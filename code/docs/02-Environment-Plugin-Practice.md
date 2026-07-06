@@ -26,7 +26,7 @@
 
 | 目标环境 | 是否支持 Hook | 是否可安装检测 | 断点后验证方式 | 失败时回到哪里 |
 |---|---|---|---|---|
-| Codex 样例 | 有 repo-local 样例 shim；真实环境仍需插件页面、授权和 lifecycle 证据 | 可检测 V3 shim、manifest、stale path 和 shim 正反输入 | 按 30 恢复入口运行新会话探针和真实工作流检查 | 插件安装 / 授权诊断，或 30 修复流程 |
+| Codex 样例 | 有 repo-local 样例 shim；真实环境仍需插件页面、授权和 lifecycle 当次依据 | 可检测 V3 shim、manifest、stale path 和 shim 正反输入 | 按 30 恢复入口运行新会话探针和真实工作流检查 | 插件安装 / 授权诊断，或 30 修复流程 |
 | Trae / IDE / Agent runner | 只有实装对应插件 / 扩展包后才算支持 | 未实装前不可安装检测 | 通过插件 lifecycle Hook 汇聚到 runtime adapter receipt | 由 01 / 环境审计判定并回到 30 修复流程 |
 | 未知环境 | 需先确认目标环境能力 | 不可直接检测 | 先确认是否存在可安装、可验证、可阻断的 lifecycle Hook | 30 路径确认和环境能力确认 |
 
@@ -69,11 +69,11 @@ python3 code/runtime_adapter.py completion-claim --target-path "<target>" --veri
 
 目标环境的 `SessionStart`、`PreToolUse`、`Stop` 或同类事件可以映射到 V3 `session_start`、`pre_tool_use`、`completion_claim` 邻近入口。具体名称由目标环境决定，V3 只要求映射后回到同一套保障消费语义。
 
-pre tool use 类事件只有在目标环境真实支持阻断、payload 可验证、失败处理可复现、安装与接入证据可检查、回滚路径明确时，才可以作为阻断型入口。否则只能输出 diagnostic，不得声明 integrated。
+pre tool use 类事件只有在目标环境真实支持阻断、payload 可验证、失败处理可复现、安装与接入当次依据可检查、回滚路径明确时，才可以作为阻断型入口。否则只能输出 diagnostic，不得声明 integrated。
 
-## 证据检查与 Stale 判定
+## 当次依据检查与 Stale 判定
 
-接入前后应使用环境证据检查确认：
+接入前后应使用环境当次依据检查确认：
 
 ```bash
 python3 code/environment_status.py --format text
@@ -82,7 +82,7 @@ python3 code/environment_entry_audit.py --environment-name <目标环境名> --f
 
 `environment_entry_audit.py` 按目标环境生成候选项；只有 `--environment-name Codex` 时才审计 `codex.ldvh-plugin` 样例并识别旧插件指向 V2 路径。其它目标环境必须显示自身插件、扩展包或 adapter 的缺口，不得复用 Codex 插件状态。
 
-证据检查至少应覆盖：
+当次依据检查至少应覆盖：
 
 1. 插件或扩展包是否 installed、enabled、trusted；
 2. 插件页面、扩展页面或插件管理器是否能显示该条目，且无待处理授权或错误；
@@ -94,9 +94,9 @@ python3 code/environment_entry_audit.py --environment-name <目标环境名> --f
 8. 失败是否按预期阻断或返回 diagnostic；
 9. uninstall 后是否不再自动触发 LDVH。
 
-当次 integrated 验收建议按以下清单收集证据：
+当次 integrated 验收建议按以下清单收集可观察依据：
 
-| 验收项 | 正常证据 | 不能替代它的内容 |
+| 验收项 | 正常当次依据 | 不能替代它的内容 |
 |---|---|---|
 | 安装启用 | 插件 / 扩展包 / package 已启用、已授权或无待授权，Hook 命令指向当前 V3 shim 或 `runtime_adapter.py` | repo-local 样例包存在 |
 | `SessionStart` | 新会话、恢复或等价事件自动输出 `event=session_start`、read_plan 或 receipt | 手动运行 `runtime_adapter.py session-start` |
@@ -106,15 +106,15 @@ python3 code/environment_entry_audit.py --environment-name <目标环境名> --f
 | payload / target | payload 可回读 event、session、cwd、target、operation、acknowledged_paths 或 verification_evidence，缺字段有 diagnostic | 用户口头说明目标 |
 | 回滚 | 禁用或卸载后新会话 / 等价触发不再进入 LDVH，cache 已清理或过期不采信 | 删除 repo-local 样例文件 |
 
-只有当次验收同时具备真实触发、稳定 payload、失败处理、安装与接入证据、回滚方式和测试证据，才可把对应环境入口判定为 integrated。该结论只对当次目标环境、LDVH root、插件配置和触发证据成立，不写成长期安装状态。文件存在、插件缓存存在、历史 trust 记录或旧路径命中，都不得声明 integrated。安装检测和 integrated 证明必须分开：插件可见、必需 lifecycle Hook manifest 齐全、指向 V3 shim、旧路径诊断为 0、repo-local shim 直测通过且 Git Hook 正反例通过时，可以作为安装检测通过；真实 lifecycle 尚未回读时，只是不声明 integrated，不应单独阻断安装完成。
+只有当次验收同时具备真实触发、稳定 payload、失败处理、安装与接入当次依据、回滚方式和测试依据，才可把对应环境入口判定为 integrated。该结论只对当次目标环境、LDVH root、插件配置和触发依据成立，不写成长期安装状态。文件存在、插件缓存存在、历史 trust 记录或旧路径命中，都不得声明 integrated。安装检测和 integrated 证明必须分开：插件可见、必需 lifecycle Hook manifest 齐全、指向 V3 shim、旧路径诊断为 0、repo-local shim 直测通过且 Git Hook 正反例通过时，可以作为安装检测通过；真实 lifecycle 尚未回读时，只是不声明 integrated，不应单独阻断安装完成。
 
-跨环境不能直接验收真实 lifecycle。Codex 会话只能审计 WorkBuddy 样例包或 WorkBuddy 回传的当次证据，不能自行判定 WorkBuddy integrated；WorkBuddy 会话也不能替代 Codex 真实触发验收。目标环境不可在当前环境触发时，应输出不可在当前环境验收、候选资产存在或缺失的结论。
+跨环境不能直接验收真实 lifecycle。Codex 会话只能审计 WorkBuddy 样例包或 WorkBuddy 回传的当次可观察依据，不能自行判定 WorkBuddy integrated；WorkBuddy 会话也不能替代 Codex 真实触发验收。目标环境不可在当前环境触发时，应输出不可在当前环境验收、候选资产存在或缺失的结论。
 
-若后续逻辑显式要求 integrated，必须使用当次可执行的 lifecycle 验证路径，而不是让 AI 永久停在不可验证声明。30 负责交还恢复入口语、可复制新会话探针、真实工作流检查和失败信息包；AI 逐项判断插件页面启用、重启 App、新会话只读可见性探针、授权 / trust、PreToolUse 负例阻断和正例放行。目标环境能提供真实 SessionStart lifecycle 证据时应一并回读；目标环境不稳定展示 Hook stdout 时，不得让 Human 去猜启动提示是否出现。全部通过后，AI 复跑 `install_verification.py` 做技术复核并交还本次验证总结；不得复用命令输出里的旧式下一步提示。验证总结不写长期状态，不替代插件页面、真实 payload 或失败处理诊断。
+若后续逻辑显式要求 integrated，必须使用当次可执行的 lifecycle 验证路径，而不是让 AI 永久停在不可验证声明。30 负责交还恢复入口语、可复制新会话探针、真实工作流检查和失败信息包；AI 逐项判断插件页面启用、重启 App、新会话只读可见性探针、授权 / trust、PreToolUse 负例阻断和正例放行。目标环境能提供真实 SessionStart lifecycle 当次依据时应一并回读；目标环境不稳定展示 Hook stdout 时，不得让 Human 去猜启动提示是否出现。全部通过后，AI 复跑 `install_verification.py` 做技术复核并交还本次验证总结；不得复用命令输出里的旧式下一步提示。验证总结不写长期状态，不替代插件页面、真实 payload 或失败处理诊断。
 
 断点后 lifecycle 验证只适用于已实装目标环境插件、扩展包、package 或 runtime adapter 的路径。目标环境暂不支持可阻断 lifecycle Hook 时，不进入正式安装验证；AI 应交还“先实现目标环境 Hook adapter”的缺口，再重新运行安装向导。
 
-安装审计结果必须以当前命令输出为准。当前 worktree 只有通过 `governed_hook_adapter.py verify` 证明的 `git.commit-msg` 可以作为 integrated 入口；Codex 样例插件即使命中缓存，也只能在 Hook 命令指向 `hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py` 且完成真实 lifecycle、payload、失败阻断 / 非阻断诊断、授权 / trust 和回滚证据后，才可改变 integrated 结论。若审计发现 Hook 命令仍指向旧 `code/environment_plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py`，该状态属于已废弃 repo-local 插件资产路径，必须按环境插件升级或重装处理，不得写成已安装或 integrated。
+安装审计结果必须以当前命令输出为准。当前 worktree 只有通过 `governed_hook_adapter.py verify` 证明的 `git.commit-msg` 可以作为 integrated 入口；Codex 样例插件即使命中缓存，也只能在 Hook 命令指向 `hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py` 且完成真实 lifecycle、payload、失败阻断 / 非阻断诊断、授权 / trust 和回滚当次依据后，才可改变 integrated 结论。若审计发现 Hook 命令仍指向旧 `code/environment_plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py`，该状态属于已废弃 repo-local 插件资产路径，必须按环境插件升级或重装处理，不得写成已安装或 integrated。
 
 ## 断点后 lifecycle 验证引导
 
@@ -170,7 +170,7 @@ python3 <ldvh-root>/code/runtime_adapter.py session-start --root <ldvh-root> --c
 请继续 LDVH 受控正例放行测试。scratch target 使用 <target-path>/.ldvh-runtime/acceptance-probe/allowed.txt。请先确认已读取 00/01/02 和 30 的必读依据，再只运行写入前检查；预期结果是放行，诊断为空，不需要实际写文件。
 ```
 
-最终交还只列用户接下来要做的具体动作：本次验证通过则可结束；失败则停在失败步骤并补充失败信息包；未验证则补齐缺失的插件页面、新会话探针或真实工作流证据。
+最终交还只列用户接下来要做的具体动作：本次验证通过则可结束；失败则停在失败步骤并补充失败信息包；未验证则补齐缺失的插件页面、新会话探针或真实工作流当次依据。
 
 ## 安装与卸载边界
 
@@ -185,7 +185,7 @@ python3 <ldvh-root>/code/runtime_adapter.py session-start --root <ldvh-root> --c
 5. 会触发哪些 lifecycle event；
 6. 哪些事件可阻断，哪些只能 diagnostic；
 7. 重启 App 或重载插件宿主、授权 / trust 和新窗口或新会话测试要求；
-8. 回滚命令和回滚后证据检查；
+8. 回滚命令和回滚后依据检查；
 9. 验证命令、输入范围、正常判断标准、残留风险和 source_refs。
 
 卸载时只能移除或禁用 LDVH 自己写入的插件、扩展包、shim 或指针，不得静默删除原有用户 Hook、其它插件配置、用户事实源或非 LDVH 资产。卸载后必须验证环境不再自动触发 LDVH。
@@ -210,7 +210,7 @@ python3 <ldvh-root>/code/runtime_adapter.py session-start --root <ldvh-root> --c
 python3 code/install_verification.py --governance-root "<workspace-root>" --ldvh-root "<ldvh-root>" --environment-name "<当前 AI 运行环境名称>"
 ```
 
-该命令会先使用 specs 10 的配置校验读取 `LDVH-GOVERNED-PROJECTS.yaml`，再验证每个管辖项目 Git `commit-msg` Hook 的 status、managed marker、正例放行和反例阻断。目标环境为 Codex 时，它会执行 repo-local Codex 样例 shim 的 SessionStart、PreToolUse 和 Stop 直测，并把插件页面、重启 App、授权 / trust、新会话只读可见性探针、真实 lifecycle、payload、失败处理和卸载后自动触发证据列为用户侧冒烟检查，同时输出正常判断标准。目标环境不是 Codex 时，该命令只能输出目标环境插件待实装 / 待验收结论，不运行 Codex 样例 shim，也不得暗示 Trae、IDE 或 Agent runner 已被支持。该命令不会安装、升级、禁用、卸载或写入用户环境；它输出 `complete` 且 `environment_hook_integrated=false` 时表示安装检测已通过但真实环境接入仍不能声明 integrated；它输出 `environment_hook_integrated=true` 时表示当前检测已具备环境 integrated 证据；它输出 `review_required` 时表示环境插件缺失、未启用、未指向 V3 shim 或目标环境没有当前验收入口支持。
+该命令会先使用 specs 10 的配置校验读取 `LDVH-GOVERNED-PROJECTS.yaml`，再验证每个管辖项目 Git `commit-msg` Hook 的 status、managed marker、正例放行和反例阻断。目标环境为 Codex 时，它会执行 repo-local Codex 样例 shim 的 SessionStart、PreToolUse 和 Stop 直测，并把插件页面、重启 App、授权 / trust、新会话只读可见性探针、真实 lifecycle、payload、失败处理和卸载后自动触发依据列为用户侧冒烟检查，同时输出正常判断标准。目标环境不是 Codex 时，该命令只能输出目标环境插件待实装 / 待验收结论，不运行 Codex 样例 shim，也不得暗示 Trae、IDE 或 Agent runner 已被支持。该命令不会安装、升级、禁用、卸载或写入用户环境；它输出 `complete` 且 `environment_hook_integrated=false` 时表示安装检测已通过但真实环境接入仍不能声明 integrated；它输出 `environment_hook_integrated=true` 时表示当前检测已具备环境 integrated 当次依据；它输出 `review_required` 时表示环境插件缺失、未启用、未指向 V3 shim 或目标环境没有当前验收入口支持。
 
 ## Codex 样例进入条件
 
@@ -225,7 +225,7 @@ Codex 样例后续进入实装前，至少要补齐：
 7. stale V2 plugin 路径检测和升级前阻断；
 8. status / positive / negative / rollback 测试。
 
-旧 `ldvh@personal`、旧仓库路径、旧 `code/hook_adapter.py` 或历史 trust 记录不能复用为 V3 integrated 证据。
+旧 `ldvh@personal`、旧仓库路径、旧 `code/hook_adapter.py` 或历史 trust 记录不能复用为 V3 integrated 当次依据。
 
 根目录 `icons/` 只作为 LDVH 通用图标资产来源和历史吸收结果；它不是环境插件安装源。实际 manifest 引用的展示资产必须位于对应插件包目录内，例如 `hooks/environment-plugins/codex-ldvh-v3/assets/`，并由静态测试确认存在和尺寸有效。
 
@@ -241,4 +241,4 @@ Codex 样例后续进入实装前，至少要补齐：
 
 ## 下一步
 
-后续若 Human 明确要求进入某个目标环境的实装，应先按本文生成 repo-local 插件包方案和证据检查计划，再进入 Human Gate。真实安装、升级、禁用或卸载只能在 Human 明确确认目标环境、写入位置和回滚方式后执行。
+后续若 Human 明确要求进入某个目标环境的实装，应先按本文生成 repo-local 插件包方案和当次依据检查计划，再进入 Human Gate。真实安装、升级、禁用或卸载只能在 Human 明确确认目标环境、写入位置和回滚方式后执行。

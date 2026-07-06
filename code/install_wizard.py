@@ -331,7 +331,7 @@ def _interaction_handoff(
     if install_plan:
         unverifiable = list(install_plan.get("verification", {}).get("unverifiable", []))
     if verification and verification.get("summary", {}).get("environment_human_acceptance_required"):
-        unverifiable.append("真实 lifecycle、授权 / trust、payload 或失败处理证据需要 Human 断点后验证。")
+        unverifiable.append("真实 lifecycle、授权 / trust、payload 或失败处理依据需要 Human 断点后验证。")
 
     return {
         "template": "specs/30-安装配置与验证行动模板.md",
@@ -624,7 +624,7 @@ def build_install_plan(
             ),
             "expected": "summary.status is complete or review_required with explicit Human handoff",
             "unverifiable": [
-                "environment integrated requires真实自动触发、payload、失败处理、trust 和重启后证据"
+                "environment integrated requires真实自动触发、payload、失败处理、trust 和重启后当次依据"
             ],
         },
         "source_refs": check["source_refs"],

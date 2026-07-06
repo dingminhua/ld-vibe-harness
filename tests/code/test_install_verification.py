@@ -163,7 +163,7 @@ projects:
     assert impact["access_modes"]["plugin_hook"]["integrated"] is False
     assert impact["access_modes"]["plugin_hook"]["verification_method"] == "repo_local_shim_direct_test"
     assert impact["access_modes"]["plugin_hook"]["real_hook_observed"] is False
-    assert "Hook 已触发但 read_plan 消费证据链路未通过" in impact["access_modes"]["plugin_hook"]["user_status"]
+    assert "Hook 已触发但 read_plan 消费依据链路未通过" in impact["access_modes"]["plugin_hook"]["user_status"]
     assert {effect["trigger"] for effect in impact["effects"]} >= {
         "SessionStart",
         "PreToolUse write-class tool",
@@ -192,7 +192,7 @@ projects:
     assert status_card["验收目标"] == "真实触发验收"
     assert status_card["验收结果"] == "未完成"
     assert "Git 提交消息 Hook 正例放行、反例阻断" in status_card["已真实触发"]
-    assert "Codex lifecycle Hook 触发证据回读 / read_plan 消费证据链路" in status_card["未完成触发项"]
+    assert "Codex lifecycle Hook 当次触发依据回读 / read_plan 消费依据链路" in status_card["未完成触发项"]
     assert status_card["技术安装状态"] == "是"
     assert "授权 / trust" in status_card["下一步"]
     assert "Hook 已触发" in status_card["下一步"]
@@ -201,7 +201,7 @@ projects:
     assert any("当前安装方式是插件 Hook" in item for item in handoff["plain_conclusion"])
     assert any("本次真实触发验收未完成" in item for item in handoff["plain_conclusion"])
     assert any("已真实触发：Git 提交消息 Hook 正例放行、反例阻断" in item for item in handoff["plain_conclusion"])
-    assert any("未完成触发项：Codex lifecycle Hook 触发证据回读 / read_plan 消费证据链路" in item for item in handoff["plain_conclusion"])
+    assert any("未完成触发项：Codex lifecycle Hook 当次触发依据回读 / read_plan 消费依据链路" in item for item in handoff["plain_conclusion"])
     assert any("真实触发验收未完成" in item for item in handoff["plain_conclusion"])
     assert not any("不等于已经打开或观察到真实自动 Hook" in item for item in handoff["plain_conclusion"])
     assert [block["name"] for block in handoff["impact_status_blocks"]] == [
@@ -212,8 +212,8 @@ projects:
     assert any("插件页面" in step for step in handoff["user_next_steps"])
     assert any("授权 / trust" in step for step in handoff["user_next_steps"])
     assert any("Hook / lifecycle 触发记录" in step for step in handoff["user_next_steps"])
-    assert any("未取得 Hook 触发证据" in step for step in handoff["user_next_steps"])
-    assert any("Hook 已触发，但 read_plan 消费证据链路未通过" in step for step in handoff["user_next_steps"])
+    assert any("未取得 Hook 触发依据" in step for step in handoff["user_next_steps"])
+    assert any("Hook 已触发，但 read_plan 消费依据链路未通过" in step for step in handoff["user_next_steps"])
     assert any("只读 LDVH 可见性检查" in step for step in handoff["user_next_steps"])
     assert handoff["real_trigger_acceptance"]["result"] == "未完成"
     assert handoff["real_trigger_acceptance"]["complete"] is False
@@ -221,7 +221,7 @@ projects:
         "Git 提交消息 Hook 正例放行、反例阻断"
     ]
     assert handoff["real_trigger_acceptance"]["pending_items"] == [
-        "Codex lifecycle Hook 触发证据回读 / read_plan 消费证据链路"
+        "Codex lifecycle Hook 当次触发依据回读 / read_plan 消费依据链路"
     ]
     assert "hook.lifecycle-verify-probe" in handoff["visible_probe_command"]
     assert any("目标环境名称和版本" in item for item in handoff["failure_info_package"])
@@ -650,7 +650,7 @@ projects:
     assert status_card["验收结果"] == "未完成"
     assert "Git 提交消息 Hook 正例放行、反例阻断" in status_card["已真实触发"]
     assert "Runtime 入口可读" not in status_card["已真实触发"]
-    assert "Trae lifecycle Hook 触发证据回读" in status_card["未完成触发项"]
+    assert "Trae lifecycle Hook 当次触发依据回读" in status_card["未完成触发项"]
     assert status_card["技术安装状态"] == "否"
     assert "先实现目标环境插件" in status_card["下一步"]
     assert any("当前环境是 Trae" in item for item in handoff["plain_conclusion"])

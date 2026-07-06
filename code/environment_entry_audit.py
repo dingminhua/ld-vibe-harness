@@ -323,7 +323,7 @@ def _codex_ldvh_plugin_candidate(
             evidence=evidence,
             hook_entry="code/runtime_adapter.py",
             decision="verify_trust_and_runtime_before_integration",
-            reason="检测到指向当前 V3 的 LDVH 插件 Hook 配置，且 SessionStart、PreToolUse、Stop 三类必需事件齐全；仍需真实触发、payload 和失败处理证据后才能声明 integrated。",
+            reason="检测到指向当前 V3 的 LDVH 插件 Hook 配置，且 SessionStart、PreToolUse、Stop 三类必需事件齐全；仍需真实触发、payload 和失败处理当次依据后才能声明 integrated。",
             details={"commands": commands, "hook_entries": hook_entries, **required_hook_status},
         )
     if points_to_v3:
@@ -363,7 +363,7 @@ def _target_environment_ldvh_plugin_candidate(environment_name: str) -> dict[str
         hook_entry="code/runtime_adapter.py",
         decision="create_target_environment_plugin_before_claiming",
         reason=(
-            f"未发现 {name} 的 LDVH lifecycle Hook 插件、扩展包或 adapter 实装证据；"
+            f"未发现 {name} 的 LDVH lifecycle Hook 插件、扩展包或 adapter 实装依据；"
             "不得引用其他环境插件状态作为目标环境入口。"
         ),
         details={
@@ -457,7 +457,7 @@ def build_environment_entry_audit(
             decision="defer",
             reason=(
                 "统一 adapter 已有；支持 Hook 的环境应以对应 LDVH 插件、扩展包或 adapter 作为正式安装载体，"
-                f"但当前还没有 {target_environment} 插件的真实触发、失败处理和回滚证据。"
+                f"但当前还没有 {target_environment} 插件的真实触发、失败处理和回滚当次依据。"
             ),
         ),
         _removed_top_level_candidate(

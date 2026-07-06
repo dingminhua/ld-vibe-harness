@@ -354,7 +354,7 @@ def _verify_environment(
                     "verification_method": "not_run",
                     "real_hook_observed": False,
                     "user_status": "目标环境插件入口未实装；未验证真实自动 Hook。",
-                    "reason": "当前统一验收入口没有目标环境插件 / 扩展包实装证据。",
+                    "reason": "当前统一验收入口没有目标环境插件 / 扩展包实装依据。",
                 },
             },
             "impact_matrix": [],
@@ -364,14 +364,14 @@ def _verify_environment(
             ),
             "human_acceptance": {
                 "required": True,
-                "reason": f"{environment_name} 目标环境尚无当前验收入口可识别的 LDVH 插件 / 扩展包实装、授权、payload、失败处理和回滚证据；正式 LDVH 接入必须先实现可安装、可验证、可阻断的 AI lifecycle Hook。",
+                "reason": f"{environment_name} 目标环境尚无当前验收入口可识别的 LDVH 插件 / 扩展包实装、授权、payload、失败处理和回滚当次依据；正式 LDVH 接入必须先实现可安装、可验证、可阻断的 AI lifecycle Hook。",
                 "steps": [
                     f"先确认 {environment_name} 是否支持插件 / 扩展包 / package 形态的 Hook 入口。",
                     "若支持 Hook，必须先实装目标环境插件 / 扩展包并让安装检测通过；写入完成后按 30 的断点恢复协议继续 LDVH 影响验证。",
                     "若目标环境当前没有可阻断 lifecycle Hook，停止正式安装并返回目标环境插件 / adapter 候选缺口。",
                 ],
                 "acceptance_criteria": [
-                    "目标环境支持 Hook 时，必须能提供插件 / 扩展包实装、入口指向、授权、payload、失败处理和回滚证据。",
+                    "目标环境支持 Hook 时，必须能提供插件 / 扩展包实装、入口指向、授权、payload、失败处理和回滚当次依据。",
                     "目标环境缺少可阻断 lifecycle Hook 时，正式 LDVH 影响验证不得通过。",
                     "Human 已理解当前目标环境的触发来源、不可验证范围和断点后验证方式。",
                 ],
@@ -475,7 +475,7 @@ def _verify_environment(
             "integrated": environment_integrated,
             "verification_method": "repo_local_shim_direct_test",
             "real_hook_observed": environment_integrated,
-            "user_status": "插件入口可见，内部连接检查通过；若真实 PreToolUse 已阻断，则按 Hook 已触发但 read_plan 消费证据链路未通过处理。"
+            "user_status": "插件入口可见，内部连接检查通过；若真实 PreToolUse 已阻断，则按 Hook 已触发但 read_plan 消费依据链路未通过处理。"
             if environment_install_verified and not environment_integrated
             else "真实自动 Hook integrated 已验证。"
             if environment_integrated
@@ -551,7 +551,7 @@ def _verify_environment(
                 f"{environment_name} 插件页面显示 LDVH 插件已启用、已授权或无待处理授权，且无错误。",
                 f"插件 Hook 命令指向当前 V3 shim: {CODEX_SHIM}。",
                 "重启 App 或重载插件宿主后，插件页面仍保持启用且无错误。",
-                "新会话只读可见性探针输出 status=ok、event=session_start、receipt_id，且 Diagnostics: none；若目标环境提供真实触发证据，应一并回读。",
+                "新会话只读可见性探针输出 status=ok、event=session_start、receipt_id，且 Diagnostics: none；若目标环境提供真实触发当次依据，应一并回读。",
                 "写入前检查负例被阻断，正例被放行。",
                 "install_verification.py 显示 install_complete=true、插件可见、内部连接检查通过，并列出 Git Hook 正反例结果。",
             ],
@@ -605,7 +605,7 @@ def build_install_verification(
                 "blocking",
                 "INSTALL_VERIFY_ENVIRONMENT_NOT_INTEGRATED",
                 environment_name,
-                "要求环境 Hook integrated，但当前仍缺真实触发、授权或失败处理证据。",
+                "要求环境 Hook integrated，但当前仍缺真实触发、授权或失败处理当次依据。",
             )
         )
 
@@ -771,7 +771,7 @@ def _build_user_handoff(result: dict[str, Any]) -> dict[str, Any]:
     if env_status == "已自动接入":
         real_trigger_passed_items.append(f"{environment_name} 生命周期触发")
     else:
-        real_trigger_pending_items.append(f"{environment_name} lifecycle Hook 触发证据回读 / read_plan 消费证据链路")
+        real_trigger_pending_items.append(f"{environment_name} lifecycle Hook 当次触发依据回读 / read_plan 消费依据链路")
 
     if summary["blocking"]:
         install_status = "阻断"
@@ -781,7 +781,7 @@ def _build_user_handoff(result: dict[str, Any]) -> dict[str, Any]:
         if env_status == "已自动接入":
             next_step = "可停止；保留验证输出作为交还证据"
         elif env_status == "插件可见，待真实触发":
-            next_step = f"先确认 {environment_name} 插件已授权 / trust；若已看到 PreToolUse 阻断，按 Hook 已触发处理，继续修复 read_plan 消费证据链路"
+            next_step = f"先确认 {environment_name} 插件已授权 / trust；若已看到 PreToolUse 阻断，按 Hook 已触发处理，继续修复 read_plan 消费依据链路"
         else:
             next_step = "交还当前状态和残留限制"
     else:
@@ -798,8 +798,8 @@ def _build_user_handoff(result: dict[str, Any]) -> dict[str, Any]:
             f"打开 {environment_name} 插件页面，确认 LDVH 插件启用且无错误。",
             "确认插件已授权 / trust；如果有授权提示，先完成授权，没有提示则记录无待处理授权。",
             "重启 App 或新开会话。",
-            f"查看 {environment_name} 插件 Hook / lifecycle 触发记录；若没有可见记录，返回“未取得 Hook 触发证据”。",
-            "若看到 PreToolUse 阻断，尤其是 RUNTIME_READ_PLAN_CONSUMED_EMPTY 或 PREFLIGHT_TARGET_UNKNOWN，记录为“Hook 已触发，但 read_plan 消费证据链路未通过”。",
+            f"查看 {environment_name} 插件 Hook / lifecycle 触发记录；若没有可见记录，返回“未取得 Hook 触发依据”。",
+            "若看到 PreToolUse 阻断，尤其是 RUNTIME_READ_PLAN_CONSUMED_EMPTY 或 PREFLIGHT_TARGET_UNKNOWN，记录为“Hook 已触发，但 read_plan 消费依据链路未通过”。",
             "在新会话里触发只读 LDVH 可见性检查，确认返回 runtime 回执。",
             "触发一次受控写入前检查，确认应阻断的写入会被阻断。",
             "带着新会话结果回来继续真实触发验收。",
@@ -826,10 +826,10 @@ def _build_user_handoff(result: dict[str, Any]) -> dict[str, Any]:
         {
             "name": "真实触发验收",
             "status": real_trigger_result,
-            "normal": "通过标准：当前工作流产生可复核的 LDVH 触发证据，并且提交消息 Hook 正反例通过。",
+            "normal": "通过标准：当前工作流产生可复核的 LDVH 当次触发依据，并且提交消息 Hook 正反例通过。",
             "next_step": "无需处理。"
             if real_trigger_acceptance_complete
-            else "若已出现 PreToolUse 阻断，按 Hook 已触发处理；继续修复 read_plan 消费证据链路后再验收。",
+            else "若已出现 PreToolUse 阻断，按 Hook 已触发处理；继续修复 read_plan 消费依据链路后再验收。",
         },
         {
             "name": "提交消息检查",

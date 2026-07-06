@@ -90,7 +90,7 @@ Python CLI 测试应统一走 `tests/code/test_ldvh_specs_validate.py` 中的 `_
 
 正式行动模板独立成 spec 后，应测试它自己的 `code_consumption` 契约、README 可发现索引和历史迁移记录中的废弃标注。新增消费声明但没有对应 validator 消费、删除实践文档回指、重新把已废弃 formal review hash gate 写成当前机制，都应触发回归失败。
 
-环境入口审计测试应同时覆盖 stale V2 path 阻断、旧 `code/environment_plugins/` 资产路径阻断、V3 Codex shim 可见但未验证 integrated 的判定；仅发现插件 hook 指向 V3 shim，不足以把 Codex runtime 自动入口声明为 integrated。`hooks/environment-plugins/` 下样例包、manifest、图标或 shim 变更必须触发 `test_environment_plugins.py` 和 `test_install_verification.py` 的 targeted runner 阶段。真实 AI 环境 Hook 安装检测完成后应能测试插件证据、V3 shim 指向、直接 shim 正反输入，并要求交还插件页面结果、重启 App、授权 / trust、新会话只读可见性探针、受控正反例和正常判断标准；无法触发真实 lifecycle 时必须明确不可验证范围，但不得让缺少真实 lifecycle 自证阻断已通过的安装检测。若后续逻辑需要 integrated，测试必须覆盖 30 断点后 lifecycle 验证、本次验证总结、历史过程 JSON 不影响 integrated 结论、旧 JSON 测试不得写真实仓库根目录，以及 `install_verification.py` 只能用当前审计和当前检测结果判断 `environment_hook_integrated`。
+环境入口审计测试应同时覆盖 stale V2 path 阻断、旧 `code/environment_plugins/` 资产路径阻断、V3 Codex shim 可见但未验证 integrated 的判定；仅发现插件 hook 指向 V3 shim，不足以把 Codex runtime 自动入口声明为 integrated。`hooks/environment-plugins/` 下样例包、manifest、图标或 shim 变更必须触发 `test_environment_plugins.py` 和 `test_install_verification.py` 的 targeted runner 阶段。真实 AI 环境 Hook 安装检测完成后应能测试插件依据、V3 shim 指向、直接 shim 正反输入，并要求交还插件页面结果、重启 App、授权 / trust、新会话只读可见性探针、受控正反例和正常判断标准；无法触发真实 lifecycle 时必须明确不可验证范围，但不得让缺少真实 lifecycle 自证阻断已通过的安装检测。若后续逻辑需要 integrated，测试必须覆盖 30 断点后 lifecycle 验证、本次验证总结、历史过程 JSON 不影响 integrated 结论、旧 JSON 测试不得写真实仓库根目录，以及 `install_verification.py` 只能用当前审计和当前检测结果判断 `environment_hook_integrated`。
 
 安装验收入口测试必须证明 `install_verification.py` 使用 specs 10 的管辖项目配置校验，而不是手写轻量 YAML 解析；坏配置、空项目、非 Git 管辖项目和缺失 Git Hook 都必须阻断。目标环境不是当前实现已覆盖的样例环境时，测试应确认验收入口返回 gated / review_required，不运行错误环境的样例 shim，不声明该环境已 supported 或 integrated。
 

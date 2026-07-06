@@ -151,11 +151,11 @@ GOVERNED_CONFIG=<workspace-root>/LDVH-GOVERNED-PROJECTS.yaml
 
 每个已选择管辖项目必须是有效 Git worktree。安装前检查发现目标不是 Git 仓库时，必须停在安装前检查或安装方案预览，标为 `⛔ 阻断`，并说明管辖项目必须是 Git 仓库；不得继续进入最终执行，也不得创建 Git Hook 替代 Git 初始化。
 
-安装后验证必须可复现。AI 环境 Hook 至少要验证插件安装证据、Hook 配置指向 V3 shim、直接 shim 正反输入；这些只读安装检测通过后，可以声明写入完成。真实 Codex / IDE lifecycle、插件页面授权和新窗口触发属于用户侧冒烟检查；如果当前回合不能触发，必须写明不可验证范围，不得声明 integrated，但不得仅因此阻断写入完成。Git Hook 必须验证 `governed_hook_adapter.py status`、`core.hooksPath`、managed `commit-msg` 文件和可执行位，并直接执行 hook 文件跑有效 commit message 放行和无效 commit message 阻断。写入完成交还应优先运行 `install_verification.py` 汇总 Git Hook 正反例和环境入口审计。
+安装后验证必须可复现。AI 环境 Hook 至少要验证插件安装依据、Hook 配置指向 V3 shim、直接 shim 正反输入；这些只读安装检测通过后，可以声明写入完成。真实 Codex / IDE lifecycle、插件页面授权和新窗口触发属于用户侧冒烟检查；如果当前回合不能触发，必须写明不可验证范围，不得声明 integrated，但不得仅因此阻断写入完成。Git Hook 必须验证 `governed_hook_adapter.py status`、`core.hooksPath`、managed `commit-msg` 文件和可执行位，并直接执行 hook 文件跑有效 commit message 放行和无效 commit message 阻断。写入完成交还应优先运行 `install_verification.py` 汇总 Git Hook 正反例和环境入口审计。
 
 若后续流程需要判断环境自动接入是否可写为 integrated，不能停在不可验证声明。安装检测已通过后，30 必须交还断点恢复协议：恢复入口语、可复制新会话只读可见性探针、真实工作流检查和失败信息包。Human 在重启 App、重载插件宿主或新会话回来后，AI 复跑 `install_verification.py` 重建上下文，逐项确认 runtime adapter receipt、Git Hook 正反例和受控写入前检查。
 
-不可验证范围单独列出，不能混入“验证通过”。常见不可验证项包括真实 Codex / IDE lifecycle 触发、外部环境自动触发和卸载后自动触发证据。
+不可验证范围单独列出，不能混入“验证通过”。常见不可验证项包括真实 Codex / IDE lifecycle 触发、外部环境自动触发和卸载后自动触发依据。
 
 ## 执行编排形态
 
@@ -245,7 +245,7 @@ scratch target 路径和文件状态：
 | shim 直测 | SessionStart、PreToolUse 阻断、Stop / completion 非阻断诊断直测通过 |
 | Git Hook | 每个已选择管辖项目的 managed hook、正例放行和反例阻断通过 |
 
-安装检测通过即可作为当前回合写入完成条件。真实 lifecycle、授权 / trust、payload 或失败处理证据不足时，交还结果必须包含断点恢复入口语和用户侧冒烟检查提示。Human 完成下表冒烟检查并明确反馈后，AI 可复跑安装验证并交还本次验证总结；该总结只是当前过程输出，不形成长期状态。
+安装检测通过即可作为当前回合写入完成条件。真实 lifecycle、授权 / trust、payload 或失败处理依据不足时，交还结果必须包含断点恢复入口语和用户侧冒烟检查提示。Human 完成下表冒烟检查并明确反馈后，AI 可复跑安装验证并交还本次验证总结；该总结只是当前过程输出，不形成长期状态。
 
 用户侧冒烟检查顺序：
 
@@ -255,11 +255,11 @@ scratch target 路径和文件状态：
 | 2 | 核对插件入口 | 命令、manifest 或入口指向当前 V3 LDVH root / V3 shim |
 | 3 | 重启 App 或重载插件宿主 | 重启后插件仍显示启用，没有新增错误 |
 | 4 | 完成授权 / trust | 页面显示已授权、已信任或没有待处理授权提示 |
-| 5 | 新开目标环境窗口或会话并运行只读可见性探针 | 输出显示 `status=ok`、`event=session_start`、存在 `receipt_id`，且诊断为空；有真实 SessionStart 触发证据时一并回读 |
+| 5 | 新开目标环境窗口或会话并运行只读可见性探针 | 输出显示 `status=ok`、`event=session_start`、存在 `receipt_id`，且诊断为空；有真实 SessionStart 触发依据时一并回读 |
 | 6 | 触发一次受控写入类工具 | 负例会被阻断；正例会放行 |
 | 7 | 运行统一安装验证 | `install_verification.py` 显示 `install_complete=true`、插件可见、shim 直测通过，并列出 Git Hook 正反例结果 |
 
-用户侧冒烟检查需要确认当前环境自动接入证据时，应继续 30 的断点后 lifecycle 验证。Human 可以用以下句式交还 AI：
+用户侧冒烟检查需要确认当前环境自动接入依据时，应继续 30 的断点后 lifecycle 验证。Human 可以用以下句式交还 AI：
 
 ```text
 我重启了，继续 LDVH lifecycle 验证。请按 30 的恢复协议逐项检查插件页面、重启后结果、新会话可见性探针、受控负例阻断、受控正例放行和统一安装验证。
@@ -271,7 +271,7 @@ scratch target 路径和文件状态：
 python3 code/install_verification.py --governance-root "<workspace-root>" --ldvh-root "<ldvh-root>" --environment-name "<当前 AI 运行环境名称>"
 ```
 
-正常交还标准是 `install_verification.py` 显示安装检测通过，Git Hook 正反例仍通过，并且本次验证总结列出插件页面、重启后结果、可见性探针、受控负例阻断和正例放行的结果。最终交还必须写成本次验证通过、失败或未验证，不得复用 `install_verification.py` 输出中的旧式下一步提示，也不得使用 `--require-environment-integrated` 作为收尾通过条件。任一必需项失败时进入诊断和修复流程，但不直接回写安装检测失败；只有复跑安装检测发现插件缺失、未启用、manifest 不完整、旧路径、stale V2 path、shim 直测失败或 Git Hook 正反例失败时，才改变 `install_complete` 或返回 `review_required` / `blocked`。若缺少真实 lifecycle、授权 / trust、payload 或失败处理证据，交还状态仍不得声明 integrated。
+正常交还标准是 `install_verification.py` 显示安装检测通过，Git Hook 正反例仍通过，并且本次验证总结列出插件页面、重启后结果、可见性探针、受控负例阻断和正例放行的结果。最终交还必须写成本次验证通过、失败或未验证，不得复用 `install_verification.py` 输出中的旧式下一步提示，也不得使用 `--require-environment-integrated` 作为收尾通过条件。任一必需项失败时进入诊断和修复流程，但不直接回写安装检测失败；只有复跑安装检测发现插件缺失、未启用、manifest 不完整、旧路径、stale V2 path、shim 直测失败或 Git Hook 正反例失败时，才改变 `install_complete` 或返回 `review_required` / `blocked`。若缺少真实 lifecycle、授权 / trust、payload 或失败处理依据，交还状态仍不得声明 integrated。
 
 最终确认只提供两个主选项。5/5 不再重复安装前检查表，也不把执行后验证写成新的只读验证选项；只列出将写入对象和不写入对象。Human 选择 `1 执行方案` 后，AI 必须立即执行已确认写入并进行写入后验证；Human 要求调整方案时回到对应前一步，但不作为第三个主选项展示：
 
@@ -445,7 +445,7 @@ python3 code/install_verification.py --governance-root "<workspace-root>" --ldvh
 | 转接脚本直测 | 通过 / 未运行 / 失败 |
 | 真实自动触发 | 已验证 / 未验证 |
 | 正常判断标准 | 安装检测通过；用户侧冒烟检查包括插件页面启用且无错误、重启后插件仍启用且无新增错误、授权完成、新会话只读可见性探针输出正常、受控写入负例阻断且正例放行 |
-| integrated 声明 | 只有真实自动触发、失败可阻断且证据齐备时才可声明 |
+| integrated 声明 | 只有真实自动触发、失败可阻断且当次依据齐备时才可声明 |
 
 若当前 AI 运行环境名称可识别，必须在本节使用当前环境名称；若目标环境不是当前环境，必须替换为对应目标环境名称，不得沿用示例环境名称。
 
@@ -480,4 +480,4 @@ Hook 接入后测试优先使用统一只读安装验证入口：
 python3 code/install_verification.py --governance-root "<workspace-root>" --ldvh-root "<ldvh-root>" --environment-name "<当前 AI 运行环境名称>"
 ```
 
-该命令只读验收所有管辖项目的 active `commit-msg` Hook，并汇总环境入口审计和 repo-local shim 直测。输出中每个项目必须同时满足 Hook 已安装、managed marker 存在、正例 exit `0`、反例 exit 非 `0` 且返回 `COMMIT_HEADER_INVALID`，才可在交还总结中写 Git 提交消息检查通过。命令返回 `complete` 且 `environment_hook_integrated=false` 时，表示安装检测已通过但真实 lifecycle 尚未作为 integrated 证据；30 可交还断点后 lifecycle 验证入口。断点后逐项验证通过后只交还本次验证总结，不写长期状态，也不复用本命令的旧式下一步提示；命令返回 `review_required` 时，通常表示环境插件缺失、未启用、未指向 V3 shim 或目标环境没有当前验收入口支持。
+该命令只读验收所有管辖项目的 active `commit-msg` Hook，并汇总环境入口审计和 repo-local shim 直测。输出中每个项目必须同时满足 Hook 已安装、managed marker 存在、正例 exit `0`、反例 exit 非 `0` 且返回 `COMMIT_HEADER_INVALID`，才可在交还总结中写 Git 提交消息检查通过。命令返回 `complete` 且 `environment_hook_integrated=false` 时，表示安装检测已通过但真实 lifecycle 尚未具备 integrated 当次依据；30 可交还断点后 lifecycle 验证入口。断点后逐项验证通过后只交还本次验证总结，不写长期状态，也不复用本命令的旧式下一步提示；命令返回 `review_required` 时，通常表示环境插件缺失、未启用、未指向 V3 shim 或目标环境没有当前验收入口支持。
