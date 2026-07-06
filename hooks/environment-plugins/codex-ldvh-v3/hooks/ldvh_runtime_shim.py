@@ -740,12 +740,7 @@ def diagnostic_codes(result: dict[str, Any]) -> set[str]:
 
 
 def should_deny_pre_tool(result: dict[str, Any]) -> bool:
-    if not is_blocking_result(result):
-        return False
-    codes = diagnostic_codes(result)
-    if codes and codes <= {"PREFLIGHT_TARGET_UNKNOWN"}:
-        return False
-    return True
+    return is_blocking_result(result)
 
 
 def diagnostic_reason(result: dict[str, Any]) -> str:

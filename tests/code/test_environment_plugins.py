@@ -356,6 +356,31 @@ def test_codex_sample_shim_blocks_collaboration_write_operation_without_acknowle
     assert "RUNTIME_READ_PLAN_CONSUMED_EMPTY" in hook_output["permissionDecisionReason"]
 
 
+def test_codex_sample_shim_blocks_write_when_target_unknown_even_with_acknowledgement() -> None:
+    completed = _run_shim(
+        {
+            "hook_event_name": "PreToolUse",
+            "sessionId": "shim-pretool-write-unknown-target",
+            "cwd": ROOT.as_posix(),
+            "toolName": "Write",
+            "tool_input": {},
+            "acknowledgedPaths": [
+                "specs/00-理念与构成.md",
+                "specs/01-保障与衔接.md",
+                "specs/02-AI行为规范.md",
+            ],
+        },
+        check=False,
+    )
+
+    payload = json.loads(completed.stdout)
+    hook_output = _hook_output(payload)
+    assert completed.returncode == 0
+    assert hook_output["hookEventName"] == "PreToolUse"
+    assert hook_output["permissionDecision"] == "deny"
+    assert "PREFLIGHT_TARGET_UNKNOWN" in hook_output["permissionDecisionReason"]
+
+
 def test_codex_sample_shim_does_not_allow_runtime_adapter_pre_tool_probe_without_acknowledgement() -> None:
     completed = _run_shim(
         {
