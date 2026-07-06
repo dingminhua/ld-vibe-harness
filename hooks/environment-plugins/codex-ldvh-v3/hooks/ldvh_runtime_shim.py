@@ -45,11 +45,12 @@ ADAPTER_EVENT_MAP = {
     "PreToolUse": "pre_tool_use",
     "Stop": "completion_claim",
 }
-READ_ONLY_TOOLS = {"read", "grep", "glob", "ls"}
+READ_ONLY_TOOLS = {"read", "grep", "glob", "ls", "read_thread", "codex_app.read_thread", "codex_appread_thread"}
 WRITE_TOOLS = {"write", "edit", "multiedit", "multi_edit", "apply_patch", "functions.apply_patch"}
 READ_OPERATIONS = {"read", "inspect", "search", "grep", "list", "audit", "review", "diagnose"}
 WRITE_OPERATIONS = {"write", "edit", "apply_patch", "commit", "delete", "move", "install", "update"}
-COLLABORATION_TOOL_MARKERS = ("agent", "review")
+COLLABORATION_TOOL_NAMES = {"spawn_agent", "multi_agent.spawn_agent", "multi_agent_v1.spawn_agent"}
+READ_ONLY_INTENT_MARKERS = ("read-only", "readonly", "只读", "不要修改", "不要写", "不要提交", "do not modify", "do not edit", "do not commit")
 READ_ONLY_COMMANDS = {"cat", "find", "grep", "head", "ls", "nl", "pwd", "rg", "sed", "tail", "wc"}
 READ_ONLY_GIT_SUBCOMMANDS = {
     "branch",
@@ -75,6 +76,15 @@ class ActionClassification:
     side_effect_class: str
     requires_preflight: bool
     reason: str
+
+
+@dataclass(frozen=True)
+class ToolCall:
+    namespace: str
+    name: str
+    full_name: str
+    arguments: dict[str, Any]
+    intent_text: str
 
 
 def read_payload(raw: str) -> dict[str, Any]:
@@ -461,13 +471,52 @@ def tool_name(payload: dict[str, Any]) -> str:
     return first_text(payload.get("tool_name"), payload.get("toolName"), payload.get("name")).lower()
 
 
+def normalize_tool_call(payload: dict[str, Any]) -> ToolCall:
+    arguments = tool_input(payload)
+    raw_namespace = first_text(payload.get("namespace"), payload.get("tool_namespace"), payload.get("toolNamespace"))
+    raw_name = tool_name(payload)
+    if not raw_name:
+        raw_name = first_text(payload.get("tool"), payload.get("toolName"), payload.get("name")).lower()
+    if "." in raw_name and not raw_namespace:
+        namespace, name = raw_name.rsplit(".", 1)
+    else:
+        namespace, name = raw_namespace.lower(), raw_name
+    full_name = f"{namespace}.{name}" if namespace and name else name or raw_name
+    intent_values = [
+        payload.get("operation"),
+        payload.get("task"),
+        payload.get("prompt"),
+        payload.get("message"),
+        arguments.get("operation"),
+        arguments.get("task"),
+        arguments.get("prompt"),
+        arguments.get("message"),
+        arguments.get("question"),
+    ]
+    return ToolCall(
+        namespace=namespace,
+        name=name,
+        full_name=full_name,
+        arguments=arguments,
+        intent_text=" ".join(str(value) for value in intent_values if isinstance(value, str)).lower(),
+    )
+
+
+def tool_matches(tool: ToolCall, names: set[str]) -> bool:
+    return tool.name in names or tool.full_name in names
+
+
+def has_read_only_intent(tool: ToolCall) -> bool:
+    return any(marker in tool.intent_text for marker in READ_ONLY_INTENT_MARKERS)
+
+
 def classify_action(payload: dict[str, Any], cwd: Path) -> ActionClassification:
     operation_hint = explicit_operation(payload)
-    name = tool_name(payload)
+    tool = normalize_tool_call(payload)
     command = command_text(payload)
     targets = target_path_values(payload, cwd)
 
-    if name in WRITE_TOOLS or target_paths_from_patch(payload):
+    if tool_matches(tool, WRITE_TOOLS) or target_paths_from_patch(payload):
         return ActionClassification(
             operation=operation_hint if operation_hint in WRITE_OPERATIONS else "write",
             side_effect_class="file_write",
@@ -475,7 +524,7 @@ def classify_action(payload: dict[str, Any], cwd: Path) -> ActionClassification:
             reason="write_tool_or_patch_payload",
         )
 
-    if name in READ_ONLY_TOOLS:
+    if tool_matches(tool, READ_ONLY_TOOLS):
         return ActionClassification(
             operation="read",
             side_effect_class="none",
@@ -483,7 +532,7 @@ def classify_action(payload: dict[str, Any], cwd: Path) -> ActionClassification:
             reason="read_only_tool",
         )
 
-    if name in {"bash", "exec_command", "functions.exec_command", "shell"}:
+    if tool_matches(tool, {"bash", "exec_command", "functions.exec_command", "shell"}):
         if is_likely_read_only_command(command):
             return ActionClassification(
                 operation="read",
@@ -498,6 +547,14 @@ def classify_action(payload: dict[str, Any], cwd: Path) -> ActionClassification:
             reason="command_not_classified_read_only",
         )
 
+    if tool_matches(tool, COLLABORATION_TOOL_NAMES) and has_read_only_intent(tool):
+        return ActionClassification(
+            operation=operation_hint if operation_hint in READ_OPERATIONS else "review",
+            side_effect_class="process_output",
+            requires_preflight=False,
+            reason="collaboration_read_only_intent",
+        )
+
     if operation_hint in READ_OPERATIONS and not targets:
         return ActionClassification(
             operation=operation_hint,
@@ -506,7 +563,7 @@ def classify_action(payload: dict[str, Any], cwd: Path) -> ActionClassification:
             reason="explicit_read_operation_without_targets",
         )
 
-    if operation_hint in READ_OPERATIONS and any(marker in name for marker in COLLABORATION_TOOL_MARKERS):
+    if operation_hint in READ_OPERATIONS and tool_matches(tool, COLLABORATION_TOOL_NAMES):
         return ActionClassification(
             operation=operation_hint,
             side_effect_class="process_output",

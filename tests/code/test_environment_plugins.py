@@ -319,6 +319,21 @@ def test_codex_sample_shim_allows_explicit_read_operation_without_acknowledgemen
     assert completed.stdout == ""
 
 
+def test_codex_sample_shim_allows_codex_app_read_thread_without_acknowledgement() -> None:
+    completed = _run_shim(
+        {
+            "hook_event_name": "PreToolUse",
+            "sessionId": "shim-pretool-read-thread",
+            "cwd": ROOT.as_posix(),
+            "toolName": "codex_appread_thread",
+            "tool_input": {"threadId": "019f39b2-9a9d-7c50-973c-21f810eebaa6"},
+        },
+    )
+
+    assert completed.returncode == 0
+    assert completed.stdout == ""
+
+
 def test_codex_sample_shim_allows_collaboration_review_operation_without_acknowledgement() -> None:
     completed = _run_shim(
         {
@@ -328,6 +343,23 @@ def test_codex_sample_shim_allows_collaboration_review_operation_without_acknowl
             "toolName": "multi_agent.spawn_agent",
             "operation": "review",
             "tool_input": {"target_path": "hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py"},
+        },
+    )
+
+    assert completed.returncode == 0
+    assert completed.stdout == ""
+
+
+def test_codex_sample_shim_allows_collaboration_read_only_review_intent_without_acknowledgement() -> None:
+    completed = _run_shim(
+        {
+            "hook_event_name": "PreToolUse",
+            "sessionId": "shim-pretool-agent-read-only-review",
+            "cwd": ROOT.as_posix(),
+            "toolName": "spawn_agent",
+            "tool_input": {
+                "message": "请只读审核当前判断，不要修改文件，不要提交。",
+            },
         },
     )
 
@@ -354,6 +386,26 @@ def test_codex_sample_shim_blocks_collaboration_write_operation_without_acknowle
     assert hook_output["hookEventName"] == "PreToolUse"
     assert hook_output["permissionDecision"] == "deny"
     assert "RUNTIME_READ_PLAN_CONSUMED_EMPTY" in hook_output["permissionDecisionReason"]
+
+
+def test_codex_sample_shim_blocks_collaboration_without_read_only_intent() -> None:
+    completed = _run_shim(
+        {
+            "hook_event_name": "PreToolUse",
+            "sessionId": "shim-pretool-agent-unknown-intent",
+            "cwd": ROOT.as_posix(),
+            "toolName": "spawn_agent",
+            "tool_input": {"message": "请处理这个任务。"},
+        },
+        check=False,
+    )
+
+    payload = json.loads(completed.stdout)
+    hook_output = _hook_output(payload)
+    assert completed.returncode == 0
+    assert hook_output["hookEventName"] == "PreToolUse"
+    assert hook_output["permissionDecision"] == "deny"
+    assert "PREFLIGHT_TARGET_UNKNOWN" in hook_output["permissionDecisionReason"]
 
 
 def test_codex_sample_shim_blocks_write_when_target_unknown_even_with_acknowledgement() -> None:

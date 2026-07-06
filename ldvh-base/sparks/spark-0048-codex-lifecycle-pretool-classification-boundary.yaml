@@ -3,7 +3,7 @@ type: spark
 title: Codex lifecycle 验收与 PreToolUse 动作分类边界
 status: pending
 created: '2026-07-07T00:00:00+08:00'
-updated: '2026-07-07T06:49:58+08:00'
+updated: '2026-07-07T07:23:56+08:00'
 description: |
   本 Spark 记录一个 Codex 环境 Hook 验收缺口：当前问题不是单个命令误拦，而是 Codex lifecycle Hook 的验收标准、PreToolUse 动作分类和 read_plan 消费链路边界混在一起，导致真实环境验收不断退化为逐条补命令白名单。
 
@@ -78,3 +78,6 @@ evolution:
   - at: '2026-07-07T06:49:58+08:00'
     summary: |
       第一阶段实现已落到 Codex shim：新增 ActionClassification，将 operation、target、command / patch payload 和 side_effect_class 汇总为 requires_preflight 判断。只读命令、显式 read / review 操作和只读协作过程输出不再因缺少 read_plan 消费依据被误阻断；写入工具、patch payload、非只读 shell、显式写入 operation 和未知动作仍默认进入 PreToolUse preflight。新增测试覆盖显式 read 放行、协作 review 放行、协作 write 阻断；子 agent 只读审核未发现 P0/P1/P2 阻断问题。残留增强点：当前实现仍保留少量工具名辅助判断，后续可继续收敛为更明确的 side_effect_class 规则表。
+  - at: '2026-07-07T07:23:56+08:00'
+    summary: |
+      真实 Codex 写入负例复验通过窄口径判断：`tmp/ldvh-lifecycle-smoke-2.txt` 写入被 PreToolUse 阻断，输出包含 `PREFLIGHT_TARGET_UNKNOWN`，且文件不存在；该结果只证明写入负例阻断有效，不证明 lifecycle integrated。复验同时暴露 `codex_app.read_thread` 和只读审核型 `spawn_agent` 被误拦，说明分类不能继续按单个工具补白名单。实现已进一步收敛为 ToolCall 归一化与 side_effect_class 决策：稳定抽取 namespace / name / arguments / intent_text；只读 thread 读取归为 `read/none`；带只读意图的协作审核归为 `review/process_output`；缺少只读意图的协作工具、写入工具、非只读 shell、未知动作仍进入 preflight。新增测试覆盖真实失败形态：`codex_appread_thread` 放行、只读审核 `spawn_agent` 放行、无只读意图 `spawn_agent` 阻断。
