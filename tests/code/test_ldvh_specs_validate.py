@@ -1261,7 +1261,7 @@ def test_ldvh_install_action_template_defines_action_stage_contract(validation_r
     assert "安装方案预览" in raw
     assert "最终确认" in raw
     assert "不得新增安装运行时状态闭集" in raw
-    assert "内部摘要检查" in raw
+    assert "回答组织分为两层" in raw
     assert "场景复杂度精简呈现" in raw
     assert "用户告知清单必须作为 4/5 安装方案预览的必含内容交给 Human 确认" in raw
     assert "每次只问一个问题" in raw
@@ -1464,14 +1464,14 @@ def test_ldvh_install_action_template_reports_missing_internal_summary_boundary(
     _replace_in_temp(
         root,
         "specs/30-安装配置与验证行动模板.md",
-        "内部摘要检查",
+        "回答组织分为两层",
         "步骤摘要",
     )
 
     result = ldvh_specs.build_validation(root)
 
     assert "LDVH_INSTALL_WIZARD_TERM_MISSING" in _diagnostic_codes(result)
-    assert any("内部摘要检查" in diagnostic["message"] for diagnostic in result["diagnostics"])
+    assert any("回答组织分为两层" in diagnostic["message"] for diagnostic in result["diagnostics"])
 
 
 def test_ldvh_install_action_template_reports_missing_final_confirmation_boundary(tmp_path: Path) -> None:
