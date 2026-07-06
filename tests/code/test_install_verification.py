@@ -177,14 +177,18 @@ projects:
     assert any("插件页面" in step for step in human_acceptance["steps"])
     assert any("重启 App" in step for step in human_acceptance["steps"])
     assert any("授权 / trust" in step for step in human_acceptance["steps"])
-    assert any("只读 LDVH 可见性探针" in step for step in human_acceptance["steps"])
+    assert any("自然语言验收卡" in step for step in human_acceptance["steps"])
+    assert any("未看到 LDVH 输出" in step for step in human_acceptance["steps"])
+    assert any("Human 只回传原始输出，不负责判断 integrated" in step for step in human_acceptance["steps"])
     assert any("specs/10-安装与配置规范.md" in step for step in human_acceptance["steps"])
-    assert "runtime_adapter.py" in human_acceptance["visible_probe_command"]
-    assert "session-start" in human_acceptance["visible_probe_command"]
-    assert "hook.lifecycle-verify-probe" in human_acceptance["visible_probe_command"]
+    assert "visible_probe_command" not in human_acceptance
+    assert "runtime_adapter.py" in human_acceptance["ai_diagnostic_probe_command"]
+    assert "session-start" in human_acceptance["ai_diagnostic_probe_command"]
+    assert "hook.lifecycle-verify-probe" in human_acceptance["ai_diagnostic_probe_command"]
     assert any("当前 V3 shim" in criterion for criterion in human_acceptance["acceptance_criteria"])
     assert any("install_complete=true" in criterion for criterion in human_acceptance["acceptance_criteria"])
-    assert any("写入前检查负例被阻断，正例被放行" in criterion for criterion in human_acceptance["acceptance_criteria"])
+    assert any("目标环境内自动出现 LDVH read plan" in criterion for criterion in human_acceptance["acceptance_criteria"])
+    assert any("写入前检查由目标环境自动触发" in criterion for criterion in human_acceptance["acceptance_criteria"])
     handoff = result["user_handoff"]
     status_card = {row["item"]: row["value"] for row in handoff["status_card"]}
     assert status_card["当前环境"] == "Codex"
@@ -214,7 +218,9 @@ projects:
     assert any("Hook / lifecycle 触发记录" in step for step in handoff["user_next_steps"])
     assert any("未取得 Hook 触发依据" in step for step in handoff["user_next_steps"])
     assert any("Hook 已触发，但 read_plan 消费依据链路未通过" in step for step in handoff["user_next_steps"])
-    assert any("只读 LDVH 可见性检查" in step for step in handoff["user_next_steps"])
+    assert any("自然语言验收卡" in step for step in handoff["user_next_steps"])
+    assert any("未看到 LDVH 输出" in step for step in handoff["user_next_steps"])
+    assert any("只回传原始输出，不负责判断 integrated" in step for step in handoff["user_next_steps"])
     assert handoff["real_trigger_acceptance"]["result"] == "未完成"
     assert handoff["real_trigger_acceptance"]["complete"] is False
     assert handoff["real_trigger_acceptance"]["passed_items"] == [
@@ -223,7 +229,8 @@ projects:
     assert handoff["real_trigger_acceptance"]["pending_items"] == [
         "Codex lifecycle Hook 当次触发依据回读 / read_plan 消费依据链路"
     ]
-    assert "hook.lifecycle-verify-probe" in handoff["visible_probe_command"]
+    assert "visible_probe_command" not in handoff
+    assert "hook.lifecycle-verify-probe" in handoff["ai_diagnostic_probe_command"]
     assert any("目标环境名称和版本" in item for item in handoff["failure_info_package"])
     assert result["diagnostics"] == []
 

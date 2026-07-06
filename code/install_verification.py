@@ -533,7 +533,7 @@ def _verify_environment(
         "shim_direct_tests": shim_tests,
         "human_acceptance": {
             "required": human_acceptance_required,
-            "visible_probe_command": visible_probe_command,
+            "ai_diagnostic_probe_command": visible_probe_command,
             "reason": "环境插件安装检测尚未通过。"
             if human_acceptance_required
             else "安装检测已通过；以下为用户侧冒烟检查，不阻断安装完成。",
@@ -541,8 +541,9 @@ def _verify_environment(
                 f"打开 {environment_name} 插件页面 / 扩展页面 / 插件管理器，确认 LDVH 插件已安装。",
                 f"按 {environment_name} 要求重启 App 或重载插件宿主；重启后回到插件页面确认插件仍启用且无错误。",
                 f"完成 {environment_name} 的授权 / trust；没有授权提示时，记录插件页面无待处理授权。",
-                f"新开一个 {environment_name} 窗口或会话，让 AI 运行只读 LDVH 可见性探针并返回结果表。",
-                "触发一次受控写入类工具，确认写入前检查负例会阻断，正例会放行。",
+                f"新开一个 {environment_name} 窗口或会话，按 AI 给出的自然语言验收卡触发真实 lifecycle。",
+                "把目标环境自动出现的 LDVH read plan、session_start、receipt、PreToolUse 阻断或等价输出原样返回；若未出现则返回“未看到 LDVH 输出”。",
+                "触发一次受控写入类工具，由目标环境自动执行写入前检查；Human 只回传原始输出，不负责判断 integrated。",
                 "如需确认 LDVH 影响生效，按 specs/10-安装与配置规范.md 的验证契约和 specs/30 的断点恢复话术继续验证。",
                 "若卸载或禁用插件，重新打开窗口确认不再自动触发 LDVH。",
                 "失败时返回插件页面结果、错误文本、截图或本命令 JSON 输出。",
@@ -551,8 +552,8 @@ def _verify_environment(
                 f"{environment_name} 插件页面显示 LDVH 插件已启用、已授权或无待处理授权，且无错误。",
                 f"插件 Hook 命令指向当前 V3 shim: {CODEX_SHIM}。",
                 "重启 App 或重载插件宿主后，插件页面仍保持启用且无错误。",
-                "新会话只读可见性探针输出 status=ok、event=session_start、receipt_id，且 Diagnostics: none；若目标环境提供真实触发当次依据，应一并回读。",
-                "写入前检查负例被阻断，正例被放行。",
+                "新会话在目标环境内自动出现 LDVH read plan、session_start、receipt 或等价 lifecycle 输出；若未出现，按未取得当次触发依据处理。",
+                "写入前检查由目标环境自动触发，负例被阻断，正例被放行。",
                 "install_verification.py 显示 install_complete=true、插件可见、内部连接检查通过，并列出 Git Hook 正反例结果。",
             ],
         },
@@ -748,7 +749,9 @@ def _build_user_handoff(result: dict[str, Any]) -> dict[str, Any]:
     impact = result.get("ldvh_impact", {})
     git_status = _git_hook_user_status(result["git_hooks"])
     env_status = _environment_user_status(env_summary)
-    visible_probe_command = env.get("human_acceptance", {}).get("visible_probe_command", "")
+    ai_diagnostic_probe_command = env.get("human_acceptance", {}).get(
+        "ai_diagnostic_probe_command", ""
+    )
     current_environment = str(impact.get("current_environment") or environment_name)
     current_install_mode = str(impact.get("current_install_mode") or "未确认")
     real_hook_observed = bool(impact.get("real_hook_observed"))
@@ -800,8 +803,8 @@ def _build_user_handoff(result: dict[str, Any]) -> dict[str, Any]:
             "重启 App 或新开会话。",
             f"查看 {environment_name} 插件 Hook / lifecycle 触发记录；若没有可见记录，返回“未取得 Hook 触发依据”。",
             "若看到 PreToolUse 阻断，尤其是 RUNTIME_READ_PLAN_CONSUMED_EMPTY 或 PREFLIGHT_TARGET_UNKNOWN，记录为“Hook 已触发，但 read_plan 消费依据链路未通过”。",
-            "在新会话里触发只读 LDVH 可见性检查，确认返回 runtime 回执。",
-            "触发一次受控写入前检查，确认应阻断的写入会被阻断。",
+            "在新会话里按 AI 给出的自然语言验收卡触发真实 lifecycle；若未自动出现 LDVH 输出，返回“未看到 LDVH 输出”。",
+            "触发一次受控写入类动作，让目标环境自动执行写入前检查；只回传原始输出，不负责判断 integrated。",
             "带着新会话结果回来继续真实触发验收。",
         ]
     elif env_status == "不支持":
@@ -874,7 +877,7 @@ def _build_user_handoff(result: dict[str, Any]) -> dict[str, Any]:
             "pending_items": real_trigger_pending_items,
         },
         "user_next_steps": user_next_steps,
-        "visible_probe_command": visible_probe_command,
+        "ai_diagnostic_probe_command": ai_diagnostic_probe_command,
         "failure_info_package": [
             "目标环境名称和版本",
             "插件页面结果截图或文字",
@@ -914,10 +917,6 @@ def _print_text(result: dict[str, Any]) -> None:
         print("\nUser next steps:")
         for step in next_steps:
             print(f"- {step}")
-    visible_probe_command = handoff.get("visible_probe_command")
-    if visible_probe_command:
-        print("\nVisible probe command:")
-        print(visible_probe_command)
     if result["diagnostics"] or summary["status"] != "complete":
         failure_items = handoff.get("failure_info_package", [])
         if failure_items:
