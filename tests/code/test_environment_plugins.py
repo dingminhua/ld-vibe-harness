@@ -274,6 +274,55 @@ def test_codex_sample_shim_allows_session_start_probe_command_without_acknowledg
     assert completed.stdout == ""
 
 
+def test_codex_sample_shim_allows_runtime_adapter_session_start_probe_without_acknowledgement() -> None:
+    for command in (
+        "python3 code/runtime_adapter.py session-start --help",
+        (
+            "python3 code/runtime_adapter.py session-start "
+            f"--root \"{ROOT.as_posix()}\" "
+            "--config-root \"/Users/dmh2002/poker_hud_projects\" "
+            "--session-id \"lifecycle-verify-probe\" "
+            f"--target-path \"{ROOT.as_posix()}\" "
+            "--task \"LDVH lifecycle verification probe\" "
+            "--operation read "
+            "--trigger-source \"hook.lifecycle-verify-probe\" "
+            "--format text"
+        ),
+    ):
+        completed = _run_shim(
+            {
+                "hook_event_name": "PreToolUse",
+                "sessionId": "shim-pretool-runtime-adapter-session-start",
+                "cwd": ROOT.as_posix(),
+                "toolName": "functions.exec_command",
+                "arguments": {"cmd": command},
+            },
+        )
+
+        assert completed.returncode == 0
+        assert completed.stdout == ""
+
+
+def test_codex_sample_shim_does_not_allow_runtime_adapter_pre_tool_probe_without_acknowledgement() -> None:
+    completed = _run_shim(
+        {
+            "hook_event_name": "PreToolUse",
+            "sessionId": "shim-pretool-runtime-adapter-pre-tool",
+            "cwd": ROOT.as_posix(),
+            "toolName": "functions.exec_command",
+            "arguments": {"cmd": "python3 code/runtime_adapter.py pre-tool-use --target-path README.md --format text"},
+        },
+        check=False,
+    )
+
+    payload = json.loads(completed.stdout)
+    hook_output = _hook_output(payload)
+    assert completed.returncode == 0
+    assert hook_output["hookEventName"] == "PreToolUse"
+    assert hook_output["permissionDecision"] == "deny"
+    assert "RUNTIME_READ_PLAN_CONSUMED_EMPTY" in hook_output["permissionDecisionReason"]
+
+
 def test_codex_sample_shim_does_not_allow_mixed_read_write_and_chain_without_acknowledgement() -> None:
     completed = _run_shim(
         {

@@ -58,8 +58,9 @@ READ_ONLY_GIT_SUBCOMMANDS = {
     "status",
 }
 READ_ONLY_SHELL_PIPE_COMMANDS = READ_ONLY_COMMANDS | {"xargs"}
-READ_ONLY_PYTHON_SCRIPTS = {
-    "code/session_start.py",
+READ_ONLY_PYTHON_SCRIPT_EVENTS = {
+    "code/session_start.py": None,
+    "code/runtime_adapter.py": {"session-start", "session_start", "--help", "-h"},
 }
 
 
@@ -257,13 +258,21 @@ def is_likely_read_only_command_segment(command: str) -> bool:
     if executable == "git":
         return len(parts) > 1 and parts[1].lower() in READ_ONLY_GIT_SUBCOMMANDS
     if executable in {"python", "python3"} and len(parts) > 1:
-        script = parts[1].strip()
-        normalized_script = script.replace("\\", "/")
-        return any(
-            normalized_script == allowed or normalized_script.endswith("/" + allowed)
-            for allowed in READ_ONLY_PYTHON_SCRIPTS
-        )
+        return is_allowed_read_only_python(parts)
     return executable in READ_ONLY_SHELL_PIPE_COMMANDS
+
+
+def is_allowed_read_only_python(parts: list[str]) -> bool:
+    script = parts[1].strip()
+    normalized_script = script.replace("\\", "/")
+    for allowed_script, allowed_events in READ_ONLY_PYTHON_SCRIPT_EVENTS.items():
+        if normalized_script != allowed_script and not normalized_script.endswith("/" + allowed_script):
+            continue
+        if allowed_events is None:
+            return True
+        event = parts[2].strip() if len(parts) > 2 else ""
+        return event in allowed_events
+    return False
 
 
 def command_from_record(record: dict[str, Any]) -> str:
