@@ -320,18 +320,19 @@ def test_codex_sample_shim_allows_explicit_read_operation_without_acknowledgemen
 
 
 def test_codex_sample_shim_allows_codex_app_read_thread_without_acknowledgement() -> None:
-    completed = _run_shim(
-        {
-            "hook_event_name": "PreToolUse",
-            "sessionId": "shim-pretool-read-thread",
-            "cwd": ROOT.as_posix(),
-            "toolName": "codex_appread_thread",
-            "tool_input": {"threadId": "019f39b2-9a9d-7c50-973c-21f810eebaa6"},
-        },
-    )
+    for tool_name in ("codex_appread_thread", "codex_appread_thread_terminal"):
+        completed = _run_shim(
+            {
+                "hook_event_name": "PreToolUse",
+                "sessionId": "shim-pretool-read-thread",
+                "cwd": ROOT.as_posix(),
+                "toolName": tool_name,
+                "tool_input": {"threadId": "019f39b2-9a9d-7c50-973c-21f810eebaa6"},
+            },
+        )
 
-    assert completed.returncode == 0
-    assert completed.stdout == ""
+        assert completed.returncode == 0
+        assert completed.stdout == ""
 
 
 def test_codex_sample_shim_allows_collaboration_review_operation_without_acknowledgement() -> None:

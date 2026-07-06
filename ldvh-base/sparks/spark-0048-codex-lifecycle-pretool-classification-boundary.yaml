@@ -3,7 +3,7 @@ type: spark
 title: Codex lifecycle 验收与 PreToolUse 动作分类边界
 status: pending
 created: '2026-07-07T00:00:00+08:00'
-updated: '2026-07-07T07:23:56+08:00'
+updated: '2026-07-07T07:44:12+08:00'
 description: |
   本 Spark 记录一个 Codex 环境 Hook 验收缺口：当前问题不是单个命令误拦，而是 Codex lifecycle Hook 的验收标准、PreToolUse 动作分类和 read_plan 消费链路边界混在一起，导致真实环境验收不断退化为逐条补命令白名单。
 
@@ -81,3 +81,6 @@ evolution:
   - at: '2026-07-07T07:23:56+08:00'
     summary: |
       真实 Codex 写入负例复验通过窄口径判断：`tmp/ldvh-lifecycle-smoke-2.txt` 写入被 PreToolUse 阻断，输出包含 `PREFLIGHT_TARGET_UNKNOWN`，且文件不存在；该结果只证明写入负例阻断有效，不证明 lifecycle integrated。复验同时暴露 `codex_app.read_thread` 和只读审核型 `spawn_agent` 被误拦，说明分类不能继续按单个工具补白名单。实现已进一步收敛为 ToolCall 归一化与 side_effect_class 决策：稳定抽取 namespace / name / arguments / intent_text；只读 thread 读取归为 `read/none`；带只读意图的协作审核归为 `review/process_output`；缺少只读意图的协作工具、写入工具、非只读 shell、未知动作仍进入 preflight。新增测试覆盖真实失败形态：`codex_appread_thread` 放行、只读审核 `spawn_agent` 放行、无只读意图 `spawn_agent` 阻断。
+  - at: '2026-07-07T07:44:12+08:00'
+    summary: |
+      小范围真实复验显示写入负例仍通过：`tmp/ldvh-lifecycle-smoke-3.txt` 的 Add File 被 PreToolUse 阻断，未写入文件。复验同时暴露 Codex app 同族只读工具 `codex_appread_thread_terminal` 未归入 read/none，被错误要求 read_plan 消费证据和 target 归口。实现已补齐 `read_thread_terminal` / `codex_app.read_thread_terminal` / `codex_appread_thread_terminal` 的只读分类，并扩展环境插件测试覆盖 `codex_appread_thread_terminal` 放行。

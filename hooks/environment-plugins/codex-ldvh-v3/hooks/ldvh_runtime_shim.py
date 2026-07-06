@@ -45,7 +45,18 @@ ADAPTER_EVENT_MAP = {
     "PreToolUse": "pre_tool_use",
     "Stop": "completion_claim",
 }
-READ_ONLY_TOOLS = {"read", "grep", "glob", "ls", "read_thread", "codex_app.read_thread", "codex_appread_thread"}
+READ_ONLY_TOOLS = {
+    "read",
+    "grep",
+    "glob",
+    "ls",
+    "read_thread",
+    "read_thread_terminal",
+    "codex_app.read_thread",
+    "codex_app.read_thread_terminal",
+    "codex_appread_thread",
+    "codex_appread_thread_terminal",
+}
 WRITE_TOOLS = {"write", "edit", "multiedit", "multi_edit", "apply_patch", "functions.apply_patch"}
 READ_OPERATIONS = {"read", "inspect", "search", "grep", "list", "audit", "review", "diagnose"}
 WRITE_OPERATIONS = {"write", "edit", "apply_patch", "commit", "delete", "move", "install", "update"}
