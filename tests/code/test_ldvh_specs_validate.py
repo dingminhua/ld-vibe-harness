@@ -1298,7 +1298,7 @@ def test_ldvh_install_action_template_defines_action_stage_contract(validation_r
     assert "用户主结论必须明确写入是否完成" in raw
     assert "Runtime 入口与 lifecycle 验证" in raw
     assert "提交消息检查" in raw
-    assert "授权检查必须排在重启或新开会话之前" in raw
+    assert "授权 / trust 确认必须排在重启或新开会话之前" in raw
     assert "Hook 触发证据检查排在手动 runtime 探针之前" in raw
     assert "失败信息包" in raw
     assert "最终确认只展示两个主选项" in raw
