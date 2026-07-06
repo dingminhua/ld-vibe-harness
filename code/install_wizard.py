@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
 from typing import Any
 
@@ -86,6 +87,13 @@ def _git_common_dir(path: Path) -> str:
     if not common_dir.is_absolute():
         common_dir = path / common_dir
     return common_dir.resolve().as_posix()
+
+
+def _detect_current_environment() -> str:
+    for key in os.environ:
+        if key.upper().startswith("TRAE_"):
+            return "Trae"
+    return "Codex"
 
 
 def _infer_environment_strategy(
@@ -414,9 +422,11 @@ def build_install_check(
     ldvh_root: Path = ROOT,
     repo: Path,
     codex_home: Path | None = None,
-    environment_name: str = "Codex",
+    environment_name: str = "",
     environment_strategy: str = "",
 ) -> dict[str, Any]:
+    if not environment_name:
+        environment_name = _detect_current_environment()
     resolved_governance_root = governance_root.resolve()
     resolved_ldvh_root = ldvh_root.resolve()
     resolved_repo = repo.resolve()
@@ -536,9 +546,11 @@ def build_install_plan(
     ldvh_root: Path = ROOT,
     repo: Path,
     codex_home: Path | None = None,
-    environment_name: str = "Codex",
+    environment_name: str = "",
     environment_strategy: str = "",
 ) -> dict[str, Any]:
+    if not environment_name:
+        environment_name = _detect_current_environment()
     check = build_install_check(
         governance_root=governance_root,
         ldvh_root=ldvh_root,
@@ -635,10 +647,12 @@ def build_install_apply(
     ldvh_root: Path = ROOT,
     repo: Path,
     codex_home: Path | None = None,
-    environment_name: str = "Codex",
+    environment_name: str = "",
     environment_strategy: str = "",
     confirm_human_gate: bool = False,
 ) -> dict[str, Any]:
+    if not environment_name:
+        environment_name = _detect_current_environment()
     plan = build_install_plan(
         governance_root=governance_root,
         ldvh_root=ldvh_root,
@@ -852,7 +866,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--ldvh-root", default=ROOT.as_posix(), help="LDVH root")
     parser.add_argument("--repo", default=ROOT.as_posix(), help="target governed project repository")
     parser.add_argument("--codex-home", default="", help="Codex home for environment plugin audit")
-    parser.add_argument("--environment-name", default="Codex", help="target environment name")
+    parser.add_argument("--environment-name", default="", help="target environment name (auto-detected if empty)")
     parser.add_argument("--environment-strategy", default="")
     parser.add_argument("--confirm-human-gate", action="store_true", help="required for apply")
     parser.add_argument("--format", choices=["text", "json"], default="text")

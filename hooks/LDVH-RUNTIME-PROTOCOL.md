@@ -1,17 +1,16 @@
 # LDVH Runtime Protocol Entry
 
-文件状态：hook protocol entry。本文是 V3 放在 `hooks/` 下的 Runtime Protocol 可见入口。
+文件类型：`hook_protocol_entry`。本文是 LDVH Runtime Protocol 的可执行入口，不执行本文则未进入 LDVH 保障链路。
+AI 读取本文后必须立即执行下方对应的 lifecycle event，否则不得进入写入、提交或完成声明。
 
-本文只写三类内容：
+## 权威回指
 
-1. 入口身份：`hook_protocol_entry`；
-2. 权威回指：`specs/01-保障与衔接.md`、`01.Att.01`、`01.Att.05`、`specs/07-Code确定性执行规范.md`；
-3. 当前 Code 入口：`code/runtime_adapter.py` 的三个 lifecycle event。
+`specs/01-保障与衔接.md`、`01.Att.01`、`01.Att.05`、`specs/07-Code确定性执行规范.md`
 
-## Code 入口
+## Code 入口 — 必须执行
 
-| 生命周期语义 | canonical event | 当前 Code 入口 |
+| canonical event | 执行时机 | 当前 Code 入口 |
 |---|---|---|
-| 会话开始或上下文恢复 | `session_start` | `python3 code/runtime_adapter.py session-start --format json` |
-| 写入、编辑、提交前检查 | `pre_tool_use` | `python3 code/runtime_adapter.py pre-tool-use --format json` |
-| 完成声明、交还或关闭前检查 | `completion_claim` | `python3 code/runtime_adapter.py completion-claim --format json` |
+| `session_start` | 会话第一条回复，读取本文后立即执行 | `python3 code/runtime_adapter.py session-start --format json` |
+| `pre_tool_use` | 每次写入、编辑或提交操作前执行 | `python3 code/runtime_adapter.py pre-tool-use --format json` |
+| `completion_claim` | 声明完成、交还工作或关闭会话前执行 | `python3 code/runtime_adapter.py completion-claim --format json` |
