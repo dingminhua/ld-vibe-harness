@@ -204,7 +204,7 @@ AI 不得把 CLI 写成无确认一键安装器，也不得在最终确认前执
 
 Hook 交还必须拆成两个结论块：`Runtime 入口与 lifecycle 验证` 和 `提交消息检查`。前者说明插件、runtime adapter receipt、写入前检查和完成声明检查；后者说明每个管辖项目的 Git Hook、正例放行和反例阻断。不得用一个"Hook 已通过"覆盖两类入口。
 
-交还时必须列"用户下一步待办"。支持 Hook 时最多五项：打开插件页、重启 App 或重载插件宿主、完成授权 / trust、粘贴 30 恢复入口语、运行新会话只读可见性探针、按引导完成真实工作流检查。目标环境缺少 lifecycle Hook 时最多三项：确认目标环境是否提供 Hook 插件机制、实现目标环境插件 / adapter、完成后重新运行安装前检查。
+交还时必须列"用户下一步待办"。支持 Hook 时最多五项：打开插件页、重启 App 或重载插件宿主、完成授权 / trust、粘贴 30 恢复入口语、按自然语言验收卡观察新会话真实 lifecycle 输出、按引导完成真实工作流检查。目标环境缺少 lifecycle Hook 时最多三项：确认目标环境是否提供 Hook 插件机制、实现目标环境插件 / adapter、完成后重新运行安装前检查。
 
 失败或暂停时给可复制失败信息包：
 
@@ -247,6 +247,8 @@ scratch target 路径和文件状态：
 
 安装检测通过即可作为当前回合写入完成条件。真实 lifecycle、授权 / trust、payload 或失败处理依据不足时，交还结果必须包含断点恢复入口语和用户侧冒烟检查提示。Human 完成下表冒烟检查并明确反馈后，AI 可复跑安装验证并交还本次验证总结；该总结只是当前过程输出，不形成长期状态。
 
+断点后 lifecycle 验收不得把 Human 变成技术执行者。AI 负责安装检测、shim 直测、验收卡生成和判读；Human 只负责在目标环境里确认插件状态、重启或新开会话、按自然语言任务触发真实 lifecycle，并贴回目标环境输出。手动运行 `runtime_adapter.py` 或 repo-local shim 只能作为 AI 的技术对照，不得作为 integrated 通过依据。
+
 用户侧冒烟检查顺序：
 
 | 顺序 | 用户动作或 AI 检查 | 正常判断标准 |
@@ -255,7 +257,7 @@ scratch target 路径和文件状态：
 | 2 | 核对插件入口 | 命令、manifest 或入口指向当前 V3 LDVH root / V3 shim |
 | 3 | 重启 App 或重载插件宿主 | 重启后插件仍显示启用，没有新增错误 |
 | 4 | 完成授权 / trust | 页面显示已授权、已信任或没有待处理授权提示 |
-| 5 | 新开目标环境窗口或会话并运行只读可见性探针 | 输出显示 `status=ok`、`event=session_start`、存在 `receipt_id`，且诊断为空；有真实 SessionStart 触发依据时一并回读 |
+| 5 | 新开目标环境窗口或会话，按自然语言验收卡观察真实 lifecycle 输出 | 目标环境自动出现 LDVH read plan、`session_start`、receipt 或等价输出；没有看到时贴回“未看到 LDVH 输出” |
 | 6 | 触发一次受控写入类工具 | 负例会被阻断；正例会放行 |
 | 7 | 运行统一安装验证 | `install_verification.py` 显示 `install_complete=true`、插件可见、shim 直测通过，并列出 Git Hook 正反例结果 |
 

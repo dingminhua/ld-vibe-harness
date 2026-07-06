@@ -1262,6 +1262,11 @@ def test_ldvh_install_action_template_defines_action_stage_contract(validation_r
     assert "按 spec 33 编写目标环境 LDVH 插件 / adapter" in raw
     assert "统一验证标准" in raw
     assert "runtime 循环在真实 AI lifecycle 里产出可复核的当次可观察依据" in raw
+    assert "断点后 lifecycle 验收必须先明确 AI 与 Human 的职责分工" in raw
+    assert "Human 不负责理解 integrated 分类" in raw
+    assert "不得作为环境 Hook integrated 的替代验收" in raw
+    assert "自然语言触发任务" in raw
+    assert "可复制的只读可见性探针与最小 Human 验收卡" in raw
     assert "断点恢复协议" in raw
     assert "恢复入口语" in raw
     assert "运行时入口" in raw
@@ -1284,6 +1289,8 @@ def test_ldvh_install_action_template_defines_action_stage_contract(validation_r
     assert "提交消息检查" in raw
     assert "授权 / trust 确认必须排在重启或新开会话之前" in raw
     assert "Hook 触发依据检查排在手动 runtime 探针之前" in raw
+    assert "手动 runtime 探针只能由 AI 作为技术对照或失败定位使用" in raw
+    assert "不能写成 Human 验收动作" in raw
     assert "失败信息包" in raw
     assert "最终确认只展示两个主选项" in raw
     assert "1 执行方案" in raw
@@ -1301,8 +1308,21 @@ def test_install_wizard_practice_defaults_workspace_root_to_ldvh_parent() -> Non
     assert "未显式指定时默认使用 LDVH 本体路径的父目录" in raw
     assert "由 LDVH 本体父目录推导" in raw
     assert "不要把该值写成“待确认”" in raw
+    assert "断点后 lifecycle 验收不得把 Human 变成技术执行者" in raw
+    assert "按自然语言验收卡观察新会话真实 lifecycle 输出" in raw
+    assert "新开目标环境窗口或会话，按自然语言验收卡观察真实 lifecycle 输出" in raw
     assert "状态牌固定包含" not in raw
     assert "安装向导状态机" not in raw
+
+
+def test_environment_plugin_practice_defines_human_lifecycle_card_boundary() -> None:
+    raw = (ROOT / "code/docs/02-Environment-Plugin-Practice.md").read_text(encoding="utf-8")
+
+    assert "断点后验收卡必须区分 AI 和 Human 职责" in raw
+    assert "Human 只负责在目标环境里确认插件页面状态" in raw
+    assert "按自然语言任务触发真实 lifecycle" in raw
+    assert "不得要求 Human 手动运行 `runtime_adapter.py` 或 shim 命令来证明 integrated" in raw
+    assert "只能作为安装检测或失败定位对照" in raw
 
 
 def test_ldvh_install_action_template_reports_missing_code_consumption(tmp_path: Path) -> None:

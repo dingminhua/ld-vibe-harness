@@ -112,6 +112,8 @@ python3 code/environment_entry_audit.py --environment-name <目标环境名> --f
 
 若后续逻辑显式要求 integrated，必须使用当次可执行的 lifecycle 验证路径，而不是让 AI 永久停在不可验证声明。30 负责交还恢复入口语、可复制新会话探针、真实工作流检查和失败信息包；AI 逐项判断插件页面启用、重启 App、新会话只读可见性探针、授权 / trust、PreToolUse 负例阻断和正例放行。目标环境能提供真实 SessionStart lifecycle 当次依据时应一并回读；目标环境不稳定展示 Hook stdout 时，不得让 Human 去猜启动提示是否出现。全部通过后，AI 复跑 `install_verification.py` 做技术复核并交还本次验证总结；不得复用命令输出里的旧式下一步提示。验证总结不写长期状态，不替代插件页面、真实 payload 或失败处理诊断。
 
+断点后验收卡必须区分 AI 和 Human 职责。AI 负责先跑安装检测、repo-local shim 直测、生成自然语言验收卡和判读回传；Human 只负责在目标环境里确认插件页面状态、重启或新开会话、按自然语言任务触发真实 lifecycle、复制原始输出或说明没有看到输出。不得要求 Human 手动运行 `runtime_adapter.py` 或 shim 命令来证明 integrated；这些命令只能作为安装检测或失败定位对照。
+
 断点后 lifecycle 验证只适用于已实装目标环境插件、扩展包、package 或 runtime adapter 的路径。目标环境暂不支持可阻断 lifecycle Hook 时，不进入正式安装验证；AI 应交还“先实现目标环境 Hook adapter”的缺口，再重新运行安装向导。
 
 安装审计结果必须以当前命令输出为准。当前 worktree 只有通过 `governed_hook_adapter.py verify` 证明的 `git.commit-msg` 可以作为 integrated 入口；Codex 样例插件即使命中缓存，也只能在 Hook 命令指向 `hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py` 且完成真实 lifecycle、payload、失败阻断 / 非阻断诊断、授权 / trust 和回滚当次依据后，才可改变 integrated 结论。若审计发现 Hook 命令仍指向旧 `code/environment_plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py`，该状态属于已废弃 repo-local 插件资产路径，必须按环境插件升级或重装处理，不得写成已安装或 integrated。
@@ -123,11 +125,11 @@ python3 code/environment_entry_audit.py --environment-name <目标环境名> --f
 | 步骤 | 用户要做什么 | 正常表现 | 失败时给 AI 什么 |
 |---|---|---|---|
 | 1/4 恢复入口 | 在新会话粘贴“我重启了，继续 LDVH lifecycle 验证” | AI 识别为继续 30 验证，不重新启动安装向导 | 当前会话完整输出 |
-| 2/4 新会话可见性探针 | 让 AI 运行“可见性探针输入文本” | 输出包含 `status=ok`、`event=session_start`、`receipt_id` 和 `Diagnostics: none` | 完整命令输出或错误文本 |
-| 3/4 真实工作流检查 | 按引导逐项触发 Git `commit-msg` 正反例、`SessionStart`、`PreToolUse` 负例、`PreToolUse` 正例或只读放行、`Stop` / completion 检查；需要 scratch target 时明确路径和清理 | 入口真实触发；负例被阻断，正例放行；completion 检查可见且不阻断环境正常停止；scratch 文件状态符合预期 | AI 输出、Hook 输出、scratch 路径、文件状态、completion 输出 |
+| 2/4 新会话可见性 | 按 AI 给出的自然语言任务新开或恢复会话，不手动运行 adapter 命令 | 目标环境自动出现 LDVH read plan、`session_start`、receipt 或等价输出 | 目标环境完整输出；没有看到时写“未看到 LDVH 输出” |
+| 3/4 真实工作流检查 | 按 AI 验收卡逐项触发 Git `commit-msg` 正反例、`SessionStart`、`PreToolUse` 负例、`PreToolUse` 正例或只读放行、`Stop` / completion 检查；需要 scratch target 时明确路径和清理 | 入口真实触发；负例被阻断，正例放行；completion 检查可见且不阻断环境正常停止；scratch 文件状态符合预期 | AI 输出、Hook 输出、scratch 路径、文件状态、completion 输出 |
 | 4/4 验证总结 | AI 复跑统一安装验证并交还结论 | 本次验证通过 / 失败 / 未验证、推荐行动和残留风险清楚 | 总结遗漏项、复核命令输出 |
 
-逐项验证可以用 `👉` 标记当前步骤，用 `✅` 标记已完成步骤；尚未发生的步骤保持空白。选项建议只保留 `1 我看到了上述正常表现` 和 `2 没看到或有错误，停止验证`。Human 不选择“通过 / 失败”；AI 根据用户观察和本文规则判断通过、失败或暂停诊断。
+逐项验证可以用 `👉` 标记当前步骤，用 `✅` 标记已完成步骤；尚未发生的步骤保持空白。选项建议只保留 `1 我看到了上述正常表现` 和 `2 没看到或有错误，停止验证`。Human 不选择“通过 / 失败”，不负责 integrated 分类；AI 根据用户观察和本文规则判断通过、失败或暂停诊断。
 
 新会话可见性探针优先使用以下只读命令模板；运行时用当前 LDVH 本体路径和目标路径替换占位符：
 
