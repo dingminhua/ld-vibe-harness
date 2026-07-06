@@ -12,35 +12,6 @@ from ldvh_specs import ROOT
 SWITCH_MODE = "commit_msg_hard_switch_minimal"
 AUTHORIZATION = "none"
 
-MANUAL_ENTRYPOINTS = (
-    {
-        "id": "manual.runtime_adapter",
-        "script": "runtime_adapter.py",
-        "purpose": "unified manual runtime adapter",
-    },
-    {
-        "id": "manual.session_start",
-        "script": "session_start.py",
-        "purpose": "manual session_start read_plan",
-    },
-    {
-        "id": "manual.acknowledge_read_plan",
-        "script": "acknowledge_read_plan.py",
-        "purpose": "manual read_plan consumption receipt",
-    },
-    {
-        "id": "manual.pre_tool_use",
-        "script": "pre_tool_use.py",
-        "purpose": "manual pre_tool_use preflight",
-    },
-    {
-        "id": "manual.completion_claim",
-        "script": "completion_claim.py",
-        "purpose": "manual completion_claim verification check",
-    },
-)
-
-
 def _bool_text(value: bool) -> str:
     return "true" if value else "false"
 
@@ -74,38 +45,6 @@ def _entrypoint(
         "purpose": purpose,
         "details": details or {},
     }
-
-
-def _manual_entrypoints(ldvh_root: Path, diagnostics: list[dict[str, str]]) -> list[dict[str, Any]]:
-    entries: list[dict[str, Any]] = []
-    for entry in MANUAL_ENTRYPOINTS:
-        path = ldvh_root / "code" / entry["script"]
-        available = path.is_file()
-        if not available:
-            diagnostics.append(
-                _diagnostic(
-                    "blocking",
-                    "ENV_MANUAL_ENTRYPOINT_MISSING",
-                    path.as_posix(),
-                    f"{entry['id']} 对应脚本不存在，不能作为 manual-ready 入口。",
-                )
-            )
-        entries.append(
-            _entrypoint(
-                entry_id=entry["id"],
-                mode="manual",
-                available=available,
-                integrated=False,
-                path=path,
-                purpose=entry["purpose"],
-                details={
-                    "adapter_ready": available,
-                    "automatic_trigger": False,
-                    "authorization": AUTHORIZATION,
-                },
-            )
-        )
-    return entries
 
 
 def build_environment_status(repo: Path = ROOT, ldvh_root: Path = ROOT) -> dict[str, Any]:
@@ -164,13 +103,10 @@ def build_environment_status(repo: Path = ROOT, ldvh_root: Path = ROOT) -> dict[
             purpose="real Git commit message validation",
             details=hook_details,
         ),
-        *_manual_entrypoints(resolved_ldvh_root, diagnostics),
     ]
 
     blocking = sum(1 for diagnostic in diagnostics if diagnostic["level"] in {"blocking", "error"})
     automated_entrypoints = [entry["id"] for entry in entrypoints if entry["integrated"]]
-    manual_entrypoints = [entry["id"] for entry in entrypoints if entry["mode"] == "manual"]
-    manual_entries_available = all(entry["available"] for entry in entrypoints if entry["mode"] == "manual")
 
     return {
         "metadata": {
@@ -185,30 +121,23 @@ def build_environment_status(repo: Path = ROOT, ldvh_root: Path = ROOT) -> dict[
             "switch_mode": SWITCH_MODE,
             "environment_integrated": "partial" if commit_hook_integrated else "false",
             "hook_integrated": "git.commit-msg" if commit_hook_integrated else "none",
-            "runtime_adapter_entry": "manual.runtime_adapter",
             "runtime_adapter_integrated": False,
-            "session_start_entry": "manual.session_start",
             "session_start_integrated": False,
-            "acknowledge_read_plan_entry": "manual.acknowledge_read_plan",
             "acknowledge_read_plan_integrated": False,
-            "pre_tool_use_entry": "manual.pre_tool_use",
             "pre_tool_use_integrated": False,
-            "completion_claim_entry": "manual.completion_claim",
             "completion_claim_integrated": False,
-            "manual_entries_available": manual_entries_available,
             "automated_entrypoints": automated_entrypoints,
-            "manual_entrypoints": manual_entrypoints,
             "diagnostics": len(diagnostics),
             "blocking": blocking,
             "authorization": AUTHORIZATION,
         },
         "entrypoints": entrypoints,
         "unresolved_boundaries": [
-            "session_start has no automatic environment trigger",
-            "acknowledge_read_plan is a stdout-only manual receipt, not persistent environment state",
-            "pre_tool_use has no automatic tool-call trigger",
-            "completion_claim has no automatic completion trigger",
-            "runtime_adapter is manual/external adapter-ready only",
+            "session_start has no integrated AI lifecycle Hook trigger",
+            "acknowledge_read_plan is a runtime receipt bridge, not persistent environment state",
+            "pre_tool_use has no integrated AI lifecycle tool-call trigger",
+            "completion_claim has no integrated AI lifecycle completion trigger",
+            "runtime_adapter requires a verified environment Hook, plugin, extension package, or adapter",
             "generic Web writes and non-commit action templates are not enabled",
             "Rules and Skill top-level mechanisms are removed, not pending entrypoints",
         ],
@@ -224,8 +153,6 @@ def _print_text(result: dict[str, Any]) -> None:
     print(f"- environment_integrated: {summary['environment_integrated']}")
     print(f"- hook_integrated: {summary['hook_integrated']}")
     print(f"- automated_entrypoints: {', '.join(summary['automated_entrypoints']) or 'none'}")
-    print(f"- manual_entrypoints: {', '.join(summary['manual_entrypoints']) or 'none'}")
-    print(f"- manual_entries_available: {_bool_text(summary['manual_entries_available'])}")
 
     print("\nEntrypoints:")
     for entry in result["entrypoints"]:

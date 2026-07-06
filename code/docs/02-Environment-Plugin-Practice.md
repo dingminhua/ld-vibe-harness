@@ -8,15 +8,15 @@
 
 所有支持 Hook 的协作环境，都应通过对应 LDVH 插件、扩展包或 package 安装环境 Hook。正式接入不直接写入环境 Hook 系统文件；直接写入环境 Hook 系统文件只能作为调试、探针或迁移验证，不得作为正式接入形态。
 
-目标环境确认不支持自动 Hook 时，不另开独立验收模板，也不称为 integrated。该情况由 01、`01.Att.03`、`01.Att.04` 和环境审计结果判定，`specs/30-安装配置与验证行动模板.md` 统一组织写入完成后的断点恢复与 lifecycle 验证：AI 可以交还 `repo instruction`、`manual entrypoint`、`thin reference` 或外部 adapter 候选承接形态，但验证目标仍是 Runtime Protocol 汇聚到 `code/runtime_adapter.py` 并在真实工作流里产出 receipt。
+目标环境确认缺少可安装、可验证、可阻断的 AI lifecycle Hook 时，不另开独立验收模板，也不称为 integrated。该情况由 01、`01.Att.03`、`01.Att.04` 和环境审计结果判定；`specs/30-安装配置与验证行动模板.md` 只能把它作为安装阻断和后续实现缺口交还。正式 LDVH 接入必须先实装目标环境插件、扩展包、package 或 runtime adapter，并让真实 lifecycle Hook 回到 `code/runtime_adapter.py`。
 
 环境插件状态对用户展示时必须先翻译，不把内部字段作为主问题：
 
 | 内部状态或事件 | 用户主界面说法 | 使用边界 |
 |---|---|---|
-| `unsupported_target_environment` / `target_environment_supported=false` | 当前目标环境没有自动 Hook 接入 | 由 30 交还薄引用 / manual entrypoint，并继续断点后验证 |
+| `unsupported_target_environment` / `target_environment_supported=false` | 当前目标环境没有可安装、可验证、可阻断的 lifecycle Hook | 停止正式安装，先实现目标环境插件 / adapter |
 | `environment_hook_integrated=false` 且安装检测通过 | 入口已检测，仍需断点后验证 | 由 30 引导重启 / 新会话后的 lifecycle 验证 |
-| 01 判定为无自动环境 Hook | 薄引用 / manual entrypoint 承接 | 跳过插件页面授权和自动环境阻断项，但仍按 30 断点恢复协议做可见性探针、runtime receipt、Git Hook 正反例和真实工作流验证 |
+| 01 判定为无 AI lifecycle Hook | 目标环境暂不属于 LDVH 支持范围 | 不生成替代安装写入；补插件 / adapter 后重新进入安装 |
 | `PreToolUse` | 写入前检查 | 只有目标环境真实支持阻断时才可作为阻断入口 |
 | `completion_claim_direct_nonblocking` | 完成声明检查只提示问题，不阻断环境关闭 | completion / Stop 类事件不得阻断环境关闭 |
 
@@ -27,9 +27,8 @@
 | 目标环境 | 是否支持 Hook | 是否可安装检测 | 断点后验证方式 | 失败时回到哪里 |
 |---|---|---|---|---|
 | Codex 样例 | 有 repo-local 样例 shim；真实环境仍需插件页面、授权和 lifecycle 证据 | 可检测 V3 shim、manifest、stale path 和 shim 正反输入 | 按 30 恢复入口运行新会话探针和真实工作流检查 | 插件安装 / 授权诊断，或 30 修复流程 |
-| Trae / IDE / Agent runner | 只有实装对应插件 / 扩展包后才算支持 | 未实装前不可安装检测 | 通过插件或薄引用汇聚到 runtime adapter receipt | 由 01 / 环境审计判定并回到 30 修复流程 |
-| repo instruction / manual entrypoint | 不支持环境自动 Hook | 只检测薄引用或 manual CLI | AI 按薄引用调用 manual entrypoint，回读 runtime adapter receipt | 30 断点恢复流程 |
-| 未知环境 | 需先确认目标环境能力 | 不可直接检测 | 先形成可调用 Runtime Protocol 入口 | 30 路径确认和环境能力确认 |
+| Trae / IDE / Agent runner | 只有实装对应插件 / 扩展包后才算支持 | 未实装前不可安装检测 | 通过插件 lifecycle Hook 汇聚到 runtime adapter receipt | 由 01 / 环境审计判定并回到 30 修复流程 |
+| 未知环境 | 需先确认目标环境能力 | 不可直接检测 | 先确认是否存在可安装、可验证、可阻断的 lifecycle Hook | 30 路径确认和环境能力确认 |
 
 环境插件只承担薄 shim 职责：
 
@@ -99,7 +98,7 @@ python3 code/environment_entry_audit.py --format text
 
 若后续逻辑显式要求 integrated，必须使用当次可执行的 lifecycle 验证路径，而不是让 AI 永久停在不可验证声明。30 负责交还恢复入口语、可复制新会话探针、真实工作流检查和失败信息包；AI 逐项判断插件页面启用、重启 App、新会话只读可见性探针、授权 / trust、PreToolUse 负例阻断和正例放行。目标环境能提供真实 SessionStart lifecycle 证据时应一并回读；目标环境不稳定展示 Hook stdout 时，不得让 Human 去猜启动提示是否出现。全部通过后，AI 复跑 `install_verification.py` 做技术复核并交还本次验证总结；不得复用命令输出里的旧式下一步提示。验证总结不写长期状态，不替代插件页面、真实 payload 或失败处理诊断。
 
-断点后 lifecycle 验证适用于所有承接路径：目标环境插件、薄引用、manual entrypoint 或外部 adapter 候选都必须回到 Runtime Protocol 和 `code/runtime_adapter.py`。目标环境暂不支持自动 Hook 时，只是不声明 integrated；AI 仍应按 30 的恢复入口语引导用户在新会话中确认 runtime receipt、Git Hook 正反例和真实工作流证据。
+断点后 lifecycle 验证只适用于已实装目标环境插件、扩展包、package 或 runtime adapter 的路径。目标环境暂不支持可阻断 lifecycle Hook 时，不进入正式安装验证；AI 应交还“先实现目标环境 Hook adapter”的缺口，再重新运行安装向导。
 
 安装审计结果必须以当前命令输出为准。当前 worktree 只有通过 `governed_hook_adapter.py verify` 证明的 `git.commit-msg` 可以作为 integrated 入口；Codex 样例插件即使命中缓存，也只能在 Hook 命令指向 `hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py` 且完成真实 lifecycle、payload、失败阻断 / 非阻断诊断、授权 / trust 和回滚证据后，才可改变 integrated 结论。若审计发现 Hook 命令仍指向旧 `code/environment_plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py`，该状态属于已废弃 repo-local 插件资产路径，必须按环境插件升级或重装处理，不得写成已安装或 integrated。
 
@@ -125,7 +124,7 @@ python3 code/runtime_adapter.py session-start \
   --target-path "<target-path>" \
   --task "LDVH lifecycle verification probe" \
   --operation read \
-  --trigger-source "manual.lifecycle-verify-probe" \
+  --trigger-source "hook.lifecycle-verify-probe" \
   --format text
 ```
 
@@ -146,7 +145,7 @@ Diagnostics: none
 ```text
 我重启了，继续 LDVH lifecycle 验证。请只读运行下面命令，并把完整输出原样返回：
 
-python3 <ldvh-root>/code/runtime_adapter.py session-start --root <ldvh-root> --config-root <governance-root> --session-id lifecycle-verify-probe --target-path <target-path> --task "LDVH lifecycle verification probe" --operation read --trigger-source manual.lifecycle-verify-probe --format text
+python3 <ldvh-root>/code/runtime_adapter.py session-start --root <ldvh-root> --config-root <governance-root> --session-id lifecycle-verify-probe --target-path <target-path> --task "LDVH lifecycle verification probe" --operation read --trigger-source hook.lifecycle-verify-probe --format text
 ```
 
 ```text
@@ -157,7 +156,7 @@ python3 <ldvh-root>/code/runtime_adapter.py session-start --root <ldvh-root> --c
 请继续 LDVH 受控正例放行测试。scratch target 使用 <target-path>/.ldvh-runtime/acceptance-probe/allowed.txt。请先确认已读取 00/01/02 和 30 的必读依据，再只运行写入前检查；预期结果是放行，诊断为空，不需要实际写文件。
 ```
 
-最终交还只列用户接下来要做的具体动作：本次验证通过则可结束；失败则停在失败步骤并补充失败信息包；未验证则补齐缺失的插件页面、薄引用入口、新会话探针或真实工作流证据。
+最终交还只列用户接下来要做的具体动作：本次验证通过则可结束；失败则停在失败步骤并补充失败信息包；未验证则补齐缺失的插件页面、新会话探针或真实工作流证据。
 
 ## 安装与卸载边界
 

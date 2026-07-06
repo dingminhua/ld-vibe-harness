@@ -9,7 +9,7 @@ from ldvh_specs import ROOT, build_runtime_event
 from runtime_receipt_cache import read_ack_receipt
 
 
-INTEGRATION_SCOPE = "manual.pre_tool_use"
+INTEGRATION_SCOPE = "hook.pre_tool_use"
 
 
 def _bool_text(value: bool) -> str:
@@ -26,7 +26,7 @@ def build_pre_tool_use(
     target_paths: list[str | Path] | None = None,
     task: str = "",
     operation: str = "write",
-    trigger_source: str = "manual",
+    trigger_source: str = "hook.runtime",
     acknowledged_paths: list[str] | None = None,
     runtime_cache: bool = True,
 ) -> dict[str, Any]:
@@ -125,7 +125,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--target-paths", action="append", default=[], help="explicit target path; may be repeated")
     parser.add_argument("--task", default="", help="current task summary")
     parser.add_argument("--operation", default="write", help="pending operation kind, such as write/edit/apply_patch")
-    parser.add_argument("--trigger-source", default="manual", help="trigger source label")
+    parser.add_argument("--trigger-source", default="hook.runtime", help="trigger source label")
     parser.add_argument(
         "--acknowledged-path",
         action="append",

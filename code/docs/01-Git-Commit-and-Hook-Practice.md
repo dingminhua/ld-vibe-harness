@@ -47,7 +47,7 @@ python3 code/environment_status.py --format text
 python3 code/environment_entry_audit.py --format text
 ```
 
-当前预期判定是：`git.commit-msg` 为 integrated；`manual.runtime_adapter`、`manual.session_start`、`manual.acknowledge_read_plan`、`manual.pre_tool_use` 和 `manual.completion_claim` 为 manual-ready 或 deferred。
+当前预期判定是：`git.commit-msg` 为 integrated；AI lifecycle Hook backend 仍未由目标环境自动触发，不得声明 session start、pre tool use、acknowledge read plan 或 completion claim 已 integrated。
 
 ## 底层安装器边界
 

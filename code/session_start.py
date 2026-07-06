@@ -8,7 +8,7 @@ from typing import Any
 from ldvh_specs import ROOT, build_runtime_event
 
 
-INTEGRATION_SCOPE = "manual.session_start"
+INTEGRATION_SCOPE = "hook.session_start"
 
 
 def _bool_text(value: bool) -> str:
@@ -24,7 +24,7 @@ def build_session_start(
     config_root: str | Path | None = None,
     target_paths: list[str | Path] | None = None,
     task: str = "",
-    trigger_source: str = "manual",
+    trigger_source: str = "hook.runtime",
 ) -> dict[str, Any]:
     result = build_runtime_event(
         root,
@@ -93,7 +93,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--target-path", default="", help="current target path, if known")
     parser.add_argument("--target-paths", action="append", default=[], help="explicit target path; may be repeated")
     parser.add_argument("--task", default="", help="current task summary")
-    parser.add_argument("--trigger-source", default="manual", help="trigger source label")
+    parser.add_argument("--trigger-source", default="hook.runtime", help="trigger source label")
     parser.add_argument("--format", choices=["text", "json"], default="text")
     return parser
 

@@ -22,8 +22,6 @@ from ldvh_specs import (
 AUTHORIZATION = "human_gate_required_for_apply"
 ENVIRONMENT_STRATEGIES = {
     "plugin_hook",
-    "thin_reference",
-    "manual_entrypoint",
     "external_adapter_candidate",
     "unsupported",
 }
@@ -105,15 +103,12 @@ def _infer_environment_strategy(
     if requested:
         return requested
     if environment_name.lower() != "codex":
-        return "manual_entrypoint"
+        return "unsupported"
     candidates = {candidate["id"]: candidate for candidate in environment_audit.get("candidates", [])}
     codex_plugin = candidates.get("codex.ldvh-plugin", {})
     if codex_plugin.get("status") == "available":
         return "plugin_hook"
-    runtime_protocol = candidates.get("hooks.runtime-protocol", {})
-    if runtime_protocol.get("status") == "available":
-        return "thin_reference"
-    return "manual_entrypoint"
+    return "external_adapter_candidate"
 
 
 def _strategy_is_valid(strategy: str) -> bool:
@@ -183,25 +178,6 @@ def _planned_writes(
 
 
 def _handoff_candidates(strategy: str, ldvh_root: Path, repo: Path) -> list[dict[str, Any]]:
-    if strategy == "thin_reference":
-        return [
-            {
-                "kind": "thin_reference",
-                "path": (repo / "AGENTS.md").resolve().as_posix(),
-                "operation": "handoff_candidate_only",
-                "non_executable_in_v1": True,
-                "reference": (ldvh_root / "hooks/LDVH-RUNTIME-PROTOCOL.md").as_posix(),
-            }
-        ]
-    if strategy == "manual_entrypoint":
-        return [
-            {
-                "kind": "manual_entrypoint",
-                "path": (ldvh_root / "code/runtime_adapter.py").as_posix(),
-                "operation": "handoff_command_only",
-                "non_executable_in_v1": True,
-            }
-        ]
     if strategy == "external_adapter_candidate":
         return [
             {
@@ -226,7 +202,7 @@ def _skipped_writes(strategy: str) -> list[dict[str, Any]]:
         return [
             {
                 "kind": strategy,
-                "reason": "install_wizard v1 只生成薄引用 / manual entrypoint 承接计划，不执行写入。",
+                "reason": "目标环境缺少可安装、可验证、可阻断 AI lifecycle Hook；不生成替代安装写入。",
                 "non_executable_in_v1": True,
             }
         ]
@@ -244,7 +220,7 @@ def _runtime_entry_status(verification: dict[str, Any] | None, install_plan: dic
             return "需用户侧验证"
         return "需安装或需升级"
     if install_plan and install_plan.get("handoff_candidates"):
-        return "薄引用 / manual entrypoint 承接"
+        return "需先实现环境 Hook adapter"
     return "需验证"
 
 
@@ -350,7 +326,7 @@ def _interaction_handoff(
         "human_gate_required": bool(install_plan.get("human_gate_required")) if install_plan else False,
         "human_gate_confirmed": human_gate_confirmed,
         "planned_writes": len(install_plan.get("planned_writes", [])) if install_plan else 0,
-        "handoff_candidates": len(install_plan.get("handoff_candidates", [])) if install_plan else 0,
+        "hook_adapter_candidates": len(install_plan.get("handoff_candidates", [])) if install_plan else 0,
         "skipped_writes": len(install_plan.get("skipped_writes", [])) if install_plan else 0,
         "result_cards": [
             {
@@ -490,6 +466,15 @@ def build_install_check(
         environment_name=environment_name,
         environment_audit=environment_audit,
     )
+    if strategy in {"external_adapter_candidate", "unsupported"}:
+        diagnostics.append(
+            _diagnostic(
+                "blocking",
+                "INSTALL_WIZARD_ENVIRONMENT_HOOK_UNSUPPORTED",
+                environment_name,
+                "目标 AI 环境缺少可安装、可验证、可阻断的 LDVH lifecycle Hook；正式安装必须先实现目标环境插件、扩展包、package 或 runtime adapter。",
+            )
+        )
     target_projects = _selected_projects(resolved_governance_root, resolution)
     if not target_projects and resolution["governed"]:
         diagnostics.append(
@@ -724,7 +709,7 @@ def build_install_apply(
                 "blocking",
                 "INSTALL_WIZARD_STRATEGY_APPLY_NOT_IMPLEMENTED",
                 strategy,
-                "install_wizard v1 不自动写入薄引用或 manual entrypoint；请按 plan 交还 Human 处理。",
+                "当前策略不是可执行的 AI lifecycle Hook 安装策略；请先实现目标环境插件、扩展包、package 或 runtime adapter。",
             )
         )
         summary = {"status": "blocked", "blocking": 1, "diagnostics": len(diagnostics)}

@@ -52,7 +52,7 @@ def _visible_probe_command(ldvh_root: Path, repo: Path, governance_root: Path | 
         "--operation",
         "read",
         "--trigger-source",
-        "manual.lifecycle-verify-probe",
+        "hook.lifecycle-verify-probe",
         "--format",
         "text",
     ])
@@ -329,7 +329,6 @@ def _verify_environment(
     environment_name: str,
     governance_root: Path | None = None,
 ) -> dict[str, Any]:
-    runtime_protocol = ldvh_root / "hooks/LDVH-RUNTIME-PROTOCOL.md"
     if not _is_codex_environment(environment_name):
         return {
             "summary": {
@@ -356,43 +355,23 @@ def _verify_environment(
                     "user_status": "目标环境插件入口未实装；未验证真实自动 Hook。",
                     "reason": "当前统一验收入口没有目标环境插件 / 扩展包实装证据。",
                 },
-                "thin_reference": {
-                    "available": runtime_protocol.is_file(),
-                    "verified": runtime_protocol.is_file(),
-                    "integrated": False,
-                    "verification_method": "runtime_protocol_read",
-                    "real_hook_observed": False,
-                    "user_status": "薄引用入口可读；这不是自动 Hook。",
-                    "reason": "薄引用只证明 Runtime Protocol 可读，不声明自动 Hook integrated。",
-                },
             },
-            "impact_matrix": [
-                {
-                    "access_mode": "thin_reference",
-                    "trigger": "Runtime Protocol read",
-                    "expected_result": "AI 可读取统一入口并转入 runtime adapter / manual entrypoint",
-                    "observed": runtime_protocol.is_file(),
-                    "writes": False,
-                }
-            ],
+            "impact_matrix": [],
             "audit": {},
             "shim_direct_tests": _not_run_shim_tests(
                 "当前统一验收入口只内置 Codex 样例 shim 直测；目标环境需要对应插件 / 扩展包实装后再验收。"
             ),
             "human_acceptance": {
                 "required": True,
-                "reason": f"{environment_name} 目标环境尚无当前验收入口可识别的 LDVH 插件 / 扩展包实装、授权、payload、失败处理和回滚证据；目标环境没有自动 Hook 入口时，仍按 30 交还薄引用 / manual entrypoint，并继续断点后 LDVH 影响验证。",
+                "reason": f"{environment_name} 目标环境尚无当前验收入口可识别的 LDVH 插件 / 扩展包实装、授权、payload、失败处理和回滚证据；正式 LDVH 接入必须先实现可安装、可验证、可阻断的 AI lifecycle Hook。",
                 "steps": [
                     f"先确认 {environment_name} 是否支持插件 / 扩展包 / package 形态的 Hook 入口。",
                     "若支持 Hook，必须先实装目标环境插件 / 扩展包并让安装检测通过；写入完成后按 30 的断点恢复协议继续 LDVH 影响验证。",
-                    "若 01 或环境审计确认没有自动 Hook 入口，按 specs/10-安装与配置规范.md 选择薄引用 / manual entrypoint 承接，并按 specs/30 的交互外壳交还恢复入口。",
-                    "薄引用 / manual entrypoint 承接必须基于 hooks/LDVH-RUNTIME-PROTOCOL.md 生成已替换 LDVH 本体绝对路径的薄引用文本，给出可复制内容和写入路径，不得只列承接形态表。",
-                    "薄引用 / manual entrypoint 承接不得声明环境自动接入已完成；断点后验证仍按 30 的统一 LDVH 影响验证执行。",
+                    "若目标环境当前没有可阻断 lifecycle Hook，停止正式安装并返回目标环境插件 / adapter 候选缺口。",
                 ],
                 "acceptance_criteria": [
                     "目标环境支持 Hook 时，必须能提供插件 / 扩展包实装、入口指向、授权、payload、失败处理和回滚证据。",
-                    "目标环境确认没有自动 Hook 入口时，30 仍交还 01.Att.04 的 manual_ready / available / deferred / absent 等分类，并补充承接形态说明。",
-                    "薄引用 / manual entrypoint 承接的验证标准是 V3 specs 可找到、Runtime Protocol 可读、manual CLI 可运行、runtime adapter 产出 receipt、Git Hook 正反例通过。",
+                    "目标环境缺少可阻断 lifecycle Hook 时，正式 LDVH 影响验证不得通过。",
                     "Human 已理解当前目标环境的触发来源、不可验证范围和断点后验证方式。",
                 ],
             },
@@ -483,7 +462,6 @@ def _verify_environment(
             and _shim_tests_passed(shim_tests)
         )
     )
-    thin_reference_available = runtime_protocol.is_file()
     access_modes = {
         "plugin_hook": {
             "available": _codex_plugin_install_detected(codex_plugin),
@@ -497,15 +475,6 @@ def _verify_environment(
             if environment_integrated
             else "插件入口未完成安装检测。",
             "reason": "插件 manifest、必需 lifecycle 事件和 repo-local shim 直测可见；真实自动触发仍按 01 integrated 规则另行判断。",
-        },
-        "thin_reference": {
-            "available": thin_reference_available,
-            "verified": False,
-            "integrated": False,
-            "verification_method": "not_run_current_mode",
-            "real_hook_observed": False,
-            "user_status": "当前为插件 Hook 安装方式，未按薄引用方式验证。",
-            "reason": "当前环境使用插件 Hook 安装方式；薄引用不是本次验证入口。",
         },
     }
     impact_matrix = [
@@ -644,26 +613,19 @@ def build_install_verification(
         if isinstance(mode, dict)
     )
     plugin_mode = impact_access_modes.get("plugin_hook", {})
-    thin_mode = impact_access_modes.get("thin_reference", {})
     real_hook_observed = bool(plugin_mode.get("real_hook_observed"))
     plugin_verified = bool(plugin_mode.get("verified"))
-    thin_verified = bool(thin_mode.get("verified"))
     if plugin_verified or _is_codex_environment(environment_name):
         primary_access_mode = "plugin_hook"
         current_install_mode = "插件 Hook"
-    elif thin_verified:
-        primary_access_mode = "thin_reference"
-        current_install_mode = "薄引用"
     else:
         primary_access_mode = "unknown"
         current_install_mode = "未确认"
-    fallback_access_modes: list[str] = []
+    secondary_access_modes: list[str] = []
     if real_hook_observed:
         verification_mode = "真实自动 Hook integrated 验证"
     elif primary_access_mode == "plugin_hook" and plugin_verified:
         verification_mode = "插件安装检测直测"
-    elif primary_access_mode == "thin_reference" and thin_verified:
-        verification_mode = "薄引用可读"
     else:
         verification_mode = "未验证"
     side_effects = {
@@ -705,7 +667,7 @@ def build_install_verification(
             "current_environment": environment_name,
             "current_install_mode": current_install_mode,
             "primary_access_mode": primary_access_mode,
-            "fallback_access_modes": fallback_access_modes,
+            "secondary_access_modes": secondary_access_modes,
             "verification_mode": verification_mode,
             "real_hook_observed": real_hook_observed,
             "human_conclusion": {
@@ -713,7 +675,7 @@ def build_install_verification(
                 "environment": environment_name,
                 "install_mode": current_install_mode,
                 "verified_as": verification_mode,
-                "fallback_checked": fallback_access_modes,
+                "secondary_checked": secondary_access_modes,
                 "not_claimed": []
                 if real_hook_observed
                 else ["未声明真实自动 Hook integrated"],
@@ -755,7 +717,7 @@ def _git_hook_user_status(git_results: list[dict[str, Any]]) -> str:
 
 def _environment_user_status(env_summary: dict[str, Any]) -> str:
     if not env_summary.get("target_environment_supported"):
-        return "薄引用 / manual entrypoint"
+        return "不支持"
     if env_summary.get("blocking"):
         return "阻断"
     if env_summary.get("environment_integrated"):
@@ -778,7 +740,7 @@ def _build_user_handoff(result: dict[str, Any]) -> dict[str, Any]:
     current_install_mode = str(impact.get("current_install_mode") or "未确认")
     real_hook_observed = bool(impact.get("real_hook_observed"))
     real_trigger_acceptance_complete = git_status == "通过" and (
-        real_hook_observed or env_status == "薄引用 / manual entrypoint"
+        real_hook_observed
     )
     real_trigger_result = (
         "通过"
@@ -795,8 +757,6 @@ def _build_user_handoff(result: dict[str, Any]) -> dict[str, Any]:
         real_trigger_pending_items.append("Git 提交消息 Hook 正反例")
     if env_status == "已自动接入":
         real_trigger_passed_items.append(f"{environment_name} 生命周期触发")
-    elif env_status == "薄引用 / manual entrypoint":
-        real_trigger_passed_items.append("Runtime 入口可读")
     else:
         real_trigger_pending_items.append(f"{environment_name} lifecycle Hook 触发证据回读 / read_plan 消费证据链路")
 
@@ -814,7 +774,7 @@ def _build_user_handoff(result: dict[str, Any]) -> dict[str, Any]:
     else:
         install_status = "否"
         if not env_summary.get("target_environment_supported"):
-            next_step = "按 30 确认目标环境入口；无自动 Hook 时交还薄引用 / manual entrypoint 并继续断点后验证"
+            next_step = "停止正式安装；先实现目标环境插件、扩展包、package 或 runtime adapter"
         elif git_status != "通过":
             next_step = "先安装或修复管辖项目 Git commit-msg Hook"
         else:
@@ -831,13 +791,11 @@ def _build_user_handoff(result: dict[str, Any]) -> dict[str, Any]:
             "触发一次受控写入前检查，确认应阻断的写入会被阻断。",
             "带着新会话结果回来继续真实触发验收。",
         ]
-    elif env_status == "薄引用 / manual entrypoint":
+    elif env_status == "不支持":
         user_next_steps = [
-            "确认目标环境当前没有可用 Hook 接入，或先补目标环境插件方案。",
-            "若确认无可用 Hook，按 30 薄引用 / manual entrypoint 安装交还完成交还。",
-            "确认薄引用文件已写入并可被 AI 读取到 Runtime Protocol 入口。",
-            "复核每个管辖项目 Git commit-msg Hook 的正反例结果。",
-            "以后目标环境支持 Hook 时，再升级为环境插件并进入安装检测。",
+            "停止正式 LDVH 安装。",
+            "先实现目标环境插件、扩展包、package 或 runtime adapter，并证明具备真实 lifecycle 触发、payload、失败处理和回滚方式。",
+            "实现后重新运行安装检测和 LDVH 影响验证。",
         ]
     elif env_status == "已自动接入":
         user_next_steps = [

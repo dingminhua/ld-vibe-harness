@@ -67,7 +67,7 @@ def _candidate(
     reason: str,
     integrated: bool = False,
     automatic: bool = False,
-    manual_fallback: str = "",
+    hook_entry: str = "",
     details: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     return {
@@ -78,7 +78,7 @@ def _candidate(
         "automatic": automatic,
         "trigger": trigger,
         "evidence": evidence,
-        "manual_fallback": manual_fallback,
+        "hook_entry": hook_entry,
         "decision": decision,
         "reason": reason,
         "details": details or {},
@@ -256,7 +256,7 @@ def _codex_ldvh_plugin_candidate(
             status="absent",
             trigger="Codex lifecycle hooks via LDVH plugin",
             evidence=[],
-            manual_fallback="code/runtime_adapter.py",
+            hook_entry="code/runtime_adapter.py",
             decision="install_plugin_before_claiming",
             reason="未发现 Codex 用户配置或 LDVH Codex plugin hook manifest；Codex 只是当前可审计的环境插件样例。",
         )
@@ -267,7 +267,7 @@ def _codex_ldvh_plugin_candidate(
             status="available",
             trigger="Codex lifecycle hooks via LDVH plugin",
             evidence=evidence,
-            manual_fallback="code/runtime_adapter.py",
+            hook_entry="code/runtime_adapter.py",
             decision="enable_or_install_v3_plugin",
             reason="检测到 Codex LDVH 插件相关文件，但插件未在 Codex config 中启用。",
             details={"commands": commands, "hook_entries": hook_entries, **required_hook_status},
@@ -287,7 +287,7 @@ def _codex_ldvh_plugin_candidate(
             status="available",
             trigger="Codex lifecycle hooks via LDVH plugin",
             evidence=evidence,
-            manual_fallback="code/runtime_adapter.py",
+            hook_entry="code/runtime_adapter.py",
             decision="reinstall_for_v3",
             reason="LDVH 插件已启用但指向旧 V2/旧仓库路径或已废弃的 repo-local 插件资产路径；需要 V3 插件包重新安装或升级后才可继续验收。",
             details={
@@ -306,7 +306,7 @@ def _codex_ldvh_plugin_candidate(
             status="available",
             trigger="Codex lifecycle hooks via LDVH plugin",
             evidence=evidence,
-            manual_fallback="code/runtime_adapter.py",
+            hook_entry="code/runtime_adapter.py",
             decision="verify_trust_and_runtime_before_integration",
             reason="检测到指向当前 V3 的 LDVH 插件 Hook 配置，且 SessionStart、PreToolUse、Stop 三类必需事件齐全；仍需真实触发、payload 和失败处理证据后才能声明 integrated。",
             details={"commands": commands, "hook_entries": hook_entries, **required_hook_status},
@@ -318,7 +318,7 @@ def _codex_ldvh_plugin_candidate(
             status="available",
             trigger="Codex lifecycle hooks via LDVH plugin",
             evidence=evidence,
-            manual_fallback="code/runtime_adapter.py",
+            hook_entry="code/runtime_adapter.py",
             decision="complete_v3_hook_manifest_before_install_verified",
             reason="检测到部分 Codex LDVH Hook 指向当前 V3，但 SessionStart、PreToolUse、Stop 必需事件尚未齐全，不能把安装检测写成通过。",
             details={"commands": commands, "hook_entries": hook_entries, **required_hook_status},
@@ -329,61 +329,10 @@ def _codex_ldvh_plugin_candidate(
         status="available",
         trigger="Codex lifecycle hooks via LDVH plugin",
         evidence=evidence,
-        manual_fallback="code/runtime_adapter.py",
+        hook_entry="code/runtime_adapter.py",
         decision="audit_plugin_hook_target",
         reason="检测到 LDVH 插件配置或缓存，但 Hook 指向无法归属到当前 V3；不得声明环境入口已接入。",
         details={"commands": commands, "hook_entries": hook_entries, **required_hook_status},
-    )
-
-
-def _codex_candidate(repo: Path, diagnostics: list[dict[str, str]]) -> dict[str, Any]:
-    instruction_files = _repo_files(
-        repo,
-        [
-            "AGENTS.md",
-            ".codex/config.toml",
-            ".codex/settings.json",
-            ".codex/rules.md",
-            ".codex/AGENTS.md",
-        ],
-    )
-    instruction_dirs = _repo_dirs(repo, [".codex"])
-    if instruction_files:
-        diagnostics.append(
-            _diagnostic(
-                "warning",
-                "ENV_CODEX_ENTRY_FILES_NOT_INTEGRATED",
-                repo.as_posix(),
-                "检测到 Codex/agent 指令文件，但当前审计只能确认文件存在，不能证明 session/tool/completion 生命周期已自动接入。",
-            )
-        )
-        return _candidate(
-            entry_id="codex.repo-instructions",
-            category="codex_environment",
-            status="available",
-            trigger="codex repo instruction loader",
-            evidence=_as_posix(instruction_files),
-            decision="audit_before_integration",
-            reason="repo 指令文件可能影响 AI 行为，但不能替代 V3 runtime Hook、payload 或失败处理审计。",
-        )
-    if instruction_dirs:
-        return _candidate(
-            entry_id="codex.repo-instructions",
-            category="codex_environment",
-            status="deferred",
-            trigger="codex repo instruction loader",
-            evidence=_as_posix(instruction_dirs),
-            decision="defer",
-            reason="检测到 Codex 目录但没有可识别入口文件。",
-        )
-    return _candidate(
-        entry_id="codex.repo-instructions",
-        category="codex_environment",
-        status="absent",
-        trigger="codex repo instruction loader",
-        evidence=[],
-        decision="defer",
-        reason="未发现 AGENTS.md 或 .codex repo-local Codex 配置入口。",
     )
 
 
@@ -394,19 +343,19 @@ def _runtime_protocol_entry_candidate(ldvh_root: Path) -> dict[str, Any]:
             entry_id="hooks.runtime-protocol",
             category="hook_protocol_entry",
             status="available",
-            trigger="environment hook, plugin, external adapter, repo instruction, or manual wrapper",
+            trigger="environment hook, plugin, extension package, or runtime adapter",
             evidence=[entry_path.as_posix()],
-            manual_fallback="code/runtime_adapter.py",
+            hook_entry="code/runtime_adapter.py",
             decision="reference_from_environment_entry_without_claiming_integration",
-            reason="检测到 V3 Runtime Protocol 可见入口；该文件只提供入口指向，不能证明环境 Hook、插件或手动包装已 integrated。",
+            reason="检测到 V3 Runtime Protocol 可见入口；该文件只提供 Hook 入口指向，不能证明环境 Hook、插件或 adapter 已 integrated。",
         )
     return _candidate(
         entry_id="hooks.runtime-protocol",
         category="hook_protocol_entry",
         status="absent",
-        trigger="environment hook, plugin, external adapter, repo instruction, or manual wrapper",
+        trigger="environment hook, plugin, extension package, or runtime adapter",
         evidence=[],
-        manual_fallback="code/runtime_adapter.py",
+        hook_entry="code/runtime_adapter.py",
         decision="create_hook_protocol_entry_before_reference",
         reason="未发现 hooks/LDVH-RUNTIME-PROTOCOL.md；环境入口缺少统一 Runtime Protocol 可见入口资产。",
     )
@@ -447,7 +396,7 @@ def build_environment_entry_audit(
             status="deferred",
             trigger="Codex SessionStart or equivalent session start",
             evidence=codex_plugin["evidence"],
-            manual_fallback="code/session_start.py",
+            hook_entry="code/runtime_adapter.py",
             decision="defer",
             reason="Codex 提供 SessionStart 生命周期 Hook 机制；按通用环境 Hook 口径，V3 要通过对应 LDVH 插件或扩展包安装并验证，当前未证明 V3 插件已接入。",
         ),
@@ -457,7 +406,7 @@ def build_environment_entry_audit(
             status="deferred",
             trigger="Codex PreToolUse or equivalent tool call before write/edit/apply_patch",
             evidence=codex_plugin["evidence"],
-            manual_fallback="code/pre_tool_use.py",
+            hook_entry="code/runtime_adapter.py",
             decision="defer",
             reason="Codex 提供 PreToolUse 生命周期 Hook 机制；按通用环境 Hook 口径，V3 要通过对应 LDVH 插件或扩展包安装并验证，当前未证明 V3 插件已接入。",
         ),
@@ -467,7 +416,7 @@ def build_environment_entry_audit(
             status="deferred",
             trigger="Codex Stop or equivalent completion-adjacent event",
             evidence=codex_plugin["evidence"],
-            manual_fallback="code/completion_claim.py",
+            hook_entry="code/runtime_adapter.py",
             decision="defer",
             reason="Codex 提供 Stop 生命周期 Hook 可作为完成声明邻近候选；V3 尚未通过对应 LDVH 插件或扩展包定义、安装和验证 completion_claim 自动入口。",
         ),
@@ -477,7 +426,7 @@ def build_environment_entry_audit(
             status="deferred",
             trigger="external runtime adapter or Codex plugin adapter",
             evidence=codex_plugin["evidence"],
-            manual_fallback="code/runtime_adapter.py",
+            hook_entry="code/runtime_adapter.py",
             decision="defer",
             reason="统一 adapter 已有；支持 Hook 的环境应以对应 LDVH 插件或扩展包作为正式安装载体，但当前还没有 V3 插件的真实触发、失败处理和回滚证据。",
         ),
@@ -488,7 +437,7 @@ def build_environment_entry_audit(
             category="removed_top_level",
             legacy_dir="rules",
             source_name="Rules",
-            reason="V3 已取消 Rules 资产体系和独立规则权威；无 Hook fallback 只能归为环境薄引用或 repo instruction，不恢复 rules/ 目录机制。",
+            reason="V3 已取消 Rules 资产体系和独立规则权威；不得把 Rules 恢复为环境入口。",
         ),
         _removed_top_level_candidate(
             resolved_repo,
@@ -499,7 +448,6 @@ def build_environment_entry_audit(
             source_name="Skill",
             reason="V3 已取消 Skill 顶层机制、Skill registry 和 Skill 执行闭环；可复用工作流能力只能进入行动模板、Action Guide 或外部包装候选。",
         ),
-        _codex_candidate(resolved_repo, diagnostics),
     ]
 
     blocking = sum(1 for diagnostic in diagnostics if diagnostic["level"] in {"blocking", "error"})

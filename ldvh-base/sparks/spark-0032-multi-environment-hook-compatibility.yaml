@@ -58,15 +58,15 @@ evolution:
       - 事件：SessionStart / UserPromptSubmit / PreToolUse / PostToolUse / Stop / PreCompact / PostCompact / PermissionRequest / SubagentStart / SubagentStop。
       - stdin 公共字段：session_id / transcript_path / cwd / hook_event_name / model / permission_mode。
 
-      **Trae：❌ 当前问题不是“无插件系统”，而是不支持 AI Hook**
+      **Trae：❌ 当前问题不是“无插件系统”，而是缺少可安装、可验证、可阻断 AI lifecycle Hook**
       - Trae 的关键限制应记录为：没有可由 AI Agent 生命周期自动触发、可承载 SessionStart / UserPromptSubmit / PreToolUse / PostToolUse 等语义的 AI Hook 能力。
       - 因此不能把 Trae 问题简化成“无插件机制”或“仅需手动 hooks.json”；即使存在本地配置、兼容配置或脚本入口，也不等价于 AI Hook。
-      - Trae 侧应进入无 AI Hook 环境降级路径：由 AI 主动读取 LDVH 生命周期 Rules，自觉执行 ldvh_enter、Write/Edit 前握手确认和 Git commit 协议；这里仅区分 AI Hook 强制消费与 AI 自觉消费，不把 Git hook、MCP、CI、server-side gate 或 Human Gate 混入 AI Hook 分发判断。
+      - Trae 侧不得进入替代环境入口路径；旧非 Hook 承接思路已废止。这里仅确认 AI lifecycle Hook 能力边界，不把 Git hook、MCP、CI、server-side gate 或 Human Gate 混入 AI Hook 分发判断。
       - Trae 的事件、stdin 字段、blocking 语义和上下文注入能力不得沿用 Codex / WorkBuddy / Claude Code Hook 假设，除非后续有真实 AI Hook 证据。
 
       **WorkBuddy：✅ 已确认支持插件 hooks/hooks.json（weixin-minigame-helper / godot-mcp 实例）**
 
-      **LDVH 分发策略修正**：Codex 和 WorkBuddy 走插件分发（`hooks/hooks.json` 随插件）；Trae 的核心限制修正为“不支持 AI Hook”，不是“没有插件系统”。Trae 即使存在本地配置、兼容配置或脚本入口，也不能据此视为具备 AI Agent 生命周期 Hook。spark-0032 的适配矩阵只区分两类 AI 协议消费路径：有 AI Hook 环境强制消费，无 AI Hook 环境由 AI 主动消费生命周期 Rules。
+      **LDVH 分发策略修正**：Codex 和 WorkBuddy 走插件分发（`hooks/hooks.json` 随插件）；Trae 的核心限制修正为“缺少 AI lifecycle Hook”，不是“没有插件系统”。Trae 即使存在本地配置、兼容配置或脚本入口，也不能据此视为具备 AI Agent 生命周期 Hook。2026-07-06 Hook-only 决策后，spark-0032 不再保留非 Hook 环境替代路径。
   - at: '2026-06-25T17:53:00+08:00'
     summary: |
       Human 追问 Claude Code 的插件 Hook 支持。调查结论：
@@ -80,7 +80,7 @@ evolution:
       - 插件清单：`.claude-plugin/plugin.json`。
       - 4 级安装范围：user / project / local / managed。
 
-      **Trae ↔ Claude Code 兼容通道修正**：即使 Trae 存在读取 Claude Code 配置、脚本入口或其他兼容路径，也不能直接推导为支持 AI Hook。除非后续拿到 Trae 真实 AI Agent 生命周期 Hook 证据，否则 Trae 应按“不支持 AI Hook”处理；Claude Code 插件对 Trae 的潜在间接受益只能作为待验证降级路径，不能写成 Hook 能力事实。
+      **Trae ↔ Claude Code 兼容通道修正**：即使 Trae 存在读取 Claude Code 配置、脚本入口或其他兼容路径，也不能直接推导为支持 AI Hook。除非后续拿到 Trae 真实 AI Agent 生命周期 Hook 证据，否则 Trae 应按“缺少 AI lifecycle Hook”处理；Claude Code 插件对 Trae 的潜在间接受益只能作为待验证能力线索，不能写成 Hook 能力事实。
 
       **四环境终态矩阵**：
 
@@ -89,37 +89,35 @@ evolution:
       | WorkBuddy | ✅ 支持插件式 `hooks/hooks.json` | 插件自动放行 | 插件调用 dispatcher |
       | Codex | ✅ 支持插件式 `hooks/hooks.json` | `/hooks` 审查信任 | 插件调用 dispatcher |
       | Claude Code | ✅ 支持插件式 `hooks/hooks.json` | 工作区信任对话框 | 插件调用 dispatcher |
-      | Trae | ❌ 不支持 AI Hook | 不适用；不能沿用 Hook 信任语义 | AI 主动消费生命周期 Rules |
+      | Trae | ❌ 缺少 AI lifecycle Hook | 不适用；不能沿用 Hook 信任语义 | 不属于 LDVH 正式支持范围 |
   - at: '2026-06-25T18:42:00+08:00'
     summary: |
       Human 提出核心设计收敛：**协议层统一，执行层适配**。
 
-      同一份 LDVH 生命周期 Rules 资产定义"SessionStart 做什么、PreToolUse 做什么、Git commit 做什么"的协议，两种消费路径：
+      同一份 LDVH 生命周期协议定义"SessionStart 做什么、PreToolUse 做什么、Git commit 做什么"的协议。此处曾讨论两种消费路径；2026-07-06 Hook-only 决策后，该分流已废止：
 
       - **有 AI Hook 环境**（WorkBuddy/Codex/Claude Code）：环境自动调用 dispatcher，协议由 Hook 强制执行。
-      - **无 AI Hook 环境**（Trae 等）：AI 通过 Agent 引入 LDVH 生命周期 Rules 资产，自觉按协议执行——"每次会话开始先跑 ldvh_enter，每次 Write/Edit 前确认已握手"。
+      - **缺少 AI lifecycle Hook 的环境**（Trae 等）：停止正式安装，不建立替代环境入口。
 
-      这意味着 LDVH 不需要为每种环境写不同的规则。同一个 Rules 文件，有 Hook 时环境消费，无 Hook 时 AI 自觉消费——规则描述的是同一件事，只有强制力层级不同。这是 spark-0032 适配矩阵的最终收敛：**Hook 注册只是协议的执行方式之一，不是协议本身**。
+      这意味着 LDVH 不需要为缺少 Hook 的环境写第二套入口规则。spark-0032 的当前有效收敛是：**Hook 注册不是协议本身，但正式支持必须具备可安装、可验证、可阻断的 AI lifecycle Hook**。
   - at: '2026-06-25T19:02:00+08:00'
     summary: |
-      Human 纠正 Trae 适配判断：Trae 的问题不是“没有插件系统”，而是“不支持 AI Hook”。因此 spark-0032 不应把 Trae 写成“手动 hooks.json 或 Claude Code 兼容路径即可接入”的环境；本地脚本、兼容配置或插件机制都不能替代 AI Agent 生命周期 Hook。
+      Human 纠正 Trae 适配判断：Trae 的问题不是“没有插件系统”，而是缺少可安装、可验证、可阻断 AI lifecycle Hook。因此 spark-0032 不应把 Trae 写成“手动 hooks.json 或 Claude Code 兼容路径即可接入”的环境；本地脚本、兼容配置或插件机制都不能替代 AI Agent 生命周期 Hook。
 
-      修正后的判断：Trae 归入无 AI Hook 环境。LDVH 协议仍保持统一，但 Trae 不能依赖环境自动 Hook 强制执行，只能由 AI 主动消费生命周期 Rules。这里的区分只发生在 AI 生命周期协议消费层：有 AI Hook 是强制消费，无 AI Hook 是自觉消费；Git hook 是 Git 提交层面的机制，不属于 AI Hook，也不应混入 AI Hook 分发判断。后续除非取得 Trae 真实 AI Hook 证据，否则不得沿用 Codex / WorkBuddy / Claude Code 的事件、stdin、blocking、上下文注入或信任机制假设。
+      修正后的判断：Trae 归入缺少 AI lifecycle Hook 的环境。LDVH 协议仍保持统一，但 Trae 不能依赖环境自动 Hook 强制执行，也不得建立替代环境入口。Git hook 是 Git 提交层面的机制，不属于 AI Hook，也不应混入 AI Hook 分发判断。后续除非取得 Trae 真实 AI Hook 证据，否则不得沿用 Codex / WorkBuddy / Claude Code 的事件、stdin、blocking、上下文注入或信任机制假设。
   - at: '2026-06-25T19:45:00+08:00'
     summary: |
-      双路径消费模型已写入 `specs/06` 正式规范。`specs/06` §7 新增：
+      旧双路径消费模型曾写入当时的正式规范，但已由 2026-07-06 Hook-only 决策覆盖。当前有效口径是：
+      - 支持 AI Hook 的环境：可通过 Hook/插件强制消费 lifecycle 协议；
+      - 缺少可安装、可验证、可阻断 AI lifecycle Hook 的环境：不属于 LDVH 正式支持范围；
+      - Git hook 属于 Git 提交层机制，不属于 AI Hook。
 
-      > LDVH 生命周期协议统一，AI 环境按 AI Hook 能力分流消费：
-      > - 支持 AI Hook 的环境：可通过 Hook/插件强制消费生命周期协议；
-      > - 不支持 AI Hook 的环境：由 AI 通过 Rules/Agent/instructions 等入口自觉消费同一套协议。
-      > Git hook 属于 Git 提交层机制，不属于 AI Hook。
+      同时已更新当时的环境入口附件、非 Codex 自助适配核对表和环境入口规范（环境入口列出时区分 AI Hook 能力）。该双路径结论后续已由 2026-07-06 Hook-only 决策覆盖：缺少可安装、可验证、可阻断 AI lifecycle Hook 的环境不再作为正式支持路径。
 
-      同时已更新 `specs/attachments/06.Att.09`（薄引用使用规则）、`specs/attachments/06.Att.13`（非 Codex 自助适配核对表）和 `specs/32`（环境入口列出时区分 AI Hook 能力）。
-
-      本 spark-0032 的核心收敛（协议统一、执行分层、Hook 注册只是协议执行方式之一）已与正式规范口径一致。spark-0025 也同步新增了双路径修正 evolution。后续工作对象应以 `specs/06` 的双路径原则为准，不再需要 spark 层面单独论证消费方式分流。
+      本 spark-0032 的核心收敛已被 Hook-only 口径修订。后续工作对象应以 01/09/10/30 的 Hook-only 原则为准，不再论证非 Hook 消费方式分流。
   - at: '2026-06-26T10:06:12+08:00'
     summary: |
-      经主工作线程人工确认，本 spark 标记为已分流。多环境 Hook 探测、兼容矩阵与双路径消费口径已经由 workcase-0012 完成验证并沉淀到正式规范；生产级部署保障与同链路工作调度范式改由 spark-0033 承接。
+      经主工作线程人工确认，本 spark 标记为已分流。多环境 Hook 探测与兼容矩阵已经由 workcase-0012 完成验证并沉淀；旧非 Hook 消费口径已由 2026-07-06 Hook-only 决策覆盖；生产级部署保障与同链路工作调度范式改由 spark-0033 承接。
 
       因此，插件式部署、receipt 持久化、旧入口清理、Skill/subAgent/worktree/new conversation 调度范式建设，不再作为 spark-0032 的未完成项。
     evidence:

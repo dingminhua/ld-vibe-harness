@@ -9,7 +9,7 @@ from ldvh_specs import ROOT, build_runtime_event
 from runtime_receipt_cache import write_ack_receipt
 
 
-INTEGRATION_SCOPE = "manual.acknowledge_read_plan"
+INTEGRATION_SCOPE = "hook.acknowledge_read_plan"
 
 
 def _bool_text(value: bool) -> str:
@@ -22,7 +22,7 @@ def build_acknowledge_read_plan(
     session_id: str = "",
     target_path: str = "",
     task: str = "",
-    trigger_source: str = "manual",
+    trigger_source: str = "hook.runtime",
     acknowledged_paths: list[str] | None = None,
     runtime_cache: bool = True,
 ) -> dict[str, Any]:
@@ -100,7 +100,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--session-id", default="", help="current session identifier")
     parser.add_argument("--target-path", default="", help="target path for the acknowledged read_plan")
     parser.add_argument("--task", default="", help="current task summary")
-    parser.add_argument("--trigger-source", default="manual", help="trigger source label")
+    parser.add_argument("--trigger-source", default="hook.runtime", help="trigger source label")
     parser.add_argument(
         "--acknowledged-path",
         action="append",

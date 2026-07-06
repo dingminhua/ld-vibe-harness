@@ -150,24 +150,19 @@ projects:
     assert impact["current_environment"] == "Codex"
     assert impact["current_install_mode"] == "插件 Hook"
     assert impact["primary_access_mode"] == "plugin_hook"
-    assert impact["fallback_access_modes"] == []
+    assert impact["secondary_access_modes"] == []
     assert impact["verification_mode"] == "插件安装检测直测"
     assert impact["real_hook_observed"] is False
     assert impact["human_conclusion"]["environment"] == "Codex"
     assert impact["human_conclusion"]["install_mode"] == "插件 Hook"
     assert impact["human_conclusion"]["verified_as"] == "插件安装检测直测"
-    assert impact["human_conclusion"]["fallback_checked"] == []
+    assert impact["human_conclusion"]["secondary_checked"] == []
     assert "未声明真实自动 Hook integrated" in impact["human_conclusion"]["not_claimed"]
     assert impact["access_modes"]["plugin_hook"]["verified"] is True
     assert impact["access_modes"]["plugin_hook"]["integrated"] is False
     assert impact["access_modes"]["plugin_hook"]["verification_method"] == "repo_local_shim_direct_test"
     assert impact["access_modes"]["plugin_hook"]["real_hook_observed"] is False
     assert "Hook 已触发但 read_plan 消费证据链路未通过" in impact["access_modes"]["plugin_hook"]["user_status"]
-    assert impact["access_modes"]["thin_reference"]["available"] is True
-    assert impact["access_modes"]["thin_reference"]["verified"] is False
-    assert impact["access_modes"]["thin_reference"]["verification_method"] == "not_run_current_mode"
-    assert impact["access_modes"]["thin_reference"]["real_hook_observed"] is False
-    assert "未按薄引用方式验证" in impact["access_modes"]["thin_reference"]["user_status"]
     assert {effect["trigger"] for effect in impact["effects"]} >= {
         "SessionStart",
         "PreToolUse write-class tool",
@@ -185,7 +180,7 @@ projects:
     assert any("specs/10-安装与配置规范.md" in step for step in human_acceptance["steps"])
     assert "runtime_adapter.py" in human_acceptance["visible_probe_command"]
     assert "session-start" in human_acceptance["visible_probe_command"]
-    assert "manual.lifecycle-verify-probe" in human_acceptance["visible_probe_command"]
+    assert "hook.lifecycle-verify-probe" in human_acceptance["visible_probe_command"]
     assert any("当前 V3 shim" in criterion for criterion in human_acceptance["acceptance_criteria"])
     assert any("install_complete=true" in criterion for criterion in human_acceptance["acceptance_criteria"])
     assert any("写入前检查负例被阻断，正例被放行" in criterion for criterion in human_acceptance["acceptance_criteria"])
@@ -227,7 +222,7 @@ projects:
     assert handoff["real_trigger_acceptance"]["pending_items"] == [
         "Codex lifecycle Hook 触发证据回读 / read_plan 消费证据链路"
     ]
-    assert "manual.lifecycle-verify-probe" in handoff["visible_probe_command"]
+    assert "hook.lifecycle-verify-probe" in handoff["visible_probe_command"]
     assert any("目标环境名称和版本" in item for item in handoff["failure_info_package"])
     assert result["diagnostics"] == []
 
@@ -583,73 +578,63 @@ projects:
 
     assert result["summary"]["status"] == "review_required"
     assert result["summary"]["git_hooks_ok"] is True
-    assert result["summary"]["ldvh_impact_verified"] is True
+    assert result["summary"]["ldvh_impact_verified"] is False
     assert result["summary"]["install_complete"] is False
     assert result["summary"]["environment_hook_install_verified"] is False
     assert result["summary"]["environment_hook_integrated"] is False
     impact = result["ldvh_impact"]
-    assert impact["verified"] is True
+    assert impact["verified"] is False
     assert impact["integrated"] is False
     assert impact["current_environment"] == "Trae"
-    assert impact["current_install_mode"] == "薄引用"
-    assert impact["primary_access_mode"] == "thin_reference"
-    assert impact["fallback_access_modes"] == []
-    assert impact["verification_mode"] == "薄引用可读"
+    assert impact["current_install_mode"] == "未确认"
+    assert impact["primary_access_mode"] == "unknown"
+    assert impact["secondary_access_modes"] == []
+    assert impact["verification_mode"] == "未验证"
     assert impact["real_hook_observed"] is False
     assert impact["human_conclusion"]["environment"] == "Trae"
-    assert impact["human_conclusion"]["install_mode"] == "薄引用"
-    assert impact["human_conclusion"]["verified_as"] == "薄引用可读"
-    assert impact["human_conclusion"]["fallback_checked"] == []
+    assert impact["human_conclusion"]["install_mode"] == "未确认"
+    assert impact["human_conclusion"]["verified_as"] == "未验证"
+    assert impact["human_conclusion"]["secondary_checked"] == []
     assert impact["access_modes"]["plugin_hook"]["verified"] is False
     assert impact["access_modes"]["plugin_hook"]["verification_method"] == "not_run"
     assert impact["access_modes"]["plugin_hook"]["real_hook_observed"] is False
-    assert impact["access_modes"]["thin_reference"]["available"] is True
-    assert impact["access_modes"]["thin_reference"]["verified"] is True
-    assert impact["access_modes"]["thin_reference"]["verification_method"] == "runtime_protocol_read"
-    assert impact["access_modes"]["thin_reference"]["real_hook_observed"] is False
+    assert set(impact["access_modes"]) == {"plugin_hook"}
     assert impact["side_effects"]["formal_fact_source_writes"] is False
     assert impact["side_effects"]["spark_0046_writes"] is False
     assert impact["side_effects"]["scratch_writes"] is False
-    assert impact["effects"] == [
-        {
-            "access_mode": "thin_reference",
-            "trigger": "Runtime Protocol read",
-            "expected_result": "AI 可读取统一入口并转入 runtime adapter / manual entrypoint",
-            "observed": True,
-            "writes": False,
-        }
-    ]
+    assert impact["effects"] == []
     assert result["environment"]["summary"]["environment_adapter"] == "unsupported_target_environment"
     assert result["environment"]["summary"]["target_environment_supported"] is False
     assert result["environment"]["summary"]["plugin_decision"] == "create_target_environment_plugin_before_verification"
     assert result["environment"]["shim_direct_tests"]["session_start_direct"]["status"] == "not_run"
     human_acceptance = result["environment"]["human_acceptance"]
     assert any("Trae 是否支持插件 / 扩展包 / package 形态的 Hook 入口" in step for step in human_acceptance["steps"])
-    assert any("薄引用 / manual entrypoint" in step for step in human_acceptance["steps"])
-    assert any("薄引用文本" in step for step in human_acceptance["steps"])
+    assert any("停止正式安装" in step for step in human_acceptance["steps"])
+    assert any("插件 / adapter 候选缺口" in step for step in human_acceptance["steps"])
     assert not any("specs/31-环境Hook接入后验收行动模板.md" in step for step in human_acceptance["steps"])
-    assert any("manual_ready" in criterion for criterion in human_acceptance["acceptance_criteria"])
-    assert any("断点后验证方式" in criterion for criterion in human_acceptance["acceptance_criteria"])
+    assert any("缺少可阻断 lifecycle Hook" in criterion for criterion in human_acceptance["acceptance_criteria"])
+    assert any("正式 LDVH 影响验证不得通过" in criterion for criterion in human_acceptance["acceptance_criteria"])
     handoff = result["user_handoff"]
     status_card = {row["item"]: row["value"] for row in handoff["status_card"]}
     assert status_card["当前环境"] == "Trae"
-    assert status_card["当前安装方式"] == "薄引用"
+    assert status_card["当前安装方式"] == "未确认"
     assert status_card["验收目标"] == "真实触发验收"
-    assert status_card["验收结果"] == "通过"
+    assert status_card["验收结果"] == "未完成"
     assert "Git 提交消息 Hook 正例放行、反例阻断" in status_card["已真实触发"]
-    assert "Runtime 入口可读" in status_card["已真实触发"]
-    assert status_card["未完成触发项"] == "无"
+    assert "Runtime 入口可读" not in status_card["已真实触发"]
+    assert "Trae lifecycle Hook 触发证据回读" in status_card["未完成触发项"]
     assert status_card["技术安装状态"] == "否"
-    assert "30" in status_card["下一步"]
+    assert "先实现目标环境插件" in status_card["下一步"]
     assert any("当前环境是 Trae" in item for item in handoff["plain_conclusion"])
-    assert any("本次真实触发验收通过" in item for item in handoff["plain_conclusion"])
-    assert any("已真实触发：Git 提交消息 Hook 正例放行、反例阻断；Runtime 入口可读" in item for item in handoff["plain_conclusion"])
+    assert any("本次真实触发验收未完成" in item for item in handoff["plain_conclusion"])
+    assert any("已真实触发：Git 提交消息 Hook 正例放行、反例阻断" in item for item in handoff["plain_conclusion"])
     assert [block["name"] for block in handoff["impact_status_blocks"]] == [
         "真实触发验收",
         "提交消息检查",
     ]
     assert handoff["hook_status_blocks"] == handoff["impact_status_blocks"]
-    assert any("薄引用 / manual entrypoint" in step for step in handoff["user_next_steps"])
+    assert any("停止正式 LDVH 安装" in step for step in handoff["user_next_steps"])
+    assert any("先实现目标环境插件" in step for step in handoff["user_next_steps"])
 
 
 def test_install_verification_keeps_disabled_codex_plugin_review_required(tmp_path: Path) -> None:

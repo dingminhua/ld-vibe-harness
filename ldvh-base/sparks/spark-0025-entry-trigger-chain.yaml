@@ -9,7 +9,7 @@ description: |
 
   本 Spark 记录一个候选工程方向：把入口触发链做成可验证的运行时能力，使新会话、线程恢复、上下文压缩后，AI 稳定先读工作区入口，再运行 `knowledge-map --input-scope entry_navigation --layer neighbors --start-node <path-or-node> --task-type <task_type>`，并消费 `read_plan`、`next_queries`、`stop_conditions` 和 `impact_summary`。
 
-  该方向与 `spark-0024` 不同：它不是恢复面板能力，而是运行时触发保障。它可能涉及 AGENTS 薄引用、Rules 入口、Hook / Skill / Agent 能力资产、环境入口适配和 Human Gate。后续若转 WorkCase，必须先明确不得静默写入外部环境，不得声明环境已安装完整 LDVH。
+  该方向与 `spark-0024` 不同：它不是恢复面板能力，而是运行时触发保障。当前 Hook-only 决策后，它只能通过可安装、可验证、可阻断的 AI lifecycle Hook、插件 / 扩展包 / package、环境入口适配和 Human Gate 推进；旧非 Hook 提醒路径不再作为环境入口、安装策略或验证路径。后续若转 WorkCase，必须先明确不得静默写入外部环境，不得声明环境已安装完整 LDVH。
 source: conversation
 priority: P0
 source_detail: 用户认可将“会话恢复投影器”和“入口触发链工程化”拆成两个 Spark，并结合《LDVH-知识地图价值重新评估报告-v2-20260624.md》确认“AI 触发链稳定性”是未闭环点。外部文件仅记录为名称与核心结论，不建立可解析文件关系。
@@ -59,13 +59,13 @@ evolution:
     该设计顺带收敛 spark 评估时标注的第二个未闭环点（receipt 消费闭环）：表格明确写了“拿到 receipt 后按 read_plan 读、按 stop 停”，AI 不用自己判断如何消费 receipt。剩余唯一未闭环点为枚举完备性（semantic claim 覆盖率不足会频繁退化为 TASK_TYPE_AMBIGUOUS，反而促退 AI 绕过握手）。
 - at: '2026-06-25T08:21:00+08:00'
   summary: |
-    本轮基于 WorkBuddy 环境 Hook 机制的实测证据，收敛 spark-0025 第二阶段终态设计，并修正入口与薄引用的角色。
+    本轮基于 WorkBuddy 环境 Hook 机制的实测证据，收敛 spark-0025 第二阶段终态设计，并修正旧入口提醒的角色。
 
     实测证据：在当前 WorkBuddy 环境中，已安装插件 `weixin-minigame-helper` 和 `godot-mcp` 真实使用 Hook 事件 `SessionStart`（matcher: startup|resume，注入 `CODEBUDDY_PLUGIN_ROOT`）、`PreToolUse`（matcher: Write|Edit|...，可阻断写入）、`PostToolUse`（支持 type: prompt 让 LLM 评估）、`UserPromptSubmit`（占位存在）。Hook 通过 stdin JSON 传入公共字段，包括 `session_id`、`transcript_path`、`cwd`、`permission_mode`、`hook_event_name`——其中 `cwd` 正是握手判定环境类型所需的可观察信号。`SessionStart` 的 `source` 字段区分 startup/resume/clear/compact，正好对应握手的三种触发场景。其他事件（Stop / PreCompact / PostCompact / CwdChanged 等）文档支持但本环境无实际用例，保持“候选/待实测”。
 
     据此确定第二阶段终态：Hook 在 SessionStart（及可选的 PostCompact）强制触发握手，握手 Code 拿到 `cwd` 判定环境类型、补全入口链、返回 receipt，receipt 通过 SessionStart 的 `additionalContext` 注入 AI 上下文。PreToolUse 可作为强制力补充——若 AI 跳过握手直接 Write/Edit，Hook 用退出码 2 或 `permissionDecision: deny` 阻断，reason 告知“先跑握手”。这是真正的环境强制，不再是 AI 自觉。
 
-    关键修正——薄引用可移除：第二阶段 Hook 落地后，用户项目的 AGENTS.md 不再需要写 LDVH 薄引用。薄引用的存在理由是“提醒 AI 去读 LDVH 入口”，而 Hook 在会话开始时强制触发握手，握手 receipt 直接返回完整入口链，AI 不需要任何提醒，甚至不需要知道“这是 LDVH 项目”。这解决了薄引用长期痛点：用户 AGENTS.md 纯净化（只有用户自己的内容）、用户删不掉 LDVH 触发（Hook 是环境配置/插件，不在 AGENTS.md 里）、不需要每个项目重复写、用户 Agent 与 LDVH 在 AGENTS.md 这一层彻底解耦。移除是逐项目的——配了 Hook 的项目可移除薄引用，没配的仍须保留作为降级。`06.Att.09` 薄引用模板应补“已部署 Hook 触发握手的环境可免除薄引用；未部署的仍须保留”作为可免除条件，走 Rules 入口同步审查（specs/30）时一并改。
+    关键修正——旧入口提醒不再作为正式路径：第二阶段 Hook 落地后，用户项目的 AGENTS.md 不再需要写 LDVH 入口提醒。入口提醒的存在理由是“提醒 AI 去读 LDVH 入口”，而 Hook 在会话开始时强制触发握手，握手 receipt 直接返回完整入口链，AI 不需要任何提醒，甚至不需要知道“这是 LDVH 项目”。Hook-only 决策后，未部署 Hook 的环境不再通过提醒文件作为正式替代路径；必须先实现目标环境插件 / adapter。
 
     入口角色澄清：入口没有消失，它从“提醒 AI 去读”变成“被 Hook 强制消费的 receipt 内容”。AGENTS.md 的“提醒”职责在第二阶段消失，但入口链本身（协议表格、Rules）仍是 receipt 的内容来源。所以不是“不需要入口”，是“入口的读取不再依赖 AI 自觉”。AGENTS.md 可退到极薄甚至空壳，但协议表格和 Rules 不动。
 
@@ -73,7 +73,7 @@ evolution:
 
     用户体验边界：LDVH 插件附加到用户 Agent，不接管不替换。用户不装 LDVH 插件则一切照旧；装了则只在 cwd 命中 LDVH 管辖项目时握手才动作，其他项目 Hook 触发了也因 cwd 不匹配 no-op。这与 `06` STOP 点“不得覆盖用户已有 Rules、Skill、Agent、instructions、AGENTS、配置或等价入口”一致。唯一体验影响是 Hook 执行时间（默认 60 秒超时），要求握手 Code 秒级返回——只做可观察信号判定 + 入口链补全 + 返回 receipt，不做 knowledge-map 全量查询（那一步交给 AI 在 receipt 指导下后续执行）。
 
-    据此 spark-0025 完整终态为：第一阶段 AI 自觉跑握手（入口存在、薄引用保留、跳过风险高）；第二阶段 Hook 强制握手（入口退为 receipt 内容、薄引用可移除、AGENTS.md 可空壳、LDVH 插件附加不接管）。`06.Att.12` 中 SessionStart / PreToolUse / PostToolUse / UserPromptSubmit 在 WorkBuddy 环境已实测可用，可从 candidate 转为 active；其他事件保持 candidate 待实测。
+    据此 spark-0025 完整终态修订为：通过可安装、可验证、可阻断的 AI lifecycle Hook 强制握手；入口退为 receipt 内容，AGENTS.md 不再承载 LDVH 环境入口职责，LDVH 插件附加不接管用户 Agent。`06.Att.12` 中 SessionStart / PreToolUse / PostToolUse / UserPromptSubmit 在 WorkBuddy 环境已实测可用，可从 candidate 转为 active；其他事件保持 candidate 待实测。
 - at: '2026-06-25T08:45:00+08:00'
   summary: |
     Human 从安装角度追问“用户下载 LDVH 后，需要做什么才能把 LDVH 和环境关联上”。本轮收敛为：下载 LDVH 本体不等于环境关联，真正的关联只需要两个动作：让环境能触发 LDVH，以及让 LDVH 知道管哪些项目。
@@ -82,20 +82,20 @@ evolution:
 
     最终用户视角应压缩为四步：下载/安装 LDVH → 启用 LDVH 插件 → 写一个 `LDVH-GOVERNED-PROJECTS.yaml` → 完成。用户不需要再改自己的 AGENTS.md，也不需要把 LDVH 规则写进用户 Agent。Hook 负责把环境事件送进 LDVH；后续握手、入口链、知识地图、Rules、Skill 都由 LDVH 内部处理。未命中管辖项目时 no-op，不影响普通项目。
 
-    当前规则文件仍体现旧路径：`rules/LDVH-WORKSPACE-ENTRY.md` 与 `rules/LDVH-MAINTAINER-ENTRY.md` 仍写有“环境入口、项目规则、工作区配置或会话提示只应通过薄引用措施指向本文件”的表述，且工作区入口的常用查询表仍写“Rules 环境入口接入：默认只生成可复制的 Codex 薄入口文本，由用户自行加入环境规则入口”。这些是 spark-0025 第二阶段需要替换的对象：从“薄引用安装”迁移为“Hook/插件安装”，并给薄引用保留降级角色。
+    当前规则文件仍体现旧路径：`rules/LDVH-WORKSPACE-ENTRY.md` 与 `rules/LDVH-MAINTAINER-ENTRY.md` 曾承载旧环境入口提醒表述。这些是 spark-0025 第二阶段需要替换的对象：迁移为 Hook/插件安装，并删除旧非 Hook 提醒路径在安装、验证和环境状态中的角色。
 
-    安装态分层为：当前/降级方案 = 用户在 AGENTS.md 写薄引用；Hook 验证方案 = 用户不改 AGENTS.md，只在 settings 注册 hook；插件终态 = 用户启用 LDVH 插件，插件自带 `hooks/hooks.json`。因此安装角度最终只有一个环境关联点：Hook/插件。Hook 把事件送进 LDVH，LDVH 内部根据 `cwd` 和管辖配置判断是否动作；用户自己的 Agent / AGENTS.md 不再承载 LDVH 内容。
+    安装态修订为：插件终态 = 用户启用 LDVH 插件或等价 package，插件自带 `hooks/hooks.json` 或等价 lifecycle Hook 配置；验证阶段也只能使用可安装、可验证、可阻断的环境 Hook / adapter。Hook 把事件送进 LDVH，LDVH 内部根据 `cwd` 和管辖配置判断是否动作；用户自己的 Agent / AGENTS.md 不再承载 LDVH 内容。
 - at: '2026-06-25T19:45:00+08:00'
   summary: |
-    本轮基于 `spark-0032` 中 Human 确认的"Trae 不支持 AI Hook"事实，以及 `specs/06` 新增的 AI Hook 强制消费与 AI 自觉消费双路径原则，对本 spark 此前"单一路径"终态进行修正。
+    本轮基于 `spark-0032` 中 Human 确认的"Trae 不支持 AI Hook"事实，对本 spark 此前终态进行修正；该修正后续已被 2026-07-06 Hook-only 决策再次覆盖。
 
-    核心修正：spark-0025 此前描述的第二阶段终态（Hook 强制握手、薄引用可移除、AGENTS.md 可空壳、安装角度最终只有一个 Hook/插件关联点）仅对支持 AI Hook 的环境成立（WorkBuddy/Codex/Claude Code）。对于不支持 AI Hook 的环境（Trae 等），握手只能走 AI 自觉消费路径：AGENTS.md 薄引用必须保留，Rules/Agent/instructions 仍是主消费入口，不能宣称"用户不需要再改 AGENTS.md"。
+    核心修正：spark-0025 此前描述的第二阶段终态仅对支持 AI Hook 的环境成立（WorkBuddy/Codex/Claude Code）。2026-07-06 后续决策进一步明确：对于不支持 AI Hook 的环境（Trae 等），不再建立 AI 自觉消费替代路径；该环境暂不属于 LDVH 正式支持范围。
 
-    因此 spark-0025 的终态应按 `specs/06` 分流：
-    - 有 AI Hook 环境：Hook/插件强制握手成立 → AGENTS.md 薄引用可弱化或免除；安装角度最终关联点是 Hook/插件。
-    - 无 AI Hook 环境：AI 自觉消费成立 → AGENTS.md 薄引用必须保留；Rules/Agent/instructions 仍是主入口；不可将插件终态或 Hook 强制握手写成该环境的安装目标。
+    因此 spark-0025 的当前终态应按 Hook-only 口径收敛：
+    - 有 AI Hook 环境：Hook/插件强制握手成立；安装角度最终关联点是 Hook/插件。
+    - 无 AI Hook 环境：停止正式安装；先实现目标环境插件 / adapter，不以 Rules、Agent、instructions 或提醒文件作为环境入口替代。
 
-    此前 evolution 中"四步压缩""最终只有一个环境关联点""用户不需要再改 AGENTS.md""降级方案/降级角色"等表述，在无 AI Hook 环境中不适用。Trae 等环境的 Rules 方式是独立安装路径，不是插件方式的降级替代。不得将 Git hook、MCP、CI、server-side gate 或 Human Gate 等外部机制等同于 AI Hook 或纳入 AI Hook 能力判断。
+    此前 evolution 中"四步压缩""最终只有一个环境关联点""用户不需要再改 AGENTS.md""旧非 Hook 路径"等表述，在无 AI Hook 环境中不适用。不得将 Git hook、MCP、CI、server-side gate 或 Human Gate 等外部机制等同于 AI Hook 或纳入 AI Hook 能力判断。
 - at: '2026-06-27T22:35:00+08:00'
   summary: |
     Human 与主控围绕 00 的 V1 快速定位复盘后，进一步收敛本 Spark 的核心缺口：问题不是知识地图能力不存在，也不是规范、Skill、dispatcher、Code 入口数量本身过多，而是 AI 实际执行顺序还没有稳定等于设计顺序。

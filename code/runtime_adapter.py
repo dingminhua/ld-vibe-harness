@@ -11,7 +11,7 @@ from pre_tool_use import build_pre_tool_use
 from session_start import build_session_start
 
 
-INTEGRATION_SCOPE = "manual.runtime_adapter"
+INTEGRATION_SCOPE = "hook.runtime_adapter"
 REQUIRED_PAYLOAD_FIELDS = [
     "event",
     "session_id",
@@ -240,7 +240,7 @@ def _print_text(result: dict[str, Any]) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Dispatch LDVH v3 manual runtime events through one adapter payload.")
+    parser = argparse.ArgumentParser(description="Dispatch LDVH v3 lifecycle Hook events through one adapter payload.")
     parser.add_argument(
         "event",
         nargs="?",

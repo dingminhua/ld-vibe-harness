@@ -166,40 +166,48 @@ def test_install_wizard_blocks_non_governed_repo(tmp_path: Path) -> None:
     assert any(diagnostic["code"] == "INSTALL_WIZARD_TARGET_NOT_GOVERNED" for diagnostic in result["diagnostics"])
 
 
-def test_install_wizard_outputs_non_hook_environment_strategies_without_integrated_claim(tmp_path: Path) -> None:
+def test_install_wizard_blocks_non_hook_environment_strategies_without_alternative_writes(tmp_path: Path) -> None:
     governance_root = tmp_path / "governance"
     repo = tmp_path / "repo"
     governance_root.mkdir()
     _init_git_repo(repo)
     _write_governed_config(governance_root, repo)
 
-    thin_plan = build_install_plan(
+    external_plan = build_install_plan(
         governance_root=governance_root,
         ldvh_root=ROOT,
         repo=repo,
-        environment_strategy="thin_reference",
+        environment_strategy="external_adapter_candidate",
     )
-    manual_plan = build_install_plan(
+    unsupported_plan = build_install_plan(
         governance_root=governance_root,
         ldvh_root=ROOT,
         repo=repo,
-        environment_strategy="manual_entrypoint",
+        environment_strategy="unsupported",
     )
 
-    assert thin_plan["install_plan"]["environment_strategy"] == "thin_reference"
-    assert thin_plan["install_plan"]["planned_writes"] == []
-    assert thin_plan["install_plan"]["handoff_candidates"][0]["kind"] == "thin_reference"
-    assert thin_plan["install_plan"]["handoff_candidates"][0]["non_executable_in_v1"] is True
-    assert thin_plan["install_plan"]["skipped_writes"][0]["kind"] == "thin_reference"
-    assert manual_plan["install_plan"]["environment_strategy"] == "manual_entrypoint"
-    assert manual_plan["install_plan"]["planned_writes"] == []
-    assert manual_plan["install_plan"]["handoff_candidates"][0]["kind"] == "manual_entrypoint"
-    assert manual_plan["install_plan"]["handoff_candidates"][0]["non_executable_in_v1"] is True
-    assert manual_plan["install_plan"]["skipped_writes"][0]["kind"] == "manual_entrypoint"
-    assert thin_plan["install_plan"]["checks"]["environment_audit"]["codex_plugin_entry_integrated"] is False
+    assert external_plan["summary"]["status"] == "blocked"
+    assert unsupported_plan["summary"]["status"] == "blocked"
+    assert external_plan["install_plan"]["environment_strategy"] == "external_adapter_candidate"
+    assert external_plan["install_plan"]["planned_writes"] == []
+    assert external_plan["install_plan"]["handoff_candidates"][0]["kind"] == "external_adapter_candidate"
+    assert external_plan["install_plan"]["skipped_writes"][0]["kind"] == "external_adapter_candidate"
+    assert unsupported_plan["install_plan"]["environment_strategy"] == "unsupported"
+    assert unsupported_plan["install_plan"]["planned_writes"] == []
+    assert unsupported_plan["install_plan"]["handoff_candidates"][0]["kind"] == "unsupported"
+    assert unsupported_plan["install_plan"]["skipped_writes"][0]["kind"] == "unsupported"
+    assert any(
+        diagnostic["code"] == "INSTALL_WIZARD_ENVIRONMENT_HOOK_UNSUPPORTED"
+        for diagnostic in external_plan["diagnostics"]
+    )
+    assert any(
+        diagnostic["code"] == "INSTALL_WIZARD_ENVIRONMENT_HOOK_UNSUPPORTED"
+        for diagnostic in unsupported_plan["diagnostics"]
+    )
+    assert external_plan["install_plan"]["checks"]["environment_audit"]["codex_plugin_entry_integrated"] is False
 
 
-def test_install_wizard_apply_blocks_thin_and_manual_strategies(tmp_path: Path) -> None:
+def test_install_wizard_apply_blocks_non_hook_strategies(tmp_path: Path) -> None:
     governance_root = tmp_path / "governance"
     repo = tmp_path / "repo"
     governance_root.mkdir()
@@ -207,30 +215,30 @@ def test_install_wizard_apply_blocks_thin_and_manual_strategies(tmp_path: Path) 
     _write_governed_config(governance_root, repo)
     agent_file = repo / "AGENTS.md"
 
-    thin_result = build_install_apply(
+    external_result = build_install_apply(
         governance_root=governance_root,
         ldvh_root=ROOT,
         repo=repo,
-        environment_strategy="thin_reference",
+        environment_strategy="external_adapter_candidate",
         confirm_human_gate=True,
     )
-    manual_result = build_install_apply(
+    unsupported_result = build_install_apply(
         governance_root=governance_root,
         ldvh_root=ROOT,
         repo=repo,
-        environment_strategy="manual_entrypoint",
+        environment_strategy="unsupported",
         confirm_human_gate=True,
     )
 
-    assert thin_result["summary"]["status"] == "blocked"
-    assert manual_result["summary"]["status"] == "blocked"
+    assert external_result["summary"]["status"] == "blocked"
+    assert unsupported_result["summary"]["status"] == "blocked"
     assert any(
-        diagnostic["code"] == "INSTALL_WIZARD_STRATEGY_APPLY_NOT_IMPLEMENTED"
-        for diagnostic in thin_result["diagnostics"]
+        diagnostic["code"] == "INSTALL_WIZARD_ENVIRONMENT_HOOK_UNSUPPORTED"
+        for diagnostic in external_result["diagnostics"]
     )
     assert any(
-        diagnostic["code"] == "INSTALL_WIZARD_STRATEGY_APPLY_NOT_IMPLEMENTED"
-        for diagnostic in manual_result["diagnostics"]
+        diagnostic["code"] == "INSTALL_WIZARD_ENVIRONMENT_HOOK_UNSUPPORTED"
+        for diagnostic in unsupported_result["diagnostics"]
     )
     assert not agent_file.exists()
 

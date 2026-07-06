@@ -8,7 +8,7 @@ from typing import Any
 from ldvh_specs import ROOT, build_runtime_event
 
 
-INTEGRATION_SCOPE = "manual.completion_claim"
+INTEGRATION_SCOPE = "hook.completion_claim"
 
 
 def _bool_text(value: bool) -> str:
@@ -25,7 +25,7 @@ def build_completion_claim(
     target_paths: list[str | Path] | None = None,
     task: str = "",
     operation: str = "complete",
-    trigger_source: str = "manual",
+    trigger_source: str = "hook.runtime",
     acknowledged_paths: list[str] | None = None,
     verification_evidence: list[str] | None = None,
 ) -> dict[str, Any]:
@@ -92,7 +92,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--target-paths", action="append", default=[], help="explicit target path; may be repeated")
     parser.add_argument("--task", default="", help="current task summary")
     parser.add_argument("--operation", default="complete", help="completion operation kind")
-    parser.add_argument("--trigger-source", default="manual", help="trigger source label")
+    parser.add_argument("--trigger-source", default="hook.runtime", help="trigger source label")
     parser.add_argument(
         "--acknowledged-path",
         action="append",

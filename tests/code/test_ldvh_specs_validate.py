@@ -159,7 +159,6 @@ def test_assurance_spec_registers_environment_entry_classification_and_payload_c
         "runtime_protocol_hook_entry",
         "runtime_payload_contract",
         "install_rollback_contract",
-        "manual_ready_boundary",
         "removed_top_level_boundary",
         "authorization_none_boundary",
     }
@@ -191,12 +190,13 @@ def test_assurance_spec_defines_git_and_environment_hook_boundaries() -> None:
     assert "不作为环境 adapter 的独立 lifecycle event" in spec_01
     assert "运行态 receipt cache 是 receipt 的短期桥接形态" in spec_01
     assert "不得写入项目 repo、`specs/`、`ldvh-base/`、Spark、受管项目或工作树隐藏目录" in spec_01
-    assert "stdout receipt 和 runtime cache 都只能作为过程输出" in spec_01
+    assert "receipt 是过程输出和证据候选" in spec_01
+    assert "runtime cache 只能作为过程输出" in spec_01
     assert "Git Hook" in spec_01
     assert "环境 Hook" in spec_01
     assert "只能定位并调用 LDVH" in spec_01
     assert "核心逻辑都必须留在 LDVH Code 中" in spec_01
-    assert "所有支持 Hook 的协作环境" in spec_01
+    assert "LDVH 仅支持具备 AI lifecycle Hook 的协作环境" in spec_01
     assert "LDVH 插件、扩展包或 package" in spec_01
     assert "非管辖项目必须静默 no-op" in spec_01
     assert "不得输出 stdout、systemMessage、additionalContext、deny 决策、read_plan 或完成声明 warning" in spec_01
@@ -232,11 +232,9 @@ def test_assurance_spec_defines_git_and_environment_hook_boundaries() -> None:
     assert "恢复或保留原有用户 Hook / 环境配置" in rollback
     assert "清理或说明已过期的 LDVH runtime receipt cache" in rollback
 
-    assert "文件状态：hook protocol entry" in runtime_protocol_entry
-    assert "本文只写三类内容" in runtime_protocol_entry
-    assert "入口身份" in runtime_protocol_entry
+    assert "文件类型：`hook_protocol_entry`" in runtime_protocol_entry
     assert "权威回指" in runtime_protocol_entry
-    assert "当前 Code 入口" in runtime_protocol_entry
+    assert "Code 入口" in runtime_protocol_entry
     assert "接入判定分类" not in runtime_protocol_entry
     assert "python3 code/runtime_adapter.py session-start --format json" in runtime_protocol_entry
 
@@ -1272,15 +1270,15 @@ def test_ldvh_install_action_template_defines_action_stage_contract(validation_r
     assert "管辖项目配置位置" in raw
     assert "项目内 / 用户级 / LDVH 本体目录边界" in raw
     assert "目标环境入口承接" in raw
-    assert "30 不按“支持 Hook / 不支持 Hook”拆成两套写入完成流程" in raw
+    assert "30 只支持目标 AI 环境通过可安装、可验证、可阻断的 lifecycle Hook 接入 LDVH" in raw
     assert "Runtime Protocol" in raw
-    assert "manual entrypoint" in raw
-    assert "thin reference" in raw
+    assert "目标环境暂不属于 LDVH 支持范围" in raw
+    assert "需先实现目标环境插件" in raw
     assert "统一验证标准" in raw
-    assert "runtime 循环在真实工作流里产出可复核证据" in raw
+    assert "runtime 循环在真实 AI lifecycle 里产出可复核证据" in raw
     assert "断点恢复协议" in raw
     assert "恢复入口语" in raw
-    assert "Runtime Protocol 或等价运行时入口" in raw
+    assert "运行时入口" in raw
     assert "授权 / trust 检查" in raw
     assert "必须先提示用户确认插件已授权、已信任或无待处理授权" in raw
     assert "Hook 触发证据检查" in raw
@@ -1554,14 +1552,14 @@ def test_ldvh_install_action_template_reports_missing_unified_flow_boundary(tmp_
     _replace_in_temp(
         root,
         "specs/30-安装配置与验证行动模板.md",
-        "30 不按“支持 Hook / 不支持 Hook”拆成两套写入完成流程",
+        "30 只支持目标 AI 环境通过可安装、可验证、可阻断的 lifecycle Hook 接入 LDVH",
         "可以按 Hook 支持能力拆成两套写入完成流程",
     )
 
     result = ldvh_specs.build_validation(root)
 
     assert "LDVH_INSTALL_WIZARD_TERM_MISSING" in _diagnostic_codes(result)
-    assert any("30 不按“支持 Hook / 不支持 Hook”拆成两套写入完成流程" in diagnostic["message"] for diagnostic in result["diagnostics"])
+    assert any("30 只支持目标 AI 环境通过可安装、可验证、可阻断的 lifecycle Hook 接入 LDVH" in diagnostic["message"] for diagnostic in result["diagnostics"])
 
 
 def test_ldvh_install_action_template_reports_missing_breakpoint_recovery_boundary(tmp_path: Path) -> None:
@@ -2397,7 +2395,7 @@ def test_runtime_external_session_start_is_noop_without_read_plan(tmp_path: Path
     assert runtime["diagnostics"] == []
 
 
-def test_session_start_cli_exports_manual_read_plan_json() -> None:
+def test_session_start_cli_exports_hook_read_plan_json() -> None:
     completed = _run_cli(
         [
             sys.executable,
@@ -2420,8 +2418,8 @@ def test_session_start_cli_exports_manual_read_plan_json() -> None:
     assert payload["summary"]["status"] == "ok"
     assert payload["summary"]["event"] == "session_start"
     assert payload["summary"]["environment_integrated"] is False
-    assert payload["summary"]["integration_scope"] == "manual.session_start"
-    assert payload["metadata"]["integration_scope"] == "manual.session_start"
+    assert payload["summary"]["integration_scope"] == "hook.session_start"
+    assert payload["metadata"]["integration_scope"] == "hook.session_start"
     assert payload["receipt"]["storage"] == "stdout_only"
     assert payload["receipt"]["persistent"] is False
     assert {
@@ -2504,8 +2502,8 @@ def test_acknowledge_read_plan_cli_accepts_entry_paths() -> None:
     assert payload["summary"]["status"] == "ok"
     assert payload["summary"]["event"] == "acknowledge_read_plan"
     assert payload["summary"]["environment_integrated"] is False
-    assert payload["summary"]["integration_scope"] == "manual.acknowledge_read_plan"
-    assert payload["metadata"]["integration_scope"] == "manual.acknowledge_read_plan"
+    assert payload["summary"]["integration_scope"] == "hook.acknowledge_read_plan"
+    assert payload["metadata"]["integration_scope"] == "hook.acknowledge_read_plan"
     assert payload["receipt"]["storage"] == "stdout_only"
     assert payload["receipt"]["persistent"] is False
     assert payload["summary"]["runtime_cache"] == "disabled"
@@ -2535,7 +2533,7 @@ def test_acknowledge_read_plan_cli_blocks_missing_paths() -> None:
     payload = json.loads(completed.stdout)
     assert completed.returncode == 1
     assert payload["summary"]["status"] == "blocked"
-    assert payload["summary"]["integration_scope"] == "manual.acknowledge_read_plan"
+    assert payload["summary"]["integration_scope"] == "hook.acknowledge_read_plan"
     assert "RUNTIME_ACK_REQUIRED_PATHS_EMPTY" in _diagnostic_codes(payload)
 
 
@@ -2726,7 +2724,7 @@ projects:
     assert "PREFLIGHT_TARGET_UNKNOWN" in _diagnostic_codes(runtime)
 
 
-def test_pre_tool_use_cli_accepts_manual_preflight_json() -> None:
+def test_pre_tool_use_cli_accepts_hook_preflight_json() -> None:
     completed = _run_cli(
         [
             sys.executable,
@@ -2754,9 +2752,9 @@ def test_pre_tool_use_cli_accepts_manual_preflight_json() -> None:
     assert payload["summary"]["status"] == "ok"
     assert payload["summary"]["event"] == "pre_tool_use"
     assert payload["summary"]["environment_integrated"] is False
-    assert payload["summary"]["integration_scope"] == "manual.pre_tool_use"
+    assert payload["summary"]["integration_scope"] == "hook.pre_tool_use"
     assert payload["summary"]["preflight_status"] == "diagnostic_clear"
-    assert payload["metadata"]["integration_scope"] == "manual.pre_tool_use"
+    assert payload["metadata"]["integration_scope"] == "hook.pre_tool_use"
     assert payload["receipt"]["storage"] == "stdout_only"
     assert payload["receipt"]["acknowledged_paths"] == [
         "specs/00-理念与构成.md",
@@ -2785,7 +2783,7 @@ def test_pre_tool_use_cli_blocks_missing_read_plan_consumption() -> None:
     assert completed.returncode == 1
     assert payload["summary"]["status"] == "blocked"
     assert "RUNTIME_READ_PLAN_CONSUMED_EMPTY" in _diagnostic_codes(payload)
-    assert payload["summary"]["integration_scope"] == "manual.pre_tool_use"
+    assert payload["summary"]["integration_scope"] == "hook.pre_tool_use"
 
 
 def test_pre_tool_use_cli_consumes_runtime_cache(tmp_path: Path) -> None:
@@ -3999,7 +3997,7 @@ projects:
     assert not (repo / "hooks" / "commit-msg").exists()
 
 
-def test_environment_status_reports_commit_hook_and_manual_entries(tmp_path: Path) -> None:
+def test_environment_status_reports_commit_hook_without_manual_entries(tmp_path: Path) -> None:
     repo = tmp_path / "repo"
     repo.mkdir()
     subprocess.run(["git", "init", "-q"], cwd=repo, check=True, timeout=30)
@@ -4039,20 +4037,8 @@ def test_environment_status_reports_commit_hook_and_manual_entries(tmp_path: Pat
     assert payload["summary"]["environment_integrated"] == "partial"
     assert payload["summary"]["hook_integrated"] == "git.commit-msg"
     assert payload["summary"]["automated_entrypoints"] == ["git.commit-msg"]
-    assert set(payload["summary"]["manual_entrypoints"]) == {
-        "manual.runtime_adapter",
-        "manual.session_start",
-        "manual.acknowledge_read_plan",
-        "manual.pre_tool_use",
-        "manual.completion_claim",
-    }
-    assert payload["summary"]["manual_entries_available"] is True
     assert entrypoints["git.commit-msg"]["integrated"] is True
-    assert entrypoints["manual.runtime_adapter"]["available"] is True
-    assert entrypoints["manual.runtime_adapter"]["integrated"] is False
-    assert entrypoints["manual.acknowledge_read_plan"]["available"] is True
-    assert entrypoints["manual.acknowledge_read_plan"]["integrated"] is False
-    assert entrypoints["manual.pre_tool_use"]["details"]["automatic_trigger"] is False
+    assert set(entrypoints) == {"git.commit-msg"}
     assert payload["metadata"]["authorization"] == "none"
     assert payload["diagnostics"] == []
 
@@ -4083,7 +4069,6 @@ def test_environment_status_blocks_missing_commit_hook(tmp_path: Path) -> None:
     assert payload["summary"]["status"] == "blocked"
     assert payload["summary"]["environment_integrated"] == "false"
     assert payload["summary"]["hook_integrated"] == "none"
-    assert payload["summary"]["manual_entries_available"] is True
     assert payload["summary"]["automated_entrypoints"] == []
     assert "ENV_COMMIT_MSG_HOOK_NOT_INSTALLED" in _diagnostic_codes(payload)
 
@@ -4147,14 +4132,13 @@ def test_environment_entry_audit_marks_rules_and_skills_removed_top_level(tmp_pa
     assert candidates["hooks.runtime-protocol"]["integrated"] is False
     assert candidates["hooks.runtime-protocol"]["category"] == "hook_protocol_entry"
     assert candidates["runtime.pre_tool_use.auto"]["status"] == "deferred"
-    assert candidates["runtime.pre_tool_use.auto"]["manual_fallback"] == "code/pre_tool_use.py"
+    assert candidates["runtime.pre_tool_use.auto"]["hook_entry"] == "code/runtime_adapter.py"
     assert candidates["codex.ldvh-plugin"]["status"] == "absent"
     assert candidates["codex.ldvh-plugin"]["decision"] == "install_plugin_before_claiming"
     assert candidates["rules.top_level_mechanism"]["status"] == "removed_top_level"
     assert candidates["rules.top_level_mechanism"]["decision"] == "removed_top_level"
     assert candidates["skills.top_level_mechanism"]["status"] == "removed_top_level"
     assert candidates["skills.top_level_mechanism"]["decision"] == "removed_top_level"
-    assert candidates["codex.repo-instructions"]["status"] == "absent"
     assert payload["decision"]["next_step"] == "install_or_upgrade_ldvh_environment_plugin_before_auto_runtime_claim"
     assert payload["diagnostics"] == []
 
@@ -4203,13 +4187,12 @@ def test_environment_entry_audit_does_not_treat_agent_file_as_integration(tmp_pa
     assert payload["summary"]["integrated_entrypoints"] == ["git.commit-msg"]
     assert candidates["hooks.runtime-protocol"]["status"] == "available"
     assert candidates["hooks.runtime-protocol"]["integrated"] is False
-    assert candidates["codex.repo-instructions"]["status"] == "available"
-    assert candidates["codex.repo-instructions"]["integrated"] is False
+    assert "codex.repo-instructions" not in candidates
     assert candidates["codex.ldvh-plugin"]["status"] == "absent"
     assert candidates["rules.top_level_mechanism"]["status"] == "removed_top_level"
     assert candidates["skills.top_level_mechanism"]["status"] == "removed_top_level"
     assert payload["summary"]["codex_environment_entry_integrated"] is False
-    assert "ENV_CODEX_ENTRY_FILES_NOT_INTEGRATED" in _diagnostic_codes(payload)
+    assert "ENV_CODEX_ENTRY_FILES_NOT_INTEGRATED" not in _diagnostic_codes(payload)
 
 
 def test_environment_entry_audit_reports_stale_ldvh_codex_plugin(tmp_path: Path) -> None:
@@ -4475,7 +4458,7 @@ def test_runtime_completion_claim_requires_verification_evidence(validation_resu
     assert runtime["diagnostics"][0]["code"] == "RUNTIME_COMPLETION_VERIFICATION_MISSING"
 
 
-def test_completion_claim_cli_accepts_manual_evidence_json() -> None:
+def test_completion_claim_cli_accepts_hook_evidence_json() -> None:
     completed = _run_cli(
         [
             sys.executable,
@@ -4503,9 +4486,9 @@ def test_completion_claim_cli_accepts_manual_evidence_json() -> None:
     assert payload["summary"]["status"] == "ok"
     assert payload["summary"]["event"] == "completion_claim"
     assert payload["summary"]["environment_integrated"] is False
-    assert payload["summary"]["integration_scope"] == "manual.completion_claim"
+    assert payload["summary"]["integration_scope"] == "hook.completion_claim"
     assert payload["summary"]["verification_evidence"] == 2
-    assert payload["metadata"]["integration_scope"] == "manual.completion_claim"
+    assert payload["metadata"]["integration_scope"] == "hook.completion_claim"
     assert payload["metadata"]["authorization"] == "none"
     assert payload["receipt"]["storage"] == "stdout_only"
     assert payload["receipt"]["verification_evidence"] == [
@@ -4532,7 +4515,7 @@ def test_completion_claim_cli_blocks_missing_verification_evidence() -> None:
     payload = json.loads(completed.stdout)
     assert completed.returncode == 1
     assert payload["summary"]["status"] == "blocked"
-    assert payload["summary"]["integration_scope"] == "manual.completion_claim"
+    assert payload["summary"]["integration_scope"] == "hook.completion_claim"
     assert payload["receipt"]["storage"] == "stdout_only"
     assert "RUNTIME_COMPLETION_VERIFICATION_MISSING" in _diagnostic_codes(payload)
 
@@ -4566,8 +4549,8 @@ def test_runtime_adapter_dispatches_session_start_payload_json() -> None:
     assert payload["summary"]["status"] == "ok"
     assert payload["summary"]["event"] == "session_start"
     assert payload["summary"]["adapter_integrated"] is False
-    assert payload["metadata"]["integration_scope"] == "manual.runtime_adapter"
-    assert payload["dispatch"]["summary"]["integration_scope"] == "manual.session_start"
+    assert payload["metadata"]["integration_scope"] == "hook.runtime_adapter"
+    assert payload["dispatch"]["summary"]["integration_scope"] == "hook.session_start"
     assert {
         "specs/00-理念与构成.md",
         "specs/01-保障与衔接.md",
@@ -4581,6 +4564,8 @@ def test_runtime_adapter_dispatches_pre_tool_use_cli_json() -> None:
             sys.executable,
             "code/runtime_adapter.py",
             "pre-tool-use",
+            "--cwd",
+            str(ROOT),
             "--target-path",
             "tests/code/test_ldvh_specs_validate.py",
             "--acknowledged-path",
@@ -4599,7 +4584,7 @@ def test_runtime_adapter_dispatches_pre_tool_use_cli_json() -> None:
     payload = json.loads(completed.stdout)
     assert payload["summary"]["status"] == "ok"
     assert payload["summary"]["event"] == "pre_tool_use"
-    assert payload["dispatch"]["summary"]["integration_scope"] == "manual.pre_tool_use"
+    assert payload["dispatch"]["summary"]["integration_scope"] == "hook.pre_tool_use"
     assert payload["dispatch"]["preflight"]["summary"]["target_type"] == "tests"
     assert payload["diagnostics"] == []
 
@@ -4723,6 +4708,8 @@ def test_runtime_adapter_dispatches_completion_claim_cli_json() -> None:
             sys.executable,
             "code/runtime_adapter.py",
             "completion-claim",
+            "--cwd",
+            str(ROOT),
             "--target-path",
             "README.md",
             "--verification-evidence",
@@ -4737,7 +4724,7 @@ def test_runtime_adapter_dispatches_completion_claim_cli_json() -> None:
     payload = json.loads(completed.stdout)
     assert payload["summary"]["status"] == "ok"
     assert payload["summary"]["event"] == "completion_claim"
-    assert payload["dispatch"]["summary"]["integration_scope"] == "manual.completion_claim"
+    assert payload["dispatch"]["summary"]["integration_scope"] == "hook.completion_claim"
     assert payload["dispatch"]["receipt"]["verification_evidence"] == [
         "python3 code/specs_validate.py all --format text --fail-on-diagnostics",
     ]

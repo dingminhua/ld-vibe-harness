@@ -8,16 +8,16 @@ created: '2026-06-25T08:59:00+08:00'
 updated: '2026-06-26T09:52:45+08:00'
 priority: P1
 description: |
-  spark-0025 已经把 LDVH 入口触发链收敛为"Hook 强制握手 + receipt 消费入口链"的终态方向；spark-0032 进一步指出，多环境 Hook 接入不能混在 spark-0025 中处理，因为 Codex、WorkBuddy、Trae 的事件名称、参数字段、注册方式、blocking 语义、信任机制和可注入上下文可能不同——且 spark-0032 已确认 Trae 不支持 AI Hook，与 Codex/WorkBuddy 的 AI Hook 能力属于不同消费路径。
+  spark-0025 已经把 LDVH 入口触发链收敛为"Hook 强制握手 + receipt 消费入口链"的终态方向；spark-0032 进一步指出，多环境 Hook 接入不能混在 spark-0025 中处理，因为 Codex、WorkBuddy、Trae 的事件名称、参数字段、注册方式、blocking 语义、信任机制和可注入上下文可能不同——且 spark-0032 已确认 Trae 缺少可安装、可验证、可阻断的 AI lifecycle Hook，不属于 LDVH 正式支持范围。
 
-  本 WorkCase 只负责三环境 Probe 测试：Codex 和 WorkBuddy 走 AI Hook Probe 路径（对应插件方式）；Trae 走 AI 自觉消费路径（对应 Rules 方式，确认 AI 通过 Rules/Agent/instructions 消费 LDVH 协议的可用方式）。测试不直接实现完整 LDVH 握手，不直接替换用户 AGENTS.md，不直接启用生产 Hook。测试目标是先取得真实证据：每个环境到底能触发哪些事件、传入哪些字段、是否能阻断、如何返回 additional context 或等价上下文、如何安装/启用/卸载，以及如何做到非 LDVH 项目 no-op。
+  本 WorkCase 只负责三环境 Probe 测试：Codex 和 WorkBuddy 走 AI Hook Probe 路径（对应插件方式）；Trae 只记录“不具备正式接入能力”的证据，不建立替代环境入口。测试不直接实现完整 LDVH 握手，不直接替换用户 AGENTS.md，不直接启用生产 Hook。测试目标是先取得真实证据：每个环境到底能触发哪些事件、传入哪些字段、是否能阻断、如何返回 additional context 或等价上下文、如何安装/启用/卸载，以及如何做到非 LDVH 项目 no-op。
 
   环境范围固定为：Codex、WorkBuddy、Trae。若后续加入其他环境，应追加 revision_history 或新 WorkCase，不在本 WorkCase 隐式扩大范围。
 success_criteria: |
   - [x] 形成一个最小 Hook Probe 方案：只记录事件 payload、环境变量、cwd、退出码和输出处理结果，不执行 LDVH 业务逻辑，不写用户项目事实源。
   - [x] 在 WorkBuddy 环境完成 SessionStart、UserPromptSubmit、PreToolUse、PostToolUse 至少四类事件的触发与 payload 采样，并记录 settings / 插件两种注册路径的可行性判断。
   - [x] 在 Codex 环境完成 Hook 能力实测：确认可用事件、注册方式、payload 字段、blocking 语义、上下文注入能力和不可用项，不沿用 WorkBuddy 假设。
-  - [x] 在 Trae 环境完成 AI 自觉消费路径（Rules 方式）实测：确认 Trae 不支持 AI Hook 后，验证 AI 通过 Rules/Agent/instructions 消费 LDVH 协议的可用入口和稳定执行方式，不试图安装、模拟或寻找 AI Hook 替代品。
+  - [x] 在 Trae 环境完成能力边界确认：确认 Trae 缺少可安装、可验证、可阻断 AI lifecycle Hook 后，记录为不属于 LDVH 正式支持范围，不试图安装、模拟或寻找替代入口。
   - [x] 形成三环境适配矩阵：事件名、触发时机、输入字段、输出格式、blocking 能力、信任/启用机制、安装路径、卸载路径、no-op 规则和安全边界。
   - [x] 明确 LDVH 内核与环境 adapter 的边界：LDVH 内核只消费统一 normalized event，环境差异只留在 adapter。
   - [x] 给出是否可以把 spark-0025 的 Hook 入口推进到实现 WorkCase 的判断，以及需要同步哪些 specs/06、Att.09、Att.10、Att.12、Rules 或插件资产。
@@ -92,20 +92,20 @@ orchestration:
         - specs/attachments/06.Att.15-环境Hook事件映射表.md
       blocking_reason: null
     - id: item-4
-      title: 实测 Trae AI 自觉消费路径（Rules 方式）
+      title: 实测 Trae AI lifecycle Hook 能力边界
       role: environment-probe
       mode: sequential
       input_refs:
         - specs/06-运行时扩展规范.md
         - ldvh-base/sparks/spark-0032-multi-environment-hook-compatibility.yaml
-      expected_output: 确认 Trae 不支持 AI Hook 后，实测 AI 通过 Rules/Agent/instructions 消费 LDVH 协议的可用入口和稳定执行方式；不尝试安装、模拟或寻找 AI Hook 替代品，不把 Git hook、MCP、CI 或 Human Gate 写成 AI Hook 替代。
+      expected_output: 确认 Trae 缺少可安装、可验证、可阻断 AI lifecycle Hook 后，记录不属于 LDVH 正式支持范围；不尝试安装、模拟或寻找替代入口，不把 Git hook、MCP、CI 或 Human Gate 写成 AI Hook 替代。
       status: done
       result_summary: |
-        Trae 路径已按 Human 确认和 spark-0032 收敛完成：Trae 的问题不是没有插件系统，而是不支持 AI Agent 生命周期 Hook。
+        Trae 路径已按 Human 确认和 spark-0032 收敛完成：Trae 的问题不是没有插件系统，而是缺少可安装、可验证、可阻断的 AI Agent 生命周期 Hook。
         - 不得把 Git hook、MCP、CI、server-side gate、Human Gate、本地脚本或兼容配置写成 Trae AI Hook 替代。
         - Trae 不沿用 Codex / WorkBuddy / Claude Code 的事件、stdin 字段、blocking 语义、上下文注入或信任机制假设。
-        - Trae 走 Rules 方式：AI 通过 rules/LDVH-RUNTIME-PROTOCOL.md 自觉触发同一 canonical event，trigger_source=rules。
-        - Rules 方式与插件方式是平等接入方式，不是降级或不完整方案。
+        - Trae 不建立替代环境入口；正式 LDVH 接入必须等目标环境具备插件、扩展包、package 或 runtime adapter 形态的 lifecycle Hook。
+        - 旧非 Hook 路径已废止，不能作为平等接入方式。
       evidence_refs:
         - ldvh-base/sparks/spark-0032-multi-environment-hook-compatibility.yaml
         - specs/06-运行时扩展规范.md
@@ -126,7 +126,7 @@ orchestration:
         三环境适配矩阵已收敛为协议统一、执行分层：
         - LDVH core 只消费 canonical event：session-start、pre-tool-use、git.commit-msg。
         - WorkBuddy / Codex：有 AI Hook 能力，推荐插件方式；原生 SessionStart / UserPromptSubmit / PreToolUse / PostToolUse 由 adapter 映射到 canonical event，trigger_source=hook。
-        - Trae：无 AI Hook 能力，使用 Rules / Agent / instructions 入口自觉消费 Runtime Protocol，trigger_source=rules。
+        - Trae：缺少 AI lifecycle Hook 能力，不属于 LDVH 正式支持范围；不建立替代环境入口。
         - no-op 规则统一由 dispatcher 读取工作区根目录 LDVH-GOVERNED-PROJECTS.yaml 并按 cwd 判定；未命中管辖项目时静默退出。
         - 环境差异保留在 adapter：原生事件名、payload 字段、信任/启用机制、插件路径、上下文注入和 blocking 语义不得进入 LDVH core。
       evidence_refs:
@@ -144,18 +144,17 @@ orchestration:
         - ldvh-base/sparks/spark-0032-multi-environment-hook-compatibility.yaml
         - ldvh-base/workcases/workcase-0012-multi-environment-hook-probe.yaml
         - specs/06-运行时扩展规范.md
-        - specs/attachments/06.Att.09-薄引用模板.md
+        - specs/attachments/01.Att.03-环境入口类型表.md
         - specs/attachments/06.Att.10-部署检查核对表.md
         - specs/attachments/06.Att.15-环境Hook事件映射表.md
         - rules/LDVH-RUNTIME-PROTOCOL.md
       expected_output: 判断是否具备将 spark-0025 推进为 Hook 入口实现 WorkCase 的条件，并列出需同步的 specs、Rules、Hook registry、dispatcher、插件或受限接入说明。
       status: done
       result_summary: |
-        可以把 spark-0025 推进到 Hook 入口实现，但实现条件必须按双路径模型拆分：
-        - 有 AI Hook 环境（WorkBuddy / Codex / Claude Code）：插件 hooks/hooks.json 调用 hook_dispatch.py，adapter 映射原生事件到 canonical event，trigger_source=hook。
-        - 无 AI Hook 环境（Trae 等）：保留薄引用 / Rules / instructions 入口，AI 自觉调用同一 dispatcher，trigger_source=rules。
-        - spark-0025 此前“Hook 是唯一终态、AGENTS.md 可完全免除”的表述只适用于已确认支持 AI Hook 的环境；Trae 等环境不能套用。
-        - 已同步 specs/06、06.Att.15、specs/33 和 rules/LDVH-RUNTIME-PROTOCOL.md 方向；后续实现 WorkCase 应聚焦插件资产、adapter、dispatcher receipt 和旧入口路径清理。
+        可以把 spark-0025 推进到 Hook 入口实现；当前结论已由 2026-07-06 Hook-only 决策修订：
+        - 支持 AI Hook 的环境：插件 hooks/hooks.json 或等价 package 调用 hook_dispatch.py / runtime_adapter.py，adapter 映射原生事件到 canonical event，trigger_source=hook。
+        - 缺少可安装、可验证、可阻断 AI lifecycle Hook 的环境：不属于 LDVH 正式支持范围，不能通过非 Hook 机制、Rules 或 instructions 作为环境入口替代。
+        - spark-0025 此前关于非 Hook 环境替代路径的设想已废止；后续实现 WorkCase 应聚焦插件资产、adapter、dispatcher receipt 和旧入口路径清理。
       evidence_refs:
         - ldvh-base/sparks/spark-0025-entry-trigger-chain.yaml
         - ldvh-base/sparks/spark-0032-multi-environment-hook-compatibility.yaml
@@ -302,7 +301,7 @@ orchestration:
           执行项均已形成结论，成功标准已满足，可进入独立结果复核；关闭前仍需补 result_review.review_items、controller_resolution 和 Human 关闭确认。
         key_findings:
           - WorkBuddy 与 Codex 均已有四类 Hook 采样证据，且字段结构足以支撑 adapter 设计。
-          - Trae 已按 Human 确认和 spark-0032 归入无 AI Hook 环境，使用 Rules 方式自觉消费同一 Runtime Protocol。
+          - Trae 已按 Human 确认和 spark-0032 归入缺少 AI lifecycle Hook 能力的环境，不属于 LDVH 正式支持范围。
           - active specs/06、06.Att.15、specs/33 和 rules/LDVH-RUNTIME-PROTOCOL.md 已承接协议统一、执行分层、canonical event 和 trigger_source 边界。
           - 当前 session-start 运行可命中 governed 项目；P0-B 已将固定 Rules 入口收敛到 rules/LDVH-RUNTIME-PROTOCOL.md，并保留旧路径兼容重定向，session-start receipt 已可返回 ok。
         required_changes: []
@@ -336,7 +335,7 @@ orchestration:
         result:
           status: pass_with_followups
           summary: |
-            workcase-0012 当前结论与 active specs/06、06.Att.15、specs/33 和 Runtime Protocol 的双路径模型一致：Codex、WorkBuddy 作为已实测 AI Hook 环境走插件/Hook 路径；Trae 明确归入无 AI Hook 环境，走 Rules 自觉消费路径；LDVH core 只消费 canonical event。未发现把 Git hook、MCP、CI 或 Human Gate 当作 Trae AI Hook 替代的问题。
+            workcase-0012 当前结论已由 Hook-only 口径修订：Codex、WorkBuddy 作为已实测 AI Hook 环境走插件/Hook 路径；Trae 明确缺少可安装、可验证、可阻断 lifecycle Hook，不属于 LDVH 正式支持范围；LDVH core 只消费 canonical event。未发现把 Git hook、MCP、CI 或 Human Gate 当作 Trae AI Hook 替代的问题。
           key_findings:
             - workcase 当前结论没有把 Trae Rules 写成降级；已明确 Rules 方式与插件方式平等，不是不完整方案。
             - workcase 当前结论遵守 canonical event / trigger_source 边界。
@@ -382,10 +381,10 @@ orchestration:
         result:
           status: pass_with_followups
           summary: |
-            workcase-0012 正确保留了环境 adapter / LDVH core 边界，明确 Codex/WorkBuddy 走插件 Hook、Trae 走 Rules 自觉消费的双路径模型，也记录了 no-op、残留风险和后续实现项。未发现把本地 .probe-evidence/ 误写成用户长期安装状态或环境完整部署状态的问题。
+            workcase-0012 正确保留了环境 adapter / LDVH core 边界，明确 Codex/WorkBuddy 走插件 Hook、Trae 因缺少 AI lifecycle Hook 不进入正式支持路径，也记录了 no-op、残留风险和后续实现项。未发现把本地 .probe-evidence/ 误写成用户长期安装状态或环境完整部署状态的问题。
           key_findings:
             - LDVH core 只消费 session-start、pre-tool-use、git.commit-msg；环境原生事件、payload 字段、信任/启用、插件路径、上下文注入和 blocking 语义留在 adapter。
-            - Codex / WorkBuddy 归入有 AI Hook 的插件路径，Trae 归入无 AI Hook 的 Rules / Agent / instructions 路径。
+            - Codex / WorkBuddy 归入有 AI Hook 的插件路径，Trae 归入缺少 AI lifecycle Hook 的不支持路径。
             - no-op 由 dispatcher 读取 LDVH-GOVERNED-PROJECTS.yaml 并按 cwd 判定；生产路径不保留 probe evidence / 日志。
             - 旧入口路径引用导致 receipt limited，已作为残留风险记录，不阻塞 0011 收口。
           required_changes: []
@@ -453,9 +452,9 @@ closure_evidence: |
   本 WorkCase 范围内的目标已完成，可提交 Human 关闭确认：
   - 最小 Hook Probe 已实现并验证，且不会执行 LDVH 业务逻辑或写用户项目事实源。
   - WorkBuddy 与 Codex 已完成四类事件采样并形成 raw evidence；采样结果足以支撑 adapter/core 边界判断。
-  - Trae 已确认不支持 AI Hook，走 Rules / Agent / instructions 自觉消费 Runtime Protocol；该路径是平等接入方式，不是降级。
+  - Trae 已确认缺少可安装、可验证、可阻断 AI lifecycle Hook；该环境不属于 LDVH 正式支持范围。
   - 三环境适配矩阵已被 active specs/06、06.Att.15、specs/33 和 rules/LDVH-RUNTIME-PROTOCOL.md 吸收。
-  - spark-0025 可以推进后续实现，但必须按双路径模型拆分插件 Hook 与 Rules 自觉消费；该后续实现链路已被当前 P0 `spark-0033` 统一承接。
+  - spark-0025 可以推进后续实现，但必须按 Hook-only 口径聚焦插件 Hook / runtime adapter；该后续实现链路已被当前 P0 `spark-0033` 统一承接。
   - 结果复核已完成三个视角；其中 WorkCase 状态机视角发现的字段缺口已在本轮补齐。
   关闭候选结果：completed，并保留 follow-up 分流记录。关闭后不继续在本 WorkCase 内实现生产插件、adapter、receipt 持久化或旧入口路径清理；这些作为 `spark-0033` 下的后续运行链路/实现 WorkCase 承接。
 
@@ -528,7 +527,7 @@ revision_history:
       - followup_refs
       - related_docs
     summary: |
-      WorkBuddy 与 Codex Hook Probe evidence 已存在并足以支撑环境 adapter 判断；Trae 已按 Human 确认和 spark-0032 收敛为无 AI Hook 环境，走 Rules 自觉消费路径。三环境结论已被 specs/06、06.Att.15、specs/33 和 rules/LDVH-RUNTIME-PROTOCOL.md 吸收。本轮将执行项 item-1 至 item-6 收口为 done，补充主控自检和残留风险，进入 result_self_checking；下一步应做独立结果复核，再提交 Human 关闭确认。
+      WorkBuddy 与 Codex Hook Probe evidence 已存在并足以支撑环境 adapter 判断；Trae 已按 Human 确认和 spark-0032 收敛为缺少 AI lifecycle Hook 的不支持环境。三环境结论已由后续 Hook-only 口径修订。本轮将执行项 item-1 至 item-6 收口为 done，补充主控自检和残留风险，进入 result_self_checking；下一步应做独立结果复核，再提交 Human 关闭确认。
   - at: '2026-06-26T05:10:55+08:00'
     from_status: result_self_checking
     to_status: subagents_result_reviewing
@@ -586,7 +585,7 @@ revision_history:
       WorkCase 以 completed 结果关闭，并保留 follow-up 分流记录；生产插件、adapter、receipt 持久化和旧入口路径清理不在本 WorkCase 内继续执行。
 related_docs:
   - specs/06-运行时扩展规范.md
-  - specs/attachments/06.Att.09-薄引用模板.md
+  - specs/attachments/01.Att.03-环境入口类型表.md
   - specs/attachments/06.Att.10-部署检查核对表.md
   - specs/attachments/06.Att.15-环境Hook事件映射表.md
   - specs/33-ldvh-install-action-LDVH安装行动编排.md

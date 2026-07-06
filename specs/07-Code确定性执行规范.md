@@ -198,4 +198,4 @@ Code 暴露规范缺口时，应输出 diagnostic 并回到对应规范或 `_mig
 
 ## 13. 待补齐事项
 
-当前无未承接的体系缺口。V2 `04.Att.*` 中可迁入的 Code 命令入口、诊断码和输出 schema 已由本文、Code 和 tests 按需承接；V2 `06` 的 payload、adapter、dispatcher 和 hook mapping 已由 01、07、10、Code/docs 和 tests 承接为 manual-ready 或 external-adapter-ready 边界；commit validator 已进入 03/07/09 与 Code/tests 闭环；specs validator 对 03/05/06/07/08/09 的专属检查已由 Code/tests 承接。真实环境入口集成仍按 01、09、10 和 Human Gate 后置。
+当前无未承接的体系缺口。V2 `04.Att.*` 中可迁入的 Code 命令入口、诊断码和输出 schema 已由本文、Code 和 Tests 按需承接；V2 `06` 的 payload、adapter、dispatcher 和 hook mapping 已由 01、07、10、Code/docs 和 Tests 承接为 AI lifecycle Hook 或 external-adapter 候选边界；commit validator 已进入 03/07/09 与 Code/Tests 闭环；specs validator 对 03/05/06/07/08/09 的专属检查已由 Code/Tests 承接。真实环境入口集成仍按 01、09、10 和 Human Gate 后置，缺少可安装、可验证、可阻断 Hook 的目标环境不属于正式支持范围。
