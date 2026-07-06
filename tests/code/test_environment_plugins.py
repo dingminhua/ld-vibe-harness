@@ -303,6 +303,59 @@ def test_codex_sample_shim_allows_runtime_adapter_session_start_probe_without_ac
         assert completed.stdout == ""
 
 
+def test_codex_sample_shim_allows_explicit_read_operation_without_acknowledgement() -> None:
+    completed = _run_shim(
+        {
+            "hook_event_name": "PreToolUse",
+            "sessionId": "shim-pretool-explicit-read",
+            "cwd": ROOT.as_posix(),
+            "toolName": "mcp.read_context",
+            "operation": "read",
+            "tool_input": {"query": "LDVH lifecycle boundary"},
+        },
+    )
+
+    assert completed.returncode == 0
+    assert completed.stdout == ""
+
+
+def test_codex_sample_shim_allows_collaboration_review_operation_without_acknowledgement() -> None:
+    completed = _run_shim(
+        {
+            "hook_event_name": "PreToolUse",
+            "sessionId": "shim-pretool-agent-review",
+            "cwd": ROOT.as_posix(),
+            "toolName": "multi_agent.spawn_agent",
+            "operation": "review",
+            "tool_input": {"target_path": "hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py"},
+        },
+    )
+
+    assert completed.returncode == 0
+    assert completed.stdout == ""
+
+
+def test_codex_sample_shim_blocks_collaboration_write_operation_without_acknowledgement() -> None:
+    completed = _run_shim(
+        {
+            "hook_event_name": "PreToolUse",
+            "sessionId": "shim-pretool-agent-write",
+            "cwd": ROOT.as_posix(),
+            "toolName": "multi_agent.spawn_agent",
+            "operation": "write",
+            "tool_input": {"target_path": "hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py"},
+        },
+        check=False,
+    )
+
+    payload = json.loads(completed.stdout)
+    hook_output = _hook_output(payload)
+    assert completed.returncode == 0
+    assert hook_output["hookEventName"] == "PreToolUse"
+    assert hook_output["permissionDecision"] == "deny"
+    assert "RUNTIME_READ_PLAN_CONSUMED_EMPTY" in hook_output["permissionDecisionReason"]
+
+
 def test_codex_sample_shim_does_not_allow_runtime_adapter_pre_tool_probe_without_acknowledgement() -> None:
     completed = _run_shim(
         {

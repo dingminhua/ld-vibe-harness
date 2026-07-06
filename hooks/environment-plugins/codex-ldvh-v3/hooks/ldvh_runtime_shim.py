@@ -13,6 +13,7 @@ import re
 import shlex
 import subprocess
 import sys
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -45,6 +46,10 @@ ADAPTER_EVENT_MAP = {
     "Stop": "completion_claim",
 }
 READ_ONLY_TOOLS = {"read", "grep", "glob", "ls"}
+WRITE_TOOLS = {"write", "edit", "multiedit", "multi_edit", "apply_patch", "functions.apply_patch"}
+READ_OPERATIONS = {"read", "inspect", "search", "grep", "list", "audit", "review", "diagnose"}
+WRITE_OPERATIONS = {"write", "edit", "apply_patch", "commit", "delete", "move", "install", "update"}
+COLLABORATION_TOOL_MARKERS = ("agent", "review")
 READ_ONLY_COMMANDS = {"cat", "find", "grep", "head", "ls", "nl", "pwd", "rg", "sed", "tail", "wc"}
 READ_ONLY_GIT_SUBCOMMANDS = {
     "branch",
@@ -62,6 +67,14 @@ READ_ONLY_PYTHON_SCRIPT_EVENTS = {
     "code/session_start.py": None,
     "code/runtime_adapter.py": {"session-start", "session_start", "--help", "-h"},
 }
+
+
+@dataclass(frozen=True)
+class ActionClassification:
+    operation: str
+    side_effect_class: str
+    requires_preflight: bool
+    reason: str
 
 
 def read_payload(raw: str) -> dict[str, Any]:
@@ -438,7 +451,88 @@ def task_text(payload: dict[str, Any]) -> str:
     )
 
 
-def operation(payload: dict[str, Any]) -> str:
+def explicit_operation(payload: dict[str, Any]) -> str:
+    tool = tool_input(payload)
+    raw = first_text(payload.get("operation"), payload.get("op"), tool.get("operation"), tool.get("op"))
+    return raw.replace("-", "_").lower()
+
+
+def tool_name(payload: dict[str, Any]) -> str:
+    return first_text(payload.get("tool_name"), payload.get("toolName"), payload.get("name")).lower()
+
+
+def classify_action(payload: dict[str, Any], cwd: Path) -> ActionClassification:
+    operation_hint = explicit_operation(payload)
+    name = tool_name(payload)
+    command = command_text(payload)
+    targets = target_path_values(payload, cwd)
+
+    if name in WRITE_TOOLS or target_paths_from_patch(payload):
+        return ActionClassification(
+            operation=operation_hint if operation_hint in WRITE_OPERATIONS else "write",
+            side_effect_class="file_write",
+            requires_preflight=True,
+            reason="write_tool_or_patch_payload",
+        )
+
+    if name in READ_ONLY_TOOLS:
+        return ActionClassification(
+            operation="read",
+            side_effect_class="none",
+            requires_preflight=False,
+            reason="read_only_tool",
+        )
+
+    if name in {"bash", "exec_command", "functions.exec_command", "shell"}:
+        if is_likely_read_only_command(command):
+            return ActionClassification(
+                operation="read",
+                side_effect_class="none",
+                requires_preflight=False,
+                reason="read_only_command",
+            )
+        return ActionClassification(
+            operation=operation_hint if operation_hint else "write",
+            side_effect_class="external_state_or_file_write",
+            requires_preflight=True,
+            reason="command_not_classified_read_only",
+        )
+
+    if operation_hint in READ_OPERATIONS and not targets:
+        return ActionClassification(
+            operation=operation_hint,
+            side_effect_class="none",
+            requires_preflight=False,
+            reason="explicit_read_operation_without_targets",
+        )
+
+    if operation_hint in READ_OPERATIONS and any(marker in name for marker in COLLABORATION_TOOL_MARKERS):
+        return ActionClassification(
+            operation=operation_hint,
+            side_effect_class="process_output",
+            requires_preflight=False,
+            reason="collaboration_read_process_output",
+        )
+
+    if operation_hint in WRITE_OPERATIONS:
+        return ActionClassification(
+            operation=operation_hint,
+            side_effect_class="file_write_or_external_state",
+            requires_preflight=True,
+            reason="explicit_write_operation",
+        )
+
+    return ActionClassification(
+        operation=operation_hint or "write",
+        side_effect_class="unknown",
+        requires_preflight=True,
+        reason="default_preflight_for_unknown_action",
+    )
+
+
+def operation(payload: dict[str, Any], cwd: Path | None = None) -> str:
+    if cwd is not None:
+        return classify_action(payload, cwd).operation
     tool_name = first_text(payload.get("tool_name"), payload.get("toolName"), payload.get("name")).lower()
     if tool_name in READ_ONLY_TOOLS:
         return "read"
@@ -455,7 +549,7 @@ def adapter_payload(payload: dict[str, Any], event: str, cwd: Path) -> dict[str,
         "config_root": first_text(payload.get("config_root"), payload.get("configRoot"), os.environ.get("LDVH_CONFIG_ROOT")),
         "target_path": target_path(payload, cwd),
         "target_paths": target_path_values(payload, cwd),
-        "operation": operation(payload),
+        "operation": operation(payload, cwd),
         "task": task_text(payload),
         "acknowledged_paths": acknowledged_paths(payload),
         "verification_evidence": list_text(payload.get("verification_evidence") or payload.get("verificationEvidence")),
@@ -575,19 +669,25 @@ def append_research_spark(path: Path, now: str, summary: str) -> None:
 
 
 def research_summary(payload: dict[str, Any], event: str, cwd: Path) -> str:
-    tool_name = first_text(payload.get("tool_name"), payload.get("toolName"))
+    tool = first_text(payload.get("tool_name"), payload.get("toolName"))
     session_id = first_text(payload.get("session_id"), payload.get("sessionId"), "codex-hook")
     target = target_path(payload, cwd)
+    action = classify_action(payload, cwd) if event == "PreToolUse" else None
     keys = ", ".join(sorted(str(key) for key in payload.keys())[:20])
     lines = [
         f"event={event}",
         f"session_id={session_id}",
         f"cwd={cwd.as_posix()}",
     ]
-    if tool_name:
-        lines.append(f"tool_name={tool_name}")
+    if tool:
+        lines.append(f"tool_name={tool}")
     if target:
         lines.append(f"target_path={target}")
+    if action:
+        lines.append(f"operation={action.operation}")
+        lines.append(f"side_effect_class={action.side_effect_class}")
+        lines.append(f"requires_preflight={str(action.requires_preflight).lower()}")
+        lines.append(f"classification_reason={action.reason}")
     if keys:
         lines.append(f"payload_keys={keys}")
     return "\n".join(lines)
@@ -776,7 +876,8 @@ def main() -> int:
     if not runtime_event:
         return 0
 
-    if event == "PreToolUse" and operation(payload) == "read":
+    action = classify_action(payload, cwd) if event == "PreToolUse" else None
+    if action and not action.requires_preflight:
         return 0
 
     runtime_adapter = ldvh_root / "code" / "runtime_adapter.py"
