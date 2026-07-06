@@ -20,6 +20,7 @@ from ldvh_specs import (
 
 
 AUTHORIZATION = "human_gate_required_for_apply"
+UNKNOWN_ENVIRONMENT_NAME = "未知环境"
 ENVIRONMENT_STRATEGIES = {
     "plugin_hook",
     "external_adapter_candidate",
@@ -91,7 +92,7 @@ def _detect_current_environment() -> str:
     for key in os.environ:
         if key.upper().startswith("TRAE_"):
             return "Trae"
-    return "Codex"
+    return UNKNOWN_ENVIRONMENT_NAME
 
 
 def _infer_environment_strategy(
@@ -785,8 +786,10 @@ def build_install_verify(
     ldvh_root: Path = ROOT,
     repo: Path,
     codex_home: Path | None = None,
-    environment_name: str = "Codex",
+    environment_name: str = "",
 ) -> dict[str, Any]:
+    if not environment_name:
+        environment_name = _detect_current_environment()
     verification = build_install_verification(
         governance_root=governance_root,
         ldvh_root=ldvh_root,

@@ -22,6 +22,7 @@ from ldvh_specs import (
 AUTHORIZATION = "none"
 CODEX_SHIM = "hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py"
 CODEX_ENVIRONMENT_NAME = "Codex"
+UNKNOWN_ENVIRONMENT_NAME = "未知环境"
 
 
 def _detect_current_environment() -> str:
@@ -29,7 +30,7 @@ def _detect_current_environment() -> str:
         upper_key = key.upper()
         if upper_key.startswith("TRAE_"):
             return "Trae"
-    return CODEX_ENVIRONMENT_NAME
+    return UNKNOWN_ENVIRONMENT_NAME
 
 
 def _visible_probe_command(ldvh_root: Path, repo: Path, governance_root: Path | None = None) -> str:
@@ -768,7 +769,7 @@ def _build_user_handoff(result: dict[str, Any]) -> dict[str, Any]:
         if env_status == "已自动接入":
             next_step = "可停止；保留验证输出作为交还证据"
         elif env_status == "插件可见，待真实触发":
-            next_step = "先确认 Codex 插件已授权 / trust；若已看到 PreToolUse 阻断，按 Hook 已触发处理，继续修复 read_plan 消费证据链路"
+            next_step = f"先确认 {environment_name} 插件已授权 / trust；若已看到 PreToolUse 阻断，按 Hook 已触发处理，继续修复 read_plan 消费证据链路"
         else:
             next_step = "交还当前状态和残留限制"
     else:

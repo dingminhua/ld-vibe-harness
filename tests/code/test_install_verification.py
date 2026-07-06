@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -265,6 +266,9 @@ projects:
 
 
 def test_install_verification_parser_defaults_to_workspace_parent_without_config(tmp_path: Path, monkeypatch) -> None:
+    for key in list(os.environ):
+        if key.upper().startswith("TRAE_"):
+            monkeypatch.delenv(key, raising=False)
     workspace = tmp_path / "workspace"
     ldvh_root = workspace / "ldvh"
     ldvh_root.mkdir(parents=True)
@@ -276,6 +280,7 @@ def test_install_verification_parser_defaults_to_workspace_parent_without_config
     assert args.governance_root == workspace.as_posix()
     assert args.repo == workspace.as_posix()
     assert args.ldvh_root == ldvh_root.as_posix()
+    assert args.environment_name == "未知环境"
 
 
 def test_install_verification_parser_defaults_to_existing_workspace_config(tmp_path: Path, monkeypatch) -> None:

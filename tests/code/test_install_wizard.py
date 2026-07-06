@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -73,6 +74,31 @@ def test_install_wizard_check_and_plan_are_read_only(tmp_path: Path) -> None:
     assert plan["interaction_handoff"]["result_cards"][1]["id"] == "commit_message_check"
     assert plan["interaction_handoff"]["result_cards"][1]["status"] == "需安装或需升级"
     assert not hook_path.exists()
+
+
+def test_install_wizard_auto_detect_unknown_environment_blocks_without_codex_default(tmp_path: Path, monkeypatch) -> None:
+    for key in list(os.environ):
+        if key.upper().startswith("TRAE_"):
+            monkeypatch.delenv(key, raising=False)
+    governance_root = tmp_path / "governance"
+    repo = tmp_path / "repo"
+    governance_root.mkdir()
+    _init_git_repo(repo)
+    _write_governed_config(governance_root, repo)
+
+    result = build_install_check(
+        governance_root=governance_root,
+        ldvh_root=ROOT,
+        repo=repo,
+    )
+
+    assert result["metadata"]["environment_name"] == "未知环境"
+    assert result["summary"]["environment_strategy"] == "unsupported"
+    assert result["summary"]["status"] == "blocked"
+    assert any(
+        diagnostic["code"] == "INSTALL_WIZARD_ENVIRONMENT_HOOK_UNSUPPORTED"
+        for diagnostic in result["diagnostics"]
+    )
 
 
 def test_install_wizard_apply_requires_human_gate_and_does_not_write(tmp_path: Path) -> None:
