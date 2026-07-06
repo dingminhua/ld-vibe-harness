@@ -1261,19 +1261,19 @@ def test_ldvh_install_action_template_defines_action_stage_contract(validation_r
     assert "不会执行任何替代环境写入" in raw
     assert "按 spec 33 编写目标环境 LDVH 插件 / adapter" in raw
     assert "统一验证标准" in raw
-    assert "runtime 循环在真实 AI lifecycle 里产出可复核证据" in raw
+    assert "runtime 循环在真实 AI lifecycle 里产出可复核的当次可观察依据" in raw
     assert "断点恢复协议" in raw
     assert "恢复入口语" in raw
     assert "运行时入口" in raw
     assert "授权 / trust 检查" in raw
     assert "必须先提示用户确认插件已授权、已信任或无待处理授权" in raw
-    assert "Hook 触发证据检查" in raw
-    assert "未取得 Hook 触发证据" in raw
-    assert "不得用手动探针替代真实 Hook 触发证据" in raw
+    assert "Hook 触发依据检查" in raw
+    assert "未取得 Hook 触发依据" in raw
+    assert "不得用手动探针替代真实 Hook 触发依据" in raw
     assert "PreToolUse 阻断" in raw
     assert "RUNTIME_READ_PLAN_CONSUMED_EMPTY" in raw
     assert "PREFLIGHT_TARGET_UNKNOWN" in raw
-    assert "Hook 已触发，但 read_plan 消费证据链路未通过" in raw
+    assert "Hook 已触发，但 read_plan 消费依据链路未通过" in raw
     assert "不得继续写成 lifecycle 未触发" in raw
     assert "真实工作流验证清单" in raw
     assert "本次验证通过" in raw
@@ -1283,7 +1283,7 @@ def test_ldvh_install_action_template_defines_action_stage_contract(validation_r
     assert "Runtime 入口与 lifecycle 验证" in raw
     assert "提交消息检查" in raw
     assert "授权 / trust 确认必须排在重启或新开会话之前" in raw
-    assert "Hook 触发证据检查排在手动 runtime 探针之前" in raw
+    assert "Hook 触发依据检查排在手动 runtime 探针之前" in raw
     assert "失败信息包" in raw
     assert "最终确认只展示两个主选项" in raw
     assert "1 执行方案" in raw

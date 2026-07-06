@@ -94,7 +94,21 @@ python3 code/environment_entry_audit.py --environment-name <目标环境名> --f
 8. 失败是否按预期阻断或返回 diagnostic；
 9. uninstall 后是否不再自动触发 LDVH。
 
-只有同时具备真实触发、稳定 payload、失败处理、安装与接入证据、回滚方式和测试证据，才可把对应环境入口升级为 integrated。文件存在、插件缓存存在、历史 trust 记录或旧路径命中，都不得声明 integrated。安装检测和 integrated 证明必须分开：插件可见、必需 lifecycle Hook manifest 齐全、指向 V3 shim、旧路径诊断为 0、repo-local shim 直测通过且 Git Hook 正反例通过时，可以作为安装检测通过；真实 lifecycle 尚未回读时，只是不声明 integrated，不应单独阻断安装完成。
+当次 integrated 验收建议按以下清单收集证据：
+
+| 验收项 | 正常证据 | 不能替代它的内容 |
+|---|---|---|
+| 安装启用 | 插件 / 扩展包 / package 已启用、已授权或无待授权，Hook 命令指向当前 V3 shim 或 `runtime_adapter.py` | repo-local 样例包存在 |
+| `SessionStart` | 新会话、恢复或等价事件自动输出 `event=session_start`、read_plan 或 receipt | 手动运行 `runtime_adapter.py session-start` |
+| `PreToolUse` 负例 | 写入类工具在缺 read_plan、target unknown 或等价负例时被目标环境 deny / 阻断 | 只打印 warning 或命令行负例 |
+| `PreToolUse` 正例 | 已满足 target 和 read_plan 条件的正例或只读动作不被误阻断 | 只测试负例 |
+| `Stop` / completion | Stop 或完成邻近事件输出 completion check、验证缺口或残留风险提示，且不阻断环境正常停止 | 完成后手动运行检查命令 |
+| payload / target | payload 可回读 event、session、cwd、target、operation、acknowledged_paths 或 verification_evidence，缺字段有 diagnostic | 用户口头说明目标 |
+| 回滚 | 禁用或卸载后新会话 / 等价触发不再进入 LDVH，cache 已清理或过期不采信 | 删除 repo-local 样例文件 |
+
+只有当次验收同时具备真实触发、稳定 payload、失败处理、安装与接入证据、回滚方式和测试证据，才可把对应环境入口判定为 integrated。该结论只对当次目标环境、LDVH root、插件配置和触发证据成立，不写成长期安装状态。文件存在、插件缓存存在、历史 trust 记录或旧路径命中，都不得声明 integrated。安装检测和 integrated 证明必须分开：插件可见、必需 lifecycle Hook manifest 齐全、指向 V3 shim、旧路径诊断为 0、repo-local shim 直测通过且 Git Hook 正反例通过时，可以作为安装检测通过；真实 lifecycle 尚未回读时，只是不声明 integrated，不应单独阻断安装完成。
+
+跨环境不能直接验收真实 lifecycle。Codex 会话只能审计 WorkBuddy 样例包或 WorkBuddy 回传的当次证据，不能自行判定 WorkBuddy integrated；WorkBuddy 会话也不能替代 Codex 真实触发验收。目标环境不可在当前环境触发时，应输出不可在当前环境验收、候选资产存在或缺失的结论。
 
 若后续逻辑显式要求 integrated，必须使用当次可执行的 lifecycle 验证路径，而不是让 AI 永久停在不可验证声明。30 负责交还恢复入口语、可复制新会话探针、真实工作流检查和失败信息包；AI 逐项判断插件页面启用、重启 App、新会话只读可见性探针、授权 / trust、PreToolUse 负例阻断和正例放行。目标环境能提供真实 SessionStart lifecycle 证据时应一并回读；目标环境不稳定展示 Hook stdout 时，不得让 Human 去猜启动提示是否出现。全部通过后，AI 复跑 `install_verification.py` 做技术复核并交还本次验证总结；不得复用命令输出里的旧式下一步提示。验证总结不写长期状态，不替代插件页面、真实 payload 或失败处理诊断。
 
@@ -110,7 +124,7 @@ python3 code/environment_entry_audit.py --environment-name <目标环境名> --f
 |---|---|---|---|
 | 1/4 恢复入口 | 在新会话粘贴“我重启了，继续 LDVH lifecycle 验证” | AI 识别为继续 30 验证，不重新启动安装向导 | 当前会话完整输出 |
 | 2/4 新会话可见性探针 | 让 AI 运行“可见性探针输入文本” | 输出包含 `status=ok`、`event=session_start`、`receipt_id` 和 `Diagnostics: none` | 完整命令输出或错误文本 |
-| 3/4 真实工作流检查 | 按引导触发 Git `commit-msg` 正反例、写入前检查或 harmless scratch target | 负例被阻断，正例放行；scratch 文件状态符合预期 | AI 输出、scratch 路径、文件是否被写入 |
+| 3/4 真实工作流检查 | 按引导逐项触发 Git `commit-msg` 正反例、`SessionStart`、`PreToolUse` 负例、`PreToolUse` 正例或只读放行、`Stop` / completion 检查；需要 scratch target 时明确路径和清理 | 入口真实触发；负例被阻断，正例放行；completion 检查可见且不阻断环境正常停止；scratch 文件状态符合预期 | AI 输出、Hook 输出、scratch 路径、文件状态、completion 输出 |
 | 4/4 验证总结 | AI 复跑统一安装验证并交还结论 | 本次验证通过 / 失败 / 未验证、推荐行动和残留风险清楚 | 总结遗漏项、复核命令输出 |
 
 逐项验证可以用 `👉` 标记当前步骤，用 `✅` 标记已完成步骤；尚未发生的步骤保持空白。选项建议只保留 `1 我看到了上述正常表现` 和 `2 没看到或有错误，停止验证`。Human 不选择“通过 / 失败”；AI 根据用户观察和本文规则判断通过、失败或暂停诊断。
