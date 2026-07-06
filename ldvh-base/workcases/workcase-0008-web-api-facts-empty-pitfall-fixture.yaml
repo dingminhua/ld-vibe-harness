@@ -43,7 +43,7 @@ orchestration:
       role: maintainer
       mode: single
       input_refs:
-        - rules/LDVH-RUNTIME-PROTOCOL.md
+        - git-history:rules/LDVH-RUNTIME-PROTOCOL.md
         - specs/05-Web信息同步规范.md
         - specs/08-测试基础规范.md
         - specs/02-事实模型基础规范.md

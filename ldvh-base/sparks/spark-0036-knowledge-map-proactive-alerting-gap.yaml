@@ -84,7 +84,7 @@ related_docs:
   - specs/05-Web信息同步规范.md
   - specs/06-运行时扩展规范.md
   - specs/20-Spark-火花.md
-  - rules/LDVH-RUNTIME-PROTOCOL.md
+  - git-history:rules/LDVH-RUNTIME-PROTOCOL.md
   - LDVH-GOVERNED-PROJECTS.yaml
   - code/specs_validate.py
   - code/spec_checks/knowledge_map.py

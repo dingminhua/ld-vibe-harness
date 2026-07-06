@@ -25,7 +25,7 @@ description: |
 
   - `code/hook_dispatch.py` 已能识别 Codex payload，并通过 `~/.codex/ldvh/session-receipts/<session_id>.json` 保留会话 receipt。
   - 当前仓库已安装 native Git `commit-msg` hook，真实 `git commit` 会调用 `git.commit-msg` 事件并执行 `code/commit_validate.py`。
-  - `specs/06`、`rules/LDVH-RUNTIME-PROTOCOL.md`、`hooks/ldvh-hooks.yaml` 和 `specs/33` 已记录 Hook / Rules 双路径与提交层 hook 的边界。
+  - `specs/06`、`git-history:rules/LDVH-RUNTIME-PROTOCOL.md`、`hooks/ldvh-hooks.yaml` 和 `specs/33` 已记录 Hook / Rules 双路径与提交层 hook 的边界。
   - `workcase-0012` 已完成多环境 Hook Probe，但它只证明环境能力和适配矩阵，不等于 Hook / Agent 双入口已经打通为 AI 可持续消费的运行链路。
 
   后续应优先转化为一个或多个 WorkCase，先收掉以下前置问题。它们不是要求 0032 完成所有机制的最终形态，而是要求形成最小可运行、可复用、可验收的工程范式：
@@ -59,7 +59,7 @@ input_refs:
   - specs/06-运行时扩展规范.md
   - specs/31-git-commit-action-Git提交行动编排.md
   - specs/33-ldvh-install-action-LDVH安装行动编排.md
-  - rules/LDVH-RUNTIME-PROTOCOL.md
+  - git-history:rules/LDVH-RUNTIME-PROTOCOL.md
   - hooks/ldvh-hooks.yaml
   - code/hook_dispatch.py
   - code/install_git_hooks.py

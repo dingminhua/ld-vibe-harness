@@ -78,7 +78,7 @@ related_docs:
   - specs/01-保障与衔接.md
   - specs/02-AI行为规范.md
   - specs/23-Pitfall-踩坑经验.md
-  - hooks/LDVH-RUNTIME-PROTOCOL.md
+  - git-history:hooks/LDVH-RUNTIME-PROTOCOL.md
 related_rules:
   - specs/01-保障与衔接.md
   - specs/23-Pitfall-踩坑经验.md

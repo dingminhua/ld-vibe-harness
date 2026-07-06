@@ -71,7 +71,7 @@ related_docs:
   - specs/06-运行时扩展规范.md
   - specs/03-行动编排规范.md
   - code/hook_dispatch.py
-  - rules/LDVH-RUNTIME-PROTOCOL.md
+  - git-history:rules/LDVH-RUNTIME-PROTOCOL.md
 resolved_to: ''
 resolved_at: ''
 discard_reason: ''

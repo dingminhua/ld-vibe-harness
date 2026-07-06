@@ -109,7 +109,7 @@ orchestration:
       evidence_refs:
         - ldvh-base/sparks/spark-0032-multi-environment-hook-compatibility.yaml
         - specs/06-运行时扩展规范.md
-        - rules/LDVH-RUNTIME-PROTOCOL.md
+        - git-history:rules/LDVH-RUNTIME-PROTOCOL.md
         - specs/33-ldvh-install-action-LDVH安装行动编排.md
       blocking_reason: null
     - id: item-5
@@ -147,7 +147,7 @@ orchestration:
         - specs/attachments/01.Att.03-环境入口类型表.md
         - specs/attachments/06.Att.10-部署检查核对表.md
         - specs/attachments/06.Att.15-环境Hook事件映射表.md
-        - rules/LDVH-RUNTIME-PROTOCOL.md
+        - git-history:rules/LDVH-RUNTIME-PROTOCOL.md
       expected_output: 判断是否具备将 spark-0025 推进为 Hook 入口实现 WorkCase 的条件，并列出需同步的 specs、Rules、Hook registry、dispatcher、插件或受限接入说明。
       status: done
       result_summary: |
@@ -160,7 +160,7 @@ orchestration:
         - ldvh-base/sparks/spark-0032-multi-environment-hook-compatibility.yaml
         - specs/06-运行时扩展规范.md
         - specs/attachments/06.Att.15-环境Hook事件映射表.md
-        - rules/LDVH-RUNTIME-PROTOCOL.md
+        - git-history:rules/LDVH-RUNTIME-PROTOCOL.md
       blocking_reason: null
   plan_review:
     orchestration_owner: main_controller
@@ -292,7 +292,7 @@ orchestration:
           - specs/06-运行时扩展规范.md
           - specs/attachments/06.Att.15-环境Hook事件映射表.md
           - specs/33-ldvh-install-action-LDVH安装行动编排.md
-          - rules/LDVH-RUNTIME-PROTOCOL.md
+          - git-history:rules/LDVH-RUNTIME-PROTOCOL.md
           - .probe-evidence/workbuddy/
           - .probe-evidence/codex/
       result:
@@ -302,8 +302,8 @@ orchestration:
         key_findings:
           - WorkBuddy 与 Codex 均已有四类 Hook 采样证据，且字段结构足以支撑 adapter 设计。
           - Trae 已按 Human 确认和 spark-0032 归入缺少 AI lifecycle Hook 能力的环境，不属于 LDVH 正式支持范围。
-          - active specs/06、06.Att.15、specs/33 和 rules/LDVH-RUNTIME-PROTOCOL.md 已承接协议统一、执行分层、canonical event 和 trigger_source 边界。
-          - 当前 session-start 运行可命中 governed 项目；P0-B 已将固定 Rules 入口收敛到 rules/LDVH-RUNTIME-PROTOCOL.md，并保留旧路径兼容重定向，session-start receipt 已可返回 ok。
+          - active specs/06、06.Att.15、specs/33 和 git-history:rules/LDVH-RUNTIME-PROTOCOL.md 已承接协议统一、执行分层、canonical event 和 trigger_source 边界。
+          - 当前 session-start 运行可命中 governed 项目；P0-B 已将固定 Rules 入口收敛到 git-history:rules/LDVH-RUNTIME-PROTOCOL.md，并保留旧路径兼容重定向，session-start receipt 已可返回 ok。
         required_changes: []
         evidence_refs:
           - verification_evidence
@@ -320,7 +320,7 @@ orchestration:
         - 环境适配边界与残留风险
       optional_perspectives: []
       tool_method_requirements:
-        - 只读复核 workcase-0012、spark-0025、spark-0032、specs/06、06.Att.15、specs/33、rules/LDVH-RUNTIME-PROTOCOL.md 和 probe evidence 摘要。
+        - 只读复核 workcase-0012、spark-0025、spark-0032、specs/06、06.Att.15、specs/33、git-history:rules/LDVH-RUNTIME-PROTOCOL.md 和 probe evidence 摘要。
         - 不修改用户环境入口、settings、插件配置或 probe evidence。
         - 发现 fail 或 needs_human_gate 时不得进入 Human 关闭确认，必须退回执行或提交 Human 裁决。
       aggregation_rule: |
@@ -346,7 +346,7 @@ orchestration:
             - specs/06-运行时扩展规范.md
             - specs/attachments/06.Att.15-环境Hook事件映射表.md
             - specs/33-ldvh-install-action-LDVH安装行动编排.md
-            - rules/LDVH-RUNTIME-PROTOCOL.md
+            - git-history:rules/LDVH-RUNTIME-PROTOCOL.md
       - id: result-review-2
         reviewer: subagent-workcase-state-evidence
         role: WorkCase 状态机与证据充分性
@@ -453,7 +453,7 @@ closure_evidence: |
   - 最小 Hook Probe 已实现并验证，且不会执行 LDVH 业务逻辑或写用户项目事实源。
   - WorkBuddy 与 Codex 已完成四类事件采样并形成 raw evidence；采样结果足以支撑 adapter/core 边界判断。
   - Trae 已确认缺少可安装、可验证、可阻断 AI lifecycle Hook；该环境不属于 LDVH 正式支持范围。
-  - 三环境适配矩阵已被 active specs/06、06.Att.15、specs/33 和 rules/LDVH-RUNTIME-PROTOCOL.md 吸收。
+  - 三环境适配矩阵已被 active specs/06、06.Att.15、specs/33 和 git-history:rules/LDVH-RUNTIME-PROTOCOL.md 吸收。
   - spark-0025 可以推进后续实现，但必须按 Hook-only 口径聚焦插件 Hook / runtime adapter；该后续实现链路已被当前 P0 `spark-0033` 统一承接。
   - 结果复核已完成三个视角；其中 WorkCase 状态机视角发现的字段缺口已在本轮补齐。
   关闭候选结果：completed，并保留 follow-up 分流记录。关闭后不继续在本 WorkCase 内实现生产插件、adapter、receipt 持久化或旧入口路径清理；这些作为 `spark-0033` 下的后续运行链路/实现 WorkCase 承接。
@@ -589,7 +589,7 @@ related_docs:
   - specs/attachments/06.Att.10-部署检查核对表.md
   - specs/attachments/06.Att.15-环境Hook事件映射表.md
   - specs/33-ldvh-install-action-LDVH安装行动编排.md
-  - rules/LDVH-RUNTIME-PROTOCOL.md
+  - git-history:rules/LDVH-RUNTIME-PROTOCOL.md
 related_adrs: []
 related_sparks:
   - spark-0025

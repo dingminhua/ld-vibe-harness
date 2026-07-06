@@ -30,16 +30,16 @@ orchestration:
         - specs/01-规范体系基础规范.md
         - specs/06-运行时扩展规范.md
         - specs/33-ldvh-install-action-LDVH安装行动编排.md
-        - rules/LDVH-RUNTIME-PROTOCOL.md
+        - git-history:rules/LDVH-RUNTIME-PROTOCOL.md
       expected_output: 明确 Git 身份字段只用于确定性识别 worktree，不承载执行状态。
       status: done
       result_summary: |
-        已同步 `specs/01`、`specs/06`、`specs/33` 和 `rules/LDVH-RUNTIME-PROTOCOL.md`：管辖项目配置可登记 Git 可验证身份；该身份只用于识别 Codex/Git worktree 等临时执行目录，不承载初始化状态、部署状态、执行状态或环境能力。
+        已同步 `specs/01`、`specs/06`、`specs/33` 和 `git-history:rules/LDVH-RUNTIME-PROTOCOL.md`：管辖项目配置可登记 Git 可验证身份；该身份只用于识别 Codex/Git worktree 等临时执行目录，不承载初始化状态、部署状态、执行状态或环境能力。
       evidence_refs:
         - specs/01-规范体系基础规范.md
         - specs/06-运行时扩展规范.md
         - specs/33-ldvh-install-action-LDVH安装行动编排.md
-        - rules/LDVH-RUNTIME-PROTOCOL.md
+        - git-history:rules/LDVH-RUNTIME-PROTOCOL.md
       blocking_reason: ''
     - id: item-2
       title: 实现 dispatcher 与知识地图 worktree 识别
@@ -79,7 +79,7 @@ orchestration:
       role: runtime-hardening
       mode: single
       input_refs:
-        - rules/LDVH-RUNTIME-PROTOCOL.md
+        - git-history:rules/LDVH-RUNTIME-PROTOCOL.md
         - specs/06-运行时扩展规范.md
         - specs/attachments/06.Att.02-固定运行时扩展登记表.md
         - specs/attachments/06.Att.15-环境Hook事件映射表.md
@@ -95,7 +95,7 @@ orchestration:
         - code/hook_dispatch.py
         - tests/code/test_hook_dispatch.py
         - tests/code/test_commit_validate.py
-        - rules/LDVH-RUNTIME-PROTOCOL.md
+        - git-history:rules/LDVH-RUNTIME-PROTOCOL.md
         - specs/06-运行时扩展规范.md
         - specs/attachments/06.Att.15-环境Hook事件映射表.md
         - hooks/ldvh-hooks.yaml
@@ -152,7 +152,7 @@ orchestration:
           - specs/01-规范体系基础规范.md
           - specs/06-运行时扩展规范.md
           - specs/33-ldvh-install-action-LDVH安装行动编排.md
-          - rules/LDVH-RUNTIME-PROTOCOL.md
+          - git-history:rules/LDVH-RUNTIME-PROTOCOL.md
           - code/hook_dispatch.py
           - code/spec_checks/knowledge_map.py
           - code/spec_checks/governed_projects.py
@@ -254,7 +254,7 @@ related_docs:
   - specs/01-规范体系基础规范.md
   - specs/06-运行时扩展规范.md
   - specs/33-ldvh-install-action-LDVH安装行动编排.md
-  - rules/LDVH-RUNTIME-PROTOCOL.md
+  - git-history:rules/LDVH-RUNTIME-PROTOCOL.md
   - code/hook_dispatch.py
   - code/spec_checks/knowledge_map.py
   - code/spec_checks/governed_projects.py

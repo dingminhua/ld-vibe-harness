@@ -18,7 +18,7 @@ description: |
   5. **Rules 路径自觉消费**：无 AI Hook 或 Hook 不稳定时，Windows 文档应给出 PowerShell / cmd 可执行的 `session-start`、`acknowledge-read-plan`、`pre-tool-use`、`git.commit-msg` 等等价命令，保证 Trae 等环境仍能走同一 Runtime Protocol。
   6. **Web / npm 开发链路**：确认 `npm install`、`npm run check`、`npm run test:web:api`、`npm run web:restart` 或替代启动方式在 Windows 可用。`web/restart.sh` 是 Unix shell 脚本，Windows 需要 npm 脚本、Node 脚本或明确 Git Bash 依赖，不能把清端口和重启能力只放在 `.sh` 中。
   7. **测试矩阵与 CI**：增加 Windows 验证入口，至少覆盖 Python 单测、fact/spec 校验、hook dispatcher CLI、Git hook 渲染或安装 dry-run、Web API 测试和路径规范化单测。若引入 GitHub Actions，应加入 `windows-latest`，并明确哪些检查是必须通过、哪些是环境能力探测。
-  8. **安装与文档验收**：README、`specs/32`、`specs/33`、`rules/LDVH-RUNTIME-PROTOCOL.md`、`hooks/ldvh-hooks.yaml` 中的命令示例和环境要求应区分 macOS/Linux 与 Windows。文档不应只说“支持 Windows”，而应列出最低依赖、推荐 shell、已验证 AI 环境、已知限制和等价手动步骤。
+  8. **安装与文档验收**：README、`specs/32`、`specs/33`、`git-history:rules/LDVH-RUNTIME-PROTOCOL.md`、`hooks/ldvh-hooks.yaml` 中的命令示例和环境要求应区分 macOS/Linux 与 Windows。文档不应只说“支持 Windows”，而应列出最低依赖、推荐 shell、已验证 AI 环境、已知限制和等价手动步骤。
 
   本 Spark 的核心判断是：Windows 支持应被视为一次跨平台运行链路验收，而不是单点兼容修复。它与 spark-0032 的“多环境 Hook 接入兼容”相关，但关注维度不同：0031 关注 AI 协作环境能力差异，本 Spark 关注操作系统层的路径、shell、安装、Git 与测试差异。它也与 spark-0033 相关，因为生产运行链路若要可靠，最终应证明同一套 Runtime Protocol 在 Windows 上也可被 Hook 路径或 Rules 路径消费。
 source: conversation
@@ -35,7 +35,7 @@ input_refs:
   - specs/06-运行时扩展规范.md
   - specs/32-environment-entry-adaptation-环境入口落地与适配检查.md
   - specs/33-ldvh-install-action-LDVH安装行动编排.md
-  - rules/LDVH-RUNTIME-PROTOCOL.md
+  - git-history:rules/LDVH-RUNTIME-PROTOCOL.md
   - hooks/ldvh-hooks.yaml
   - README.md
   - code/hook_dispatch.py
@@ -53,5 +53,5 @@ related_docs:
   - specs/06-运行时扩展规范.md
   - specs/32-environment-entry-adaptation-环境入口落地与适配检查.md
   - specs/33-ldvh-install-action-LDVH安装行动编排.md
-  - rules/LDVH-RUNTIME-PROTOCOL.md
+  - git-history:rules/LDVH-RUNTIME-PROTOCOL.md
   - hooks/ldvh-hooks.yaml

@@ -49,18 +49,18 @@ orchestration:
         - specs/01-规范体系基础规范.md
         - specs/06-运行时扩展规范.md
         - specs/04-Code确定性执行规范.md
-        - rules/LDVH-RUNTIME-PROTOCOL.md
+        - git-history:rules/LDVH-RUNTIME-PROTOCOL.md
         - ldvh-base/workcases/workcase-0015-governed-project-git-identity-worktree.yaml
       expected_output: |
         在基础规范、运行时扩展规范、Code 确定性执行规范和 Runtime Protocol 中同步定义 governed subject / operation target，并明确 cwd 回退、worktree Git 身份、Hook/Rules 双入口一致性和多目标边界。Runtime Protocol 只表达触发时机、canonical event 和 Rules 路径模拟方式；消费、阻断、receipt 和判定必须由 dispatcher 的同一 handler 执行。规范文字必须写成强约束，并明确 prose 不得作为执行时自行放行/阻断依据。
       status: done
       result_summary: |
-        已在 `specs/01` 定义 governed subject / operation target；在 `specs/06` 写硬 target-first、cwd-fallback、Hook/Rules 同 dispatcher、Runtime Protocol 不得维护第二套逻辑、AI 必须以 dispatcher 结构化输出为执行依据；在 `specs/04` 写入 canonical event context schema、target-first 判定顺序、unknown_target、multi-target 和 commit-msg 工作对象规则；在 `rules/LDVH-RUNTIME-PROTOCOL.md` 收敛为触发时机 + canonical event 模拟入口。
+        已在 `specs/01` 定义 governed subject / operation target；在 `specs/06` 写硬 target-first、cwd-fallback、Hook/Rules 同 dispatcher、Runtime Protocol 不得维护第二套逻辑、AI 必须以 dispatcher 结构化输出为执行依据；在 `specs/04` 写入 canonical event context schema、target-first 判定顺序、unknown_target、multi-target 和 commit-msg 工作对象规则；在 `git-history:rules/LDVH-RUNTIME-PROTOCOL.md` 收敛为触发时机 + canonical event 模拟入口。
       evidence_refs:
         - specs/01-规范体系基础规范.md
         - specs/04-Code确定性执行规范.md
         - specs/06-运行时扩展规范.md
-        - rules/LDVH-RUNTIME-PROTOCOL.md
+        - git-history:rules/LDVH-RUNTIME-PROTOCOL.md
       blocking_reason: ''
     - id: item-2
       title: 同步入口表、Schema 和安装验证
@@ -115,7 +115,7 @@ orchestration:
       mode: single
       input_refs:
         - code/hook_dispatch.py
-        - rules/LDVH-RUNTIME-PROTOCOL.md
+        - git-history:rules/LDVH-RUNTIME-PROTOCOL.md
         - specs/06-运行时扩展规范.md
       expected_output: |
         同一管辖项目多 target 放行；跨管辖项目或管辖/非管辖混合写入返回 blocking 并要求拆分或显式 project；explicit project 只能用于校验、消歧或 Human 确认，不得覆盖真实 target；写操作 target 不确定时返回 unknown_target 并阻断或要求显式 target；只读命令可保留 warning；写入和 commit-msg 继续要求 read_plan_consumed 证据。Git identity 多项目歧义必须阻断，remote_url 只能作为证据线索，common-dir 比较必须使用 absolute resolved 路径。
@@ -151,7 +151,7 @@ orchestration:
       input_refs:
         - code/hook_dispatch.py
         - tests/code/test_hook_dispatch.py
-        - rules/LDVH-RUNTIME-PROTOCOL.md
+        - git-history:rules/LDVH-RUNTIME-PROTOCOL.md
         - specs/04-Code确定性执行规范.md
         - specs/06-运行时扩展规范.md
       expected_output: |
@@ -162,7 +162,7 @@ orchestration:
       evidence_refs:
         - code/hook_dispatch.py
         - tests/code/test_hook_dispatch.py
-        - rules/LDVH-RUNTIME-PROTOCOL.md
+        - git-history:rules/LDVH-RUNTIME-PROTOCOL.md
         - specs/04-Code确定性执行规范.md
         - specs/06-运行时扩展规范.md
       blocking_reason: ''
@@ -208,7 +208,7 @@ orchestration:
               - 明确 commit-msg 进入同一 canonical event context。
             evidence_refs:
               - ldvh-base/workcases/workcase-0016-target-based-hook-governance.yaml
-              - rules/LDVH-RUNTIME-PROTOCOL.md
+              - git-history:rules/LDVH-RUNTIME-PROTOCOL.md
               - specs/06-运行时扩展规范.md
               - code/hook_dispatch.py
         - id: plan-review-2
@@ -301,7 +301,7 @@ orchestration:
           检查 WorkCase 0015 是否已从行动需求落实到 specs、Code、tests 和验证证据，并确认 Hook/Rules 双路径、target-first 管辖判定、worktree/Git 身份和 read_plan 门禁没有分叉。
         input_refs:
           - ldvh-base/workcases/workcase-0016-target-based-hook-governance.yaml
-          - rules/LDVH-RUNTIME-PROTOCOL.md
+          - git-history:rules/LDVH-RUNTIME-PROTOCOL.md
           - specs/01-规范体系基础规范.md
           - specs/04-Code确定性执行规范.md
           - specs/06-运行时扩展规范.md
@@ -429,7 +429,7 @@ orchestration:
             - Runtime Protocol、specs/04 和 specs/06 均明确 acknowledge-read-plan 不能确认空 required_paths。
           required_changes: []
           evidence_refs:
-            - rules/LDVH-RUNTIME-PROTOCOL.md
+            - git-history:rules/LDVH-RUNTIME-PROTOCOL.md
             - specs/04-Code确定性执行规范.md
             - specs/06-运行时扩展规范.md
             - ldvh-base/workcases/workcase-0016-target-based-hook-governance.yaml
@@ -628,7 +628,7 @@ revision_history:
     evidence_refs:
       - code/hook_dispatch.py
       - tests/code/test_hook_dispatch.py
-      - rules/LDVH-RUNTIME-PROTOCOL.md
+      - git-history:rules/LDVH-RUNTIME-PROTOCOL.md
       - specs/04-Code确定性执行规范.md
       - specs/06-运行时扩展规范.md
       - verification_evidence

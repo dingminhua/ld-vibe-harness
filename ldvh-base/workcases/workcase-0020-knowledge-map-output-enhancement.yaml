@@ -447,7 +447,7 @@ related_docs:
   - specs/attachments/04.Att.02-Code命令入口表.md
   - specs/attachments/04.Att.03-Code结构化输出Schema表.md
   - tests/code/test_hook_dispatch.py
-  - rules/LDVH-RUNTIME-PROTOCOL.md
+  - git-history:rules/LDVH-RUNTIME-PROTOCOL.md
 plan_confirmed_at: '2026-06-27T08:25:00+08:00'
 verification_evidence: |
   ## 验证计划
@@ -458,7 +458,7 @@ verification_evidence: |
 
   - `python3 -m pytest tests/code/test_hook_dispatch.py tests/code/specs_validate_checks/test_v2.py -q`
   - `python3 -m pytest tests/code -q`
-  - `python3 code/specs_validate.py knowledge-map --input-scope entry_navigation --layer neighbors --start-node rules/LDVH-RUNTIME-PROTOCOL.md --task-type code_change --format json`
+  - `python3 code/specs_validate.py knowledge-map --input-scope entry_navigation --layer neighbors --start-node git-history:rules/LDVH-RUNTIME-PROTOCOL.md --task-type code_change --format json`
   - `python3 code/hook_dispatch.py run acknowledge-read-plan --cwd /Users/dmh2002/poker_hud_projects/ld-vibe-harness --action-hint fix`
 
   ## 验证结果

@@ -50,7 +50,7 @@ orchestration:
         - specs/attachments/04.Att.06-知识地图投影Schema表.md
         - specs/attachments/04.Att.07-受控写入前检查矩阵.md
         - specs/06-运行时扩展规范.md
-        - rules/LDVH-RUNTIME-PROTOCOL.md
+        - git-history:rules/LDVH-RUNTIME-PROTOCOL.md
         - code/specs_validate.py
         - code/spec_checks/knowledge_map.py
         - code/spec_checks/preflight.py
@@ -95,7 +95,7 @@ orchestration:
         - code/specs_validate.py
         - code/spec_checks/knowledge_map.py
         - code/hook_dispatch.py
-        - rules/LDVH-RUNTIME-PROTOCOL.md
+        - git-history:rules/LDVH-RUNTIME-PROTOCOL.md
         - specs/30-rules-entry-sync-review-Rules入口同步审查.md
         - specs/attachments/04.Att.02-Code命令入口表.md
         - specs/attachments/04.Att.03-Code结构化输出Schema表.md
@@ -116,7 +116,7 @@ orchestration:
         - code/hook_dispatch.py
         - code/specs_validate.py
         - code/spec_checks/knowledge_map.py
-        - rules/LDVH-RUNTIME-PROTOCOL.md
+        - git-history:rules/LDVH-RUNTIME-PROTOCOL.md
         - specs/06-运行时扩展规范.md
       expected_output: |
         明确 action-guide 触发频率、receipt / brief / standard / full 输出模式、默认预算、同输入去重、guide_receipt 指纹、pre-tool-use 只查 receipt 的规则，以及何时因 target/diff/action_hint 变化或缺 ack 重发摘要；避免“每次行动”都刷完整指南造成高噪声高打扰。
@@ -244,7 +244,7 @@ orchestration:
               - code/spec_checks/preflight.py
               - code/spec_checks/deployment_entries.py
               - code/hook_dispatch.py
-              - rules/LDVH-RUNTIME-PROTOCOL.md
+              - git-history:rules/LDVH-RUNTIME-PROTOCOL.md
               - specs/04-Code确定性执行规范.md
               - specs/attachments/04.Att.02-Code命令入口表.md
     controller_resolution:
@@ -398,7 +398,7 @@ related_docs:
   - specs/attachments/07.Att.11-非事实源排除清单.md
   - specs/21-WorkCase-工作项.md
   - specs/attachments/21.Att.01-orchestration字段契约表.md
-  - rules/LDVH-RUNTIME-PROTOCOL.md
+  - git-history:rules/LDVH-RUNTIME-PROTOCOL.md
   - LDVH-GOVERNED-PROJECTS.yaml
   - code/specs_validate.py
   - code/spec_checks/knowledge_map.py

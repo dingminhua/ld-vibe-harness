@@ -491,7 +491,7 @@ related_docs:
   - specs/attachments/04.Att.04-Code诊断码表.md
   - specs/attachments/04.Att.07-受控写入前检查矩阵.md
   - tests/code/test_hook_dispatch.py
-  - rules/LDVH-RUNTIME-PROTOCOL.md
+  - git-history:rules/LDVH-RUNTIME-PROTOCOL.md
 plan_confirmed_at: '2026-06-27T09:10:00+08:00'
 verification_evidence: |
   ## 验证计划

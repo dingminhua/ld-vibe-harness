@@ -14,7 +14,6 @@ from ldvh_specs import ROOT
 
 AUTHORIZATION = "none"
 PLACEHOLDER_FILES = {".gitkeep", ".DS_Store"}
-RUNTIME_PROTOCOL_ENTRY = "hooks/LDVH-RUNTIME-PROTOCOL.md"
 LEGACY_LDVH_PLUGIN_COMMAND_RE = re.compile(
     r"/ld-vibe-harness(?:-[^/\s]+)?/code/(hook_adapter|hook_dispatch)\.py"
 )
@@ -375,31 +374,6 @@ def _target_environment_ldvh_plugin_candidate(environment_name: str) -> dict[str
     )
 
 
-def _runtime_protocol_entry_candidate(ldvh_root: Path) -> dict[str, Any]:
-    entry_path = ldvh_root / RUNTIME_PROTOCOL_ENTRY
-    if entry_path.is_file():
-        return _candidate(
-            entry_id="hooks.runtime-protocol",
-            category="hook_protocol_entry",
-            status="available",
-            trigger="environment hook, plugin, extension package, or runtime adapter",
-            evidence=[entry_path.as_posix()],
-            hook_entry="code/runtime_adapter.py",
-            decision="reference_from_environment_entry_without_claiming_integration",
-            reason="检测到 V3 Runtime Protocol 可见入口；该文件只提供 Hook 入口指向，不能证明环境 Hook、插件或 adapter 已 integrated。",
-        )
-    return _candidate(
-        entry_id="hooks.runtime-protocol",
-        category="hook_protocol_entry",
-        status="absent",
-        trigger="environment hook, plugin, extension package, or runtime adapter",
-        evidence=[],
-        hook_entry="code/runtime_adapter.py",
-        decision="create_hook_protocol_entry_before_reference",
-        reason="未发现 hooks/LDVH-RUNTIME-PROTOCOL.md；环境入口缺少统一 Runtime Protocol 可见入口资产。",
-    )
-
-
 def build_environment_entry_audit(
     repo: Path = ROOT,
     ldvh_root: Path = ROOT,
@@ -421,7 +395,6 @@ def build_environment_entry_audit(
         if is_codex
         else _target_environment_ldvh_plugin_candidate(target_environment)
     )
-    runtime_protocol_entry = _runtime_protocol_entry_candidate(resolved_ldvh_root)
     candidates: list[dict[str, Any]] = [
         _candidate(
             entry_id="git.commit-msg",
@@ -434,7 +407,6 @@ def build_environment_entry_audit(
             integrated=bool(commit_entry.get("integrated")),
             automatic=bool(commit_entry.get("integrated")),
         ),
-        runtime_protocol_entry,
         environment_plugin,
         _candidate(
             entry_id="runtime.session_start.auto",

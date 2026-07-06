@@ -115,7 +115,7 @@ related_workcases: []
 related_adrs: []
 related_studies: []
 related_docs:
-- rules/LDVH-RUNTIME-PROTOCOL.md
+- git-history:rules/LDVH-RUNTIME-PROTOCOL.md
 - specs/01-规范体系基础规范.md
 - specs/04-Code确定性执行规范.md
 - specs/06-运行时扩展规范.md
