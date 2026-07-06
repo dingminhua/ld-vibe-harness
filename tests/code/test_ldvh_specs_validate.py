@@ -3163,6 +3163,26 @@ def test_commit_gate_rejects_unknown_scope() -> None:
     assert "COMMIT_SCOPE_NOT_ALLOWED" in _diagnostic_codes(gate)
 
 
+def test_commit_gate_requires_chinese_description() -> None:
+    gate = ldvh_specs.build_commit_gate(
+        ROOT,
+        message="""docs(specs): clarify spec system consumption chain
+
+关键变更:
+- 澄清规范体系消费链路。
+""",
+        changed_paths=["specs/00-理念与构成.md"],
+        acknowledged_paths=[
+            "specs/00-理念与构成.md",
+            "specs/01-保障与衔接.md",
+            "specs/02-AI行为规范.md",
+        ],
+    )
+
+    assert gate["summary"]["status"] == "blocked"
+    assert "COMMIT_DESCRIPTION_NOT_CHINESE" in _diagnostic_codes(gate)
+
+
 def test_commit_gate_requires_body_for_high_impact_changes() -> None:
     gate = ldvh_specs.build_commit_gate(
         ROOT,

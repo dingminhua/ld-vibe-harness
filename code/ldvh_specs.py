@@ -4329,6 +4329,10 @@ def parse_commit_message(message: str) -> dict[str, Any]:
     return parsed
 
 
+def _contains_cjk(text: str) -> bool:
+    return any("\u4e00" <= char <= "\u9fff" for char in text)
+
+
 def commit_contract_values(root: Path = ROOT) -> dict[str, set[str]]:
     def cell_token(value: str) -> str:
         return value.strip().strip("`").strip()
@@ -4463,6 +4467,13 @@ def build_commit_gate(
                 "COMMIT_DESCRIPTION_MISSING",
                 COMMIT_MESSAGE_CONTRACT_PATH,
                 "commit description 不能为空。",
+            ))
+        elif not _contains_cjk(parsed["description"]):
+            diagnostics.append(_commit_gate_diagnostic(
+                "blocking",
+                "COMMIT_DESCRIPTION_NOT_CHINESE",
+                COMMIT_MESSAGE_CONTRACT_PATH,
+                "commit description 必须使用简体中文简短说明。",
             ))
 
     if not normalized_changed_paths:
