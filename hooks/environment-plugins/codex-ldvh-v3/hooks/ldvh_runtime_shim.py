@@ -188,13 +188,56 @@ def split_unquoted_pipes(command: str) -> list[str]:
     return segments
 
 
+def split_unquoted_and_chains(command: str) -> list[str]:
+    segments: list[str] = []
+    current: list[str] = []
+    quote = ""
+    escaped = False
+    index = 0
+    while index < len(command):
+        char = command[index]
+        if escaped:
+            current.append(char)
+            escaped = False
+            index += 1
+            continue
+        if char == "\\":
+            current.append(char)
+            escaped = True
+            index += 1
+            continue
+        if quote:
+            current.append(char)
+            if char == quote:
+                quote = ""
+            index += 1
+            continue
+        if char in {"'", '"'}:
+            current.append(char)
+            quote = char
+            index += 1
+            continue
+        if char == "&" and index + 1 < len(command) and command[index + 1] == "&":
+            segments.append("".join(current).strip())
+            current = []
+            index += 2
+            continue
+        current.append(char)
+        index += 1
+    segments.append("".join(current).strip())
+    return segments
+
+
 def is_likely_read_only_command(command: str) -> bool:
     stripped = command.strip()
-    if not stripped or re.search(r"[;&><`$()\n\r]", stripped):
+    if not stripped or re.search(r"[;><`$()\n\r]", stripped):
         return False
-    segments = split_unquoted_pipes(stripped)
-    if len(segments) > 1:
-        return all(is_likely_read_only_command_segment(segment) for segment in segments)
+    chain_segments = split_unquoted_and_chains(stripped)
+    if len(chain_segments) > 1:
+        return all(is_likely_read_only_command(segment) for segment in chain_segments)
+    pipe_segments = split_unquoted_pipes(stripped)
+    if len(pipe_segments) > 1:
+        return all(is_likely_read_only_command_segment(segment) for segment in pipe_segments)
     return is_likely_read_only_command_segment(stripped)
 
 

@@ -234,6 +234,45 @@ def test_codex_sample_shim_allows_read_only_exec_command_pipeline_without_acknow
     assert completed.stdout == ""
 
 
+def test_codex_sample_shim_allows_read_only_exec_command_and_chain_without_acknowledgement() -> None:
+    for command in (
+        'pwd && rg -n "session_start|receipt|lifecycle|read plan|read_plan|LDVH" -S .',
+        "ls -la && rg --files",
+    ):
+        completed = _run_shim(
+            {
+                "hook_event_name": "PreToolUse",
+                "sessionId": "shim-pretool-exec-and-chain-read",
+                "cwd": ROOT.as_posix(),
+                "toolName": "functions.exec_command",
+                "arguments": {"cmd": command},
+            },
+        )
+
+        assert completed.returncode == 0
+        assert completed.stdout == ""
+
+
+def test_codex_sample_shim_does_not_allow_mixed_read_write_and_chain_without_acknowledgement() -> None:
+    completed = _run_shim(
+        {
+            "hook_event_name": "PreToolUse",
+            "sessionId": "shim-pretool-exec-and-chain-write",
+            "cwd": ROOT.as_posix(),
+            "toolName": "functions.exec_command",
+            "arguments": {"cmd": "pwd && touch tmp/ldvh-mixed-chain.txt"},
+        },
+        check=False,
+    )
+
+    payload = json.loads(completed.stdout)
+    hook_output = _hook_output(payload)
+    assert completed.returncode == 0
+    assert hook_output["hookEventName"] == "PreToolUse"
+    assert hook_output["permissionDecision"] == "deny"
+    assert "RUNTIME_READ_PLAN_CONSUMED_EMPTY" in hook_output["permissionDecisionReason"]
+
+
 def test_codex_sample_shim_infers_read_plan_ack_from_transcript(tmp_path: Path) -> None:
     transcript = tmp_path / "transcript.jsonl"
     transcript.write_text(
