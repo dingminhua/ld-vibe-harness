@@ -5,7 +5,7 @@ status: pending
 created: '2026-07-02T18:13:58+08:00'
 updated: '2026-07-02T18:13:58+08:00'
 description: |
-  本 Spark 承接 `_migration/24A-user-local-ldvh-config-candidate.md` 中关于用户级 LDVH 配置目录、工作区根配置、当前项目根配置和配置生成位置选择的候选讨论。
+  本 Spark 承接 `git-history:_migration/24A-user-local-ldvh-config-candidate.md` 中关于用户级 LDVH 配置目录、工作区根配置、当前项目根配置和配置生成位置选择的候选讨论。
 
   当前已确认的是“把候选内容转入 Spark 继续跟踪”，不是确认启用用户级配置目录，也不是确认修改配置解析顺序、创建 `~/.ldvh`、写入 `%APPDATA%\ldvh`、移动 `LDVH-GOVERNED-PROJECTS.yaml`、安装 Hook 或声明任何环境入口 integrated。
 
@@ -15,14 +15,14 @@ priority: P1
 priority_detail: |
   该议题影响安装初始化、管辖项目配置发现、跨项目本机默认值和 Human Gate 位置选择。它不阻断 V3 当前主线，但如果后续要生成或发现用户级配置，必须先收敛。
 source_detail: |
-  Human 在 V3 后置收口过程中确认“Spark 先创建，把内容移动进入”。来源候选记录为 `_migration/24A-user-local-ldvh-config-candidate.md`，其中明确待 Spark 可用后转入 Spark 或 WorkCase。
+  Human 在 V3 后置收口过程中确认“Spark 先创建，把内容移动进入”。来源候选记录为 `git-history:_migration/24A-user-local-ldvh-config-candidate.md`，其中明确待 Spark 可用后转入 Spark 或 WorkCase。
 evolution:
   - at: '2026-07-02T18:13:58+08:00'
     summary: |
       创建 Spark 承接 24A 的用户级配置目录候选。当前只完成候选转入和问题保留，不修改 specs、Code、现有配置文件或用户环境。后续必须先由 Human 在“工作区根目录 / 用户级 LDVH 配置目录 / 当前项目根目录”中确认生成位置，再决定是否进入正式设计。
 input_refs:
-  - _migration/24A-user-local-ldvh-config-candidate.md
-  - _migration/26A-v3-post-closure-work-queue.md
+  - git-history:_migration/24A-user-local-ldvh-config-candidate.md
+  - git-history:_migration/26A-v3-post-closure-work-queue.md
   - specs/10-安装与配置规范.md
   - specs/attachments/10.Att.01-管辖项目配置字段表.md
   - specs/20-Spark-火花.md
@@ -43,8 +43,8 @@ related_workcases: []
 related_adrs: []
 related_studies: []
 related_docs:
-  - _migration/24A-user-local-ldvh-config-candidate.md
-  - _migration/26A-v3-post-closure-work-queue.md
+  - git-history:_migration/24A-user-local-ldvh-config-candidate.md
+  - git-history:_migration/26A-v3-post-closure-work-queue.md
   - specs/10-安装与配置规范.md
   - specs/attachments/10.Att.01-管辖项目配置字段表.md
   - specs/20-Spark-火花.md

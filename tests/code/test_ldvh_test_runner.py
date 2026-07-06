@@ -34,7 +34,7 @@ def test_all_pytest_stages_use_short_tracebacks() -> None:
         runner.build_stages("full", []),
         runner.build_stages(
             "targeted",
-            ["code/ldvh_specs.py,_migration/tests/test_migration_gate.py"],
+            ["code/ldvh_specs.py"],
             slow_policy="include",
         ),
     ]
@@ -63,16 +63,15 @@ def test_targeted_profile_selects_web_checks_for_web_changes() -> None:
     assert "web api tests" in _stage_names(stages)
 
 
-def test_targeted_profile_selects_code_and_migration_checks() -> None:
+def test_targeted_profile_selects_code_checks() -> None:
     runner = _load_runner()
 
-    stages = runner.build_stages("targeted", ["code/ldvh_specs.py,_migration/tests/test_migration_gate.py"])
+    stages = runner.build_stages("targeted", ["code/ldvh_specs.py"])
 
     assert "code pytest fast" in _stage_names(stages)
     assert "code runtime core" in _stage_names(stages)
     assert "code hook adapter checks" in _stage_names(stages)
     assert "code runtime long-tail" in _stage_names(stages)
-    assert "migration pytest" in _stage_names(stages)
 
 
 def test_targeted_profile_selects_environment_plugin_checks_for_hook_assets() -> None:
@@ -114,5 +113,5 @@ def test_full_profile_includes_e2e_full_pytest_and_web_build() -> None:
     stages = runner.build_stages("full", [])
 
     assert "e2e rehearsal" in _stage_names(stages)
-    assert "code and migration pytest" in _stage_names(stages)
+    assert "code pytest" in _stage_names(stages)
     assert "web production build" in _stage_names(stages)

@@ -112,12 +112,10 @@ python3 code/test_runner.py targeted --slow include --changed "<path>"
 
 慢速层不默认并行化。需要并行运行时，应先确认依赖、内存、临时目录、端口和外部服务隔离，否则并行可能造成 OOM、端口冲突或 flaky 结果。
 
-## 迁移测试
-
-当前 full profile 仍运行：
+## Full Profile
 
 ```bash
-python3 -m pytest tests/code _migration/tests -q --durations=20 --tb=short
+python3 -m pytest tests/code -q --durations=20 --tb=short
 ```
 
-因此 `_migration/tests` 仍是稳定回归的一部分，不能在未替代前删除。
+历史迁移测试已退出当前 full profile；当前回归只覆盖正式 `tests/`。

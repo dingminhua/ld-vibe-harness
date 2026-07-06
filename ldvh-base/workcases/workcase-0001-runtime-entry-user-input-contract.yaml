@@ -51,7 +51,7 @@ orchestration:
         - specs/01-AI行为规范.md
         - specs/attachments/01.Att.01-AI行为保障消费时机表.md
         - specs/attachments/01.Att.06-AI行为保障机制承接矩阵.md
-        - _migration/v2-runtime-capability-migration-notes.md
+        - git-history:_migration/v2-runtime-capability-migration-notes.md
       expected_output: |
         在后续 v3 运行时扩展或行动指南规范中明确 session-start、acknowledge-read-plan、user-input、pre-tool-use 的边界；定义行动指南为 Code 生成的确定性辅助承接结果，不是规则源或授权器。
       status: pending
@@ -63,7 +63,7 @@ orchestration:
       role: code-contract-design
       mode: single
       input_refs:
-        - _migration/v2-runtime-capability-migration-notes.md
+        - git-history:_migration/v2-runtime-capability-migration-notes.md
       expected_output: |
         设计 `user-input` 或等价 Code 入口的输入输出 schema。输入包括 raw_text、cwd、target candidates、session_id、trigger_source 和 read_plan_consumed；输出包括 intent、extracted_fields、missing_fields、task_read_plan、stop_conditions、validation_guard、next_action 和 source_refs。
       status: pending
@@ -75,7 +75,7 @@ orchestration:
       role: runtime-governance-design
       mode: single
       input_refs:
-        - _migration/v2-runtime-capability-migration-notes.md
+        - git-history:_migration/v2-runtime-capability-migration-notes.md
       expected_output: |
         固化四种情况的处理策略：cwd governed + target governed；cwd governed + target non-governed；cwd non-governed + target governed；cwd non-governed + target non-governed。策略必须 target-first、cwd-fallback，并明确 AI 何时可自行判断普通非项目问题、何时必须调用 Code 确认。
       status: pending
@@ -87,7 +87,7 @@ orchestration:
       role: runtime-state-design
       mode: single
       input_refs:
-        - _migration/v2-runtime-capability-migration-notes.md
+        - git-history:_migration/v2-runtime-capability-migration-notes.md
       expected_output: |
         定义 session-start 的幂等语义、receipt key、target_scope 隔离、target_changed / new_scope 状态、no-op receipt 与 governed receipt 隔离，以及禁止业务副作用的边界。测试必须证明重复 session-start 不修改项目事实源，不跨 target 复用 receipt。
       status: pending
@@ -133,7 +133,7 @@ residual_risks:
 followup_refs: []
 revision_history: []
 related_docs:
-  - _migration/v2-runtime-capability-migration-notes.md
+  - git-history:_migration/v2-runtime-capability-migration-notes.md
 related_adrs: []
 related_sparks:
   - spark-0001

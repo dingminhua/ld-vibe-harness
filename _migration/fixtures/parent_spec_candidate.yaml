@@ -1,8 +1,0 @@
-source_path: specs/04-Code确定性执行规范.md
-source_kind: spec
-candidate_role: parent_spec
-authority_source: specs/04-Code确定性执行规范.md
-target_area: specs
-why_needed: Defines high-level deterministic Code boundaries for v3.
-proposed_target: specs/07-Code确定性执行规范.md
-derived_from: []

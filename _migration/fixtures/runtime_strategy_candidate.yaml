@@ -1,7 +1,0 @@
-source_path: code/hook_dispatch.py
-source_kind: runtime_asset
-candidate_role: runtime_strategy
-authority_source: specs/06-运行时扩展规范.md
-target_area: hooks
-why_needed: Runtime worktree identity strategy needs explicit confirmation.
-derived_from: []

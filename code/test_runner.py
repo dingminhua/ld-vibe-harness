@@ -91,8 +91,8 @@ CODE_RUNTIME_SLOW_STAGE = Stage(
     ),
 )
 CODE_FULL_STAGE = Stage(
-    "code and migration pytest",
-    _python_command("-m", "pytest", "tests/code", "_migration/tests", "-q", "--durations=20", "--tb=short"),
+    "code pytest",
+    _python_command("-m", "pytest", "tests/code", "-q", "--durations=20", "--tb=short"),
 )
 ENVIRONMENT_PLUGIN_STAGE = Stage(
     "environment plugin checks",
@@ -200,8 +200,6 @@ def build_targeted_stages(changed_paths: Iterable[str], *, slow_policy: str = "a
                     stages.append(CODE_RUNTIME_SLOW_STAGE)
         if path.startswith("hooks/environment-plugins/"):
             stages.append(ENVIRONMENT_PLUGIN_STAGE)
-        if path.startswith(("_migration/code/", "_migration/tests/", "_migration/fixtures/", "_migration/schemas/")):
-            stages.append(Stage("migration pytest", _python_command("-m", "pytest", "_migration/tests", "-q", "--durations=20", "--tb=short")))
         if path.startswith("ldvh-base/"):
             stages.append(
                 Stage(

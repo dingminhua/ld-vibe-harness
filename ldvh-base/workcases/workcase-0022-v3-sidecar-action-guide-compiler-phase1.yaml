@@ -312,7 +312,7 @@ verification_evidence: |
   - 新增 v3 行动指南编译器：`code/action_guide/` 与 `code/action_guide_cli.py`。
   - 新增 fixtures：`tests/fixtures/action_guide/`，覆盖 active spec、active action member、candidate action member、deprecated attachment 和 invalid missing source_refs。
   - 新增聚焦测试：`tests/code/test_action_guide_compiler.py`。
-  - 新增临时迁移准入目录：`_migration/`；该目录集中承载 migration gate 的 schemas、code、fixtures 和 tests，明确不属于正式 v3 构成面，可整体删除。
+  - 新增临时迁移准入目录：`git-history:_migration/`；该目录集中承载 migration gate 的 schemas、code、fixtures 和 tests，明确不属于正式 v3 构成面，可整体删除。
 
   ## 验证命令
 
@@ -321,8 +321,8 @@ verification_evidence: |
   - `find . -maxdepth 2 -type d | sort`
   - `python3 code/specs_validate.py governed-projects --root /Users/dmh2002/poker_hud_projects`
   - `python3 /Users/dmh2002/poker_hud_projects/ld-vibe-harness/code/commit_validate.py --check-message <v3 initial commit message> --files <v3 staged files>`
-  - `python3 -m pytest _migration/tests -q`
-  - `python3 _migration/migration_gate_cli.py _migration/fixtures/derived_checklist_candidate.yaml --pretty`
+  - `python3 -m pytest git-history:_migration/tests -q`
+  - `python3 git-history:_migration/migration_gate_cli.py git-history:_migration/fixtures/derived_checklist_candidate.yaml --pretty`
 
   ## 验证结果
 
@@ -335,17 +335,17 @@ verification_evidence: |
   - commit message 预检通过。
   - v3 首个 commit 成功：`d1944cf9 chore: 初始化干净 LDVH v3 骨架`。
   - Human 指出本轮只能增加配置；非配置改动已撤回，当前不声明 Runtime / Hook 策略已完成消歧。
-  - `_migration/` 定向测试通过：7 passed。
+  - `git-history:_migration/` 定向测试通过：7 passed。
   - CLI 样例确认 derived checklist 输出 `do_not_migrate`，next_action 为 `encode_as_schema_code_or_test`。
-  - v3 `_migration/` 已提交：`c5717f34 chore: 添加临时迁移准入脚手架`。
-  - v3 临时迁移决定已提交：`d7868692 chore: 记录 Code 确定性规范迁移决定`；decision 位于 `_migration/decisions/spec-04-code-determinism.decision.yaml`，未迁正文。
+  - v3 `git-history:_migration/` 已提交：`c5717f34 chore: 添加临时迁移准入脚手架`。
+  - v3 临时迁移决定已提交：`d7868692 chore: 记录 Code 确定性规范迁移决定`；decision 位于 `git-history:_migration/decisions/spec-04-code-determinism.decision.yaml`，未迁正文。
   - v3 正式上位规范已提交：`978a9657 feat(specs): 添加 Code 确定性上位规范`；该结论后续已被自举链修正为 `specs/core/` Markdown 核心规范优先，YAML 仅作机器投影。
   - v3 自举链修正已完成：新增 `specs/core/spec-system.md`、`specs/core/schema-contract.md`、`specs/core/code-determinism.md`、`specs/core/action-guide.md`；原 `specs/code-determinism.yaml` 迁为 `specs/core/code-determinism.yaml`。
   - v3 specs 文档体系稳定约束已记录：不新增新专题目录替代原 LDVH specs 体系，不将普通 specs 正文整体 YAML 化；`specs/core/` 只作为少量父层。
-  - v3 临时 specs 体系盘点已建立：`_migration/inventory/specs-inventory.yaml` 覆盖 21 个 specs 正文和 75 个 attachment 文件，只作为迁移评审辅助，不作为正式 v3 权威。
-  - v3 MD 直读 extractor 原型已建立：`_migration/code/md_spec_extractor.py` 可直接读取 v2 `specs/01-规范体系基础规范.md` 的 `v2_spec` 身份块、章节和附件引用，生成可编译为 Action Guide 的行动源；不需要 per-spec YAML。
-  - v3 MD 直读覆盖面已扩展：5 类代表 spec 和全部 21 个 v2 `specs/*.md` 正文均可解析并生成行动源；其中 17 个 usable，4 个 draft limited。临时证据位于 `_migration/inventory/md-direct-read-coverage.yaml`。
-  - v3 specs 膨胀扫描已建立：`_migration/code/spec_bloat_scan.py` 与 `_migration/inventory/spec-bloat-scan.yaml` 记录重复章节、成员模板和跨切面边界语言的临时证据；该扫描不授权删除正文。
+  - v3 临时 specs 体系盘点已建立：`git-history:_migration/inventory/specs-inventory.yaml` 覆盖 21 个 specs 正文和 75 个 attachment 文件，只作为迁移评审辅助，不作为正式 v3 权威。
+  - v3 MD 直读 extractor 原型已建立：`git-history:_migration/code/md_spec_extractor.py` 可直接读取 v2 `specs/01-规范体系基础规范.md` 的 `v2_spec` 身份块、章节和附件引用，生成可编译为 Action Guide 的行动源；不需要 per-spec YAML。
+  - v3 MD 直读覆盖面已扩展：5 类代表 spec 和全部 21 个 v2 `specs/*.md` 正文均可解析并生成行动源；其中 17 个 usable，4 个 draft limited。临时证据位于 `git-history:_migration/inventory/md-direct-read-coverage.yaml`。
+  - v3 specs 膨胀扫描已建立：`git-history:_migration/code/spec_bloat_scan.py` 与 `git-history:_migration/inventory/spec-bloat-scan.yaml` 记录重复章节、成员模板和跨切面边界语言的临时证据；该扫描不授权删除正文。
   - v3 定位已修正：不是实验后回灌 v2，而是 specs + Code 正式重构线；其他构成面暂不重构，待 specs + Code 成熟后整体迁移。
   - v3 全量测试通过：`python3 -m pytest -q`，9 passed。
 
@@ -361,7 +361,7 @@ residual_risks:
   - v3 方向可能拆出多个 WorkCase；本 WorkCase 只承接第一阶段方案和最小闭环，不能作为全部 v3 改造的完成证明。
   - v3 与 v2 仍共享 Git common_dir；当前只增加配置，不改变 Runtime / Hook 策略，因此后续真实 hook 提交和运行时识别仍可能需要单独消歧设计。
   - v3 目前只迁入最小 action guide 编译闭环，尚未迁入 v2 adapter、Runtime/Skill/Web 接入或真实 ldvh-base 事实对象。
-  - '`_migration/` 是临时迁移脚手架，后续如果被正式代码引用或被当成事实源，会重新引入体系膨胀风险；必须保持可整体删除。'
+  - '`git-history:_migration/` 是临时迁移脚手架，后续如果被正式代码引用或被当成事实源，会重新引入体系膨胀风险；必须保持可整体删除。'
   - 行动指南命名可能与当前 v2 knowledge-map 入口形成概念重叠；第一阶段不得删除或弱化 v2 入口。
 followup_refs:
   - spark-0039
@@ -422,7 +422,7 @@ revision_history:
       - verification_evidence
       - residual_risks
     summary: |
-      在 v3 worktree 新增 `_migration/` 临时目录，包含 README、migration schemas、migration_gate classifier、fixtures 和 tests。该目录声明不属于正式 specs/code/tests/fixtures，可在迁移准入完成后整体删除；定向测试 `python3 -m pytest _migration/tests -q` 通过：7 passed。v3 提交已完成：`c5717f34 chore: 添加临时迁移准入脚手架`。
+      在 v3 worktree 新增 `git-history:_migration/` 临时目录，包含 README、migration schemas、migration_gate classifier、fixtures 和 tests。该目录声明不属于正式 specs/code/tests/fixtures，可在迁移准入完成后整体删除；定向测试 `python3 -m pytest git-history:_migration/tests -q` 通过：7 passed。v3 提交已完成：`c5717f34 chore: 添加临时迁移准入脚手架`。
   - at: '2026-06-28T01:40:00+08:00'
     actor: main-controller-codex
     from_status: result_self_checking
@@ -432,7 +432,7 @@ revision_history:
       - updated
       - verification_evidence
     summary: |
-      在 v3 worktree 使用 `_migration` 对 `specs/04-Code确定性执行规范.md` 生成临时迁移 decision：`migrate` / `parent_spec` / `specs/code-determinism.yaml`。decision 已提交到 v3：`d7868692 chore: 记录 Code 确定性规范迁移决定`。
+      在 v3 worktree 使用 `git-history:_migration` 对 `specs/04-Code确定性执行规范.md` 生成临时迁移 decision：`migrate` / `parent_spec` / `specs/code-determinism.yaml`。decision 已提交到 v3：`d7868692 chore: 记录 Code 确定性规范迁移决定`。
   - at: '2026-06-28T01:55:00+08:00'
     actor: main-controller-codex
     from_status: result_self_checking
@@ -442,7 +442,7 @@ revision_history:
       - updated
       - verification_evidence
     summary: |
-      在 v3 worktree 新增正式规范 `specs/code-determinism.yaml`，只抽象 Code 确定性输入、输出、实现纪律、派生物边界和 Runtime 策略停止条件；新增 `tests/code/test_formal_specs.py` 确认该规范可编译为 action guide 且不依赖 `_migration/`。v3 提交已完成：`978a9657 feat(specs): 添加 Code 确定性上位规范`。
+      在 v3 worktree 新增正式规范 `specs/code-determinism.yaml`，只抽象 Code 确定性输入、输出、实现纪律、派生物边界和 Runtime 策略停止条件；新增 `tests/code/test_formal_specs.py` 确认该规范可编译为 action guide 且不依赖 `git-history:_migration/`。v3 提交已完成：`978a9657 feat(specs): 添加 Code 确定性上位规范`。
   - at: '2026-06-28T02:10:00+08:00'
     actor: main-controller-codex
     from_status: result_self_checking
@@ -474,7 +474,7 @@ revision_history:
       - updated
       - verification_evidence
     summary: |
-      在 v3 `_migration/inventory/specs-inventory.yaml` 建立临时盘点：覆盖 21 个 v2 specs 正文和 75 个 attachments 文件，按原体系分段记录角色、迁移动作、共同读取来源、风险和停止条件。同步更新 `_migration/README.md`，明确 inventory 只是临时评审辅助，不授权 v3 specs、schema、Code 或 Action Guide。YAML 解析校验通过，`python3 -m pytest -q` 通过：9 passed。
+      在 v3 `git-history:_migration/inventory/specs-inventory.yaml` 建立临时盘点：覆盖 21 个 v2 specs 正文和 75 个 attachments 文件，按原体系分段记录角色、迁移动作、共同读取来源、风险和停止条件。同步更新 `git-history:_migration/README.md`，明确 inventory 只是临时评审辅助，不授权 v3 specs、schema、Code 或 Action Guide。YAML 解析校验通过，`python3 -m pytest -q` 通过：9 passed。
   - at: '2026-06-28T02:50:00+08:00'
     actor: main-controller-codex
     from_status: result_self_checking
@@ -485,7 +485,7 @@ revision_history:
       - description
       - verification_evidence
     summary: |
-      修正 v3 技术方向：不采用长期“一个 MD 一个 YAML”的双维护策略。新增 `_migration/code/md_spec_extractor.py`、`_migration/md_spec_extract_cli.py` 和 `_migration/tests/test_md_spec_extractor.py`，直接从 v2 `specs/01-规范体系基础规范.md` 解析 `v2_spec` 身份块、标题、章节和附件引用，生成可交给现有 Action Guide compiler 的行动源。`python3 -m pytest _migration/tests -q` 通过：9 passed。
+      修正 v3 技术方向：不采用长期“一个 MD 一个 YAML”的双维护策略。新增 `git-history:_migration/code/md_spec_extractor.py`、`git-history:_migration/md_spec_extract_cli.py` 和 `git-history:_migration/tests/test_md_spec_extractor.py`，直接从 v2 `specs/01-规范体系基础规范.md` 解析 `v2_spec` 身份块、标题、章节和附件引用，生成可交给现有 Action Guide compiler 的行动源。`python3 -m pytest git-history:_migration/tests -q` 通过：9 passed。
   - at: '2026-06-28T03:05:00+08:00'
     actor: main-controller-codex
     from_status: result_self_checking
@@ -495,7 +495,7 @@ revision_history:
       - updated
       - verification_evidence
     summary: |
-      扩展 `_migration` MD extractor 测试：覆盖 00 价值基线、01 规范体系、04 Code、20 事实模型成员、31 行动编排成员，并新增全量扫描测试确认 21 个 v2 `specs/*.md` 正文均可直接从 Markdown 生成行动源。扫描结果：17 个 usable，4 个 draft limited（32、34、35、36）。新增 `_migration/inventory/md-direct-read-coverage.yaml` 记录临时覆盖证据。`python3 -m pytest _migration/tests -q` 通过：16 passed；正式 v3 `python3 -m pytest -q` 通过：9 passed。
+      扩展 `git-history:_migration` MD extractor 测试：覆盖 00 价值基线、01 规范体系、04 Code、20 事实模型成员、31 行动编排成员，并新增全量扫描测试确认 21 个 v2 `specs/*.md` 正文均可直接从 Markdown 生成行动源。扫描结果：17 个 usable，4 个 draft limited（32、34、35、36）。新增 `git-history:_migration/inventory/md-direct-read-coverage.yaml` 记录临时覆盖证据。`python3 -m pytest git-history:_migration/tests -q` 通过：16 passed；正式 v3 `python3 -m pytest -q` 通过：9 passed。
   - at: '2026-06-28T03:20:00+08:00'
     actor: main-controller-codex
     from_status: result_self_checking
@@ -505,7 +505,7 @@ revision_history:
       - updated
       - verification_evidence
     summary: |
-      新增 `_migration/code/spec_bloat_scan.py`、CLI、测试和 `_migration/inventory/spec-bloat-scan.yaml` 临时报告。扫描结果确认重复主要是结构性：21 个文件重复通用治理章节；30/31/32/34/35/36 行动成员共享完整 19 节骨架；20-24 事实模型成员共享对象定位、状态机、对象关系、字段契约等骨架；Human Gate、事实源边界、Code、知识地图、不得/不定义等跨切面语言高频出现。`python3 -m pytest _migration/tests -q` 通过：19 passed；正式 v3 `python3 -m pytest -q` 通过：9 passed。
+      新增 `git-history:_migration/code/spec_bloat_scan.py`、CLI、测试和 `git-history:_migration/inventory/spec-bloat-scan.yaml` 临时报告。扫描结果确认重复主要是结构性：21 个文件重复通用治理章节；30/31/32/34/35/36 行动成员共享完整 19 节骨架；20-24 事实模型成员共享对象定位、状态机、对象关系、字段契约等骨架；Human Gate、事实源边界、Code、知识地图、不得/不定义等跨切面语言高频出现。`python3 -m pytest git-history:_migration/tests -q` 通过：19 passed；正式 v3 `python3 -m pytest -q` 通过：9 passed。
   - at: '2026-06-28T03:35:00+08:00'
     actor: main-controller-codex
     from_status: result_self_checking

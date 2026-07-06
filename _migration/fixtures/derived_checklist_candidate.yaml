@@ -1,9 +1,0 @@
-source_path: specs/attachments/04.Att.07-派生检查清单.md
-source_kind: checklist
-candidate_role: derived_checklist
-authority_source: specs/04-Code确定性执行规范.md
-target_area: none
-why_needed: Checklist is useful but should be generated from schema and tests.
-derived_from:
-  - specs/04-Code确定性执行规范.md
-  - specs/schemas/action-guide.schema.yaml

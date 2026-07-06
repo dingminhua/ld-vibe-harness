@@ -1,6 +1,6 @@
 # LDVH V3
 
-V2 已于 2026-07-02 关闭为历史来源、迁移审计依据和对照材料，不再作为当前 LDVH 的日常规则入口。关闭记录见 `_migration/25A-v2-official-closure.md`。
+V2 已于 2026-07-02 关闭为历史来源、迁移审计依据和对照材料，不再作为当前 LDVH 的日常规则入口。迁移记录已从工作树删除，需要时通过 Git history 追溯。
 
 当前仓库处于 V3 commit-msg 最小 hard switch 状态：日常规则判断、事实对象维护和 Web 数据读取以 V3 为准；当前 worktree 的真实 Git `commit-msg` Hook 已由 V3 接管。Rules / Skill 顶层机制已取消；AI 环境正式接入只支持可安装、可验证、可阻断的 lifecycle Hook。
 
@@ -11,7 +11,6 @@ V2 已于 2026-07-02 关闭为历史来源、迁移审计依据和对照材料�
 - `code/`：确定性解析、校验、诊断、commit gate 和 e2e rehearsal。
 - `web/`：Human-facing 展示和 Web API。Web 独立读取 V3 `ldvh-base/`，不依赖 Code 输出作为主数据源。
 - `tests/`：Tests（测试与验证实现域）的目录。
-- `_migration/`：历史迁移证据和迁移测试材料；不作为日常规则源、事实维护入口或当前 review gate。
 - `hooks/`：当前 worktree 的 `commit-msg` Hook 模板已启用，用于真实提交前校验 V3 commit message 契约；read_plan 消费证据归 runtime receipt 或外部运行时入口，不写入 commit body 要求。
 
 V3 不保留 `rules/` 或 `skills/` 顶层目录机制。V2 Rules 的入口可见能力不再作为当前环境入口、安装策略或验证路径；V2 Skill 的可复用工作流能力只进入行动模板、Action Guide 或外部包装候选。

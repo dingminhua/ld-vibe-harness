@@ -117,13 +117,13 @@ evolution:
       根据 Human 提醒“要配置管辖目录”，已在工作区根目录 `/Users/dmh2002/poker_hud_projects/LDVH-GOVERNED-PROJECTS.yaml` 登记 `ldvh-v3`，并在仓库内配置同步记录 v3 条目。主控曾临时修改 dispatcher、native hook 和测试以处理 worktree common_dir 消歧，但 Human 指出这超出“只增加配置”的授权范围；相关非配置改动已撤回。v3 首个提交 `d1944cf9` 已存在，但不得把它解释为 Runtime/Hook 策略已获准改变。
   - at: '2026-06-28T01:25:00+08:00'
     summary: |
-      根据 Human 判断，迁移准入层是临时系统，不能和正式 v3 内容耦合。已在 v3 worktree 新增 `_migration/` 临时目录，集中放置 migration schemas、classifier、fixtures、tests 和 README；正式 `specs/`、`code/`、`tests/` 不因此增加迁移准入内容。`_migration/` 明确可在首批迁移完成、稳定分类体系形成后整体删除。v3 提交已完成：`c5717f34 chore: 添加临时迁移准入脚手架`。
+      根据 Human 判断，迁移准入层是临时系统，不能和正式 v3 内容耦合。已在 v3 worktree 新增 `git-history:_migration/` 临时目录，集中放置 migration schemas、classifier、fixtures、tests 和 README；正式 `specs/`、`code/`、`tests/` 不因此增加迁移准入内容。`git-history:_migration/` 明确可在首批迁移完成、稳定分类体系形成后整体删除。v3 提交已完成：`c5717f34 chore: 添加临时迁移准入脚手架`。
   - at: '2026-06-28T01:40:00+08:00'
     summary: |
-      按计划执行第一份迁移准入试判定：使用 `_migration` 对 `specs/04-Code确定性执行规范.md` 生成临时 decision，结论为 `migrate` / `parent_spec`，目标 `specs/code-determinism.yaml`。该 decision 只存在于 `_migration/decisions/`，不迁正文、不修改正式 v3 specs。v3 提交已完成：`d7868692 chore: 记录 Code 确定性规范迁移决定`。
+      按计划执行第一份迁移准入试判定：使用 `git-history:_migration` 对 `specs/04-Code确定性执行规范.md` 生成临时 decision，结论为 `migrate` / `parent_spec`，目标 `specs/code-determinism.yaml`。该 decision 只存在于 `git-history:_migration/decisions/`，不迁正文、不修改正式 v3 specs。v3 提交已完成：`d7868692 chore: 记录 Code 确定性规范迁移决定`。
   - at: '2026-06-28T01:55:00+08:00'
     summary: |
-      根据首个 migration decision，在 v3 正式 `specs/` 中新增 `specs/code-determinism.yaml`。该文件只抽象 Code 确定性的上位边界，不复制 v2 04 正文，不引用 `_migration/` 作为正式依赖，并明确 Runtime / hook / dispatcher / write strategy 变化必须另行确认。v3 提交已完成：`978a9657 feat(specs): 添加 Code 确定性上位规范`。
+      根据首个 migration decision，在 v3 正式 `specs/` 中新增 `specs/code-determinism.yaml`。该文件只抽象 Code 确定性的上位边界，不复制 v2 04 正文，不引用 `git-history:_migration/` 作为正式依赖，并明确 Runtime / hook / dispatcher / write strategy 变化必须另行确认。v3 提交已完成：`978a9657 feat(specs): 添加 Code 确定性上位规范`。
   - at: '2026-06-28T02:10:00+08:00'
     summary: |
       根据 Human 对自举悖论的质疑和子 agent 审核，修正 v3 权威链：不新增 `specs/00-bootstrap-charter.md`，也不让 YAML 先定义上位规范。Human 允许将第一批核心规范放入 `specs/core/`；因此 v3 新增 `specs/core/spec-system.md`、`schema-contract.md`、`code-determinism.md`、`action-guide.md`，并将原 `specs/code-determinism.yaml` 迁为 `specs/core/code-determinism.yaml` 的机器投影，回指 Markdown 核心规范。
@@ -132,16 +132,16 @@ evolution:
       根据 Human 纠偏，记录稳定约束：v3 不重做 specs 正文分类体系，不把原 specs 正文 YAML 化。原 LDVH specs 文档体系继续作为迁移基线；`specs/core/` 只是少量父层规范；`specs/schemas/` 是机器契约；YAML 只作为授权后的机器表达。未经明确决策，不新增 `specs/runtime/`、`specs/facts/`、`specs/action/`、`specs/git/` 等新专题目录替代原体系。
   - at: '2026-06-28T02:35:00+08:00'
     summary: |
-      按 Human 要求继续行动，但不迁正文、不新增正式规范。v3 在 `_migration/inventory/specs-inventory.yaml` 建立临时 specs 体系盘点，覆盖 v2 的 21 个 specs 正文和 75 个 attachments 文件，记录原体系分段、每份正文的原始角色、推荐迁移动作、共同读取来源、风险和停止条件。该 inventory 明确不是 v3 事实源、规则源、schema authority 或 Action Guide，只用于后续迁移评审。
+      按 Human 要求继续行动，但不迁正文、不新增正式规范。v3 在 `git-history:_migration/inventory/specs-inventory.yaml` 建立临时 specs 体系盘点，覆盖 v2 的 21 个 specs 正文和 75 个 attachments 文件，记录原体系分段、每份正文的原始角色、推荐迁移动作、共同读取来源、风险和停止条件。该 inventory 明确不是 v3 事实源、规则源、schema authority 或 Action Guide，只用于后续迁移评审。
   - at: '2026-06-28T02:50:00+08:00'
     summary: |
-      根据 Human 对“一个 MD 一个 YAML 如何同步”的追问，修正方向：长期不做 per-spec YAML 双维护。v3 在 `_migration/code/md_spec_extractor.py` 新增 MD 直读 extractor 原型，直接读取 v2 `specs/01-规范体系基础规范.md` 的 `v2_spec` 身份块、标题、章节和附件引用，生成可交给现有 Action Guide compiler 的行动源。`_migration/tests` 通过，证明 Code 可先从 Markdown 稳定格式直接生成导航结构。
+      根据 Human 对“一个 MD 一个 YAML 如何同步”的追问，修正方向：长期不做 per-spec YAML 双维护。v3 在 `git-history:_migration/code/md_spec_extractor.py` 新增 MD 直读 extractor 原型，直接读取 v2 `specs/01-规范体系基础规范.md` 的 `v2_spec` 身份块、标题、章节和附件引用，生成可交给现有 Action Guide compiler 的行动源。`git-history:_migration/tests` 通过，证明 Code 可先从 Markdown 稳定格式直接生成导航结构。
   - at: '2026-06-28T03:05:00+08:00'
     summary: |
-      扩展 MD 直读覆盖面验证：`_migration/tests/test_md_spec_extractor.py` 现在覆盖 00、01、04、20、31 五类代表 spec，并扫描全部 21 个 v2 `specs/*.md` 正文。结果显示 21 份正文都可从 Markdown 直接提取身份块并生成 Action Guide compiler 可消费的行动源；17 份 active/usable，4 份 draft 自动降级为 limited。覆盖证据记录在 `_migration/inventory/md-direct-read-coverage.yaml`，仍为临时迁移证据，不是正式规则源。
+      扩展 MD 直读覆盖面验证：`git-history:_migration/tests/test_md_spec_extractor.py` 现在覆盖 00、01、04、20、31 五类代表 spec，并扫描全部 21 个 v2 `specs/*.md` 正文。结果显示 21 份正文都可从 Markdown 直接提取身份块并生成 Action Guide compiler 可消费的行动源；17 份 active/usable，4 份 draft 自动降级为 limited。覆盖证据记录在 `git-history:_migration/inventory/md-direct-read-coverage.yaml`，仍为临时迁移证据，不是正式规则源。
   - at: '2026-06-28T03:20:00+08:00'
     summary: |
-      回到最初问题：v2 specs 是否存在重复和非必要信息。v3 在 `_migration/code/spec_bloat_scan.py` 新增可复跑的重复结构扫描器，并生成 `_migration/inventory/spec-bloat-scan.yaml` 临时报告。扫描 21 个 specs 正文后发现：通用治理章节在几乎所有文件重复；30/31/32/34/35/36 六个行动成员共享完整 19 节 H2 骨架；20-24 五个事实模型成员共享对象/状态机/关系/字段等骨架；Human Gate、事实源边界、Code、知识地图、不得/不定义等跨切面语言高频出现。初步结论是：保留 Markdown 权威和可解析骨架，但应区分本地 delta、父层规则、Code 检查和行动指南可派生内容。
+      回到最初问题：v2 specs 是否存在重复和非必要信息。v3 在 `git-history:_migration/code/spec_bloat_scan.py` 新增可复跑的重复结构扫描器，并生成 `git-history:_migration/inventory/spec-bloat-scan.yaml` 临时报告。扫描 21 个 specs 正文后发现：通用治理章节在几乎所有文件重复；30/31/32/34/35/36 六个行动成员共享完整 19 节 H2 骨架；20-24 五个事实模型成员共享对象/状态机/关系/字段等骨架；Human Gate、事实源边界、Code、知识地图、不得/不定义等跨切面语言高频出现。初步结论是：保留 Markdown 权威和可解析骨架，但应区分本地 delta、父层规则、Code 检查和行动指南可派生内容。
   - at: '2026-06-28T03:35:00+08:00'
     summary: |
       根据 Human 澄清，修正 v3 定位：不是实验后回灌 v2，而是 specs 与 Code 两块正式重构线。v2 保持当前稳定运行；v3 聚焦解决 specs 膨胀、重复、知识地图概念局限和 Code 编译链升级；`rules/`、`hooks/`、`skills/`、Runtime、Web、`ldvh-base/` 等其他构成面暂不重构、不改变策略，待 specs + Code 成熟后再整体迁移。

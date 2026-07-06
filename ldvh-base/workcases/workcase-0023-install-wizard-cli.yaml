@@ -211,7 +211,7 @@ orchestration:
         summary: |
           README 和 Code docs 已表达 CLI 是 10 的确定性执行壳、30 是 Human-facing 正式行动模板。审核指出 WorkCase 成功标准未同步、item-4 expected_output 残留旧表述、formal review receipt hash 失真；主控已修正。
         residual_risk: |
-          `_migration/` 是历史材料，后续若继续批量替换正式路径，应同步检查 receipt/hash 类证据字段。
+          `git-history:_migration/` 是历史材料，后续若继续批量替换正式路径，应同步检查 receipt/hash 类证据字段。
       - reviewer: Hypatia
         perspective: cli_implementation_boundary_result
         outcome: pass_after_p1_p2_fixes

@@ -136,14 +136,6 @@ def test_install_action_template_discloses_runtime_cache_boundary() -> None:
     assert "runtime cache 状态" in raw
 
 
-def test_migration_33a_marks_formal_review_hash_gate_superseded() -> None:
-    raw = (ROOT / "_migration/33A-action-template-30-admission.md").read_text(encoding="utf-8")
-
-    assert "formal review hash gate 的描述只保留为历史迁移记录" in raw
-    assert "formal review 机制后续已废弃" in raw
-    assert "`reviews/formal/30-formal-review.yaml` 不再是当前仓库应存在的产物" in raw
-
-
 def test_assurance_spec_registers_environment_entry_classification_and_payload_contracts(validation_result: dict) -> None:
     result = validation_result
     specs = {spec["object_id"]: spec for spec in result["specs"]}
@@ -208,8 +200,8 @@ def test_assurance_spec_defines_git_and_environment_hook_boundaries() -> None:
     assert "hooks/LDVH-RUNTIME-PROTOCOL.md" in entry_types
     assert "不写接入判定分类" in entry_types
     assert "| `environment_hook` |" in entry_types
-    assert "LDVH 环境插件" in entry_types
-    assert "Codex plugin" in entry_types
+    assert "目标环境 LDVH 插件" in entry_types
+    assert "Codex 目标环境" in entry_types
     assert "只调用 LDVH" in entry_types
     assert "只指向 LDVH runtime / adapter" in entry_types
 
@@ -486,7 +478,7 @@ def test_fact_model_validator_reports_migration_as_instance_boundary(tmp_path: P
     _replace_in_temp(
         root,
         "specs/05-事实模型基础规范.md",
-        "`_migration` 迁移材料不得被写成事实实例；它只作为迁移证据或历史来源。",
+        "已从工作树删除的迁移材料不得被写成事实实例；历史迁移记录只通过 Git history 追溯。",
     )
 
     result = ldvh_specs.build_validation(root)
@@ -3089,21 +3081,21 @@ def test_runtime_git_commit_msg_blocks_incomplete_read_plan_consumption(validati
 
 
 def test_commit_gate_accepts_v2_commit_body_without_read_plan() -> None:
-    message = """docs(docs): 对齐阶段9主线切换范围
+    message = """test(tests): 对齐当前测试回归范围
 
 关键变更:
-- 新增阶段9范围和9A审计
+- 更新当前测试回归范围说明
 
 验证结论:
-- python3 -m pytest tests/code _migration/tests -q 通过
+- python3 -m pytest tests/code -q 通过
 """
 
     gate = ldvh_specs.build_commit_gate(
         ROOT,
         message=message,
         changed_paths=[
-            "_migration/9-v3-mainline-transition-scope.md",
-            "_migration/9A-migration-layer-dependency-audit.md",
+            "tests/code/test_ldvh_specs_validate.py",
+            "tests/code/test_ldvh_test_runner.py",
         ],
     )
 
@@ -3114,7 +3106,7 @@ def test_commit_gate_accepts_v2_commit_body_without_read_plan() -> None:
     assert gate["summary"]["body_required"] is True
     assert gate["summary"]["read_plan_required"] is False
     assert gate["summary"]["read_plan_consumed"] is True
-    assert gate["body_required_reasons"] == ["多文件范围", "边界变化"]
+    assert gate["body_required_reasons"] == ["高影响文件", "多文件范围"]
     assert gate["diagnostics"] == []
 
 
@@ -3148,8 +3140,8 @@ def test_commit_gate_does_not_use_message_body_as_read_plan_evidence() -> None:
 def test_commit_gate_rejects_unknown_scope() -> None:
     gate = ldvh_specs.build_commit_gate(
         ROOT,
-        message="docs(migration): 对齐阶段9主线切换范围",
-        changed_paths=["_migration/9-v3-mainline-transition-scope.md"],
+        message="docs(migration): 对齐历史迁移说明",
+        changed_paths=["README.md"],
         acknowledged_paths=[
             "specs/00-理念与构成.md",
             "specs/01-保障与衔接.md",
@@ -3263,7 +3255,7 @@ def test_commit_validate_wrapper_blocks_invalid_message(tmp_path: Path) -> None:
             "--repo",
             str(ROOT),
             "--changed-path",
-            "_migration/9-v3-mainline-transition-scope.md",
+            "README.md",
             "--acknowledged-path",
             "specs/00-理念与构成.md",
             "--acknowledged-path",

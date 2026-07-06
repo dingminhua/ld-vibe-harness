@@ -185,7 +185,7 @@ FACT_MODEL_BOUNDARY_REQUIREMENTS = [
         "code": "FACT_INSTANCE_MIGRATION_BOUNDARY_MISSING",
         "section": "事实模型与事实实例",
         "message": "05 必须声明迁移材料不得被写成事实实例",
-        "terms": ["`_migration` 迁移材料不得被写成事实实例"],
+        "terms": ["已从工作树删除的迁移材料不得被写成事实实例"],
     },
     {
         "code": "FACT_OBJECT_ADMISSION_VALUE_MISSING",
@@ -212,7 +212,7 @@ FACT_SOURCE_EVIDENCE_REQUIREMENTS = [
         "path": SHORT_SPEC_REFS["03"],
         "section": "事实源边界",
         "message": "03 必须列出非事实源排除项",
-        "terms": ["聊天", "Code 输出", "测试输出", "Web 页面状态", "runtime receipt", "`_migration` 材料", "Git commit records"],
+        "terms": ["聊天", "Code 输出", "测试输出", "Web 页面状态", "runtime receipt", "历史迁移材料", "Git commit records"],
     },
     {
         "code": "PROCESS_OUTPUT_QUALIFICATION_MISSING",
@@ -3918,13 +3918,6 @@ def classify_target_path(target_path: str) -> dict[str, str]:
             "impact": "low",
             "reason": "目标属于测试，提供验证证据但不得替代 Human Gate。",
         }
-    if normalized.startswith("_migration/"):
-        return {
-            "target_path": normalized,
-            "target_type": "migration",
-            "impact": "low",
-            "reason": "目标属于迁移材料，只能作为临时证据，不授权正式规则或 Code 行为。",
-        }
     return {
         "target_path": normalized,
         "target_type": "unknown",
@@ -3940,8 +3933,6 @@ def preflight_read_plan_for_target(classification: dict[str, str]) -> list[dict[
     read_paths.extend(PREFLIGHT_TYPE_READ_PATHS.get(target_type, []))
     if target_type in {"spec", "core_spec", "attachment"} and target_path:
         read_paths.append(target_path)
-    if target_type == "migration":
-        read_paths.append("_migration/v3-migration-execution-plan.md")
     return [
         {
             "priority": "P0" if path in PREFLIGHT_BASE_READ_PATHS else "P1",
@@ -4358,8 +4349,6 @@ def _commit_scope_for_path(path: str) -> str:
         return "rules"
     if normalized.startswith("docs/"):
         return "docs"
-    if normalized.startswith("_migration/"):
-        return "docs"
     if normalized.startswith(".github/") or normalized.endswith((".yaml", ".yml", ".toml", ".json")):
         return "config"
     if normalized.startswith("ldvh-base/sparks/"):
@@ -4398,8 +4387,6 @@ def _commit_path_changes_boundary(path: str) -> bool:
             VERIFICATION_CLAIM_FIELDS_PATH,
             TAKEOVER_MATRIX_PATH,
             GOVERNED_PROJECTS_CONFIG_PATH,
-            "_migration/v3-migration-execution-plan.md",
-            "_migration/9-v3-mainline-transition-scope.md",
         }
         or normalized.startswith("code/")
         or normalized.startswith("rules/")
@@ -4979,7 +4966,7 @@ def build_e2e_rehearsal(
     normalized_target = normalize_relative_path(target_path)
     ack_paths = list(RUNTIME_REQUIRED_ENTRY_PATHS)
     evidence = verification_evidence or [
-        "python3 -m pytest tests/code _migration/tests -q",
+        "python3 -m pytest tests/code -q",
         "python3 code/specs_validate.py all --format text --fail-on-diagnostics",
     ]
     validation = build_validation(root)
@@ -5138,7 +5125,6 @@ def build_e2e_rehearsal(
             + git_commit_msg["source_refs"]
             + completion_claim["source_refs"]
             + [
-                {"path": "_migration/v3-migration-execution-plan.md", "role": "stage_8_plan"},
                 {"path": SHORT_SPEC_REFS["31"], "role": "git_commit_action_template"},
                 {"path": SHORT_SPEC_REFS["10"], "role": "governed_project_boundary"},
             ],

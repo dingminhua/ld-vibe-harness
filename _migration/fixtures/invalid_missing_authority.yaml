@@ -1,7 +1,0 @@
-source_path: specs/unknown.md
-source_kind: spec
-candidate_role: parent_spec
-authority_source: ""
-target_area: specs
-why_needed: Invalid candidate without an authority source.
-derived_from: []
