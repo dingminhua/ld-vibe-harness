@@ -77,10 +77,10 @@ pre tool use 类事件只有在目标环境真实支持阻断、payload 可验�
 
 ```bash
 python3 code/environment_status.py --format text
-python3 code/environment_entry_audit.py --format text
+python3 code/environment_entry_audit.py --environment-name <目标环境名> --format text
 ```
 
-`environment_entry_audit.py` 当前可审计 `codex.ldvh-plugin` 样例，并能识别旧插件指向 V2 路径。Codex 只是当前可审计样例，不是环境插件总规则。
+`environment_entry_audit.py` 按目标环境生成候选项；只有 `--environment-name Codex` 时才审计 `codex.ldvh-plugin` 样例并识别旧插件指向 V2 路径。其它目标环境必须显示自身插件、扩展包或 adapter 的缺口，不得复用 Codex 插件状态。
 
 证据检查至少应覆盖：
 

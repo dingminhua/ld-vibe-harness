@@ -33,24 +33,75 @@ def _init_git_repo(path: Path) -> None:
     subprocess.run(["git", "init", "-q"], cwd=path, check=True, timeout=30)
 
 
+def _install_codex_v3_plugin(codex_home: Path) -> None:
+    hook_dir = codex_home / "plugins" / "cache" / "personal" / "ldvh" / "0.1.0" / "hooks"
+    hook_dir.mkdir(parents=True)
+    (codex_home / "config.toml").write_text(
+        """
+[plugins."ldvh@personal"]
+enabled = true
+""".strip()
+        + "\n",
+        encoding="utf-8",
+    )
+    shim = ROOT / "hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py"
+    (hook_dir / "hooks.json").write_text(
+        json.dumps(
+            {
+                "hooks": {
+                    "SessionStart": [{"matcher": "startup|resume", "hooks": [{"type": "command", "command": f"{sys.executable} {shim}"}]}],
+                    "PreToolUse": [{"matcher": "Write|Edit|apply_patch", "hooks": [{"type": "command", "command": f"{sys.executable} {shim}"}]}],
+                    "Stop": [{"matcher": "*", "hooks": [{"type": "command", "command": f"{sys.executable} {shim}"}]}],
+                }
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+
+
+def test_install_wizard_parser_defaults_workspace_to_ldvh_parent(tmp_path: Path, monkeypatch) -> None:
+    workspace = tmp_path / "workspace"
+    ldvh_root = workspace / "ldvh"
+    ldvh_root.mkdir(parents=True)
+    (ldvh_root / "LDVH-GOVERNED-PROJECTS.yaml").write_text(
+        "product_name: Wrong scope\nproduct_description: Should not define default workspace\nprojects: []\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(install_wizard, "ROOT", ldvh_root)
+
+    args = install_wizard.build_parser().parse_args(["check"])
+
+    assert args.governance_root == workspace.as_posix()
+    assert args.repo == workspace.as_posix()
+    assert args.ldvh_root == ldvh_root.as_posix()
+
+
 def test_install_wizard_check_and_plan_are_read_only(tmp_path: Path) -> None:
     governance_root = tmp_path / "governance"
     repo = tmp_path / "repo"
+    codex_home = tmp_path / "codex-home"
     governance_root.mkdir()
+    codex_home.mkdir()
     _init_git_repo(repo)
     _write_governed_config(governance_root, repo)
+    _install_codex_v3_plugin(codex_home)
     hook_path = repo / ".git/hooks/commit-msg"
 
     check = build_install_check(
         governance_root=governance_root,
         ldvh_root=ROOT,
         repo=repo,
+        codex_home=codex_home,
+        environment_name="Codex",
         environment_strategy="plugin_hook",
     )
     plan = build_install_plan(
         governance_root=governance_root,
         ldvh_root=ROOT,
         repo=repo,
+        codex_home=codex_home,
+        environment_name="Codex",
         environment_strategy="plugin_hook",
     )
 
@@ -95,6 +146,8 @@ def test_install_wizard_auto_detect_unknown_environment_blocks_without_codex_def
     assert result["metadata"]["environment_name"] == "未知环境"
     assert result["summary"]["environment_strategy"] == "unsupported"
     assert result["summary"]["status"] == "blocked"
+    assert "目标环境插件缺口提示" in result["interaction_handoff"]["next_actions"][0]
+    assert any("不要生成替代环境写入" in item for item in result["interaction_handoff"]["next_actions"])
     assert any(
         diagnostic["code"] == "INSTALL_WIZARD_ENVIRONMENT_HOOK_UNSUPPORTED"
         for diagnostic in result["diagnostics"]
@@ -104,15 +157,20 @@ def test_install_wizard_auto_detect_unknown_environment_blocks_without_codex_def
 def test_install_wizard_apply_requires_human_gate_and_does_not_write(tmp_path: Path) -> None:
     governance_root = tmp_path / "governance"
     repo = tmp_path / "repo"
+    codex_home = tmp_path / "codex-home"
     governance_root.mkdir()
+    codex_home.mkdir()
     _init_git_repo(repo)
     _write_governed_config(governance_root, repo)
+    _install_codex_v3_plugin(codex_home)
     hook_path = repo / ".git/hooks/commit-msg"
 
     result = build_install_apply(
         governance_root=governance_root,
         ldvh_root=ROOT,
         repo=repo,
+        codex_home=codex_home,
+        environment_name="Codex",
         environment_strategy="plugin_hook",
         confirm_human_gate=False,
     )
@@ -132,12 +190,14 @@ def test_install_wizard_apply_plugin_hook_uses_governed_hook_backend(tmp_path: P
     codex_home.mkdir()
     _init_git_repo(repo)
     _write_governed_config(governance_root, repo)
+    _install_codex_v3_plugin(codex_home)
 
     result = build_install_apply(
         governance_root=governance_root,
         ldvh_root=ROOT,
         repo=repo,
         codex_home=codex_home,
+        environment_name="Codex",
         environment_strategy="plugin_hook",
         confirm_human_gate=True,
     )
@@ -147,11 +207,11 @@ def test_install_wizard_apply_plugin_hook_uses_governed_hook_backend(tmp_path: P
     hook_status = result["apply_results"][0]["hook_status"]
     assert Path(hook_status["active_hook"]).is_file()
     assert result["verification"]["metadata"]["authority"] == "install_verification"
-    assert result["interaction_handoff"]["status"] == "write_completed_handoff_required"
+    assert result["interaction_handoff"]["status"] == "write_completed_verified"
     assert result["interaction_handoff"]["human_gate_confirmed"] is True
-    assert result["interaction_handoff"]["result_cards"][0]["status"] == "需用户侧验证"
+    assert result["interaction_handoff"]["result_cards"][0]["status"] == "断点后验证"
     assert result["interaction_handoff"]["result_cards"][1]["status"] == "通过"
-    assert any("断点后 lifecycle 验证" in action for action in result["interaction_handoff"]["next_actions"])
+    assert any("写入完成总结和验证结果" in action for action in result["interaction_handoff"]["next_actions"])
 
 
 def test_install_wizard_blocks_non_git_repo(tmp_path: Path) -> None:
@@ -203,17 +263,27 @@ def test_install_wizard_blocks_non_hook_environment_strategies_without_alternati
         governance_root=governance_root,
         ldvh_root=ROOT,
         repo=repo,
+        environment_name="WorkBuddy",
         environment_strategy="external_adapter_candidate",
     )
     unsupported_plan = build_install_plan(
         governance_root=governance_root,
         ldvh_root=ROOT,
         repo=repo,
+        environment_name="WorkBuddy",
         environment_strategy="unsupported",
+    )
+    requested_plugin_hook_plan = build_install_plan(
+        governance_root=governance_root,
+        ldvh_root=ROOT,
+        repo=repo,
+        environment_name="WorkBuddy",
+        environment_strategy="plugin_hook",
     )
 
     assert external_plan["summary"]["status"] == "blocked"
     assert unsupported_plan["summary"]["status"] == "blocked"
+    assert requested_plugin_hook_plan["summary"]["status"] == "blocked"
     assert external_plan["install_plan"]["environment_strategy"] == "external_adapter_candidate"
     assert external_plan["install_plan"]["planned_writes"] == []
     assert external_plan["install_plan"]["handoff_candidates"][0]["kind"] == "external_adapter_candidate"
@@ -222,6 +292,11 @@ def test_install_wizard_blocks_non_hook_environment_strategies_without_alternati
     assert unsupported_plan["install_plan"]["planned_writes"] == []
     assert unsupported_plan["install_plan"]["handoff_candidates"][0]["kind"] == "unsupported"
     assert unsupported_plan["install_plan"]["skipped_writes"][0]["kind"] == "unsupported"
+    assert requested_plugin_hook_plan["install_plan"]["environment_strategy"] == "unsupported"
+    assert requested_plugin_hook_plan["install_plan"]["planned_writes"] == []
+    assert "目标环境插件缺口提示" in external_plan["interaction_handoff"]["next_actions"][0]
+    assert any("不要生成替代环境写入" in item for item in unsupported_plan["interaction_handoff"]["next_actions"])
+    assert "目标环境插件缺口提示" in requested_plugin_hook_plan["interaction_handoff"]["next_actions"][0]
     assert any(
         diagnostic["code"] == "INSTALL_WIZARD_ENVIRONMENT_HOOK_UNSUPPORTED"
         for diagnostic in external_plan["diagnostics"]
@@ -230,7 +305,13 @@ def test_install_wizard_blocks_non_hook_environment_strategies_without_alternati
         diagnostic["code"] == "INSTALL_WIZARD_ENVIRONMENT_HOOK_UNSUPPORTED"
         for diagnostic in unsupported_plan["diagnostics"]
     )
-    assert external_plan["install_plan"]["checks"]["environment_audit"]["codex_plugin_entry_integrated"] is False
+    assert any(
+        diagnostic["code"] == "INSTALL_WIZARD_ENVIRONMENT_HOOK_UNSUPPORTED"
+        for diagnostic in requested_plugin_hook_plan["diagnostics"]
+    )
+    assert external_plan["install_plan"]["checks"]["environment_audit"]["environment_name"] == "WorkBuddy"
+    assert "codex_plugin_entry_integrated" not in external_plan["install_plan"]["checks"]["environment_audit"]
+    assert external_plan["install_plan"]["checks"]["environment_audit"]["absent_entrypoints"] == ["workbuddy.ldvh-plugin"]
 
 
 def test_install_wizard_apply_blocks_non_hook_strategies(tmp_path: Path) -> None:
@@ -295,9 +376,12 @@ def test_install_wizard_verify_wraps_install_verification(tmp_path: Path) -> Non
 def test_install_wizard_cli_plan_json(tmp_path: Path) -> None:
     governance_root = tmp_path / "governance"
     repo = tmp_path / "repo"
+    codex_home = tmp_path / "codex-home"
     governance_root.mkdir()
+    codex_home.mkdir()
     _init_git_repo(repo)
     _write_governed_config(governance_root, repo)
+    _install_codex_v3_plugin(codex_home)
 
     completed = subprocess.run(
         [
@@ -310,6 +394,10 @@ def test_install_wizard_cli_plan_json(tmp_path: Path) -> None:
             ROOT.as_posix(),
             "--repo",
             repo.as_posix(),
+            "--codex-home",
+            codex_home.as_posix(),
+            "--environment-name",
+            "Codex",
             "--environment-strategy",
             "plugin_hook",
             "--format",
@@ -330,9 +418,12 @@ def test_install_wizard_cli_plan_json(tmp_path: Path) -> None:
 def test_install_wizard_cli_text_includes_interaction_handoff(tmp_path: Path) -> None:
     governance_root = tmp_path / "governance"
     repo = tmp_path / "repo"
+    codex_home = tmp_path / "codex-home"
     governance_root.mkdir()
+    codex_home.mkdir()
     _init_git_repo(repo)
     _write_governed_config(governance_root, repo)
+    _install_codex_v3_plugin(codex_home)
 
     completed = subprocess.run(
         [
@@ -345,6 +436,10 @@ def test_install_wizard_cli_text_includes_interaction_handoff(tmp_path: Path) ->
             ROOT.as_posix(),
             "--repo",
             repo.as_posix(),
+            "--codex-home",
+            codex_home.as_posix(),
+            "--environment-name",
+            "Codex",
             "--environment-strategy",
             "plugin_hook",
             "--format",
@@ -371,6 +466,7 @@ def test_install_wizard_cli_check_verify_and_apply_gate_json(tmp_path: Path) -> 
     codex_home.mkdir()
     _init_git_repo(repo)
     _write_governed_config(governance_root, repo)
+    _install_codex_v3_plugin(codex_home)
 
     common_args = [
         "--governance-root",
@@ -381,6 +477,8 @@ def test_install_wizard_cli_check_verify_and_apply_gate_json(tmp_path: Path) -> 
         repo.as_posix(),
         "--codex-home",
         codex_home.as_posix(),
+        "--environment-name",
+        "Codex",
         "--environment-strategy",
         "plugin_hook",
         "--format",
@@ -482,6 +580,7 @@ def test_install_wizard_cli_apply_reports_verification_blocking_exit_nonzero(tmp
     codex_home.mkdir()
     _init_git_repo(repo)
     _write_governed_config(governance_root, repo)
+    _install_codex_v3_plugin(codex_home)
 
     def fake_build_install_verification(**_kwargs):
         return {
@@ -512,6 +611,8 @@ def test_install_wizard_cli_apply_reports_verification_blocking_exit_nonzero(tmp
             repo.as_posix(),
             "--codex-home",
             codex_home.as_posix(),
+            "--environment-name",
+            "Codex",
             "--environment-strategy",
             "plugin_hook",
             "--confirm-human-gate",

@@ -1206,6 +1206,8 @@ def test_ldvh_install_action_template_is_code_consumable(validation_result: dict
     assert "目标环境" in rows["Context"]
     assert "LDVH 本体路径" in rows["Context"]
     assert "目标工作区根目录" in rows["Context"]
+    assert "默认值是 LDVH 本体路径的父目录" in raw
+    assert "不得把目标工作区根目录写成“待确认”" in raw
     assert "目标工作区配置" in rows["Context"]
     assert "事实源目录状态" in rows["Context"]
     assert "Git Hook 状态" in rows["Context"]
@@ -1266,6 +1268,9 @@ def test_ldvh_install_action_template_defines_action_stage_contract(validation_r
     assert "Runtime Protocol" in raw
     assert "目标环境暂不属于 LDVH 支持范围" in raw
     assert "需先实现目标环境插件" in raw
+    assert "目标环境插件缺口提示" in raw
+    assert "不会执行任何替代环境写入" in raw
+    assert "按 spec 33 编写目标环境 LDVH 插件 / adapter" in raw
     assert "统一验证标准" in raw
     assert "runtime 循环在真实 AI lifecycle 里产出可复核证据" in raw
     assert "断点恢复协议" in raw
@@ -1299,6 +1304,14 @@ def test_ldvh_install_action_template_defines_action_stage_contract(validation_r
     assert "进入 31" not in raw
     assert "specs/31" not in raw
     assert "环境Hook接入后验收" not in raw
+
+
+def test_install_wizard_practice_defaults_workspace_root_to_ldvh_parent() -> None:
+    raw = (ROOT / "code/docs/03-LDVH-Install-Wizard-Practice.md").read_text(encoding="utf-8")
+
+    assert "未显式指定时默认使用 LDVH 本体路径的父目录" in raw
+    assert "由 LDVH 本体父目录推导" in raw
+    assert "不要把该值写成“待确认”" in raw
     assert "状态牌固定包含" not in raw
     assert "安装向导状态机" not in raw
 
@@ -4100,6 +4113,8 @@ def test_environment_entry_audit_marks_rules_and_skills_removed_top_level(tmp_pa
             str(ROOT),
             "--codex-home",
             str(codex_home),
+            "--environment-name",
+            "Codex",
             "--format",
             "json",
         ],
@@ -4167,6 +4182,8 @@ def test_environment_entry_audit_does_not_treat_agent_file_as_integration(tmp_pa
             str(ROOT),
             "--codex-home",
             str(codex_home),
+            "--environment-name",
+            "Codex",
             "--format",
             "json",
         ],
@@ -4185,6 +4202,69 @@ def test_environment_entry_audit_does_not_treat_agent_file_as_integration(tmp_pa
     assert candidates["skills.top_level_mechanism"]["status"] == "removed_top_level"
     assert payload["summary"]["codex_environment_entry_integrated"] is False
     assert "ENV_CODEX_ENTRY_FILES_NOT_INTEGRATED" not in _diagnostic_codes(payload)
+
+
+def test_environment_entry_audit_scopes_plugin_candidate_to_target_environment(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    codex_home = tmp_path / "codex-home"
+    repo.mkdir()
+    codex_home.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=repo, check=True, timeout=30)
+    (codex_home / "config.toml").write_text(
+        """
+[plugins."ldvh@personal"]
+enabled = true
+""".strip()
+        + "\n",
+        encoding="utf-8",
+    )
+    _run_cli(
+        [
+            sys.executable,
+            "code/install_git_hooks.py",
+            "install",
+            "--repo",
+            str(repo),
+            "--backend-allow-external",
+            "--ldvh-root",
+            str(ROOT),
+        ],
+        cwd=ROOT,
+        check=True,
+    )
+
+    completed = _run_cli(
+        [
+            sys.executable,
+            "code/environment_entry_audit.py",
+            "--repo",
+            str(repo),
+            "--ldvh-root",
+            str(ROOT),
+            "--codex-home",
+            str(codex_home),
+            "--environment-name",
+            "WorkBuddy",
+            "--format",
+            "json",
+        ],
+        cwd=ROOT,
+        check=True,
+    )
+
+    payload = json.loads(completed.stdout)
+    candidates = {candidate["id"]: candidate for candidate in payload["candidates"]}
+    assert payload["metadata"]["environment_name"] == "WorkBuddy"
+    assert "codex_home" not in payload["metadata"]
+    assert "codex.ldvh-plugin" not in candidates
+    assert candidates["workbuddy.ldvh-plugin"]["status"] == "absent"
+    assert candidates["workbuddy.ldvh-plugin"]["decision"] == "create_target_environment_plugin_before_claiming"
+    assert candidates["runtime.pre_tool_use.auto"]["trigger"] == "WorkBuddy tool-call-before-write lifecycle hook"
+    assert payload["summary"]["absent_entrypoints"] == ["workbuddy.ldvh-plugin"]
+    assert payload["summary"]["target_environment_plugin_entry_integrated"] is False
+    assert "codex_plugin_entry_integrated" not in payload["summary"]
+    assert "codex_environment_entry_integrated" not in payload["summary"]
+    assert "Codex" not in json.dumps(payload["candidates"], ensure_ascii=False)
 
 
 def test_environment_entry_audit_reports_stale_ldvh_codex_plugin(tmp_path: Path) -> None:
@@ -4259,6 +4339,8 @@ enabled = true
             str(ROOT),
             "--codex-home",
             str(codex_home),
+            "--environment-name",
+            "Codex",
             "--format",
             "json",
         ],
@@ -4336,6 +4418,8 @@ enabled = true
             str(ROOT),
             "--codex-home",
             str(codex_home),
+            "--environment-name",
+            "Codex",
             "--format",
             "json",
         ],
@@ -4422,6 +4506,8 @@ enabled = true
             str(ROOT),
             "--codex-home",
             str(codex_home),
+            "--environment-name",
+            "Codex",
             "--format",
             "json",
         ],

@@ -101,11 +101,19 @@ def _infer_environment_strategy(
     environment_name: str,
     environment_audit: dict[str, Any],
 ) -> str:
+    candidates = {candidate["id"]: candidate for candidate in environment_audit.get("candidates", [])}
+    environment_hook_candidates = [
+        candidate
+        for candidate in candidates.values()
+        if candidate.get("category") == "environment_hook"
+    ]
+    target_plugin_available = any(candidate.get("status") == "available" for candidate in environment_hook_candidates)
     if requested:
+        if requested == "plugin_hook" and not target_plugin_available:
+            return "external_adapter_candidate" if environment_name.lower() == "codex" else "unsupported"
         return requested
     if environment_name.lower() != "codex":
         return "unsupported"
-    candidates = {candidate["id"]: candidate for candidate in environment_audit.get("candidates", [])}
     codex_plugin = candidates.get("codex.ldvh-plugin", {})
     if codex_plugin.get("status") == "available":
         return "plugin_hook"
@@ -275,10 +283,17 @@ def _interaction_next_actions(
     *,
     command: str,
     status: str,
+    summary: dict[str, Any],
     install_plan: dict[str, Any] | None,
     verification: dict[str, Any] | None,
 ) -> list[str]:
     if status == "blocked":
+        if summary.get("environment_strategy") in {"external_adapter_candidate", "unsupported"}:
+            return [
+                "按 30 输出目标环境插件缺口提示。",
+                "停止正式安装；不要生成替代环境写入。",
+                "先调查目标环境 lifecycle Hook 能力并实现插件 / adapter，完成后重新运行安装前检查。",
+            ]
         return ["修复 blocking diagnostics 后重新运行当前命令。"]
     if command == "plan" and install_plan and install_plan.get("human_gate_required"):
         return ["按 30 展示安装方案预览；Human 确认后运行 apply --confirm-human-gate。"]
@@ -344,6 +359,7 @@ def _interaction_handoff(
         "next_actions": _interaction_next_actions(
             command=command,
             status=status,
+            summary=summary,
             install_plan=install_plan,
             verification=verification,
         ),
@@ -460,6 +476,7 @@ def build_install_check(
         resolved_repo,
         resolved_ldvh_root,
         codex_home,
+        environment_name=environment_name,
     )
     diagnostics.extend(_install_context_diagnostic(diagnostic) for diagnostic in environment_audit.get("diagnostics", []))
     strategy = _infer_environment_strategy(
@@ -848,11 +865,12 @@ def _print_text(result: dict[str, Any]) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
+    default_workspace_root = ROOT.parent
     parser = argparse.ArgumentParser(description="LDVH v3 install/config wizard facade.")
     parser.add_argument("command", choices=["check", "plan", "apply", "verify"])
-    parser.add_argument("--governance-root", default=ROOT.as_posix(), help="workspace root containing LDVH-GOVERNED-PROJECTS.yaml")
+    parser.add_argument("--governance-root", default=default_workspace_root.as_posix(), help="workspace root containing LDVH-GOVERNED-PROJECTS.yaml; defaults to LDVH root parent")
     parser.add_argument("--ldvh-root", default=ROOT.as_posix(), help="LDVH root")
-    parser.add_argument("--repo", default=ROOT.as_posix(), help="target governed project repository")
+    parser.add_argument("--repo", default=default_workspace_root.as_posix(), help="target governed project repository; defaults to LDVH root parent")
     parser.add_argument("--codex-home", default="", help="Codex home for environment plugin audit")
     parser.add_argument("--environment-name", default="", help="target environment name (auto-detected if empty)")
     parser.add_argument("--environment-strategy", default="")

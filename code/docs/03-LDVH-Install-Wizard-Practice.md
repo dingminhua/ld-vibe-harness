@@ -117,6 +117,8 @@
 | 🗂️ 目标工作区根目录 | LDVH 要管理的工作区范围，配置文件和管辖项目相对 path 以此目录为基准 | 未显式指定时默认使用 LDVH 本体路径的父目录；不应与 LDVH 本体路径或某个管辖项目根路径等同（specs/10 §5） |
 | 🧾 配置文件完整路径 | 登记该工作区管辖项目的配置文件 | 使用工作区根目录下的固定配置文件 |
 
+目标工作区根目录有默认值时，路径确认表必须直接展示默认绝对路径，例如 `WORKSPACE_ROOT=<LDVH_ROOT 的父目录>`，证据写“由 LDVH 本体父目录推导”。不要把该值写成“待确认”；只有存在多个合理候选、用户显式要求覆盖默认值，或配置层级冲突需要选择时，才让 Human 选择目标工作区。
+
 如果当前界面支持选择框 / 单选控件，多个 LDVH 本体候选或多个目标工作区候选应使用 UI 控件；不可用时使用等价编号选项。
 
 目标工作区没有 LDVH 文件时，AI 仍应从 LDVH 本体读取安装模板。允许的 bootstrap discovery 是有限、只读、有证据的搜索：优先使用当前已知 LDVH root、`LDVH_ROOT` / `LDVH_HOME`、插件 / Hook / wrapper 中记录的 LDVH root、cwd 向上的 LDVH 本体候选、常见工作区父目录有限深度搜索；多个候选必须展示证据并让 Human 选择，找不到时要求 Human 提供 LDVH 本体路径。
@@ -180,6 +182,8 @@ AI 不得把 CLI 写成无确认一键安装器，也不得在最终确认前执
 
 目标环境是否支持 Hook 由 01、`01.Att.03`、`01.Att.04` 和环境审计结果判定，30 不重新定义环境入口分类。判定结果确认目标环境没有可用 AI lifecycle Hook / 插件入口时，30 必须把正式安装阻断在环境入口阶段，交还“需先实现目标环境插件 / adapter”的缺口和失败信息包；不得生成替代环境写入、不得声明写入完成、不得声明 integrated。
 
+如果目标环境还没有 LDVH 插件、扩展包、package 或 runtime adapter，用户主界面必须显示“目标环境插件缺口提示”：写清目标环境名称、当前不能继续正式安装、不会执行替代环境写入、下一步需要调查目标环境 lifecycle Hook 能力并实现插件 / adapter、实现后重新运行安装前检查。该提示必须出现在 raw diagnostics 之前；不得只让用户阅读 JSON、命令输出或技术枚举。
+
 目标环境缺少 lifecycle Hook 时的主选项只保留两个：
 
 | 选项 | 用户看到的说法 | 技术结论 | 下一步 |
@@ -208,7 +212,7 @@ Hook 交还必须拆成两个结论块：`Runtime 入口与 lifecycle 验证` �
 目标环境名称和版本：
 插件页面结果截图或文字：
 install_verification.py --format json 输出：
-environment_entry_audit.py --format text 输出：
+environment_entry_audit.py --environment-name <目标环境名> --format text 输出：
 失败步骤编号：
 是否发生实际写入：
 scratch target 路径和文件状态：

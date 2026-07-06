@@ -1,0 +1,41 @@
+{
+  "description": "LDVH V3 WorkBuddy lifecycle hook configuration. Routes SessionStart, PreToolUse, and Stop to the thin shim via ${CODEBUDDY_PLUGIN_ROOT}.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ${CODEBUDDY_PLUGIN_ROOT}/hooks/ldvh_runtime_shim.py",
+            "timeout": 30000
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ${CODEBUDDY_PLUGIN_ROOT}/hooks/ldvh_runtime_shim.py",
+            "timeout": 30000
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ${CODEBUDDY_PLUGIN_ROOT}/hooks/ldvh_runtime_shim.py",
+            "timeout": 30000
+          }
+        ]
+      }
+    ]
+  }
+}

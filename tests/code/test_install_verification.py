@@ -307,6 +307,28 @@ projects:
     assert args.ldvh_root == ldvh_root.as_posix()
 
 
+def test_install_verification_parser_defaults_to_parent_even_when_ldvh_root_has_config(tmp_path: Path, monkeypatch) -> None:
+    workspace = tmp_path / "workspace"
+    ldvh_root = workspace / "ldvh"
+    ldvh_root.mkdir(parents=True)
+    _write_governed_config(
+        ldvh_root,
+        """
+product_name: Wrong scope
+product_description: Should not define default workspace
+projects: []
+""",
+    )
+    monkeypatch.setattr(install_verification, "ROOT", ldvh_root)
+
+    parser = install_verification.build_parser()
+    args = parser.parse_args([])
+
+    assert args.governance_root == workspace.as_posix()
+    assert args.repo == workspace.as_posix()
+    assert args.ldvh_root == ldvh_root.as_posix()
+
+
 def test_install_verification_ignores_legacy_lifecycle_acceptance_json(tmp_path: Path) -> None:
     governance_root = tmp_path / "governance"
     repo = tmp_path / "repo"
@@ -612,6 +634,7 @@ projects:
     assert result["environment"]["summary"]["target_environment_supported"] is False
     assert result["environment"]["summary"]["plugin_decision"] == "create_target_environment_plugin_before_verification"
     assert result["environment"]["shim_direct_tests"]["session_start_direct"]["status"] == "not_run"
+    assert "Trae 目标环境 shim" in result["environment"]["shim_direct_tests"]["session_start_direct"]["reason"]
     human_acceptance = result["environment"]["human_acceptance"]
     assert any("Trae 是否支持插件 / 扩展包 / package 形态的 Hook 入口" in step for step in human_acceptance["steps"])
     assert any("停止正式安装" in step for step in human_acceptance["steps"])
@@ -640,6 +663,12 @@ projects:
     assert handoff["hook_status_blocks"] == handoff["impact_status_blocks"]
     assert any("停止正式 LDVH 安装" in step for step in handoff["user_next_steps"])
     assert any("先实现目标环境插件" in step for step in handoff["user_next_steps"])
+    assert any(
+        "environment_entry_audit.py --environment-name Trae --format text 输出" == item
+        for item in handoff["failure_info_package"]
+    )
+    assert not any("codex-ldvh-v3" in ref["path"] for ref in result["source_refs"])
+    assert "Codex" not in json.dumps(result["environment"]["shim_direct_tests"], ensure_ascii=False)
 
 
 def test_install_verification_keeps_disabled_codex_plugin_review_required(tmp_path: Path) -> None:

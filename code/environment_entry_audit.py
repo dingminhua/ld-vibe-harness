@@ -22,10 +22,26 @@ STALE_REPO_ENVIRONMENT_PLUGIN_COMMAND_RE = re.compile(
     r"/ld-vibe-harness(?:-[^/\s]+)?/code/environment_plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim\.py"
 )
 CODEX_REQUIRED_HOOK_EVENTS = ("SessionStart", "PreToolUse", "Stop")
+CODEX_ENVIRONMENT_NAME = "Codex"
+UNKNOWN_ENVIRONMENT_NAME = "未知环境"
 
 
 def _bool_text(value: bool) -> str:
     return "true" if value else "false"
+
+
+def _environment_name(value: str) -> str:
+    stripped = value.strip()
+    return stripped or UNKNOWN_ENVIRONMENT_NAME
+
+
+def _is_codex_environment(value: str) -> bool:
+    return _environment_name(value).lower() == CODEX_ENVIRONMENT_NAME.lower()
+
+
+def _environment_slug(value: str) -> str:
+    slug = re.sub(r"[^a-z0-9]+", "-", _environment_name(value).lower()).strip("-")
+    return slug or "target-environment"
 
 
 def _diagnostic(level: str, code: str, path: str, message: str, disposition: str = "follow_up") -> dict[str, str]:
@@ -336,6 +352,29 @@ def _codex_ldvh_plugin_candidate(
     )
 
 
+def _target_environment_ldvh_plugin_candidate(environment_name: str) -> dict[str, Any]:
+    name = _environment_name(environment_name)
+    slug = _environment_slug(name)
+    return _candidate(
+        entry_id=f"{slug}.ldvh-plugin",
+        category="environment_hook",
+        status="absent",
+        trigger=f"{name} lifecycle hooks via LDVH plugin, extension package, or adapter",
+        evidence=[],
+        hook_entry="code/runtime_adapter.py",
+        decision="create_target_environment_plugin_before_claiming",
+        reason=(
+            f"未发现 {name} 的 LDVH lifecycle Hook 插件、扩展包或 adapter 实装证据；"
+            "不得引用其他环境插件状态作为目标环境入口。"
+        ),
+        details={
+            "environment_name": name,
+            "target_environment_supported": False,
+            "required_capability": "installable_verifiable_blocking_lifecycle_hook",
+        },
+    )
+
+
 def _runtime_protocol_entry_candidate(ldvh_root: Path) -> dict[str, Any]:
     entry_path = ldvh_root / RUNTIME_PROTOCOL_ENTRY
     if entry_path.is_file():
@@ -365,16 +404,23 @@ def build_environment_entry_audit(
     repo: Path = ROOT,
     ldvh_root: Path = ROOT,
     codex_home: Optional[Path] = None,
+    environment_name: str = "",
 ) -> dict[str, Any]:
     resolved_repo = repo.resolve()
     resolved_ldvh_root = ldvh_root.resolve()
     resolved_codex_home = Path(codex_home or os.environ.get("CODEX_HOME") or (Path.home() / ".codex")).resolve()
+    target_environment = _environment_name(environment_name)
+    is_codex = _is_codex_environment(target_environment)
     environment = build_environment_status(resolved_repo, resolved_ldvh_root)
     diagnostics: list[dict[str, str]] = list(environment["diagnostics"])
 
     env_entrypoints = {entry["id"]: entry for entry in environment["entrypoints"]}
     commit_entry = env_entrypoints.get("git.commit-msg", {})
-    codex_plugin = _codex_ldvh_plugin_candidate(resolved_ldvh_root, resolved_codex_home, diagnostics)
+    environment_plugin = (
+        _codex_ldvh_plugin_candidate(resolved_ldvh_root, resolved_codex_home, diagnostics)
+        if is_codex
+        else _target_environment_ldvh_plugin_candidate(target_environment)
+    )
     runtime_protocol_entry = _runtime_protocol_entry_candidate(resolved_ldvh_root)
     candidates: list[dict[str, Any]] = [
         _candidate(
@@ -389,46 +435,58 @@ def build_environment_entry_audit(
             automatic=bool(commit_entry.get("integrated")),
         ),
         runtime_protocol_entry,
-        codex_plugin,
+        environment_plugin,
         _candidate(
             entry_id="runtime.session_start.auto",
             category="runtime_event",
             status="deferred",
-            trigger="Codex SessionStart or equivalent session start",
-            evidence=codex_plugin["evidence"],
+            trigger=f"{target_environment} session start lifecycle hook",
+            evidence=environment_plugin["evidence"],
             hook_entry="code/runtime_adapter.py",
             decision="defer",
-            reason="Codex 提供 SessionStart 生命周期 Hook 机制；按通用环境 Hook 口径，V3 要通过对应 LDVH 插件或扩展包安装并验证，当前未证明 V3 插件已接入。",
+            reason=(
+                f"{target_environment} 的 session start 自动入口必须由对应 LDVH 插件、扩展包或 adapter 安装并验证；"
+                "当前未证明目标环境插件已接入。"
+            ),
         ),
         _candidate(
             entry_id="runtime.pre_tool_use.auto",
             category="runtime_event",
             status="deferred",
-            trigger="Codex PreToolUse or equivalent tool call before write/edit/apply_patch",
-            evidence=codex_plugin["evidence"],
+            trigger=f"{target_environment} tool-call-before-write lifecycle hook",
+            evidence=environment_plugin["evidence"],
             hook_entry="code/runtime_adapter.py",
             decision="defer",
-            reason="Codex 提供 PreToolUse 生命周期 Hook 机制；按通用环境 Hook 口径，V3 要通过对应 LDVH 插件或扩展包安装并验证，当前未证明 V3 插件已接入。",
+            reason=(
+                f"{target_environment} 的写入前自动入口必须由对应 LDVH 插件、扩展包或 adapter 安装并验证；"
+                "当前未证明目标环境插件已接入。"
+            ),
         ),
         _candidate(
             entry_id="runtime.completion_claim.auto",
             category="runtime_event",
             status="deferred",
-            trigger="Codex Stop or equivalent completion-adjacent event",
-            evidence=codex_plugin["evidence"],
+            trigger=f"{target_environment} completion-adjacent lifecycle hook",
+            evidence=environment_plugin["evidence"],
             hook_entry="code/runtime_adapter.py",
             decision="defer",
-            reason="Codex 提供 Stop 生命周期 Hook 可作为完成声明邻近候选；V3 尚未通过对应 LDVH 插件或扩展包定义、安装和验证 completion_claim 自动入口。",
+            reason=(
+                f"{target_environment} 的完成声明邻近自动入口必须由对应 LDVH 插件、扩展包或 adapter 定义、安装并验证；"
+                "当前未证明目标环境 completion_claim 自动入口已接入。"
+            ),
         ),
         _candidate(
             entry_id="runtime.adapter.auto",
             category="runtime_adapter",
             status="deferred",
-            trigger="external runtime adapter or Codex plugin adapter",
-            evidence=codex_plugin["evidence"],
+            trigger=f"{target_environment} runtime adapter or environment plugin adapter",
+            evidence=environment_plugin["evidence"],
             hook_entry="code/runtime_adapter.py",
             decision="defer",
-            reason="统一 adapter 已有；支持 Hook 的环境应以对应 LDVH 插件或扩展包作为正式安装载体，但当前还没有 V3 插件的真实触发、失败处理和回滚证据。",
+            reason=(
+                "统一 adapter 已有；支持 Hook 的环境应以对应 LDVH 插件、扩展包或 adapter 作为正式安装载体，"
+                f"但当前还没有 {target_environment} 插件的真实触发、失败处理和回滚证据。"
+            ),
         ),
         _removed_top_level_candidate(
             resolved_repo,
@@ -457,37 +515,50 @@ def build_environment_entry_audit(
     absent = [candidate["id"] for candidate in candidates if candidate["status"] == "absent"]
     removed_top_level = [candidate["id"] for candidate in candidates if candidate["status"] == "removed_top_level"]
 
+    metadata = {
+        "read_only": True,
+        "authority": "environment_entry_audit",
+        "authorization": AUTHORIZATION,
+        "root": resolved_ldvh_root.as_posix(),
+        "repo": resolved_repo.as_posix(),
+        "environment_name": target_environment,
+    }
+    if is_codex:
+        metadata["codex_home"] = resolved_codex_home.as_posix()
+
+    summary = {
+        "status": "blocked" if blocking else "ok",
+        "environment_name": target_environment,
+        "integrated_entrypoints": integrated,
+        "available_unintegrated_entrypoints": available,
+        "deferred_entrypoints": deferred,
+        "absent_entrypoints": absent,
+        "removed_top_level_entrypoints": removed_top_level,
+        "rules_entry_integrated": False,
+        "skill_entry_integrated": False,
+        "tool_hook_integrated": False,
+        "completion_hook_integrated": False,
+        "session_start_integrated": False,
+        "target_environment_plugin_entry_integrated": bool(environment_plugin["integrated"]),
+        "diagnostics": len(diagnostics),
+        "blocking": blocking,
+        "authorization": AUTHORIZATION,
+    }
+    if is_codex:
+        summary["codex_plugin_entry_integrated"] = bool(environment_plugin["integrated"])
+        summary["codex_environment_entry_integrated"] = False
+
     return {
-        "metadata": {
-            "read_only": True,
-            "authority": "environment_entry_audit",
-            "authorization": AUTHORIZATION,
-            "root": resolved_ldvh_root.as_posix(),
-            "repo": resolved_repo.as_posix(),
-            "codex_home": resolved_codex_home.as_posix(),
-        },
-        "summary": {
-            "status": "blocked" if blocking else "ok",
-            "integrated_entrypoints": integrated,
-            "available_unintegrated_entrypoints": available,
-            "deferred_entrypoints": deferred,
-            "absent_entrypoints": absent,
-            "removed_top_level_entrypoints": removed_top_level,
-            "rules_entry_integrated": False,
-            "skill_entry_integrated": False,
-            "tool_hook_integrated": False,
-            "completion_hook_integrated": False,
-            "session_start_integrated": False,
-            "codex_plugin_entry_integrated": bool(codex_plugin["integrated"]),
-            "codex_environment_entry_integrated": False,
-            "diagnostics": len(diagnostics),
-            "blocking": blocking,
-            "authorization": AUTHORIZATION,
-        },
+        "metadata": metadata,
+        "summary": summary,
         "candidates": candidates,
         "decision": {
             "next_step": "install_or_upgrade_ldvh_environment_plugin_before_auto_runtime_claim",
-            "reason": "所有支持 Hook 的协作环境都必须通过对应 LDVH 插件、扩展包或 package 安装环境 Hook，而不是直接写入环境 Hook 系统文件；当前已审计到 Codex lifecycle Hook 机制，但未验证 V3 插件安装、trust、payload 和失败处理前，除 git.commit-msg 外不得声明自动入口 integrated。",
+            "reason": (
+                "所有支持 Hook 的协作环境都必须通过对应 LDVH 插件、扩展包或 package 安装环境 Hook，而不是直接写入环境 Hook 系统文件；"
+                f"当前目标环境是 {target_environment}，未验证目标环境插件安装、trust、payload 和失败处理前，"
+                "除 git.commit-msg 外不得声明自动入口 integrated。"
+            ),
         },
         "diagnostics": diagnostics,
     }
@@ -506,8 +577,11 @@ def _print_text(result: dict[str, Any]) -> None:
     print(f"- skill_entry_integrated: {_bool_text(summary['skill_entry_integrated'])}")
     print(f"- tool_hook_integrated: {_bool_text(summary['tool_hook_integrated'])}")
     print(f"- completion_hook_integrated: {_bool_text(summary['completion_hook_integrated'])}")
-    print(f"- codex_plugin_entry_integrated: {_bool_text(summary['codex_plugin_entry_integrated'])}")
-    print(f"- codex_environment_entry_integrated: {_bool_text(summary['codex_environment_entry_integrated'])}")
+    print(f"- target_environment_plugin_entry_integrated: {_bool_text(summary['target_environment_plugin_entry_integrated'])}")
+    if "codex_plugin_entry_integrated" in summary:
+        print(f"- codex_plugin_entry_integrated: {_bool_text(summary['codex_plugin_entry_integrated'])}")
+    if "codex_environment_entry_integrated" in summary:
+        print(f"- codex_environment_entry_integrated: {_bool_text(summary['codex_environment_entry_integrated'])}")
 
     print("\nCandidates:")
     for candidate in result["candidates"]:
@@ -535,6 +609,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--repo", default=ROOT.as_posix(), help="target repository root")
     parser.add_argument("--ldvh-root", default=ROOT.as_posix(), help="LDVH v3 root containing code/ and hooks/")
     parser.add_argument("--codex-home", default="", help="Codex home containing config.toml and plugin cache")
+    parser.add_argument("--environment-name", default="", help="target AI environment name, for example Codex or WorkBuddy")
     parser.add_argument("--format", choices=["text", "json"], default="text")
     return parser
 
@@ -542,7 +617,12 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     codex_home = Path(args.codex_home).resolve() if args.codex_home else None
-    result = build_environment_entry_audit(Path(args.repo), Path(args.ldvh_root), codex_home)
+    result = build_environment_entry_audit(
+        Path(args.repo),
+        Path(args.ldvh_root),
+        codex_home,
+        environment_name=args.environment_name,
+    )
     if args.format == "json":
         print(json.dumps(result, ensure_ascii=False, indent=2))
     else:

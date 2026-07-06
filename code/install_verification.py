@@ -360,7 +360,7 @@ def _verify_environment(
             "impact_matrix": [],
             "audit": {},
             "shim_direct_tests": _not_run_shim_tests(
-                "当前统一验收入口只内置 Codex 样例 shim 直测；目标环境需要对应插件 / 扩展包实装后再验收。"
+                f"当前统一验收入口未内置 {environment_name} 目标环境 shim；目标环境需要对应插件 / 扩展包实装后再验收。"
             ),
             "human_acceptance": {
                 "required": True,
@@ -379,7 +379,12 @@ def _verify_environment(
             "diagnostics": [],
         }
 
-    audit = build_environment_entry_audit(repo=repo, ldvh_root=ldvh_root, codex_home=codex_home)
+    audit = build_environment_entry_audit(
+        repo=repo,
+        ldvh_root=ldvh_root,
+        codex_home=codex_home,
+        environment_name=environment_name,
+    )
     candidates = {candidate["id"]: candidate for candidate in audit["candidates"]}
     codex_plugin = candidates.get("codex.ldvh-plugin", {})
     diagnostics: list[dict[str, str]] = list(audit.get("diagnostics", []))
@@ -637,6 +642,19 @@ def build_install_verification(
         "note": "install_verification.py 默认只读；repo-local shim 直测强制 LDVH_HOOK_SPARK_CAPTURE=0。",
     }
     impact_verified = git_ok and impact_access_verified and blocking == 0
+    source_refs = [
+        {"path": "specs/10-安装与配置规范.md", "role": "install_config_contract"},
+        {"path": "specs/30-安装配置与验证行动模板.md", "role": "install_interaction_handoff"},
+        {"path": "code/governed_hook_adapter.py", "role": "git_hook_status_backend"},
+        {"path": "code/environment_entry_audit.py", "role": "environment_hook_audit"},
+    ]
+    if _is_codex_environment(environment_name):
+        source_refs.append(
+            {
+                "path": "hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py",
+                "role": "environment_shim_direct_test",
+            }
+        )
     result = {
         "metadata": {
             "read_only": True,
@@ -690,13 +708,7 @@ def build_install_verification(
         "git_hooks": git_results,
         "environment": environment,
         "diagnostics": diagnostics,
-        "source_refs": [
-            {"path": "specs/10-安装与配置规范.md", "role": "install_config_contract"},
-            {"path": "specs/30-安装配置与验证行动模板.md", "role": "install_interaction_handoff"},
-            {"path": "code/governed_hook_adapter.py", "role": "git_hook_status_backend"},
-            {"path": "code/environment_entry_audit.py", "role": "environment_hook_audit"},
-            {"path": "hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py", "role": "environment_shim_direct_test"},
-        ],
+        "source_refs": source_refs,
     }
     result["user_handoff"] = _build_user_handoff(result)
     return result
@@ -867,7 +879,7 @@ def _build_user_handoff(result: dict[str, Any]) -> dict[str, Any]:
             "目标环境名称和版本",
             "插件页面结果截图或文字",
             "install_verification.py --format json 完整输出",
-            "environment_entry_audit.py --format text 输出",
+            f"environment_entry_audit.py --environment-name {current_environment} --format text 输出",
             "失败步骤编号",
             "是否发生实际写入",
             "scratch target 路径和文件状态",
@@ -948,11 +960,11 @@ def _print_text(result: dict[str, Any]) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    default_config_root = _find_config_root(ROOT)
+    default_workspace_root = ROOT.parent
     parser = argparse.ArgumentParser(description="Verify LDVH installation handoff state without writing user environment.")
-    parser.add_argument("--governance-root", default=default_config_root.as_posix(), help="root containing LDVH-GOVERNED-PROJECTS.yaml; defaults to the discovered config root or LDVH root parent")
+    parser.add_argument("--governance-root", default=default_workspace_root.as_posix(), help="root containing LDVH-GOVERNED-PROJECTS.yaml; defaults to LDVH root parent")
     parser.add_argument("--ldvh-root", default=ROOT.as_posix(), help="LDVH v3 root")
-    parser.add_argument("--repo", default=default_config_root.as_posix(), help="repo used for environment entry audit; defaults to the workspace root")
+    parser.add_argument("--repo", default=default_workspace_root.as_posix(), help="repo used for environment entry audit; defaults to LDVH root parent")
     parser.add_argument("--codex-home", default="", help="Codex home for read-only plugin audit")
     parser.add_argument(
         "--environment-name",

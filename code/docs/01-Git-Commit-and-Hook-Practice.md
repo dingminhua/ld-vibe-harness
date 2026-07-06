@@ -44,7 +44,7 @@ git config --worktree core.hooksPath hooks
 ```bash
 python3 code/install_git_hooks.py status --repo .
 python3 code/environment_status.py --format text
-python3 code/environment_entry_audit.py --format text
+python3 code/environment_entry_audit.py --environment-name <目标环境名> --format text
 ```
 
 当前预期判定是：`git.commit-msg` 为 integrated；AI lifecycle Hook backend 仍未由目标环境自动触发，不得声明 session start、pre tool use、acknowledge read plan 或 completion claim 已 integrated。

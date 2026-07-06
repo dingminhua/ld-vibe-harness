@@ -10,6 +10,8 @@
 |---|---|
 | `codex-ldvh-v3/` | Codex lifecycle hook 样例包 |
 | `codex-ldvh-v3/assets/` | Codex 样例包展示资产；必须包含 manifest 实际引用的 LDVH 图标 |
+| `workbuddy-ldvh-v3/` | WorkBuddy lifecycle hook 样例包 |
+| `workbuddy-ldvh-v3/assets/` | WorkBuddy 样例包展示资产；必须包含 manifest 实际引用的 LDVH 图标 |
 
 后续新增环境样例包时，必须先确认目标环境支持的插件、扩展包或 package 形态，再补对应 manifest、Hook 配置、shim、状态检查和卸载边界。不得把 Codex 样例当成所有环境的总规则。
 
