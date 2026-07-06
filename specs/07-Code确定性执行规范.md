@@ -10,8 +10,8 @@ ldvh_spec:
   canonical_path: "specs/07-Code确定性执行规范.md"
   parent_spec: "specs/00-理念与构成.md"
   relation: "refines"
-  positioning: "定义 Code 的读取、解析、校验、诊断、Action Guide、preflight、runtime facade 和环境适配实现边界"
-  scope: "Code 解析、结构校验、诊断、source_refs、Action Guide、preflight、runtime facade、payload/adapter/dispatcher/validator 边界和 Code 变更纪律"
+  positioning: "定义 Code 的读取、解析、校验、诊断、Action Guide（行动指南）、preflight、runtime facade 和环境适配实现边界"
+  scope: "Code 解析、结构校验、诊断、source_refs、Action Guide（行动指南）、preflight、runtime facade、payload/adapter/dispatcher/validator 边界和 Code 变更纪律"
   basis:
     - "specs/00-理念与构成.md"
     - "specs/01-保障与衔接.md"
@@ -67,7 +67,7 @@ Code 主要服务 V1、V3、V4、V6、V7 和 V9：它通过解析、索引、校
 
 ## 3. 归口边界
 
-本文归口定义 Code 的确定性执行边界：读取、解析、校验、诊断、source_refs、Action Guide、preflight、runtime facade、payload/adapter/dispatcher/validator 规则和 Code 变更纪律。
+本文归口定义 Code 的确定性执行边界：读取、解析、校验、诊断、source_refs、Action Guide（行动指南）、preflight、runtime facade、payload/adapter/dispatcher/validator 规则和 Code 变更纪律。
 
 本文不归口定义事实对象字段、行动模板步骤、Web 页面、Web 页面/API 数据路径、测试治理、Git commit 契约本体、环境安装方式或 Hook registry。相邻内容分别由 05、06、08、09、03 和 01/06 承接。
 
@@ -80,7 +80,7 @@ Code 输出可以供 AI、tests、审计或 Web 诊断展示对照使用，但�
 本文适用于：
 
 1. `code/` 下的正式解析、校验、CLI 和 runtime facade；
-2. Code 生成的 Action Guide、preflight、receipt、diagnostic、source_refs 和 read_plan；
+2. Code 生成的 Action Guide（行动指南）、preflight、receipt、diagnostic、source_refs 和 read_plan；
 3. 由 V2 `04` 和 V2 `06` 迁入的 dispatcher、adapter、payload 和 validator 设计；
 4. 测试中对 Code 行为的正反例和验证命令。
 
@@ -123,7 +123,7 @@ Code 不得输出 `approved`、`allowed`、`accepted risk`、`human_gate_passed`
 V3 当前 runtime facade 的边界：
 
 1. 可以消费 `01.Att.01` 的消费时机闭集；
-2. 可以生成 Action Guide、preflight、stdout-only receipt 和 diagnostics；
+2. 可以生成 Action Guide（行动指南）、preflight、stdout-only receipt 和 diagnostics；
 3. 可以检查 acknowledged read_plan 和 completion evidence；
 4. 不写持久 receipt；
 5. 不安装 Hook、Rules、插件或环境入口；
