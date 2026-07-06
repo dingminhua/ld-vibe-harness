@@ -177,7 +177,6 @@ Web 受控轻写入只有在对应事实模型、事实源、Web API、测试和
 
 ## 12. 待补齐事项
 
-1. 后续继续判断 V2 `05.Att.*` 中 DTO 长表、Confirm UI 细则和视觉回归矩阵是否进入 Web 实现域或 tests；
-2. 后续定义 Web 只读差距审计模板是否迁入 V3 附件；
-3. 后续补齐 Confirm UI 端到端验证、页面视觉回归和真实 Human Gate 展示验证；
-4. 后续 Code 可继续提供 diagnostics、source_refs 和 verification summary 供测试、审计或诊断对照，不作为 Web 页面/API 数据源。
+1. V2 `05.Att.*` 中 DTO/API、来源回指、缓存边界和 Spark quick create 轻写入回归已由 Web 实现域和 `tests/web` 承接；未形成正式授权的长表继续留在 `_migration`；
+2. 后续补齐完整 Confirm UI 端到端验证、页面视觉回归和真实 Human Gate 展示验证；
+3. Web 只读差距审计模板如需长期复用，应进入行动模板、Web 实现域或 tests，不在本文待补齐事项中登记。

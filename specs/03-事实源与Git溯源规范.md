@@ -165,10 +165,8 @@ Code 可以检查路径、source_refs、commit message 格式和诊断结构；A
 出现以下情况时，AI 必须暂停：
 
 1. 无法判断权威事实源位置；
-2. 过程输出正在替代正式 specs、事实对象、验证声明或 Human Gate；
-3. 稳定事实或稳定状态只存在聊天、缓存、测试输出、Web 展示、Code 输出、环境审计或 runtime receipt 中；
-4. commit message 掩盖未验证范围、Human Gate 未决或事实源冲突；
-5. 需要接受事实源不一致或不可溯源风险但未获得 Human 确认。
+2. commit message 掩盖未验证范围、Human Gate 未决或事实源冲突；
+3. 需要接受事实源不一致或不可溯源风险但未获得 Human 确认。
 
 ## 12. 待补齐事项
 

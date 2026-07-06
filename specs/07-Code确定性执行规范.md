@@ -198,7 +198,4 @@ Code 暴露规范缺口时，应输出 diagnostic 并回到对应规范或 `_mig
 
 ## 13. 待补齐事项
 
-1. 后续从 V2 `04.Att.*` 筛选可迁入的 Code 命令入口、诊断码和输出 schema；
-2. 后续从 V2 `06` 筛选 payload、adapter、dispatcher 和 hook mapping 的最小实现契约；
-3. 后续承接 commit validator 到 V3 `03/07/09` 闭环；
-4. 后续扩展 specs validator 对 03/05/06/07/08/09 的专属检查。
+当前无未承接的体系缺口。V2 `04.Att.*` 中可迁入的 Code 命令入口、诊断码和输出 schema 已由本文、Code 和 tests 按需承接；V2 `06` 的 payload、adapter、dispatcher 和 hook mapping 已由 01、07、10、Code/docs 和 tests 承接为 manual-ready 或 external-adapter-ready 边界；commit validator 已进入 03/07/09 与 Code/tests 闭环；specs validator 对 03/05/06/07/08/09 的专属检查已由 Code/tests 承接。真实环境入口集成仍按 01、09、10 和 Human Gate 后置。

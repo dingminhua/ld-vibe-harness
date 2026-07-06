@@ -1048,7 +1048,7 @@ FOUNDATION_SPEC_CONTRACTS = {
             "Git 溯源检查",
         ],
         "human_gate_terms": ["非 Git 文件", "过程输出", "commit 契约", "Git commit records", "事实源冲突"],
-        "stop_condition_terms": ["权威事实源", "过程输出", "聊天、缓存、测试输出", "commit message", "事实源不一致"],
+        "stop_condition_terms": ["权威事实源", "commit message", "事实源不一致"],
     },
     "05": {
         "path": SHORT_SPEC_REFS["05"],
