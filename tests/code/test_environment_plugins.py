@@ -433,6 +433,81 @@ def test_codex_sample_shim_allows_acknowledge_read_plan_bootstrap_command_withou
     assert completed.stdout == ""
 
 
+def test_codex_sample_shim_allows_acknowledge_bootstrap_from_tool_field() -> None:
+    command = (
+        "python3 code/acknowledge_read_plan.py "
+        "--session-id shim-pretool-ack-bootstrap-tool-field "
+        "--target-path README.md "
+        + " ".join(f"--acknowledged-path {path}" for path in ENTRY_ACK_PATHS)
+        + " --format json"
+    )
+    completed = _run_shim(
+        {
+            "hook_event_name": "PreToolUse",
+            "sessionId": "shim-pretool-ack-bootstrap-tool-field",
+            "cwd": ROOT.as_posix(),
+            "tool": "Bash",
+            "input": {"command": command},
+        },
+    )
+
+    assert completed.returncode == 0
+    assert completed.stdout == ""
+
+
+def test_codex_sample_shim_allows_acknowledge_bootstrap_from_mcp_exec_tool() -> None:
+    command = (
+        "python3 code/acknowledge_read_plan.py "
+        "--session-id shim-pretool-ack-bootstrap-mcp-exec "
+        "--target-path README.md "
+        + " ".join(f"--acknowledged-path {path}" for path in ENTRY_ACK_PATHS)
+        + " --format json"
+    )
+    completed = _run_shim(
+        {
+            "hook_event_name": "PreToolUse",
+            "sessionId": "shim-pretool-ack-bootstrap-mcp-exec",
+            "cwd": ROOT.as_posix(),
+            "toolName": "mcp__functions__exec_command",
+            "arguments": {"cmd": command},
+        },
+    )
+
+    assert completed.returncode == 0
+    assert completed.stdout == ""
+
+
+def test_codex_sample_shim_does_not_treat_nested_name_as_tool_identity() -> None:
+    command = (
+        "python3 code/acknowledge_read_plan.py "
+        "--session-id shim-pretool-ack-bootstrap-nested-name "
+        "--target-path README.md "
+        + " ".join(f"--acknowledged-path {path}" for path in ENTRY_ACK_PATHS)
+        + " --format json"
+    )
+    completed = _run_shim(
+        {
+            "hook_event_name": "PreToolUse",
+            "sessionId": "shim-pretool-ack-bootstrap-nested-name",
+            "cwd": ROOT.as_posix(),
+            "toolName": "Write",
+            "tool_input": {
+                "file_path": "README.md",
+                "name": "bash",
+                "command": command,
+            },
+        },
+        check=False,
+    )
+
+    payload = json.loads(completed.stdout)
+    hook_output = _hook_output(payload)
+    assert completed.returncode == 0
+    assert hook_output["hookEventName"] == "PreToolUse"
+    assert hook_output["permissionDecision"] == "deny"
+    assert "RUNTIME_READ_PLAN_CONSUMED_EMPTY" in hook_output["permissionDecisionReason"]
+
+
 def test_codex_sample_shim_does_not_allow_chained_acknowledge_bootstrap_write_without_acknowledgement() -> None:
     command = (
         "python3 code/acknowledge_read_plan.py "
@@ -816,6 +891,90 @@ def test_workbuddy_sample_shim_allows_acknowledge_read_plan_bootstrap_command_wi
 
     assert completed.returncode == 0
     assert completed.stdout == ""
+
+
+def test_workbuddy_sample_shim_allows_acknowledge_bootstrap_from_tool_field(
+    tmp_path: Path,
+) -> None:
+    command = (
+        "python3 code/acknowledge_read_plan.py "
+        "--session-id workbuddy-ack-bootstrap-tool-field "
+        "--target-path README.md "
+        + " ".join(f"--acknowledged-path {path}" for path in ENTRY_ACK_PATHS)
+        + " --format json"
+    )
+    completed = _run_workbuddy_shim(
+        {
+            "hook_event_name": "PreToolUse",
+            "sessionId": "workbuddy-ack-bootstrap-tool-field",
+            "cwd": ROOT.as_posix(),
+            "tool": "Bash",
+            "input": {"command": command},
+        },
+        extra_env={"LDVH_RUNTIME_CACHE_DIR": (tmp_path / "runtime-cache").as_posix()},
+    )
+
+    assert completed.returncode == 0
+    assert completed.stdout == ""
+
+
+def test_workbuddy_sample_shim_allows_acknowledge_bootstrap_from_mcp_exec_tool(
+    tmp_path: Path,
+) -> None:
+    command = (
+        "python3 code/acknowledge_read_plan.py "
+        "--session-id workbuddy-ack-bootstrap-mcp-exec "
+        "--target-path README.md "
+        + " ".join(f"--acknowledged-path {path}" for path in ENTRY_ACK_PATHS)
+        + " --format json"
+    )
+    completed = _run_workbuddy_shim(
+        {
+            "hook_event_name": "PreToolUse",
+            "sessionId": "workbuddy-ack-bootstrap-mcp-exec",
+            "cwd": ROOT.as_posix(),
+            "toolName": "mcp__functions__exec_command",
+            "arguments": {"cmd": command},
+        },
+        extra_env={"LDVH_RUNTIME_CACHE_DIR": (tmp_path / "runtime-cache").as_posix()},
+    )
+
+    assert completed.returncode == 0
+    assert completed.stdout == ""
+
+
+def test_workbuddy_sample_shim_does_not_treat_nested_name_as_tool_identity(
+    tmp_path: Path,
+) -> None:
+    command = (
+        "python3 code/acknowledge_read_plan.py "
+        "--session-id workbuddy-ack-bootstrap-nested-name "
+        "--target-path README.md "
+        + " ".join(f"--acknowledged-path {path}" for path in ENTRY_ACK_PATHS)
+        + " --format json"
+    )
+    completed = _run_workbuddy_shim(
+        {
+            "hook_event_name": "PreToolUse",
+            "sessionId": "workbuddy-ack-bootstrap-nested-name",
+            "cwd": ROOT.as_posix(),
+            "toolName": "Write",
+            "tool_input": {
+                "file_path": "README.md",
+                "name": "bash",
+                "command": command,
+            },
+        },
+        extra_env={"LDVH_RUNTIME_CACHE_DIR": (tmp_path / "runtime-cache").as_posix()},
+        check=False,
+    )
+
+    payload = json.loads(completed.stdout)
+    hook_output = _hook_output(payload)
+    assert completed.returncode == 0
+    assert hook_output["hookEventName"] == "PreToolUse"
+    assert hook_output["permissionDecision"] == "deny"
+    assert "RUNTIME_READ_PLAN_CONSUMED_EMPTY" in hook_output["permissionDecisionReason"]
 
 
 def test_workbuddy_sample_shim_does_not_allow_chained_acknowledge_bootstrap_write_without_acknowledgement(

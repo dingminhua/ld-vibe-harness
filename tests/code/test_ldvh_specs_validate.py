@@ -412,6 +412,10 @@ def test_web_sync_validator_requires_native_source_refs_boundary(tmp_path: Path)
 
 
 def test_governed_project_spec_requires_target_first_boundary(tmp_path: Path) -> None:
+    raw = (ROOT / "specs/10-安装与配置规范.md").read_text(encoding="utf-8")
+    assert "已有有效管辖配置且 target/cwd 未命中任何管辖对象" in raw
+    assert "缺少可复核管辖配置、target/cwd 依据或解析能力" in raw
+
     root = _copy_specs_root(tmp_path)
     _replace_in_temp(
         root,
@@ -866,6 +870,7 @@ projects:
     assert resolution["governed"] is False
     assert resolution["blocked"] is False
     assert resolution["scope_status"] == "non_governed"
+    assert resolution["unknown_reason"] == "not_in_governed_project"
     assert resolution["target_resolutions"][0]["status"] == "not_governed"
 
 
@@ -4210,6 +4215,7 @@ projects:
     payload = json.loads(completed.stdout)
     assert payload["summary"]["status"] == "ok"
     assert payload["summary"]["governed"] is True
+    assert payload["summary"]["scope_status"] == "governed_single"
     assert payload["summary"]["governed_project_id"] == "app"
     assert payload["summary"]["hook_integrated"] == "git.commit-msg"
     assert payload["metadata"]["human_gate_confirmed"] is True
@@ -4723,6 +4729,7 @@ projects:
     assert completed.returncode == 1
     assert payload["summary"]["status"] == "blocked"
     assert payload["summary"]["governed"] is False
+    assert payload["summary"]["scope_status"] == "non_governed"
     assert "GOVERNED_HOOK_TARGET_NOT_GOVERNED" in _diagnostic_codes(payload)
     assert not (repo / "hooks" / "commit-msg").exists()
 

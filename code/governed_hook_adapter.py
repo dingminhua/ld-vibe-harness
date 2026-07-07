@@ -347,6 +347,7 @@ def build_governed_hook_adapter(
             "status": status,
             "command": command,
             "governed": bool(resolution["governed"]),
+            "scope_status": resolution.get("scope_status", ""),
             "governed_project_id": resolution["governed_project_id"],
             "governed_via": resolution["governed_via"],
             "hook_installed": installed,

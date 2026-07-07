@@ -61,7 +61,14 @@ READ_ONLY_TOOLS = {
     "multi_agent_v1.wait_agent",
     "multi_agent_v1wait_agent",
 }
-COMMAND_EXECUTION_TOOLS = {"bash", "exec_command", "functions.exec_command", "shell"}
+COMMAND_EXECUTION_TOOLS = {
+    "bash",
+    "exec_command",
+    "functions.exec_command",
+    "mcp__functions__exec_command",
+    "mcp__developer__exec_command",
+    "shell",
+}
 WRITE_TOOLS = {"write", "edit", "multiedit", "multi_edit", "apply_patch", "functions.apply_patch"}
 READ_OPERATIONS = {"read", "inspect", "search", "grep", "list", "audit", "review", "diagnose"}
 WRITE_OPERATIONS = {"write", "edit", "apply_patch", "commit", "delete", "move", "install", "update"}

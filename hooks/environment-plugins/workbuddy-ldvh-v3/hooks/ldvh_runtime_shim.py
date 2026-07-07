@@ -42,7 +42,14 @@ ADAPTER_EVENT_MAP = {
     "Stop": "ldvh.completion_claim",
 }
 READ_ONLY_TOOLS = {"read", "grep", "glob", "ls"}
-COMMAND_EXECUTION_TOOLS = {"bash", "exec_command", "functions.exec_command", "shell"}
+COMMAND_EXECUTION_TOOLS = {
+    "bash",
+    "exec_command",
+    "functions.exec_command",
+    "mcp__functions__exec_command",
+    "mcp__developer__exec_command",
+    "shell",
+}
 READ_ONLY_COMMANDS = {"cat", "find", "grep", "head", "ls", "nl", "pwd", "rg", "sed", "tail", "wc"}
 READ_ONLY_GIT_SUBCOMMANDS = {
     "branch",
@@ -234,8 +241,25 @@ def is_controlled_read_plan_bootstrap_command(command: str, cwd: Path, ldvh_root
 
 
 def is_command_execution_tool(payload: dict[str, Any]) -> bool:
-    tool_name = first_text(payload.get("tool_name"), payload.get("toolName"), payload.get("name")).lower()
-    return tool_name in COMMAND_EXECUTION_TOOLS
+    return any(name in COMMAND_EXECUTION_TOOLS for name in tool_name_candidates(payload))
+
+
+def tool_name_candidates(payload: dict[str, Any]) -> list[str]:
+    raw_names = [
+        payload.get("tool_name"),
+        payload.get("toolName"),
+        payload.get("name"),
+        payload.get("tool"),
+    ]
+    names: list[str] = []
+    for raw in raw_names:
+        if not isinstance(raw, str) or not raw.strip():
+            continue
+        lowered = raw.strip().lower()
+        names.append(lowered)
+        if "__" in lowered:
+            names.append(lowered.replace("__", "."))
+    return list(dict.fromkeys(names))
 
 
 def command_from_record(record: dict[str, Any]) -> str:
@@ -420,10 +444,10 @@ def task_text(payload: dict[str, Any]) -> str:
 
 
 def operation(payload: dict[str, Any]) -> str:
-    tool_name = first_text(payload.get("tool_name"), payload.get("toolName"), payload.get("name")).lower()
-    if tool_name in READ_ONLY_TOOLS:
+    tool_names = tool_name_candidates(payload)
+    if any(name in READ_ONLY_TOOLS for name in tool_names):
         return "read"
-    if tool_name in COMMAND_EXECUTION_TOOLS and is_likely_read_only_command(command_text(payload)):
+    if any(name in COMMAND_EXECUTION_TOOLS for name in tool_names) and is_likely_read_only_command(command_text(payload)):
         return "read"
     return first_text(payload.get("operation"), "write")
 
