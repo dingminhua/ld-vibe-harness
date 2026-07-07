@@ -881,6 +881,10 @@ def is_blocking_result(result: dict[str, Any]) -> bool:
     return summary_status(result) == "blocked"
 
 
+def has_runtime_diagnostics(result: dict[str, Any]) -> bool:
+    return bool(diagnostics(result)) or summary_status(result) not in {"", "ok", "no_op"}
+
+
 def diagnostic_codes(result: dict[str, Any]) -> set[str]:
     return {str(item.get("code") or "") for item in diagnostics(result) if isinstance(item, dict)}
 
@@ -988,7 +992,7 @@ def codex_protocol_output(event: str, result: dict[str, Any]) -> dict[str, Any]:
 
     if event == "Stop":
         message = "LDVH V3 completion check passed."
-        if is_blocking_result(result):
+        if has_runtime_diagnostics(result):
             message = "LDVH V3 completion check warning: " + diagnostic_reason(result)
         return {"continue": True, "systemMessage": message}
 

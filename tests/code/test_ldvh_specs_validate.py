@@ -5083,6 +5083,71 @@ def test_runtime_completion_claim_requires_verification_evidence(validation_resu
     assert runtime["diagnostics"][0]["code"] == "RUNTIME_COMPLETION_VERIFICATION_MISSING"
 
 
+def test_runtime_completion_claim_blocks_target_primary_diagnostic_even_with_evidence(validation_result: dict) -> None:
+    validation = _validation_with_extra_diagnostics(
+        validation_result,
+        [
+            {
+                "level": "error",
+                "code": "COMPLETION_TARGET_STILL_DIRTY",
+                "path": "README.md",
+                "message": "目标仍存在未解决诊断，不能声明完成。",
+            }
+        ],
+    )
+
+    runtime = ldvh_specs.build_runtime_event(
+        ROOT,
+        event="completion_claim",
+        target_path="README.md",
+        verification_evidence=["python3 code/specs_validate.py all --format text --fail-on-diagnostics"],
+        validation=validation,
+    )
+
+    codes = _diagnostic_codes(runtime)
+    target_diagnostic = next(
+        diagnostic for diagnostic in runtime["diagnostics"] if diagnostic["code"] == "COMPLETION_TARGET_STILL_DIRTY"
+    )
+    assert runtime["summary"]["status"] == "blocked"
+    assert runtime["summary"]["blocking"] == 1
+    assert runtime["summary"]["has_preflight"] is True
+    assert runtime["preflight"]["summary"]["blocking"] == 1
+    assert target_diagnostic["diagnostic_scope"] == "target_primary"
+    assert "RUNTIME_COMPLETION_VERIFICATION_MISSING" not in codes
+
+
+def test_runtime_completion_claim_keeps_unrelated_global_diagnostic_as_residual_risk(validation_result: dict) -> None:
+    validation = _validation_with_extra_diagnostics(
+        validation_result,
+        [
+            {
+                "level": "error",
+                "code": "UNRELATED_FACT_INSTANCE_STILL_DIRTY",
+                "path": WORKCASE_TARGET,
+                "message": "无关事实对象仍存在诊断，应呈现为残留风险而不是阻断当前完成声明。",
+            }
+        ],
+    )
+
+    runtime = ldvh_specs.build_runtime_event(
+        ROOT,
+        event="completion_claim",
+        target_path="README.md",
+        verification_evidence=["python3 code/specs_validate.py all --format text --fail-on-diagnostics"],
+        validation=validation,
+    )
+
+    residual = next(
+        diagnostic for diagnostic in runtime["diagnostics"] if diagnostic["code"] == "UNRELATED_FACT_INSTANCE_STILL_DIRTY"
+    )
+    assert runtime["summary"]["status"] == "review_required"
+    assert runtime["summary"]["blocking"] == 0
+    assert runtime["summary"]["unrelated_global"] == 1
+    assert runtime["preflight"]["summary"]["blocking"] == 0
+    assert residual["diagnostic_scope"] == "unrelated_global"
+    assert residual["disposition"] == "informational"
+
+
 def test_completion_claim_cli_accepts_hook_evidence_json() -> None:
     completed = _run_cli(
         [
@@ -5114,6 +5179,9 @@ def test_completion_claim_cli_accepts_hook_evidence_json() -> None:
     assert payload["summary"]["environment_integrated"] is False
     assert payload["summary"]["integration_scope"] == "hook.completion_claim"
     assert payload["summary"]["verification_evidence"] == 2
+    assert payload["summary"]["preflight_status"] == "diagnostic_clear"
+    assert payload["summary"]["completion_diagnostics"] == 0
+    assert payload["summary"]["completion_blockers"] == 0
     assert payload["metadata"]["integration_scope"] == "hook.completion_claim"
     assert payload["metadata"]["authorization"] == "none"
     assert payload["receipt"]["storage"] == "stdout_only"
@@ -5142,6 +5210,8 @@ def test_completion_claim_cli_blocks_missing_verification_evidence() -> None:
     assert completed.returncode == 1
     assert payload["summary"]["status"] == "blocked"
     assert payload["summary"]["integration_scope"] == "hook.completion_claim"
+    assert payload["summary"]["preflight_status"] == "diagnostic_clear"
+    assert payload["summary"]["completion_blockers"] == 1
     assert payload["receipt"]["storage"] == "stdout_only"
     assert "RUNTIME_COMPLETION_VERIFICATION_MISSING" in _diagnostic_codes(payload)
 

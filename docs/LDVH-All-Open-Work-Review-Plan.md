@@ -82,7 +82,7 @@ LDVH 的总目标不变：
 | 分层 diagnostic、target-scoped blocking、repair_mode、non_governed no-op、runtime receipt cache、sed-i 修复大体已实现 | 从 P0 实现项降级为测试覆盖确认或漂移治理 |
 | repair lane Code 已实现，但 `01/07/09` 没有 specs 契约 | 已完成 P0 specs 回写；后续保留测试和实现对齐复核 |
 | `01/02/07/09` 的待补齐口径与当前缺口认知不一致 | 已完成四处待补齐事项同步修正；后续按缺口清单推进 |
-| completion_claim 只检查 evidence 非空，不消费 preflight diagnostic | 新增 P1：completion_claim 完成前诊断消费 |
+| completion_claim 只检查 evidence 非空，不消费 preflight diagnostic | P1 已开始承接：runtime 已消费 target-scoped preflight diagnostic，真实环境 completion / Stop 可见性仍需验收 |
 | Code 顶层无显式六类 `scope_status` | 新增 P1：Code schema 合规 |
 | Code 不支持 `declared_multi_governed` | 新增 P1：显式跨管辖对象只读审计路径 |
 | cwd 在 ldvh_root 内且无 receipt 时，生成 receipt 的入口也会被 Hook 拦截 | P1 已开始承接：Code / shim 已补 `acknowledge_read_plan` bootstrap allowance 和回归，仍需真实环境当次验收 |
@@ -165,7 +165,7 @@ LDVH 的总目标不变：
 | diagnostic 分类：`target_primary` / `target_cascade` / `unrelated_global` / `runtime_blocker` | Code + tests | 已实现，保留测试覆盖确认 | P1 |
 | runtime event builder / preflight target-scoped blocking | Code + tests | 已实现，保留回归确认 | P1 |
 | `ldvh.session_start` / `ldvh.pre_tool_use` scoping 验收 | Code + tests | 已实现，保留回归确认 | P1 |
-| `ldvh.completion_claim` 完成前诊断消费 | `01` / `07` / Code | 只检查 verification evidence 非空，不消费 preflight diagnostic | P1 |
+| `ldvh.completion_claim` 完成前诊断消费 | `01` / `07` / Code | runtime 已消费 target-scoped preflight diagnostic；真实环境 completion / Stop 可见性仍需验收 | P1 |
 | repair final validation 仅验证 primary target 及必要 direct dependent | `09` / tests | specs 已承接，测试仍需确认 | P1 |
 | `sed -i` 分类洞修复 | hooks / tests | 已修复 | P1 |
 | Codex / WorkBuddy shim 共享分类器 | Code + hooks | `sed -i` 已对齐，但命令分类出现 `&` 漂移 | P1 |
@@ -579,7 +579,7 @@ target -> operation -> risk -> phase -> decision / verification_plan -> diagnost
 | 事项 | 主归口 | 协作归口 | 执行类型 | 说明 |
 |---|---|---|---|---|
 | hook bootstrapping 死锁 | `01` | `07` / Code | `code-after-existing-spec` | Code / shim 已补受控入口，仍需真实环境当次验收；receipt 生成入口本身不能被 read_plan 检查拦截 |
-| completion_claim 消费当前 diagnostic | `01` | `07` / Code / tests | `spec-first + HG` -> `code-after-spec` | 完成声明不能只看 evidence 非空 |
+| completion_claim 消费当前 diagnostic | `01` | `07` / Code / tests | `code-after-existing-spec` | runtime 已补 target-scoped diagnostic 消费和回归；真实环境 completion / Stop 可见性仍需验收 |
 | resolver 输出显式六类 `scope_status` | `07` | Code / `10` / tests | `spec-first + HG` -> `code-after-spec` | specs 要求六类，Code 顶层 schema 待补 |
 | `declared_multi_governed` 只读审计路径 | `10` | `07` / Code / tests | `spec-first + HG` -> `code-after-spec` | Human 显式跨对象审计不应被普通多项目混合阻断 |
 | Action Guide governed project 链路 | `01` | `07` / `10` / Code | `spec-first + HG` -> `code-after-spec` | 10 入口、07 读取、01 消费 |
@@ -615,7 +615,7 @@ target -> operation -> risk -> phase -> decision / verification_plan -> diagnost
 1. **确认 P0 specs 小步补强已完成**：repair lane 契约已回写，`01/02/07/09` 待补齐事项已同步修正；
 2. **Human 决策 WorkCase**：决定是否创建或指定顶层 WorkCase 承接本轮体系重构；
 3. **收尾 P1 bootstrapping**：本地已实现 read_plan receipt 生成入口的受控放行路径，下一步补真实环境当次验收；
-4. **处理 P1 完成声明和 scope schema**：补 completion_claim diagnostic 消费、`scope_status`、`declared_multi_governed`；
+4. **处理 P1 scope schema**：completion_claim diagnostic 消费已本地补齐；下一步补 `scope_status`、`declared_multi_governed`；
 5. **补 Action Guide / 验证选择 / 能力模型**：先 specs，后 Code 和 tests；
 6. **处理 shim 漂移和回归测试**：抽共享分类器，补 runtime scoping / no-op / repair / mixed scope 回归；
 7. **V2 收口复核**：根据 V3 `00` 和补强后的 specs，重新判断 V2 是否可删除；

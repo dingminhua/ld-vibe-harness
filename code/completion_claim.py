@@ -43,11 +43,15 @@ def build_completion_claim(
         acknowledged_paths=acknowledged_paths,
         verification_evidence=verification_evidence,
     )
+    preflight = result["preflight"] or {}
     result["metadata"]["integration_scope"] = INTEGRATION_SCOPE
     result["summary"]["environment_integrated"] = False
     result["summary"]["integration_scope"] = INTEGRATION_SCOPE
     result["summary"]["verification_evidence"] = len(result["receipt"]["verification_evidence"])
     result["summary"]["acknowledged_paths"] = len(result["receipt"]["acknowledged_paths"])
+    result["summary"]["preflight_status"] = preflight.get("summary", {}).get("status", "")
+    result["summary"]["completion_diagnostics"] = len(result["diagnostics"])
+    result["summary"]["completion_blockers"] = result["summary"]["blocking"]
     return result
 
 
@@ -65,6 +69,9 @@ def _print_text(result: dict[str, Any]) -> None:
     print(f"- receipt_storage: {receipt['storage']}")
     print(f"- verification_evidence: {summary['verification_evidence']}")
     print(f"- acknowledged_paths: {summary['acknowledged_paths']}")
+    print(f"- preflight_status: {summary['preflight_status']}")
+    print(f"- completion_diagnostics: {summary['completion_diagnostics']}")
+    print(f"- completion_blockers: {summary['completion_blockers']}")
     print(f"- environment_integrated: {_bool_text(summary['environment_integrated'])}")
     print(f"- integration_scope: {summary['integration_scope']}")
 

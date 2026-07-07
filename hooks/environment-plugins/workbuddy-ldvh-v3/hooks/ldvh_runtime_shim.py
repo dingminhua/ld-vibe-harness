@@ -614,6 +614,10 @@ def is_blocking_result(result: dict[str, Any]) -> bool:
     return summary_status(result) == "blocked"
 
 
+def has_runtime_diagnostics(result: dict[str, Any]) -> bool:
+    return bool(diagnostics(result)) or summary_status(result) not in {"", "ok", "no_op"}
+
+
 def should_deny_pre_tool(result: dict[str, Any]) -> bool:
     return is_blocking_result(result)
 
@@ -717,7 +721,7 @@ def workbuddy_protocol_output(event: str, result: dict[str, Any]) -> dict[str, A
 
     if event == "Stop":
         message = "LDVH V3 completion check passed."
-        if is_blocking_result(result):
+        if has_runtime_diagnostics(result):
             message = "LDVH V3 completion check warning: " + diagnostic_reason(result)
         return {"continue": True, "systemMessage": message}
 

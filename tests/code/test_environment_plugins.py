@@ -1071,6 +1071,45 @@ def test_codex_sample_shim_degrades_completion_claim_to_non_blocking_stop() -> N
     assert "RUNTIME_COMPLETION_VERIFICATION_MISSING" in payload["systemMessage"]
 
 
+def test_codex_sample_shim_warns_on_completion_review_required_without_blocking_stop() -> None:
+    completed = _run_shim(
+        {
+            "hook_event_name": "Stop",
+            "sessionId": "shim-stop-review-required",
+            "cwd": ROOT.as_posix(),
+            "targetPath": "code/ldvh_specs.py",
+            "verificationEvidence": ["python3 code/specs_validate.py all --format text --fail-on-diagnostics"],
+        },
+        check=True,
+    )
+
+    payload = json.loads(completed.stdout)
+    assert completed.returncode == 0
+    assert payload["continue"] is True
+    assert "LDVH V3 completion check warning" in payload["systemMessage"]
+    assert "PREFLIGHT_CODE_OUTPUT_NOT_AUTHORIZATION" in payload["systemMessage"]
+
+
+def test_workbuddy_sample_shim_warns_on_completion_review_required_without_blocking_stop(tmp_path: Path) -> None:
+    completed = _run_workbuddy_shim(
+        {
+            "hook_event_name": "Stop",
+            "sessionId": "workbuddy-stop-review-required",
+            "cwd": ROOT.as_posix(),
+            "targetPath": "code/ldvh_specs.py",
+            "verificationEvidence": ["python3 code/specs_validate.py all --format text --fail-on-diagnostics"],
+        },
+        extra_env={"LDVH_RUNTIME_CACHE_DIR": (tmp_path / "runtime-cache").as_posix()},
+        check=True,
+    )
+
+    payload = json.loads(completed.stdout)
+    assert completed.returncode == 0
+    assert payload["continue"] is True
+    assert "LDVH V3 completion check warning" in payload["systemMessage"]
+    assert "PREFLIGHT_CODE_OUTPUT_NOT_AUTHORIZATION" in payload["systemMessage"]
+
+
 def test_codex_sample_shim_does_not_capture_research_spark_by_default(tmp_path: Path) -> None:
     spark_dir = tmp_path / "sparks"
     completed = _run_shim(

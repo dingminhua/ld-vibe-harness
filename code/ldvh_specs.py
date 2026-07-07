@@ -5392,13 +5392,42 @@ def build_runtime_event(
                 ))
             diagnostics.extend(preflight["diagnostics"])
 
-        if normalized_event == "completion_claim" and not normalized_verification_evidence:
-            diagnostics.append(_runtime_diagnostic(
-                "blocking",
-                "RUNTIME_COMPLETION_VERIFICATION_MISSING",
-                f"runtime://{canonical_event}",
-                f"{canonical_event} 必须提供验证证据、未验证范围或残留风险说明。",
-            ))
+        if normalized_event == "completion_claim":
+            if not normalized_verification_evidence:
+                diagnostics.append(_runtime_diagnostic(
+                    "blocking",
+                    "RUNTIME_COMPLETION_VERIFICATION_MISSING",
+                    f"runtime://{canonical_event}",
+                    f"{canonical_event} 必须提供验证证据、未验证范围或残留风险说明。",
+                ))
+            preflight = build_preflight(
+                root,
+                target_path=target_path,
+                operation=operation,
+                task=task,
+                trigger_source=trigger_source,
+                cwd=cwd,
+                config_root=config_root,
+                target_paths=target_paths,
+                validation=validation,
+            )
+            if preflight["summary"]["status"] == "no_op":
+                return build_runtime_no_op_event(
+                    root,
+                    event=normalized_event,
+                    trigger_source=trigger_source,
+                    session_id=session_id,
+                    target_path=normalized_target,
+                    task=task,
+                    operation=operation,
+                    acknowledged_paths=normalized_ack_paths,
+                    verification_evidence=normalized_verification_evidence,
+                    cwd=cwd,
+                    config_root=config_root,
+                    target_paths=raw_scope_targets,
+                    preflight=preflight,
+                )
+            diagnostics.extend(preflight["diagnostics"])
 
     status = runtime_status_from_diagnostics(diagnostics, preflight)
     receipt_status = "blocked" if status == "blocked" else "generated"
