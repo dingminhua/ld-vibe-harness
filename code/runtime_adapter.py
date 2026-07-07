@@ -221,6 +221,7 @@ def _print_text(result: dict[str, Any]) -> None:
     print("LDVH v3 runtime adapter")
     print(f"- status: {summary['status']}")
     print(f"- event: {summary['event']}")
+    print(f"- internal_event: {summary['internal_event']}")
     print(f"- dispatch_status: {summary['dispatch_status']}")
     print(f"- adapter_integrated: {_bool_text(summary['adapter_integrated'])}")
     print(f"- environment_integrated: {_bool_text(summary['environment_integrated'])}")

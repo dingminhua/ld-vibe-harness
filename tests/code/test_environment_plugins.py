@@ -11,6 +11,8 @@ ROOT = Path(__file__).resolve().parents[2]
 PLUGIN_ROOT = ROOT / "hooks/environment-plugins/codex-ldvh-v3"
 SHIM = ROOT / "hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py"
 PLUGIN_JSON = PLUGIN_ROOT / "plugin.json"
+WORKBUDDY_PLUGIN_ROOT = ROOT / "hooks/environment-plugins/workbuddy-ldvh-v3"
+WORKBUDDY_SHIM = WORKBUDDY_PLUGIN_ROOT / "hooks/ldvh_runtime_shim.py"
 
 
 def _png_dimensions(path: Path) -> tuple[int, int]:
@@ -27,6 +29,26 @@ def _run_shim(payload: dict, *, check: bool = True, extra_env: dict[str, str] | 
         env.update(extra_env)
     return subprocess.run(
         [sys.executable, SHIM.as_posix()],
+        cwd=ROOT,
+        input=json.dumps(payload, ensure_ascii=False),
+        text=True,
+        capture_output=True,
+        check=check,
+        env=env,
+        timeout=60,
+    )
+
+
+def _run_workbuddy_shim(
+    payload: dict, *, check: bool = True, extra_env: dict[str, str] | None = None
+) -> subprocess.CompletedProcess:
+    env = dict(os.environ)
+    env["LDVH_ROOT"] = ROOT.as_posix()
+    env["LDVH_HOOK_SPARK_CAPTURE"] = "0"
+    if extra_env:
+        env.update(extra_env)
+    return subprocess.run(
+        [sys.executable, WORKBUDDY_SHIM.as_posix()],
         cwd=ROOT,
         input=json.dumps(payload, ensure_ascii=False),
         text=True,
@@ -577,6 +599,125 @@ def test_codex_sample_shim_consumes_session_runtime_cache(tmp_path: Path) -> Non
         {
             "hook_event_name": "PreToolUse",
             "sessionId": "shim-runtime-cache",
+            "cwd": ROOT.as_posix(),
+            "toolName": "Write",
+            "tool_input": {"file_path": "tests/code/test_environment_plugins.py"},
+        },
+        extra_env=extra_env,
+    )
+
+    payload = json.loads(completed.stdout)
+    hook_output = _hook_output(payload)
+    assert completed.returncode == 0
+    assert hook_output["hookEventName"] == "PreToolUse"
+    assert hook_output["additionalContext"].startswith("LDVH V3 pre-tool check passed.")
+
+
+def test_workbuddy_sample_shim_session_start_does_not_ack_read_plan(tmp_path: Path) -> None:
+    tmp_dir = tmp_path / "tmp"
+    tmp_dir.mkdir()
+    session_id = "workbuddy-no-session-ack"
+    extra_env = {
+        "TMPDIR": tmp_dir.as_posix(),
+        "LDVH_RUNTIME_CACHE_DIR": (tmp_path / "runtime-cache").as_posix(),
+    }
+
+    completed = _run_workbuddy_shim(
+        {
+            "hook_event_name": "SessionStart",
+            "sessionId": session_id,
+            "cwd": ROOT.as_posix(),
+            "prompt": "进入 LDVH v3 工作",
+            "targetPath": "README.md",
+        },
+        extra_env=extra_env,
+    )
+
+    payload = json.loads(completed.stdout)
+    hook_output = _hook_output(payload)
+    legacy_cache = tmp_dir / "ldvh-codex-hook" / "receipts" / f"{session_id}.json"
+    assert completed.returncode == 0
+    assert hook_output["hookEventName"] == "SessionStart"
+    assert "LDVH V3 session read plan is active" in hook_output["additionalContext"]
+    assert not legacy_cache.exists()
+
+    completed = _run_workbuddy_shim(
+        {
+            "hook_event_name": "PreToolUse",
+            "sessionId": session_id,
+            "cwd": ROOT.as_posix(),
+            "toolName": "Write",
+            "tool_input": {"file_path": "tests/code/test_environment_plugins.py"},
+        },
+        extra_env=extra_env,
+        check=False,
+    )
+
+    payload = json.loads(completed.stdout)
+    hook_output = _hook_output(payload)
+    assert completed.returncode == 0
+    assert hook_output["hookEventName"] == "PreToolUse"
+    assert hook_output["permissionDecision"] == "deny"
+    assert "RUNTIME_READ_PLAN_CONSUMED_EMPTY" in hook_output["permissionDecisionReason"]
+
+
+def test_workbuddy_sample_shim_blocks_target_unknown_even_with_acknowledgement(tmp_path: Path) -> None:
+    completed = _run_workbuddy_shim(
+        {
+            "hook_event_name": "PreToolUse",
+            "sessionId": "workbuddy-unknown-target",
+            "cwd": ROOT.as_posix(),
+            "toolName": "Write",
+            "tool_input": {},
+            "acknowledgedPaths": [
+                "specs/00-理念与构成.md",
+                "specs/01-保障与衔接.md",
+                "specs/02-AI行为规范.md",
+            ],
+        },
+        extra_env={"LDVH_RUNTIME_CACHE_DIR": (tmp_path / "runtime-cache").as_posix()},
+        check=False,
+    )
+
+    payload = json.loads(completed.stdout)
+    hook_output = _hook_output(payload)
+    assert completed.returncode == 0
+    assert hook_output["hookEventName"] == "PreToolUse"
+    assert hook_output["permissionDecision"] == "deny"
+    assert "PREFLIGHT_TARGET_UNKNOWN" in hook_output["permissionDecisionReason"]
+
+
+def test_workbuddy_sample_shim_consumes_standard_runtime_cache(tmp_path: Path) -> None:
+    extra_env = {"LDVH_RUNTIME_CACHE_DIR": (tmp_path / "receipt-cache").as_posix()}
+    subprocess.run(
+        [
+            sys.executable,
+            "code/acknowledge_read_plan.py",
+            "--session-id",
+            "workbuddy-runtime-cache",
+            "--target-path",
+            "tests/code/test_environment_plugins.py",
+            "--acknowledged-path",
+            "specs/00-理念与构成.md",
+            "--acknowledged-path",
+            "specs/01-保障与衔接.md",
+            "--acknowledged-path",
+            "specs/02-AI行为规范.md",
+            "--format",
+            "json",
+        ],
+        cwd=ROOT,
+        env={**os.environ, **extra_env},
+        text=True,
+        capture_output=True,
+        check=True,
+        timeout=60,
+    )
+
+    completed = _run_workbuddy_shim(
+        {
+            "hook_event_name": "PreToolUse",
+            "sessionId": "workbuddy-runtime-cache",
             "cwd": ROOT.as_posix(),
             "toolName": "Write",
             "tool_input": {"file_path": "tests/code/test_environment_plugins.py"},

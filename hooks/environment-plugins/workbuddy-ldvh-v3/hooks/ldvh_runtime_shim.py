@@ -13,110 +13,13 @@ import re
 import shlex
 import subprocess
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 
 ROOT_MARKERS = ("code/runtime_adapter.py", "specs/00-理念与构成.md")
 
-
-# runtime receipt cache 目录解析顺序（spec 01.Att.05）
-def receipt_cache_dir() -> Path:
-    """按平台解析 receipt cache 目录（spec 01.Att.05）"""
-    if os.name == "posix":
-        tmpdir = os.environ.get("TMPDIR", "/tmp")
-        return Path(tmpdir) / "ldvh-codex-hook" / "receipts"
-    if os.name == "nt":
-        import tempfile
-        return Path(tempfile.gettempdir()) / "ldvh-hook" / "receipts"
-    return Path.home() / ".cache" / "ldvh" / "hook" / "receipts"
-
-
-def receipt_cache_path(session_id: str) -> Path:
-    """返回指定 session 的 receipt cache 文件路径"""
-    return receipt_cache_dir() / f"{session_id}.json"
-
-
-def ensure_receipt_cache_dir() -> Path:
-    """创建 cache 目录并返回路径（权限 0700）"""
-    directory = receipt_cache_dir()
-    directory.mkdir(parents=True, exist_ok=True, mode=0o700)
-    return directory
-
-
-def clean_expired_receipts() -> None:
-    """清理过期 receipt cache（spec 01.Att.05 管理规则 4）"""
-    directory = receipt_cache_dir()
-    if not directory.exists():
-        return
-    now = datetime.now().astimezone()
-    for path in directory.glob("*.json"):
-        try:
-            data = json.loads(path.read_text(encoding="utf-8"))
-            expires_at = data.get("expires_at")
-            if expires_at:
-                expiry = datetime.fromisoformat(expires_at)
-                if now >= expiry:
-                    path.unlink()
-        except (OSError, json.JSONDecodeError, ValueError):
-            continue
-
-
-def write_receipt_cache(session_id: str, workspace_root: str, acknowledged_paths: list[str]) -> None:
-    """写 receipt cache（spec 01.Att.05）"""
-    clean_expired_receipts()
-    directory = ensure_receipt_cache_dir()
-    now = datetime.now().astimezone()
-    expires = now + timedelta(minutes=30)
-    workspace_hash = str(abs(hash(workspace_root)) % 10**8)
-    data = {
-        "schema_version": 1,
-        "event": "acknowledge_read_plan",
-        "session_id": session_id,
-        "workspace_root": workspace_root,
-        "workspace_hash": str(workspace_hash),
-        "trigger_source": TRIGGER_SOURCE,
-        "acknowledged_paths": acknowledged_paths,
-        "created_at": now.isoformat(timespec="seconds"),
-        "expires_at": expires.isoformat(timespec="seconds"),
-        "boundary": "cache-not-fact-source-or-authorization",
-    }
-    temp_path = directory / f".{session_id}.tmp"
-    target_path = receipt_cache_path(session_id)
-    try:
-        temp_path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
-        os.rename(temp_path, target_path)
-        os.chmod(target_path, 0o600)
-    except OSError:
-        if temp_path.exists():
-            temp_path.unlink()
-
-
-def read_receipt_cache(session_id: str, workspace_root: str) -> list[str]:
-    """读 receipt cache 作为 fallback（spec 01.Att.05）"""
-    clean_expired_receipts()
-    path = receipt_cache_path(session_id)
-    if not path.exists():
-        return []
-    try:
-        data = json.loads(path.read_text(encoding="utf-8"))
-        if data.get("schema_version") != 1:
-            return []
-        if data.get("event") != "acknowledge_read_plan":
-            return []
-        if data.get("session_id") != session_id:
-            return []
-        if data.get("workspace_root") != workspace_root:
-            return []
-        expires_at = data.get("expires_at")
-        if expires_at:
-            expiry = datetime.fromisoformat(expires_at)
-            if datetime.now().astimezone() >= expiry:
-                return []
-        return list(data.get("acknowledged_paths") or [])
-    except (OSError, json.JSONDecodeError, ValueError):
-        return []
 
 TRIGGER_SOURCE = "workbuddy.ldvh-plugin"
 RESEARCH_SPARK_SLUG = "workbuddy-hook-three-event-research-capture"
@@ -481,11 +384,6 @@ def operation(payload: dict[str, Any]) -> str:
 
 def adapter_payload(payload: dict[str, Any], event: str, cwd: Path) -> dict[str, Any]:
     session_id = first_text(payload.get("session_id"), payload.get("sessionId"), "workbuddy-hook")
-    acknowledged = acknowledged_paths(payload)
-    if not acknowledged and event == "pre_tool_use":
-        cache_paths = read_receipt_cache(session_id, cwd.as_posix())
-        if cache_paths:
-            acknowledged = cache_paths
     return {
         "event": event,
         "session_id": session_id,
@@ -495,7 +393,7 @@ def adapter_payload(payload: dict[str, Any], event: str, cwd: Path) -> dict[str,
         "target_paths": target_path_values(payload, cwd),
         "operation": operation(payload),
         "task": task_text(payload),
-        "acknowledged_paths": acknowledged,
+        "acknowledged_paths": acknowledged_paths(payload),
         "verification_evidence": list_text(payload.get("verification_evidence") or payload.get("verificationEvidence")),
         "trigger_source": TRIGGER_SOURCE,
     }
@@ -670,17 +568,8 @@ def is_blocking_result(result: dict[str, Any]) -> bool:
     return summary_status(result) == "blocked"
 
 
-def diagnostic_codes(result: dict[str, Any]) -> set[str]:
-    return {str(item.get("code") or "") for item in diagnostics(result) if isinstance(item, dict)}
-
-
 def should_deny_pre_tool(result: dict[str, Any]) -> bool:
-    if not is_blocking_result(result):
-        return False
-    codes = diagnostic_codes(result)
-    if codes and codes <= {"PREFLIGHT_TARGET_UNKNOWN"}:
-        return False
-    return True
+    return is_blocking_result(result)
 
 
 def diagnostic_reason(result: dict[str, Any]) -> str:
@@ -806,12 +695,6 @@ def main() -> int:
         )
 
     record_hook_event_to_spark(ldvh_root, payload, event, cwd)
-    # SessionStart 时写 receipt cache（spec 01 §6.7）
-    if event == "SessionStart":
-        session_id = first_text(payload.get("session_id"), payload.get("sessionId"), "workbuddy-hook")
-        write_receipt_cache(session_id, cwd.as_posix(), list(REQUIRED_ENTRY_PATHS))
-
-
     runtime_event = adapter_event(event)
     if not runtime_event:
         return 0

@@ -179,6 +179,8 @@ projects:
     assert any("授权 / trust" in step for step in human_acceptance["steps"])
     assert any("自然语言验收卡" in step for step in human_acceptance["steps"])
     assert any("未看到 LDVH 输出" in step for step in human_acceptance["steps"])
+    assert any("ldvh.session_start" in step for step in human_acceptance["steps"])
+    assert any("ldvh.pre_tool_use" in step for step in human_acceptance["steps"])
     assert any("Human 只回传原始输出，不负责判断 integrated" in step for step in human_acceptance["steps"])
     assert any("specs/10-安装与配置规范.md" in step for step in human_acceptance["steps"])
     assert "visible_probe_command" not in human_acceptance

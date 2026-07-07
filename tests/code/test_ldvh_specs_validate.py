@@ -4683,6 +4683,29 @@ def test_runtime_adapter_dispatches_session_start_payload_json() -> None:
     }.issubset(read_paths)
 
 
+def test_runtime_adapter_text_output_prints_internal_event() -> None:
+    completed = _run_cli(
+        [
+            sys.executable,
+            "code/runtime_adapter.py",
+            "session-start",
+            "--cwd",
+            str(ROOT),
+            "--target-path",
+            "README.md",
+            "--operation",
+            "read",
+            "--format",
+            "text",
+        ],
+        cwd=ROOT,
+        check=True,
+    )
+
+    assert "- event: ldvh.session_start" in completed.stdout
+    assert "- internal_event: session_start" in completed.stdout
+
+
 def test_runtime_adapter_dispatches_pre_tool_use_cli_json() -> None:
     completed = _run_cli(
         [
