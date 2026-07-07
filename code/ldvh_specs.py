@@ -4045,6 +4045,198 @@ def capability_gaps_for_requirement(requirement: dict[str, Any]) -> list[dict[st
     return []
 
 
+ACTION_GUIDE_SOURCE_BOUNDARIES = [
+    {
+        "source_type": "ldvh_specs",
+        "boundary": "LDVH specs 是规则来源；行动指南只能引用，不得反向改写或替代。",
+        "source_path": SHORT_SPEC_REFS["01"],
+    },
+    {
+        "source_type": "ldvh_facts",
+        "boundary": "LDVH 本体事实源只描述 LDVH 自身事实对象，不得替代外部管辖项目事实源。",
+        "source_path": SHORT_SPEC_REFS["03"],
+    },
+    {
+        "source_type": "governed_project_facts",
+        "boundary": "管辖项目事实源只能来自 resolver 输出的 governed_project_path 下 ldvh-base/。",
+        "source_path": SHORT_SPEC_REFS["10"],
+    },
+    {
+        "source_type": "process_output",
+        "boundary": "过程输出只能作为当次诊断、receipt 或导航证据，不是事实源、授权或完成证明。",
+        "source_path": SHORT_SPEC_REFS["01"],
+    },
+]
+
+
+def action_guide_scope_kind(consumption_timing: str, read_write_kind: str | None) -> str:
+    if read_write_kind:
+        return governed_scope_kind_for_operation(read_write_kind)
+    if consumption_timing == "git_commit_msg":
+        return "commit"
+    if consumption_timing in {"pre_tool_use", "completion_claim"}:
+        return "write"
+    return "read"
+
+
+def runtime_action_guide_read_write_kind(event: str, operation: str) -> str | None:
+    if event == "git_commit_msg":
+        return "commit"
+    if event in {"pre_tool_use", "completion_claim"}:
+        return operation
+    return None
+
+
+def action_guide_governed_subjects(governed_project: dict[str, Any]) -> list[dict[str, str]]:
+    raw_subjects = governed_project.get("governed_subjects", [])
+    if isinstance(raw_subjects, list) and raw_subjects:
+        return [subject for subject in raw_subjects if isinstance(subject, dict)]
+    governed_project_path = governed_project.get("governed_project_path", "")
+    if governed_project_path:
+        return [
+            {
+                "governed_subject": governed_project.get("governed_subject", governed_project_path),
+                "governed_project_id": governed_project.get("governed_project_id", ""),
+                "governed_project_path": governed_project_path,
+                "governed_via": governed_project.get("governed_via", ""),
+                "project_key": governed_project.get("governed_project_id", "") or governed_project_path,
+            }
+        ]
+    return []
+
+
+def project_fact_source_for_subject(root: Path, subject: dict[str, str]) -> dict[str, str]:
+    project_path = Path(subject.get("governed_project_path", ""))
+    fact_root = project_path / "ldvh-base" if str(project_path) else Path("")
+    status = "available" if str(project_path) and fact_root.is_dir() else "missing"
+    return {
+        "source_type": "governed_project_facts",
+        "status": status,
+        "governed_project_id": subject.get("governed_project_id", ""),
+        "governed_project_path": project_path.as_posix() if str(project_path) else "",
+        "governed_subject": subject.get("governed_subject", ""),
+        "fact_root": _display_path(fact_root, root) if str(project_path) else "",
+        "source_path": SHORT_SPEC_REFS["10"],
+        "boundary": "只能读取该项目根下 ldvh-base/；不得用 LDVH 本体 ldvh-base/、cwd 或项目登记配置替代。",
+    }
+
+
+def apply_governed_project_action_guide(
+    *,
+    root: Path,
+    governed_project: dict[str, Any],
+    source_refs: list[dict[str, Any]],
+    task_read_plan: list[dict[str, Any]],
+    validation_guard: list[dict[str, str]],
+    capability_gap: list[dict[str, str]],
+    missing_fields: list[dict[str, str]],
+    guide_diagnostics: list[dict[str, str]],
+) -> tuple[list[dict[str, str]], list[dict[str, str]]]:
+    scope_status = governed_project.get("scope_status", "scope_unknown")
+    project_fact_sources: list[dict[str, str]] = []
+    unverifiable: list[dict[str, str]] = []
+    source_refs.append({"path": SHORT_SPEC_REFS["10"], "role": "governed_project_resolution"})
+    config_path = governed_project.get("config_path", "")
+    if config_path:
+        source_refs.append({"path": config_path, "role": "governed_project_config"})
+
+    if scope_status == "non_governed":
+        return project_fact_sources, unverifiable
+
+    if scope_status == "scope_unknown":
+        missing_fields.append({
+            "field": "governed_project_resolution",
+            "reason": "缺少可复核管辖配置、target/cwd 依据或解析能力，不能生成项目事实源 read_plan。",
+        })
+        capability_gap.append({
+            "requirement_id": "",
+            "required_capability": "Governed project Action Guide source resolution",
+            "current_gap": "scope_unknown 不能当作管辖对象处理；当前只能输出缺口，不注入项目事实源。",
+            "disposition": "补充管辖配置、target/cwd 依据或解析能力后重试。",
+        })
+        unverifiable.append({
+            "code": "ACTION_GUIDE_SCOPE_UNKNOWN",
+            "target": ";".join(governed_project.get("target_paths", [])),
+            "reason": governed_project.get("message", "无法证明对象属于管辖项目。"),
+        })
+        return project_fact_sources, unverifiable
+
+    if scope_status == "governed_target_unknown":
+        if not any(item.get("field") == "target_path" for item in missing_fields):
+            missing_fields.append({
+                "field": "target_path",
+                "reason": "已有管辖范围证据，但本次具体 target、影响范围或风险归口不明。",
+            })
+        capability_gap.append({
+            "requirement_id": "",
+            "required_capability": "Target-specific governed project Action Guide",
+            "current_gap": "target 不明确前不能生成项目事实源 read_plan。",
+            "disposition": "补充 target、拆分范围或进入 Human Gate。",
+        })
+        return project_fact_sources, unverifiable
+
+    if scope_status == "mixed_scope":
+        guide_diagnostics.append(
+            Diagnostic(
+                "error",
+                "ACTION_GUIDE_MIXED_SCOPE",
+                SHORT_SPEC_REFS["10"],
+                governed_project.get("message", "混合或多管辖 target 不能生成合并行动指南。"),
+            ).to_dict()
+        )
+        return project_fact_sources, unverifiable
+
+    if scope_status not in {"governed_single", "declared_multi_governed"}:
+        capability_gap.append({
+            "requirement_id": "",
+            "required_capability": "Governed project Action Guide scope routing",
+            "current_gap": f"未知或未承接的 scope_status: {scope_status}",
+            "disposition": "不得生成项目事实源 read_plan；先补齐分流规则或进入 Human Gate。",
+        })
+        return project_fact_sources, unverifiable
+
+    for subject in action_guide_governed_subjects(governed_project):
+        fact_source = project_fact_source_for_subject(root, subject)
+        project_fact_sources.append(fact_source)
+        if fact_source["status"] != "available":
+            capability_gap.append({
+                "requirement_id": "",
+                "required_capability": "Governed project fact source",
+                "current_gap": f"{fact_source['governed_project_id']} 缺少可读取的项目事实源入口: {fact_source['fact_root']}",
+                "disposition": "不得用 LDVH 本体事实源、cwd 或项目登记配置替代；需要 Human Gate 初始化或补充事实源入口。",
+            })
+            unverifiable.append({
+                "code": "ACTION_GUIDE_PROJECT_FACT_SOURCE_MISSING",
+                "target": fact_source["governed_project_id"],
+                "reason": "无法确认项目 ldvh-base/ 事实源入口。",
+            })
+            continue
+
+        source_refs.append({
+            "path": fact_source["fact_root"],
+            "role": "governed_project_fact_source",
+            "governed_project_id": fact_source["governed_project_id"],
+        })
+        task_read_plan.append({
+            "priority": "P1",
+            "role": "governed_project_fact_source",
+            "source_type": "governed_project_facts",
+            "path": fact_source["fact_root"],
+            "label": f"{fact_source['governed_project_id']} 项目事实源",
+            "requirement_id": "",
+            "reason": "Action Guide 服务管辖项目时必须从对应项目 ldvh-base/ 获取事实源入口。",
+            "governed_project_id": fact_source["governed_project_id"],
+        })
+        validation_guard.append({
+            "requirement_id": "",
+            "guard": "确认项目事实源来自 resolver 输出的 governed_project_path 下 ldvh-base/，且未用 LDVH 本体事实源或过程输出替代。",
+            "source_path": SHORT_SPEC_REFS["10"],
+            "governed_project_id": fact_source["governed_project_id"],
+        })
+
+    return project_fact_sources, unverifiable
+
+
 def build_action_guide(
     root: Path = ROOT,
     consumption_timing: str = "session_start",
@@ -4052,6 +4244,11 @@ def build_action_guide(
     target_path: str = "",
     trigger_source: str = "manual",
     validation: dict[str, Any] | None = None,
+    cwd: str | Path | None = None,
+    config_root: str | Path | None = None,
+    target_paths: list[str | Path] | None = None,
+    read_write_kind: str | None = None,
+    governed_project: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     validation = validation if validation is not None else build_validation(root)
     allowed_timings = {row["consumption_timing"] for row in validation["consumption_timings"]}
@@ -4085,11 +4282,76 @@ def build_action_guide(
             "reason": "写入或提交前需要明确 target/staged paths，当前输入未提供。",
         })
 
+    scope_kind = action_guide_scope_kind(consumption_timing, read_write_kind)
+    scope_targets = _scope_target_values(target_path, target_paths)
+    resolved_governed_project = governed_project or resolve_governed_subject(
+        root,
+        cwd=cwd or root,
+        target_paths=scope_targets,
+        read_write_kind=scope_kind,
+        config_root=config_root,
+    )
+    if resolved_governed_project.get("scope_status") == "non_governed":
+        return {
+            "metadata": {
+                "read_only": True,
+                "authority": "derived_from_specs_markdown",
+                "authorization": "none",
+                "root": root.as_posix(),
+            },
+            "summary": {
+                "status": "no_op",
+                "consumption_timing": consumption_timing,
+                "scope_status": "non_governed",
+                "requirements": 0,
+                "task_read_plan": 0,
+                "missing_fields": 0,
+                "capability_gap": 0,
+                "unverifiable": 0,
+                "project_fact_sources": 0,
+                "diagnostics": 0,
+            },
+            "input": {
+                "task": task,
+                "target_path": target_path,
+                "target_paths": [str(path) for path in scope_targets],
+                "trigger_source": trigger_source,
+                "consumption_timing": consumption_timing,
+                "cwd": _resolve_path(Path(cwd) if cwd is not None else root, root).as_posix(),
+                "config_root": _resolve_path(Path(config_root), root).as_posix() if config_root is not None else "",
+                "read_write_kind": scope_kind,
+            },
+            "requirements": [],
+            "task_read_plan": [],
+            "next_queries": [],
+            "stop_conditions": [],
+            "validation_guard": [],
+            "next_action": "非管辖项目 no-op；不得输出 LDVH guidance、项目事实源 read_plan 或完成声明判断。",
+            "missing_fields": [],
+            "capability_gap": [],
+            "unverifiable": [],
+            "project_fact_sources": [],
+            "source_boundaries": ACTION_GUIDE_SOURCE_BOUNDARIES,
+            "governed_project": resolved_governed_project,
+            "impact_summary": {
+                "affected_paths": [],
+                "affected_path_count": 0,
+                "requirement_ids": [],
+            },
+            "source_refs": [
+                {"path": SHORT_SPEC_REFS["01"], "role": "action_guide_noop_boundary"},
+                {"path": SHORT_SPEC_REFS["10"], "role": "governed_project_noop_boundary"},
+            ],
+            "diagnostics": [],
+        }
+
     task_read_plan: list[dict[str, Any]] = []
     source_refs = [dict(ref) for ref in BASE_ACTION_GUIDE_SOURCE_REFS]
     stop_conditions: list[dict[str, str]] = []
     validation_guard: list[dict[str, str]] = []
     capability_gap: list[dict[str, str]] = []
+    project_fact_sources: list[dict[str, str]] = []
+    unverifiable: list[dict[str, str]] = []
 
     for requirement in requirements:
         requirement_id = requirement["requirement_id"]
@@ -4132,6 +4394,17 @@ def build_action_guide(
         })
         capability_gap.extend(capability_gaps_for_requirement(requirement))
 
+    project_fact_sources, unverifiable = apply_governed_project_action_guide(
+        root=root,
+        governed_project=resolved_governed_project,
+        source_refs=source_refs,
+        task_read_plan=task_read_plan,
+        validation_guard=validation_guard,
+        capability_gap=capability_gap,
+        missing_fields=missing_fields,
+        guide_diagnostics=guide_diagnostics,
+    )
+
     if not task_read_plan and consumption_timing in allowed_timings:
         for path in ("specs/00-理念与构成.md", "specs/01-保障与衔接.md", "specs/02-AI行为规范.md"):
             task_read_plan.append({
@@ -4151,12 +4424,13 @@ def build_action_guide(
         })
 
     next_queries: list[dict[str, str]] = []
-    if target_path:
-        next_queries.append({
-            "query": "target_impact",
-            "target_path": target_path,
-            "reason": "后续阶段用于定位 target 对 specs、Code、事实源或环境入口的影响。",
-        })
+    if scope_targets:
+        for target in scope_targets:
+            next_queries.append({
+                "query": "target_impact",
+                "target_path": str(target),
+                "reason": "后续阶段用于定位 target 对 specs、Code、事实源或环境入口的影响。",
+            })
     else:
         next_queries.append({
             "query": "provide_target",
@@ -4171,7 +4445,7 @@ def build_action_guide(
         }
     )
     diagnostics = guide_diagnostics
-    status = "ok" if not diagnostics else "failed"
+    status = "failed" if diagnostics else "degraded" if unverifiable else "ok"
 
     return {
         "metadata": {
@@ -4187,13 +4461,20 @@ def build_action_guide(
             "task_read_plan": len(task_read_plan),
             "missing_fields": len(missing_fields),
             "capability_gap": len(capability_gap),
+            "unverifiable": len(unverifiable),
+            "project_fact_sources": len(project_fact_sources),
+            "scope_status": resolved_governed_project.get("scope_status", ""),
             "diagnostics": len(diagnostics),
         },
         "input": {
             "task": task,
             "target_path": target_path,
+            "target_paths": [str(path) for path in scope_targets],
             "trigger_source": trigger_source,
             "consumption_timing": consumption_timing,
+            "cwd": _resolve_path(Path(cwd) if cwd is not None else root, root).as_posix(),
+            "config_root": _resolve_path(Path(config_root), root).as_posix() if config_root is not None else "",
+            "read_write_kind": scope_kind,
         },
         "requirements": requirements,
         "task_read_plan": unique_dicts(task_read_plan, ("priority", "role", "source_type", "path", "label", "requirement_id")),
@@ -4203,6 +4484,10 @@ def build_action_guide(
         "next_action": action_guide_next_action(consumption_timing, missing_fields),
         "missing_fields": missing_fields,
         "capability_gap": unique_dicts(capability_gap, ("requirement_id", "required_capability")),
+        "unverifiable": unique_dicts(unverifiable, ("code", "target")),
+        "project_fact_sources": unique_dicts(project_fact_sources, ("governed_project_id", "fact_root")),
+        "source_boundaries": ACTION_GUIDE_SOURCE_BOUNDARIES,
+        "governed_project": resolved_governed_project,
         "impact_summary": {
             "affected_paths": impact_paths,
             "affected_path_count": len(impact_paths),
@@ -4525,12 +4810,17 @@ def _empty_action_guide_summary() -> dict[str, Any]:
             "task_read_plan": 0,
             "missing_fields": 0,
             "capability_gap": 0,
+            "unverifiable": 0,
+            "project_fact_sources": 0,
             "diagnostics": 0,
         },
         "task_read_plan": [],
         "stop_conditions": [],
         "missing_fields": [],
         "capability_gap": [],
+        "unverifiable": [],
+        "project_fact_sources": [],
+        "source_boundaries": ACTION_GUIDE_SOURCE_BOUNDARIES,
     }
 
 
@@ -4636,6 +4926,11 @@ def build_preflight(
         target_path=classification["target_path"],
         trigger_source=trigger_source,
         validation=validation,
+        cwd=cwd,
+        config_root=config_root,
+        target_paths=raw_scope_targets,
+        read_write_kind=operation,
+        governed_project=governed_project,
     )
 
     scope_targets = _normalized_scope_targets(root, target_path, target_paths, cwd)
@@ -4817,6 +5112,10 @@ def build_preflight(
             "stop_conditions": action_guide["stop_conditions"],
             "missing_fields": action_guide["missing_fields"],
             "capability_gap": action_guide["capability_gap"],
+            "unverifiable": action_guide["unverifiable"],
+            "project_fact_sources": action_guide["project_fact_sources"],
+            "source_boundaries": action_guide["source_boundaries"],
+            "governed_project": action_guide["governed_project"],
         },
         "validation_guard": [
             {
@@ -5389,6 +5688,10 @@ def build_runtime_event(
             target_path=normalized_target,
             trigger_source=trigger_source,
             validation=validation,
+            cwd=cwd,
+            config_root=config_root,
+            target_paths=target_paths,
+            read_write_kind=runtime_action_guide_read_write_kind(normalized_event, operation),
         )
         diagnostics.extend(_diagnostic_with_scope(diagnostic, "runtime_blocker") for diagnostic in action_guide["diagnostics"])
 

@@ -257,7 +257,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--config-root", default="", help="configuration root for governed-projects hierarchy checks")
     parser.add_argument("--trigger-source", default="manual", help="trigger source for action-guide")
-    parser.add_argument("--operation", default="write", help="operation for preflight")
+    parser.add_argument("--operation", default="", help="operation for preflight/runtime/action-guide")
     parser.add_argument("--high-impact", action="store_true", help="mark preflight as high impact")
     parser.add_argument("--event", default="session_start", help="runtime canonical event")
     parser.add_argument("--session-id", default="", help="runtime session id")
@@ -297,6 +297,10 @@ def main(argv: list[str] | None = None) -> int:
             task=args.task,
             target_path=args.target_path,
             trigger_source=args.trigger_source,
+            cwd=args.cwd or None,
+            config_root=args.config_root or None,
+            target_paths=args.target_paths,
+            read_write_kind=args.operation or None,
         )
         result = output
     elif args.command == "commit-gate":
@@ -315,7 +319,7 @@ def main(argv: list[str] | None = None) -> int:
         output = build_preflight(
             root,
             target_path=args.target_path,
-            operation=args.operation,
+            operation=args.operation or "write",
             task=args.task,
             trigger_source=args.trigger_source,
             high_impact=args.high_impact,
@@ -332,7 +336,7 @@ def main(argv: list[str] | None = None) -> int:
             session_id=args.session_id,
             target_path=args.target_path,
             task=args.task,
-            operation=args.operation,
+            operation=args.operation or "write",
             acknowledged_paths=args.acknowledged_path,
             verification_evidence=args.verification_evidence,
             cwd=args.cwd or None,
@@ -355,7 +359,7 @@ def main(argv: list[str] | None = None) -> int:
             root,
             target_path=args.target_path or "tests/code/test_ldvh_specs_validate.py",
             task=args.task or "LDVH v3 stage 8 end-to-end rehearsal",
-            operation=args.operation,
+            operation=args.operation or "write",
             trigger_source=args.trigger_source,
             verification_evidence=args.verification_evidence or None,
         )

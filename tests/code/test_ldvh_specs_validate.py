@@ -2507,6 +2507,238 @@ def test_action_guide_unknown_timing_diagnostic(validation_result: dict) -> None
     assert guide["diagnostics"][0]["code"] == "ACTION_GUIDE_TIMING_UNKNOWN"
 
 
+def test_action_guide_governed_single_adds_project_fact_source(
+    tmp_path: Path,
+    validation_result: dict,
+) -> None:
+    root = _copy_specs_root(tmp_path)
+    project = root / "governed-app"
+    (project / "ldvh-base").mkdir(parents=True)
+    _write_governed_config(
+        root,
+        """
+product_name: Test
+product_description: Test registry
+projects:
+  - id: app
+    path: governed-app
+""",
+    )
+
+    guide = ldvh_specs.build_action_guide(
+        root,
+        consumption_timing="session_start",
+        target_path=(project / "README.md").as_posix(),
+        cwd=root,
+        config_root=root,
+        validation=validation_result,
+    )
+
+    assert guide["summary"]["status"] == "ok"
+    assert guide["summary"]["scope_status"] == "governed_single"
+    assert guide["governed_project"]["governed_project_id"] == "app"
+    assert guide["project_fact_sources"] == [
+        {
+            "source_type": "governed_project_facts",
+            "status": "available",
+            "governed_project_id": "app",
+            "governed_project_path": project.as_posix(),
+            "governed_subject": (project / "README.md").as_posix(),
+            "fact_root": "governed-app/ldvh-base",
+            "source_path": "specs/10-安装与配置规范.md",
+            "boundary": "只能读取该项目根下 ldvh-base/；不得用 LDVH 本体 ldvh-base/、cwd 或项目登记配置替代。",
+        }
+    ]
+    assert any(item["source_type"] == "governed_project_facts" for item in guide["task_read_plan"])
+    assert any(ref["role"] == "governed_project_fact_source" for ref in guide["source_refs"])
+    assert {item["source_type"] for item in guide["source_boundaries"]} == {
+        "ldvh_specs",
+        "ldvh_facts",
+        "governed_project_facts",
+        "process_output",
+    }
+
+
+def test_action_guide_non_governed_noops_without_project_guidance(
+    tmp_path: Path,
+    validation_result: dict,
+) -> None:
+    root = _copy_specs_root(tmp_path)
+    project = root / "governed-app"
+    outside = root / "outside"
+    project.mkdir()
+    outside.mkdir()
+    _write_governed_config(
+        root,
+        """
+product_name: Test
+product_description: Test registry
+projects:
+  - id: app
+    path: governed-app
+""",
+    )
+
+    guide = ldvh_specs.build_action_guide(
+        root,
+        consumption_timing="session_start",
+        target_path=(outside / "README.md").as_posix(),
+        cwd=root,
+        config_root=root,
+        validation=validation_result,
+    )
+
+    assert guide["summary"]["status"] == "no_op"
+    assert guide["summary"]["scope_status"] == "non_governed"
+    assert guide["task_read_plan"] == []
+    assert guide["project_fact_sources"] == []
+    assert guide["requirements"] == []
+
+
+def test_action_guide_scope_unknown_degrades_without_project_fact_read_plan(
+    tmp_path: Path,
+    validation_result: dict,
+) -> None:
+    root = _copy_specs_root(tmp_path)
+
+    guide = ldvh_specs.build_action_guide(
+        root,
+        consumption_timing="session_start",
+        target_path="README.md",
+        cwd=root,
+        config_root=root,
+        validation=validation_result,
+    )
+
+    assert guide["summary"]["status"] == "degraded"
+    assert guide["summary"]["scope_status"] == "scope_unknown"
+    assert guide["governed_project"]["unknown_reason"] == "config_missing"
+    assert not any(item["source_type"] == "governed_project_facts" for item in guide["task_read_plan"])
+    assert any(gap["required_capability"] == "Governed project Action Guide source resolution" for gap in guide["capability_gap"])
+    assert guide["unverifiable"][0]["code"] == "ACTION_GUIDE_SCOPE_UNKNOWN"
+
+
+def test_action_guide_declared_multi_governed_splits_project_fact_sources(
+    tmp_path: Path,
+    validation_result: dict,
+) -> None:
+    root = _copy_specs_root(tmp_path)
+    project_a = root / "governed-a"
+    project_b = root / "governed-b"
+    (project_a / "ldvh-base").mkdir(parents=True)
+    (project_b / "ldvh-base").mkdir(parents=True)
+    _write_governed_config(
+        root,
+        """
+product_name: Test
+product_description: Test registry
+projects:
+  - id: app-a
+    path: governed-a
+  - id: app-b
+    path: governed-b
+""",
+    )
+
+    guide = ldvh_specs.build_action_guide(
+        root,
+        consumption_timing="session_start",
+        target_paths=[project_a / "README.md", project_b / "README.md"],
+        cwd=root,
+        config_root=root,
+        read_write_kind="audit",
+        validation=validation_result,
+    )
+
+    assert guide["summary"]["status"] == "ok"
+    assert guide["summary"]["scope_status"] == "declared_multi_governed"
+    assert {item["governed_project_id"] for item in guide["project_fact_sources"]} == {"app-a", "app-b"}
+    assert {
+        item["governed_project_id"]
+        for item in guide["task_read_plan"]
+        if item["source_type"] == "governed_project_facts"
+    } == {"app-a", "app-b"}
+    assert {
+        item["governed_project_id"]
+        for item in guide["validation_guard"]
+        if item.get("governed_project_id")
+    } == {"app-a", "app-b"}
+    assert not any(query["query"] == "provide_target" for query in guide["next_queries"])
+
+
+def test_action_guide_missing_project_fact_root_reports_capability_gap(
+    tmp_path: Path,
+    validation_result: dict,
+) -> None:
+    root = _copy_specs_root(tmp_path)
+    project = root / "governed-app"
+    project.mkdir()
+    _write_governed_config(
+        root,
+        """
+product_name: Test
+product_description: Test registry
+projects:
+  - id: app
+    path: governed-app
+""",
+    )
+
+    guide = ldvh_specs.build_action_guide(
+        root,
+        consumption_timing="session_start",
+        target_path=(project / "README.md").as_posix(),
+        cwd=root,
+        config_root=root,
+        validation=validation_result,
+    )
+
+    assert guide["summary"]["status"] == "degraded"
+    assert guide["project_fact_sources"][0]["status"] == "missing"
+    assert not any(item["source_type"] == "governed_project_facts" for item in guide["task_read_plan"])
+    assert any(gap["required_capability"] == "Governed project fact source" for gap in guide["capability_gap"])
+    assert guide["unverifiable"][0]["code"] == "ACTION_GUIDE_PROJECT_FACT_SOURCE_MISSING"
+
+
+def test_action_guide_mixed_scope_blocks_combined_project_fact_read_plan(
+    tmp_path: Path,
+    validation_result: dict,
+) -> None:
+    root = _copy_specs_root(tmp_path)
+    project_a = root / "governed-a"
+    project_b = root / "governed-b"
+    (project_a / "ldvh-base").mkdir(parents=True)
+    (project_b / "ldvh-base").mkdir(parents=True)
+    _write_governed_config(
+        root,
+        """
+product_name: Test
+product_description: Test registry
+projects:
+  - id: app-a
+    path: governed-a
+  - id: app-b
+    path: governed-b
+""",
+    )
+
+    guide = ldvh_specs.build_action_guide(
+        root,
+        consumption_timing="pre_tool_use",
+        target_paths=[project_a / "README.md", project_b / "README.md"],
+        cwd=root,
+        config_root=root,
+        read_write_kind="write",
+        validation=validation_result,
+    )
+
+    assert guide["summary"]["status"] == "failed"
+    assert guide["summary"]["scope_status"] == "mixed_scope"
+    assert "ACTION_GUIDE_MIXED_SCOPE" in _diagnostic_codes(guide)
+    assert guide["project_fact_sources"] == []
+    assert not any(item["source_type"] == "governed_project_facts" for item in guide["task_read_plan"])
+
+
 def test_specs_validate_cli_action_guide_json() -> None:
     completed = _run_cli(
         [
@@ -2979,6 +3211,24 @@ def test_runtime_session_start_generates_stdout_receipt() -> None:
         "specs/01-保障与衔接.md",
         "specs/02-AI行为规范.md",
     }.issubset(read_paths)
+
+
+def test_runtime_session_start_action_guide_uses_read_scope_when_operation_defaulted() -> None:
+    runtime = ldvh_specs.build_runtime_event(
+        ROOT,
+        event="session_start",
+        trigger_source="manual",
+        session_id="test-session-default-operation",
+    )
+
+    assert runtime["summary"]["status"] == "ok"
+    assert runtime["action_guide"]["input"]["read_write_kind"] == "read"
+    assert runtime["action_guide"]["summary"]["scope_status"] == "governed_single"
+    assert runtime["action_guide"]["missing_fields"] == []
+    assert any(
+        item["source_type"] == "governed_project_facts"
+        for item in runtime["action_guide"]["task_read_plan"]
+    )
 
 
 def test_runtime_session_start_ignores_unrelated_global_validation_diagnostics(validation_result: dict) -> None:
