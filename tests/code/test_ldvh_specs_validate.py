@@ -2432,6 +2432,72 @@ def test_preflight_known_tests_target_uses_diagnostic_clear_status(validation_re
     }.issubset(read_paths)
 
 
+def test_preflight_workcase_fact_instance_target_is_recognized(validation_result: dict) -> None:
+    preflight = ldvh_specs.build_preflight(
+        ROOT,
+        target_path="ldvh-base/workcases/workcase-0024-v2-deletion-readiness-closure.yaml",
+        operation="write",
+        validation=validation_result,
+    )
+
+    assert preflight["summary"]["status"] == "diagnostic_clear"
+    assert preflight["summary"]["target_type"] == "fact_instance"
+    assert preflight["target"]["fact_kind"] == "workcase"
+    assert preflight["target"]["member_spec"] == "specs/21-WorkCase-工作项.md"
+    assert preflight["diagnostics"] == []
+    read_paths = {item["path"] for item in preflight["required_read_plan"]}
+    assert {
+        "specs/05-事实模型基础规范.md",
+        "specs/21-WorkCase-工作项.md",
+        "ldvh-base/workcases/workcase-0024-v2-deletion-readiness-closure.yaml",
+    }.issubset(read_paths)
+
+
+def test_preflight_recognizes_common_ldvh_target_domains(validation_result: dict) -> None:
+    cases = {
+        "README.md": ("project_doc", "diagnostic_clear"),
+        "docs/skills/readme.md": ("project_doc", "diagnostic_clear"),
+        "LDVH-GOVERNED-PROJECTS.yaml": ("config", "review_required"),
+        "package.json": ("config", "review_required"),
+        "pyproject.toml": ("config", "review_required"),
+        "web/api/app.ts": ("web", "diagnostic_clear"),
+        "web/package.json": ("web", "diagnostic_clear"),
+        "hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py": ("hook", "review_required"),
+        "hooks/environment-plugins/workbuddy-ldvh-v3/hooks/ldvh_runtime_shim.py": ("hook", "review_required"),
+        "icons/ldvh-plugin-icon-128.png": ("asset", "diagnostic_clear"),
+    }
+
+    for target, (target_type, status) in cases.items():
+        preflight = ldvh_specs.build_preflight(
+            ROOT,
+            target_path=target,
+            operation="write",
+            validation=validation_result,
+        )
+        codes = _diagnostic_codes(preflight)
+        read_paths = {item["path"] for item in preflight["required_read_plan"]}
+
+        assert preflight["summary"]["target_type"] == target_type, target
+        assert preflight["summary"]["status"] == status, target
+        assert "PREFLIGHT_TARGET_UNKNOWN" not in codes, target
+        assert target in read_paths, target
+
+    config_preflight = ldvh_specs.build_preflight(
+        ROOT,
+        target_path="LDVH-GOVERNED-PROJECTS.yaml",
+        operation="write",
+        validation=validation_result,
+    )
+    hook_preflight = ldvh_specs.build_preflight(
+        ROOT,
+        target_path="hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py",
+        operation="write",
+        validation=validation_result,
+    )
+    assert "PREFLIGHT_CONFIG_BOUNDARY" in _diagnostic_codes(config_preflight)
+    assert "PREFLIGHT_HOOK_ENTRY_BOUNDARY" in _diagnostic_codes(hook_preflight)
+
+
 def test_preflight_acceptance_scratch_target_is_diagnostic_clear(validation_result: dict) -> None:
     preflight = ldvh_specs.build_preflight(
         ROOT,
@@ -2771,6 +2837,21 @@ def test_runtime_pre_tool_use_blocks_without_read_plan_consumption(validation_re
 
     assert runtime["summary"]["status"] == "blocked"
     assert runtime["diagnostics"][0]["code"] == "RUNTIME_READ_PLAN_CONSUMED_EMPTY"
+
+
+def test_runtime_pre_tool_use_workcase_target_without_ack_is_not_target_unknown(validation_result: dict) -> None:
+    runtime = ldvh_specs.build_runtime_event(
+        ROOT,
+        event="pre_tool_use",
+        target_path="ldvh-base/workcases/workcase-0024-v2-deletion-readiness-closure.yaml",
+        validation=validation_result,
+    )
+
+    codes = _diagnostic_codes(runtime)
+    assert runtime["summary"]["status"] == "blocked"
+    assert runtime["preflight"]["summary"]["target_type"] == "fact_instance"
+    assert "RUNTIME_READ_PLAN_CONSUMED_EMPTY" in codes
+    assert "PREFLIGHT_TARGET_UNKNOWN" not in codes
 
 
 def test_runtime_external_pre_tool_use_noops_before_read_plan_ack(tmp_path: Path, validation_result: dict) -> None:
@@ -3282,6 +3363,45 @@ def test_pre_tool_use_cli_allows_acceptance_probe_scratch_target() -> None:
     assert payload["summary"]["preflight_status"] == "diagnostic_clear"
     assert payload["receipt"]["target_path"] == ".ldvh-runtime/acceptance-probe/allowed.txt"
     assert payload["preflight"]["summary"]["target_type"] == "acceptance_scratch"
+    assert payload["diagnostics"] == []
+
+
+def test_pre_tool_use_cli_recognizes_workcase_fact_instance_target() -> None:
+    completed = _run_cli(
+        [
+            sys.executable,
+            "code/pre_tool_use.py",
+            "--target-path",
+            "ldvh-base/workcases/workcase-0024-v2-deletion-readiness-closure.yaml",
+            "--acknowledged-path",
+            "specs/00-理念与构成.md",
+            "--acknowledged-path",
+            "specs/01-保障与衔接.md",
+            "--acknowledged-path",
+            "specs/02-AI行为规范.md",
+            "--acknowledged-path",
+            "specs/03-事实源与Git溯源规范.md",
+            "--acknowledged-path",
+            "specs/04-Specs基础规范.md",
+            "--acknowledged-path",
+            "specs/05-事实模型基础规范.md",
+            "--acknowledged-path",
+            "specs/21-WorkCase-工作项.md",
+            "--acknowledged-path",
+            "ldvh-base/workcases/workcase-0024-v2-deletion-readiness-closure.yaml",
+            "--format",
+            "json",
+        ],
+        cwd=ROOT,
+        check=True,
+    )
+
+    payload = json.loads(completed.stdout)
+    assert payload["summary"]["status"] == "ok"
+    assert payload["summary"]["preflight_status"] == "diagnostic_clear"
+    assert payload["preflight"]["summary"]["target_type"] == "fact_instance"
+    assert payload["preflight"]["target"]["fact_kind"] == "workcase"
+    assert "PREFLIGHT_TARGET_UNKNOWN" not in _diagnostic_codes(payload)
     assert payload["diagnostics"] == []
 
 

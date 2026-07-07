@@ -706,6 +706,34 @@ def test_workbuddy_sample_shim_blocks_target_unknown_even_with_acknowledgement(t
     assert "PREFLIGHT_TARGET_UNKNOWN" in hook_output["permissionDecisionReason"]
 
 
+def test_workbuddy_sample_shim_recognizes_workcase_fact_instance_target(tmp_path: Path) -> None:
+    completed = _run_workbuddy_shim(
+        {
+            "hook_event_name": "PreToolUse",
+            "sessionId": "workbuddy-workcase-target",
+            "cwd": ROOT.as_posix(),
+            "toolName": "Write",
+            "tool_input": {
+                "file_path": "ldvh-base/workcases/workcase-0024-v2-deletion-readiness-closure.yaml"
+            },
+            "acknowledgedPaths": [
+                "specs/00-理念与构成.md",
+                "specs/01-保障与衔接.md",
+                "specs/02-AI行为规范.md",
+            ],
+        },
+        extra_env={"LDVH_RUNTIME_CACHE_DIR": (tmp_path / "runtime-cache").as_posix()},
+    )
+
+    payload = json.loads(completed.stdout)
+    hook_output = _hook_output(payload)
+    assert completed.returncode == 0
+    assert hook_output["hookEventName"] == "PreToolUse"
+    assert hook_output["additionalContext"].startswith("LDVH V3 pre-tool check passed.")
+    assert "specs/21-WorkCase-工作项.md" in hook_output["additionalContext"]
+    assert "PREFLIGHT_TARGET_UNKNOWN" not in json.dumps(payload, ensure_ascii=False)
+
+
 def test_workbuddy_sample_shim_consumes_standard_runtime_cache(tmp_path: Path) -> None:
     extra_env = {"LDVH_RUNTIME_CACHE_DIR": (tmp_path / "receipt-cache").as_posix()}
     subprocess.run(
@@ -801,6 +829,33 @@ def test_codex_sample_shim_allows_pre_tool_use_with_acknowledged_paths() -> None
     assert hook_output["hookEventName"] == "PreToolUse"
     assert hook_output["additionalContext"].startswith("LDVH V3 pre-tool check passed.")
     assert "specs/00-理念与构成.md" in hook_output["additionalContext"]
+
+
+def test_codex_sample_shim_recognizes_workcase_fact_instance_target() -> None:
+    completed = _run_shim(
+        {
+            "hook_event_name": "PreToolUse",
+            "sessionId": "shim-pretool-workcase-target",
+            "cwd": ROOT.as_posix(),
+            "toolName": "Write",
+            "toolInput": {
+                "file_path": "ldvh-base/workcases/workcase-0024-v2-deletion-readiness-closure.yaml"
+            },
+            "acknowledgedPaths": [
+                "specs/00-理念与构成.md",
+                "specs/01-保障与衔接.md",
+                "specs/02-AI行为规范.md",
+            ],
+        },
+    )
+
+    payload = json.loads(completed.stdout)
+    hook_output = _hook_output(payload)
+    assert completed.returncode == 0
+    assert hook_output["hookEventName"] == "PreToolUse"
+    assert hook_output["additionalContext"].startswith("LDVH V3 pre-tool check passed.")
+    assert "specs/21-WorkCase-工作项.md" in hook_output["additionalContext"]
+    assert "PREFLIGHT_TARGET_UNKNOWN" not in json.dumps(payload, ensure_ascii=False)
 
 
 def test_codex_sample_shim_degrades_completion_claim_to_non_blocking_stop() -> None:

@@ -622,7 +622,7 @@ def pre_tool_context(result: dict[str, Any]) -> str:
         if isinstance(item, dict) and str(item.get("path") or "").strip()
     ]
     if paths:
-        return "LDVH V3 pre-tool check passed. Relevant read plan: " + ", ".join(paths[:5])
+        return "LDVH V3 pre-tool check passed. Relevant read plan: " + ", ".join(paths[:9])
     return "LDVH V3 pre-tool check passed."
 
 

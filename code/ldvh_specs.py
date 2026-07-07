@@ -70,6 +70,32 @@ PREFLIGHT_TYPE_READ_PATHS = {
         "specs/30-安装配置与验证行动模板.md",
         "code/docs/02-Environment-Plugin-Practice.md",
     ],
+    "fact_instance": [
+        "specs/05-事实模型基础规范.md",
+        "specs/03-事实源与Git溯源规范.md",
+        "specs/09-测试与验证规范.md",
+    ],
+    "project_doc": [
+        "specs/03-事实源与Git溯源规范.md",
+        "specs/09-测试与验证规范.md",
+    ],
+    "config": [
+        "specs/10-安装与配置规范.md",
+        "specs/09-测试与验证规范.md",
+    ],
+    "web": [
+        "specs/08-Web信息同步规范.md",
+        "specs/09-测试与验证规范.md",
+    ],
+    "hook": [
+        "specs/10-安装与配置规范.md",
+        "specs/33-环境插件编写与更新行动模板.md",
+        "code/docs/02-Environment-Plugin-Practice.md",
+    ],
+    "asset": [
+        "specs/08-Web信息同步规范.md",
+        "specs/09-测试与验证规范.md",
+    ],
 }
 ACCEPTANCE_SCRATCH_PREFIX = ".ldvh-runtime/acceptance-probe/"
 HIGH_IMPACT_SPEC_PATHS = {
@@ -84,6 +110,13 @@ RUNTIME_REQUIRED_ENTRY_PATHS = [
     "specs/01-保障与衔接.md",
     "specs/02-AI行为规范.md",
 ]
+FACT_INSTANCE_TARGET_PREFIXES = {
+    "ldvh-base/sparks/": ("spark", "specs/20-Spark-火花.md"),
+    "ldvh-base/workcases/": ("workcase", "specs/21-WorkCase-工作项.md"),
+    "ldvh-base/adrs/": ("adr", "specs/22-ADR-决策.md"),
+    "ldvh-base/pitfalls/": ("pitfall", "specs/23-Pitfall-踩坑经验.md"),
+    "ldvh-base/studies/": ("study", "specs/24-Study-研究报告.md"),
+}
 
 
 def normalize_relative_path(path: str) -> str:
@@ -4126,6 +4159,35 @@ def classify_target_path(target_path: str) -> dict[str, str]:
             "impact": "low",
             "reason": "目标属于 30 断点后 lifecycle 验证的受控 scratch target，只能用于当次正反例探针，不作为事实源或长期过程状态。",
         }
+    if normalized == "README.md" or normalized.startswith("docs/"):
+        return {
+            "target_path": normalized,
+            "target_type": "project_doc",
+            "impact": "medium",
+            "reason": "目标属于项目文档或实现域说明，必须保持事实源、验证和规则边界，不得替代 specs、事实对象或 Human Gate。",
+        }
+    if (
+        normalized == GOVERNED_PROJECTS_CONFIG_PATH
+        or normalized in {"package.json", "package-lock.json", "pyproject.toml"}
+        or normalized.endswith((".toml", ".lock"))
+        or ("/" not in normalized and normalized.endswith((".json", ".yaml", ".yml")))
+    ):
+        return {
+            "target_path": normalized,
+            "target_type": "config",
+            "impact": "medium",
+            "reason": "目标属于配置或构建入口，可能影响管辖项目、安装、测试、Web 或环境入口行为。",
+        }
+    for prefix, (fact_kind, member_spec) in FACT_INSTANCE_TARGET_PREFIXES.items():
+        if normalized.startswith(prefix):
+            return {
+                "target_path": normalized,
+                "target_type": "fact_instance",
+                "fact_kind": fact_kind,
+                "member_spec": member_spec,
+                "impact": "medium",
+                "reason": "目标属于 LDVH 正式事实对象实例，必须服从 03/05、对应成员规范、字段 schema、状态闭集和验证边界。",
+            }
     if normalized in HIGH_IMPACT_SPEC_PATHS:
         return {
             "target_path": normalized,
@@ -4154,12 +4216,33 @@ def classify_target_path(target_path: str) -> dict[str, str]:
             "impact": "medium",
             "reason": "目标属于正式 Code，输出不得替代 specs、Human Gate 或事实源。",
         }
+    if normalized.startswith("web/"):
+        return {
+            "target_path": normalized,
+            "target_type": "web",
+            "impact": "medium",
+            "reason": "目标属于 Web 实现域，必须服从 08 的同源独立读取、展示、缓存和受控写入边界。",
+        }
+    if normalized.startswith("hooks/"):
+        return {
+            "target_path": normalized,
+            "target_type": "hook",
+            "impact": "high",
+            "reason": "目标属于 Git Hook 或 AI 环境插件入口，可能影响 lifecycle 触发、阻断、安装验证或回滚边界。",
+        }
     if normalized.startswith("tests/"):
         return {
             "target_path": normalized,
             "target_type": "tests",
             "impact": "low",
             "reason": "目标属于测试，提供验证证据但不得替代 Human Gate。",
+        }
+    if normalized.startswith("icons/") or normalized.endswith((".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg", ".ico")):
+        return {
+            "target_path": normalized,
+            "target_type": "asset",
+            "impact": "low",
+            "reason": "目标属于静态资产，仍需保持来源、展示和环境插件资产边界。",
         }
     return {
         "target_path": normalized,
@@ -4174,8 +4257,13 @@ def preflight_read_plan_for_target(classification: dict[str, str]) -> list[dict[
     target_type = classification["target_type"]
     read_paths = list(PREFLIGHT_BASE_READ_PATHS)
     read_paths.extend(PREFLIGHT_TYPE_READ_PATHS.get(target_type, []))
-    if target_type in {"spec", "core_spec", "attachment"} and target_path:
-        read_paths.append(target_path)
+    if target_type == "fact_instance":
+        member_spec = classification.get("member_spec", "")
+        if member_spec:
+            read_paths.append(member_spec)
+    if target_type in {"spec", "core_spec", "attachment", "fact_instance", "project_doc", "config", "web", "hook", "asset"} and target_path:
+        if target_path:
+            read_paths.append(target_path)
     return [
         {
             "priority": "P0" if path in PREFLIGHT_BASE_READ_PATHS else "P1",
@@ -4401,6 +4489,24 @@ def build_preflight(
             "path": normalized_target,
             "message": "当前 preflight 只能诊断 Code 写入风险，不能授权、放行或替代 Human Gate。",
             "disposition": "keep_ai_judgment",
+        })
+
+    if target_type == "config":
+        diagnostics.append({
+            "level": "warning",
+            "code": "PREFLIGHT_CONFIG_BOUNDARY",
+            "path": normalized_target,
+            "message": "配置写入可能影响管辖项目、安装、测试、Web 或环境入口；preflight 只提示风险，不替代 Human Gate 或验证。",
+            "disposition": "boundary_review",
+        })
+
+    if target_type == "hook":
+        diagnostics.append({
+            "level": "warning",
+            "code": "PREFLIGHT_HOOK_ENTRY_BOUNDARY",
+            "path": normalized_target,
+            "message": "Hook 或环境插件写入可能影响 lifecycle 触发、阻断、安装验收和回滚；不得据此声明 integrated。",
+            "disposition": "boundary_review",
         })
 
     if target_type == "migration":
