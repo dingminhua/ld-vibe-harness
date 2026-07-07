@@ -238,6 +238,9 @@ def test_codex_sample_shim_allows_read_only_exec_command_and_chain_without_ackno
     for command in (
         'pwd && rg -n "session_start|receipt|lifecycle|read plan|read_plan|LDVH" -S .',
         "ls -la && rg --files",
+        "sleep 20",
+        f"git -C {ROOT.as_posix()} log -1 --oneline",
+        f"git -C {ROOT.as_posix()} status --short",
     ):
         completed = _run_shim(
             {
@@ -251,6 +254,21 @@ def test_codex_sample_shim_allows_read_only_exec_command_and_chain_without_ackno
 
         assert completed.returncode == 0
         assert completed.stdout == ""
+
+
+def test_codex_sample_shim_allows_multi_agent_wait_without_acknowledgement() -> None:
+    completed = _run_shim(
+        {
+            "hook_event_name": "PreToolUse",
+            "sessionId": "shim-pretool-agent-wait",
+            "cwd": ROOT.as_posix(),
+            "toolName": "multi_agent_v1wait_agent",
+            "tool_input": {"targets": ["019f39fa-148e-7aa2-b6cd-50504f7a2fa3"], "timeout_ms": 300000},
+        },
+    )
+
+    assert completed.returncode == 0
+    assert completed.stdout == ""
 
 
 def test_codex_sample_shim_allows_session_start_probe_command_without_acknowledgement() -> None:
@@ -352,20 +370,33 @@ def test_codex_sample_shim_allows_collaboration_review_operation_without_acknowl
 
 
 def test_codex_sample_shim_allows_collaboration_read_only_review_intent_without_acknowledgement() -> None:
-    completed = _run_shim(
-        {
-            "hook_event_name": "PreToolUse",
-            "sessionId": "shim-pretool-agent-read-only-review",
-            "cwd": ROOT.as_posix(),
-            "toolName": "spawn_agent",
-            "tool_input": {
+    for tool_name, tool_input in (
+        (
+            "spawn_agent",
+            {
                 "message": "请只读审核当前判断，不要修改文件，不要提交。",
             },
-        },
-    )
+        ),
+        (
+            "multi_agent_v1send_input",
+            {
+                "message": "请停止继续委派，直接只读审查并返回结论。不要修改文件，不要提交。",
+                "target": "019f39fa-148e-7aa2-b6cd-50504f7a2fa3",
+            },
+        ),
+    ):
+        completed = _run_shim(
+            {
+                "hook_event_name": "PreToolUse",
+                "sessionId": "shim-pretool-agent-read-only-review",
+                "cwd": ROOT.as_posix(),
+                "toolName": tool_name,
+                "tool_input": tool_input,
+            },
+        )
 
-    assert completed.returncode == 0
-    assert completed.stdout == ""
+        assert completed.returncode == 0
+        assert completed.stdout == ""
 
 
 def test_codex_sample_shim_blocks_collaboration_write_operation_without_acknowledgement() -> None:
@@ -390,23 +421,24 @@ def test_codex_sample_shim_blocks_collaboration_write_operation_without_acknowle
 
 
 def test_codex_sample_shim_blocks_collaboration_without_read_only_intent() -> None:
-    completed = _run_shim(
-        {
-            "hook_event_name": "PreToolUse",
-            "sessionId": "shim-pretool-agent-unknown-intent",
-            "cwd": ROOT.as_posix(),
-            "toolName": "spawn_agent",
-            "tool_input": {"message": "请处理这个任务。"},
-        },
-        check=False,
-    )
+    for tool_name in ("spawn_agent", "multi_agent_v1send_input"):
+        completed = _run_shim(
+            {
+                "hook_event_name": "PreToolUse",
+                "sessionId": "shim-pretool-agent-unknown-intent",
+                "cwd": ROOT.as_posix(),
+                "toolName": tool_name,
+                "tool_input": {"message": "请处理这个任务。"},
+            },
+            check=False,
+        )
 
-    payload = json.loads(completed.stdout)
-    hook_output = _hook_output(payload)
-    assert completed.returncode == 0
-    assert hook_output["hookEventName"] == "PreToolUse"
-    assert hook_output["permissionDecision"] == "deny"
-    assert "PREFLIGHT_TARGET_UNKNOWN" in hook_output["permissionDecisionReason"]
+        payload = json.loads(completed.stdout)
+        hook_output = _hook_output(payload)
+        assert completed.returncode == 0
+        assert hook_output["hookEventName"] == "PreToolUse"
+        assert hook_output["permissionDecision"] == "deny"
+        assert "PREFLIGHT_TARGET_UNKNOWN" in hook_output["permissionDecisionReason"]
 
 
 def test_codex_sample_shim_blocks_write_when_target_unknown_even_with_acknowledgement() -> None:

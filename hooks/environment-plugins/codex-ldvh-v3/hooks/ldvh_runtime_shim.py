@@ -56,13 +56,25 @@ READ_ONLY_TOOLS = {
     "codex_app.read_thread_terminal",
     "codex_appread_thread",
     "codex_appread_thread_terminal",
+    "wait_agent",
+    "multi_agent.wait_agent",
+    "multi_agent_v1.wait_agent",
+    "multi_agent_v1wait_agent",
 }
 WRITE_TOOLS = {"write", "edit", "multiedit", "multi_edit", "apply_patch", "functions.apply_patch"}
 READ_OPERATIONS = {"read", "inspect", "search", "grep", "list", "audit", "review", "diagnose"}
 WRITE_OPERATIONS = {"write", "edit", "apply_patch", "commit", "delete", "move", "install", "update"}
-COLLABORATION_TOOL_NAMES = {"spawn_agent", "multi_agent.spawn_agent", "multi_agent_v1.spawn_agent"}
+COLLABORATION_TOOL_NAMES = {
+    "spawn_agent",
+    "multi_agent.spawn_agent",
+    "multi_agent_v1.spawn_agent",
+    "send_input",
+    "multi_agent.send_input",
+    "multi_agent_v1.send_input",
+    "multi_agent_v1send_input",
+}
 READ_ONLY_INTENT_MARKERS = ("read-only", "readonly", "只读", "不要修改", "不要写", "不要提交", "do not modify", "do not edit", "do not commit")
-READ_ONLY_COMMANDS = {"cat", "find", "grep", "head", "ls", "nl", "pwd", "rg", "sed", "tail", "wc"}
+READ_ONLY_COMMANDS = {"cat", "find", "grep", "head", "ls", "nl", "pwd", "rg", "sed", "sleep", "tail", "wc"}
 READ_ONLY_GIT_SUBCOMMANDS = {
     "branch",
     "diff",
@@ -290,10 +302,31 @@ def is_likely_read_only_command_segment(command: str) -> bool:
     if executable == "find" and "-exec" in parts:
         return False
     if executable == "git":
-        return len(parts) > 1 and parts[1].lower() in READ_ONLY_GIT_SUBCOMMANDS
+        return git_subcommand(parts) in READ_ONLY_GIT_SUBCOMMANDS
     if executable in {"python", "python3"} and len(parts) > 1:
         return is_allowed_read_only_python(parts)
     return executable in READ_ONLY_SHELL_PIPE_COMMANDS
+
+
+def git_subcommand(parts: list[str]) -> str:
+    index = 1
+    while index < len(parts):
+        part = parts[index]
+        lowered = part.lower()
+        if lowered in {"-c", "--git-dir", "--work-tree"}:
+            index += 2
+            continue
+        if lowered.startswith("-c") and lowered != "-c":
+            index += 1
+            continue
+        if lowered.startswith("--git-dir=") or lowered.startswith("--work-tree="):
+            index += 1
+            continue
+        if lowered.startswith("-"):
+            index += 1
+            continue
+        return lowered
+    return ""
 
 
 def is_allowed_read_only_python(parts: list[str]) -> bool:
