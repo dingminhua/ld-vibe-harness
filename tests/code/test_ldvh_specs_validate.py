@@ -1517,6 +1517,77 @@ def test_environment_lifecycle_docs_use_ldvh_canonical_event_direction() -> None
     assert "到 V3 runtime event" not in combined
 
 
+def test_environment_plugin_template_is_requirement_first_and_current_environment_scoped() -> None:
+    raw = (ROOT / "specs/33-环境插件编写与更新行动模板.md").read_text(encoding="utf-8")
+
+    assert "33 的主职责是定义插件必须满足的要求和编写/审查流程" in raw
+    assert "repo-local 插件包只能作为样例、受管 adapter 或 conformance fixture" in raw
+    assert "不等于目标环境真实安装或 integrated" in raw
+    assert "目标环境插件首先必须满足本文的要求契约" in raw
+    assert "真实目标环境可能使用插件包、扩展包、settings hook、marketplace package、adapter 脚本或其它机制" in raw
+    assert "环境事件名可以不同，也可以由多个原生事件组合成一个 LDVH canonical event" in raw
+    assert "当前 Codex hook 关闭时，Codex 会话只能做 repo-local 代码和样例 shim 验证" in raw
+    assert "WorkBuddy hook 开启与否只能由 WorkBuddy 当前环境的真实 lifecycle 输出和 30 验收判断" in raw
+    assert "Codex 会话不能验收 WorkBuddy lifecycle" in raw
+    assert "WorkBuddy 会话也不能替代 Codex lifecycle" in raw
+    assert "当前 AI 环境只能验收本环境真实 lifecycle" in raw
+    assert "要求覆盖清单、capability_gap、与目标环境 API 的映射" in raw
+    assert "当前在 Codex 却声明 WorkBuddy lifecycle 已通过" in raw
+    assert "三层文件结构的最小要求" not in raw
+    assert "插件包是否包含 manifest + hooks.json + shim 三个文件 | 不得声明插件编写完成" not in raw
+    assert "不得把单一文件结构当成所有环境完成条件" in raw
+    assert "hooks.json 是否注册了至少 SessionStart + PreToolUse + Stop" not in raw
+    assert "Hook event routing 或目标环境等价配置是否覆盖 `ldvh.session_start`、`ldvh.pre_tool_use`、`ldvh.completion_claim`" in raw
+    assert "每个环境插件必须注册 SessionStart + PreToolUse + Stop" not in raw
+    assert "编写/审查 hooks.json 时" not in raw
+    assert "hooks.json 事件清单" not in raw
+    assert "Manifest、hooks.json 和 shim 的内容只能包含" not in raw
+    assert "JSON 语法检查、Python 语法编译检查、shim 干跑" not in raw
+    assert "更新已有插件的 hooks.json 或 shim" not in raw
+    assert "找不到 LDVH root 时 shim 必须输出 warning 并 exit 0" not in raw
+    assert "shim 是否只做 payload 翻译 + 调 runtime_adapter" not in raw
+    assert "shim 只做 payload 格式翻译" not in raw
+    assert "故意让 LDVH root 找不到时，shim 是否输出 warning 并 exit 0" not in raw
+    assert "插件只能承载入口声明、Hook 配置、shim" not in raw
+    assert "33 产出的插件包" not in raw
+    assert "为新增目标环境编写插件包" not in raw
+    assert "将插件包部署到实际安装位置" not in raw
+    assert "目标环境尚无 `hooks/environment-plugins/<env>-ldvh-v3/` 目录" not in raw
+    assert "两份独立文件" not in raw
+    assert "代码和配置输出落在 `hooks/environment-plugins/<env>-ldvh-v3/` 目录内" not in raw
+    assert "目标环境已安装插件状态" not in raw
+    assert "插件文件清单" not in raw
+    assert "哪些文件被创建/修改" not in raw
+    assert "交还时明确文件" not in raw
+    assert "输出插件要求覆盖情况、文件清单" not in raw
+    assert "完成声明前必须交还文件清单" not in raw
+    assert "编写完成或阻断时是否交还文件清单" not in raw
+    assert "下一步（进入 30 安装流程）" not in raw
+    assert "最终要经 30 的安装流程完成验证交还" not in raw
+    assert "交还给 30 的安装流程" not in raw
+    assert "经 30 安装流程" not in raw
+    assert "目标环境入口或等价配置必须覆盖 `ldvh.session_start`、`ldvh.pre_tool_use`、`ldvh.completion_claim`" in raw
+    assert "canonical event 覆盖清单、本地 fixture 验证和 capability_gap 说明" in raw
+    assert "repo-local manifest / hooks / shim 或目标环境等价入口资产只能包含入口声明" in raw
+    assert "repo-local 或目标环境等价配置解析检查、shim / adapter 对应语法检查、canonical event fixture 干跑" in raw
+    assert "目标环境入口必须按目标环境协议降级为不阻断" in raw
+    assert "repo-local 命令式 shim 可以表现为 warning + exit 0" in raw
+    assert "shim / adapter 或目标环境等价入口资产是否只做 payload 翻译 + 调用 LDVH runtime adapter" in raw
+    assert "目标环境入口资产只能承载入口声明、Hook 配置、payload 翻译 / adapter 引用" in raw
+    assert "插件要求只交还 30 验收入口或 capability_gap" in raw
+    assert "将目标环境真实入口资产部署到实际安装位置" in raw
+    assert "目标环境尚无已知 LDVH 入口资产、repo-local 样例、adapter 或插件要求记录" in raw
+    assert "repo-local 样例和目标环境真实入口是两类独立资产 / 位置" in raw
+    assert "只定义要求时输出 requirements、capability_gap 和 30 验收入口" in raw
+    assert "目标环境已安装 / 启用的入口资产、配置、package 或 adapter 状态" in raw
+    assert "交还要求 / 入口资产清单：requirements、capability_gap、repo-local 样例文件、目标环境入口资产" in raw
+    assert "输出要求 / 入口资产清单、未写入项、关键决策记录" in raw
+    assert "完成声明前必须交还要求 / 入口资产清单、未写入项、本地验证结果" in raw
+    assert "编写完成或阻断时是否交还要求 / 入口资产清单、未写入项" in raw
+    assert "插件要求只交还 30 验收入口或 capability_gap" in raw
+    assert "下一步（30 安装 / 验收入口、目标环境回传证据或 capability_gap 分流）" in raw
+
+
 def test_install_wizard_practice_defaults_workspace_root_to_ldvh_parent() -> None:
     raw = (ROOT / "code/docs/03-LDVH-Install-Wizard-Practice.md").read_text(encoding="utf-8")
 
