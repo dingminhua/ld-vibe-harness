@@ -134,9 +134,9 @@ EVENT_MAP = {
     "stop": "Stop",
 }
 ADAPTER_EVENT_MAP = {
-    "SessionStart": "session_start",
-    "PreToolUse": "pre_tool_use",
-    "Stop": "completion_claim",
+    "SessionStart": "ldvh.session_start",
+    "PreToolUse": "ldvh.pre_tool_use",
+    "Stop": "ldvh.completion_claim",
 }
 READ_ONLY_TOOLS = {"read", "grep", "glob", "ls"}
 READ_ONLY_COMMANDS = {"cat", "find", "grep", "head", "ls", "nl", "pwd", "rg", "sed", "tail", "wc"}

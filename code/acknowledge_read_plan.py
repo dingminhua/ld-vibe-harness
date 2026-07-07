@@ -63,8 +63,10 @@ def _print_text(result: dict[str, Any]) -> None:
     summary = result["summary"]
     receipt = result["receipt"]
 
-    print("LDVH v3 acknowledge_read_plan receipt")
+    print("LDVH v3 ldvh.acknowledge_read_plan receipt")
     print(f"- status: {summary['status']}")
+    print(f"- event: {summary['event']}")
+    print(f"- internal_event: {summary['internal_event']}")
     print(f"- session_id: {receipt['session_id']}")
     print(f"- target_path: {receipt['target_path']}")
     print(f"- receipt_id: {receipt['receipt_id']}")

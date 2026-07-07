@@ -21,7 +21,7 @@ Git 提交行动执行时，AI 应按当前目标读取：
 python3 code/acknowledge_read_plan.py --acknowledged-path specs/00-理念与构成.md --acknowledged-path specs/01-保障与衔接.md --acknowledged-path specs/02-AI行为规范.md --format json
 ```
 
-该入口只生成 stdout-only receipt，不写入 session 存储，不替代 `pre_tool_use`、commit gate、验证声明或 Human Gate。`runtime_adapter.py` 仍只暴露环境 lifecycle 三件套：`session_start`、`pre_tool_use`、`completion_claim`。
+该入口只生成 stdout-only receipt，不写入 session 存储，不替代 `ldvh.pre_tool_use`、commit gate、验证声明或 Human Gate。`runtime_adapter.py` 对外只暴露环境 lifecycle 三件套：`ldvh.session_start`、`ldvh.pre_tool_use`、`ldvh.completion_claim`；内部兼容键只用于 Code 枚举、adapter 映射和兼容输入解析。
 
 提交前可运行：
 

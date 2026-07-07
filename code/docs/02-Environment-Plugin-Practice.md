@@ -67,7 +67,7 @@ python3 code/runtime_adapter.py pre-tool-use --target-path "<target>" --operatio
 python3 code/runtime_adapter.py completion-claim --target-path "<target>" --verification-evidence "<evidence>"
 ```
 
-目标环境的 `SessionStart`、`PreToolUse`、`Stop` 或同类事件可以映射到 V3 `session_start`、`pre_tool_use`、`completion_claim` 邻近入口。具体名称由目标环境决定，V3 只要求映射后回到同一套保障消费语义。
+目标环境的 `SessionStart`、`PreToolUse`、`Stop` 或同类事件可以映射到 V3 `ldvh.session_start`、`ldvh.pre_tool_use`、`ldvh.completion_claim` 邻近入口。具体名称由目标环境决定，V3 只要求映射后回到同一套保障消费语义；未前缀内部键只允许在 Code 内部枚举、adapter 内部映射层或兼容输入解析中使用。
 
 pre tool use 类事件只有在目标环境真实支持阻断、payload 可验证、失败处理可复现、安装与接入当次依据可检查、回滚路径明确时，才可以作为阻断型入口。否则只能输出 diagnostic，不得声明 integrated。
 
@@ -99,7 +99,7 @@ python3 code/environment_entry_audit.py --environment-name <目标环境名> --f
 | 验收项 | 正常当次依据 | 不能替代它的内容 |
 |---|---|---|
 | 安装启用 | 插件 / 扩展包 / package 已启用、已授权或无待授权，Hook 命令指向当前 V3 shim 或 `runtime_adapter.py` | repo-local 样例包存在 |
-| `SessionStart` | 新会话、恢复或等价事件自动输出 `event=session_start`、read_plan 或 receipt | 手动运行 `runtime_adapter.py session-start` |
+| `SessionStart` | 新会话、恢复或等价事件自动输出 `event=ldvh.session_start`、read_plan 或 receipt | 手动运行 `runtime_adapter.py session-start` |
 | `PreToolUse` 负例 | 写入类工具在缺 read_plan、target unknown 或等价负例时被目标环境 deny / 阻断 | 只打印 warning 或命令行负例 |
 | `PreToolUse` 正例 | 已满足 target 和 read_plan 条件的正例或只读动作不被误阻断 | 只测试负例 |
 | `Stop` / completion | Stop 或完成邻近事件输出 completion check、验证缺口或残留风险提示，且不阻断环境正常停止 | 完成后手动运行检查命令 |
@@ -125,7 +125,7 @@ python3 code/environment_entry_audit.py --environment-name <目标环境名> --f
 | 步骤 | 用户要做什么 | 正常表现 | 失败时给 AI 什么 |
 |---|---|---|---|
 | 1/4 恢复入口 | 在新会话粘贴“我重启了，继续 LDVH lifecycle 验证” | AI 识别为继续 30 验证，不重新启动安装向导 | 当前会话完整输出 |
-| 2/4 新会话可见性 | 按 AI 给出的自然语言任务新开或恢复会话，不手动运行 adapter 命令 | 目标环境自动出现 LDVH read plan、`session_start`、receipt 或等价输出 | 目标环境完整输出；没有看到时写“未看到 LDVH 输出” |
+| 2/4 新会话可见性 | 按 AI 给出的自然语言任务新开或恢复会话，不手动运行 adapter 命令 | 目标环境自动出现 LDVH read plan、`ldvh.session_start`、receipt 或等价输出 | 目标环境完整输出；没有看到时写“未看到 LDVH 输出” |
 | 3/4 真实工作流检查 | 按 AI 验收卡逐项触发 Git `commit-msg` 正反例、`SessionStart`、`PreToolUse` 负例、`PreToolUse` 正例或只读放行、`Stop` / completion 检查；需要 scratch target 时明确路径和清理 | 入口真实触发；负例被阻断，正例放行；completion 检查可见且不阻断环境正常停止；scratch 文件状态符合预期 | AI 输出、Hook 输出、scratch 路径、文件状态、completion 输出 |
 | 4/4 验证总结 | AI 复跑统一安装验证并交还结论 | 本次验证通过 / 失败 / 未验证、推荐行动和残留风险清楚 | 总结遗漏项、复核命令输出 |
 
@@ -149,7 +149,7 @@ python3 code/runtime_adapter.py session-start \
 ```text
 LDVH v3 runtime adapter
 - status: ok
-- event: session_start
+- event: ldvh.session_start
 - receipt_id: <receipt-id>
 Diagnostics: none
 ```

@@ -177,7 +177,7 @@ def test_assurance_spec_defines_git_and_environment_hook_boundaries() -> None:
     assert "不得通过仓库内的独立协议文件证明安装、接入或自动触发生效" in spec_01
     assert "接入判定分类由 `01.Att.04` 和 Code 环境审计承接" in spec_01
     assert "不恢复 V2 persistent session receipt 存储" in spec_01
-    assert "不作为环境 adapter 的独立 lifecycle event" in spec_01
+    assert "不得被要求为任何目标环境的原生 Hook 时机" in spec_01
     assert "运行态 receipt cache 是 receipt 的短期桥接形态" in spec_01
     assert "不得写入项目 repo、`specs/`、`ldvh-base/`、Spark、受管项目或工作树隐藏目录" in spec_01
     assert "receipt 是过程输出和证据候选" in spec_01
@@ -2430,7 +2430,8 @@ def test_session_start_cli_exports_hook_read_plan_json() -> None:
     payload = json.loads(completed.stdout)
     read_paths = {item["path"] for item in payload["action_guide"]["task_read_plan"] if item["path"]}
     assert payload["summary"]["status"] == "ok"
-    assert payload["summary"]["event"] == "session_start"
+    assert payload["summary"]["event"] == "ldvh.session_start"
+    assert payload["summary"]["internal_event"] == "session_start"
     assert payload["summary"]["environment_integrated"] is False
     assert payload["summary"]["integration_scope"] == "hook.session_start"
     assert payload["metadata"]["integration_scope"] == "hook.session_start"
@@ -2514,7 +2515,8 @@ def test_acknowledge_read_plan_cli_accepts_entry_paths() -> None:
 
     payload = json.loads(completed.stdout)
     assert payload["summary"]["status"] == "ok"
-    assert payload["summary"]["event"] == "acknowledge_read_plan"
+    assert payload["summary"]["event"] == "ldvh.acknowledge_read_plan"
+    assert payload["summary"]["internal_event"] == "acknowledge_read_plan"
     assert payload["summary"]["environment_integrated"] is False
     assert payload["summary"]["integration_scope"] == "hook.acknowledge_read_plan"
     assert payload["metadata"]["integration_scope"] == "hook.acknowledge_read_plan"
@@ -2764,7 +2766,8 @@ def test_pre_tool_use_cli_accepts_hook_preflight_json() -> None:
 
     payload = json.loads(completed.stdout)
     assert payload["summary"]["status"] == "ok"
-    assert payload["summary"]["event"] == "pre_tool_use"
+    assert payload["summary"]["event"] == "ldvh.pre_tool_use"
+    assert payload["summary"]["internal_event"] == "pre_tool_use"
     assert payload["summary"]["environment_integrated"] is False
     assert payload["summary"]["integration_scope"] == "hook.pre_tool_use"
     assert payload["summary"]["preflight_status"] == "diagnostic_clear"
@@ -4566,7 +4569,8 @@ def test_completion_claim_cli_accepts_hook_evidence_json() -> None:
 
     payload = json.loads(completed.stdout)
     assert payload["summary"]["status"] == "ok"
-    assert payload["summary"]["event"] == "completion_claim"
+    assert payload["summary"]["event"] == "ldvh.completion_claim"
+    assert payload["summary"]["internal_event"] == "completion_claim"
     assert payload["summary"]["environment_integrated"] is False
     assert payload["summary"]["integration_scope"] == "hook.completion_claim"
     assert payload["summary"]["verification_evidence"] == 2
@@ -4629,7 +4633,8 @@ def test_runtime_adapter_dispatches_session_start_payload_json() -> None:
     payload = json.loads(completed.stdout)
     read_paths = {item["path"] for item in payload["dispatch"]["action_guide"]["task_read_plan"] if item["path"]}
     assert payload["summary"]["status"] == "ok"
-    assert payload["summary"]["event"] == "session_start"
+    assert payload["summary"]["event"] == "ldvh.session_start"
+    assert payload["summary"]["internal_event"] == "session_start"
     assert payload["summary"]["adapter_integrated"] is False
     assert payload["metadata"]["integration_scope"] == "hook.runtime_adapter"
     assert payload["dispatch"]["summary"]["integration_scope"] == "hook.session_start"
@@ -4665,7 +4670,8 @@ def test_runtime_adapter_dispatches_pre_tool_use_cli_json() -> None:
 
     payload = json.loads(completed.stdout)
     assert payload["summary"]["status"] == "ok"
-    assert payload["summary"]["event"] == "pre_tool_use"
+    assert payload["summary"]["event"] == "ldvh.pre_tool_use"
+    assert payload["summary"]["internal_event"] == "pre_tool_use"
     assert payload["dispatch"]["summary"]["integration_scope"] == "hook.pre_tool_use"
     assert payload["dispatch"]["preflight"]["summary"]["target_type"] == "tests"
     assert payload["diagnostics"] == []
@@ -4805,7 +4811,8 @@ def test_runtime_adapter_dispatches_completion_claim_cli_json() -> None:
 
     payload = json.loads(completed.stdout)
     assert payload["summary"]["status"] == "ok"
-    assert payload["summary"]["event"] == "completion_claim"
+    assert payload["summary"]["event"] == "ldvh.completion_claim"
+    assert payload["summary"]["internal_event"] == "completion_claim"
     assert payload["dispatch"]["summary"]["integration_scope"] == "hook.completion_claim"
     assert payload["dispatch"]["receipt"]["verification_evidence"] == [
         "python3 code/specs_validate.py all --format text --fail-on-diagnostics",
@@ -4918,8 +4925,10 @@ def test_runtime_supports_all_consumption_timings(validation_result: dict) -> No
             validation=validation_result,
             **common_kwargs,
         )
-        assert runtime["summary"]["event"] == event
-        assert runtime["receipt"]["canonical_event"] == event
+        assert runtime["summary"]["event"] == f"ldvh.{event}"
+        assert runtime["summary"]["internal_event"] == event
+        assert runtime["receipt"]["canonical_event"] == f"ldvh.{event}"
+        assert runtime["receipt"]["internal_event"] == event
 
 
 def test_specs_validate_cli_runtime_json() -> None:

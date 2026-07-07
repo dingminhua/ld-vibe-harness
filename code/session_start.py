@@ -50,8 +50,10 @@ def _print_text(result: dict[str, Any]) -> None:
     receipt = result["receipt"]
     action_guide = result["action_guide"] or {}
 
-    print("LDVH v3 session_start read_plan")
+    print("LDVH v3 ldvh.session_start read_plan")
     print(f"- status: {summary['status']}")
+    print(f"- event: {summary['event']}")
+    print(f"- internal_event: {summary['internal_event']}")
     print(f"- session_id: {receipt['session_id']}")
     print(f"- target_path: {receipt['target_path']}")
     print(f"- task_read_plan: {summary['task_read_plan']}")

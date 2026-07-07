@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from completion_claim import build_completion_claim
-from ldvh_specs import ROOT
+from ldvh_specs import ROOT, runtime_canonical_event_name, runtime_internal_event_key
 from pre_tool_use import build_pre_tool_use
 from session_start import build_session_start
 
@@ -38,7 +38,7 @@ def _diagnostic(level: str, code: str, path: str, message: str, disposition: str
 
 
 def _normalize_event(event: str) -> str:
-    return event.strip().replace("-", "_")
+    return runtime_internal_event_key(event)
 
 
 def _list_value(value: Any) -> list[str]:
@@ -58,6 +58,7 @@ def _base_result(root: Path, payload: dict[str, Any], diagnostics: list[dict[str
     blocking = sum(1 for diagnostic in diagnostics if diagnostic["level"] in {"error", "blocking"})
     status = "blocked" if blocking else "ok"
     event = _normalize_event(str(payload.get("event", "")))
+    canonical_event = runtime_canonical_event_name(event)
     return {
         "metadata": {
             "read_only": True,
@@ -70,7 +71,8 @@ def _base_result(root: Path, payload: dict[str, Any], diagnostics: list[dict[str
         },
         "summary": {
             "status": status,
-            "event": event,
+            "event": canonical_event,
+            "internal_event": event,
             "dispatch_status": "",
             "diagnostics": len(diagnostics),
             "blocking": blocking,
@@ -133,6 +135,7 @@ def dispatch_runtime_payload(root: Path = ROOT, payload: dict[str, Any] | None =
         return _base_result(root, normalized_payload, diagnostics)
 
     event = _normalize_event(str(normalized_payload.get("event", "")))
+    canonical_event = runtime_canonical_event_name(event)
     dispatcher = _dispatchers().get(event)
     if dispatcher is None:
         diagnostics.append(
@@ -140,7 +143,7 @@ def dispatch_runtime_payload(root: Path = ROOT, payload: dict[str, Any] | None =
                 "blocking",
                 "RUNTIME_ADAPTER_EVENT_UNKNOWN",
                 "runtime://adapter-payload",
-                f"runtime adapter 不支持事件: {event}",
+                f"runtime adapter 不支持事件: {canonical_event or event}",
             )
         )
         return _base_result(root, normalized_payload, diagnostics)
@@ -183,7 +186,8 @@ def dispatch_runtime_payload(root: Path = ROOT, payload: dict[str, Any] | None =
 
     result = _base_result(root, normalized_payload, dispatch["diagnostics"])
     result["summary"]["status"] = dispatch["summary"]["status"]
-    result["summary"]["event"] = event
+    result["summary"]["event"] = canonical_event
+    result["summary"]["internal_event"] = event
     result["summary"]["dispatch_status"] = dispatch["summary"]["status"]
     result["summary"]["diagnostics"] = len(dispatch["diagnostics"])
     result["summary"]["blocking"] = dispatch["summary"]["blocking"]

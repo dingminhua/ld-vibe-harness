@@ -41,9 +41,9 @@ EVENT_MAP = {
     "notification": "Notification",
 }
 ADAPTER_EVENT_MAP = {
-    "SessionStart": "session_start",
-    "PreToolUse": "pre_tool_use",
-    "Stop": "completion_claim",
+    "SessionStart": "ldvh.session_start",
+    "PreToolUse": "ldvh.pre_tool_use",
+    "Stop": "ldvh.completion_claim",
 }
 READ_ONLY_TOOLS = {
     "read",

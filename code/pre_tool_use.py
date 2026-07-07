@@ -76,8 +76,10 @@ def _print_text(result: dict[str, Any]) -> None:
     preflight = result["preflight"] or {}
     preflight_summary = preflight.get("summary", {})
 
-    print("LDVH v3 pre_tool_use check")
+    print("LDVH v3 ldvh.pre_tool_use check")
     print(f"- status: {summary['status']}")
+    print(f"- event: {summary['event']}")
+    print(f"- internal_event: {summary['internal_event']}")
     print(f"- operation: {result['input']['operation']}")
     print(f"- target_path: {receipt['target_path']}")
     print(f"- target_type: {preflight_summary.get('target_type', '')}")

@@ -4267,6 +4267,21 @@ def normalize_path_list(paths: list[str] | None) -> list[str]:
     return list(dict.fromkeys(normalized))
 
 
+LDVH_CANONICAL_EVENT_PREFIX = "ldvh."
+
+
+def runtime_internal_event_key(event: str) -> str:
+    normalized = event.strip().replace("-", "_")
+    if normalized.startswith(LDVH_CANONICAL_EVENT_PREFIX):
+        normalized = normalized[len(LDVH_CANONICAL_EVENT_PREFIX):]
+    return normalized
+
+
+def runtime_canonical_event_name(event: str) -> str:
+    internal_event = runtime_internal_event_key(event)
+    return f"{LDVH_CANONICAL_EVENT_PREFIX}{internal_event}" if internal_event else ""
+
+
 def _commit_gate_diagnostic(level: str, code: str, path: str, message: str, disposition: str = "blocking") -> dict[str, str]:
     return {
         "level": level,
@@ -4627,9 +4642,11 @@ def build_runtime_no_op_event(
     target_paths: list[str | Path] | None,
     preflight: dict[str, Any] | None,
 ) -> dict[str, Any]:
+    internal_event = runtime_internal_event_key(event)
+    canonical_event = runtime_canonical_event_name(internal_event)
     receipt = {
         "receipt_id": receipt_id_for(
-            event,
+            canonical_event,
             trigger_source,
             session_id,
             target_path,
@@ -4640,7 +4657,8 @@ def build_runtime_no_op_event(
         "status": "no_op",
         "persistent": False,
         "storage": "stdout_only",
-        "canonical_event": event,
+        "canonical_event": canonical_event,
+        "internal_event": internal_event,
         "trigger_source": trigger_source,
         "session_id": session_id,
         "target_path": target_path,
@@ -4658,7 +4676,8 @@ def build_runtime_no_op_event(
         },
         "summary": {
             "status": "no_op",
-            "event": event,
+            "event": canonical_event,
+            "internal_event": internal_event,
             "trigger_source": trigger_source,
             "diagnostics": 0,
             "blocking": 0,
@@ -4667,7 +4686,8 @@ def build_runtime_no_op_event(
             "has_preflight": preflight is not None,
         },
         "input": {
-            "event": event,
+            "event": canonical_event,
+            "internal_event": internal_event,
             "trigger_source": trigger_source,
             "session_id": session_id,
             "cwd": _resolve_path(Path(cwd) if cwd is not None else root, root).as_posix(),
@@ -4722,7 +4742,8 @@ def build_runtime_event(
 ) -> dict[str, Any]:
     validation = validation if validation is not None else build_validation(root)
     allowed_events = {row["consumption_timing"] for row in validation["consumption_timings"]}
-    normalized_event = event.strip()
+    normalized_event = runtime_internal_event_key(event)
+    canonical_event = runtime_canonical_event_name(normalized_event)
     normalized_target = normalize_target_path_for_root(root, target_path, cwd)
     raw_scope_targets = _scope_target_values(target_path, target_paths)
     normalized_ack_paths = normalize_path_list(acknowledged_paths)
@@ -4787,18 +4808,18 @@ def build_runtime_event(
             ]
             if not normalized_ack_paths:
                 diagnostics.append({
-                    "level": "blocking",
-                    "code": "RUNTIME_ACK_REQUIRED_PATHS_EMPTY",
-                    "path": "runtime://acknowledge_read_plan",
-                    "message": "acknowledge_read_plan 必须提供已消费的 required paths。",
-                    "disposition": "blocking",
-                })
+                "level": "blocking",
+                "code": "RUNTIME_ACK_REQUIRED_PATHS_EMPTY",
+                "path": f"runtime://{canonical_event}",
+                "message": f"{canonical_event} 必须提供已消费的 required paths。",
+                "disposition": "blocking",
+            })
             elif missing_required:
                 diagnostics.append({
                     "level": "blocking",
                     "code": "RUNTIME_ACK_REQUIRED_PATHS_INCOMPLETE",
-                    "path": "runtime://acknowledge_read_plan",
-                    "message": "acknowledge_read_plan 缺少入口必读路径: " + "；".join(missing_required),
+                    "path": f"runtime://{canonical_event}",
+                    "message": f"{canonical_event} 缺少入口必读路径: " + "；".join(missing_required),
                     "disposition": "blocking",
                 })
 
@@ -4840,28 +4861,28 @@ def build_runtime_event(
                 diagnostics.append({
                     "level": "blocking",
                     "code": "RUNTIME_READ_PLAN_CONSUMED_EMPTY",
-                    "path": f"runtime://{normalized_event}",
-                    "message": f"{normalized_event} 必须提供 read_plan 消费证据。",
+                    "path": f"runtime://{canonical_event}",
+                    "message": f"{canonical_event} 必须提供 read_plan 消费证据。",
                     "disposition": "blocking",
                 })
             elif missing_required:
                 diagnostics.append({
                     "level": "blocking",
                     "code": "RUNTIME_READ_PLAN_CONSUMED_INCOMPLETE",
-                    "path": f"runtime://{normalized_event}",
-                    "message": f"{normalized_event} 缺少入口必读路径: " + "；".join(missing_required),
+                    "path": f"runtime://{canonical_event}",
+                    "message": f"{canonical_event} 缺少入口必读路径: " + "；".join(missing_required),
                     "disposition": "blocking",
                 })
             diagnostics.extend(preflight["diagnostics"])
 
         if normalized_event == "completion_claim" and not normalized_verification_evidence:
             diagnostics.append({
-                "level": "blocking",
-                "code": "RUNTIME_COMPLETION_VERIFICATION_MISSING",
-                "path": "runtime://completion_claim",
-                "message": "completion_claim 必须提供验证证据、未验证范围或残留风险说明。",
-                "disposition": "blocking",
-            })
+            "level": "blocking",
+            "code": "RUNTIME_COMPLETION_VERIFICATION_MISSING",
+            "path": f"runtime://{canonical_event}",
+            "message": f"{canonical_event} 必须提供验证证据、未验证范围或残留风险说明。",
+            "disposition": "blocking",
+        })
 
     status = runtime_status_from_diagnostics(diagnostics, preflight)
     receipt_status = "blocked" if status == "blocked" else "generated"
@@ -4877,7 +4898,7 @@ def build_runtime_event(
 
     receipt = {
         "receipt_id": receipt_id_for(
-            normalized_event,
+            canonical_event,
             trigger_source,
             session_id,
             normalized_target,
@@ -4888,7 +4909,8 @@ def build_runtime_event(
         "status": receipt_status,
         "persistent": False,
         "storage": "stdout_only",
-        "canonical_event": normalized_event,
+        "canonical_event": canonical_event,
+        "internal_event": normalized_event,
         "trigger_source": trigger_source,
         "session_id": session_id,
         "target_path": normalized_target,
@@ -4907,7 +4929,8 @@ def build_runtime_event(
         },
         "summary": {
             "status": status,
-            "event": normalized_event,
+            "event": canonical_event,
+            "internal_event": normalized_event,
             "trigger_source": trigger_source,
             "diagnostics": len(diagnostics),
             "blocking": sum(1 for diagnostic in diagnostics if diagnostic["level"] in {"error", "blocking"}),
@@ -4916,7 +4939,8 @@ def build_runtime_event(
             "has_preflight": preflight is not None,
         },
         "input": {
-            "event": normalized_event,
+            "event": canonical_event,
+            "internal_event": normalized_event,
             "trigger_source": trigger_source,
             "session_id": session_id,
             "cwd": _resolve_path(Path(cwd) if cwd is not None else root, root).as_posix(),
