@@ -16,11 +16,11 @@
 
 ## Hook 映射
 
-| WorkBuddy event | V3 runtime event | 当前样例处理 |
+| WorkBuddy event | LDVH canonical event | 当前样例处理 |
 |---|---|---|
-| `SessionStart` | `session_start` | 调用 runtime adapter，输出 read plan / diagnostic，不声明 integrated |
-| `PreToolUse` | `pre_tool_use` | 调用 runtime adapter；只有目标环境真实支持阻断且通过安装验证后，才可作为阻断入口 |
-| `Stop` | `completion_claim` | 作为完成声明邻近候选；默认 diagnostic-only，不替代 Human 验收 |
+| `SessionStart` | `ldvh.session_start` | 调用 runtime adapter，输出 read plan / diagnostic，不声明 integrated |
+| `PreToolUse` | `ldvh.pre_tool_use` | 调用 runtime adapter；只有目标环境真实支持阻断且通过安装验证后，才可作为阻断入口 |
+| `Stop` | `ldvh.completion_claim` | 作为完成声明邻近候选；默认 diagnostic-only，不替代 Human 验收 |
 
 与 Codex 样例包的差异：本包只注册 LDVH 核心三事件（SessionStart + PreToolUse + Stop），不注册 PostToolUse、UserPromptSubmit、Notification 等暂未映射到稳定 runtime 事件的环境事件。
 
@@ -79,4 +79,4 @@ python3 -m json.tool hooks/environment-plugins/workbuddy-ldvh-v3/hooks/hooks.jso
 python3 -m py_compile hooks/environment-plugins/workbuddy-ldvh-v3/hooks/ldvh_runtime_shim.py
 ```
 
-这些检查只证明 repo-local 包结构、manifest 图标资产、shim 语法、payload 透传、PreToolUse 阻断返回、Stop 非阻断降级和安装验收入口的只读行为可用，不证明 WorkBuddy 已加载或触发该包。
+这些检查只证明 repo-local 包结构、manifest 图标资产、shim 语法、payload 透传、环境 PreToolUse 映射到 `ldvh.pre_tool_use` 后的阻断返回、Stop 非阻断降级和安装验收入口的只读行为可用，不证明 WorkBuddy 已加载或触发该包。

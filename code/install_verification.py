@@ -475,7 +475,7 @@ def _verify_environment(
             "integrated": environment_integrated,
             "verification_method": "repo_local_shim_direct_test",
             "real_hook_observed": environment_integrated,
-            "user_status": "插件入口可见，内部连接检查通过；若真实 PreToolUse 已阻断，则按 Hook 已触发但 read_plan 消费依据链路未通过处理。"
+            "user_status": "插件入口可见，内部连接检查通过；若环境 PreToolUse 映射出的 `ldvh.pre_tool_use` 已阻断，则按 Hook 已触发但 read_plan 消费依据链路未通过处理。"
             if environment_install_verified and not environment_integrated
             else "真实自动 Hook integrated 已验证。"
             if environment_integrated
@@ -784,7 +784,7 @@ def _build_user_handoff(result: dict[str, Any]) -> dict[str, Any]:
         if env_status == "已自动接入":
             next_step = "可停止；保留验证输出作为交还证据"
         elif env_status == "插件可见，待真实触发":
-            next_step = f"先确认 {environment_name} 插件已授权 / trust；若已看到 PreToolUse 阻断，按 Hook 已触发处理，继续修复 read_plan 消费依据链路"
+            next_step = f"先确认 {environment_name} 插件已授权 / trust；若已看到环境 PreToolUse 映射出的 `ldvh.pre_tool_use` 阻断，按 Hook 已触发处理，继续修复 read_plan 消费依据链路"
         else:
             next_step = "交还当前状态和残留限制"
     else:
@@ -802,7 +802,7 @@ def _build_user_handoff(result: dict[str, Any]) -> dict[str, Any]:
             "确认插件已授权 / trust；如果有授权提示，先完成授权，没有提示则记录无待处理授权。",
             "重启 App 或新开会话。",
             f"查看 {environment_name} 插件 Hook / lifecycle 触发记录；若没有可见记录，返回“未取得 Hook 触发依据”。",
-            "若看到 PreToolUse 阻断，尤其是 RUNTIME_READ_PLAN_CONSUMED_EMPTY 或 PREFLIGHT_TARGET_UNKNOWN，记录为“Hook 已触发，但 read_plan 消费依据链路未通过”。",
+            "若看到环境 PreToolUse 映射出的 `ldvh.pre_tool_use` 阻断，尤其是 RUNTIME_READ_PLAN_CONSUMED_EMPTY 或 PREFLIGHT_TARGET_UNKNOWN，记录为“Hook 已触发，但 read_plan 消费依据链路未通过”。",
             "在新会话里按 AI 给出的自然语言验收卡触发真实 lifecycle；若未自动出现 LDVH 输出，返回“未看到 LDVH 输出”。",
             "触发一次受控写入类动作，让目标环境自动执行写入前检查；只回传原始输出，不负责判断 integrated。",
             "带着新会话结果回来继续真实触发验收。",
@@ -832,7 +832,7 @@ def _build_user_handoff(result: dict[str, Any]) -> dict[str, Any]:
             "normal": "通过标准：当前工作流产生可复核的 LDVH 当次触发依据，并且提交消息 Hook 正反例通过。",
             "next_step": "无需处理。"
             if real_trigger_acceptance_complete
-            else "若已出现 PreToolUse 阻断，按 Hook 已触发处理；继续修复 read_plan 消费依据链路后再验收。",
+            else "若已出现环境 PreToolUse 映射出的 `ldvh.pre_tool_use` 阻断，按 Hook 已触发处理；继续修复 read_plan 消费依据链路后再验收。",
         },
         {
             "name": "提交消息检查",

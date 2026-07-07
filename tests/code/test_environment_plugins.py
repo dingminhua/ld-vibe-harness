@@ -112,6 +112,25 @@ def test_codex_sample_plugin_declares_six_research_hook_events() -> None:
         ), event_name
 
 
+def test_environment_plugin_readmes_use_ldvh_canonical_events() -> None:
+    readmes = [
+        PLUGIN_ROOT / "README.md",
+        WORKBUDDY_PLUGIN_ROOT / "README.md",
+    ]
+
+    for readme in readmes:
+        raw = readme.read_text(encoding="utf-8")
+        assert "LDVH canonical event" in raw
+        assert "`ldvh.session_start`" in raw
+        assert "`ldvh.pre_tool_use`" in raw
+        assert "`ldvh.completion_claim`" in raw
+        assert "V3 runtime event" not in raw
+        assert "PreToolUse 阻断返回" not in raw
+        assert "| `SessionStart` | `session_start` |" not in raw
+        assert "| `PreToolUse` | `pre_tool_use` |" not in raw
+        assert "| `Stop` | `completion_claim` |" not in raw
+
+
 def test_v2_absorbed_icon_assets_have_expected_png_sizes() -> None:
     expected_sizes = {
         "ldvh-plugin-icon-16.png": (16, 16),
