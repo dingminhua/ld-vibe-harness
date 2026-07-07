@@ -1321,7 +1321,16 @@ def test_environment_lifecycle_docs_use_ldvh_canonical_event_direction() -> None
     assert "映射目标环境 lifecycle event 到 LDVH canonical event" in contents["practice02"]
     assert "LDVH canonical event 是否由目标环境真实触发" in contents["practice02"]
     assert "`ldvh.pre_tool_use` 阻断" in contents["practice02"]
+    assert "| 环境 `SessionStart` -> `ldvh.session_start` |" in contents["practice02"]
+    assert "| 环境 `PreToolUse` -> `ldvh.pre_tool_use` 负例 |" in contents["practice02"]
+    assert "| 环境 `Stop` / completion -> `ldvh.completion_claim` |" in contents["practice02"]
+    assert "观察映射后的 `ldvh.session_start`、`ldvh.pre_tool_use` 负例" in contents["practice02"]
     assert "环境 PreToolUse 映射到 `ldvh.pre_tool_use` 后的阻断" in contents["practice03"]
+
+    assert "| `SessionStart` |" not in contents["practice02"]
+    assert "| `PreToolUse` 负例 |" not in contents["practice02"]
+    assert "| `PreToolUse` 正例 |" not in contents["practice02"]
+    assert "逐项触发 Git `commit-msg` 正反例、`SessionStart`、`PreToolUse` 负例" not in contents["practice02"]
 
     combined = "\n".join(contents.values())
     assert "V3 runtime event" not in combined

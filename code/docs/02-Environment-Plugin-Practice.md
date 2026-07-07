@@ -99,10 +99,10 @@ python3 code/environment_entry_audit.py --environment-name <目标环境名> --f
 | 验收项 | 正常当次依据 | 不能替代它的内容 |
 |---|---|---|
 | 安装启用 | 插件 / 扩展包 / package 已启用、已授权或无待授权，Hook 命令指向当前 V3 shim 或 `runtime_adapter.py` | repo-local 样例包存在 |
-| `SessionStart` | 新会话、恢复或等价事件自动输出 `event=ldvh.session_start`、read_plan 或 receipt | 手动运行 `runtime_adapter.py session-start` |
-| `PreToolUse` 负例 | 写入类工具在缺 read_plan、target unknown 或等价负例时被目标环境 deny / 阻断 | 只打印 warning 或命令行负例 |
-| `PreToolUse` 正例 | 已满足 target 和 read_plan 条件的正例或只读动作不被误阻断 | 只测试负例 |
-| `Stop` / completion | Stop 或完成邻近事件输出 completion check、验证缺口或残留风险提示，且不阻断环境正常停止 | 完成后手动运行检查命令 |
+| 环境 `SessionStart` -> `ldvh.session_start` | 新会话、恢复或等价事件自动输出 `event=ldvh.session_start`、read_plan 或 receipt | 手动运行 `runtime_adapter.py session-start` |
+| 环境 `PreToolUse` -> `ldvh.pre_tool_use` 负例 | 写入类工具在缺 read_plan、target unknown 或等价负例时被目标环境 deny / 阻断 | 只打印 warning 或命令行负例 |
+| 环境 `PreToolUse` -> `ldvh.pre_tool_use` 正例 | 已满足 target 和 read_plan 条件的正例或只读动作不被误阻断 | 只测试负例 |
+| 环境 `Stop` / completion -> `ldvh.completion_claim` | Stop 或完成邻近事件输出 completion check、验证缺口或残留风险提示，且不阻断环境正常停止 | 完成后手动运行检查命令 |
 | payload / target | payload 可回读 event、session、cwd、target、operation、acknowledged_paths 或 verification_evidence，缺字段有 diagnostic | 用户口头说明目标 |
 | 回滚 | 禁用或卸载后新会话 / 等价触发不再进入 LDVH，cache 已清理或过期不采信 | 删除 repo-local 样例文件 |
 
@@ -126,7 +126,7 @@ python3 code/environment_entry_audit.py --environment-name <目标环境名> --f
 |---|---|---|---|
 | 1/4 恢复入口 | 在新会话粘贴“我重启了，继续 LDVH lifecycle 验证” | AI 识别为继续 30 验证，不重新启动安装向导 | 当前会话完整输出 |
 | 2/4 新会话可见性 | 按 AI 给出的自然语言任务新开或恢复会话，不手动运行 adapter 命令 | 目标环境自动出现 LDVH read plan、`ldvh.session_start`、receipt 或等价输出 | 目标环境完整输出；没有看到时写“未看到 LDVH 输出” |
-| 3/4 真实工作流检查 | 按 AI 验收卡逐项触发 Git `commit-msg` 正反例、`SessionStart`、`PreToolUse` 负例、`PreToolUse` 正例或只读放行、`Stop` / completion 检查；需要 scratch target 时明确路径和清理 | 入口真实触发；负例被阻断，正例放行；completion 检查可见且不阻断环境正常停止；scratch 文件状态符合预期 | AI 输出、Hook 输出、scratch 路径、文件状态、completion 输出 |
+| 3/4 真实工作流检查 | 按 AI 验收卡逐项触发 Git `commit-msg` 正反例、目标环境 lifecycle 对应动作，并观察映射后的 `ldvh.session_start`、`ldvh.pre_tool_use` 负例、`ldvh.pre_tool_use` 正例或只读放行、`ldvh.completion_claim` / completion-adjacent 检查；需要 scratch target 时明确路径和清理 | 入口真实触发；负例被阻断，正例放行；completion 检查可见且不阻断环境正常停止；scratch 文件状态符合预期 | AI 输出、Hook 输出、scratch 路径、文件状态、completion 输出 |
 | 4/4 验证总结 | AI 复跑统一安装验证并交还结论 | 本次验证通过 / 失败 / 未验证、推荐行动和残留风险清楚 | 总结遗漏项、复核命令输出 |
 
 逐项验证可以用 `👉` 标记当前步骤，用 `✅` 标记已完成步骤；尚未发生的步骤保持空白。选项建议只保留 `1 我看到了上述正常表现` 和 `2 没看到或有错误，停止验证`。Human 不选择“通过 / 失败”，不负责 integrated 分类；AI 根据用户观察和本文规则判断通过、失败或暂停诊断。
