@@ -2856,6 +2856,44 @@ def test_pre_tool_use_cli_consumes_runtime_cache(tmp_path: Path) -> None:
     ]
 
 
+def test_lifecycle_smoke_cli_checks_ldvh_canonical_same_chain(tmp_path: Path) -> None:
+    env = {
+        **os.environ,
+        "LDVH_RUNTIME_CACHE_DIR": (tmp_path / "receipt-cache").as_posix(),
+    }
+    completed = _run_cli(
+        [
+            sys.executable,
+            "code/lifecycle_smoke.py",
+            "--session-id",
+            "test-lifecycle-smoke",
+            "--target-path",
+            "tests/code/test_ldvh_specs_validate.py",
+            "--format",
+            "json",
+        ],
+        cwd=ROOT,
+        check=True,
+        env=env,
+    )
+
+    payload = json.loads(completed.stdout)
+    assert payload["summary"]["status"] == "ok"
+    assert payload["summary"]["environment_integrated"] is False
+    assert payload["summary"]["events"] == [
+        "ldvh.session_start",
+        "ldvh.acknowledge_read_plan",
+        "ldvh.pre_tool_use",
+        "ldvh.completion_claim",
+    ]
+    assert payload["runtime_cache"]["acknowledge_status"] == "written"
+    assert payload["runtime_cache"]["pre_tool_use_status"] == "hit"
+    assert payload["results"]["pre_tool_use"]["summary"]["event"] == "ldvh.pre_tool_use"
+    assert payload["results"]["pre_tool_use"]["summary"]["internal_event"] == "pre_tool_use"
+    assert payload["results"]["pre_tool_use"]["summary"]["runtime_cache"] == "hit"
+    assert payload["diagnostics"] == []
+
+
 def test_runtime_cache_refuses_repo_local_directory(monkeypatch) -> None:
     monkeypatch.setenv("LDVH_RUNTIME_CACHE_DIR", (ROOT / ".ldvh-runtime-cache-test").as_posix())
 

@@ -552,7 +552,7 @@ def _verify_environment(
                 f"{environment_name} 插件页面显示 LDVH 插件已启用、已授权或无待处理授权，且无错误。",
                 f"插件 Hook 命令指向当前 V3 shim: {CODEX_SHIM}。",
                 "重启 App 或重载插件宿主后，插件页面仍保持启用且无错误。",
-                "新会话在目标环境内自动出现 LDVH read plan、session_start、receipt 或等价 lifecycle 输出；若未出现，按未取得当次触发依据处理。",
+                "新会话在目标环境内自动出现 LDVH read plan、ldvh.session_start、receipt 或等价 lifecycle 输出；若未出现，按未取得当次触发依据处理。",
                 "写入前检查由目标环境自动触发，负例被阻断，正例被放行。",
                 "install_verification.py 显示 install_complete=true、插件可见、内部连接检查通过，并列出 Git Hook 正反例结果。",
             ],

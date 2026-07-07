@@ -156,6 +156,16 @@ Diagnostics: none
 
 该探针证明新会话里 LDVH runtime 可见；完整 lifecycle 验证还需要真实工作流检查和统一安装验证复核。受控正反例默认使用 `.ldvh-runtime/acceptance-probe/` 下的 scratch 文件。默认动作是：先只运行写入前检查验证 `.ldvh-runtime/acceptance-probe/blocked.txt` 预期阻断；再验证 `.ldvh-runtime/acceptance-probe/allowed.txt` 预期放行；不碰 specs、事实源或业务文件；测试后按 Human Gate 清理 scratch 文件。目标环境无法执行等价安全动作时，先重新设计 harmless scratch target。
 
+### LDVH canonical event 同链路技术对照
+
+`code/lifecycle_smoke.py` 用于验证 LDVH 自己的 canonical event 链路是否成立：
+
+```bash
+python3 code/lifecycle_smoke.py --session-id lifecycle-smoke --target-path tests/code/test_ldvh_specs_validate.py --format text
+```
+
+正常输出应按顺序包含 `ldvh.session_start`、`ldvh.acknowledge_read_plan`、`ldvh.pre_tool_use`、`ldvh.completion_claim`，且 `runtime_cache_bridge=hit`。该命令只证明 LDVH runtime 内部的 read_plan receipt bridge 可被后续 `ldvh.pre_tool_use` 消费；它不证明目标环境已经 integrated，也不能替代目标环境自动 lifecycle 触发、payload、失败处理、安装依据和回滚依据。正式 integrated 验收仍以目标环境真实触发的 LDVH canonical event 输出为准，不验收 Codex / WorkBuddy 等环境原生事件名本身。
+
 用户操作必须给出可复制输入文本。默认输入文本如下；运行时替换 `<ldvh-root>`、`<governance-root>` 和 `<target-path>`：
 
 ```text
