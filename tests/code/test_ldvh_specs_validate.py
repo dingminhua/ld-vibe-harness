@@ -1275,7 +1275,8 @@ def test_ldvh_install_action_template_defines_action_stage_contract(validation_r
     assert "Hook 触发依据检查" in raw
     assert "未取得 Hook 触发依据" in raw
     assert "不得用手动探针替代真实 Hook 触发依据" in raw
-    assert "PreToolUse 阻断" in raw
+    assert "环境 PreToolUse 映射出的 `ldvh.pre_tool_use` 阻断" in raw
+    assert "若出现 PreToolUse 阻断" not in raw
     assert "RUNTIME_READ_PLAN_CONSUMED_EMPTY" in raw
     assert "PREFLIGHT_TARGET_UNKNOWN" in raw
     assert "Hook 已触发，但 read_plan 消费依据链路未通过" in raw
@@ -1300,6 +1301,34 @@ def test_ldvh_install_action_template_defines_action_stage_contract(validation_r
     assert "进入 31" not in raw
     assert "specs/31" not in raw
     assert "环境Hook接入后验收" not in raw
+
+
+def test_environment_lifecycle_docs_use_ldvh_canonical_event_direction() -> None:
+    documents = {
+        "spec30": ROOT / "specs/30-安装配置与验证行动模板.md",
+        "spec33": ROOT / "specs/33-环境插件编写与更新行动模板.md",
+        "practice02": ROOT / "code/docs/02-Environment-Plugin-Practice.md",
+        "practice03": ROOT / "code/docs/03-LDVH-Install-Wizard-Practice.md",
+    }
+    contents = {name: path.read_text(encoding="utf-8") for name, path in documents.items()}
+
+    assert "环境 PreToolUse 映射出的 `ldvh.pre_tool_use` 阻断" in contents["spec30"]
+    assert "目标环境 lifecycle event 映射到 LDVH canonical event" in contents["spec33"]
+    assert "解析环境原生事件名并映射到 LDVH canonical event" in contents["spec33"]
+    assert "`ldvh.session_start`" in contents["spec33"]
+    assert "`ldvh.pre_tool_use`" in contents["spec33"]
+    assert "`ldvh.completion_claim`" in contents["spec33"]
+    assert "映射目标环境 lifecycle event 到 LDVH canonical event" in contents["practice02"]
+    assert "LDVH canonical event 是否由目标环境真实触发" in contents["practice02"]
+    assert "`ldvh.pre_tool_use` 阻断" in contents["practice02"]
+    assert "环境 PreToolUse 映射到 `ldvh.pre_tool_use` 后的阻断" in contents["practice03"]
+
+    combined = "\n".join(contents.values())
+    assert "V3 runtime event" not in combined
+    assert "若出现 PreToolUse 阻断" not in combined
+    assert "PreToolUse 阻断 |" not in combined
+    assert "`session_start`（映射到目标环境 SessionStart" not in combined
+    assert "到 V3 runtime event" not in combined
 
 
 def test_install_wizard_practice_defaults_workspace_root_to_ldvh_parent() -> None:

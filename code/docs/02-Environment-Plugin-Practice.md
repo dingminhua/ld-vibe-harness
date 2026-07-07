@@ -48,7 +48,7 @@
 |---|---|
 | manifest | 说明插件身份、版本、目标环境、LDVH 兼容版本、Hook 入口和卸载方式 |
 | 展示资产 | manifest 引用的 icon / logo / composerIcon 等资产必须在插件包内存在并可被静态校验 |
-| Hook 配置 | 映射目标环境 lifecycle event 到 V3 runtime event，且不得覆盖无关用户 Hook |
+| Hook 配置 | 映射目标环境 lifecycle event 到 LDVH canonical event，且不得覆盖无关用户 Hook |
 | shim 命令 | 只调用 LDVH Code 入口，不内嵌规则判断 |
 | LDVH root 解析 | 明确从插件配置、工作区配置或显式参数解析 LDVH 根目录 |
 | payload 透传 | 保留目标环境原始 payload，并补充 trigger source、target path、cwd 等上下文 |
@@ -90,7 +90,7 @@ python3 code/environment_entry_audit.py --environment-name <目标环境名> --f
 4. Hook 命令是否指向当前 V3 LDVH root；
 5. 是否仍指向旧仓库、旧 `code/hook_adapter.py`、旧 Rules/Skill 资产或 stale V2 path；
 6. 重启 App 或重载插件宿主后状态是否保持；
-7. runtime event 是否真实触发；
+7. LDVH canonical event 是否由目标环境真实触发；
 8. 失败是否按预期阻断或返回 diagnostic；
 9. uninstall 后是否不再自动触发 LDVH。
 
@@ -209,7 +209,7 @@ python3 <ldvh-root>/code/runtime_adapter.py session-start --root <ldvh-root> --c
 | 场景 | 仓库内验证 | 后置条件 |
 |---|---|---|
 | payload 透传 | 对 `hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py` 传入 Codex-like JSON，检查 `session_id`、target、task、`trigger_source=codex.ldvh-plugin` 进入 `runtime_adapter.py` | 不证明 Codex 已加载插件 |
-| PreToolUse 阻断 | PreToolUse 缺少 `acknowledged_paths` 时 shim 返回 runtime adapter 非零退出并保留 blocking diagnostic | 真实环境还需验证该退出码确实阻断写入工具 |
+| `ldvh.pre_tool_use` 阻断 | 环境 PreToolUse 映射到 `ldvh.pre_tool_use` 后，缺少 `acknowledged_paths` 时 shim 返回 runtime adapter 非零退出并保留 blocking diagnostic | 真实环境还需验证该退出码确实阻断写入工具 |
 | completion 非阻断诊断 | Stop / completion payload 缺少 `verification_evidence` 时输出 blocking diagnostic，但 shim 对 Stop 返回 0，避免样例包阻断环境关闭 | 真实环境接入前需确认 Stop 输出可见性和失败处理 |
 | stale V2 path | `environment_entry_audit.py` 识别指向旧 `ld-vibe-harness` / `hook_adapter.py` / `hook_dispatch.py` 的 Codex plugin 命令，判定保持 `available` 而不是 integrated | 修复必须走插件升级 / reinstall Human Gate |
 | install / uninstall / rollback | `governed_hook_adapter.py` 与 `install_git_hooks.py` 的临时 repo 测试覆盖 Git hook shim 安装、Human Gate 缺失阻断、卸载后状态回读 | 不等价于安装用户级环境插件 |
@@ -232,7 +232,7 @@ Codex 样例后续进入实装前，至少要补齐：
 2. manifest 和 lifecycle Hook 配置；
 3. manifest 实际引用的插件展示图标资产；
 4. 只调用 V3 `code/runtime_adapter.py` 的薄 shim；
-5. `SessionStart`、`PreToolUse`、`Stop` 到 V3 runtime event 的 payload 映射；
+5. `SessionStart`、`PreToolUse`、`Stop` 等环境原生事件到 `ldvh.session_start`、`ldvh.pre_tool_use`、`ldvh.completion_claim` 的 payload 映射；
 6. install、status、trust、disable、uninstall 的可复现步骤；
 7. stale V2 plugin 路径检测和升级前阻断；
 8. status / positive / negative / rollback 测试。

@@ -242,7 +242,7 @@ scratch target 路径和文件状态：
 | 入口指向 | 命令、manifest 或入口指向当前 V3 LDVH root / V3 shim |
 | manifest 覆盖 | 必需 lifecycle Hook manifest 覆盖 SessionStart、PreToolUse 和 Stop |
 | 旧路径 | stale V2 path 和已废弃 repo-local 旧路径诊断为 0 |
-| shim 直测 | SessionStart、PreToolUse 阻断、Stop / completion 非阻断诊断直测通过 |
+| shim 直测 | SessionStart、环境 PreToolUse 映射到 `ldvh.pre_tool_use` 后的阻断、Stop / completion 非阻断诊断直测通过 |
 | Git Hook | 每个已选择管辖项目的 managed hook、正例放行和反例阻断通过 |
 
 安装检测通过即可作为当前回合写入完成条件。真实 lifecycle、授权 / trust、payload 或失败处理依据不足时，交还结果必须包含断点恢复入口语和用户侧冒烟检查提示。Human 完成下表冒烟检查并明确反馈后，AI 可复跑安装验证并交还本次验证总结；该总结只是当前过程输出，不形成长期状态。
