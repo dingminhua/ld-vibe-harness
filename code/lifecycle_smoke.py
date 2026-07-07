@@ -7,7 +7,7 @@ from typing import Any
 
 from acknowledge_read_plan import build_acknowledge_read_plan
 from completion_claim import build_completion_claim
-from ldvh_specs import ROOT, RUNTIME_REQUIRED_ENTRY_PATHS
+from ldvh_specs import ROOT, build_preflight, required_ack_paths_for_runtime_event
 from pre_tool_use import build_pre_tool_use
 from session_start import build_session_start
 
@@ -50,7 +50,14 @@ def build_lifecycle_smoke(
     verification_evidence: list[str] | None = None,
 ) -> dict[str, Any]:
     evidence = verification_evidence or ["LDVH lifecycle smoke reached ldvh.completion_claim with prior stages ok"]
-    acknowledged_paths = list(RUNTIME_REQUIRED_ENTRY_PATHS)
+    preflight_plan = build_preflight(
+        root,
+        target_path=target_path,
+        operation="write",
+        task=task,
+        trigger_source=TRIGGER_SOURCE,
+    )
+    acknowledged_paths = required_ack_paths_for_runtime_event("pre_tool_use", preflight_plan)
 
     session_start = build_session_start(
         root,

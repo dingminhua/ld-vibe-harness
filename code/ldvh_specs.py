@@ -5074,6 +5074,18 @@ def runtime_status_from_diagnostics(
     return "ok"
 
 
+def required_ack_paths_for_runtime_event(event: str, preflight: dict[str, Any] | None) -> list[str]:
+    if event == "pre_tool_use" and preflight and preflight["summary"]["status"] != "no_op":
+        paths = [
+            item.get("path", "")
+            for item in preflight.get("required_read_plan", [])
+            if item.get("path")
+        ]
+        if paths:
+            return list(dict.fromkeys(paths))
+    return list(RUNTIME_REQUIRED_ENTRY_PATHS)
+
+
 def build_runtime_event(
     root: Path = ROOT,
     event: str = "session_start",
@@ -5150,9 +5162,10 @@ def build_runtime_event(
         diagnostics.extend(action_guide["diagnostics"])
 
         if normalized_event == "acknowledge_read_plan":
+            required_ack_paths = required_ack_paths_for_runtime_event(normalized_event, preflight)
             missing_required = [
                 path
-                for path in RUNTIME_REQUIRED_ENTRY_PATHS
+                for path in required_ack_paths
                 if path not in normalized_ack_paths
             ]
             if not normalized_ack_paths:
@@ -5201,9 +5214,10 @@ def build_runtime_event(
                     preflight=preflight,
                 )
 
+            required_ack_paths = required_ack_paths_for_runtime_event(normalized_event, preflight)
             missing_required = [
                 path
-                for path in RUNTIME_REQUIRED_ENTRY_PATHS
+                for path in required_ack_paths
                 if path not in normalized_ack_paths
             ]
             if not normalized_ack_paths:
@@ -5219,7 +5233,7 @@ def build_runtime_event(
                     "level": "blocking",
                     "code": "RUNTIME_READ_PLAN_CONSUMED_INCOMPLETE",
                     "path": f"runtime://{canonical_event}",
-                    "message": f"{canonical_event} 缺少入口必读路径: " + "；".join(missing_required),
+                    "message": f"{canonical_event} 缺少 read_plan 必读路径: " + "；".join(missing_required),
                     "disposition": "blocking",
                 })
             diagnostics.extend(preflight["diagnostics"])
@@ -5337,12 +5351,20 @@ def build_e2e_rehearsal(
     verification_evidence: list[str] | None = None,
 ) -> dict[str, Any]:
     normalized_target = normalize_relative_path(target_path)
-    ack_paths = list(RUNTIME_REQUIRED_ENTRY_PATHS)
     evidence = verification_evidence or [
         "python3 -m pytest tests/code -q",
         "python3 code/specs_validate.py all --format text --fail-on-diagnostics",
     ]
     validation = build_validation(root)
+    preflight_plan = build_preflight(
+        root,
+        target_path=normalized_target,
+        operation=operation,
+        task=task,
+        trigger_source=trigger_source,
+        validation=validation,
+    )
+    ack_paths = required_ack_paths_for_runtime_event("pre_tool_use", preflight_plan)
 
     governed = build_governed_projects_report(
         root,
@@ -5478,7 +5500,7 @@ def build_e2e_rehearsal(
             "static_rehearsal_complete": status == "ok",
             "reduces_ai_burden": [
                 "target 归属由 governed project resolver 输出，不靠 AI 记忆判断",
-                "session_start 生成 read_plan，pre_tool_use 复用 acknowledged paths",
+                "session_start 生成 read_plan，pre_tool_use 复用完整 target read plan acknowledged paths",
                 "preflight 在写入前给出目标归口、Human Gate 风险和管辖项目边界",
                 "completion_claim 必须携带验证证据，不能空口声明完成",
             ],

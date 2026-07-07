@@ -13,6 +13,49 @@ import runtime_receipt_cache
 
 
 ROOT = Path(__file__).resolve().parents[2]
+ENTRY_ACK_PATHS = [
+    "specs/00-理念与构成.md",
+    "specs/01-保障与衔接.md",
+    "specs/02-AI行为规范.md",
+]
+CODE_TARGET_ACK_PATHS = [
+    *ENTRY_ACK_PATHS,
+    "specs/03-事实源与Git溯源规范.md",
+    "specs/04-Specs基础规范.md",
+    "specs/07-Code确定性执行规范.md",
+    "specs/09-测试与验证规范.md",
+]
+TEST_TARGET_ACK_PATHS = [
+    *ENTRY_ACK_PATHS,
+    "specs/03-事实源与Git溯源规范.md",
+    "specs/04-Specs基础规范.md",
+    "specs/09-测试与验证规范.md",
+    "specs/07-Code确定性执行规范.md",
+]
+ACCEPTANCE_SCRATCH_ACK_PATHS = [
+    *ENTRY_ACK_PATHS,
+    "specs/03-事实源与Git溯源规范.md",
+    "specs/04-Specs基础规范.md",
+    "specs/30-安装配置与验证行动模板.md",
+    "code/docs/02-Environment-Plugin-Practice.md",
+]
+WORKCASE_TARGET = "ldvh-base/workcases/workcase-0024-v2-deletion-readiness-closure.yaml"
+WORKCASE_ACK_PATHS = [
+    *ENTRY_ACK_PATHS,
+    "specs/03-事实源与Git溯源规范.md",
+    "specs/04-Specs基础规范.md",
+    "specs/05-事实模型基础规范.md",
+    "specs/09-测试与验证规范.md",
+    "specs/21-WorkCase-工作项.md",
+    WORKCASE_TARGET,
+]
+
+
+def _ack_args(paths: list[str]) -> list[str]:
+    args: list[str] = []
+    for path in paths:
+        args.extend(["--acknowledged-path", path])
+    return args
 
 
 def _copy_specs_root(tmp_path: Path) -> Path:
@@ -2787,12 +2830,7 @@ def test_acknowledge_read_plan_cli_writes_runtime_cache(tmp_path: Path) -> None:
             "test-runtime-cache",
             "--target-path",
             "tests/code/test_ldvh_specs_validate.py",
-            "--acknowledged-path",
-            "specs/00-理念与构成.md",
-            "--acknowledged-path",
-            "specs/01-保障与衔接.md",
-            "--acknowledged-path",
-            "specs/02-AI行为规范.md",
+            *_ack_args(TEST_TARGET_ACK_PATHS),
             "--format",
             "json",
         ],
@@ -2813,11 +2851,7 @@ def test_runtime_pre_tool_use_includes_preflight(validation_result: dict) -> Non
         ROOT,
         event="pre_tool_use",
         target_path="code/ldvh_specs.py",
-        acknowledged_paths=[
-            "specs/00-理念与构成.md",
-            "specs/01-保障与衔接.md",
-            "specs/02-AI行为规范.md",
-        ],
+        acknowledged_paths=CODE_TARGET_ACK_PATHS,
         validation=validation_result,
     )
 
@@ -2843,7 +2877,7 @@ def test_runtime_pre_tool_use_workcase_target_without_ack_is_not_target_unknown(
     runtime = ldvh_specs.build_runtime_event(
         ROOT,
         event="pre_tool_use",
-        target_path="ldvh-base/workcases/workcase-0024-v2-deletion-readiness-closure.yaml",
+        target_path=WORKCASE_TARGET,
         validation=validation_result,
     )
 
@@ -2851,6 +2885,24 @@ def test_runtime_pre_tool_use_workcase_target_without_ack_is_not_target_unknown(
     assert runtime["summary"]["status"] == "blocked"
     assert runtime["preflight"]["summary"]["target_type"] == "fact_instance"
     assert "RUNTIME_READ_PLAN_CONSUMED_EMPTY" in codes
+    assert "PREFLIGHT_TARGET_UNKNOWN" not in codes
+
+
+def test_runtime_pre_tool_use_workcase_target_requires_target_read_plan(validation_result: dict) -> None:
+    runtime = ldvh_specs.build_runtime_event(
+        ROOT,
+        event="pre_tool_use",
+        target_path=WORKCASE_TARGET,
+        acknowledged_paths=ENTRY_ACK_PATHS,
+        validation=validation_result,
+    )
+
+    codes = _diagnostic_codes(runtime)
+    assert runtime["summary"]["status"] == "blocked"
+    assert runtime["preflight"]["summary"]["target_type"] == "fact_instance"
+    assert runtime["diagnostics"][0]["code"] == "RUNTIME_READ_PLAN_CONSUMED_INCOMPLETE"
+    assert "specs/21-WorkCase-工作项.md" in runtime["diagnostics"][0]["message"]
+    assert WORKCASE_TARGET in runtime["diagnostics"][0]["message"]
     assert "PREFLIGHT_TARGET_UNKNOWN" not in codes
 
 
@@ -2963,11 +3015,7 @@ projects:
         cwd=ROOT,
         config_root=governance_root,
         operation="write",
-        acknowledged_paths=[
-            "specs/00-理念与构成.md",
-            "specs/01-保障与衔接.md",
-            "specs/02-AI行为规范.md",
-        ],
+        acknowledged_paths=ENTRY_ACK_PATHS,
         validation=validation_result,
     )
 
@@ -2987,12 +3035,7 @@ def test_pre_tool_use_cli_accepts_hook_preflight_json() -> None:
             "tests/code/test_ldvh_specs_validate.py",
             "--operation",
             "write",
-            "--acknowledged-path",
-            "specs/00-理念与构成.md",
-            "--acknowledged-path",
-            "specs/01-保障与衔接.md",
-            "--acknowledged-path",
-            "specs/02-AI行为规范.md",
+            *_ack_args(TEST_TARGET_ACK_PATHS),
             "--format",
             "json",
         ],
@@ -3009,11 +3052,7 @@ def test_pre_tool_use_cli_accepts_hook_preflight_json() -> None:
     assert payload["summary"]["preflight_status"] == "diagnostic_clear"
     assert payload["metadata"]["integration_scope"] == "hook.pre_tool_use"
     assert payload["receipt"]["storage"] == "stdout_only"
-    assert payload["receipt"]["acknowledged_paths"] == [
-        "specs/00-理念与构成.md",
-        "specs/01-保障与衔接.md",
-        "specs/02-AI行为规范.md",
-    ]
+    assert payload["receipt"]["acknowledged_paths"] == TEST_TARGET_ACK_PATHS
     assert payload["preflight"]["summary"]["target_type"] == "tests"
     assert payload["diagnostics"] == []
 
@@ -3052,12 +3091,7 @@ def test_pre_tool_use_cli_consumes_runtime_cache(tmp_path: Path) -> None:
             "test-pre-tool-cache",
             "--target-path",
             "tests/code/test_ldvh_specs_validate.py",
-            "--acknowledged-path",
-            "specs/00-理念与构成.md",
-            "--acknowledged-path",
-            "specs/01-保障与衔接.md",
-            "--acknowledged-path",
-            "specs/02-AI行为规范.md",
+            *_ack_args(TEST_TARGET_ACK_PATHS),
             "--format",
             "json",
         ],
@@ -3085,11 +3119,7 @@ def test_pre_tool_use_cli_consumes_runtime_cache(tmp_path: Path) -> None:
     payload = json.loads(completed.stdout)
     assert payload["summary"]["status"] == "ok"
     assert payload["summary"]["runtime_cache"] == "hit"
-    assert payload["receipt"]["acknowledged_paths"] == [
-        "specs/00-理念与构成.md",
-        "specs/01-保障与衔接.md",
-        "specs/02-AI行为规范.md",
-    ]
+    assert payload["receipt"]["acknowledged_paths"] == TEST_TARGET_ACK_PATHS
 
 
 def test_lifecycle_smoke_cli_checks_ldvh_canonical_same_chain(tmp_path: Path) -> None:
@@ -3345,12 +3375,7 @@ def test_pre_tool_use_cli_allows_acceptance_probe_scratch_target() -> None:
             "code/pre_tool_use.py",
             "--target-path",
             ".ldvh-runtime/acceptance-probe/allowed.txt",
-            "--acknowledged-path",
-            "specs/00-理念与构成.md",
-            "--acknowledged-path",
-            "specs/01-保障与衔接.md",
-            "--acknowledged-path",
-            "specs/02-AI行为规范.md",
+            *_ack_args(ACCEPTANCE_SCRATCH_ACK_PATHS),
             "--format",
             "json",
         ],
@@ -3372,23 +3397,8 @@ def test_pre_tool_use_cli_recognizes_workcase_fact_instance_target() -> None:
             sys.executable,
             "code/pre_tool_use.py",
             "--target-path",
-            "ldvh-base/workcases/workcase-0024-v2-deletion-readiness-closure.yaml",
-            "--acknowledged-path",
-            "specs/00-理念与构成.md",
-            "--acknowledged-path",
-            "specs/01-保障与衔接.md",
-            "--acknowledged-path",
-            "specs/02-AI行为规范.md",
-            "--acknowledged-path",
-            "specs/03-事实源与Git溯源规范.md",
-            "--acknowledged-path",
-            "specs/04-Specs基础规范.md",
-            "--acknowledged-path",
-            "specs/05-事实模型基础规范.md",
-            "--acknowledged-path",
-            "specs/21-WorkCase-工作项.md",
-            "--acknowledged-path",
-            "ldvh-base/workcases/workcase-0024-v2-deletion-readiness-closure.yaml",
+            WORKCASE_TARGET,
+            *_ack_args(WORKCASE_ACK_PATHS),
             "--format",
             "json",
         ],
@@ -4991,12 +5001,7 @@ def test_runtime_adapter_dispatches_pre_tool_use_cli_json() -> None:
             str(ROOT),
             "--target-path",
             "tests/code/test_ldvh_specs_validate.py",
-            "--acknowledged-path",
-            "specs/00-理念与构成.md",
-            "--acknowledged-path",
-            "specs/01-保障与衔接.md",
-            "--acknowledged-path",
-            "specs/02-AI行为规范.md",
+            *_ack_args(TEST_TARGET_ACK_PATHS),
             "--format",
             "json",
         ],
@@ -5245,11 +5250,7 @@ def test_runtime_adapter_blocks_missing_payload_fields() -> None:
 def test_runtime_supports_all_consumption_timings(validation_result: dict) -> None:
     events = [row["consumption_timing"] for row in validation_result["consumption_timings"]]
     common_kwargs = {
-        "acknowledged_paths": [
-            "specs/00-理念与构成.md",
-            "specs/01-保障与衔接.md",
-            "specs/02-AI行为规范.md",
-        ],
+        "acknowledged_paths": TEST_TARGET_ACK_PATHS,
         "target_path": "tests/code/test_ldvh_specs_validate.py",
         "verification_evidence": ["python3 -m pytest tests/code"],
     }

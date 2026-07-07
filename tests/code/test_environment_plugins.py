@@ -13,6 +13,35 @@ SHIM = ROOT / "hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.p
 PLUGIN_JSON = PLUGIN_ROOT / "plugin.json"
 WORKBUDDY_PLUGIN_ROOT = ROOT / "hooks/environment-plugins/workbuddy-ldvh-v3"
 WORKBUDDY_SHIM = WORKBUDDY_PLUGIN_ROOT / "hooks/ldvh_runtime_shim.py"
+ENTRY_ACK_PATHS = [
+    "specs/00-理念与构成.md",
+    "specs/01-保障与衔接.md",
+    "specs/02-AI行为规范.md",
+]
+TEST_TARGET_ACK_PATHS = [
+    *ENTRY_ACK_PATHS,
+    "specs/03-事实源与Git溯源规范.md",
+    "specs/04-Specs基础规范.md",
+    "specs/09-测试与验证规范.md",
+    "specs/07-Code确定性执行规范.md",
+]
+WORKCASE_TARGET = "ldvh-base/workcases/workcase-0024-v2-deletion-readiness-closure.yaml"
+WORKCASE_ACK_PATHS = [
+    *ENTRY_ACK_PATHS,
+    "specs/03-事实源与Git溯源规范.md",
+    "specs/04-Specs基础规范.md",
+    "specs/05-事实模型基础规范.md",
+    "specs/09-测试与验证规范.md",
+    "specs/21-WorkCase-工作项.md",
+    WORKCASE_TARGET,
+]
+
+
+def _ack_args(paths: list[str]) -> list[str]:
+    args: list[str] = []
+    for path in paths:
+        args.extend(["--acknowledged-path", path])
+    return args
 
 
 def _png_dimensions(path: Path) -> tuple[int, int]:
@@ -490,11 +519,7 @@ def test_codex_sample_shim_blocks_write_when_target_unknown_even_with_acknowledg
             "cwd": ROOT.as_posix(),
             "toolName": "Write",
             "tool_input": {},
-            "acknowledgedPaths": [
-                "specs/00-理念与构成.md",
-                "specs/01-保障与衔接.md",
-                "specs/02-AI行为规范.md",
-            ],
+            "acknowledgedPaths": ENTRY_ACK_PATHS,
         },
         check=False,
     )
@@ -560,11 +585,7 @@ def test_codex_sample_shim_infers_read_plan_ack_from_transcript(tmp_path: Path) 
                 },
                 ensure_ascii=False,
             )
-            for path in (
-                "specs/00-理念与构成.md",
-                "specs/01-保障与衔接.md",
-                "specs/02-AI行为规范.md",
-            )
+            for path in TEST_TARGET_ACK_PATHS
         ),
         encoding="utf-8",
     )
@@ -597,12 +618,7 @@ def test_codex_sample_shim_consumes_session_runtime_cache(tmp_path: Path) -> Non
             "shim-runtime-cache",
             "--target-path",
             "tests/code/test_environment_plugins.py",
-            "--acknowledged-path",
-            "specs/00-理念与构成.md",
-            "--acknowledged-path",
-            "specs/01-保障与衔接.md",
-            "--acknowledged-path",
-            "specs/02-AI行为规范.md",
+            *_ack_args(TEST_TARGET_ACK_PATHS),
             "--format",
             "json",
         ],
@@ -688,11 +704,7 @@ def test_workbuddy_sample_shim_blocks_target_unknown_even_with_acknowledgement(t
             "cwd": ROOT.as_posix(),
             "toolName": "Write",
             "tool_input": {},
-            "acknowledgedPaths": [
-                "specs/00-理念与构成.md",
-                "specs/01-保障与衔接.md",
-                "specs/02-AI行为规范.md",
-            ],
+            "acknowledgedPaths": ENTRY_ACK_PATHS,
         },
         extra_env={"LDVH_RUNTIME_CACHE_DIR": (tmp_path / "runtime-cache").as_posix()},
         check=False,
@@ -714,13 +726,9 @@ def test_workbuddy_sample_shim_recognizes_workcase_fact_instance_target(tmp_path
             "cwd": ROOT.as_posix(),
             "toolName": "Write",
             "tool_input": {
-                "file_path": "ldvh-base/workcases/workcase-0024-v2-deletion-readiness-closure.yaml"
+                "file_path": WORKCASE_TARGET
             },
-            "acknowledgedPaths": [
-                "specs/00-理念与构成.md",
-                "specs/01-保障与衔接.md",
-                "specs/02-AI行为规范.md",
-            ],
+            "acknowledgedPaths": WORKCASE_ACK_PATHS,
         },
         extra_env={"LDVH_RUNTIME_CACHE_DIR": (tmp_path / "runtime-cache").as_posix()},
     )
@@ -744,12 +752,7 @@ def test_workbuddy_sample_shim_consumes_standard_runtime_cache(tmp_path: Path) -
             "workbuddy-runtime-cache",
             "--target-path",
             "tests/code/test_environment_plugins.py",
-            "--acknowledged-path",
-            "specs/00-理念与构成.md",
-            "--acknowledged-path",
-            "specs/01-保障与衔接.md",
-            "--acknowledged-path",
-            "specs/02-AI行为规范.md",
+            *_ack_args(TEST_TARGET_ACK_PATHS),
             "--format",
             "json",
         ],
@@ -792,11 +795,7 @@ def test_codex_sample_shim_extracts_apply_patch_targets() -> None:
  pass
 *** End Patch
 """,
-            "acknowledgedPaths": [
-                "specs/00-理念与构成.md",
-                "specs/01-保障与衔接.md",
-                "specs/02-AI行为规范.md",
-            ],
+            "acknowledgedPaths": TEST_TARGET_ACK_PATHS,
         },
     )
 
@@ -815,11 +814,7 @@ def test_codex_sample_shim_allows_pre_tool_use_with_acknowledged_paths() -> None
             "cwd": ROOT.as_posix(),
             "toolName": "Write",
             "toolInput": {"file_path": "tests/code/test_environment_plugins.py"},
-            "acknowledgedPaths": [
-                "specs/00-理念与构成.md",
-                "specs/01-保障与衔接.md",
-                "specs/02-AI行为规范.md",
-            ],
+            "acknowledgedPaths": TEST_TARGET_ACK_PATHS,
         },
     )
 
@@ -839,13 +834,9 @@ def test_codex_sample_shim_recognizes_workcase_fact_instance_target() -> None:
             "cwd": ROOT.as_posix(),
             "toolName": "Write",
             "toolInput": {
-                "file_path": "ldvh-base/workcases/workcase-0024-v2-deletion-readiness-closure.yaml"
+                "file_path": WORKCASE_TARGET
             },
-            "acknowledgedPaths": [
-                "specs/00-理念与构成.md",
-                "specs/01-保障与衔接.md",
-                "specs/02-AI行为规范.md",
-            ],
+            "acknowledgedPaths": WORKCASE_ACK_PATHS,
         },
     )
 

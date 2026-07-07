@@ -389,14 +389,32 @@ def transcript_read_commands(payload: dict[str, Any]) -> list[str]:
     return commands
 
 
+def normalize_read_path_candidate(raw: str) -> str:
+    candidate = raw.strip().strip("'\"").rstrip(",")
+    while candidate.startswith("./"):
+        candidate = candidate[2:]
+    if not candidate or candidate.startswith(("-", "/", "~")):
+        return ""
+    if candidate.startswith(("specs/", "code/docs/", "ldvh-base/", "hooks/", "code/", "tests/")):
+        return candidate
+    if candidate.endswith((".md", ".py", ".json", ".toml", ".yaml", ".yml", ".txt")) and "/" in candidate:
+        return candidate
+    return ""
+
+
+def transcript_read_paths(payload: dict[str, Any]) -> list[str]:
+    paths: list[str] = []
+    for command in transcript_read_commands(payload):
+        for part in command_parts(command):
+            candidate = normalize_read_path_candidate(part)
+            if candidate:
+                paths.append(candidate)
+    return list(dict.fromkeys(paths))
+
+
 def acknowledged_paths(payload: dict[str, Any]) -> list[str]:
     explicit = list_text(payload.get("acknowledged_paths") or payload.get("acknowledgedPaths"))
-    inferred: list[str] = []
-    for command in transcript_read_commands(payload):
-        for required_path in REQUIRED_ENTRY_PATHS:
-            if required_path in command:
-                inferred.append(required_path)
-    return list(dict.fromkeys([*explicit, *inferred]))
+    return list(dict.fromkeys([*explicit, *transcript_read_paths(payload)]))
 
 
 def target_path_from_command(payload: dict[str, Any]) -> str:
