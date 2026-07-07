@@ -120,6 +120,8 @@ Code 不得输出 `approved`、`allowed`、`accepted risk`、`human_gate_passed`
 
 Code 诊断必须区分“对象归口问题”和“动作条件问题”。`scope_unknown` 不得自动升级为管辖阻断；只有已有管辖范围证据但本次 target 不明时，才可输出 `governed_target_unknown` 对高影响动作 gated。普通管辖对象的 preflight 不得被无关全局诊断阻断；全局健康检查只适用于提交、完成声明、关闭、发布或后续规范明确要求全局健康的动作。
 
+Code 生成管辖项目 Action Guide 时，必须消费 01 和 10 的管辖分流契约，并在输出中区分 `ldvh_specs`、`ldvh_facts`、`governed_project_facts` 和 `process_output` 或等价来源类型。只有 `governed_single` 可以生成单项目事实源 read_plan；`declared_multi_governed` 必须按每个 `governed_subject` 拆分 read_plan、source_refs、validation_guard 和 residual risk；`non_governed` 必须 no-op；`scope_unknown` 必须 degraded；`mixed_scope` 必须阻断、拆分或进入 Human Gate。Code 无法确认项目 `ldvh-base/` 入口或事实实例时，必须输出 `capability_gap`、`missing_fields` 或 `unverifiable`，不得伪造项目事实源 read_plan。
+
 ## 7. Runtime facade 与环境适配实现边界
 
 01 已定义 Runtime Protocol、canonical event 和 trigger source 的上位语义。本文只承接具体实现边界。
@@ -236,6 +238,6 @@ Code 暴露规范缺口时，应输出 diagnostic 并回到对应规范、授权
 2. `declared_multi_governed` 的只读审计路径已补本地承接：Human 明确发起跨管辖对象读取、审计或对比时，Code resolver 应表达该分类；写入、提交、迁移和事实源回写仍必须拆分或进入 Human Gate；
 3. `ldvh.completion_claim` 已补当前 diagnostic 消费：runtime facade 不得只检查验证证据非空，必须继续输出未解决 blocker、未验证范围和残留风险的可消费摘要，并保留回归覆盖；
 4. read_plan receipt bootstrap 路径已补受控放行边界；后续仍需保持 `ldvh.acknowledge_read_plan` 或等价 runtime receipt 入口不被 read_plan 消费检查自锁，且不得扩展为任意命令 bypass；
-5. Action Guide governed project 链路需要补齐：Code 生成行动指南时应能消费 10 的管辖解析结果，并区分 LDVH specs、LDVH facts、管辖项目 facts 和过程输出；
+5. Action Guide governed project 链路 specs 契约已补齐：Code 生成行动指南时必须消费 10 的管辖解析结果，并区分 LDVH specs、LDVH facts、管辖项目 facts 和过程输出；Code builder 实现和回归仍需补齐；
 6. test runner verification_plan 输出需要补齐：测试 runner 应能说明选择理由、覆盖层级、排除层级、未验证范围和 residual risk；
 7. Codex / WorkBuddy shim 命令分类逻辑需要收敛到共享实现，避免环境插件独立实现继续漂移。

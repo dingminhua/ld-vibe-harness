@@ -274,6 +274,29 @@ def test_assurance_spec_defines_git_and_environment_hook_boundaries() -> None:
     assert "清理或说明已过期的 LDVH runtime receipt cache" in rollback
 
 
+def test_action_guide_governed_project_contract_is_specified() -> None:
+    spec_01 = (ROOT / "specs/01-保障与衔接.md").read_text(encoding="utf-8")
+    spec_07 = (ROOT / "specs/07-Code确定性执行规范.md").read_text(encoding="utf-8")
+    spec_10 = (ROOT / "specs/10-安装与配置规范.md").read_text(encoding="utf-8")
+
+    assert "### 7.4 管辖项目行动指南" in spec_01
+    assert "行动指南不是规则源、授权器、事实源、测试结论或 Human Gate" in spec_01
+    assert "必须先消费 10 的管辖解析结果" in spec_01
+    assert "| `governed_single` | 可以为该单一管辖对象生成项目事实源" in spec_01
+    assert "| `non_governed` | 必须静默 no-op" in spec_01
+    assert "| `scope_unknown` | 只能输出 degraded、`capability_gap`、`missing_fields` 或 `unverifiable`" in spec_01
+    assert "| `declared_multi_governed` | 只能用于 Human 明确发起的跨管辖对象读取、审计或对比" in spec_01
+    assert "LDVH specs、LDVH 本体事实源、管辖项目事实源和过程输出" in spec_01
+    assert "不得生成看似完整的项目事实源 read_plan" in spec_01
+
+    assert "`ldvh_specs`、`ldvh_facts`、`governed_project_facts` 和 `process_output`" in spec_07
+    assert "`declared_multi_governed` 必须按每个 `governed_subject` 拆分" in spec_07
+    assert "不得伪造项目事实源 read_plan" in spec_07
+
+    assert "只能以 resolver 输出的 `governed_project_path` 下 `ldvh-base/` 作为项目事实源入口" in spec_10
+    assert "不得用 LDVH 本体 `ldvh-base/`、cwd、对话记忆或项目登记配置替代项目事实源" in spec_10
+
+
 def test_foundation_validator_reports_missing_code_consumption(tmp_path: Path) -> None:
     root = _copy_specs_root(tmp_path)
     _replace_in_temp(

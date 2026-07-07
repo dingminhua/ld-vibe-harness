@@ -230,12 +230,12 @@ LDVH 的总目标不变：
 | 事项 | 归口 | 状态 | 优先级 |
 |---|---|---|---|
 | 明确 Action Guide 是行动前承接包，不是规则源 | `01` | 已有 | P0 |
-| 定义 Action Guide for governed project | `01` / `07` / `10` | 三段归口待补：10 入口、07 读取、01 消费 | P1 |
-| 输出区分 LDVH specs、LDVH facts、governed project facts、process outputs | `07` | 待做 | P1 |
-| 当 target 命中管辖项目时，读取或引用该项目 `ldvh-base/` 事实源入口 | `07` / Code | 待做 | P1 |
-| 只有 `governed_single` 才能生成项目事实源 read_plan；`non_governed` 静默 no-op；`scope_unknown` 只能 degraded / capability_gap | `01` / `07` / `10` | 待做 | P1 |
-| 对多管辖项目任务按项目拆分 read_plan / source_refs / validation_guard | `01` / `07` / `10` | 待做 | P1 |
-| Action Guide 缺输入时输出 `missing_fields` / `capability_gap` / `unverifiable` | `01` / Code | 部分已有 | P1 |
+| 定义 Action Guide for governed project | `01` / `07` / `10` | specs 契约已补；Code builder 待做 | P1 |
+| 输出区分 LDVH specs、LDVH facts、governed project facts、process outputs | `07` | specs 契约已补；Code builder 待做 | P1 |
+| 当 target 命中管辖项目时，读取或引用该项目 `ldvh-base/` 事实源入口 | `07` / Code | `10` / `07` 契约已补；Code builder 待做 | P1 |
+| 只有 `governed_single` 才能生成项目事实源 read_plan；`non_governed` 静默 no-op；`scope_unknown` 只能 degraded / capability_gap | `01` / `07` / `10` | specs 契约已补；Code builder 待做 | P1 |
+| 对多管辖项目任务按项目拆分 read_plan / source_refs / validation_guard | `01` / `07` / `10` | specs 契约已补；Code builder 待做 | P1 |
+| Action Guide 缺输入时输出 `missing_fields` / `capability_gap` / `unverifiable` | `01` / Code | specs 契约已补；Code builder 待做 | P1 |
 
 外部 AI 需评审：
 
@@ -582,7 +582,7 @@ target -> operation -> risk -> phase -> decision / verification_plan -> diagnost
 | completion_claim 消费当前 diagnostic | `01` | `07` / Code / tests | `code-after-existing-spec` | runtime 已补 target-scoped diagnostic 消费和回归；真实环境 completion / Stop 可见性仍需验收 |
 | resolver 输出显式六类 `scope_status` | `07` | Code / `10` / tests | `code-after-existing-spec` | resolver、preflight 和 runtime summary 已补本地输出；仍需真实多 target 使用验收 |
 | `declared_multi_governed` 只读审计路径 | `10` | `07` / Code / tests | `code-after-existing-spec` | Human 显式跨对象审计已补 resolver 分流；写入和提交仍阻断 |
-| Action Guide governed project 链路 | `01` | `07` / `10` / Code | `spec-first + HG` -> `code-after-spec` | 10 入口、07 读取、01 消费 |
+| Action Guide governed project 链路 | `01` | `07` / `10` / Code | `code-after-spec` | specs 契约已补：10 入口、07 读取、01 消费；下一步补 Code builder 和回归 |
 | 验证选择协议与 test_runner verification_plan | `09` | `01` / `07` / Code / tests | `spec-first + HG` -> `code-after-spec` | 映射到现有验证入口，不新建第二套规则 |
 | 能力匹配模型附件化 | `01` | `07` / `10` | `spec-first + HG` | 正文定义口径，附件只承载矩阵 |
 | runtime scoping / no-op / repair 回归覆盖确认 | tests | Code | `code-after-spec` | 已实现项保留回归保护 |
@@ -616,7 +616,7 @@ target -> operation -> risk -> phase -> decision / verification_plan -> diagnost
 2. **Human 决策 WorkCase**：决定是否创建或指定顶层 WorkCase 承接本轮体系重构；
 3. **收尾 P1 bootstrapping**：本地已实现 read_plan receipt 生成入口的受控放行路径，下一步补真实环境当次验收；
 4. **收尾 P1 scope schema**：completion_claim、`scope_status`、`declared_multi_governed` 已本地补齐；后续保留真实环境 / 真实多 target 使用验收；
-5. **补 Action Guide / 验证选择 / 能力模型**：先 specs，后 Code 和 tests；
+5. **补 Action Guide / 验证选择 / 能力模型**：Action Guide governed project specs 契约已补；下一步补 Code builder，再进入验证选择和能力模型；
 6. **处理 shim 漂移和回归测试**：抽共享分类器，补 runtime scoping / no-op / repair / mixed scope 回归；
 7. **V2 收口复核**：根据 V3 `00` 和补强后的 specs，重新判断 V2 是否可删除；
 8. **提交与复审**：每个阶段可独立提交、复审、回退。
