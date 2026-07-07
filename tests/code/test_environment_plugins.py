@@ -411,6 +411,83 @@ def test_codex_sample_shim_allows_runtime_adapter_session_start_probe_without_ac
         assert completed.stdout == ""
 
 
+def test_codex_sample_shim_allows_acknowledge_read_plan_bootstrap_command_without_acknowledgement() -> None:
+    command = (
+        "python3 code/acknowledge_read_plan.py "
+        "--session-id shim-pretool-ack-bootstrap "
+        "--target-path README.md "
+        + " ".join(f"--acknowledged-path {path}" for path in ENTRY_ACK_PATHS)
+        + " --format json"
+    )
+    completed = _run_shim(
+        {
+            "hook_event_name": "PreToolUse",
+            "sessionId": "shim-pretool-ack-bootstrap",
+            "cwd": ROOT.as_posix(),
+            "toolName": "functions.exec_command",
+            "arguments": {"cmd": command},
+        },
+    )
+
+    assert completed.returncode == 0
+    assert completed.stdout == ""
+
+
+def test_codex_sample_shim_does_not_allow_chained_acknowledge_bootstrap_write_without_acknowledgement() -> None:
+    command = (
+        "python3 code/acknowledge_read_plan.py "
+        "--session-id shim-pretool-ack-bootstrap-chain "
+        "--target-path README.md "
+        + " ".join(f"--acknowledged-path {path}" for path in ENTRY_ACK_PATHS)
+        + " --format json && touch tmp/ldvh-bootstrap-leak.txt"
+    )
+    completed = _run_shim(
+        {
+            "hook_event_name": "PreToolUse",
+            "sessionId": "shim-pretool-ack-bootstrap-chain",
+            "cwd": ROOT.as_posix(),
+            "toolName": "functions.exec_command",
+            "arguments": {"cmd": command},
+        },
+        check=False,
+    )
+
+    payload = json.loads(completed.stdout)
+    hook_output = _hook_output(payload)
+    assert completed.returncode == 0
+    assert hook_output["hookEventName"] == "PreToolUse"
+    assert hook_output["permissionDecision"] == "deny"
+    assert "RUNTIME_READ_PLAN_CONSUMED_EMPTY" in hook_output["permissionDecisionReason"]
+
+
+def test_codex_sample_shim_does_not_allow_acknowledge_bootstrap_from_write_tool_without_acknowledgement() -> None:
+    command = (
+        "python3 code/acknowledge_read_plan.py "
+        "--session-id shim-pretool-ack-bootstrap-write-tool "
+        "--target-path README.md "
+        + " ".join(f"--acknowledged-path {path}" for path in ENTRY_ACK_PATHS)
+        + " --format json"
+    )
+    completed = _run_shim(
+        {
+            "hook_event_name": "PreToolUse",
+            "sessionId": "shim-pretool-ack-bootstrap-write-tool",
+            "cwd": ROOT.as_posix(),
+            "toolName": "Write",
+            "tool_input": {"file_path": "README.md"},
+            "cmd": command,
+        },
+        check=False,
+    )
+
+    payload = json.loads(completed.stdout)
+    hook_output = _hook_output(payload)
+    assert completed.returncode == 0
+    assert hook_output["hookEventName"] == "PreToolUse"
+    assert hook_output["permissionDecision"] == "deny"
+    assert "RUNTIME_READ_PLAN_CONSUMED_EMPTY" in hook_output["permissionDecisionReason"]
+
+
 def test_codex_sample_shim_allows_explicit_read_operation_without_acknowledgement() -> None:
     completed = _run_shim(
         {
@@ -705,6 +782,92 @@ def test_workbuddy_sample_shim_session_start_does_not_ack_read_plan(tmp_path: Pa
             "tool_input": {"file_path": "tests/code/test_environment_plugins.py"},
         },
         extra_env=extra_env,
+        check=False,
+    )
+
+    payload = json.loads(completed.stdout)
+    hook_output = _hook_output(payload)
+    assert completed.returncode == 0
+    assert hook_output["hookEventName"] == "PreToolUse"
+    assert hook_output["permissionDecision"] == "deny"
+    assert "RUNTIME_READ_PLAN_CONSUMED_EMPTY" in hook_output["permissionDecisionReason"]
+
+
+def test_workbuddy_sample_shim_allows_acknowledge_read_plan_bootstrap_command_without_acknowledgement(
+    tmp_path: Path,
+) -> None:
+    command = (
+        "python3 code/acknowledge_read_plan.py "
+        "--session-id workbuddy-ack-bootstrap "
+        "--target-path README.md "
+        + " ".join(f"--acknowledged-path {path}" for path in ENTRY_ACK_PATHS)
+        + " --format json"
+    )
+    completed = _run_workbuddy_shim(
+        {
+            "hook_event_name": "PreToolUse",
+            "sessionId": "workbuddy-ack-bootstrap",
+            "cwd": ROOT.as_posix(),
+            "toolName": "functions.exec_command",
+            "arguments": {"cmd": command},
+        },
+        extra_env={"LDVH_RUNTIME_CACHE_DIR": (tmp_path / "runtime-cache").as_posix()},
+    )
+
+    assert completed.returncode == 0
+    assert completed.stdout == ""
+
+
+def test_workbuddy_sample_shim_does_not_allow_chained_acknowledge_bootstrap_write_without_acknowledgement(
+    tmp_path: Path,
+) -> None:
+    command = (
+        "python3 code/acknowledge_read_plan.py "
+        "--session-id workbuddy-ack-bootstrap-chain "
+        "--target-path README.md "
+        + " ".join(f"--acknowledged-path {path}" for path in ENTRY_ACK_PATHS)
+        + " --format json && touch tmp/ldvh-workbuddy-bootstrap-leak.txt"
+    )
+    completed = _run_workbuddy_shim(
+        {
+            "hook_event_name": "PreToolUse",
+            "sessionId": "workbuddy-ack-bootstrap-chain",
+            "cwd": ROOT.as_posix(),
+            "toolName": "functions.exec_command",
+            "arguments": {"cmd": command},
+        },
+        extra_env={"LDVH_RUNTIME_CACHE_DIR": (tmp_path / "runtime-cache").as_posix()},
+        check=False,
+    )
+
+    payload = json.loads(completed.stdout)
+    hook_output = _hook_output(payload)
+    assert completed.returncode == 0
+    assert hook_output["hookEventName"] == "PreToolUse"
+    assert hook_output["permissionDecision"] == "deny"
+    assert "RUNTIME_READ_PLAN_CONSUMED_EMPTY" in hook_output["permissionDecisionReason"]
+
+
+def test_workbuddy_sample_shim_does_not_allow_acknowledge_bootstrap_from_write_tool_without_acknowledgement(
+    tmp_path: Path,
+) -> None:
+    command = (
+        "python3 code/acknowledge_read_plan.py "
+        "--session-id workbuddy-ack-bootstrap-write-tool "
+        "--target-path README.md "
+        + " ".join(f"--acknowledged-path {path}" for path in ENTRY_ACK_PATHS)
+        + " --format json"
+    )
+    completed = _run_workbuddy_shim(
+        {
+            "hook_event_name": "PreToolUse",
+            "sessionId": "workbuddy-ack-bootstrap-write-tool",
+            "cwd": ROOT.as_posix(),
+            "toolName": "Write",
+            "tool_input": {"file_path": "README.md"},
+            "cmd": command,
+        },
+        extra_env={"LDVH_RUNTIME_CACHE_DIR": (tmp_path / "runtime-cache").as_posix()},
         check=False,
     )
 

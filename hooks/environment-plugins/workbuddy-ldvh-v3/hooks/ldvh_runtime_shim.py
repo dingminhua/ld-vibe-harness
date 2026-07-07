@@ -42,6 +42,7 @@ ADAPTER_EVENT_MAP = {
     "Stop": "ldvh.completion_claim",
 }
 READ_ONLY_TOOLS = {"read", "grep", "glob", "ls"}
+COMMAND_EXECUTION_TOOLS = {"bash", "exec_command", "functions.exec_command", "shell"}
 READ_ONLY_COMMANDS = {"cat", "find", "grep", "head", "ls", "nl", "pwd", "rg", "sed", "tail", "wc"}
 READ_ONLY_GIT_SUBCOMMANDS = {
     "branch",
@@ -55,6 +56,7 @@ READ_ONLY_GIT_SUBCOMMANDS = {
     "status",
 }
 READ_ONLY_SHELL_PIPE_COMMANDS = READ_ONLY_COMMANDS | {"xargs"}
+CONTROLLED_BOOTSTRAP_PYTHON_SCRIPTS = {"code/acknowledge_read_plan.py"}
 
 
 def read_payload(raw: str) -> dict[str, Any]:
@@ -210,6 +212,30 @@ def is_likely_read_only_command_segment(command: str) -> bool:
     if executable == "git":
         return len(parts) > 1 and parts[1].lower() in READ_ONLY_GIT_SUBCOMMANDS
     return executable in READ_ONLY_SHELL_PIPE_COMMANDS
+
+
+def is_controlled_read_plan_bootstrap_command(command: str, cwd: Path, ldvh_root: Path) -> bool:
+    stripped = command.strip()
+    if not stripped or re.search(r"[;&|><`$()\n\r]", stripped):
+        return False
+    parts = command_parts(stripped)
+    if len(parts) < 2:
+        return False
+    executable = Path(parts[0]).name.lower()
+    if executable not in {"python", "python3"}:
+        return False
+    script = Path(parts[1].strip()).expanduser()
+    resolved_script = script if script.is_absolute() else cwd / script
+    expected_scripts = {
+        (ldvh_root / script_path).resolve(strict=False)
+        for script_path in CONTROLLED_BOOTSTRAP_PYTHON_SCRIPTS
+    }
+    return resolved_script.resolve(strict=False) in expected_scripts
+
+
+def is_command_execution_tool(payload: dict[str, Any]) -> bool:
+    tool_name = first_text(payload.get("tool_name"), payload.get("toolName"), payload.get("name")).lower()
+    return tool_name in COMMAND_EXECUTION_TOOLS
 
 
 def command_from_record(record: dict[str, Any]) -> str:
@@ -397,7 +423,7 @@ def operation(payload: dict[str, Any]) -> str:
     tool_name = first_text(payload.get("tool_name"), payload.get("toolName"), payload.get("name")).lower()
     if tool_name in READ_ONLY_TOOLS:
         return "read"
-    if tool_name in {"bash", "exec_command", "functions.exec_command", "shell"} and is_likely_read_only_command(command_text(payload)):
+    if tool_name in COMMAND_EXECUTION_TOOLS and is_likely_read_only_command(command_text(payload)):
         return "read"
     return first_text(payload.get("operation"), "write")
 
@@ -717,6 +743,13 @@ def main() -> int:
     record_hook_event_to_spark(ldvh_root, payload, event, cwd)
     runtime_event = adapter_event(event)
     if not runtime_event:
+        return 0
+
+    if (
+        event == "PreToolUse"
+        and is_command_execution_tool(payload)
+        and is_controlled_read_plan_bootstrap_command(command_text(payload), cwd, ldvh_root)
+    ):
         return 0
 
     if event == "PreToolUse" and operation(payload) == "read":

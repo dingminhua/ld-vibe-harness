@@ -61,6 +61,7 @@ READ_ONLY_TOOLS = {
     "multi_agent_v1.wait_agent",
     "multi_agent_v1wait_agent",
 }
+COMMAND_EXECUTION_TOOLS = {"bash", "exec_command", "functions.exec_command", "shell"}
 WRITE_TOOLS = {"write", "edit", "multiedit", "multi_edit", "apply_patch", "functions.apply_patch"}
 READ_OPERATIONS = {"read", "inspect", "search", "grep", "list", "audit", "review", "diagnose"}
 WRITE_OPERATIONS = {"write", "edit", "apply_patch", "commit", "delete", "move", "install", "update"}
@@ -91,6 +92,7 @@ READ_ONLY_PYTHON_SCRIPT_EVENTS = {
     "code/session_start.py": None,
     "code/runtime_adapter.py": {"session-start", "session_start", "--help", "-h"},
 }
+CONTROLLED_BOOTSTRAP_PYTHON_SCRIPTS = {"code/acknowledge_read_plan.py"}
 
 
 @dataclass(frozen=True)
@@ -344,6 +346,25 @@ def is_allowed_read_only_python(parts: list[str]) -> bool:
     return False
 
 
+def is_controlled_read_plan_bootstrap_command(command: str, cwd: Path, ldvh_root: Path) -> bool:
+    stripped = command.strip()
+    if not stripped or re.search(r"[;&|><`$()\n\r]", stripped):
+        return False
+    parts = command_parts(stripped)
+    if len(parts) < 2:
+        return False
+    executable = Path(parts[0]).name.lower()
+    if executable not in {"python", "python3"}:
+        return False
+    script = Path(parts[1].strip()).expanduser()
+    resolved_script = script if script.is_absolute() else cwd / script
+    expected_scripts = {
+        (ldvh_root / script_path).resolve(strict=False)
+        for script_path in CONTROLLED_BOOTSTRAP_PYTHON_SCRIPTS
+    }
+    return resolved_script.resolve(strict=False) in expected_scripts
+
+
 def command_from_record(record: dict[str, Any]) -> str:
     candidates: list[Any] = []
     item = record.get("payload") if isinstance(record.get("payload"), dict) else record
@@ -570,6 +591,10 @@ def tool_matches(tool: ToolCall, names: set[str]) -> bool:
     return tool.name in names or tool.full_name in names
 
 
+def is_command_execution_tool(payload: dict[str, Any]) -> bool:
+    return tool_matches(normalize_tool_call(payload), COMMAND_EXECUTION_TOOLS)
+
+
 def has_read_only_intent(tool: ToolCall) -> bool:
     return any(marker in tool.intent_text for marker in READ_ONLY_INTENT_MARKERS)
 
@@ -596,7 +621,7 @@ def classify_action(payload: dict[str, Any], cwd: Path) -> ActionClassification:
             reason="read_only_tool",
         )
 
-    if tool_matches(tool, {"bash", "exec_command", "functions.exec_command", "shell"}):
+    if tool_matches(tool, COMMAND_EXECUTION_TOOLS):
         if is_likely_read_only_command(command):
             return ActionClassification(
                 operation="read",
@@ -657,7 +682,7 @@ def operation(payload: dict[str, Any], cwd: Path | None = None) -> str:
     tool_name = first_text(payload.get("tool_name"), payload.get("toolName"), payload.get("name")).lower()
     if tool_name in READ_ONLY_TOOLS:
         return "read"
-    if tool_name in {"bash", "exec_command", "functions.exec_command", "shell"} and is_likely_read_only_command(command_text(payload)):
+    if tool_name in COMMAND_EXECUTION_TOOLS and is_likely_read_only_command(command_text(payload)):
         return "read"
     return first_text(payload.get("operation"), "write")
 
@@ -993,6 +1018,12 @@ def main() -> int:
         return 0
 
     action = classify_action(payload, cwd) if event == "PreToolUse" else None
+    if (
+        event == "PreToolUse"
+        and is_command_execution_tool(payload)
+        and is_controlled_read_plan_bootstrap_command(command_text(payload), cwd, ldvh_root)
+    ):
+        return 0
     if action and not action.requires_preflight:
         return 0
 

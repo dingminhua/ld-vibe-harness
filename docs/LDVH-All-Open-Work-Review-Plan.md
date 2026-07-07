@@ -85,7 +85,7 @@ LDVH 的总目标不变：
 | completion_claim 只检查 evidence 非空，不消费 preflight diagnostic | 新增 P1：completion_claim 完成前诊断消费 |
 | Code 顶层无显式六类 `scope_status` | 新增 P1：Code schema 合规 |
 | Code 不支持 `declared_multi_governed` | 新增 P1：显式跨管辖对象只读审计路径 |
-| cwd 在 ldvh_root 内且无 receipt 时，生成 receipt 的入口也会被 Hook 拦截 | 新增 P1：hook bootstrapping 死锁 |
+| cwd 在 ldvh_root 内且无 receipt 时，生成 receipt 的入口也会被 Hook 拦截 | P1 已开始承接：Code / shim 已补 `acknowledge_read_plan` bootstrap allowance 和回归，仍需真实环境当次验收 |
 | Codex / WorkBuddy shim sed-i 已对齐，但命令分类已有 `&` 漂移 | 新增 P1：抽共享分类器 |
 
 ## 3. 已讨论出的工作总表
@@ -209,7 +209,7 @@ LDVH 的总目标不变：
 | 环境原生事件到 `ldvh.*` 的映射规则 | `01` / environment docs | 部分完成 | P1 |
 | integrated 声明只基于当时可观测验收 | `01` / `10` | 已讨论，需复核 | P1 |
 | Codex / WorkBuddy 行为边界与 payload parity | hooks / tests | 待复核 | P1 |
-| hook bootstrapping 死锁 | `01` / `07` / Code | 无 receipt 时生成 receipt 的入口也可能被拦截 | P1 |
+| hook bootstrapping 死锁 | `01` / `07` / Code | Codex / WorkBuddy shim 已补 `acknowledge_read_plan` 受控 bootstrap allowance；仍需真实环境当次验收 | P1 |
 
 外部 AI 需评审：
 
@@ -578,7 +578,7 @@ target -> operation -> risk -> phase -> decision / verification_plan -> diagnost
 
 | 事项 | 主归口 | 协作归口 | 执行类型 | 说明 |
 |---|---|---|---|---|
-| hook bootstrapping 死锁 | `01` | `07` / Code | `spec-first + HG` -> `code-after-spec` | receipt 生成入口本身不能被 read_plan 检查拦截 |
+| hook bootstrapping 死锁 | `01` | `07` / Code | `code-after-existing-spec` | Code / shim 已补受控入口，仍需真实环境当次验收；receipt 生成入口本身不能被 read_plan 检查拦截 |
 | completion_claim 消费当前 diagnostic | `01` | `07` / Code / tests | `spec-first + HG` -> `code-after-spec` | 完成声明不能只看 evidence 非空 |
 | resolver 输出显式六类 `scope_status` | `07` | Code / `10` / tests | `spec-first + HG` -> `code-after-spec` | specs 要求六类，Code 顶层 schema 待补 |
 | `declared_multi_governed` 只读审计路径 | `10` | `07` / Code / tests | `spec-first + HG` -> `code-after-spec` | Human 显式跨对象审计不应被普通多项目混合阻断 |
@@ -614,7 +614,7 @@ target -> operation -> risk -> phase -> decision / verification_plan -> diagnost
 
 1. **确认 P0 specs 小步补强已完成**：repair lane 契约已回写，`01/02/07/09` 待补齐事项已同步修正；
 2. **Human 决策 WorkCase**：决定是否创建或指定顶层 WorkCase 承接本轮体系重构；
-3. **优先处理 P1 bootstrapping**：定义并实现 read_plan receipt 生成入口的受控放行路径；
+3. **收尾 P1 bootstrapping**：本地已实现 read_plan receipt 生成入口的受控放行路径，下一步补真实环境当次验收；
 4. **处理 P1 完成声明和 scope schema**：补 completion_claim diagnostic 消费、`scope_status`、`declared_multi_governed`；
 5. **补 Action Guide / 验证选择 / 能力模型**：先 specs，后 Code 和 tests；
 6. **处理 shim 漂移和回归测试**：抽共享分类器，补 runtime scoping / no-op / repair / mixed scope 回归；
