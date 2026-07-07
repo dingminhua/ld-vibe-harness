@@ -5,9 +5,9 @@ goal: |
   承接 spark-0039，建立 LDVH v3 旁路实验线的第一阶段执行方案。目标不是立即迁移全部 specs、重写全部 Code 或替换 v2 knowledge-map，而是先把 `../ld-vibe-harness-v3` + `dev-v3` + 管辖项目登记 + 无版本号内部目录 + 最小格式化规范 / compiler / 行动指南 / fixtures / tests 闭环设计清楚，并准备进入 Human 方案确认。
 
   本 WorkCase 要处理“工作项目可能很多”的风险：将 v3 大方向拆成第一阶段可验证闭环与后续 followup，不把 v2 全量迁移、Runtime 接入、安装 bootstrap、Web 展示、Skill 注册和旧 knowledge-map 删除混入同一轮执行。
-status: result_self_checking
+status: closed
 created: '2026-06-27T23:23:10.196893'
-updated: '2026-06-28T03:35:00+08:00'
+updated: '2026-07-07T13:00:00+08:00'
 priority: P1
 description: |
   Human 已确认 v3 可以大胆推进，但版本隔离应由同级 worktree、分支和管辖项目 id 承载；新工作树内部目录不带版本号，以免未来成熟后再迁移目录名。Human 同时提醒，目标句必须带定语：格式化规范应限定为面向 LDVH 规范、事实对象和运行时资产的结构化契约；确定性 Code 应限定为只读、实时、可复查、无语义猜测的编译层；知识地图 / 行动指南应限定为面向当前任务和目标对象的实时任务导航投影。
@@ -293,8 +293,24 @@ orchestration:
       aggregation_rule: |
         result_review.review_items 为空时不得进入 human_closure_confirming 或 closed；存在 fail 或 needs_human_gate 结论时不得提交 Human 关闭确认。
     review_items: []
-    controller_resolution: null
-    human_closure_confirmation: null
+    controller_resolution:
+      status: closed_by_current_v3_mainline
+      summary: |
+        Human 明确决定直接关闭本 WorkCase。0022 承载的是 v3 sidecar / specs + Code 第一阶段探索路线，其早期“v2 继续稳定服务、待整体迁移”的表述不再作为当前推进承诺。当前删除准备度、V2 关键内容是否已迁入、以及本地 V2 是否可删除，改由 `workcase-0024` 承接。
+      resolved_at: '2026-07-07T13:00:00+08:00'
+      unresolved_items:
+        - V2 关键内容迁移完整性尚未确认；Human 当前只明确把握 00 已审核。
+        - specs/03、05、06 和若干事实对象仍存在 V2 删除准备度收口项。
+      followup_items:
+        - workcase-0024
+    human_closure_confirmation:
+      decision: closed
+      confirmer: Human
+      confirmed_at: '2026-07-07T13:00:00+08:00'
+      scope: |
+        关闭 `workcase-0022` 作为 v3 sidecar / 第一阶段路线载体；关闭不等于确认 V2 关键内容已经完整迁入。
+      summary: |
+        Human 要求 `workcase-0022` 直接关闭，同时指出仍担心 V2 关键内容是否已经搬到 V3；该担心由 `workcase-0024` 继续审计和收口。
 plan_confirmed_at: '2026-06-28T00:31:00+08:00'
 verification_evidence: |
   ## 验证计划
@@ -352,20 +368,53 @@ verification_evidence: |
   ## 结论
 
   v3 旁路干净根、最小闭环、管辖登记和首个提交已完成；Runtime / Hook 层面的 worktree 消歧不在本轮授权范围内，后续推进前必须单独沟通方案。
-closure_evidence: ''
-closure_requested_at: ''
-review_requested_at: ''
-closed_at: ''
-closure_outcome: ''
+closure_evidence: |
+  ## 关闭判断
+
+  Human 已明确要求 `workcase-0022` 直接关闭。该 WorkCase 的历史价值是记录 v3 sidecar / specs + Code 第一阶段探索、干净根、临时迁移准入、MD 直读和 specs 膨胀扫描等早期路线。当前 V3 已进入正式主线，且 `workcase-0024` 已专门承接 V2 删除准备度收口。
+
+  因此，`workcase-0022` 不再作为当前迁移计划、V2 删除判断或 V3 主线切换的推进对象。
+
+  ## 后续分流 / 收口结果
+
+  - V2 关键内容是否已完整迁入：转由 `workcase-0024` 承接，不能因关闭 0022 而声明完成。
+  - V2 删除准备度：转由 `workcase-0024` 承接，当前仍有 specs/03、05、06 和事实对象旧路线承诺需要收口。
+  - 0022 中早期“v2 继续稳定服务 / 待整体迁移”的表述：保留为历史背景，不再作为当前活承诺。
+  - 若后续需要追溯 0022 的迁移实验、临时 inventory 或 MD 直读证据，应按 Git history 和本 WorkCase 记录读取，不重新打开 0022 作为执行计划。
+closure_requested_at: '2026-07-07T13:00:00+08:00'
+review_requested_at: '2026-07-07T13:00:00+08:00'
+closed_at: '2026-07-07T13:00:00+08:00'
+closure_outcome: superseded_by_current_v3_mainline
 residual_risks:
   - v3 方向可能拆出多个 WorkCase；本 WorkCase 只承接第一阶段方案和最小闭环，不能作为全部 v3 改造的完成证明。
   - v3 与 v2 仍共享 Git common_dir；当前只增加配置，不改变 Runtime / Hook 策略，因此后续真实 hook 提交和运行时识别仍可能需要单独消歧设计。
   - v3 目前只迁入最小 action guide 编译闭环，尚未迁入 v2 adapter、Runtime/Skill/Web 接入或真实 ldvh-base 事实对象。
   - '`git-history:_migration/` 是临时迁移脚手架，后续如果被正式代码引用或被当成事实源，会重新引入体系膨胀风险；必须保持可整体删除。'
   - 行动指南命名可能与当前 v2 knowledge-map 入口形成概念重叠；第一阶段不得删除或弱化 v2 入口。
+  - V2 关键内容迁移完整性仍未确认；Human 当前只明确把握 00 已审核，后续必须由 `workcase-0024` 按删除准备度逐项审计。
 followup_refs:
   - spark-0039
+  - workcase-0024
 revision_history:
+  - at: '2026-07-07T13:00:00+08:00'
+    actor: main-controller-codex
+    from_status: result_self_checking
+    to_status: closed
+    reason: Human 明确要求直接关闭 0022，并将 V2 关键内容迁移完整性担忧转由 0024 承接。
+    changed_fields:
+      - status
+      - updated
+      - closure_evidence
+      - closure_requested_at
+      - review_requested_at
+      - closed_at
+      - closure_outcome
+      - residual_risks
+      - followup_refs
+      - orchestration.result_review.controller_resolution
+      - orchestration.result_review.human_closure_confirmation
+    summary: |
+      0022 作为 v3 sidecar / specs + Code 第一阶段探索载体关闭。关闭不声明 V2 关键内容已经完整迁入；该风险和删除准备度收口已分流到 `workcase-0024`。
   - at: '2026-06-28T00:36:00+08:00'
     actor: main-controller-codex
     from_status: subagents_plan_reviewing
