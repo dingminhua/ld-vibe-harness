@@ -644,12 +644,33 @@ GOVERNED_PROJECT_REQUIRED_RESOLUTION_FIELDS = [
     "normalized_path",
     "source",
     "status",
+    "scope_status",
     "governed_project_id",
     "governed_project_path",
     "governed_via",
     "git_common_dir",
     "unknown_reason",
 ]
+GOVERNED_SCOPE_STATUSES = {
+    "governed_single",
+    "non_governed",
+    "scope_unknown",
+    "governed_target_unknown",
+    "declared_multi_governed",
+    "mixed_scope",
+}
+DECLARED_MULTI_GOVERNED_READ_KINDS = {"read", "audit", "review", "inspect", "compare"}
+
+
+def governed_scope_kind_for_operation(operation: str) -> str:
+    normalized = operation.replace("-", "_").lower()
+    if normalized == "commit":
+        return "commit"
+    if normalized in DECLARED_MULTI_GOVERNED_READ_KINDS:
+        return normalized
+    return "write"
+
+
 GOVERNED_PROJECT_SPEC_REQUIREMENTS = [
     {
         "code": "GOVERNED_PROJECT_CONFIG_BOUNDARY_MISSING",
@@ -2397,6 +2418,7 @@ def resolve_governed_subject(
     raw_targets = [Path(path) for path in (target_paths or []) if str(path).strip()]
     explicit_targets = bool(raw_targets)
     effective_targets = raw_targets if explicit_targets else [base_cwd]
+    normalized_read_write_kind = read_write_kind.replace("-", "_").lower()
     config_hierarchy = inspect_governed_config_hierarchy(
         root,
         config_root=config_root,
@@ -2413,13 +2435,16 @@ def resolve_governed_subject(
         "governed": False,
         "blocked": False,
         "blocked_reason": "",
+        "scope_status": "scope_unknown",
         "cwd": base_cwd.as_posix(),
         "target_paths": [_resolve_path(path, base_cwd).as_posix() for path in effective_targets],
         "target_resolutions": [],
+        "governed_subjects": [],
         "governed_subject": "",
         "governed_via": "",
         "governed_project_id": "",
         "governed_project_path": "",
+        "unknown_reason": "config_missing" if config is None else "",
         "config_path": config.relative_to(root).as_posix() if config and config.is_relative_to(root) else config.as_posix() if config else "",
         "config_path_absolute": config.as_posix() if config else "",
         "config_hierarchy": config_hierarchy,
@@ -2431,6 +2456,8 @@ def resolve_governed_subject(
         result.update({
             "blocked": True,
             "blocked_reason": config_hierarchy["blocked_reason"],
+            "scope_status": "mixed_scope",
+            "unknown_reason": config_hierarchy["blocked_reason"],
             "message": config_hierarchy["message"],
         })
         return result
@@ -2447,6 +2474,8 @@ def resolve_governed_subject(
         result.update({
             "blocked": True,
             "blocked_reason": "ambiguous_governed_project",
+            "scope_status": "mixed_scope",
+            "unknown_reason": "ambiguous_governed_project",
             "message": "Git identity 命中多个管辖项目，必须拆分或进入 Human Gate。",
         })
         return result
@@ -2455,26 +2484,66 @@ def resolve_governed_subject(
     nongoverned = [item for item in resolutions if not item["governed"]]
     governed_keys = {item["project_key"] or item["governed_project_path"] for item in governed}
     if len(governed_keys) > 1:
+        governed_subjects = [
+            {
+                "governed_subject": item["normalized_path"],
+                "governed_project_id": item["governed_project_id"],
+                "governed_project_path": item["governed_project_path"],
+                "governed_via": item["governed_via"],
+                "project_key": item["project_key"],
+            }
+            for item in governed
+        ]
+        if normalized_read_write_kind in DECLARED_MULTI_GOVERNED_READ_KINDS:
+            result.update({
+                "governed": True,
+                "scope_status": "declared_multi_governed",
+                "governed_subjects": governed_subjects,
+                "message": "Human 显式发起跨管辖对象读取、审计或对比；必须保留每个对象独立归口、证据、验证和风险。",
+            })
+            return result
         result.update({
             "blocked": True,
             "blocked_reason": "multiple_governed_projects",
+            "scope_status": "mixed_scope",
+            "governed_subjects": governed_subjects,
+            "unknown_reason": "multiple_governed_projects",
             "message": "一次操作命中多个管辖项目，必须拆分或进入 Human Gate。",
         })
         return result
-    if governed and nongoverned and explicit_targets and read_write_kind in {"write", "commit"}:
+    if governed and nongoverned and explicit_targets:
         result.update({
             "blocked": True,
             "blocked_reason": "mixed_governed_and_ungoverned_targets",
-            "message": "一次写入操作混合管辖与非管辖 target，必须拆分或进入 Human Gate。",
+            "scope_status": "mixed_scope",
+            "unknown_reason": "mixed_governed_and_ungoverned_targets",
+            "message": "一次操作混合管辖与非管辖 target，必须拆分或进入 Human Gate。",
         })
         return result
     if not governed:
+        result["scope_status"] = "non_governed"
+        result["unknown_reason"] = "not_in_governed_project"
         result["message"] = "工作对象未命中管辖项目，no-op"
         return result
 
     subject = governed[0]
+    scope_status = (
+        "governed_target_unknown"
+        if not explicit_targets and normalized_read_write_kind in {"write", "commit"}
+        else "governed_single"
+    )
     result.update({
         "governed": True,
+        "scope_status": scope_status,
+        "governed_subjects": [
+            {
+                "governed_subject": subject["normalized_path"],
+                "governed_project_id": subject["governed_project_id"],
+                "governed_project_path": subject["governed_project_path"],
+                "governed_via": subject["governed_via"],
+                "project_key": subject["project_key"],
+            }
+        ],
         "governed_subject": subject["normalized_path"],
         "governed_via": subject["governed_via"],
         "governed_project_id": subject["governed_project_id"],
@@ -3764,7 +3833,7 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
     fact_instances = parse_fact_instances(root)
     governed_projects_config = parse_governed_projects_config(root)
     governed_project_config_contract = parse_governed_project_config_contract(root)
-    governed_project_resolution = resolve_governed_subject(root, cwd=root, target_paths=[])
+    governed_project_resolution = resolve_governed_subject(root, cwd=root, target_paths=[], read_write_kind="read")
     attachment_contracts = {
         "commit_message_contract": parse_commit_message_contract(root),
         "field_registry_contract": parse_field_registry_contract(root),
@@ -3919,6 +3988,7 @@ def build_governed_projects_report(
         "summary": {
             "status": status,
             "projects": len(config["projects"]),
+            "scope_status": resolution["scope_status"],
             "governed": resolution["governed"],
             "blocked": resolution["blocked"],
             "diagnostics": len(diagnostics),
@@ -4488,6 +4558,7 @@ def _build_preflight_no_op(
         "summary": {
             "status": "no_op",
             "operation": operation,
+            "scope_status": governed_project.get("scope_status", "non_governed"),
             "target_type": "non_governed",
             "impact": "none",
             "diagnostics": 0,
@@ -4541,7 +4612,7 @@ def build_preflight(
         root,
         cwd=cwd or root,
         target_paths=raw_scope_targets,
-        read_write_kind="commit" if operation == "commit" else "write",
+        read_write_kind=governed_scope_kind_for_operation(operation),
         config_root=config_root,
     )
     if _should_noop_for_nongoverned_scope(root, classification, governed_project):
@@ -4713,6 +4784,7 @@ def build_preflight(
             "status": status,
             "operation": operation,
             "mode": "repair" if repair_mode else "normal",
+            "scope_status": governed_project.get("scope_status", ""),
             "target_type": target_type,
             "impact": impact,
             "diagnostics": len(diagnostics),
@@ -5114,7 +5186,7 @@ def build_runtime_scope_noop_preflight(
         root,
         cwd=cwd or root,
         target_paths=raw_scope_targets,
-        read_write_kind="commit" if operation == "commit" else "write",
+        read_write_kind=governed_scope_kind_for_operation(operation),
         config_root=config_root,
     )
     if not _should_noop_for_nongoverned_scope(root, classification, governed_project):
@@ -5186,6 +5258,7 @@ def build_runtime_no_op_event(
             "event": canonical_event,
             "internal_event": internal_event,
             "trigger_source": trigger_source,
+            "scope_status": (preflight or {}).get("governed_project", {}).get("scope_status", "") if preflight else "",
             "diagnostics": 0,
             "blocking": 0,
             "receipt_status": "no_op",
@@ -5480,6 +5553,7 @@ def build_runtime_event(
             "event": canonical_event,
             "internal_event": normalized_event,
             "trigger_source": trigger_source,
+            "scope_status": (preflight or {}).get("governed_project", {}).get("scope_status", "") if preflight else "",
             "diagnostics": len(diagnostics),
             "blocking": blocking_count,
             "target_primary": scope_counts["target_primary"],
@@ -5559,7 +5633,7 @@ def build_e2e_rehearsal(
         root,
         cwd=root,
         target_paths=[normalized_target] if normalized_target else [],
-        read_write_kind="commit" if operation == "commit" else "write",
+        read_write_kind=governed_scope_kind_for_operation(operation),
     )
     session_start = build_runtime_event(
         root,

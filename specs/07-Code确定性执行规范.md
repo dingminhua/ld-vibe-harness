@@ -232,8 +232,8 @@ Code 暴露规范缺口时，应输出 diagnostic 并回到对应规范、授权
 
 当前已识别以下待补齐事项。Code 不得在这些事项补齐前把实现输出写成规则已完整承接：
 
-1. 六类管辖解析需要显式 `scope_status` 输出：涉及管辖项目、preflight 或 runtime facade 的 Code 输出应在顶层表达 `governed_single`、`non_governed`、`scope_unknown`、`governed_target_unknown`、`declared_multi_governed` 或 `mixed_scope`，而不是要求消费者从 `governed`、`blocked` 或 message 反推；
-2. `declared_multi_governed` 的只读审计路径需要补齐：Human 明确发起跨管辖对象读取、审计或对比时，Code resolver 应能表达该分类；写入、提交、迁移和事实源回写仍必须拆分或进入 Human Gate；
+1. 六类管辖解析显式 `scope_status` 输出已补本地承接：涉及管辖项目、preflight 或 runtime facade 的 Code 输出必须继续在顶层表达 `governed_single`、`non_governed`、`scope_unknown`、`governed_target_unknown`、`declared_multi_governed` 或 `mixed_scope`，不得退回让消费者从 `governed`、`blocked` 或 message 反推；
+2. `declared_multi_governed` 的只读审计路径已补本地承接：Human 明确发起跨管辖对象读取、审计或对比时，Code resolver 应表达该分类；写入、提交、迁移和事实源回写仍必须拆分或进入 Human Gate；
 3. `ldvh.completion_claim` 已补当前 diagnostic 消费：runtime facade 不得只检查验证证据非空，必须继续输出未解决 blocker、未验证范围和残留风险的可消费摘要，并保留回归覆盖；
 4. read_plan receipt bootstrap 路径已补受控放行边界；后续仍需保持 `ldvh.acknowledge_read_plan` 或等价 runtime receipt 入口不被 read_plan 消费检查自锁，且不得扩展为任意命令 bypass；
 5. Action Guide governed project 链路需要补齐：Code 生成行动指南时应能消费 10 的管辖解析结果，并区分 LDVH specs、LDVH facts、管辖项目 facts 和过程输出；

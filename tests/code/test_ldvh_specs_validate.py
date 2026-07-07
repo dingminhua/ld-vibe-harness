@@ -583,6 +583,7 @@ def test_migrated_attachment_contracts_are_code_consumable(validation_result: di
         "target",
         "normalized_path",
         "status",
+        "scope_status",
         "governed_project_id",
         "unknown_reason",
     }
@@ -598,6 +599,7 @@ def test_governed_projects_config_is_code_consumable(validation_result: dict) ->
     assert config["product_name"].strip()
     assert "ldvh-v3" in project_ids
     assert resolution["governed"] is True
+    assert resolution["scope_status"] == "governed_single"
     assert resolution["governed_project_id"] == "ldvh-v3"
     assert resolution["governed_via"] == "path"
 
@@ -733,6 +735,8 @@ projects:
 
     assert report["summary"]["status"] == "ok"
     assert report["resolution"]["governed"] is True
+    assert report["summary"]["scope_status"] == "governed_single"
+    assert report["resolution"]["scope_status"] == "governed_single"
     assert report["resolution"]["subject_source"] == "target"
     assert report["resolution"]["governed_project_id"] == "app"
     assert report["resolution"]["target_resolutions"][0]["status"] == "governed"
@@ -838,7 +842,19 @@ projects:
 
     assert resolution["governed"] is False
     assert resolution["blocked"] is False
+    assert resolution["scope_status"] == "non_governed"
     assert resolution["target_resolutions"][0]["status"] == "not_governed"
+
+
+def test_governed_project_resolver_marks_missing_config_as_scope_unknown(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+
+    resolution = ldvh_specs.resolve_governed_subject(root, cwd=root, target_paths=[])
+
+    assert resolution["governed"] is False
+    assert resolution["blocked"] is False
+    assert resolution["scope_status"] == "scope_unknown"
+    assert resolution["unknown_reason"] == "config_missing"
 
 
 def test_governed_project_resolver_blocks_mixed_write_targets(tmp_path: Path) -> None:
@@ -866,7 +882,72 @@ projects:
     )
 
     assert resolution["blocked"] is True
+    assert resolution["scope_status"] == "mixed_scope"
     assert resolution["blocked_reason"] == "mixed_governed_and_ungoverned_targets"
+
+
+def test_governed_project_resolver_supports_declared_multi_governed_read_audit(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    project_a = root / "governed-a"
+    project_b = root / "governed-b"
+    project_a.mkdir()
+    project_b.mkdir()
+    _write_governed_config(
+        root,
+        """
+product_name: Test
+product_description: Test registry
+projects:
+  - id: app-a
+    path: governed-a
+  - id: app-b
+    path: governed-b
+""",
+    )
+
+    resolution = ldvh_specs.resolve_governed_subject(
+        root,
+        cwd=root,
+        target_paths=[project_a / "README.md", project_b / "README.md"],
+        read_write_kind="audit",
+    )
+
+    assert resolution["blocked"] is False
+    assert resolution["governed"] is True
+    assert resolution["scope_status"] == "declared_multi_governed"
+    assert {item["governed_project_id"] for item in resolution["governed_subjects"]} == {"app-a", "app-b"}
+
+
+def test_governed_project_resolver_blocks_multi_governed_write_as_mixed_scope(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    project_a = root / "governed-a"
+    project_b = root / "governed-b"
+    project_a.mkdir()
+    project_b.mkdir()
+    _write_governed_config(
+        root,
+        """
+product_name: Test
+product_description: Test registry
+projects:
+  - id: app-a
+    path: governed-a
+  - id: app-b
+    path: governed-b
+""",
+    )
+
+    resolution = ldvh_specs.resolve_governed_subject(
+        root,
+        cwd=root,
+        target_paths=[project_a / "README.md", project_b / "README.md"],
+        read_write_kind="write",
+    )
+
+    assert resolution["blocked"] is True
+    assert resolution["scope_status"] == "mixed_scope"
+    assert resolution["blocked_reason"] == "multiple_governed_projects"
+    assert {item["governed_project_id"] for item in resolution["governed_subjects"]} == {"app-a", "app-b"}
 
 
 def test_governed_project_resolver_matches_git_worktree_common_dir(tmp_path: Path) -> None:
@@ -2486,6 +2567,69 @@ def test_preflight_known_tests_target_uses_diagnostic_clear_status(validation_re
     }.issubset(read_paths)
 
 
+def test_preflight_declared_multi_governed_audit_consumes_scope_kind(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _write_governed_config(
+        root,
+        """
+product_name: Test
+product_description: Test registry
+projects:
+  - id: specs-area
+    path: specs
+  - id: tests-area
+    path: tests
+""",
+    )
+
+    preflight = ldvh_specs.build_preflight(
+        root,
+        target_path=(root / "specs/01-保障与衔接.md").as_posix(),
+        target_paths=[
+            root / "specs/01-保障与衔接.md",
+            root / "tests/code/test_ldvh_specs_validate.py",
+        ],
+        operation="audit",
+        validation=ldvh_specs.build_validation(root),
+    )
+
+    assert preflight["summary"]["scope_status"] == "declared_multi_governed"
+    assert preflight["governed_project"]["scope_status"] == "declared_multi_governed"
+    assert "PREFLIGHT_GOVERNED_PROJECT_BOUNDARY" not in _diagnostic_codes(preflight)
+
+
+def test_preflight_multi_governed_write_blocks_as_mixed_scope(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _write_governed_config(
+        root,
+        """
+product_name: Test
+product_description: Test registry
+projects:
+  - id: specs-area
+    path: specs
+  - id: tests-area
+    path: tests
+""",
+    )
+
+    preflight = ldvh_specs.build_preflight(
+        root,
+        target_path=(root / "specs/01-保障与衔接.md").as_posix(),
+        target_paths=[
+            root / "specs/01-保障与衔接.md",
+            root / "tests/code/test_ldvh_specs_validate.py",
+        ],
+        operation="write",
+        validation=ldvh_specs.build_validation(root),
+    )
+
+    assert preflight["summary"]["status"] == "blocked"
+    assert preflight["summary"]["scope_status"] == "mixed_scope"
+    assert preflight["governed_project"]["blocked_reason"] == "multiple_governed_projects"
+    assert "PREFLIGHT_GOVERNED_PROJECT_BOUNDARY" in _diagnostic_codes(preflight)
+
+
 def test_preflight_workcase_fact_instance_target_is_recognized(validation_result: dict) -> None:
     preflight = ldvh_specs.build_preflight(
         ROOT,
@@ -3137,9 +3281,11 @@ def test_runtime_external_pre_tool_use_noops_before_read_plan_ack(tmp_path: Path
     )
 
     assert runtime["summary"]["status"] == "no_op"
+    assert runtime["summary"]["scope_status"] in {"non_governed", "scope_unknown"}
     assert runtime["summary"]["blocking"] == 0
     assert runtime["action_guide"] is None
     assert runtime["preflight"]["summary"]["status"] == "no_op"
+    assert runtime["preflight"]["summary"]["scope_status"] in {"non_governed", "scope_unknown"}
     assert runtime["preflight"]["required_read_plan"] == []
     assert runtime["diagnostics"] == []
 
@@ -3172,7 +3318,9 @@ projects:
 
     assert runtime["summary"]["status"] == "blocked"
     assert runtime["preflight"]["summary"]["status"] == "blocked"
+    assert runtime["preflight"]["summary"]["scope_status"] == "governed_single"
     assert runtime["preflight"]["governed_project"]["governed"] is True
+    assert runtime["preflight"]["governed_project"]["scope_status"] == "governed_single"
     assert runtime["diagnostics"][0]["code"] == "RUNTIME_READ_PLAN_CONSUMED_EMPTY"
 
 
@@ -3554,8 +3702,10 @@ def test_pre_tool_use_cli_blocks_missing_target() -> None:
     payload = json.loads(completed.stdout)
     assert completed.returncode == 1
     assert payload["summary"]["status"] == "blocked"
+    assert payload["summary"]["scope_status"] == "governed_target_unknown"
     assert "PREFLIGHT_TARGET_UNKNOWN" in _diagnostic_codes(payload)
     assert payload["preflight"]["summary"]["target_type"] == "unknown"
+    assert payload["preflight"]["summary"]["scope_status"] == "governed_target_unknown"
 
 
 def test_pre_tool_use_cli_external_nongoverned_noops_without_ack(tmp_path: Path) -> None:
