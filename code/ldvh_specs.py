@@ -4100,7 +4100,7 @@ def build_action_guide(
             if item.get("path")
         }
     )
-    diagnostics = validation["diagnostics"] + guide_diagnostics
+    diagnostics = guide_diagnostics
     status = "ok" if not diagnostics else "failed"
 
     return {
@@ -4272,6 +4272,123 @@ def preflight_read_plan_for_target(classification: dict[str, str]) -> list[dict[
         }
         for path in dict.fromkeys(read_paths)
     ]
+
+
+REPAIRABLE_FACT_INSTANCE_DIAGNOSTIC_CODES = {
+    "FACT_INSTANCE_PARSE_FAILED",
+    "FACT_INSTANCE_REQUIRED_FIELD_MISSING",
+    "FACT_INSTANCE_FIELD_UNKNOWN",
+    "FACT_INSTANCE_REFERENCE_MISSING",
+    "FACT_INSTANCE_ID_FILENAME_MISMATCH",
+    "FACT_INSTANCE_TYPE_MISMATCH",
+    "FACT_INSTANCE_ID_DUPLICATE",
+    "FACT_INSTANCE_STATUS_INVALID",
+    "FACT_INSTANCE_LEGACY_FIELD_FORBIDDEN",
+}
+TARGET_SCOPED_BLOCKING_SCOPES = {"target_primary", "runtime_blocker"}
+
+
+def _diagnostic_with_scope(diagnostic: dict[str, Any], scope: str) -> dict[str, Any]:
+    scoped = dict(diagnostic)
+    scoped.setdefault("diagnostic_scope", scope)
+    if scope in {"target_cascade", "unrelated_global"}:
+        scoped.setdefault("disposition", "informational")
+    elif scope == "target_primary":
+        scoped.setdefault("disposition", "blocking")
+    elif scope == "runtime_blocker":
+        scoped.setdefault("disposition", "blocking" if scoped.get("level") in {"error", "blocking"} else "review")
+    return scoped
+
+
+def _runtime_diagnostic(level: str, code: str, path: str, message: str, disposition: str = "blocking") -> dict[str, Any]:
+    return {
+        "level": level,
+        "code": code,
+        "path": path,
+        "message": message,
+        "disposition": disposition,
+        "diagnostic_scope": "runtime_blocker",
+    }
+
+
+def _normalized_scope_targets(
+    root: Path,
+    target_path: str,
+    target_paths: list[str | Path] | None,
+    cwd: str | Path | None = None,
+) -> list[str]:
+    values: list[str] = []
+    for raw_target in _scope_target_values(target_path, target_paths):
+        normalized = normalize_target_path_for_root(root, str(raw_target), cwd)
+        if normalized:
+            values.append(normalized)
+    normalized_primary = normalize_target_path_for_root(root, target_path, cwd)
+    if normalized_primary:
+        values.append(normalized_primary)
+    return list(dict.fromkeys(values))
+
+
+def _fact_ids_for_target_paths(target_paths: list[str]) -> set[str]:
+    return {
+        fact_id
+        for fact_id in (_fact_instance_id_from_filename(Path(path)) for path in target_paths)
+        if fact_id
+    }
+
+
+def _validation_diagnostic_scope(
+    diagnostic: dict[str, Any],
+    target_paths: set[str],
+    target_fact_ids: set[str],
+) -> str:
+    path = normalize_relative_path(str(diagnostic.get("path") or ""))
+    if path in target_paths:
+        return "target_primary"
+    if (
+        diagnostic.get("code") == "FACT_INSTANCE_REFERENCE_MISSING"
+        and any(fact_id and fact_id in str(diagnostic.get("message") or "") for fact_id in target_fact_ids)
+    ):
+        return "target_cascade"
+    return "unrelated_global"
+
+
+def _scoped_validation_diagnostics(validation: dict[str, Any], target_paths: list[str]) -> list[dict[str, Any]]:
+    normalized_targets = set(target_paths)
+    target_fact_ids = _fact_ids_for_target_paths(target_paths)
+    return [
+        _diagnostic_with_scope(
+            diagnostic,
+            _validation_diagnostic_scope(diagnostic, normalized_targets, target_fact_ids),
+        )
+        for diagnostic in validation.get("diagnostics", [])
+    ]
+
+
+def _diagnostic_scope_counts(diagnostics: list[dict[str, Any]]) -> dict[str, int]:
+    counts = {
+        "target_primary": 0,
+        "target_cascade": 0,
+        "unrelated_global": 0,
+        "runtime_blocker": 0,
+    }
+    for diagnostic in diagnostics:
+        scope = str(diagnostic.get("diagnostic_scope") or "runtime_blocker")
+        if scope in counts:
+            counts[scope] += 1
+    return counts
+
+
+def _is_blocking_for_runtime(diagnostic: dict[str, Any], *, repair_mode: bool = False) -> bool:
+    if diagnostic.get("level") not in {"error", "blocking"}:
+        return False
+    scope = str(diagnostic.get("diagnostic_scope") or "runtime_blocker")
+    if scope == "target_primary" and repair_mode and diagnostic.get("code") in REPAIRABLE_FACT_INSTANCE_DIAGNOSTIC_CODES:
+        return False
+    return scope in TARGET_SCOPED_BLOCKING_SCOPES
+
+
+def _runtime_blocking_count(diagnostics: list[dict[str, Any]], *, repair_mode: bool = False) -> int:
+    return sum(1 for diagnostic in diagnostics if _is_blocking_for_runtime(diagnostic, repair_mode=repair_mode))
 
 
 def _scope_target_values(target_path: str, target_paths: list[str | Path] | None) -> list[str | Path]:
@@ -4450,82 +4567,88 @@ def build_preflight(
         validation=validation,
     )
 
-    diagnostics: list[dict[str, str]] = list(validation["diagnostics"])
+    scope_targets = _normalized_scope_targets(root, target_path, target_paths, cwd)
+    if operation == "commit":
+        diagnostics: list[dict[str, Any]] = [
+            _diagnostic_with_scope(diagnostic, "runtime_blocker")
+            for diagnostic in validation.get("diagnostics", [])
+        ]
+    else:
+        diagnostics = _scoped_validation_diagnostics(validation, scope_targets)
     target_type = classification["target_type"]
     impact = classification["impact"]
     normalized_target = classification["target_path"]
 
     if target_type == "unknown":
-        diagnostics.append({
-            "level": "blocking",
-            "code": "PREFLIGHT_TARGET_UNKNOWN",
-            "path": normalized_target,
-            "message": "无法判断 target 归口；写入前必须补充明确 target 或交还 Human 判断。",
-            "disposition": "blocking",
-        })
+        diagnostics.append(_runtime_diagnostic(
+            "blocking",
+            "PREFLIGHT_TARGET_UNKNOWN",
+            normalized_target,
+            "无法判断 target 归口；写入前必须补充明确 target 或交还 Human 判断。",
+        ))
 
     if target_type == "core_spec" or high_impact:
-        diagnostics.append({
-            "level": "warning",
-            "code": "PREFLIGHT_HUMAN_GATE_RISK",
-            "path": normalized_target,
-            "message": "目标可能改变 00/01/02/03/04 的上位结构、保障、事实源、规格或 AI 行为边界；需要评估 Human Gate。",
-            "disposition": "human_gate_review",
-        })
+        diagnostics.append(_runtime_diagnostic(
+            "warning",
+            "PREFLIGHT_HUMAN_GATE_RISK",
+            normalized_target,
+            "目标可能改变 00/01/02/03/04 的上位结构、保障、事实源、规格或 AI 行为边界；需要评估 Human Gate。",
+            "human_gate_review",
+        ))
 
     if target_type == "attachment":
-        diagnostics.append({
-            "level": "warning",
-            "code": "PREFLIGHT_ATTACHMENT_BOUNDARY",
-            "path": normalized_target,
-            "message": "附件只能承载正文授权的表格、字段闭集或枚举，不得承载核心规则、行动流程或 Human Gate。",
-            "disposition": "boundary_review",
-        })
+        diagnostics.append(_runtime_diagnostic(
+            "warning",
+            "PREFLIGHT_ATTACHMENT_BOUNDARY",
+            normalized_target,
+            "附件只能承载正文授权的表格、字段闭集或枚举，不得承载核心规则、行动流程或 Human Gate。",
+            "boundary_review",
+        ))
 
     if target_type == "code":
-        diagnostics.append({
-            "level": "unverifiable",
-            "code": "PREFLIGHT_CODE_OUTPUT_NOT_AUTHORIZATION",
-            "path": normalized_target,
-            "message": "当前 preflight 只能诊断 Code 写入风险，不能授权、放行或替代 Human Gate。",
-            "disposition": "keep_ai_judgment",
-        })
+        diagnostics.append(_runtime_diagnostic(
+            "unverifiable",
+            "PREFLIGHT_CODE_OUTPUT_NOT_AUTHORIZATION",
+            normalized_target,
+            "当前 preflight 只能诊断 Code 写入风险，不能授权、放行或替代 Human Gate。",
+            "keep_ai_judgment",
+        ))
 
     if target_type == "config":
-        diagnostics.append({
-            "level": "warning",
-            "code": "PREFLIGHT_CONFIG_BOUNDARY",
-            "path": normalized_target,
-            "message": "配置写入可能影响管辖项目、安装、测试、Web 或环境入口；preflight 只提示风险，不替代 Human Gate 或验证。",
-            "disposition": "boundary_review",
-        })
+        diagnostics.append(_runtime_diagnostic(
+            "warning",
+            "PREFLIGHT_CONFIG_BOUNDARY",
+            normalized_target,
+            "配置写入可能影响管辖项目、安装、测试、Web 或环境入口；preflight 只提示风险，不替代 Human Gate 或验证。",
+            "boundary_review",
+        ))
 
     if target_type == "hook":
-        diagnostics.append({
-            "level": "warning",
-            "code": "PREFLIGHT_HOOK_ENTRY_BOUNDARY",
-            "path": normalized_target,
-            "message": "Hook 或环境插件写入可能影响 lifecycle 触发、阻断、安装验收和回滚；不得据此声明 integrated。",
-            "disposition": "boundary_review",
-        })
+        diagnostics.append(_runtime_diagnostic(
+            "warning",
+            "PREFLIGHT_HOOK_ENTRY_BOUNDARY",
+            normalized_target,
+            "Hook 或环境插件写入可能影响 lifecycle 触发、阻断、安装验收和回滚；不得据此声明 integrated。",
+            "boundary_review",
+        ))
 
     if target_type == "migration":
-        diagnostics.append({
-            "level": "follow_up",
-            "code": "PREFLIGHT_MIGRATION_NOT_AUTHORITY",
-            "path": normalized_target,
-            "message": "迁移材料是临时证据；有效决定必须由正式 specs、Code 或 tests 承接。",
-            "disposition": "track_absorption",
-        })
+        diagnostics.append(_runtime_diagnostic(
+            "follow_up",
+            "PREFLIGHT_MIGRATION_NOT_AUTHORITY",
+            normalized_target,
+            "迁移材料是临时证据；有效决定必须由正式 specs、Code 或 tests 承接。",
+            "track_absorption",
+        ))
 
     if governed_project["blocked"]:
-        diagnostics.append({
-            "level": "blocking",
-            "code": "PREFLIGHT_GOVERNED_PROJECT_BOUNDARY",
-            "path": normalized_target,
-            "message": governed_project["message"],
-            "disposition": governed_project["blocked_reason"],
-        })
+        diagnostics.append(_runtime_diagnostic(
+            "blocking",
+            "PREFLIGHT_GOVERNED_PROJECT_BOUNDARY",
+            normalized_target,
+            governed_project["message"],
+            governed_project["blocked_reason"],
+        ))
 
     required_read_plan = preflight_read_plan_for_target(classification)
     source_refs = unique_dicts(
@@ -4541,7 +4664,37 @@ def build_preflight(
         ("path", "role"),
     )
 
-    blocking_count = sum(1 for diagnostic in diagnostics if diagnostic["level"] == "blocking")
+    repair_mode = operation == "repair"
+    if repair_mode:
+        target_primary_blockers = [
+            diagnostic
+            for diagnostic in diagnostics
+            if diagnostic.get("diagnostic_scope") == "target_primary"
+            and diagnostic.get("level") in {"error", "blocking"}
+        ]
+        nonrepairable = [
+            diagnostic
+            for diagnostic in target_primary_blockers
+            if diagnostic.get("code") not in REPAIRABLE_FACT_INSTANCE_DIAGNOSTIC_CODES
+        ]
+        if target_type != "fact_instance":
+            diagnostics.append(_runtime_diagnostic(
+                "blocking",
+                "PREFLIGHT_REPAIR_TARGET_NOT_FACT_INSTANCE",
+                normalized_target,
+                "repair mode 只允许修复事实对象结构性诊断，不能用于普通写入或状态推进。",
+            ))
+        elif nonrepairable:
+            diagnostics.append(_runtime_diagnostic(
+                "blocking",
+                "PREFLIGHT_REPAIR_DIAGNOSTIC_NOT_ALLOWED",
+                normalized_target,
+                "repair mode 只能处理结构性事实对象诊断: "
+                + "；".join(str(diagnostic.get("code")) for diagnostic in nonrepairable),
+            ))
+
+    blocking_count = _runtime_blocking_count(diagnostics, repair_mode=repair_mode)
+    scope_counts = _diagnostic_scope_counts(diagnostics)
     human_gate_risks = [
         diagnostic
         for diagnostic in diagnostics
@@ -4559,10 +4712,15 @@ def build_preflight(
         "summary": {
             "status": status,
             "operation": operation,
+            "mode": "repair" if repair_mode else "normal",
             "target_type": target_type,
             "impact": impact,
             "diagnostics": len(diagnostics),
             "blocking": blocking_count,
+            "target_primary": scope_counts["target_primary"],
+            "target_cascade": scope_counts["target_cascade"],
+            "unrelated_global": scope_counts["unrelated_global"],
+            "runtime_blocker": scope_counts["runtime_blocker"],
             "warnings": sum(1 for diagnostic in diagnostics if diagnostic["level"] == "warning"),
             "follow_up": sum(1 for diagnostic in diagnostics if diagnostic["level"] == "follow_up"),
             "unverifiable": sum(1 for diagnostic in diagnostics if diagnostic["level"] == "unverifiable"),
@@ -5060,12 +5218,13 @@ def build_runtime_no_op_event(
 
 
 def runtime_status_from_diagnostics(
-    diagnostics: list[dict[str, str]],
+    diagnostics: list[dict[str, Any]],
     preflight: dict[str, Any] | None,
 ) -> str:
     if preflight and preflight["summary"]["status"] == "no_op":
         return "no_op"
-    if any(diagnostic["level"] in {"error", "blocking"} for diagnostic in diagnostics):
+    repair_mode = bool(preflight and preflight.get("summary", {}).get("mode") == "repair")
+    if _runtime_blocking_count(diagnostics, repair_mode=repair_mode):
         return "blocked"
     if preflight and preflight["summary"]["status"] in {"blocked", "review_required"}:
         return preflight["summary"]["status"]
@@ -5110,18 +5269,17 @@ def build_runtime_event(
     normalized_ack_paths = normalize_path_list(acknowledged_paths)
     normalized_verification_evidence = normalize_path_list(verification_evidence)
 
-    diagnostics: list[dict[str, str]] = list(validation["diagnostics"])
+    diagnostics: list[dict[str, Any]] = []
     action_guide: dict[str, Any] | None = None
     preflight: dict[str, Any] | None = None
 
     if normalized_event not in allowed_events:
-        diagnostics.append({
-            "level": "blocking",
-            "code": "RUNTIME_EVENT_UNKNOWN",
-            "path": TIMING_TABLE_PATH,
-            "message": f"runtime event 不在消费时机闭集内: {normalized_event}",
-            "disposition": "blocking",
-        })
+        diagnostics.append(_runtime_diagnostic(
+            "blocking",
+            "RUNTIME_EVENT_UNKNOWN",
+            TIMING_TABLE_PATH,
+            f"runtime event 不在消费时机闭集内: {normalized_event}",
+        ))
     else:
         if normalized_event in {"session_start", "pre_tool_use", "completion_claim", "git_commit_msg"}:
             noop_preflight = build_runtime_scope_noop_preflight(
@@ -5159,7 +5317,7 @@ def build_runtime_event(
             trigger_source=trigger_source,
             validation=validation,
         )
-        diagnostics.extend(action_guide["diagnostics"])
+        diagnostics.extend(_diagnostic_with_scope(diagnostic, "runtime_blocker") for diagnostic in action_guide["diagnostics"])
 
         if normalized_event == "acknowledge_read_plan":
             required_ack_paths = required_ack_paths_for_runtime_event(normalized_event, preflight)
@@ -5169,21 +5327,19 @@ def build_runtime_event(
                 if path not in normalized_ack_paths
             ]
             if not normalized_ack_paths:
-                diagnostics.append({
-                "level": "blocking",
-                "code": "RUNTIME_ACK_REQUIRED_PATHS_EMPTY",
-                "path": f"runtime://{canonical_event}",
-                "message": f"{canonical_event} 必须提供已消费的 required paths。",
-                "disposition": "blocking",
-            })
+                diagnostics.append(_runtime_diagnostic(
+                    "blocking",
+                    "RUNTIME_ACK_REQUIRED_PATHS_EMPTY",
+                    f"runtime://{canonical_event}",
+                    f"{canonical_event} 必须提供已消费的 required paths。",
+                ))
             elif missing_required:
-                diagnostics.append({
-                    "level": "blocking",
-                    "code": "RUNTIME_ACK_REQUIRED_PATHS_INCOMPLETE",
-                    "path": f"runtime://{canonical_event}",
-                    "message": f"{canonical_event} 缺少入口必读路径: " + "；".join(missing_required),
-                    "disposition": "blocking",
-                })
+                diagnostics.append(_runtime_diagnostic(
+                    "blocking",
+                    "RUNTIME_ACK_REQUIRED_PATHS_INCOMPLETE",
+                    f"runtime://{canonical_event}",
+                    f"{canonical_event} 缺少入口必读路径: " + "；".join(missing_required),
+                ))
 
         if normalized_event in {"pre_tool_use", "git_commit_msg"}:
             preflight = build_preflight(
@@ -5221,34 +5377,34 @@ def build_runtime_event(
                 if path not in normalized_ack_paths
             ]
             if not normalized_ack_paths:
-                diagnostics.append({
-                    "level": "blocking",
-                    "code": "RUNTIME_READ_PLAN_CONSUMED_EMPTY",
-                    "path": f"runtime://{canonical_event}",
-                    "message": f"{canonical_event} 必须提供 read_plan 消费证据。",
-                    "disposition": "blocking",
-                })
+                diagnostics.append(_runtime_diagnostic(
+                    "blocking",
+                    "RUNTIME_READ_PLAN_CONSUMED_EMPTY",
+                    f"runtime://{canonical_event}",
+                    f"{canonical_event} 必须提供 read_plan 消费证据。",
+                ))
             elif missing_required:
-                diagnostics.append({
-                    "level": "blocking",
-                    "code": "RUNTIME_READ_PLAN_CONSUMED_INCOMPLETE",
-                    "path": f"runtime://{canonical_event}",
-                    "message": f"{canonical_event} 缺少 read_plan 必读路径: " + "；".join(missing_required),
-                    "disposition": "blocking",
-                })
+                diagnostics.append(_runtime_diagnostic(
+                    "blocking",
+                    "RUNTIME_READ_PLAN_CONSUMED_INCOMPLETE",
+                    f"runtime://{canonical_event}",
+                    f"{canonical_event} 缺少 read_plan 必读路径: " + "；".join(missing_required),
+                ))
             diagnostics.extend(preflight["diagnostics"])
 
         if normalized_event == "completion_claim" and not normalized_verification_evidence:
-            diagnostics.append({
-            "level": "blocking",
-            "code": "RUNTIME_COMPLETION_VERIFICATION_MISSING",
-            "path": f"runtime://{canonical_event}",
-            "message": f"{canonical_event} 必须提供验证证据、未验证范围或残留风险说明。",
-            "disposition": "blocking",
-        })
+            diagnostics.append(_runtime_diagnostic(
+                "blocking",
+                "RUNTIME_COMPLETION_VERIFICATION_MISSING",
+                f"runtime://{canonical_event}",
+                f"{canonical_event} 必须提供验证证据、未验证范围或残留风险说明。",
+            ))
 
     status = runtime_status_from_diagnostics(diagnostics, preflight)
     receipt_status = "blocked" if status == "blocked" else "generated"
+    repair_mode = bool(preflight and preflight.get("summary", {}).get("mode") == "repair")
+    blocking_count = _runtime_blocking_count(diagnostics, repair_mode=repair_mode)
+    scope_counts = _diagnostic_scope_counts(diagnostics)
     source_refs = [
         {"path": "specs/01-保障与衔接.md", "role": "runtime_protocol_boundary"},
         {"path": "specs/02-AI行为规范.md", "role": "runtime_behavior_requirement"},
@@ -5296,7 +5452,11 @@ def build_runtime_event(
             "internal_event": normalized_event,
             "trigger_source": trigger_source,
             "diagnostics": len(diagnostics),
-            "blocking": sum(1 for diagnostic in diagnostics if diagnostic["level"] in {"error", "blocking"}),
+            "blocking": blocking_count,
+            "target_primary": scope_counts["target_primary"],
+            "target_cascade": scope_counts["target_cascade"],
+            "unrelated_global": scope_counts["unrelated_global"],
+            "runtime_blocker": scope_counts["runtime_blocker"],
             "receipt_status": receipt_status,
             "has_action_guide": action_guide is not None,
             "has_preflight": preflight is not None,

@@ -304,6 +304,26 @@ def test_codex_sample_shim_allows_read_only_exec_command_pipeline_without_acknow
     assert completed.stdout == ""
 
 
+def test_codex_sample_shim_does_not_treat_sed_in_place_as_read_only() -> None:
+    completed = _run_shim(
+        {
+            "hook_event_name": "PreToolUse",
+            "sessionId": "shim-pretool-sed-in-place",
+            "cwd": ROOT.as_posix(),
+            "toolName": "functions.exec_command",
+            "arguments": {"cmd": "sed -i '' -e 's/old/new/' README.md"},
+        },
+        check=False,
+    )
+
+    payload = json.loads(completed.stdout)
+    hook_output = _hook_output(payload)
+    assert completed.returncode == 0
+    assert hook_output["hookEventName"] == "PreToolUse"
+    assert hook_output["permissionDecision"] == "deny"
+    assert "RUNTIME_READ_PLAN_CONSUMED_EMPTY" in hook_output["permissionDecisionReason"]
+
+
 def test_codex_sample_shim_allows_read_only_exec_command_and_chain_without_acknowledgement() -> None:
     for command in (
         'pwd && rg -n "session_start|receipt|lifecycle|read plan|read_plan|LDVH" -S .',
@@ -716,6 +736,27 @@ def test_workbuddy_sample_shim_blocks_target_unknown_even_with_acknowledgement(t
     assert hook_output["hookEventName"] == "PreToolUse"
     assert hook_output["permissionDecision"] == "deny"
     assert "PREFLIGHT_TARGET_UNKNOWN" in hook_output["permissionDecisionReason"]
+
+
+def test_workbuddy_sample_shim_does_not_treat_sed_in_place_as_read_only(tmp_path: Path) -> None:
+    completed = _run_workbuddy_shim(
+        {
+            "hook_event_name": "PreToolUse",
+            "sessionId": "workbuddy-sed-in-place",
+            "cwd": ROOT.as_posix(),
+            "toolName": "functions.exec_command",
+            "arguments": {"cmd": "sed -i '' -e 's/old/new/' README.md"},
+        },
+        extra_env={"LDVH_RUNTIME_CACHE_DIR": (tmp_path / "runtime-cache").as_posix()},
+        check=False,
+    )
+
+    payload = json.loads(completed.stdout)
+    hook_output = _hook_output(payload)
+    assert completed.returncode == 0
+    assert hook_output["hookEventName"] == "PreToolUse"
+    assert hook_output["permissionDecision"] == "deny"
+    assert "RUNTIME_READ_PLAN_CONSUMED_EMPTY" in hook_output["permissionDecisionReason"]
 
 
 def test_workbuddy_sample_shim_recognizes_workcase_fact_instance_target(tmp_path: Path) -> None:

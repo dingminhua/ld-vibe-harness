@@ -116,6 +116,10 @@ Code 输出应能被 AI 和 tests 稳定消费，至少包含状态、来源、�
 
 Code 不得输出 `approved`、`allowed`、`accepted risk`、`human_gate_passed` 等授权语义。无诊断时可以输出 `diagnostic_clear`，但不得把它解释为授权。
 
+涉及管辖项目、preflight 或 runtime facade 的 Code 输出不得只给出 `governed=true/false`。Code 必须按 10 输出可消费的管辖解析结果，至少能区分 `governed_single`、`non_governed`、`scope_unknown`、`governed_target_unknown`、`declared_multi_governed` 和 `mixed_scope`，并保留 `target_resolutions`、`source`、`governed_via`、`git_common_dir`、`unknown_reason` 或等价可复核依据。
+
+Code 诊断必须区分“对象归口问题”和“动作条件问题”。`scope_unknown` 不得自动升级为管辖阻断；只有已有管辖范围证据但本次 target 不明时，才可输出 `governed_target_unknown` 对高影响动作 gated。普通管辖对象的 preflight 不得被无关全局诊断阻断；全局健康检查只适用于提交、完成声明、关闭、发布或后续规范明确要求全局健康的动作。
+
 ## 7. Runtime facade 与环境适配实现边界
 
 01 已定义 Runtime Protocol、canonical event 和 trigger source 的上位语义。本文只承接具体实现边界。
@@ -133,6 +137,34 @@ V3 当前 runtime facade 的边界：
 V2 `06` 中的 payload schema、dispatcher、adapter、payload_present、unknown event 和环境 fallback 可作为本文后续实现来源。涉及写入用户环境、安装 Hook、覆盖入口或扩大权限时，必须先进入 Human Gate 和 09 测试设计。
 
 V2 项目管辖 target-based governance 中的静态解析能力由 `specs/10-安装与配置规范.md` 和本文 Code parser 承接。Code 可以输出 `governed_project_resolution`、`target_resolutions` 和管辖/非管辖边界 diagnostic；这些输出不得被解释为 Hook 已接入、环境已拦截或 Human Gate 已完成。
+
+### 7.1 Repair Mode 输出契约
+
+Code 可以在 preflight / runtime facade 中实现 `operation=repair` 或等价 `mode=repair`，但该模式只能承接 01 定义的 repair lane。Repair mode 不新增 runtime event，不跳过 read_plan、target 归口、Human Gate 或验证声明，也不得被用作 bypass。
+
+Repair mode 必须同时满足：
+
+1. target 归口为单一事实对象实例；
+2. 待处理 diagnostic 的 scope 是当前 target 的 `target_primary`；
+3. diagnostic code 属于本文定义的可修复事实对象结构诊断闭集；
+4. 当前动作不推进状态、不关闭对象、不接受风险、不迁移事实源、不跨对象合并写入；
+5. 输出必须标明 `mode=repair`、target、diagnostic code、blocking 计算口径、source_refs 和 final validation 要求。
+
+当前可修复事实对象结构诊断闭集为：
+
+| diagnostic code | 含义 |
+|---|---|
+| `FACT_INSTANCE_PARSE_FAILED` | 事实对象实例无法解析 |
+| `FACT_INSTANCE_REQUIRED_FIELD_MISSING` | 必填字段缺失 |
+| `FACT_INSTANCE_FIELD_UNKNOWN` | 出现未知字段 |
+| `FACT_INSTANCE_REFERENCE_MISSING` | 引用不存在的事实对象 |
+| `FACT_INSTANCE_ID_FILENAME_MISMATCH` | ID 与文件名不匹配 |
+| `FACT_INSTANCE_TYPE_MISMATCH` | 事实对象类型不匹配 |
+| `FACT_INSTANCE_ID_DUPLICATE` | 事实对象 ID 重复 |
+| `FACT_INSTANCE_STATUS_INVALID` | 状态值不在闭集内 |
+| `FACT_INSTANCE_LEGACY_FIELD_FORBIDDEN` | 出现禁止保留的 legacy 字段 |
+
+不在该闭集内的 diagnostic、非事实对象 target、状态推进、关闭判断、Human Gate 风险接受、业务语义判断或跨对象迁移，必须输出 blocker 或 Human Gate diagnostic，不得被 repair mode 放行。Repair mode 的 Code 实现若发现 specs 没有覆盖的新诊断码，必须回到本文或对应事实模型规范补齐后再允许自动处理。
 
 ## 8. Code 变更纪律
 
@@ -198,4 +230,12 @@ Code 暴露规范缺口时，应输出 diagnostic 并回到对应规范、授权
 
 ## 13. 待补齐事项
 
-当前无未承接的体系缺口。V2 `04.Att.*` 中可迁入的 Code 命令入口、诊断码和输出 schema 已由本文、Code 和 Tests 按需承接；V2 `06` 的 payload、adapter、dispatcher 和 hook mapping 已由 01、07、10、Code/docs 和 Tests 承接为 AI lifecycle Hook 或 external-adapter 候选边界；commit validator 已进入 03/07/09 与 Code/Tests 闭环；specs validator 对 03/05/06/07/08/09 的专属检查已由 Code/Tests 承接。真实环境入口集成仍按 01、09、10 和 Human Gate 后置，缺少可安装、可验证、可阻断 Hook 的目标环境不属于正式支持范围。
+当前已识别以下待补齐事项。Code 不得在这些事项补齐前把实现输出写成规则已完整承接：
+
+1. 六类管辖解析需要显式 `scope_status` 输出：涉及管辖项目、preflight 或 runtime facade 的 Code 输出应在顶层表达 `governed_single`、`non_governed`、`scope_unknown`、`governed_target_unknown`、`declared_multi_governed` 或 `mixed_scope`，而不是要求消费者从 `governed`、`blocked` 或 message 反推；
+2. `declared_multi_governed` 的只读审计路径需要补齐：Human 明确发起跨管辖对象读取、审计或对比时，Code resolver 应能表达该分类；写入、提交、迁移和事实源回写仍必须拆分或进入 Human Gate；
+3. `ldvh.completion_claim` 需要消费当前 diagnostic：runtime facade 不得只检查验证证据非空，还应输出未解决 blocker、未验证范围和残留风险的可消费摘要；
+4. read_plan receipt bootstrap 路径需要补齐：生成 `ldvh.acknowledge_read_plan` 或等价 runtime receipt 的 LDVH 自身入口应有受控放行边界，避免被 read_plan 消费检查自锁；
+5. Action Guide governed project 链路需要补齐：Code 生成行动指南时应能消费 10 的管辖解析结果，并区分 LDVH specs、LDVH facts、管辖项目 facts 和过程输出；
+6. test runner verification_plan 输出需要补齐：测试 runner 应能说明选择理由、覆盖层级、排除层级、未验证范围和 residual risk；
+7. Codex / WorkBuddy shim 命令分类逻辑需要收敛到共享实现，避免环境插件独立实现继续漂移。

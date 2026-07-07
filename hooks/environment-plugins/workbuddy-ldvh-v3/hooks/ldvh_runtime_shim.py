@@ -205,6 +205,8 @@ def is_likely_read_only_command_segment(command: str) -> bool:
     executable = Path(parts[0]).name.lower()
     if executable == "find" and "-exec" in parts:
         return False
+    if executable == "sed" and any(part == "-i" or part.startswith("-i") or part == "--in-place" or part.startswith("--in-place=") for part in parts[1:]):
+        return False
     if executable == "git":
         return len(parts) > 1 and parts[1].lower() in READ_ONLY_GIT_SUBCOMMANDS
     return executable in READ_ONLY_SHELL_PIPE_COMMANDS

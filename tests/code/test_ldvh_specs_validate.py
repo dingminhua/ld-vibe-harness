@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import json
 import os
 from datetime import datetime
@@ -85,6 +86,16 @@ def _write_governed_config(root: Path, content: str) -> Path:
 
 def _diagnostic_codes(result: dict) -> set[str]:
     return {diagnostic["code"] for diagnostic in result["diagnostics"]}
+
+
+def _validation_with_extra_diagnostics(validation: dict, diagnostics: list[dict[str, str]]) -> dict:
+    payload = copy.deepcopy(validation)
+    payload["diagnostics"].extend(diagnostics)
+    payload["summary"]["diagnostics"] = len(payload["diagnostics"])
+    payload["summary"]["errors"] = sum(1 for diagnostic in payload["diagnostics"] if diagnostic["level"] == "error")
+    payload["summary"]["warnings"] = sum(1 for diagnostic in payload["diagnostics"] if diagnostic["level"] == "warning")
+    payload["summary"]["status"] = "failed" if payload["diagnostics"] else "ok"
+    return payload
 
 
 def _run_cli(
@@ -2496,6 +2507,151 @@ def test_preflight_workcase_fact_instance_target_is_recognized(validation_result
     }.issubset(read_paths)
 
 
+def test_preflight_unrelated_global_diagnostics_do_not_block_target(validation_result: dict) -> None:
+    validation = _validation_with_extra_diagnostics(
+        validation_result,
+        [
+            {
+                "level": "error",
+                "code": "FACT_INSTANCE_PARSE_FAILED",
+                "path": WORKCASE_TARGET,
+                "message": "事实实例无法解析为结构化数据",
+            },
+            {
+                "level": "error",
+                "code": "FACT_INSTANCE_REFERENCE_MISSING",
+                "path": "ldvh-base/workcases/workcase-0022-v3-sidecar-action-guide-compiler-phase1.yaml",
+                "message": "workcase-0022 引用不存在的事实对象: workcase-0024",
+            },
+        ],
+    )
+
+    preflight = ldvh_specs.build_preflight(
+        ROOT,
+        target_path="README.md",
+        operation="write",
+        validation=validation,
+    )
+
+    assert preflight["summary"]["status"] == "review_required"
+    assert preflight["summary"]["blocking"] == 0
+    assert preflight["summary"]["unrelated_global"] == 2
+    assert {diagnostic["diagnostic_scope"] for diagnostic in preflight["diagnostics"]} == {"unrelated_global"}
+
+
+def test_preflight_target_primary_diagnostic_blocks_normal_write(validation_result: dict) -> None:
+    validation = _validation_with_extra_diagnostics(
+        validation_result,
+        [
+            {
+                "level": "error",
+                "code": "FACT_INSTANCE_PARSE_FAILED",
+                "path": WORKCASE_TARGET,
+                "message": "事实实例无法解析为结构化数据",
+            }
+        ],
+    )
+
+    preflight = ldvh_specs.build_preflight(
+        ROOT,
+        target_path=WORKCASE_TARGET,
+        operation="write",
+        validation=validation,
+    )
+
+    assert preflight["summary"]["status"] == "blocked"
+    assert preflight["summary"]["blocking"] == 1
+    assert preflight["summary"]["target_primary"] == 1
+    assert preflight["diagnostics"][0]["diagnostic_scope"] == "target_primary"
+
+
+def test_preflight_repair_mode_allows_repairable_primary_and_cascade(validation_result: dict) -> None:
+    validation = _validation_with_extra_diagnostics(
+        validation_result,
+        [
+            {
+                "level": "error",
+                "code": "FACT_INSTANCE_PARSE_FAILED",
+                "path": WORKCASE_TARGET,
+                "message": "事实实例无法解析为结构化数据",
+            },
+            {
+                "level": "error",
+                "code": "FACT_INSTANCE_REFERENCE_MISSING",
+                "path": "ldvh-base/workcases/workcase-0022-v3-sidecar-action-guide-compiler-phase1.yaml",
+                "message": "workcase-0022 引用不存在的事实对象: workcase-0024",
+            },
+        ],
+    )
+
+    preflight = ldvh_specs.build_preflight(
+        ROOT,
+        target_path=WORKCASE_TARGET,
+        operation="repair",
+        validation=validation,
+    )
+
+    assert preflight["summary"]["status"] == "review_required"
+    assert preflight["summary"]["mode"] == "repair"
+    assert preflight["summary"]["blocking"] == 0
+    assert preflight["summary"]["target_primary"] == 1
+    assert preflight["summary"]["target_cascade"] == 1
+    assert _diagnostic_codes(preflight) == {"FACT_INSTANCE_PARSE_FAILED", "FACT_INSTANCE_REFERENCE_MISSING"}
+
+
+def test_preflight_repair_mode_final_validation_only_checks_primary(validation_result: dict) -> None:
+    validation = _validation_with_extra_diagnostics(
+        validation_result,
+        [
+            {
+                "level": "error",
+                "code": "FACT_INSTANCE_PARSE_FAILED",
+                "path": "ldvh-base/workcases/workcase-0023-non-target-example.yaml",
+                "message": "事实实例无法解析为结构化数据",
+            }
+        ],
+    )
+
+    preflight = ldvh_specs.build_preflight(
+        ROOT,
+        target_path=WORKCASE_TARGET,
+        operation="repair",
+        validation=validation,
+    )
+
+    assert preflight["summary"]["status"] == "review_required"
+    assert preflight["summary"]["mode"] == "repair"
+    assert preflight["summary"]["blocking"] == 0
+    assert preflight["summary"]["target_primary"] == 0
+    assert preflight["summary"]["unrelated_global"] == 1
+
+
+def test_preflight_commit_operation_keeps_global_validation_blocker(validation_result: dict) -> None:
+    validation = _validation_with_extra_diagnostics(
+        validation_result,
+        [
+            {
+                "level": "error",
+                "code": "FACT_INSTANCE_PARSE_FAILED",
+                "path": WORKCASE_TARGET,
+                "message": "事实实例无法解析为结构化数据",
+            }
+        ],
+    )
+
+    preflight = ldvh_specs.build_preflight(
+        ROOT,
+        target_path="README.md",
+        operation="commit",
+        validation=validation,
+    )
+
+    assert preflight["summary"]["status"] == "blocked"
+    assert preflight["summary"]["blocking"] == 1
+    assert preflight["summary"]["runtime_blocker"] == 1
+    assert preflight["diagnostics"][0]["diagnostic_scope"] == "runtime_blocker"
+
+
 def test_preflight_recognizes_common_ldvh_target_domains(validation_result: dict) -> None:
     cases = {
         "README.md": ("project_doc", "diagnostic_clear"),
@@ -2651,6 +2807,33 @@ def test_runtime_session_start_generates_stdout_receipt() -> None:
         "specs/01-保障与衔接.md",
         "specs/02-AI行为规范.md",
     }.issubset(read_paths)
+
+
+def test_runtime_session_start_ignores_unrelated_global_validation_diagnostics(validation_result: dict) -> None:
+    validation = _validation_with_extra_diagnostics(
+        validation_result,
+        [
+            {
+                "level": "error",
+                "code": "FACT_INSTANCE_PARSE_FAILED",
+                "path": WORKCASE_TARGET,
+                "message": "事实实例无法解析为结构化数据",
+            }
+        ],
+    )
+
+    runtime = ldvh_specs.build_runtime_event(
+        ROOT,
+        event="session_start",
+        trigger_source="manual",
+        session_id="test-session-dirty-validation",
+        validation=validation,
+    )
+
+    assert runtime["summary"]["status"] == "ok"
+    assert runtime["summary"]["blocking"] == 0
+    assert runtime["summary"]["unrelated_global"] == 0
+    assert "FACT_INSTANCE_PARSE_FAILED" not in _diagnostic_codes(runtime)
 
 
 def test_runtime_external_session_start_is_noop_without_read_plan(tmp_path: Path, validation_result: dict) -> None:
@@ -2859,6 +3042,40 @@ def test_runtime_pre_tool_use_includes_preflight(validation_result: dict) -> Non
     assert runtime["summary"]["has_preflight"] is True
     assert runtime["preflight"]["summary"]["target_type"] == "code"
     assert runtime["diagnostics"][0]["code"] == "PREFLIGHT_CODE_OUTPUT_NOT_AUTHORIZATION"
+
+
+def test_runtime_pre_tool_use_unrelated_global_diagnostics_are_not_blocking(validation_result: dict) -> None:
+    validation = _validation_with_extra_diagnostics(
+        validation_result,
+        [
+            {
+                "level": "error",
+                "code": "FACT_INSTANCE_PARSE_FAILED",
+                "path": WORKCASE_TARGET,
+                "message": "事实实例无法解析为结构化数据",
+            }
+        ],
+    )
+
+    runtime = ldvh_specs.build_runtime_event(
+        ROOT,
+        event="pre_tool_use",
+        target_path="README.md",
+        acknowledged_paths=[
+            *ENTRY_ACK_PATHS,
+            "specs/03-事实源与Git溯源规范.md",
+            "specs/04-Specs基础规范.md",
+            "specs/09-测试与验证规范.md",
+            "README.md",
+        ],
+        validation=validation,
+    )
+
+    assert runtime["summary"]["status"] == "review_required"
+    assert runtime["summary"]["blocking"] == 0
+    assert runtime["summary"]["unrelated_global"] == 1
+    assert runtime["preflight"]["summary"]["blocking"] == 0
+    assert runtime["diagnostics"][0]["diagnostic_scope"] == "unrelated_global"
 
 
 def test_runtime_pre_tool_use_blocks_without_read_plan_consumption(validation_result: dict) -> None:
