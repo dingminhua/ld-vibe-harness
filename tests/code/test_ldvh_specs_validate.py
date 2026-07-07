@@ -1683,6 +1683,9 @@ def test_workcase_member_contract_is_code_consumable(validation_result: dict) ->
         "fact_model_member_identity",
         "workcase_source_boundaries",
         "workcase_state_boundaries",
+        "workcase_field_contract",
+        "workcase_orchestration_contract",
+        "workcase_state_required_fields",
         "workcase_closure_boundaries",
         "workcase_human_gate_boundaries",
         "workcase_instance_checks",
@@ -1697,6 +1700,20 @@ def test_workcase_member_contract_is_code_consumable(validation_result: dict) ->
         "closed",
     ]
     assert any(item["path"] == "specs/05-事实模型基础规范.md" for item in contract["source_refs"])
+    assert any(item["path"] == "specs/attachments/21.Att.01-orchestration字段契约表.md" for item in contract["source_refs"])
+
+    field_contract = contract["field_contract"]
+    assert field_contract["path"] == "specs/attachments/21.Att.01-orchestration字段契约表.md"
+    registered_paths = {ldvh_specs.strip_inline_code(row["field_path"]) for row in field_contract["fields"]}
+    required_fields = {ldvh_specs.strip_inline_code(row["字段"]) for row in field_contract["required_fields"]}
+    status_rows = {ldvh_specs.strip_inline_code(row["状态"]): row for row in field_contract["status_requirements"]}
+
+    assert "orchestration.execution_items.status" in registered_paths
+    assert "orchestration.plan_review.controller_resolution" in registered_paths
+    assert "orchestration.result_review.human_closure_confirmation" in registered_paths
+    assert "closure_evidence" in required_fields
+    assert "orchestration.result_review.controller_resolution" in status_rows["human_closure_confirming"]["条件必填字段"]
+    assert "orchestration.result_review.human_closure_confirmation" in status_rows["closed"]["条件必填字段"]
 
 
 def test_workcase_member_validator_reports_missing_state(tmp_path: Path) -> None:
@@ -1766,6 +1783,92 @@ def test_workcase_member_validator_reports_missing_legacy_status_boundary(tmp_pa
     result = ldvh_specs.build_validation(root)
 
     assert "WORKCASE_LEGACY_STATUS_BOUNDARY_MISSING" in _diagnostic_codes(result)
+
+
+def test_workcase_member_validator_reports_missing_field_contract_attachment(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    (root / "specs/attachments/21.Att.01-orchestration字段契约表.md").unlink()
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "WORKCASE_FIELD_CONTRACT_MISSING" in _diagnostic_codes(result)
+
+
+def test_workcase_member_validator_reports_missing_field_contract_tables(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    path = root / "specs/attachments/21.Att.01-orchestration字段契约表.md"
+    raw = path.read_text(encoding="utf-8")
+    raw = raw.replace(
+        "| field_path | scope | meaning | format_kind | value_shape | ref_kind | enum_owner | schema_owner | code_check_kind | web_render_kind | status | replacement |",
+        "| path | scope | meaning | format_kind | value_shape | ref_kind | enum_owner | schema_owner | code_check_kind | web_render_kind | status | replacement |",
+    )
+    raw = raw.replace("| 字段 | 必填口径 |", "| 字段名 | 必填口径 |")
+    raw = raw.replace("| 状态 | 条件必填字段 | 说明 |", "| 状态名 | 条件必填字段 | 说明 |")
+    path.write_text(raw, encoding="utf-8")
+
+    result = ldvh_specs.build_validation(root)
+    codes = _diagnostic_codes(result)
+
+    assert "WORKCASE_FIELD_CONTRACT_TABLE_MISSING" in codes
+    assert "WORKCASE_REQUIRED_FIELD_TABLE_MISSING" in codes
+    assert "WORKCASE_STATUS_REQUIRED_TABLE_MISSING" in codes
+
+
+def test_workcase_member_validator_reports_missing_field_contract_top_level_field(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/attachments/21.Att.01-orchestration字段契约表.md",
+        "| `followup_refs` | WorkCase | 后续承接对象、文档或提交引用 | reference | list_string | mixed_ref | none | 21 | ref | mixed_ref | active | none |\n",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "WORKCASE_FIELD_CONTRACT_FIELD_MISSING" in _diagnostic_codes(result)
+    assert any("followup_refs" in diagnostic["message"] for diagnostic in result["diagnostics"])
+
+
+def test_workcase_member_validator_reports_missing_orchestration_contract_field(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/attachments/21.Att.01-orchestration字段契约表.md",
+        "| `orchestration.result_review.human_closure_confirmation` | WorkCase.result_review | Human 对关闭判断、残留风险和后续分流的确认 | decision | object | none | none | 21 | owner_state | structured_area | active | none |\n",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "WORKCASE_ORCHESTRATION_CONTRACT_FIELD_MISSING" in _diagnostic_codes(result)
+    assert any("orchestration.result_review.human_closure_confirmation" in diagnostic["message"] for diagnostic in result["diagnostics"])
+
+
+def test_workcase_member_validator_reports_missing_status_required_row(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/attachments/21.Att.01-orchestration字段契约表.md",
+        "| `subagents_result_reviewing` | `verification_evidence`; `orchestration.result_review.review_items` | 独立视角正在复查结果与关闭材料 |\n",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "WORKCASE_STATUS_REQUIRED_ROW_MISSING" in _diagnostic_codes(result)
+    assert any("subagents_result_reviewing" in diagnostic["message"] for diagnostic in result["diagnostics"])
+
+
+def test_workcase_member_validator_reports_missing_status_required_field(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/attachments/21.Att.01-orchestration字段契约表.md",
+        "`closed_at`; `closure_outcome`; `closure_evidence`; `orchestration.result_review.human_closure_confirmation`; `human_closure_confirmation`",
+        "`closed_at`; `closure_outcome`; `closure_evidence`; `human_closure_confirmation`",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "WORKCASE_STATUS_REQUIRED_FIELD_MISSING" in _diagnostic_codes(result)
+    assert any("orchestration.result_review.human_closure_confirmation" in diagnostic["message"] for diagnostic in result["diagnostics"])
 
 
 def test_fact_model_member_contracts_are_code_consumable(validation_result: dict) -> None:

@@ -19,6 +19,7 @@ AI_BEHAVIOR_SPEC_PATH = "specs/02-AI行为规范.md"
 COMMIT_MESSAGE_CONTRACT_PATH = "specs/attachments/03.Att.01-Commit-Message契约字段表.md"
 FIELD_REGISTRY_CONTRACT_PATH = "specs/attachments/05.Att.01-字段注册表结构.md"
 VERIFICATION_CLAIM_FIELDS_PATH = "specs/attachments/09.Att.01-验证声明字段表.md"
+WORKCASE_FIELD_CONTRACT_PATH = "specs/attachments/21.Att.01-orchestration字段契约表.md"
 GOVERNED_PROJECTS_CONFIG_PATH = "LDVH-GOVERNED-PROJECTS.yaml"
 GOVERNED_PROJECTS_CONTRACT_PATH = "specs/attachments/10.Att.01-管辖项目配置字段表.md"
 
@@ -145,6 +146,22 @@ COMMIT_REQUIRED_BODY_HEADING = "关键变更"
 FIELD_REGISTRY_COLUMNS = ["列", "含义"]
 FIELD_REGISTRY_ALLOWED_COLUMNS = ["注册列", "允许值或写法"]
 FIELD_REGISTRY_CODE_CHECK_COLUMNS = ["code_check_kind", "可机械消费维度", "边界"]
+WORKCASE_FIELD_CONTRACT_COLUMNS = [
+    "field_path",
+    "scope",
+    "meaning",
+    "format_kind",
+    "value_shape",
+    "ref_kind",
+    "enum_owner",
+    "schema_owner",
+    "code_check_kind",
+    "web_render_kind",
+    "status",
+    "replacement",
+]
+WORKCASE_REQUIRED_FIELD_COLUMNS = ["字段", "必填口径"]
+WORKCASE_STATUS_REQUIRED_COLUMNS = ["状态", "条件必填字段", "说明"]
 VERIFICATION_CLAIM_COLUMNS = ["字段", "要求"]
 VERIFICATION_COMPLETE_CONDITION_COLUMNS = ["条件", "内容"]
 VERIFICATION_FORBIDDEN_COLUMNS = ["写法", "边界"]
@@ -668,6 +685,9 @@ WORKCASE_REQUIRED_CODE_CONSUMPTION = [
     "workcase_admission_rules",
     "workcase_source_boundaries",
     "workcase_state_boundaries",
+    "workcase_field_contract",
+    "workcase_orchestration_contract",
+    "workcase_state_required_fields",
     "workcase_closure_boundaries",
     "workcase_human_gate_boundaries",
     "workcase_instance_checks",
@@ -701,6 +721,55 @@ WORKCASE_HUMAN_GATE_TERMS = [
     "跳过未验证执行项",
 ]
 WORKCASE_LEGACY_STATUSES = ["draft", "active", "review_needed"]
+WORKCASE_REQUIRED_ORCHESTRATION_FIELD_PATHS = [
+    "orchestration.mode",
+    "orchestration.execution_items",
+    "orchestration.execution_items.id",
+    "orchestration.execution_items.title",
+    "orchestration.execution_items.role",
+    "orchestration.execution_items.mode",
+    "orchestration.execution_items.input_refs",
+    "orchestration.execution_items.expected_output",
+    "orchestration.execution_items.status",
+    "orchestration.execution_items.result_summary",
+    "orchestration.execution_items.evidence_refs",
+    "orchestration.execution_items.blocking_reason",
+    "orchestration.plan_review",
+    "orchestration.plan_review.orchestration_owner",
+    "orchestration.plan_review.workflow_ref",
+    "orchestration.plan_review.review_policy",
+    "orchestration.plan_review.review_items",
+    "orchestration.plan_review.controller_resolution",
+    "orchestration.plan_review.human_confirmation",
+    "orchestration.result_review",
+    "orchestration.result_review.orchestration_owner",
+    "orchestration.result_review.workflow_ref",
+    "orchestration.result_review.review_policy",
+    "orchestration.result_review.controller_self_check",
+    "orchestration.result_review.review_items",
+    "orchestration.result_review.controller_resolution",
+    "orchestration.result_review.human_closure_confirmation",
+]
+WORKCASE_STATUS_REQUIRED_TERMS = {
+    "subagents_plan_reviewing": ["orchestration.plan_review.review_items"],
+    "human_plan_confirming": ["orchestration.plan_review.controller_resolution"],
+    "executing": ["plan_confirmed_at", "orchestration.plan_review.human_confirmation"],
+    "result_self_checking": ["verification_evidence", "orchestration.result_review.controller_self_check"],
+    "subagents_result_reviewing": ["verification_evidence", "orchestration.result_review.review_items"],
+    "human_closure_confirming": [
+        "verification_evidence",
+        "closure_evidence",
+        "closure_requested_at",
+        "orchestration.result_review.controller_resolution",
+    ],
+    "closed": [
+        "closed_at",
+        "closure_outcome",
+        "closure_evidence",
+        "human_closure_confirmation",
+        "orchestration.result_review.human_closure_confirmation",
+    ],
+}
 FACT_MODEL_MEMBER_CONTRACTS = {
     "20": {
         "member": "Spark",
@@ -1443,6 +1512,24 @@ def parse_field_registry_contract(root: Path = ROOT) -> dict[str, list[dict[str,
     }
 
 
+def parse_workcase_field_contract(root: Path = ROOT) -> dict[str, Any]:
+    path = root / WORKCASE_FIELD_CONTRACT_PATH
+    if not path.exists():
+        return {
+            "path": WORKCASE_FIELD_CONTRACT_PATH,
+            "fields": [],
+            "required_fields": [],
+            "status_requirements": [],
+        }
+    raw = path.read_text(encoding="utf-8")
+    return {
+        "path": WORKCASE_FIELD_CONTRACT_PATH,
+        "fields": find_table(raw, WORKCASE_FIELD_CONTRACT_COLUMNS),
+        "required_fields": find_table(raw, WORKCASE_REQUIRED_FIELD_COLUMNS),
+        "status_requirements": find_table(raw, WORKCASE_STATUS_REQUIRED_COLUMNS),
+    }
+
+
 def parse_verification_claim_fields(root: Path = ROOT) -> dict[str, list[dict[str, str]]]:
     raw = (root / VERIFICATION_CLAIM_FIELDS_PATH).read_text(encoding="utf-8")
     return {
@@ -1634,13 +1721,16 @@ def parse_fact_model_member_contract(spec_id: str, root: Path = ROOT) -> dict[st
 
 def parse_fact_model_member_contracts(root: Path = ROOT) -> list[dict[str, Any]]:
     return [
-        parse_fact_model_member_contract(spec_id, root)
+        parse_workcase_member_contract(root) if spec_id == "21" else parse_fact_model_member_contract(spec_id, root)
         for spec_id in sorted(FACT_MODEL_MEMBER_CONTRACTS)
     ]
 
 
 def parse_workcase_member_contract(root: Path = ROOT) -> dict[str, Any]:
-    return parse_fact_model_member_contract("21", root)
+    contract = parse_fact_model_member_contract("21", root)
+    contract["field_contract"] = parse_workcase_field_contract(root)
+    contract["source_refs"].append({"path": WORKCASE_FIELD_CONTRACT_PATH, "role": "workcase_field_contract"})
+    return contract
 
 
 def _fact_instance_id_from_filename(path: Path) -> str:
@@ -3301,6 +3391,108 @@ def validate_workcase_member_contract(root: Path = ROOT) -> list[Diagnostic]:
             )
         )
 
+    field_contract = contract.get("field_contract", {})
+    field_contract_path = str(field_contract.get("path", WORKCASE_FIELD_CONTRACT_PATH))
+    if not (root / field_contract_path).exists():
+        diagnostics.append(
+            Diagnostic(
+                "error",
+                "WORKCASE_FIELD_CONTRACT_MISSING",
+                field_contract_path,
+                "WorkCase 字段与 orchestration 契约附件缺失",
+            )
+        )
+    else:
+        fields = field_contract.get("fields", [])
+        required_fields = field_contract.get("required_fields", [])
+        status_requirements = field_contract.get("status_requirements", [])
+        if not fields:
+            diagnostics.append(
+                Diagnostic(
+                    "error",
+                    "WORKCASE_FIELD_CONTRACT_TABLE_MISSING",
+                    field_contract_path,
+                    "WorkCase 字段注册表缺失",
+                )
+            )
+        if not required_fields:
+            diagnostics.append(
+                Diagnostic(
+                    "error",
+                    "WORKCASE_REQUIRED_FIELD_TABLE_MISSING",
+                    field_contract_path,
+                    "WorkCase 顶层必填字段表缺失",
+                )
+            )
+        if not status_requirements:
+            diagnostics.append(
+                Diagnostic(
+                    "error",
+                    "WORKCASE_STATUS_REQUIRED_TABLE_MISSING",
+                    field_contract_path,
+                    "WorkCase 状态条件必填表缺失",
+                )
+            )
+
+        registered_paths = {strip_inline_code(row.get("field_path", "")) for row in fields}
+        required_registered = {strip_inline_code(row.get("字段", "")) for row in required_fields}
+        status_rows = {strip_inline_code(row.get("状态", "")): row for row in status_requirements}
+
+        workcase_schema = FACT_INSTANCE_FIELD_SCHEMAS["workcase"]
+        for field in sorted(workcase_schema["allowed"]):
+            if field not in registered_paths:
+                diagnostics.append(
+                    Diagnostic(
+                        "error",
+                        "WORKCASE_FIELD_CONTRACT_FIELD_MISSING",
+                        field_contract_path,
+                        f"WorkCase 字段契约缺少顶层字段: {field}",
+                    )
+                )
+        for field in sorted(workcase_schema["required"]):
+            if field not in required_registered:
+                diagnostics.append(
+                    Diagnostic(
+                        "error",
+                        "WORKCASE_REQUIRED_FIELD_MISSING",
+                        field_contract_path,
+                        f"WorkCase 顶层必填表缺少字段: {field}",
+                    )
+                )
+        for field_path in WORKCASE_REQUIRED_ORCHESTRATION_FIELD_PATHS:
+            if field_path not in registered_paths:
+                diagnostics.append(
+                    Diagnostic(
+                        "error",
+                        "WORKCASE_ORCHESTRATION_CONTRACT_FIELD_MISSING",
+                        field_contract_path,
+                        f"WorkCase orchestration 契约缺少字段: {field_path}",
+                    )
+                )
+        for status in WORKCASE_REQUIRED_STATUSES:
+            row = status_rows.get(status)
+            if row is None:
+                diagnostics.append(
+                    Diagnostic(
+                        "error",
+                        "WORKCASE_STATUS_REQUIRED_ROW_MISSING",
+                        field_contract_path,
+                        f"WorkCase 状态条件必填表缺少状态: {status}",
+                    )
+                )
+                continue
+            required_text = row.get("条件必填字段", "")
+            for term in WORKCASE_STATUS_REQUIRED_TERMS.get(status, []):
+                if term not in required_text:
+                    diagnostics.append(
+                        Diagnostic(
+                            "error",
+                            "WORKCASE_STATUS_REQUIRED_FIELD_MISSING",
+                            field_contract_path,
+                            f"WorkCase 状态 {status} 条件必填字段缺少: {term}",
+                        )
+                    )
+
     status_values = [row["status"] for row in contract["statuses"]]
     for status in _missing_exact_values(WORKCASE_REQUIRED_STATUSES, status_values):
         diagnostics.append(
@@ -3495,6 +3687,7 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
     attachment_contracts = {
         "commit_message_contract": parse_commit_message_contract(root),
         "field_registry_contract": parse_field_registry_contract(root),
+        "workcase_field_contract": parse_workcase_field_contract(root),
         "verification_claim_fields": parse_verification_claim_fields(root),
         "governed_project_config_contract": governed_project_config_contract,
     }
@@ -3563,6 +3756,7 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
             {"path": "specs/22-ADR-决策.md", "role": "fact_model_member_spec"},
             {"path": "specs/23-Pitfall-踩坑经验.md", "role": "fact_model_member_spec"},
             {"path": "specs/24-Study-研究报告.md", "role": "fact_model_member_spec"},
+            {"path": WORKCASE_FIELD_CONTRACT_PATH, "role": "workcase_field_contract"},
             {"path": "ldvh-base/", "role": "fact_instances_root"},
             {"path": TIMING_TABLE_PATH, "role": "consumption_timing_registry"},
             {"path": TAKEOVER_MATRIX_PATH, "role": "takeover_matrix"},

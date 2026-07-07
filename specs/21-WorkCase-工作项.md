@@ -20,6 +20,7 @@ ldvh_spec:
     - "specs/04-Specs基础规范.md"
     - "specs/05-事实模型基础规范.md"
   related_specs:
+    - "specs/attachments/21.Att.01-orchestration字段契约表.md"
     - "specs/06-行动模板基础规范.md"
     - "specs/07-Code确定性执行规范.md"
     - "specs/08-Web信息同步规范.md"
@@ -33,6 +34,9 @@ ldvh_spec:
     - "workcase_admission_rules"
     - "workcase_source_boundaries"
     - "workcase_state_boundaries"
+    - "workcase_field_contract"
+    - "workcase_orchestration_contract"
+    - "workcase_state_required_fields"
     - "workcase_closure_boundaries"
     - "workcase_human_gate_boundaries"
     - "workcase_instance_checks"
@@ -53,7 +57,7 @@ ldvh_spec:
     next_queries: "12. 待补齐事项"
 ```
 
-> 文件状态：active；本文吸收 V2 WorkCase 成员规范的父层规则。真实 WorkCase 实例已由阶段 9C 迁入 `ldvh-base/workcases/` 并由 Code/tests 校验；本文不迁入 V2 完整字段表、`21.Att.01` 长字段表、Hook、commit gate、Web 写入或 runtime adapter。WorkCase 最小手动行动模板由 `specs/06-行动模板基础规范.md` 承接，不改变本文事实对象边界。
+> 文件状态：active；本文吸收 V2 WorkCase 成员规范的父层规则。真实 WorkCase 实例已由阶段 9C 迁入 `ldvh-base/workcases/` 并由 Code/tests 校验；WorkCase 当前 V3 的完整顶层字段、`orchestration` 最小嵌套契约和状态条件必填口径由 `specs/attachments/21.Att.01-orchestration字段契约表.md` 承接。本文不迁入 V2 Hook、commit gate、Web 写入或 runtime adapter。WorkCase 最小手动行动模板由 `specs/06-行动模板基础规范.md` 承接，不改变本文事实对象边界。
 
 ## 1. 价值判断
 
@@ -69,9 +73,9 @@ WorkCase 主要服务 V1、V2、V4、V5、V6、V7、V8 和 V9：它承接目标�
 
 ## 3. 归口边界
 
-本文归口定义 WorkCase 的成员规范最小规则：对象定位、准入条件、事实源边界、最小状态闭集、执行项内部化、完成口径、Human Gate 和首批实例检查。
+本文归口定义 WorkCase 的成员规范最小规则：对象定位、准入条件、事实源边界、最小状态闭集、字段契约归口、执行项内部化、完成口径、Human Gate 和首批实例检查。
 
-本文不归口定义行动模板实例、正式 Hook 接入、commit gate、Web 写入、Code 输出 schema 或完整 `orchestration` 嵌套字段表。具体 WorkCase 实例位于 `ldvh-base/workcases/`，由 03 的事实源边界、本文成员规则和 Code/tests 字段 schema 共同约束。
+本文不内联行动模板实例、正式 Hook 接入、commit gate、Web 写入或 Code 输出 schema。具体 WorkCase 实例位于 `ldvh-base/workcases/`，由 03 的事实源边界、本文成员规则、`21.Att.01` 字段契约和 Code/tests 字段 schema 共同约束。
 
 WorkCase 行动模板由 06 承接。本文只为行动模板提供事实对象状态、证据、关闭口径和 Human Gate 边界，不定义模板步骤、Web 写入或环境触发。
 
@@ -82,7 +86,7 @@ WorkCase 行动模板由 06 承接。本文只为行动模板提供事实对象�
 1. 判断一次目标是否应形成 WorkCase；
 2. 创建、迁移、审计或关闭 WorkCase 实例前的最小规则读取；
 3. Code、Web、行动模板和测试消费 WorkCase 状态、证据和关闭边界；
-4. V2 `21-WorkCase-工作项.md` 和 `21.Att.01` 的后续迁移判断。
+4. V2 `21-WorkCase-工作项.md` 和 `21.Att.01` 已迁移规则的后续审计与收敛判断。
 
 ## 5. 对象定位与准入
 
@@ -115,7 +119,8 @@ ldvh-base/workcases/workcase-{NNNN}-short-title.yaml
 |---|---|
 | WorkCase 成员规范 | `specs/21-WorkCase-工作项.md` |
 | WorkCase 实例 | `ldvh-base/workcases/` |
-| WorkCase 字段注册结构 | `specs/attachments/05.Att.01-字段注册表结构.md` 与后续 WorkCase 字段附件 |
+| WorkCase 字段与 orchestration 契约 | `specs/attachments/21.Att.01-orchestration字段契约表.md` |
+| WorkCase 字段注册结构 | `specs/attachments/05.Att.01-字段注册表结构.md` |
 | WorkCase 验证声明 | `specs/09-测试与验证规范.md` 与 `specs/attachments/09.Att.01-验证声明字段表.md` |
 | WorkCase 展示、聚合或诊断输出 | Code、Web 或测试派生输出，不作为事实源 |
 
@@ -148,6 +153,8 @@ WorkCase 的完成口径必须区分四层：
 3. 已关闭：状态为 `closed`，且关闭时间、关闭结果、关闭证据和 Human 关闭确认已填写；
 4. 已提交：相关事实源修改已经进入符合 03 契约的 Git commit records。
 
+WorkCase 字段必须以 `21.Att.01` 为当前 V3 权威契约。顶层字段完整集合、`orchestration.mode`、`orchestration.execution_items`、`orchestration.plan_review`、`orchestration.result_review`、执行项字段、方案复核字段、结果复核字段和状态条件必填字段不得只存在于实例、Web 或测试夹具中；Code/Web 消费到新字段前，应先回到 `21.Att.01` 登记或经 Human Gate 明确作为迁移诊断处理。
+
 关闭证据必须包含可读取的 `后续分流 / 收口结果` 段落。收口干净时，应说明无后续分流或无残留尾巴；收口不干净时，应列出承接对象、承接边界和继续处理方式。不得用“后续再看”“待定”“另行处理”等模糊语句替代承接结论。
 
 ## 8. 保障措施
@@ -157,6 +164,7 @@ WorkCase 的完成口径必须区分四层：
 | 准入说明要求 | 创建 WorkCase 前必须说明对象化价值和减少的 AI 负担 | 本文、05、02 | 对象治理 | 目标被提升为 WorkCase 时 |
 | 事实源边界要求 | WorkCase 实例不得反向定义规则，也不得由 Code/Web/测试输出替代 | 本文、03、05 | 事实源治理 | 创建、迁移或审计实例时 |
 | 状态闭集要求 | WorkCase 状态必须属于本文闭集，legacy 状态只能作为迁移诊断 | 本文、Code/tests | 状态治理 | 写入、迁移或展示状态时 |
+| 字段契约要求 | WorkCase 顶层字段、orchestration 最小结构和状态条件必填必须由 21.Att.01 承接 | 本文、21.Att.01、Code/tests | 字段治理 | 写入、迁移、展示或诊断 WorkCase 时 |
 | 关闭证据要求 | 关闭前必须区分完成口径并记录后续分流 / 收口结果 | 本文、09、Human Gate | 验证治理 | 进入关闭确认或关闭状态时 |
 
 ## 9. 验证方法
@@ -167,6 +175,7 @@ WorkCase 的完成口径必须区分四层：
 |---|---|---|
 | 准入检查 | 是否说明对象化价值、事实源位置和减少的 AI 负担 | 保留为当前上下文、Spark 候选或待补齐事项 |
 | 状态检查 | 状态是否属于闭集，且未使用 legacy 状态 | 阻断写入或记录迁移诊断 |
+| 字段契约检查 | 顶层字段、orchestration 核心结构、执行项字段和状态条件必填是否由 21.Att.01 登记 | 回到 21.Att.01 补齐字段契约或把实例差异标为迁移诊断 |
 | 事实源检查 | 执行项、Code 输出、Web 状态或测试夹具是否没有被写成独立事实源 | 回到 03/05 边界修正 |
 | 关闭检查 | 是否区分执行完成、可提交关闭确认、已关闭和已提交，并有后续分流 / 收口结果 | 不得声明关闭完整 |
 
@@ -193,8 +202,7 @@ WorkCase 的完成口径必须区分四层：
 
 ## 12. 待补齐事项
 
-1. 后续再判断是否迁入 V2 `21.Att.01-orchestration字段契约表.md` 的最小附件或转为 Code/tests；
-2. 真实 WorkCase 实例目录已迁入 `ldvh-base/workcases/`；后续仍需判断是否定义 WorkCase 完整字段表、状态条件必填和实例样例；
-3. WorkCase 最小手动行动模板已由 06 承接；后续 Web 写入、完整 Confirm UI、外部环境触发、字段表细化和批量状态迁移仍需单独判断；
-4. 后续 Web 实现启动时，应只展示 WorkCase 事实源和可追溯派生状态，不建立执行项独立页面或第二事实源；
-5. 后续继续逐篇判断 Spark、ADR、Pitfall 和 Study 是否进入 V3 成员规范。
+1. WorkCase 最小手动行动模板已由 06 承接；后续 Web 写入、完整 Confirm UI、外部环境触发和批量状态迁移仍需单独判断；
+2. 后续 Web 实现启动时，应只展示 WorkCase 事实源和可追溯派生状态，不建立执行项独立页面或第二事实源；
+3. 后续继续逐篇判断 Spark、ADR、Pitfall 和 Study 是否进入 V3 成员规范；
+4. 21.Att.01 后续若继续细化枚举值、复核记录子字段或历史实例自动诊断，必须保持字段契约先于 Code/Web 消费。
