@@ -1,0 +1,277 @@
+id: workcase-0024
+type: workcase
+title: V2 删除准备度收口
+goal: |
+  在准备删除本地 V2 前，完成 LDVH V3 的删除准备度收口：清除 active specs、事实对象和实现域文档中仍把本地 V2 当作后续迁移来源、稳定运行线或整体切换前提的活依赖，并建立可复查的验证检查，确保 V2 删除后 V3 主线仍自足。
+
+  本 WorkCase 不以“继续迁移更多 V2 内容”为默认目标，而是逐项判断现有 V2 活引用应归入已迁入、不迁入、转为 V3 自身待办或 Git history 追溯。只有仍支撑当前 V3 规则成立、Code 消费或事实对象关闭判断的内容，才进入 V3 正式规范或事实对象。
+status: human_plan_confirming
+created: '2026-07-07T12:48:59+08:00'
+updated: '2026-07-07T12:48:59+08:00'
+priority: P0
+description: |
+  Human 指出：既然迁移模板预期是迁移完成后 V2 准备删除，那么当前 V3 中仍存在“后续从 V2 筛选 / 判断 / 迁入”的待补齐事项就需要重新审核。
+
+  2026-07-07 已完成三路只读审计：
+  - specs/attachments 审计结论：不具备删除准备度；P0 阻断集中在 `specs/03`、`specs/05`、`specs/06` 仍把 V2 附件或行动成员写成后续筛选来源。
+  - Code/tests/runtime 审计结论：通过；未发现删除本地 V2 会坏掉的活依赖，旧路径主要是 stale path 检测和测试 fixture。
+  - README/事实对象/实现域文档审计结论：不具备删除准备度；`spark-0039` 和 `workcase-0022` 仍以未关闭状态保留“v2 继续稳定服务 / 待整体迁移”的活承诺。
+
+  本 WorkCase 用于承接后续逐步修补，不替代具体 specs 修改、事实对象关闭、测试或最终删除决策。
+success_criteria: |
+  - [ ] `specs/03-事实源与Git溯源规范.md` 不再把本地 V2 `07.Att.*` 写成后续筛选来源；commit type/scope/body 已迁入部分、非事实源排除清单、过程输出回写、读取策略等逐项判定为已迁入、不迁入或 V3 后续待办。
+  - [ ] `specs/05-事实模型基础规范.md` 不再把本地 V2 `02.Att.*`、20-24 成员文件或 WorkCase orchestration 长表写成活迁移来源；已由 `05.Att.01`、`21.Att.01`、20-24 成员规范、Code/tests schema 承接的内容完成收口。
+  - [ ] `specs/06-行动模板基础规范.md` 不再写“后续从 V2 30-36 和 WorkCase 流程筛选”；候选行动模板改为 V3 自身候选清单、Git history 追溯或明确不迁入。
+  - [ ] `specs/07`、20/22/23/24、21 的过期待补齐事项完成清理，避免未来 AI 误以为仍需回本地 V2 做字段或实现来源判断。
+  - [ ] `spark-0039` 和 `workcase-0022` 的旧路线活承诺被关闭、废弃或改写为历史背景；不再以 pending / open 状态要求 V2 继续稳定服务或等待整体迁移。
+  - [ ] README、code/docs 和实现域保留必要 stale V2 path 检测，但不把旧 V2 路径、旧插件或旧运行线写成当前依赖。
+  - [ ] 新增或更新 Code/tests 检查，阻止 active specs 再出现“后续从本地 V2 筛选 / 判断 / 迁入”的活依赖句式；允许 `migration_sources: v2:...`、Git history 追溯和 stale path 检测。
+  - [ ] 最终验证包含 specs validation、相关 targeted tests、子 agent 复审和工作区 clean 检查。
+source: |
+  来源：2026-07-07 当前会话。
+
+  Human 关键输入：
+  - “那按照这个要求是不是之前制定的 v2 迁移计划要重新审核？我的模板是这次迁移完成后 v2 要准备删除了”
+  - “那你重新审核吧，我觉得安排子 agent 一起重新审核然后可以互补一下”
+  - “你看有什么要记录的，先做一个记录，我们逐步完成”
+
+  审计依据：
+  - `README.md`
+  - `specs/03-事实源与Git溯源规范.md`
+  - `specs/05-事实模型基础规范.md`
+  - `specs/06-行动模板基础规范.md`
+  - `specs/07-Code确定性执行规范.md`
+  - `specs/20-Spark-火花.md`
+  - `specs/21-WorkCase-工作项.md`
+  - `specs/22-ADR-决策.md`
+  - `specs/23-Pitfall-踩坑经验.md`
+  - `specs/24-Study-研究报告.md`
+  - `ldvh-base/sparks/spark-0039-v3-sidecar-action-guide-compiler.yaml`
+  - `ldvh-base/workcases/workcase-0022-v3-sidecar-action-guide-compiler-phase1.yaml`
+  - `code/environment_entry_audit.py`
+  - `tests/code/test_ldvh_specs_validate.py`
+orchestration:
+  mode: sequential
+  execution_items:
+    - id: item-1
+      title: 收口 specs/03 的 V2 07.Att 活依赖
+      role: specs
+      mode: single
+      input_refs:
+        - specs/03-事实源与Git溯源规范.md
+        - specs/attachments/03.Att.01-Commit-Message契约字段表.md
+        - v2:specs/attachments/07.Att.01-事实归属矩阵.md
+        - v2:specs/attachments/07.Att.06-过程输出回写核对表.md
+        - v2:specs/attachments/07.Att.10-事实源读取策略核对表.md
+        - v2:specs/attachments/07.Att.11-非事实源排除清单.md
+        - v2:specs/attachments/07.Att.12-事实承载介质选择表.md
+      expected_output: |
+        03 的待补齐事项不再要求从本地 V2 `07.Att.*` 筛选；commit message 已承接内容、非事实源排除清单、过程输出回写、读取策略和承载介质边界逐项落入 V3 正文、附件、Code/tests 后续或明确不迁入。
+      status: pending
+      result_summary: ''
+      evidence_refs: []
+      blocking_reason: ''
+    - id: item-2
+      title: 收口 specs/05 与成员字段迁移活口径
+      role: specs
+      mode: single
+      input_refs:
+        - specs/05-事实模型基础规范.md
+        - specs/attachments/05.Att.01-字段注册表结构.md
+        - specs/attachments/21.Att.01-orchestration字段契约表.md
+        - specs/20-Spark-火花.md
+        - specs/21-WorkCase-工作项.md
+        - specs/22-ADR-决策.md
+        - specs/23-Pitfall-踩坑经验.md
+        - specs/24-Study-研究报告.md
+        - v2:specs/attachments/02.Att.*
+      expected_output: |
+        05 和 20/22/23/24 的待补齐事项改为 V3 自身字段契约、实例校验和 Web/API 后续；不再要求保留本地 V2 `02.Att.*` 作为后续筛选来源。WorkCase orchestration 长表已由 `21.Att.01` 承接的事实同步到 05。
+      status: pending
+      result_summary: ''
+      evidence_refs: []
+      blocking_reason: ''
+    - id: item-3
+      title: 收口 specs/06 行动模板候选活依赖
+      role: specs
+      mode: single
+      input_refs:
+        - specs/06-行动模板基础规范.md
+        - specs/30-安装配置与验证行动模板.md
+        - specs/31-Git提交行动模板.md
+        - specs/33-环境插件编写与更新行动模板.md
+        - v2:specs/30-36
+      expected_output: |
+        06 不再写“后续从 V2 30-36 和 WorkCase 流程筛选”；候选行动模板改为当前 V3 已知候选、具体 WorkCase 后续或 Git history 追溯。30/31/33 的正式模板地位与未迁候选边界清楚。
+      status: pending
+      result_summary: ''
+      evidence_refs: []
+      blocking_reason: ''
+    - id: item-4
+      title: 收口未关闭事实对象中的旧路线承诺
+      role: facts
+      mode: single
+      input_refs:
+        - ldvh-base/sparks/spark-0039-v3-sidecar-action-guide-compiler.yaml
+        - ldvh-base/workcases/workcase-0022-v3-sidecar-action-guide-compiler-phase1.yaml
+        - ldvh-base/studies/study-0010-spark-study-absorption-index.md
+        - ldvh-base/workcases/workcase-0001-runtime-entry-user-input-contract.yaml
+      expected_output: |
+        pending / open 事实对象不再承诺 “v2 继续稳定服务” 或 “待整体迁移后切换”。历史语境可保留，但必须标明已被 V3 主线替代、转为 Git history 追溯或由本 WorkCase 承接。
+      status: pending
+      result_summary: ''
+      evidence_refs: []
+      blocking_reason: ''
+    - id: item-5
+      title: 增加删除准备度防回归检查
+      role: code-tests
+      mode: single
+      input_refs:
+        - code/ldvh_specs.py
+        - tests/code/test_ldvh_specs_validate.py
+        - README.md
+      expected_output: |
+        新增或更新只读 validator / tests：active specs 不得出现“后续从 V2 / 本地 V2 筛选、判断、迁入”的活依赖；允许 `migration_sources: v2:...`、Git history 追溯、历史来源说明和 stale path 检测。
+      status: pending
+      result_summary: ''
+      evidence_refs: []
+      blocking_reason: ''
+  plan_review:
+    orchestration_owner: main_controller
+    workflow_ref: null
+    review_policy:
+      selection_reason: |
+        本工作直接影响 V2 删除准备度和 V3 主线自足性。若处理不完整，删除本地 V2 后会留下规范待办、事实对象和 README 之间的冲突；若处理过度，则可能误删合理的历史追溯和 stale path 检测。
+      required_perspectives:
+        - specs_attachments_deletion_readiness
+        - code_tests_runtime_deletion_readiness
+        - facts_readme_docs_deletion_readiness
+      optional_perspectives:
+        - commit_gate_contract
+        - environment_plugin_stale_path_detection
+      tool_method_requirements:
+        - 子 agent 审计只读，不修改文件。
+        - 必须区分 active V2 活依赖和允许的历史追溯。
+        - 必须区分本地 V2 文件依赖和 Git history 追溯。
+        - 必须保留 stale V2 path 检测，不得当作删除对象。
+      aggregation_rule: |
+        任一 required perspective 发现 `blocks_v2_deletion`，不得声明本地 V2 可删除。所有阻断必须转为已迁入、不迁入、V3 自身待办或 Git history 追溯后，才能进入删除准备度完成判断。
+    review_items:
+      - id: review-1
+        role: specs-attachments
+        agent_name: McClintock
+        requested_at: '2026-07-07T12:00:00+08:00'
+        prompt_context: |
+          只读审计 `specs/` 和 `specs/attachments/` 是否仍保留本地 V2 删除阻断。
+        result:
+          status: fail
+          summary: |
+            当前还不具备 specs/attachments 删除准备度。P0 阻断集中在 `specs/03`、`specs/05`、`specs/06`：它们仍把 V2 附件或 V2 行动成员写成后续筛选 / 迁入来源。`specs/07` 和 20/22/23/24 还有需要决策的活口径，`specs/21` 有过期待补齐事项。
+          key_findings:
+            - specs/03 仍要求后续从 V2 `07.Att.*` 筛选 commit type、scope、body 条件和非事实源排除清单。
+            - specs/05 仍要求后续筛选 V2 `02.Att.*`，且上文仍把 20-24 和 WorkCase orchestration 长表写成后续判断来源。
+            - specs/06 仍写后续从 V2 30-36 和 WorkCase 流程筛选正式行动模板候选。
+            - migration_sources 和 stale path 处理属于可接受历史引用，不阻断删除。
+          required_changes:
+            - 收敛 03/05/06 P0 活依赖。
+            - 决策 07 与成员规范中过期待补齐事项。
+          evidence_refs:
+            - specs/03-事实源与Git溯源规范.md
+            - specs/05-事实模型基础规范.md
+            - specs/06-行动模板基础规范.md
+      - id: review-2
+        role: code-tests-runtime
+        agent_name: Mill
+        requested_at: '2026-07-07T12:00:00+08:00'
+        prompt_context: |
+          只读审计 `code/`、`tests/`、`hooks/`、`web/` 和根配置是否依赖本地 V2。
+        result:
+          status: pass
+          summary: |
+            Code/tests/runtime 范围未发现会因删除本地 V2 目录而坏掉的活依赖。旧 `ld-vibe-harness`、`hook_adapter.py`、`hook_dispatch.py` 路径主要用于 stale path 诊断和测试 fixture，应保留。
+          key_findings:
+            - "`code/environment_entry_audit.py` 的旧路径匹配是 legacy detection。"
+            - "`tests/code/test_ldvh_specs_validate.py` 和 install verification 中旧路径是 fixture。"
+            - Codex 插件 README 写“来自 V2 icons”是 stale wording，不阻断。
+          required_changes:
+            - 可后续清理图标来源文案。
+            - 保留 stale path 检测和负例测试。
+          evidence_refs:
+            - code/environment_entry_audit.py
+            - tests/code/test_ldvh_specs_validate.py
+            - hooks/environment-plugins/codex-ldvh-v3/README.md
+      - id: review-3
+        role: facts-readme-docs
+        agent_name: Ptolemy
+        requested_at: '2026-07-07T12:00:00+08:00'
+        prompt_context: |
+          只读审计 README、code/docs 和事实对象是否仍保留本地 V2 删除阻断。
+        result:
+          status: fail
+          summary: |
+            README 已宣称 V2 关闭为历史来源，但 pending/open 事实对象仍保留“v2 继续稳定服务 / 待整体迁移”的活承诺，形成口径冲突。`spark-0039` 和 `workcase-0022` 是 P1 删除阻断，`study-0010` 和 `workcase-0001` 需要删除前决策。
+          key_findings:
+            - "`spark-0039` 仍是 pending，并写 V2 继续作为当前稳定运行线。"
+            - "`workcase-0022` 仍是 result_self_checking，并写 V2 保持当前稳定运行、待 specs + Code 成熟后再整体迁移。"
+            - README 口径与上述事实对象冲突，需要先改写或关闭事实对象。
+          required_changes:
+            - 收口 `spark-0039` 和 `workcase-0022`。
+            - 处理 `study-0010` 中 “v2 当前需求” 表述。
+            - 明确 `workcase-0001` 的 v2 字段格式只是历史来源。
+          evidence_refs:
+            - README.md
+            - ldvh-base/sparks/spark-0039-v3-sidecar-action-guide-compiler.yaml
+            - ldvh-base/workcases/workcase-0022-v3-sidecar-action-guide-compiler-phase1.yaml
+  result_review:
+    orchestration_owner: main_controller
+    workflow_ref: null
+    review_policy:
+      selection_reason: |
+        本 WorkCase 尚未执行修补。结果复核将在所有阻断项完成、测试通过并完成子 agent 复审后填写。
+      required_perspectives:
+        - specs_closure_result
+        - facts_closure_result
+        - code_tests_guardrail_result
+      tool_method_requirements:
+        - 修补后必须复跑 specs validation 和 targeted tests。
+        - 必须确认 active specs 不再含本地 V2 活依赖句式。
+        - 必须确认 README 与事实对象状态口径一致。
+    controller_self_check: {}
+    review_items: []
+    controller_resolution: {}
+    human_closure_confirmation: {}
+plan_confirmed_at: ''
+review_requested_at: ''
+verification_evidence: |
+  记录创建前已完成只读审计：
+  - specs/attachments 子审计：不通过，发现 03/05/06 P0 删除阻断。
+  - Code/tests/runtime 子审计：通过，未发现删除本地 V2 会坏掉的活依赖。
+  - README/事实对象/实现域文档子审计：不通过，发现 `spark-0039`、`workcase-0022` 活承诺冲突。
+
+  本 WorkCase 仅记录审计结论和执行计划；尚未执行修补。
+closure_evidence: ''
+closure_requested_at: ''
+closed_at: ''
+closure_outcome: ''
+residual_risks: |
+  - 本记录创建后，若未继续修补 03/05/06 和事实对象，仍不得声明本地 V2 可删除。
+  - 删除准备度检查需要允许历史追溯、`migration_sources: v2:...` 和 stale path 检测，不能简单禁止所有 V2 字符串。
+  - `spark-0039`、`workcase-0022` 的处理需要区分历史语境、事实对象状态和当前主线承诺，不能直接粗暴删除历史记录。
+followup_refs:
+  - workcase-0022
+  - spark-0039
+revision_history:
+  - at: '2026-07-07T12:48:59+08:00'
+    summary: |
+      创建 V2 删除准备度收口 WorkCase，记录三路只读审计结论、P0/P1 阻断、执行项和后续验证要求。
+related_docs:
+  - README.md
+  - specs/03-事实源与Git溯源规范.md
+  - specs/05-事实模型基础规范.md
+  - specs/06-行动模板基础规范.md
+related_adrs: []
+related_sparks:
+  - spark-0039
+related_pitfalls: []
+related_workcases:
+  - workcase-0022
