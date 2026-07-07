@@ -467,12 +467,26 @@ def test_fact_model_validator_reports_migration_as_instance_boundary(tmp_path: P
     _replace_in_temp(
         root,
         "specs/05-事实模型基础规范.md",
-        "已从工作树删除的迁移材料不得被写成事实实例；历史迁移记录只通过 Git history 追溯。",
+        "已从工作树删除的迁移材料不得被写成事实实例；历史迁移记录只可在审计追溯、争议复核或历史取证时查询，不作为当前 V3 规则、实例字段或验收依据。",
     )
 
     result = ldvh_specs.build_validation(root)
 
     assert "FACT_INSTANCE_MIGRATION_BOUNDARY_MISSING" in _diagnostic_codes(result)
+
+
+def test_v2_deletion_readiness_forbids_git_history_as_migration_exit(tmp_path: Path) -> None:
+    root = _copy_specs_and_facts_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/06-行动模板基础规范.md",
+        "V2 30-59 成员全文不在当前工作树保留，未进入当前 V3 specs、事实对象或明确 WorkCase 待办的内容不得视为已承接。",
+        "V2 30-59 成员全文不在当前工作树保留，需要时通过 Git history 追溯。",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "V2_DELETION_HISTORY_FALLBACK_FORBIDDEN" in _diagnostic_codes(result)
 
 
 def test_fact_model_validator_reports_missing_field_term_boundary(tmp_path: Path) -> None:

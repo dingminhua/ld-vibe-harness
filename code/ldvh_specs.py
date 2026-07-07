@@ -229,7 +229,18 @@ FACT_SOURCE_EVIDENCE_REQUIREMENTS = [
         "path": SHORT_SPEC_REFS["03"],
         "section": "事实源边界",
         "message": "03 必须列出非事实源排除项",
-        "terms": ["聊天", "Code 输出", "测试输出", "Web 页面状态", "runtime receipt", "历史迁移材料", "Git commit records"],
+        "terms": [
+            "聊天",
+            "Code 输出",
+            "测试输出",
+            "Web 页面状态",
+            "runtime receipt",
+            "历史迁移材料",
+            "Git history 只能作为审计追溯、争议复核或历史取证的备份渠道",
+            "不授权正式规则、实现行为、验收通过或未迁内容承接",
+            "V3 删除准备度和当前主线验收必须以当前工作树自足为准",
+            "Git commit records",
+        ],
     },
     {
         "code": "PROCESS_OUTPUT_QUALIFICATION_MISSING",
@@ -259,6 +270,17 @@ FACT_SOURCE_EVIDENCE_REQUIREMENTS = [
         "message": "09 必须声明失败阻断边界",
         "terms": ["必须运行的测试失败", "关键验证未运行", "证据无法回指", "Human 验收尚未发生", "仅有工具成功输出"],
     },
+]
+V2_DELETION_HISTORY_FALLBACK_FORBIDDEN_PATTERNS = [
+    "转为 Git history 追溯",
+    "通过 Git history 追溯",
+    "需要时通过 Git history",
+    "或 Git history 追溯",
+    "Git history 追溯或",
+]
+V2_DELETION_READINESS_SCAN_PATHS = [
+    "README.md",
+    "ldvh-base/workcases/workcase-0024-v2-deletion-readiness-closure.yaml",
 ]
 ACTION_TEMPLATE_FOUNDATION_RULE_REQUIREMENTS = [
     {
@@ -2814,6 +2836,32 @@ def validate_fact_source_and_verification_boundaries(root: Path = ROOT) -> list[
     return diagnostics
 
 
+def validate_v2_deletion_readiness_boundaries(root: Path = ROOT) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    scan_paths = [root / path for path in V2_DELETION_READINESS_SCAN_PATHS]
+    specs_dir = root / "specs"
+    if specs_dir.exists():
+        scan_paths.extend(sorted(specs_dir.glob("**/*.md")))
+
+    for path in scan_paths:
+        if not path.exists() or not path.is_file():
+            continue
+        rel_path = _display_path(path, root)
+        raw = path.read_text(encoding="utf-8")
+        for pattern in V2_DELETION_HISTORY_FALLBACK_FORBIDDEN_PATTERNS:
+            if pattern in raw:
+                diagnostics.append(
+                    Diagnostic(
+                        "error",
+                        "V2_DELETION_HISTORY_FALLBACK_FORBIDDEN",
+                        rel_path,
+                        f"Git history 只能作为审计追溯、争议复核或历史取证备份，不能作为未迁内容承接或验收出口: {pattern}",
+                    )
+                )
+
+    return diagnostics
+
+
 def validate_web_sync_boundaries(root: Path = ROOT) -> list[Diagnostic]:
     path = SHORT_SPEC_REFS["08"]
     raw = (root / path).read_text(encoding="utf-8")
@@ -3700,6 +3748,7 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
     diagnostics.extend(validate_foundation_spec_contracts(foundation_spec_contracts))
     diagnostics.extend(validate_fact_model_boundaries(root))
     diagnostics.extend(validate_fact_source_and_verification_boundaries(root))
+    diagnostics.extend(validate_v2_deletion_readiness_boundaries(root))
     diagnostics.extend(validate_web_sync_boundaries(root))
     diagnostics.extend(validate_implementation_domain_boundaries(root))
     diagnostics.extend(validate_governed_project_spec_boundaries(root))
