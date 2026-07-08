@@ -378,6 +378,24 @@ def test_assurance_spec_defines_hook_action_boundary_table() -> None:
     assert "保障机制失败时只能交还 Human 完善机制或授权一次受控处理，不提供默认自动恢复路径" in spec_01
 
 
+def test_assurance_spec_defines_self_lock_disposition_path() -> None:
+    spec_01 = (ROOT / "specs/01-保障与衔接.md").read_text(encoding="utf-8")
+
+    # These string checks intentionally guard specs semantics, not prose style.
+    assert "### 5.8.1 自锁事故处置路径" in spec_01
+    assert "恢复“AI 能准确行动”的保障链路，而不是自动恢复、自动放行或把异常写成长期健康状态" in spec_01
+    assert "先消费 10 的 target-first 管辖解析" in spec_01
+    assert "`scope_unknown` 必须 degraded / `capability_gap` / `unverifiable`，不得被扩大成管辖阻断" in spec_01
+    assert "区分 `target_primary`、必要 direct dependent / cascade、`unrelated_global` 和 `runtime_blocker`" in spec_01
+    assert "无关坏对象只作为 residual risk，不得阻断当前无关普通写入" in spec_01
+    assert "普通写入必须停止，并在 repair、拆分、补 target、补 read_plan 或 Human Gate 之间分流" in spec_01
+    assert "repair 不是 bypass，不得推进状态、关闭对象、接受风险、跨对象迁移或替代 Human Gate" in spec_01
+    assert "仍失败时必须记录“已写未通过”或等价失败结果" in spec_01
+    assert "LDVH 不提供默认自动恢复路径" in spec_01
+    assert "不新增 runtime event、不新增 bypass、不改变 Human Gate 条件" in spec_01
+    assert "自锁事故处置路径已由本文 §5.8.1 串联 07、09、10" in spec_01
+
+
 def test_verification_spec_defines_verification_plan_contract() -> None:
     spec_09 = (ROOT / "specs/09-测试与验证规范.md").read_text(encoding="utf-8")
 
