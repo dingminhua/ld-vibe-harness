@@ -124,6 +124,8 @@ Code 生成管辖项目 Action Guide 时，必须消费 01 和 10 的管辖分�
 
 Code 生成 Action Guide 的 `action_type`、`attention_points`、`tool_plan` 和 `post_read_action` 时，只能基于显式 action hint、消费时机、读写类型、target 类型、管辖解析、保障需求、source_refs、diagnostic、validation guard 和已授权 Code 入口确定性派生。Code 不得从自然语言任务中猜测价值取舍，不得引入未授权命令，不得输出 `allowed`、`approved`、`unblocked` 或等价授权语义；工具建议和读后行动只能作为候选导航，并必须继续交还 AI 主控判断。
 
+Code 生成 Action Guide 的 `source_outline` 时，只能重新组织已有 `source_refs`、`task_read_plan`、`read_mode`、`source_boundaries`、项目事实源解析和 diagnostic / gap 输出，不得引入新规则、新事实源或新授权判断。`source_outline` 必须区分立即消费、回指保留和后续展开，并保留来源类型、角色、优先级、披露层级和边界说明；无法归类时必须输出 `unclassified` / `process_output` 或 diagnostic，不得把未知来源伪装成权威规则。
+
 ## 7. Runtime facade 与环境适配实现边界
 
 01 已定义 Runtime Protocol、canonical event 和 trigger source 的上位语义。本文只承接具体实现边界。

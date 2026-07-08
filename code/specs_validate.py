@@ -96,6 +96,17 @@ def print_text(result: dict[str, Any], command: str) -> None:
             print("\nAttention points:")
             for item in result["attention_points"]:
                 print(f"- {item.get('message', '')}")
+        if result.get("source_outline", {}).get("groups"):
+            print("\nSource outline:")
+            for group in result["source_outline"]["groups"]:
+                print(f"- {group.get('source_type', '')}: {group.get('boundary', '')}")
+                items = group.get("items", [])
+                for item in items[:5]:
+                    priority = item.get("priority") or "ref"
+                    read_mode = item.get("read_mode") or "reference"
+                    print(f"  - {priority}/{read_mode}/{item.get('disposition', '')}: {item.get('path', '')}")
+                if len(items) > 5:
+                    print(f"  - ... {len(items) - 5} more")
         if result["task_read_plan"]:
             print("\nTask read plan:")
             for item in result["task_read_plan"]:

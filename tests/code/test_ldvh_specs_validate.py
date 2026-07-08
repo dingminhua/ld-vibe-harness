@@ -348,6 +348,7 @@ def test_action_guide_governed_project_contract_is_specified() -> None:
     assert "| `action_type` | 由显式 action hint、消费时机、读写类型或 target 类型确定的行动分类" in spec_01
     assert "| `relationship_projection` | 与当前任务相关的 specs、附件、事实对象、WorkCase、证据、测试和环境入口关系。 |" in spec_01
     assert "| `attention_points` | 当前行动前 3-5 条短提醒" in spec_01
+    assert "| `source_outline` | 将 `source_refs`、`task_read_plan`、`read_mode` 和 `source_boundaries` 组织成" in spec_01
     assert "| `read_order` | 建议读取顺序、P0 / P1 层级、authority / context / verification / fallback 等角色。 |" in spec_01
     assert "| `read_mode` | 每个读取项或读取组的披露层级，例如 `result`、`contract`、`section` 或 `full`。 |" in spec_01
     assert "| `guide_receipt` | 对已消费且输入未变化的行动指南返回 brief / receipt 确认，避免重复注入完整上下文。 |" in spec_01
@@ -358,6 +359,7 @@ def test_action_guide_governed_project_contract_is_specified() -> None:
     assert "| 任务脉络 | 输出包含当前任务、消费时机、target、cwd、`scope_status`、管辖项目和当前阶段" in spec_01
     assert "| 行动分类 | `action_type` 必须来自显式 action hint、消费时机、读写类型或 target 类型" in spec_01
     assert "| 行动提醒 | `attention_points` 应保持 3-5 条短提醒" in spec_01
+    assert "| 来源组织 | `source_outline` 必须把来源按 `ldvh_specs`、`ldvh_facts`、`governed_project_facts`" in spec_01
     assert "| 工具与读后行动 | `tool_plan` 和 `post_read_action` 必须是候选导航" in spec_01
     assert "| 人类可见输出 | 当 Action Guide 以 text、receipt、Hook 消息或其它 Human-facing 形式呈现时" in spec_01
     assert "而不只展示 read_plan" in spec_01
@@ -377,6 +379,8 @@ def test_action_guide_governed_project_contract_is_specified() -> None:
     assert "不得伪造项目事实源 read_plan" in spec_07
     assert "Code 生成 Action Guide 的 `action_type`、`attention_points`、`tool_plan` 和 `post_read_action`" in spec_07
     assert "不得从自然语言任务中猜测价值取舍" in spec_07
+    assert "Code 生成 Action Guide 的 `source_outline` 时，只能重新组织已有" in spec_07
+    assert "不得把未知来源伪装成权威规则" in spec_07
     assert "Action Guide governed project 链路 specs 契约和本地 Code builder 已补齐" in spec_07
 
     assert "只能以 resolver 输出的 `governed_project_path` 下 `ldvh-base/` 作为项目事实源入口" in spec_10
@@ -2796,6 +2800,27 @@ def test_action_guide_session_start_read_plan() -> None:
     assert 3 <= len(guide["attention_points"]) <= 5
     assert any("Action Guide 只提供导航和缺口暴露" in item["message"] for item in guide["attention_points"])
     assert any("Stop Conditions" in item["message"] for item in guide["attention_points"])
+    source_outline = guide["source_outline"]
+    assert source_outline["summary"]["groups"] >= 2
+    assert source_outline["summary"]["consume_now"] >= 3
+    assert "不是事实源、规则源或授权判断" in source_outline["boundary"]
+    source_groups = {group["source_type"]: group for group in source_outline["groups"]}
+    assert "ldvh_specs" in source_groups
+    assert "governed_project_facts" in source_groups
+    assert not any(
+        item["path"] == "ldvh-base"
+        for item in source_groups.get("ldvh_facts", {}).get("items", [])
+    )
+    spec_outline_paths = {item["path"] for item in source_groups["ldvh_specs"]["items"]}
+    assert "specs/01-保障与衔接.md" in spec_outline_paths
+    assert "specs/10-安装与配置规范.md" in spec_outline_paths
+    assert any(
+        item["path"] == "specs/01-保障与衔接.md"
+        and item["priority"] == "P0"
+        and item["read_mode"] in {"contract", "section"}
+        and item["consume_now"] is True
+        for item in source_groups["ldvh_specs"]["items"]
+    )
     assert guide["tool_plan"]
     assert guide["tool_plan"][0]["tool"] == "code/specs_validate.py action-guide"
     assert "code/specs_validate.py action-guide" in guide["tool_plan"][0]["command"]
@@ -2885,6 +2910,34 @@ def test_action_guide_tool_plan_covers_completion_and_commit_candidates(validati
     assert "code/specs_validate.py commit-gate" in commit_tools
     assert "--message-file '<commit_msg_file>'" in commit_tools["code/specs_validate.py commit-gate"]["command"]
     assert all(item["authorization"] == "none" for item in commit_guide["tool_plan"])
+
+
+def test_action_guide_source_outline_normalizes_non_session_source_types(validation_result: dict) -> None:
+    for timing in ("pre_tool_use", "completion_claim", "git_commit_msg"):
+        guide = ldvh_specs.build_action_guide(
+            ROOT,
+            consumption_timing=timing,
+            target_path="specs/01-保障与衔接.md",
+            validation=validation_result,
+        )
+
+        source_types = {group["source_type"] for group in guide["source_outline"]["groups"]}
+        assert "ldvh_specs" in source_types
+        assert "process_output" in source_types
+        assert "spec_section" not in source_types
+        assert "process_evidence" not in source_types
+        assert all("未知来源类型" not in group["boundary"] for group in guide["source_outline"]["groups"])
+
+
+def test_action_guide_source_outline_prefers_governed_fact_role_over_generic_fact() -> None:
+    assert (
+        ldvh_specs.action_guide_infer_source_type(
+            "ldvh-base",
+            explicit_source_type="fact",
+            role="governed_project_fact_source",
+        )
+        == "governed_project_facts"
+    )
 
 
 def test_action_guide_pre_tool_use_next_action_has_no_write_authorization(validation_result: dict) -> None:
@@ -3008,6 +3061,9 @@ projects:
     assert guide["task_context"]["scope_status"] == "non_governed"
     assert guide["action_type"]["authorization"] == "none"
     assert guide["attention_points"] == []
+    assert guide["source_outline"]["summary"]["items"] == 0
+    assert guide["source_outline"]["summary"]["consume_now"] == 0
+    assert guide["source_outline"]["groups"] == []
     assert guide["tool_plan"] == []
     assert guide["post_read_action"]["kind"] == "no_op"
     assert guide["post_read_action"]["authorization"] == "none"
@@ -3189,6 +3245,8 @@ def test_specs_validate_cli_action_guide_json() -> None:
     assert payload["action_type"]["action_type"] == "session_start"
     assert payload["action_type"]["authorization"] == "none"
     assert payload["attention_points"]
+    assert payload["source_outline"]["summary"]["groups"] >= 2
+    assert payload["source_outline"]["summary"]["consume_now"] >= 3
     assert payload["tool_plan"][0]["authorization"] == "none"
     assert payload["post_read_action"]["kind"] == "continue_after_read_plan"
     assert payload["post_read_action"]["authorization"] == "none"
@@ -3220,6 +3278,9 @@ def test_specs_validate_cli_action_guide_text_outputs_execution_bridge() -> None
     assert "- action_type: session_start" in output
     assert "Attention points:" in output
     assert "Action Guide 只提供导航和缺口暴露" in output
+    assert "Source outline:" in output
+    assert "- ldvh_specs:" in output
+    assert "P0/section/consume_now: specs/01-保障与衔接.md" in output
     assert "Task read plan:" in output
     assert "Tool plan:" in output
     assert "code/specs_validate.py action-guide" in output
@@ -3270,6 +3331,9 @@ def test_session_start_text_outputs_action_guide_context() -> None:
     assert "Read budget:" in output
     assert "Attention points:" in output
     assert "Action Guide 只提供导航和缺口暴露" in output
+    assert "Source outline:" in output
+    assert "- ldvh_specs:" in output
+    assert "P0/section/consume_now: specs/01-保障与衔接.md" in output
     assert "Suggested sections:" in output
     assert "Relationship projection:" in output
     assert "- consumption_timing -> AI-BEH-001 [requires]" in output

@@ -109,6 +109,19 @@ def _print_text(result: dict[str, Any]) -> None:
         for item in attention_points:
             print(f"- {item.get('message', '')}")
 
+    source_outline = action_guide.get("source_outline", {})
+    if source_outline.get("groups"):
+        print("\nSource outline:")
+        for group in source_outline["groups"]:
+            print(f"- {group.get('source_type', '')}: {group.get('boundary', '')}")
+            items = group.get("items", [])
+            for item in items[:5]:
+                priority = item.get("priority") or "ref"
+                read_mode = item.get("read_mode") or "reference"
+                print(f"  - {priority}/{read_mode}/{item.get('disposition', '')}: {item.get('path', '')}")
+            if len(items) > 5:
+                print(f"  - ... {len(items) - 5} more")
+
     read_plan = action_guide.get("task_read_plan", [])
     if read_plan:
         print("\nTask read plan:")

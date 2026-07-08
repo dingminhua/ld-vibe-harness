@@ -4072,6 +4072,8 @@ def capability_gaps_for_requirement(requirement: dict[str, Any]) -> list[dict[st
 ACTION_GUIDE_P0_INLINE_LIMIT = 5
 ACTION_GUIDE_P1_INLINE_LIMIT = 8
 ACTION_GUIDE_ALLOWED_READ_MODES = ("result", "contract", "section", "full")
+ACTION_GUIDE_PRIORITY_ORDER = {"P0": 0, "P1": 1, "P2": 2, "P3": 3}
+ACTION_GUIDE_READ_MODE_ORDER = {"result": 0, "contract": 1, "section": 2, "full": 3}
 ACTION_GUIDE_SECTION_HINTS = {
     SHORT_SPEC_REFS["00"]: ["五类构成要素", "V1-V9 价值判断"],
     SHORT_SPEC_REFS["01"]: ["7. 行动指南", "10. Human Gate", "11. Stop Conditions"],
@@ -4343,6 +4345,158 @@ def action_guide_suggested_sections(task_read_plan: list[dict[str, Any]]) -> lis
             "reason": "优先定位与当前行动指南契约相关的章节，而不是重复注入全文。",
         })
     return suggestions
+
+
+def action_guide_infer_source_type(path: str, explicit_source_type: str = "", role: str = "") -> str:
+    if role == "governed_project_fact_source":
+        return "governed_project_facts"
+    if explicit_source_type:
+        if explicit_source_type in {"spec", "attachment", "spec_section"}:
+            return "ldvh_specs"
+        if explicit_source_type == "fact":
+            return "ldvh_facts"
+        if explicit_source_type == "process_evidence":
+            return "process_output"
+        return explicit_source_type
+    normalized = normalize_relative_path(path)
+    if normalized.startswith("specs/"):
+        return "ldvh_specs"
+    if normalized.startswith("ldvh-base") or normalized.startswith("ldvh-base/"):
+        return "ldvh_facts"
+    if role in {"governed_project_config", "governed_project_resolution"}:
+        return "process_output"
+    return "process_output"
+
+
+def _merge_source_outline_item(existing: dict[str, Any], incoming: dict[str, Any]) -> dict[str, Any]:
+    priority_rank = ACTION_GUIDE_PRIORITY_ORDER
+    read_mode_rank = ACTION_GUIDE_READ_MODE_ORDER
+    merged = dict(existing)
+    merged["roles"] = sorted(set(existing.get("roles", [])) | set(incoming.get("roles", [])))
+    merged["source_ref_roles"] = sorted(
+        set(existing.get("source_ref_roles", [])) | set(incoming.get("source_ref_roles", []))
+    )
+    incoming_priority = incoming.get("priority", "")
+    existing_priority = existing.get("priority", "")
+    if incoming_priority and (
+        not existing_priority
+        or priority_rank.get(incoming_priority, 99) < priority_rank.get(existing_priority, 99)
+    ):
+        merged["priority"] = incoming_priority
+    incoming_read_mode = incoming.get("read_mode", "")
+    existing_read_mode = existing.get("read_mode", "")
+    if incoming_read_mode and (
+        not existing_read_mode
+        or read_mode_rank.get(incoming_read_mode, -1) > read_mode_rank.get(existing_read_mode, -1)
+    ):
+        merged["read_mode"] = incoming_read_mode
+    if incoming.get("read_order") and (
+        not existing.get("read_order") or int(incoming["read_order"]) < int(existing["read_order"])
+    ):
+        merged["read_order"] = incoming["read_order"]
+    if incoming.get("reason") and not merged.get("reason"):
+        merged["reason"] = incoming["reason"]
+    if incoming.get("consume_now"):
+        merged["consume_now"] = True
+        merged["disposition"] = "consume_now"
+    elif not merged.get("consume_now") and incoming.get("disposition") == "deferred":
+        merged["disposition"] = "deferred"
+    return merged
+
+
+def action_guide_source_outline(
+    *,
+    source_refs: list[dict[str, Any]],
+    task_read_plan: list[dict[str, Any]],
+    source_boundaries: list[dict[str, str]],
+) -> dict[str, Any]:
+    boundary_by_type = {item["source_type"]: item["boundary"] for item in source_boundaries}
+    source_path_by_type = {item["source_type"]: item["source_path"] for item in source_boundaries}
+    items_by_key: dict[tuple[str, str], dict[str, Any]] = {}
+
+    for item in task_read_plan:
+        path = item.get("path") or item.get("label", "")
+        if not path:
+            continue
+        source_type = action_guide_infer_source_type(
+            path,
+            str(item.get("source_type", "")),
+            str(item.get("role", "")),
+        )
+        priority = item.get("priority", "")
+        consume_now = priority in {"P0", "P1"} and item.get("budget_group") != "next_queries"
+        outline_item = {
+            "source_type": source_type,
+            "path": path,
+            "roles": [item.get("role", "")] if item.get("role") else [],
+            "source_ref_roles": [],
+            "priority": priority,
+            "read_mode": item.get("read_mode", ""),
+            "read_order": item.get("read_order", 0),
+            "consume_now": consume_now,
+            "disposition": "consume_now" if consume_now else "deferred",
+            "reason": item.get("reason", ""),
+        }
+        key = (source_type, path)
+        items_by_key[key] = (
+            _merge_source_outline_item(items_by_key[key], outline_item)
+            if key in items_by_key
+            else outline_item
+        )
+
+    for ref in source_refs:
+        path = str(ref.get("path") or "").strip()
+        if not path:
+            continue
+        source_type = action_guide_infer_source_type(path, role=str(ref.get("role", "")))
+        outline_item = {
+            "source_type": source_type,
+            "path": path,
+            "roles": [],
+            "source_ref_roles": [ref.get("role", "")] if ref.get("role") else [],
+            "priority": "",
+            "read_mode": "",
+            "read_order": 0,
+            "consume_now": False,
+            "disposition": "reference_only",
+            "reason": "来源回指；仅在 read_plan、Stop Conditions、Human Gate 或解释需求触发时展开。",
+        }
+        key = (source_type, path)
+        items_by_key[key] = (
+            _merge_source_outline_item(items_by_key[key], outline_item)
+            if key in items_by_key
+            else outline_item
+        )
+
+    ordered_items = sorted(
+        items_by_key.values(),
+        key=lambda item: (
+            ACTION_GUIDE_PRIORITY_ORDER.get(str(item.get("priority", "")), 99),
+            int(item.get("read_order") or 9999),
+            str(item.get("source_type", "")),
+            str(item.get("path", "")),
+        ),
+    )
+    groups: list[dict[str, Any]] = []
+    for source_type in sorted({item["source_type"] for item in ordered_items}):
+        group_items = [item for item in ordered_items if item["source_type"] == source_type]
+        groups.append({
+            "source_type": source_type,
+            "boundary": boundary_by_type.get(source_type, "未知来源类型只能作为过程输出或 diagnostic，不得伪装成权威规则。"),
+            "source_path": source_path_by_type.get(source_type, SHORT_SPEC_REFS["01"]),
+            "items": group_items,
+        })
+    return {
+        "summary": {
+            "groups": len(groups),
+            "items": len(ordered_items),
+            "consume_now": sum(1 for item in ordered_items if item.get("consume_now")),
+            "reference_only": sum(1 for item in ordered_items if item.get("disposition") == "reference_only"),
+            "deferred": sum(1 for item in ordered_items if item.get("disposition") == "deferred"),
+        },
+        "groups": groups,
+        "boundary": "source_outline 只重组已有 source_refs、task_read_plan、read_mode 和 source_boundaries；不是事实源、规则源或授权判断。",
+    }
 
 
 def action_guide_task_context(
@@ -4778,6 +4932,11 @@ def build_action_guide(
                 project_fact_sources=[],
             ),
             "attention_points": [],
+            "source_outline": {
+                "summary": {"groups": 0, "items": 0, "consume_now": 0, "reference_only": 0, "deferred": 0},
+                "groups": [],
+                "boundary": "non_governed no-op 不输出来源组织视图；不是事实源、规则源或授权判断。",
+            },
             "requirements": [],
             "task_read_plan": [],
             "read_order": [],
@@ -4938,6 +5097,11 @@ def build_action_guide(
         project_fact_sources=project_fact_sources,
     )
     read_budget = action_guide_read_budget(task_read_plan)
+    source_outline = action_guide_source_outline(
+        source_refs=source_refs,
+        task_read_plan=task_read_plan,
+        source_boundaries=ACTION_GUIDE_SOURCE_BOUNDARIES,
+    )
     attention_points = action_guide_attention_points(
         task_context=task_context,
         stop_conditions=stop_conditions,
@@ -4990,6 +5154,7 @@ def build_action_guide(
         "action_type": action_type,
         "relationship_projection": relationship_projection,
         "attention_points": attention_points,
+        "source_outline": source_outline,
         "requirements": requirements,
         "task_read_plan": task_read_plan,
         "read_order": read_order,
@@ -5337,6 +5502,11 @@ def _empty_action_guide_summary() -> dict[str, Any]:
         "action_type": {},
         "relationship_projection": [],
         "attention_points": [],
+        "source_outline": {
+            "summary": {"groups": 0, "items": 0, "consume_now": 0, "reference_only": 0, "deferred": 0},
+            "groups": [],
+            "boundary": "空 source_outline 不是事实源、规则源或授权判断。",
+        },
         "task_read_plan": [],
         "read_order": [],
         "suggested_sections": [],
@@ -5649,6 +5819,7 @@ def build_preflight(
             "action_type": action_guide["action_type"],
             "relationship_projection": action_guide["relationship_projection"],
             "attention_points": action_guide["attention_points"],
+            "source_outline": action_guide["source_outline"],
             "task_read_plan": action_guide["task_read_plan"],
             "read_order": action_guide["read_order"],
             "suggested_sections": action_guide["suggested_sections"],
