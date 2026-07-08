@@ -1,0 +1,45 @@
+id: spark-0049
+type: spark
+title: 统一事实对象记录时间格式
+status: pending
+created: '2026-07-08T23:55:33+08:00'
+updated: '2026-07-08T23:55:33+08:00'
+description: |
+  本 Spark 记录一个事实对象字段契约缺口：LDVH 希望所有事实对象中用于记录发生、创建、更新、分流、确认、关闭等含义的时间字段都使用统一时间戳格式，但当前 specs 还没有形成覆盖 Spark、WorkCase、ADR、Pitfall、Study 的上位规则。
+
+  当前只读检查显示，`specs/attachments/01.Att.05-runtime-payload字段表.md` 已对 runtime receipt cache 的 `created_at` 和 `expires_at` 明确使用 ISO 8601 时间戳；`specs/attachments/05.Att.01-字段注册表结构.md` 只把字段形态区分为 `date` 与 `datetime`，但没有定义 `datetime` 的具体格式、精度和时区要求；`specs/attachments/21.Att.01-orchestration字段契约表.md` 把 WorkCase 的 `created`、`updated`、`plan_confirmed_at`、`review_requested_at`、`closure_requested_at`、`closed_at` 标为 `datetime`，但 `created` / `updated` 的含义仍写作“时间或日期”，与“必须是时间戳”的目标不一致；`specs/20-Spark-火花.md` 要求 `resolved` 必须说明 `resolved_at`，但没有定义格式。
+
+  后续若推进，应先在事实模型或字段注册表归口中定义事实对象 `datetime` 的统一格式，例如是否固定为 ISO 8601 字符串时间戳、是否必须包含时区、精度至少到分钟还是秒、是否允许空字符串表达未发生，以及 `date` 只用于确有日期语义的字段。然后同步成员字段契约、Code validator、Web 写入与展示、测试夹具和已有实例迁移策略，避免 Web/API、Code/tests 或历史实例各自形成第二口径。
+source: conversation
+source_detail: |
+  Human 要求检查 LDVH 中所有记录时间是否都是时间戳，并在复查当前 specs 后要求创建 Spark，记录“统一事实对象中记录的时间格式”的需求。
+priority: P1
+evolution:
+  - at: '2026-07-08T23:55:33+08:00'
+    summary: |
+      新建 Spark，暂存事实对象记录时间格式统一需求。当前判断是：runtime payload 已有 ISO 8601 timestamp 明确口径；事实对象字段层只有 `datetime` 倾向，没有全局格式定义，且 WorkCase `created` / `updated` 文案仍保留“时间或日期”口径。后续应由 V3-owned 字段契约明确 `datetime` 格式、时区、精度、空值语义，并同步 Code/Web/tests 与既有实例迁移策略。
+input_refs:
+  - specs/05-事实模型基础规范.md
+  - specs/20-Spark-火花.md
+  - specs/21-WorkCase-工作项.md
+  - specs/attachments/01.Att.05-runtime-payload字段表.md
+  - specs/attachments/05.Att.01-字段注册表结构.md
+  - specs/attachments/21.Att.01-orchestration字段契约表.md
+  - web/docs/01-全局设计约束.md
+  - code/ldvh_specs.py
+resolved_to: ''
+resolved_at: ''
+discard_reason: ''
+related_sparks: []
+related_workcases: []
+related_adrs: []
+related_studies: []
+related_docs:
+  - specs/05-事实模型基础规范.md
+  - specs/20-Spark-火花.md
+  - specs/21-WorkCase-工作项.md
+  - specs/attachments/01.Att.05-runtime-payload字段表.md
+  - specs/attachments/05.Att.01-字段注册表结构.md
+  - specs/attachments/21.Att.01-orchestration字段契约表.md
+  - web/docs/01-全局设计约束.md
+  - code/ldvh_specs.py
