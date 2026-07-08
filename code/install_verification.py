@@ -353,12 +353,19 @@ def _verify_environment(
                     "integrated": False,
                     "verification_method": "not_run",
                     "real_hook_observed": False,
+                    "classification_source": "code/action_classifier.py",
+                    "classification_boundary": "环境 shim 只映射工具与 payload，读写副作用分类由 shared classifier 判断。",
                     "user_status": "目标环境插件入口未实装；未验证真实自动 Hook。",
                     "reason": "当前统一验收入口没有目标环境插件 / 扩展包实装依据。",
                 },
             },
             "impact_matrix": [],
             "audit": {},
+            "shared_classifier": {
+                "path": "code/action_classifier.py",
+                "scope": "read_write_side_effect_classification",
+                "environment_plugin_boundary": "目标环境插件需薄引用 LDVH Code，不维护独立命令分类规则。",
+            },
             "shim_direct_tests": _not_run_shim_tests(
                 f"当前统一验收入口未内置 {environment_name} 目标环境 shim；目标环境需要对应插件 / 扩展包实装后再验收。"
             ),
@@ -475,6 +482,8 @@ def _verify_environment(
             "integrated": environment_integrated,
             "verification_method": "repo_local_shim_direct_test",
             "real_hook_observed": environment_integrated,
+            "classification_source": "code/action_classifier.py",
+            "classification_boundary": "环境 shim 只映射工具与 payload，读写副作用分类由 shared classifier 判断。",
             "user_status": "插件入口可见，内部连接检查通过；若环境 PreToolUse 映射出的 `ldvh.pre_tool_use` 已阻断，则按 Hook 已触发但 read_plan 消费依据链路未通过处理。"
             if environment_install_verified and not environment_integrated
             else "真实自动 Hook integrated 已验证。"
@@ -494,7 +503,7 @@ def _verify_environment(
         {
             "access_mode": "plugin_hook",
             "trigger": "PreToolUse write-class tool",
-            "expected_result": "对受管目标写入前检查给出 deny / reason",
+            "expected_result": "shared classifier 判定写入类工具后，对受管目标写入前检查给出 deny / reason",
             "observed": shim_tests["pre_tool_use_direct_block"]["status"] == "passed",
             "writes": False,
         },
@@ -516,7 +525,7 @@ def _verify_environment(
         "summary": {
             "status": status,
             "environment_name": environment_name,
-            "environment_adapter": "codex_sample",
+            "environment_adapter": "codex_repo_local_sample",
             "target_environment_supported": True,
             "install_verified": environment_install_verified,
             "environment_integrated": environment_integrated,
@@ -530,6 +539,11 @@ def _verify_environment(
         "access_modes": access_modes,
         "impact_matrix": impact_matrix,
         "audit": audit,
+        "shared_classifier": {
+            "path": "code/action_classifier.py",
+            "scope": "read_write_side_effect_classification",
+            "environment_plugin_boundary": "Codex repo-local shim 只映射事件、工具和 payload；读写副作用分类由 shared classifier 判断，不维护独立命令分类规则。",
+        },
         "shim_direct_tests": shim_tests,
         "human_acceptance": {
             "required": human_acceptance_required,
@@ -646,6 +660,9 @@ def build_install_verification(
     source_refs = [
         {"path": "specs/10-安装与配置规范.md", "role": "install_config_contract"},
         {"path": "specs/30-安装配置与验证行动模板.md", "role": "install_interaction_handoff"},
+        {"path": "specs/33-环境插件编写与更新行动模板.md", "role": "environment_plugin_boundary"},
+        {"path": "specs/attachments/33.Att.01-环境插件差异速查.md", "role": "environment_plugin_delta_reference"},
+        {"path": "code/action_classifier.py", "role": "shared_action_classifier"},
         {"path": "code/governed_hook_adapter.py", "role": "git_hook_status_backend"},
         {"path": "code/environment_entry_audit.py", "role": "environment_hook_audit"},
     ]

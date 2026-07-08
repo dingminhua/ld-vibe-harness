@@ -148,6 +148,10 @@ def test_install_wizard_auto_detect_unknown_environment_blocks_without_codex_def
     assert result["summary"]["status"] == "blocked"
     assert "目标环境插件缺口提示" in result["interaction_handoff"]["next_actions"][0]
     assert any("不要生成替代环境写入" in item for item in result["interaction_handoff"]["next_actions"])
+    assert any("33/33.Att.01" in item and "薄引用插件 / adapter" in item for item in result["interaction_handoff"]["next_actions"])
+    source_ref_paths = {item["path"] for item in result["source_refs"]}
+    assert "specs/33-环境插件编写与更新行动模板.md" in source_ref_paths
+    assert "specs/attachments/33.Att.01-环境插件差异速查.md" in source_ref_paths
     assert any(
         diagnostic["code"] == "INSTALL_WIZARD_ENVIRONMENT_HOOK_UNSUPPORTED"
         for diagnostic in result["diagnostics"]
@@ -296,6 +300,7 @@ def test_install_wizard_blocks_non_hook_environment_strategies_without_alternati
     assert requested_plugin_hook_plan["install_plan"]["planned_writes"] == []
     assert "目标环境插件缺口提示" in external_plan["interaction_handoff"]["next_actions"][0]
     assert any("不要生成替代环境写入" in item for item in unsupported_plan["interaction_handoff"]["next_actions"])
+    assert any("33/33.Att.01" in item and "薄引用插件 / adapter" in item for item in unsupported_plan["interaction_handoff"]["next_actions"])
     assert "目标环境插件缺口提示" in requested_plugin_hook_plan["interaction_handoff"]["next_actions"][0]
     assert any(
         diagnostic["code"] == "INSTALL_WIZARD_ENVIRONMENT_HOOK_UNSUPPORTED"

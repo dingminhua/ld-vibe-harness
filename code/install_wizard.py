@@ -292,7 +292,7 @@ def _interaction_next_actions(
             return [
                 "按 30 输出目标环境插件缺口提示。",
                 "停止正式安装；不要生成替代环境写入。",
-                "先调查目标环境 lifecycle Hook 能力并实现插件 / adapter，完成后重新运行安装前检查。",
+                "按 33/33.Att.01 记录目标环境 lifecycle Hook 能力差异，并实现薄引用插件 / adapter 后重新运行安装前检查。",
             ]
         return ["修复 blocking diagnostics 后重新运行当前命令。"]
     if command == "plan" and install_plan and install_plan.get("human_gate_required"):
@@ -535,6 +535,8 @@ def build_install_check(
             {"path": "specs/01-保障与衔接.md", "role": "environment_boundary"},
             {"path": "specs/07-Code确定性执行规范.md", "role": "code_determinism"},
             {"path": "specs/09-测试与验证规范.md", "role": "verification_boundary"},
+            {"path": "specs/33-环境插件编写与更新行动模板.md", "role": "environment_plugin_boundary"},
+            {"path": "specs/attachments/33.Att.01-环境插件差异速查.md", "role": "environment_plugin_delta_reference"},
             {"path": "code/governed_hook_adapter.py", "role": "hook_backend"},
             {"path": "code/environment_entry_audit.py", "role": "environment_audit"},
         ],

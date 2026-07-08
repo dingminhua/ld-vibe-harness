@@ -138,10 +138,16 @@ projects:
     assert result["environment"]["shim_direct_tests"]["session_start_direct"]["status"] == "passed"
     assert result["environment"]["shim_direct_tests"]["pre_tool_use_direct_block"]["status"] == "passed"
     assert result["environment"]["shim_direct_tests"]["completion_claim_direct_nonblocking"]["status"] == "passed"
-    assert result["environment"]["summary"]["environment_adapter"] == "codex_sample"
+    assert result["environment"]["summary"]["environment_adapter"] == "codex_repo_local_sample"
     assert result["environment"]["summary"]["target_environment_supported"] is True
     assert result["environment"]["summary"]["install_verified"] is True
     assert result["environment"]["summary"]["environment_integrated"] is False
+    assert result["environment"]["shared_classifier"]["path"] == "code/action_classifier.py"
+    assert "不维护独立命令分类规则" in result["environment"]["shared_classifier"]["environment_plugin_boundary"]
+    source_ref_paths = {item["path"] for item in result["source_refs"]}
+    assert "code/action_classifier.py" in source_ref_paths
+    assert "specs/33-环境插件编写与更新行动模板.md" in source_ref_paths
+    assert "specs/attachments/33.Att.01-环境插件差异速查.md" in source_ref_paths
     impact = result["ldvh_impact"]
     assert impact["verified"] is True
     assert impact["integrated"] is False
@@ -163,6 +169,8 @@ projects:
     assert impact["access_modes"]["plugin_hook"]["integrated"] is False
     assert impact["access_modes"]["plugin_hook"]["verification_method"] == "repo_local_shim_direct_test"
     assert impact["access_modes"]["plugin_hook"]["real_hook_observed"] is False
+    assert impact["access_modes"]["plugin_hook"]["classification_source"] == "code/action_classifier.py"
+    assert "shared classifier" in impact["access_modes"]["plugin_hook"]["classification_boundary"]
     assert "Hook 已触发但 read_plan 消费依据链路未通过" in impact["access_modes"]["plugin_hook"]["user_status"]
     assert "ldvh.pre_tool_use" in impact["access_modes"]["plugin_hook"]["user_status"]
     assert {effect["trigger"] for effect in impact["effects"]} >= {
@@ -640,6 +648,8 @@ projects:
     assert impact["access_modes"]["plugin_hook"]["verified"] is False
     assert impact["access_modes"]["plugin_hook"]["verification_method"] == "not_run"
     assert impact["access_modes"]["plugin_hook"]["real_hook_observed"] is False
+    assert impact["access_modes"]["plugin_hook"]["classification_source"] == "code/action_classifier.py"
+    assert "shared classifier" in impact["access_modes"]["plugin_hook"]["classification_boundary"]
     assert set(impact["access_modes"]) == {"plugin_hook"}
     assert impact["side_effects"]["formal_fact_source_writes"] is False
     assert impact["side_effects"]["spark_0046_writes"] is False
@@ -648,6 +658,8 @@ projects:
     assert result["environment"]["summary"]["environment_adapter"] == "unsupported_target_environment"
     assert result["environment"]["summary"]["target_environment_supported"] is False
     assert result["environment"]["summary"]["plugin_decision"] == "create_target_environment_plugin_before_verification"
+    assert result["environment"]["shared_classifier"]["path"] == "code/action_classifier.py"
+    assert "不维护独立命令分类规则" in result["environment"]["shared_classifier"]["environment_plugin_boundary"]
     assert result["environment"]["shim_direct_tests"]["session_start_direct"]["status"] == "not_run"
     assert "Trae 目标环境 shim" in result["environment"]["shim_direct_tests"]["session_start_direct"]["reason"]
     human_acceptance = result["environment"]["human_acceptance"]
@@ -683,6 +695,10 @@ projects:
         for item in handoff["failure_info_package"]
     )
     assert not any("codex-ldvh-v3" in ref["path"] for ref in result["source_refs"])
+    source_ref_paths = {item["path"] for item in result["source_refs"]}
+    assert "code/action_classifier.py" in source_ref_paths
+    assert "specs/33-环境插件编写与更新行动模板.md" in source_ref_paths
+    assert "specs/attachments/33.Att.01-环境插件差异速查.md" in source_ref_paths
     assert "Codex" not in json.dumps(result["environment"]["shim_direct_tests"], ensure_ascii=False)
 
 
