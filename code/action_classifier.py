@@ -17,8 +17,16 @@ READ_ONLY_TOOLS = {
     "read_thread_terminal",
     "codex_app.read_thread",
     "codex_app.read_thread_terminal",
+    "codex_app.list_threads",
     "codex_appread_thread",
     "codex_appread_thread_terminal",
+    "codex_applist_threads",
+    "functions.update_plan",
+    "update_plan",
+    "close_agent",
+    "multi_agent.close_agent",
+    "multi_agent_v1.close_agent",
+    "multi_agent_v1close_agent",
     "wait_agent",
     "multi_agent.wait_agent",
     "multi_agent_v1.wait_agent",
@@ -55,7 +63,7 @@ READ_ONLY_INTENT_MARKERS = (
     "do not edit",
     "do not commit",
 )
-READ_ONLY_COMMANDS = {"cat", "find", "grep", "head", "ls", "nl", "pwd", "rg", "sed", "sleep", "tail", "wc"}
+READ_ONLY_COMMANDS = {"cat", "find", "grep", "head", "ls", "nl", "pwd", "rg", "sed", "sleep", "sort", "tail", "wc"}
 READ_ONLY_GIT_SUBCOMMANDS = {
     "branch",
     "diff",

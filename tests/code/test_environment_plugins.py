@@ -206,6 +206,7 @@ def test_shared_action_classifier_covers_read_and_write_command_matrix() -> None
     read_only_commands = [
         "pwd",
         'rg -n "read_plan|target_path" code/runtime_adapter.py | sed -n \'1,20p\'',
+        "find ldvh-base -maxdepth 2 -type f -print | sort | sed -n '1,120p'",
         'rg -l "LDVH" README.md | xargs wc -l',
         'pwd && rg -n "session_start|receipt" -S .',
         "sleep 20",
@@ -226,6 +227,7 @@ def test_shared_action_classifier_covers_read_and_write_command_matrix() -> None
         "find . -name '*.py' -fls tmp/list.txt",
         "pwd &",
         "git commit -m test",
+        "python3 -c 'print(1)'",
         'rg -l "LDVH" README.md | xargs rm -f',
         "python3 code/acknowledge_read_plan.py --session-id x --target-path README.md --format json && touch tmp/leak",
     ]
@@ -238,6 +240,22 @@ def test_shared_action_classifier_covers_read_and_write_command_matrix() -> None
     for command in write_like_commands:
         classification = action_classifier.classify_action(_command_payload(command), ROOT)
         assert classification.requires_preflight is True, command
+
+
+def test_shared_action_classifier_noops_codex_read_and_process_tools() -> None:
+    for tool_name in (
+        "codex_applist_threads",
+        "codex_app.list_threads",
+        "update_plan",
+        "functions.update_plan",
+        "close_agent",
+        "multi_agent_v1.close_agent",
+        "multi_agent_v1close_agent",
+    ):
+        classification = action_classifier.classify_action({"hook_event_name": "PreToolUse", "toolName": tool_name}, ROOT)
+        assert classification.operation == "read"
+        assert classification.requires_preflight is False
+        assert classification.reason == "read_only_tool"
 
 
 def test_shared_action_classifier_covers_nested_tool_payloads() -> None:
@@ -257,6 +275,7 @@ def test_environment_shims_delegate_to_shared_classifier_for_command_parity(tmp_
     read_only_commands = [
         "pwd",
         'rg -n "read_plan|target_path" code/runtime_adapter.py | sed -n \'1,20p\'',
+        "find ldvh-base -maxdepth 2 -type f -print | sort | sed -n '1,120p'",
         'rg -l "LDVH" README.md | xargs wc -l',
         'pwd && rg -n "session_start|receipt" -S .',
         "sleep 20",
@@ -273,6 +292,7 @@ def test_environment_shims_delegate_to_shared_classifier_for_command_parity(tmp_
         "find . -name '*.py' -fprint tmp/list.txt",
         "find . -name '*.py' -fprintf tmp/list.txt '%p\\n'",
         "pwd &",
+        "python3 -c 'print(1)'",
         'rg -l "LDVH" README.md | xargs rm -f',
     ]
 
@@ -550,18 +570,22 @@ def test_codex_sample_shim_allows_read_only_bash_probe_without_acknowledgement()
 
 
 def test_codex_sample_shim_allows_read_only_exec_command_pipeline_without_acknowledgement() -> None:
-    completed = _run_shim(
-        {
-            "hook_event_name": "PreToolUse",
-            "sessionId": "shim-pretool-exec-read",
-            "cwd": ROOT.as_posix(),
-            "toolName": "functions.exec_command",
-            "arguments": {"cmd": "rg -n \"read_plan|target_path\" code/runtime_adapter.py | sed -n '1,20p'"},
-        },
-    )
+    for command in (
+        "rg -n \"read_plan|target_path\" code/runtime_adapter.py | sed -n '1,20p'",
+        "find ldvh-base -maxdepth 2 -type f -print | sort | sed -n '1,120p'",
+    ):
+        completed = _run_shim(
+            {
+                "hook_event_name": "PreToolUse",
+                "sessionId": "shim-pretool-exec-read",
+                "cwd": ROOT.as_posix(),
+                "toolName": "functions.exec_command",
+                "arguments": {"cmd": command},
+            },
+        )
 
-    assert completed.returncode == 0
-    assert completed.stdout == ""
+        assert completed.returncode == 0
+        assert completed.stdout == ""
 
 
 def test_codex_sample_shim_does_not_treat_sed_in_place_as_read_only() -> None:
