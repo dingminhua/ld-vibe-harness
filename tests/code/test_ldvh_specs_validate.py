@@ -153,6 +153,7 @@ def test_foundation_specs_contracts_are_code_consumable(validation_result: dict)
     assert "web_code_separation_boundaries" in contracts["08"]["code_consumption"]
     assert "source_ref_display_requirements" in contracts["08"]["code_consumption"]
     assert "verification_claim_fields" in contracts["09"]["code_consumption"]
+    assert "self_lock_acceptance_matrix" in contracts["09"]["code_consumption"]
     assert "failure_blocking_rules" in contracts["09"]["code_consumption"]
 
     assert [row["requirement"] for row in contracts["06"]["assurance_measures"]] == [
@@ -300,6 +301,62 @@ def test_action_guide_governed_project_contract_is_specified() -> None:
 
     assert "只能以 resolver 输出的 `governed_project_path` 下 `ldvh-base/` 作为项目事实源入口" in spec_10
     assert "不得用 LDVH 本体 `ldvh-base/`、cwd、对话记忆或项目登记配置替代项目事实源" in spec_10
+
+
+def test_assurance_spec_defines_hook_action_boundary_table() -> None:
+    spec_01 = (ROOT / "specs/01-保障与衔接.md").read_text(encoding="utf-8")
+
+    # These string checks intentionally guard specs semantics, not prose style.
+    assert "### 6.8 Hook 行动边界表" in spec_01
+    assert "目标环境原生事件只作为 trigger source，不得直接成为 LDVH 事件本体" in spec_01
+    for event_name in [
+        "`ldvh.session_start` / `session_start`",
+        "`ldvh.acknowledge_read_plan` / `acknowledge_read_plan`",
+        "`ldvh.pre_tool_use` / `pre_tool_use`",
+        "`ldvh.pre_tool_use` repair mode",
+        "`git_commit_msg`",
+        "`ldvh.completion_claim` / `completion_claim`",
+        "`human_facing_output`",
+        "`external_output_intake`",
+        "`diagnostic_disposition`",
+    ]:
+        assert event_name in spec_01
+    assert "repair 不是 bypass" in spec_01
+    assert "`unrelated_global` 只作 residual risk，不阻断当前普通写入" in spec_01
+    assert "`scope_unknown` 只能 degraded / capability_gap" in spec_01
+    assert "Stop 类环境事件不得被误阻断环境正常关闭" in spec_01
+    assert "不得把 unknown 当作管辖对象扩大阻断" in spec_01
+    assert "commit gate 在其它明确替代的全局健康保障机制落地前保持全局健康要求" in spec_01
+    assert "CI 未落地前" not in spec_01
+    assert "保障机制失败时只能交还 Human 完善机制或授权一次受控处理，不提供默认自动恢复路径" in spec_01
+
+
+def test_verification_spec_defines_self_lock_acceptance_matrix() -> None:
+    spec_09 = (ROOT / "specs/09-测试与验证规范.md").read_text(encoding="utf-8")
+
+    # These string checks intentionally guard specs semantics, not prose style.
+    assert '"self_lock_acceptance_matrix"' in spec_09
+    assert "### 7.2 自锁事故验收矩阵" in spec_09
+    assert "只定义验收口径，不新增 runtime event、bypass、自动恢复路径或长期状态" in spec_09
+    for scenario_name in [
+        "坏事实对象在场，当前写入 target 与其无关",
+        "当前 target 自身是坏事实对象的普通写入",
+        "repair mode 修复当前 primary fact target",
+        "repair 写入后 final validation 仍失败",
+        "repair 目标越界",
+        "`scope_unknown`",
+        "`declared_multi_governed` / `mixed_scope`",
+        "read_plan receipt bootstrap",
+        "completion claim 仅存在无关全局诊断",
+        "completion claim 存在当前 blocker",
+        "保障机制自身失败",
+    ]:
+        assert scenario_name in spec_09
+    assert "receipt 变成任意命令 bypass、写入授权、事实源、Human Gate" in spec_09
+    assert "不要求每次修改都运行全量测试" in spec_09
+    assert "自锁事故验收要求" in spec_09
+    assert "自锁事故检查" in spec_09
+    assert "repair lane 的回归验收口径与自锁事故验收矩阵已由本文 §7.2 定义" in spec_09
 
 
 def test_foundation_validator_reports_missing_code_consumption(tmp_path: Path) -> None:
