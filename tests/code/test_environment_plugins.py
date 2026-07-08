@@ -137,6 +137,71 @@ def _nested_command_payloads(command: str) -> list[dict]:
     ]
 
 
+def _nested_write_payloads() -> list[dict]:
+    return [
+        {
+            "hook_event_name": "PreToolUse",
+            "sessionId": "shim-nested-write",
+            "cwd": ROOT.as_posix(),
+            "tool": {"name": "Write", "input": {"file_path": "README.md"}},
+        },
+        {
+            "hook_event_name": "PreToolUse",
+            "sessionId": "shim-nested-edit",
+            "cwd": ROOT.as_posix(),
+            "tool": {
+                "name": "Edit",
+                "input": {
+                    "file_path": "README.md",
+                    "old_string": "LDVH",
+                    "new_string": "LDVH V3",
+                },
+            },
+        },
+        {
+            "hook_event_name": "PreToolUse",
+            "sessionId": "shim-nested-apply-patch",
+            "cwd": ROOT.as_posix(),
+            "tool": {
+                "name": "apply_patch",
+                "input": {
+                    "patch": (
+                        "*** Begin Patch\n"
+                        "*** Update File: README.md\n"
+                        "@@\n"
+                        "-LDVH\n"
+                        "+LDVH V3\n"
+                        "*** End Patch\n"
+                    ),
+                },
+            },
+        },
+        {
+            "hook_event_name": "PreToolUse",
+            "sessionId": "shim-nested-functions-apply-patch",
+            "cwd": ROOT.as_posix(),
+            "tool_call": {
+                "function": {
+                    "name": "functions.apply_patch",
+                    "arguments": json.dumps(
+                        {
+                            "patch": (
+                                "*** Begin Patch\n"
+                                "*** Update File: README.md\n"
+                                "@@\n"
+                                "-LDVH\n"
+                                "+LDVH V3\n"
+                                "*** End Patch\n"
+                            )
+                        },
+                        ensure_ascii=False,
+                    ),
+                }
+            },
+        },
+    ]
+
+
 def test_shared_action_classifier_covers_read_and_write_command_matrix() -> None:
     read_only_commands = [
         "pwd",
@@ -182,15 +247,10 @@ def test_shared_action_classifier_covers_nested_tool_payloads() -> None:
         assert classification.requires_preflight is False
         assert classification.reason == "read_only_command"
 
-    write_payload = {
-        "hook_event_name": "PreToolUse",
-        "sessionId": "shim-nested-write",
-        "cwd": ROOT.as_posix(),
-        "tool": {"name": "Write", "input": {"file_path": "README.md"}},
-    }
-    classification = action_classifier.classify_action(write_payload, ROOT)
-    assert classification.operation == "write"
-    assert classification.requires_preflight is True
+    for payload in _nested_write_payloads():
+        classification = action_classifier.classify_action(payload, ROOT)
+        assert classification.operation == "write"
+        assert classification.requires_preflight is True
 
 
 def test_environment_shims_delegate_to_shared_classifier_for_command_parity(tmp_path: Path) -> None:
@@ -250,24 +310,19 @@ def test_environment_shims_allow_nested_read_only_command_payloads(tmp_path: Pat
         assert codex.stdout == "", payload
         assert workbuddy.stdout == "", payload
 
-    write_payload = {
-        "hook_event_name": "PreToolUse",
-        "sessionId": "shim-nested-write",
-        "cwd": ROOT.as_posix(),
-        "tool": {"name": "Write", "input": {"file_path": "README.md"}},
-    }
-    codex = _run_shim(write_payload, check=False)
-    workbuddy = _run_workbuddy_shim(
-        write_payload,
-        check=False,
-        extra_env={"LDVH_RUNTIME_CACHE_DIR": (tmp_path / "runtime-cache").as_posix()},
-    )
-    codex_output = _hook_output(json.loads(codex.stdout))
-    workbuddy_output = _hook_output(json.loads(workbuddy.stdout))
-    assert codex_output["permissionDecision"] == "deny"
-    assert workbuddy_output["permissionDecision"] == "deny"
-    assert "RUNTIME_READ_PLAN_CONSUMED_EMPTY" in codex_output["permissionDecisionReason"]
-    assert "RUNTIME_READ_PLAN_CONSUMED_EMPTY" in workbuddy_output["permissionDecisionReason"]
+    for payload in _nested_write_payloads():
+        codex = _run_shim(payload, check=False)
+        workbuddy = _run_workbuddy_shim(
+            payload,
+            check=False,
+            extra_env={"LDVH_RUNTIME_CACHE_DIR": (tmp_path / "runtime-cache").as_posix()},
+        )
+        codex_output = _hook_output(json.loads(codex.stdout))
+        workbuddy_output = _hook_output(json.loads(workbuddy.stdout))
+        assert codex_output["permissionDecision"] == "deny"
+        assert workbuddy_output["permissionDecision"] == "deny"
+        assert "RUNTIME_READ_PLAN_CONSUMED_EMPTY" in codex_output["permissionDecisionReason"]
+        assert "RUNTIME_READ_PLAN_CONSUMED_EMPTY" in workbuddy_output["permissionDecisionReason"]
 
 
 def test_environment_shims_do_not_keep_local_command_classification_registries() -> None:
