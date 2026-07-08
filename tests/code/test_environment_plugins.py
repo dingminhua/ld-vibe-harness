@@ -6,6 +6,8 @@ from pathlib import Path
 import subprocess
 import sys
 
+import action_classifier
+
 
 ROOT = Path(__file__).resolve().parents[2]
 PLUGIN_ROOT = ROOT / "hooks/environment-plugins/codex-ldvh-v3"
@@ -95,6 +97,113 @@ def _diagnostic_codes(result: dict) -> set[str]:
 def _hook_output(payload: dict) -> dict:
     value = payload.get("hookSpecificOutput")
     return value if isinstance(value, dict) else {}
+
+
+def _command_payload(command: str) -> dict:
+    return {
+        "hook_event_name": "PreToolUse",
+        "sessionId": "shim-shared-classifier",
+        "cwd": ROOT.as_posix(),
+        "toolName": "functions.exec_command",
+        "arguments": {"cmd": command},
+    }
+
+
+def test_shared_action_classifier_covers_read_and_write_command_matrix() -> None:
+    read_only_commands = [
+        "pwd",
+        'rg -n "read_plan|target_path" code/runtime_adapter.py | sed -n \'1,20p\'',
+        'rg -l "LDVH" README.md | xargs wc -l',
+        'pwd && rg -n "session_start|receipt" -S .',
+        "sleep 20",
+        f"git -C {ROOT.as_posix()} status --short",
+        "python3 code/session_start.py --task probe --target-path README.md",
+        "python3 code/runtime_adapter.py session-start --help",
+    ]
+    write_like_commands = [
+        "sed -i '' -e 's/old/new/' README.md",
+        "sed -n 'w tmp/sed-out.txt' README.md",
+        "sed '/LDVH/w tmp/sed-out.txt' README.md",
+        "sed 's/LDVH/echo LDVH/e' README.md",
+        "find . -name '*.tmp' -exec rm {} \\;",
+        "find . -name '*.tmp' -delete",
+        "find . -name '*.py' -fprint tmp/list.txt",
+        "find . -name '*.py' -fprint0 tmp/list.txt",
+        "find . -name '*.py' -fprintf tmp/list.txt '%p\\n'",
+        "find . -name '*.py' -fls tmp/list.txt",
+        "pwd &",
+        "git commit -m test",
+        'rg -l "LDVH" README.md | xargs rm -f',
+        "python3 code/acknowledge_read_plan.py --session-id x --target-path README.md --format json && touch tmp/leak",
+    ]
+
+    for command in read_only_commands:
+        classification = action_classifier.classify_action(_command_payload(command), ROOT)
+        assert classification.operation == "read", command
+        assert classification.requires_preflight is False, command
+
+    for command in write_like_commands:
+        classification = action_classifier.classify_action(_command_payload(command), ROOT)
+        assert classification.requires_preflight is True, command
+
+
+def test_environment_shims_delegate_to_shared_classifier_for_command_parity(tmp_path: Path) -> None:
+    read_only_commands = [
+        "pwd",
+        'rg -n "read_plan|target_path" code/runtime_adapter.py | sed -n \'1,20p\'',
+        'rg -l "LDVH" README.md | xargs wc -l',
+        'pwd && rg -n "session_start|receipt" -S .',
+        "sleep 20",
+        f"git -C {ROOT.as_posix()} status --short",
+        "python3 code/session_start.py --task probe --target-path README.md",
+    ]
+    write_like_commands = [
+        "sed -i '' -e 's/old/new/' README.md",
+        "sed -n 'w tmp/sed-out.txt' README.md",
+        "sed '/LDVH/w tmp/sed-out.txt' README.md",
+        "sed 's/LDVH/echo LDVH/e' README.md",
+        "find . -name '*.tmp' -exec rm {} \\;",
+        "find . -name '*.tmp' -delete",
+        "find . -name '*.py' -fprint tmp/list.txt",
+        "find . -name '*.py' -fprintf tmp/list.txt '%p\\n'",
+        "pwd &",
+        'rg -l "LDVH" README.md | xargs rm -f',
+    ]
+
+    for command in read_only_commands:
+        codex = _run_shim(_command_payload(command))
+        workbuddy = _run_workbuddy_shim(
+            _command_payload(command),
+            extra_env={"LDVH_RUNTIME_CACHE_DIR": (tmp_path / "runtime-cache").as_posix()},
+        )
+        assert codex.stdout == "", command
+        assert workbuddy.stdout == "", command
+
+    for command in write_like_commands:
+        codex = _run_shim(_command_payload(command), check=False)
+        workbuddy = _run_workbuddy_shim(
+            _command_payload(command),
+            check=False,
+            extra_env={"LDVH_RUNTIME_CACHE_DIR": (tmp_path / "runtime-cache").as_posix()},
+        )
+        codex_output = _hook_output(json.loads(codex.stdout))
+        workbuddy_output = _hook_output(json.loads(workbuddy.stdout))
+        assert codex_output["permissionDecision"] == "deny", command
+        assert workbuddy_output["permissionDecision"] == "deny", command
+        assert "RUNTIME_READ_PLAN_CONSUMED_EMPTY" in codex_output["permissionDecisionReason"], command
+        assert "RUNTIME_READ_PLAN_CONSUMED_EMPTY" in workbuddy_output["permissionDecisionReason"], command
+
+
+def test_environment_shims_do_not_keep_local_command_classification_registries() -> None:
+    shared_raw = (ROOT / "code/action_classifier.py").read_text(encoding="utf-8")
+    assert "READ_ONLY_COMMANDS =" in shared_raw
+    assert "COMMAND_EXECUTION_TOOLS =" in shared_raw
+
+    for shim in (SHIM, WORKBUDDY_SHIM):
+        raw = shim.read_text(encoding="utf-8")
+        assert "READ_ONLY_COMMANDS =" not in raw
+        assert "COMMAND_EXECUTION_TOOLS =" not in raw
+        assert "READ_ONLY_TOOLS =" not in raw
 
 
 def test_codex_sample_plugin_manifest_consumes_package_icons() -> None:

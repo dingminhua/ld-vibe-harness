@@ -10,7 +10,6 @@ from __future__ import annotations
 import json
 import os
 import re
-import shlex
 import subprocess
 import sys
 from datetime import datetime
@@ -41,29 +40,7 @@ ADAPTER_EVENT_MAP = {
     "PreToolUse": "ldvh.pre_tool_use",
     "Stop": "ldvh.completion_claim",
 }
-READ_ONLY_TOOLS = {"read", "grep", "glob", "ls"}
-COMMAND_EXECUTION_TOOLS = {
-    "bash",
-    "exec_command",
-    "functions.exec_command",
-    "mcp__functions__exec_command",
-    "mcp__developer__exec_command",
-    "shell",
-}
-READ_ONLY_COMMANDS = {"cat", "find", "grep", "head", "ls", "nl", "pwd", "rg", "sed", "tail", "wc"}
-READ_ONLY_GIT_SUBCOMMANDS = {
-    "branch",
-    "diff",
-    "grep",
-    "log",
-    "ls-files",
-    "remote",
-    "rev-parse",
-    "show",
-    "status",
-}
-READ_ONLY_SHELL_PIPE_COMMANDS = READ_ONLY_COMMANDS | {"xargs"}
-CONTROLLED_BOOTSTRAP_PYTHON_SCRIPTS = {"code/acknowledge_read_plan.py"}
+_ACTION_CLASSIFIER: Any | None = None
 
 
 def read_payload(raw: str) -> dict[str, Any]:
@@ -135,6 +112,22 @@ def find_ldvh_root(payload: dict[str, Any], cwd: Path) -> Path | None:
     return None
 
 
+def action_classifier_module(ldvh_root: Path | None = None) -> Any:
+    global _ACTION_CLASSIFIER
+    if _ACTION_CLASSIFIER is not None:
+        return _ACTION_CLASSIFIER
+    root = ldvh_root or find_ldvh_root({}, Path(os.getcwd()).expanduser())
+    if root is None:
+        raise RuntimeError("LDVH root is required to load the shared action classifier.")
+    code_path = (root / "code").as_posix()
+    if code_path not in sys.path:
+        sys.path.insert(0, code_path)
+    import action_classifier as module
+
+    _ACTION_CLASSIFIER = module
+    return module
+
+
 def tool_input(payload: dict[str, Any]) -> dict[str, Any]:
     for key in ("tool_input", "toolInput", "input", "arguments", "parameters"):
         value = payload.get(key)
@@ -156,110 +149,27 @@ def command_text(payload: dict[str, Any]) -> str:
 
 
 def command_parts(command: str) -> list[str]:
-    try:
-        return shlex.split(command)
-    except ValueError:
-        return command.split()
+    return action_classifier_module().command_parts(command)
 
 
 def split_unquoted_pipes(command: str) -> list[str]:
-    segments: list[str] = []
-    current: list[str] = []
-    quote = ""
-    escaped = False
-    for char in command:
-        if escaped:
-            current.append(char)
-            escaped = False
-            continue
-        if char == "\\":
-            current.append(char)
-            escaped = True
-            continue
-        if quote:
-            current.append(char)
-            if char == quote:
-                quote = ""
-            continue
-        if char in {"'", '"'}:
-            current.append(char)
-            quote = char
-            continue
-        if char == "|":
-            segments.append("".join(current).strip())
-            current = []
-            continue
-        current.append(char)
-    segments.append("".join(current).strip())
-    return segments
+    return action_classifier_module().split_unquoted_pipes(command)
 
 
 def is_likely_read_only_command(command: str) -> bool:
-    stripped = command.strip()
-    if not stripped or re.search(r"[;&><`$()\n\r]", stripped):
-        return False
-    segments = split_unquoted_pipes(stripped)
-    if len(segments) > 1:
-        return all(is_likely_read_only_command_segment(segment) for segment in segments)
-    return is_likely_read_only_command_segment(stripped)
+    return action_classifier_module().is_likely_read_only_command(command)
 
 
 def is_likely_read_only_command_segment(command: str) -> bool:
-    stripped = command.strip()
-    if not stripped:
-        return False
-    parts = command_parts(stripped)
-    if not parts:
-        return False
-    executable = Path(parts[0]).name.lower()
-    if executable == "find" and "-exec" in parts:
-        return False
-    if executable == "sed" and any(part == "-i" or part.startswith("-i") or part == "--in-place" or part.startswith("--in-place=") for part in parts[1:]):
-        return False
-    if executable == "git":
-        return len(parts) > 1 and parts[1].lower() in READ_ONLY_GIT_SUBCOMMANDS
-    return executable in READ_ONLY_SHELL_PIPE_COMMANDS
+    return action_classifier_module().is_likely_read_only_command_segment(command)
 
 
 def is_controlled_read_plan_bootstrap_command(command: str, cwd: Path, ldvh_root: Path) -> bool:
-    stripped = command.strip()
-    if not stripped or re.search(r"[;&|><`$()\n\r]", stripped):
-        return False
-    parts = command_parts(stripped)
-    if len(parts) < 2:
-        return False
-    executable = Path(parts[0]).name.lower()
-    if executable not in {"python", "python3"}:
-        return False
-    script = Path(parts[1].strip()).expanduser()
-    resolved_script = script if script.is_absolute() else cwd / script
-    expected_scripts = {
-        (ldvh_root / script_path).resolve(strict=False)
-        for script_path in CONTROLLED_BOOTSTRAP_PYTHON_SCRIPTS
-    }
-    return resolved_script.resolve(strict=False) in expected_scripts
+    return action_classifier_module(ldvh_root).is_controlled_read_plan_bootstrap_command(command, cwd, ldvh_root)
 
 
 def is_command_execution_tool(payload: dict[str, Any]) -> bool:
-    return any(name in COMMAND_EXECUTION_TOOLS for name in tool_name_candidates(payload))
-
-
-def tool_name_candidates(payload: dict[str, Any]) -> list[str]:
-    raw_names = [
-        payload.get("tool_name"),
-        payload.get("toolName"),
-        payload.get("name"),
-        payload.get("tool"),
-    ]
-    names: list[str] = []
-    for raw in raw_names:
-        if not isinstance(raw, str) or not raw.strip():
-            continue
-        lowered = raw.strip().lower()
-        names.append(lowered)
-        if "__" in lowered:
-            names.append(lowered.replace("__", "."))
-    return list(dict.fromkeys(names))
+    return action_classifier_module().is_command_execution_tool(payload)
 
 
 def command_from_record(record: dict[str, Any]) -> str:
@@ -443,13 +353,12 @@ def task_text(payload: dict[str, Any]) -> str:
     )
 
 
-def operation(payload: dict[str, Any]) -> str:
-    tool_names = tool_name_candidates(payload)
-    if any(name in READ_ONLY_TOOLS for name in tool_names):
-        return "read"
-    if any(name in COMMAND_EXECUTION_TOOLS for name in tool_names) and is_likely_read_only_command(command_text(payload)):
-        return "read"
-    return first_text(payload.get("operation"), "write")
+def classify_action(payload: dict[str, Any], cwd: Path, ldvh_root: Path | None = None) -> Any:
+    return action_classifier_module(ldvh_root).classify_action(payload, cwd)
+
+
+def operation(payload: dict[str, Any], cwd: Path | None = None) -> str:
+    return action_classifier_module().operation(payload, cwd)
 
 
 def adapter_payload(payload: dict[str, Any], event: str, cwd: Path) -> dict[str, Any]:
@@ -461,7 +370,7 @@ def adapter_payload(payload: dict[str, Any], event: str, cwd: Path) -> dict[str,
         "config_root": first_text(payload.get("config_root"), payload.get("configRoot"), os.environ.get("LDVH_CONFIG_ROOT")),
         "target_path": target_path(payload, cwd),
         "target_paths": target_path_values(payload, cwd),
-        "operation": operation(payload),
+        "operation": operation(payload, cwd),
         "task": task_text(payload),
         "acknowledged_paths": acknowledged_paths(payload),
         "verification_evidence": list_text(payload.get("verification_evidence") or payload.get("verificationEvidence")),
@@ -767,6 +676,7 @@ def main() -> int:
         return emit_warning(
             "LDVH_WORKBUDDY_SHIM_ROOT_NOT_FOUND: LDVH root was not found from LDVH_ROOT, payload, cwd, or shim path; hook shim allowed the event."
         )
+    action_classifier_module(ldvh_root)
 
     record_hook_event_to_spark(ldvh_root, payload, event, cwd)
     runtime_event = adapter_event(event)
@@ -780,7 +690,8 @@ def main() -> int:
     ):
         return 0
 
-    if event == "PreToolUse" and operation(payload) == "read":
+    action = classify_action(payload, cwd, ldvh_root) if event == "PreToolUse" else None
+    if action and not action.requires_preflight:
         return 0
 
     runtime_adapter = ldvh_root / "code" / "runtime_adapter.py"
