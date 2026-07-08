@@ -191,6 +191,31 @@ def test_install_action_template_discloses_runtime_cache_boundary() -> None:
     assert "runtime cache 状态" in raw
 
 
+def test_assurance_spec_defines_capability_matching_model() -> None:
+    spec_01 = (ROOT / "specs/01-保障与衔接.md").read_text(encoding="utf-8")
+
+    # These string checks intentionally guard specs semantics, not prose style.
+    assert "### 5.2.1 能力匹配模型" in spec_01
+    assert "把 `00` 的目标和保障需求转成可执行的能力判断" in spec_01
+    assert "不得只看某个工具、环境、文件或命令是否存在" in spec_01
+    for field_name in [
+        "`provider_dimension`",
+        "`provider`",
+        "`capability_axis`",
+        "`control_strength`",
+        "`acceptance_basis`",
+        "`fallback_disposition`",
+    ]:
+        assert field_name in spec_01
+    assert "Codex、WorkBuddy、Claude Code、IDE Agent 等都属于“AI 协作环境”这一 provider dimension" in spec_01
+    assert "不得把某个环境的原生事件名、样例插件、配置缓存或用户口头描述直接写成另一个环境的 integrated" in spec_01
+    assert "不同能力轴必须分开判断；局部支持不能写成完整支持" in spec_01
+    assert "repo-local 样例、手动命令或测试通过不得冒充真实 integrated" in spec_01
+    assert "完成声明只可声称 acceptance basis 覆盖的范围" in spec_01
+    assert "能力匹配输出不是事实源、授权、安装状态、环境 integrated 声明或完成证明" in spec_01
+    assert "能力匹配模型已由本文 §5.2.1 补正文口径" in spec_01
+
+
 def test_assurance_spec_registers_environment_entry_classification_and_payload_contracts(validation_result: dict) -> None:
     result = validation_result
     specs = {spec["object_id"]: spec for spec in result["specs"]}
