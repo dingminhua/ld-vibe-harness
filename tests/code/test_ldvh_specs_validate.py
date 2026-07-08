@@ -191,6 +191,24 @@ def test_install_action_template_discloses_runtime_cache_boundary() -> None:
     assert "runtime cache 状态" in raw
 
 
+def test_specs_base_defines_cross_spec_responsibility_boundary() -> None:
+    spec_04 = (ROOT / "specs/04-Specs基础规范.md").read_text(encoding="utf-8")
+    audit_table = (ROOT / "docs/LDVH-Specs-Convergence-Audit-Table.md").read_text(encoding="utf-8")
+
+    # These string checks intentionally guard specs semantics, not prose style.
+    assert "### 5.8 跨规范职责边界总览" in spec_04
+    assert "它是路由表和防越界检查，不是第二规则源" in spec_04
+    assert "不替代单篇 spec 的归口边界、主体规则、Human Gate、Stop Conditions 或附件授权" in spec_04
+    assert "当总览与单篇 spec 正文冲突时，以单篇 spec 正文、上位规范和 Human Gate 为准" in spec_04
+    assert "docs、Code、测试、review 收据或行动指南长期补位" in spec_04
+    for spec_id in ["`00`", "`01`", "`07`", "`09`", "`10`", "`30`", "`33`"]:
+        assert spec_id in spec_04
+    assert "需要新增或改变规则语义时，先回到主职责所在 spec" in spec_04
+    assert "不得被写成已经 integrated、已授权或已完成" in spec_04
+    assert "跨规范职责边界 | 本文总览是否只作为路由表和防越界检查" in spec_04
+    assert "已由 `04 §5.8` 固定为跨规范职责边界总览" in audit_table
+
+
 def test_assurance_spec_defines_capability_matching_model() -> None:
     spec_01 = (ROOT / "specs/01-保障与衔接.md").read_text(encoding="utf-8")
 
