@@ -320,12 +320,12 @@ target -> operation -> risk -> phase -> decision / verification_plan -> diagnost
 
 | 事项 | 归口 | 状态 | 优先级 |
 |---|---|---|---|
-| 将验证选择协议映射到 `09` 现有验证入口 | `09` | 待做，不新建第二套规则 | P1 |
-| `07` 要求 test runner 输出 verification plan | `07` | 待做 | P1 |
-| test runner 输出选择理由、覆盖层级、未验证范围 | Code | 待做 | P1 |
-| 修复 runtime-sensitive specs 改动可能只跑 smoke 的缺口 | tests | 待做 | P1 |
-| 建立“不该 full”和“该升级”的 runner 自测 | tests | 待做 | P1 |
-| 更新测试实践文档 | docs / tests | 待做 | P1 |
+| 将验证选择协议映射到 `09` 现有验证入口 | `09` | 已由 runner `matrix_refs` 回指 `09 §5`，不新建第二套规则 | P1 |
+| `07` 要求 test runner 输出 verification plan | `07` | 已同步为本地承接，保留回归要求 | P1 |
+| test runner 输出选择理由、覆盖层级、未验证范围 | Code | 已实现 `VerificationPlan` 输出 | P1 |
+| 修复 runtime-sensitive specs 改动可能只跑 smoke 的缺口 | tests | 已修复并补 targeted runner 自测 | P1 |
+| 建立“不该 full”和“该升级”的 runner 自测 | tests | 已补关键自测；后续按新增 profile 继续扩展 | P1 |
+| 更新测试实践文档 | docs / tests | 已更新 `tests/docs/01-Test-Runner-Practice.md` | P1 |
 
 外部 AI 需评审：
 
@@ -510,7 +510,7 @@ target -> operation -> risk -> phase -> decision / verification_plan -> diagnost
 | Action Guide builder 消费管辖项目事实源 | Code | 待做 | P1 |
 | preflight 区分对象归口、动作条件、无关全局诊断 | Code | 已实现，保留回归确认 | P1 |
 | runtime event 输出不把 global poison 注入所有事件 | Code | 已实现，保留回归确认 | P1 |
-| test runner 输出 verification plan | Code | 待做 | P1 |
+| test runner 输出 verification plan | Code | 已实现，保留 plan/stage 一致性回归 | P1 |
 | Code 输出声明 authority / authorization / source boundary | `07` / Code | 部分已有，需复核 | P1 |
 
 外部 AI 需评审：

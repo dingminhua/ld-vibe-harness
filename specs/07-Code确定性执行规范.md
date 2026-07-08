@@ -239,5 +239,5 @@ Code 暴露规范缺口时，应输出 diagnostic 并回到对应规范、授权
 3. `ldvh.completion_claim` 已补当前 diagnostic 消费：runtime facade 不得只检查验证证据非空，必须继续输出未解决 blocker、未验证范围和残留风险的可消费摘要，并保留回归覆盖；
 4. read_plan receipt bootstrap 路径已补受控放行边界；后续仍需保持 `ldvh.acknowledge_read_plan` 或等价 runtime receipt 入口不被 read_plan 消费检查自锁，且不得扩展为任意命令 bypass；
 5. Action Guide governed project 链路 specs 契约已补齐：Code 生成行动指南时必须消费 10 的管辖解析结果，并区分 LDVH specs、LDVH facts、管辖项目 facts 和过程输出；Code builder 实现和回归仍需补齐；
-6. test runner verification_plan 输出需要补齐：测试 runner 应能说明选择理由、覆盖层级、排除层级、未验证范围和 residual risk；
+6. test runner `verification_plan` 输出已补本地承接：测试 runner 必须继续说明选择理由、覆盖层级、排除层级、未验证范围和 residual risk，并回指 09 的验证入口选择矩阵；
 7. Codex / WorkBuddy shim 命令分类逻辑需要收敛到共享实现，避免环境插件独立实现继续漂移。

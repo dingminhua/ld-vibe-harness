@@ -1588,6 +1588,21 @@ def test_environment_plugin_template_is_requirement_first_and_current_environmen
     assert "下一步（30 安装 / 验收入口、目标环境回传证据或 capability_gap 分流）" in raw
 
 
+def test_code_spec_records_test_runner_verification_plan_as_implemented() -> None:
+    raw = (ROOT / "specs/07-Code确定性执行规范.md").read_text(encoding="utf-8")
+
+    assert "test runner `verification_plan` 输出已补本地承接" in raw
+    assert "回指 09 的验证入口选择矩阵" in raw
+    assert "test runner verification_plan 输出需要补齐" not in raw
+
+
+def test_open_work_plan_records_test_runner_verification_plan_as_implemented() -> None:
+    raw = (ROOT / "docs/LDVH-All-Open-Work-Review-Plan.md").read_text(encoding="utf-8")
+
+    assert "| test runner 输出 verification plan | Code | 已实现，保留 plan/stage 一致性回归 | P1 |" in raw
+    assert "| test runner 输出 verification plan | Code | 待做 | P1 |" not in raw
+
+
 def test_install_wizard_practice_defaults_workspace_root_to_ldvh_parent() -> None:
     raw = (ROOT / "code/docs/03-LDVH-Install-Wizard-Practice.md").read_text(encoding="utf-8")
 
