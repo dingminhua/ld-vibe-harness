@@ -2645,6 +2645,17 @@ def test_action_guide_session_start_read_plan() -> None:
     assert guide["summary"]["consumption_timing"] == "session_start"
     assert guide["summary"]["requirements"] == 1
     assert guide["missing_fields"] == []
+    assert guide["task_context"]["current_stage"] == "session_start"
+    assert guide["task_context"]["scope_status"] != ""
+    assert guide["guide_receipt"]["persistent"] is False
+    assert "不是事实源、授权、放行或完成证明" in guide["guide_receipt"]["boundary"]
+    assert guide["read_order"]
+    assert [item["read_order"] for item in guide["task_read_plan"]] == list(range(1, len(guide["task_read_plan"]) + 1))
+    assert {item["read_mode"] for item in guide["task_read_plan"]}.issubset({"result", "contract", "section", "full"})
+    assert all(item["read_mode"] != "full" for item in guide["task_read_plan"] if item["priority"] in {"P0", "P1"})
+    assert guide["summary"]["read_budget"]["overflow_to"] == "next_queries"
+    assert any(item["path"] == "specs/01-保障与衔接.md" for item in guide["suggested_sections"])
+    assert any(item["relationship"] == "requires" and item["to"] == "AI-BEH-001" for item in guide["relationship_projection"])
     read_paths = {item["path"] for item in guide["task_read_plan"] if item["path"]}
     assert {
         "specs/00-理念与构成.md",
@@ -2742,7 +2753,9 @@ projects:
             "boundary": "只能读取该项目根下 ldvh-base/；不得用 LDVH 本体 ldvh-base/、cwd 或项目登记配置替代。",
         }
     ]
-    assert any(item["source_type"] == "governed_project_facts" for item in guide["task_read_plan"])
+    project_fact_items = [item for item in guide["task_read_plan"] if item["source_type"] == "governed_project_facts"]
+    assert project_fact_items
+    assert project_fact_items[0]["read_mode"] == "contract"
     assert any(ref["role"] == "governed_project_fact_source" for ref in guide["source_refs"])
     assert {item["source_type"] for item in guide["source_boundaries"]} == {
         "ldvh_specs",
@@ -2784,6 +2797,10 @@ projects:
     assert guide["summary"]["status"] == "no_op"
     assert guide["summary"]["scope_status"] == "non_governed"
     assert guide["task_read_plan"] == []
+    assert guide["read_order"] == []
+    assert guide["suggested_sections"] == []
+    assert guide["guide_receipt"]["status"] == "no_op"
+    assert guide["task_context"]["scope_status"] == "non_governed"
     assert guide["project_fact_sources"] == []
     assert guide["requirements"] == []
 
@@ -2855,6 +2872,12 @@ projects:
         item["governed_project_id"]
         for item in guide["validation_guard"]
         if item.get("governed_project_id")
+    } == {"app-a", "app-b"}
+    assert {
+        item["from"]
+        for item in guide["relationship_projection"]
+        if item["relationship"] == "governed_project_fact_source"
+        and item.get("status") == "available"
     } == {"app-a", "app-b"}
     assert not any(query["query"] == "provide_target" for query in guide["next_queries"])
 
@@ -2952,6 +2975,9 @@ def test_specs_validate_cli_action_guide_json() -> None:
     assert payload["metadata"]["read_only"] is True
     assert payload["summary"]["status"] == "ok"
     assert payload["summary"]["task_read_plan"] >= 3
+    assert payload["guide_receipt"]["persistent"] is False
+    assert payload["read_order"]
+    assert payload["suggested_sections"]
     assert payload["source_refs"]
 
 
@@ -2969,6 +2995,8 @@ def test_preflight_core_spec_marks_human_gate_risk() -> None:
     assert preflight["summary"]["target_type"] == "core_spec"
     assert preflight["summary"]["human_gate_risks"] == 1
     assert any(item["path"] == "specs/01-保障与衔接.md" for item in preflight["required_read_plan"])
+    assert preflight["action_guide"]["guide_receipt"]["persistent"] is False
+    assert preflight["action_guide"]["read_order"]
 
 
 def test_preflight_code_target_is_unverifiable_not_authorization(validation_result: dict) -> None:

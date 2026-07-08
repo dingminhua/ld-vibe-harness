@@ -4045,6 +4045,220 @@ def capability_gaps_for_requirement(requirement: dict[str, Any]) -> list[dict[st
     return []
 
 
+ACTION_GUIDE_P0_INLINE_LIMIT = 5
+ACTION_GUIDE_P1_INLINE_LIMIT = 8
+ACTION_GUIDE_ALLOWED_READ_MODES = ("result", "contract", "section", "full")
+ACTION_GUIDE_SECTION_HINTS = {
+    SHORT_SPEC_REFS["00"]: ["五类构成要素", "V1-V9 价值判断"],
+    SHORT_SPEC_REFS["01"]: ["7. 行动指南", "10. Human Gate", "11. Stop Conditions"],
+    SHORT_SPEC_REFS["02"]: ["AI 行为保障需求", "Stop Conditions"],
+    SHORT_SPEC_REFS["07"]: ["Code 输出契约", "Runtime facade 与环境适配实现边界"],
+    SHORT_SPEC_REFS["09"]: ["验证方式分层", "验证声明与失败阻断"],
+    SHORT_SPEC_REFS["10"]: ["工作对象与 target-first", "管辖项目分流"],
+}
+
+
+def action_guide_normalized_targets(
+    root: Path,
+    scope_targets: list[str | Path],
+    cwd: str | Path | None,
+) -> set[str]:
+    base_cwd = _resolve_path(Path(cwd) if cwd is not None else root, root)
+    normalized: set[str] = set()
+    for raw_target in scope_targets:
+        raw = str(raw_target).strip()
+        if not raw:
+            continue
+        normalized.add(normalize_relative_path(raw))
+        resolved = _resolve_path(Path(raw), base_cwd)
+        normalized.add(resolved.as_posix())
+        normalized.add(_display_path(resolved, root))
+    return {item for item in normalized if item}
+
+
+def action_guide_read_mode(item: dict[str, Any], normalized_targets: set[str]) -> str:
+    path = normalize_relative_path(str(item.get("path", "")).strip())
+    if not path:
+        return "result"
+    if path in normalized_targets:
+        return "section"
+    if item.get("source_type") == "process_output":
+        return "result"
+    return "contract"
+
+
+def apply_action_guide_disclosure(
+    task_read_plan: list[dict[str, Any]],
+    *,
+    root: Path,
+    scope_targets: list[str | Path],
+    cwd: str | Path | None,
+) -> list[dict[str, Any]]:
+    normalized_targets = action_guide_normalized_targets(root, scope_targets, cwd)
+    disclosed: list[dict[str, Any]] = []
+    for index, item in enumerate(task_read_plan, start=1):
+        item_with_mode = dict(item)
+        item_with_mode["read_order"] = index
+        item_with_mode["read_mode"] = action_guide_read_mode(item, normalized_targets)
+        item_with_mode["disclosure"] = (
+            "target_section"
+            if item_with_mode["read_mode"] == "section"
+            else "progressive_contract"
+        )
+        priority = item_with_mode.get("priority", "")
+        item_with_mode["budget_group"] = priority if priority in {"P0", "P1"} else "next_queries"
+        disclosed.append(item_with_mode)
+    return disclosed
+
+
+def action_guide_read_order(task_read_plan: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [
+        {
+            "order": item["read_order"],
+            "priority": item["priority"],
+            "path": item.get("path", ""),
+            "label": item.get("label", ""),
+            "role": item.get("role", ""),
+            "source_type": item.get("source_type", ""),
+            "read_mode": item["read_mode"],
+            "reason": item.get("reason", ""),
+        }
+        for item in task_read_plan
+    ]
+
+
+def action_guide_suggested_sections(task_read_plan: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    suggestions: list[dict[str, Any]] = []
+    for item in task_read_plan:
+        path = item.get("path", "")
+        sections = ACTION_GUIDE_SECTION_HINTS.get(path, [])
+        if not sections:
+            continue
+        suggestions.append({
+            "path": path,
+            "read_order": item["read_order"],
+            "read_mode": item["read_mode"],
+            "sections": sections,
+            "reason": "优先定位与当前行动指南契约相关的章节，而不是重复注入全文。",
+        })
+    return suggestions
+
+
+def action_guide_task_context(
+    *,
+    task: str,
+    target_path: str,
+    scope_targets: list[str | Path],
+    trigger_source: str,
+    consumption_timing: str,
+    cwd: str | Path | None,
+    config_root: str | Path | None,
+    root: Path,
+    scope_kind: str,
+    governed_project: dict[str, Any],
+) -> dict[str, Any]:
+    return {
+        "task": task,
+        "current_stage": consumption_timing,
+        "consumption_timing": consumption_timing,
+        "trigger_source": trigger_source,
+        "target_path": target_path,
+        "target_paths": [str(path) for path in scope_targets],
+        "cwd": _resolve_path(Path(cwd) if cwd is not None else root, root).as_posix(),
+        "config_root": _resolve_path(Path(config_root), root).as_posix() if config_root is not None else "",
+        "read_write_kind": scope_kind,
+        "scope_status": governed_project.get("scope_status", ""),
+        "governed": bool(governed_project.get("governed")),
+        "blocked": bool(governed_project.get("blocked")),
+        "governed_project_id": governed_project.get("governed_project_id", ""),
+        "governed_project_path": governed_project.get("governed_project_path", ""),
+    }
+
+
+def action_guide_relationship_projection(
+    *,
+    requirements: list[dict[str, Any]],
+    source_refs: list[dict[str, Any]],
+    task_read_plan: list[dict[str, Any]],
+    project_fact_sources: list[dict[str, str]],
+) -> list[dict[str, Any]]:
+    relationships: list[dict[str, Any]] = []
+    for requirement in requirements:
+        relationships.append({
+            "from": "consumption_timing",
+            "to": requirement["requirement_id"],
+            "relationship": "requires",
+            "source_path": requirement["source_path"],
+        })
+    for ref in source_refs:
+        relationships.append({
+            "from": "action_guide",
+            "to": ref.get("path", ""),
+            "relationship": ref.get("role", ""),
+            "requirement_id": ref.get("requirement_id", ""),
+        })
+    for item in task_read_plan:
+        relationships.append({
+            "from": "task_read_plan",
+            "to": item.get("path") or item.get("label", ""),
+            "relationship": item.get("role", ""),
+            "priority": item.get("priority", ""),
+            "read_mode": item.get("read_mode", ""),
+            "requirement_id": item.get("requirement_id", ""),
+        })
+    for source in project_fact_sources:
+        relationships.append({
+            "from": source.get("governed_project_id", ""),
+            "to": source.get("fact_root", ""),
+            "relationship": "governed_project_fact_source",
+            "status": source.get("status", ""),
+        })
+    return unique_dicts(relationships, ("from", "to", "relationship", "requirement_id"))
+
+
+def action_guide_read_budget(task_read_plan: list[dict[str, Any]]) -> dict[str, Any]:
+    p0_items = sum(1 for item in task_read_plan if item.get("priority") == "P0")
+    p1_items = sum(1 for item in task_read_plan if item.get("priority") == "P1")
+    overflow_items = sum(1 for item in task_read_plan if item.get("budget_group") == "next_queries")
+    return {
+        "p0_items": p0_items,
+        "p1_items": p1_items,
+        "overflow_items": overflow_items,
+        "p0_inline_limit": ACTION_GUIDE_P0_INLINE_LIMIT,
+        "p1_inline_limit": ACTION_GUIDE_P1_INLINE_LIMIT,
+        "overflow_to": "next_queries",
+    }
+
+
+def build_action_guide_receipt(
+    *,
+    root: Path,
+    consumption_timing: str,
+    task: str,
+    target_path: str,
+    scope_targets: list[str | Path],
+    task_read_plan: list[dict[str, Any]],
+    status: str,
+) -> dict[str, Any]:
+    fingerprint_parts = [
+        root.as_posix(),
+        consumption_timing,
+        task,
+        target_path,
+        ";".join(str(path) for path in scope_targets),
+        ";".join(f"{item.get('priority')}:{item.get('path')}:{item.get('read_mode')}" for item in task_read_plan),
+    ]
+    receipt_id = "ldvh-guide-" + hashlib.sha256("\n".join(fingerprint_parts).encode("utf-8")).hexdigest()[:16]
+    return {
+        "receipt_id": receipt_id,
+        "status": status,
+        "persistent": False,
+        "storage": "stdout_only",
+        "brief_available": True,
+        "boundary": "guide_receipt 只证明当次 Action Guide 输入和输出指纹；不是事实源、授权、放行或完成证明。",
+    }
+
+
 ACTION_GUIDE_SOURCE_BOUNDARIES = [
     {
         "source_type": "ldvh_specs",
@@ -4291,7 +4505,32 @@ def build_action_guide(
         read_write_kind=scope_kind,
         config_root=config_root,
     )
+    task_context = action_guide_task_context(
+        task=task,
+        target_path=target_path,
+        scope_targets=scope_targets,
+        trigger_source=trigger_source,
+        consumption_timing=consumption_timing,
+        cwd=cwd,
+        config_root=config_root,
+        root=root,
+        scope_kind=scope_kind,
+        governed_project=resolved_governed_project,
+    )
     if resolved_governed_project.get("scope_status") == "non_governed":
+        noop_source_refs = [
+            {"path": SHORT_SPEC_REFS["01"], "role": "action_guide_noop_boundary"},
+            {"path": SHORT_SPEC_REFS["10"], "role": "governed_project_noop_boundary"},
+        ]
+        noop_receipt = build_action_guide_receipt(
+            root=root,
+            consumption_timing=consumption_timing,
+            task=task,
+            target_path=target_path,
+            scope_targets=scope_targets,
+            task_read_plan=[],
+            status="no_op",
+        )
         return {
             "metadata": {
                 "read_only": True,
@@ -4321,8 +4560,18 @@ def build_action_guide(
                 "config_root": _resolve_path(Path(config_root), root).as_posix() if config_root is not None else "",
                 "read_write_kind": scope_kind,
             },
+            "task_context": task_context,
+            "relationship_projection": action_guide_relationship_projection(
+                requirements=[],
+                source_refs=noop_source_refs,
+                task_read_plan=[],
+                project_fact_sources=[],
+            ),
             "requirements": [],
             "task_read_plan": [],
+            "read_order": [],
+            "suggested_sections": [],
+            "guide_receipt": noop_receipt,
             "next_queries": [],
             "stop_conditions": [],
             "validation_guard": [],
@@ -4338,10 +4587,7 @@ def build_action_guide(
                 "affected_path_count": 0,
                 "requirement_ids": [],
             },
-            "source_refs": [
-                {"path": SHORT_SPEC_REFS["01"], "role": "action_guide_noop_boundary"},
-                {"path": SHORT_SPEC_REFS["10"], "role": "governed_project_noop_boundary"},
-            ],
+            "source_refs": noop_source_refs,
             "diagnostics": [],
         }
 
@@ -4446,6 +4692,32 @@ def build_action_guide(
     )
     diagnostics = guide_diagnostics
     status = "failed" if diagnostics else "degraded" if unverifiable else "ok"
+    task_read_plan = apply_action_guide_disclosure(
+        unique_dicts(task_read_plan, ("priority", "role", "source_type", "path", "label", "requirement_id")),
+        root=root,
+        scope_targets=scope_targets,
+        cwd=cwd,
+    )
+    source_refs = unique_dicts(source_refs, ("path", "role", "requirement_id"))
+    project_fact_sources = unique_dicts(project_fact_sources, ("governed_project_id", "fact_root"))
+    read_order = action_guide_read_order(task_read_plan)
+    suggested_sections = action_guide_suggested_sections(task_read_plan)
+    guide_receipt = build_action_guide_receipt(
+        root=root,
+        consumption_timing=consumption_timing,
+        task=task,
+        target_path=target_path,
+        scope_targets=scope_targets,
+        task_read_plan=task_read_plan,
+        status=status,
+    )
+    relationship_projection = action_guide_relationship_projection(
+        requirements=requirements,
+        source_refs=source_refs,
+        task_read_plan=task_read_plan,
+        project_fact_sources=project_fact_sources,
+    )
+    read_budget = action_guide_read_budget(task_read_plan)
 
     return {
         "metadata": {
@@ -4465,6 +4737,7 @@ def build_action_guide(
             "project_fact_sources": len(project_fact_sources),
             "scope_status": resolved_governed_project.get("scope_status", ""),
             "diagnostics": len(diagnostics),
+            "read_budget": read_budget,
         },
         "input": {
             "task": task,
@@ -4476,8 +4749,13 @@ def build_action_guide(
             "config_root": _resolve_path(Path(config_root), root).as_posix() if config_root is not None else "",
             "read_write_kind": scope_kind,
         },
+        "task_context": task_context,
+        "relationship_projection": relationship_projection,
         "requirements": requirements,
-        "task_read_plan": unique_dicts(task_read_plan, ("priority", "role", "source_type", "path", "label", "requirement_id")),
+        "task_read_plan": task_read_plan,
+        "read_order": read_order,
+        "suggested_sections": suggested_sections,
+        "guide_receipt": guide_receipt,
         "next_queries": next_queries,
         "stop_conditions": unique_dicts(stop_conditions, ("requirement_id", "condition")),
         "validation_guard": validation_guard,
@@ -4485,7 +4763,7 @@ def build_action_guide(
         "missing_fields": missing_fields,
         "capability_gap": unique_dicts(capability_gap, ("requirement_id", "required_capability")),
         "unverifiable": unique_dicts(unverifiable, ("code", "target")),
-        "project_fact_sources": unique_dicts(project_fact_sources, ("governed_project_id", "fact_root")),
+        "project_fact_sources": project_fact_sources,
         "source_boundaries": ACTION_GUIDE_SOURCE_BOUNDARIES,
         "governed_project": resolved_governed_project,
         "impact_summary": {
@@ -4493,7 +4771,7 @@ def build_action_guide(
             "affected_path_count": len(impact_paths),
             "requirement_ids": [requirement["requirement_id"] for requirement in requirements],
         },
-        "source_refs": unique_dicts(source_refs, ("path", "role", "requirement_id")),
+        "source_refs": source_refs,
         "diagnostics": diagnostics,
     }
 
@@ -4814,7 +5092,19 @@ def _empty_action_guide_summary() -> dict[str, Any]:
             "project_fact_sources": 0,
             "diagnostics": 0,
         },
+        "task_context": {},
+        "relationship_projection": [],
         "task_read_plan": [],
+        "read_order": [],
+        "suggested_sections": [],
+        "guide_receipt": {
+            "receipt_id": "",
+            "status": "no_op",
+            "persistent": False,
+            "storage": "stdout_only",
+            "brief_available": False,
+            "boundary": "空 Action Guide 摘要不是事实源、授权、放行或完成证明。",
+        },
         "stop_conditions": [],
         "missing_fields": [],
         "capability_gap": [],
@@ -5108,7 +5398,13 @@ def build_preflight(
         "required_read_plan": required_read_plan,
         "action_guide": {
             "summary": action_guide["summary"],
+            "task_context": action_guide["task_context"],
+            "relationship_projection": action_guide["relationship_projection"],
             "task_read_plan": action_guide["task_read_plan"],
+            "read_order": action_guide["read_order"],
+            "suggested_sections": action_guide["suggested_sections"],
+            "guide_receipt": action_guide["guide_receipt"],
+            "next_queries": action_guide["next_queries"],
             "stop_conditions": action_guide["stop_conditions"],
             "missing_fields": action_guide["missing_fields"],
             "capability_gap": action_guide["capability_gap"],

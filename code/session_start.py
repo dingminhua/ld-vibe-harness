@@ -61,13 +61,17 @@ def _print_text(result: dict[str, Any]) -> None:
     print(f"- receipt_storage: {receipt['storage']}")
     print(f"- environment_integrated: {_bool_text(summary['environment_integrated'])}")
     print(f"- integration_scope: {summary['integration_scope']}")
+    guide_receipt = action_guide.get("guide_receipt", {})
+    if guide_receipt:
+        print(f"- guide_receipt_id: {guide_receipt.get('receipt_id', '')}")
+        print(f"- guide_receipt_storage: {guide_receipt.get('storage', '')}")
 
     read_plan = action_guide.get("task_read_plan", [])
     if read_plan:
         print("\nTask read plan:")
         for item in read_plan:
             path = item["path"] or item["label"]
-            print(f"- {item['priority']}: {path} ({item['requirement_id']})")
+            print(f"- {item['priority']}/{item.get('read_mode', 'contract')}: {path} ({item['requirement_id']})")
 
     stop_conditions = action_guide.get("stop_conditions", [])
     if stop_conditions:
