@@ -156,6 +156,28 @@ def _print_text(result: dict[str, Any]) -> None:
         for item in validation_guard:
             print(f"- {item.get('requirement_id', '')}: {item.get('guard', '')}")
 
+    verification_outline = action_guide.get("verification_outline", {})
+    if verification_outline.get("summary"):
+        summary = verification_outline["summary"]
+        print("\nVerification outline:")
+        print(f"- result_status: {summary.get('result_status', '')}")
+        print(
+            "- counts: "
+            f"checks={summary.get('checks', 0)}, "
+            f"fallback={summary.get('fallback_actions', 0)}, "
+            f"residual_risk={summary.get('residual_risks', 0)}"
+        )
+        for item in verification_outline.get("checks", [])[:5]:
+            print(f"- check/{item.get('result_status', '')}: {item.get('check', '')}")
+        for item in verification_outline.get("stop_conditions", [])[:5]:
+            print(f"- stop/{item.get('result_status', '')}: {item.get('condition', '')}")
+        for item in verification_outline.get("fallback_actions", [])[:5]:
+            print(f"- fallback/{item.get('result_status', '')}: {item.get('kind', '')} {item.get('target', '')}")
+        for item in verification_outline.get("residual_risks", [])[:5]:
+            print(f"- residual/{item.get('result_status', '')}: {item.get('risk', '')}")
+        for item in verification_outline.get("tool_candidates", [])[:5]:
+            print(f"- tool/{item.get('result_status', '')}: {item.get('tool', '')}")
+
     tool_plan = action_guide.get("tool_plan", [])
     if tool_plan:
         print("\nTool plan:")

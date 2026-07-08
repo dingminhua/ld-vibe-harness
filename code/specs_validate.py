@@ -112,6 +112,26 @@ def print_text(result: dict[str, Any], command: str) -> None:
             for item in result["task_read_plan"]:
                 path = item["path"] or item["label"]
                 print(f"- {item['priority']}/{item['source_type']}: {path} ({item['requirement_id']})")
+        if result.get("verification_outline", {}).get("summary"):
+            summary = result["verification_outline"]["summary"]
+            print("\nVerification outline:")
+            print(f"- result_status: {summary.get('result_status', '')}")
+            print(
+                "- counts: "
+                f"checks={summary.get('checks', 0)}, "
+                f"fallback={summary.get('fallback_actions', 0)}, "
+                f"residual_risk={summary.get('residual_risks', 0)}"
+            )
+            for item in result["verification_outline"].get("checks", [])[:5]:
+                print(f"- check/{item.get('result_status', '')}: {item.get('check', '')}")
+            for item in result["verification_outline"].get("stop_conditions", [])[:5]:
+                print(f"- stop/{item.get('result_status', '')}: {item.get('condition', '')}")
+            for item in result["verification_outline"].get("fallback_actions", [])[:5]:
+                print(f"- fallback/{item.get('result_status', '')}: {item.get('kind', '')} {item.get('target', '')}")
+            for item in result["verification_outline"].get("residual_risks", [])[:5]:
+                print(f"- residual/{item.get('result_status', '')}: {item.get('risk', '')}")
+            for item in result["verification_outline"].get("tool_candidates", [])[:5]:
+                print(f"- tool/{item.get('result_status', '')}: {item.get('tool', '')}")
         if result.get("tool_plan"):
             print("\nTool plan:")
             for item in result["tool_plan"]:

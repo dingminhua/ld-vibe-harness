@@ -126,6 +126,8 @@ Code 生成 Action Guide 的 `action_type`、`attention_points`、`tool_plan` �
 
 Code 生成 Action Guide 的 `source_outline` 时，只能重新组织已有 `source_refs`、`task_read_plan`、`read_mode`、`source_boundaries`、项目事实源解析和 diagnostic / gap 输出，不得引入新规则、新事实源或新授权判断。`source_outline` 必须区分立即消费、回指保留和后续展开，并保留来源类型、角色、优先级、披露层级和边界说明；无法归类时必须输出 `unclassified` / `process_output` 或 diagnostic，不得把未知来源伪装成权威规则。
 
+Code 生成 Action Guide 的 `verification_outline` 时，只能重新组织已有 `validation_guard`、`stop_conditions`、`capability_gap`、`unverifiable`、diagnostics、fallback 和候选工具信息，不得生成测试结果、完成结论或风险接受。所有检查项必须保留 `result_status` 为 not_run、not_verified、blocked 或等价非通过状态；若存在缺口或不可验证范围，必须进入 fallback / residual risk，而不是被测试建议清零。
+
 ## 7. Runtime facade 与环境适配实现边界
 
 01 已定义 Runtime Protocol、canonical event 和 trigger source 的上位语义。本文只承接具体实现边界。

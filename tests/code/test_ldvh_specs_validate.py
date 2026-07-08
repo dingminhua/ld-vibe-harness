@@ -327,6 +327,7 @@ def test_assurance_spec_defines_git_and_environment_hook_boundaries() -> None:
 def test_action_guide_governed_project_contract_is_specified() -> None:
     spec_01 = (ROOT / "specs/01-保障与衔接.md").read_text(encoding="utf-8")
     spec_07 = (ROOT / "specs/07-Code确定性执行规范.md").read_text(encoding="utf-8")
+    spec_09 = (ROOT / "specs/09-测试与验证规范.md").read_text(encoding="utf-8")
     spec_10 = (ROOT / "specs/10-安装与配置规范.md").read_text(encoding="utf-8")
 
     assert "### 7.4 管辖项目行动指南" in spec_01
@@ -353,6 +354,7 @@ def test_action_guide_governed_project_contract_is_specified() -> None:
     assert "| `read_mode` | 每个读取项或读取组的披露层级，例如 `result`、`contract`、`section` 或 `full`。 |" in spec_01
     assert "| `guide_receipt` | 对已消费且输入未变化的行动指南返回 brief / receipt 确认，避免重复注入完整上下文。 |" in spec_01
     assert "| `suggested_sections` | 需要优先定位的章节、字段、对象、关系或证据片段。 |" in spec_01
+    assert "| `verification_outline` | 将 `validation_guard`、`stop_conditions`、`capability_gap`、`unverifiable`" in spec_01
     assert "| `tool_plan` | 候选 Code、Git、测试或审计工具入口" in spec_01
     assert "| `post_read_action` | AI 消费 P0/P1 后的确定性下一步候选" in spec_01
     assert "### 7.7 行动指南验收清单" in spec_01
@@ -360,6 +362,7 @@ def test_action_guide_governed_project_contract_is_specified() -> None:
     assert "| 行动分类 | `action_type` 必须来自显式 action hint、消费时机、读写类型或 target 类型" in spec_01
     assert "| 行动提醒 | `attention_points` 应保持 3-5 条短提醒" in spec_01
     assert "| 来源组织 | `source_outline` 必须把来源按 `ldvh_specs`、`ldvh_facts`、`governed_project_facts`" in spec_01
+    assert "| 验证组织 | `verification_outline` 必须区分待验证项、fallback、不可验证范围和残留风险" in spec_01
     assert "| 工具与读后行动 | `tool_plan` 和 `post_read_action` 必须是候选导航" in spec_01
     assert "| 人类可见输出 | 当 Action Guide 以 text、receipt、Hook 消息或其它 Human-facing 形式呈现时" in spec_01
     assert "而不只展示 read_plan" in spec_01
@@ -381,7 +384,12 @@ def test_action_guide_governed_project_contract_is_specified() -> None:
     assert "不得从自然语言任务中猜测价值取舍" in spec_07
     assert "Code 生成 Action Guide 的 `source_outline` 时，只能重新组织已有" in spec_07
     assert "不得把未知来源伪装成权威规则" in spec_07
+    assert "Code 生成 Action Guide 的 `verification_outline` 时，只能重新组织已有" in spec_07
+    assert "不得生成测试结果、完成结论或风险接受" in spec_07
     assert "Action Guide governed project 链路 specs 契约和本地 Code builder 已补齐" in spec_07
+
+    assert "Action Guide 可以输出 `verification_outline` 或等价验证前视图" in spec_09
+    assert "不替代 `verification_plan` 的测试入口选择" in spec_09
 
     assert "只能以 resolver 输出的 `governed_project_path` 下 `ldvh-base/` 作为项目事实源入口" in spec_10
     assert "不得用 LDVH 本体 `ldvh-base/`、cwd、对话记忆或项目登记配置替代项目事实源" in spec_10
@@ -2843,6 +2851,15 @@ def test_action_guide_session_start_read_plan() -> None:
     }.issubset(read_paths)
     assert guide["stop_conditions"]
     assert guide["validation_guard"][0]["requirement_id"] == "AI-BEH-001"
+    verification_outline = guide["verification_outline"]
+    assert verification_outline["summary"]["checks"] >= 1
+    assert verification_outline["summary"]["result_status"] == "not_verified"
+    assert "不是测试结果" in verification_outline["boundary"]
+    assert all(item["result_status"] == "not_run" for item in verification_outline["checks"])
+    assert any(item["source"] == "capability_gap" for item in verification_outline["residual_risks"])
+    assert all(item["result_status"] == "not_run" for item in verification_outline["stop_conditions"])
+    assert all(item["result_status"] == "not_run" for item in verification_outline["tool_candidates"])
+    assert not any(item.get("result_status") in {"passed", "complete", "verified"} for item in verification_outline["checks"])
     assert any(gap["requirement_id"] == "AI-BEH-001" for gap in guide["capability_gap"])
 
 
@@ -2864,6 +2881,11 @@ def test_action_guide_pre_tool_use_reports_missing_target(validation_result: dic
     assert "补齐 missing_fields" in guide["next_action"]
     assert guide["post_read_action"]["kind"] == "fill_missing_fields"
     assert guide["post_read_action"]["instruction"] == guide["next_action"]
+    assert guide["verification_outline"]["summary"]["fallback_actions"] >= 1
+    assert any(
+        item["kind"] == "fill_missing_field" and item["target"] == "target_path"
+        for item in guide["verification_outline"]["fallback_actions"]
+    )
     assert any(item["tool"] == "code/pre_tool_use.py" for item in guide["tool_plan"])
     assert any(item["requirement_id"] == "AI-BEH-003" for item in guide["stop_conditions"])
 
@@ -2910,6 +2932,25 @@ def test_action_guide_tool_plan_covers_completion_and_commit_candidates(validati
     assert "code/specs_validate.py commit-gate" in commit_tools
     assert "--message-file '<commit_msg_file>'" in commit_tools["code/specs_validate.py commit-gate"]["command"]
     assert all(item["authorization"] == "none" for item in commit_guide["tool_plan"])
+
+
+def test_action_guide_completion_claim_verification_outline_is_pre_result(validation_result: dict) -> None:
+    guide = ldvh_specs.build_action_guide(
+        ROOT,
+        consumption_timing="completion_claim",
+        target_path="specs/01-保障与衔接.md",
+        validation=validation_result,
+    )
+
+    outline = guide["verification_outline"]
+    assert outline["summary"]["checks"] >= 1
+    assert outline["summary"]["stop_conditions"] >= 1
+    assert outline["summary"]["tool_candidates"] >= 1
+    assert outline["summary"]["result_status"] == "not_verified"
+    assert any(item["disposition"] == "verify_before_completion" for item in outline["checks"])
+    assert any(item["tool"] == "code/completion_claim.py" for item in outline["tool_candidates"])
+    assert all(item["result_status"] == "not_run" for item in outline["checks"])
+    assert all(item["result_status"] == "not_run" for item in outline["tool_candidates"])
 
 
 def test_action_guide_source_outline_normalizes_non_session_source_types(validation_result: dict) -> None:
@@ -3064,6 +3105,9 @@ projects:
     assert guide["source_outline"]["summary"]["items"] == 0
     assert guide["source_outline"]["summary"]["consume_now"] == 0
     assert guide["source_outline"]["groups"] == []
+    assert guide["verification_outline"]["summary"]["checks"] == 0
+    assert guide["verification_outline"]["summary"]["residual_risks"] == 0
+    assert guide["verification_outline"]["summary"]["result_status"] == "not_verified"
     assert guide["tool_plan"] == []
     assert guide["post_read_action"]["kind"] == "no_op"
     assert guide["post_read_action"]["authorization"] == "none"
@@ -3092,6 +3136,8 @@ def test_action_guide_scope_unknown_degrades_without_project_fact_read_plan(
     assert not any(item["source_type"] == "governed_project_facts" for item in guide["task_read_plan"])
     assert any(gap["required_capability"] == "Governed project Action Guide source resolution" for gap in guide["capability_gap"])
     assert guide["unverifiable"][0]["code"] == "ACTION_GUIDE_SCOPE_UNKNOWN"
+    assert guide["verification_outline"]["summary"]["fallback_actions"] >= 1
+    assert guide["verification_outline"]["summary"]["residual_risks"] >= 1
 
 
 def test_action_guide_declared_multi_governed_splits_project_fact_sources(
@@ -3247,6 +3293,8 @@ def test_specs_validate_cli_action_guide_json() -> None:
     assert payload["attention_points"]
     assert payload["source_outline"]["summary"]["groups"] >= 2
     assert payload["source_outline"]["summary"]["consume_now"] >= 3
+    assert payload["verification_outline"]["summary"]["checks"] >= 1
+    assert payload["verification_outline"]["summary"]["result_status"] == "not_verified"
     assert payload["tool_plan"][0]["authorization"] == "none"
     assert payload["post_read_action"]["kind"] == "continue_after_read_plan"
     assert payload["post_read_action"]["authorization"] == "none"
@@ -3282,6 +3330,11 @@ def test_specs_validate_cli_action_guide_text_outputs_execution_bridge() -> None
     assert "- ldvh_specs:" in output
     assert "P0/section/consume_now: specs/01-保障与衔接.md" in output
     assert "Task read plan:" in output
+    assert "Verification outline:" in output
+    assert "- result_status: not_verified" in output
+    assert "check/not_run:" in output
+    assert "stop/not_run:" in output
+    assert "tool/not_run:" in output
     assert "Tool plan:" in output
     assert "code/specs_validate.py action-guide" in output
     assert "Post-read action:" in output
@@ -3339,6 +3392,11 @@ def test_session_start_text_outputs_action_guide_context() -> None:
     assert "- consumption_timing -> AI-BEH-001 [requires]" in output
     assert "- action_guide -> specs/01-保障与衔接.md [action_guide_contract]" in output
     assert "Validation guard:" in output
+    assert "Verification outline:" in output
+    assert "- result_status: not_verified" in output
+    assert "check/not_run:" in output
+    assert "stop/not_run:" in output
+    assert "tool/not_run:" in output
     assert "Tool plan:" in output
     assert "code/specs_validate.py action-guide" in output
     assert "Post-read action:" in output

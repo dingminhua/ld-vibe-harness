@@ -4499,6 +4499,137 @@ def action_guide_source_outline(
     }
 
 
+def action_guide_empty_verification_outline(boundary: str | None = None) -> dict[str, Any]:
+    return {
+        "summary": {
+            "checks": 0,
+            "fallback_actions": 0,
+            "residual_risks": 0,
+            "stop_conditions": 0,
+            "tool_candidates": 0,
+            "result_status": "not_verified",
+        },
+        "checks": [],
+        "fallback_actions": [],
+        "residual_risks": [],
+        "stop_conditions": [],
+        "tool_candidates": [],
+        "boundary": boundary
+        or "verification_outline 是验证前组织视图；不是测试结果、验证声明、Human Gate、风险接受或完成证明。",
+    }
+
+
+def action_guide_verification_outline(
+    *,
+    consumption_timing: str,
+    status: str,
+    missing_fields: list[dict[str, str]],
+    stop_conditions: list[dict[str, str]],
+    validation_guard: list[dict[str, str]],
+    capability_gap: list[dict[str, str]],
+    unverifiable: list[dict[str, str]],
+    diagnostics: list[dict[str, Any]],
+    tool_plan: list[dict[str, str]],
+) -> dict[str, Any]:
+    checks = [
+        {
+            "requirement_id": item.get("requirement_id", ""),
+            "check": item.get("guard", ""),
+            "source_path": item.get("source_path", SHORT_SPEC_REFS["09"]),
+            "result_status": "not_run",
+            "disposition": "verify_before_completion" if consumption_timing == "completion_claim" else "guard_before_action",
+        }
+        for item in validation_guard
+        if item.get("guard")
+    ]
+    fallback_actions: list[dict[str, str]] = []
+    for item in missing_fields:
+        fallback_actions.append({
+            "kind": "fill_missing_field",
+            "target": item.get("field", ""),
+            "reason": item.get("reason", ""),
+            "result_status": "not_verified",
+            "disposition": "补齐后重新生成 Action Guide；不得继续声明完成。",
+        })
+    for item in capability_gap:
+        fallback_actions.append({
+            "kind": "capability_gap",
+            "target": item.get("required_capability", ""),
+            "reason": item.get("current_gap", ""),
+            "result_status": "not_verified",
+            "disposition": item.get("disposition", "保留为缺口或交还 Human，不得声明保障完整。"),
+        })
+    for item in unverifiable:
+        fallback_actions.append({
+            "kind": "unverifiable",
+            "target": item.get("target", ""),
+            "reason": item.get("reason", ""),
+            "result_status": "not_verified",
+            "disposition": "作为不可验证范围和残留风险交还，不得写成已验证。",
+        })
+    residual_risks: list[dict[str, str]] = []
+    for item in capability_gap:
+        residual_risks.append({
+            "source": "capability_gap",
+            "risk": item.get("current_gap", ""),
+            "source_path": item.get("source_path", SHORT_SPEC_REFS["01"]),
+            "result_status": "not_verified",
+            "disposition": item.get("disposition", "保留为残留风险或后续机制补齐。"),
+        })
+    for item in unverifiable:
+        residual_risks.append({
+            "source": "unverifiable",
+            "risk": item.get("reason", ""),
+            "source_path": item.get("source_path", SHORT_SPEC_REFS["09"]),
+            "result_status": "not_verified",
+            "disposition": "完成声明必须说明未验证范围和残留风险。",
+        })
+    for diagnostic in diagnostics:
+        residual_risks.append({
+            "source": "diagnostic",
+            "risk": diagnostic.get("message", ""),
+            "source_path": diagnostic.get("path", SHORT_SPEC_REFS["07"]),
+            "result_status": "blocked" if diagnostic.get("level") in {"error", "blocking"} else "not_verified",
+            "disposition": "先处理 diagnostic；不得用 Action Guide 输出替代验证或 Human Gate。",
+        })
+    outlined_stop_conditions = [
+        {
+            "requirement_id": item.get("requirement_id", ""),
+            "condition": item.get("condition", ""),
+            "result_status": "not_run",
+            "disposition": item.get("disposition", "触发时暂停、分流或进入 Human Gate。"),
+        }
+        for item in stop_conditions
+    ]
+    tool_candidates = [
+        {
+            "tool": item.get("tool", ""),
+            "reason": item.get("reason", ""),
+            "source_path": item.get("source_path", SHORT_SPEC_REFS["07"]),
+            "result_status": "not_run",
+            "authorization": "none",
+        }
+        for item in tool_plan
+    ]
+    result_status = "blocked" if status == "failed" or diagnostics else "not_verified"
+    return {
+        "summary": {
+            "checks": len(checks),
+            "fallback_actions": len(fallback_actions),
+            "residual_risks": len(residual_risks),
+            "stop_conditions": len(outlined_stop_conditions),
+            "tool_candidates": len(tool_candidates),
+            "result_status": result_status,
+        },
+        "checks": checks,
+        "fallback_actions": fallback_actions,
+        "residual_risks": residual_risks,
+        "stop_conditions": outlined_stop_conditions,
+        "tool_candidates": tool_candidates,
+        "boundary": "verification_outline 只组织验证前护栏、fallback 和残留风险；不是测试结果、verification_plan、验证声明、Human Gate 或完成证明。",
+    }
+
+
 def action_guide_task_context(
     *,
     task: str,
@@ -4946,6 +5077,9 @@ def build_action_guide(
             "next_queries": [],
             "stop_conditions": [],
             "validation_guard": [],
+            "verification_outline": action_guide_empty_verification_outline(
+                "non_governed no-op 不输出验证组织视图；不是测试结果、验证声明或完成证明。"
+            ),
             "post_read_action": {
                 "kind": "no_op",
                 "instruction": "非管辖项目 no-op；不得输出 LDVH guidance、项目事实源 read_plan 或完成声明判断。",
@@ -5118,6 +5252,17 @@ def build_action_guide(
         consumption_timing=consumption_timing,
         missing_fields=missing_fields,
     )
+    verification_outline = action_guide_verification_outline(
+        consumption_timing=consumption_timing,
+        status=status,
+        missing_fields=missing_fields,
+        stop_conditions=unique_dicts(stop_conditions, ("requirement_id", "condition")),
+        validation_guard=validation_guard,
+        capability_gap=unique_dicts(capability_gap, ("requirement_id", "required_capability")),
+        unverifiable=unique_dicts(unverifiable, ("code", "target")),
+        diagnostics=diagnostics,
+        tool_plan=tool_plan,
+    )
     next_action = post_read_action["instruction"]
 
     return {
@@ -5164,6 +5309,7 @@ def build_action_guide(
         "next_queries": next_queries,
         "stop_conditions": unique_dicts(stop_conditions, ("requirement_id", "condition")),
         "validation_guard": validation_guard,
+        "verification_outline": verification_outline,
         "post_read_action": post_read_action,
         "next_action": next_action,
         "missing_fields": missing_fields,
@@ -5521,6 +5667,7 @@ def _empty_action_guide_summary() -> dict[str, Any]:
         "tool_plan": [],
         "stop_conditions": [],
         "validation_guard": [],
+        "verification_outline": action_guide_empty_verification_outline(),
         "post_read_action": {},
         "next_action": "",
         "missing_fields": [],
@@ -5828,6 +5975,7 @@ def build_preflight(
             "next_queries": action_guide["next_queries"],
             "stop_conditions": action_guide["stop_conditions"],
             "validation_guard": action_guide["validation_guard"],
+            "verification_outline": action_guide["verification_outline"],
             "post_read_action": action_guide["post_read_action"],
             "next_action": action_guide["next_action"],
             "missing_fields": action_guide["missing_fields"],
