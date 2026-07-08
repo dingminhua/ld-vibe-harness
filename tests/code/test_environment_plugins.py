@@ -109,6 +109,34 @@ def _command_payload(command: str) -> dict:
     }
 
 
+def _nested_command_payloads(command: str) -> list[dict]:
+    return [
+        {
+            "hook_event_name": "PreToolUse",
+            "sessionId": "shim-nested-tool",
+            "cwd": ROOT.as_posix(),
+            "tool": {"name": "functions.exec_command", "arguments": {"cmd": command}},
+        },
+        {
+            "hook_event_name": "PreToolUse",
+            "sessionId": "shim-nested-bash",
+            "cwd": ROOT.as_posix(),
+            "tool": {"name": "Bash", "input": {"command": command}},
+        },
+        {
+            "hook_event_name": "PreToolUse",
+            "sessionId": "shim-nested-tool-call",
+            "cwd": ROOT.as_posix(),
+            "tool_call": {
+                "function": {
+                    "name": "functions.exec_command",
+                    "arguments": json.dumps({"cmd": command}, ensure_ascii=False),
+                }
+            },
+        },
+    ]
+
+
 def test_shared_action_classifier_covers_read_and_write_command_matrix() -> None:
     read_only_commands = [
         "pwd",
@@ -145,6 +173,24 @@ def test_shared_action_classifier_covers_read_and_write_command_matrix() -> None
     for command in write_like_commands:
         classification = action_classifier.classify_action(_command_payload(command), ROOT)
         assert classification.requires_preflight is True, command
+
+
+def test_shared_action_classifier_covers_nested_tool_payloads() -> None:
+    for payload in _nested_command_payloads("pwd"):
+        classification = action_classifier.classify_action(payload, ROOT)
+        assert classification.operation == "read"
+        assert classification.requires_preflight is False
+        assert classification.reason == "read_only_command"
+
+    write_payload = {
+        "hook_event_name": "PreToolUse",
+        "sessionId": "shim-nested-write",
+        "cwd": ROOT.as_posix(),
+        "tool": {"name": "Write", "input": {"file_path": "README.md"}},
+    }
+    classification = action_classifier.classify_action(write_payload, ROOT)
+    assert classification.operation == "write"
+    assert classification.requires_preflight is True
 
 
 def test_environment_shims_delegate_to_shared_classifier_for_command_parity(tmp_path: Path) -> None:
@@ -192,6 +238,36 @@ def test_environment_shims_delegate_to_shared_classifier_for_command_parity(tmp_
         assert workbuddy_output["permissionDecision"] == "deny", command
         assert "RUNTIME_READ_PLAN_CONSUMED_EMPTY" in codex_output["permissionDecisionReason"], command
         assert "RUNTIME_READ_PLAN_CONSUMED_EMPTY" in workbuddy_output["permissionDecisionReason"], command
+
+
+def test_environment_shims_allow_nested_read_only_command_payloads(tmp_path: Path) -> None:
+    for payload in _nested_command_payloads("pwd"):
+        codex = _run_shim(payload)
+        workbuddy = _run_workbuddy_shim(
+            payload,
+            extra_env={"LDVH_RUNTIME_CACHE_DIR": (tmp_path / "runtime-cache").as_posix()},
+        )
+        assert codex.stdout == "", payload
+        assert workbuddy.stdout == "", payload
+
+    write_payload = {
+        "hook_event_name": "PreToolUse",
+        "sessionId": "shim-nested-write",
+        "cwd": ROOT.as_posix(),
+        "tool": {"name": "Write", "input": {"file_path": "README.md"}},
+    }
+    codex = _run_shim(write_payload, check=False)
+    workbuddy = _run_workbuddy_shim(
+        write_payload,
+        check=False,
+        extra_env={"LDVH_RUNTIME_CACHE_DIR": (tmp_path / "runtime-cache").as_posix()},
+    )
+    codex_output = _hook_output(json.loads(codex.stdout))
+    workbuddy_output = _hook_output(json.loads(workbuddy.stdout))
+    assert codex_output["permissionDecision"] == "deny"
+    assert workbuddy_output["permissionDecision"] == "deny"
+    assert "RUNTIME_READ_PLAN_CONSUMED_EMPTY" in codex_output["permissionDecisionReason"]
+    assert "RUNTIME_READ_PLAN_CONSUMED_EMPTY" in workbuddy_output["permissionDecisionReason"]
 
 
 def test_environment_shims_do_not_keep_local_command_classification_registries() -> None:

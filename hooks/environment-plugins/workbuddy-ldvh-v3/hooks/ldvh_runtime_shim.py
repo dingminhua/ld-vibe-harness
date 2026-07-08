@@ -129,23 +129,11 @@ def action_classifier_module(ldvh_root: Path | None = None) -> Any:
 
 
 def tool_input(payload: dict[str, Any]) -> dict[str, Any]:
-    for key in ("tool_input", "toolInput", "input", "arguments", "parameters"):
-        value = payload.get(key)
-        if isinstance(value, dict):
-            return value
-        if isinstance(value, str) and value.strip().startswith("{"):
-            try:
-                parsed = json.loads(value)
-            except json.JSONDecodeError:
-                continue
-            if isinstance(parsed, dict):
-                return parsed
-    return {}
+    return action_classifier_module().tool_input(payload)
 
 
 def command_text(payload: dict[str, Any]) -> str:
-    tool = tool_input(payload)
-    return first_text(tool.get("command"), tool.get("cmd"), payload.get("command"), payload.get("cmd"))
+    return action_classifier_module().command_text(payload)
 
 
 def command_parts(command: str) -> list[str]:

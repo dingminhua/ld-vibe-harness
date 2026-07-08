@@ -73,6 +73,8 @@ READ_ONLY_PYTHON_SCRIPT_EVENTS = {
     "code/runtime_adapter.py": {"session-start", "session_start", "--help", "-h"},
 }
 CONTROLLED_BOOTSTRAP_PYTHON_SCRIPTS = {"code/acknowledge_read_plan.py"}
+TOOL_INPUT_KEYS = ("tool_input", "toolInput", "input", "arguments", "parameters")
+TOOL_OBJECT_KEYS = ("tool", "tool_call", "toolCall", "function_call", "functionCall")
 FIND_WRITE_PRIMARIES = {"-delete", "-exec", "-execdir", "-fprint", "-fprint0", "-fprintf", "-fls", "-ok", "-okdir"}
 XARGS_OPTIONS_WITH_VALUE = {
     "-a",
@@ -132,18 +134,56 @@ def list_text(value: Any) -> list[str]:
     return [str(value)]
 
 
+def object_mapping(value: Any) -> dict[str, Any]:
+    if isinstance(value, dict):
+        return value
+    if isinstance(value, str) and value.strip().startswith("{"):
+        try:
+            parsed = json.loads(value)
+        except json.JSONDecodeError:
+            return {}
+        if isinstance(parsed, dict):
+            return parsed
+    return {}
+
+
+def nested_tool_objects(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    objects: list[dict[str, Any]] = []
+    for key in TOOL_OBJECT_KEYS:
+        tool = object_mapping(payload.get(key))
+        if not tool:
+            continue
+        objects.append(tool)
+        function = object_mapping(tool.get("function"))
+        if function:
+            objects.append(function)
+    return objects
+
+
 def tool_input(payload: dict[str, Any]) -> dict[str, Any]:
-    for key in ("tool_input", "toolInput", "input", "arguments", "parameters"):
-        value = payload.get(key)
-        if isinstance(value, dict):
+    for key in TOOL_INPUT_KEYS:
+        value = object_mapping(payload.get(key))
+        if value:
             return value
-        if isinstance(value, str) and value.strip().startswith("{"):
-            try:
-                parsed = json.loads(value)
-            except json.JSONDecodeError:
-                continue
-            if isinstance(parsed, dict):
-                return parsed
+    for tool in nested_tool_objects(payload):
+        for key in TOOL_INPUT_KEYS:
+            value = object_mapping(tool.get(key))
+            if value:
+                return value
+        if any(
+            key in tool
+            for key in (
+                "cmd",
+                "command",
+                "file_path",
+                "filePath",
+                "path",
+                "target_path",
+                "targetPath",
+                "patch",
+            )
+        ):
+            return tool
     return {}
 
 
@@ -526,10 +566,30 @@ def explicit_operation(payload: dict[str, Any]) -> str:
 
 def normalize_tool_call(payload: dict[str, Any]) -> ToolCall:
     arguments = tool_input(payload)
-    raw_namespace = first_text(payload.get("namespace"), payload.get("tool_namespace"), payload.get("toolNamespace"))
-    raw_name = first_text(payload.get("tool_name"), payload.get("toolName"), payload.get("name")).lower()
+    tool_objects = nested_tool_objects(payload)
+    raw_namespace = first_text(
+        payload.get("namespace"),
+        payload.get("tool_namespace"),
+        payload.get("toolNamespace"),
+        *(tool.get("namespace") for tool in tool_objects),
+        *(tool.get("tool_namespace") for tool in tool_objects),
+        *(tool.get("toolNamespace") for tool in tool_objects),
+    )
+    raw_name = first_text(
+        payload.get("tool_name"),
+        payload.get("toolName"),
+        payload.get("name"),
+        *(tool.get("tool_name") for tool in tool_objects),
+        *(tool.get("toolName") for tool in tool_objects),
+        *(tool.get("name") for tool in tool_objects),
+    ).lower()
     if not raw_name:
-        raw_name = first_text(payload.get("tool"), payload.get("toolName"), payload.get("name")).lower()
+        raw_name = first_text(
+            payload.get("tool"),
+            payload.get("toolName"),
+            payload.get("name"),
+            *(tool.get("tool") for tool in tool_objects),
+        ).lower()
     if "." in raw_name and not raw_namespace:
         namespace, name = raw_name.rsplit(".", 1)
     else:
