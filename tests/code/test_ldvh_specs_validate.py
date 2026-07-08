@@ -353,6 +353,33 @@ def test_assurance_spec_defines_hook_action_boundary_table() -> None:
     assert "保障机制失败时只能交还 Human 完善机制或授权一次受控处理，不提供默认自动恢复路径" in spec_01
 
 
+def test_verification_spec_defines_verification_plan_contract() -> None:
+    spec_09 = (ROOT / "specs/09-测试与验证规范.md").read_text(encoding="utf-8")
+
+    # These string checks intentionally guard specs semantics, not prose style.
+    assert "### 5.1 `verification_plan` 输出契约" in spec_09
+    assert "`verification_plan` 是测试选择说明" in spec_09
+    assert "不是测试结果、事实源、授权、Human Gate 或完成证明" in spec_09
+    assert "即使 `verification_plan` 生成成功，也不能据此声明验证通过" in spec_09
+    for field_name in [
+        "`profile` / 验证入口类型",
+        "`changed_paths` / 输入范围",
+        "`selected_layers`",
+        "`excluded_layers`",
+        "`selection_reasons`",
+        "`unverified_scope`",
+        "`residual_risk`",
+        "`matrix_refs` / source_refs",
+    ]:
+        assert field_name in spec_09
+    assert "被排除层必须进入未验证范围或残留风险判断" in spec_09
+    assert "跳过 runtime、慢速、Web、环境入口或其它高成本层" in spec_09
+    assert "完成声明仍必须按 §6 和 `09.Att.01` 单独说明" in spec_09
+    assert "快速层、目标层、runtime / 慢速层和全量层是覆盖范围分类，不是质量评价" in spec_09
+    assert "runner profile、stage 名称、slow policy、命令参数和维护实践" in spec_09
+    assert "runner 输出反向定义验证规则" in spec_09
+
+
 def test_verification_spec_defines_self_lock_acceptance_matrix() -> None:
     spec_09 = (ROOT / "specs/09-测试与验证规范.md").read_text(encoding="utf-8")
 
