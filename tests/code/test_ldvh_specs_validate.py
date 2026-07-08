@@ -286,7 +286,26 @@ def test_action_guide_governed_project_contract_is_specified() -> None:
     spec_10 = (ROOT / "specs/10-安装与配置规范.md").read_text(encoding="utf-8")
 
     assert "### 7.4 管辖项目行动指南" in spec_01
+    assert "行动指南继承 V2 知识地图的实时任务导航投影职责" in spec_01
+    assert "组织出 AI 当前能理解、能继续行动的脉络" in spec_01
+    assert "不得把知识地图能力缩减成 read_plan 清单、preflight 阻断输出或普通检查清单" in spec_01
+    assert "行动指南依赖规范化、格式化文本形成可编译输入" in spec_01
+    assert "Code 不能从非结构化长文中猜测规则" in spec_01
+    assert "行动指南必须保留知识地图阶段形成的渐进式披露要求" in spec_01
+    assert "默认输出应优先给当前任务所需的派生结果、短契约、source_refs、Stop Conditions 和 next_queries" in spec_01
+    assert "才升级到章节读取或全文读取" in spec_01
+    assert "至少四类读取层级：`result` 表示只消费 Code / Action Guide 派生出的当前任务结论" in spec_01
+    assert "P0 / P1 读取项必须有数量和语义上限" in spec_01
+    assert "P2 / P3、跨项目召回和远关系展开默认只能进入 `next_queries`、影响面判断或 fallback" in spec_01
+    assert "若已确认消费，可只返回 `guide_receipt` / brief 确认" in spec_01
     assert "行动指南不是规则源、授权器、事实源、测试结论或 Human Gate" in spec_01
+    assert "不得作为完成证明" in spec_01
+    assert "| `task_context` | 当前任务、目标对象、已知事实、关键约束和当前所处阶段形成的任务脉络。 |" in spec_01
+    assert "| `relationship_projection` | 与当前任务相关的 specs、附件、事实对象、WorkCase、证据、测试和环境入口关系。 |" in spec_01
+    assert "| `read_order` | 建议读取顺序、P0 / P1 层级、authority / context / verification / fallback 等角色。 |" in spec_01
+    assert "| `read_mode` | 每个读取项或读取组的披露层级，例如 `result`、`contract`、`section` 或 `full`。 |" in spec_01
+    assert "| `guide_receipt` | 对已消费且输入未变化的行动指南返回 brief / receipt 确认，避免重复注入完整上下文。 |" in spec_01
+    assert "| `suggested_sections` | 需要优先定位的章节、字段、对象、关系或证据片段。 |" in spec_01
     assert "必须先消费 10 的管辖解析结果" in spec_01
     assert "| `governed_single` | 可以为该单一管辖对象生成项目事实源" in spec_01
     assert "| `non_governed` | 必须静默 no-op" in spec_01
@@ -294,6 +313,9 @@ def test_action_guide_governed_project_contract_is_specified() -> None:
     assert "| `declared_multi_governed` | 只能用于 Human 明确发起的跨管辖对象读取、审计或对比" in spec_01
     assert "LDVH specs、LDVH 本体事实源、管辖项目事实源和过程输出" in spec_01
     assert "不得生成看似完整的项目事实源 read_plan" in spec_01
+    assert "若输出只剩文件清单、阻断结果或验证清单，不能组织当前任务脉络、关系投影、渐进读取、停止条件、章节 / 对象定位和影响面判断" in spec_01
+    assert "不得把渐进式披露退化成“少给信息”或“永远不读原文”" in spec_01
+    assert "当 source_refs 不足、规则冲突、目标是修改权威文件、涉及 Human Gate / Stop Conditions 或需要作出高影响判断时，必须升级到章节或全文读取" in spec_01
 
     assert "`ldvh_specs`、`ldvh_facts`、`governed_project_facts` 和 `process_output`" in spec_07
     assert "`declared_multi_governed` 必须按每个 `governed_subject` 拆分" in spec_07
