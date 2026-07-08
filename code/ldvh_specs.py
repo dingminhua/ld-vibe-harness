@@ -5238,6 +5238,53 @@ def apply_governed_project_action_guide(
     return project_fact_sources, unverifiable
 
 
+def apply_target_type_action_guide(
+    *,
+    root: Path,
+    cwd: str | Path | None,
+    scope_targets: list[str | Path],
+    source_refs: list[dict[str, Any]],
+    task_read_plan: list[dict[str, Any]],
+    validation_guard: list[dict[str, str]],
+) -> None:
+    for raw_target in scope_targets:
+        normalized_target = normalize_target_path_for_root(root, str(raw_target), cwd)
+        classification = classify_target_path(normalized_target)
+        if classification.get("target_type") != "fact_instance":
+            continue
+
+        member_spec = classification.get("member_spec", "")
+        fact_kind = classification.get("fact_kind", "")
+        source_paths = [
+            ("specs/03-事实源与Git溯源规范.md", "fact_source_boundary", "事实对象实例写入必须服从 Git 可追踪事实源边界。"),
+            ("specs/05-事实模型基础规范.md", "fact_model_foundation", "事实对象实例写入必须服从事实模型父层、状态归口和字段证据边界。"),
+            ("specs/09-测试与验证规范.md", "verification_boundary", "事实对象实例写入后必须能回到对应结构、字段、状态、关系和事实源边界验证。"),
+        ]
+        if member_spec:
+            source_paths.append(
+                (member_spec, "fact_model_member_spec", f"{fact_kind or 'fact'} 实例写入必须读取对应成员规范。")
+            )
+        source_paths.append((normalized_target, "target_fact_instance", "当前目标事实对象实例必须先读取自身内容。"))
+
+        for path, role, reason in source_paths:
+            source_refs.append({"path": path, "role": role})
+            task_read_plan.append({
+                "priority": "P1",
+                "role": role,
+                "source_type": "fact" if role == "target_fact_instance" else "spec",
+                "path": path,
+                "label": path,
+                "requirement_id": "",
+                "reason": reason,
+            })
+
+        validation_guard.append({
+            "requirement_id": "",
+            "guard": "确认目标事实对象实例符合 03/05、对应成员规范、字段 schema、状态闭集、关系和验证边界。",
+            "source_path": member_spec or "specs/05-事实模型基础规范.md",
+        })
+
+
 def build_action_guide(
     root: Path = ROOT,
     consumption_timing: str = "session_start",
@@ -5474,6 +5521,14 @@ def build_action_guide(
         capability_gap=capability_gap,
         missing_fields=missing_fields,
         guide_diagnostics=guide_diagnostics,
+    )
+    apply_target_type_action_guide(
+        root=root,
+        cwd=cwd,
+        scope_targets=scope_targets,
+        source_refs=source_refs,
+        task_read_plan=task_read_plan,
+        validation_guard=validation_guard,
     )
 
     if not task_read_plan and consumption_timing in allowed_timings:

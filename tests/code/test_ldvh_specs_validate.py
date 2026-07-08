@@ -3095,6 +3095,51 @@ projects:
     }
 
 
+def test_action_guide_fact_instance_target_adds_member_spec_read_plan(validation_result: dict) -> None:
+    target = "ldvh-base/workcases/workcase-0024-v2-deletion-readiness-closure.yaml"
+
+    guide = ldvh_specs.build_action_guide(
+        ROOT,
+        consumption_timing="session_start",
+        target_path=target,
+        cwd=ROOT,
+        config_root=ROOT.parent,
+        read_write_kind="write",
+        validation=validation_result,
+    )
+
+    read_plan_by_path = {item["path"]: item for item in guide["task_read_plan"]}
+    assert "specs/03-事实源与Git溯源规范.md" in read_plan_by_path
+    assert "specs/05-事实模型基础规范.md" in read_plan_by_path
+    assert "specs/09-测试与验证规范.md" in read_plan_by_path
+    assert "specs/21-WorkCase-工作项.md" in read_plan_by_path
+    assert target in read_plan_by_path
+    assert read_plan_by_path["specs/21-WorkCase-工作项.md"]["role"] == "fact_model_member_spec"
+    assert read_plan_by_path[target]["role"] == "target_fact_instance"
+    assert read_plan_by_path[target]["source_type"] == "fact"
+    assert any(ref["role"] == "fact_model_member_spec" for ref in guide["source_refs"])
+    assert any(ref["role"] == "target_fact_instance" for ref in guide["source_refs"])
+    assert any("目标事实对象实例符合 03/05" in item["guard"] for item in guide["validation_guard"])
+
+
+def test_action_guide_non_fact_target_does_not_add_fact_instance_read_plan(validation_result: dict) -> None:
+    guide = ldvh_specs.build_action_guide(
+        ROOT,
+        consumption_timing="session_start",
+        target_path="specs/01-保障与衔接.md",
+        cwd=ROOT,
+        config_root=ROOT.parent,
+        read_write_kind="write",
+        validation=validation_result,
+    )
+
+    roles = {item["role"] for item in guide["task_read_plan"]}
+    assert "fact_model_member_spec" not in roles
+    assert "target_fact_instance" not in roles
+    assert not any(ref["role"] == "fact_model_member_spec" for ref in guide["source_refs"])
+    assert not any(ref["role"] == "target_fact_instance" for ref in guide["source_refs"])
+
+
 def test_action_guide_non_governed_noops_without_project_guidance(
     tmp_path: Path,
     validation_result: dict,
@@ -3169,6 +3214,33 @@ def test_action_guide_scope_unknown_degrades_without_project_fact_read_plan(
     assert guide["unverifiable"][0]["code"] == "ACTION_GUIDE_SCOPE_UNKNOWN"
     assert guide["verification_outline"]["summary"]["fallback_actions"] >= 1
     assert guide["verification_outline"]["summary"]["residual_risks"] >= 1
+
+
+def test_action_guide_scope_unknown_fact_target_does_not_add_project_fact_source(
+    tmp_path: Path,
+    validation_result: dict,
+) -> None:
+    root = _copy_specs_root(tmp_path)
+
+    guide = ldvh_specs.build_action_guide(
+        root,
+        consumption_timing="session_start",
+        target_path="ldvh-base/workcases/workcase-0024-v2-deletion-readiness-closure.yaml",
+        cwd=root,
+        config_root=root,
+        read_write_kind="write",
+        validation=validation_result,
+    )
+
+    assert guide["summary"]["status"] == "degraded"
+    assert guide["summary"]["scope_status"] == "scope_unknown"
+    assert guide["action_type"]["authorization"] == "none"
+    assert not any(item["source_type"] == "governed_project_facts" for item in guide["task_read_plan"])
+    assert "specs/21-WorkCase-工作项.md" in {item["path"] for item in guide["task_read_plan"]}
+    assert "ldvh-base/workcases/workcase-0024-v2-deletion-readiness-closure.yaml" in {
+        item["path"] for item in guide["task_read_plan"]
+    }
+    assert guide["project_fact_sources"] == []
 
 
 def test_action_guide_declared_multi_governed_splits_project_fact_sources(
