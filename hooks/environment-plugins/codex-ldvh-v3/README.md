@@ -7,8 +7,8 @@
 | 路径 | 职责 |
 |---|---|
 | `plugin.json` | 目标环境插件 manifest 源资产；不包含 Rules / Skill 顶层机制，不在 manifest 中声明 unsupported `hooks` 字段 |
-| `assets/ldvh-plugin-icon-128.png` | manifest `composerIcon`；来自 V2 `icons/` 的 LDVH 图标资产 |
-| `assets/ldvh-plugin-icon-512.png` | manifest `logo`；来自 V2 `icons/` 的 LDVH 图标资产 |
+| `assets/ldvh-plugin-icon-128.png` | manifest `composerIcon`；当前样例包内的 LDVH 图标资产 |
+| `assets/ldvh-plugin-icon-512.png` | manifest `logo`；当前样例包内的 LDVH 图标资产 |
 | `hooks/hooks.json` | Codex lifecycle hook 配置样例；实际安装前必须确认命令路径解析方式 |
 | `hooks/ldvh_runtime_shim.py` | 薄 shim；读取 stdin payload，解析 LDVH root，按事件需要委托 V3 `code/action_classifier.py` 和 `code/runtime_adapter.py`；默认不写事实源 |
 

@@ -9,7 +9,7 @@ summary: |
   本 Study 记录 LDVH v2 迁移后对现有 Spark 和 Study 的吸收判断。结论是：Spark 和 Study 不属于本轮事实源清理对象；Spark 的 `pending` 与 Study 的 `active` 均可作为合法保留状态。迁移后的主要工作不是关闭它们，而是建立读取索引，说明哪些内容已经被 specs、Code、Web、运行时扩展或 Git 事实源吸收，哪些内容仍作为后续工作入口保留。
 user_intent: Human 确认 Spark 和 Study 应保留，要求继续推进迁移后的吸收标注和误读风险清理。
 conclusion: |
-  当前应把 Spark/Study 视为 v2 后续建设的入口层和研究证据层。已被迁移吸收的内容可以在本索引中标注为“已吸收但保留证据”，不能据此自动关闭 Spark；仍有未承接议题的 Spark 继续保持 `pending`。Study 继续保持 `active`，除非 Human 明确确认其不再作为当前引用入口。后续若要推进具体实现，应从本索引中选择候选议题创建新的 WorkCase 或行动编排，而不是把旧 WorkCase 或旧流程机械迁回。
+  当前应把 Spark/Study 视为 V3-owned 后续建设的历史入口层和研究证据层。已被迁移吸收的内容可以在本索引中标注为“已吸收但保留证据”，不能据此自动关闭 Spark；仍有未承接议题的 Spark 继续保持 `pending`。Study 继续保持 `active`，除非 Human 明确确认其不再作为当前引用入口。后续若要推进具体实现，应从本索引中选择候选议题创建新的 WorkCase 或行动编排，而不是把旧 WorkCase 或旧流程机械迁回。
 urls: []
 input_refs:
 - spark-0002
@@ -95,7 +95,7 @@ archive_reason: null
 - `active` Study 是当前可引用研究报告，不因迁移完成而自动归档；
 - Study 关联 Spark 只说明报告可作为输入或证据，不说明 Spark 已解决；
 - 已吸收到 specs、Code 或 Web 的内容仍可保留为历史语境和设计证据；
-- 若后续需要执行，应新建或更新 WorkCase，并按 v2 当前需求重新定义目标、验收和验证。
+- 若后续需要执行，应新建或更新 WorkCase，并按当前 V3-owned 需求重新定义目标、验收和验证。
 
 ## 关键发现
 
@@ -110,8 +110,8 @@ Spark 和 Study 的保留价值不在于“还有多少未完成任务”，而�
 | 分组 | Spark | 当前读取判断 | 后续处理方向 |
 |---|---|---|---|
 | 已大量吸收但保留证据 | spark-0002、spark-0005、spark-0010、spark-0011、spark-0012、spark-0018、spark-0021 | 相关内容已经在 v2 规范、WorkCase 事实源、Code/Web 边界或 Git 提交治理中被大量吸收，但仍保留迁移语境和局部残留问题 | 不自动关闭；后续若发现剩余问题明确，再单独分流 |
-| 当前仍有架构入口价值 | spark-0003、spark-0004、spark-0007、spark-0013、spark-0014、spark-0015、spark-0016、spark-0020、spark-0022 | 这些 Spark 涉及规则建立方式、多项目治理、Spark 分流提醒、模糊用词、影响判断、流程触发、反思分流、派生型审核和子 Agent 复查，仍可能影响 v2 后续建设 | 可按优先级转为新 WorkCase、行动编排候选或规范补丁 |
-| 研究证据入口 | spark-0008、spark-0009、spark-0017、spark-0019 | 这些 Spark 已关联或可关联 Study 研究，适合作为后续 Agent、产品级能力、知识地图和 Web 颜色治理的资料入口 | 保持 pending，后续按当前 v2 需求重新计划 |
+| 当前仍有架构入口价值 | spark-0003、spark-0004、spark-0007、spark-0013、spark-0014、spark-0015、spark-0016、spark-0020、spark-0022 | 这些 Spark 涉及规则建立方式、多项目治理、Spark 分流提醒、模糊用词、影响判断、流程触发、反思分流、派生型审核和子 Agent 复查，仍可能影响 V3-owned 后续建设 | 可按优先级转为新 WorkCase、行动编排候选或规范补丁 |
+| 研究证据入口 | spark-0008、spark-0009、spark-0017、spark-0019 | 这些 Spark 已关联或可关联 Study 研究，适合作为后续 Agent、产品级能力、知识地图和 Web 颜色治理的资料入口 | 保持 pending，后续按当前 V3-owned 需求重新计划 |
 | 需要谨慎复读的历史线索 | spark-0006 | WorkCase 与行动编排边界在 v2 中已发生明显重排，旧描述具有重要历史价值，但不能直接当作当前行动编排方案 | 后续只吸收问题意识和边界判断，不机械迁移旧流程 |
 
 上述分组只用于读取和分流，不是状态流转依据。任何 Spark 若要进入 `resolved` 或 `discarded`，仍需回到 Spark 规范、确认剩余议题是否完整承接，并经过 Human Gate。
@@ -164,4 +164,4 @@ Spark 和 Study 的保留价值不在于“还有多少未完成任务”，而�
 | spark-0020 派生型审核流程与能力资产边界 | 与两阶段审查、子 Agent 复查、能力资产准入相关 | 行动编排候选或运行时扩展规范补丁 |
 | spark-0019 Web 颜色体系治理 | Study 已有研究，Web 仍需要后续实现规划 | Web WorkCase |
 
-本报告完成后，后续迁移工作应继续围绕 v2 当前事实源需求推进，而不是把 Spark/Study 当作待清空列表处理。
+本报告完成后，后续迁移工作应继续围绕当前 V3-owned 事实源需求推进，而不是把 Spark/Study 当作待清空列表处理。
