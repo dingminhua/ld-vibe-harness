@@ -3150,6 +3150,8 @@ def test_session_start_text_outputs_action_guide_context() -> None:
     assert "Read budget:" in output
     assert "Suggested sections:" in output
     assert "Relationship projection:" in output
+    assert "- consumption_timing -> AI-BEH-001 [requires]" in output
+    assert "- action_guide -> specs/01-保障与衔接.md [action_guide_contract]" in output
     assert "Validation guard:" in output
     assert "Next queries:" in output
     assert "Capability gaps:" in output

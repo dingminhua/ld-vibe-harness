@@ -9,6 +9,7 @@ from ldvh_specs import ROOT, build_runtime_event
 
 
 INTEGRATION_SCOPE = "hook.session_start"
+RELATIONSHIP_PROJECTION_TEXT_LIMIT = 8
 
 
 def _bool_text(value: bool) -> str:
@@ -112,10 +113,10 @@ def _print_text(result: dict[str, Any]) -> None:
     relationships = action_guide.get("relationship_projection", [])
     if relationships:
         print("\nRelationship projection:")
-        for item in relationships[:8]:
+        for item in relationships[:RELATIONSHIP_PROJECTION_TEXT_LIMIT]:
             print(f"- {item.get('from', '')} -> {_format_ref(item)} [{item.get('relationship', '')}]")
-        if len(relationships) > 8:
-            print(f"- ... {len(relationships) - 8} more")
+        if len(relationships) > RELATIONSHIP_PROJECTION_TEXT_LIMIT:
+            print(f"- ... {len(relationships) - RELATIONSHIP_PROJECTION_TEXT_LIMIT} more")
 
     stop_conditions = action_guide.get("stop_conditions", [])
     if stop_conditions:
