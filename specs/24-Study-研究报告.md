@@ -82,7 +82,7 @@ Study 主要服务 V1、V2、V3、V7 和 V9：它帮助 AI 快速定位稳定资
 1. 判断一份调研、分析、核验或方案比较结果是否应形成 Study；
 2. 创建、迁移、审计、引用或归档 Study 实例前的最小规则读取；
 3. Code、Web、行动模板和测试消费 Study 状态、正文骨架、URL 结构和事实源边界；
-4. V2 `24-Study-研究报告.md` 的后续字段迁移判断。
+4. 当前 V3 Study frontmatter、正文样例和 URL 字段细节的后续补充判断；该判断不得以本地 V2 成员文件作为默认来源。
 
 ## 5. 对象定位与准入
 
@@ -193,7 +193,7 @@ Study 的报告口径必须满足：
 
 ## 12. 待补齐事项
 
-1. 后续再判断是否迁入 Study 完整 frontmatter schema、正文样例和 URL 字段细节；
+1. 后续如需补充 Study 完整 frontmatter schema、正文样例和 URL 字段细节，必须作为 V3-owned 字段契约、实例校验或明确 WorkCase 推进；
 2. 真实 Study 实例目录已迁入 `ldvh-base/studies/`，后续新增或改写实例必须通过 frontmatter schema、正文骨架和关系校验；
 3. 后续 Web 实现启动时，应复用同一份 Study 事实源，不维护第二套摘要或正文；
 4. 后续 Code 可继续扩展 Study frontmatter 和正文骨架 validator，但不得让字段级检查反向定义本文未授权规则。

@@ -742,6 +742,40 @@ def test_v2_deletion_readiness_forbids_git_history_as_migration_exit(tmp_path: P
     assert "V2_DELETION_HISTORY_FALLBACK_FORBIDDEN" in _diagnostic_codes(result)
 
 
+def test_v2_deletion_readiness_forbids_active_v2_dependency_in_specs(tmp_path: Path) -> None:
+    root = _copy_specs_and_facts_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/06-行动模板基础规范.md",
+        "后续行动模板候选以当前 V3 需求、已识别 WorkCase / Spark 和 Human 明确目标为来源；不得以本地 V2 30-36 或 WorkCase 流程作为默认筛选清单。",
+        "后续从 V2 30-36 和 WorkCase 流程中逐项筛选正式行动模板候选。",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "V2_DELETION_ACTIVE_DEPENDENCY_FORBIDDEN" in _diagnostic_codes(result)
+
+
+def test_v2_deletion_readiness_forbids_migration_source_synonyms_in_specs(tmp_path: Path) -> None:
+    root = _copy_specs_and_facts_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/05-事实模型基础规范.md",
+        "V2 `02.Att.*`、20-24 成员文件和事实对象 CLI 仅保留为历史审计语境，不作为当前 V3 事实模型的后续来源、验收依据或删除阻断。",
+        "V2 `02.Att.*`、20-24 成员文件和事实对象 CLI 只能作为迁移来源。",
+    )
+    _replace_in_temp(
+        root,
+        "specs/05-事实模型基础规范.md",
+        "具体成员完整字段表、成员模板、完整状态机和 WorkCase `orchestration` 长表后续如需补充，必须作为 V3-owned 字段契约、附件、Code/tests schema 或明确 WorkCase 推进。",
+        "具体成员完整字段表、成员模板、完整状态机和 WorkCase `orchestration` 长表仍应在行动模板入口或 Web 读取边界稳定后再判断是否迁入正式附件或继续由 Code/tests 承接。",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "V2_DELETION_ACTIVE_DEPENDENCY_FORBIDDEN" in _diagnostic_codes(result)
+
+
 def test_fact_model_validator_reports_missing_field_term_boundary(tmp_path: Path) -> None:
     root = _copy_specs_root(tmp_path)
     _replace_in_temp(

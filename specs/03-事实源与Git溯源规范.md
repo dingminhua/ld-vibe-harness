@@ -126,7 +126,7 @@ V3 保留 commit 契约的父层规则：
 4. 影响正式 specs、Code、tests、Web、事实源边界或环境入口的提交，应在正文说明关键变更、验证和风险；
 5. Git 提交记录不替代事实源文件、事实对象、Human Gate 或验证声明。
 
-具体 type、scope、body 条件和 message 字段由 `specs/attachments/03.Att.01-Commit-Message契约字段表.md` 承接；该附件只维护字段闭集、枚举和机器契约，不承载提交流程、Human Gate 或 Hook 实现。样例和 parser 规则由 Code 和 tests 承接。未稳定前，其它 V2 `07.Att.*` 只能作为迁移来源，不自动成为 V3 附件。
+具体 type、scope、body 条件和 message 字段由 `specs/attachments/03.Att.01-Commit-Message契约字段表.md` 承接；该附件只维护字段闭集、枚举和机器契约，不承载提交流程、Human Gate 或 Hook 实现。样例和 parser 规则由 Code 和 tests 承接。其它旧 V2 `07.Att.*` 仅保留为历史审计语境；未进入当前 V3 specs、附件、Code/tests 或明确 WorkCase 的条目不自动成为 V3 附件、当前规则或删除阻断。
 
 ## 8. 保障措施
 
@@ -172,7 +172,7 @@ Code 可以检查路径、source_refs、commit message 格式和诊断结构；A
 
 ## 12. 待补齐事项
 
-1. 后续应从 V2 `07.Att.*` 中筛选 commit type、scope、body 条件和非事实源排除清单，只有有正文授权、Code 消费方和测试闭环时才迁入 V3 附件；
+1. V2 `07.Att.*` 删除准备度判定已收口：commit type、scope、body 条件和 message 字段由 `03.Att.01`、Code 和 tests 承接；非事实源排除、过程输出回写、读取策略和承载介质边界由本文、01、09 和 Code source_refs 承接。未进入当前 V3 specs、附件、Code/tests 或明确 WorkCase 的 V2 条目不作为当前规则、验收依据或删除阻断；后续发现缺漏时按 V3 00 新建 V3-owned 待办；
 2. 后续 Code 应承接 commit message parser、source_refs 检查和过程输出回写诊断；
 3. Git 提交行动、提交拆分、验证说明和提交后交还已由 `specs/31-Git提交行动模板.md` 承接；后续只在验证或回写闭环变化时修订 31；
 4. 后续 Web 应承接提交记录展示和事实源证据展示边界。

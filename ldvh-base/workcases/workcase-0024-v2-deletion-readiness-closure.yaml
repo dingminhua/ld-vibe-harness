@@ -9,7 +9,7 @@ goal: |
   2026-07-07 Human 进一步收紧判断标准：V3 `specs/00` 是已审核目标；本 WorkCase 不全量审计 V2，也不从 Git history 反推迁移清单。执行范围只限当前 V3 specs、事实对象、README 和实现域文档中已经暴露的 V2 / legacy / migration / deletion-readiness 活口径；每条必须回到 00 的 AI-first、事实源边界、保障与衔接层、五类构成要素、V1-V9 和 Human Gate 判断。缺漏后续按 V3 00 重写，不把 V2 重新升格为权威来源。
 status: executing
 created: '2026-07-07T12:48:59+08:00'
-updated: '2026-07-07T13:11:20+08:00'
+updated: '2026-07-08T16:23:00+08:00'
 priority: P0
 description: |
   Human 指出：既然迁移模板预期是迁移完成后 V2 准备删除，那么当前 V3 中仍存在“后续从 V2 筛选 / 判断 / 迁入”的待补齐事项就需要重新审核。
@@ -121,9 +121,12 @@ orchestration:
         - v2:specs/attachments/07.Att.12-事实承载介质选择表.md
       expected_output: |
         03 的待补齐事项不再要求从本地 V2 `07.Att.*` 筛选；commit message 已承接内容、非事实源排除清单、过程输出回写、读取策略和承载介质边界逐项落入 V3 正文、附件、Code/tests 后续或明确不迁入。
-      status: pending
-      result_summary: ''
-      evidence_refs: []
+      status: done
+      result_summary: |
+        `specs/03` §7 / §12.1 已从“V2 07.Att.* 作为迁移来源 / 后续筛选”改为删除准备度收口口径：commit type、scope、body 条件和 message 字段由 `03.Att.01`、Code 和 tests 承接；非事实源排除、过程输出回写、读取策略和承载介质边界由 03、01、09 和 Code source_refs 承接。旧 V2 `07.Att.*` 未进入当前 V3 specs、附件、Code/tests 或明确 WorkCase 的条目只保留为历史审计语境，不作为当前规则、验收依据或删除阻断；后续缺漏按 V3 00 新建 V3-owned 待办。
+      evidence_refs:
+        - specs/03-事实源与Git溯源规范.md
+        - specs/attachments/03.Att.01-Commit-Message契约字段表.md
       blocking_reason: ''
     - id: item-2
       title: 收口 specs/05 与成员字段迁移活口径
@@ -141,9 +144,18 @@ orchestration:
         - v2:specs/attachments/02.Att.*
       expected_output: |
         05 和 20/22/23/24 的待补齐事项改为 V3 自身字段契约、实例校验和 Web/API 后续；不再要求保留本地 V2 `02.Att.*` 作为后续筛选来源。WorkCase orchestration 长表已由 `21.Att.01` 承接的事实同步到 05。
-      status: pending
-      result_summary: ''
-      evidence_refs: []
+      status: done
+      result_summary: |
+        `specs/05` §7 / §12 已改为 V3-owned 字段契约口径：Spark、WorkCase、ADR、Pitfall、Study 与真实 `ldvh-base/` 实例按当前 V3 成员规范、`05.Att.01`、`21.Att.01`、Code/tests schema 维护。成员完整字段表后续只能作为 V3-owned 字段契约、Code/tests schema 或明确 WorkCase 推进；本地 V2 `02.Att.*`、20-24 成员文件和事实对象 CLI 仅保留为历史审计语境，不再作为后续来源、当前规则、验收依据或删除阻断。`specs/20`、`21`、`22`、`23`、`24` 也已把后续字段 / frontmatter / 实例样例判断改为当前 V3 契约补充判断，不再以本地 V2 成员文件作为默认来源。
+      evidence_refs:
+        - specs/05-事实模型基础规范.md
+        - specs/20-Spark-火花.md
+        - specs/21-WorkCase-工作项.md
+        - specs/22-ADR-决策.md
+        - specs/23-Pitfall-踩坑经验.md
+        - specs/24-Study-研究报告.md
+        - specs/attachments/05.Att.01-字段注册表结构.md
+        - specs/attachments/21.Att.01-orchestration字段契约表.md
       blocking_reason: ''
     - id: item-3
       title: 收口 specs/06 行动模板候选活依赖
@@ -157,9 +169,14 @@ orchestration:
         - v2:specs/30-36
       expected_output: |
         06 不再写“后续从 V2 30-36 和 WorkCase 流程筛选”；候选行动模板改为当前 V3 已知候选、具体 WorkCase 后续或明确不迁入。30/31/33 的正式模板地位与未迁候选边界清楚。
-      status: pending
-      result_summary: ''
-      evidence_refs: []
+      status: done
+      result_summary: |
+        `specs/06` §11 已从“后续从 V2 30-36 和 WorkCase 流程中逐项筛选”改为当前 V3 候选来源：候选行动模板来自当前 V3 需求、已识别 WorkCase / Spark 和 Human 明确目标；不得以本地 V2 30-36 或 WorkCase 流程作为默认筛选清单。30/31/33 仍按正式模板成员维护，未进入当前 V3 的旧行动成员不构成删除阻断。
+      evidence_refs:
+        - specs/06-行动模板基础规范.md
+        - specs/30-安装配置与验证行动模板.md
+        - specs/31-Git提交行动模板.md
+        - specs/33-环境插件编写与更新行动模板.md
       blocking_reason: ''
     - id: item-4
       title: 收口未关闭事实对象中的旧路线承诺
@@ -172,9 +189,12 @@ orchestration:
         - ldvh-base/workcases/workcase-0001-runtime-entry-user-input-contract.yaml
       expected_output: |
         pending / open 事实对象不再承诺 “v2 继续稳定服务” 或 “待整体迁移后切换”。历史语境可保留，但必须标明已被 V3 主线替代、由本 WorkCase 承接或明确不迁入；不得把 Git history 写成完成依据。
-      status: pending
-      result_summary: ''
-      evidence_refs: []
+      status: done
+      result_summary: |
+        `spark-0039` 已从 `pending` 改为 `resolved`，并明确其中“v2 继续作为当前稳定运行线”“待 specs + Code 成熟后整体迁移”等旧路线承诺只保留为历史背景，不再作为当前 V3 主线承诺、删除阻断或后续迁移来源；后续缺漏按 V3 00 新建 V3-owned 待办。`workcase-0022` 已关闭，只作为完整性担忧已分流到本 WorkCase 的来源证据。
+      evidence_refs:
+        - ldvh-base/sparks/spark-0039-v3-sidecar-action-guide-compiler.yaml
+        - ldvh-base/workcases/workcase-0022-v3-sidecar-action-guide-compiler-phase1.yaml
       blocking_reason: ''
     - id: item-5
       title: 增加删除准备度防回归检查
@@ -186,9 +206,12 @@ orchestration:
         - README.md
       expected_output: |
         新增或更新只读 validator / tests：active specs 不得出现“后续从 V2 / 本地 V2 筛选、判断、迁入”的活依赖；Git history 不得作为未迁内容承接或验收出口；允许 `migration_sources: v2:...`、历史来源说明、审计追溯语境和 stale path 检测。
-      status: pending
-      result_summary: ''
-      evidence_refs: []
+      status: done
+      result_summary: |
+        `code/ldvh_specs.py` 已新增 `V2_DELETION_ACTIVE_DEPENDENCY_FORBIDDEN` 检查：active specs 正文不得再出现“后续从 V2 / 本地 V2 筛选、判断、迁入”“只能作为迁移来源”“再判断是否迁入”等活依赖句式；检查范围避开附件，并继续允许 migration_sources、历史来源说明、审计追溯语境和 stale path 检测。`tests/code/test_ldvh_specs_validate.py` 已补正向防回归用例和同义残留用例。
+      evidence_refs:
+        - code/ldvh_specs.py
+        - tests/code/test_ldvh_specs_validate.py
       blocking_reason: ''
   plan_review:
     orchestration_owner: main_controller
@@ -285,8 +308,7 @@ orchestration:
         - "`workcase-0022` 已关闭，不再作为未关闭阻断重复处理；其完整性担忧由本 WorkCase 承接。"
         - "20/22/23/24 尾部字段细节先标为 `human_decision`，后续按 V3 字段契约或实例校验判断，不回退为 V2 权威。"
       unresolved_items:
-        - "`spark-0039` 仍需改写、归档或明确被当前 V3 主线替代。"
-        - 03/05/06 正文和防回归检查尚未修补。
+        - 本轮 03/05/06、`spark-0039` 和防回归检查已修补，仍需子 agent 复审、验证结果记录和 Human closure 判断。
     human_confirmation:
       decision: execute_v3_current_plan
       confirmed_at: '2026-07-07'
@@ -303,7 +325,7 @@ orchestration:
     workflow_ref: null
     review_policy:
       selection_reason: |
-        本 WorkCase 尚未执行修补。结果复核将在所有阻断项完成、测试通过并完成子 agent 复审后填写。
+        本 WorkCase 已完成 03/05/06、`spark-0039` 和防回归检查的本轮修补。结果复核将在测试通过并完成子 agent 复审后填写；最终关闭仍需 Human closure 判断。
       required_perspectives:
         - specs_closure_result
         - facts_closure_result
@@ -325,14 +347,26 @@ verification_evidence: |
   - README/事实对象/实现域文档子审计：不通过，发现 `spark-0039`、`workcase-0022` 活承诺冲突。
 
   2026-07-07 已按 Human 新标准建立 V3-current V2-related 待办判定表，见 `orchestration.execution_items.item-0.result_summary`。本次判定只覆盖当前 V3 文件中已经暴露的活口径，不声明 V2 关键内容全量完整迁入。
+
+  2026-07-08 本轮修补完成：
+  - `specs/03`、`specs/05`、`specs/06` 已清除“后续从本地 V2 筛选 / 判断 / 迁入”的 active 依赖口径，并改为 V3-owned 待办与已承接来源。
+  - `specs/07`、`specs/20`、`specs/21`、`specs/22`、`specs/23`、`specs/24` 已把后续实现 / 字段 / 实例补充判断改为当前 V3-owned 口径，不以本地 V2 文件作为默认来源。
+  - `spark-0039` 已改为 `resolved`，旧 v2 稳定运行线 / 整体迁移承诺仅保留为历史背景。
+  - `code/ldvh_specs.py` 和 `tests/code/test_ldvh_specs_validate.py` 已新增 active V2 dependency 防回归检查，并覆盖“后续从 V2”和“只能作为迁移来源 / 再判断是否迁入”同义残留。
+  - `python3 code/specs_validate.py all --format text --fail-on-diagnostics` 通过，diagnostics 为 0。
+  - `python3 -m pytest tests/code/test_ldvh_specs_validate.py -q --tb=short -k "v2_deletion_readiness or current_specs_validate_without_diagnostics"` 通过，4 passed。
+  - `python3 code/test_runner.py smoke` 通过。
+  - `python3 -m pytest tests/code -q -m 'not slow' --durations=10 --tb=short` 通过，227 passed / 135 deselected；该轮在同义残留测试新增前启动，作为既有 code fast 回归补充证据。
+  - `python3 code/test_runner.py targeted ... --slow skip --dry-run` 输出选择层为 quick_structure、fact_instance_validator、targeted_code_fast，并声明 runtime/e2e/environment/web/full-build 为未验证范围。
+  - 子 agent 首轮复审发现 03/05 仍残留“V2 作为迁移来源 / 再判断是否迁入”同义活口径；本轮已修正 03/05 正文并扩展 validator/tests。修正后 active specs 禁止句式搜索无命中。
 closure_evidence: ''
 closure_requested_at: ''
 closed_at: ''
 closure_outcome: ''
 residual_risks: |
-  - 本记录创建后，若未继续修补 03/05/06 和 `spark-0039`，仍不得声明本地 V2 可删除。
+  - 本轮已清除当前已识别 active specs / facts 的 V2 活依赖，但这不等于声明 V2 关键内容全量完整迁入；后续发现缺漏时按 V3 00 新建 V3-owned 待办。
   - 删除准备度检查需要允许审计追溯语境、`migration_sources: v2:...` 和 stale path 检测，不能简单禁止所有 V2 字符串；但不得把 Git history 写成未迁内容承接或验收出口。
-  - `spark-0039` 的处理需要区分历史语境、事实对象状态和当前主线承诺，不能直接粗暴删除历史记录；`workcase-0022` 已关闭，只保留为完整性担忧分流来源。
+  - `workcase-0024` 仍需子 agent 复审和 Human closure 判断；在 Human 明确关闭前，不应把本记录解释为“本地 V2 已可立即删除”的授权。
 followup_refs:
   - workcase-0022
   - spark-0039
@@ -343,6 +377,9 @@ revision_history:
   - at: '2026-07-07T12:48:59+08:00'
     summary: |
       创建 V2 删除准备度收口 WorkCase，记录三路只读审计结论、P0/P1 阻断、执行项和后续验证要求。
+  - at: '2026-07-08T16:23:00+08:00'
+    summary: |
+      完成本轮 V2 删除准备度修补：03/05/06 改为 V3-owned 口径，`spark-0039` 旧路线承诺改为 resolved 历史来源，Code/tests 新增 active V2 dependency 防回归检查。最终删除授权仍需子 agent 复审、验证通过和 Human closure 判断。
 related_docs:
   - README.md
   - specs/03-事实源与Git溯源规范.md

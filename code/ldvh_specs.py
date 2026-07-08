@@ -311,6 +311,18 @@ V2_DELETION_HISTORY_FALLBACK_FORBIDDEN_PATTERNS = [
     "或 Git history 追溯",
     "Git history 追溯或",
 ]
+V2_DELETION_ACTIVE_DEPENDENCY_FORBIDDEN_PATTERNS = [
+    "后续应从 V2",
+    "后续从 V2",
+    "后续筛选 V2",
+    "后续从本地 V2",
+    "从本地 V2",
+    "作为后续筛选来源",
+    "只能作为迁移来源",
+    "再判断是否迁入",
+    "判断是否迁入正式附件",
+    "是否迁入正式附件",
+]
 V2_DELETION_READINESS_SCAN_PATHS = [
     "README.md",
     "ldvh-base/workcases/workcase-0024-v2-deletion-readiness-closure.yaml",
@@ -2960,6 +2972,17 @@ def validate_v2_deletion_readiness_boundaries(root: Path = ROOT) -> list[Diagnos
                         f"Git history 只能作为审计追溯、争议复核或历史取证备份，不能作为未迁内容承接或验收出口: {pattern}",
                     )
                 )
+        if rel_path.startswith("specs/") and not rel_path.startswith("specs/attachments/"):
+            for pattern in V2_DELETION_ACTIVE_DEPENDENCY_FORBIDDEN_PATTERNS:
+                if pattern in raw:
+                    diagnostics.append(
+                        Diagnostic(
+                            "error",
+                            "V2_DELETION_ACTIVE_DEPENDENCY_FORBIDDEN",
+                            rel_path,
+                            f"active specs 不得把本地 V2 写成后续筛选、判断或迁入来源；缺漏应转为 V3-owned 待办: {pattern}",
+                        )
+                    )
 
     return diagnostics
 

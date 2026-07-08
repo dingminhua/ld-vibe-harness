@@ -27,17 +27,17 @@
 | 环境插件薄引用边界 | 已由 `01`、`33`、`33.Att.01` 和共享 classifier 实现方向承接 |
 | repo-local shim 与真实 integrated 区分 | 已由 `10`、`30`、`33` 和安装验证输出承接 |
 | 管辖范围、no-op、unknown/gated、target-scoped blocking | 已由 `10`、`07`、`09` 和 runtime/code tests 承接 |
-| repair lane 基础语义 | 已由 `01`、`07`、`09` 承接，仍需和自锁恢复设计一起复核 |
-| verification_plan 基础选择模型 | 已由 `09` 和 test runner 本地承接，仍需检查开发过程是否按该模型使用 |
+| repair lane 与自锁处置基础语义 | 已由 `01`、`07`、`09` 和 `10` 承接；后续实现变化按 `09 §7.2` 验证 |
+| verification_plan 基础选择模型 | 已由 `09` 和 test runner 本地承接；后续新增 profile 时按 `09` 判断是否改变语义 |
 
 还不能算全局完成的部分：
 
 | 范围 | 判断 |
 |---|---|
 | Action Guide 完整职责 | 归口已有，但需要确认 Code builder 前的输入、输出和非规则源边界是否足够可执行 |
-| 能力匹配模型 | `01/10/33` 已有基础，但缺一个“LDVH 想做什么 / 环境能做什么 / 做不到如何交还”的统一规格入口 |
-| 自锁 / repair / unknown-gated | 局部规则已有，但需要从“事实源写坏后如何受控修复、不全局锁死”这一真实事故重新做整体复核 |
-| V2 收口 | `workcase-0024` 尚未关闭，03/05/06 和 `spark-0039` 仍是删除准备度硬项 |
+| 能力匹配模型 | `01 §5.2.1` 已提供统一规格入口；具体 provider × capability 矩阵后续只能由附件或实现域承载，不得成为第二规则源 |
+| 自锁 / repair / unknown-gated | `01 §5.8.1` 已从真实事故出发串联 target-first、diagnostic scope、repair、final validation 和 Human 介入 |
+| V2 收口 | `workcase-0024` 承接删除准备度；03/05/06 和 `spark-0039` 已完成本轮文本收口，仍需结果复审与 Human closure 判断 |
 | specs 职责边界 | 已由 `04 §5.8` 固定为跨规范职责边界总览：只作路由表和防越界检查，不替代单篇 spec 正文 |
 
 ## 3. 六类收敛问题总表
@@ -48,7 +48,7 @@
 | verification_plan / 测试分层 | 解决“开发过程测试过慢”和“什么时候跑什么测试”的判断问题 | `09` | `07`、`06`、tests 实现域 | `09` 已补 `verification_plan` 输出契约，明确其是测试选择说明，不是测试结果、事实源、授权、Human Gate 或完成证明；`07` 记录 test runner `verification_plan` 已补本地承接 | specs 口径已收敛到“最小稳定验证入口 + 未验证范围 / residual risk 明示”；后续风险主要是执行时没有按 plan 声明未覆盖范围 | 保持 `tests/code/test_ldvh_test_runner.py` 与 `tests/docs/01-Test-Runner-Practice.md` 作为实现域哨兵；新增验证入口或 profile 时先回到 `09` 判断是否改变语义 |
 | 能力匹配模型 | 明确 LDVH 想做什么、环境 / 工具 / Git / Code 能做什么，做不到时如何交还，而不是把能力缺口伪装成已接入 | `01` | `07`、`10`、`30`、`33`、`09` | `01 §5.2.1` 已定义 provider dimension、provider、capability axis、control strength、acceptance basis 和 fallback disposition；`10` 定义 environment_strategy；`33` 定义插件要求和 capability_gap；`30` 定义安装验收交还 | 上位口径已收敛；具体 provider × capability 矩阵只能由附件或实现域文档承载，不得成为第二规则源 | 后续新增环境、插件或验证入口时，先按 `01 §5.2.1` 做能力匹配，再分流到 `30/33/09` 或 capability_gap |
 | 自锁 / repair / unknown-gated | LDVH 自己事实源写坏时，允许受控修复 primary target，但不能让坏对象全局阻断无关行动，也不能自动恢复或绕过 Human | `01` | `07`、`09`、`10`、`02`、事实模型成员规范 | `01 §5.8.1` 已把 target-first 归口、diagnostic scope、repair mode、final validation、机制失败 Human 介入和过程输出边界串成处置路径；`07` 定义 Code repair 闭集；`09 §7.2` 定义自锁事故验收矩阵；`10` 定义 scope_status 六类分流 | specs 口径已收敛到“受控修复 primary，不因 unrelated_global 全局锁死，不自动恢复，不扩大 unknown 作用域” | 后续实现或环境入口改动必须按 `09 §7.2` 覆盖对应事故正反例，或声明等价验证和未覆盖风险 |
-| V2 收口 | 判断本地 V2 什么时候能彻底删除，不让 V3 active 文件继续引用 V2 作为后续迁移来源 | `workcase-0024` | `03`、`05`、`06`、相关事实对象 | README 已把 V2 降为历史来源；`workcase-0024` 仍 executing，明确 03/05/06 和 `spark-0039` 未收口前不得声明本地 V2 可删除 | 这是 V2 删除阻断，不是 Action Guide builder 的直接前置；但它影响 specs 自足性 | 按 `workcase-0024` 逐项完成 03/05/06、`spark-0039`、防回归检查和复审 |
+| V2 收口 | 判断本地 V2 什么时候能彻底删除，不让 V3 active 文件继续引用 V2 作为后续迁移来源 | `workcase-0024` | `03`、`05`、`06`、相关事实对象 | README 已把 V2 降为历史来源；03/05/06 已改成 V3-owned 口径，`spark-0039` 已转为 resolved 历史来源；validator 已补 active V2 dependency 防回归检查 | 这是 V2 删除准备度收口，不是 Action Guide builder 的直接前置；最终删除仍需 `workcase-0024` 结果复审和 Human closure 判断 | 完成本轮子 agent 复审、验证和提交；后续由 Human 判断是否关闭 `workcase-0024` 并删除本地 V2 |
 | specs 职责边界 | 防止 `01/07/09/10/30/33` 互相抢规则源，尤其是安装、环境入口、验证、Code 输出、行动模板之间 | `04` 的结构治理 + 各单篇归口边界 | `01`、`07`、`09`、`10`、`30`、`33` | `04 §5.8` 已固定跨规范职责边界总览，并声明它只是路由表和防越界检查；单篇多数已写“本文归口 / 不归口”；30/33 也已声明只组织行动，不声明 integrated | specs 口径已收敛到“总览只做路由，规则仍回到单篇正文”；后续风险主要是新增 spec 或环境能力时忘记同步 `04 §5.8` 和对应单篇归口 | 新增高风险 spec、环境入口、安装验收、Code 输出或测试口径时，先检查 `04 §5.8`；若改变规则语义，回到主职责所在 spec 或 Human Gate |
 
 ## 4. 职责边界对照表
@@ -85,7 +85,7 @@
 | 4 | 做 verification_plan / 测试分层执行对照 | 解决开发过程测试过慢，同时避免未验证完成声明 | 已补 `09` 的 `verification_plan` 输出契约；runner 对照由 tests 哨兵继续保障 |
 | 5 | 做能力匹配模型 specs-first 草案 | 统一 LDVH 目标、环境能力、Code 能力和交还口径 | 已补 `01 §5.2.1` 正文口径；具体矩阵后续按附件或实现域承接 |
 | 6 | 固定 specs 职责边界总览 | 防止跨 `01/07/09/10/30/33` 抢规则源 | 已补 `04 §5.8`，作为路由表和防越界检查 |
-| 7 | 按 `workcase-0024` 收口 V2 删除准备度 | 解除本地 V2 删除阻断 | 03/05/06、`spark-0039`、防回归检查和复审 |
+| 7 | 按 `workcase-0024` 收口 V2 删除准备度 | 解除 active specs / facts 对本地 V2 的活依赖 | 已完成 03/05/06、`spark-0039` 和防回归检查；待本轮复审与 Human closure 判断 |
 
 ## 7. 当前不做
 

@@ -136,7 +136,7 @@ V3 当前 runtime facade 的边界：
 6. 不声明当前环境完整支持 LDVH；
 7. 不替代 AI 判断、Human Gate 或事实源回写。
 
-V2 `06` 中的 payload schema、dispatcher、adapter、payload_present、unknown event 和环境 fallback 可作为本文后续实现来源。涉及写入用户环境、安装 Hook、覆盖入口或扩大权限时，必须先进入 Human Gate 和 09 测试设计。
+payload schema、dispatcher、adapter、payload_present、unknown event 和环境 fallback 的当前 V3 可用边界由本文、01、10、30、33 和 Code/tests 承接；后续实现缺漏必须转为 V3-owned 待办，不以本地 V2 `06` 作为默认实现来源。涉及写入用户环境、安装 Hook、覆盖入口或扩大权限时，必须先进入 Human Gate 和 09 测试设计。
 
 V2 项目管辖 target-based governance 中的静态解析能力由 `specs/10-安装与配置规范.md` 和本文 Code parser 承接。Code 可以输出 `governed_project_resolution`、`target_resolutions` 和管辖/非管辖边界 diagnostic；这些输出不得被解释为 Hook 已接入、环境已拦截或 Human Gate 已完成。
 
