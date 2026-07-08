@@ -128,6 +128,8 @@ Code 生成 Action Guide 的 `source_outline` 时，只能重新组织已有 `so
 
 Code 生成 Action Guide 的 `verification_outline` 时，只能重新组织已有 `validation_guard`、`stop_conditions`、`capability_gap`、`unverifiable`、diagnostics、fallback 和候选工具信息，不得生成测试结果、完成结论或风险接受。所有检查项必须保留 `result_status` 为 not_run、not_verified、blocked 或等价非通过状态；若存在缺口或不可验证范围，必须进入 fallback / residual risk，而不是被测试建议清零。
 
+Code 生成 Action Guide 的 `impact_summary` 和 `next_queries` 时，只能基于 target 解析、`task_read_plan`、`source_refs`、`source_outline`、`validation_guard`、`capability_gap`、`unverifiable`、diagnostics、read budget 和项目事实源解析进行确定性重组。`impact_summary` 只能表达候选影响、来源分组、读取升级线索和未验证范围，不得声明覆盖完整、测试通过、风险接受或完成；`next_queries` 只能表达后续需要定位、拆分、回读、补证或交还的问题，不得作为当前已读上下文、preflight 放行、completion 证据或 Human Gate 结果。
+
 ## 7. Runtime facade 与环境适配实现边界
 
 01 已定义 Runtime Protocol、canonical event 和 trigger source 的上位语义。本文只承接具体实现边界。

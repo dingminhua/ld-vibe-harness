@@ -355,6 +355,8 @@ def test_action_guide_governed_project_contract_is_specified() -> None:
     assert "| `guide_receipt` | 对已消费且输入未变化的行动指南返回 brief / receipt 确认，避免重复注入完整上下文。 |" in spec_01
     assert "| `suggested_sections` | 需要优先定位的章节、字段、对象、关系或证据片段。 |" in spec_01
     assert "| `verification_outline` | 将 `validation_guard`、`stop_conditions`、`capability_gap`、`unverifiable`" in spec_01
+    assert "| `next_queries` | 当前行动不应立即全文展开、但后续需要定位或确认的查询队列" in spec_01
+    assert "| `impact_summary` | 受影响的规范、事实对象、行动模板、Code、Web、测试、环境入口、target、验证项或诊断项" in spec_01
     assert "| `tool_plan` | 候选 Code、Git、测试或审计工具入口" in spec_01
     assert "| `post_read_action` | AI 消费 P0/P1 后的确定性下一步候选" in spec_01
     assert "### 7.7 行动指南验收清单" in spec_01
@@ -363,6 +365,8 @@ def test_action_guide_governed_project_contract_is_specified() -> None:
     assert "| 行动提醒 | `attention_points` 应保持 3-5 条短提醒" in spec_01
     assert "| 来源组织 | `source_outline` 必须把来源按 `ldvh_specs`、`ldvh_facts`、`governed_project_facts`" in spec_01
     assert "| 验证组织 | `verification_outline` 必须区分待验证项、fallback、不可验证范围和残留风险" in spec_01
+    assert "| 影响面判断 | `impact_summary` 必须按来源类型或影响类型组织 target、规则、事实源" in spec_01
+    assert "| 后续展开 | `next_queries` 必须承接缺 target、P2/P3 overflow、远关系" in spec_01
     assert "| 工具与读后行动 | `tool_plan` 和 `post_read_action` 必须是候选导航" in spec_01
     assert "| 人类可见输出 | 当 Action Guide 以 text、receipt、Hook 消息或其它 Human-facing 形式呈现时" in spec_01
     assert "而不只展示 read_plan" in spec_01
@@ -386,6 +390,8 @@ def test_action_guide_governed_project_contract_is_specified() -> None:
     assert "不得把未知来源伪装成权威规则" in spec_07
     assert "Code 生成 Action Guide 的 `verification_outline` 时，只能重新组织已有" in spec_07
     assert "不得生成测试结果、完成结论或风险接受" in spec_07
+    assert "Code 生成 Action Guide 的 `impact_summary` 和 `next_queries` 时，只能基于 target 解析" in spec_07
+    assert "不得声明覆盖完整、测试通过、风险接受或完成" in spec_07
     assert "Action Guide governed project 链路 specs 契约和本地 Code builder 已补齐" in spec_07
 
     assert "Action Guide 可以输出 `verification_outline` 或等价验证前视图" in spec_09
@@ -2861,6 +2867,19 @@ def test_action_guide_session_start_read_plan() -> None:
     assert all(item["result_status"] == "not_run" for item in verification_outline["tool_candidates"])
     assert not any(item.get("result_status") in {"passed", "complete", "verified"} for item in verification_outline["checks"])
     assert any(gap["requirement_id"] == "AI-BEH-001" for gap in guide["capability_gap"])
+    impact_summary = guide["impact_summary"]
+    assert impact_summary["summary"]["groups"] >= 3
+    assert impact_summary["summary"]["result_status"] == "not_verified"
+    assert "不是覆盖完整、测试通过、风险接受或完成证明" in impact_summary["boundary"]
+    impact_groups = {group["impact_kind"]: group for group in impact_summary["groups"]}
+    assert {"rule_source", "governed_project_fact_source", "verification"}.issubset(impact_groups)
+    assert "specs/01-保障与衔接.md" in impact_groups["rule_source"]["paths"]
+    assert impact_summary["unverified_scope"]
+    next_queries = {item["query"]: item for item in guide["next_queries"]}
+    assert next_queries["review_impact_summary"]["category"] == "impact"
+    assert next_queries["resolve_capability_gap"]["category"] == "capability_gap"
+    assert next_queries["verify_residual_risk"]["category"] == "verification"
+    assert all("allowed" not in json.dumps(item, ensure_ascii=False) for item in guide["next_queries"])
 
 
 def test_action_guide_pre_tool_use_reports_missing_target(validation_result: dict) -> None:
@@ -2886,6 +2905,12 @@ def test_action_guide_pre_tool_use_reports_missing_target(validation_result: dic
         item["kind"] == "fill_missing_field" and item["target"] == "target_path"
         for item in guide["verification_outline"]["fallback_actions"]
     )
+    next_queries = {item["query"]: item for item in guide["next_queries"]}
+    assert next_queries["provide_target"]["priority"] == "P0"
+    assert next_queries["resolve_missing_field"]["target_path"] == "target_path"
+    assert next_queries["review_impact_summary"]["disposition"] == "只作为影响面候选复核，不是覆盖声明。"
+    assert guide["impact_summary"]["summary"]["unverified_scope"] >= 1
+    assert any(item["kind"] == "capability_gap" for item in guide["impact_summary"]["unverified_scope"])
     assert any(item["tool"] == "code/pre_tool_use.py" for item in guide["tool_plan"])
     assert any(item["requirement_id"] == "AI-BEH-003" for item in guide["stop_conditions"])
 
@@ -3008,6 +3033,12 @@ def test_action_guide_unknown_timing_diagnostic(validation_result: dict) -> None
     assert guide["action_type"]["raw_consumption_timing"] == "unknown_event"
     assert guide["action_type"]["authorization"] == "none"
     assert guide["diagnostics"][0]["code"] == "ACTION_GUIDE_TIMING_UNKNOWN"
+    diagnostic_query = next(item for item in guide["next_queries"] if item["query"] == "handle_diagnostic")
+    assert diagnostic_query["target_path"] == "specs/attachments/01.Att.01-保障消费时机表.md"
+    assert diagnostic_query["source_path"] == "specs/07-Code确定性执行规范.md"
+    diagnostic_scope = next(item for item in guide["impact_summary"]["unverified_scope"] if item["kind"] == "diagnostic")
+    assert diagnostic_scope["target"] == "specs/attachments/01.Att.01-保障消费时机表.md"
+    assert diagnostic_scope["source_path"] == "specs/07-Code确定性执行规范.md"
 
 
 def test_action_guide_governed_single_adds_project_fact_source(
@@ -3298,6 +3329,11 @@ def test_specs_validate_cli_action_guide_json() -> None:
     assert payload["tool_plan"][0]["authorization"] == "none"
     assert payload["post_read_action"]["kind"] == "continue_after_read_plan"
     assert payload["post_read_action"]["authorization"] == "none"
+    assert payload["impact_summary"]["summary"]["result_status"] == "not_verified"
+    assert payload["impact_summary"]["summary"]["groups"] >= 3
+    assert "不是覆盖完整" in payload["impact_summary"]["boundary"]
+    assert any(item["query"] == "review_impact_summary" for item in payload["next_queries"])
+    assert any(item["query"] == "resolve_capability_gap" for item in payload["next_queries"])
     assert payload["read_order"]
     assert payload["suggested_sections"]
     assert payload["source_refs"]
@@ -3337,6 +3373,12 @@ def test_specs_validate_cli_action_guide_text_outputs_execution_bridge() -> None
     assert "tool/not_run:" in output
     assert "Tool plan:" in output
     assert "code/specs_validate.py action-guide" in output
+    assert "Impact summary:" in output
+    assert "rule_source:" in output
+    assert "... " in output
+    assert "boundary: impact_summary 只组织候选影响" in output
+    assert "Next queries:" in output
+    assert "review_impact_summary P1/impact" in output
     assert "Post-read action:" in output
     assert "- authorization: none" in output
     for forbidden in ["allowed", "approved", "unblocked", "Human Gate 已完成", "风险已接受"]:
@@ -3399,8 +3441,11 @@ def test_session_start_text_outputs_action_guide_context() -> None:
     assert "tool/not_run:" in output
     assert "Tool plan:" in output
     assert "code/specs_validate.py action-guide" in output
+    assert "Impact summary:" in output
+    assert "rule_source:" in output
     assert "Post-read action:" in output
     assert "Next queries:" in output
+    assert "review_impact_summary P1/impact" in output
     assert "Capability gaps:" in output
     assert "Source boundaries:" in output
     assert "Next action:" in output

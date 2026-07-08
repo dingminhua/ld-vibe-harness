@@ -184,11 +184,35 @@ def _print_text(result: dict[str, Any]) -> None:
         for item in tool_plan:
             print(f"- {item.get('tool', '')}: {item.get('command', '')}")
 
+    impact_summary = action_guide.get("impact_summary", {})
+    if impact_summary.get("summary"):
+        summary = impact_summary["summary"]
+        print("\nImpact summary:")
+        print(
+            "- counts: "
+            f"groups={summary.get('groups', 0)}, "
+            f"paths={summary.get('affected_paths', 0)}, "
+            f"unverified={summary.get('unverified_scope', 0)}"
+        )
+        for group in impact_summary.get("groups", [])[:5]:
+            print(f"- {group.get('impact_kind', '')}: {group.get('count', 0)}")
+            paths = group.get("paths", [])
+            for path in paths[:3]:
+                print(f"  - {path}")
+            if len(paths) > 3:
+                print(f"  - ... {len(paths) - 3} more")
+        if impact_summary.get("boundary"):
+            print(f"- boundary: {impact_summary.get('boundary', '')}")
+
     next_queries = action_guide.get("next_queries", [])
     if next_queries:
         print("\nNext queries:")
         for item in next_queries:
-            print(f"- {item.get('query', '')}: {item.get('reason', '')}")
+            priority = item.get("priority", "")
+            category = item.get("category", "")
+            prefix = f"{priority}/{category}" if priority or category else ""
+            label = f"{item.get('query', '')} {prefix}".strip()
+            print(f"- {label}: {item.get('reason', '')}")
 
     capability_gap = action_guide.get("capability_gap", [])
     if capability_gap:

@@ -136,6 +136,32 @@ def print_text(result: dict[str, Any], command: str) -> None:
             print("\nTool plan:")
             for item in result["tool_plan"]:
                 print(f"- {item.get('tool', '')}: {item.get('command', '')}")
+        if result.get("impact_summary", {}).get("summary"):
+            summary = result["impact_summary"]["summary"]
+            print("\nImpact summary:")
+            print(
+                "- counts: "
+                f"groups={summary.get('groups', 0)}, "
+                f"paths={summary.get('affected_paths', 0)}, "
+                f"unverified={summary.get('unverified_scope', 0)}"
+            )
+            for group in result["impact_summary"].get("groups", [])[:5]:
+                print(f"- {group.get('impact_kind', '')}: {group.get('count', 0)}")
+                paths = group.get("paths", [])
+                for path in paths[:3]:
+                    print(f"  - {path}")
+                if len(paths) > 3:
+                    print(f"  - ... {len(paths) - 3} more")
+            if result["impact_summary"].get("boundary"):
+                print(f"- boundary: {result['impact_summary'].get('boundary', '')}")
+        if result.get("next_queries"):
+            print("\nNext queries:")
+            for item in result["next_queries"]:
+                priority = item.get("priority", "")
+                category = item.get("category", "")
+                prefix = f"{priority}/{category}" if priority or category else ""
+                label = f"{item.get('query', '')} {prefix}".strip()
+                print(f"- {label}: {item.get('reason', '')}")
         if result.get("post_read_action"):
             post_read_action = result["post_read_action"]
             print("\nPost-read action:")

@@ -4630,6 +4630,307 @@ def action_guide_verification_outline(
     }
 
 
+def action_guide_impact_kind(source_type: str, role: str = "") -> str:
+    if source_type == "ldvh_specs":
+        return "rule_source"
+    if source_type == "ldvh_facts":
+        return "ldvh_fact_source"
+    if source_type == "governed_project_facts":
+        return "governed_project_fact_source"
+    if source_type == "target":
+        return "target"
+    if source_type == "verification":
+        return "verification"
+    if source_type == "diagnostic":
+        return "diagnostic"
+    if role in {"validation_guard", "stop_condition"}:
+        return "verification"
+    return "process_output"
+
+
+def action_guide_impact_summary(
+    *,
+    scope_targets: list[str | Path],
+    task_read_plan: list[dict[str, Any]],
+    source_refs: list[dict[str, Any]],
+    validation_guard: list[dict[str, str]],
+    capability_gap: list[dict[str, str]],
+    unverifiable: list[dict[str, str]],
+    diagnostics: list[dict[str, Any]],
+    project_fact_sources: list[dict[str, str]],
+    requirements: list[dict[str, Any]],
+) -> dict[str, Any]:
+    items: list[dict[str, Any]] = []
+
+    for target in scope_targets:
+        target_path = str(target)
+        if not target_path:
+            continue
+        items.append({
+            "impact_kind": "target",
+            "source_type": "target",
+            "path": target_path,
+            "role": "target_path",
+            "priority": "P0",
+            "read_mode": "section",
+            "disposition": "inspect_impact",
+            "reason": "当前行动 target，需要判断对 specs、事实源、Code、测试或环境入口的影响。",
+        })
+
+    for item in task_read_plan:
+        path = str(item.get("path") or item.get("label") or "").strip()
+        if not path:
+            continue
+        source_type = action_guide_infer_source_type(
+            path,
+            str(item.get("source_type", "")),
+            str(item.get("role", "")),
+        )
+        items.append({
+            "impact_kind": action_guide_impact_kind(source_type, str(item.get("role", ""))),
+            "source_type": source_type,
+            "path": path,
+            "role": str(item.get("role", "")),
+            "priority": str(item.get("priority", "")),
+            "read_mode": str(item.get("read_mode", "")),
+            "disposition": "consume_now" if item.get("consume_now", True) else "deferred",
+            "reason": str(item.get("reason", "")),
+            "requirement_id": str(item.get("requirement_id", "")),
+        })
+
+    for ref in source_refs:
+        path = str(ref.get("path") or "").strip()
+        if not path:
+            continue
+        source_type = action_guide_infer_source_type(path, role=str(ref.get("role", "")))
+        items.append({
+            "impact_kind": action_guide_impact_kind(source_type, str(ref.get("role", ""))),
+            "source_type": source_type,
+            "path": path,
+            "role": str(ref.get("role", "")),
+            "priority": "",
+            "read_mode": "",
+            "disposition": "reference_only",
+            "reason": "来源回指；需要解释规则、事实源或边界时再展开。",
+            "requirement_id": str(ref.get("requirement_id", "")),
+        })
+
+    for source in project_fact_sources:
+        path = str(source.get("fact_root") or "").strip()
+        if not path:
+            continue
+        items.append({
+            "impact_kind": "governed_project_fact_source",
+            "source_type": "governed_project_facts",
+            "path": path,
+            "role": "governed_project_fact_source",
+            "priority": "P1",
+            "read_mode": "contract",
+            "disposition": "consume_now" if source.get("status") == "available" else "unverified",
+            "reason": source.get("boundary", "管辖项目事实源入口。"),
+            "governed_project_id": source.get("governed_project_id", ""),
+        })
+
+    for item in validation_guard:
+        path = str(item.get("source_path") or SHORT_SPEC_REFS["09"])
+        items.append({
+            "impact_kind": "verification",
+            "source_type": "verification",
+            "path": path,
+            "role": "validation_guard",
+            "priority": "P1",
+            "read_mode": "contract",
+            "disposition": "verify_before_claim",
+            "reason": item.get("guard", ""),
+            "requirement_id": item.get("requirement_id", ""),
+        })
+
+    unverified_scope: list[dict[str, str]] = []
+    for item in capability_gap:
+        unverified_scope.append({
+            "kind": "capability_gap",
+            "target": item.get("required_capability", ""),
+            "reason": item.get("current_gap", ""),
+            "source_path": item.get("source_path", SHORT_SPEC_REFS["01"]),
+            "result_status": "not_verified",
+            "disposition": item.get("disposition", "保留为缺口或后续分流。"),
+        })
+    for item in unverifiable:
+        unverified_scope.append({
+            "kind": "unverifiable",
+            "target": item.get("target", ""),
+            "reason": item.get("reason", ""),
+            "source_path": item.get("source_path", SHORT_SPEC_REFS["09"]),
+            "result_status": "not_verified",
+            "disposition": "作为不可验证范围交还，不得写成已覆盖。",
+        })
+    for diagnostic in diagnostics:
+        unverified_scope.append({
+            "kind": "diagnostic",
+            "target": diagnostic.get("path", ""),
+            "reason": diagnostic.get("message", ""),
+            "source_path": diagnostic.get("source_path") or SHORT_SPEC_REFS["07"],
+            "result_status": "blocked" if diagnostic.get("level") in {"error", "blocking"} else "not_verified",
+            "disposition": "先处理 diagnostic；不得声明覆盖完整。",
+        })
+
+    deduped_items = unique_dicts(items, ("impact_kind", "source_type", "path", "role"))
+    groups: list[dict[str, Any]] = []
+    for impact_kind in sorted({item["impact_kind"] for item in deduped_items}):
+        group_items = [
+            item
+            for item in deduped_items
+            if item["impact_kind"] == impact_kind
+        ]
+        groups.append({
+            "impact_kind": impact_kind,
+            "count": len(group_items),
+            "source_types": sorted({item.get("source_type", "") for item in group_items if item.get("source_type")}),
+            "paths": sorted({item.get("path", "") for item in group_items if item.get("path")}),
+            "items": sorted(
+                group_items,
+                key=lambda item: (
+                    ACTION_GUIDE_PRIORITY_ORDER.get(str(item.get("priority", "")), 99),
+                    str(item.get("path", "")),
+                    str(item.get("role", "")),
+                ),
+            ),
+        })
+
+    affected_paths = sorted({item.get("path", "") for item in deduped_items if item.get("path")})
+    return {
+        "summary": {
+            "groups": len(groups),
+            "items": len(deduped_items),
+            "affected_paths": len(affected_paths),
+            "targets": len([item for item in deduped_items if item.get("impact_kind") == "target"]),
+            "unverified_scope": len(unverified_scope),
+            "result_status": "not_verified",
+        },
+        "groups": groups,
+        "affected_paths": affected_paths,
+        "affected_path_count": len(affected_paths),
+        "requirement_ids": sorted({requirement["requirement_id"] for requirement in requirements}),
+        "unverified_scope": unverified_scope,
+        "boundary": "impact_summary 只组织候选影响、来源分组和未验证范围；不是覆盖完整、测试通过、风险接受或完成证明。",
+    }
+
+
+def action_guide_next_queries(
+    *,
+    scope_targets: list[str | Path],
+    missing_fields: list[dict[str, str]],
+    capability_gap: list[dict[str, str]],
+    unverifiable: list[dict[str, str]],
+    diagnostics: list[dict[str, Any]],
+    read_budget: dict[str, Any],
+    source_outline: dict[str, Any],
+    verification_outline: dict[str, Any],
+    impact_summary: dict[str, Any],
+) -> list[dict[str, str]]:
+    queries: list[dict[str, str]] = []
+    if scope_targets:
+        for target in scope_targets:
+            queries.append({
+                "query": "target_impact",
+                "priority": "P1",
+                "category": "impact",
+                "target_path": str(target),
+                "reason": "后续阶段用于定位 target 对 specs、Code、事实源、测试或环境入口的影响。",
+                "source_path": SHORT_SPEC_REFS["01"],
+                "disposition": "按需要升级读取，不得声明影响面已完整覆盖。",
+            })
+    else:
+        queries.append({
+            "query": "provide_target",
+            "priority": "P0",
+            "category": "missing_field",
+            "target_path": "",
+            "reason": "若当前行动涉及写入、提交或完成声明，应补充 target/staged paths。",
+            "source_path": SHORT_SPEC_REFS["10"],
+            "disposition": "补齐 target 后重新生成 Action Guide。",
+        })
+
+    for item in missing_fields:
+        queries.append({
+            "query": "resolve_missing_field",
+            "priority": "P0",
+            "category": "missing_field",
+            "target_path": item.get("field", ""),
+            "reason": item.get("reason", ""),
+            "source_path": SHORT_SPEC_REFS["01"],
+            "disposition": "补齐后重新生成 Action Guide；不得继续声明完成。",
+        })
+
+    if read_budget.get("overflow_items", 0) or source_outline.get("summary", {}).get("deferred", 0):
+        queries.append({
+            "query": "expand_deferred_sources",
+            "priority": "P2",
+            "category": "progressive_disclosure",
+            "target_path": "",
+            "reason": "P2/P3、远关系或 deferred 来源未注入当前上下文；需要时再按章节或全文升级读取。",
+            "source_path": SHORT_SPEC_REFS["01"],
+            "disposition": "作为后续展开，不得当作当前已读上下文。",
+        })
+
+    if impact_summary.get("summary", {}).get("groups", 0):
+        queries.append({
+            "query": "review_impact_summary",
+            "priority": "P1",
+            "category": "impact",
+            "target_path": "",
+            "reason": "根据 impact_summary 判断是否需要补读规则、事实源、测试或环境入口影响面。",
+            "source_path": SHORT_SPEC_REFS["01"],
+            "disposition": "只作为影响面候选复核，不是覆盖声明。",
+        })
+
+    for item in capability_gap:
+        queries.append({
+            "query": "resolve_capability_gap",
+            "priority": "P1",
+            "category": "capability_gap",
+            "target_path": item.get("required_capability", ""),
+            "reason": item.get("current_gap", ""),
+            "source_path": item.get("source_path", SHORT_SPEC_REFS["01"]),
+            "disposition": item.get("disposition", "保留为缺口或交还 Human，不得声明保障完整。"),
+        })
+
+    for item in unverifiable:
+        queries.append({
+            "query": "inspect_unverifiable",
+            "priority": "P1",
+            "category": "unverifiable",
+            "target_path": item.get("target", ""),
+            "reason": item.get("reason", ""),
+            "source_path": item.get("source_path", SHORT_SPEC_REFS["09"]),
+            "disposition": "作为不可验证范围交还，不得写成已验证。",
+        })
+
+    for diagnostic in diagnostics:
+        queries.append({
+            "query": "handle_diagnostic",
+            "priority": "P0" if diagnostic.get("level") in {"error", "blocking"} else "P1",
+            "category": "diagnostic",
+            "target_path": diagnostic.get("path", ""),
+            "reason": diagnostic.get("message", ""),
+            "source_path": diagnostic.get("source_path") or SHORT_SPEC_REFS["07"],
+            "disposition": "先处理 diagnostic；不得用 Action Guide 替代修复或 Human Gate。",
+        })
+
+    if verification_outline.get("summary", {}).get("residual_risks", 0):
+        queries.append({
+            "query": "verify_residual_risk",
+            "priority": "P1",
+            "category": "verification",
+            "target_path": "",
+            "reason": "verification_outline 存在残留风险；完成声明前必须说明未验证范围或补充验证。",
+            "source_path": SHORT_SPEC_REFS["09"],
+            "disposition": "不得把验证前视图写成验证通过。",
+        })
+
+    return unique_dicts(queries, ("query", "category", "target_path", "reason"))
+
+
 def action_guide_task_context(
     *,
     task: str,
@@ -5096,9 +5397,20 @@ def build_action_guide(
             "source_boundaries": ACTION_GUIDE_SOURCE_BOUNDARIES,
             "governed_project": resolved_governed_project,
             "impact_summary": {
+                "summary": {
+                    "groups": 0,
+                    "items": 0,
+                    "affected_paths": 0,
+                    "targets": 0,
+                    "unverified_scope": 0,
+                    "result_status": "not_verified",
+                },
+                "groups": [],
                 "affected_paths": [],
                 "affected_path_count": 0,
                 "requirement_ids": [],
+                "unverified_scope": [],
+                "boundary": "non_governed no-op 不输出影响摘要；不是覆盖完整、测试通过、风险接受或完成证明。",
             },
             "source_refs": noop_source_refs,
             "diagnostics": [],
@@ -5182,27 +5494,6 @@ def build_action_guide(
             "disposition": "不得确认空 read_plan；后续应补齐对应保障需求。",
         })
 
-    next_queries: list[dict[str, str]] = []
-    if scope_targets:
-        for target in scope_targets:
-            next_queries.append({
-                "query": "target_impact",
-                "target_path": str(target),
-                "reason": "后续阶段用于定位 target 对 specs、Code、事实源或环境入口的影响。",
-            })
-    else:
-        next_queries.append({
-            "query": "provide_target",
-            "reason": "若当前行动涉及写入、提交或完成声明，应补充 target/staged paths。",
-        })
-
-    impact_paths = sorted(
-        {
-            item["path"]
-            for item in task_read_plan
-            if item.get("path")
-        }
-    )
     diagnostics = guide_diagnostics
     status = "failed" if diagnostics else "degraded" if unverifiable else "ok"
     task_read_plan = apply_action_guide_disclosure(
@@ -5263,6 +5554,28 @@ def build_action_guide(
         diagnostics=diagnostics,
         tool_plan=tool_plan,
     )
+    impact_summary = action_guide_impact_summary(
+        scope_targets=scope_targets,
+        task_read_plan=task_read_plan,
+        source_refs=source_refs,
+        validation_guard=validation_guard,
+        capability_gap=unique_dicts(capability_gap, ("requirement_id", "required_capability")),
+        unverifiable=unique_dicts(unverifiable, ("code", "target")),
+        diagnostics=diagnostics,
+        project_fact_sources=project_fact_sources,
+        requirements=requirements,
+    )
+    next_queries = action_guide_next_queries(
+        scope_targets=scope_targets,
+        missing_fields=missing_fields,
+        capability_gap=unique_dicts(capability_gap, ("requirement_id", "required_capability")),
+        unverifiable=unique_dicts(unverifiable, ("code", "target")),
+        diagnostics=diagnostics,
+        read_budget=read_budget,
+        source_outline=source_outline,
+        verification_outline=verification_outline,
+        impact_summary=impact_summary,
+    )
     next_action = post_read_action["instruction"]
 
     return {
@@ -5318,11 +5631,7 @@ def build_action_guide(
         "project_fact_sources": project_fact_sources,
         "source_boundaries": ACTION_GUIDE_SOURCE_BOUNDARIES,
         "governed_project": resolved_governed_project,
-        "impact_summary": {
-            "affected_paths": impact_paths,
-            "affected_path_count": len(impact_paths),
-            "requirement_ids": [requirement["requirement_id"] for requirement in requirements],
-        },
+        "impact_summary": impact_summary,
         "source_refs": source_refs,
         "diagnostics": diagnostics,
     }
