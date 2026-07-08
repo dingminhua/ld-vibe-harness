@@ -33,6 +33,22 @@ runner 必须让 AI 能在长测试期间持续判断当前进度：
 
 `tests/code/test_ldvh_test_runner.py::test_all_pytest_stages_use_short_tracebacks` 覆盖 `--tb=short` 防回归。新增或改名 pytest stage 时，必须先让该测试通过。
 
+## Verification Plan
+
+runner 在执行 stage 前必须输出 `Verification plan`，用于把本次测试选择映射回 `specs/09 §5` 的验证入口选择矩阵。
+
+计划输出至少包含：
+
+1. profile、changed paths 和 slow policy；
+2. selected layers：本次会覆盖的验证层；
+3. excluded layers：本次明确没有覆盖的验证层；
+4. selection reasons：为什么选择这些层；
+5. unverified scope：不能由本次 runner 证明的范围；
+6. residual risk：即使本次 runner 通过仍需保留的风险；
+7. matrix refs：回指 `specs/09 §5`。
+
+`Verification plan` 是验证说明，不是授权、放行或完成声明。`--slow skip` 必须把 slow/runtime/e2e 层写入 unverified scope 和 residual risk；真实目标 AI lifecycle、Human Gate 和外部环境验收不得被本地 runner 输出替代。
+
 ## CLI 测试包装
 
 Python CLI 测试应统一走 `tests/code/test_ldvh_specs_validate.py` 中的 `_run_cli` 包装，而不是直接 `subprocess.run([sys.executable, ...])`。
