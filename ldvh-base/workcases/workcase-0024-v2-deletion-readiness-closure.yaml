@@ -7,9 +7,9 @@ goal: |
   本 WorkCase 不以“继续迁移更多 V2 内容”为默认目标，而是逐项判断现有 V2 活引用应归入已迁入、不迁入或转为 V3 自身待办。Git history 仅作为审计追溯、争议复核或历史取证的备份渠道，不作为活依赖收口方式。只有仍支撑当前 V3 规则成立、Code 消费或事实对象关闭判断的内容，才进入 V3 正式规范或事实对象。
 
   2026-07-07 Human 进一步收紧判断标准：V3 `specs/00` 是已审核目标；本 WorkCase 不全量审计 V2，也不从 Git history 反推迁移清单。执行范围只限当前 V3 specs、事实对象、README 和实现域文档中已经暴露的 V2 / legacy / migration / deletion-readiness 活口径；每条必须回到 00 的 AI-first、事实源边界、保障与衔接层、五类构成要素、V1-V9 和 Human Gate 判断。缺漏后续按 V3 00 重写，不把 V2 重新升格为权威来源。
-status: executing
+status: closed
 created: '2026-07-07T12:48:59+08:00'
-updated: '2026-07-08T23:31:00+08:00'
+updated: '2026-07-08T23:42:00+08:00'
 priority: P0
 description: |
   Human 指出：既然迁移模板预期是迁移完成后 V2 准备删除，那么当前 V3 中仍存在“后续从 V2 筛选 / 判断 / 迁入”的待补齐事项就需要重新审核。
@@ -23,16 +23,16 @@ description: |
 
   本 WorkCase 用于承接后续逐步修补，不替代具体 specs 修改、事实对象关闭、测试或最终删除决策。
 success_criteria: |
-  - [ ] 建立 V3-current V2-related 待办判定表；来源只限当前 V3 specs、事实对象、README 和实现域文档中已经暴露的待补齐事项或活口径，不从 V2 / Git history 主动挖迁移清单。
-  - [ ] 每条 V2-related 条目按 00 价值锚点归类为 `must_close_before_v2_delete`、`covered`、`archive_only` 或 `human_decision`，并说明它服务或影响的 AI-first、事实源、保障、五类构成要素、V1-V9 或 Human Gate。
-  - [ ] `specs/03-事实源与Git溯源规范.md` 不再把本地 V2 `07.Att.*` 写成后续筛选来源；commit type/scope/body 已迁入部分、非事实源排除清单、过程输出回写、读取策略等逐项判定为已迁入、不迁入或 V3 后续待办。
-  - [ ] `specs/05-事实模型基础规范.md` 不再把本地 V2 `02.Att.*`、20-24 成员文件或 WorkCase orchestration 长表写成活迁移来源；已由 `05.Att.01`、`21.Att.01`、20-24 成员规范、Code/tests schema 承接的内容完成收口。
-  - [ ] `specs/06-行动模板基础规范.md` 不再写“后续从 V2 30-36 和 WorkCase 流程筛选”；候选行动模板改为 V3 自身候选清单、明确后续 WorkCase 或明确不迁入。
-  - [ ] `specs/07`、20/22/23/24、21 的过期待补齐事项完成清理，避免未来 AI 误以为仍需回本地 V2 做字段或实现来源判断。
-  - [ ] `spark-0039` 的旧路线活承诺被关闭、废弃或改写为历史背景；`workcase-0022` 已关闭，只作为“完整性担忧已分流到本 WorkCase”的来源证据，不再作为未关闭阻断重复处理。
-  - [ ] README、code/docs 和实现域保留必要 stale V2 path 检测，但不把旧 V2 路径、旧插件或旧运行线写成当前依赖。
-  - [ ] 新增或更新 Code/tests 检查，阻止 active specs 再出现“后续从本地 V2 筛选 / 判断 / 迁入”的活依赖句式，并阻止把 Git history 写成未迁内容承接或验收出口；允许 `migration_sources: v2:...`、历史审计语境和 stale path 检测。
-  - [ ] 最终验证包含 specs validation、相关 targeted tests、子 agent 复审和工作区 clean 检查。
+  - [x] 建立 V3-current V2-related 待办判定表；来源只限当前 V3 specs、事实对象、README 和实现域文档中已经暴露的待补齐事项或活口径，不从 V2 / Git history 主动挖迁移清单。
+  - [x] 每条 V2-related 条目按 00 价值锚点归类为 `must_close_before_v2_delete`、`covered`、`archive_only` 或 `human_decision`，并说明它服务或影响的 AI-first、事实源、保障、五类构成要素、V1-V9 或 Human Gate。
+  - [x] `specs/03-事实源与Git溯源规范.md` 不再把本地 V2 `07.Att.*` 写成后续筛选来源；commit type/scope/body 已迁入部分、非事实源排除清单、过程输出回写、读取策略等逐项判定为已迁入、不迁入或 V3 后续待办。
+  - [x] `specs/05-事实模型基础规范.md` 不再把本地 V2 `02.Att.*`、20-24 成员文件或 WorkCase orchestration 长表写成活迁移来源；已由 `05.Att.01`、`21.Att.01`、20-24 成员规范、Code/tests schema 承接的内容完成收口。
+  - [x] `specs/06-行动模板基础规范.md` 不再写“后续从 V2 30-36 和 WorkCase 流程筛选”；候选行动模板改为 V3 自身候选清单、明确后续 WorkCase 或明确不迁入。
+  - [x] `specs/07`、20/22/23/24、21 的过期待补齐事项完成清理，避免未来 AI 误以为仍需回本地 V2 做字段或实现来源判断。
+  - [x] `spark-0039` 的旧路线活承诺被关闭、废弃或改写为历史背景；`workcase-0022` 已关闭，只作为“完整性担忧已分流到本 WorkCase”的来源证据，不再作为未关闭阻断重复处理。
+  - [x] README、code/docs 和实现域保留必要 stale V2 path 检测，但不把旧 V2 路径、旧插件或旧运行线写成当前依赖。
+  - [x] 新增或更新 Code/tests 检查，阻止 active specs 再出现“后续从本地 V2 筛选 / 判断 / 迁入”的活依赖句式，并阻止把 Git history 写成未迁内容承接或验收出口；允许 `migration_sources: v2:...`、历史审计语境和 stale path 检测。
+  - [x] 最终验证包含 specs validation、相关 targeted tests、子 agent 复审和工作区 clean 检查。
 source: |
   来源：2026-07-07 当前会话。
 
@@ -308,7 +308,7 @@ orchestration:
         - "`workcase-0022` 已关闭，不再作为未关闭阻断重复处理；其完整性担忧由本 WorkCase 承接。"
         - "20/22/23/24 尾部字段细节先标为 `human_decision`，后续按 V3 字段契约或实例校验判断，不回退为 V2 权威。"
       unresolved_items:
-        - 本轮 03/05/06、`spark-0039` 和防回归检查已修补，仍需子 agent 复审、验证结果记录和 Human closure 判断。
+        - 本轮 03/05/06、`spark-0039`、防回归检查、子 agent 复审、验证结果记录和 Human closure 判断均已完成；实际删除本地 V2 仍需另行授权。
     human_confirmation:
       decision: execute_v3_current_plan
       confirmed_at: '2026-07-07'
@@ -325,7 +325,7 @@ orchestration:
     workflow_ref: null
     review_policy:
       selection_reason: |
-        本 WorkCase 已完成 03/05/06、`spark-0039` 和防回归检查的本轮修补。结果复核将在测试通过并完成子 agent 复审后填写；最终关闭仍需 Human closure 判断。
+        本 WorkCase 已完成 03/05/06、`spark-0039`、防回归检查、测试验证、外部审核、子 agent 复审和 Human closure 判断。本结果复核记录只作为关闭证据，不授权立即删除本地 V2。
       required_perspectives:
         - specs_closure_result
         - facts_closure_result
@@ -335,11 +335,88 @@ orchestration:
         - 必须确认 active specs 不再含本地 V2 活依赖句式。
         - 必须确认 README 与事实对象状态口径一致。
     controller_self_check: {}
-    review_items: []
-    controller_resolution: {}
-    human_closure_confirmation: {}
+    review_items:
+      - id: result-review-1
+        role: external-ai-review
+        agent_name: external-ai
+        requested_at: '2026-07-08T23:00:00+08:00'
+        prompt_context: |
+          Human 将 5 个 specs 收敛与 V2 删除准备度提交交给外部 AI 只读审核，要求按 P0/P1/P2 判断是否可进入 Human closure review。
+        result:
+          status: pass_with_followups
+          summary: |
+            外部审核结论为 P0 无、P1 无，5 个提交整体可保留，可以进入 Human closure review；仍不能声明“已授权立即删除 V2”。外部审核列出的 P2 中，`study-0010` 当前化 v2 需求表述和 Codex README 图标来源文案已在后续提交中清理；事实模型共享字段契约已记录为 V3-owned 后续工作，不作为 V2 删除准备度阻断。
+          evidence_refs:
+            - specs/03-事实源与Git溯源规范.md
+            - specs/05-事实模型基础规范.md
+            - specs/06-行动模板基础规范.md
+            - specs/07-Code确定性执行规范.md
+            - specs/20-Spark-火花.md
+            - specs/21-WorkCase-工作项.md
+            - specs/22-ADR-决策.md
+            - specs/23-Pitfall-踩坑经验.md
+            - specs/24-Study-研究报告.md
+            - ldvh-base/sparks/spark-0039-v3-sidecar-action-guide-compiler.yaml
+            - ldvh-base/studies/study-0010-spark-study-absorption-index.md
+      - id: result-review-2
+        role: subagent-result-review
+        agent_name: Helmholtz
+        requested_at: '2026-07-08T16:40:00+08:00'
+        prompt_context: |
+          只读总复审能力匹配、自锁处置、职责边界、V2 收口提交是否整体自洽。
+        result:
+          status: pass_with_followups
+          summary: |
+            子 agent 总复审未发现 P0/P1；指出 `specs/21` 仍有“后续继续逐篇判断 Spark、ADR、Pitfall 和 Study 是否进入 V3 成员规范”的陈旧 P2，已由提交 `e3346ee7` 清理。
+          evidence_refs:
+            - specs/21-WorkCase-工作项.md
+      - id: result-review-3
+        role: subagent-p2-cleanup-review
+        agent_name: Jason
+        requested_at: '2026-07-08T23:20:00+08:00'
+        prompt_context: |
+          只读复审 `study-0010` 和 Codex README 历史文案残留清理。
+        result:
+          status: pass
+          summary: |
+            子 agent 复审确认 `study-0010` 当前承接表述已改为 V3-owned / 当前 V3-owned，历史语境仍保留；Codex README 图标资产来源已改为当前样例包内资产；无 P0/P1/P2。
+          evidence_refs:
+            - ldvh-base/studies/study-0010-spark-study-absorption-index.md
+            - hooks/environment-plugins/codex-ldvh-v3/README.md
+      - id: result-review-4
+        role: subagent-shared-field-followup-review
+        agent_name: Zeno
+        requested_at: '2026-07-08T23:31:00+08:00'
+        prompt_context: |
+          只读复审事实模型共享字段契约是否被正确记录为 V3-owned 后续工作。
+        result:
+          status: pass
+          summary: |
+            子 agent 复审确认共享字段契约在 05 和本 WorkCase 中均写为 V3-owned 后续工作，并明确不作为 V2 删除准备度阻断；无 P0/P1/P2。
+          evidence_refs:
+            - specs/05-事实模型基础规范.md
+            - ldvh-base/workcases/workcase-0024-v2-deletion-readiness-closure.yaml
+    controller_resolution:
+      status: closure_confirmed
+      summary: |
+        主控接受外部审核和子 agent 复审结论：当前已识别的 V3 active specs、事实对象、README 和实现域文档中的本地 V2 活依赖已收口；防回归检查已建立；旧路线承诺和历史文案残留已处理或转为 V3-owned 后续项。P0/P1 均为无，P2 已处理或明确不阻断关闭。
+      required_changes_handling:
+        - 外部审核 P2 `study-0010` 当前化 v2 需求表述已清理为当前 V3-owned 需求。
+        - 外部审核 P2 Codex README “来自 V2 icons” 已清理为当前样例包内资产。
+        - 外部审核 P2 事实模型共享字段契约已记录为 V3-owned 后续工作，不作为 V2 删除准备度阻断。
+      unresolved_items:
+        - 关闭本 WorkCase 不等于确认 V2 关键内容全量无缺漏；后续发现缺漏时按 V3 00 新建 V3-owned 待办。
+        - 关闭本 WorkCase 不等于授权立即删除本地 V2；删除动作仍需 Human 单独授权。
+    human_closure_confirmation:
+      decision: close
+      confirmed_at: '2026-07-08T23:42:00+08:00'
+      confirmer: Human
+      scope: |
+        Human 已确认关闭 `workcase-0024`。关闭范围仅限 V2 删除准备度收口：当前已识别的 V3 active 文件不再把本地 V2 作为后续规则、迁移、验收或实现来源。
+      summary: |
+        Human 接受当前验证、外部审核、子 agent 复审和主控处理结论，确认本 WorkCase 以 completed 结果关闭。该确认不授权立即删除本地 V2；删除动作需另行决策。
 plan_confirmed_at: '2026-07-07'
-review_requested_at: ''
+review_requested_at: '2026-07-08T23:00:00+08:00'
 verification_evidence: |
   记录创建前已完成只读审计：
   - specs/attachments 子审计：不通过，发现 03/05/06 P0 删除阻断。
@@ -359,15 +436,55 @@ verification_evidence: |
   - `python3 -m pytest tests/code -q -m 'not slow' --durations=10 --tb=short` 通过，227 passed / 135 deselected；该轮在同义残留测试新增前启动，作为既有 code fast 回归补充证据。
   - `python3 code/test_runner.py targeted ... --slow skip --dry-run` 输出选择层为 quick_structure、fact_instance_validator、targeted_code_fast，并声明 runtime/e2e/environment/web/full-build 为未验证范围。
   - 子 agent 首轮复审发现 03/05 仍残留“V2 作为迁移来源 / 再判断是否迁入”同义活口径；本轮已修正 03/05 正文并扩展 validator/tests。修正后 active specs 禁止句式搜索无命中。
-closure_evidence: ''
-closure_requested_at: ''
-closed_at: ''
-closure_outcome: ''
+closure_evidence: |
+  ## 关闭判断
+
+  本 WorkCase 的目标是完成 V3 当前文件中已识别的本地 V2 活依赖收口，并建立防回归检查。关闭本 WorkCase 表示“删除准备度收口已完成，可以进入删除决策 review”；不表示 V2 关键内容全量无缺漏，也不授权立即删除本地 V2。
+
+  ## 已完成范围
+
+  - `specs/03`、`specs/05`、`specs/06` 已清除“后续从本地 V2 筛选 / 判断 / 迁入”的 active 依赖口径。
+  - `specs/07`、`specs/20`、`specs/21`、`specs/22`、`specs/23`、`specs/24` 已改为 V3-owned 后续实现 / 字段 / 实例补充判断，不以本地 V2 文件作为默认来源。
+  - `spark-0039` 已转为 `resolved`，旧 V2 稳定运行线 / 整体迁移承诺只保留为历史背景。
+  - `study-0010` 当前化 v2 需求表述已改为当前 V3-owned 需求；Codex 插件 README “来自 V2 icons” 已改为当前样例包内资产。
+  - `code/ldvh_specs.py` 与 `tests/code/test_ldvh_specs_validate.py` 已建立 active V2 dependency 防回归检查，并覆盖“后续从 V2”“只能作为迁移来源”“再判断是否迁入”等同义残留。
+  - 事实模型共享字段契约已记录为 V3-owned 后续工作，不作为 V2 删除准备度阻断。
+
+  ## 验证与复审
+
+  - `python3 code/specs_validate.py all --format text --fail-on-diagnostics` 通过，diagnostics 为 0。
+  - `python3 code/test_runner.py smoke` 通过。
+  - `python3 -m pytest tests/code/test_ldvh_specs_validate.py -q --tb=short -k "v2_deletion_readiness or current_specs_validate_without_diagnostics"` 通过，4 passed。
+  - `python3 -m pytest tests/code/test_ldvh_specs_validate.py -q --tb=short -k "v2_deletion_readiness or current_specs_validate_without_diagnostics or workcase"` 通过，20 passed。
+  - `python3 -m pytest tests/code -q -m 'not slow' --durations=10 --tb=short` 通过，227 passed / 135 deselected。
+  - 外部 AI 审核结论：P0 无、P1 无，5 个提交整体可保留，可以进入 Human closure review；仍不能声明“已授权立即删除 V2”。
+  - 子 agent 复审结论：最终总复审、P2 清理复审、共享字段契约后续项复审均无 P0/P1；closure patch 首轮复审发现 stale closure 文案，主控已修正。
+
+  ## 后续分流 / 收口结果
+
+  - 若后续发现 V2 未迁内容确实支撑当前 V3 规则成立、Code 消费或事实对象关闭判断，应按 V3 00 新建 V3-owned 待办，不重新把本地 V2 升格为权威来源。
+  - 事实模型共享字段契约后续可单独建 WorkCase，统一 Spark、WorkCase、ADR、Pitfall、Study 等成员中语义相同字段的字段名、定义、证据边界和 Code/tests 消费口径。
+  - 本地 V2 的实际删除是独立高影响动作，需要 Human 另行授权和执行计划；本 WorkCase 的关闭不替代该授权。
+
+  ## 结论
+
+  Human 已确认关闭；本 WorkCase 以 `completed` 结果收口。当前关闭结论仅覆盖 V2 删除准备度收口，不覆盖立即删除本地 V2。
+closure_requested_at: '2026-07-08T23:42:00+08:00'
+closed_at: '2026-07-08T23:42:00+08:00'
+closure_outcome: completed
+human_closure_confirmation:
+  decision: close
+  confirmed_at: '2026-07-08T23:42:00+08:00'
+  confirmer: Human
+  scope: |
+    Human 已确认关闭 `workcase-0024`。关闭范围仅限 V2 删除准备度收口：当前已识别的 V3 active 文件不再把本地 V2 作为后续规则、迁移、验收或实现来源。
+  summary: |
+    Human 接受当前验证、外部审核、子 agent 复审和主控处理结论，确认本 WorkCase 以 completed 结果关闭。该确认不授权立即删除本地 V2；删除动作需另行决策。
 residual_risks: |
   - 本轮已清除当前已识别 active specs / facts 的 V2 活依赖，但这不等于声明 V2 关键内容全量完整迁入；后续发现缺漏时按 V3 00 新建 V3-owned 待办。
   - 事实模型共享字段契约仍是 V3-owned 后续工作：它的目标是统一 Spark、WorkCase、ADR、Pitfall、Study 等成员中语义相同字段的命名、定义、证据边界和 Code/tests 消费口径，避免各成员规范各自构造同义字段；该工作不作为 V2 删除准备度阻断。
   - 删除准备度检查需要允许审计追溯语境、`migration_sources: v2:...` 和 stale path 检测，不能简单禁止所有 V2 字符串；但不得把 Git history 写成未迁内容承接或验收出口。
-  - `workcase-0024` 仍需子 agent 复审和 Human closure 判断；在 Human 明确关闭前，不应把本记录解释为“本地 V2 已可立即删除”的授权。
+  - `workcase-0024` 已由 Human 确认关闭；本关闭结论仍不得解释为“本地 V2 已可立即删除”的授权。
 followup_refs:
   - workcase-0022
   - spark-0039
@@ -380,7 +497,25 @@ revision_history:
       创建 V2 删除准备度收口 WorkCase，记录三路只读审计结论、P0/P1 阻断、执行项和后续验证要求。
   - at: '2026-07-08T16:23:00+08:00'
     summary: |
-      完成本轮 V2 删除准备度修补：03/05/06 改为 V3-owned 口径，`spark-0039` 旧路线承诺改为 resolved 历史来源，Code/tests 新增 active V2 dependency 防回归检查。最终删除授权仍需子 agent 复审、验证通过和 Human closure 判断。
+      完成本轮 V2 删除准备度修补：03/05/06 改为 V3-owned 口径，`spark-0039` 旧路线承诺改为 resolved 历史来源，Code/tests 新增 active V2 dependency 防回归检查。当时尚未授权实际删除本地 V2，后续需继续完成结果复审和 Human closure。
+  - at: '2026-07-08T23:42:00+08:00'
+    from_status: executing
+    to_status: closed
+    actor: Human
+    reason: |
+      Human 确认关闭本 WorkCase；关闭范围仅限 V2 删除准备度收口，不授权立即删除本地 V2。
+    changed_fields:
+      - status
+      - updated
+      - success_criteria
+      - orchestration.result_review
+      - review_requested_at
+      - closure_evidence
+      - closure_requested_at
+      - closed_at
+      - closure_outcome
+      - human_closure_confirmation
+      - revision_history
 related_docs:
   - README.md
   - specs/03-事实源与Git溯源规范.md
