@@ -6,6 +6,7 @@ import os
 from datetime import datetime
 from pathlib import Path
 import shutil
+import shlex
 import subprocess
 import sys
 
@@ -344,13 +345,20 @@ def test_action_guide_governed_project_contract_is_specified() -> None:
     assert "行动指南不是规则源、授权器、事实源、测试结论或 Human Gate" in spec_01
     assert "不得作为完成证明" in spec_01
     assert "| `task_context` | 当前任务、目标对象、已知事实、关键约束和当前所处阶段形成的任务脉络。 |" in spec_01
+    assert "| `action_type` | 由显式 action hint、消费时机、读写类型或 target 类型确定的行动分类" in spec_01
     assert "| `relationship_projection` | 与当前任务相关的 specs、附件、事实对象、WorkCase、证据、测试和环境入口关系。 |" in spec_01
+    assert "| `attention_points` | 当前行动前 3-5 条短提醒" in spec_01
     assert "| `read_order` | 建议读取顺序、P0 / P1 层级、authority / context / verification / fallback 等角色。 |" in spec_01
     assert "| `read_mode` | 每个读取项或读取组的披露层级，例如 `result`、`contract`、`section` 或 `full`。 |" in spec_01
     assert "| `guide_receipt` | 对已消费且输入未变化的行动指南返回 brief / receipt 确认，避免重复注入完整上下文。 |" in spec_01
     assert "| `suggested_sections` | 需要优先定位的章节、字段、对象、关系或证据片段。 |" in spec_01
+    assert "| `tool_plan` | 候选 Code、Git、测试或审计工具入口" in spec_01
+    assert "| `post_read_action` | AI 消费 P0/P1 后的确定性下一步候选" in spec_01
     assert "### 7.7 行动指南验收清单" in spec_01
     assert "| 任务脉络 | 输出包含当前任务、消费时机、target、cwd、`scope_status`、管辖项目和当前阶段" in spec_01
+    assert "| 行动分类 | `action_type` 必须来自显式 action hint、消费时机、读写类型或 target 类型" in spec_01
+    assert "| 行动提醒 | `attention_points` 应保持 3-5 条短提醒" in spec_01
+    assert "| 工具与读后行动 | `tool_plan` 和 `post_read_action` 必须是候选导航" in spec_01
     assert "| 人类可见输出 | 当 Action Guide 以 text、receipt、Hook 消息或其它 Human-facing 形式呈现时" in spec_01
     assert "而不只展示 read_plan" in spec_01
     assert "必须先消费 10 的管辖解析结果" in spec_01
@@ -367,6 +375,8 @@ def test_action_guide_governed_project_contract_is_specified() -> None:
     assert "`ldvh_specs`、`ldvh_facts`、`governed_project_facts` 和 `process_output`" in spec_07
     assert "`declared_multi_governed` 必须按每个 `governed_subject` 拆分" in spec_07
     assert "不得伪造项目事实源 read_plan" in spec_07
+    assert "Code 生成 Action Guide 的 `action_type`、`attention_points`、`tool_plan` 和 `post_read_action`" in spec_07
+    assert "不得从自然语言任务中猜测价值取舍" in spec_07
     assert "Action Guide governed project 链路 specs 契约和本地 Code builder 已补齐" in spec_07
 
     assert "只能以 resolver 输出的 `governed_project_path` 下 `ldvh-base/` 作为项目事实源入口" in spec_10
@@ -2778,8 +2788,21 @@ def test_action_guide_session_start_read_plan() -> None:
     assert guide["missing_fields"] == []
     assert guide["task_context"]["current_stage"] == "session_start"
     assert guide["task_context"]["scope_status"] != ""
+    assert guide["action_type"]["action_type"] == "session_start"
+    assert guide["action_type"]["action_type_source"] == "consumption_timing"
+    assert guide["action_type"]["authorization"] == "none"
     assert guide["guide_receipt"]["persistent"] is False
     assert "不是事实源、授权、放行或完成证明" in guide["guide_receipt"]["boundary"]
+    assert 3 <= len(guide["attention_points"]) <= 5
+    assert any("Action Guide 只提供导航和缺口暴露" in item["message"] for item in guide["attention_points"])
+    assert any("Stop Conditions" in item["message"] for item in guide["attention_points"])
+    assert guide["tool_plan"]
+    assert guide["tool_plan"][0]["tool"] == "code/specs_validate.py action-guide"
+    assert "code/specs_validate.py action-guide" in guide["tool_plan"][0]["command"]
+    assert guide["tool_plan"][0]["authorization"] == "none"
+    assert guide["post_read_action"]["kind"] == "continue_after_read_plan"
+    assert guide["post_read_action"]["authorization"] == "none"
+    assert guide["post_read_action"]["instruction"] == guide["next_action"]
     assert guide["read_order"]
     assert [item["read_order"] for item in guide["task_read_plan"]] == list(range(1, len(guide["task_read_plan"]) + 1))
     assert {item["read_mode"] for item in guide["task_read_plan"]}.issubset({"result", "contract", "section", "full"})
@@ -2814,7 +2837,54 @@ def test_action_guide_pre_tool_use_reports_missing_target(validation_result: dic
         }
     ]
     assert "补齐 missing_fields" in guide["next_action"]
+    assert guide["post_read_action"]["kind"] == "fill_missing_fields"
+    assert guide["post_read_action"]["instruction"] == guide["next_action"]
+    assert any(item["tool"] == "code/pre_tool_use.py" for item in guide["tool_plan"])
     assert any(item["requirement_id"] == "AI-BEH-003" for item in guide["stop_conditions"])
+
+
+def test_action_guide_tool_plan_quotes_candidate_command_args(validation_result: dict) -> None:
+    target_path = "tmp/action guide target;rm.md"
+    guide = ldvh_specs.build_action_guide(
+        ROOT,
+        consumption_timing="pre_tool_use",
+        target_path=target_path,
+        validation=validation_result,
+    )
+
+    quoted_target = shlex.quote(target_path)
+    commands = [item["command"] for item in guide["tool_plan"]]
+    assert any(f"--target-path {quoted_target}" in command for command in commands)
+    assert all(f"--target-path {target_path}" not in command for command in commands)
+    assert all(item["authorization"] == "none" for item in guide["tool_plan"])
+
+
+def test_action_guide_tool_plan_covers_completion_and_commit_candidates(validation_result: dict) -> None:
+    target_path = "tmp/action guide target.md"
+    completion_guide = ldvh_specs.build_action_guide(
+        ROOT,
+        consumption_timing="completion_claim",
+        target_path=target_path,
+        validation=validation_result,
+    )
+    commit_guide = ldvh_specs.build_action_guide(
+        ROOT,
+        consumption_timing="git_commit_msg",
+        target_path=target_path,
+        validation=validation_result,
+    )
+
+    quoted_target = shlex.quote(target_path)
+    completion_tools = {item["tool"]: item for item in completion_guide["tool_plan"]}
+    assert "code/completion_claim.py" in completion_tools
+    assert f"--target-path {quoted_target}" in completion_tools["code/completion_claim.py"]["command"]
+    assert "--verification-evidence '<evidence>'" in completion_tools["code/completion_claim.py"]["command"]
+    assert all(item["authorization"] == "none" for item in completion_guide["tool_plan"])
+
+    commit_tools = {item["tool"]: item for item in commit_guide["tool_plan"]}
+    assert "code/specs_validate.py commit-gate" in commit_tools
+    assert "--message-file '<commit_msg_file>'" in commit_tools["code/specs_validate.py commit-gate"]["command"]
+    assert all(item["authorization"] == "none" for item in commit_guide["tool_plan"])
 
 
 def test_action_guide_pre_tool_use_next_action_has_no_write_authorization(validation_result: dict) -> None:
@@ -2839,6 +2909,10 @@ def test_action_guide_unknown_timing_diagnostic(validation_result: dict) -> None
 
     assert guide["summary"]["status"] == "failed"
     assert guide["missing_fields"][0]["field"] == "consumption_timing"
+    assert guide["action_type"]["action_type"] == "unknown"
+    assert guide["action_type"]["action_type_source"] == "invalid_consumption_timing"
+    assert guide["action_type"]["raw_consumption_timing"] == "unknown_event"
+    assert guide["action_type"]["authorization"] == "none"
     assert guide["diagnostics"][0]["code"] == "ACTION_GUIDE_TIMING_UNKNOWN"
 
 
@@ -2932,6 +3006,11 @@ projects:
     assert guide["suggested_sections"] == []
     assert guide["guide_receipt"]["status"] == "no_op"
     assert guide["task_context"]["scope_status"] == "non_governed"
+    assert guide["action_type"]["authorization"] == "none"
+    assert guide["attention_points"] == []
+    assert guide["tool_plan"] == []
+    assert guide["post_read_action"]["kind"] == "no_op"
+    assert guide["post_read_action"]["authorization"] == "none"
     assert guide["project_fact_sources"] == []
     assert guide["requirements"] == []
 
@@ -3107,9 +3186,47 @@ def test_specs_validate_cli_action_guide_json() -> None:
     assert payload["summary"]["status"] == "ok"
     assert payload["summary"]["task_read_plan"] >= 3
     assert payload["guide_receipt"]["persistent"] is False
+    assert payload["action_type"]["action_type"] == "session_start"
+    assert payload["action_type"]["authorization"] == "none"
+    assert payload["attention_points"]
+    assert payload["tool_plan"][0]["authorization"] == "none"
+    assert payload["post_read_action"]["kind"] == "continue_after_read_plan"
+    assert payload["post_read_action"]["authorization"] == "none"
     assert payload["read_order"]
     assert payload["suggested_sections"]
     assert payload["source_refs"]
+
+
+def test_specs_validate_cli_action_guide_text_outputs_execution_bridge() -> None:
+    completed = _run_cli(
+        [
+            sys.executable,
+            "code/specs_validate.py",
+            "action-guide",
+            "--timing",
+            "session_start",
+            "--target-path",
+            "specs/01-保障与衔接.md",
+            "--format",
+            "text",
+            "--fail-on-diagnostics",
+        ],
+        cwd=ROOT,
+        check=True,
+    )
+
+    output = completed.stdout
+    assert "Action type:" in output
+    assert "- action_type: session_start" in output
+    assert "Attention points:" in output
+    assert "Action Guide 只提供导航和缺口暴露" in output
+    assert "Task read plan:" in output
+    assert "Tool plan:" in output
+    assert "code/specs_validate.py action-guide" in output
+    assert "Post-read action:" in output
+    assert "- authorization: none" in output
+    for forbidden in ["allowed", "approved", "unblocked", "Human Gate 已完成", "风险已接受"]:
+        assert forbidden not in output
 
 
 def test_session_start_text_outputs_action_guide_context() -> None:
@@ -3147,12 +3264,20 @@ def test_session_start_text_outputs_action_guide_context() -> None:
     assert "- scope_status: governed_single" in output
     assert "- read_write_kind: read" in output
     assert "- governed_project_id: ldvh-v3" in output
+    assert "Action type:" in output
+    assert "- action_type: session_start" in output
+    assert "- authorization: none" in output
     assert "Read budget:" in output
+    assert "Attention points:" in output
+    assert "Action Guide 只提供导航和缺口暴露" in output
     assert "Suggested sections:" in output
     assert "Relationship projection:" in output
     assert "- consumption_timing -> AI-BEH-001 [requires]" in output
     assert "- action_guide -> specs/01-保障与衔接.md [action_guide_contract]" in output
     assert "Validation guard:" in output
+    assert "Tool plan:" in output
+    assert "code/specs_validate.py action-guide" in output
+    assert "Post-read action:" in output
     assert "Next queries:" in output
     assert "Capability gaps:" in output
     assert "Source boundaries:" in output

@@ -86,11 +86,30 @@ def print_text(result: dict[str, Any], command: str) -> None:
         print(f"- diagnostics: {summary['diagnostics']}")
         print(f"- next_action: {result['next_action']}")
         print("- authorization: none")
+        if result.get("action_type"):
+            action_type = result["action_type"]
+            print("\nAction type:")
+            print(f"- action_type: {action_type.get('action_type', '')}")
+            print(f"- source: {action_type.get('action_type_source', '')}")
+            print(f"- authorization: {action_type.get('authorization', '')}")
+        if result.get("attention_points"):
+            print("\nAttention points:")
+            for item in result["attention_points"]:
+                print(f"- {item.get('message', '')}")
         if result["task_read_plan"]:
             print("\nTask read plan:")
             for item in result["task_read_plan"]:
                 path = item["path"] or item["label"]
                 print(f"- {item['priority']}/{item['source_type']}: {path} ({item['requirement_id']})")
+        if result.get("tool_plan"):
+            print("\nTool plan:")
+            for item in result["tool_plan"]:
+                print(f"- {item.get('tool', '')}: {item.get('command', '')}")
+        if result.get("post_read_action"):
+            post_read_action = result["post_read_action"]
+            print("\nPost-read action:")
+            print(f"- {post_read_action.get('kind', '')}: {post_read_action.get('instruction', '')}")
+            print(f"- authorization: {post_read_action.get('authorization', '')}")
         if result["missing_fields"]:
             print("\nMissing fields:")
             for item in result["missing_fields"]:

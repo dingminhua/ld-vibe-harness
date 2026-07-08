@@ -5,6 +5,7 @@ import hashlib
 import os
 from pathlib import Path
 import re
+import shlex
 import subprocess
 from typing import Any
 
@@ -4081,6 +4082,183 @@ ACTION_GUIDE_SECTION_HINTS = {
 }
 
 
+def action_guide_action_type(
+    *,
+    consumption_timing: str,
+    timing_known: bool,
+    scope_kind: str,
+    target_path: str,
+    scope_targets: list[str | Path],
+    governed_project: dict[str, Any],
+) -> dict[str, Any]:
+    action_type = consumption_timing if timing_known else "unknown"
+    action_type_source = "consumption_timing" if timing_known else "invalid_consumption_timing"
+    reason = "" if timing_known else f"消费时机不在闭集内: {consumption_timing}"
+    return {
+        "action_type": action_type,
+        "action_type_source": action_type_source,
+        "raw_consumption_timing": consumption_timing,
+        "read_write_kind": scope_kind,
+        "target_path": target_path,
+        "target_paths": [str(path) for path in scope_targets],
+        "target_evidence": {
+            "scope_status": governed_project.get("scope_status", ""),
+            "governed_project_id": governed_project.get("governed_project_id", ""),
+            "governed_via": governed_project.get("governed_via", ""),
+            "subject_source": governed_project.get("subject_source", ""),
+        },
+        "reason": reason,
+        "authorization": "none",
+        "boundary": "action_type 只由显式消费时机、读写类型、target 和管辖解析派生；Code 不猜自然语言意图。",
+    }
+
+
+def action_guide_tool_plan(
+    *,
+    consumption_timing: str,
+    target_path: str,
+    scope_kind: str,
+) -> list[dict[str, str]]:
+    target_arg = shlex.quote(target_path or "<target_path>")
+    timing_arg = shlex.quote(consumption_timing)
+    operation_arg = shlex.quote(scope_kind)
+    evidence_arg = shlex.quote("<evidence>")
+    message_file_arg = shlex.quote("<commit_msg_file>")
+    timing_command = (
+        f"python3 code/specs_validate.py action-guide --timing {timing_arg} "
+        f"--target-path {target_arg} --format json"
+    )
+    plan = [
+        {
+            "tool": "code/specs_validate.py action-guide",
+            "command": timing_command,
+            "reason": "重新生成当前消费时机的 Action Guide JSON，用于核对 read_plan、source_refs、stop_conditions 和缺口。",
+            "source_path": SHORT_SPEC_REFS["01"],
+            "authorization": "none",
+        }
+    ]
+    if consumption_timing == "pre_tool_use":
+        plan.append({
+            "tool": "code/pre_tool_use.py",
+            "command": (
+                f"python3 code/pre_tool_use.py --target-path {target_arg} "
+                f"--operation {operation_arg} --format text"
+            ),
+            "reason": "写入前检查 target、read_plan 消费和阻断诊断；输出不替代 Human Gate。",
+            "source_path": SHORT_SPEC_REFS["07"],
+            "authorization": "none",
+        })
+    elif consumption_timing == "completion_claim":
+        plan.append({
+            "tool": "code/completion_claim.py",
+            "command": (
+                f"python3 code/completion_claim.py --target-path {target_arg} "
+                f"--verification-evidence {evidence_arg} --format text"
+            ),
+            "reason": "完成声明前检查验证证据、未验证范围和残留风险。",
+            "source_path": SHORT_SPEC_REFS["09"],
+            "authorization": "none",
+        })
+    elif consumption_timing == "git_commit_msg":
+        plan.append({
+            "tool": "code/specs_validate.py commit-gate",
+            "command": (
+                "python3 code/specs_validate.py commit-gate "
+                f"--message-file {message_file_arg} --format text"
+            ),
+            "reason": "提交前检查 commit message 契约、staged paths 和 read_plan 证据。",
+            "source_path": "specs/31-Git提交行动模板.md",
+            "authorization": "none",
+        })
+    return plan
+
+
+def action_guide_post_read_action(
+    *,
+    consumption_timing: str,
+    missing_fields: list[dict[str, str]],
+) -> dict[str, str]:
+    instruction = action_guide_next_action(consumption_timing, missing_fields)
+    if missing_fields:
+        kind = "fill_missing_fields"
+    elif consumption_timing == "session_start":
+        kind = "continue_after_read_plan"
+    elif consumption_timing == "pre_tool_use":
+        kind = "preflight_disposition"
+    elif consumption_timing == "completion_claim":
+        kind = "verify_before_completion"
+    elif consumption_timing == "git_commit_msg":
+        kind = "validate_commit"
+    else:
+        kind = "follow_action_guide"
+    return {
+        "kind": kind,
+        "instruction": instruction,
+        "source": "deterministic_template",
+        "source_path": SHORT_SPEC_REFS["01"],
+        "authorization": "none",
+        "boundary": "post_read_action 是读后候选行动，不替代 AI 判断、Human Gate、preflight、commit gate 或完成证明。",
+    }
+
+
+def action_guide_attention_points(
+    *,
+    task_context: dict[str, Any],
+    stop_conditions: list[dict[str, str]],
+    capability_gap: list[dict[str, str]],
+    unverifiable: list[dict[str, str]],
+    read_budget: dict[str, Any],
+) -> list[dict[str, str]]:
+    if task_context.get("scope_status") == "non_governed":
+        return []
+
+    points: list[dict[str, str]] = [
+        {
+            "message": "Action Guide 只提供导航和缺口暴露，不授权写入、完成、风险接受或 Human Gate。",
+            "source_path": SHORT_SPEC_REFS["01"],
+        }
+    ]
+    scope_status = task_context.get("scope_status", "")
+    if scope_status == "governed_single":
+        project_id = task_context.get("governed_project_id", "")
+        points.append({
+            "message": f"当前 target 命中单一管辖项目 {project_id or '<unknown>'}；项目事实源只能来自该项目 ldvh-base/。",
+            "source_path": SHORT_SPEC_REFS["10"],
+        })
+    elif scope_status == "declared_multi_governed":
+        points.append({
+            "message": "当前为多管辖对象读取或审计；必须按项目拆分 read_plan、source_refs、验证和风险。",
+            "source_path": SHORT_SPEC_REFS["10"],
+        })
+    elif scope_status in {"scope_unknown", "governed_target_unknown", "mixed_scope"}:
+        points.append({
+            "message": f"当前 scope_status={scope_status}；不得生成看似完整的项目事实源指南。",
+            "source_path": SHORT_SPEC_REFS["10"],
+        })
+
+    if stop_conditions:
+        points.append({
+            "message": "存在 Stop Conditions；触发时必须暂停、分流或进入 Human Gate，不得声明完成。",
+            "source_path": SHORT_SPEC_REFS["01"],
+        })
+    if capability_gap:
+        points.append({
+            "message": "存在 capability_gap；只能作为缺口暴露或后续分流，不得声明保障已完整生效。",
+            "source_path": SHORT_SPEC_REFS["01"],
+        })
+    if unverifiable:
+        points.append({
+            "message": "存在 unverifiable；不可验证范围必须进入残留风险或后续查询。",
+            "source_path": SHORT_SPEC_REFS["09"],
+        })
+    if read_budget.get("overflow_items", 0):
+        points.append({
+            "message": "超出 P0/P1 的远关系默认进入 next_queries，不全文注入当前上下文。",
+            "source_path": SHORT_SPEC_REFS["01"],
+        })
+    return points[:5]
+
+
 def action_guide_normalized_targets(
     root: Path,
     scope_targets: list[str | Path],
@@ -4540,6 +4718,14 @@ def build_action_guide(
         scope_kind=scope_kind,
         governed_project=resolved_governed_project,
     )
+    action_type = action_guide_action_type(
+        consumption_timing=consumption_timing,
+        timing_known=consumption_timing in allowed_timings,
+        scope_kind=scope_kind,
+        target_path=target_path,
+        scope_targets=scope_targets,
+        governed_project=resolved_governed_project,
+    )
     if resolved_governed_project.get("scope_status") == "non_governed":
         noop_source_refs = [
             {"path": SHORT_SPEC_REFS["01"], "role": "action_guide_noop_boundary"},
@@ -4584,20 +4770,31 @@ def build_action_guide(
                 "read_write_kind": scope_kind,
             },
             "task_context": task_context,
+            "action_type": action_type,
             "relationship_projection": action_guide_relationship_projection(
                 requirements=[],
                 source_refs=noop_source_refs,
                 task_read_plan=[],
                 project_fact_sources=[],
             ),
+            "attention_points": [],
             "requirements": [],
             "task_read_plan": [],
             "read_order": [],
             "suggested_sections": [],
             "guide_receipt": noop_receipt,
+            "tool_plan": [],
             "next_queries": [],
             "stop_conditions": [],
             "validation_guard": [],
+            "post_read_action": {
+                "kind": "no_op",
+                "instruction": "非管辖项目 no-op；不得输出 LDVH guidance、项目事实源 read_plan 或完成声明判断。",
+                "source": "deterministic_template",
+                "source_path": SHORT_SPEC_REFS["10"],
+                "authorization": "none",
+                "boundary": "post_read_action 是读后候选行动，不替代 AI 判断、Human Gate、preflight、commit gate 或完成证明。",
+            },
             "next_action": "非管辖项目 no-op；不得输出 LDVH guidance、项目事实源 read_plan 或完成声明判断。",
             "missing_fields": [],
             "capability_gap": [],
@@ -4741,6 +4938,23 @@ def build_action_guide(
         project_fact_sources=project_fact_sources,
     )
     read_budget = action_guide_read_budget(task_read_plan)
+    attention_points = action_guide_attention_points(
+        task_context=task_context,
+        stop_conditions=stop_conditions,
+        capability_gap=capability_gap,
+        unverifiable=unverifiable,
+        read_budget=read_budget,
+    )
+    tool_plan = action_guide_tool_plan(
+        consumption_timing=consumption_timing,
+        target_path=target_path,
+        scope_kind=scope_kind,
+    )
+    post_read_action = action_guide_post_read_action(
+        consumption_timing=consumption_timing,
+        missing_fields=missing_fields,
+    )
+    next_action = post_read_action["instruction"]
 
     return {
         "metadata": {
@@ -4773,16 +4987,20 @@ def build_action_guide(
             "read_write_kind": scope_kind,
         },
         "task_context": task_context,
+        "action_type": action_type,
         "relationship_projection": relationship_projection,
+        "attention_points": attention_points,
         "requirements": requirements,
         "task_read_plan": task_read_plan,
         "read_order": read_order,
         "suggested_sections": suggested_sections,
         "guide_receipt": guide_receipt,
+        "tool_plan": tool_plan,
         "next_queries": next_queries,
         "stop_conditions": unique_dicts(stop_conditions, ("requirement_id", "condition")),
         "validation_guard": validation_guard,
-        "next_action": action_guide_next_action(consumption_timing, missing_fields),
+        "post_read_action": post_read_action,
+        "next_action": next_action,
         "missing_fields": missing_fields,
         "capability_gap": unique_dicts(capability_gap, ("requirement_id", "required_capability")),
         "unverifiable": unique_dicts(unverifiable, ("code", "target")),
@@ -5116,7 +5334,9 @@ def _empty_action_guide_summary() -> dict[str, Any]:
             "diagnostics": 0,
         },
         "task_context": {},
+        "action_type": {},
         "relationship_projection": [],
+        "attention_points": [],
         "task_read_plan": [],
         "read_order": [],
         "suggested_sections": [],
@@ -5128,7 +5348,11 @@ def _empty_action_guide_summary() -> dict[str, Any]:
             "brief_available": False,
             "boundary": "空 Action Guide 摘要不是事实源、授权、放行或完成证明。",
         },
+        "tool_plan": [],
         "stop_conditions": [],
+        "validation_guard": [],
+        "post_read_action": {},
+        "next_action": "",
         "missing_fields": [],
         "capability_gap": [],
         "unverifiable": [],
@@ -5422,13 +5646,19 @@ def build_preflight(
         "action_guide": {
             "summary": action_guide["summary"],
             "task_context": action_guide["task_context"],
+            "action_type": action_guide["action_type"],
             "relationship_projection": action_guide["relationship_projection"],
+            "attention_points": action_guide["attention_points"],
             "task_read_plan": action_guide["task_read_plan"],
             "read_order": action_guide["read_order"],
             "suggested_sections": action_guide["suggested_sections"],
             "guide_receipt": action_guide["guide_receipt"],
+            "tool_plan": action_guide["tool_plan"],
             "next_queries": action_guide["next_queries"],
             "stop_conditions": action_guide["stop_conditions"],
+            "validation_guard": action_guide["validation_guard"],
+            "post_read_action": action_guide["post_read_action"],
+            "next_action": action_guide["next_action"],
             "missing_fields": action_guide["missing_fields"],
             "capability_gap": action_guide["capability_gap"],
             "unverifiable": action_guide["unverifiable"],

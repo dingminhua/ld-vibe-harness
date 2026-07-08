@@ -86,6 +86,13 @@ def _print_text(result: dict[str, Any]) -> None:
         print(f"- read_write_kind: {task_context.get('read_write_kind', '')}")
         print(f"- governed_project_id: {task_context.get('governed_project_id', '')}")
 
+    action_type = action_guide.get("action_type", {})
+    if action_type:
+        print("\nAction type:")
+        print(f"- action_type: {action_type.get('action_type', '')}")
+        print(f"- source: {action_type.get('action_type_source', '')}")
+        print(f"- authorization: {action_type.get('authorization', '')}")
+
     read_budget = action_guide.get("summary", {}).get("read_budget", {})
     if read_budget:
         print("\nRead budget:")
@@ -95,6 +102,12 @@ def _print_text(result: dict[str, Any]) -> None:
             f"(limits {read_budget.get('p0_inline_limit', 0)}/{read_budget.get('p1_inline_limit', 0)})"
         )
         print(f"- overflow_to: {read_budget.get('overflow_to', '')}")
+
+    attention_points = action_guide.get("attention_points", [])
+    if attention_points:
+        print("\nAttention points:")
+        for item in attention_points:
+            print(f"- {item.get('message', '')}")
 
     read_plan = action_guide.get("task_read_plan", [])
     if read_plan:
@@ -130,6 +143,12 @@ def _print_text(result: dict[str, Any]) -> None:
         for item in validation_guard:
             print(f"- {item.get('requirement_id', '')}: {item.get('guard', '')}")
 
+    tool_plan = action_guide.get("tool_plan", [])
+    if tool_plan:
+        print("\nTool plan:")
+        for item in tool_plan:
+            print(f"- {item.get('tool', '')}: {item.get('command', '')}")
+
     next_queries = action_guide.get("next_queries", [])
     if next_queries:
         print("\nNext queries:")
@@ -158,6 +177,12 @@ def _print_text(result: dict[str, Any]) -> None:
     if next_action:
         print("\nNext action:")
         print(f"- {next_action}")
+
+    post_read_action = action_guide.get("post_read_action", {})
+    if post_read_action:
+        print("\nPost-read action:")
+        print(f"- {post_read_action.get('kind', '')}: {post_read_action.get('instruction', '')}")
+        print(f"- authorization: {post_read_action.get('authorization', '')}")
 
     if result["diagnostics"]:
         print("\nDiagnostics:")
