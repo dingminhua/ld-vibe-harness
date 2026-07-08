@@ -240,6 +240,9 @@ def test_assurance_spec_defines_git_and_environment_hook_boundaries() -> None:
     assert "环境 Hook" in spec_01
     assert "只能定位并调用 LDVH" in spec_01
     assert "核心逻辑都必须留在 LDVH Code 中" in spec_01
+    assert "环境插件必须是薄引用入口" in spec_01
+    assert "不得在不同环境插件中分别实现规则判断、复杂命令分类、target 归口、diagnostic 分流" in spec_01
+    assert "凡是会影响阻断、no-op、diagnostic、验证声明或事实源回写的逻辑" in spec_01
     assert "LDVH 仅支持具备 AI lifecycle Hook 的协作环境" in spec_01
     assert "LDVH 插件、扩展包或 package" in spec_01
     assert "非管辖项目必须静默 no-op" in spec_01
@@ -253,6 +256,8 @@ def test_assurance_spec_defines_git_and_environment_hook_boundaries() -> None:
     assert "Codex 目标环境" in entry_types
     assert "只调用 LDVH" in entry_types
     assert "只指向 LDVH runtime / adapter" in entry_types
+    assert "必须是只指向 LDVH runtime / adapter 的薄引用" in entry_types
+    assert "不得在环境插件中承载规则判断、复杂命令分类、target 归口、diagnostic 分流或状态推进" in entry_types
 
     assert "| `cwd` |" in runtime_payload
     assert "| `config_root` |" in runtime_payload
@@ -1525,6 +1530,9 @@ def test_environment_plugin_template_is_requirement_first_and_current_environmen
     assert "不等于目标环境真实安装或 integrated" in raw
     assert "目标环境插件首先必须满足本文的要求契约" in raw
     assert "真实目标环境可能使用插件包、扩展包、settings hook、marketplace package、adapter 脚本或其它机制" in raw
+    assert "环境插件必须是薄引用，不是环境专属实现层" in raw
+    assert "凡是会影响阻断、no-op、diagnostic、read_plan、repair、bypass、completion、验证声明、事实源回写或状态推进的判断" in raw
+    assert "不得在 Codex、WorkBuddy 或其它环境插件中各自维护一份复杂逻辑" in raw
     assert "环境事件名可以不同，也可以由多个原生事件组合成一个 LDVH canonical event" in raw
     assert "当前 Codex hook 关闭时，Codex 会话只能做 repo-local 代码和样例 shim 验证" in raw
     assert "WorkBuddy hook 开启与否只能由 WorkBuddy 当前环境的真实 lifecycle 输出和 30 验收判断" in raw
@@ -1536,6 +1544,7 @@ def test_environment_plugin_template_is_requirement_first_and_current_environmen
     assert "三层文件结构的最小要求" not in raw
     assert "插件包是否包含 manifest + hooks.json + shim 三个文件 | 不得声明插件编写完成" not in raw
     assert "不得把单一文件结构当成所有环境完成条件" in raw
+    assert "薄 shim 边界" not in raw
     assert "hooks.json 是否注册了至少 SessionStart + PreToolUse + Stop" not in raw
     assert "Hook event routing 或目标环境等价配置是否覆盖 `ldvh.session_start`、`ldvh.pre_tool_use`、`ldvh.completion_claim`" in raw
     assert "每个环境插件必须注册 SessionStart + PreToolUse + Stop" not in raw
@@ -1572,8 +1581,16 @@ def test_environment_plugin_template_is_requirement_first_and_current_environmen
     assert "repo-local 或目标环境等价配置解析检查、shim / adapter 对应语法检查、canonical event fixture 干跑" in raw
     assert "目标环境入口必须按目标环境协议降级为不阻断" in raw
     assert "repo-local 命令式 shim 可以表现为 warning + exit 0" in raw
-    assert "shim / adapter 或目标环境等价入口资产是否只做 payload 翻译 + 调用 LDVH runtime adapter" in raw
-    assert "目标环境入口资产只能承载入口声明、Hook 配置、payload 翻译 / adapter 引用" in raw
+    assert "只读工具操作（Read、Grep、Glob 或目标环境等价只读操作）只能由共享 LDVH Code 或共享分类器判断" in raw
+    assert "薄引用检查" in raw
+    assert "thin reference shim / adapter" in raw
+    assert "目标环境入口资产只能作为薄引用" in raw
+    assert "只能包含入口声明、Hook 配置、环境原生事件映射、payload 字段投影、LDVH root / adapter 引用、输出协议翻译、必要资产引用和按目标环境协议的不阻断降级提示" in raw
+    assert "不得含校验逻辑、命令分类逻辑、target 归口逻辑、diagnostic 分流逻辑或状态推进逻辑" in raw
+    assert "`ldvh.pre_tool_use` 对应 shim / adapter 只投影 tool_name、operation、command_text 和 payload 字段并调用共享 LDVH runtime / classifier" in raw
+    assert "只读跳过由共享 Code 判断，环境入口只翻译 no-op / allow 输出" in raw
+    assert "shim / adapter 必须检查是否为只读操作" not in raw
+    assert "shim / adapter 中读操作判断逻辑" not in raw
     assert "插件要求只交还 30 验收入口或 capability_gap" in raw
     assert "将目标环境真实入口资产部署到实际安装位置" in raw
     assert "目标环境尚无已知 LDVH 入口资产、repo-local 样例、adapter 或插件要求记录" in raw
