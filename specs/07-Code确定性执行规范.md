@@ -238,6 +238,6 @@ Code 暴露规范缺口时，应输出 diagnostic 并回到对应规范、授权
 2. `declared_multi_governed` 的只读审计路径已补本地承接：Human 明确发起跨管辖对象读取、审计或对比时，Code resolver 应表达该分类；写入、提交、迁移和事实源回写仍必须拆分或进入 Human Gate；
 3. `ldvh.completion_claim` 已补当前 diagnostic 消费：runtime facade 不得只检查验证证据非空，必须继续输出未解决 blocker、未验证范围和残留风险的可消费摘要，并保留回归覆盖；
 4. read_plan receipt bootstrap 路径已补受控放行边界；后续仍需保持 `ldvh.acknowledge_read_plan` 或等价 runtime receipt 入口不被 read_plan 消费检查自锁，且不得扩展为任意命令 bypass；
-5. Action Guide governed project 链路 specs 契约已补齐：Code 生成行动指南时必须消费 10 的管辖解析结果，并区分 LDVH specs、LDVH facts、管辖项目 facts 和过程输出；Code builder 实现和回归仍需补齐；
+5. Action Guide governed project 链路 specs 契约和本地 Code builder 已补齐：Code 生成行动指南时必须继续消费 10 的管辖解析结果，并区分 LDVH specs、LDVH facts、管辖项目 facts 和过程输出；后续仍需保持 session_start、runtime facade、CLI / text 输出和回归测试不丢失任务脉络、关系投影、渐进读取、`read_mode`、项目事实源 read_plan、source_refs、validation_guard 和 capability gap；
 6. test runner `verification_plan` 输出已补本地承接：测试 runner 必须继续说明选择理由、覆盖层级、排除层级、未验证范围和 residual risk，并回指 09 的验证入口选择矩阵；
 7. Codex / WorkBuddy shim 命令分类逻辑需要收敛到共享实现，避免环境插件独立实现继续漂移。

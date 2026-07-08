@@ -349,6 +349,10 @@ def test_action_guide_governed_project_contract_is_specified() -> None:
     assert "| `read_mode` | 每个读取项或读取组的披露层级，例如 `result`、`contract`、`section` 或 `full`。 |" in spec_01
     assert "| `guide_receipt` | 对已消费且输入未变化的行动指南返回 brief / receipt 确认，避免重复注入完整上下文。 |" in spec_01
     assert "| `suggested_sections` | 需要优先定位的章节、字段、对象、关系或证据片段。 |" in spec_01
+    assert "### 7.7 行动指南验收清单" in spec_01
+    assert "| 任务脉络 | 输出包含当前任务、消费时机、target、cwd、`scope_status`、管辖项目和当前阶段" in spec_01
+    assert "| 人类可见输出 | 当 Action Guide 以 text、receipt、Hook 消息或其它 Human-facing 形式呈现时" in spec_01
+    assert "而不只展示 read_plan" in spec_01
     assert "必须先消费 10 的管辖解析结果" in spec_01
     assert "| `governed_single` | 可以为该单一管辖对象生成项目事实源" in spec_01
     assert "| `non_governed` | 必须静默 no-op" in spec_01
@@ -363,6 +367,7 @@ def test_action_guide_governed_project_contract_is_specified() -> None:
     assert "`ldvh_specs`、`ldvh_facts`、`governed_project_facts` 和 `process_output`" in spec_07
     assert "`declared_multi_governed` 必须按每个 `governed_subject` 拆分" in spec_07
     assert "不得伪造项目事实源 read_plan" in spec_07
+    assert "Action Guide governed project 链路 specs 契约和本地 Code builder 已补齐" in spec_07
 
     assert "只能以 resolver 输出的 `governed_project_path` 下 `ldvh-base/` 作为项目事实源入口" in spec_10
     assert "不得用 LDVH 本体 `ldvh-base/`、cwd、对话记忆或项目登记配置替代项目事实源" in spec_10
@@ -2591,6 +2596,10 @@ def test_ai_behavior_requirements_reference_allowed_timings(validation_result: d
         assert row["completion_evidence"]
         assert row["blocking_conditions"]
         assert row["gap_disposition"]
+    session_start = next(row for row in requirements if row["requirement_id"] == "AI-BEH-001")
+    assert "Code Action Guide" in session_start["required_capability"]
+    assert "Action Guide 无结果且无 fallback" in session_start["blocking_conditions"]
+    assert "knowledge-map 无结果且无 fallback" not in session_start["blocking_conditions"]
 
 
 def test_takeover_matrix_covers_ai_behavior_requirements(validation_result: dict) -> None:
@@ -3101,6 +3110,62 @@ def test_specs_validate_cli_action_guide_json() -> None:
     assert payload["read_order"]
     assert payload["suggested_sections"]
     assert payload["source_refs"]
+
+
+def test_session_start_text_outputs_action_guide_context() -> None:
+    completed = _run_cli(
+        [
+            sys.executable,
+            "code/session_start.py",
+            "--root",
+            ROOT.as_posix(),
+            "--cwd",
+            ROOT.as_posix(),
+            "--config-root",
+            ROOT.parent.as_posix(),
+            "--target-path",
+            "specs/01-保障与衔接.md",
+            "--task",
+            "Action Guide text output smoke",
+            "--format",
+            "text",
+        ],
+        cwd=ROOT,
+        check=True,
+    )
+
+    output = completed.stdout
+    assert "LDVH v3 ldvh.session_start Action Guide / read_plan" in output
+    assert "Task context:" in output
+    assert "- task: Action Guide text output smoke" in output
+    assert "- stage: session_start" in output
+    assert "- consumption_timing: session_start" in output
+    assert "- trigger_source: hook.runtime" in output
+    assert "- target_path: specs/01-保障与衔接.md" in output
+    assert "- target_paths: specs/01-保障与衔接.md" in output
+    assert f"- cwd: {ROOT.as_posix()}" in output
+    assert "- scope_status: governed_single" in output
+    assert "- read_write_kind: read" in output
+    assert "- governed_project_id: ldvh-v3" in output
+    assert "Read budget:" in output
+    assert "Suggested sections:" in output
+    assert "Relationship projection:" in output
+    assert "Validation guard:" in output
+    assert "Next queries:" in output
+    assert "Capability gaps:" in output
+    assert "Source boundaries:" in output
+    assert "Next action:" in output
+    assert "Authorization: none" in output
+    for forbidden in [
+        "allowed",
+        "approved",
+        "unblocked",
+        "Human Gate 已完成",
+        "风险已接受",
+        "对象已关闭",
+        "任务已完成",
+    ]:
+        assert forbidden not in output
 
 
 def test_preflight_core_spec_marks_human_gate_risk() -> None:

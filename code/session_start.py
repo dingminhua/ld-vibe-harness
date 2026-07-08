@@ -15,6 +15,10 @@ def _bool_text(value: bool) -> str:
     return "true" if value else "false"
 
 
+def _format_ref(item: dict[str, Any]) -> str:
+    return str(item.get("path") or item.get("label") or item.get("to") or item.get("target_path") or "")
+
+
 def build_session_start(
     root: Path = ROOT,
     *,
@@ -50,7 +54,7 @@ def _print_text(result: dict[str, Any]) -> None:
     receipt = result["receipt"]
     action_guide = result["action_guide"] or {}
 
-    print("LDVH v3 ldvh.session_start read_plan")
+    print("LDVH v3 ldvh.session_start Action Guide / read_plan")
     print(f"- status: {summary['status']}")
     print(f"- event: {summary['event']}")
     print(f"- internal_event: {summary['internal_event']}")
@@ -66,6 +70,31 @@ def _print_text(result: dict[str, Any]) -> None:
         print(f"- guide_receipt_id: {guide_receipt.get('receipt_id', '')}")
         print(f"- guide_receipt_storage: {guide_receipt.get('storage', '')}")
 
+    task_context = action_guide.get("task_context", {})
+    if task_context:
+        print("\nTask context:")
+        print(f"- task: {task_context.get('task', '')}")
+        print(f"- stage: {task_context.get('current_stage', '')}")
+        print(f"- consumption_timing: {task_context.get('consumption_timing', '')}")
+        print(f"- trigger_source: {task_context.get('trigger_source', '')}")
+        print(f"- target_path: {task_context.get('target_path', '')}")
+        target_paths = ", ".join(task_context.get("target_paths", []))
+        print(f"- target_paths: {target_paths}")
+        print(f"- cwd: {task_context.get('cwd', '')}")
+        print(f"- scope_status: {task_context.get('scope_status', '')}")
+        print(f"- read_write_kind: {task_context.get('read_write_kind', '')}")
+        print(f"- governed_project_id: {task_context.get('governed_project_id', '')}")
+
+    read_budget = action_guide.get("summary", {}).get("read_budget", {})
+    if read_budget:
+        print("\nRead budget:")
+        print(
+            "- P0/P1: "
+            f"{read_budget.get('p0_items', 0)}/{read_budget.get('p1_items', 0)} "
+            f"(limits {read_budget.get('p0_inline_limit', 0)}/{read_budget.get('p1_inline_limit', 0)})"
+        )
+        print(f"- overflow_to: {read_budget.get('overflow_to', '')}")
+
     read_plan = action_guide.get("task_read_plan", [])
     if read_plan:
         print("\nTask read plan:")
@@ -73,11 +102,61 @@ def _print_text(result: dict[str, Any]) -> None:
             path = item["path"] or item["label"]
             print(f"- {item['priority']}/{item.get('read_mode', 'contract')}: {path} ({item['requirement_id']})")
 
+    suggested_sections = action_guide.get("suggested_sections", [])
+    if suggested_sections:
+        print("\nSuggested sections:")
+        for item in suggested_sections:
+            sections = ", ".join(item.get("sections", []))
+            print(f"- {item.get('path', '')}: {sections}")
+
+    relationships = action_guide.get("relationship_projection", [])
+    if relationships:
+        print("\nRelationship projection:")
+        for item in relationships[:8]:
+            print(f"- {item.get('from', '')} -> {_format_ref(item)} [{item.get('relationship', '')}]")
+        if len(relationships) > 8:
+            print(f"- ... {len(relationships) - 8} more")
+
     stop_conditions = action_guide.get("stop_conditions", [])
     if stop_conditions:
         print("\nStop conditions:")
         for item in stop_conditions:
             print(f"- {item['requirement_id']}: {item['condition']}")
+
+    validation_guard = action_guide.get("validation_guard", [])
+    if validation_guard:
+        print("\nValidation guard:")
+        for item in validation_guard:
+            print(f"- {item.get('requirement_id', '')}: {item.get('guard', '')}")
+
+    next_queries = action_guide.get("next_queries", [])
+    if next_queries:
+        print("\nNext queries:")
+        for item in next_queries:
+            print(f"- {item.get('query', '')}: {item.get('reason', '')}")
+
+    capability_gap = action_guide.get("capability_gap", [])
+    if capability_gap:
+        print("\nCapability gaps:")
+        for item in capability_gap:
+            print(f"- {item.get('required_capability', '')}: {item.get('current_gap', '')}")
+
+    unverifiable = action_guide.get("unverifiable", [])
+    if unverifiable:
+        print("\nUnverifiable:")
+        for item in unverifiable:
+            print(f"- {item.get('code', '')}: {item.get('reason', '')}")
+
+    source_boundaries = action_guide.get("source_boundaries", [])
+    if source_boundaries:
+        print("\nSource boundaries:")
+        for item in source_boundaries:
+            print(f"- {item.get('source_type', '')}: {item.get('boundary', '')}")
+
+    next_action = action_guide.get("next_action", "")
+    if next_action:
+        print("\nNext action:")
+        print(f"- {next_action}")
 
     if result["diagnostics"]:
         print("\nDiagnostics:")
