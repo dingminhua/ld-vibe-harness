@@ -262,11 +262,31 @@ def test_environment_plugin_readmes_use_ldvh_canonical_events() -> None:
         assert "`ldvh.session_start`" in raw
         assert "`ldvh.pre_tool_use`" in raw
         assert "`ldvh.completion_claim`" in raw
+        assert "code/action_classifier.py" in raw
+        assert "shared classifier" in raw
+        assert "shim 中不得维护独立分类规则" in raw
         assert "V3 runtime event" not in raw
         assert "PreToolUse 阻断返回" not in raw
         assert "| `SessionStart` | `session_start` |" not in raw
         assert "| `PreToolUse` | `pre_tool_use` |" not in raw
         assert "| `Stop` | `completion_claim` |" not in raw
+
+
+def test_environment_plugin_practice_and_directory_readme_use_shared_classifier_boundary() -> None:
+    practice = (ROOT / "code/docs/02-Environment-Plugin-Practice.md").read_text(encoding="utf-8")
+    directory_readme = (ROOT / "hooks/environment-plugins/README.md").read_text(encoding="utf-8")
+
+    assert "specs/attachments/33.Att.01-环境插件差异速查.md" in practice
+    assert "code/action_classifier.py" in practice
+    assert "只读 / 写入副作用分类由 `code/action_classifier.py` 统一判断" in practice
+    assert "不维护第二套规则源、字段契约、状态机、事实源、命令分类、target 归口、diagnostic 分流或完成判断" in practice
+    assert "shared classifier parity" in practice
+    assert "code/action_classifier.py" in directory_readme
+    assert "33.Att.01" in directory_readme
+    assert "不维护独立命令分类、target 归口、diagnostic 分流、read_plan、repair、bypass、completion 或状态推进" in directory_readme
+    assert "不复制 specs、事实对象、行动模板、Human Gate 或管辖项目配置内容" in directory_readme
+    assert "定位 LDVH 根目录和已确认的管辖项目配置" not in practice
+    assert "shim 自己判断" not in practice + directory_readme
 
 
 def test_v2_absorbed_icon_assets_have_expected_png_sizes() -> None:

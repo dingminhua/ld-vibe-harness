@@ -1,6 +1,6 @@
 # 环境插件样例包
 
-本文档属于 LDVH Hook 资产目录说明，承接 `code/docs/02-Environment-Plugin-Practice.md` 的实现实践。本文所在目录只保存 repo-local 环境插件样例包和安装前审计材料，不表示任何插件已安装、启用、trusted 或 integrated。
+本文档属于 LDVH Hook 资产目录说明，承接 `code/docs/02-Environment-Plugin-Practice.md` 的实现实践，并回指 `specs/attachments/33.Att.01-环境插件差异速查.md` 的环境能力差异口径。本文所在目录只保存 repo-local 环境插件样例包和安装前审计材料，不表示任何插件已安装、启用、trusted 或 integrated。
 
 ## 目录规则
 
@@ -13,7 +13,7 @@
 | `workbuddy-ldvh-v3/` | WorkBuddy lifecycle hook 样例包 |
 | `workbuddy-ldvh-v3/assets/` | WorkBuddy 样例包展示资产；必须包含 manifest 实际引用的 LDVH 图标 |
 
-后续新增环境样例包时，必须先确认目标环境支持的插件、扩展包或 package 形态，再补对应 manifest、Hook 配置、shim、状态检查和卸载边界。不得把 Codex 样例当成所有环境的总规则。
+后续新增环境样例包时，必须先确认目标环境支持的插件、扩展包或 package 形态，并在 `33.Att.01` 或目标环境官方文档回读中写清环境能力差异，再补对应 manifest、Hook 配置、shim、状态检查和卸载边界。不得把 Codex 样例当成所有环境的总规则。
 
 根目录 `icons/` 是 LDVH 通用图标资产来源，不是环境插件安装源。manifest 实际引用的图标必须复制到对应样例包的 `assets/` 目录，并由测试确认存在；真实安装时应从目标环境插件包读取这些资产，而不是从 LDVH 根目录 `icons/` 读取。
 
@@ -22,12 +22,13 @@
 环境插件样例包必须满足：
 
 1. 只做薄 shim，核心逻辑留在 LDVH Code；
-2. 不复制 specs、事实对象、行动模板、Human Gate 或管辖项目配置；
-3. 只通过 LDVH root 定位 `code/runtime_adapter.py` 或稳定 Code 入口；
+2. 不复制 specs、事实对象、行动模板、Human Gate 或管辖项目配置内容；
+3. 只通过 LDVH root 定位 `code/runtime_adapter.py`、`code/action_classifier.py` 或稳定 Code 入口；
 4. Hook 配置不得覆盖无关用户 Hook；
 5. uninstall 只能移除或禁用 LDVH 自己写入的指针；
 6. manifest 展示资产必须位于插件包内，并通过静态测试确认存在和格式有效；
-7. 未经 Human Gate，不得安装、升级、禁用、卸载或写入用户环境配置。
+7. 不维护独立命令分类、target 归口、diagnostic 分流、read_plan、repair、bypass、completion 或状态推进；
+8. 未经 Human Gate，不得安装、升级、禁用、卸载或写入用户环境配置。
 
 ## 当前状态
 
@@ -40,4 +41,4 @@ python3 code/environment_entry_audit.py --format text
 
 除当前 worktree 的 `git.commit-msg` 外，样例包存在不等于任何环境入口已自动触发。
 
-当前 Codex 样例包的仓库内测试只覆盖 shim 行为、payload 透传、阻断/非阻断返回和 stale path 审计。若环境审计发现 Hook 命令仍指向旧 `code/environment_plugins/` 路径，应标记为需升级或重装。真实安装、升级、禁用、卸载或 rollback 仍必须进入 Human Gate。
+当前样例包的仓库内测试只覆盖 shim 行为、payload 透传、共享 `code/action_classifier.py` 分类一致性、阻断/非阻断返回和 stale path 审计。若环境审计发现 Hook 命令仍指向旧 `code/environment_plugins/` 路径，应标记为需升级或重装。真实安装、升级、禁用、卸载或 rollback 仍必须进入 Human Gate。

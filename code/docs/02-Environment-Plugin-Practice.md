@@ -1,6 +1,6 @@
 # 环境插件与 Hook 接入实现实践
 
-本文是 Code 实现域文档，承接 `specs/01-保障与衔接.md` §6、`specs/04-Specs基础规范.md` 的状态归口原则、`specs/10-安装与配置规范.md` 的安装与配置机器契约、`specs/06-行动模板基础规范.md` 的行动模板父层边界、`specs/30-安装配置与验证行动模板.md` 的 Human-facing 安装行动编排边界、`specs/07-Code确定性执行规范.md` 和 `specs/09-测试与验证规范.md`。本文不定义新的规则源、事实源、Human Gate、环境入口判定分类或管辖项目配置契约；若与 specs 冲突，以 specs 为准。
+本文是 Code 实现域文档，承接 `specs/01-保障与衔接.md` §6、`specs/04-Specs基础规范.md` 的状态归口原则、`specs/10-安装与配置规范.md` 的安装与配置机器契约、`specs/06-行动模板基础规范.md` 的行动模板父层边界、`specs/30-安装配置与验证行动模板.md` 的 Human-facing 安装行动编排边界、`specs/33-环境插件编写与更新行动模板.md`、`specs/attachments/33.Att.01-环境插件差异速查.md`、`specs/07-Code确定性执行规范.md` 和 `specs/09-测试与验证规范.md`。本文不定义新的规则源、事实源、Human Gate、环境入口判定分类或管辖项目配置契约；若与 specs 冲突，以 specs 为准。
 
 本文只处理环境 Hook 的插件化实现实践。Git `commit-msg` shim 和外部管辖项目 Git Hook 实践见 `code/docs/01-Git-Commit-and-Hook-Practice.md`。
 
@@ -27,6 +27,7 @@
 | 目标环境 | 是否支持 Hook | 是否可安装检测 | 断点后验证方式 | 失败时回到哪里 |
 |---|---|---|---|---|
 | Codex 样例 | 有 repo-local 样例 shim；真实环境仍需插件页面、授权和 lifecycle 当次依据 | 可检测 V3 shim、manifest、stale path 和 shim 正反输入 | 按 30 恢复入口运行新会话探针和真实工作流检查 | 插件安装 / 授权诊断，或 30 修复流程 |
+| WorkBuddy 样例 | 有 repo-local 样例 shim；真实环境状态只能由 WorkBuddy 当前环境当次输出或用户回传证据判断 | 可检测样例 manifest、stale path 和 shim 正反输入 | 只能在 WorkBuddy 环境中触发真实 lifecycle；Codex 会话只能审计样例和回传依据 | WorkBuddy 插件更新场景，或 30 修复流程 |
 | Trae / IDE / Agent runner | 只有实装对应插件 / 扩展包后才算支持 | 未实装前不可安装检测 | 通过插件 lifecycle Hook 汇聚到 runtime adapter receipt | 由 01 / 环境审计判定并回到 30 修复流程 |
 | 未知环境 | 需先确认目标环境能力 | 不可直接检测 | 先确认是否存在可安装、可验证、可阻断的 lifecycle Hook | 30 路径确认和环境能力确认 |
 
@@ -34,11 +35,11 @@
 
 1. 接收目标环境的 lifecycle event 和原始 payload；
 2. 保留并透传 payload，不复制 specs、事实对象、行动模板或 Human Gate 判断；
-3. 定位 LDVH 根目录和已确认的管辖项目配置；
-4. 调用 LDVH `code/runtime_adapter.py` 或对应稳定 Code 入口；
+3. 定位 LDVH 根目录，提取 target、cwd、tool_name、command_text、session_id 等可投影字段；
+4. 调用 LDVH `code/runtime_adapter.py`、`code/action_classifier.py` 或对应稳定 Code 入口；
 5. 将 stdout、stderr、exit code 和阻断结果按目标环境约定返回。
 
-核心逻辑必须留在 LDVH Code 中。插件、扩展包或 package 不维护第二套规则源、字段契约、状态机、事实源或完成判断。
+核心逻辑必须留在 LDVH Code 中。插件、扩展包或 package 不维护第二套规则源、字段契约、状态机、事实源、命令分类、target 归口、diagnostic 分流或完成判断。只读 / 写入副作用分类由 `code/action_classifier.py` 统一判断；环境入口只翻译 shared classifier / runtime adapter 的 no-op、allow、deny 或 warning 输出。
 
 ## 最小插件包契约
 
@@ -49,7 +50,7 @@
 | manifest | 说明插件身份、版本、目标环境、LDVH 兼容版本、Hook 入口和卸载方式 |
 | 展示资产 | manifest 引用的 icon / logo / composerIcon 等资产必须在插件包内存在并可被静态校验 |
 | Hook 配置 | 映射目标环境 lifecycle event 到 LDVH canonical event，且不得覆盖无关用户 Hook |
-| shim 命令 | 只调用 LDVH Code 入口，不内嵌规则判断 |
+| shim 命令 | 只调用 LDVH Code 入口，不内嵌规则判断、命令分类、target 归口或 diagnostic 分流 |
 | LDVH root 解析 | 明确从插件配置、工作区配置或显式参数解析 LDVH 根目录 |
 | payload 透传 | 保留目标环境原始 payload，并补充 trigger source、target path、cwd 等上下文 |
 | 证据检查 | 可判断 installed、enabled、trusted、target path、LDVH root 和 stale V2 path |
@@ -211,6 +212,7 @@ python3 <ldvh-root>/code/runtime_adapter.py session-start --root <ldvh-root> --c
 | payload 透传 | 对 `hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py` 传入 Codex-like JSON，检查 `session_id`、target、task、`trigger_source=codex.ldvh-plugin` 进入 `runtime_adapter.py` | 不证明 Codex 已加载插件 |
 | `ldvh.pre_tool_use` 阻断 | 环境 PreToolUse 映射到 `ldvh.pre_tool_use` 后，缺少 `acknowledged_paths` 时 shim 返回 runtime adapter 非零退出并保留 blocking diagnostic | 真实环境还需验证该退出码确实阻断写入工具 |
 | completion 非阻断诊断 | Stop / completion payload 缺少 `verification_evidence` 时输出 blocking diagnostic，但 shim 对 Stop 返回 0，避免样例包阻断环境关闭 | 真实环境接入前需确认 Stop 输出可见性和失败处理 |
+| shared classifier parity | `tests/code/test_environment_plugins.py` 验证 Codex / WorkBuddy shim 对 sed、find、xargs、git、管道和只读命令使用同一 `code/action_classifier.py` 判断 | 不证明目标环境真实 payload 已覆盖所有工具名 |
 | stale V2 path | `environment_entry_audit.py` 识别指向旧 `ld-vibe-harness` / `hook_adapter.py` / `hook_dispatch.py` 的 Codex plugin 命令，判定保持 `available` 而不是 integrated | 修复必须走插件升级 / reinstall Human Gate |
 | install / uninstall / rollback | `governed_hook_adapter.py` 与 `install_git_hooks.py` 的临时 repo 测试覆盖 Git hook shim 安装、Human Gate 缺失阻断、卸载后状态回读 | 不等价于安装用户级环境插件 |
 
@@ -231,7 +233,7 @@ Codex 样例后续进入实装前，至少要补齐：
 1. `hooks/environment-plugins/` 下的 repo-local LDVH Codex plugin package，或用户确认位置下的目标环境插件包；
 2. manifest 和 lifecycle Hook 配置；
 3. manifest 实际引用的插件展示图标资产；
-4. 只调用 V3 `code/runtime_adapter.py` 的薄 shim；
+4. 只调用 V3 `code/runtime_adapter.py` 和 `code/action_classifier.py` 的薄 shim；
 5. `SessionStart`、`PreToolUse`、`Stop` 等环境原生事件到 `ldvh.session_start`、`ldvh.pre_tool_use`、`ldvh.completion_claim` 的 payload 映射；
 6. install、status、trust、disable、uninstall 的可复现步骤；
 7. stale V2 plugin 路径检测和升级前阻断；
