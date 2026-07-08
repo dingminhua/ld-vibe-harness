@@ -1524,6 +1524,7 @@ def test_environment_lifecycle_docs_use_ldvh_canonical_event_direction() -> None
 
 def test_environment_plugin_template_is_requirement_first_and_current_environment_scoped() -> None:
     raw = (ROOT / "specs/33-环境插件编写与更新行动模板.md").read_text(encoding="utf-8")
+    attachment = (ROOT / "specs/attachments/33.Att.01-环境插件差异速查.md").read_text(encoding="utf-8")
 
     assert "33 的主职责是定义插件必须满足的要求和编写/审查流程" in raw
     assert "repo-local 插件包只能作为样例、受管 adapter 或 conformance fixture" in raw
@@ -1603,6 +1604,16 @@ def test_environment_plugin_template_is_requirement_first_and_current_environmen
     assert "编写完成或阻断时是否交还要求 / 入口资产清单、未写入项" in raw
     assert "插件要求只交还 30 验收入口或 capability_gap" in raw
     assert "下一步（30 安装 / 验收入口、目标环境回传证据或 capability_gap 分流）" in raw
+    assert "specs/attachments/33.Att.01-环境插件差异速查.md" in raw
+    assert "33.Att.01" in attachment
+    assert "不是目标环境 Hook API 的完整文档" in attachment
+    assert "目标环境提供" in attachment
+    assert "LDVH 定义 / 承接" in attachment
+    assert "当前 AI 环境只能验收本环境真实 lifecycle" in attachment
+    assert "repo-local 样例包只证明本仓库样例结构和 shim 行为" in attachment
+    assert "只读 / 写入副作用分类归共享 LDVH Code / shared classifier" in attachment
+    assert "Codex 会话不能验收 WorkBuddy lifecycle" in attachment
+    assert "不得复制 Codex / WorkBuddy 标本后声明支持" in attachment
 
 
 def test_code_spec_records_test_runner_verification_plan_as_implemented() -> None:
