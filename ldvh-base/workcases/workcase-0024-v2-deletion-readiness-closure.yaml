@@ -9,7 +9,7 @@ goal: |
   2026-07-07 Human 进一步收紧判断标准：V3 `specs/00` 是已审核目标；本 WorkCase 不全量审计 V2，也不从 Git history 反推迁移清单。执行范围只限当前 V3 specs、事实对象、README 和实现域文档中已经暴露的 V2 / legacy / migration / deletion-readiness 活口径；每条必须回到 00 的 AI-first、事实源边界、保障与衔接层、五类构成要素、V1-V9 和 Human Gate 判断。缺漏后续按 V3 00 重写，不把 V2 重新升格为权威来源。
 status: executing
 created: '2026-07-07T12:48:59+08:00'
-updated: '2026-07-08T16:23:00+08:00'
+updated: '2026-07-08T23:31:00+08:00'
 priority: P0
 description: |
   Human 指出：既然迁移模板预期是迁移完成后 V2 准备删除，那么当前 V3 中仍存在“后续从 V2 筛选 / 判断 / 迁入”的待补齐事项就需要重新审核。
@@ -365,6 +365,7 @@ closed_at: ''
 closure_outcome: ''
 residual_risks: |
   - 本轮已清除当前已识别 active specs / facts 的 V2 活依赖，但这不等于声明 V2 关键内容全量完整迁入；后续发现缺漏时按 V3 00 新建 V3-owned 待办。
+  - 事实模型共享字段契约仍是 V3-owned 后续工作：它的目标是统一 Spark、WorkCase、ADR、Pitfall、Study 等成员中语义相同字段的命名、定义、证据边界和 Code/tests 消费口径，避免各成员规范各自构造同义字段；该工作不作为 V2 删除准备度阻断。
   - 删除准备度检查需要允许审计追溯语境、`migration_sources: v2:...` 和 stale path 检测，不能简单禁止所有 V2 字符串；但不得把 Git history 写成未迁内容承接或验收出口。
   - `workcase-0024` 仍需子 agent 复审和 Human closure 判断；在 Human 明确关闭前，不应把本记录解释为“本地 V2 已可立即删除”的授权。
 followup_refs:
