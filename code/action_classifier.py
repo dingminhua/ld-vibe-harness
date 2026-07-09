@@ -17,12 +17,15 @@ READ_ONLY_TOOLS = {
     "ls",
     "read_thread",
     "read_thread_terminal",
+    "list_projects",
     "codex_app.read_thread",
     "codex_app.read_thread_terminal",
     "codex_app.list_threads",
+    "codex_app.list_projects",
     "codex_appread_thread",
     "codex_appread_thread_terminal",
     "codex_applist_threads",
+    "codex_applist_projects",
     "functions.update_plan",
     "update_plan",
     "close_agent",
@@ -53,6 +56,10 @@ COLLABORATION_TOOL_NAMES = {
     "multi_agent.send_input",
     "multi_agent_v1.send_input",
     "multi_agent_v1send_input",
+    "codex_app.create_thread",
+    "codex_app.send_message_to_thread",
+    "codex_appcreate_thread",
+    "codex_appsend_message_to_thread",
 }
 READ_ONLY_INTENT_MARKERS = (
     "read-only",
@@ -102,6 +109,8 @@ GIT_PUSH_FLAGS = {
 }
 READ_ONLY_SHELL_PIPE_COMMANDS = READ_ONLY_COMMANDS | {"xargs"}
 READ_ONLY_PYTHON_SCRIPT_EVENTS = {
+    "code/environment_entry_audit.py": None,
+    "code/install_verification.py": None,
     "code/session_start.py": None,
     "code/runtime_adapter.py": {"session-start", "session_start", "--help", "-h"},
 }

@@ -336,6 +336,8 @@ def test_shared_action_classifier_noops_codex_read_and_process_tools() -> None:
     for tool_name in (
         "codex_applist_threads",
         "codex_app.list_threads",
+        "codex_applist_projects",
+        "codex_app.list_projects",
         "update_plan",
         "functions.update_plan",
         "close_agent",
@@ -370,6 +372,8 @@ def test_environment_shims_delegate_to_shared_classifier_for_command_parity(tmp_
         'pwd && rg -n "session_start|receipt" -S .',
         "sleep 20",
         f"git -C {ROOT.as_posix()} status --short",
+        "python3 code/environment_entry_audit.py --environment-name Codex --format text",
+        "python3 code/install_verification.py --environment-name Codex --format text",
         "python3 code/session_start.py --task probe --target-path README.md",
     ]
     write_like_commands = [
@@ -977,7 +981,7 @@ def test_codex_sample_shim_allows_explicit_read_operation_without_acknowledgemen
 
 
 def test_codex_sample_shim_allows_codex_app_read_thread_without_acknowledgement() -> None:
-    for tool_name in ("codex_appread_thread", "codex_appread_thread_terminal"):
+    for tool_name in ("codex_appread_thread", "codex_appread_thread_terminal", "codex_applist_projects"):
         completed = _run_shim(
             {
                 "hook_event_name": "PreToolUse",
@@ -1023,6 +1027,19 @@ def test_codex_sample_shim_allows_collaboration_read_only_review_intent_without_
                 "target": "019f39fa-148e-7aa2-b6cd-50504f7a2fa3",
             },
         ),
+        (
+            "codex_app.create_thread",
+            {
+                "prompt": "请新建只读验收线程，只报告 LDVH lifecycle 输出。不要修改文件，不要提交。",
+            },
+        ),
+        (
+            "codex_appsend_message_to_thread",
+            {
+                "prompt": "请继续只读验收并返回原始输出。不要修改文件，不要提交。",
+                "threadId": "019f39fa-148e-7aa2-b6cd-50504f7a2fa3",
+            },
+        ),
     ):
         completed = _run_shim(
             {
@@ -1060,7 +1077,7 @@ def test_codex_sample_shim_blocks_collaboration_write_operation_without_acknowle
 
 
 def test_codex_sample_shim_blocks_collaboration_without_read_only_intent() -> None:
-    for tool_name in ("spawn_agent", "multi_agent_v1send_input"):
+    for tool_name in ("spawn_agent", "multi_agent_v1send_input", "codex_app.create_thread"):
         completed = _run_shim(
             {
                 "hook_event_name": "PreToolUse",
