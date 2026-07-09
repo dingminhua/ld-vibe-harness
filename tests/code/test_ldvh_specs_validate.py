@@ -393,6 +393,7 @@ def test_action_guide_governed_project_contract_is_specified() -> None:
     assert "不得作为完成证明" in spec_01
     assert "| `task_context` | 当前任务、目标对象、已知事实、关键约束和当前所处阶段形成的任务脉络。 |" in spec_01
     assert "| `action_type` | 由显式 action hint、消费时机、读写类型或 target 类型确定的行动分类" in spec_01
+    assert "| `response_check` | AI 在建议、计划、行动开始或交还前可直接消费的轻量判断回答短契约" in spec_01
     assert "| `relationship_projection` | 与当前任务相关的 specs、附件、事实对象、WorkCase、证据、测试和环境入口关系。 |" in spec_01
     assert "| `attention_points` | 当前行动前 3-5 条短提醒" in spec_01
     assert "| `source_outline` | 将 `source_refs`、`task_read_plan`、`read_mode` 和 `source_boundaries` 组织成" in spec_01
@@ -408,6 +409,7 @@ def test_action_guide_governed_project_contract_is_specified() -> None:
     assert "### 7.7 行动指南验收清单" in spec_01
     assert "| 任务脉络 | 输出包含当前任务、消费时机、target、cwd、`scope_status`、管辖项目和当前阶段" in spec_01
     assert "| 行动分类 | `action_type` 必须来自显式 action hint、消费时机、读写类型或 target 类型" in spec_01
+    assert "| 轻量判断 | `response_check` 必须给出意图、00 价值或风险依据" in spec_01
     assert "| 行动提醒 | `attention_points` 应保持 3-5 条短提醒" in spec_01
     assert "| 来源组织 | `source_outline` 必须把来源按 `ldvh_specs`、`ldvh_facts`、`governed_project_facts`" in spec_01
     assert "| 验证组织 | `verification_outline` 必须区分待验证项、fallback、不可验证范围和残留风险" in spec_01
@@ -415,6 +417,7 @@ def test_action_guide_governed_project_contract_is_specified() -> None:
     assert "| 后续展开 | `next_queries` 必须承接缺 target、P2/P3 overflow、远关系" in spec_01
     assert "| 工具与读后行动 | `tool_plan` 和 `post_read_action` 必须是候选导航" in spec_01
     assert "| 人类可见输出 | 当 Action Guide 以 text、receipt、Hook 消息或其它 Human-facing 形式呈现时" in spec_01
+    assert "任务脉络、轻量判断、读取计划" in spec_01
     assert "而不只展示 read_plan" in spec_01
     assert "必须先消费 10 的管辖解析结果" in spec_01
     assert "| `governed_single` | 可以为该单一管辖对象生成项目事实源" in spec_01
@@ -432,6 +435,7 @@ def test_action_guide_governed_project_contract_is_specified() -> None:
     assert "不得伪造项目事实源 read_plan" in spec_07
     assert "Code 生成 Action Guide 的 `action_type`、`attention_points`、`tool_plan` 和 `post_read_action`" in spec_07
     assert "不得从自然语言任务中猜测价值取舍" in spec_07
+    assert "Code 生成 Action Guide 的 `response_check` 时，只能按 01 和 02 的轻量判断回答契约" in spec_07
     assert "Code 生成 Action Guide 的 `source_outline` 时，只能重新组织已有" in spec_07
     assert "不得把未知来源伪装成权威规则" in spec_07
     assert "Code 生成 Action Guide 的 `verification_outline` 时，只能重新组织已有" in spec_07
@@ -2690,6 +2694,11 @@ def test_ai_behavior_requirements_reference_allowed_timings(validation_result: d
     assert "Code Action Guide" in session_start["required_capability"]
     assert "Action Guide 无结果且无 fallback" in session_start["blocking_conditions"]
     assert "knowledge-map 无结果且无 fallback" not in session_start["blocking_conditions"]
+    human_output = next(row for row in requirements if row["requirement_id"] == "AI-BEH-005")
+    assert "建议、计划、行动开始" in human_output["requirement"]
+    assert "Action Guide `response_check`" in human_output["required_capability"]
+    assert "Gate 或 Stop 候选" in human_output["completion_evidence"]
+    assert "高风险场景只给短答不展开" in human_output["blocking_conditions"]
 
 
 def test_takeover_matrix_covers_ai_behavior_requirements(validation_result: dict) -> None:
@@ -2871,6 +2880,13 @@ def test_action_guide_session_start_read_plan() -> None:
     assert guide["action_type"]["action_type"] == "session_start"
     assert guide["action_type"]["action_type_source"] == "consumption_timing"
     assert guide["action_type"]["authorization"] == "none"
+    response_check = guide["response_check"]
+    assert response_check["intent"] == "session_start"
+    assert [item["value"] for item in response_check["value_refs"]] == ["V1", "V2"]
+    assert "减少 AI 盲读入口" in response_check["ai_burden_reduced"]
+    assert response_check["gate_status"]["status"] == "check_required"
+    assert response_check["gate_status"]["stop_condition_candidates"] >= 1
+    assert "不是授权、放行、验证结果" in response_check["boundary"]
     assert guide["guide_receipt"]["persistent"] is False
     assert "不是事实源、授权、放行或完成证明" in guide["guide_receipt"]["boundary"]
     assert 3 <= len(guide["attention_points"]) <= 5
@@ -3455,6 +3471,9 @@ def test_specs_validate_cli_action_guide_json() -> None:
     assert payload["guide_receipt"]["persistent"] is False
     assert payload["action_type"]["action_type"] == "session_start"
     assert payload["action_type"]["authorization"] == "none"
+    assert payload["response_check"]["intent"] == "session_start"
+    assert payload["response_check"]["gate_status"]["status"] == "check_required"
+    assert "不是授权、放行、验证结果" in payload["response_check"]["boundary"]
     assert payload["attention_points"]
     assert payload["source_outline"]["summary"]["groups"] >= 2
     assert payload["source_outline"]["summary"]["consume_now"] >= 3
@@ -3494,6 +3513,10 @@ def test_specs_validate_cli_action_guide_text_outputs_execution_bridge() -> None
     output = completed.stdout
     assert "Action type:" in output
     assert "- action_type: session_start" in output
+    assert "Response check:" in output
+    assert "- values: V1, V2" in output
+    assert "减少 AI 盲读入口" in output
+    assert "boundary: response_check 只承接轻量判断回答" in output
     assert "Attention points:" in output
     assert "Action Guide 只提供导航和缺口暴露" in output
     assert "Source outline:" in output
@@ -3557,6 +3580,9 @@ def test_session_start_text_outputs_action_guide_context() -> None:
     assert "Action type:" in output
     assert "- action_type: session_start" in output
     assert "- authorization: none" in output
+    assert "Response check:" in output
+    assert "- values: V1, V2" in output
+    assert "减少 AI 盲读入口" in output
     assert "Read budget:" in output
     assert "Attention points:" in output
     assert "Action Guide 只提供导航和缺口暴露" in output
@@ -6842,6 +6868,24 @@ def test_preflight_recognizes_git_remote_ref_without_target_unknown(tmp_path: Pa
     assert "PREFLIGHT_GIT_REMOTE_REF_HUMAN_GATE" in codes
     assert "PREFLIGHT_TARGET_UNKNOWN" not in codes
     assert [item["path"] for item in preflight["required_read_plan"]] == GIT_REMOTE_REF_ACK_PATHS
+
+
+def test_preflight_accepts_human_git_push_boundary_phrase(tmp_path: Path) -> None:
+    target = _clean_git_remote_ref_target(tmp_path)
+    preflight = ldvh_specs.build_preflight(
+        ROOT,
+        target_path=target,
+        operation="git_push",
+        task="请把当前 dev-v3 分支 push 到 origin；这只是 git remote push，不是 release、deploy、PR、merge 或 tag。",
+        cwd=ROOT,
+    )
+
+    codes = _diagnostic_codes(preflight)
+    assert preflight["summary"]["target_type"] == "git_remote_ref"
+    assert preflight["summary"]["blocking"] == 0
+    assert "PREFLIGHT_GIT_REMOTE_REF_HUMAN_GATE" in codes
+    assert "PREFLIGHT_GIT_REMOTE_REF_AUTHORIZATION_REQUIRED" not in codes
+    assert "PREFLIGHT_TARGET_UNKNOWN" not in codes
 
 
 def test_preflight_blocks_destructive_or_protected_git_remote_ref() -> None:

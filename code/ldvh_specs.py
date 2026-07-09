@@ -2283,18 +2283,25 @@ def _git_remote_ref_authorized_by_task(task: str, remote: str, ref: str) -> bool
     if not normalized:
         return False
     push_markers = ("git push", " push ", "push ", "推送", "同步")
-    only_push_markers = ("只 push", "只推送", "只同步", "only push")
-    release_markers = ("不做发布", "不发布", "no release", "not release")
-    deploy_markers = ("不部署", "no deploy", "not deploy")
-    pr_markers = ("不创建 pr", "不创建PR".lower(), "no pr", "not pr", "no pull request", "not pull request")
-    merge_markers = ("不 merge", "不合并", "no merge", "not merge")
-    tag_markers = ("不 tag", "不打 tag", "不打tag", "no tag", "not tag")
+    only_push_markers = ("只 push", "只是 git remote push", "只推送", "只同步", "only push")
+    release_markers = ("不做发布", "不发布", "不是 release", "no release", "not release")
+    deploy_markers = ("不部署", "不是 deploy", "no deploy", "not deploy")
+    pr_markers = ("不创建 pr", "不创建PR".lower(), "不是 pr", "no pr", "not pr", "no pull request", "not pull request")
+    merge_markers = ("不 merge", "不合并", "不是 merge", "no merge", "not merge")
+    tag_markers = ("不 tag", "不打 tag", "不打tag", "不是 tag", "no tag", "not tag")
     has_push = any(marker in normalized for marker in push_markers)
     has_only_push = any(marker in normalized for marker in only_push_markers)
     has_remote = bool(remote) and remote.lower() in normalized
     ref_tail = ref.rsplit("/", 1)[-1].lower()
     has_ref = bool(ref_tail) and ref_tail in normalized
-    has_boundary = all(
+    grouped_boundary = (
+        ("不是 release" in normalized or "not release" in normalized or "no release" in normalized)
+        and "deploy" in normalized
+        and "pr" in normalized
+        and "merge" in normalized
+        and "tag" in normalized
+    )
+    has_boundary = grouped_boundary or all(
         any(marker in normalized for marker in markers)
         for markers in (release_markers, deploy_markers, pr_markers, merge_markers, tag_markers)
     )
@@ -4306,6 +4313,109 @@ def action_guide_post_read_action(
     }
 
 
+def action_guide_response_value_refs(consumption_timing: str) -> list[dict[str, str]]:
+    mapping = {
+        "session_start": [
+            {"value": "V1", "reason": "用 P0/P1 读取入口帮助 AI 快速定位。"},
+            {"value": "V2", "reason": "用短契约和渐进披露降低上下文过载。"},
+        ],
+        "acknowledge_read_plan": [
+            {"value": "V4", "reason": "记录入口读取计划已消费，支撑稳定执行。"},
+            {"value": "V6", "reason": "让后续写入或提交前检查有可核对依据。"},
+        ],
+        "pre_tool_use": [
+            {"value": "V3", "reason": "写入前识别 target、风险和阻断候选。"},
+            {"value": "V4", "reason": "把行动收束到已读依据和当前 target。"},
+            {"value": "V5", "reason": "暴露可能需要 Human Gate 的候选。"},
+        ],
+        "git_commit_msg": [
+            {"value": "V3", "reason": "提交前判断范围、验证和 Gate 风险。"},
+            {"value": "V7", "reason": "保护 Git records 的溯源说明不掩盖缺口。"},
+        ],
+        "human_facing_output": [
+            {"value": "V8", "reason": "把建议、计划或交还组织成 Human 可判断短回答。"},
+            {"value": "V5", "reason": "需要确认时显式暴露 Gate 候选。"},
+        ],
+        "external_output_intake": [
+            {"value": "V3", "reason": "先定性过程输出，避免外部输出替代主控判断。"},
+            {"value": "V6", "reason": "区分证据、诊断和未验证范围。"},
+        ],
+        "diagnostic_disposition": [
+            {"value": "V3", "reason": "区分 blocker、warning、follow_up 和 unverifiable。"},
+            {"value": "V9", "reason": "把缺口分流到后续承接位置。"},
+        ],
+        "completion_claim": [
+            {"value": "V5", "reason": "完成声明前检查 Human Gate 未决。"},
+            {"value": "V6", "reason": "完成前必须说明验证和不可验证范围。"},
+        ],
+    }
+    return mapping.get(consumption_timing, [
+        {"value": "V3", "reason": "未知或少见行动需要先判断风险与归口。"},
+    ])
+
+
+def action_guide_response_burden(consumption_timing: str) -> str:
+    mapping = {
+        "session_start": "减少 AI 盲读入口和重复恢复上下文的负担。",
+        "acknowledge_read_plan": "减少后续写入前反复证明已读入口的负担。",
+        "pre_tool_use": "减少 AI 凭聊天记忆越界写入或漏看 Gate 的风险。",
+        "git_commit_msg": "减少把未验证、范围不清或 Gate 未决写入 Git records 的风险。",
+        "human_facing_output": "减少 Human 需要从长段自然语言中反推依据、风险和下一步的负担。",
+        "external_output_intake": "减少把工具、测试或子 Agent 输出误当最终结论的风险。",
+        "diagnostic_disposition": "减少 warning、blocker、follow-up 和不可验证事项静默丢失的风险。",
+        "completion_claim": "减少未验证完成、残留风险被覆盖或 Human Gate 被代签的风险。",
+    }
+    return mapping.get(consumption_timing, "减少 AI 在未知行动中自由发挥和漏分流的风险。")
+
+
+def action_guide_response_check(
+    *,
+    task_context: dict[str, Any],
+    action_type: dict[str, Any],
+    stop_conditions: list[dict[str, str]],
+    capability_gap: list[dict[str, str]],
+    unverifiable: list[dict[str, str]],
+    diagnostics: list[dict[str, Any]],
+    post_read_action: dict[str, str],
+) -> dict[str, Any]:
+    consumption_timing = str(task_context.get("consumption_timing") or action_type.get("action_type") or "")
+    human_gate_candidates = [
+        item for item in stop_conditions
+        if "Human Gate" in item.get("condition", "") or "Human" in item.get("condition", "")
+    ]
+    gate_status = "check_required" if (
+        stop_conditions or capability_gap or unverifiable or diagnostics
+    ) else "not_detected_by_action_guide"
+    target_path = str(task_context.get("target_path") or "")
+    intent = action_type.get("action_type") or consumption_timing or "unknown"
+    if target_path:
+        intent = f"{intent}:{target_path}"
+    return {
+        "intent": intent,
+        "answer_contract": [
+            "意图",
+            "价值或风险依据",
+            "减少的 AI 负担或避免的风险",
+            "Gate / Stop 候选",
+            "下一步分流",
+        ],
+        "value_refs": action_guide_response_value_refs(consumption_timing),
+        "ai_burden_reduced": action_guide_response_burden(consumption_timing),
+        "gate_status": {
+            "status": gate_status,
+            "human_gate_candidates": len(human_gate_candidates),
+            "stop_condition_candidates": len(stop_conditions),
+            "capability_gaps": len(capability_gap),
+            "unverifiable": len(unverifiable),
+            "diagnostics": len(diagnostics),
+        },
+        "next_step": post_read_action.get("instruction", ""),
+        "format_budget": "默认 3-5 行或等价短字段；高风险、Human Gate、规则变更、状态变更、完成声明或不可验证阻断时展开。",
+        "source_path": SHORT_SPEC_REFS["02"],
+        "boundary": "response_check 只承接轻量判断回答；不是授权、放行、验证结果、Human Gate、风险接受或完成证明。",
+    }
+
+
 def action_guide_attention_points(
     *,
     task_context: dict[str, Any],
@@ -5513,6 +5623,7 @@ def build_action_guide(
                 task_read_plan=[],
                 project_fact_sources=[],
             ),
+            "response_check": {},
             "attention_points": [],
             "source_outline": {
                 "summary": {"groups": 0, "items": 0, "consume_now": 0, "reference_only": 0, "deferred": 0},
@@ -5701,6 +5812,15 @@ def build_action_guide(
         consumption_timing=consumption_timing,
         missing_fields=missing_fields,
     )
+    response_check = action_guide_response_check(
+        task_context=task_context,
+        action_type=action_type,
+        stop_conditions=unique_dicts(stop_conditions, ("requirement_id", "condition")),
+        capability_gap=unique_dicts(capability_gap, ("requirement_id", "required_capability")),
+        unverifiable=unique_dicts(unverifiable, ("code", "target")),
+        diagnostics=diagnostics,
+        post_read_action=post_read_action,
+    )
     verification_outline = action_guide_verification_outline(
         consumption_timing=consumption_timing,
         status=status,
@@ -5769,6 +5889,7 @@ def build_action_guide(
         "task_context": task_context,
         "action_type": action_type,
         "relationship_projection": relationship_projection,
+        "response_check": response_check,
         "attention_points": attention_points,
         "source_outline": source_outline,
         "requirements": requirements,
@@ -6158,6 +6279,7 @@ def _empty_action_guide_summary() -> dict[str, Any]:
         "task_context": {},
         "action_type": {},
         "relationship_projection": [],
+        "response_check": {},
         "attention_points": [],
         "source_outline": {
             "summary": {"groups": 0, "items": 0, "consume_now": 0, "reference_only": 0, "deferred": 0},
@@ -6524,6 +6646,7 @@ def build_preflight(
             "summary": action_guide["summary"],
             "task_context": action_guide["task_context"],
             "action_type": action_guide["action_type"],
+            "response_check": action_guide["response_check"],
             "relationship_projection": action_guide["relationship_projection"],
             "attention_points": action_guide["attention_points"],
             "source_outline": action_guide["source_outline"],

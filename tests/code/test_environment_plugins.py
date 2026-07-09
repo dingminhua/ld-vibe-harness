@@ -54,6 +54,25 @@ def _ack_args(paths: list[str]) -> list[str]:
     return args
 
 
+def _clean_git_push_repo(tmp_path: Path) -> Path:
+    repo = tmp_path / "push-repo"
+    repo.mkdir()
+    subprocess.run(["git", "init", "-b", "dev-v3"], cwd=repo, check=True, capture_output=True, text=True)
+    subprocess.run(["git", "config", "user.email", "ldvh@example.test"], cwd=repo, check=True)
+    subprocess.run(["git", "config", "user.name", "LDVH Test"], cwd=repo, check=True)
+    subprocess.run(["git", "remote", "add", "origin", "https://example.test/ldvh/push-repo.git"], cwd=repo, check=True)
+    (repo / "README.md").write_text("push repo\n", encoding="utf-8")
+    subprocess.run(["git", "add", "README.md"], cwd=repo, check=True)
+    subprocess.run(
+        ["git", "-c", "core.hooksPath=/dev/null", "commit", "-m", "init"],
+        cwd=repo,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return repo
+
+
 def _png_dimensions(path: Path) -> tuple[int, int]:
     data = path.read_bytes()
     assert data.startswith(b"\x89PNG\r\n\x1a\n")
@@ -263,6 +282,17 @@ def test_shared_action_classifier_extracts_git_push_remote_ref_target() -> None:
     assert targets[0].startswith("git-remote-ref:origin/dev-v3?")
     assert "flags=set_upstream" in targets[0]
     assert "repo=" in targets[0]
+
+
+def test_shared_action_classifier_targets_ldvh_codex_plugin_install() -> None:
+    payload = _command_payload("codex plugin add ldvh@personal")
+
+    classification = action_classifier.classify_action(payload, ROOT)
+    targets = action_classifier.target_path_values(payload, ROOT)
+
+    assert classification.operation == "write"
+    assert classification.requires_preflight is True
+    assert targets == ["hooks/environment-plugins/codex-ldvh-v3"]
 
 
 def test_shared_action_classifier_keeps_destructive_git_push_in_preflight() -> None:
@@ -1192,6 +1222,52 @@ def test_codex_sample_shim_infers_read_plan_ack_from_transcript(tmp_path: Path) 
     assert completed.returncode == 0
     assert hook_output["hookEventName"] == "PreToolUse"
     assert hook_output["additionalContext"].startswith("LDVH V3 pre-tool check passed.")
+
+
+def test_codex_sample_shim_uses_transcript_user_message_for_git_push_authorization(tmp_path: Path) -> None:
+    repo = _clean_git_push_repo(tmp_path)
+    transcript = tmp_path / "transcript.jsonl"
+    records = [
+        {
+            "payload": {
+                "type": "function_call",
+                "arguments": json.dumps({"cmd": f"cat {path}"}),
+            }
+        }
+        for path in GIT_REMOTE_REF_ACK_PATHS
+    ]
+    records.append(
+        {
+            "payload": {
+                "type": "user_message",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "请把当前 dev-v3 分支 push 到 origin；这只是 git remote push，不是 release、deploy、PR、merge 或 tag。",
+                    }
+                ],
+            }
+        }
+    )
+    transcript.write_text("\n".join(json.dumps(record, ensure_ascii=False) for record in records), encoding="utf-8")
+
+    completed = _run_shim(
+        {
+            "hook_event_name": "PreToolUse",
+            "sessionId": "shim-pretool-git-push-transcript-auth",
+            "cwd": repo.as_posix(),
+            "transcript_path": transcript.as_posix(),
+            "toolName": "functions.exec_command",
+            "arguments": {"cmd": f"git -C {repo.as_posix()} push origin dev-v3"},
+        },
+    )
+
+    payload = json.loads(completed.stdout)
+    hook_output = _hook_output(payload)
+    assert completed.returncode == 0
+    assert hook_output["hookEventName"] == "PreToolUse"
+    assert hook_output["additionalContext"].startswith("LDVH V3 pre-tool check passed.")
+    assert "PREFLIGHT_GIT_REMOTE_REF_AUTHORIZATION_REQUIRED" not in json.dumps(payload, ensure_ascii=False)
 
 
 def test_codex_sample_shim_consumes_session_runtime_cache(tmp_path: Path) -> None:

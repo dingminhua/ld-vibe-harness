@@ -92,6 +92,24 @@ def print_text(result: dict[str, Any], command: str) -> None:
             print(f"- action_type: {action_type.get('action_type', '')}")
             print(f"- source: {action_type.get('action_type_source', '')}")
             print(f"- authorization: {action_type.get('authorization', '')}")
+        if result.get("response_check"):
+            response_check = result["response_check"]
+            gate_status = response_check.get("gate_status", {})
+            value_refs = ", ".join(item.get("value", "") for item in response_check.get("value_refs", []))
+            print("\nResponse check:")
+            print(f"- intent: {response_check.get('intent', '')}")
+            print(f"- values: {value_refs}")
+            print(f"- ai_burden_reduced: {response_check.get('ai_burden_reduced', '')}")
+            print(
+                "- gate_status: "
+                f"{gate_status.get('status', '')} "
+                f"(human_gate={gate_status.get('human_gate_candidates', 0)}, "
+                f"stop={gate_status.get('stop_condition_candidates', 0)}, "
+                f"gap={gate_status.get('capability_gaps', 0)}, "
+                f"unverifiable={gate_status.get('unverifiable', 0)})"
+            )
+            print(f"- next_step: {response_check.get('next_step', '')}")
+            print(f"- boundary: {response_check.get('boundary', '')}")
         if result.get("attention_points"):
             print("\nAttention points:")
             for item in result["attention_points"]:

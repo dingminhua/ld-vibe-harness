@@ -124,6 +124,8 @@ Code 生成管辖项目 Action Guide 时，必须消费 01 和 10 的管辖分�
 
 Code 生成 Action Guide 的 `action_type`、`attention_points`、`tool_plan` 和 `post_read_action` 时，只能基于显式 action hint、消费时机、读写类型、target 类型、管辖解析、保障需求、source_refs、diagnostic、validation guard 和已授权 Code 入口确定性派生。Code 不得从自然语言任务中猜测价值取舍，不得引入未授权命令，不得输出 `allowed`、`approved`、`unblocked` 或等价授权语义；工具建议和读后行动只能作为候选导航，并必须继续交还 AI 主控判断。
 
+Code 生成 Action Guide 的 `response_check` 时，只能按 01 和 02 的轻量判断回答契约，把已知的 action_type、消费时机、target、source_refs、stop_conditions、validation_guard、capability_gap、unverifiable、diagnostics 和 post_read_action 组织成短字段。`response_check` 可以提示 AI 在建议或行动前回答意图、价值或风险依据、减少的 AI 负担、Gate / Stop 候选和下一步分流，但不得替 AI 判断自然语言价值取舍，不得声明授权、放行、验证通过、Human Gate 完成、风险接受或任务完成。
+
 Code 生成 Action Guide 的 `source_outline` 时，只能重新组织已有 `source_refs`、`task_read_plan`、`read_mode`、`source_boundaries`、项目事实源解析和 diagnostic / gap 输出，不得引入新规则、新事实源或新授权判断。`source_outline` 必须区分立即消费、回指保留和后续展开，并保留来源类型、角色、优先级、披露层级和边界说明；无法归类时必须输出 `unclassified` / `process_output` 或 diagnostic，不得把未知来源伪装成权威规则。
 
 Code 生成 Action Guide 的 `verification_outline` 时，只能重新组织已有 `validation_guard`、`stop_conditions`、`capability_gap`、`unverifiable`、diagnostics、fallback 和候选工具信息，不得生成测试结果、完成结论或风险接受。所有检查项必须保留 `result_status` 为 not_run、not_verified、blocked 或等价非通过状态；若存在缺口或不可验证范围，必须进入 fallback / residual risk，而不是被测试建议清零。

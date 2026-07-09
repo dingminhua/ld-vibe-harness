@@ -241,6 +241,60 @@ def transcript_read_paths(payload: dict[str, Any]) -> list[str]:
     return list(dict.fromkeys(paths))
 
 
+def text_fragments(value: Any) -> list[str]:
+    if isinstance(value, str):
+        return [value] if value.strip() else []
+    if isinstance(value, list):
+        fragments: list[str] = []
+        for item in value:
+            fragments.extend(text_fragments(item))
+        return fragments
+    if isinstance(value, dict):
+        fragments: list[str] = []
+        for key in ("text", "message", "input", "content"):
+            fragments.extend(text_fragments(value.get(key)))
+        return fragments
+    return []
+
+
+def transcript_user_messages(payload: dict[str, Any]) -> list[str]:
+    raw_path = first_text(payload.get("transcript_path"), payload.get("transcriptPath"))
+    if not raw_path:
+        return []
+    transcript_path = Path(raw_path).expanduser()
+    if not transcript_path.is_file():
+        return []
+    messages: list[str] = []
+    try:
+        lines = transcript_path.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return []
+    for line in lines:
+        try:
+            record = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        candidates = [record]
+        if isinstance(record, dict) and isinstance(record.get("payload"), dict):
+            candidates.append(record["payload"])
+        for item in candidates:
+            if not isinstance(item, dict):
+                continue
+            role = str(item.get("role") or item.get("author") or item.get("from") or "").lower()
+            record_type = str(item.get("type") or "").lower()
+            if role != "user" and record_type not in {"user", "user_message", "usermessage", "user_prompt", "userprompt"}:
+                continue
+            text = first_text(*text_fragments(item))
+            if text:
+                messages.append(text)
+    return messages
+
+
+def transcript_recent_user_message(payload: dict[str, Any]) -> str:
+    messages = transcript_user_messages(payload)
+    return messages[-1] if messages else ""
+
+
 def acknowledged_paths(payload: dict[str, Any]) -> list[str]:
     explicit = list_text(payload.get("acknowledged_paths") or payload.get("acknowledgedPaths"))
     return list(dict.fromkeys([*explicit, *transcript_read_paths(payload)]))
@@ -277,13 +331,14 @@ def target_path(payload: dict[str, Any], cwd: Path) -> str:
 
 
 def task_text(payload: dict[str, Any]) -> str:
-    return first_text(
+    explicit = first_text(
         payload.get("task"),
         payload.get("prompt"),
         payload.get("user_prompt"),
         payload.get("userPrompt"),
         payload.get("message"),
     )
+    return explicit or transcript_recent_user_message(payload)
 
 
 def explicit_operation(payload: dict[str, Any]) -> str:

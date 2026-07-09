@@ -619,6 +619,19 @@ def git_push_remote_ref_target(command: str, cwd: Path | None = None) -> str:
     return f"git-remote-ref:{quote(remote, safe='')}/{quote(refspec, safe='')}{suffix}"
 
 
+def codex_plugin_environment_target(command: str) -> str:
+    parts = command_parts(command.strip())
+    if len(parts) < 4:
+        return ""
+    executable = Path(parts[0]).name.lower()
+    if executable != "codex" or parts[1:3] != ["plugin", "add"]:
+        return ""
+    plugin_name = parts[3].strip().lower().split("@", 1)[0]
+    if plugin_name != "ldvh":
+        return ""
+    return "hooks/environment-plugins/codex-ldvh-v3"
+
+
 def is_allowed_read_only_python(parts: list[str]) -> bool:
     script = parts[1].strip()
     normalized_script = script.replace("\\", "/")
@@ -756,6 +769,9 @@ def target_path_from_command(payload: dict[str, Any], cwd: Path | None = None) -
     git_remote_ref_target = git_push_remote_ref_target(command, cwd)
     if git_remote_ref_target:
         return git_remote_ref_target
+    codex_plugin_target = codex_plugin_environment_target(command)
+    if codex_plugin_target:
+        return codex_plugin_target
     for pattern in (
         r"^\*\*\* Update File: (.+)$",
         r"^\*\*\* Add File: (.+)$",
