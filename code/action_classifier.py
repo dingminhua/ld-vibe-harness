@@ -349,9 +349,42 @@ def has_unquoted_background_operator(command: str) -> bool:
     return False
 
 
+def has_shell_control_operator(command: str) -> bool:
+    quote = ""
+    escaped = False
+    index = 0
+    while index < len(command):
+        char = command[index]
+        if escaped:
+            escaped = False
+            index += 1
+            continue
+        if char == "\\":
+            escaped = True
+            index += 1
+            continue
+        if quote:
+            if char == quote:
+                quote = ""
+                index += 1
+                continue
+            if quote == '"' and char in {"`", "$"}:
+                return True
+            index += 1
+            continue
+        if char in {"'", '"'}:
+            quote = char
+            index += 1
+            continue
+        if char in {";", ">", "<", "`", "$", "(", ")", "\n", "\r"}:
+            return True
+        index += 1
+    return False
+
+
 def is_likely_read_only_command(command: str) -> bool:
     stripped = command.strip()
-    if not stripped or re.search(r"[;><`$()\n\r]", stripped):
+    if not stripped or has_shell_control_operator(stripped):
         return False
     if has_unquoted_background_operator(stripped):
         return False
@@ -645,6 +678,98 @@ def is_allowed_read_only_python(parts: list[str]) -> bool:
     return False
 
 
+def _is_descriptor_redirection_target(target: str) -> bool:
+    stripped = target.strip()
+    return not stripped or stripped.startswith("&") or stripped.isdigit()
+
+
+def _shell_output_redirection_length(command: str, index: int) -> int:
+    if command.startswith("&>>", index):
+        return 3
+    if command.startswith("&>", index):
+        return 2
+    descriptor_end = index
+    while descriptor_end < len(command) and command[descriptor_end].isdigit():
+        descriptor_end += 1
+    operator_index = descriptor_end if descriptor_end > index else index
+    for operator in (">>", ">|", ">"):
+        if command.startswith(operator, operator_index):
+            return operator_index - index + len(operator)
+    return 0
+
+
+def _read_shell_word(command: str, index: int) -> tuple[str, int]:
+    current: list[str] = []
+    quote = ""
+    escaped = False
+    while index < len(command):
+        char = command[index]
+        if escaped:
+            current.append(char)
+            escaped = False
+            index += 1
+            continue
+        if char == "\\":
+            escaped = True
+            index += 1
+            continue
+        if quote:
+            if char == quote:
+                quote = ""
+            else:
+                current.append(char)
+            index += 1
+            continue
+        if char in {"'", '"'}:
+            quote = char
+            index += 1
+            continue
+        if char.isspace() or char in {";", "|", "&", "<", ">"}:
+            break
+        current.append(char)
+        index += 1
+    return "".join(current).strip(), index
+
+
+def shell_output_redirection_targets(command: str) -> list[str]:
+    targets: list[str] = []
+    index = 0
+    quote = ""
+    escaped = False
+    while index < len(command):
+        char = command[index]
+        if escaped:
+            escaped = False
+            index += 1
+            continue
+        if char == "\\":
+            escaped = True
+            index += 1
+            continue
+        if quote:
+            if char == quote:
+                quote = ""
+            index += 1
+            continue
+        if char in {"'", '"'}:
+            quote = char
+            index += 1
+            continue
+
+        operator_length = _shell_output_redirection_length(command, index)
+        if operator_length:
+            target_start = index + operator_length
+            while target_start < len(command) and command[target_start].isspace():
+                target_start += 1
+            target, target_end = _read_shell_word(command, target_start)
+            if not _is_descriptor_redirection_target(target):
+                targets.append(target)
+            index = max(target_end, target_start + 1)
+            continue
+        index += 1
+    return targets
+
+
 def is_likely_read_only_sed(parts: list[str]) -> bool:
     scripts: list[str] = []
     index = 1
@@ -772,6 +897,9 @@ def target_path_from_command(payload: dict[str, Any], cwd: Path | None = None) -
     codex_plugin_target = codex_plugin_environment_target(command)
     if codex_plugin_target:
         return codex_plugin_target
+    redirection_targets = shell_output_redirection_targets(command)
+    if redirection_targets:
+        return redirection_targets[0]
     for pattern in (
         r"^\*\*\* Update File: (.+)$",
         r"^\*\*\* Add File: (.+)$",

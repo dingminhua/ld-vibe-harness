@@ -72,6 +72,9 @@ PREFLIGHT_TYPE_READ_PATHS = {
         "specs/30-安装配置与验证行动模板.md",
         "code/docs/02-Environment-Plugin-Practice.md",
     ],
+    "scratch": [
+        "specs/09-测试与验证规范.md",
+    ],
     "fact_instance": [
         "specs/05-事实模型基础规范.md",
         "specs/03-事实源与Git溯源规范.md",
@@ -5931,6 +5934,13 @@ def classify_target_path(target_path: str) -> dict[str, str]:
             "target_type": "acceptance_scratch",
             "impact": "low",
             "reason": "目标属于 30 断点后 lifecycle 验证的受控 scratch target，只能用于当次正反例探针，不作为事实源或长期过程状态。",
+        }
+    if normalized.startswith(("tmp/", ".tmp/")):
+        return {
+            "target_path": normalized,
+            "target_type": "scratch",
+            "impact": "low",
+            "reason": "目标属于仓库内临时输出路径，只能作为当次过程输出或 scratch target，不作为事实源、授权或完成证明。",
         }
     if normalized.startswith(GIT_REMOTE_REF_PREFIX):
         git_remote_ref = parse_git_remote_ref_target(normalized)

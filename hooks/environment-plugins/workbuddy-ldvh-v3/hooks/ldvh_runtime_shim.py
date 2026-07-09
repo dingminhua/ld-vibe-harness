@@ -555,22 +555,55 @@ def adapter_dispatch(result: dict[str, Any]) -> dict[str, Any]:
 
 
 def session_additional_context(result: dict[str, Any]) -> str:
-    guide = adapter_dispatch(result).get("action_guide")
+    dispatch = adapter_dispatch(result)
+    summary = dispatch.get("summary")
+    summary = summary if isinstance(summary, dict) else {}
+    receipt = dispatch.get("receipt")
+    receipt = receipt if isinstance(receipt, dict) else {}
+    guide = dispatch.get("action_guide")
     guide = guide if isinstance(guide, dict) else {}
+    guide_summary = guide.get("summary")
+    guide_summary = guide_summary if isinstance(guide_summary, dict) else {}
     read_plan = guide.get("task_read_plan")
     read_plan = read_plan if isinstance(read_plan, list) else []
-    paths = [
-        str(item.get("path") or item.get("label") or "").strip()
-        for item in read_plan
-        if isinstance(item, dict) and str(item.get("path") or item.get("label") or "").strip()
+    paths = []
+    for item in read_plan:
+        if not isinstance(item, dict):
+            continue
+        path = str(item.get("path") or item.get("label") or "").strip()
+        if not path:
+            continue
+        priority = str(item.get("priority") or "ref").strip()
+        role = str(item.get("role") or "").strip()
+        suffix = f" ({role})" if role else ""
+        paths.append(f"{priority}: {path}{suffix}")
+
+    lines = [
+        "LDVH V3 `ldvh.session_start` Action Guide / read_plan is active.",
+        "LDVH V3 session read plan is active.",
+        f"- status: {summary.get('status', result.get('summary', {}).get('status', ''))}",
+        f"- event: {summary.get('event', 'ldvh.session_start')}",
+        f"- receipt_id: {receipt.get('receipt_id', '')}",
+        f"- receipt_storage: {receipt.get('storage', '')}",
+        "- receipt_boundary: process output only; not authorization, not Human Gate, not completion evidence.",
+        (
+            "- action_guide: "
+            f"read_plan={guide_summary.get('task_read_plan', len(read_plan))}, "
+            f"stop_conditions={guide_summary.get('stop_conditions', len(guide.get('stop_conditions', [])))}, "
+            f"validation_guard={guide_summary.get('validation_guard', len(guide.get('validation_guard', [])))}, "
+            f"missing_fields={guide_summary.get('missing_fields', len(guide.get('missing_fields', [])))}, "
+            f"capability_gap={guide_summary.get('capability_gap', len(guide.get('capability_gap', [])))}"
+        ),
     ]
     if not paths:
-        return "LDVH V3 session hook ran. Before substantive edits, identify the applicable LDVH read plan and stop conditions."
-    return (
-        "LDVH V3 session read plan is active. Before substantive edits, read: "
-        + ", ".join(paths[:5])
-        + ". Treat this hook output as guidance, not authorization or completion evidence."
-    )
+        lines.append("- read_plan: unavailable; identify the applicable LDVH read plan and stop conditions before substantive edits.")
+    else:
+        lines.append("- read_plan: " + "; ".join(paths[:5]))
+    next_action = str(guide.get("next_action") or "").strip()
+    if next_action:
+        lines.append("- next_action: " + next_action)
+    lines.append("Treat this hook output as guidance, not authorization or completion evidence.")
+    return "\n".join(lines)
 
 
 def pre_tool_context(result: dict[str, Any]) -> str:

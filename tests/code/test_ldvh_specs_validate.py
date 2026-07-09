@@ -4060,6 +4060,23 @@ def test_preflight_acceptance_scratch_target_is_diagnostic_clear(validation_resu
     }.issubset(read_paths)
 
 
+def test_preflight_tmp_scratch_target_is_target_known(validation_result: dict) -> None:
+    preflight = ldvh_specs.build_preflight(
+        ROOT,
+        target_path="tmp/ldvh-shell-target.txt",
+        operation="write",
+        validation=validation_result,
+    )
+
+    assert preflight["summary"]["status"] == "diagnostic_clear"
+    assert preflight["summary"]["target_type"] == "scratch"
+    assert preflight["input"]["target_path"] == "tmp/ldvh-shell-target.txt"
+    assert "PREFLIGHT_TARGET_UNKNOWN" not in _diagnostic_codes(preflight)
+    read_paths = {item["path"] for item in preflight["required_read_plan"]}
+    assert "specs/09-测试与验证规范.md" in read_paths
+    assert "tmp/ldvh-shell-target.txt" not in read_paths
+
+
 def test_preflight_other_hidden_runtime_target_still_blocks(validation_result: dict) -> None:
     preflight = ldvh_specs.build_preflight(
         ROOT,

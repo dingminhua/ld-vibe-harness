@@ -233,6 +233,7 @@ def test_shared_action_classifier_covers_read_and_write_command_matrix() -> None
     read_only_commands = [
         "pwd",
         'rg -n "read_plan|target_path" code/runtime_adapter.py | sed -n \'1,20p\'',
+        'rg -n ">" code/action_classifier.py',
         "find ldvh-base -maxdepth 2 -type f -print | sort | sed -n '1,120p'",
         'rg -l "LDVH" README.md | xargs wc -l',
         'pwd && rg -n "session_start|receipt" -S .',
@@ -255,6 +256,7 @@ def test_shared_action_classifier_covers_read_and_write_command_matrix() -> None
         "pwd &",
         "git commit -m test",
         "git push -u origin dev-v3",
+        "printf 'LDVH > smoke' >tmp/ldvh-shell-target.txt",
         "python3 -c 'print(1)'",
         'rg -l "LDVH" README.md | xargs rm -f',
         "python3 code/acknowledge_read_plan.py --session-id x --target-path README.md --format json && touch tmp/leak",
@@ -293,6 +295,28 @@ def test_shared_action_classifier_targets_ldvh_codex_plugin_install() -> None:
     assert classification.operation == "write"
     assert classification.requires_preflight is True
     assert targets == ["hooks/environment-plugins/codex-ldvh-v3"]
+
+
+def test_shared_action_classifier_handles_quote_aware_shell_redirection_targets() -> None:
+    read_payload = _command_payload('rg -n ">" code/action_classifier.py')
+
+    assert action_classifier.is_likely_read_only_command('rg -n ">" code/action_classifier.py') is True
+    assert action_classifier.shell_output_redirection_targets('rg -n ">" code/action_classifier.py') == []
+    read_classification = action_classifier.classify_action(read_payload, ROOT)
+    assert read_classification.operation == "read"
+    assert read_classification.requires_preflight is False
+
+    for command, expected_target in {
+        "printf 'LDVH > smoke' >tmp/ldvh-shell-target.txt": "tmp/ldvh-shell-target.txt",
+        "printf 'LDVH > smoke' > tmp/ldvh-shell-target-spaced.txt": "tmp/ldvh-shell-target-spaced.txt",
+    }.items():
+        payload = _command_payload(command)
+        classification = action_classifier.classify_action(payload, ROOT)
+        targets = action_classifier.target_path_values(payload, ROOT)
+
+        assert classification.requires_preflight is True, command
+        assert targets[0] == expected_target, command
+        assert action_classifier.shell_output_redirection_targets(command) == [expected_target]
 
 
 def test_shared_action_classifier_keeps_destructive_git_push_in_preflight() -> None:
@@ -397,6 +421,7 @@ def test_environment_shims_delegate_to_shared_classifier_for_command_parity(tmp_
     read_only_commands = [
         "pwd",
         'rg -n "read_plan|target_path" code/runtime_adapter.py | sed -n \'1,20p\'',
+        'rg -n ">" code/action_classifier.py',
         "find ldvh-base -maxdepth 2 -type f -print | sort | sed -n '1,120p'",
         'rg -l "LDVH" README.md | xargs wc -l',
         'pwd && rg -n "session_start|receipt" -S .',
@@ -417,6 +442,7 @@ def test_environment_shims_delegate_to_shared_classifier_for_command_parity(tmp_
         "find . -name '*.py' -fprintf tmp/list.txt '%p\\n'",
         "pwd &",
         "git push -u origin dev-v3",
+        "printf 'LDVH > smoke' >tmp/ldvh-shell-target.txt",
         "python3 -c 'print(1)'",
         'rg -l "LDVH" README.md | xargs rm -f',
     ]
@@ -487,6 +513,23 @@ def test_environment_shims_project_git_push_to_remote_ref_target(tmp_path: Path)
     assert "PREFLIGHT_GIT_REMOTE_REF_AUTHORIZATION_REQUIRED" in workbuddy_reason
     assert "PREFLIGHT_GIT_REMOTE_REF_WORKTREE_NOT_CLEAN" in codex_reason
     assert "PREFLIGHT_GIT_REMOTE_REF_WORKTREE_NOT_CLEAN" in workbuddy_reason
+    assert "PREFLIGHT_TARGET_UNKNOWN" not in codex_reason
+    assert "PREFLIGHT_TARGET_UNKNOWN" not in workbuddy_reason
+
+
+def test_environment_shims_project_shell_redirection_target(tmp_path: Path) -> None:
+    payload = _command_payload("printf 'LDVH > smoke' >tmp/ldvh-shell-target.txt")
+    codex = _run_shim(payload, check=False)
+    workbuddy = _run_workbuddy_shim(
+        payload,
+        check=False,
+        extra_env={"LDVH_RUNTIME_CACHE_DIR": (tmp_path / "runtime-cache").as_posix()},
+    )
+
+    codex_reason = _hook_output(json.loads(codex.stdout))["permissionDecisionReason"]
+    workbuddy_reason = _hook_output(json.loads(workbuddy.stdout))["permissionDecisionReason"]
+    assert "RUNTIME_READ_PLAN_CONSUMED_EMPTY" in codex_reason
+    assert "RUNTIME_READ_PLAN_CONSUMED_EMPTY" in workbuddy_reason
     assert "PREFLIGHT_TARGET_UNKNOWN" not in codex_reason
     assert "PREFLIGHT_TARGET_UNKNOWN" not in workbuddy_reason
 
@@ -623,7 +666,11 @@ def test_codex_sample_shim_passes_session_payload_to_runtime_adapter() -> None:
     hook_output = _hook_output(payload)
     assert completed.returncode == 0
     assert hook_output["hookEventName"] == "SessionStart"
+    assert "LDVH V3 `ldvh.session_start` Action Guide / read_plan is active." in hook_output["additionalContext"]
     assert "LDVH V3 session read plan is active" in hook_output["additionalContext"]
+    assert "- receipt_id:" in hook_output["additionalContext"]
+    assert "- receipt_boundary: process output only" in hook_output["additionalContext"]
+    assert "- action_guide:" in hook_output["additionalContext"]
     assert "specs/00-理念与构成.md" in hook_output["additionalContext"]
     assert "specs/01-保障与衔接.md" in hook_output["additionalContext"]
     assert "specs/02-AI行为规范.md" in hook_output["additionalContext"]
@@ -1335,7 +1382,10 @@ def test_workbuddy_sample_shim_session_start_does_not_ack_read_plan(tmp_path: Pa
     legacy_cache = tmp_dir / "ldvh-codex-hook" / "receipts" / f"{session_id}.json"
     assert completed.returncode == 0
     assert hook_output["hookEventName"] == "SessionStart"
+    assert "LDVH V3 `ldvh.session_start` Action Guide / read_plan is active." in hook_output["additionalContext"]
     assert "LDVH V3 session read plan is active" in hook_output["additionalContext"]
+    assert "- receipt_boundary: process output only" in hook_output["additionalContext"]
+    assert "- action_guide:" in hook_output["additionalContext"]
     assert not legacy_cache.exists()
 
     completed = _run_workbuddy_shim(
