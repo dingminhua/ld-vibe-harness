@@ -22,7 +22,21 @@ STALE_REPO_ENVIRONMENT_PLUGIN_COMMAND_RE = re.compile(
 )
 CODEX_REQUIRED_HOOK_EVENTS = ("SessionStart", "PreToolUse", "Stop")
 CODEX_ENVIRONMENT_NAME = "Codex"
+WORKBUDDY_ENVIRONMENT_NAME = "WorkBuddy"
 UNKNOWN_ENVIRONMENT_NAME = "未知环境"
+PLUGIN_ROOT_TOKENS = (
+    "$PLUGIN_ROOT",
+    "${PLUGIN_ROOT}",
+    "%PLUGIN_ROOT%",
+    "$CODEBUDDY_PLUGIN_ROOT",
+    "${CODEBUDDY_PLUGIN_ROOT}",
+    "%CODEBUDDY_PLUGIN_ROOT%",
+)
+TARGET_PROJECTION_DELEGATION_SNIPPETS = (
+    "return action_classifier_module().target_path_from_command(payload)",
+    "return action_classifier_module().target_paths_from_patch(payload)",
+    "return action_classifier_module().target_path_values(payload, cwd)",
+)
 
 
 def _bool_text(value: bool) -> str:
@@ -36,6 +50,10 @@ def _environment_name(value: str) -> str:
 
 def _is_codex_environment(value: str) -> bool:
     return _environment_name(value).lower() == CODEX_ENVIRONMENT_NAME.lower()
+
+
+def _is_workbuddy_environment(value: str) -> bool:
+    return _environment_name(value).lower() == WORKBUDDY_ENVIRONMENT_NAME.lower()
 
 
 def _environment_slug(value: str) -> str:
@@ -165,9 +183,31 @@ def _ldvh_plugin_hook_files(codex_home: Path) -> list[Path]:
     return sorted(cache_root.glob("*/hooks/hooks.json"))
 
 
+def _workbuddy_ldvh_plugin_hook_files(workbuddy_home: Path) -> list[Path]:
+    plugin_root = workbuddy_home / "plugins" / "marketplaces" / "ldvh-local" / "plugins" / "ldvh"
+    marketplace_matches = sorted(
+        (workbuddy_home / "plugins" / "marketplaces").glob("*/plugins/ldvh/hooks/hooks.json")
+    )
+    direct = plugin_root / "hooks" / "hooks.json"
+    candidates = [direct, *marketplace_matches]
+    seen: set[str] = set()
+    result: list[Path] = []
+    for path in candidates:
+        normalized = path.resolve().as_posix()
+        if path.is_file() and normalized not in seen:
+            seen.add(normalized)
+            result.append(path)
+    return result
+
+
+def _hook_file_plugin_root(hook_file: Path) -> Path:
+    return hook_file.parent.parent
+
+
 def _hook_entries(hook_files: list[Path]) -> list[dict[str, str]]:
     entries: list[dict[str, str]] = []
     for hook_file in hook_files:
+        plugin_root = _hook_file_plugin_root(hook_file)
         try:
             data = json.loads(hook_file.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
@@ -187,6 +227,7 @@ def _hook_entries(hook_files: list[Path]) -> list[dict[str, str]]:
                         entries.append(
                             {
                                 "file": hook_file.as_posix(),
+                                "plugin_root": plugin_root.as_posix(),
                                 "event": str(event),
                                 "matcher": str(matcher) if matcher is not None else "",
                                 "type": str(item.get("type", "")),
@@ -203,7 +244,17 @@ def _hook_commands(hook_files: list[Path]) -> list[str]:
     return commands
 
 
-def _command_targets_any_path(command: str, paths: set[str]) -> bool:
+def _expand_plugin_root_tokens(command: str, plugin_root: str = "") -> str:
+    if not plugin_root:
+        return command
+    expanded = command
+    for token in PLUGIN_ROOT_TOKENS:
+        expanded = expanded.replace(token, plugin_root)
+    return expanded
+
+
+def _command_targets_any_path(command: str, paths: set[str], *, plugin_root: str = "") -> bool:
+    command = _expand_plugin_root_tokens(command, plugin_root)
     try:
         parts = shlex.split(command)
     except ValueError:
@@ -216,6 +267,89 @@ def _command_targets_any_path(command: str, paths: set[str]) -> bool:
     )
 
 
+def _entry_targets_any_path(entry: dict[str, str], paths: set[str]) -> bool:
+    return _command_targets_any_path(entry["command"], paths, plugin_root=entry.get("plugin_root", ""))
+
+
+def _installed_shim_paths(hook_files: list[Path]) -> list[Path]:
+    roots = sorted({_hook_file_plugin_root(hook_file) for hook_file in hook_files})
+    return [root / "hooks" / "ldvh_runtime_shim.py" for root in roots]
+
+
+def _plugin_manifest_paths(plugin_root: Path) -> list[Path]:
+    return [
+        plugin_root / ".codex-plugin" / "plugin.json",
+        plugin_root / "plugin.json",
+        plugin_root / ".codebuddy-plugin" / "plugin.json",
+    ]
+
+
+def _plugin_manifest_status(plugin_root: Path) -> dict[str, Any]:
+    manifests = [path for path in _plugin_manifest_paths(plugin_root) if path.is_file()]
+    result: dict[str, Any] = {
+        "plugin_root": plugin_root.as_posix(),
+        "manifest_paths": _as_posix(manifests),
+        "non_hook_capability_keys": [],
+    }
+    for manifest in manifests:
+        try:
+            data = json.loads(manifest.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        for key in ("skills", "rules", "mcpServers", "apps"):
+            if key in data:
+                result["non_hook_capability_keys"].append(key)
+        interface = data.get("interface")
+        if isinstance(interface, dict):
+            capabilities = interface.get("capabilities")
+            if isinstance(capabilities, list):
+                result["interface_capabilities"] = [str(item) for item in capabilities]
+    return result
+
+
+def _shim_static_status(shim_path: Path) -> dict[str, Any]:
+    result: dict[str, Any] = {
+        "path": shim_path.as_posix(),
+        "exists": shim_path.is_file(),
+        "thin_target_projection": False,
+        "uses_runtime_adapter": False,
+        "uses_shared_classifier": False,
+        "spark_capture_requires_explicit_dir": False,
+        "contains_spark_capture": False,
+    }
+    if not shim_path.is_file():
+        return result
+    try:
+        raw = shim_path.read_text(encoding="utf-8")
+    except OSError:
+        return result
+    result["thin_target_projection"] = all(snippet in raw for snippet in TARGET_PROJECTION_DELEGATION_SNIPPETS)
+    result["uses_runtime_adapter"] = "runtime_adapter.py" in raw
+    result["uses_shared_classifier"] = "action_classifier_module()" in raw or "action_classifier.py" in raw
+    result["contains_spark_capture"] = "LDVH_HOOK_SPARK_CAPTURE" in raw
+    result["spark_capture_requires_explicit_dir"] = (
+        "LDVH_HOOK_SPARK_DIR" in raw and 'return ldvh_root / "ldvh-base" / "sparks"' not in raw
+    )
+    result["thin_reference_ok"] = bool(
+        result["thin_target_projection"] and result["uses_runtime_adapter"] and result["uses_shared_classifier"]
+    )
+    return result
+
+
+def _installed_package_status(hook_files: list[Path]) -> dict[str, Any]:
+    plugin_roots = sorted({_hook_file_plugin_root(hook_file) for hook_file in hook_files})
+    shim_status = [_shim_static_status(root / "hooks" / "ldvh_runtime_shim.py") for root in plugin_roots]
+    manifest_status = [_plugin_manifest_status(root) for root in plugin_roots]
+    thin_reference_ok = bool(shim_status) and all(item.get("thin_reference_ok") for item in shim_status)
+    return {
+        "plugin_roots": _as_posix(plugin_roots),
+        "shim_paths": [item["path"] for item in shim_status],
+        "shim_static": shim_status,
+        "manifest_static": manifest_status,
+        "thin_reference_ok": thin_reference_ok,
+    }
+
+
 def _required_hook_event_status(entries: list[dict[str, str]], v3_paths: set[str]) -> dict[str, Any]:
     by_event: dict[str, list[dict[str, str]]] = {event: [] for event in CODEX_REQUIRED_HOOK_EVENTS}
     for entry in entries:
@@ -223,7 +357,7 @@ def _required_hook_event_status(entries: list[dict[str, str]], v3_paths: set[str
             by_event[entry["event"]].append(entry)
     satisfied = {
         event: any(
-            entry["type"] == "command" and _command_targets_any_path(entry["command"], v3_paths)
+            entry["type"] == "command" and _entry_targets_any_path(entry, v3_paths)
             for entry in event_entries
         )
         for event, event_entries in by_event.items()
@@ -249,14 +383,16 @@ def _codex_ldvh_plugin_candidate(
     hook_entries = _hook_entries(hook_files)
     commands = [entry["command"] for entry in hook_entries]
     command_blob = "\n".join(commands)
+    installed_package = _installed_package_status(hook_files)
     v3_adapter = (ldvh_root / "code" / "runtime_adapter.py").as_posix()
     v3_codex_shim = (ldvh_root / "hooks" / "environment-plugins" / "codex-ldvh-v3" / "hooks" / "ldvh_runtime_shim.py").as_posix()
-    v3_paths = {v3_adapter, v3_codex_shim}
+    v3_paths = {v3_adapter, v3_codex_shim, *installed_package["shim_paths"]}
     required_hook_status = _required_hook_event_status(hook_entries, v3_paths)
     points_to_v3 = any(
-        entry["type"] == "command" and _command_targets_any_path(entry["command"], v3_paths)
+        entry["type"] == "command" and _entry_targets_any_path(entry, v3_paths)
         for entry in hook_entries
     )
+    installed_shim_exists = any(item.get("exists") for item in installed_package["shim_static"])
     legacy_commands = [command for command in commands if LEGACY_LDVH_PLUGIN_COMMAND_RE.search(command)]
     stale_asset_commands = [
         command for command in commands if STALE_REPO_ENVIRONMENT_PLUGIN_COMMAND_RE.search(command)
@@ -285,7 +421,7 @@ def _codex_ldvh_plugin_candidate(
             hook_entry="code/runtime_adapter.py",
             decision="enable_or_install_v3_plugin",
             reason="检测到 Codex LDVH 插件相关文件，但插件未在 Codex config 中启用。",
-            details={"commands": commands, "hook_entries": hook_entries, **required_hook_status},
+            details={"commands": commands, "hook_entries": hook_entries, "installed_package": installed_package, **required_hook_status},
         )
     if points_to_legacy:
         diagnostics.append(
@@ -311,8 +447,29 @@ def _codex_ldvh_plugin_candidate(
                 "stale_commands": stale_commands,
                 "legacy_commands": legacy_commands,
                 "stale_asset_commands": stale_asset_commands,
+                "installed_package": installed_package,
                 **required_hook_status,
             },
+        )
+    if installed_shim_exists and not installed_package["thin_reference_ok"]:
+        diagnostics.append(
+            _diagnostic(
+                "warning",
+                "ENV_CODEX_LDVH_PLUGIN_STALE_CACHE",
+                installed_package["shim_paths"][0] if installed_package["shim_paths"] else hook_files[0].as_posix(),
+                "检测到已启用的 LDVH Codex 插件 cache，但 installed shim 未满足薄引用边界；需要通过插件升级 / 重装同步到共享 classifier / runtime adapter。",
+            )
+        )
+        return _candidate(
+            entry_id="codex.ldvh-plugin",
+            category="environment_hook",
+            status="available",
+            trigger="Codex lifecycle hooks via LDVH plugin",
+            evidence=evidence,
+            hook_entry="code/runtime_adapter.py",
+            decision="reinstall_for_v3",
+            reason="Codex 插件已启用但真实安装包 / cache 中的 shim 未满足薄引用边界；不能把 repo-local 样例通过写成真实环境入口已对齐。",
+            details={"commands": commands, "hook_entries": hook_entries, "installed_package": installed_package, **required_hook_status},
         )
     if points_to_v3 and required_hook_status["required_events_ok"]:
         return _candidate(
@@ -324,7 +481,7 @@ def _codex_ldvh_plugin_candidate(
             hook_entry="code/runtime_adapter.py",
             decision="verify_trust_and_runtime_before_integration",
             reason="检测到指向当前 V3 的 LDVH 插件 Hook 配置，且 SessionStart、PreToolUse、Stop 三类必需事件齐全；仍需真实触发、payload 和失败处理当次依据后才能声明 integrated。",
-            details={"commands": commands, "hook_entries": hook_entries, **required_hook_status},
+            details={"commands": commands, "hook_entries": hook_entries, "installed_package": installed_package, **required_hook_status},
         )
     if points_to_v3:
         return _candidate(
@@ -336,7 +493,7 @@ def _codex_ldvh_plugin_candidate(
             hook_entry="code/runtime_adapter.py",
             decision="complete_v3_hook_manifest_before_install_verified",
             reason="检测到部分 Codex LDVH Hook 指向当前 V3，但 SessionStart、PreToolUse、Stop 必需事件尚未齐全，不能把安装检测写成通过。",
-            details={"commands": commands, "hook_entries": hook_entries, **required_hook_status},
+            details={"commands": commands, "hook_entries": hook_entries, "installed_package": installed_package, **required_hook_status},
         )
     return _candidate(
         entry_id="codex.ldvh-plugin",
@@ -347,7 +504,89 @@ def _codex_ldvh_plugin_candidate(
         hook_entry="code/runtime_adapter.py",
         decision="audit_plugin_hook_target",
         reason="检测到 LDVH 插件配置或缓存，但 Hook 指向无法归属到当前 V3；不得声明环境入口已接入。",
-        details={"commands": commands, "hook_entries": hook_entries, **required_hook_status},
+        details={"commands": commands, "hook_entries": hook_entries, "installed_package": installed_package, **required_hook_status},
+    )
+
+
+def _workbuddy_ldvh_plugin_candidate(
+    ldvh_root: Path,
+    workbuddy_home: Path,
+    diagnostics: list[dict[str, str]],
+) -> dict[str, Any]:
+    hook_files = _workbuddy_ldvh_plugin_hook_files(workbuddy_home)
+    evidence = _as_posix(hook_files)
+    hook_entries = _hook_entries(hook_files)
+    commands = [entry["command"] for entry in hook_entries]
+    installed_package = _installed_package_status(hook_files)
+    v3_adapter = (ldvh_root / "code" / "runtime_adapter.py").as_posix()
+    v3_workbuddy_shim = (
+        ldvh_root / "hooks" / "environment-plugins" / "workbuddy-ldvh-v3" / "hooks" / "ldvh_runtime_shim.py"
+    ).as_posix()
+    v3_paths = {v3_adapter, v3_workbuddy_shim, *installed_package["shim_paths"]}
+    required_hook_status = _required_hook_event_status(hook_entries, v3_paths)
+    points_to_v3 = any(
+        entry["type"] == "command" and _entry_targets_any_path(entry, v3_paths)
+        for entry in hook_entries
+    )
+
+    if not evidence:
+        return _candidate(
+            entry_id="workbuddy.ldvh-plugin",
+            category="environment_hook",
+            status="absent",
+            trigger="WorkBuddy lifecycle hooks via LDVH plugin, extension package, or adapter",
+            evidence=[],
+            hook_entry="code/runtime_adapter.py",
+            decision="create_target_environment_plugin_before_claiming",
+            reason="未发现 WorkBuddy LDVH lifecycle Hook 插件、扩展包或 adapter 实装依据；Codex 会话不能引用自身插件状态替代 WorkBuddy 入口。",
+            details={
+                "environment_name": WORKBUDDY_ENVIRONMENT_NAME,
+                "target_environment_supported": False,
+                "required_capability": "installable_verifiable_blocking_lifecycle_hook",
+            },
+        )
+    if not installed_package["thin_reference_ok"]:
+        diagnostics.append(
+            _diagnostic(
+                "warning",
+                "ENV_WORKBUDDY_LDVH_PLUGIN_STALE_CACHE",
+                installed_package["shim_paths"][0] if installed_package["shim_paths"] else hook_files[0].as_posix(),
+                "检测到 WorkBuddy LDVH 插件安装目录，但 installed shim 未满足薄引用边界；需要按 33 更新插件并经 30 验收。",
+            )
+        )
+        return _candidate(
+            entry_id="workbuddy.ldvh-plugin",
+            category="environment_hook",
+            status="available",
+            trigger="WorkBuddy lifecycle hooks via LDVH plugin, extension package, or adapter",
+            evidence=evidence,
+            hook_entry="code/runtime_adapter.py",
+            decision="upgrade_workbuddy_plugin_before_claiming",
+            reason="WorkBuddy 插件安装目录存在，但真实 shim 未满足薄引用边界；只能作为待升级入口，不能在 Codex 会话中声明 WorkBuddy lifecycle integrated。",
+            details={"commands": commands, "hook_entries": hook_entries, "installed_package": installed_package, **required_hook_status},
+        )
+    if points_to_v3 and required_hook_status["required_events_ok"]:
+        return _candidate(
+            entry_id="workbuddy.ldvh-plugin",
+            category="environment_hook",
+            status="available",
+            trigger="WorkBuddy lifecycle hooks via LDVH plugin, extension package, or adapter",
+            evidence=evidence,
+            hook_entry="code/runtime_adapter.py",
+            decision="collect_workbuddy_runtime_evidence_before_integration",
+            reason="检测到 WorkBuddy 插件安装目录和薄引用 shim；仍需 WorkBuddy 当前环境真实 lifecycle 输出、payload、阻断和回滚依据后才能声明 integrated。",
+            details={"commands": commands, "hook_entries": hook_entries, "installed_package": installed_package, **required_hook_status},
+        )
+    return _candidate(
+        entry_id="workbuddy.ldvh-plugin",
+        category="environment_hook",
+        status="available",
+        trigger="WorkBuddy lifecycle hooks via LDVH plugin, extension package, or adapter",
+        evidence=evidence,
+        hook_entry="code/runtime_adapter.py",
+        decision="audit_workbuddy_plugin_hook_target",
+        reason="检测到 WorkBuddy 插件安装目录，但 Hook 指向或核心事件覆盖无法归属到当前 V3；不得声明 WorkBuddy lifecycle integrated。",
+        details={"commands": commands, "hook_entries": hook_entries, "installed_package": installed_package, **required_hook_status},
     )
 
 
@@ -378,23 +617,29 @@ def build_environment_entry_audit(
     repo: Path = ROOT,
     ldvh_root: Path = ROOT,
     codex_home: Optional[Path] = None,
+    workbuddy_home: Optional[Path] = None,
     environment_name: str = "",
 ) -> dict[str, Any]:
     resolved_repo = repo.resolve()
     resolved_ldvh_root = ldvh_root.resolve()
     resolved_codex_home = Path(codex_home or os.environ.get("CODEX_HOME") or (Path.home() / ".codex")).resolve()
+    resolved_workbuddy_home = Path(
+        workbuddy_home or os.environ.get("WORKBUDDY_HOME") or (Path.home() / ".workbuddy")
+    ).resolve()
     target_environment = _environment_name(environment_name)
     is_codex = _is_codex_environment(target_environment)
+    is_workbuddy = _is_workbuddy_environment(target_environment)
     environment = build_environment_status(resolved_repo, resolved_ldvh_root)
     diagnostics: list[dict[str, str]] = list(environment["diagnostics"])
 
     env_entrypoints = {entry["id"]: entry for entry in environment["entrypoints"]}
     commit_entry = env_entrypoints.get("git.commit-msg", {})
-    environment_plugin = (
-        _codex_ldvh_plugin_candidate(resolved_ldvh_root, resolved_codex_home, diagnostics)
-        if is_codex
-        else _target_environment_ldvh_plugin_candidate(target_environment)
-    )
+    if is_codex:
+        environment_plugin = _codex_ldvh_plugin_candidate(resolved_ldvh_root, resolved_codex_home, diagnostics)
+    elif is_workbuddy:
+        environment_plugin = _workbuddy_ldvh_plugin_candidate(resolved_ldvh_root, resolved_workbuddy_home, diagnostics)
+    else:
+        environment_plugin = _target_environment_ldvh_plugin_candidate(target_environment)
     candidates: list[dict[str, Any]] = [
         _candidate(
             entry_id="git.commit-msg",
@@ -497,6 +742,8 @@ def build_environment_entry_audit(
     }
     if is_codex:
         metadata["codex_home"] = resolved_codex_home.as_posix()
+    if is_workbuddy:
+        metadata["workbuddy_home"] = resolved_workbuddy_home.as_posix()
 
     summary = {
         "status": "blocked" if blocking else "ok",
@@ -519,6 +766,9 @@ def build_environment_entry_audit(
     if is_codex:
         summary["codex_plugin_entry_integrated"] = bool(environment_plugin["integrated"])
         summary["codex_environment_entry_integrated"] = False
+    if is_workbuddy:
+        summary["workbuddy_plugin_entry_integrated"] = bool(environment_plugin["integrated"])
+        summary["workbuddy_environment_entry_integrated"] = False
 
     return {
         "metadata": metadata,
@@ -554,6 +804,10 @@ def _print_text(result: dict[str, Any]) -> None:
         print(f"- codex_plugin_entry_integrated: {_bool_text(summary['codex_plugin_entry_integrated'])}")
     if "codex_environment_entry_integrated" in summary:
         print(f"- codex_environment_entry_integrated: {_bool_text(summary['codex_environment_entry_integrated'])}")
+    if "workbuddy_plugin_entry_integrated" in summary:
+        print(f"- workbuddy_plugin_entry_integrated: {_bool_text(summary['workbuddy_plugin_entry_integrated'])}")
+    if "workbuddy_environment_entry_integrated" in summary:
+        print(f"- workbuddy_environment_entry_integrated: {_bool_text(summary['workbuddy_environment_entry_integrated'])}")
 
     print("\nCandidates:")
     for candidate in result["candidates"]:
@@ -581,6 +835,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--repo", default=ROOT.as_posix(), help="target repository root")
     parser.add_argument("--ldvh-root", default=ROOT.as_posix(), help="LDVH v3 root containing code/ and hooks/")
     parser.add_argument("--codex-home", default="", help="Codex home containing config.toml and plugin cache")
+    parser.add_argument("--workbuddy-home", default="", help="WorkBuddy home containing local marketplace plugins")
     parser.add_argument("--environment-name", default="", help="target AI environment name, for example Codex or WorkBuddy")
     parser.add_argument("--format", choices=["text", "json"], default="text")
     return parser
@@ -589,10 +844,12 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     codex_home = Path(args.codex_home).resolve() if args.codex_home else None
+    workbuddy_home = Path(args.workbuddy_home).resolve() if args.workbuddy_home else None
     result = build_environment_entry_audit(
         Path(args.repo),
         Path(args.ldvh_root),
         codex_home,
+        workbuddy_home,
         environment_name=args.environment_name,
     )
     if args.format == "json":

@@ -247,26 +247,7 @@ def acknowledged_paths(payload: dict[str, Any]) -> list[str]:
 
 
 def target_path_from_command(payload: dict[str, Any]) -> str:
-    command = command_text(payload)
-    if not command:
-        return ""
-    for pattern in (
-        r"^\*\*\* Update File: (.+)$",
-        r"^\*\*\* Add File: (.+)$",
-        r"^\*\*\* Delete File: (.+)$",
-    ):
-        match = re.search(pattern, command, re.MULTILINE)
-        if match:
-            return match.group(1).strip()
-    for part in reversed(command_parts(command)):
-        candidate = part.strip().strip("'\"")
-        if not candidate or candidate.startswith("-"):
-            continue
-        if candidate in {"python", "python3", "pytest", "py_compile"}:
-            continue
-        if "/" in candidate or candidate.endswith((".md", ".py", ".json", ".toml", ".yaml", ".yml", ".txt")):
-            return candidate
-    return ""
+    return action_classifier_module().target_path_from_command(payload)
 
 
 def patch_text(payload: dict[str, Any]) -> str:
@@ -283,58 +264,11 @@ def patch_text(payload: dict[str, Any]) -> str:
 
 
 def target_paths_from_patch(payload: dict[str, Any]) -> list[str]:
-    raw = patch_text(payload)
-    if not raw:
-        return []
-    values: list[str] = []
-    for pattern in (
-        r"^\*\*\* Update File: (.+)$",
-        r"^\*\*\* Add File: (.+)$",
-        r"^\*\*\* Delete File: (.+)$",
-    ):
-        values.extend(match.strip() for match in re.findall(pattern, raw, flags=re.MULTILINE))
-    return values
+    return action_classifier_module().target_paths_from_patch(payload)
 
 
 def target_path_values(payload: dict[str, Any], cwd: Path) -> list[str]:
-    tool = tool_input(payload)
-    candidates = [
-        payload.get("target_path"),
-        payload.get("targetPath"),
-        payload.get("file_path"),
-        payload.get("filePath"),
-        payload.get("path"),
-        tool.get("file_path"),
-        tool.get("filePath"),
-        tool.get("path"),
-        tool.get("target_path"),
-        tool.get("targetPath"),
-    ]
-    values: list[str] = []
-    for candidate in candidates:
-        if isinstance(candidate, str) and candidate.strip():
-            values.append(candidate.strip())
-    for target_paths in (
-        payload.get("target_paths"),
-        payload.get("targetPaths"),
-        tool.get("target_paths"),
-        tool.get("targetPaths"),
-        payload.get("file_paths"),
-        payload.get("filePaths"),
-        payload.get("paths"),
-        tool.get("file_paths"),
-        tool.get("filePaths"),
-        tool.get("paths"),
-    ):
-        target_paths = list_text(target_paths)
-        for candidate in target_paths:
-            if isinstance(candidate, str) and candidate.strip():
-                values.append(candidate.strip())
-    values.extend(target_paths_from_patch(payload))
-    command_target = target_path_from_command(payload)
-    if command_target:
-        values.append(command_target)
-    return list(dict.fromkeys(values))
+    return action_classifier_module().target_path_values(payload, cwd)
 
 
 def target_path(payload: dict[str, Any], cwd: Path) -> str:
@@ -417,7 +351,7 @@ def spark_dir(ldvh_root: Path) -> Path:
     override = first_text(os.environ.get("LDVH_HOOK_SPARK_DIR"))
     if override:
         return Path(override).expanduser().resolve()
-    return ldvh_root / "ldvh-base" / "sparks"
+    raise ValueError("LDVH_HOOK_SPARK_DIR is required for hook research capture")
 
 
 def next_spark_id(directory: Path) -> str:
@@ -524,7 +458,10 @@ def record_hook_event_to_spark(ldvh_root: Path, payload: dict[str, Any], event: 
     if not hook_spark_capture_enabled():
         return
     now = local_timestamp()
-    path = research_spark_path(ldvh_root)
+    try:
+        path = research_spark_path(ldvh_root)
+    except ValueError:
+        return
     summary = research_summary(payload, event, cwd)
     try:
         if path.exists():

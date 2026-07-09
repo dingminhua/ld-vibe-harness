@@ -273,6 +273,8 @@ specs 编号段表示规范归口和层级承接，不表示五类构成要素�
 
 `role_sections.rule_body` 可以是单个章节标题，也可以是多个章节标题列表，用于指向主体规则区。主体规则区的标题由单篇 spec 自定义，Code 不得因为主体标题不同而判定结构失败。
 
+`role_sections`、identity block、canonical path、code_consumption、显式引用和附件 relation 产生的结构性诊断属于 specs 结构治理问题。若这些诊断发生在当前 primary spec / attachment 上，并导致 Hook 或 validator 在写入前自锁，AI 和 Code 应按 01 的 specs structural repair lane 分流：普通写入停止，`operation=repair` 只允许修复当前 primary 文件的结构映射或字段一致性，修复后用本文验证方法复跑结构检查。该通道不得用于重写规则语义、接受风险、跨 spec 批量迁移或替代 Human Gate。
+
 ### 6.3 `code_consumption`
 
 `code_consumption` 只声明本文提供哪些可被 Code 消费的结构入口。它不得承诺 Code 已经实现，不得把 Code 输出升级为授权、放行、验收或事实源。
@@ -399,6 +401,7 @@ Code 可检查项不应被手写成固定正文清单。Code 覆盖状态应由 
 | 主体规则区 | 本文必须在固定头部和固定尾部之间提供主体规则区，并使用专题小节区分规则簇。 |
 | 固定尾部 | 本文必须具备保障措施、验证方法、Human Gate、Stop Conditions 和待补齐事项。 |
 | 信息角色职责 | 本文每个信息角色不得承载职责闭集之外的核心规则。 |
+| specs structural repair | 当前 primary spec / attachment 的 `role_sections`、identity block、canonical path、code_consumption、显式引用或附件 relation 结构性诊断进入 repair 时，只验证该 primary 结构诊断是否被清除；无关全局诊断只能进入 residual risk，不得让 repair 永久自锁。 |
 | 00 豁免 | 本文只能豁免 00，不能让其他正式规范逃离固定头尾和主体规则区要求。 |
 | 编号分层 | 本文是否声明 specs 编号分层，新增 spec 是否按归口选择编号段。 |
 | 固定尾部跨篇一致性 | 本文固定尾部是否只写本篇归口特定内容，Human Gate/Stop Conditions/待补齐事项是否未重复上位通用条件。 |

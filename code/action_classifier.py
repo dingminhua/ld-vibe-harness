@@ -3,9 +3,11 @@ from __future__ import annotations
 import json
 import re
 import shlex
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote, urlencode
 
 
 READ_ONLY_TOOLS = {
@@ -42,7 +44,7 @@ COMMAND_EXECUTION_TOOLS = {
 }
 WRITE_TOOLS = {"write", "edit", "multiedit", "multi_edit", "apply_patch", "functions.apply_patch"}
 READ_OPERATIONS = {"read", "inspect", "search", "grep", "list", "audit", "review", "diagnose"}
-WRITE_OPERATIONS = {"write", "edit", "apply_patch", "commit", "delete", "move", "install", "update"}
+WRITE_OPERATIONS = {"write", "edit", "apply_patch", "commit", "delete", "move", "install", "update", "git_push"}
 COLLABORATION_TOOL_NAMES = {
     "spawn_agent",
     "multi_agent.spawn_agent",
@@ -74,6 +76,29 @@ READ_ONLY_GIT_SUBCOMMANDS = {
     "rev-parse",
     "show",
     "status",
+}
+GIT_GLOBAL_OPTIONS_WITH_VALUE = {"-C", "-c", "--git-dir", "--namespace", "--work-tree"}
+GIT_PUSH_OPTIONS_WITH_VALUE = {
+    "--exec",
+    "--push-option",
+    "--receive-pack",
+    "--repo",
+    "-o",
+}
+GIT_PUSH_FLAGS = {
+    "--all": "all",
+    "--delete": "delete",
+    "-d": "delete",
+    "--force": "force",
+    "-f": "force",
+    "--force-if-includes": "force_if_includes",
+    "--force-with-lease": "force_with_lease",
+    "--follow-tags": "follow_tags",
+    "--mirror": "mirror",
+    "--prune": "prune",
+    "--set-upstream": "set_upstream",
+    "-u": "set_upstream",
+    "--tags": "tags",
 }
 READ_ONLY_SHELL_PIPE_COMMANDS = READ_ONLY_COMMANDS | {"xargs"}
 READ_ONLY_PYTHON_SCRIPT_EVENTS = {
@@ -352,11 +377,16 @@ def is_likely_read_only_command_segment(command: str) -> bool:
 
 
 def git_subcommand(parts: list[str]) -> str:
+    result = git_subcommand_with_index(parts)
+    return result[0]
+
+
+def git_subcommand_with_index(parts: list[str]) -> tuple[str, int]:
     index = 1
     while index < len(parts):
         part = parts[index]
         lowered = part.lower()
-        if lowered in {"-c", "--git-dir", "--work-tree"}:
+        if lowered in GIT_GLOBAL_OPTIONS_WITH_VALUE:
             index += 2
             continue
         if lowered.startswith("-c") and lowered != "-c":
@@ -365,11 +395,219 @@ def git_subcommand(parts: list[str]) -> str:
         if lowered.startswith("--git-dir=") or lowered.startswith("--work-tree="):
             index += 1
             continue
+        if lowered.startswith("--namespace="):
+            index += 1
+            continue
         if lowered.startswith("-"):
             index += 1
             continue
-        return lowered
-    return ""
+        return lowered, index
+    return "", -1
+
+
+def is_git_push_command(command: str) -> bool:
+    parts = command_parts(command.strip())
+    return bool(parts) and Path(parts[0]).name.lower() == "git" and git_subcommand(parts) == "push"
+
+
+def normalize_git_push_flag(part: str) -> str:
+    if part.startswith("--force-with-lease="):
+        return "force_with_lease"
+    if part.startswith("--push-option="):
+        return "push_option"
+    if part.startswith("--repo="):
+        return "repo"
+    return GIT_PUSH_FLAGS.get(part, "")
+
+
+def _resolve_command_path(path: str, base: Path | None) -> str:
+    if not path:
+        return ""
+    candidate = Path(path).expanduser()
+    if not candidate.is_absolute() and base is not None:
+        candidate = base / candidate
+    try:
+        return candidate.resolve().as_posix()
+    except OSError:
+        return candidate.absolute().as_posix()
+
+
+def git_command_repo_hints(parts: list[str], cwd: Path | None = None) -> tuple[str, str, list[str]]:
+    base = cwd.expanduser() if cwd is not None else None
+    git_dir = ""
+    flags: list[str] = []
+    index = 1
+    while index < len(parts):
+        part = parts[index]
+        lowered = part.lower()
+        if part == "-C":
+            value = parts[index + 1] if index + 1 < len(parts) else ""
+            if value:
+                base = Path(_resolve_command_path(value, base))
+            index += 2
+            continue
+        if lowered == "-c":
+            index += 2
+            continue
+        if lowered in {"--work-tree"}:
+            value = parts[index + 1] if index + 1 < len(parts) else ""
+            if value:
+                base = Path(_resolve_command_path(value, base))
+            index += 2
+            continue
+        if lowered.startswith("--work-tree="):
+            base = Path(_resolve_command_path(parts[index].split("=", 1)[1], base))
+            index += 1
+            continue
+        if lowered == "--git-dir":
+            value = parts[index + 1] if index + 1 < len(parts) else ""
+            if value:
+                git_dir = _resolve_command_path(value, base)
+                flags.append("git_dir")
+            index += 2
+            continue
+        if lowered.startswith("--git-dir="):
+            git_dir = _resolve_command_path(parts[index].split("=", 1)[1], base)
+            flags.append("git_dir")
+            index += 1
+            continue
+        if lowered.startswith("-"):
+            index += 1
+            continue
+        break
+    return _resolve_command_path(base.as_posix(), None) if base is not None else "", git_dir, flags
+
+
+def git_command_repo_hint(parts: list[str], cwd: Path | None = None) -> str:
+    repo, _, _ = git_command_repo_hints(parts, cwd)
+    return repo
+
+
+def _git_output(repo_hint: str, args: list[str]) -> str:
+    if not repo_hint:
+        return ""
+    try:
+        completed = subprocess.run(
+            ["git", "-C", repo_hint, *args],
+            text=True,
+            capture_output=True,
+            timeout=2,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return ""
+    if completed.returncode != 0:
+        return ""
+    return completed.stdout.strip()
+
+
+def git_common_dir_hint(repo_hint: str) -> str:
+    return _git_output(repo_hint, ["rev-parse", "--path-format=absolute", "--git-common-dir"])
+
+
+def git_remote_url_hint(repo_hint: str, remote: str) -> str:
+    if re.match(r"^[a-z][a-z0-9+.-]*://", remote, flags=re.IGNORECASE) or remote.startswith(("git@", "ssh://")):
+        return remote
+    return _git_output(repo_hint, ["remote", "get-url", remote])
+
+
+def git_push_remote_ref_target(command: str, cwd: Path | None = None) -> str:
+    parts = command_parts(command.strip())
+    if not parts or Path(parts[0]).name.lower() != "git":
+        return ""
+    subcommand, subcommand_index = git_subcommand_with_index(parts)
+    if subcommand != "push" or subcommand_index < 0:
+        return ""
+
+    flags: list[str] = []
+    positional: list[str] = []
+    repo_option = ""
+    index = subcommand_index + 1
+    while index < len(parts):
+        part = parts[index]
+        if part == "--":
+            positional.extend(parts[index + 1 :])
+            break
+        if part in GIT_PUSH_OPTIONS_WITH_VALUE:
+            value = parts[index + 1] if index + 1 < len(parts) else ""
+            flag = normalize_git_push_flag(part)
+            if flag:
+                flags.append(flag)
+            if part == "--repo":
+                repo_option = value.strip()
+            index += 2
+            continue
+        if any(part.startswith(option + "=") for option in GIT_PUSH_OPTIONS_WITH_VALUE if option.startswith("--")):
+            flag = normalize_git_push_flag(part)
+            if flag:
+                flags.append(flag)
+            if part.startswith("--repo="):
+                repo_option = part.split("=", 1)[1].strip()
+            index += 1
+            continue
+        flag = normalize_git_push_flag(part)
+        if flag:
+            flags.append(flag)
+            index += 1
+            continue
+        if part.startswith("-"):
+            index += 1
+            continue
+        positional.append(part)
+        index += 1
+
+    if repo_option:
+        positional = [repo_option, *positional]
+    remote = positional[0].strip() if positional else ""
+    refspec = positional[1].strip() if len(positional) > 1 else ""
+    if len(positional) > 2 and refspec != "tag":
+        flags.append("multi_refspec")
+    if refspec == "tag" and len(positional) > 2:
+        flags.append("tags")
+        refspec = f"refs/tags/{positional[2].strip()}"
+    if not refspec:
+        if "mirror" in flags:
+            refspec = "*"
+        elif "tags" in flags:
+            refspec = "refs/tags/*"
+        elif "all" in flags:
+            refspec = "refs/heads/*"
+    if not remote:
+        flags.append("missing_remote")
+        remote = "unknown"
+    if not refspec:
+        flags.append("missing_ref")
+        refspec = "unknown"
+
+    if refspec.startswith("+"):
+        flags.append("force")
+        refspec = refspec[1:]
+    if ":" in refspec:
+        local_ref, remote_ref = refspec.split(":", 1)
+        if not local_ref:
+            flags.append("delete")
+        refspec = remote_ref or refspec
+    if refspec.startswith("+"):
+        flags.append("force")
+        refspec = refspec[1:]
+    if not refspec:
+        flags.append("missing_ref")
+        refspec = "unknown"
+
+    repo_hint, git_dir_hint, global_flags = git_command_repo_hints(parts, cwd)
+    flags.extend(global_flags)
+    common_dir = git_dir_hint or git_common_dir_hint(repo_hint)
+    remote_url = "" if git_dir_hint else git_remote_url_hint(repo_hint, remote)
+    unique_flags = sorted(set(flag for flag in flags if flag))
+    query = {
+        "flags": ",".join(unique_flags),
+        "repo": repo_hint,
+        "git_dir": git_dir_hint,
+        "common_dir": common_dir,
+        "remote_url": remote_url,
+    }
+    suffix = "?" + urlencode({key: value for key, value in query.items() if value}) if any(query.values()) else ""
+    return f"git-remote-ref:{quote(remote, safe='')}/{quote(refspec, safe='')}{suffix}"
 
 
 def is_allowed_read_only_python(parts: list[str]) -> bool:
@@ -502,10 +740,13 @@ def target_paths_from_patch(payload: dict[str, Any]) -> list[str]:
     return values
 
 
-def target_path_from_command(payload: dict[str, Any]) -> str:
+def target_path_from_command(payload: dict[str, Any], cwd: Path | None = None) -> str:
     command = command_text(payload)
     if not command:
         return ""
+    git_remote_ref_target = git_push_remote_ref_target(command, cwd)
+    if git_remote_ref_target:
+        return git_remote_ref_target
     for pattern in (
         r"^\*\*\* Update File: (.+)$",
         r"^\*\*\* Add File: (.+)$",
@@ -560,7 +801,7 @@ def target_path_values(payload: dict[str, Any], cwd: Path | None = None) -> list
             if isinstance(candidate, str) and candidate.strip():
                 values.append(candidate.strip())
     values.extend(target_paths_from_patch(payload))
-    command_target = target_path_from_command(payload)
+    command_target = target_path_from_command(payload, cwd)
     if command_target:
         values.append(command_target)
     return list(dict.fromkeys(values))
@@ -667,6 +908,13 @@ def classify_action(payload: dict[str, Any], cwd: Path | None = None) -> ActionC
                 side_effect_class="none",
                 requires_preflight=False,
                 reason="read_only_command",
+            )
+        if is_git_push_command(command):
+            return ActionClassification(
+                operation="git_push",
+                side_effect_class="git_remote_ref_write",
+                requires_preflight=True,
+                reason="git_push_remote_ref_write",
             )
         return ActionClassification(
             operation=operation_hint if operation_hint else "write",

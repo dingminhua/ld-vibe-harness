@@ -118,6 +118,10 @@ V3 删除准备度和当前主线验收必须以当前工作树自足为准。�
 
 Git commit records 用于溯源文件事实源的修改。它们回答本次修改改了什么、为什么改、影响哪里、如何验证和后续风险是什么。
 
+Git remote ref 同步用于把本地 Git records 或 refs 同步到远端仓库。`git push` 会改变远端 branch、tag 或其它 ref，因此不是只读命令；但普通分支 push 也不等同于 release、部署、PR、merge 或 tag。AI 和 Code 必须把这类动作区分为远端 Git ref target，而不是文件事实源写入。
+
+远端 Git ref target 至少应包含当前 repo / Git common-dir、remote 名称、remote URL 或可回查线索、ref / refspec 和操作模式。普通分支同步需要 Human 当场明确指令、工作区状态检查、remote/ref 明确和未验证范围说明；`--force`、`--force-with-lease`、`--delete`、`--mirror`、`--tags`、tag ref、默认主分支或 protected-like ref 必须进入更强 Human Gate。远端同步成功只说明远端 ref 已尝试更新或已更新，不新增事实源、不替代文件事实源、不替代 commit 契约、不证明任务完成，也不授权发布、部署、PR 或 merge。
+
 V3 保留 commit 契约的父层规则：
 
 1. 提交首行应表达单一主意图和主承载域；
@@ -137,6 +141,7 @@ V3 保留 commit 契约的父层规则：
 | 状态归口要求 | 运行、验证、审计、交互或展示输出中的 status/state 不得被写成事实源状态 | 本文、04、05 | 事实源治理 | 使用 Code、Web、测试、环境审计或安装检测输出时 |
 | Git 溯源要求 | 文件事实源修改应可通过 Git commit records 回查 | 本文、31 Git 提交行动模板、Code/tests | 溯源治理 | 提交正式 docs、Code、tests 或事实源修改时 |
 | commit 契约要求 | 提交说明不得替代验证、Human Gate 或事实源正文 | 本文、31 Git 提交行动模板、09 验证声明 | 提交治理 | 生成 commit message 或提交前检查时 |
+| Git 远端 ref 同步要求 | `git push` 等远端 ref 变更必须识别 repo / remote / ref target，不得当作只读、发布、部署、PR、merge 或完成证明 | 本文、01、10、09、Code/tests | 远端同步治理 | 执行或预检远端 ref 写入时 |
 
 ## 9. 验证方法
 
@@ -149,6 +154,7 @@ V3 保留 commit 契约的父层规则：
 | 状态归口检查 | 只有 specs / attachments 生命周期状态和事实对象业务状态被记录为稳定状态，其它 status/state 是否只作为过程输出或验证证据 | 回到 04 状态归口原则或 05 事实对象规则 |
 | 回写检查 | 过程输出被采纳时是否说明采纳范围、目标位置和验证方式 | 记录为 unverifiable 或 follow-up |
 | Git 溯源检查 | 提交说明是否说明关键变更和验证，不掩盖风险 | 回到 commit 契约、行动模板或 Human Gate |
+| Git 远端 ref 检查 | 远端同步是否识别 repo / remote / ref target，是否区分普通分支同步与 force/delete/mirror/tag/protected-like ref，是否说明不等于发布、部署、PR、merge 或完成证明 | 停止远端写入，补 target、验证或进入 Human Gate |
 
 Code 可以检查路径、source_refs、commit message 格式和诊断结构；AI 必须判断事实源权威、采纳范围和残留风险；Human Gate 负责确认高影响事实源改变和风险接受。
 
@@ -161,6 +167,7 @@ Code 可以检查路径、source_refs、commit message 格式和诊断结构；A
 3. 改变 commit 契约导致溯源能力下降；
 4. 将 Git commit records 升级为事实对象或替代文件事实源；
 5. 接受事实源冲突、不可验证证据或未完成回写的长期风险。
+6. 执行或允许 Git 远端 ref 写入，尤其是 force、delete、mirror、tag、默认主分支或 protected-like ref。
 
 ## 11. Stop Conditions
 
@@ -169,6 +176,7 @@ Code 可以检查路径、source_refs、commit message 格式和诊断结构；A
 1. 无法判断权威事实源位置；
 2. commit message 掩盖未验证范围、Human Gate 未决或事实源冲突；
 3. 需要接受事实源不一致或不可溯源风险但未获得 Human 确认。
+4. `git push` 等远端 ref 写入无法识别 repo、remote 或 ref，或被误写成只读、发布、部署、PR、merge、tag、完成证明或事实源更新。
 
 ## 12. 待补齐事项
 

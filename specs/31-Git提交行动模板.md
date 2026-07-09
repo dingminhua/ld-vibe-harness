@@ -70,7 +70,7 @@ Git 提交行动主要服务 V2、V3、V4、V6、V7、V8 和 V9：它让 AI 快�
 
 本文归口定义 Git 提交行动的步骤组织、提交范围 Gate、验证和交还边界。
 
-本文不归口定义 commit message 字段闭集、type / scope 枚举、body 条件、验证声明字段定义、测试治理、Hook 安装、commit gate 实现、Git 命令实践、Code 输出 schema 或 CI 规则。这些分别由 03、03.Att.01、09、09.Att.01、01、07、10、Code 和 tests 承接。
+本文不归口定义 commit message 字段闭集、type / scope 枚举、body 条件、验证声明字段定义、测试治理、Hook 安装、commit gate 实现、Git 命令实践、Git remote ref 同步、Code 输出 schema 或 CI 规则。这些分别由 03、03.Att.01、09、09.Att.01、01、07、10、Code 和 tests 承接。
 
 本文可以组织“读取工作区、判断范围、必要时拆分、形成提交说明、验证、提交、交还”的行动顺序，也可以把 commit validator、Hook 或测试输出作为过程证据交还主控 AI 判断；但不得把工具通过写成 Human Gate 已完成、不得把 Git commit records 写成事实对象、不得把未验证范围隐藏在提交说明外。
 
@@ -92,7 +92,7 @@ Git 提交行动主要服务 V2、V3、V4、V6、V7、V8 和 V9：它让 AI 快�
 
 本文承接 Git 状态读取、diff 判断、验证证据、提交后交还和失败分流能力。历史 Skill 或外部包装只能作为来源线索和包装候选，不恢复 Skill 顶层机制；即使后续存在外部包装，行动结果仍必须交还主控 AI 判断。
 
-当前最小闭环包括：读取用户目标和工作区、判断 staged / unstaged / untracked 范围、必要时拆分、引用 03.Att.01 形成提交说明、执行匹配验证或说明未验证范围、运行 commit validator 或等价提交消息检查、创建提交、交还结果和残留风险。Hook 安装、commit gate 部署、CI 配置和环境入口接入不由本文授权。
+当前最小闭环包括：读取用户目标和工作区、判断 staged / unstaged / untracked 范围、必要时拆分、引用 03.Att.01 形成提交说明、执行匹配验证或说明未验证范围、运行 commit validator 或等价提交消息检查、创建提交、交还结果和残留风险。Hook 安装、commit gate 部署、Git push / 远端 ref 同步、CI 配置和环境入口接入不由本文授权。
 
 ## 6. Git 提交行动边界
 

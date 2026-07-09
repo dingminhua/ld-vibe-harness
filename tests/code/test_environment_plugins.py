@@ -37,6 +37,14 @@ WORKCASE_ACK_PATHS = [
     "specs/21-WorkCase-工作项.md",
     WORKCASE_TARGET,
 ]
+GIT_REMOTE_REF_ACK_PATHS = [
+    *ENTRY_ACK_PATHS,
+    "specs/03-事实源与Git溯源规范.md",
+    "specs/04-Specs基础规范.md",
+    "specs/10-安装与配置规范.md",
+    "specs/09-测试与验证规范.md",
+    "specs/31-Git提交行动模板.md",
+]
 
 
 def _ack_args(paths: list[str]) -> list[str]:
@@ -227,6 +235,7 @@ def test_shared_action_classifier_covers_read_and_write_command_matrix() -> None
         "find . -name '*.py' -fls tmp/list.txt",
         "pwd &",
         "git commit -m test",
+        "git push -u origin dev-v3",
         "python3 -c 'print(1)'",
         'rg -l "LDVH" README.md | xargs rm -f',
         "python3 code/acknowledge_read_plan.py --session-id x --target-path README.md --format json && touch tmp/leak",
@@ -240,6 +249,87 @@ def test_shared_action_classifier_covers_read_and_write_command_matrix() -> None
     for command in write_like_commands:
         classification = action_classifier.classify_action(_command_payload(command), ROOT)
         assert classification.requires_preflight is True, command
+
+
+def test_shared_action_classifier_extracts_git_push_remote_ref_target() -> None:
+    payload = _command_payload("git -C /tmp/repo push -u origin dev-v3")
+
+    classification = action_classifier.classify_action(payload, ROOT)
+    targets = action_classifier.target_path_values(payload, ROOT)
+
+    assert classification.operation == "git_push"
+    assert classification.side_effect_class == "git_remote_ref_write"
+    assert classification.requires_preflight is True
+    assert targets[0].startswith("git-remote-ref:origin/dev-v3?")
+    assert "flags=set_upstream" in targets[0]
+    assert "repo=" in targets[0]
+
+
+def test_shared_action_classifier_keeps_destructive_git_push_in_preflight() -> None:
+    payload = _command_payload("git push --force origin main")
+
+    classification = action_classifier.classify_action(payload, ROOT)
+    targets = action_classifier.target_path_values(payload, ROOT)
+
+    assert classification.operation == "git_push"
+    assert classification.requires_preflight is True
+    assert targets[0].startswith("git-remote-ref:origin/main?")
+    assert "flags=force" in targets[0]
+    assert "repo=" in targets[0]
+
+
+def test_shared_action_classifier_marks_dangerous_git_push_forms() -> None:
+    cases = {
+        "git push origin :dev-v3": "delete",
+        "git push --delete origin dev-v3": "delete",
+        "git push origin tag v1.0.0": "tags",
+        "git push --follow-tags origin dev-v3": "follow_tags",
+        "git push --prune origin dev-v3": "prune",
+        "git push --repo=https://example.test/repo.git dev-v3": "repo",
+        "git push --mirror origin": "mirror",
+        "git push --tags": "tags",
+        "git push --all origin": "all",
+        "git push --force-with-lease origin dev-v3": "force_with_lease",
+        "git push --force-if-includes origin dev-v3": "force_if_includes",
+        "git push origin +dev-v3": "force",
+        "git --git-dir=/tmp/other.git push origin dev-v3": "git_dir",
+        "git push origin dev-v3 main": "multi_refspec",
+        "git push origin dev-v3 +main": "multi_refspec",
+    }
+
+    for command, expected_flag in cases.items():
+        payload = _command_payload(command)
+        classification = action_classifier.classify_action(payload, ROOT)
+        targets = action_classifier.target_path_values(payload, ROOT)
+
+        assert classification.operation == "git_push", command
+        assert classification.requires_preflight is True, command
+        assert targets and targets[0].startswith("git-remote-ref:"), command
+        assert expected_flag in targets[0], command
+
+
+def test_shared_action_classifier_keeps_incomplete_git_push_as_remote_ref_target() -> None:
+    for command, expected_flag in {
+        "git push": "missing_remote",
+        "git push origin": "missing_ref",
+        "git push --force": "missing_remote",
+    }.items():
+        payload = _command_payload(command)
+        classification = action_classifier.classify_action(payload, ROOT)
+        targets = action_classifier.target_path_values(payload, ROOT)
+
+        assert classification.operation == "git_push", command
+        assert classification.requires_preflight is True, command
+        assert targets and targets[0].startswith("git-remote-ref:"), command
+        assert expected_flag in targets[0], command
+
+
+def test_shared_action_classifier_encodes_git_push_url_remote() -> None:
+    payload = _command_payload("git push --repo=https://example.test/repo.git dev-v3")
+    targets = action_classifier.target_path_values(payload, ROOT)
+
+    assert targets and targets[0].startswith("git-remote-ref:https%3A%2F%2Fexample.test%2Frepo.git/dev-v3")
+    assert "flags=repo" in targets[0]
 
 
 def test_shared_action_classifier_noops_codex_read_and_process_tools() -> None:
@@ -292,6 +382,7 @@ def test_environment_shims_delegate_to_shared_classifier_for_command_parity(tmp_
         "find . -name '*.py' -fprint tmp/list.txt",
         "find . -name '*.py' -fprintf tmp/list.txt '%p\\n'",
         "pwd &",
+        "git push -u origin dev-v3",
         "python3 -c 'print(1)'",
         'rg -l "LDVH" README.md | xargs rm -f',
     ]
@@ -345,6 +436,27 @@ def test_environment_shims_allow_nested_read_only_command_payloads(tmp_path: Pat
         assert "RUNTIME_READ_PLAN_CONSUMED_EMPTY" in workbuddy_output["permissionDecisionReason"]
 
 
+def test_environment_shims_project_git_push_to_remote_ref_target(tmp_path: Path) -> None:
+    payload = _command_payload("git push -u origin dev-v3")
+    codex = _run_shim(payload, check=False)
+    workbuddy = _run_workbuddy_shim(
+        payload,
+        check=False,
+        extra_env={"LDVH_RUNTIME_CACHE_DIR": (tmp_path / "runtime-cache").as_posix()},
+    )
+
+    codex_reason = _hook_output(json.loads(codex.stdout))["permissionDecisionReason"]
+    workbuddy_reason = _hook_output(json.loads(workbuddy.stdout))["permissionDecisionReason"]
+    assert "RUNTIME_READ_PLAN_CONSUMED_EMPTY" in codex_reason
+    assert "RUNTIME_READ_PLAN_CONSUMED_EMPTY" in workbuddy_reason
+    assert "PREFLIGHT_GIT_REMOTE_REF_AUTHORIZATION_REQUIRED" in codex_reason
+    assert "PREFLIGHT_GIT_REMOTE_REF_AUTHORIZATION_REQUIRED" in workbuddy_reason
+    assert "PREFLIGHT_GIT_REMOTE_REF_WORKTREE_NOT_CLEAN" in codex_reason
+    assert "PREFLIGHT_GIT_REMOTE_REF_WORKTREE_NOT_CLEAN" in workbuddy_reason
+    assert "PREFLIGHT_TARGET_UNKNOWN" not in codex_reason
+    assert "PREFLIGHT_TARGET_UNKNOWN" not in workbuddy_reason
+
+
 def test_environment_shims_do_not_keep_local_command_classification_registries() -> None:
     shared_raw = (ROOT / "code/action_classifier.py").read_text(encoding="utf-8")
     assert "READ_ONLY_COMMANDS =" in shared_raw
@@ -355,6 +467,7 @@ def test_environment_shims_do_not_keep_local_command_classification_registries()
         assert "READ_ONLY_COMMANDS =" not in raw
         assert "COMMAND_EXECUTION_TOOLS =" not in raw
         assert "READ_ONLY_TOOLS =" not in raw
+        assert "return action_classifier_module().target_path_values(payload, cwd)" in raw
 
 
 def test_codex_sample_plugin_manifest_consumes_package_icons() -> None:

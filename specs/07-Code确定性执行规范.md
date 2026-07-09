@@ -154,10 +154,10 @@ Code 可以在 preflight / runtime facade 中实现 `operation=repair` 或等价
 
 Repair mode 必须同时满足：
 
-1. target 归口为单一事实对象实例；
+1. target 归口为单一事实对象实例、正式 spec 或授权附件；
 2. 待处理 diagnostic 的 scope 是当前 target 的 `target_primary`；
-3. diagnostic code 属于本文定义的可修复事实对象结构诊断闭集；
-4. 当前动作不推进状态、不关闭对象、不接受风险、不迁移事实源、不跨对象合并写入；
+3. diagnostic code 属于本文定义的可修复事实对象结构诊断闭集或 specs / attachment 结构诊断闭集；
+4. 当前动作不推进状态、不关闭对象、不接受风险、不迁移事实源、不跨对象合并写入、不改写规则语义；
 5. 输出必须标明 `mode=repair`、target、diagnostic code、blocking 计算口径、source_refs 和 final validation 要求。
 
 当前可修复事实对象结构诊断闭集为：
@@ -174,7 +174,34 @@ Repair mode 必须同时满足：
 | `FACT_INSTANCE_STATUS_INVALID` | 状态值不在闭集内 |
 | `FACT_INSTANCE_LEGACY_FIELD_FORBIDDEN` | 出现禁止保留的 legacy 字段 |
 
-不在该闭集内的 diagnostic、非事实对象 target、状态推进、关闭判断、Human Gate 风险接受、业务语义判断或跨对象迁移，必须输出 blocker 或 Human Gate diagnostic，不得被 repair mode 放行。Repair mode 的 Code 实现若发现 specs 没有覆盖的新诊断码，必须回到本文或对应事实模型规范补齐后再允许自动处理。
+事实对象 target 上不在该闭集内的 diagnostic、非结构性事实对象改写、状态推进、关闭判断、Human Gate 风险接受、业务语义判断或跨对象迁移，必须输出 blocker 或 Human Gate diagnostic，不得被 repair mode 放行。Repair mode 的 Code 实现若发现 specs 没有覆盖的新诊断码，必须回到本文或对应事实模型规范补齐后再允许自动处理。
+
+当前可修复 specs / attachment 结构诊断闭集为：
+
+| diagnostic code | 含义 |
+|---|---|
+| `MISSING_IDENTITY_FIELD` | identity block 缺少必填字段 |
+| `CANONICAL_PATH_MISMATCH` | canonical_path 与实际路径不一致 |
+| `CODE_CONSUMPTION_MISSING` | spec 缺少 code_consumption |
+| `ROLE_SECTIONS_MISSING` | 非 00 spec 缺少 role_sections |
+| `ROLE_SECTION_NOT_FOUND` | role_sections 指向不存在的 H2 |
+| `REFERENCE_FIELD_NOT_LIST` | basis / related_specs / active_fact_source 等引用字段不是列表 |
+| `REFERENCE_NOT_FOUND` | spec 引用的路径不存在 |
+| `DUPLICATE_OBJECT_ID` | specs 或附件对象 ID 重复 |
+| `ATTACHMENT_RELATION` | attachment relation 不符合授权关系 |
+| `MISSING_PARENT_SPEC` | attachment parent_spec 不存在 |
+
+上述 specs / attachment 诊断只有在 diagnostic path 等于当前 primary target，且 target 类型是 `spec`、`core_spec` 或 `attachment` 时，才能被 repair mode 计为可修复。`ROLE_SECTION_NOT_FOUND` 这类诊断的修复目标是恢复 metadata 与当前 Markdown H2 结构的一致性；不得借此新增规则语义、接受 Human Gate 风险、删除固定尾部、绕开 04 的结构要求或批量重排其它 spec。
+
+不在上述闭集内的 specs diagnostic、非结构性 target、状态推进、关闭判断、Human Gate 风险接受、业务语义判断、规则语义改写或跨对象迁移，必须输出 blocker 或 Human Gate diagnostic，不得被 repair mode 放行。
+
+### 7.2 外部入口共享 Code 归口
+
+Code 是外部入口薄引用目标的确定性承接层。Git Hook、环境 Hook、环境插件、扩展包、package、runtime shim / adapter、真实安装包、插件 cache 或 marketplace package 只能调用共享 LDVH Code；会影响阻断、no-op、diagnostic、read_plan 消费、target 归口、读写副作用分类、repair / completion、验证声明、事实源回写或 Human Gate 分流的判断，必须由 Code 中的共享 resolver、classifier、runtime adapter、validator 或 facade 承接。
+
+`code/action_classifier.py` 归口读写副作用分类、命令解析、target / target_paths 投影和 Git remote ref target 识别。`code/runtime_adapter.py` 与 runtime facade 归口 LDVH canonical event、payload 消费、preflight、completion、repair、receipt 和诊断输出。环境 shim / adapter 可以做字段提取和输出协议翻译，但不得维护独立命令分类表、target 解析器、diagnostic scope 规则、read_plan 消费判定、状态推进或事实源写入逻辑。
+
+环境入口审计、安装检测和验证输出必须能区分 repo-local 样例、真实安装包 / cache / marketplace package、命令直测和真实 lifecycle integrated。Code 发现真实安装件仍复制旧 shim 逻辑、指向 stale path、缺少核心三事件、含非 Hook 能力声明、或未委托共享 classifier / runtime adapter 时，只能输出 `available`、`deferred`、`failed`、`unverifiable` 或 diagnostic，不得声明 integrated。
 
 ## 8. Code 变更纪律
 
@@ -248,4 +275,4 @@ Code 暴露规范缺口时，应输出 diagnostic 并回到对应规范、授权
 4. read_plan receipt bootstrap 路径已补受控放行边界；后续仍需保持 `ldvh.acknowledge_read_plan` 或等价 runtime receipt 入口不被 read_plan 消费检查自锁，且不得扩展为任意命令 bypass；
 5. Action Guide governed project 链路 specs 契约和本地 Code builder 已补齐：Code 生成行动指南时必须继续消费 10 的管辖解析结果，并区分 LDVH specs、LDVH facts、管辖项目 facts 和过程输出；后续仍需保持 session_start、runtime facade、CLI / text 输出和回归测试不丢失任务脉络、行动分类、行动提醒、工具建议、读后行动、关系投影、渐进读取、`read_mode`、项目事实源 read_plan、source_refs、validation_guard 和 capability gap；
 6. test runner `verification_plan` 输出已补本地承接：测试 runner 必须继续说明选择理由、覆盖层级、排除层级、未验证范围和 residual risk，并回指 09 的验证入口选择矩阵；
-7. Codex / WorkBuddy shim 命令分类逻辑需要收敛到共享实现，避免环境插件独立实现继续漂移。
+7. Codex / WorkBuddy repo-local shim 命令分类和 target 投影已收敛到共享实现：后续必须保持入口 shim 只委托 shared classifier / runtime adapter，并用环境入口审计识别真实 installed package / cache 是否仍停留在旧 shim。

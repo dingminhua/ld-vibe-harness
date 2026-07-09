@@ -8,6 +8,7 @@ import re
 import shlex
 import subprocess
 from typing import Any
+from urllib.parse import parse_qs, unquote
 
 import yaml
 
@@ -93,12 +94,35 @@ PREFLIGHT_TYPE_READ_PATHS = {
         "specs/33-环境插件编写与更新行动模板.md",
         "code/docs/02-Environment-Plugin-Practice.md",
     ],
+    "git_remote_ref": [
+        "specs/10-安装与配置规范.md",
+        "specs/09-测试与验证规范.md",
+        "specs/31-Git提交行动模板.md",
+    ],
     "asset": [
         "specs/08-Web信息同步规范.md",
         "specs/09-测试与验证规范.md",
     ],
 }
 ACCEPTANCE_SCRATCH_PREFIX = ".ldvh-runtime/acceptance-probe/"
+GIT_REMOTE_REF_PREFIX = "git-remote-ref:"
+GIT_REMOTE_REF_STRONG_GATE_FLAGS = {
+    "all",
+    "delete",
+    "follow_tags",
+    "force",
+    "force_if_includes",
+    "force_with_lease",
+    "git_dir",
+    "mirror",
+    "multi_refspec",
+    "missing_ref",
+    "missing_remote",
+    "prune",
+    "repo",
+    "tags",
+}
+GIT_REMOTE_REF_PROTECTED_NAMES = {"main", "master", "prod", "production", "release", "stable", "trunk"}
 HIGH_IMPACT_SPEC_PATHS = {
     "specs/00-理念与构成.md",
     "specs/01-保障与衔接.md",
@@ -125,6 +149,40 @@ def normalize_relative_path(path: str) -> str:
     while normalized.startswith("./"):
         normalized = normalized[2:]
     return normalized
+
+
+def parse_git_remote_ref_target(target_path: str) -> dict[str, Any]:
+    if not target_path.startswith(GIT_REMOTE_REF_PREFIX):
+        return {}
+    body = target_path[len(GIT_REMOTE_REF_PREFIX):]
+    remote_ref, _, query = body.partition("?")
+    encoded_remote, separator, encoded_ref = remote_ref.partition("/")
+    remote = unquote(encoded_remote)
+    ref = unquote(encoded_ref)
+    flags: list[str] = []
+    query_values = parse_qs(query, keep_blank_values=True)
+    if "flags" in query_values:
+        flags = [flag for flag in query_values["flags"][0].split(",") if flag]
+    normalized_ref = ref.removeprefix("refs/heads/").removeprefix("heads/")
+    first_segment = normalized_ref.split("/", 1)[0]
+    protected_like = normalized_ref in GIT_REMOTE_REF_PROTECTED_NAMES or first_segment in GIT_REMOTE_REF_PROTECTED_NAMES
+    if normalized_ref.startswith(("refs/tags/", "tags/")):
+        flags.append("tags")
+    repo = unquote(query_values.get("repo", [""])[0])
+    common_dir = unquote(query_values.get("common_dir", [""])[0])
+    remote_url = unquote(query_values.get("remote_url", [""])[0])
+    git_dir = unquote(query_values.get("git_dir", [""])[0])
+    return {
+        "remote": remote,
+        "ref": ref,
+        "remote_ref": remote_ref if separator else "",
+        "flags": sorted(set(flags)),
+        "protected_like": protected_like,
+        "repo": repo,
+        "common_dir": common_dir,
+        "remote_url": remote_url,
+        "git_dir": git_dir,
+    }
 
 
 def _path_is_relative_to(path: Path, parent: Path) -> bool:
@@ -2196,6 +2254,51 @@ def _git_text(cwd: Path, args: list[str]) -> str:
 
 def _git_common_dir(cwd: Path) -> str:
     return _git_text(cwd, ["rev-parse", "--path-format=absolute", "--git-common-dir"])
+
+
+def _git_remote_ref_repo_path(root: Path, cwd: str | Path | None, classification: dict[str, str]) -> str:
+    for key in ("repo", "common_dir"):
+        value = classification.get(key, "").strip()
+        if value:
+            return value
+    if cwd is not None:
+        return _resolve_path(Path(cwd), root).as_posix()
+    return root.as_posix()
+
+
+def _git_worktree_clean(repo_path: str) -> tuple[bool, str]:
+    if not repo_path:
+        return False, "missing_repo"
+    output = _git_text(Path(repo_path), ["status", "--porcelain=v1", "--untracked-files=all"])
+    if output:
+        return False, "dirty"
+    common_dir = _git_text(Path(repo_path), ["rev-parse", "--path-format=absolute", "--git-common-dir"])
+    if not common_dir:
+        return False, "not_git_repo"
+    return True, "clean"
+
+
+def _git_remote_ref_authorized_by_task(task: str, remote: str, ref: str) -> bool:
+    normalized = task.lower()
+    if not normalized:
+        return False
+    push_markers = ("git push", " push ", "push ", "推送", "同步")
+    only_push_markers = ("只 push", "只推送", "只同步", "only push")
+    release_markers = ("不做发布", "不发布", "no release", "not release")
+    deploy_markers = ("不部署", "no deploy", "not deploy")
+    pr_markers = ("不创建 pr", "不创建PR".lower(), "no pr", "not pr", "no pull request", "not pull request")
+    merge_markers = ("不 merge", "不合并", "no merge", "not merge")
+    tag_markers = ("不 tag", "不打 tag", "不打tag", "no tag", "not tag")
+    has_push = any(marker in normalized for marker in push_markers)
+    has_only_push = any(marker in normalized for marker in only_push_markers)
+    has_remote = bool(remote) and remote.lower() in normalized
+    ref_tail = ref.rsplit("/", 1)[-1].lower()
+    has_ref = bool(ref_tail) and ref_tail in normalized
+    has_boundary = all(
+        any(marker in normalized for marker in markers)
+        for markers in (release_markers, deploy_markers, pr_markers, merge_markers, tag_markers)
+    )
+    return has_push and has_only_push and has_remote and has_ref and has_boundary
 
 
 def _resolved_common_dir(raw: str) -> str:
@@ -5708,6 +5811,25 @@ def classify_target_path(target_path: str) -> dict[str, str]:
             "impact": "low",
             "reason": "目标属于 30 断点后 lifecycle 验证的受控 scratch target，只能用于当次正反例探针，不作为事实源或长期过程状态。",
         }
+    if normalized.startswith(GIT_REMOTE_REF_PREFIX):
+        git_remote_ref = parse_git_remote_ref_target(normalized)
+        flags = git_remote_ref.get("flags", [])
+        protected_like = bool(git_remote_ref.get("protected_like"))
+        impact = "high" if (set(flags) & GIT_REMOTE_REF_STRONG_GATE_FLAGS or protected_like) else "medium"
+        return {
+            "target_path": normalized,
+            "target_type": "git_remote_ref",
+            "impact": impact,
+            "remote": str(git_remote_ref.get("remote") or ""),
+            "ref": str(git_remote_ref.get("ref") or ""),
+            "repo": str(git_remote_ref.get("repo") or ""),
+            "git_dir": str(git_remote_ref.get("git_dir") or ""),
+            "common_dir": str(git_remote_ref.get("common_dir") or ""),
+            "remote_url": str(git_remote_ref.get("remote_url") or ""),
+            "flags": ",".join(flags),
+            "protected_like": "true" if protected_like else "false",
+            "reason": "目标属于 Git 远端 ref 写入；不是只读、发布、部署、PR、merge、tag 或完成证明。",
+        }
     if normalized == "README.md" or normalized.startswith("docs/"):
         return {
             "target_path": normalized,
@@ -5834,6 +5956,19 @@ REPAIRABLE_FACT_INSTANCE_DIAGNOSTIC_CODES = {
     "FACT_INSTANCE_STATUS_INVALID",
     "FACT_INSTANCE_LEGACY_FIELD_FORBIDDEN",
 }
+REPAIRABLE_SPEC_STRUCTURAL_DIAGNOSTIC_CODES = {
+    "MISSING_IDENTITY_FIELD",
+    "CANONICAL_PATH_MISMATCH",
+    "CODE_CONSUMPTION_MISSING",
+    "ROLE_SECTIONS_MISSING",
+    "ROLE_SECTION_NOT_FOUND",
+    "REFERENCE_FIELD_NOT_LIST",
+    "REFERENCE_NOT_FOUND",
+    "DUPLICATE_OBJECT_ID",
+    "ATTACHMENT_RELATION",
+    "MISSING_PARENT_SPEC",
+}
+REPAIRABLE_SPEC_TARGET_TYPES = {"spec", "core_spec", "attachment"}
 TARGET_SCOPED_BLOCKING_SCOPES = {"target_primary", "runtime_blocker"}
 
 
@@ -5931,9 +6066,19 @@ def _is_blocking_for_runtime(diagnostic: dict[str, Any], *, repair_mode: bool = 
     if diagnostic.get("level") not in {"error", "blocking"}:
         return False
     scope = str(diagnostic.get("diagnostic_scope") or "runtime_blocker")
-    if scope == "target_primary" and repair_mode and diagnostic.get("code") in REPAIRABLE_FACT_INSTANCE_DIAGNOSTIC_CODES:
+    if scope == "target_primary" and repair_mode and diagnostic.get("code") in (
+        REPAIRABLE_FACT_INSTANCE_DIAGNOSTIC_CODES | REPAIRABLE_SPEC_STRUCTURAL_DIAGNOSTIC_CODES
+    ):
         return False
     return scope in TARGET_SCOPED_BLOCKING_SCOPES
+
+
+def _repairable_codes_for_target_type(target_type: str) -> set[str]:
+    if target_type == "fact_instance":
+        return set(REPAIRABLE_FACT_INSTANCE_DIAGNOSTIC_CODES)
+    if target_type in REPAIRABLE_SPEC_TARGET_TYPES:
+        return set(REPAIRABLE_SPEC_STRUCTURAL_DIAGNOSTIC_CODES)
+    return set()
 
 
 def _runtime_blocking_count(diagnostics: list[dict[str, Any]], *, repair_mode: bool = False) -> int:
@@ -5951,6 +6096,8 @@ def normalize_target_path_for_root(root: Path, target_path: str, cwd: str | Path
     raw = target_path.strip()
     if not raw:
         return ""
+    if raw.startswith(GIT_REMOTE_REF_PREFIX):
+        return raw
     base_cwd = _resolve_path(Path(cwd) if cwd is not None else root, root)
     resolved_root = root.resolve(strict=False)
     resolved_target = _resolve_path(Path(raw), base_cwd)
@@ -6216,6 +6363,54 @@ def build_preflight(
             "boundary_review",
         ))
 
+    if target_type == "git_remote_ref":
+        flags = {flag for flag in classification.get("flags", "").split(",") if flag}
+        protected_like = classification.get("protected_like") == "true"
+        remote = classification.get("remote", "")
+        ref = classification.get("ref", "")
+        repo_path = _git_remote_ref_repo_path(root, cwd, classification)
+        remote_url = classification.get("remote_url", "")
+        target_incomplete = not remote or not ref or not repo_path or bool(flags & {"missing_remote", "missing_ref"})
+        if target_incomplete:
+            diagnostics.append(_runtime_diagnostic(
+                "blocking",
+                "PREFLIGHT_GIT_REMOTE_REF_TARGET_INCOMPLETE",
+                normalized_target,
+                "Git remote ref 写入缺少 repo、remote 或 ref target 依据，不能按普通文件 target 处理。",
+            ))
+        elif flags & GIT_REMOTE_REF_STRONG_GATE_FLAGS or protected_like:
+            diagnostics.append(_runtime_diagnostic(
+                "blocking",
+                "PREFLIGHT_GIT_REMOTE_REF_STRONG_GATE",
+                normalized_target,
+                "Git remote ref 写入包含 force/delete/mirror/tags/all/follow-tags/prune/multi-refspec/--repo/--git-dir/protected-like ref 等高风险条件，必须进入更强 Human Gate，不能由 preflight 自动放行。",
+            ))
+        else:
+            if not _git_remote_ref_authorized_by_task(task, remote, ref):
+                diagnostics.append(_runtime_diagnostic(
+                    "blocking",
+                    "PREFLIGHT_GIT_REMOTE_REF_AUTHORIZATION_REQUIRED",
+                    normalized_target,
+                    "Git remote ref 写入需要 Human 当场明确 push 指令，并说明不是 release/deploy/PR/merge/tag。",
+                ))
+            clean, clean_reason = _git_worktree_clean(repo_path)
+            if not clean:
+                diagnostics.append(_runtime_diagnostic(
+                    "blocking",
+                    "PREFLIGHT_GIT_REMOTE_REF_WORKTREE_NOT_CLEAN",
+                    normalized_target,
+                    f"Git remote ref 写入前必须确认工作区 clean；当前检查结果为 {clean_reason}。",
+                ))
+            if remote and ref and repo_path and _git_remote_ref_authorized_by_task(task, remote, ref) and clean:
+                remote_hint = f"，remote_url={remote_url}" if remote_url else ""
+                diagnostics.append(_runtime_diagnostic(
+                    "warning",
+                    "PREFLIGHT_GIT_REMOTE_REF_HUMAN_GATE",
+                    normalized_target,
+                    f"Git remote ref 写入目标为 repo={repo_path} remote={remote}/{ref}{remote_hint}；普通分支同步仍不是授权、发布、部署、PR、merge、tag 或完成证明。",
+                    "human_gate_review",
+                ))
+
     if target_type == "migration":
         diagnostics.append(_runtime_diagnostic(
             "follow_up",
@@ -6250,6 +6445,7 @@ def build_preflight(
 
     repair_mode = operation == "repair"
     if repair_mode:
+        repairable_codes = _repairable_codes_for_target_type(target_type)
         target_primary_blockers = [
             diagnostic
             for diagnostic in diagnostics
@@ -6259,21 +6455,21 @@ def build_preflight(
         nonrepairable = [
             diagnostic
             for diagnostic in target_primary_blockers
-            if diagnostic.get("code") not in REPAIRABLE_FACT_INSTANCE_DIAGNOSTIC_CODES
+            if diagnostic.get("code") not in repairable_codes
         ]
-        if target_type != "fact_instance":
+        if not repairable_codes:
             diagnostics.append(_runtime_diagnostic(
                 "blocking",
-                "PREFLIGHT_REPAIR_TARGET_NOT_FACT_INSTANCE",
+                "PREFLIGHT_REPAIR_TARGET_NOT_STRUCTURAL",
                 normalized_target,
-                "repair mode 只允许修复事实对象结构性诊断，不能用于普通写入或状态推进。",
+                "repair mode 只允许修复事实对象、正式 spec 或授权附件的结构性诊断，不能用于普通写入、语义改写或状态推进。",
             ))
         elif nonrepairable:
             diagnostics.append(_runtime_diagnostic(
                 "blocking",
                 "PREFLIGHT_REPAIR_DIAGNOSTIC_NOT_ALLOWED",
                 normalized_target,
-                "repair mode 只能处理结构性事实对象诊断: "
+                "repair mode 只能处理当前 target 类型允许的结构性诊断: "
                 + "；".join(str(diagnostic.get("code")) for diagnostic in nonrepairable),
             ))
 
@@ -6824,10 +7020,12 @@ def build_runtime_no_op_event(
 def runtime_status_from_diagnostics(
     diagnostics: list[dict[str, Any]],
     preflight: dict[str, Any] | None,
+    *,
+    allow_repair_entry: bool = False,
 ) -> str:
     if preflight and preflight["summary"]["status"] == "no_op":
         return "no_op"
-    repair_mode = bool(preflight and preflight.get("summary", {}).get("mode") == "repair")
+    repair_mode = bool(allow_repair_entry and preflight and preflight.get("summary", {}).get("mode") == "repair")
     if _runtime_blocking_count(diagnostics, repair_mode=repair_mode):
         return "blocked"
     if preflight and preflight["summary"]["status"] in {"blocked", "review_required"}:
@@ -7037,9 +7235,13 @@ def build_runtime_event(
                 )
             diagnostics.extend(preflight["diagnostics"])
 
-    status = runtime_status_from_diagnostics(diagnostics, preflight)
+    status = runtime_status_from_diagnostics(
+        diagnostics,
+        preflight,
+        allow_repair_entry=normalized_event == "pre_tool_use",
+    )
     receipt_status = "blocked" if status == "blocked" else "generated"
-    repair_mode = bool(preflight and preflight.get("summary", {}).get("mode") == "repair")
+    repair_mode = bool(normalized_event == "pre_tool_use" and preflight and preflight.get("summary", {}).get("mode") == "repair")
     blocking_count = _runtime_blocking_count(diagnostics, repair_mode=repair_mode)
     scope_counts = _diagnostic_scope_counts(diagnostics)
     source_refs = [

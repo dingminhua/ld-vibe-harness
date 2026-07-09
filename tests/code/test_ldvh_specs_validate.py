@@ -9,6 +9,7 @@ import shutil
 import shlex
 import subprocess
 import sys
+from urllib.parse import urlencode
 
 import ldvh_specs
 import runtime_receipt_cache
@@ -40,6 +41,14 @@ ACCEPTANCE_SCRATCH_ACK_PATHS = [
     "specs/04-Specs基础规范.md",
     "specs/30-安装配置与验证行动模板.md",
     "code/docs/02-Environment-Plugin-Practice.md",
+]
+GIT_REMOTE_REF_ACK_PATHS = [
+    *ENTRY_ACK_PATHS,
+    "specs/03-事实源与Git溯源规范.md",
+    "specs/04-Specs基础规范.md",
+    "specs/10-安装与配置规范.md",
+    "specs/09-测试与验证规范.md",
+    "specs/31-Git提交行动模板.md",
 ]
 WORKCASE_TARGET = "ldvh-base/workcases/workcase-0024-v2-deletion-readiness-closure.yaml"
 WORKCASE_ACK_PATHS = [
@@ -129,6 +138,29 @@ def _run_cli(
         raise
 
 
+def _clean_git_remote_ref_target(tmp_path: Path) -> str:
+    repo = tmp_path / "push-repo"
+    repo.mkdir()
+    subprocess.run(["git", "init"], cwd=repo, check=True, capture_output=True, text=True)
+    remote_url = "https://example.test/ldvh/push-repo.git"
+    subprocess.run(["git", "remote", "add", "origin", remote_url], cwd=repo, check=True)
+    common_dir = subprocess.run(
+        ["git", "-C", repo.as_posix(), "rev-parse", "--path-format=absolute", "--git-common-dir"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    query = urlencode(
+        {
+            "flags": "set_upstream",
+            "repo": repo.as_posix(),
+            "common_dir": common_dir,
+            "remote_url": remote_url,
+        }
+    )
+    return f"git-remote-ref:origin/dev-v3?{query}"
+
+
 def test_current_specs_validate_without_diagnostics(validation_result: dict) -> None:
     result = validation_result
 
@@ -190,6 +222,9 @@ def test_install_action_template_discloses_runtime_cache_boundary() -> None:
     assert "OS runtime / temporary / cache 目录" in raw
     assert "cache 不能作为事实源或完成证据" in raw
     assert "runtime cache 状态" in raw
+    assert "真实安装包、插件 cache、marketplace package 或目标环境等价安装目录同样必须满足薄引用边界" in raw
+    assert "不得把手工覆盖 cache 当作长期安装路径" in raw
+    assert "不能把 repo-local 样例通过写成真实环境入口已对齐" in raw
 
 
 def test_specs_base_defines_cross_spec_responsibility_boundary() -> None:
@@ -201,6 +236,11 @@ def test_specs_base_defines_cross_spec_responsibility_boundary() -> None:
     assert "它是路由表和防越界检查，不是第二规则源" in spec_04
     assert "不替代单篇 spec 的归口边界、主体规则、Human Gate、Stop Conditions 或附件授权" in spec_04
     assert "当总览与单篇 spec 正文冲突时，以单篇 spec 正文、上位规范和 Human Gate 为准" in spec_04
+    assert "`role_sections`、identity block、canonical path、code_consumption、显式引用和附件 relation 产生的结构性诊断属于 specs 结构治理问题" in spec_04
+    assert "按 01 的 specs structural repair lane 分流" in spec_04
+    assert "只允许修复当前 primary 文件的结构映射或字段一致性" in spec_04
+    assert "不得用于重写规则语义、接受风险、跨 spec 批量迁移或替代 Human Gate" in spec_04
+    assert "specs structural repair" in spec_04
     assert "docs、Code、测试、review 收据或行动指南长期补位" in spec_04
     for spec_id in ["`00`", "`01`", "`07`", "`09`", "`10`", "`30`", "`33`"]:
         assert spec_id in spec_04
@@ -286,6 +326,12 @@ def test_assurance_spec_defines_git_and_environment_hook_boundaries() -> None:
     assert "只能定位并调用 LDVH" in spec_01
     assert "核心逻辑都必须留在 LDVH Code 中" in spec_01
     assert "环境插件必须是薄引用入口" in spec_01
+    assert "所有外部入口都必须按同一薄引用目标审计" in spec_01
+    assert "真实安装包、插件 cache 和 marketplace package" in spec_01
+    assert "repo-local 样例通过、插件 cache 存在、Hook manifest 可解析或命令直测通过" in spec_01
+    assert "真实安装态仍必须通过当次 lifecycle 触发、payload、阻断、回滚和不可验证范围判读" in spec_01
+    assert "Git Hook / commit gate 的 integrated 结论只覆盖 Git commit 事件" in spec_01
+    assert "环境 lifecycle Hook 的 integrated 结论只覆盖目标 AI 环境真实触发" in spec_01
     assert "不得在不同环境插件中分别实现规则判断、复杂命令分类、target 归口、diagnostic 分流" in spec_01
     assert "凡是会影响阻断、no-op、diagnostic、验证声明或事实源回写的逻辑" in spec_01
     assert "LDVH 仅支持具备 AI lifecycle Hook 的协作环境" in spec_01
@@ -440,7 +486,10 @@ def test_assurance_spec_defines_self_lock_disposition_path() -> None:
     assert "区分 `target_primary`、必要 direct dependent / cascade、`unrelated_global` 和 `runtime_blocker`" in spec_01
     assert "无关坏对象只作为 residual risk，不得阻断当前无关普通写入" in spec_01
     assert "普通写入必须停止，并在 repair、拆分、补 target、补 read_plan 或 Human Gate 之间分流" in spec_01
-    assert "repair 不是 bypass，不得推进状态、关闭对象、接受风险、跨对象迁移或替代 Human Gate" in spec_01
+    assert "repair 不是 bypass，不得推进状态、关闭对象、接受风险、跨对象迁移、改写规则语义或替代 Human Gate" in spec_01
+    assert "Specs structural repair lane 是 repair lane 的一个专门场景" in spec_01
+    assert "当前 primary spec / attachment 因 `role_sections`" in spec_01
+    assert "不得用来改写规则语义、放行未验证风险、接受 Human Gate、跨 spec 批量迁移" in spec_01
     assert "仍失败时必须记录“已写未通过”或等价失败结果" in spec_01
     assert "LDVH 不提供默认自动恢复路径" in spec_01
     assert "不新增 runtime event、不新增 bypass、不改变 Human Gate 条件" in spec_01
@@ -485,6 +534,7 @@ def test_verification_spec_defines_self_lock_acceptance_matrix() -> None:
         "坏事实对象在场，当前写入 target 与其无关",
         "当前 target 自身是坏事实对象的普通写入",
         "repair mode 修复当前 primary fact target",
+        "specs structural repair 修复当前 primary spec / attachment",
         "repair 写入后 final validation 仍失败",
         "repair 目标越界",
         "`scope_unknown`",
@@ -496,6 +546,7 @@ def test_verification_spec_defines_self_lock_acceptance_matrix() -> None:
     ]:
         assert scenario_name in spec_09
     assert "receipt 变成任意命令 bypass、写入授权、事实源、Human Gate" in spec_09
+    assert "借 repair 改写规则语义、接受 Human Gate 风险、跨 spec 批量迁移" in spec_09
     assert "不要求每次修改都运行全量测试" in spec_09
     assert "自锁事故验收要求" in spec_09
     assert "自锁事故检查" in spec_09
@@ -1766,8 +1817,12 @@ def test_environment_plugin_template_is_requirement_first_and_current_environmen
     assert "目标环境插件首先必须满足本文的要求契约" in raw
     assert "真实目标环境可能使用插件包、扩展包、settings hook、marketplace package、adapter 脚本或其它机制" in raw
     assert "环境插件必须是薄引用，不是环境专属实现层" in raw
+    assert "真实安装包、插件 cache、marketplace package、扩展包和 repo-local 样例包适用同一薄引用检查" in raw
     assert "凡是会影响阻断、no-op、diagnostic、read_plan、repair、bypass、completion、验证声明、事实源回写或状态推进的判断" in raw
     assert "不得在 Codex、WorkBuddy 或其它环境插件中各自维护一份复杂逻辑" in raw
+    assert "target / target_paths、Git remote ref target、patch path 和嵌套 payload 的投影必须委托共享 classifier / runtime helper" in raw
+    assert "环境插件不得默认写 `ldvh-base/`、specs、事实对象或受管项目" in raw
+    assert "必须写入明确的 scratch / temp 目录或由共享 Code 的受控命令承接" in raw
     assert "环境事件名可以不同，也可以由多个原生事件组合成一个 LDVH canonical event" in raw
     assert "当前 Codex hook 关闭时，Codex 会话只能做 repo-local 代码和样例 shim 验证" in raw
     assert "WorkBuddy hook 开启与否只能由 WorkBuddy 当前环境的真实 lifecycle 输出和 30 验收判断" in raw
@@ -1814,6 +1869,7 @@ def test_environment_plugin_template_is_requirement_first_and_current_environmen
     assert "canonical event 覆盖清单、本地 fixture 验证和 capability_gap 说明" in raw
     assert "repo-local manifest / hooks / shim 或目标环境等价入口资产只能包含入口声明" in raw
     assert "repo-local 或目标环境等价配置解析检查、shim / adapter 对应语法检查、canonical event fixture 干跑" in raw
+    assert "真实安装包 / cache / marketplace package 审计" in raw
     assert "目标环境入口必须按目标环境协议降级为不阻断" in raw
     assert "repo-local 命令式 shim 可以表现为 warning + exit 0" in raw
     assert "只读工具操作（Read、Grep、Glob 或目标环境等价只读操作）只能由共享 LDVH Code 或共享分类器判断" in raw
@@ -1855,6 +1911,12 @@ def test_code_spec_records_test_runner_verification_plan_as_implemented() -> Non
 
     assert "test runner `verification_plan` 输出已补本地承接" in raw
     assert "回指 09 的验证入口选择矩阵" in raw
+    assert "### 7.2 外部入口共享 Code 归口" in raw
+    assert "当前可修复 specs / attachment 结构诊断闭集" in raw
+    assert "`ROLE_SECTION_NOT_FOUND`" in raw
+    assert "不得借此新增规则语义、接受 Human Gate 风险、删除固定尾部" in raw
+    assert "`code/action_classifier.py` 归口读写副作用分类、命令解析、target / target_paths 投影和 Git remote ref target 识别" in raw
+    assert "环境 shim / adapter 可以做字段提取和输出协议翻译，但不得维护独立命令分类表" in raw
     assert "test runner verification_plan 输出需要补齐" not in raw
 
 
@@ -3802,6 +3864,84 @@ def test_preflight_repair_mode_final_validation_only_checks_primary(validation_r
     assert preflight["summary"]["blocking"] == 0
     assert preflight["summary"]["target_primary"] == 0
     assert preflight["summary"]["unrelated_global"] == 1
+
+
+def test_preflight_normal_write_blocks_primary_spec_structure_diagnostic(validation_result: dict) -> None:
+    validation = _validation_with_extra_diagnostics(
+        validation_result,
+        [
+            {
+                "level": "error",
+                "code": "ROLE_SECTION_NOT_FOUND",
+                "path": "specs/07-Code确定性执行规范.md",
+                "message": "role_sections 指向不存在的 H2: 13. 待补齐事项",
+            }
+        ],
+    )
+
+    preflight = ldvh_specs.build_preflight(
+        ROOT,
+        target_path="specs/07-Code确定性执行规范.md",
+        operation="write",
+        validation=validation,
+    )
+
+    assert preflight["summary"]["status"] == "blocked"
+    assert preflight["summary"]["blocking"] == 1
+    assert preflight["summary"]["target_primary"] == 1
+
+
+def test_preflight_repair_mode_allows_primary_spec_structure_diagnostic(validation_result: dict) -> None:
+    validation = _validation_with_extra_diagnostics(
+        validation_result,
+        [
+            {
+                "level": "error",
+                "code": "ROLE_SECTION_NOT_FOUND",
+                "path": "specs/07-Code确定性执行规范.md",
+                "message": "role_sections 指向不存在的 H2: 13. 待补齐事项",
+            }
+        ],
+    )
+
+    preflight = ldvh_specs.build_preflight(
+        ROOT,
+        target_path="specs/07-Code确定性执行规范.md",
+        operation="repair",
+        validation=validation,
+    )
+
+    assert preflight["summary"]["status"] == "review_required"
+    assert preflight["summary"]["mode"] == "repair"
+    assert preflight["summary"]["target_type"] == "spec"
+    assert preflight["summary"]["blocking"] == 0
+    assert preflight["summary"]["target_primary"] == 1
+    assert "PREFLIGHT_REPAIR_DIAGNOSTIC_NOT_ALLOWED" not in _diagnostic_codes(preflight)
+
+
+def test_preflight_repair_mode_blocks_nonrepairable_spec_diagnostic(validation_result: dict) -> None:
+    validation = _validation_with_extra_diagnostics(
+        validation_result,
+        [
+            {
+                "level": "error",
+                "code": "AI_BEHAVIOR_FIELD_EMPTY",
+                "path": "specs/02-AI行为规范.md",
+                "message": "AI-BEH-001 字段为空: 完成证据",
+            }
+        ],
+    )
+
+    preflight = ldvh_specs.build_preflight(
+        ROOT,
+        target_path="specs/02-AI行为规范.md",
+        operation="repair",
+        validation=validation,
+    )
+
+    assert preflight["summary"]["status"] == "blocked"
+    assert preflight["summary"]["mode"] == "repair"
+    assert "PREFLIGHT_REPAIR_DIAGNOSTIC_NOT_ALLOWED" in _diagnostic_codes(preflight)
 
 
 def test_preflight_commit_operation_keeps_global_validation_blocker(validation_result: dict) -> None:
@@ -5958,8 +6098,10 @@ def test_environment_entry_audit_does_not_treat_agent_file_as_integration(tmp_pa
 def test_environment_entry_audit_scopes_plugin_candidate_to_target_environment(tmp_path: Path) -> None:
     repo = tmp_path / "repo"
     codex_home = tmp_path / "codex-home"
+    workbuddy_home = tmp_path / "workbuddy-home"
     repo.mkdir()
     codex_home.mkdir()
+    workbuddy_home.mkdir()
     subprocess.run(["git", "init", "-q"], cwd=repo, check=True, timeout=30)
     (codex_home / "config.toml").write_text(
         """
@@ -5994,6 +6136,8 @@ enabled = true
             str(ROOT),
             "--codex-home",
             str(codex_home),
+            "--workbuddy-home",
+            str(workbuddy_home),
             "--environment-name",
             "WorkBuddy",
             "--format",
@@ -6015,7 +6159,7 @@ enabled = true
     assert payload["summary"]["target_environment_plugin_entry_integrated"] is False
     assert "codex_plugin_entry_integrated" not in payload["summary"]
     assert "codex_environment_entry_integrated" not in payload["summary"]
-    assert "Codex" not in json.dumps(payload["candidates"], ensure_ascii=False)
+    assert "codex.ldvh-plugin" not in json.dumps(payload["candidates"], ensure_ascii=False)
 
 
 def test_environment_entry_audit_reports_stale_ldvh_codex_plugin(tmp_path: Path) -> None:
@@ -6203,7 +6347,8 @@ enabled = true
         + "\n",
         encoding="utf-8",
     )
-    v3_shim = ROOT / "hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py"
+    installed_shim = hook_dir / "ldvh_runtime_shim.py"
+    shutil.copyfile(ROOT / "hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py", installed_shim)
     (hook_dir / "hooks.json").write_text(
         json.dumps(
             {
@@ -6211,19 +6356,19 @@ enabled = true
                     "SessionStart": [
                         {
                             "matcher": "startup|resume",
-                            "hooks": [{"type": "command", "command": f"{sys.executable} {v3_shim}"}],
+                            "hooks": [{"type": "command", "command": 'python3 "$PLUGIN_ROOT/hooks/ldvh_runtime_shim.py"'}],
                         }
                     ],
                     "PreToolUse": [
                         {
                             "matcher": "Write|Edit|apply_patch",
-                            "hooks": [{"type": "command", "command": f"{sys.executable} {v3_shim}"}],
+                            "hooks": [{"type": "command", "command": 'python3 "$PLUGIN_ROOT/hooks/ldvh_runtime_shim.py"'}],
                         }
                     ],
                     "Stop": [
                         {
                             "matcher": "*",
-                            "hooks": [{"type": "command", "command": f"{sys.executable} {v3_shim}"}],
+                            "hooks": [{"type": "command", "command": 'python3 "$PLUGIN_ROOT/hooks/ldvh_runtime_shim.py"'}],
                         }
                     ],
                 }
@@ -6273,7 +6418,146 @@ enabled = true
     assert candidates["codex.ldvh-plugin"]["integrated"] is False
     assert candidates["codex.ldvh-plugin"]["decision"] == "verify_trust_and_runtime_before_integration"
     assert candidates["codex.ldvh-plugin"]["details"]["required_events_ok"] is True
-    assert str(v3_shim) in "\n".join(candidates["codex.ldvh-plugin"]["details"]["commands"])
+    assert candidates["codex.ldvh-plugin"]["details"]["installed_package"]["thin_reference_ok"] is True
+    assert str(installed_shim) in candidates["codex.ldvh-plugin"]["details"]["installed_package"]["shim_paths"]
+
+
+def test_environment_entry_audit_reports_stale_codex_installed_cache_shim(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    codex_home = tmp_path / "codex-home"
+    hook_dir = codex_home / "plugins" / "cache" / "personal" / "ldvh" / "0.1.0" / "hooks"
+    repo.mkdir()
+    hook_dir.mkdir(parents=True)
+    subprocess.run(["git", "init", "-q"], cwd=repo, check=True, timeout=30)
+    (codex_home / "config.toml").write_text(
+        """
+[plugins."ldvh@personal"]
+enabled = true
+""".strip()
+        + "\n",
+        encoding="utf-8",
+    )
+    (hook_dir / "ldvh_runtime_shim.py").write_text(
+        """
+def target_path_from_command(payload):
+    return ""
+
+def target_paths_from_patch(payload):
+    return []
+
+def target_path_values(payload, cwd):
+    return []
+""".strip()
+        + "\n",
+        encoding="utf-8",
+    )
+    (hook_dir / "hooks.json").write_text(
+        json.dumps(
+            {
+                "hooks": {
+                    "SessionStart": [{"matcher": "startup", "hooks": [{"type": "command", "command": 'python3 "$PLUGIN_ROOT/hooks/ldvh_runtime_shim.py"'}]}],
+                    "PreToolUse": [{"matcher": "*", "hooks": [{"type": "command", "command": 'python3 "$PLUGIN_ROOT/hooks/ldvh_runtime_shim.py"'}]}],
+                    "Stop": [{"matcher": "*", "hooks": [{"type": "command", "command": 'python3 "$PLUGIN_ROOT/hooks/ldvh_runtime_shim.py"'}]}],
+                }
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    _run_cli(
+        [
+            sys.executable,
+            "code/install_git_hooks.py",
+            "install",
+            "--repo",
+            str(repo),
+            "--backend-allow-external",
+            "--ldvh-root",
+            str(ROOT),
+        ],
+        cwd=ROOT,
+        check=True,
+    )
+
+    completed = _run_cli(
+        [
+            sys.executable,
+            "code/environment_entry_audit.py",
+            "--repo",
+            str(repo),
+            "--ldvh-root",
+            str(ROOT),
+            "--codex-home",
+            str(codex_home),
+            "--environment-name",
+            "Codex",
+            "--format",
+            "json",
+        ],
+        cwd=ROOT,
+        check=True,
+    )
+
+    payload = json.loads(completed.stdout)
+    candidates = {candidate["id"]: candidate for candidate in payload["candidates"]}
+    assert candidates["codex.ldvh-plugin"]["status"] == "available"
+    assert candidates["codex.ldvh-plugin"]["decision"] == "reinstall_for_v3"
+    assert candidates["codex.ldvh-plugin"]["details"]["installed_package"]["thin_reference_ok"] is False
+    assert "ENV_CODEX_LDVH_PLUGIN_STALE_CACHE" in _diagnostic_codes(payload)
+
+
+def test_environment_entry_audit_recognizes_workbuddy_installed_plugin_without_integration(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    workbuddy_home = tmp_path / "workbuddy-home"
+    hook_dir = workbuddy_home / "plugins" / "marketplaces" / "ldvh-local" / "plugins" / "ldvh" / "hooks"
+    repo.mkdir()
+    hook_dir.mkdir(parents=True)
+    subprocess.run(["git", "init", "-q"], cwd=repo, check=True, timeout=30)
+    shutil.copyfile(ROOT / "hooks/environment-plugins/workbuddy-ldvh-v3/hooks/ldvh_runtime_shim.py", hook_dir / "ldvh_runtime_shim.py")
+    shutil.copyfile(ROOT / "hooks/environment-plugins/workbuddy-ldvh-v3/hooks/hooks.json", hook_dir / "hooks.json")
+    _run_cli(
+        [
+            sys.executable,
+            "code/install_git_hooks.py",
+            "install",
+            "--repo",
+            str(repo),
+            "--backend-allow-external",
+            "--ldvh-root",
+            str(ROOT),
+        ],
+        cwd=ROOT,
+        check=True,
+    )
+
+    completed = _run_cli(
+        [
+            sys.executable,
+            "code/environment_entry_audit.py",
+            "--repo",
+            str(repo),
+            "--ldvh-root",
+            str(ROOT),
+            "--workbuddy-home",
+            str(workbuddy_home),
+            "--environment-name",
+            "WorkBuddy",
+            "--format",
+            "json",
+        ],
+        cwd=ROOT,
+        check=True,
+    )
+
+    payload = json.loads(completed.stdout)
+    candidates = {candidate["id"]: candidate for candidate in payload["candidates"]}
+    assert candidates["workbuddy.ldvh-plugin"]["status"] == "available"
+    assert candidates["workbuddy.ldvh-plugin"]["integrated"] is False
+    assert candidates["workbuddy.ldvh-plugin"]["decision"] == "collect_workbuddy_runtime_evidence_before_integration"
+    assert candidates["workbuddy.ldvh-plugin"]["details"]["required_events_ok"] is True
+    assert candidates["workbuddy.ldvh-plugin"]["details"]["installed_package"]["thin_reference_ok"] is True
+    assert payload["summary"]["workbuddy_plugin_entry_integrated"] is False
+    assert payload["summary"]["workbuddy_environment_entry_integrated"] is False
 
 
 def test_runtime_completion_claim_requires_verification_evidence(validation_result: dict) -> None:
@@ -6318,6 +6602,34 @@ def test_runtime_completion_claim_blocks_target_primary_diagnostic_even_with_evi
     assert runtime["preflight"]["summary"]["blocking"] == 1
     assert target_diagnostic["diagnostic_scope"] == "target_primary"
     assert "RUNTIME_COMPLETION_VERIFICATION_MISSING" not in codes
+
+
+def test_runtime_completion_claim_blocks_repair_primary_spec_diagnostic_still_present(validation_result: dict) -> None:
+    validation = _validation_with_extra_diagnostics(
+        validation_result,
+        [
+            {
+                "level": "error",
+                "code": "ROLE_SECTION_NOT_FOUND",
+                "path": "specs/07-Code确定性执行规范.md",
+                "message": "role_sections 指向不存在的 H2: 13. 待补齐事项",
+            }
+        ],
+    )
+
+    runtime = ldvh_specs.build_runtime_event(
+        ROOT,
+        event="completion_claim",
+        target_path="specs/07-Code确定性执行规范.md",
+        operation="repair",
+        verification_evidence=["pytest repair final validation"],
+        validation=validation,
+    )
+
+    assert runtime["summary"]["status"] == "blocked"
+    assert runtime["summary"]["blocking"] > 0
+    assert runtime["summary"]["receipt_status"] == "blocked"
+    assert "ROLE_SECTION_NOT_FOUND" in _diagnostic_codes(runtime)
 
 
 def test_runtime_completion_claim_keeps_unrelated_global_diagnostic_as_residual_risk(validation_result: dict) -> None:
@@ -6507,6 +6819,148 @@ def test_runtime_adapter_dispatches_pre_tool_use_cli_json() -> None:
     assert payload["dispatch"]["summary"]["integration_scope"] == "hook.pre_tool_use"
     assert payload["dispatch"]["preflight"]["summary"]["target_type"] == "tests"
     assert payload["diagnostics"] == []
+
+
+def test_preflight_recognizes_git_remote_ref_without_target_unknown(tmp_path: Path) -> None:
+    target = _clean_git_remote_ref_target(tmp_path)
+    preflight = ldvh_specs.build_preflight(
+        ROOT,
+        target_path=target,
+        operation="git_push",
+        task="只 push 当前 dev-v3 到 origin，不做发布、不部署、不创建 PR、不 merge、不 tag",
+        cwd=ROOT,
+    )
+
+    codes = _diagnostic_codes(preflight)
+    assert preflight["summary"]["target_type"] == "git_remote_ref"
+    assert preflight["target"]["remote"] == "origin"
+    assert preflight["target"]["ref"] == "dev-v3"
+    assert preflight["target"]["repo"]
+    assert preflight["target"]["common_dir"]
+    assert preflight["target"]["remote_url"] == "https://example.test/ldvh/push-repo.git"
+    assert preflight["summary"]["blocking"] == 0
+    assert "PREFLIGHT_GIT_REMOTE_REF_HUMAN_GATE" in codes
+    assert "PREFLIGHT_TARGET_UNKNOWN" not in codes
+    assert [item["path"] for item in preflight["required_read_plan"]] == GIT_REMOTE_REF_ACK_PATHS
+
+
+def test_preflight_blocks_destructive_or_protected_git_remote_ref() -> None:
+    targets = [
+        "git-remote-ref:origin/main?flags=force",
+        "git-remote-ref:origin/dev-v3?flags=delete",
+        "git-remote-ref:origin/refs/tags/v1.0.0?flags=tags",
+        "git-remote-ref:origin/dev-v3?flags=follow_tags",
+        "git-remote-ref:origin/dev-v3?flags=prune",
+        "git-remote-ref:https%3A%2F%2Fexample.test%2Frepo.git/dev-v3?flags=repo",
+        "git-remote-ref:origin/dev-v3?flags=git_dir",
+        "git-remote-ref:origin/dev-v3?flags=force_with_lease",
+        "git-remote-ref:origin/dev-v3?flags=force_if_includes",
+        "git-remote-ref:origin/dev-v3?flags=mirror",
+        "git-remote-ref:origin/dev-v3?flags=all",
+        "git-remote-ref:origin/dev-v3?flags=multi_refspec",
+    ]
+
+    for target in targets:
+        preflight = ldvh_specs.build_preflight(
+            ROOT,
+            target_path=target,
+            operation="git_push",
+            task="force push main",
+            cwd=ROOT,
+        )
+
+        codes = _diagnostic_codes(preflight)
+        assert preflight["summary"]["target_type"] == "git_remote_ref"
+        assert preflight["summary"]["blocking"] >= 1
+        assert "PREFLIGHT_GIT_REMOTE_REF_STRONG_GATE" in codes
+        assert "PREFLIGHT_TARGET_UNKNOWN" not in codes
+
+
+def test_preflight_incomplete_git_push_remote_ref_is_not_target_unknown() -> None:
+    targets = [
+        "git-remote-ref:unknown/unknown?flags=missing_remote,missing_ref",
+        "git-remote-ref:origin/unknown?flags=missing_ref",
+    ]
+
+    for target in targets:
+        preflight = ldvh_specs.build_preflight(
+            ROOT,
+            target_path=target,
+            operation="git_push",
+            task="git push",
+            cwd=ROOT,
+        )
+
+        codes = _diagnostic_codes(preflight)
+        assert preflight["summary"]["target_type"] == "git_remote_ref"
+        assert preflight["summary"]["blocking"] >= 1
+        assert "PREFLIGHT_GIT_REMOTE_REF_TARGET_INCOMPLETE" in codes
+        assert "PREFLIGHT_TARGET_UNKNOWN" not in codes
+
+
+def test_preflight_decodes_git_remote_url_target() -> None:
+    preflight = ldvh_specs.build_preflight(
+        ROOT,
+        target_path="git-remote-ref:https%3A%2F%2Fexample.test%2Frepo.git/dev-v3?flags=repo",
+        operation="git_push",
+        task="git push",
+        cwd=ROOT,
+    )
+
+    assert preflight["target"]["remote"] == "https://example.test/repo.git"
+    assert preflight["target"]["ref"] == "dev-v3"
+    assert "PREFLIGHT_TARGET_UNKNOWN" not in _diagnostic_codes(preflight)
+
+
+def test_git_remote_ref_target_contract_is_specified() -> None:
+    raw01 = (ROOT / "specs/01-保障与衔接.md").read_text(encoding="utf-8")
+    raw03 = (ROOT / "specs/03-事实源与Git溯源规范.md").read_text(encoding="utf-8")
+    raw09 = (ROOT / "specs/09-测试与验证规范.md").read_text(encoding="utf-8")
+    raw10 = (ROOT / "specs/10-安装与配置规范.md").read_text(encoding="utf-8")
+    raw31 = (ROOT / "specs/31-Git提交行动模板.md").read_text(encoding="utf-8")
+
+    assert "Git 远端 ref 变更属于外部状态变更" in raw01
+    assert "`git push`、tag 推送、远端 ref 删除或强制更新都不是只读动作" in raw01
+    assert "普通分支 push 也不等同于 release、部署、PR、merge 或 tag" in raw03
+    assert "Git remote ref target" in raw10
+    assert "不能再被归类为普通 `target_unknown`" in raw10
+    assert "外部入口不得自行实现本文的管辖解析、target-first 判断或 `git_remote_ref` 识别" in raw10
+    assert "真实安装件若仍保留旧 target 解析器" in raw10
+    assert "测试不得真实更新远端" in raw09
+    assert "真实安装件 / cache / marketplace package 审计" in raw09
+    assert "Git push / 远端 ref 同步" in raw31
+
+
+def test_runtime_adapter_git_push_remote_ref_uses_review_gate_not_unknown(tmp_path: Path) -> None:
+    target = _clean_git_remote_ref_target(tmp_path)
+    completed = _run_cli(
+        [
+            sys.executable,
+            "code/runtime_adapter.py",
+            "pre-tool-use",
+            "--cwd",
+            str(ROOT),
+            "--target-path",
+            target,
+            "--operation",
+            "git_push",
+            "--task",
+            "只 push 当前 dev-v3 到 origin，不做发布、不部署、不创建 PR、不 merge、不 tag",
+            *_ack_args(GIT_REMOTE_REF_ACK_PATHS),
+            "--format",
+            "json",
+        ],
+        cwd=ROOT,
+        check=True,
+    )
+
+    payload = json.loads(completed.stdout)
+    codes = _diagnostic_codes(payload)
+    assert payload["summary"]["status"] == "review_required"
+    assert payload["summary"]["blocking"] == 0
+    assert payload["dispatch"]["preflight"]["summary"]["target_type"] == "git_remote_ref"
+    assert "PREFLIGHT_GIT_REMOTE_REF_HUMAN_GATE" in codes
+    assert "PREFLIGHT_TARGET_UNKNOWN" not in codes
 
 
 def test_runtime_adapter_external_pre_tool_payload_noops_without_ack(tmp_path: Path) -> None:
