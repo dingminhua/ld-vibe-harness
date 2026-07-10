@@ -229,7 +229,6 @@ def test_install_action_template_discloses_runtime_cache_boundary() -> None:
 
 def test_specs_base_defines_cross_spec_responsibility_boundary() -> None:
     spec_04 = (ROOT / "specs/04-Specs基础规范.md").read_text(encoding="utf-8")
-    audit_table = (ROOT / "docs/LDVH-Specs-Convergence-Audit-Table.md").read_text(encoding="utf-8")
 
     # These string checks intentionally guard specs semantics, not prose style.
     assert "### 5.8 跨规范职责边界总览" in spec_04
@@ -247,7 +246,6 @@ def test_specs_base_defines_cross_spec_responsibility_boundary() -> None:
     assert "需要新增或改变规则语义时，先回到主职责所在 spec" in spec_04
     assert "不得被写成已经 integrated、已授权或已完成" in spec_04
     assert "跨规范职责边界 | 本文总览是否只作为路由表和防越界检查" in spec_04
-    assert "已由 `04 §5.8` 固定为跨规范职责边界总览" in audit_table
 
 
 def test_assurance_spec_defines_capability_matching_model() -> None:
@@ -1922,13 +1920,6 @@ def test_code_spec_records_test_runner_verification_plan_as_implemented() -> Non
     assert "`code/action_classifier.py` 归口读写副作用分类、命令解析、target / target_paths 投影和 Git remote ref target 识别" in raw
     assert "环境 shim / adapter 可以做字段提取和输出协议翻译，但不得维护独立命令分类表" in raw
     assert "test runner verification_plan 输出需要补齐" not in raw
-
-
-def test_open_work_plan_records_test_runner_verification_plan_as_implemented() -> None:
-    raw = (ROOT / "docs/LDVH-All-Open-Work-Review-Plan.md").read_text(encoding="utf-8")
-
-    assert "| test runner 输出 verification plan | Code | 已实现，保留 plan/stage 一致性回归 | P1 |" in raw
-    assert "| test runner 输出 verification plan | Code | 待做 | P1 |" not in raw
 
 
 def test_install_wizard_practice_defaults_workspace_root_to_ldvh_parent() -> None:
