@@ -44,7 +44,7 @@ related_docs:
   - specs/01-保障与衔接.md
   - specs/02-AI行为规范.md
   - specs/03-事实源与Git溯源规范.md
-  - specs/04-Specs基础规范.md
+  - specs/04-规范体系基础规范.md
   - specs/05-事实模型基础规范.md
   - specs/20-Spark-火花.md
   - specs/21-WorkCase-工作项.md
@@ -53,5 +53,4 @@ related_docs:
   - specs/24-Study-研究报告.md
   - specs/30-安装配置与验证行动模板.md
   - specs/attachments/01.Att.06-环境安装回滚检查表.md
-  - specs/attachments/04.Att.04-保障要求字段表.md
   - specs/attachments/09.Att.01-验证声明字段表.md

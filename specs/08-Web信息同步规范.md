@@ -17,7 +17,7 @@ ldvh_spec:
     - "specs/01-保障与衔接.md"
     - "specs/02-AI行为规范.md"
     - "specs/03-事实源与Git溯源规范.md"
-    - "specs/04-Specs基础规范.md"
+    - "specs/04-规范体系基础规范.md"
   related_specs:
     - "specs/05-事实模型基础规范.md"
     - "specs/06-行动模板基础规范.md"
@@ -58,7 +58,7 @@ Web 主要服务 V5 门禁确认、V6 强制验证、V7 格式回写和 V8 范�
 
 ## 2. 权威依据
 
-本文承接 `specs/00-理念与构成.md` 的 Web 构成要素定位、`specs/01-保障与衔接.md` 的证据和 Human Gate 呈现边界、`specs/02-AI行为规范.md` 的面向 Human 输出责任、`specs/03-事实源与Git溯源规范.md` 的非事实源边界，以及 `specs/04-Specs基础规范.md` 的结构规则。
+本文承接 `specs/00-理念与构成.md` 的 Web 构成要素定位、`specs/01-保障与衔接.md` 的证据和 Human Gate 呈现边界、`specs/02-AI行为规范.md` 的面向 Human 输出责任、`specs/03-事实源与Git溯源规范.md` 的非事实源边界，以及 `specs/04-规范体系基础规范.md` 的结构规则。
 
 Web 展示若与 Git 文件事实源、Code 诊断或 specs 正文冲突，应回到事实源和正文判断；Code 诊断只能作为发现冲突的证据，不覆盖事实源或正文。
 

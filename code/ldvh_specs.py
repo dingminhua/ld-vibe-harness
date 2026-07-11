@@ -30,7 +30,7 @@ SHORT_SPEC_REFS = {
     "01": "specs/01-保障与衔接.md",
     "02": "specs/02-AI行为规范.md",
     "03": "specs/03-事实源与Git溯源规范.md",
-    "04": "specs/04-Specs基础规范.md",
+    "04": "specs/04-规范体系基础规范.md",
     "05": "specs/05-事实模型基础规范.md",
     "06": "specs/06-行动模板基础规范.md",
     "07": "specs/07-Code确定性执行规范.md",
@@ -57,7 +57,7 @@ PREFLIGHT_BASE_READ_PATHS = [
     "specs/01-保障与衔接.md",
     "specs/02-AI行为规范.md",
     "specs/03-事实源与Git溯源规范.md",
-    "specs/04-Specs基础规范.md",
+    "specs/04-规范体系基础规范.md",
 ]
 PREFLIGHT_TYPE_READ_PATHS = {
     "code": [
@@ -131,7 +131,7 @@ HIGH_IMPACT_SPEC_PATHS = {
     "specs/01-保障与衔接.md",
     "specs/02-AI行为规范.md",
     "specs/03-事实源与Git溯源规范.md",
-    "specs/04-Specs基础规范.md",
+    "specs/04-规范体系基础规范.md",
 }
 RUNTIME_REQUIRED_ENTRY_PATHS = [
     "specs/00-理念与构成.md",
@@ -266,6 +266,10 @@ GOVERNED_PROJECT_GIT_COLUMNS = ["Git字段", "要求", "说明"]
 GOVERNED_PROJECT_RESOLUTION_COLUMNS = ["resolution字段", "要求", "说明"]
 ACTION_TEMPLATE_COLUMNS = ["结构", "最小要求"]
 FOUNDATION_SPEC_IDS = ("03", "05", "06", "07", "08", "09")
+LEGACY_STANDARD_HEAD_SECTIONS = ["价值判断", "权威依据", "归口边界", "适用范围"]
+TARGET_STANDARD_HEAD_SECTIONS = ["价值判断", "规范依据", "职责边界", "适用范围"]
+LEGACY_STANDARD_TAIL_SECTIONS = ["保障措施", "验证方法", "Human Gate", "Stop Conditions", "待补齐事项"]
+TARGET_STANDARD_TAIL_SECTIONS = ["验证要求", "Human Gate", "Stop Conditions"]
 ASSURANCE_COLUMNS = ["保障要求", "要求内容", "保障机制", "同步类型", "触发条件"]
 AUTHORIZED_ASSURANCE_COLUMNS = ["要求", "机制", "触发", "证据", "缺口处理"]
 AUTHORIZED_ASSURANCE_SPEC_IDS = {"06", "30"}
@@ -280,6 +284,7 @@ ALLOWED_RELATION_TYPES = {
     "supersedes",
 }
 VERIFICATION_COLUMNS = ["检查类别", "检查内容", "不满足时"]
+VERIFICATION_REQUIREMENT_COLUMNS = ["验证对象", "验证时机", "成立条件", "可接受依据", "验证入口", "可证明范围", "未满足时的处理"]
 FACT_MODEL_BOUNDARY_REQUIREMENTS = [
     {
         "code": "FACT_INSTANCE_RULE_BOUNDARY_MISSING",
@@ -2093,6 +2098,56 @@ def _table_rows_for_section(sections: dict[str, dict[str, str]], section_name: s
     return find_table(section["body"], columns)
 
 
+def spec_structure_profile(obj: FormalObject) -> str:
+    titles = [normalize_h2_title(title) for title in obj.h2_titles]
+    if obj.object_id == "00":
+        return "root_spec" if titles[-len(TARGET_STANDARD_TAIL_SECTIONS):] == TARGET_STANDARD_TAIL_SECTIONS else "unknown"
+    if (
+        titles[:len(TARGET_STANDARD_HEAD_SECTIONS)] == TARGET_STANDARD_HEAD_SECTIONS
+        and titles[-len(TARGET_STANDARD_TAIL_SECTIONS):] == TARGET_STANDARD_TAIL_SECTIONS
+    ):
+        return "target_standard_spec"
+    if (
+        titles[:len(LEGACY_STANDARD_HEAD_SECTIONS)] == LEGACY_STANDARD_HEAD_SECTIONS
+        and titles[-len(LEGACY_STANDARD_TAIL_SECTIONS):] == LEGACY_STANDARD_TAIL_SECTIONS
+    ):
+        return "legacy_standard_spec"
+    return "unknown"
+
+
+def _verification_rows_for_sections(sections: dict[str, dict[str, str]]) -> list[dict[str, str]]:
+    requirement_rows = _table_rows_for_section(sections, "验证要求", VERIFICATION_REQUIREMENT_COLUMNS)
+    if requirement_rows:
+        return [
+            {
+                "verification_object": row["验证对象"],
+                "timing": row["验证时机"],
+                "acceptance_criteria": row["成立条件"],
+                "evidence": row["可接受依据"],
+                "entry": row["验证入口"],
+                "proof_scope": row["可证明范围"],
+                "failure_disposition": row["未满足时的处理"],
+                "field_style": "verification_requirement",
+            }
+            for row in requirement_rows
+        ]
+
+    legacy_rows = _table_rows_for_section(sections, "验证方法", VERIFICATION_COLUMNS)
+    return [
+        {
+            "verification_object": row["检查类别"],
+            "timing": "",
+            "acceptance_criteria": row["检查内容"],
+            "evidence": "",
+            "entry": "",
+            "proof_scope": "",
+            "failure_disposition": row["不满足时"],
+            "field_style": "legacy_verification_method",
+        }
+        for row in legacy_rows
+    ]
+
+
 def _assurance_rows_for_section(sections: dict[str, dict[str, str]]) -> list[dict[str, str]]:
     section = sections.get("保障措施")
     if not section:
@@ -2135,6 +2190,29 @@ def _section_numbered_items(sections: dict[str, dict[str, str]], section_name: s
     return numbered_list_items(section["body"])
 
 
+def parse_spec_structure_contracts(
+    objects: list[FormalObject],
+    root: Path = ROOT,
+) -> list[dict[str, Any]]:
+    contracts: list[dict[str, Any]] = []
+    for obj in objects:
+        if obj.object_type != "spec":
+            continue
+        raw = (root / obj.path).read_text(encoding="utf-8")
+        sections = h2_sections(raw)
+        contracts.append(
+            {
+                "spec_id": obj.object_id,
+                "path": obj.path,
+                "profile": spec_structure_profile(obj),
+                "verification_requirements": _verification_rows_for_sections(sections),
+                "human_gate": _section_numbered_items(sections, "Human Gate"),
+                "stop_conditions": _section_numbered_items(sections, "Stop Conditions"),
+            }
+        )
+    return contracts
+
+
 def parse_foundation_spec_contracts(
     objects: list[FormalObject],
     root: Path = ROOT,
@@ -2153,7 +2231,7 @@ def parse_foundation_spec_contracts(
             rule_body_sections = flatten_role_sections(role_sections.get("rule_body", []))
 
         assurance_rows = _assurance_rows_for_section(sections)
-        verification_rows = _table_rows_for_section(sections, "验证方法", VERIFICATION_COLUMNS)
+        verification_rows = _verification_rows_for_sections(sections)
         contracts.append(
             {
                 "spec_id": spec_id,
@@ -2162,13 +2240,14 @@ def parse_foundation_spec_contracts(
                 "status": obj.status,
                 "authority": obj.metadata.get("authority", ""),
                 "code_consumption": obj.metadata.get("code_consumption", []),
+                "structure_profile": spec_structure_profile(obj),
                 "rule_body_sections": rule_body_sections,
                 "assurance_measures": assurance_rows,
                 "verification_checks": [
                     {
-                        "check_type": row["检查类别"],
-                        "content": row["检查内容"],
-                        "failure_disposition": row["不满足时"],
+                        "check_type": row["verification_object"],
+                        "content": row["acceptance_criteria"],
+                        **row,
                     }
                     for row in verification_rows
                 ],
@@ -2871,6 +2950,58 @@ def _missing_contained_terms(expected: list[str], actual_items: list[str]) -> li
     return [term for term in expected if not any(term in item for item in actual_items)]
 
 
+def validate_spec_structure_contracts(contracts: list[dict[str, Any]]) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    for contract in contracts:
+        spec_id = contract["spec_id"]
+        path = contract["path"]
+        profile = contract["profile"]
+        allowed_profiles = {"root_spec"} if spec_id == "00" else {"legacy_standard_spec", "target_standard_spec"}
+        if profile not in allowed_profiles:
+            diagnostics.append(
+                Diagnostic(
+                    "error",
+                    "SPEC_STRUCTURE_PROFILE_UNKNOWN",
+                    path,
+                    f"{spec_id} 无法识别根规范、旧标准规范或目标标准规范结构",
+                )
+            )
+            continue
+
+        if profile in {"root_spec", "target_standard_spec"}:
+            verification_rows = contract["verification_requirements"]
+            if not verification_rows:
+                diagnostics.append(Diagnostic("error", "VERIFICATION_REQUIREMENTS_MISSING", path, "目标结构缺少可解析的验证要求表"))
+            for row in verification_rows:
+                if row["field_style"] != "verification_requirement":
+                    diagnostics.append(Diagnostic("error", "VERIFICATION_REQUIREMENTS_FIELDSET_INVALID", path, "目标结构必须使用验证要求七字段表"))
+                    continue
+                for field in (
+                    "verification_object",
+                    "timing",
+                    "acceptance_criteria",
+                    "evidence",
+                    "entry",
+                    "proof_scope",
+                    "failure_disposition",
+                ):
+                    if not row[field]:
+                        diagnostics.append(
+                            Diagnostic(
+                                "error",
+                                "VERIFICATION_REQUIREMENTS_FIELD_EMPTY",
+                                path,
+                                f"验证要求字段为空: {field}",
+                            )
+                        )
+
+        if not contract["human_gate"]:
+            diagnostics.append(Diagnostic("error", "SPEC_HUMAN_GATE_MISSING", path, "缺少可解析的 Human Gate 条目"))
+        if not contract["stop_conditions"]:
+            diagnostics.append(Diagnostic("error", "SPEC_STOP_CONDITIONS_MISSING", path, "缺少可解析的 Stop Conditions 条目"))
+    return diagnostics
+
+
 def validate_foundation_spec_contracts(contracts: list[dict[str, Any]]) -> list[Diagnostic]:
     diagnostics: list[Diagnostic] = []
     contracts_by_id = {contract["spec_id"]: contract for contract in contracts}
@@ -2908,9 +3039,9 @@ def validate_foundation_spec_contracts(contracts: list[dict[str, Any]]) -> list[
             )
 
         assurance_rows = contract["assurance_measures"]
-        if not assurance_rows:
+        if contract["structure_profile"] == "legacy_standard_spec" and not assurance_rows:
             diagnostics.append(Diagnostic("error", "FOUNDATION_ASSURANCE_TABLE_MISSING", path, f"{spec_id} 缺少可解析保障措施表"))
-        else:
+        elif contract["structure_profile"] == "legacy_standard_spec":
             assurance_names = [row["requirement"] for row in assurance_rows]
             for item in _missing_exact_values(expected["required_assurance_rows"], assurance_names):
                 diagnostics.append(
@@ -2945,8 +3076,8 @@ def validate_foundation_spec_contracts(contracts: list[dict[str, Any]]) -> list[
 
         verification_rows = contract["verification_checks"]
         if not verification_rows:
-            diagnostics.append(Diagnostic("error", "FOUNDATION_VERIFICATION_TABLE_MISSING", path, f"{spec_id} 缺少可解析验证方法表"))
-        else:
+            diagnostics.append(Diagnostic("error", "FOUNDATION_VERIFICATION_TABLE_MISSING", path, f"{spec_id} 缺少可解析验证要求或验证方法表"))
+        elif contract["structure_profile"] == "legacy_standard_spec":
             verification_names = [row["check_type"] for row in verification_rows]
             for item in _missing_exact_values(expected["required_verification_rows"], verification_names):
                 diagnostics.append(
@@ -2966,6 +3097,26 @@ def validate_foundation_spec_contracts(contracts: list[dict[str, Any]]) -> list[
                                 "FOUNDATION_VERIFICATION_FIELD_EMPTY",
                                 path,
                                 f"{spec_id} 验证方法字段为空: {key}",
+                            )
+                        )
+        else:
+            for row in verification_rows:
+                for key in (
+                    "verification_object",
+                    "timing",
+                    "acceptance_criteria",
+                    "evidence",
+                    "entry",
+                    "proof_scope",
+                    "failure_disposition",
+                ):
+                    if not row[key]:
+                        diagnostics.append(
+                            Diagnostic(
+                                "error",
+                                "FOUNDATION_VERIFICATION_FIELD_EMPTY",
+                                path,
+                                f"{spec_id} 验证要求字段为空: {key}",
                             )
                         )
 
@@ -3960,6 +4111,7 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
     timings = parse_consumption_timings(root)
     requirements = parse_ai_behavior_requirements(root)
     takeover_matrix = parse_takeover_matrix(root)
+    spec_structure_contracts = parse_spec_structure_contracts(objects, root)
     foundation_spec_contracts = parse_foundation_spec_contracts(objects, root)
     ldvh_install_action_template = parse_ldvh_install_action_template(root)
     ldvh_install_spec_contract = parse_ldvh_install_spec_contract(root)
@@ -3984,6 +4136,7 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
     diagnostics.extend(validate_consumption_timings(timings))
     diagnostics.extend(validate_ai_behavior_requirements(requirements, timings, objects, root))
     diagnostics.extend(validate_takeover_matrix(takeover_matrix, requirements, timings))
+    diagnostics.extend(validate_spec_structure_contracts(spec_structure_contracts))
     diagnostics.extend(validate_foundation_spec_contracts(foundation_spec_contracts))
     diagnostics.extend(validate_fact_model_boundaries(root))
     diagnostics.extend(validate_fact_source_and_verification_boundaries(root))
@@ -4017,6 +4170,7 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
             "consumption_timings": len(timings),
             "ai_behavior_requirements": len(requirements),
             "takeover_matrix_rows": len(takeover_matrix),
+            "spec_structure_contracts": len(spec_structure_contracts),
             "foundation_spec_contracts": len(foundation_spec_contracts),
             "fact_instances": len(fact_instances),
             "governed_projects": len(governed_projects_config["projects"]),
@@ -4029,7 +4183,7 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
             {"path": "specs/01-保障与衔接.md", "role": "assurance_boundary"},
             {"path": "specs/02-AI行为规范.md", "role": "ai_behavior_requirements"},
             {"path": "specs/03-事实源与Git溯源规范.md", "role": "fact_source_traceability"},
-            {"path": "specs/04-Specs基础规范.md", "role": "specs_structure"},
+            {"path": "specs/04-规范体系基础规范.md", "role": "specs_structure"},
             {"path": "specs/05-事实模型基础规范.md", "role": "fact_model_foundation"},
             {"path": "specs/06-行动模板基础规范.md", "role": "action_template_foundation"},
             {"path": "specs/30-安装配置与验证行动模板.md", "role": "ldvh_install_action_template"},
@@ -4056,6 +4210,7 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
         "consumption_timings": timings,
         "ai_behavior_requirements": requirements,
         "takeover_matrix": takeover_matrix,
+        "spec_structure_contracts": spec_structure_contracts,
         "foundation_spec_contracts": foundation_spec_contracts,
         "ldvh_install_action_template": ldvh_install_action_template,
         "ldvh_install_spec_contract": ldvh_install_spec_contract,
@@ -6569,7 +6724,7 @@ def build_preflight(
         ]
         + [
             {"path": "specs/01-保障与衔接.md", "role": "preflight_assurance_boundary"},
-            {"path": "specs/04-Specs基础规范.md", "role": "preflight_structure_boundary"},
+            {"path": "specs/04-规范体系基础规范.md", "role": "preflight_structure_boundary"},
             {"path": "specs/02-AI行为规范.md", "role": "preflight_ai_behavior_boundary"},
         ],
         ("path", "role"),

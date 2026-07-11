@@ -17,7 +17,7 @@ ldvh_spec:
     - "specs/01-保障与衔接.md"
     - "specs/02-AI行为规范.md"
     - "specs/03-事实源与Git溯源规范.md"
-    - "specs/04-Specs基础规范.md"
+    - "specs/04-规范体系基础规范.md"
   related_specs:
     - "specs/05-事实模型基础规范.md"
     - "specs/06-行动模板基础规范.md"
@@ -61,7 +61,7 @@ Code 主要服务 V1、V3、V4、V6、V7 和 V9：它通过解析、索引、校
 
 ## 2. 权威依据
 
-本文承接 `specs/00-理念与构成.md` 的 Code 定位、`specs/01-保障与衔接.md` 的保障消费语义、`specs/02-AI行为规范.md` 的主控责任、`specs/03-事实源与Git溯源规范.md` 的事实源边界，以及 `specs/04-Specs基础规范.md` 的 Markdown 结构规则。
+本文承接 `specs/00-理念与构成.md` 的 Code 定位、`specs/01-保障与衔接.md` 的保障消费语义、`specs/02-AI行为规范.md` 的主控责任、`specs/03-事实源与Git溯源规范.md` 的事实源边界，以及 `specs/04-规范体系基础规范.md` 的 Markdown 结构规则。
 
 若 Code 输出与 specs 正文冲突，以 specs 正文和 Human Gate 为准。Code 发现规则缺口时只能输出 diagnostic 并回到对应规范，不得自行补写规则。
 

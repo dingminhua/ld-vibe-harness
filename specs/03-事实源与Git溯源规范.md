@@ -16,7 +16,7 @@ ldvh_spec:
     - "specs/00-理念与构成.md"
     - "specs/01-保障与衔接.md"
     - "specs/02-AI行为规范.md"
-    - "specs/04-Specs基础规范.md"
+    - "specs/04-规范体系基础规范.md"
   related_specs:
     - "specs/05-事实模型基础规范.md"
     - "specs/06-行动模板基础规范.md"
@@ -59,7 +59,7 @@ ldvh_spec:
 
 ## 2. 权威依据
 
-本文承接 `specs/00-理念与构成.md` 的事实源边界、`specs/01-保障与衔接.md` 的 receipt/evidence/diagnostic 边界、`specs/02-AI行为规范.md` 的过程输出和证据处理责任，以及 `specs/04-Specs基础规范.md` 的 spec 结构规则。
+本文承接 `specs/00-理念与构成.md` 的事实源边界、`specs/01-保障与衔接.md` 的 receipt/evidence/diagnostic 边界、`specs/02-AI行为规范.md` 的过程输出和证据处理责任，以及 `specs/04-规范体系基础规范.md` 的 spec 结构规则。
 
 若本文与 00 的事实源原则冲突，以 00 为准。若本文与 01 的保障消费语义冲突，应回到 01 和 Human Gate。若 Code、Web、测试、review 或迁移材料与本文冲突，以本文和上位规范为准。
 
@@ -99,7 +99,7 @@ ldvh_spec:
 
 V3 删除准备度和当前主线验收必须以当前工作树自足为准。若某项内容只存在于已删除的 V2 历史中，它在当前 V3 中默认没有规则效力；需要继续使用时，必须进入当前 V3 specs、事实对象、实现域文档或明确的后续 WorkCase，而不能以“Git history 可查”作为已迁入、已验收或可日常使用的依据。
 
-状态归口受 `specs/04-Specs基础规范.md` 约束。除 specs / attachments 自身生命周期状态外，只有进入 Git 可追踪事实源的事实对象业务状态可以成为稳定状态；Code 输出、环境审计、安装检测、Web 展示、测试结果和 CLI summary 中的 `status`、`state` 或“状态”只能作为过程输出、验证证据或展示输出，不得被本文写成事实源。
+除 specs / attachments 自身生命周期状态外，只有进入 Git 可追踪事实源的事实对象业务状态可以成为稳定状态；Code 输出、环境审计、安装检测、Web 展示、测试结果和 CLI summary 中的 `status`、`state` 或“状态”只能作为过程输出、验证证据或展示输出，不得被本文写成事实源。
 
 ## 6. 过程输出、证据与回写
 

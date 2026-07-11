@@ -23,7 +23,7 @@ ENTRY_ACK_PATHS = [
 TEST_TARGET_ACK_PATHS = [
     *ENTRY_ACK_PATHS,
     "specs/03-事实源与Git溯源规范.md",
-    "specs/04-Specs基础规范.md",
+    "specs/04-规范体系基础规范.md",
     "specs/09-测试与验证规范.md",
     "specs/07-Code确定性执行规范.md",
 ]
@@ -31,7 +31,7 @@ WORKCASE_TARGET = "ldvh-base/workcases/workcase-0024-v2-deletion-readiness-closu
 WORKCASE_ACK_PATHS = [
     *ENTRY_ACK_PATHS,
     "specs/03-事实源与Git溯源规范.md",
-    "specs/04-Specs基础规范.md",
+    "specs/04-规范体系基础规范.md",
     "specs/05-事实模型基础规范.md",
     "specs/09-测试与验证规范.md",
     "specs/21-WorkCase-工作项.md",
@@ -40,7 +40,7 @@ WORKCASE_ACK_PATHS = [
 GIT_REMOTE_REF_ACK_PATHS = [
     *ENTRY_ACK_PATHS,
     "specs/03-事实源与Git溯源规范.md",
-    "specs/04-Specs基础规范.md",
+    "specs/04-规范体系基础规范.md",
     "specs/10-安装与配置规范.md",
     "specs/09-测试与验证规范.md",
     "specs/31-Git提交行动模板.md",

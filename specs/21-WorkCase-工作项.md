@@ -17,7 +17,7 @@ ldvh_spec:
     - "specs/01-保障与衔接.md"
     - "specs/02-AI行为规范.md"
     - "specs/03-事实源与Git溯源规范.md"
-    - "specs/04-Specs基础规范.md"
+    - "specs/04-规范体系基础规范.md"
     - "specs/05-事实模型基础规范.md"
   related_specs:
     - "specs/attachments/21.Att.01-orchestration字段契约表.md"

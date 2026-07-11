@@ -275,6 +275,7 @@ def print_text(result: dict[str, Any], command: str) -> None:
     print(f"- consumption_timings: {summary['consumption_timings']}")
     print(f"- ai_behavior_requirements: {summary['ai_behavior_requirements']}")
     print(f"- takeover_matrix_rows: {summary['takeover_matrix_rows']}")
+    print(f"- spec_structure_contracts: {summary['spec_structure_contracts']}")
     print(f"- foundation_spec_contracts: {summary['foundation_spec_contracts']}")
     print(f"- fact_instances: {summary['fact_instances']}")
     print(f"- governed_projects: {summary['governed_projects']}")
@@ -295,6 +296,7 @@ def select_output(result: dict[str, Any], command: str) -> dict[str, Any]:
             "summary": result["summary"],
             "specs": result["specs"],
             "attachments": result["attachments"],
+            "spec_structure_contracts": result["spec_structure_contracts"],
             "foundation_spec_contracts": result["foundation_spec_contracts"],
             "diagnostics": result["diagnostics"],
         }

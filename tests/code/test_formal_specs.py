@@ -7,18 +7,29 @@ import yaml
 
 
 ROOT = Path(__file__).resolve().parents[2]
-FIXED_HEAD_SECTIONS = [
+LEGACY_FIXED_HEAD_SECTIONS = [
     "价值判断",
     "权威依据",
     "归口边界",
     "适用范围",
 ]
-FIXED_TAIL_SECTIONS = [
+TARGET_FIXED_HEAD_SECTIONS = [
+    "价值判断",
+    "规范依据",
+    "职责边界",
+    "适用范围",
+]
+LEGACY_FIXED_TAIL_SECTIONS = [
     "保障措施",
     "验证方法",
     "Human Gate",
     "Stop Conditions",
     "待补齐事项",
+]
+TARGET_FIXED_TAIL_SECTIONS = [
+    "验证要求",
+    "Human Gate",
+    "Stop Conditions",
 ]
 FORBIDDEN_ATTACHMENT_HEADINGS = [
     "## 上位依据",
@@ -113,7 +124,7 @@ def test_ldvh_starts_from_markdown_specs_only() -> None:
     assert (ROOT / "specs" / "01-保障与衔接.md").exists()
     assert (ROOT / "specs" / "02-AI行为规范.md").exists()
     assert (ROOT / "specs" / "03-事实源与Git溯源规范.md").exists()
-    assert (ROOT / "specs" / "04-Specs基础规范.md").exists()
+    assert (ROOT / "specs" / "04-规范体系基础规范.md").exists()
     assert (ROOT / "specs" / "05-事实模型基础规范.md").exists()
     assert (ROOT / "specs" / "06-行动模板基础规范.md").exists()
     assert (ROOT / "specs" / "07-Code确定性执行规范.md").exists()
@@ -141,7 +152,7 @@ def test_attachments_stay_subordinate_tables_or_enums() -> None:
     )
     assert attachments
 
-    spec_04 = (ROOT / "specs" / "04-Specs基础规范.md").read_text(encoding="utf-8")
+    spec_04 = (ROOT / "specs" / "04-规范体系基础规范.md").read_text(encoding="utf-8")
     assert "附件只是正文授权的附属内容" in spec_04
     assert "附件不得承载上位原则、核心规则、行动流程、Human Gate" in spec_04
 
@@ -169,13 +180,31 @@ def test_formal_specs_keep_ldvh_identity_blocks() -> None:
         assert f'canonical_path: "{path.relative_to(ROOT)}"' in raw
 
 
-def test_non_root_specs_keep_fixed_head_and_tail_entries() -> None:
+def test_root_spec_keeps_root_tail_entries() -> None:
+    path = ROOT / "specs" / "00-理念与构成.md"
+    titles = _normalized_h2_titles(path.read_text(encoding="utf-8"))
+    assert titles[-len(TARGET_FIXED_TAIL_SECTIONS):] == TARGET_FIXED_TAIL_SECTIONS
+
+
+def test_non_root_specs_keep_legacy_or_target_head_and_tail_entries() -> None:
     for path in _spec_markdown_files(include_root=False):
         raw = path.read_text(encoding="utf-8")
         titles = _normalized_h2_titles(raw)
-        assert titles[: len(FIXED_HEAD_SECTIONS)] == FIXED_HEAD_SECTIONS, path
-        assert titles[-len(FIXED_TAIL_SECTIONS) :] == FIXED_TAIL_SECTIONS, path
-        assert len(titles) > len(FIXED_HEAD_SECTIONS) + len(FIXED_TAIL_SECTIONS), path
+        legacy = (
+            titles[:len(LEGACY_FIXED_HEAD_SECTIONS)] == LEGACY_FIXED_HEAD_SECTIONS
+            and titles[-len(LEGACY_FIXED_TAIL_SECTIONS):] == LEGACY_FIXED_TAIL_SECTIONS
+        )
+        target = (
+            titles[:len(TARGET_FIXED_HEAD_SECTIONS)] == TARGET_FIXED_HEAD_SECTIONS
+            and titles[-len(TARGET_FIXED_TAIL_SECTIONS):] == TARGET_FIXED_TAIL_SECTIONS
+        )
+        assert legacy or target, path
+        fixed_count = (
+            len(LEGACY_FIXED_HEAD_SECTIONS) + len(LEGACY_FIXED_TAIL_SECTIONS)
+            if legacy
+            else len(TARGET_FIXED_HEAD_SECTIONS) + len(TARGET_FIXED_TAIL_SECTIONS)
+        )
+        assert len(titles) > fixed_count, path
 
 
 def test_role_sections_point_to_existing_h2_entries() -> None:

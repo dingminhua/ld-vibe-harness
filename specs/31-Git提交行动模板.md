@@ -17,7 +17,7 @@ ldvh_spec:
     - "specs/01-保障与衔接.md"
     - "specs/02-AI行为规范.md"
     - "specs/03-事实源与Git溯源规范.md"
-    - "specs/04-Specs基础规范.md"
+    - "specs/04-规范体系基础规范.md"
     - "specs/06-行动模板基础规范.md"
     - "specs/09-测试与验证规范.md"
   related_specs:

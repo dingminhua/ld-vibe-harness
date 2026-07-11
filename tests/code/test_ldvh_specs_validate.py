@@ -24,28 +24,28 @@ ENTRY_ACK_PATHS = [
 CODE_TARGET_ACK_PATHS = [
     *ENTRY_ACK_PATHS,
     "specs/03-事实源与Git溯源规范.md",
-    "specs/04-Specs基础规范.md",
+    "specs/04-规范体系基础规范.md",
     "specs/07-Code确定性执行规范.md",
     "specs/09-测试与验证规范.md",
 ]
 TEST_TARGET_ACK_PATHS = [
     *ENTRY_ACK_PATHS,
     "specs/03-事实源与Git溯源规范.md",
-    "specs/04-Specs基础规范.md",
+    "specs/04-规范体系基础规范.md",
     "specs/09-测试与验证规范.md",
     "specs/07-Code确定性执行规范.md",
 ]
 ACCEPTANCE_SCRATCH_ACK_PATHS = [
     *ENTRY_ACK_PATHS,
     "specs/03-事实源与Git溯源规范.md",
-    "specs/04-Specs基础规范.md",
+    "specs/04-规范体系基础规范.md",
     "specs/30-安装配置与验证行动模板.md",
     "code/docs/02-Environment-Plugin-Practice.md",
 ]
 GIT_REMOTE_REF_ACK_PATHS = [
     *ENTRY_ACK_PATHS,
     "specs/03-事实源与Git溯源规范.md",
-    "specs/04-Specs基础规范.md",
+    "specs/04-规范体系基础规范.md",
     "specs/10-安装与配置规范.md",
     "specs/09-测试与验证规范.md",
     "specs/31-Git提交行动模板.md",
@@ -54,7 +54,7 @@ WORKCASE_TARGET = "ldvh-base/workcases/workcase-0024-v2-deletion-readiness-closu
 WORKCASE_ACK_PATHS = [
     *ENTRY_ACK_PATHS,
     "specs/03-事实源与Git溯源规范.md",
-    "specs/04-Specs基础规范.md",
+    "specs/04-规范体系基础规范.md",
     "specs/05-事实模型基础规范.md",
     "specs/09-测试与验证规范.md",
     "specs/21-WorkCase-工作项.md",
@@ -168,6 +168,25 @@ def test_current_specs_validate_without_diagnostics(validation_result: dict) -> 
     assert result["diagnostics"] == []
 
 
+def test_spec_structure_contracts_support_root_and_legacy_profiles(validation_result: dict) -> None:
+    contracts = {contract["spec_id"]: contract for contract in validation_result["spec_structure_contracts"]}
+
+    assert contracts["00"]["profile"] == "root_spec"
+    assert contracts["04"]["profile"] == "legacy_standard_spec"
+    assert [row["verification_object"] for row in contracts["00"]["verification_requirements"]] == [
+        "存在理由与第一服务对象",
+        "Helper CLI 基础服务与规则作用边界",
+        "事实源信息锚点",
+        "五类构成要素归口",
+        "Specs 共同结构治理职责授权",
+        "V1-V8 价值判断",
+        "能力、环境与完成声明",
+        "Human Gate 与 Stop Conditions",
+    ]
+    assert contracts["00"]["human_gate"]
+    assert contracts["00"]["stop_conditions"]
+
+
 def test_foundation_specs_contracts_are_code_consumable(validation_result: dict) -> None:
     result = validation_result
     contracts = {contract["spec_id"]: contract for contract in result["foundation_spec_contracts"]}
@@ -228,7 +247,7 @@ def test_install_action_template_discloses_runtime_cache_boundary() -> None:
 
 
 def test_specs_base_defines_cross_spec_responsibility_boundary() -> None:
-    spec_04 = (ROOT / "specs/04-Specs基础规范.md").read_text(encoding="utf-8")
+    spec_04 = (ROOT / "specs/04-规范体系基础规范.md").read_text(encoding="utf-8")
 
     # These string checks intentionally guard specs semantics, not prose style.
     assert "### 5.8 跨规范职责边界总览" in spec_04
@@ -867,7 +886,7 @@ def test_fact_model_validator_reports_missing_field_term_boundary(tmp_path: Path
     _replace_in_temp(
         root,
         "specs/05-事实模型基础规范.md",
-        "6. 字段名不得与 `specs/attachments/04.Att.06-术语表.md` 中的术语含义冲突；确需复用术语时，必须说明字段语义和术语边界。\n",
+        "6. 字段名不得与 `specs/attachments/04.Att.06-LDVH术语登记表.md` 中的术语含义冲突；确需复用术语时，必须说明字段语义和术语边界。\n",
     )
 
     result = ldvh_specs.build_validation(root)
@@ -1458,7 +1477,7 @@ def test_specs_validator_reports_missing_implementation_domain_boundary(tmp_path
     root = _copy_specs_root(tmp_path)
     _replace_in_temp(
         root,
-        "specs/04-Specs基础规范.md",
+        "specs/04-规范体系基础规范.md",
         "实现域实践细节由对应实现域承接",
         "实践细节由对应位置承接",
     )
@@ -1472,7 +1491,7 @@ def test_specs_validator_reports_missing_state_ownership_boundary(tmp_path: Path
     root = _copy_specs_root(tmp_path)
     _replace_in_temp(
         root,
-        "specs/04-Specs基础规范.md",
+        "specs/04-规范体系基础规范.md",
         "只有两类对象可以拥有可记录、可迁移、可校验的状态",
         "多类对象可以拥有可记录、可迁移、可校验的状态",
     )
@@ -4434,7 +4453,7 @@ def test_runtime_pre_tool_use_unrelated_global_diagnostics_are_not_blocking(vali
         acknowledged_paths=[
             *ENTRY_ACK_PATHS,
             "specs/03-事实源与Git溯源规范.md",
-            "specs/04-Specs基础规范.md",
+            "specs/04-规范体系基础规范.md",
             "specs/09-测试与验证规范.md",
             "README.md",
         ],
