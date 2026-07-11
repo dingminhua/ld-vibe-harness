@@ -1,184 +1,19 @@
-# LDVH V3
+# LDVH V4
 
-V2 已于 2026-07-02 关闭为历史来源、迁移审计依据和对照材料，不再作为当前 LDVH 的日常规则入口。迁移记录已从工作树删除；Git history 只作为审计追溯、争议复核或历史取证的备份渠道，不作为日常规则、验收通过、迁移收口或缺口承接依据。
+本仓库正在建立 LDVH V4 的全新架构与规范基线。V4 不以兼容迁移 V3 为目标；当前资产是否属于 V4，必须以 V4 规则、实现与当次验证证据为准。
 
-当前仓库处于 V3 commit-msg 最小 hard switch 状态：日常规则判断、事实对象维护和 Web 数据读取以 V3 为准；当前 worktree 的真实 Git `commit-msg` Hook 已由 V3 接管。Rules / Skill 顶层机制已取消；AI 环境正式接入只支持可安装、可验证、可阻断的 lifecycle Hook。
+## 当前入口
 
-## 当前主线
+- [`specs/`](specs/) 是 V4 当前规则源；根规范从 [`00-理念与构成.md`](specs/00-理念与构成.md) 开始。
+- [`V4-架构重建基线.md`](docs/v4-architecture/V4-架构重建基线.md) 记录本轮重建范围、非继承边界和资产处置原则。
+- [`archive/v3/specs/`](archive/v3/specs/) 是 V3 Specs 的历史参考，不是 V4 规则源。
 
-- `specs/`：规则源。Markdown specs 是正式规则权威，不是事实源。
-- `ldvh-base/`：事实对象实例。当前承接 Spark、WorkCase、ADR、Pitfall、Study。
-- `code/`：确定性解析、校验、诊断、commit gate 和 e2e rehearsal。
-- `web/`：Human-facing 展示和 Web API。Web 独立读取 V3 `ldvh-base/`，不依赖 Code 输出作为主数据源。
-- `tests/`：Tests（测试与验证实现域）的目录。
-- `hooks/`：当前 worktree 的 `commit-msg` Hook 模板已启用，用于真实提交前校验 V3 commit message 契约；read_plan 消费证据归 runtime receipt 或外部运行时入口，不写入 commit body 要求。
+## 资产边界
 
-V3 不保留 `rules/` 或 `skills/` 顶层目录机制。V2 Rules 的入口可见能力不再作为当前环境入口、安装策略或验证路径；V2 Skill 的可复用工作流能力只进入行动模板、Action Guide 或外部包装候选。
+- 现有 `code/`、`tests/`、`hooks/`、`ldvh-base/` 以及 package 配置仍属于 V3 参考实现。它们可以用于研究问题和候选设计，但不能证明任何能力已在 V4 中 `available`、`integrated` 或 `completed`。
+- `web/` 作为现有产品资产冻结保留，不在本轮 V4 架构重建范围内，也不因仓库进入 V4 而自动获得 V4 验证结论。
+- 除 `archive/v3/specs/` 外，仓库中仍可能存在 V3 路径、字段或行为假设；在完成 V4 重新裁决前，均不得视为 V4 契约。
 
-## 环境边界
+## 使用状态
 
-以下 YAML 是当前 worktree 的审计观察，不是长期安装状态，也不是事实对象状态。环境接入结论只对当次审计或当次验收的目标环境、LDVH root、插件配置和当次触发依据成立；换环境、换路径、插件升级、配置变化或重启后失效时，必须重新验收。
-
-```yaml
-switch_mode: commit_msg_hard_switch_minimal
-environment_integrated: partial
-hook_integrated: git.commit-msg
-runtime_adapter_entry: hook.runtime_adapter
-runtime_adapter_integrated: false
-session_start_entry: hook.session_start
-session_start_integrated: false
-pre_tool_use_entry: hook.pre_tool_use
-pre_tool_use_integrated: false
-completion_claim_entry: hook.completion_claim
-completion_claim_integrated: false
-authorization: none
-```
-
-这意味着 V3 已是日常主线，并会通过当前 worktree 的 `core.hooksPath=hooks` 自动拦截真实 Git commit message。系统仍不会自动拦截所有 session start、pre tool use、completion claim 或其它 AI 环境操作；这些入口必须由目标环境插件、扩展包、package 或 runtime adapter 的 lifecycle Hook 触发。Code、Web、Tests 或 commit gate 输出都不替代 Human Gate。
-
-当前支持两种接入口径：
-
-1. Git Hook：`git.commit-msg` 已自动触发，外部管辖项目通过薄 shim 接入；
-2. AI 环境 Hook：所有支持 Hook 的协作环境都必须通过对应 LDVH 插件、扩展包、package 或 runtime adapter 安装 lifecycle Hook；当前可审计样例是 Codex，旧 `ldvh@personal` 插件指向 V2 路径，不能声明为 V3 integrated。
-
-Git Hook 实践见 `code/docs/01-Git-Commit-and-Hook-Practice.md`；环境插件和 Hook 接入实现实践见 `code/docs/02-Environment-Plugin-Practice.md`。后者只记录实现域边界，不表示已安装或升级任何环境插件。
-
-统一 runtime adapter 入口：
-
-```bash
-python3 code/runtime_adapter.py session-start --task "<当前任务>" --target-path "<目标路径>"
-python3 code/runtime_adapter.py pre-tool-use --target-path "<目标路径>" \
-  --acknowledged-path specs/00-理念与构成.md \
-  --acknowledged-path specs/01-保障与衔接.md \
-  --acknowledged-path specs/02-AI行为规范.md
-python3 code/runtime_adapter.py completion-claim --target-path "<目标路径>" \
-  --verification-evidence "<验证命令、未验证范围或残留风险说明>"
-```
-
-该入口输出统一 adapter 包装结果和对应 lifecycle 事件结果；它是 Hook backend，可被目标环境插件或 adapter 调用；直接运行命令只作为本地探针，不是环境自动触发证明。
-
-session start Hook backend：
-
-```bash
-python3 code/session_start.py --task "<当前任务>" --target-path "<目标路径>"
-```
-
-该入口输出 P0/P1 read_plan 和 receipt；它必须由目标环境 lifecycle Hook 触发才可作为环境接入当次依据。
-
-pre tool use Hook backend：
-
-```bash
-python3 code/pre_tool_use.py --target-path "<目标路径>" --operation write \
-  --acknowledged-path specs/00-理念与构成.md \
-  --acknowledged-path specs/01-保障与衔接.md \
-  --acknowledged-path specs/02-AI行为规范.md
-```
-
-该入口输出写入前 preflight、required read plan 和 receipt；它必须由目标环境写入前 lifecycle Hook 触发才可作为当次阻断依据。
-
-completion claim Hook backend：
-
-```bash
-python3 code/completion_claim.py --target-path "<目标路径>" \
-  --verification-evidence "<验证命令、未验证范围或残留风险说明>"
-```
-
-该入口输出完成声明前检查和 receipt；它必须由目标环境 lifecycle Hook 触发才可作为完成声明接入当次依据，且不替代 Human 验收。
-
-Hook 状态和回滚入口：
-
-```bash
-python3 code/install_git_hooks.py status
-python3 code/install_git_hooks.py install --repo .
-python3 code/install_git_hooks.py uninstall --repo .
-```
-
-`install_git_hooks.py` 是当前 LDVH worktree 本地安装器和 adapter backend；不要用它直接安装或卸载外部 repo。
-
-外部管辖项目 Hook adapter：
-
-```bash
-python3 code/governed_hook_adapter.py status --repo "<repo>" --governance-root "<ldvh-root>"
-python3 code/governed_hook_adapter.py install --repo "<repo>" --governance-root "<ldvh-root>" --confirm-human-gate
-python3 code/governed_hook_adapter.py uninstall --repo "<repo>" --governance-root "<ldvh-root>" --confirm-human-gate
-```
-
-该 adapter 会先按 `LDVH-GOVERNED-PROJECTS.yaml` 做 target-first / Git common-dir 解析；`install` 和 `uninstall` 必须显式带 `--confirm-human-gate`。它不会默认覆盖非管辖项目，也不表示任何外部项目已经自动接入。
-
-安装与配置规则由 `specs/10-安装与配置规范.md` 归口，安装向导 CLI 第一版入口是 `code/install_wizard.py`，由 `ldvh-base/workcases/workcase-0023-install-wizard-cli.yaml` 承接。该 CLI 只作为 10 的薄执行壳：`check` / `plan` 只读，`apply` 必须显式带 `--confirm-human-gate`，`verify` 复用 `install_verification.py`；当前 `plugin_hook` 可通过现有 `governed_hook_adapter.py` 安装管辖项目 Git Hook。目标 AI 环境缺少可安装、可验证、可阻断 lifecycle Hook 时，安装向导必须阻断并交还“先实现目标环境插件 / adapter”的缺口，不生成替代环境写入。`specs/30-安装配置与验证行动模板.md` 仍是 3x 正式行动模板，负责 Human-facing 五阶段编排、告知清单、最终确认、断点恢复、失败信息包和验证交还，不作为机器规则源。
-
-统一环境接入判定检查：
-
-```bash
-python3 code/environment_status.py --format text
-python3 code/environment_entry_audit.py --format text
-```
-
-该检查会同时报告真实 `git.commit-msg` Hook、AI lifecycle Hook backend、`session_start`、`pre_tool_use` 和 `completion_claim` 的可用性、接入判定分类和当次可观察依据。当前预期结果是 `environment_integrated: partial`、`hook_integrated: git.commit-msg`，且三类 runtime 入口尚未由目标 AI 环境自动触发。该结果只表达本次审计观察，不写成长期状态。
-
-`environment_entry_audit.py` 进一步审计 LDVH 环境插件样例、tool hook、completion hook 和外部 runtime adapter 候选，同时确认 Rules / Skill 顶层机制是 `removed_top_level`，不是待启用入口。当前结论是：所有支持 Hook 的协作环境都必须通过对应 LDVH 插件、扩展包或 package 安装环境 Hook，而不是直接写入环境 Hook 系统文件；Codex lifecycle Hook 是当前可审计样例，但旧插件、旧仓库路径或历史 trust 记录不能证明 V3 已接入。除 `git.commit-msg` 外，当前不得声明其它入口已自动触发。Codex 会话不能直接验收 WorkBuddy lifecycle，WorkBuddy 只能在 WorkBuddy 环境内用当次触发依据验收。
-
-Git 提交行动模板见 `specs/31-Git提交行动模板.md`。真实提交如果触发 body 必填条件，正文至少包含 `关键变更:`；`读取依据` 不是 commit message 契约字段：
-
-```text
-关键变更:
-- ...
-```
-
-## 常用验证
-
-优先使用分层测试入口。日常小改用 smoke 或 targeted，阶段收口、跨域迁移和高风险回归再跑 full：
-
-```bash
-python3 code/test_runner.py smoke
-python3 code/test_runner.py targeted --changed specs/09-测试与验证规范.md
-python3 code/test_runner.py targeted --slow skip --changed code/test_runner.py
-python3 code/test_runner.py runtime
-python3 code/test_runner.py full
-```
-
-等价 npm scripts：
-
-```bash
-npm run test:smoke
-npm run test:targeted -- --changed web/api/app.ts
-npm run test:runtime
-npm run test:full
-```
-
-底层验证命令仍可直接运行：
-
-```bash
-python3 code/specs_validate.py all --format text --fail-on-diagnostics
-python3 code/specs_validate.py e2e --target-path tests/code/test_ldvh_specs_validate.py --format text --fail-on-diagnostics
-python3 code/specs_validate.py commit-gate --format text --fail-on-diagnostics --message "<message>"
-npm --prefix web run test:web:api
-npm --prefix web run check
-```
-
-慢速全量测试适用于阶段收口、主线切换、跨域迁移或高风险回归：
-
-```bash
-python3 code/test_runner.py full
-```
-
-## 当前正式 specs 编号
-
-- `00`：理念与构成
-- `01`：保障与衔接
-- `02`：AI 行为规范
-- `03`：事实源与 Git 溯源规范
-- `04`：Specs 基础规范
-- `05`：事实模型基础规范
-- `06`：行动模板基础规范
-- `07`：Code 确定性执行规范
-- `08`：Web 信息同步规范
-- `09`：测试与验证规范
-- `10`：安装与配置规范
-- `20`：Spark-火花
-- `21`：WorkCase-工作项
-- `22`：ADR-决策
-- `23`：Pitfall-踩坑经验
-- `24`：Study-研究报告
-- `30`：安装配置与验证行动模板
-- `31`：Git 提交行动模板
+当前 README 不提供旧 CLI 命令作为 V4 使用说明。V4 Helper CLI、Code 和 tests 只有在依据 V4 规范重新实现、接入并验证后，才能按实际证据声明相应状态。
