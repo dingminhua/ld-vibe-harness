@@ -46,7 +46,7 @@
 
 | 候选名称 | 判断 |
 |---|---|
-| LDVH Helper CLI 服务契约规范 / LDVH Helper CLI Service Contract Specification | 推荐。保留 00 已定义的完整服务形式，并用“服务契约”准确限定公开接口与结果语义，不包含内部实现 |
+| Helper CLI 服务契约规范 / Helper CLI Service Contract Specification | 推荐。保留 00 已定义的 Helper CLI 服务形式，并用“服务契约”准确限定公开接口与结果语义；标题省略已由项目语境明确的 `LDVH`，避免文件名过长 |
 | Helper 基础服务规范 / Helper Foundation Service Specification | 不推荐。“基础服务”重复 00 的上位定位，但没有清楚表达公开接口契约 |
 | LDVH Helper 服务规范 / LDVH Helper Service Specification | 不推荐。省略 CLI 后弱化当前唯一已确定的基础服务形式，“服务规范”也容易同时指向内部实现 |
 
@@ -56,8 +56,8 @@
 - 反例：parser 库选择、缓存算法、某厂商 Hook payload、事实类型字段。
 - 相邻责任：Code 实现该契约；环境接入映射该契约；具体来源规范定义被报告规则的效力。
 - 替换检查：“修改该规范时必须检查公开 CLI 与机器响应是否仍保持来源、对象范围和部分结果”能够准确替换为上述责任说明。
-- 推荐中文：`LDVH Helper CLI 服务契约规范`。
-- 推荐英文：`LDVH Helper CLI Service Contract Specification`。
+- 推荐中文：`Helper CLI 服务契约规范`。
+- 推荐英文：`Helper CLI Service Contract Specification`。
 - 推荐 `spec_key`：`helper-cli-service-contract`。
 - 术语处理：“LDVH Helper CLI”已经是 `current`；“服务契约”在标题中是普通描述，不在本轮新增独立术语。
 
@@ -181,7 +181,7 @@
 
 | 候选责任 | 推荐中文名称 | 推荐英文名称 | 推荐 `spec_key` | 相对旧提案 |
 |---|---|---|---|---|
-| A | LDVH Helper CLI 服务契约规范 | LDVH Helper CLI Service Contract Specification | `helper-cli-service-contract` | 保留 |
+| A | Helper CLI 服务契约规范 | Helper CLI Service Contract Specification | `helper-cli-service-contract` | 保留；标题缩短不改变职责 |
 | B | 事实模型基础规范 | Fact Model Foundation Specification | `fact-model-foundation` | 保留 |
 | C | 行动模板基础规范 | Action Template Foundation Specification | `action-template-foundation` | 保留 |
 | D | Code 实践与测试规范 | Code Practices and Testing Specification | `code-engineering-practices` | Human 将测试显式写入标题；职责仍是同一 Code 工程责任，正文保留首次实现前规划要求 |

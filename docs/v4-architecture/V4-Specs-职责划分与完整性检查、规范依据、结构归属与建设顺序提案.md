@@ -56,7 +56,7 @@
 | 《验证与声明规范》；`verification-claims` | 现有依据能够证明什么对象、范围、环境和时间下的结论 | 设计、实现、接入、验证、可用和完成等相互独立的声明维度；已证实范围、未证实范围、残留风险、时效和 Human 验收边界 | 具体领域的通过条件；测试框架、覆盖率和文件组织；事实记录存储；规则适用判断 |
 | 《事实模型基础规范》；`fact-model-foundation` | 哪些稳定内容值得对象化，如何持久组织 | 候选事实对象的准入、稳定身份、字段、状态、关系、证据引用、实例边界和状态转换 | 重定义事实源或证据充分性；Helper 会话、V3 runtime receipt、缓存或临时编排；具体工作流程 |
 | 《行动模板基础规范》；`action-template-foundation` | 重复场景的可复用行动结构如何表达 | 模板身份、适用条件、输入、前置条件、关键步骤、验证、回写、交还，以及对来源规则、候选事实对象和 Code 能力的引用边界 | 重新定义领域规则、事实语义或其它规范的权威关系；仅凭行动模板身份取得规则权威；保存运行状态；形成全局固定工作流；直接执行行动 |
-| 《LDVH Helper CLI 服务契约规范》；`helper-cli-service-contract` | AI 可以通过基础服务入口请求什么，结果表示什么 | 面向 AI 的统一服务边界；任务和工作对象输入；能力发现；命令族、请求与响应结构、来源回指、渐进式披露选择、Human 当前指令与候选协作偏好的来源类型标注、`no-op`、歧义、部分可用、缺少所需能力、错误，以及受控写入和其它状态变更的边界 | 创造规则、事实或模板语义；把协作偏好提升为规则；内部模块和算法；环境事件协议；为 Web 提供中转 |
+| 《Helper CLI 服务契约规范》；`helper-cli-service-contract` | AI 可以通过基础服务入口请求什么，结果表示什么 | 面向 AI 的统一服务边界；任务和工作对象输入；能力发现；命令族、请求与响应结构、来源回指、渐进式披露选择、Human 当前指令与候选协作偏好的来源类型标注、`no-op`、歧义、部分可用、缺少所需能力、错误，以及受控写入和其它状态变更的边界 | 创造规则、事实或模板语义；把协作偏好提升为规则；内部模块和算法；环境事件协议；为 Web 提供中转 |
 | 《Code 系统规划与工程实践规范》；`code-system-engineering-practices` | Code 如何在实现前完成规划，并以模块化、可测试、可维护方式实现确定性能力 | 实现前系统规划要求；模块职责、模块之间允许的引用与调用方向、接口与数据契约、Schema 的唯一定义和维护责任、测试策略、错误与诊断、受控写入、可观察性、复杂度与规模约束、必须重构的条件，以及经可靠来源和适用性核验并按 00 与 V1-V8 选择吸收的外部工程实践要求 | 重定义 Helper 外部服务或领域 Schema 语义；用单一行数上限取代设计判断；承载真实源代码；定义厂商环境协议 |
 
 ## 5. 已确认但后续起草的职责
@@ -100,7 +100,7 @@ Human 当前指令和已启用协作偏好只在其作用范围内影响可自�
 
 ### 6.3 Helper 服务、Code 工程实践要求与真实实现分开
 
-《LDVH Helper CLI 服务契约规范》定义面向 AI 的外部服务语义，不定义内部模块和算法。
+《Helper CLI 服务契约规范》定义面向 AI 的外部服务语义，不定义内部模块和算法。
 
 《Code 系统规划与工程实践规范》定义 Code 构成要素内的系统规划与工程实践要求，当前不再拆成“Code 架构规范”和“Code 实践规范”两份独立普通规范，也不建立“Code 实现规范”。真实实现只位于 Code 和 tests。
 
@@ -132,7 +132,7 @@ Human 当前指令和已启用协作偏好只在其作用范围内影响可自�
 
 ### 8.1 结构归属
 
-当前 01 与下列候选普通规范在结构上都是 `ldvh-root` 的直接细化，不根据编号、规范依据或建设顺序构造多层结构：
+当前 01–04 与下列候选普通规范在结构上都是 `ldvh-root` 的直接细化，不根据编号、规范依据或建设顺序构造多层结构：
 
 | 当前或候选 `spec_key` | `parent_spec` | `relation` | 当前状态 |
 |---|---|---|---|
@@ -143,7 +143,7 @@ Human 当前指令和已启用协作偏好只在其作用范围内影响可自�
 | `rule-applicability-effect` | `ldvh-root` | `refines` | 候选 |
 | `fact-model-foundation` | `ldvh-root` | `refines` | 候选 |
 | `action-template-foundation` | `ldvh-root` | `refines` | 候选 |
-| `helper-cli-service-contract` | `ldvh-root` | `refines` | 候选 |
+| `helper-cli-service-contract` | `ldvh-root` | `refines` | 已生效 |
 | `code-system-engineering-practices` | `ldvh-root` | `refines` | 候选 |
 | `environment-integration` | `ldvh-root` | `refines` | 候选；后续阶段起草 |
 | `web-information-interaction` | `ldvh-root` | `refines` | 候选；当前冻结 |
@@ -160,7 +160,7 @@ Human 当前指令和已启用协作偏好只在其作用范围内影响可自�
 | 规则适用与效力 | `specification-model-foundation`、`work-object-governance-scope`、`source-of-truth-traceability`、`verification-claims` | 需要识别规则源、工作对象、依据和可证明范围 |
 | 事实模型基础 | `work-object-governance-scope`、`source-of-truth-traceability`、`verification-claims` | 稳定事实对象必须具有对象边界、事实源位置和证据边界 |
 | 行动模板基础 | `rule-applicability-effect`、`verification-claims`、`fact-model-foundation` | 行动结构需要引用适用规则、验证条件和事实回写边界 |
-| LDVH Helper CLI 服务契约 | `specification-model-foundation`、`work-object-governance-scope`、`source-of-truth-traceability`、`rule-applicability-effect`、`verification-claims`、`fact-model-foundation`、`action-template-foundation` | Helper 需要统一组织这些已经定义的语义，但不创造新语义 |
+| Helper CLI 服务契约 | `specification-model-foundation`、`work-object-governance-scope`、`source-of-truth-traceability`、`rule-applicability-effect`、`verification-claims`、`fact-model-foundation`、`action-template-foundation` | Helper 需要统一组织这些已经定义的语义，但不创造新语义；该早期候选依据已由后续独立审计收敛为当前 04 的实际 `basis` |
 | Code 系统规划与工程实践 | `helper-cli-service-contract` | Code 需要实现已定义的 Helper 外部服务，并保持内部职责与外部契约分离 |
 | 环境接入 | `work-object-governance-scope`、`verification-claims`、`helper-cli-service-contract` | 环境适配器需要传递对象信息、调用 Helper 并验证真实接入 |
 | Web 信息呈现与交互 | `source-of-truth-traceability`、`verification-claims`、`fact-model-foundation` | Web 从相应 Source of Truth 独立读取，并呈现事实、证据和声明边界 |
@@ -186,7 +186,7 @@ Human 当前指令和已启用协作偏好只在其作用范围内影响可自�
 | 4 | 《规则适用与效力规范》 | 管辖对象、来源规则和统一的验证与声明语义下，规则命中、效力、冲突和缺少所需能力时的处理已确认 |
 | 5 | 《事实模型基础规范》 | 候选稳定事实对象的准入、身份、状态、关系和实例边界确认 |
 | 6 | 《行动模板基础规范》 | 可复用行动结构、适用条件、验证、回写和交还边界确认 |
-| 7 | 《LDVH Helper CLI 服务契约规范》 | 上游语义契约可被统一服务入口稳定组织 |
+| 7 | 《Helper CLI 服务契约规范》 | 上游语义契约可被统一服务入口稳定组织 |
 | 8 | 《Code 系统规划与工程实践规范》及结构化系统规划 | 相关外部工程资料的来源与适用性已经核验，并按 00 与 V1-V8 完成选择；模块、引用与调用关系、接口、测试和质量约束已生效，并为后续环境适配器保留明确扩展边界 |
 | 9 | 模块化 Code 和 tests 的可端到端验证最小实现增量 | 只实现已有稳定契约的能力，并按实际证据支持的声明范围报告结果 |
 | 10 | 《环境接入规范》的通用环境适配器契约 | 不绑定厂商的服务调用、对象定位信息映射和接入验证边界确认；只阻塞环境适配器与接入实现，不反向阻塞已有契约且不依赖环境接入的 Code 能力 |
