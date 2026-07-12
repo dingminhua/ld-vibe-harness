@@ -115,7 +115,7 @@
 
 | 候选名称 | 判断 |
 |---|---|
-| Code 工程实践规范 / Code Engineering Practices Specification | 推荐。以 Code 构成要素为主语，覆盖实现前设计、测试、诊断、重构和持续演进，不暗示存在独立于 Helper CLI 的另一套系统 |
+| Code 实践与测试规范 / Code Practices and Testing Specification | 推荐。以 Code 构成要素为主语，并把测试责任明确写入标题；正文仍覆盖实现前规划、诊断、重构和持续演进，不暗示存在独立于 Helper CLI 的另一套系统 |
 | Code 系统设计与工程实践规范 / Code System Design and Engineering Practices Specification | 不推荐。内容本身可成立，但“Code 系统设计”容易让人误解为 Code 是与 Helper CLI 并列的另一套系统 |
 | Code 系统规划与工程实践规范 / Code System Planning and Engineering Practices Specification | 不推荐。“系统规划”还容易被理解为建设计划或排期，不能稳定指向模块、依赖、接口与 Schema 责任设计 |
 | Code 工程治理规范 / Code Engineering Governance Specification | 不推荐。“治理”过于抽象，无法从名称直接判断它同时承担首次系统设计和持续工程要求 |
@@ -126,10 +126,10 @@
 - 反例：固定当前文件清单、规定单次重构步骤、用全局 5000 行阈值替代设计判断、重新定义 Helper 外部契约。
 - 相邻责任：Helper 规范定义外部服务；领域规范定义 Schema 语义；Code/tests 实现并验证；环境接入定义 adapter 边界。
 - 替换检查：“修改该规范时必须检查实现 Helper CLI 的 Code 是否仍在首次实现前明确模块与接口，并持续满足测试、诊断和重构要求”能够准确替换为上述责任说明。
-- 推荐中文：`Code 工程实践规范`。
-- 推荐英文：`Code Engineering Practices Specification`。
+- 推荐中文：`Code 实践与测试规范`。
+- 推荐英文：`Code Practices and Testing Specification`。
 - 推荐 `spec_key`：`code-engineering-practices`。
-- 术语处理：“Code”已经是 `current`；“工程实践”只作普通描述，不声称为 LDVH 新模型或行业标准。
+- 术语处理：“Code”已经是 `current`；“实践与测试”只作普通描述，不声称为 LDVH 新模型或行业标准。标题变化只把同一责任中已经存在的测试显式化，因此稳定 `spec_key` 不随标题逐字变化。
 
 ### 3.5 候选责任 E
 
@@ -139,20 +139,20 @@
 
 | 候选名称 | 判断 |
 |---|---|
-| Web 信息访问、呈现与交互规范 / Web Information Access, Presentation, and Interaction Specification | 推荐。三个普通动作分别覆盖受限读取、面向 Human 的呈现和受控交互，并保留 Web 主语 |
-| Web 信息呈现与交互规范 / Web Information Presentation and Interaction Specification | 不推荐。表达自然但省略了 Web 独立读取和读取范围这一项已经证明独立的规则责任 |
+| Web 呈现与交互规范 / Web Presentation and Interaction Specification | 推荐。以 Web 的两个 Human-facing 主动作概括产品责任；独立读取是形成可信呈现的内部规则，由定位、范围和正文明确，不需要全部写入标题 |
+| Web 信息访问、呈现与交互规范 / Web Information Access, Presentation, and Interaction Specification | 可表达完整责任，但标题过长，并且容易把读取这一内部边界误解为与 Human-facing 呈现、交互并列的产品目的 |
 | Web 信息产品规范 / Web Information Product Specification | 不推荐。“信息产品”是审计记录中的概括，不是 00 术语，且无法直接看出读取、来源呈现和受控交互边界 |
 
-推荐定义：该规范定义 Web 对允许信息源的访问、面向 Human 的信息呈现及受控交互边界；这里的“信息访问”只说明读取与访问范围，不授予 Web 事实写入权威，写入只能作为有来源授权且有实际 Code 能力承接的交互请求。
+推荐定义：该规范定义 Web 面向 Human 的信息呈现及受控交互边界；为了使呈现可信，正文同时约束 Web 从允许范围独立读取、标明派生信息和回指来源。标题省略读取，不授予 Web 事实写入权威，写入只能作为有来源授权且有实际 Code 能力承接的交互请求。
 
 - 正例：读取范围、派生值过期提示、来源导航、多语言和视口下的可识别性、受控写入请求及结果回读。
 - 反例：由页面创建事实字段、把页面成功当作 Human Gate、通过 Helper 中转 Web 读取、把旧缓存显示成当前事实。
 - 相邻责任：03 定义信息和事实源共同边界；事实模型定义结构化事实；Code 提供确定性能力；Web 不经过 Helper 服务 Human。
 - 替换检查：“修改该规范时必须检查 Web 是否仍从允许来源读取、清楚呈现来源并只请求已授权交互”能够准确替换为上述责任说明。
-- 推荐中文：`Web 信息访问、呈现与交互规范`。
-- 推荐英文：`Web Information Access, Presentation, and Interaction Specification`。
-- 推荐 `spec_key`：`web-information-access-presentation-interaction`。
-- 术语处理：“Web”已经是 `current`；“信息访问、呈现与交互”只是一组普通动作，不建立“信息产品”等新架构术语。
+- 推荐中文：`Web 呈现与交互规范`。
+- 推荐英文：`Web Presentation and Interaction Specification`。
+- 推荐 `spec_key`：`web-presentation-interaction`。
+- 术语处理：“Web”已经是 `current`；“呈现与交互”只是一组普通动作，不建立“信息产品”等新架构术语。读取仍是该责任必须遵守的内部规则。
 
 ### 3.6 候选责任 F
 
@@ -184,8 +184,8 @@
 | A | LDVH Helper CLI 服务契约规范 | LDVH Helper CLI Service Contract Specification | `helper-cli-service-contract` | 保留 |
 | B | 事实模型基础规范 | Fact Model Foundation Specification | `fact-model-foundation` | 保留 |
 | C | 行动模板基础规范 | Action Template Foundation Specification | `action-template-foundation` | 保留 |
-| D | Code 工程实践规范 | Code Engineering Practices Specification | `code-engineering-practices` | Human 指出“Code 系统设计”容易被误解为独立于 Helper CLI 的系统；名称收敛到 Code 实现层的工程实践，正文仍保留首次实现前设计要求 |
-| E | Web 信息访问、呈现与交互规范 | Web Information Access, Presentation, and Interaction Specification | `web-information-access-presentation-interaction` | 补入独立读取与访问范围；旧 key 过窄，建议更换 |
+| D | Code 实践与测试规范 | Code Practices and Testing Specification | `code-engineering-practices` | Human 将测试显式写入标题；职责仍是同一 Code 工程责任，正文保留首次实现前规划要求 |
+| E | Web 呈现与交互规范 | Web Presentation and Interaction Specification | `web-presentation-interaction` | Human 决定读取作为正文内部规则，不进入标题；定位和范围仍明确独立读取、来源与派生边界 |
 | F | 环境接入规范 | Environment Integration Specification | `environment-integration` | 保留 |
 
 旧提案中的名称和 `spec_key` 均未取得正式规范身份，因此本轮比较不构成已生效职责标识符的改名或替代。推荐项只有在独立复核完成、异议关闭并进入相应规范草案后，才成为该草案的正式身份候选。
@@ -195,7 +195,7 @@
 本轮不建议立即修改双语术语表：
 
 1. `LDVH Helper CLI`、事实模型、行动模板、Code、Web 已登记为 `current`；
-2. “服务契约”“工程实践”“信息访问、呈现与交互”“环境接入”在本轮只承担规范标题中的普通描述，不需要为保持标题完整而分别创造架构概念；
+2. “服务契约”“实践与测试”“呈现与交互”“环境接入”在本轮只承担规范标题中的普通描述，不需要为保持标题完整而分别创造架构概念；
 3. 六个规范全名是候选文档身份，不是需要脱离文档单独复用的术语；
 4. 如果后续规范正文确实把其中某一表达定义为跨规范稳定概念，再按 01 §12 单独检查并登记，不能由本记录提前授予 `current` 状态。
 
@@ -214,12 +214,12 @@
 
 ## 7. 独立复核状态
 
-三名未修改本记录的独立 AI 执行者完成了初次交叉复核。随后 Human 指出“Code 系统设计”可能错误暗示 Code 是独立于 Helper CLI 的另一套系统；主执行者确认该异议成立，把候选 D 收敛为 `Code 工程实践规范 / Code Engineering Practices Specification` 与 `code-engineering-practices`，同时保留首次实现前必须明确模块、依赖、接口、Schema 维护责任和测试策略的要求。
+三名未修改本记录的独立 AI 执行者完成了初次交叉复核。随后 Human 先指出“Code 系统设计”可能错误暗示 Code 是独立于 Helper CLI 的另一套系统，后又于第一批草案开始前将候选 D 最终定为 `Code 实践与测试规范 / Code Practices and Testing Specification`，将候选 E 最终定为 `Web 呈现与交互规范 / Web Presentation and Interaction Specification`。前者把同一责任中已经存在的测试显式写入标题；后者把独立读取保留为正文内部规则而不写入标题。
 
 未参与该改名的独立复核者对候选 D 重新检查后确认：
 
-1. `Code 工程实践规范` 与 `Code Engineering Practices Specification` 中英文自然且范围一致；
-2. “工程实践”能够自然包含首次实现前设计与持续测试、诊断、重构要求，没有把责任缩窄为编码阶段；
+1. `Code 实践与测试规范` 与 `Code Practices and Testing Specification` 中英文范围一致；
+2. 标题明确包含测试，正文同时保留首次实现前规划与持续诊断、重构要求，没有把责任缩窄为编码或测试阶段；
 3. 新名称避免制造独立 `Code System` 的错误联想，比旧名称更准确；
 4. `code-engineering-practices` 能稳定表示 Code 实现层的共同工程责任，不编码标题、编号、结构或建设顺序。
 
@@ -227,7 +227,7 @@
 
 1. 六组中英文名称均指向对应通用或基础责任，没有把实现、建设阶段或历史结构写入标题；
 2. `Fact Model Foundation Specification` 和 `Action Template Foundation Specification` 中的 `Foundation` 准确表达跨具体类型或模板的共同基础规则；
-3. Web 名称中的 `Information Access` 与中文“信息访问”均指允许来源的读取及访问范围，不授予写入权；`Interaction` 承接受控操作请求和其它 Human 交互；
+3. Web 标题中的“呈现 / Presentation”与“交互 / Interaction”概括面向 Human 的产品目的；定位、范围和正文继续明确允许来源的独立读取及访问范围，不因标题简化而授予写入权或删除读取责任；
 4. `Environment Integration Specification` 能够覆盖转换、真实触发、安装、升级、禁用、卸载和回滚，不会缩窄为 adapter 实现；
 5. 六个当前推荐 `spec_key` 均未编码编号、版本、状态、父级、路径或建设顺序，也未与当前有效职责标识符冲突；
 6. 六项不是未来规范闭集；具体事实类型、行动模板、项目适用的正式规则来源和单一 adapter 契约仍按《V3 设计覆盖与 V4 下游审核清单》继续审核；

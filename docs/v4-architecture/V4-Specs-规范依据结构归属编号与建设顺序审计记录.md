@@ -30,8 +30,8 @@
 | LDVH Helper CLI 服务契约规范 | `ldvh-root`、`specification-model-foundation`、`work-object-governance-scope`、`source-of-truth-traceability` | 00 定义 Helper CLI 基础服务形式；01 定义当前规则源和渐进式披露；02 定义任务工作对象与管辖范围输入；03 定义来源、当前信息和回指边界 | 事实模型与行动模板的详细规则不是公开服务请求与结果契约成立的前置；具体能力可以在相应来源成立后扩展 |
 | 事实模型基础规范 | `ldvh-root`、`work-object-governance-scope`、`source-of-truth-traceability` | 00 定义事实模型构成要素；02 提供事实所属项目和对象范围；03 定义事实源、稳定事实形成和 Git 溯源边界 | 01 的文档结构约束普遍适用但不是事实模型语义依据；具体事实类型不能反向成为基础规范依据 |
 | 行动模板基础规范 | `ldvh-root`、`specification-model-foundation`、`source-of-truth-traceability` | 00 定义行动模板构成要素；01 定义规则源资格，使模板不能冒充规则；03 定义模板回写、来源引用和当次结果不能冒充事实的共同边界 | 事实模型和 Helper 是模板可能引用或被消费的位置，不是模板共同结构成立的前置 |
-| Code 工程实践规范 | `ldvh-root` | 00 定义 Code 构成要素、确定性能力范围及其实现 Helper CLI 的关系，足以作为共同工程实践的直接上位语义 | Helper 契约和具体领域规范是实际 Code 规划与实现的输入前置，不是共同工程实践规范自身的直接依据；01–03、环境和 Web 也不反向成为依据 |
-| Web 信息访问、呈现与交互规范 | `ldvh-root`、`work-object-governance-scope`、`source-of-truth-traceability` | 00 定义 Web 独立服务 Human；02 限定允许项目与对象；03 定义当前信息、来源和派生边界 | Helper 不服务 Web；事实模型和具体事实来源是 Web 可能消费的信息结构，Code 是实现关系，都不反向成为 Web 通用规则依据 |
+| Code 实践与测试规范 | `ldvh-root` | 00 定义 Code 构成要素、确定性能力范围及其实现 Helper CLI 的关系，足以作为共同 Code 实践与测试要求的直接上位语义 | Helper 契约和具体领域规范是实际 Code 规划与实现的输入前置，不是该共同责任自身的直接依据；01–03、环境和 Web 也不反向成为依据 |
+| Web 呈现与交互规范 | `ldvh-root`、`work-object-governance-scope`、`source-of-truth-traceability` | 00 定义 Web 独立服务 Human；02 限定允许项目与对象；03 定义当前信息、来源和派生边界 | Helper 不服务 Web；事实模型和具体事实来源是 Web 可能消费的信息结构，Code 是实现关系，都不反向成为 Web 通用规则依据 |
 | 环境接入规范 | `ldvh-root`、`work-object-governance-scope`、`source-of-truth-traceability`、`helper-cli-service-contract` | 00 定义环境入口调用同一 Helper；02 提供环境映射的工作对象与管辖范围；03 定义环境观察、静态安装证据、真实触发结果和回滚结果的当次信息与来源回指边界；Helper 契约定义 adapter 必须忠实转换的请求与结果 | Code 工程实践约束实现但不定义环境接入契约 |
 
 ### 2.2 需要在草案中验证的边界
@@ -49,8 +49,8 @@
 | LDVH Helper CLI 服务契约规范 | `ldvh-root` | `refines` | 直接细化 00 的 Helper CLI 基础服务形式 |
 | 事实模型基础规范 | `ldvh-root` | `refines` | 直接细化 00 的事实模型构成要素 |
 | 行动模板基础规范 | `ldvh-root` | `refines` | 直接细化 00 的行动模板构成要素 |
-| Code 工程实践规范 | `ldvh-root` | `refines` | 直接细化 00 的 Code 构成要素及 Code 实现 Helper 的边界 |
-| Web 信息访问、呈现与交互规范 | `ldvh-root` | `refines` | 直接细化 00 的 Web 构成要素 |
+| Code 实践与测试规范 | `ldvh-root` | `refines` | 直接细化 00 的 Code 构成要素及 Code 实现 Helper 的边界 |
+| Web 呈现与交互规范 | `ldvh-root` | `refines` | 直接细化 00 的 Web 构成要素 |
 | 环境接入规范 | `ldvh-root` | `refines` | 直接细化 00 已定义的环境入口与 Helper 连接边界 |
 
 以下关系明确不成立：
@@ -77,8 +77,8 @@
 | 04 | LDVH Helper CLI 服务契约规范 | 00–03 已提供根级、规范、对象和信息基础，随后先展示面向 AI 的统一服务入口 |
 | 05 | 事实模型基础规范 | 进入需要结构化管理的事实共同规则 |
 | 06 | 行动模板基础规范 | 紧接事实模型，进入重复行动结构共同规则 |
-| 07 | Code 工程实践规范 | 说明实现 Helper 与其它确定性能力时的共同工程要求 |
-| 08 | Web 信息访问、呈现与交互规范 | 对应 00 第五类构成要素，保留现有 Web 产品实践的 V4 规则入口 |
+| 07 | Code 实践与测试规范 | 说明实现 Helper 与其它确定性能力时的共同实践与测试要求 |
+| 08 | Web 呈现与交互规范 | 对应 00 第五类构成要素，保留现有 Web 产品实践的 V4 规则入口 |
 | 09 | 环境接入规范 | 最后集中说明外部环境如何连接 Helper；编号靠后不表示环境规范必须最后起草 |
 
 这一顺序相对 00 的构成要素顺序只有一项有意调整：Helper 不是构成要素，但作为基础服务形式放在六项候选之首，避免目录把 Helper 误解为 Code 的附属命令或最后才补的接入层。
@@ -90,7 +90,7 @@
 | 建设批次 | 可以并行的工作 | 转为 active 前的条件 |
 |---|---|---|
 | 已完成基础 | active 00–03 | 保持当前有效并通过各自验证 |
-| 第一批 | Helper、事实模型、行动模板、Code 工程实践和 Web 五份草案可以并行 | 各自只使用当前有效的直接 `basis`；逐份完成正文、术语、验证、Human Gate/Stop 和独立复核。Helper 不因事实模型或行动模板尚未 active 而虚构对应具体命令；Code 规范不因尚无 Helper 契约而定义具体实现规划；Web 不预设具体来源字段和状态 |
+| 第一批 | Helper、事实模型、行动模板、Code 实践与测试和 Web 五份草案可以并行 | 各自只使用当前有效的直接 `basis`；逐份完成正文、术语、验证、Human Gate/Stop 和独立复核。Helper 不因事实模型或行动模板尚未 active 而虚构对应具体命令；Code 规范不因尚无 Helper 契约而定义具体实现规划；Web 不预设具体来源字段和状态 |
 | 第二批 | 环境接入草案 | 转为 active 前 Helper 契约必须 active，其它直接 `basis` 也必须保持当前有效 |
 
 Helper、事实模型、行动模板、Code 工程实践和 Web 可以并行起草，原因是它们的建议直接依据都已经 active，且分别约束公开服务请求与结果、事实共同规则、行动共同结构、Code 共同工程要求和 Web 通用产品边界。并行不表示可以互相猜测未定义字段；发生需要其它来源语义的地方必须保留来源引用或等待相应草案收敛。
@@ -99,9 +99,9 @@ Helper、事实模型、行动模板、Code 工程实践和 Web 可以并行起�
 
 ### 5.2 Code、tests、环境和 Web 实现
 
-1. 不启动 V4 Code/tests 实现，直到 Helper 服务契约和 Code 工程实践规范 active，并完成首个实现增量需要的模块、依赖、接口、Schema 维护责任和风险驱动测试设计；
+1. 不启动 V4 Code/tests 实现，直到 Helper 服务契约和 Code 实践与测试规范 active，并完成首个实现增量需要的模块、依赖、接口、Schema 维护责任和风险驱动测试设计；
 2. 某个 Code 增量还必须等待其准备实现的具体来源规则 active；例如事实对象解析不能只凭事实模型基础规范猜测具体事实类型字段；
-3. 环境 adapter 实现必须等待 Helper 服务契约、环境接入规范和 Code 工程实践规范 active，并完成目标环境当前资料核验；若该 adapter 的受支持事件、必需输入或安装接口形成稳定外部契约，还必须等待相应正式来源或授权附件成立，不能由 Code/tests 边实现边定义；
+3. 环境 adapter 实现必须等待 Helper 服务契约、环境接入规范和 Code 实践与测试规范 active，并完成目标环境当前资料核验；若该 adapter 的受支持事件、必需输入或安装接口形成稳定外部契约，还必须等待相应正式来源或授权附件成立，不能由 Code/tests 边实现边定义；
 4. Web 实现保持不变，直到 Web 规范及当前功能准备消费的具体正式来源与数据契约成立，并完成 V3 实践与 V4 规则的差异审核；结构化事实来源只是 Web 可能消费的来源之一；
 5. 具体事实类型可以提前调查和比较承载位置，但最终类型准入、正文成立和转为 active 必须遵守已经 active 的事实模型基础规范；
 6. 具体行动模板可以提前调查和比较承载位置，但最终准入和生效必须遵守已经 active 的行动模板基础规范；
@@ -152,9 +152,9 @@ Web 实现：等待 Web 规范和当前功能的具体正式来源与数据契�
 1. 六项候选的直接 `basis` 没有已知漏列、过列或间接重复；
 2. 六项候选全部使用 `parent_spec: ldvh-root`、`relation: refines`，消费、实现和建设先后没有被误写成结构关系；
 3. 04–09 只承担导航排序，不表达依据、父子或建设顺序；
-4. Helper、事实模型、行动模板、Code 工程实践和 Web 可以第一批并行起草，环境接入可以提前调查和局部起草，但转为 active 前等待 Helper 契约 active；
+4. Helper、事实模型、行动模板、Code 实践与测试和 Web 可以第一批并行起草，环境接入可以提前调查和局部起草，但转为 active 前等待 Helper 契约 active；
 5. Code、Web 和环境实现仍分别等待其具体外部契约、正式来源、数据契约、环境资料和工程前置条件；
 6. 具体事实类型、行动模板、项目强制规则和 adapter 契约的后续入口没有被编号或批次关闭；
-7. `Code 工程实践规范 / Code Engineering Practices Specification / code-engineering-practices` 名称和首次实现前设计责任保持一致。
+7. Human 后续确认的 `Code 实践与测试规范 / Code Practices and Testing Specification / code-engineering-practices` 与 `Web 呈现与交互规范 / Web Presentation and Interaction Specification / web-presentation-interaction` 已进入第一批草案；标题变化没有改变既有责任、直接依据、结构归属或建设前置。
 
 独立复核结论为通过。本记录可以作为下一步逐份起草候选规范时审核 `basis`、结构身份、编号和建设顺序的工作依据，但在候选规范草案形成和验证前不授予任何 04–09 当前规范身份。
