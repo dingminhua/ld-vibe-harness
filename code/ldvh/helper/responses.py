@@ -60,8 +60,12 @@ def common_response(
     completed_scope: list[object] | None = None,
     not_completed_scope: list[object] | None = None,
     sources: list[dict[str, Any]] | None = None,
+    disclosure: dict[str, Any] | None = None,
     gaps: list[dict[str, Any]] | None = None,
+    changes: list[dict[str, Any]] | None = None,
+    verification: list[dict[str, Any]] | None = None,
     diagnostics: list[dict[str, Any]] | None = None,
+    follow_up: dict[str, Any] | None = None,
 ) -> ServiceResult:
     if outcome not in EXIT_CODES:
         raise ValueError(f"unsupported Helper outcome: {outcome}")
@@ -79,17 +83,21 @@ def common_response(
             "governance_resolution": None,
         },
         "sources": [] if sources is None else sources,
-        "disclosure": None,
+        "disclosure": disclosure,
         "gaps": [] if gaps is None else gaps,
-        "changes": [],
-        "verification": [],
+        "changes": [] if changes is None else changes,
+        "verification": [] if verification is None else verification,
         "diagnostics": [] if diagnostics is None else diagnostics,
-        "follow_up": {
-            "summary": "当前响应没有能够由 Helper 明确的专属后续信息",
-            "required_inputs": [],
-            "required_human_decisions": [],
-            "resume_conditions": [],
-            "suggested_operations": [],
-        },
+        "follow_up": (
+            {
+                "summary": "当前响应没有能够由 Helper 明确的专属后续信息",
+                "required_inputs": [],
+                "required_human_decisions": [],
+                "resume_conditions": [],
+                "suggested_operations": [],
+            }
+            if follow_up is None
+            else follow_up
+        ),
     }
     return ServiceResult(response=response, exit_code=EXIT_CODES[outcome])

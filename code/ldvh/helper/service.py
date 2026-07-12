@@ -7,6 +7,13 @@ from pathlib import Path
 from typing import Any
 
 import ldvh
+from ldvh.helper.operation_runtime import (
+    OperationExecution,
+    OperationImplementation,
+    bind_operation_implementations,
+    implementation_contract_diagnostics,
+    implementation_error_execution,
+)
 from ldvh.helper.operation_sources import OperationDeclarationCandidate
 from ldvh.helper.requests import parse_common_request, valid_operation_key
 from ldvh.helper.responses import RequestKind, ServiceResult, common_response, diagnostic, gap, source_reference
@@ -17,6 +24,7 @@ CONTRACT_SOURCES = [
     source_reference("rule", "specs/attachments/04.Att.01-Helper CLI 请求与响应字段表.md"),
 ]
 RULE_SOURCE_QUALIFICATION_SOURCE = source_reference("rule", "specs/01-规范模型基础规范.md")
+OPERATION_IMPLEMENTATIONS: dict[str, OperationImplementation] = {}
 
 
 def invalid_request_result(
@@ -84,14 +92,25 @@ def _operation_item(
     request_check: bool,
     rule_source_conditions: tuple[str, ...],
     contract_conditions: tuple[str, ...],
+    implementation: OperationImplementation | None = None,
+    availability: str | None = None,
+    available_scope: list[object] | None = None,
+    unavailable_scope: list[object] | None = None,
+    availability_gaps: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     operation_scope: list[object] = [declaration.operation_key]
     declaration_source = _declaration_source(declaration)
     operation_gaps = [
-        gap(
-            "当前 Code 尚未发现该公开操作的实际实现及可复核能力依据",
-            scope=operation_scope,
-            sources=[declaration_source],
+        *(
+            [
+                gap(
+                    "当前 Code 尚未发现该公开操作的实际实现及可复核能力依据",
+                    scope=operation_scope,
+                    sources=[declaration_source],
+                )
+            ]
+            if implementation is None
+            else []
         ),
         *(
             [
@@ -101,7 +120,7 @@ def _operation_item(
                     sources=[source_reference("rule", declaration.arguments_contract)],
                 )
             ]
-            if contract_conditions
+            if contract_conditions and implementation is None
             else []
         ),
         *_qualification_gaps(
@@ -110,21 +129,56 @@ def _operation_item(
             scope=operation_scope,
         ),
         *_qualification_gaps(contract_conditions, sources=CONTRACT_SOURCES, scope=operation_scope),
+        *([] if availability_gaps is None else availability_gaps),
     ]
     return {
         "operation_key": declaration.operation_key,
         "summary": declaration.summary,
         "sources": [declaration_source],
         "effect": declaration.effect,
-        "required_inputs": [],
-        "optional_inputs": [],
-        "implementation": {"present": False, "evidence": []},
-        "availability": "unavailable_for_request" if request_check else None,
-        "available_scope": [],
-        "unavailable_scope": operation_scope if request_check else [],
+        "required_inputs": [] if implementation is None else list(implementation.required_inputs),
+        "optional_inputs": [] if implementation is None else list(implementation.optional_inputs),
+        "implementation": {
+            "present": implementation is not None,
+            "evidence": [] if implementation is None else list(implementation.evidence),
+        },
+        "availability": (
+            ("unavailable_for_request" if implementation is None else availability) if request_check else None
+        ),
+        "available_scope": [] if available_scope is None else available_scope,
+        "unavailable_scope": (
+            operation_scope
+            if request_check and implementation is None
+            else ([] if unavailable_scope is None else unavailable_scope)
+        ),
         "gaps": operation_gaps,
         "observed_at": observed_at,
     }
+
+
+def _execution_response(
+    request_kind: RequestKind,
+    operation_key: str,
+    declaration_source: dict[str, Any],
+    execution: OperationExecution,
+) -> ServiceResult:
+    return common_response(
+        request_kind=request_kind,
+        operation_key=operation_key,
+        outcome=execution.outcome,
+        summary=execution.summary,
+        result=execution.result,
+        requested_scope=list(execution.requested_scope),
+        completed_scope=list(execution.completed_scope),
+        not_completed_scope=list(execution.not_completed_scope),
+        sources=[*CONTRACT_SOURCES, declaration_source, *execution.sources],
+        disclosure=execution.disclosure,
+        gaps=list(execution.gaps),
+        changes=list(execution.changes),
+        verification=list(execution.verification),
+        diagnostics=list(execution.diagnostics),
+        follow_up=execution.follow_up,
+    )
 
 
 def handle_request(request_kind: RequestKind, operation_key: str | None, raw_input: str) -> ServiceResult:
@@ -164,24 +218,28 @@ def handle_request(request_kind: RequestKind, operation_key: str | None, raw_inp
         *_qualification_gaps(contract_conditions, sources=CONTRACT_SOURCES),
     ]
     declarations = operations.candidate_declarations
-    declarations_by_key = {declaration.operation_key: declaration for declaration in declarations}
+    runtime = bind_operation_implementations(operations, OPERATION_IMPLEMENTATIONS)
+    bound_by_key = runtime.by_key()
+    runtime_diagnostics = implementation_contract_diagnostics(runtime)
     observed_at = datetime.now().astimezone().isoformat()
 
     if operation_key is not None:
-        declaration = declarations_by_key.get(operation_key)
-        if declaration is None:
+        bound_operation = bound_by_key.get(operation_key)
+        if bound_operation is None:
             return invalid_request_result(
                 request_kind,
                 operation_key,
                 (f"当前规则源未定义公开操作 {operation_key!r}",),
             )
+        declaration = bound_operation.declaration
+        implementation = bound_operation.implementation
         declaration_source = _declaration_source(declaration)
         operation_gap = gap(
             "当前 Code 尚未发现该公开操作的实际实现及可复核能力依据",
             scope=[operation_key],
             sources=[declaration_source],
         )
-        if request_kind == "call":
+        if request_kind == "call" and implementation is None:
             return common_response(
                 request_kind="call",
                 operation_key=operation_key,
@@ -191,24 +249,53 @@ def handle_request(request_kind: RequestKind, operation_key: str | None, raw_inp
                 not_completed_scope=[operation_key],
                 sources=[*CONTRACT_SOURCES, declaration_source, RULE_SOURCE_QUALIFICATION_SOURCE],
                 gaps=[operation_gap, *qualification_gaps],
+                diagnostics=runtime_diagnostics,
             )
+        if request_kind == "call":
+            assert implementation is not None
+            try:
+                execution = implementation.call(parsed.request, repository)
+            except Exception as error:  # noqa: BLE001 - service boundary converts implementation failures
+                execution = implementation_error_execution(bound_operation, error)
+            return _execution_response("call", operation_key, declaration_source, execution)
+
+        availability = None
+        available_scope: list[object] = []
+        unavailable_scope: list[object] = []
+        availability_gaps: list[dict[str, Any]] = []
+        if implementation is not None:
+            try:
+                evaluated = implementation.check_availability(parsed.request, repository)
+                availability = evaluated.availability
+                available_scope = list(evaluated.available_scope)
+                unavailable_scope = list(evaluated.unavailable_scope)
+                availability_gaps = list(evaluated.gaps)
+            except Exception as error:  # noqa: BLE001 - service boundary converts implementation failures
+                execution = implementation_error_execution(bound_operation, error)
+                return _execution_response("capabilities", operation_key, declaration_source, execution)
         operation = _operation_item(
             declaration,
             observed_at=observed_at,
             request_check=True,
             rule_source_conditions=unchecked_conditions,
             contract_conditions=contract_conditions,
+            implementation=implementation,
+            availability=availability,
+            available_scope=available_scope,
+            unavailable_scope=unavailable_scope,
+            availability_gaps=availability_gaps,
         )
         return common_response(
             request_kind="capabilities",
             operation_key=operation_key,
             outcome="ok",
-            summary="已完成公开操作的当次可用性检查；当前操作不可调用",
+            summary="已完成公开操作的当次可用性检查",
             result={"mode": "request_check", "operations": [operation]},
             requested_scope=[operation_key],
             completed_scope=[operation_key],
             sources=[*CONTRACT_SOURCES, declaration_source, RULE_SOURCE_QUALIFICATION_SOURCE],
-            gaps=[operation_gap, *qualification_gaps],
+            gaps=([operation_gap] if implementation is None else []) + qualification_gaps + availability_gaps,
+            diagnostics=runtime_diagnostics,
         )
 
     discovered_operations = [
@@ -218,8 +305,10 @@ def handle_request(request_kind: RequestKind, operation_key: str | None, raw_inp
             request_check=False,
             rule_source_conditions=unchecked_conditions,
             contract_conditions=contract_conditions,
+            implementation=bound_operation.implementation,
         )
-        for declaration in declarations
+        for bound_operation in runtime.operations
+        for declaration in (bound_operation.declaration,)
     ]
     declaration_sources = [_declaration_source(declaration) for declaration in declarations]
 
@@ -232,4 +321,5 @@ def handle_request(request_kind: RequestKind, operation_key: str | None, raw_inp
         completed_scope=[declaration.operation_key for declaration in declarations],
         sources=[*CONTRACT_SOURCES, *declaration_sources, RULE_SOURCE_QUALIFICATION_SOURCE],
         gaps=qualification_gaps,
+        diagnostics=runtime_diagnostics,
     )
