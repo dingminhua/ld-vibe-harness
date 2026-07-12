@@ -2,7 +2,71 @@
 
 > 当前规划入口：本文是当前唯一的 Code 实现规划及稳定入口。本文不是规则源，也不是完整的 V4 进展总览；当前状态与跨构成要素边界见 [`V4-当前进展.md`](../v4-architecture/V4-当前进展.md)。实现语义必须回到当前有效规范和授权附件。
 
-## 当前增量：Helper CLI 基础服务与公开操作发现
+## 当前增量：规范候选读取公开操作
+
+| 项目 | 当前决定 |
+|---|---|
+| 实现起点 | Git commit `69d7f7467520ca3d94e9b33c87fe5acf893f1383` |
+| 目标 | 让 `read-specification-candidates` 从已定义但未实现，推进为能够按 01 契约实际读取 Working Tree 中 L0–L2 信息的 Helper 公开操作 |
+| 不覆盖 | L3/L4、任务相关性判断、管辖范围解析、规则适用判断、状态变更、普通 wheel 规则源部署和其它领域公开操作 |
+| 直接来源 | `specification-model-foundation` §§6、9.2–9.5，`helper-cli-service-contract` §§5–7，`helper-cli-request-response-fields`，`source-of-truth-traceability`，`code-engineering-practices` |
+
+本增量采用三个独立 Git worktree 并行实施。并行只缩短实现等待时间，不允许各分支修改 Specs、Web、公共规划或彼此拥有的生产文件；发现来源契约歧义时返回主线程处理，不在实现分支自行补造规则。
+
+### 并行文件所有权
+
+| 并行线 | 生产文件所有权 | 测试文件所有权 | 不承担 |
+|---|---|---|---|
+| A：领域请求 | 新建 `ldvh.helper.operations.specification_candidate_request` | 新建同名聚焦测试 | 不读取仓库、不生成 L0–L2、不修改服务分流 |
+| B：候选读取 | 新建 `ldvh.helper.operations.specification_candidates` | 新建同名聚焦测试 | 不解析原始 JSON、不选择公开操作、不构造共同响应 |
+| C：服务运行时 | 新建 `ldvh.helper.operation_runtime`，并修改 `ldvh.helper.service`、必要时最小扩展 `ldvh.helper.responses` | 新建运行时测试并修改现有服务测试 | 不实现 01 的领域读取，不硬编码公开操作结果，不修改来源规范 |
+
+三个分支不得同时修改同一生产文件或测试文件。`ldvh.helper.operations` 包的 `__init__.py` 由主线程在集成时建立，避免 A/B 同时创建产生无意义冲突。
+
+### 冻结的最小接口
+
+A 线导出：
+
+```python
+parse_specification_candidate_request(
+    request: CommonRequest,
+) -> SpecificationCandidateRequestParseResult
+```
+
+成功结果必须只包含 `responsibility_keys: tuple[str, ...]` 和已经把 `null` 归一为 `L0` 的 `disclosure: Literal["L0", "L1", "L2"]`；失败结果只包含领域输入问题，不生成共同响应或选择外层 `outcome`。A 线同时从 01 的输入契约形成 `required_inputs` 与 `optional_inputs` 的可复核描述；当前操作没有领域必填输入，两个可选输入为 `arguments.responsibility_keys` 与共同字段 `requested_disclosure`。Code 中的字段表示必须由 tests 对照来源章节检查，不能反向成为领域权威。
+
+B 线导出：
+
+```python
+read_specification_candidates(
+    repository: RepositoryInspection,
+    *,
+    responsibility_keys: tuple[str, ...],
+    disclosure: Literal["L0", "L1", "L2"],
+) -> SpecificationCandidateReadResult
+```
+
+B 线只消费已经验证的领域输入和现有 repository/projection 结果。返回对象必须分别提供：领域 `items` 或 `null`、requested/completed/not-completed 范围、来源回指、逐层 disclosure parts、实际机械检查的 verification、资格与未完成 gaps、必要 diagnostics，以及按 01/04 已定义条件建议的 `ok`、`partial` 或 `unavailable`。它不得构造共同响应顶层、判断任务相关性或重新解析规范文件。
+
+C 线导出一个内部实现绑定与解析器。绑定只连接“来源声明中已存在的 `operation_key`”和 Code 实现，不授予公开操作身份；运行时先以 `OperationSourceInspection` 确认声明，再查找实现。C 线使用 fake implementation 独立验证以下共同行为：
+
+1. 有来源、无实现：发现但不可调用；
+2. 有实现、无来源：不进入公开操作清单，只报告契约缺口；
+3. 来源与实现同时存在：发现结果显示实现依据，并由实现提供输入清单；
+4. 未知 key：`invalid_request`；
+5. 实现异常：`error`，不丢失可定位范围与诊断。
+
+C 线在自身分支不导入 A/B 尚未集成的模块，也不预先注册 `read-specification-candidates`；实际绑定由主线程按 A → B → C 的顺序集成后增加。这样 C 可以与 A/B 并行完成通用运行时，而不通过临时桩或领域硬编码制造错误依赖。
+
+### 集成顺序与完成条件
+
+主线程依次集成 A、B、C，然后只在集成分支完成 `read-specification-candidates` 的实际绑定和端到端测试。发生接口偏移时优先让实现回到本节和来源规范，不通过扩大共同 Schema、修改 Specs 或复制转换逻辑解决。
+
+完成条件：通用发现返回完整输入清单和可复核实现依据；单项 `capabilities` 对有效请求报告实际可用范围；`call` 按 L0–L2 形成累积结果、来源、验证和资格缺口；未知 key、未知职责标识符、混合完成范围、L3/L4、错误字段和关系缺口均有来源匹配的结果；Code tests、Ruff、格式、真实 CLI 与独立复核全部通过。
+
+---
+
+## 已完成增量：Helper CLI 基础服务与公开操作发现
 
 | 项目 | 当前决定 |
 |---|---|
