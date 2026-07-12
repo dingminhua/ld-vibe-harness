@@ -198,10 +198,10 @@ def inspect_operation_sources(repository: RepositoryInspection) -> OperationSour
                 )
                 incomplete.add(observed.source_key)
 
+    contract_conditions = ("契约目标章节是否完整定义字段、类型、必填性、空值和闭集语义",) if observed_keys else ()
     return OperationSourceInspection(
         candidate_declarations=tuple(sorted(declarations, key=lambda declaration: declaration.operation_key)),
         issues=tuple(issues),
         incomplete_sources=tuple(sorted(incomplete)),
-        unchecked_conditions=repository.unchecked_conditions
-        + ("契约目标章节是否完整定义字段、类型、必填性、空值和闭集语义",),
+        unchecked_conditions=repository.unchecked_conditions + contract_conditions,
     )

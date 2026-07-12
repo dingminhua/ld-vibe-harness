@@ -229,3 +229,4 @@ def test_example_heading_does_not_create_a_public_operation(tmp_path: Path) -> N
     assert result.candidate_declarations == ()
     assert result.issues == ()
     assert result.incomplete_sources == ()
+    assert result.unchecked_conditions == ("repository semantic review",)

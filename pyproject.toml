@@ -12,6 +12,9 @@ dependencies = [
   "ruamel.yaml>=0.18.10,<0.19",
 ]
 
+[project.scripts]
+ldvh = "ldvh.cli:main"
+
 [project.optional-dependencies]
 dev = [
   "pytest>=8.4,<10",

@@ -2,6 +2,71 @@
 
 > 当前规划入口：本文是当前唯一的 Code 实现规划及稳定入口。本文不是规则源，也不是完整的 V4 进展总览；当前状态与跨构成要素边界见 [`V4-当前进展.md`](../v4-architecture/V4-当前进展.md)。实现语义必须回到当前有效规范和授权附件。
 
+## 当前增量：Helper CLI 基础契约
+
+| 项目 | 当前决定 |
+|---|---|
+| 实现起点 | Git commit `ee40306bb667465eaa1dcaf7a6aa82b2b44fe910` 及其包含的规范读取与公开操作声明候选读取能力；本规划与本增量 Code/tests 的未提交变化一并属于当前实现对象 |
+| 目标 | 建立 `ldvh` 进程入口、共同 JSON 请求与响应、`capabilities` 和 `call` 的基础分流，并让当前规则源中 0 个领域公开操作成为合法且可验证的发现结果 |
+| 不覆盖 | 任何具体领域公开操作、管辖范围解析、事实对象、行动模板执行、状态变更、Human 文本模式、环境 Hook/插件/adapter 接入和普通 wheel 的规则源部署 |
+| 直接来源 | `ldvh-root`、`helper-cli-service-contract`、`helper-cli-request-response-fields`、`source-of-truth-traceability`、`code-engineering-practices` |
+
+本增量不由 Code、tests 或实现注册表补造领域公开操作。当前规则源没有 `Helper 公开操作` 声明时，`ldvh capabilities` 必须成功返回空 `operations`；针对任意操作的单项 `capabilities` 与 `call` 必须返回 `invalid_request`。
+
+### 规则源定位与安装边界
+
+公开请求没有定义规则源根目录参数，当前规范也没有定义外部配置文件或环境变量。为避免从 `cwd`、工作对象名称或隐藏变量猜测，本增量只支持 Code 源文件位于 LDVH Git Working Tree 内的源码运行或 editable install：定位器从实际导入的 `ldvh` 包路径向上检查父目录，取得首个同时包含固定 `specs/00-理念与构成.md` 和 `code/ldvh/` 的共置候选，再由现有 discovery 验证其是否为 Git worktree。定位器不得读取 `cwd`，不得跨越包路径的祖先链搜索，也不得仅凭同名目录把候选报告为可用规则源。
+
+普通 wheel、复制出的单独 Python 包或其它未与当前规则源 Working Tree 共置的安装不在本增量支持范围。进程能够启动但无法定位上述根目录时，合法的通用发现请求返回 `unavailable`，并在 `gaps` 和 `diagnostics` 中说明规则源定位缺口；不得回退到打包快照、`HEAD`、缓存或空规则源并返回成功。未来需要支持独立安装时，必须先由相应规划明确规则源部署和外部配置契约，不在本增量增加未定义的公开参数或隐藏环境变量。
+
+### 模块责任、接口与依赖方向
+
+| 模块 | 承担内容 | 不承担内容 |
+|---|---|---|
+| `ldvh.helper.requests` | 解析标准输入中的零个或一个 JSON 对象；维护共同请求字段闭集、类型、缺省值和 `operation_key` 格式检查 | 不读取规则源，不判断操作是否存在，不解释领域 `arguments` |
+| `ldvh.helper.responses` | 唯一维护共同响应和共同嵌套对象的 Code 表示与序列化；构造空范围、后续信息、来源、缺口和诊断 | 不选择业务 `outcome`，不创建领域结果或全局诊断码闭集 |
+| `ldvh.helper.rule_source` | 按上述共置边界定位根目录，并调用既有 repository 与 operation source inspection | 不读 `cwd`、环境变量、缓存或 `HEAD`，不授予候选声明正式操作身份 |
+| `ldvh.helper.service` | 编排请求、规则源检查、发现和调用分流；选择 04 已定义的外层 `outcome` 与退出码 | 不重复维护请求/响应字段，不实现领域操作，不形成全局操作注册表 |
+| `ldvh.cli` | 解析三个公开命令形态、读取 stdin、调用 service、只向 stdout 写一个 JSON 对象并返回对应退出码 | 不读取规范、不判断能力、不在 stderr 承载完整结果所需信息 |
+
+允许依赖方向为：
+
+```text
+ldvh.cli -> ldvh.helper.service
+ldvh.helper.service -> ldvh.helper.requests
+ldvh.helper.service -> ldvh.helper.responses
+ldvh.helper.service -> ldvh.helper.rule_source
+ldvh.helper.rule_source -> ldvh.specs.repository
+ldvh.helper.rule_source -> ldvh.helper.operation_sources
+```
+
+`requests` 与 `responses` 不依赖 repository、operation sources 或 CLI；既有 specs 模块不反向依赖 Helper service。共同响应 Schema 的唯一 Code 维护位置是 `ldvh.helper.responses`，共同请求 Schema 的唯一 Code 维护位置是 `ldvh.helper.requests`。tests 通过共享 contract 断言检查完整共同结构，命令场景只断言自身差异，不在每个测试复制全部字段。
+
+### 结果、退出码与诊断边界
+
+本增量严格使用 04 §7.2：`ok=0`、`invalid_request=2`、`unavailable=5`、未预期且无法形成可信服务结果的实现异常为 `error=1`。当前没有领域实现，因此不会产生 `no_change`、`partial` 或 `rejected`。通用空发现是完成了发现请求，返回 `ok`，但 repository 和 operation inspection 尚未自动证明的规则源资格条件必须逐项保留在 `gaps`，不得因 0 个操作或外层成功而静默丢弃；没有返回规范信息时 `disclosure` 保持 `null`，没有符合来源契约的验证条目时不通过 `verification` 自造状态值。未知或格式错误的操作标识返回 `invalid_request`；请求 JSON、顶层类型、未知共同字段和字段类型错误同样返回 `invalid_request`。
+
+能够识别 `capabilities` 或 `call`、取得一个非空 `operation_key` 且只是出现额外命令参数时，进程能够形成满足共同响应闭集的 JSON `invalid_request`。缺少 `call` 的必填 `operation_key`、空 key、未知入口或没有入口时，当前共同响应无法同时满足 `request_kind` 和非通用入口 `operation_key` 的必填约束，因此只返回进程级 usage 与退出码 `2`，不伪造一个违反附件闭集的机器响应。若未来要求这些形态也形成 JSON，必须先由 Helper 契约定义其合法字段表示。
+
+规则源检查问题不得被改写成 0 个公开操作。能够定位规则源但本增量现有机械检查存在阻断问题时，返回 `unavailable` 并保留实际问题、受影响范围和未检查条件；未预期内部异常返回 `error`。诊断只使用可定位摘要和结构化 details，不建立来源规范未定义的 `code`。
+
+### 风险与测试映射
+
+| 风险 | 必须验证 |
+|---|---|
+| 空操作被误判为错误或被内部实现补齐 | 当前真实 Working Tree 的 `capabilities` 返回 `ok`、空 `operations`，且单项检查/调用未知 key 均为 `invalid_request` |
+| 共同 JSON 契约漂移 | 共享响应 contract test 一次检查全部顶层字段和共同嵌套闭集；请求参数化反例覆盖非 UTF-8、未知字段、非对象、无效 JSON、错误类型和通用发现非空 `arguments` |
+| stdout 被日志污染或退出码丢失 | 使用真实子进程调用入口，验证 stdout 只能解析为一个 JSON 对象、stderr 为空、退出码与 `outcome` 对应 |
+| `cwd` 改变规则源 | 从仓库外临时目录启动真实子进程，仍从包路径定位同一 Working Tree；不存在共置规则源的定位器组件测试返回明确缺口 |
+| 规则源错误被包装为空发现 | 注入不完整 inspection，验证 `unavailable`、缺口、诊断和未完成范围，不返回 `ok` 空集合 |
+| 测试形成第二套响应构造 | 完整共同结构只由一份共享断言检查；场景测试复用该断言且只补充场景差异 |
+
+本增量完成条件：规划与实现一致；`ldvh` console script 已声明；真实进程覆盖通用发现、未知操作、无效 JSON 和仓库外 `cwd`；Code tests、Ruff 和格式检查全部通过；当前真实规则源仍报告 0 个领域公开操作；未实现的独立安装、具体操作、管辖解析、环境接入和 Human 文本模式明确保留为未验证、不可用范围。
+
+---
+
+## 已完成增量：规范模型确定性基础
+
 ## 1. 当前实现范围与起点
 
 | 项目 | 当前内容 |
