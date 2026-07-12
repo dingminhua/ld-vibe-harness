@@ -268,4 +268,4 @@ Human 最终确认中文标题为 `Web 呈现与交互规范`，英文采用 `We
 4. 05 的“事实类型 / Fact Type”“事实对象 / Fact Object”和“事实类型标识 / Fact Type Identifier”概念必要；前两项分别以“事实对象类型”和“事实实例 / Fact Instance”为别名，第三项使用机器字段 `fact_type_key`。本轮术语独立复核初次为 0 blocker、1 major、1 minor，均已通过修正使用扫描、影响范围、总览和来源分类解决；边界复核补齐声明表唯一解析算法后为 0 blocker、0 major、0 minor。随 05 激活，三项已同步为 `current`，active 03 和候选标题也已同步；
 5. 第一版 `Code 规划 / Code Planning` 因名称更像活动而取消；`Code 实现规划 / Code Implementation Plan` 已完成独立复核，并随 07 激活同步为 `current`；
 6. 07 与该术语的状态已经原子同步，active 03 使用该正式名称的条件已经满足；
-7. 04–07 已完成术语同步，不再受本记录中的候选状态阻止。相应规范激活不表示 Helper、具体事实类型、具体行动模板、Code、tests 或环境能力已经实现、可用或通过验证。
+7. 04–07 已完成需要的术语同步，08 的标题、正文和实现差异复核没有新增正式术语。04–08 均不再受本记录中的候选状态阻止；相应规范激活不表示 Helper、具体事实类型、具体行动模板、Code、tests、Web 或环境能力已经实现、可用或通过验证。
