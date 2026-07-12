@@ -8,8 +8,8 @@
 |---|---|
 | 实现增量 | 规范候选发现、当前规则源的可机械检查部分、L0–L2 派生信息和 Helper 公开操作声明读取 |
 | 实现起点 | Git commit `f8a2363907221a5ac31e1409c2b471bbabe36e11` |
-| 当前 Working Tree | 本规划是起点之后首先形成的未提交文件；尚无 V4 `src/`、`tests/` 或根级 `pyproject.toml` |
-| 覆盖对象 | 准备新建的 Python 包、规范读取模块、公开操作声明读取模块、测试和工程配置 |
+| 当前 Working Tree | 已形成根级 `pyproject.toml`、`src/ldvh/` 下的首批实现、`tests/` 及本规划的同步修改；这些内容共同构成本增量，不以是否已经提交改变当前读取对象 |
+| 覆盖对象 | Python 包、规范读取模块、公开操作声明读取模块、测试和工程配置 |
 | 不覆盖 | Helper CLI 进程入口、`capabilities` 响应、具体公开操作、事实对象、行动模板执行、管辖范围解析、环境接入、Web 适配、Index 提交前验证和跨历史重启 `retired` 职责检查 |
 | 旧规划 | 无；`archive/v3/` 中的实现和文档不承担当前规划责任 |
 
@@ -28,10 +28,10 @@
 实现完成时应当能够：
 
 1. 从显式传入的 LDVH 仓库根目录发现当前 Working Tree 中未被 Git ignore 排除、不跟随符号链接且精确命中 01 路径规则的规范与附件候选；
-2. 按 01 的启动顺序定位 01、验证 00，再检查普通规范和附件的可机械条件；
+2. 按 01 的启动顺序，先用最小 envelope 唯一定位 active 01 候选，验证 root profile 与 00，再完整验证 01 及其他普通规范和附件；
 3. 对 `active` 文件的身份、路径、标题、字符串双引号、字段闭集、关系、授权、`supersedes`、H2 结构和循环形成确定性结果；
-4. 对通过本增量检查的有效范围生成 L0–L2 派生信息，同时保留不完整范围、问题和尚未自动检查的条件；
-5. 只从符合当前规则源条件的固定 `Helper 公开操作` 表读取公开操作声明，并验证 key、表头、来源位置和契约引用；
+4. 对通过本增量已实现检查的 active 文档范围生成 L0–L2 派生信息，同时保留不完整范围、问题和尚未自动检查的条件；
+5. 从通过本增量已实现检查的 active 文档中定位固定 `Helper 公开操作` 表，形成声明候选并验证 key、表头、来源位置和契约引用；未检查条件满足前不授予当前规则源或正式公开操作资格；
 6. 对当前真实仓库给出可重复结果，同时明确不能由 Code 单独证明的语义审核、规则适用、实现可用和完成范围。
 
 ## 3. 技术选择
@@ -70,13 +70,13 @@ tests/
 | 模块 | 承担内容 | 不承担内容 |
 |---|---|---|
 | `ldvh.specs.discovery` | 验证显式仓库根是 Git worktree；从当前文件系统精确发现候选；调用 Git 判断 ignore；拒绝符号链接、近似路径和额外嵌套路径 | 不解析 Markdown/YAML，不读取 Index 或用 `HEAD` 补回已删除文件 |
-| `ldvh.specs.markdown` | 固定 H1、紧邻 YAML 围栏、H2/H3 和严格 Markdown 表格的定位与最小解析 | 不判断规范是否生效，不解释领域规则，不渲染完整 GFM |
+| `ldvh.specs.markdown` | 通过逐级不跟随符号链接的文件打开与读取前后文件身份核对取得源码；完成固定 H1、紧邻 YAML 围栏、H2/H3 和严格 Markdown 表格的定位与最小解析 | 不判断规范是否生效，不解释领域规则，不渲染完整 GFM |
 | `ldvh.specs.identity` | 根规范、普通规范和附件身份字段、字符串样式、类型与字段闭集检查 | 不扫描目录，不建立跨文件关系，不决定规则适用 |
 | `ldvh.specs.structure` | 根据已解析身份选择根规范或普通规范 profile，检查 H2 顺序、连续编号、固定头尾、验证要求固定七列表头和声明所在章节结构 | 不建立规范依据、授权或替代关系 |
-| `ldvh.specs.graph` | 消费 identity 结果，检查 key/编号唯一性、规范依据、结构归属、附件授权、替代关系、类型匹配、自指、重复、循环和可经上位规范到达的间接 `basis` 冗余；计算受问题影响的最小范围 | 不发现文件，不重复解析 YAML，不生成 L0–L2 |
-| `ldvh.specs.projection` | 消费 identity 与 graph 的有效节点、关系和影响范围生成 L0–L2；每项明确携带 `layer`，并保留 key、仓库相对路径、字段/标题/表行位置 | 不自行修正规则源问题，不生成规则适用或能力状态 |
-| `ldvh.specs.repository` | 按 01 启动顺序薄编排 discovery、identity、structure、graph 和 projection；合并各模块结果而不重新实现其规则 | 不成为 Schema、关系、诊断或投影的第二维护位置，不读取 V3/Web/事实实例 |
-| `ldvh.helper.operation_sources` | 从仓库检查结果中符合条件的范围读取 `Helper 公开操作` 表，验证声明及契约引用，并保留来源位置与未检查条件 | 不实现操作，不计算当次可用性，不生成 Helper 响应 |
+| `ldvh.specs.graph` | 消费 identity 结果，检查 key/编号唯一性、规范依据、结构归属、附件授权、替代关系、类型匹配、自指、重复和循环；报告可经其它直接依据到达的 `basis` 重叠候选，计算受机械问题影响的最小范围 | 不以图可达性替代“直接且必要”的语义判断，不发现文件，不重复解析 YAML，不生成 L0–L2 |
+| `ldvh.specs.projection` | 消费 identity 与 graph 中通过本增量已实现检查的 active 文档节点、关系和影响范围生成 L0–L2；每项明确携带 `layer`，并保留 key、仓库相对路径、字段/标题/表行位置 | 不自行修正规则源问题，不生成规则适用或能力状态 |
+| `ldvh.specs.repository` | 按 01 两阶段启动顺序薄编排：通过 `markdown` 的固定 YAML 位置只预读最小 envelope，先唯一定位 active 01 候选并验证 00，再完整验证 01 和其他候选；合并 discovery、identity、structure、graph 和 projection 结果 | 不成为 Schema、关系、诊断或投影的第二维护位置，不读取 V3/Web/事实实例 |
+| `ldvh.helper.operation_sources` | 从仓库检查结果中通过本增量检查的 active 文档读取 `Helper 公开操作` 表，形成声明候选，验证表格与契约引用，并保留来源位置与未检查条件 | 不授予当前规则源资格，不形成正式公开操作，不实现操作，不计算当次可用性，不生成 Helper 响应 |
 | `ldvh.diagnostics` | 内部问题对象、文件位置和面向调用者的确定性汇总 | 不创建跨规范错误码闭集，不改变来源规则语义 |
 
 依赖只允许：
@@ -86,6 +86,7 @@ operation_sources -> specs.repository
 operation_sources -> specs.markdown
 
 specs.repository -> specs.discovery
+specs.repository -> specs.markdown
 specs.repository -> specs.identity -> specs.markdown
 specs.repository -> specs.structure -> specs.identity
                                       -> specs.markdown
@@ -96,17 +97,19 @@ specs.repository -> specs.projection -> specs.identity
 all error-producing modules -> diagnostics
 ```
 
-`operation_sources` 只把 `repository` 提供的有效文件范围交给 `markdown` 定位 H3、严格表格和契约标题，不自行重新读取或重新解释身份。所有可能产生问题的模块直接依赖叶层 `diagnostics`，在最接近文件系统、Git、YAML、结构或关系失败的位置形成内部问题对象；`repository` 只合并，不把一种失败重写为另一种语义。`specs.markdown` 不依赖身份、仓库或 Helper；`specs.repository` 不依赖 Helper；任何模块都不读取 `archive/v3/` 或 `web/`。若实现需要未声明的横向 import、反向 import、全局可变注册表或在一个中心函数中按规范编号不断追加分支，必须先停止并重新检查责任划分。
+`operation_sources` 只把 `repository` 提供的、通过本增量检查的 active 文档范围交给 `markdown` 定位 H3、严格表格和契约标题，不自行重新读取或重新解释身份，也不把该范围冒充已经满足全部规则源资格。`repository` 直接使用 `markdown` 安全读取并缓存每个候选的当次观察；最小 envelope 只用于启动定位，完整 Schema 仍由 `identity` 唯一维护。所有可能产生问题的模块直接依赖叶层 `diagnostics`，在最接近文件系统、Git、YAML、结构或关系失败的位置形成内部问题对象；`repository` 只合并，不把一种失败重写为另一种语义。`specs.markdown` 不依赖身份、仓库或 Helper；`specs.repository` 不依赖 Helper；任何模块都不读取 `archive/v3/` 或 `web/`。若实现需要未声明的横向 import、反向 import、全局可变注册表或在一个中心函数中按规范编号不断追加分支，必须先停止并重新检查责任划分。
+
+`graph` 可以机械证明某个已直接列出的 `basis` 也能经另一直接依据到达，但图可达性不能单独证明该依据对当前规范已不再直接且必要：规范依据不使上位规范的全部具体规则自动传递生效。此类结果因此作为重叠候选单独报告，交由对照规范正文的语义复核判断；Code 不自动删除关系，也不据此阻断文档。明确重复 key、自指、缺失目标、非 active 目标或循环仍按机械关系错误处理。
 
 ## 5. 接口与 Schema 维护
 
 首个增量只建立内部 Python 接口：
 
 1. 所有读取入口显式接收 `repository_root: Path`，不使用模块级 `LDVH_ROOT`、隐藏环境变量或 `cwd` 猜测；
-2. 文件内容、身份对象、关系对象、诊断和派生行使用不可变 dataclass 或只读集合传递；
+2. 文件读取必须在逐级拒绝符号链接后通过已打开的文件描述符完成，并核对读取前后文件身份；文件内容、身份对象、关系对象、诊断和派生行使用不可变 dataclass 或只读集合传递；
 3. YAML 字段、允许值和声明表头只在对应生产模块维护一次；tests 使用一份集中、直接回指 01/04 章节的独立契约预期，不能从被测生产常量推导字段闭集、允许值和表头。共享 builder 只减少仓库和文件搭建重复，不决定断言期望；
 4. L0–L2 只镜像 01 已定义的身份和关系，不加入实现状态、规则适用结果或领域字段；
-5. 公开操作派生结果只包含当前规则源实际声明的内容。当前仓库没有具体公开操作声明时，合法结果是空集合，不得用示例行或内部函数补造操作。
+5. 公开操作声明读取结果只包含通过本增量检查的 active 文档中符合固定结构的声明候选，并同时保留尚未自动检查的规则源资格条件；它不独立授予当前规则源资格或正式公开操作身份。当前仓库没有具体声明候选时，合法结果是空集合，不得用示例行或内部函数补造操作。
 
 本增量不发布 JSON Schema，也不建立持久缓存。未来 Helper 共同请求与响应由 04 的授权附件定义；相应 Code 实现开始前必须在本规划中补充其唯一维护位置和消费者。
 
@@ -139,11 +142,11 @@ all error-producing modules -> diagnostics
 | YAML 解析器与 01 契约不一致 | 局部组件行为、真实当前规范样例 | YAML 1.2 标量、字符串与字符串列表成员双引号、重复 key、多文档、标签、锚点/别名、顶层闭集、非映射 |
 | 启动顺序形成循环或猜测 00/01 | 仓库组合测试 | 01 缺失、重复、非 active、00 缺失或身份错误、正常启动 |
 | 无效 active 文件被静默忽略 | 仓库组合测试 | 路径/H1/编号/字段/H2/固定头尾/验证要求七列表头错误时整体结果含诊断且不回退 `HEAD` |
-| 关系、附件授权与替代关系漂移 | 仓库组合测试 | 缺失或类型错误依据、非 active 依据、自指/重复/循环、间接 `basis` 冗余、父规范错误、未授权/多父附件、`supersedes` 同类型目标/旧成员状态及 L2 回指 |
+| 关系、附件授权与替代关系漂移 | 仓库组合测试 | 缺失或类型错误依据、非 active 依据、自指/重复/循环、`basis` 可达重叠候选及其非自动语义判断边界、父规范错误、未授权/多父附件、`supersedes` 同类型目标/旧成员状态及 L2 回指 |
 | 声明示例或实现反向成为公开操作 | 声明契约测试 | 示例不进入结果、错误或重复的精确 `Helper 公开操作` H3、表格未紧邻 H3、错误表头/行、重复 key、越源或悬空引用、契约目标精确标题重复导致歧义、合法声明 |
 | 生产常量与测试同步漂移 | 独立契约预期与故意变异反例 | 集中维护、直接回指来源的独立字面量预期；故意增删字段、允许值或表头时 tests 失败 |
 | 测试复制导致 V3 式冗长 | tests 结构复核 | 共享最小仓库 builder、参数化错误样例、共同诊断断言只维护一次；builder 不生成契约预期 |
-| 只在合成样例通过 | 真实组合测试 | 当前 Working Tree 的 9 份 active 规范、3 份 active 附件、0 项具体公开操作声明 |
+| 只在合成样例通过 | 真实组合测试 | 当前 Working Tree 的 9 份通过本增量已实现检查的 active 规范、3 份同范围 active 附件、0 项声明候选 |
 
 测试不会恢复 V3 的 runner/profile/fixture 闭集，也不把每份规范的全部共同字段复制成独立测试。当前真实仓库测试只证明本次 Working Tree 和被执行路径，不证明规则语义审核、Helper 可用、Web 合规或环境接入。
 
@@ -156,7 +159,7 @@ all error-producing modules -> diagnostics
 3. 实现 discovery、身份与结构检查，以及 Git 临时仓库反例；
 4. 实现 graph 的关系、附件、替代和影响范围检查；
 5. 实现带来源位置和不完整范围的 L0–L2 派生结果；
-6. 实现公开操作声明读取及契约引用检查；
+6. 实现公开操作声明候选读取及契约引用检查；
 7. 对当前 Working Tree 运行真实组合测试、静态检查和完整测试。
 
 本增量只有同时满足以下条件才可以视为完成：
@@ -164,8 +167,8 @@ all error-producing modules -> diagnostics
 1. 本文覆盖的模块、依赖、接口和测试与真实实现一致；
 2. 必要局部、组合、声明和真实仓库 tests 全部通过，没有 skip、隔离或 flaky 被计入通过；
 3. 静态检查通过，失败诊断没有被空结果掩盖；
-4. 当前仓库结果准确报告 9 份通过本增量检查的 active 规范、3 份通过检查的 active 附件和 0 项具体公开操作声明，并列出尚未自动检查的条件；
-5. ignored/untracked/deleted/symlink/越界路径、Git 查询失败、双引号、验证要求七列表头、间接 `basis` 冗余、关系、附件、`supersedes`、L0–L2 `layer`、公开操作重复 H3/非紧邻表格/契约标题歧义、部分失败和独立契约预期 tests 全部通过；
+4. 当前仓库结果准确报告 9 份通过本增量已实现检查的 active 规范、3 份同范围 active 附件和 0 项声明候选，并列出尚未自动检查的条件；
+5. ignored/untracked/deleted/symlink/越界路径、Git 查询失败、双引号、验证要求七列表头、`basis` 可达重叠候选、关系、附件、`supersedes`、L0–L2 `layer` 与来源回指、公开操作重复 H3/非紧邻表格/契约标题歧义、部分失败和独立契约预期 tests 全部通过；
 6. 未实现的 Index 提交前验证、跨历史生命周期、语义审核、Helper CLI、管辖解析、领域能力、Web 和环境范围仍明确保留为未实现，不使用本增量结果声明完整当前规则源、available、integrated 或 completed。
 
 ## 9. 重新评估条件
