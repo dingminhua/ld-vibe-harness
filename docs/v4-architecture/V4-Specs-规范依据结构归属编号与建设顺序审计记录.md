@@ -1,6 +1,6 @@
 # V4 Specs 规范依据、结构归属、编号与建设顺序审计记录
 
-> 记录性质：本文最初依据当时 active 00–03、已通过的责任审计、命名审计和 V3 设计覆盖清单，分别审核六项通用或基础候选规范的直接规范依据、结构归属、编号导航和建设顺序。本文不是规则源，不创建规范身份；当前 04 已另经正文审核和 Human 确认转为 `active`，其实际 YAML 与当前规则源状态优先于本文早期候选表述。
+> 记录性质：本文最初依据当时 active 00–03、已通过的责任审计、命名审计和 V3 设计覆盖清单，分别审核六项通用或基础候选规范的直接规范依据、结构归属、编号导航和建设顺序。本文不是规则源，不创建规范身份；当前 04–07 已另经正文审核和 Human 确认转为 `active`，其实际 YAML 与当前规则源状态优先于本文早期候选表述。
 
 ## 1. 审核边界
 
@@ -30,7 +30,7 @@
 | Helper CLI 服务契约规范 | `ldvh-root`、`specification-model-foundation`、`work-object-governance-scope`、`source-of-truth-traceability` | 00 定义 Helper CLI 基础服务形式；01 定义当前规则源和渐进式披露；02 定义任务工作对象与管辖范围输入；03 定义来源、当前信息和回指边界 | 事实模型与行动模板的详细规则不是公开服务请求与结果契约成立的前置；具体能力可以在相应来源成立后扩展 |
 | 事实模型基础规范 | `ldvh-root`、`work-object-governance-scope`、`source-of-truth-traceability` | 00 定义事实模型构成要素；02 提供事实所属项目和对象范围；03 定义事实源、稳定事实形成和 Git 溯源边界 | 01 的文档结构约束普遍适用但不是事实模型语义依据；具体事实类型不能反向成为基础规范依据 |
 | 行动模板基础规范 | `ldvh-root`、`specification-model-foundation`、`source-of-truth-traceability` | 00 定义行动模板构成要素；01 定义规则源资格，使模板不能冒充规则；03 定义模板回写、来源引用和当次结果不能冒充事实的共同边界 | 事实模型和 Helper 是模板可能引用或被消费的位置，不是模板共同结构成立的前置 |
-| Code 实践与测试规范 | `ldvh-root` | 00 定义 Code 构成要素、确定性能力范围及其实现 Helper CLI 的关系，足以作为共同 Code 实践与测试要求的直接上位语义 | Helper 契约和具体领域规范是实际 Code 规划与实现的输入前置，不是该共同责任自身的直接依据；01–03、环境和 Web 也不反向成为依据 |
+| Code 实践与测试规范 | `ldvh-root`、`source-of-truth-traceability` | 00 定义 Code 构成要素、确定性能力范围及其实现 Helper CLI 的关系；03 直接提供当前 Code 实现规划使用的 Working Tree、未提交或未跟踪文件、`HEAD` 与 Git history 边界 | Helper 契约和具体领域规范是实际 Code 实现规划与实现的输入前置，不是该共同责任自身的直接依据；01–02、环境和 Web 也不反向成为依据 |
 | Web 呈现与交互规范 | `ldvh-root`、`work-object-governance-scope`、`source-of-truth-traceability` | 00 定义 Web 独立服务 Human；02 限定允许项目与对象；03 定义当前信息、来源和派生边界 | Helper 不服务 Web；事实模型和具体事实来源是 Web 可能消费的信息结构，Code 是实现关系，都不反向成为 Web 通用规则依据 |
 | 环境接入规范 | `ldvh-root`、`work-object-governance-scope`、`source-of-truth-traceability`、`helper-cli-service-contract` | 00 定义环境入口调用同一 Helper；02 提供环境映射的工作对象与管辖范围；03 定义环境观察、静态安装证据、真实触发结果和回滚结果的当次信息与来源回指边界；Helper 契约定义 adapter 必须忠实转换的请求与结果 | Code 工程实践约束实现但不定义环境接入契约 |
 
@@ -155,6 +155,6 @@ Web 实现：等待 Web 规范和当前功能的具体正式来源与数据契�
 4. Helper、事实模型、行动模板、Code 实践与测试和 Web 可以第一批并行起草，环境接入可以提前调查和局部起草，但转为 active 前等待 Helper 契约 active；
 5. Code、Web 和环境实现仍分别等待其具体外部契约、正式来源、数据契约、环境资料和工程前置条件；
 6. 具体事实类型、行动模板、项目强制规则和 adapter 契约的后续入口没有被编号或批次关闭；
-7. Human 后续确认的 `Code 实践与测试规范 / Code Practices and Testing Specification / code-engineering-practices` 与 `Web 呈现与交互规范 / Web Presentation and Interaction Specification / web-presentation-interaction` 已进入第一批草案；标题变化没有改变既有责任、直接依据、结构归属或建设前置。
+7. Human 后续确认的 `Code 实践与测试规范 / Code Practices and Testing Specification / code-engineering-practices` 与 `Web 呈现与交互规范 / Web Presentation and Interaction Specification / web-presentation-interaction` 已进入第一批草案；标题变化没有改变既有责任、结构归属或建设前置。07 后续为当前 Code 实现规划补入 Working Tree 和 Git 历史定位规则，因此按实际直接语义新增 `source-of-truth-traceability` 为 `basis`。
 
 独立复核结论为通过。本记录可以作为下一步逐份起草候选规范时审核 `basis`、结构身份、编号和建设顺序的工作依据，但在候选规范草案形成和验证前不授予任何 04–09 当前规范身份。
