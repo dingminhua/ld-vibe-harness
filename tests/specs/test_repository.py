@@ -43,8 +43,9 @@ def test_invalid_working_tree_source_is_not_replaced_with_committed_content(
     assert "specs/07-Code 实践与测试规范.md" in inspection.incomplete_scope
     assert any("YAML title 与 H1" in issue.summary for issue in inspection.issues)
     assert inspection.implemented_checks_complete is False
-    assert len(inspection.active_documents_passing_implemented_checks) == 11
-    assert len(inspection.projections) == 33
+    assert inspection.document_passing_implemented_checks_by_key("web-presentation-interaction") is None
+    assert len(inspection.active_documents_passing_implemented_checks) == 10
+    assert len(inspection.projections) == 30
 
 
 def test_invalid_foundation_stops_dependent_current_projection(current_specs_repository: Path) -> None:
