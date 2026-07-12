@@ -8,7 +8,7 @@
 |---|---|
 | 实现增量 | 规范候选发现、当前规则源的可机械检查部分、L0–L2 派生信息和 Helper 公开操作声明读取 |
 | 实现起点 | Git commit `f8a2363907221a5ac31e1409c2b471bbabe36e11` |
-| 当前 Working Tree | 已形成根级 `pyproject.toml`、`src/ldvh/` 下的首批实现、`tests/` 及本规划的同步修改；这些内容共同构成本增量，不以是否已经提交改变当前读取对象 |
+| 当前 Working Tree | 已形成根级 `pyproject.toml`、`code/ldvh/` 下的首批实现、根级 Code tests 及本规划的同步修改；这些内容共同构成本增量，不以是否已经提交改变当前读取对象 |
 | 覆盖对象 | Python 包、规范读取模块、公开操作声明读取模块、测试和工程配置 |
 | 不覆盖 | Helper CLI 进程入口、`capabilities` 响应、具体公开操作、事实对象、行动模板执行、管辖范围解析、环境接入、Web 适配、Index 提交前验证和跨历史重启 `retired` 职责检查 |
 | 旧规划 | 无；`archive/v3/` 中的实现和文档不承担当前规划责任 |
@@ -48,7 +48,7 @@
 
 ```text
 pyproject.toml
-src/
+code/
   ldvh/
     specs/
     helper/
@@ -57,13 +57,15 @@ tests/
   helper/
 ```
 
-1. 使用 `pyproject.toml` 声明构建、运行和测试依赖；使用 `src/` 布局避免仓库根目录偶然进入 import 路径；
+根级 `tests/` 只承载 `code/` 中 LDVH Code、Helper 和仓库级 Code 组合测试；Web API、component、E2E、可访问性与响应式测试在后续 Web 适配时归入 `web/tests/`。未来可以提供统一执行入口依次调用两套测试，但统一执行不改变各自的实现归属、工具链和测试文件位置。
+
+1. 使用 `pyproject.toml` 声明构建、运行和测试依赖，并把 Python 包发现位置显式映射到 `code/`；`code/` 直接对应 00 的 Code 构成要素，使 AI 和 Human 不需要把通用 Python `src/` 习惯再解释为 LDVH Code；
 2. 使用 `ruamel.yaml` 的 YAML 1.2 模式读取身份块；在构造对象前检查 token/event 和原始标量样式，显式禁止重复 key、多个文档、自定义标签、锚点、别名、合并键及未使用双引号的字符串值或字符串列表成员；不使用 PyYAML 的默认 YAML 1.1 标量行为替代 01 的 YAML 1.2.2 要求；
 3. 使用标准库 `dataclasses`、`pathlib` 和类型标注表达内部结构，不在首个增量引入通用框架、依赖注入容器或全局 Schema 注册表；
 4. 使用 `pytest` 组织 tests，并以共享 fixture 和参数化反例避免按每份规范复制相同断言；
 5. 使用 `ruff` 做静态与格式检查。静态检查只补充行为测试，不作为功能正确证明。
 
-上述选择参考 Python Packaging User Guide 对 [`pyproject.toml`](https://packaging.python.org/en/latest/guides/writing-pyproject-toml/) 和 [`src` 布局](https://packaging.python.org/en/latest/discussions/src-layout-vs-flat-layout/)的说明，以及 `ruamel.yaml` 对 [YAML 1.2 支持](https://yaml.dev/doc/ruamel.yaml/overview/)和[重复 key 默认拒绝](https://yaml.dev/doc/ruamel.yaml/api/)的维护者文档。它们只支持工具适用性判断，不成为 LDVH 规则源。
+上述选择参考 Python Packaging User Guide 对 [`pyproject.toml`](https://packaging.python.org/en/latest/guides/writing-pyproject-toml/) 的说明，以及 `ruamel.yaml` 对 [YAML 1.2 支持](https://yaml.dev/doc/ruamel.yaml/overview/)和[重复 key 默认拒绝](https://yaml.dev/doc/ruamel.yaml/api/)的维护者文档。它们只支持工具适用性判断，不成为 LDVH 规则源；`code/` 名称来自 00 已确认的构成要素，不声称是 Python 行业统一目录标准。
 
 ## 4. 模块责任与依赖方向
 
