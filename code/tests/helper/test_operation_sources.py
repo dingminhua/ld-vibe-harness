@@ -104,10 +104,8 @@ def test_reads_one_valid_declaration_and_preserves_source(tmp_path: Path) -> Non
     assert declaration.result_contract == "source-one::结果字段"
     assert declaration.source_key == "source-one"
     assert declaration.source.path == "specs/source-one.md"
-    assert result.unchecked_conditions == (
-        "repository semantic review",
-        "契约目标章节是否完整定义字段、类型、必填性、空值和闭集语义",
-    )
+    assert result.unchecked_conditions == ("repository semantic review",)
+    assert result.contract_conditions == ("契约目标章节是否完整定义字段、类型、必填性、空值和闭集语义",)
 
 
 @pytest.mark.parametrize(

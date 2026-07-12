@@ -27,15 +27,45 @@ def _run(cwd: Path, *arguments: str, stdin: str = "") -> tuple[subprocess.Comple
     return completed, response
 
 
-def test_general_discovery_accepts_zero_public_operations_from_outside_repository(tmp_path: Path) -> None:
+def test_general_discovery_reports_defined_operation_without_claiming_implementation(tmp_path: Path) -> None:
     completed, response = _run(tmp_path, "capabilities")
 
     assert completed.returncode == 0
     assert response["outcome"] == "ok"
     assert response["operation_key"] is None
-    assert response["result"] == {"mode": "discovery", "operations": []}
-    assert len(response["gaps"]) == 5
+    assert response["result"]["mode"] == "discovery"
+    assert len(response["result"]["operations"]) == 1
+    operation = response["result"]["operations"][0]
+    assert operation["operation_key"] == "read-specification-candidates"
+    assert operation["implementation"] == {"present": False, "evidence": []}
+    assert operation["availability"] is None
+    assert operation["required_inputs"] == []
+    assert operation["optional_inputs"] == []
+    input_gap = next(gap for gap in operation["gaps"] if "空数组不表示该操作没有输入" in gap["summary"])
+    assert input_gap["source_refs"] == [
+        {
+            "kind": "rule",
+            "locator": "specification-model-foundation::9.4 规范候选读取输入字段",
+        }
+    ]
+    assert len(response["gaps"]) == 6
     assert all(gap["summary"].startswith("当前 Code 尚未自动证明：") for gap in response["gaps"])
+
+
+def test_defined_unimplemented_operation_has_distinct_check_and_call_results(tmp_path: Path) -> None:
+    checked, check_response = _run(tmp_path, "capabilities", "read-specification-candidates")
+    called, call_response = _run(tmp_path, "call", "read-specification-candidates")
+
+    assert checked.returncode == 0
+    assert check_response["outcome"] == "ok"
+    checked_operation = check_response["result"]["operations"][0]
+    assert checked_operation["availability"] == "unavailable_for_request"
+    assert checked_operation["unavailable_scope"] == ["read-specification-candidates"]
+
+    assert called.returncode == 5
+    assert call_response["outcome"] == "unavailable"
+    assert call_response["result"] is None
+    assert call_response["scope"]["not_completed"] == ["read-specification-candidates"]
 
 
 @pytest.mark.parametrize("command", [("capabilities", "one", "extra"), ("call", "one", "extra")])

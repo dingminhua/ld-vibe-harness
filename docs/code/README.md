@@ -2,16 +2,16 @@
 
 > 当前规划入口：本文是当前唯一的 Code 实现规划及稳定入口。本文不是规则源，也不是完整的 V4 进展总览；当前状态与跨构成要素边界见 [`V4-当前进展.md`](../v4-architecture/V4-当前进展.md)。实现语义必须回到当前有效规范和授权附件。
 
-## 当前增量：Helper CLI 基础契约
+## 当前增量：Helper CLI 基础服务与公开操作发现
 
 | 项目 | 当前决定 |
 |---|---|
 | 实现起点 | Git commit `ee40306bb667465eaa1dcaf7a6aa82b2b44fe910` 及其包含的规范读取与公开操作声明候选读取能力；本规划与本增量 Code/tests 的未提交变化一并属于当前实现对象 |
-| 目标 | 建立 `ldvh` 进程入口、共同 JSON 请求与响应、`capabilities` 和 `call` 的基础分流，并让当前规则源中 0 个领域公开操作成为合法且可验证的发现结果 |
-| 不覆盖 | 任何具体领域公开操作、管辖范围解析、事实对象、行动模板执行、状态变更、Human 文本模式、环境 Hook/插件/adapter 接入和普通 wheel 的规则源部署 |
+| 目标 | 保持 `ldvh` 进程入口、共同 JSON 请求与响应及 `capabilities`/`call` 基础分流，并从当前来源声明发现 `read-specification-candidates`，如实区分已定义、未实现、当次不可调用和直接调用不可用 |
+| 不覆盖 | `read-specification-candidates` 的领域调用实现、领域输入清单机械解析、管辖范围解析、事实对象、行动模板执行、状态变更、Human 文本模式、环境 Hook/插件/adapter 接入和普通 wheel 的规则源部署 |
 | 直接来源 | `ldvh-root`、`helper-cli-service-contract`、`helper-cli-request-response-fields`、`source-of-truth-traceability`、`code-engineering-practices` |
 
-本增量不由 Code、tests 或实现注册表补造领域公开操作。当前规则源没有 `Helper 公开操作` 声明时，`ldvh capabilities` 必须成功返回空 `operations`；针对任意操作的单项 `capabilities` 与 `call` 必须返回 `invalid_request`。
+本增量不由 Code、tests 或实现注册表补造领域公开操作。通用 `ldvh capabilities` 只从当前来源的 `Helper 公开操作` 声明形成发现结果：已有声明但没有实现时仍返回该操作，`implementation.present` 为 `false`，并保留领域输入清单尚未机械确认、规则源资格尚未完整证明及实现缺失等缺口。针对已定义但未实现操作的单项 `capabilities` 完成可用性检查并返回 `unavailable_for_request`；直接 `call` 返回 `unavailable`。未知操作仍返回 `invalid_request`。
 
 ### 规则源定位与安装边界
 
@@ -44,7 +44,7 @@ ldvh.helper.rule_source -> ldvh.helper.operation_sources
 
 ### 结果、退出码与诊断边界
 
-本增量严格使用 04 §7.2：`ok=0`、`invalid_request=2`、`unavailable=5`、未预期且无法形成可信服务结果的实现异常为 `error=1`。当前没有领域实现，因此不会产生 `no_change`、`partial` 或 `rejected`。通用空发现是完成了发现请求，返回 `ok`，但 repository 和 operation inspection 尚未自动证明的规则源资格条件必须逐项保留在 `gaps`，不得因 0 个操作或外层成功而静默丢弃；没有返回规范信息时 `disclosure` 保持 `null`，没有符合来源契约的验证条目时不通过 `verification` 自造状态值。未知或格式错误的操作标识返回 `invalid_request`；请求 JSON、顶层类型、未知共同字段和字段类型错误同样返回 `invalid_request`。
+本增量严格使用 04 §7.2：`ok=0`、`invalid_request=2`、`unavailable=5`、未预期且无法形成可信服务结果的实现异常为 `error=1`。当前没有领域实现，因此不会产生 `no_change`、`partial` 或 `rejected`。通用发现和已定义操作的单项可用性检查都完成了相应发现请求，外层返回 `ok`；直接调用已定义但未实现的操作返回 `unavailable`。repository 和 operation inspection 尚未自动证明的规则源资格条件必须逐项保留在 `gaps`，不得因发现了操作或外层成功而静默丢弃；没有返回规范信息时 `disclosure` 保持 `null`，没有符合来源契约的验证条目时不通过 `verification` 自造状态值。未知或格式错误的操作标识返回 `invalid_request`；请求 JSON、顶层类型、未知共同字段和字段类型错误同样返回 `invalid_request`。
 
 能够识别 `capabilities` 或 `call`、取得一个非空 `operation_key` 且只是出现额外命令参数时，进程能够形成满足共同响应闭集的 JSON `invalid_request`。缺少 `call` 的必填 `operation_key`、空 key、未知入口或没有入口时，当前共同响应无法同时满足 `request_kind` 和非通用入口 `operation_key` 的必填约束，因此只返回进程级 usage 与退出码 `2`，不伪造一个违反附件闭集的机器响应。若未来要求这些形态也形成 JSON，必须先由 Helper 契约定义其合法字段表示。
 
@@ -54,14 +54,14 @@ ldvh.helper.rule_source -> ldvh.helper.operation_sources
 
 | 风险 | 必须验证 |
 |---|---|
-| 空操作被误判为错误或被内部实现补齐 | 当前真实 Working Tree 的 `capabilities` 返回 `ok`、空 `operations`，且单项检查/调用未知 key 均为 `invalid_request` |
+| 来源声明被隐藏或被内部实现补造 | 当前真实 Working Tree 的 `capabilities` 返回 `ok`，只发现 `read-specification-candidates`，明确 `implementation.present: false`；已定义操作的检查与调用分别返回不可调用和不可用，未知 key 为 `invalid_request` |
 | 共同 JSON 契约漂移 | 共享响应 contract test 一次检查全部顶层字段和共同嵌套闭集；请求参数化反例覆盖非 UTF-8、未知字段、非对象、无效 JSON、错误类型和通用发现非空 `arguments` |
 | stdout 被日志污染或退出码丢失 | 使用真实子进程调用入口，验证 stdout 只能解析为一个 JSON 对象、stderr 为空、退出码与 `outcome` 对应 |
 | `cwd` 改变规则源 | 从仓库外临时目录启动真实子进程，仍从包路径定位同一 Working Tree；不存在共置规则源的定位器组件测试返回明确缺口 |
 | 规则源错误被包装为空发现 | 注入不完整 inspection，验证 `unavailable`、缺口、诊断和未完成范围，不返回 `ok` 空集合 |
 | 测试形成第二套响应构造 | 完整共同结构只由一份共享断言检查；场景测试复用该断言且只补充场景差异 |
 
-本增量完成条件：规划与实现一致；`ldvh` console script 已声明；真实进程覆盖通用发现、未知操作、无效 JSON 和仓库外 `cwd`；Code tests、Ruff 和格式检查全部通过；当前真实规则源仍报告 0 个领域公开操作；未实现的独立安装、具体操作、管辖解析、环境接入和 Human 文本模式明确保留为未验证、不可用范围。
+本增量完成条件：规划与实现一致；`ldvh` console script 已声明；真实进程覆盖通用发现、已定义但未实现操作的检查与调用、未知操作、无效 JSON 和仓库外 `cwd`；Code tests、Ruff 和格式检查全部通过；当前真实来源声明的操作能够被发现且不冒充已有实现；未实现的独立安装、具体操作调用、领域输入清单解析、管辖解析、环境接入和 Human 文本模式明确保留为未验证、不可用范围。
 
 ---
 

@@ -8,7 +8,7 @@
 
 | 编号 | 草案 | 职责标识符 | 当前状态 |
 |---:|---|---|---|
-| 04 | Helper CLI 服务契约规范 | `helper-cli-service-contract` | `active` |
+| 04 | Helper CLI 服务规范 | `helper-cli-service-contract` | `active` |
 | 05 | 事实模型基础规范 | `fact-model-foundation` | `active` |
 | 06 | 行动模板基础规范 | `action-template-foundation` | `active` |
 | 07 | Code 实践与测试规范 | `code-engineering-practices` | `active` |
@@ -51,7 +51,7 @@ Human 同意后，第二轮修正：
 5. 共同响应新增 `request_kind` 和 `follow_up`，分别消除 capabilities 响应身份歧义并承接 00 的结果接续要求；
 6. 第一版“能力发现结果”候选取消，改为范围更准确的“当次操作可用性 / Request-specific Operation Availability”；第二轮独立术语复核确认概念必要、中英文自然且边界完整；
 7. 为避免 Code 从任意正文猜测领域公开操作，具体操作来源在固定 `Helper 公开操作` H3 下使用 Markdown 表格声明操作和输入/结果契约位置；没有修改 01 的 YAML 身份块解析边界，也没有建立第二操作注册表。
-8. Human 确认标题和文件名省略项目语境中重复的 `LDVH`，改为 `04-Helper CLI 服务契约规范.md`；`spec_key: helper-cli-service-contract` 和规范责任保持不变。
+8. Human 当时确认标题和文件名省略项目语境中重复的 `LDVH`，采用 `04-Helper CLI 服务契约规范.md`；2026-07-13 进一步确认 04 承担完整 Helper CLI 服务责任，服务契约只是其中一部分，因此当前名称校准为 `04-Helper CLI 服务规范.md`。`spec_key: helper-cli-service-contract` 作为稳定职责标识符保持不变，规范责任没有拆分或替换。
 
 第二轮最终复核结果：
 

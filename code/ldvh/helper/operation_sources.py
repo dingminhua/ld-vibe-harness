@@ -47,6 +47,7 @@ class OperationSourceInspection:
     issues: tuple[Issue, ...]
     incomplete_sources: tuple[str, ...]
     unchecked_conditions: tuple[str, ...]
+    contract_conditions: tuple[str, ...] = ()
 
 
 def _issue(document: FormalDocument, summary: str, *, line: int | None = None) -> Issue:
@@ -203,5 +204,6 @@ def inspect_operation_sources(repository: RepositoryInspection) -> OperationSour
         candidate_declarations=tuple(sorted(declarations, key=lambda declaration: declaration.operation_key)),
         issues=tuple(issues),
         incomplete_sources=tuple(sorted(incomplete)),
-        unchecked_conditions=repository.unchecked_conditions + contract_conditions,
+        unchecked_conditions=repository.unchecked_conditions,
+        contract_conditions=contract_conditions,
     )

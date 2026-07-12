@@ -25,7 +25,10 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
     assert len(inspection.projections) == 36
     assert {projection.layer for projection in inspection.projections} == {"L0", "L1", "L2"}
     assert inspection.unchecked_conditions == UNCHECKED_CONDITIONS
-    assert operations.candidate_declarations == ()
+    assert [declaration.operation_key for declaration in operations.candidate_declarations] == [
+        "read-specification-candidates"
+    ]
+    assert operations.candidate_declarations[0].source.path == "specs/01-规范模型基础规范.md"
     assert operations.issues == ()
     assert operations.incomplete_sources == ()
 

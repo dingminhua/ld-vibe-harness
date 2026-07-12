@@ -1,16 +1,16 @@
-# Helper CLI 服务契约规范
+# Helper CLI 服务规范
 
 ```yaml
 ldvh_spec:
   spec_key: "helper-cli-service-contract"
   spec_id: "04"
   spec_kind: "spec"
-  title: "Helper CLI 服务契约规范"
+  title: "Helper CLI 服务规范"
   status: "active"
-  canonical_path: "specs/04-Helper CLI 服务契约规范.md"
+  canonical_path: "specs/04-Helper CLI 服务规范.md"
   parent_spec: "ldvh-root"
   relation: "refines"
-  positioning: "定义 LDVH Helper CLI 面向 AI Agent 及环境入口的公开调用、能力发现、机器响应、来源与范围保留、部分结果和受控操作结果契约"
+  positioning: "定义 LDVH Helper CLI 面向 AI Agent 及环境入口的公开服务、能力发现、请求与响应契约、来源与范围保留、部分结果和受控操作边界"
   scope: "AI Agent 或环境入口调用 LDVH Helper CLI 发现当前规则源已定义的公开操作，或者读取、判断和执行其中已有 Code 实现且当次条件成立的 LDVH 能力"
   basis:
     - "ldvh-root"
@@ -144,6 +144,8 @@ ldvh call <operation_key>
 7. 本次发现的观察范围和时间。
 
 通用发现没有获得具体操作参数和对象范围时，`availability` 必须为 `null`。缺少尚未请求的操作参数不得被写成 `unavailable_for_request`；结果应列出所需输入，让 AI 决定是否形成针对该操作的检查或调用。
+
+Code 已能定位有效公开操作声明，但尚未机械确认该操作领域输入契约的完整字段时，仍须发现该操作并在操作 `gaps` 中报告输入清单未确定；此时 `required_inputs` 和 `optional_inputs` 暂为空数组，只表示当前发现结果没有形成可信输入清单，不得解释为该操作没有输入。只有 Code 已从操作来源契约形成可复核的完整字段清单后，才能填入这两个数组并移除相应缺口。
 
 已有当前来源但没有实现的操作仍出现在发现结果中，`implementation.present` 为 `false`，不得声明为可调用。实现存在但没有当前来源支持其公开语义时，该实现不进入公开操作清单，也不取得 `operation_key`；如果检查实际发现这种情况，只能作为契约缺口诊断报告，并暂停把它作为公开能力使用。
 

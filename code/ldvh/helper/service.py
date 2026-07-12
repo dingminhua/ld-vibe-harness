@@ -2,15 +2,18 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 import ldvh
+from ldvh.helper.operation_sources import OperationDeclarationCandidate
 from ldvh.helper.requests import parse_common_request, valid_operation_key
 from ldvh.helper.responses import RequestKind, ServiceResult, common_response, diagnostic, gap, source_reference
 from ldvh.helper.rule_source import inspect_colocated_rule_source
 
 CONTRACT_SOURCES = [
-    source_reference("rule", "specs/04-Helper CLI 服务契约规范.md"),
+    source_reference("rule", "specs/04-Helper CLI 服务规范.md"),
     source_reference("rule", "specs/attachments/04.Att.01-Helper CLI 请求与响应字段表.md"),
 ]
 RULE_SOURCE_QUALIFICATION_SOURCE = source_reference("rule", "specs/01-规范模型基础规范.md")
@@ -48,6 +51,82 @@ def _rule_source_unavailable(request_kind: RequestKind, operation_key: str | Non
     )
 
 
+def _declaration_source(declaration: OperationDeclarationCandidate) -> dict[str, Any]:
+    return source_reference(
+        "rule",
+        declaration.source.path,
+        line=declaration.source.line,
+        heading=declaration.source.heading,
+        source_key=declaration.source_key,
+    )
+
+
+def _qualification_gaps(
+    conditions: tuple[str, ...],
+    *,
+    sources: list[dict[str, Any]],
+    scope: list[object] | None = None,
+) -> list[dict[str, Any]]:
+    return [
+        gap(
+            f"当前 Code 尚未自动证明：{condition}",
+            scope=scope,
+            sources=sources,
+        )
+        for condition in dict.fromkeys(conditions)
+    ]
+
+
+def _operation_item(
+    declaration: OperationDeclarationCandidate,
+    *,
+    observed_at: str,
+    request_check: bool,
+    rule_source_conditions: tuple[str, ...],
+    contract_conditions: tuple[str, ...],
+) -> dict[str, Any]:
+    operation_scope: list[object] = [declaration.operation_key]
+    declaration_source = _declaration_source(declaration)
+    operation_gaps = [
+        gap(
+            "当前 Code 尚未发现该公开操作的实际实现及可复核能力依据",
+            scope=operation_scope,
+            sources=[declaration_source],
+        ),
+        *(
+            [
+                gap(
+                    "领域输入清单尚未由 Code 机械确认；required_inputs 与 optional_inputs 的空数组不表示该操作没有输入",
+                    scope=operation_scope,
+                    sources=[source_reference("rule", declaration.arguments_contract)],
+                )
+            ]
+            if contract_conditions
+            else []
+        ),
+        *_qualification_gaps(
+            rule_source_conditions,
+            sources=[RULE_SOURCE_QUALIFICATION_SOURCE],
+            scope=operation_scope,
+        ),
+        *_qualification_gaps(contract_conditions, sources=CONTRACT_SOURCES, scope=operation_scope),
+    ]
+    return {
+        "operation_key": declaration.operation_key,
+        "summary": declaration.summary,
+        "sources": [declaration_source],
+        "effect": declaration.effect,
+        "required_inputs": [],
+        "optional_inputs": [],
+        "implementation": {"present": False, "evidence": []},
+        "availability": "unavailable_for_request" if request_check else None,
+        "available_scope": [],
+        "unavailable_scope": operation_scope if request_check else [],
+        "gaps": operation_gaps,
+        "observed_at": observed_at,
+    }
+
+
 def handle_request(request_kind: RequestKind, operation_key: str | None, raw_input: str) -> ServiceResult:
     general_discovery = request_kind == "capabilities" and operation_key is None
     parsed = parse_common_request(raw_input, general_discovery=general_discovery)
@@ -78,33 +157,79 @@ def handle_request(request_kind: RequestKind, operation_key: str | None, raw_inp
             diagnostics=[diagnostic("规则源机械检查未通过", issues=summaries)],
         )
 
+    unchecked_conditions = tuple(dict.fromkeys(operations.unchecked_conditions))
+    contract_conditions = tuple(dict.fromkeys(operations.contract_conditions))
+    qualification_gaps = [
+        *_qualification_gaps(unchecked_conditions, sources=[RULE_SOURCE_QUALIFICATION_SOURCE]),
+        *_qualification_gaps(contract_conditions, sources=CONTRACT_SOURCES),
+    ]
     declarations = operations.candidate_declarations
-    if declarations:
-        return _rule_source_unavailable(
-            request_kind,
-            operation_key,
-            "发现了领域公开操作声明候选，但本增量尚未实现其完整输入契约与实现依据发现",
-        )
+    declarations_by_key = {declaration.operation_key: declaration for declaration in declarations}
+    observed_at = datetime.now().astimezone().isoformat()
 
     if operation_key is not None:
-        return invalid_request_result(request_kind, operation_key, (f"当前规则源未定义公开操作 {operation_key!r}",))
-
-    unchecked_conditions = tuple(dict.fromkeys(operations.unchecked_conditions))
-    qualification_gaps = [
-        gap(
-            f"当前 Code 尚未自动证明：{condition}",
-            sources=[RULE_SOURCE_QUALIFICATION_SOURCE],
+        declaration = declarations_by_key.get(operation_key)
+        if declaration is None:
+            return invalid_request_result(
+                request_kind,
+                operation_key,
+                (f"当前规则源未定义公开操作 {operation_key!r}",),
+            )
+        declaration_source = _declaration_source(declaration)
+        operation_gap = gap(
+            "当前 Code 尚未发现该公开操作的实际实现及可复核能力依据",
+            scope=[operation_key],
+            sources=[declaration_source],
         )
-        for condition in unchecked_conditions
+        if request_kind == "call":
+            return common_response(
+                request_kind="call",
+                operation_key=operation_key,
+                outcome="unavailable",
+                summary="公开操作已经定义，但当前没有可调用的实现与能力依据",
+                requested_scope=[operation_key],
+                not_completed_scope=[operation_key],
+                sources=[*CONTRACT_SOURCES, declaration_source, RULE_SOURCE_QUALIFICATION_SOURCE],
+                gaps=[operation_gap, *qualification_gaps],
+            )
+        operation = _operation_item(
+            declaration,
+            observed_at=observed_at,
+            request_check=True,
+            rule_source_conditions=unchecked_conditions,
+            contract_conditions=contract_conditions,
+        )
+        return common_response(
+            request_kind="capabilities",
+            operation_key=operation_key,
+            outcome="ok",
+            summary="已完成公开操作的当次可用性检查；当前操作不可调用",
+            result={"mode": "request_check", "operations": [operation]},
+            requested_scope=[operation_key],
+            completed_scope=[operation_key],
+            sources=[*CONTRACT_SOURCES, declaration_source, RULE_SOURCE_QUALIFICATION_SOURCE],
+            gaps=[operation_gap, *qualification_gaps],
+        )
+
+    discovered_operations = [
+        _operation_item(
+            declaration,
+            observed_at=observed_at,
+            request_check=False,
+            rule_source_conditions=unchecked_conditions,
+            contract_conditions=contract_conditions,
+        )
+        for declaration in declarations
     ]
+    declaration_sources = [_declaration_source(declaration) for declaration in declarations]
 
     return common_response(
         request_kind="capabilities",
         operation_key=None,
         outcome="ok",
-        summary="已完成当前规则源的公开操作发现；当前没有领域公开操作",
-        result={"mode": "discovery", "operations": []},
-        completed_scope=[],
-        sources=[*CONTRACT_SOURCES, RULE_SOURCE_QUALIFICATION_SOURCE],
+        summary=f"已完成当前规则源的公开操作发现；发现 {len(discovered_operations)} 项领域公开操作",
+        result={"mode": "discovery", "operations": discovered_operations},
+        completed_scope=[declaration.operation_key for declaration in declarations],
+        sources=[*CONTRACT_SOURCES, *declaration_sources, RULE_SOURCE_QUALIFICATION_SOURCE],
         gaps=qualification_gaps,
     )
