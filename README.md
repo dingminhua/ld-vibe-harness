@@ -8,6 +8,7 @@
 - [`01-规范模型基础规范.md`](specs/01-规范模型基础规范.md) 定义正式规范及其授权附件的共同结构、关系、规则表达、渐进式披露和双语术语治理。
 - [`01.Att.01-LDVH双语术语表.md`](specs/attachments/01.Att.01-LDVH双语术语表.md) 是 01 授权的当前双语术语登记。
 - [`docs/code/README.md`](docs/code/README.md) 是当前 Code 实现规划入口；它不是规则源。
+- [`docs/web/README.md`](docs/web/README.md) 是当前 Web 实现规划入口；它记录行为保持边界、测试策略和分批整治顺序，不是规则源。
 - [`docs/v4-architecture/V4-当前进展.md`](docs/v4-architecture/V4-当前进展.md) 是当前 V4 进展、验证证据和未完成边界的状态入口。
 - [`V4-架构重建基线.md`](docs/v4-architecture/V4-架构重建基线.md) 记录本轮重建范围、非继承边界和资产处置原则。
 - [`V3 设计覆盖与 V4 下游审核清单`](docs/v4-architecture/V3-设计覆盖与V4下游审核清单.md) 保留尚未完成的 V3 设计内容审核入口。
@@ -22,4 +23,4 @@
 
 ## 使用状态
 
-当前 00–08 及三份授权附件已经激活；这只表示相应规则完成审核。V4 Code 的首个实现增量已经落地并验证：规范候选发现、身份/结构/关系检查、L0–L2 派生信息、Helper 公开操作声明读取，以及对应 Code tests 已可运行。当前仍没有 Helper CLI 进程入口、具体公开操作、事实类型、行动模板执行、环境接入或 V4 Web 适配完成声明；详见 [当前进展](docs/v4-architecture/V4-当前进展.md)。
+当前 00–08 及三份授权附件已经激活；这只表示相应规则完成审核。V4 Code 已建立规范模型确定性基础和 Helper CLI 基础契约；Web 已建立独立实现规划与首批自有 API 特征测试。当前仍没有具体 Helper 公开操作、事实类型、行动模板执行、环境接入或 V4 Web 适配完成声明；详见 [当前进展](docs/v4-architecture/V4-当前进展.md)。
