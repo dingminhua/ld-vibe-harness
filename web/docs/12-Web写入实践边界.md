@@ -1,38 +1,21 @@
-# Web 写入实践边界
+# Web 写入实践记录（V3 历史）
 
-本文是 Web 实现域文档，承接 `specs/08-Web信息同步规范.md` 中不应写入 specs 正文的当前实现状态、API 白名单和测试实践。本文不定义新的 Web 写入授权；若与 specs 冲突，以 specs 为准。
+> 本文只记录当前 Web 中仍存在的 V3 写入实现，不是规则源、授权来源或 V4 能力声明。当前稳定边界见 [`08-Web 呈现与交互规范.md`](<../../specs/08-Web 呈现与交互规范.md>) §8。
 
-## 当前写入白名单
+## 当前实现事实
 
-当前 Web 正式写入能力只有 Spark quick create。
+`web/api/routes/sparks.ts`、`web/api/app.ts` 和前端 Spark 创建组件表明：Spark quick create 的 V3 写入路径仍在当前源码中并可以被挂载。该实现内部包含 V3 字段、初始状态、目录和回读逻辑。
 
-边界：
+这只能证明相应源码和路由存在，不能证明：
 
-1. 写入对象只限 Spark；
-2. 初始状态固定为 `pending`；
-3. 写入位置为 Git 可追踪 Spark 事实实例文件；
-4. `source` 固定为 `web`；
-5. API response 必须包含 `source_refs`；
-6. 写入后必须回读验证；
-7. 不得写入 legacy 字段；
-8. 不得替代 Git 提交、Human Gate、验证声明或完成声明。
+1. Spark 已成为 V4 事实类型；
+2. 相应字段、状态和路径仍然有效；
+3. Web 已取得写入授权；
+4. 存在实际可用的 V4 Code 受控能力；
+5. 写入、回读、Human Gate 或完成结论已经通过验证。
 
-现有测试入口：
+对应 V3 tests 位于 `archive/v3/tests/web/api/sparks.test.ts`，当前 `web/tests/` 不恢复该测试，也不把旧测试固定的行为当作 V4 契约。
 
-```bash
-npm run test:web:api
-```
+## 后续处理入口
 
-其中 `tests/web/api/sparks.test.ts` 覆盖创建、字段校验、文件冲突和写后校验失败。
-
-## 后置写入
-
-以下能力未启用：
-
-1. 通用事实对象写入；
-2. WorkCase 状态推进写入；
-3. ADR、Pitfall、Study 的 Web 创建或状态改写；
-4. 完整 Confirm UI；
-5. Confirm UI 自动生成 Human Gate 完成记录。
-
-新增或扩大 Web 写入前，必须回到 `specs/08-Web信息同步规范.md` 的 Human Gate、source_refs、写后校验和事实源边界。
+V4 Web 默认只读。准备保留、隔离、替换或重新开放任何写入前，必须回到当前有效来源，确认目标对象、允许变化、前置条件、当次授权、实际 Code 能力、操作前呈现、操作后回读、失败和部分结果边界。具体调查、实现和测试顺序记录在 [`docs/web/README.md`](../../docs/web/README.md)，不由本文制定。

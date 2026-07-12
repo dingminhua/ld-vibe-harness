@@ -10,7 +10,7 @@
 
 ProjectFiles 是管辖项目文件、Git 工作区和提交历史的只读工具页。它帮助 Human 查看项目文件、预览 Markdown / SVG / 文本内容、检查待提交文件、查看 diff 和追溯提交，不是工作对象列表、对象详情页、完整 IDE、文件管理器或通用 Git 客户端。
 
-ProjectFiles 可以读取项目文件和 Git 信息，但不得新增、修改、移动、删除项目文件，不得提供 stage、commit、checkout、reset、rebase、merge、discard 或等价写入动作。任何未来写入能力都必须先回到 `specs/05-Web信息同步规范.md` 的受控轻写入、Human Gate 和测试要求。
+ProjectFiles 可以读取项目文件和 Git 信息，但不得新增、修改、移动、删除项目文件，不得提供 stage、commit、checkout、reset、rebase、merge、discard 或等价写入动作。任何未来写入能力都必须先回到当前有效来源及 [`08-Web 呈现与交互规范.md`](<../../specs/08-Web 呈现与交互规范.md>) 的默认只读、受控操作和 Human Gate 边界。
 
 ## 2. 当前页面结构
 
@@ -29,7 +29,7 @@ ProjectFiles 可以读取项目文件和 Git 信息，但不得新增、修改�
 
 1. 文件内容来自当前管辖项目的 Git 工作区文件系统读取。
 2. Git 状态、diff 和提交历史来自 Git 命令或后端确定性解析。
-3. ProjectFiles 展示的文件路径、diff、commit hash、commit message 和 Markdown 正文都是事实或审计材料，不由 Web 翻译或改写。
+3. ProjectFiles 展示的当前文件内容和 Git 溯源信息必须保持各自来源与身份，不由 Web 翻译或改写，也不被统一提升为稳定事实。
 4. ProjectFiles 不把页面选中项、展开目录、当前 tab、搜索条件、diff 展开态或预览滚动位置写成事实源。
 5. ProjectFiles 不创建新的工作对象类别，不把文件浏览状态解释为 WorkCase、Spark、ADR、Pitfall 或 Study 生命周期。
 
@@ -62,7 +62,7 @@ ProjectFiles 的复制入口必须按内容命名：
 
 ProjectFiles 的提交历史必须复用 Changelog / Dashboard 的 commit message 拆分与 Conventional Commits 解析函数，统一输出 `message`、`body`、`category`、`scope`、`description` 和 `isBreaking`。ProjectFiles 可以追加 `parents`、`isMerge`、`files`、`absolutePath`、diff 等工具页字段，但不得维护第二套 commit header parser。
 
-ProjectFiles 展开提交历史项时，commit body 展示必须复用 Changelog 的提交正文显示契约：按 Markdown 渲染 07 强制的 `- ` 无序列表项，不得用 `pre` 原样展示造成结构化列表表现不一致。
+ProjectFiles 展开提交历史项时，commit body 应与 Changelog 的当前呈现保持一致：按 Markdown 渲染 `- ` 无序列表项，不使用 `pre` 原样展示而造成结构化列表表现不一致。
 
 ProjectFiles 的提交历史是工具页上下文中的 Git 证据入口；`/changelog` 仍是全站提交记录主入口，`/changelog/:hash` 仍是提交详情主路由。
 
@@ -91,7 +91,7 @@ ProjectFiles API 可以返回项目、目录项、文件内容、Git status、Gi
 
 ## 10. 测试要求
 
-ProjectFiles 属于 Web 高风险 API 覆盖对象。修改 ProjectFiles 的 API、路径解析、Git 解析、diff 展示、commit DTO、Markdown 预览、复制语义或 i18n 时，应优先补充或运行 `tests/web/api/` 下的最小 contract 测试；页面层改动应覆盖空态、错误态、路径越界、只读边界和来源呈现。
+ProjectFiles 属于 Web 高风险 API 覆盖对象。修改 ProjectFiles 的 API、路径解析、Git 解析、diff 展示、commit DTO、Markdown 预览、复制语义或 i18n 时，应优先补充或运行 `web/tests/api/` 下的最小 contract 测试；页面层改动应覆盖空态、错误态、路径越界、只读边界和来源呈现。
 
 无法补自动化测试时，必须说明等价验证方式和残留风险，不得宣称完整验证。
 

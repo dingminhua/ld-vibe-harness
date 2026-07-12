@@ -1,10 +1,12 @@
 # LDVH Web Architecture
 
+> 当前身份：本文记录既有 V3 Web 的实现架构，不是 V4 规范或完整适配结论。V4 当前实施入口见 [`docs/web/README.md`](../../docs/web/README.md)。正文中的 V3 事实对象、`ldvh-base/` 和旧 Specs 说明只能作为历史实现线索。
+
 ## 1. Positioning
 
 LDVH Web is the Human-facing surface for Git-backed LDVH fact objects. It does not replace specs, Code validation, YAML fact sources, Study Markdown fact sources, or Git commit records.
 
-The repository intentionally keeps system tests under the root `tests/` directory because Web behavior often verifies the integration among:
+Web tests belong to the Web implementation and are kept under `web/tests/`. They may verify integration among:
 
 - `ldvh-base/` YAML fact objects and Study Markdown fact objects
 - `code/` deterministic Python tools
@@ -21,37 +23,30 @@ ld-vibe-harness/
   code/               # deterministic Python tools
   specs/              # formal specs
   ldvh-base/          # dogfood fact objects
-  tests/              # cross-layer tests
   web/
     package.json      # Web Node package
     api/              # Express API
     src/              # React app
+    tests/            # Web-owned tests
 ```
 
 ## 3. Dependency Ownership
 
 The Web Node dependency owner is `web/package.json`.
 
-Root-level TypeScript tests may live in `tests/web/`, but when they need Web runtime dependencies they must resolve those dependencies from `web/package.json` or execute through the Web package scripts. They should not rely on implicit shell globals such as `NODE_PATH`.
+Web TypeScript tests live in `web/tests/` and resolve their dependencies from `web/package.json`. They should not rely on implicit shell globals such as `NODE_PATH`. The repository root does not provide a shared `tests/` directory.
 
 ## 4. Command Entry
 
-Use the repository root for product-level checks:
+Use `web/` for focused Web checks:
 
 ```bash
 npm run check
 npm run test:web:api
-npm run specs:check
-npm run web:restart
-```
-
-Use `web/` directly only for focused Web development:
-
-```bash
-cd web
-npm run dev
 npm run build
 ```
+
+Run these commands after `cd web`.
 
 ## 5. Fact Reading Boundary
 
