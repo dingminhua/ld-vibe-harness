@@ -102,7 +102,7 @@ AI 负责判断研究是否完成、来源是否充分、推断是否越界、�
 | 记录当前报告最近实质变化时间 | `updated-at` | reuse | `updated-at` | 公共更新时间无损适用，不代替来源 observed_at | `study-fact-type::5. Study 类型定义::field-review-0002` |
 | 表达报告是否仍是当前入口、已被整体替代或无替代退出 | `status` | reuse | `status` | 公共条件状态入口适用，由本文定义 Study 三状态闭集 | `study-fact-type::5. Study 类型定义::field-review-0001` |
 | 回指研究委托、实际输入与报告形成来源 | `source-refs` | reuse | `source-refs` | 公共来源统一替代 user_intent、input_refs、related_docs 和拆分输入字段 | `study-fact-type::5. Study 类型定义::field-review-0002` |
-| 定位支持发现、结论、限制、适用与验证的依据 | `evidence-refs` | reuse | `evidence-refs` | 公共证据入口统一替代 urls 和裸链接池，成员已有 version 与 observed_at | `study-fact-type::5. Study 类型定义::field-review-0002` |
+| 定位支持发现、结论、限制、适用与验证的依据 | `evidence-refs` | reuse | `evidence-refs` | 公共证据入口以 locator、version 与 observed_at 承担稳定定位和时效；来源用途、支持声明与限制由正文映射，不恢复 urls 或裸链接池 | `study-fact-type::5. Study 类型定义::field-review-0002` |
 | 表达一个新 Study 对旧 Study 的单向整体替代 | `relations` | reuse | `relations` | 公共关系统一承载 supersedes，不恢复 related_* 或反向字段 | `study-fact-type::5. Study 类型定义::field-review-0001` |
 | 说明 superseded 或 retired 为什么成立及剩余引用边界 | `disposition-summary,status` | reuse | `disposition-summary` | 共享终态处置无损承接研究整体替代或不再安全引用 | `study-fact-type::5. Study 类型定义::field-review-0001` |
 | 记录 Study 首次有效进入终态的时间 | `closed-at,updated-at` | reuse | `closed-at` | 与其它类型的终态首次成立时间完全同义 | `study-fact-type::5. Study 类型定义::field-review-0002` |
@@ -151,6 +151,8 @@ Study 对象使用 UTF-8 Markdown，一文件一对象，当前权威位置固�
 
 正文必须按顺序各出现且只出现一次以下非空 H2：`研究问题`、`输入、方法与观察边界`、`关键发现`、`结论与限制`、`建议`、`后续分流`。正文可以使用 H3、表格和列表展开细节，但 frontmatter 的 research_question、abstract、applicability 和 validation_summary 是稳定机器入口；正文不得改变或弱化这些边界。研究方法、来源质量、冲突证据、未覆盖与时效限制在正文相应章节详细表达，不再建立第二个 limitations 字段。建议和后续分流可以明确没有可行动内容，但不得写占位语、虚构任务或暗示已经创建下游对象。
 
+迁移 V3 Study 的 `urls` 时，`ref` 按实际作用进入 source_refs 或 evidence_refs 的 locator，来源标题可以作为正文 Markdown 链接的显示文本，不建立第二个来源身份字段；原 `summary` 中“该来源用于支持什么、实际读取了什么、未核验什么和有哪些限制”必须进入“输入、方法与观察边界”“关键发现”或“结论与限制”，并与相应 locator 明确映射。只复制 URL 而丢弃用途与限制不成立；若一项稳定信息无法在现有引用成员和正文中无歧义承接，必须暂停该对象迁移并按 05 重新进行字段准入，不得把历史 `title`、`summary` 或 `urls` 直接恢复为 frontmatter 字段。
+
 完整 Schema 由统一登记的 `fact-object` 直接字段、本节绑定、跨类型共享定义、类型专属字段定义和本节正文骨架组合。Study 不得出现 current summary、priority、evolution、WorkCase/ADR/Pitfall 专属字段、user_intent、conclusion、urls、input_refs、related_*、archive_reason、正文外第二报告、自由 metadata 或其它未登记 frontmatter。
 
 ## 6. 对象语义与生命周期
@@ -169,7 +171,7 @@ Study 只记录完成的一轮研究结果。搜索、阅读、实验或比较�
 
 ## 7. 来源、证据、时效与替代关系
 
-source_refs 至少回指研究委托或问题来源及全部实际输入；evidence_refs 必须精确支持主要发现、结论、applicability、validation_summary 和正文限制。正文重要事实与推断必须能够映射到具体 evidence_ref，不得只给文末裸链接池。下游事实对象需要引用 Study 时由下游对象把 Study 记入 source_refs；Study 不双写 related_*。
+source_refs 至少回指研究委托或问题来源及全部实际输入；evidence_refs 必须精确支持主要发现、结论、applicability、validation_summary 和正文限制。引用成员只承担种类、定位、版本和观察时间；来源为何被使用、支持哪项声明及其限制由正文承担，并通过 locator 与具体引用映射。正文重要事实与推断必须能够映射到具体 evidence_ref，不得只给文末裸链接池。下游事实对象需要引用 Study 时由下游对象把 Study 记入 source_refs；Study 不双写 related_*。
 
 Study 的 source_refs 与 evidence_refs 只允许下列 kind 和最低机械条件：
 
@@ -187,9 +189,9 @@ Study 的 source_refs 与 evidence_refs 只允许下列 kind 和最低机械条�
 
 上表的 `required` 和 kind 闭集由 Code 直接检查；`allowed` 表示 Code 不因缺少 version 单独拒绝，但 AI 判断结论依赖具体版本时仍必须把 version 收紧为必填。所有 observed_at 必须是带时区 RFC 3339 date-time，且不得晚于 Study 的 updated_at；同一数组中的 kind、locator、version、observed_at 完全相同的引用不得重复。上表没有授权 Code 根据正文关键词猜测来源种类或版本依赖。
 
-全部 Study 引用都必须记录 observed_at；结论依赖软件、文档、仓库、package、协议、产品或其它具体版本时还必须按上表记录 version。updated_at 不是观察时间，created_at 不是研究发生时间，version 与 observed_at 也不证明来源正确。
+全部 Study 引用都必须记录 observed_at；它表示该来源实际被读取、取得或确认的时间。对于 RFC、已发布论文或其它静态文档，observed_at 仍记录本次实际观察时间，不冒充文档发布时间。结论依赖软件、文档、仓库、package、协议、产品或其它具体版本时还必须按上表记录 version。updated_at 不是观察时间，created_at 不是研究发生时间，version 与 observed_at 也不证明来源正确。
 
-Study 没有统一 TTL。消费 active Study 时，只要目标版本或环境超出 applicability、结论依赖可变化事实、观察后出现已知变化或冲突，或高影响决定依赖其当前性，就必须重新观察相应来源。重验证失败只暂停受影响结论的当前消费；同问题同边界且主要结论不变时原地更新，主要结论变化时新建 Study 并替代，无替代且不安全时 retired。
+Study 没有统一 TTL。只读取或定位 Study、把它作为历史研究过程的来源，或者严格在已记录版本、观察时点、applicability 与限制内引用其历史结论，不因该动作本身强制重新观察。只有当前消费需要把结论当作观察时点之后仍成立的当前依据，并且目标版本或环境超出或无法确认落在 applicability 内、结论所依赖的可变化事实需要当前性、观察后出现已知变化或冲突，或者高影响决定明确依赖其当前性时，才必须重新观察支持该受影响结论的必要来源；不得无差别重读全部引用。重验证失败只暂停受影响结论的当前消费；同问题同边界且主要结论不变时原地更新，主要结论变化时新建 Study 并替代，无替代且不安全时 retired。
 
 Study relation_key 第一版只允许 supersedes：
 

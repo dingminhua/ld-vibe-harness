@@ -155,7 +155,7 @@ Spark 与 WorkCase 的分界不取决于“以后是否可能做”。Spark 尚�
 | `workcase-scope` | `scope` | string | WorkCase 承诺覆盖的内容、重要约束和明确排除边界 | 不表示当前进展、完整计划、实现细节或来源全文 | 必填非空；边界变化时同步复核目标、成功标准、授权和对象身份 |
 | `workcase-success-criteria` | `success_criteria` | array | 共同构成目标达成判断的可观察条件闭集 | 不表示执行步骤、todo 状态、证据、测试命令或关闭结果 | 至少一项非空唯一字符串；每项可独立检查；不嵌入 checklist 标记或可变完成状态 |
 | `workcase-blocking-summary` | `blocking_summary` | string | WorkCase 当前不能继续的具体事实、影响范围和解除条件 | 不表示低优先级、普通剩余工作、失败历史或终态理由 | 非空；解除条件必须可观察且有依据；不保留已经解除的历史阻塞占位 |
-| `workcase-closure-outcome` | `closure_outcome` | string | WorkCase 在当前身份下停止推进时的结果分类 | 不表示状态、成功标准验证详情、终态理由或 Git 已提交 | 闭集 completed、partial、cancelled、superseded、not-achieved；completed 要求全部成功标准有充分满足依据 |
+| `workcase-closure-outcome` | `closure_outcome` | string | WorkCase 在当前身份下停止推进时的结果分类 | 不表示状态、成功标准验证详情、终态理由或 Git 已提交 | 闭集 completed、partial、cancelled、superseded、not-achieved；各值的互斥语义与成立条件由 §6 唯一定义 |
 
 ### Schema 与对象载体
 
@@ -179,7 +179,17 @@ WorkCase 对象使用 UTF-8 YAML，一文件一对象，当前权威位置固定
 
 正常转换只有 `open → blocked`、`blocked → open`、`open → closed` 和 `blocked → closed`。`closed` 不直接重开；后来出现的新工作建立新 WorkCase，确属替代时由新对象使用 `supersedes` 指向旧对象。原终态记录本身错误时按 05 的事实更正规则修正，不把更正伪装成重新推进。
 
-`closed` 必须逐项核对成功标准。`completed` 要求每项均有充分满足依据；`partial` 和 `not-achieved` 必须明确未满足或未验证项；`cancelled` 必须说明停止依据；`superseded` 必须由本对象使用 `routed-to` 指向接替责任的当前 open 或 blocked WorkCase。新对象需要表达身份沿革时可以单向 `supersedes` 本对象，但该入向关系由 Code 派生读取，不是旧对象关闭成立的第二权威，也不能替代旧对象的 `routed-to` 承接声明。所有仍适用责任都必须由 `routed-to` 指向能够按目标类型与当前状态稳定承接该具体责任的事实对象，或在 `disposition_summary` 明确证明没有残余内容。
+`closure_outcome` 使用以下互斥语义。先判断原责任是否已由其它 WorkCase 整体接替，是则使用 `superseded`；再判断是否在足以评价成功标准前被明确撤回，是则使用 `cancelled`；其余情况才按成功标准的实际满足程度选择 `completed`、`partial` 或 `not-achieved`：
+
+| closure_outcome | 成立条件 | 不得冒充 |
+|---|---|---|
+| `completed` | 全部成功标准均有充分满足依据；原范围内没有未满足或未验证项 | 有部分完成但仍遗留原成功标准 |
+| `partial` | 至少一项成功标准已充分满足且至少一项未满足或未验证；已完成部分仍有稳定价值，剩余责任已明确承接或由 Human 接受停止 | “基本完成”、全部失败或只产生过程输出 |
+| `not-achieved` | 没有任何成功标准得到充分满足，或已有输出不足以构成任一成功标准的稳定完成结果；停止理由和实际尝试边界有依据 | 尚未执行就被撤销，或把部分成功隐藏为整体失败 |
+| `cancelled` | 在尚不足以对成功标准形成 `completed`、`partial` 或 `not-achieved` 判断时，授权、方向或继续投入决定被明确撤回 | 已经能够据实分类的完成或失败结果 |
+| `superseded` | 原工作责任不再由本对象推进，并已由 `routed-to` 指向能够继续承担该责任的当前 open 或 blocked WorkCase | 普通拆分、取消、部分完成或只有新对象但没有责任承接 |
+
+`closed` 必须逐项核对成功标准，并在 `validation_summary` 说明已满足、未满足与未验证范围。新对象需要表达身份沿革时可以单向 `supersedes` 本对象，但该入向关系由 Code 派生读取，不是旧对象关闭成立的第二权威，也不能替代旧对象的 `routed-to` 承接声明。所有仍适用责任都必须由 `routed-to` 指向能够按目标类型与当前状态稳定承接该具体责任的事实对象，或在 `disposition_summary` 明确证明没有残余内容。
 
 ## 7. 来源、证据与关系
 
@@ -202,6 +212,8 @@ WorkCase `relation_key` 闭集为：
 创建前必须召回相邻 WorkCase、Spark 和其它稳定来源，先判断更新、拆分、分流或保持当前上下文，再分配新身份。仅有多个步骤不构成拆分理由；多个目标能够独立验收、阻塞、取消或关闭时不得捆绑。
 
 目标、范围或成功标准实质变化时，必须重新检查来源、当前授权、对象身份和已有验证。仍是同一工作责任时更新当前字段与 `updated_at`；变成不同关闭责任时新建对象并明确旧对象处置。过程历史由 Git 保留，不写 revision history。
+
+迁移 V3 WorkCase 时不得复制 `execution_items`。每一项必须按当前实际作用重新分流：仍是同一目标下的临时步骤时进入当次计划或已准入行动模板；能够独立验收、阻塞、取消或关闭的剩余责任形成单独 WorkCase；已经完成且仍有长期价值的结果按实际语义进入来源、证据、ADR、Pitfall、Study、普通文档或其它当前稳定位置；仅有过程状态、角色、顺序、日志或已经失效的步骤只保留在 Git 历史。无法证明长期价值和当前承接位置的执行项不迁移，也不得压缩成新的事实对象字段。
 
 closed 文件默认保留在当前类型载体中供历史、来源和关系回读；本文不建立 `archived` 状态或归档位置。删除只有在适用来源规则允许、全部引用和剩余责任已经处置且不会丢失仍适用事实时才成立，不能用删除替代 closed。WorkCase 类型停止新增、合并、替代或取消时，必须按 05 处置唯一定义来源、全部现有对象（包括 closed）、引用消费者和仍适用责任；全部未终态责任还必须获得明确承接，不得只删除类型规范或隐藏对象目录。
 
