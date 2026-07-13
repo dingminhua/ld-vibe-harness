@@ -10,8 +10,43 @@ from typing import Literal
 
 GitResolutionStatus = Literal["git_worktree", "not_git_worktree", "technical_failure"]
 
-_GIT_IDENTITY_ENVIRONMENT = ("GIT_DIR", "GIT_WORK_TREE", "GIT_COMMON_DIR")
 _GIT_PROBE_TIMEOUT_SECONDS = 10
+
+
+def isolated_git_environment() -> dict[str, str]:
+    """Return a Git environment that cannot redirect repository identity or config."""
+
+    blocked = {
+        "GIT_ALTERNATE_OBJECT_DIRECTORIES",
+        "GIT_CEILING_DIRECTORIES",
+        "GIT_COMMON_DIR",
+        "GIT_CONFIG_GLOBAL",
+        "GIT_CONFIG_SYSTEM",
+        "GIT_DIR",
+        "GIT_DISCOVERY_ACROSS_FILESYSTEM",
+        "GIT_IMPLICIT_WORK_TREE",
+        "GIT_INDEX_FILE",
+        "GIT_OBJECT_DIRECTORY",
+        "GIT_WORK_TREE",
+    }
+    environment = {
+        key: value
+        for key, value in os.environ.items()
+        if key not in blocked
+        and key != "GIT_CONFIG_COUNT"
+        and not key.startswith("GIT_CONFIG_KEY_")
+        and not key.startswith("GIT_CONFIG_VALUE_")
+    }
+    environment.update(
+        {
+            "GIT_ATTR_NOSYSTEM": "1",
+            "GIT_CONFIG_GLOBAL": os.devnull,
+            "GIT_CONFIG_NOSYSTEM": "1",
+            "GIT_TERMINAL_PROMPT": "0",
+            "LC_ALL": "C",
+        }
+    )
+    return environment
 
 
 @dataclass(frozen=True, slots=True)
@@ -69,12 +104,7 @@ def resolve_git_identity(locator: str, *, base: str | Path) -> GitIdentityResolu
         return GitIdentityResolution(status="technical_failure", path=path, failure=path_failure)
 
     assert path.probe_path is not None
-    environment = os.environ.copy()
-    for name in _GIT_IDENTITY_ENVIRONMENT:
-        environment.pop(name, None)
-    # Keep Git's deterministic "not a git repository" diagnostic available to
-    # the three-way classifier instead of depending on the host locale.
-    environment["LC_ALL"] = "C"
+    environment = isolated_git_environment()
 
     classification = _run_git(
         path.probe_path,

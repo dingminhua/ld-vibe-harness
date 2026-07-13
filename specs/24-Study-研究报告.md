@@ -196,7 +196,7 @@ Study 类型停止新增、合并、替代或取消时，必须按 05 处置唯�
 
 Code 可以确定性检查：载体、frontmatter 闭集、身份、字段类型与非空、状态值、条件字段、时间格式与顺序、Study kind 闭集与引用矩阵、URL/相对路径 profile、临时路径、重复引用、`observed_at <= updated_at`、正文标题唯一性和顺序、关系目标、自指、全生命周期单一直接替代源和 supersedes DAG。Code 不得判断研究是否有价值、来源是否充分或真实、允许 version 是否因结论语义变成必填、推断是否合理、限制是否诚实、建议是否越权、两份自然语言报告是否同义或外部事实是否仍当前。
 
-最低验证样例必须覆盖：七种 kind 各自的合法引用；未知 kind；每种 locator profile 错误；缺 required version 或 observed_at；带时区时间合法与缺时区；observed_at 晚于 updated_at；绝对本地路径、`/tmp`、`/var/folders`、`.`、`..`、反斜线、临时 scheme、会话附件缓存与重复引用；正文六个 H2 的缺失、重复、乱序和空内容；三个状态及条件字段；supersedes 的项目、类型、状态、全生命周期单一直接 source、时间、自指、缺失目标与 DAG。当前尚未实现 Study 对象 parser/validator，因此这些是未来实现必须从本文派生的测试契约，不得把当前规范检查通过冒充对象消费能力。
+最低验证样例必须覆盖：七种 kind 各自的合法引用；未知 kind；每种 locator profile 错误；缺 required version 或 observed_at；带时区时间合法与缺时区；observed_at 晚于 updated_at；绝对本地路径、`/tmp`、`/var/folders`、`.`、`..`、反斜线、临时 scheme、会话附件缓存与重复引用；正文六个 H2 的缺失、重复、乱序和空内容；三个状态及条件字段；supersedes 的项目、类型、状态、全生命周期单一直接 source、时间、自指、缺失目标与 DAG。当前 Study parser/validator 已由 `read-fact-objects` 的只读实现从本文与统一登记派生；实现和测试只证明实际覆盖的机械范围，不得把读取通过冒充研究价值、来源真实性、证据充分性或当前可消费性已经成立。
 
 ### 保障措施
 

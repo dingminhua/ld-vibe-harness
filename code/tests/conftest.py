@@ -70,7 +70,8 @@ def assert_common_response(response: dict[str, Any]) -> None:
     assert isinstance(response["scope"]["requested"], list)
     assert isinstance(response["scope"]["completed"], list)
     assert isinstance(response["scope"]["not_completed"], list)
-    assert response["scope"]["governance_resolution"] is None
+    governance_resolution = response["scope"]["governance_resolution"]
+    assert governance_resolution is None or isinstance(governance_resolution, dict)
     assert isinstance(response["sources"], list)
     for reference in response["sources"]:
         _assert_source_reference(reference)

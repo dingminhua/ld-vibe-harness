@@ -209,6 +209,7 @@ def _execution_response(
         requested_scope=list(execution.requested_scope),
         completed_scope=list(execution.completed_scope),
         not_completed_scope=list(execution.not_completed_scope),
+        governance_resolution=execution.governance_resolution,
         sources=[*CONTRACT_SOURCES, declaration_source, *execution.sources],
         disclosure=execution.disclosure,
         gaps=list(execution.gaps),

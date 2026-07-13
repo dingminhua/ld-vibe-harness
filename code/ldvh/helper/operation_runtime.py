@@ -58,6 +58,7 @@ class OperationExecution:
     requested_scope: tuple[object, ...] = ()
     completed_scope: tuple[object, ...] = ()
     not_completed_scope: tuple[object, ...] = ()
+    governance_resolution: dict[str, Any] | None = None
     sources: tuple[dict[str, Any], ...] = ()
     disclosure: dict[str, Any] | None = None
     gaps: tuple[dict[str, Any], ...] = ()

@@ -148,6 +148,34 @@ def test_defined_implementation_is_discovered_and_preserves_partial_scope(monkey
     }
 
 
+def test_execution_can_carry_governance_resolution(monkeypatch, tmp_path: Path) -> None:
+    source = _working_rule_source(tmp_path)
+    implementation = _implementation()
+    original_call = implementation.call
+    governance_resolution = {
+        "workspace_root": "/workspace",
+        "config_path": "/workspace/LDVH-GOVERNED-PROJECTS.yaml",
+        "config_status": "valid",
+        "scope_status": "governed_single",
+        "object_resolutions": [],
+        "source_refs": [{"kind": "rule", "locator": "fixture"}],
+    }
+
+    def call_with_governance(request, repository, context):
+        execution = original_call(request, repository, context)
+        return replace(execution, governance_resolution=governance_resolution)
+
+    monkeypatch.setattr("ldvh.helper.service.inspect_colocated_rule_source", lambda _: source)
+    monkeypatch.setattr(
+        "ldvh.helper.service.OPERATION_IMPLEMENTATIONS",
+        {"read-source": replace(implementation, call=call_with_governance)},
+    )
+
+    called = handle_request("call", "read-source", "")
+
+    assert called.response["scope"]["governance_resolution"] == governance_resolution
+
+
 def test_undeclared_implementation_is_diagnostic_only(monkeypatch, tmp_path: Path) -> None:
     source = _working_rule_source(tmp_path)
     monkeypatch.setattr("ldvh.helper.service.inspect_colocated_rule_source", lambda _: source)
@@ -226,6 +254,7 @@ def test_unrelated_candidate_problem_does_not_block_defined_operation(
 
     assert discovered.response["outcome"] == "partial"
     assert discovered.response["scope"]["completed"] == [
+        "read-fact-objects",
         "read-specification-candidates",
         "read-specification-content",
         "resolve-governance-scope",
@@ -238,6 +267,11 @@ def test_unrelated_candidate_problem_does_not_block_defined_operation(
     )
     assert governance["implementation"]["present"] is True
     assert governance["required_inputs"] == []
+    facts = next(
+        item for item in discovered.response["result"]["operations"] if item["operation_key"] == "read-fact-objects"
+    )
+    assert facts["implementation"]["present"] is True
+    assert facts["required_inputs"] == ["arguments.fact_refs"]
     assert governance["optional_inputs"] == ["work_object_locators", "arguments.workspace_root"]
     assert any(source["locator"] == "specs/99-Broken.md" for source in discovered.response["sources"])
     assert discovered.response["diagnostics"][-1]["details"]["path"] == "specs/99-Broken.md"
