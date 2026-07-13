@@ -131,22 +131,22 @@ AI 负责判断信息是否需要 Spark、是否与已有事实语义重复、�
 
 ### 类型字段使用绑定
 
-| field_key | field_path | presence | type_constraints |
-|---|---|---|---|
-| `object-id` | `object_id` | required | 必须匹配 `spark-[0-9]{4,}`；分配后不得因标题、路径、状态或内容改变而变化 |
-| `fact-type-key` | `fact_type_key` | required | 唯一允许值为 `spark` |
-| `title` | `title` | required | 简短标识核心议题，不复制 `summary` |
-| `created-at` | `created_at` | required | 只使用有依据的首次形成时间 |
-| `updated-at` | `updated_at` | required | 当前摘要、来源、优先级、演变、关系、状态或处置发生实质变化并回读后更新 |
-| `status` | `status` | required | 只使用 `open`、`routed`、`discarded` |
-| `source-refs` | `source_refs` | required | 至少一项；locator 必须能按当前判断所需精度重新定位输入，Spark 来源种类不限于对话或 Web |
-| `evidence-refs` | `evidence_refs` | conditional | 声称观察已验证或状态为 `routed`、`discarded` 时必填且至少一项；普通 open 推测可以省略 |
-| `relations` | `relations` | conditional | 只有存在有向事实对象关系时出现；每项 relation_key 必须属于本文闭集 |
-| `current-summary` | `summary` | required | 非空；说明当前问题焦点、成立与未知边界、保留原因和剩余处置问题，不写完整报告、计划或过程日志 |
-| `priority` | `priority` | conditional | `open` 时必填并只使用 `P0`、`P1`、`P2`、`P3`；`routed` 或 `discarded` 时禁止；只表达当前待处置入口的相对优先级，不构成执行授权 |
-| `evolution` | `evolution` | conditional | 出现条件：当前快照无法解释一项重要方向变化时出现，否则省略 |
-| `disposition-summary` | `disposition_summary` | conditional | `routed` 或 `discarded` 时必填；`open` 时禁止；必须说明为何不再有未处置内容及证据边界 |
-| `closed-at` | `closed_at` | conditional | `routed` 或 `discarded` 时必填并使用带时区 RFC 3339 date-time；`open` 时禁止；不得晚于当前 `updated_at` |
+| field_key | presence | constraint_ref |
+|---|---|---|
+| `object-id` | required | `spark-fact-type::5. Spark 类型定义` |
+| `fact-type-key` | required | `inherit` |
+| `title` | required | `spark-fact-type::5. Spark 类型定义` |
+| `created-at` | required | `inherit` |
+| `updated-at` | required | `spark-fact-type::8. 创建、更新与停止使用边界` |
+| `status` | required | `spark-fact-type::6. 对象语义与生命周期` |
+| `source-refs` | required | `spark-fact-type::7. 来源、证据、关系与处置` |
+| `evidence-refs` | conditional | `spark-fact-type::7. 来源、证据、关系与处置` |
+| `relations` | conditional | `spark-fact-type::7. 来源、证据、关系与处置` |
+| `current-summary` | required | `spark-fact-type::6. 对象语义与生命周期` |
+| `priority` | conditional | `spark-fact-type::6. 对象语义与生命周期` |
+| `evolution` | conditional | `spark-fact-type::6. 对象语义与生命周期` |
+| `disposition-summary` | conditional | `spark-fact-type::6. 对象语义与生命周期` |
+| `closed-at` | conditional | `spark-fact-type::6. 对象语义与生命周期` |
 
 ### 类型专属字段定义
 
@@ -158,7 +158,7 @@ AI 负责判断信息是否需要 Spark、是否与已有事实语义重复、�
 
 ### Schema 与对象载体
 
-Spark 对象使用 UTF-8 YAML，一文件一对象，当前权威位置固定为管辖项目仓库中的 `facts/sparks/<object_id>.yaml`。文件名必须与 `object_id` 完全一致；短标题、状态和目录移动不得参与身份计算。未知或不适用的条件字段必须省略，不使用显式 `null`、空字符串、空数组、占位时间或默认关系。
+Spark 对象使用 UTF-8 YAML，一文件一对象，当前权威位置固定为管辖项目仓库中的 `facts/sparks/<object_id>.yaml`。`object_id` 必须匹配 `spark-[0-9]{4,}`；文件名必须与 `object_id` 完全一致，分配后的身份不得因短标题、路径、状态或内容改变。`title` 只简短标识核心议题，不复制 `summary`。未知或不适用的条件字段必须省略，不使用显式 `null`、空字符串、空数组、占位时间或默认关系。
 
 完整 Schema 由统一登记的 `fact-object` 直接字段、本节绑定、类型专属字段定义及 `value_structure` 递归组合。Spark 不得出现未登记字段，也不得向共享 `source-ref` 添加类型私有扩展；来源触发内容必须由精确 locator 指向原始来源，并由当前 `summary` 在不冒充来源原文的前提下表达。本文没有授权附件，Schema、Code 常量和 test fixture 都只能从当前来源派生。
 

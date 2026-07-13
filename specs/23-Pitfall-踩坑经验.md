@@ -124,26 +124,26 @@ AI 负责判断失败是否实际发生、根因和解决是否有证据、经�
 
 ### 类型字段使用绑定
 
-| field_key | field_path | presence | type_constraints |
-|---|---|---|---|
-| `object-id` | `object_id` | required | 必须匹配 `pitfall-[0-9]{4,}`；分配后不得因标题、状态或内容改变而变化 |
-| `fact-type-key` | `fact_type_key` | required | 唯一允许值为 `pitfall` |
-| `title` | `title` | required | 简短识别失败机制，不复制 symptoms 或 root_cause |
-| `created-at` | `created_at` | required | 只使用对象首次按 Pitfall 形成的有依据时间 |
-| `updated-at` | `updated_at` | required | 同一机制的症状、触发、证据、验证、来源、状态、关系或终态事实实质变化并回读后更新 |
-| `status` | `status` | required | 只使用 `active`、`superseded`、`retired` |
-| `source-refs` | `source_refs` | required | 至少一项；必须能重新定位原始事故或误判、调查输入和经验形成来源 |
-| `evidence-refs` | `evidence_refs` | required | 至少一项；必须支持根因、解决、验证覆盖和 applicability；终态时还要支持替代或退出 |
-| `relations` | `relations` | conditional | 只有 supersedes 关系存在时出现；无关系时省略 |
-| `disposition-summary` | `disposition_summary` | conditional | superseded 或 retired 时必填，active 时禁止；说明替代或退出依据、仍有效边界和承接结论 |
-| `closed-at` | `closed_at` | conditional | superseded 或 retired 时必填，active 时禁止；继承 `created_at <= closed_at <= updated_at` |
-| `adr-applicability` | `applicability` | required | 明确经验可安全复用的对象、环境、条件、范围和排除项；外部事实变化时必须重新验证 |
-| `workcase-validation-summary` | `validation_summary` | required | 说明 root cause、resolution 与安全复用的实际验证覆盖、结果、失败和未验证范围；不复制命令日志 |
-| `pitfall-symptoms` | `symptoms` | required | none |
-| `pitfall-trigger-conditions` | `trigger_conditions` | required | none |
-| `pitfall-root-cause` | `root_cause` | required | none |
-| `pitfall-resolution` | `resolution` | required | none |
-| `pitfall-avoidance` | `avoidance` | required | none |
+| field_key | presence | constraint_ref |
+|---|---|---|
+| `object-id` | required | `pitfall-fact-type::5. Pitfall 类型定义` |
+| `fact-type-key` | required | `inherit` |
+| `title` | required | `pitfall-fact-type::5. Pitfall 类型定义` |
+| `created-at` | required | `inherit` |
+| `updated-at` | required | `pitfall-fact-type::8. 变更、删除与类型退出` |
+| `status` | required | `pitfall-fact-type::6. 对象语义与生命周期` |
+| `source-refs` | required | `pitfall-fact-type::7. 来源、证据与替代关系` |
+| `evidence-refs` | required | `pitfall-fact-type::7. 来源、证据与替代关系` |
+| `relations` | conditional | `pitfall-fact-type::7. 来源、证据与替代关系` |
+| `disposition-summary` | conditional | `pitfall-fact-type::6. 对象语义与生命周期` |
+| `closed-at` | conditional | `pitfall-fact-type::6. 对象语义与生命周期` |
+| `adr-applicability` | required | `pitfall-fact-type::7. 来源、证据与替代关系` |
+| `workcase-validation-summary` | required | `pitfall-fact-type::7. 来源、证据与替代关系` |
+| `pitfall-symptoms` | required | `inherit` |
+| `pitfall-trigger-conditions` | required | `inherit` |
+| `pitfall-root-cause` | required | `inherit` |
+| `pitfall-resolution` | required | `inherit` |
+| `pitfall-avoidance` | required | `inherit` |
 
 ### 类型专属字段定义
 
@@ -157,7 +157,7 @@ AI 负责判断失败是否实际发生、根因和解决是否有证据、经�
 
 ### Schema 与对象载体
 
-Pitfall 对象使用 UTF-8 YAML，一文件一对象，当前权威位置固定为管辖项目仓库中的 `facts/pitfalls/<object_id>.yaml`。文件名必须与 `object_id` 完全一致；标题、状态和目录移动不得参与身份计算。未知或不适用的条件字段必须省略，不使用 `null`、空字符串、空数组、占位时间、默认状态或默认关系。
+Pitfall 对象使用 UTF-8 YAML，一文件一对象，当前权威位置固定为管辖项目仓库中的 `facts/pitfalls/<object_id>.yaml`。`object_id` 必须匹配 `pitfall-[0-9]{4,}`；文件名必须与 `object_id` 完全一致，分配后的身份不得因标题、路径、状态或内容改变。`title` 只简短识别失败机制，不复制 `symptoms` 或 `root_cause`。未知或不适用的条件字段必须省略，不使用 `null`、空字符串、空数组、占位时间、默认状态或默认关系。
 
 完整 Schema 由统一登记的 `fact-object` 直接字段、本节绑定、跨类型共享定义和类型专属字段定义组合。Pitfall 不得出现 current summary、priority、evolution、tags、`archive_reason`、repeatability、severity、superseded_by、source_objects/source_sparks、related_*、长命令日志字段、实现状态、revision history 或其它未登记内容。
 

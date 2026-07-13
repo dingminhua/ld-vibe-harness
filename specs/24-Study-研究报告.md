@@ -120,23 +120,23 @@ AI 负责判断研究是否完成、来源是否充分、推断是否越界、�
 
 ### 类型字段使用绑定
 
-| field_key | field_path | presence | type_constraints |
-|---|---|---|---|
-| `object-id` | `object_id` | required | 必须匹配 `study-[0-9]{4,}`；分配后不得因标题、状态或内容改变而变化 |
-| `fact-type-key` | `fact_type_key` | required | 唯一允许值为 `study` |
-| `title` | `title` | required | 简短识别研究主题，不复制 research_question、abstract 或结论 |
-| `created-at` | `created_at` | required | 只使用对象首次按 Study 形成的有依据时间，不使用研究开始、文件 mtime 或迁移时间冒充 |
-| `updated-at` | `updated_at` | required | 报告事实、来源、观察时点、适用、限制、验证、状态、关系或终态实质变化并回读后更新 |
-| `status` | `status` | required | 只使用 `active`、`superseded`、`retired` |
-| `source-refs` | `source_refs` | required | 至少一项；完整定位研究委托、问题来源和实际输入，不允许临时不可恢复 locator |
-| `evidence-refs` | `evidence_refs` | required | 至少一项；必须支持主要发现、结论、applicability、正文限制和 validation_summary |
-| `relations` | `relations` | conditional | 只有 supersedes 关系存在时出现；无关系时省略 |
-| `disposition-summary` | `disposition_summary` | conditional | superseded 或 retired 时必填，active 时禁止；说明替代或退出依据、剩余引用边界和承接结论 |
-| `closed-at` | `closed_at` | conditional | superseded 或 retired 时必填，active 时禁止；继承 `created_at <= closed_at <= updated_at` |
-| `adr-applicability` | `applicability` | required | 明确发现可引用的对象、环境、版本、时间、条件、范围和排除项；不表示研究输入清单 |
-| `workcase-validation-summary` | `validation_summary` | required | 说明来源交叉核对、当次观察、实测或未实测的覆盖、结果、失败和未验证范围；不得用“已研究”冒充验证 |
-| `study-research-question` | `research_question` | required | none |
-| `study-abstract` | `abstract` | required | none |
+| field_key | presence | constraint_ref |
+|---|---|---|
+| `object-id` | required | `study-fact-type::5. Study 类型定义` |
+| `fact-type-key` | required | `inherit` |
+| `title` | required | `study-fact-type::5. Study 类型定义` |
+| `created-at` | required | `inherit` |
+| `updated-at` | required | `study-fact-type::8. 变更、更正、删除与类型退出` |
+| `status` | required | `study-fact-type::6. 对象语义与生命周期` |
+| `source-refs` | required | `study-fact-type::7. 来源、证据、时效与替代关系` |
+| `evidence-refs` | required | `study-fact-type::7. 来源、证据、时效与替代关系` |
+| `relations` | conditional | `study-fact-type::7. 来源、证据、时效与替代关系` |
+| `disposition-summary` | conditional | `study-fact-type::6. 对象语义与生命周期` |
+| `closed-at` | conditional | `study-fact-type::6. 对象语义与生命周期` |
+| `adr-applicability` | required | `study-fact-type::7. 来源、证据、时效与替代关系` |
+| `workcase-validation-summary` | required | `study-fact-type::7. 来源、证据、时效与替代关系` |
+| `study-research-question` | required | `inherit` |
+| `study-abstract` | required | `inherit` |
 
 ### 类型专属字段定义
 
@@ -147,7 +147,7 @@ AI 负责判断研究是否完成、来源是否充分、推断是否越界、�
 
 ### Schema、Markdown 正文与对象载体
 
-Study 对象使用 UTF-8 Markdown，一文件一对象，当前权威位置固定为管辖项目仓库中的 `facts/studies/<object_id>.md`。文件名必须与 `object_id` 完全一致；YAML frontmatter 只承载本节绑定字段，之后的 Markdown 正文承载详细报告。未知或不适用的条件字段必须省略，不使用 `null`、空字符串、空数组、占位时间、默认状态或默认关系。
+Study 对象使用 UTF-8 Markdown，一文件一对象，当前权威位置固定为管辖项目仓库中的 `facts/studies/<object_id>.md`。`object_id` 必须匹配 `study-[0-9]{4,}`；文件名必须与 `object_id` 完全一致，分配后的身份不得因标题、路径、状态或内容改变。`title` 只简短识别研究主题，不复制 `research_question`、`abstract` 或结论。YAML frontmatter 只承载本节绑定字段，之后的 Markdown 正文承载详细报告。未知或不适用的条件字段必须省略，不使用 `null`、空字符串、空数组、占位时间、默认状态或默认关系。
 
 正文必须按顺序各出现且只出现一次以下非空 H2：`研究问题`、`输入、方法与观察边界`、`关键发现`、`结论与限制`、`建议`、`后续分流`。正文可以使用 H3、表格和列表展开细节，但 frontmatter 的 research_question、abstract、applicability 和 validation_summary 是稳定机器入口；正文不得改变或弱化这些边界。研究方法、来源质量、冲突证据、未覆盖与时效限制在正文相应章节详细表达，不再建立第二个 limitations 字段。建议和后续分流可以明确没有可行动内容，但不得写占位语、虚构任务或暗示已经创建下游对象。
 

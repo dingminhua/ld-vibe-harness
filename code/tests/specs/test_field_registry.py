@@ -38,7 +38,9 @@ def _synthetic_spark(
         if field_key != omit_admission_for
     )
     binding_rows = "\n".join(
-        f"| `{field_key}` | `{field_path}` | {presence} | none |" for field_key, field_path, presence in fields
+        f"| `{field_key}` | {presence} | "
+        f"`{'synthetic-fact-type::5. Synthetic' if presence == 'conditional' else 'inherit'}` |"
+        for field_key, _, presence in fields
     )
     source = f"""# Synthetic 事实类型
 
@@ -105,8 +107,8 @@ Spark 需要稳定的事实类型契约。
 
 ### 类型字段使用绑定
 
-| field_key | field_path | presence | type_constraints |
-|---|---|---|---|
+| field_key | presence | constraint_ref |
+|---|---|---|
 {binding_rows}
 
 ### 类型专属字段定义
@@ -560,13 +562,13 @@ def test_required_foundation_field_cannot_be_weakened_by_type_binding(
     assert any(issue.summary == "基础必填字段 'object-id' 必须绑定为 required" for issue in inspection.issues)
 
 
-def test_required_type_field_binding_cannot_repeat_its_definition(current_specs_repository: Path) -> None:
+def test_binding_constraint_ref_must_point_to_same_type_source(current_specs_repository: Path) -> None:
     source = current_specs_repository / "specs/21-WorkCase-工作项.md"
     text = source.read_text(encoding="utf-8")
     source.write_text(
         text.replace(
-            "| `workcase-goal` | `goal` | required | none |",
-            "| `workcase-goal` | `goal` | required | 单一且可独立关闭的目标 |",
+            "| `workcase-goal` | required | `inherit` |",
+            "| `workcase-goal` | required | `other-source::5. WorkCase 类型定义` |",
             1,
         ),
         encoding="utf-8",
@@ -576,18 +578,18 @@ def test_required_type_field_binding_cannot_repeat_its_definition(current_specs_
 
     assert inspection.complete is False
     assert any(
-        issue.summary == "required type 字段 'workcase-goal' 的 type_constraints 必须为 none"
+        issue.summary == "绑定字段 'workcase-goal' 的 constraint_ref 必须回指同一类型来源 H2"
         for issue in inspection.issues
     )
 
 
-def test_conditional_type_field_binding_must_only_declare_presence(current_specs_repository: Path) -> None:
+def test_binding_constraint_ref_must_resolve_unique_h2(current_specs_repository: Path) -> None:
     source = current_specs_repository / "specs/21-WorkCase-工作项.md"
     text = source.read_text(encoding="utf-8")
     source.write_text(
         text.replace(
-            "出现条件：status 为 `blocked` 时必填，其他状态禁止",
-            "必须说明具体阻塞事实、影响范围和解除条件",
+            "`workcase-fact-type::6. 对象语义与生命周期`",
+            "`workcase-fact-type::不存在的章节`",
             1,
         ),
         encoding="utf-8",
@@ -597,7 +599,28 @@ def test_conditional_type_field_binding_must_only_declare_presence(current_specs
 
     assert inspection.complete is False
     assert any(
-        issue.summary == "conditional type 字段 'workcase-blocking-summary' 的 type_constraints 必须只声明出现条件"
+        issue.summary == "绑定字段 'status' 的 constraint_ref 必须唯一指向同一类型来源 H2"
+        for issue in inspection.issues
+    )
+
+
+def test_conditional_binding_cannot_inherit_without_condition_owner(current_specs_repository: Path) -> None:
+    source = current_specs_repository / "specs/21-WorkCase-工作项.md"
+    text = source.read_text(encoding="utf-8")
+    source.write_text(
+        text.replace(
+            "| `workcase-blocking-summary` | conditional | `workcase-fact-type::6. 对象语义与生命周期` |",
+            "| `workcase-blocking-summary` | conditional | `inherit` |",
+            1,
+        ),
+        encoding="utf-8",
+    )
+
+    inspection = _inspection(current_specs_repository)
+
+    assert inspection.complete is False
+    assert any(
+        issue.summary == "conditional 绑定字段 'workcase-blocking-summary' 必须引用出现条件的归口 H2"
         for issue in inspection.issues
     )
 

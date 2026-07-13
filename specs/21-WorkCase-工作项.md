@@ -125,27 +125,27 @@ Spark 与 WorkCase 的分界不取决于“以后是否可能做”。Spark 尚�
 
 ### 类型字段使用绑定
 
-| field_key | field_path | presence | type_constraints |
-|---|---|---|---|
-| `object-id` | `object_id` | required | 必须匹配 `workcase-[0-9]{4,}`；分配后不得因标题、路径、状态或内容改变而变化 |
-| `fact-type-key` | `fact_type_key` | required | 唯一允许值为 `workcase` |
-| `title` | `title` | required | 简短识别工作责任，不复制 goal 或 summary |
-| `created-at` | `created_at` | required | 只使用有依据的首次形成时间 |
-| `updated-at` | `updated_at` | required | 目标、范围、成功标准、当前摘要、优先级、状态、验证、来源、证据、关系或关闭事实实质变化并回读后更新 |
-| `status` | `status` | required | 只使用 `open`、`blocked`、`closed` |
-| `source-refs` | `source_refs` | required | 至少一项；必须能重新定位目标、范围和成功标准的形成依据及必要授权来源 |
-| `evidence-refs` | `evidence_refs` | conditional | `blocked` 或 `closed` 时必填；open 状态声明已验证进展时必填；只定位实际依据 |
-| `relations` | `relations` | conditional | 只有存在本文闭集中的有向关系时出现；无关系时省略 |
-| `current-summary` | `summary` | required | 说明当前进展、范围内剩余工作、当前不确定性和下一判断，不复制验证结论、完整计划或历史 |
-| `priority` | `priority` | conditional | `open` 或 `blocked` 时必填并只使用 `P0`、`P1`、`P2`、`P3`；`closed` 时省略；只排序当前 WorkCase 队列 |
-| `disposition-summary` | `disposition_summary` | conditional | `closed` 时必填，未终态时禁止；必须说明完成与未完成边界、残余内容以及每项承接结论 |
-| `closed-at` | `closed_at` | conditional | `closed` 时必填，未终态时禁止；使用带时区 RFC 3339 date-time且不得晚于 updated_at |
-| `workcase-goal` | `goal` | required | none |
-| `workcase-scope` | `scope` | required | none |
-| `workcase-success-criteria` | `success_criteria` | required | none |
-| `workcase-validation-summary` | `validation_summary` | conditional | 声称任何成功标准已验证时出现；`closed` 时必填；逐项说明通过、失败、豁免与未验证范围，依据进入 evidence_refs |
-| `workcase-blocking-summary` | `blocking_summary` | conditional | 出现条件：status 为 `blocked` 时必填，其他状态禁止 |
-| `workcase-closure-outcome` | `closure_outcome` | conditional | 出现条件：status 为 `closed` 时必填，其他状态禁止 |
+| field_key | presence | constraint_ref |
+|---|---|---|
+| `object-id` | required | `workcase-fact-type::5. WorkCase 类型定义` |
+| `fact-type-key` | required | `inherit` |
+| `title` | required | `workcase-fact-type::5. WorkCase 类型定义` |
+| `created-at` | required | `inherit` |
+| `updated-at` | required | `workcase-fact-type::8. 对象变化与授权边界` |
+| `status` | required | `workcase-fact-type::6. 对象语义与生命周期` |
+| `source-refs` | required | `workcase-fact-type::7. 来源、证据与关系` |
+| `evidence-refs` | conditional | `workcase-fact-type::7. 来源、证据与关系` |
+| `relations` | conditional | `workcase-fact-type::7. 来源、证据与关系` |
+| `current-summary` | required | `workcase-fact-type::6. 对象语义与生命周期` |
+| `priority` | conditional | `workcase-fact-type::6. 对象语义与生命周期` |
+| `disposition-summary` | conditional | `workcase-fact-type::6. 对象语义与生命周期` |
+| `closed-at` | conditional | `workcase-fact-type::6. 对象语义与生命周期` |
+| `workcase-goal` | required | `inherit` |
+| `workcase-scope` | required | `inherit` |
+| `workcase-success-criteria` | required | `inherit` |
+| `workcase-validation-summary` | conditional | `workcase-fact-type::7. 来源、证据与关系` |
+| `workcase-blocking-summary` | conditional | `workcase-fact-type::6. 对象语义与生命周期` |
+| `workcase-closure-outcome` | conditional | `workcase-fact-type::6. 对象语义与生命周期` |
 
 ### 类型专属字段定义
 
@@ -159,7 +159,7 @@ Spark 与 WorkCase 的分界不取决于“以后是否可能做”。Spark 尚�
 
 ### Schema 与对象载体
 
-WorkCase 对象使用 UTF-8 YAML，一文件一对象，当前权威位置固定为管辖项目仓库中的 `facts/workcases/<object_id>.yaml`。文件名必须与 `object_id` 完全一致；标题、状态和目录移动不得参与身份计算。未知或不适用的条件字段必须省略，不使用 `null`、空字符串、空数组、占位时间、默认状态或默认关系。
+WorkCase 对象使用 UTF-8 YAML，一文件一对象，当前权威位置固定为管辖项目仓库中的 `facts/workcases/<object_id>.yaml`。`object_id` 必须匹配 `workcase-[0-9]{4,}`；文件名必须与 `object_id` 完全一致，分配后的身份不得因标题、路径、状态或内容改变。`title` 只简短识别工作责任，不复制 `goal` 或 `summary`。未知或不适用的条件字段必须省略，不使用 `null`、空字符串、空数组、占位时间、默认状态或默认关系。
 
 完整 Schema 由统一登记的 `fact-object` 直接字段、本节绑定、跨类型共享定义和类型专属字段定义组合。WorkCase 不得出现 `orchestration`、`execution_items`、`revision_history`、`plan_confirmed_at`、review receipt、Human confirmation 对象、`residual_risks`、`followup_refs`、按目标类型拆分的关系字段或其它未登记内容。
 

@@ -121,25 +121,25 @@ AI 负责判断决定是否已实际成立、是否值得对象化、是否重�
 
 ### 类型字段使用绑定
 
-| field_key | field_path | presence | type_constraints |
-|---|---|---|---|
-| `object-id` | `object_id` | required | 必须匹配 `adr-[0-9]{4,}`；分配后不得因标题、状态或内容改变而变化 |
-| `fact-type-key` | `fact_type_key` | required | 唯一允许值为 `adr` |
-| `title` | `title` | required | 简短识别决定主题，不复制 decision_question 或 decision |
-| `created-at` | `created_at` | required | 只使用对象首次按 ADR 形成的有依据时间；可以晚于 decided_at |
-| `updated-at` | `updated_at` | required | 六个专属字段有来源的事实更正，或来源、证据、状态、关系、终态事实实质变化并回读后更新；不授权原地改写决定语义 |
-| `status` | `status` | required | 只使用 `active`、`superseded`、`retired` |
-| `source-refs` | `source_refs` | required | 至少一项；必须能重新定位决策问题、关键输入和实际决定来源 |
-| `evidence-refs` | `evidence_refs` | required | 至少一项；必须支持决定确已成立及其授权范围；终态时还要支持替代或退出判断 |
-| `relations` | `relations` | conditional | 只有 supersedes 关系存在时出现；无关系时省略 |
-| `disposition-summary` | `disposition_summary` | conditional | `superseded` 或 `retired` 时必填，active 时禁止；说明替代或退出依据、剩余适用边界和承接结论 |
-| `closed-at` | `closed_at` | conditional | `superseded` 或 `retired` 时必填，active 时禁止；继承 `created_at <= closed_at <= updated_at` |
-| `adr-decision-question` | `decision_question` | required | none |
-| `adr-decision` | `decision` | required | none |
-| `adr-applicability` | `applicability` | required | 明确适用对象、环境、条件、范围和排除项；不得无依据泛化 |
-| `adr-rationale` | `rationale` | required | none |
-| `adr-consequences` | `consequences` | required | none |
-| `adr-decided-at` | `decided_at` | required | none |
+| field_key | presence | constraint_ref |
+|---|---|---|
+| `object-id` | required | `adr-fact-type::5. ADR 类型定义` |
+| `fact-type-key` | required | `inherit` |
+| `title` | required | `adr-fact-type::5. ADR 类型定义` |
+| `created-at` | required | `adr-fact-type::8. 变更、删除与类型退出` |
+| `updated-at` | required | `adr-fact-type::8. 变更、删除与类型退出` |
+| `status` | required | `adr-fact-type::6. 对象语义与生命周期` |
+| `source-refs` | required | `adr-fact-type::7. 来源、证据与替代关系` |
+| `evidence-refs` | required | `adr-fact-type::7. 来源、证据与替代关系` |
+| `relations` | conditional | `adr-fact-type::7. 来源、证据与替代关系` |
+| `disposition-summary` | conditional | `adr-fact-type::6. 对象语义与生命周期` |
+| `closed-at` | conditional | `adr-fact-type::6. 对象语义与生命周期` |
+| `adr-decision-question` | required | `inherit` |
+| `adr-decision` | required | `inherit` |
+| `adr-applicability` | required | `adr-fact-type::7. 来源、证据与替代关系` |
+| `adr-rationale` | required | `inherit` |
+| `adr-consequences` | required | `inherit` |
+| `adr-decided-at` | required | `inherit` |
 
 ### 类型专属字段定义
 
@@ -153,7 +153,7 @@ AI 负责判断决定是否已实际成立、是否值得对象化、是否重�
 
 ### Schema 与对象载体
 
-ADR 对象使用 UTF-8 YAML，一文件一对象，当前权威位置固定为管辖项目仓库中的 `facts/adrs/<object_id>.yaml`。文件名必须与 `object_id` 完全一致；标题、状态和目录移动不得参与身份计算。未知或不适用的条件字段必须省略，不使用 `null`、空字符串、空数组、占位时间、默认状态或默认关系。
+ADR 对象使用 UTF-8 YAML，一文件一对象，当前权威位置固定为管辖项目仓库中的 `facts/adrs/<object_id>.yaml`。`object_id` 必须匹配 `adr-[0-9]{4,}`；文件名必须与 `object_id` 完全一致，分配后的身份不得因标题、路径、状态或内容改变。`title` 只简短识别决定主题，不复制 `decision_question` 或 `decision`。未知或不适用的条件字段必须省略，不使用 `null`、空字符串、空数组、占位时间、默认状态或默认关系。
 
 完整 Schema 由统一登记的 `fact-object` 直接字段、本节绑定、跨类型共享定义和类型专属字段定义组合。ADR 不得出现 current summary、priority、evolution、WorkCase 字段、`alternatives` 结构、`affects`、`superseded_by`、`archive_reason`、`deprecated_reason`、implementation/absorption status、revision history、按目标类型拆分的关系或其它未登记内容。
 

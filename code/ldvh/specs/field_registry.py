@@ -59,7 +59,7 @@ ADMISSION_HEADERS = (
     "rationale",
     "review_ref",
 )
-BINDING_HEADERS = ("field_key", "field_path", "presence", "type_constraints")
+BINDING_HEADERS = ("field_key", "presence", "constraint_ref")
 REVIEW_HEADERS = ("review_key", "reviewer", "reviewed_scope", "findings", "disposition")
 DEFINITION_HEADERS = frozenset({PUBLIC_FIELD_HEADERS, MEMBER_FIELD_HEADERS, TYPE_FIELD_HEADERS})
 JSON_TYPES = frozenset({"string", "boolean", "integer", "number", "object", "array"})
@@ -812,14 +812,12 @@ def _validate_bindings(
     for offset, row in enumerate(table.rows, start=2):
         line = table.line + offset
         if len(row) != len(BINDING_HEADERS) or any(not value for value in row):
-            issues.append(_type_issue(definition, "类型字段使用绑定行必须包含四个非空单元格", line=line))
+            issues.append(_type_issue(definition, "类型字段使用绑定行必须包含三个非空单元格", line=line))
             continue
-        field_key, field_path, presence, type_constraints = row
+        field_key, presence, constraint_ref = row
         registration = applicable.get(field_key)
         if registration is None:
             issues.append(_type_issue(definition, f"绑定字段 {field_key!r} 未登记、非对象直接字段或不适用", line=line))
-        elif field_path != registration.field_path:
-            issues.append(_type_issue(definition, f"绑定字段 {field_key!r} 的 field_path 与登记不一致", line=line))
         if presence not in PRESENCE_VALUES:
             issues.append(_type_issue(definition, f"绑定字段 {field_key!r} 使用非法 presence", line=line))
         if registration is not None and registration.base_presence == "required" and presence != "required":
@@ -828,25 +826,28 @@ def _validate_bindings(
             issues.append(
                 _type_issue(definition, f"明确适用于本类型的字段 {field_key!r} 不得绑定为 forbidden", line=line)
             )
-        if registration is not None and registration.definition_scope == "type":
-            if presence == "required" and type_constraints != "none":
+        if constraint_ref != "inherit":
+            reference_parts = constraint_ref.split("::")
+            if len(reference_parts) != 2 or reference_parts[0] != definition.source_key:
                 issues.append(
                     _type_issue(
                         definition,
-                        f"required type 字段 {field_key!r} 的 type_constraints 必须为 none",
+                        f"绑定字段 {field_key!r} 的 constraint_ref 必须回指同一类型来源 H2",
                         line=line,
                     )
                 )
-            if presence == "conditional" and (
-                not type_constraints.startswith("出现条件：") or type_constraints == "出现条件："
-            ):
+            elif len(definition.document.markdown.find_headings(reference_parts[1], level=2)) != 1:
                 issues.append(
                     _type_issue(
                         definition,
-                        f"conditional type 字段 {field_key!r} 的 type_constraints 必须只声明出现条件",
+                        f"绑定字段 {field_key!r} 的 constraint_ref 必须唯一指向同一类型来源 H2",
                         line=line,
                     )
                 )
+        elif presence == "conditional":
+            issues.append(
+                _type_issue(definition, f"conditional 绑定字段 {field_key!r} 必须引用出现条件的归口 H2", line=line)
+            )
         if field_key in bound:
             issues.append(_type_issue(definition, f"类型重复绑定字段 {field_key!r}", line=line))
         bound.add(field_key)
