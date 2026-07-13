@@ -176,6 +176,12 @@ Study relation_key 第一版只允许 supersedes：
 
 supersedes 边一旦有效形成，在 source 后续转为 superseded 或 retired 时仍永久保留并继续占用 target 的唯一直接替代源基数。不能整体承接旧报告时必须先拆分研究问题或保留旧 Study 并收紧 applicability，不得用关系制造虚假关闭。
 
+### 主动召回与消费时机
+
+Study 在当前问题需要已有研究依据、准备展开实质相同或相邻的研究、比较方案或作出依赖研究结论的决定，以及当前输入精确引用研究报告时产生召回机会。F2 Study 候选卡直接投影 `object_id`、`title`、`status`、`research_question`、`abstract`、`applicability`、`validation_summary` 和 `updated_at`，并只提示引用中是否存在 version/observed_at 边界，不在候选层解释结论当前性。只在主要发现、证据映射、限制或建议会影响当前判断时展开完整正文，不得因主题相似就向 AI 无差别注入整份报告。
+
+`active` Study 可进入当前结论候选，但仍必须按本节时效规则核对版本、observed_at、applicability、已知变化和冲突；`superseded` 与 `retired` Study 只在精确引用、研究历史或来源追溯、检查替代链，或比较结论变化时展开。上下文压缩后，已在当次被引用且仍影响判断的 Study 必须重新回读 F3 中的研究问题、主要结论与限制，并恢复需要复核的版本、观察时点和来源范围；Study 被召回不证明外部事实仍当前、建议已采纳或结论取得规则与决定权威。
+
 ## 8. 变更、更正、删除与类型退出
 
 任何创建或更新都必须先召回相邻对象和当前字段登记，取得实际行动授权，写入唯一当前文件，回读 Working Tree，并验证 frontmatter、正文、状态、来源和关系。created_at 与 object_id 不因内容修正改变；正文、abstract、applicability、validation_summary、来源版本或观察时点实质变化时 updated_at 必须同步更新。
@@ -188,6 +194,7 @@ Study 类型停止新增、合并、替代或取消时，必须按 05 处置唯�
 
 | 验证对象 | 验证时机 | 成立条件 | 可接受依据 | 验证入口 | 可证明范围 | 未满足时的处理 |
 |---|---|---|---|---|---|---|
+| Study 召回与消费 | 需要研究依据、展开相邻研究、比较方案、作出依赖研究结论的决定或压缩恢复已引用结论时 | F2 卡片只投影权威字段与引用边界提示；正文按需展开；`active` 与终态的默认作用分离；压缩后已引用结论的限制与时效边界已恢复；当前性未被状态冒充 | 当前研究问题、对象卡片与正文、版本、observed_at、来源、证据和已知变化 | 分层候选走查、按需正文回读、AI 适用与时效审核 | 当次研究问题、已展开对象和已复核结论 | 不引用受影响结论；补读来源、重新观察、收紧 applicability 或报告未检查范围 |
 | 对象 Schema 与身份 | 创建、读取或更新对象时 | 路径、frontmatter 闭集、身份、字段类型、条件、时间和引用符合当前来源 | 当前文件、统一登记、本文与派生 Schema | 实际 parser/validator；未实现时逐项来源回读 | 当次对象当前 Working Tree 内容 | 不作为有效 Study 消费；报告字段和未验证范围 |
 | Markdown 正文 | 创建或正文变化时 | 六个 H2 精确唯一、顺序固定、内容非空，且不改变 frontmatter 核心边界 | 本文与对象正文 | 实际 Markdown validator；未实现时结构回读 | 当次对象正文 | 不声明报告结构成立；修正重复、缺失或漂移 |
 | 来源、证据与时效 | 创建、更新或消费可变化结论时 | kind 属于闭集；locator 符合 profile；version/observed_at 出现条件和 `observed_at <= updated_at` 成立；重要发现可映射到证据；重验证范围清楚 | 本文、03、对象引用与外部当前来源 | 来源矩阵检查、来源回读、版本核对、实际观察与证据审查 | 被核对的来源、版本、时点和结论 | 暂停受影响结论消费；补证、收紧 applicability、更新、替代或退出 |

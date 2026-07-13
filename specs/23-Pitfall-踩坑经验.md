@@ -165,6 +165,14 @@ Pitfall relation_key 第一版只允许 supersedes：
 
 新经验只替代旧经验的一部分时，不能把旧对象整体标为 superseded；应拆分新经验或让旧经验保持 active，并收紧其适用边界。关系存在不单独证明替代成立，必须与对象、证据、适用范围和同一变更一致。
 
+### 主动召回与消费时机
+
+Pitfall 在当前出现可能相似的失败症状、进入已知触发条件、准备采用曾有失败风险的方案，或正在调查、修复、验证一项故障时产生召回机会。F2 Pitfall 候选卡直接投影 `object_id`、`title`、`status`、`symptoms`、`trigger_conditions`、`applicability`、`validation_summary` 和 `updated_at`；可以在允许字段中进行可回指到 field path 与实际文本的精确字面检索，但不生成或写回标签、关键词权重或语义分数。这一类型化投影承担 V3 `tags` 原本的快速检索价值；`tags` 不因该价值存在而恢复为事实字段或第二分类权威。
+
+默认候选只包含症状、触发条件、环境、版本或 applicability 与当前情形可能相容的 `active` Pitfall；不得因标题、错误文本或某个工具名相同就自动采用规避结论。上下文压缩后必须对当次已经语义选中且仍影响行动的 Pitfall 重新回读 F3，并重新核对当前环境、版本和 applicability；不在会话开始时全量展开全部 Pitfall。
+
+`superseded` 与 `retired` Pitfall 只在精确引用、追溯历史失败或验证、检查替代链，或判断当前经验是新机制还是旧机制的变体时展开。AI 消费任何 Pitfall 前必须重新核对 symptoms、trigger conditions、root cause、resolution、avoidance、applicability、validation summary、来源版本与当前环境；对象被召回不表示根因已在当次重现，也不表示规避方法已获授权执行。
+
 ## 8. 变更、删除与类型退出
 
 创建前必须召回相邻 Pitfall、当前规则、ADR、WorkCase、Spark 和稳定来源，先判断不对象化、更新同一机制、拆分或建立新身份。更新 active Pitfall 时必须重新验证 root cause、resolution、avoidance、applicability 和 validation summary 的一致性；不能让新增样例把经验无依据泛化。
@@ -179,6 +187,7 @@ Pitfall 类型停止新增、合并、替代或取消时，必须按 05 处置�
 |---|---|---|---|---|---|---|
 | Pitfall 类型定义 | 新建或实质修改本文时 | 唯一声明、准入审计引用、绑定、状态、来源、证据与关系完整且无第二权威 | 05、统一登记、本文、历史 V3 样本与独立复核 | 当前来源回读与规范检查；Code 只验证可机械部分 | 当前 pitfall 类型定义 | 本文不进入或退出当前规则源；修正定义，不消费受影响对象 |
 | Pitfall 准入与查重 | 创建对象前 | 失败已发生、解决、根因与验证成立、经验可复用、边界清楚且没有无损现有承载 | 原始事故、调查与验证来源、召回结果及 AI 语义比较 | AI 来源回读与全局检索；Code 只辅助精确检索 | 当次候选与直接相邻事实 | 不创建；留在当前行动、WorkCase、Spark、ADR、文档或已有对象 |
+| Pitfall 召回与消费 | 出现相似症状、进入触发条件、采用高风险方案、调查修复故障或压缩恢复已选经验时 | F2 卡片只投影现有权威字段并保留字面命中依据，不恢复 `tags`；`active` 候选的症状、触发、环境、版本与 applicability 可能相容；终态只作追溯或替代链候选；召回未被冒充为根因证明或行动授权 | 当前症状与环境、候选卡与命中字段、对象全文、来源版本、证据和验证范围 | 候选范围走查、对象与当前环境回读、AI 因果与适用审核 | 当次症状、环境与已展开经验 | 不复用规避结论；继续调查、重新验证、缩小边界或建立 WorkCase |
 | 对象 Schema 与身份 | 创建、读取或更新对象时 | 路径、身份、字段闭集、类型、条件、时间和引用符合当前来源 | 当前文件、统一登记、本文与派生 Schema | 实际 parser/validator；未实现时逐项来源回读 | 当次对象当前 Working Tree 内容 | 不作为有效 Pitfall 消费；报告字段和未验证范围 |
 | 根因、解决与复用 | 创建或消费 active Pitfall 时 | 根因有证据、解决已执行验证、applicability 匹配当前环境、验证边界未被扩大 | source_refs、evidence_refs、当前环境和相邻规则 | AI 语义审核、来源及实际环境回读 | 当次经验及声明范围 | 不创建或暂停复用；补证据、缩小边界、重新验证或建立 WorkCase |
 | 替代或退出 | 准备 superseded 或 retired 时 | 新经验或退出依据成立，对象、关系、证据、适用边界和时间一致 | 新旧 Pitfall、来源、证据、当前规则与 Human 决定 | AI 语义审核、目标回读和结构校验 | 当次终态与替代声明 | 保持 active；修正替代范围、补证据或进入 Human Gate |
