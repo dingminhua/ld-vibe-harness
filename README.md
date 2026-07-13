@@ -22,4 +22,4 @@
 
 ## 使用状态
 
-当前 00–08 及三份授权附件已经激活；这只表示相应规则完成审核。V4 Code 已建立规范模型确定性基础、Helper CLI 基础契约，以及 `read-specification-candidates`、`read-specification-content` 和 `resolve-governance-scope` 三项公开操作；Web 已建立首批自有 API 特征测试和浏览器表现基线。当前仍没有通用规则适用判断、具体事实类型、事实消费与回写、行动模板执行、环境接入或 V4 Web 适配完成声明；完整路线、当前并行边界和验证证据见 [工作推进总纲](docs/v4-architecture/V4-工作推进总纲.md)。
+当前 00–08 及三份授权附件已经激活；这只表示相应规则完成审核。V4 Code 已建立规范模型确定性基础、Helper CLI 基础契约，以及 `read-specification-candidates`、`read-specification-content` 和 `resolve-governance-scope` 三项公开操作；Web 已建立首批自有 API 特征测试和浏览器表现基线。自然语言规则的语义和适用性由 AI 依据当前来源判断；Code 不得解释规则，只执行来源已定义的结构化契约。当前仍没有具体事实类型、事实消费与回写、行动模板执行、环境接入或 V4 Web 适配完成声明；完整路线、当前并行边界和验证证据见 [工作推进总纲](docs/v4-architecture/V4-工作推进总纲.md)。
