@@ -43,6 +43,7 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
     assert inspection.unchecked_conditions == UNCHECKED_CONDITIONS
     assert [declaration.operation_key for declaration in operations.candidate_declarations] == [
         "create-fact-object",
+        "find-fact-object-candidates",
         "prepare-fact-object-draft",
         "read-fact-objects",
         "read-specification-candidates",
@@ -54,6 +55,7 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
     }
     assert declaration_sources == {
         "create-fact-object": "specs/05-事实模型基础规范.md",
+        "find-fact-object-candidates": "specs/05-事实模型基础规范.md",
         "prepare-fact-object-draft": "specs/05-事实模型基础规范.md",
         "read-fact-objects": "specs/05-事实模型基础规范.md",
         "read-specification-candidates": "specs/01-规范模型基础规范.md",

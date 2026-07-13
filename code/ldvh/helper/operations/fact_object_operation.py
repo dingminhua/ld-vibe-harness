@@ -2,19 +2,16 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
-from dataclasses import replace
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 from ldvh.facts.contracts import LAYOUTS
-from ldvh.facts.models import FactIssue, FactReferenceScope
-from ldvh.facts.relations import ProjectFactIndex, validate_project_relations
+from ldvh.facts.models import FactReferenceScope
+from ldvh.facts.project_validation import stabilize_project_index
+from ldvh.facts.relations import ProjectFactIndex
 from ldvh.facts.repository import FactReadResult, read_fact_object
 from ldvh.facts.schema import project_fact_schemas
-from ldvh.facts.source_validation import validate_study_sources
-from ldvh.governance.models import ObjectStatus
 from ldvh.governance.resolver import GovernanceResolutionRun, resolve_governance_scope
 from ldvh.helper.operation_runtime import (
     AvailabilityEvaluation,
@@ -29,6 +26,7 @@ from ldvh.helper.operations.fact_object_request import (
     FactObjectRequest,
     parse_fact_object_request,
 )
+from ldvh.helper.operations.fact_operation_support import plain, reading_boundary
 from ldvh.helper.requests import CommonRequest
 from ldvh.helper.responses import source_reference
 from ldvh.specs.repository import RepositoryInspection
@@ -46,14 +44,6 @@ _TYPE_SOURCES = {
 }
 
 
-def _plain(value: Any) -> Any:
-    if isinstance(value, Mapping):
-        return {str(key): _plain(item) for key, item in value.items()}
-    if isinstance(value, tuple):
-        return [_plain(item) for item in value]
-    return value
-
-
 def _validated_request(request: CommonRequest, context: OperationExecutionContext) -> FactObjectRequest:
     parsed = parse_fact_object_request(request, context)
     if parsed.request is None:
@@ -66,33 +56,6 @@ def _governance(domain: FactObjectRequest) -> GovernanceResolutionRun:
         domain.governance_scope,
         base=domain.base,
         explicit_workspace_root=domain.workspace_root,
-    )
-
-
-def _reading_boundary(run: GovernanceResolutionRun) -> tuple[str, Path, Path] | None:
-    if run.result is None or run.technical_non_completions or len(run.completed_scope) != len(run.requested_scope):
-        return None
-    resolutions = run.result.object_resolutions
-    if len(resolutions) != len(run.requested_scope) or any(
-        item.status is not ObjectStatus.GOVERNED for item in resolutions
-    ):
-        return None
-    project_ids = {item.governed_project_id for item in resolutions}
-    roots = {item.git_worktree_root for item in resolutions}
-    common_dirs = {item.git_common_dir for item in resolutions}
-    if (
-        len(project_ids) != 1
-        or len(roots) != 1
-        or len(common_dirs) != 1
-        or None in project_ids
-        or None in roots
-        or None in common_dirs
-    ):
-        return None
-    return (
-        next(iter(project_ids)),
-        Path(next(iter(roots))),  # type: ignore[arg-type]
-        Path(next(iter(common_dirs))),  # type: ignore[arg-type]
     )
 
 
@@ -143,70 +106,8 @@ def _boundary_gap(domain: FactObjectRequest, run: GovernanceResolutionRun) -> di
     return {
         "summary": "全部定位输入未能形成同一管辖项目、同一实际 Git Working Tree 的唯一读取边界",
         "scope": [_scope_json(scope) for scope in domain.fact_scopes],
-        "source_refs": [_plain(source) for source in run.sources],
+        "source_refs": [plain(source) for source in run.sources],
     }
-
-
-def _project_second_pass(index: ProjectFactIndex) -> None:
-    """Reach a stable project-backed status without request-order dependence."""
-
-    base_reads = {
-        key: read
-        for key, read in index.cache.items()
-        if read.check_status == "mechanically_valid" and read.fields is not None
-    }
-    for fact_type_key in LAYOUTS:
-        reads, _ = index.scan_valid_objects(fact_type_key)
-        for read in reads:
-            if read.fields is not None and isinstance(read.fields.get("object_id"), str):
-                base_reads[(fact_type_key, read.fields["object_id"])] = read
-
-    for _ in range(len(base_reads) + 1):
-        evaluated: dict[tuple[str, str], FactReadResult] = {}
-        for (fact_type_key, object_id), base_read in base_reads.items():
-            current = index.cache.get((fact_type_key, object_id))
-            if current is not None and current.check_status != "mechanically_valid":
-                evaluated[(fact_type_key, object_id)] = current
-                continue
-            relation_issues, relation_unavailable = validate_project_relations(
-                index,
-                fact_type_key,
-                object_id,
-                base_read,
-            )
-            source_issues: tuple[FactIssue, ...] = ()
-            source_unavailable = False
-            if fact_type_key == "study":
-                source_issues, source_unavailable = validate_study_sources(index, base_read)
-            project_issues = (*relation_issues, *source_issues)
-            if relation_unavailable or source_unavailable:
-                evaluated[(fact_type_key, object_id)] = replace(
-                    base_read,
-                    check_status="unavailable",
-                    issues=(
-                        *base_read.issues,
-                        *project_issues,
-                        FactIssue("reference", "项目级关系或来源集合未能完成必需机械检查"),
-                    ),
-                )
-            elif project_issues:
-                evaluated[(fact_type_key, object_id)] = replace(
-                    base_read,
-                    check_status="invalid",
-                    issues=(*base_read.issues, *project_issues),
-                )
-            else:
-                evaluated[(fact_type_key, object_id)] = base_read
-        if all(index.cache.get(key) == value for key, value in evaluated.items()):
-            return
-        index.cache.update(evaluated)
-
-    for key, base_read in base_reads.items():
-        index.cache[key] = replace(
-            base_read,
-            check_status="unavailable",
-            issues=(*base_read.issues, FactIssue("relation", "项目级关系校验未能收敛")),
-        )
 
 
 def _execute(
@@ -218,7 +119,7 @@ def _execute(
     run = _governance(domain)
     requested = tuple(_scope_json(scope) for scope in domain.fact_scopes)
     governance_json = None if run.result is None else run.result.to_json()
-    boundary = _reading_boundary(run)
+    boundary = reading_boundary(run)
     if boundary is None:
         return OperationExecution(
             outcome="unavailable",
@@ -226,7 +127,7 @@ def _execute(
             requested_scope=requested,
             not_completed_scope=requested,
             governance_resolution=governance_json,
-            sources=tuple(_plain(source) for source in run.sources) + _IMPLEMENTATION_EVIDENCE,
+            sources=tuple(plain(source) for source in run.sources) + _IMPLEMENTATION_EVIDENCE,
             gaps=(_boundary_gap(domain, run),),
         )
 
@@ -250,7 +151,7 @@ def _execute(
         first_pass[scope.fact_ref_index] = read
         fact_index.cache[(reference.fact_type_key, reference.object_id)] = read
         fact_index.base_cache[(reference.fact_type_key, reference.object_id)] = read
-    _project_second_pass(fact_index)
+    stabilize_project_index(fact_index)
 
     items: list[dict[str, Any]] = []
     completed: list[dict[str, object]] = []
@@ -343,7 +244,7 @@ def _execute(
         completed_scope=tuple(completed),
         not_completed_scope=tuple(not_completed),
         governance_resolution=governance_json,
-        sources=tuple(_plain(source) for source in run.sources) + tuple(all_sources) + _IMPLEMENTATION_EVIDENCE,
+        sources=tuple(plain(source) for source in run.sources) + tuple(all_sources) + _IMPLEMENTATION_EVIDENCE,
         gaps=gaps,
         verification=verification,
     )

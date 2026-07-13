@@ -255,6 +255,7 @@ def test_unrelated_candidate_problem_does_not_block_defined_operation(
     assert discovered.response["outcome"] == "partial"
     assert discovered.response["scope"]["completed"] == [
         "create-fact-object",
+        "find-fact-object-candidates",
         "prepare-fact-object-draft",
         "read-fact-objects",
         "read-specification-candidates",
