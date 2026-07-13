@@ -12,12 +12,16 @@ Code tests 不代替 `web/tests/`，也不证明环境接入、Web 适配或整�
 
 ## 常用检查
 
-在仓库根目录运行：
+V4 Code 要求 Python 3.12 或更高版本。在仓库根目录建立开发环境并运行检查：
 
 ```bash
-python -m pytest code/tests
-ruff check .
-ruff format --check .
+python3.12 -m venv .venv
+.venv/bin/python -m pip install -e '.[dev]'
+.venv/bin/python -m pytest code/tests
+.venv/bin/ruff check .
+.venv/bin/ruff format --check .
 ```
+
+已有满足要求的虚拟环境时，不需要重复建立或安装。不得使用低于 3.12 的系统默认 `python` 解释测试收集失败为 Code 回归。
 
 实际通过数、当前实现范围、已知缺口和下一增量的准入条件只在工作推进总纲中更新。替换前的已完成增量详细由 Git 历史保留，不作为并行的当前设计。
