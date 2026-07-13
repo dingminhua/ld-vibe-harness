@@ -23,4 +23,4 @@
 
 ## 使用状态
 
-当前 00–08 及三份授权附件已经激活；这只表示相应规则完成审核。V4 Code 已建立规范模型确定性基础和 Helper CLI 基础契约；Web 已建立独立实现规划与首批自有 API 特征测试。当前仍没有具体 Helper 公开操作、事实类型、行动模板执行、环境接入或 V4 Web 适配完成声明；详见 [当前进展](docs/v4-architecture/V4-当前进展.md)。
+当前 00–08 及三份授权附件已经激活；这只表示相应规则完成审核。V4 Code 已建立规范模型确定性基础、Helper CLI 基础契约，以及 `read-specification-candidates` 和 `resolve-governance-scope` 两项公开操作；Web 已建立独立实现规划与首批自有 API 特征测试。当前仍没有 L3/L4 规则读取、规则适用判断、具体事实类型、行动模板执行、环境接入或 V4 Web 适配完成声明；完整路线、当前并行边界和验证证据见 [当前进展](docs/v4-architecture/V4-当前进展.md)。
