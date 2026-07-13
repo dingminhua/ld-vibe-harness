@@ -2,7 +2,69 @@
 
 > 当前规划入口：本文是当前唯一的 Code 实现规划及稳定入口。本文不是规则源，也不是完整的 V4 进展总览；当前状态与跨构成要素边界见 [`V4-当前进展.md`](../v4-architecture/V4-当前进展.md)。实现语义必须回到当前有效规范和授权附件。
 
-## 当前增量：规范候选读取公开操作
+## 当前增量：管辖范围解析公开操作
+
+| 项目 | 当前决定 |
+|---|---|
+| 实现起点 | Specs 固定提交 `25ec579d`；Code 模块边界提交 `c16d1ab7` |
+| 目标 | 实现 `resolve-governance-scope`，从当前配置、路径和 Git 观察形成逐对象管辖判定及聚合结果，并完整兼容同一项目的 main/linked worktree |
+| 不覆盖 | 规则适用判断、对象专属规范或事实读取、配置写入、worktree 创建或切换、环境 Hook/adapter、远端仓库身份和状态变更 |
+| 直接来源 | `work-object-governance-scope` §§5–11、`governed-projects-config-fields`、`helper-cli-service-contract` §§5–7、`helper-cli-request-response-fields`、`source-of-truth-traceability`、`code-engineering-practices` |
+
+本增量不读取目标 worktree 的 Specs 来决定自身公开身份。Helper 仍先从与实际 Code 共置的当前规则源发现操作，再由领域实现只读取请求涉及的配置、路径和 Git 信息；管辖结果形成后，其它操作是否读取目标 worktree 内容由各自来源契约决定。
+
+### 模块责任与依赖
+
+| 模块 | 唯一维护责任 | 不承担 |
+|---|---|---|
+| `ldvh.governance.configuration` | 配置候选发现、真实路径去重、YAML 当前内容、字段闭集和结构校验 | 不运行 Git，不判断对象归属 |
+| `ldvh.governance.git` | 路径定位、真实 worktree 根、common-dir 和 Git 技术失败 | 不读取配置，不选择管辖项目 |
+| `ldvh.governance.models` | 02 领域状态、逐对象结果、确定性聚合和 JSON 序列化 | 不访问文件系统，不选择 Helper outcome |
+| `ldvh.governance.resolver` | 组合配置、Git 身份和匹配规则，保留每个 locator 的结果、来源和缺口 | 不构造共同响应，不读取项目内容 |
+| `ldvh.helper.operations.governance_scope_request` | 按 02 §10.1 校验领域输入并把实际进程 `cwd` 作为显式执行上下文 | 不发现配置，不调用 Git |
+| `ldvh.helper.operations.governance_scope_operation` | 把 resolver 结果映射为可用性和 `OperationExecution` | 不复制共同响应 Schema或重新实现领域判断 |
+| `ldvh.helper.service` | 在服务边界捕获一次实际 `cwd` 并注入操作运行时 | 不从请求中的 `task` 或 `observed_context` 猜测目录 |
+
+允许依赖方向为：
+
+```text
+governance.configuration ─┐
+governance.git ───────────┼─> governance.resolver -> governance.models
+                          │
+helper governance request ┴─> helper governance operation -> operation_runtime
+service -> operation_runtime
+```
+
+配置、Git 和 models 互不反向依赖；resolver 是唯一组合位置。共同请求和响应仍分别由 `ldvh.helper.requests` 与 `ldvh.helper.responses` 维护。附件中的字段语义不在 dataclass、tests 或 handler 中复制成第二来源；内部类型只承接当前契约。
+
+### 冻结接口与错误边界
+
+配置模块接收显式 `workspace_root`，或由 resolver 提供的对象路径搜索起点、common-dir 父目录搜索起点和需排除的 Git worktree 根；它按真实配置路径去重并区分 `valid/missing/invalid/conflict`。Git 模块返回成功身份、确定性非 worktree 或技术失败，不能把 Git 可执行文件缺失、权限、I/O 和进程失败伪装成非管辖。models 只聚合已经完成的逐对象结果；`partial` 的未完成范围由 Helper scope 保留，不用聚合状态覆盖。
+
+首个实现只接受路径 string locator；相对路径以实际进程 `cwd` 为基准。领域结果携带 `locator_index`、原始 locator、实际 `git_worktree_root`、`git_common_dir` 和配置登记路径。登记路径只用于配置校验和直接路径命中；任何后续内容读取不得由它替代实际目标 worktree。
+
+### 并行实施与集成顺序
+
+第一阶段三个独立 worktree 分别拥有 `configuration.py`、`git.py`、`models.py` 及其聚焦 tests，禁止修改 Specs、Web 或彼此生产文件。主线程按 models → Git → configuration 集成并核对接口，再单线实现 resolver、领域请求和 Helper handler；涉及共同 service/operation runtime 的变化只在主线程完成，避免多个分支并发改动公共编排。
+
+### 风险与测试映射
+
+| 风险 | 主要证据 |
+|---|---|
+| 上层 `cwd` 猜中子项目或覆盖显式 locator | 真实进程测试覆盖上层目录、空 locator、显式 V4 locator和相对路径 |
+| 临时 worktree 找不到外部配置 | 真实 linked worktree 测试覆盖从 common-dir 父目录发现配置，并跳过 Git worktree 根内同名文件 |
+| V3/V4 或临时 worktree 内容串读 | 配置入口与目标 worktree 放置不同哨兵内容，断言只返回和使用实际目标 root |
+| remote、分支或目录名被误作身份 | 独立 clone 同 remote、branch switch、detached HEAD 反例 |
+| submodule 被父路径穿透 | 未登记与独立登记 submodule 场景 |
+| 配置或 Git 技术失败被包装成确定结论 | missing/invalid/conflict 与 permission/process/dependency failure 分层测试 |
+| 重复 locator、相同配置多路线发现或多对象聚合丢失 | locator_index、真实路径去重、single/multiple/mixed/unknown contract tests |
+| 新操作声明被旧测试或 Code 白名单阻断 | 操作发现测试同时验证“来源已定义、实现未接入”和集成后的来源绑定实现 |
+
+完成条件：配置、Git、模型、resolver、领域请求和 Helper handler 的局部与契约 tests 通过；main/linked worktree、外部配置发现、上层 `cwd`、独立 clone、submodule、配置无效和技术失败均有范围匹配证据；真实 `ldvh capabilities/call` 只从当前来源发现并调用实现；完整 pytest、Ruff、格式、diff-check 和独立复核通过。未实现的对象专属规则/事实读取、环境接入和跨平台真实环境继续明确标记未验证。
+
+---
+
+## 已完成增量：规范候选读取公开操作
 
 | 项目 | 当前决定 |
 |---|---|
