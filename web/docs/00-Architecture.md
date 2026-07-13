@@ -1,6 +1,6 @@
 # LDVH Web Architecture
 
-> 当前身份：本文记录既有 V3 Web 的实现架构，不是 V4 规范或完整适配结论。V4 当前实施入口见 [`docs/web/README.md`](../../docs/web/README.md)。正文中的 V3 事实对象、`ldvh-base/` 和旧 Specs 说明只能作为历史实现线索。
+> 当前身份：本文记录既有 V3 Web 的实现架构，不是 V4 规范或完整适配结论。V4 当前实施入口见 [`V4-工作推进总纲.md`](../../docs/v4-architecture/V4-工作推进总纲.md)。正文中的 V3 事实对象、`ldvh-base/` 和旧 Specs 说明只能作为历史实现线索。
 
 ## 1. Positioning
 
