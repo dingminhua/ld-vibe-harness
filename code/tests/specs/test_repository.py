@@ -27,10 +27,17 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
     assert inspection.unchecked_conditions == UNCHECKED_CONDITIONS
     assert [declaration.operation_key for declaration in operations.candidate_declarations] == [
         "read-specification-candidates",
+        "read-specification-content",
         "resolve-governance-scope",
     ]
-    assert operations.candidate_declarations[0].source.path == "specs/01-规范模型基础规范.md"
-    assert operations.candidate_declarations[1].source.path == "specs/02-工作对象与管辖范围规范.md"
+    declaration_sources = {
+        declaration.operation_key: declaration.source.path for declaration in operations.candidate_declarations
+    }
+    assert declaration_sources == {
+        "read-specification-candidates": "specs/01-规范模型基础规范.md",
+        "read-specification-content": "specs/01-规范模型基础规范.md",
+        "resolve-governance-scope": "specs/02-工作对象与管辖范围规范.md",
+    }
     assert operations.issues == ()
     assert operations.incomplete_sources == ()
 

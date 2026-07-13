@@ -34,7 +34,7 @@ def test_general_discovery_reports_source_bound_implementation(tmp_path: Path) -
     assert response["outcome"] == "ok"
     assert response["operation_key"] is None
     assert response["result"]["mode"] == "discovery"
-    assert len(response["result"]["operations"]) == 2
+    assert len(response["result"]["operations"]) == 3
     operations = {item["operation_key"]: item for item in response["result"]["operations"]}
     operation = operations["read-specification-candidates"]
     assert operation["operation_key"] == "read-specification-candidates"
@@ -51,6 +51,19 @@ def test_general_discovery_reports_source_bound_implementation(tmp_path: Path) -
         "arguments.responsibility_keys",
         "requested_disclosure",
     ]
+    content = operations["read-specification-content"]
+    assert content["implementation"] == {
+        "present": True,
+        "evidence": [
+            {
+                "kind": "implementation",
+                "locator": "code/ldvh/helper/operations/specification_content_operation.py",
+            }
+        ],
+    }
+    assert content["required_inputs"] == ["arguments.selections", "requested_disclosure"]
+    assert content["optional_inputs"] == []
+    assert content["availability"] is None
     governance = operations["resolve-governance-scope"]
     assert governance["implementation"] == {
         "present": True,
@@ -226,3 +239,114 @@ def test_invalid_utf8_is_a_machine_invalid_request(tmp_path: Path) -> None:
     assert completed.stderr == b""
     assert response["outcome"] == "invalid_request"
     assert response["gaps"][0]["summary"] == "标准输入必须是 UTF-8"
+
+
+def test_specification_content_capabilities_and_l4_call_use_exact_current_source(tmp_path: Path) -> None:
+    request = {
+        "arguments": {
+            "selections": [{"responsibility_key": "ldvh-root", "heading_path": None}],
+        },
+        "requested_disclosure": "L4",
+    }
+    checked, check_response = _run(
+        tmp_path,
+        "capabilities",
+        "read-specification-content",
+        stdin=json.dumps(request),
+    )
+    called, call_response = _run(
+        tmp_path,
+        "call",
+        "read-specification-content",
+        stdin=json.dumps(request),
+    )
+
+    assert checked.returncode == 0
+    operation = check_response["result"]["operations"][0]
+    assert operation["availability"] == "available_for_request"
+    assert operation["required_inputs"] == ["arguments.selections", "requested_disclosure"]
+    assert operation["optional_inputs"] == []
+    assert operation["available_scope"] == request["arguments"]["selections"]
+    assert operation["unavailable_scope"] == []
+
+    assert called.returncode == 0
+    assert call_response["outcome"] == "ok"
+    item = call_response["result"]["items"][0]
+    assert item["key"] == "ldvh-root"
+    assert item["requested_disclosure"] == item["actual_disclosure"] == "L4"
+    assert item["parts"][0]["content"].startswith("# 理念与构成\n")
+    source = item["parts"][0]["source"]
+    assert source["locator"].startswith("specs/00-理念与构成.md#L1-L")
+    assert source["observed_at"]
+    assert source["details"]["git_worktree_root"].endswith("ld-vibe-harness-v4")
+    assert call_response["disclosure"]["parts"] == [
+        {"level": "L4", "source_refs": [source], "reason": "请求 L4，按契约返回完整来源"}
+    ]
+    assert call_response["changes"] == []
+
+
+def test_specification_content_l3_expands_and_attachment_l4_includes_parent(tmp_path: Path) -> None:
+    l3_request = {
+        "arguments": {
+            "selections": [
+                {
+                    "responsibility_key": "specification-model-foundation",
+                    "heading_path": ["5. 基础术语", "5.1 规范文档（Specification）"],
+                }
+            ]
+        },
+        "requested_disclosure": "L3",
+    }
+    expanded, expanded_response = _run(
+        tmp_path,
+        "call",
+        "read-specification-content",
+        stdin=json.dumps(l3_request),
+    )
+    attachment_request = {
+        "arguments": {"selections": [{"responsibility_key": "ldvh-bilingual-terminology", "heading_path": None}]},
+        "requested_disclosure": "L4",
+    }
+    attachment, attachment_response = _run(
+        tmp_path,
+        "call",
+        "read-specification-content",
+        stdin=json.dumps(attachment_request),
+    )
+
+    assert expanded.returncode == 0
+    expanded_item = expanded_response["result"]["items"][0]
+    assert expanded_item["requested_disclosure"] == "L3"
+    assert expanded_item["actual_disclosure"] == "L4"
+    assert expanded_item["expanded_to_l4"] is True
+    assert expanded_item["expansion_reason"]
+
+    assert attachment.returncode == 0
+    parts = attachment_response["result"]["items"][0]["parts"]
+    assert [part["source"]["details"]["responsibility_key"] for part in parts] == [
+        "ldvh-bilingual-terminology",
+        "specification-model-foundation",
+    ]
+
+
+def test_specification_content_invalid_exact_selection_is_invalid_request(tmp_path: Path) -> None:
+    completed, response = _run(
+        tmp_path,
+        "call",
+        "read-specification-content",
+        stdin=json.dumps(
+            {
+                "arguments": {
+                    "selections": [
+                        {"responsibility_key": "specification-model-foundation", "heading_path": ["Unknown H2"]}
+                    ]
+                },
+                "requested_disclosure": "L3",
+            }
+        ),
+    )
+
+    assert completed.returncode == 2
+    assert response["outcome"] == "invalid_request"
+    assert response["result"] is None
+    assert any("无法精确唯一匹配" in gap["summary"] for gap in response["gaps"])

@@ -227,6 +227,7 @@ def test_unrelated_candidate_problem_does_not_block_defined_operation(
     assert discovered.response["outcome"] == "partial"
     assert discovered.response["scope"]["completed"] == [
         "read-specification-candidates",
+        "read-specification-content",
         "resolve-governance-scope",
     ]
     assert discovered.response["scope"]["not_completed"] == ["broken"]

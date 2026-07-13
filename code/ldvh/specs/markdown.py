@@ -11,6 +11,7 @@ import re
 import stat
 from collections.abc import Iterator
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 
 from ldvh.diagnostics import Issue, SourceLocation
@@ -50,6 +51,8 @@ class MarkdownDocument:
     yaml_text: str | None
     yaml_line: int | None
     headings: tuple[Heading, ...]
+    raw_text: str = ""
+    observed_at: str | None = None
 
     @property
     def path(self) -> str:
@@ -140,7 +143,7 @@ def parse_markdown(path: str | Path, relative_path: str | Path) -> MarkdownResul
 
     source_path = Path(relative_path).as_posix()
     try:
-        raw_lines = _read_regular_file_without_symlinks(Path(path), Path(source_path))
+        raw_text, raw_lines, observed_at = _read_regular_file_without_symlinks(Path(path), Path(source_path))
     except UnicodeError as error:
         document = MarkdownDocument(source_path, (), None, None, None, None, ())
         issue = Issue(
@@ -253,11 +256,13 @@ def parse_markdown(path: str | Path, relative_path: str | Path) -> MarkdownResul
         yaml_text=yaml_text,
         yaml_line=yaml_line,
         headings=tuple(headings),
+        raw_text=raw_text,
+        observed_at=observed_at,
     )
     return MarkdownResult(document, tuple(issues))
 
 
-def _read_regular_file_without_symlinks(path: Path, relative_path: Path) -> tuple[str, ...]:
+def _read_regular_file_without_symlinks(path: Path, relative_path: Path) -> tuple[str, tuple[str, ...], str]:
     """Read one repository-relative file without following any path-component symlink."""
 
     invalid_component = any(part in {"", ".", ".."} for part in relative_path.parts)
@@ -288,7 +293,7 @@ def _read_regular_file_without_symlinks(path: Path, relative_path: Path) -> tupl
             before_read = os.fstat(file_fd)
             if not stat.S_ISREG(before_read.st_mode):
                 raise OSError("source path is not a regular file")
-            with os.fdopen(file_fd, "r", encoding="utf-8") as source:
+            with os.fdopen(file_fd, "r", encoding="utf-8", newline="") as source:
                 file_fd = -1
                 text = source.read()
                 after_read = os.fstat(source.fileno())
@@ -310,7 +315,8 @@ def _read_regular_file_without_symlinks(path: Path, relative_path: Path) -> tupl
                 )
                 if observed_before != observed_after:
                     raise OSError("source file changed while it was being read")
-                return tuple(text.splitlines())
+                observed_at = datetime.now().astimezone().isoformat()
+                return text, tuple(text.splitlines()), observed_at
         finally:
             if file_fd >= 0:
                 os.close(file_fd)

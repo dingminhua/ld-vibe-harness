@@ -41,10 +41,24 @@ ldvh_spec:
     assert result.document.yaml_text == 'ldvh_spec:\n  spec_key: "example"'
     assert result.document.yaml_line == 3
     assert result.document.raw_lines[0] == "# Example"
+    assert result.document.raw_text == path.read_text(encoding="utf-8")
     assert result.document.headings == (
         Heading(2, "1. First", 8),
         Heading(3, "Exact target", 14),
     )
+
+
+def test_preserves_decoded_source_line_endings_and_terminal_newline(tmp_path: Path) -> None:
+    source = b'# Example\r\n\r\n```yaml\r\nkey: "value"\r\n```\r\n'
+    path = tmp_path / "specs/99-Example.md"
+    path.parent.mkdir(parents=True)
+    path.write_bytes(source)
+
+    result = parse_markdown(path, "specs/99-Example.md")
+
+    assert result.issues == ()
+    assert result.document.raw_text.encode("utf-8") == source
+    assert result.document.raw_lines == ("# Example", "", "```yaml", 'key: "value"', "```")
 
 
 def test_requires_first_line_unique_h1_and_fixed_yaml_position(tmp_path: Path) -> None:

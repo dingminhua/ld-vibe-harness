@@ -17,11 +17,18 @@ from ldvh.helper.operations.specification_candidate_operation import (
 from ldvh.helper.operations.specification_candidate_operation import (
     SPECIFICATION_CANDIDATE_IMPLEMENTATION,
 )
+from ldvh.helper.operations.specification_content_operation import (
+    OPERATION_KEY as SPECIFICATION_CONTENT_OPERATION_KEY,
+)
+from ldvh.helper.operations.specification_content_operation import (
+    SPECIFICATION_CONTENT_IMPLEMENTATION,
+)
 
 IMPLEMENTATIONS = MappingProxyType[str, OperationImplementation](
     {
         GOVERNANCE_SCOPE_OPERATION_KEY: GOVERNANCE_SCOPE_IMPLEMENTATION,
         SPECIFICATION_CANDIDATE_OPERATION_KEY: SPECIFICATION_CANDIDATE_IMPLEMENTATION,
+        SPECIFICATION_CONTENT_OPERATION_KEY: SPECIFICATION_CONTENT_IMPLEMENTATION,
     }
 )
 
