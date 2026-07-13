@@ -34,8 +34,16 @@ def test_general_discovery_reports_source_bound_implementation(tmp_path: Path) -
     assert response["outcome"] == "ok"
     assert response["operation_key"] is None
     assert response["result"]["mode"] == "discovery"
-    assert len(response["result"]["operations"]) == 4
+    assert len(response["result"]["operations"]) == 6
     operations = {item["operation_key"]: item for item in response["result"]["operations"]}
+    assert operations["prepare-fact-object-draft"]["required_inputs"] == [
+        "arguments.governed_project_id",
+        "arguments.fact_type_key",
+    ]
+    assert operations["create-fact-object"]["required_inputs"] == [
+        "arguments.draft_basis",
+        "arguments.fact_object",
+    ]
     facts = operations["read-fact-objects"]
     assert facts["implementation"]["present"] is True
     assert facts["required_inputs"] == ["arguments.fact_refs"]

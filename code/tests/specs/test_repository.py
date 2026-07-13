@@ -42,6 +42,8 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
     assert "fact-object-field-registry" in fact_model.authorized_attachments
     assert inspection.unchecked_conditions == UNCHECKED_CONDITIONS
     assert [declaration.operation_key for declaration in operations.candidate_declarations] == [
+        "create-fact-object",
+        "prepare-fact-object-draft",
         "read-fact-objects",
         "read-specification-candidates",
         "read-specification-content",
@@ -51,6 +53,8 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
         declaration.operation_key: declaration.source.path for declaration in operations.candidate_declarations
     }
     assert declaration_sources == {
+        "create-fact-object": "specs/05-事实模型基础规范.md",
+        "prepare-fact-object-draft": "specs/05-事实模型基础规范.md",
         "read-fact-objects": "specs/05-事实模型基础规范.md",
         "read-specification-candidates": "specs/01-规范模型基础规范.md",
         "read-specification-content": "specs/01-规范模型基础规范.md",
