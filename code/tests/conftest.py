@@ -2,12 +2,39 @@ from __future__ import annotations
 
 import shutil
 import subprocess
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 import pytest
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+
+def _assert_source_reference(reference: dict[str, Any]) -> None:
+    assert {"kind", "locator"} <= set(reference) <= {"kind", "locator", "version", "observed_at", "details"}
+    assert isinstance(reference["kind"], str) and reference["kind"]
+    assert isinstance(reference["locator"], str) and reference["locator"]
+    if "version" in reference:
+        assert isinstance(reference["version"], str) and reference["version"]
+    if "observed_at" in reference:
+        assert isinstance(reference["observed_at"], str) and reference["observed_at"]
+        parsed = datetime.fromisoformat(reference["observed_at"].replace("Z", "+00:00"))
+        assert parsed.tzinfo is not None
+    if "details" in reference:
+        assert isinstance(reference["details"], dict)
+
+
+def _assert_follow_up_item(item: dict[str, Any], *, operation: bool = False) -> None:
+    expected = {"summary", "scope", "source_refs"} | ({"operation_key"} if operation else set())
+    assert set(item) == expected
+    assert isinstance(item["summary"], str) and item["summary"]
+    assert isinstance(item["scope"], list)
+    assert isinstance(item["source_refs"], list) and item["source_refs"]
+    for reference in item["source_refs"]:
+        _assert_source_reference(reference)
+    if operation:
+        assert isinstance(item["operation_key"], str) and item["operation_key"]
 
 
 def assert_common_response(response: dict[str, Any]) -> None:
@@ -45,11 +72,59 @@ def assert_common_response(response: dict[str, Any]) -> None:
     assert isinstance(response["scope"]["not_completed"], list)
     assert response["scope"]["governance_resolution"] is None
     assert isinstance(response["sources"], list)
-    assert response["disclosure"] is None
+    for reference in response["sources"]:
+        _assert_source_reference(reference)
+    disclosure = response["disclosure"]
+    if disclosure is not None:
+        assert set(disclosure) == {"requested", "parts"}
+        assert disclosure["requested"] in {None, "L0", "L1", "L2", "L3", "L4"}
+        assert isinstance(disclosure["parts"], list)
+        for part in disclosure["parts"]:
+            assert set(part) == {"level", "source_refs", "reason"}
+            assert part["level"] in {"L0", "L1", "L2", "L3", "L4"}
+            assert isinstance(part["source_refs"], list) and part["source_refs"]
+            for reference in part["source_refs"]:
+                _assert_source_reference(reference)
+            assert isinstance(part["reason"], str) and part["reason"]
     assert isinstance(response["gaps"], list)
-    assert response["changes"] == []
-    assert response["verification"] == []
+    for item in response["gaps"]:
+        assert {"summary", "scope", "source_refs"} <= set(item) <= {"summary", "scope", "source_refs", "code"}
+        assert isinstance(item["summary"], str) and item["summary"]
+        assert isinstance(item["scope"], list)
+        assert isinstance(item["source_refs"], list)
+        for reference in item["source_refs"]:
+            _assert_source_reference(reference)
+        if "code" in item:
+            assert isinstance(item["code"], str) and item["code"]
+    assert isinstance(response["changes"], list)
+    for item in response["changes"]:
+        assert set(item) == {"summary", "status", "target", "source_refs"}
+        assert isinstance(item["summary"], str) and item["summary"]
+        assert isinstance(item["status"], str) and item["status"]
+        assert isinstance(item["target"], (str, dict))
+        assert isinstance(item["source_refs"], list)
+        for reference in item["source_refs"]:
+            _assert_source_reference(reference)
+    assert isinstance(response["verification"], list)
+    for item in response["verification"]:
+        assert set(item) == {"check", "status", "scope", "evidence"}
+        assert isinstance(item["check"], str) and item["check"]
+        assert isinstance(item["status"], str) and item["status"]
+        assert isinstance(item["scope"], list)
+        assert isinstance(item["evidence"], list)
+        for reference in item["evidence"]:
+            _assert_source_reference(reference)
     assert isinstance(response["diagnostics"], list)
+    for item in response["diagnostics"]:
+        assert {"summary", "details"} <= set(item) <= {"summary", "details", "code", "source_refs"}
+        assert isinstance(item["summary"], str) and item["summary"]
+        assert isinstance(item["details"], dict)
+        if "code" in item:
+            assert isinstance(item["code"], str) and item["code"]
+        if "source_refs" in item:
+            assert isinstance(item["source_refs"], list)
+            for reference in item["source_refs"]:
+                _assert_source_reference(reference)
     assert set(response["follow_up"]) == {
         "summary",
         "required_inputs",
@@ -64,7 +139,15 @@ def assert_common_response(response: dict[str, Any]) -> None:
         "resume_conditions",
         "suggested_operations",
     ):
-        assert response["follow_up"][field] == []
+        assert isinstance(response["follow_up"][field], list)
+    for item in response["follow_up"]["required_inputs"]:
+        _assert_follow_up_item(item)
+    for item in response["follow_up"]["required_human_decisions"]:
+        _assert_follow_up_item(item)
+    for item in response["follow_up"]["resume_conditions"]:
+        _assert_follow_up_item(item)
+    for item in response["follow_up"]["suggested_operations"]:
+        _assert_follow_up_item(item, operation=True)
 
 
 @pytest.fixture

@@ -7,14 +7,17 @@ from pathlib import Path
 from typing import Any
 
 import ldvh
+from ldvh.diagnostics import Issue
 from ldvh.helper.operation_runtime import (
     OperationExecution,
     OperationImplementation,
+    OperationRequestError,
     bind_operation_implementations,
     implementation_contract_diagnostics,
     implementation_error_execution,
 )
 from ldvh.helper.operation_sources import OperationDeclarationCandidate
+from ldvh.helper.operations import IMPLEMENTATIONS
 from ldvh.helper.requests import parse_common_request, valid_operation_key
 from ldvh.helper.responses import RequestKind, ServiceResult, common_response, diagnostic, gap, source_reference
 from ldvh.helper.rule_source import inspect_colocated_rule_source
@@ -24,14 +27,48 @@ CONTRACT_SOURCES = [
     source_reference("rule", "specs/attachments/04.Att.01-Helper CLI 请求与响应字段表.md"),
 ]
 RULE_SOURCE_QUALIFICATION_SOURCE = source_reference("rule", "specs/01-规范模型基础规范.md")
-OPERATION_IMPLEMENTATIONS: dict[str, OperationImplementation] = {}
+OPERATION_IMPLEMENTATIONS: dict[str, OperationImplementation] = dict(IMPLEMENTATIONS)
+
+
+def _issue_source(issue: Issue) -> dict[str, Any]:
+    locator = issue.location.path if issue.location.line is None else f"{issue.location.path}:{issue.location.line}"
+    details = {} if issue.location.heading is None else {"heading": issue.location.heading}
+    return source_reference("working_tree", locator, **details)
+
+
+def _issue_sources(issues: tuple[Issue, ...]) -> list[dict[str, Any]]:
+    results: list[dict[str, Any]] = []
+    seen: set[tuple[str, str]] = set()
+    for issue in issues:
+        source = _issue_source(issue)
+        identity = (str(source["kind"]), str(source["locator"]))
+        if identity not in seen:
+            seen.add(identity)
+            results.append(source)
+    return results
+
+
+def _issue_diagnostic(issue: Issue) -> dict[str, Any]:
+    details: dict[str, Any] = {
+        "path": issue.location.path,
+        "line": issue.location.line,
+        "affected": list(issue.affected),
+    }
+    if issue.cause is not None:
+        details["cause"] = issue.cause
+    result = diagnostic(issue.summary, **details)
+    result["source_refs"] = [_issue_source(issue)]
+    return result
 
 
 def invalid_request_result(
     request_kind: RequestKind,
     operation_key: str | None,
     problems: tuple[str, ...],
+    *,
+    sources: list[dict[str, Any]] | None = None,
 ) -> ServiceResult:
+    response_sources = CONTRACT_SOURCES if sources is None else [*CONTRACT_SOURCES, *sources]
     return common_response(
         request_kind=request_kind,
         operation_key=operation_key,
@@ -39,8 +76,8 @@ def invalid_request_result(
         summary="Helper 请求不符合共同接口契约",
         requested_scope=[] if operation_key is None else [operation_key],
         not_completed_scope=[] if operation_key is None else [operation_key],
-        sources=CONTRACT_SOURCES,
-        gaps=[gap(problem, sources=CONTRACT_SOURCES) for problem in problems],
+        sources=response_sources,
+        gaps=[gap(problem, sources=response_sources) for problem in problems],
         diagnostics=[diagnostic("请求解析或校验未通过", problems=list(problems))],
     )
 
@@ -195,9 +232,17 @@ def handle_request(request_kind: RequestKind, operation_key: str | None, raw_inp
     assert inspected.repository is not None and inspected.operations is not None
     repository = inspected.repository
     operations = inspected.operations
-    if repository.issues or repository.incomplete_scope or operations.issues or operations.incomplete_sources:
-        summaries = [issue.summary for issue in (*repository.issues, *operations.issues)]
-        affected = [*repository.incomplete_scope, *operations.incomplete_sources]
+    operation_only_issues = tuple(issue for issue in operations.issues if issue not in repository.issues)
+    operation_only_incomplete = tuple(
+        scope for scope in operations.incomplete_sources if scope not in repository.incomplete_scope
+    )
+    declarations = operations.candidate_declarations
+    repository_incomplete = bool(repository.issues or repository.incomplete_scope)
+    declaration_incomplete = bool(operation_only_issues or operation_only_incomplete)
+    if declaration_incomplete or (repository_incomplete and not declarations):
+        blocking_issues = (*repository.issues, *operation_only_issues)
+        issue_sources = _issue_sources(blocking_issues)
+        affected = [*repository.incomplete_scope, *operation_only_incomplete]
         problem = "规则源或公开操作声明检查存在未完成范围"
         return common_response(
             request_kind=request_kind,
@@ -206,9 +251,9 @@ def handle_request(request_kind: RequestKind, operation_key: str | None, raw_inp
             summary="当前进程未能完整检查规则源",
             requested_scope=[] if operation_key is None else [operation_key],
             not_completed_scope=affected or ([] if operation_key is None else [operation_key]),
-            sources=CONTRACT_SOURCES,
-            gaps=[gap(problem, scope=affected, sources=CONTRACT_SOURCES)],
-            diagnostics=[diagnostic("规则源机械检查未通过", issues=summaries)],
+            sources=[*CONTRACT_SOURCES, *issue_sources],
+            gaps=[gap(problem, scope=affected, sources=[*CONTRACT_SOURCES, *issue_sources])],
+            diagnostics=[_issue_diagnostic(issue) for issue in blocking_issues],
         )
 
     unchecked_conditions = tuple(dict.fromkeys(operations.unchecked_conditions))
@@ -217,7 +262,6 @@ def handle_request(request_kind: RequestKind, operation_key: str | None, raw_inp
         *_qualification_gaps(unchecked_conditions, sources=[RULE_SOURCE_QUALIFICATION_SOURCE]),
         *_qualification_gaps(contract_conditions, sources=CONTRACT_SOURCES),
     ]
-    declarations = operations.candidate_declarations
     runtime = bind_operation_implementations(operations, OPERATION_IMPLEMENTATIONS)
     bound_by_key = runtime.by_key()
     runtime_diagnostics = implementation_contract_diagnostics(runtime)
@@ -226,6 +270,25 @@ def handle_request(request_kind: RequestKind, operation_key: str | None, raw_inp
     if operation_key is not None:
         bound_operation = bound_by_key.get(operation_key)
         if bound_operation is None:
+            if repository_incomplete:
+                repository_sources = _issue_sources(repository.issues)
+                return common_response(
+                    request_kind=request_kind,
+                    operation_key=operation_key,
+                    outcome="unavailable",
+                    summary="当前规则源存在未完成范围，无法确定请求的操作是否已由来源定义",
+                    requested_scope=[operation_key],
+                    not_completed_scope=[operation_key, *repository.incomplete_scope],
+                    sources=[*CONTRACT_SOURCES, *repository_sources],
+                    gaps=[
+                        gap(
+                            "规则源未完成范围可能影响公开操作身份判断",
+                            scope=[operation_key, *repository.incomplete_scope],
+                            sources=[*CONTRACT_SOURCES, *repository_sources],
+                        )
+                    ],
+                    diagnostics=[_issue_diagnostic(issue) for issue in repository.issues],
+                )
             return invalid_request_result(
                 request_kind,
                 operation_key,
@@ -255,6 +318,13 @@ def handle_request(request_kind: RequestKind, operation_key: str | None, raw_inp
             assert implementation is not None
             try:
                 execution = implementation.call(parsed.request, repository)
+            except OperationRequestError as error:
+                return invalid_request_result(
+                    "call",
+                    operation_key,
+                    error.problems,
+                    sources=list(error.sources),
+                )
             except Exception as error:  # noqa: BLE001 - service boundary converts implementation failures
                 execution = implementation_error_execution(bound_operation, error)
             return _execution_response("call", operation_key, declaration_source, execution)
@@ -270,6 +340,13 @@ def handle_request(request_kind: RequestKind, operation_key: str | None, raw_inp
                 available_scope = list(evaluated.available_scope)
                 unavailable_scope = list(evaluated.unavailable_scope)
                 availability_gaps = list(evaluated.gaps)
+            except OperationRequestError as error:
+                return invalid_request_result(
+                    "capabilities",
+                    operation_key,
+                    error.problems,
+                    sources=list(error.sources),
+                )
             except Exception as error:  # noqa: BLE001 - service boundary converts implementation failures
                 execution = implementation_error_execution(bound_operation, error)
                 return _execution_response("capabilities", operation_key, declaration_source, execution)
@@ -311,15 +388,40 @@ def handle_request(request_kind: RequestKind, operation_key: str | None, raw_inp
         for declaration in (bound_operation.declaration,)
     ]
     declaration_sources = [_declaration_source(declaration) for declaration in declarations]
+    repository_sources = _issue_sources(repository.issues)
 
     return common_response(
         request_kind="capabilities",
         operation_key=None,
-        outcome="ok",
-        summary=f"已完成当前规则源的公开操作发现；发现 {len(discovered_operations)} 项领域公开操作",
+        outcome="partial" if repository_incomplete else "ok",
+        summary=(
+            f"已完成部分当前规则源的公开操作发现；发现 {len(discovered_operations)} 项领域公开操作"
+            if repository_incomplete
+            else f"已完成当前规则源的公开操作发现；发现 {len(discovered_operations)} 项领域公开操作"
+        ),
         result={"mode": "discovery", "operations": discovered_operations},
         completed_scope=[declaration.operation_key for declaration in declarations],
-        sources=[*CONTRACT_SOURCES, *declaration_sources, RULE_SOURCE_QUALIFICATION_SOURCE],
-        gaps=qualification_gaps,
-        diagnostics=runtime_diagnostics,
+        not_completed_scope=list(repository.incomplete_scope),
+        sources=[
+            *CONTRACT_SOURCES,
+            *declaration_sources,
+            RULE_SOURCE_QUALIFICATION_SOURCE,
+            *repository_sources,
+        ],
+        gaps=(
+            qualification_gaps
+            + (
+                [
+                    gap(
+                        "规则源存在未完成候选范围；已发现操作不覆盖这些范围",
+                        scope=list(repository.incomplete_scope),
+                        sources=[*CONTRACT_SOURCES, *repository_sources],
+                    )
+                ]
+                if repository_incomplete
+                else []
+            )
+        ),
+        diagnostics=runtime_diagnostics
+        + ([_issue_diagnostic(issue) for issue in repository.issues] if repository_incomplete else []),
     )

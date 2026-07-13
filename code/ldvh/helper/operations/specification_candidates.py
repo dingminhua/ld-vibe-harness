@@ -166,6 +166,10 @@ def _issue_references(issue: Issue) -> list[JsonObject]:
     return [_location_reference(issue.location)]
 
 
+def _scope_for_all(repository: RepositoryInspection, eligible_keys: tuple[str, ...]) -> tuple[str, ...]:
+    return tuple(dict.fromkeys((*eligible_keys, *repository.incomplete_scope)))
+
+
 def _relevant_issue(issue: Issue, scopes: set[str], paths: set[str]) -> bool:
     return bool(set(issue.affected) & scopes) or issue.location.path in scopes or issue.location.path in paths
 
@@ -190,7 +194,7 @@ def read_specification_candidates(
             key=lambda item: (item.canonical_path, item.key),
         )
     )
-    requested_scope = responsibility_keys or eligible_keys
+    requested_scope = responsibility_keys or _scope_for_all(repository, eligible_keys)
     selection = responsibility_keys or eligible_keys
     completed: list[str] = []
     not_completed: list[str] = []
@@ -278,6 +282,7 @@ def read_specification_candidates(
 
     if not responsibility_keys:
         extra_incomplete = [scope for scope in repository.incomplete_scope if scope not in completed]
+        not_completed.extend(extra_incomplete)
         relevant_issues = [
             issue
             for issue in repository.issues

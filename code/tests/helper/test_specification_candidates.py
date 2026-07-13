@@ -154,7 +154,7 @@ def test_issue_affecting_one_key_does_not_discard_an_independent_completed_key(
     assert [diagnostic["summary"] for diagnostic in result.diagnostics] == [issue.summary]
 
 
-def test_empty_selection_exposes_failed_candidates_without_expanding_its_scope(
+def test_empty_selection_keeps_failed_candidates_in_not_completed_scope(
     current_specs_repository: Path,
 ) -> None:
     inspection = inspect_repository(current_specs_repository)
@@ -179,10 +179,10 @@ def test_empty_selection_exposes_failed_candidates_without_expanding_its_scope(
 
     result = read_specification_candidates(partial, responsibility_keys=(), disclosure="L0")
 
-    assert result.suggested_outcome == "ok"
-    assert broken_key not in result.requested_scope
-    assert result.requested_scope == result.completed_scope
-    assert result.not_completed_scope == ()
+    assert result.suggested_outcome == "partial"
+    assert broken_key in result.requested_scope
+    assert set(result.requested_scope) == {*result.completed_scope, broken_key}
+    assert result.not_completed_scope == (broken_key,)
     assert any(gap["scope"] == [broken_key] for gap in result.gaps)
     assert [diagnostic["summary"] for diagnostic in result.diagnostics] == [issue.summary]
 

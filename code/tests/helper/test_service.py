@@ -1,14 +1,17 @@
 from __future__ import annotations
 
+import json
+from dataclasses import replace
 from pathlib import Path
 
 from ldvh.diagnostics import Issue, SourceLocation
 from ldvh.helper.operation_runtime import AvailabilityEvaluation, OperationExecution, OperationImplementation
-from ldvh.helper.operation_sources import OperationSourceInspection
+from ldvh.helper.operation_sources import OperationSourceInspection, inspect_operation_sources
+from ldvh.helper.operations import IMPLEMENTATIONS
 from ldvh.helper.responses import gap, source_reference
 from ldvh.helper.rule_source import RuleSourceResult
 from ldvh.helper.service import handle_request
-from ldvh.specs.repository import RepositoryInspection
+from ldvh.specs.repository import RepositoryInspection, inspect_repository
 
 
 def _working_rule_source(tmp_path: Path) -> RuleSourceResult:
@@ -106,7 +109,13 @@ def test_repository_problem_is_not_rewritten_as_empty_discovery(monkeypatch, tmp
     assert result.response["outcome"] == "unavailable"
     assert result.response["result"] is None
     assert result.response["scope"]["not_completed"] == ["broken"]
-    assert result.response["diagnostics"][0]["details"]["issues"] == ["规则源检查失败"]
+    assert result.response["diagnostics"][0]["summary"] == "规则源检查失败"
+    assert result.response["diagnostics"][0]["details"] == {
+        "path": "specs/broken.md",
+        "line": None,
+        "affected": ["broken"],
+    }
+    assert result.response["diagnostics"][0]["source_refs"] == [{"kind": "working_tree", "locator": "specs/broken.md"}]
 
 
 def test_defined_implementation_is_discovered_and_preserves_partial_scope(monkeypatch, tmp_path: Path) -> None:
@@ -182,3 +191,49 @@ def test_implementation_exception_is_bounded_error(monkeypatch, tmp_path: Path) 
         "exception_type": "RuntimeError",
     }
     assert "private failure detail" not in str(result.response)
+
+
+def test_unrelated_candidate_problem_does_not_block_defined_operation(
+    monkeypatch,
+    current_specs_repository: Path,
+) -> None:
+    inspected = inspect_repository(current_specs_repository)
+    issue = Issue(
+        "Unrelated candidate failed",
+        SourceLocation("specs/99-Broken.md"),
+        affected=("broken",),
+    )
+    repository = replace(
+        inspected,
+        issues=(issue,),
+        incomplete_scope=("broken",),
+        implemented_checks_complete=False,
+    )
+    operations = inspect_operation_sources(repository)
+    monkeypatch.setattr(
+        "ldvh.helper.service.inspect_colocated_rule_source",
+        lambda _: RuleSourceResult(repository, operations, None),
+    )
+    monkeypatch.setattr("ldvh.helper.service.OPERATION_IMPLEMENTATIONS", dict(IMPLEMENTATIONS))
+
+    discovered = handle_request("capabilities", None, "")
+    called = handle_request(
+        "call",
+        "read-specification-candidates",
+        json.dumps({"arguments": {"responsibility_keys": ["ldvh-root"]}}),
+    )
+    unknown = handle_request("call", "possibly-hidden-operation", "")
+
+    assert discovered.response["outcome"] == "partial"
+    assert discovered.response["scope"]["completed"] == ["read-specification-candidates"]
+    assert discovered.response["scope"]["not_completed"] == ["broken"]
+    assert any(source["locator"] == "specs/99-Broken.md" for source in discovered.response["sources"])
+    assert discovered.response["diagnostics"][-1]["details"]["path"] == "specs/99-Broken.md"
+    assert discovered.response["diagnostics"][-1]["source_refs"] == [
+        {"kind": "working_tree", "locator": "specs/99-Broken.md"}
+    ]
+    assert called.response["outcome"] == "ok"
+    assert called.response["scope"]["completed"] == ["ldvh-root"]
+    assert unknown.response["outcome"] == "unavailable"
+    assert unknown.response["result"] is None
+    assert any(source["locator"] == "specs/99-Broken.md" for source in unknown.response["sources"])

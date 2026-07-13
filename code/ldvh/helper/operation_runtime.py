@@ -20,6 +20,20 @@ Availability = Literal[
 Outcome = Literal["ok", "no_change", "partial", "rejected", "unavailable", "invalid_request", "error"]
 
 
+class OperationRequestError(ValueError):
+    """A source-defined operation rejected its domain request without executing it."""
+
+    def __init__(
+        self,
+        problems: tuple[str, ...],
+        *,
+        sources: tuple[dict[str, Any], ...] = (),
+    ) -> None:
+        super().__init__("operation request does not satisfy its domain contract")
+        self.problems = problems
+        self.sources = sources
+
+
 @dataclass(frozen=True, slots=True)
 class AvailabilityEvaluation:
     availability: Availability
