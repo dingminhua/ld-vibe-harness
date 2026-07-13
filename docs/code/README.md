@@ -2,6 +2,40 @@
 
 > 当前规划入口：本文是当前唯一的 Code 实现规划及稳定入口。本文不是规则源，也不是完整的 V4 进展总览；当前状态与跨构成要素边界见 [`V4-当前进展.md`](../v4-architecture/V4-当前进展.md)。实现语义必须回到当前有效规范和授权附件。
 
+## 计划增量：规范内容读取公开操作
+
+| 项目 | 当前决定 |
+|---|---|
+| 实现起点 | Specs 固定提交 `98ffd188` |
+| 目标 | 实现 `read-specification-content`，从确认本操作公开身份的当前规则源中，按精确职责标识符与 H2/H3 路径读取 L3 或 L4 |
+| 不覆盖 | 任务相关性、规则适用判断、对象 worktree 中的另一套 Specs、Git 历史、分页、任意表格行和状态变更 |
+| 直接来源 | `specification-model-foundation` §§9.2–9.3、9.6–9.7，`helper-cli-service-contract` §§5–7，`helper-cli-request-response-fields`，`source-of-truth-traceability`，`code-engineering-practices` |
+
+当前 `service` 已把用于确认公开操作身份的当次 `RepositoryInspection` 传入领域实现。新操作只消费该对象，不再次检查仓库，不从 `cwd`、`work_object_locators`、管辖配置或 Git common-dir 寻找其它规则源。共同请求响应字段、`OperationImplementation` 和 `OperationExecution` 继续由现有模块唯一维护，本增量不扩大 04 共同契约。
+
+### 已固定的首版边界
+
+1. `arguments.selections` 与 `requested_disclosure` 按 01 闭集解析；精确选择失败是 `invalid_request`，不做标题、路径、大小写或自然语言回退。
+2. 仅当允许选择的载体集合与目标来源已形成时，才把未知 key 或标题判为输入无效。已解析但未通过适用已实现检查的载体按 Stop Conditions 保持未完成；仓库未完整且无法确定请求 key 是否被隐藏时，不冒充 `invalid_request`。实现不按诊断文本猜测失败类型。
+3. 根规范或普通规范的 L4 是当前文件全文；授权附件的 L4 是附件全文与当前唯一父规范全文。不沿 `basis`、`related_specs` 或关系图递归扩展。
+4. L3 仍先精确验证 H2/H3 路径。当前结构没有足以机械证明“必要定义完整”的通用判据，因此首版对全部合法 L3 选择保守展开到 L4，并逐项返回展开原因。未来只能在 Specs 成立可复核机械判据后缩小到真正 L3，不由 Code 从标题或正文猜测。
+5. 内容来自当次已安全读取的 `MarkdownDocument`；为保持完整文本与原有换行，主线先扩展该共享对象保留当次已解码的原文，领域模块不重读文件。
+6. 单项 `capabilities` 只表达当次可用性：至少一项可读为 `partially_available`，全部可读为 `available_for_request`，零项可读为 `unavailable_for_request`。`call` 仍按 01 的 `ok/partial/rejected/unavailable/invalid_request/error` 语义与零完成聚合顺序返回，不为 availability 扩大共同接口。
+
+### 模块责任与集成顺序
+
+| 模块 | 唯一维护责任 | 不承担 |
+|---|---|---|
+| `ldvh.specs.markdown` | 保留已安全读取的当次原文，继续提供围栏外 H2/H3 与 1-based 行号 | 不选择领域内容，不判断 L3 完整性 |
+| `ldvh.helper.operations.specification_content_request` | 封闭的领域输入类型与校验，形成精确选择对象 | 不读取仓库，不选择 outcome |
+| `ldvh.helper.operations.specification_content` | 仅消费已检查仓库与已校验选择，形成范围、全文、父规范、来源、披露、缺口和领域结果 | 不重读文件，不寻找其它规则源，不构造共同响应 |
+| `ldvh.helper.operations.specification_content_operation` | 把领域请求与读取结果映射为 availability 和 `OperationExecution` | 不复制领域选择或共同 Schema |
+| `ldvh.helper.operations.__init__` | 在来源已定义 key 与 Code 实现之间建立显式映射 | 不授予公开身份，不加入隐式白名单 |
+
+实施顺序为：先由主线同步当前 3 项公开操作的发现测试，并扩展 `MarkdownDocument` 的当次原文表示；然后实现请求解析、领域读取与操作 adapter；最后由主线注册实现、补充 service/CLI 组合测试、运行全量 Code tests 与 Ruff，并用真实 CLI 验证 L4 规范、L4 附件、L3 保守展开、无效选择和混合部分结果。未形成独立互斥文件、独立验收和独立提交前，不为表面并行创建 worktree。
+
+---
+
 ## 已完成增量：管辖范围解析公开操作
 
 | 项目 | 当前决定 |
