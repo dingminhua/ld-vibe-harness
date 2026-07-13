@@ -42,7 +42,7 @@ def _working_rule_source(tmp_path: Path) -> RuleSourceResult:
 
 
 def _implementation(*, raises: bool = False) -> OperationImplementation:
-    def call(_request, _repository) -> OperationExecution:
+    def call(_request, _repository, _context) -> OperationExecution:
         if raises:
             raise RuntimeError("private failure detail")
         return OperationExecution(
@@ -60,7 +60,7 @@ def _implementation(*, raises: bool = False) -> OperationImplementation:
         required_inputs=("arguments.source_key",),
         optional_inputs=("requested_disclosure",),
         evidence=(source_reference("implementation", "ldvh.test.fake"),),
-        check_availability=lambda _request, _repository: AvailabilityEvaluation(
+        check_availability=lambda _request, _repository, _context: AvailabilityEvaluation(
             "partially_available",
             available_scope=("one",),
             unavailable_scope=("two",),

@@ -8,6 +8,7 @@ from typing import assert_never
 from ldvh.helper.operation_runtime import (
     AvailabilityEvaluation,
     OperationExecution,
+    OperationExecutionContext,
     OperationImplementation,
     OperationRequestError,
 )
@@ -61,7 +62,9 @@ def _read(
 def _check_availability(
     request: CommonRequest,
     repository: RepositoryInspection,
+    context: OperationExecutionContext,
 ) -> AvailabilityEvaluation:
+    del context
     _, result = _read(request, repository)
     if result.suggested_outcome == "ok":
         availability = "available_for_request"
@@ -89,7 +92,12 @@ def _summary(result: SpecificationCandidateReadResult) -> str:
     assert_never(result.suggested_outcome)
 
 
-def _call(request: CommonRequest, repository: RepositoryInspection) -> OperationExecution:
+def _call(
+    request: CommonRequest,
+    repository: RepositoryInspection,
+    context: OperationExecutionContext,
+) -> OperationExecution:
+    del context
     _, result = _read(request, repository)
     working_tree_observation = {
         "kind": "working_tree",

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
+from pathlib import Path
 from types import MappingProxyType
 from typing import Any, Literal
 
@@ -35,6 +36,13 @@ class OperationRequestError(ValueError):
 
 
 @dataclass(frozen=True, slots=True)
+class OperationExecutionContext:
+    """Process observations captured once at the Helper service boundary."""
+
+    cwd: Path
+
+
+@dataclass(frozen=True, slots=True)
 class AvailabilityEvaluation:
     availability: Availability
     available_scope: tuple[object, ...] = ()
@@ -59,8 +67,8 @@ class OperationExecution:
     follow_up: dict[str, Any] | None = None
 
 
-AvailabilityHandler = Callable[[CommonRequest, RepositoryInspection], AvailabilityEvaluation]
-CallHandler = Callable[[CommonRequest, RepositoryInspection], OperationExecution]
+AvailabilityHandler = Callable[[CommonRequest, RepositoryInspection, OperationExecutionContext], AvailabilityEvaluation]
+CallHandler = Callable[[CommonRequest, RepositoryInspection, OperationExecutionContext], OperationExecution]
 
 
 @dataclass(frozen=True, slots=True)

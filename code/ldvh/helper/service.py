@@ -10,6 +10,7 @@ import ldvh
 from ldvh.diagnostics import Issue
 from ldvh.helper.operation_runtime import (
     OperationExecution,
+    OperationExecutionContext,
     OperationImplementation,
     OperationRequestError,
     bind_operation_implementations,
@@ -219,6 +220,7 @@ def _execution_response(
 
 
 def handle_request(request_kind: RequestKind, operation_key: str | None, raw_input: str) -> ServiceResult:
+    execution_context = OperationExecutionContext(cwd=Path.cwd())
     general_discovery = request_kind == "capabilities" and operation_key is None
     parsed = parse_common_request(raw_input, general_discovery=general_discovery)
     if parsed.request is None:
@@ -317,7 +319,7 @@ def handle_request(request_kind: RequestKind, operation_key: str | None, raw_inp
         if request_kind == "call":
             assert implementation is not None
             try:
-                execution = implementation.call(parsed.request, repository)
+                execution = implementation.call(parsed.request, repository, execution_context)
             except OperationRequestError as error:
                 return invalid_request_result(
                     "call",
@@ -335,7 +337,7 @@ def handle_request(request_kind: RequestKind, operation_key: str | None, raw_inp
         availability_gaps: list[dict[str, Any]] = []
         if implementation is not None:
             try:
-                evaluated = implementation.check_availability(parsed.request, repository)
+                evaluated = implementation.check_availability(parsed.request, repository, execution_context)
                 availability = evaluated.availability
                 available_scope = list(evaluated.available_scope)
                 unavailable_scope = list(evaluated.unavailable_scope)

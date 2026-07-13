@@ -8,6 +8,7 @@ from ldvh.diagnostics import SourceLocation
 from ldvh.helper.operation_runtime import (
     AvailabilityEvaluation,
     OperationExecution,
+    OperationExecutionContext,
     OperationImplementation,
     bind_operation_implementations,
     implementation_contract_diagnostics,
@@ -39,8 +40,8 @@ def _implementation() -> OperationImplementation:
         required_inputs=("arguments.source_key",),
         optional_inputs=("requested_disclosure",),
         evidence=(source_reference("implementation", "ldvh.test.fake"),),
-        check_availability=lambda _request, _repository: AvailabilityEvaluation("available_for_request"),
-        call=lambda _request, _repository: OperationExecution("ok", "fake completed"),
+        check_availability=lambda _request, _repository, _context: AvailabilityEvaluation("available_for_request"),
+        call=lambda _request, _repository, _context: OperationExecution("ok", "fake completed"),
     )
 
 
@@ -83,28 +84,33 @@ def test_implementation_rejects_invalid_input_metadata(
             required_inputs=required,
             optional_inputs=optional,
             evidence=(source_reference("implementation", "ldvh.test.fake"),),
-            check_availability=lambda _request, _repository: AvailabilityEvaluation("available_for_request"),
-            call=lambda _request, _repository: OperationExecution("ok", "fake completed"),
+            check_availability=lambda _request, _repository, _context: AvailabilityEvaluation("available_for_request"),
+            call=lambda _request, _repository, _context: OperationExecution("ok", "fake completed"),
         )
 
 
 def test_fake_handlers_receive_validated_request_and_repository(tmp_path: Path) -> None:
-    observed: list[tuple[CommonRequest, RepositoryInspection]] = []
+    observed: list[tuple[CommonRequest, RepositoryInspection, OperationExecutionContext]] = []
 
-    def call(request: CommonRequest, repository: RepositoryInspection) -> OperationExecution:
-        observed.append((request, repository))
+    def call(
+        request: CommonRequest,
+        repository: RepositoryInspection,
+        context: OperationExecutionContext,
+    ) -> OperationExecution:
+        observed.append((request, repository, context))
         return OperationExecution("ok", "fake completed")
 
     implementation = OperationImplementation(
         required_inputs=(),
         optional_inputs=(),
         evidence=(source_reference("implementation", "ldvh.test.fake"),),
-        check_availability=lambda _request, _repository: AvailabilityEvaluation("available_for_request"),
+        check_availability=lambda _request, _repository, _context: AvailabilityEvaluation("available_for_request"),
         call=call,
     )
     repository = RepositoryInspection(tmp_path, (), (), (), (), (), (), (), (), True)
     request = CommonRequest(None, (), {}, None, {}, ())
 
-    implementation.call(request, repository)
+    context = OperationExecutionContext(cwd=tmp_path)
+    implementation.call(request, repository, context)
 
-    assert observed == [(request, repository)]
+    assert observed == [(request, repository, context)]
