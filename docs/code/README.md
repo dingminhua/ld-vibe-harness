@@ -2,7 +2,7 @@
 
 > 当前规划入口：本文是当前唯一的 Code 实现规划及稳定入口。本文不是规则源，也不是完整的 V4 进展总览；当前状态与跨构成要素边界见 [`V4-当前进展.md`](../v4-architecture/V4-当前进展.md)。实现语义必须回到当前有效规范和授权附件。
 
-## 当前增量：管辖范围解析公开操作
+## 已完成增量：管辖范围解析公开操作
 
 | 项目 | 当前决定 |
 |---|---|
@@ -63,6 +63,16 @@ service -> operation_runtime
 | 新操作声明被旧测试或 Code 白名单阻断 | 操作发现测试同时验证“来源已定义、实现未接入”和集成后的来源绑定实现 |
 
 完成条件：配置、Git、模型、resolver、领域请求和 Helper handler 的局部与契约 tests 通过；main/linked worktree、外部配置发现、上层 `cwd`、独立 clone、submodule、配置无效和技术失败均有范围匹配证据；真实 `ldvh capabilities/call` 只从当前来源发现并调用实现；完整 pytest、Ruff、格式、diff-check 和独立复核通过。未实现的对象专属规则/事实读取、环境接入和跨平台真实环境继续明确标记未验证。
+
+### 当前 Working Tree 实现结果
+
+本增量已完成配置发现与校验、Git worktree 身份观察、领域结果模型、逐对象解析、请求解析和 Helper 公开操作接入。实现以登记路径确认项目身份，以实际目标 `git_worktree_root` 保持内容操作边界，并通过实时派生的 `git_common_dir` 将同一 Git 仓库的 main/linked worktree 解析为同一管辖项目；分支、HEAD、remote 和目录名均不作为项目身份。
+
+领域未知与技术未完成已经分开：配置 `missing/invalid/conflict` 只为观察已完成的对象形成 `scope_unknown`，Git 依赖、权限、I/O、进程或超时失败进入 `not_completed`，不会被包装成确定性非管辖结论。Git 子进程设有 10 秒超时，内部诊断不直接泄漏到公开结果。
+
+当次验证结果为 279 项 Code tests 全部通过，Ruff、格式和 diff-check 通过，独立复核没有 Blocker 或 Major。真实 CLI 已验证当前 V4 worktree、位于工作区外的 linked worktree，以及从上层目录无 locator 调用三类场景：前两者均通过外部管辖配置解析为同一 `ldvh` 项目并保留各自实际 worktree 根；第三类只判断实际 `cwd`，不会猜测其下的 V4 项目。
+
+本增量没有实现对象专属 Specs/事实读取、规则适用判断、配置写入、worktree 生命周期管理或环境接入；这些范围仍不得声明为可用或已完成。
 
 ---
 
