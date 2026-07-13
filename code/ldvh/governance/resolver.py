@@ -160,7 +160,7 @@ def resolve_governance_scope(
             observation_sources,
         )
 
-    config_sources = _configuration_sources(configuration, observed_at)
+    config_sources = _configuration_sources(configuration, observed_at, fallback=base)
     all_sources = _deduplicate_sources((*observation_sources, *config_sources))
     locator_failures = tuple((item, observation.failure) for item, observation in observations if observation.failure)
 
@@ -192,11 +192,14 @@ def resolve_governance_scope(
     assert configuration.configuration is not None
     validated_projects: list[_ValidatedProject] = []
     project_failures: list[tuple[ScopeDescriptor, TechnicalFailure]] = []
+    project_sources: list[SourceReference] = []
     validation_diagnostics: list[ResolutionDiagnostic] = []
     structurally_invalid = False
     synthetic_scope = requested or ()
     for registration in configuration.configuration.projects:
         resolved = resolve_git_identity(str(registration.path), base=configuration.configuration.workspace_root)
+        registration_sources = _registered_project_sources(registration, resolved, observed_at)
+        project_sources.extend(registration_sources)
         if resolved.status == "technical_failure":
             assert resolved.failure is not None
             # Project validation affects every requested object because common-
@@ -216,12 +219,13 @@ def resolve_governance_scope(
                     stage="configuration_validation",
                     summary=f"Registered project {registration.project_id!r} is not an actual Git worktree root",
                     scope=requested,
-                    source_refs=config_sources,
+                    source_refs=_deduplicate_sources((*config_sources, *registration_sources)),
                 )
             )
             continue
         validated_projects.append(_ValidatedProject(registration, resolved.identity))
 
+    all_sources = _deduplicate_sources((*all_sources, *project_sources))
     if project_failures:
         return _technical_run_for_failures(
             requested,
@@ -270,7 +274,7 @@ def resolve_governance_scope(
             assert observation.failure is not None
             failures.append((item, observation.failure))
             continue
-        resolution = _resolve_object(item, observation, tuple(validated_projects), config_sources, observed_at)
+        resolution = _resolve_object(item, observation, tuple(validated_projects), all_sources, observed_at)
         resolutions.append(resolution)
         if resolution.status is ObjectStatus.UNKNOWN:
             gaps.append(
@@ -638,7 +642,40 @@ def _observation_sources(
     return (_freeze_source(path_source), _freeze_source(git_source))
 
 
-def _configuration_sources(result: ConfigurationReadResult, observed_at: str) -> tuple[SourceReference, ...]:
+def _registered_project_sources(
+    registration: GovernedProjectRegistration,
+    resolved: GitIdentityResolution,
+    observed_at: str,
+) -> tuple[SourceReference, ...]:
+    details: dict[str, Any] = {
+        "project_id": registration.project_id,
+        "status": resolved.status,
+    }
+    if resolved.identity is not None:
+        details.update(
+            {
+                "git_worktree_root": str(resolved.identity.worktree_root),
+                "git_common_dir": str(resolved.identity.common_dir),
+            }
+        )
+    return (
+        _freeze_source(
+            {
+                "kind": "registered_project_git_identity",
+                "locator": str(registration.path),
+                "observed_at": observed_at,
+                "details": details,
+            }
+        ),
+    )
+
+
+def _configuration_sources(
+    result: ConfigurationReadResult,
+    observed_at: str,
+    *,
+    fallback: Path,
+) -> tuple[SourceReference, ...]:
     sources: list[SourceReference] = []
     for discovered in result.discovered:
         sources.append(
@@ -656,7 +693,7 @@ def _configuration_sources(result: ConfigurationReadResult, observed_at: str) ->
             )
         )
     if not sources:
-        locator = result.workspace_root or (result.search_bases[0].start if result.search_bases else Path.cwd())
+        locator = result.workspace_root or (result.search_bases[0].start if result.search_bases else fallback)
         sources.append(
             _freeze_source(
                 {

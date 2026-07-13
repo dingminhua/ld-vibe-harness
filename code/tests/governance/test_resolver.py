@@ -120,6 +120,11 @@ def test_external_linked_worktree_uses_common_dir_and_skips_main_repo_local_conf
     config_sources = [source for source in run.sources if source["kind"] == "governed_projects_configuration"]
     assert len(config_sources) == 1
     assert {basis["kind"] for basis in config_sources[0]["details"]["discovery_bases"]} == {"git.common_dir_parent"}
+    registered_sources = [source for source in run.sources if source["kind"] == "registered_project_git_identity"]
+    assert len(registered_sources) == 1
+    assert registered_sources[0]["locator"] == str(main.resolve())
+    assert registered_sources[0]["details"]["git_common_dir"] == item.git_common_dir
+    assert any(source["kind"] == "registered_project_git_identity" for source in item.identity_evidence)
 
 
 def test_main_and_linked_inputs_are_preserved_and_aggregate_to_one_project(tmp_path: Path) -> None:
