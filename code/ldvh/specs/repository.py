@@ -10,6 +10,7 @@ from ruamel.yaml import YAML
 
 from ldvh.diagnostics import Issue, SourceLocation
 from ldvh.specs.discovery import Candidate, DiscoveryResult, discover_candidates
+from ldvh.specs.field_registry import REGISTRY_KEY, inspect_field_registry
 from ldvh.specs.graph import BasisReachabilityOverlap, GraphResult, validate_graph
 from ldvh.specs.identity import FormalDocument, parse_identity
 from ldvh.specs.markdown import MarkdownResult, parse_markdown
@@ -22,6 +23,8 @@ UNCHECKED_CONDITIONS = (
     "supersedes 正文是否完整说明旧职责中仍适用内容的保留、转移或退出",
     "Index 中准备提交的完整内容及提交后 HEAD 历史锚点",
     "跨 Git 历史的 retired 职责是否曾被重新启用或职责标识符是否被改派",
+    "跨 Git 历史的 retired 字段登记是否被删除，或 field_key 与字段位置是否被改派",
+    "跨 Git 历史的 fact_type_key 是否被删除、重新启用或改派给其它事实类型语义",
 )
 
 _FOUNDATION_KEY = "specification-model-foundation"
@@ -301,7 +304,25 @@ def inspect_repository(repository_root: Path) -> RepositoryInspection:
 
     parsed_documents = tuple(sorted(documents, key=lambda document: document.canonical_path))
 
-    graph: GraphResult = validate_graph(parsed_documents)
+    initial_graph: GraphResult = validate_graph(parsed_documents)
+    field_registry = None
+    if any(document.key == REGISTRY_KEY for document in initial_graph.active_documents_passing_implemented_checks):
+        field_registry = inspect_field_registry(initial_graph.active_documents_passing_implemented_checks)
+
+    if field_registry is not None and field_registry.issues:
+        central_failure = any(REGISTRY_KEY in issue.affected for issue in field_registry.issues)
+        invalid_source_keys = {
+            affected
+            for issue in field_registry.issues
+            for affected in issue.affected
+            if affected != REGISTRY_KEY and any(document.key == affected for document in parsed_documents)
+        }
+        excluded_keys = invalid_source_keys | ({REGISTRY_KEY} if central_failure else set())
+        graph = validate_graph(tuple(document for document in parsed_documents if document.key not in excluded_keys))
+        issues.extend(field_registry.issues)
+        incomplete.update(excluded_keys)
+    else:
+        graph = initial_graph
     issues.extend(graph.issues)
     incomplete.update(graph.incomplete_keys)
     projections = project_l0_l2(graph)

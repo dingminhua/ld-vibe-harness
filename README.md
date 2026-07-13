@@ -22,4 +22,4 @@
 
 ## 使用状态
 
-当前 00–08 及三份授权附件已经激活；这只表示相应规则完成审核。V4 Code 已建立规范模型确定性基础、Helper CLI 基础契约，以及 `read-specification-candidates`、`read-specification-content` 和 `resolve-governance-scope` 三项公开操作；Web 已建立首批自有 API 特征测试和浏览器表现基线。自然语言规则的语义和适用性由 AI 依据当前来源判断；Code 不得解释规则，只执行来源已定义的结构化契约。当前仍没有具体事实类型、事实消费与回写、行动模板执行、环境接入或 V4 Web 适配完成声明；完整路线、当前并行边界和验证证据见 [工作推进总纲](docs/v4-architecture/V4-工作推进总纲.md)。
+当前 00–08、Spark、WorkCase、ADR、Pitfall、Study 唯一定义来源及四份授权附件声明为 `active`，并通过当前已实现的机械结构检查；这不替代 01 对其它变更要求的语义审核和独立复核。05 及其字段登记附件已经建立统一字段与结构登记、唯一字段定义、类型使用绑定和单一提升来源边界；Spark、WorkCase、ADR、Pitfall 与 Study 已按严格串行顺序完成类型定义、机械验证、两路独立复核及五类型全局归并，阶段 4 已关闭。下一步只进入阶段 5 的事实读取与受控回写规划，尚未授权实现。V4 Code 已建立规范模型确定性基础、Helper CLI 基础契约，以及 `read-specification-candidates`、`read-specification-content` 和 `resolve-governance-scope` 三项公开操作；Web 已建立首批自有 API 特征测试和浏览器表现基线。自然语言规则的语义和适用性由 AI 依据当前来源判断；Code 不得解释规则，只执行来源已定义的结构化契约。当前仍没有事实对象消费与回写、行动模板执行、环境接入或 V4 Web 适配完成声明；完整路线、当前边界和验证证据见 [工作推进总纲](docs/v4-architecture/V4-工作推进总纲.md)。

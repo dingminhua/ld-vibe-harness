@@ -9,21 +9,29 @@ from ldvh.diagnostics import Issue, SourceLocation
 from ldvh.helper.operation_sources import inspect_operation_sources
 from ldvh.specs import repository as repository_module
 from ldvh.specs.discovery import DiscoveryResult
+from ldvh.specs.field_registry import inspect_field_registry
 from ldvh.specs.repository import UNCHECKED_CONDITIONS, inspect_repository
 
 
 def test_current_v4_sources_form_the_expected_real_combination(current_specs_repository: Path) -> None:
     inspection = inspect_repository(current_specs_repository)
     operations = inspect_operation_sources(inspection)
+    fields = inspect_field_registry(inspection.active_documents_passing_implemented_checks)
 
     assert inspection.issues == ()
     assert inspection.implemented_checks_complete is True
     checked_documents = inspection.active_documents_passing_implemented_checks
-    assert len(checked_documents) == 12
-    assert sum(document.kind != "attachment" for document in checked_documents) == 9
-    assert sum(document.kind == "attachment" for document in checked_documents) == 3
-    assert len(inspection.projections) == 36
+    assert len(checked_documents) == 18
+    assert sum(document.kind != "attachment" for document in checked_documents) == 14
+    assert sum(document.kind == "attachment" for document in checked_documents) == 4
+    assert len(inspection.projections) == 54
     assert {projection.layer for projection in inspection.projections} == {"L0", "L1", "L2"}
+    field_registry = inspection.document_passing_implemented_checks_by_key("fact-object-field-registry")
+    assert field_registry is not None
+    assert field_registry.canonical_path == "specs/attachments/05.Att.01-事实对象统一字段登记.md"
+    fact_model = inspection.document_passing_implemented_checks_by_key("fact-model-foundation")
+    assert fact_model is not None
+    assert "fact-object-field-registry" in fact_model.authorized_attachments
     assert inspection.unchecked_conditions == UNCHECKED_CONDITIONS
     assert [declaration.operation_key for declaration in operations.candidate_declarations] == [
         "read-specification-candidates",
@@ -40,6 +48,9 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
     }
     assert operations.issues == ()
     assert operations.incomplete_sources == ()
+    assert fields.complete is True
+    assert len(fields.structures) == 5
+    assert len(fields.registrations) == 46
 
 
 def test_invalid_working_tree_source_is_not_replaced_with_committed_content(
@@ -56,8 +67,8 @@ def test_invalid_working_tree_source_is_not_replaced_with_committed_content(
     assert any("YAML title 与 H1" in issue.summary for issue in inspection.issues)
     assert inspection.implemented_checks_complete is False
     assert inspection.document_passing_implemented_checks_by_key("web-presentation-interaction") is None
-    assert len(inspection.active_documents_passing_implemented_checks) == 10
-    assert len(inspection.projections) == 30
+    assert len(inspection.active_documents_passing_implemented_checks) == 16
+    assert len(inspection.projections) == 48
 
 
 def test_invalid_foundation_stops_dependent_current_projection(current_specs_repository: Path) -> None:
