@@ -235,10 +235,9 @@ def test_unrelated_candidate_problem_does_not_block_defined_operation(
         for item in discovered.response["result"]["operations"]
         if item["operation_key"] == "resolve-governance-scope"
     )
-    assert governance["implementation"] == {"present": False, "evidence": []}
+    assert governance["implementation"]["present"] is True
     assert governance["required_inputs"] == []
-    assert governance["optional_inputs"] == []
-    assert any("领域输入清单尚未由 Code 机械确认" in item["summary"] for item in governance["gaps"])
+    assert governance["optional_inputs"] == ["work_object_locators", "arguments.workspace_root"]
     assert any(source["locator"] == "specs/99-Broken.md" for source in discovered.response["sources"])
     assert discovered.response["diagnostics"][-1]["details"]["path"] == "specs/99-Broken.md"
     assert discovered.response["diagnostics"][-1]["source_refs"] == [

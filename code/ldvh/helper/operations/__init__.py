@@ -5,6 +5,12 @@ from __future__ import annotations
 from types import MappingProxyType
 
 from ldvh.helper.operation_runtime import OperationImplementation
+from ldvh.helper.operations.governance_scope_operation import (
+    GOVERNANCE_SCOPE_IMPLEMENTATION,
+)
+from ldvh.helper.operations.governance_scope_operation import (
+    OPERATION_KEY as GOVERNANCE_SCOPE_OPERATION_KEY,
+)
 from ldvh.helper.operations.specification_candidate_operation import (
     OPERATION_KEY as SPECIFICATION_CANDIDATE_OPERATION_KEY,
 )
@@ -14,6 +20,7 @@ from ldvh.helper.operations.specification_candidate_operation import (
 
 IMPLEMENTATIONS = MappingProxyType[str, OperationImplementation](
     {
+        GOVERNANCE_SCOPE_OPERATION_KEY: GOVERNANCE_SCOPE_IMPLEMENTATION,
         SPECIFICATION_CANDIDATE_OPERATION_KEY: SPECIFICATION_CANDIDATE_IMPLEMENTATION,
     }
 )
