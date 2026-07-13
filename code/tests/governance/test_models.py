@@ -133,6 +133,17 @@ def test_non_valid_configuration_only_supports_unknown_domain_results() -> None:
         )
 
 
+def test_result_rejects_relative_paths() -> None:
+    with pytest.raises(ValueError, match="workspace_root"):
+        GovernanceScopeResult(
+            workspace_root="relative",
+            config_path=None,
+            config_status=ConfigStatus.MISSING,
+            object_resolutions=(resolution(0, ObjectStatus.UNKNOWN),),
+            source_refs=SOURCE,
+        )
+
+
 def test_object_status_invariants_prevent_internally_conflicting_results() -> None:
     with pytest.raises(ValueError, match="unknown resolution requires unknown_reason"):
         ObjectResolution(

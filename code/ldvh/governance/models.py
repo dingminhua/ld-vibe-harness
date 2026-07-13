@@ -9,6 +9,7 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from enum import StrEnum
+from pathlib import Path
 from types import MappingProxyType
 from typing import Any
 
@@ -71,7 +72,7 @@ def _references_json(values: Sequence[JsonObject]) -> list[dict[str, Any]]:
 
 
 def _require_absolute_or_none(value: str | None, field_name: str) -> None:
-    if value is not None and not value.startswith("/"):
+    if value is not None and not Path(value).is_absolute():
         raise ValueError(f"{field_name} must be an absolute path or None")
 
 
