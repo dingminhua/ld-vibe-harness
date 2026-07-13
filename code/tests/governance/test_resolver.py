@@ -339,6 +339,79 @@ def test_explicit_root_allows_partial_completion_for_one_git_dependency_failure(
     assert "raw secret detail" not in repr(run.gaps)
 
 
+@pytest.mark.parametrize(
+    ("configuration_case", "expected_status"),
+    [("missing", ConfigStatus.MISSING), ("invalid_project", ConfigStatus.INVALID)],
+)
+def test_non_valid_configuration_does_not_hide_a_locator_technical_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    configuration_case: str,
+    expected_status: ConfigStatus,
+) -> None:
+    workspace = tmp_path / "workspace"
+    repository = _repository(workspace / "repository")
+    if configuration_case == "invalid_project":
+        nested = repository / "nested"
+        nested.mkdir()
+        _configuration(workspace, [("repository", nested)])
+    original = resolver_module.resolve_git_identity
+
+    def selective_failure(locator: str, *, base: str | Path) -> GitIdentityResolution:
+        if locator != "broken":
+            return original(locator, base=base)
+        absolute = (Path(base) / locator).absolute()
+        return GitIdentityResolution(
+            status="technical_failure",
+            path=PathObservation(locator, str(base), absolute, None, None, False, False),
+            failure=TechnicalFailure("git_dependency", "Git executable is unavailable", "raw secret detail"),
+        )
+
+    monkeypatch.setattr(resolver_module, "resolve_git_identity", selective_failure)
+    run = resolve_governance_scope(
+        _scope(str(repository / "tracked.txt"), "broken"),
+        base=workspace,
+        explicit_workspace_root=workspace,
+    )
+
+    assert run.result is not None
+    assert run.result.config_status is expected_status
+    assert [item.locator_index for item in run.result.object_resolutions] == [0]
+    assert run.result.object_resolutions[0].status is ObjectStatus.UNKNOWN
+    assert run.completed_scope == (run.requested_scope[0],)
+    assert run.not_completed_scope == (run.requested_scope[1],)
+    assert run.technical_non_completions[0].outcome is TechnicalOutcome.UNAVAILABLE
+    assert "raw secret detail" not in repr(run.diagnostics)
+
+
+def test_missing_configuration_with_only_a_technical_failure_has_no_domain_result(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+
+    def fail(locator: str, *, base: str | Path) -> GitIdentityResolution:
+        absolute = (Path(base) / locator).absolute()
+        return GitIdentityResolution(
+            status="technical_failure",
+            path=PathObservation(locator, str(base), absolute, None, None, False, False),
+            failure=TechnicalFailure("git_dependency", "Git executable is unavailable", "raw secret detail"),
+        )
+
+    monkeypatch.setattr(resolver_module, "resolve_git_identity", fail)
+    run = resolve_governance_scope(
+        _scope("broken"),
+        base=workspace,
+        explicit_workspace_root=workspace,
+    )
+
+    assert run.result is None
+    assert run.completed_scope == ()
+    assert run.not_completed_scope == run.requested_scope
+    assert run.technical_non_completions[0].outcome is TechnicalOutcome.UNAVAILABLE
+
+
 def test_configuration_read_failure_has_no_domain_result(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

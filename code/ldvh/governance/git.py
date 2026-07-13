@@ -11,6 +11,7 @@ from typing import Literal
 GitResolutionStatus = Literal["git_worktree", "not_git_worktree", "technical_failure"]
 
 _GIT_IDENTITY_ENVIRONMENT = ("GIT_DIR", "GIT_WORK_TREE", "GIT_COMMON_DIR")
+_GIT_PROBE_TIMEOUT_SECONDS = 10
 
 
 @dataclass(frozen=True, slots=True)
@@ -203,11 +204,18 @@ def _run_git(probe: Path, arguments: tuple[str, ...], environment: dict[str, str
             capture_output=True,
             text=True,
             env=environment,
+            timeout=_GIT_PROBE_TIMEOUT_SECONDS,
         )
     except FileNotFoundError as error:
         return TechnicalFailure("git_dependency", "Git executable is unavailable", str(error))
     except OSError as error:
         return TechnicalFailure("git_process", "Git process could not be started", str(error))
+    except subprocess.TimeoutExpired:
+        return TechnicalFailure(
+            "git_process",
+            "Git identity probe timed out",
+            f"Git probe exceeded {_GIT_PROBE_TIMEOUT_SECONDS} seconds",
+        )
     if completed.returncode != 0:
         details = (
             completed.stderr.strip() or completed.stdout.strip() or f"Git exited with status {completed.returncode}"

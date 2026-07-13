@@ -219,3 +219,21 @@ def test_unrecognized_git_failure_is_not_reported_as_non_worktree(
     assert result.status == "technical_failure"
     assert result.failure is not None
     assert result.failure.stage == "git_process"
+
+
+def test_git_probe_timeout_is_a_bounded_technical_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def timeout(*args: object, **kwargs: object) -> None:
+        assert kwargs["timeout"] == 10
+        raise subprocess.TimeoutExpired(cmd="git", timeout=10)
+
+    monkeypatch.setattr(subprocess, "run", timeout)
+
+    result = resolve_git_identity(".", base=tmp_path)
+
+    assert result.status == "technical_failure"
+    assert result.failure is not None
+    assert result.failure.stage == "git_process"
+    assert result.failure.summary == "Git identity probe timed out"

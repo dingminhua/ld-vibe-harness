@@ -9,7 +9,7 @@ response and selecting its outer outcome.
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from enum import StrEnum
 from pathlib import Path
@@ -247,22 +247,21 @@ def resolve_governance_scope(
         )
 
     if structurally_invalid:
-        invalid_result = _unknown_result(
+        invalid_configuration = replace(
+            configuration,
+            status=ConfigurationStatus.INVALID,
+            configuration=None,
+            diagnostics=(),
+        )
+        invalid_run = _non_valid_configuration_run(
             requested,
             observations,
-            configuration,
-            ConfigStatus.INVALID,
-            "The governed-projects configuration failed project identity validation",
+            invalid_configuration,
             all_sources,
         )
-        return GovernanceResolutionRun(
-            result=invalid_result,
-            requested_scope=requested,
-            completed_scope=requested,
-            technical_non_completions=(),
-            sources=all_sources,
-            gaps=(ResolutionGap("The governed-projects configuration is invalid", requested, config_sources),),
-            diagnostics=tuple(validation_diagnostics),
+        return replace(
+            invalid_run,
+            diagnostics=(*invalid_run.diagnostics, *validation_diagnostics),
         )
 
     resolutions: list[ObjectResolution] = []
@@ -483,16 +482,35 @@ def _non_valid_configuration_run(
         ConfigStatus.CONFLICT: "Multiple governed-projects configurations were discovered",
         ConfigStatus.VALID: "",
     }[status]
-    result = _unknown_result(requested, observations, configuration, status, reason, sources)
-    diagnostics = tuple(_configuration_diagnostic(item, requested, sources) for item in configuration.diagnostics)
+    completed_observations = tuple(
+        (item, observation) for item, observation in observations if observation.status != "technical_failure"
+    )
+    completed = tuple(item for item, _ in completed_observations)
+    failures = tuple(
+        (item, observation.failure)
+        for item, observation in observations
+        if observation.status == "technical_failure" and observation.failure is not None
+    )
+    result = (
+        _unknown_result(completed, completed_observations, configuration, status, reason, sources)
+        if completed
+        else None
+    )
+    technical = _technical_non_completions(failures)
+    gaps = ([ResolutionGap(reason, completed, sources)] if completed else []) + [
+        ResolutionGap(item.summary, item.scope, sources) for item in technical
+    ]
+    diagnostics = [_configuration_diagnostic(item, completed, sources) for item in configuration.diagnostics] + [
+        ResolutionDiagnostic(item.stage, item.summary, item.scope) for item in technical
+    ]
     return GovernanceResolutionRun(
         result=result,
         requested_scope=requested,
-        completed_scope=requested,
-        technical_non_completions=(),
+        completed_scope=completed,
+        technical_non_completions=technical,
         sources=sources,
-        gaps=(ResolutionGap(reason, requested, sources),),
-        diagnostics=diagnostics,
+        gaps=tuple(gaps),
+        diagnostics=tuple(diagnostics),
     )
 
 

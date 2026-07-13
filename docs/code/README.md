@@ -28,14 +28,16 @@
 允许依赖方向为：
 
 ```text
-governance.configuration ─┐
-governance.git ───────────┼─> governance.resolver -> governance.models
-                          │
-helper governance request ┴─> helper governance operation -> operation_runtime
+governance.models <──────── governance.configuration
+        ^
+        └────────────────── governance.resolver <── governance.git
+
+helper governance request -> helper governance operation -> governance.resolver
+helper governance operation -> operation_runtime
 service -> operation_runtime
 ```
 
-配置、Git 和 models 互不反向依赖；resolver 是唯一组合位置。共同请求和响应仍分别由 `ldvh.helper.requests` 与 `ldvh.helper.responses` 维护。附件中的字段语义不在 dataclass、tests 或 handler 中复制成第二来源；内部类型只承接当前契约。
+`models` 是领域状态与结果结构的唯一 Code 表示；配置模块只复用其中的 `ConfigStatus`，Git 模块保持独立，resolver 是唯一组合位置。共同请求和响应仍分别由 `ldvh.helper.requests` 与 `ldvh.helper.responses` 维护。附件中的字段语义不在 tests 或 handler 中复制成第二来源；内部类型只承接当前契约。
 
 ### 冻结接口与错误边界
 
