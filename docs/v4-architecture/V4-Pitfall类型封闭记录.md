@@ -6,7 +6,7 @@
 
 Pitfall 的对象语义、粒度、准入、Schema、状态、来源、证据、替代关系、变更、验证、Human Gate 与 Stop Conditions 已完成定义、机械检查和两路独立复核。复核发现的重复字段准入 P2 已修正，两路终审均确认没有剩余 P1/P2；Pitfall Gate 关闭，可以按严格串行顺序开始 Study。
 
-本结论只证明类型来源与当前机械范围成立。V3 两个 Pitfall 实例只证明核心信息需求存在，不证明其内容、外部协议、字段或状态仍然当前；任何 Pitfall 对象迁移、事实读取或写入、Helper、行动模板、Web 或环境接入能力也尚未因此实现。
+本结论只证明类型来源与当前机械范围成立。commit `3d028ec2` 历史快照包含两个 V3 Pitfall 实例；两者都表达 symptoms、trigger conditions、root cause、resolution、verification、avoidance 和 applicability，只能证明这些核心信息需求存在，不能证明 tags、archived、旧引用数组、内容、外部协议、字段或状态仍然当前；任何 Pitfall 对象迁移、事实读取或写入、Helper、行动模板、Web 或环境接入能力也尚未因此实现。
 
 ## 2. 主要收敛
 

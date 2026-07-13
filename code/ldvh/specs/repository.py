@@ -9,8 +9,8 @@ from pathlib import Path
 from ruamel.yaml import YAML
 
 from ldvh.diagnostics import Issue, SourceLocation
-from ldvh.specs.discovery import Candidate, DiscoveryResult, discover_candidates
-from ldvh.specs.field_registry import REGISTRY_KEY, inspect_field_registry
+from ldvh.specs.discovery import Candidate, DiscoveryResult, discover_candidates, validate_non_ignored_git_path
+from ldvh.specs.field_registry import ADMISSION_AUDIT_PATH, REGISTRY_KEY, inspect_field_registry
 from ldvh.specs.graph import BasisReachabilityOverlap, GraphResult, validate_graph
 from ldvh.specs.identity import FormalDocument, parse_identity
 from ldvh.specs.markdown import MarkdownResult, parse_markdown
@@ -307,7 +307,20 @@ def inspect_repository(repository_root: Path) -> RepositoryInspection:
     initial_graph: GraphResult = validate_graph(parsed_documents)
     field_registry = None
     if any(document.key == REGISTRY_KEY for document in initial_graph.active_documents_passing_implemented_checks):
-        field_registry = inspect_field_registry(initial_graph.active_documents_passing_implemented_checks)
+        audit_eligibility_issue = validate_non_ignored_git_path(discovery.repository_root, ADMISSION_AUDIT_PATH)
+        if audit_eligibility_issue is not None:
+            issues.append(audit_eligibility_issue)
+            incomplete.add(ADMISSION_AUDIT_PATH)
+            admission_audit = None
+        else:
+            admission_audit = parse_markdown(
+                discovery.repository_root / ADMISSION_AUDIT_PATH,
+                ADMISSION_AUDIT_PATH,
+            ).document
+        field_registry = inspect_field_registry(
+            initial_graph.active_documents_passing_implemented_checks,
+            admission_audit=admission_audit,
+        )
 
     if field_registry is not None and field_registry.issues:
         central_failure = any(REGISTRY_KEY in issue.affected for issue in field_registry.issues)

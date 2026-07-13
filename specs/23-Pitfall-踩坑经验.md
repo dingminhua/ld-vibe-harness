@@ -18,7 +18,7 @@ ldvh_spec:
   authorized_attachments: []
 ```
 
-> 文件状态：`active`。本文是 `pitfall` 事实类型的唯一定义来源；它不使 Pitfall 读取、创建、校验、迁移、Helper、Code、tests、行动模板或 Web 能力自动成立。V3 规范、Code 和两个实例只作为需求与反例输入；两个实例都依赖 V3 字段或可变化的外部协议，不能直接作为 V4 active 对象。
+> 文件状态：`active`。本文是 `pitfall` 事实类型的唯一定义来源；它不使 Pitfall 读取、创建、校验、迁移、Helper、Code、tests、行动模板或 Web 能力自动成立。V3 规范、Code 和实例只作为需求与反例输入；依赖 V3 字段或可变化外部协议的旧实例不能直接作为 V4 active 对象。
 
 ## 1. 价值判断
 
@@ -26,7 +26,7 @@ Pitfall 保存一个已经实际发生、查明、解决、验证且仍能迁移
 
 Pitfall 主要服务 V1 快速定位、V2 充分理解、V3 边界识别、V5 据实判断、V6 工作接续、V7 清晰沟通和 V8 持续积累。V4 稳定推进由 WorkCase 和行动模板承担；Pitfall 不承载 bug backlog、实施计划或行动授权。新增成本包括发现、查重、维护、Schema、迁移、时效复核和消费；通过只准入已发生且验证的单一失败机制、三状态、五个专属字段、两个共享语义字段并排除日志与自由标签，维护成本低于重复犯错和错误复用的损耗。普通文档、测试、代码说明或当前规则能够无损承载且不需要独立身份、状态、证据和替代历史时，不创建 Pitfall。
 
-V3 两个实例都实际表达 symptoms、trigger conditions、root cause、resolution、verification、avoidance 和 applicability，能够证明这些信息问题有表达需求；它们不能证明 tags、archived 或旧引用数组有稳定消费价值，也不能证明旧经验在 V4 或当前外部环境仍有效。V4 只吸收经重新查重的语义字段，不继承实例当前性。
+V4 只吸收经重新查重且具有稳定消费价值的语义字段，不继承旧 shape、旧引用数组或实例当前性。
 
 ## 2. 规范依据
 
@@ -86,43 +86,15 @@ AI 负责判断失败是否实际发生、根因和解决是否有证据、经�
 |---|---|---|
 | `pitfall` | 已经发生、查明、解决、验证且仍有迁移复用价值的单一失败机制与规避经验 | `pitfall-fact-type::5. Pitfall 类型定义` |
 
-### 结构准入记录
+### 准入审计引用
 
-本类型没有结构准入事项
+| admission_audit_ref |
+|---|
+| `v4-five-type-closure::five-type-admission-audit::pitfall::admission-audit` |
 
 ### 类型专属结构定义
 
 本类型没有类型专属结构
-
-### 字段准入记录
-
-| information_need | compared_field_keys | decision | resulting_field_key | rationale | review_ref |
-|---|---|---|---|---|---|
-| 稳定识别同一 Pitfall | `object-id` | reuse | `object-id` | 公共对象身份无损适用，只收紧 Pitfall 格式 | `pitfall-fact-type::5. Pitfall 类型定义::field-review-0002` |
-| 声明对象属于 Pitfall 类型 | `fact-type-key` | reuse | `fact-type-key` | 公共类型身份无损适用，固定为 `pitfall` | `pitfall-fact-type::5. Pitfall 类型定义::field-review-0002` |
-| 提供 Human 与 AI 可读短标签 | `title` | reuse | `title` | 公共标题只用于识别，不承担失败机制正文 | `pitfall-fact-type::5. Pitfall 类型定义::field-review-0001` |
-| 记录对象首次形成时间 | `created-at` | reuse | `created-at` | 公共形成时间无损适用，不冒充事故发生或验证时间 | `pitfall-fact-type::5. Pitfall 类型定义::field-review-0002` |
-| 记录当前经验内容最近实质变化时间 | `updated-at` | reuse | `updated-at` | 公共更新时间无损适用，不建立经验演变日志 | `pitfall-fact-type::5. Pitfall 类型定义::field-review-0002` |
-| 表达经验是否仍可参考、已被整体替代或无替代退出 | `status` | reuse | `status` | 公共条件状态入口适用，由本文定义 Pitfall 三状态闭集 | `pitfall-fact-type::5. Pitfall 类型定义::field-review-0001` |
-| 回指原始事故、问题调查和经验形成输入 | `source-refs` | reuse | `source-refs` | 公共来源统一替代 source_objects、source_sparks 和拆分来源字段 | `pitfall-fact-type::5. Pitfall 类型定义::field-review-0002` |
-| 支持根因、解决、验证、适用和终态判断 | `evidence-refs` | reuse | `evidence-refs` | 公共证据引用定位依据，不由验证摘要或命令文本自证 | `pitfall-fact-type::5. Pitfall 类型定义::field-review-0001` |
-| 表达一个 Pitfall 对旧 Pitfall 的单向整体替代 | `relations` | reuse | `relations` | 公共关系统一承载 supersedes，不恢复 related_* 或 superseded_by | `pitfall-fact-type::5. Pitfall 类型定义::field-review-0001` |
-| 说明 superseded 或 retired 为什么成立以及剩余适用边界 | `disposition-summary,status` | reuse | `disposition-summary` | 共享终态处置无损承接经验整体替代或退出边界 | `pitfall-fact-type::5. Pitfall 类型定义::field-review-0001` |
-| 记录 Pitfall 首次有效进入终态的时间 | `closed-at,updated-at` | reuse | `closed-at` | 与其它类型的终态首次成立时间完全同义 | `pitfall-fact-type::5. Pitfall 类型定义::field-review-0002` |
-| 表达经验成立与适用的对象、环境、条件、范围和排除项 | `adr-applicability,workcase-scope` | promote | `adr-applicability` | 与 ADR applicability 具有相同共同基线，均限定对象核心内容的适用边界；WorkCase scope 仍是执行责任承诺 | `pitfall-fact-type::5. Pitfall 类型定义::field-review-0001` |
-| 说明实际验证覆盖、结果、失败与未验证范围 | `evidence-refs,workcase-validation-summary` | promote | `workcase-validation-summary` | 与 WorkCase validation summary 共同回答实际验证覆盖与边界；Pitfall 收紧为根因、解决和安全复用验证 | `pitfall-fact-type::5. Pitfall 类型定义::field-review-0002` |
-| 表达失败发生后的可观察表现与识别信号 | `current-summary,title` | differentiate | `pitfall-symptoms` | 标题只识别对象，当前摘要是进展快照；症状是失败发生后的稳定可观察表现 | `pitfall-fact-type::5. Pitfall 类型定义::field-review-0001` |
-| 表达会触发失败的前置条件或组合 | `adr-applicability,pitfall-symptoms` | differentiate | `pitfall-trigger-conditions` | applicability 限定经验可复用范围，symptoms 是触发后的表现；均不能替代触发前置条件 | `pitfall-fact-type::5. Pitfall 类型定义::field-review-0001` |
-| 表达经证据支持的失败因果机制 | `adr-rationale,evidence-refs,source-refs` | differentiate | `pitfall-root-cause` | ADR rationale 解释选择，引用只定位依据；都不表示失败因果机制 | `pitfall-fact-type::5. Pitfall 类型定义::field-review-0001` |
-| 表达已经实际解决该问题的修复方式 | `adr-decision,disposition-summary,workcase-goal` | differentiate | `pitfall-resolution` | 决定、终态处置和工作目标都不表示已发生问题的实际修复方式 | `pitfall-fact-type::5. Pitfall 类型定义::field-review-0002` |
-| 表达后续识别、预防或安全复用方式 | `adr-consequences,pitfall-resolution` | differentiate | `pitfall-avoidance` | resolution 回答已发生问题如何修复，consequences 回答决定后果；均不能替代未来规避经验 | `pitfall-fact-type::5. Pitfall 类型定义::field-review-0002` |
-
-### 字段独立复核
-
-| review_key | reviewer | reviewed_scope | findings | disposition |
-|---|---|---|---|---|
-| `field-review-0001` | independent-pitfall-spec-review-agent | Pitfall 对象价值、准入、规则/ADR/WorkCase/Spark 边界、状态、关系及全部字段提案 | 两个 V3 实例证明核心信息需求但不能直接迁移；经验不能成为规则，外部协议经验必须受版本与观察时点限制；archived 混淆吸收与有效性 | 使用 active/superseded/retired；第一版只保留 supersedes；淘汰 tags、archived、拆分引用与空占位 |
-| `field-review-0002` | independent-pitfall-field-audit-agent | V3 23、历史 Code、两个真实实例、当前 39 字段及全部字段准入提案 | 七类核心经验信息在 2/2 样本出现；applicability 与 validation summary 可提升共享；长验证日志、tags 和 related_* 没有稳定消费证明 | 提升两个既有字段；新增五个 type 字段；复用公共及终态入口；旧实例仅作迁移与反例输入 |
 
 ### 类型字段使用绑定
 
@@ -205,18 +177,18 @@ Pitfall 类型停止新增、合并、替代或取消时，必须按 05 处置�
 
 | 验证对象 | 验证时机 | 成立条件 | 可接受依据 | 验证入口 | 可证明范围 | 未满足时的处理 |
 |---|---|---|---|---|---|---|
-| Pitfall 类型定义 | 新建或实质修改本文时 | 唯一声明、字段准入与提升、绑定、状态、来源、证据、关系和独立复核完整且无第二权威 | 05、统一登记、本文、两个 V3 样本与独立复核 | 当前来源回读与规范检查；Code 只验证可机械部分 | 当前 pitfall 类型定义 | 本文不进入或退出当前规则源；修正定义，不消费受影响对象 |
+| Pitfall 类型定义 | 新建或实质修改本文时 | 唯一声明、准入审计引用、绑定、状态、来源、证据与关系完整且无第二权威 | 05、统一登记、本文、历史 V3 样本与独立复核 | 当前来源回读与规范检查；Code 只验证可机械部分 | 当前 pitfall 类型定义 | 本文不进入或退出当前规则源；修正定义，不消费受影响对象 |
 | Pitfall 准入与查重 | 创建对象前 | 失败已发生、解决、根因与验证成立、经验可复用、边界清楚且没有无损现有承载 | 原始事故、调查与验证来源、召回结果及 AI 语义比较 | AI 来源回读与全局检索；Code 只辅助精确检索 | 当次候选与直接相邻事实 | 不创建；留在当前行动、WorkCase、Spark、ADR、文档或已有对象 |
 | 对象 Schema 与身份 | 创建、读取或更新对象时 | 路径、身份、字段闭集、类型、条件、时间和引用符合当前来源 | 当前文件、统一登记、本文与派生 Schema | 实际 parser/validator；未实现时逐项来源回读 | 当次对象当前 Working Tree 内容 | 不作为有效 Pitfall 消费；报告字段和未验证范围 |
 | 根因、解决与复用 | 创建或消费 active Pitfall 时 | 根因有证据、解决已执行验证、applicability 匹配当前环境、验证边界未被扩大 | source_refs、evidence_refs、当前环境和相邻规则 | AI 语义审核、来源及实际环境回读 | 当次经验及声明范围 | 不创建或暂停复用；补证据、缩小边界、重新验证或建立 WorkCase |
 | 替代或退出 | 准备 superseded 或 retired 时 | 新经验或退出依据成立，对象、关系、证据、适用边界和时间一致 | 新旧 Pitfall、来源、证据、当前规则与 Human 决定 | AI 语义审核、目标回读和结构校验 | 当次终态与替代声明 | 保持 active；修正替代范围、补证据或进入 Human Gate |
 | 变更与回读 | 创建、更正、补强、替代、退出、拆分、合并或删除后 | 获准变更已写入、回读并验证；失败和部分结果如实保留 | Human 指令、文件差异、Working Tree 回读和验证结果 | 实际写入入口与当前文件回读 | 当次实际变更 | 不声明成功；修正、回滚或保留部分结果与残余风险 |
 
-AI 必须审核实际发生、对象粒度、因果证据、解决与验证、现时适用、复用安全、规则边界、替代完整性和退出依据。两个 V3 样本只能证明核心信息问题存在，不能证明旧经验当前有效、tags 必需或终态已被真实消费。
+AI 必须审核实际发生、对象粒度、因果证据、解决与验证、现时适用、复用安全、规则边界、替代完整性和退出依据。历史 V3 样本只能证明核心信息问题存在，不能证明旧经验当前有效、tags 必需或终态已被真实消费。
 
 Code 可以确定性检查：载体、身份、Schema 闭集、字段类型与非空、状态值、状态条件、时间格式与顺序、引用 shape、目标身份与状态、自指、全部保留关系上的全生命周期单一直接替代源、跨对象时间顺序和 supersedes DAG。Code 不得判断根因是否真实、验证是否充分、外部协议是否仍当前、经验能否安全迁移、规则是否已吸收或自然语言经验是否同义。
 
-最低验证样例必须覆盖：active、superseded、retired；每个状态缺条件字段或带禁止字段；两份 V3 样本的字段映射与不直接迁移；根因无证据、解决未执行、验证边界扩大、外部版本变化、多个独立机制捆绑；supersedes 的建立时与持久 source/target 状态、项目、全生命周期单一直接替代源、跨对象时间、自指、缺失目标和全部保留关系 DAG；旧 archived/tags/related_*/空占位被拒绝。
+最低验证样例必须覆盖：active、superseded、retired；每个状态缺条件字段或带禁止字段；历史 V3 样本的字段映射与不直接迁移；根因无证据、解决未执行、验证边界扩大、外部版本变化、多个独立机制捆绑；supersedes 的建立时与持久 source/target 状态、项目、全生命周期单一直接替代源、跨对象时间、自指、缺失目标和全部保留关系 DAG；旧 archived/tags/related_*/空占位被拒绝。
 
 ## 10. Human Gate
 

@@ -6,7 +6,7 @@
 
 ADR 的对象语义、粒度、准入、Schema、状态、来源、证据、替代关系、变更、验证、Human Gate 与 Stop Conditions 已完成定义、机械检查和两路独立复核。复核提出的 P1/P2 已全部修正，ADR Gate 关闭，可以按严格串行顺序开始 Pitfall。
 
-本结论只证明类型来源与当前机械范围成立。V3 没有 ADR 实例，因此不能宣称真实 ADR 样本消费已经验证；任何 ADR 对象、迁移、事实读取或写入、Helper、Code、tests、行动模板、Web 或环境接入能力也尚未因此实现。
+本结论只证明类型来源与当前机械范围成立。commit `3d028ec2` 历史快照中 V3 没有 ADR 实例，只有规范和 validator 草案；因此不能宣称真实 ADR 样本消费已经验证，也不能以历史快照补齐 `archived`、固定影响模板、传统 alternatives 数组或任何旧字段。任何 ADR 对象、迁移、事实读取或写入、Helper、Code、tests、行动模板、Web 或环境接入能力也尚未因此实现。
 
 ## 2. 主要收敛
 

@@ -27,7 +27,7 @@ WorkCase 把一个已经形成明确目标、范围和成功标准的工作责�
 
 一个 WorkCase 只承担一个能够独立判断关闭的工作责任。步骤、命令、子 Agent 分工、方案审核顺序和当次计划不是 WorkCase；共同服务同一关闭判断的步骤留在当前行动计划或适用行动模板中，可独立验收、阻塞、取消或转交的目标则分别形成 WorkCase。
 
-V3 的 24 个实例平均约 479 行、最大约 1099 行；全部保存固定 `orchestration.mode`，122 个执行项中 106 个仍标为 `single`，120 个阻塞原因为空，且对象状态与执行项状态已出现互相矛盾。这证明跨会话目标与关闭事实有价值，也证明把编排、复核和空占位长期写入对象会制造同步负担与漂移。V4 因而保留工作责任事实，移除运行脚手架，只登记恢复与关闭所需的最小字段。
+跨会话目标与关闭事实有持续价值，而把编排、复核和空占位长期写入对象会制造同步负担与漂移。V4 因而保留工作责任事实，移除运行脚手架，只登记恢复与关闭所需的最小字段。
 
 WorkCase 主要服务 V1 快速定位、V2 充分理解、V3 边界识别、V5 据实判断、V6 工作接续、V7 清晰沟通和 V8 持续积累；它通过阻塞、关闭与 Human Gate 交还当前状态、依据、影响、风险和待决定事项来服务 V7。V4 稳定推进由行动模板和当次计划承担，WorkCase 只提供目标与当前事实，不复制行动编排。新增成本包括发现、查重、持续回写、Schema、迁移和消费维护；在字段统一复用、三状态、六个专属字段以及不保存执行日志的边界下，这些成本低于跨会话反复重建目标、范围、验证和关闭判断的持续损耗。不能证明该净收益的工作不准入 WorkCase。
 
@@ -39,7 +39,7 @@ WorkCase 主要服务 V1 快速定位、V2 充分理解、V3 边界识别、V5 �
 2. `source-of-truth-traceability`：规定 Git 可追踪事实源、当前 Working Tree、来源回指和稳定事实边界；
 3. `action-template-foundation`：规定可复用行动结构与单次执行计划不应反向成为事实对象 Schema。
 
-历史 V3 21、21.Att.01、24 个实例和 V2 候选行动编排只用于识别真实需求与失败模式。它们不能证明 V4 路径、字段、状态、实例、固定审核流程或写入能力成立。
+历史 V3 21、21.Att.01、实例和 V2 候选行动编排只用于识别真实需求与失败模式。它们不能证明 V4 路径、字段、状态、实例、固定审核流程或写入能力成立。
 
 ## 3. 职责边界
 
@@ -84,44 +84,15 @@ Spark 与 WorkCase 的分界不取决于“以后是否可能做”。Spark 尚�
 |---|---|---|
 | `workcase` | 已形成明确可验证目标并需要跨行动或会话保存当前推进与终态判断的单一工作责任 | `workcase-fact-type::5. WorkCase 类型定义` |
 
-### 结构准入记录
+### 准入审计引用
 
-本类型没有结构准入事项
+| admission_audit_ref |
+|---|
+| `v4-five-type-closure::five-type-admission-audit::workcase::admission-audit` |
 
 ### 类型专属结构定义
 
 本类型没有类型专属结构
-
-### 字段准入记录
-
-| information_need | compared_field_keys | decision | resulting_field_key | rationale | review_ref |
-|---|---|---|---|---|---|
-| 稳定识别同一 WorkCase | `object-id` | reuse | `object-id` | 公共对象身份无损适用，只收紧 WorkCase 格式 | `workcase-fact-type::5. WorkCase 类型定义::field-review-0002` |
-| 声明对象属于 WorkCase 类型 | `fact-type-key` | reuse | `fact-type-key` | 公共类型身份无损适用，固定为 `workcase` | `workcase-fact-type::5. WorkCase 类型定义::field-review-0002` |
-| 提供 Human 与 AI 可读短标签 | `title` | reuse | `title` | 公共标题只用于识别，不承担目标或当前进展 | `workcase-fact-type::5. WorkCase 类型定义::field-review-0001` |
-| 记录首次形成时间 | `created-at` | reuse | `created-at` | 公共形成时间语义无损适用 | `workcase-fact-type::5. WorkCase 类型定义::field-review-0002` |
-| 记录当前内容最近实质变化时间 | `updated-at` | reuse | `updated-at` | 公共更新时间无损适用，不建立请求与确认时间镜像 | `workcase-fact-type::5. WorkCase 类型定义::field-review-0002` |
-| 表达工作责任是否仍可继续、被阻塞或已经结束 | `status` | reuse | `status` | 公共条件状态入口适用，由本文定义 WorkCase 三状态闭集 | `workcase-fact-type::5. WorkCase 类型定义::field-review-0001` |
-| 回指目标、范围和成功标准的形成依据 | `source-refs` | reuse | `source-refs` | 公共来源统一替代 V3 `source` 与 `input_refs` | `workcase-fact-type::5. WorkCase 类型定义::field-review-0002` |
-| 支持验证、阻塞和关闭判断 | `evidence-refs` | reuse | `evidence-refs` | 公共证据引用负责定位依据，不用自由文本复制命令日志 | `workcase-fact-type::5. WorkCase 类型定义::field-review-0002` |
-| 表达依赖、剩余责任承接或替代关系 | `relations` | reuse | `relations` | 公共关系统一替代 `related_*` 和 `followup_refs` | `workcase-fact-type::5. WorkCase 类型定义::field-review-0001` |
-| 直接恢复当前进展、边界和剩余工作 | `current-summary,title` | promote | `current-summary` | Spark 与 WorkCase 都需要非历史的当前语义快照；共同基线一致，由类型绑定收紧 | `workcase-fact-type::5. WorkCase 类型定义::field-review-0001` |
-| 排序同类型未终态 WorkCase 的相对处理优先级 | `priority` | promote | `priority` | 与 Spark 优先级同样只排序本类型未终态入口，不构成授权或执行顺序 | `workcase-fact-type::5. WorkCase 类型定义::field-review-0002` |
-| 说明关闭为何成立以及剩余责任如何收口 | `disposition-summary` | promote | `disposition-summary` | 与 Spark 终态处置具有相同共同基线；验证结论与结果枚举仍分别表达 | `workcase-fact-type::5. WorkCase 类型定义::field-review-0001` |
-| 记录 WorkCase 终态首次有效成立时间 | `closed-at` | promote | `closed-at` | 与 Spark 终态时间完全同义，不能另建关闭时间字段 | `workcase-fact-type::5. WorkCase 类型定义::field-review-0002` |
-| 表达该工作责任期望达成什么状态 | `current-summary,title` | differentiate | `workcase-goal` | 当前摘要描述现在，标题只识别对象；目标描述期望达成状态 | `workcase-fact-type::5. WorkCase 类型定义::field-review-0001` |
-| 表达该责任包含与明确不包含什么 | `current-summary,workcase-goal` | differentiate | `workcase-scope` | 目标和当前摘要都不能稳定替代承诺边界与排除项 | `workcase-fact-type::5. WorkCase 类型定义::field-review-0001` |
-| 表达哪些可观察条件共同构成目标达成 | `evidence-refs,workcase-goal` | differentiate | `workcase-success-criteria` | 目标说明期望，证据只定位依据；成功标准定义可检查的验收边界 | `workcase-fact-type::5. WorkCase 类型定义::field-review-0001` |
-| 说明实际验证覆盖、结果与未验证范围 | `disposition-summary,evidence-refs,workcase-validation-summary` | reuse | `workcase-validation-summary` | 该字段已因 Pitfall 的同义验证需求提升为共享定义；WorkCase 继续收紧为成功标准的实际验证覆盖 | `workcase-fact-type::5. WorkCase 类型定义::field-review-0002` |
-| 说明当前为什么不能继续以及解除条件 | `current-summary,disposition-summary` | differentiate | `workcase-blocking-summary` | 当前快照不应隐藏明确阻塞条件，终态说明只在关闭时出现 | `workcase-fact-type::5. WorkCase 类型定义::field-review-0001` |
-| 结构化区分关闭是完成、部分完成、取消、替代或未达成 | `disposition-summary,status` | differentiate | `workcase-closure-outcome` | `closed` 不等于成功，终态说明又不能替代稳定结果分类 | `workcase-fact-type::5. WorkCase 类型定义::field-review-0001` |
-
-### 字段独立复核
-
-| review_key | reviewer | reviewed_scope | findings | disposition |
-|---|---|---|---|---|
-| `field-review-0001` | independent-workcase-spec-review-agent | WorkCase 对象粒度、准入、状态、关闭、关系、全部字段与结构准入提案 | V3 七状态、整个 orchestration、执行项、review receipt、revision_history 和请求时间属于行动运行态；24 个实例已出现双层状态漂移；当前事实只需目标、范围、成功标准、当前摘要、阻塞、验证与终态 | 状态收敛为 open/blocked/closed；排除执行项和历史日志；提升四个同义字段；新增六个 WorkCase 字段 |
-| `field-review-0002` | independent-workcase-field-audit-agent | 24 个 V3 WorkCase、122 个执行项、当前统一登记及全部候选字段，并回读 Pitfall 准入后的字段提升 | 来源、证据和关系可统一；验证结论不能由 evidence refs 替代；Pitfall 具有同义验证摘要需求；执行项存在恢复诉求但与行动模板边界冲突；evolution 与 revision history 容易恢复日志负担 | 将 validation summary 提升为 WorkCase/Pitfall 共享字段；执行步骤留在行动计划或模板；WorkCase 不复用 Spark evolution，不新建 revision history、residual risks 或 followup 字段 |
 
 ### 类型字段使用绑定
 
@@ -223,7 +194,7 @@ closed 文件默认保留在当前类型载体中供历史、来源和关系回�
 
 | 验证对象 | 验证时机 | 成立条件 | 可接受依据 | 验证入口 | 可证明范围 | 未满足时的处理 |
 |---|---|---|---|---|---|---|
-| WorkCase 类型定义 | 新建或实质修改本文时 | 唯一声明、字段准入、绑定、状态、来源、证据、关系和独立复核完整且无第二权威 | 05、统一登记、本文、V3 反例和独立复核记录 | 当前来源回读与规范检查；Code 只验证可机械部分 | 当前 `workcase` 类型定义 | 本文不进入或退出当前规则源；修正定义，不消费受影响对象 |
+| WorkCase 类型定义 | 新建或实质修改本文时 | 唯一声明、准入审计引用、绑定、状态、来源、证据与关系完整且无第二权威 | 05、统一登记、本文、V3 反例和独立复核记录 | 当前来源回读与规范检查；Code 只验证可机械部分 | 当前 `workcase` 类型定义 | 本文不进入或退出当前规则源；修正定义，不消费受影响对象 |
 | WorkCase 准入与查重 | 创建新对象前 | 单一目标、范围与成功标准清楚，确需跨行动事实，已召回相邻对象且没有可无损更新入口 | 当前输入、来源定位、召回结果与 AI 语义比较 | AI 来源回读与全局检索；Code 只辅助精确检索 | 当次候选与直接相邻事实 | 不创建；留在当前行动、更新已有对象、拆分或转 Spark |
 | 对象 Schema 与身份 | 创建、读取或更新对象时 | 路径、身份、字段闭集、类型、条件、时间和引用符合当前来源 | 当前文件、统一登记、本文与派生 Schema | 实际 parser/validator；未实现时逐项来源回读 | 当次对象当前 Working Tree 内容 | 不作为有效 WorkCase 消费；报告字段和未验证范围 |
 | 状态、验证与关闭 | 写入 blocked 或准备 closed 时 | 阻塞有具体解除条件；成功标准逐项核对；结果、终态说明、证据和承接一致 | 当前对象、实际验证、来源、证据、目标对象与 Human 决定 | AI 语义审核、目标回读和结构校验 | 当次状态、验证与关闭声明 | 保持 open 或 blocked；补证据、承接或进入 Human Gate |

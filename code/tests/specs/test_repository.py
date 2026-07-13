@@ -9,20 +9,28 @@ from ldvh.diagnostics import Issue, SourceLocation
 from ldvh.helper.operation_sources import inspect_operation_sources
 from ldvh.specs import repository as repository_module
 from ldvh.specs.discovery import DiscoveryResult
-from ldvh.specs.field_registry import inspect_field_registry
+from ldvh.specs.field_registry import ADMISSION_AUDIT_PATH, inspect_field_registry
+from ldvh.specs.markdown import parse_markdown
 from ldvh.specs.repository import UNCHECKED_CONDITIONS, inspect_repository
 
 
 def test_current_v4_sources_form_the_expected_real_combination(current_specs_repository: Path) -> None:
     inspection = inspect_repository(current_specs_repository)
     operations = inspect_operation_sources(inspection)
-    fields = inspect_field_registry(inspection.active_documents_passing_implemented_checks)
+    fields = inspect_field_registry(
+        inspection.active_documents_passing_implemented_checks,
+        admission_audit=parse_markdown(
+            current_specs_repository / ADMISSION_AUDIT_PATH,
+            ADMISSION_AUDIT_PATH,
+        ).document,
+    )
 
     assert inspection.issues == ()
     assert inspection.implemented_checks_complete is True
     checked_documents = inspection.active_documents_passing_implemented_checks
     assert len(checked_documents) == 18
     assert sum(document.kind != "attachment" for document in checked_documents) == 14
+
     assert sum(document.kind == "attachment" for document in checked_documents) == 4
     assert len(inspection.projections) == 54
     assert {projection.layer for projection in inspection.projections} == {"L0", "L1", "L2"}
@@ -51,6 +59,20 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
     assert fields.complete is True
     assert len(fields.structures) == 5
     assert len(fields.registrations) == 46
+
+
+def test_ignored_admission_audit_evidence_blocks_fact_type_validation(
+    current_specs_repository: Path,
+) -> None:
+    gitignore = current_specs_repository / ".gitignore"
+    existing = gitignore.read_text(encoding="utf-8") if gitignore.exists() else ""
+    gitignore.write_text(f"{existing}\n/{ADMISSION_AUDIT_PATH}\n", encoding="utf-8")
+
+    inspection = inspect_repository(current_specs_repository)
+
+    assert inspection.implemented_checks_complete is False
+    assert ADMISSION_AUDIT_PATH in inspection.incomplete_scope
+    assert any(issue.summary == "Required Git evidence path is ignored by Git" for issue in inspection.issues)
 
 
 def test_invalid_working_tree_source_is_not_replaced_with_committed_content(

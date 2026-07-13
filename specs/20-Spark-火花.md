@@ -35,7 +35,7 @@ Spark 为跨行动或会话仍有保留价值、但尚未形成确定承接位�
 
 Spark 新增一项事实类型发现入口、一份 Schema 和相应迁移与实现成本，也会增加创建前查重和终态判断负担。相对地，它消除的是跨会话未收敛信息反复丢失、重复讨论、被过早升级为行动或决定以及无法明确退出入口的持续成本；这些问题不能由普通文件或其它四类对象在不混淆责任的情况下自然承担。通过单一对象粒度、九个公共字段复用、一个小型结构、条件字段省略和三状态闭集，新增维护面被限制在实现其独有价值所需的最小范围。因此 V1、V2、V3、V5、V6、V8 的持续净收益高于发现、Schema、迁移和实现成本；V4 稳定推进由后续行动承接，V7 清晰沟通由来源、处置边界和需要时的 Human Gate 交还辅助实现，二者都不作为扩大 Spark 职责的理由。
 
-Human 已确认 V4 保留 Spark 类型，因此本文不重复决定是否建立该类型；本文仍必须证明具体语义、对象边界和 Schema 没有从 V3 实现直接恢复。V3 39 个实际 Spark 中 37 个长期保持 `pending`，多套来源与 `related_*` 字段、空值占位和过长演变记录使分流与退出判断漂移。V4 因而保留跨会话捕获价值，但收紧对象粒度、统一来源与关系，并把终态解释为入口职责结束而不是下游工作完成。
+Human 已确认 V4 保留 Spark 类型，因此本文不重复决定是否建立该类型；本文仍必须证明具体语义、对象边界和 Schema 没有从 V3 实现直接恢复。V4 保留跨会话捕获价值，但收紧对象粒度、统一来源与关系，并把终态解释为入口职责结束而不是下游工作完成。
 
 ## 2. 规范依据
 
@@ -89,45 +89,17 @@ AI 负责判断信息是否需要 Spark、是否与已有事实语义重复、�
 |---|---|---|
 | `spark` | 尚未形成确定承接位置但值得跨行动或会话保留的单一信息需求、发现、问题或缺口 | `spark-fact-type::5. Spark 类型定义` |
 
-### 结构准入记录
+### 准入审计引用
 
-| information_need | compared_structure_keys | decision | resulting_structure_key | rationale | review_ref |
-|---|---|---|---|---|---|
-| 直接读取一项关键语义转折的发生时间和摘要 | `fact-object,relation,relation-target,source-ref` | new | `spark-evolution-entry` | 已检索全部 current 与 retired 结构；现有结构分别承载完整事实对象、关系、关系目标和来源定位，均不能无损表达 Spark 内部关键语义转折条目 | `spark-fact-type::5. Spark 类型定义::field-review-0002` |
+| admission_audit_ref |
+|---|
+| `v4-five-type-closure::five-type-admission-audit::spark::admission-audit` |
 
 ### 类型专属结构定义
 
 | structure_key | meaning | not_meaning | constraints |
 |---|---|---|---|
 | `spark-evolution-entry` | Spark 当前摘要无法单独解释时，需要直接读取的一次关键语义转折 | 不表示逐条对话、执行日志、状态历史、来源或证据对象 | 成员闭集只有 `at` 与 `summary`；只在问题焦点、边界、判断方向或承接方向发生实质变化时增加 |
-
-### 字段准入记录
-
-| information_need | compared_field_keys | decision | resulting_field_key | rationale | review_ref |
-|---|---|---|---|---|---|
-| 稳定识别同一 Spark 对象 | `object-id` | reuse | `object-id` | 公共对象身份语义无损适用；Spark 只收紧格式，不另建 `id` | `spark-fact-type::5. Spark 类型定义::field-review-0002` |
-| 声明对象属于 Spark 类型 | `fact-type-key` | reuse | `fact-type-key` | 公共类型身份无损适用；固定值为 `spark`，不恢复 `type` | `spark-fact-type::5. Spark 类型定义::field-review-0002` |
-| 提供 Human 与 AI 可读的短标签 | `title` | reuse | `title` | 公共标题语义无损适用，不承担问题全文 | `spark-fact-type::5. Spark 类型定义::field-review-0002` |
-| 记录对象首次按 Spark 形成的时间 | `created-at` | reuse | `created-at` | 公共形成时间语义无损适用 | `spark-fact-type::5. Spark 类型定义::field-review-0002` |
-| 记录当前 Spark 内容最近一次实质变化时间 | `updated-at` | reuse | `updated-at` | 公共更新时间语义无损适用，不承担关键转折历史 | `spark-fact-type::5. Spark 类型定义::field-review-0002` |
-| 表明 Spark 是否仍承担待处置入口 | `status` | reuse | `status` | 公共条件状态入口适用，由本文定义 Spark 值闭集和转换 | `spark-fact-type::5. Spark 类型定义::field-review-0001` |
-| 回指形成或理解当前 Spark 的输入 | `source-refs` | reuse | `source-refs` | 公共来源数组替代 V3 `source`、`source_detail` 与 `input_refs` 的重叠入口 | `spark-fact-type::5. Spark 类型定义::field-review-0002` |
-| 支持已验证观察或终态处置判断 | `evidence-refs` | reuse | `evidence-refs` | 公共证据数组无损适用；不得用来源存在替代证据充分性 | `spark-fact-type::5. Spark 类型定义::field-review-0001` |
-| 表达 Spark 与其它事实对象的有向语义关系 | `relations` | reuse | `relations` | 公共关系统一入口替代全部按目标类型拆分的 `related_*` 与对象型 `resolved_to` | `spark-fact-type::5. Spark 类型定义::field-review-0002` |
-| 直接读取 Spark 当前问题焦点、边界和剩余不确定性 | `current-summary,title` | reuse | `current-summary` | 标题只用于识别；共享当前摘要无损承接 Spark 的当前焦点与剩余问题 | `spark-fact-type::5. Spark 类型定义::field-review-0001` |
-| 在多个 open Spark 中表达应优先处理的相对等级 | `priority` | reuse | `priority` | 共享优先级同样只排序本类型未终态入口，不授权或描述下游行动 | `spark-fact-type::5. Spark 类型定义::field-review-0002` |
-| 不依赖逐次 Git diff 直接读取少量关键语义转折 | `updated-at` | differentiate | `evolution` | `updated_at` 只回答最近何时变化；关键转折需要时间与摘要的结构化条目，但不得恢复过程日志 | `spark-fact-type::5. Spark 类型定义::field-review-0002` |
-| 说明 routed 或 discarded 为什么成立以及剩余议题为何为零 | `disposition-summary,status` | reuse | `disposition-summary` | 共享终态处置说明无损承接完整承接或废弃理由，不由状态值替代 | `spark-fact-type::5. Spark 类型定义::field-review-0001` |
-| 记录 Spark 退出待处置入口的时间 | `closed-at,updated-at` | reuse | `closed-at` | 共享终态首次成立时间与 Spark 终态语义一致，不能由最近更新时间替代 | `spark-fact-type::5. Spark 类型定义::field-review-0002` |
-| 记录关键语义转折发生或被确认的时间 | `created-at,updated-at` | differentiate | `evolution-at` | 对象创建与最近更新时间不能表达单条语义转折时点 | `spark-fact-type::5. Spark 类型定义::field-review-0002` |
-| 记录关键语义转折的最小可读内容 | `current-summary,title` | differentiate | `evolution-summary` | 当前摘要是最新快照，标题是短标签；本字段只保留解释方向变化所需的历史摘要 | `spark-fact-type::5. Spark 类型定义::field-review-0002` |
-
-### 字段独立复核
-
-| review_key | reviewer | reviewed_scope | findings | disposition |
-|---|---|---|---|---|
-| `field-review-0001` | independent-spec-review-agent | Spark 类型语义、状态、来源、证据、关系及终态字段 | V3 的单一主目标、Study 不能完成分流、普遍 Human Gate 和长期 pending 会制造漂移；当前摘要与最小终态说明需要保留 | 使用 open/routed/discarded；允许任意稳定位置在完整承接时结束入口；统一关系并缩小 Gate |
-| `field-review-0002` | independent-field-audit-agent | 39 个 V3 Spark 的字段分布、12 个代表样本、全部字段与结构准入行，以及 WorkCase 准入后的共享提升复核 | 身份与来源关系可复用公共字段；当前摘要、priority 与终态字段有跨类型同义需求；Spark evolution 有直接消费价值但 WorkCase 的历史应由当前快照与 Git 承接；source context 会污染共享结构，空值、related_* 和 resolved_to shape 不应继承 | 复用九个公共入口；提升四个跨类型字段，保留 evolution 结构与三个字段为 Spark 专属；删除 source-context，省略空条件字段并禁止按目标类型拆字段 |
 
 ### 类型字段使用绑定
 
@@ -212,7 +184,7 @@ Spark 类型停止新增、合并、替代或取消时，必须按 05 处理唯�
 
 | 验证对象 | 验证时机 | 成立条件 | 可接受依据 | 验证入口 | 可证明范围 | 未满足时的处理 |
 |---|---|---|---|---|---|---|
-| Spark 类型定义 | 新建或实质修改本文时 | 唯一声明、对象语义、字段与结构准入、绑定、状态、来源、证据、关系和独立复核完整且无第二权威 | 05、统一登记、本文、历史反例和独立复核记录 | 当前来源回读与规范检查；Code 只验证可机械部分 | 当前 `spark` 类型定义 | 本文不进入或退出当前规则源；修正定义，不消费受影响对象 |
+| Spark 类型定义 | 新建或实质修改本文时 | 唯一声明、对象语义、准入审计引用、绑定、状态、来源、证据与关系完整且无第二权威 | 05、统一登记、本文、历史反例和独立复核记录 | 当前来源回读与规范检查；Code 只验证可机械部分 | 当前 `spark` 类型定义 | 本文不进入或退出当前规则源；修正定义，不消费受影响对象 |
 | Spark 准入与查重 | 创建新对象前 | 信息跨行动有保留价值、尚无正确承接位置、粒度单一、已召回相邻事实且没有可无损更新的现有入口 | 当前输入、来源定位、召回结果、相邻对象与 AI 语义比较 | AI 来源回读与全局检索；Code 只辅助精确检索 | 当次候选与直接相邻事实 | 不创建；直接处理、更新现有位置、拆分或转正确承载 |
 | 对象 Schema 与身份 | 创建、读取或更新对象时 | 路径、object_id、fact_type_key、字段闭集、类型、出现条件、时间和引用均符合当前来源 | 当前文件、统一登记、本文字段定义与派生 Schema | 实际 parser/validator；未实现时逐项来源回读 | 当次对象当前 Working Tree 内容 | 不作为有效 Spark 消费；报告具体字段与未验证范围 |
 | 状态与处置 | 准备 routed 或 discarded 时 | 全部原始内容确已承接或废弃理由成立；终态字段、证据、关系和时间完整一致 | 处置前后对象、承接位置、来源、证据与 Human 决定 | AI 语义审核、目标回读和结构校验 | 当次状态与处置声明 | 保持 open；补齐承接、证据或进入 Human Gate |

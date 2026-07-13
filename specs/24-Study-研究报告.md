@@ -18,7 +18,7 @@ ldvh_spec:
   authorized_attachments: []
 ```
 
-> 文件状态：`active`。本文是 `study` 事实类型的唯一定义来源；它不使 Study 读取、创建、校验、迁移、Helper、Code、tests、行动模板或 Web 能力自动成立。V3 规范、Code 和 17 个实例只作为需求与反例输入；旧实例缺少 V4 来源版本、观察时点、适用边界与验证闭包，不能批量直接成为 V4 active 对象。
+> 文件状态：`active`。本文是 `study` 事实类型的唯一定义来源；它不使 Study 读取、创建、校验、迁移、Helper、Code、tests、行动模板或 Web 能力自动成立。V3 规范、Code 和实例只作为需求与反例输入；旧实例缺少 V4 来源版本、观察时点、适用边界与验证闭包，不能批量直接成为 V4 active 对象。
 
 ## 1. 价值判断
 
@@ -26,7 +26,7 @@ Study 保存一轮已经完成、可独立引用且具有跨行动稳定阅读�
 
 Study 主要服务 V1 快速定位、V2 充分理解、V3 边界识别、V5 据实判断、V7 清晰沟通和 V8 持续积累。研究执行与进度由 WorkCase 和当次计划承担；Study 不承载搜索过程、任务编排或行动授权。新增成本包括查重、来源精确化、时效复核、Schema、迁移和消费；通过只准入已经完成的一轮研究、Markdown 单一正文、三状态、两个专属元数据字段、统一来源证据和禁止多套 related 字段，维护成本低于重复重建资料、误用旧结论和无法定位依据的损耗。普通文档已经能够自然承载且不需要稳定身份、状态、证据、时效边界和整体替代历史时，不创建 Study。
 
-V3 17 个实例全部具备研究问题、输入边界、关键发现、建议和后续分流正文，证明稳定研究报告具有真实需求；它们不能证明 archived、空关系数组、独立 URL 池、user_intent、conclusion 或旧实例当前性有稳定价值。V4 只吸收经全局查重的信息需要，不继承旧 shape 或内容效力。
+稳定研究报告具有真实需求，但 archived、空关系数组、独立 URL 池、user_intent、conclusion 或旧实例当前性不能仅凭旧 shape 获得稳定价值。V4 只吸收经全局查重的信息需要，不继承旧 shape 或内容效力。
 
 ## 2. 规范依据
 
@@ -83,40 +83,15 @@ AI 负责判断研究是否完成、来源是否充分、推断是否越界、�
 |---|---|---|
 | `study` | 已经完成、可独立引用且具有跨行动稳定阅读价值的一轮研究结果 | `study-fact-type::5. Study 类型定义` |
 
-### 结构准入记录
+### 准入审计引用
 
-本类型没有结构准入事项
+| admission_audit_ref |
+|---|
+| `v4-five-type-closure::five-type-admission-audit::study::admission-audit` |
 
 ### 类型专属结构定义
 
 本类型没有类型专属结构
-
-### 字段准入记录
-
-| information_need | compared_field_keys | decision | resulting_field_key | rationale | review_ref |
-|---|---|---|---|---|---|
-| 稳定识别同一 Study | `object-id` | reuse | `object-id` | 公共对象身份无损适用，只收紧 Study 格式 | `study-fact-type::5. Study 类型定义::field-review-0002` |
-| 声明对象属于 Study 类型 | `fact-type-key` | reuse | `fact-type-key` | 公共类型身份无损适用，固定为 `study` | `study-fact-type::5. Study 类型定义::field-review-0002` |
-| 提供 Human 与 AI 可读短标签 | `title` | reuse | `title` | 公共标题只识别研究主题，不承担结论或摘要 | `study-fact-type::5. Study 类型定义::field-review-0001` |
-| 记录对象首次形成时间 | `created-at` | reuse | `created-at` | 公共形成时间无损适用，不冒充研究观察时间 | `study-fact-type::5. Study 类型定义::field-review-0002` |
-| 记录当前报告最近实质变化时间 | `updated-at` | reuse | `updated-at` | 公共更新时间无损适用，不代替来源 observed_at | `study-fact-type::5. Study 类型定义::field-review-0002` |
-| 表达报告是否仍是当前入口、已被整体替代或无替代退出 | `status` | reuse | `status` | 公共条件状态入口适用，由本文定义 Study 三状态闭集 | `study-fact-type::5. Study 类型定义::field-review-0001` |
-| 回指研究委托、实际输入与报告形成来源 | `source-refs` | reuse | `source-refs` | 公共来源统一替代 user_intent、input_refs、related_docs 和拆分输入字段 | `study-fact-type::5. Study 类型定义::field-review-0002` |
-| 定位支持发现、结论、限制、适用与验证的依据 | `evidence-refs` | reuse | `evidence-refs` | 公共证据入口以 locator、version 与 observed_at 承担稳定定位和时效；来源用途、支持声明与限制由正文映射，不恢复 urls 或裸链接池 | `study-fact-type::5. Study 类型定义::field-review-0002` |
-| 表达一个新 Study 对旧 Study 的单向整体替代 | `relations` | reuse | `relations` | 公共关系统一承载 supersedes，不恢复 related_* 或反向字段 | `study-fact-type::5. Study 类型定义::field-review-0001` |
-| 说明 superseded 或 retired 为什么成立及剩余引用边界 | `disposition-summary,status` | reuse | `disposition-summary` | 共享终态处置无损承接研究整体替代或不再安全引用 | `study-fact-type::5. Study 类型定义::field-review-0001` |
-| 记录 Study 首次有效进入终态的时间 | `closed-at,updated-at` | reuse | `closed-at` | 与其它类型的终态首次成立时间完全同义 | `study-fact-type::5. Study 类型定义::field-review-0002` |
-| 表达研究发现可引用的对象、环境、版本、时间、条件、范围与排除项 | `adr-applicability,workcase-scope` | reuse | `adr-applicability` | 现有共享 applicability 无损适用；研究输入集合仍由正文与来源表达 | `study-fact-type::5. Study 类型定义::field-review-0001` |
-| 说明对研究核心声明的实际核对覆盖、结果、失败与未验证范围 | `evidence-refs,workcase-validation-summary` | reuse | `workcase-validation-summary` | 现有共享 validation summary 无损适用；Study 必填并明确资料核对、实测与未实测边界 | `study-fact-type::5. Study 类型定义::field-review-0002` |
-| 表达报告实际回答的单一或边界一致的研究问题 | `adr-decision-question,workcase-goal` | differentiate | `study-research-question` | 决定问题要求形成选择，工作目标要求执行；研究问题只限定已完成报告回答的知识问题 | `study-fact-type::5. Study 类型定义::field-review-0001` |
-| 不读完整正文即可理解研究问题、证据边界、主要发现与关键限制 | `adr-decision,current-summary,title` | differentiate | `study-abstract` | current summary 是进行中对象快照，标题只识别，决定是已成立选择；均不能承担完成报告摘要 | `study-fact-type::5. Study 类型定义::field-review-0001` |
-
-### 字段独立复核
-
-| review_key | reviewer | reviewed_scope | findings | disposition |
-|---|---|---|---|---|
-| `field-review-0001` | independent-study-governance-review-agent | Study 对象价值、准入、相邻类型与规则边界、状态、关系、正文及全部字段提案 | Study 必须是完成报告而非进展对象；current-summary、决定与研究摘要不等价；active 不证明外部事实当前 | 使用 active/superseded/retired；只保留 supersedes；不恢复 archived、conclusion、related_* 或 URL 池 |
-| `field-review-0002` | independent-study-field-audit-agent | V3 24、旧 Code schema、17 个实例、135 个网页引用、当前 44 字段及全部准入提案 | 旧空数组和 null 无消费证据；版本与 observed_at 是主要缺口；独立 limitations 字段与多个已有入口及正文重复 | 复用 13 个现有字段；新增两个 type 字段；详细限制唯一留在正文并由 applicability 与 validation summary 提供机器边界 |
 
 ### 类型字段使用绑定
 
@@ -228,7 +203,7 @@ Code 可以确定性检查：载体、frontmatter 闭集、身份、字段类型
 | 保障要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
 |---|---|---|---|---|
 | 完成与单一问题准入 | 只把完成且可独立引用的一轮研究形成 Study | 本文准入、来源回读、AI 审核 | 对象治理 | 创建或拆分 Study 时 |
-| 字段唯一与全局查重 | 每项 frontmatter 信息先查统一登记，只使用登记字段和唯一准入结论 | 05、05.Att.01、本文表格、Code checks、独立复核 | 字段治理 | 新增、提升或改变字段时 |
+| 字段唯一与全局查重 | 每项 frontmatter 信息先查统一登记，只使用登记字段和唯一准入结论 | 05、05.Att.01、准入审计引用所指证据、Code checks、独立复核 | 字段治理 | 新增、提升或改变字段时 |
 | 来源版本与观察时点 | 可变化来源保留 observed_at，版本相关结论保留 version，locator 可恢复 | source/evidence refs、来源回读、重验证 | 时效治理 | 创建、更新或消费可变化结论时 |
 | 报告与规则分离 | 发现、结论和建议不自动成为规则、决定、任务或事实当前性 | 本文、相邻类型来源、Human Gate | 权威治理 | 引用、吸收或提出行动时 |
 | 状态与替代闭包 | 终态字段、整体替代、时间、单一直接 source 和 DAG 同时成立 | 本文、对象集、Code checks、AI 审核 | 生命周期治理 | 状态或 supersedes 变化时 |

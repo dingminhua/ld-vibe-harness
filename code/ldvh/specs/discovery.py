@@ -71,6 +71,32 @@ class _DirectoryObservation:
     entries: tuple[_EntryObservation, ...] = ()
 
 
+def validate_non_ignored_git_path(root: Path, relative_path: str) -> Issue | None:
+    """Require a fixed evidence path to remain eligible under Git ignore rules."""
+
+    encoded = os.fsencode(relative_path)
+    try:
+        completed = _run_git(root, "check-ignore", "-z", "--stdin", stdin_data=encoded + b"\0")
+    except (OSError, subprocess.SubprocessError) as exc:
+        return _issue(
+            "Cannot determine whether the required Git evidence path is ignored",
+            cause=str(exc),
+            affected=(relative_path,),
+        )
+    if completed.returncode == 1 and not completed.stdout:
+        return None
+    if completed.returncode == 0 and completed.stdout == encoded + b"\0":
+        return _issue(
+            "Required Git evidence path is ignored by Git",
+            affected=(relative_path,),
+        )
+    return _issue(
+        "Cannot determine whether the required Git evidence path is ignored",
+        cause=_git_failure_cause(completed),
+        affected=(relative_path,),
+    )
+
+
 def discover_candidates(repository_root: Path) -> DiscoveryResult:
     """Discover candidates from the current filesystem without consulting ``HEAD``.
 

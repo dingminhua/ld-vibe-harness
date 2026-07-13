@@ -26,7 +26,7 @@ ADR 保存一个已经实际成立、会跨行动持续影响项目的决定，�
 
 ADR 主要服务 V1 快速定位、V2 充分理解、V3 边界识别、V5 据实判断、V6 工作接续、V7 清晰沟通和 V8 持续积累。V4 稳定推进由 WorkCase 与行动模板承担；ADR 不承载实施计划、任务进度或执行授权。新增成本包括查重、持续维护、Schema、迁移和消费；通过只记录已成立决定、一个决定问题、三状态、六个专属字段且不保存提案或过程历史，维护成本被限制在低于反复重建重要取舍、重复争论和错误泛化的范围。不能证明这种净收益的判断不准入 ADR。
 
-历史 V3 没有 ADR 实例，只有规范和 validator 草案。这能证明“长期取舍与理由需要稳定位置”的设计意图，不能证明 `archived`、固定影响模板、传统 alternatives 数组或任何旧字段已经被实际消费。V4 因而从最小可解释决定记录开始，不按传统 ADR 模板或 V3 Code 快照补齐未经证明的结构。
+V4 从最小可解释决定记录开始，不按传统 ADR 模板或旧 Code 快照补齐未经证明的结构。
 
 ## 2. 规范依据
 
@@ -82,42 +82,15 @@ AI 负责判断决定是否已实际成立、是否值得对象化、是否重�
 |---|---|---|
 | `adr` | 已经实际作出、具有跨行动持续影响并需要保存选择、适用边界、理由和后果的单一决定事实 | `adr-fact-type::5. ADR 类型定义` |
 
-### 结构准入记录
+### 准入审计引用
 
-本类型没有结构准入事项
+| admission_audit_ref |
+|---|
+| `v4-five-type-closure::five-type-admission-audit::adr::admission-audit` |
 
 ### 类型专属结构定义
 
 本类型没有类型专属结构
-
-### 字段准入记录
-
-| information_need | compared_field_keys | decision | resulting_field_key | rationale | review_ref |
-|---|---|---|---|---|---|
-| 稳定识别同一 ADR | `object-id` | reuse | `object-id` | 公共对象身份无损适用，只收紧 ADR 格式 | `adr-fact-type::5. ADR 类型定义::field-review-0002` |
-| 声明对象属于 ADR 类型 | `fact-type-key` | reuse | `fact-type-key` | 公共类型身份无损适用，固定为 `adr` | `adr-fact-type::5. ADR 类型定义::field-review-0002` |
-| 提供 Human 与 AI 可读短标签 | `title` | reuse | `title` | 公共标题只用于识别，不承担决定内容 | `adr-fact-type::5. ADR 类型定义::field-review-0001` |
-| 记录对象首次形成时间 | `created-at` | reuse | `created-at` | 公共形成时间无损适用，与实际决定时间分开 | `adr-fact-type::5. ADR 类型定义::field-review-0002` |
-| 记录当前对象内容最近实质变化时间 | `updated-at` | reuse | `updated-at` | 公共更新时间无损适用，不建立状态历史 | `adr-fact-type::5. ADR 类型定义::field-review-0002` |
-| 表达决定是否仍是当前选择、已被替代或无替代退出 | `status` | reuse | `status` | 公共条件状态入口适用，由本文定义 ADR 三状态闭集 | `adr-fact-type::5. ADR 类型定义::field-review-0001` |
-| 回指决策问题、输入和实际决定来源 | `source-refs` | reuse | `source-refs` | 公共来源负责重新定位问题、输入与决定来源 | `adr-fact-type::5. ADR 类型定义::field-review-0002` |
-| 支持决定确已成立、授权范围与终态判断 | `evidence-refs` | reuse | `evidence-refs` | 公共证据引用定位实际依据，不由决定文本自证 | `adr-fact-type::5. ADR 类型定义::field-review-0001` |
-| 表达一个 ADR 对旧 ADR 的单向整体替代 | `relations` | reuse | `relations` | 公共关系统一承载 supersedes，不恢复 related_* 或 superseded_by | `adr-fact-type::5. ADR 类型定义::field-review-0001` |
-| 说明 superseded 或 retired 为什么成立以及剩余适用边界 | `disposition-summary,status` | reuse | `disposition-summary` | 与 Spark、WorkCase 的终态处置共同基线一致；ADR 只收紧终态内容 | `adr-fact-type::5. ADR 类型定义::field-review-0001` |
-| 记录 ADR 首次有效进入终态的时间 | `closed-at,updated-at` | reuse | `closed-at` | 与其它类型的终态首次成立时间完全同义 | `adr-fact-type::5. ADR 类型定义::field-review-0002` |
-| 表达该 ADR 必须解决的单一选择问题 | `current-summary,workcase-goal` | differentiate | `adr-decision-question` | 当前摘要是可变快照，WorkCase goal 是期望工作结果；二者都不表示决定所回答的选择问题 | `adr-fact-type::5. ADR 类型定义::field-review-0001` |
-| 表达已经实际选择的方向 | `current-summary,workcase-goal` | differentiate | `adr-decision` | 决定是稳定选择事实，不是进展快照、目标或可执行规则正文 | `adr-fact-type::5. ADR 类型定义::field-review-0001` |
-| 表达决定适用的对象、条件、范围和排除项 | `adr-applicability,workcase-scope` | reuse | `adr-applicability` | 该字段已因 Pitfall 的同义适用边界需求提升为共享定义；ADR 继续收紧为决定成立与适用的边界，仍不同于 WorkCase 承诺范围 | `adr-fact-type::5. ADR 类型定义::field-review-0001` |
-| 表达选择理由、关键取舍与未选主要方向 | `evidence-refs,source-refs` | differentiate | `adr-rationale` | 引用只定位依据，不能替代可读取舍判断；第一版不建立 alternatives 结构 | `adr-fact-type::5. ADR 类型定义::field-review-0002` |
-| 表达决定接受的正负后果、限制和风险 | `disposition-summary,workcase-validation-summary` | differentiate | `adr-consequences` | 验证摘要说明工作验证，终态处置说明退出；均不能承载决定成立时接受的后果 | `adr-fact-type::5. ADR 类型定义::field-review-0001` |
-| 记录决定在来源与授权范围内实际成立的时间 | `closed-at,created-at,evolution-at,updated-at` | differentiate | `adr-decided-at` | closed-at 是终态时间，evolution-at 是 Spark 内部语义转折时间，created-at 与 updated-at 是对象形成和最近更新时间；均不能替代决定实际成立时间 | `adr-fact-type::5. ADR 类型定义::field-review-0002` |
-
-### 字段独立复核
-
-| review_key | reviewer | reviewed_scope | findings | disposition |
-|---|---|---|---|---|
-| `field-review-0001` | independent-adr-spec-review-agent | ADR 对象价值、准入、规范/WorkCase/Spark 边界、状态、关系、Human Gate 及全部字段提案 | V3 把 ADR 当决策补丁并用 absorbed/archived 表示规范吸收，会与正式来源争权；未决内容、行动纪律和实现计划不应对象化为 ADR | 改为决定事实；使用 active/superseded/retired；第一版只保留 supersedes；不建立 absorption 状态 |
-| `field-review-0002` | independent-adr-field-audit-agent | V3 22、历史 validator、相关 Spark、当前统一登记及全部字段准入提案，并回读 Pitfall 准入后的字段提升 | V3 没有 ADR 实例，不能证明传统模板消费；公共身份、来源、证据、终态与 applicability 可复用，summary/priority/evolution/WorkCase 字段不适用 | 新增五个 ADR type 字段并把 applicability 提升为 ADR/Pitfall 共享字段；扩展两个共享终态字段到 ADR；不建 alternatives、affects、archive reason 或实现状态 |
 
 ### 类型字段使用绑定
 
@@ -199,7 +172,7 @@ ADR 类型停止新增、合并、替代或取消时，必须按 05 处置唯一
 
 | 验证对象 | 验证时机 | 成立条件 | 可接受依据 | 验证入口 | 可证明范围 | 未满足时的处理 |
 |---|---|---|---|---|---|---|
-| ADR 类型定义 | 新建或实质修改本文时 | 唯一声明、字段准入、绑定、状态、来源、证据、关系和独立复核完整且无第二权威 | 05、统一登记、本文、V3 反例与独立复核 | 当前来源回读与规范检查；Code 只验证可机械部分 | 当前 `adr` 类型定义 | 本文不进入或退出当前规则源；修正定义，不消费受影响对象 |
+| ADR 类型定义 | 新建或实质修改本文时 | 唯一声明、准入审计引用、绑定、状态、来源、证据与关系完整且无第二权威 | 05、统一登记、本文、V3 反例与独立复核 | 当前来源回读与规范检查；Code 只验证可机械部分 | 当前 `adr` 类型定义 | 本文不进入或退出当前规则源；修正定义，不消费受影响对象 |
 | ADR 准入与查重 | 创建对象前 | 单一选择已实际成立、影响长期、边界与理由清楚、来源授权可回指且没有现有无损承载 | 当前输入、决定来源、授权依据、召回结果与 AI 语义比较 | AI 来源回读与全局检索；Code 只辅助精确检索 | 当次候选与直接相邻事实 | 不创建；留在当前行动、Spark、WorkCase、Study 或已有来源 |
 | 对象 Schema 与身份 | 创建、读取或更新对象时 | 路径、身份、字段闭集、类型、条件、时间和引用符合当前来源 | 当前文件、统一登记、本文与派生 Schema | 实际 parser/validator；未实现时逐项来源回读 | 当次对象当前 Working Tree 内容 | 不作为有效 ADR 消费；报告字段和未验证范围 |
 | 决定与适用边界 | 创建或消费 active ADR 时 | 决定确已成立，授权、适用和排除范围有来源支持，未与当前规范或其它 active ADR 冲突 | source_refs、evidence_refs、当前规范、相邻 ADR 与 Human 决定 | AI 语义审核、来源与规范回读 | 当次决定及声明范围 | 不创建或暂停当前决定消费；缩小范围、补依据或进入 Human Gate |

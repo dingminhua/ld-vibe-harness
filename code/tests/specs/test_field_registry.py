@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from ldvh.specs.field_registry import inspect_field_registry
+import pytest
+
+from ldvh.specs.field_registry import ADMISSION_AUDIT_PATH, inspect_field_registry
 from ldvh.specs.identity import parse_identity
 from ldvh.specs.markdown import parse_markdown
 from ldvh.specs.repository import inspect_repository
@@ -10,12 +12,20 @@ from ldvh.specs.repository import inspect_repository
 
 def _inspection(repository: Path):
     repository_inspection = inspect_repository(repository)
-    return inspect_field_registry(repository_inspection.parsed_documents)
+    return inspect_field_registry(
+        repository_inspection.parsed_documents,
+        admission_audit=_admission_audit(repository),
+    )
+
+
+def _admission_audit(repository: Path):
+    return parse_markdown(repository / ADMISSION_AUDIT_PATH, ADMISSION_AUDIT_PATH).document
 
 
 def _synthetic_spark(
     tmp_path: Path,
     *,
+    audit_repository: Path,
     omit_admission_for: str | None = None,
     object_id_presence: str = "required",
 ):
@@ -42,6 +52,33 @@ def _synthetic_spark(
         f"`{'synthetic-fact-type::5. Synthetic' if presence == 'conditional' else 'inherit'}` |"
         for field_key, _, presence in fields
     )
+    external_admission_rows = admission_rows.replace(
+        "synthetic-fact-type::5. Synthetic::field-review-0001",
+        "v4-five-type-closure::five-type-admission-audit::synthetic 字段独立复核::field-review-0001",
+    )
+    audit_path = audit_repository / ADMISSION_AUDIT_PATH
+    audit_text = audit_path.read_text(encoding="utf-8")
+    audit_addition = f"""
+
+### synthetic 结构准入记录
+
+本类型没有结构准入事项
+
+### synthetic 字段准入记录
+
+| information_need | compared_field_keys | decision | resulting_field_key | rationale | review_ref |
+|---|---|---|---|---|---|
+{external_admission_rows}
+
+### synthetic 字段独立复核
+
+| review_key | reviewer | reviewed_scope | findings | disposition |
+|---|---|---|---|---|
+| `field-review-0001` | independent-ai | 全部 Spark 字段准入行 | 未发现同义重造 | 保留复用结论 |
+"""
+    next_h2 = "\n## 4. 最终验证"
+    assert next_h2 in audit_text
+    audit_path.write_text(audit_text.replace(next_h2, audit_addition + next_h2, 1), encoding="utf-8")
     source = f"""# Synthetic 事实类型
 
 ```yaml
@@ -85,25 +122,15 @@ Spark 需要稳定的事实类型契约。
 |---|---|---|
 | `synthetic` | 测试使用的合成事实类型 | `synthetic-fact-type::5. Synthetic` |
 
-### 结构准入记录
-
-本类型没有结构准入事项
-
 ### 类型专属结构定义
 
 本类型没有类型专属结构
 
-### 字段准入记录
+### 准入审计引用
 
-| information_need | compared_field_keys | decision | resulting_field_key | rationale | review_ref |
-|---|---|---|---|---|---|
-{admission_rows}
-
-### 字段独立复核
-
-| review_key | reviewer | reviewed_scope | findings | disposition |
-|---|---|---|---|---|
-| `field-review-0001` | independent-ai | 全部 Spark 字段准入行 | 未发现同义重造 | 保留复用结论 |
+| admission_audit_ref |
+|---|
+| `v4-five-type-closure::five-type-admission-audit::synthetic::admission-audit` |
 
 ### 类型字段使用绑定
 
@@ -212,7 +239,7 @@ def test_shared_field_requires_at_least_two_sorted_type_bindings(current_specs_r
 
 
 def test_shared_field_requires_exactly_one_promotion_source(current_specs_repository: Path) -> None:
-    workcase = current_specs_repository / "specs/21-WorkCase-工作项.md"
+    workcase = current_specs_repository / ADMISSION_AUDIT_PATH
     text = workcase.read_text(encoding="utf-8")
     workcase.write_text(
         text.replace(
@@ -231,8 +258,9 @@ def test_shared_field_requires_exactly_one_promotion_source(current_specs_reposi
         for issue in missing.issues
     )
 
-    spark = current_specs_repository / "specs/20-Spark-火花.md"
-    spark_text = spark.read_text(encoding="utf-8")
+    workcase.write_text(text, encoding="utf-8")
+    spark = current_specs_repository / ADMISSION_AUDIT_PATH
+    spark_text = text
     spark.write_text(
         spark_text.replace(
             "| `current-summary,title` | reuse | `current-summary` |",
@@ -241,8 +269,6 @@ def test_shared_field_requires_exactly_one_promotion_source(current_specs_reposi
         ),
         encoding="utf-8",
     )
-    workcase.write_text(text, encoding="utf-8")
-
     duplicated = _inspection(current_specs_repository)
 
     assert duplicated.complete is False
@@ -253,14 +279,14 @@ def test_shared_field_requires_exactly_one_promotion_source(current_specs_reposi
 
 
 def test_duplicate_structure_admission_information_need_is_rejected(current_specs_repository: Path) -> None:
-    source = current_specs_repository / "specs/20-Spark-火花.md"
+    source = current_specs_repository / ADMISSION_AUDIT_PATH
     text = source.read_text(encoding="utf-8")
     row = (
         "| 直接读取一项关键语义转折的发生时间和摘要 | "
         "`fact-object,relation,relation-target,source-ref` | new | `spark-evolution-entry` | "
         "已检索全部 current 与 retired 结构；现有结构分别承载完整事实对象、关系、关系目标和来源定位，"
         "均不能无损表达 Spark 内部关键语义转折条目 | "
-        "`spark-fact-type::5. Spark 类型定义::field-review-0002` |\n"
+        "`v4-five-type-closure::five-type-admission-audit::spark 字段独立复核::field-review-0002` |\n"
     )
     source.write_text(text.replace(row, row + row, 1), encoding="utf-8")
 
@@ -274,19 +300,19 @@ def test_duplicate_structure_admission_information_need_is_rejected(current_spec
 
 
 def test_duplicate_structure_admission_resulting_key_is_rejected(current_specs_repository: Path) -> None:
-    source = current_specs_repository / "specs/20-Spark-火花.md"
+    source = current_specs_repository / ADMISSION_AUDIT_PATH
     text = source.read_text(encoding="utf-8")
     anchor = (
         "| 直接读取一项关键语义转折的发生时间和摘要 | "
         "`fact-object,relation,relation-target,source-ref` | new | `spark-evolution-entry` | "
         "已检索全部 current 与 retired 结构；现有结构分别承载完整事实对象、关系、关系目标和来源定位，"
         "均不能无损表达 Spark 内部关键语义转折条目 | "
-        "`spark-fact-type::5. Spark 类型定义::field-review-0002` |\n"
+        "`v4-five-type-closure::five-type-admission-audit::spark 字段独立复核::field-review-0002` |\n"
     )
     duplicate_result = (
         "| 保存另一项语义变化结构 | `fact-object` | new | `spark-evolution-entry` | "
         "同一结果结构不得保留第二份准入结论 | "
-        "`spark-fact-type::5. Spark 类型定义::field-review-0002` |\n"
+        "`v4-five-type-closure::five-type-admission-audit::spark 字段独立复核::field-review-0002` |\n"
     )
     source.write_text(text.replace(anchor, anchor + duplicate_result, 1), encoding="utf-8")
 
@@ -315,13 +341,16 @@ def _make_evolution_structure_finitely_shared(repository: Path) -> None:
     )
     registry.write_text(registry_text, encoding="utf-8")
 
-    spark = repository / "specs/20-Spark-火花.md"
-    spark_text = spark.read_text(encoding="utf-8")
-    spark_text = spark_text.replace(
+    audit = repository / ADMISSION_AUDIT_PATH
+    audit_text = audit.read_text(encoding="utf-8")
+    audit_text = audit_text.replace(
         "`fact-object,relation,relation-target,source-ref` | new | `spark-evolution-entry` |",
         "`fact-object,relation,relation-target,source-ref,spark-evolution-entry` | promote | `spark-evolution-entry` |",
         1,
     )
+    audit.write_text(audit_text, encoding="utf-8")
+    spark = repository / "specs/20-Spark-火花.md"
+    spark_text = spark.read_text(encoding="utf-8")
     structure_definition = (
         "| structure_key | meaning | not_meaning | constraints |\n"
         "|---|---|---|---|\n"
@@ -331,14 +360,14 @@ def _make_evolution_structure_finitely_shared(repository: Path) -> None:
     )
     spark.write_text(spark_text.replace(structure_definition, "本类型没有类型专属结构", 1), encoding="utf-8")
 
-    workcase = repository / "specs/21-WorkCase-工作项.md"
+    workcase = repository / ADMISSION_AUDIT_PATH
     workcase_text = workcase.read_text(encoding="utf-8")
     admission = (
         "| information_need | compared_structure_keys | decision | resulting_structure_key | rationale | review_ref |\n"
         "|---|---|---|---|---|---|\n"
         "| 复用合成共享结构 | `spark-evolution-entry` | reuse | `spark-evolution-entry` | "
         "合成负例需要第二类型使用同一结构 | "
-        "`workcase-fact-type::5. WorkCase 类型定义::field-review-0002` |"
+        "`v4-five-type-closure::five-type-admission-audit::workcase 字段独立复核::field-review-0002` |"
     )
     workcase.write_text(
         workcase_text.replace("本类型没有结构准入事项", admission, 1),
@@ -348,7 +377,7 @@ def _make_evolution_structure_finitely_shared(repository: Path) -> None:
 
 def test_shared_structure_requires_exactly_one_promotion_source(current_specs_repository: Path) -> None:
     _make_evolution_structure_finitely_shared(current_specs_repository)
-    spark = current_specs_repository / "specs/20-Spark-火花.md"
+    spark = current_specs_repository / ADMISSION_AUDIT_PATH
     spark_text = spark.read_text(encoding="utf-8")
     spark.write_text(
         spark_text.replace("| promote | `spark-evolution-entry` |", "| reuse | `spark-evolution-entry` |", 1),
@@ -364,7 +393,7 @@ def test_shared_structure_requires_exactly_one_promotion_source(current_specs_re
     )
 
     spark.write_text(spark_text, encoding="utf-8")
-    workcase = current_specs_repository / "specs/21-WorkCase-工作项.md"
+    workcase = current_specs_repository / ADMISSION_AUDIT_PATH
     workcase_text = workcase.read_text(encoding="utf-8")
     workcase.write_text(
         workcase_text.replace("| reuse | `spark-evolution-entry` |", "| promote | `spark-evolution-entry` |", 1),
@@ -458,9 +487,12 @@ def test_fact_type_bindings_close_over_registry_and_admission_records(
     tmp_path: Path,
 ) -> None:
     repository = inspect_repository(current_specs_repository)
-    spark = _synthetic_spark(tmp_path)
+    spark = _synthetic_spark(tmp_path, audit_repository=current_specs_repository)
 
-    inspection = inspect_field_registry((*repository.parsed_documents, spark))
+    inspection = inspect_field_registry(
+        (*repository.parsed_documents, spark),
+        admission_audit=_admission_audit(current_specs_repository),
+    )
 
     assert inspection.complete is True
     assert [definition.fact_type_key for definition in inspection.fact_types] == [
@@ -474,12 +506,12 @@ def test_fact_type_bindings_close_over_registry_and_admission_records(
 
 
 def test_duplicate_admission_information_need_is_rejected(current_specs_repository: Path) -> None:
-    source = current_specs_repository / "specs/23-Pitfall-踩坑经验.md"
+    source = current_specs_repository / ADMISSION_AUDIT_PATH
     text = source.read_text(encoding="utf-8")
     row = (
         "| 提供 Human 与 AI 可读短标签 | `title` | reuse | `title` | "
         "公共标题只用于识别，不承担失败机制正文 | "
-        "`pitfall-fact-type::5. Pitfall 类型定义::field-review-0001` |\n"
+        "`v4-five-type-closure::five-type-admission-audit::pitfall 字段独立复核::field-review-0001` |\n"
     )
     source.write_text(text.replace(row, row + row, 1), encoding="utf-8")
 
@@ -490,17 +522,17 @@ def test_duplicate_admission_information_need_is_rejected(current_specs_reposito
 
 
 def test_duplicate_admission_resulting_field_key_is_rejected(current_specs_repository: Path) -> None:
-    source = current_specs_repository / "specs/23-Pitfall-踩坑经验.md"
+    source = current_specs_repository / ADMISSION_AUDIT_PATH
     text = source.read_text(encoding="utf-8")
     anchor = (
         "| 提供 Human 与 AI 可读短标签 | `title` | reuse | `title` | "
         "公共标题只用于识别，不承担失败机制正文 | "
-        "`pitfall-fact-type::5. Pitfall 类型定义::field-review-0001` |\n"
+        "`v4-five-type-closure::five-type-admission-audit::pitfall 字段独立复核::field-review-0001` |\n"
     )
     duplicate_result = (
         "| 提供便于列表显示的简短名称 | `title` | reuse | `title` | "
         "同一结果字段不得保留第二份准入结论 | "
-        "`pitfall-fact-type::5. Pitfall 类型定义::field-review-0001` |\n"
+        "`v4-five-type-closure::five-type-admission-audit::pitfall 字段独立复核::field-review-0001` |\n"
     )
     source.write_text(text.replace(anchor, anchor + duplicate_result, 1), encoding="utf-8")
 
@@ -510,14 +542,85 @@ def test_duplicate_admission_resulting_field_key_is_rejected(current_specs_repos
     assert any(issue.summary == "重复 resulting_field_key 'title'" for issue in inspection.issues)
 
 
+def test_admission_audit_reference_must_use_the_fixed_record_and_type(
+    current_specs_repository: Path,
+) -> None:
+    source = current_specs_repository / "specs/22-ADR-决策.md"
+    text = source.read_text(encoding="utf-8")
+    source.write_text(
+        text.replace(
+            "v4-five-type-closure::five-type-admission-audit::adr::admission-audit",
+            "other-record::five-type-admission-audit::adr::admission-audit",
+            1,
+        ),
+        encoding="utf-8",
+    )
+
+    inspection = _inspection(current_specs_repository)
+
+    assert inspection.complete is False
+    assert any(issue.summary.startswith("准入审计引用必须精确为") for issue in inspection.issues)
+
+
+@pytest.mark.parametrize("mutation", ["prefixed", "outside", "duplicate"])
+def test_admission_audit_record_key_must_be_one_exact_declaration_inside_namespace(
+    current_specs_repository: Path,
+    mutation: str,
+) -> None:
+    source = current_specs_repository / ADMISSION_AUDIT_PATH
+    text = source.read_text(encoding="utf-8")
+    declaration = "> `audit_record_key: v4-five-type-closure`"
+    if mutation == "prefixed":
+        text = text.replace(declaration, "> `not_audit_record_key: v4-five-type-closure`", 1)
+    elif mutation == "outside":
+        text = text.replace(declaration, "", 1).replace(
+            "## 1. 结论",
+            f"{declaration}\n\n## 1. 结论",
+            1,
+        )
+    else:
+        text = text.replace(declaration, f"{declaration}\n>\n{declaration}", 1)
+    source.write_text(text, encoding="utf-8")
+
+    inspection = _inspection(current_specs_repository)
+
+    assert inspection.complete is False
+    assert any(issue.summary == "准入审计证据必须恰好声明一次稳定 audit_record_key" for issue in inspection.issues)
+
+
+def test_admission_review_reference_must_resolve_inside_the_same_type_audit(
+    current_specs_repository: Path,
+) -> None:
+    source = current_specs_repository / ADMISSION_AUDIT_PATH
+    text = source.read_text(encoding="utf-8")
+    source.write_text(
+        text.replace(
+            "spark 字段独立复核::field-review-0002",
+            "workcase 字段独立复核::field-review-0002",
+            1,
+        ),
+        encoding="utf-8",
+    )
+
+    inspection = _inspection(current_specs_repository)
+
+    assert inspection.complete is False
+    matching = [issue for issue in inspection.issues if issue.summary.startswith("结构 review_ref 未指向")]
+    assert matching
+    assert matching[0].location.path == ADMISSION_AUDIT_PATH
+
+
 def test_binding_without_admission_record_is_rejected(
     current_specs_repository: Path,
     tmp_path: Path,
 ) -> None:
     repository = inspect_repository(current_specs_repository)
-    spark = _synthetic_spark(tmp_path, omit_admission_for="relations")
+    spark = _synthetic_spark(tmp_path, audit_repository=current_specs_repository, omit_admission_for="relations")
 
-    inspection = inspect_field_registry((*repository.parsed_documents, spark))
+    inspection = inspect_field_registry(
+        (*repository.parsed_documents, spark),
+        admission_audit=_admission_audit(current_specs_repository),
+    )
 
     assert inspection.complete is False
     assert any(issue.summary == "绑定字段 'relations' 没有字段准入记录" for issue in inspection.issues)
@@ -528,8 +631,8 @@ def test_reuse_admission_must_include_resulting_field_in_compared_set(
     tmp_path: Path,
 ) -> None:
     repository = inspect_repository(current_specs_repository)
-    _synthetic_spark(tmp_path)
-    source = tmp_path / "specs/29-Synthetic-事实类型.md"
+    _synthetic_spark(tmp_path, audit_repository=current_specs_repository)
+    source = current_specs_repository / ADMISSION_AUDIT_PATH
     text = source.read_text(encoding="utf-8")
     source.write_text(
         text.replace(
@@ -539,11 +642,14 @@ def test_reuse_admission_must_include_resulting_field_in_compared_set(
         ),
         encoding="utf-8",
     )
-    reparsed = parse_markdown(source, "specs/29-Synthetic-事实类型.md")
+    synthetic_source = tmp_path / "specs/29-Synthetic-事实类型.md"
+    reparsed = parse_markdown(synthetic_source, "specs/29-Synthetic-事实类型.md")
     identity = parse_identity(reparsed.document)
     assert identity.document is not None
-
-    inspection = inspect_field_registry((*repository.parsed_documents, identity.document))
+    inspection = inspect_field_registry(
+        (*repository.parsed_documents, identity.document),
+        admission_audit=_admission_audit(current_specs_repository),
+    )
 
     assert inspection.complete is False
     assert any("reuse 决定必须在 compared_field_keys 中包含结果字段" == issue.summary for issue in inspection.issues)
@@ -554,9 +660,12 @@ def test_required_foundation_field_cannot_be_weakened_by_type_binding(
     tmp_path: Path,
 ) -> None:
     repository = inspect_repository(current_specs_repository)
-    spark = _synthetic_spark(tmp_path, object_id_presence="optional")
+    spark = _synthetic_spark(tmp_path, audit_repository=current_specs_repository, object_id_presence="optional")
 
-    inspection = inspect_field_registry((*repository.parsed_documents, spark))
+    inspection = inspect_field_registry(
+        (*repository.parsed_documents, spark),
+        admission_audit=_admission_audit(current_specs_repository),
+    )
 
     assert inspection.complete is False
     assert any(issue.summary == "基础必填字段 'object-id' 必须绑定为 required" for issue in inspection.issues)
@@ -626,7 +735,7 @@ def test_conditional_binding_cannot_inherit_without_condition_owner(current_spec
 
 
 def test_type_structure_member_requires_field_admission_record(current_specs_repository: Path) -> None:
-    source = current_specs_repository / "specs/20-Spark-火花.md"
+    source = current_specs_repository / ADMISSION_AUDIT_PATH
     text = source.read_text(encoding="utf-8")
     source.write_text(
         "\n".join(line for line in text.splitlines() if "记录关键语义转折发生或被确认的时间" not in line) + "\n",
@@ -682,14 +791,14 @@ def test_fact_type_declaration_h3_rejects_extra_content(
     tmp_path: Path,
 ) -> None:
     repository = inspect_repository(current_specs_repository)
-    _synthetic_spark(tmp_path)
+    _synthetic_spark(tmp_path, audit_repository=current_specs_repository)
     source = tmp_path / "specs/29-Synthetic-事实类型.md"
     text = source.read_text(encoding="utf-8")
     source.write_text(
         text.replace(
-            "| `synthetic` | 测试使用的合成事实类型 | `synthetic-fact-type::5. Synthetic` |\n\n### 结构准入记录",
+            "| `synthetic` | 测试使用的合成事实类型 | `synthetic-fact-type::5. Synthetic` |\n\n### 类型专属结构定义",
             "| `synthetic` | 测试使用的合成事实类型 | "
-            "`synthetic-fact-type::5. Synthetic` |\n\n额外正文\n\n### 结构准入记录",
+            "`synthetic-fact-type::5. Synthetic` |\n\n额外正文\n\n### 类型专属结构定义",
             1,
         ),
         encoding="utf-8",
@@ -698,7 +807,10 @@ def test_fact_type_declaration_h3_rejects_extra_content(
     identity = parse_identity(reparsed.document)
     assert identity.document is not None
 
-    inspection = inspect_field_registry((*repository.parsed_documents, identity.document))
+    inspection = inspect_field_registry(
+        (*repository.parsed_documents, identity.document),
+        admission_audit=_admission_audit(current_specs_repository),
+    )
 
     assert inspection.complete is False
     assert any(issue.summary == "事实类型声明 H3 只能包含唯一声明表" for issue in inspection.issues)
@@ -728,7 +840,11 @@ def test_attachment_cannot_declare_fact_type(current_specs_repository: Path) -> 
 def test_type_local_field_error_does_not_invalidate_central_registry(
     current_specs_repository: Path,
 ) -> None:
-    _synthetic_spark(current_specs_repository, omit_admission_for="relations")
+    _synthetic_spark(
+        current_specs_repository,
+        audit_repository=current_specs_repository,
+        omit_admission_for="relations",
+    )
 
     repository = inspect_repository(current_specs_repository)
 

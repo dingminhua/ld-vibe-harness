@@ -252,6 +252,8 @@ Helper 提供规则信息时遵守 01 的 L0–L4。L0–L2 只能用于发现�
 
 规则适用判断结果（Rule Applicability Evaluation Result）是 Helper 针对一条已定位的当前来源规则、一个明确对象范围和当次输入，报告是否已经完成适用判断，以及判断为适用、不适用、依据不足或尚未检查的结果，机器字段为 `applicability`。它不改变来源规则的含义、效力或优先级。
 
+`applicability` 只是判断结果的报告载体，不授权 Helper 或 Code 解释自然语言规则。只有来源已把适用条件定义为可机械判定的结构化契约时，Code 才可以据实产生 `applies` 或 `does_not_apply`；依赖自然语言语义、当前事项理解或来源冲突取舍的判断必须由 AI 完成，Helper 只回传判断输入、结果、依据和未检查范围。判断来源或依据不足时必须返回 `insufficient_information` 或 `not_evaluated`，不得根据关键词、相似度或默认值推断适用性。
+
 Helper 报告某条规则的当次判断时，至少保留：
 
 1. 规则所在规范的 `spec_key`、当前路径和具体章节或结构位置；
