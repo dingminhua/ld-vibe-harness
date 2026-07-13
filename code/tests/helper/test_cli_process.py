@@ -34,8 +34,9 @@ def test_general_discovery_reports_source_bound_implementation(tmp_path: Path) -
     assert response["outcome"] == "ok"
     assert response["operation_key"] is None
     assert response["result"]["mode"] == "discovery"
-    assert len(response["result"]["operations"]) == 1
-    operation = response["result"]["operations"][0]
+    assert len(response["result"]["operations"]) == 2
+    operations = {item["operation_key"]: item for item in response["result"]["operations"]}
+    operation = operations["read-specification-candidates"]
     assert operation["operation_key"] == "read-specification-candidates"
     assert operation["implementation"]["present"] is True
     assert operation["implementation"]["evidence"] == [
@@ -50,8 +51,14 @@ def test_general_discovery_reports_source_bound_implementation(tmp_path: Path) -
         "arguments.responsibility_keys",
         "requested_disclosure",
     ]
+    governance = operations["resolve-governance-scope"]
+    assert governance["implementation"] == {"present": False, "evidence": []}
+    assert governance["required_inputs"] == []
+    assert governance["optional_inputs"] == []
+    assert any("领域输入清单尚未由 Code 机械确认" in item["summary"] for item in governance["gaps"])
+    assert any("尚未发现该公开操作的实际实现" in item["summary"] for item in governance["gaps"])
     assert len(response["gaps"]) == 6
-    assert all(gap["summary"].startswith("当前 Code 尚未自动证明：") for gap in response["gaps"])
+    assert all(item["summary"].startswith("当前 Code 尚未自动证明：") for item in response["gaps"])
 
 
 def test_defined_operation_check_and_call_return_actual_l0_results(tmp_path: Path) -> None:

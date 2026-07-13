@@ -225,8 +225,20 @@ def test_unrelated_candidate_problem_does_not_block_defined_operation(
     unknown = handle_request("call", "possibly-hidden-operation", "")
 
     assert discovered.response["outcome"] == "partial"
-    assert discovered.response["scope"]["completed"] == ["read-specification-candidates"]
+    assert discovered.response["scope"]["completed"] == [
+        "read-specification-candidates",
+        "resolve-governance-scope",
+    ]
     assert discovered.response["scope"]["not_completed"] == ["broken"]
+    governance = next(
+        item
+        for item in discovered.response["result"]["operations"]
+        if item["operation_key"] == "resolve-governance-scope"
+    )
+    assert governance["implementation"] == {"present": False, "evidence": []}
+    assert governance["required_inputs"] == []
+    assert governance["optional_inputs"] == []
+    assert any("领域输入清单尚未由 Code 机械确认" in item["summary"] for item in governance["gaps"])
     assert any(source["locator"] == "specs/99-Broken.md" for source in discovered.response["sources"])
     assert discovered.response["diagnostics"][-1]["details"]["path"] == "specs/99-Broken.md"
     assert discovered.response["diagnostics"][-1]["source_refs"] == [
