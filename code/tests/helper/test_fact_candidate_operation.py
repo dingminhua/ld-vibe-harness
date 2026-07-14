@@ -96,11 +96,35 @@ def _workcase() -> dict[str, object]:
         "title": "Recall contract implementation",
         "status": "open",
         "source_refs": _source(),
-        "summary": "Implement deterministic fact recall.",
+        "summary": "Waiting for Human execution approval.",
+        "resume_from": "Present plan version 1 for Human approval.",
+        "waiting_on": "Human execution approval.",
         "priority": "P1",
         "goal": "Complete the recall Helper operation.",
         "scope": "Stage 5 candidate discovery.",
         "success_criteria": ["F1 and F2 cards are deterministic."],
+        "phase": "human_plan_confirming",
+        "plan_version": 1,
+        "work_items": [
+            {
+                "item_id": "item-01",
+                "goal": "Implement deterministic candidate cards.",
+                "expected_result": "F1 and F2 cards are deterministic.",
+                "status": "pending",
+                "approach_summary": "Use current fact sources and focused Helper tests.",
+            }
+        ],
+        "creation_reviews": [
+            {
+                "reviewer": "independent-candidate-reviewer",
+                "reviewed_at": "2026-07-14T09:00:00+08:00",
+                "subject_version": 1,
+                "scope": "Goal, scope, criteria, work items, method, validation and risks.",
+                "conclusion": "pass",
+                "feedback": ["The plan is bounded and testable."],
+                "controller_resolution": "1. Accepted; no change required.",
+            }
+        ],
     }
 
 
@@ -252,6 +276,15 @@ def test_f1_returns_complete_active_adr_and_open_workcase_baseline_with_paginati
     assert second["result"]["coverage"]["offset"] == 1
     assert second["result"]["coverage"]["next_cursor"] is None
     assert second["result"]["cards"][0]["fact_ref"]["fact_type_key"] == "workcase"
+    fields = second["result"]["cards"][0]["fields"]
+    assert fields["phase"] == "human_plan_confirming"
+    assert fields["work_item_counts"] == {
+        "pending": 1,
+        "in_progress": 0,
+        "blocked": 0,
+        "completed": 0,
+        "cancelled": 0,
+    }
 
 
 def test_f2_uses_pitfall_authoritative_fields_without_tags_or_scores(tmp_path: Path) -> None:

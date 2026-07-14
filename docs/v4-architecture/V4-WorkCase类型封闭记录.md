@@ -1,38 +1,39 @@
 # V4 WorkCase 类型封闭记录
 
-> 记录日期：2026-07-13。本文只记录 WorkCase 类型 Gate 的审核和验证结果，不取得类型定义权。WorkCase 当前规则以 `specs/21-WorkCase-工作项.md`、`specs/05-事实模型基础规范.md` 和统一登记附件为准。
+> 初次记录：2026-07-13；重开并重新封闭：2026-07-14。本文只记录 WorkCase 类型 Gate 的审核和验证结果，不取得类型定义权。当前规则以 `specs/21-WorkCase-工作项.md`、`specs/05-事实模型基础规范.md`、`specs/06-行动模板基础规范.md` 和统一登记附件为准。
 
-## 1. 结论
+## 1. 当前结论
 
-WorkCase 的对象语义、粒度、准入、Schema、状态、目标、范围、成功标准、来源、证据、关系、验证、关闭、Human Gate 与 Stop Conditions 已完成定义、机械检查和两路独立复核。复核提出的 P1/P2 已全部修正，WorkCase Gate 关闭，可以按严格串行顺序开始 ADR。
+2026-07-13 的首次 Gate 曾基于“阶段性执行项全部退出长期事实”的判断关闭。后续 V3 设计意图复查和 Human 对真实控制流程的澄清证明该判断过度删减：WorkCase 必须保留共同服务同一关闭责任的阶段性工作项、创建方案独立审核、两次 Human Gate、主控自检、独立结果审核、当前恢复点、最终报告和承接建议；只有单个工作项内部的命令、临时 todo、工具日志、AI 推理和自由实现步骤退出事实。
 
-本结论只证明类型来源与当前机械范围成立，不证明任何 WorkCase 对象、V3 迁移、事实读取或写入、Helper、Code、tests、行动模板、Web 或环境接入能力已经实现。
+当前 21、统一字段登记、准入审计、机械校验和 F1 责任卡已经按修正后的边界更新。WorkCase Gate 在 2026-07-14 重新关闭。该结论不授权事实更新、状态推进、多对象事务、行动模板、Web 写入或环境 Hook；这些仍须各自通过后续准入。
 
-## 2. 主要收敛
+## 2. 当前模型
 
-1. WorkCase 只承载一个已经形成明确目标、范围与成功标准，并需要跨行动或会话保持当前推进与终态判断的独立工作责任；当前即可完成的小任务、Spark 式模糊问题和运行计划不准入。
-2. 状态收敛为 `open / blocked / closed`；新建初态只能是 open 或有具体可证阻塞的 blocked，closed 不等于成功、已提交或下游完成。
-3. V3 整个 `orchestration`、执行项、七段 Agent/Human 流程状态、review receipt、请求时间、revision history 和空占位退出事实 Schema；行动步骤归当次计划或行动模板。
-4. 新增 `goal`、`scope`、`success_criteria`、`validation_summary`、`blocking_summary`、`closure_outcome` 六个 WorkCase 专属字段；来源、证据和关系复用公共入口。
-5. `current-summary`、`priority`、`disposition-summary`、`closed-at` 从 Spark 类型定义提升为 Spark 与 WorkCase 的共享 foundation 字段，唯一共同定义移入 05.Att.01；Spark evolution 保持 Spark 专属。
-6. WorkCase 关系限定为 `depends-on`、`routed-to`、`supersedes`，分别定义 source/target 状态、基数、反向派生、缺失和循环边界；superseded 关闭只由旧对象 outbound routed-to 承担承接权威。
+1. WorkCase 只承担一个可独立判断关闭的长时工作责任；`goal / scope / success_criteria` 定义整体承诺，`work_items` 定义具有独立阶段目标和预期结果、但共同服务同一关闭判断的阶段结果。
+2. 顶层 `status` 保持 `open / blocked / closed`，另以 `phase` 表达 `human_plan_confirming → executing → controller_checking → independent_reviewing → closure_preparing → human_closure_confirming → closed`。阻塞是责任可推进性，阶段是流程位置，二者不得互相替代。
+3. 创建前必须完成方案形成、独立审核和主控反馈处置；对象创建后停在第一次 Human Gate。Human 批准当前 `plan_version` 后才可执行；实质计划变化使旧审核和批准失效。
+4. 全部工作项完成或取消后，由主控自检修复、独立结果审核、主控处理反馈并形成最终报告与分流建议；对象停在第二次 Human Gate，Human 批准当前 `result_version` 后才可关闭。
+5. 顶层与进行中/阻塞工作项都保存最小当前恢复快照。Git 保留历史，当前对象只保留当前版本；Web 与 Helper 只从对象派生阶段条和工作项状态计数，无显式权重时不生成完成百分比。
+6. `workcase-item`、`workcase-review`、`workcase-human-approval` 进入统一结构登记；全部新增字段先完成全局比较、准入、唯一登记和类型绑定，没有在类型正文建立第二字段权威。
 
 ## 3. 独立复核与修正
 
-规范复核覆盖对象价值、准入、Spark 分界、行动模板边界、状态、初态、关闭、关系、类型退出和 V1–V8。字段与 Code 复核扫描 24 个 V3 WorkCase、122 个执行项及当前统一登记，检查字段复用、提升、定义闭包和失败隔离。该历史统计以 commit `3d028ec2` 快照为准：24 个实例平均约 479 行、最大约 1099 行；122 个执行项中 106 个为 `single`，120 个阻塞原因为空，且对象状态与执行项状态已出现矛盾。这些数量只作为设计与反例证据，不取得 V4 实例当前性。
+首次 Gate 的两路复核仍支持单一责任、三状态、统一来源/证据/关系和移除通用 orchestration 容器，但“不保留任何执行项或 review”的结论已被本次复核替代。
 
-终审实际拦截并修正了：summary 与 validation_summary 职责冲突、初态缺失、关系目标承接能力与基数/环边界不足、superseded 方向含混、closed_at 下界丢失、P0–P3 含义丢失、类型退出遗漏 closed 对象、V7 名称漂移，以及有限共享字段 promotion 缺少唯一机械来源。两路复核最终均确认没有剩余 P1/P2。
+本次两路独立审议分别覆盖字段/结构治理和生命周期完整性。实际关闭的问题包括：新增结构与字段的完整准入链、审核联合覆盖、创建前审核与创建后第一次 Human Gate 的顺序、两次批准的版本绑定、计划变化级联失效、结果变化重审、允许的阶段边、工作项取消边界、非执行阶段的恢复快照、blocked 到 closed 的限制、当前版本审核记录、Web 派生展示边界，以及无消费者的 `review_id`。`review_id` 未准入；审核由数组位置、版本、审核者和 Git 历史追溯。
 
-执行项是否进入 Schema 出现过审议分歧。最终依据 06 的行动边界、V3 双层状态漂移和最小事实原则，选择不进入 WorkCase；未来只有出现稳定独立消费证据并重新完成统一字段准入时才能重审。
+## 4. 验证边界
 
-## 4. 验证
+Code 当前可检查 Schema、状态/阶段/枚举、局部身份、工作项依赖缺失/自指/成环、字段条件、计划与结果版本正整数、审核/批准版本绑定、阶段必要字段和时间格式/顺序；F1 责任卡投影 `phase` 并派生五类工作项计数。
 
-tests 数字记录 WorkCase Gate 关闭当时结果；仓库文档、事实类型与字段数量是五类型全局归并前的当前回查结果。
+Code 当前不能判断目标与工作项拆分是否合理、审核是否真正独立、反馈是否被语义解决、Human 是否真实表达批准、成功标准是否满足、证据是否充分或分流建议是否正确。当前实现也没有受控更新入口，因此只能校验已经给出的当前对象，不能证明阶段转换的前后版本单调性；该能力必须在事实更新服务准入时实现。
 
-- 全量 tests：333 passed；
+本次重新封闭的最终验证：
+
+- 全量 tests：440 passed；
 - Ruff lint：passed；
 - Ruff format check：passed；
 - `git diff --check`：passed；
-- 当前仓库检查：18 个当前文档、0 issues、repository complete；
-- 字段治理检查：`fact_types = [spark, workcase, adr, pitfall, study]`、5 个结构、46 个字段、0 issues；
-- promotion 负向检查：有限共享字段缺失提升来源或存在多个提升来源均被阻断。
+- 当前仓库检查：18 个当前文档、0 issues、implemented checks complete；
+- 字段治理检查：5 个事实类型、8 个结构、81 个字段、0 issues。

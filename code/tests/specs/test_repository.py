@@ -65,8 +65,8 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
     assert operations.issues == ()
     assert operations.incomplete_sources == ()
     assert fields.complete is True
-    assert len(fields.structures) == 5
-    assert len(fields.registrations) == 46
+    assert len(fields.structures) == 8
+    assert len(fields.registrations) == 81
 
 
 def test_ignored_admission_audit_evidence_blocks_fact_type_validation(

@@ -60,6 +60,7 @@ _F1_FIELDS = {
         "object_id",
         "title",
         "status",
+        "phase",
         "goal",
         "scope",
         "summary",
@@ -238,6 +239,15 @@ def _card(
     object_id = read.fields["object_id"]
     projection = _F1_FIELDS[fact_type_key] if domain.card_layer == "F1" else _F2_FIELDS[fact_type_key]
     fields = {field: read.fields[field] for field in projection if field in read.fields}
+    if fact_type_key == "workcase":
+        counts = Counter(
+            item.get("status")
+            for item in read.fields.get("work_items", [])
+            if isinstance(item, dict) and isinstance(item.get("status"), str)
+        )
+        fields["work_item_counts"] = {
+            status: counts.get(status, 0) for status in ("pending", "in_progress", "blocked", "completed", "cancelled")
+        }
     observed_at = datetime.now().astimezone().isoformat()
     sources = [
         source_reference("rule", _TYPE_SOURCES[fact_type_key]),

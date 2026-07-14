@@ -176,6 +176,241 @@ def _validate_status(fact_type_key: str, fields: dict[str, Any], issues: list[Fa
             _require(fields, TERMINAL_COMMON, issues)
 
 
+_WORKCASE_PHASES = {
+    "human_plan_confirming",
+    "executing",
+    "controller_checking",
+    "independent_reviewing",
+    "closure_preparing",
+    "human_closure_confirming",
+    "closed",
+}
+_WORKCASE_ITEM_STATUSES = {"pending", "in_progress", "blocked", "completed", "cancelled"}
+_WORKCASE_REVIEW_CONCLUSIONS = {"pass", "pass_with_followups", "changes_required", "blocked"}
+
+
+def _positive_integer(value: object) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool) and value > 0
+
+
+def _validate_workcase_items(fields: dict[str, Any], issues: list[FactIssue]) -> None:
+    values = fields.get("work_items")
+    if not isinstance(values, list):
+        return
+    item_ids = [item.get("item_id") for item in values if isinstance(item, dict)]
+    string_ids = [item_id for item_id in item_ids if isinstance(item_id, str)]
+    if len(string_ids) != len(set(string_ids)):
+        issues.append(FactIssue("schema", "work_items.item_id 不得重复", "work_items"))
+    known = set(string_ids)
+    statuses = {
+        item.get("item_id"): item.get("status")
+        for item in values
+        if isinstance(item, dict) and isinstance(item.get("item_id"), str)
+    }
+    graph: dict[str, set[str]] = {item_id: set() for item_id in string_ids}
+    for index, item in enumerate(values):
+        if not isinstance(item, dict):
+            continue
+        path = f"work_items[{index}]"
+        item_id = item.get("item_id")
+        if isinstance(item_id, str) and re.fullmatch(r"item-[0-9]{2,}", item_id) is None:
+            issues.append(FactIssue("schema", "item_id 必须匹配 item-[0-9]{2,}", f"{path}.item_id"))
+        status = item.get("status")
+        if status not in _WORKCASE_ITEM_STATUSES:
+            issues.append(FactIssue("schema", "work item status 不在当前闭集中", f"{path}.status"))
+            continue
+        conditions = {"current_summary", "resume_from", "blocking_summary", "result_summary", "evidence_refs"}
+        required: set[str] = set()
+        allowed: set[str] = set()
+        if status == "in_progress":
+            required = {"current_summary", "resume_from"}
+            allowed = {"current_summary", "resume_from", "evidence_refs"}
+        elif status == "blocked":
+            required = {"current_summary", "resume_from", "blocking_summary", "evidence_refs"}
+            allowed = required
+        elif status == "completed":
+            required = {"result_summary", "evidence_refs"}
+            allowed = required
+        elif status == "cancelled":
+            required = {"result_summary"}
+            allowed = {"result_summary", "evidence_refs"}
+        for name in sorted(required - set(item)):
+            issues.append(FactIssue("schema", "当前 work item 状态要求该字段", f"{path}.{name}"))
+        for name in sorted((conditions - allowed) & set(item)):
+            issues.append(FactIssue("schema", "当前 work item 状态禁止该字段", f"{path}.{name}"))
+        dependencies = item.get("depends_on")
+        if not isinstance(dependencies, list):
+            continue
+        if any(not isinstance(target, str) or not target for target in dependencies):
+            issues.append(FactIssue("schema", "depends_on 成员必须是非空 item_id", f"{path}.depends_on"))
+            continue
+        if len(dependencies) != len(set(dependencies)):
+            issues.append(FactIssue("schema", "depends_on 成员不得重复", f"{path}.depends_on"))
+        for target in dependencies:
+            if target not in known:
+                issues.append(FactIssue("schema", "depends_on 目标不存在", f"{path}.depends_on"))
+            elif target == item_id:
+                issues.append(FactIssue("schema", "work item 不得依赖自身", f"{path}.depends_on"))
+            elif isinstance(item_id, str):
+                graph[item_id].add(target)
+            if status == "in_progress" and statuses.get(target) not in {"completed", "cancelled"}:
+                issues.append(FactIssue("schema", "in_progress work item 的依赖必须已完成或取消", f"{path}.depends_on"))
+    visiting: set[str] = set()
+    visited: set[str] = set()
+
+    def visit(node: str) -> bool:
+        if node in visiting:
+            return True
+        if node in visited:
+            return False
+        visiting.add(node)
+        if any(visit(target) for target in graph.get(node, ())):
+            return True
+        visiting.remove(node)
+        visited.add(node)
+        return False
+
+    if any(visit(node) for node in graph if node not in visited):
+        issues.append(FactIssue("schema", "work item depends_on 有向图不得成环", "work_items"))
+
+
+def _validate_workcase_reviews(
+    fields: dict[str, Any],
+    array_name: str,
+    version_name: str,
+    issues: list[FactIssue],
+) -> None:
+    values = fields.get(array_name)
+    version = fields.get(version_name)
+    if not isinstance(values, list):
+        return
+    for index, review in enumerate(values):
+        if not isinstance(review, dict):
+            continue
+        path = f"{array_name}[{index}]"
+        if _positive_integer(version) and review.get("subject_version") != version:
+            issues.append(FactIssue("schema", f"审核必须绑定当前 {version_name}", f"{path}.subject_version"))
+        if review.get("conclusion") not in _WORKCASE_REVIEW_CONCLUSIONS:
+            issues.append(FactIssue("schema", "review conclusion 不在当前闭集中", f"{path}.conclusion"))
+        feedback = review.get("feedback")
+        if isinstance(feedback, list):
+            if any(not isinstance(item, str) or not item for item in feedback):
+                issues.append(FactIssue("schema", "review feedback 成员必须是非空 string", f"{path}.feedback"))
+            elif len(feedback) != len(set(feedback)):
+                issues.append(FactIssue("schema", "review feedback 不得重复", f"{path}.feedback"))
+
+
+def _validate_workcase(fields: dict[str, Any], issues: list[FactIssue]) -> None:
+    status = fields.get("status")
+    phase = fields.get("phase")
+    if phase not in _WORKCASE_PHASES:
+        issues.append(FactIssue("schema", "phase 不在 WorkCase 推进阶段闭集中", "phase"))
+    if not _positive_integer(fields.get("plan_version")):
+        issues.append(FactIssue("schema", "plan_version 必须是正整数", "plan_version"))
+    if status == "closed":
+        if phase != "closed":
+            issues.append(FactIssue("schema", "closed WorkCase 的 phase 必须为 closed", "phase"))
+        _forbid(fields, {"resume_from", "waiting_on"}, issues)
+    else:
+        _require(fields, {"resume_from"}, issues)
+        if phase == "closed":
+            issues.append(FactIssue("schema", "非 closed WorkCase 不得使用 closed phase", "phase"))
+    if phase in {"human_plan_confirming", "human_closure_confirming"}:
+        _require(fields, {"waiting_on"}, issues)
+    if phase == "human_plan_confirming":
+        _forbid(
+            fields,
+            {
+                "execution_approval",
+                "result_version",
+                "controller_check_summary",
+                "result_reviews",
+                "closure_approval",
+                "validation_summary",
+                "closure_outcome",
+                "disposition_summary",
+                "closed_at",
+            },
+            issues,
+        )
+    if phase in {
+        "executing",
+        "controller_checking",
+        "independent_reviewing",
+        "closure_preparing",
+        "human_closure_confirming",
+        "closed",
+    }:
+        _require(fields, {"execution_approval"}, issues)
+    if phase == "executing":
+        items = fields.get("work_items")
+        if isinstance(items, list) and not any(
+            isinstance(item, dict) and item.get("status") not in {"completed", "cancelled"} for item in items
+        ):
+            issues.append(FactIssue("schema", "executing 阶段必须仍有未完成工作项", "work_items"))
+    if phase in {
+        "controller_checking",
+        "independent_reviewing",
+        "closure_preparing",
+        "human_closure_confirming",
+        "closed",
+    }:
+        _require(fields, {"result_version"}, issues)
+        if not _positive_integer(fields.get("result_version")):
+            issues.append(FactIssue("schema", "result_version 必须是正整数", "result_version"))
+        items = fields.get("work_items")
+        if isinstance(items, list) and any(
+            isinstance(item, dict) and item.get("status") not in {"completed", "cancelled"} for item in items
+        ):
+            issues.append(FactIssue("schema", "进入结果阶段前全部 work item 必须完成或取消", "work_items"))
+    if phase in {"independent_reviewing", "closure_preparing", "human_closure_confirming", "closed"}:
+        _require(fields, {"controller_check_summary"}, issues)
+    if phase in {"closure_preparing", "human_closure_confirming", "closed"}:
+        _require(fields, {"result_reviews"}, issues)
+    if phase in {"human_closure_confirming", "closed"}:
+        _require(fields, {"validation_summary", "closure_outcome", "disposition_summary", "evidence_refs"}, issues)
+    if phase == "human_closure_confirming":
+        _forbid(fields, {"closure_approval", "closed_at"}, issues)
+    if phase == "closed":
+        _require(fields, {"closure_approval"}, issues)
+    plan_version = fields.get("plan_version")
+    approval = fields.get("execution_approval")
+    if (
+        isinstance(approval, dict)
+        and _positive_integer(plan_version)
+        and approval.get("subject_version") != plan_version
+    ):
+        issues.append(
+            FactIssue("schema", "execution_approval 必须绑定当前 plan_version", "execution_approval.subject_version")
+        )
+    result_version = fields.get("result_version")
+    closure = fields.get("closure_approval")
+    if (
+        isinstance(closure, dict)
+        and _positive_integer(result_version)
+        and closure.get("subject_version") != result_version
+    ):
+        issues.append(
+            FactIssue("schema", "closure_approval 必须绑定当前 result_version", "closure_approval.subject_version")
+        )
+    _validate_workcase_items(fields, issues)
+    _validate_workcase_reviews(fields, "creation_reviews", "plan_version", issues)
+    _validate_workcase_reviews(fields, "result_reviews", "result_version", issues)
+    creation_reviews = fields.get("creation_reviews")
+    if isinstance(creation_reviews, list) and any(
+        isinstance(review, dict) and review.get("conclusion") not in {"pass", "pass_with_followups"}
+        for review in creation_reviews
+    ):
+        issues.append(FactIssue("schema", "当前计划不得保留未解决的创建审核阻断结论", "creation_reviews"))
+    if phase in {"closure_preparing", "human_closure_confirming", "closed"}:
+        result_reviews = fields.get("result_reviews")
+        if isinstance(result_reviews, list) and any(
+            isinstance(review, dict) and review.get("conclusion") not in {"pass", "pass_with_followups"}
+            for review in result_reviews
+        ):
+            issues.append(FactIssue("schema", "进入关闭准备后不得保留未解决的结果审核阻断结论", "result_reviews"))
+
+
 def _validate_times(fact_type_key: str, fields: dict[str, Any], issues: list[FactIssue]) -> None:
     created = _time(fields.get("created_at"), "created_at", issues) if "created_at" in fields else None
     updated = _time(fields.get("updated_at"), "updated_at", issues) if "updated_at" in fields else None
@@ -202,6 +437,30 @@ def _validate_times(fact_type_key: str, fields: dict[str, Any], issues: list[Fac
                 issues.append(FactIssue("schema", "evolution.at 不得早于 created_at", f"evolution[{index}].at"))
             if at is not None and updated is not None and at > updated:
                 issues.append(FactIssue("schema", "evolution.at 不得晚于 updated_at", f"evolution[{index}].at"))
+    if fact_type_key == "workcase":
+        nested_times: list[tuple[str, object, bool]] = []
+        for array_name in ("creation_reviews", "result_reviews"):
+            values = fields.get(array_name)
+            if isinstance(values, list):
+                nested_times.extend(
+                    (
+                        f"{array_name}[{index}].reviewed_at",
+                        value.get("reviewed_at"),
+                        array_name != "creation_reviews",
+                    )
+                    for index, value in enumerate(values)
+                    if isinstance(value, dict) and "reviewed_at" in value
+                )
+        for approval_name in ("execution_approval", "closure_approval"):
+            value = fields.get(approval_name)
+            if isinstance(value, dict) and "approved_at" in value:
+                nested_times.append((f"{approval_name}.approved_at", value["approved_at"], True))
+        for path, value, requires_created_lower_bound in nested_times:
+            at = _time(value, path, issues)
+            if at is not None and created is not None and requires_created_lower_bound and at < created:
+                issues.append(FactIssue("schema", "WorkCase 事件时间不得早于 created_at", path))
+            if at is not None and updated is not None and at > updated:
+                issues.append(FactIssue("schema", "WorkCase 事件时间不得晚于 updated_at", path))
 
 
 def _validate_references(fact_type_key: str, fields: dict[str, Any], issues: list[FactIssue]) -> None:
@@ -327,6 +586,8 @@ def validate_fact_object(fact_type_key: str, fields: dict[str, Any], schema: Fac
     if fields.get("fact_type_key") != fact_type_key:
         issues.append(FactIssue("identity", "fact_type_key 与请求类型不一致", "fact_type_key"))
     _validate_status(fact_type_key, fields, issues)
+    if fact_type_key == "workcase":
+        _validate_workcase(fields, issues)
     _validate_times(fact_type_key, fields, issues)
     if fact_type_key == "workcase" and isinstance(fields.get("success_criteria"), list):
         criteria = fields["success_criteria"]

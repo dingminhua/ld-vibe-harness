@@ -172,11 +172,11 @@ def test_current_registry_has_unique_resolved_field_definitions(current_specs_re
 
     assert inspection.complete is True
     assert inspection.issues == ()
-    assert len(inspection.structures) == 5
-    assert len(inspection.registrations) == 46
-    assert len({registration.field_key for registration in inspection.registrations}) == 46
+    assert len(inspection.structures) == 8
+    assert len(inspection.registrations) == 81
+    assert len({registration.field_key for registration in inspection.registrations}) == 81
     assert (
-        len({(registration.container_ref, registration.field_path) for registration in inspection.registrations}) == 46
+        len({(registration.container_ref, registration.field_path) for registration in inspection.registrations}) == 81
     )
     assert {registration.definition_scope for registration in inspection.registrations} == {"foundation", "type"}
     assert {registration.definition_key for registration in inspection.registrations} == {
@@ -329,14 +329,18 @@ def _make_evolution_structure_finitely_shared(repository: Path) -> None:
         "| `spark-evolution-entry` | object | type | `spark` | "
         "`spark-fact-type::5. Spark 类型定义::spark-evolution-entry` | current |",
         "| `spark-evolution-entry` | object | foundation | `spark,workcase` | "
-        "`fact-object-field-registry::基础结构定义表::spark-evolution-entry` | current |",
+        "`fact-object-field-registry::跨类型共享结构定义表::spark-evolution-entry` | current |",
         1,
     )
     registry_text = registry_text.replace(
-        "| `fact-object` | 一个具体事实对象的顶层 JSON object 成员闭集 |",
+        "存在只供部分类型复用的 `definition_scope: foundation` 结构时，只能在本节追加唯一结构定义，"
+        "使用与“基础结构定义表”相同的四列表头。",
+        "| structure_key | meaning | not_meaning | constraints |\n"
+        "|---|---|---|---|\n"
         "| `spark-evolution-entry` | Spark 与 WorkCase 共享的合成测试结构 | 不表示正式设计 | "
-        "只用于结构提升负例 |\n"
-        "| `fact-object` | 一个具体事实对象的顶层 JSON object 成员闭集 |",
+        "只用于结构提升负例 |\n\n"
+        "存在只供部分类型复用的 `definition_scope: foundation` 结构时，只能在本节追加唯一结构定义，"
+        "使用与“基础结构定义表”相同的四列表头。",
         1,
     )
     registry.write_text(registry_text, encoding="utf-8")
@@ -363,14 +367,17 @@ def _make_evolution_structure_finitely_shared(repository: Path) -> None:
     workcase = repository / ADMISSION_AUDIT_PATH
     workcase_text = workcase.read_text(encoding="utf-8")
     admission = (
-        "| information_need | compared_structure_keys | decision | resulting_structure_key | rationale | review_ref |\n"
-        "|---|---|---|---|---|---|\n"
         "| 复用合成共享结构 | `spark-evolution-entry` | reuse | `spark-evolution-entry` | "
         "合成负例需要第二类型使用同一结构 | "
-        "`v4-five-type-closure::five-type-admission-audit::workcase 字段独立复核::field-review-0002` |"
+        "`v4-five-type-closure::five-type-admission-audit::workcase 字段独立复核::field-review-0002` |\n\n"
+    )
+    workcase_structure_header = (
+        "### workcase 结构准入记录\n\n"
+        "| information_need | compared_structure_keys | decision | resulting_structure_key | rationale | review_ref |\n"
+        "|---|---|---|---|---|---|\n"
     )
     workcase.write_text(
-        workcase_text.replace("本类型没有结构准入事项", admission, 1),
+        workcase_text.replace(workcase_structure_header, workcase_structure_header + admission, 1),
         encoding="utf-8",
     )
 
@@ -396,16 +403,20 @@ def test_shared_structure_requires_exactly_one_promotion_source(current_specs_re
     workcase = current_specs_repository / ADMISSION_AUDIT_PATH
     workcase_text = workcase.read_text(encoding="utf-8")
     workcase.write_text(
-        workcase_text.replace("| reuse | `spark-evolution-entry` |", "| promote | `spark-evolution-entry` |", 1),
+        workcase_text.replace(
+            "| 复用合成共享结构 | `spark-evolution-entry` | reuse | `spark-evolution-entry` |",
+            "| 复用合成共享结构 | `spark-evolution-entry` | promote | `spark-evolution-entry` |",
+            1,
+        ),
         encoding="utf-8",
     )
 
     duplicated = _inspection(current_specs_repository)
 
     assert duplicated.complete is False
-    assert any(
-        issue.summary == "有限共享结构 'spark-evolution-entry' 必须恰有一个 promote 来源；当前为 spark, workcase"
-        for issue in duplicated.issues
+    summaries = {issue.summary for issue in duplicated.issues}
+    assert "有限共享结构 'spark-evolution-entry' 必须恰有一个 promote 来源；当前为 spark, workcase" in summaries, (
+        summaries
     )
 
 

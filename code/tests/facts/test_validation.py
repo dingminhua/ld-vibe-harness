@@ -21,17 +21,47 @@ def _common(fact_type_key: str, object_id: str, status: str) -> dict[str, object
     }
 
 
+def _workcase_fields() -> dict[str, object]:
+    return {
+        "summary": "Waiting for Human execution approval",
+        "resume_from": "Present plan version 1 for Human approval",
+        "waiting_on": "Human execution approval",
+        "priority": "P2",
+        "goal": "Ship",
+        "scope": "One module",
+        "success_criteria": ["Tests pass"],
+        "phase": "human_plan_confirming",
+        "plan_version": 1,
+        "work_items": [
+            {
+                "item_id": "item-01",
+                "goal": "Implement the module",
+                "expected_result": "The module passes its tests",
+                "status": "pending",
+                "approach_summary": "Implement within the declared scope and run focused tests",
+            }
+        ],
+        "creation_reviews": [
+            {
+                "reviewer": "independent-plan-reviewer",
+                "reviewed_at": "2026-07-14T09:30:00+08:00",
+                "subject_version": 1,
+                "scope": "Goal, scope, success criteria, work items, method, validation and risks",
+                "conclusion": "pass",
+                "feedback": ["The plan is bounded and independently checkable"],
+                "controller_resolution": "1. Accepted; no plan change required.",
+            }
+        ],
+    }
+
+
 def test_projected_schemas_validate_all_five_minimal_shapes(current_specs_repository: Path) -> None:
     schemas = project_fact_schemas(inspect_repository(current_specs_repository))
     objects = {
         "spark": {**_common("spark", "spark-0001", "open"), "summary": "Question", "priority": "P2"},
         "workcase": {
             **_common("workcase", "workcase-0001", "open"),
-            "summary": "Current",
-            "priority": "P2",
-            "goal": "Ship",
-            "scope": "One module",
-            "success_criteria": ["Tests pass"],
+            **_workcase_fields(),
         },
         "adr": {
             **_common("adr", "adr-0001", "active"),
@@ -126,16 +156,57 @@ def test_study_reference_profiles_and_observation_time_are_mechanical(current_sp
     assert any(issue.field_path == "evidence_refs[0].version" for issue in issues)
 
 
+def test_workcase_phase_items_versions_and_event_times_are_mechanical(current_specs_repository: Path) -> None:
+    schema = project_fact_schemas(inspect_repository(current_specs_repository))["workcase"]
+    fields = {
+        **_common("workcase", "workcase-0001", "open"),
+        **_workcase_fields(),
+        "phase": "executing",
+        "work_items": [
+            {
+                "item_id": "item-01",
+                "goal": "First result",
+                "expected_result": "First result is observable",
+                "status": "pending",
+                "depends_on": ["item-02"],
+                "approach_summary": "Execute within the declared scope",
+            },
+            {
+                "item_id": "item-02",
+                "goal": "Second result",
+                "expected_result": "Second result is observable",
+                "status": "pending",
+                "depends_on": ["item-01"],
+                "approach_summary": "Execute within the declared scope",
+            },
+        ],
+        "creation_reviews": [
+            {
+                "reviewer": "independent-plan-reviewer",
+                "reviewed_at": "2026-07-14T11:00:00+08:00",
+                "subject_version": 2,
+                "scope": "Current plan",
+                "conclusion": "pass",
+                "feedback": ["Plan is bounded"],
+                "controller_resolution": "1. Accepted.",
+            }
+        ],
+    }
+
+    issues = validate_fact_object("workcase", fields, schema)
+
+    assert any(issue.field_path == "execution_approval" for issue in issues)
+    assert any(issue.field_path == "work_items" and "成环" in issue.summary for issue in issues)
+    assert any(issue.field_path == "creation_reviews[0].subject_version" for issue in issues)
+    assert any(issue.field_path == "creation_reviews[0].reviewed_at" for issue in issues)
+
+
 def test_each_fact_type_rejects_an_unknown_top_level_field(current_specs_repository: Path) -> None:
     schemas = project_fact_schemas(inspect_repository(current_specs_repository))
     required_by_type = {
         "spark": {"summary": "Question", "priority": "P2"},
         "workcase": {
-            "summary": "Current",
-            "priority": "P2",
-            "goal": "Ship",
-            "scope": "One module",
-            "success_criteria": ["Tests pass"],
+            **_workcase_fields(),
         },
         "adr": {
             "evidence_refs": [{"kind": "repository-path", "locator": "docs/evidence.md"}],
@@ -215,10 +286,7 @@ def test_each_terminal_or_blocked_state_enforces_its_condition_fields(
     additions = {
         "spark": {"summary": "Question"},
         "workcase": {
-            "summary": "Current",
-            "goal": "Ship",
-            "scope": "One module",
-            "success_criteria": ["Tests pass"],
+            **_workcase_fields(),
         },
         "adr": {
             "evidence_refs": [{"kind": "repository-path", "locator": "docs/evidence.md"}],

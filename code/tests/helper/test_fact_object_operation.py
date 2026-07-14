@@ -151,12 +151,31 @@ def test_fact_read_checks_relation_targets_and_reachable_dag(tmp_path: Path) -> 
                     "source_refs:",
                     "  - kind: repository-path",
                     "    locator: docs/input.md",
-                    "summary: Current",
+                    "summary: Waiting for Human execution approval",
+                    "resume_from: Present plan version 1 for Human approval",
+                    "waiting_on: Human execution approval",
                     "priority: P2",
                     "goal: Finish",
                     "scope: One object",
                     "success_criteria:",
                     "  - Done",
+                    "phase: human_plan_confirming",
+                    "plan_version: 1",
+                    "work_items:",
+                    "  - item_id: item-01",
+                    "    goal: Finish the object",
+                    "    expected_result: Done",
+                    "    status: pending",
+                    "    approach_summary: Complete the bounded target and validate it",
+                    "creation_reviews:",
+                    "  - reviewer: independent-dependency-reviewer",
+                    "    reviewed_at: 2026-07-14T09:30:00+08:00",
+                    "    subject_version: 1",
+                    "    scope: Goal, scope, criteria, work items, method, validation and risks",
+                    "    conclusion: pass",
+                    "    feedback:",
+                    "      - The dependency plan is bounded",
+                    "    controller_resolution: '1. Accepted; no change required.'",
                     "relations:",
                     "  - relation_key: depends-on",
                     "    target:",
@@ -381,6 +400,46 @@ goal: Finish
 scope: One object
 success_criteria:
   - Done
+phase: closed
+plan_version: 1
+work_items:
+  - item_id: item-01
+    goal: Finish the object
+    expected_result: Done
+    status: completed
+    approach_summary: Complete the bounded target and validate it
+    result_summary: The work was replaced after producing a bounded result
+    evidence_refs:
+      - kind: repository-path
+        locator: docs/evidence.md
+creation_reviews:
+  - reviewer: independent-plan-reviewer
+    reviewed_at: 2026-07-14T09:05:00+08:00
+    subject_version: 1
+    scope: Goal, scope, criteria, work items, method, validation and risks
+    conclusion: pass
+    feedback:
+      - The plan was bounded
+    controller_resolution: '1. Accepted; no change required.'
+execution_approval:
+  subject_version: 1
+  approved_at: 2026-07-14T09:10:00+08:00
+  summary: Human approved execution of plan version 1
+result_version: 1
+controller_check_summary: The controller checked the result and replacement boundary
+result_reviews:
+  - reviewer: independent-result-reviewer
+    reviewed_at: 2026-07-14T09:50:00+08:00
+    subject_version: 1
+    scope: Item results, criteria, validation, residuals, outcome and routing
+    conclusion: pass
+    feedback:
+      - A routed-to successor is required
+    controller_resolution: '1. Accepted; routing remains required.'
+closure_approval:
+  subject_version: 1
+  approved_at: 2026-07-14T10:00:00+08:00
+  summary: Human approved closure of result version 1
 validation_summary: Validated
 closure_outcome: superseded
 disposition_summary: Replaced

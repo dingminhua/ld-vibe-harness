@@ -50,7 +50,18 @@ _TEXT_MATCH_FIELDS = frozenset({"text", "field_paths"})
 _F2_FIELDS = {
     "spark": frozenset({"object_id", "title", "status", "summary", "priority", "updated_at"}),
     "workcase": frozenset(
-        {"object_id", "title", "status", "goal", "scope", "summary", "priority", "blocking_summary", "updated_at"}
+        {
+            "object_id",
+            "title",
+            "status",
+            "phase",
+            "goal",
+            "scope",
+            "summary",
+            "priority",
+            "blocking_summary",
+            "updated_at",
+        }
     ),
     "adr": frozenset({"object_id", "title", "status", "decision_question", "decision", "applicability", "updated_at"}),
     "pitfall": frozenset(
