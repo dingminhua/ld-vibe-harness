@@ -52,14 +52,13 @@ python3.12 -m venv .venv
 
 输出从 `05.Att.01` 统一登记和 20–24 类型绑定实时派生，只用于阅读，不是第二字段权威或手写 Schema。
 
-需要核对当前规则源实际公开的操作及某项请求契约时，运行：
+需要核对当前规则源实际公开的操作及其已发现输入清单时，运行通用发现：
 
 ```bash
 .venv/bin/ldvh capabilities
-.venv/bin/ldvh capabilities find-fact-object-candidates
 ```
 
-`capabilities` 的返回值是当次 Working Tree 中规则源声明与 Code 实现的实时绑定结果，比本文的导航列表更权威。
+`capabilities` 的返回值是当次 Working Tree 中规则源声明与 Code 实现的实时绑定结果，比本文的导航列表更权威。`capabilities <operation_key>` 不是无参数契约描述命令；它使用该操作的完整业务请求，检查具体对象和范围在当次环境中是否可用。
 
 已有满足要求的虚拟环境时，不需要重复建立或安装。不得使用低于 3.12 的系统默认 `python` 解释测试收集失败为 Code 回归。
 
