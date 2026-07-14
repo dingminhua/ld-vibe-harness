@@ -162,7 +162,9 @@ def serialize_fact_object(layout: FactTypeLayout, fields: dict[str, object], bod
     frontmatter = stream.getvalue()
     if layout.carrier == "markdown":
         assert body is not None
-        return f"---\n{frontmatter}---\n\n{body.rstrip()}\n"
+        normalized_body = body.rstrip()
+        separator = "" if normalized_body.startswith("\n") else "\n"
+        return f"---\n{frontmatter}---\n{separator}{normalized_body}\n"
     return frontmatter
 
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import errno
+import hashlib
 import os
 import stat
 import subprocess
@@ -30,6 +31,8 @@ class FactReadResult:
     fields: dict[str, Any] | None
     body: str | None
     issues: tuple[FactIssue, ...]
+    content_fingerprint: str | None = None
+    raw_text: str | None = None
 
 
 def _safe_regular_file(root: Path, relative_path: str) -> tuple[Path, FactIssue | None, CheckStatus | None]:
@@ -213,7 +216,17 @@ def read_fact_object(
     if parsed.fields.get("object_id") != object_id:
         issues.append(FactIssue("identity", "object_id 与请求引用及文件名不一致", "object_id"))
     status: CheckStatus = "invalid" if issues else "mechanically_valid"
-    return FactReadResult(relative_path, layout.carrier, status, parsed.fields, parsed.body, tuple(issues))
+    fingerprint = hashlib.sha256(text.encode("utf-8")).hexdigest()
+    return FactReadResult(
+        relative_path,
+        layout.carrier,
+        status,
+        parsed.fields,
+        parsed.body,
+        tuple(issues),
+        fingerprint if status == "mechanically_valid" else None,
+        text,
+    )
 
 
 __all__ = ["CheckStatus", "FactReadResult", "read_fact_object"]

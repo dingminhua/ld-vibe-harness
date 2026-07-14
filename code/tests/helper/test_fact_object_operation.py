@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import subprocess
 import sys
@@ -97,7 +98,10 @@ def test_exact_fact_read_preserves_valid_and_not_found_local_results(tmp_path: P
         "not_found",
     ]
     assert response["result"]["items"][0]["fact_object"]["summary"] == "Read one object"
+    raw = (project / "facts" / "sparks" / "spark-0001.yaml").read_bytes()
+    assert response["result"]["items"][0]["content_fingerprint"] == hashlib.sha256(raw).hexdigest()
     assert response["result"]["items"][1]["fact_object"] is None
+    assert response["result"]["items"][1]["content_fingerprint"] is None
     assert response["changes"] == []
 
 
@@ -533,6 +537,21 @@ relations:
     )
     valid = handle_request("call", "read-fact-objects", json.dumps(payload)).response
     assert [item["check_status"] for item in valid["result"]["items"]] == [
+        "mechanically_valid",
+        "mechanically_valid",
+    ]
+
+    successor.write_text(
+        successor.read_text(encoding="utf-8").replace(
+            "status: active\n",
+            "status: retired\n"
+            "disposition_summary: Replacement later retired without deleting its established edge\n"
+            "closed_at: 2026-07-14T11:00:00+08:00\n",
+        ),
+        encoding="utf-8",
+    )
+    retained_edge = handle_request("call", "read-fact-objects", json.dumps(payload)).response
+    assert [item["check_status"] for item in retained_edge["result"]["items"]] == [
         "mechanically_valid",
         "mechanically_valid",
     ]

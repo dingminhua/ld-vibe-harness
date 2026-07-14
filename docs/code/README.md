@@ -16,7 +16,7 @@ Code tests 不代替 `web/tests/`，也不证明环境接入、Web 适配或整�
 
 - `code/ldvh/specs/`：当前规则源的发现、结构检查、派生投影与事实类型 Schema 投影。
 - `code/ldvh/governance/`：管辖项目配置、Git worktree 身份与管辖范围解析。
-- `code/ldvh/facts/`：事实对象载体、关系、验证、候选发现、项目级检查与受控创建。
+- `code/ldvh/facts/`：事实对象载体、关系、验证、候选发现、项目级检查、受控创建与单对象 CAS 更新。
 - `code/ldvh/helper/`：公共请求响应、来源声明绑定、能力发现与 CLI 服务分流。
 - `code/ldvh/helper/operations/`：当前规则源已声明公开操作的显式 Code 适配器。
 
@@ -29,6 +29,7 @@ Code tests 不代替 `web/tests/`，也不证明环境接入、Web 适配或整�
 - `read-fact-objects`：按精确事实引用读取 F3 完整对象。
 - `prepare-fact-object-draft`：无副作用地准备单个事实对象草案与预留信息。
 - `create-fact-object`：在预留契约下受控创建单个事实对象。
+- `update-fact-object`：按精确引用和当前内容指纹受控替换单个事实对象。
 
 上述列表是开发者导航，不是第二操作契约。操作是否取得公开身份、请求与结果结构、可用条件及边界，以当前有效 Specs 中的来源声明为准；Code 实现只有与来源声明成功绑定后才会被 Helper 公开。
 

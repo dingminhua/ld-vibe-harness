@@ -261,6 +261,7 @@ def test_unrelated_candidate_problem_does_not_block_defined_operation(
         "read-specification-candidates",
         "read-specification-content",
         "resolve-governance-scope",
+        "update-fact-object",
     ]
     assert discovered.response["scope"]["not_completed"] == ["broken"]
     governance = next(

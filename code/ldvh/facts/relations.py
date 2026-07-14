@@ -143,8 +143,6 @@ def _edge_time_valid(
 
 
 def _source_condition(source_type: str, relation_key: str, source_fields: dict[str, object]) -> bool:
-    if source_type in {"adr", "pitfall", "study"} and relation_key == "supersedes":
-        return source_fields.get("status") == "active"
     if source_type == "workcase" and relation_key == "depends-on":
         return source_fields.get("status") in {"open", "blocked"}
     if source_type == "workcase" and relation_key == "routed-to":
@@ -255,11 +253,14 @@ def _valid_supersedes_source(
     object_id: str,
     candidate: FactReadResult,
 ) -> bool:
-    """Check a replacement source independently of target incoming-cardinality state."""
+    """Check a persisted replacement edge independently of incoming cardinality.
+
+    Establishment requires an active source and a multi-object mutation. Static
+    reads must keep the edge valid after that source later reaches a terminal
+    status; controlled single-object create/update paths cannot establish it.
+    """
 
     assert candidate.fields is not None
-    if candidate.fields.get("status") != "active":
-        return False
     seen: set[tuple[object, object, object, object]] = set()
     for relation in _relations(candidate):
         identity = _edge_identity(relation)
