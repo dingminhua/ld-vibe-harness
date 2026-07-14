@@ -8,6 +8,7 @@ from conftest import commit_all
 from ldvh.diagnostics import Issue, SourceLocation
 from ldvh.helper.operation_sources import inspect_operation_sources
 from ldvh.specs import repository as repository_module
+from ldvh.specs.action_templates import inspect_action_template_sources
 from ldvh.specs.discovery import DiscoveryResult
 from ldvh.specs.field_registry import ADMISSION_AUDIT_PATH, inspect_field_registry
 from ldvh.specs.markdown import parse_markdown
@@ -17,6 +18,7 @@ from ldvh.specs.repository import UNCHECKED_CONDITIONS, inspect_repository
 def test_current_v4_sources_form_the_expected_real_combination(current_specs_repository: Path) -> None:
     inspection = inspect_repository(current_specs_repository)
     operations = inspect_operation_sources(inspection)
+    action_templates = inspect_action_template_sources(inspection)
     fields = inspect_field_registry(
         inspection.active_documents_passing_implemented_checks,
         admission_audit=parse_markdown(
@@ -28,11 +30,11 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
     assert inspection.issues == ()
     assert inspection.implemented_checks_complete is True
     checked_documents = inspection.active_documents_passing_implemented_checks
-    assert len(checked_documents) == 18
-    assert sum(document.kind != "attachment" for document in checked_documents) == 14
+    assert len(checked_documents) == 19
+    assert sum(document.kind != "attachment" for document in checked_documents) == 15
 
     assert sum(document.kind == "attachment" for document in checked_documents) == 4
-    assert len(inspection.projections) == 54
+    assert len(inspection.projections) == 57
     assert {projection.layer for projection in inspection.projections} == {"L0", "L1", "L2"}
     field_registry = inspection.document_passing_implemented_checks_by_key("fact-object-field-registry")
     assert field_registry is not None
@@ -66,6 +68,11 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
     }
     assert operations.issues == ()
     assert operations.incomplete_sources == ()
+    assert [declaration.template_key for declaration in action_templates.candidate_declarations] == ["git-commit"]
+    assert action_templates.candidate_declarations[0].source_key == "git-commit-action-template"
+    assert action_templates.candidate_declarations[0].definition_heading.title == "5. Git 提交行动模板定义"
+    assert action_templates.issues == ()
+    assert action_templates.incomplete_sources == ()
     assert fields.complete is True
     assert len(fields.structures) == 8
     assert len(fields.registrations) == 81
@@ -100,7 +107,7 @@ def test_invalid_working_tree_source_is_not_replaced_with_committed_content(
     assert inspection.implemented_checks_complete is False
     assert inspection.document_passing_implemented_checks_by_key("web-presentation-interaction") is None
     assert len(inspection.active_documents_passing_implemented_checks) == 16
-    assert len(inspection.projections) == 48
+    assert len(inspection.projections) == 51
 
 
 def test_invalid_foundation_stops_dependent_current_projection(current_specs_repository: Path) -> None:

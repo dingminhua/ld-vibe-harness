@@ -126,12 +126,12 @@ def test_defined_operation_check_and_call_return_actual_l0_results(tmp_path: Pat
     assert check_response["outcome"] == "ok"
     checked_operation = check_response["result"]["operations"][0]
     assert checked_operation["availability"] == "available_for_request"
-    assert len(checked_operation["available_scope"]) == 18
+    assert len(checked_operation["available_scope"]) == 19
     assert checked_operation["unavailable_scope"] == []
 
     assert called.returncode == 0
     assert call_response["outcome"] == "ok"
-    assert len(call_response["result"]["items"]) == 18
+    assert len(call_response["result"]["items"]) == 19
     assert call_response["scope"]["requested"] == call_response["scope"]["completed"]
     assert call_response["scope"]["not_completed"] == []
     assert call_response["disclosure"]["requested"] is None
