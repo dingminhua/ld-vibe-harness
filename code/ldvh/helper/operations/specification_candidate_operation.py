@@ -55,6 +55,7 @@ def _read(
         repository,
         responsibility_keys=domain_request.responsibility_keys,
         disclosure=domain_request.disclosure,
+        response_profile=request.response_profile,  # type: ignore[arg-type]
     )
     return domain_request, result
 

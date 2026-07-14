@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Literal
 
-CONTRACT = "ldvh-helper-cli/1"
+CONTRACT = "ldvh-helper-cli/2"
 EXIT_CODES = {
     "ok": 0,
     "no_change": 0,
@@ -55,6 +55,7 @@ def common_response(
     operation_key: str | None,
     outcome: str,
     summary: str,
+    response_profile: str = "compact",
     result: dict[str, Any] | None = None,
     requested_scope: list[object] | None = None,
     completed_scope: list[object] | None = None,
@@ -70,8 +71,11 @@ def common_response(
 ) -> ServiceResult:
     if outcome not in EXIT_CODES:
         raise ValueError(f"unsupported Helper outcome: {outcome}")
+    if response_profile not in {"compact", "diagnostic"}:
+        raise ValueError(f"unsupported Helper response profile: {response_profile}")
     response = {
         "contract": CONTRACT,
+        "response_profile": response_profile,
         "request_kind": request_kind,
         "operation_key": operation_key,
         "outcome": outcome,

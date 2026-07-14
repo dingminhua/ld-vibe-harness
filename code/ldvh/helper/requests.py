@@ -15,6 +15,7 @@ REQUEST_FIELDS = frozenset(
         "work_object_locators",
         "arguments",
         "requested_disclosure",
+        "response_profile",
         "observed_context",
         "authorization_reference",
     }
@@ -32,6 +33,7 @@ class CommonRequest:
     requested_disclosure: str | None
     observed_context: dict[str, Any]
     authorization_reference: tuple[dict[str, Any], ...]
+    response_profile: str = "compact"
 
 
 @dataclass(frozen=True, slots=True)
@@ -123,6 +125,10 @@ def parse_common_request(raw: str, *, general_discovery: bool) -> RequestParseRe
     if disclosure is not None and disclosure not in DISCLOSURE_LEVELS:
         problems.append("requested_disclosure 只允许 L0、L1、L2、L3、L4 或 null")
 
+    response_profile = value.get("response_profile", "compact")
+    if not isinstance(response_profile, str) or response_profile not in {"compact", "diagnostic"}:
+        problems.append("response_profile 只允许 compact 或 diagnostic")
+
     observed = value.get("observed_context", {})
     if not _is_object(observed):
         problems.append("observed_context 必须是 object")
@@ -144,6 +150,7 @@ def parse_common_request(raw: str, *, general_discovery: bool) -> RequestParseRe
             work_object_locators=tuple(locators),
             arguments=dict(arguments),
             requested_disclosure=disclosure,
+            response_profile=response_profile,
             observed_context=dict(observed),
             authorization_reference=tuple(dict(reference) for reference in authorization),
         ),

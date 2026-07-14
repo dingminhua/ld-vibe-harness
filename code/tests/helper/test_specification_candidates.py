@@ -39,7 +39,7 @@ def test_reads_l0_without_reopening_the_working_tree(current_specs_repository: P
     )
     assert [part["level"] for part in result.disclosure_parts] == ["L0"]
     assert result.verification[0]["status"] == "passed"
-    assert len(result.gaps) == len(inspection.unchecked_conditions)
+    assert len(result.gaps) == 1
 
 
 def test_l2_is_cumulative_and_exact_selection_keeps_request_order(current_specs_repository: Path) -> None:
@@ -239,6 +239,7 @@ def test_unchecked_qualification_and_basis_review_gaps_do_not_downgrade_success(
         inspection,
         responsibility_keys=(overlap.spec_key,),
         disclosure="L0",
+        response_profile="diagnostic",
     )
 
     assert result.suggested_outcome == "ok"

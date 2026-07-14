@@ -40,6 +40,7 @@ def _assert_follow_up_item(item: dict[str, Any], *, operation: bool = False) -> 
 def assert_common_response(response: dict[str, Any]) -> None:
     assert set(response) == {
         "contract",
+        "response_profile",
         "request_kind",
         "operation_key",
         "outcome",
@@ -54,7 +55,8 @@ def assert_common_response(response: dict[str, Any]) -> None:
         "diagnostics",
         "follow_up",
     }
-    assert response["contract"] == "ldvh-helper-cli/1"
+    assert response["contract"] == "ldvh-helper-cli/2"
+    assert response["response_profile"] in {"compact", "diagnostic"}
     assert response["request_kind"] in {"capabilities", "call"}
     assert response["outcome"] in {
         "ok",

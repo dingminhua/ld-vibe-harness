@@ -14,6 +14,7 @@ def test_empty_input_uses_all_common_defaults() -> None:
     assert result.request.work_object_locators == ()
     assert result.request.arguments == {}
     assert result.request.requested_disclosure is None
+    assert result.request.response_profile == "compact"
     assert result.request.observed_context == {}
     assert result.request.authorization_reference == ()
 
@@ -30,6 +31,8 @@ def test_empty_input_uses_all_common_defaults() -> None:
         ('{"arguments": []}', "arguments"),
         ('{"arguments": {"unexpected": true}}', "通用 capabilities"),
         ('{"requested_disclosure": "L5"}', "requested_disclosure"),
+        ('{"response_profile": "verbose"}', "response_profile"),
+        ('{"response_profile": []}', "response_profile"),
         ('{"observed_context": []}', "observed_context"),
         ('{"authorization_reference": {}}', "authorization_reference"),
         ('{"authorization_reference": [{}]}', "kind"),
@@ -44,6 +47,14 @@ def test_rejects_invalid_common_request(raw: str, problem: str) -> None:
 
     assert result.request is None
     assert any(problem in item for item in result.problems)
+
+
+def test_accepts_diagnostic_response_profile() -> None:
+    result = parse_common_request('{"response_profile": "diagnostic"}', general_discovery=True)
+
+    assert result.problems == ()
+    assert result.request is not None
+    assert result.request.response_profile == "diagnostic"
 
 
 @pytest.mark.parametrize("value", ["read-source", "a", "a1-b2"])

@@ -179,6 +179,7 @@ def read_specification_candidates(
     *,
     responsibility_keys: tuple[str, ...],
     disclosure: Literal["L0", "L1", "L2"],
+    response_profile: Literal["compact", "diagnostic"] = "compact",
 ) -> SpecificationCandidateReadResult:
     """Read candidate projections without touching the repository filesystem."""
 
@@ -275,10 +276,11 @@ def read_specification_candidates(
 
         items.append(item)
         completed.append(key)
-        for layer in _LAYERS[: _LAYERS.index(disclosure) + 1]:
-            references = _projection_sources(projections[layer])
-            level_sources[layer].extend(references)
-            item_sources.extend(references)
+        if response_profile == "diagnostic":
+            for layer in _LAYERS[: _LAYERS.index(disclosure) + 1]:
+                references = _projection_sources(projections[layer])
+                level_sources[layer].extend(references)
+                item_sources.extend(references)
 
     if not responsibility_keys:
         extra_incomplete = [scope for scope in repository.incomplete_scope if scope not in completed]
@@ -314,36 +316,85 @@ def read_specification_candidates(
 
     qualification_scope = list(completed)
     if qualification_scope:
-        gaps.extend(
-            {
-                "summary": f"尚未由 Code 机械证明当前规则源资格条件：{condition}",
-                "scope": qualification_scope,
-                "source_refs": [_QUALIFICATION_SOURCE.copy()],
-            }
-            for condition in repository.unchecked_conditions
-        )
-        gaps.extend(
-            {
-                "summary": (
-                    f"{overlap.spec_key} 的直接 basis {overlap.direct_basis} 已可经由 "
-                    f"{overlap.reachable_via} 到达，其直接必要性需语义复核"
-                ),
-                "scope": [overlap.spec_key],
-                "source_refs": [_QUALIFICATION_SOURCE.copy()],
-            }
-            for overlap in repository.basis_reachability_overlaps
-            if overlap.spec_key in completed
-        )
+        unchecked = tuple(dict.fromkeys(repository.unchecked_conditions))
+        if unchecked and response_profile == "compact":
+            gaps.append(
+                {
+                    "summary": (
+                        f"尚未由 Code 机械证明 {len(unchecked)} 项当前规则源资格条件；请求 diagnostic 档可读取逐项明细"
+                    ),
+                    "scope": qualification_scope,
+                    "source_refs": [_QUALIFICATION_SOURCE.copy()],
+                }
+            )
+        else:
+            gaps.extend(
+                {
+                    "summary": f"尚未由 Code 机械证明当前规则源资格条件：{condition}",
+                    "scope": qualification_scope,
+                    "source_refs": [_QUALIFICATION_SOURCE.copy()],
+                }
+                for condition in unchecked
+            )
+        overlaps = tuple(overlap for overlap in repository.basis_reachability_overlaps if overlap.spec_key in completed)
+        if overlaps and response_profile == "compact":
+            gaps.append(
+                {
+                    "summary": f"发现 {len(overlaps)} 项直接 basis 可经其它路径到达，直接必要性仍需语义复核",
+                    "scope": list(dict.fromkeys(overlap.spec_key for overlap in overlaps)),
+                    "source_refs": [_QUALIFICATION_SOURCE.copy()],
+                }
+            )
+        else:
+            gaps.extend(
+                {
+                    "summary": (
+                        f"{overlap.spec_key} 的直接 basis {overlap.direct_basis} 已可经由 "
+                        f"{overlap.reachable_via} 到达，其直接必要性需语义复核"
+                    ),
+                    "scope": [overlap.spec_key],
+                    "source_refs": [_QUALIFICATION_SOURCE.copy()],
+                }
+                for overlap in overlaps
+            )
 
-    verification = tuple(
-        {
-            "check": f"当前实现中适用于 {key} 的全部机械检查已执行并通过（整体结果）",
-            "status": "passed",
-            "scope": [key],
-            "evidence": list(_projection_sources(projection_groups[key]["L0"])),
+    compact_source: JsonObject | None = None
+    if completed and response_profile == "compact":
+        compact_source = {
+            "kind": "working_tree_rule_set",
+            "locator": repository.repository_root.resolve().as_posix(),
+            "details": {
+                "responsibility_keys": list(completed),
+                "paths": [documents[key].canonical_path for key in completed],
+            },
         }
-        for key in completed
-    )
+        item_sources.append(compact_source)
+        for layer in _LAYERS[: _LAYERS.index(disclosure) + 1]:
+            level_sources[layer].append(compact_source)
+
+    if response_profile == "compact":
+        verification = (
+            (
+                {
+                    "check": f"当前实现中适用于 {len(completed)} 个完成条目的机械检查已执行并通过（集合结果）",
+                    "status": "passed",
+                    "scope": list(completed),
+                    "evidence": [] if compact_source is None else [compact_source],
+                },
+            )
+            if completed
+            else ()
+        )
+    else:
+        verification = tuple(
+            {
+                "check": f"当前实现中适用于 {key} 的全部机械检查已执行并通过（整体结果）",
+                "status": "passed",
+                "scope": [key],
+                "evidence": list(_projection_sources(projection_groups[key]["L0"])),
+            }
+            for key in completed
+        )
     disclosure_parts = tuple(
         {
             "level": layer,

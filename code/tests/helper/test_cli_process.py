@@ -98,6 +98,22 @@ def test_general_discovery_reports_source_bound_implementation(tmp_path: Path) -
     }
     assert governance["required_inputs"] == []
     assert governance["optional_inputs"] == ["work_object_locators", "arguments.workspace_root"]
+    assert len(response["gaps"]) == 2
+    condition_count = sum(
+        int(item["summary"].split("尚未自动证明 ", 1)[1].split(" 项", 1)[0]) for item in response["gaps"]
+    )
+    assert condition_count == 8
+
+
+def test_diagnostic_profile_expands_qualification_details(tmp_path: Path) -> None:
+    completed, response = _run(
+        tmp_path,
+        "capabilities",
+        stdin=json.dumps({"response_profile": "diagnostic"}),
+    )
+
+    assert completed.returncode == 0
+    assert response["response_profile"] == "diagnostic"
     assert len(response["gaps"]) == 8
     assert all(item["summary"].startswith("当前 Code 尚未自动证明：") for item in response["gaps"])
 
@@ -307,7 +323,7 @@ def test_specification_content_capabilities_and_l4_call_use_exact_current_source
     assert call_response["changes"] == []
 
 
-def test_specification_content_l3_expands_and_attachment_l4_includes_parent(tmp_path: Path) -> None:
+def test_specification_content_l3_slices_and_attachment_l4_includes_parent(tmp_path: Path) -> None:
     l3_request = {
         "arguments": {
             "selections": [
@@ -319,7 +335,7 @@ def test_specification_content_l3_expands_and_attachment_l4_includes_parent(tmp_
         },
         "requested_disclosure": "L3",
     }
-    expanded, expanded_response = _run(
+    sliced, sliced_response = _run(
         tmp_path,
         "call",
         "read-specification-content",
@@ -336,12 +352,10 @@ def test_specification_content_l3_expands_and_attachment_l4_includes_parent(tmp_
         stdin=json.dumps(attachment_request),
     )
 
-    assert expanded.returncode == 0
-    expanded_item = expanded_response["result"]["items"][0]
-    assert expanded_item["requested_disclosure"] == "L3"
-    assert expanded_item["actual_disclosure"] == "L4"
-    assert expanded_item["expanded_to_l4"] is True
-    assert expanded_item["expansion_reason"]
+    assert sliced.returncode == 0
+    sliced_item = sliced_response["result"]["items"][0]
+    assert sliced_item["requested_disclosure"] == sliced_item["actual_disclosure"] == "L3"
+    assert [part["level"] for part in sliced_item["parts"]] == ["L3", "L3"]
 
     assert attachment.returncode == 0
     parts = attachment_response["result"]["items"][0]["parts"]

@@ -53,6 +53,7 @@ def _read(
         return read_specification_content(
             repository,
             request=domain_request,
+            response_profile=request.response_profile,  # type: ignore[arg-type]
         )
     except SpecificationContentSelectionError as error:
         raise OperationRequestError(error.problems, sources=error.sources) from error

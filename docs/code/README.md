@@ -23,7 +23,7 @@ Code tests 不代替 `web/tests/`，也不证明环境接入、Web 适配或整�
 当前已接入的公开操作为：
 
 - `read-specification-candidates`：发现规范候选与 L0–L2 投影。
-- `read-specification-content`：按精确选择展开 L3/L4 规则内容。
+- `read-specification-content`：按精确选择读取 L3 原文切片或 L4 完整来源。
 - `resolve-governance-scope`：解析工作对象的管辖项目范围。
 - `find-fact-object-candidates`：从当前 Working Tree 直接发现 F0–F2 事实候选。
 - `read-fact-objects`：按精确事实引用读取 F3 完整对象。
@@ -60,6 +60,8 @@ python3.12 -m venv .venv
 ```
 
 `capabilities` 的返回值是当次 Working Tree 中规则源声明与 Code 实现的实时绑定结果，比本文的导航列表更权威。`capabilities <operation_key>` 不是无参数契约描述命令；它使用该操作的完整业务请求，检查具体对象和范围在当次环境中是否可用。
+
+共同请求的 `response_profile` 缺省为 `compact`；审计或排障需要逐项资格条件与证据时可显式使用 `diagnostic`。两个档位不改变领域结果、范围、状态变化或实际执行行为。
 
 已有满足要求的虚拟环境时，不需要重复建立或安装。不得使用低于 3.12 的系统默认 `python` 解释测试收集失败为 Code 回归。
 

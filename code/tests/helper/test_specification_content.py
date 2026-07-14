@@ -46,8 +46,6 @@ def test_reads_exact_l4_source_with_fixed_traceability_fields(current_specs_repo
     item = result.items[0]
     assert item["selection"] == selection.as_scope()
     assert item["requested_disclosure"] == item["actual_disclosure"] == "L4"
-    assert item["expanded_to_l4"] is False
-    assert item["expansion_reason"] is None
     parts = item["parts"]
     assert isinstance(parts, list) and len(parts) == 1
     part = parts[0]
@@ -78,7 +76,7 @@ def test_reads_exact_l4_source_with_fixed_traceability_fields(current_specs_repo
     )
     assert len(result.verification) == 1
     assert result.verification[0]["status"] == "passed"
-    assert len(result.gaps) == len(repository.unchecked_conditions)
+    assert len(result.gaps) == 1
 
 
 def test_attachment_l4_includes_attachment_then_unique_parent_without_basis_recursion(
@@ -109,7 +107,7 @@ def test_attachment_l4_includes_attachment_then_unique_parent_without_basis_recu
     assert [part["source_refs"][0] for part in result.disclosure_parts] == [part["source"] for part in parts]
 
 
-def test_valid_l3_h3_is_checked_then_conservatively_expanded_to_l4(current_specs_repository: Path) -> None:
+def test_valid_l3_h3_returns_exact_mechanical_slice(current_specs_repository: Path) -> None:
     repository = inspect_repository(current_specs_repository)
     selection = SpecificationContentSelection(
         "specification-model-foundation",
@@ -125,11 +123,13 @@ def test_valid_l3_h3_is_checked_then_conservatively_expanded_to_l4(current_specs
     assert result.items is not None
     item = result.items[0]
     assert item["requested_disclosure"] == "L3"
-    assert item["actual_disclosure"] == "L4"
-    assert item["expanded_to_l4"] is True
-    assert isinstance(item["expansion_reason"], str) and item["expansion_reason"]
-    assert item["parts"][0]["heading_path"] is None
-    assert result.disclosure_parts[0]["level"] == "L4"
+    assert item["actual_disclosure"] == "L3"
+    assert [part["heading_path"] for part in item["parts"]] == [
+        ["5. 基础术语"],
+        ["5. 基础术语", "5.1 规范文档（Specification）"],
+    ]
+    assert item["parts"][1]["content"].startswith("### 5.1 规范文档（Specification）")
+    assert result.disclosure_parts[0]["level"] == "L3"
     assert "请求 L3" in result.disclosure_parts[0]["reason"]
 
 

@@ -68,6 +68,7 @@ def invalid_request_result(
     problems: tuple[str, ...],
     *,
     sources: list[dict[str, Any]] | None = None,
+    response_profile: str = "compact",
 ) -> ServiceResult:
     response_sources = CONTRACT_SOURCES if sources is None else [*CONTRACT_SOURCES, *sources]
     return common_response(
@@ -75,6 +76,7 @@ def invalid_request_result(
         operation_key=operation_key,
         outcome="invalid_request",
         summary="Helper 请求不符合共同接口契约",
+        response_profile=response_profile,
         requested_scope=[] if operation_key is None else [operation_key],
         not_completed_scope=[] if operation_key is None else [operation_key],
         sources=response_sources,
@@ -83,12 +85,19 @@ def invalid_request_result(
     )
 
 
-def _rule_source_unavailable(request_kind: RequestKind, operation_key: str | None, problem: str) -> ServiceResult:
+def _rule_source_unavailable(
+    request_kind: RequestKind,
+    operation_key: str | None,
+    problem: str,
+    *,
+    response_profile: str,
+) -> ServiceResult:
     return common_response(
         request_kind=request_kind,
         operation_key=operation_key,
         outcome="unavailable",
         summary="当前进程无法形成可信的规则源发现结果",
+        response_profile=response_profile,
         requested_scope=[] if operation_key is None else [operation_key],
         not_completed_scope=[] if operation_key is None else [operation_key],
         sources=CONTRACT_SOURCES,
@@ -112,14 +121,26 @@ def _qualification_gaps(
     *,
     sources: list[dict[str, Any]],
     scope: list[object] | None = None,
+    response_profile: str = "compact",
 ) -> list[dict[str, Any]]:
+    unique_conditions = tuple(dict.fromkeys(conditions))
+    if not unique_conditions:
+        return []
+    if response_profile == "compact":
+        return [
+            gap(
+                f"当前 Code 尚未自动证明 {len(unique_conditions)} 项资格条件；请求 diagnostic 档可读取逐项明细",
+                scope=scope,
+                sources=sources,
+            )
+        ]
     return [
         gap(
             f"当前 Code 尚未自动证明：{condition}",
             scope=scope,
             sources=sources,
         )
-        for condition in dict.fromkeys(conditions)
+        for condition in unique_conditions
     ]
 
 
@@ -135,6 +156,7 @@ def _operation_item(
     available_scope: list[object] | None = None,
     unavailable_scope: list[object] | None = None,
     availability_gaps: list[dict[str, Any]] | None = None,
+    response_profile: str = "compact",
 ) -> dict[str, Any]:
     operation_scope: list[object] = [declaration.operation_key]
     declaration_source = _declaration_source(declaration)
@@ -165,8 +187,14 @@ def _operation_item(
             rule_source_conditions,
             sources=[RULE_SOURCE_QUALIFICATION_SOURCE],
             scope=operation_scope,
+            response_profile=response_profile,
         ),
-        *_qualification_gaps(contract_conditions, sources=CONTRACT_SOURCES, scope=operation_scope),
+        *_qualification_gaps(
+            contract_conditions,
+            sources=CONTRACT_SOURCES,
+            scope=operation_scope,
+            response_profile=response_profile,
+        ),
         *([] if availability_gaps is None else availability_gaps),
     ]
     return {
@@ -199,12 +227,15 @@ def _execution_response(
     operation_key: str,
     declaration_source: dict[str, Any],
     execution: OperationExecution,
+    *,
+    response_profile: str,
 ) -> ServiceResult:
     return common_response(
         request_kind=request_kind,
         operation_key=operation_key,
         outcome=execution.outcome,
         summary=execution.summary,
+        response_profile=response_profile,
         result=execution.result,
         requested_scope=list(execution.requested_scope),
         completed_scope=list(execution.completed_scope),
@@ -226,12 +257,23 @@ def handle_request(request_kind: RequestKind, operation_key: str | None, raw_inp
     parsed = parse_common_request(raw_input, general_discovery=general_discovery)
     if parsed.request is None:
         return invalid_request_result(request_kind, operation_key, parsed.problems)
+    response_profile = parsed.request.response_profile
     if operation_key is not None and not valid_operation_key(operation_key):
-        return invalid_request_result(request_kind, operation_key, ("命令位置中的 operation_key 格式无效",))
+        return invalid_request_result(
+            request_kind,
+            operation_key,
+            ("命令位置中的 operation_key 格式无效",),
+            response_profile=response_profile,
+        )
 
     inspected = inspect_colocated_rule_source(Path(ldvh.__file__))
     if inspected.problem is not None:
-        return _rule_source_unavailable(request_kind, operation_key, inspected.problem)
+        return _rule_source_unavailable(
+            request_kind,
+            operation_key,
+            inspected.problem,
+            response_profile=response_profile,
+        )
     assert inspected.repository is not None and inspected.operations is not None
     repository = inspected.repository
     operations = inspected.operations
@@ -252,6 +294,7 @@ def handle_request(request_kind: RequestKind, operation_key: str | None, raw_inp
             operation_key=operation_key,
             outcome="unavailable",
             summary="当前进程未能完整检查规则源",
+            response_profile=response_profile,
             requested_scope=[] if operation_key is None else [operation_key],
             not_completed_scope=affected or ([] if operation_key is None else [operation_key]),
             sources=[*CONTRACT_SOURCES, *issue_sources],
@@ -262,8 +305,16 @@ def handle_request(request_kind: RequestKind, operation_key: str | None, raw_inp
     unchecked_conditions = tuple(dict.fromkeys(operations.unchecked_conditions))
     contract_conditions = tuple(dict.fromkeys(operations.contract_conditions))
     qualification_gaps = [
-        *_qualification_gaps(unchecked_conditions, sources=[RULE_SOURCE_QUALIFICATION_SOURCE]),
-        *_qualification_gaps(contract_conditions, sources=CONTRACT_SOURCES),
+        *_qualification_gaps(
+            unchecked_conditions,
+            sources=[RULE_SOURCE_QUALIFICATION_SOURCE],
+            response_profile=response_profile,
+        ),
+        *_qualification_gaps(
+            contract_conditions,
+            sources=CONTRACT_SOURCES,
+            response_profile=response_profile,
+        ),
     ]
     runtime = bind_operation_implementations(operations, OPERATION_IMPLEMENTATIONS)
     bound_by_key = runtime.by_key()
@@ -280,6 +331,7 @@ def handle_request(request_kind: RequestKind, operation_key: str | None, raw_inp
                     operation_key=operation_key,
                     outcome="unavailable",
                     summary="当前规则源存在未完成范围，无法确定请求的操作是否已由来源定义",
+                    response_profile=response_profile,
                     requested_scope=[operation_key],
                     not_completed_scope=[operation_key, *repository.incomplete_scope],
                     sources=[*CONTRACT_SOURCES, *repository_sources],
@@ -296,6 +348,7 @@ def handle_request(request_kind: RequestKind, operation_key: str | None, raw_inp
                 request_kind,
                 operation_key,
                 (f"当前规则源未定义公开操作 {operation_key!r}",),
+                response_profile=response_profile,
             )
         declaration = bound_operation.declaration
         implementation = bound_operation.implementation
@@ -311,6 +364,7 @@ def handle_request(request_kind: RequestKind, operation_key: str | None, raw_inp
                 operation_key=operation_key,
                 outcome="unavailable",
                 summary="公开操作已经定义，但当前没有可调用的实现与能力依据",
+                response_profile=response_profile,
                 requested_scope=[operation_key],
                 not_completed_scope=[operation_key],
                 sources=[*CONTRACT_SOURCES, declaration_source, RULE_SOURCE_QUALIFICATION_SOURCE],
@@ -327,10 +381,17 @@ def handle_request(request_kind: RequestKind, operation_key: str | None, raw_inp
                     operation_key,
                     error.problems,
                     sources=list(error.sources),
+                    response_profile=response_profile,
                 )
             except Exception as error:  # noqa: BLE001 - service boundary converts implementation failures
                 execution = implementation_error_execution(bound_operation, error)
-            return _execution_response("call", operation_key, declaration_source, execution)
+            return _execution_response(
+                "call",
+                operation_key,
+                declaration_source,
+                execution,
+                response_profile=response_profile,
+            )
 
         availability = None
         available_scope: list[object] = []
@@ -349,10 +410,17 @@ def handle_request(request_kind: RequestKind, operation_key: str | None, raw_inp
                     operation_key,
                     error.problems,
                     sources=list(error.sources),
+                    response_profile=response_profile,
                 )
             except Exception as error:  # noqa: BLE001 - service boundary converts implementation failures
                 execution = implementation_error_execution(bound_operation, error)
-                return _execution_response("capabilities", operation_key, declaration_source, execution)
+                return _execution_response(
+                    "capabilities",
+                    operation_key,
+                    declaration_source,
+                    execution,
+                    response_profile=response_profile,
+                )
         operation = _operation_item(
             declaration,
             observed_at=observed_at,
@@ -364,12 +432,14 @@ def handle_request(request_kind: RequestKind, operation_key: str | None, raw_inp
             available_scope=available_scope,
             unavailable_scope=unavailable_scope,
             availability_gaps=availability_gaps,
+            response_profile=response_profile,
         )
         return common_response(
             request_kind="capabilities",
             operation_key=operation_key,
             outcome="ok",
             summary="已完成公开操作的当次可用性检查",
+            response_profile=response_profile,
             result={"mode": "request_check", "operations": [operation]},
             requested_scope=[operation_key],
             completed_scope=[operation_key],
@@ -386,6 +456,7 @@ def handle_request(request_kind: RequestKind, operation_key: str | None, raw_inp
             rule_source_conditions=unchecked_conditions,
             contract_conditions=contract_conditions,
             implementation=bound_operation.implementation,
+            response_profile=response_profile,
         )
         for bound_operation in runtime.operations
         for declaration in (bound_operation.declaration,)
@@ -402,6 +473,7 @@ def handle_request(request_kind: RequestKind, operation_key: str | None, raw_inp
             if repository_incomplete
             else f"已完成当前规则源的公开操作发现；发现 {len(discovered_operations)} 项领域公开操作"
         ),
+        response_profile=response_profile,
         result={"mode": "discovery", "operations": discovered_operations},
         completed_scope=[declaration.operation_key for declaration in declarations],
         not_completed_scope=list(repository.incomplete_scope),

@@ -22,7 +22,6 @@ _QUALIFICATION_SOURCE: JsonObject = {
     "kind": "rule",
     "locator": "specs/01-规范模型基础规范.md#6.2-进入当前规则源的条件",
 }
-_L3_EXPANSION_REASON = "当前结构没有可复核的通用机械判据证明必要定义已完整，因此按契约展开完整来源"
 
 
 class SpecificationContentSelectionError(ValueError):
@@ -103,6 +102,80 @@ def _full_part(
         "inclusion_reason": inclusion_reason,
         "source": source,
     }
+
+
+def _section_part(
+    document: FormalDocument,
+    *,
+    repository_root: str,
+    heading_path: tuple[str, ...],
+) -> tuple[JsonObject, ...]:
+    headings = document.markdown.headings
+    h2 = next(heading for heading in headings if heading.level == 2 and heading.title == heading_path[0])
+    next_h2 = min(
+        (heading.line for heading in headings if heading.level == 2 and heading.line > h2.line),
+        default=len(document.markdown.raw_lines) + 1,
+    )
+
+    ranges: list[tuple[tuple[str, ...], int, int, str]] = []
+    if len(heading_path) == 1:
+        ranges.append((heading_path, h2.line, next_h2 - 1, "按精确 H2 机械边界返回所选原文切片"))
+    else:
+        h3s = [heading for heading in headings if heading.level == 3 and h2.line < heading.line < next_h2]
+        target = next(heading for heading in h3s if heading.title == heading_path[1])
+        first_h3_line = min(heading.line for heading in h3s)
+        ranges.append(
+            (
+                (heading_path[0],),
+                h2.line,
+                first_h3_line - 1,
+                "返回所属 H2 标题及首个 H3 前对各子节共同适用的原文",
+            )
+        )
+        next_peer = min(
+            (heading.line for heading in headings if heading.line > target.line and heading.level in (2, 3)),
+            default=len(document.markdown.raw_lines) + 1,
+        )
+        ranges.append(
+            (
+                heading_path,
+                target.line,
+                next_peer - 1,
+                "按精确 H3 机械边界返回所选原文切片",
+            )
+        )
+
+    raw_lines = document.markdown.raw_text.splitlines(keepends=True)
+    observed_at = document.markdown.observed_at
+    if observed_at is None:
+        raise ValueError("inspected Markdown source is missing its observation time")
+    parts: list[JsonObject] = []
+    for path, start_line, end_line, reason in ranges:
+        source: JsonObject = {
+            "kind": "rule",
+            "locator": f"{document.canonical_path}#L{start_line}-L{end_line}",
+            "observed_at": observed_at,
+            "details": {
+                "responsibility_key": document.key,
+                "path": document.canonical_path,
+                "heading_path": list(path),
+                "start_line": start_line,
+                "end_line": end_line,
+                "git_worktree_root": repository_root,
+            },
+        }
+        parts.append(
+            {
+                "level": "L3",
+                "heading_path": list(path),
+                "start_line": start_line,
+                "end_line": end_line,
+                "content": "".join(raw_lines[start_line - 1 : end_line]),
+                "inclusion_reason": reason,
+                "source": source,
+            }
+        )
+    return tuple(parts)
 
 
 def _deduplicate_sources(sources: list[JsonObject]) -> tuple[JsonObject, ...]:
@@ -227,16 +300,23 @@ def _parts_for_document(
     document: FormalDocument,
     *,
     repository: RepositoryInspection,
-    expanded: bool,
+    selection: SpecificationContentSelection,
+    disclosure: Literal["L3", "L4"],
 ) -> tuple[JsonObject, ...] | _UnfinishedSelection:
     root = repository.repository_root.resolve().as_posix()
+    if document.kind != "attachment" and disclosure == "L3":
+        assert selection.heading_path is not None
+        return _section_part(
+            document,
+            repository_root=root,
+            heading_path=selection.heading_path,
+        )
     if document.kind != "attachment":
-        reason = "请求 L3 但必要上下文无法机械证明，因此纳入完整来源" if expanded else "请求 L4，纳入完整来源"
         return (
             _full_part(
                 document,
                 repository_root=root,
-                inclusion_reason=reason,
+                inclusion_reason="请求 L4，纳入完整来源",
             ),
         )
 
@@ -254,17 +334,23 @@ def _parts_for_document(
             sources=(source,),
         )
     parent = parents[0]
-    prefix = "请求 L3 后按契约展开 L4" if expanded else "请求 L4"
+    if disclosure == "L3":
+        assert selection.heading_path is not None
+        return _section_part(
+            document,
+            repository_root=root,
+            heading_path=selection.heading_path,
+        )
     return (
         _full_part(
             document,
             repository_root=root,
-            inclusion_reason=f"{prefix}，纳入授权附件完整来源",
+            inclusion_reason="请求 L4，纳入授权附件完整来源",
         ),
         _full_part(
             parent,
             repository_root=root,
-            inclusion_reason=f"{prefix}，纳入授权该附件的当前唯一父规范完整来源",
+            inclusion_reason="请求 L4，纳入授权该附件的当前唯一父规范完整来源",
         ),
     )
 
@@ -282,8 +368,9 @@ def read_specification_content(
     repository: RepositoryInspection,
     *,
     request: SpecificationContentRequest,
+    response_profile: Literal["compact", "diagnostic"] = "compact",
 ) -> SpecificationContentReadResult:
-    """Read L4 content or conservatively expand an exact L3 selection to L4."""
+    """Read an exact L3 mechanical slice or the complete L4 source."""
 
     targets = [_selection_target(repository, selection) for selection in request.selections]
     requested_scope = tuple(selection.as_scope() for selection in request.selections)
@@ -322,11 +409,11 @@ def read_specification_content(
             )
             continue
 
-        expanded = request.disclosure == "L3"
         parts = _parts_for_document(
             target,
             repository=repository,
-            expanded=expanded,
+            selection=selection,
+            disclosure=request.disclosure,
         )
         if isinstance(parts, _UnfinishedSelection):
             failure = _UnfinishedSelection(
@@ -357,9 +444,7 @@ def read_specification_content(
             "status": target.status,
             "path": target.canonical_path,
             "requested_disclosure": request.disclosure,
-            "actual_disclosure": "L4",
-            "expanded_to_l4": expanded,
-            "expansion_reason": _L3_EXPANSION_REASON if expanded else None,
+            "actual_disclosure": request.disclosure,
             "parts": part_list,
         }
         items.append(item)
@@ -368,26 +453,55 @@ def read_specification_content(
             source = part["source"]
             assert isinstance(source, dict)
             sources.append(source)
-            reason = f"请求 L3；实际展开为 L4：{_L3_EXPANSION_REASON}" if expanded else "请求 L4，按契约返回完整来源"
-            disclosure_parts.append({"level": "L4", "source_refs": [source], "reason": reason})
-        verification.append(
-            {
-                "check": f"当前实现中适用于 {target.key} 的身份、结构、授权和读取检查已执行并通过",
-                "status": "passed",
-                "scope": [selection.as_scope()],
-                "evidence": [part["source"] for part in part_list],
-            }
-        )
+            reason = (
+                "请求 L3，按精确标题机械边界返回原文切片"
+                if request.disclosure == "L3"
+                else "请求 L4，按契约返回完整来源"
+            )
+            disclosure_parts.append({"level": request.disclosure, "source_refs": [source], "reason": reason})
+        if response_profile == "diagnostic":
+            verification.append(
+                {
+                    "check": f"当前实现中适用于 {target.key} 的身份、结构、授权和读取检查已执行并通过",
+                    "status": "passed",
+                    "scope": [selection.as_scope()],
+                    "evidence": [part["source"] for part in part_list],
+                }
+            )
 
     if completed_scope:
-        gaps.extend(
-            {
-                "summary": f"尚未由 Code 机械证明当前规则源资格条件：{condition}",
-                "scope": list(completed_scope),
-                "source_refs": [_QUALIFICATION_SOURCE.copy()],
-            }
-            for condition in repository.unchecked_conditions
-        )
+        unchecked = tuple(dict.fromkeys(repository.unchecked_conditions))
+        if unchecked and response_profile == "compact":
+            gaps.append(
+                {
+                    "summary": (
+                        f"尚未由 Code 机械证明 {len(unchecked)} 项当前规则源资格条件；请求 diagnostic 档可读取逐项明细"
+                    ),
+                    "scope": list(completed_scope),
+                    "source_refs": [_QUALIFICATION_SOURCE.copy()],
+                }
+            )
+        else:
+            gaps.extend(
+                {
+                    "summary": f"尚未由 Code 机械证明当前规则源资格条件：{condition}",
+                    "scope": list(completed_scope),
+                    "source_refs": [_QUALIFICATION_SOURCE.copy()],
+                }
+                for condition in unchecked
+            )
+        if response_profile == "compact":
+            verification.append(
+                {
+                    "check": (
+                        f"当前实现中适用于 {len(completed_scope)} 个完成选择的身份、结构、授权和读取检查"
+                        "已执行并通过（集合结果）"
+                    ),
+                    "status": "passed",
+                    "scope": list(completed_scope),
+                    "evidence": list(_deduplicate_sources(sources)),
+                }
+            )
 
     if completed_scope and failures:
         outcome: SuggestedOutcome = "partial"
