@@ -106,7 +106,7 @@ def test_invalid_working_tree_source_is_not_replaced_with_committed_content(
     assert any("YAML title 与 H1" in issue.summary for issue in inspection.issues)
     assert inspection.implemented_checks_complete is False
     assert inspection.document_passing_implemented_checks_by_key("web-presentation-interaction") is None
-    assert len(inspection.active_documents_passing_implemented_checks) == 16
+    assert len(inspection.active_documents_passing_implemented_checks) == 17
     assert len(inspection.projections) == 51
 
 

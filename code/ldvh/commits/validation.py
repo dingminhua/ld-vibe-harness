@@ -1,0 +1,185 @@
+"""Side-effect-free mechanical validation for the 03 Git commit contract."""
+
+from __future__ import annotations
+
+import re
+from dataclasses import dataclass
+from typing import Literal
+
+from ldvh.commits.contract_source import CommitContractProjection
+
+_HEADER = re.compile(r"^(?P<type>[a-z]+)(?:\((?P<scope>[a-z]+)\))?(?P<breaking>!)?: (?P<description>.+)$")
+_CJK = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff]")
+_FIXED_HEADINGS = ("动机:", "关键变更:", "影响边界:", "验证结论:", "风险与后续:")
+SEMANTIC_CHECKS_REQUIRED = (
+    "主要目的与拆分",
+    "简体中文语义与 description 真实性",
+    "高影响分类",
+    "breaking 必要性",
+    "body 充分性",
+    "验证结论与风险真实性",
+)
+
+
+@dataclass(frozen=True, slots=True)
+class CommitValidationInput:
+    message: str | None
+    candidate_paths: tuple[str, ...] | None
+    git_worktree_root: str | None
+    governance_status: str | None
+    governance_identity: str | None
+    snapshot_identity: str | None
+    source_path: str | None
+    source_fingerprint: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class CommitValidationIssue:
+    code: str
+    message: str
+
+
+@dataclass(frozen=True, slots=True)
+class CommitValidationResult:
+    outcome: Literal["passed", "failed", "unverifiable"]
+    issues: tuple[CommitValidationIssue, ...]
+    normalized_message: str | None
+    header: str | None
+    body: str | None
+    source_path: str
+    source_fingerprint: str
+    semantic_checks_required: tuple[str, ...]
+
+
+def _issue(code: str, message: str) -> CommitValidationIssue:
+    return CommitValidationIssue(code, message)
+
+
+def _normalize_message(message: str) -> tuple[str, list[str]]:
+    normalized = message.replace("\r\n", "\n").replace("\r", "\n")
+    lines = normalized.split("\n")
+    while lines and (not lines[0].strip() or lines[0].startswith("#")):
+        lines.pop(0)
+    return "\n".join(lines).rstrip(), lines
+
+
+def _path_issues(paths: tuple[str, ...]) -> list[CommitValidationIssue]:
+    issues: list[CommitValidationIssue] = []
+    if not paths:
+        return [_issue("candidate_paths_empty", "完整候选路径不能为空")]
+    if len(set(paths)) != len(paths):
+        issues.append(_issue("candidate_paths_duplicate", "候选路径不得重复"))
+    for path in paths:
+        parts = path.split("/")
+        if not path or path.startswith("/") or "\\" in path or any(part in {"", ".", ".."} for part in parts):
+            issues.append(_issue("candidate_path_invalid", f"候选路径不是规范化 worktree 相对路径: {path!r}"))
+    return issues
+
+
+def _heading_has_list(body_lines: list[str], heading: str) -> bool:
+    positions = [index for index, line in enumerate(body_lines) if line == heading]
+    if len(positions) != 1:
+        return False
+    start = positions[0] + 1
+    for line in body_lines[start:]:
+        if line in _FIXED_HEADINGS or re.fullmatch(r"[A-Za-z-]+:\s*.*", line):
+            break
+        if line.startswith("- ") and line[2:].strip():
+            return True
+    return False
+
+
+def validate_commit(contract: CommitContractProjection, value: CommitValidationInput) -> CommitValidationResult:
+    """Validate only the deterministic subset; never reads Git or the filesystem."""
+
+    unavailable: list[CommitValidationIssue] = []
+    required = {
+        "message": value.message,
+        "candidate_paths": value.candidate_paths,
+        "git_worktree_root": value.git_worktree_root,
+        "governance_status": value.governance_status,
+        "governance_identity": value.governance_identity,
+        "snapshot_identity": value.snapshot_identity,
+        "source_path": value.source_path,
+        "source_fingerprint": value.source_fingerprint,
+    }
+    for field, field_value in required.items():
+        if field_value is None or field_value == "":
+            unavailable.append(_issue("input_missing", f"缺少必需输入: {field}"))
+    if value.governance_status is not None and value.governance_status != "governed_single":
+        unavailable.append(_issue("governance_unverifiable", "提交契约只校验 governed_single 目标"))
+    if value.source_path is not None and value.source_path != contract.source_path:
+        unavailable.append(_issue("source_path_mismatch", "输入来源路径与契约投影不一致"))
+    if value.source_fingerprint is not None and value.source_fingerprint != contract.content_fingerprint:
+        unavailable.append(_issue("source_fingerprint_mismatch", "输入来源指纹与契约投影不一致"))
+    if value.candidate_paths is not None:
+        unavailable.extend(_path_issues(value.candidate_paths))
+    if unavailable:
+        return CommitValidationResult(
+            "unverifiable",
+            tuple(unavailable),
+            None,
+            None,
+            None,
+            contract.source_path,
+            contract.content_fingerprint,
+            SEMANTIC_CHECKS_REQUIRED,
+        )
+
+    assert value.message is not None and value.candidate_paths is not None
+    normalized, lines = _normalize_message(value.message)
+    failures: list[CommitValidationIssue] = []
+    if not lines or not normalized:
+        failures.append(_issue("message_empty", "完整 message 清理后不能为空"))
+        header = None
+        body = None
+    else:
+        header = lines[0]
+        body_lines = lines[1:]
+        while body_lines and not body_lines[0].strip():
+            body_lines.pop(0)
+        body = "\n".join(body_lines).rstrip() or None
+        match = _HEADER.fullmatch(header)
+        if match is None:
+            failures.append(_issue("header_invalid", "header 不符合 type[(scope)][!]: 简体中文描述"))
+        else:
+            commit_type = match.group("type")
+            scope = match.group("scope")
+            breaking = match.group("breaking") is not None
+            description = match.group("description")
+            if commit_type not in contract.type_tokens:
+                failures.append(_issue("type_unknown", f"未知 type: {commit_type}"))
+            if scope is not None and scope not in contract.scope_tokens:
+                failures.append(_issue("scope_unknown", f"未知 scope: {scope}"))
+            if _CJK.search(description) is None:
+                failures.append(_issue("description_cjk_missing", "description 至少需要一个 CJK 字符"))
+            if description.endswith(("。", ".")):
+                failures.append(_issue("description_period", "description 不使用句号结尾"))
+            body_required = len(value.candidate_paths) >= 2 or breaking or commit_type == "revert"
+            if body_required and body is None:
+                failures.append(_issue("body_required", "当前机械 trigger 要求 body"))
+            if body is not None:
+                if not _heading_has_list(body_lines, "关键变更:"):
+                    failures.append(_issue("key_changes_required", "body 必须含关键变更列表"))
+                if breaking and not _heading_has_list(body_lines, "影响边界:"):
+                    failures.append(_issue("impact_boundary_required", "使用 ! 时必须含影响边界列表"))
+    outcome: Literal["passed", "failed", "unverifiable"] = "failed" if failures else "passed"
+    return CommitValidationResult(
+        outcome,
+        tuple(failures),
+        normalized,
+        header,
+        body,
+        contract.source_path,
+        contract.content_fingerprint,
+        SEMANTIC_CHECKS_REQUIRED,
+    )
+
+
+__all__ = [
+    "CommitValidationInput",
+    "CommitValidationIssue",
+    "CommitValidationResult",
+    "SEMANTIC_CHECKS_REQUIRED",
+    "validate_commit",
+]

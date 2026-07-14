@@ -160,7 +160,7 @@ def current_specs_repository(tmp_path: Path) -> Path:
     repository = tmp_path / "repository"
     repository.mkdir()
     shutil.copytree(PROJECT_ROOT / "specs", repository / "specs")
-    audit_relative_path = Path("docs/v4-architecture/V4-五类型全局归并封闭记录.md")
+    audit_relative_path = Path("docs/v4-architecture/active/V4-五类型全局归并封闭记录.md")
     audit_target = repository / audit_relative_path
     audit_target.parent.mkdir(parents=True)
     shutil.copy2(PROJECT_ROOT / audit_relative_path, audit_target)

@@ -61,7 +61,7 @@ ADMISSION_HEADERS = (
 )
 BINDING_HEADERS = ("field_key", "presence", "constraint_ref")
 REVIEW_HEADERS = ("review_key", "reviewer", "reviewed_scope", "findings", "disposition")
-ADMISSION_AUDIT_PATH = "docs/v4-architecture/V4-五类型全局归并封闭记录.md"
+ADMISSION_AUDIT_PATH = "docs/v4-architecture/active/V4-五类型全局归并封闭记录.md"
 ADMISSION_AUDIT_RECORD_KEY = "v4-five-type-closure"
 ADMISSION_AUDIT_HEADING = "five-type-admission-audit"
 ADMISSION_AUDIT_REF_HEADING = "准入审计引用"
