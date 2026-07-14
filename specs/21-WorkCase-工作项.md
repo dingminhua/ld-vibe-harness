@@ -194,8 +194,8 @@ WorkCase 对象使用 UTF-8 YAML，一文件一对象，当前权威位置固定
 
 | status | 语义 | 必须成立 |
 |---|---|---|
-| `open` | 目标已经准入，仍有未完成内容；可以继续完成当前 phase 允许的准备、确认或执行活动 | `priority` 必填；阻塞与终态字段禁止；summary 明确当前 phase、焦点和剩余工作 |
-| `blocked` | 仍有未完成内容，但明确的外部依赖、Human 决定、授权、证据或能力缺口使当前不能继续 | `priority`、`blocking_summary`、`evidence_refs` 必填；终态字段禁止 |
+| `open` | 目标已经准入，仍有未完成内容；可以继续完成当前 phase 允许的准备、确认或执行活动 | `priority` 必填，blocking_summary、closure_approval、closed_at 禁止；结果包字段是否出现由 phase 决定；summary 明确当前 phase、焦点和剩余工作 |
+| `blocked` | 仍有未完成内容，但明确的外部依赖、Human 决定、授权、证据或能力缺口使当前不能继续 | `priority`、`blocking_summary`、`evidence_refs` 必填，closure_approval、closed_at 禁止；结果包字段是否出现由 phase 决定 |
 | `closed` | Human 已确认该 WorkCase 身份下不再继续推进，不等于成功、已提交或下游责任完成 | phase=closed；priority 与 blocking_summary 省略；result_version、controller_check_summary、result_reviews、closure_approval、validation_summary、closure_outcome、disposition_summary、closed_at、evidence_refs 必填 |
 
 新建 WorkCase 必须已经完成计划形成、创建方案独立审核和主控对审核反馈的处置；初始 `phase` 固定为 `human_plan_confirming`，`execution_approval` 禁止出现。初始 `status` 可以是 `open` 或 `blocked`：正常等待第一次 Human Gate 不构成 blocked；只有另有具体、可证且使方案确认也无法继续的条件时才可 blocked。`closed` 不能作为普通新建初态。
@@ -209,7 +209,7 @@ WorkCase 对象使用 UTF-8 YAML，一文件一对象，当前权威位置固定
 | `human_plan_confirming` | WorkCase 已建立，独立创建审核和主控处置已经形成，等待 Human 判断是否按当前计划执行 | 当前 plan_version 的 creation reviews 联合覆盖完整计划且均无未解决阻断项；execution_approval 禁止；Human 要求实质修改时递增 plan_version、重审并继续保持本阶段 |
 | `executing` | Human 已批准当前计划版本，工作项正在按依赖推进 | execution_approval.subject_version 等于当前 plan_version；至少一项工作项尚未 completed/cancelled；只允许在依赖满足后进入 in_progress |
 | `controller_checking` | 全部工作项已形成 completed/cancelled 结果，主控正在逐项核对、验证和修复 | result_version 必填；全部 work item 为 completed/cancelled；controller_check_summary 在离开本阶段前必填；修复需要重新执行时退回 executing 并更新相应 item |
-| `independent_reviewing` | 主控自检完成，独立审核者正在审核当前结果版本 | controller_check_summary 与当前 result_version 必填；result_reviews 至少在离开本阶段前形成；changes_required/blocked 或主控修正使结果包变化时递增 result_version、删除旧版本审核并重新审核 |
+| `independent_reviewing` | 主控自检完成，独立审核者正在审核当前结果版本 | controller_check_summary 与当前 result_version 必填；result_reviews 在离开本阶段前形成，审核进行中时可以尚未出现；changes_required/blocked 或主控修正使结果包变化时递增 result_version、删除旧版本审核并重新审核 |
 | `closure_preparing` | 当前结果版本的独立审核已通过，主控正在形成最终验证报告、关闭结果和分流建议 | 当前 result_reviews 联合覆盖全部工作项结果、成功标准、验证、残余问题、关闭分类与分流，全部阻断反馈已解决；validation_summary、closure_outcome、disposition_summary、关系和顶层 evidence_refs 在离开前完整 |
 | `human_closure_confirming` | 最终报告和分流建议已形成，等待 Human 判断关闭或退回 | 当前结果版本、验证、处置、结果审核和承接完整；closure_approval 禁止；Human 退回时按受影响范围回到 executing、controller_checking、independent_reviewing 或 closure_preparing |
 | `closed` | Human 已批准当前结果版本并在同一受控变更中关闭 | status=closed；closure_approval.subject_version 等于当前 result_version；全部终态字段和剩余责任承接成立 |
@@ -239,7 +239,7 @@ flowchart TD
     N -- "确认" --> O["status/phase: closed"]
 ```
 
-流程图用于帮助 Human 和 AI 快速理解；阶段闭集、转换条件和必填字段以上表及本节文字为规范依据。两处 Human Gate 都不得由审核、技术验证、模板选择或主控自述代替。
+流程图用于帮助 Human 和 AI 快速理解；阶段闭集、转换条件和必填字段以上表及本节文字为规范依据。图中只画 phase，`open ↔ blocked` 是覆盖在非终态 phase 之上的 status 变化；blocked WorkCase 仍须沿结果分类、独立审核和第二 Human Gate 对应的 phase 路径才能 closed，不另造一条 blocked phase 边。两处 Human Gate 都不得由审核、技术验证、模板选择或主控自述代替。
 
 工作项状态条件如下：
 
@@ -253,7 +253,7 @@ flowchart TD
 
 工作项 blocked 不自动使 WorkCase status=blocked；只有当前 phase 内没有任何可继续活动，且具体条件确实阻止整个责任推进时，才将 WorkCase 置为 blocked。工作项只有在已获批准的计划明确预设取消条件且该条件实际成立时，才可直接进入 cancelled；其它取消改变计划承诺，必须递增 plan_version、重新独立审核并重新取得 Human 执行批准。中断、上下文压缩和执行者交接前，进行中或阻塞工作项必须更新 `current_summary` 与 `resume_from`；正常连续执行不要求为每条命令或每个内部步骤更新。恢复快照在工作项完成或取消时由结果与证据吸收并移除，Git 保留历史变化。
 
-计划版本覆盖 goal、scope、success_criteria、work_items 的目标、预期结果、依赖、方法边界、模板选择、偏离以及非预设取消。Human 或审核导致这些内容发生实质变化时，必须递增 plan_version，移除旧 creation_reviews、execution_approval、result_version、controller_check_summary、result_reviews、closure_approval、validation_summary、closure_outcome、disposition_summary 和只支持旧结果包的 evidence_refs/relations，把受影响 work item 恢复为符合新计划的状态，回到 human_plan_confirming 并重新完成独立审核；旧值只由 Git 追溯。不得让旧审核、结果或批准覆盖新计划。结果版本覆盖工作项结果、controller_check_summary、validation_summary、closure_outcome、disposition_summary、相关关系与 evidence_refs；这些内容发生实质变化时必须递增 result_version，移除旧 result_reviews 与 closure_approval 并重新审核，不得沿用旧结果审核或关闭批准。
+计划版本覆盖 goal、scope、success_criteria、work_items 的目标、预期结果、依赖、方法边界、模板选择、偏离以及非预设取消。Human 或审核导致这些内容发生实质变化时，必须递增 plan_version，移除旧 creation_reviews、execution_approval、result_version、controller_check_summary、result_reviews、closure_approval、validation_summary、closure_outcome、disposition_summary 和只支持旧结果包的 evidence_refs/relations，把受影响 work item 恢复为符合新计划的状态，回到 human_plan_confirming 并重新完成独立审核；旧值只由 Git 追溯。不得让旧审核、结果或批准覆盖新计划。结果版本覆盖工作项结果、controller_check_summary、validation_summary、closure_outcome、disposition_summary、相关关系与 evidence_refs；这些内容发生实质变化时必须递增 result_version，移除旧 result_reviews 与 closure_approval 并重新审核，不得沿用旧结果审核或关闭批准。Human 只要求修正工作项结果、验证、关闭分类、处置或分流，而没有改变计划覆盖内容时，不得递增 plan_version，不得移除仍有效的 creation_reviews/execution_approval，也不得把未受影响的 completed/cancelled 工作项恢复为待执行；只按受影响范围递增 result_version 并退回 controller_checking、independent_reviewing 或 closure_preparing。只有修正实际改变计划覆盖内容或确需重新执行工作项时，才进入 plan_version 级联失效或退回 executing。
 
 creation reviews 对当前计划的联合覆盖至少包括 goal、scope、success_criteria、全部 work items、item 依赖/并行边界、方法、行动模板选择与偏离、验证方式和重要风险；result reviews 对当前结果包的联合覆盖至少包括全部 item 结果、成功标准逐项满足情况、主控自检、实际验证、未验证范围、残余问题、closure_outcome、disposition_summary 与 routed-to 建议。一个窄范围 pass 不得覆盖其它审核中的未解决 changes_required/blocked。
 
@@ -309,7 +309,7 @@ WorkCase `relation_key` 闭集为：
 
 ### 主动召回与消费时机
 
-在管辖项目和实际 Working Tree 成立后，新会话开始、会话恢复和上下文压缩后恢复都必须向 AI 提供该项目全部 `open` 与 `blocked` WorkCase 的 F1 责任卡。每张卡直接投影 `object_id`、`title`、`status`、`phase`、`goal`、`scope`、`summary`、`priority`、`blocking_summary`、工作项状态计数和 `updated_at`；条件字段不适用时保持省略，不用 AI 摘要或索引改写。工作项状态计数是从当前对象派生的非权威视图，不写回对象。卡片可分页，但必须完整披露 coverage、cursor、未读、无效和不可读对象；未完整时不得声称已恢复当前全部稳定工作责任。
+在管辖项目和实际 Working Tree 成立后，新会话开始、会话恢复和上下文压缩后恢复都必须向 AI 提供该项目全部 `open` 与 `blocked` WorkCase 的 F1 责任卡。每张卡直接投影 `object_id`、`title`、`status`、`phase`、`goal`、`scope`、`summary`、`priority`、`blocking_summary`、`updated_at`，并以 `work_item_counts` 返回从当前 work_items 派生的五类状态计数；条件字段不适用时保持省略，不用 AI 摘要或索引改写。`work_item_counts` 是非权威派生结果，不登记或写回事实对象。卡片可分页，但必须完整披露 coverage、cursor、未读、无效和不可读对象；未完整时不得声称已恢复当前全部稳定工作责任。
 
 Web 和 Helper 可以从当前对象派生推进阶段条、`pending/in_progress/blocked/completed/cancelled` 五类工作项计数，以及 active item 的 goal、current_summary、resume_from 和 waiting_on。`status=blocked` 作为阶段条之上的责任阻塞提示，不替换 phase；cancelled 必须单列，不计作 completed；没有显式权重时不得按 item 数量或 phase 序号生成完成百分比。派生展示不得写回对象或取得状态权威，具体 UI 由 08 承接。
 

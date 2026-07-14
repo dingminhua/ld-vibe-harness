@@ -31,9 +31,11 @@ Code 当前不能判断目标与工作项拆分是否合理、审核是否真正
 
 本次重新封闭的最终验证：
 
-- 全量 tests：440 passed；
+- 全量 tests：448 passed；
 - Ruff lint：passed；
 - Ruff format check：passed；
 - `git diff --check`：passed；
 - 当前仓库检查：18 个当前文档、0 issues、implemented checks complete；
 - 字段治理检查：5 个事实类型、8 个结构、81 个字段、0 issues。
+
+2026-07-14 的专项外部审计及逐项处置见 `V4-WorkCase专项外部审计处置记录.md`。处置没有恢复通用 orchestration 或把自然语言审核交给 Code；它补清结果退回、F1 派生键和 status/phase 图示边界，并修正了审计未发现的关闭前结果包被 open/blocked 状态错误禁止的问题。七个 phase 均已有有效快照测试，WorkCase Gate 保持关闭。

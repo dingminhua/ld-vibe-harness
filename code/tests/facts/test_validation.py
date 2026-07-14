@@ -55,6 +55,77 @@ def _workcase_fields() -> dict[str, object]:
     }
 
 
+def _workcase_phase_fields(phase: str) -> dict[str, object]:
+    fields = _workcase_fields()
+    if phase == "human_plan_confirming":
+        return fields
+
+    fields.pop("waiting_on")
+    fields["phase"] = phase
+    fields["execution_approval"] = {
+        "subject_version": 1,
+        "approved_at": "2026-07-14T09:35:00+08:00",
+        "summary": "Human approved plan version 1",
+    }
+    if phase == "executing":
+        return fields
+
+    fields["work_items"] = [
+        {
+            "item_id": "item-01",
+            "goal": "Implement the module",
+            "expected_result": "The module passes its tests",
+            "status": "completed",
+            "approach_summary": "Implement within the declared scope and run focused tests",
+            "result_summary": "The module is implemented and its focused tests pass",
+            "evidence_refs": [{"kind": "repository-path", "locator": "evidence/item-01.txt"}],
+        }
+    ]
+    fields["result_version"] = 1
+    if phase == "controller_checking":
+        return fields
+
+    fields["controller_check_summary"] = "Checked the work item, success criteria, tests, and residual scope"
+    if phase == "independent_reviewing":
+        return fields
+
+    fields["result_reviews"] = [
+        {
+            "reviewer": "independent-result-reviewer",
+            "reviewed_at": "2026-07-14T09:50:00+08:00",
+            "subject_version": 1,
+            "scope": "Work item result, success criteria, validation, residual scope, and routing",
+            "conclusion": "pass",
+            "feedback": ["The result package is complete"],
+            "controller_resolution": "1. Accepted; no result change required.",
+        }
+    ]
+    if phase == "closure_preparing":
+        return fields
+
+    fields.update(
+        {
+            "waiting_on": "Human closure confirmation",
+            "validation_summary": "The success criterion is satisfied by the recorded test evidence",
+            "closure_outcome": "completed",
+            "disposition_summary": "The responsibility is complete with no residual work",
+            "evidence_refs": [{"kind": "repository-path", "locator": "evidence/final.txt"}],
+        }
+    )
+    if phase == "human_closure_confirming":
+        return fields
+
+    fields.pop("resume_from")
+    fields.pop("waiting_on")
+    fields["closure_approval"] = {
+        "subject_version": 1,
+        "approved_at": "2026-07-14T09:55:00+08:00",
+        "summary": "Human approved closing result version 1",
+    }
+    fields["closed_at"] = "2026-07-14T09:55:00+08:00"
+    return fields
+
+
 def test_projected_schemas_validate_all_five_minimal_shapes(current_specs_repository: Path) -> None:
     schemas = project_fact_schemas(inspect_repository(current_specs_repository))
     objects = {
@@ -199,6 +270,47 @@ def test_workcase_phase_items_versions_and_event_times_are_mechanical(current_sp
     assert any(issue.field_path == "work_items" and "成环" in issue.summary for issue in issues)
     assert any(issue.field_path == "creation_reviews[0].subject_version" for issue in issues)
     assert any(issue.field_path == "creation_reviews[0].reviewed_at" for issue in issues)
+
+
+@pytest.mark.parametrize(
+    ("phase", "status"),
+    [
+        ("human_plan_confirming", "open"),
+        ("executing", "open"),
+        ("controller_checking", "open"),
+        ("independent_reviewing", "open"),
+        ("closure_preparing", "open"),
+        ("human_closure_confirming", "open"),
+        ("closed", "closed"),
+    ],
+)
+def test_each_workcase_phase_has_a_mechanically_valid_snapshot(
+    current_specs_repository: Path,
+    phase: str,
+    status: str,
+) -> None:
+    schema = project_fact_schemas(inspect_repository(current_specs_repository))["workcase"]
+    fields = {
+        **_common("workcase", "workcase-0001", status),
+        **_workcase_phase_fields(phase),
+    }
+    if status == "closed":
+        fields.pop("priority")
+
+    assert validate_fact_object("workcase", fields, schema) == ()
+
+
+def test_human_closure_confirmation_requires_waiting_on(current_specs_repository: Path) -> None:
+    schema = project_fact_schemas(inspect_repository(current_specs_repository))["workcase"]
+    fields = {
+        **_common("workcase", "workcase-0001", "open"),
+        **_workcase_phase_fields("human_closure_confirming"),
+    }
+    fields.pop("waiting_on")
+
+    issues = validate_fact_object("workcase", fields, schema)
+
+    assert any(issue.field_path == "waiting_on" and "要求" in issue.summary for issue in issues)
 
 
 def test_each_fact_type_rejects_an_unknown_top_level_field(current_specs_repository: Path) -> None:

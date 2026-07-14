@@ -154,10 +154,10 @@ def _validate_status(fact_type_key: str, fields: dict[str, Any], issues: list[Fa
         terminal = {"validation_summary", "closure_outcome", "disposition_summary", "closed_at", "evidence_refs"}
         if status == "open":
             _require(fields, {"priority"}, issues)
-            _forbid(fields, {"blocking_summary", *terminal}, issues)
+            _forbid(fields, {"blocking_summary", "closure_approval", "closed_at"}, issues)
         elif status == "blocked":
             _require(fields, {"priority", "blocking_summary", "evidence_refs"}, issues)
-            _forbid(fields, {"closure_outcome", "disposition_summary", "closed_at", "validation_summary"}, issues)
+            _forbid(fields, {"closure_approval", "closed_at"}, issues)
         else:
             _require(fields, terminal, issues)
             _forbid(fields, {"priority", "blocking_summary"}, issues)
@@ -333,6 +333,42 @@ def _validate_workcase(fields: dict[str, Any], issues: list[FactIssue]) -> None:
             },
             issues,
         )
+    if phase == "executing":
+        _forbid(
+            fields,
+            {
+                "result_version",
+                "controller_check_summary",
+                "result_reviews",
+                "closure_approval",
+                "validation_summary",
+                "closure_outcome",
+                "disposition_summary",
+                "closed_at",
+            },
+            issues,
+        )
+    if phase == "controller_checking":
+        _forbid(
+            fields,
+            {
+                "result_reviews",
+                "closure_approval",
+                "validation_summary",
+                "closure_outcome",
+                "disposition_summary",
+                "closed_at",
+            },
+            issues,
+        )
+    if phase == "independent_reviewing":
+        _forbid(
+            fields,
+            {"closure_approval", "validation_summary", "closure_outcome", "disposition_summary", "closed_at"},
+            issues,
+        )
+    if phase == "closure_preparing":
+        _forbid(fields, {"closure_approval", "closed_at"}, issues)
     if phase in {
         "executing",
         "controller_checking",
