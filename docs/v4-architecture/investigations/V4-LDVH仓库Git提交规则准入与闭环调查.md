@@ -339,3 +339,9 @@ Adapter 不生成 message，不进行 AI 语义判断，不调用 Git 写命令�
 执行结果区分 `blocked`、`not_created`、`created` 和 `partial`。Hook 拒绝不创建 commit；Hook 或并发变化造成 tree/message/paths/parent 不一致、真实 Index 无法安全对齐、回读或清理失败时保留实际结果并返回 `partial`，不自动 reset、amend 或回滚历史。调用方 approval guard 只阻止缺少显式确认的调用，不被报告为 Human 授权事实本身。
 
 候选形成与执行新增 27 项真实仓库风险 tests，commits 模块合计 58 项、全量 Code 543 项通过，Ruff check/format check 通过。内部能力仍未成为 Helper 公开操作，也没有安装 Hook、改变环境配置、执行 push/PR 或提供跨进程持久候选；真实 commit 必须继续按 30 使用同一候选完成 AI 语义审核和 Human 授权判断。
+
+## 21. 首次真实仓库执行证据
+
+在 Human 已明确授权提交并继续推进的当前任务中，AI 显式选择 22 个与 Git 提交机制增量同一主要目的的路径，排除工作树中一项既有删除和一项无关未跟踪审计文件。受控临时 Index、机械 Validator、AI 语义审核、验证覆盖和创建前身份重检全部通过。
+
+内部执行能力创建并回读 commit `9d462a7e6f031f4609e3d55e86198b295099032b`：parent、tree、规范化 message 和 22 个实际路径均与候选一致，真实 Index 对齐和临时资产清理成功，结果为 `created` 且无 issues。提交后真实 Index 为空，被排除的删除与未跟踪文件仍保持原状。该证据把能力状态从 tests 内部可用推进到当前仓库真实调用成立，但仍不证明 Helper、Hook、环境插件或远端流程 integrated。

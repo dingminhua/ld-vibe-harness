@@ -156,3 +156,11 @@ Adapter 返回 `observed`、`unverifiable` 或 `drifted`，保留阶段化诊断
 候选形成新增 14 项、执行新增 13 项风险 tests；commits 模块合计 58 项通过，覆盖 clean/unborn/linked worktree、add/delete/rename、既有 staged 保留、重叠和路径扩张阻断、HEAD/Index/Working Tree 漂移、环境重定向、所有权清理、Hook 拒绝、Hook message/tree 扩张、真实 Index 对齐失败及 commit 回读。全量 Code tests 为 543 passed，全量 Ruff check 和本增量 format check 通过。
 
 本结果建立内部 Code 能力，不等于 Helper 公开操作、环境 Hook 安装、跨进程持久候选、push/PR 或任意一次真实 commit 已经完成。真实使用仍必须由 AI 依据 30 取得 Human 当前授权、确定路径闭集、完成语义与验证审核，再以同一候选调用内部执行能力。
+
+## 16. 首次真实 dogfood 结果
+
+Human 已在当前连续任务中明确授权提交并要求按计划推进。AI 将 Git 提交机制、统一契约、Web token 同步和恢复本增量全量验证所必需的路径修复判断为一个共同主要目的，显式选择 22 个目标路径，并排除工作树中既有的 `V4-Audit-Report-GLM5.2-2026-07-14.md` 删除与 `05-06-基础规范边界专项审计.md` 未跟踪文件。
+
+临时 Index 候选、机械 Validator、AI 语义审核、验证覆盖 guard 和创建前全部身份重检通过。内部执行能力创建 commit `9d462a7e6f031f4609e3d55e86198b295099032b`，parent 为 `13bf510dfed89fd6aa9b0183c7d688123a841601`，tree 为 `a613fa5a4fd4f9044f0d64f614d6b141e67aa6b0`；回读的 22 个路径、规范化 message、parent 和 tree 与候选一致，真实 Index 对齐完成，临时资产清理结果为 `discarded`，执行结果为 `created` 且无 issues。
+
+提交后真实 Index 为空；上述外部审计报告删除仍为 unstaged，05/06 专项审计仍为 untracked，没有被静默纳入、丢弃或改写。该结果证明内部 Code 闭环在当前实际仓库成立，不外推 Helper 公开操作、Hook 安装、push/PR 或其它环境已经集成。
