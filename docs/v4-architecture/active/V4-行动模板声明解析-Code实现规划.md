@@ -1,6 +1,6 @@
 # V4 行动模板声明解析 Code 实现规划
 
-> 当前规划版本：1；形成时间：2026-07-15 03:41:22 +08:00；实现起点 commit：`554558c076895f42b46ab1703693f5d9a31fcacd`。本文覆盖当前 Working Tree 中尚未提交的 30 草案、准入调查与本增量 Code/tests；不覆盖工作树中的其它既有或无关变化。本文是 07 定义的 Code 实现规划，不是规则源。
+> 当前规划版本：2；初版形成时间：2026-07-15 03:41:22 +08:00；实现起点 commit：`554558c076895f42b46ab1703693f5d9a31fcacd`。§§1–9 记录声明解析首增量，§10 记录三模板与 Helper 读取后续扩展；本文是 07 定义的 Code 实现规划，不是规则源。
 
 ## 1. 实现目标与来源
 
@@ -26,7 +26,7 @@
 
 允许方向为：消费方或 tests → `ldvh.specs.action_templates` → `RepositoryInspection` 数据结构、`identity.KEY_PATTERN`、`markdown` 解析结果和共同 `diagnostics`。`repository` 不导入 `action_templates`，避免把某类派生声明塞入规范启动闭环并形成循环。
 
-禁止行动模板模块自行扫描路径、回退 Index/`HEAD`、读取 draft/retired 文档、调用 Helper、解释摘要相关性或维护手工注册表。未来 Helper 模板操作若由正式来源定义，只能消费本模块结果或同一 06 契约的共享实现，不得复制解析器。
+禁止行动模板模块自行扫描路径、回退 Index/`HEAD`、读取 draft/retired 文档、调用 Helper、解释摘要相关性或维护手工注册表。后续 Helper 模板操作已经按 06 正式契约消费本模块结果，不复制解析器。
 
 ## 4. 接口与 Code 侧表示
 
@@ -61,7 +61,7 @@
 
 本规划实现和测试完成后，已经回读 30 准入记录、身份、声明和第二轮处置，并把 30 从 `draft` 改为 `active`。激活后的当前仓库派生检查只发现 `git-commit` 且来源回指正确；当前仓库其它既有缺口仍按 §9 报告，不得用新增模块的局部通过替代。
 
-Helper 模板发现/内容读取需要未来正式公开操作契约；Git 执行封装需要稳定机械能力和重复价值另行规划；跨 Git 历史的 key 改派与 retired tombstone 检查仍是未实现资格条件。本规划不提前固定这些接口。出现第二个真实模板、声明结构变化、外部消费者或 Helper 契约时，必须重新评估接口、派生范围和测试矩阵。
+初版完成时，Helper 模板发现/内容读取、第二个真实模板与 Git 执行封装仍待后续正式契约和实现；跨 Git 历史的 key 改派与 retired tombstone 检查也是未实现资格条件。后续扩展已经按本节触发条件重新评估接口、派生范围和测试矩阵，当前结果见 §10。
 
 ## 8. 与其它当前规划的关系
 
@@ -82,4 +82,12 @@ Helper 模板发现/内容读取需要未来正式公开操作契约；Git 执�
 5. 将已移动的五类型准入记录在内存中指向实际 `docs/v4-architecture/active/` 路径后，仓库检查为 0 issues、19 个 active 载体、15 个非附件、57 个 L0–L2 投影、8 个既有 Helper 操作和 1 个行动模板；
 6. 未修正既有路径漂移的当前 Working Tree 全量 `code/tests`：337 passed、46 failed、102 errors。失败和 setup error 共同受到 `field_registry.ADMISSION_AUDIT_PATH` 与 fixture 仍指向重组前路径的上游影响；本增量未越界修改事实模型路径契约。
 
-因此，本规划覆盖的声明解析、派生身份、冲突处理和 tests 已完成。尚未验证和未实现范围仍是：真实 Git commit 行动、Helper 模板公开操作、Hook/Skill/adapter 接入，以及五类型准入记录路径漂移修复后的完整回归。
+因此，初版规划覆盖的声明解析、派生身份、冲突处理和 tests 已完成。当时尚未验证和未实现的真实 Git commit、Helper 模板公开操作及五类型准入路径漂移已在后续增量处理；Hook/Skill/adapter 接入仍未实现。当前扩展证据见 §10。
+
+## 10. 后续扩展：三模板与 Helper 读取
+
+2026-07-15，31 与 32 加入后，声明解析在真实当前来源中同时发现 `git-commit`、`fact-object-controlled-creation` 和 `fact-object-lifecycle-change`，并继续保持 key 唯一、来源精确和定义范围机械切片。
+
+06 新增 `read-action-template-candidates` 与 `read-action-template-content` 两个只读公开操作。实现复用 `inspect_action_template_sources` 的同一次 `RepositoryInspection`，不重新扫描路径：候选操作返回稳定 key、摘要、来源与定义行范围，并列出 Code 未自动证明的准入条件；内容操作按精确 key 和请求顺序返回定义章节、完整来源规范及各自 SHA-256。两者不作自然语言适用、授权、能力或执行判断，不建立跨调用运行状态。
+
+风险测试覆盖三真实模板组合、精确顺序、未知 key 的 partial/unavailable、空 key 与 disclosure 拒绝、capabilities 可用性、定义/来源双指纹、同一快照读取和真实 CLI 调用。当前未完成范围是环境 Hook/Skill/adapter、跨 Git 历史 key tombstone 自动检查、模板语义自动选择与执行；其中后两项不得因只读 Helper 存在而外推成立。

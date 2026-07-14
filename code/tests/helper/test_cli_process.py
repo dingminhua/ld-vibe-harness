@@ -34,7 +34,7 @@ def test_general_discovery_reports_source_bound_implementation(tmp_path: Path) -
     assert response["outcome"] == "ok"
     assert response["operation_key"] is None
     assert response["result"]["mode"] == "discovery"
-    assert len(response["result"]["operations"]) == 8
+    assert len(response["result"]["operations"]) == 10
     operations = {item["operation_key"]: item for item in response["result"]["operations"]}
     candidates = operations["find-fact-object-candidates"]
     assert candidates["implementation"]["present"] is True
@@ -86,6 +86,24 @@ def test_general_discovery_reports_source_bound_implementation(tmp_path: Path) -
     assert content["required_inputs"] == ["arguments.selections", "requested_disclosure"]
     assert content["optional_inputs"] == []
     assert content["availability"] is None
+    template_candidates = operations["read-action-template-candidates"]
+    assert template_candidates["implementation"] == {
+        "present": True,
+        "evidence": [
+            {
+                "kind": "implementation",
+                "locator": "code/ldvh/helper/operations/action_template_operation.py",
+            }
+        ],
+    }
+    assert template_candidates["required_inputs"] == []
+    assert template_candidates["optional_inputs"] == ["arguments.template_keys"]
+    assert template_candidates["availability"] is None
+    template_content = operations["read-action-template-content"]
+    assert template_content["implementation"]["present"] is True
+    assert template_content["required_inputs"] == ["arguments.template_keys"]
+    assert template_content["optional_inputs"] == []
+    assert template_content["availability"] is None
     governance = operations["resolve-governance-scope"]
     assert governance["implementation"] == {
         "present": True,
@@ -126,12 +144,12 @@ def test_defined_operation_check_and_call_return_actual_l0_results(tmp_path: Pat
     assert check_response["outcome"] == "ok"
     checked_operation = check_response["result"]["operations"][0]
     assert checked_operation["availability"] == "available_for_request"
-    assert len(checked_operation["available_scope"]) == 19
+    assert len(checked_operation["available_scope"]) == 21
     assert checked_operation["unavailable_scope"] == []
 
     assert called.returncode == 0
     assert call_response["outcome"] == "ok"
-    assert len(call_response["result"]["items"]) == 19
+    assert len(call_response["result"]["items"]) == 21
     assert call_response["scope"]["requested"] == call_response["scope"]["completed"]
     assert call_response["scope"]["not_completed"] == []
     assert call_response["disclosure"]["requested"] is None
@@ -149,6 +167,49 @@ def test_defined_operation_check_and_call_return_actual_l0_results(tmp_path: Pat
         any(evidence["kind"] == "implementation" for evidence in item["evidence"])
         for item in call_response["verification"]
     )
+
+
+def test_action_template_operations_discover_and_read_three_current_sources(tmp_path: Path) -> None:
+    discovered, candidate_response = _run(tmp_path, "call", "read-action-template-candidates")
+    read, content_response = _run(
+        tmp_path,
+        "call",
+        "read-action-template-content",
+        stdin=json.dumps(
+            {
+                "arguments": {
+                    "template_keys": [
+                        "git-commit",
+                        "fact-object-controlled-creation",
+                        "fact-object-lifecycle-change",
+                    ]
+                }
+            }
+        ),
+    )
+
+    assert discovered.returncode == read.returncode == 0
+    assert candidate_response["outcome"] == "ok"
+    assert [item["template_key"] for item in candidate_response["result"]["items"]] == [
+        "fact-object-controlled-creation",
+        "fact-object-lifecycle-change",
+        "git-commit",
+    ]
+    assert candidate_response["result"]["unchecked_conditions"]
+    assert content_response["outcome"] == "ok"
+    assert content_response["scope"]["requested"] == content_response["scope"]["completed"]
+    assert content_response["scope"]["not_completed"] == []
+    assert [item["template_key"] for item in content_response["result"]["items"]] == [
+        "git-commit",
+        "fact-object-controlled-creation",
+        "fact-object-lifecycle-change",
+    ]
+    assert all("## 8. Stop Conditions" in item["source_content"] for item in content_response["result"]["items"])
+    assert all(
+        len(item["content_sha256"]) == len(item["source_content_sha256"]) == 64
+        for item in content_response["result"]["items"]
+    )
+    assert content_response["changes"] == []
 
 
 @pytest.mark.parametrize("requested", ["L3", "L4"])

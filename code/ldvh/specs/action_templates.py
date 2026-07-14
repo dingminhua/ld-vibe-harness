@@ -18,9 +18,7 @@ from ldvh.specs.repository import RepositoryInspection
 
 DECLARATION_HEADING = "行动模板声明"
 DECLARATION_HEADERS = ("template_key", "summary", "definition_ref")
-ACTION_TEMPLATE_UNCHECKED_CONDITIONS = (
-    "行动模板的重复价值、稳定剩余结构、承载位置、独立失败和净价值是否满足准入条件",
-)
+ACTION_TEMPLATE_UNCHECKED_CONDITIONS = ("行动模板的重复价值、稳定剩余结构、承载位置、独立失败和净价值是否满足准入条件",)
 
 
 @dataclass(frozen=True, slots=True)
@@ -85,9 +83,7 @@ def _definition_heading(
         return None
     target_title = parts[1]
     matches = tuple(
-        heading
-        for heading in document.markdown.headings
-        if heading.level in {2, 3} and heading.title == target_title
+        heading for heading in document.markdown.headings if heading.level in {2, 3} and heading.title == target_title
     )
     if len(matches) != 1:
         issues.append(

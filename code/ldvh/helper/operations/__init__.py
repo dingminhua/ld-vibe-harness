@@ -5,6 +5,16 @@ from __future__ import annotations
 from types import MappingProxyType
 
 from ldvh.helper.operation_runtime import OperationImplementation
+from ldvh.helper.operations.action_template_operation import (
+    ACTION_TEMPLATE_CANDIDATE_IMPLEMENTATION,
+    ACTION_TEMPLATE_CONTENT_IMPLEMENTATION,
+)
+from ldvh.helper.operations.action_template_operation import (
+    CANDIDATE_OPERATION_KEY as ACTION_TEMPLATE_CANDIDATE_OPERATION_KEY,
+)
+from ldvh.helper.operations.action_template_operation import (
+    CONTENT_OPERATION_KEY as ACTION_TEMPLATE_CONTENT_OPERATION_KEY,
+)
 from ldvh.helper.operations.fact_candidate_operation import FACT_CANDIDATE_IMPLEMENTATION
 from ldvh.helper.operations.fact_candidate_operation import OPERATION_KEY as FACT_CANDIDATE_OPERATION_KEY
 from ldvh.helper.operations.fact_creation_operation import (
@@ -38,6 +48,8 @@ from ldvh.helper.operations.specification_content_operation import (
 
 IMPLEMENTATIONS = MappingProxyType[str, OperationImplementation](
     {
+        ACTION_TEMPLATE_CANDIDATE_OPERATION_KEY: ACTION_TEMPLATE_CANDIDATE_IMPLEMENTATION,
+        ACTION_TEMPLATE_CONTENT_OPERATION_KEY: ACTION_TEMPLATE_CONTENT_IMPLEMENTATION,
         CREATE_OPERATION_KEY: CREATE_FACT_OBJECT_IMPLEMENTATION,
         FACT_CANDIDATE_OPERATION_KEY: FACT_CANDIDATE_IMPLEMENTATION,
         FACT_OBJECT_OPERATION_KEY: FACT_OBJECT_IMPLEMENTATION,

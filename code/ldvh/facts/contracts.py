@@ -18,6 +18,7 @@ class FactTypeLayout:
     suffix: str
     carrier: str
     object_id_pattern: re.Pattern[str]
+    initial_statuses: frozenset[str]
     statuses: frozenset[str]
     relation_keys: frozenset[str]
 
@@ -30,6 +31,7 @@ def _layout(
     plural: str,
     *,
     suffix: str = ".yaml",
+    initial_statuses: tuple[str, ...],
     statuses: tuple[str, ...],
     relation_keys: tuple[str, ...],
 ) -> FactTypeLayout:
@@ -39,6 +41,7 @@ def _layout(
         suffix=suffix,
         carrier="markdown" if suffix == ".md" else "yaml",
         object_id_pattern=re.compile(rf"{re.escape(fact_type_key)}-[0-9]{{4,}}\Z"),
+        initial_statuses=frozenset(initial_statuses),
         statuses=frozenset(statuses),
         relation_keys=frozenset(relation_keys),
     )
@@ -48,24 +51,28 @@ LAYOUTS = {
     "spark": _layout(
         "spark",
         "sparks",
+        initial_statuses=("open",),
         statuses=("open", "routed", "discarded"),
         relation_keys=("routed-to", "related-to", "supersedes"),
     ),
     "workcase": _layout(
         "workcase",
         "workcases",
+        initial_statuses=("open", "blocked"),
         statuses=("open", "blocked", "closed"),
         relation_keys=("depends-on", "routed-to", "supersedes"),
     ),
     "adr": _layout(
         "adr",
         "adrs",
+        initial_statuses=("active",),
         statuses=("active", "superseded", "retired"),
         relation_keys=("supersedes",),
     ),
     "pitfall": _layout(
         "pitfall",
         "pitfalls",
+        initial_statuses=("active",),
         statuses=("active", "superseded", "retired"),
         relation_keys=("supersedes",),
     ),
@@ -73,6 +80,7 @@ LAYOUTS = {
         "study",
         "studies",
         suffix=".md",
+        initial_statuses=("active",),
         statuses=("active", "superseded", "retired"),
         relation_keys=("supersedes",),
     ),

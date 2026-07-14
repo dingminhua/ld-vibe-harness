@@ -71,45 +71,53 @@ def _spark(title: str = "Controlled creation") -> dict[str, object]:
     }
 
 
+def _workcase(*, status: str = "open") -> dict[str, object]:
+    fact_object: dict[str, object] = {
+        "title": "Controlled WorkCase",
+        "status": status,
+        "source_refs": [{"kind": "repository-path", "locator": "docs/input.md"}],
+        "summary": "Waiting for Human execution approval.",
+        "resume_from": "Present plan version 1 for Human approval.",
+        "waiting_on": "Human execution approval.",
+        "priority": "P2",
+        "goal": "Verify controlled creation.",
+        "scope": "One test object.",
+        "success_criteria": ["The object passes write-back validation."],
+        "phase": "human_plan_confirming",
+        "plan_version": 1,
+        "work_items": [
+            {
+                "item_id": "item-01",
+                "goal": "Create and validate one WorkCase.",
+                "expected_result": "The object passes write-back validation.",
+                "status": "pending",
+                "approach_summary": "Use controlled creation and read back the object.",
+            }
+        ],
+        "creation_reviews": [
+            {
+                "reviewer": "independent-creation-reviewer",
+                "reviewed_at": "2026-07-14T09:00:00+08:00",
+                "subject_version": 1,
+                "scope": "Goal, scope, criteria, work items, method, validation and risks.",
+                "conclusion": "pass",
+                "feedback": ["The plan is bounded and testable."],
+                "controller_resolution": "1. Accepted; no change required.",
+            }
+        ],
+    }
+    if status == "blocked":
+        fact_object["blocking_summary"] = "Required external evidence is not yet available."
+        fact_object["evidence_refs"] = [{"kind": "repository-path", "locator": "docs/blocker.md"}]
+    return fact_object
+
+
 @pytest.mark.parametrize(
     ("fact_type_key", "fact_object"),
     [
         (
             "workcase",
-            {
-                "title": "Controlled WorkCase",
-                "status": "open",
-                "source_refs": [{"kind": "repository-path", "locator": "docs/input.md"}],
-                "summary": "Waiting for Human execution approval.",
-                "resume_from": "Present plan version 1 for Human approval.",
-                "waiting_on": "Human execution approval.",
-                "priority": "P2",
-                "goal": "Verify controlled creation.",
-                "scope": "One test object.",
-                "success_criteria": ["The object passes write-back validation."],
-                "phase": "human_plan_confirming",
-                "plan_version": 1,
-                "work_items": [
-                    {
-                        "item_id": "item-01",
-                        "goal": "Create and validate one WorkCase.",
-                        "expected_result": "The object passes write-back validation.",
-                        "status": "pending",
-                        "approach_summary": "Use controlled creation and read back the object.",
-                    }
-                ],
-                "creation_reviews": [
-                    {
-                        "reviewer": "independent-creation-reviewer",
-                        "reviewed_at": "2026-07-14T09:00:00+08:00",
-                        "subject_version": 1,
-                        "scope": "Goal, scope, criteria, work items, method, validation and risks.",
-                        "conclusion": "pass",
-                        "feedback": ["The plan is bounded and testable."],
-                        "controller_resolution": "1. Accepted; no change required.",
-                    }
-                ],
-            },
+            _workcase(),
         ),
         (
             "adr",
@@ -161,6 +169,22 @@ def test_create_supports_all_yaml_fact_types(
     assert response["outcome"] == "ok"
     assert response["result"]["actual_ref"]["fact_type_key"] == fact_type_key
     assert response["result"]["actual_ref"]["object_id"] == f"{fact_type_key}-0001"
+
+
+def test_create_accepts_workcase_blocked_initial_state_defined_by_type_source(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    basis = _prepare(workspace, project, "workcase")
+
+    response = handle_request(
+        "call",
+        "create-fact-object",
+        _create_payload(workspace, project, basis, _workcase(status="blocked")),
+    ).response
+
+    assert_common_response(response)
+    assert response["outcome"] == "ok"
+    assert response["result"]["fact_object"]["status"] == "blocked"
+    assert response["result"]["fact_object"]["blocking_summary"]
 
 
 def _create_payload(

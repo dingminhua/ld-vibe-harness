@@ -59,13 +59,6 @@ _IMPLEMENTATION_SOURCE = source_reference(
     "code/ldvh/helper/operations/fact_creation_operation.py",
 )
 _MANAGED_FIELDS = frozenset({"object_id", "fact_type_key", "created_at", "updated_at"})
-_INITIAL_STATUSES = {
-    "spark": "open",
-    "workcase": "open",
-    "adr": "active",
-    "pitfall": "active",
-    "study": "active",
-}
 
 
 def _plain(value: Any) -> Any:
@@ -356,7 +349,9 @@ def _create_execute(
             (f"AI 不得填写 Code 托管字段: {', '.join(managed)}",),
             sources=request_sources,
         )
-    if supplied.get("status") != _INITIAL_STATUSES[basis.fact_type_key]:
+    initial_statuses = LAYOUTS[basis.fact_type_key].initial_statuses
+    if supplied.get("status") not in initial_statuses:
+        rendered_statuses = ", ".join(sorted(initial_statuses))
         return OperationExecution(
             outcome="rejected",
             summary="事实对象初始状态不符合当前类型来源",
@@ -366,7 +361,7 @@ def _create_execute(
             sources=request_sources,
             gaps=(
                 {
-                    "summary": f"{basis.fact_type_key} 初始状态必须是 {_INITIAL_STATUSES[basis.fact_type_key]}",
+                    "summary": f"{basis.fact_type_key} 初始状态必须属于: {rendered_statuses}",
                     "scope": list(requested),
                     "source_refs": [_CREATE_CONTRACT],
                 },
