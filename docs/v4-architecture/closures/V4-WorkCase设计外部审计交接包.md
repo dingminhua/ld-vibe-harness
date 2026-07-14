@@ -39,10 +39,10 @@
 ### B. 当前 WorkCase 设计与证据
 
 5. `specs/21-WorkCase-工作项.md`
-6. `docs/v4-architecture/V4-WorkCase类型封闭记录.md`
-7. `docs/v4-architecture/V4-五类型全局归并封闭记录.md` 中 workcase 结构、字段准入和 `field-review-0003/0004`
-8. `docs/v4-architecture/V4-工作推进总纲.md` 中阶段 5、阶段 6 和当前下一步
-9. `docs/v4-architecture/V3-行动资产盘点与V4内部行动能力设计.md` 中 WorkCase 生命周期与行动平面边界
+6. `docs/v4-architecture/closures/V4-WorkCase类型封闭记录.md`
+7. `docs/v4-architecture/active/V4-五类型全局归并封闭记录.md` 中 workcase 结构、字段准入和 `field-review-0003/0004`
+8. `docs/v4-architecture/active/V4-工作推进总纲.md` 中阶段 5、阶段 6 和当前下一步
+9. `docs/v4-architecture/investigations/V3-行动资产盘点与V4内部行动能力设计.md` 中 WorkCase 生命周期与行动平面边界
 
 ### C. V3 对照资料
 

@@ -46,7 +46,7 @@ Human 已确认候选规范中文名为“Code 实践与测试规范”，并要
 
 ### 2.3 V3 覆盖输入
 
-`docs/v4-architecture/V3-设计覆盖与V4下游审核清单.md` 对 07 草案保留以下问题输入：
+`docs/v4-architecture/investigations/V3-设计覆盖与V4下游审核清单.md` 对 07 草案保留以下问题输入：
 
 1. 内部模块、诊断和 tests 归 Code 实践；公开 CLI 和机器结果归 Helper，adapter 归环境，领域行为归具体来源；
 2. 测试应风险驱动，覆盖正反例、失败边界，并如实保留未验证范围；
