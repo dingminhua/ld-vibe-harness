@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import subprocess
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -128,6 +129,46 @@ def _hook(repository: Path, name: str, body: str) -> None:
     source = repository / ".git/hooks" / name
     source.write_text(f"#!/bin/sh\n{body}\n", encoding="utf-8")
     source.chmod(0o755)
+
+
+def test_unsupported_windows_commit_path_does_not_start_process(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(execution, "windows_path_problem", lambda _path: "UNC is unsupported")
+    monkeypatch.setattr(
+        execution.subprocess,
+        "run",
+        lambda *args, **kwargs: pytest.fail("unsupported commit path must not start Git"),
+    )
+
+    result = execution._run_commit(tmp_path, tmp_path / "index", tmp_path / "message")
+
+    assert isinstance(result, execution.CommitExecutionIssue)
+    assert result.stage == "commit"
+    assert "unsupported" in result.message
+
+
+def test_unsupported_windows_index_is_rejected_before_ownership_read(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repository = _repository(tmp_path / "repository")
+    (repository / "target.txt").write_text("target\n", encoding="utf-8")
+    candidate, _ = _prepared(repository, ("target.txt",))
+    unsafe = replace(candidate, candidate_index_path=r"\\server\share\index")
+    monkeypatch.setattr(
+        execution,
+        "windows_path_problem",
+        lambda path: "UNC is unsupported" if str(path).startswith("\\\\") else None,
+    )
+
+    issue = execution._assets_owned(unsafe)
+
+    assert issue is not None
+    assert issue.stage == "ownership"
+    assert "unsupported" in issue.message
+    assert candidate_index.discard_prepared_candidate(candidate).outcome == "discarded"
 
 
 def test_creates_and_reads_back_commit_then_aligns_real_index(tmp_path: Path) -> None:
@@ -271,12 +312,12 @@ def test_unborn_repository_creates_a_root_commit(tmp_path: Path) -> None:
 
 
 def test_linked_worktree_commit_uses_its_own_branch_and_index(tmp_path: Path) -> None:
-    repository = _repository(tmp_path / "repository")
+    repository = _repository(tmp_path / "主 repository")
     main_head = _git(repository, "rev-parse", "HEAD").strip()
-    linked = tmp_path / "linked"
+    linked = tmp_path / "linked 工作树"
     _git(repository, "worktree", "add", "-qb", "linked-test", str(linked))
-    (linked / "linked.txt").write_text("linked\n", encoding="utf-8")
-    candidate, governance = _prepared(linked, ("linked.txt",))
+    (linked / "linked 中文.txt").write_text("linked\n", encoding="utf-8")
+    candidate, governance = _prepared(linked, ("linked 中文.txt",))
 
     result = _execute(candidate, governance)
 

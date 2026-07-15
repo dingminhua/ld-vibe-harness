@@ -12,6 +12,7 @@ from typing import Literal
 
 from ldvh.diagnostics import Issue, SourceLocation
 from ldvh.filesystem import is_link_or_reparse
+from ldvh.governance.git import windows_path_problem
 
 _SPEC_NAME = re.compile(r"[0-9]{2,}-.+\.md")
 _ATTACHMENT_NAME = re.compile(r"[0-9]{2,}\.Att\.[0-9]{2,}-.+\.md")
@@ -170,6 +171,13 @@ def discover_candidates(repository_root: Path) -> DiscoveryResult:
 
 def _normalise_repository_root(repository_root: Path) -> tuple[Path, Issue | None]:
     requested = Path(repository_root).expanduser()
+    path_problem = windows_path_problem(requested)
+    if path_problem is not None:
+        return requested.absolute(), _issue(
+            "The explicit repository root is unsupported on Windows",
+            cause=path_problem,
+            affected=(".",),
+        )
     try:
         requested_observation = requested.lstat()
     except FileNotFoundError:
@@ -242,7 +250,12 @@ def _validate_worktree_root(root: Path) -> Issue | None:
         )
 
     try:
-        actual_root = Path(os.fsdecode(reported)).resolve(strict=False)
+        actual_root = Path(reported.decode("utf-8")).resolve(strict=False)
+    except UnicodeDecodeError:
+        return _issue(
+            "Git returned a non-UTF-8 worktree root",
+            affected=(".",),
+        )
     except (OSError, RuntimeError) as exc:
         return _issue(
             "Cannot resolve the worktree root reported by Git",
@@ -670,6 +683,9 @@ def _run_git(
     *arguments: str,
     stdin_data: bytes | None = None,
 ) -> subprocess.CompletedProcess[bytes]:
+    path_problem = windows_path_problem(root)
+    if path_problem is not None:
+        raise OSError(f"Git path is unsupported on Windows: {path_problem}")
     return subprocess.run(
         ["git", "-C", os.fspath(root), *arguments],
         input=stdin_data,

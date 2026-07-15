@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import subprocess
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -50,6 +51,55 @@ def _repository(path: Path, *, commit: bool = True) -> Path:
         _git(path, "add", "tracked.txt")
         _git(path, "commit", "-qm", "initial")
     return path
+
+
+def test_unsupported_windows_worktree_does_not_start_git(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(git_adapter, "windows_path_problem", lambda _path: "UNC is unsupported")
+    monkeypatch.setattr(
+        git_adapter.subprocess,
+        "run",
+        lambda *args, **kwargs: pytest.fail("unsupported worktree must not start Git"),
+    )
+
+    result = git_adapter._run_git(tmp_path, ("status",))
+
+    assert isinstance(result, git_adapter.CommitCandidateObservationIssue)
+    assert result.stage == "git_process"
+    assert "unsupported" in result.message
+
+
+def test_public_observe_rejects_unsupported_governance_path_before_resolve(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repository = _repository(tmp_path / "repository")
+    governance = _governance(repository)
+    resolution = replace(
+        governance.object_resolutions[0],
+        git_worktree_root=str(tmp_path / "policy-rejected-worktree"),
+    )
+    unsafe_governance = replace(governance, object_resolutions=(resolution,))
+    monkeypatch.setattr(git_adapter, "windows_path_problem", lambda _path: "UNC is unsupported")
+    monkeypatch.setattr(
+        git_adapter,
+        "resolve_git_identity",
+        lambda *args, **kwargs: pytest.fail("unsupported governance path must fail before identity resolution"),
+    )
+
+    result = git_adapter.observe_commit_candidate(
+        locator=".",
+        base=repository,
+        message="feat: test",
+        contract=_contract(),
+        governance=unsafe_governance,
+    )
+
+    assert result.outcome == "unverifiable"
+    assert result.issues[0].stage == "identity"
+    assert "unsupported" in result.issues[0].message
 
 
 def _contract() -> CommitContractProjection:

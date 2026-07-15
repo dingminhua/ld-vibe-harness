@@ -19,6 +19,7 @@ from ldvh.commits.candidate_index import (
 from ldvh.commits.contract_source import CommitContractProjection
 from ldvh.commits.git_adapter import _observe_index, _parse_name_status, observe_commit_candidate
 from ldvh.commits.validation import validate_commit
+from ldvh.governance.git import windows_path_problem
 from ldvh.governance.models import GovernanceScopeResult
 
 _GIT_TIMEOUT_SECONDS = 120
@@ -114,6 +115,16 @@ def _commit_environment(index_path: Path) -> dict[str, str]:
 
 
 def _run_commit(worktree: Path, index_path: Path, message_path: Path) -> _GitResult | CommitExecutionIssue:
+    path_problem = next(
+        (
+            problem
+            for path in (worktree, index_path, message_path)
+            if (problem := windows_path_problem(path)) is not None
+        ),
+        None,
+    )
+    if path_problem is not None:
+        return _issue("commit", f"Git path is unsupported on Windows: {path_problem}")
     try:
         completed = subprocess.run(
             (
@@ -144,6 +155,13 @@ def _run_commit(worktree: Path, index_path: Path, message_path: Path) -> _GitRes
 def _assets_owned(candidate: PreparedCommitCandidate) -> CommitExecutionIssue | None:
     directory = Path(candidate.candidate_directory)
     index_path = Path(candidate.candidate_index_path)
+    path_problem = (
+        windows_path_problem(candidate.worktree_root)
+        or windows_path_problem(directory)
+        or windows_path_problem(index_path)
+    )
+    if path_problem is not None:
+        return _issue("ownership", f"Prepared candidate path is unsupported on Windows: {path_problem}")
     marker = directory / _OWNER_MARKER
     try:
         if (

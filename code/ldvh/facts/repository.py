@@ -16,7 +16,7 @@ from ldvh.facts.models import FactIssue
 from ldvh.facts.schema import FactSchema
 from ldvh.facts.validation import validate_fact_object
 from ldvh.filesystem import ReadBudgetExceeded, UnsafePathError, safe_read_relative, validate_relative_regular_file
-from ldvh.governance.git import isolated_git_environment
+from ldvh.governance.git import isolated_git_environment, windows_path_problem
 
 CheckStatus = Literal["mechanically_valid", "invalid", "not_found", "unavailable"]
 MAX_FACT_BYTES = 4 * 1024 * 1024
@@ -47,14 +47,15 @@ def _safe_regular_file(root: Path, relative_path: str) -> tuple[Path, FactIssue 
     return candidate, None, None
 
 
-def _git(root: Path, *arguments: str) -> subprocess.CompletedProcess[str] | None:
+def _git(root: Path, *arguments: str) -> subprocess.CompletedProcess[bytes] | None:
+    if windows_path_problem(root) is not None:
+        return None
     try:
         return subprocess.run(
             ("git", "-C", os.fspath(root), *arguments),
             check=False,
             capture_output=True,
             env=isolated_git_environment(),
-            text=True,
             timeout=10,
         )
     except (OSError, subprocess.TimeoutExpired):
@@ -65,7 +66,10 @@ def _git_identity(root: Path) -> tuple[Path, Path] | None:
     result = _git(root, "rev-parse", "--path-format=absolute", "--show-toplevel", "--git-common-dir")
     if result is None or result.returncode != 0:
         return None
-    lines = result.stdout.splitlines()
+    try:
+        lines = result.stdout.decode("utf-8").splitlines()
+    except UnicodeDecodeError:
+        return None
     if len(lines) != 2:
         return None
     return Path(lines[0]).resolve(), Path(lines[1]).resolve()

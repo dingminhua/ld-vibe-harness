@@ -2,14 +2,11 @@ from __future__ import annotations
 
 import json
 import subprocess
-import sys
 from pathlib import Path
 from typing import Any
 
 import pytest
-from conftest import assert_common_response
-
-HELPER_EXECUTABLE = Path(sys.executable).with_name("ldvh")
+from conftest import HELPER_EXECUTABLE, assert_common_response, helper_executable_path
 
 
 def _run(cwd: Path, *arguments: str, stdin: str = "") -> tuple[subprocess.CompletedProcess[str], dict[str, Any]]:
@@ -38,6 +35,11 @@ def _assert_working_tree_implementation(
     assert evidence["locator"] == locator
     assert evidence["details"]["implementation_source_view"] == "working_tree"
     assert evidence["details"]["git_worktree_root"].endswith("ld-vibe-harness-v4")
+
+
+def test_console_script_locator_uses_windows_executable_suffix() -> None:
+    assert helper_executable_path(r"C:\\venv\\Scripts\\python.exe", platform_name="win32").name == "ldvh.exe"
+    assert helper_executable_path("/venv/bin/python", platform_name="linux").name == "ldvh"
 
 
 def test_general_discovery_reports_source_bound_implementation(tmp_path: Path) -> None:

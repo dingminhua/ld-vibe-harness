@@ -50,7 +50,7 @@
 2. **候选级已完成**：迁移安全读取路径，统一拒绝 link/reparse，并建立 fail-closed 行为。
 3. **候选级已完成**：迁移 ID 分配锁，证明 POSIX 不回退并构造 Windows 候选并发语义。
 4. **候选级已完成**：分离 POSIX/Windows 原子创建与条件替换，定义目录耐久性边界。
-5. 建立 Windows 路径、进程、Git linked worktree 的候选测试矩阵。
+5. **候选级已完成**：建立 Windows 路径、进程、Git linked worktree 的候选测试矩阵。
 6. 单独审核 Codex 适配器的解释器与 shell 边界；未闭合前不得宣称适配器支持 Windows。
 7. 在原生 Windows 上执行并固化证据。
 8. 发布前再建立 LDVH 自身的三平台 CI 与开源发布资料。
@@ -62,6 +62,8 @@
 第 3 切片的当前证据：POSIX 上 4 个独立解释器的临界区保持单并发，持锁进程被终止后锁可恢复；6 个并发 allocator 形成连续且唯一的 ID，main/linked worktree 共用 Git common-dir counter；损坏 counter fail-closed。fake `msvcrt` 证明 offset 0、固定 1-byte、`LK_LOCK`/`LK_UNLCK` 及 descriptor 异常清理。静态检查通过，定向测试 33 个通过，完整测试集 616 个通过。Windows CRT `LK_LOCK` 固定约 10 秒重试上限及当前通用错误映射仍须原生验证；锁目录安全打开、counter 替换和目录耐久性归入第 4 切片。空 lock 文件按官方语义允许锁定 EOF 之后的字节，文件保持持久且不截断、不替换、不删除。
 
 第 4 切片的当前证据：lock/counter/fact 父路径和最终文件统一拒绝 link/reparse；POSIX 保留 `openat`、`O_NOFOLLOW`、hard-link no-overwrite、原子 replace、文件与目录 `fsync`。新建事实目录保持 `0755`，allocator 私有状态目录保持 `0700`；每级新目录 entry 均先同步其父目录，create 的最终目录同步覆盖“目标发布 + 临时名清理”，因此只有完成该边界才报告 `file_and_directory`。写结果显式记录 namespace 提交点、耐久等级与 cleanup residue，提交后同步或清理失败不再误报“未写入”。独立进程 update 在同一 LDVH 类型锁内形成单赢家；外部不协作写入仍不宣称线性化 CAS。Windows 候选分支绕开 `dir_fd`/`O_DIRECTORY`/`O_NOFOLLOW` 及 POSIX read backend，以本地同目录 hard-link/replace 形成 `file_only` 候选；公开 Windows 写入在 Human 接受该降级前于创建锁状态之前 fail-closed。静态检查通过，定向测试 56 个通过，独立进程单赢家连续 20 次重复通过，完整测试集 644 个通过。原生 NTFS 的 hard-link、replace、sharing violation、ACL/ADS 和终止恢复仍待验证。
+
+第 5 切片的当前证据：测试侧统一按平台定位 `ldvh`/`ldvh.exe`，不再假定无后缀 console script；Git 身份与事实读取的路径输出改为 bytes 后按 ASCII/UTF-8 责任严格解码，CRLF 可接受，非法编码形成 `git_output`/`unavailable` 而不冒泡。Windows 路径策略允许本地盘符绝对路径和普通相对路径，拒绝依赖当前驱动器状态的 drive-relative/root-relative 路径；UNC 与 device namespace 在 governance locator/workspace/config project、规格发现、commit observe/prepare/execute/discard 和事实 Git 入口于文件观察、临时目录探测或启动 Git 前 fail-closed。argv 保持 `shell=False`，Git canonical selected path 继续使用 `/`，`GIT_INDEX_FILE` 继续作为单一文件路径。macOS 候选矩阵覆盖空格/中文 workspace、linked worktree、事实读取、allocator common-dir、临时 Index 与 linked branch 隔离；独立定向复核 235 个、完整测试集 679 个通过，Ruff 与 133 个 Python 文件格式检查通过。该证据不证明 Windows 路径大小写别名、Git for Windows 中文输出、`ldvh.exe`、NTFS 或 `%TEMP%` 的原生/fallback 行为；这些仍须第 7 切片原生验证。
 
 ## 6. 验证矩阵
 

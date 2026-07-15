@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from ldvh.specs import discovery
-from ldvh.specs.discovery import Candidate, discover_candidates
+from ldvh.specs.discovery import Candidate, discover_candidates, validate_non_ignored_git_path
 
 
 @pytest.fixture
@@ -38,6 +38,43 @@ def test_discovers_direct_untracked_spec_and_attachment_candidates(repository: P
             kind="attachment",
         ),
     )
+
+
+def test_unsupported_windows_root_fails_before_filesystem_or_git(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    requested = tmp_path / "must-not-be-read"
+    monkeypatch.setattr(discovery, "windows_path_problem", lambda _path: "UNC is unsupported")
+    monkeypatch.setattr(
+        discovery,
+        "_run_git",
+        lambda *args, **kwargs: pytest.fail("unsupported root must not start Git"),
+    )
+
+    result = discover_candidates(requested)
+
+    assert result.complete is False
+    assert result.candidates == ()
+    assert result.issues[0].summary == "The explicit repository root is unsupported on Windows"
+    assert not requested.exists()
+
+
+def test_fixed_path_validation_cannot_bypass_windows_git_path_guard(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(discovery, "windows_path_problem", lambda _path: "UNC is unsupported")
+    monkeypatch.setattr(
+        discovery.subprocess,
+        "run",
+        lambda *args, **kwargs: pytest.fail("unsupported root must not start Git"),
+    )
+
+    issue = validate_non_ignored_git_path(tmp_path, "docs/evidence.md")
+
+    assert issue is not None
+    assert issue.cause is not None and "unsupported" in issue.cause
 
 
 def test_only_exact_direct_regular_markdown_paths_are_candidates(repository: Path) -> None:

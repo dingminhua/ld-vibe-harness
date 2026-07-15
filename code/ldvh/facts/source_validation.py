@@ -37,7 +37,11 @@ def _git_revision_status(index: ProjectFactIndex, locator: str, version: str) ->
         return FactIssue("git-traceability", "无法验证 git-revision version"), True
     if revision.returncode != 0:
         return FactIssue("reference", "git-revision version 不能解析为当前仓库 commit"), False
-    exists = _git(index.root, "cat-file", "-e", f"{revision.stdout.strip()}:{locator}")
+    try:
+        revision_id = revision.stdout.decode("ascii").strip()
+    except UnicodeDecodeError:
+        return FactIssue("git-traceability", "git-revision version 输出无法解码"), True
+    exists = _git(index.root, "cat-file", "-e", f"{revision_id}:{locator}")
     if exists is None:
         return FactIssue("git-traceability", "无法验证 git-revision 中的 locator"), True
     if exists.returncode != 0:

@@ -60,9 +60,11 @@ def _visible_worktrees(boundary: CreationBoundary) -> tuple[Path, ...] | None:
     observed = _git(boundary.worktree_root, "worktree", "list", "--porcelain")
     if observed is None or observed.returncode != 0:
         return None
-    roots = [
-        Path(line.removeprefix("worktree ")) for line in observed.stdout.splitlines() if line.startswith("worktree ")
-    ]
+    try:
+        output = observed.stdout.decode("utf-8")
+    except UnicodeDecodeError:
+        return None
+    roots = [Path(line.removeprefix("worktree ")) for line in output.splitlines() if line.startswith("worktree ")]
     return tuple(roots) if roots else (boundary.worktree_root,)
 
 

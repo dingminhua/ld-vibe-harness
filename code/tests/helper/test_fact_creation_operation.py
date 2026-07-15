@@ -4,19 +4,16 @@ import json
 import os
 import stat
 import subprocess
-import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import pytest
-from conftest import assert_common_response
+from conftest import HELPER_EXECUTABLE, assert_common_response
 
 from ldvh.facts.models import FactIssue
 from ldvh.facts.repository import FactReadResult
 from ldvh.helper.operations import fact_creation_operation
 from ldvh.helper.service import handle_request
-
-HELPER_EXECUTABLE = Path(sys.executable).with_name("ldvh")
 
 
 def _git(project: Path, *arguments: str) -> None:

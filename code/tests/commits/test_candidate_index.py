@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import os
 import subprocess
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
 
 import ldvh.commits.candidate_index as candidate_index
+import ldvh.commits.git_adapter as git_adapter
 from ldvh.commits.candidate_index import discard_prepared_candidate, prepare_commit_candidate
 from ldvh.commits.contract_source import CommitContractProjection
 from ldvh.commits.validation import validate_commit
@@ -122,6 +124,30 @@ def test_prepares_exact_candidate_without_changing_real_index(tmp_path: Path) ->
     assert discard_prepared_candidate(result.candidate).outcome == "discarded"
     assert not Path(result.candidate.candidate_directory).exists()
     assert discard_prepared_candidate(result.candidate).outcome == "already_absent"
+
+
+def test_unicode_space_paths_and_temporary_index_remain_exact(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repository = _repository(tmp_path / "候选 仓库")
+    directory = repository / "目录 with space"
+    directory.mkdir()
+    target = directory / "文件 中文.txt"
+    target.write_text("candidate\n", encoding="utf-8")
+    candidates = tmp_path / "临时 Index 目录"
+    candidates.mkdir()
+    monkeypatch.setattr(candidate_index.tempfile, "tempdir", str(candidates))
+
+    result = _prepare(repository, ("目录 with space/文件 中文.txt",))
+
+    assert result.outcome == "prepared"
+    assert result.candidate is not None
+    assert result.candidate_paths == ("目录 with space/文件 中文.txt",)
+    assert Path(result.candidate.candidate_directory).parent == candidates
+    assert _git(repository, "diff", "--cached", "--name-only") == ""
+    assert discard_prepared_candidate(result.candidate).outcome == "discarded"
+    assert tuple(candidates.iterdir()) == ()
 
 
 def test_preserves_unrelated_existing_staged_content(tmp_path: Path) -> None:
@@ -272,3 +298,113 @@ def test_invalid_target_path_is_blocked_before_assets_are_created(tmp_path: Path
     assert result.outcome == "blocked"
     assert result.candidate is None
     assert result.issues[0].stage == "input"
+
+
+def test_unsupported_windows_git_path_does_not_start_process(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(candidate_index, "windows_path_problem", lambda _path: "UNC is unsupported")
+    monkeypatch.setattr(
+        candidate_index.subprocess,
+        "run",
+        lambda *args, **kwargs: pytest.fail("unsupported candidate path must not start Git"),
+    )
+
+    result = candidate_index._run_git(tmp_path, ("status",))
+
+    assert isinstance(result, candidate_index.CandidatePreparationIssue)
+    assert result.stage == "temporary_index"
+    assert "unsupported" in result.message
+
+
+def test_public_prepare_rejects_unsupported_governance_path_before_assets(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repository = _repository(tmp_path / "repository")
+    governance = _governance(repository)
+    unsafe_resolution = replace(
+        governance.object_resolutions[0],
+        git_worktree_root=str(tmp_path / "policy-rejected-worktree"),
+    )
+    unsafe_governance = replace(governance, object_resolutions=(unsafe_resolution,))
+    monkeypatch.setattr(git_adapter, "windows_path_problem", lambda _path: "UNC is unsupported")
+    monkeypatch.setattr(
+        candidate_index,
+        "_create_candidate_assets",
+        lambda: pytest.fail("unsupported governance path must fail before candidate assets"),
+    )
+
+    result = prepare_commit_candidate(
+        locator=".",
+        base=repository,
+        message="feat: test",
+        selected_paths=("target.txt",),
+        contract=_contract(),
+        governance=unsafe_governance,
+    )
+
+    assert result.outcome == "unverifiable"
+    assert result.issues[0].stage == "baseline"
+
+
+def test_unsupported_windows_temp_environment_fails_before_gettempdir(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("TEMP", r"\\server\share\temp")
+    monkeypatch.setattr(
+        candidate_index,
+        "windows_path_problem",
+        lambda path: "UNC is unsupported" if str(path).startswith("\\\\") else None,
+    )
+    monkeypatch.setattr(
+        candidate_index.tempfile,
+        "gettempdir",
+        lambda: pytest.fail("unsupported TEMP must fail before tempfile probing"),
+    )
+
+    directory, index, token, issue = candidate_index._create_candidate_assets()
+
+    assert (directory, index, token) == (Path(), Path(), "")
+    assert issue is not None and issue.stage == "temporary_index"
+
+
+def test_unsupported_windows_cleanup_path_is_rejected_before_observation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(candidate_index, "windows_path_problem", lambda _path: "UNC is unsupported")
+
+    result = candidate_index._discard_assets(Path("unused"), Path("unused/index"), "token")
+
+    assert result is not None
+    assert result.stage == "cleanup"
+    assert "unsupported" in result.message
+
+
+def test_public_discard_rejects_unsupported_windows_path_before_exists(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repository = _repository(tmp_path / "repository")
+    (repository / "target.txt").write_text("target\n", encoding="utf-8")
+    result = _prepare(repository, ("target.txt",))
+    assert result.candidate is not None
+    unsafe = replace(
+        result.candidate,
+        candidate_directory=r"\\server\share\candidate",
+        candidate_index_path=r"\\server\share\candidate\index",
+    )
+
+    with monkeypatch.context() as context:
+        context.setattr(
+            candidate_index,
+            "windows_path_problem",
+            lambda path: "UNC is unsupported" if str(path).startswith("\\\\") else None,
+        )
+        context.setattr(Path, "exists", lambda _self: pytest.fail("unsupported path must not be observed"))
+        cleanup = discard_prepared_candidate(unsafe)
+
+    assert cleanup.outcome == "unsafe"
+    assert cleanup.issues[0].stage == "cleanup"
+    assert discard_prepared_candidate(result.candidate).outcome == "discarded"

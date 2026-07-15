@@ -13,6 +13,7 @@ from typing import Literal
 
 from ruamel.yaml import YAML
 
+from ldvh.governance.git import windows_path_problem
 from ldvh.governance.models import ConfigStatus
 
 CONFIGURATION_FILENAME = "LDVH-GOVERNED-PROJECTS.yaml"
@@ -175,6 +176,8 @@ def _non_empty_string(
 def _parse_configuration(
     source_path: Path,
     workspace_root: Path,
+    *,
+    platform_name: str | None = None,
 ) -> tuple[GovernedProjectsConfiguration | None, tuple[ConfigurationDiagnostic, ...]]:
     diagnostics: list[ConfigurationDiagnostic] = []
     yaml = YAML(typ="safe")
@@ -260,19 +263,30 @@ def _parse_configuration(
 
         normalized_path = None
         if raw_path is not None:
-            candidate_path = Path(raw_path)
-            if not candidate_path.is_absolute():
-                candidate_path = workspace_root / candidate_path
-            normalized_path = _real_absolute(candidate_path)
-            if normalized_path in normalized_paths:
+            path_problem = windows_path_problem(raw_path, platform_name=platform_name)
+            if path_problem is not None:
                 diagnostics.append(
                     _diagnostic(
-                        f"规范化项目路径 {str(normalized_path)!r} 必须在全配置唯一",
+                        f"{project_field}.path 在 Windows 上不受支持",
                         source_path,
                         field=f"{project_field}.path",
+                        cause=path_problem,
                     )
                 )
-            normalized_paths.add(normalized_path)
+            else:
+                candidate_path = Path(raw_path)
+                if not candidate_path.is_absolute():
+                    candidate_path = workspace_root / candidate_path
+                normalized_path = _real_absolute(candidate_path)
+                if normalized_path in normalized_paths:
+                    diagnostics.append(
+                        _diagnostic(
+                            f"规范化项目路径 {str(normalized_path)!r} 必须在全配置唯一",
+                            source_path,
+                            field=f"{project_field}.path",
+                        )
+                    )
+                normalized_paths.add(normalized_path)
 
         if project_id is not None and normalized_path is not None:
             projects.append(
@@ -304,6 +318,7 @@ def read_governed_projects_configuration(
     path_search_starts: Sequence[Path] = (),
     common_dir_parent_search_starts: Sequence[Path] = (),
     excluded_worktree_roots: Sequence[Path] = (),
+    platform_name: str | None = None,
 ) -> ConfigurationReadResult:
     """Discover and parse the current configuration without running Git.
 
@@ -312,6 +327,40 @@ def read_governed_projects_configuration(
     set of Git worktree roots whose repository-local configuration files must
     not participate in automatic discovery.
     """
+
+    inputs: list[tuple[str, Path]] = []
+    if explicit_workspace_root is not None:
+        inputs.append(("explicit_workspace_root", explicit_workspace_root))
+    inputs.extend(("path", path) for path in path_search_starts)
+    inputs.extend(("git.common_dir_parent", path) for path in common_dir_parent_search_starts)
+    inputs.extend(("excluded_worktree_root", path) for path in excluded_worktree_roots)
+    for kind, path in inputs:
+        path_problem = windows_path_problem(path, platform_name=platform_name)
+        if path_problem is None:
+            continue
+        root = Path(explicit_workspace_root) if explicit_workspace_root is not None else None
+        search_bases: list[ConfigurationSearchBasis] = []
+        if root is not None:
+            search_bases.append(ConfigurationSearchBasis("explicit_workspace_root", root))
+        search_bases.extend(ConfigurationSearchBasis("path", path) for path in path_search_starts)
+        search_bases.extend(
+            ConfigurationSearchBasis("git.common_dir_parent", path) for path in common_dir_parent_search_starts
+        )
+        return ConfigurationReadResult(
+            status=ConfigurationStatus.INVALID,
+            workspace_root=root,
+            config_path=None,
+            configuration=None,
+            search_bases=tuple(search_bases),
+            discovered=(),
+            diagnostics=(
+                ConfigurationDiagnostic(
+                    summary=f"配置发现路径 {kind!r} 在 Windows 上不受支持",
+                    path=Path(path),
+                    cause=path_problem,
+                ),
+            ),
+        )
 
     bases, discovered, selected_root = _discover(
         explicit_workspace_root=explicit_workspace_root,
@@ -346,7 +395,11 @@ def read_governed_projects_configuration(
 
     source_path = discovered[0].path
     workspace_root = selected_root if selected_root is not None else source_path.parent
-    configuration, diagnostics = _parse_configuration(source_path, workspace_root)
+    configuration, diagnostics = _parse_configuration(
+        source_path,
+        workspace_root,
+        platform_name=platform_name,
+    )
     return ConfigurationReadResult(
         status=ConfigurationStatus.VALID if configuration is not None else ConfigurationStatus.INVALID,
         workspace_root=workspace_root,

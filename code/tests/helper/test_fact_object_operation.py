@@ -3,15 +3,12 @@ from __future__ import annotations
 import hashlib
 import json
 import subprocess
-import sys
 from pathlib import Path
 
 import pytest
-from conftest import assert_common_response
+from conftest import HELPER_EXECUTABLE, assert_common_response
 
 from ldvh.helper.service import handle_request
-
-HELPER_EXECUTABLE = Path(sys.executable).with_name("ldvh")
 
 
 def _git(project: Path, *arguments: str) -> None:
@@ -103,6 +100,19 @@ def test_exact_fact_read_preserves_valid_and_not_found_local_results(tmp_path: P
     assert response["result"]["items"][1]["fact_object"] is None
     assert response["result"]["items"][1]["content_fingerprint"] is None
     assert response["changes"] == []
+
+
+def test_fact_read_supports_space_and_unicode_worktree_paths(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path / "工作区 with space")
+
+    result = handle_request("call", "read-fact-objects", _payload(workspace, project, "spark-0001"))
+
+    assert result.exit_code == 0
+    assert result.response["outcome"] == "ok"
+    assert result.response["result"]["items"][0]["check_status"] == "mechanically_valid"
+    assert result.response["scope"]["governance_resolution"]["object_resolutions"][0]["git_worktree_root"] == str(
+        project.resolve()
+    )
 
 
 def test_fact_read_rejects_invalid_selector_before_resolution() -> None:

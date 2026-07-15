@@ -184,12 +184,14 @@ def test_allocator_assigns_contiguous_ids_across_independent_processes(tmp_path:
 
 @_POSIX_ALLOCATOR_ONLY
 def test_main_and_linked_worktree_allocate_from_one_common_counter(tmp_path: Path) -> None:
-    project, common_dir = _repository(tmp_path)
+    unicode_root = tmp_path / "allocator 根目录"
+    unicode_root.mkdir()
+    project, common_dir = _repository(unicode_root)
     marker = project / "tracked.txt"
     marker.write_text("tracked\n", encoding="utf-8")
     _git(project, "add", "tracked.txt")
     _git(project, "-c", "user.name=LDVH Test", "-c", "user.email=ldvh@example.invalid", "commit", "-qm", "initial")
-    linked = tmp_path / "linked"
+    linked = tmp_path / "linked 工作树"
     _git(project, "worktree", "add", "-qb", "linked-allocator", str(linked))
 
     allocated = _allocated_ids(
@@ -309,6 +311,31 @@ def test_relative_lock_builds_api_before_opening_state(
             pytest.fail("lock must not be acquired")
 
     assert not (tmp_path / "ldvh").exists()
+
+
+def test_relative_lock_retries_one_transient_create_enoent_with_identical_flags(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    real_open = os.open
+    attempts: list[tuple[int, int | None]] = []
+
+    def transient_open(path: str | bytes | Path, flags: int, *args: object, **kwargs: object) -> int:
+        if os.fsdecode(path) == "sample.lock":
+            attempts.append((flags, kwargs.get("dir_fd")))
+            if len(attempts) == 1:
+                raise FileNotFoundError("simulated concurrent O_CREAT race")
+        return real_open(path, flags, *args, **kwargs)
+
+    monkeypatch.setattr(filesystem.os, "open", transient_open)
+
+    with exclusive_relative_file_lock(tmp_path, "ldvh/locks/sample.lock"):
+        pass
+
+    assert len(attempts) == 2
+    assert attempts[0] == attempts[1]
+    assert attempts[0][1] is not None
+    assert (tmp_path / "ldvh/locks/sample.lock").is_file()
 
 
 def test_allocator_private_state_directories_use_owner_only_mode(tmp_path: Path) -> None:

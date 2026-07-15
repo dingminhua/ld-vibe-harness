@@ -24,7 +24,13 @@ from ldvh.governance.configuration import (
     GovernedProjectRegistration,
     read_governed_projects_configuration,
 )
-from ldvh.governance.git import GitIdentityResolution, GitWorktreeIdentity, TechnicalFailure, resolve_git_identity
+from ldvh.governance.git import (
+    GitIdentityResolution,
+    GitWorktreeIdentity,
+    TechnicalFailure,
+    resolve_git_identity,
+    windows_path_problem,
+)
 from ldvh.governance.models import (
     ConfigStatus,
     GovernanceScopeResult,
@@ -127,6 +133,16 @@ def resolve_governance_scope(
 
     requested = tuple(requested_scope)
     _validate_requested_scope(requested)
+    if explicit_workspace_root is not None:
+        path_problem = windows_path_problem(explicit_workspace_root)
+        if path_problem is not None:
+            return _global_technical_run(
+                requested,
+                TechnicalOutcome.ERROR,
+                "configuration_discovery",
+                f"The explicit workspace root is unsupported on Windows: {path_problem}",
+                (),
+            )
     observed_at = datetime.now(UTC).astimezone().isoformat(timespec="seconds")
     observations = tuple((item, resolve_git_identity(item.locator, base=base)) for item in requested)
     observation_sources = tuple(

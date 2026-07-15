@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import os
 import secrets
 import subprocess
 import tempfile
@@ -13,7 +14,7 @@ from typing import Literal
 from ldvh.commits.contract_source import CommitContractProjection
 from ldvh.commits.git_adapter import _observe_index, observe_commit_candidate
 from ldvh.commits.validation import CommitValidationInput
-from ldvh.governance.git import isolated_git_environment
+from ldvh.governance.git import isolated_git_environment, windows_path_problem
 from ldvh.governance.models import GovernanceScopeResult
 
 _GIT_TIMEOUT_SECONDS = 30
@@ -89,6 +90,11 @@ def _run_git(
     index_file: Path | None = None,
     literal_paths: bool = False,
 ) -> _GitResult | CandidatePreparationIssue:
+    path_problem = windows_path_problem(worktree)
+    if path_problem is None and index_file is not None:
+        path_problem = windows_path_problem(index_file)
+    if path_problem is not None:
+        return _issue("temporary_index", f"Git path is unsupported on Windows: {path_problem}")
     environment = isolated_git_environment()
     environment["GIT_OPTIONAL_LOCKS"] = "0"
     if index_file is not None:
@@ -177,6 +183,33 @@ def _index_identity(worktree: Path) -> tuple[str, CandidatePreparationIssue | No
 def _create_candidate_assets() -> tuple[Path, Path, str, CandidatePreparationIssue | None]:
     token = secrets.token_hex(32)
     directory: Path | None = None
+    for variable in ("TMPDIR", "TEMP", "TMP"):
+        raw_root = os.environ.get(variable)
+        if raw_root is None:
+            continue
+        path_problem = windows_path_problem(raw_root)
+        if path_problem is not None:
+            return (
+                Path(),
+                Path(),
+                "",
+                _issue(
+                    "temporary_index",
+                    f"{variable} is unsupported on Windows: {path_problem}",
+                ),
+            )
+    temporary_root = Path(tempfile.gettempdir())
+    path_problem = windows_path_problem(temporary_root)
+    if path_problem is not None:
+        return (
+            Path(),
+            Path(),
+            "",
+            _issue(
+                "temporary_index",
+                f"Temporary directory is unsupported on Windows: {path_problem}",
+            ),
+        )
     try:
         directory = Path(tempfile.mkdtemp(prefix=_CANDIDATE_PREFIX)).resolve()
         index_path = directory / _INDEX_NAME
@@ -194,6 +227,9 @@ def _create_candidate_assets() -> tuple[Path, Path, str, CandidatePreparationIss
 
 
 def _discard_assets(directory: Path, index_path: Path, token: str) -> CandidatePreparationIssue | None:
+    path_problem = windows_path_problem(directory) or windows_path_problem(index_path)
+    if path_problem is not None:
+        return _issue("cleanup", f"Candidate asset path is unsupported on Windows: {path_problem}")
     if not directory.exists():
         return None
     marker = directory / _OWNER_MARKER
@@ -395,9 +431,14 @@ def discard_prepared_candidate(candidate: PreparedCommitCandidate) -> CandidateC
     """Remove only assets whose ownership marker matches the prepared candidate."""
 
     directory = Path(candidate.candidate_directory)
+    index_path = Path(candidate.candidate_index_path)
+    path_problem = windows_path_problem(directory) or windows_path_problem(index_path)
+    if path_problem is not None:
+        failure = _issue("cleanup", f"Candidate asset path is unsupported on Windows: {path_problem}")
+        return CandidateCleanupResult("unsafe", (failure,))
     if not directory.exists():
         return CandidateCleanupResult("already_absent", ())
-    failure = _discard_assets(directory, Path(candidate.candidate_index_path), candidate.ownership_token)
+    failure = _discard_assets(directory, index_path, candidate.ownership_token)
     if failure is not None:
         return CandidateCleanupResult("unsafe", (failure,))
     return CandidateCleanupResult("discarded", ())

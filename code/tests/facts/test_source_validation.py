@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from ldvh.facts import repository as fact_repository
 from ldvh.facts.models import FactIssue
 from ldvh.facts.relations import ProjectFactIndex
 from ldvh.facts.repository import FactReadResult
@@ -128,3 +129,13 @@ def test_git_revision_technical_failure_is_unavailable(
     )
     assert unavailable is True
     assert any(issue.category == "git-traceability" for issue in issues)
+
+
+def test_non_utf8_git_identity_output_fails_closed(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    invalid = subprocess.CompletedProcess([], 0, b"/workspace/\xff\n.git\n", b"")
+    monkeypatch.setattr(fact_repository, "_git", lambda *_args: invalid)
+
+    assert fact_repository._git_identity(tmp_path) is None

@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 
+from ldvh.governance import configuration
 from ldvh.governance.configuration import (
     CONFIGURATION_FILENAME,
     ConfigurationAccessError,
@@ -62,6 +63,50 @@ def test_explicit_workspace_root_reports_missing_without_searching_parents(tmp_p
     assert result.workspace_root == selected.resolve()
     assert result.config_path is None
     assert result.discovered == ()
+
+
+def test_unsupported_windows_workspace_fails_before_file_observation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    with monkeypatch.context() as context:
+        context.setattr(Path, "is_file", lambda _self: pytest.fail("unsupported workspace must not be observed"))
+        result = read_governed_projects_configuration(
+            explicit_workspace_root=Path(r"\\server\share\workspace"),
+            platform_name="nt",
+        )
+
+    assert result.status is ConfigurationStatus.INVALID
+    assert result.configuration is None
+    assert result.diagnostics and "Windows" in result.diagnostics[0].summary
+
+
+@pytest.mark.parametrize("project_path", (r"\\server\share\project", r"C:relative\project"))
+def test_unsupported_windows_project_path_is_rejected_before_resolve(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    project_path: str,
+) -> None:
+    workspace = tmp_path / "workspace"
+    source = _write_configuration(
+        workspace,
+        f"""product_name: Workspace
+product_description: Test
+projects:
+  - id: project
+    path: '{project_path}'
+""",
+    )
+    monkeypatch.setattr(
+        configuration,
+        "_real_absolute",
+        lambda _path: pytest.fail("unsupported project path must not be resolved"),
+    )
+
+    parsed, diagnostics = configuration._parse_configuration(source, workspace, platform_name="nt")
+
+    assert parsed is None
+    assert diagnostics and diagnostics[0].field == "projects[0].path"
+    assert diagnostics[0].cause is not None
 
 
 def test_relative_project_paths_use_the_configuration_workspace_root(tmp_path: Path) -> None:

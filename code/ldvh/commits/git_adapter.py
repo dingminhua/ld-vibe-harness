@@ -11,7 +11,7 @@ from typing import Literal
 
 from ldvh.commits.contract_source import CommitContractProjection
 from ldvh.commits.validation import CommitValidationInput
-from ldvh.governance.git import isolated_git_environment, resolve_git_identity
+from ldvh.governance.git import isolated_git_environment, resolve_git_identity, windows_path_problem
 from ldvh.governance.models import GovernanceScopeResult, ObjectStatus, ScopeStatus
 
 _GIT_TIMEOUT_SECONDS = 10
@@ -51,6 +51,11 @@ def _run_git(
     *,
     index_file: Path | None = None,
 ) -> _GitResult | CommitCandidateObservationIssue:
+    path_problem = windows_path_problem(worktree)
+    if path_problem is None and index_file is not None:
+        path_problem = windows_path_problem(index_file)
+    if path_problem is not None:
+        return _issue("git_process", f"Git path is unsupported on Windows: {path_problem}")
     environment = isolated_git_environment()
     environment["GIT_OPTIONAL_LOCKS"] = "0"
     if index_file is not None:
@@ -206,6 +211,10 @@ def observe_commit_candidate(
     resolution = governance.object_resolutions[0]
     if resolution.status is not ObjectStatus.GOVERNED or resolution.git_worktree_root is None:
         issue = _issue("governance", "Governance result does not identify one governed worktree")
+        return CommitCandidateObservation("unverifiable", None, (issue,), (), None)
+    path_problem = windows_path_problem(resolution.git_worktree_root)
+    if path_problem is not None:
+        issue = _issue("identity", f"Governance worktree path is unsupported on Windows: {path_problem}")
         return CommitCandidateObservation("unverifiable", None, (issue,), (), None)
 
     git_identity = resolve_git_identity(locator, base=base)

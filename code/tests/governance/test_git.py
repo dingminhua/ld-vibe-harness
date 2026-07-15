@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from ldvh.governance.git import resolve_git_identity
+from ldvh.governance.git import resolve_git_identity, windows_path_problem
 
 
 def _git(path: Path, *arguments: str) -> str:
@@ -76,6 +76,58 @@ def test_main_and_linked_worktrees_share_common_dir_but_keep_distinct_roots(tmp_
     assert main_result.identity.worktree_root == repository.resolve()
     assert linked_result.identity.worktree_root == linked.resolve()
     assert main_result.identity.git_dir != linked_result.identity.git_dir
+
+
+def test_unicode_and_space_paths_preserve_linked_worktree_identity(tmp_path: Path) -> None:
+    repository = _repository(tmp_path / "主 仓库")
+    linked = tmp_path / "链接 工作树"
+    _git(repository, "worktree", "add", "-qb", "unicode-linked", str(linked))
+
+    main_result = resolve_git_identity(".", base=repository)
+    linked_result = resolve_git_identity(".", base=linked)
+
+    assert main_result.identity is not None
+    assert linked_result.identity is not None
+    assert linked_result.identity.worktree_root == linked.resolve()
+    assert main_result.identity.common_dir == linked_result.identity.common_dir
+    assert main_result.identity.git_dir != linked_result.identity.git_dir
+
+
+@pytest.mark.parametrize(
+    ("value", "supported"),
+    (
+        (r"C:\workspace\project", True),
+        (r"c:\WORKSPACE\PROJECT", True),
+        (r"relative\project", True),
+        (r"C:relative\project", False),
+        (r"\root-relative", False),
+        (r"\\server\share\project", False),
+        (r"\\?\C:\workspace", False),
+        (r"\\.\device", False),
+        (r"//server/share/project", False),
+    ),
+)
+def test_windows_path_policy_is_lexical_and_fail_closed(value: str, supported: bool) -> None:
+    assert (windows_path_problem(value, platform_name="nt") is None) is supported
+
+
+@pytest.mark.parametrize("locator", (r"C:relative", r"\root-relative", r"\\server\share\project"))
+def test_unsupported_windows_locator_fails_before_git(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    locator: str,
+) -> None:
+    monkeypatch.setattr(
+        subprocess,
+        "run",
+        lambda *args, **kwargs: pytest.fail("unsupported Windows paths must not start Git"),
+    )
+
+    result = resolve_git_identity(locator, base=r"C:\workspace", platform_name="nt")
+
+    assert result.status == "technical_failure"
+    assert result.failure is not None
+    assert result.failure.stage == "path"
 
 
 def test_branch_switch_and_detached_head_do_not_change_identity(tmp_path: Path) -> None:
@@ -204,12 +256,12 @@ def test_unrecognized_git_failure_is_not_reported_as_non_worktree(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    def fail(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
+    def fail(*args: object, **kwargs: object) -> subprocess.CompletedProcess[bytes]:
         return subprocess.CompletedProcess(
             args=[],
             returncode=128,
-            stdout="",
-            stderr="fatal: detected dubious ownership",
+            stdout=b"",
+            stderr=b"fatal: detected dubious ownership",
         )
 
     monkeypatch.setattr(subprocess, "run", fail)
@@ -219,6 +271,48 @@ def test_unrecognized_git_failure_is_not_reported_as_non_worktree(
     assert result.status == "technical_failure"
     assert result.failure is not None
     assert result.failure.stage == "git_process"
+
+
+def test_non_utf8_identity_output_is_a_git_output_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    outputs = iter(
+        (
+            subprocess.CompletedProcess([], 0, b"true\r\nfalse\r\n", b""),
+            subprocess.CompletedProcess([], 0, b"/workspace/\xff\n.git\n.git\n", b""),
+        )
+    )
+    monkeypatch.setattr(subprocess, "run", lambda *args, **kwargs: next(outputs))
+
+    result = resolve_git_identity(".", base=tmp_path)
+
+    assert result.status == "technical_failure"
+    assert result.failure is not None
+    assert result.failure.stage == "git_output"
+    assert "non-UTF-8" in result.failure.summary
+
+
+def test_git_probe_uses_argv_without_shell_for_space_and_unicode_path(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repository = _repository(tmp_path / "路径 with space")
+    real_run = subprocess.run
+    observations: list[tuple[tuple[str, ...], object]] = []
+
+    def record(command: tuple[str, ...], **kwargs: object) -> subprocess.CompletedProcess[bytes]:
+        observations.append((command, kwargs.get("shell")))
+        return real_run(command, **kwargs)
+
+    monkeypatch.setattr(subprocess, "run", record)
+
+    result = resolve_git_identity(".", base=repository)
+
+    assert result.status == "git_worktree"
+    assert observations
+    assert all(shell in {None, False} for _, shell in observations)
+    assert all(str(repository) in command for command, _ in observations)
 
 
 def test_git_probe_timeout_is_a_bounded_technical_failure(

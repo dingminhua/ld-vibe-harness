@@ -82,6 +82,32 @@ def test_discovers_external_configuration_from_upper_workspace_cwd(tmp_path: Pat
     }
 
 
+def test_unsupported_windows_explicit_workspace_fails_before_locator_or_configuration_access(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(resolver_module, "windows_path_problem", lambda _path: "UNC is unsupported")
+    monkeypatch.setattr(
+        resolver_module,
+        "resolve_git_identity",
+        lambda *args, **kwargs: pytest.fail("unsupported workspace must fail before Git identity"),
+    )
+    monkeypatch.setattr(
+        resolver_module,
+        "read_governed_projects_configuration",
+        lambda *args, **kwargs: pytest.fail("unsupported workspace must fail before configuration access"),
+    )
+
+    run = resolve_governance_scope(
+        _scope(str(tmp_path / "local-object")),
+        base=tmp_path,
+        explicit_workspace_root=Path(r"\\server\share\workspace"),
+    )
+
+    assert run.result is None
+    assert run.technical_non_completions[0].stage == "configuration_discovery"
+
+
 def test_upper_workspace_cwd_is_an_object_not_a_guessed_child_project(tmp_path: Path) -> None:
     workspace = tmp_path / "workspace"
     repository = _repository(workspace / "project")

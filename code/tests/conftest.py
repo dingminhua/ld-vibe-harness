@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import shutil
 import subprocess
+import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -9,6 +10,20 @@ from typing import Any
 import pytest
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+
+def helper_executable_path(
+    python_executable: str | Path = sys.executable,
+    *,
+    platform_name: str = sys.platform,
+) -> Path:
+    """Locate the installed console script beside the active test interpreter."""
+
+    executable_name = "ldvh.exe" if platform_name == "win32" else "ldvh"
+    return Path(python_executable).with_name(executable_name)
+
+
+HELPER_EXECUTABLE = helper_executable_path()
 
 
 def _assert_source_reference(reference: dict[str, Any]) -> None:

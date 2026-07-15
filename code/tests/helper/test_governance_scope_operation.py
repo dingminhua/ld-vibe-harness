@@ -2,15 +2,12 @@ from __future__ import annotations
 
 import json
 import subprocess
-import sys
 from pathlib import Path
 from typing import Any
 
-from conftest import assert_common_response
+from conftest import HELPER_EXECUTABLE, assert_common_response
 
 from ldvh.helper.service import handle_request
-
-HELPER_EXECUTABLE = Path(sys.executable).with_name("ldvh")
 
 
 def _git(cwd: Path, *arguments: str) -> str:

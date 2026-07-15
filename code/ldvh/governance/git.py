@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 import subprocess
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 from typing import Literal
 
 GitResolutionStatus = Literal["git_worktree", "not_git_worktree", "technical_failure"]
@@ -91,7 +91,12 @@ class GitIdentityResolution:
     failure: TechnicalFailure | None = None
 
 
-def resolve_git_identity(locator: str, *, base: str | Path) -> GitIdentityResolution:
+def resolve_git_identity(
+    locator: str,
+    *,
+    base: str | Path,
+    platform_name: str | None = None,
+) -> GitIdentityResolution:
     """Resolve ``locator`` against ``base`` and observe its local Git worktree.
 
     Existing files are probed through their parent directory.  A path that does
@@ -99,7 +104,7 @@ def resolve_git_identity(locator: str, *, base: str | Path) -> GitIdentityResolu
     absolute and real paths remain in the returned observation.
     """
 
-    path, path_failure = _observe_path(locator, base)
+    path, path_failure = _observe_path(locator, base, platform_name=platform_name)
     if path_failure is not None:
         return GitIdentityResolution(status="technical_failure", path=path, failure=path_failure)
 
@@ -120,9 +125,13 @@ def resolve_git_identity(locator: str, *, base: str | Path) -> GitIdentityResolu
             )
         return GitIdentityResolution(status="technical_failure", path=path, failure=classification)
 
-    classification_lines = classification.splitlines()
+    try:
+        classification_text = classification.decode("ascii")
+    except UnicodeDecodeError:
+        return _output_failure(path, "Git returned a non-ASCII worktree classification", repr(classification))
+    classification_lines = classification_text.splitlines()
     if len(classification_lines) != 2 or any(value not in {"true", "false"} for value in classification_lines):
-        return _output_failure(path, "Git returned an invalid worktree classification", classification)
+        return _output_failure(path, "Git returned an invalid worktree classification", classification_text)
     inside_worktree = classification_lines[0] == "true"
     bare_repository = classification_lines[1] == "true"
     if bare_repository:
@@ -145,9 +154,13 @@ def resolve_git_identity(locator: str, *, base: str | Path) -> GitIdentityResolu
     )
     if isinstance(identity_output, TechnicalFailure):
         return GitIdentityResolution(status="technical_failure", path=path, failure=identity_output)
-    identity_lines = identity_output.splitlines()
+    try:
+        identity_text = identity_output.decode("utf-8")
+    except UnicodeDecodeError:
+        return _output_failure(path, "Git returned non-UTF-8 worktree identity paths", repr(identity_output))
+    identity_lines = identity_text.splitlines()
     if len(identity_lines) != 3 or any(not value for value in identity_lines):
-        return _output_failure(path, "Git returned an invalid worktree identity", identity_output)
+        return _output_failure(path, "Git returned an invalid worktree identity", identity_text)
 
     try:
         identity = GitWorktreeIdentity(
@@ -168,8 +181,25 @@ def resolve_git_identity(locator: str, *, base: str | Path) -> GitIdentityResolu
     return GitIdentityResolution(status="git_worktree", path=path, identity=identity)
 
 
-def _observe_path(locator: str, base: str | Path) -> tuple[PathObservation, TechnicalFailure | None]:
+def _observe_path(
+    locator: str,
+    base: str | Path,
+    *,
+    platform_name: str | None = None,
+) -> tuple[PathObservation, TechnicalFailure | None]:
     original_base = os.fspath(base)
+    path_problem = windows_path_problem(original_base, platform_name=platform_name) or windows_path_problem(
+        locator,
+        platform_name=platform_name,
+    )
+    if path_problem is not None:
+        rejected = PathObservation(locator, original_base, Path(locator), None, None, False, False)
+        return rejected, TechnicalFailure(
+            stage="path",
+            summary="Work object path is unsupported on Windows",
+            details=path_problem,
+        )
+
     base_path = Path(original_base).expanduser()
     if not base_path.is_absolute():
         base_path = Path.cwd() / base_path
@@ -225,14 +255,13 @@ def _observe_path(locator: str, base: str | Path) -> tuple[PathObservation, Tech
     )
 
 
-def _run_git(probe: Path, arguments: tuple[str, ...], environment: dict[str, str]) -> str | TechnicalFailure:
+def _run_git(probe: Path, arguments: tuple[str, ...], environment: dict[str, str]) -> bytes | TechnicalFailure:
     command = ("git", "-C", str(probe), *arguments)
     try:
         completed = subprocess.run(
             command,
             check=False,
             capture_output=True,
-            text=True,
             env=environment,
             timeout=_GIT_PROBE_TIMEOUT_SECONDS,
         )
@@ -247,11 +276,31 @@ def _run_git(probe: Path, arguments: tuple[str, ...], environment: dict[str, str
             f"Git probe exceeded {_GIT_PROBE_TIMEOUT_SECONDS} seconds",
         )
     if completed.returncode != 0:
-        details = (
-            completed.stderr.strip() or completed.stdout.strip() or f"Git exited with status {completed.returncode}"
-        )
+        raw_details = completed.stderr.strip() or completed.stdout.strip()
+        details = raw_details.decode("utf-8", errors="replace") or f"Git exited with status {completed.returncode}"
         return TechnicalFailure("git_process", "Git could not inspect the work object", details)
     return completed.stdout.strip()
+
+
+def windows_path_problem(
+    value: str | Path,
+    *,
+    platform_name: str | None = None,
+) -> str | None:
+    """Return why one lexical path is unsupported by the Windows release candidate."""
+
+    selected_platform = os.name if platform_name is None else platform_name
+    if selected_platform != "nt":
+        return None
+    raw = os.fspath(value)
+    path = PureWindowsPath(raw)
+    if raw.startswith(("\\\\", "//")) or path.drive.startswith(("\\\\", "//")):
+        return "UNC and device-namespace paths are unsupported before native verification"
+    if path.drive and not path.root:
+        return "drive-relative paths depend on ambient per-drive working-directory state"
+    if path.root and not path.drive:
+        return "root-relative Windows paths depend on an ambient current drive"
+    return None
 
 
 def _normalize_git_path(value: str, probe: Path) -> Path:
