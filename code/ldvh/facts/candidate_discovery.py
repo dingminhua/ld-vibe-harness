@@ -12,7 +12,7 @@ from ldvh.facts.contracts import LAYOUTS
 from ldvh.facts.creation import schema_fingerprint
 from ldvh.facts.project_validation import stabilize_project_index
 from ldvh.facts.relations import MAX_GRAPH_OBJECTS, ProjectFactIndex
-from ldvh.facts.repository import FactReadResult
+from ldvh.facts.repository import FactReadResult, _identity_issue
 from ldvh.facts.schema import FactSchema
 from ldvh.filesystem import safe_list_directory
 
@@ -25,6 +25,14 @@ class FactCandidateSnapshot:
     complete: bool
     schema_fingerprint: str
     object_set_fingerprint: str
+
+
+@dataclass(frozen=True, slots=True)
+class FactTypeRawSnapshot:
+    fact_type_key: str
+    objects: tuple[tuple[str, FactReadResult], ...]
+    structural_problems: tuple[dict[str, object], ...]
+    coverage_complete: bool
 
 
 def _digest(value: object) -> str:
@@ -127,4 +135,89 @@ def discover_fact_candidates(
     )
 
 
-__all__ = ["FactCandidateSnapshot", "discover_fact_candidates"]
+def discover_fact_type_raw(
+    root: Path,
+    project_id: str,
+    common_dir: Path,
+    schemas: dict[str, FactSchema],
+    fact_type_key: str,
+) -> FactTypeRawSnapshot:
+    """Read one complete canonical directory without filtering invalid objects."""
+
+    layout = LAYOUTS[fact_type_key]
+    schema = schemas.get(fact_type_key)
+    if schema is None:
+        return FactTypeRawSnapshot(
+            fact_type_key,
+            (),
+            (_structural_problem(fact_type_key, layout.directory, "事实类型 Schema 不可用"),),
+            False,
+        )
+    identity_issue, _ = _identity_issue(root, common_dir)
+    if identity_issue is not None:
+        return FactTypeRawSnapshot(
+            fact_type_key,
+            (),
+            (_structural_problem(fact_type_key, layout.directory, identity_issue.summary),),
+            False,
+        )
+
+    def listing() -> tuple[Path, ...] | None:
+        try:
+            return tuple(sorted(safe_list_directory(root, layout.directory), key=lambda item: item.name))
+        except FileNotFoundError:
+            return ()
+        except OSError:
+            return None
+
+    before = listing()
+    if before is None:
+        return FactTypeRawSnapshot(
+            fact_type_key,
+            (),
+            (_structural_problem(fact_type_key, layout.directory, "事实类型目录无法安全完整枚举"),),
+            False,
+        )
+    relevant = tuple(path for path in before if path.suffix == layout.suffix)
+    structural: list[dict[str, object]] = []
+    canonical: list[tuple[str, Path]] = []
+    if len(relevant) > MAX_GRAPH_OBJECTS:
+        structural.append(
+            _structural_problem(fact_type_key, layout.directory, "当前事实类型超过 10,000 个载体扫描预算")
+        )
+        return FactTypeRawSnapshot(fact_type_key, (), tuple(structural), False)
+    for path in relevant:
+        object_id = path.name.removesuffix(layout.suffix)
+        if layout.object_id_pattern.fullmatch(object_id) is None:
+            structural.append(_structural_problem(fact_type_key, path.name, "事实文件名不是 canonical fact identity"))
+        else:
+            canonical.append((object_id, path))
+    index = ProjectFactIndex(root, project_id, schemas, common_dir)
+    base_objects: list[tuple[str, FactReadResult]] = []
+    for object_id, _ in canonical:
+        read = index.read(fact_type_key, object_id)
+        if read is None:
+            structural.append(_structural_problem(fact_type_key, object_id, "canonical 事实对象无法读取"))
+            continue
+        base_objects.append((object_id, read))
+    stabilize_project_index(index)
+    objects = tuple(
+        (object_id, index.cache.get((fact_type_key, object_id), base_read)) for object_id, base_read in base_objects
+    )
+    after = listing()
+    identity_after, _ = _identity_issue(root, common_dir)
+    stable_listing = after is not None and tuple(path.name for path in before) == tuple(path.name for path in after)
+    complete = stable_listing and identity_after is None and not structural
+    if not stable_listing:
+        structural.append(_structural_problem(fact_type_key, layout.directory, "事实目录在扫描期间发生变化"))
+    if identity_after is not None:
+        structural.append(_structural_problem(fact_type_key, layout.directory, identity_after.summary))
+    return FactTypeRawSnapshot(fact_type_key, objects, tuple(structural), complete)
+
+
+__all__ = [
+    "FactCandidateSnapshot",
+    "FactTypeRawSnapshot",
+    "discover_fact_candidates",
+    "discover_fact_type_raw",
+]

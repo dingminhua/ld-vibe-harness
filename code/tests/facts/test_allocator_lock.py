@@ -15,6 +15,9 @@ from ldvh.facts.creation import (
     _allocator_paths,
     allocate_object_id_locked,
     allocation_lock,
+    candidate_object_id,
+    commit_object_id_locked,
+    preview_object_id_locked,
 )
 from ldvh.filesystem import exclusive_relative_file_lock
 
@@ -222,6 +225,56 @@ def test_corrupt_counter_fails_closed_without_leaving_the_lock_held(tmp_path: Pa
 
     assert lock_path.is_file()
     assert counter_path.read_text(encoding="ascii") == "corrupt\n"
+
+
+@_POSIX_ALLOCATOR_ONLY
+def test_allocator_preview_is_read_only_and_missing_counter_commit_is_no_overwrite(tmp_path: Path) -> None:
+    project, common_dir = _repository(tmp_path)
+    boundary = CreationBoundary("sample", project, common_dir)
+    layout = LAYOUTS["spark"]
+    _, counter = _allocator_paths(boundary, layout)
+
+    with allocation_lock(boundary, layout) as counter_path:
+        preview = preview_object_id_locked(boundary, layout, counter_path)
+        assert preview is not None and preview.object_id == "spark-0001"
+        assert not counter.exists()
+        committed = commit_object_id_locked(boundary, layout, preview)
+
+    assert committed.status == "committed"
+    assert committed.object_id == "spark-0001"
+    assert counter.read_bytes() == b"1\n"
+
+
+@_POSIX_ALLOCATOR_ONLY
+def test_allocator_commit_rejects_stale_preview_without_overwriting_counter(tmp_path: Path) -> None:
+    project, common_dir = _repository(tmp_path)
+    boundary = CreationBoundary("sample", project, common_dir)
+    layout = LAYOUTS["spark"]
+    _, counter = _allocator_paths(boundary, layout)
+
+    with allocation_lock(boundary, layout) as counter_path:
+        preview = preview_object_id_locked(boundary, layout, counter_path)
+        assert preview is not None
+        counter.parent.mkdir(parents=True, exist_ok=True)
+        counter.write_bytes(b"7\n")
+        committed = commit_object_id_locked(boundary, layout, preview)
+
+    assert committed.status == "stale"
+    assert committed.object_id is None
+    assert counter.read_bytes() == b"7\n"
+
+
+def test_excessive_numeric_counter_fails_closed_instead_of_raising(tmp_path: Path) -> None:
+    project, common_dir = _repository(tmp_path)
+    boundary = CreationBoundary("sample", project, common_dir)
+    layout = LAYOUTS["spark"]
+    _, counter = _allocator_paths(boundary, layout)
+    counter.parent.mkdir(parents=True)
+    counter.write_text("9" * 5000, encoding="ascii")
+
+    assert candidate_object_id(boundary, layout) is None
+    with allocation_lock(boundary, layout) as counter_path:
+        assert preview_object_id_locked(boundary, layout, counter_path) is None
 
 
 def test_allocator_lock_rejects_linked_state_directory(tmp_path: Path) -> None:

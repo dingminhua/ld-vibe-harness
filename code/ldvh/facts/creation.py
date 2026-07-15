@@ -9,6 +9,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from io import StringIO
 from pathlib import Path
+from typing import Literal
 
 from ruamel.yaml import YAML
 
@@ -18,7 +19,7 @@ from ldvh.facts.schema import FactSchema
 from ldvh.filesystem import (
     AtomicWriteResult,
     atomic_create_relative,
-    atomic_store_relative,
+    atomic_replace_relative_if_equal,
     exclusive_relative_file_lock,
     remove_relative_if_equal,
     safe_list_directory,
@@ -31,6 +32,23 @@ class CreationBoundary:
     governed_project_id: str
     worktree_root: Path
     git_common_dir: Path
+
+
+@dataclass(frozen=True, slots=True)
+class AllocationPreview:
+    counter_path: Path
+    prior_counter_bytes: bytes | None
+    visible_max: int
+    sequence: int
+    object_id: str
+    counter_bytes: bytes
+
+
+@dataclass(frozen=True, slots=True)
+class AllocationCommitResult:
+    status: Literal["committed", "stale", "unavailable", "uncertain"]
+    object_id: str | None
+    write_result: AtomicWriteResult | None = None
 
 
 def schema_fingerprint(schema: FactSchema) -> str:
@@ -104,13 +122,28 @@ def _allocator_paths(boundary: CreationBoundary, layout: FactTypeLayout) -> tupl
 
 
 def _read_counter(root: Path, relative_path: Path) -> int | None:
+    observed = _read_counter_snapshot(root, relative_path)
+    return None if observed is None else observed[0]
+
+
+def _read_counter_snapshot(root: Path, relative_path: Path) -> tuple[int, bytes | None] | None:
     try:
-        raw = safe_read_relative(root, relative_path).decode("ascii").strip()
+        payload = safe_read_relative(root, relative_path)
     except FileNotFoundError:
-        return 0
-    except (OSError, UnicodeError):
+        return 0, None
+    except OSError:
         return None
-    return int(raw) if raw.isdigit() else None
+    try:
+        raw = payload.decode("ascii").strip()
+    except UnicodeError:
+        return None
+    if not raw.isdigit():
+        return None
+    try:
+        counter = int(raw)
+    except ValueError:
+        return None
+    return counter, payload
 
 
 def candidate_object_id(boundary: CreationBoundary, layout: FactTypeLayout) -> str | None:
@@ -134,22 +167,75 @@ def allocate_object_id_locked(
     layout: FactTypeLayout,
     counter_path: Path,
 ) -> str | None:
+    preview = preview_object_id_locked(boundary, layout, counter_path)
+    if preview is None:
+        return None
+    committed = commit_object_id_locked(boundary, layout, preview)
+    return committed.object_id if committed.status == "committed" else None
+
+
+def preview_object_id_locked(
+    boundary: CreationBoundary,
+    layout: FactTypeLayout,
+    counter_path: Path,
+) -> AllocationPreview | None:
+    """Preview the next identity without mutating allocator state; caller holds the lock."""
+
     if counter_path != _allocator_relative_paths(boundary, layout)[1]:
         return None
     visible = _max_visible_id(boundary, layout)
-    counter = _read_counter(boundary.git_common_dir, counter_path)
-    if visible is None or counter is None:
+    observed = _read_counter_snapshot(boundary.git_common_dir, counter_path)
+    if visible is None or observed is None:
         return None
-    allocated = max(visible, counter) + 1
-    payload = f"{allocated}\n".encode("ascii")
-    stored = atomic_store_relative(boundary.git_common_dir, counter_path, payload)
+    counter, prior = observed
+    sequence = max(visible, counter) + 1
+    return AllocationPreview(
+        counter_path,
+        prior,
+        visible,
+        sequence,
+        f"{layout.fact_type_key}-{sequence:04d}",
+        f"{sequence}\n".encode("ascii"),
+    )
+
+
+def commit_object_id_locked(
+    boundary: CreationBoundary,
+    layout: FactTypeLayout,
+    preview: AllocationPreview,
+) -> AllocationCommitResult:
+    """Conditionally commit one preview after revalidating all allocator observations."""
+
+    current = preview_object_id_locked(boundary, layout, preview.counter_path)
+    if current is None:
+        return AllocationCommitResult("unavailable", None)
+    if current != preview:
+        return AllocationCommitResult("stale", None)
+    if preview.prior_counter_bytes is None:
+        stored = atomic_create_relative(
+            boundary.git_common_dir,
+            preview.counter_path,
+            preview.counter_bytes,
+        )
+    else:
+        stored = atomic_replace_relative_if_equal(
+            boundary.git_common_dir,
+            preview.counter_path,
+            preview.prior_counter_bytes,
+            preview.counter_bytes,
+        )
+    if stored.namespace_state == "uncertain":
+        return AllocationCommitResult("uncertain", None, stored)
     if stored.namespace_state != "committed":
-        return None
+        status = "stale" if stored.outcome == "conflict" else "unavailable"
+        return AllocationCommitResult(status, None, stored)
     try:
-        observed = safe_read_relative(boundary.git_common_dir, counter_path)
+        observed = safe_read_relative(boundary.git_common_dir, preview.counter_path)
     except OSError:
-        return None
-    return f"{layout.fact_type_key}-{allocated:04d}" if observed == payload else None
+        return AllocationCommitResult("uncertain", None, stored)
+    if observed != preview.counter_bytes:
+        return AllocationCommitResult("uncertain", None, stored)
+    return AllocationCommitResult("committed", preview.object_id, stored)
 
 
 def serialize_fact_object(layout: FactTypeLayout, fields: dict[str, object], body: str | None) -> str:
@@ -181,11 +267,15 @@ def rollback_created_text(
 
 
 __all__ = [
+    "AllocationCommitResult",
+    "AllocationPreview",
     "CreationBoundary",
     "allocate_object_id_locked",
     "allocation_lock",
     "atomic_create_text",
     "candidate_object_id",
+    "commit_object_id_locked",
+    "preview_object_id_locked",
     "rollback_created_text",
     "schema_fingerprint",
     "serialize_fact_object",

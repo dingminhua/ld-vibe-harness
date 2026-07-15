@@ -78,6 +78,45 @@ def test_prepared_creation_can_run_under_one_external_allocation_lock(
     assert (command.boundary.worktree_root / "facts/sparks/spark-0001.yaml").is_file()
 
 
+def test_prepared_creation_defensively_freezes_nested_supplied_values(
+    current_specs_repository: Path,
+    tmp_path: Path,
+) -> None:
+    command = _command(current_specs_repository, tmp_path)
+    command.supplied["source_refs"] = [{"kind": "repository-path", "locator": "docs/original.md"}]
+    prepared = prepare_fact_creation(command)
+    assert isinstance(prepared, PreparedFactCreation)
+
+    command.supplied["title"] = "mutated"
+    command.supplied["source_refs"][0]["locator"] = "docs/mutated.md"
+    with allocation_lock(command.boundary, LAYOUTS["spark"]) as counter_path:
+        result = create_fact_object_locked(prepared, counter_path)
+
+    assert result.status == "created"
+    assert result.read is not None and result.read.fields is not None
+    assert result.read.fields["title"] == "Application boundary"
+    assert result.read.fields["source_refs"][0]["locator"] == "docs/original.md"
+
+
+def test_caller_supplied_observation_time_binds_both_managed_timestamps(
+    current_specs_repository: Path,
+    tmp_path: Path,
+) -> None:
+    command = _command(current_specs_repository, tmp_path)
+    observed_at = "2026-07-15T16:00:00+08:00"
+
+    prepared = prepare_fact_creation(command, observed_at=observed_at)
+
+    assert isinstance(prepared, PreparedFactCreation)
+    assert prepared.observed_at == observed_at
+    with allocation_lock(command.boundary, LAYOUTS["spark"]) as counter_path:
+        result = create_fact_object_locked(prepared, counter_path)
+    assert result.status == "created"
+    assert result.read is not None and result.read.fields is not None
+    assert result.read.fields["created_at"] == observed_at
+    assert result.read.fields["updated_at"] == observed_at
+
+
 def test_candidate_rejection_has_no_allocator_or_fact_side_effect(
     current_specs_repository: Path,
     tmp_path: Path,
