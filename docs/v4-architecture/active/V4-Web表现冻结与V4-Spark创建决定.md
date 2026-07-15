@@ -1,8 +1,8 @@
 # V4 Web 表现冻结与 V4 Spark 创建决定
 
-> 记录性质：本文记录 Human 对当前 Web 表现层和 Spark 创建能力的明确决定、实施前置与验证边界。它不是规则源，不自行修改 08/20/31，不证明 Web API、共享 Code 能力或 V4 Spark 创建已经实现。
+> 记录性质：本文记录 Human 对当前 Web 表现层和 Spark 创建能力的明确决定、实施前置与验证边界。它不是规则源；规则语义只回到 08/20/31，也不证明 Web API、共享 Code 能力或 V4 Spark 创建已经实现。
 > 决定日期：2026-07-15
-> 当前状态：只记录，暂不实施
+> 当前状态：`web-direct-capture` 规则契约已形成；生产 Code、API、读取与 DTO 接管尚未实施
 
 ## 1. Human 决定
 
@@ -18,7 +18,7 @@
 
 现有前端只提交 `{title, description, priority}`。现有后端把它转换为 V3 `id/type/status/created/updated/description/source/related_*`，写入带 slug 的 `ldvh-base/sparks/<id>-<slug>.yaml`。V4 要求 `facts/sparks/<object_id>.yaml`、`object_id/fact_type_key/created_at/updated_at/status/source_refs/summary/priority`，并要求合法 `open` 初态、创建前召回查重、来源定位、受控身份分配、机械校验、原子 no-overwrite 和写后回读。
 
-因此保持 UI 不变不等于可以只替换几个字段名。实施前必须解决：
+因此保持 UI 不变不等于可以只替换几个字段名。当前规则切片已经解决前两项的定义问题，后续实现仍必须承接：
 
 1. Web quick capture 的 Human 输入如何形成可重新定位且不伪造的 `source_refs`；
 2. `{title, description, priority}` 如何在不改变表单的情况下形成合法 `title/summary/priority`，以及 20/31 要求的对象化、类型判断和创建前查重由谁承担；
@@ -26,9 +26,18 @@
 4. V4 新对象写入后，现有对象列表和详情 API 必须改读 `facts/sparks`，并投影为前端当前 DTO，否则创建成功后页面不可见；
 5. 只有 V4 原子创建和精确回读实际成功后才能返回 2xx；拒绝、不可用、失败、回读或回滚异常必须返回非 2xx，并保持前端当前可展示的 `error`/`errors` 契约。
 
-若当前 20/31 无法在不引入 AI 语义判断的 Web quick capture 中合法承接上述行为，应先形成规则差距与方案比较，不能由路由私设“Web 特例”。
+08/20/31 现已形成唯一 `web-direct-capture` carve-out：每次 Human 点击只授权一个 `open` Spark；自包含 data URI 恢复 canonical payload，SHA-256 进入 source version；全状态精确重复统一非 2xx；不同 identity 的语义比较在后续 AI F2/F3 opportunity 中进行。该规则不由路由私设，也不改变普通 AI 创建或 Helper 契约。
 
-## 3. 后续实施边界
+## 3. 已冻结的规则契约
+
+1. 请求字段继续只有 `{title, description, priority}`；description 只在 canonical payload 中映射为 summary；Unicode 15.1 NFC、枚举 White_Space trim、确定性 JSON escaping、RFC 4648 standard Base64、SHA-256 version 与固定向量均由 08 唯一定义；
+2. source ref 为 `kind: web-direct-capture`，locator 自包含 canonical JSON，version 为 digest，observed_at 为服务器观察时点；bare digest、`human-input` 或 `web` 不成立；
+3. 同一唯一项目/实际 worktree 中扫描全部 current Spark 状态；唯一精确匹配统一返回 409 `exact_duplicate` 和 existing 稳定引用/状态，多匹配、损坏或 coverage 不完整 fail closed；
+4. direct capture 不更新、重开、替代、关联、commit 或回退 V3；语义相似但 identity 不同不由 Code 拒绝，后续只产生 AI F2/F3 reconciliation opportunity；
+5. 只允许 loopback 本机单用户和唯一 governed project/worktree/common-dir；远程、Vercel、fallback workspace、零/多项目与多 worktree 均零写入拒绝；
+6. 冻结 UI 的窄例外只说明现有三字段已经呈现本次对象内容和预期新增；现有错误区域仍须显示实际分类和残留路径。不能据此声明 Web 整体符合 08。
+
+## 4. 后续实施边界
 
 该增量实施时必须保持 `web/src/` 中受影响表现层文件零行为变化。允许修改范围原则上包括：
 
@@ -40,7 +49,7 @@
 
 不允许顺带新增 ADR、WorkCase、Pitfall、Study 或其它写入 API，也不允许修改前端视觉、布局、导航、文案、表单字段、成功时序或交互流程。
 
-## 4. 最低验证
+## 5. 最低验证
 
 1. 前端源文件无目标变化，并回归现有浏览器表现基线；
 2. POST 继续接受当前三个字段，保持前端实际使用的成功和错误响应边界；
@@ -49,6 +58,6 @@
 5. 创建后列表和详情立即能通过 V4 读取与 DTO 投影观察同一对象；
 6. Linux、原生 Windows 和 macOS 的相应 Code/API 契约最终通过；在真实 Windows 证据形成前只声明仓库侧候选兼容。
 
-## 5. 完成边界
+## 6. 完成边界
 
-本决定现在只落盘，不开始 Web 实施。只有表现层保持不变、POST 不再写 V3、V4 对象受控创建并回读、列表/详情读取同一 V4 来源、失败边界可观察且范围匹配测试通过时，才能声明 Web Spark 创建完成。其它 Web 写入能力继续明确为未建设。
+当前只完成规则契约，不得声明 Web Spark 创建已经实现。只有表现层保持不变、POST 不再写 V3、V4 对象受控创建并回读、列表/详情读取同一 V4 来源、失败边界可观察且范围匹配测试通过时，才能声明 Web Spark 创建完成。其它 Web 写入能力继续明确为未建设。

@@ -16,6 +16,8 @@ ldvh_spec:
     - "ldvh-root"
     - "work-object-governance-scope"
     - "source-of-truth-traceability"
+    - "fact-model-foundation"
+    - "spark-fact-type"
     - "code-engineering-practices"
   authorized_attachments: []
 ```
@@ -45,7 +47,9 @@ Web 的价值来自清楚、可信和可操作的呈现，不来自增加第二�
 1. `ldvh-root` 对 Web 直接服务 Human、从相应信息源独立读取及不得通过 Helper 的架构边界；
 2. `work-object-governance-scope` 对工作对象、管辖项目和对象范围的定义；
 3. `source-of-truth-traceability` 对当前信息、Working Tree、来源回指、派生信息、事实源更新和回读的定义；
-4. `code-engineering-practices` 对 Web tests 共同适用的风险驱动测试、同步、质量和证据边界要求；本文只据此约束 Web tests，不把 Web 实现或 Web tests 的物理归属转交给 Code。
+4. `fact-model-foundation` 对事实对象共同字段、来源回指、唯一 worktree、确定性发现与受控创建的定义；
+5. `spark-fact-type` 对 Spark 准入、合法 `open` 初态、`web-direct-capture` 来源、精确重复与后续语义协调的定义；
+6. `code-engineering-practices` 对 Web tests 共同适用的风险驱动测试、同步、质量和证据边界要求；本文只据此约束 Web tests，不把 Web 实现或 Web tests 的物理归属转交给 Code。
 
 本文不重新定义工作对象、事实源、事实类型、规则、Human Gate、验证成立条件或 Code 能力。具体页面使用的事实字段、状态、关系和可写操作，必须来自当时已经生效的具体来源，不能由本规范或 Web 实现提前定义。
 
@@ -174,7 +178,33 @@ Web 默认只读。页面、API 或表单的存在不授予 Web 修改事实源�
 
 具体能力尚未实现或无法回读时，Web 可以呈现说明或交还入口，但不得显示为可完成操作。
 
-### 8.2 Human 操作的证明边界
+### 8.2 Spark Web direct capture 窄边界
+
+Human 已明确决定保留现有 Spark 创建表现且不增加页面字段。仅对本节定义的 `web-direct-capture`，§8.1 第 4 项使用以下窄化解释：现有表单明确呈现的 title、description 与 priority 是当次唯一对象内容和预期变化；“创建 Spark”只表示尝试在页面当前唯一项目中 no-overwrite 新增一个 `open` Spark。该交互不更新、重开、替代或关联既有对象，不创建其它事实类型，不修改配置或 Git，不触发其它工作，也不证明信息真实、语义唯一或后续工作已经开始。该窄边界不放宽 §8.1 的当前来源、当次授权、实际 Code 能力和写后回读要求。
+
+每次点击提交只授权处理该次闭集请求中的一个 Spark；此前保留产品能力的 Human 决定只授权建设该入口，不替代逐次提交。请求 JSON object 只允许 `title`、`description` 和 `priority` 三个字段，不接受额外字段；`description` 映射为 canonical payload 的 `summary`。规范化与内容身份固定如下：
+
+1. `title`、`description` 必须是 Unicode string；先按 Unicode 15.1 NFC 规范化，再只从两端删除 White_Space code point 集合 `U+0009–U+000D`、`U+0020`、`U+0085`、`U+00A0`、`U+1680`、`U+2000–U+200A`、`U+2028`、`U+2029`、`U+202F`、`U+205F`、`U+3000`；`U+FEFF` 不属于本集合，不得删除；结果必须非空；
+2. `priority` 必须精确为 `P0`、`P1`、`P2` 或 `P3`，不 trim、不折叠大小写、不修复；
+3. canonical object 的字段闭集恰为 `priority`、`summary`、`title`，按 ASCII key 升序输出为 JSON；冒号与逗号旁无空白、无末尾换行，非 ASCII 字符在 NFC 后直接使用 UTF-8；
+4. JSON 必须把 `"` 和 `\` 分别转义为 `\"` 与 `\\`；C0 中 `U+0008/U+0009/U+000A/U+000C/U+000D` 分别使用 `\b/\t/\n/\f/\r`，其它 C0 使用小写十六进制 `\u00xx`；`/` 不转义，内部 `U+2028/U+2029` 保留为 UTF-8，unpaired surrogate 拒绝；
+5. canonical bytes 是上述 JSON 的 UTF-8 bytes。`version` 固定为 `sha256:<64 位小写十六进制>`；`locator` 固定为 `data:application/json;base64,<payload>`，其中 payload 使用 RFC 4648 standard Base64 alphabet、保留必要 `=` padding、禁止空白和非 canonical 编码；
+6. `source_refs` 的该项固定使用 `kind: web-direct-capture`，并包含上述 `locator`、`version` 与实际服务器观察提交事件时形成的带时区 RFC 3339 `observed_at`。locator 必须可解码回 canonical bytes；Code 必须重新规范化、逐 bytes 比较、复算 digest，并核对其与对象 `title/summary/priority` 一致。
+
+固定向量如下；输入转义只用于在本文可见地表示 code point，不是 canonical JSON 的另一种编码：
+
+| vector | 原始输入 | canonical 或 identity |
+|---|---|---|
+| `ascii-padding` | `title="  Alpha  "`、`description="  Beta  "`、`priority="P3"` | canonical 为 `{"priority":"P3","summary":"Beta","title":"Alpha"}`；SHA-256 为 `5626348cede47a57cdb59910a5b23e11013c5508554b1998ba92bcd4ab18ec69`；Base64 为 `eyJwcmlvcml0eSI6IlAzIiwic3VtbWFyeSI6IkJldGEiLCJ0aXRsZSI6IkFscGhhIn0=` |
+| `unicode-escaping` | title 两端为 `U+2003/U+00A0`，正文为 `Cafe + U+0301 + space + "A/B"`；description 两端为 `U+3000/U+00A0`，正文含中文、内部 `U+2028`、quote、backslash、LF、`U+0001`、emoji；`priority="P2"` | NFC/trim 后 SHA-256 为 `e3208211e97f642d5bb5e363cd5ea64c68c7f872c6aca294edca6ccc60d491ef`；Base64 为 `eyJwcmlvcml0eSI6IlAyIiwic3VtbWFyeSI6IuS4reKAqOaWhyBcIui3r+W+hFxcXCJcblx1MDAwMfCfmIAiLCJ0aXRsZSI6IkNhZsOpIFwiQS9CXCIifQ==` |
+
+该来源项只证明本机受信 Web 在 `observed_at` 观察到 Human 提交了规范化后的三个字段。它不证明 Human 的远程身份、内容正确、语义没有重复或事实已经验证；bare `web-capture://sha256/<digest>`、泛化 `web`/`human-input` 字符串以及只能通过搜索当前对象反推 payload 的引用均不是合格 locator。
+
+本能力只允许在 loopback 上运行的本机单用户进程中开放，并且运行时必须精确解析出一个 governed project、该项目的一个实际 Git worktree 和对应 common-dir。零项目、多项目、同项目多 worktree、fallback `workspace`、非 loopback 请求、监听或转发边界无法证明、Vercel/其它远程部署均拒绝且零写入；不得猜测 `LDVH_ROOT` 或回退 V3 writer。Web 不通过 Helper CLI 执行该操作；它只可调用与 Helper wrapper 分离、由正式来源约束的共享 Code application service。
+
+分配事实 ID 或创建 allocator 状态之前，Code 必须证明 canonical payload 与自包含 locator 能在保守 managed-field envelope 下形成不超过当前 4 MiB 事实读取预算的最终 UTF-8 YAML；无法证明或超限时按请求无效拒绝，零写入。只有原子创建、精确回读且回读对象与本次 canonical payload 一致时才能返回 2xx。
+
+### 8.3 Human 操作的证明边界
 
 点击、提交、选择、确认、取消、暂缓或页面成功状态只证明当次 Web 交互及其实际记录范围。它们不自动证明：
 
@@ -186,11 +216,13 @@ Web 默认只读。页面、API 或表单的存在不授予 Web 修改事实源�
 
 只有来源规则明确将 Human 的特定决定作为成立条件，并且 Web 记录能回指决定对象、选项、作用范围和时间时，该记录才能证明相应 Human 决定。技术状态仍须由实际 Code、测试、环境触发或回读证明。
 
-### 8.3 操作结果
+### 8.4 操作结果
 
 受控操作的呈现必须区分：已执行、未发生变化、部分完成、被拒绝、能力不可用、请求无效、执行错误和回读失败。Web 可以使用适合 Human 的文案，但不得把这些结果折叠成笼统的成功或失败。
 
 实际写入与回读不一致时，页面必须以当前来源为准并暴露差异；不得保留乐观 UI 状态冒充写入结果。操作失败后仍然成立的部分结果和残留变化必须保留，不得通过刷新清空。
+
+冻结表现下，Spark direct capture 的现有错误区域必须至少显示实际类别及可行动文本：请求无效、`exact_duplicate`、范围/能力不可用、执行错误、回读失败或回滚残留；存在残留时必须包含允许披露的实际路径。唯一精确重复无论现有状态为何都返回非 2xx，不能用 `no_change` 或其它 2xx 让页面显示“已创建”。这只使当前通用错误区域承载真实分类，不表示 Web 整体已满足所有受控操作呈现要求。
 
 ## 9. 既有 Web 的行为保持与变更边界
 
@@ -218,6 +250,7 @@ Web API 或前端不得作为事实类型、字段、ID、初始状态和状态�
 | 派生内容 | 新增缓存、聚合、计数、筛选、排序或关系视图时 | 来源、观察时间、转换、遗漏范围和过期状态可复核，来源变化后刷新或标明过期 | 当前来源、派生输入输出、时间和差异 | API/component tests 与来源变更测试 | 当次派生功能和测试数据 | 不作为当前事实呈现；刷新、标记过期或移除误导结果 |
 | 来源与判断边界呈现 | 新增页面、字段、复制或导航时 | 事实、派生、诊断、Human 输入和未知范围可区分，关键内容能回到来源 | 页面、复制结果、导航目标和来源文件 | 页面、键盘和代表性辅助技术测试 | 当次页面及声明支持方式 | 修正呈现或缩小支持声明 |
 | 受控操作 | 新增或修改可能改变状态的交互时 | 有当前来源、授权和实际 Code 能力；操作前信息完整；操作后回读并呈现失败和未完成范围 | 来源规则、Human 指令、Code 调用、目标前后内容和回读 | API/E2E tests 与实际目标回读 | 当次操作、对象和环境 | 维持只读、禁用操作或按实际结果呈现失败 |
+| Spark Web direct capture | 保留冻结表单并开放 V4 Spark 创建时 | 只在 loopback 单用户和唯一项目/worktree/common-dir 中运行；闭集请求、自包含来源、资源预算、全状态精确重复、no-overwrite 创建与回读全部成立；V3 和远程 fallback 不存在 | 08、20、Human 当次提交、运行边界、源引用、对象前后内容与 Code 结果 | canonical 固定向量、API/Code contract tests、隔离项目写入/回读与冻结表现回归 | 本机单用户的一个 `open` Spark direct capture | 非 2xx 且零写入；报告 duplicate、invalid、unavailable、error、readback 或 rollback residue，不回退 V3 |
 | Human 决定与技术结果 | Web 承载确认、验收或风险接受时 | 决定对象、选项、范围和时间可回指；页面没有扩大为技术通过或完成 | 交互记录、来源规则、技术验证与回读 | E2E 场景与 AI 回读 | 当次 Human 决定及单独验证的技术范围 | 分开呈现决定与技术状态，不声明未证明结果 |
 | Web 行为保持与变更 | 整治既有 Web、准备声明行为保持或有意改变可观察行为时 | 行为保持覆盖受改动影响的既有可观察行为，并有范围匹配证据；未基线化范围未被冒充为已证明不变；有意变更同时有当前来源支持和 Human 对明确范围的决定 | 当前来源、Web 实现规划、变更前后实现、范围匹配的 API、页面、可访问性和响应式测试、Human 决定 | Web tests、实际页面回读与 Human 验收 | 当次已检查的可观察行为和支持范围 | 暂停受影响重构或行为变更；缩小声明，补充来源、Human 决定或范围匹配证据 |
 
@@ -237,6 +270,8 @@ Web API 或前端不得作为事实类型、字段、ID、初始状态和状态�
 
 不改变上述可观察行为的内部组件、模块、类型、数据读取或样式组织重构，不因本文单独进入 Human Gate。
 
+Human 已明确决定保留现有 Spark 创建表现、改由 V4 承接并且不开放其它 Web 写入，因此建立 §8.2 的产品窄边界不再重复进入 Gate。该决定不授权每次具体创建；当次点击只授权一个闭集请求，也不授权真实项目测试写入、生命周期变更、迁移、commit、远程部署或其它事实类型。
+
 ## 12. Stop Conditions
 
 出现以下任一情况时，必须暂停受影响的 Web 呈现、交互或符合性声明：
@@ -249,6 +284,7 @@ Web API 或前端不得作为事实类型、字段、ID、初始状态和状态�
 6. 页面点击、成功提示或 Human 输入正在被扩大为 Human Gate、技术验证、环境接入或完成证明；
 7. 实际写入失败、部分完成或与回读不一致，却由页面乐观状态掩盖；
 8. 既有 Web 没有行为保持或有意变更所需的范围匹配依据，却被声明为未变、已符合、available、verified 或 completed。
+9. Spark direct capture 运行范围不是 loopback 单用户和唯一 governed project/worktree/common-dir，来源 locator 不能自包含恢复 canonical payload，精确重复/coverage 未完成，或实现准备回退 V3 writer。
 
 暂停只影响能够覆盖风险的最小页面、API、操作、项目范围或声明。不依赖受影响 Web 能力的其它工作可以继续。
 

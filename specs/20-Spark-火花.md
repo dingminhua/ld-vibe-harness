@@ -64,7 +64,7 @@ Human 已确认 V4 保留 Spark 类型，因此本文不重复决定是否建立
 4. 当前行动是否获准、下游工作是否完成、长期决定是否成立或研究结论是否正确；
 5. 逐条聊天、执行日志、临时分析、派生索引或 Git 历史的替代副本。
 
-AI 负责判断信息是否需要 Spark、是否与已有事实语义重复、当前摘要和处置结论是否准确；Code 只可依据当前来源检查固定结构、值闭集、引用和状态条件。本文定义 Spark 的领域规则，不授予任何消费方通用写入或删除权限。
+AI 负责判断信息是否需要 Spark、是否与已有事实语义重复、当前摘要和处置结论是否准确；Code 只可依据当前来源检查固定结构、值闭集、引用和状态条件。08 §8.2 的 `web-direct-capture` 是唯一窄例外：Human 明确选择 Spark 并提交其完整当前内容，Code 可以先创建通过精确身份查重的 `open` Spark，把自然语言语义比较留给后续明确的 AI reconciliation opportunity。该例外不使 Code 取得语义判断权，也不授予任何消费方通用写入或删除权限。
 
 ## 4. 适用范围
 
@@ -78,6 +78,8 @@ AI 负责判断信息是否需要 Spark、是否与已有事实语义重复、�
 4. 能表达为一个可独立判断“是否仍需处置”的信息需求、发现、问题或缺口；
 5. 已召回并比较现有 Spark 和相邻稳定事实，没有可无损更新的现有入口；
 6. 至少一个来源可以按所需精度回指，且没有把推测改写成已验证事实。
+
+普通 AI 创建在写入前满足上述全部条件。08 §8.2 的 Web direct capture 只把第 5 项的自然语言比较后移：当次仍须满足 Spark 类型选择、单一粒度、来源、合法 `open` 初态和全状态精确身份扫描；语义相似但精确 identity 不同不由 Code 拒绝，后续按 §7 的 F2/F3 opportunity 比较。该例外不能用于其它输入来源、事实类型或写操作。
 
 当前行动中可以直接处理且不需跨会话保留、已经由现有位置完整承载、已经具有明确行动目标、已经形成长期决定或复用经验、完整研究报告、过程日志、逐条聊天、工具输出和单纯执行提醒，不应单独形成 Spark。多个已经可以独立处置的问题不得长期捆成一个 Spark；相关子问题一旦具有独立目标、判断或跟踪价值，必须拆分并建立关系。
 
@@ -168,7 +170,22 @@ Spark 的 `relation_key` 闭集为：
 
 普通 Markdown、配置或其它非事实对象不能伪装成 `relation-target`；它们按实际作用进入 `source_refs` 或 `evidence_refs`。V3 `related_workcases`、`related_adrs`、`related_studies`、`related_sparks`、`related_docs`、`input_refs` 和 `resolved_to` 不进入 V4 Schema。
 
-创建前必须按主题、来源、相邻对象和已知引用召回现有 Spark 与稳定事实。完全重复或同一对象的自然更新应更新现有入口；语义范围不同且需要独立处置时才新建并建立必要关系。Code 可以做精确 key、locator 和文本检索，不能裁决自然语言是否同义。
+创建前必须按主题、来源、相邻对象和已知引用召回现有 Spark 与稳定事实。完全重复或同一对象的自然更新应更新现有入口；语义范围不同且需要独立处置时才新建并建立必要关系。Code 可以做精确 key、locator 和文本检索，不能裁决自然语言是否同义。只有下节 `web-direct-capture` 可以在完成确定性全状态精确扫描后，把自然语言语义比较推迟到明确的 AI reconciliation opportunity；这不是对普通创建查重责任的放宽。
+
+### Web direct capture 来源、精确重复与语义协调
+
+`web-direct-capture` 是 Spark 可接受的 Human 输入来源种类，只在 08 §8.2 的本机 loopback、单用户、唯一 governed project 与实际 worktree/common-dir 边界内成立。其 source ref 必须完整使用 08 定义的自包含 `data:application/json;base64,...` locator、`sha256:<lowerhex>` version 和 RFC 3339 `observed_at`；bare digest 不成立。该引用只证明 Web 观察到一次规范化 Human capture，不证明内容正确、没有语义重复或已完成 AI 审核。
+
+创建前必须在同一 governed project 和实际 worktree 中扫描全部 current Spark 状态，保留完整 coverage，并按以下确定性规则处理：
+
+1. 每个参与比较的 `web-direct-capture` source ref 都必须通过 Base64 canonical 解码、canonical bytes 复核、version digest 复算以及与对象 `title/summary/priority` 的一致性检查；
+2. 精确匹配至少以已验证 source ref 的 version digest 为 identity；对于 mechanically valid 的 `open` Spark，还必须从其 `title/summary/priority` 复算 canonical identity，防止缺失或异常 direct-capture 引用被当作无匹配；
+3. 全部状态中恰有一个有效精确匹配时，不创建对象并返回非 2xx `exact_duplicate`；结果必须包含 existing 的 `governed_project_id`、`fact_type_key`、`object_id` 和实际 `status`，无论状态是 `open`、`routed` 还是 `discarded` 都不得返回 2xx `no_change`；
+4. 多个精确匹配、对象或来源损坏、扫描分页未完成、coverage 超限或读取不可用时 fail closed，零写入；不得用“未匹配”掩盖完整性问题；
+5. 精确重复处理不得自动更新、重开、创建替代对象、增加 `supersedes`/其它关系、改变终态、消费 allocator、commit 或回退 V3 writer；网络重试命中 existing 时同样返回 409 冲突和稳定引用；
+6. digest 不同但自然语言相似时，Code 不裁决语义同义；满足 direct-capture 其它条件即可创建一个 `open` Spark。
+
+每个新建 `web-direct-capture` `open` Spark 在下一次与其主题、来源或引用相关的 AI 行动中产生可分页 Spark F2 reconciliation opportunity；AI 按需展开 F3，比较当前主题、全部来源、摘要、已有对象和 coverage。该机会不进入 F1，也不自动合并对象。若判断应更新、处置、替代、建立关系或形成多对象变化，必须转入 `fact-object-lifecycle-change`，重新核对授权与实际能力；未执行变更时保留原对象和未完成范围。
 
 ### 主动召回与消费时机
 
@@ -178,7 +195,7 @@ Spark 在当前行动进入新主题、准备结束或交还、准备创建新�
 
 ## 8. 创建、更新与停止使用边界
 
-创建 Spark 前必须确认准入条件、召回结果、对象粒度、来源和当前摘要。创建后的任何更新都必须先取得实际行动授权，写入当前权威文件，回读 Working Tree，并验证 Schema 与状态条件；本文不因定义更新规则而授权 AI、Helper、Code 或 Web 修改文件。
+普通创建 Spark 前必须确认准入条件、召回结果、对象粒度、来源和当前摘要。`web-direct-capture` 仅按 08 §8.2 和 §7 的全状态精确扫描后创建，不能冒充已经完成自然语言召回与比较。创建后的任何更新都必须先取得实际行动授权，写入当前权威文件，回读 Working Tree，并验证 Schema 与状态条件；本文不因定义更新规则而授权 AI、Helper、Code 或 Web 修改文件。
 
 修正 `summary` 时必须保持其为当前快照；只有会影响后续恢复的关键语义转折才追加 `evolution`。优先级变化只改变召回排序，不推进状态。新增关系必须说明方向语义，不复制目标正文。拆分必须让每个新 Spark 具有独立问题边界、来源和身份，并由原对象或新对象保留关系；合并、替代或删除不得丢失仍适用来源、证据和承接关系。
 
@@ -192,6 +209,7 @@ Spark 类型停止新增、合并、替代或取消时，必须按 05 处理唯�
 |---|---|---|---|---|---|---|
 | Spark 类型定义 | 新建或实质修改本文时 | 唯一声明、对象语义、准入审计引用、绑定、状态、来源、证据与关系完整且无第二权威 | 05、统一登记、本文、历史反例和独立复核记录 | 当前来源回读与规范检查；Code 只验证可机械部分 | 当前 `spark` 类型定义 | 本文不进入或退出当前规则源；修正定义，不消费受影响对象 |
 | Spark 准入与查重 | 创建新对象前 | 信息跨行动有保留价值、尚无正确承接位置、粒度单一、已召回相邻事实且没有可无损更新的现有入口 | 当前输入、来源定位、召回结果、相邻对象与 AI 语义比较 | AI 来源回读与全局检索；Code 只辅助精确检索 | 当次候选与直接相邻事实 | 不创建；直接处理、更新现有位置、拆分或转正确承载 |
+| Web direct capture | 从 08 冻结表单创建 Spark 前 | 自包含来源有效；全状态精确扫描和 coverage 完整；唯一 duplicate 返回 409；多匹配/损坏/不完整 fail closed；不同 identity 的语义比较明确留给 F2/F3 | 08、当次 Human 提交、全部 current Spark、来源引用、扫描结果和回读对象 | canonical 固定向量、隔离项目全状态/分页/损坏矩阵与创建后精确回读 | 当次本机单用户 capture 与确定性 identity 范围 | 零写入；返回 exact_duplicate、invalid、unavailable 或 integrity conflict，不自动更新/重开/替代 |
 | Spark 召回与消费 | 新主题、压缩恢复、行动收尾、事实创建前或显式引用时 | F2 卡片只投影权威字段；`open` 候选已按主题、来源与关系缩小；压缩只恢复已相关对象；终态只在追溯或关系场景展开；优先级未被冒充为相关性或行动授权 | 当前主题、对象、来源、关系、状态、召回命中依据和恢复引用 | 候选范围走查、按需对象回读与 AI 语义比较 | 当次已检查候选与展开对象 | 不声称 Spark 相关或应处置；缩小候选、补读来源或保留未检查范围 |
 | 对象 Schema 与身份 | 创建、读取或更新对象时 | 路径、object_id、fact_type_key、字段闭集、类型、出现条件、时间和引用均符合当前来源 | 当前文件、统一登记、本文字段定义与派生 Schema | 实际 parser/validator；未实现时逐项来源回读 | 当次对象当前 Working Tree 内容 | 不作为有效 Spark 消费；报告具体字段与未验证范围 |
 | 状态与处置 | 准备 routed 或 discarded 时 | 全部原始内容确已承接或废弃理由成立；终态字段、证据、关系和时间完整一致 | 处置前后对象、承接位置、来源、证据与 Human 决定 | AI 语义审核、目标回读和结构校验 | 当次状态与处置声明 | 保持 open；补齐承接、证据或进入 Human Gate |
@@ -212,11 +230,13 @@ Spark 类型停止新增、合并、替代或取消时，必须按 05 处理唯�
 
 Human 已明确要求创建，或在既有授权范围内补充来源、修正摘要和建立普通可逆关系时，不因对象类型是 Spark 而重复进入 Gate。Human 决定不能替代 Schema、来源回读、证据充分性和写后验证，也不能使未完整承接的 Spark 自动 routed。
 
+08 §8.2 下每次点击只授权创建该次闭集请求的一个 `open` Spark；产品方向决定不替代逐次点击，也不授权真实项目测试写入、更新、处置、迁移、commit、远程部署或其它事实类型。后续 F2/F3 语义比较不自动产生 lifecycle 变更授权。
+
 ## 11. Stop Conditions
 
 出现以下任一情况时，必须暂停受影响 Spark 的新建、更新或处置：
 
-1. 未召回已有对象，存在重复或同义 Spark 风险；
+1. 普通创建未召回已有对象，存在重复或同义 Spark 风险；或 Web direct capture 未完成 §7 全状态精确扫描、coverage 与来源 identity 复核；
 2. 信息已经由现有事实源自然、完整承载，或已经满足其它正确承载位置的边界；
 3. 没有可回指来源，或 locator 无法达到当前声明所需精度；
 4. 正在把推测写成已验证事实，把关系存在写成完整承接，或把终态写成下游完成；
