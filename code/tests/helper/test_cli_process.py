@@ -151,9 +151,7 @@ def test_defined_operation_check_and_call_return_actual_l0_results(tmp_path: Pat
     assert [part["level"] for part in call_response["disclosure"]["parts"]] == ["L0"]
     assert all(item["overview"] is None and item["relationships"] is None for item in call_response["result"]["items"])
     observed_sources = [
-        source
-        for source in call_response["sources"]
-        if source["kind"] == "rule" and source["locator"] == "specs/"
+        source for source in call_response["sources"] if source["kind"] == "rule" and source["locator"] == "specs/"
     ]
     assert len(observed_sources) == 1
     assert observed_sources[0]["details"]["rule_source_view"] == "working_tree"

@@ -2,7 +2,7 @@
 
 > 记录性质：本文是普通 sdist/wheel 自包含安装增量的 Code Implementation Plan。它不替代 01、04、07、09 或 33，不使构建、安装、升级、卸载、Helper 调用或环境接入自动成立。
 >
-> 当前状态：2026-07-15 已完成契约、快照构建/定位和 Helper 来源投影三个切片；下一切片为安装、强制重装、替换和卸载生命周期矩阵及文档收口。
+> 当前状态：2026-07-15 四个切片已经全部完成；普通发行安装闭合当前 macOS/Python 3.12 范围，下一平台 Gate 为原生 Windows，不外推公共索引发布、环境 adapter 或三平台支持。
 
 ## 1. 目标与保持边界
 
@@ -130,8 +130,31 @@ sdist 必须包含根级 Specs、附件、由当前规则机器声明的机械�
 
 - `ruff check code/ldvh code/tests`：通过；
 - `.venv/bin/pytest -q`：587 passed；
-- 直接 wheel 与无 `.git` sdist→wheel 的 24 项快照成员集合摘要一致，均为 `15ff1160f97b80e1fbb3b5902feb9737997f443e140b03af1343e7934212e24b`；
+- 直接 wheel 与无 `.git` sdist→wheel 的 manifest 内 24 项资源成员集合摘要一致，均为 `15ff1160f97b80e1fbb3b5902feb9737997f443e140b03af1343e7934212e24b`；两者另各含一个 `manifest.json`；
 - 在 `/tmp` 的干净 Python 3.12 venv 安装直接 wheel 后，`capabilities` 及规范候选、规范正文、行动模板候选、行动模板正文五类进程级调用全部 `outcome: ok`；递归检查到的内部规则/实现引用分别为 71、10、10、16、7 项，全部绑定 `ld-vibe-harness==0.1.0` 的安装身份，未出现 `_rule_snapshot`、`git_worktree_root` 或 `working_tree_rule_set`；
 - 在另一干净 venv 安装 sdist→wheel 后，`ldvh capabilities` 退出码 0、发现 10 项操作，且同时出现安装规则快照与安装实现身份，不含 Working Tree 身份。
 
-这些结果完成来源表达，不替代切片 4 的强制重装、版本替换模拟、卸载残留、全部公开操作进程矩阵和 README/总纲收口，也不外推为 Linux 或原生 Windows 已通过。
+这些结果完成来源表达；切片 3 完成时尚未覆盖的强制重装、版本替换、卸载残留、全部公开操作进程矩阵和 README/总纲收口现由下节切片 4 闭合。Linux 与原生 Windows 仍不由本计划的当前证据外推。
+
+## 11. 2026-07-15 切片 4 完成记录
+
+切片 4 已把一次性手工 smoke test 提升为默认执行、无静默跳过的发行物生命周期回归：
+
+1. 构建只发生在隔离临时源码副本；直接 wheel、sdist 和版本替换模拟不写共享 checkout，也不复用其 build、egg-info 或快照目录；构建前端与 backend 工具进入 `dev` 依赖；
+2. 当前 direct wheel 与无 `.git` sdist 解包目录再构建的 wheel 使用完全相同的 manifest；24 项清单成员加 `manifest.json` 合计 25 项快照资源，避免把两种计数混写；
+3. 临时 `0.0.0` 旧发行包带一个只属于旧 RECORD 的 Python 成员和不同快照摘要；升级到当前 `0.1.0` 后只剩当前 dist-info，旧成员、版本与快照身份全部退出；
+4. 当前安装的 manifest 被篡改后，`ldvh capabilities` 以 `unavailable`、退出码 5 fail closed；同一 wheel `--force-reinstall` 后恢复原始资源和安装身份；
+5. direct wheel 与 sdist-derived wheel 分别在独立 venv、无 LDVH 源码 `PYTHONPATH` 的进程中，对十项公开操作逐项执行有效 `capabilities <key>`、有效 `call <key>` 和操作专属无效请求；每次 stdout 都是一个 canonical UTF-8 JSON 加单个 LF，stderr 为空，invalid request 为退出码 2；
+6. prepare/create/read/update 按一个隔离受管辖 Git 项目串行执行；全项目非 Git 文件树与 Git status/index 指纹证明 capabilities、prepare 和 invalid request 无持久副作用，有效 create/update 只改变预期 canonical 事实文件且不改变 Git index。规则与实现引用始终绑定 installed distribution，governance/facts/Git 始终回指临时项目 Working Tree，安装快照前后摘要不变，也没有在安装目录生成管辖配置、事实实例或 Git metadata；
+7. 卸载后只检查 LDVH 自有 console script、package、dist-info、快照和旧 RECORD 成员消失；`ruamel.yaml` 等依赖留存不被误报为 LDVH 残留；
+8. README 与工作推进总纲只声明本地构建和当次 macOS/Python 3.12 普通 distribution 证据；没有宣称 PyPI 发布、Linux/Windows 通过、三平台 CI 或环境 adapter 自动接入。生命周期矩阵以 `--no-deps` 安装 LDVH wheel，并从开发环境复制已声明的 `ruamel.yaml` 到独立依赖路径，以便离线验证 LDVH 自有安装对象；它不覆盖 pip 依赖解析。切片 2 的正常依赖安装 smoke 与本矩阵分别证明依赖安装可达和 LDVH 生命周期边界。
+
+最终验证：
+
+- 发行生命周期定向回归：2 passed；
+- `.venv/bin/pytest -q`：589 passed；
+- `ruff check code/ldvh code/tests`：通过；
+- `ruff format --check code/ldvh code/tests`：123 files already formatted；
+- `git diff --check`：通过。
+
+普通安装当前增量至此完成。后续原生 Windows 阶段仍须处理跨平台锁、安全路径遍历与 reparse point、原子创建/替换、目录持久化降级、盘符/UNC/大小写和解释器启动，并取得真实 Windows 机器证据；该工作不重新打开本增量已经固定的双规则源与发行生命周期语义。

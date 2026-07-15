@@ -685,9 +685,7 @@ def _parse_admission_audit_scope(
         )
         return None
     matching = tuple(
-        locator
-        for locator in locators
-        if locator.audit_record_key == parts[0] and locator.audit_namespace == parts[1]
+        locator for locator in locators if locator.audit_record_key == parts[0] and locator.audit_namespace == parts[1]
     )
     if len(matching) != 1:
         issues.append(

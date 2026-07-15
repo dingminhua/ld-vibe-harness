@@ -333,13 +333,9 @@ def inspect_repository_source(
     initial_graph: GraphResult = validate_graph(parsed_documents)
     field_registry = None
     if any(document.key == REGISTRY_KEY for document in initial_graph.active_documents_passing_implemented_checks):
-        locator_inspection = inspect_audit_evidence_locators(
-            initial_graph.active_documents_passing_implemented_checks
-        )
+        locator_inspection = inspect_audit_evidence_locators(initial_graph.active_documents_passing_implemented_checks)
         issues.extend(locator_inspection.issues)
-        audit_documents = {
-            path: result.document for path, result in (admission_audits or {}).items()
-        }
+        audit_documents = {path: result.document for path, result in (admission_audits or {}).items()}
         if source_identity.view == "working_tree":
             for locator in locator_inspection.locators:
                 audit_eligibility_issue = validate_non_ignored_git_path(

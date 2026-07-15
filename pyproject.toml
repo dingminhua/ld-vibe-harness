@@ -17,8 +17,11 @@ ldvh = "ldvh.cli:main"
 
 [project.optional-dependencies]
 dev = [
+  "build>=1.2,<2",
   "pytest>=8.4,<10",
   "ruff>=0.12,<1",
+  "setuptools>=75",
+  "wheel>=0.45,<1",
 ]
 
 [tool.setuptools.packages.find]

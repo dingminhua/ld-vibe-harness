@@ -108,10 +108,7 @@ def _manifest_payload(distribution: str, version: str, files: tuple[SnapshotFile
         "distribution": distribution,
         "version": version,
         "algorithm": "sha256",
-        "files": [
-            {"path": item.path, "role": item.role, "size": item.size, "sha256": item.sha256}
-            for item in files
-        ],
+        "files": [{"path": item.path, "role": item.role, "size": item.size, "sha256": item.sha256} for item in files],
     }
 
 

@@ -22,6 +22,21 @@
 
 ## 使用状态
 
-当前 00–09、Spark、WorkCase、ADR、Pitfall、Study、四份具体行动模板及四份授权附件声明为 `active`，并通过当前已实现的机械结构检查；这不替代 01 对其它变更要求的语义审核和独立复核。阶段 4 与阶段 5 已关闭；事实服务已经提供候选发现、精确读取、草案准备、单对象受控创建和完整目标 CAS 更新。V4 Code 已建立规范模型确定性基础、Helper CLI v2 契约和十项当前公开操作；默认 `compact` 响应聚合同范围重复证据，`diagnostic` 档保留逐项审计信息，L3 按精确标题边界返回原文切片。09 与 33 已分别定义环境接入规则和安装验证行动；首个 Codex `SessionStart startup|resume` 薄 adapter 已在本机当前用户的 Codex 0.144.2 中完成安装、信任、显式配置、真实成功/失败触发及停用/恢复验证，结论不外推到其它环境或事件。
+当前 00–09、Spark、WorkCase、ADR、Pitfall、Study、四份具体行动模板及四份授权附件声明为 `active`，并通过当前已实现的机械结构检查；这不替代 01 对其它变更要求的语义审核和独立复核。阶段 4 与阶段 5 已关闭；事实服务已经提供候选发现、精确读取、草案准备、单对象受控创建和完整目标 CAS 更新。V4 Code 已建立规范模型确定性基础、Helper CLI v2 契约和十项当前公开操作；默认 `compact` 响应聚合同范围重复证据，`diagnostic` 档保留逐项审计信息，L3 按精确标题边界返回原文切片。普通 wheel 与 sdist 已自包含同一发行版本绑定的规则快照；直接 wheel、无 Git 的 sdist→wheel、真实版本替换、强制重装、卸载和十项操作进程矩阵已在 macOS、Python 3.12 临时环境验证。09 与 33 已分别定义环境接入规则和安装验证行动；首个 Codex `SessionStart startup|resume` 薄 adapter 已在本机当前用户的 Codex 0.144.2 中完成安装、信任、显式配置、真实成功/失败触发及停用/恢复验证，结论不外推到其它环境或事件。
 
-三份 2026-07-15 独立审计完成合并处置后，当前主线已经校正为：保持 Web 表现层不变，把现有 Spark POST/读取接口改接 V4 受控创建与投影；再闭合普通 wheel 与原生 Windows 基础；其后逐条迁移全部 92 个 V3 事实对象（包括已关闭对象），并以真实事实建立低成本启动/恢复入口和跨会话 dogfood；最后根据实测决定是否简化 WorkCase、字段治理或 Helper 响应。其它事实类型的 Web 写入 API 暂不建设。当前这些决定只完成记录，尚未实施；Git 跟踪的 V4 事实实例仍为 0，普通安装、原生 Windows、三平台 CI、V4 Web 和首个完整 dogfood 均未完成。完整路线、当前边界、审计处置和验证证据见 [工作推进总纲](docs/v4-architecture/active/V4-工作推进总纲.md)。
+三份 2026-07-15 独立审计完成合并处置后，当前主线已经校正为：保持 Web 表现层不变，把现有 Spark POST/读取接口改接 V4 受控创建与投影；闭合普通发行安装和原生 Windows 基础；其后逐条迁移全部 92 个 V3 事实对象（包括已关闭对象），并以真实事实建立低成本启动/恢复入口和跨会话 dogfood；最后根据实测决定是否简化 WorkCase、字段治理或 Helper 响应。其它事实类型的 Web 写入 API 暂不建设。普通发行安装现已闭合当前 macOS/Python 3.12 范围；Git 跟踪的 V4 事实实例仍为 0，原生 Windows、三平台 CI、V4 Web 和首个完整 dogfood 均未完成。完整路线、当前边界、审计处置和验证证据见 [工作推进总纲](docs/v4-architecture/active/V4-工作推进总纲.md)。
+
+## 本地构建与普通安装
+
+仓库当前没有声明已经发布到公共 Python 包索引。要验证本地源码生成的普通发行物：
+
+```bash
+python3.12 -m pip install -e '.[dev]'
+python3.12 -m build --sdist --wheel
+python3.12 -m venv /tmp/ldvh-install
+/tmp/ldvh-install/bin/python -m pip install dist/ld_vibe_harness-*.whl
+cd /tmp
+/tmp/ldvh-install/bin/ldvh capabilities
+```
+
+普通安装的 Helper 从同一 Python distribution 内已经验证的不可变规则快照读取规则，不搜索当前目录、管辖项目或相邻 checkout。事实与 Git 操作仍只作用于请求解析出的实际管辖项目。以上命令只是 POSIX 形式的本地构建示例；当前验证证据不证明 PyPI 发布、Linux、原生 Windows、环境 adapter 自动接入或三平台 CI 已完成。
