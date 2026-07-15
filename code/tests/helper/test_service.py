@@ -115,7 +115,16 @@ def test_repository_problem_is_not_rewritten_as_empty_discovery(monkeypatch, tmp
         "line": None,
         "affected": ["broken"],
     }
-    assert result.response["diagnostics"][0]["source_refs"] == [{"kind": "working_tree", "locator": "specs/broken.md"}]
+    assert result.response["diagnostics"][0]["source_refs"] == [
+        {
+            "kind": "rule",
+            "locator": "specs/broken.md",
+            "details": {
+                "rule_source_view": "working_tree",
+                "git_worktree_root": tmp_path.resolve().as_posix(),
+            },
+        }
+    ]
 
 
 def test_defined_implementation_is_discovered_and_preserves_partial_scope(monkeypatch, tmp_path: Path) -> None:
@@ -132,7 +141,16 @@ def test_defined_implementation_is_discovered_and_preserves_partial_scope(monkey
     operation = discovered.response["result"]["operations"][0]
     assert operation["implementation"] == {
         "present": True,
-        "evidence": [{"kind": "implementation", "locator": "ldvh.test.fake"}],
+        "evidence": [
+            {
+                "kind": "implementation",
+                "locator": "ldvh.test.fake",
+                "details": {
+                    "implementation_source_view": "working_tree",
+                    "git_worktree_root": tmp_path.resolve().as_posix(),
+                },
+            }
+        ],
     }
     assert operation["required_inputs"] == ["arguments.source_key"]
     assert operation["optional_inputs"] == ["requested_disclosure"]
@@ -282,7 +300,14 @@ def test_unrelated_candidate_problem_does_not_block_defined_operation(
     assert any(source["locator"] == "specs/99-Broken.md" for source in discovered.response["sources"])
     assert discovered.response["diagnostics"][-1]["details"]["path"] == "specs/99-Broken.md"
     assert discovered.response["diagnostics"][-1]["source_refs"] == [
-        {"kind": "working_tree", "locator": "specs/99-Broken.md"}
+        {
+            "kind": "rule",
+            "locator": "specs/99-Broken.md",
+            "details": {
+                "rule_source_view": "working_tree",
+                "git_worktree_root": current_specs_repository.resolve().as_posix(),
+            },
+        }
     ]
     assert called.response["outcome"] == "ok"
     assert called.response["scope"]["completed"] == ["ldvh-root"]

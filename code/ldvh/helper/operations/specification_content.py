@@ -11,17 +11,20 @@ from ldvh.helper.operations.specification_content_request import (
     SpecificationContentRequest,
     SpecificationContentSelection,
 )
+from ldvh.helper.responses import source_reference
+from ldvh.helper.source_refs import GeneratedSourceReference, RuleReferenceBinder
 from ldvh.specs.identity import FormalDocument
 from ldvh.specs.repository import RepositoryInspection
+from ldvh.specs.source import RuleSourceIdentity
 
 type JsonObject = dict[str, object]
 SuggestedOutcome = Literal["ok", "partial", "rejected", "unavailable", "error"]
 FailureKind = Literal["rejected", "unavailable", "error"]
 
-_QUALIFICATION_SOURCE: JsonObject = {
-    "kind": "rule",
-    "locator": "specs/01-规范模型基础规范.md#6.2-进入当前规则源的条件",
-}
+_QUALIFICATION_SOURCE: JsonObject = source_reference(
+    "rule",
+    "specs/01-规范模型基础规范.md#6.2-进入当前规则源的条件",
+)
 
 
 class SpecificationContentSelectionError(ValueError):
@@ -58,41 +61,36 @@ class _UnfinishedSelection:
 
 def _simple_source(path: str, *, line: int | None = None) -> JsonObject:
     locator = path if line is None else f"{path}#L{line}"
-    return {"kind": "rule", "locator": locator}
+    return source_reference("rule", locator)
 
 
-def _fixed_source(
-    document: FormalDocument,
-    *,
-    repository_root: str,
-) -> JsonObject:
+def _fixed_source(document: FormalDocument, identity: RuleSourceIdentity) -> JsonObject:
     end_line = len(document.markdown.raw_lines)
     path = document.canonical_path
     observed_at = document.markdown.observed_at
     if observed_at is None:
         raise ValueError("inspected Markdown source is missing its observation time")
-    return {
-        "kind": "rule",
-        "locator": f"{path}#L1-L{end_line}",
-        "observed_at": observed_at,
-        "details": {
-            "responsibility_key": document.key,
-            "path": path,
-            "heading_path": None,
-            "start_line": 1,
-            "end_line": end_line,
-            "git_worktree_root": repository_root,
-        },
-    }
+    source = source_reference(
+        "rule",
+        f"{path}#L1-L{end_line}",
+        responsibility_key=document.key,
+        path=path,
+        heading_path=None,
+        start_line=1,
+        end_line=end_line,
+    )
+    source["observed_at"] = observed_at
+    assert isinstance(source, GeneratedSourceReference)
+    return RuleReferenceBinder(identity, (document,)).bind(source)
 
 
 def _full_part(
     document: FormalDocument,
     *,
-    repository_root: str,
+    identity: RuleSourceIdentity,
     inclusion_reason: str,
 ) -> JsonObject:
-    source = _fixed_source(document, repository_root=repository_root)
+    source = _fixed_source(document, identity)
     return {
         "level": "L4",
         "heading_path": None,
@@ -107,7 +105,7 @@ def _full_part(
 def _section_part(
     document: FormalDocument,
     *,
-    repository_root: str,
+    identity: RuleSourceIdentity,
     heading_path: tuple[str, ...],
 ) -> tuple[JsonObject, ...]:
     headings = document.markdown.headings
@@ -151,19 +149,18 @@ def _section_part(
         raise ValueError("inspected Markdown source is missing its observation time")
     parts: list[JsonObject] = []
     for path, start_line, end_line, reason in ranges:
-        source: JsonObject = {
-            "kind": "rule",
-            "locator": f"{document.canonical_path}#L{start_line}-L{end_line}",
-            "observed_at": observed_at,
-            "details": {
-                "responsibility_key": document.key,
-                "path": document.canonical_path,
-                "heading_path": list(path),
-                "start_line": start_line,
-                "end_line": end_line,
-                "git_worktree_root": repository_root,
-            },
-        }
+        source: JsonObject = source_reference(
+            "rule",
+            f"{document.canonical_path}#L{start_line}-L{end_line}",
+            responsibility_key=document.key,
+            path=document.canonical_path,
+            heading_path=list(path),
+            start_line=start_line,
+            end_line=end_line,
+        )
+        source["observed_at"] = observed_at
+        assert isinstance(source, GeneratedSourceReference)
+        source = RuleReferenceBinder(identity, (document,)).bind(source)
         parts.append(
             {
                 "level": "L3",
@@ -303,19 +300,20 @@ def _parts_for_document(
     selection: SpecificationContentSelection,
     disclosure: Literal["L3", "L4"],
 ) -> tuple[JsonObject, ...] | _UnfinishedSelection:
-    root = repository.repository_root.resolve().as_posix()
+    assert repository.source_identity is not None
+    identity = repository.source_identity
     if document.kind != "attachment" and disclosure == "L3":
         assert selection.heading_path is not None
         return _section_part(
             document,
-            repository_root=root,
+            identity=identity,
             heading_path=selection.heading_path,
         )
     if document.kind != "attachment":
         return (
             _full_part(
                 document,
-                repository_root=root,
+                identity=identity,
                 inclusion_reason="请求 L4，纳入完整来源",
             ),
         )
@@ -338,18 +336,18 @@ def _parts_for_document(
         assert selection.heading_path is not None
         return _section_part(
             document,
-            repository_root=root,
+            identity=identity,
             heading_path=selection.heading_path,
         )
     return (
         _full_part(
             document,
-            repository_root=root,
+            identity=identity,
             inclusion_reason="请求 L4，纳入授权附件完整来源",
         ),
         _full_part(
             parent,
-            repository_root=root,
+            identity=identity,
             inclusion_reason="请求 L4，纳入授权该附件的当前唯一父规范完整来源",
         ),
     )

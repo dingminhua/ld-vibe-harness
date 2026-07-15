@@ -27,6 +27,19 @@ def _run(cwd: Path, *arguments: str, stdin: str = "") -> tuple[subprocess.Comple
     return completed, response
 
 
+def _assert_working_tree_implementation(
+    implementation: dict[str, Any],
+    locator: str,
+) -> None:
+    assert implementation["present"] is True
+    assert len(implementation["evidence"]) == 1
+    evidence = implementation["evidence"][0]
+    assert evidence["kind"] == "implementation"
+    assert evidence["locator"] == locator
+    assert evidence["details"]["implementation_source_view"] == "working_tree"
+    assert evidence["details"]["git_worktree_root"].endswith("ld-vibe-harness-v4")
+
+
 def test_general_discovery_reports_source_bound_implementation(tmp_path: Path) -> None:
     completed, response = _run(tmp_path, "capabilities")
 
@@ -60,13 +73,10 @@ def test_general_discovery_reports_source_bound_implementation(tmp_path: Path) -
     ]
     operation = operations["read-specification-candidates"]
     assert operation["operation_key"] == "read-specification-candidates"
-    assert operation["implementation"]["present"] is True
-    assert operation["implementation"]["evidence"] == [
-        {
-            "kind": "implementation",
-            "locator": "code/ldvh/helper/operations/specification_candidate_operation.py",
-        }
-    ]
+    _assert_working_tree_implementation(
+        operation["implementation"],
+        "code/ldvh/helper/operations/specification_candidate_operation.py",
+    )
     assert operation["availability"] is None
     assert operation["required_inputs"] == []
     assert operation["optional_inputs"] == [
@@ -74,28 +84,18 @@ def test_general_discovery_reports_source_bound_implementation(tmp_path: Path) -
         "requested_disclosure",
     ]
     content = operations["read-specification-content"]
-    assert content["implementation"] == {
-        "present": True,
-        "evidence": [
-            {
-                "kind": "implementation",
-                "locator": "code/ldvh/helper/operations/specification_content_operation.py",
-            }
-        ],
-    }
+    _assert_working_tree_implementation(
+        content["implementation"],
+        "code/ldvh/helper/operations/specification_content_operation.py",
+    )
     assert content["required_inputs"] == ["arguments.selections", "requested_disclosure"]
     assert content["optional_inputs"] == []
     assert content["availability"] is None
     template_candidates = operations["read-action-template-candidates"]
-    assert template_candidates["implementation"] == {
-        "present": True,
-        "evidence": [
-            {
-                "kind": "implementation",
-                "locator": "code/ldvh/helper/operations/action_template_operation.py",
-            }
-        ],
-    }
+    _assert_working_tree_implementation(
+        template_candidates["implementation"],
+        "code/ldvh/helper/operations/action_template_operation.py",
+    )
     assert template_candidates["required_inputs"] == []
     assert template_candidates["optional_inputs"] == ["arguments.template_keys"]
     assert template_candidates["availability"] is None
@@ -105,15 +105,10 @@ def test_general_discovery_reports_source_bound_implementation(tmp_path: Path) -
     assert template_content["optional_inputs"] == []
     assert template_content["availability"] is None
     governance = operations["resolve-governance-scope"]
-    assert governance["implementation"] == {
-        "present": True,
-        "evidence": [
-            {
-                "kind": "implementation",
-                "locator": "code/ldvh/helper/operations/governance_scope_operation.py",
-            }
-        ],
-    }
+    _assert_working_tree_implementation(
+        governance["implementation"],
+        "code/ldvh/helper/operations/governance_scope_operation.py",
+    )
     assert governance["required_inputs"] == []
     assert governance["optional_inputs"] == ["work_object_locators", "arguments.workspace_root"]
     assert len(response["gaps"]) == 2
@@ -155,12 +150,23 @@ def test_defined_operation_check_and_call_return_actual_l0_results(tmp_path: Pat
     assert call_response["disclosure"]["requested"] is None
     assert [part["level"] for part in call_response["disclosure"]["parts"]] == ["L0"]
     assert all(item["overview"] is None and item["relationships"] is None for item in call_response["result"]["items"])
-    observed_sources = [source for source in call_response["sources"] if source["kind"] == "working_tree"]
+    observed_sources = [
+        source
+        for source in call_response["sources"]
+        if source["kind"] == "rule" and source["locator"] == "specs/"
+    ]
     assert len(observed_sources) == 1
-    assert observed_sources[0]["observed_at"]
-    assert observed_sources[0]["details"] == {"view": "Working Tree"}
+    assert observed_sources[0]["details"]["rule_source_view"] == "working_tree"
+    assert observed_sources[0]["details"]["git_worktree_root"].endswith("ld-vibe-harness-v4")
+    assert observed_sources[0]["details"]["responsibility_keys"]
+    assert observed_sources[0]["details"]["paths"]
     assert all(
-        any(evidence.get("observed_at") == observed_sources[0]["observed_at"] for evidence in item["evidence"])
+        any(
+            evidence["kind"] == "rule"
+            and evidence["locator"] == "specs/"
+            and evidence["details"]["rule_source_view"] == "working_tree"
+            for evidence in item["evidence"]
+        )
         for item in call_response["verification"]
     )
     assert all(

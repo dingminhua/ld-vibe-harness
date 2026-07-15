@@ -22,6 +22,8 @@ from ldvh.helper.operations import IMPLEMENTATIONS
 from ldvh.helper.requests import parse_common_request, valid_operation_key
 from ldvh.helper.responses import RequestKind, ServiceResult, common_response, diagnostic, gap, source_reference
 from ldvh.helper.rule_source import inspect_colocated_rule_source
+from ldvh.helper.source_refs import RuleReferenceBinder, reset_reference_binder, set_reference_binder
+from ldvh.specs.source import RuleSourceIdentity
 
 CONTRACT_SOURCES = [
     source_reference("rule", "specs/04-Helper CLI 服务规范.md"),
@@ -34,7 +36,7 @@ OPERATION_IMPLEMENTATIONS: dict[str, OperationImplementation] = dict(IMPLEMENTAT
 def _issue_source(issue: Issue) -> dict[str, Any]:
     locator = issue.location.path if issue.location.line is None else f"{issue.location.path}:{issue.location.line}"
     details = {} if issue.location.heading is None else {"heading": issue.location.heading}
-    return source_reference("working_tree", locator, **details)
+    return source_reference("rule", locator, **details)
 
 
 def _issue_sources(issues: tuple[Issue, ...]) -> list[dict[str, Any]]:
@@ -252,6 +254,14 @@ def _execution_response(
 
 
 def handle_request(request_kind: RequestKind, operation_key: str | None, raw_input: str) -> ServiceResult:
+    token = set_reference_binder(None)
+    try:
+        return _handle_request(request_kind, operation_key, raw_input)
+    finally:
+        reset_reference_binder(token)
+
+
+def _handle_request(request_kind: RequestKind, operation_key: str | None, raw_input: str) -> ServiceResult:
     execution_context = OperationExecutionContext(cwd=Path.cwd())
     general_discovery = request_kind == "capabilities" and operation_key is None
     parsed = parse_common_request(raw_input, general_discovery=general_discovery)
@@ -276,6 +286,11 @@ def handle_request(request_kind: RequestKind, operation_key: str | None, raw_inp
         )
     assert inspected.repository is not None and inspected.operations is not None
     repository = inspected.repository
+    identity = repository.source_identity or RuleSourceIdentity(
+        "working_tree",
+        git_worktree_root=repository.repository_root.resolve(),
+    )
+    set_reference_binder(RuleReferenceBinder(identity, repository.parsed_documents))
     operations = inspected.operations
     operation_only_issues = tuple(issue for issue in operations.issues if issue not in repository.issues)
     operation_only_incomplete = tuple(

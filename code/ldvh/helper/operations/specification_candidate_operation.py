@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from datetime import datetime
 from typing import assert_never
 
 from ldvh.helper.operation_runtime import (
@@ -100,16 +99,10 @@ def _call(
 ) -> OperationExecution:
     del context
     _, result = _read(request, repository)
-    working_tree_observation = {
-        "kind": "working_tree",
-        "locator": repository.repository_root.as_posix(),
-        "observed_at": datetime.now().astimezone().isoformat(),
-        "details": {"view": "Working Tree"},
-    }
     verification = tuple(
         {
             **item,
-            "evidence": [*item["evidence"], working_tree_observation, *_IMPLEMENTATION_EVIDENCE],
+            "evidence": [*item["evidence"], *_IMPLEMENTATION_EVIDENCE],
         }
         for item in result.verification
     )
@@ -120,7 +113,7 @@ def _call(
         requested_scope=result.requested_scope,
         completed_scope=result.completed_scope,
         not_completed_scope=result.not_completed_scope,
-        sources=(*result.sources, working_tree_observation, *_IMPLEMENTATION_EVIDENCE),
+        sources=(*result.sources, *_IMPLEMENTATION_EVIDENCE),
         disclosure={
             "requested": request.requested_disclosure,
             "parts": list(result.disclosure_parts),

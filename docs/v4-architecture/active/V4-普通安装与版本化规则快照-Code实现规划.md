@@ -2,7 +2,7 @@
 
 > 记录性质：本文是普通 sdist/wheel 自包含安装增量的 Code Implementation Plan。它不替代 01、04、07、09 或 33，不使构建、安装、升级、卸载、Helper 调用或环境接入自动成立。
 >
-> 当前状态：2026-07-15 已完成实施前只读审核和失败基线；先同步规则源契约，再分阶段实现资源构建、运行时定位和干净环境验证。
+> 当前状态：2026-07-15 已完成契约、快照构建/定位和 Helper 来源投影三个切片；下一切片为安装、强制重装、替换和卸载生命周期矩阵及文档收口。
 
 ## 1. 目标与保持边界
 
@@ -113,4 +113,25 @@ sdist 必须包含根级 Specs、附件、由当前规则机器声明的机械�
 - 干净 Python 3.12 venv 从直接 wheel 安装后，在 `/tmp`、无源码 `PYTHONPATH` 执行 `ldvh capabilities`：退出码 0、`outcome: ok`、发现 10 项操作；
 - sdist 同时包含精确根 Specs、声明的机械证据和冻结快照；从无 `.git` 的 sdist 构建 wheel 成功，快照集合摘要与直接 wheel 同为 `15ff1160f97b80e1fbb3b5902feb9737997f443e140b03af1343e7934212e24b`，且同样没有伪插件包。
 
-上述摘要绑定本次工作树内容；后续 Specs 或机械证据发生变化时应产生新的集合摘要，不得把该值写成长期常量。切片 3 仍需把 capabilities、十项操作、规范/模板读取的全部规则与实现来源回指投影到 `working_tree` 或 `installed_release_snapshot` 的真实身份。
+上述摘要绑定本次工作树内容；后续 Specs 或机械证据发生变化时应产生新的集合摘要，不得把该值写成长期常量。切片 2 完成时尚未覆盖的 Helper 来源投影现由下节切片 3 记录闭合。
+
+## 10. 2026-07-15 切片 3 完成记录
+
+切片 3 已完成 Helper 生成来源引用的统一身份投影；调用者或事实对象携带的普通字典不因恰好声明 `kind: rule` 而被重写：
+
+1. Helper 内部生成的 `rule` 与 `implementation` 引用以不进入 JSON 的内部标记区分；复制仍保留标记，只对这类引用绑定当前 repository 的唯一来源身份；
+2. Working Tree 规则引用带 `rule_source_view: working_tree` 与实际 `git_worktree_root`，不带发行版本；安装规则引用带 distribution、version、`snapshot_sha256` 与 `rule_source_view: installed_release_snapshot`，不暴露包内 `_rule_snapshot` 物理路径；
+3. Working Tree 实现证据绑定实际工作树；安装实现证据只绑定 `implementation_source_view: installed_distribution`、distribution 与 version，不伪造 Git 根或把规则快照摘要误作实现身份；
+4. 规范候选 compact 响应用一项 `specs/` 集合引用携带责任 key 与 canonical path 集合；精确 L3/L4 读取继续回指 canonical path、heading path 和行范围；
+5. 只在 `sources`、`source_refs`、`evidence` 中按完整 canonical JSON 去重内部生成引用；没有可信 repository 身份时删去内部引用，不输出无版本、无视图的裸证据；
+6. capabilities、规范候选/正文与行动模板候选/正文已经分别覆盖 Working Tree 和 installed snapshot 投影，旧 `working_tree_rule_set` 与作为规则来源的冗余 Working Tree observation 已退出。事实操作中描述实际管辖项目 Working Tree 的来源保持不变。
+
+实际验证：
+
+- `ruff check code/ldvh code/tests`：通过；
+- `.venv/bin/pytest -q`：587 passed；
+- 直接 wheel 与无 `.git` sdist→wheel 的 24 项快照成员集合摘要一致，均为 `15ff1160f97b80e1fbb3b5902feb9737997f443e140b03af1343e7934212e24b`；
+- 在 `/tmp` 的干净 Python 3.12 venv 安装直接 wheel 后，`capabilities` 及规范候选、规范正文、行动模板候选、行动模板正文五类进程级调用全部 `outcome: ok`；递归检查到的内部规则/实现引用分别为 71、10、10、16、7 项，全部绑定 `ld-vibe-harness==0.1.0` 的安装身份，未出现 `_rule_snapshot`、`git_worktree_root` 或 `working_tree_rule_set`；
+- 在另一干净 venv 安装 sdist→wheel 后，`ldvh capabilities` 退出码 0、发现 10 项操作，且同时出现安装规则快照与安装实现身份，不含 Working Tree 身份。
+
+这些结果完成来源表达，不替代切片 4 的强制重装、版本替换模拟、卸载残留、全部公开操作进程矩阵和 README/总纲收口，也不外推为 Linux 或原生 Windows 已通过。

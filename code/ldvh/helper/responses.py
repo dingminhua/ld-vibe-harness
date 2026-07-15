@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Literal
 
+from ldvh.helper.source_refs import generated_source_reference, project_generated_sources
+
 CONTRACT = "ldvh-helper-cli/2"
 EXIT_CODES = {
     "ok": 0,
@@ -26,10 +28,7 @@ class ServiceResult:
 
 
 def source_reference(kind: str, locator: str, **details: Any) -> dict[str, Any]:
-    result: dict[str, Any] = {"kind": kind, "locator": locator}
-    if details:
-        result["details"] = details
-    return result
+    return generated_source_reference(kind, locator, **details)
 
 
 def gap(
@@ -105,4 +104,4 @@ def common_response(
             else follow_up
         ),
     }
-    return ServiceResult(response=response, exit_code=EXIT_CODES[outcome])
+    return ServiceResult(response=project_generated_sources(response), exit_code=EXIT_CODES[outcome])

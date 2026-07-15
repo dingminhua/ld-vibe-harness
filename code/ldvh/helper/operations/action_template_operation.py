@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import hashlib
 from dataclasses import dataclass
-from datetime import datetime
 from typing import Literal, assert_never
 
 from ldvh.helper.operation_runtime import (
@@ -178,12 +177,7 @@ def _availability(result: _ReadResult) -> AvailabilityEvaluation:
 
 
 def _execution(result: _ReadResult, repository: RepositoryInspection, *, include_content: bool) -> OperationExecution:
-    observed = {
-        "kind": "working_tree",
-        "locator": repository.repository_root.as_posix(),
-        "observed_at": datetime.now().astimezone().isoformat(),
-        "details": {"view": "LDVH current rule source"},
-    }
+    del repository
     if result.outcome == "ok":
         summary = "已精确读取行动模板定义内容" if include_content else "已读取当前行动模板机械候选"
     elif result.outcome == "partial":
@@ -207,7 +201,7 @@ def _execution(result: _ReadResult, repository: RepositoryInspection, *, include
         requested_scope=result.requested,
         completed_scope=result.completed,
         not_completed_scope=result.not_completed,
-        sources=(*result.sources, observed, *_IMPLEMENTATION_EVIDENCE),
+        sources=(*result.sources, *_IMPLEMENTATION_EVIDENCE),
         gaps=result.gaps,
         verification=result.verification,
     )

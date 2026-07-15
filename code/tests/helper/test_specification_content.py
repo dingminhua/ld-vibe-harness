@@ -67,6 +67,7 @@ def test_reads_exact_l4_source_with_fixed_traceability_fields(current_specs_repo
             "heading_path": None,
             "start_line": 1,
             "end_line": len(expected.splitlines()),
+            "rule_source_view": "working_tree",
             "git_worktree_root": current_specs_repository.resolve().as_posix(),
         },
     }

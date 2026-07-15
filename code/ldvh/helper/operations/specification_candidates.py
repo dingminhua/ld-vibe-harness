@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from typing import Literal
 
 from ldvh.diagnostics import Issue, SourceLocation
+from ldvh.helper.responses import source_reference
 from ldvh.specs.projection import DisclosureLayer, ProjectionItem
 from ldvh.specs.repository import RepositoryInspection
 
@@ -14,10 +15,10 @@ SuggestedOutcome = Literal["ok", "partial", "unavailable"]
 type JsonObject = dict[str, object]
 
 _LAYERS: tuple[DisclosureLayer, ...] = ("L0", "L1", "L2")
-_QUALIFICATION_SOURCE = {
-    "kind": "rule",
-    "locator": "specs/01-规范模型基础规范.md#6.2-进入当前规则源的条件",
-}
+_QUALIFICATION_SOURCE = source_reference(
+    "rule",
+    "specs/01-规范模型基础规范.md#6.2-进入当前规则源的条件",
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -48,7 +49,7 @@ class _ProjectionProblem(ValueError):
 
 def _location_reference(location: SourceLocation) -> JsonObject:
     locator = location.path if location.line is None else f"{location.path}:{location.line}"
-    result: JsonObject = {"kind": "rule", "locator": locator}
+    result: JsonObject = source_reference("rule", locator)
     if location.heading is not None:
         result["details"] = {"heading": location.heading}
     return result
@@ -360,14 +361,12 @@ def read_specification_candidates(
 
     compact_source: JsonObject | None = None
     if completed and response_profile == "compact":
-        compact_source = {
-            "kind": "working_tree_rule_set",
-            "locator": repository.repository_root.resolve().as_posix(),
-            "details": {
-                "responsibility_keys": list(completed),
-                "paths": [documents[key].canonical_path for key in completed],
-            },
-        }
+        compact_source = source_reference(
+            "rule",
+            "specs/",
+            responsibility_keys=list(completed),
+            paths=[documents[key].canonical_path for key in completed],
+        )
         item_sources.append(compact_source)
         for layer in _LAYERS[: _LAYERS.index(disclosure) + 1]:
             level_sources[layer].append(compact_source)
