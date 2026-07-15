@@ -179,7 +179,7 @@ Spark 的 `relation_key` 闭集为：
 创建前必须在同一 governed project 和实际 worktree 中扫描全部 current Spark 状态，保留完整 coverage，并按以下确定性规则处理：
 
 1. 每个参与比较的 `web-direct-capture` source ref 都必须通过 Base64 canonical 解码、canonical bytes 复核、version digest 复算、带时区 `observed_at` 和 source ref 自身闭合性检查；创建与首次写后回读时还必须核对 payload 与新对象初始 `title/summary/priority` 精确一致，后续扫描不要求历史 capture 永远等于发生过合法生命周期变化的当前对象快照；
-2. 精确匹配至少以已验证 source ref 的 version digest 为 identity。对于 mechanically valid、当前为 `open` 且完全没有 `web-direct-capture` source ref 的 Spark，必须从当前 `title/summary/priority` 复算 fallback identity；只要对象存在任一 `web-direct-capture` source ref，损坏、非 canonical、digest 不一致或无法完整验证都必须 fail closed，不得以当前字段 fallback 掩盖来源异常；
+2. 必须先验证对象中的全部 `web-direct-capture` source ref，任一来源损坏、非 canonical、digest 不一致或无法完整验证都立即 fail closed，不得以当前字段 identity 掩盖来源异常；随后以每个已验证 source ref 的 version digest 作为历史 identity，并对每个 mechanically valid 的 `open` Spark 无论是否已有该来源都从当前 `title/summary/priority` 额外复算当前 identity。`routed`、`discarded` 等不再携带 priority 的终态只使用已验证历史 identity；
 3. duplicate 按不同事实对象而不是 source-ref 条目计数；全部状态中恰有一个有效精确匹配对象时，不创建对象并返回非 2xx `exact_duplicate`；结果必须包含 existing 的 `governed_project_id`、`fact_type_key`、`object_id` 和实际 `status`，无论状态是 `open`、`routed` 还是 `discarded` 都不得返回 2xx `no_change`；
 4. 多个精确匹配、对象或来源损坏、扫描分页未完成、coverage 超限或读取不可用时 fail closed，零写入；不得用“未匹配”掩盖完整性问题；
 5. 精确重复处理不得自动更新、重开、创建替代对象、增加 `supersedes`/其它关系、改变终态、消费 allocator、commit 或回退 V3 writer；网络重试命中 existing 时同样返回 409 冲突和稳定引用；

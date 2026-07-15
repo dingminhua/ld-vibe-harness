@@ -156,8 +156,10 @@ def test_duplicate_and_reconciliation_rules_are_narrow_and_fail_closed(
     assert "`governed_project_id`、`fact_type_key`、`object_id`" in direct
     assert "多个精确匹配" in direct and "coverage 超限" in direct and "fail closed" in direct
     assert "duplicate 按不同事实对象而不是 source-ref 条目计数" in direct
-    assert "当前为 `open` 且完全没有 `web-direct-capture` source ref" in direct
-    assert "不得以当前字段 fallback 掩盖来源异常" in direct
+    assert "必须先验证对象中的全部 `web-direct-capture` source ref" in direct
+    assert "无论是否已有该来源都从当前 `title/summary/priority`" in direct
+    assert "不得以当前字段 identity 掩盖来源异常" in direct
+    assert "终态只使用已验证历史 identity" in direct
     assert "后续扫描不要求历史 capture 永远等于" in direct
     assert "不得自动更新、重开、创建替代对象" in direct
     assert "可分页 Spark F2 reconciliation opportunity" in direct
