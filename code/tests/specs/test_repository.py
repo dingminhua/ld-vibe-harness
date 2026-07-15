@@ -32,11 +32,11 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
     assert inspection.issues == ()
     assert inspection.implemented_checks_complete is True
     checked_documents = inspection.active_documents_passing_implemented_checks
-    assert len(checked_documents) == 23
-    assert sum(document.kind != "attachment" for document in checked_documents) == 19
+    assert len(checked_documents) == 24
+    assert sum(document.kind != "attachment" for document in checked_documents) == 20
 
     assert sum(document.kind == "attachment" for document in checked_documents) == 4
-    assert len(inspection.projections) == 69
+    assert len(inspection.projections) == 72
     assert {projection.layer for projection in inspection.projections} == {"L0", "L1", "L2"}
     field_registry = inspection.document_passing_implemented_checks_by_key("fact-object-field-registry")
     assert field_registry is not None
@@ -88,6 +88,7 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
         "environment-integration-installation-verification",
         "fact-object-controlled-creation",
         "fact-object-lifecycle-change",
+        "fact-object-source-reconstruction-migration",
         "git-commit",
     ]
     assert {
@@ -108,6 +109,10 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
         "fact-object-lifecycle-change": (
             "fact-object-lifecycle-change-action-template",
             "5. 事实对象生命周期变更与承接处置行动模板定义",
+        ),
+        "fact-object-source-reconstruction-migration": (
+            "fact-object-source-reconstruction-migration-action-template",
+            "5. 事实对象来源重建与批量迁移行动模板定义",
         ),
         "git-commit": ("git-commit-action-template", "5. Git 提交行动模板定义"),
     }
@@ -146,8 +151,8 @@ def test_invalid_working_tree_source_is_not_replaced_with_committed_content(
     assert any("YAML title 与 H1" in issue.summary for issue in inspection.issues)
     assert inspection.implemented_checks_complete is False
     assert inspection.document_passing_implemented_checks_by_key("web-presentation-interaction") is None
-    assert len(inspection.active_documents_passing_implemented_checks) == 21
-    assert len(inspection.projections) == 63
+    assert len(inspection.active_documents_passing_implemented_checks) == 22
+    assert len(inspection.projections) == 66
 
 
 def test_invalid_foundation_stops_dependent_current_projection(current_specs_repository: Path) -> None:

@@ -189,7 +189,13 @@ def test_direct_capture_adds_no_helper_operation_template_or_fact_field(
     )
 
     assert len(operations.candidate_declarations) == 10
-    assert len(templates.candidate_declarations) == 4
+    assert all(
+        "web" not in declaration.template_key and "capture" not in declaration.template_key
+        for declaration in templates.candidate_declarations
+    )
+    assert all(
+        declaration.source.path != "specs/08-Web 呈现与交互规范.md" for declaration in templates.candidate_declarations
+    )
     assert len(fields.registrations) == 81
     assert operations.issues == ()
     assert templates.issues == ()
