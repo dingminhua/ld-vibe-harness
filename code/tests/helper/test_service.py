@@ -257,6 +257,8 @@ def test_unrelated_candidate_problem_does_not_block_defined_operation(
         "create-fact-object",
         "find-fact-object-candidates",
         "prepare-fact-object-draft",
+        "read-action-template-candidates",
+        "read-action-template-content",
         "read-fact-objects",
         "read-specification-candidates",
         "read-specification-content",

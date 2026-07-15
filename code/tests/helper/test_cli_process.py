@@ -144,12 +144,12 @@ def test_defined_operation_check_and_call_return_actual_l0_results(tmp_path: Pat
     assert check_response["outcome"] == "ok"
     checked_operation = check_response["result"]["operations"][0]
     assert checked_operation["availability"] == "available_for_request"
-    assert len(checked_operation["available_scope"]) == 21
+    assert len(checked_operation["available_scope"]) == 23
     assert checked_operation["unavailable_scope"] == []
 
     assert called.returncode == 0
     assert call_response["outcome"] == "ok"
-    assert len(call_response["result"]["items"]) == 21
+    assert len(call_response["result"]["items"]) == 23
     assert call_response["scope"]["requested"] == call_response["scope"]["completed"]
     assert call_response["scope"]["not_completed"] == []
     assert call_response["disclosure"]["requested"] is None
@@ -169,7 +169,7 @@ def test_defined_operation_check_and_call_return_actual_l0_results(tmp_path: Pat
     )
 
 
-def test_action_template_operations_discover_and_read_three_current_sources(tmp_path: Path) -> None:
+def test_action_template_operations_discover_and_read_four_current_sources(tmp_path: Path) -> None:
     discovered, candidate_response = _run(tmp_path, "call", "read-action-template-candidates")
     read, content_response = _run(
         tmp_path,
@@ -182,6 +182,7 @@ def test_action_template_operations_discover_and_read_three_current_sources(tmp_
                         "git-commit",
                         "fact-object-controlled-creation",
                         "fact-object-lifecycle-change",
+                        "environment-integration-installation-verification",
                     ]
                 }
             }
@@ -191,6 +192,7 @@ def test_action_template_operations_discover_and_read_three_current_sources(tmp_
     assert discovered.returncode == read.returncode == 0
     assert candidate_response["outcome"] == "ok"
     assert [item["template_key"] for item in candidate_response["result"]["items"]] == [
+        "environment-integration-installation-verification",
         "fact-object-controlled-creation",
         "fact-object-lifecycle-change",
         "git-commit",
@@ -203,6 +205,7 @@ def test_action_template_operations_discover_and_read_three_current_sources(tmp_
         "git-commit",
         "fact-object-controlled-creation",
         "fact-object-lifecycle-change",
+        "environment-integration-installation-verification",
     ]
     assert all("## 8. Stop Conditions" in item["source_content"] for item in content_response["result"]["items"])
     assert all(

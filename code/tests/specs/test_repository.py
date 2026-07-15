@@ -30,11 +30,11 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
     assert inspection.issues == ()
     assert inspection.implemented_checks_complete is True
     checked_documents = inspection.active_documents_passing_implemented_checks
-    assert len(checked_documents) == 21
-    assert sum(document.kind != "attachment" for document in checked_documents) == 17
+    assert len(checked_documents) == 23
+    assert sum(document.kind != "attachment" for document in checked_documents) == 19
 
     assert sum(document.kind == "attachment" for document in checked_documents) == 4
-    assert len(inspection.projections) == 63
+    assert len(inspection.projections) == 69
     assert {projection.layer for projection in inspection.projections} == {"L0", "L1", "L2"}
     field_registry = inspection.document_passing_implemented_checks_by_key("fact-object-field-registry")
     assert field_registry is not None
@@ -42,6 +42,16 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
     fact_model = inspection.document_passing_implemented_checks_by_key("fact-model-foundation")
     assert fact_model is not None
     assert "fact-object-field-registry" in fact_model.authorized_attachments
+    environment_integration = inspection.document_passing_implemented_checks_by_key("environment-integration")
+    assert environment_integration is not None
+    assert environment_integration.current_id == "09"
+    assert environment_integration.canonical_path == "specs/09-环境接入规范.md"
+    assert environment_integration.basis == (
+        "ldvh-root",
+        "work-object-governance-scope",
+        "source-of-truth-traceability",
+        "helper-cli-service-contract",
+    )
     assert inspection.unchecked_conditions == UNCHECKED_CONDITIONS
     assert [declaration.operation_key for declaration in operations.candidate_declarations] == [
         "create-fact-object",
@@ -73,6 +83,7 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
     assert operations.issues == ()
     assert operations.incomplete_sources == ()
     assert [declaration.template_key for declaration in action_templates.candidate_declarations] == [
+        "environment-integration-installation-verification",
         "fact-object-controlled-creation",
         "fact-object-lifecycle-change",
         "git-commit",
@@ -84,6 +95,10 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
         )
         for declaration in action_templates.candidate_declarations
     } == {
+        "environment-integration-installation-verification": (
+            "environment-integration-installation-verification-action-template",
+            "5. 环境接入安装与验证行动模板定义",
+        ),
         "fact-object-controlled-creation": (
             "fact-object-controlled-creation-action-template",
             "5. 事实对象判定与受控创建行动模板定义",
@@ -129,8 +144,8 @@ def test_invalid_working_tree_source_is_not_replaced_with_committed_content(
     assert any("YAML title 与 H1" in issue.summary for issue in inspection.issues)
     assert inspection.implemented_checks_complete is False
     assert inspection.document_passing_implemented_checks_by_key("web-presentation-interaction") is None
-    assert len(inspection.active_documents_passing_implemented_checks) == 19
-    assert len(inspection.projections) == 57
+    assert len(inspection.active_documents_passing_implemented_checks) == 21
+    assert len(inspection.projections) == 63
 
 
 def test_invalid_foundation_stops_dependent_current_projection(current_specs_repository: Path) -> None:

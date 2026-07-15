@@ -25,7 +25,7 @@ def _request(*keys: str, disclosure: str | None = None) -> CommonRequest:
     )
 
 
-def test_candidate_operation_discovers_three_real_templates_in_stable_order(
+def test_candidate_operation_discovers_four_real_templates_in_stable_order(
     current_specs_repository: Path,
 ) -> None:
     repository = inspect_repository(current_specs_repository)
@@ -41,6 +41,7 @@ def test_candidate_operation_discovers_three_real_templates_in_stable_order(
         execution.requested_scope
         == execution.completed_scope
         == (
+            "environment-integration-installation-verification",
             "fact-object-controlled-creation",
             "fact-object-lifecycle-change",
             "git-commit",

@@ -1,0 +1,17 @@
+{
+  "name": "ldvh",
+  "version": "0.1.0",
+  "description": "Thin Codex SessionStart adapter for the LDVH Helper CLI",
+  "author": {
+    "name": "LDVH"
+  },
+  "interface": {
+    "displayName": "LDVH for Codex",
+    "shortDescription": "Loads LDVH governance context when a Codex task starts.",
+    "longDescription": "A thin SessionStart adapter that sends the current Codex work object to the configured LDVH Helper and returns its mechanical result to the AI.",
+    "developerName": "LDVH",
+    "category": "Productivity",
+    "capabilities": ["SessionStart context"],
+    "defaultPrompt": ["Show the LDVH governance context for this task."]
+  }
+}
