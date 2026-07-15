@@ -32,6 +32,9 @@ namespaces = false
 [tool.pytest.ini_options]
 testpaths = ["code/tests"]
 addopts = "-ra --strict-markers"
+markers = [
+  "native_windows: requires a native Windows host and is run by the manual evidence gate",
+]
 
 [tool.ruff]
 target-version = "py312"
