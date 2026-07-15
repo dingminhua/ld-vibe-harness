@@ -189,7 +189,7 @@ Human 已明确决定保留现有 Spark 创建表现且不增加页面字段。�
 3. canonical object 的字段闭集恰为 `priority`、`summary`、`title`，按 ASCII key 升序输出为 JSON；冒号与逗号旁无空白、无末尾换行，非 ASCII 字符在 NFC 后直接使用 UTF-8；
 4. JSON 必须把 `"` 和 `\` 分别转义为 `\"` 与 `\\`；C0 中 `U+0008/U+0009/U+000A/U+000C/U+000D` 分别使用 `\b/\t/\n/\f/\r`，其它 C0 使用小写十六进制 `\u00xx`；`/` 不转义，内部 `U+2028/U+2029` 保留为 UTF-8，unpaired surrogate 拒绝；
 5. canonical bytes 是上述 JSON 的 UTF-8 bytes。`version` 固定为 `sha256:<64 位小写十六进制>`；`locator` 固定为 `data:application/json;base64,<payload>`，其中 payload 使用 RFC 4648 standard Base64 alphabet、保留必要 `=` padding、禁止空白和非 canonical 编码；
-6. `source_refs` 的该项固定使用 `kind: web-direct-capture`，并包含上述 `locator`、`version` 与实际服务器观察提交事件时形成的带时区 RFC 3339 `observed_at`。locator 必须可解码回 canonical bytes；Code 必须重新规范化、逐 bytes 比较、复算 digest，并核对其与对象 `title/summary/priority` 一致。
+6. `source_refs` 的该项固定使用 `kind: web-direct-capture`，并包含上述 `locator`、`version` 与实际服务器观察提交事件时形成的带时区 RFC 3339 `observed_at`。locator 必须可解码回 canonical bytes；Code 必须重新规范化、逐 bytes 比较并复算 digest。创建前与首次写后回读时，还必须核对该历史 capture 与新对象初始 `title/summary/priority` 精确一致；对象随后发生合法生命周期变化时，该来源仍证明当时输入，不要求历史 payload 永远等于当前对象快照。
 
 固定向量如下；输入转义只用于在本文可见地表示 code point，不是 canonical JSON 的另一种编码：
 
@@ -202,7 +202,7 @@ Human 已明确决定保留现有 Spark 创建表现且不增加页面字段。�
 
 本能力只允许在 loopback 上运行的本机单用户进程中开放，并且运行时必须精确解析出一个 governed project、该项目的一个实际 Git worktree 和对应 common-dir。零项目、多项目、同项目多 worktree、fallback `workspace`、非 loopback 请求、监听或转发边界无法证明、Vercel/其它远程部署均拒绝且零写入；不得猜测 `LDVH_ROOT` 或回退 V3 writer。Web 不通过 Helper CLI 执行该操作；它只可调用与 Helper wrapper 分离、由正式来源约束的共享 Code application service。
 
-分配事实 ID 或创建 allocator 状态之前，Code 必须证明 canonical payload 与自包含 locator 能在保守 managed-field envelope 下形成不超过当前 4 MiB 事实读取预算的最终 UTF-8 YAML；无法证明或超限时按请求无效拒绝，零写入。只有原子创建、精确回读且回读对象与本次 canonical payload 一致时才能返回 2xx。
+分配事实 ID 或创建 allocator 状态之前，Code 必须证明 canonical payload 与自包含 locator 能在保守 managed-field envelope 下形成不超过当前 4 MiB 事实读取预算的最终 UTF-8 YAML；无法证明或超限时按请求无效拒绝，零写入。只有原子创建、精确回读且首次回读对象与本次 canonical payload 一致时才能返回 2xx。后续重复扫描按 20 的历史来源规则验证该 source ref 自身闭合，不把合法生命周期变化误判为来源损坏。
 
 ### 8.3 Human 操作的证明边界
 

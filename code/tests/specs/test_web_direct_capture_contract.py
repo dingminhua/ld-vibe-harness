@@ -125,6 +125,8 @@ def test_web_source_owns_capture_contract_without_changing_foundation_sources(
     assert UNICODE_DIGEST in web and UNICODE_BASE64 in web
     assert "Vercel/其它远程部署均拒绝且零写入" in web
     assert "4 MiB" in web and "分配事实 ID 或创建 allocator 状态之前" in web
+    assert "创建前与首次写后回读时" in web
+    assert "不要求历史 payload 永远等于当前对象快照" in web
 
     assert "Web direct capture 来源、精确重复与语义协调" in spark
     assert "Web direct capture carve-out" in template
@@ -153,6 +155,10 @@ def test_duplicate_and_reconciliation_rules_are_narrow_and_fail_closed(
     assert "非 2xx `exact_duplicate`" in direct
     assert "`governed_project_id`、`fact_type_key`、`object_id`" in direct
     assert "多个精确匹配" in direct and "coverage 超限" in direct and "fail closed" in direct
+    assert "duplicate 按不同事实对象而不是 source-ref 条目计数" in direct
+    assert "当前为 `open` 且完全没有 `web-direct-capture` source ref" in direct
+    assert "不得以当前字段 fallback 掩盖来源异常" in direct
+    assert "后续扫描不要求历史 capture 永远等于" in direct
     assert "不得自动更新、重开、创建替代对象" in direct
     assert "可分页 Spark F2 reconciliation opportunity" in direct
     assert "按需展开 F3" in direct
