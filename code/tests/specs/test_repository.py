@@ -118,6 +118,30 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
     assert len(fields.registrations) == 81
 
 
+def test_mechanically_distinct_spec_does_not_create_a_semantic_duplicate_diagnosis(
+    current_specs_repository: Path,
+) -> None:
+    source = (current_specs_repository / "specs/07-Code 实践与测试规范.md").read_text(encoding="utf-8")
+    duplicate = current_specs_repository / "specs/90-Code-Semantic-Copy.md"
+    duplicate.write_text(
+        source.replace('spec_key: "code-engineering-practices"', 'spec_key: "code-engineering-practices-copy"', 1)
+        .replace('spec_id: "07"', 'spec_id: "90"', 1)
+        .replace('title: "Code 实践与测试规范"', 'title: "Code 实践与测试规范语义副本"', 1)
+        .replace(
+            'canonical_path: "specs/07-Code 实践与测试规范.md"',
+            'canonical_path: "specs/90-Code-Semantic-Copy.md"',
+            1,
+        )
+        .replace("# Code 实践与测试规范", "# Code 实践与测试规范语义副本", 1),
+        encoding="utf-8",
+    )
+
+    inspection = inspect_repository(current_specs_repository)
+
+    assert inspection.document_passing_implemented_checks_by_key("code-engineering-practices-copy") is not None
+    assert inspection.issues == ()
+
+
 def test_ignored_admission_audit_evidence_blocks_fact_type_validation(
     current_specs_repository: Path,
 ) -> None:

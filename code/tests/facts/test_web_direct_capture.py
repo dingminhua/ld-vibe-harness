@@ -5,6 +5,7 @@ import hashlib
 import subprocess
 import unicodedata
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timedelta
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -235,7 +236,8 @@ def test_open_current_identity_is_checked_after_legal_content_change(
     fields["title"] = "Current B"
     fields["summary"] = "Current summary B"
     fields["priority"] = "P1"
-    fields["updated_at"] = "2026-07-15T17:00:00+08:00"
+    created_at = datetime.fromisoformat(fields["created_at"])
+    fields["updated_at"] = (created_at + timedelta(seconds=1)).isoformat()
     with path.open("w", encoding="utf-8") as stream:
         yaml.dump(fields, stream)
 

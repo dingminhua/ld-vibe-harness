@@ -14,7 +14,7 @@ from ldvh.helper.operations.specification_content_request import (
     SpecificationContentSelection,
 )
 from ldvh.specs.markdown import Heading
-from ldvh.specs.repository import inspect_repository
+from ldvh.specs.repository import UNCHECKED_CONDITIONS, inspect_repository
 
 
 def _request(
@@ -78,6 +78,27 @@ def test_reads_exact_l4_source_with_fixed_traceability_fields(current_specs_repo
     assert len(result.verification) == 1
     assert result.verification[0]["status"] == "passed"
     assert len(result.gaps) == 1
+
+
+def test_diagnostic_keeps_semantic_qualification_in_gaps(
+    current_specs_repository: Path,
+) -> None:
+    repository = inspect_repository(current_specs_repository)
+    selection = SpecificationContentSelection("specification-model-foundation", None)
+
+    result = read_specification_content(
+        repository,
+        request=_request("L4", selection),
+        response_profile="diagnostic",
+    )
+
+    semantic_condition = next(condition for condition in UNCHECKED_CONDITIONS if condition.startswith("规范责任重复"))
+    assert len(result.verification) == 1
+    assert result.verification[0]["status"] == "passed"
+    assert result.verification[0]["check"] == (
+        "当前实现中适用于 specification-model-foundation 的身份、结构、授权和读取检查已执行并通过"
+    )
+    assert f"尚未由 Code 机械证明当前规则源资格条件：{semantic_condition}" in {gap["summary"] for gap in result.gaps}
 
 
 def test_attachment_l4_includes_attachment_then_unique_parent_without_basis_recursion(

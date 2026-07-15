@@ -13,6 +13,7 @@ from ldvh.rule_snapshot import (
     validate_snapshot_directory,
     write_snapshot,
 )
+from ldvh.specs.repository import UNCHECKED_CONDITIONS
 
 
 class _Distribution:
@@ -40,6 +41,7 @@ def test_worktree_snapshot_separates_rules_and_mechanical_evidence(
     verified = validate_snapshot_directory(root, distribution="ld-vibe-harness", version="0.1.0")
     repository = inspect_verified_snapshot(verified)
     assert repository.implemented_checks_complete is True
+    assert repository.unchecked_conditions == UNCHECKED_CONDITIONS
     assert repository.source_identity is not None
     assert repository.source_identity.view == "installed_release_snapshot"
     assert all(candidate.relative_path.startswith("specs/") for candidate in repository.candidates)

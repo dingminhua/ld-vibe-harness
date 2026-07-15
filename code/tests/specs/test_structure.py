@@ -68,6 +68,18 @@ def test_accepts_regular_structure_and_independent_seven_column_oracle(tmp_path:
     assert validate_structure(_document(tmp_path, _source())) == ()
 
 
+def test_structure_does_not_interpret_semantic_conflicts_or_gate_words(tmp_path: Path) -> None:
+    source = _source().replace(
+        "## 5. 具体规则",
+        """## 5. 具体规则
+
+规则 A 声称同一事项必须执行，规则 B 声称同一事项不得执行。
+正文提到 Human Gate 和 Stop Conditions，但不改变固定尾部结构。""",
+    )
+
+    assert validate_structure(_document(tmp_path, source)) == ()
+
+
 def test_rejects_wrong_verification_header_order(tmp_path: Path) -> None:
     wrong = VERIFICATION_TABLE.replace("| 验证入口 | 可证明范围 |", "| 可证明范围 | 验证入口 |")
     issues = validate_structure(_document(tmp_path, _source(wrong)))
