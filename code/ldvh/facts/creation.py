@@ -7,7 +7,6 @@ import hashlib
 import json
 import os
 import secrets
-import stat
 from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -19,7 +18,7 @@ from ruamel.yaml import YAML
 from ldvh.facts.contracts import FactTypeLayout
 from ldvh.facts.repository import _git
 from ldvh.facts.schema import FactSchema
-from ldvh.filesystem import exclusive_file_lock
+from ldvh.filesystem import exclusive_file_lock, safe_list_directory
 
 
 @dataclass(frozen=True, slots=True)
@@ -68,11 +67,8 @@ def _max_visible_id(boundary: CreationBoundary, layout: FactTypeLayout) -> int |
         return None
     maximum = 0
     for root in roots:
-        directory = root / layout.directory
         try:
-            if stat.S_ISLNK(directory.lstat().st_mode):
-                return None
-            paths = tuple(directory.iterdir())
+            paths = safe_list_directory(root, layout.directory)
         except FileNotFoundError:
             continue
         except OSError:

@@ -48,7 +48,7 @@
 
 1. **候选级已完成**：建立平台文件系统边界，延迟加载 `fcntl`，集中锁和 reparse 判定。
 2. **候选级已完成**：迁移安全读取路径，统一拒绝 link/reparse，并建立 fail-closed 行为。
-3. 迁移 ID 分配锁，证明 POSIX 不回退并构造 Windows 候选并发语义。
+3. **候选级已完成**：迁移 ID 分配锁，证明 POSIX 不回退并构造 Windows 候选并发语义。
 4. 分离 POSIX/Windows 原子创建与条件替换，定义目录耐久性边界。
 5. 建立 Windows 路径、进程、Git linked worktree 的候选测试矩阵。
 6. 单独审核 Codex 适配器的解释器与 shell 边界；未闭合前不得宣称适配器支持 Windows。
@@ -58,6 +58,8 @@
 第 1 切片的当前证据：静态检查通过；文件系统与 Markdown 定向测试 26 个通过；CLI 创建、更新与进程边界定向测试 42 个通过；完整测试集 593 个通过。该证据只证明 macOS 上的 POSIX 行为未回退并形成 Windows 候选兼容基础，不构成原生 Windows 通过结论。
 
 第 2 切片的当前证据：POSIX 继续使用逐级 `openat`/`dir_fd` 与 `O_NOFOLLOW`；portable 分支覆盖 root、中间目录、最终文件、打开句柄与读取后拓扑复核；缺失稳定身份与 UNC 均 fail-closed；事实候选、关系、规格发现和安装快照不进入 link/reparse。静态检查通过，定向测试 79 个通过，完整测试集 608 个通过。该证据仍只是 macOS 上的 POSIX 保持性与 Windows 候选证据。
+
+第 3 切片的当前证据：POSIX 上 4 个独立解释器的临界区保持单并发，持锁进程被终止后锁可恢复；6 个并发 allocator 形成连续且唯一的 ID，main/linked worktree 共用 Git common-dir counter；损坏 counter fail-closed。fake `msvcrt` 证明 offset 0、固定 1-byte、`LK_LOCK`/`LK_UNLCK` 及 descriptor 异常清理。静态检查通过，定向测试 33 个通过，完整测试集 616 个通过。Windows CRT `LK_LOCK` 固定约 10 秒重试上限及当前通用错误映射仍须原生验证；锁目录安全打开、counter 替换和目录耐久性归入第 4 切片。空 lock 文件按官方语义允许锁定 EOF 之后的字节，文件保持持久且不截断、不替换、不删除。
 
 ## 6. 验证矩阵
 

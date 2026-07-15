@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import builtins
 import os
 import stat
 import subprocess
@@ -13,6 +14,7 @@ from ldvh.filesystem import (
     UnsafePathError,
     UnstableIdentityError,
     _exclusive_file_lock,
+    _WindowsLockingApi,
     is_link_or_reparse,
     is_reparse_point,
     safe_read_relative,
@@ -21,8 +23,9 @@ from ldvh.filesystem import (
 
 
 class _RecordingLockApi:
-    def __init__(self, *, fail_lock: bool = False) -> None:
+    def __init__(self, *, fail_lock: bool = False, fail_unlock: bool = False) -> None:
         self.fail_lock = fail_lock
+        self.fail_unlock = fail_unlock
         self.locked: list[int] = []
         self.unlocked: list[int] = []
 
@@ -33,6 +36,8 @@ class _RecordingLockApi:
 
     def unlock(self, descriptor: int) -> None:
         self.unlocked.append(descriptor)
+        if self.fail_unlock:
+            raise OSError("unlock failed")
 
 
 def test_exclusive_file_lock_unlocks_and_closes_after_body_failure(tmp_path: Path) -> None:
@@ -60,6 +65,55 @@ def test_exclusive_file_lock_closes_without_unlock_after_acquisition_failure(tmp
     assert api.unlocked == []
     with pytest.raises(OSError):
         os.fstat(descriptor)
+
+
+def test_exclusive_file_lock_closes_after_unlock_failure(tmp_path: Path) -> None:
+    api = _RecordingLockApi(fail_unlock=True)
+    descriptor = -1
+
+    with pytest.raises(OSError, match="unlock failed"):
+        with _exclusive_file_lock(tmp_path / "allocator.lock", api):
+            descriptor = api.locked[0]
+
+    assert api.unlocked == [descriptor]
+    with pytest.raises(OSError):
+        os.fstat(descriptor)
+
+
+def test_windows_locking_api_uses_one_byte_at_offset_zero_without_fcntl(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[tuple[int, int, int, int]] = []
+    fake_msvcrt = SimpleNamespace(LK_LOCK=101, LK_UNLCK=102)
+
+    def locking(descriptor: int, mode: int, length: int) -> None:
+        calls.append((descriptor, mode, length, os.lseek(descriptor, 0, os.SEEK_CUR)))
+
+    fake_msvcrt.locking = locking
+    monkeypatch.setitem(sys.modules, "msvcrt", fake_msvcrt)
+    real_import = builtins.__import__
+
+    def guarded_import(name: str, *args: object, **kwargs: object) -> object:
+        if name == "fcntl":
+            raise ImportError("fcntl is unavailable")
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", guarded_import)
+    descriptor = os.open(tmp_path / "allocator.lock", os.O_RDWR | os.O_CREAT, 0o600)
+    try:
+        os.write(descriptor, b"existing lock-file bytes")
+        api = _WindowsLockingApi()
+        api.lock(descriptor)
+        os.lseek(descriptor, 7, os.SEEK_SET)
+        api.unlock(descriptor)
+    finally:
+        os.close(descriptor)
+
+    assert calls == [
+        (calls[0][0], fake_msvcrt.LK_LOCK, 1, 0),
+        (calls[0][0], fake_msvcrt.LK_UNLCK, 1, 0),
+    ]
 
 
 def test_link_or_reparse_detection_covers_both_platform_signals() -> None:
