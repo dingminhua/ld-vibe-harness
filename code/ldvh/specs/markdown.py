@@ -15,6 +15,7 @@ from datetime import datetime
 from pathlib import Path
 
 from ldvh.diagnostics import Issue, SourceLocation
+from ldvh.filesystem import is_reparse_point
 from ldvh.specs.source import ObservedResource
 
 _ATX_HEADING = re.compile(r" {0,3}(?P<marks>#{1,6})(?:[ \t]+(?P<title>.*?))?[ \t]*$")
@@ -354,12 +355,6 @@ def _read_bytes_posix(repository_root: Path, relative_path: Path, *, no_follow: 
         os.close(directory_fd)
 
 
-def _is_reparse_point(observation: os.stat_result) -> bool:
-    attributes = getattr(observation, "st_file_attributes", 0)
-    reparse_flag = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
-    return bool(attributes & reparse_flag)
-
-
 def _portable_signature(observation: os.stat_result) -> tuple[int, int, int, int, int, int, int]:
     return (
         stat.S_IFMT(observation.st_mode),
@@ -381,7 +376,7 @@ def _observe_portable_components(
     for index, component in enumerate(relative_path.parts):
         current = current / component
         observed = current.lstat()
-        if stat.S_ISLNK(observed.st_mode) or _is_reparse_point(observed):
+        if stat.S_ISLNK(observed.st_mode) or is_reparse_point(observed):
             raise OSError("source path contains a symlink or reparse point")
         if index < len(relative_path.parts) - 1 and not stat.S_ISDIR(observed.st_mode):
             raise OSError("source path component is not a directory")
@@ -395,7 +390,7 @@ def _read_bytes_portable(absolute_path: Path, repository_root: Path, relative_pa
     before_components = _observe_portable_components(repository_root, relative_path)
     with absolute_path.open("rb") as source:
         before_handle = os.fstat(source.fileno())
-        if not stat.S_ISREG(before_handle.st_mode) or _is_reparse_point(before_handle):
+        if not stat.S_ISREG(before_handle.st_mode) or is_reparse_point(before_handle):
             raise OSError("source handle is not a regular non-reparse file")
         raw_bytes = source.read()
         after_handle = os.fstat(source.fileno())

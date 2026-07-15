@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import errno
-import fcntl
 import hashlib
 import json
 import os
@@ -20,6 +19,7 @@ from ruamel.yaml import YAML
 from ldvh.facts.contracts import FactTypeLayout
 from ldvh.facts.repository import _git
 from ldvh.facts.schema import FactSchema
+from ldvh.filesystem import exclusive_file_lock
 
 
 @dataclass(frozen=True, slots=True)
@@ -117,14 +117,8 @@ def candidate_object_id(boundary: CreationBoundary, layout: FactTypeLayout) -> s
 @contextmanager
 def allocation_lock(boundary: CreationBoundary, layout: FactTypeLayout) -> Iterator[Path]:
     lock_path, counter_path = _allocator_paths(boundary, layout)
-    lock_path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
-    descriptor = os.open(lock_path, os.O_RDWR | os.O_CREAT, 0o600)
-    try:
-        fcntl.flock(descriptor, fcntl.LOCK_EX)
+    with exclusive_file_lock(lock_path):
         yield counter_path
-    finally:
-        fcntl.flock(descriptor, fcntl.LOCK_UN)
-        os.close(descriptor)
 
 
 def allocate_object_id_locked(
