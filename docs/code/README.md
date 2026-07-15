@@ -30,6 +30,8 @@ Code tests 不代替 `web/tests/`，也不证明环境接入、Web 适配或整�
 - `prepare-fact-object-draft`：无副作用地准备单个事实对象草案与预留信息。
 - `create-fact-object`：在预留契约下受控创建单个事实对象。
 - `update-fact-object`：按精确引用和当前内容指纹受控替换单个事实对象。
+- `read-action-template-candidates`：发现当前行动模板的机械候选与精确定义摘要。
+- `read-action-template-content`：按稳定 key 读取行动模板精确定义、完整来源及指纹。
 
 上述列表是开发者导航，不是第二操作契约。操作是否取得公开身份、请求与结果结构、可用条件及边界，以当前有效 Specs 中的来源声明为准；Code 实现只有与来源声明成功绑定后才会被 Helper 公开。
 
