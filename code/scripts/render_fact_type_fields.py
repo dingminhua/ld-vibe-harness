@@ -6,8 +6,6 @@ import argparse
 from pathlib import Path
 
 from ldvh.specs.fact_type_projection import project_fact_type_fields, render_fact_type_field_projection
-from ldvh.specs.field_registry import ADMISSION_AUDIT_PATH, inspect_field_registry
-from ldvh.specs.markdown import parse_markdown
 from ldvh.specs.repository import inspect_repository
 
 
@@ -21,11 +19,10 @@ def main() -> int:
         for issue in repository.issues:
             print(f"ERROR: {issue.summary}")
         return 1
-    audit = parse_markdown(repository_root / ADMISSION_AUDIT_PATH, ADMISSION_AUDIT_PATH).document
-    inspection = inspect_field_registry(
-        repository.active_documents_passing_implemented_checks,
-        admission_audit=audit,
-    )
+    inspection = repository.field_registry
+    if inspection is None:
+        print("ERROR: field registry inspection is unavailable")
+        return 1
     if inspection.issues:
         for issue in inspection.issues:
             print(f"ERROR: {issue.summary}")

@@ -97,6 +97,15 @@ def validate_non_ignored_git_path(root: Path, relative_path: str) -> Issue | Non
     )
 
 
+def validate_exact_worktree_root(root: Path) -> Issue | None:
+    """Validate one already-selected path as the exact Git worktree root."""
+
+    normalised, issue = _normalise_repository_root(root)
+    if issue is not None:
+        return issue
+    return _validate_worktree_root(normalised)
+
+
 def discover_candidates(repository_root: Path) -> DiscoveryResult:
     """Discover candidates from the current filesystem without consulting ``HEAD``.
 

@@ -4,10 +4,12 @@ from pathlib import Path
 
 import pytest
 
-from ldvh.specs.field_registry import ADMISSION_AUDIT_PATH, inspect_field_registry
+from ldvh.specs.field_registry import inspect_field_registry
 from ldvh.specs.identity import parse_identity
 from ldvh.specs.markdown import parse_markdown
 from ldvh.specs.repository import inspect_repository
+
+ADMISSION_AUDIT_PATH = "docs/v4-architecture/active/V4-五类型全局归并封闭记录.md"
 
 
 def _inspection(repository: Path):

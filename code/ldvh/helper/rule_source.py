@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from ldvh.helper.operation_sources import OperationSourceInspection, inspect_operation_sources
+from ldvh.rule_snapshot import SnapshotError, inspect_verified_snapshot, validate_installed_snapshot
+from ldvh.specs.discovery import validate_exact_worktree_root
 from ldvh.specs.repository import RepositoryInspection, inspect_repository
 
 
@@ -17,20 +19,40 @@ class RuleSourceResult:
 
 
 def locate_colocated_repository(package_file: Path) -> Path | None:
-    package_directory = package_file.resolve().parent
+    root = _structural_worktree_root(package_file)
+    if root is None or validate_exact_worktree_root(root) is not None:
+        return None
+    return root
+
+
+def _structural_worktree_root(package_file: Path) -> Path | None:
+    try:
+        package_directory = package_file.resolve(strict=True).parent
+    except OSError:
+        return None
     for candidate in package_directory.parents:
-        if (candidate / "code/ldvh").resolve() != package_directory:
+        try:
+            expected = (candidate / "code/ldvh").resolve(strict=True)
+        except OSError:
             continue
-        if not (candidate / "specs/00-理念与构成.md").is_file():
-            continue
-        return candidate
+        if expected == package_directory:
+            return candidate
     return None
 
 
 def inspect_colocated_rule_source(package_file: Path) -> RuleSourceResult:
-    root = locate_colocated_repository(package_file)
-    if root is None:
-        return RuleSourceResult(None, None, "导入的 ldvh Code 未与可定位的 LDVH Working Tree 规则源共置")
-    repository = inspect_repository(root)
+    structural_root = _structural_worktree_root(package_file)
+    if structural_root is not None:
+        issue = validate_exact_worktree_root(structural_root)
+        if issue is not None:
+            problem = f"导入的 ldvh Code 具有 Working Tree 结构但无法确认其 Git 根：{issue.summary}"
+            return RuleSourceResult(None, None, problem)
+        repository = inspect_repository(structural_root)
+    else:
+        try:
+            snapshot = validate_installed_snapshot(package_file)
+            repository = inspect_verified_snapshot(snapshot)
+        except (OSError, SnapshotError, ValueError) as exc:
+            return RuleSourceResult(None, None, f"安装规则快照不可用：{exc}")
     operations = inspect_operation_sources(repository)
     return RuleSourceResult(repository, operations, None)

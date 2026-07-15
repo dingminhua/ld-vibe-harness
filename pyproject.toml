@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=75"]
+requires = ["setuptools>=75", "ruamel.yaml>=0.18.10,<0.19"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -23,7 +23,8 @@ dev = [
 
 [tool.setuptools.packages.find]
 where = ["code"]
-exclude = ["tests*"]
+include = ["ldvh*"]
+namespaces = false
 
 [tool.pytest.ini_options]
 testpaths = ["code/tests"]

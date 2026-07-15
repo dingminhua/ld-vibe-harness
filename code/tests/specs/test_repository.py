@@ -10,9 +10,11 @@ from ldvh.helper.operation_sources import inspect_operation_sources
 from ldvh.specs import repository as repository_module
 from ldvh.specs.action_templates import inspect_action_template_sources
 from ldvh.specs.discovery import DiscoveryResult
-from ldvh.specs.field_registry import ADMISSION_AUDIT_PATH, inspect_field_registry
+from ldvh.specs.field_registry import inspect_field_registry
 from ldvh.specs.markdown import parse_markdown
 from ldvh.specs.repository import UNCHECKED_CONDITIONS, inspect_repository
+
+ADMISSION_AUDIT_PATH = "docs/v4-architecture/active/V4-五类型全局归并封闭记录.md"
 
 
 def test_current_v4_sources_form_the_expected_real_combination(current_specs_repository: Path) -> None:

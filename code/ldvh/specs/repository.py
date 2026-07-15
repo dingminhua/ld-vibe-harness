@@ -9,12 +9,14 @@ from pathlib import Path
 from ruamel.yaml import YAML
 
 from ldvh.diagnostics import Issue, SourceLocation
+from ldvh.specs.audit_evidence import inspect_audit_evidence_locators
 from ldvh.specs.discovery import Candidate, DiscoveryResult, discover_candidates, validate_non_ignored_git_path
-from ldvh.specs.field_registry import ADMISSION_AUDIT_PATH, REGISTRY_KEY, inspect_field_registry
+from ldvh.specs.field_registry import REGISTRY_KEY, FieldRegistryInspection, inspect_field_registry
 from ldvh.specs.graph import BasisReachabilityOverlap, GraphResult, validate_graph
 from ldvh.specs.identity import FormalDocument, parse_identity
 from ldvh.specs.markdown import MarkdownResult, parse_markdown
 from ldvh.specs.projection import ProjectionItem, project_l0_l2
+from ldvh.specs.source import RuleSourceIdentity
 from ldvh.specs.structure import validate_structure
 
 UNCHECKED_CONDITIONS = (
@@ -44,6 +46,8 @@ class RepositoryInspection:
     unchecked_conditions: tuple[str, ...]
     basis_reachability_overlaps: tuple[BasisReachabilityOverlap, ...]
     implemented_checks_complete: bool
+    source_identity: RuleSourceIdentity | None = None
+    field_registry: FieldRegistryInspection | None = None
 
     def document_passing_implemented_checks_by_key(self, key: str) -> FormalDocument | None:
         matches = [document for document in self.active_documents_passing_implemented_checks if document.key == key]
@@ -116,6 +120,7 @@ def _stopped_inspection(
     parsed_documents: tuple[FormalDocument, ...],
     issues: list[Issue],
     incomplete: set[str],
+    source_identity: RuleSourceIdentity,
 ) -> RepositoryInspection:
     return RepositoryInspection(
         repository_root=discovery.repository_root,
@@ -128,6 +133,7 @@ def _stopped_inspection(
         unchecked_conditions=UNCHECKED_CONDITIONS,
         basis_reachability_overlaps=(),
         implemented_checks_complete=False,
+        source_identity=source_identity,
     )
 
 
@@ -135,16 +141,30 @@ def inspect_repository(repository_root: Path) -> RepositoryInspection:
     """Inspect the current Working Tree without falling back to Index or HEAD."""
 
     discovery: DiscoveryResult = discover_candidates(repository_root)
+    identity = RuleSourceIdentity("working_tree", git_worktree_root=discovery.repository_root)
+    return inspect_repository_source(discovery, identity)
+
+
+def inspect_repository_source(
+    discovery: DiscoveryResult,
+    source_identity: RuleSourceIdentity,
+    *,
+    markdown_results: dict[str, MarkdownResult] | None = None,
+    admission_audits: dict[str, MarkdownResult] | None = None,
+) -> RepositoryInspection:
+    """Run the common repository checks over one already-selected source view."""
+
     issues: list[Issue] = list(discovery.issues)
     incomplete = {affected for issue in discovery.issues for affected in (issue.affected or (issue.location.path,))}
 
     # Read every candidate once so bootstrap and full validation observe the same
     # Working Tree bytes.  Full diagnostics are deliberately deferred until the
     # root/foundation startup contract has closed.
-    markdown_results = {
-        candidate.relative_path: parse_markdown(candidate.absolute_path, candidate.relative_path)
-        for candidate in discovery.candidates
-    }
+    if markdown_results is None:
+        markdown_results = {
+            candidate.relative_path: parse_markdown(candidate.absolute_path, candidate.relative_path)
+            for candidate in discovery.candidates
+        }
     envelopes = tuple(
         envelope
         for candidate in discovery.candidates
@@ -164,6 +184,7 @@ def inspect_repository(repository_root: Path) -> RepositoryInspection:
             parsed_documents=(),
             issues=issues,
             incomplete=incomplete,
+            source_identity=source_identity,
         )
 
     foundation_envelope = foundation_envelopes[0]
@@ -181,6 +202,7 @@ def inspect_repository(repository_root: Path) -> RepositoryInspection:
             parsed_documents=(),
             issues=issues,
             incomplete=incomplete,
+            source_identity=source_identity,
         )
 
     root_candidates = tuple(candidate for candidate in discovery.candidates if candidate.relative_path == _ROOT_PATH)
@@ -198,6 +220,7 @@ def inspect_repository(repository_root: Path) -> RepositoryInspection:
             parsed_documents=(),
             issues=issues,
             incomplete=incomplete,
+            source_identity=source_identity,
         )
 
     root_candidate = root_candidates[0]
@@ -225,6 +248,7 @@ def inspect_repository(repository_root: Path) -> RepositoryInspection:
             parsed_documents=(),
             issues=issues,
             incomplete=incomplete,
+            source_identity=source_identity,
         )
 
     foundation_document, foundation_issues = _validate_candidate(
@@ -251,6 +275,7 @@ def inspect_repository(repository_root: Path) -> RepositoryInspection:
             parsed_documents=(root_document,),
             issues=issues,
             incomplete=incomplete,
+            source_identity=source_identity,
         )
 
     startup_attachment_prefix = f"specs/attachments/{foundation_document.current_id}.Att."
@@ -287,6 +312,7 @@ def inspect_repository(repository_root: Path) -> RepositoryInspection:
             parsed_documents=tuple(sorted(startup_documents, key=lambda document: document.canonical_path)),
             issues=issues,
             incomplete=incomplete,
+            source_identity=source_identity,
         )
 
     documents = startup_documents.copy()
@@ -307,19 +333,40 @@ def inspect_repository(repository_root: Path) -> RepositoryInspection:
     initial_graph: GraphResult = validate_graph(parsed_documents)
     field_registry = None
     if any(document.key == REGISTRY_KEY for document in initial_graph.active_documents_passing_implemented_checks):
-        audit_eligibility_issue = validate_non_ignored_git_path(discovery.repository_root, ADMISSION_AUDIT_PATH)
-        if audit_eligibility_issue is not None:
-            issues.append(audit_eligibility_issue)
-            incomplete.add(ADMISSION_AUDIT_PATH)
-            admission_audit = None
+        locator_inspection = inspect_audit_evidence_locators(
+            initial_graph.active_documents_passing_implemented_checks
+        )
+        issues.extend(locator_inspection.issues)
+        audit_documents = {
+            path: result.document for path, result in (admission_audits or {}).items()
+        }
+        if source_identity.view == "working_tree":
+            for locator in locator_inspection.locators:
+                audit_eligibility_issue = validate_non_ignored_git_path(
+                    discovery.repository_root,
+                    locator.canonical_path,
+                )
+                if audit_eligibility_issue is not None:
+                    issues.append(audit_eligibility_issue)
+                    incomplete.add(locator.canonical_path)
+                    continue
+                result = (admission_audits or {}).get(locator.canonical_path)
+                if result is None:
+                    result = parse_markdown(
+                        discovery.repository_root / locator.canonical_path,
+                        locator.canonical_path,
+                    )
+                audit_documents[locator.canonical_path] = result.document
         else:
-            admission_audit = parse_markdown(
-                discovery.repository_root / ADMISSION_AUDIT_PATH,
-                ADMISSION_AUDIT_PATH,
-            ).document
+            missing_evidence = {
+                locator.canonical_path
+                for locator in locator_inspection.locators
+                if locator.canonical_path not in audit_documents
+            }
+            incomplete.update(missing_evidence)
         field_registry = inspect_field_registry(
             initial_graph.active_documents_passing_implemented_checks,
-            admission_audit=admission_audit,
+            admission_audits=audit_documents,
         )
 
     if field_registry is not None and field_registry.issues:
@@ -351,4 +398,6 @@ def inspect_repository(repository_root: Path) -> RepositoryInspection:
         unchecked_conditions=UNCHECKED_CONDITIONS,
         basis_reachability_overlaps=graph.basis_reachability_overlaps,
         implemented_checks_complete=discovery.complete and not blocking_issues and not incomplete,
+        source_identity=source_identity,
+        field_registry=field_registry,
     )

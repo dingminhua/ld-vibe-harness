@@ -5,8 +5,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from ldvh.specs.fact_type_projection import project_fact_type_fields
-from ldvh.specs.field_registry import ADMISSION_AUDIT_PATH, inspect_field_registry
-from ldvh.specs.markdown import parse_markdown
 from ldvh.specs.repository import RepositoryInspection
 
 
@@ -29,15 +27,8 @@ class FactSchema:
 
 
 def project_fact_schemas(repository: RepositoryInspection) -> dict[str, FactSchema]:
-    audit = parse_markdown(
-        repository.repository_root / ADMISSION_AUDIT_PATH,
-        ADMISSION_AUDIT_PATH,
-    ).document
-    registry = inspect_field_registry(
-        repository.active_documents_passing_implemented_checks,
-        admission_audit=audit,
-    )
-    if not registry.complete:
+    registry = repository.field_registry
+    if registry is None or not registry.complete:
         return {}
     grouped: dict[str, list[ProjectedField]] = {}
     for field in project_fact_type_fields(registry):

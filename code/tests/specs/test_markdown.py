@@ -2,7 +2,13 @@ from pathlib import Path
 
 import pytest
 
-from ldvh.specs.markdown import Heading, parse_markdown, parse_table_after_heading
+from ldvh.specs.markdown import (
+    Heading,
+    _read_bytes_portable,
+    parse_markdown,
+    parse_markdown_bytes,
+    parse_table_after_heading,
+)
 
 
 def _write(tmp_path: Path, text: str, relative_path: str = "specs/99-Example.md") -> Path:
@@ -59,6 +65,30 @@ def test_preserves_decoded_source_line_endings_and_terminal_newline(tmp_path: Pa
     assert result.issues == ()
     assert result.document.raw_text.encode("utf-8") == source
     assert result.document.raw_lines == ("# Example", "", "```yaml", 'key: "value"', "```")
+
+
+def test_parse_markdown_bytes_uses_the_observed_bytes_without_a_path(tmp_path: Path) -> None:
+    result = parse_markdown_bytes(
+        b'# Example\n\n```yaml\nkey: "value"\n```\n',
+        "specs/99-Example.md",
+        observed_at="2026-07-15T00:00:00+08:00",
+    )
+    assert result.issues == ()
+    assert result.document.raw_text.startswith("# Example")
+    assert result.document.observed_at == "2026-07-15T00:00:00+08:00"
+
+
+def test_portable_reader_rejects_symlink_component(tmp_path: Path) -> None:
+    real = tmp_path / "real"
+    real.mkdir()
+    (real / "file.md").write_text("# Example", encoding="utf-8")
+    link = tmp_path / "linked"
+    try:
+        link.symlink_to(real, target_is_directory=True)
+    except OSError:
+        pytest.skip("symlinks are unavailable")
+    with pytest.raises(OSError, match="symlink or reparse"):
+        _read_bytes_portable(link / "file.md", tmp_path, Path("linked/file.md"))
 
 
 def test_requires_first_line_unique_h1_and_fixed_yaml_position(tmp_path: Path) -> None:

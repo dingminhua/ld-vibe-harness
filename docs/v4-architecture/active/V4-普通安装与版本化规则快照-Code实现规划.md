@@ -94,3 +94,23 @@ sdist 必须包含根级 Specs、附件、由当前规则机器声明的机械�
 ## 8. 当前未覆盖
 
 本计划不实现 Web Spark POST、V3 事实迁移、bootstrap/resume、远端发布、分支保护或其它环境 adapter。普通安装完成也不证明 Codex 等环境已经安装或真实触发；环境接入继续按 09/33 独立验证。
+
+## 9. 2026-07-15 切片 2 完成记录
+
+切片 2 已完成快照构建、唯一来源定位和共同 repository 检查输入，保持 Helper 来源投影仍归切片 3：
+
+1. `05.Att.01` 的“审计证据定位表”已经成为准入审计 record key、canonical path 与 namespace 的唯一机器映射；原 Code 三常量不再承担决策权；
+2. 清单对 `rule_candidate` 与 `mechanical_evidence` 一并做闭集、长度、逐文件摘要和集合摘要校验，但只有前者进入规范发现；校验后的原始 bytes 直接供 Markdown 与机械证据解析，不在 hash 后重新打开；
+3. Working Tree 只按导入包精确位于 Git 根的 `code/ldvh` 识别，不再以根规范健康为选择条件；普通安装则用 distribution 的 `files` 与 `locate_file()` 证明当前导入包、manifest 和每个快照资源由同一发行包实际认领；
+4. POSIX 保留 `dir_fd + O_NOFOLLOW` 读取；portable 分支拒绝 symlink/reparse 并比较路径组件和文件句柄前后身份。此处只证明代码路径和单元反例，不能替代原生 Windows 实测；
+5. setuptools 包发现只交付 `ldvh*`；直接 wheel 不再夹带顶层 `plugins/` 或 `scripts/`。sdist 创建时冻结同一已验证快照和精确源文件集合，无 `.git` 的 sdist→wheel 只复验并复用该快照。
+
+实际验证：
+
+- `ruff check code/ldvh code/tests`：通过；
+- `.venv/bin/pytest -q`：577 passed；
+- 直接 wheel：102 个归档条目，其中 25 个快照资源均进入 RECORD；无顶层 `plugins/` 或 `scripts/`；
+- 干净 Python 3.12 venv 从直接 wheel 安装后，在 `/tmp`、无源码 `PYTHONPATH` 执行 `ldvh capabilities`：退出码 0、`outcome: ok`、发现 10 项操作；
+- sdist 同时包含精确根 Specs、声明的机械证据和冻结快照；从无 `.git` 的 sdist 构建 wheel 成功，快照集合摘要与直接 wheel 同为 `15ff1160f97b80e1fbb3b5902feb9737997f443e140b03af1343e7934212e24b`，且同样没有伪插件包。
+
+上述摘要绑定本次工作树内容；后续 Specs 或机械证据发生变化时应产生新的集合摘要，不得把该值写成长期常量。切片 3 仍需把 capabilities、十项操作、规范/模板读取的全部规则与实现来源回指投影到 `working_tree` 或 `installed_release_snapshot` 的真实身份。

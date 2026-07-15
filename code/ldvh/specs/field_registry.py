@@ -8,9 +8,11 @@ semantics.
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass
 
 from ldvh.diagnostics import Issue, SourceLocation
+from ldvh.specs.audit_evidence import AuditEvidenceLocator, inspect_audit_evidence_locators, validate_audit_document
 from ldvh.specs.fact_types import FactTypeDefinition, inspect_fact_types
 from ldvh.specs.identity import KEY_PATTERN, FormalDocument
 from ldvh.specs.markdown import Heading, MarkdownDocument, MarkdownTable, parse_table_after_heading
@@ -61,9 +63,6 @@ ADMISSION_HEADERS = (
 )
 BINDING_HEADERS = ("field_key", "presence", "constraint_ref")
 REVIEW_HEADERS = ("review_key", "reviewer", "reviewed_scope", "findings", "disposition")
-ADMISSION_AUDIT_PATH = "docs/v4-architecture/active/V4-五类型全局归并封闭记录.md"
-ADMISSION_AUDIT_RECORD_KEY = "v4-five-type-closure"
-ADMISSION_AUDIT_HEADING = "five-type-admission-audit"
 ADMISSION_AUDIT_REF_HEADING = "准入审计引用"
 ADMISSION_AUDIT_REF_HEADERS = ("admission_audit_ref",)
 DEFINITION_HEADERS = frozenset({PUBLIC_FIELD_HEADERS, MEMBER_FIELD_HEADERS, TYPE_FIELD_HEADERS})
@@ -618,10 +617,11 @@ def _audit_issue(
     summary: str,
     *,
     line: int | None = None,
+    fallback_path: str = ".",
 ) -> Issue:
     return Issue(
         summary=summary,
-        location=SourceLocation(ADMISSION_AUDIT_PATH if audit is None else audit.relative_path, line=line),
+        location=SourceLocation(fallback_path if audit is None else audit.relative_path, line=line),
         affected=(definition.source_key, definition.fact_type_key),
     )
 
@@ -652,7 +652,8 @@ def _audit_h3(scope: _AdmissionAuditScope, title: str) -> tuple[Heading, ...]:
 
 def _parse_admission_audit_scope(
     definition: FactTypeDefinition,
-    audit: MarkdownDocument | None,
+    locators: tuple[AuditEvidenceLocator, ...],
+    audits: Mapping[str, MarkdownDocument],
     issues: list[Issue],
 ) -> _AdmissionAuditScope | None:
     reference_table = _required_type_table(
@@ -673,42 +674,77 @@ def _parse_admission_audit_scope(
         )
         return None
     reference = reference_table.rows[0][0]
-    expected_reference = (
-        f"{ADMISSION_AUDIT_RECORD_KEY}::{ADMISSION_AUDIT_HEADING}::{definition.fact_type_key}::admission-audit"
-    )
-    if reference != expected_reference:
+    parts = reference.split("::")
+    if len(parts) != 4 or parts[2] != definition.fact_type_key or parts[3] != "admission-audit":
         issues.append(
             _type_issue(
                 definition,
-                f"准入审计引用必须精确为 {expected_reference!r}",
+                "准入审计引用必须精确为定位表已登记的 record、namespace、本类型和 admission-audit 后缀",
                 line=reference_table.line + 2,
             )
         )
         return None
-    if audit is None or audit.relative_path != ADMISSION_AUDIT_PATH or not audit.raw_lines:
-        issues.append(_audit_issue(definition, audit, "准入审计证据文档不存在或无法安全读取"))
+    matching = tuple(
+        locator
+        for locator in locators
+        if locator.audit_record_key == parts[0] and locator.audit_namespace == parts[1]
+    )
+    if len(matching) != 1:
+        issues.append(
+            _type_issue(
+                definition,
+                "准入审计引用必须精确为定位表中唯一登记的 record key、namespace、本类型和 admission-audit 后缀",
+                line=reference_table.line + 2,
+            )
+        )
         return None
-    namespace_headings = audit.find_headings(ADMISSION_AUDIT_HEADING, level=2)
+    locator = matching[0]
+    audit = audits.get(locator.canonical_path)
+    if audit is None or audit.relative_path != locator.canonical_path or not audit.raw_lines:
+        issues.append(
+            _audit_issue(
+                definition,
+                audit,
+                "准入审计证据文档不存在或无法安全读取",
+                fallback_path=locator.canonical_path,
+            )
+        )
+        return None
+    namespace_headings = audit.find_headings(locator.audit_namespace, level=2)
     if len(namespace_headings) != 1:
-        issues.append(_audit_issue(definition, audit, "准入审计证据 H2 必须恰好出现一次"))
+        issues.append(
+            _audit_issue(
+                definition,
+                audit,
+                "准入审计证据 H2 必须恰好出现一次",
+                fallback_path=locator.canonical_path,
+            )
+        )
         return None
     namespace_start = namespace_headings[0].line
     following_h2 = [heading.line for heading in audit.headings if heading.level == 2 and heading.line > namespace_start]
     namespace_end = min(following_h2, default=len(audit.raw_lines) + 1)
-    record_declaration = f"> `audit_record_key: {ADMISSION_AUDIT_RECORD_KEY}`"
+    record_declaration = f"> `audit_record_key: {locator.audit_record_key}`"
     declarations = tuple(
         line.strip()
         for line in audit.raw_lines[namespace_start : namespace_end - 1]
         if line.strip() == record_declaration
     )
     if len(declarations) != 1:
-        issues.append(_audit_issue(definition, audit, "准入审计证据必须恰好声明一次稳定 audit_record_key"))
+        issues.append(
+            _audit_issue(
+                definition,
+                audit,
+                "准入审计证据必须恰好声明一次稳定 audit_record_key",
+                fallback_path=locator.canonical_path,
+            )
+        )
         return None
     return _AdmissionAuditScope(
         document=audit,
         namespace_heading=namespace_headings[0],
         review_reference_prefix=(
-            f"{ADMISSION_AUDIT_RECORD_KEY}::{ADMISSION_AUDIT_HEADING}::{definition.fact_type_key} 字段独立复核"
+            f"{locator.audit_record_key}::{locator.audit_namespace}::{definition.fact_type_key} 字段独立复核"
         ),
     )
 
@@ -1282,7 +1318,8 @@ def _validate_fact_type_fields(
     structures: tuple[FieldStructure, ...],
     registrations: tuple[FieldRegistration, ...],
     registry: FormalDocument,
-    admission_audit: MarkdownDocument | None,
+    audit_locators: tuple[AuditEvidenceLocator, ...],
+    admission_audits: Mapping[str, MarkdownDocument],
     issues: list[Issue],
 ) -> None:
     registrations_by_key = {registration.field_key: registration for registration in registrations}
@@ -1293,7 +1330,7 @@ def _validate_fact_type_fields(
         for legacy_heading in ("结构准入记录", "字段准入记录", "字段独立复核"):
             if _type_h3(definition, legacy_heading):
                 issues.append(_type_issue(definition, f"{legacy_heading} 必须移至准入审计证据文档"))
-        scope = _parse_admission_audit_scope(definition, admission_audit, issues)
+        scope = _parse_admission_audit_scope(definition, audit_locators, admission_audits, issues)
         if scope is None:
             audit_scopes_complete = False
             continue
@@ -1354,6 +1391,7 @@ def inspect_field_registry(
     documents: tuple[FormalDocument, ...],
     *,
     admission_audit: MarkdownDocument | None = None,
+    admission_audits: Mapping[str, MarkdownDocument] | None = None,
 ) -> FieldRegistryInspection:
     """Inspect exact field registration structure without interpreting semantics."""
 
@@ -1368,6 +1406,15 @@ def inspect_field_registry(
 
     registry = registries[0]
     issues: list[Issue] = []
+    locator_inspection = inspect_audit_evidence_locators(documents)
+    issues.extend(locator_inspection.issues)
+    audits = dict(admission_audits or {})
+    if admission_audit is not None:
+        audits[admission_audit.relative_path] = admission_audit
+    for locator in locator_inspection.locators:
+        document = audits.get(locator.canonical_path)
+        if document is not None:
+            issues.extend(validate_audit_document(locator, document))
     structures = _parse_structures(registry, issues)
     registrations = _parse_registrations(registry, structures, issues)
     fact_type_inspection = inspect_fact_types(documents)
@@ -1389,7 +1436,8 @@ def inspect_field_registry(
         structures,
         registrations,
         registry,
-        admission_audit,
+        locator_inspection.locators,
+        audits,
         issues,
     )
     return FieldRegistryInspection(structures, registrations, fact_type_inspection.definitions, tuple(issues))
