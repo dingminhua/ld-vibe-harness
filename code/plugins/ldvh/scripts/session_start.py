@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from configuration import ConfigurationError, load_configuration
+from configuration import ConfigurationError, configure_utf8_standard_streams, load_configuration
 from helper_protocol import validate_helper_response
 
 
@@ -78,6 +78,8 @@ def _run(value: Any) -> dict[str, Any]:
         cwd=cwd,
         input=request,
         text=True,
+        encoding="utf-8",
+        errors="strict",
         capture_output=True,
         timeout=20,
         check=False,
@@ -111,6 +113,7 @@ def _run(value: Any) -> dict[str, Any]:
 
 
 def main() -> int:
+    configure_utf8_standard_streams()
     value: Any = None
     try:
         value = json.load(sys.stdin)

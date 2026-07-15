@@ -11,6 +11,7 @@ from configuration import (
     ConfigurationError,
     build_configuration,
     configuration_path,
+    configure_utf8_standard_streams,
     load_configuration,
     write_configuration,
 )
@@ -129,6 +130,8 @@ def _verify(plugin_data: Path) -> int:
         [configuration["helper_executable"], "capabilities", "resolve-governance-scope"],
         input=request,
         text=True,
+        encoding="utf-8",
+        errors="strict",
         capture_output=True,
         timeout=30,
         check=False,
@@ -164,6 +167,7 @@ def _verify(plugin_data: Path) -> int:
 
 
 def main() -> int:
+    configure_utf8_standard_streams()
     arguments = _parser().parse_args()
     try:
         plugin_data = _plugin_data(arguments.plugin_data)
@@ -180,7 +184,7 @@ def main() -> int:
                 replace=arguments.replace,
             )
         return _verify(plugin_data)
-    except (ConfigurationError, OSError, subprocess.SubprocessError) as error:
+    except (ConfigurationError, OSError, UnicodeError, subprocess.SubprocessError) as error:
         return _emit("unavailable", summary=str(error), changes=[])
 
 

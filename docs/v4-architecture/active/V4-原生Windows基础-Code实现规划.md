@@ -22,7 +22,7 @@
 3. 多处仅拒绝符号链接，没有统一拒绝 Windows junction/reparse point。
 4. update 只承诺同一 common-dir、同一类型锁内的 LDVH 受控入口跨进程单赢家；不承诺对外部编辑器或跨 clone 的线性化 CAS，需分别固化证据与披露。
 5. Windows 的目录耐久性、共享冲突、盘符/UNC/大小写和 Git linked worktree 尚无原生证据。
-6. Codex hook 固定使用 `python3` 与 POSIX shell，不能自动纳入核心 CLI 的 Windows 结论。
+6. Codex adapter 的 Windows 候选入口已经与 POSIX 入口分离，但解释器 launcher、安装缓存、Hook 信任与真实触发仍须独立原生验证，不能自动纳入核心 CLI 的 Windows 结论。
 
 ## 4. 平台边界
 
@@ -51,7 +51,7 @@
 3. **候选级已完成**：迁移 ID 分配锁，证明 POSIX 不回退并构造 Windows 候选并发语义。
 4. **候选级已完成**：分离 POSIX/Windows 原子创建与条件替换，定义目录耐久性边界。
 5. **候选级已完成**：建立 Windows 路径、进程、Git linked worktree 的候选测试矩阵。
-6. 单独审核 Codex 适配器的解释器与 shell 边界；未闭合前不得宣称适配器支持 Windows。
+6. **候选级已完成**：单独闭合 Codex 适配器的解释器、shell、UTF-8 管道与安装证据分层；仍不得宣称适配器已在 Windows 集成。
 7. 在原生 Windows 上执行并固化证据。
 8. 发布前再建立 LDVH 自身的三平台 CI 与开源发布资料。
 
@@ -64,6 +64,8 @@
 第 4 切片的当前证据：lock/counter/fact 父路径和最终文件统一拒绝 link/reparse；POSIX 保留 `openat`、`O_NOFOLLOW`、hard-link no-overwrite、原子 replace、文件与目录 `fsync`。新建事实目录保持 `0755`，allocator 私有状态目录保持 `0700`；每级新目录 entry 均先同步其父目录，create 的最终目录同步覆盖“目标发布 + 临时名清理”，因此只有完成该边界才报告 `file_and_directory`。写结果显式记录 namespace 提交点、耐久等级与 cleanup residue，提交后同步或清理失败不再误报“未写入”。独立进程 update 在同一 LDVH 类型锁内形成单赢家；外部不协作写入仍不宣称线性化 CAS。Windows 候选分支绕开 `dir_fd`/`O_DIRECTORY`/`O_NOFOLLOW` 及 POSIX read backend，以本地同目录 hard-link/replace 形成 `file_only` 候选；公开 Windows 写入在 Human 接受该降级前于创建锁状态之前 fail-closed。静态检查通过，定向测试 56 个通过，独立进程单赢家连续 20 次重复通过，完整测试集 644 个通过。原生 NTFS 的 hard-link、replace、sharing violation、ACL/ADS 和终止恢复仍待验证。
 
 第 5 切片的当前证据：测试侧统一按平台定位 `ldvh`/`ldvh.exe`，不再假定无后缀 console script；Git 身份与事实读取的路径输出改为 bytes 后按 ASCII/UTF-8 责任严格解码，CRLF 可接受，非法编码形成 `git_output`/`unavailable` 而不冒泡。Windows 路径策略允许本地盘符绝对路径和普通相对路径，拒绝依赖当前驱动器状态的 drive-relative/root-relative 路径；UNC 与 device namespace 在 governance locator/workspace/config project、规格发现、commit observe/prepare/execute/discard 和事实 Git 入口于文件观察、临时目录探测或启动 Git 前 fail-closed。argv 保持 `shell=False`，Git canonical selected path 继续使用 `/`，`GIT_INDEX_FILE` 继续作为单一文件路径。macOS 候选矩阵覆盖空格/中文 workspace、linked worktree、事实读取、allocator common-dir、临时 Index 与 linked branch 隔离；独立定向复核 235 个、完整测试集 679 个通过，Ruff 与 133 个 Python 文件格式检查通过。该证据不证明 Windows 路径大小写别名、Git for Windows 中文输出、`ldvh.exe`、NTFS 或 `%TEMP%` 的原生/fallback 行为；这些仍须第 7 切片原生验证。
+
+第 6 切片的当前证据：依据 Codex CLI 0.144.2 对应源码，Hook 在 Windows 默认由 `%COMSPEC% /C` 执行，并在 discovery 时优先选择 `commandWindows`；插件保留 POSIX `python3 -X utf8` 命令，同时增加 `py -3.12 -X utf8` 的 Windows 命令，二者均使用 Codex 在执行前展开的 `${PLUGIN_ROOT}` 并引用完整脚本路径。adapter 自身标准流以及调用 Helper 的 stdin/stdout 均固定为 UTF-8 strict；生产 Helper 调用继续使用 argv 和 `shell=False`。测试 helper 在 POSIX 使用可执行 shebang、在 Windows 候选使用 `.cmd` launcher，避免把 Unix chmod/shebang 冒充 Windows console script。插件 validator 通过，adapter 定向测试 22 个、完整测试集 684 个通过，覆盖空格/中文路径、非法 UTF-8、stderr 不冒充 stdout JSON、timeout 显式降级和静态 argv 边界；Ruff、format 与 diff check 通过。该证据只属于仓库候选；当前个人插件安装缓存仍是本切片之前的版本，旧 macOS 真实触发不覆盖新候选，原生 Windows 仍须重新安装、审核 trust hash 并验证 startup/resume。
 
 ## 6. 验证矩阵
 
@@ -85,6 +87,9 @@
 - 多进程 ID 分配、无覆盖创建、条件更新单赢家；
 - sharing violation、失败清理及可恢复性；
 - Codex hook 仅在其独立边界闭合后纳入。
+- Codex 0.144.2 实际选择 `commandWindows`，`py -3.12` 可解析，`${PLUGIN_ROOT}` 指向含空格/中文的安装缓存；
+- Codex adapter 使用普通安装的 `.venv\Scripts\ldvh.exe` 完成配置、静态验证、startup/resume、失败降级、停用与恢复；
+- 仓库来源、cachebuster 安装缓存、enabled/trusted 状态和真实触发逐层回读，不继承旧 macOS 证据。
 
 ## 7. 后续需要 Human 决策
 

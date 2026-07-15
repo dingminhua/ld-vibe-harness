@@ -6,7 +6,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$PLUGIN_ROOT/scripts/session_start.py\"",
+            "command": "python3 -X utf8 \"${PLUGIN_ROOT}/scripts/session_start.py\"",
+            "commandWindows": "py -3.12 -X utf8 \"${PLUGIN_ROOT}\\scripts\\session_start.py\"",
             "timeout": 30,
             "statusMessage": "Loading LDVH governance context"
           }

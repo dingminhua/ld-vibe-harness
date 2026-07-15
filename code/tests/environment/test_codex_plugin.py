@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 import json
 import os
 import subprocess
@@ -33,11 +34,12 @@ def _helper(
     contract: str = "ldvh-helper-cli/2",
     availability: str = "available_for_request",
 ) -> Path:
-    helper = tmp_path / f"ldvh-{outcome}-{exit_code}"
-    helper.write_text(
+    stem = f"ldvh-{outcome}-{exit_code}"
+    script = tmp_path / f"{stem}.py"
+    script.write_text(
         "\n".join(
             [
-                f"#!{sys.executable}",
+                "from __future__ import annotations",
                 "import json",
                 "import sys",
                 "request = json.load(sys.stdin)",
@@ -49,14 +51,45 @@ def _helper(
                 f"response = {{'contract': {contract!r}, 'request_kind': request_kind, "
                 f"'operation_key': operation_key, 'outcome': {outcome!r}, 'result': result, "
                 "'arguments': sys.argv[1:], 'request': request}",
-                "print(json.dumps(response, sort_keys=True))",
+                "print(json.dumps(response, ensure_ascii=False, sort_keys=True))",
                 f"raise SystemExit({exit_code})",
                 "",
             ]
         ),
         encoding="utf-8",
     )
-    helper.chmod(0o755)
+    if sys.platform == "win32":
+        helper = tmp_path / f"{stem}.cmd"
+        helper.write_text(
+            f'@"{sys.executable}" -X utf8 "{script}" %*\r\n',
+            encoding="utf-8",
+        )
+    else:
+        helper = tmp_path / stem
+        helper.write_text(
+            f"#!{sys.executable}\n" + script.read_text(encoding="utf-8"),
+            encoding="utf-8",
+        )
+        helper.chmod(0o755)
+    return helper
+
+
+def _raw_helper(tmp_path: Path, name: str, body: str) -> Path:
+    script = tmp_path / f"{name}.py"
+    script.write_text(body, encoding="utf-8")
+    if sys.platform == "win32":
+        helper = tmp_path / f"{name}.cmd"
+        helper.write_text(
+            f'@"{sys.executable}" -X utf8 "{script}" %*\r\n',
+            encoding="utf-8",
+        )
+    else:
+        helper = tmp_path / name
+        helper.write_text(
+            f"#!{sys.executable}\n" + script.read_text(encoding="utf-8"),
+            encoding="utf-8",
+        )
+        helper.chmod(0o755)
     return helper
 
 
@@ -64,6 +97,8 @@ def _run_configure(*arguments: str) -> tuple[subprocess.CompletedProcess[str], d
     completed = subprocess.run(
         [sys.executable, str(CONFIGURE), *arguments],
         text=True,
+        encoding="utf-8",
+        errors="strict",
         capture_output=True,
         check=False,
     )
@@ -100,6 +135,8 @@ def _run_hook(
         [sys.executable, str(SESSION_START)],
         input=json.dumps({"hook_event_name": event, "source": source, "cwd": str(cwd)}),
         text=True,
+        encoding="utf-8",
+        errors="strict",
         capture_output=True,
         env=environment,
         check=False,
@@ -123,7 +160,8 @@ def test_manifest_and_hook_register_only_the_supported_session_start_scope() -> 
                     "hooks": [
                         {
                             "type": "command",
-                            "command": 'python3 "$PLUGIN_ROOT/scripts/session_start.py"',
+                            "command": 'python3 -X utf8 "${PLUGIN_ROOT}/scripts/session_start.py"',
+                            "commandWindows": ('py -3.12 -X utf8 "${PLUGIN_ROOT}\\scripts\\session_start.py"'),
                             "timeout": 30,
                             "statusMessage": "Loading LDVH governance context",
                         }
@@ -132,6 +170,22 @@ def test_manifest_and_hook_register_only_the_supported_session_start_scope() -> 
             ]
         }
     }
+
+
+def test_adapter_helper_processes_use_argv_without_a_shell() -> None:
+    for path in (CONFIGURE, SESSION_START):
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        calls = [
+            node
+            for node in ast.walk(tree)
+            if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and node.func.attr == "run"
+        ]
+        assert len(calls) == 1
+        assert isinstance(calls[0].args[0], ast.List)
+        assert not any(
+            keyword.arg == "shell" and isinstance(keyword.value, ast.Constant) and keyword.value.value is True
+            for keyword in calls[0].keywords
+        )
 
 
 def test_plan_is_read_only_and_apply_requires_confirmation(tmp_path: Path) -> None:
@@ -303,6 +357,118 @@ def test_static_verify_rejects_helper_that_is_not_available_for_the_request(
     assert response["outcome"] == "unavailable"
     assert response["helper_available_for_request"] is False
     assert response["real_environment_trigger_verified"] is False
+
+
+def test_utf8_transport_preserves_unicode_paths_and_helper_json(tmp_path: Path) -> None:
+    root = tmp_path / "含 空格"
+    root.mkdir()
+    plugin_data = root / "插件 数据"
+    workspace = _workspace(root)
+    project = root / "项目 甲"
+    project.mkdir()
+    helper = _helper(root)
+    _apply(plugin_data, helper, workspace)
+
+    verified, verification = _run_configure("verify", "--plugin-data", str(plugin_data))
+    completed, response = _run_hook(plugin_data, project)
+
+    assert verified.returncode == 0
+    assert verification["helper_response"]["request"] == {
+        "arguments": {"workspace_root": str(workspace.resolve())},
+        "response_profile": "compact",
+    }
+    assert completed.returncode == 0
+    context = response["hookSpecificOutput"]["additionalContext"]
+    assert str(project) in context
+    assert str(workspace.resolve()) in context
+    assert str(helper.resolve()) in context
+
+
+def test_invalid_utf8_helper_output_is_an_explicit_gap(tmp_path: Path) -> None:
+    plugin_data = tmp_path / "plugin-data"
+    workspace = _workspace(tmp_path)
+    project = tmp_path / "project"
+    project.mkdir()
+    helper = _raw_helper(
+        tmp_path,
+        "invalid-utf8-helper",
+        "import sys\nsys.stdout.buffer.write(b'\\xff')\n",
+    )
+    _apply(plugin_data, helper, workspace)
+
+    verified, verification = _run_configure("verify", "--plugin-data", str(plugin_data))
+    completed, response = _run_hook(plugin_data, project)
+
+    assert verified.returncode == 2
+    assert verification["outcome"] == "unavailable"
+    assert "decode" in verification["summary"]
+    assert completed.returncode == 0
+    assert "decode" in response["systemMessage"]
+    assert "governance scope as unresolved" in response["systemMessage"]
+
+
+def test_stderr_is_not_reinterpreted_as_helper_json(tmp_path: Path) -> None:
+    plugin_data = tmp_path / "plugin-data"
+    workspace = _workspace(tmp_path)
+    project = tmp_path / "project"
+    project.mkdir()
+    helper = _raw_helper(
+        tmp_path,
+        "stderr-only-helper",
+        'import sys\nsys.stderr.write(\'{"outcome": "ok"}\\n\')\n',
+    )
+    _apply(plugin_data, helper, workspace)
+
+    verified, verification = _run_configure("verify", "--plugin-data", str(plugin_data))
+    completed, response = _run_hook(plugin_data, project)
+
+    assert verified.returncode == 2
+    assert verification["summary"] == "Helper verification did not return JSON"
+    assert completed.returncode == 0
+    assert "Helper did not return one JSON response" in response["systemMessage"]
+    assert "governance scope as unresolved" in response["systemMessage"]
+
+
+def test_helper_timeout_is_an_explicit_non_blocking_gap(tmp_path: Path) -> None:
+    plugin_data = tmp_path / "plugin-data"
+    workspace = _workspace(tmp_path)
+    project = tmp_path / "project"
+    project.mkdir()
+    helper = _helper(tmp_path)
+    _apply(plugin_data, helper, workspace)
+    patch_dir = tmp_path / "timeout-patch"
+    patch_dir.mkdir()
+    (patch_dir / "sitecustomize.py").write_text(
+        "import subprocess\n"
+        "def timeout(*args, **kwargs):\n"
+        "    raise subprocess.TimeoutExpired(args[0], kwargs.get('timeout'))\n"
+        "subprocess.run = timeout\n",
+        encoding="utf-8",
+    )
+    environment = os.environ.copy()
+    environment.update(
+        {
+            "PLUGIN_DATA": str(plugin_data),
+            "PLUGIN_ROOT": str(PLUGIN_ROOT),
+            "PYTHONPATH": str(patch_dir),
+        }
+    )
+
+    completed = subprocess.run(
+        [sys.executable, str(SESSION_START)],
+        input=json.dumps({"hook_event_name": "SessionStart", "source": "startup", "cwd": str(project)}),
+        text=True,
+        encoding="utf-8",
+        errors="strict",
+        capture_output=True,
+        env=environment,
+        check=False,
+    )
+    response = json.loads(completed.stdout)
+
+    assert completed.returncode == 0
+    assert "timed out after 20 seconds" in response["systemMessage"]
+    assert "governance scope as unresolved" in response["systemMessage"]
 
 
 @pytest.mark.parametrize(("outcome", "exit_code"), [("ok", 0), ("partial", 3)])

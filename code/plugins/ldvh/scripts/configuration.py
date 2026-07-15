@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -13,6 +14,11 @@ GOVERNED_PROJECTS_FILENAME = "LDVH-GOVERNED-PROJECTS.yaml"
 
 class ConfigurationError(ValueError):
     pass
+
+
+def configure_utf8_standard_streams() -> None:
+    for stream in (sys.stdin, sys.stdout, sys.stderr):
+        stream.reconfigure(encoding="utf-8", errors="strict")
 
 
 def _absolute_path(value: Any, field: str) -> Path:

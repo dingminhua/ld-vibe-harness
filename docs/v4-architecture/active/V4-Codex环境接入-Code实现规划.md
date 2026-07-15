@@ -132,3 +132,14 @@
 Human 授权后，候选已按个人插件 cachebuster 流程安装为 `ldvh@personal` 版本 `0.1.0+codex.20260715021623`；个人来源与安装缓存逐文件一致，Hook 为 Trusted/Enabled，显式配置 `check/verify` 通过。Codex 0.144.2 新任务已分别证明正常配置成功、缺失配置显式降级、`/hooks` 停用后无注入、恢复后再次成功。完成条件 §§7.4–7.6 已满足于当次版本、用户、入口、工作区和 `SessionStart startup|resume` 范围。
 
 本实现不声明永久卸载、V3 恢复、其它 Codex 版本、用户、机器、工作区、环境或 Hook 事件已验证。详细基线、授权、指纹、thread id、结果和未验证范围见 `V4-Codex环境接入-安装与真实验证记录.md`。
+
+### 8.1 Windows 仓库候选增量
+
+后续 Windows 第 6 切片只更新仓库候选，不改写上述历史安装事实：
+
+1. `hooks.json` 保留 POSIX `command`，增加 Codex schema 支持的 `commandWindows`；Codex CLI 0.144.2 对应实现会在 Windows 选择该 override，并通过 `%COMSPEC% /C` 执行，因此候选使用 `py -3.12 -X utf8` 和引用后的 `${PLUGIN_ROOT}\scripts\session_start.py`，不使用 PowerShell `$env:` 语法；
+2. adapter 标准流与 Helper subprocess transport 固定为 UTF-8 strict，Helper 调用仍为 argv 且不启用 shell；
+3. 测试 helper 按平台形成 POSIX shebang 或 Windows `.cmd` launcher，新增空格/中文路径、非法 UTF-8、stderr 不冒充 JSON、timeout 显式降级和 argv 边界检查；当前 macOS 上 plugin validator、22 项 adapter tests 与 684 项完整 tests 通过；
+4. 这些结果只证明 repo candidate。已安装的 `0.1.0+codex.20260715021623` cache、既有 trust hash 和真实触发仍对应修改前内容，不能作为该 Windows 候选的安装或集成证据。
+
+Windows 原生 gate 必须使用新 cachebuster 重新安装，逐文件回读 source↔cache，重新审核 Hook 信任，并分别验证 `commandWindows`、`py -3.12`、含空格/中文的 `PLUGIN_ROOT/PLUGIN_DATA/cwd/workspace`、普通安装后的 `ldvh.exe`、startup/resume 与失败/停用/恢复。核心 CLI Windows 结论与 Codex adapter Windows 结论继续分开；当前 Ruff、format 与 diff check 也已通过，但都不替代该原生 gate。
