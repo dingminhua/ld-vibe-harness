@@ -40,9 +40,6 @@ _LAYOUTS = {
     "pitfall": ("pitfalls", ".yaml", "yaml"),
     "adr": ("adrs", ".yaml", "yaml"),
 }
-_LEGACY_SUFFIXES = {
-    fact_type: frozenset({".yaml", ".yml", *({".md"} if fact_type == "study" else set())}) for fact_type in _LAYOUTS
-}
 _ID = re.compile(r"(spark|workcase|study|pitfall|adr)-[0-9]{4,}\Z")
 _ENTRY_KEYS = {
     "source_key",
@@ -228,68 +225,6 @@ def _issue(code: str, summary: str, path: object = None) -> BaselineIssue:
     return BaselineIssue(code, summary, path if isinstance(path, str) else None)
 
 
-def _detect_out_of_baseline(repository_root: Path) -> list[BaselineIssue]:
-    issues: list[BaselineIssue] = []
-    legacy_root = repository_root / "ldvh-base"
-    if legacy_root.is_symlink():
-        issues.append(_issue("out-of-baseline", "root ldvh-base must not be a symlink", "ldvh-base"))
-    elif legacy_root.exists() and not legacy_root.is_dir():
-        issues.append(_issue("out-of-baseline", "root ldvh-base is not a directory", "ldvh-base"))
-    elif legacy_root.is_dir():
-        for fact_type, (directory, _suffix, _) in _LAYOUTS.items():
-            parent = legacy_root / directory
-            relative_parent = parent.relative_to(repository_root).as_posix()
-            if parent.is_symlink():
-                issues.append(
-                    _issue("out-of-baseline", "root V3 source directory must not be a symlink", relative_parent)
-                )
-                continue
-            if not parent.exists():
-                continue
-            if not parent.is_dir():
-                issues.append(
-                    _issue(
-                        "out-of-baseline",
-                        "root V3 source directory is not safely inspectable",
-                        relative_parent,
-                    )
-                )
-                continue
-            try:
-                members = sorted(parent.iterdir(), key=lambda item: item.name)
-            except OSError:
-                issues.append(
-                    _issue("out-of-baseline", "root V3 source directory cannot be enumerated", relative_parent)
-                )
-                continue
-            for path in members:
-                relative = path.relative_to(repository_root).as_posix()
-                if path.is_symlink():
-                    issues.append(_issue("out-of-baseline", "root V3 source member is a symlink", relative))
-                elif path.suffix in _LEGACY_SUFFIXES[fact_type] and not path.is_file():
-                    issues.append(_issue("out-of-baseline", "root V3 source member is not a regular file", relative))
-                elif path.is_file() and path.suffix in _LEGACY_SUFFIXES[fact_type]:
-                    issues.append(
-                        _issue(
-                            "out-of-baseline",
-                            f"root ldvh-base contains a V3 {fact_type} outside the frozen 92-item input",
-                            relative,
-                        )
-                    )
-    facts_root = repository_root / "facts"
-    if facts_root.exists():
-        for path in sorted(facts_root.rglob("*")):
-            if path.is_file() or path.is_symlink():
-                issues.append(
-                    _issue(
-                        "unexpected-v4-instance",
-                        "baseline-only stage must not contain V4 fact instances",
-                        path.relative_to(repository_root).as_posix(),
-                    )
-                )
-    return issues
-
-
 def verify_v3_baseline(repository_root: Path, manifest_path: Path) -> BaselineVerification:
     """Verify manifest shape, frozen Git identity, working bytes, and closed-set coverage."""
 
@@ -389,7 +324,6 @@ def verify_v3_baseline(repository_root: Path, manifest_path: Path) -> BaselineVe
             issues.append(
                 _issue("drift", "checked-in manifest differs from the current frozen Git/working-tree projection")
             )
-    issues.extend(_detect_out_of_baseline(repository_root))
     return BaselineVerification(len(entries), tuple(issues))
 
 

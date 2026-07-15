@@ -92,13 +92,27 @@ def test_diagnostic_keeps_semantic_qualification_in_gaps(
         response_profile="diagnostic",
     )
 
-    semantic_condition = next(condition for condition in UNCHECKED_CONDITIONS if condition.startswith("规范责任重复"))
     assert len(result.verification) == 1
-    assert result.verification[0]["status"] == "passed"
-    assert result.verification[0]["check"] == (
-        "当前实现中适用于 specification-model-foundation 的身份、结构、授权和读取检查已执行并通过"
+    verification = result.verification[0]
+    assert verification["status"] == "passed"
+    assert verification["scope"] == [selection.as_scope()]
+    assert len(result.gaps) == len(UNCHECKED_CONDITIONS)
+    for condition in UNCHECKED_CONDITIONS:
+        matching_gaps = [gap for gap in result.gaps if condition in gap["summary"]]
+        assert len(matching_gaps) == 1
+        assert matching_gaps[0]["scope"] == [selection.as_scope()]
+        assert matching_gaps[0]["source_refs"]
+        assert condition not in verification["check"]
+    assert all(
+        unsupported_claim not in verification["check"]
+        for unsupported_claim in (
+            "规则语义完整",
+            "规则适用",
+            "Human Gate",
+            "Stop Conditions",
+            "完整取得当前规则源资格",
+        )
     )
-    assert f"尚未由 Code 机械证明当前规则源资格条件：{semantic_condition}" in {gap["summary"] for gap in result.gaps}
 
 
 def test_attachment_l4_includes_attachment_then_unique_parent_without_basis_recursion(

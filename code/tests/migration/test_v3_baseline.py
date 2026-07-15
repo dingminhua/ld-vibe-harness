@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -37,7 +38,7 @@ def test_v3_baseline_freezes_counts_statuses_paths_blobs_and_times() -> None:
     )
 
 
-def test_v3_baseline_exposes_time_and_closed_workcase_migration_blockers() -> None:
+def test_v3_baseline_records_historical_time_and_closed_workcase_observations() -> None:
     loaded = json.loads(MANIFEST.read_text(encoding="utf-8"))
     offset = re.compile(r"(?:Z|[+-][0-9]{2}:[0-9]{2})\Z")
     affected: set[str] = set()
@@ -82,72 +83,57 @@ def test_v3_baseline_exposes_time_and_closed_workcase_migration_blockers() -> No
     )
 
 
-def test_root_v3_object_is_reported_as_out_of_baseline(tmp_path: Path) -> None:
-    root = tmp_path / "ldvh-base" / "sparks"
-    root.mkdir(parents=True)
-    (root / "spark-0050.yaml").write_text("id: spark-0050\ntype: spark\nstatus: pending\n", encoding="utf-8")
-
-    from ldvh.migration.v3_baseline import _detect_out_of_baseline
-
-    issues = _detect_out_of_baseline(tmp_path)
-    assert [(issue.code, issue.source_path) for issue in issues] == [
-        ("out-of-baseline", "ldvh-base/sparks/spark-0050.yaml")
-    ]
-
-
-@pytest.mark.parametrize(
-    ("directory", "filename"),
-    (("sparks", "spark-0050.yml"), ("adrs", "adr-0001.yaml"), ("studies", "study-0018.md")),
-)
-def test_every_legacy_web_carrier_is_reported_out_of_baseline(
+def test_v3_baseline_ignores_current_paths_outside_the_frozen_archive(
     tmp_path: Path,
-    directory: str,
-    filename: str,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    parent = tmp_path / "ldvh-base" / directory
-    parent.mkdir(parents=True)
-    path = parent / filename
-    path.write_text("id: candidate\n", encoding="utf-8")
+    manifest = tmp_path / "migration" / "v3-facts" / "baseline.json"
+    manifest.parent.mkdir(parents=True)
+    manifest.write_text(MANIFEST.read_text(encoding="utf-8"), encoding="utf-8")
+    loaded = json.loads(manifest.read_text(encoding="utf-8"))
+    shutil.copytree(
+        PROJECT_ROOT / "archive" / "v3" / "ldvh-base",
+        tmp_path / "archive" / "v3" / "ldvh-base",
+    )
 
-    from ldvh.migration.v3_baseline import _detect_out_of_baseline
+    for relative in (
+        Path("facts/sparks/spark-0001.yaml"),
+        Path("ldvh-base/sparks/spark-0050.yaml"),
+    ):
+        path = tmp_path / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("object_id: example\n", encoding="utf-8")
 
-    issues = _detect_out_of_baseline(tmp_path)
-    assert [(issue.code, issue.source_path) for issue in issues] == [
-        ("out-of-baseline", path.relative_to(tmp_path).as_posix())
-    ]
+    snapshot_commit = loaded["snapshot_commit"]
+    snapshot_tree = loaded["snapshot_tree"]
+    source_root = loaded["source_root"]
+    entries_by_path = {entry["source_path"]: entry for entry in loaded["entries"]}
 
+    def fake_git(repository_root: Path, *args: str) -> bytes:
+        assert repository_root == tmp_path.resolve()
+        if args == ("rev-parse", "--verify", f"{snapshot_commit}^{{commit}}"):
+            return f"{snapshot_commit}\n".encode()
+        if args in {
+            ("rev-parse", f"{snapshot_commit}:{source_root}"),
+            ("rev-parse", f"HEAD:{source_root}"),
+        }:
+            return f"{snapshot_tree}\n".encode()
+        if args == ("status", "--porcelain=v1", "--untracked-files=all", "--", source_root):
+            return b""
+        if len(args) == 2 and args[0] == "show":
+            revision, relative = args[1].split(":", 1)
+            assert revision == snapshot_commit
+            return (tmp_path / relative).read_bytes()
+        if len(args) == 2 and args[0] == "rev-parse":
+            revision, relative = args[1].split(":", 1)
+            assert revision == snapshot_commit
+            return f"{entries_by_path[relative]['git_blob_oid']}\n".encode()
+        raise AssertionError(f"unexpected git call: {args}")
 
-@pytest.mark.parametrize(
-    "link_kind",
-    ("root", "broken-root", "directory", "broken-directory", "member", "broken-member"),
-)
-def test_legacy_symlinks_fail_closed(tmp_path: Path, link_kind: str) -> None:
-    target = tmp_path / "target"
-    target.mkdir()
-    legacy = tmp_path / "ldvh-base"
-    try:
-        if link_kind in {"root", "broken-root"}:
-            root_target = target if link_kind == "root" else tmp_path / "missing-root"
-            legacy.symlink_to(root_target, target_is_directory=True)
-        else:
-            sparks = legacy / "sparks"
-            if link_kind in {"directory", "broken-directory"}:
-                legacy.mkdir()
-                directory_target = target if link_kind == "directory" else tmp_path / "missing-directory"
-                sparks.symlink_to(directory_target, target_is_directory=True)
-            else:
-                sparks.mkdir(parents=True)
-                link_target = target / "missing.yaml" if link_kind == "broken-member" else target
-                (sparks / "spark-0050.yaml").symlink_to(link_target, target_is_directory=link_kind == "member")
-    except OSError as exc:
-        pytest.skip(f"symlink creation is unavailable: {exc}")
+    monkeypatch.setattr("ldvh.migration.v3_baseline._git", fake_git)
 
-    from ldvh.migration.v3_baseline import _detect_out_of_baseline
-
-    issues = _detect_out_of_baseline(tmp_path)
-    assert len(issues) == 1
-    assert issues[0].code == "out-of-baseline"
-    assert "symlink" in issues[0].summary
+    result = verify_v3_baseline(tmp_path, manifest)
+    assert result.valid, result.issues
 
 
 @pytest.mark.parametrize(
@@ -219,16 +205,3 @@ def test_cli_returns_one_for_an_invalid_manifest(tmp_path: Path) -> None:
     response = json.loads(completed.stdout)
     assert completed.returncode == 1
     assert response["valid"] is False
-
-
-def test_any_v4_fact_file_is_rejected_during_baseline_only_stage(tmp_path: Path) -> None:
-    path = tmp_path / "facts" / "sparks" / "spark-0001.yaml"
-    path.parent.mkdir(parents=True)
-    path.write_text("object_id: spark-0001\n", encoding="utf-8")
-
-    from ldvh.migration.v3_baseline import _detect_out_of_baseline
-
-    issues = _detect_out_of_baseline(tmp_path)
-    assert [(issue.code, issue.source_path) for issue in issues] == [
-        ("unexpected-v4-instance", "facts/sparks/spark-0001.yaml")
-    ]
