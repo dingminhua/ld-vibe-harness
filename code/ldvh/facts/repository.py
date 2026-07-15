@@ -32,6 +32,7 @@ class FactReadResult:
     issues: tuple[FactIssue, ...]
     content_fingerprint: str | None = None
     raw_text: str | None = None
+    raw_byte_count: int | None = None
 
 
 def _safe_regular_file(root: Path, relative_path: str) -> tuple[Path, FactIssue | None, CheckStatus | None]:
@@ -109,18 +110,26 @@ def _traceability(root: Path, relative_path: str) -> tuple[FactIssue | None, Che
 def _read_utf8_without_symlinks(
     root: Path,
     relative_path: str,
-) -> tuple[str | None, FactIssue | None, CheckStatus | None]:
+    *,
+    max_bytes: int,
+) -> tuple[str | None, int | None, FactIssue | None, CheckStatus | None]:
     try:
-        raw_bytes = safe_read_relative(root, relative_path, max_bytes=MAX_FACT_BYTES)
-        return raw_bytes.decode("utf-8"), None, None
+        raw_bytes = safe_read_relative(root, relative_path, max_bytes=max_bytes)
+        raw_byte_count = len(raw_bytes)
+        return raw_bytes.decode("utf-8"), raw_byte_count, None, None
     except UnicodeDecodeError:
-        return None, FactIssue("parse", "事实对象无法作为 UTF-8 普通文件读取"), "invalid"
+        return None, raw_byte_count, FactIssue("parse", "事实对象无法作为 UTF-8 普通文件读取"), "invalid"
     except ReadBudgetExceeded:
-        return None, FactIssue("parse", "事实对象载体超过 4 MiB 读取预算"), "unavailable"
+        return (
+            None,
+            max_bytes,
+            FactIssue("parse", f"事实对象载体超过 {max_bytes} bytes 读取预算"),
+            "unavailable",
+        )
     except UnsafePathError:
-        return None, FactIssue("location", "事实对象 canonical path 必须是非 link/reparse 普通文件"), "invalid"
+        return None, None, FactIssue("location", "事实对象 canonical path 必须是非 link/reparse 普通文件"), "invalid"
     except OSError:
-        return None, FactIssue("location", "事实对象文件在安全读取时发生变化或不可访问"), "unavailable"
+        return None, None, FactIssue("location", "事实对象文件在安全读取时发生变化或不可访问"), "unavailable"
 
 
 def read_fact_object(
@@ -130,6 +139,7 @@ def read_fact_object(
     object_id: str,
     *,
     expected_common_dir: Path | None = None,
+    max_bytes: int = MAX_FACT_BYTES,
 ) -> FactReadResult:
     """Read and mechanically validate one source-selected fact object."""
 
@@ -152,10 +162,32 @@ def read_fact_object(
     trace_issue, trace_status = _traceability(root, relative_path)
     if trace_issue is not None:
         return FactReadResult(relative_path, layout.carrier, trace_status or "invalid", None, None, (trace_issue,))
-    text, read_issue, read_status = _read_utf8_without_symlinks(root, relative_path)
+    effective_max_bytes = min(MAX_FACT_BYTES, max_bytes)
+    if effective_max_bytes <= 0:
+        return FactReadResult(
+            relative_path,
+            layout.carrier,
+            "unavailable",
+            None,
+            None,
+            (FactIssue("budget", "事实对象聚合读取预算已耗尽"),),
+        )
+    text, raw_byte_count, read_issue, read_status = _read_utf8_without_symlinks(
+        root,
+        relative_path,
+        max_bytes=effective_max_bytes,
+    )
     if read_issue is not None or text is None:
         issue = read_issue or FactIssue("location", "事实对象文件无法安全读取")
-        return FactReadResult(relative_path, layout.carrier, read_status or "unavailable", None, None, (issue,))
+        return FactReadResult(
+            relative_path,
+            layout.carrier,
+            read_status or "unavailable",
+            None,
+            None,
+            (issue,),
+            raw_byte_count=raw_byte_count,
+        )
     identity_issue, identity_status = _identity_issue(root, expected_common_dir)
     if identity_issue is not None:
         return FactReadResult(
@@ -169,7 +201,16 @@ def read_fact_object(
 
     parsed = parse_study_markdown(text) if layout.carrier == "markdown" else parse_yaml_object(text)
     if parsed.fields is None or parsed.issues:
-        return FactReadResult(relative_path, layout.carrier, "invalid", parsed.fields, parsed.body, parsed.issues)
+        return FactReadResult(
+            relative_path,
+            layout.carrier,
+            "invalid",
+            parsed.fields,
+            parsed.body,
+            parsed.issues,
+            raw_text=text,
+            raw_byte_count=raw_byte_count,
+        )
 
     issues = list(validate_fact_object(layout.fact_type_key, parsed.fields, schema))
     if parsed.fields.get("object_id") != object_id:
@@ -185,6 +226,7 @@ def read_fact_object(
         tuple(issues),
         fingerprint if status == "mechanically_valid" else None,
         text,
+        raw_byte_count,
     )
 
 

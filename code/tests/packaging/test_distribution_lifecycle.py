@@ -188,6 +188,12 @@ def _create_installed_environment(root: Path) -> InstalledEnvironment:
     )
     dependencies = root / "runtime-dependencies"
     _copy_runtime_dependencies(dependencies)
+    for dependency in dependencies.iterdir():
+        target = purelib / dependency.name
+        if dependency.is_dir():
+            shutil.copytree(dependency, target, dirs_exist_ok=True)
+        else:
+            shutil.copy2(dependency, target)
     return InstalledEnvironment(root, python, helper, purelib, dependencies)
 
 
@@ -227,6 +233,46 @@ def _cli(
     decoded = completed.stdout.decode("utf-8")
     response = json.loads(decoded)
     assert decoded == json.dumps(response, ensure_ascii=False, separators=(",", ":")) + "\n"
+    return response
+
+
+def _machine(
+    environment: InstalledEnvironment,
+    cwd: Path,
+    operation: str,
+    scope: dict[str, str],
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    payload = json.dumps(
+        {
+            "protocol_version": 1,
+            "operation": operation,
+            "scope": scope,
+            "arguments": arguments,
+        },
+        ensure_ascii=False,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    completed = subprocess.run(
+        [str(environment.python), "-I", "-X", "utf8", "-m", "ldvh.facts.web_machine"],
+        cwd=cwd,
+        input=payload,
+        capture_output=True,
+        check=False,
+    )
+    assert completed.returncode == 0, (completed.stdout, completed.stderr)
+    assert completed.stderr == b""
+    assert completed.stdout.endswith(b"\n") and completed.stdout.count(b"\n") == 1
+    response = json.loads(completed.stdout)
+    assert set(response) == {
+        "protocol_version",
+        "operation",
+        "status",
+        "result",
+        "error",
+        "completion_unknown",
+    }
+    assert response["operation"] == operation
     return response
 
 
@@ -581,6 +627,36 @@ def _exercise_operation_matrix(
         ),
     )
     assert fact_path.read_bytes() == updated_bytes
+
+    machine_scope = {
+        "workspace_root": str(workspace),
+        "worktree_locator": str(project),
+        "expected_governed_project_id": "sample",
+    }
+    listed = _machine(environment, project, "list-sparks", machine_scope, {})
+    detail = _machine(
+        environment,
+        project,
+        "read-spark",
+        machine_scope,
+        {"object_id": "spark-0001"},
+    )
+    captured = _machine(
+        environment,
+        project,
+        "create-spark",
+        machine_scope,
+        {
+            "title": "Installed Web bridge",
+            "description": "Direct machine invocation from an ordinary installed distribution.",
+            "priority": "P2",
+        },
+    )
+    assert listed["status"] == "complete"
+    assert len(listed["result"]["items"]) == 1
+    assert detail["status"] == "ok"
+    assert captured["status"] == "created"
+    assert captured["result"]["actual_ref"]["object_id"] == "spark-0002"
 
     assert _snapshot_tree_fingerprint(snapshot) == snapshot_before
     assert not tuple(environment.purelib.rglob("spark-0001.yaml"))

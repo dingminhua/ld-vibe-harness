@@ -16,6 +16,8 @@ from ldvh.facts.repository import FactReadResult, _identity_issue
 from ldvh.facts.schema import FactSchema
 from ldvh.filesystem import safe_list_directory
 
+MAX_WEB_FACT_AGGREGATE_BYTES = 16 * 1024 * 1024
+
 
 @dataclass(frozen=True, slots=True)
 class FactCandidateSnapshot:
@@ -141,6 +143,8 @@ def discover_fact_type_raw(
     common_dir: Path,
     schemas: dict[str, FactSchema],
     fact_type_key: str,
+    *,
+    aggregate_budget_bytes: int | None = None,
 ) -> FactTypeRawSnapshot:
     """Read one complete canonical directory without filtering invalid objects."""
 
@@ -192,7 +196,13 @@ def discover_fact_type_raw(
             structural.append(_structural_problem(fact_type_key, path.name, "事实文件名不是 canonical fact identity"))
         else:
             canonical.append((object_id, path))
-    index = ProjectFactIndex(root, project_id, schemas, common_dir)
+    index = ProjectFactIndex(
+        root,
+        project_id,
+        schemas,
+        common_dir,
+        aggregate_budget_bytes,
+    )
     base_objects: list[tuple[str, FactReadResult]] = []
     for object_id, _ in canonical:
         read = index.read(fact_type_key, object_id)
@@ -200,7 +210,24 @@ def discover_fact_type_raw(
             structural.append(_structural_problem(fact_type_key, object_id, "canonical 事实对象无法读取"))
             continue
         base_objects.append((object_id, read))
+        if index.aggregate_budget_exhausted:
+            structural.append(
+                _structural_problem(
+                    fact_type_key,
+                    layout.directory,
+                    f"事实类型安全读取超过 {aggregate_budget_bytes} bytes 聚合预算",
+                )
+            )
+            break
     stabilize_project_index(index)
+    if index.aggregate_budget_exhausted and not any("聚合预算" in str(problem) for problem in structural):
+        structural.append(
+            _structural_problem(
+                fact_type_key,
+                layout.directory,
+                f"事实类型关系校验超过 {aggregate_budget_bytes} bytes 聚合预算",
+            )
+        )
     objects = tuple(
         (object_id, index.cache.get((fact_type_key, object_id), base_read)) for object_id, base_read in base_objects
     )
@@ -218,6 +245,7 @@ def discover_fact_type_raw(
 __all__ = [
     "FactCandidateSnapshot",
     "FactTypeRawSnapshot",
+    "MAX_WEB_FACT_AGGREGATE_BYTES",
     "discover_fact_candidates",
     "discover_fact_type_raw",
 ]

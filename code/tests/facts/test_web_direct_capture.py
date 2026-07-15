@@ -5,6 +5,7 @@ import hashlib
 import subprocess
 import unicodedata
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timedelta
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -171,6 +172,30 @@ def test_service_creates_once_and_duplicate_does_not_consume_counter(
     assert len(tuple((boundary.worktree_root / "facts/sparks").glob("*.yaml"))) == 1
 
 
+def test_create_duplicate_scan_uses_the_same_hard_aggregate_budget(
+    current_specs_repository: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    boundary, schemas = _fixture(current_specs_repository, tmp_path)
+    assert create_web_spark_direct_capture(boundary, schemas, _request()).status == "created"
+    before_counter = _counter(boundary).read_bytes()
+    monkeypatch.setattr(web_direct_capture, "MAX_WEB_FACT_AGGREGATE_BYTES", 1)
+
+    result = create_web_spark_direct_capture(
+        boundary,
+        schemas,
+        _request("Different", "Must not bypass incomplete duplicate coverage", "P1"),
+    )
+
+    assert result.status == "unavailable"
+    assert result.code == "spark_coverage_unavailable"
+    assert _counter(boundary).read_bytes() == before_counter
+    assert tuple((boundary.worktree_root / "facts/sparks").glob("*.yaml")) == (
+        boundary.worktree_root / "facts/sparks/spark-0001.yaml",
+    )
+
+
 def test_concurrent_same_capture_has_one_creator_and_one_duplicate(
     current_specs_repository: Path,
     tmp_path: Path,
@@ -235,7 +260,7 @@ def test_open_current_identity_is_checked_after_legal_content_change(
     fields["title"] = "Current B"
     fields["summary"] = "Current summary B"
     fields["priority"] = "P1"
-    fields["updated_at"] = "2026-07-15T17:00:00+08:00"
+    fields["updated_at"] = (datetime.fromisoformat(fields["created_at"]) + timedelta(seconds=1)).isoformat()
     with path.open("w", encoding="utf-8") as stream:
         yaml.dump(fields, stream)
 

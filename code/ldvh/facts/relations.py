@@ -7,7 +7,7 @@ from pathlib import Path
 
 from ldvh.facts.contracts import LAYOUTS
 from ldvh.facts.models import FactIssue
-from ldvh.facts.repository import FactReadResult, _identity_issue, read_fact_object
+from ldvh.facts.repository import MAX_FACT_BYTES, FactReadResult, _identity_issue, read_fact_object
 from ldvh.facts.schema import FactSchema
 from ldvh.facts.validation import parse_rfc3339
 from ldvh.filesystem import safe_list_directory
@@ -21,8 +21,11 @@ class ProjectFactIndex:
     governed_project_id: str
     schemas: dict[str, FactSchema]
     expected_common_dir: Path | None = None
+    aggregate_budget_bytes: int | None = None
     cache: dict[tuple[str, str], FactReadResult] = field(default_factory=dict)
     base_cache: dict[tuple[str, str], FactReadResult] = field(default_factory=dict)
+    aggregate_bytes_read: int = field(default=0, init=False)
+    aggregate_budget_exhausted: bool = field(default=False, init=False)
 
     def read(self, fact_type_key: str, object_id: str) -> FactReadResult | None:
         layout = LAYOUTS.get(fact_type_key)
@@ -31,13 +34,39 @@ class ProjectFactIndex:
             return None
         key = (fact_type_key, object_id)
         if key not in self.cache:
+            remaining = None
+            if self.aggregate_budget_bytes is not None:
+                remaining = self.aggregate_budget_bytes - self.aggregate_bytes_read
+                if remaining <= 0:
+                    self.aggregate_budget_exhausted = True
+                    result = FactReadResult(
+                        layout.canonical_path(object_id),
+                        layout.carrier,
+                        "unavailable",
+                        None,
+                        None,
+                        (FactIssue("budget", "事实对象聚合读取预算已耗尽"),),
+                    )
+                    self.cache[key] = result
+                    self.base_cache[key] = result
+                    return result
             result = read_fact_object(
                 self.root,
                 layout,
                 schema,
                 object_id,
                 expected_common_dir=self.expected_common_dir,
+                max_bytes=MAX_FACT_BYTES if remaining is None else min(MAX_FACT_BYTES, remaining),
             )
+            if result.raw_byte_count is not None:
+                self.aggregate_bytes_read += result.raw_byte_count
+            if (
+                remaining is not None
+                and remaining < MAX_FACT_BYTES
+                and result.check_status == "unavailable"
+                and any(issue.category == "parse" and "读取预算" in issue.summary for issue in result.issues)
+            ):
+                self.aggregate_budget_exhausted = True
             self.cache[key] = result
             self.base_cache[key] = result
         return self.cache[key]
