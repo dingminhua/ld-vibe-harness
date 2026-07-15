@@ -12,7 +12,7 @@ from conftest import HELPER_EXECUTABLE, assert_common_response
 
 from ldvh.facts.models import FactIssue
 from ldvh.facts.repository import FactReadResult
-from ldvh.helper.operations import fact_creation_operation
+from ldvh.filesystem import AtomicWriteResult
 from ldvh.helper.service import handle_request
 
 
@@ -279,7 +279,7 @@ def test_create_fails_before_allocator_mutation_when_platform_durability_is_not_
 ) -> None:
     workspace, project = _fixture(tmp_path)
     basis = _prepare(workspace, project)
-    monkeypatch.setattr(fact_creation_operation, "durable_writes_enabled", lambda: False)
+    monkeypatch.setattr("ldvh.facts.creation_application.durable_writes_enabled", lambda: False)
 
     response = handle_request(
         "call",
@@ -484,7 +484,7 @@ def test_failed_write_back_read_rolls_back_file_but_never_reuses_id(tmp_path: Pa
     workspace, project = _fixture(tmp_path)
     basis = _prepare(workspace, project)
     monkeypatch.setattr(
-        "ldvh.helper.operations.fact_creation_operation.read_fact_object",
+        "ldvh.facts.creation_application.read_fact_object",
         lambda *args, **kwargs: FactReadResult(
             "facts/sparks/spark-0001.yaml",
             "yaml",
@@ -505,6 +505,37 @@ def test_failed_write_back_read_rolls_back_file_but_never_reuses_id(tmp_path: Pa
     assert response["changes"][0]["status"] == "rolled-back"
     assert not (project / "facts" / "sparks" / "spark-0001.yaml").exists()
     assert _prepare(workspace, project)["candidate_object_id"] == "spark-0002"
+
+
+def test_failed_write_back_reports_residue_when_exact_rollback_fails(tmp_path: Path, monkeypatch) -> None:
+    workspace, project = _fixture(tmp_path)
+    basis = _prepare(workspace, project)
+    monkeypatch.setattr(
+        "ldvh.facts.creation_application.read_fact_object",
+        lambda *args, **kwargs: FactReadResult(
+            "facts/sparks/spark-0001.yaml",
+            "yaml",
+            "invalid",
+            None,
+            None,
+            (FactIssue("carrier", "forced write-back failure"),),
+        ),
+    )
+    monkeypatch.setattr(
+        "ldvh.facts.creation_application.rollback_created_text",
+        lambda *args, **kwargs: AtomicWriteResult("unavailable", "uncertain", "unknown", "residue"),
+    )
+
+    response = handle_request(
+        "call",
+        "create-fact-object",
+        _create_payload(workspace, project, basis, _spark()),
+    ).response
+
+    assert response["outcome"] == "error"
+    assert response["changes"][0]["status"] == "rollback-failed"
+    assert response["changes"][0]["target"] == "facts/sparks/spark-0001.yaml"
+    assert (project / "facts/sparks/spark-0001.yaml").is_file()
 
 
 def test_create_study_validates_markdown_carrier_and_tracked_sources(tmp_path: Path) -> None:

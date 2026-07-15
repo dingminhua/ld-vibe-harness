@@ -7,26 +7,16 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from ldvh.facts.carriers.study_markdown import parse_study_markdown
-from ldvh.facts.carriers.yaml_object import parse_yaml_object
 from ldvh.facts.contracts import LAYOUTS
 from ldvh.facts.creation import (
     CreationBoundary,
-    allocate_object_id_locked,
-    allocation_lock,
-    atomic_create_text,
     candidate_object_id,
-    rollback_created_text,
     schema_fingerprint,
-    serialize_fact_object,
     worktree_fingerprint,
 )
+from ldvh.facts.creation_application import FactCreationCommand, create_fact_object
 from ldvh.facts.models import FactIssue
-from ldvh.facts.relations import ProjectFactIndex, validate_project_relations
-from ldvh.facts.repository import FactReadResult, read_fact_object
-from ldvh.facts.schema import FactSchema, project_fact_schemas
-from ldvh.facts.source_validation import validate_study_sources
-from ldvh.facts.validation import validate_fact_object
+from ldvh.facts.schema import project_fact_schemas
 from ldvh.filesystem import durable_writes_enabled
 from ldvh.governance.models import ObjectStatus
 from ldvh.governance.resolver import GovernanceResolutionRun, resolve_governance_scope
@@ -251,51 +241,6 @@ def _content(
     return dict(domain.fact_object), None, ()
 
 
-def _preflight(
-    boundary: CreationBoundary,
-    layout_key: str,
-    schemas: dict[str, FactSchema],
-    schema: FactSchema,
-    object_id: str,
-    supplied: dict[str, Any],
-    body: str | None,
-    now: str,
-) -> tuple[dict[str, Any], str, tuple[FactIssue, ...], bool]:
-    layout = LAYOUTS[layout_key]
-    fields = {
-        **supplied,
-        "object_id": object_id,
-        "fact_type_key": layout_key,
-        "created_at": now,
-        "updated_at": now,
-    }
-    text = serialize_fact_object(layout, fields, body)
-    parsed = parse_study_markdown(text) if layout.carrier == "markdown" else parse_yaml_object(text)
-    issues = list(parsed.issues)
-    if parsed.fields is None:
-        return fields, text, tuple(issues), False
-    issues.extend(validate_fact_object(layout_key, parsed.fields, schema))
-    if issues:
-        return fields, text, tuple(issues), False
-    read = FactReadResult(
-        layout.canonical_path(object_id), layout.carrier, "mechanically_valid", parsed.fields, parsed.body, ()
-    )
-    index = ProjectFactIndex(
-        boundary.worktree_root,
-        boundary.governed_project_id,
-        schemas,
-        boundary.git_common_dir,
-    )
-    index.cache[(layout_key, object_id)] = read
-    index.base_cache[(layout_key, object_id)] = read
-    relation_issues, relation_unavailable = validate_project_relations(index, layout_key, object_id, read)
-    source_issues: tuple[FactIssue, ...] = ()
-    source_unavailable = False
-    if layout_key == "study":
-        source_issues, source_unavailable = validate_study_sources(index, read)
-    return fields, text, (*relation_issues, *source_issues), relation_unavailable or source_unavailable
-
-
 def _issue_gap(issues: tuple[FactIssue, ...], scope: object) -> dict[str, Any]:
     summary = "; ".join(f"{issue.field_path + ': ' if issue.field_path else ''}{issue.summary}" for issue in issues)
     return {
@@ -388,19 +333,18 @@ def _create_execute(
             ),
         )
 
-    now = datetime.now().astimezone().isoformat()
-    candidate_fields, _, candidate_issues, candidate_unavailable = _preflight(
-        boundary,
-        basis.fact_type_key,
-        schemas,
-        schema,
-        basis.candidate_object_id,
-        supplied,
-        body,
-        now,
+    creation = create_fact_object(
+        FactCreationCommand(
+            boundary=boundary,
+            fact_type_key=basis.fact_type_key,
+            schemas=schemas,
+            schema=schema,
+            requested_candidate_id=basis.candidate_object_id,
+            supplied=supplied,
+            body=body,
+        )
     )
-    del candidate_fields
-    if candidate_unavailable:
+    if creation.status == "candidate_unavailable":
         return OperationExecution(
             outcome="unavailable",
             summary="创建前项目级机械检查未能完成",
@@ -408,9 +352,9 @@ def _create_execute(
             not_completed_scope=requested,
             governance_resolution=run.result.to_json() if run.result else None,
             sources=request_sources,
-            gaps=(_issue_gap(candidate_issues, requested[0]),),
+            gaps=(_issue_gap(creation.issues, requested[0]),),
         )
-    if candidate_issues:
+    if creation.status == "candidate_rejected":
         return OperationExecution(
             outcome="rejected",
             summary="AI 填写内容未通过当前事实类型机械检查",
@@ -418,10 +362,9 @@ def _create_execute(
             not_completed_scope=requested,
             governance_resolution=run.result.to_json() if run.result else None,
             sources=request_sources,
-            gaps=(_issue_gap(candidate_issues, requested[0]),),
+            gaps=(_issue_gap(creation.issues, requested[0]),),
         )
-
-    if not durable_writes_enabled():
+    if creation.status == "durability_unavailable":
         return OperationExecution(
             outcome="unavailable",
             summary="当前平台尚未获准以 file-only 耐久等级写入事实对象",
@@ -437,108 +380,58 @@ def _create_execute(
                 },
             ),
         )
-
-    layout = LAYOUTS[basis.fact_type_key]
-    allocation_consumed = False
-    actual_id: str | None = None
-    actual_fields: dict[str, Any] | None = None
-    actual_text: str | None = None
-    creation_result = None
-    with allocation_lock(boundary, layout) as counter_path:
-        for _ in range(16):
-            actual_id = allocate_object_id_locked(boundary, layout, counter_path)
-            if actual_id is None:
-                break
-            allocation_consumed = True
-            actual_fields, actual_text, issues, unavailable = _preflight(
-                boundary,
-                basis.fact_type_key,
-                schemas,
-                schema,
-                actual_id,
-                supplied,
-                body,
-                now,
-            )
-            if issues or unavailable:
-                status = "unavailable" if unavailable else "rejected"
-                return OperationExecution(
-                    outcome=status,  # type: ignore[arg-type]
-                    summary="最终身份分配后机械前置条件发生变化，未创建对象",
-                    requested_scope=requested,
-                    not_completed_scope=requested,
-                    governance_resolution=run.result.to_json() if run.result else None,
-                    sources=request_sources,
-                    changes=(
-                        {
-                            "summary": "顺序编号已消耗但未创建对象；编号不会复用",
-                            "status": "allocation-consumed",
-                            "target": actual_id,
-                            "source_refs": [_CREATE_CONTRACT],
-                        },
-                    ),
-                    gaps=(_issue_gap(issues, requested[0]),),
-                )
-            creation_result = atomic_create_text(boundary.worktree_root, layout, actual_id, actual_text)
-            if creation_result.outcome == "created" and creation_result.namespace_state == "committed":
-                break
-            if creation_result.outcome != "conflict":
-                actual_id = None
-                break
-            actual_id = None
-        if actual_id is None or actual_fields is None or actual_text is None:
-            return OperationExecution(
-                outcome="unavailable",
-                summary="无法在受控重试范围内取得可原子创建的事实对象身份",
-                requested_scope=requested,
-                not_completed_scope=requested,
-                governance_resolution=run.result.to_json() if run.result else None,
-                sources=request_sources,
-                changes=(
-                    {
-                        "summary": (
-                            "allocator 已推进；文件系统 namespace 提交状态不确定"
-                            if creation_result is not None and creation_result.namespace_state == "uncertain"
-                            else "allocator 可能已推进；没有创建事实对象"
-                        ),
-                        "status": (
-                            "namespace-uncertain"
-                            if creation_result is not None and creation_result.namespace_state == "uncertain"
-                            else "allocation-consumed"
-                            if allocation_consumed
-                            else "not-created"
-                        ),
-                        "target": basis.fact_type_key,
-                        "source_refs": [_CREATE_CONTRACT],
-                    },
-                ),
-            )
-
-    read = read_fact_object(
-        boundary.worktree_root,
-        layout,
-        schema,
-        actual_id,
-        expected_common_dir=boundary.git_common_dir,
-    )
-    post_issues: tuple[FactIssue, ...] = ()
-    post_unavailable = False
-    if read.check_status == "mechanically_valid" and read.fields is not None:
-        index = ProjectFactIndex(
-            boundary.worktree_root,
-            boundary.governed_project_id,
-            schemas,
-            boundary.git_common_dir,
+    if creation.status in {"final_rejected", "final_unavailable"}:
+        assert creation.actual_id is not None
+        return OperationExecution(
+            outcome="unavailable" if creation.status == "final_unavailable" else "rejected",
+            summary="最终身份分配后机械前置条件发生变化，未创建对象",
+            requested_scope=requested,
+            not_completed_scope=requested,
+            governance_resolution=run.result.to_json() if run.result else None,
+            sources=request_sources,
+            changes=(
+                {
+                    "summary": "顺序编号已消耗但未创建对象；编号不会复用",
+                    "status": "allocation-consumed",
+                    "target": creation.actual_id,
+                    "source_refs": [_CREATE_CONTRACT],
+                },
+            ),
+            gaps=(_issue_gap(creation.issues, requested[0]),),
         )
-        index.cache[(basis.fact_type_key, actual_id)] = read
-        index.base_cache[(basis.fact_type_key, actual_id)] = read
-        post_issues, post_unavailable = validate_project_relations(index, basis.fact_type_key, actual_id, read)
-        if basis.fact_type_key == "study":
-            source_issues, source_unavailable = validate_study_sources(index, read)
-            post_issues = (*post_issues, *source_issues)
-            post_unavailable = post_unavailable or source_unavailable
-    if read.check_status != "mechanically_valid" or post_issues or post_unavailable:
-        rollback = rollback_created_text(boundary.worktree_root, layout, actual_id, actual_text)
+    if creation.status == "allocation_unavailable":
+        write = creation.creation_result
+        return OperationExecution(
+            outcome="unavailable",
+            summary="无法在受控重试范围内取得可原子创建的事实对象身份",
+            requested_scope=requested,
+            not_completed_scope=requested,
+            governance_resolution=run.result.to_json() if run.result else None,
+            sources=request_sources,
+            changes=(
+                {
+                    "summary": (
+                        "allocator 已推进；文件系统 namespace 提交状态不确定"
+                        if write is not None and write.namespace_state == "uncertain"
+                        else "allocator 可能已推进；没有创建事实对象"
+                    ),
+                    "status": (
+                        "namespace-uncertain"
+                        if write is not None and write.namespace_state == "uncertain"
+                        else "allocation-consumed"
+                        if creation.allocation_consumed
+                        else "not-created"
+                    ),
+                    "target": basis.fact_type_key,
+                    "source_refs": [_CREATE_CONTRACT],
+                },
+            ),
+        )
+    layout = LAYOUTS[basis.fact_type_key]
+    if creation.status == "readback_failed":
+        assert creation.actual_id is not None
+        rollback = creation.rollback_result
+        assert rollback is not None
         rolled_back = rollback.outcome == "removed" and rollback.namespace_state == "committed"
         return OperationExecution(
             outcome="error",
@@ -552,12 +445,20 @@ def _create_execute(
                 {
                     "summary": "新对象已删除回滚" if rolled_back else "新对象仍残留且未完成验证",
                     "status": "rolled-back" if rolled_back else "rollback-failed",
-                    "target": layout.canonical_path(actual_id),
+                    "target": layout.canonical_path(creation.actual_id),
                     "source_refs": [_CREATE_CONTRACT],
                 },
             ),
-            gaps=(_issue_gap((*read.issues, *post_issues), requested[0]),),
+            gaps=(_issue_gap(creation.issues, requested[0]),),
         )
+
+    assert creation.status == "created"
+    actual_id = creation.actual_id
+    read = creation.read
+    creation_result = creation.creation_result
+    assert actual_id is not None
+    assert read is not None
+    assert creation_result is not None
 
     actual_ref = {
         "governed_project_id": boundary.governed_project_id,
