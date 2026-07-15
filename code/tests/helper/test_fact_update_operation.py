@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import json
+import os
+import stat
 import subprocess
+import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -12,6 +15,8 @@ from ldvh.facts.models import FactIssue
 from ldvh.facts.repository import FactReadResult
 from ldvh.helper.operations import fact_update_operation
 from ldvh.helper.service import handle_request
+
+HELPER_EXECUTABLE = Path(sys.executable).with_name("ldvh")
 
 
 def _git(project: Path, *arguments: str) -> None:
@@ -256,6 +261,90 @@ def test_concurrent_updates_with_one_fingerprint_have_one_winner(tmp_path: Path)
     assert sorted(response["outcome"] for response in responses) == ["ok", "rejected"]
     final = _read(workspace, project)
     assert final["fact_object"]["summary"] in {"First contender", "Second contender"}
+
+
+def test_update_reports_committed_namespace_when_directory_sync_fails(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    workspace, project, fact = _fixture(tmp_path)
+    before = _read(workspace, project)
+    target = _mutable(before)
+    target["summary"] = "Committed despite directory sync failure"
+    real_fsync = os.fsync
+    target_directory = fact.parent
+
+    def fail_directory_sync(descriptor: int) -> None:
+        observation = os.fstat(descriptor)
+        if stat.S_ISDIR(observation.st_mode) and (observation.st_dev, observation.st_ino) == (
+            target_directory.stat().st_dev,
+            target_directory.stat().st_ino,
+        ):
+            raise OSError("directory sync failed")
+        real_fsync(descriptor)
+
+    monkeypatch.setattr("ldvh.filesystem.os.fsync", fail_directory_sync)
+    response = handle_request(
+        "call",
+        "update-fact-object",
+        _update_payload(workspace, project, before["content_fingerprint"], target),
+    ).response
+
+    assert response["outcome"] == "ok"
+    assert response["changes"][0]["status"] == "updated"
+    assert "durability=unknown" in response["changes"][0]["summary"]
+    assert "Committed despite directory sync failure" in fact.read_text(encoding="utf-8")
+
+
+def test_update_fails_before_lock_or_file_mutation_when_platform_durability_is_not_approved(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    workspace, project, fact = _fixture(tmp_path)
+    before = _read(workspace, project)
+    target = _mutable(before)
+    target["summary"] = "Must not be written"
+    original = fact.read_bytes()
+    monkeypatch.setattr(fact_update_operation, "durable_writes_enabled", lambda: False)
+
+    response = handle_request(
+        "call",
+        "update-fact-object",
+        _update_payload(workspace, project, before["content_fingerprint"], target),
+    ).response
+
+    assert response["outcome"] == "unavailable"
+    assert "file-only" in response["summary"]
+    assert not (project / ".git/ldvh").exists()
+    assert fact.read_bytes() == original
+
+
+def test_independent_process_updates_with_one_fingerprint_have_one_winner(tmp_path: Path) -> None:
+    workspace, project, _ = _fixture(tmp_path)
+    before = _read(workspace, project)
+    payloads: list[str] = []
+    for summary in ("First process", "Second process"):
+        target = _mutable(before)
+        target["summary"] = summary
+        payloads.append(_update_payload(workspace, project, before["content_fingerprint"], target))
+
+    def run(payload: str) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            [str(HELPER_EXECUTABLE), "call", "update-fact-object"],
+            cwd=project,
+            input=payload,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        completed = tuple(executor.map(run, payloads))
+
+    assert all(item.stderr == "" for item in completed)
+    assert sorted(json.loads(item.stdout)["outcome"] for item in completed) == ["ok", "rejected"]
+    final = _read(workspace, project)
+    assert final["fact_object"]["summary"] in {"First process", "Second process"}
 
 
 def test_update_rejects_managed_fields_and_terminal_reopen(tmp_path: Path) -> None:

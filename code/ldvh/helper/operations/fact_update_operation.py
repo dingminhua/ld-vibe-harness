@@ -17,6 +17,7 @@ from ldvh.facts.schema import FactSchema, project_fact_schemas
 from ldvh.facts.transitions import validate_fact_transition
 from ldvh.facts.update import atomic_replace_text_if_unchanged
 from ldvh.facts.validation import validate_fact_object
+from ldvh.filesystem import durable_writes_enabled
 from ldvh.governance.resolver import GovernanceResolutionRun, resolve_governance_scope
 from ldvh.helper.operation_runtime import (
     AvailabilityEvaluation,
@@ -278,6 +279,22 @@ def _execute(
             (f"AI 不得填写 Code 托管字段: {', '.join(managed)}",),
             sources=(_CONTRACT,),
         )
+    if not durable_writes_enabled():
+        return OperationExecution(
+            outcome="unavailable",
+            summary="当前平台尚未获准以 file-only 耐久等级更新事实对象",
+            requested_scope=requested,
+            not_completed_scope=requested,
+            governance_resolution=run.result.to_json() if run.result else None,
+            sources=request_sources,
+            gaps=(
+                {
+                    "summary": "未创建锁状态或替换事实文件；需先决定是否接受 Windows file-only 耐久降级",
+                    "scope": list(requested),
+                    "source_refs": [_CONTRACT],
+                },
+            ),
+        )
 
     with allocation_lock(boundary, layout):
         current = _current_read(
@@ -375,18 +392,22 @@ def _execute(
             current.raw_text,
             candidate_text,
         )
-        if replacement != "replaced":
-            outcome = "rejected" if replacement == "conflict" else "unavailable"
+        if replacement.outcome != "replaced" or replacement.namespace_state != "committed":
+            outcome = "rejected" if replacement.outcome == "conflict" else "unavailable"
             return OperationExecution(
                 outcome=outcome,  # type: ignore[arg-type]
-                summary="原子替换前对象发生变化" if replacement == "conflict" else "原子替换技术条件不成立",
+                summary=("原子替换前对象发生变化" if replacement.outcome == "conflict" else "原子替换技术条件不成立"),
                 requested_scope=requested,
                 not_completed_scope=requested,
                 governance_resolution=run.result.to_json() if run.result else None,
                 sources=(*request_sources, _IMPLEMENTATION_SOURCE),
                 gaps=(
                     {
-                        "summary": "未写入；重新精确读取当前对象后再形成更新请求",
+                        "summary": (
+                            "namespace 提交状态不确定；必须重新精确读取当前对象"
+                            if replacement.namespace_state == "uncertain"
+                            else "未提交写入；重新精确读取当前对象后再形成更新请求"
+                        ),
                         "scope": list(requested),
                         "source_refs": [_CONTRACT],
                     },
@@ -400,7 +421,7 @@ def _execute(
             reference.object_id,
         )
         if readback.check_status != "mechanically_valid" or readback.fields is None:
-            rolled_back = atomic_replace_text_if_unchanged(
+            rollback = atomic_replace_text_if_unchanged(
                 boundary.worktree_root,
                 layout,
                 reference.object_id,
@@ -409,15 +430,27 @@ def _execute(
             )
             return OperationExecution(
                 outcome="error",
-                summary="写后回读未通过；已回滚" if rolled_back == "replaced" else "写后回读未通过且无法安全回滚",
+                summary=(
+                    "写后回读未通过；已回滚"
+                    if rollback.outcome == "replaced" and rollback.namespace_state == "committed"
+                    else "写后回读未通过且无法安全回滚"
+                ),
                 requested_scope=requested,
                 not_completed_scope=requested,
                 governance_resolution=run.result.to_json() if run.result else None,
                 sources=(*request_sources, _IMPLEMENTATION_SOURCE),
                 changes=(
                     {
-                        "summary": "已恢复更新前载体" if rolled_back == "replaced" else "新载体可能残留且未完成验证",
-                        "status": "rolled-back" if rolled_back == "replaced" else "rollback-failed",
+                        "summary": (
+                            "已恢复更新前载体"
+                            if rollback.outcome == "replaced" and rollback.namespace_state == "committed"
+                            else "新载体可能残留且未完成验证"
+                        ),
+                        "status": (
+                            "rolled-back"
+                            if rollback.outcome == "replaced" and rollback.namespace_state == "committed"
+                            else "rollback-failed"
+                        ),
                         "target": reference.to_json(),
                         "source_refs": [_CONTRACT],
                     },
@@ -449,7 +482,9 @@ def _execute(
         sources=sources,
         changes=(
             {
-                "summary": "已原子替换并回读事实对象",
+                "summary": (
+                    f"已原子替换并回读事实对象（durability={replacement.durability}, cleanup={replacement.cleanup}）"
+                ),
                 "status": "updated",
                 "target": reference.to_json(),
                 "source_refs": [working_tree_source],
@@ -457,7 +492,11 @@ def _execute(
         ),
         verification=(
             {
-                "check": "旧内容指纹、完整目标、转换边界、原子替换和写后机械读取已通过",
+                "check": (
+                    "旧内容指纹、完整目标、转换边界、原子替换和写后机械读取已通过；"
+                    f"namespace={replacement.namespace_state}, durability={replacement.durability}, "
+                    f"cleanup={replacement.cleanup}"
+                ),
                 "status": "passed",
                 "scope": list(requested),
                 "evidence": [working_tree_source, _CONTRACT],
@@ -473,6 +512,18 @@ def _check_availability(
 ) -> AvailabilityEvaluation:
     domain = _validated_request(request, context)
     requested = domain.fact_ref.to_json()
+    if not durable_writes_enabled():
+        return AvailabilityEvaluation(
+            availability="unavailable_for_request",
+            unavailable_scope=(requested,),
+            gaps=(
+                {
+                    "summary": "当前平台尚未获准以 file-only 耐久等级更新事实对象",
+                    "scope": [requested],
+                    "source_refs": [_CONTRACT],
+                },
+            ),
+        )
     run = _governance(domain)
     boundary = _boundary(run)
     schemas = project_fact_schemas(repository)

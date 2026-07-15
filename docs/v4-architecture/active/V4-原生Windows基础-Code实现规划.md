@@ -20,7 +20,7 @@
 1. `facts.creation` 顶层导入 `fcntl`，Windows 连 `ldvh capabilities` 都无法导入。
 2. 创建、读取和更新路径直接依赖 `O_DIRECTORY`、`O_NOFOLLOW`、`dir_fd` 及目录 `fsync`。
 3. 多处仅拒绝符号链接，没有统一拒绝 Windows junction/reparse point。
-4. 现有 update 的读后替换不是跨进程条件写入，需补真正的单赢家证据。
+4. update 只承诺同一 common-dir、同一类型锁内的 LDVH 受控入口跨进程单赢家；不承诺对外部编辑器或跨 clone 的线性化 CAS，需分别固化证据与披露。
 5. Windows 的目录耐久性、共享冲突、盘符/UNC/大小写和 Git linked worktree 尚无原生证据。
 6. Codex hook 固定使用 `python3` 与 POSIX shell，不能自动纳入核心 CLI 的 Windows 结论。
 
@@ -49,7 +49,7 @@
 1. **候选级已完成**：建立平台文件系统边界，延迟加载 `fcntl`，集中锁和 reparse 判定。
 2. **候选级已完成**：迁移安全读取路径，统一拒绝 link/reparse，并建立 fail-closed 行为。
 3. **候选级已完成**：迁移 ID 分配锁，证明 POSIX 不回退并构造 Windows 候选并发语义。
-4. 分离 POSIX/Windows 原子创建与条件替换，定义目录耐久性边界。
+4. **候选级已完成**：分离 POSIX/Windows 原子创建与条件替换，定义目录耐久性边界。
 5. 建立 Windows 路径、进程、Git linked worktree 的候选测试矩阵。
 6. 单独审核 Codex 适配器的解释器与 shell 边界；未闭合前不得宣称适配器支持 Windows。
 7. 在原生 Windows 上执行并固化证据。
@@ -61,12 +61,15 @@
 
 第 3 切片的当前证据：POSIX 上 4 个独立解释器的临界区保持单并发，持锁进程被终止后锁可恢复；6 个并发 allocator 形成连续且唯一的 ID，main/linked worktree 共用 Git common-dir counter；损坏 counter fail-closed。fake `msvcrt` 证明 offset 0、固定 1-byte、`LK_LOCK`/`LK_UNLCK` 及 descriptor 异常清理。静态检查通过，定向测试 33 个通过，完整测试集 616 个通过。Windows CRT `LK_LOCK` 固定约 10 秒重试上限及当前通用错误映射仍须原生验证；锁目录安全打开、counter 替换和目录耐久性归入第 4 切片。空 lock 文件按官方语义允许锁定 EOF 之后的字节，文件保持持久且不截断、不替换、不删除。
 
+第 4 切片的当前证据：lock/counter/fact 父路径和最终文件统一拒绝 link/reparse；POSIX 保留 `openat`、`O_NOFOLLOW`、hard-link no-overwrite、原子 replace、文件与目录 `fsync`。新建事实目录保持 `0755`，allocator 私有状态目录保持 `0700`；每级新目录 entry 均先同步其父目录，create 的最终目录同步覆盖“目标发布 + 临时名清理”，因此只有完成该边界才报告 `file_and_directory`。写结果显式记录 namespace 提交点、耐久等级与 cleanup residue，提交后同步或清理失败不再误报“未写入”。独立进程 update 在同一 LDVH 类型锁内形成单赢家；外部不协作写入仍不宣称线性化 CAS。Windows 候选分支绕开 `dir_fd`/`O_DIRECTORY`/`O_NOFOLLOW` 及 POSIX read backend，以本地同目录 hard-link/replace 形成 `file_only` 候选；公开 Windows 写入在 Human 接受该降级前于创建锁状态之前 fail-closed。静态检查通过，定向测试 56 个通过，独立进程单赢家连续 20 次重复通过，完整测试集 644 个通过。原生 NTFS 的 hard-link、replace、sharing violation、ACL/ADS 和终止恢复仍待验证。
+
 ## 6. 验证矩阵
 
 ### 6.1 当前 macOS 可验证
 
 - 不存在 `fcntl` 时 CLI 模块仍可导入；
 - POSIX 锁正常互斥且异常路径释放 descriptor；
+- POSIX 写入的 namespace 提交点、目录耐久性和 cleanup 失败可区分；
 - reparse 属性由统一函数识别；
 - 现有事实创建、读取、更新、普通安装和全量回归不退化；
 - 用 fake/mock 构造 Windows 分支只能标记为候选证据。
@@ -88,5 +91,5 @@
 - 首发只承诺本地 NTFS，还是同时承诺 UNC；当前默认 UNC 无证据即 fail-closed。
 - 首发 Windows 范围只含核心 CLI，还是同时含 Codex 适配器。
 - 原生 Windows runner/VM 的来源与授权。
-- 是否接受 Windows 无目录 `fsync` 时明确披露的耐久性降级。
+- 是否接受 Windows 无目录 `fsync` 时明确披露的 `file_only` 耐久性降级；作出决定前 Windows 事实写入保持 fail-closed。
 - 最终发布矩阵与三平台 CI 的触发策略。

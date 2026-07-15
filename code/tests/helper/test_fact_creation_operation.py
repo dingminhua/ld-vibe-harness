@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import os
+import stat
 import subprocess
 import sys
 from concurrent.futures import ThreadPoolExecutor
@@ -11,6 +13,7 @@ from conftest import assert_common_response
 
 from ldvh.facts.models import FactIssue
 from ldvh.facts.repository import FactReadResult
+from ldvh.helper.operations import fact_creation_operation
 from ldvh.helper.service import handle_request
 
 HELPER_EXECUTABLE = Path(sys.executable).with_name("ldvh")
@@ -237,6 +240,60 @@ def test_prepare_has_no_canonical_side_effect_and_create_injects_managed_fields(
     assert fact_object["fact_type_key"] == "spark"
     assert fact_object["created_at"] == fact_object["updated_at"]
     assert (project / response["result"]["canonical_path"]).is_file()
+
+
+def test_create_reports_committed_namespace_when_directory_sync_fails(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    workspace, project = _fixture(tmp_path)
+    basis = _prepare(workspace, project)
+    real_fsync = os.fsync
+    target_directory = project / "facts/sparks"
+
+    def fail_directory_sync(descriptor: int) -> None:
+        observation = os.fstat(descriptor)
+        if (
+            stat.S_ISDIR(observation.st_mode)
+            and target_directory.exists()
+            and (observation.st_dev, observation.st_ino)
+            == (target_directory.stat().st_dev, target_directory.stat().st_ino)
+        ):
+            raise OSError("directory sync failed")
+        real_fsync(descriptor)
+
+    monkeypatch.setattr("ldvh.filesystem.os.fsync", fail_directory_sync)
+
+    response = handle_request(
+        "call",
+        "create-fact-object",
+        _create_payload(workspace, project, basis, _spark()),
+    ).response
+
+    assert response["outcome"] == "ok"
+    assert response["changes"][0]["status"] == "created"
+    assert "durability=unknown" in response["changes"][0]["summary"]
+    assert (project / "facts/sparks/spark-0001.yaml").is_file()
+
+
+def test_create_fails_before_allocator_mutation_when_platform_durability_is_not_approved(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    workspace, project = _fixture(tmp_path)
+    basis = _prepare(workspace, project)
+    monkeypatch.setattr(fact_creation_operation, "durable_writes_enabled", lambda: False)
+
+    response = handle_request(
+        "call",
+        "create-fact-object",
+        _create_payload(workspace, project, basis, _spark()),
+    ).response
+
+    assert response["outcome"] == "unavailable"
+    assert "file-only" in response["summary"]
+    assert not (project / ".git/ldvh").exists()
+    assert not (project / "facts").exists()
 
 
 def test_two_ai_drafts_with_same_candidate_receive_distinct_final_ids(tmp_path: Path) -> None:

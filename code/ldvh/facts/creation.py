@@ -2,11 +2,8 @@
 
 from __future__ import annotations
 
-import errno
 import hashlib
 import json
-import os
-import secrets
 from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -18,7 +15,15 @@ from ruamel.yaml import YAML
 from ldvh.facts.contracts import FactTypeLayout
 from ldvh.facts.repository import _git
 from ldvh.facts.schema import FactSchema
-from ldvh.filesystem import exclusive_file_lock, safe_list_directory
+from ldvh.filesystem import (
+    AtomicWriteResult,
+    atomic_create_relative,
+    atomic_store_relative,
+    exclusive_relative_file_lock,
+    remove_relative_if_equal,
+    safe_list_directory,
+    safe_read_relative,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -85,26 +90,31 @@ def _allocator_key(boundary: CreationBoundary, layout: FactTypeLayout) -> str:
     return f"{project_hash}-{layout.fact_type_key}"
 
 
-def _allocator_paths(boundary: CreationBoundary, layout: FactTypeLayout) -> tuple[Path, Path]:
-    state = boundary.git_common_dir / "ldvh" / "fact-id-allocators"
+def _allocator_relative_paths(boundary: CreationBoundary, layout: FactTypeLayout) -> tuple[Path, Path]:
+    state = Path("ldvh") / "fact-id-allocators"
     key = _allocator_key(boundary, layout)
     return state / f"{key}.lock", state / f"{key}.counter"
 
 
-def _read_counter(path: Path) -> int | None:
+def _allocator_paths(boundary: CreationBoundary, layout: FactTypeLayout) -> tuple[Path, Path]:
+    lock_path, counter_path = _allocator_relative_paths(boundary, layout)
+    return boundary.git_common_dir / lock_path, boundary.git_common_dir / counter_path
+
+
+def _read_counter(root: Path, relative_path: Path) -> int | None:
     try:
-        raw = path.read_text(encoding="ascii").strip()
+        raw = safe_read_relative(root, relative_path).decode("ascii").strip()
     except FileNotFoundError:
         return 0
-    except OSError:
+    except (OSError, UnicodeError):
         return None
     return int(raw) if raw.isdigit() else None
 
 
 def candidate_object_id(boundary: CreationBoundary, layout: FactTypeLayout) -> str | None:
     visible = _max_visible_id(boundary, layout)
-    _, counter_path = _allocator_paths(boundary, layout)
-    counter = _read_counter(counter_path)
+    _, counter_path = _allocator_relative_paths(boundary, layout)
+    counter = _read_counter(boundary.git_common_dir, counter_path)
     if visible is None or counter is None:
         return None
     return f"{layout.fact_type_key}-{max(visible, counter) + 1:04d}"
@@ -112,8 +122,8 @@ def candidate_object_id(boundary: CreationBoundary, layout: FactTypeLayout) -> s
 
 @contextmanager
 def allocation_lock(boundary: CreationBoundary, layout: FactTypeLayout) -> Iterator[Path]:
-    lock_path, counter_path = _allocator_paths(boundary, layout)
-    with exclusive_file_lock(lock_path):
+    lock_path, counter_path = _allocator_relative_paths(boundary, layout)
+    with exclusive_relative_file_lock(boundary.git_common_dir, lock_path):
         yield counter_path
 
 
@@ -122,25 +132,22 @@ def allocate_object_id_locked(
     layout: FactTypeLayout,
     counter_path: Path,
 ) -> str | None:
+    if counter_path != _allocator_relative_paths(boundary, layout)[1]:
+        return None
     visible = _max_visible_id(boundary, layout)
-    counter = _read_counter(counter_path)
+    counter = _read_counter(boundary.git_common_dir, counter_path)
     if visible is None or counter is None:
         return None
     allocated = max(visible, counter) + 1
-    temporary = counter_path.with_name(f".{counter_path.name}.{secrets.token_hex(8)}.tmp")
-    descriptor = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    payload = f"{allocated}\n".encode("ascii")
+    stored = atomic_store_relative(boundary.git_common_dir, counter_path, payload)
+    if stored.namespace_state != "committed":
+        return None
     try:
-        os.write(descriptor, f"{allocated}\n".encode("ascii"))
-        os.fsync(descriptor)
-    finally:
-        os.close(descriptor)
-    os.replace(temporary, counter_path)
-    directory_fd = os.open(counter_path.parent, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
-    try:
-        os.fsync(directory_fd)
-    finally:
-        os.close(directory_fd)
-    return f"{layout.fact_type_key}-{allocated:04d}"
+        observed = safe_read_relative(boundary.git_common_dir, counter_path)
+    except OSError:
+        return None
+    return f"{layout.fact_type_key}-{allocated:04d}" if observed == payload else None
 
 
 def serialize_fact_object(layout: FactTypeLayout, fields: dict[str, object], body: str | None) -> str:
@@ -158,88 +165,17 @@ def serialize_fact_object(layout: FactTypeLayout, fields: dict[str, object], bod
     return frontmatter
 
 
-def _open_creation_directory(root: Path, layout: FactTypeLayout) -> int:
-    descriptor = os.open(root, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
-    try:
-        for segment in Path(layout.directory).parts:
-            try:
-                os.mkdir(segment, mode=0o755, dir_fd=descriptor)
-            except FileExistsError:
-                pass
-            next_descriptor = os.open(
-                segment,
-                os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
-                dir_fd=descriptor,
-            )
-            os.close(descriptor)
-            descriptor = next_descriptor
-        return descriptor
-    except Exception:
-        os.close(descriptor)
-        raise
+def atomic_create_text(root: Path, layout: FactTypeLayout, object_id: str, text: str) -> AtomicWriteResult:
+    return atomic_create_relative(root, layout.canonical_path(object_id), text.encode("utf-8"))
 
 
-def atomic_create_text(root: Path, layout: FactTypeLayout, object_id: str, text: str) -> bool:
-    directory_fd = _open_creation_directory(root, layout)
-    temporary_name = f".ldvh-create-{secrets.token_hex(12)}.tmp"
-    target_name = f"{object_id}{layout.suffix}"
-    temporary_fd: int | None = None
-    try:
-        temporary_fd = os.open(
-            temporary_name,
-            os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
-            0o600,
-            dir_fd=directory_fd,
-        )
-        payload = text.encode("utf-8")
-        offset = 0
-        while offset < len(payload):
-            offset += os.write(temporary_fd, payload[offset:])
-        os.fsync(temporary_fd)
-        os.close(temporary_fd)
-        temporary_fd = None
-        try:
-            os.link(
-                temporary_name,
-                target_name,
-                src_dir_fd=directory_fd,
-                dst_dir_fd=directory_fd,
-                follow_symlinks=False,
-            )
-        except FileExistsError:
-            return False
-        os.fsync(directory_fd)
-        return True
-    finally:
-        if temporary_fd is not None:
-            os.close(temporary_fd)
-        try:
-            os.unlink(temporary_name, dir_fd=directory_fd)
-        except FileNotFoundError:
-            pass
-        os.close(directory_fd)
-
-
-def rollback_created_text(root: Path, layout: FactTypeLayout, object_id: str, expected_text: str) -> bool:
-    directory_fd = _open_creation_directory(root, layout)
-    target_name = f"{object_id}{layout.suffix}"
-    try:
-        descriptor = os.open(target_name, os.O_RDONLY | os.O_NOFOLLOW, dir_fd=directory_fd)
-        try:
-            observed = os.read(descriptor, len(expected_text.encode("utf-8")) + 1)
-        finally:
-            os.close(descriptor)
-        if observed != expected_text.encode("utf-8"):
-            return False
-        os.unlink(target_name, dir_fd=directory_fd)
-        os.fsync(directory_fd)
-        return True
-    except OSError as error:
-        if error.errno in {errno.ENOENT, errno.ELOOP, errno.ENOTDIR}:
-            return False
-        return False
-    finally:
-        os.close(directory_fd)
+def rollback_created_text(
+    root: Path,
+    layout: FactTypeLayout,
+    object_id: str,
+    expected_text: str,
+) -> AtomicWriteResult:
+    return remove_relative_if_equal(root, layout.canonical_path(object_id), expected_text.encode("utf-8"))
 
 
 __all__ = [

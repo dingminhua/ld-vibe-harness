@@ -27,6 +27,7 @@ from ldvh.facts.repository import FactReadResult, read_fact_object
 from ldvh.facts.schema import FactSchema, project_fact_schemas
 from ldvh.facts.source_validation import validate_study_sources
 from ldvh.facts.validation import validate_fact_object
+from ldvh.filesystem import durable_writes_enabled
 from ldvh.governance.models import ObjectStatus
 from ldvh.governance.resolver import GovernanceResolutionRun, resolve_governance_scope
 from ldvh.helper.operation_runtime import (
@@ -420,11 +421,29 @@ def _create_execute(
             gaps=(_issue_gap(candidate_issues, requested[0]),),
         )
 
+    if not durable_writes_enabled():
+        return OperationExecution(
+            outcome="unavailable",
+            summary="当前平台尚未获准以 file-only 耐久等级写入事实对象",
+            requested_scope=requested,
+            not_completed_scope=requested,
+            governance_resolution=run.result.to_json() if run.result else None,
+            sources=request_sources,
+            gaps=(
+                {
+                    "summary": "未创建 allocator 状态或事实文件；需先决定是否接受 Windows file-only 耐久降级",
+                    "scope": list(requested),
+                    "source_refs": [_CREATE_CONTRACT],
+                },
+            ),
+        )
+
     layout = LAYOUTS[basis.fact_type_key]
     allocation_consumed = False
     actual_id: str | None = None
     actual_fields: dict[str, Any] | None = None
     actual_text: str | None = None
+    creation_result = None
     with allocation_lock(boundary, layout) as counter_path:
         for _ in range(16):
             actual_id = allocate_object_id_locked(boundary, layout, counter_path)
@@ -460,7 +479,11 @@ def _create_execute(
                     ),
                     gaps=(_issue_gap(issues, requested[0]),),
                 )
-            if atomic_create_text(boundary.worktree_root, layout, actual_id, actual_text):
+            creation_result = atomic_create_text(boundary.worktree_root, layout, actual_id, actual_text)
+            if creation_result.outcome == "created" and creation_result.namespace_state == "committed":
+                break
+            if creation_result.outcome != "conflict":
+                actual_id = None
                 break
             actual_id = None
         if actual_id is None or actual_fields is None or actual_text is None:
@@ -473,8 +496,18 @@ def _create_execute(
                 sources=request_sources,
                 changes=(
                     {
-                        "summary": "allocator 可能已推进；没有创建事实对象",
-                        "status": "allocation-consumed" if allocation_consumed else "not-created",
+                        "summary": (
+                            "allocator 已推进；文件系统 namespace 提交状态不确定"
+                            if creation_result is not None and creation_result.namespace_state == "uncertain"
+                            else "allocator 可能已推进；没有创建事实对象"
+                        ),
+                        "status": (
+                            "namespace-uncertain"
+                            if creation_result is not None and creation_result.namespace_state == "uncertain"
+                            else "allocation-consumed"
+                            if allocation_consumed
+                            else "not-created"
+                        ),
                         "target": basis.fact_type_key,
                         "source_refs": [_CREATE_CONTRACT],
                     },
@@ -505,7 +538,8 @@ def _create_execute(
             post_issues = (*post_issues, *source_issues)
             post_unavailable = post_unavailable or source_unavailable
     if read.check_status != "mechanically_valid" or post_issues or post_unavailable:
-        rolled_back = rollback_created_text(boundary.worktree_root, layout, actual_id, actual_text)
+        rollback = rollback_created_text(boundary.worktree_root, layout, actual_id, actual_text)
+        rolled_back = rollback.outcome == "removed" and rollback.namespace_state == "committed"
         return OperationExecution(
             outcome="error",
             summary="写后回读未通过；已回滚" if rolled_back else "写后回读未通过且无法安全回滚",
@@ -544,6 +578,7 @@ def _create_execute(
         _IMPLEMENTATION_SOURCE,
     )
     assert read.fields is not None
+    assert creation_result is not None
     result_object: dict[str, Any] = (
         {"frontmatter": read.fields, "body": read.body or ""} if layout.carrier == "markdown" else read.fields
     )
@@ -563,7 +598,10 @@ def _create_execute(
         sources=sources,
         changes=(
             {
-                "summary": "已原子创建并回读事实对象",
+                "summary": (
+                    "已原子创建并回读事实对象"
+                    f"（durability={creation_result.durability}, cleanup={creation_result.cleanup}）"
+                ),
                 "status": "created",
                 "target": actual_ref,
                 "source_refs": [working_tree_source],
@@ -571,7 +609,11 @@ def _create_execute(
         ),
         verification=(
             {
-                "check": "写后读取、派生 Schema、身份、引用和关系机械检查已通过",
+                "check": (
+                    "写后读取、派生 Schema、身份、引用和关系机械检查已通过；"
+                    f"namespace={creation_result.namespace_state}, durability={creation_result.durability}, "
+                    f"cleanup={creation_result.cleanup}"
+                ),
                 "status": "passed",
                 "scope": [actual_ref],
                 "evidence": [working_tree_source, _CREATE_CONTRACT],
@@ -609,6 +651,19 @@ def _create_availability(
     context: OperationExecutionContext,
 ) -> AvailabilityEvaluation:
     domain = _validated_create(request, context)
+    if not durable_writes_enabled():
+        requested = (domain.draft_basis.to_json(),)
+        return AvailabilityEvaluation(
+            availability="unavailable_for_request",
+            unavailable_scope=requested,
+            gaps=(
+                {
+                    "summary": "当前平台尚未获准以 file-only 耐久等级写入事实对象",
+                    "scope": list(requested),
+                    "source_refs": [_CREATE_CONTRACT],
+                },
+            ),
+        )
     run = _governance(domain)
     boundary = _boundary(run)
     schemas = project_fact_schemas(repository)
