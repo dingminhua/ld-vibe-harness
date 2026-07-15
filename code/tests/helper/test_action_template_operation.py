@@ -25,7 +25,7 @@ def _request(*keys: str, disclosure: str | None = None) -> CommonRequest:
     )
 
 
-def test_candidate_operation_discovers_five_real_templates_in_stable_order(
+def test_candidate_operation_discovers_four_real_templates_in_stable_order(
     current_specs_repository: Path,
 ) -> None:
     repository = inspect_repository(current_specs_repository)
@@ -44,7 +44,6 @@ def test_candidate_operation_discovers_five_real_templates_in_stable_order(
             "environment-integration-installation-verification",
             "fact-object-controlled-creation",
             "fact-object-lifecycle-change",
-            "fact-object-source-reconstruction-migration",
             "git-commit",
         )
     )
