@@ -2,9 +2,9 @@ from pathlib import Path
 
 import pytest
 
+from ldvh.filesystem import safe_read_relative
 from ldvh.specs.markdown import (
     Heading,
-    _read_bytes_portable,
     parse_markdown,
     parse_markdown_bytes,
     parse_table_after_heading,
@@ -87,8 +87,8 @@ def test_portable_reader_rejects_symlink_component(tmp_path: Path) -> None:
         link.symlink_to(real, target_is_directory=True)
     except OSError:
         pytest.skip("symlinks are unavailable")
-    with pytest.raises(OSError, match="symlink or reparse"):
-        _read_bytes_portable(link / "file.md", tmp_path, Path("linked/file.md"))
+    with pytest.raises(OSError, match="symbolic link or reparse"):
+        safe_read_relative(tmp_path, Path("linked/file.md"), platform_name="nt")
 
 
 def test_requires_first_line_unique_h1_and_fixed_yaml_position(tmp_path: Path) -> None:

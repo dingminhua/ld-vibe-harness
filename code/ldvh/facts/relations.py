@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import stat
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -11,6 +10,7 @@ from ldvh.facts.models import FactIssue
 from ldvh.facts.repository import FactReadResult, _identity_issue, read_fact_object
 from ldvh.facts.schema import FactSchema
 from ldvh.facts.validation import parse_rfc3339
+from ldvh.filesystem import safe_list_directory
 
 MAX_GRAPH_OBJECTS = 10_000
 
@@ -53,14 +53,11 @@ class ProjectFactIndex:
         base: bool = False,
     ) -> tuple[tuple[FactReadResult, ...], bool]:
         layout = LAYOUTS[fact_type_key]
-        directory = self.root / layout.directory
         identity_issue, _ = _identity_issue(self.root, self.expected_common_dir)
         if identity_issue is not None:
             return (), False
         try:
-            if stat.S_ISLNK(directory.lstat().st_mode):
-                return (), False
-            paths = tuple(directory.iterdir())
+            paths = safe_list_directory(self.root, layout.directory)
         except FileNotFoundError:
             return (), True
         except OSError:

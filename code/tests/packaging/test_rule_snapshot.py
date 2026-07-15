@@ -73,6 +73,55 @@ def test_manifest_rejects_resource_tampering(
         validate_snapshot_directory(root, distribution="ld-vibe-harness", version="0.1.0")
 
 
+def test_snapshot_walk_rejects_linked_directory_without_descending(
+    current_specs_repository: Path,
+    tmp_path: Path,
+) -> None:
+    plan = snapshot_plan_for_source(current_specs_repository, "0.1.0")
+    root = tmp_path / "snapshot"
+    write_snapshot(plan, root)
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    (outside / "undeclared.md").write_text("outside", encoding="utf-8")
+    try:
+        (root / "linked").symlink_to(outside, target_is_directory=True)
+    except OSError:
+        pytest.skip("symlinks are unavailable")
+
+    with pytest.raises(SnapshotError, match="unsafe resource"):
+        validate_snapshot_directory(root, distribution="ld-vibe-harness", version="0.1.0")
+
+
+def test_snapshot_rejects_nested_undeclared_manifest_name(
+    current_specs_repository: Path,
+    tmp_path: Path,
+) -> None:
+    plan = snapshot_plan_for_source(current_specs_repository, "0.1.0")
+    root = tmp_path / "snapshot"
+    write_snapshot(plan, root)
+    (root / "specs/manifest.json").write_text("{}\n", encoding="utf-8")
+
+    with pytest.raises(SnapshotError, match="undeclared"):
+        validate_snapshot_directory(root, distribution="ld-vibe-harness", version="0.1.0")
+
+
+def test_snapshot_rejects_linked_root(
+    current_specs_repository: Path,
+    tmp_path: Path,
+) -> None:
+    plan = snapshot_plan_for_source(current_specs_repository, "0.1.0")
+    root = tmp_path / "snapshot"
+    write_snapshot(plan, root)
+    linked_root = tmp_path / "linked-snapshot"
+    try:
+        linked_root.symlink_to(root, target_is_directory=True)
+    except OSError:
+        pytest.skip("symlinks are unavailable")
+
+    with pytest.raises(SnapshotError, match="cannot be read safely"):
+        validate_snapshot_directory(linked_root, distribution="ld-vibe-harness", version="0.1.0")
+
+
 def test_installed_snapshot_requires_the_distribution_to_own_package_and_resources(
     current_specs_repository: Path,
     tmp_path: Path,

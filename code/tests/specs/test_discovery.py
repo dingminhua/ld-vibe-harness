@@ -137,6 +137,42 @@ def test_does_not_follow_symlinked_specs_directory_outside_worktree(
     assert result.candidates == ()
 
 
+def test_rejects_linked_repository_root(repository: Path, tmp_path: Path) -> None:
+    linked_root = tmp_path / "linked-repository"
+    try:
+        linked_root.symlink_to(repository, target_is_directory=True)
+    except OSError:
+        pytest.skip("symlinks are unavailable")
+
+    result = discover_candidates(linked_root)
+
+    assert result.complete is False
+    assert result.candidates == ()
+    assert len(result.issues) == 1
+    assert "link or reparse" in result.issues[0].summary
+
+
+def test_does_not_enter_reparse_specs_directory(
+    repository: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    candidate = repository / "specs/01-Outside.md"
+    _write(candidate)
+    specs_inode = (repository / "specs").lstat().st_ino
+    real_is_link_or_reparse = discovery.is_link_or_reparse
+
+    def simulated_reparse(observation: object) -> bool:
+        return getattr(observation, "st_ino", None) == specs_inode or real_is_link_or_reparse(observation)
+
+    monkeypatch.setattr(discovery, "is_link_or_reparse", simulated_reparse)
+
+    result = discover_candidates(repository)
+
+    assert result.complete is True
+    assert result.issues == ()
+    assert result.candidates == ()
+
+
 def test_file_replaced_by_external_symlink_during_ignore_query_is_rejected(
     repository: Path,
     tmp_path: Path,

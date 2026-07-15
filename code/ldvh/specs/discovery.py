@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Literal
 
 from ldvh.diagnostics import Issue, SourceLocation
+from ldvh.filesystem import is_link_or_reparse
 
 _SPEC_NAME = re.compile(r"[0-9]{2,}-.+\.md")
 _ATTACHMENT_NAME = re.compile(r"[0-9]{2,}\.Att\.[0-9]{2,}-.+\.md")
@@ -170,6 +171,22 @@ def discover_candidates(repository_root: Path) -> DiscoveryResult:
 def _normalise_repository_root(repository_root: Path) -> tuple[Path, Issue | None]:
     requested = Path(repository_root).expanduser()
     try:
+        requested_observation = requested.lstat()
+    except FileNotFoundError:
+        pass
+    except OSError as exc:
+        return requested.absolute(), _issue(
+            "Cannot inspect the explicit repository root",
+            cause=str(exc),
+            affected=(".",),
+        )
+    else:
+        if is_link_or_reparse(requested_observation):
+            return requested.absolute(), _issue(
+                "The explicit repository root must not be a link or reparse point",
+                affected=(".",),
+            )
+    try:
         return requested.resolve(strict=False), None
     except (OSError, RuntimeError) as exc:
         fallback = requested.absolute()
@@ -182,7 +199,7 @@ def _normalise_repository_root(repository_root: Path) -> tuple[Path, Issue | Non
 
 def _require_directory(root: Path) -> Issue | None:
     try:
-        mode = root.stat().st_mode
+        observation = root.lstat()
     except OSError as exc:
         return _issue(
             "The explicit repository root is not readable",
@@ -190,7 +207,7 @@ def _require_directory(root: Path) -> Issue | None:
             affected=(".",),
         )
 
-    if stat.S_ISDIR(mode):
+    if stat.S_ISDIR(observation.st_mode) and not is_link_or_reparse(observation):
         return None
 
     return _issue(
@@ -328,14 +345,22 @@ def _real_directory(
             affected=(relative_path,),
         )
 
+    identity = _stable_identity(current)
+    if identity is None:
+        return None, _issue(
+            "Cannot prove a stable specification candidate directory identity",
+            path=relative_path,
+            affected=(relative_path,),
+        )
+    device, inode = identity
     return (
         _DirectoryObservation(
             relative_path=relative_path,
             absolute_path=directory,
             kind=kind,
-            file_type=stat.S_IFMT(current.st_mode),
-            device=current.st_dev,
-            inode=current.st_ino,
+            file_type=_safe_file_type(current),
+            device=device,
+            inode=inode,
         ),
         None,
     )
@@ -396,12 +421,16 @@ def _matching_entry_snapshot(
                 if pattern.fullmatch(entry.name) is None:
                     continue
                 current = entry.stat(follow_symlinks=False)
+                identity = _stable_identity(current)
+                if identity is None:
+                    return None, f"filesystem identity is unavailable for {entry.name}"
+                device, inode = identity
                 observed.append(
                     _EntryObservation(
                         relative_path=f"{relative_directory}/{entry.name}",
-                        file_type=stat.S_IFMT(current.st_mode),
-                        device=current.st_dev,
-                        inode=current.st_ino,
+                        file_type=_safe_file_type(current),
+                        device=device,
+                        inode=inode,
                     )
                 )
     except OSError as exc:
@@ -523,10 +552,13 @@ def _same_filesystem_identity(
     except OSError as exc:
         return False, str(exc)
 
-    has_expected_type = stat.S_ISREG(current.st_mode)
+    has_expected_type = stat.S_ISREG(current.st_mode) and not is_link_or_reparse(current)
     if not has_expected_type:
         return False, f"the path is no longer the same {expected}"
-    if (current.st_dev, current.st_ino) != (device, inode):
+    identity = _stable_identity(current)
+    if identity is None:
+        return False, f"the {expected} has no stable filesystem identity"
+    if identity != (device, inode):
         return False, f"the {expected} has a different filesystem identity"
     return True, None
 
@@ -545,11 +577,10 @@ def _same_directory_topology(
 
     if observation.file_type is None:
         return False, "the previously absent candidate directory path now exists"
-    current_identity = (
-        stat.S_IFMT(current.st_mode),
-        current.st_dev,
-        current.st_ino,
-    )
+    stable_identity = _stable_identity(current)
+    if stable_identity is None:
+        return False, "the candidate directory has no stable filesystem identity"
+    current_identity = (_safe_file_type(current), *stable_identity)
     expected_identity = (
         observation.file_type,
         observation.device,
@@ -558,6 +589,20 @@ def _same_directory_topology(
     if current_identity != expected_identity:
         return False, "the candidate directory path has a different type or filesystem identity"
     return True, None
+
+
+def _safe_file_type(observation: os.stat_result) -> int:
+    return stat.S_IFLNK if is_link_or_reparse(observation) else stat.S_IFMT(observation.st_mode)
+
+
+def _stable_identity(observation: os.stat_result) -> tuple[int, int] | None:
+    device = getattr(observation, "st_dev", None)
+    inode = getattr(observation, "st_ino", None)
+    if not isinstance(device, int) or isinstance(device, bool) or device <= 0:
+        return None
+    if not isinstance(inode, int) or isinstance(inode, bool) or inode <= 0:
+        return None
+    return device, inode
 
 
 def _query_ignored(

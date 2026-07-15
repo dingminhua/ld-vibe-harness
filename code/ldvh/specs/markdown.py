@@ -6,16 +6,14 @@ a document is a current rule source, interpret YAML, or apply domain rules.
 
 from __future__ import annotations
 
-import os
 import re
-import stat
 from collections.abc import Iterator
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
 from ldvh.diagnostics import Issue, SourceLocation
-from ldvh.filesystem import is_reparse_point
+from ldvh.filesystem import safe_read_relative
 from ldvh.specs.source import ObservedResource
 
 _ATX_HEADING = re.compile(r" {0,3}(?P<marks>#{1,6})(?:[ \t]+(?P<title>.*?))?[ \t]*$")
@@ -288,13 +286,8 @@ def read_observed_resource(path: Path, relative_path: str | Path) -> ObservedRes
 
     relative = Path(relative_path)
     source_path = relative.as_posix()
-    absolute_path, repository_root = _validated_resource_path(path, relative)
-    no_follow = getattr(os, "O_NOFOLLOW", None)
-    directory_flag = getattr(os, "O_DIRECTORY", None)
-    if os.name != "nt" and no_follow is not None and directory_flag is not None:
-        raw_bytes = _read_bytes_posix(repository_root, relative, no_follow=no_follow, directory_flag=directory_flag)
-    else:
-        raw_bytes = _read_bytes_portable(absolute_path, repository_root, relative)
+    _, repository_root = _validated_resource_path(path, relative)
+    raw_bytes = safe_read_relative(repository_root, relative)
     return ObservedResource(source_path, raw_bytes, datetime.now().astimezone().isoformat())
 
 
@@ -310,98 +303,6 @@ def _validated_resource_path(path: Path, relative_path: Path) -> tuple[Path, Pat
     if repository_root / relative_path != absolute_path:
         raise OSError("source path does not match its repository-relative path")
     return absolute_path, repository_root
-
-
-def _read_bytes_posix(repository_root: Path, relative_path: Path, *, no_follow: int, directory_flag: int) -> bytes:
-    directory_fd = os.open(repository_root, os.O_RDONLY | directory_flag | no_follow)
-    try:
-        for component in relative_path.parts[:-1]:
-            next_fd = os.open(component, os.O_RDONLY | directory_flag | no_follow, dir_fd=directory_fd)
-            os.close(directory_fd)
-            directory_fd = next_fd
-
-        file_fd = os.open(relative_path.parts[-1], os.O_RDONLY | no_follow, dir_fd=directory_fd)
-        try:
-            before_read = os.fstat(file_fd)
-            if not stat.S_ISREG(before_read.st_mode):
-                raise OSError("source path is not a regular file")
-            with os.fdopen(file_fd, "rb") as source:
-                file_fd = -1
-                raw_bytes = source.read()
-                after_read = os.fstat(source.fileno())
-                observed_before = (
-                    before_read.st_dev,
-                    before_read.st_ino,
-                    before_read.st_nlink,
-                    before_read.st_size,
-                    before_read.st_mtime_ns,
-                    before_read.st_ctime_ns,
-                )
-                observed_after = (
-                    after_read.st_dev,
-                    after_read.st_ino,
-                    after_read.st_nlink,
-                    after_read.st_size,
-                    after_read.st_mtime_ns,
-                    after_read.st_ctime_ns,
-                )
-                if observed_before != observed_after:
-                    raise OSError("source file changed while it was being read")
-                return raw_bytes
-        finally:
-            if file_fd >= 0:
-                os.close(file_fd)
-    finally:
-        os.close(directory_fd)
-
-
-def _portable_signature(observation: os.stat_result) -> tuple[int, int, int, int, int, int, int]:
-    return (
-        stat.S_IFMT(observation.st_mode),
-        observation.st_dev,
-        observation.st_ino,
-        observation.st_size,
-        observation.st_mtime_ns,
-        observation.st_ctime_ns,
-        getattr(observation, "st_file_attributes", 0),
-    )
-
-
-def _observe_portable_components(
-    repository_root: Path,
-    relative_path: Path,
-) -> tuple[tuple[Path, tuple[int, ...]], ...]:
-    observations: list[tuple[Path, tuple[int, ...]]] = []
-    current = repository_root
-    for index, component in enumerate(relative_path.parts):
-        current = current / component
-        observed = current.lstat()
-        if stat.S_ISLNK(observed.st_mode) or is_reparse_point(observed):
-            raise OSError("source path contains a symlink or reparse point")
-        if index < len(relative_path.parts) - 1 and not stat.S_ISDIR(observed.st_mode):
-            raise OSError("source path component is not a directory")
-        if index == len(relative_path.parts) - 1 and not stat.S_ISREG(observed.st_mode):
-            raise OSError("source path is not a regular file")
-        observations.append((current, _portable_signature(observed)))
-    return tuple(observations)
-
-
-def _read_bytes_portable(absolute_path: Path, repository_root: Path, relative_path: Path) -> bytes:
-    before_components = _observe_portable_components(repository_root, relative_path)
-    with absolute_path.open("rb") as source:
-        before_handle = os.fstat(source.fileno())
-        if not stat.S_ISREG(before_handle.st_mode) or is_reparse_point(before_handle):
-            raise OSError("source handle is not a regular non-reparse file")
-        raw_bytes = source.read()
-        after_handle = os.fstat(source.fileno())
-    after_components = _observe_portable_components(repository_root, relative_path)
-    if _portable_signature(before_handle) != _portable_signature(after_handle):
-        raise OSError("source file changed while it was being read")
-    if before_components != after_components:
-        raise OSError("source path topology changed while it was being read")
-    if before_components[-1][1] != _portable_signature(before_handle):
-        raise OSError("opened source does not match the observed path")
-    return raw_bytes
 
 
 def find_headings(document: MarkdownDocument, title: str, *, level: int | None = None) -> tuple[Heading, ...]:

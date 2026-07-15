@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 
-import errno
 import hashlib
 import os
-import stat
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
@@ -17,6 +15,7 @@ from ldvh.facts.contracts import FactTypeLayout
 from ldvh.facts.models import FactIssue
 from ldvh.facts.schema import FactSchema
 from ldvh.facts.validation import validate_fact_object
+from ldvh.filesystem import ReadBudgetExceeded, UnsafePathError, safe_read_relative, validate_relative_regular_file
 from ldvh.governance.git import isolated_git_environment
 
 CheckStatus = Literal["mechanically_valid", "invalid", "not_found", "unavailable"]
@@ -37,23 +36,14 @@ class FactReadResult:
 
 def _safe_regular_file(root: Path, relative_path: str) -> tuple[Path, FactIssue | None, CheckStatus | None]:
     candidate = root / relative_path
-    current = root
-    for segment in Path(relative_path).parts:
-        current = current / segment
-        try:
-            mode = current.lstat().st_mode
-        except FileNotFoundError:
-            return candidate, FactIssue("location", "事实对象预期位置不存在"), "not_found"
-        except OSError:
-            return candidate, FactIssue("location", "无法安全读取事实对象路径"), "unavailable"
-        if stat.S_ISLNK(mode):
-            return candidate, FactIssue("location", "事实对象 canonical path 不得包含符号链接"), "invalid"
     try:
-        mode = candidate.stat().st_mode
+        validate_relative_regular_file(root, relative_path)
+    except FileNotFoundError:
+        return candidate, FactIssue("location", "事实对象预期位置不存在"), "not_found"
+    except UnsafePathError:
+        return candidate, FactIssue("location", "事实对象 canonical path 必须是非 link/reparse 普通文件"), "invalid"
     except OSError:
-        return candidate, FactIssue("location", "无法读取事实对象文件状态"), "unavailable"
-    if not stat.S_ISREG(mode):
-        return candidate, FactIssue("location", "事实对象 canonical path 必须是普通文件"), "invalid"
+        return candidate, FactIssue("location", "无法安全读取事实对象路径"), "unavailable"
     return candidate, None, None
 
 
@@ -116,52 +106,17 @@ def _read_utf8_without_symlinks(
     root: Path,
     relative_path: str,
 ) -> tuple[str | None, FactIssue | None, CheckStatus | None]:
-    directory_fd: int | None = None
-    file_fd: int | None = None
     try:
-        directory_fd = os.open(root, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
-        parts = Path(relative_path).parts
-        for segment in parts[:-1]:
-            next_fd = os.open(
-                segment,
-                os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
-                dir_fd=directory_fd,
-            )
-            os.close(directory_fd)
-            directory_fd = next_fd
-        file_fd = os.open(parts[-1], os.O_RDONLY | os.O_NOFOLLOW, dir_fd=directory_fd)
-        before = os.fstat(file_fd)
-        if not stat.S_ISREG(before.st_mode):
-            return None, FactIssue("location", "事实对象 canonical path 必须是普通文件"), "invalid"
-        if before.st_size > MAX_FACT_BYTES:
-            return None, FactIssue("parse", "事实对象载体超过 4 MiB 读取预算"), "unavailable"
-        chunks: list[bytes] = []
-        observed = 0
-        while observed <= MAX_FACT_BYTES:
-            chunk = os.read(file_fd, min(64 * 1024, MAX_FACT_BYTES + 1 - observed))
-            if not chunk:
-                break
-            chunks.append(chunk)
-            observed += len(chunk)
-        if observed > MAX_FACT_BYTES:
-            return None, FactIssue("parse", "事实对象载体超过 4 MiB 读取预算"), "unavailable"
-        after = os.fstat(file_fd)
-        fingerprint_before = (before.st_dev, before.st_ino, before.st_size, before.st_mtime_ns, before.st_ctime_ns)
-        fingerprint_after = (after.st_dev, after.st_ino, after.st_size, after.st_mtime_ns, after.st_ctime_ns)
-        if fingerprint_before != fingerprint_after:
-            return None, FactIssue("location", "事实对象在安全读取期间发生变化"), "unavailable"
-        return b"".join(chunks).decode("utf-8"), None, None
+        raw_bytes = safe_read_relative(root, relative_path, max_bytes=MAX_FACT_BYTES)
+        return raw_bytes.decode("utf-8"), None, None
     except UnicodeDecodeError:
         return None, FactIssue("parse", "事实对象无法作为 UTF-8 普通文件读取"), "invalid"
-    except OSError as error:
-        if error.errno in {errno.ELOOP, errno.ENOTDIR}:
-            return None, FactIssue("location", "事实对象 canonical path 不得包含符号链接"), "invalid"
+    except ReadBudgetExceeded:
+        return None, FactIssue("parse", "事实对象载体超过 4 MiB 读取预算"), "unavailable"
+    except UnsafePathError:
+        return None, FactIssue("location", "事实对象 canonical path 必须是非 link/reparse 普通文件"), "invalid"
+    except OSError:
         return None, FactIssue("location", "事实对象文件在安全读取时发生变化或不可访问"), "unavailable"
-    finally:
-        if file_fd is not None:
-            os.close(file_fd)
-        if directory_fd is not None:
-            os.close(directory_fd)
 
 
 def read_fact_object(

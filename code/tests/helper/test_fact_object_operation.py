@@ -138,6 +138,25 @@ def test_fact_read_rejects_symlink_canonical_path(tmp_path: Path) -> None:
     assert item["issues"][0]["category"] == "location"
 
 
+def test_fact_read_rejects_symlinked_parent_directory(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    facts = project / "facts"
+    sparks = facts / "sparks"
+    real_sparks = project / "real-sparks"
+    sparks.replace(real_sparks)
+    try:
+        sparks.symlink_to(real_sparks, target_is_directory=True)
+    except OSError:
+        pytest.skip("symlinks are unavailable")
+
+    result = handle_request("call", "read-fact-objects", _payload(workspace, project, "spark-0001"))
+    item = result.response["result"]["items"][0]
+
+    assert result.response["outcome"] == "ok"
+    assert item["check_status"] == "invalid"
+    assert "link/reparse" in item["issues"][0]["summary"]
+
+
 def test_fact_read_checks_relation_targets_and_reachable_dag(tmp_path: Path) -> None:
     workspace, project = _fixture(tmp_path)
     directory = project / "facts" / "workcases"

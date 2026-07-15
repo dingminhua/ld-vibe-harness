@@ -8,12 +8,12 @@ import json
 import os
 import re
 import shutil
-import stat
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Any, Literal
 
 from ldvh.diagnostics import Issue, SourceLocation
+from ldvh.filesystem import walk_regular_files
 from ldvh.specs.audit_evidence import inspect_audit_evidence_locators
 from ldvh.specs.discovery import Candidate, DiscoveryResult, discover_candidates, validate_non_ignored_git_path
 from ldvh.specs.markdown import MarkdownResult, parse_markdown_bytes, read_observed_resource
@@ -248,28 +248,31 @@ def _strict_manifest(
 
 
 def validate_snapshot_directory(root: Path, *, distribution: str, version: str) -> VerifiedSnapshot:
-    manifest_resource = read_observed_resource(root / MANIFEST_NAME, MANIFEST_NAME)
+    manifest_resource = _read_snapshot_resource(root, MANIFEST_NAME)
     manifest, entries = _strict_manifest(manifest_resource.raw_bytes, distribution=distribution, version=version)
     files: list[SnapshotFile] = []
     declared = {entry["path"] for entry in entries}
     for entry in entries:
-        observed = read_observed_resource(root / entry["path"], entry["path"])
+        observed = _read_snapshot_resource(root, entry["path"])
         digest = hashlib.sha256(observed.raw_bytes).hexdigest()
         if len(observed.raw_bytes) != entry["size"] or digest != entry["sha256"]:
             raise SnapshotError(f"snapshot resource does not match manifest: {entry['path']}")
         files.append(SnapshotFile(entry["path"], entry["role"], observed.raw_bytes, observed.observed_at))
-    actual: set[str] = set()
-    for path in root.rglob("*"):
-        relative = path.relative_to(root).as_posix()
-        observation = path.lstat()
-        is_supported_type = stat.S_ISDIR(observation.st_mode) or stat.S_ISREG(observation.st_mode)
-        if stat.S_ISLNK(observation.st_mode) or not is_supported_type:
-            raise SnapshotError(f"snapshot contains an unsafe resource: {relative}")
-        if stat.S_ISREG(observation.st_mode) and relative != MANIFEST_NAME:
-            actual.add(relative)
+    try:
+        walked_files = walk_regular_files(root)
+    except OSError as exc:
+        raise SnapshotError(f"snapshot contains an unsafe resource: {exc}") from exc
+    actual = {relative for path in walked_files if (relative := path.relative_to(root).as_posix()) != MANIFEST_NAME}
     if actual != declared:
         raise SnapshotError("snapshot directory contains missing or undeclared resources")
     return VerifiedSnapshot(root, distribution, version, tuple(files), manifest["snapshot_sha256"])
+
+
+def _read_snapshot_resource(root: Path, relative_path: str) -> ObservedResource:
+    try:
+        return read_observed_resource(root / relative_path, relative_path)
+    except OSError as exc:
+        raise SnapshotError(f"snapshot resource cannot be read safely: {relative_path}") from exc
 
 
 def write_snapshot(plan: SnapshotPlan, destination: Path) -> None:

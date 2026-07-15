@@ -9,7 +9,15 @@ from types import SimpleNamespace
 
 import pytest
 
-from ldvh.filesystem import _exclusive_file_lock, is_link_or_reparse, is_reparse_point
+from ldvh.filesystem import (
+    UnsafePathError,
+    UnstableIdentityError,
+    _exclusive_file_lock,
+    is_link_or_reparse,
+    is_reparse_point,
+    safe_read_relative,
+    walk_regular_files,
+)
 
 
 class _RecordingLockApi:
@@ -63,6 +71,98 @@ def test_link_or_reparse_detection_covers_both_platform_signals() -> None:
     assert is_link_or_reparse(reparse) is True
     assert is_link_or_reparse(symlink) is True
     assert is_link_or_reparse(regular) is False
+
+
+def _stat_view(observation: os.stat_result, **overrides: int) -> SimpleNamespace:
+    values = {
+        field: getattr(observation, field)
+        for field in ("st_mode", "st_dev", "st_ino", "st_nlink", "st_size", "st_mtime_ns", "st_ctime_ns")
+    }
+    values["st_file_attributes"] = getattr(observation, "st_file_attributes", 0)
+    values.update(overrides)
+    return SimpleNamespace(**values)
+
+
+@pytest.mark.parametrize("reparse_part", ("root", "parent", "file"))
+def test_portable_reader_rejects_reparse_at_every_path_level(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    reparse_part: str,
+) -> None:
+    root = tmp_path / "root"
+    parent = root / "nested"
+    parent.mkdir(parents=True)
+    file = parent / "fact.yaml"
+    file.write_text("object_id: spark-0001\n", encoding="utf-8")
+    targets = {"root": root, "parent": parent, "file": file}
+    target = targets[reparse_part]
+    real_lstat = Path.lstat
+
+    def reparse_lstat(path: Path) -> os.stat_result | SimpleNamespace:
+        observed = real_lstat(path)
+        return _stat_view(observed, st_file_attributes=0x400) if path == target else observed
+
+    monkeypatch.setattr(Path, "lstat", reparse_lstat)
+
+    with pytest.raises(UnsafePathError, match="reparse"):
+        safe_read_relative(root, "nested/fact.yaml", platform_name="nt")
+
+
+def test_portable_reader_fails_closed_without_stable_identity(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root = tmp_path / "root"
+    root.mkdir()
+    file = root / "fact.yaml"
+    file.write_text("object_id: spark-0001\n", encoding="utf-8")
+    real_lstat = Path.lstat
+
+    def unstable_lstat(path: Path) -> os.stat_result | SimpleNamespace:
+        observed = real_lstat(path)
+        return _stat_view(observed, st_ino=0) if path == file else observed
+
+    monkeypatch.setattr(Path, "lstat", unstable_lstat)
+
+    with pytest.raises(UnstableIdentityError, match="st_ino"):
+        safe_read_relative(root, "fact.yaml", platform_name="nt")
+
+
+def test_reader_rejects_a_linked_root_on_posix_and_portable_paths(tmp_path: Path) -> None:
+    real_root = tmp_path / "real"
+    real_root.mkdir()
+    (real_root / "fact.yaml").write_text("object_id: spark-0001\n", encoding="utf-8")
+    linked_root = tmp_path / "linked"
+    try:
+        linked_root.symlink_to(real_root, target_is_directory=True)
+    except OSError:
+        pytest.skip("symlinks are unavailable")
+
+    with pytest.raises(OSError):
+        safe_read_relative(linked_root, "fact.yaml")
+    with pytest.raises(UnsafePathError, match="reparse"):
+        safe_read_relative(linked_root, "fact.yaml", platform_name="nt")
+
+
+def test_windows_candidate_reader_rejects_unc_without_native_evidence() -> None:
+    with pytest.raises(UnstableIdentityError, match="UNC"):
+        safe_read_relative(Path(r"\\server\share"), "fact.yaml", platform_name="nt")
+
+
+def test_safe_walk_rejects_link_before_descending(tmp_path: Path) -> None:
+    root = tmp_path / "snapshot"
+    root.mkdir()
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    (outside / "secret.txt").write_text("outside", encoding="utf-8")
+    link = root / "linked"
+    try:
+        link.symlink_to(outside, target_is_directory=True)
+    except OSError:
+        pytest.skip("symlinks are unavailable")
+
+    with pytest.raises(UnsafePathError, match="symbolic link or reparse"):
+        walk_regular_files(root)
 
 
 def test_cli_import_does_not_require_fcntl() -> None:

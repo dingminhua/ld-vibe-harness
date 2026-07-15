@@ -14,6 +14,7 @@ from ldvh.facts.project_validation import stabilize_project_index
 from ldvh.facts.relations import MAX_GRAPH_OBJECTS, ProjectFactIndex
 from ldvh.facts.repository import FactReadResult
 from ldvh.facts.schema import FactSchema
+from ldvh.filesystem import safe_list_directory
 
 
 @dataclass(frozen=True, slots=True)
@@ -82,20 +83,14 @@ def discover_fact_candidates(
                 _structural_problem(fact_type_key, layout.directory, "五类型扫描预算已耗尽，当前目录未枚举")
             )
             continue
-        directory = root / layout.directory
         try:
-            mode = directory.lstat().st_mode
-            if stat.S_ISLNK(mode) or not stat.S_ISDIR(mode):
-                structural.append(
-                    _structural_problem(fact_type_key, layout.directory, "事实类型目录必须是非符号链接目录")
-                )
-                complete = False
-                continue
-            paths = sorted(directory.iterdir(), key=lambda item: item.name)
+            paths = sorted(safe_list_directory(root, layout.directory), key=lambda item: item.name)
         except FileNotFoundError:
             continue
         except OSError:
-            structural.append(_structural_problem(fact_type_key, layout.directory, "事实类型目录无法安全枚举"))
+            structural.append(
+                _structural_problem(fact_type_key, layout.directory, "事实类型目录必须是非 link/reparse 可安全枚举目录")
+            )
             complete = False
             continue
         for path in paths:
