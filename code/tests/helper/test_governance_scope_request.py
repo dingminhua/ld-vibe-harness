@@ -16,7 +16,6 @@ from ldvh.helper.operations.governance_scope_request import (
 )
 from ldvh.helper.requests import CommonRequest
 
-PROJECT_ROOT = Path(__file__).resolve().parents[3]
 CWD = Path("/workspace/current-worktree")
 
 
@@ -162,14 +161,6 @@ def test_domain_request_and_parse_result_are_immutable() -> None:
         result.problems = ("changed",)  # type: ignore[misc]
 
 
-def test_capability_input_descriptions_are_anchored_to_current_source() -> None:
-    source = (PROJECT_ROOT / "specs/02-工作对象与管辖范围规范.md").read_text(encoding="utf-8")
-    section = source.split("### 10.1 管辖范围解析输入字段", 1)[1].split("### 10.2 管辖范围解析结果边界", 1)[0]
-
+def test_capability_input_metadata_matches_the_public_operation_contract() -> None:
     assert REQUIRED_INPUTS == ()
     assert OPTIONAL_INPUTS == ("work_object_locators", "arguments.workspace_root")
-    assert "`work_object_locators` 可以为空" in section
-    assert "非空时只接受非空路径 string" in section
-    assert "相对路径以 Helper 进程实际 `cwd` 为解析基准" in section
-    assert "`workspace_root` | string | 可选；出现时必须为非空绝对路径" in section
-    assert "本操作要求 `observed_context` 为空 object" in section

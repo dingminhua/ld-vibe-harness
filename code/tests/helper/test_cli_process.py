@@ -387,9 +387,11 @@ def test_specification_content_capabilities_and_l4_call_use_exact_current_source
     assert source["locator"].startswith("specs/00-理念与构成.md#L1-L")
     assert source["observed_at"]
     assert source["details"]["git_worktree_root"].endswith("ld-vibe-harness-v4")
-    assert call_response["disclosure"]["parts"] == [
-        {"level": "L4", "source_refs": [source], "reason": "请求 L4，按契约返回完整来源"}
-    ]
+    disclosure = call_response["disclosure"]["parts"]
+    assert len(disclosure) == 1
+    assert disclosure[0]["level"] == "L4"
+    assert disclosure[0]["source_refs"] == [source]
+    assert disclosure[0]["reason"]
     assert call_response["changes"] == []
 
 

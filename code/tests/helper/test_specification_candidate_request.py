@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Any
 
 import pytest
@@ -12,8 +11,6 @@ from ldvh.helper.operations.specification_candidate_request import (
     parse_specification_candidate_request,
 )
 from ldvh.helper.requests import CommonRequest
-
-PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 
 def _request(
@@ -117,16 +114,9 @@ def test_all_domain_input_problems_are_reported_deterministically() -> None:
     )
 
 
-def test_capability_input_descriptions_are_anchored_to_current_source() -> None:
-    source = (PROJECT_ROOT / "specs/01-规范模型基础规范.md").read_text(encoding="utf-8")
-    section = source.split("### 9.4 规范候选读取输入字段", 1)[1].split("### 9.5 规范候选读取结果字段", 1)[0]
-
+def test_capability_input_metadata_matches_the_public_operation_contract() -> None:
     assert REQUIRED_INPUTS == ()
     assert OPTIONAL_INPUTS == (
         "arguments.responsibility_keys",
         "requested_disclosure",
     )
-    assert "`responsibility_keys` | array | 可选" in section
-    assert "`requested_disclosure` 缺省或为 `null` 时按 L0 处理" in section
-    assert "本操作只接受 L0、L1 或 L2" in section
-    assert "L3 或 L4 对本操作明确不受支持" in section

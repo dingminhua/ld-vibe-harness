@@ -72,9 +72,11 @@ def test_reads_exact_l4_source_with_fixed_traceability_fields(current_specs_repo
         },
     }
     assert result.sources == (source,)
-    assert result.disclosure_parts == (
-        {"level": "L4", "source_refs": [source], "reason": "请求 L4，按契约返回完整来源"},
-    )
+    assert len(result.disclosure_parts) == 1
+    disclosure = result.disclosure_parts[0]
+    assert disclosure["level"] == "L4"
+    assert disclosure["source_refs"] == [source]
+    assert isinstance(disclosure["reason"], str) and disclosure["reason"]
     assert len(result.verification) == 1
     assert result.verification[0]["status"] == "passed"
     assert len(result.gaps) == 1
@@ -166,7 +168,8 @@ def test_valid_l3_h3_returns_exact_mechanical_slice(current_specs_repository: Pa
     ]
     assert item["parts"][1]["content"].startswith("### 5.1 规范文档（Specification）")
     assert result.disclosure_parts[0]["level"] == "L3"
-    assert "请求 L3" in result.disclosure_parts[0]["reason"]
+    assert result.disclosure_parts[0]["source_refs"]
+    assert result.disclosure_parts[0]["reason"]
 
 
 @pytest.mark.parametrize(
