@@ -209,3 +209,9 @@ tests 按失败边界拆开：核心 tests 固定恢复调用顺序、唯一项�
 Human 在 `/hooks` 授权后，当前线程的 `SessionStart/resume` 与一次独立子代理的 `SubagentStart` 都自动调用已安装 adapter，并各自注入共享核心的原始结果。两份输出都只包含 `resolve-governance-scope`、`find-fact-object-candidates`，全部 `outcome: ok` 且 `changes: []`；子代理也独立确认其启动上下文收到同一恢复信息及“Code 未作语义判断”的说明。已安装缓存的缺失配置 direct probe 返回 `continue: true` 与明确的 unresolved context，证明 adapter 失败交还不会伪造成功；它不是新的原生失败事件证据。
 
 因此，本实现增量已完成共享能力、Codex 薄映射、最小独立失败 tests 和两条原生成功路径的验证。它不声明 `startup|clear|compact`、停用/恢复、名称/图标 UI 呈现、其它 Codex 版本或其它环境已验证；这些范围只在相应目标、来源和当次证据具备时重新进入 09/33 Gate。完整安装范围、证据路径和未验证项见 `V4-Codex环境接入-安装与真实验证记录.md` §9。
+
+### 9.7 Codex worktree Git Gate 的薄引用边界
+
+Codex 当前没有可承接 Git Gate 的“worktree created” Hook；它的正确环境入口是 Human 配置的 Local Environment setup script。该 setup 接口明确交付的当前工作树 cwd 才能薄引用给共享入口：`ldvh-git-hook bootstrap --worktree "$PWD" --workspace-root <workspace> --commit-msg-runner <runner> --confirm-human-gate`；任意或隐式 cwd 不能代替它。核心自行确认该 cwd 是目标 Git worktree、`governed_single`、安全的 worktree-local Hook 路径与无用户 Hook 遮蔽条件；script 不读取或解释提交规则、Helper 响应、管辖字段或 AI 语义。
+
+因此，`codex_context.py`、`SessionStart`、`SubagentStart` 和 `PLUGIN_DATA/ldvh.json` 继续只承担上下文恢复：不新增第二份配置 Schema，不写 Git 配置，也不安装 Git Hook。把上述 setup command 写入某一 Codex Local Environment 是独立的项目×环境 Human Gate；本轮没有创建该环境配置或声称 Codex 工作树已经自动安装 Git Hook。其它 Hook-capable 环境应各自用真实的创建/设置事件薄引用同一核心，而不是复用 Codex 事件名或插件实现。

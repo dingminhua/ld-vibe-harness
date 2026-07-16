@@ -167,20 +167,30 @@ Human 已在当前连续任务中明确授权提交并要求按计划推进。AI
 
 ## 17. 原生 `commit-msg` Hook 最小接入规划
 
+本节记录首次实现切片；现行跨环境实际 worktree 的收口以 §19 为准。首次切片中“任何已有 `core.hooksPath` 一律停止”的限制，已由 §19 的安全 worktree-local 窄例外替代。
+
 09 §5.1 已为来源已独立定义的原生阻断型机械 Gate 建立唯一窄例外：它可以绕过 Helper 直达唯一核心 Code，但只接收真实事件输入、绑定同一实际候选/来源/管辖/Index 身份并返回 allow/block 与诊断。03 §9 是本增量的唯一机械合格条件来源；30 继续不定义 Hook；33 继续只组织一次安装与验证行动。本增量不新增 Git 专用 Spec、Helper 操作、Helper 字段、第二份 Schema、登记册或状态机。
 
 共享 runner `ldvh.hooks.commit_msg` 必须从同一已分发规则源解析 03 投影，读取 Git 提供的完整 message 文件，解析 02 管辖并以 Git 实际 commit 使用的 Index 观察候选，最后调用既有纯 Validator。`passed` 才返回零；`failed`、`unverifiable`、来源缺失、管辖未完成、候选读取失败或观察漂移均返回非零。它不写 message、Index 或 Git 历史，也不判断本地最小增量、主要目的、语义、授权、验证充分性或完成。
 
 Git 侧只允许一个 POSIX 薄 adapter：它从当前 `commit-msg` 事件取得 worktree、message 文件和可选的 Git `GIT_INDEX_FILE`，再把这些值及安装时显式固定的 runner/workspace 原样传给共享 runner。adapter 不保存提交 type/scope/body 规则、管辖逻辑、AI 判断或 Helper Schema。对 LDVH 内部临时 Index 的创建提交，runner 必须显式消费 Git 事件提供的该 Index，而不能退回读取用户默认 Index。
 
-本地管理入口只提供 `status`、`install`、`uninstall`。安装或卸载必须显式确认 Human Gate；任何已有 `core.hooksPath`、既有 `commit-msg`、符号链接、未知文件或 effective hooks directory 位于当前 worktree 外时一律停止、零写入，不设置、修改、合并或清除 Git 配置。只有默认 Hook 目录中的精确 LDVH 自有 regular file 才能更新或删除；linked worktree 的 common-dir 默认 Hook 目录保持不支持，避免一次授权影响兄弟 worktree。
+首次切片的本地管理入口只提供 `status`、`install`、`uninstall`。安装或卸载必须显式确认 Human Gate；当时任何已有 `core.hooksPath`、既有 `commit-msg`、符号链接、未知文件或 effective hooks directory 位于当前 worktree 外时一律停止、零写入，不设置、修改、合并或清除 Git 配置。只有默认 Hook 目录中的精确 LDVH 自有 regular file 才能更新或删除；linked worktree 的 common-dir 默认 Hook 目录保持不支持，避免一次授权影响兄弟 worktree。
 
 最小 tests 只固定独立失败价值：真实 `git commit` 的机械正反例（失败时 HEAD/Index 不前进）、内部临时 Index 的同一候选观察、非管辖/不可验证 fail closed、已有用户 Hook/`core.hooksPath`/shared common-dir 的零写入、以及 Human Gate 后仅删除自有 wrapper。既有 Validator 风险 tests 继续唯一覆盖格式规则，不重复 AI 语义。当前 V4 worktree 已显式设置 `.githooks-v4`，因此属于安装器应停止并交还的现状；隔离仓库验证完成后，是否迁移或授权当前项目的 Hook 仍由 Human 另行决定。该能力只覆盖正常本地 Git lifecycle；`--no-verify`、远端导入和服务端创建提交不因本入口获得约束。
 
 ## 18. 原生 Hook 实现与验证结果
 
-本增量已经完成：09 §5.1 只增加原生阻断型机械 Gate 的窄例外；`ldvh.hooks.commit_msg` 从当前规则源取得 03 投影、解析 02 管辖、读取 Git message 与显式 Git Index 后调用纯 Validator；`ldvh.git_hooks.commit_msg` 只渲染 POSIX 薄 adapter，并提供受 Human Gate 保护的 `status`/`install`/`uninstall`。adapter 本身不保存规则或 Helper Schema；Hook 的自有文件以正文 SHA-256 识别，用户后来改动、符号链接和未知文件均不被覆盖或删除。
+首次实现切片已经完成：09 §5.1 只增加原生阻断型机械 Gate 的窄例外；`ldvh.hooks.commit_msg` 从当前规则源取得 03 投影、解析 02 管辖、读取 Git message 与显式 Git Index 后调用纯 Validator；`ldvh.git_hooks.commit_msg` 只渲染 POSIX 薄 adapter，并提供受 Human Gate 保护的 `status`/`install`/`uninstall`。adapter 本身不保存规则或 Helper Schema；Hook 的自有文件以正文 SHA-256 识别，用户后来改动、符号链接和未知文件均不被覆盖或删除。§19 在不改变 Gate 语义的前提下收口了其实际 worktree 生命周期。
 
 真实隔离 Git 生命周期 tests 证明：不合格 message 阻断且 HEAD/Index 保持，合格 message 正常创建提交；内部临时 Index 经过 Git 事件显式传入并被同一 Gate 观察；非管辖项目 fail closed；既有用户 Hook、任意 `core.hooksPath`、linked worktree 共享目录和被修改的伪自有文件均零写入；未确认 Human Gate 不卸载，确认后只移除完整自有 wrapper。wheel/sdist 生命周期同时验证两个新 console entry point 存在且卸载后退出。
 
 独立 POST 审核确认 09 例外未扩大为新的语义或状态权威，五组 tests 均有独立失败价值。最终快照完成全量 `code/tests`：`799 passed, 10 skipped`；全库 Ruff check 和 format check 均通过，`git diff --check` 通过。当前 V4 worktree 的 `core.hooksPath` 仍为 `.githooks-v4`，目录仍只有既有 `README.md`；本增量没有安装、替换或移除当前项目 Hook，也没有修改其 Git 配置。实际项目接入仍等待 Human 另行授权。
+
+## 19. 跨环境实际 worktree Git Gate 收口
+
+09/33 后续明确：原生 `commit-msg` Gate 的安装实例只属于实际触发 Git 事件的 `governed_single` worktree；不同环境只需把其创建/设置接口明确交付的目标 worktree（包括该接口明确交付的 cwd）薄引用到同一 Git 核心，核心重新验证其身份和管辖，不能复制 Gate、03、02、Helper Schema 或 AI 判断。删除工作树时，只有实际位于其中的 wrapper 随目录物理消失；这不是注销、中央登记或其它 worktree/common Git directory 的清理结论。
+
+管理入口新增 `bootstrap`，但没有新 console entry point、Helper 操作或环境专属配置 Schema。`install` 只接受 Git 实际生效、scope 为 `worktree`、且 origin 为该 worktree `config.worktree` 的 `core.hooksPath`，并要求有效目录不经符号链接且位于该 worktree 内；local/global/外部路径、未知 `commit-msg` 和共享默认目录继续零写入拒绝。`bootstrap` 只在 Human 已授权的项目×环境确定性 setup 中使用：先确认准确管辖、Git 接受的 `extensions.worktreeConfig` 真值、默认目录不会被遮蔽的 active Hook，以及目标 `.githooks-v4` 不会激活未知资产；它先验证 runner/workspace 绑定并在未激活目录准备同一 POSIX wrapper，随后才写当前 worktree 配置。配置写入或回读失败时，只回滚本次重新观察到的精确配置和新建 wrapper，不用登记、状态机或第二份环境 Schema 补偿。
+
+每个支持工作树 setup 的环境只需调用同一入口，形式为 `ldvh-git-hook bootstrap --worktree "$PWD" --workspace-root <workspace> --commit-msg-runner <runner> --confirm-human-gate`。其中 `$PWD` 是环境实际提供的 setup cwd，核心仍重新解析 Git 身份和管辖；`--confirm-human-gate` 只表示该 setup 已处在 Human 确认的项目×环境范围内，不产生持久授权。`install` 与 `uninstall` 只能接受同一 runner/workspace 渲染出的精确 wrapper，因而另一环境不能静默覆盖或删除；普通 `uninstall` 只移除该 wrapper，不猜测或清除可能是用户原有选择的 worktree 配置。实际 worktree 正常删除时，目录与其 `config.worktree` 中的配置一并物理消失；仍存在 worktree 的配置残留必须按 09/33 单独观察和处理。当前增量未安装或变更任何真实项目 Hook，也未配置任何环境的 setup script。

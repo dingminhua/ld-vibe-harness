@@ -10,8 +10,11 @@ from ldvh.commits.candidate_index import prepare_commit_candidate
 from ldvh.commits.contract_source import CommitContractProjection, project_commit_contract
 from ldvh.commits.execution import CallerCommitApproval, execute_prepared_commit
 from ldvh.git_hooks.commit_msg import (
+    CommitMsgHookStatus,
+    bootstrap_commit_msg_hook,
     inspect_commit_msg_hook,
     install_commit_msg_hook,
+    render_commit_msg_hook,
     uninstall_commit_msg_hook,
 )
 from ldvh.governance.models import LocatorSource, ScopeDescriptor
@@ -99,6 +102,7 @@ def _managed_project(tmp_path: Path, *, governed: bool = True) -> tuple[Path, Pa
 
 def _runner(tmp_path: Path) -> Path:
     runner = tmp_path / "ldvh-git-commit-msg"
+    runner.parent.mkdir(parents=True, exist_ok=True)
     source = shlex.quote(str(REPOSITORY_ROOT / "code"))
     executable = shlex.quote(sys.executable)
     runner.write_text(
@@ -128,6 +132,16 @@ def _install(tmp_path: Path, workspace: Path, project: Path) -> Path:
     assert installed.state == "managed", installed
     assert installed.hook_path is not None
     return Path(installed.hook_path)
+
+
+def _write_native_hook(project: Path, workspace: Path, runner: Path) -> Path:
+    hook = project / ".git" / "hooks" / "commit-msg"
+    hook.write_text(
+        render_commit_msg_hook(commit_msg_runner=runner, workspace_root=workspace),
+        encoding="utf-8",
+    )
+    hook.chmod(0o755)
+    return hook
 
 
 def _contract() -> CommitContractProjection:
@@ -204,7 +218,19 @@ def test_native_hook_observes_the_temporary_index_used_by_internal_commit_execut
 
 def test_native_hook_fails_closed_when_the_actual_worktree_is_not_governed(tmp_path: Path) -> None:
     workspace, project = _managed_project(tmp_path, governed=False)
-    _install(tmp_path, workspace, project)
+    runner = _runner(tmp_path)
+    blocked = install_commit_msg_hook(
+        worktree=str(project),
+        workspace_root=str(workspace),
+        commit_msg_runner=str(runner),
+        human_gate_confirmed=True,
+    )
+
+    assert blocked.state == "conflict"
+    assert "governed_single" in blocked.detail
+    assert not (project / ".git" / "hooks" / "commit-msg").exists()
+
+    _write_native_hook(project, workspace, runner)
     (project / "change.txt").write_text("change\n", encoding="utf-8")
     _checked_git(project, "add", "change.txt")
     before = _checked_git(project, "rev-parse", "HEAD").strip()
@@ -216,7 +242,7 @@ def test_native_hook_fails_closed_when_the_actual_worktree_is_not_governed(tmp_p
     assert _checked_git(project, "rev-parse", "HEAD").strip() == before
 
 
-def test_install_refuses_user_hook_configured_hooks_path_and_shared_linked_worktree(tmp_path: Path) -> None:
+def test_install_preserves_user_or_non_worktree_scoped_hook_assets(tmp_path: Path) -> None:
     workspace, project = _managed_project(tmp_path / "user-hook")
     runner = _runner(tmp_path)
     user_hook = project / ".git" / "hooks" / "commit-msg"
@@ -269,36 +295,299 @@ def test_install_refuses_user_hook_configured_hooks_path_and_shared_linked_workt
         configured_before.stderr,
     )
 
-    linked_workspace, main = _managed_project(tmp_path / "linked-worktree")
-    linked = tmp_path / "linked-worktree" / "linked"
-    _checked_git(main, "branch", "linked")
-    _checked_git(main, "worktree", "add", "-q", str(linked), "linked")
-    shared = install_commit_msg_hook(
-        worktree=str(linked),
-        workspace_root=str(linked_workspace),
+    external_workspace, external_project = _managed_project(tmp_path / "external-hooks")
+    external_directory = tmp_path / "outside-worktree-hooks"
+    external_directory.mkdir()
+    _checked_git(external_project, "config", "extensions.worktreeConfig", "true")
+    _checked_git(external_project, "config", "--worktree", "core.hooksPath", str(external_directory))
+    external = install_commit_msg_hook(
+        worktree=str(external_project),
+        workspace_root=str(external_workspace),
         commit_msg_runner=str(runner),
         human_gate_confirmed=True,
     )
 
-    assert shared.state == "conflict"
+    assert external.state == "conflict"
+    assert not (external_directory / "commit-msg").exists()
+
+
+def test_install_accepts_an_effective_worktree_local_hooks_path(tmp_path: Path) -> None:
+    workspace, project = _managed_project(tmp_path)
+    runner = _runner(tmp_path)
+    _checked_git(project, "config", "extensions.worktreeConfig", "true")
+    _checked_git(project, "config", "--worktree", "core.hooksPath", ".githooks")
+    configured_before = _git(project, "config", "--show-origin", "--show-scope", "--get", "core.hooksPath")
+
+    installed = install_commit_msg_hook(
+        worktree=str(project),
+        workspace_root=str(workspace),
+        commit_msg_runner=str(runner),
+        human_gate_confirmed=True,
+    )
+
+    assert installed.state == "managed", installed
+    assert installed.hook_path == str(project / ".githooks" / "commit-msg")
+    assert (project / ".githooks" / "commit-msg").is_file()
+    configured_after = _git(project, "config", "--show-origin", "--show-scope", "--get", "core.hooksPath")
+    assert (configured_after.returncode, configured_after.stdout, configured_after.stderr) == (
+        configured_before.returncode,
+        configured_before.stdout,
+        configured_before.stderr,
+    )
+
+    (project / "worktree-local-change.txt").write_text("change\n", encoding="utf-8")
+    _checked_git(project, "add", "worktree-local-change.txt")
+    rejected = _git(project, "commit", "-m", "docs: invalid")
+
+    assert rejected.returncode != 0
+    assert "description_cjk_missing" in rejected.stderr
+
+
+def test_bootstrap_uses_one_worktree_local_path_and_its_wrapper_disappears_with_the_worktree(tmp_path: Path) -> None:
+    workspace, main = _managed_project(tmp_path)
+    runner = _runner(tmp_path)
+    linked = tmp_path / "linked"
+    _checked_git(main, "branch", "linked")
+    _checked_git(main, "worktree", "add", "-q", str(linked), "linked")
+
+    unavailable = bootstrap_commit_msg_hook(
+        worktree=str(linked),
+        workspace_root=str(workspace),
+        commit_msg_runner=str(runner),
+        human_gate_confirmed=True,
+    )
+
+    assert unavailable.state == "unavailable"
+    assert "extensions.worktreeConfig" in unavailable.detail
+    assert _git(linked, "config", "--get", "core.hooksPath").returncode == 1
+
+    _checked_git(main, "config", "extensions.worktreeConfig", "yes")
+    installed = bootstrap_commit_msg_hook(
+        worktree=str(linked),
+        workspace_root=str(workspace),
+        commit_msg_runner=str(runner),
+        human_gate_confirmed=True,
+    )
+
+    hook = linked / ".githooks-v4" / "commit-msg"
+    assert installed.state == "managed", installed
+    assert installed.hook_path == str(hook)
+    assert hook.is_file()
+    assert _git(linked, "config", "--show-origin", "--show-scope", "--get", "core.hooksPath").stdout.endswith(
+        "\t.githooks-v4\n"
+    )
     assert not (main / ".git" / "hooks" / "commit-msg").exists()
+
+    (linked / "worktree-bootstrap-change.txt").write_text("change\n", encoding="utf-8")
+    _checked_git(linked, "add", "worktree-bootstrap-change.txt")
+    before = _checked_git(linked, "rev-parse", "HEAD").strip()
+    rejected = _git(linked, "commit", "-m", "docs: invalid")
+
+    assert rejected.returncode != 0
+    assert "description_cjk_missing" in rejected.stderr
+    assert _checked_git(linked, "rev-parse", "HEAD").strip() == before
+
+    removed = uninstall_commit_msg_hook(
+        worktree=str(linked),
+        workspace_root=str(workspace),
+        commit_msg_runner=str(runner),
+        human_gate_confirmed=True,
+    )
+
+    assert removed.state == "absent", removed
+    assert "remains unchanged" in removed.detail
+    assert not hook.exists()
+    assert _git(linked, "config", "--get", "core.hooksPath").stdout == ".githooks-v4\n"
+
+    reinstalled = bootstrap_commit_msg_hook(
+        worktree=str(linked),
+        workspace_root=str(workspace),
+        commit_msg_runner=str(runner),
+        human_gate_confirmed=True,
+    )
+    assert reinstalled.state == "managed", reinstalled
+    assert hook.is_file()
+
+    _checked_git(main, "worktree", "remove", "--force", str(linked))
+
+    assert not hook.exists()
+
+
+def test_bootstrap_does_not_shadow_an_existing_shared_hook(tmp_path: Path) -> None:
+    workspace, main = _managed_project(tmp_path)
+    runner = _runner(tmp_path)
+    _checked_git(main, "config", "extensions.worktreeConfig", "true")
+    linked = tmp_path / "linked"
+    _checked_git(main, "branch", "linked")
+    _checked_git(main, "worktree", "add", "-q", str(linked), "linked")
+    shared_hook = main / ".git" / "hooks" / "pre-commit"
+    shared_contents = b"#!/bin/sh\necho user hook >&2\n"
+    shared_hook.write_bytes(shared_contents)
+    shared_hook.chmod(0o755)
+
+    blocked = bootstrap_commit_msg_hook(
+        worktree=str(linked),
+        workspace_root=str(workspace),
+        commit_msg_runner=str(runner),
+        human_gate_confirmed=True,
+    )
+
+    assert blocked.state == "conflict"
+    assert "shadowed" in blocked.detail
+    assert shared_hook.read_bytes() == shared_contents
+    assert _git(linked, "config", "--get", "core.hooksPath").returncode == 1
+    assert not (linked / ".githooks-v4").exists()
+
+
+def test_bootstrap_validates_the_runner_before_changing_worktree_configuration(tmp_path: Path) -> None:
+    workspace, main = _managed_project(tmp_path)
+    _checked_git(main, "config", "extensions.worktreeConfig", "yes")
+    linked = tmp_path / "linked"
+    _checked_git(main, "branch", "linked")
+    _checked_git(main, "worktree", "add", "-q", str(linked), "linked")
+
+    unavailable = bootstrap_commit_msg_hook(
+        worktree=str(linked),
+        workspace_root=str(workspace),
+        commit_msg_runner=str(tmp_path / "missing-runner"),
+        human_gate_confirmed=True,
+    )
+
+    assert unavailable.state == "unavailable"
+    assert _git(linked, "config", "--get", "core.hooksPath").returncode == 1
+    assert not (linked / ".githooks-v4").exists()
+
+
+def test_bootstrap_rolls_back_configuration_and_wrapper_after_post_activation_failure(
+    tmp_path: Path, monkeypatch
+) -> None:
+    workspace, main = _managed_project(tmp_path)
+    runner = _runner(tmp_path)
+    _checked_git(main, "config", "extensions.worktreeConfig", "on")
+    linked = tmp_path / "linked"
+    _checked_git(main, "branch", "linked")
+    _checked_git(main, "worktree", "add", "-q", str(linked), "linked")
+    hook = linked / ".githooks-v4" / "commit-msg"
+
+    def _post_activation_failure(**_kwargs) -> CommitMsgHookStatus:
+        assert _git(linked, "config", "--get", "core.hooksPath").stdout == ".githooks-v4\n"
+        assert hook.is_file()
+        return CommitMsgHookStatus(
+            "conflict", "simulated post-activation failure", str(linked), str(hook.parent), str(hook)
+        )
+
+    monkeypatch.setattr("ldvh.git_hooks.commit_msg.install_commit_msg_hook", _post_activation_failure)
+
+    unavailable = bootstrap_commit_msg_hook(
+        worktree=str(linked),
+        workspace_root=str(workspace),
+        commit_msg_runner=str(runner),
+        human_gate_confirmed=True,
+    )
+
+    assert unavailable.state == "unavailable"
+    assert "simulated post-activation failure" in unavailable.detail
+    assert _git(linked, "config", "--get", "core.hooksPath").returncode == 1
+    assert not hook.exists()
+
+
+def test_managed_hook_binding_prevents_cross_environment_replacement_or_removal(tmp_path: Path) -> None:
+    workspace, project = _managed_project(tmp_path)
+    runner_a = _runner(tmp_path / "environment-a")
+    runner_b = _runner(tmp_path / "environment-b")
+    workspace_b = tmp_path / "environment-b-workspace"
+    workspace_b.mkdir()
+    (workspace_b / "LDVH-GOVERNED-PROJECTS.yaml").write_text(
+        "\n".join(
+            (
+                "product_name: Native Hook Tests",
+                "product_description: Isolated native Git lifecycle tests.",
+                "projects:",
+                "  - id: sample",
+                f"    path: {project}",
+                "    name: Sample",
+                "    description: Temporary governed project.",
+                "",
+            )
+        ),
+        encoding="utf-8",
+    )
+    installed = install_commit_msg_hook(
+        worktree=str(project),
+        workspace_root=str(workspace),
+        commit_msg_runner=str(runner_a),
+        human_gate_confirmed=True,
+    )
+
+    assert installed.state == "managed", installed
+    assert installed.hook_path is not None
+    hook = Path(installed.hook_path)
+    contents = hook.read_bytes()
+    replacement = install_commit_msg_hook(
+        worktree=str(project),
+        workspace_root=str(workspace),
+        commit_msg_runner=str(runner_b),
+        human_gate_confirmed=True,
+    )
+    removal = uninstall_commit_msg_hook(
+        worktree=str(project),
+        workspace_root=str(workspace),
+        commit_msg_runner=str(runner_b),
+        human_gate_confirmed=True,
+    )
+    workspace_replacement = install_commit_msg_hook(
+        worktree=str(project),
+        workspace_root=str(workspace_b),
+        commit_msg_runner=str(runner_a),
+        human_gate_confirmed=True,
+    )
+    workspace_removal = uninstall_commit_msg_hook(
+        worktree=str(project),
+        workspace_root=str(workspace_b),
+        commit_msg_runner=str(runner_a),
+        human_gate_confirmed=True,
+    )
+
+    assert replacement.state == "conflict"
+    assert removal.state == "conflict"
+    assert workspace_replacement.state == "conflict"
+    assert workspace_removal.state == "conflict"
+    assert hook.read_bytes() == contents
+    removed = uninstall_commit_msg_hook(
+        worktree=str(project),
+        workspace_root=str(workspace),
+        commit_msg_runner=str(runner_a),
+        human_gate_confirmed=True,
+    )
+    assert removed.state == "absent", removed
 
 
 def test_uninstall_requires_human_gate_and_only_removes_owned_hook(tmp_path: Path) -> None:
     workspace, project = _managed_project(tmp_path)
     hook = _install(tmp_path, workspace, project)
+    runner = _runner(tmp_path)
     pre_commit = project / ".git" / "hooks" / "pre-commit"
     pre_commit_contents = b"#!/bin/sh\nexit 0\n"
     pre_commit.write_bytes(pre_commit_contents)
     pre_commit.chmod(0o755)
     hooks_config_before = _git(project, "config", "--get-all", "core.hooksPath")
 
-    blocked = uninstall_commit_msg_hook(worktree=str(project), human_gate_confirmed=False)
+    blocked = uninstall_commit_msg_hook(
+        worktree=str(project),
+        workspace_root=str(workspace),
+        commit_msg_runner=str(runner),
+        human_gate_confirmed=False,
+    )
 
     assert blocked.state == "unavailable"
     assert hook.is_file()
 
-    removed = uninstall_commit_msg_hook(worktree=str(project), human_gate_confirmed=True)
+    removed = uninstall_commit_msg_hook(
+        worktree=str(project),
+        workspace_root=str(workspace),
+        commit_msg_runner=str(runner),
+        human_gate_confirmed=True,
+    )
 
     assert removed.state == "absent", removed
     assert not hook.exists()
