@@ -13,9 +13,9 @@ from configuration import (
     configuration_path,
     configure_utf8_standard_streams,
     load_configuration,
+    load_existing_configuration,
     write_configuration,
 )
-from helper_protocol import validate_helper_response
 
 
 def _emit(outcome: str, **details: Any) -> int:
@@ -33,6 +33,7 @@ def _parser() -> argparse.ArgumentParser:
         child = subparsers.add_parser(command)
         child.add_argument("--plugin-data", required=True)
         child.add_argument("--helper-executable", required=True)
+        child.add_argument("--context-recovery-executable", required=True)
         child.add_argument("--workspace-root", required=True)
         if command == "apply":
             child.add_argument("--confirm-write", action="store_true")
@@ -51,7 +52,7 @@ def _load_optional_configuration(plugin_data: Path) -> dict[str, Any] | None:
     path = configuration_path(plugin_data)
     if not path.exists() and not path.is_symlink():
         return None
-    return load_configuration(plugin_data)
+    return load_existing_configuration(plugin_data)
 
 
 def _check(plugin_data: Path) -> int:
@@ -64,8 +65,8 @@ def _check(plugin_data: Path) -> int:
     )
 
 
-def _plan(plugin_data: Path, helper: str, workspace: str) -> int:
-    proposed = build_configuration(helper, workspace)
+def _plan(plugin_data: Path, helper: str, context_recovery: str, workspace: str) -> int:
+    proposed = build_configuration(helper, context_recovery, workspace)
     path = configuration_path(plugin_data)
     current = _load_optional_configuration(plugin_data)
     change = "none" if current == proposed else ("create" if current is None else "replace")
@@ -82,12 +83,13 @@ def _plan(plugin_data: Path, helper: str, workspace: str) -> int:
 def _apply(
     plugin_data: Path,
     helper: str,
+    context_recovery: str,
     workspace: str,
     *,
     confirm_write: bool,
     replace: bool,
 ) -> int:
-    proposed = build_configuration(helper, workspace)
+    proposed = build_configuration(helper, context_recovery, workspace)
     path = configuration_path(plugin_data)
     current = _load_optional_configuration(plugin_data)
     if current == proposed:
@@ -120,15 +122,20 @@ def _apply(
 
 def _verify(plugin_data: Path) -> int:
     configuration = load_configuration(plugin_data)
-    request = json.dumps(
-        {
-            "arguments": {"workspace_root": configuration["workspace_root"]},
-            "response_profile": "compact",
-        }
-    )
     completed = subprocess.run(
-        [configuration["helper_executable"], "capabilities", "resolve-governance-scope"],
-        input=request,
+        [
+            configuration["context_recovery_executable"],
+            "--helper-executable",
+            configuration["helper_executable"],
+            "--workspace-root",
+            configuration["workspace_root"],
+            "--work-object-locator",
+            configuration["workspace_root"],
+            "--helper-cwd",
+            configuration["workspace_root"],
+        ],
+        cwd=configuration["workspace_root"],
+        input="",
         text=True,
         encoding="utf-8",
         errors="strict",
@@ -136,31 +143,19 @@ def _verify(plugin_data: Path) -> int:
         timeout=30,
         check=False,
     )
+    if completed.returncode != 0:
+        raise ConfigurationError("Context recovery verification did not complete successfully")
     try:
         parsed_response = json.loads(completed.stdout)
     except json.JSONDecodeError as error:
-        raise ConfigurationError("Helper verification did not return JSON") from error
-    helper_response = validate_helper_response(
-        parsed_response,
-        exit_code=completed.returncode,
-        request_kind="capabilities",
-        operation_key="resolve-governance-scope",
-    )
-    result = helper_response.get("result")
-    operations = result.get("operations", []) if isinstance(result, dict) else []
-    available = (
-        len(operations) == 1
-        and isinstance(operations[0], dict)
-        and operations[0].get("operation_key") == "resolve-governance-scope"
-        and operations[0].get("availability") == "available_for_request"
-    )
-    outcome = "ok" if available else "unavailable"
+        raise ConfigurationError("Context recovery verification did not return JSON") from error
+    if not isinstance(parsed_response, list) or not parsed_response:
+        raise ConfigurationError("Context recovery verification did not return a non-empty JSON exchange array")
     return _emit(
-        outcome,
+        "ok",
         configuration_path=str(configuration_path(plugin_data)),
-        helper_exit_code=completed.returncode,
-        helper_response=helper_response,
-        helper_available_for_request=available,
+        context_recovery_exchanges=parsed_response,
+        context_recovery_runner_verified=True,
         real_environment_trigger_verified=False,
         changes=[],
     )
@@ -174,11 +169,17 @@ def main() -> int:
         if arguments.command == "check":
             return _check(plugin_data)
         if arguments.command == "plan":
-            return _plan(plugin_data, arguments.helper_executable, arguments.workspace_root)
+            return _plan(
+                plugin_data,
+                arguments.helper_executable,
+                arguments.context_recovery_executable,
+                arguments.workspace_root,
+            )
         if arguments.command == "apply":
             return _apply(
                 plugin_data,
                 arguments.helper_executable,
+                arguments.context_recovery_executable,
                 arguments.workspace_root,
                 confirm_write=arguments.confirm_write,
                 replace=arguments.replace,

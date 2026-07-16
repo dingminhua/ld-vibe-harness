@@ -8,7 +8,8 @@ from pathlib import Path
 from typing import Any
 
 CONFIG_FILENAME = "ldvh.json"
-CONFIG_VERSION = 1
+CONFIG_VERSION = 2
+LEGACY_CONFIG_VERSION = 1
 GOVERNED_PROJECTS_FILENAME = "LDVH-GOVERNED-PROJECTS.yaml"
 
 
@@ -30,32 +31,62 @@ def _absolute_path(value: Any, field: str) -> Path:
     return path
 
 
-def validate_configuration(value: Any) -> dict[str, Any]:
+def _executable_path(value: Any, field: str) -> Path:
+    path = _absolute_path(value, field)
+    if not path.is_file():
+        raise ConfigurationError(f"{field} does not identify a current file")
+    if not os.access(path, os.X_OK):
+        raise ConfigurationError(f"{field} is not executable")
+    return path
+
+
+def _configuration_fields(value: Any, expected: set[str]) -> dict[str, Any]:
     if not isinstance(value, dict):
         raise ConfigurationError("configuration must be a JSON object")
-    expected = {"config_version", "helper_executable", "workspace_root"}
     unknown = sorted(set(value) - expected)
     missing = sorted(expected - set(value))
     if unknown:
         raise ConfigurationError(f"configuration contains unknown fields: {', '.join(unknown)}")
     if missing:
         raise ConfigurationError(f"configuration is missing fields: {', '.join(missing)}")
-    if value["config_version"] != CONFIG_VERSION:
-        raise ConfigurationError(f"config_version must be {CONFIG_VERSION}")
+    return value
 
-    helper = _absolute_path(value["helper_executable"], "helper_executable")
+
+def _helper_and_workspace(value: dict[str, Any]) -> tuple[Path, Path]:
+    helper = _executable_path(value["helper_executable"], "helper_executable")
     workspace = _absolute_path(value["workspace_root"], "workspace_root")
-    if not helper.is_file():
-        raise ConfigurationError("helper_executable does not identify a current file")
-    if not os.access(helper, os.X_OK):
-        raise ConfigurationError("helper_executable is not executable")
     if not workspace.is_dir():
         raise ConfigurationError("workspace_root does not identify a current directory")
     governed_projects = workspace / GOVERNED_PROJECTS_FILENAME
     if not governed_projects.is_file():
         raise ConfigurationError(f"workspace_root does not contain {GOVERNED_PROJECTS_FILENAME}")
+    return helper, workspace
+
+
+def validate_configuration(value: Any) -> dict[str, Any]:
+    expected = {"config_version", "helper_executable", "context_recovery_executable", "workspace_root"}
+    value = _configuration_fields(value, expected)
+    if value["config_version"] != CONFIG_VERSION:
+        raise ConfigurationError(f"config_version must be {CONFIG_VERSION}")
+
+    helper, workspace = _helper_and_workspace(value)
+    context_recovery = _executable_path(value["context_recovery_executable"], "context_recovery_executable")
     return {
         "config_version": CONFIG_VERSION,
+        "helper_executable": str(helper.resolve()),
+        "context_recovery_executable": str(context_recovery.resolve()),
+        "workspace_root": str(workspace.resolve()),
+    }
+
+
+def validate_legacy_configuration(value: Any) -> dict[str, Any]:
+    expected = {"config_version", "helper_executable", "workspace_root"}
+    value = _configuration_fields(value, expected)
+    if value["config_version"] != LEGACY_CONFIG_VERSION:
+        raise ConfigurationError(f"config_version must be {LEGACY_CONFIG_VERSION}")
+    helper, workspace = _helper_and_workspace(value)
+    return {
+        "config_version": LEGACY_CONFIG_VERSION,
         "helper_executable": str(helper.resolve()),
         "workspace_root": str(workspace.resolve()),
     }
@@ -67,7 +98,7 @@ def configuration_path(plugin_data: Path) -> Path:
     return plugin_data / CONFIG_FILENAME
 
 
-def load_configuration(plugin_data: Path) -> dict[str, Any]:
+def _read_configuration(plugin_data: Path) -> Any:
     path = configuration_path(plugin_data)
     try:
         value = json.loads(path.read_text(encoding="utf-8"))
@@ -75,14 +106,33 @@ def load_configuration(plugin_data: Path) -> dict[str, Any]:
         raise ConfigurationError(f"configuration does not exist: {path}") from error
     except (OSError, UnicodeError, json.JSONDecodeError) as error:
         raise ConfigurationError(f"configuration cannot be read as UTF-8 JSON: {path}") from error
+    return value
+
+
+def load_configuration(plugin_data: Path) -> dict[str, Any]:
+    value = _read_configuration(plugin_data)
+    if isinstance(value, dict) and value.get("config_version") == LEGACY_CONFIG_VERSION:
+        raise ConfigurationError("configuration version 1 requires explicit v2 replacement")
     return validate_configuration(value)
 
 
-def build_configuration(helper_executable: str, workspace_root: str) -> dict[str, Any]:
+def load_existing_configuration(plugin_data: Path) -> dict[str, Any]:
+    value = _read_configuration(plugin_data)
+    if isinstance(value, dict) and value.get("config_version") == LEGACY_CONFIG_VERSION:
+        return validate_legacy_configuration(value)
+    return validate_configuration(value)
+
+
+def build_configuration(
+    helper_executable: str,
+    context_recovery_executable: str,
+    workspace_root: str,
+) -> dict[str, Any]:
     return validate_configuration(
         {
             "config_version": CONFIG_VERSION,
             "helper_executable": helper_executable,
+            "context_recovery_executable": context_recovery_executable,
             "workspace_root": workspace_root,
         }
     )

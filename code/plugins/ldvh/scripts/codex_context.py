@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Any
 
 from configuration import ConfigurationError, configure_utf8_standard_streams, load_configuration
-from context_recovery import recover_context
 
 SESSION_START_SOURCES = frozenset({"startup", "resume", "clear", "compact"})
 SUPPORTED_EVENTS = frozenset({"SessionStart", "SubagentStart"})
@@ -71,7 +70,7 @@ def _plugin_data() -> Path:
 
 
 def _render_recovery_context(
-    exchanges: tuple[dict[str, Any], ...],
+    exchanges: list[Any],
     *,
     helper_executable: str,
     cwd: str,
@@ -86,14 +85,43 @@ def _render_recovery_context(
     )
 
 
+def _run_context_recovery(configuration: dict[str, Any], *, cwd: str) -> list[Any]:
+    completed = subprocess.run(
+        [
+            configuration["context_recovery_executable"],
+            "--helper-executable",
+            configuration["helper_executable"],
+            "--workspace-root",
+            configuration["workspace_root"],
+            "--work-object-locator",
+            cwd,
+            "--helper-cwd",
+            cwd,
+        ],
+        cwd=cwd,
+        input="",
+        text=True,
+        encoding="utf-8",
+        errors="strict",
+        capture_output=True,
+        timeout=30,
+        check=False,
+    )
+    if completed.returncode != 0:
+        raise ConfigurationError("context_recovery_executable did not complete successfully")
+    try:
+        exchanges = json.loads(completed.stdout)
+    except json.JSONDecodeError as error:
+        raise ConfigurationError("context_recovery_executable did not return a JSON exchange array") from error
+    if not isinstance(exchanges, list) or not exchanges:
+        raise ConfigurationError("context_recovery_executable did not return a non-empty JSON exchange array")
+    return exchanges
+
+
 def _run(value: Any) -> dict[str, Any]:
     event_name, cwd, source = _validate_hook_input(value)
     configuration = load_configuration(_plugin_data())
-    exchanges = recover_context(
-        helper_executable=configuration["helper_executable"],
-        workspace_root=configuration["workspace_root"],
-        cwd=cwd,
-    )
+    exchanges = _run_context_recovery(configuration, cwd=cwd)
     native_trigger = event_name if source is None else f"{event_name}/{source}"
     context = (
         f"LDVH Codex thin adapter mapped {native_trigger} to shared context recovery. "

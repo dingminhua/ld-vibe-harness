@@ -14,6 +14,7 @@ dependencies = [
 
 [project.scripts]
 ldvh = "ldvh.cli:main"
+ldvh-context-recovery = "ldvh.hooks.context_recovery:main"
 
 [project.optional-dependencies]
 dev = [

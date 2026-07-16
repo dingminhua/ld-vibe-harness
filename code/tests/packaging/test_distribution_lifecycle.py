@@ -48,6 +48,7 @@ class InstalledEnvironment:
     root: Path
     python: Path
     helper: Path
+    context_recovery_runner: Path
     purelib: Path
     runtime_dependencies: Path
 
@@ -180,6 +181,7 @@ def _create_installed_environment(root: Path) -> InstalledEnvironment:
     scripts = root / ("Scripts" if os.name == "nt" else "bin")
     python = scripts / ("python.exe" if os.name == "nt" else "python")
     helper = scripts / ("ldvh.exe" if os.name == "nt" else "ldvh")
+    context_recovery_runner = scripts / ("ldvh-context-recovery.exe" if os.name == "nt" else "ldvh-context-recovery")
     purelib = Path(
         _run_checked(
             [str(python), "-c", 'import sysconfig; print(sysconfig.get_paths()["purelib"])'],
@@ -188,7 +190,7 @@ def _create_installed_environment(root: Path) -> InstalledEnvironment:
     )
     dependencies = root / "runtime-dependencies"
     _copy_runtime_dependencies(dependencies)
-    return InstalledEnvironment(root, python, helper, purelib, dependencies)
+    return InstalledEnvironment(root, python, helper, context_recovery_runner, purelib, dependencies)
 
 
 def _pip(environment: InstalledEnvironment, *arguments: str) -> None:
@@ -228,6 +230,40 @@ def _cli(
     response = json.loads(decoded)
     assert decoded == json.dumps(response, ensure_ascii=False, separators=(",", ":")) + "\n"
     return response
+
+
+def _context_recovery(
+    environment: InstalledEnvironment,
+    cwd: Path,
+    workspace: Path,
+    work_object_locator: Path,
+) -> list[dict[str, Any]]:
+    completed = subprocess.run(
+        [
+            str(environment.context_recovery_runner),
+            "--helper-executable",
+            str(environment.helper),
+            "--workspace-root",
+            str(workspace),
+            "--work-object-locator",
+            str(work_object_locator),
+            "--helper-cwd",
+            str(cwd),
+        ],
+        cwd=cwd,
+        input="",
+        text=True,
+        encoding="utf-8",
+        errors="strict",
+        capture_output=True,
+        env=environment.process_environment,
+        check=False,
+    )
+    assert completed.returncode == 0, (completed.stdout, completed.stderr)
+    assert completed.stderr == ""
+    exchanges = json.loads(completed.stdout)
+    assert isinstance(exchanges, list)
+    return exchanges
 
 
 def _references(value: Any) -> list[dict[str, Any]]:
@@ -606,8 +642,26 @@ def _assert_version(
     _assert_installed_identity(response, version, snapshot_sha256)
 
 
+def _assert_context_recovery_runner(environment: InstalledEnvironment, root: Path) -> None:
+    workspace, project = _managed_project(root)
+    decoy = root / "decoy-cwd"
+    (decoy / "specs").mkdir(parents=True)
+    (decoy / "specs" / "00-理念与构成.md").write_text("not the installed source\n", encoding="utf-8")
+
+    assert environment.context_recovery_runner.is_file()
+    exchanges = _context_recovery(environment, decoy, workspace, project)
+
+    assert [exchange["operation_key"] for exchange in exchanges] == [
+        "resolve-governance-scope",
+        "find-fact-object-candidates",
+    ]
+    assert exchanges[0]["request"]["work_object_locators"] == [str(project)]
+    assert not tuple(environment.purelib.rglob("codex_context.py"))
+
+
 def _assert_uninstalled(environment: InstalledEnvironment) -> None:
     assert not environment.helper.exists()
+    assert not environment.context_recovery_runner.exists()
     assert not (environment.purelib / "ldvh").exists()
     assert not tuple(environment.purelib.glob("ld_vibe_harness-*.dist-info"))
     completed = subprocess.run(
@@ -673,6 +727,7 @@ def test_direct_wheel_replaces_old_record_repairs_tampering_and_uninstalls(
         release_artifacts.current_version,
         release_artifacts.current_snapshot_sha256,
     )
+    _assert_context_recovery_runner(environment, tmp_path / "direct-context-recovery")
 
     _exercise_operation_matrix(
         environment,
@@ -696,6 +751,7 @@ def test_sdist_derived_wheel_runs_the_same_process_matrix_and_uninstalls(
         release_artifacts.current_version,
         release_artifacts.current_snapshot_sha256,
     )
+    _assert_context_recovery_runner(environment, tmp_path / "sdist-context-recovery")
     _exercise_operation_matrix(
         environment,
         tmp_path / "sdist-matrix",
