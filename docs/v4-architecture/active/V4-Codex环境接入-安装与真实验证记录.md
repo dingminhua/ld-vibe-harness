@@ -2,6 +2,8 @@
 
 > 记录性质：本文保存 09/33 首个 Codex 接入增量的当次环境基线、实际变化、证据和未验证范围，不是规则源。结论只覆盖本文明确记录的机器、用户、Codex 版本、插件版本、工作区、入口和事件。
 
+§§1–8 保留 2026-07-15 初版候选的历史证据；2026-07-16 核心先行后继候选的当前安装与触发范围只由 §9 说明。两者不得相互借用版本、信任、事件或回滚结论。
+
 ## 1. 目标与结论
 
 目标环境是本机当前用户的 Codex CLI/个人插件系统。接入单元来自仓库 `code/plugins/ldvh`，只覆盖 Codex `SessionStart` 的 `startup|resume`，通过显式安装配置调用本仓库 `.venv/bin/ldvh` 的 `resolve-governance-scope`。
@@ -99,3 +101,39 @@ Human 先确认建立 09 和配套行动模板，并明确同意个人插件替�
 Windows 第 6 切片随后修改了仓库内 Hook 命令和 adapter UTF-8 transport，但没有修改个人 marketplace、已安装 cache、配置或 Hook 信任状态。本记录中的版本、SHA-256、thread id、成功/失败触发与停用/恢复结论仍是当时有效的 macOS 历史证据，只对应 `0.1.0+codex.20260715021623` 的旧安装内容。
 
 因此，仓库新候选不得复用本记录宣称 source↔cache 一致、已 trusted 或真实触发。未来在 macOS 重装或进行原生 Windows 验证时，必须按 33 使用新 cachebuster、重新回读逐文件指纹、重新审核 trust hash，并产生新的 startup/resume 与失败/停用/恢复证据；在此之前，仓库候选、旧安装缓存和原生 Windows 支持是三个不同结论层级。
+
+## 9. 2026-07-16 核心先行后继候选
+
+本节记录提交 5baef8aa 之后的当前候选，不重写 §§1–8 的历史事实。共享恢复实现已从插件 bundle 移至 ldvh.hooks.context_recovery，并由明确的 ldvh-context-recovery 入口调用；Codex 脚本只投影本机原生事件、读取显式配置、以 argv 调用核心并原样返回非空 exchanges。
+
+### 9.1 实际安装与配置回读
+
+| 对象 | 当次观察 |
+|---|---|
+| 仓库提交 | 5baef8aa feat(v4): establish core-first hook recovery |
+| 个人来源与当前缓存 | /Users/dmh2002/plugins/ldvh；/Users/dmh2002/.codex/plugins/cache/personal/ldvh/0.1.0+codex.20260716090757 |
+| 当前插件版本 | ldvh@personal 0.1.0+codex.20260716090757，CLI 回读为 installed, enabled |
+| 核心入口 | /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/.venv/bin/ldvh-context-recovery，以显式 Helper、工作区、工作对象 locator 和 Helper cwd 调用 |
+| 配置 | 旧 v1 仅通过显式 --replace 整体替换为 v2；v2 包含 helper_executable、context_recovery_executable 与 workspace_root 的绝对路径 |
+| source↔cache | cachebuster 后逐文件比较一致；个人来源和安装缓存均通过 plugin validator；缓存中的 configure.py check 返回 outcome: ok |
+
+本轮先以本地 editable 安装使核心 console entrypoint 可用，再同步个人来源、运行 cachebuster、执行 codex plugin add ldvh@personal。没有手改 marketplace、没有推导核心入口、没有修改管辖配置、事实源或生产 Helper。Human 随后在 /hooks 完成授权；自动触发输出是授权生效的当次证据，本文不把 CLI 的 installed, enabled 表述为独立的 Hook 信任结论。
+
+### 9.2 原生成功路径
+
+当前线程 019f671a-eb74-7b62-a365-450290894556 产生两份 Hook 原始输出。两者均来自已安装 adapter，包含实际 Helper 请求、进程退出码和未修改的 Helper 响应：
+
+| 原生路径 | 当次输出 | 可观察结果 |
+|---|---|---|
+| SessionStart/resume | a2da92be-a5e3-40a9-8dbc-626514091865.txt | 自动进入共享恢复；依次为 resolve-governance-scope、find-fact-object-candidates；均为 outcome: ok，所有 changes 为空 |
+| SubagentStart | c59d4bec-ddab-4c40-8a65-c4a84827e237.txt | 自动进入同一共享恢复；操作集合、ok 结果和零变化与前项一致；启动后的独立子代理也确认收到该恢复上下文及“Code 未作语义判断”的说明 |
+
+两条路径都先得到唯一受管辖项目 ldvh，才读取 F1；没有调用 capabilities、规则全文、F3/F4、写入操作、行动模板或任何 receipt/状态机。此处只证明这两个当次原生成功路径；它们不证明 AI 已恢复真实责任或完成了端到端 dogfood。
+
+### 9.3 降级、未验证范围与结论
+
+已安装缓存还做过一次无配置 direct probe：以不存在的 PLUGIN_DATA 调用 SubagentStart 映射时，adapter 返回 continue: true、明确的 unresolved context 与 hookSpecificOutput，没有伪造治理或事实结果。该结果只证明已安装 adapter 的非阻塞失败交还，不是新的目标环境自动失败触发。
+
+本轮没有重新取得 SessionStart/startup、clear、compact、停用/恢复、Human 可见名称或图标展示的真实证据，也没有验证其它 Codex 版本、用户、机器、工作区或第二个环境。这些范围继续未验证；旧版本的停用/恢复和失败证据不能填补它们。
+
+因此，当前可声明的范围是：本机当前用户、上述插件版本和工作区中，核心先行共享恢复通过 Codex 薄 adapter 已在 SessionStart/resume 与 SubagentStart 自动触发，并忠实交还两项来源定义的只读 Helper 结果。完整 Tests、POST 审核和实现边界见 V4-Codex环境接入-Code实现规划.md §9.6；下一主线 Gate 仍是 Human 选择真实工作后的纵向 dogfood。

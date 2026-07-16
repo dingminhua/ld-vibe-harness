@@ -146,11 +146,11 @@ Windows 原生 gate 必须使用新 cachebuster 重新安装，逐文件回读 s
 
 ## 9. 共享 Hook 行为与 Codex 薄引用迭代
 
-本节记录 2026-07-16 在 05 与 09 当前规则成立后的下一实现增量。§§1–8.1 只保留为历史基线；与本节冲突时，以本节定义的新候选为准。本节不使 Code、安装、信任或真实触发自动成立。
+本节记录 2026-07-16 在 05 与 09 当前规则成立后的核心先行实现增量。§§1–8.1 只保留为历史基线；与本节冲突时，以本节定义的新候选为准。§§9.1–9.5 记录实施前边界与顺序，§9.6 记录已取得的当次安装和真实触发证据；二者均不外推到未观察事件、其它环境或未来版本。
 
 ### 9.1 当前问题与吸收边界
 
-当前仓库候选仍只有 `SessionStart startup|resume`，个人插件来源与安装缓存又停留在 Windows 候选之前；`ldvh@personal` 虽显示已安装并启用，但其历史五项插件 Hook trust 状态均为 `enabled=false`，用户级 `~/.codex/hooks.json` 当前为空。因此，插件存在不能证明任何 LDVH Hook 正在驱动当前会话。
+实施开始时，仓库候选仍只有 `SessionStart startup|resume`，个人插件来源与安装缓存也停留在 Windows 候选之前；当时的插件存在不能证明任何 LDVH Hook 正在驱动当前会话。该观察只说明实施前基线，已由 §9.6 的新安装和真实触发证据替代，不能反向覆盖本轮范围。
 
 本轮只复用 V3 的 `SessionStart` 触发点。`PreToolUse` 依赖命令分类和 transcript 推断，`Stop` 把事件名解释成完成声明，二者必须等待新的正式来源与 Helper 操作后重新设计；`PostToolUse`、`UserPromptSubmit` 和 `Notification` 原本只是 no-op 或研究采样，其中 `Notification` 已不属于当前 Codex Hook 事件。不得为了恢复 V3 数量而重新注册这些入口。
 
@@ -200,4 +200,12 @@ tests 按失败边界拆开：核心 tests 固定恢复调用顺序、唯一项�
 
 先完成共享行为和 adapter tests，再运行 plugin validator、Ruff、格式、聚焦与全量测试，并由独立 POST 审核 Code 是否越权以及 tests 是否重复。仓库增量独立提交后，才按 plugin-creator 的 cachebuster 流程更新既有个人来源并执行 `codex plugin add ldvh@personal`；不手改 marketplace 或 trust hash。
 
-新 Hook 定义必须由 Human 在 `/hooks` 复核并信任，随后用新任务分别取得 SessionStart、SubagentStart、主要失败路径、停用与恢复的真实证据。无法真实触发的 `resume|clear|compact` 继续标为未验证；插件名称、图标、source/cache 一致和旧 Hook 不再加载也必须实际回读，不能由 manifest 或 tests 倒推。
+新 Hook 定义必须由 Human 在 `/hooks` 复核并信任，随后用新任务分别取得 SessionStart、SubagentStart、主要失败路径、停用与恢复的真实证据。该顺序已在 §9.6 执行到本轮可观察范围；无法真实触发的 `startup|clear|compact`、停用与恢复，以及 Human 可见名称、图标展示继续标为未验证，不能由 manifest 或 tests 倒推。
+
+### 9.6 2026-07-16 实施、安装与真实验证收口
+
+仓库增量已作为提交 `5baef8aa` 完成。核心入口 `ldvh-context-recovery` 已在本仓库当前虚拟环境可执行；个人插件来源按 cachebuster 更新，并经 `codex plugin add ldvh@personal` 安装为 `0.1.0+codex.20260716090757`。来源与安装缓存逐文件一致，plugin validator、Ruff、聚焦回归、wheel/sdist 隔离验证和当时全量回归均通过。原有 v1 配置只经显式 `--replace` 整体替换为含 `context_recovery_executable` 的 v2；没有推导插件路径、工作区或 Helper 入口。
+
+Human 在 `/hooks` 授权后，当前线程的 `SessionStart/resume` 与一次独立子代理的 `SubagentStart` 都自动调用已安装 adapter，并各自注入共享核心的原始结果。两份输出都只包含 `resolve-governance-scope`、`find-fact-object-candidates`，全部 `outcome: ok` 且 `changes: []`；子代理也独立确认其启动上下文收到同一恢复信息及“Code 未作语义判断”的说明。已安装缓存的缺失配置 direct probe 返回 `continue: true` 与明确的 unresolved context，证明 adapter 失败交还不会伪造成功；它不是新的原生失败事件证据。
+
+因此，本实现增量已完成共享能力、Codex 薄映射、最小独立失败 tests 和两条原生成功路径的验证。它不声明 `startup|clear|compact`、停用/恢复、名称/图标 UI 呈现、其它 Codex 版本或其它环境已验证；这些范围只在相应目标、来源和当次证据具备时重新进入 09/33 Gate。完整安装范围、证据路径和未验证项见 `V4-Codex环境接入-安装与真实验证记录.md` §9。
