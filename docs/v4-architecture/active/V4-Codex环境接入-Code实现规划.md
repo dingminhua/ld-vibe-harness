@@ -156,7 +156,7 @@ Windows 原生 gate 必须使用新 cachebuster 重新安装，逐文件回读 s
 
 ### 9.2 唯一共享恢复行为
 
-当前只有一个真实环境消费者，不建立核心源码与插件 bundle 两份实现。`scripts/context_recovery.py` 作为唯一共享实现，不接收 Codex 事件名或厂商 payload；`scripts/codex_context.py` 只校验 Codex 输入、调用共享实现并转换输出。出现第二个真实环境消费者时，再依据实际分发方式把同一实现移到双方可直接调用的唯一位置，不预先建立复制、同步脚本或 registry。
+当前只有一个真实环境消费者，不建立核心源码与插件 bundle 两份实现。`scripts/context_recovery.py` 作为唯一共享实现，不接收 Codex 事件名或厂商 payload；它只保留两次 Helper 调用、发起 F1 所必需的最小管辖门槛和原始响应收集。`scripts/codex_context.py` 只校验 Codex 输入、调用共享实现并转换输出。这个拆分是当前两种原生事件共同薄引用同一恢复链的边界，不为未来 adapter 预建分发框架；出现第二个真实环境消费者时，再依据实际分发方式把同一实现移到双方可直接调用的唯一位置，不预先建立复制、同步脚本或 registry。
 
 共享恢复行为固定执行：
 
@@ -185,13 +185,14 @@ Codex 薄 adapter 不按事件名称选择“最接近”的 LDVH 行为。未�
 
 本轮候选文件变化限定为：
 
-1. 新增唯一环境无关共享实现 `scripts/context_recovery.py`；
+1. 新增唯一环境无关共享实现 `scripts/context_recovery.py`；它不定义投影对象、Helper Schema、coverage/cursor 提示或领域结论；
 2. 用 `scripts/codex_context.py` 替代只服务 SessionStart 的旧脚本，Hook 配置的两个原生事件都薄引用该入口；
-3. 保持现有显式配置字段不变，补足 Helper 共同响应闭集与共享行为实际消费字段的校验；
-4. manifest 的 Human 可见名称改为 `LD Vibe Harness`，描述不再声称只支持 SessionStart 管辖注入，并从根级现有 `icons/` 复制 128/512 PNG 到插件 `assets/` 供 `composerIcon` 与 `logo` 使用；
-5. 不修改 Helper 公开操作、管辖配置、事实 Schema、行动模板或 marketplace 登记。
+3. 保持现有显式配置字段不变；只核验 Helper 的契约身份、请求／操作回显、`outcome` 与退出码一致性，以及发起 F1 所必需的管辖字段；插件不维护共同响应或领域结果的第二份 Schema；
+4. 将每次实际 Helper 请求、退出码和完整原始响应一起交给 AI，不投影、裁剪、重述 `result`、`scope`、coverage、cursor、gaps 或 follow-up；
+5. manifest 的 Human 可见名称改为 `LD Vibe Harness`，描述不再声称只支持 SessionStart 管辖注入，并从根级现有 `icons/` 复制 128/512 PNG 到插件 `assets/` 供 `composerIcon` 与 `logo` 使用；
+6. 不修改 Helper 公开操作、管辖配置、事实 Schema、行动模板或 marketplace 登记。
 
-tests 原则上保留现有配置、协议、UTF-8、timeout 与进程失败反例。共享成功链同时覆盖完整 F1，不再另设“完整投影”测试；另为非唯一管辖不调用 F1、cursor、partial 和失败各保留一个独立分支。adapter 只覆盖 SessionStart 四个 source、SubagentStart 与未知事件的薄映射，Helper 失败不再按事件复制；最后精确检查 manifest、Hook 与图标闭合。fixture 不得自创 Helper 顶层字段，tests 不得判断事实适用、当前 WorkCase、授权和完成。
+tests 只保留具有独立失败价值的来源边界：完整链准确调用管辖与 F1 并原样交还响应；无法机械取得唯一项目时不调用 F1；一个实际 `partial` 结果不被吞掉；传输、契约身份和退出码不一致可被区分；两个原生事件及其允许 source 薄引用同一入口；manifest、Hook 与图标闭合。cursor、coverage 含义、F1 嵌套字段、共同响应闭集和同一通用转交路径中的多个 outcome 不再作为插件 tests。fixture 不得自创有效 Helper Schema 或把合格响应改写成另一种业务结果；tests 不得判断事实适用、当前 WorkCase、授权和完成。
 
 ### 9.5 实施与真实验证顺序
 

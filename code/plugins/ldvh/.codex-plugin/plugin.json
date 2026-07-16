@@ -1,17 +1,20 @@
 {
   "name": "ldvh",
   "version": "0.1.0",
-  "description": "Thin Codex SessionStart adapter for the LDVH Helper CLI",
+  "description": "Thin Codex adapter for source-defined LDVH context recovery",
   "author": {
     "name": "LDVH"
   },
   "interface": {
-    "displayName": "LDVH for Codex",
-    "shortDescription": "Loads LDVH governance context when a Codex task starts.",
-    "longDescription": "A thin SessionStart adapter that sends the current Codex work object to the configured LDVH Helper and returns its mechanical result to the AI.",
+    "displayName": "LD Vibe Harness",
+    "shortDescription": "Restores source-defined LDVH context for Codex AI sessions.",
+    "longDescription": "Maps supported Codex lifecycle events to shared LDVH context recovery and returns only source-defined mechanical results to the AI.",
     "developerName": "LDVH",
     "category": "Productivity",
-    "capabilities": ["SessionStart context"],
-    "defaultPrompt": ["Show the LDVH governance context for this task."]
+    "capabilities": ["Shared context recovery"],
+    "defaultPrompt": ["Show the LDVH context recovered for this task."],
+    "brandColor": "#1F6FEB",
+    "composerIcon": "./assets/ldvh-plugin-icon-128.png",
+    "logo": "./assets/ldvh-plugin-icon-512.png"
   }
 }

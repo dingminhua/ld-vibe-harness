@@ -2,14 +2,27 @@
   "hooks": {
     "SessionStart": [
       {
-        "matcher": "startup|resume",
+        "matcher": "startup|resume|clear|compact",
         "hooks": [
           {
             "type": "command",
-            "command": "python3 -X utf8 \"${PLUGIN_ROOT}/scripts/session_start.py\"",
-            "commandWindows": "py -3.12 -X utf8 \"${PLUGIN_ROOT}\\scripts\\session_start.py\"",
-            "timeout": 30,
-            "statusMessage": "Loading LDVH governance context"
+            "command": "python3 -X utf8 \"${PLUGIN_ROOT}/scripts/codex_context.py\"",
+            "commandWindows": "py -3.12 -X utf8 \"${PLUGIN_ROOT}\\scripts\\codex_context.py\"",
+            "timeout": 60,
+            "statusMessage": "Restoring LDVH context"
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -X utf8 \"${PLUGIN_ROOT}/scripts/codex_context.py\"",
+            "commandWindows": "py -3.12 -X utf8 \"${PLUGIN_ROOT}\\scripts\\codex_context.py\"",
+            "timeout": 60,
+            "statusMessage": "Restoring LDVH context"
           }
         ]
       }
