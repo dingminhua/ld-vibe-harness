@@ -1,6 +1,6 @@
 # V4 Git 提交契约 Validator Code 实现规划
 
-> 当前规划版本：1；形成时间：2026-07-15（Asia/Shanghai）；实现起点 commit：`13bf510dfed89fd6aa9b0183c7d688123a841601`。本文是 07 定义的 Code 实现规划，不是规则源，不授权任何 Git 写入、历史改写或 Hook 安装。
+> 当前规划版本：2；形成时间：2026-07-15（Asia/Shanghai）；最近调整：2026-07-16（Asia/Shanghai）；实现起点 commit：`13bf510dfed89fd6aa9b0183c7d688123a841601`。本文是 07 定义的 Code 实现规划，不是规则源；具体项目的 Hook 安装、替换或移除仍须由 Human 当次授权。
 
 ## 1. 实现目标与来源
 
@@ -164,3 +164,23 @@ Human 已在当前连续任务中明确授权提交并要求按计划推进。AI
 临时 Index 候选、机械 Validator、AI 语义审核、验证覆盖 guard 和创建前全部身份重检通过。内部执行能力创建 commit `9d462a7e6f031f4609e3d55e86198b295099032b`，parent 为 `13bf510dfed89fd6aa9b0183c7d688123a841601`，tree 为 `a613fa5a4fd4f9044f0d64f614d6b141e67aa6b0`；回读的 22 个路径、规范化 message、parent 和 tree 与候选一致，真实 Index 对齐完成，临时资产清理结果为 `discarded`，执行结果为 `created` 且无 issues。
 
 提交后真实 Index 为空；上述外部审计报告删除仍为 unstaged，05/06 专项审计仍为 untracked，没有被静默纳入、丢弃或改写。该结果证明内部 Code 闭环在当前实际仓库成立，不外推 Helper 公开操作、Hook 安装、push/PR 或其它环境已经集成。
+
+## 17. 原生 `commit-msg` Hook 最小接入规划
+
+09 §5.1 已为来源已独立定义的原生阻断型机械 Gate 建立唯一窄例外：它可以绕过 Helper 直达唯一核心 Code，但只接收真实事件输入、绑定同一实际候选/来源/管辖/Index 身份并返回 allow/block 与诊断。03 §9 是本增量的唯一机械合格条件来源；30 继续不定义 Hook；33 继续只组织一次安装与验证行动。本增量不新增 Git 专用 Spec、Helper 操作、Helper 字段、第二份 Schema、登记册或状态机。
+
+共享 runner `ldvh.hooks.commit_msg` 必须从同一已分发规则源解析 03 投影，读取 Git 提供的完整 message 文件，解析 02 管辖并以 Git 实际 commit 使用的 Index 观察候选，最后调用既有纯 Validator。`passed` 才返回零；`failed`、`unverifiable`、来源缺失、管辖未完成、候选读取失败或观察漂移均返回非零。它不写 message、Index 或 Git 历史，也不判断本地最小增量、主要目的、语义、授权、验证充分性或完成。
+
+Git 侧只允许一个 POSIX 薄 adapter：它从当前 `commit-msg` 事件取得 worktree、message 文件和可选的 Git `GIT_INDEX_FILE`，再把这些值及安装时显式固定的 runner/workspace 原样传给共享 runner。adapter 不保存提交 type/scope/body 规则、管辖逻辑、AI 判断或 Helper Schema。对 LDVH 内部临时 Index 的创建提交，runner 必须显式消费 Git 事件提供的该 Index，而不能退回读取用户默认 Index。
+
+本地管理入口只提供 `status`、`install`、`uninstall`。安装或卸载必须显式确认 Human Gate；任何已有 `core.hooksPath`、既有 `commit-msg`、符号链接、未知文件或 effective hooks directory 位于当前 worktree 外时一律停止、零写入，不设置、修改、合并或清除 Git 配置。只有默认 Hook 目录中的精确 LDVH 自有 regular file 才能更新或删除；linked worktree 的 common-dir 默认 Hook 目录保持不支持，避免一次授权影响兄弟 worktree。
+
+最小 tests 只固定独立失败价值：真实 `git commit` 的机械正反例（失败时 HEAD/Index 不前进）、内部临时 Index 的同一候选观察、非管辖/不可验证 fail closed、已有用户 Hook/`core.hooksPath`/shared common-dir 的零写入、以及 Human Gate 后仅删除自有 wrapper。既有 Validator 风险 tests 继续唯一覆盖格式规则，不重复 AI 语义。当前 V4 worktree 已显式设置 `.githooks-v4`，因此属于安装器应停止并交还的现状；隔离仓库验证完成后，是否迁移或授权当前项目的 Hook 仍由 Human 另行决定。该能力只覆盖正常本地 Git lifecycle；`--no-verify`、远端导入和服务端创建提交不因本入口获得约束。
+
+## 18. 原生 Hook 实现与验证结果
+
+本增量已经完成：09 §5.1 只增加原生阻断型机械 Gate 的窄例外；`ldvh.hooks.commit_msg` 从当前规则源取得 03 投影、解析 02 管辖、读取 Git message 与显式 Git Index 后调用纯 Validator；`ldvh.git_hooks.commit_msg` 只渲染 POSIX 薄 adapter，并提供受 Human Gate 保护的 `status`/`install`/`uninstall`。adapter 本身不保存规则或 Helper Schema；Hook 的自有文件以正文 SHA-256 识别，用户后来改动、符号链接和未知文件均不被覆盖或删除。
+
+真实隔离 Git 生命周期 tests 证明：不合格 message 阻断且 HEAD/Index 保持，合格 message 正常创建提交；内部临时 Index 经过 Git 事件显式传入并被同一 Gate 观察；非管辖项目 fail closed；既有用户 Hook、任意 `core.hooksPath`、linked worktree 共享目录和被修改的伪自有文件均零写入；未确认 Human Gate 不卸载，确认后只移除完整自有 wrapper。wheel/sdist 生命周期同时验证两个新 console entry point 存在且卸载后退出。
+
+独立 POST 审核确认 09 例外未扩大为新的语义或状态权威，五组 tests 均有独立失败价值。最终快照完成全量 `code/tests`：`799 passed, 10 skipped`；全库 Ruff check 和 format check 均通过，`git diff --check` 通过。当前 V4 worktree 的 `core.hooksPath` 仍为 `.githooks-v4`，目录仍只有既有 `README.md`；本增量没有安装、替换或移除当前项目 Hook，也没有修改其 Git 配置。实际项目接入仍等待 Human 另行授权。

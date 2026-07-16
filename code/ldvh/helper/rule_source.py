@@ -40,7 +40,9 @@ def _structural_worktree_root(package_file: Path) -> Path | None:
     return None
 
 
-def inspect_colocated_rule_source(package_file: Path) -> RuleSourceResult:
+def inspect_colocated_repository(package_file: Path) -> RuleSourceResult:
+    """Inspect only the current rule repository colocated with imported Code."""
+
     structural_root = _structural_worktree_root(package_file)
     if structural_root is not None:
         issue = validate_exact_worktree_root(structural_root)
@@ -54,5 +56,13 @@ def inspect_colocated_rule_source(package_file: Path) -> RuleSourceResult:
             repository = inspect_verified_snapshot(snapshot)
         except (OSError, SnapshotError, ValueError) as exc:
             return RuleSourceResult(None, None, f"安装规则快照不可用：{exc}")
-    operations = inspect_operation_sources(repository)
-    return RuleSourceResult(repository, operations, None)
+    return RuleSourceResult(repository, None, None)
+
+
+def inspect_colocated_rule_source(package_file: Path) -> RuleSourceResult:
+    """Inspect the colocated rule repository and Helper operation declarations."""
+
+    result = inspect_colocated_repository(package_file)
+    if result.problem is not None or result.repository is None:
+        return result
+    return RuleSourceResult(result.repository, inspect_operation_sources(result.repository), None)

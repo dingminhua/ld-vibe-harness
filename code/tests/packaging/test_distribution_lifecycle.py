@@ -49,6 +49,8 @@ class InstalledEnvironment:
     python: Path
     helper: Path
     context_recovery_runner: Path
+    commit_msg_runner: Path
+    git_hook_manager: Path
     purelib: Path
     runtime_dependencies: Path
 
@@ -182,6 +184,8 @@ def _create_installed_environment(root: Path) -> InstalledEnvironment:
     python = scripts / ("python.exe" if os.name == "nt" else "python")
     helper = scripts / ("ldvh.exe" if os.name == "nt" else "ldvh")
     context_recovery_runner = scripts / ("ldvh-context-recovery.exe" if os.name == "nt" else "ldvh-context-recovery")
+    commit_msg_runner = scripts / ("ldvh-git-commit-msg.exe" if os.name == "nt" else "ldvh-git-commit-msg")
+    git_hook_manager = scripts / ("ldvh-git-hook.exe" if os.name == "nt" else "ldvh-git-hook")
     purelib = Path(
         _run_checked(
             [str(python), "-c", 'import sysconfig; print(sysconfig.get_paths()["purelib"])'],
@@ -190,7 +194,16 @@ def _create_installed_environment(root: Path) -> InstalledEnvironment:
     )
     dependencies = root / "runtime-dependencies"
     _copy_runtime_dependencies(dependencies)
-    return InstalledEnvironment(root, python, helper, context_recovery_runner, purelib, dependencies)
+    return InstalledEnvironment(
+        root,
+        python,
+        helper,
+        context_recovery_runner,
+        commit_msg_runner,
+        git_hook_manager,
+        purelib,
+        dependencies,
+    )
 
 
 def _pip(environment: InstalledEnvironment, *arguments: str) -> None:
@@ -659,9 +672,27 @@ def _assert_context_recovery_runner(environment: InstalledEnvironment, root: Pat
     assert not tuple(environment.purelib.rglob("codex_context.py"))
 
 
+def _assert_native_git_hook_runners(environment: InstalledEnvironment) -> None:
+    for runner in (environment.commit_msg_runner, environment.git_hook_manager):
+        completed = subprocess.run(
+            [str(runner), "--help"],
+            cwd=environment.root,
+            text=True,
+            encoding="utf-8",
+            errors="strict",
+            capture_output=True,
+            env=environment.process_environment,
+            check=False,
+        )
+        assert completed.returncode == 0, (runner, completed.stdout, completed.stderr)
+        assert completed.stdout
+
+
 def _assert_uninstalled(environment: InstalledEnvironment) -> None:
     assert not environment.helper.exists()
     assert not environment.context_recovery_runner.exists()
+    assert not environment.commit_msg_runner.exists()
+    assert not environment.git_hook_manager.exists()
     assert not (environment.purelib / "ldvh").exists()
     assert not tuple(environment.purelib.glob("ld_vibe_harness-*.dist-info"))
     completed = subprocess.run(
@@ -728,6 +759,7 @@ def test_direct_wheel_replaces_old_record_repairs_tampering_and_uninstalls(
         release_artifacts.current_snapshot_sha256,
     )
     _assert_context_recovery_runner(environment, tmp_path / "direct-context-recovery")
+    _assert_native_git_hook_runners(environment)
 
     _exercise_operation_matrix(
         environment,
@@ -752,6 +784,7 @@ def test_sdist_derived_wheel_runs_the_same_process_matrix_and_uninstalls(
         release_artifacts.current_snapshot_sha256,
     )
     _assert_context_recovery_runner(environment, tmp_path / "sdist-context-recovery")
+    _assert_native_git_hook_runners(environment)
     _exercise_operation_matrix(
         environment,
         tmp_path / "sdist-matrix",

@@ -15,6 +15,8 @@ dependencies = [
 [project.scripts]
 ldvh = "ldvh.cli:main"
 ldvh-context-recovery = "ldvh.hooks.context_recovery:main"
+ldvh-git-commit-msg = "ldvh.hooks.commit_msg:main"
+ldvh-git-hook = "ldvh.git_hooks.commit_msg:main"
 
 [project.optional-dependencies]
 dev = [

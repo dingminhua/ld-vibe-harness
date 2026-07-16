@@ -202,8 +202,15 @@ def observe_commit_candidate(
     message: str | None,
     contract: CommitContractProjection,
     governance: GovernanceScopeResult,
+    index_file: Path | None = None,
 ) -> CommitCandidateObservation:
-    """Observe one real governed worktree without modifying Git or project files."""
+    """Observe one real governed worktree without modifying Git or project files.
+
+    ``index_file`` is only for a caller that already received the active Index
+    path from Git itself (for example, a native ``commit-msg`` hook or the
+    internal temporary-index commit executor). It is never taken from ambient
+    process state here.
+    """
 
     if governance.scope_status is not ScopeStatus.GOVERNED_SINGLE or len(governance.object_resolutions) != 1:
         issue = _issue("governance", "Adapter requires one governed_single object resolution")
@@ -232,6 +239,7 @@ def observe_commit_candidate(
         message=message,
         contract=contract,
         governance=governance,
+        index_file=index_file,
     )
 
 

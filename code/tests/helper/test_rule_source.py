@@ -3,7 +3,11 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
-from ldvh.helper.rule_source import inspect_colocated_rule_source, locate_colocated_repository
+from ldvh.helper.rule_source import (
+    inspect_colocated_repository,
+    inspect_colocated_rule_source,
+    locate_colocated_repository,
+)
 
 
 def _git_init(root: Path) -> None:
@@ -42,6 +46,27 @@ def test_worktree_selection_does_not_depend_on_specs_health(tmp_path: Path, monk
     assert result.repository is not None
     assert result.repository.source_identity is not None
     assert result.repository.source_identity.view == "working_tree"
+
+
+def test_colocated_repository_does_not_require_helper_operation_declarations(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    root = tmp_path / "repository"
+    package_file = root / "code/ldvh/__init__.py"
+    package_file.parent.mkdir(parents=True)
+    package_file.write_text("", encoding="utf-8")
+    _git_init(root)
+    monkeypatch.setattr(
+        "ldvh.helper.rule_source.inspect_operation_sources",
+        lambda _repository: (_ for _ in ()).throw(AssertionError("operation declarations must not be read")),
+    )
+
+    result = inspect_colocated_repository(package_file)
+
+    assert result.problem is None
+    assert result.repository is not None
+    assert result.operations is None
 
 
 def test_does_not_search_cwd_or_unrelated_sibling(tmp_path: Path, monkeypatch) -> None:
