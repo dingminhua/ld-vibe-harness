@@ -143,3 +143,58 @@ Human 授权后，候选已按个人插件 cachebuster 流程安装为 `ldvh@per
 4. 这些结果只证明 repo candidate。已安装的 `0.1.0+codex.20260715021623` cache、既有 trust hash 和真实触发仍对应修改前内容，不能作为该 Windows 候选的安装或集成证据。
 
 Windows 原生 gate 必须使用新 cachebuster 重新安装，逐文件回读 source↔cache，重新审核 Hook 信任，并分别验证 `commandWindows`、`py -3.12`、含空格/中文的 `PLUGIN_ROOT/PLUGIN_DATA/cwd/workspace`、普通安装后的 `ldvh.exe`、startup/resume 与失败/停用/恢复。核心 CLI Windows 结论与 Codex adapter Windows 结论继续分开；当前 Ruff、format 与 diff check 也已通过，但都不替代该原生 gate。
+
+## 9. 共享 Hook 行为与 Codex 薄引用迭代
+
+本节记录 2026-07-16 在 05 与 09 当前规则成立后的下一实现增量。§§1–8.1 只保留为历史基线；与本节冲突时，以本节定义的新候选为准。本节不使 Code、安装、信任或真实触发自动成立。
+
+### 9.1 当前问题与吸收边界
+
+当前仓库候选仍只有 `SessionStart startup|resume`，个人插件来源与安装缓存又停留在 Windows 候选之前；`ldvh@personal` 虽显示已安装并启用，但其历史五项插件 Hook trust 状态均为 `enabled=false`，用户级 `~/.codex/hooks.json` 当前为空。因此，插件存在不能证明任何 LDVH Hook 正在驱动当前会话。
+
+本轮只复用 V3 的 `SessionStart` 触发点。`PreToolUse` 依赖命令分类和 transcript 推断，`Stop` 把事件名解释成完成声明，二者必须等待新的正式来源与 Helper 操作后重新设计；`PostToolUse`、`UserPromptSubmit` 和 `Notification` 原本只是 no-op 或研究采样，其中 `Notification` 已不属于当前 Codex Hook 事件。不得为了恢复 V3 数量而重新注册这些入口。
+
+### 9.2 唯一共享恢复行为
+
+当前只有一个真实环境消费者，不建立核心源码与插件 bundle 两份实现。`scripts/context_recovery.py` 作为唯一共享实现，不接收 Codex 事件名或厂商 payload；`scripts/codex_context.py` 只校验 Codex 输入、调用共享实现并转换输出。出现第二个真实环境消费者时，再依据实际分发方式把同一实现移到双方可直接调用的唯一位置，不预先建立复制、同步脚本或 registry。
+
+共享恢复行为固定执行：
+
+1. 使用显式配置的 Helper、`workspace_root` 和环境实际 `cwd` 调用 `resolve-governance-scope`；
+2. 只有响应完整为 `ok`、`scope_status=governed_single` 且能够机械取得唯一 `governed_project_id` 时，才调用 `find-fact-object-candidates` 的 F1；其它结果只忠实交还管辖范围和缺口；
+3. F1 不传 `current_workcase_ref`、`selected_fact_refs`、F2 过滤器或写入输入，不由 Code 猜测当前责任、事实适用或 WorkCase 创建需要；
+4. 向 AI 传递 04 共同响应和 05 F1 结果中已经定义的项目身份、实际 worktree/common-dir、F0、cards、coverage、cursor、invalid/unavailable、范围、来源、缺口和诊断；共享层只按这些固定字段确定性组织，不生成摘要，不作语义去重或裁剪，也不把环境输出定义为新公共协议；
+5. `next_cursor` 非空时，明确本次只取得当前页并由 AI 继续同一查询；coverage 为 `partial` 或存在未完成范围时，忠实交还缺口与恢复条件，不把它改写成可分页问题或完整恢复；`coverage=complete` 只证明扫描集合完整，不证明全部卡片已经审阅；
+6. 不自动调用通用 capabilities、规则全文、F3/F4、事实写入或行动模板，不创建 WorkCase，不保存 receipt、状态或跨会话 payload。
+
+### 9.3 Codex 当次事件映射
+
+下表只记录 Codex 0.144.2 当前协议与本次来源支持的映射，不是 LDVH Hook 闭集：
+
+| Codex 原生事件 | 本轮映射 | 原因与边界 |
+|---|---|---|
+| `SessionStart`，source 为 `startup|resume|clear|compact` | 调用共享恢复行为 | 05 已定义新会话、恢复和压缩恢复；`clear` 实际建立新的会话上下文 |
+| `SubagentStart` | 调用同一共享恢复行为 | 05 已明确尚未完成当前 F0/F1 恢复的独立 AI 执行上下文按新会话处理；adapter 不解释 `agent_type` 的领域语义 |
+| `PreCompact`、`PostCompact` | 不映射 | `SessionStart/compact` 已承接恢复；本轮不建立压缩前状态或重复调用 |
+| `PreToolUse`、`PermissionRequest`、`PostToolUse` | 不映射 | 当前没有来源定义的通用工具分类、授权或事后审计 Helper 操作 |
+| `UserPromptSubmit`、`SubagentStop`、`Stop` | 不映射 | 当前没有来源定义的输入分流、结果审核或完成声明 Helper 操作 |
+
+Codex 薄 adapter 不按事件名称选择“最接近”的 LDVH 行为。未来任一新增映射都重新对照当时 Codex payload、输出能力、正式来源和 Helper 能力，不能沿用本表推断。
+
+### 9.4 文件、展示与最小 tests
+
+本轮候选文件变化限定为：
+
+1. 新增唯一环境无关共享实现 `scripts/context_recovery.py`；
+2. 用 `scripts/codex_context.py` 替代只服务 SessionStart 的旧脚本，Hook 配置的两个原生事件都薄引用该入口；
+3. 保持现有显式配置字段不变，补足 Helper 共同响应闭集与共享行为实际消费字段的校验；
+4. manifest 的 Human 可见名称改为 `LD Vibe Harness`，描述不再声称只支持 SessionStart 管辖注入，并从根级现有 `icons/` 复制 128/512 PNG 到插件 `assets/` 供 `composerIcon` 与 `logo` 使用；
+5. 不修改 Helper 公开操作、管辖配置、事实 Schema、行动模板或 marketplace 登记。
+
+tests 原则上保留现有配置、协议、UTF-8、timeout 与进程失败反例。共享成功链同时覆盖完整 F1，不再另设“完整投影”测试；另为非唯一管辖不调用 F1、cursor、partial 和失败各保留一个独立分支。adapter 只覆盖 SessionStart 四个 source、SubagentStart 与未知事件的薄映射，Helper 失败不再按事件复制；最后精确检查 manifest、Hook 与图标闭合。fixture 不得自创 Helper 顶层字段，tests 不得判断事实适用、当前 WorkCase、授权和完成。
+
+### 9.5 实施与真实验证顺序
+
+先完成共享行为和 adapter tests，再运行 plugin validator、Ruff、格式、聚焦与全量测试，并由独立 POST 审核 Code 是否越权以及 tests 是否重复。仓库增量独立提交后，才按 plugin-creator 的 cachebuster 流程更新既有个人来源并执行 `codex plugin add ldvh@personal`；不手改 marketplace 或 trust hash。
+
+新 Hook 定义必须由 Human 在 `/hooks` 复核并信任，随后用新任务分别取得 SessionStart、SubagentStart、主要失败路径、停用与恢复的真实证据。无法真实触发的 `resume|clear|compact` 继续标为未验证；插件名称、图标、source/cache 一致和旧 Hook 不再加载也必须实际回读，不能由 manifest 或 tests 倒推。
