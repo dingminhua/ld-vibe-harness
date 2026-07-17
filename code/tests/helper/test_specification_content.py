@@ -363,3 +363,31 @@ def test_reader_uses_the_same_inspection_snapshot_without_reopening_source(curre
     assert content == inspected_text.markdown.raw_text
     assert "AFTER_INSPECTION" not in content
     assert result.items[0]["parts"][0]["source"]["observed_at"] == inspected_at
+
+
+def test_root_specification_source_chapter_l3_returns_exact_slice(
+    current_specs_repository: Path,
+) -> None:
+    repository = inspect_repository(current_specs_repository)
+    selection = SpecificationContentSelection(
+        "ldvh-root",
+        ("4. 以规范源为边界系统与流程规范",),
+    )
+
+    result = read_specification_content(
+        repository,
+        request=_request("L3", selection),
+    )
+
+    assert result.suggested_outcome == "ok"
+    assert result.items is not None
+    item = result.items[0]
+    assert item["requested_disclosure"] == item["actual_disclosure"] == "L3"
+    assert [part["heading_path"] for part in item["parts"]] == [
+        ["4. 以规范源为边界系统与流程规范"],
+    ]
+    content = item["parts"][0]["content"]
+    assert content.startswith("## 4. 以规范源为边界系统与流程规范")
+    assert "规范源（Specification Source）由全部 Specs 及其授权附件构成" in content
+    assert "也不得成为第二规范源。" in content
+    assert "## 5. 以事实源为信息锚点" not in content
