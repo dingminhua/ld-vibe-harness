@@ -390,4 +390,4 @@ def test_root_specification_source_chapter_l3_returns_exact_slice(
     assert content.startswith("## 4. 以规范源为边界系统与流程规范")
     assert "规范源（Specification Source）由全部 Specs 及其授权附件构成" in content
     assert "也不得成为第二规范源。" in content
-    assert "## 5. 以事实源为信息锚点" not in content
+    assert "## 5. 以事实源为信息锚点与判断依据" not in content
