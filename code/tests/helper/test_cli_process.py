@@ -49,7 +49,7 @@ def test_general_discovery_reports_source_bound_implementation(tmp_path: Path) -
     assert response["outcome"] == "ok"
     assert response["operation_key"] is None
     assert response["result"]["mode"] == "discovery"
-    assert len(response["result"]["operations"]) == 10
+    assert len(response["result"]["operations"]) == 11
     operations = {item["operation_key"]: item for item in response["result"]["operations"]}
     candidates = operations["find-fact-object-candidates"]
     assert candidates["implementation"]["present"] is True
@@ -113,6 +113,14 @@ def test_general_discovery_reports_source_bound_implementation(tmp_path: Path) -
     )
     assert governance["required_inputs"] == []
     assert governance["optional_inputs"] == ["work_object_locators", "arguments.workspace_root"]
+    commit_precheck = operations["precheck-git-commit"]
+    assert commit_precheck["implementation"]["present"] is True
+    assert {item["locator"] for item in commit_precheck["implementation"]["evidence"]} == {
+        "code/ldvh/commits/precheck.py",
+        "code/ldvh/helper/operations/commit_precheck_operation.py",
+    }
+    assert commit_precheck["required_inputs"] == ["work_object_locators", "arguments.message"]
+    assert commit_precheck["optional_inputs"] == ["arguments.workspace_root"]
     assert len(response["gaps"]) == 2
     condition_count = sum(
         int(item["summary"].split("尚未自动证明 ", 1)[1].split(" 项", 1)[0]) for item in response["gaps"]

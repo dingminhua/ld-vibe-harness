@@ -30,6 +30,7 @@ pytestmark = [
 OPERATIONS = {
     "create-fact-object",
     "find-fact-object-candidates",
+    "precheck-git-commit",
     "prepare-fact-object-draft",
     "read-action-template-candidates",
     "read-action-template-content",

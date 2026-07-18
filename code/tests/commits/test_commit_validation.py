@@ -56,6 +56,15 @@ def test_crlf_and_leading_comments_are_normalized(contract: CommitContractProjec
     assert result.header == "docs(specs): 明确提交契约"
 
 
+def test_empty_message_is_a_mechanical_failure_not_a_missing_input(
+    contract: CommitContractProjection,
+) -> None:
+    result = validate_commit(contract, _input(contract, message=""))
+
+    assert result.outcome == "failed"
+    assert _codes(result) == {"message_empty"}
+
+
 @pytest.mark.parametrize(
     ("message", "code"),
     [

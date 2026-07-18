@@ -1,6 +1,6 @@
 # V4 Git 提交契约 Validator Code 实现规划
 
-> 当前规划版本：2；形成时间：2026-07-15（Asia/Shanghai）；最近调整：2026-07-16（Asia/Shanghai）；实现起点 commit：`13bf510dfed89fd6aa9b0183c7d688123a841601`。本文是 07 定义的 Code 实现规划，不是规则源；具体项目的 Hook 安装、替换或移除仍须由 Human 当次授权。
+> 当前规划版本：3；形成时间：2026-07-15（Asia/Shanghai）；最近调整：2026-07-18（Asia/Shanghai）；实现起点 commit：`13bf510dfed89fd6aa9b0183c7d688123a841601`。本文是 07 定义的 Code 实现规划，不是规则源；具体项目的 Hook 安装、替换或移除仍须由 Human 当次授权。
 
 ## 1. 实现目标与来源
 
@@ -194,3 +194,42 @@ Git 侧只允许一个 POSIX 薄 adapter：它从当前 `commit-msg` 事件取�
 管理入口新增 `bootstrap`，但没有新 console entry point、Helper 操作或环境专属配置 Schema。`install` 只接受 Git 实际生效、scope 为 `worktree`、且 origin 为该 worktree `config.worktree` 的 `core.hooksPath`，并要求有效目录不经符号链接且位于该 worktree 内；local/global/外部路径、未知 `commit-msg` 和共享默认目录继续零写入拒绝。`bootstrap` 只在 Human 已授权的项目×环境确定性 setup 中使用：先确认准确管辖、Git 接受的 `extensions.worktreeConfig` 真值、默认目录不会被遮蔽的 active Hook，以及目标 `.githooks-v4` 不会激活未知资产；它先验证 runner/workspace 绑定并在未激活目录准备同一 POSIX wrapper，随后才写当前 worktree 配置。配置写入或回读失败时，只回滚本次重新观察到的精确配置和新建 wrapper，不用登记、状态机或第二份环境 Schema 补偿。
 
 每个支持工作树 setup 的环境只需调用同一入口，形式为 `ldvh-git-hook bootstrap --worktree "$PWD" --workspace-root <workspace> --commit-msg-runner <runner> --confirm-human-gate`。其中 `$PWD` 是环境实际提供的 setup cwd，核心仍重新解析 Git 身份和管辖；`--confirm-human-gate` 只表示该 setup 已处在 Human 确认的项目×环境范围内，不产生持久授权。`install` 与 `uninstall` 只能接受同一 runner/workspace 渲染出的精确 wrapper，因而另一环境不能静默覆盖或删除；普通 `uninstall` 只移除该 wrapper，不猜测或清除可能是用户原有选择的 worktree 配置。实际 worktree 正常删除时，目录与其 `config.worktree` 中的配置一并物理消失；仍存在 worktree 的配置残留必须按 09/33 单独观察和处理。当前增量未安装或变更任何真实项目 Hook，也未配置任何环境的 setup script。
+
+## 20. Helper 主动预检与原生 Gate 单内核增量规划
+
+2026-07-18 Human 明确决定：提交机械检查应同时支持 AI 经 Helper 主动预检和原生 `commit-msg` Gate 在真实事件中自动阻断，并要求两个入口使用同一提交契约投影和候选观察实现、调用唯一 validator。该决定只适用于具有明确主动预检价值的提交机械检查，不建立“所有 Gate 都必须有 Helper 操作”的一般规则，也不授权安装或变更任何真实 Hook。
+
+本增量先由 00、03、09 明确双入口关系，并由 03 定义只读公开操作 `precheck-git-commit`。输入严格绑定一个目标 locator 和完整 message，可选显式工作区根；Helper 不接受 `index_file`、候选路径、快照或来源身份，由 Code 只读观察目标 worktree 当前真实 Index。结果区分 Helper 服务 `outcome` 与领域 `mechanical_outcome`：机械 `failed` 或由 validator 可信形成的 `unverifiable` 仍表示读取操作完成，不能被改写为 Helper 请求拒绝；任何 `passed` 都继续保留 AI 语义审核清单，不证明授权、创建或最终 Gate 通过。
+
+新增 `ldvh.commits.precheck` 作为无 Helper 依赖的领域应用服务，唯一编排 `project_commit_contract → resolve_governance_scope → observe_commit_candidate → validate_commit`。`ldvh.hooks.commit_msg` 和新的 Helper operation 只负责各自可信输入投影与结果适配并共同调用该服务；原生 Gate 继续接收 Git 事件提供的 message 文件和可选活动 Index，Helper 只观察目标 worktree 默认真实 Index。§4 对现有 Helper 不反向依赖 commits 模块的初始限制，在本来源已定义操作范围内由本节定点替代；specs repository、governance 和纯 validator 仍不得反向依赖 Helper。
+
+风险验证至少覆盖：同一实际 Index 与 message 经 Helper 和 Gate 得到相同机械结果、底层问题、来源指纹和快照身份；合格、不合格、空候选、管辖错配、linked worktree、观察漂移和 Git 失败；Helper 拒绝 `index_file` 与多目标输入且不受环境变量重定向；调用前后 Working Tree 与 Index 不变；Gate 对所有非 `passed` 或异常继续 fail closed；公开操作发现、当次 capabilities、真实 CLI、安装快照和发行生命周期均能定位并调用新操作。这里的“底层问题相同”允许 Helper 使用结构化字段、Gate 使用面向 Git 的文本诊断，不要求两个公开入口具有相同响应形状。validator 规则风险仍由其既有 tests 唯一覆盖，Helper 与 Gate tests 不复制格式闭集。
+
+### 20.1 `mechanical_outcome` 候选术语检查记录
+
+1. 预期含义：对一次已经绑定 worktree、Index、message、管辖和来源身份的 Git 提交候选执行 03 可机械检查条件后，只说明通过、不合格或因可信输入不足而无法验证的结果。
+2. 必要性：Helper 外层已有 `outcome`，原生 Gate 又映射 allow/block；若只写“结果”或复用 Helper 服务结果，会把领域校验、服务执行和环境作用混为一层。该概念还直接暴露为公开机器字段，不能只靠局部实现命名。
+3. 来源分类：LDVH 特定的机器契约术语；不声称为 Git、Conventional Commits 或测试行业标准。
+4. 中英文候选：采用“提交机械预检结果 / Git Commit Mechanical Precheck Outcome”；“机械结果 / Mechanical Result”范围过宽，“validator result”绑定实现名且未说明 Git 提交候选，“提交验证结果”容易与语义审核和完整验证混淆。
+5. 定义：按照 03 提交契约，对一次已绑定候选执行可机械检查条件后形成的 `passed | failed | unverifiable` 三值结果；不表示 Helper 服务是否成功、Gate 是否已经触发、语义是否成立或提交是否创建。
+6. 正例与反例：合法单路径 message 得到 `passed`、格式不合格得到 `failed`、空候选得到 `unverifiable` 属于正例；来源投影失败导致 Helper `unavailable`、Gate 的 block、AI 判断拆分不合理和 Git commit 成功均不是该结果。
+7. 相邻概念：Helper 服务结果描述公开操作执行层；Gate allow/block 描述环境作用；AI 语义审核判断主要目的、拆分和真实性；三者均不得由本术语替代。
+8. 替换检查：把定义替换进 03 §§9.8–9.9 的代表性语句后，`failed` 仍表示读取操作完成，`unverifiable` 仍只覆盖 validator 已取得可信绑定输入的三值分支，原句含义成立。
+9. 使用扫描：当前稳定使用位置限于 03 公开结果契约、Helper/共享 precheck Code、对应 tests 和本实现规划；00、09 已改用普通关系表达，不把字段名扩张为通用 Gate 或验证术语。
+10. 影响范围：接受该术语需要同步 03 定义、01.Att.01 登记、`mechanical_outcome` Schema、Helper operation、shared precheck 和 tests；改名将是机器契约变化，取消正式术语则仍需为该公开字段找到不与外层 `outcome` 冲突的准确表达。
+11. 检查结论：保留该术语及机器表示。独立 POST 复核从概念与名称两个视角确认其能够稳定区分 Helper 服务 `outcome`、Gate allow/block 和 AI 语义判断，中英文范围一致，正反例与三值边界清楚，没有同名异义、更小既有术语或未解决语义异议；术语表同步转为 `current`。
+
+## 21. Helper 主动预检与原生 Gate 单内核实现结果
+
+当前 Working Tree 已完成 §20：`ldvh.commits.precheck` 是唯一编排 03 提交契约投影、02 管辖解析、真实 Git 候选观察与纯 validator 的应用服务；`precheck-git-commit` Helper operation 和原生 `commit-msg` Gate 只投影各自可信输入并适配结果。Helper 不公开 `index_file`，只观察目标 worktree 默认真实 Index；Gate 只从 Git 事件或内部可信调用取得活动 Index，并对所有非 `passed` 结果 fail closed。两入口没有互相调用，也没有复制规则解析或校验逻辑。
+
+结果分层已经按 03 实现：validator 形成的 `failed` 和 `unverifiable` 是 Helper 外层 `ok` 的已完成读取；来源、管辖、候选观察、漂移或 Git 读取未形成可信 validator 输入时是 `unavailable`；Gate 只把同一底层结果映射为 allow/block 与诊断。空 message 进入 validator 形成 `message_empty`，不再误报为输入缺失。当前增量没有安装、启用或修改任何真实项目 Hook，也没有写入环境 setup。
+
+验证按 00 §8 的风险匹配原则取得并复用：
+
+1. 生产 Code、公开 Helper Schema 和 Helper/Gate 跨实现边界变化触发全量回归；在基线 `8f055f8fdf227899d3619c0ab200090aa1f473c2` 加当前生产实现的快照上，`.venv/bin/python -m pytest code/tests -q` 为 `816 passed, 10 skipped in 457.14s`。跳过项全部是既有 native Windows 条件测试。
+2. 该全量结果之后生产 Code 未再变化；后续差异只增加本操作的风险 tests 与规范/规划收口。因此全量结果只复用于未变的生产实现和既有测试集合，不冒充当前全部文件的单次运行结果；新增/修改的提交预检专项在后续快照单独取得 `11 passed in 12.36s`，覆盖 failed、validator-unverifiable、linked worktree、观察漂移和 Git 读取失败。
+3. 原生 Git Hook 与发行生命周期的同生产实现快照聚焦回归为 `13 passed in 93.62s`；提交预检相关 commits/helper/specs 组合回归为 `471 passed in 188.47s`。这些结果只证明对应检查范围，不代替未执行的原生 Windows、真实 Hook 安装/触发、Web 或发布验证。
+4. 当前测试差异的 Ruff check 与 format check 通过，`git diff --check` 通过；对最终规范差异单次复跑规范结构测试为 `158 passed in 25.12s`，未复用修改前结果。
+
+独立 POST Code 审核确认共享编排、Index 信任边界、结果映射、分发来源和风险测试均无 P0/P1/P2。规范审核提出的总纲冲突、失败诊断一致性、09/33 Gate-only 路径和术语治理问题已经逐项修正；最终规范复核须在提交前确认这些修正与风险匹配验证记录均已闭合。

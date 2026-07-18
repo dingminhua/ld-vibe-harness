@@ -9,11 +9,7 @@ from pathlib import Path
 from typing import Literal
 
 import ldvh
-from ldvh.commits.contract_source import CommitContractProjection, project_commit_contract
-from ldvh.commits.git_adapter import CommitCandidateObservation, observe_commit_candidate
-from ldvh.commits.validation import CommitValidationResult, validate_commit
-from ldvh.governance.models import LocatorSource, ScopeDescriptor
-from ldvh.governance.resolver import GovernanceResolutionRun, resolve_governance_scope
+from ldvh.commits.precheck import precheck_git_commit
 from ldvh.helper.rule_source import inspect_colocated_repository
 
 GateOutcome = Literal["passed", "failed", "unverifiable"]
@@ -29,6 +25,8 @@ class CommitMsgGateResult:
 
     outcome: GateOutcome
     issues: tuple[str, ...]
+    source_fingerprint: str | None = None
+    snapshot_identity: str | None = None
 
     @property
     def allowed(self) -> bool:
@@ -65,46 +63,6 @@ def _absolute_file(value: str, field: str) -> Path:
     return resolved
 
 
-def _load_contract() -> CommitContractProjection:
-    inspected = inspect_colocated_repository(Path(ldvh.__file__))
-    if inspected.problem is not None or inspected.repository is None:
-        raise CommitMsgHookError(f"current LDVH rule source is unavailable: {inspected.problem or 'unknown problem'}")
-    document = inspected.repository.document_passing_implemented_checks_by_key("source-of-truth-traceability")
-    if document is None:
-        raise CommitMsgHookError("current LDVH rule source does not provide one active 03 document")
-    projection = project_commit_contract(document)
-    if projection.projection is None:
-        details = "; ".join(issue.summary for issue in projection.issues) or "unknown projection problem"
-        raise CommitMsgHookError(f"03 commit contract is unavailable: {details}")
-    return projection.projection
-
-
-def _resolve_governance(worktree: Path, workspace_root: Path):
-    run: GovernanceResolutionRun = resolve_governance_scope(
-        (ScopeDescriptor(0, str(worktree), LocatorSource.EXPLICIT_LOCATOR),),
-        base=worktree,
-        explicit_workspace_root=workspace_root,
-    )
-    if run.result is None:
-        details = "; ".join(item.summary for item in run.diagnostics) or "governance resolution did not complete"
-        raise CommitMsgHookError(f"governance is unavailable: {details}")
-    return run.result
-
-
-def _observation_result(observation: CommitCandidateObservation) -> CommitMsgGateResult:
-    if observation.outcome == "observed" and observation.validation_input is not None:
-        raise AssertionError("observed candidates must be handled with the current contract")
-    details = tuple(f"{item.stage}: {item.message}" for item in observation.issues)
-    return CommitMsgGateResult("unverifiable", details or (f"candidate observation was {observation.outcome}",))
-
-
-def _validation_result(value: CommitValidationResult) -> CommitMsgGateResult:
-    return CommitMsgGateResult(
-        value.outcome,
-        tuple(f"{item.code}: {item.message}" for item in value.issues),
-    )
-
-
 def run_commit_msg_gate(
     *,
     workspace_root: str,
@@ -123,19 +81,23 @@ def run_commit_msg_gate(
     except (OSError, UnicodeError) as error:
         raise CommitMsgHookError(f"message_file could not be read as UTF-8: {error}") from error
 
-    contract = _load_contract()
-    governance = _resolve_governance(current_worktree, workspace)
-    observation = observe_commit_candidate(
+    inspected = inspect_colocated_repository(Path(ldvh.__file__))
+    if inspected.problem is not None or inspected.repository is None:
+        raise CommitMsgHookError(f"current LDVH rule source is unavailable: {inspected.problem or 'unknown problem'}")
+    result = precheck_git_commit(
+        repository=inspected.repository,
         locator=str(current_worktree),
         base=current_worktree,
+        workspace_root=workspace,
         message=message,
-        contract=contract,
-        governance=governance,
         index_file=active_index,
     )
-    if observation.outcome != "observed" or observation.validation_input is None:
-        return _observation_result(observation)
-    return _validation_result(validate_commit(contract, observation.validation_input))
+    return CommitMsgGateResult(
+        result.mechanical_outcome,
+        tuple(f"{item.stage}/{item.code}: {item.message}" for item in result.issues),
+        None if result.contract is None else result.contract.content_fingerprint,
+        None if result.observation is None else result.observation.snapshot_identity,
+    )
 
 
 def _parser() -> argparse.ArgumentParser:

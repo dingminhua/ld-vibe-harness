@@ -274,6 +274,7 @@ def test_unrelated_candidate_problem_does_not_block_defined_operation(
     assert discovered.response["scope"]["completed"] == [
         "create-fact-object",
         "find-fact-object-candidates",
+        "precheck-git-commit",
         "prepare-fact-object-draft",
         "read-action-template-candidates",
         "read-action-template-content",

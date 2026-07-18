@@ -58,6 +58,7 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
     assert [declaration.operation_key for declaration in operations.candidate_declarations] == [
         "create-fact-object",
         "find-fact-object-candidates",
+        "precheck-git-commit",
         "prepare-fact-object-draft",
         "read-action-template-candidates",
         "read-action-template-content",
@@ -73,6 +74,7 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
     assert declaration_sources == {
         "create-fact-object": "specs/05-事实模型基础规范.md",
         "find-fact-object-candidates": "specs/05-事实模型基础规范.md",
+        "precheck-git-commit": "specs/03-事实源与信息溯源规范.md",
         "prepare-fact-object-draft": "specs/05-事实模型基础规范.md",
         "read-action-template-candidates": "specs/06-行动模板基础规范.md",
         "read-action-template-content": "specs/06-行动模板基础规范.md",

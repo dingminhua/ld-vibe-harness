@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 from dataclasses import replace
 from pathlib import Path
 
@@ -71,6 +72,56 @@ def test_installed_capabilities_bind_every_internal_rule_and_implementation(
     result = handle_request("capabilities", None, "")
 
     assert result.response["outcome"] == "ok"
+    _assert_installed_references(result.response)
+
+
+def test_installed_snapshot_prechecks_a_real_governed_index(
+    current_specs_repository: Path,
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    repository = _installed_repository(current_specs_repository, tmp_path)
+    operations = inspect_operation_sources(repository)
+    monkeypatch.setattr(
+        "ldvh.helper.service.inspect_colocated_rule_source",
+        lambda _: RuleSourceResult(repository, operations, None),
+    )
+
+    workspace = tmp_path / "workspace"
+    project = workspace / "project"
+    project.mkdir(parents=True)
+    subprocess.run(["git", "-C", str(project), "init", "-q"], check=True, capture_output=True)
+    (project / "change.txt").write_text("candidate\n", encoding="utf-8")
+    subprocess.run(["git", "-C", str(project), "add", "change.txt"], check=True, capture_output=True)
+    (workspace / "LDVH-GOVERNED-PROJECTS.yaml").write_text(
+        "\n".join(
+            [
+                "product_name: Installed Snapshot Test",
+                "product_description: Installed precheck source identity.",
+                "projects:",
+                "  - id: sample",
+                f"    path: {project}",
+                "    name: Sample",
+                "    description: Test project.",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    payload = json.dumps(
+        {
+            "work_object_locators": [str(project)],
+            "arguments": {
+                "workspace_root": str(workspace),
+                "message": "test: 验证安装快照预检",
+            },
+        }
+    )
+
+    result = handle_request("call", "precheck-git-commit", payload)
+
+    assert result.response["outcome"] == "ok"
+    assert result.response["result"]["mechanical_outcome"] == "passed"
     _assert_installed_references(result.response)
 
 

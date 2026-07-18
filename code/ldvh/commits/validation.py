@@ -104,7 +104,7 @@ def validate_commit(contract: CommitContractProjection, value: CommitValidationI
         "source_fingerprint": value.source_fingerprint,
     }
     for field, field_value in required.items():
-        if field_value is None or field_value == "":
+        if field_value is None or (field != "message" and field_value == ""):
             unavailable.append(_issue("input_missing", f"缺少必需输入: {field}"))
     if value.governance_status is not None and value.governance_status != "governed_single":
         unavailable.append(_issue("governance_unverifiable", "提交契约只校验 governed_single 目标"))

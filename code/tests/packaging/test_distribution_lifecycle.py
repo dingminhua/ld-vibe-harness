@@ -22,6 +22,7 @@ OPERATIONS = (
     "read-specification-candidates",
     "read-specification-content",
     "resolve-governance-scope",
+    "precheck-git-commit",
     "find-fact-object-candidates",
     "read-fact-objects",
     "prepare-fact-object-draft",
@@ -436,6 +437,33 @@ def _exercise_operation_matrix(
         project,
         "resolve-governance-scope",
         json.dumps({"work_object_locators": [{"path": str(project)}]}),
+    )
+
+    _run_checked(["git", "-C", str(project), "add", "observed.txt"], cwd=root)
+    commit_precheck = _payload(
+        workspace,
+        project,
+        {"message": "test: 验证安装发行提交预检"},
+    )
+    precheck_response = _valid_pair(
+        environment,
+        project,
+        "precheck-git-commit",
+        commit_precheck,
+        version,
+        snapshot_sha256,
+    )
+    assert precheck_response["result"]["mechanical_outcome"] == "passed"
+    assert precheck_response["result"]["candidate"]["paths"] == ["observed.txt"]
+    _invalid_pair(
+        environment,
+        project,
+        "precheck-git-commit",
+        _payload(
+            workspace,
+            project,
+            {"message": "test: 验证非法 Index 输入", "index_file": "/tmp/untrusted-index"},
+        ),
     )
 
     _valid_pair(environment, project, "read-specification-candidates", "", version, snapshot_sha256)

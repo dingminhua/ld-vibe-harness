@@ -9,11 +9,13 @@ from ldvh.commits.candidate_index import (
 from ldvh.commits.contract_source import CommitContractProjection, project_commit_contract
 from ldvh.commits.execution import CallerCommitApproval, CommitExecutionResult, execute_prepared_commit
 from ldvh.commits.git_adapter import CommitCandidateObservation, observe_commit_candidate
+from ldvh.commits.precheck import CommitPrecheckResult, precheck_git_commit
 from ldvh.commits.validation import CommitValidationInput, CommitValidationResult, validate_commit
 
 __all__ = [
     "CommitContractProjection",
     "CommitCandidateObservation",
+    "CommitPrecheckResult",
     "CandidatePreparationResult",
     "CallerCommitApproval",
     "CommitExecutionResult",
@@ -25,5 +27,6 @@ __all__ = [
     "prepare_commit_candidate",
     "project_commit_contract",
     "observe_commit_candidate",
+    "precheck_git_commit",
     "validate_commit",
 ]
