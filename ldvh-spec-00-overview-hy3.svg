@@ -1,0 +1,269 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 1430" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif">
+  <defs>
+    <linearGradient id="titleGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#4338ca"/>
+      <stop offset="0.55" stop-color="#6d28d9"/>
+      <stop offset="1" stop-color="#7c3aed"/>
+    </linearGradient>
+    <linearGradient id="ruleGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#64748b" stop-opacity="0.0"/>
+      <stop offset="0.5" stop-color="#64748b" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#64748b" stop-opacity="0.0"/>
+    </linearGradient>
+    <filter id="cardShadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="2.5" stdDeviation="3.5" flood-color="#0f172a" flood-opacity="0.12"/>
+    </filter>
+    <marker id="arR" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#94a3b8"/>
+    </marker>
+    <marker id="arRed" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#ef4444"/>
+    </marker>
+    <marker id="arGreen" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#10b981"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1280" height="1372" fill="#f8fafc"/>
+
+  <!-- ===== 标题渐变头 ===== -->
+  <rect x="0" y="0" width="1280" height="74" fill="url(#titleGrad)"/>
+  <rect x="0" y="72" width="1280" height="2" fill="#312e81"/>
+  <text x="640" y="34" text-anchor="middle" font-size="24" font-weight="800" fill="#ffffff">理念与构成 — LDVH 根规范 00 全景图</text>
+  <text x="640" y="56" text-anchor="middle" font-size="12" fill="#e0e7ff">specs/00-理念与构成.md · status: active · 存在理由 · 第一服务对象 · 三类语义构成要素 · 两大源 · V1–V8 · 三种价值交付 · 验证与治理</text>
+  <rect x="1116" y="21" width="124" height="32" rx="16" fill="#ffffff" fill-opacity="0.16" stroke="#ffffff" stroke-opacity="0.55"/>
+  <text x="1178" y="42" text-anchor="middle" font-size="12.5" font-weight="700" fill="#ffffff">Hy3 美化版</text>
+
+  <!-- ===== §1 ===== -->
+  <text x="40" y="108" font-size="13.5" font-weight="800" fill="#334155"><tspan fill="#475569">§1</tspan> · LDVH 为什么存在 —— 六条设计理念即下文 §2–§7</text>
+  <rect x="40" y="114" width="58" height="3" rx="1.5" fill="#475569"/>
+
+  <rect x="40" y="124" width="350" height="80" rx="12" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4" filter="url(#cardShadow)"/>
+  <rect x="40" y="136" width="5" height="56" rx="2.5" fill="#64748b"/>
+  <text x="56" y="146" font-size="12.5" font-weight="700" fill="#334155">AI 生成代码的本质</text>
+  <text x="56" y="164" font-size="10.5" fill="#475569">不是确定性编译，而是概率性推理</text>
+  <text x="56" y="180" font-size="10.5" fill="#475569">基于上下文、训练经验与参数生成</text>
+  <text x="56" y="196" font-size="10.5" fill="#475569">上下文依赖 · 概率性输出 · 无状态</text>
+
+  <line x1="394" y1="164" x2="456" y2="164" stroke="#ef4444" stroke-width="1.8" marker-end="url(#arRed)"/>
+
+  <rect x="460" y="124" width="350" height="80" rx="12" fill="#fef2f2" stroke="#fca5a5" stroke-width="1.4" filter="url(#cardShadow)"/>
+  <rect x="460" y="136" width="5" height="56" rx="2.5" fill="#ef4444"/>
+  <text x="476" y="146" font-size="12.5" font-weight="700" fill="#b91c1c">长期演进的四大风险</text>
+  <text x="476" y="164" font-size="10.5" fill="#475569">问题回归 · 判断失据</text>
+  <text x="476" y="180" font-size="10.5" fill="#475569">质量漂移 · 闭环断裂</text>
+  <text x="476" y="196" font-size="10.5" fill="#475569">产出越多，负担越重</text>
+
+  <line x1="814" y1="164" x2="876" y2="164" stroke="#10b981" stroke-width="1.8" marker-end="url(#arGreen)"/>
+
+  <rect x="880" y="124" width="360" height="80" rx="12" fill="#ecfdf5" stroke="#6ee7b7" stroke-width="1.4" filter="url(#cardShadow)"/>
+  <rect x="880" y="136" width="5" height="56" rx="2.5" fill="#10b981"/>
+  <text x="896" y="146" font-size="12.5" font-weight="700" fill="#065f46">LDVH 的存在理由</text>
+  <text x="896" y="164" font-size="10.5" fill="#475569">避免从「开始还不错」变成「难以继续做」</text>
+  <text x="896" y="180" font-size="10.5" fill="#475569">让 Vibe Coding 长期演进更稳定、可控、高效</text>
+  <text x="896" y="196" font-size="10.5" fill="#475569">环境、模型、使用者按需组合</text>
+
+  <!-- ===== §2 ===== -->
+  <text x="40" y="238" font-size="13.5" font-weight="800" fill="#334155"><tspan fill="#2563eb">§2</tspan> · 以 AI 执行者为第一服务对象</text>
+  <rect x="40" y="244" width="58" height="3" rx="1.5" fill="#2563eb"/>
+
+  <rect x="40" y="254" width="387" height="140" rx="12" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.4" filter="url(#cardShadow)"/>
+  <rect x="40" y="266" width="5" height="116" rx="2.5" fill="#3b82f6"/>
+  <text x="56" y="276" font-size="12.5" font-weight="700" fill="#1e40af">AI 所需支撑 ×5</text>
+  <text x="56" y="296" font-size="10.5" fill="#334155">明确边界 — 边界模糊则扩大 / 遗漏 / 误解</text>
+  <text x="56" y="313" font-size="10.5" fill="#334155">稳定事实 — 事实混乱则判断失据</text>
+  <text x="56" y="330" font-size="10.5" fill="#334155">关联信息 — 缺背景依赖则孤立误判</text>
+  <text x="56" y="347" font-size="10.5" fill="#334155">可见状态 — 不可见则无法判断进展</text>
+  <text x="56" y="364" font-size="10.5" fill="#334155">可用能力 — 否则停留推理难以落实</text>
+
+  <rect x="446" y="254" width="387" height="140" rx="12" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.4" filter="url(#cardShadow)"/>
+  <rect x="446" y="266" width="5" height="116" rx="2.5" fill="#3b82f6"/>
+  <text x="462" y="276" font-size="12.5" font-weight="700" fill="#1e40af">AI 能力优势 ×5</text>
+  <text x="462" y="296" font-size="10.5" fill="#334155">语义理解 — 提取目标、约束、关系</text>
+  <text x="462" y="313" font-size="10.5" fill="#334155">规划构造 — 拆解路径、步骤与对象</text>
+  <text x="462" y="330" font-size="10.5" fill="#334155">约束判断 — 生效 / 适用 / 行动允许</text>
+  <text x="462" y="347" font-size="10.5" fill="#334155">工具调度 — 识别工具并纳入反馈</text>
+  <text x="462" y="364" font-size="10.5" fill="#334155">泛化应用 — 举一反三复用经验</text>
+
+  <rect x="853" y="254" width="387" height="140" rx="12" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.4" filter="url(#cardShadow)"/>
+  <rect x="853" y="266" width="5" height="116" rx="2.5" fill="#3b82f6"/>
+  <text x="869" y="276" font-size="12.5" font-weight="700" fill="#1e40af">AI 先天限制 ×3</text>
+  <text x="869" y="296" font-size="10.5" fill="#334155">概率性推理 — 输出是概率性结果</text>
+  <text x="869" y="313" font-size="10.5" fill="#334155">上下文依赖 — 缺失 / 过载 / 冲突均影响</text>
+  <text x="869" y="330" font-size="10.5" fill="#334155">状态不连续 — 跨会话须靠外部事实接续</text>
+  <line x1="869" y1="342" x2="1224" y2="342" stroke="#bfdbfe" stroke-width="1"/>
+  <text x="869" y="358" font-size="10" fill="#64748b">「第一」≠ 唯一服务对象，不构成权威排序</text>
+  <text x="869" y="375" font-size="10" fill="#64748b">目标调整 · 方向选择 · 风险接受 · 验收 → Human 决定</text>
+
+  <rect x="40" y="406" width="1200" height="32" rx="9" fill="#2563eb" filter="url(#cardShadow)"/>
+  <text x="640" y="427" text-anchor="middle" font-size="11.5" font-weight="700" fill="#ffffff">支撑方向 → 清晰边界系统 · 稳定信息依据 · 可复用行动流程 · 可靠确定性能力 · 必要协作条件（判断有据 · 行动可续 · 结果可验）</text>
+
+  <!-- ===== §3 ===== -->
+  <text x="40" y="474" font-size="13.5" font-weight="800" fill="#334155"><tspan fill="#7c3aed">§3</tspan> · 三类语义构成要素 —— 按主要语义责任划分，不形成上下层级或固定执行阶段</text>
+  <rect x="40" y="480" width="58" height="3" rx="1.5" fill="#7c3aed"/>
+
+  <rect x="40" y="490" width="373" height="120" rx="12" fill="#f5f3ff" stroke="#c4b5fd" stroke-width="1.4" filter="url(#cardShadow)"/>
+  <rect x="40" y="502" width="5" height="96" rx="2.5" fill="#8b5cf6"/>
+  <text x="56" y="512" font-size="12.5" font-weight="700" fill="#5b21b6">规范模型 Specification Model</text>
+  <text x="56" y="532" font-size="10.5" fill="#334155">组织规范源中规范的身份、结构、</text>
+  <text x="56" y="549" font-size="10.5" fill="#334155">关系、规则表达与效力边界</text>
+  <text x="56" y="566" font-size="10.5" fill="#334155">使各类定义被稳定表达、</text>
+  <text x="56" y="583" font-size="10.5" fill="#334155">定位、引用与消费</text>
+
+  <rect x="453" y="490" width="373" height="120" rx="12" fill="#f0f9ff" stroke="#7dd3fc" stroke-width="1.4" filter="url(#cardShadow)"/>
+  <rect x="453" y="502" width="5" height="96" rx="2.5" fill="#0ea5e9"/>
+  <text x="469" y="512" font-size="12.5" font-weight="700" fill="#075985">事实模型 Fact Model</text>
+  <text x="469" y="532" font-size="10.5" fill="#334155">组织需对象化、状态化、证据化的</text>
+  <text x="469" y="549" font-size="10.5" fill="#334155">事实：类型、身份、状态、关系、</text>
+  <text x="469" y="566" font-size="10.5" fill="#334155">来源与证据；使事实被稳定定位、</text>
+  <text x="469" y="583" font-size="10.5" fill="#334155">关联、更新与接续</text>
+
+  <rect x="866" y="490" width="373" height="120" rx="12" fill="#f0fdfa" stroke="#5eead4" stroke-width="1.4" filter="url(#cardShadow)"/>
+  <rect x="866" y="502" width="5" height="96" rx="2.5" fill="#14b8a6"/>
+  <text x="882" y="512" font-size="12.5" font-weight="700" fill="#0f766e">行动模板 Action Templates</text>
+  <text x="882" y="532" font-size="10.5" fill="#334155">规定重复场景可复用的行动流程：</text>
+  <text x="882" y="549" font-size="10.5" fill="#334155">适用条件、输入、步骤分支、失败</text>
+  <text x="882" y="566" font-size="10.5" fill="#334155">处理、验证、回写与交还</text>
+  <text x="882" y="583" font-size="10.5" fill="#334155">不自行产生行动授权</text>
+
+  <rect x="40" y="622" width="1200" height="32" rx="9" fill="#ffffff" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="6 4"/>
+  <text x="640" y="643" text-anchor="middle" font-size="11" fill="#475569">不构成语义构成要素：Code · Web · Helper · Hook · Gate —— 确定性执行能力由 Code 承担，面向 Human 的交互呈现由 Web 承担（§7）</text>
+
+  <!-- ===== §4–§5 ===== -->
+  <text x="40" y="688" font-size="13.5" font-weight="800" fill="#334155"><tspan fill="#7c3aed">§4–§5</tspan> · 两大源 —— 规范源与事实源（源是承载与依据，不是构成要素）</text>
+  <rect x="40" y="694" width="72" height="3" rx="1.5" fill="#7c3aed"/>
+
+  <rect x="40" y="704" width="587" height="148" rx="12" fill="#f5f3ff" stroke="#c4b5fd" stroke-width="1.4" filter="url(#cardShadow)"/>
+  <rect x="40" y="716" width="5" height="124" rx="2.5" fill="#8b5cf6"/>
+  <text x="56" y="726" font-size="12.5" font-weight="700" fill="#6d28d9">§4 · 规范源 = 边界系统 + 流程规范</text>
+  <text x="56" y="746" font-size="10.5" fill="#334155">构成：全部 Specs ＋ 授权附件（规范内容统一承载）</text>
+  <text x="56" y="763" font-size="10.5" fill="#334155">边界系统：行动 · 事实源 · 构成职责 · 价值 · 授权与 Human</text>
+  <text x="56" y="780" font-size="10.5" fill="#334155">决定 · 验证与声明 · 服务 · 能力 · 停止与恢复（9 类关联）</text>
+  <text x="56" y="797" font-size="10.5" fill="#334155">三级判断：生效 → 适用 → 行动允许（依次判断，互不替代）</text>
+  <text x="56" y="814" font-size="10.5" fill="#334155">行动模板：唯一定义来源＋准入条件 → 适用即约束当次范围</text>
+  <text x="56" y="831" font-size="10.5" fill="#334155">索引 / 摘要 / 缓存 / 视图仅辅助定位，不得成为第二规范源</text>
+
+  <rect x="653" y="704" width="587" height="148" rx="12" fill="#f0f9ff" stroke="#7dd3fc" stroke-width="1.4" filter="url(#cardShadow)"/>
+  <rect x="653" y="716" width="5" height="124" rx="2.5" fill="#0ea5e9"/>
+  <text x="669" y="726" font-size="12.5" font-weight="700" fill="#0369a1">§5 · 事实源 = 信息锚点 + 判断依据</text>
+  <text x="669" y="746" font-size="10.5" fill="#334155">要求① 有 Git，可溯源 —— Git 可追踪文件为唯一有效承载</text>
+  <text x="669" y="763" font-size="10.5" fill="#334155">要求② 有组织，可消费 —— 定位 / 读取 / 关联 / 验证 / 回写清晰</text>
+  <text x="669" y="780" font-size="10.5" fill="#334155">两项要求 = 事实源边界：不符合不得承载稳定事实</text>
+  <text x="669" y="797" font-size="10.5" fill="#334155">聊天、推理、工具输出、缓存、页面状态 → 回写验证后才算稳定事实</text>
+  <text x="669" y="814" font-size="10.5" fill="#334155">承载事实、状态、证据、决策、经验，让 AI 少读、少猜、少漂移</text>
+
+  <!-- ===== §6 ===== -->
+  <text x="40" y="882" font-size="13.5" font-weight="800" fill="#334155"><tspan fill="#4f46e5">§6</tspan> · V1–V8 八项价值评判标准 —— 新增机制须为 AI 带来可辨认净收益</text>
+  <rect x="40" y="888" width="58" height="3" rx="1.5" fill="#4f46e5"/>
+
+  <g>
+    <rect x="40" y="898" width="289" height="52" rx="10" fill="#ffffff" stroke="#fecaca" stroke-width="1.3" filter="url(#cardShadow)"/>
+    <rect x="40" y="910" width="5" height="28" rx="2.5" fill="#ef4444"/>
+    <text x="54" y="919" font-size="11.5" font-weight="700" fill="#ef4444">V1 · 快速定位</text>
+    <text x="54" y="937" font-size="9.5" fill="#64748b">来源明确的规则·事实·状态·能力入口</text>
+
+    <rect x="343" y="898" width="289" height="52" rx="10" fill="#ffffff" stroke="#fed7aa" stroke-width="1.3" filter="url(#cardShadow)"/>
+    <rect x="343" y="910" width="5" height="28" rx="2.5" fill="#f97316"/>
+    <text x="357" y="919" font-size="11.5" font-weight="700" fill="#ea580c">V2 · 充分理解</text>
+    <text x="357" y="937" font-size="9.5" fill="#64748b">充分、连贯、不过载的整体理解</text>
+
+    <rect x="646" y="898" width="289" height="52" rx="10" fill="#ffffff" stroke="#fde68a" stroke-width="1.3" filter="url(#cardShadow)"/>
+    <rect x="646" y="910" width="5" height="28" rx="2.5" fill="#eab308"/>
+    <text x="660" y="919" font-size="11.5" font-weight="700" fill="#ca8a04">V3 · 边界识别</text>
+    <text x="660" y="937" font-size="9.5" fill="#64748b">适用要求·自主空间·何时暂停交还</text>
+
+    <rect x="949" y="898" width="289" height="52" rx="10" fill="#ffffff" stroke="#bbf7d0" stroke-width="1.3" filter="url(#cardShadow)"/>
+    <rect x="949" y="910" width="5" height="28" rx="2.5" fill="#22c55e"/>
+    <text x="963" y="919" font-size="11.5" font-weight="700" fill="#16a34a">V4 · 稳定推进</text>
+    <text x="963" y="937" font-size="9.5" fill="#64748b">复用行动结构·及时确定性反馈</text>
+
+    <rect x="40" y="964" width="289" height="52" rx="10" fill="#ffffff" stroke="#bfdbfe" stroke-width="1.3" filter="url(#cardShadow)"/>
+    <rect x="40" y="976" width="5" height="28" rx="2.5" fill="#3b82f6"/>
+    <text x="54" y="985" font-size="11.5" font-weight="700" fill="#2563eb">V5 · 据实判断</text>
+    <text x="54" y="1003" font-size="9.5" fill="#64748b">依据可回指·区分证实 / 未证实 / 风险</text>
+
+    <rect x="343" y="964" width="289" height="52" rx="10" fill="#ffffff" stroke="#ddd6fe" stroke-width="1.3" filter="url(#cardShadow)"/>
+    <rect x="343" y="976" width="5" height="28" rx="2.5" fill="#8b5cf6"/>
+    <text x="357" y="985" font-size="11.5" font-weight="700" fill="#7c3aed">V6 · 工作接续</text>
+    <text x="357" y="1003" font-size="9.5" fill="#64748b">跨会话恢复事实·状态·证据·决策</text>
+
+    <rect x="646" y="964" width="289" height="52" rx="10" fill="#ffffff" stroke="#fbcfe8" stroke-width="1.3" filter="url(#cardShadow)"/>
+    <rect x="646" y="976" width="5" height="28" rx="2.5" fill="#ec4899"/>
+    <text x="660" y="985" font-size="11.5" font-weight="700" fill="#db2777">V7 · 清晰沟通</text>
+    <text x="660" y="1003" font-size="9.5" fill="#64748b">交还清楚·Human 回应可执行</text>
+
+    <rect x="949" y="964" width="289" height="52" rx="10" fill="#ffffff" stroke="#99f6e4" stroke-width="1.3" filter="url(#cardShadow)"/>
+    <rect x="949" y="976" width="5" height="28" rx="2.5" fill="#14b8a6"/>
+    <text x="963" y="985" font-size="11.5" font-weight="700" fill="#0d9488">V8 · 持续积累</text>
+    <text x="963" y="1003" font-size="9.5" fill="#64748b">经验复用·反复问题与缺口闭环</text>
+  </g>
+
+  <!-- ===== §7 ===== -->
+  <text x="40" y="1042" font-size="13.5" font-weight="800" fill="#334155"><tspan fill="#4338ca">§7</tspan> · 三种价值交付方式 —— 以同一规范源与事实源为依据，不各自另建规则</text>
+  <rect x="40" y="1048" width="58" height="3" rx="1.5" fill="#4338ca"/>
+
+  <rect x="40" y="1058" width="373" height="108" rx="12" fill="#eef2ff" stroke="#a5b4fc" stroke-width="1.4" filter="url(#cardShadow)"/>
+  <rect x="40" y="1070" width="5" height="84" rx="2.5" fill="#6366f1"/>
+  <text x="56" y="1080" font-size="12.5" font-weight="700" fill="#3730a3">① AI 执行者主动调用</text>
+  <text x="56" y="1100" font-size="10.5" fill="#334155">Helper CLI 为基础服务形式，AI 直接调用</text>
+  <text x="56" y="1117" font-size="10.5" fill="#334155">定位事实与规则 · 了解状态 · 调用能力</text>
+  <text x="56" y="1134" font-size="10.5" fill="#334155">无论规范是否适用，均可提供信息与能力</text>
+  <text x="56" y="1151" font-size="10.5" fill="#334155">普通求解路径在规范允许范围内保持自主</text>
+
+  <rect x="453" y="1058" width="373" height="108" rx="12" fill="#ecfdf5" stroke="#6ee7b7" stroke-width="1.4" filter="url(#cardShadow)"/>
+  <rect x="453" y="1070" width="5" height="84" rx="2.5" fill="#10b981"/>
+  <text x="469" y="1080" font-size="12.5" font-weight="700" fill="#065f46">② 环境 Hook / Gate 自动触发</text>
+  <text x="469" y="1100" font-size="10.5" fill="#334155">Hook、插件、adapter 在生命周期自动触发</text>
+  <text x="469" y="1117" font-size="10.5" fill="#334155">原则上调用同一 Helper 服务能力</text>
+  <text x="469" y="1134" font-size="10.5" fill="#334155">同一机械检查：同一来源投影 ＋ 唯一内核</text>
+  <text x="469" y="1151" font-size="10.5" fill="#334155">自动触发不替代 AI 判断（Gate ≠ Human Gate）</text>
+
+  <rect x="866" y="1058" width="373" height="108" rx="12" fill="#fff7ed" stroke="#fdba74" stroke-width="1.4" filter="url(#cardShadow)"/>
+  <rect x="866" y="1070" width="5" height="84" rx="2.5" fill="#f97316"/>
+  <text x="882" y="1080" font-size="12.5" font-weight="700" fill="#9a3412">③ Web 交互协作</text>
+  <text x="882" y="1100" font-size="10.5" fill="#334155">面向 Human 的独立价值交付路径</text>
+  <text x="882" y="1117" font-size="10.5" fill="#334155">信息呈现 · 状态查看 · 交互协作</text>
+  <text x="882" y="1134" font-size="10.5" fill="#334155">价值回路：Web → Human → AI</text>
+  <text x="882" y="1151" font-size="10.5" fill="#334155">页面状态不替代事实源与 Human Gate 决定</text>
+
+  <text x="640" y="1182" text-anchor="middle" font-size="10.5" fill="#64748b">Code 实现 Helper CLI / Hook / Gate；Helper 是架构层面向 AI 的统一服务入口，不是构成要素，也不能缩减为 Code 的普通能力</text>
+
+  <!-- ===== §8–§10 ===== -->
+  <text x="40" y="1216" font-size="13.5" font-weight="800" fill="#334155"><tspan fill="#9333ea">§8–§10</tspan> · 验证要求与治理机制</text>
+  <rect x="40" y="1222" width="72" height="3" rx="1.5" fill="#9333ea"/>
+
+  <rect x="40" y="1232" width="373" height="160" rx="12" fill="#faf5ff" stroke="#d8b4fe" stroke-width="1.4" filter="url(#cardShadow)"/>
+  <rect x="40" y="1244" width="5" height="136" rx="2.5" fill="#a855f7"/>
+  <text x="56" y="1254" font-size="12.5" font-weight="700" fill="#7e22ce">§8 · 验证要求</text>
+  <text x="56" y="1274" font-size="10.5" fill="#334155">8 类验证对象：存在理由与第一服务对象 ·</text>
+  <text x="56" y="1291" font-size="10.5" fill="#334155">Helper 服务边界 · 事实源信息锚点 · 构成归口 ·</text>
+  <text x="56" y="1308" font-size="10.5" fill="#334155">规范模型定义职责授权 · V1–V8 价值判断 ·</text>
+  <text x="56" y="1325" font-size="10.5" fill="#334155">能力 / 环境 / 完成声明 · Human Gate 与停止条件</text>
+  <text x="56" y="1342" font-size="10.5" fill="#334155">每类定义时机、成立条件、依据、入口与范围</text>
+  <text x="56" y="1359" font-size="10.5" fill="#334155">结论只覆盖当次检查的对象、环境与范围</text>
+  <text x="56" y="1376" font-size="10.5" fill="#334155">Human 决定记录不证明技术状态</text>
+
+  <rect x="453" y="1232" width="373" height="160" rx="12" fill="#fffbeb" stroke="#fcd34d" stroke-width="1.4" filter="url(#cardShadow)"/>
+  <rect x="453" y="1244" width="5" height="136" rx="2.5" fill="#f59e0b"/>
+  <text x="469" y="1254" font-size="12.5" font-weight="700" fill="#b45309">§9 · Human Gate（判断保留给 Human）</text>
+  <text x="469" y="1274" font-size="10.5" fill="#334155">10 类事项只能由 Human 决定：改变存在理由 ·</text>
+  <text x="469" y="1291" font-size="10.5" fill="#334155">第一服务对象定位 · Helper 作用边界 · 事实源定位 ·</text>
+  <text x="469" y="1308" font-size="10.5" fill="#334155">构成要素增删改 · V1–V8 标准 · 授权范围 ·</text>
+  <text x="469" y="1325" font-size="10.5" fill="#334155">验证与治理语义 · 上位效力约束 · 重大取舍</text>
+  <text x="469" y="1342" font-size="10.5" fill="#334155">触发后受影响范围优先暂停；交还 7 项内容</text>
+  <text x="469" y="1359" font-size="10.5" fill="#334155">不得把未验证内容转化为已验证</text>
+
+  <rect x="866" y="1232" width="373" height="160" rx="12" fill="#fef2f2" stroke="#fca5a5" stroke-width="1.4" filter="url(#cardShadow)"/>
+  <rect x="866" y="1244" width="5" height="136" rx="2.5" fill="#ef4444"/>
+  <text x="882" y="1254" font-size="12.5" font-weight="700" fill="#b91c1c">§10 · Stop Conditions（优先暂停）</text>
+  <text x="882" y="1274" font-size="10.5" fill="#334155">8 项停止条件：Human Gate 未获回应 · 规则适用 /</text>
+  <text x="882" y="1291" font-size="10.5" fill="#334155">效力 / 权威不明 · 强制要求无法满足且无分流 ·</text>
+  <text x="882" y="1308" font-size="10.5" fill="#334155">事实写入条件不足 · 无法归口或无净价值 ·</text>
+  <text x="882" y="1325" font-size="10.5" fill="#334155">声明超出验证依据 · 下位覆盖上位定义 · 范围不明</text>
+  <text x="882" y="1342" font-size="10.5" fill="#334155">暂停期间可定位、核对、验证、收集证据、修复准备</text>
+  <text x="882" y="1359" font-size="10.5" fill="#334155">5 项恢复条件满足后，按依据支持范围恢复</text>
+  <text x="882" y="1376" font-size="10.5" fill="#334155">未命中停止条件的普通求解保持自主</text>
+
+  <!-- 底注 -->
+  <text x="640" y="1412" text-anchor="middle" font-size="10.5" fill="#64748b">依据 specs/00-理念与构成.md（status: active）绘制 · 仅概括上位定义，具体规则以规范原文为准 · 2026-07 · Hy3 美化版</text>
+</svg>

@@ -1,0 +1,215 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1300 1120" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#64748b"/>
+    </marker>
+    <marker id="arAmber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#d97706"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1300" height="1120" fill="#f8fafc"/>
+
+  <!-- ===== 标题 ===== -->
+  <text x="650" y="34" text-anchor="middle" font-size="25" font-weight="800" fill="#0f172a">LDVH V4 · 整体框架</text>
+  <text x="650" y="58" text-anchor="middle" font-size="12.5" fill="#475569">以 AI 执行为第一服务对象 · 三类语义要素 · 规范源(边界+流程) · 事实源(信息锚点) · 三种价值交付 · V1–V8 价值评判</text>
+  <text x="650" y="74" text-anchor="middle" font-size="11" fill="#94a3b8">LD Vibe Harness —— 让 Vibe Coding 的长期演进稳定、可控、可接续</text>
+
+  <!-- ===== ① 服务对象 ===== -->
+  <text x="40" y="104" font-size="12.5" font-weight="700" fill="#475569">① 服务对象</text>
+
+  <rect x="300" y="92" width="330" height="66" rx="10" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.6"/>
+  <text x="465" y="116" text-anchor="middle" font-size="14.5" font-weight="700" fill="#1e3a8a">AI Agent · 第一服务对象</text>
+  <text x="465" y="138" text-anchor="middle" font-size="10.5" fill="#3b82f6">理解 / 判断 / 行动 / 验证 / 交付，按 V1–V8 评判</text>
+
+  <rect x="760" y="92" width="320" height="66" rx="10" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.6"/>
+  <text x="920" y="116" text-anchor="middle" font-size="14.5" font-weight="700" fill="#92400e">Human</text>
+  <text x="920" y="138" text-anchor="middle" font-size="10.5" fill="#b45309">治理授权 · Human Gate · Stop Conditions</text>
+
+  <rect x="646" y="108" width="68" height="30" rx="7" fill="#fffbeb" stroke="#d97706" stroke-width="1.3"/>
+  <text x="680" y="128" text-anchor="middle" font-size="11.5" font-weight="700" fill="#b45309">Gate</text>
+
+  <!-- 价值回路 -->
+  <path d="M760,159 C720,182 660,182 630,159" fill="none" stroke="#d97706" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#arAmber)"/>
+  <text x="700" y="180" text-anchor="middle" font-size="10" fill="#b45309">Web → Human → AI 价值回路</text>
+
+  <!-- ①→② 箭头 -->
+  <line x1="650" y1="176" x2="650" y2="200" stroke="#64748b" stroke-width="1.6" marker-end="url(#ar)"/>
+  <text x="660" y="192" font-size="10.5" fill="#475569">价值交付</text>
+
+  <!-- ===== ② 价值交付层 ===== -->
+  <text x="40" y="222" font-size="12.5" font-weight="700" fill="#475569">② 价值交付层 — Code 确定性能力交付（Helper / Hook / Gate）· Web 独立面向 Human</text>
+
+  <rect x="40" y="230" width="373" height="104" rx="10" fill="#eef2ff" stroke="#6366f1" stroke-width="1.6"/>
+  <text x="56" y="254" font-size="13.5" font-weight="700" fill="#3730a3">Helper CLI · ldvh（主入口）</text>
+  <text x="56" y="276" font-size="11" fill="#334155">AI 主动调用：定位规则/事实、查状态、调能力</text>
+  <text x="56" y="295" font-size="11" fill="#334155">11 项公开操作 operation_key（事实 ×5…）</text>
+  <text x="56" y="314" font-size="11" fill="#334155">入口：capabilities ｜ call &lt;key&gt;（compact/diagnostic）</text>
+  <text x="56" y="331" font-size="10.5" fill="#6366f1">服务范围 ≠ 规则适用范围；未命中规则时保持自主</text>
+
+  <rect x="453" y="230" width="373" height="104" rx="10" fill="#ecfdf5" stroke="#10b981" stroke-width="1.6"/>
+  <text x="469" y="254" font-size="13.5" font-weight="700" fill="#065f46">Hook / Gate · 环境接入（09 / 33）</text>
+  <text x="469" y="276" font-size="11" fill="#334155">环境生命周期自动触发，调用同一 Helper 能力</text>
+  <text x="469" y="295" font-size="11" fill="#334155">ldvh-context-recovery · Codex SessionStart adapter</text>
+  <text x="469" y="314" font-size="11" fill="#334155">ldvh-git-commit-msg · ldvh-git-hook</text>
+  <text x="469" y="331" font-size="10.5" fill="#10b981">命中管辖 ≠ 规则生效 ≠ 行动授权</text>
+
+  <rect x="866" y="230" width="394" height="104" rx="10" fill="#fff7ed" stroke="#f97316" stroke-width="1.6"/>
+  <text x="882" y="254" font-size="13.5" font-weight="700" fill="#9a3412">Web · 面向 Human</text>
+  <text x="882" y="276" font-size="11" fill="#334155">React 18 + Vite · Express API（Node/TS）</text>
+  <text x="882" y="295" font-size="11" fill="#334155">Git-backed 事实对象展示与校验</text>
+  <text x="882" y="314" font-size="11" fill="#334155">V4 bridge 待恢复 · 写入 API 暂不建设</text>
+  <text x="882" y="331" font-size="10.5" fill="#f97316">页面状态不替代事实源 / 规范源</text>
+
+  <!-- ②→③ 箭头 -->
+  <line x1="650" y1="334" x2="650" y2="354" stroke="#64748b" stroke-width="1.6" marker-end="url(#ar)"/>
+  <text x="660" y="350" font-size="10.5" fill="#475569">实现</text>
+
+  <!-- ===== ③ Code 实现层 ===== -->
+  <text x="40" y="376" font-size="12.5" font-weight="700" fill="#475569">③ Code 实现层 — Python 包 ldvh（运行时依赖仅 ruamel.yaml；确定性执行能力）</text>
+  <rect x="40" y="384" width="1220" height="156" rx="12" fill="#f1f5f9" stroke="#64748b" stroke-width="1.6"/>
+
+  <g font-size="12" font-weight="700" fill="#0f172a">
+    <rect x="60" y="400" width="288" height="54" rx="8" fill="#ffffff" stroke="#94a3b8"/>
+    <text x="74" y="421">ldvh/helper/</text>
+    <text x="74" y="439" font-size="10" font-weight="400" fill="#64748b">服务层 · 11 项操作运行时</text>
+
+    <rect x="362" y="400" width="288" height="54" rx="8" fill="#ffffff" stroke="#94a3b8"/>
+    <text x="376" y="421">ldvh/specs/</text>
+    <text x="376" y="439" font-size="10" font-weight="400" fill="#64748b">规范解析 · 结构投影 · 关系图谱</text>
+
+    <rect x="664" y="400" width="288" height="54" rx="8" fill="#ffffff" stroke="#94a3b8"/>
+    <text x="678" y="421">ldvh/facts/</text>
+    <text x="678" y="439" font-size="10" font-weight="400" fill="#64748b">事实服务 · CAS 更新 · carriers</text>
+
+    <rect x="966" y="400" width="288" height="54" rx="8" fill="#ffffff" stroke="#94a3b8"/>
+    <text x="980" y="421">ldvh/governance/</text>
+    <text x="980" y="439" font-size="10" font-weight="400" fill="#64748b">管辖解析（worktree / common-dir）</text>
+
+    <rect x="60" y="466" width="288" height="54" rx="8" fill="#ffffff" stroke="#94a3b8"/>
+    <text x="74" y="487">ldvh/commits/</text>
+    <text x="74" y="505" font-size="10" font-weight="400" fill="#64748b">Git 提交契约（precheck*）</text>
+
+    <rect x="362" y="466" width="288" height="54" rx="8" fill="#ffffff" stroke="#94a3b8"/>
+    <text x="376" y="487">ldvh/hooks/ · git_hooks/</text>
+    <text x="376" y="505" font-size="10" font-weight="400" fill="#64748b">环境 Hook 入口</text>
+
+    <rect x="664" y="466" width="288" height="54" rx="8" fill="#ffffff" stroke="#94a3b8"/>
+    <text x="678" y="487">ldvh/migration/</text>
+    <text x="678" y="505" font-size="10" font-weight="400" fill="#64748b">V3 基线 · 来源刻画</text>
+
+    <rect x="966" y="466" width="288" height="54" rx="8" fill="#ffffff" stroke="#94a3b8"/>
+    <text x="980" y="487">ldvh/rule_snapshot.py</text>
+    <text x="980" y="505" font-size="10" font-weight="400" fill="#64748b">发行内嵌规则快照（wheel/sdist 自包含）</text>
+  </g>
+
+  <!-- ③→④ 箭头 -->
+  <line x1="650" y1="540" x2="650" y2="560" stroke="#64748b" stroke-width="1.6" marker-end="url(#ar)"/>
+  <text x="660" y="556" font-size="10.5" fill="#475569">规范消费 · 规则快照</text>
+
+  <!-- ===== ④ 语义构成层（规范源） ===== -->
+  <text x="40" y="582" font-size="12.5" font-weight="700" fill="#475569">④ 语义构成层 — 规范源 = 全部 Specs + 授权附件（边界系统 + 流程规范）</text>
+
+  <rect x="40" y="590" width="373" height="150" rx="10" fill="#f5f3ff" stroke="#8b5cf6" stroke-width="1.6"/>
+  <text x="56" y="612" font-size="13.5" font-weight="700" fill="#5b21b6">规范模型（Specification Model）</text>
+  <text x="56" y="633" font-size="11" fill="#334155">00 理念与构成（根规范）</text>
+  <text x="56" y="651" font-size="11" fill="#334155">01–09 基础规范（已激活）+ 授权附件 ×4</text>
+  <text x="56" y="669" font-size="11" fill="#334155">01 规范模型 · 02 管辖 · 03 事实源溯源</text>
+  <text x="56" y="687" font-size="11" fill="#334155">04 Helper · 07 Code 实践 · 08 Web · 09 环境接入</text>
+  <text x="56" y="708" font-size="11" fill="#334155">三级判断：生效 → 适用 → 行动允许</text>
+  <text x="56" y="728" font-size="10.5" fill="#7c3aed">组织身份/结构/关系/效力边界；不替代事实语义</text>
+
+  <rect x="453" y="590" width="373" height="150" rx="10" fill="#f0f9ff" stroke="#0ea5e9" stroke-width="1.6"/>
+  <text x="469" y="612" font-size="13.5" font-weight="700" fill="#075985">事实模型（Fact Model）</text>
+  <text x="469" y="633" font-size="11" fill="#334155">05 事实模型基础规范（上位规范）</text>
+  <text x="469" y="651" font-size="11" fill="#334155">05.Att.01 事实对象统一字段登记</text>
+  <text x="469" y="669" font-size="11" fill="#334155">五类事实对象：</text>
+  <text x="469" y="687" font-size="11" fill="#334155">20 Spark 火花 · 21 WorkCase 工作项</text>
+  <text x="469" y="705" font-size="11" fill="#334155">22 ADR 决策 · 23 Pitfall 踩坑</text>
+  <text x="469" y="723" font-size="11" fill="#334155">24 Study 研究</text>
+  <text x="469" y="733" font-size="10.5" fill="#0284c7">类型/身份/状态/关系/来源/证据 可稳定接续</text>
+
+  <rect x="866" y="590" width="394" height="150" rx="10" fill="#f0fdfa" stroke="#14b8a6" stroke-width="1.6"/>
+  <text x="882" y="612" font-size="13.5" font-weight="700" fill="#0f766e">行动模板（Action Templates）</text>
+  <text x="882" y="633" font-size="11" fill="#334155">06 行动模板基础规范（上位规范）</text>
+  <text x="882" y="651" font-size="11" fill="#334155">四份具体模板：</text>
+  <text x="882" y="669" font-size="11" fill="#334155">30 Git 提交 · 31 事实对象判定与受控创建</text>
+  <text x="882" y="687" font-size="11" fill="#334155">32 生命周期变更与承接处置</text>
+  <text x="882" y="705" font-size="11" fill="#334155">33 环境接入安装与验证</text>
+  <text x="882" y="723" font-size="11" fill="#334155">统一 Helper 消费 · 单一环境接入边界</text>
+  <text x="882" y="733" font-size="10.5" fill="#0d9488">不重定义规范/事实语义，不产生行动授权</text>
+
+  <!-- ④→⑤ 箭头 -->
+  <line x1="430" y1="740" x2="430" y2="758" stroke="#64748b" stroke-width="1.6" marker-end="url(#ar)"/>
+  <text x="440" y="756" font-size="10.5" fill="#475569">事实对象化承载（Git 可溯源 · 仅作用于管辖项目）</text>
+
+  <!-- ===== ⑤ 事实源 / 治理 ===== -->
+  <text x="40" y="780" font-size="12.5" font-weight="700" fill="#475569">⑤ 事实源 · 治理与历史资产</text>
+
+  <rect x="40" y="788" width="720" height="84" rx="10" fill="#ffffff" stroke="#64748b" stroke-width="1.6"/>
+  <text x="56" y="810" font-size="12.5" font-weight="700" fill="#0f172a">事实源 — Git 可追踪文件为唯一有效承载</text>
+  <text x="56" y="831" font-size="11" fill="#334155">事实对象 YAML · Study Markdown（V4 事实实例当前为 0）</text>
+  <text x="56" y="851" font-size="11" fill="#334155">LDVH-GOVERNED-PROJECTS.yaml 管辖登记（非事实源 / 规则源）</text>
+  <text x="56" y="869" font-size="10.5" fill="#64748b">要求：有 Git 可溯源 · 有组织可消费；聊天/缓存/页面状态不得替代</text>
+
+  <rect x="800" y="788" width="460" height="84" rx="10" fill="#ffffff" stroke="#64748b" stroke-width="1.6"/>
+  <text x="816" y="810" font-size="12.5" font-weight="700" fill="#0f172a">治理与历史资产</text>
+  <text x="816" y="831" font-size="11" fill="#334155">docs/v4-architecture：V4 工作推进总纲（唯一控制面）</text>
+  <text x="816" y="851" font-size="11" fill="#334155">archive/v3 ＋ migration：92 个 V3 历史事实 → 选择性吸收</text>
+  <text x="816" y="869" font-size="10.5" fill="#64748b">V3 资产仅可调查 / 选择性重设计，不自动取得 V4 身份</text>
+
+  <!-- ===== V1–V8 价值标准条 ===== -->
+  <text x="40" y="900" font-size="12.5" font-weight="700" fill="#475569">V1–V8 价值评判标准（一切实践须为 AI 带来可辨认的净收益）</text>
+  <g font-size="11" font-weight="700" fill="#0f172a">
+    <rect x="40"  y="908" width="145" height="46" rx="8" fill="#fef2f2" stroke="#f87171"/>
+    <text x="112" y="930" text-anchor="middle">V1 快速定位</text>
+    <text x="112" y="946" text-anchor="middle" font-size="9.5" font-weight="400" fill="#64748b">定位规则/事实/状态/能力</text>
+
+    <rect x="193" y="908" width="145" height="46" rx="8" fill="#fff7ed" stroke="#fb923c"/>
+    <text x="265" y="930" text-anchor="middle">V2 充分理解</text>
+    <text x="265" y="946" text-anchor="middle" font-size="9.5" font-weight="400" fill="#64748b">整体连贯不过载</text>
+
+    <rect x="346" y="908" width="145" height="46" rx="8" fill="#fefce8" stroke="#facc15"/>
+    <text x="418" y="930" text-anchor="middle">V3 边界识别</text>
+    <text x="418" y="946" text-anchor="middle" font-size="9.5" font-weight="400" fill="#64748b">识别遵守/自主/暂停</text>
+
+    <rect x="499" y="908" width="145" height="46" rx="8" fill="#ecfdf5" stroke="#34d399"/>
+    <text x="571" y="930" text-anchor="middle">V4 稳定推进</text>
+    <text x="571" y="946" text-anchor="middle" font-size="9.5" font-weight="400" fill="#64748b">复用行动结构</text>
+
+    <rect x="652" y="908" width="145" height="46" rx="8" fill="#eff6ff" stroke="#60a5fa"/>
+    <text x="724" y="930" text-anchor="middle">V5 据实判断</text>
+    <text x="724" y="946" text-anchor="middle" font-size="9.5" font-weight="400" fill="#64748b">可回指依据</text>
+
+    <rect x="805" y="908" width="145" height="46" rx="8" fill="#f5f3ff" stroke="#a78bfa"/>
+    <text x="877" y="930" text-anchor="middle">V6 工作接续</text>
+    <text x="877" y="946" text-anchor="middle" font-size="9.5" font-weight="400" fill="#64748b">跨会话恢复</text>
+
+    <rect x="958" y="908" width="145" height="46" rx="8" fill="#fdf2f8" stroke="#f472b6"/>
+    <text x="1030" y="930" text-anchor="middle">V7 清晰沟通</text>
+    <text x="1030" y="946" text-anchor="middle" font-size="9.5" font-weight="400" fill="#64748b">交还 Human</text>
+
+    <rect x="1111" y="908" width="145" height="46" rx="8" fill="#f0fdfa" stroke="#2dd4bf"/>
+    <text x="1183" y="930" text-anchor="middle">V8 持续积累</text>
+    <text x="1183" y="946" text-anchor="middle" font-size="9.5" font-weight="400" fill="#64748b">复用经验</text>
+  </g>
+
+  <!-- ===== 关键概念说明 ===== -->
+  <rect x="40" y="970" width="595" height="128" rx="10" fill="#eef2ff" stroke="#6366f1" stroke-width="1.4"/>
+  <text x="56" y="992" font-size="13" font-weight="700" fill="#3730a3">规范源（Specification Source）</text>
+  <text x="56" y="1012" font-size="10.5" fill="#334155">全部 Specs + 授权附件，是 LDVH 规范内容统一承载。</text>
+  <text x="56" y="1030" font-size="10.5" fill="#334155">两类作用：① 界定边界系统（行动/事实/授权/验证/Human决定/停止恢复等互相关联的边界）</text>
+  <text x="56" y="1048" font-size="10.5" fill="#334155">② 规范行动流程（行动模板＝流程规范，避免反复重建流程）。</text>
+  <text x="56" y="1066" font-size="10.5" fill="#334155">三级判断：生效 → 适用 → 行动允许。Human对话/工具输出不成为规范源，不得自行扩张边界。</text>
+  <text x="56" y="1086" font-size="10.5" fill="#334155">边界系统不是新的语义构成要素；索引/缓存/视图不得成为「第二规范源」。</text>
+
+  <rect x="665" y="970" width="595" height="128" rx="10" fill="#ecfeff" stroke="#0ea5e9" stroke-width="1.4"/>
+  <text x="681" y="992" font-size="13" font-weight="700" fill="#075985">事实源（Fact Source）</text>
+  <text x="681" y="1012" font-size="10.5" fill="#334155">以 Git 可追踪文件为唯一有效承载 —— 信息锚点与判断依据。</text>
+  <text x="681" y="1030" font-size="10.5" fill="#334155">两项要求：① 有 Git 可溯源（形成/修改/验证/关闭可回指）② 有组织可消费（定位/关联/回写）。</text>
+  <text x="681" y="1048" font-size="10.5" fill="#334155">五类事实对象：20 Spark · 21 WorkCase · 22 ADR · 23 Pitfall · 24 Study。</text>
+  <text x="681" y="1066" font-size="10.5" fill="#334155">聊天/AI推理/工具输出/缓存/页面状态，回写事实源并验证后才可能成为稳定事实。</text>
+  <text x="681" y="1086" font-size="10.5" fill="#334155">不符合两项要求者，不得作为稳定事实承载位置。</text>
+
+  <text x="650" y="1112" text-anchor="middle" font-size="10" fill="#94a3b8">依据 specs/00-理念与构成 与 docs/v4-architecture/active/V4-工作推进总纲 绘制 · 状态基线 2026-07</text>
+</svg>
