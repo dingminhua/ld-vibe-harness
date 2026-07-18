@@ -185,7 +185,9 @@ Git 侧只允许一个 POSIX 薄 adapter：它从当前 `commit-msg` 事件取�
 
 真实隔离 Git 生命周期 tests 证明：不合格 message 阻断且 HEAD/Index 保持，合格 message 正常创建提交；内部临时 Index 经过 Git 事件显式传入并被同一 Gate 观察；非管辖项目 fail closed；既有用户 Hook、任意 `core.hooksPath`、linked worktree 共享目录和被修改的伪自有文件均零写入；未确认 Human Gate 不卸载，确认后只移除完整自有 wrapper。wheel/sdist 生命周期同时验证两个新 console entry point 存在且卸载后退出。
 
-独立 POST 审核确认 09 例外未扩大为新的语义或状态权威，五组 tests 均有独立失败价值。最终快照完成全量 `code/tests`：`799 passed, 10 skipped`；全库 Ruff check 和 format check 均通过，`git diff --check` 通过。当前 V4 worktree 的 `core.hooksPath` 仍为 `.githooks-v4`，目录仍只有既有 `README.md`；本增量没有安装、替换或移除当前项目 Hook，也没有修改其 Git 配置。实际项目接入仍等待 Human 另行授权。
+独立 POST 审核确认 09 例外未扩大为新的语义或状态权威，五组 tests 均有独立失败价值。最终快照完成全量 `code/tests`：`799 passed, 10 skipped`；全库 Ruff check 和 format check 均通过，`git diff --check` 通过。本实现增量自身没有安装、替换或移除当前项目 Hook，也没有修改其 Git 配置。
+
+2026-07-19 状态校正：当前 V4 worktree 的 `core.hooksPath` 为 `.githooks-v4`，其中存在可执行且由 LDVH 管理的 `commit-msg` wrapper。Human 同日确认其继续保留和生效；仓库内未找到历史安装当次的授权记录，故不倒填该事实。本校正只记录已观察状态，不新增受控 allow/block 真实触发验证。
 
 ## 19. 跨环境实际 worktree Git Gate 收口
 

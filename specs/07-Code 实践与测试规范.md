@@ -10,7 +10,7 @@ ldvh_spec:
   canonical_path: "specs/07-Code 实践与测试规范.md"
   parent_spec: "ldvh-root"
   relation: "refines"
-  positioning: "定义 Code 承担确定性执行能力并在实现层交付 Helper CLI、Hook 与 Gate 所需程序时的规划、模块责任、依赖方向、来源语义边界审核、接口与 Schema 维护、诊断、重构以及风险驱动测试共同要求"
+  positioning: "定义 Code 承担确定性执行能力并在实现层交付 Helper CLI、Hook、Git Gate 与 Hook Gate 所需程序时的规划、模块责任、依赖方向、来源语义边界审核、接口与 Schema 维护、诊断、重构以及风险驱动测试共同要求"
   scope: "LDVH Code 与 Code tests 的首次规划、增量设计、实现变更、缺陷修复、重构和测试证据，以及被相应语义来源或职责规范明确引用的共同测试工程要求；不定义领域语义、外部产品契约或具体实现技术"
   basis:
     - "ldvh-root"
@@ -40,7 +40,7 @@ Code 实践与测试规范（Code Practices and Testing Specification）的价�
 本文直接依据 `ldvh-root`，细化 00 对 Code 作为确定性执行能力上位概念及其实现关系的定义：
 
 1. Code 提供解析、索引、聚合、校验、测试、上下文压缩和受控写入等确定性能力与反馈；
-2. 在实现层，Helper CLI、Hook 和 Gate 所需的确定性程序由 Code 实现；该关系不建立架构层隶属、并列语义构成要素或固定模块层级；
+2. 在实现层，Helper CLI、Hook、Git Gate 和 Hook Gate 所需的确定性程序由 Code 实现；该关系不建立架构层隶属、并列语义构成要素或固定模块层级；
 3. Web 是面向 Human 的交互呈现职责，不属于 Code；为 Web 服务的脚本与配置归入 Web 实现，不因具有可执行形态而归入 `code/`；
 4. Code 和 tests 不得重新解释规范模型、事实模型、行动模板、Helper、Web 或环境的来源语义；
 5. 能力可用、状态成立和工作完成的声明不得超出当次实现、测试和可观察依据实际支持的范围。
@@ -384,7 +384,7 @@ Code tests 自身属于 Code，必须遵守适用的责任、依赖、可维护�
 
 本文不新增独立于 00 和实际来源规则的 Human Gate。出现以下情况时，分别按已有来源进入 Human Gate：
 
-1. 准备改变 Code 作为确定性执行能力的上位概念、Helper CLI、Hook 与 Gate 的实现层关系，或测试证据边界等 00 上位语义；
+1. 准备改变 Code 作为确定性执行能力的上位概念、Helper CLI、Hook、Git Gate 与 Hook Gate 的实现层关系，或测试证据边界等 00 上位语义；
 2. 多个实现方向会改变 Human 已确认的外部产品范围、不可逆技术承诺或受控副作用，而当前来源不能替 Human 选择；
 3. 准备接受高影响残留风险、长期保留已确认的严重设计偏移，或在验证范围不足时继续作出相应声明；
 4. 实际来源规则明确把某项接口、风险接受、兼容退出或验收决定保留给 Human。

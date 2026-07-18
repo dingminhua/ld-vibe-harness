@@ -189,7 +189,7 @@ Human 已明确决定保留现有 Spark 创建表现且不增加页面字段。�
 3. canonical object 的字段闭集恰为 `priority`、`summary`、`title`，按 ASCII key 升序输出为 JSON；冒号与逗号旁无空白、无末尾换行，非 ASCII 字符在 NFC 后直接使用 UTF-8；
 4. JSON 必须把 `"` 和 `\` 分别转义为 `\"` 与 `\\`；C0 中 `U+0008/U+0009/U+000A/U+000C/U+000D` 分别使用 `\b/\t/\n/\f/\r`，其它 C0 使用小写十六进制 `\u00xx`；`/` 不转义，内部 `U+2028/U+2029` 保留为 UTF-8，unpaired surrogate 拒绝；
 5. canonical bytes 是上述 JSON 的 UTF-8 bytes。`version` 固定为 `sha256:<64 位小写十六进制>`；`locator` 固定为 `data:application/json;base64,<payload>`，其中 payload 使用 RFC 4648 standard Base64 alphabet、保留必要 `=` padding、禁止空白和非 canonical 编码；
-6. `source_refs` 的该项固定使用 `kind: web-direct-capture`，并包含上述 `locator`、`version` 与实际服务器观察提交事件时形成的带时区 RFC 3339 `observed_at`。locator 必须可解码回 canonical bytes；Code 必须重新规范化、逐 bytes 比较并复算 digest。创建前与首次写后回读时，还必须核对该历史 capture 与新对象初始 `title/summary/priority` 精确一致；对象随后发生合法生命周期变化时，该来源仍证明当时输入，不要求历史 payload 永远等于当前对象快照。
+6. `source_refs` 的该项固定使用 `kind: web-direct-capture`，并包含上述 `locator`、`version` 与实际服务器观察提交事件时形成的带时区 RFC 3339 `observed_at`。locator 必须可解码回 canonical bytes；Code 必须重新规范化、逐 bytes 比较并复算 digest。创建前与首次写后回读时的历史 capture 与新对象初始 `title/summary/priority` 一致性核对按 20 §7 执行；对象随后发生合法生命周期变化时，该来源仍证明当时输入，不要求历史 payload 永远等于当前对象快照。
 
 固定向量如下；输入转义只用于在本文可见地表示 code point，不是 canonical JSON 的另一种编码：
 
@@ -270,7 +270,7 @@ Web API 或前端不得作为事实类型、字段、ID、初始状态和状态�
 
 不改变上述可观察行为的内部组件、模块、类型、数据读取或样式组织重构，不因本文单独进入 Human Gate。
 
-Human 已明确决定保留现有 Spark 创建表现、改由 V4 承接并且不开放其它 Web 写入，因此建立 §8.2 的产品窄边界不再重复进入 Gate。该决定不授权每次具体创建；当次点击只授权一个闭集请求，也不授权真实项目测试写入、生命周期变更、迁移、commit、远程部署或其它事实类型。
+Human 已明确决定保留现有 Spark 创建表现、改由 V4 承接并且不开放其它 Web 写入，因此建立 §8.2 的产品窄边界不再重复进入 Human Gate。该决定不授权每次具体创建；当次点击只授权一个闭集请求，也不授权真实项目测试写入、生命周期变更、迁移、commit、远程部署或其它事实类型。
 
 ## 12. Stop Conditions
 

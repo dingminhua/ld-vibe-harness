@@ -152,10 +152,10 @@ Spark 与 WorkCase 的分界不取决于“以后是否可能做”。Spark 尚�
 | `workcase-execution-approval` | `execution_approval` | object | Human 对当前计划版本开始执行的明确批准 | 不表示创建批准、技术验证、关闭批准或后续计划版本继续获批 | 仅在 Human 实际批准后出现；成员使用 `workcase-human-approval` 且 subject_version 等于当前 plan_version；计划版本变化时立即失效并移除，phase 回到 human_plan_confirming |
 | `workcase-result-version` | `result_version` | integer | 工作项结果、主控自检、验证总结、关闭处置和分流建议共同形成的待审核结果包版本 | 不表示 plan_version、Git revision 或结果审核次数 | 进入 controller_checking 时建立为 1；结果包实质变化时单调递增；结果审核与关闭批准只对同版本有效 |
 | `workcase-controller-check-summary` | `controller_check_summary` | string | 主控逐项检查成功标准、工作项结果、验证、残余问题并完成修复后的当前自检说明 | 不表示独立结果审核、Human 验收或工具日志 | controller_checking 后必填非空；必须说明检查覆盖、发现、修复和未验证范围，并由当前 evidence_refs 支持 |
-| `workcase-result-reviews` | `result_reviews` | array | 独立审核者对当前结果版本进行审核以及主控处理反馈的记录 | 不表示创建审核、主控自检或 Human 关闭确认 | 进入 independent_reviewing 后必填且至少一项；成员使用 `workcase-review`；只保留当前 result_version 的实际审核，旧版本由 Git 追溯；全部当前审核的联合 scope 必须覆盖 §6 规定的完整结果包，且没有未解决 changes_required/blocked |
+| `workcase-result-reviews` | `result_reviews` | array | 独立审核者对当前结果版本进行审核以及主控处理反馈的记录 | 不表示创建审核、主控自检或 Human 关闭确认 | 离开 independent_reviewing 前（进入 closure_preparing 时）必填且至少一项；成员使用 `workcase-review`；只保留当前 result_version 的实际审核，旧版本由 Git 追溯；全部当前审核的联合 scope 必须覆盖 §6 规定的完整结果包，且没有未解决 changes_required/blocked |
 | `workcase-closure-approval` | `closure_approval` | object | Human 对当前结果版本、最终报告和分流建议作出的关闭批准 | 不表示技术验证、Git 已提交、下游责任完成或后续结果版本获批 | 仅在 Human 实际批准关闭后出现；成员使用 `workcase-human-approval` 且 subject_version 等于当前 result_version；写入与 status/phase 进入 closed 必须属于同一受控变更 |
 | `workcase-resume-from` | `resume_from` | string | 当前非终态推进阶段在中断、压缩或执行者交接后继续的最小明确入口 | 不表示完整执行步骤、历史日志或单个工作项自己的恢复点 | status 非 closed 时必填非空；与 summary 共同覆盖当前 phase 的已完成范围、下一动作和所需输入；阶段变化时覆盖更新 |
-| `workcase-waiting-on` | `waiting_on` | string | 当前阶段正在等待的 Human 决定、独立审核、外部能力、证据或其它明确条件 | 不表示普通下一步、低优先级或历史阻塞 | 实际等待时条件出现且非空；等待解除后移除；Human 确认阶段必须说明等待的具体 Gate，blocked 仍由 blocking_summary 表达整体阻塞 |
+| `workcase-waiting-on` | `waiting_on` | string | 当前阶段正在等待的 Human 决定、独立审核、外部能力、证据或其它明确条件 | 不表示普通下一步、低优先级或历史阻塞 | 实际等待时条件出现且非空；等待解除后移除；Human 确认阶段必须说明等待的具体 Human Gate，blocked 仍由 blocking_summary 表达整体阻塞 |
 | `workcase-blocking-summary` | `blocking_summary` | string | WorkCase 当前不能继续的具体事实、影响范围和解除条件 | 不表示低优先级、普通剩余工作、失败历史或终态理由 | 非空；解除条件必须可观察且有依据；不保留已经解除的历史阻塞占位 |
 | `workcase-closure-outcome` | `closure_outcome` | string | WorkCase 在当前身份下停止推进时的结果分类 | 不表示状态、成功标准验证详情、终态理由或 Git 已提交 | 闭集 completed、partial、cancelled、superseded、not-achieved；各值的互斥语义与成立条件由 §6 唯一定义 |
 | `workcase-item-id` | `item_id` | string | 同一 WorkCase 内稳定识别一个阶段性工作项的局部身份 | 不表示事实对象身份、数组序号或执行者身份 | 必填；匹配 `item-[0-9]{2,}`；同一 WorkCase 内唯一，形成后不得因排序、状态或执行者变化而改变 |
@@ -197,7 +197,7 @@ WorkCase 对象使用 UTF-8 YAML，一文件一对象，当前权威位置固定
 
 WorkCase 的正式计划形成与对象创建存在一个对象外前提：Human 已通过当前指令明确确认该工作值得由项目承担并建立 WorkCase；当前指令尚未包含该决定时，AI 先基于只读召回说明建议理由与边界，再请求 Human 确认。该确认沿用 05 对事实对象创建行动授权的共同边界，只回答“是否承担并进入 WorkCase 规划与记录”，允许 AI 形成并独立审核计划以及受控创建对象；它不批准尚未形成的 `plan_version`，不形成 `execution_approval`，也不建立对象内 phase。Human 不确认或撤回该工作意图时，AI 不进入正式计划、Subagent 创建审核和对象创建流程；需要保留的未收敛入口按其实际语义留在当前上下文或另行判断是否满足 Spark 等承载位置。
 
-本文所称“双 Human Gate”只指 WorkCase 对象建立后的当前计划执行批准与最终结果关闭确认。对象创建前的工作意图确认承接 05 对当次事实对象写入授权的共同边界，不因 WorkCase 生命周期另造第三个对象内 Gate；三项判断的对象分别是工作意图、具体计划和实际结果，不得互相替代。
+本文所称“双 Human Gate”只指 WorkCase 对象建立后的当前计划执行批准与最终结果关闭确认。对象创建前的工作意图确认承接 05 对当次事实对象写入授权的共同边界，不因 WorkCase 生命周期另造第三个对象内 Human Gate；三项判断的对象分别是工作意图、具体计划和实际结果，不得互相替代。
 
 Human 选择建立 WorkCase 表示选择由本文完整管理该工作的当前计划、执行结果、审核、批准与关闭；工作持续时间短、实现简单、只有一个 work item 或 Code 能验证部分结果，都不改变已经生效的审核、批准与关闭边界。不需要这条完整链路的工作不建立 WorkCase，不在建立后通过跳过关口将它降级为普通工作记录。
 
@@ -343,7 +343,7 @@ AI 可以在建议阶段只读召回相邻 WorkCase、Spark 和其它稳定来�
 
 closed 文件默认保留在当前类型载体中供历史、来源和关系回读；本文不建立 `archived` 状态或归档位置。删除只有在适用来源规则允许、全部引用和剩余责任已经处置且不会丢失仍适用事实时才成立，不能用删除替代 closed。WorkCase 类型停止新增、合并、替代或取消时，必须按 05 处置唯一定义来源、全部现有对象（包括 closed）、引用消费者和仍适用责任；全部未终态责任还必须获得明确承接，不得只删除类型规范或隐藏对象目录。
 
-具体保留给 Human 的决定见 §10。Human 对工作意图的确认只允许形成、审核并创建计划；Human 已批准当前 plan_version 且适用于相应行动的全部来源规则许可条件仍成立时，在批准范围内推进 work item、更新恢复快照、证据和客观状态不重复建立 Gate；但计划实质变化必须回到对象建立后的第一次 Gate，关闭始终必须经过第二次 Gate。任何确认或批准都不使技术验证、来源回读和字段约束自动成立。
+具体保留给 Human 的决定见 §10。Human 对工作意图的确认只允许形成、审核并创建计划；Human 已批准当前 plan_version 且适用于相应行动的全部来源规则许可条件仍成立时，在批准范围内推进 work item、更新恢复快照、证据和客观状态不重复建立 Human Gate；但计划实质变化必须回到对象建立后的第一次 Human Gate，关闭始终必须经过第二次 Human Gate。任何确认或批准都不使技术验证、来源回读和字段约束自动成立。
 
 ## 9. 验证要求
 
@@ -353,7 +353,7 @@ closed 文件默认保留在当前类型载体中供历史、来源和关系回�
 | WorkCase 准入、创建审核与查重 | 建议建立候选、形成正式计划和创建新对象前 | Human 已确认工作意图和建立项目记录；对象化净收益、单一目标、范围、成功标准成立；work item 的拆分、依赖、方法及模板选择/偏离合理；已召回相邻对象且没有可无损更新入口；独立审核反馈和主控处置完整 | Human 当前确认、当前输入、来源定位、召回结果、计划方案、独立审核与主控处置 | AI 授权核对、来源回读与全局检索；Code 只辅助精确检索和检查结构 | 当次工作意图、候选、当前 plan_version 与直接相邻事实 | 未确认意图时不进入正式计划和创建；其余不满足时不创建，修订并重审、留在当前行动、更新已有对象、拆分或转 Spark |
 | WorkCase 召回与消费 | 会话开始/恢复/压缩恢复，执行者交接，开始、继续、改变或交还工作，或检查阻塞与依赖时 | 全部 `open`/`blocked` F1 责任卡 coverage 完整；精确对象及直接依赖已展开；status、phase、版本、工作项、审核、批准和恢复点没有被派生视图改写 | 管辖与 worktree 结果、全部责任卡、coverage/cursor、完整对象、依赖与当前授权 | 完整卡片分页回读、对象/依赖回读与 AI 目标/范围比较 | 当次已读卡片范围、完整对象、责任、阶段与依赖 | 不声称上下文完整，不执行或改变对象；继续分页、补读来源或交还未确认责任 |
 | 对象 Schema 与身份 | 创建、读取或更新对象时 | 路径、身份、字段闭集、类型、条件、时间和引用符合当前来源 | 当前文件、统一登记、本文与派生 Schema | 实际 parser/validator；未实现时逐项来源回读 | 当次对象当前 Working Tree 内容 | 不作为有效 WorkCase 消费；报告字段和未验证范围 |
-| 状态、阶段、版本与双 Gate | 创建、转换 phase/status、修改计划或结果包、准备执行或关闭时 | 转换来自允许边；计划/结果实质变化递增相应版本；审核和 Human 批准绑定当前版本；阻塞、工作项条件、验证、终态和承接一致 | 当前对象、审核反馈、主控处置、Human 决定、实际验证、来源、证据与目标对象 | AI 语义审核、版本/结构校验、目标回读和受控变更前后比较 | 当次状态、阶段、版本、执行授权与关闭声明 | 保持或退回前一阶段；撤销失效批准；重审、补证据、承接或进入 Human Gate |
+| 状态、阶段、版本与双 Human Gate | 创建、转换 phase/status、修改计划或结果包、准备执行或关闭时 | 转换来自允许边；计划/结果实质变化递增相应版本；审核和 Human 批准绑定当前版本；阻塞、工作项条件、验证、终态和承接一致 | 当前对象、审核反馈、主控处置、Human 决定、实际验证、来源、证据与目标对象 | AI 语义审核、版本/结构校验、目标回读和受控变更前后比较 | 当次状态、阶段、版本、执行授权与关闭声明 | 保持或退回前一阶段；撤销失效批准；重审、补证据、承接或进入 Human Gate |
 | 来源、证据与关系 | 写入当前说明、验证结论、阻塞或关系时 | 来源可定位，证据支持声明，关系方向、目标和状态稳定且无环 | 原始来源、目标对象、引用成员和当前说明 | 来源与目标回读；Code 检查结构、身份及可确定环 | 当次声明与关系 | 缩小声明、修正引用或移除无依据关系 |
 | 变更与回读 | 创建、更新、更正、拆分、合并、替代或删除后 | 获准变更已写入、回读并验证；失败和部分结果如实保留 | Human 指令、文件差异、Working Tree 回读和验证结果 | 实际写入入口与当前文件回读 | 当次实际变更 | 不声明成功；修正、回滚或保留部分结果与残余风险 |
 
@@ -382,7 +382,7 @@ AI 语义审核以本表各验证对象及其成立条件为准，不另建一�
 3. 扩大范围、改变目标、接受 `partial`、`not-achieved`、残余风险、豁免、取消或替代，或者行动本身包含高影响、不可逆及其它来源保留给 Human 的决定；
 4. 合并、拆分、删除或重组可能丢失身份、来源、证据、审核、批准或承接事实。
 
-第一次执行批准只覆盖其 subject_version；实质计划变化必须重审并再次请求 Human。第二次关闭批准只覆盖其 subject_version，必须与 closed 同一受控变更。工作意图确认、计划执行批准和结果关闭确认分别针对不同判断对象，不构成重复请求；Human 决定复用按 00 §9 执行，在批准计划边界内且适用于相应行动的全部来源规则许可条件仍成立时，更新工作项恢复快照、阶段结果、验证和客观状态不重复进入 Gate。Human 确认不能替代技术验证、独立审核或字段约束；技术验证和审核也不能替代 Human 的工作意图、执行与关闭决定。
+第一次执行批准只覆盖其 subject_version；实质计划变化必须重审并再次请求 Human。第二次关闭批准只覆盖其 subject_version，必须与 closed 同一受控变更。工作意图确认、计划执行批准和结果关闭确认分别针对不同判断对象，不构成重复请求；Human 决定复用按 00 §9 执行，在批准计划边界内且适用于相应行动的全部来源规则许可条件仍成立时，更新工作项恢复快照、阶段结果、验证和客观状态不重复进入 Human Gate。Human 确认不能替代技术验证、独立审核或字段约束；技术验证和审核也不能替代 Human 的工作意图、执行与关闭决定。
 
 ## 11. Stop Conditions
 
