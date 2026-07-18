@@ -136,8 +136,8 @@ Windows 第 6 切片随后修改了仓库内 Hook 命令和 adapter UTF-8 transp
 
 本轮没有重新取得 SessionStart/startup、clear、compact、停用/恢复、Human 可见名称或图标展示的真实证据，也没有验证其它 Codex 版本、用户、机器、工作区或第二个环境。这些范围继续未验证；旧版本的停用/恢复和失败证据不能填补它们。
 
-因此，当前可声明的范围是：本机当前用户、上述插件版本和工作区中，核心先行共享恢复通过 Codex 薄 adapter 已在 SessionStart/resume 与 SubagentStart 自动触发，并忠实交还两项来源定义的只读 Helper 结果。完整 Tests、POST 审核和实现边界见 V4-Codex环境接入-Code实现规划.md §9.6；下一主线 Gate 仍是 Human 选择真实工作后的纵向 dogfood。
+因此，当前可声明的范围是：本机当前用户、上述插件版本和工作区中，核心先行共享恢复通过 Codex 薄 adapter 已在 SessionStart/resume 与 SubagentStart 自动触发，并忠实交还两项来源定义的只读 Helper 结果。完整 Tests、POST 审核和实现边界见 V4-Codex环境接入-Code实现规划.md §9.6；下一主线 Human Gate 仍是 Human 选择真实工作后的纵向 dogfood。
 
-### 9.4 Git worktree Gate 边界
+### 9.4 Git worktree Git Gate 边界
 
 本记录中的 Codex Hook 只覆盖上下文恢复，当前没有为本机 Codex Local Environment 写入 setup script，因此不声明工作树创建会自动安装 Git Hook。2026-07-19 已另行观察到当前 LDVH worktree 存在 managed `commit-msg` wrapper；Human 同日确认继续保留。该观察不归因于 Codex setup，不补写历史安装当次授权，也不借用本节的 SessionStart/SubagentStart 触发证据；本轮不新增 allow/block 真实触发验证。后续若 Human 授权一个具体项目×环境 setup，仍必须以当时的 `ldvh-git-hook bootstrap`、工作树内路径回读和真实环境创建证据另行记录。
