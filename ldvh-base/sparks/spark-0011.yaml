@@ -1,0 +1,11 @@
+title: 能力资产准入、封装与触发
+status: open
+priority: P2
+source_refs:
+- kind: human-input
+  locator: 2026-07-19 Human：建立有价值历史 Spark 的 V4 原生入口，后续研究推进
+summary: 研究 Skill、Agent、Hook 等能力资产的准入、声明、可发现性、触发时机和验证证据；避免资产堆积或由未验证自动化扩大结论。
+object_id: spark-0011
+fact_type_key: spark
+created_at: '2026-07-19T10:28:38.631195+08:00'
+updated_at: '2026-07-19T10:28:38.631195+08:00'

@@ -1,0 +1,11 @@
+title: WorkCase 编排控制面与可执行状态
+status: open
+priority: P1
+source_refs:
+- kind: human-input
+  locator: 2026-07-19 Human：建立有价值历史 Spark 的 V4 原生入口，后续研究推进
+summary: 研究 WorkCase 如何承载可验证目标与稳定状态，并与依赖、阻塞、下一步选择和运行期编排分层；当前不引入外部任务系统或自动调度。
+object_id: spark-0008
+fact_type_key: spark
+created_at: '2026-07-19T10:28:34.053553+08:00'
+updated_at: '2026-07-19T10:28:34.053553+08:00'

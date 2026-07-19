@@ -559,6 +559,25 @@ def _validate_references(fact_type_key: str, fields: dict[str, Any], issues: lis
             if isinstance(kind, str) and isinstance(locator, str) and not _valid_study_locator(kind, locator):
                 issues.append(FactIssue("reference", f"locator 不符合 {kind} profile", f"{path}.locator"))
 
+    if fact_type_key == "study":
+        evidence_refs = fields.get("evidence_refs")
+        has_external_evidence = isinstance(evidence_refs, list) and any(
+            isinstance(reference, dict)
+            and reference.get("kind") in {"web-page", "api-observation", "human-provided-artifact"}
+            for reference in evidence_refs
+        )
+        if not has_external_evidence:
+            issues.append(
+                FactIssue(
+                    "reference",
+                    (
+                        "Study 的 evidence_refs 必须至少包含一项 web-page、api-observation "
+                        "或 human-provided-artifact 外部证据"
+                    ),
+                    "evidence_refs",
+                )
+            )
+
 
 _FACT_OBJECT_LOCATOR = re.compile(
     r"ldvh-base/(?P<directory>sparks|workcases|adrs|pitfalls|studies)/"

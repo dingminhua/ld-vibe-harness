@@ -1,0 +1,56 @@
+---
+title: OpenAI Codex Harness Engineering 与 Symphony 调研
+status: active
+source_refs:
+- kind: web-page
+  locator: https://openai.com/index/harness-engineering/
+  observed_at: '2026-07-19T10:00:00+08:00'
+- kind: web-page
+  locator: https://openai.com/index/open-source-codex-orchestration-symphony/
+  observed_at: '2026-07-19T10:00:00+08:00'
+- kind: web-page
+  locator: https://github.com/openai/symphony
+  observed_at: '2026-07-19T10:00:00+08:00'
+evidence_refs:
+- kind: web-page
+  locator: https://openai.com/index/harness-engineering/
+  observed_at: '2026-07-19T10:00:00+08:00'
+- kind: web-page
+  locator: https://openai.com/index/open-source-codex-orchestration-symphony/
+  observed_at: '2026-07-19T10:00:00+08:00'
+- kind: web-page
+  locator: https://github.com/openai/symphony
+  observed_at: '2026-07-19T10:00:00+08:00'
+applicability: 用于 LDVH WorkCase 编排、Agent-first Harness 和人类可读证据链的外部参考；不把 OpenAI
+  内部实践或 Symphony 的任务模型直接作为 LDVH 规范。
+validation_summary: 已读取 OpenAI 官方 Harness Engineering 与 Symphony
+  公开文章；外部材料主要是经验性描述，未构成对 LDVH 任何具体架构的性能或安全保证。
+research_question: OpenAI 的 Harness Engineering 与 Symphony 公开实践如何把 Agent
+  工作变成可验证、可编排的工程控制面？
+abstract: 调研 OpenAI Harness Engineering 文章与 Symphony
+  开源编排介绍。两者都强调环境、脚手架、反馈循环、结构化工具和可观察性；Symphony 进一步把 issue tracker
+  作为控制面，为任务分配隔离工作区并要求人工审查。结论是过程控制和证明材料比“让 Agent 自由写代码”更关键。
+object_id: study-0003
+fact_type_key: study
+created_at: '2026-07-19T11:17:42.310359+08:00'
+updated_at: '2026-07-19T11:17:42.310359+08:00'
+---
+
+## 研究问题
+
+OpenAI 的 Harness Engineering 与 Symphony 公开实践如何把 Agent 工作变成可验证、可编排的工程控制面？
+## 输入、方法与观察边界
+
+本报告读取并对照了以下外部公开资料：https://openai.com/index/harness-engineering/、https://openai.com/index/open-source-codex-orchestration-symphony/、https://github.com/openai/symphony。观察时间统一记录在 evidence_refs；本报告只陈述页面可直接支持的内容，并将 LDVH 适用性与外部事实分开。
+## 关键发现
+
+Harness Engineering 把人的主要工作放到环境、脚手架、反馈循环、工具/文档/可观测性和机械边界上，并用自定义 linter/结构测试约束架构边界。Symphony 以 issue tracker 作为控制面，为每项工作创建 Agent 与 workspace，要求人工 review，并明确并非所有任务都适合自动编排。
+## 结论与限制
+
+对 LDVH 最有价值的不是复制一个编排器，而是把“目标、状态、工作区、反馈、证明、人工复核”串成闭环，并保留任务不适合自动化时的退出路径。限制是公开文章展示的是特定组织和工具上下文，不能证明同一闭环在 LDVH 上已经成立。
+## 建议
+
+把 WorkCase 作为可观察控制面，补齐工作项状态、验证证据、停止条件和“不适合自动编排”的分流；把 linter/结构测试作为候选机械门禁而非 AI 判断替代物。
+## 后续分流
+
+供 Spark-0008、Spark-0009；具体字段和运行时接入必须另开 WorkCase，并通过现有 Git/Hook/Human Gate。

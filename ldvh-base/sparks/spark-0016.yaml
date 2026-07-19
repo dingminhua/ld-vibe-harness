@@ -1,0 +1,11 @@
+title: 非权威关系导航与代码库索引
+status: open
+priority: P2
+source_refs:
+- kind: human-input
+  locator: 2026-07-19 Human：建立有价值历史 Spark 的 V4 原生入口，后续研究推进
+summary: 研究从 V4 事实对象关系和代码结构派生可查询导航、影响发现与索引的边界；索引不得替代权威事实源或自动裁决语义。
+object_id: spark-0016
+fact_type_key: spark
+created_at: '2026-07-19T10:28:46.306813+08:00'
+updated_at: '2026-07-19T10:28:46.306813+08:00'

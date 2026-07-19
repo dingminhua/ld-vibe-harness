@@ -1,0 +1,11 @@
+title: 人类可读与机器可读的过程输出契约
+status: open
+priority: P1
+source_refs:
+- kind: human-input
+  locator: 2026-07-19 Human：建立有价值历史 Spark 的 V4 原生入口，后续研究推进
+summary: 定义计划、进度、工具运行、验证、审计和最终交接的双层输出边界，使 Human 可检查、机器可消费且过程输出不冒充正式事实。
+object_id: spark-0014
+fact_type_key: spark
+created_at: '2026-07-19T10:28:43.236462+08:00'
+updated_at: '2026-07-19T10:28:43.236462+08:00'

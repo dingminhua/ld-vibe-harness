@@ -56,7 +56,7 @@ export const TYPE_DESCRIPTION_LOCALES: Record<string, { zh: string; en: string }
   adr: { zh: '决策记录', en: 'Architecture Decision Record' },
   pitfall: { zh: '可复用经验', en: 'Reusable pitfalls' },
   spark: { zh: '待分流的火花', en: 'Spark pending routing' },
-  study: { zh: '稳定研究', en: 'Stable study' },
+  study: { zh: '外部调研', en: 'External study' },
   change: { zh: '提交', en: 'Commit' },
 };
 
@@ -116,7 +116,7 @@ export const UI_LOCALES = {
     'nav.adrs': '决策',
     'nav.pitfalls': '经验',
     'nav.sparks': '火花',
-    'nav.studies': '研究',
+    'nav.studies': '外部调研',
     'nav.changes': '提交',
     'nav.changelog': '提交',
     'nav.collapseSidebar': '收起侧栏',
@@ -344,7 +344,7 @@ export const UI_LOCALES = {
     'nav.adrs': 'ADRs',
     'nav.pitfalls': 'Pitfalls',
     'nav.sparks': 'Sparks',
-    'nav.studies': 'Studies',
+    'nav.studies': 'External studies',
     'nav.changes': 'Commit Records',
     'nav.changelog': 'Commit Records',
     'nav.collapseSidebar': 'Collapse sidebar',

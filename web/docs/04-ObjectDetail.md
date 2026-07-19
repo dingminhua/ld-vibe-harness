@@ -3,6 +3,8 @@
 > 路由：`/objects/:type/:id`
 > 源码：`web/src/pages/ObjectDetail.tsx`
 > 字段格式规则：`web/src/utils/fieldFormats.ts`
+
+> V4 读取边界：当前 Web 事实读取器只连接 V4 原生 Spark。Study 的界面原型不得读取 V2/V3 文件、旧字段或兼容 DTO；在 V4 原生 Study 读取能力和外部证据投影实际建立前，不得把该原型宣称为可用的 Study 阅读入口。
 > API：`GET /api/objects/:type/:id`
 > 全局设计语言：`web/docs/01-全局设计约束.md` §1.10
 > 图标规范：[`09-图标语义规范.md`](./09-图标语义规范.md)
@@ -20,7 +22,7 @@
   WorkCase：执行态势 + 成功标准 / 验证证据 / 关闭证据 + 检查安排 + 目标 / 所属工作项 / 来源 + 文档 / 决策 / 火花 / 踩坑经验
   ADR：背景 / 决策 / 影响 / 关联
   Pitfall：现象 / 触发 / 根因 / 方案 / 验证 / 规避 / 范围 / 关联
-  Study：意图 / 摘要 / 建议 / 正文 / 关联
+  Study：研究问题 / 摘要 / 适用范围 / 验证说明 / 正文 / 外部证据
   Spark：意图 / 摘要 / 演变 / 分流 / 关联
   其他对象：字段卡片布局
 YAML 源码折叠区
@@ -62,7 +64,7 @@ WorkCase 不使用普通字段卡片堆叠，而作为“一次目标的执行�
 
 1. Pitfall / 踩坑经验：作为“可复用经验阅读页”展示；
 2. ADR / 决策：作为“决策补丁阅读页”展示；
-3. Study / 研究报告：作为“报告阅读界面”展示；
+3. Study / 外部内容调研：作为“外部调研报告阅读界面”展示；当前 V4 读取器尚未实现；
 4. Spark / 火花：作为“待分流信息阅读页”展示。
 
 上述四类方案作为后续非工作主线对象页面设计的参照，不再回退到普通字段卡片堆叠。提交详情不是工作对象详情，但它是五个基准模块之一，已经进入同一阅读语言族：标准身份头部、指标区、圆点正文节点和右侧扩展阅读都必须与这四类详情保持一致。
@@ -99,27 +101,21 @@ WorkCase 不使用普通字段卡片堆叠，而作为“一次目标的执行�
 | 路径文本 | `PathText` | 等宽、可换行的路径标签 |
 | 其他短文本 | `ldvh-body` | 普通文本 |
 
-当前可点击对象引用仅覆盖 Web 支持的工作对象类型：WorkCase、ADR、Pitfall、Spark、Study。未进入当前对象路由的引用只作为普通引用文本展示，不跳转到无效详情页。
+当前 V4 可点击对象引用只覆盖已实际接入读取器的 Spark。Study、WorkCase、ADR 和 Pitfall 在其各自 V4 原生读取器实际建立前，只能作为普通引用文本展示，不跳转到历史兼容页面。
 
 路径类字段应按字段语义区分：`related_docs` 指向关联文档，`urls` 只指向报告正文提炼出的外部 `http(s)` 网址及用途摘要，`related_rules` 指向关联规范、Rules、Skill、Agent、Code 或 Web 路径。Web 可预览本地 Markdown 或展示路径，但不得把可预览路径集合解释为所有路径字段的合法范围。
 
 带章节后缀的本地 Markdown 引用应区分展示文本与加载路径：列表行保留完整引用文本，例如 `specs/07-Code确定性执行实现规范.md §4.7`；点击整行或扩展阅读图标时，只用规范化后的 Markdown 文件路径加载右侧阅读区，例如 `specs/07-Code确定性执行实现规范.md`，不得把章节后缀拼入文件读取 API。
 
-所有 `related_*`、`aggregated_related_*` 和 Study `urls` 字段在对象详情中应统一收进上层“关联”区块，不得按字段名散落在正文、证据或其他字段之间。关联区块内部先展示工作对象关联，并按事实模型编号排序：Spark 20、WorkCase 21、ADR 22、Pitfall 23、Study 24；非工作对象关联再按字段英文名排序，例如 `related_docs`、`urls`、`related_rules`。提交记录不是工作对象关联字段，应从 Git 提交记录视图派生。
+未来 V4 Study 阅读器只读取当前 Study 的 `research_question`、`abstract`、`applicability`、`validation_summary`、Markdown 正文、`source_refs`、`evidence_refs` 与 `relations`。不得读取或投影 V2/V3 的 `urls`、`user_intent`、`summary`、`conclusion`、`related_*`、`archive_reason` 或任何兼容 DTO；提交记录仍应从 Git 提交记录视图派生。
 
 关联区块内的工作对象引用不直接展示对象编号。对象编号属于打开后的对象详情、复制路径或 YAML 源码中的定位信息；列表态只展示对象类型图标、对象标题和必要操作图标，降低重复元信息对阅读的干扰。
 
 关联区块内每个具体条目必须使用统一行结构：左侧为语义图标和标题/路径/网址文本，右侧固定提供复制入口和扩展阅读入口。整行必须可点击并触发扩展阅读；复制入口只执行复制，不触发扩展阅读。对象引用、文档路径和外部 URL 不得各自使用不同的卡片、文字按钮或标签样式。行内语义图标、标题文本、复制入口和扩展阅读入口必须垂直居中；复制和扩展阅读入口使用同一 28px 操作容器，长标题截断或出现摘要次行时也不得让右侧操作图标下坠或上浮。
 
-`urls` 必须展示在“关联”区块下的“网址”分组。每个条目必须来自结构化网址对象；列表主行显示 `title`，没有 `title` 时显示 `ref`，次行必须显示中文 `summary`，复制和扩展阅读仍作用于 `ref`。Web 不把 URL 摘要派生为事实；摘要必须来自 Study frontmatter 或其他权威事实源。
+V4 Study 阅读器实现后，外部证据只从 `source_refs` 与 `evidence_refs` 展示：`web-page` 和 `api-observation` 显示为可展开的外部来源，项目内引用只作为调研委托、适用范围或验证上下文展示。界面不得自行生成 URL 摘要、把证据转换为规则，或把内部来源呈现为外部研究对象。
 
-Study 详情页的 `urls` 分组标题显示为“网址”。字段名保持 `urls`，用于承载报告正文提炼出的外部 URL 及其用途摘要；UI 标题应避免使用“引用”这种过宽泛表达。
-
-Study 详情页是报告阅读界面，不按普通字段卡片表达主内容。中文主节点标题固定为“意图、摘要、建议、正文、关联”，分别对应 `user_intent`、`summary`、`conclusion`、`report_body` 和关联区。`user_intent`、`summary`、`conclusion` 和 `report_body` 必须与“关联”使用同一层级的节点标题样式：标题前使用小圆点，标题字号和权重与关联区标题一致，内容区颜色低于标题。`report_body` 不在主页面直接铺开全文；“正文”节点下只展示当前 Study 文件名入口，点击整行或扩展阅读图标后在右侧扩展阅读区渲染正文 Markdown。结构化 `urls.summary` 是引用用途提示，应比 Study 主内容再弱一级，不承担正文结论表达。
-
-Study 主节点标题栏整行可点击，不再在内容内部放“展开/收起”文字按钮。`user_intent`、`summary`、`conclusion`、`report_body` 和“关联”统一使用两态：默认全部打开，点击标题栏在 `expanded` 与 `collapsed` 之间切换。图标表达当前可执行动作：收拢状态使用 `ChevronDown`，表示可以向下打开；打开状态使用 `ChevronUp`，表示可以向上收起。
-
-Study 必须抽为独立 `StudyReadingLayout` 并同时供详情页和右侧扩展阅读区复用；不得继续依赖 `ContentField` 对 Study 字段做兜底特判。`ContentField` 只处理专用布局之外的额外字段。
+V4 Study 详情页是外部调研报告阅读界面，不按普通字段卡片表达主内容。主节点依次为“研究问题、摘要、适用范围、验证说明、正文、外部证据”；分别消费 `research_question`、`abstract`、`applicability`、`validation_summary`、Markdown body 和引用数组。正文和证据只可来自同一 V4 原生 Study 文件，不提供 V2/V3 兼容字段或双读。节点标题栏整行可点击，默认全部打开；详情页和右侧扩展阅读区必须复用同一布局。
 
 Spark 不使用普通字段卡片堆叠。Spark 是“分流前的信息对象”，页面目标不是证明结论、沉淀经验或呈现报告，而是帮助 Human 和 AI 判断这条信息当前应继续 pending、追加演变、分流到目标事实源，还是废弃。Spark 作为“待分流信息阅读页”展示，基础主节点固定为“意图、摘要、演变、关联”；“分流”是闭环事实节点，不是 pending 状态说明节点：
 

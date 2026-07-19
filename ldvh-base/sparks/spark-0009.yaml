@@ -1,0 +1,11 @@
+title: Agent-first Harness 成熟度与持续编排
+status: open
+priority: P1
+source_refs:
+- kind: human-input
+  locator: 2026-07-19 Human：建立有价值历史 Spark 的 V4 原生入口，后续研究推进
+summary: 定义 LDVH 在事实可读、工具可调用、验证可复跑、失败可回收和工作对象编排方面的成熟度与最小实验边界；当前不采用特定编排产品。
+object_id: spark-0009
+fact_type_key: spark
+created_at: '2026-07-19T10:28:35.563830+08:00'
+updated_at: '2026-07-19T10:28:35.563830+08:00'

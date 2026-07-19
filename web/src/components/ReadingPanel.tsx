@@ -34,7 +34,7 @@ const OBJECT_TYPE_LABELS: Record<string, { zh: string; en: string }> = {
   adr: { zh: '决策', en: 'ADR' },
   pitfall: { zh: '经验', en: 'Pitfall' },
   spark: { zh: '火花', en: 'Spark' },
-  study: { zh: '研究', en: 'Study' },
+  study: { zh: '外部调研', en: 'External study' },
   change: { zh: '提交', en: 'Commit' },
 };
 

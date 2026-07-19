@@ -108,7 +108,7 @@ export async function showObject(id: string): Promise<WebFactResult | WebFactErr
   }
 }
 
-/** Non-Spark V4 readers are not implemented in this Web increment. */
+/** Non-Spark V4 readers are intentionally absent in this increment: no V2/V3 fallback or compatibility read is allowed. */
 export function readFactData(_filePath: string): Record<string, unknown> {
   return {}
 }

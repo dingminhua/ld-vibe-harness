@@ -1,0 +1,12 @@
+title: Codex 多 Agent、工作树与角色协作治理
+status: open
+priority: P1
+source_refs:
+- kind: human-input
+  locator: 2026-07-19 Human：建立有价值历史 Spark 的 V4 原生入口，后续研究推进
+summary: 明确主控、子 Agent、新对话与 Git worktree 的适用场景、写入边界、结果回收、复核和 Human
+  Gate；当前不固化特定环境能力。
+object_id: spark-0010
+fact_type_key: spark
+created_at: '2026-07-19T10:28:37.087505+08:00'
+updated_at: '2026-07-19T10:28:37.087505+08:00'

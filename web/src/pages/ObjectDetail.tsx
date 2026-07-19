@@ -60,7 +60,6 @@ const META_KEYS = [
 const COMMON_AUXILIARY_META_KEYS = ['priority', 'importance', 'tags', 'scope', 'impact', 'assignee'];
 const AUXILIARY_META_KEYS_BY_TYPE: Record<string, string[]> = {
   spark: ['priority', 'tags', 'source'],
-  study: ['tags'],
   pitfall: ['tags'],
 };
 const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
@@ -86,13 +85,12 @@ const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
     'related_adrs', 'related_studies', 'related_docs',
   ],
   study: [
-    'user_intent', 'summary', 'conclusion', 'report_body', 'urls',
-    'related_sparks',
-    'related_adrs', 'related_pitfalls', 'related_docs', 'archive_reason',
+    'research_question', 'abstract', 'applicability', 'validation_summary', 'body',
+    'source_refs', 'evidence_refs', 'relations', 'disposition_summary', 'closed_at',
   ],
 };
 
-const STUDY_READING_NODE_FIELDS = new Set(['user_intent', 'summary', 'conclusion', 'report_body']);
+const STUDY_READING_NODE_FIELDS = new Set(['research_question', 'abstract', 'applicability', 'validation_summary', 'body']);
 type ReadingNodeState = 'collapsed' | 'expanded';
 const RELATED_OBJECT_FIELD_ORDER: Record<string, number> = {
   related_workcases: 21,
@@ -179,7 +177,7 @@ const TYPE_LOCALES: Record<string, { zh: string; en: string }> = {
   adr: { zh: '决策', en: 'ADR' },
   pitfall: { zh: '经验', en: 'Pitfall' },
   spark: { zh: '火花', en: 'Spark' },
-  study: { zh: '研究', en: 'Study' },
+  study: { zh: '外部调研', en: 'External study' },
   change: { zh: '提交', en: 'Commit' },
 };
 
@@ -2557,10 +2555,11 @@ function basename(path: string) {
 }
 
 const STUDY_READING_NODES: Array<{ field: string; zh: string; en: string; kind: 'text' | 'report' }> = [
-  { field: 'user_intent', zh: '意图', en: 'Intent', kind: 'text' },
-  { field: 'summary', zh: '摘要', en: 'Summary', kind: 'text' },
-  { field: 'conclusion', zh: '建议', en: 'Recommendation', kind: 'text' },
-  { field: 'report_body', zh: '正文', en: 'Report body', kind: 'report' },
+  { field: 'research_question', zh: '研究问题', en: 'Research question', kind: 'text' },
+  { field: 'abstract', zh: '摘要', en: 'Abstract', kind: 'text' },
+  { field: 'applicability', zh: '适用范围', en: 'Applicability', kind: 'text' },
+  { field: 'validation_summary', zh: '验证说明', en: 'Validation summary', kind: 'text' },
+  { field: 'body', zh: '正文', en: 'Report body', kind: 'report' },
 ];
 
 function isDetailRecord(value: unknown): value is Record<string, unknown> {

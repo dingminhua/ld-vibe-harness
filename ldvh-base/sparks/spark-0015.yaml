@@ -1,0 +1,11 @@
+title: 全事实对象与工作状态的 Web 可观察表达
+status: open
+priority: P2
+source_refs:
+- kind: human-input
+  locator: 2026-07-19 Human：建立有价值历史 Spark 的 V4 原生入口，后续研究推进
+summary: 评估 Web 如何逐步呈现五类事实对象、相关工作状态、证据和待 Human 判断点；保持只读观察边界，不把界面当作事实源。
+object_id: spark-0015
+fact_type_key: spark
+created_at: '2026-07-19T10:28:44.766489+08:00'
+updated_at: '2026-07-19T10:28:44.766489+08:00'

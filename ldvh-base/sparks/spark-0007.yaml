@@ -1,0 +1,11 @@
+title: 多项目管辖与用户配置拓扑
+status: open
+priority: P1
+source_refs:
+- kind: human-input
+  locator: 2026-07-19 Human：建立有价值历史 Spark 的 V4 原生入口，后续研究推进
+summary: 明确开源 LDVH 面向多个管辖项目时的工作区、项目与用户级配置职责、发现顺序及 Human 决策边界；当前不选择具体目录或写入策略。
+object_id: spark-0007
+fact_type_key: spark
+created_at: '2026-07-19T10:28:32.540645+08:00'
+updated_at: '2026-07-19T10:28:32.540645+08:00'

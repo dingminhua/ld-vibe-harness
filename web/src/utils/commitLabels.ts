@@ -33,7 +33,7 @@ const COMMIT_SCOPE_LABELS: Record<(typeof CURRENT_COMMIT_SCOPES)[number], { zh: 
   workcase: { zh: '工作', en: 'WorkCase' },
   adr: { zh: '决策', en: 'ADR' },
   spark: { zh: '火花', en: 'Spark' },
-  study: { zh: '研究', en: 'Study' },
+  study: { zh: '外部调研', en: 'External study' },
   pitfall: { zh: '经验', en: 'Pitfall' },
 };
 

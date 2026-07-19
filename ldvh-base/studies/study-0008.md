@@ -1,0 +1,80 @@
+---
+title: Firecrawl 外部网页证据获取能力调研
+status: active
+source_refs:
+- kind: web-page
+  locator: https://docs.firecrawl.dev/api-reference/introduction
+  observed_at: '2026-07-19T10:00:00+08:00'
+- kind: web-page
+  locator: https://docs.firecrawl.dev/api-reference/endpoint/scrape
+  observed_at: '2026-07-19T10:00:00+08:00'
+- kind: web-page
+  locator: https://docs.firecrawl.dev/api-reference/endpoint/crawl-post
+  observed_at: '2026-07-19T10:00:00+08:00'
+- kind: web-page
+  locator: https://docs.firecrawl.dev/api-reference/endpoint/map
+  observed_at: '2026-07-19T10:00:00+08:00'
+- kind: web-page
+  locator: https://docs.firecrawl.dev/api-reference/endpoint/search
+  observed_at: '2026-07-19T10:00:00+08:00'
+- kind: web-page
+  locator: https://docs.firecrawl.dev/api-reference/endpoint/extract
+  observed_at: '2026-07-19T10:00:00+08:00'
+- kind: web-page
+  locator: https://github.com/firecrawl/firecrawl
+  observed_at: '2026-07-19T10:00:00+08:00'
+evidence_refs:
+- kind: web-page
+  locator: https://docs.firecrawl.dev/api-reference/introduction
+  observed_at: '2026-07-19T10:00:00+08:00'
+- kind: web-page
+  locator: https://docs.firecrawl.dev/api-reference/endpoint/scrape
+  observed_at: '2026-07-19T10:00:00+08:00'
+- kind: web-page
+  locator: https://docs.firecrawl.dev/api-reference/endpoint/crawl-post
+  observed_at: '2026-07-19T10:00:00+08:00'
+- kind: web-page
+  locator: https://docs.firecrawl.dev/api-reference/endpoint/map
+  observed_at: '2026-07-19T10:00:00+08:00'
+- kind: web-page
+  locator: https://docs.firecrawl.dev/api-reference/endpoint/search
+  observed_at: '2026-07-19T10:00:00+08:00'
+- kind: web-page
+  locator: https://docs.firecrawl.dev/api-reference/endpoint/extract
+  observed_at: '2026-07-19T10:00:00+08:00'
+- kind: web-page
+  locator: https://github.com/firecrawl/firecrawl
+  observed_at: '2026-07-19T10:00:00+08:00'
+applicability: 用于 LDVH Web/Study 外部资料获取边界、可回读证据和失败/限流表达；不在本次直接接入 Firecrawl
+  或承诺抓取任何网站。
+validation_summary: 已读取 Firecrawl API introduction、Scrape 等官方文档与 GitHub
+  README；观察时间为 2026-07-19，版本化 API/仓库内容可能继续变化，未使用 API key 做运行验证。
+research_question: Firecrawl 当前 API 如何提供 Search、Scrape、Crawl、Map、Extract
+  等网页证据获取能力，其可靠性、隐私与许可边界是什么？
+abstract: 调研 Firecrawl v2 API 文档与官方仓库。API 将网页搜索、单页抓取、整站 Crawl、URL Map 和自然语言
+  Extract 分成不同入口，并可返回 Markdown/HTML/JSON 等格式；官方同时提示认证、限流、错误码、robots/网站政策和
+  AGPL/云服务差异。它可作为证据获取候选，不是证据真实性或许可自动通过器。
+object_id: study-0008
+fact_type_key: study
+created_at: '2026-07-19T11:17:55.692023+08:00'
+updated_at: '2026-07-19T11:17:55.692023+08:00'
+---
+
+## 研究问题
+
+Firecrawl 当前 API 如何提供 Search、Scrape、Crawl、Map、Extract 等网页证据获取能力，其可靠性、隐私与许可边界是什么？
+## 输入、方法与观察边界
+
+本报告读取并对照了以下外部公开资料：https://docs.firecrawl.dev/api-reference/introduction、https://docs.firecrawl.dev/api-reference/endpoint/scrape、https://docs.firecrawl.dev/api-reference/endpoint/crawl-post、https://docs.firecrawl.dev/api-reference/endpoint/map、https://docs.firecrawl.dev/api-reference/endpoint/search、https://docs.firecrawl.dev/api-reference/endpoint/extract、https://github.com/firecrawl/firecrawl。观察时间统一记录在 evidence_refs；本报告只陈述页面可直接支持的内容，并将 LDVH 适用性与外部事实分开。
+## 关键发现
+
+官方文档把 Scrape、Crawl、Map、Search、Extract 明确分层；Scrape 可输出 Markdown、HTML、截图或结构化数据，Crawl 面向站点，Map 面向 URL 发现，Search 返回搜索结果内容，Extract 面向结构化抽取。文档明确 2xx/4xx/5xx、408/429 等失败类别和认证要求；仓库说明开源核心为 AGPL-3.0，SDK/部分组件可能不同许可，并提醒遵守网站政策。
+## 结论与限制
+
+LDVH 若采用，应把“请求、原始响应、解析产物、来源 URL、观察时间、版本、失败状态和许可判断”分开保存；429、超时、反爬或空结果必须是 unknown/evidence incomplete，而不是研究通过。限制是本次只读文档，没有验证实际页面可抓取性、成本或服务 SLA。
+## 建议
+
+先把 Firecrawl 当作可插拔 Web 证据获取适配器，补齐许可/robots/隐私、限流、重试、原始响应保存和失败回传契约；Study 仍由 AI 负责外部证据判断。
+## 后续分流
+
+供 Spark-0017；若接入 Web，先建 WorkCase 做最小受控抓取和证据回读，不绕过现有 Web direct capture 与 Human 边界。

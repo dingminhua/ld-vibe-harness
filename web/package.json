@@ -12,7 +12,7 @@
     "test": "npm run test:web:api",
     "test:web:api": "tsx --test tests/api/*.test.ts",
     "server:dev": "nodemon",
-    "dev": "concurrently \"npm run client:dev\" \"npm run server:dev\""
+    "dev": "npm run server:dev & npm run client:dev --"
   },
   "dependencies": {
     "clsx": "^2.1.1",

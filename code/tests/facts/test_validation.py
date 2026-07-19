@@ -169,7 +169,12 @@ def test_projected_schemas_validate_all_five_minimal_shapes(current_specs_reposi
                     "kind": "repository-path",
                     "locator": "docs/evidence.md",
                     "observed_at": "2026-07-14T09:30:00+08:00",
-                }
+                },
+                {
+                    "kind": "web-page",
+                    "locator": "https://example.invalid/study-evidence",
+                    "observed_at": "2026-07-14T09:30:00+08:00",
+                },
             ],
             "applicability": "This version",
             "validation_summary": "Sources compared",
@@ -225,6 +230,53 @@ def test_study_reference_profiles_and_observation_time_are_mechanical(current_sp
     assert any(issue.field_path == "source_refs[0].observed_at" for issue in issues)
     assert any(issue.field_path == "evidence_refs[0].locator" for issue in issues)
     assert any(issue.field_path == "evidence_refs[0].version" for issue in issues)
+    assert any(issue.field_path == "evidence_refs" and "web-page" in issue.summary for issue in issues)
+
+
+def test_study_requires_external_evidence_but_allows_internal_context(current_specs_repository: Path) -> None:
+    schema = project_fact_schemas(inspect_repository(current_specs_repository))["study"]
+    fields = {
+        **_common("study", "study-0001", "active"),
+        "source_refs": [
+            {
+                "kind": "repository-path",
+                "locator": "docs/research-request.md",
+                "observed_at": "2026-07-14T09:30:00+08:00",
+            }
+        ],
+        "evidence_refs": [
+            {
+                "kind": "repository-path",
+                "locator": "docs/internal-context.md",
+                "observed_at": "2026-07-14T09:30:00+08:00",
+            }
+        ],
+        "applicability": "The current governed project.",
+        "validation_summary": "The external evidence and internal context were separately reviewed.",
+        "research_question": "What does the external product document say about its public contract?",
+        "abstract": "The report distinguishes the external contract from local adoption decisions.",
+    }
+
+    issues = validate_fact_object("study", fields, schema)
+    assert any(issue.field_path == "evidence_refs" and "外部证据" in issue.summary for issue in issues)
+
+    fields["evidence_refs"].append(
+        {
+            "kind": "web-page",
+            "locator": "https://example.invalid/external-contract",
+            "observed_at": "2026-07-14T09:30:00+08:00",
+        }
+    )
+    assert validate_fact_object("study", fields, schema) == ()
+
+    fields["evidence_refs"] = [
+        {
+            "kind": "human-provided-artifact",
+            "locator": "evidence/external-paper.pdf",
+            "observed_at": "2026-07-14T09:30:00+08:00",
+        }
+    ]
+    assert validate_fact_object("study", fields, schema) == ()
 
 
 def test_workcase_phase_items_versions_and_event_times_are_mechanical(current_specs_repository: Path) -> None:
@@ -474,7 +526,14 @@ def test_all_seven_study_reference_kinds_pass_their_lexical_contract(
     fields = {
         **_common("study", "study-0001", "active"),
         "source_refs": [reference],
-        "evidence_refs": [reference],
+        "evidence_refs": [
+            reference,
+            {
+                "kind": "web-page",
+                "locator": "https://example.invalid/external-evidence",
+                "observed_at": "2026-07-14T09:30:00+08:00",
+            },
+        ],
         "applicability": "This version",
         "validation_summary": "Compared",
         "research_question": "What?",

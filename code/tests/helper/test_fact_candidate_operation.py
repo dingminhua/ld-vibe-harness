@@ -173,7 +173,10 @@ def _study() -> dict[str, object]:
             "title": "Candidate projection Study",
             "status": "active",
             "source_refs": [{"kind": "repository-path", "locator": "docs/question.md", "observed_at": observed}],
-            "evidence_refs": [{"kind": "repository-path", "locator": "docs/evidence.md", "observed_at": observed}],
+        "evidence_refs": [
+            {"kind": "repository-path", "locator": "docs/evidence.md", "observed_at": observed},
+            {"kind": "web-page", "locator": "https://example.invalid/study-evidence", "observed_at": observed},
+        ],
             "applicability": "Current candidate projection contract.",
             "validation_summary": "Tracked evidence supports the bounded conclusion.",
             "research_question": "Can Study cards remain smaller than full reports?",
@@ -182,7 +185,7 @@ def _study() -> dict[str, object]:
         "body": "\n\n".join(
             [
                 "## 研究问题\n\n验证 Study 候选卡。",
-                "## 输入、方法与观察边界\n\n读取已跟踪问题与证据。",
+                "## 输入、方法与观察边界\n\n读取已跟踪问题、证据与外部网页资料。",
                 "## 关键发现\n\n候选卡不需要注入完整正文。",
                 "## 结论与限制\n\n只适用于当前测试契约。",
                 "## 建议\n\n选中后再读取完整报告。",

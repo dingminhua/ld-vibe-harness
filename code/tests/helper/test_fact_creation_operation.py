@@ -563,7 +563,12 @@ def test_create_study_validates_markdown_carrier_and_tracked_sources(tmp_path: P
                     "kind": "repository-path",
                     "locator": "docs/evidence.md",
                     "observed_at": observed,
-                }
+                },
+                {
+                    "kind": "web-page",
+                    "locator": "https://example.invalid/controlled-study-evidence",
+                    "observed_at": observed,
+                },
             ],
             "applicability": "This test repository and the current creation contract.",
             "validation_summary": "The tracked evidence file was read and mapped to the conclusion.",
@@ -575,7 +580,7 @@ def test_create_study_validates_markdown_carrier_and_tracked_sources(tmp_path: P
         "body": "\n\n".join(
             [
                 "## 研究问题\n\n验证受控创建是否承接完整 Study。",
-                "## 输入、方法与观察边界\n\n读取 docs/question.md 与 docs/evidence.md。",
+                "## 输入、方法与观察边界\n\n读取 docs/question.md、docs/evidence.md 与外部网页资料。",
                 "## 关键发现\n\nCode 可以在最终分配身份后验证完整载体。",
                 "## 结论与限制\n\n结论仅适用于当前测试仓库和当前契约。",
                 "## 建议\n\n继续保持草案阶段无正式文件副作用。",

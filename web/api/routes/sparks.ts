@@ -4,6 +4,7 @@ import { Router, type Request, type Response } from 'express'
 
 import { captureV4Spark } from '../services/v4SparkReader.js'
 import { v4SparkReaderConfig, V4FactsConfigurationError } from '../services/v4FactsConfig.js'
+import { V4FactsTransportError } from '../internal/v4FactsTransport.js'
 
 const router = Router()
 
@@ -47,6 +48,10 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
       governance_resolution: result.governance_resolution,
     })
   } catch (caught) {
+    if (caught instanceof V4FactsTransportError && caught.code === 'invalid_transport_request') {
+      res.status(400).json({ ok: false, code: 'INVALID_REQUEST', error: caught.message })
+      return
+    }
     const message = caught instanceof Error ? caught.message : 'V4 Spark capture unavailable'
     const code = caught instanceof V4FactsConfigurationError ? 'V4_WEB_CONFIGURATION_REQUIRED' : 'V4_MACHINE_UNAVAILABLE'
     res.status(503).json({ ok: false, code, error: message })
