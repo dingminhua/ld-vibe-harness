@@ -33,7 +33,7 @@ V4 从最小可解释决定记录开始，不按传统 ADR 模板或旧 Code 快
 本文直接依据：
 
 1. `fact-model-foundation`：规定事实类型、统一字段、来源、证据、关系、状态、变更和验证的共同边界；
-2. `source-of-truth-traceability`：规定 Git 可追踪事实源、当前 Working Tree、来源回指和稳定事实边界。
+2. `source-of-truth-traceability`：规定管辖项目当前事实源、Working Tree、来源回指和稳定事实边界。
 
 ADR 是决定事实，不是“决策补丁”或规则来源。规范、项目规则、Code、Web 和行动模板各自的当前来源决定实际规则与行为；ADR 只能记录决定和理由。Human 决定只证明决定及其作用范围，不证明技术状态、实现完成、规则生效或后续行动已经获准。
 

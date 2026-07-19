@@ -365,6 +365,88 @@ def test_human_closure_confirmation_requires_waiting_on(current_specs_repository
     assert any(issue.field_path == "waiting_on" and "要求" in issue.summary for issue in issues)
 
 
+@pytest.mark.parametrize("conclusion", ["pass", "pass_with_followups", "changes_required", "blocked"])
+def test_review_conclusions_are_structural_values_not_phase_decisions(
+    current_specs_repository: Path,
+    conclusion: str,
+) -> None:
+    schema = project_fact_schemas(inspect_repository(current_specs_repository))["workcase"]
+    plan_fields = {
+        **_common("workcase", "workcase-0001", "open"),
+        **_workcase_phase_fields("human_plan_confirming"),
+    }
+    plan_fields["creation_reviews"][0]["conclusion"] = conclusion
+    assert validate_fact_object("workcase", plan_fields, schema) == ()
+
+    result_fields = {
+        **_common("workcase", "workcase-0001", "open"),
+        **_workcase_phase_fields("closure_preparing"),
+    }
+    result_fields["result_reviews"][0]["conclusion"] = conclusion
+    assert validate_fact_object("workcase", result_fields, schema) == ()
+
+
+def test_returned_execution_can_retain_current_result_context(current_specs_repository: Path) -> None:
+    schema = project_fact_schemas(inspect_repository(current_specs_repository))["workcase"]
+    fields = {
+        **_common("workcase", "workcase-0001", "open"),
+        **_workcase_phase_fields("closure_preparing"),
+    }
+    fields["phase"] = "executing"
+    fields["work_items"] = [
+        {
+            "item_id": "item-01",
+            "goal": "Implement the module",
+            "expected_result": "The module passes its tests",
+            "status": "in_progress",
+            "approach_summary": "Implement within the declared scope and run focused tests",
+            "current_summary": "Review feedback is being implemented",
+            "resume_from": "Continue the bounded implementation correction",
+        }
+    ]
+
+    assert validate_fact_object("workcase", fields, schema) == ()
+
+
+def test_independent_review_can_retain_closure_report_for_rereview(current_specs_repository: Path) -> None:
+    schema = project_fact_schemas(inspect_repository(current_specs_repository))["workcase"]
+    fields = {
+        **_common("workcase", "workcase-0001", "open"),
+        **_workcase_phase_fields("human_closure_confirming"),
+    }
+    fields["phase"] = "independent_reviewing"
+    fields.pop("waiting_on")
+
+    assert validate_fact_object("workcase", fields, schema) == ()
+
+
+def test_executing_still_rejects_closure_report_fields(current_specs_repository: Path) -> None:
+    schema = project_fact_schemas(inspect_repository(current_specs_repository))["workcase"]
+    fields = {
+        **_common("workcase", "workcase-0001", "open"),
+        **_workcase_phase_fields("executing"),
+        "result_version": 1,
+        "validation_summary": "Premature closure report",
+    }
+
+    issues = validate_fact_object("workcase", fields, schema)
+
+    assert any(issue.field_path == "validation_summary" and "禁止" in issue.summary for issue in issues)
+
+
+def test_result_subfields_require_result_version(current_specs_repository: Path) -> None:
+    schema = project_fact_schemas(inspect_repository(current_specs_repository))["workcase"]
+    fields = {
+        **_common("workcase", "workcase-0001", "open"),
+        **_workcase_phase_fields("executing"),
+        "controller_check_summary": "Retained result context without its version",
+    }
+
+    issues = validate_fact_object("workcase", fields, schema)
+
+    assert any(issue.field_path == "result_version" and "从属字段" in issue.summary for issue in issues)
+
+
 def test_each_fact_type_rejects_an_unknown_top_level_field(current_specs_repository: Path) -> None:
     schemas = project_fact_schemas(inspect_repository(current_specs_repository))
     required_by_type = {

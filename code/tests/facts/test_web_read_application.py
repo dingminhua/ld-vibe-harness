@@ -59,6 +59,28 @@ def test_list_and_detail_preserve_complete_empty_and_valid_objects(
     assert detail.coverage_status == "complete"
 
 
+def test_list_and_detail_accept_ignored_current_spark(
+    current_specs_repository: Path,
+    tmp_path: Path,
+) -> None:
+    boundary, schemas = _fixture(current_specs_repository, tmp_path)
+    (boundary.worktree_root / ".gitignore").write_text("ldvh-base/\n", encoding="utf-8")
+    created = create_web_spark_direct_capture(
+        boundary,
+        schemas,
+        {"title": "Ignored reader", "description": "Read ignored current Spark", "priority": "P2"},
+    )
+    assert created.status == "created"
+
+    listed = read_web_spark_list(boundary, schemas)
+    detail = read_web_spark_detail(boundary, schemas, "spark-0001")
+
+    assert listed.status == "complete"
+    assert len(listed.items) == 1
+    assert detail.status == "ok"
+    assert detail.item == listed.items[0]
+
+
 def test_invalid_object_is_partial_and_exact_detail_is_invalid(
     current_specs_repository: Path,
     tmp_path: Path,

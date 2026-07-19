@@ -337,9 +337,6 @@ def _validate_workcase(fields: dict[str, Any], issues: list[FactIssue]) -> None:
         _forbid(
             fields,
             {
-                "result_version",
-                "controller_check_summary",
-                "result_reviews",
                 "closure_approval",
                 "validation_summary",
                 "closure_outcome",
@@ -349,24 +346,9 @@ def _validate_workcase(fields: dict[str, Any], issues: list[FactIssue]) -> None:
             issues,
         )
     if phase == "controller_checking":
-        _forbid(
-            fields,
-            {
-                "result_reviews",
-                "closure_approval",
-                "validation_summary",
-                "closure_outcome",
-                "disposition_summary",
-                "closed_at",
-            },
-            issues,
-        )
+        _forbid(fields, {"closure_approval", "closed_at"}, issues)
     if phase == "independent_reviewing":
-        _forbid(
-            fields,
-            {"closure_approval", "validation_summary", "closure_outcome", "disposition_summary", "closed_at"},
-            issues,
-        )
+        _forbid(fields, {"closure_approval", "closed_at"}, issues)
     if phase == "closure_preparing":
         _forbid(fields, {"closure_approval", "closed_at"}, issues)
     if phase in {
@@ -392,13 +374,22 @@ def _validate_workcase(fields: dict[str, Any], issues: list[FactIssue]) -> None:
         "closed",
     }:
         _require(fields, {"result_version"}, issues)
-        if not _positive_integer(fields.get("result_version")):
-            issues.append(FactIssue("schema", "result_version 必须是正整数", "result_version"))
         items = fields.get("work_items")
         if isinstance(items, list) and any(
             isinstance(item, dict) and item.get("status") not in {"completed", "cancelled"} for item in items
         ):
             issues.append(FactIssue("schema", "进入结果阶段前全部 work item 必须完成或取消", "work_items"))
+    result_context_fields = {
+        "controller_check_summary",
+        "result_reviews",
+        "validation_summary",
+        "closure_outcome",
+        "disposition_summary",
+    }
+    if "result_version" in fields and not _positive_integer(fields.get("result_version")):
+        issues.append(FactIssue("schema", "result_version 必须是正整数", "result_version"))
+    if any(key in fields for key in result_context_fields) and "result_version" not in fields:
+        issues.append(FactIssue("schema", "结果从属字段要求有效 result_version", "result_version"))
     if phase in {"independent_reviewing", "closure_preparing", "human_closure_confirming", "closed"}:
         _require(fields, {"controller_check_summary"}, issues)
     if phase in {"closure_preparing", "human_closure_confirming", "closed"}:
@@ -432,19 +423,6 @@ def _validate_workcase(fields: dict[str, Any], issues: list[FactIssue]) -> None:
     _validate_workcase_items(fields, issues)
     _validate_workcase_reviews(fields, "creation_reviews", "plan_version", issues)
     _validate_workcase_reviews(fields, "result_reviews", "result_version", issues)
-    creation_reviews = fields.get("creation_reviews")
-    if isinstance(creation_reviews, list) and any(
-        isinstance(review, dict) and review.get("conclusion") not in {"pass", "pass_with_followups"}
-        for review in creation_reviews
-    ):
-        issues.append(FactIssue("schema", "当前计划不得保留未解决的创建审核阻断结论", "creation_reviews"))
-    if phase in {"closure_preparing", "human_closure_confirming", "closed"}:
-        result_reviews = fields.get("result_reviews")
-        if isinstance(result_reviews, list) and any(
-            isinstance(review, dict) and review.get("conclusion") not in {"pass", "pass_with_followups"}
-            for review in result_reviews
-        ):
-            issues.append(FactIssue("schema", "进入关闭准备后不得保留未解决的结果审核阻断结论", "result_reviews"))
 
 
 def _validate_times(fact_type_key: str, fields: dict[str, Any], issues: list[FactIssue]) -> None:

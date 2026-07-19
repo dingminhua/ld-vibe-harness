@@ -7,7 +7,7 @@ from pathlib import Path
 from ldvh.facts.contracts import LAYOUTS
 from ldvh.facts.models import FactIssue
 from ldvh.facts.relations import ProjectFactIndex
-from ldvh.facts.repository import FactReadResult, _git, _identity_issue, _safe_regular_file, _traceability
+from ldvh.facts.repository import FactReadResult, _git, _identity_issue, _safe_regular_file
 
 _REPOSITORY_KINDS = {
     "repository-path",
@@ -21,14 +21,13 @@ def _repository_path_status(
     index: ProjectFactIndex,
     locator: str,
 ) -> tuple[FactIssue | None, bool]:
-    identity_issue, _ = _identity_issue(index.root, index.expected_common_dir)
+    identity_issue, _ = _identity_issue(index.root, index.expected_common_dir, index.git_identity_cache)
     if identity_issue is not None:
         return identity_issue, True
     _, issue, status = _safe_regular_file(index.root, locator)
     if issue is not None:
         return issue, status == "unavailable"
-    issue, status = _traceability(index.root, locator)
-    return issue, status == "unavailable"
+    return None, False
 
 
 def _git_revision_status(index: ProjectFactIndex, locator: str, version: str) -> tuple[FactIssue | None, bool]:

@@ -244,14 +244,14 @@ def test_fact_read_checks_relation_targets_and_reachable_dag(tmp_path: Path) -> 
     assert any(issue["category"] == "relation" and "有向循环" in issue["summary"] for issue in item["issues"])
 
 
-def test_untracked_ignored_fact_is_invalid_but_tracked_dirty_content_is_current(tmp_path: Path) -> None:
+def test_fact_qualification_is_independent_of_git_status_but_content_rules_still_apply(tmp_path: Path) -> None:
     workspace, project = _fixture(tmp_path)
     ignore = project / ".gitignore"
     ignore.write_text("ldvh-base/\n", encoding="utf-8")
 
     ignored = handle_request("call", "read-fact-objects", _payload(workspace, project, "spark-0001"))
-    assert ignored.response["result"]["items"][0]["check_status"] == "invalid"
-    assert ignored.response["result"]["items"][0]["issues"][0]["category"] == "git-traceability"
+    assert ignored.response["result"]["items"][0]["check_status"] == "mechanically_valid"
+    assert ignored.response["result"]["items"][0]["issues"] == []
 
     _git(project, "add", ".gitignore")
     _git(project, "add", "-f", "ldvh-base/sparks/spark-0001.yaml")

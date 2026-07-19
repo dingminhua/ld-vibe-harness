@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from ldvh.specs import discovery
-from ldvh.specs.discovery import Candidate, discover_candidates, validate_non_ignored_git_path
+from ldvh.specs.discovery import Candidate, discover_candidates
 
 
 @pytest.fixture
@@ -60,23 +60,6 @@ def test_unsupported_windows_root_fails_before_filesystem_or_git(
     assert not requested.exists()
 
 
-def test_fixed_path_validation_cannot_bypass_windows_git_path_guard(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    monkeypatch.setattr(discovery, "windows_path_problem", lambda _path: "UNC is unsupported")
-    monkeypatch.setattr(
-        discovery.subprocess,
-        "run",
-        lambda *args, **kwargs: pytest.fail("unsupported root must not start Git"),
-    )
-
-    issue = validate_non_ignored_git_path(tmp_path, "docs/evidence.md")
-
-    assert issue is not None
-    assert issue.cause is not None and "unsupported" in issue.cause
-
-
 def test_only_exact_direct_regular_markdown_paths_are_candidates(repository: Path) -> None:
     _write(repository / "specs/01-Valid.md")
     _write(repository / "specs/attachments/01.Att.01-Valid.md")
@@ -109,7 +92,7 @@ def test_only_exact_direct_regular_markdown_paths_are_candidates(repository: Pat
     ]
 
 
-def test_excludes_untracked_files_ignored_by_git(repository: Path) -> None:
+def test_includes_current_files_regardless_of_git_ignore_status(repository: Path) -> None:
     _write(repository / ".gitignore", "specs/02-Ignored.md\nspecs/attachments/\n")
     _write(repository / "specs/01-Included.md")
     _write(repository / "specs/02-Ignored.md")
@@ -119,10 +102,14 @@ def test_excludes_untracked_files_ignored_by_git(repository: Path) -> None:
 
     assert result.complete is True
     assert result.issues == ()
-    assert [candidate.relative_path for candidate in result.candidates] == ["specs/01-Included.md"]
+    assert [candidate.relative_path for candidate in result.candidates] == [
+        "specs/01-Included.md",
+        "specs/02-Ignored.md",
+        "specs/attachments/01.Att.01-Ignored.md",
+    ]
 
 
-def test_tracked_file_matching_ignore_stays_candidate_despite_index_override(
+def test_candidate_qualification_does_not_depend_on_index_or_ignore_status(
     repository: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -210,7 +197,7 @@ def test_does_not_enter_reparse_specs_directory(
     assert result.candidates == ()
 
 
-def test_file_replaced_by_external_symlink_during_ignore_query_is_rejected(
+def test_file_replaced_by_external_symlink_before_revalidation_is_rejected(
     repository: Path,
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -220,58 +207,19 @@ def test_file_replaced_by_external_symlink_during_ignore_query_is_rejected(
     outside = tmp_path / "outside.md"
     _write(candidate)
     _write(outside, "outside\n")
-    real_run = subprocess.run
+    real_revalidate = discovery._revalidate_observations
 
-    def replace_during_ignore(
-        command: list[str],
-        **kwargs: object,
-    ) -> subprocess.CompletedProcess[bytes]:
-        if "check-ignore" in command:
-            candidate.unlink()
-            candidate.symlink_to(outside)
-            return subprocess.CompletedProcess(command, 1, stdout=b"", stderr=b"")
-        return real_run(command, **kwargs)
+    def replace_before_revalidation(
+        observations: tuple[object, ...],
+        directories: tuple[object, ...],
+        *,
+        phase: str,
+    ) -> tuple[tuple[object, ...], list[object]]:
+        candidate.unlink()
+        candidate.symlink_to(outside)
+        return real_revalidate(observations, directories, phase=phase)  # type: ignore[arg-type,return-value]
 
-    monkeypatch.setattr(discovery.subprocess, "run", replace_during_ignore)
-
-    result = discover_candidates(repository)
-
-    assert result.complete is False
-    assert result.candidates == ()
-    assert len(result.issues) == 1
-    assert result.issues[0].location.path == "specs"
-    assert result.issues[0].affected == (candidate_path,)
-
-
-def test_ignored_file_replaced_during_ignore_query_is_still_revalidated(
-    repository: Path,
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    candidate_path = "specs/01-Ignored-and-replaced.md"
-    candidate = repository / candidate_path
-    outside = tmp_path / "outside.md"
-    _write(repository / ".gitignore", f"{candidate_path}\n")
-    _write(candidate)
-    _write(outside, "outside\n")
-    real_run = subprocess.run
-
-    def replace_during_ignore(
-        command: list[str],
-        **kwargs: object,
-    ) -> subprocess.CompletedProcess[bytes]:
-        if "check-ignore" in command:
-            candidate.unlink()
-            candidate.symlink_to(outside)
-            return subprocess.CompletedProcess(
-                command,
-                0,
-                stdout=f"{candidate_path}\0".encode(),
-                stderr=b"",
-            )
-        return real_run(command, **kwargs)
-
-    monkeypatch.setattr(discovery.subprocess, "run", replace_during_ignore)
+    monkeypatch.setattr(discovery, "_revalidate_observations", replace_before_revalidation)
 
     result = discover_candidates(repository)
 
@@ -282,25 +230,25 @@ def test_ignored_file_replaced_during_ignore_query_is_still_revalidated(
     assert result.issues[0].affected == (candidate_path,)
 
 
-def test_candidate_added_to_same_directory_during_ignore_query_invalidates_scope(
+def test_candidate_added_to_same_directory_before_revalidation_invalidates_scope(
     repository: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     original_path = "specs/01-Original.md"
     added_path = "specs/02-Added-during-query.md"
     _write(repository / original_path)
-    real_run = subprocess.run
+    real_revalidate = discovery._revalidate_observations
 
-    def add_during_ignore(
-        command: list[str],
-        **kwargs: object,
-    ) -> subprocess.CompletedProcess[bytes]:
-        if "check-ignore" in command:
-            _write(repository / added_path)
-            return subprocess.CompletedProcess(command, 1, stdout=b"", stderr=b"")
-        return real_run(command, **kwargs)
+    def add_before_revalidation(
+        observations: tuple[object, ...],
+        directories: tuple[object, ...],
+        *,
+        phase: str,
+    ) -> tuple[tuple[object, ...], list[object]]:
+        _write(repository / added_path)
+        return real_revalidate(observations, directories, phase=phase)  # type: ignore[arg-type,return-value]
 
-    monkeypatch.setattr(discovery.subprocess, "run", add_during_ignore)
+    monkeypatch.setattr(discovery, "_revalidate_observations", add_before_revalidation)
 
     result = discover_candidates(repository)
 
@@ -311,25 +259,25 @@ def test_candidate_added_to_same_directory_during_ignore_query_invalidates_scope
     assert result.issues[0].affected == (original_path, added_path)
 
 
-def test_missing_attachments_directory_created_during_query_is_detected(
+def test_missing_attachments_directory_created_before_revalidation_is_detected(
     repository: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     original_path = "specs/01-Original.md"
     added_path = "specs/attachments/01.Att.01-Added-during-query.md"
     _write(repository / original_path)
-    real_run = subprocess.run
+    real_revalidate = discovery._revalidate_observations
 
-    def add_attachment_during_ignore(
-        command: list[str],
-        **kwargs: object,
-    ) -> subprocess.CompletedProcess[bytes]:
-        if "check-ignore" in command:
-            _write(repository / added_path)
-            return subprocess.CompletedProcess(command, 1, stdout=b"", stderr=b"")
-        return real_run(command, **kwargs)
+    def add_attachment_before_revalidation(
+        observations: tuple[object, ...],
+        directories: tuple[object, ...],
+        *,
+        phase: str,
+    ) -> tuple[tuple[object, ...], list[object]]:
+        _write(repository / added_path)
+        return real_revalidate(observations, directories, phase=phase)  # type: ignore[arg-type,return-value]
 
-    monkeypatch.setattr(discovery.subprocess, "run", add_attachment_during_ignore)
+    monkeypatch.setattr(discovery, "_revalidate_observations", add_attachment_before_revalidation)
 
     result = discover_candidates(repository)
 
@@ -340,7 +288,7 @@ def test_missing_attachments_directory_created_during_query_is_detected(
     assert result.issues[0].affected == ("specs/attachments",)
 
 
-def test_directory_replaced_during_ignore_query_only_invalidates_its_scope(
+def test_directory_replaced_before_revalidation_only_invalidates_its_scope(
     repository: Path,
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -352,19 +300,19 @@ def test_directory_replaced_during_ignore_query_only_invalidates_its_scope(
     outside_attachments = tmp_path / "outside-attachments"
     _write(outside_attachments / "01.Att.01-Replaced.md", "outside\n")
     attachments = repository / "specs/attachments"
-    real_run = subprocess.run
+    real_revalidate = discovery._revalidate_observations
 
-    def replace_during_ignore(
-        command: list[str],
-        **kwargs: object,
-    ) -> subprocess.CompletedProcess[bytes]:
-        if "check-ignore" in command:
-            attachments.rename(repository / "specs/saved-attachments")
-            attachments.symlink_to(outside_attachments, target_is_directory=True)
-            return subprocess.CompletedProcess(command, 1, stdout=b"", stderr=b"")
-        return real_run(command, **kwargs)
+    def replace_before_revalidation(
+        observations: tuple[object, ...],
+        directories: tuple[object, ...],
+        *,
+        phase: str,
+    ) -> tuple[tuple[object, ...], list[object]]:
+        attachments.rename(repository / "specs/saved-attachments")
+        attachments.symlink_to(outside_attachments, target_is_directory=True)
+        return real_revalidate(observations, directories, phase=phase)  # type: ignore[arg-type,return-value]
 
-    monkeypatch.setattr(discovery.subprocess, "run", replace_during_ignore)
+    monkeypatch.setattr(discovery, "_revalidate_observations", replace_before_revalidation)
 
     result = discover_candidates(repository)
 
@@ -373,45 +321,6 @@ def test_directory_replaced_during_ignore_query_only_invalidates_its_scope(
     assert len(result.issues) == 1
     assert result.issues[0].location.path == "specs/attachments"
     assert result.issues[0].affected == (attachment_path,)
-
-
-def test_directory_with_only_ignored_candidate_is_revalidated_after_query(
-    repository: Path,
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    candidate_path = "specs/attachments/01.Att.01-Ignored.md"
-    _write(repository / ".gitignore", f"{candidate_path}\n")
-    _write(repository / candidate_path)
-    attachments = repository / "specs/attachments"
-    outside_attachments = tmp_path / "outside-attachments"
-    _write(outside_attachments / "01.Att.01-Ignored.md", "outside\n")
-    real_run = subprocess.run
-
-    def replace_during_ignore(
-        command: list[str],
-        **kwargs: object,
-    ) -> subprocess.CompletedProcess[bytes]:
-        if "check-ignore" in command:
-            attachments.rename(repository / "specs/saved-attachments")
-            attachments.symlink_to(outside_attachments, target_is_directory=True)
-            return subprocess.CompletedProcess(
-                command,
-                0,
-                stdout=f"{candidate_path}\0".encode(),
-                stderr=b"",
-            )
-        return real_run(command, **kwargs)
-
-    monkeypatch.setattr(discovery.subprocess, "run", replace_during_ignore)
-
-    result = discover_candidates(repository)
-
-    assert result.complete is False
-    assert result.candidates == ()
-    assert len(result.issues) == 1
-    assert result.issues[0].location.path == "specs/attachments"
-    assert result.issues[0].affected == (candidate_path,)
 
 
 def test_does_not_restore_a_worktree_file_deleted_since_head(repository: Path) -> None:
@@ -513,36 +422,29 @@ def test_worktree_query_failure_is_reported_as_incomplete(
     assert result.issues[0].cause == "simulated worktree failure"
 
 
-def test_ignore_query_failure_does_not_treat_candidates_as_unignored(
+def test_discovery_does_not_query_per_file_git_status(
     repository: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    candidate_path = "specs/01-Cannot-be-trusted.md"
+    candidate_path = "specs/01-Ignored.md"
+    _write(repository / ".gitignore", f"{candidate_path}\n")
     _write(repository / candidate_path)
     real_run = subprocess.run
 
-    def failed_ignore_query(
+    def reject_per_file_status_query(
         command: list[str],
         **kwargs: object,
     ) -> subprocess.CompletedProcess[bytes]:
-        if "check-ignore" in command:
-            return subprocess.CompletedProcess(
-                command,
-                returncode=128,
-                stdout=b"",
-                stderr=b"simulated ignore failure",
-            )
+        assert "check-ignore" not in command
+        assert "ls-files" not in command
         return real_run(command, **kwargs)
 
-    monkeypatch.setattr(discovery.subprocess, "run", failed_ignore_query)
+    monkeypatch.setattr(discovery.subprocess, "run", reject_per_file_status_query)
 
     result = discover_candidates(repository)
 
-    assert result.complete is False
-    assert result.candidates == ()
-    assert len(result.issues) == 1
-    assert result.issues[0].cause == "simulated ignore failure"
-    assert result.issues[0].affected == (candidate_path,)
+    assert result.complete is True
+    assert [candidate.relative_path for candidate in result.candidates] == [candidate_path]
 
 
 def _write(path: Path, content: str = "# candidate\n") -> None:

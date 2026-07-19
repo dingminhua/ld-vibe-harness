@@ -21,6 +21,10 @@ from ldvh.governance.git import isolated_git_environment, windows_path_problem
 CheckStatus = Literal["mechanically_valid", "invalid", "not_found", "unavailable"]
 MAX_FACT_BYTES = 4 * 1024 * 1024
 
+# One scan's memo of Git worktree identity per root; the identity cannot change
+# within a single scan, so repeat rev-parse subprocesses are redundant.
+GitIdentityCache = dict[str, tuple[Path, Path] | None]
+
 
 @dataclass(frozen=True, slots=True)
 class FactReadResult:
@@ -63,24 +67,30 @@ def _git(root: Path, *arguments: str) -> subprocess.CompletedProcess[bytes] | No
         return None
 
 
-def _git_identity(root: Path) -> tuple[Path, Path] | None:
+def _git_identity(root: Path, cache: GitIdentityCache | None = None) -> tuple[Path, Path] | None:
+    key = os.fspath(root)
+    if cache is not None and key in cache:
+        return cache[key]
     result = _git(root, "rev-parse", "--path-format=absolute", "--show-toplevel", "--git-common-dir")
-    if result is None or result.returncode != 0:
-        return None
-    try:
-        lines = result.stdout.decode("utf-8").splitlines()
-    except UnicodeDecodeError:
-        return None
-    if len(lines) != 2:
-        return None
-    return Path(lines[0]).resolve(), Path(lines[1]).resolve()
+    identity: tuple[Path, Path] | None = None
+    if result is not None and result.returncode == 0:
+        try:
+            lines = result.stdout.decode("utf-8").splitlines()
+        except UnicodeDecodeError:
+            lines = []
+        if len(lines) == 2:
+            identity = Path(lines[0]).resolve(), Path(lines[1]).resolve()
+    if cache is not None:
+        cache[key] = identity
+    return identity
 
 
 def _identity_issue(
     root: Path,
     expected_common_dir: Path | None,
+    cache: GitIdentityCache | None = None,
 ) -> tuple[FactIssue | None, CheckStatus | None]:
-    identity = _git_identity(root)
+    identity = _git_identity(root, cache)
     if identity is None:
         return FactIssue("git-traceability", "无法确认事实对象所在 Git Working Tree 身份"), "unavailable"
     worktree_root, common_dir = identity
@@ -89,22 +99,6 @@ def _identity_issue(
     ):
         return FactIssue("git-traceability", "事实对象读取边界与已解析 Git 身份不一致"), "unavailable"
     return None, None
-
-
-def _traceability(root: Path, relative_path: str) -> tuple[FactIssue | None, CheckStatus | None]:
-    tracked = _git(root, "ls-files", "--error-unmatch", "--", relative_path)
-    if tracked is None:
-        return FactIssue("git-traceability", "无法执行必需的 Git 可追踪性检查"), "unavailable"
-    if tracked.returncode == 0:
-        return None, None
-    ignored = _git(root, "check-ignore", "--quiet", "--no-index", "--", relative_path)
-    if ignored is None:
-        return FactIssue("git-traceability", "无法执行必需的 Git ignore 检查"), "unavailable"
-    if ignored.returncode == 0:
-        return FactIssue("git-traceability", "untracked 且 ignored 的文件不能成为稳定事实"), "invalid"
-    if ignored.returncode == 1:
-        return None, None
-    return FactIssue("git-traceability", "Git ignore 检查没有形成可信结果"), "unavailable"
 
 
 def _read_utf8_without_symlinks(
@@ -134,11 +128,12 @@ def read_fact_object(
     *,
     expected_common_dir: Path | None = None,
     max_bytes: int = MAX_FACT_BYTES,
+    git_identity_cache: GitIdentityCache | None = None,
 ) -> FactReadResult:
     """Read and mechanically validate one source-selected fact object."""
 
     relative_path = layout.canonical_path(object_id)
-    identity_issue, identity_status = _identity_issue(root, expected_common_dir)
+    identity_issue, identity_status = _identity_issue(root, expected_common_dir, git_identity_cache)
     if identity_issue is not None:
         return FactReadResult(
             relative_path,
@@ -153,9 +148,6 @@ def read_fact_object(
         return FactReadResult(
             relative_path, layout.carrier, location_status or "invalid", None, None, (location_issue,)
         )
-    trace_issue, trace_status = _traceability(root, relative_path)
-    if trace_issue is not None:
-        return FactReadResult(relative_path, layout.carrier, trace_status or "invalid", None, None, (trace_issue,))
     effective_max_bytes = min(MAX_FACT_BYTES, max_bytes)
     if effective_max_bytes <= 0:
         return FactReadResult(
@@ -171,7 +163,7 @@ def read_fact_object(
             relative_path, layout.carrier, read_status or "unavailable", None, None, (issue,),
             raw_byte_count=raw_byte_count,
         )
-    identity_issue, identity_status = _identity_issue(root, expected_common_dir)
+    identity_issue, identity_status = _identity_issue(root, expected_common_dir, git_identity_cache)
     if identity_issue is not None:
         return FactReadResult(
             relative_path,

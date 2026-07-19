@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import shutil
+import subprocess
 from pathlib import Path, PurePosixPath
 
 import pytest
@@ -43,6 +45,22 @@ def test_worktree_snapshot_separates_rules_and_mechanical_evidence(
     assert repository.source_identity is not None
     assert repository.source_identity.view == "installed_release_snapshot"
     assert all(candidate.relative_path.startswith("specs/") for candidate in repository.candidates)
+
+
+def test_worktree_snapshot_includes_ignored_current_rule_candidate(
+    current_specs_repository: Path,
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "source"
+    source.mkdir()
+    shutil.copytree(current_specs_repository / "specs", source / "specs")
+    subprocess.run(["git", "-C", str(source), "init", "-q"], check=True, capture_output=True)
+    ignored_path = "specs/24-Study-研究报告.md"
+    (source / ".gitignore").write_text(f"{ignored_path}\n", encoding="utf-8")
+
+    plan = snapshot_plan_for_source(source, "0.1.0")
+
+    assert ignored_path in {item.path for item in plan.files}
 
 
 def test_manifest_rejects_unknown_fields_and_noncanonical_json(

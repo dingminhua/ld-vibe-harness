@@ -239,6 +239,54 @@ def test_prepare_has_no_canonical_side_effect_and_create_injects_managed_fields(
     assert (project / response["result"]["canonical_path"]).is_file()
 
 
+def test_helper_create_read_and_update_accept_ignored_current_fact(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    (project / ".gitignore").write_text("ldvh-base/\n", encoding="utf-8")
+    basis = _prepare(workspace, project)
+
+    created = handle_request(
+        "call",
+        "create-fact-object",
+        _create_payload(workspace, project, basis, _spark()),
+    ).response
+    assert created["outcome"] == "ok"
+    reference = created["result"]["actual_ref"]
+
+    read = handle_request(
+        "call",
+        "read-fact-objects",
+        json.dumps(
+            {
+                "work_object_locators": [str(project)],
+                "arguments": {"workspace_root": str(workspace), "fact_refs": [reference]},
+            }
+        ),
+    ).response["result"]["items"][0]
+    assert read["check_status"] == "mechanically_valid"
+
+    target = dict(read["fact_object"])
+    for key in ("object_id", "fact_type_key", "created_at", "updated_at"):
+        target.pop(key)
+    target["summary"] = "Ignored current fact updated through the Helper."
+    updated = handle_request(
+        "call",
+        "update-fact-object",
+        json.dumps(
+            {
+                "work_object_locators": [str(project)],
+                "arguments": {
+                    "workspace_root": str(workspace),
+                    "fact_ref": reference,
+                    "expected_content_fingerprint": read["content_fingerprint"],
+                    "fact_object": target,
+                },
+            }
+        ),
+    ).response
+    assert updated["outcome"] == "ok"
+    assert updated["result"]["fact_object"]["summary"] == target["summary"]
+
+
 def test_create_reports_committed_namespace_when_directory_sync_fails(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

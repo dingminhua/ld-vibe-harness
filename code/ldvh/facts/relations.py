@@ -7,7 +7,13 @@ from pathlib import Path
 
 from ldvh.facts.contracts import LAYOUTS
 from ldvh.facts.models import FactIssue
-from ldvh.facts.repository import MAX_FACT_BYTES, FactReadResult, _identity_issue, read_fact_object
+from ldvh.facts.repository import (
+    MAX_FACT_BYTES,
+    FactReadResult,
+    GitIdentityCache,
+    _identity_issue,
+    read_fact_object,
+)
 from ldvh.facts.schema import FactSchema
 from ldvh.facts.validation import parse_rfc3339
 from ldvh.filesystem import safe_list_directory
@@ -24,6 +30,7 @@ class ProjectFactIndex:
     aggregate_budget_bytes: int | None = None
     cache: dict[tuple[str, str], FactReadResult] = field(default_factory=dict)
     base_cache: dict[tuple[str, str], FactReadResult] = field(default_factory=dict)
+    git_identity_cache: GitIdentityCache = field(default_factory=dict)
     aggregate_bytes_read: int = field(default=0, init=False)
     aggregate_budget_exhausted: bool = field(default=False, init=False)
 
@@ -53,6 +60,7 @@ class ProjectFactIndex:
                 object_id,
                 expected_common_dir=self.expected_common_dir,
                 max_bytes=MAX_FACT_BYTES if remaining is None else min(MAX_FACT_BYTES, remaining),
+                git_identity_cache=self.git_identity_cache,
             )
             if result.raw_byte_count is not None:
                 self.aggregate_bytes_read += result.raw_byte_count
@@ -77,7 +85,7 @@ class ProjectFactIndex:
         base: bool = False,
     ) -> tuple[tuple[FactReadResult, ...], bool]:
         layout = LAYOUTS[fact_type_key]
-        identity_issue, _ = _identity_issue(self.root, self.expected_common_dir)
+        identity_issue, _ = _identity_issue(self.root, self.expected_common_dir, self.git_identity_cache)
         if identity_issue is not None:
             return (), False
         try:
@@ -105,7 +113,7 @@ class ProjectFactIndex:
                 complete = False
             elif result.check_status == "mechanically_valid":
                 results.append(result)
-        identity_issue, _ = _identity_issue(self.root, self.expected_common_dir)
+        identity_issue, _ = _identity_issue(self.root, self.expected_common_dir, self.git_identity_cache)
         return tuple(results), complete and identity_issue is None
 
 

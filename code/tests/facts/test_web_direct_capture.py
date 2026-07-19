@@ -172,6 +172,21 @@ def test_service_creates_once_and_duplicate_does_not_consume_counter(
     assert len(tuple((boundary.worktree_root / "ldvh-base/sparks").glob("*.yaml"))) == 1
 
 
+def test_direct_capture_accepts_ignored_canonical_target(
+    current_specs_repository: Path,
+    tmp_path: Path,
+) -> None:
+    boundary, schemas = _fixture(current_specs_repository, tmp_path)
+    (boundary.worktree_root / ".gitignore").write_text("ldvh-base/\n", encoding="utf-8")
+
+    created = create_web_spark_direct_capture(boundary, schemas, _request())
+    duplicate = create_web_spark_direct_capture(boundary, schemas, _request())
+
+    assert created.status == "created"
+    assert duplicate.status == "exact_duplicate"
+    assert (boundary.worktree_root / "ldvh-base/sparks/spark-0001.yaml").is_file()
+
+
 def test_concurrent_same_capture_has_one_creator_and_one_duplicate(
     current_specs_repository: Path,
     tmp_path: Path,

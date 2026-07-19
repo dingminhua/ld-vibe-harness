@@ -26,6 +26,7 @@ _WORKCASE_PHASE_EDGES = {
     ("executing", "controller_checking"),
     ("controller_checking", "executing"),
     ("controller_checking", "independent_reviewing"),
+    ("controller_checking", "closure_preparing"),
     ("independent_reviewing", "controller_checking"),
     ("independent_reviewing", "executing"),
     ("independent_reviewing", "closure_preparing"),
@@ -48,23 +49,6 @@ _PLAN_ITEM_FIELDS = (
     "template_keys",
     "template_deviation_summary",
 )
-_RESULT_TOP_FIELDS = (
-    "controller_check_summary",
-    "validation_summary",
-    "closure_outcome",
-    "disposition_summary",
-    "relations",
-    "evidence_refs",
-)
-_RESULT_ITEM_FIELDS = (
-    "item_id",
-    "status",
-    "current_summary",
-    "resume_from",
-    "blocking_summary",
-    "result_summary",
-    "evidence_refs",
-)
 _PLAN_RESET_FIELDS = (
     "execution_approval",
     "result_version",
@@ -74,6 +58,22 @@ _PLAN_RESET_FIELDS = (
     "validation_summary",
     "closure_outcome",
     "disposition_summary",
+)
+_RESULT_CONTEXT_FIELDS = (
+    "result_version",
+    "controller_check_summary",
+    "result_reviews",
+    "validation_summary",
+    "closure_outcome",
+    "disposition_summary",
+)
+_REVIEWER_OWNED_FIELDS = (
+    "reviewer",
+    "reviewed_at",
+    "subject_version",
+    "scope",
+    "conclusion",
+    "feedback",
 )
 
 
@@ -105,6 +105,15 @@ def _supersedes(fields: dict[str, object]) -> str:
 def _version(fields: dict[str, object], key: str) -> int | None:
     value = fields.get(key)
     return value if isinstance(value, int) and not isinstance(value, bool) else None
+
+
+def _reviewer_records(fields: dict[str, object]) -> tuple[str, ...]:
+    values = fields.get("result_reviews")
+    return tuple(
+        _stable({key: review.get(key) for key in _REVIEWER_OWNED_FIELDS})
+        for review in (values if isinstance(values, list) else [])
+        if isinstance(review, dict)
+    )
 
 
 def _workcase_transition(before: dict[str, object], after: dict[str, object]) -> list[FactIssue]:
@@ -149,20 +158,53 @@ def _workcase_transition(before: dict[str, object], after: dict[str, object]) ->
 
     before_result = _version(before, "result_version")
     after_result = _version(after, "result_version")
-    result_changed = _projection(before, _RESULT_TOP_FIELDS, _RESULT_ITEM_FIELDS) != _projection(
-        after, _RESULT_TOP_FIELDS, _RESULT_ITEM_FIELDS
-    )
     result_bumped = before_result is not None and after_result is not None and after_result > before_result
     if not plan_bumped and before_result is not None and (after_result is None or after_result < before_result):
         issues.append(FactIssue("schema", "result_version 不得减少或移除", "result_version"))
-    if not plan_bumped and before_result is not None and result_changed and not result_bumped:
-        issues.append(FactIssue("schema", "结果包变化必须递增 result_version", "result_version"))
-    if not plan_bumped and not result_changed and result_bumped:
-        issues.append(FactIssue("schema", "结果包未变化时不得递增 result_version", "result_version"))
+    if not plan_bumped and before_result is None and after_result is not None:
+        if (before_phase, after_phase) != ("executing", "controller_checking") or after_result != 1:
+            issues.append(
+                FactIssue(
+                    "schema",
+                    "result_version 只能在首次 executing 进入 controller_checking 时建立为 1",
+                    "result_version",
+                )
+            )
+    if (before_phase, after_phase) == ("human_plan_confirming", "executing"):
+        for key in _RESULT_CONTEXT_FIELDS:
+            if key in after:
+                issues.append(FactIssue("schema", "首次进入 executing 不得携带结果上下文", key))
     if result_bumped:
         for key in ("result_reviews", "closure_approval"):
             if key in after:
-                issues.append(FactIssue("schema", "result_version 递增后旧审核和关闭批准必须移除", key))
+                issues.append(FactIssue("schema", "result_version 递增后必须重新形成审核且旧关闭批准失效", key))
+
+    before_reviews = _reviewer_records(before)
+    after_reviews = _reviewer_records(after)
+    review_records_changed = before_reviews != after_reviews
+    review_reset_for_new_version = result_bumped and not after_reviews
+    if (
+        not plan_bumped
+        and review_records_changed
+        and before_phase != "independent_reviewing"
+        and not review_reset_for_new_version
+    ):
+        issues.append(
+            FactIssue(
+                "schema",
+                "result review 只能在 independent_reviewing 形成；离开后 Reviewer 自有字段不得改写",
+                "result_reviews",
+            )
+        )
+    if (before_phase, after_phase) == ("controller_checking", "closure_preparing"):
+        if not before_reviews or before_reviews != after_reviews:
+            issues.append(
+                FactIssue(
+                    "schema",
+                    "controller_checking 进入 closure_preparing 必须保留转换前已形成的当前版本 review",
+                    "result_reviews",
+                )
+            )
     return issues
 
 

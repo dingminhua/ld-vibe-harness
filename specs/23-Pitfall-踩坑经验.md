@@ -33,7 +33,7 @@ V4 只吸收经重新查重且具有稳定消费价值的语义字段，不继�
 本文直接依据：
 
 1. `fact-model-foundation`：规定事实类型、统一字段、来源、证据、关系、状态、变更和验证的共同边界；
-2. `source-of-truth-traceability`：规定 Git 可追踪事实源、当前 Working Tree、来源回指和稳定事实边界。
+2. `source-of-truth-traceability`：规定管辖项目当前事实源、Working Tree、来源回指和稳定事实边界。
 
 Pitfall 是经验事实，不是规则来源。`avoidance` 说明在适用边界内如何识别、预防或安全复用经验，不取得 MUST 级规则权威。需要形成强制规则、Code 行为或行动结构时，必须由相应正式来源另行定义、授权和验证；吸收不会自动使 Pitfall 终态。
 

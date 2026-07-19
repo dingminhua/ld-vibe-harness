@@ -33,7 +33,7 @@ Study 主要服务 V1 快速定位、V2 充分理解、V3 边界识别、V5 据�
 本文直接依据：
 
 1. `fact-model-foundation`：规定事实类型、统一字段、来源、证据、关系、状态、变更和验证的共同边界；
-2. `source-of-truth-traceability`：规定 Git 可追踪事实源、当前 Working Tree、来源回指和稳定事实边界。
+2. `source-of-truth-traceability`：规定管辖项目当前事实源、Working Tree、来源回指和稳定事实边界。
 
 Study 是外部调研事实，不是正式规则、长期决定、内部分析载体或当前外部事实证明。研究发现、结论和建议需要成为规则、决定、任务或经验时，必须由相应正式来源另行准入、授权和验证；被吸收不会自动使 Study 终态。
 

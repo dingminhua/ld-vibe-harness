@@ -30,7 +30,7 @@ _GIT_REPOSITORY_OVERRIDES = (
 
 @dataclass(frozen=True, slots=True)
 class Candidate:
-    """A regular, non-ignored file at one of the two candidate path shapes."""
+    """A regular current file at one of the two candidate path shapes."""
 
     relative_path: str
     absolute_path: Path
@@ -73,32 +73,6 @@ class _DirectoryObservation:
     entries: tuple[_EntryObservation, ...] = ()
 
 
-def validate_non_ignored_git_path(root: Path, relative_path: str) -> Issue | None:
-    """Require a fixed evidence path to remain eligible under Git ignore rules."""
-
-    encoded = os.fsencode(relative_path)
-    try:
-        completed = _run_git(root, "check-ignore", "-z", "--stdin", stdin_data=encoded + b"\0")
-    except (OSError, subprocess.SubprocessError) as exc:
-        return _issue(
-            "Cannot determine whether the required Git evidence path is ignored",
-            cause=str(exc),
-            affected=(relative_path,),
-        )
-    if completed.returncode == 1 and not completed.stdout:
-        return None
-    if completed.returncode == 0 and completed.stdout == encoded + b"\0":
-        return _issue(
-            "Required Git evidence path is ignored by Git",
-            affected=(relative_path,),
-        )
-    return _issue(
-        "Cannot determine whether the required Git evidence path is ignored",
-        cause=_git_failure_cause(completed),
-        affected=(relative_path,),
-    )
-
-
 def validate_exact_worktree_root(root: Path) -> Issue | None:
     """Validate one already-selected path as the exact Git worktree root."""
 
@@ -112,9 +86,8 @@ def discover_candidates(repository_root: Path) -> DiscoveryResult:
     """Discover candidates from the current filesystem without consulting ``HEAD``.
 
     The supplied path must be the Git worktree root itself. Files are scanned only
-    from the two direct candidate directories and then filtered through Git's
-    ignore rules. A failed Git query never defaults to treating files as
-    non-ignored.
+    from the two direct candidate directories. Per-file Git status does not affect
+    qualification; filesystem shape and identity are revalidated after the scan.
     """
 
     root, root_issue = _normalise_repository_root(repository_root)
@@ -132,38 +105,18 @@ def discover_candidates(repository_root: Path) -> DiscoveryResult:
     observations, directories, scan_issues = _scan_candidate_files(root)
     observations = tuple(sorted(observations, key=lambda item: item.candidate.relative_path))
 
-    observations, before_query_issues = _revalidate_observations(
+    observations, revalidation_issues = _revalidate_observations(
         observations,
         directories,
-        phase="before the Git ignore query",
+        phase="after the candidate scan",
     )
 
-    query_performed = bool(observations)
-    ignored_paths, ignore_issue = _query_ignored(root, observations)
     issues = list(scan_issues)
-    issues.extend(before_query_issues)
-    if ignore_issue is not None:
-        issues.append(ignore_issue)
-
-    if query_performed:
-        observations, after_query_issues = _revalidate_observations(
-            observations,
-            directories,
-            phase="after the Git ignore query",
-        )
-    else:
-        after_query_issues = []
-    issues.extend(after_query_issues)
-
-    filtered = (
-        tuple(item for item in observations if os.fsencode(item.candidate.relative_path) not in ignored_paths)
-        if ignore_issue is None
-        else ()
-    )
+    issues.extend(revalidation_issues)
 
     return DiscoveryResult(
         repository_root=root,
-        candidates=tuple(item.candidate for item in filtered),
+        candidates=tuple(item.candidate for item in observations),
         issues=tuple(issues),
         complete=not issues,
     )
@@ -616,66 +569,6 @@ def _stable_identity(observation: os.stat_result) -> tuple[int, int] | None:
     if not isinstance(inode, int) or isinstance(inode, bool) or inode <= 0:
         return None
     return device, inode
-
-
-def _query_ignored(
-    root: Path,
-    observations: tuple[_FileObservation, ...],
-) -> tuple[frozenset[bytes], Issue | None]:
-    if not observations:
-        return frozenset(), None
-
-    encoded_paths = {os.fsencode(item.candidate.relative_path): item for item in observations}
-    payload = b"".join(path + b"\0" for path in encoded_paths)
-
-    try:
-        completed = _run_git(
-            root,
-            "check-ignore",
-            "-z",
-            "--stdin",
-            stdin_data=payload,
-        )
-    except (OSError, subprocess.SubprocessError) as exc:
-        return frozenset(), _ignore_issue(observations, str(exc))
-
-    if completed.returncode not in (0, 1):
-        return frozenset(), _ignore_issue(
-            observations,
-            _git_failure_cause(completed),
-        )
-
-    output = completed.stdout
-    if output and not output.endswith(b"\0"):
-        return frozenset(), _ignore_issue(
-            observations,
-            "git check-ignore returned malformed non-NUL output",
-        )
-
-    ignored_paths = set(output[:-1].split(b"\0")) if output else set()
-    output_is_consistent = (completed.returncode == 0) == bool(ignored_paths)
-    if not output_is_consistent:
-        return frozenset(), _ignore_issue(
-            observations,
-            f"git check-ignore returned status {completed.returncode} with inconsistent output",
-        )
-
-    unknown_paths = ignored_paths.difference(encoded_paths)
-    if unknown_paths:
-        return frozenset(), _ignore_issue(
-            observations,
-            "git check-ignore returned a path that was not queried",
-        )
-
-    return frozenset(ignored_paths), None
-
-
-def _ignore_issue(observations: tuple[_FileObservation, ...], cause: str) -> Issue:
-    return _issue(
-        "Cannot determine which specification candidates are ignored by Git",
-        cause=cause,
-        affected=tuple(item.candidate.relative_path for item in observations),
-    )
 
 
 def _run_git(

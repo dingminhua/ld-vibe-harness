@@ -5,6 +5,7 @@ import os
 import stat
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
 from pathlib import Path
 
 import pytest
@@ -68,14 +69,18 @@ def _ref() -> dict[str, str]:
     }
 
 
-def _read(workspace: Path, project: Path) -> dict[str, object]:
+def _read(
+    workspace: Path,
+    project: Path,
+    fact_ref: dict[str, str] | None = None,
+) -> dict[str, object]:
     response = handle_request(
         "call",
         "read-fact-objects",
         json.dumps(
             {
                 "work_object_locators": [str(project)],
-                "arguments": {"workspace_root": str(workspace), "fact_refs": [_ref()]},
+                "arguments": {"workspace_root": str(workspace), "fact_refs": [fact_ref or _ref()]},
             }
         ),
     ).response
@@ -97,18 +102,263 @@ def _update_payload(
     project: Path,
     fingerprint: object,
     fact_object: dict[str, object],
+    fact_ref: dict[str, str] | None = None,
 ) -> str:
     return json.dumps(
         {
             "work_object_locators": [str(project)],
             "arguments": {
                 "workspace_root": str(workspace),
-                "fact_ref": _ref(),
+                "fact_ref": fact_ref or _ref(),
                 "expected_content_fingerprint": fingerprint,
                 "fact_object": fact_object,
             },
         }
     )
+
+
+def _create_workcase(workspace: Path, project: Path) -> dict[str, str]:
+    prepared = handle_request(
+        "call",
+        "prepare-fact-object-draft",
+        json.dumps(
+            {
+                "work_object_locators": [str(project)],
+                "arguments": {
+                    "workspace_root": str(workspace),
+                    "governed_project_id": "sample",
+                    "fact_type_key": "workcase",
+                },
+            }
+        ),
+    ).response["result"]
+    created = handle_request(
+        "call",
+        "create-fact-object",
+        json.dumps(
+            {
+                "work_object_locators": [str(project)],
+                "arguments": {
+                    "workspace_root": str(workspace),
+                    "draft_basis": {
+                        key: prepared[key]
+                        for key in (
+                            "governed_project_id",
+                            "fact_type_key",
+                            "candidate_object_id",
+                            "schema_fingerprint",
+                            "worktree_fingerprint",
+                        )
+                    },
+                    "fact_object": {
+                        "title": "Controller-owned review lifecycle",
+                        "status": "open",
+                        "source_refs": [{"kind": "repository-path", "locator": "docs/input.md"}],
+                        "summary": "Current plan is ready for Human approval",
+                        "resume_from": "Request approval for the presented current plan",
+                        "waiting_on": "Human execution approval",
+                        "priority": "P1",
+                        "goal": "Exercise the Controller-owned review and closure lifecycle",
+                        "scope": "One bounded Helper lifecycle test",
+                        "success_criteria": ["The WorkCase reaches closed through all required phases"],
+                        "phase": "human_plan_confirming",
+                        "plan_version": 1,
+                        "work_items": [
+                            {
+                                "item_id": "item-01",
+                                "goal": "Produce one verified result",
+                                "expected_result": "One result is available for Controller check",
+                                "status": "pending",
+                                "approach_summary": "Use controlled full-object Helper updates",
+                            }
+                        ],
+                        "creation_reviews": [
+                            {
+                                "reviewer": "independent-plan-reviewer",
+                                "reviewed_at": "2026-07-14T09:00:00+08:00",
+                                "subject_version": 1,
+                                "scope": "Goal, scope, success criterion, work item, method, and risk",
+                                "conclusion": "changes_required",
+                                "feedback": ["Controller should explicitly own the phase decision"],
+                                "controller_resolution": "1. Accepted; the plan records Controller ownership.",
+                            }
+                        ],
+                    },
+                },
+            }
+        ),
+    ).response
+    assert created["outcome"] == "ok", json.dumps(created, ensure_ascii=False, indent=2)
+    return created["result"]["actual_ref"]
+
+
+def test_workcase_helper_walks_controller_owned_review_and_atomic_closure(tmp_path: Path) -> None:
+    workspace, project, _ = _fixture(tmp_path)
+    docs = project / "docs"
+    docs.mkdir()
+    (docs / "input.md").write_text("Human-authorized work\n", encoding="utf-8")
+    (docs / "evidence.md").write_text("Verified result\n", encoding="utf-8")
+    workcase_ref = _create_workcase(workspace, project)
+
+    def update(mutator) -> dict[str, object]:
+        before = _read(workspace, project, workcase_ref)
+        target = _mutable(before)
+        mutator(target)
+        response = handle_request(
+            "call",
+            "update-fact-object",
+            _update_payload(
+                workspace,
+                project,
+                before["content_fingerprint"],
+                target,
+                workcase_ref,
+            ),
+        ).response
+        assert response["outcome"] == "ok", json.dumps(response, ensure_ascii=False, indent=2)
+        return response["result"]["fact_object"]
+
+    def event_time() -> str:
+        return datetime.now().astimezone().isoformat(timespec="microseconds")
+
+    def approve_execution(fields: dict[str, object]) -> None:
+        fields.update(
+            {
+                "phase": "executing",
+                "summary": "Human approved the current plan; execution started",
+                "resume_from": "Complete item-01",
+                "execution_approval": {
+                    "subject_version": 1,
+                    "approved_at": event_time(),
+                    "summary": "Human approved the presented current plan",
+                },
+            }
+        )
+        fields.pop("waiting_on")
+        fields["work_items"][0].update(
+            {
+                "status": "in_progress",
+                "current_summary": "Producing the bounded result",
+                "resume_from": "Finish and verify the result",
+            }
+        )
+
+    approve_snapshot = update(approve_execution)
+    assert "result_version" not in approve_snapshot
+
+    def enter_controller_check(fields: dict[str, object]) -> None:
+        fields.update(
+            {
+                "phase": "controller_checking",
+                "summary": "Controller is checking the completed result",
+                "resume_from": "Check the result and initiate independent review",
+                "result_version": 1,
+                "controller_check_summary": "Controller checked the item result and focused evidence",
+            }
+        )
+        item = fields["work_items"][0]
+        item.pop("current_summary")
+        item.pop("resume_from")
+        item.update(
+            {
+                "status": "completed",
+                "result_summary": "The bounded result was produced and verified",
+                "evidence_refs": [{"kind": "repository-path", "locator": "docs/evidence.md"}],
+            }
+        )
+
+    update(enter_controller_check)
+    update(
+        lambda fields: fields.update(
+            {
+                "phase": "independent_reviewing",
+                "summary": "Independent result review is in progress",
+                "resume_from": "Obtain review feedback and let Controller decide the next phase",
+            }
+        )
+    )
+
+    review = {
+        "reviewer": "independent-result-reviewer",
+        "reviewed_at": event_time(),
+        "subject_version": 1,
+        "scope": "Item result, success criterion, Controller check, validation, and residual risk",
+        "conclusion": "blocked",
+        "feedback": ["The reviewer would prefer another validation statement"],
+        "controller_resolution": (
+            "1. Rejected as a phase veto; existing evidence is sufficient, so no rereview is needed."
+        ),
+    }
+
+    def controller_handles_feedback(fields: dict[str, object]) -> None:
+        fields.update(
+            {
+                "phase": "controller_checking",
+                "summary": "Controller handled review feedback and decided no rereview is required",
+                "resume_from": "Enter closure preparation with the retained current-version review",
+                "result_reviews": [review],
+            }
+        )
+
+    update(controller_handles_feedback)
+    update(
+        lambda fields: fields.update(
+            {
+                "phase": "closure_preparing",
+                "summary": "Controller is preparing the final closure report",
+                "resume_from": "Complete validation, outcome, and disposition",
+            }
+        )
+    )
+
+    def complete_report(fields: dict[str, object]) -> None:
+        fields.update(
+            {
+                "validation_summary": "The success criterion is supported by the focused evidence",
+                "closure_outcome": "completed",
+                "disposition_summary": "No residual responsibility remains",
+                "evidence_refs": [{"kind": "repository-path", "locator": "docs/evidence.md"}],
+            }
+        )
+
+    prepared = update(complete_report)
+    assert prepared["result_version"] == 1
+    assert prepared["result_reviews"][0]["conclusion"] == "blocked"
+
+    def request_human_closure(fields: dict[str, object]) -> None:
+        fields.update(
+            {
+                "phase": "human_closure_confirming",
+                "summary": "Controller judged the complete report ready for Human closure confirmation",
+                "resume_from": "Await Human decision on the current result and report",
+                "waiting_on": "Human closure confirmation",
+            }
+        )
+
+    update(request_human_closure)
+
+    def close_with_human_approval(fields: dict[str, object]) -> None:
+        approved_at = event_time()
+        fields.update(
+            {
+                "status": "closed",
+                "phase": "closed",
+                "summary": "Human approved the current result and report; the WorkCase is closed",
+                "closure_approval": {
+                    "subject_version": 1,
+                    "approved_at": approved_at,
+                    "summary": "Human approved the current result version and complete report",
+                },
+                "closed_at": approved_at,
+            }
+        )
+        for key in ("priority", "resume_from", "waiting_on"):
+            fields.pop(key, None)
+
+    closed = update(close_with_human_approval)
+    assert closed["status"] == "closed"
+    assert closed["phase"] == "closed"
+    assert closed["closure_approval"]["subject_version"] == closed["result_version"]
 
 
 def test_update_replaces_full_target_and_preserves_managed_identity(tmp_path: Path) -> None:
@@ -414,7 +664,9 @@ def test_study_update_preserves_submitted_body_boundary(tmp_path: Path) -> None:
             "title": "Study update",
             "status": "active",
             "source_refs": [{"kind": "repository-path", "locator": "docs/question.md", "observed_at": observed}],
-            "evidence_refs": [{"kind": "repository-path", "locator": "docs/evidence.md", "observed_at": observed}],
+            "evidence_refs": [
+                {"kind": "human-provided-artifact", "locator": "docs/evidence.md", "observed_at": observed}
+            ],
             "applicability": "Current Study update test.",
             "validation_summary": "The local evidence was checked.",
             "research_question": "Does update preserve the submitted Markdown body boundary?",
@@ -454,7 +706,7 @@ def test_study_update_preserves_submitted_body_boundary(tmp_path: Path) -> None:
             }
         ),
     ).response
-    assert created["outcome"] == "ok"
+    assert created["outcome"] == "ok", json.dumps(created, ensure_ascii=False, indent=2)
     reference = created["result"]["actual_ref"]
     read = handle_request(
         "call",

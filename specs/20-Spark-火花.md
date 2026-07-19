@@ -42,7 +42,7 @@ Human 已确认保留 Spark 类型，因此本文不重复决定是否建立该�
 本文直接依据：
 
 1. `fact-model-foundation`：规定具体事实类型的责任、统一字段登记、状态、来源、证据、关系、对象变更和验证共同边界；
-2. `source-of-truth-traceability`：规定 Git 可追踪文件、当前 Working Tree、来源回指和稳定事实边界。
+2. `source-of-truth-traceability`：规定管辖项目当前事实源、Working Tree、来源回指和稳定事实边界。
 
 既有候选记录实践、Code 和 Web 只用于识别已验证价值与失败模式，不能证明当前路径、字段、状态、实例当前性或写入能力成立。创建前召回的必要性由 05 的字段准入与对象查重规则重新定义。
 

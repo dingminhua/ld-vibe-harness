@@ -85,7 +85,7 @@ def test_study_fact_object_reference_requires_a_valid_current_target(tmp_path: P
     assert any("mechanically valid" in issue.summary for issue in issues)
 
 
-def test_runtime_and_human_artifacts_reject_ignored_and_symlink_paths(tmp_path: Path) -> None:
+def test_runtime_and_human_artifacts_accept_ignored_current_files_but_reject_symlinks(tmp_path: Path) -> None:
     index, _ = _index(tmp_path)
     evidence = index.root / "evidence"
     evidence.mkdir()
@@ -106,15 +106,17 @@ def test_runtime_and_human_artifacts_reject_ignored_and_symlink_paths(tmp_path: 
     (index.root / ".gitignore").write_text("evidence/ignored.txt\n", encoding="utf-8")
     (evidence / "ignored.txt").write_text("ignored\n", encoding="utf-8")
     (evidence / "linked.txt").symlink_to(evidence / "human.pdf")
-    invalid, invalid_unavailable = validate_study_sources(
+    checked, checked_unavailable = validate_study_sources(
         index,
         _read(
             {"kind": "runtime-observation", "locator": "evidence/ignored.txt", "version": "tool-v1"},
             {"kind": "human-provided-artifact", "locator": "evidence/linked.txt"},
         ),
     )
-    assert invalid_unavailable is False
-    assert {issue.category for issue in invalid} == {"git-traceability", "location"}
+    assert checked_unavailable is False
+    assert len(checked) == 1
+    assert checked[0].category == "location"
+    assert checked[0].field_path == "source_refs[1].locator"
 
 
 def test_git_revision_technical_failure_is_unavailable(

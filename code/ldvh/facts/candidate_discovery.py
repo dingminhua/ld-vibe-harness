@@ -157,7 +157,8 @@ def discover_fact_type_raw(
             (_structural_problem(fact_type_key, layout.directory, "事实类型 Schema 不可用"),),
             False,
         )
-    identity_issue, _ = _identity_issue(root, common_dir)
+    identity_cache: dict[str, tuple[Path, Path] | None] = {}
+    identity_issue, _ = _identity_issue(root, common_dir, identity_cache)
     if identity_issue is not None:
         return FactTypeRawSnapshot(
             fact_type_key,
