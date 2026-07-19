@@ -1,0 +1,11 @@
+title: Adapter payload 与 target 身份完整性
+status: open
+priority: P2
+source_refs:
+- kind: repository-path
+  locator: specs/09-环境接入规范.md
+summary: 验证目标环境的真实 payload、target、cwd、locator 与工具输入能否完整、无歧义地传给 LDVH 核心，并在缺失或冲突时可诊断地交还。环境接入规则已禁止 adapter 猜测或补全输入，但不能替代多环境、关键事件的真实输入完整性证据。
+object_id: spark-0002
+fact_type_key: spark
+created_at: '2026-07-19T08:33:49.319864+08:00'
+updated_at: '2026-07-19T08:50:02.909313+08:00'

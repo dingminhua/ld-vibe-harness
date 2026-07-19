@@ -25,7 +25,7 @@ def _fixture(tmp_path: Path) -> tuple[Path, Path, Path]:
     project = workspace / "project"
     project.mkdir(parents=True)
     _git(project, "init", "-q")
-    fact = project / "facts" / "sparks" / "spark-0001.yaml"
+    fact = project / "ldvh-base" / "sparks" / "spark-0001.yaml"
     fact.parent.mkdir(parents=True)
     fact.write_text(
         """object_id: spark-0001
@@ -216,7 +216,7 @@ def test_failed_write_back_read_rolls_back_only_matching_replacement(
         calls += 1
         if calls == 2:
             return FactReadResult(
-                "facts/sparks/spark-0001.yaml",
+                "ldvh-base/sparks/spark-0001.yaml",
                 "yaml",
                 "invalid",
                 None,

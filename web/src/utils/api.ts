@@ -89,6 +89,16 @@ export interface ObjectItem {
   resolved_to?: string | { type?: string; ref?: string };
   resolved_at?: string;
   related_studies?: string[];
+  /** V4-native Spark fields. */
+  object_id?: string;
+  fact_type_key?: string;
+  canonical_path?: string;
+  absolute_path?: string;
+  created_at?: string;
+  updated_at?: string;
+  disposition_summary?: string;
+  closed_at?: string;
+  relations?: Array<Record<string, unknown>>;
   /** Study-specific */
   summary?: string;
   conclusion?: string;

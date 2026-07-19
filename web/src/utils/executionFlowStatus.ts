@@ -145,7 +145,7 @@ export function getExecutionFlowLabel(item: RelatedObjectSummary, t: ExecutionFl
   return getStatus(item.status);
 }
 
-export function getExecutionFlowToneLabel(tone: ExecutionFlowTone, t: ExecutionFlowTranslate, getStatus: (status: string) => string): string {
+export function getExecutionFlowToneLabel(tone: ExecutionFlowTone, t: ExecutionFlowTranslate, _getStatus: (status: string) => string): string {
   if (tone === 'blocked') return t('objectList.executionFlowBlocked');
   if (tone === 'pending') return t('objectList.executionFlowPending');
   if (tone === 'inProgress') return t('objectList.executionFlowInProgress');

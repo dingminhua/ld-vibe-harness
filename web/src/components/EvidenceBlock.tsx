@@ -1,4 +1,4 @@
-import Markdown from 'react-markdown';
+import Markdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
 interface EvidenceBlockProps {
@@ -17,8 +17,8 @@ interface EvidenceSection {
   rows: EvidenceRow[];
 }
 
-const markdownComponents = {
-  code: ({ className, children, ...props }: any) => {
+const markdownComponents: Components = {
+  code: ({ className, children, ...props }) => {
     const text = String(children);
     const isCommand = /^(python3?|npx|npm|yarn|pip|cargo|go\s+(?:run|test|build))\s/.test(text);
     const isPath = /^(docs\/|specs\/|src\/|tools\/|web\/|config\/|\.\/|\/)/.test(text);
@@ -48,7 +48,7 @@ const markdownComponents = {
       </code>
     );
   },
-  pre: ({ children, ...props }: any) => (
+  pre: ({ children, ...props }) => (
     <pre
       className="rounded-lg border border-ldvh-accent/20 bg-ldvh-accent/5 p-3 overflow-x-auto"
       {...props}
@@ -56,12 +56,12 @@ const markdownComponents = {
       {children}
     </pre>
   ),
-  h2: ({ children, ...props }: any) => (
+  h2: ({ children, ...props }) => (
     <h2 className="ldvh-section-title mt-3 mb-1 first:mt-0" {...props}>
       {children}
     </h2>
   ),
-  h3: ({ children, ...props }: any) => (
+  h3: ({ children, ...props }) => (
     <h3 className="ldvh-card-title mt-2 mb-1" {...props}>
       {children}
     </h3>

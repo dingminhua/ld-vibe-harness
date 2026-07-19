@@ -200,7 +200,7 @@ Human 已明确决定保留现有 Spark 创建表现且不增加页面字段。�
 
 该来源项只证明本机受信 Web 在 `observed_at` 观察到 Human 提交了规范化后的三个字段。它不证明 Human 的远程身份、内容正确、语义没有重复或事实已经验证；bare `web-capture://sha256/<digest>`、泛化 `web`/`human-input` 字符串以及只能通过搜索当前对象反推 payload 的引用均不是合格 locator。
 
-本能力只允许在 loopback 上运行的本机单用户进程中开放，并且运行时必须精确解析出一个 governed project、该项目的一个实际 Git worktree 和对应 common-dir。零项目、多项目、同项目多 worktree、fallback `workspace`、非 loopback 请求、监听或转发边界无法证明、Vercel/其它远程部署均拒绝且零写入；不得猜测 `LDVH_ROOT` 或回退 V3 writer。Web 不通过 Helper CLI 执行该操作；它只可调用与 Helper wrapper 分离、由正式来源约束的共享 Code application service。
+本能力只允许在 loopback 上运行的本机单用户进程中开放，并且运行时必须精确解析出一个 governed project、该项目的一个实际 Git worktree 和对应 common-dir。零项目、多项目、同项目多 worktree、fallback `workspace`、非 loopback 请求、监听或转发边界无法证明、Vercel/其它远程部署均拒绝且零写入；不得猜测运行根目录或回退任何非受控写入器。Web 不通过 Helper CLI 执行该操作；它只可调用与 Helper wrapper 分离、由正式来源约束的共享 Code application service。
 
 分配事实 ID 或创建 allocator 状态之前，Code 必须证明 canonical payload 与自包含 locator 能在保守 managed-field envelope 下形成不超过当前 4 MiB 事实读取预算的最终 UTF-8 YAML；无法证明或超限时按请求无效拒绝，零写入。只有原子创建、精确回读且首次回读对象与本次 canonical payload 一致时才能返回 2xx。后续重复扫描按 20 的历史来源规则验证该 source ref 自身闭合，不把合法生命周期变化误判为来源损坏。
 
@@ -250,7 +250,7 @@ Web API 或前端不得作为事实类型、字段、ID、初始状态和状态�
 | 派生内容 | 新增缓存、聚合、计数、筛选、排序或关系视图时 | 来源、观察时间、转换、遗漏范围和过期状态可复核，来源变化后刷新或标明过期 | 当前来源、派生输入输出、时间和差异 | API/component tests 与来源变更测试 | 当次派生功能和测试数据 | 不作为当前事实呈现；刷新、标记过期或移除误导结果 |
 | 来源与判断边界呈现 | 新增页面、字段、复制或导航时 | 事实、派生、诊断、Human 输入和未知范围可区分，关键内容能回到来源 | 页面、复制结果、导航目标和来源文件 | 页面、键盘和代表性辅助技术测试 | 当次页面及声明支持方式 | 修正呈现或缩小支持声明 |
 | 受控操作 | 新增或修改可能改变状态的交互时 | Human 当前指令已经授权，且适用于该行动的全部来源规则许可条件已经成立；实际 Code 能力可用；操作前信息完整；操作后回读并呈现失败和未完成范围 | 来源规则、Human 当前指令、Code 调用、目标前后内容和回读 | API/E2E tests 与实际目标回读 | 当次操作、对象和环境 | 维持只读、禁用操作或按实际结果呈现失败 |
-| Spark Web direct capture | 保留冻结表单并开放 V4 Spark 创建时 | 只在 loopback 单用户和唯一项目/worktree/common-dir 中运行；闭集请求、自包含来源、资源预算、全状态精确重复、no-overwrite 创建与回读全部成立；V3 和远程 fallback 不存在 | 08、20、Human 当次提交、运行边界、源引用、对象前后内容与 Code 结果 | canonical 固定向量、API/Code contract tests、隔离项目写入/回读与冻结表现回归 | 本机单用户的一个 `open` Spark direct capture | 非 2xx 且零写入；报告 duplicate、invalid、unavailable、error、readback 或 rollback residue，不回退 V3 |
+| Spark Web direct capture | 保留冻结表单并开放 Spark 创建时 | 只在 loopback 单用户和唯一项目/worktree/common-dir 中运行；闭集请求、自包含来源、资源预算、全状态精确重复、no-overwrite 创建与回读全部成立；不存在非受控或远程 fallback | 08、20、Human 当次提交、运行边界、源引用、对象前后内容与 Code 结果 | canonical 固定向量、API/Code contract tests、隔离项目写入/回读与冻结表现回归 | 本机单用户的一个 `open` Spark direct capture | 非 2xx 且零写入；报告 duplicate、invalid、unavailable、error、readback 或 rollback residue，不回退到其它写入路径 |
 | Human 决定与技术结果 | Web 承载确认、验收或风险接受时 | 决定对象、选项、范围和时间可回指；页面没有扩大为技术通过或完成 | 交互记录、来源规则、技术验证与回读 | E2E 场景与 AI 回读 | 当次 Human 决定及单独验证的技术范围 | 分开呈现决定与技术状态，不声明未证明结果 |
 | Web 行为保持与变更 | 整治既有 Web、准备声明行为保持或有意改变可观察行为时 | 行为保持覆盖受改动影响的既有可观察行为，并有范围匹配证据；未基线化范围未被冒充为已证明不变；有意变更同时有当前来源支持和 Human 对明确范围的决定 | 当前来源、Web 实现规划、变更前后实现、范围匹配的 API、页面、可访问性和响应式测试、Human 决定 | Web tests、实际页面回读与 Human 验收 | 当次已检查的可观察行为和支持范围 | 暂停受影响重构或行为变更；缩小声明，补充来源、Human 决定或范围匹配证据 |
 
@@ -284,7 +284,7 @@ Human 已明确决定保留现有 Spark 创建表现、改由 V4 承接并且不
 6. 页面点击、成功提示或 Human 输入正在被扩大为 Human Gate、技术验证、环境接入或完成证明；
 7. 实际写入失败、部分完成或与回读不一致，却由页面乐观状态掩盖；
 8. 既有 Web 没有行为保持或有意变更所需的范围匹配依据，却被声明为未变、已符合、available、verified 或 completed。
-9. Spark direct capture 运行范围不是 loopback 单用户和唯一 governed project/worktree/common-dir，来源 locator 不能自包含恢复 canonical payload，精确重复/coverage 未完成，或实现准备回退 V3 writer。
+9. Spark direct capture 运行范围不是 loopback 单用户和唯一 governed project/worktree/common-dir，来源 locator 不能自包含恢复 canonical payload，精确重复/coverage 未完成，或实现准备回退到非受控写入路径。
 
 暂停范围及不受影响工作的处理按 00 §10 执行。
 

@@ -37,7 +37,7 @@ def _layout(
 ) -> FactTypeLayout:
     return FactTypeLayout(
         fact_type_key=fact_type_key,
-        directory=f"facts/{plural}",
+        directory=f"ldvh-base/{plural}",
         suffix=suffix,
         carrier="markdown" if suffix == ".md" else "yaml",
         object_id_pattern=re.compile(rf"{re.escape(fact_type_key)}-[0-9]{{4,}}\Z"),

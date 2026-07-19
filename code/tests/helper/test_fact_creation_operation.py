@@ -246,7 +246,7 @@ def test_create_reports_committed_namespace_when_directory_sync_fails(
     workspace, project = _fixture(tmp_path)
     basis = _prepare(workspace, project)
     real_fsync = os.fsync
-    target_directory = project / "facts/sparks"
+    target_directory = project / "ldvh-base/sparks"
 
     def fail_directory_sync(descriptor: int) -> None:
         observation = os.fstat(descriptor)
@@ -270,7 +270,7 @@ def test_create_reports_committed_namespace_when_directory_sync_fails(
     assert response["outcome"] == "ok"
     assert response["changes"][0]["status"] == "created"
     assert "durability=unknown" in response["changes"][0]["summary"]
-    assert (project / "facts/sparks/spark-0001.yaml").is_file()
+    assert (project / "ldvh-base/sparks/spark-0001.yaml").is_file()
 
 
 def test_create_fails_before_allocator_mutation_when_platform_durability_is_not_approved(
@@ -311,7 +311,7 @@ def test_two_ai_drafts_with_same_candidate_receive_distinct_final_ids(tmp_path: 
     assert all(response["outcome"] == "ok" for response in responses)
     actual_ids = {response["result"]["actual_ref"]["object_id"] for response in responses}
     assert actual_ids == {"spark-0001", "spark-0002"}
-    assert sorted(path.name for path in (project / "facts" / "sparks").glob("*.yaml")) == [
+    assert sorted(path.name for path in (project / "ldvh-base" / "sparks").glob("*.yaml")) == [
         "spark-0001.yaml",
         "spark-0002.yaml",
     ]
@@ -337,7 +337,7 @@ def test_create_rejects_ai_managed_fields_without_writing_or_consuming_id(tmp_pa
 
 def test_create_revalidates_cross_type_relation_with_complete_schema_set(tmp_path: Path) -> None:
     workspace, project = _fixture(tmp_path)
-    workcases = project / "facts" / "workcases"
+    workcases = project / "ldvh-base" / "workcases"
     workcases.mkdir(parents=True)
     (workcases / "workcase-0001.yaml").write_text(
         "\n".join(
@@ -423,7 +423,7 @@ def test_stale_schema_or_worktree_basis_requires_prepare_again(tmp_path: Path) -
 def test_existing_candidate_is_never_overwritten_and_allocator_advances(tmp_path: Path) -> None:
     workspace, project = _fixture(tmp_path)
     basis = _prepare(workspace, project)
-    sparks = project / "facts" / "sparks"
+    sparks = project / "ldvh-base" / "sparks"
     sparks.mkdir(parents=True)
     existing = sparks / "spark-0001.yaml"
     existing.write_text("manual collision\n", encoding="utf-8")
@@ -475,9 +475,9 @@ def test_linked_worktrees_share_allocator_but_write_to_the_requested_worktree(tm
     assert main_response["result"]["actual_ref"]["object_id"] == "spark-0001"
     assert linked_basis["candidate_object_id"] == "spark-0002"
     assert linked_response["result"]["actual_ref"]["object_id"] == "spark-0002"
-    assert (project / "facts" / "sparks" / "spark-0001.yaml").is_file()
+    assert (project / "ldvh-base" / "sparks" / "spark-0001.yaml").is_file()
     assert not (project / "facts" / "sparks" / "spark-0002.yaml").exists()
-    assert (linked / "facts" / "sparks" / "spark-0002.yaml").is_file()
+    assert (linked / "ldvh-base" / "sparks" / "spark-0002.yaml").is_file()
 
 
 def test_failed_write_back_read_rolls_back_file_but_never_reuses_id(tmp_path: Path, monkeypatch) -> None:
@@ -486,7 +486,7 @@ def test_failed_write_back_read_rolls_back_file_but_never_reuses_id(tmp_path: Pa
     monkeypatch.setattr(
         "ldvh.facts.creation_application.read_fact_object",
         lambda *args, **kwargs: FactReadResult(
-            "facts/sparks/spark-0001.yaml",
+            "ldvh-base/sparks/spark-0001.yaml",
             "yaml",
             "invalid",
             None,
@@ -513,7 +513,7 @@ def test_failed_write_back_reports_residue_when_exact_rollback_fails(tmp_path: P
     monkeypatch.setattr(
         "ldvh.facts.creation_application.read_fact_object",
         lambda *args, **kwargs: FactReadResult(
-            "facts/sparks/spark-0001.yaml",
+            "ldvh-base/sparks/spark-0001.yaml",
             "yaml",
             "invalid",
             None,
@@ -534,8 +534,8 @@ def test_failed_write_back_reports_residue_when_exact_rollback_fails(tmp_path: P
 
     assert response["outcome"] == "error"
     assert response["changes"][0]["status"] == "rollback-failed"
-    assert response["changes"][0]["target"] == "facts/sparks/spark-0001.yaml"
-    assert (project / "facts/sparks/spark-0001.yaml").is_file()
+    assert response["changes"][0]["target"] == "ldvh-base/sparks/spark-0001.yaml"
+    assert (project / "ldvh-base/sparks/spark-0001.yaml").is_file()
 
 
 def test_create_study_validates_markdown_carrier_and_tracked_sources(tmp_path: Path) -> None:
@@ -594,7 +594,7 @@ def test_create_study_validates_markdown_carrier_and_tracked_sources(tmp_path: P
     assert response["result"]["carrier"] == "markdown"
     assert response["result"]["actual_ref"]["object_id"] == "study-0001"
     assert response["result"]["fact_object"]["body"].lstrip().startswith("## 研究问题")
-    assert (project / "facts" / "studies" / "study-0001.md").is_file()
+    assert (project / "ldvh-base" / "studies" / "study-0001.md").is_file()
 
 
 def test_real_cli_prepares_and_creates_fact_object(tmp_path: Path) -> None:

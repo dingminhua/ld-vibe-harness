@@ -9,8 +9,7 @@ from pathlib import Path
 from ruamel.yaml import YAML
 
 from ldvh.diagnostics import Issue, SourceLocation
-from ldvh.specs.audit_evidence import inspect_audit_evidence_locators
-from ldvh.specs.discovery import Candidate, DiscoveryResult, discover_candidates, validate_non_ignored_git_path
+from ldvh.specs.discovery import Candidate, DiscoveryResult, discover_candidates
 from ldvh.specs.field_registry import REGISTRY_KEY, FieldRegistryInspection, inspect_field_registry
 from ldvh.specs.graph import BasisReachabilityOverlap, GraphResult, validate_graph
 from ldvh.specs.identity import FormalDocument, parse_identity
@@ -150,7 +149,6 @@ def inspect_repository_source(
     source_identity: RuleSourceIdentity,
     *,
     markdown_results: dict[str, MarkdownResult] | None = None,
-    admission_audits: dict[str, MarkdownResult] | None = None,
 ) -> RepositoryInspection:
     """Run the common repository checks over one already-selected source view."""
 
@@ -333,37 +331,7 @@ def inspect_repository_source(
     initial_graph: GraphResult = validate_graph(parsed_documents)
     field_registry = None
     if any(document.key == REGISTRY_KEY for document in initial_graph.active_documents_passing_implemented_checks):
-        locator_inspection = inspect_audit_evidence_locators(initial_graph.active_documents_passing_implemented_checks)
-        issues.extend(locator_inspection.issues)
-        audit_documents = {path: result.document for path, result in (admission_audits or {}).items()}
-        if source_identity.view == "working_tree":
-            for locator in locator_inspection.locators:
-                audit_eligibility_issue = validate_non_ignored_git_path(
-                    discovery.repository_root,
-                    locator.canonical_path,
-                )
-                if audit_eligibility_issue is not None:
-                    issues.append(audit_eligibility_issue)
-                    incomplete.add(locator.canonical_path)
-                    continue
-                result = (admission_audits or {}).get(locator.canonical_path)
-                if result is None:
-                    result = parse_markdown(
-                        discovery.repository_root / locator.canonical_path,
-                        locator.canonical_path,
-                    )
-                audit_documents[locator.canonical_path] = result.document
-        else:
-            missing_evidence = {
-                locator.canonical_path
-                for locator in locator_inspection.locators
-                if locator.canonical_path not in audit_documents
-            }
-            incomplete.update(missing_evidence)
-        field_registry = inspect_field_registry(
-            initial_graph.active_documents_passing_implemented_checks,
-            admission_audits=audit_documents,
-        )
+        field_registry = inspect_field_registry(initial_graph.active_documents_passing_implemented_checks)
 
     if field_registry is not None and field_registry.issues:
         central_failure = any(REGISTRY_KEY in issue.affected for issue in field_registry.issues)

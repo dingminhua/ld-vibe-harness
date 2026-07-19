@@ -561,7 +561,7 @@ def _validate_references(fact_type_key: str, fields: dict[str, Any], issues: lis
 
 
 _FACT_OBJECT_LOCATOR = re.compile(
-    r"facts/(?P<directory>sparks|workcases|adrs|pitfalls|studies)/"
+    r"ldvh-base/(?P<directory>sparks|workcases|adrs|pitfalls|studies)/"
     r"(?P<object_id>spark|workcase|adr|pitfall|study)-[0-9]{4,}(?P<suffix>\.yaml|\.md)\Z"
 )
 

@@ -5,7 +5,7 @@ const DEFAULT_ACTIVE_TYPES = new Set(['adr', 'pitfall', 'study']);
 export const ALL_STATUS_PARAM = 'all';
 
 export function getDefaultListStatus(type: string): string | null {
-  if (type === 'spark') return 'pending';
+  if (type === 'spark') return 'open';
   if (type === 'workcase') return WORKCASE_DEFAULT_LIST_STATUS;
   return DEFAULT_ACTIVE_TYPES.has(type) ? 'active' : null;
 }

@@ -12,10 +12,8 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Any, Literal
 
-from ldvh.diagnostics import Issue, SourceLocation
 from ldvh.filesystem import walk_regular_files
-from ldvh.specs.audit_evidence import inspect_audit_evidence_locators
-from ldvh.specs.discovery import Candidate, DiscoveryResult, discover_candidates, validate_non_ignored_git_path
+from ldvh.specs.discovery import Candidate, DiscoveryResult, discover_candidates
 from ldvh.specs.markdown import MarkdownResult, parse_markdown_bytes, read_observed_resource
 from ldvh.specs.repository import RepositoryInspection, inspect_repository_source
 from ldvh.specs.source import ObservedResource, RuleSourceIdentity
@@ -145,31 +143,7 @@ def _observe_worktree_plan(repository_root: Path, version: str) -> SnapshotPlan:
     }
     identity = RuleSourceIdentity("working_tree", git_worktree_root=discovery.repository_root)
     first = inspect_repository_source(discovery, identity, markdown_results=markdown_results)
-    locators = inspect_audit_evidence_locators(first.parsed_documents)
-    if locators.issues:
-        raise SnapshotError("cannot resolve mechanical evidence from the current rule source")
-    observed_evidence: dict[str, ObservedResource] = {}
-    evidence_results: dict[str, MarkdownResult] = {}
-    for locator in locators.locators:
-        issue = validate_non_ignored_git_path(discovery.repository_root, locator.canonical_path)
-        if issue is not None:
-            raise SnapshotError(issue.summary)
-        observed = read_observed_resource(
-            discovery.repository_root / locator.canonical_path,
-            locator.canonical_path,
-        )
-        observed_evidence[locator.canonical_path] = observed
-        evidence_results[locator.canonical_path] = parse_markdown_bytes(
-            observed.raw_bytes,
-            locator.canonical_path,
-            observed_at=observed.observed_at,
-        )
-    final = inspect_repository_source(
-        discovery,
-        identity,
-        markdown_results=markdown_results,
-        admission_audits=evidence_results,
-    )
+    final = first
     if not final.implemented_checks_complete:
         summaries = "; ".join(issue.summary for issue in final.issues[:3])
         raise SnapshotError(f"current rule source did not pass implemented checks: {summaries}")
@@ -179,10 +153,6 @@ def _observe_worktree_plan(repository_root: Path, version: str) -> SnapshotPlan:
                 *(
                     SnapshotFile(path, "rule_candidate", item.raw_bytes, item.observed_at)
                     for path, item in observed_candidates.items()
-                ),
-                *(
-                    SnapshotFile(path, "mechanical_evidence", item.raw_bytes, item.observed_at)
-                    for path, item in observed_evidence.items()
                 ),
             ),
             key=lambda item: (item.role, item.path),
@@ -364,7 +334,6 @@ def inspect_verified_snapshot(snapshot: VerifiedSnapshot) -> RepositoryInspectio
     )
     candidates: list[Candidate] = []
     markdown_results: dict[str, MarkdownResult] = {}
-    evidence_results: dict[str, MarkdownResult] = {}
     for item in snapshot.files:
         parsed = parse_markdown_bytes(item.raw_bytes, item.path, observed_at=item.observed_at)
         if item.role == "rule_candidate":
@@ -373,30 +342,12 @@ def inspect_verified_snapshot(snapshot: VerifiedSnapshot) -> RepositoryInspectio
                 raise SnapshotError("verified rule candidate has an invalid path")
             candidates.append(Candidate(item.path, snapshot.root / item.path, kind))
             markdown_results[item.path] = parsed
-        else:
-            evidence_results[item.path] = parsed
     discovery = DiscoveryResult(snapshot.root, tuple(candidates), (), complete=True)
     inspection = inspect_repository_source(
         discovery,
         identity,
         markdown_results=markdown_results,
-        admission_audits=evidence_results,
     )
-    locators = inspect_audit_evidence_locators(inspection.parsed_documents)
-    expected_evidence = {locator.canonical_path for locator in locators.locators}
-    if locators.issues or expected_evidence != set(evidence_results):
-        issue = Issue(
-            summary="安装快照机械证据集合与当前规则声明不一致",
-            location=SourceLocation(MANIFEST_NAME),
-            affected=tuple(sorted(expected_evidence | set(evidence_results))),
-        )
-        failed = DiscoveryResult(snapshot.root, tuple(candidates), (issue,), complete=False)
-        inspection = inspect_repository_source(
-            failed,
-            identity,
-            markdown_results=markdown_results,
-            admission_audits=evidence_results,
-        )
     return inspection
 
 

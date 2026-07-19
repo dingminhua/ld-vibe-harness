@@ -11,23 +11,14 @@ from ldvh.specs import repository as repository_module
 from ldvh.specs.action_templates import inspect_action_template_sources
 from ldvh.specs.discovery import DiscoveryResult
 from ldvh.specs.field_registry import inspect_field_registry
-from ldvh.specs.markdown import parse_markdown
 from ldvh.specs.repository import UNCHECKED_CONDITIONS, inspect_repository
-
-ADMISSION_AUDIT_PATH = "docs/v4-architecture/active/V4-五类型全局归并封闭记录.md"
 
 
 def test_current_v4_sources_form_the_expected_real_combination(current_specs_repository: Path) -> None:
     inspection = inspect_repository(current_specs_repository)
     operations = inspect_operation_sources(inspection)
     action_templates = inspect_action_template_sources(inspection)
-    fields = inspect_field_registry(
-        inspection.active_documents_passing_implemented_checks,
-        admission_audit=parse_markdown(
-            current_specs_repository / ADMISSION_AUDIT_PATH,
-            ADMISSION_AUDIT_PATH,
-        ).document,
-    )
+    fields = inspect_field_registry(inspection.active_documents_passing_implemented_checks)
 
     assert inspection.issues == ()
     assert inspection.implemented_checks_complete is True
@@ -142,20 +133,6 @@ def test_mechanically_distinct_spec_does_not_create_a_semantic_duplicate_diagnos
 
     assert inspection.document_passing_implemented_checks_by_key("code-engineering-practices-copy") is not None
     assert inspection.issues == ()
-
-
-def test_ignored_admission_audit_evidence_blocks_fact_type_validation(
-    current_specs_repository: Path,
-) -> None:
-    gitignore = current_specs_repository / ".gitignore"
-    existing = gitignore.read_text(encoding="utf-8") if gitignore.exists() else ""
-    gitignore.write_text(f"{existing}\n/{ADMISSION_AUDIT_PATH}\n", encoding="utf-8")
-
-    inspection = inspect_repository(current_specs_repository)
-
-    assert inspection.implemented_checks_complete is False
-    assert ADMISSION_AUDIT_PATH in inspection.incomplete_scope
-    assert any(issue.summary == "Required Git evidence path is ignored by Git" for issue in inspection.issues)
 
 
 def test_invalid_working_tree_source_is_not_replaced_with_committed_content(

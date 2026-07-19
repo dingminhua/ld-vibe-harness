@@ -1,0 +1,11 @@
+title: 目标环境生命周期与工作对象范围
+status: open
+priority: P2
+source_refs:
+- kind: repository-path
+  locator: specs/09-环境接入规范.md
+summary: 为选定的目标环境判断哪些原生 lifecycle 事件值得接入、各事件应以何种真实工作对象范围恢复上下文，以及需要哪些范围匹配证据。本 Spark 不预设固定事件闭集、read-plan 或 receipt。
+object_id: spark-0001
+fact_type_key: spark
+created_at: '2026-07-19T08:33:47.543976+08:00'
+updated_at: '2026-07-19T08:52:47.098923+08:00'

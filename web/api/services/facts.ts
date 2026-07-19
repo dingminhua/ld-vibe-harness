@@ -1,49 +1,20 @@
-/**
- * Web-native fact source reader.
- *
- * This service reads Git-backed fact objects directly for Human-facing
- * Web views. It supports YAML objects and Study Markdown frontmatter, and
- * it is read-only and does not replace specs or Code validation.
- */
+/** V4-only fact reader for Human-facing Web views. */
 
-import fs from 'fs'
-import path from 'path'
-import yaml from 'js-yaml'
-import { fileURLToPath } from 'url'
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
-
-export const LDVH_ROOT = path.resolve(process.env.LDVH_ROOT || path.resolve(__dirname, '../../..'))
-export const LDVH_BASE_DIR = path.join(LDVH_ROOT, 'ldvh-base')
+import {
+  V4FactsTransportError,
+} from '../internal/v4FactsTransport.js'
+import { v4SparkReaderConfig, V4FactsConfigurationError } from './v4FactsConfig.js'
+import { listV4Sparks, readV4Spark } from './v4SparkReader.js'
+import { projectV4Spark, projectV4SparkList } from './v4SparkProjector.js'
 
 export const ACTIVE_OBJECT_TYPES = ['workcase', 'adr', 'pitfall', 'spark', 'study'] as const
 export const OBJECT_TYPES = ACTIVE_OBJECT_TYPES
 export type ObjectType = (typeof OBJECT_TYPES)[number]
 
-const DIRECTORY_MAP: Record<ObjectType, string> = {
-  workcase: 'workcases',
-  adr: 'adrs',
-  pitfall: 'pitfalls',
-  spark: 'sparks',
-  study: 'studies',
-}
-
-const LIST_SUMMARY_FIELDS = [
-  'priority',
-  'archive_reason',
-  'deprecated_reason',
-  'discard_reason',
-  'closure_evidence',
-] as const
-
-type SourceRef = {
-  path: string
-  role: string
-}
+type SourceRef = { path: string; role: string }
 
 export interface WebFactResult {
-  ok: boolean
+  ok: true
   command: string
   action: string
   target: string
@@ -59,142 +30,87 @@ export interface WebFactError {
   exitCode: number | string | null
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value && typeof value === 'object' && !Array.isArray(value))
-}
-
-function toStringValue(value: unknown, fallback = ''): string {
-  if (value instanceof Date) return value.toISOString().slice(0, 10)
-  if (typeof value === 'string') return value
-  if (typeof value === 'number' || typeof value === 'boolean') return String(value)
-  return fallback
-}
-
-function objectDir(type: ObjectType, baseDir = LDVH_ROOT): string {
-  return path.join(baseDir, 'ldvh-base', DIRECTORY_MAP[type])
-}
-
-function toSourceRef(filePath: string, baseDir = LDVH_ROOT, role = 'fact_instance'): SourceRef {
-  const relativePath = path.relative(baseDir, filePath).split(path.sep).join('/')
-  return {
-    path: relativePath.startsWith('..') ? filePath : relativePath,
-    role,
-  }
-}
-
-function readYamlFile(filePath: string): Record<string, unknown> | null {
-  try {
-    const content = fs.readFileSync(filePath, 'utf-8')
-    if (filePath.endsWith('.md')) {
-      if (!content.startsWith('---\n')) return null
-      const end = content.indexOf('\n---', 4)
-      if (end === -1) return null
-      const frontmatter = content.slice(4, end)
-      const body = content.slice(end + 4).replace(/^\n/, '')
-      const data = yaml.load(frontmatter, { schema: yaml.JSON_SCHEMA })
-      return isRecord(data) ? { ...data, report_body: body } : null
-    }
-    const data = yaml.load(content, { schema: yaml.JSON_SCHEMA })
-    return isRecord(data) ? data : null
-  } catch {
-    return null
-  }
-}
-
-function listYamlFiles(type: ObjectType, baseDir = LDVH_ROOT): string[] {
-  const dir = objectDir(type, baseDir)
-  if (!fs.existsSync(dir)) return []
-
-  return fs
-    .readdirSync(dir)
-    .filter((filename) => filename.endsWith('.yaml') || filename.endsWith('.yml') || (type === 'study' && filename.endsWith('.md')))
-    .sort()
-    .map((filename) => path.join(dir, filename))
-}
-
-function normalizeListItem(data: Record<string, unknown>, filePath: string, type: ObjectType, baseDir = LDVH_ROOT): Record<string, unknown> | null {
-  const id = toStringValue(data.id)
-  if (!id) return null
-
-  const item: Record<string, unknown> = {
-    id,
-    type: toStringValue(data.type, type),
-    status: toStringValue(data.status, 'unknown'),
-    title: toStringValue(data.title, id),
-    path: filePath,
-    source_refs: [toSourceRef(filePath, baseDir)],
-    created: toStringValue(data.created),
-    updated: toStringValue(data.updated),
-  }
-
-  const titleEn = toStringValue(data.title_en)
-  const titleZh = toStringValue(data.title_zh)
-  if (titleEn) item.title_en = titleEn
-  if (titleZh) item.title_zh = titleZh
-
-  for (const field of LIST_SUMMARY_FIELDS) {
-    const value = toStringValue(data[field])
-    if (value) item[field] = value
-  }
-
-  return item
-}
-
-function makeResult(action: string, target: string, summary: Record<string, unknown>, data: Record<string, unknown>): WebFactResult {
+function result(action: string, target: string, data: Record<string, unknown>): WebFactResult {
   return {
     ok: true,
-    command: 'web-facts',
+    command: 'v4-web-facts',
     action,
     target,
-    summary,
+    summary: { count: Array.isArray(data.items) ? data.items.length : undefined, source_refs: data.source_refs ?? [] },
     issues: [],
     data,
   }
 }
 
-export async function listObjects(type: ObjectType, baseDir: string = LDVH_ROOT, status?: string): Promise<WebFactResult | WebFactError> {
-  const files = listYamlFiles(type, baseDir)
-  const sourceRefs = [toSourceRef(objectDir(type, baseDir), baseDir, 'fact_instance_directory')]
-  const items = files
-    .map((filePath) => {
-      const data = readYamlFile(filePath)
-      return data ? normalizeListItem(data, filePath, type, baseDir) : null
-    })
-    .filter((item): item is Record<string, unknown> => Boolean(item))
-    .filter((item) => !status || item.status === status)
-    .sort((a, b) => {
-      const updatedDelta = toStringValue(b.updated).localeCompare(toStringValue(a.updated))
-      if (updatedDelta !== 0) return updatedDelta
-      return toStringValue(a.id).localeCompare(toStringValue(b.id))
-    })
-
-  return makeResult('list', type, { count: items.length, source_refs: sourceRefs }, { items, source_refs: sourceRefs })
+function error(value: unknown): WebFactError {
+  if (value instanceof V4FactsTransportError) {
+    return { ok: false, error: value.message, stderr: value.diagnostic, exitCode: value.code }
+  }
+  return { ok: false, error: value instanceof Error ? value.message : 'V4 facts unavailable', stderr: '', exitCode: 1 }
 }
 
-export async function showObject(id: string, baseDir: string = LDVH_ROOT): Promise<WebFactResult | WebFactError> {
-  for (const type of OBJECT_TYPES) {
-    for (const filePath of listYamlFiles(type, baseDir)) {
-      const data = readYamlFile(filePath)
-      if (!data || data.id !== id) continue
-      const sourceRefs = [toSourceRef(filePath, baseDir)]
-      return makeResult(
-        'show',
-        id,
-        { id, type: toStringValue(data.type, type), status: toStringValue(data.status, 'unknown'), source_refs: sourceRefs },
-        { ...data, path: filePath, source_refs: sourceRefs },
-      )
+function empty(type: ObjectType): WebFactResult {
+  return result('list', type, { items: [], source_refs: [] })
+}
+
+export async function listObjects(type: ObjectType, _baseDir?: string, status?: string): Promise<WebFactResult | WebFactError> {
+  if (type !== 'spark') return empty(type)
+  try {
+    const response = await listV4Sparks(v4SparkReaderConfig())
+    if (!response.result || typeof response.result !== 'object' || Array.isArray(response.result)) {
+      return error(new Error('V4 Spark list result is unavailable'))
     }
-  }
-
-  return {
-    ok: false,
-    error: `Object not found: ${id}`,
-    stderr: '',
-    exitCode: 1,
+    const raw = response.result as Record<string, unknown>
+    const projection = projectV4SparkList(raw.items)
+    const items = projection.items.filter((item) => !status || item.status === status)
+    const sourceRefs = items.flatMap((item) => Array.isArray(item.source_refs) ? item.source_refs : []) as SourceRef[]
+    return result('list', type, {
+      items,
+      source_refs: sourceRefs,
+      coverage_status: raw.status,
+      projection_problems: projection.projection_problems,
+      governance_resolution: raw.governance_resolution,
+    })
+  } catch (caught) {
+    return error(caught)
   }
 }
 
-export function readFactData(filePath: string): Record<string, unknown> {
-  const resolvedPath = path.isAbsolute(filePath) ? filePath : path.join(LDVH_ROOT, filePath)
-  return readYamlFile(resolvedPath) ?? {}
+export async function showObject(id: string): Promise<WebFactResult | WebFactError> {
+  if (!/^spark-\d+$/.test(id)) {
+    return { ok: false, error: `Object not found: ${id}`, stderr: '', exitCode: 1 }
+  }
+  try {
+    const response = await readV4Spark(v4SparkReaderConfig(), id)
+    if (!response.result || typeof response.result !== 'object' || Array.isArray(response.result)) {
+      return error(new Error('V4 Spark detail result is unavailable'))
+    }
+    const raw = response.result as Record<string, unknown>
+    if (raw.status === 'not_found') return { ok: false, error: `Object not found: ${id}`, stderr: '', exitCode: 1 }
+    const projection = projectV4Spark(raw.item)
+    if (projection.ok === false) return { ok: false, error: projection.error, stderr: projection.code, exitCode: 1 }
+    const data: Record<string, unknown> = {
+      ...projection.data,
+      source_refs: projection.data.source_refs ?? [],
+      coverage_status: raw.coverage_status,
+      governance_resolution: raw.governance_resolution,
+    }
+    return {
+      ...result('show', id, data),
+      summary: {
+        id: typeof data.object_id === 'string' ? data.object_id : id,
+        type: typeof data.fact_type_key === 'string' ? data.fact_type_key : 'spark',
+        status: typeof data.status === 'string' ? data.status : 'unknown',
+      },
+    }
+  } catch (caught) {
+    return error(caught)
+  }
 }
+
+/** Non-Spark V4 readers are not implemented in this Web increment. */
+export function readFactData(_filePath: string): Record<string, unknown> {
+  return {}
+}
+
+export { V4FactsConfigurationError }

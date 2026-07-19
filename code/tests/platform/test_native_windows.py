@@ -165,7 +165,7 @@ def test_native_msvcrt_lock_serializes_and_recovers_after_kill(tmp_path: Path) -
 def test_native_file_only_create_and_replace_report_exact_boundaries(tmp_path: Path) -> None:
     root = tmp_path / "原子 root with spaces"
     root.mkdir()
-    relative = Path("facts/sparks/spark-0001.yaml")
+    relative = Path("ldvh-base/sparks/spark-0001.yaml")
 
     created = atomic_create_relative(root, relative, b"first\n", allow_file_only=True)
     conflict = atomic_create_relative(root, relative, b"second\n", allow_file_only=True)

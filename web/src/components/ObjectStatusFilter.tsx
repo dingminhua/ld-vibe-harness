@@ -15,7 +15,7 @@ const STATUS_FILTER_ORDER = [
   'accepted',
   'done',
   'skipped',
-  'resolved',
+  'routed',
   'discarded',
   'archived',
   'superseded',
@@ -30,7 +30,7 @@ const FALLBACK_STATUSES_BY_TYPE: Record<string, string[]> = {
   workcase: [...WORKCASE_STATUS_ORDER],
   adr: ['active', 'archived', 'deprecated'],
   pitfall: ['active', 'archived'],
-  spark: ['pending', 'resolved', 'discarded'],
+  spark: ['open', 'routed', 'discarded'],
   study: ['active', 'archived'],
 };
 

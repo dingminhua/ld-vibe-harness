@@ -17,7 +17,6 @@ from typing import Any
 import pytest
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
-EVIDENCE_PATH = Path("docs/v4-architecture/active/V4-五类型全局归并封闭记录.md")
 OPERATIONS = (
     "read-specification-candidates",
     "read-specification-content",
@@ -74,9 +73,6 @@ def _copy_release_source(destination: Path) -> None:
         shutil.copy2(PROJECT_ROOT / name, destination / name)
     shutil.copytree(PROJECT_ROOT / "code" / "ldvh", destination / "code" / "ldvh")
     shutil.copytree(PROJECT_ROOT / "specs", destination / "specs")
-    evidence = destination / EVIDENCE_PATH
-    evidence.parent.mkdir(parents=True)
-    shutil.copy2(PROJECT_ROOT / EVIDENCE_PATH, evidence)
     _run_checked(["git", "init", "-q", str(destination)], cwd=destination.parent)
 
 
@@ -582,7 +578,7 @@ def _exercise_operation_matrix(
             },
         },
     )
-    fact_path = project / "facts" / "sparks" / "spark-0001.yaml"
+    fact_path = project / "ldvh-base" / "sparks" / "spark-0001.yaml"
     before_create = _project_state(project)
     checked_create = _cli(environment, project, "capabilities", "create-fact-object", create_payload)
     assert checked_create["outcome"] == "ok"
@@ -592,7 +588,7 @@ def _exercise_operation_matrix(
     assert created["outcome"] == "ok"
     _assert_installed_identity(created, version, snapshot_sha256)
     assert fact_path.is_file()
-    _assert_only_file_changed(before_create[0], _project_files(project), "facts/sparks/spark-0001.yaml")
+    _assert_only_file_changed(before_create[0], _project_files(project), "ldvh-base/sparks/spark-0001.yaml")
     assert _git_observation(project, "ls-files", "--stage", "-z") == before_create[2]
     created_bytes = fact_path.read_bytes()
     _invalid_pair(
@@ -602,7 +598,7 @@ def _exercise_operation_matrix(
         _payload(workspace, project, {"fact_object": {}}),
     )
     assert fact_path.read_bytes() == created_bytes
-    assert tuple((project / "facts" / "sparks").glob("*.yaml")) == (fact_path,)
+    assert tuple((project / "ldvh-base" / "sparks").glob("*.yaml")) == (fact_path,)
 
     fact_ref = {"governed_project_id": "sample", "fact_type_key": "spark", "object_id": "spark-0001"}
     read_payload = _payload(workspace, project, {"fact_refs": [fact_ref]})
@@ -644,7 +640,7 @@ def _exercise_operation_matrix(
     assert updated["outcome"] == "ok"
     _assert_installed_identity(updated, version, snapshot_sha256)
     assert fact_path.read_bytes() != before_update
-    _assert_only_file_changed(before_update_state[0], _project_files(project), "facts/sparks/spark-0001.yaml")
+    _assert_only_file_changed(before_update_state[0], _project_files(project), "ldvh-base/sparks/spark-0001.yaml")
     assert _git_observation(project, "ls-files", "--stage", "-z") == before_update_state[2]
     updated_bytes = fact_path.read_bytes()
     _invalid_pair(

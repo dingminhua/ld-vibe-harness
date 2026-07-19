@@ -363,7 +363,7 @@ def test_cursor_is_rejected_after_any_canonical_fact_object_changes(tmp_path: Pa
 def test_exact_ref_can_recall_terminal_object_without_bypassing_explicit_status_filter(tmp_path: Path) -> None:
     workspace, project = _fixture(tmp_path)
     object_id = _create(workspace, project, "pitfall", _pitfall())
-    path = project / "facts" / "pitfalls" / f"{object_id}.yaml"
+    path = project / "ldvh-base" / "pitfalls" / f"{object_id}.yaml"
     text = path.read_text(encoding="utf-8")
     updated_line = next(line for line in text.splitlines() if line.startswith("updated_at:"))
     closed_at = updated_line.split(": ", 1)[1]
@@ -405,7 +405,7 @@ def test_exact_ref_can_recall_terminal_object_without_bypassing_explicit_status_
 def test_invalid_object_makes_coverage_partial_and_remains_observable(tmp_path: Path) -> None:
     workspace, project = _fixture(tmp_path)
     _create(workspace, project, "workcase", _workcase())
-    sparks = project / "facts" / "sparks"
+    sparks = project / "ldvh-base" / "sparks"
     sparks.mkdir(parents=True)
     (sparks / "spark-9999.yaml").write_text("not: [valid", encoding="utf-8")
 

@@ -32,9 +32,7 @@ def test_worktree_snapshot_separates_rules_and_mechanical_evidence(
     tmp_path: Path,
 ) -> None:
     plan = snapshot_plan_for_source(current_specs_repository, "0.1.0")
-    assert {item.role for item in plan.files} == {"rule_candidate", "mechanical_evidence"}
-    evidence = [item.path for item in plan.files if item.role == "mechanical_evidence"]
-    assert evidence == ["docs/v4-architecture/active/V4-五类型全局归并封闭记录.md"]
+    assert {item.role for item in plan.files} == {"rule_candidate"}
 
     root = tmp_path / "snapshot"
     write_snapshot(plan, root)

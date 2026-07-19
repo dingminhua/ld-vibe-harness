@@ -429,8 +429,8 @@ export default function ObjectDetail() {
                 statusLabel={getObjectStatusLocale(objType, objStatus, locale)}
                 source={obj}
                 locale={locale}
-                created={formatDateTime(obj.created as string | undefined)}
-                updated={formatDateTime(obj.updated as string | undefined)}
+                created={formatDateTime((obj.created_at ?? obj.created) as string | undefined)}
+                updated={formatDateTime((obj.updated_at ?? obj.updated) as string | undefined)}
                 closedAt={obj.closed_at ? formatDateTime(obj.closed_at as string) : undefined}
                 auxiliaryMetaEntries={auxiliaryMetaEntries}
                 copyLabel={t('common.copyObjectPath')}
@@ -1964,8 +1964,7 @@ function PitfallTextNodeContent({ value }: { value: unknown }) {
 }
 
 const SPARK_READING_NODES: Array<{ field: string; zh: string; en: string; kind: 'summary' | 'intent' | 'evolution' | 'routing' }> = [
-  { field: 'source_detail', zh: '意图', en: 'Intent', kind: 'intent' },
-  { field: 'description', zh: '摘要', en: 'Current Summary', kind: 'summary' },
+  { field: 'summary', zh: '摘要', en: 'Current Summary', kind: 'summary' },
   { field: 'evolution', zh: '演变', en: 'Evolution', kind: 'evolution' },
   { field: 'routing', zh: '分流', en: 'Routing', kind: 'routing' },
 ];
@@ -2009,7 +2008,7 @@ function SparkReadingNode({
 }) {
   const [state, setState] = useState<ReadingNodeState>('expanded');
   const hasContent = kind === 'summary'
-    ? hasDetailContent(obj.description)
+    ? hasDetailContent(obj.summary)
     : kind === 'intent'
       ? hasDetailContent(obj.source_detail)
     : kind === 'evolution'
@@ -2025,7 +2024,7 @@ function SparkReadingNode({
       locale={locale}
       onToggle={() => setState((current) => getReadingNodeNextState(current))}
     >
-      {kind === 'summary' && <SparkSummaryNode value={obj.description} />}
+      {kind === 'summary' && <SparkSummaryNode value={obj.summary} />}
       {kind === 'intent' && <SparkSummaryNode value={obj.source_detail} />}
       {kind === 'evolution' && <SparkEvolutionNode value={obj.evolution} locale={locale} />}
       {kind === 'routing' && <SparkRoutingNode obj={obj} locale={locale} />}
@@ -2094,11 +2093,13 @@ function SparkEvolutionTime({ value, locale }: { value?: string; locale: string 
 }
 
 function SparkRoutingNode({ obj, locale }: { obj: Record<string, unknown>; locale: string }) {
-  const status = String(obj.status ?? 'pending');
+  const status = String(obj.status ?? 'open');
   const statusLabel = getObjectStatusLocale('spark', status, locale);
-  const resolvedRef = getSparkResolvedReference(obj.resolved_to);
-  const resolvedAt = typeof obj.resolved_at === 'string' && obj.resolved_at.trim().length > 0 ? obj.resolved_at : null;
-  const discardReason = typeof obj.discard_reason === 'string' && obj.discard_reason.trim().length > 0 ? obj.discard_reason : null;
+  const routedTargets = getSparkRoutedReferences(obj.relations);
+  const closedAt = typeof obj.closed_at === 'string' && obj.closed_at.trim().length > 0 ? obj.closed_at : null;
+  const disposition = typeof obj.disposition_summary === 'string' && obj.disposition_summary.trim().length > 0
+    ? obj.disposition_summary
+    : null;
 
   return (
     <div className="flex flex-col divide-y divide-ldvh-border/60">
@@ -2106,25 +2107,26 @@ function SparkRoutingNode({ obj, locale }: { obj: Record<string, unknown>; local
         label={locale === 'en' ? 'Status' : '状态'}
         value={<StatusBadge status={status} statusLabel={statusLabel} objectType="spark" size="sm" />}
       />
-      {resolvedRef && (
+      {routedTargets.map((target) => (
         <DetailObjectRow
-          label={locale === 'en' ? 'Target' : '目标'}
-          fallbackId={resolvedRef.ref}
-          objectType={resolvedRef.objectType}
+          key={`${target.objectType}:${target.ref}`}
+          label={locale === 'en' ? 'Routed to' : '分流至'}
+          fallbackId={target.ref}
+          objectType={target.objectType}
           locale={locale}
           variant="property"
         />
-      )}
-      {resolvedAt && (
+      ))}
+      {closedAt && (
         <DetailInlineField
-          label={locale === 'en' ? 'Routed At' : '分流时间'}
-          value={<span className="ldvh-definition-text">{formatDateTime(resolvedAt)}</span>}
+          label={locale === 'en' ? 'Closed at' : '处置时间'}
+          value={<span className="ldvh-definition-text">{formatDateTime(closedAt)}</span>}
         />
       )}
-      {discardReason && (
+      {disposition && (
         <DetailInlineField
-          label={locale === 'en' ? 'Discard Reason' : '废弃原因'}
-          value={<StudyTextNodeContent value={discardReason} />}
+          label={locale === 'en' ? 'Disposition' : '处置说明'}
+          value={<StudyTextNodeContent value={disposition} />}
         />
       )}
     </div>
@@ -2132,28 +2134,24 @@ function SparkRoutingNode({ obj, locale }: { obj: Record<string, unknown>; local
 }
 
 function hasSparkRoutingContent(obj: Record<string, unknown>) {
-  const status = String(obj.status ?? 'pending');
-  return status === 'resolved'
+  const status = String(obj.status ?? 'open');
+  return status === 'routed'
     || status === 'discarded'
-    || hasDetailContent(obj.resolved_to)
-    || hasDetailContent(obj.resolved_at)
-    || hasDetailContent(obj.discard_reason);
+    || getSparkRoutedReferences(obj.relations).length > 0
+    || hasDetailContent(obj.closed_at)
+    || hasDetailContent(obj.disposition_summary);
 }
 
-function getSparkResolvedReference(value: unknown): { ref: string; objectType: string } | null {
-  if (typeof value === 'string') {
-    const ref = value.trim();
-    if (!ref) return null;
-    const objectType = getObjectRefType(ref);
-    return objectType ? { ref, objectType } : null;
-  }
-  if (!value || typeof value !== 'object') return null;
-  const record = value as Record<string, unknown>;
-  const ref = typeof record.ref === 'string' ? record.ref.trim() : '';
-  if (!ref) return null;
-  const type = typeof record.type === 'string' ? record.type.trim() : '';
-  const objectType = type || getObjectRefType(ref);
-  return objectType ? { ref, objectType } : null;
+function getSparkRoutedReferences(value: unknown): Array<{ ref: string; objectType: string }> {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((relation) => {
+    if (!relation || typeof relation !== 'object') return [];
+    const record = relation as Record<string, unknown>;
+    if (record.relation_key !== 'routed-to' || !record.target || typeof record.target !== 'object') return [];
+    const target = record.target as Record<string, unknown>;
+    if (typeof target.object_id !== 'string' || typeof target.fact_type_key !== 'string') return [];
+    return [{ ref: target.object_id, objectType: target.fact_type_key }];
+  });
 }
 
 const EVIDENCE_NODE_ORDER = ['验证计划', '验证命令', '验证结果', '结论'];

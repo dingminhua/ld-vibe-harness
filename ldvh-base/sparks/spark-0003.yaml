@@ -1,0 +1,13 @@
+title: 环境安装、配置拓扑与 doctor/bootstrap
+status: open
+priority: P2
+source_refs:
+- kind: repository-path
+  locator: specs/09-环境接入规范.md
+- kind: repository-path
+  locator: specs/33-环境接入安装与验证行动模板.md
+summary: 为未来选定的目标环境保留可诊断的安装前检查、安装后验证、配置位置选择、停用或卸载及故障定位问题。当前环境的有限安装与触发证据不等于跨环境安装闭环已经成立；本 Spark 不预设通用 CLI 或 Skill。
+object_id: spark-0003
+fact_type_key: spark
+created_at: '2026-07-19T08:33:50.911048+08:00'
+updated_at: '2026-07-19T08:50:06.245037+08:00'

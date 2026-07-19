@@ -159,7 +159,7 @@ def test_recovery_preserves_an_actual_partial_f1_response(
     workspace = _workspace(tmp_path)
     project = tmp_path / "project"
     project.mkdir()
-    sparks = tmp_path / "facts/sparks"
+    sparks = tmp_path / "ldvh-base/sparks"
     sparks.mkdir(parents=True)
     (sparks / "spark-9999.yaml").write_text("not: [valid", encoding="utf-8")
 

@@ -18,7 +18,7 @@ ldvh_spec:
   authorized_attachments: []
 ```
 
-> 文件状态：`active`。本文是 `study` 事实类型的唯一定义来源；它不使 Study 读取、创建、校验、迁移、Helper、Code、tests、行动模板或 Web 能力自动成立。V3 规范、Code 和实例只作为需求与反例输入；旧实例缺少 V4 来源版本、观察时点、适用边界与验证闭包，不能批量直接成为 V4 active 对象。
+> 文件状态：`active`。本文是 `study` 事实类型的唯一定义来源；它不使 Study 读取、创建、校验、Helper、Code、tests、行动模板或 Web 能力自动成立。任何外部材料都必须按本文重新满足来源版本、观察时点、适用边界与验证闭包，不能批量直接成为 V4 active 对象。
 
 ## 1. 价值判断
 
@@ -83,12 +83,6 @@ AI 负责判断研究是否完成、来源是否充分、推断是否越界、�
 |---|---|---|
 | `study` | 已经完成、可独立引用且具有跨行动稳定阅读价值的一轮研究结果 | `study-fact-type::5. Study 类型定义` |
 
-### 准入审计引用
-
-| admission_audit_ref |
-|---|
-| `v4-five-type-closure::five-type-admission-audit::study::admission-audit` |
-
 ### 类型专属结构定义
 
 本类型没有类型专属结构
@@ -122,11 +116,11 @@ AI 负责判断研究是否完成、来源是否充分、推断是否越界、�
 
 ### Schema、Markdown 正文与对象载体
 
-Study 对象使用 UTF-8 Markdown，一文件一对象，当前权威位置固定为管辖项目仓库中的 `facts/studies/<object_id>.md`。`object_id` 必须匹配 `study-[0-9]{4,}`；文件名必须与 `object_id` 完全一致，分配后的身份不得因标题、路径、状态或内容改变。`title` 只简短识别研究主题，不复制 `research_question`、`abstract` 或结论。YAML frontmatter 只承载本节绑定字段，之后的 Markdown 正文承载详细报告。未知或不适用的条件字段必须省略，不使用 `null`、空字符串、空数组、占位时间、默认状态或默认关系。
+Study 对象使用 UTF-8 Markdown，一文件一对象，当前权威位置固定为管辖项目仓库中的 `ldvh-base/studies/<object_id>.md`。`object_id` 必须匹配 `study-[0-9]{4,}`；文件名必须与 `object_id` 完全一致，分配后的身份不得因标题、路径、状态或内容改变。`title` 只简短识别研究主题，不复制 `research_question`、`abstract` 或结论。YAML frontmatter 只承载本节绑定字段，之后的 Markdown 正文承载详细报告。未知或不适用的条件字段必须省略，不使用 `null`、空字符串、空数组、占位时间、默认状态或默认关系。
 
 正文必须按顺序各出现且只出现一次以下非空 H2：`研究问题`、`输入、方法与观察边界`、`关键发现`、`结论与限制`、`建议`、`后续分流`。正文可以使用 H3、表格和列表展开细节，但 frontmatter 的 research_question、abstract、applicability 和 validation_summary 是稳定机器入口；正文不得改变或弱化这些边界。研究方法、来源质量、冲突证据、未覆盖与时效限制在正文相应章节详细表达，不再建立第二个 limitations 字段。建议和后续分流可以明确没有可行动内容，但不得写占位语、虚构任务或暗示已经创建下游对象。
 
-迁移 V3 Study 的 `urls` 时，`ref` 按实际作用进入 source_refs 或 evidence_refs 的 locator，来源标题可以作为正文 Markdown 链接的显示文本，不建立第二个来源身份字段；原 `summary` 中“该来源用于支持什么、实际读取了什么、未核验什么和有哪些限制”必须进入“输入、方法与观察边界”“关键发现”或“结论与限制”，并与相应 locator 明确映射。只复制 URL 而丢弃用途与限制不成立；若一项稳定信息无法在现有引用成员和正文中无歧义承接，必须暂停该对象迁移并按 05 重新进行字段准入，不得把历史 `title`、`summary` 或 `urls` 直接恢复为 frontmatter 字段。
+从外部报告形成 Study 时，来源 locator、正文对来源用途与限制的说明必须按 source_refs、evidence_refs 与正文骨架重新建立准确映射；只复制 URL、标题、摘要或其它旧字段而丢弃用途、观察边界和限制不成立。若一项稳定信息无法在现有引用成员和正文中无歧义承接，必须停止创建并按 05 重新进行字段准入。
 
 完整 Schema 由统一登记的 `fact-object` 直接字段、本节绑定、跨类型共享定义、类型专属字段定义和本节正文骨架组合。Study 不得出现 current summary、priority、evolution、WorkCase/ADR/Pitfall 专属字段、user_intent、conclusion、urls、input_refs、related_*、archive_reason、正文外第二报告、自由 metadata 或其它未登记 frontmatter。
 
@@ -152,7 +146,7 @@ Study 的 source_refs 与 evidence_refs 只允许下列 kind 和最低机械条�
 
 | kind | locator profile | version | observed_at |
 |---|---|---|---|
-| `fact-object` | 当前管辖项目内匹配 `facts/(sparks\|workcases\|adrs\|pitfalls\|studies)/<object_id>.(yaml\|md)` 的 canonical 相对路径 | allowed；结论依赖特定提交时 required | required |
+| `fact-object` | 当前管辖项目内匹配 `ldvh-base/(sparks\|workcases\|adrs\|pitfalls\|studies)/<object_id>.(yaml\|md)` 的 canonical 相对路径 | allowed；结论依赖特定提交时 required | required |
 | `repository-path` | 当前管辖项目内的 stable repository-relative path | allowed；结论依赖特定提交、ref 或文件版本时 required | required |
 | `git-revision` | 当前管辖项目内的 stable repository-relative path | required，使用可恢复的 commit 或 ref | required |
 | `web-page` | 绝对 `http` 或 `https` URL | allowed；页面声明可恢复版本且结论依赖它时 required | required |
@@ -195,7 +189,7 @@ Study 类型停止新增、合并、替代或取消时，必须按 05 处置唯�
 | 保障要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
 |---|---|---|---|---|
 | 完成与单一问题准入 | 只把完成且可独立引用的一轮研究形成 Study | 本文准入、来源回读、AI 审核 | 对象治理 | 创建或拆分 Study 时 |
-| 字段唯一与全局查重 | 每项 frontmatter 信息先查统一登记，只使用登记字段和唯一准入结论 | 05、05.Att.01、准入审计引用所指证据、Code checks、独立复核 | 字段治理 | 新增、提升或改变字段时 |
+| 字段唯一与全局查重 | 每项 frontmatter 信息先查统一登记，只使用登记字段和唯一准入结论 | 05、05.Att.01、Code checks、独立复核 | 字段治理 | 新增、提升或改变字段时 |
 | 来源版本与观察时点 | 可变化来源保留 observed_at，版本相关结论保留 version，locator 可恢复 | source/evidence refs、来源回读、重验证 | 时效治理 | 创建、更新或消费可变化结论时 |
 | 报告与规则分离 | 发现、结论和建议不自动成为规则、决定、任务或事实当前性 | 本文、相邻类型来源、Human Gate | 权威治理 | 引用、吸收或提出行动时 |
 | 状态与替代闭包 | 终态字段、整体替代、时间、单一直接 source 和 DAG 同时成立 | 本文、对象集、Code checks、AI 审核 | 生命周期治理 | 状态或 supersedes 变化时 |

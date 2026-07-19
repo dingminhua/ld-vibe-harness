@@ -19,7 +19,7 @@ ldvh_spec:
   authorized_attachments: []
 ```
 
-> 文件状态：`active`。本文已经完成两轮独立复核、定点修改、通用声明解析 Code、风险匹配 tests 和激活检查；在其余当前规则源资格条件成立时进入当前规则源。`active` 和声明可解析只证明规范侧模板身份，不自行授予任何一次 Git 写入权限，也不证明 Git 执行封装、Helper 模板操作、Hook、Skill 或环境接入已经实现、可用或通过验证。准入、复核处置和 V3 边界调查见 `docs/v4-architecture/investigations/V4-Git提交行动模板准入与V3边界调查.md`。
+> 文件状态：`active`。本文已经完成独立复核、定点修改、通用声明解析 Code、风险匹配 tests 和激活检查；在其余当前规则源资格条件成立时进入当前规则源。`active` 和声明可解析只证明规范侧模板身份，不自行授予任何一次 Git 写入权限，也不证明 Git 执行封装、Helper 模板操作、Hook、Skill 或环境接入已经实现、可用或通过验证。
 
 ## 1. 价值判断
 
@@ -39,7 +39,7 @@ ldvh_spec:
 
 `code-engineering-practices`、具体领域规范、项目正式规则、Human 当前指令及实际 Git/测试能力按当次对象提供输入、验证和行动边界，但不是每次 Git 提交共同成立所必需的直接规范依据。本文不得把它们的字段、枚举、命令、测试集合、branch 策略、message 格式、Hook 或实现接口复制为自身规则。
 
-V3 的模板、附件、Skill、validator、Hook、WorkCase 和实例只作为重复价值与失败模式输入，不取得 V4 当前效力。本文不自行恢复 V3 的 Conventional Commit 契约、固定七结构、全局 validator/Hook、自动提交或文件类别触发的普遍 Human Gate；受管辖项目的共同拆分和 message 基线由 `source-of-truth-traceability` §9 定义，本文只组织消费。
+未经当前规则采纳的模板、附件、Skill、validator、Hook、WorkCase 和实例不取得 V4 当前效力。本文不自行恢复未被当前规则定义的 Conventional Commit 契约、固定七结构、全局 validator/Hook、自动提交或文件类别触发的普遍 Human Gate；受管辖项目的共同拆分和 message 基线由 `source-of-truth-traceability` §9 定义，本文只组织消费。
 
 ## 3. 职责边界
 
@@ -103,7 +103,7 @@ V3 的模板、附件、Skill、validator、Hook、WorkCase 和实例只作为�
 6. 可能属于用户、其它事项、其它执行者或其它提交的既有变化；
 7. 对受管辖目标，03 定义的 `precheck-git-commit` 当次是否可用，以及准备直接传入该操作的完整 message。
 
-静态文件名、历史模板、工具安装、缓存结果、旧 status/diff、另一 worktree 的结果或 AI 记忆不得替代当前输入。只在实际检查范围内未发现项目特定 message、拆分、branch 或 Hook 规则时，只能报告该有限结果及未检查或不可读取范围；不得扩大为项目不存在规则，也不得用 V3 契约、行业惯例或自身偏好补造全局要求。
+静态文件名、过期模板、工具安装、缓存结果、旧 status/diff、另一 worktree 的结果或 AI 记忆不得替代当前输入。只在实际检查范围内未发现项目特定 message、拆分、branch 或 Hook 规则时，只能报告该有限结果及未检查或不可读取范围；不得扩大为项目不存在规则，也不得用过期契约、行业惯例或自身偏好补造全局要求。
 
 ### 5.2 参与者、能力与授权
 

@@ -71,7 +71,7 @@ const STATUS_PRIORITY: Record<string, number> = {
   capability_gap: 15,
   evidence_gap: 16,
   fact_conflict: 17,
-  // Legacy backend status; Human-facing labels render this as a limited/risk state.
+  // A limited status remains a non-terminal display state for implemented object types.
   degraded: 18,
   suspended: 19,
   proposed: 20,
@@ -111,19 +111,21 @@ function hasContent(value: unknown): boolean {
 
 function normalizeItem(value: unknown): ListedObject | null {
   if (!isRecord(value)) return null
-  const id = toStringValue(value.id)
+  const v4Object = typeof value.object_id === 'string' && typeof value.fact_type_key === 'string'
+  const id = toStringValue(value.object_id) || toStringValue(value.id)
   if (!id) return null
 
   return {
     ...value,
     id,
-    type: toStringValue(value.type),
+    type: toStringValue(value.fact_type_key) || toStringValue(value.type),
     status: toStringValue(value.status, 'unknown'),
     title: toStringValue(value.title, id),
     title_en: toStringValue(value.title_en) || undefined,
     title_zh: toStringValue(value.title_zh) || undefined,
-    path: toStringValue(value.path),
-    updated: toStringValue(value.updated),
+    path: v4Object ? toStringValue(value.canonical_path) : toStringValue(value.path),
+    created: v4Object ? toStringValue(value.created_at) || undefined : toStringValue(value.created) || undefined,
+    updated: v4Object ? toStringValue(value.updated_at) : toStringValue(value.updated),
   }
 }
 
@@ -132,6 +134,11 @@ function getResultItems(result: unknown): ListedObject[] {
   return result.data.items
     .map(normalizeItem)
     .filter((item): item is ListedObject => Boolean(item))
+}
+
+function getRawItems(result: unknown): Array<Record<string, unknown>> {
+  if (!isRecord(result) || !isRecord(result.data) || !Array.isArray(result.data.items)) return []
+  return result.data.items.filter(isRecord)
 }
 
 function toRelatedSummary(item: ListedObject, type = item.type): RelatedObjectSummary {
@@ -176,10 +183,6 @@ function countByStatus(items: Array<{ status: string }>): Record<string, number>
     counts[item.status] = (counts[item.status] ?? 0) + 1
     return counts
   }, {})
-}
-
-function countMatching(items: Array<{ status: string }>, statuses: Set<string>): number {
-  return items.filter((item) => statuses.has(item.status)).length
 }
 
 function countOpenExecutionItems(items: Array<{ status: string }>): number {
@@ -300,21 +303,6 @@ async function enrichWorkCases(items: ListedObject[]): Promise<ListedObject[]> {
   })
 }
 
-async function enrichSparks(items: ListedObject[]): Promise<ListedObject[]> {
-  return items.map((item) => {
-    const data = readFactData(item.path)
-    return {
-      ...item,
-      source: toStringValue(data.source) || undefined,
-      description: toStringValue(data.description) || undefined,
-      source_detail: toStringValue(data.source_detail) || undefined,
-      resolved_to: data.resolved_to || undefined,
-      resolved_at: toStringValue(data.resolved_at) || undefined,
-      discard_reason: toStringValue(data.discard_reason) || undefined,
-    }
-  })
-}
-
 async function enrichPitfalls(items: ListedObject[]): Promise<ListedObject[]> {
   return items.map((item) => {
     const data = readFactData(item.path)
@@ -348,6 +336,7 @@ router.get('/:type', async (req: Request, res: Response): Promise<void> => {
     return
   }
 
+  const rawItems = getRawItems(result)
   const items = getResultItems(result)
   let enrichedItems = items
   if (isRecord(result.data)) {
@@ -361,14 +350,13 @@ router.get('/:type', async (req: Request, res: Response): Promise<void> => {
   if (isRecord(result.data) && type === 'adr') {
     enrichedItems = await enrichAdrs(items)
   }
-  if (isRecord(result.data) && type === 'spark') {
-    enrichedItems = await enrichSparks(items)
-  }
   if (isRecord(result.data) && type === 'pitfall') {
     enrichedItems = await enrichPitfalls(items)
   }
   if (isRecord(result.data)) {
-    result.data.items = sortByUpdatedDesc(enrichedItems)
+    result.data.items = type === 'spark'
+      ? [...rawItems].sort((left, right) => String(right.updated_at || '').localeCompare(String(left.updated_at || '')))
+      : sortByUpdatedDesc(enrichedItems)
   }
 
   res.json(result)
@@ -396,7 +384,7 @@ router.get('/:type/:id', async (req: Request, res: Response): Promise<void> => {
     res.status(404).json(result)
     return
   }
-  if (isRecord(result.data) && result.data.type !== type) {
+  if (isRecord(result.data) && result.data.fact_type_key !== type) {
     res.status(404).json({
       ok: false,
       error: `Object not found for type ${type}: ${id}`,

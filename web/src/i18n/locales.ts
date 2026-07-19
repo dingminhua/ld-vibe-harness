@@ -29,6 +29,7 @@ export const STATUS_LOCALES: Record<string, { zh: string; en: string }> = {
   human_closure_confirming: { zh: '关闭待确认', en: 'Closure Confirmation' },
   closed: { zh: '已关闭', en: 'Closed' },
   open: { zh: '未关闭', en: 'Open' },
+  routed: { zh: '已分流', en: 'Routed' },
   degraded: { zh: '受限', en: 'Limited' },
   needs_human_gate: { zh: '需确认', en: 'Needs Gate' },
   pass: { zh: '通过', en: 'Pass' },

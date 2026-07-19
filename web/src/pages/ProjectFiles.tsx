@@ -344,7 +344,7 @@ export default function ProjectFiles() {
     readOnly: pickCopy(locale, '只读', 'Read-only'),
     root: pickCopy(locale, '项目根目录', 'Project root'),
     docs: pickCopy(locale, 'docs', 'docs'),
-    facts: pickCopy(locale, 'ldvh-base', 'ldvh-base'),
+    ldvhBase: pickCopy(locale, 'LDVH Base', 'LDVH Base'),
   };
 
   const selectedProject = useMemo(
@@ -496,7 +496,7 @@ export default function ProjectFiles() {
   const quickDirs = [
     { label: copy.root, path: '' },
     { label: copy.docs, path: 'docs' },
-    { label: copy.facts, path: 'ldvh-base' },
+    { label: copy.ldvhBase, path: 'ldvh-base' },
   ];
 
   if (projectsLoading) {

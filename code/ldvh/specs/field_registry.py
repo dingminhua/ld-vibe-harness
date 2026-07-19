@@ -8,14 +8,12 @@ semantics.
 from __future__ import annotations
 
 import re
-from collections.abc import Mapping
 from dataclasses import dataclass
 
 from ldvh.diagnostics import Issue, SourceLocation
-from ldvh.specs.audit_evidence import AuditEvidenceLocator, inspect_audit_evidence_locators, validate_audit_document
 from ldvh.specs.fact_types import FactTypeDefinition, inspect_fact_types
 from ldvh.specs.identity import KEY_PATTERN, FormalDocument
-from ldvh.specs.markdown import Heading, MarkdownDocument, MarkdownTable, parse_table_after_heading
+from ldvh.specs.markdown import Heading, MarkdownTable, parse_table_after_heading
 
 REGISTRY_KEY = "fact-object-field-registry"
 STRUCTURE_HEADING = "结构登记表"
@@ -42,37 +40,16 @@ REGISTRY_HEADERS = (
     "status",
 )
 STRUCTURE_DEFINITION_HEADERS = ("structure_key", "meaning", "not_meaning", "constraints")
-STRUCTURE_ADMISSION_HEADERS = (
-    "information_need",
-    "compared_structure_keys",
-    "decision",
-    "resulting_structure_key",
-    "rationale",
-    "review_ref",
-)
 PUBLIC_FIELD_HEADERS = ("field_key", "字段", "JSON 类型", "共同出现规则", "共同语义与边界", "类型可定义")
 MEMBER_FIELD_HEADERS = ("field_key", "字段", "JSON 类型", "出现规则", "含义与边界")
 TYPE_FIELD_HEADERS = ("field_key", "field_path", "JSON type", "meaning", "not_meaning", "constraints")
-ADMISSION_HEADERS = (
-    "information_need",
-    "compared_field_keys",
-    "decision",
-    "resulting_field_key",
-    "rationale",
-    "review_ref",
-)
 BINDING_HEADERS = ("field_key", "presence", "constraint_ref")
-REVIEW_HEADERS = ("review_key", "reviewer", "reviewed_scope", "findings", "disposition")
-ADMISSION_AUDIT_REF_HEADING = "准入审计引用"
-ADMISSION_AUDIT_REF_HEADERS = ("admission_audit_ref",)
 DEFINITION_HEADERS = frozenset({PUBLIC_FIELD_HEADERS, MEMBER_FIELD_HEADERS, TYPE_FIELD_HEADERS})
 JSON_TYPES = frozenset({"string", "boolean", "integer", "number", "object", "array"})
 FIELD_ROLES = frozenset({"object-field", "structure-member"})
 DEFINITION_SCOPES = frozenset({"foundation", "type"})
 STATUSES = frozenset({"current", "retired"})
 FIELD_PATH_PATTERN = re.compile(r"[a-z][a-z0-9_]*\Z")
-REVIEW_KEY_PATTERN = re.compile(r"field-review-[0-9]{4}\Z")
-DECISIONS = frozenset({"reuse", "promote", "differentiate", "new"})
 PRESENCE_VALUES = frozenset({"required", "conditional", "forbidden"})
 BASE_PRESENCE_VALUES = frozenset({"required", "conditional"})
 
@@ -117,13 +94,6 @@ class FieldRegistryInspection:
     @property
     def complete(self) -> bool:
         return not self.issues
-
-
-@dataclass(frozen=True, slots=True)
-class _AdmissionAuditScope:
-    document: MarkdownDocument
-    namespace_heading: Heading
-    review_reference_prefix: str
 
 
 def _issue(document: FormalDocument, summary: str, *, line: int | None = None) -> Issue:
@@ -611,21 +581,6 @@ def _type_issue(definition: FactTypeDefinition, summary: str, *, line: int | Non
     )
 
 
-def _audit_issue(
-    definition: FactTypeDefinition,
-    audit: MarkdownDocument | None,
-    summary: str,
-    *,
-    line: int | None = None,
-    fallback_path: str = ".",
-) -> Issue:
-    return Issue(
-        summary=summary,
-        location=SourceLocation(fallback_path if audit is None else audit.relative_path, line=line),
-        affected=(definition.source_key, definition.fact_type_key),
-    )
-
-
 def _type_h3(definition: FactTypeDefinition, title: str) -> tuple[Heading, ...]:
     start = definition.definition_heading.line
     following_h2 = [
@@ -636,114 +591,6 @@ def _type_h3(definition: FactTypeDefinition, title: str) -> tuple[Heading, ...]:
         heading
         for heading in definition.document.markdown.headings
         if heading.level == 3 and heading.title == title and start < heading.line < end
-    )
-
-
-def _audit_h3(scope: _AdmissionAuditScope, title: str) -> tuple[Heading, ...]:
-    start = scope.namespace_heading.line
-    following_h2 = [heading.line for heading in scope.document.headings if heading.level == 2 and heading.line > start]
-    end = min(following_h2, default=len(scope.document.raw_lines) + 1)
-    return tuple(
-        heading
-        for heading in scope.document.headings
-        if heading.level == 3 and heading.title == title and start < heading.line < end
-    )
-
-
-def _parse_admission_audit_scope(
-    definition: FactTypeDefinition,
-    locators: tuple[AuditEvidenceLocator, ...],
-    audits: Mapping[str, MarkdownDocument],
-    issues: list[Issue],
-) -> _AdmissionAuditScope | None:
-    reference_table = _required_type_table(
-        definition,
-        ADMISSION_AUDIT_REF_HEADING,
-        ADMISSION_AUDIT_REF_HEADERS,
-        issues,
-    )
-    if reference_table is None:
-        return None
-    if len(reference_table.rows) != 1 or len(reference_table.rows[0]) != 1 or not reference_table.rows[0][0]:
-        issues.append(
-            _type_issue(
-                definition,
-                "准入审计引用必须恰好包含一个非空引用",
-                line=reference_table.line,
-            )
-        )
-        return None
-    reference = reference_table.rows[0][0]
-    parts = reference.split("::")
-    if len(parts) != 4 or parts[2] != definition.fact_type_key or parts[3] != "admission-audit":
-        issues.append(
-            _type_issue(
-                definition,
-                "准入审计引用必须精确为定位表已登记的 record、namespace、本类型和 admission-audit 后缀",
-                line=reference_table.line + 2,
-            )
-        )
-        return None
-    matching = tuple(
-        locator for locator in locators if locator.audit_record_key == parts[0] and locator.audit_namespace == parts[1]
-    )
-    if len(matching) != 1:
-        issues.append(
-            _type_issue(
-                definition,
-                "准入审计引用必须精确为定位表中唯一登记的 record key、namespace、本类型和 admission-audit 后缀",
-                line=reference_table.line + 2,
-            )
-        )
-        return None
-    locator = matching[0]
-    audit = audits.get(locator.canonical_path)
-    if audit is None or audit.relative_path != locator.canonical_path or not audit.raw_lines:
-        issues.append(
-            _audit_issue(
-                definition,
-                audit,
-                "准入审计证据文档不存在或无法安全读取",
-                fallback_path=locator.canonical_path,
-            )
-        )
-        return None
-    namespace_headings = audit.find_headings(locator.audit_namespace, level=2)
-    if len(namespace_headings) != 1:
-        issues.append(
-            _audit_issue(
-                definition,
-                audit,
-                "准入审计证据 H2 必须恰好出现一次",
-                fallback_path=locator.canonical_path,
-            )
-        )
-        return None
-    namespace_start = namespace_headings[0].line
-    following_h2 = [heading.line for heading in audit.headings if heading.level == 2 and heading.line > namespace_start]
-    namespace_end = min(following_h2, default=len(audit.raw_lines) + 1)
-    record_declaration = f"> `audit_record_key: {locator.audit_record_key}`"
-    declarations = tuple(
-        line.strip()
-        for line in audit.raw_lines[namespace_start : namespace_end - 1]
-        if line.strip() == record_declaration
-    )
-    if len(declarations) != 1:
-        issues.append(
-            _audit_issue(
-                definition,
-                audit,
-                "准入审计证据必须恰好声明一次稳定 audit_record_key",
-                fallback_path=locator.canonical_path,
-            )
-        )
-        return None
-    return _AdmissionAuditScope(
-        document=audit,
-        namespace_heading=namespace_headings[0],
-        review_reference_prefix=(
-            f"{locator.audit_record_key}::{locator.audit_namespace}::{definition.fact_type_key} 字段独立复核"
-        ),
     )
 
 
@@ -801,85 +648,6 @@ def _optional_type_table(
     return None
 
 
-def _required_audit_table(
-    definition: FactTypeDefinition,
-    scope: _AdmissionAuditScope,
-    title: str,
-    headers: tuple[str, ...],
-    issues: list[Issue],
-) -> MarkdownTable | None:
-    headings = _audit_h3(scope, title)
-    if len(headings) != 1:
-        issues.append(_audit_issue(definition, scope.document, f"准入审计证据中 {title} H3 必须恰好出现一次"))
-        return None
-    table = parse_table_after_heading(scope.document, headings[0])
-    if table is None or table.headers != headers:
-        issues.append(
-            _audit_issue(
-                definition,
-                scope.document,
-                f"准入审计证据中 {title} 必须紧接固定表头",
-                line=headings[0].line,
-            )
-        )
-        return None
-    if not table.rows:
-        issues.append(
-            _audit_issue(
-                definition,
-                scope.document,
-                f"准入审计证据中 {title} 至少包含一个数据行",
-                line=table.line,
-            )
-        )
-        return None
-    return table
-
-
-def _optional_audit_table(
-    definition: FactTypeDefinition,
-    scope: _AdmissionAuditScope,
-    *,
-    title: str,
-    headers: tuple[str, ...],
-    empty_statement: str,
-    issues: list[Issue],
-) -> MarkdownTable | None:
-    headings = _audit_h3(scope, title)
-    if len(headings) != 1:
-        issues.append(_audit_issue(definition, scope.document, f"准入审计证据中 {title} H3 必须恰好出现一次"))
-        return None
-    heading = headings[0]
-    table = parse_table_after_heading(scope.document, heading)
-    if table is not None:
-        if table.headers != headers:
-            issues.append(
-                _audit_issue(definition, scope.document, f"准入审计证据中 {title} 使用了错误表头", line=table.line)
-            )
-            return None
-        if not table.rows:
-            issues.append(
-                _audit_issue(definition, scope.document, f"准入审计证据中 {title} 不得建立空表", line=table.line)
-            )
-            return None
-        return table
-    next_heading_lines = [
-        item.line for item in scope.document.headings if item.line > heading.line and item.level in {2, 3}
-    ]
-    end = min(next_heading_lines, default=len(scope.document.raw_lines) + 1)
-    content = tuple(line.strip() for line in scope.document.raw_lines[heading.line : end - 1] if line.strip())
-    if content != (empty_statement,):
-        issues.append(
-            _audit_issue(
-                definition,
-                scope.document,
-                f"准入审计证据中 {title} 无表时必须使用固定声明",
-                line=heading.line,
-            )
-        )
-    return None
-
-
 def _validate_registration_type_targets(
     structures: tuple[FieldStructure, ...],
     registrations: tuple[FieldRegistration, ...],
@@ -908,135 +676,9 @@ def _validate_registration_type_targets(
             issues.append(_issue(registry, f"type 登记 {item_key!r} 的 definition_ref 未指向其唯一适用类型"))
 
 
-def _parse_review_keys(
-    definition: FactTypeDefinition,
-    scope: _AdmissionAuditScope,
-    issues: list[Issue],
-) -> set[str]:
-    title = f"{definition.fact_type_key} 字段独立复核"
-    table = _required_audit_table(definition, scope, title, REVIEW_HEADERS, issues)
-    if table is None:
-        return set()
-    review_keys: set[str] = set()
-    for offset, row in enumerate(table.rows, start=2):
-        line = table.line + offset
-        if len(row) != len(REVIEW_HEADERS) or any(not value for value in row):
-            issues.append(_audit_issue(definition, scope.document, "字段独立复核行必须包含五个非空单元格", line=line))
-            continue
-        review_key = row[0]
-        if REVIEW_KEY_PATTERN.fullmatch(review_key) is None:
-            issues.append(_audit_issue(definition, scope.document, f"非法 review_key {review_key!r}", line=line))
-        if review_key in review_keys:
-            issues.append(_audit_issue(definition, scope.document, f"重复 review_key {review_key!r}", line=line))
-        review_keys.add(review_key)
-    return review_keys
-
-
-def _parse_admissions(
-    definition: FactTypeDefinition,
-    scope: _AdmissionAuditScope,
-    registrations_by_key: dict[str, FieldRegistration],
-    review_keys: set[str],
-    issues: list[Issue],
-) -> tuple[set[str], tuple[str, ...]]:
-    title = f"{definition.fact_type_key} 字段准入记录"
-    table = _required_audit_table(definition, scope, title, ADMISSION_HEADERS, issues)
-    if table is None:
-        return set(), ()
-    information_needs: set[str] = set()
-    resulting_keys: set[str] = set()
-    promoted_keys: list[str] = []
-    for offset, row in enumerate(table.rows, start=2):
-        line = table.line + offset
-        if len(row) != len(ADMISSION_HEADERS) or any(not value for value in row):
-            issues.append(_audit_issue(definition, scope.document, "字段准入记录行必须包含六个非空单元格", line=line))
-            continue
-        information_need, compared_raw, decision, resulting_key, _, review_ref = row
-        if information_need in information_needs:
-            issues.append(
-                _audit_issue(definition, scope.document, f"重复 information_need {information_need!r}", line=line)
-            )
-        information_needs.add(information_need)
-        if resulting_key in resulting_keys:
-            issues.append(
-                _audit_issue(definition, scope.document, f"重复 resulting_field_key {resulting_key!r}", line=line)
-            )
-        compared: tuple[str, ...] = ()
-        if compared_raw != "none":
-            compared = tuple(compared_raw.split(","))
-            if compared != tuple(sorted(set(compared))) or any(key not in registrations_by_key for key in compared):
-                issues.append(
-                    _audit_issue(
-                        definition, scope.document, "compared_field_keys 必须引用已登记字段并唯一排序", line=line
-                    )
-                )
-        if decision not in DECISIONS:
-            issues.append(_audit_issue(definition, scope.document, f"非法字段准入 decision {decision!r}", line=line))
-        elif decision in {"reuse", "promote"} and resulting_key not in compared:
-            issues.append(
-                _audit_issue(
-                    definition, scope.document, f"{decision} 决定必须在 compared_field_keys 中包含结果字段", line=line
-                )
-            )
-        elif decision == "differentiate" and not compared:
-            issues.append(
-                _audit_issue(definition, scope.document, "differentiate 决定必须列出被区分的已登记字段", line=line)
-            )
-        registration = registrations_by_key.get(resulting_key)
-        if registration is None or registration.status != "current":
-            issues.append(
-                _audit_issue(
-                    definition, scope.document, f"resulting_field_key {resulting_key!r} 未登记为 current", line=line
-                )
-            )
-        elif decision == "new" and (
-            registration.definition_scope != "type" or registration.applies_to != (definition.fact_type_key,)
-        ):
-            issues.append(
-                _audit_issue(definition, scope.document, "new 决定必须产生归属于本类型的 type 字段", line=line)
-            )
-        elif decision == "differentiate" and (
-            registration.definition_scope != "type" or registration.applies_to != (definition.fact_type_key,)
-        ):
-            issues.append(
-                _audit_issue(
-                    definition, scope.document, "differentiate 决定必须产生归属于本类型的 type 字段", line=line
-                )
-            )
-        elif decision == "promote" and (
-            registration.definition_scope != "foundation"
-            or (registration.applies_to is not None and definition.fact_type_key not in registration.applies_to)
-        ):
-            issues.append(
-                _audit_issue(
-                    definition, scope.document, "promote 决定必须指向已提升并适用于本类型的 foundation 字段", line=line
-                )
-            )
-        elif decision == "promote":
-            promoted_keys.append(resulting_key)
-        elif (
-            decision == "reuse"
-            and registration.applies_to is not None
-            and definition.fact_type_key not in registration.applies_to
-        ):
-            issues.append(_audit_issue(definition, scope.document, "reuse 决定引用了不适用于本类型的字段", line=line))
-        reference_parts = review_ref.rsplit("::", maxsplit=1)
-        if (
-            len(reference_parts) != 2
-            or reference_parts[0] != scope.review_reference_prefix
-            or reference_parts[1] not in review_keys
-        ):
-            issues.append(
-                _audit_issue(definition, scope.document, "review_ref 未指向本类型字段独立复核表中的有效行", line=line)
-            )
-        resulting_keys.add(resulting_key)
-    return resulting_keys, tuple(promoted_keys)
-
-
 def _validate_bindings(
     definition: FactTypeDefinition,
     registrations: tuple[FieldRegistration, ...],
-    admission_keys: set[str],
     issues: list[Issue],
 ) -> set[str]:
     table = _required_type_table(definition, "类型字段使用绑定", BINDING_HEADERS, issues)
@@ -1093,8 +735,6 @@ def _validate_bindings(
         if field_key in bound:
             issues.append(_type_issue(definition, f"类型重复绑定字段 {field_key!r}", line=line))
         bound.add(field_key)
-        if field_key not in admission_keys:
-            issues.append(_type_issue(definition, f"绑定字段 {field_key!r} 没有字段准入记录", line=line))
     missing = sorted(set(applicable) - bound)
     extra = sorted(bound - set(applicable))
     if missing:
@@ -1147,249 +787,20 @@ def _validate_type_definitions(
         issues.append(_type_issue(definition, f"类型专属字段定义缺少已登记字段：{', '.join(missing)}"))
 
 
-def _validate_type_structures(
-    definition: FactTypeDefinition,
-    scope: _AdmissionAuditScope,
-    structures: tuple[FieldStructure, ...],
-    review_keys: set[str],
-    issues: list[Issue],
-) -> tuple[str, ...]:
-    structures_by_key = {structure.structure_key: structure for structure in structures}
-    admission_table = _optional_audit_table(
-        definition,
-        scope,
-        title=f"{definition.fact_type_key} 结构准入记录",
-        headers=STRUCTURE_ADMISSION_HEADERS,
-        empty_statement="本类型没有结构准入事项",
-        issues=issues,
-    )
-    information_needs: set[str] = set()
-    admitted: set[str] = set()
-    promoted: list[str] = []
-    if admission_table is not None:
-        for offset, row in enumerate(admission_table.rows, start=2):
-            line = admission_table.line + offset
-            if len(row) != len(STRUCTURE_ADMISSION_HEADERS) or any(not value for value in row):
-                issues.append(
-                    _audit_issue(definition, scope.document, "结构准入记录行必须包含六个非空单元格", line=line)
-                )
-                continue
-            information_need, compared_raw, decision, resulting_key, _, review_ref = row
-            if information_need in information_needs:
-                issues.append(
-                    _audit_issue(
-                        definition, scope.document, f"重复结构 information_need {information_need!r}", line=line
-                    )
-                )
-            information_needs.add(information_need)
-            if resulting_key in admitted:
-                issues.append(
-                    _audit_issue(
-                        definition, scope.document, f"重复 resulting_structure_key {resulting_key!r}", line=line
-                    )
-                )
-            compared: tuple[str, ...] = ()
-            if compared_raw != "none":
-                compared = tuple(compared_raw.split(","))
-                if compared != tuple(sorted(set(compared))) or any(key not in structures_by_key for key in compared):
-                    issues.append(
-                        _audit_issue(
-                            definition,
-                            scope.document,
-                            "compared_structure_keys 必须引用已登记结构并唯一排序",
-                            line=line,
-                        )
-                    )
-            structure = structures_by_key.get(resulting_key)
-            if decision not in DECISIONS:
-                issues.append(
-                    _audit_issue(definition, scope.document, f"非法结构准入 decision {decision!r}", line=line)
-                )
-            elif decision in {"reuse", "promote"} and resulting_key not in compared:
-                issues.append(
-                    _audit_issue(
-                        definition,
-                        scope.document,
-                        f"{decision} 决定必须在 compared_structure_keys 中包含结果结构",
-                        line=line,
-                    )
-                )
-            elif decision == "differentiate" and not compared:
-                issues.append(
-                    _audit_issue(definition, scope.document, "differentiate 决定必须列出被区分的已登记结构", line=line)
-                )
-            if structure is None or structure.status != "current":
-                issues.append(
-                    _audit_issue(
-                        definition,
-                        scope.document,
-                        f"resulting_structure_key {resulting_key!r} 未登记为 current",
-                        line=line,
-                    )
-                )
-            elif decision in {"new", "differentiate"} and (
-                structure.definition_scope != "type" or structure.applies_to != (definition.fact_type_key,)
-            ):
-                issues.append(
-                    _audit_issue(
-                        definition, scope.document, f"{decision} 决定必须产生归属于本类型的 type 结构", line=line
-                    )
-                )
-            elif decision == "promote" and (
-                structure.definition_scope != "foundation"
-                or (structure.applies_to is not None and definition.fact_type_key not in structure.applies_to)
-            ):
-                issues.append(
-                    _audit_issue(
-                        definition, scope.document, "promote 决定必须指向适用于本类型的 foundation 结构", line=line
-                    )
-                )
-            elif decision == "promote":
-                promoted.append(resulting_key)
-            elif (
-                decision == "reuse"
-                and structure.applies_to is not None
-                and definition.fact_type_key not in structure.applies_to
-            ):
-                issues.append(
-                    _audit_issue(definition, scope.document, "reuse 决定引用了不适用于本类型的结构", line=line)
-                )
-            reference_parts = review_ref.rsplit("::", maxsplit=1)
-            if (
-                len(reference_parts) != 2
-                or reference_parts[0] != scope.review_reference_prefix
-                or reference_parts[1] not in review_keys
-            ):
-                issues.append(
-                    _audit_issue(
-                        definition, scope.document, "结构 review_ref 未指向本类型字段独立复核表中的有效行", line=line
-                    )
-                )
-            admitted.add(resulting_key)
-
-    expected = {
-        structure.structure_key: structure
-        for structure in structures
-        if structure.status == "current"
-        and structure.definition_scope == "type"
-        and structure.applies_to == (definition.fact_type_key,)
-    }
-    expected_admissions = {
-        structure.structure_key
-        for structure in structures
-        if structure.status == "current"
-        and structure.applies_to is not None
-        and definition.fact_type_key in structure.applies_to
-    }
-    definition_table = _optional_type_table(
-        definition,
-        title="类型专属结构定义",
-        headers=STRUCTURE_DEFINITION_HEADERS,
-        empty_statement="本类型没有类型专属结构",
-        issues=issues,
-    )
-    defined: set[str] = set()
-    if definition_table is not None:
-        for offset, row in enumerate(definition_table.rows, start=2):
-            line = definition_table.line + offset
-            if len(row) != len(STRUCTURE_DEFINITION_HEADERS) or any(not value for value in row):
-                issues.append(_type_issue(definition, "类型专属结构定义行必须包含四个非空单元格", line=line))
-                continue
-            structure_key = row[0]
-            if structure_key in defined:
-                issues.append(_type_issue(definition, f"重复定义专属结构 {structure_key!r}", line=line))
-            defined.add(structure_key)
-    missing_definitions = sorted(set(expected) - defined)
-    if missing_definitions:
-        issues.append(_type_issue(definition, f"类型专属结构定义缺少已登记结构：{', '.join(missing_definitions)}"))
-    missing_admissions = sorted(expected_admissions - admitted)
-    if missing_admissions:
-        issues.append(_type_issue(definition, f"类型专属结构缺少准入记录：{', '.join(missing_admissions)}"))
-    extra_definitions = sorted(defined - set(expected))
-    if extra_definitions:
-        issues.append(_type_issue(definition, f"类型专属结构定义包含非本类型结构：{', '.join(extra_definitions)}"))
-    return tuple(promoted)
-
-
 def _validate_fact_type_fields(
     fact_types: tuple[FactTypeDefinition, ...],
     structures: tuple[FieldStructure, ...],
     registrations: tuple[FieldRegistration, ...],
     registry: FormalDocument,
-    audit_locators: tuple[AuditEvidenceLocator, ...],
-    admission_audits: Mapping[str, MarkdownDocument],
     issues: list[Issue],
 ) -> None:
-    registrations_by_key = {registration.field_key: registration for registration in registrations}
-    field_promotion_sources: dict[str, list[str]] = {}
-    structure_promotion_sources: dict[str, list[str]] = {}
-    audit_scopes_complete = True
     for definition in fact_types:
-        for legacy_heading in ("结构准入记录", "字段准入记录", "字段独立复核"):
-            if _type_h3(definition, legacy_heading):
-                issues.append(_type_issue(definition, f"{legacy_heading} 必须移至准入审计证据文档"))
-        scope = _parse_admission_audit_scope(definition, audit_locators, admission_audits, issues)
-        if scope is None:
-            audit_scopes_complete = False
-            continue
-        review_keys = _parse_review_keys(definition, scope, issues)
-        promoted_structures = _validate_type_structures(definition, scope, structures, review_keys, issues)
-        for structure_key in promoted_structures:
-            structure_promotion_sources.setdefault(structure_key, []).append(definition.fact_type_key)
-        admissions, promoted_keys = _parse_admissions(definition, scope, registrations_by_key, review_keys, issues)
-        for field_key in promoted_keys:
-            field_promotion_sources.setdefault(field_key, []).append(definition.fact_type_key)
-        expected_nonuniversal_admissions = {
-            registration.field_key
-            for registration in registrations
-            if registration.status == "current"
-            and registration.applies_to is not None
-            and definition.fact_type_key in registration.applies_to
-        }
-        missing_admissions = sorted(expected_nonuniversal_admissions - admissions)
-        if missing_admissions:
-            issues.append(_type_issue(definition, f"类型缺少非全局字段准入记录：{', '.join(missing_admissions)}"))
-        _validate_bindings(definition, registrations, admissions, issues)
+        _validate_bindings(definition, registrations, issues)
         _validate_type_definitions(definition, registrations, issues)
-    if not audit_scopes_complete:
-        return
-    for registration in registrations:
-        if (
-            registration.status != "current"
-            or registration.definition_scope != "foundation"
-            or registration.applies_to is None
-        ):
-            continue
-        sources = field_promotion_sources.get(registration.field_key, [])
-        if len(sources) != 1:
-            rendered = ", ".join(sources) if sources else "none"
-            issues.append(
-                _issue(
-                    registry,
-                    f"有限共享字段 {registration.field_key!r} 必须恰有一个 promote 来源；当前为 {rendered}",
-                    line=registration.source.line,
-                )
-            )
-    for structure in structures:
-        if structure.status != "current" or structure.definition_scope != "foundation" or structure.applies_to is None:
-            continue
-        sources = structure_promotion_sources.get(structure.structure_key, [])
-        if len(sources) != 1:
-            rendered = ", ".join(sources) if sources else "none"
-            issues.append(
-                _issue(
-                    registry,
-                    f"有限共享结构 {structure.structure_key!r} 必须恰有一个 promote 来源；当前为 {rendered}",
-                    line=structure.source.line,
-                )
-            )
 
 
 def inspect_field_registry(
     documents: tuple[FormalDocument, ...],
-    *,
-    admission_audit: MarkdownDocument | None = None,
-    admission_audits: Mapping[str, MarkdownDocument] | None = None,
 ) -> FieldRegistryInspection:
     """Inspect exact field registration structure without interpreting semantics."""
 
@@ -1404,15 +815,6 @@ def inspect_field_registry(
 
     registry = registries[0]
     issues: list[Issue] = []
-    locator_inspection = inspect_audit_evidence_locators(documents)
-    issues.extend(locator_inspection.issues)
-    audits = dict(admission_audits or {})
-    if admission_audit is not None:
-        audits[admission_audit.relative_path] = admission_audit
-    for locator in locator_inspection.locators:
-        document = audits.get(locator.canonical_path)
-        if document is not None:
-            issues.extend(validate_audit_document(locator, document))
     structures = _parse_structures(registry, issues)
     registrations = _parse_registrations(registry, structures, issues)
     fact_type_inspection = inspect_fact_types(documents)
@@ -1434,8 +836,6 @@ def inspect_field_registry(
         structures,
         registrations,
         registry,
-        locator_inspection.locators,
-        audits,
         issues,
     )
     return FieldRegistryInspection(structures, registrations, fact_type_inspection.definitions, tuple(issues))

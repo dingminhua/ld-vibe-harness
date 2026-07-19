@@ -62,7 +62,7 @@ def _counter(boundary: CreationBoundary) -> Path:
 
 
 def _relate_created_spark(boundary: CreationBoundary, target_id: str) -> None:
-    path = boundary.worktree_root / "facts/sparks/spark-0001.yaml"
+    path = boundary.worktree_root / "ldvh-base/sparks/spark-0001.yaml"
     yaml = YAML(typ="rt")
     fields = yaml.load(path.read_text(encoding="utf-8"))
     fields["relations"] = [
@@ -169,7 +169,7 @@ def test_service_creates_once_and_duplicate_does_not_consume_counter(
         "status": "open",
     }
     assert _counter(boundary).read_bytes() == before
-    assert len(tuple((boundary.worktree_root / "facts/sparks").glob("*.yaml"))) == 1
+    assert len(tuple((boundary.worktree_root / "ldvh-base/sparks").glob("*.yaml"))) == 1
 
 
 def test_concurrent_same_capture_has_one_creator_and_one_duplicate(
@@ -230,7 +230,7 @@ def test_open_current_identity_is_checked_after_legal_content_change(
 ) -> None:
     boundary, schemas = _fixture(current_specs_repository, tmp_path)
     assert create_web_spark_direct_capture(boundary, schemas, _request()).status == "created"
-    path = boundary.worktree_root / "facts/sparks/spark-0001.yaml"
+    path = boundary.worktree_root / "ldvh-base/sparks/spark-0001.yaml"
     yaml = YAML(typ="rt")
     fields = yaml.load(path.read_text(encoding="utf-8"))
     fields["title"] = "Current B"
@@ -253,7 +253,7 @@ def test_damaged_historical_source_fails_closed_before_current_identity(
 ) -> None:
     boundary, schemas = _fixture(current_specs_repository, tmp_path)
     assert create_web_spark_direct_capture(boundary, schemas, _request()).status == "created"
-    path = boundary.worktree_root / "facts/sparks/spark-0001.yaml"
+    path = boundary.worktree_root / "ldvh-base/sparks/spark-0001.yaml"
     yaml = YAML(typ="rt")
     fields = yaml.load(path.read_text(encoding="utf-8"))
     fields["source_refs"][0]["version"] = "sha256:" + ("0" * 64)
@@ -282,7 +282,7 @@ def test_missing_relation_target_is_integrity_conflict_without_state_change(
     assert result.status == "integrity_conflict"
     assert result.code == "spark_integrity_conflict"
     assert _counter(boundary).read_bytes() == before
-    assert len(tuple((boundary.worktree_root / "facts/sparks").glob("*.yaml"))) == 1
+    assert len(tuple((boundary.worktree_root / "ldvh-base/sparks").glob("*.yaml"))) == 1
 
 
 def test_unreadable_relation_target_is_unavailable_without_state_change(
@@ -292,7 +292,7 @@ def test_unreadable_relation_target_is_unavailable_without_state_change(
     boundary, schemas = _fixture(current_specs_repository, tmp_path)
     assert create_web_spark_direct_capture(boundary, schemas, _request()).status == "created"
     _relate_created_spark(boundary, "workcase-9999")
-    target = boundary.worktree_root / "facts/workcases/workcase-9999.yaml"
+    target = boundary.worktree_root / "ldvh-base/workcases/workcase-9999.yaml"
     target.parent.mkdir(parents=True)
     target.write_bytes(b"x" * (4 * 1024 * 1024 + 1))
     before = _counter(boundary).read_bytes()
@@ -302,7 +302,7 @@ def test_unreadable_relation_target_is_unavailable_without_state_change(
     assert result.status == "unavailable"
     assert result.code == "spark_coverage_unavailable"
     assert _counter(boundary).read_bytes() == before
-    assert len(tuple((boundary.worktree_root / "facts/sparks").glob("*.yaml"))) == 1
+    assert len(tuple((boundary.worktree_root / "ldvh-base/sparks").glob("*.yaml"))) == 1
 
 
 def test_terminal_spark_uses_validated_historical_identity_without_priority(
@@ -311,7 +311,7 @@ def test_terminal_spark_uses_validated_historical_identity_without_priority(
 ) -> None:
     boundary, schemas = _fixture(current_specs_repository, tmp_path)
     assert create_web_spark_direct_capture(boundary, schemas, _request()).status == "created"
-    path = boundary.worktree_root / "facts/sparks/spark-0001.yaml"
+    path = boundary.worktree_root / "ldvh-base/sparks/spark-0001.yaml"
     yaml = YAML(typ="rt")
     fields = yaml.load(path.read_text(encoding="utf-8"))
     fields["status"] = "discarded"
@@ -334,8 +334,8 @@ def test_multiple_objects_with_same_historical_identity_are_integrity_conflict(
 ) -> None:
     boundary, schemas = _fixture(current_specs_repository, tmp_path)
     assert create_web_spark_direct_capture(boundary, schemas, _request()).status == "created"
-    first = boundary.worktree_root / "facts/sparks/spark-0001.yaml"
-    second = boundary.worktree_root / "facts/sparks/spark-0002.yaml"
+    first = boundary.worktree_root / "ldvh-base/sparks/spark-0001.yaml"
+    second = boundary.worktree_root / "ldvh-base/sparks/spark-0002.yaml"
     second.write_text(first.read_text(encoding="utf-8").replace("spark-0001", "spark-0002"), encoding="utf-8")
     before = _counter(boundary).read_bytes()
 
@@ -352,7 +352,7 @@ def test_noncanonical_spark_filename_is_integrity_conflict_without_counter(
     tmp_path: Path,
 ) -> None:
     boundary, schemas = _fixture(current_specs_repository, tmp_path)
-    directory = boundary.worktree_root / "facts/sparks"
+    directory = boundary.worktree_root / "ldvh-base/sparks"
     directory.mkdir(parents=True)
     (directory / "legacy.yaml").write_text("status: open\n", encoding="utf-8")
 
@@ -423,8 +423,8 @@ def test_linked_worktree_uses_shared_counter_but_selected_worktree_duplicate_sco
 
     assert linked_result.status == "created"
     assert linked_result.actual_ref is not None and linked_result.actual_ref["object_id"] == "spark-0002"
-    assert (boundary.worktree_root / "facts/sparks/spark-0001.yaml").is_file()
-    assert (linked / "facts/sparks/spark-0002.yaml").is_file()
+    assert (boundary.worktree_root / "ldvh-base/sparks/spark-0001.yaml").is_file()
+    assert (linked / "ldvh-base/sparks/spark-0002.yaml").is_file()
 
 
 def test_id_growth_from_9999_to_10000_is_repreviewed_in_final_yaml(

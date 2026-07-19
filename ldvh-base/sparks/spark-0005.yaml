@@ -1,0 +1,11 @@
+title: V4 Web 只读事实观察闭环
+status: open
+priority: P1
+source_refs:
+- kind: repository-path
+  locator: specs/08-Web 呈现与交互规范.md
+summary: 让 Human 通过保持既有表现层的 Web，从 V4 当前事实读取并观察 Spark、状态、关系、证据与长文本；Helper 是底层读取能力和一致性核对依据，而不是日常人工检查入口。需以 V4 bridge、read/list/detail 与 DTO 投影原子接管生产读取，且不扩大 Web 写入范围。
+object_id: spark-0005
+fact_type_key: spark
+created_at: '2026-07-19T08:33:54.065365+08:00'
+updated_at: '2026-07-19T08:52:53.759200+08:00'

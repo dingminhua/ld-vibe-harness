@@ -75,7 +75,7 @@ def test_prepared_creation_can_run_under_one_external_allocation_lock(
     assert result.status == "created"
     assert result.actual_id == "spark-0001"
     assert result.read is not None and result.read.check_status == "mechanically_valid"
-    assert (command.boundary.worktree_root / "facts/sparks/spark-0001.yaml").is_file()
+    assert (command.boundary.worktree_root / "ldvh-base/sparks/spark-0001.yaml").is_file()
 
 
 def test_prepared_creation_defensively_freezes_nested_supplied_values(

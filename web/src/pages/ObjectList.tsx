@@ -1,6 +1,6 @@
-import { useEffect, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react';
+import { useEffect, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { ArrowRight, CheckCircle2, ChevronDown, ChevronUp, CircleAlert, ClipboardCheck } from 'lucide-react';
+import { ArrowRight, CheckCircle2, CircleAlert, ClipboardCheck } from 'lucide-react';
 import StatusBadge from '@/components/StatusBadge';
 import ObjectStatusFilter from '@/components/ObjectStatusFilter';
 import CopyPathButton from '@/components/CopyPathButton';
@@ -9,7 +9,7 @@ import ObjectSignalBadges from '@/components/ObjectSignalBadges';
 import PriorityIcon from '@/components/PriorityIcon';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
 import { ExecutionFlowBar, ExecutionFlowLegend, ExecutionFlowMarker } from '@/components/ExecutionFlowStatus';
-import { fetchObjects, type ObjectItem, type ObjectStatusOption, type RelatedObjectSummary, type RelatedWorkCaseSummary } from '@/utils/api';
+import { fetchObjects, type ObjectItem, type ObjectStatusOption } from '@/utils/api';
 import { formatDateTime } from '@/utils/dateFormat';
 import { useI18n } from '@/i18n/context';
 import { getObjectStatusLocale } from '@/i18n/locales';
@@ -23,7 +23,6 @@ import {
 
 type LocalizedTitleItem = Pick<ObjectItem, 'id'> & Partial<Pick<ObjectItem, 'title' | 'title_en' | 'title_zh'>>;
 
-type OpenEvent = MouseEvent<HTMLElement> | KeyboardEvent<HTMLElement>;
 type Translate = ReturnType<typeof useI18n>['t'];
 type WorkCaseRecordState = 'recorded' | 'missing';
 type StatusReason = { label: string; text: string; missing?: boolean };
@@ -48,8 +47,10 @@ const TITLE_ACCENT_CLASS: Record<string, string> = {
   proposed: 'border-amber-400/75',
   planned: 'border-amber-400/75',
   pending: 'border-amber-400/75',
+  open: 'border-amber-400/75',
   closed: 'border-zinc-500/50',
   resolved: 'border-zinc-500/50',
+  routed: 'border-zinc-500/50',
   archived: 'border-zinc-500/50',
   discarded: 'border-red-400/75',
   superseded: 'border-zinc-500/50',
@@ -87,7 +88,7 @@ function formatReasonText(value: string): string {
 }
 
 function statusRequiresReason(status: string): boolean {
-  return status === 'archived' || status === 'deprecated' || status === 'discarded' || status === 'closed';
+  return status === 'archived' || status === 'deprecated' || status === 'discarded' || status === 'closed' || status === 'routed';
 }
 
 function getNonActiveReason(obj: ObjectItem, locale: string): StatusReason | null {
@@ -96,9 +97,12 @@ function getNonActiveReason(obj: ObjectItem, locale: string): StatusReason | nul
     archive_reason: locale === 'en' ? 'Archive reason' : '归档原因',
     deprecated_reason: locale === 'en' ? 'Deprecated reason' : '废弃原因',
     discard_reason: locale === 'en' ? 'Discard reason' : '废弃原因',
+    disposition_summary: locale === 'en' ? 'Disposition' : '处置说明',
     closure_evidence: locale === 'en' ? 'Close reason' : '关闭原因',
   };
-  const orderedFields = obj.status === 'archived'
+  const orderedFields = obj.status === 'routed'
+    ? ['disposition_summary', 'closure_evidence', 'discard_reason']
+    : obj.status === 'archived'
     ? ['archive_reason', 'closure_evidence', 'deprecated_reason', 'discard_reason']
     : obj.status === 'deprecated'
       ? ['deprecated_reason', 'archive_reason', 'closure_evidence', 'discard_reason']
@@ -240,6 +244,18 @@ function sortObjectsForList(items: ObjectItem[], currentType: string): ObjectIte
   });
 }
 
+function sparkViewItem(value: ObjectItem): ObjectItem {
+  if (value.fact_type_key !== 'spark' || typeof value.object_id !== 'string') return value;
+  return {
+    ...value,
+    id: value.object_id,
+    type: value.fact_type_key,
+    path: value.canonical_path ?? '',
+    created: value.created_at,
+    updated: value.updated_at ?? '',
+  };
+}
+
 
 function ObjectCardFrame({
   obj,
@@ -296,27 +312,22 @@ function ObjectCardFrame({
 
 type SparkRoutingRef = { ref: string; objectType?: string };
 
+function sparkRoutedTargets(obj: ObjectItem): SparkRoutingRef[] {
+  if (!Array.isArray(obj.relations)) return [];
+  return obj.relations.flatMap((relation) => {
+    if (relation.relation_key !== 'routed-to' || !relation.target || typeof relation.target !== 'object') return [];
+    const target = relation.target as Record<string, unknown>;
+    if (typeof target.object_id !== 'string' || typeof target.fact_type_key !== 'string') return [];
+    return [{ ref: target.object_id, objectType: target.fact_type_key }];
+  });
+}
+
 function hasSparkResolvedFact(obj: ObjectItem) {
-  return obj.status === 'resolved' || Boolean(parseSparkRoutingRef(obj.resolved_to)) || Boolean(obj.resolved_at);
+  return obj.status === 'routed' || sparkRoutedTargets(obj).length > 0;
 }
 
 function hasSparkDiscardFact(obj: ObjectItem) {
-  return obj.status === 'discarded' || Boolean(obj.discard_reason?.trim());
-}
-
-function parseSparkRoutingRef(value: ObjectItem['resolved_to']): SparkRoutingRef | null {
-  if (typeof value === 'string') {
-    const ref = value.trim();
-    if (!ref) return null;
-    return { ref, objectType: ref.match(/^([a-z]+)-\d+$/)?.[1] };
-  }
-  if (!value || typeof value !== 'object') return null;
-  const ref = typeof value.ref === 'string' ? value.ref.trim() : '';
-  if (!ref) return null;
-  return {
-    ref,
-    objectType: typeof value.type === 'string' && value.type.trim() ? value.type.trim() : ref.match(/^([a-z]+)-\d+$/)?.[1],
-  };
+  return obj.status === 'discarded' || Boolean(obj.disposition_summary?.trim());
 }
 
 function SparkFactPanel({
@@ -324,7 +335,7 @@ function SparkFactPanel({
   title,
   children,
 }: {
-  tone: 'pending' | 'resolved' | 'discarded';
+  tone: 'open' | 'routed' | 'discarded';
   title: string;
   children: ReactNode;
 }) {
@@ -356,23 +367,24 @@ function SparkMetaLine({ label, value }: { label: string; value: string }) {
 }
 
 function SparkResolvedCardContent({ obj, locale }: { obj: ObjectItem; locale: string }) {
-  const routingRef = parseSparkRoutingRef(obj.resolved_to);
-  const targetLabel = routingRef?.ref || (locale === 'en' ? 'Target missing' : '分流目标缺失');
-  const typeLabel = routingRef?.objectType ? `${routingRef.objectType} ` : '';
-  const resolvedAt = obj.resolved_at ? formatDateTime(obj.resolved_at) : '';
+  const routingTargets = sparkRoutedTargets(obj);
+  const targetLabel = routingTargets.length > 0
+    ? routingTargets.map((target) => `${target.objectType ?? ''} ${target.ref}`.trim()).join(', ')
+    : (locale === 'en' ? 'No fact-object target recorded' : '未记录事实对象目标');
+  const routedAt = obj.closed_at ? formatDateTime(obj.closed_at) : '';
 
   return (
-    <SparkFactPanel tone="resolved" title={locale === 'en' ? 'Routed' : '已分流'}>
+    <SparkFactPanel tone="routed" title={locale === 'en' ? 'Routed' : '已分流'}>
       <div className="flex flex-col gap-0.5">
-        <SparkMetaLine label={locale === 'en' ? 'Target' : '目标'} value={`${typeLabel}${targetLabel}`} />
-        {resolvedAt && <SparkMetaLine label={locale === 'en' ? 'Time' : '时间'} value={resolvedAt} />}
+        <SparkMetaLine label={locale === 'en' ? 'Target' : '目标'} value={targetLabel} />
+        {routedAt && <SparkMetaLine label={locale === 'en' ? 'Time' : '时间'} value={routedAt} />}
       </div>
     </SparkFactPanel>
   );
 }
 
 function SparkDiscardedCardContent({ obj, locale }: { obj: ObjectItem; locale: string }) {
-  const reason = obj.discard_reason?.trim() || (locale === 'en' ? 'Discard reason missing.' : '废弃原因缺失。');
+  const reason = obj.disposition_summary?.trim() || (locale === 'en' ? 'Disposition missing.' : '处置说明缺失。');
 
   return (
     <SparkFactPanel tone="discarded" title={locale === 'en' ? 'Discarded' : '已废弃'}>
@@ -418,7 +430,8 @@ export default function ObjectList() {
     setStatusTotal(0);
     fetchObjects(currentType, activeStatus ?? undefined)
       .then((result) => {
-        const nextItems = result.data?.items ?? [];
+        const receivedItems = result.data?.items ?? [];
+        const nextItems = currentType === 'spark' ? receivedItems.map(sparkViewItem) : receivedItems;
         setItems(nextItems);
         setStatusOptions(result.data?.statusOptions ?? []);
         setStatusTotal(result.data?.statusTotal ?? nextItems.length);
@@ -439,14 +452,6 @@ export default function ObjectList() {
   const returnToListPath = `${location.pathname}${location.search}`;
   const openObject = (objId: string) => {
     navigate(`/objects/${currentType}/${objId}${detailSearch ? `?${detailSearch}` : ''}`, {
-      state: { from: returnToListPath },
-    });
-  };
-
-  const openRelatedObject = (event: OpenEvent, item: RelatedObjectSummary) => {
-    event.preventDefault();
-    event.stopPropagation();
-    navigate(`/objects/${item.type}/${item.id}`, {
       state: { from: returnToListPath },
     });
   };

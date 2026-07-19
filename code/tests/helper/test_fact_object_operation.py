@@ -20,7 +20,7 @@ def _fixture(tmp_path: Path) -> tuple[Path, Path]:
     project = workspace / "project"
     project.mkdir(parents=True)
     _git(project, "init", "-q")
-    facts = project / "facts" / "sparks"
+    facts = project / "ldvh-base" / "sparks"
     facts.mkdir(parents=True)
     (facts / "spark-0001.yaml").write_text(
         "\n".join(
@@ -95,7 +95,7 @@ def test_exact_fact_read_preserves_valid_and_not_found_local_results(tmp_path: P
         "not_found",
     ]
     assert response["result"]["items"][0]["fact_object"]["summary"] == "Read one object"
-    raw = (project / "facts" / "sparks" / "spark-0001.yaml").read_bytes()
+    raw = (project / "ldvh-base" / "sparks" / "spark-0001.yaml").read_bytes()
     assert response["result"]["items"][0]["content_fingerprint"] == hashlib.sha256(raw).hexdigest()
     assert response["result"]["items"][1]["fact_object"] is None
     assert response["result"]["items"][1]["content_fingerprint"] is None
@@ -135,7 +135,7 @@ def test_fact_read_rejects_invalid_selector_before_resolution() -> None:
 
 def test_fact_read_rejects_symlink_canonical_path(tmp_path: Path) -> None:
     workspace, project = _fixture(tmp_path)
-    original = project / "facts" / "sparks" / "spark-0001.yaml"
+    original = project / "ldvh-base" / "sparks" / "spark-0001.yaml"
     target = project / "real.yaml"
     original.replace(target)
     original.symlink_to(target)
@@ -150,7 +150,7 @@ def test_fact_read_rejects_symlink_canonical_path(tmp_path: Path) -> None:
 
 def test_fact_read_rejects_symlinked_parent_directory(tmp_path: Path) -> None:
     workspace, project = _fixture(tmp_path)
-    facts = project / "facts"
+    facts = project / "ldvh-base"
     sparks = facts / "sparks"
     real_sparks = project / "real-sparks"
     sparks.replace(real_sparks)
@@ -169,7 +169,7 @@ def test_fact_read_rejects_symlinked_parent_directory(tmp_path: Path) -> None:
 
 def test_fact_read_checks_relation_targets_and_reachable_dag(tmp_path: Path) -> None:
     workspace, project = _fixture(tmp_path)
-    directory = project / "facts" / "workcases"
+    directory = project / "ldvh-base" / "workcases"
     directory.mkdir()
     for object_id, target_id in (("workcase-0001", "workcase-0002"), ("workcase-0002", "workcase-0001")):
         (directory / f"{object_id}.yaml").write_text(
@@ -247,14 +247,14 @@ def test_fact_read_checks_relation_targets_and_reachable_dag(tmp_path: Path) -> 
 def test_untracked_ignored_fact_is_invalid_but_tracked_dirty_content_is_current(tmp_path: Path) -> None:
     workspace, project = _fixture(tmp_path)
     ignore = project / ".gitignore"
-    ignore.write_text("facts/\n", encoding="utf-8")
+    ignore.write_text("ldvh-base/\n", encoding="utf-8")
 
     ignored = handle_request("call", "read-fact-objects", _payload(workspace, project, "spark-0001"))
     assert ignored.response["result"]["items"][0]["check_status"] == "invalid"
     assert ignored.response["result"]["items"][0]["issues"][0]["category"] == "git-traceability"
 
     _git(project, "add", ".gitignore")
-    _git(project, "add", "-f", "facts/sparks/spark-0001.yaml")
+    _git(project, "add", "-f", "ldvh-base/sparks/spark-0001.yaml")
     _git(
         project,
         "-c",
@@ -265,7 +265,7 @@ def test_untracked_ignored_fact_is_invalid_but_tracked_dirty_content_is_current(
         "-qm",
         "tracked fact",
     )
-    fact = project / "facts" / "sparks" / "spark-0001.yaml"
+    fact = project / "ldvh-base" / "sparks" / "spark-0001.yaml"
     fact.write_text(fact.read_text(encoding="utf-8") + "implementation_private: true\n", encoding="utf-8")
 
     dirty = handle_request("call", "read-fact-objects", _payload(workspace, project, "spark-0001"))
@@ -351,8 +351,8 @@ def test_real_cli_reads_current_fact_object(tmp_path: Path) -> None:
 
 def test_malformed_mapping_key_is_local_to_one_requested_object(tmp_path: Path) -> None:
     workspace, project = _fixture(tmp_path)
-    (project / "facts" / "sparks" / "spark-0002.yaml").write_text(
-        (project / "facts" / "sparks" / "spark-0001.yaml")
+    (project / "ldvh-base" / "sparks" / "spark-0002.yaml").write_text(
+        (project / "ldvh-base" / "sparks" / "spark-0001.yaml")
         .read_text(encoding="utf-8")
         .replace("spark-0001", "spark-0002")
         .replace("summary: Read one object", "true: invalid-key\nsummary: Read one object"),
@@ -394,9 +394,9 @@ def test_fact_reference_batch_has_a_bounded_size() -> None:
 
 def test_oversized_fact_is_unavailable_without_affecting_other_exact_reads(tmp_path: Path) -> None:
     workspace, project = _fixture(tmp_path)
-    large = project / "facts" / "sparks" / "spark-0002.yaml"
+    large = project / "ldvh-base" / "sparks" / "spark-0002.yaml"
     large.write_text(
-        (project / "facts" / "sparks" / "spark-0001.yaml")
+        (project / "ldvh-base" / "sparks" / "spark-0001.yaml")
         .read_text(encoding="utf-8")
         .replace("spark-0001", "spark-0002")
         + "#"
@@ -413,7 +413,7 @@ def test_oversized_fact_is_unavailable_without_affecting_other_exact_reads(tmp_p
 
 def test_closed_superseded_workcase_requires_a_routed_to_successor(tmp_path: Path) -> None:
     workspace, project = _fixture(tmp_path)
-    directory = project / "facts" / "workcases"
+    directory = project / "ldvh-base" / "workcases"
     directory.mkdir()
     (directory / "workcase-0001.yaml").write_text(
         """object_id: workcase-0001
@@ -489,7 +489,7 @@ closed_at: 2026-07-14T10:00:00+08:00
 
 def test_superseded_adr_requires_exactly_one_valid_incoming_source(tmp_path: Path) -> None:
     workspace, project = _fixture(tmp_path)
-    directory = project / "facts" / "adrs"
+    directory = project / "ldvh-base" / "adrs"
     directory.mkdir()
     (directory / "adr-0001.yaml").write_text(
         """object_id: adr-0001
@@ -616,7 +616,7 @@ relations:
 
 def test_project_relation_results_are_stable_across_request_order(tmp_path: Path) -> None:
     workspace, project = _fixture(tmp_path)
-    directory = project / "facts" / "sparks"
+    directory = project / "ldvh-base" / "sparks"
     for object_id, target_type, target_id in (
         ("spark-0002", "workcase", "workcase-9999"),
         ("spark-0003", "spark", "spark-0002"),

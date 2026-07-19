@@ -9,6 +9,8 @@ export const STATUS_COLORS: Record<string, { light: string; dark: string }> = {
   accepted: { light: '#059669', dark: '#00d4aa' },
   closed: { light: '#6b7280', dark: '#6b7280' },
   resolved: { light: '#6b7280', dark: '#6b7280' },
+  routed: { light: '#6b7280', dark: '#6b7280' },
+  open: { light: '#d97706', dark: '#f59e0b' },
   pending: { light: '#d97706', dark: '#f59e0b' },
   draft: { light: '#d97706', dark: '#f59e0b' },
   proposed: { light: '#d97706', dark: '#f59e0b' },

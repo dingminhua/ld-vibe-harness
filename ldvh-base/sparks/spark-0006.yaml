@@ -1,0 +1,11 @@
+title: LDVH 开源发布就绪与公共契约
+status: open
+priority: P1
+source_refs:
+- kind: human-input
+  locator: 2026-07-19 Human：建 P1 开源发布公共契约 Spark，暂不推进
+summary: 记录 LDVH 面向开源发布前仍需判断和承接的发布就绪条件与公共契约边界；当前只保留为后续议题，不构成发布计划、完成声明或立即执行授权。
+object_id: spark-0006
+fact_type_key: spark
+created_at: '2026-07-19T10:19:29.162601+08:00'
+updated_at: '2026-07-19T10:26:47.796420+08:00'

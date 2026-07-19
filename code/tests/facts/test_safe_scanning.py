@@ -54,7 +54,7 @@ def test_raw_type_scan_detects_listing_drift(
     def changing_listing(*args: object, **kwargs: object) -> tuple[Path, ...]:
         nonlocal calls
         calls += 1
-        return () if calls == 1 else (tmp_path / "facts/sparks/spark-0001.yaml",)
+        return () if calls == 1 else (tmp_path / "ldvh-base/sparks/spark-0001.yaml",)
 
     monkeypatch.setattr(candidate_discovery, "_identity_issue", lambda *args: (None, None))
     monkeypatch.setattr(candidate_discovery, "safe_list_directory", changing_listing)
@@ -117,14 +117,14 @@ def test_raw_type_scan_preserves_invalid_read_instead_of_filtering_it(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    path = tmp_path / "facts/sparks/spark-0001.yaml"
+    path = tmp_path / "ldvh-base/sparks/spark-0001.yaml"
     monkeypatch.setattr(candidate_discovery, "_identity_issue", lambda *args: (None, None))
     monkeypatch.setattr(candidate_discovery, "safe_list_directory", lambda *args, **kwargs: (path,))
     monkeypatch.setattr(
         ProjectFactIndex,
         "read",
         lambda *args, **kwargs: FactReadResult(
-            "facts/sparks/spark-0001.yaml",
+            "ldvh-base/sparks/spark-0001.yaml",
             "yaml",
             "invalid",
             None,

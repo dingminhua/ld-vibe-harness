@@ -448,7 +448,7 @@ def test_each_terminal_or_blocked_state_enforces_its_condition_fields(
 @pytest.mark.parametrize(
     ("kind", "locator", "version"),
     [
-        ("fact-object", "facts/sparks/spark-0001.yaml", None),
+        ("fact-object", "ldvh-base/sparks/spark-0001.yaml", None),
         ("repository-path", "docs/input.md", None),
         ("git-revision", "docs/input.md", "HEAD"),
         ("web-page", "https://example.invalid/page", None),

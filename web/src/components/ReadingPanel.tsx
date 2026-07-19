@@ -2,7 +2,6 @@ import { useEffect, useRef, useState, useCallback, type ReactNode } from 'react'
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, X, GripVertical, FileText, ExternalLink } from 'lucide-react';
 import { usePanel, type PanelContent } from '@/utils/panelContext';
 import MarkdownPreview from '@/components/MarkdownPreview';
-import CopyPathButton from '@/components/CopyPathButton';
 import { useI18n } from '@/i18n/context';
 import {
   ContentField,

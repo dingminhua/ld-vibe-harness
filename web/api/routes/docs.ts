@@ -9,7 +9,7 @@ import { LDVH_ROOT } from '../services/pytools.js'
 const router = Router()
 
 /** 允许读取的目录前缀（安全白名单） */
-const ALLOWED_PREFIXES = ['specs/', 'docs/', 'web/docs/']
+const ALLOWED_PREFIXES = ['specs/', 'web/docs/']
 
 router.get('/', async (req: Request, res: Response): Promise<void> => {
   const docPath = String(req.query.path || '')

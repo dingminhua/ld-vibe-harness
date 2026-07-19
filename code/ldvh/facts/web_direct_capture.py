@@ -13,7 +13,11 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Literal
 
-from ldvh.facts.candidate_discovery import FactTypeRawSnapshot, discover_fact_type_raw
+from ldvh.facts.candidate_discovery import (
+    MAX_WEB_FACT_AGGREGATE_BYTES,
+    FactTypeRawSnapshot,
+    discover_fact_type_raw,
+)
 from ldvh.facts.contracts import LAYOUTS
 from ldvh.facts.creation import CreationBoundary, allocation_lock, candidate_object_id, serialize_fact_object
 from ldvh.facts.creation_application import (
@@ -209,7 +213,7 @@ def _snapshot_identities(
 ) -> WebDirectCaptureResult | tuple[tuple[str, str], ...]:
     if snapshot.structural_problems:
         structural = tuple(
-            str(problem.get("canonical_path", "facts/sparks")) for problem in snapshot.structural_problems
+            str(problem.get("canonical_path", "ldvh-base/sparks")) for problem in snapshot.structural_problems
         )
         if all("identity" in str(problem) or "文件名" in str(problem) for problem in snapshot.structural_problems):
             return WebDirectCaptureResult(
@@ -389,6 +393,7 @@ def create_web_spark_direct_capture(
                 boundary.git_common_dir,
                 schema_snapshot,
                 "spark",
+                aggregate_budget_bytes=MAX_WEB_FACT_AGGREGATE_BYTES,
             )
             matches = _snapshot_identities(snapshot, identity.digest)
             if isinstance(matches, WebDirectCaptureResult):

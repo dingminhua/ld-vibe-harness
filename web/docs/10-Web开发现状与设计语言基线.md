@@ -56,7 +56,6 @@
 | Changelog | [`06-Changelog.md`](./06-Changelog.md) | 已进入五个基准模块 | 提交页是证据流工具页，但卡片和详情语言与对象模块同源 |
 | ProjectFiles | [`05-ProjectFiles.md`](./05-ProjectFiles.md) | 工具页，提交历史已复用 Changelog/Dashboard 的 commit parser 和 DTO 字段 | 不以五个模块卡片语言强行改造，但复制、Markdown、路径、提交记录字段和工具密度应遵守全局规则 |
 | 图标语义 | [`09-图标语义规范.md`](./09-图标语义规范.md) | 基线文档 | 新增图标或操作先检查语义归属 |
-| 测试实现 | [`11-Web测试实现规范.md`](./11-Web测试实现规范.md) | 基线文档 | 改 API、路由、状态、复制或 i18n 时同步检查 |
 
 ## 3.1 页面确认矩阵
 

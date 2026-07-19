@@ -36,7 +36,7 @@ def _index(tmp_path: Path) -> tuple[ProjectFactIndex, str]:
 
 def _read(*references: dict[str, str]) -> FactReadResult:
     return FactReadResult(
-        "facts/studies/study-0001.md",
+        "ldvh-base/studies/study-0001.md",
         "markdown",
         "mechanically_valid",
         {"source_refs": list(references), "evidence_refs": []},
@@ -79,7 +79,7 @@ def test_study_fact_object_reference_requires_a_valid_current_target(tmp_path: P
     index, _ = _index(tmp_path)
     issues, unavailable = validate_study_sources(
         index,
-        _read({"kind": "fact-object", "locator": "facts/sparks/spark-9999.yaml"}),
+        _read({"kind": "fact-object", "locator": "ldvh-base/sparks/spark-9999.yaml"}),
     )
     assert unavailable is False
     assert any("mechanically valid" in issue.summary for issue in issues)
