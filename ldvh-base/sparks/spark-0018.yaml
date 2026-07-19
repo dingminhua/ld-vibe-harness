@@ -1,0 +1,14 @@
+title: 无环境 Hook 下的 LDVH 自约束运行
+status: open
+priority: P2
+source_refs:
+- kind: human-input
+  locator: 2026-07-19 Human：创建 Spark，研究 LDVH 在没有环境 Hook 下是否可依靠 Agent.md 
+    等规则文档进行自动约束
+summary: 研究在没有环境 Hook 注入或阻断时，LDVH 是否仍能依靠 Agent.md 等规则文档被 Agent 
+  稳定发现、遵守、验证与回收；需区分文档规则能够形成的行为约束、Helper 与 Agent 的主动执行责任，以及 Hook 
+  提供的自动注入、阻断和审计能力，不把规则文档存在或 Agent 自律误判为自动约束已经成立。
+object_id: spark-0018
+fact_type_key: spark
+created_at: '2026-07-19T18:45:09.421410+08:00'
+updated_at: '2026-07-19T18:45:09.421410+08:00'

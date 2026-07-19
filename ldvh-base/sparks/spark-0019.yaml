@@ -1,0 +1,13 @@
+title: Agent 友好的 LDVH Helper 创建工作流
+status: open
+priority: P2
+source_refs:
+- kind: human-input
+  locator: 2026-07-19 Human：将 LDVH Helper 创建过程的顺畅性与 Agent 可用性作为后续深入议题
+summary: 研究如何让 LDVH Helper CLI 对 Agent 更易发现、更少负担且保持治理可靠：优化公开操作说明、JSON 
+  请求示例、草案依据传递、候选事实召回、诊断信息压缩以及写后回读交接；明确机械校验、语义判断与 Human Gate 
+  的分层，不以降低校验、来源和授权边界换取表面上的一步创建。
+object_id: spark-0019
+fact_type_key: spark
+created_at: '2026-07-19T18:47:20.417174+08:00'
+updated_at: '2026-07-19T18:47:20.417174+08:00'
