@@ -9,7 +9,7 @@ const MAX_WIDTH_RATIO = 0.58;
 const DEFAULT_WIDTH = 380;
 const DEFAULT_DOC_WIDTH = 680;
 const SNAP_THRESHOLD = 40;
-const MOBILE_BREAKPOINT = 768;
+const MOBILE_BREAKPOINT = 640; // 与侧栏 Tailwind `sm:` 断点一致
 
 export default function ReadingPanel() {
   const { isOpen, content, canGoBack, canGoForward, goBack, goForward, closePanel } = usePanel();

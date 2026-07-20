@@ -1,4 +1,4 @@
-import { useEffect, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { ArrowLeft, BookOpenText, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Code2, ExternalLink, FileText } from 'lucide-react';
 import Markdown from 'react-markdown';
@@ -82,12 +82,26 @@ export default function ObjectDetail() {
   const [showYaml, setShowYaml] = useState(false);
   const { t, getStatus, locale } = useI18n();
 
+  // 保留上一次成功渲染的详情，仅当路由与缓存对象一致时复用（前进/后退/面板往返），
+  // 避免全屏空白闪烁；切到不同对象时不展示旧内容，改走骨架加载
+  const lastDetailRef = useRef<{ key: string; value: ObjectDetail } | null>(null);
+  useEffect(() => {
+    if (detail) {
+      lastDetailRef.current = { key: `${detail.summary.type}/${detail.summary.id}`, value: detail };
+    }
+  }, [detail]);
+
+  const currentKey = type && id ? `${type}/${id}` : null;
+  const cached = currentKey && lastDetailRef.current?.key === currentKey ? lastDetailRef.current.value : null;
+  const displayDetail = detail ?? cached;
+  const isStale = !detail && displayDetail !== null;
+
 
 
   useEffect(() => {
     if (!type || !id) return;
     let cancelled = false;
-    setDetail(null);
+    // 不再 setDetail(null)：保留旧详情做占位，新数据到达再替换，消除全屏空白闪烁
     setRelatedWorkCaseSummary(null);
     setRelatedSummaryLoading(type === 'workcase');
     setError(null);
@@ -131,7 +145,9 @@ export default function ObjectDetail() {
     );
   }
 
-  if (!detail) {
+  // 仅当连缓存都没有（首次进入）才显示全屏 spinner；
+  // 路由切换加载期间沿用旧内容，由下方 isStale 轻提示代替
+  if (!displayDetail) {
     return (
       <div className="flex h-full items-center justify-center">
         <div className="h-6 w-6 animate-spin rounded-full border-2 border-ldvh-accent border-t-transparent" />
@@ -139,10 +155,10 @@ export default function ObjectDetail() {
     );
   }
 
-  const obj = detail.data;
-  const objId = detail.summary.id;
-  const objType = detail.summary.type;
-  const objStatus = detail.summary.status;
+  const obj = displayDetail.data;
+  const objId = displayDetail.summary.id;
+  const objType = displayDetail.summary.type;
+  const objStatus = displayDetail.summary.status;
   const typeColor = CATEGORY_COLORS[objType] || CATEGORY_COLORS.other;
 
   const displayTitle = getLocalizedObjectTitle(obj as LocalizedTitleItem, locale, objId);
@@ -158,13 +174,19 @@ export default function ObjectDetail() {
   const listPath = `/objects/${objType}${listSearch ? `?${listSearch}` : ''}`;
   const currentPath = `${location.pathname}${location.search}`;
   const returnPath = getReturnPath(location.state, currentPath) ?? listPath;
-  const copyTarget = String(obj.path || detail.target || objId);
+  const copyTarget = String(obj.path || displayDetail.target || objId);
 
   return (
     <div className="flex h-full">
       {/* Main content area */}
       <div className="flex-1 overflow-y-auto rounded-none transition-[margin] duration-300">
-        <div className="mx-auto max-w-4xl p-4 sm:p-6">
+        {/* 切换加载中的细进度条：保留旧内容时给出轻提示 */}
+        {isStale && (
+          <div className="sticky top-0 z-30 h-0.5 w-full overflow-hidden bg-ldvh-border/40">
+            <div className="h-full w-1/3 animate-pulse bg-ldvh-accent" />
+          </div>
+        )}
+        <div className={`mx-auto max-w-4xl p-4 sm:p-6 transition-opacity duration-150 ${isStale ? 'opacity-60' : 'opacity-100'}`}>
           <div className="sticky top-0 z-20 -mx-4 -mt-4 mb-6 border-b border-ldvh-border bg-ldvh-bg/95 px-4 pb-4 pt-4 backdrop-blur sm:-mx-6 sm:-mt-6 sm:px-6">
           {/* Header */}
           <div>
@@ -211,7 +233,7 @@ export default function ObjectDetail() {
               extraEntries={primaryEntries}
               relatedEntries={relatedEntries}
               locale={locale}
-              objectPath={typeof obj.path === 'string' ? obj.path : detail.target}
+              objectPath={typeof obj.path === 'string' ? obj.path : displayDetail.target}
             />
           ) : objType === 'adr' ? (
             <AdrReadingLayout
@@ -240,7 +262,7 @@ export default function ObjectDetail() {
                   value={value}
                   locale={locale}
                   objType={objType}
-                  objectPath={typeof obj.path === 'string' ? obj.path : detail.target}
+                  objectPath={typeof obj.path === 'string' ? obj.path : displayDetail.target}
                 />
               ))}
               <RelatedContentSection entries={relatedEntries} locale={locale} />

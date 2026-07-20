@@ -122,7 +122,7 @@ Spark 不使用普通字段卡片堆叠。Spark 是“分流前的信息对象�
 1. “意图”消费 `source_detail`，使用与 Study “意图”一致的主节点样式表达这条 Spark 的来源意图、问题触发或对话背景；不得再以“来源说明”字段卡片或来源子字段表达。
 2. “摘要”消费 `description`，展示当前问题焦点、保留价值和阶段性收敛方向；这是 Spark 主阅读节点，不得被压在普通字段卡片中。
 3. “演变”消费 `evolution`，按倒序展示关键语义转折；每条展示 `at` 和 `summary`，`at` 拆成日期与时间两行展示，不做聊天流水账样式，不额外创建时间线事实源。
-4. “分流”只在 `status` 为 `resolved` / `discarded`，或存在 `resolved_to`、`resolved_at`、`discard_reason` 任一真实闭环事实时渲染；`pending` 且没有上述事实时不得渲染“分流”节点，不得用固定提示文案占位。节点内消费 `status`、`resolved_to`、`resolved_at`、`discard_reason`：`resolved` 显示分流目标引用和分流日期；`discarded` 显示废弃原因。Web 只读展示，不提供状态修改、分流或废弃按钮。
+4. "分流"只在 `status` 为 `routed` / `discarded`，或存在 `resolved_to`、`resolved_at`、`discard_reason` 任一真实闭环事实时渲染；`open` 且没有上述事实时不得渲染"分流"节点，不得用固定提示文案占位。节点内消费 `status`、`resolved_to`、`resolved_at`、`discard_reason`：`routed` 显示分流目标引用和分流日期；`discarded` 显示废弃原因。Web 只读展示，不提供状态修改、分流或废弃按钮。
 5. `source` 不进入正文节点，必须作为对象头部弱元信息展示在“更新”之后，表达方式与创建/更新元信息一致。
 6. “关联”统一收纳 `related_workcases`、`related_workcases`、`related_adrs`、`related_studies` 和 `related_docs`，按关联区通用行样式展示；Spark 当前字段契约没有 `related_sparks` 或 `related_pitfalls`，Web 不得为 Spark 杜撰这两类字段。
 

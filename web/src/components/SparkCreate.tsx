@@ -1,4 +1,5 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
+import { createPortal } from 'react-dom';
 import { Plus, X, Loader2 } from 'lucide-react';
 import { useI18n } from '@/i18n/context';
 
@@ -25,6 +26,16 @@ export default function SparkCreate({ onCreated }: SparkCreateProps) {
     setError(null);
     setSuccess(false);
   };
+
+  // Esc 关闭弹窗
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { setIsOpen(false); reset(); }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isOpen]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -69,9 +80,17 @@ export default function SparkCreate({ onCreated }: SparkCreateProps) {
     );
   }
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 pt-[10vh]">
-      <div className="w-full max-w-lg rounded-lg border border-ldvh-border bg-ldvh-panel shadow-2xl">
+  // 用 Portal 挂到 body，避免被父级 sticky/transform 容器限制 fixed 定位
+  return createPortal(
+    <div className="fixed inset-0 z-[100]">
+      {/* 遮罩：fixed 全屏，点击关闭 */}
+      <div
+        className="absolute inset-0 bg-black/40"
+        onClick={() => { setIsOpen(false); reset(); }}
+      />
+      {/* 面板定位层：不拦截遮罩点击 */}
+      <div className="pointer-events-none absolute inset-0 flex items-start justify-center pt-[10vh]">
+        <div className="pointer-events-auto relative w-full max-w-lg rounded-lg border border-ldvh-border bg-ldvh-panel shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between gap-2 border-b border-ldvh-border px-4 py-3">
           <h2 className="ldvh-section-title">{t('spark.create')}</h2>
@@ -151,7 +170,9 @@ export default function SparkCreate({ onCreated }: SparkCreateProps) {
             </button>
           </form>
         )}
+        </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

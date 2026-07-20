@@ -33,7 +33,7 @@
 - 展示“各状态 + 全部 + 数量”，“全部”固定在最后。
 - 状态筛选使用全局 tab 样式：`ldvh-tab-list`、`ldvh-tab-button`、`ldvh-tab-button-active` 和 `ldvh-tab-button-idle`，与提交记录页加载范围、type、scope 筛选保持一致。
 - 数据返回前先渲染稳定的筛选占位，数字位置使用轻量加载动画，避免对象卡片先出现、顶部筛选后插入造成页面跳动。
-- 对有活跃态的主工作对象，URL 无 `status` 时默认视为对象当前主推进态；WorkCase 因当前事实源可能同时存在新状态和 legacy 状态，默认展示全部工作项，并在筛选条显式展示当前新状态机与 legacy 状态计数；WorkCase / ADR / Pitfall / Study 默认视为 `active`，Spark 默认视为 `pending`；用户显式选择全部时写入 `?status=all`。
+- 对有活跃态的主工作对象，URL 无 `status` 时默认视为对象当前主推进态；WorkCase 因当前事实源可能同时存在新状态和 legacy 状态，默认展示全部工作项，并在筛选条显式展示当前新状态机与 legacy 状态计数；WorkCase / ADR / Pitfall / Study 默认视为 `active`，Spark 默认视为 `open`；用户显式选择全部时写入 `?status=all`。
 - 当前状态写入 URL query：例如 `?status=human_closure_confirming`；历史对象仍可使用 `?status=review_needed` 或 `?status=active` 筛选。
 - 点击对象进入详情页时保留当前 query，使详情页返回路径与列表筛选一致。
 
@@ -92,18 +92,30 @@ Spark 是“待分流信息”卡片，列表态用于快速定位每条火花�
 - Spark 卡片保留通用头部、标题、优先级字符徽标、状态和更新时间。
 - Spark 卡片不使用通用非活跃原因块；卡片中部只由 Spark 闭环状态驱动。
 - Spark 卡片中部状态内容必须使用与 Pitfall 归档原因一致的弱说明表达：弱圆点、小号标签、小号正文，无彩色外框、无大面积状态底色、无 section 标题级强调。
-- `pending` 且没有分流闭环事实时，卡片中部不展示 `source`、`source_detail` 或 `description`；来源和意图留在 Spark 详情页的正文节点中阅读。
-- `resolved` 或存在 `resolved_to` / `resolved_at` 时，卡片中部展示“已分流”区域，消费 `resolved_to` 和 `resolved_at`：`resolved_to` 显示分流目标，`resolved_at` 显示分流时间。不得只用状态徽章表达已解决。
-- `discarded` 或存在 `discard_reason` 时，卡片中部展示“已废弃”区域，消费 `discard_reason`；缺少原因时展示原因缺失提示。不得再同时展示通用非活跃原因块造成重复。
+- `open` 且没有分流闭环事实时，卡片中部不展示 `source`、`source_detail` 或 `description`；来源和意图留在 Spark 详情页的正文节点中阅读。
+- `routed` 或存在 `resolved_to` / `resolved_at` 时，卡片中部展示"已分流"区域，消费 `resolved_to` 和 `resolved_at`：`resolved_to` 显示分流目标，`resolved_at` 显示分流时间。不得只用状态徽章表达已分流。
+- `discarded` 或存在 `discard_reason` 时，卡片中部展示"已废弃"区域，消费 `discard_reason`；缺少原因时展示原因缺失提示。不得再同时展示通用非活跃原因块造成重复。
 - Spark 卡片内部信息区域只用于阅读，不响应主路由跳转；点击外层卡片仍进入 Spark 详情页。
 
-### 3.6 空态、加载态、错误态
+### 3.6 Spark 创建入口
+
+Spark 列表页提供 Spark 直接捕获入口，属于 `specs/08-Web 呈现与交互规范.md` §8.2 的 web-direct-capture 窄例外边界，不改变"Web 默认只读"的基线。
+
+- 入口仅出现在 Spark 类型列表页（`ObjectList.tsx` 中 `currentType === 'spark'` 时渲染 `SparkCreate`），不扩散到其他对象类型；其他类型的创建、修改、删除仍必须走 Helper CLI / Human 操作路径。
+- 入口默认折叠为弱化 chip（`ldvh-chip` + 虚线边框 + `Plus` 图标 + `spark.quickCapture`），不抢占列表主视觉；点击后打开居上模态表单。
+- 表单字段严格封闭为三件套：`title`、`description`、`priority`（下拉仅 `P0` / `P1` / `P2` / `P3`，默认 `P3`），与 08 §8.2 的字段闭集一致；不扩展来源、标签、状态等任何额外字段。
+- 提交走 `POST /api/sparks`；该路由仅接受 loopback 连接（`127.0.0.1` / `::1` / `::ffff:127.0.0.1`），非回环请求一律 `403 LOOPBACK_REQUIRED`，对应"单机单用户单项目"边界。
+- 状态码语义：`created` → 201，`invalid` → 400，`exact_duplicate` / `integrity_conflict` → 409，`unavailable` → 503；前端按 HTTP 错误统一展示服务端返回的错误文案（`errors` 列表或 `error`），不自行杜撰失败原因。
+- 创建成功后展示成功提示并回调 `onCreated` 触发列表重新加载（`setReloadKey`），约 1.5 秒后自动关闭表单并重置字段；失败时保留表单内容供修改重试。
+- 该入口只是捕获通道：回读校验、重复检测、完整性判断全部由 V4 Spark 写入机（Helper 侧）完成，Web 不在前端复制这些判断逻辑。
+
+### 3.7 空态、加载态、错误态
 
 - 加载态：居中旋转动画。
 - 错误态：`common.loadFailed` + 错误信息。
 - 空态：`objectList.noObjects`，不得拼 raw 中文句子。
 
-### 3.7 五个基准模块中的对象列表基线
+### 3.8 五个基准模块中的对象列表基线
 
 研究、决策、火花、经验四个对象列表已经进入五个基准模块，应作为非工作主线对象卡片的统一基线。提交列表不属于工作对象列表，但其卡片网格、标题带、右上复制入口和底部更新时间必须与这四类对象列表保持同一视觉语言。
 

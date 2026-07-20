@@ -35,7 +35,7 @@
 ### 3.2 对象统计网格
 
 - 使用 `ldvh-dashboard-stats-grid`。
-- 固定顺序：workcase → adr → pitfall → spark → study。
+- 固定顺序：spark → workcase → adr → pitfall → study。
 - 每张卡片展示类型名称、总数和状态分布。
 - 点击统计卡片跳转到 `/objects/{type}`。
 
