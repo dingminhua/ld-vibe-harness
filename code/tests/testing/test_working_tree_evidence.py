@@ -13,6 +13,7 @@ from ldvh.testing.working_tree_evidence import (
     current_complete_coverage,
     current_policy_fingerprint,
     current_policy_projection,
+    finalize_working_tree_evidence,
     manifest_fingerprint,
     normalize_relative_path,
     normalize_relative_paths,
@@ -173,6 +174,16 @@ def test_identical_complete_manifests_produce_and_validate_complete_evidence() -
     assert comparison == {"status": "complete", "changes": []}
     validate_working_tree_evidence(_evidence(before, after, status="complete", changes=[]))
 
+    finalized = finalize_working_tree_evidence(
+        governed_project_id="ldvh",
+        git_worktree_root="/workspace/ldvh",
+        git_common_dir="/workspace/ldvh-main/.git",
+        coverage=current_complete_coverage(),
+        before=before,
+        after=after,
+    )
+    assert finalized == _evidence(before, after, status="complete", changes=[])
+
 
 def test_complete_manifest_diff_is_sorted_and_produces_stale_evidence() -> None:
     before = _manifest([_file("a.txt", b"old"), _file("m.txt", b"removed")])
@@ -247,6 +258,15 @@ def test_missing_or_incomplete_after_returns_incomplete_without_changes() -> Non
         coverage=_incomplete_coverage(),
     )
     validate_working_tree_evidence(evidence)
+    assert finalize_working_tree_evidence(
+        governed_project_id="ldvh",
+        git_worktree_root="/workspace/ldvh",
+        git_common_dir="/workspace/ldvh-main/.git",
+        coverage=_incomplete_coverage(),
+        before=before,
+        after=None,
+        identities_match=False,
+    ) == evidence
 
 
 def test_incomplete_evidence_forbids_partial_changes() -> None:

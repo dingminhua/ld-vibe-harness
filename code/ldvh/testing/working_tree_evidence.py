@@ -16,7 +16,7 @@ import unicodedata
 from collections.abc import Mapping, Sequence
 from datetime import datetime
 from pathlib import PureWindowsPath
-from typing import Any
+from typing import Any, Literal
 
 EVIDENCE_CONTRACT = "ldvh-working-tree-evidence/1"
 COVERAGE_POLICY_CONTRACT = "ldvh-working-tree-coverage-policy/1"
@@ -164,6 +164,31 @@ def current_complete_coverage() -> dict[str, Any]:
     }
 
 
+def policy_excludes_relative_path(
+    path: str,
+    *,
+    entry_kind: Literal["directory", "regular_file", "other"],
+) -> bool:
+    """Return whether the fixed policy excludes one normalized relative path.
+
+    ``entry_kind`` is supplied by the filesystem observation layer.  Keeping
+    path-rule matching here ensures capture code cannot silently duplicate or
+    drift from the policy projection used for the policy fingerprint.
+    """
+
+    normalized = normalize_relative_path(path)
+    if entry_kind not in {"directory", "regular_file", "other"}:
+        raise ValueError("entry_kind is outside the closed enum")
+    segments = normalized.split("/")
+    for rule in _POLICY_RULES:
+        if rule["effect"] != "exclude":
+            continue
+        for path_rule in rule["path_rules"]:
+            if _path_rule_matches(path_rule, normalized, segments, entry_kind):
+                return True
+    return False
+
+
 def normalize_relative_path(path: str) -> str:
     """Normalize one observed worktree-relative path to NFC.
 
@@ -200,6 +225,39 @@ def normalize_relative_paths(paths: Sequence[str]) -> tuple[str, ...]:
         sources[result] = path
         normalized.append(result)
     return tuple(normalized)
+
+
+def _path_rule_matches(
+    path_rule: str,
+    path: str,
+    segments: list[str],
+    entry_kind: str,
+) -> bool:
+    if path_rule.startswith("ROOT:"):
+        target = path_rule.removeprefix("ROOT:")
+        if target.endswith("/**"):
+            target = target.removesuffix("/**")
+            return path == target or path.startswith(f"{target}/")
+        # The sole current exact ROOT rule is .git, whose attachment-defined
+        # boundary covers either the administration file or its complete tree.
+        return path == target or path.startswith(f"{target}/")
+    if path_rule.startswith("ANY_DIR:"):
+        target = path_rule.removeprefix("ANY_DIR:").removesuffix("/**")
+        directory_segments = segments if entry_kind == "directory" else segments[:-1]
+        return target in directory_segments
+    if path_rule.startswith("ANY_SUFFIX_DIR:"):
+        suffix = path_rule.removeprefix("ANY_SUFFIX_DIR:").removesuffix("/**")
+        directory_segments = segments if entry_kind == "directory" else segments[:-1]
+        return any(segment.endswith(suffix) for segment in directory_segments)
+    if path_rule.startswith("ANY_FILE:"):
+        target = path_rule.removeprefix("ANY_FILE:")
+        return entry_kind == "regular_file" and segments[-1] == target
+    if path_rule.startswith("ANY_SUFFIX_FILE:"):
+        suffix = path_rule.removeprefix("ANY_SUFFIX_FILE:")
+        return entry_kind == "regular_file" and segments[-1].endswith(suffix)
+    if path_rule == "ALL_REGULAR_FILES":
+        return False
+    raise ValueError(f"unsupported fixed policy path rule: {path_rule!r}")
 
 
 def manifest_fingerprint(files: Sequence[Mapping[str, Any]], policy_fingerprint: str) -> str:
@@ -326,6 +384,49 @@ def compare_manifests(
         # content hashes.  It must not emit a partial or invented difference.
         return {"status": "incomplete", "changes": []}
     return {"status": "stale", "changes": changes}
+
+
+def finalize_working_tree_evidence(
+    *,
+    governed_project_id: str,
+    git_worktree_root: str,
+    git_common_dir: str,
+    coverage: Mapping[str, Any],
+    before: Mapping[str, Any],
+    after: Mapping[str, Any] | None,
+    identities_match: bool = True,
+    policies_match: bool = True,
+    comparison_complete: bool = True,
+) -> dict[str, Any]:
+    """Form and validate the sole closed Working Tree evidence DTO.
+
+    Filesystem and runner layers provide already observed identity, coverage,
+    and manifests.  Keeping the DTO field set and deterministic comparison in
+    this pure module prevents those side-effect layers from maintaining a
+    second evidence schema.
+    """
+
+    comparison = compare_manifests(
+        before,
+        after,
+        policy_fingerprint=coverage["policy_fingerprint"],
+        identities_match=identities_match,
+        policies_match=policies_match,
+        comparison_complete=comparison_complete,
+    )
+    evidence = {
+        "contract": EVIDENCE_CONTRACT,
+        "governed_project_id": governed_project_id,
+        "git_worktree_root": git_worktree_root,
+        "git_common_dir": git_common_dir,
+        "status": comparison["status"],
+        "coverage": dict(coverage),
+        "before": dict(before),
+        "after": None if after is None else dict(after),
+        "changes": comparison["changes"],
+    }
+    validate_working_tree_evidence(evidence)
+    return evidence
 
 
 def validate_working_tree_evidence(evidence: Mapping[str, Any]) -> None:
