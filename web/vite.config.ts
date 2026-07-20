@@ -6,6 +6,12 @@ import { resolve } from 'node:path';
 
 const apiTarget = process.env.VITE_API_TARGET || 'http://localhost:3001';
 
+// 允许通过环境变量追加 dev server 可访问主机（如内网穿透域名），默认保留原值以不破坏既有开发访问。
+const allowedHosts = (process.env.VITE_ALLOWED_HOSTS || '2ch75157hd.vicp.fun')
+  .split(',')
+  .map((host) => host.trim())
+  .filter(Boolean);
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
@@ -29,6 +35,7 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
+      '@/shared': resolve(__dirname, 'shared'),
       '@': resolve(__dirname, 'src'),
     },
   },
@@ -36,24 +43,12 @@ export default defineConfig({
     host: '127.0.0.1',
     port: 5173,
     strictPort: true,
-    allowedHosts: ['2ch75157hd.vicp.fun'],
+    allowedHosts,
     proxy: {
       '/api': {
         target: apiTarget,
         changeOrigin: true,
         secure: false,
-        configure: (proxy) => {
-          proxy.on('error', (err) => {
-            console.log('proxy error', err);
-          });
-          proxy.on('proxyReq', (proxyReq, req) => {
-            void proxyReq
-            console.log('Sending Request to the Target:', req.method, req.url);
-          });
-          proxy.on('proxyRes', (proxyRes, req) => {
-            console.log('Received Response from the Target:', proxyRes.statusCode, req.url);
-          });
-        },
       }
     }
   }

@@ -1,4 +1,3 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   AlertCircle,
   ChevronRight,
@@ -19,204 +18,29 @@ import CopyPathButton from '@/components/CopyPathButton';
 import MarkdownPreview from '@/components/MarkdownPreview';
 import PageHeader from '@/components/PageHeader';
 import { useI18n } from '@/i18n/context';
-import {
-  fetchProjectFileContent,
-  fetchProjectFileEntries,
-  fetchProjectFilesProjects,
-  fetchProjectGitCommitDetail,
-  fetchProjectGitCommitFileDiff,
-  fetchProjectGitCommits,
-  fetchProjectGitDiff,
-  fetchProjectGitStatus,
-  type GovernedProject,
-  type ProjectFileContentData,
-  type ProjectFileEntry,
-  type ProjectGitDiffData,
-  type ProjectGitCommitDetail,
-  type ProjectGitCommitEntry,
-  type ProjectGitCommitFile,
-  type ProjectGitStatusEntry,
-} from '@/utils/api';
+import { getGitStatusLabel, getProjectFileKindLabel } from '@/i18n/locales';
+import { type ProjectFileEntry } from '@/utils/api';
 import { formatDateTime } from '@/utils/dateFormat';
-
-type FilePanelState = {
-  data: ProjectFileContentData | null;
-  loading: boolean;
-  error: string | null;
-};
-
-type DiffPanelState = {
-  data: ProjectGitDiffData | null;
-  loading: boolean;
-  error: string | null;
-};
-
-type EntryKind = ProjectFileEntry['kind'];
-type ActiveProjectFilesTab = 'files' | 'changes' | 'history';
-type DiffViewMode = 'unified' | 'split';
-
-type CommitPanelState = {
-  data: ProjectGitCommitDetail | null;
-  loading: boolean;
-  error: string | null;
-};
-
-type SplitDiffCell = {
-  kind: 'context' | 'delete' | 'add' | 'empty';
-  lineNumber?: number;
-  text?: string;
-};
-
-type SplitDiffRow =
-  | { kind: 'meta' | 'hunk'; text: string }
-  | { kind: 'line'; oldCell: SplitDiffCell; newCell: SplitDiffCell };
-
-function pickCopy<T>(locale: string, zh: T, en: T): T {
-  return locale === 'en' ? en : zh;
-}
-
-function formatBytes(size: number): string {
-  if (!Number.isFinite(size) || size <= 0) return '0 B';
-  const units = ['B', 'KB', 'MB', 'GB'];
-  let value = size;
-  let unitIndex = 0;
-  while (value >= 1024 && unitIndex < units.length - 1) {
-    value /= 1024;
-    unitIndex += 1;
-  }
-  return `${value >= 10 || unitIndex === 0 ? value.toFixed(0) : value.toFixed(1)} ${units[unitIndex]}`;
-}
-
-function getFileName(filePath?: string): string {
-  if (!filePath) return '';
-  const parts = filePath.split('/').filter(Boolean);
-  return parts[parts.length - 1] || filePath;
-}
-
-function isHiddenRelativePath(filePath: string): boolean {
-  return filePath.split('/').some((part) => part.startsWith('.') && part.length > 1);
-}
+import {
+  formatBytes,
+  getDiffLineClass,
+  getFileName,
+  getSplitDiffCellClass,
+  getSvgDataUrl,
+  type ProjectFileEntryKind as EntryKind,
+} from '@/pages/project-files/model';
+import { useProjectFilesController } from '@/pages/project-files/useProjectFilesController';
 
 function getKindLabel(kind: EntryKind, locale: string): string {
-  const labels: Record<EntryKind, { zh: string; en: string }> = {
-    directory: { zh: '目录', en: 'Directory' },
-    markdown: { zh: 'Markdown', en: 'Markdown' },
-    yaml: { zh: 'YAML', en: 'YAML' },
-    svg: { zh: 'SVG', en: 'SVG' },
-    text: { zh: '文本', en: 'Text' },
-    binary: { zh: '二进制', en: 'Binary' },
-  };
-  return locale === 'en' ? labels[kind].en : labels[kind].zh;
+  return getProjectFileKindLabel(kind, locale);
 }
 
 function getStatusLabel(status: string, locale: string): string {
-  const trimmed = status.trim();
-  const labels: Record<string, { zh: string; en: string }> = {
-    '??': { zh: '未跟踪', en: 'Untracked' },
-    M: { zh: '已修改', en: 'Modified' },
-    A: { zh: '新增', en: 'Added' },
-    D: { zh: '删除', en: 'Deleted' },
-    R: { zh: '重命名', en: 'Renamed' },
-    C: { zh: '复制', en: 'Copied' },
-    U: { zh: '冲突', en: 'Conflict' },
-  };
-  const key = trimmed === '??' ? '??' : trimmed.replace(/\s/g, '').charAt(0);
-  const label = labels[key];
-  if (!label) return status;
-  return locale === 'en' ? label.en : label.zh;
+  return getGitStatusLabel(status, locale);
 }
 
 function getCommitFileStatusLabel(status: string, locale: string): string {
-  const key = status.trim().charAt(0);
-  const labels: Record<string, { zh: string; en: string }> = {
-    A: { zh: '新增', en: 'Added' },
-    M: { zh: '修改', en: 'Modified' },
-    D: { zh: '删除', en: 'Deleted' },
-    R: { zh: '重命名', en: 'Renamed' },
-    C: { zh: '复制', en: 'Copied' },
-  };
-  const label = labels[key];
-  if (!label) return status;
-  return locale === 'en' ? label.en : label.zh;
-}
-
-function getSvgDataUrl(content: string): string {
-  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(content)}`;
-}
-
-function getDiffLineClass(line: string): string {
-  if (line.startsWith('+++') || line.startsWith('---')) return 'text-ldvh-text-secondary';
-  if (line.startsWith('+')) return 'text-emerald-400';
-  if (line.startsWith('-')) return 'text-red-400';
-  if (line.startsWith('@@')) return 'text-ldvh-accent';
-  if (line.startsWith('diff ') || line.startsWith('index ')) return 'text-sky-300';
-  return 'text-ldvh-text-primary';
-}
-
-function getSplitDiffCellClass(cell: SplitDiffCell): string {
-  if (cell.kind === 'delete') return 'bg-red-500/10 text-red-300';
-  if (cell.kind === 'add') return 'bg-emerald-500/10 text-emerald-300';
-  if (cell.kind === 'empty') return 'bg-ldvh-panel/60 text-ldvh-text-secondary';
-  return 'text-ldvh-text-primary';
-}
-
-function parseSplitDiff(diff: string): SplitDiffRow[] {
-  const rows: SplitDiffRow[] = [];
-  let oldLineNumber: number | null = null;
-  let newLineNumber: number | null = null;
-  let pendingDeletes: SplitDiffCell[] = [];
-
-  const flushDeletes = () => {
-    if (pendingDeletes.length === 0) return;
-    pendingDeletes.forEach((oldCell) => {
-      rows.push({ kind: 'line', oldCell, newCell: { kind: 'empty' } });
-    });
-    pendingDeletes = [];
-  };
-
-  diff.split('\n').forEach((line) => {
-    const hunkMatch = line.match(/^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/);
-    if (hunkMatch) {
-      flushDeletes();
-      oldLineNumber = Number(hunkMatch[1]);
-      newLineNumber = Number(hunkMatch[2]);
-      rows.push({ kind: 'hunk', text: line });
-      return;
-    }
-
-    if (oldLineNumber === null || newLineNumber === null) {
-      flushDeletes();
-      rows.push({ kind: 'meta', text: line });
-      return;
-    }
-
-    if (line.startsWith('-') && !line.startsWith('---')) {
-      pendingDeletes.push({ kind: 'delete', lineNumber: oldLineNumber, text: line.slice(1) });
-      oldLineNumber += 1;
-      return;
-    }
-
-    if (line.startsWith('+') && !line.startsWith('+++')) {
-      const newCell: SplitDiffCell = { kind: 'add', lineNumber: newLineNumber, text: line.slice(1) };
-      newLineNumber += 1;
-      const oldCell = pendingDeletes.shift() ?? { kind: 'empty' };
-      rows.push({ kind: 'line', oldCell, newCell });
-      return;
-    }
-
-    flushDeletes();
-    const text = line.startsWith(' ') ? line.slice(1) : line;
-    rows.push({
-      kind: 'line',
-      oldCell: { kind: 'context', lineNumber: oldLineNumber, text },
-      newCell: { kind: 'context', lineNumber: newLineNumber, text },
-    });
-    oldLineNumber += 1;
-    newLineNumber += 1;
-  });
-
-  flushDeletes();
-  return rows;
+  return getGitStatusLabel(status, locale);
 }
 
 function FileIcon({ entry }: { entry: ProjectFileEntry }) {
@@ -282,215 +106,51 @@ function LoadingState({ text }: { text: string }) {
 }
 
 export default function ProjectFiles() {
-  const { locale } = useI18n();
-  const [projects, setProjects] = useState<GovernedProject[]>([]);
-  const [projectId, setProjectId] = useState('');
-  const [projectsLoading, setProjectsLoading] = useState(true);
-  const [projectsError, setProjectsError] = useState<string | null>(null);
-  const [currentDir, setCurrentDir] = useState('');
-  const [entries, setEntries] = useState<ProjectFileEntry[]>([]);
-  const [entriesLoading, setEntriesLoading] = useState(false);
-  const [entriesError, setEntriesError] = useState<string | null>(null);
-  const [filePanel, setFilePanel] = useState<FilePanelState>({ data: null, loading: false, error: null });
-  const [gitEntries, setGitEntries] = useState<ProjectGitStatusEntry[]>([]);
-  const [gitLoading, setGitLoading] = useState(false);
-  const [gitError, setGitError] = useState<string | null>(null);
-  const [commitEntries, setCommitEntries] = useState<ProjectGitCommitEntry[]>([]);
-  const [commitsLoading, setCommitsLoading] = useState(false);
-  const [commitsError, setCommitsError] = useState<string | null>(null);
-  const [selectedCommitHash, setSelectedCommitHash] = useState('');
-  const [commitPanel, setCommitPanel] = useState<CommitPanelState>({ data: null, loading: false, error: null });
-  const [diffPanel, setDiffPanel] = useState<DiffPanelState>({ data: null, loading: false, error: null });
-  const [activeTab, setActiveTab] = useState<ActiveProjectFilesTab>('files');
-  const [diffViewMode, setDiffViewMode] = useState<DiffViewMode>('unified');
-  const [showHiddenFiles, setShowHiddenFiles] = useState(false);
-
+  const { locale, t } = useI18n();
+  const {
+    projects, projectId, projectsLoading, projectsError, currentDir, entries, entriesLoading, entriesError,
+    filePanel, gitEntries, gitLoading, gitError, commitEntries, commitsLoading, commitsError,
+    selectedCommitHash, commitPanel, diffPanel, activeTab, diffViewMode, showHiddenFiles,
+    selectedProject, splitDiffRows, setActiveTab, setDiffViewMode,
+    handleProjectChange, handleNavigateDir, handleOpenEntry, handleOpenDiff, handleOpenCommit,
+    handleOpenCommitFileDiff, handleRefresh, handleShowHiddenChange,
+  } = useProjectFilesController();
   const copy = {
-    title: pickCopy(locale, '项目文件', 'Project Files'),
-    subtitle: pickCopy(
-      locale,
-      '按 LDVH 管辖项目浏览文件，预览 Markdown，并只读查看当前 Git 待提交差异。',
-      'Browse governed project files, preview Markdown, and inspect pending Git changes in read-only mode.',
-    ),
-    project: pickCopy(locale, '管辖项目', 'Governed Project'),
-    quickRoots: pickCopy(locale, '常用目录', 'Quick Roots'),
-    showHiddenFiles: pickCopy(locale, '显示隐藏文件', 'Show hidden files'),
-    filesTab: pickCopy(locale, '文件浏览', 'Files'),
-    changesTab: pickCopy(locale, '待提交文件', 'Pending'),
-    historyTab: pickCopy(locale, '提交历史', 'History'),
-    fileBrowser: pickCopy(locale, '项目文件浏览', 'Project File Browser'),
-    preview: pickCopy(locale, '文件预览', 'File Preview'),
-    pending: pickCopy(locale, '待提交文件', 'Pending Files'),
-    history: pickCopy(locale, '提交历史', 'Commit History'),
-    changeDetail: pickCopy(locale, '差异详情', 'Diff Detail'),
-    selectedCommitFiles: pickCopy(locale, '当前提交文件', 'Selected Commit Files'),
-    diff: pickCopy(locale, '文件差异', 'File Diff'),
-    diffMode: pickCopy(locale, '差异显示方式', 'Diff display mode'),
-    unifiedDiff: pickCopy(locale, '统一', 'Unified'),
-    splitDiff: pickCopy(locale, '分栏', 'Split'),
-    reload: pickCopy(locale, '刷新', 'Refresh'),
-    loading: pickCopy(locale, '加载中', 'Loading'),
-    noProjects: pickCopy(locale, '没有读取到管辖项目。', 'No governed projects found.'),
-    noEntries: pickCopy(locale, '当前目录没有可展示文件。', 'No displayable files in this directory.'),
-    chooseFile: pickCopy(locale, '选择左侧文件后在这里阅读。', 'Select a file on the left to read it here.'),
-    chooseDiff: pickCopy(locale, '选择待提交文件后在这里查看差异。', 'Select a pending file to view its diff here.'),
-    chooseCommit: pickCopy(locale, '选择左侧提交后查看详情。', 'Select a commit on the left to view details.'),
-    chooseCommitFile: pickCopy(locale, '选择改动文件后查看该提交中的差异。', 'Select a changed file to view its diff in this commit.'),
-    noChanges: pickCopy(locale, '当前项目没有待提交文件。', 'This project has no pending files.'),
-    noCommits: pickCopy(locale, '当前项目没有提交历史。', 'This project has no commit history.'),
-    mergeCommit: pickCopy(locale, '合并提交', 'Merge'),
-    binary: pickCopy(locale, '这是二进制文件，Web 仅展示路径和大小。', 'This is a binary file; the web view only shows path and size.'),
-    truncated: pickCopy(locale, '内容已按安全上限截断。', 'Content was truncated at the safety limit.'),
-    readOnly: pickCopy(locale, '只读', 'Read-only'),
-    root: pickCopy(locale, '项目根目录', 'Project root'),
-    docs: pickCopy(locale, 'docs', 'docs'),
-    ldvhBase: pickCopy(locale, 'LDVH Base', 'LDVH Base'),
-  };
-
-  const selectedProject = useMemo(
-    () => projects.find((project) => project.id === projectId) ?? null,
-    [projects, projectId],
-  );
-
-  const splitDiffRows = useMemo(
-    () => (diffPanel.data ? parseSplitDiff(diffPanel.data.diff) : []),
-    [diffPanel.data],
-  );
-
-  const loadProjects = useCallback(() => {
-    setProjectsLoading(true);
-    setProjectsError(null);
-    fetchProjectFilesProjects()
-      .then((result) => {
-        setProjects(result.projects ?? []);
-        setProjectId((current) => current || result.projects?.[0]?.id || '');
-      })
-      .catch((err) => setProjectsError(err instanceof Error ? err.message : String(err)))
-      .finally(() => setProjectsLoading(false));
-  }, []);
-
-  const loadEntries = useCallback((nextDir: string, nextShowHidden: boolean) => {
-    if (!projectId) return;
-    setEntriesLoading(true);
-    setEntriesError(null);
-    fetchProjectFileEntries(projectId, nextDir, nextShowHidden)
-      .then((result) => {
-        setEntries(result.entries ?? []);
-        setCurrentDir(result.dir ?? nextDir);
-      })
-      .catch((err) => setEntriesError(err instanceof Error ? err.message : String(err)))
-      .finally(() => setEntriesLoading(false));
-  }, [projectId]);
-
-  const loadGitStatus = useCallback(() => {
-    if (!projectId) return;
-    setGitLoading(true);
-    setGitError(null);
-    fetchProjectGitStatus(projectId)
-      .then((result) => setGitEntries(result.entries ?? []))
-      .catch((err) => setGitError(err instanceof Error ? err.message : String(err)))
-      .finally(() => setGitLoading(false));
-  }, [projectId]);
-
-  const loadCommits = useCallback(() => {
-    if (!projectId) return;
-    setCommitsLoading(true);
-    setCommitsError(null);
-    fetchProjectGitCommits(projectId, 80)
-      .then((result) => setCommitEntries(result.entries ?? []))
-      .catch((err) => setCommitsError(err instanceof Error ? err.message : String(err)))
-      .finally(() => setCommitsLoading(false));
-  }, [projectId]);
-
-  useEffect(() => {
-    loadProjects();
-  }, [loadProjects]);
-
-  useEffect(() => {
-    if (!projectId) return;
-    setCurrentDir('');
-    setEntries([]);
-    setCommitEntries([]);
-    setSelectedCommitHash('');
-    setShowHiddenFiles(false);
-    setFilePanel({ data: null, loading: false, error: null });
-    setCommitPanel({ data: null, loading: false, error: null });
-    setDiffPanel({ data: null, loading: false, error: null });
-    loadEntries('', false);
-    loadGitStatus();
-    loadCommits();
-  }, [loadCommits, loadEntries, loadGitStatus, projectId]);
-
-  const handleProjectChange = (nextProjectId: string) => {
-    if (nextProjectId === projectId) return;
-    setProjectId(nextProjectId);
-  };
-
-  const handleNavigateDir = (nextDir: string) => {
-    setActiveTab('files');
-    setFilePanel({ data: null, loading: false, error: null });
-    loadEntries(nextDir, showHiddenFiles);
-  };
-
-  const handleOpenEntry = (entry: ProjectFileEntry) => {
-    setActiveTab('files');
-    if (entry.type === 'directory') {
-      handleNavigateDir(entry.path);
-      return;
-    }
-
-    setFilePanel({ data: null, loading: true, error: null });
-    fetchProjectFileContent(projectId, entry.path, showHiddenFiles)
-      .then((data) => setFilePanel({ data, loading: false, error: null }))
-      .catch((err) => {
-        setFilePanel({ data: null, loading: false, error: err instanceof Error ? err.message : String(err) });
-      });
-  };
-
-  const handleOpenDiff = (entry: ProjectGitStatusEntry) => {
-    setActiveTab('changes');
-    setDiffPanel({ data: null, loading: true, error: null });
-    fetchProjectGitDiff(entry.projectId, entry.path, entry.status)
-      .then((data) => setDiffPanel({ data, loading: false, error: null }))
-      .catch((err) => {
-        setDiffPanel({ data: null, loading: false, error: err instanceof Error ? err.message : String(err) });
-      });
-  };
-
-  const handleOpenCommit = (entry: ProjectGitCommitEntry) => {
-    setActiveTab('history');
-    setSelectedCommitHash(entry.hash);
-    setCommitPanel({ data: null, loading: true, error: null });
-    setDiffPanel({ data: null, loading: false, error: null });
-    fetchProjectGitCommitDetail(projectId, entry.hash)
-      .then((result) => setCommitPanel({ data: result.commit, loading: false, error: null }))
-      .catch((err) => {
-        setCommitPanel({ data: null, loading: false, error: err instanceof Error ? err.message : String(err) });
-      });
-  };
-
-  const handleOpenCommitFileDiff = (file: ProjectGitCommitFile) => {
-    if (!commitPanel.data) return;
-    setActiveTab('history');
-    setDiffPanel({ data: null, loading: true, error: null });
-    fetchProjectGitCommitFileDiff(projectId, commitPanel.data.hash, file.path)
-      .then((data) => setDiffPanel({ data, loading: false, error: null }))
-      .catch((err) => {
-        setDiffPanel({ data: null, loading: false, error: err instanceof Error ? err.message : String(err) });
-      });
-  };
-
-  const handleRefresh = () => {
-    loadEntries(currentDir, showHiddenFiles);
-    loadGitStatus();
-    loadCommits();
-  };
-
-  const handleShowHiddenChange = (nextShowHidden: boolean) => {
-    setShowHiddenFiles(nextShowHidden);
-    setFilePanel({ data: null, loading: false, error: null });
-    const nextDir = !nextShowHidden && isHiddenRelativePath(currentDir) ? '' : currentDir;
-    loadEntries(nextDir, nextShowHidden);
+    title: t('projectFiles.title'),
+    subtitle: t('projectFiles.subtitle'),
+    project: t('projectFiles.project'),
+    quickRoots: t('projectFiles.quickRoots'),
+    showHiddenFiles: t('projectFiles.showHiddenFiles'),
+    filesTab: t('projectFiles.filesTab'),
+    changesTab: t('projectFiles.changesTab'),
+    historyTab: t('projectFiles.historyTab'),
+    fileBrowser: t('projectFiles.fileBrowser'),
+    preview: t('projectFiles.preview'),
+    pending: t('projectFiles.pending'),
+    history: t('projectFiles.history'),
+    changeDetail: t('projectFiles.changeDetail'),
+    selectedCommitFiles: t('projectFiles.selectedCommitFiles'),
+    diff: t('projectFiles.diff'),
+    diffMode: t('projectFiles.diffMode'),
+    unifiedDiff: t('projectFiles.unifiedDiff'),
+    splitDiff: t('projectFiles.splitDiff'),
+    reload: t('projectFiles.reload'),
+    loading: t('projectFiles.loading'),
+    noProjects: t('projectFiles.noProjects'),
+    noEntries: t('projectFiles.noEntries'),
+    chooseFile: t('projectFiles.chooseFile'),
+    chooseDiff: t('projectFiles.chooseDiff'),
+    chooseCommit: t('projectFiles.chooseCommit'),
+    chooseCommitFile: t('projectFiles.chooseCommitFile'),
+    noChanges: t('projectFiles.noChanges'),
+    noCommits: t('projectFiles.noCommits'),
+    mergeCommit: t('projectFiles.mergeCommit'),
+    binary: t('projectFiles.binary'),
+    truncated: t('projectFiles.truncated'),
+    readOnly: t('projectFiles.readOnly'),
+    root: t('projectFiles.root'),
+    docs: t('projectFiles.docs'),
+    ldvhBase: t('projectFiles.ldvhBase'),
   };
 
   const quickDirs = [
@@ -569,8 +229,8 @@ export default function ProjectFiles() {
             )}
           </label>
           <div className="flex min-w-0 flex-col justify-end gap-2">
-            <p className="ldvh-caption-strong">{pickCopy(locale, '视图', 'View')}</p>
-            <div role="tablist" aria-label={pickCopy(locale, '项目文件视图', 'Project file view')} className="ldvh-tab-list max-w-2xl">
+            <p className="ldvh-caption-strong">{t('projectFiles.view')}</p>
+            <div role="tablist" aria-label={t('projectFiles.viewAria')} className="ldvh-tab-list max-w-2xl">
               <button
                 type="button"
                 role="tab"
@@ -862,9 +522,9 @@ export default function ProjectFiles() {
                   <div className="min-w-0">
                     <div className="ldvh-meta sticky top-0 z-10 grid grid-cols-[3rem_minmax(0,1fr)_3rem_minmax(0,1fr)] border-b border-ldvh-border bg-ldvh-panel/95 sm:grid-cols-[4rem_minmax(0,1fr)_4rem_minmax(0,1fr)]">
                       <div className="border-r border-ldvh-border px-2 py-2 text-right">-</div>
-                      <div className="border-r border-ldvh-border px-3 py-2">{pickCopy(locale, '旧内容', 'Before')}</div>
+                      <div className="border-r border-ldvh-border px-3 py-2">{t('projectFiles.before')}</div>
                       <div className="border-r border-ldvh-border px-2 py-2 text-right">+</div>
-                      <div className="px-3 py-2">{pickCopy(locale, '新内容', 'After')}</div>
+                      <div className="px-3 py-2">{t('projectFiles.after')}</div>
                     </div>
                     <div className="ldvh-meta-primary">
                       {splitDiffRows.map((row, index) => {
@@ -1126,9 +786,9 @@ export default function ProjectFiles() {
                   <div className="min-w-0">
                     <div className="ldvh-meta sticky top-0 z-10 grid grid-cols-[3rem_minmax(0,1fr)_3rem_minmax(0,1fr)] border-b border-ldvh-border bg-ldvh-panel/95 sm:grid-cols-[4rem_minmax(0,1fr)_4rem_minmax(0,1fr)]">
                       <div className="border-r border-ldvh-border px-2 py-2 text-right">-</div>
-                      <div className="border-r border-ldvh-border px-3 py-2">{pickCopy(locale, '旧内容', 'Before')}</div>
+                      <div className="border-r border-ldvh-border px-3 py-2">{t('projectFiles.before')}</div>
                       <div className="border-r border-ldvh-border px-2 py-2 text-right">+</div>
-                      <div className="px-3 py-2">{pickCopy(locale, '新内容', 'After')}</div>
+                      <div className="px-3 py-2">{t('projectFiles.after')}</div>
                     </div>
                     <div className="ldvh-meta-primary">
                       {splitDiffRows.map((row, index) => {

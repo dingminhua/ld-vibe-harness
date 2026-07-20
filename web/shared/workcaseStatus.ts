@@ -20,6 +20,20 @@ export const WORKCASE_STATUS_ORDER = [
   'closed',
 ] as const;
 
+const WORKCASE_PHASE_DISPLAY_STATUS: Record<string, string> = {
+  human_plan_confirming: 'human_plan_confirming',
+  executing: 'executing',
+  controller_checking: 'result_self_checking',
+  independent_reviewing: 'subagents_result_reviewing',
+  closure_preparing: 'result_self_checking',
+  human_closure_confirming: 'human_closure_confirming',
+  closed: 'closed',
+};
+
+export function getWorkCaseDisplayStatus(phase: string, status: string): string {
+  return WORKCASE_PHASE_DISPLAY_STATUS[phase] ?? status;
+}
+
 const WORKCASE_TERMINAL_STATUSES = new Set(['closed', 'archived', 'discarded', 'superseded']);
 const WORKCASE_HUMAN_CONFIRMING_STATUSES = new Set([
   'human_plan_confirming',

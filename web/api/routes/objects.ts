@@ -3,8 +3,8 @@
  */
 
 import { Router, type Request, type Response } from 'express'
-import { listObjects, showObject, OBJECT_TYPES, readFactData, type ObjectType } from '../services/facts.js'
-import { WORKCASE_STATUS_ORDER } from '../../src/utils/workcaseStatus.ts'
+import { listObjects, showObject, OBJECT_TYPES, type ObjectType } from '../services/facts.js'
+import { WORKCASE_STATUS_ORDER, getWorkCaseDisplayStatus } from '../../shared/workcaseStatus.ts'
 
 const router = Router()
 
@@ -114,12 +114,18 @@ function normalizeItem(value: unknown): ListedObject | null {
   const v4Object = typeof value.object_id === 'string' && typeof value.fact_type_key === 'string'
   const id = toStringValue(value.object_id) || toStringValue(value.id)
   if (!id) return null
+  const type = toStringValue(value.fact_type_key) || toStringValue(value.type)
+  const responsibilityStatus = toStringValue(value.status, 'unknown')
+  const status = type === 'workcase'
+    ? getWorkCaseDisplayStatus(toStringValue(value.phase), responsibilityStatus)
+    : responsibilityStatus
 
   return {
     ...value,
     id,
-    type: toStringValue(value.fact_type_key) || toStringValue(value.type),
-    status: toStringValue(value.status, 'unknown'),
+    type,
+    status,
+    responsibilityStatus,
     title: toStringValue(value.title, id),
     title_en: toStringValue(value.title_en) || undefined,
     title_zh: toStringValue(value.title_zh) || undefined,
@@ -157,9 +163,9 @@ function toRelatedSummary(item: ListedObject, type = item.type): RelatedObjectSu
 
 function toExecutionItemSummary(value: unknown, workcase: ListedObject, index: number): RelatedObjectSummary | null {
   if (!isRecord(value)) return null
-  const id = toStringValue(value.id) || `execution-item-${index + 1}`
+  const id = toStringValue(value.item_id) || toStringValue(value.id) || `execution-item-${index + 1}`
   const status = toStringValue(value.status, 'unknown')
-  const title = toStringValue(value.title, id)
+  const title = toStringValue(value.goal) || toStringValue(value.title, id)
 
   return {
     id,
@@ -168,11 +174,11 @@ function toExecutionItemSummary(value: unknown, workcase: ListedObject, index: n
     title,
     path: workcase.path,
     updated: workcase.updated,
-    role: toStringValue(value.role) || undefined,
+    role: toStringValue(value.role) || toStringValue(value.item_id) || undefined,
     mode: toStringValue(value.mode) || undefined,
-    expectedOutput: toStringValue(value.expected_output) || undefined,
+    expectedOutput: toStringValue(value.expected_result) || toStringValue(value.expected_output) || undefined,
     resultSummary: toStringValue(value.result_summary) || undefined,
-    blockingReason: toStringValue(value.blocking_reason) || undefined,
+    blockingReason: toStringValue(value.blocking_summary) || toStringValue(value.blocking_reason) || undefined,
     inputRefs: toStringArray(value.input_refs),
     evidenceRefs: toStringArray(value.evidence_refs),
   }
@@ -201,6 +207,27 @@ function getChecklistProgress(value: unknown): { total: number; done: number } {
     },
     { total: 0, done: 0 },
   )
+}
+
+function getWorkCaseCriterionProgress(data: Record<string, unknown>): { total: number; done: number } {
+  const definitions = Array.isArray(data.success_criterion_definitions)
+    ? data.success_criterion_definitions.filter(isRecord)
+    : []
+  if (definitions.length === 0) return getChecklistProgress(data.success_criteria)
+
+  const satisfied = new Set(
+    (Array.isArray(data.success_criterion_results) ? data.success_criterion_results : [])
+      .filter(isRecord)
+      .filter((item) => toStringValue(item.outcome) === 'satisfied')
+      .map((item) => toStringValue(item.criterion_id))
+      .filter(Boolean),
+  )
+  const criterionIds = definitions.map((item) => toStringValue(item.criterion_id)).filter(Boolean)
+  return { total: definitions.length, done: criterionIds.filter((id) => satisfied.has(id)).length }
+}
+
+function isExecutionItemDone(status: string): boolean {
+  return status === 'done' || status === 'completed'
 }
 
 function getUpdatedTime(value: string | undefined): number {
@@ -248,29 +275,32 @@ export async function buildWorkCaseSummaries(workcaseItems: ListedObject[]): Pro
   if (workcaseItems.length === 0) return []
 
   return workcaseItems.map((item) => {
-    const data = readFactData(item.path)
+    const data = item
     const orchestration = isRecord(data.orchestration) ? data.orchestration : {}
-    const executionItems = Array.isArray(orchestration.execution_items)
-      ? orchestration.execution_items
-        .map((executionItem, index) => toExecutionItemSummary(executionItem, item, index))
-        .filter((executionItem): executionItem is RelatedObjectSummary => Boolean(executionItem))
-      : []
-    const successCriteriaProgress = getChecklistProgress(data.success_criteria)
+    const rawExecutionItems = Array.isArray(data.work_items)
+      ? data.work_items
+      : Array.isArray(orchestration.execution_items)
+        ? orchestration.execution_items
+        : []
+    const executionItems = rawExecutionItems
+      .map((executionItem, index) => toExecutionItemSummary(executionItem, item, index))
+      .filter((executionItem): executionItem is RelatedObjectSummary => Boolean(executionItem))
+    const successCriteriaProgress = getWorkCaseCriterionProgress(data)
 
     return {
       ...toRelatedSummary(item, 'workcase'),
       executionItems: sortExecutionItems(executionItems),
       executionItemTotal: executionItems.length,
-      executionItemDone: executionItems.filter((executionItem) => executionItem.status === 'done').length,
+      executionItemDone: executionItems.filter((executionItem) => isExecutionItemDone(executionItem.status)).length,
       executionItemBlocked: executionItems.filter((executionItem) => executionItem.status === 'blocked').length,
       executionItemOpen: countOpenExecutionItems(executionItems),
       successCriteriaTotal: successCriteriaProgress.total,
       successCriteriaDone: successCriteriaProgress.done,
-      hasSuccessCriteria: hasContent(data.success_criteria),
-      hasPlanConfirmedAt: hasContent(data.plan_confirmed_at),
-      hasClosureRequestedAt: hasContent(data.closure_requested_at) || hasContent(data.review_requested_at),
-      hasVerificationEvidence: hasContent(data.verification_evidence),
-      hasClosureEvidence: hasContent(data.closure_evidence),
+      hasSuccessCriteria: successCriteriaProgress.total > 0,
+      hasPlanConfirmedAt: hasContent(data.execution_approval) || hasContent(data.plan_confirmed_at),
+      hasClosureRequestedAt: toStringValue(data.phase) === 'human_closure_confirming' || hasContent(data.closure_requested_at) || hasContent(data.review_requested_at),
+      hasVerificationEvidence: hasContent(data.evidence_refs) || hasContent(data.controller_check_summary) || hasContent(data.verification_evidence),
+      hasClosureEvidence: hasContent(data.validation_summary) || hasContent(data.closure_evidence),
       hasClosedAt: hasContent(data.closed_at),
     }
   })
@@ -298,6 +328,7 @@ async function enrichWorkCases(items: ListedObject[]): Promise<ListedObject[]> {
       hasVerificationEvidence: summary.hasVerificationEvidence,
       hasClosureEvidence: summary.hasClosureEvidence,
       hasClosedAt: summary.hasClosedAt,
+      closure_evidence: toStringValue(item.disposition_summary) || toStringValue(item.validation_summary) || toStringValue(item.closure_evidence) || undefined,
       executionItemByStatus: countByStatus(summary.executionItems ?? []),
     }
   })
@@ -305,7 +336,7 @@ async function enrichWorkCases(items: ListedObject[]): Promise<ListedObject[]> {
 
 async function enrichPitfalls(items: ListedObject[]): Promise<ListedObject[]> {
   return items.map((item) => {
-    const data = readFactData(item.path)
+    const data = item
     return {
       ...item,
       resolution: toStringValue(data.resolution) || undefined,
@@ -329,7 +360,7 @@ router.get('/:type', async (req: Request, res: Response): Promise<void> => {
   }
 
   const status = req.query.status as string | undefined
-  const result = await listObjects(type, undefined, status)
+  const result = await listObjects(type, undefined, type === 'workcase' ? undefined : status)
 
   if (!result.ok) {
     res.status(500).json(result)
@@ -337,10 +368,13 @@ router.get('/:type', async (req: Request, res: Response): Promise<void> => {
   }
 
   const rawItems = getRawItems(result)
-  const items = getResultItems(result)
+  const allItems = getResultItems(result)
+  const items = type === 'workcase' && status
+    ? allItems.filter((item) => item.status === status)
+    : allItems
   let enrichedItems = items
   if (isRecord(result.data)) {
-    const statusItems = status ? await listObjectSummaries(type) : items
+    const statusItems = type === 'workcase' ? allItems : status ? await listObjectSummaries(type) : items
     result.data.statusOptions = getStatusOptions(statusItems)
     result.data.statusTotal = statusItems.length
   }
@@ -402,7 +436,11 @@ router.get('/:type/:id', async (req: Request, res: Response): Promise<void> => {
     const relatedPitfallsSet = new Set<string>()
     const executionRefsSet = new Set<string>()
     const orchestration = isRecord(result.data.orchestration) ? result.data.orchestration : {}
-    const executionItems = Array.isArray(orchestration.execution_items) ? orchestration.execution_items : []
+    const executionItems = Array.isArray(result.data.work_items)
+      ? result.data.work_items
+      : Array.isArray(orchestration.execution_items)
+        ? orchestration.execution_items
+        : []
 
     addStringArray(relatedDocsSet, result.data.related_docs)
     addStringArray(relatedAdrsSet, result.data.related_adrs)
@@ -428,7 +466,7 @@ router.get('/:type/:id', async (req: Request, res: Response): Promise<void> => {
 export default router
 async function enrichAdrs(items: ListedObject[]): Promise<ListedObject[]> {
   return items.map((item) => {
-    const data = readFactData(item.path)
+    const data = item
     return {
       ...item,
       date: toStringValue(data.date) || undefined,

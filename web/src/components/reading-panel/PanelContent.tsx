@@ -1,0 +1,659 @@
+import { useEffect, useState, type ReactNode } from 'react';
+import { ChevronDown, ChevronUp, FileText, ExternalLink } from 'lucide-react';
+import type { PanelContent } from '@/utils/panelContext';
+import MarkdownPreview from '@/components/MarkdownPreview';
+import { useI18n } from '@/i18n/context';
+import {
+  ContentField,
+  ObjectIdentityHeader,
+  RelatedContentSection,
+  StudyReadingLayout,
+  getAuxiliaryMetaEntries,
+} from '@/pages/ObjectDetail';
+import { AdrReadingLayout, PitfallReadingLayout, SparkReadingLayout } from '@/pages/object-detail/FactReadingLayouts';
+import { WorkCaseReadingLayout } from '@/pages/object-detail/WorkCaseReadingLayout';
+import { getObjectDetailContentEntries, splitRelatedContentEntries } from '@/pages/object-detail/model';
+import { getCommitDetailLabels, getLocalizedObjectTitle, getObjectStatusLocale, getToggleLabel, getTypeLabel, type CommitDetailLabels } from '@/i18n/locales';
+import { fetchDocContent, fetchObjectDetail, fetchObjects, type CommitDetailPanelData, type DocContent, type ObjectDetail as ApiObjectDetail, type ObjectItem } from '@/utils/api';
+import { CATEGORY_COLORS } from '@/utils/categoryColors';
+import { getCommitScopeLabel, getCommitTypeLabel } from '@/utils/commitLabels';
+import { formatDateTime } from '@/utils/dateFormat';
+import {
+  getCommitBodySectionsForReading,
+  getCommitNodeNextState,
+  isCommitDetailPanelData,
+  parseCommitStat,
+  type ParsedCommitStat,
+} from '@/components/reading-panel/commitModel';
+
+export function EmptyPanelPreview() {
+  const { t } = useI18n();
+  return (
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+      <p className="ldvh-body-muted">{t('readingPanel.empty')}</p>
+    </div>
+  );
+}
+
+export function PanelContentRenderer({ content }: { content: PanelContent }) {
+  switch (content.type) {
+    case 'object': return <ObjectPreview content={content} />;
+    case 'doc': return <DocPreview content={content} />;
+    case 'web': return <WebPreview content={content} />;
+    case 'yaml': return <YamlPreview content={content} />;
+    case 'evidence': return <EvidencePreview content={content} />;
+    case 'diff': return <DiffPreview content={content} />;
+    default:
+      return (
+        <EmptyPanelPreview />
+      );
+  }
+}
+
+function WebPreview({ content }: { content: PanelContent }) {
+  const { t } = useI18n();
+  const { url } = content;
+  if (!url) return <EmptyPanelPreview />;
+  const openLabel = t('readingPanel.openNewTab');
+
+  return (
+    <div className="flex h-full min-h-[520px] flex-col gap-3">
+      <div className="flex min-w-0 items-center justify-between gap-3 rounded-lg border border-ldvh-border bg-ldvh-panel px-3 py-2">
+        <span className="ldvh-meta-primary min-w-0 flex-1 truncate">{url}</span>
+        <a
+          href={url}
+          target="_blank"
+          rel="noreferrer"
+          className="ldvh-chip inline-flex shrink-0 items-center gap-1 rounded-md border border-ldvh-border bg-ldvh-bg px-2 py-1 text-ldvh-text-primary hover:border-ldvh-accent hover:text-ldvh-accent"
+        >
+          <ExternalLink size={12} />
+          <span>{openLabel}</span>
+        </a>
+      </div>
+      <iframe
+        title={url}
+        src={url}
+        sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+        referrerPolicy="no-referrer"
+        className="min-h-0 flex-1 rounded-lg border border-ldvh-border bg-white"
+      />
+    </div>
+  );
+}
+
+function ObjectPreview({ content }: { content: PanelContent }) {
+  const { objectType, objectId, data } = content;
+  const { locale, t } = useI18n();
+  const [detail, setDetail] = useState<ApiObjectDetail | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const obj = (data as Record<string, unknown> | undefined) ?? detail?.data;
+  const status = detail?.summary.status ?? (obj?.status as string | undefined);
+  const headerStatus = isObjectDetailLayoutType(objectType) ? undefined : status;
+  const title = getObjectTitle(obj, objectId, locale);
+  const targetPath = String(obj?.path || detail?.target || objectId || '');
+  const loading = !obj && !error && Boolean(objectType && objectId);
+  const typeColor = objectType ? (CATEGORY_COLORS[objectType] || CATEGORY_COLORS.other) : CATEGORY_COLORS.other;
+
+  useEffect(() => {
+    if (data || !objectType || !objectId) {
+      setDetail(null);
+      setError(null);
+      return;
+    }
+
+    let cancelled = false;
+    setDetail(null);
+    setError(null);
+    fetchObjectDetail(objectType, objectId)
+      .then((result) => {
+        if (!cancelled) setDetail(result);
+      })
+      .catch((e) => {
+        if (!cancelled) setError(e.message);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [data, objectType, objectId]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <div className="h-5 w-5 animate-spin rounded-full border-2 border-ldvh-accent border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-md border border-red-500/20 bg-red-500/10 p-3">
+        <p className="ldvh-body text-red-300">{t('readingPanel.loadFailed')}</p>
+        <p className="ldvh-meta mt-1 text-red-300/80">{error}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <ObjectIdentityHeader
+        objectType={objectType || ''}
+        id={objectId || ''}
+        title={title}
+        target={targetPath}
+        typeColor={typeColor}
+        typeLabel={getObjectTypeLabel(objectType, locale)}
+        status={headerStatus}
+        statusLabel={headerStatus ? getObjectStatusLocale(objectType || '', headerStatus, locale) : undefined}
+        source={obj || {}}
+        locale={locale}
+        created={formatDateTime(obj?.created as string | undefined)}
+        updated={formatDateTime(obj?.updated as string | undefined)}
+        closedAt={obj?.closed_at ? formatDateTime(obj.closed_at as string) : undefined}
+        auxiliaryMetaEntries={obj ? getAuxiliaryMetaEntries(obj, objectType || '') : []}
+        copyLabel={t('common.copyObjectPath')}
+        copiedLabel={t('common.copiedObjectPath')}
+        compact
+      />
+      {obj && isObjectDetailLayoutType(objectType) && (
+        <ObjectSemanticPreview
+          objectType={objectType}
+          obj={obj}
+          objectId={objectId}
+          objectPath={typeof obj.path === 'string' ? obj.path : targetPath}
+        />
+      )}
+      {obj && !isObjectDetailLayoutType(objectType) && (
+        <GenericObjectPreview
+          objectType={objectType}
+          obj={obj}
+          objectPath={typeof obj.path === 'string' ? obj.path : targetPath}
+        />
+      )}
+    </div>
+  );
+}
+
+function ObjectSemanticPreview({
+  objectType,
+  obj,
+  objectId,
+  objectPath,
+}: {
+  objectType?: string;
+  obj: Record<string, unknown>;
+  objectId?: string;
+  objectPath?: string;
+}) {
+  const [summary, setSummary] = useState<ObjectItem | null>(null);
+  const [loading, setLoading] = useState(false);
+  const { locale, getStatus } = useI18n();
+
+  useEffect(() => {
+    if (!objectType || !objectId) return;
+    if (!isObjectDetailLayoutType(objectType)) return;
+    if (objectType === 'pitfall' || objectType === 'adr' || objectType === 'spark' || objectType === 'study') {
+      setSummary(null);
+      setLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setLoading(true);
+    setSummary(null);
+
+    fetchObjects('workcase')
+      .then((result) => {
+        if (cancelled) return;
+        const items = result.data?.items ?? [];
+        setSummary(items.find((plan) => plan.id === objectId) ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) setSummary(null);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [objectType, objectId]);
+
+  if (objectType === 'workcase') {
+    return <WorkCaseReadingLayout obj={obj} summary={summary} loading={loading} locale={locale} getStatus={getStatus} />;
+  }
+  if (objectType === 'pitfall') {
+    const entries = getObjectDetailContentEntries(obj, objectType);
+    const { relatedEntries } = splitRelatedContentEntries(entries);
+    return <PitfallReadingLayout obj={obj} relatedEntries={relatedEntries} locale={locale} />;
+  }
+  if (objectType === 'adr') {
+    const entries = getObjectDetailContentEntries(obj, objectType);
+    const { relatedEntries } = splitRelatedContentEntries(entries);
+    return <AdrReadingLayout obj={obj} relatedEntries={relatedEntries} locale={locale} />;
+  }
+  if (objectType === 'spark') {
+    const entries = getObjectDetailContentEntries(obj, objectType);
+    const { relatedEntries } = splitRelatedContentEntries(entries);
+    return <SparkReadingLayout obj={obj} relatedEntries={relatedEntries} locale={locale} />;
+  }
+  if (objectType === 'study') {
+    const entries = getObjectDetailContentEntries(obj, objectType);
+    const { primaryEntries, relatedEntries } = splitRelatedContentEntries(entries);
+    return (
+      <StudyReadingLayout
+        obj={obj}
+        extraEntries={primaryEntries}
+        relatedEntries={relatedEntries}
+        locale={locale}
+        objectPath={objectPath}
+      />
+    );
+  }
+  return null;
+}
+
+function isObjectDetailLayoutType(objectType: string | undefined) {
+  return objectType === 'workcase' || objectType === 'pitfall' || objectType === 'adr' || objectType === 'spark' || objectType === 'study';
+}
+
+function getObjectTitle(obj: Record<string, unknown> | undefined, objectId: string | undefined, locale: string) {
+  if (!obj) return objectId || '—';
+  return getLocalizedObjectTitle(obj as { title?: string; title_en?: string; title_zh?: string }, locale, objectId || '—');
+}
+
+function getObjectTypeLabel(objectType: string | undefined, locale: string) {
+  if (!objectType) return '—';
+  return getTypeLabel(objectType, locale);
+}
+
+function GenericObjectPreview({ objectType, obj, objectPath }: { objectType?: string; obj: Record<string, unknown>; objectPath?: string }) {
+  const { locale } = useI18n();
+  const entries = getObjectDetailContentEntries(obj, objectType || '');
+  const { primaryEntries, relatedEntries } = splitRelatedContentEntries(entries);
+  if (entries.length === 0) return null;
+
+  return (
+    <div className="mb-6 flex flex-col gap-5">
+      {primaryEntries.map(([fieldKey, value]) => (
+        <ContentField key={fieldKey} fieldKey={fieldKey} value={value} locale={locale} objType={objectType || ''} objectPath={objectPath} />
+      ))}
+      <RelatedContentSection entries={relatedEntries} locale={locale} />
+    </div>
+  );
+}
+
+function DocPreview({ content }: { content: PanelContent }) {
+  const { t } = useI18n();
+  const { docPath, data } = content;
+  const [doc, setDoc] = useState<DocContent | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const docContent = typeof data === 'string' ? data : doc?.content ?? '';
+  const truncated = doc?.truncated ?? false;
+  const isMarkdown = Boolean(docPath && /\.(md|markdown)$/i.test(docPath));
+
+  useEffect(() => {
+    if (typeof data === 'string' || !docPath) {
+      setDoc(null);
+      setError(null);
+      return;
+    }
+
+    let cancelled = false;
+    setDoc(null);
+    setError(null);
+    fetchDocContent(docPath)
+      .then((result) => {
+        if (!cancelled) setDoc(result);
+      })
+      .catch((e) => {
+        if (!cancelled) setError(e.message);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [data, docPath]);
+
+  if (error) {
+    return (
+      <div className="space-y-3">
+        <div className="rounded-md border border-red-500/20 bg-red-500/10 p-3">
+          <p className="ldvh-body text-red-300">{t('readingPanel.docLoadFailed')}</p>
+          <p className="ldvh-meta mt-1 text-red-300/80">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {!docContent ? (
+        <div className="flex items-center justify-center rounded-md bg-ldvh-bg py-16">
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-ldvh-accent border-t-transparent" />
+        </div>
+      ) : isMarkdown ? (
+        <article className="rounded-lg border border-ldvh-border bg-ldvh-panel px-4 py-4 shadow-sm shadow-black/10">
+          <MarkdownPreview content={docContent} />
+          {truncated && <p className="ldvh-caption mt-3">{t('readingPanel.truncated')}</p>}
+        </article>
+      ) : (
+        <div className="rounded-md bg-ldvh-bg p-3">
+          <pre className="ldvh-meta-primary whitespace-pre-wrap">
+            {docContent}
+          </pre>
+          {truncated && <p className="ldvh-caption mt-3">{t('readingPanel.truncated')}</p>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function YamlPreview({ content }: { content: PanelContent }) {
+  const { data } = content;
+  const yamlText = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+  return (
+    <div className="space-y-3">
+      <div className="rounded-md bg-ldvh-bg p-3">
+        <pre className="ldvh-meta-primary max-h-[600px] overflow-y-auto whitespace-pre-wrap">
+          {yamlText}
+        </pre>
+      </div>
+    </div>
+  );
+}
+
+function EvidencePreview({ content }: { content: PanelContent }) {
+  const { t } = useI18n();
+  const { title, data } = content;
+  const items = (data as Array<{ label: string; value: string }>) || [];
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        <FileText size={14} className="text-ldvh-text-secondary" />
+        <h4 className="ldvh-card-title">{title || t('objectDetail.closureEvidence')}</h4>
+      </div>
+      {items.length === 0 ? (
+        <p className="ldvh-caption">{t('readingPanel.noEvidence')}</p>
+      ) : (
+        <div className="space-y-2">
+          {items.map((item, i) => (
+            <div key={i} className="rounded-md bg-ldvh-bg p-3">
+              <p className="ldvh-caption-strong mb-1">{item.label}</p>
+              <p className="ldvh-meta-primary whitespace-pre-wrap">{item.value}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CommitMetric({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone?: 'add' | 'delete';
+}) {
+  const toneClass = tone === 'add'
+    ? 'text-emerald-300'
+    : tone === 'delete'
+      ? 'text-red-300'
+      : 'text-ldvh-text-primary';
+
+  return (
+    <div className="rounded-md border border-ldvh-border bg-ldvh-bg px-3 py-2 text-center">
+      <div className={`font-mono text-lg font-semibold leading-tight ${toneClass}`}>{value}</div>
+      <div className="ldvh-caption mt-0.5">{label}</div>
+    </div>
+  );
+}
+
+function CommitReadingNodeSection({
+  title,
+  state,
+  locale,
+  onToggle,
+  children,
+}: {
+  title: string;
+  state: 'collapsed' | 'expanded';
+  locale: string;
+  onToggle: () => void;
+  children: ReactNode;
+}) {
+  const StateIcon = state === 'collapsed' ? ChevronDown : ChevronUp;
+  const nextState = getCommitNodeNextState(state);
+  const actionLabel = getToggleLabel(title, nextState, locale);
+
+  return (
+    <section className="rounded-xl border border-ldvh-border bg-ldvh-panel p-4">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-label={actionLabel}
+        className={`ldvh-section-title flex w-full min-w-0 items-center gap-2 text-left transition-colors hover:text-ldvh-accent ${state === 'collapsed' ? '' : 'mb-3'}`}
+      >
+        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-ldvh-accent" />
+        <span className="min-w-0 flex-1 truncate">{title}</span>
+        <StateIcon size={14} className="shrink-0 text-ldvh-text-secondary/80" aria-hidden="true" />
+      </button>
+      {state !== 'collapsed' && children}
+    </section>
+  );
+}
+
+function CommitIdentitySection({
+  entry,
+  parsed,
+  title,
+  labels,
+  locale,
+}: {
+  entry?: CommitDetailPanelData['entry'];
+  parsed: ParsedCommitStat;
+  title: string;
+  labels: CommitDetailLabels;
+  locale: string;
+}) {
+  const commitColor = CATEGORY_COLORS.other;
+  const commitValue = entry?.shortHash || parsed.commit || '—';
+  const copyValue = entry?.hash || commitValue;
+  const timeValue = entry?.date ? formatDateTime(entry.date) : parsed.date || '—';
+  const typeLabel = labels.commit;
+  const headerMetaItems = [
+    entry?.category ? getCommitTypeLabel(entry.category, locale) : '',
+    entry?.scope ? getCommitScopeLabel(entry.scope, locale) : '',
+  ].filter(Boolean);
+
+  return (
+    <ObjectIdentityHeader
+      title={title}
+      id={headerMetaItems.join(' · ')}
+      target={copyValue}
+      objectType="changelog"
+      typeColor={commitColor}
+      typeLabel={typeLabel}
+      source={{}}
+      locale={locale}
+      created=""
+      updated=""
+      showDefaultDates={false}
+      titleMetaEntries={[{ label: labels.time, value: timeValue }]}
+      titleMetaAlign="footerEnd"
+      copyLabel={labels.copyHash}
+      copiedLabel={labels.copiedHash}
+      extraBadges={(
+        <>
+        {entry?.isBreaking && (
+          <span className="ldvh-chip shrink-0 rounded bg-red-500/10 px-2 py-0.5 text-red-300">
+            !
+          </span>
+        )}
+        </>
+      )}
+    />
+  );
+}
+
+export function CommitDetailIdentity({
+  entry,
+  stat,
+  title,
+}: {
+  entry?: CommitDetailPanelData['entry'];
+  stat: string;
+  title?: string;
+}) {
+  const { locale, t } = useI18n();
+  const parsed = parseCommitStat(stat);
+  const displayTitle = entry?.description || entry?.message || title || t('readingPanel.changeDetail');
+  const labels = getCommitDetailLabels(locale);
+
+  return (
+    <CommitIdentitySection
+      entry={entry}
+      parsed={parsed}
+      title={displayTitle}
+      labels={labels}
+      locale={locale}
+    />
+  );
+}
+
+export function CommitDetailContent({
+  entry,
+  stat,
+  title,
+  showIdentity = true,
+}: {
+  entry?: CommitDetailPanelData['entry'];
+  stat: string;
+  title?: string;
+  showIdentity?: boolean;
+}) {
+  const { locale, t } = useI18n();
+  const [bodySectionStates, setBodySectionStates] = useState<Record<string, 'collapsed' | 'expanded'>>({});
+  const [filesState, setFilesState] = useState<'collapsed' | 'expanded'>('collapsed');
+  const [rawState, setRawState] = useState<'collapsed' | 'expanded'>('collapsed');
+  const diffText = stat;
+  const commitBody = entry?.body?.trim() ?? '';
+  const parsed = parseCommitStat(diffText);
+  const displayTitle = entry?.description || entry?.message || title || t('readingPanel.changeDetail');
+  const labels = getCommitDetailLabels(locale);
+  const summary = parsed.summary;
+  const filesChanged = summary?.filesChanged ?? parsed.files.length;
+  const insertions = summary?.insertions ?? parsed.files.reduce((total, file) => total + file.additions, 0);
+  const deletions = summary?.deletions ?? parsed.files.reduce((total, file) => total + file.deletions, 0);
+  const lines = diffText.split('\n');
+  const commitBodySections = commitBody ? getCommitBodySectionsForReading(commitBody, labels.commitBody) : [];
+
+  useEffect(() => {
+    setBodySectionStates({});
+  }, [entry?.hash, commitBody]);
+
+  return (
+    <div className="mb-6 flex flex-col gap-5">
+      {showIdentity && (
+        <CommitIdentitySection
+          entry={entry}
+          parsed={parsed}
+          title={displayTitle}
+          labels={labels}
+          locale={locale}
+        />
+      )}
+
+      <section className="rounded-xl border border-ldvh-border bg-ldvh-panel p-4">
+        <div className="ldvh-section-title mb-3 flex w-full min-w-0 items-center gap-2 text-left">
+          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-ldvh-accent" />
+          <span className="min-w-0 flex-1 truncate">{labels.summary}</span>
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          <CommitMetric label={labels.files} value={filesChanged} />
+          <CommitMetric label={labels.insertions} value={insertions} tone="add" />
+          <CommitMetric label={labels.deletions} value={deletions} tone="delete" />
+        </div>
+      </section>
+
+      {commitBody && commitBodySections.map((section) => {
+        const sectionState = bodySectionStates[section.key] ?? 'expanded';
+        return (
+          <CommitReadingNodeSection
+            key={section.key}
+            title={section.title}
+            state={sectionState}
+            locale={locale}
+            onToggle={() => {
+              setBodySectionStates((current) => ({
+                ...current,
+                [section.key]: getCommitNodeNextState(sectionState),
+              }));
+            }}
+          >
+            <div className="ldvh-study-node-content">
+              <MarkdownPreview
+                content={section.content}
+                className="ldvh-inline-markdown ldvh-commit-body-markdown max-w-none"
+              />
+            </div>
+          </CommitReadingNodeSection>
+        );
+      })}
+
+      <CommitReadingNodeSection
+        title={labels.changedFiles}
+        state={filesState}
+        locale={locale}
+        onToggle={() => setFilesState((current) => getCommitNodeNextState(current))}
+      >
+        {parsed.files.length === 0 ? (
+          <p className="ldvh-body-muted">{labels.noFiles}</p>
+        ) : (
+          <div className="divide-y divide-ldvh-border/70 rounded-lg border border-ldvh-border bg-ldvh-bg/40">
+            {parsed.files.map((file) => (
+              <div key={`${file.path}:${file.stat}`} className="px-3 py-2">
+                <div className="ldvh-meta-primary break-all font-mono">{file.path}</div>
+                <div className="ldvh-caption mt-1 font-mono text-ldvh-text-secondary">{file.stat}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CommitReadingNodeSection>
+
+      <CommitReadingNodeSection
+        title={labels.raw}
+        state={rawState}
+        locale={locale}
+        onToggle={() => setRawState((current) => getCommitNodeNextState(current))}
+      >
+        {diffText ? (
+          <pre className="ldvh-meta-primary max-h-[360px] overflow-y-auto whitespace-pre-wrap rounded-lg border border-ldvh-border bg-ldvh-bg/40 px-3 py-2">
+            {lines.map((line, i) => {
+              let cls = 'text-ldvh-text-primary';
+              if (line.startsWith('+')) cls = 'text-emerald-400';
+              else if (line.startsWith('-')) cls = 'text-red-400';
+              else if (line.startsWith('@@')) cls = 'text-ldvh-accent';
+              return <div key={i} className={cls}>{line}</div>;
+            })}
+          </pre>
+        ) : (
+          <p className="ldvh-body-muted">{labels.noFiles}</p>
+        )}
+      </CommitReadingNodeSection>
+      </div>
+  );
+}
+
+function DiffPreview({ content }: { content: PanelContent }) {
+  const { title, data } = content;
+  const commitData = isCommitDetailPanelData(data) ? data : null;
+
+  return (
+    <CommitDetailContent
+      entry={commitData?.entry}
+      stat={commitData?.stat ?? (typeof data === 'string' ? data : '')}
+      title={title}
+    />
+  );
+}

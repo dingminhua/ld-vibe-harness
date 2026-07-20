@@ -8,8 +8,8 @@ interface DocPreviewLinkProps {
 }
 
 export default function DocPreviewLink({ docs, variant = 'card' }: DocPreviewLinkProps) {
-  const { locale } = useI18n();
-  const readLabel = locale === 'en' ? 'Read' : '阅读';
+  const { t } = useI18n();
+  const readLabel = t('common.read');
 
   if (docs.length === 0) return null;
 

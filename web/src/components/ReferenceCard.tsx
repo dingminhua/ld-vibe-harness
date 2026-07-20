@@ -7,19 +7,9 @@ import { isObjectRef } from '@/utils/fieldFormats';
 import { CATEGORY_COLORS } from '@/utils/categoryColors';
 import StatusBadge from '@/components/StatusBadge';
 import CopyPathButton from '@/components/CopyPathButton';
-import { getObjectStatusLocale } from '@/i18n/locales';
+import { getLocalizedObjectTitle, getObjectStatusLocale, getTypeLabel } from '@/i18n/locales';
 import { usePanel } from '@/utils/panelContext';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
-
-/** 对象类型中英映射（与 ObjectDetail 页面保持一致） */
-const TYPE_LOCALES: Record<string, { zh: string; en: string }> = {
-  workcase: { zh: '工作', en: 'WorkCase' },
-  adr: { zh: '决策', en: 'ADR' },
-  pitfall: { zh: '经验', en: 'Pitfall' },
-  spark: { zh: '火花', en: 'Spark' },
-  study: { zh: '外部调研', en: 'External study' },
-  change: { zh: '提交', en: 'Commit' },
-};
 
 /** 从引用 ID 解析对象类型（如 workcase-0001 → workcase） */
 function parseRefType(refId: string): string | null {
@@ -74,9 +64,7 @@ function ReferenceItem({
     fetchObjectDetail(refType, refId)
       .then((detail) => {
         const obj = detail.data;
-        const title = (locale === 'en'
-          ? (obj.title_en as string || obj.title as string)
-          : (obj.title_zh as string || obj.title as string)) || refId;
+        const title = getLocalizedObjectTitle(obj as { title?: string; title_en?: string; title_zh?: string }, locale, refId);
         setInfo({ type: refType, title, status: detail.summary.status, path: String(obj.path || detail.target || '') });
       })
       .catch(() => setInfo(null))
@@ -84,9 +72,7 @@ function ReferenceItem({
   }, [refType, refId, locale]);
 
   const typeColor = refType ? (CATEGORY_COLORS[refType] || CATEGORY_COLORS.other) : CATEGORY_COLORS.other;
-  const typeLabel = TYPE_LOCALES[refType || '']
-    ? (locale === 'en' ? TYPE_LOCALES[refType!].en : TYPE_LOCALES[refType!].zh)
-    : refType;
+  const typeLabel = refType ? getTypeLabel(refType, locale) : undefined;
   const isCurrentPanelOpen = Boolean(panelOpen && refType && panelContent?.type === 'object' && panelContent.objectType === refType && panelContent.objectId === refId);
   const PanelIcon = isCurrentPanelOpen ? ChevronLeft : ChevronRight;
   const itemClassName = variant === 'plain'
@@ -122,7 +108,7 @@ function ReferenceItem({
       }}
       className={itemClassName}
     >
-      <ObjectTypeIcon type={refType} size={13} className="shrink-0" style={{ color: typeColor }} />
+      <ObjectTypeIcon type={refType ?? undefined} size={13} className="shrink-0" style={{ color: typeColor }} />
       <span className="ldvh-meta shrink-0 text-ldvh-accent">{refId}</span>
       {showType && typeLabel && (
         <span

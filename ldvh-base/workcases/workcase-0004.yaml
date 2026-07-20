@@ -1,0 +1,333 @@
+title: Web 规范符合性与工程结构整改
+status: open
+priority: P1
+source_refs:
+- kind: repository-path
+  locator: specs/08-Web 呈现与交互规范.md
+- kind: repository-path
+  locator: web/docs/01-全局设计约束.md
+- kind: repository-path
+  locator: web/docs/10-Web开发现状与设计语言基线.md
+summary: workcase-0004 result_version 2 的完整关闭报告已形成：6/6 成功标准、7/7 工作项完成，独立结果审核 pass_with_followups、无 must-fix，关闭分类 proposed=completed；等待 Human 最终关闭确认。
+resume_from: phase=human_closure_confirming：向 Human 展示 result_version 2 的验证总结、completed 分类、无残余责任及 3 项非约束后续；仅在 Human 明确批准后写 closure_approval 并进入 closed。
+goal: 使 LDVH V4 web/ 在 LDVH 规范符合性与行业工程规范两个维度达到可信基线，消除已知明文违规，并建立防止回归的验证。
+scope: 覆盖 i18n 合规、事实读取语义（空列表掩盖与治理 YAML 自行解析）、五类事实对象统一读取路径（直读本地文件机械映射、不校验、缺失标注）、巨石组件拆分、api/src 边界、tsconfig 双配置、vite.config 清理。范围限于 web/src、web/api、web/tests、web/tsconfig*、web/vite.config.ts。明确排除：不改动 Python 端 ldvh 包与 web_machine 协议定义；不改动 specs/ 任何规范；不新增 Web 写入能力（create-spark 仍走既有 Python 桥与 loopback 边界）；不做与整改无关的 UI 重设计；不做 tsconfig strict（留作 followup）；Git 日志(changelog)读取保留现状走 git 子进程。统一读取原则：事实对象 YAML/MD 由 Web 直读机械映射；治理/协议类 YAML 仍经 Code 受控路径；Git 日志走 git 子进程。
+workcase_profile: control-contract-v1
+success_criterion_definitions:
+- criterion_id: criterion-01
+  statement: web/src 不再存在 JSX 内联中英文案分支或自建平行 i18n；全部用户可见文案走 useI18n()/t()，文案资源集中于 src/i18n/locales.ts（含 ObjectDetail 内联 TYPE_LOCALES/FIELD_LABEL_LOCALES/FIELD_VALUE_LOCALES 迁回，及 ReadingPanel 字段 label 与 ObjectDetail 同源复用）。
+- criterion_id: criterion-02
+  statement: 非 spark 类型不再以空列表+ok:true 掩盖未接入；API 返回可区分的 type_not_integrated 语义（非空列表、非笼统 404），页面如实区分“未接入”与“无数据”。
+- criterion_id: criterion-03
+  statement: projectFiles 不再自行 yaml.load 治理类 YAML（LDVH-GOVERNED-PROJECTS.yaml），读取回到经 Code 的受控路径。
+- criterion_id: criterion-04
+  statement: 五类事实对象统一改为直读本地文件机械映射、不校验、缺失如实标注（按类型确认实际文件形态：yaml / md+frontmatter / 目录缺失）；读取路径不产生 Python 子进程；给出基线与整改后的实测耗时对比；create-spark 写入路径不变。
+- criterion_id: criterion-05
+  statement: ObjectDetail.tsx/ProjectFiles.tsx/ReadingPanel.tsx 拆分为符合单一职责的模块；api 不再反向 import src；tsconfig 拆分为 tsconfig.app.json/tsconfig.node.json 双配置并启用 strict、修复全部 strict 类型错误（当前实测 3 个：2 个 i18n t() key 字面量联合类型与 string 不兼容 + 1 个 ReferenceCard null/undefined 收窄）；vite.config 移除代理调试 console.log，allowedHosts 硬编码域名改为环境变量并保留默认值。
+- criterion_id: criterion-06
+  statement: 行为保持核对：除标准 2/3/4 三项明确有意变更的呈现语义外，其余既有可观察行为（路由表、API 响应 shape 字段集、既有 Web API 测试断言集、布局/响应式）保持不变；web typecheck、lint、全部 Web API 测试、production build 通过；并记录本 WorkCase 与 spark-0005 的承接关系结论。
+phase: human_closure_confirming
+plan_version: 2
+work_items:
+- item_id: item-01
+  goal: i18n 合规整改
+  expected_result: 所有用户可见文案走 t()，locales.ts 为唯一文案源，ObjectDetail 内联 locale 迁回，ReadingPanel label 与 ObjectDetail 同源。
+  status: completed
+  approach_summary: 全量检索 web/src 中 JSX 内联中英文案分支与自建 pickCopy 平行体系，统一收敛到 useI18n()/t()；把 ObjectDetail 内联 TYPE_LOCALES/FIELD_LABEL_LOCALES/FIELD_VALUE_LOCALES 迁回 locales.ts；ReadingPanel 字段 label 改为与 ObjectDetail 同源复用。普通来源驱动求解。
+  result_summary: i18n 文案已集中到 src/i18n/locales.ts；ObjectDetail 内联类型/字段/枚举映射、ProjectFiles pickCopy、ReadingPanel 与各页面 JSX 双语分支均已移除。机械检索确认 locales.ts 外无 locale=== 文案分支和 zh/en 平行文案表；strict typecheck 通过。
+  evidence_refs:
+  - kind: working_tree
+    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/src/i18n/locales.ts
+  - kind: working_tree
+    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/src/pages/ObjectDetail.tsx
+  - kind: working_tree
+    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/src/pages/ProjectFiles.tsx
+  - kind: working_tree
+    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/src/components/ReadingPanel.tsx
+- item_id: item-02
+  goal: 事实读取语义整改
+  expected_result: 非 spark 类型返回 type_not_integrated 语义并如实呈现；projectFiles 不再自行解析治理 YAML。
+  status: completed
+  approach_summary: 修改 facts.ts 使非 spark 类型返回可区分的 type_not_integrated（非空列表、非笼统 404）；projectFiles 对 LDVH-GOVERNED-PROJECTS.yaml 的读取改经 Code 受控路径。与 item-03 同涉 facts 读取，由同一执行者串行处理避免冲突。
+  evidence_refs:
+  - kind: working_tree
+    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/api/services/facts.ts
+  - kind: working_tree
+    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/api/services/projectFiles.ts
+  - kind: working_tree
+    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/src/pages/ObjectList.tsx
+  - kind: working_tree
+    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/tests/api/project-files.test.ts
+  result_summary: 按批准语义完成事实读取整改：缺目录返回独立 type_not_integrated、非空诊断 items 与专用页面提示，已接入空目录仍为 complete + 空 items；Project Files 改为调用 Helper resolve-governance-scope，验证 config/scope/governed project/worktree/common-dir，拒绝不确定结果，并从 Code 证据恢复多项目清单。
+- item_id: item-03
+  goal: 五类事实对象统一读取路径
+  expected_result: 直读本地文件机械映射、不校验、缺失标注；不 spawn Python；含创建→回读端到端一致性测试；给实测耗时对比。
+  status: completed
+  depends_on:
+  - item-02
+  approach_summary: 先按类型确认实际文件形态（sparks/workcases 为 .yaml，studies 为 .md+frontmatter，adr/pitfall 目录可能缺失），再实现统一读取器做 YAML/MD→DTO 机械映射、不校验、缺失如实标注；create-spark 写入路径保持 Python 桥与 loopback 边界不变；复用现有 fakeSpawn 测试能力补创建→列表/详情回读端到端一致性测试；给基线与整改后实测耗时对比。
+  result_summary: 五类本地直读保留；正式载体收紧为 Spark/WorkCase/ADR/Pitfall 精确 <id>.yaml、Study 精确 <id>.md，错扩展名不进入普通对象列表并以 unexpected_fact_carrier issue / unavailable 反馈。create-spark 写入→回读路径保持通过。
+  evidence_refs:
+  - kind: working_tree
+    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/api/services/localFactReader.ts
+  - kind: working_tree
+    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/tests/api/local-facts.test.ts
+- item_id: item-04
+  goal: 巨石组件拆分与边界修复
+  expected_result: ObjectDetail/ProjectFiles/ReadingPanel 拆分为单一职责模块；api 不再反向 import src。
+  status: completed
+  approach_summary: 把三个巨石组件按 5 路类型布局/子组件拆分为 pages/ObjectDetail/ 等目录；把 workcaseStatus 从 src/utils 移至共享位置消除 api→src 反向依赖。行为保持，依赖既有测试与页面回读兜底。
+  result_summary: 完成按职责的实质拆分：ReadingPanel 888→235 行，内容渲染进入 reading-panel/PanelContent；ProjectFiles 1019→838 行，数据加载/状态/动作编排进入 useProjectFilesController；ObjectDetail 2711→1496 行，WorkCase 生命周期/审核与 ADR/Pitfall/Spark 布局分别进入独立模块。api 无反向 src import；浏览器回归确认行为保持。
+  evidence_refs:
+  - kind: working_tree
+    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/src/components/ReadingPanel.tsx
+  - kind: working_tree
+    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/src/components/reading-panel/PanelContent.tsx
+  - kind: working_tree
+    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/src/pages/ProjectFiles.tsx
+  - kind: working_tree
+    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/src/pages/project-files/useProjectFilesController.ts
+  - kind: working_tree
+    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/src/pages/ObjectDetail.tsx
+  - kind: working_tree
+    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/src/pages/object-detail/WorkCaseReadingLayout.tsx
+  - kind: working_tree
+    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/src/pages/object-detail/FactReadingLayouts.tsx
+- item_id: item-05
+  goal: tsconfig 双配置拆分并启用 strict
+  expected_result: tsconfig.app.json（前端 DOM，含 tests/）与 tsconfig.node.json（后端 api/）分离，前后端不再混编；两个 project 均启用 strict 且 tsc 在 strict 下通过；当前 3 个错误（2 个 i18n t() key 类型 + 1 个 null/undefined 收窄）全部修复；验收命令与 criterion-06 的 typecheck 对齐。
+  status: completed
+  depends_on:
+  - item-01
+  approach_summary: 按 Vite 官方惯例拆分 tsconfig.app.json（前端 src + tests，DOM 类型）与 tsconfig.node.json（后端 api，Node 类型）；两个 project 均启用 strict；strict 修复以 item-01 落地后的 t() 签名为准（串行，避免与 i18n 整改并行改同一文件同一函数签名冲突）；逐个修复 3 个已知错误并复核 i18n key 类型设计变化后是否暴露新错误。
+  result_summary: tsconfig 已拆为 app/node 两个 strict project，tests 纳入 app，api 纳入 node；修复 2 个 t() key 函数方差错误与 ReferenceCard null/undefined 收窄，并统一 npm run check 为 tsc -b。
+  evidence_refs:
+  - kind: working_tree
+    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/tsconfig.json
+  - kind: working_tree
+    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/tsconfig.app.json
+  - kind: working_tree
+    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/tsconfig.node.json
+  - kind: working_tree
+    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/package.json
+  - kind: working_tree
+    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/src/components/ReferenceCard.tsx
+- item_id: item-06
+  goal: vite.config 清理
+  expected_result: 移除调试 console.log；allowedHosts 改环境变量并保留默认值。
+  status: completed
+  approach_summary: 删除 vite.config.ts 代理 error/proxyReq/proxyRes 回调中的调试 console.log；allowedHosts 硬编码域名改为读环境变量并保留默认值以不破坏开发访问。
+  result_summary: vite.config.ts 移除代理 error/proxyReq/proxyRes 回调中的 3 个调试 console.log（删除整个 configure 调试块）；allowedHosts 硬编码域名改为读 VITE_ALLOWED_HOSTS 环境变量、逗号分隔、保留原值作默认以不破坏开发访问。
+  evidence_refs:
+  - kind: working_tree
+    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/vite.config.ts
+- item_id: item-07
+  goal: 综合验证与行为保持核对
+  expected_result: typecheck/lint/全部 Web API 测试/build 通过；有意变更项与行为保持项逐项核对记录；明确 spark-0005 承接结论。
+  status: completed
+  depends_on:
+  - item-01
+  - item-02
+  - item-03
+  - item-04
+  - item-05
+  - item-06
+  approach_summary: 运行 web typecheck、lint、全部 Web API 测试与 production build；对照成功标准 2/3/4 三项有意变更与其余行为保持项逐项核对并记录；形成本 WorkCase 与 spark-0005 的承接关系结论（supersede/部分承接/驳回及依据）。
+  result_summary: result_version 2 综合验证通过：npm run check；lint 0 errors（14 条 Fast Refresh warnings）；34/34 Web API tests；production build。浏览器实测 Dashboard、WorkCase 详情、ADR 未接入提示、Project Files 多项目清单，Dashboard/详情均以共享 phase 投影显示执行中，页面无 load failure/NaN，浏览器日志为空。spark-0005 仍为部分承接并保持 open。
+  evidence_refs:
+  - kind: working_tree
+    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/tests/api/commit-dto.test.ts
+  - kind: working_tree
+    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/tests/api/local-facts.test.ts
+  - kind: working_tree
+    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/tests/api/project-files.test.ts
+  - kind: working_tree
+    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/ldvh-base/sparks/spark-0005.yaml
+creation_reviews:
+- reviewer: independent-subagent-reviewer/agent-7a9605e2
+  reviewed_at: '2026-07-20T16:03:45.753687+08:00'
+  subject_version: 2
+  scope: 对照 specs/21 §6 升版重审要求、web/tsconfig.json 现状（strict:false 单配置 include src/api/tests）与复跑 tsc --noEmit --strict 实测（3 个错误：2 个 i18n t() key 类型于 ObjectDetail.tsx:1319/1370 + 1 个 ReferenceCard.tsx:125 null 收窄），审核 plan_version 2 相对 v1 的 strict 纳入变更：strict 与“Web 只读呈现、不做业务校验”定位是否矛盾、item-05 变更可验收性、“实测仅 3 个错误”是否低风险可接受、成功标准 5 修订后可独立检查性，以及整体 goal/scope/标准/拆分/依赖自洽性。
+  conclusion: pass_with_followups
+  feedback:
+  - 定位一致性成立：tsconfig strict 是编译期工程严谨性属性，属 goal 的行业工程规范维度，与“Web 只读呈现、不做业务校验”（运行期语义）不冲突；原 v1 排除 strict 的“40+ 处类型债”成本担忧被实测 3 个错误证伪，变更理由充分、低风险可接受。
+  - 实测口径需修正：主控称“3 个 i18n key 类型错误”与事实不符，实为 2 个 i18n t() key 类型 + 1 个 ReferenceCard null/undefined 收窄；低风险结论不受影响，但 expected_result 应写明错误构成，避免执行期“修了 i18n 仍不过”的误判。
+  - item-05 与 item-01 存在未声明的文件级耦合：2 个 i18n key 错误位于 ObjectDetail.tsx，而 item-01 正重构该文件 i18n 与 t()；建议 item-05 声明 depends_on item-01，strict 修复以 item-01 落地后的 t() 签名为准，避免并行改同一文件同一函数签名冲突返工。
+  - tests/ 归属与验收命令需明确：拆分后 tests/ 归 app project、strict 是否同施于 api 与 tests 应言明；成功标准 5 的判定命令应与最终配置 include 集对应，并与 criterion-06 的 typecheck 明确对齐。
+  - 可独立检查性保持：修订后标准 5 以“双配置文件存在 + strict 启用 + tsc --strict 通过”形成可判定闭集；goal/scope/其余标准/依赖结构相对 v1 未动，v1 已审通过的 spark-0005 承接与 study 文件形态前置步骤结论不受影响，整体仍自洽。
+  review_basis:
+    projection_key: plan_current
+    subject_fingerprint: fc0ea004e85a66c4d1a25aaf55c2bf932d1293e19cb2c04bc8a73fc827236d33
+  controller_resolution: 1. 接受；strict 纳入与 Web 只读定位不冲突，成本前提被实测证伪。2. 接受；item-05 expected_result 与成功标准 5 已写明错误构成（2 i18n key 类型 + 1 null 收窄）。3. 接受；item-05 已增加 depends_on item-01，strict 修复以 item-01 落地后 t() 签名为准、同执行者串行。4. 接受；item-05 明确 tests/ 归 app project、strict 同施于 api 与 tests，验收命令与 criterion-06 typecheck 对齐。5. 接受；标准 5 可判定闭集保持。followup 2/3/4 已吸收进 plan_version 2 正文，无需再次升版重审，进入 Human Gate 等待对 plan_version 2 的执行批准。
+audit_summary:
+- audit_id: audit-01
+  subject_kind: pre_creation_plan
+  subject_version: 1
+  review_count: 2
+  summary: 对象创建前经历两轮独立审核：plan_version 1 草案首审为 changes_required（9 条反馈，含 E 项方法定义、成功标准可检性、item 拆分等），主控逐项处置并升版；Human 随后明确“Web 只读呈现、不做业务校验”的定位，消解了“TS 重写校验导致双实现漂移”的核心争议，并据此收敛读取方案与 strict 范围；plan_version 2 重审为 pass_with_followups。审核机制促使读取路径从“每请求 spawn Python”修正为“直读本地文件机械映射”，并把 study 文件形态与 spark-0005 承接两条执行期风险写入计划。
+  findings:
+  - finding_id: finding-01
+    topic: E 项“复用 Code schema/校验”机制未定义，存在 TS 重写校验导致双实现漂移风险
+    controller_disposition: corrected
+    resolution_summary: Human 明确 Web 不做业务校验、只读呈现，Web 对事实对象仅做 YAML/MD→DTO 机械映射，不重写校验，漂移前提被排除；读取方案收敛为直读本地文件。
+    rereview_outcome: performed
+    final_route: current_plan
+  - finding_id: finding-02
+    topic: 成功标准“行为保持不变”“性能可感知提升”不可独立检查
+    controller_disposition: corrected
+    resolution_summary: 改为可核对形式：明确受保护行为集合与有意变更项清单；性能改为“读取路径不产生 Python 子进程（可断言）+ 实测耗时对比”。
+    rereview_outcome: performed
+    final_route: current_plan
+  - finding_id: finding-03
+    topic: C 与 E 规范立场冲突（何时允许直读 YAML），且 item-04 耦合过强、H(strict) 工作量风险大
+    controller_disposition: corrected
+    resolution_summary: 建立统一读取原则（事实对象 YAML/MD 直读，治理 YAML 经 Code，Git 日志走 git 子进程）；H(strict) 拆分独立并最终决定本轮不做、留作 followup；item-04 范围随之收敛。
+    rereview_outcome: performed
+    final_route: current_plan
+- audit_id: audit-02
+  subject_kind: superseded_plan
+  subject_version: 1
+  review_count: 1
+  summary: plan_version 1（排除 tsconfig strict、留作 followup）经一轮独立审核为 pass_with_followups，已创建对象并进入 human_plan_confirming；随后 Human 要求将 strict 纳入本轮，主控实测 strict 下仅 3 个类型错误、证伪了原“40+ 处类型债”的成本前提，故升版为 plan_version 2。v1 的其余定位（Web 只读不校验、统一读取路径、i18n/读取语义/巨石拆分/综合验证与 spark-0005 承接）原样保留并被 v2 继承。
+  findings:
+  - finding_id: finding-04
+    topic: v1 排除 strict 的成本前提（40+ 处类型债）与实测不符
+    controller_disposition: corrected
+    resolution_summary: 实测 tsc --strict 仅 3 个错误（2 i18n key 类型 + 1 null 收窄），成本远低于预估；应 Human 要求将 strict 纳入 item-05 并升版重审。
+    rereview_outcome: performed
+    final_route: current_plan
+- audit_id: audit-03
+  subject_kind: superseded_result
+  subject_version: 1
+  review_count: 1
+  summary: result_version 1 的独立审核以 changes_required 识别并推动 7 类改进：恢复批准的 type_not_integrated 非空语义；Project Files 接入 Code 管辖解析并恢复多项目/拒绝不确定状态；三个巨型组件按职责实质拆分；统一 Dashboard/详情 WorkCase phase 投影；明确 scope 旧括注不覆盖 plan v2 criterion/item/Human approval；收紧五类正式载体；补齐行为测试。Controller 全部处置后形成 result_version 2，旧详细 review 由本审计连续性承接，新结果将重新独立审核。
+execution_approval:
+  subject_version: 2
+  approved_at: '2026-07-20T16:04:42.206830+08:00'
+  summary: Human 明确批准执行 workcase-0004 的 plan_version 2：范围为对象中已审核的目标、scope、6 项成功标准与 7 个工作项（含 tsconfig strict 纳入、item-05 依赖 item-01、item-02/03 串行）；批准不包含 Git commit/push/PR、不改动 Python 端 ldvh 包与 specs/ 规范、不新增 Web 写入能力。
+result_version: 2
+evidence_refs:
+- kind: working_tree
+  locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/api/routes/dashboard.ts
+- kind: working_tree
+  locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/api/services/facts.ts
+- kind: working_tree
+  locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/api/services/projectFiles.ts
+- kind: working_tree
+  locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/api/services/localFactReader.ts
+- kind: working_tree
+  locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/shared/workcaseStatus.ts
+- kind: working_tree
+  locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/src/pages/object-detail/WorkCaseReadingLayout.tsx
+- kind: working_tree
+  locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/src/pages/object-detail/FactReadingLayouts.tsx
+- kind: working_tree
+  locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/src/pages/project-files/useProjectFilesController.ts
+- kind: working_tree
+  locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/src/components/reading-panel/PanelContent.tsx
+- kind: working_tree
+  locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/tests/api/commit-dto.test.ts
+- kind: working_tree
+  locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/tests/api/local-facts.test.ts
+- kind: working_tree
+  locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/tests/api/project-files.test.ts
+success_criterion_results:
+- criterion_id: criterion-01
+  outcome: satisfied
+  summary: 用户可见文案与对象类型/字段/枚举/commit/signal 映射已集中到 locales.ts；ProjectFiles pickCopy 和组件内双语字面量分支已移除，机械检索确认 locales.ts 外无 locale=== 文案分支或 zh/en 平行表。
+  evidence_refs:
+  - kind: working_tree
+    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/src/i18n/locales.ts
+  - kind: working_tree
+    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/src/pages/ObjectDetail.tsx
+  - kind: working_tree
+    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/src/pages/ProjectFiles.tsx
+  - kind: working_tree
+    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/src/components/ReadingPanel.tsx
+- criterion_id: criterion-02
+  outcome: satisfied
+  summary: 缺目录现在返回 coverage_status=type_not_integrated、非空诊断 items 与专用 UI；已接入空目录返回 complete + 空 items，API/页面可区分两种状态。
+  evidence_refs:
+  - kind: working_tree
+    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/api/services/facts.ts
+  - kind: working_tree
+    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/tests/api/local-facts.test.ts
+- criterion_id: criterion-03
+  outcome: satisfied
+  summary: Project Files 不解析治理 YAML，实际调用 Helper resolve-governance-scope；只接受 valid + governed_single 且已验证 project/worktree/common-dir 的结果，多项目由 Code 身份证据恢复，不确定状态返回 500 拒绝。
+  evidence_refs:
+  - kind: working_tree
+    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/api/services/projectFiles.ts
+  - kind: working_tree
+    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/tests/api/project-files.test.ts
+- criterion_id: criterion-04
+  outcome: satisfied
+  summary: 五类事实保持本地机械直读且不 spawn Python；正式扩展名按类型闭合，错载体进入 issue/unavailable；create-spark 写入→回读测试继续通过，原约 895.8ms→1.7ms 对比保持。
+  evidence_refs:
+  - kind: working_tree
+    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/api/services/localFactReader.ts
+  - kind: working_tree
+    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/tests/api/local-facts.test.ts
+- criterion_id: criterion-05
+  outcome: satisfied
+  summary: ReadingPanel、ProjectFiles、ObjectDetail 已分别拆出内容渲染、控制器、WorkCase/事实类型布局模块；API 无 src 反向 import；双 tsconfig strict、Vite 清理保持通过。
+  evidence_refs:
+  - kind: working_tree
+    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/src/pages/object-detail/model.ts
+  - kind: working_tree
+    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/src/pages/project-files/model.ts
+  - kind: working_tree
+    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/src/components/reading-panel/commitModel.ts
+  - kind: working_tree
+    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/shared/workcaseStatus.ts
+  - kind: working_tree
+    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/tsconfig.app.json
+  - kind: working_tree
+    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/tsconfig.node.json
+  - kind: working_tree
+    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/vite.config.ts
+- criterion_id: criterion-06
+  outcome: satisfied
+  summary: 共享 WorkCase phase 投影覆盖列表、Dashboard 与详情 summary/header；34/34 API tests、strict typecheck、lint 0 errors、production build 与浏览器回归通过，spark-0005 部分承接结论保持。
+  evidence_refs:
+  - kind: working_tree
+    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/package.json
+  - kind: working_tree
+    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/tests/api/local-facts.test.ts
+  - kind: working_tree
+    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/web/tests/api/project-files.test.ts
+  - kind: working_tree
+    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/ldvh-base/sparks/spark-0005.yaml
+controller_check_summary: result_version 2 主控执行检查已覆盖 Reviewer 7 项反馈：type_not_integrated 与空数据区分、Helper Code 管辖解析/多项目/失败关闭、正式载体限制、组件职责拆分、共享 WorkCase phase 投影及对应测试均已实现。npm run check 通过；lint 0 errors（14 Fast Refresh warnings）；34/34 API tests；production build；浏览器实测 Dashboard/WorkCase 详情/ADR 未接入/Project Files，多处状态一致、无 NaN/load failure，浏览器日志为空。scope 中旧“不做 strict”括注与同一 plan v2 criterion-05/item-05/creation review处置/Human execution approval 冲突，本 Controller 按已批准的 strict 纳入记录解释，不改写计划投影或制造新 Human Gate。
+result_reviews:
+- reviewer: codex-agent:/root/wc0004_result_v2_review
+  reviewed_at: '2026-07-20T18:34:47.703773+08:00'
+  subject_version: 2
+  scope: 只读复核 workcase-0004 result_version 2 的 result_implementation。通过 Helper 精确读取当前对象，检查完整 Working Tree diff、API/UI/测试实现，并逐项复核 result v1 的 7 项 changes_required；独立复跑 strict check、lint、34 项 API tests、production build 与 git diff --check。
+  conclusion: pass_with_followups
+  feedback:
+  - '[medium][engineering_structure] 上一轮组件拆分阻断已关闭；但 ObjectDetail 仍导出共享 UI primitives，WorkCaseReadingLayout/FactReadingLayouts 反向导入 ObjectDetail，PanelContent 也依赖页面入口，形成维护性循环依赖。当前 strict/build/浏览器回归均无运行阻断。建议后续把共享 primitives/Study layout 移入独立模块，使页面入口只负责取数和分派。'
+  - '[low][test_coverage] 关键行为已有自动测试，但 ObjectList 未接入提示仍缺组件级断言，Project Files 对 malformed/mismatched Helper payload 的畸形组合缺表驱动 fail-closed 单测。建议后续补充。'
+  - '[info][workcase_continuity] scope 中“不做 tsconfig strict”是 stale parenthetical；同一 plan v2 的 criterion-05、item-05、creation review 处置和 Human execution approval 明确覆盖，故不构成关闭阻断。不要为修正文案静默改写已批准计划或制造重复 Human Gate。'
+  review_basis:
+    projection_key: result_implementation
+    subject_fingerprint: 69626ebf173736a7b915c868eb3caa34660e24dee4131b8c801595aa48f79094
+  controller_resolution: 1. 接受 Reviewer 对上一轮 7 项 changes_required 已全部实质闭合的结论，当前 6/6 success criteria、7/7 work items 和完整验证证据成立。2. 接受组件循环依赖为 medium 非阻断维护性后续；当前职责拆分已达到本计划验收边界，strict/build/API tests/浏览器回归均无运行阻断，不修改 result_version 2，也不要求复审。3. 接受 UI 组件级断言及畸形 Helper 响应表驱动测试为 low 非约束覆盖增强；现有测试与人工浏览器证据足以支持当前标准。4. 接受 scope 中 strict 排除括注为 stale parenthetical 的连续性解释；同一 plan v2 的 criterion-05、item-05、creation review 处置及 Human execution approval 是明确控制记录，不静默改写已批准计划，也不制造重复 Human Gate。5. Controller 判断无需返回 executing/controller_checking 或再次 independent_reviewing，进入 closure_preparing。
+validation_summary: plan_version 2 的 6 项成功标准和 7 个工作项全部满足。上一轮独立审核提出的 type_not_integrated、Helper Code governance、多项目 fail-closed、组件职责拆分、WorkCase phase 状态投影、strict 记录连续性、正式载体边界和测试缺口均已修复或完成控制解释；result_version 2 独立审核为 pass_with_followups、无 must-fix。独立复跑 npm run check、lint（0 errors，14 Fast Refresh warnings）、34/34 Web API tests、production build 与 git diff --check 均通过；浏览器实测 Dashboard、WorkCase 详情、ADR 未接入和 Project Files 多项目清单，状态一致、无 NaN/load failure，日志为空。未执行 Git commit/push/PR，符合授权排除边界。
+closure_outcome: completed
+disposition_summary: workcase-0004 批准的 Web 规范符合性与工程结构整改范围已完成，无残余修复责任，不需要 routed-to，也不需要为当前关闭另建 Spark。Reviewer 提出的循环依赖解耦、额外 UI/畸形响应测试，以及接手 WorkCase 时继承既有 execution_approval、只在真实 Human Gate 暂停的流程提示，均登记为非约束后续：它们不影响当前目标完成，不自动授权实现，也不表示下游已承接。当前 Working Tree 保留用户已有其它变更；本次未提交、未 push、未创建 PR。
+nonbinding_followups:
+- followup_id: followup-01
+  summary: 进一步拆出 ObjectDetail 的共享 UI primitives 与 Study layout，消除 ObjectDetail 与子布局模块之间的 ESM 循环依赖。
+  rationale: 当前职责拆分、strict、build 和浏览器行为均已通过，本项用于降低后续维护耦合，不是当前成功标准的未完成责任。
+- followup_id: followup-02
+  summary: 补充 ObjectList 未接入提示的组件渲染测试，以及 Project Files 对畸形或身份不匹配 Helper 响应的表驱动 fail-closed 测试。
+  rationale: 现有 API、真实 Helper 和浏览器证据已覆盖当前验收；新增测试属于覆盖深度增强。
+- followup_id: followup-03
+  summary: 改进 WorkCase 接续提示：接手者先读取对象内 execution_approval 与当前 phase，只在规范定义的下一个真实 Human Gate 暂停，避免重复询问执行授权。
+  rationale: 本次接续暴露了执行授权已经存在却被再次询问的流程摩擦；改进有明确价值，但不属于当前 Web 整改结果的完成门槛，也不自动新建 Spark。
+waiting_on: 等待 Human 对 workcase-0004 result_version 2、完整关闭报告和 completed 关闭分类作最终关闭确认。
+object_id: workcase-0004
+fact_type_key: workcase
+created_at: '2026-07-20T08:06:53.865799+08:00'
+updated_at: '2026-07-20T18:35:45.237234+08:00'

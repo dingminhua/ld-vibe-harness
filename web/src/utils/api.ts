@@ -56,6 +56,8 @@ export interface ObjectItem {
   path: string;
   created?: string;
   updated: string;
+  kind?: 'type_not_integrated';
+  message?: string;
   priority?: string;
   importance?: string;
   executionItems?: RelatedObjectSummary[];

@@ -12,16 +12,14 @@ import { ExecutionFlowBar, ExecutionFlowLegend, ExecutionFlowMarker } from '@/co
 import { fetchObjects, type ObjectItem, type ObjectStatusOption } from '@/utils/api';
 import { formatDateTime } from '@/utils/dateFormat';
 import { useI18n } from '@/i18n/context';
-import { getObjectStatusLocale } from '@/i18n/locales';
+import { getLocalizedObjectTitle, getObjectStatusLocale } from '@/i18n/locales';
 import { CATEGORY_COLORS } from '@/utils/categoryColors';
 import { getEffectiveListStatus, writeListStatusParam } from '@/utils/listStatus';
 import { getExecutionFlowLabel, getExecutionFlowTone, sortWorkCaseExecutionItems } from '@/utils/executionFlowStatus';
 import {
   WORKCASE_STATUS_ORDER,
   isWorkCaseClosureConfirmingStatus,
-} from '@/utils/workcaseStatus';
-
-type LocalizedTitleItem = Pick<ObjectItem, 'id'> & Partial<Pick<ObjectItem, 'title' | 'title_en' | 'title_zh'>>;
+} from '@/shared/workcaseStatus';
 
 type Translate = ReturnType<typeof useI18n>['t'];
 type WorkCaseRecordState = 'recorded' | 'missing';
@@ -59,13 +57,6 @@ const TITLE_ACCENT_CLASS: Record<string, string> = {
   suspended: 'border-red-400/75',
 };
 
-function getLocalizedTitle(item: LocalizedTitleItem, locale: string): string {
-  if (locale === 'en') {
-    return item.title_en || item.title || item.id;
-  }
-  return item.title_zh || item.title || item.id;
-}
-
 function getTitleAccentClass(status: string): string {
   return TITLE_ACCENT_CLASS[status] ?? 'border-ldvh-accent/70';
 }
@@ -91,14 +82,14 @@ function statusRequiresReason(status: string): boolean {
   return status === 'archived' || status === 'deprecated' || status === 'discarded' || status === 'closed' || status === 'routed';
 }
 
-function getNonActiveReason(obj: ObjectItem, locale: string): StatusReason | null {
+function getNonActiveReason(obj: ObjectItem, t: Translate): StatusReason | null {
   if (obj.status === 'active') return null;
   const labels = {
-    archive_reason: locale === 'en' ? 'Archive reason' : '归档原因',
-    deprecated_reason: locale === 'en' ? 'Deprecated reason' : '废弃原因',
-    discard_reason: locale === 'en' ? 'Discard reason' : '废弃原因',
-    disposition_summary: locale === 'en' ? 'Disposition' : '处置说明',
-    closure_evidence: locale === 'en' ? 'Close reason' : '关闭原因',
+    archive_reason: t('objectList.archiveReason'),
+    deprecated_reason: t('objectList.deprecatedReason'),
+    discard_reason: t('objectList.discardReason'),
+    disposition_summary: t('objectList.disposition'),
+    closure_evidence: t('objectList.closeReason'),
   };
   const orderedFields = obj.status === 'routed'
     ? ['disposition_summary', 'closure_evidence', 'discard_reason']
@@ -121,10 +112,8 @@ function getNonActiveReason(obj: ObjectItem, locale: string): StatusReason | nul
   }
   if (statusRequiresReason(obj.status)) {
     return {
-      label: locale === 'en' ? 'Missing reason' : '原因缺失',
-      text: locale === 'en'
-        ? 'This non-active object must record a reason in its fact source.'
-        : '该非活跃对象必须在事实源中记录原因。',
+      label: t('objectList.missingReason'),
+      text: t('objectList.missingReasonText'),
       missing: true,
     };
   }
@@ -273,7 +262,7 @@ function ObjectCardFrame({
   const { t } = useI18n();
   const titleAccentClass = getTitleAccentClass(obj.status);
   const typeColor = CATEGORY_COLORS[obj.type] || CATEGORY_COLORS.other;
-  const nonActiveReason = getNonActiveReason(obj, locale);
+  const nonActiveReason = getNonActiveReason(obj, t);
   return (
     <div
       role="button"
@@ -295,7 +284,7 @@ function ObjectCardFrame({
         <PriorityIcon source={obj} type={obj.type} locale={locale} size="sm" />
         <ObjectTypeIcon type={obj.type} size={14} className="shrink-0" style={{ color: typeColor }} />
         <span className="ldvh-card-title min-w-0 flex-1 whitespace-normal break-words leading-snug transition-colors group-hover/card:text-ldvh-accent">
-          {getLocalizedTitle(obj, locale)}
+          {getLocalizedObjectTitle(obj, locale)}
         </span>
         <ArrowRight size={14} className="shrink-0 text-ldvh-text-secondary transition-all group-hover/card:translate-x-0.5 group-hover/card:text-ldvh-accent" />
       </div>
@@ -303,7 +292,7 @@ function ObjectCardFrame({
       {children}
       <div className="mt-auto flex min-w-0 justify-end pt-1 text-right">
         <span className="ldvh-meta-muted">
-          {locale === 'en' ? 'Updated ' : '更新 '}{formatDateTime(obj.updated)}
+          {t('objectList.updated', { time: formatDateTime(obj.updated) })}
         </span>
       </div>
     </div>
@@ -366,36 +355,38 @@ function SparkMetaLine({ label, value }: { label: string; value: string }) {
   );
 }
 
-function SparkResolvedCardContent({ obj, locale }: { obj: ObjectItem; locale: string }) {
+function SparkResolvedCardContent({ obj }: { obj: ObjectItem }) {
+  const { t } = useI18n();
   const routingTargets = sparkRoutedTargets(obj);
   const targetLabel = routingTargets.length > 0
     ? routingTargets.map((target) => `${target.objectType ?? ''} ${target.ref}`.trim()).join(', ')
-    : (locale === 'en' ? 'No fact-object target recorded' : '未记录事实对象目标');
+    : t('objectList.noRouteTarget');
   const routedAt = obj.closed_at ? formatDateTime(obj.closed_at) : '';
 
   return (
-    <SparkFactPanel tone="routed" title={locale === 'en' ? 'Routed' : '已分流'}>
+    <SparkFactPanel tone="routed" title={t('objectList.routed')}>
       <div className="flex flex-col gap-0.5">
-        <SparkMetaLine label={locale === 'en' ? 'Target' : '目标'} value={targetLabel} />
-        {routedAt && <SparkMetaLine label={locale === 'en' ? 'Time' : '时间'} value={routedAt} />}
+        <SparkMetaLine label={t('objectList.target')} value={targetLabel} />
+        {routedAt && <SparkMetaLine label={t('objectList.time')} value={routedAt} />}
       </div>
     </SparkFactPanel>
   );
 }
 
-function SparkDiscardedCardContent({ obj, locale }: { obj: ObjectItem; locale: string }) {
-  const reason = obj.disposition_summary?.trim() || (locale === 'en' ? 'Disposition missing.' : '处置说明缺失。');
+function SparkDiscardedCardContent({ obj }: { obj: ObjectItem }) {
+  const { t } = useI18n();
+  const reason = obj.disposition_summary?.trim() || t('objectList.dispositionMissing');
 
   return (
-    <SparkFactPanel tone="discarded" title={locale === 'en' ? 'Discarded' : '已废弃'}>
-      <SparkMetaLine label={locale === 'en' ? 'Reason' : '原因'} value={reason} />
+    <SparkFactPanel tone="discarded" title={t('objectList.discarded')}>
+      <SparkMetaLine label={t('objectList.reason')} value={reason} />
     </SparkFactPanel>
   );
 }
 
-function SparkCardContent({ obj, locale }: { obj: ObjectItem; locale: string }) {
-  if (hasSparkDiscardFact(obj)) return <SparkDiscardedCardContent obj={obj} locale={locale} />;
-  if (hasSparkResolvedFact(obj)) return <SparkResolvedCardContent obj={obj} locale={locale} />;
+function SparkCardContent({ obj }: { obj: ObjectItem }) {
+  if (hasSparkDiscardFact(obj)) return <SparkDiscardedCardContent obj={obj} />;
+  if (hasSparkResolvedFact(obj)) return <SparkResolvedCardContent obj={obj} />;
   return null;
 }
 
@@ -441,6 +432,8 @@ export default function ObjectList() {
   }, [currentType, activeStatus, reloadKey]);
 
   const sortedItems = sortObjectsForList(items, currentType);
+  const typeNotIntegrated = sortedItems.find((item) => item.kind === 'type_not_integrated');
+  const visibleItems = sortedItems.filter((item) => item.kind !== 'type_not_integrated');
 
   const handleStatusChange = (status: string | null) => {
     const nextParams = new URLSearchParams(searchParams);
@@ -577,7 +570,7 @@ export default function ObjectList() {
                     <div key={item.id} className="flex min-w-0 items-center gap-2 py-2">
                       <ExecutionFlowMarker tone={tone} label={label} compact />
                       <div className="min-w-0 flex-1">
-                        <span className="ldvh-body block min-w-0 truncate">{getLocalizedTitle(item, locale)}</span>
+                        <span className="ldvh-body block min-w-0 truncate">{getLocalizedObjectTitle(item, locale)}</span>
                         <span className="ldvh-meta-muted block min-w-0 truncate">
                           {[item.role || item.id, label].filter(Boolean).join(' · ')}
                         </span>
@@ -620,7 +613,7 @@ export default function ObjectList() {
       return (
         <ObjectCardFrame key={obj.id} obj={obj} locale={locale} onOpen={openObject} showNonActiveReason={false}>
           <ObjectSignalBadges source={obj} type={obj.type} locale={locale} />
-          <SparkCardContent obj={obj} locale={locale} />
+          <SparkCardContent obj={obj} />
         </ObjectCardFrame>
       );
     }
@@ -661,13 +654,19 @@ export default function ObjectList() {
           <p className="ldvh-body-muted">{t('common.loadFailed')}</p>
           <p className="ldvh-meta text-red-400">{error}</p>
         </div>
-      ) : sortedItems.length === 0 ? (
+      ) : typeNotIntegrated ? (
+        <div className="mx-auto max-w-2xl rounded-lg border border-amber-500/30 bg-amber-500/10 px-5 py-8 text-center">
+          <CircleAlert className="mx-auto mb-3 text-amber-400" size={24} />
+          <p className="ldvh-card-title text-amber-300">{t('objectList.typeNotIntegrated')}</p>
+          <p className="ldvh-body-muted mt-2">{typeNotIntegrated.message || typeNotIntegrated.title}</p>
+        </div>
+      ) : visibleItems.length === 0 ? (
         <div className="ldvh-body-muted py-20 text-center">
           {t('objectList.noObjects', { type: currentType })}
         </div>
       ) : (
         <div className="ldvh-section-grid">
-          {sortedItems.map((obj) => renderObjectCard(obj))}
+          {visibleItems.map((obj) => renderObjectCard(obj))}
         </div>
       )}
     </div>

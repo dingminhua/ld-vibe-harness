@@ -3,9 +3,11 @@
 import {
   V4FactsTransportError,
 } from '../internal/v4FactsTransport.js'
-import { v4SparkReaderConfig, V4FactsConfigurationError } from './v4FactsConfig.js'
-import { listV4Sparks, readV4Spark } from './v4SparkReader.js'
-import { projectV4Spark, projectV4SparkList } from './v4SparkProjector.js'
+import { V4FactsConfigurationError } from './v4FactsConfig.js'
+// create-spark 写入路径（captureV4Spark，见 routes/sparks.ts）保持不变；
+// 列表/详情读取已切换为本地直读，不再调用 listV4Sparks/readV4Spark。
+import { listLocalFacts, readLocalFact, type LocalFactItem, type LocalFactScope } from './localFactReader.js'
+import { getWorkCaseDisplayStatus } from '../../shared/workcaseStatus.js'
 
 export const ACTIVE_OBJECT_TYPES = ['workcase', 'adr', 'pitfall', 'spark', 'study'] as const
 export const OBJECT_TYPES = ACTIVE_OBJECT_TYPES
@@ -49,60 +51,127 @@ function error(value: unknown): WebFactError {
   return { ok: false, error: value instanceof Error ? value.message : 'V4 facts unavailable', stderr: '', exitCode: 1 }
 }
 
-function empty(type: ObjectType): WebFactResult {
-  return result('list', type, { items: [], source_refs: [] })
+/** item-02：目录缺失表示该类型尚未接入；返回非空诊断项，避免与“已接入但暂无数据”混淆。 */
+function notIntegrated(type: ObjectType, message: string): WebFactResult {
+  const listed = result('list', type, {
+    items: [{
+      id: `type-not-integrated-${type}`,
+      type,
+      status: 'type_not_integrated',
+      title: message,
+      path: `ldvh-base/${type}`,
+      updated: '',
+      kind: 'type_not_integrated',
+      message,
+    }],
+    source_refs: [],
+    coverage_status: 'type_not_integrated',
+  })
+  listed.issues = [{ code: 'type_not_integrated', message }]
+  listed.summary.coverage_status = 'type_not_integrated'
+  return listed
 }
 
-export async function listObjects(type: ObjectType, _baseDir?: string, status?: string): Promise<WebFactResult | WebFactError> {
-  if (type !== 'spark') return empty(type)
+/** 与 v4SparkProjector 输出一致的扁平 DTO：fact_object 字段 + 传输元数据。 */
+function projectItem(item: LocalFactItem): Record<string, unknown> {
+  return {
+    ...item.fact_object,
+    object_ref: item.object_ref,
+    canonical_path: item.canonical_path,
+    absolute_path: item.absolute_path,
+  }
+}
+
+export async function listObjects(type: ObjectType, _baseDir?: string, status?: string, scope?: LocalFactScope): Promise<WebFactResult | WebFactError> {
   try {
-    const response = await listV4Sparks(v4SparkReaderConfig())
-    if (!response.result || typeof response.result !== 'object' || Array.isArray(response.result)) {
-      return error(new Error('V4 Spark list result is unavailable'))
+    const listed = await listLocalFacts(type, scope)
+    if (listed.status !== 'complete') {
+      const message = listed.issues[0]?.message ?? `类型 ${type} 尚无对象目录`
+      return notIntegrated(type, message)
     }
-    const raw = response.result as Record<string, unknown>
-    const projection = projectV4SparkList(raw.items)
-    const items = projection.items.filter((item) => !status || item.status === status)
+    const projectionProblems: Array<Record<string, unknown>> = listed.items
+      .filter((item) => item.issues.length > 0)
+      .map((item) => ({
+        code: 'local_read_issue',
+        error: item.issues.map((issue) => issue.message).join('；'),
+        object_ref: item.object_ref,
+        targets: [],
+      }))
+    projectionProblems.push(...listed.issues.map((issue) => ({
+      code: issue.code,
+      error: issue.message,
+      canonical_path: issue.path,
+      targets: [],
+    })))
+    const items = listed.items
+      .map(projectItem)
+      .filter((item) => !status || item.status === status)
     const sourceRefs = items.flatMap((item) => Array.isArray(item.source_refs) ? item.source_refs : []) as SourceRef[]
-    return result('list', type, {
+    const response = result('list', type, {
       items,
       source_refs: sourceRefs,
-      coverage_status: raw.status,
-      projection_problems: projection.projection_problems,
-      governance_resolution: raw.governance_resolution,
+      coverage_status: listed.status,
+      projection_problems: projectionProblems,
     })
+    response.issues = [
+      ...listed.issues.map((issue) => ({ ...issue }) as Record<string, unknown>),
+      ...listed.items.flatMap((item) => item.issues.map((issue) => ({ ...issue }) as Record<string, unknown>)),
+    ]
+    return response
   } catch (caught) {
     return error(caught)
   }
 }
 
-export async function showObject(id: string): Promise<WebFactResult | WebFactError> {
-  if (!/^spark-\d+$/.test(id)) {
+const OBJECT_ID_PATTERN = /^(workcase|adr|pitfall|spark|study)-\d+$/
+
+export async function showObject(id: string, scope?: LocalFactScope): Promise<WebFactResult | WebFactError> {
+  const match = OBJECT_ID_PATTERN.exec(id)
+  if (!match) {
     return { ok: false, error: `Object not found: ${id}`, stderr: '', exitCode: 1 }
   }
+  const type = match[1] as ObjectType
   try {
-    const response = await readV4Spark(v4SparkReaderConfig(), id)
-    if (!response.result || typeof response.result !== 'object' || Array.isArray(response.result)) {
-      return error(new Error('V4 Spark detail result is unavailable'))
+    const detail = await readLocalFact(type, id, scope)
+    if (detail.status === 'not_found') return { ok: false, error: `Object not found: ${id}`, stderr: '', exitCode: 1 }
+    if (detail.status === 'type_not_integrated') {
+      return {
+        ok: false,
+        error: detail.issues[0]?.message ?? `Object not found: ${id}`,
+        stderr: '',
+        exitCode: 'type_not_integrated',
+      }
     }
-    const raw = response.result as Record<string, unknown>
-    if (raw.status === 'not_found') return { ok: false, error: `Object not found: ${id}`, stderr: '', exitCode: 1 }
-    const projection = projectV4Spark(raw.item)
-    if (projection.ok === false) return { ok: false, error: projection.error, stderr: projection.code, exitCode: 1 }
+    if (detail.status === 'unavailable') {
+      return {
+        ok: false,
+        error: detail.issues[0]?.message ?? `Object unavailable: ${id}`,
+        stderr: '',
+        exitCode: 'unexpected_fact_carrier',
+      }
+    }
     const data: Record<string, unknown> = {
-      ...projection.data,
-      source_refs: projection.data.source_refs ?? [],
-      coverage_status: raw.coverage_status,
-      governance_resolution: raw.governance_resolution,
+      ...projectItem(detail.item),
+      source_refs: Array.isArray(detail.item.fact_object.source_refs) ? detail.item.fact_object.source_refs : [],
+      coverage_status: 'complete',
+      check_status: detail.item.check_status,
+      read_issues: detail.item.issues,
     }
-    return {
+    const response = {
       ...result('show', id, data),
       summary: {
         id: typeof data.object_id === 'string' ? data.object_id : id,
-        type: typeof data.fact_type_key === 'string' ? data.fact_type_key : 'spark',
-        status: typeof data.status === 'string' ? data.status : 'unknown',
+        type: typeof data.fact_type_key === 'string' ? data.fact_type_key : type,
+        status: type === 'workcase'
+          ? getWorkCaseDisplayStatus(
+              typeof data.phase === 'string' ? data.phase : '',
+              typeof data.status === 'string' ? data.status : 'unknown',
+            )
+          : typeof data.status === 'string' ? data.status : 'unknown',
       },
     }
+    response.issues = detail.item.issues.map((issue) => ({ ...issue }) as Record<string, unknown>)
+    return response
   } catch (caught) {
     return error(caught)
   }

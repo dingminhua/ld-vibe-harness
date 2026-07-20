@@ -249,8 +249,8 @@ export default function Changelog() {
           const isLoading = loadingHash === entry.hash;
           const PanelIcon = isSelected ? ChevronLeft : ChevronRight;
           const panelLabel = isSelected
-            ? (locale === 'en' ? 'Close details' : '收起详情')
-            : (locale === 'en' ? 'Open details' : '展开详情');
+            ? t('changelog.closeDetails')
+            : t('changelog.openDetails');
           const typeColor = CATEGORY_COLORS[entry.category] || CATEGORY_COLORS.other;
           return (
             <div
@@ -316,8 +316,7 @@ export default function Changelog() {
                 </button>
               </div>
               <div className="ldvh-meta-muted self-end">
-                {locale === 'en' ? 'Commit ' : '提交 '}
-                {formatDateTime(entry.date)}
+                {t('changelog.commitAt', { time: formatDateTime(entry.date) })}
               </div>
             </div>
           );

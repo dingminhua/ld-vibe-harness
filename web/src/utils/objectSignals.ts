@@ -1,3 +1,5 @@
+import { getFieldLabel, getFieldValueLabel } from '../i18n/locales.ts';
+
 type SignalField = 'priority' | 'importance' | 'category';
 
 export type ObjectSignalSource = Partial<Record<SignalField, unknown>>;
@@ -8,33 +10,6 @@ export const SIGNAL_FIELDS: SignalField[] = ['priority', 'importance', 'category
 const SIGNAL_FIELDS_BY_TYPE: Record<string, SignalField[]> = {
   workcase: ['priority'],
   spark: ['priority'],
-};
-
-const FIELD_LABELS: Record<SignalField, { zh: string; en: string }> = {
-  priority: { zh: '优先级', en: 'Priority' },
-  importance: { zh: '重要程度', en: 'Importance' },
-  category: { zh: '分类', en: 'Category' },
-};
-
-const VALUE_LABELS: Partial<Record<SignalField, Record<string, { zh: string; en: string }>>> = {
-  priority: {
-    P0: { zh: 'P0', en: 'P0' },
-    P1: { zh: 'P1', en: 'P1' },
-    P2: { zh: 'P2', en: 'P2' },
-    P3: { zh: 'P3', en: 'P3' },
-  },
-  importance: {
-    high: { zh: '高', en: 'High' },
-    medium: { zh: '中', en: 'Medium' },
-    low: { zh: '低', en: 'Low' },
-  },
-  category: {
-    gap: { zh: '缺口', en: 'Gap' },
-    question: { zh: '问题', en: 'Question' },
-    discovery: { zh: '发现', en: 'Discovery' },
-    reminder: { zh: '提醒', en: 'Reminder' },
-    preference: { zh: '偏好', en: 'Preference' },
-  },
 };
 
 const SIGNAL_CLASSES: Partial<Record<SignalField, Record<string, string>>> = {
@@ -93,25 +68,21 @@ function normalizeSignalValue(value: unknown): string | null {
   return normalized || null;
 }
 
-function localize(entry: { zh: string; en: string }, locale: string): string {
-  return locale === 'en' ? entry.en : entry.zh;
-}
-
 export function isSignalField(field: string): field is SignalField {
   return SIGNAL_FIELDS.includes(field as SignalField);
 }
 
 export function getSignalFieldLabel(field: string, locale: string): string | null {
   if (!isSignalField(field)) return null;
-  return localize(FIELD_LABELS[field], locale);
+  return getFieldLabel(field, locale);
 }
 
 export function getSignalText(field: string, value: unknown, locale: string): string | null {
   if (!isSignalField(field)) return null;
   const normalized = normalizeSignalValue(value);
   if (!normalized) return null;
-  const entry = VALUE_LABELS[field]?.[normalized];
-  return entry ? localize(entry, locale) : normalized.replace(/_/g, ' ');
+  const localized = getFieldValueLabel(field, normalized, locale);
+  return localized === normalized ? normalized.replace(/_/g, ' ') : localized;
 }
 
 export function getObjectPriority(source: ObjectSignalSource, type?: SignalObjectType): string | null {
@@ -122,10 +93,8 @@ export function getObjectPriority(source: ObjectSignalSource, type?: SignalObjec
 export function getPriorityLabel(value: unknown, locale: string): string | null {
   const normalized = normalizeSignalValue(value);
   if (!normalized) return null;
-  const fieldLabel = localize(FIELD_LABELS.priority, locale);
-  const valueLabel = VALUE_LABELS.priority?.[normalized]
-    ? localize(VALUE_LABELS.priority[normalized], locale)
-    : normalized;
+  const fieldLabel = getFieldLabel('priority', locale);
+  const valueLabel = getFieldValueLabel('priority', normalized, locale);
   return `${fieldLabel}: ${valueLabel}`;
 }
 

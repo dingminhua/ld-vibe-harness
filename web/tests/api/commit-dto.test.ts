@@ -9,14 +9,72 @@ import { after, before, test } from 'node:test'
 
 const workspaceRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'ldvh-commit-dto-workspace-'))
 const projectRoot = path.join(workspaceRoot, 'demo')
+const repositoryRoot = path.resolve(import.meta.dirname, '../../..')
 fs.mkdirSync(projectRoot, { recursive: true })
-
-process.env.LDVH_ROOT = projectRoot
-process.env.LDVH_WORKSPACE_ROOT = workspaceRoot
-
+fs.mkdirSync(path.join(projectRoot, 'ldvh-base', 'sparks'), { recursive: true })
 fs.writeFileSync(
-  path.join(workspaceRoot, 'LDVH-GOVERNED-PROJECTS.yaml'),
-  ['projects:', '  - id: demo', '    name: Demo', '    description: Demo project', '    path: ./demo', ''].join('\n'),
+  path.join(projectRoot, 'ldvh-base', 'sparks', 'spark-0001.yaml'),
+  [
+    'title: Dashboard 时间字段回归',
+    'status: open',
+    'priority: P2',
+    'source_refs:',
+    '- kind: repository-path',
+    '  locator: specs/08.md',
+    'summary: 固定 V4 updated_at 在 Dashboard 中的相对时间投影。',
+    'object_id: spark-0001',
+    'fact_type_key: spark',
+    "created_at: '2026-07-20T08:00:00+08:00'",
+    "updated_at: '2026-07-20T08:00:00+08:00'",
+    '',
+  ].join('\n'),
+)
+fs.mkdirSync(path.join(projectRoot, 'ldvh-base', 'workcases'), { recursive: true })
+fs.writeFileSync(
+  path.join(projectRoot, 'ldvh-base', 'workcases', 'workcase-0001.yaml'),
+  [
+    'title: Dashboard WorkCase 投影回归',
+    'status: open',
+    'priority: P1',
+    'source_refs:',
+    '- kind: repository-path',
+    '  locator: specs/21.md',
+    'summary: 当前结果等待独立复核。',
+    'resume_from: 继续独立复核。',
+    'goal: 固定 current profile 的 Web 投影。',
+    'scope: 仅测试。',
+    'workcase_profile: control-contract-v1',
+    'success_criterion_definitions:',
+    '- criterion_id: criterion-01',
+    '  statement: 当前标准已满足。',
+    'phase: independent_reviewing',
+    'plan_version: 1',
+    'work_items:',
+    '- item_id: item-01',
+    '  goal: 完成实现',
+    '  expected_result: 实现完成。',
+    '  status: completed',
+    '  result_summary: 已完成。',
+    'execution_approval:',
+    '  subject_version: 1',
+    "  approved_at: '2026-07-20T06:00:00+08:00'",
+    '  summary: Human 已批准。',
+    'result_version: 1',
+    'success_criterion_results:',
+    '- criterion_id: criterion-01',
+    '  outcome: satisfied',
+    '  summary: 已满足。',
+    'controller_check_summary: 已完成自检。',
+    'evidence_refs:',
+    '- kind: working_tree',
+    '  locator: web/api/routes/objects.ts',
+    'waiting_on: 等待独立复核。',
+    'object_id: workcase-0001',
+    'fact_type_key: workcase',
+    "created_at: '2026-07-20T06:00:00+08:00'",
+    "updated_at: '2026-07-20T07:00:00+08:00'",
+    '',
+  ].join('\n'),
 )
 
 function git(args: string[]) {
@@ -32,6 +90,26 @@ git([
   'commit', '--quiet', '-m', 'feat(web)!: 调整提交接口', '-m',
   ['动机:', '- 统一提交记录结构。', '', '验证结论:', '- 由特征测试固定当前 DTO。'].join('\n'),
 ])
+
+fs.writeFileSync(
+  path.join(workspaceRoot, 'LDVH-GOVERNED-PROJECTS.yaml'),
+  [
+    'product_name: Commit DTO test',
+    'product_description: Code-controlled governance resolution fixture.',
+    'projects:',
+    '  - id: demo',
+    `    path: ${projectRoot}`,
+    '    name: Demo',
+    '    description: Test project.',
+    '',
+  ].join('\n'),
+)
+process.env.LDVH_ROOT = projectRoot
+process.env.LDVH_WORKSPACE_ROOT = workspaceRoot
+process.env.LDVH_HELPER_EXECUTABLE = process.platform === 'win32'
+  ? path.join(repositoryRoot, '.venv', 'Scripts', 'ldvh.exe')
+  : path.join(repositoryRoot, '.venv', 'bin', 'ldvh')
+process.env.LDVH_WEB_WORKTREE_LOCATOR = projectRoot
 
 let server: Server
 let baseUrl = ''
@@ -73,9 +151,46 @@ test('preserves the shared commit DTO across current API consumers', async () =>
   assert.equal(changelog.length, 1)
   assertCommitDto(changelog[0])
 
-  const dashboard = await getJson('/api/dashboard?locale=zh') as { recentChanges: Array<Record<string, unknown>> }
+  const dashboard = await getJson('/api/dashboard?locale=zh') as {
+    actionItems: Array<Record<string, unknown>>
+    recentChanges: Array<Record<string, unknown>>
+    recentItems: Array<Record<string, unknown>>
+  }
   assert.equal(dashboard.recentChanges.length, 1)
   assertCommitDto(dashboard.recentChanges[0])
+  assert.equal(dashboard.actionItems[0].object_id, 'spark-0001')
+  assert.equal(dashboard.actionItems[0].id, 'spark-0001')
+  assert.equal(dashboard.actionItems[0].path, 'ldvh-base/sparks/spark-0001.yaml')
+  assert.equal(dashboard.actionItems[0].updated, '2026-07-20T08:00:00+08:00')
+  assert.doesNotMatch(String(dashboard.actionItems[0].relativeTime), /NaN/)
+  assert.equal(dashboard.recentItems[0].object_id, 'spark-0001')
+  const dashboardWorkcase = dashboard.actionItems.find((item) => item.object_id === 'workcase-0001')
+  assert.ok(dashboardWorkcase)
+  assert.equal(dashboardWorkcase.status, 'subagents_result_reviewing')
+
+  const workcases = await getJson('/api/objects/workcase') as {
+    data: { items: Array<Record<string, unknown>>; statusOptions: Array<Record<string, unknown>> }
+  }
+  const workcase = workcases.data.items.find((item) => item.object_id === 'workcase-0001')
+  assert.ok(workcase)
+  assert.equal(workcase.status, 'subagents_result_reviewing')
+  assert.equal(workcase.executionItemTotal, 1)
+  assert.equal(workcase.executionItemDone, 1)
+  assert.equal(workcase.successCriteriaTotal, 1)
+  assert.equal(workcase.successCriteriaDone, 1)
+  assert.equal(workcase.hasPlanConfirmedAt, true)
+  assert.equal(workcase.hasVerificationEvidence, true)
+  assert.ok(workcases.data.statusOptions.some((option) => option.status === 'subagents_result_reviewing'))
+
+  const reviewWorkcases = await getJson('/api/objects/workcase?status=subagents_result_reviewing') as {
+    data: { items: Array<Record<string, unknown>> }
+  }
+  assert.deepEqual(reviewWorkcases.data.items.map((item) => item.object_id), ['workcase-0001'])
+
+  const workcaseDetail = await getJson('/api/objects/workcase/workcase-0001') as {
+    summary: Record<string, unknown>
+  }
+  assert.equal(workcaseDetail.summary.status, 'subagents_result_reviewing')
 
   const commits = await getJson('/api/project-files/git/commits?projectId=demo&count=1') as {
     entries: Array<Record<string, unknown>>

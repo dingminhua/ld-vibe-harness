@@ -13,15 +13,15 @@ import {
 } from 'lucide-react';
 import { useI18n } from '@/i18n/context';
 import { useTheme } from '@/hooks/useTheme';
-import type { LocaleKey } from '@/i18n/locales';
+import { getLanguageSwitchKey, getOppositeLanguageNameKey, getOppositeLocale, type LocaleKey } from '@/i18n/locales';
 import { OBJECT_TYPE_ICONS } from '@/components/SemanticIcon';
 import ldvhPluginIcon from '@/assets/ldvh-plugin-icon.png';
 
 type NavIcon = ElementType<LucideProps>;
 
-const NAV_ITEMS: { to: string; labelKey?: LocaleKey; label?: { zh: string; en: string }; icon: NavIcon }[] = [
+const NAV_ITEMS: { to: string; labelKey: LocaleKey; icon: NavIcon }[] = [
   { to: '/', labelKey: 'nav.dashboard', icon: LayoutDashboard },
-  { to: '/project-files', label: { zh: '文件', en: 'Files' }, icon: FolderTree },
+  { to: '/project-files', labelKey: 'nav.projectFiles', icon: FolderTree },
   { to: '/objects/spark', labelKey: 'nav.sparks', icon: OBJECT_TYPE_ICONS.spark },
   { to: '/objects/workcase', labelKey: 'nav.workcases', icon: OBJECT_TYPE_ICONS.workcase },
   { to: '/objects/adr', labelKey: 'nav.adrs', icon: OBJECT_TYPE_ICONS.adr },
@@ -30,9 +30,8 @@ const NAV_ITEMS: { to: string; labelKey?: LocaleKey; label?: { zh: string; en: s
   { to: '/changelog', labelKey: 'nav.changelog', icon: OBJECT_TYPE_ICONS.changelog },
 ];
 
-function getNavItemLabel(item: (typeof NAV_ITEMS)[number], locale: string, t: (key: LocaleKey) => string): string {
-  if (item.labelKey) return t(item.labelKey);
-  return locale === 'en' ? item.label?.en ?? '' : item.label?.zh ?? '';
+function getNavItemLabel(item: (typeof NAV_ITEMS)[number], t: (key: LocaleKey) => string): string {
+  return t(item.labelKey);
 }
 
 function ThemeIcon({ mode }: { mode: 'system' | 'light' | 'dark' }) {
@@ -69,7 +68,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const { locale, setLocale, t } = useI18n();
   const { mode, cycleTheme } = useTheme();
   const [visibleTooltip, setVisibleTooltip] = useState<string | null>(null);
-  const languageLabel = locale === 'zh' ? t('language.switchToEnglish') : t('language.switchToChinese');
+  const languageLabel = t(getLanguageSwitchKey(locale));
   const sidebarToggleLabel = collapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar');
   const themeLabel =
     mode === 'system' ? t('theme.system') :
@@ -110,7 +109,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
               <NavLink
                 to={item.to}
                 end={item.to === '/'}
-                aria-label={collapsed ? getNavItemLabel(item, locale, t) : undefined}
+                aria-label={collapsed ? getNavItemLabel(item, t) : undefined}
                 onMouseEnter={() => setVisibleTooltip(`nav-${item.to}`)}
                 onMouseLeave={() => setVisibleTooltip(null)}
                 onFocus={() => setVisibleTooltip(`nav-${item.to}`)}
@@ -127,8 +126,8 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 }
               >
                 <item.icon size={16} className="flex-shrink-0" />
-                {!collapsed && <span className="truncate">{getNavItemLabel(item, locale, t)}</span>}
-                {collapsed && <IconTooltip label={getNavItemLabel(item, locale, t)} visible={visibleTooltip === `nav-${item.to}`} />}
+                {!collapsed && <span className="truncate">{getNavItemLabel(item, t)}</span>}
+                {collapsed && <IconTooltip label={getNavItemLabel(item, t)} visible={visibleTooltip === `nav-${item.to}`} />}
               </NavLink>
             </li>
           ))}
@@ -139,7 +138,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
           <button
             onClick={() => {
               setVisibleTooltip(null);
-              setLocale(locale === 'zh' ? 'en' : 'zh');
+              setLocale(getOppositeLocale(locale));
             }}
             onMouseEnter={() => setVisibleTooltip('language')}
             onMouseLeave={() => setVisibleTooltip(null)}
@@ -151,7 +150,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             }`}
           >
             <Globe size={16} />
-            {!collapsed && (locale === 'zh' ? t('language.english') : t('language.chinese'))}
+            {!collapsed && t(getOppositeLanguageNameKey(locale))}
             {collapsed && <IconTooltip label={languageLabel} visible={visibleTooltip === 'language'} />}
           </button>
           <button

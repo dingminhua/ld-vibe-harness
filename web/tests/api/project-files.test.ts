@@ -4,20 +4,42 @@ import type { Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import os from 'node:os'
 import path from 'node:path'
+import { execFileSync } from 'node:child_process'
 import { after, before, test } from 'node:test'
 
 const workspaceRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'ldvh-project-files-workspace-'))
 const projectRoot = path.join(workspaceRoot, 'demo')
+const secondaryProjectRoot = path.join(workspaceRoot, 'secondary')
+const repositoryRoot = path.resolve(import.meta.dirname, '../../..')
 fs.mkdirSync(path.join(projectRoot, 'assets'), { recursive: true })
 fs.mkdirSync(path.join(projectRoot, '.private'), { recursive: true })
+fs.mkdirSync(secondaryProjectRoot, { recursive: true })
+execFileSync('git', ['init', '-q', projectRoot])
+execFileSync('git', ['init', '-q', secondaryProjectRoot])
+fs.writeFileSync(
+  path.join(workspaceRoot, 'LDVH-GOVERNED-PROJECTS.yaml'),
+  [
+    'product_name: Project files test',
+    'product_description: Code-controlled governance resolution fixture.',
+    'projects:',
+    '  - id: demo',
+    `    path: ${projectRoot}`,
+    '    name: Demo',
+    '    description: Test project.',
+    '  - id: secondary',
+    `    path: ${secondaryProjectRoot}`,
+    '    name: Secondary',
+    '    description: Second governed project.',
+    '',
+  ].join('\n'),
+)
 
 process.env.LDVH_ROOT = projectRoot
 process.env.LDVH_WORKSPACE_ROOT = workspaceRoot
-
-fs.writeFileSync(
-  path.join(workspaceRoot, 'LDVH-GOVERNED-PROJECTS.yaml'),
-  ['projects:', '  - id: demo', '    name: Demo', '    description: Demo project', '    path: ./demo', ''].join('\n'),
-)
+process.env.LDVH_HELPER_EXECUTABLE = process.platform === 'win32'
+  ? path.join(repositoryRoot, '.venv', 'Scripts', 'ldvh.exe')
+  : path.join(repositoryRoot, '.venv', 'bin', 'ldvh')
+process.env.LDVH_WEB_WORKTREE_LOCATOR = projectRoot
 
 const svgContent = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12"><circle cx="6" cy="6" r="5"/></svg>\n'
 fs.writeFileSync(path.join(projectRoot, 'assets', 'mark.svg'), svgContent)
@@ -50,6 +72,17 @@ async function get(pathname: string) {
 }
 
 test('lists and reads the current supported file kinds', async () => {
+  const projects = await get('/api/project-files/projects')
+  assert.equal(projects.response.status, 200)
+  const governed = projects.body.projects as Array<Record<string, unknown>>
+  assert.equal(governed.length, 2)
+  const demo = governed.find((project) => project.id === 'demo')
+  const secondary = governed.find((project) => project.id === 'secondary')
+  assert.ok(demo)
+  assert.ok(secondary)
+  assert.equal(demo.path, fs.realpathSync(projectRoot))
+  assert.equal(secondary.path, fs.realpathSync(secondaryProjectRoot))
+
   const entries = await get('/api/project-files/entries?projectId=demo&dir=assets')
   assert.equal(entries.response.status, 200)
   const listed = entries.body.entries as Array<Record<string, unknown>>
@@ -90,4 +123,19 @@ test('preserves truncation and binary responses', async () => {
   assert.equal(binary.body.kind, 'binary')
   assert.equal(binary.body.content, '')
   assert.equal(binary.body.truncated, false)
+})
+
+test('rejects Project Files when Code governance cannot verify the workspace', async () => {
+  const configPath = path.join(workspaceRoot, 'LDVH-GOVERNED-PROJECTS.yaml')
+  const parkedPath = path.join(workspaceRoot, 'LDVH-GOVERNED-PROJECTS.parked')
+  fs.renameSync(configPath, parkedPath)
+  try {
+    const response = await fetch(`${baseUrl}/api/project-files/projects`)
+    const body = await response.json() as Record<string, unknown>
+    assert.equal(response.status, 500)
+    assert.equal(body.ok, false)
+    assert.match(String(body.error), /not verified/)
+  } finally {
+    fs.renameSync(parkedPath, configPath)
+  }
 })

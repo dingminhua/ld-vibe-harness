@@ -7,8 +7,22 @@ import { listObjects, ACTIVE_OBJECT_TYPES } from '../services/facts.js'
 import { getGitLog } from '../services/git.js'
 import { getRelativeTime } from '../services/time.js'
 import { getTypeColor } from '../services/typeColors.js'
+import { getWorkCaseDisplayStatus } from '../../shared/workcaseStatus.js'
 
 const router = Router()
+
+function getUpdatedAt(item: Record<string, unknown>): string {
+  return String(item.updated_at || item.updated || '')
+}
+
+function getDisplayStatus(type: string, item: Record<string, unknown>): string {
+  const status = String(item.status || 'unknown')
+  return type === 'workcase' ? getWorkCaseDisplayStatus(String(item.phase || ''), status) : status
+}
+
+function isFactItem(item: Record<string, unknown>): boolean {
+  return item.kind !== 'type_not_integrated'
+}
 
 /** 判断状态是否为"可推进"（非终态） */
 function isActionableStatus(type: string, status: string): boolean {
@@ -36,10 +50,10 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       if (!result.ok || !('data' in result)) {
         return { type, total: 0, byStatus: {} as Record<string, number> }
       }
-      const items = (result.data as { items: Array<Record<string, unknown>> }).items || []
+      const items = ((result.data as { items: Array<Record<string, unknown>> }).items || []).filter(isFactItem)
       const byStatus: Record<string, number> = {}
       for (const item of items) {
-        const status = String(item.status || 'unknown')
+        const status = getDisplayStatus(type, item)
         byStatus[status] = (byStatus[status] || 0) + 1
       }
       return { type, total: items.length, byStatus }
@@ -49,25 +63,30 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     const allItems: Array<Record<string, unknown>> = []
     for (const { type, result } of listResults) {
       if (!result.ok || !('data' in result)) continue
-      const items = (result.data as { items: Array<Record<string, unknown>> }).items || []
+      const items = ((result.data as { items: Array<Record<string, unknown>> }).items || []).filter(isFactItem)
       for (const item of items) {
+        const updatedAt = getUpdatedAt(item)
         allItems.push({
           ...item,
+          id: String(item.object_id || item.id || ''),
           type,
-          relativeTime: getRelativeTime(String(item.updated || ''), locale),
+          status: getDisplayStatus(type, item),
+          path: String(item.canonical_path || item.path || ''),
+          updated: updatedAt,
+          relativeTime: getRelativeTime(updatedAt, locale),
           typeColor: getTypeColor(type),
         })
       }
     }
 
     // 最近更新项（取 top 10）
-    const sortedByUpdated = [...allItems].sort((a, b) => String(b.updated || '').localeCompare(String(a.updated || '')))
+    const sortedByUpdated = [...allItems].sort((a, b) => getUpdatedAt(b).localeCompare(getUpdatedAt(a)))
     const recentItems = sortedByUpdated.slice(0, 10)
 
     // 待推进项：筛选非终态，按 updated 时间倒序排列
     const actionItems = allItems
       .filter(item => isActionableStatus(String(item.type || ''), String(item.status || '')))
-      .sort((a, b) => String(b.updated || '').localeCompare(String(a.updated || '')))
+      .sort((a, b) => getUpdatedAt(b).localeCompare(getUpdatedAt(a)))
       .slice(0, 8)
 
     res.json({

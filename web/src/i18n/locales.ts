@@ -66,6 +66,324 @@ export function getTypeDescription(type: string, locale: string): string {
   return locale === 'en' ? entry.en : entry.zh;
 }
 
+// ============================================================
+// 对象类型 / 字段名 / 字段枚举值 中英映射（显式 mapping 表）
+// 来源：docs/01-全局设计约束 §1.3 — 字段名与枚举值必须经显式映射本地化
+// 这些表集中维护于此，组件经下方 get*Label 函数读取，
+// 不得在组件内用 locale === 'en' ? ... : ... 内联分支。
+// ============================================================
+
+/** 对象类型中英映射 */
+export const TYPE_LOCALES: Record<string, { zh: string; en: string }> = {
+  workcase: { zh: '工作', en: 'WorkCase' },
+  adr: { zh: '决策', en: 'ADR' },
+  pitfall: { zh: '经验', en: 'Pitfall' },
+  spark: { zh: '火花', en: 'Spark' },
+  study: { zh: '外部调研', en: 'External study' },
+  change: { zh: '提交', en: 'Commit' },
+};
+
+export function getTypeLabel(type: string, locale: string): string {
+  const entry = TYPE_LOCALES[type];
+  if (!entry) return type;
+  return locale === 'en' ? entry.en : entry.zh;
+}
+
+export function getLocalizedObjectTitle(
+  item: { id?: string; title?: string; title_en?: string; title_zh?: string },
+  locale: string,
+  fallback = '—',
+): string {
+  if (locale === 'en') return item.title_en || item.title || item.id || fallback;
+  return item.title_zh || item.title || item.title_en || item.id || fallback;
+}
+
+export function getLocaleListSeparator(locale: string): string {
+  return locale === 'zh' ? '，' : ', ';
+}
+
+export function getOppositeLocale(locale: Locale): Locale {
+  return locale === 'zh' ? 'en' : 'zh';
+}
+
+export function getLanguageSwitchKey(locale: Locale): 'language.switchToEnglish' | 'language.switchToChinese' {
+  return locale === 'zh' ? 'language.switchToEnglish' : 'language.switchToChinese';
+}
+
+export function getOppositeLanguageNameKey(locale: Locale): 'language.english' | 'language.chinese' {
+  return locale === 'zh' ? 'language.english' : 'language.chinese';
+}
+
+/** 字段名中英映射 */
+export const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
+  id: { zh: 'ID', en: 'ID' },
+  type: { zh: '类型', en: 'Type' },
+  title: { zh: '标题', en: 'Title' },
+  title_en: { zh: '英文标题', en: 'English Title' },
+  title_zh: { zh: '中文标题', en: 'Chinese Title' },
+  status: { zh: '状态', en: 'Status' },
+  created: { zh: '创建时间', en: 'Created' },
+  updated: { zh: '更新时间', en: 'Updated' },
+  closed_at: { zh: '关闭时间', en: 'Closed At' },
+  date: { zh: '日期', en: 'Date' },
+  source: { zh: '来源', en: 'Source' },
+  source_detail: { zh: '来源说明', en: 'Source Detail' },
+  user_intent: { zh: '用户意图', en: 'User Intent' },
+  description: { zh: '描述', en: 'Description' },
+  evolution: { zh: '演变记录', en: 'Evolution' },
+  routing: { zh: '分流', en: 'Routing' },
+  disposition_summary: { zh: '处置说明', en: 'Disposition' },
+  research_question: { zh: '研究问题', en: 'Research Question' },
+  abstract: { zh: '摘要', en: 'Abstract' },
+  validation_summary: { zh: '验证总结', en: 'Validation Summary' },
+  body: { zh: '报告正文', en: 'Report Body' },
+  report_body: { zh: '报告正文', en: 'Report Body' },
+  summary: { zh: '摘要', en: 'Summary' },
+  conclusion: { zh: '结论', en: 'Conclusion' },
+  details: { zh: '详情', en: 'Details' },
+  background: { zh: '背景', en: 'Background' },
+  motivation: { zh: '动机', en: 'Motivation' },
+  outcome: { zh: '结果', en: 'Outcome' },
+  next_steps: { zh: '后续步骤', en: 'Next Steps' },
+  lessons: { zh: '经验教训', en: 'Lessons' },
+  success_criteria: { zh: '成功标准', en: 'Success Criteria' },
+  constraints: { zh: '约束', en: 'Constraints' },
+  acceptance: { zh: '验收标准', en: 'Acceptance' },
+  verification: { zh: '验证', en: 'Verification' },
+  notes: { zh: '备注', en: 'Notes' },
+  symptoms: { zh: '问题现象', en: 'Symptoms' },
+  trigger_conditions: { zh: '触发条件', en: 'Trigger Conditions' },
+  root_cause: { zh: '根因', en: 'Root Cause' },
+  avoidance: { zh: '规避策略', en: 'Avoidance' },
+  applicability: { zh: '适用范围', en: 'Applicability' },
+  archive_reason: { zh: '归档原因', en: 'Archive Reason' },
+  rationale: { zh: '理由', en: 'Rationale' },
+  context: { zh: '背景', en: 'Context' },
+  consequences: { zh: '影响', en: 'Consequences' },
+  observation: { zh: '观察', en: 'Observation' },
+  analysis: { zh: '分析', en: 'Analysis' },
+  mitigation: { zh: '缓解措施', en: 'Mitigation' },
+  resolution: { zh: '解决方案', en: 'Resolution' },
+  workcase: { zh: '工作', en: 'WorkCase' },
+  orchestration: { zh: '编排', en: 'Orchestration' },
+  execution_items: { zh: '执行项', en: 'Execution Items' },
+  mode: { zh: '模式', en: 'Mode' },
+  role: { zh: '角色', en: 'Role' },
+  input_refs: { zh: '输入引用', en: 'Input Refs' },
+  expected_output: { zh: '期望输出', en: 'Expected Output' },
+  result_summary: { zh: '结果摘要', en: 'Result Summary' },
+  evidence_refs: { zh: '证据引用', en: 'Evidence Refs' },
+  blocking_reason: { zh: '阻塞原因', en: 'Blocking Reason' },
+  closure_evidence: { zh: '关闭证据', en: 'Closure Evidence' },
+  verification_evidence: { zh: '验证证据', en: 'Verification Evidence' },
+  review_requested_at: { zh: '请求关闭确认时间', en: 'Review Requested At' },
+  plan_confirmed_at: { zh: '方案确认时间', en: 'Plan Confirmed At' },
+  closure_requested_at: { zh: '关闭确认请求时间', en: 'Closure Requested At' },
+  closure_outcome: { zh: '关闭结果', en: 'Closure Outcome' },
+  residual_risks: { zh: '残留风险', en: 'Residual Risks' },
+  followup_refs: { zh: '后续承接', en: 'Follow-up Refs' },
+  revision_history: { zh: '修订记录', en: 'Revision History' },
+  transition_reasons: { zh: '流转记录', en: 'Transition Reasons' },
+  options: { zh: '选项', en: 'Options' },
+  decision: { zh: '决策', en: 'Decision' },
+  related_workcases: { zh: '关联工作', en: 'Related Work Cases' },
+  related_adrs: { zh: '关联决策', en: 'Related ADRs' },
+  related_sparks: { zh: '关联火花', en: 'Related Sparks' },
+  related_studies: { zh: '关联研究', en: 'Related Studies' },
+  related_pitfalls: { zh: '关联经验', en: 'Related Pitfalls' },
+  source_objects: { zh: '来源对象', en: 'Source Objects' },
+  related_objects: { zh: '关联对象', en: 'Related Objects' },
+  source_sparks: { zh: '来源火花', en: 'Source Sparks' },
+  resolved_to: { zh: '分流目标', en: 'Routed To' },
+  resolved_at: { zh: '分流时间', en: 'Routed At' },
+  discard_reason: { zh: '废弃原因', en: 'Discard Reason' },
+  deprecated_reason: { zh: '废弃原因', en: 'Deprecated Reason' },
+  aggregated_execution_refs: { zh: '执行引用', en: 'Execution Refs' },
+  scope: { zh: '范围', en: 'Scope' },
+  impact: { zh: '影响范围', en: 'Impact' },
+  category: { zh: '分类', en: 'Category' },
+  priority: { zh: '优先级', en: 'Priority' },
+  importance: { zh: '重要程度', en: 'Importance' },
+  assignee: { zh: '执行者', en: 'Assignee' },
+  tags: { zh: '标签', en: 'Tags' },
+  path: { zh: '路径', en: 'Path' },
+  project_name: { zh: '项目名称', en: 'Project Name' },
+  project_kind: { zh: '项目类型', en: 'Project Kind' },
+  project_path: { zh: '项目路径', en: 'Project Path' },
+  ldvh_base_path: { zh: '事实实例路径', en: 'LDVH Base Path' },
+  docs_path: { zh: '文档路径', en: 'Docs Path' },
+  governance_scope: { zh: '管辖范围', en: 'Governance Scope' },
+  language: { zh: '语言', en: 'Language' },
+  framework: { zh: '框架', en: 'Framework' },
+  related_rules: { zh: '规范', en: 'Specs' },
+  urls: { zh: '网址', en: 'URLs' },
+  related_docs: { zh: '关联文档', en: 'Related Docs' },
+  aggregated_related_docs: { zh: '聚合关联文档', en: 'Aggregated Related Docs' },
+  aggregated_related_adrs: { zh: '聚合关联决策', en: 'Aggregated Related ADRs' },
+  aggregated_related_sparks: { zh: '聚合关联火花', en: 'Aggregated Related Sparks' },
+  aggregated_related_pitfalls: { zh: '聚合关联经验', en: 'Aggregated Related Pitfalls' },
+  at: { zh: '时间', en: 'At' },
+  from: { zh: '前状态', en: 'From' },
+  to: { zh: '后状态', en: 'To' },
+  actor: { zh: '执行者', en: 'Actor' },
+  reason: { zh: '原因', en: 'Reason' },
+};
+
+export function getFieldLabel(fieldKey: string, locale: string): string {
+  const entry = FIELD_LABEL_LOCALES[fieldKey];
+  if (!entry) return fieldKey.replace(/_/g, ' ');
+  return locale === 'en' ? entry.en : entry.zh;
+}
+
+/** 字段枚举值中英映射 */
+export const FIELD_VALUE_LOCALES: Record<string, Record<string, { zh: string; en: string }>> = {
+  category: {
+    question: { zh: '问题', en: 'Question' },
+    discovery: { zh: '发现', en: 'Discovery' },
+    gap: { zh: '缺口', en: 'Gap' },
+    reminder: { zh: '提醒', en: 'Reminder' },
+    preference: { zh: '偏好', en: 'Preference' },
+  },
+  priority: {
+    P0: { zh: 'P0', en: 'P0' },
+    P1: { zh: 'P1', en: 'P1' },
+    P2: { zh: 'P2', en: 'P2' },
+    P3: { zh: 'P3', en: 'P3' },
+  },
+  importance: {
+    high: { zh: '高', en: 'High' },
+    medium: { zh: '中', en: 'Medium' },
+    low: { zh: '低', en: 'Low' },
+  },
+};
+
+export function getFieldValueLabel(fieldKey: string, value: string, locale: string): string {
+  const entry = FIELD_VALUE_LOCALES[fieldKey]?.[value];
+  if (!entry) return value;
+  return locale === 'en' ? entry.en : entry.zh;
+}
+
+const PROJECT_FILE_KIND_LOCALES: Record<string, { zh: string; en: string }> = {
+  directory: { zh: '目录', en: 'Directory' },
+  markdown: { zh: 'Markdown', en: 'Markdown' },
+  yaml: { zh: 'YAML', en: 'YAML' },
+  svg: { zh: 'SVG', en: 'SVG' },
+  text: { zh: '文本', en: 'Text' },
+  binary: { zh: '二进制', en: 'Binary' },
+};
+
+const GIT_STATUS_LOCALES: Record<string, { zh: string; en: string }> = {
+  '??': { zh: '未跟踪', en: 'Untracked' },
+  M: { zh: '已修改', en: 'Modified' },
+  A: { zh: '新增', en: 'Added' },
+  D: { zh: '删除', en: 'Deleted' },
+  R: { zh: '重命名', en: 'Renamed' },
+  C: { zh: '复制', en: 'Copied' },
+  U: { zh: '冲突', en: 'Conflict' },
+};
+
+export function getProjectFileKindLabel(kind: string, locale: string): string {
+  const entry = PROJECT_FILE_KIND_LOCALES[kind];
+  if (!entry) return kind;
+  return locale === 'en' ? entry.en : entry.zh;
+}
+
+export function getGitStatusLabel(status: string, locale: string): string {
+  const trimmed = status.trim();
+  const key = trimmed === '??' ? '??' : trimmed.replace(/\s/g, '').charAt(0);
+  const entry = GIT_STATUS_LOCALES[key];
+  if (!entry) return status;
+  return locale === 'en' ? entry.en : entry.zh;
+}
+
+export function getToggleLabel(title: string, nextState: 'collapsed' | 'expanded', locale: string): string {
+  const action = nextState === 'collapsed'
+    ? (locale === 'en' ? 'Collapse' : '收拢')
+    : (locale === 'en' ? 'Expand' : '展开');
+  return locale === 'en' ? `${action} ${title}` : `${action}${title}`;
+}
+
+export type CommitDetailLabels = {
+  category: string;
+  type: string;
+  scope: string;
+  commit: string;
+  time: string;
+  summary: string;
+  files: string;
+  insertions: string;
+  deletions: string;
+  commitBody: string;
+  changedFiles: string;
+  noFiles: string;
+  raw: string;
+  copyHash: string;
+  copiedHash: string;
+};
+
+const COMMIT_DETAIL_LABELS: Record<string, CommitDetailLabels> = {
+  zh: {
+    category: '分类', type: '类型', scope: '范围', commit: '提交', time: '提交',
+    summary: '变更统计', files: '文件', insertions: '新增', deletions: '删除',
+    commitBody: '关键变更', changedFiles: '改动文件', noFiles: '没有可展示的文件统计',
+    raw: '原始信息', copyHash: '复制提交 hash', copiedHash: '已复制提交 hash',
+  },
+  en: {
+    category: 'Category', type: 'Type', scope: 'Scope', commit: 'Commit', time: 'Commit',
+    summary: 'Change summary', files: 'Files', insertions: 'Insertions', deletions: 'Deletions',
+    commitBody: 'Commit notes', changedFiles: 'Changed files', noFiles: 'No file stat available',
+    raw: 'Original info', copyHash: 'Copy commit hash', copiedHash: 'Commit hash copied',
+  },
+};
+
+export function getCommitDetailLabels(locale: string): CommitDetailLabels {
+  return COMMIT_DETAIL_LABELS[locale === 'en' ? 'en' : 'zh'];
+}
+
+const CATEGORY_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
+  feat: { zh: '功能', en: 'Feature' }, fix: { zh: '修复', en: 'Fix' },
+  docs: { zh: '文档', en: 'Docs' }, style: { zh: '样式', en: 'Style' },
+  refactor: { zh: '重构', en: 'Refactor' }, test: { zh: '测试', en: 'Test' },
+  chore: { zh: '杂项', en: 'Chore' }, perf: { zh: '性能', en: 'Perf' },
+  ci: { zh: 'CI', en: 'CI' }, build: { zh: '构建', en: 'Build' },
+  spec: { zh: '规范', en: 'Spec' }, rule: { zh: '规则', en: 'Rule' },
+  adr: { zh: '决策', en: 'ADR' }, other: { zh: '其他', en: 'Other' },
+};
+
+const COMMIT_TYPE_ZH: Record<string, string> = {
+  feat: '新增功能', fix: '问题修复', docs: '文档修改', style: '格式调整',
+  refactor: '代码重构', perf: '性能优化', test: '测试修改', build: '构建系统',
+  ci: '持续集成', chore: '维护杂项', revert: '回退变更',
+};
+
+const COMMIT_SCOPE_LOCALES: Record<string, { zh: string; en: string }> = {
+  specs: { zh: 'Specs', en: 'Specs' }, docs: { zh: '文档', en: 'Docs' },
+  rules: { zh: '规则', en: 'Rules' }, runtime: { zh: '运行时', en: 'Runtime' },
+  code: { zh: 'Code', en: 'Code' }, web: { zh: 'Web', en: 'Web' },
+  tests: { zh: 'Tests', en: 'Tests' }, config: { zh: '配置', en: 'Config' },
+  workcase: { zh: '工作', en: 'WorkCase' }, adr: { zh: '决策', en: 'ADR' },
+  spark: { zh: '火花', en: 'Spark' }, study: { zh: '外部调研', en: 'External study' },
+  pitfall: { zh: '经验', en: 'Pitfall' },
+};
+
+export function getCategoryLabel(category: string, locale: string): string {
+  const entry = CATEGORY_LABEL_LOCALES[category];
+  if (!entry) return category;
+  return locale === 'en' ? entry.en : entry.zh;
+}
+
+export function getCommitTypeLocale(type: string | undefined, locale: string): string {
+  if (!type) return '';
+  return locale === 'en' ? type : (COMMIT_TYPE_ZH[type] ?? type);
+}
+
+export function getCommitScopeLocale(scope: string | undefined, locale: string): string {
+  if (!scope) return '';
+  const entry = COMMIT_SCOPE_LOCALES[scope];
+  if (!entry) return scope;
+  return locale === 'en' ? entry.en : entry.zh;
+}
+
 export const STATUS_HINT_LOCALES: Record<string, { zh: string; en: string }> = {
   planned: { zh: '等待执行', en: 'Waiting to start' },
   active: { zh: '进行中', en: 'In progress' },
@@ -112,6 +430,7 @@ export const UI_LOCALES = {
     'logo.tagline': '让 Vibe Coding 更高效、更稳定、更可控',
 
     'nav.dashboard': '仪表盘',
+    'nav.projectFiles': '文件',
     'nav.workcases': '工作',
     'nav.adrs': '决策',
     'nav.pitfalls': '经验',
@@ -146,6 +465,7 @@ export const UI_LOCALES = {
     'dashboard.summary.closureConfirming': '{count} 个关闭待确认',
 
     'objectList.noObjects': '未找到 {type} 对象',
+    'objectList.typeNotIntegrated': '该事实类型尚未接入',
     'objectList.all': '全部',
     'objectList.statusFilter': '状态筛选',
     'objectList.relatedPlans': '关联工作',
@@ -185,6 +505,21 @@ export const UI_LOCALES = {
     'objectList.closedAt': '关闭时间',
     'objectList.hasRecord': '已记录',
     'objectList.missingRecord': '未完成',
+    'objectList.archiveReason': '归档原因',
+    'objectList.deprecatedReason': '废弃原因',
+    'objectList.discardReason': '废弃原因',
+    'objectList.disposition': '处置说明',
+    'objectList.closeReason': '关闭原因',
+    'objectList.missingReason': '原因缺失',
+    'objectList.missingReasonText': '该非活跃对象必须在事实源中记录原因。',
+    'objectList.updated': '更新 {time}',
+    'objectList.noRouteTarget': '未记录事实对象目标',
+    'objectList.routed': '已分流',
+    'objectList.target': '目标',
+    'objectList.time': '时间',
+    'objectList.dispositionMissing': '处置说明缺失。',
+    'objectList.discarded': '已废弃',
+    'objectList.reason': '原因',
 
     'objectDetail.back': '返回',
     'objectDetail.content': '内容',
@@ -280,6 +615,46 @@ export const UI_LOCALES = {
     'objectDetail.planMaterials': '产出与文档',
     'objectDetail.relatedMaterials': '关联材料',
 
+    'projectFiles.title': '项目文件',
+    'projectFiles.subtitle': '按 LDVH 管辖项目浏览文件，预览 Markdown，并只读查看当前 Git 待提交差异。',
+    'projectFiles.project': '管辖项目',
+    'projectFiles.quickRoots': '常用目录',
+    'projectFiles.showHiddenFiles': '显示隐藏文件',
+    'projectFiles.filesTab': '文件浏览',
+    'projectFiles.changesTab': '待提交文件',
+    'projectFiles.historyTab': '提交历史',
+    'projectFiles.fileBrowser': '项目文件浏览',
+    'projectFiles.preview': '文件预览',
+    'projectFiles.pending': '待提交文件',
+    'projectFiles.history': '提交历史',
+    'projectFiles.changeDetail': '差异详情',
+    'projectFiles.selectedCommitFiles': '当前提交文件',
+    'projectFiles.diff': '文件差异',
+    'projectFiles.diffMode': '差异显示方式',
+    'projectFiles.unifiedDiff': '统一',
+    'projectFiles.splitDiff': '分栏',
+    'projectFiles.reload': '刷新',
+    'projectFiles.loading': '加载中',
+    'projectFiles.noProjects': '没有读取到管辖项目。',
+    'projectFiles.noEntries': '当前目录没有可展示文件。',
+    'projectFiles.chooseFile': '选择左侧文件后在这里阅读。',
+    'projectFiles.chooseDiff': '选择待提交文件后在这里查看差异。',
+    'projectFiles.chooseCommit': '选择左侧提交后查看详情。',
+    'projectFiles.chooseCommitFile': '选择改动文件后查看该提交中的差异。',
+    'projectFiles.noChanges': '当前项目没有待提交文件。',
+    'projectFiles.noCommits': '当前项目没有提交历史。',
+    'projectFiles.mergeCommit': '合并提交',
+    'projectFiles.binary': '这是二进制文件，Web 仅展示路径和大小。',
+    'projectFiles.truncated': '内容已按安全上限截断。',
+    'projectFiles.readOnly': '只读',
+    'projectFiles.root': '项目根目录',
+    'projectFiles.docs': 'docs',
+    'projectFiles.ldvhBase': 'LDVH Base',
+    'projectFiles.view': '视图',
+    'projectFiles.viewAria': '项目文件视图',
+    'projectFiles.before': '旧内容',
+    'projectFiles.after': '新内容',
+
     'readingPanel.truncated': '内容已截断',
     'readingPanel.close': '关闭',
     'readingPanel.title': '扩展阅读',
@@ -290,7 +665,10 @@ export const UI_LOCALES = {
     'readingPanel.docLoadFailed': '文档加载失败',
     'readingPanel.noEvidence': '暂无证据信息',
     'readingPanel.changeDetail': '提交详情',
+    'readingPanel.openNewTab': '新标签',
     'objectDetail.humanGateTip': '此工作待关闭审查',
+    'objectDetail.openReadingPanel': '扩展阅读',
+    'objectDetail.reportBody': '报告正文',
 
     'spark.create': '创建火花',
     'spark.quickCapture': '创建火花',
@@ -317,6 +695,9 @@ export const UI_LOCALES = {
     'changelog.copiedContext': '已复制提交上下文',
     'changelog.loadFailed': '加载提交失败',
     'changelog.detailFailed': '加载提交详情失败',
+    'changelog.closeDetails': '收起详情',
+    'changelog.openDetails': '展开详情',
+    'changelog.commitAt': '提交 {time}',
 
     'common.loading': '加载中...',
     'common.loadFailed': '加载失败',
@@ -335,11 +716,13 @@ export const UI_LOCALES = {
     'common.copiedUrl': '已复制链接',
     'common.copyReference': '复制引用',
     'common.copiedReference': '已复制引用',
+    'common.read': '阅读',
   },
   en: {
     'logo.tagline': 'Making Vibe Coding more efficient, stable, and controllable',
 
     'nav.dashboard': 'Dashboard',
+    'nav.projectFiles': 'Files',
     'nav.workcases': 'Work Cases',
     'nav.adrs': 'ADRs',
     'nav.pitfalls': 'Pitfalls',
@@ -374,6 +757,7 @@ export const UI_LOCALES = {
     'dashboard.summary.closureConfirming': '{count} awaiting closure confirmation',
 
     'objectList.noObjects': 'No {type} found',
+    'objectList.typeNotIntegrated': 'This fact type is not integrated',
     'objectList.all': 'All',
     'objectList.statusFilter': 'Status filter',
     'objectList.relatedPlans': 'Related WorkCases',
@@ -413,6 +797,21 @@ export const UI_LOCALES = {
     'objectList.closedAt': 'Closed At',
     'objectList.hasRecord': 'Recorded',
     'objectList.missingRecord': 'Incomplete',
+    'objectList.archiveReason': 'Archive reason',
+    'objectList.deprecatedReason': 'Deprecated reason',
+    'objectList.discardReason': 'Discard reason',
+    'objectList.disposition': 'Disposition',
+    'objectList.closeReason': 'Close reason',
+    'objectList.missingReason': 'Missing reason',
+    'objectList.missingReasonText': 'This non-active object must record a reason in its fact source.',
+    'objectList.updated': 'Updated {time}',
+    'objectList.noRouteTarget': 'No fact-object target recorded',
+    'objectList.routed': 'Routed',
+    'objectList.target': 'Target',
+    'objectList.time': 'Time',
+    'objectList.dispositionMissing': 'Disposition missing.',
+    'objectList.discarded': 'Discarded',
+    'objectList.reason': 'Reason',
 
     'objectDetail.back': 'Back',
     'objectDetail.content': 'Content',
@@ -508,6 +907,46 @@ export const UI_LOCALES = {
     'objectDetail.planMaterials': 'Deliverables and Docs',
     'objectDetail.relatedMaterials': 'Related Materials',
 
+    'projectFiles.title': 'Project Files',
+    'projectFiles.subtitle': 'Browse governed project files, preview Markdown, and inspect pending Git changes in read-only mode.',
+    'projectFiles.project': 'Governed Project',
+    'projectFiles.quickRoots': 'Quick Roots',
+    'projectFiles.showHiddenFiles': 'Show hidden files',
+    'projectFiles.filesTab': 'Files',
+    'projectFiles.changesTab': 'Pending',
+    'projectFiles.historyTab': 'History',
+    'projectFiles.fileBrowser': 'Project File Browser',
+    'projectFiles.preview': 'File Preview',
+    'projectFiles.pending': 'Pending Files',
+    'projectFiles.history': 'Commit History',
+    'projectFiles.changeDetail': 'Diff Detail',
+    'projectFiles.selectedCommitFiles': 'Selected Commit Files',
+    'projectFiles.diff': 'File Diff',
+    'projectFiles.diffMode': 'Diff display mode',
+    'projectFiles.unifiedDiff': 'Unified',
+    'projectFiles.splitDiff': 'Split',
+    'projectFiles.reload': 'Refresh',
+    'projectFiles.loading': 'Loading',
+    'projectFiles.noProjects': 'No governed projects found.',
+    'projectFiles.noEntries': 'No displayable files in this directory.',
+    'projectFiles.chooseFile': 'Select a file on the left to read it here.',
+    'projectFiles.chooseDiff': 'Select a pending file to view its diff here.',
+    'projectFiles.chooseCommit': 'Select a commit on the left to view details.',
+    'projectFiles.chooseCommitFile': 'Select a changed file to view its diff in this commit.',
+    'projectFiles.noChanges': 'This project has no pending files.',
+    'projectFiles.noCommits': 'This project has no commit history.',
+    'projectFiles.mergeCommit': 'Merge',
+    'projectFiles.binary': 'This is a binary file; the web view only shows path and size.',
+    'projectFiles.truncated': 'Content was truncated at the safety limit.',
+    'projectFiles.readOnly': 'Read-only',
+    'projectFiles.root': 'Project root',
+    'projectFiles.docs': 'docs',
+    'projectFiles.ldvhBase': 'LDVH Base',
+    'projectFiles.view': 'View',
+    'projectFiles.viewAria': 'Project file view',
+    'projectFiles.before': 'Before',
+    'projectFiles.after': 'After',
+
     'readingPanel.truncated': 'Content truncated',
     'readingPanel.close': 'Close',
     'readingPanel.title': 'Extended Reading',
@@ -518,7 +957,10 @@ export const UI_LOCALES = {
     'readingPanel.docLoadFailed': 'Failed to load document',
     'readingPanel.noEvidence': 'No evidence available',
     'readingPanel.changeDetail': 'Commit Detail',
+    'readingPanel.openNewTab': 'New Tab',
     'objectDetail.humanGateTip': 'This WorkCase is pending close review',
+    'objectDetail.openReadingPanel': 'Open in reading panel',
+    'objectDetail.reportBody': 'Report body',
 
     'spark.create': 'Create Spark',
     'spark.quickCapture': 'Create Spark',
@@ -545,6 +987,9 @@ export const UI_LOCALES = {
     'changelog.copiedContext': 'Commit context copied',
     'changelog.loadFailed': 'Failed to load commits',
     'changelog.detailFailed': 'Failed to load commit detail',
+    'changelog.closeDetails': 'Close details',
+    'changelog.openDetails': 'Open details',
+    'changelog.commitAt': 'Commit {time}',
 
     'common.loading': 'Loading...',
     'common.loadFailed': 'Failed to load',
@@ -563,6 +1008,7 @@ export const UI_LOCALES = {
     'common.copiedUrl': 'Link copied',
     'common.copyReference': 'Copy reference',
     'common.copiedReference': 'Reference copied',
+    'common.read': 'Read',
   },
 } as const;
 

@@ -11,9 +11,10 @@ import { ObjectTypeIcon } from '@/components/SemanticIcon';
 import { fetchDashboard, type DashboardData } from '@/utils/api';
 import { usePanel } from '@/utils/panelContext';
 import { useI18n } from '@/i18n/context';
+import { getLocaleListSeparator, getLocalizedObjectTitle } from '@/i18n/locales';
 import { getObjectStatusLocale, type LocaleKey } from '@/i18n/locales';
 import { CATEGORY_COLORS, getCategoryLocale } from '@/utils/categoryColors';
-import { WORKCASE_CURRENT_STATUSES } from '@/utils/workcaseStatus';
+import { WORKCASE_CURRENT_STATUSES } from '@/shared/workcaseStatus';
 
 const TYPE_LABEL_KEYS: Record<string, LocaleKey> = {
   workcase: 'nav.workcases',
@@ -28,8 +29,7 @@ const TYPE_ORDER = ['spark', 'workcase', 'adr', 'pitfall', 'study'];
 const HIGHLIGHT_STATUSES = new Set([...WORKCASE_CURRENT_STATUSES.filter((status) => status !== 'closed'), 'verifying', 'review_needed']);
 
 function getLocalizedTitle(item: { id: string; title?: string; title_en?: string; title_zh?: string }, locale: string): string {
-  if (locale === 'zh') return item.title_zh || item.title || item.title_en || item.id;
-  return item.title_en || item.title || item.title_zh || item.id;
+  return getLocalizedObjectTitle(item, locale, item.id);
 }
 
 export default function Dashboard() {
@@ -94,7 +94,7 @@ export default function Dashboard() {
 
       {/* 态势摘要行 */}
       {parts.length > 0 && (
-        <p className="ldvh-caption mb-4">{parts.join(locale === 'zh' ? '，' : ', ')}</p>
+        <p className="ldvh-caption mb-4">{parts.join(getLocaleListSeparator(locale))}</p>
       )}
 
       {/* Stats grid */}

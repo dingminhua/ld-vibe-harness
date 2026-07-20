@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import type { ObjectStatusOption } from '@/utils/api';
 import { useI18n } from '@/i18n/context';
 import { getObjectStatusLocale } from '@/i18n/locales';
-import { WORKCASE_STATUS_ORDER } from '@/utils/workcaseStatus';
+import { WORKCASE_STATUS_ORDER } from '@/shared/workcaseStatus';
 
 const STATUS_FILTER_ORDER = [
   ...WORKCASE_STATUS_ORDER,
