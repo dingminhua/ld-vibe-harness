@@ -139,6 +139,7 @@ def _parse_name_status(output: bytes) -> tuple[tuple[str, ...], CommitCandidateO
     if tokens and tokens[-1] == "":
         tokens.pop()
     paths: list[str] = []
+    seen_paths: set[str] = set()
     index = 0
     while index < len(tokens):
         status = tokens[index]
@@ -149,7 +150,10 @@ def _parse_name_status(output: bytes) -> tuple[tuple[str, ...], CommitCandidateO
         observed = tokens[index : index + path_count]
         if any(not path for path in observed):
             return (), _issue("git_output", "Git returned an empty staged path")
-        paths.extend(observed)
+        for path in observed:
+            if path not in seen_paths:
+                paths.append(path)
+                seen_paths.add(path)
         index += path_count
     return tuple(paths), None
 

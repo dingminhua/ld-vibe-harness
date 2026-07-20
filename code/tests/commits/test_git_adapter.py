@@ -201,6 +201,15 @@ def test_rename_and_delete_preserve_actual_candidate_paths(tmp_path: Path) -> No
     assert observed.candidate_paths == ("delete.txt", "tracked.txt", "renamed.txt")
 
 
+def test_modified_copy_source_is_reported_once() -> None:
+    paths, issue = git_adapter._parse_name_status(
+        b"M\0source.txt\0C100\0source.txt\0extracted.txt\0"
+    )
+
+    assert issue is None
+    assert paths == ("source.txt", "extracted.txt")
+
+
 def test_linked_worktree_stays_bound_to_its_own_index(tmp_path: Path) -> None:
     repository = _repository(tmp_path / "repository")
     linked = tmp_path / "linked"
