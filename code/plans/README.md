@@ -4,6 +4,7 @@
 
 当前适用规划：
 
+- [Codex startup/resume 有界责任候选恢复](codex-context-recovery.md)：覆盖 `code/ldvh/hooks/context_recovery.py` 的项目/WorkCase 候选、完整 coverage、有界恢复投影，以及 Codex 薄 adapter、打包和当前环境验证边界。
 - [full-v4 Working Tree 证据生产与运行记录接入](full-v4-working-tree-evidence.md)：覆盖 `code/ldvh/testing` 中的 Working Tree manifest 采集、full-v4 耐久运行记录和 `tools/run_full_tests.py` 入口。
 - [WorkCase 专属受控变更 Helper 操作](workcase-controlled-update.md)：覆盖共享单对象更新事务、统一事件时点、`update-workcase`、锁失败诊断、响应档位与 YAML 序列化。
 

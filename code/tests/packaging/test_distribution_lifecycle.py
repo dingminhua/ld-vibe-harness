@@ -248,7 +248,7 @@ def _context_recovery(
     cwd: Path,
     workspace: Path,
     work_object_locator: Path,
-) -> list[dict[str, Any]]:
+) -> dict[str, Any]:
     completed = subprocess.run(
         [
             str(environment.context_recovery_runner),
@@ -272,9 +272,10 @@ def _context_recovery(
     )
     assert completed.returncode == 0, (completed.stdout, completed.stderr)
     assert completed.stderr == ""
-    exchanges = json.loads(completed.stdout)
-    assert isinstance(exchanges, list)
-    return exchanges
+    projection = json.loads(completed.stdout)
+    assert isinstance(projection, dict)
+    assert projection["contract"] == "ldvh-context-recovery/1"
+    return projection
 
 
 def _references(value: Any) -> list[dict[str, Any]]:
@@ -687,13 +688,16 @@ def _assert_context_recovery_runner(environment: InstalledEnvironment, root: Pat
     (decoy / "specs" / "00-理念与构成.md").write_text("not the installed source\n", encoding="utf-8")
 
     assert environment.context_recovery_runner.is_file()
-    exchanges = _context_recovery(environment, decoy, workspace, project)
+    projection = _context_recovery(environment, decoy, workspace, project)
 
-    assert [exchange["operation_key"] for exchange in exchanges] == [
+    assert [operation["operation_key"] for operation in projection["operations"]] == [
         "resolve-governance-scope",
         "find-fact-object-candidates",
     ]
-    assert exchanges[0]["request"]["work_object_locators"] == [str(project)]
+    governance_expand = next(
+        item for item in projection["expand"] if item["operation_key"] == "resolve-governance-scope"
+    )
+    assert governance_expand["request"]["work_object_locators"] == [str(project)]
     assert not tuple(environment.purelib.rglob("codex_context.py"))
 
 

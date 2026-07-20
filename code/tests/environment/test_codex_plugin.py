@@ -3,6 +3,7 @@ from __future__ import annotations
 import ast
 import json
 import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -12,6 +13,7 @@ import pytest
 from conftest import HELPER_EXECUTABLE
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
+WORKCASE_FIXTURE = REPOSITORY_ROOT / "code/tests/fixtures/context_recovery/workcase-0007.yaml"
 PLUGIN_ROOT = REPOSITORY_ROOT / "code/plugins/ldvh"
 SCRIPTS_ROOT = PLUGIN_ROOT / "scripts"
 CONFIGURE = SCRIPTS_ROOT / "configure.py"
@@ -26,6 +28,33 @@ def _workspace(tmp_path: Path) -> Path:
         encoding="utf-8",
     )
     return workspace
+
+
+def _governed_workspace(tmp_path: Path) -> tuple[Path, Path]:
+    workspace = tmp_path / "bounded-workspace"
+    project = tmp_path / "bounded-project"
+    workspace.mkdir()
+    project.mkdir()
+    subprocess.run(["git", "-C", str(project), "init", "-q"], check=True, capture_output=True)
+    workcase = project / "ldvh-base/workcases/workcase-0007.yaml"
+    workcase.parent.mkdir(parents=True)
+    shutil.copyfile(WORKCASE_FIXTURE, workcase)
+    (workspace / "LDVH-GOVERNED-PROJECTS.yaml").write_text(
+        "\n".join(
+            [
+                "product_name: Test",
+                "product_description: Test workspace.",
+                "projects:",
+                "  - id: sample",
+                f"    path: {project}",
+                "    name: Sample",
+                "    description: Test project.",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    return workspace, project
 
 
 def _executable(tmp_path: Path, name: str, body: str) -> Path:
@@ -57,7 +86,7 @@ def _core_runner(tmp_path: Path) -> Path:
     )
 
 
-def _recording_runner(tmp_path: Path, response: list[Any], *, exit_code: int = 0) -> tuple[Path, Path]:
+def _recording_runner(tmp_path: Path, response: Any, *, exit_code: int = 0) -> tuple[Path, Path]:
     records = tmp_path / "runner-records.jsonl"
     runner = _executable(
         tmp_path,
@@ -144,8 +173,10 @@ def _run_hook(
     return completed, json.loads(completed.stdout)
 
 
-def _rendered_exchanges(context: str) -> list[Any]:
-    encoded = context.split("unmodified Helper response: ", 1)[1].rsplit(". Code did not interpret", 1)[0]
+def _rendered_projection(context: str) -> dict[str, Any]:
+    encoded = context.split("Bounded recovery projection: ", 1)[1].rsplit(
+        ". Bindings are mechanical recovery state only", 1
+    )[0]
     return json.loads(encoded)
 
 
@@ -326,8 +357,8 @@ def test_static_verify_checks_the_configured_runner_without_claiming_a_real_trig
     plugin_data = tmp_path / "plugin-data"
     workspace = _workspace(tmp_path)
     helper = _executable(tmp_path, "helper", "raise SystemExit(0)\n")
-    expected_exchanges: list[Any] = [{"opaque_core_exchange": "verified"}]
-    runner, _ = _recording_runner(tmp_path, expected_exchanges)
+    expected_projection = {"contract": "ldvh-context-recovery/1", "opaque_core_projection": "verified"}
+    runner, _ = _recording_runner(tmp_path, expected_projection)
     _apply(plugin_data, helper, runner, workspace)
 
     completed, response = _run_configure("verify", "--plugin-data", str(plugin_data))
@@ -336,7 +367,7 @@ def test_static_verify_checks_the_configured_runner_without_claiming_a_real_trig
     assert response["outcome"] == "ok"
     assert response["context_recovery_runner_verified"] is True
     assert response["real_environment_trigger_verified"] is False
-    assert response["context_recovery_exchanges"] == expected_exchanges
+    assert response["context_recovery_projection"] == expected_projection
 
 
 @pytest.mark.parametrize(
@@ -360,8 +391,8 @@ def test_codex_adapter_projects_native_events_to_the_configured_core_runner(
     project = tmp_path / "project"
     project.mkdir()
     helper = _executable(tmp_path, "helper", "raise SystemExit(0)\n")
-    expected_exchanges: list[Any] = [{"opaque_core_exchange": "preserved"}]
-    runner, records = _recording_runner(tmp_path, expected_exchanges)
+    expected_projection = {"contract": "ldvh-context-recovery/1", "opaque_core_projection": "preserved"}
+    runner, records = _recording_runner(tmp_path, expected_projection)
     _apply(plugin_data, helper, runner, workspace)
 
     completed, response = _run_hook(plugin_data, project, event=event, source=source)
@@ -371,7 +402,7 @@ def test_codex_adapter_projects_native_events_to_the_configured_core_runner(
     assert response["hookSpecificOutput"]["hookEventName"] == event
     context = response["hookSpecificOutput"]["additionalContext"]
     assert f"mapped {native_trigger} to shared context recovery" in context
-    assert _rendered_exchanges(context) == expected_exchanges
+    assert _rendered_projection(context) == expected_projection
     assert records.read_text(encoding="utf-8").splitlines()
     record = json.loads(records.read_text(encoding="utf-8").splitlines()[0])
     assert record == {
@@ -389,16 +420,40 @@ def test_codex_adapter_projects_native_events_to_the_configured_core_runner(
     }
 
 
+def test_complete_additional_context_obeys_frozen_governed_and_workspace_byte_budgets(tmp_path: Path) -> None:
+    plugin_data = tmp_path / "plugin-data"
+    workspace, project = _governed_workspace(tmp_path)
+    runner = _core_runner(tmp_path)
+    _apply(plugin_data, HELPER_EXECUTABLE, runner, workspace)
+
+    governed_completed, governed_response = _run_hook(plugin_data, project)
+    workspace_completed, workspace_response = _run_hook(plugin_data, workspace)
+
+    assert governed_completed.returncode == workspace_completed.returncode == 0
+    governed_context = governed_response["hookSpecificOutput"]["additionalContext"]
+    workspace_context = workspace_response["hookSpecificOutput"]["additionalContext"]
+    assert len(governed_context.encode("utf-8")) <= 13_915
+    assert len(workspace_context.encode("utf-8")) <= 4_830
+    governed_projection = _rendered_projection(governed_context)
+    workspace_projection = _rendered_projection(workspace_context)
+    assert governed_projection["project_binding"]["reason"] == "governed_single"
+    assert governed_projection["delivery_coverage"]["status"] == "complete"
+    assert workspace_projection["project_binding"]["reason"] == "sole_registered_project_candidate"
+    assert workspace_projection["delivery_coverage"]["status"] == "incomplete"
+    assert workspace_projection["project_binding"]["status"] == "bound"
+    assert workspace_projection["workcase_binding"]["status"] == "unresolved"
+
+
 @pytest.mark.parametrize(
     ("runner_output", "exit_code", "expected"),
     [
         ([], 1, "context_recovery_executable did not complete successfully"),
-        ([], 0, "context_recovery_executable did not return a non-empty JSON exchange array"),
+        ([], 0, "context_recovery_executable did not return ldvh-context-recovery/1"),
     ],
 )
 def test_adapter_keeps_runner_failure_or_empty_output_non_blocking_and_context_unresolved(
     tmp_path: Path,
-    runner_output: list[Any],
+    runner_output: Any,
     exit_code: int,
     expected: str,
 ) -> None:
@@ -438,14 +493,14 @@ def test_utf8_native_paths_and_opaque_runner_output_are_preserved(tmp_path: Path
     project = root / "项目 甲"
     project.mkdir()
     helper = _executable(root, "helper", "raise SystemExit(0)\n")
-    expected_exchanges: list[Any] = [{"opaque_core_exchange": "中文"}]
-    runner, records = _recording_runner(root, expected_exchanges)
+    expected_projection = {"contract": "ldvh-context-recovery/1", "opaque_core_projection": "中文"}
+    runner, records = _recording_runner(root, expected_projection)
     _apply(plugin_data, helper, runner, workspace)
 
     completed, response = _run_hook(plugin_data, project)
 
     assert completed.returncode == 0
-    assert _rendered_exchanges(response["hookSpecificOutput"]["additionalContext"]) == expected_exchanges
+    assert _rendered_projection(response["hookSpecificOutput"]["additionalContext"]) == expected_projection
     record = json.loads(records.read_text(encoding="utf-8").splitlines()[0])
     assert str(project) in record["argv"]
     assert str(workspace.resolve()) in record["argv"]

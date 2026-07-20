@@ -11,6 +11,7 @@ from configuration import ConfigurationError, configure_utf8_standard_streams, l
 
 SESSION_START_SOURCES = frozenset({"startup", "resume", "clear", "compact"})
 SUPPORTED_EVENTS = frozenset({"SessionStart", "SubagentStart"})
+RECOVERY_CONTRACT = "ldvh-context-recovery/1"
 
 
 def _supported_event_for_error_context(value: Any) -> str | None:
@@ -70,7 +71,7 @@ def _plugin_data() -> Path:
 
 
 def _render_recovery_context(
-    exchanges: list[Any],
+    projection: dict[str, Any],
     *,
     helper_executable: str,
     cwd: str,
@@ -78,14 +79,14 @@ def _render_recovery_context(
     return (
         "LDVH shared context recovery executed only source-defined read operations. "
         f"Helper executable: {helper_executable}. Work object: {cwd}. "
-        "Helper exchanges contain each actual request, process exit code, and unmodified Helper response: "
-        + json.dumps(exchanges, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
-        + ". Code did not interpret fact applicability, current WorkCase, authorization, semantic sufficiency, "
-        "or task completion."
+        "Bounded recovery projection: "
+        + json.dumps(projection, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+        + ". Bindings are mechanical recovery state only; Code did not decide fact applicability, authorization, "
+        "semantic sufficiency, or task completion."
     )
 
 
-def _run_context_recovery(configuration: dict[str, Any], *, cwd: str) -> list[Any]:
+def _run_context_recovery(configuration: dict[str, Any], *, cwd: str) -> dict[str, Any]:
     completed = subprocess.run(
         [
             configuration["context_recovery_executable"],
@@ -110,23 +111,23 @@ def _run_context_recovery(configuration: dict[str, Any], *, cwd: str) -> list[An
     if completed.returncode != 0:
         raise ConfigurationError("context_recovery_executable did not complete successfully")
     try:
-        exchanges = json.loads(completed.stdout)
+        projection = json.loads(completed.stdout)
     except json.JSONDecodeError as error:
-        raise ConfigurationError("context_recovery_executable did not return a JSON exchange array") from error
-    if not isinstance(exchanges, list) or not exchanges:
-        raise ConfigurationError("context_recovery_executable did not return a non-empty JSON exchange array")
-    return exchanges
+        raise ConfigurationError("context_recovery_executable did not return a JSON projection") from error
+    if not isinstance(projection, dict) or projection.get("contract") != RECOVERY_CONTRACT:
+        raise ConfigurationError(f"context_recovery_executable did not return {RECOVERY_CONTRACT}")
+    return projection
 
 
 def _run(value: Any) -> dict[str, Any]:
     event_name, cwd, source = _validate_hook_input(value)
     configuration = load_configuration(_plugin_data())
-    exchanges = _run_context_recovery(configuration, cwd=cwd)
+    projection = _run_context_recovery(configuration, cwd=cwd)
     native_trigger = event_name if source is None else f"{event_name}/{source}"
     context = (
         f"LDVH Codex thin adapter mapped {native_trigger} to shared context recovery. "
         + _render_recovery_context(
-            exchanges,
+            projection,
             helper_executable=configuration["helper_executable"],
             cwd=cwd,
         )

@@ -75,6 +75,14 @@ def test_discovers_external_configuration_from_upper_workspace_cwd(tmp_path: Pat
     assert item.status is ObjectStatus.GOVERNED
     assert item.governed_via is GovernedVia.PATH
     assert item.git_worktree_root == str(repository.resolve())
+    assert [candidate.governed_project_id for candidate in run.result.registered_project_candidates] == ["project"]
+    candidate = run.result.registered_project_candidates[0]
+    assert candidate.registered_project_path == str(repository.resolve())
+    assert candidate.git_worktree_root == str(repository.resolve())
+    assert {source["kind"] for source in candidate.source_refs} == {
+        "governed_projects_configuration",
+        "registered_project_git_identity",
+    }
     config_source = next(source for source in run.sources if source["kind"] == "governed_projects_configuration")
     assert {basis["kind"] for basis in config_source["details"]["discovery_bases"]} == {
         "path",
@@ -120,6 +128,7 @@ def test_upper_workspace_cwd_is_an_object_not_a_guessed_child_project(tmp_path: 
     assert run.result.scope_status is ScopeStatus.NON_GOVERNED
     assert run.result.object_resolutions[0].status is ObjectStatus.NOT_GOVERNED
     assert run.result.object_resolutions[0].governed_project_id is None
+    assert [candidate.governed_project_id for candidate in run.result.registered_project_candidates] == ["project"]
 
 
 def test_external_linked_worktree_uses_common_dir_and_skips_main_repo_local_config(tmp_path: Path) -> None:
@@ -246,6 +255,7 @@ def test_complete_non_valid_configuration_returns_unknown_domain_results(
     assert run.result.config_status is expected
     assert run.result.scope_status is ScopeStatus.SCOPE_UNKNOWN
     assert run.result.object_resolutions[0].status is ObjectStatus.UNKNOWN
+    assert run.result.registered_project_candidates == ()
     assert run.completed_scope == run.requested_scope
     assert run.technical_non_completions == ()
 
@@ -266,6 +276,7 @@ def test_automatic_discovery_conflict_is_a_complete_unknown_domain_result(tmp_pa
     assert run.result is not None
     assert run.result.config_status is ConfigStatus.CONFLICT
     assert all(item.status is ObjectStatus.UNKNOWN for item in run.result.object_resolutions)
+    assert run.result.registered_project_candidates == ()
     assert len([source for source in run.sources if source["kind"] == "governed_projects_configuration"]) == 2
 
 
@@ -284,6 +295,7 @@ def test_registration_must_be_an_actual_worktree_root(tmp_path: Path) -> None:
     assert run.result is not None
     assert run.result.config_status is ConfigStatus.INVALID
     assert run.result.object_resolutions[0].status is ObjectStatus.UNKNOWN
+    assert run.result.registered_project_candidates == ()
     assert any("actual Git worktree root" in item.summary for item in run.diagnostics)
 
 
@@ -302,6 +314,7 @@ def test_registration_common_dirs_must_be_unique(tmp_path: Path) -> None:
 
     assert run.result is not None
     assert run.result.config_status is ConfigStatus.INVALID
+    assert run.result.registered_project_candidates == ()
     assert any("common directories" in item.summary for item in run.diagnostics)
 
 
@@ -326,6 +339,10 @@ def test_mixed_and_multiple_project_aggregation(tmp_path: Path) -> None:
 
     assert multiple.result is not None
     assert multiple.result.scope_status is ScopeStatus.MULTIPLE_GOVERNED_PROJECTS
+    assert [candidate.governed_project_id for candidate in multiple.result.registered_project_candidates] == [
+        "first",
+        "second",
+    ]
     assert mixed.result is not None
     assert mixed.result.scope_status is ScopeStatus.MIXED_SCOPE
 

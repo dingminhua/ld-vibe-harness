@@ -197,12 +197,42 @@ def aggregate_scope_status(resolutions: Sequence[ObjectResolution]) -> ScopeStat
 
 
 @dataclass(frozen=True, slots=True)
+class RegisteredProjectCandidate:
+    """One fully validated registration exposed for bounded recovery."""
+
+    governed_project_id: str
+    registered_project_path: str
+    git_worktree_root: str
+    git_common_dir: str
+    source_refs: tuple[JsonObject, ...]
+
+    def __post_init__(self) -> None:
+        if not self.governed_project_id:
+            raise ValueError("governed_project_id must be non-empty")
+        for field_name in ("registered_project_path", "git_worktree_root", "git_common_dir"):
+            _require_absolute_or_none(getattr(self, field_name), field_name)
+        object.__setattr__(self, "source_refs", _freeze_references(self.source_refs))
+        if not self.source_refs:
+            raise ValueError("source_refs must be non-empty")
+
+    def to_json(self) -> dict[str, object]:
+        return {
+            "governed_project_id": self.governed_project_id,
+            "registered_project_path": self.registered_project_path,
+            "git_worktree_root": self.git_worktree_root,
+            "git_common_dir": self.git_common_dir,
+            "source_refs": _references_json(self.source_refs),
+        }
+
+
+@dataclass(frozen=True, slots=True)
 class GovernanceScopeResult:
     workspace_root: str | None
     config_path: str | None
     config_status: ConfigStatus
     object_resolutions: tuple[ObjectResolution, ...]
     source_refs: tuple[JsonObject, ...]
+    registered_project_candidates: tuple[RegisteredProjectCandidate, ...] = ()
     scope_status: ScopeStatus = field(init=False)
 
     def __post_init__(self) -> None:
@@ -216,10 +246,18 @@ class GovernanceScopeResult:
         object.__setattr__(self, "source_refs", _freeze_references(self.source_refs))
         if not self.source_refs:
             raise ValueError("source_refs must be non-empty")
+        candidates = tuple(sorted(self.registered_project_candidates, key=lambda item: item.governed_project_id))
+        for field_name in ("governed_project_id", "registered_project_path", "git_common_dir"):
+            values = [getattr(item, field_name) for item in candidates]
+            if len(values) != len(set(values)):
+                raise ValueError(f"registered_project_candidates must have unique {field_name} values")
+        object.__setattr__(self, "registered_project_candidates", candidates)
         if self.config_status is not ConfigStatus.VALID and any(
             item.status is not ObjectStatus.UNKNOWN for item in ordered
         ):
             raise ValueError("a non-valid configuration cannot support a determined object status")
+        if self.config_status is not ConfigStatus.VALID and candidates:
+            raise ValueError("a non-valid configuration cannot expose registered project candidates")
         object.__setattr__(self, "scope_status", aggregate_scope_status(ordered))
 
     @property
@@ -233,6 +271,7 @@ class GovernanceScopeResult:
             "config_status": self.config_status.value,
             "scope_status": self.scope_status.value,
             "object_resolutions": [item.to_json() for item in self.object_resolutions],
+            "registered_project_candidates": [item.to_json() for item in self.registered_project_candidates],
             "source_refs": _references_json(self.source_refs),
         }
 

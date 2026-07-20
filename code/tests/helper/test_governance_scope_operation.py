@@ -69,6 +69,19 @@ def test_service_call_returns_the_source_defined_governance_result(tmp_path: Pat
     assert response["scope"]["not_completed"] == []
     assert response["result"]["config_status"] == "valid"
     assert response["result"]["scope_status"] == "governed_single"
+    assert response["result"]["registered_project_candidates"] == [
+        {
+            "governed_project_id": "sample",
+            "registered_project_path": str(project.resolve()),
+            "git_worktree_root": str(project.resolve()),
+            "git_common_dir": _git(project, "rev-parse", "--path-format=absolute", "--git-common-dir"),
+            "source_refs": response["result"]["registered_project_candidates"][0]["source_refs"],
+        }
+    ]
+    assert any(
+        source["kind"] == "registered_project_git_identity"
+        for source in response["result"]["registered_project_candidates"][0]["source_refs"]
+    )
     item = response["result"]["object_resolutions"][0]
     assert item["status"] == "governed"
     assert item["governed_project_id"] == "sample"

@@ -37,6 +37,7 @@ from ldvh.governance.models import (
     GovernedVia,
     ObjectResolution,
     ObjectStatus,
+    RegisteredProjectCandidate,
     ScopeDescriptor,
 )
 
@@ -121,6 +122,7 @@ class GovernanceResolutionRun:
 class _ValidatedProject:
     registration: GovernedProjectRegistration
     identity: GitWorktreeIdentity
+    source_refs: tuple[SourceReference, ...]
 
 
 def resolve_governance_scope(
@@ -239,7 +241,13 @@ def resolve_governance_scope(
                 )
             )
             continue
-        validated_projects.append(_ValidatedProject(registration, resolved.identity))
+        validated_projects.append(
+            _ValidatedProject(
+                registration,
+                resolved.identity,
+                _deduplicate_sources((*config_sources, *registration_sources)),
+            )
+        )
 
     all_sources = _deduplicate_sources((*all_sources, *project_sources))
     if project_failures:
@@ -303,12 +311,23 @@ def resolve_governance_scope(
     domain_result = None
     completed = tuple(item.scope_descriptor for item in resolutions)
     if resolutions:
+        registered_project_candidates = tuple(
+            RegisteredProjectCandidate(
+                governed_project_id=project.registration.project_id,
+                registered_project_path=str(project.registration.path),
+                git_worktree_root=str(project.identity.worktree_root),
+                git_common_dir=str(project.identity.common_dir),
+                source_refs=project.source_refs,
+            )
+            for project in validated_projects
+        )
         domain_result = GovernanceScopeResult(
             workspace_root=str(configuration.workspace_root) if configuration.workspace_root else None,
             config_path=str(configuration.config_path) if configuration.config_path else None,
             config_status=ConfigStatus.VALID,
             object_resolutions=tuple(resolutions),
             source_refs=all_sources,
+            registered_project_candidates=registered_project_candidates,
         )
 
     technical = _technical_non_completions(failures)

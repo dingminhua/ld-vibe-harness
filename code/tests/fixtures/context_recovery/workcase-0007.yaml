@@ -1,0 +1,44 @@
+object_id: workcase-0007
+fact_type_key: workcase
+title: Fixed context recovery fixture
+created_at: 2026-07-14T09:00:00+08:00
+updated_at: 2026-07-14T10:00:00+08:00
+status: open
+source_refs:
+  - kind: repository-path
+    locator: docs/context-recovery-input.md
+summary: Execute the approved bounded context recovery plan.
+resume_from: Continue the second work item from its fixed fixture state.
+priority: P1
+goal: Exercise bounded context recovery without depending on a live WorkCase.
+scope: A deterministic test-only WorkCase with one active item.
+success_criteria:
+  - Recovery projects the single in-progress item without inventing evidence.
+phase: executing
+plan_version: 1
+work_items:
+  - item_id: item-01
+    goal: Preserve a pending predecessor for ordering coverage.
+    expected_result: The pending item is not projected as active.
+    status: pending
+    approach_summary: Keep this item pending in the deterministic fixture.
+  - item_id: item-02
+    goal: Exercise active item projection.
+    expected_result: The item is projected as in progress.
+    status: in_progress
+    approach_summary: Read the fixed fixture through the existing Helper operations.
+    current_summary: The deterministic recovery fixture is under test.
+    resume_from: Assert the bounded projection and operation sequence.
+creation_reviews:
+  - reviewer: independent-context-fixture-reviewer
+    reviewed_at: 2026-07-14T09:10:00+08:00
+    subject_version: 1
+    scope: Goal, scope, criteria, work items, method, validation and risks.
+    conclusion: pass
+    feedback:
+      - The test plan is deterministic and bounded.
+    controller_resolution: No change required.
+execution_approval:
+  subject_version: 1
+  approved_at: 2026-07-14T09:20:00+08:00
+  summary: Human approved execution of fixture plan version 1.

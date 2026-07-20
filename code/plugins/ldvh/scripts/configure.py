@@ -149,12 +149,12 @@ def _verify(plugin_data: Path) -> int:
         parsed_response = json.loads(completed.stdout)
     except json.JSONDecodeError as error:
         raise ConfigurationError("Context recovery verification did not return JSON") from error
-    if not isinstance(parsed_response, list) or not parsed_response:
-        raise ConfigurationError("Context recovery verification did not return a non-empty JSON exchange array")
+    if not isinstance(parsed_response, dict) or parsed_response.get("contract") != "ldvh-context-recovery/1":
+        raise ConfigurationError("Context recovery verification did not return ldvh-context-recovery/1")
     return _emit(
         "ok",
         configuration_path=str(configuration_path(plugin_data)),
-        context_recovery_exchanges=parsed_response,
+        context_recovery_projection=parsed_response,
         context_recovery_runner_verified=True,
         real_environment_trigger_verified=False,
         changes=[],

@@ -11,6 +11,7 @@ from ldvh.governance.models import (
     LocatorSource,
     ObjectResolution,
     ObjectStatus,
+    RegisteredProjectCandidate,
     ScopeDescriptor,
     ScopeStatus,
     aggregate_scope_status,
@@ -47,6 +48,16 @@ def resolution(
     )
 
 
+def candidate(project_id: str) -> RegisteredProjectCandidate:
+    return RegisteredProjectCandidate(
+        governed_project_id=project_id,
+        registered_project_path=f"/workspace/{project_id}",
+        git_worktree_root=f"/workspace/{project_id}",
+        git_common_dir=f"/workspace/{project_id}/.git",
+        source_refs=SOURCE,
+    )
+
+
 @pytest.mark.parametrize(
     ("items", "expected"),
     [
@@ -80,6 +91,7 @@ def test_result_serializes_exact_attachment_field_closure_and_sorts_by_index() -
         config_status=ConfigStatus.VALID,
         object_resolutions=(second, first),
         source_refs=SOURCE,
+        registered_project_candidates=(candidate("zeta"), candidate("alpha")),
     )
 
     serialized = result.to_json()
@@ -90,10 +102,22 @@ def test_result_serializes_exact_attachment_field_closure_and_sorts_by_index() -
         "config_status",
         "scope_status",
         "object_resolutions",
+        "registered_project_candidates",
         "source_refs",
     }
     assert serialized["scope_status"] == "mixed_scope"
     assert [item["locator_index"] for item in serialized["object_resolutions"]] == [0, 1]
+    assert [item["governed_project_id"] for item in serialized["registered_project_candidates"]] == [
+        "alpha",
+        "zeta",
+    ]
+    assert set(serialized["registered_project_candidates"][0]) == {
+        "governed_project_id",
+        "registered_project_path",
+        "git_worktree_root",
+        "git_common_dir",
+        "source_refs",
+    }
     assert set(serialized["object_resolutions"][0]) == {
         "locator_index",
         "locator",
@@ -130,6 +154,36 @@ def test_non_valid_configuration_only_supports_unknown_domain_results() -> None:
             config_status=ConfigStatus.MISSING,
             object_resolutions=(resolution(0, ObjectStatus.NOT_GOVERNED),),
             source_refs=SOURCE,
+        )
+
+    with pytest.raises(ValueError, match="cannot expose registered project candidates"):
+        GovernanceScopeResult(
+            workspace_root="/workspace",
+            config_path=None,
+            config_status=ConfigStatus.MISSING,
+            object_resolutions=(resolution(0, ObjectStatus.UNKNOWN),),
+            source_refs=SOURCE,
+            registered_project_candidates=(candidate("ldvh"),),
+        )
+
+
+def test_registered_project_candidates_reject_duplicate_identity_keys() -> None:
+    duplicate_common_dir = RegisteredProjectCandidate(
+        governed_project_id="second",
+        registered_project_path="/workspace/second",
+        git_worktree_root="/workspace/second",
+        git_common_dir="/workspace/first/.git",
+        source_refs=SOURCE,
+    )
+
+    with pytest.raises(ValueError, match="unique git_common_dir"):
+        GovernanceScopeResult(
+            workspace_root="/workspace",
+            config_path="/workspace/LDVH-GOVERNED-PROJECTS.yaml",
+            config_status=ConfigStatus.VALID,
+            object_resolutions=(resolution(0, ObjectStatus.NOT_GOVERNED),),
+            source_refs=SOURCE,
+            registered_project_candidates=(candidate("first"), duplicate_common_dir),
         )
 
 

@@ -949,7 +949,7 @@ def test_workcase_delta_profiles_preserve_result_and_carrier_with_frozen_event(
     class FrozenDateTime(datetime):
         @classmethod
         def now(cls, tz=None):
-            return cls.fromisoformat("2026-07-20T18:00:00+08:00")
+            return cls.fromisoformat("2027-07-20T18:00:00+08:00")
 
     monkeypatch.setattr("ldvh.helper.service.datetime", FrozenDateTime)
     compact_before = _read(workspace, project, workcase_ref)
