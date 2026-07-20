@@ -440,7 +440,17 @@ def _read_bytes_portable(
     before_components = _observe_relative_path(root, relative_path, final_type="regular")
     with absolute_path.open("rb", buffering=0) as source:
         before_handle = os.fstat(source.fileno())
-        if before_components[-1][1] != _portable_signature(before_handle):
+        # Compare only stable topology identity (type + device + inode + attributes).
+        # The full portable signature includes st_ctime_ns, which Windows reports with
+        # slightly different resolution between lstat (observation) and fstat (opened
+        # handle); that noise must not fail the "same file" check for Unicode paths.
+        _observed_topo = (
+            before_components[-1][1][0],
+            before_components[-1][1][1],
+            before_components[-1][1][2],
+            before_components[-1][1][-1],
+        )
+        if _observed_topo != _portable_topology_identity(before_handle):
             raise PathChangedError("opened file does not match the observed path")
         raw_bytes = _read_descriptor(source.fileno(), max_bytes=max_bytes)
         after_handle = os.fstat(source.fileno())
@@ -449,7 +459,13 @@ def _read_bytes_portable(
         raise PathChangedError("opened file changed while it was read")
     if before_components != after_components:
         raise PathChangedError("path topology changed while the file was read")
-    if after_components[-1][1] != _portable_signature(after_handle):
+    _after_topo = (
+        after_components[-1][1][0],
+        after_components[-1][1][1],
+        after_components[-1][1][2],
+        after_components[-1][1][-1],
+    )
+    if _after_topo != _portable_topology_identity(after_handle):
         raise PathChangedError("opened file no longer matches the observed path")
     return raw_bytes
 
@@ -1084,7 +1100,7 @@ def walk_regular_files(root: Path) -> tuple[Path, ...]:
         if before_signature != _portable_signature(after):
             raise PathChangedError("directory changed while it was enumerated")
         for entry in current_entries:
-            observation = entry.stat(follow_symlinks=False)
+            observation = os.lstat(entry.path)
             if is_link_or_reparse(observation):
                 raise UnsafePathError("walk path contains a symbolic link or reparse point")
             path = Path(entry.path)

@@ -360,7 +360,7 @@ def _scan_directory(
         ):
             continue
         try:
-            observation = entry.stat(follow_symlinks=False)
+            observation = os.lstat(entry.path)
         except FileNotFoundError:
             _add_gap(
                 gaps,

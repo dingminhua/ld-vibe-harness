@@ -213,7 +213,7 @@ def _create_candidate_assets() -> tuple[Path, Path, str, CandidatePreparationIss
     try:
         directory = Path(tempfile.mkdtemp(prefix=_CANDIDATE_PREFIX)).resolve()
         index_path = directory / _INDEX_NAME
-        (directory / _OWNER_MARKER).write_text(token, encoding="ascii")
+        (directory / _OWNER_MARKER).write_text(token, encoding="ascii", newline="\n")
     except OSError as error:
         if directory is not None:
             try:

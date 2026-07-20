@@ -386,7 +386,7 @@ def _matching_entry_snapshot(
             for entry in entries:
                 if pattern.fullmatch(entry.name) is None:
                     continue
-                current = entry.stat(follow_symlinks=False)
+                current = os.lstat(entry.path)
                 identity = _stable_identity(current)
                 if identity is None:
                     return None, f"filesystem identity is unavailable for {entry.name}"

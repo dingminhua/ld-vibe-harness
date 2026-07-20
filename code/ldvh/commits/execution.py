@@ -402,7 +402,7 @@ def execute_prepared_commit(
     assert message is not None
     message_path = Path(candidate.candidate_directory) / _MESSAGE_NAME
     try:
-        message_path.write_text(message, encoding="utf-8")
+        message_path.write_text(message, encoding="utf-8", newline="\n")
     except OSError as error:
         issues.append(_issue("commit", f"Commit message file could not be written: {error}"))
         return _finish(outcome="not_created", candidate=candidate, issues=issues, real_index_after=index_identity)
