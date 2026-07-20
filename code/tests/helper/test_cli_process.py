@@ -49,7 +49,7 @@ def test_general_discovery_reports_source_bound_implementation(tmp_path: Path) -
     assert response["outcome"] == "ok"
     assert response["operation_key"] is None
     assert response["result"]["mode"] == "discovery"
-    assert len(response["result"]["operations"]) == 11
+    assert len(response["result"]["operations"]) == 12
     operations = {item["operation_key"]: item for item in response["result"]["operations"]}
     candidates = operations["find-fact-object-candidates"]
     assert candidates["implementation"]["present"] is True
@@ -73,6 +73,14 @@ def test_general_discovery_reports_source_bound_implementation(tmp_path: Path) -
         "arguments.expected_content_fingerprint",
         "arguments.fact_object",
     ]
+    assert operations["update-workcase"]["required_inputs"] == [
+        "arguments.fact_ref",
+        "arguments.expected_content_fingerprint",
+        "arguments.set",
+        "arguments.remove",
+        "arguments.managed_records",
+    ]
+    assert operations["update-workcase"]["implementation"]["present"] is True
     operation = operations["read-specification-candidates"]
     assert operation["operation_key"] == "read-specification-candidates"
     _assert_working_tree_implementation(
@@ -122,10 +130,7 @@ def test_general_discovery_reports_source_bound_implementation(tmp_path: Path) -
     assert commit_precheck["required_inputs"] == ["work_object_locators", "arguments.message"]
     assert commit_precheck["optional_inputs"] == ["arguments.workspace_root"]
     assert len(response["gaps"]) == 2
-    condition_count = sum(
-        int(item["summary"].split("尚未自动证明 ", 1)[1].split(" 项", 1)[0]) for item in response["gaps"]
-    )
-    assert condition_count == 8
+    assert sum(item["member_count"] for item in response["gaps"]) == 96
 
 
 def test_diagnostic_profile_expands_qualification_details(tmp_path: Path) -> None:
@@ -137,8 +142,9 @@ def test_diagnostic_profile_expands_qualification_details(tmp_path: Path) -> Non
 
     assert completed.returncode == 0
     assert response["response_profile"] == "diagnostic"
-    assert len(response["gaps"]) == 8
+    assert len(response["gaps"]) == 96
     assert all(item["summary"].startswith("当前 Code 尚未自动证明：") for item in response["gaps"])
+    assert all("member_count" not in item for item in response["gaps"])
 
 
 def test_defined_operation_check_and_call_return_actual_l0_results(tmp_path: Path) -> None:

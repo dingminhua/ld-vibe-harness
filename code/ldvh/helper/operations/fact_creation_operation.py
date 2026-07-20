@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 from ldvh.facts.contracts import LAYOUTS
 from ldvh.facts.creation import (
     CreationBoundary,
+    FactCoordinationUnavailable,
     candidate_object_id,
     schema_fingerprint,
     worktree_fingerprint,
@@ -45,6 +45,7 @@ PREPARE_OPERATION_KEY = "prepare-fact-object-draft"
 CREATE_OPERATION_KEY = "create-fact-object"
 _PREPARE_CONTRACT = source_reference("rule", "fact-model-foundation::11.3 事实对象草案准备输入与结果")
 _CREATE_CONTRACT = source_reference("rule", "fact-model-foundation::11.4 事实对象受控创建输入与结果")
+_SHARED_WRITE_CONTRACT = source_reference("rule", "fact-model-foundation::11.8 共享单对象受控写事务")
 _IMPLEMENTATION_SOURCE = source_reference(
     "implementation",
     "code/ldvh/helper/operations/fact_creation_operation.py",
@@ -251,6 +252,60 @@ def _issue_gap(issues: tuple[FactIssue, ...], scope: object) -> dict[str, Any]:
     }
 
 
+def _coordination_unavailable(
+    error: FactCoordinationUnavailable,
+    requested: tuple[object, ...],
+    run: GovernanceResolutionRun,
+    sources: tuple[dict[str, Any], ...],
+    *,
+    diagnostic_profile: bool,
+) -> OperationExecution:
+    diagnostic = {
+        "summary": "受控写入共同协调锁不可用",
+        "code": "controlled_write_lock_unavailable",
+        "details": {
+            "stage": error.stage,
+            "path_role": error.path_role,
+            "required_access": error.required_access,
+            "system_error_category": error.system_error_category,
+            "target_unchanged": True,
+            "allocator_unchanged": True,
+            "counter_unchanged": True,
+        },
+        "source_refs": [_SHARED_WRITE_CONTRACT],
+    }
+    return OperationExecution(
+        outcome="unavailable",
+        summary="事实对象共同协调锁当前不可用，未创建对象或推进 allocator",
+        requested_scope=requested,
+        not_completed_scope=requested,
+        governance_resolution=run.result.to_json() if run.result else None,
+        sources=(*sources, _SHARED_WRITE_CONTRACT),
+        gaps=(
+            {
+                "summary": "恢复 git common-dir 下 LDVH 协调根的创建、打开与排他锁权限后重试",
+                "scope": list(requested),
+                "source_refs": [_SHARED_WRITE_CONTRACT],
+                "code": "controlled_write_lock_unavailable",
+            },
+        ),
+        diagnostics=(diagnostic,) if diagnostic_profile else (),
+        follow_up={
+            "summary": "恢复共同协调根访问后重新读取当前范围并重试",
+            "required_inputs": [],
+            "required_human_decisions": [],
+            "resume_conditions": [
+                {
+                    "summary": "git common-dir 的 LDVH 协调根允许创建或打开锁并取得排他锁",
+                    "scope": list(requested),
+                    "source_refs": [_SHARED_WRITE_CONTRACT],
+                }
+            ],
+            "suggested_operations": [],
+        },
+    )
+
+
 def _create_execute(
     request: CommonRequest,
     repository: RepositoryInspection,
@@ -334,17 +389,27 @@ def _create_execute(
             ),
         )
 
-    creation = create_fact_object(
-        FactCreationCommand(
-            boundary=boundary,
-            fact_type_key=basis.fact_type_key,
-            schemas=schemas,
-            schema=schema,
-            requested_candidate_id=basis.candidate_object_id,
-            supplied=supplied,
-            body=body,
+    try:
+        creation = create_fact_object(
+            FactCreationCommand(
+                boundary=boundary,
+                fact_type_key=basis.fact_type_key,
+                schemas=schemas,
+                schema=schema,
+                requested_candidate_id=basis.candidate_object_id,
+                supplied=supplied,
+                body=body,
+            ),
+            observed_at=context.event_at,
         )
-    )
+    except FactCoordinationUnavailable as error:
+        return _coordination_unavailable(
+            error,
+            requested,
+            run,
+            request_sources,
+            diagnostic_profile=request.response_profile == "diagnostic",
+        )
     if creation.status == "candidate_unavailable":
         return OperationExecution(
             outcome="unavailable",
@@ -469,7 +534,7 @@ def _create_execute(
     working_tree_source = {
         "kind": "working_tree",
         "locator": (boundary.worktree_root / layout.canonical_path(actual_id)).as_posix(),
-        "observed_at": datetime.now().astimezone().isoformat(),
+        "observed_at": context.event_at,
         "details": {"view": "Working Tree"},
     }
     sources = (

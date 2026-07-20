@@ -124,6 +124,7 @@ def _qualification_gaps(
     sources: list[dict[str, Any]],
     scope: list[object] | None = None,
     response_profile: str = "compact",
+    member_multiplier: int = 1,
 ) -> list[dict[str, Any]]:
     unique_conditions = tuple(dict.fromkeys(conditions))
     if not unique_conditions:
@@ -131,9 +132,11 @@ def _qualification_gaps(
     if response_profile == "compact":
         return [
             gap(
-                f"当前 Code 尚未自动证明 {len(unique_conditions)} 项资格条件；请求 diagnostic 档可读取逐项明细",
+                "当前 Code 尚未自动证明来源或契约资格条件；请求 diagnostic 档可读取逐项明细",
                 scope=scope,
                 sources=sources,
+                code="qualification_unproven",
+                member_count=len(unique_conditions) * member_multiplier,
             )
         ]
     return [
@@ -141,6 +144,7 @@ def _qualification_gaps(
             f"当前 Code 尚未自动证明：{condition}",
             scope=scope,
             sources=sources,
+            code="qualification_unproven",
         )
         for condition in unique_conditions
     ]
@@ -262,7 +266,6 @@ def handle_request(request_kind: RequestKind, operation_key: str | None, raw_inp
 
 
 def _handle_request(request_kind: RequestKind, operation_key: str | None, raw_input: str) -> ServiceResult:
-    execution_context = OperationExecutionContext(cwd=Path.cwd())
     general_discovery = request_kind == "capabilities" and operation_key is None
     parsed = parse_common_request(raw_input, general_discovery=general_discovery)
     if parsed.request is None:
@@ -275,6 +278,10 @@ def _handle_request(request_kind: RequestKind, operation_key: str | None, raw_in
             ("命令位置中的 operation_key 格式无效",),
             response_profile=response_profile,
         )
+    execution_context = OperationExecutionContext(
+        cwd=Path.cwd(),
+        event_at=datetime.now().astimezone().isoformat(),
+    )
 
     inspected = inspect_colocated_rule_source(Path(ldvh.__file__))
     if inspected.problem is not None:
@@ -319,22 +326,10 @@ def _handle_request(request_kind: RequestKind, operation_key: str | None, raw_in
 
     unchecked_conditions = tuple(dict.fromkeys(operations.unchecked_conditions))
     contract_conditions = tuple(dict.fromkeys(operations.contract_conditions))
-    qualification_gaps = [
-        *_qualification_gaps(
-            unchecked_conditions,
-            sources=[RULE_SOURCE_QUALIFICATION_SOURCE],
-            response_profile=response_profile,
-        ),
-        *_qualification_gaps(
-            contract_conditions,
-            sources=CONTRACT_SOURCES,
-            response_profile=response_profile,
-        ),
-    ]
     runtime = bind_operation_implementations(operations, OPERATION_IMPLEMENTATIONS)
     bound_by_key = runtime.by_key()
     runtime_diagnostics = implementation_contract_diagnostics(runtime)
-    observed_at = datetime.now().astimezone().isoformat()
+    observed_at = execution_context.event_at
 
     if operation_key is not None:
         bound_operation = bound_by_key.get(operation_key)
@@ -368,6 +363,20 @@ def _handle_request(request_kind: RequestKind, operation_key: str | None, raw_in
         declaration = bound_operation.declaration
         implementation = bound_operation.implementation
         declaration_source = _declaration_source(declaration)
+        qualification_gaps = [
+            *_qualification_gaps(
+                unchecked_conditions,
+                sources=[RULE_SOURCE_QUALIFICATION_SOURCE],
+                scope=[operation_key],
+                response_profile=response_profile,
+            ),
+            *_qualification_gaps(
+                contract_conditions,
+                sources=CONTRACT_SOURCES,
+                scope=[operation_key],
+                response_profile=response_profile,
+            ),
+        ]
         operation_gap = gap(
             "当前 Code 尚未发现该公开操作的实际实现及可复核能力依据",
             scope=[operation_key],
@@ -440,8 +449,8 @@ def _handle_request(request_kind: RequestKind, operation_key: str | None, raw_in
             declaration,
             observed_at=observed_at,
             request_check=True,
-            rule_source_conditions=unchecked_conditions,
-            contract_conditions=contract_conditions,
+            rule_source_conditions=(),
+            contract_conditions=(),
             implementation=implementation,
             availability=availability,
             available_scope=available_scope,
@@ -468,8 +477,8 @@ def _handle_request(request_kind: RequestKind, operation_key: str | None, raw_in
             declaration,
             observed_at=observed_at,
             request_check=False,
-            rule_source_conditions=unchecked_conditions,
-            contract_conditions=contract_conditions,
+            rule_source_conditions=(),
+            contract_conditions=(),
             implementation=bound_operation.implementation,
             response_profile=response_profile,
         )
@@ -478,6 +487,43 @@ def _handle_request(request_kind: RequestKind, operation_key: str | None, raw_in
     ]
     declaration_sources = [_declaration_source(declaration) for declaration in declarations]
     repository_sources = _issue_sources(repository.issues)
+    operation_keys = [declaration.operation_key for declaration in declarations]
+    if response_profile == "compact":
+        qualification_gaps = [
+            *_qualification_gaps(
+                unchecked_conditions,
+                sources=[RULE_SOURCE_QUALIFICATION_SOURCE],
+                scope=operation_keys,
+                response_profile=response_profile,
+                member_multiplier=len(operation_keys),
+            ),
+            *_qualification_gaps(
+                contract_conditions,
+                sources=CONTRACT_SOURCES,
+                scope=operation_keys,
+                response_profile=response_profile,
+                member_multiplier=len(operation_keys),
+            ),
+        ]
+    else:
+        qualification_gaps = [
+            item
+            for operation in operation_keys
+            for item in (
+                *_qualification_gaps(
+                    unchecked_conditions,
+                    sources=[RULE_SOURCE_QUALIFICATION_SOURCE],
+                    scope=[operation],
+                    response_profile=response_profile,
+                ),
+                *_qualification_gaps(
+                    contract_conditions,
+                    sources=CONTRACT_SOURCES,
+                    scope=[operation],
+                    response_profile=response_profile,
+                ),
+            )
+        ]
 
     return common_response(
         request_kind="capabilities",

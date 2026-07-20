@@ -5,11 +5,13 @@ import os
 import stat
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
 from pathlib import Path
 
 import pytest
 from conftest import HELPER_EXECUTABLE, assert_common_response
 
+from ldvh.facts.creation import FactCoordinationUnavailable
 from ldvh.facts.models import FactIssue
 from ldvh.facts.repository import FactReadResult
 from ldvh.facts.workcase_projection import workcase_subject_fingerprint
@@ -375,6 +377,65 @@ def test_create_fails_before_allocator_mutation_when_platform_durability_is_not_
     assert "file-only" in response["summary"]
     assert not (project / ".git/ldvh").exists()
     assert not (project / "facts").exists()
+
+
+def test_create_maps_shared_lock_permission_failure_to_structured_unavailable(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    workspace, project = _fixture(tmp_path)
+    basis = _prepare(workspace, project)
+    monkeypatch.setattr(
+        "ldvh.helper.operations.fact_creation_operation.create_fact_object",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(FactCoordinationUnavailable("permission_denied")),
+    )
+
+    compact = handle_request(
+        "call",
+        "create-fact-object",
+        _create_payload(workspace, project, basis, _spark()),
+    ).response
+    diagnostic_payload = json.loads(_create_payload(workspace, project, basis, _spark()))
+    diagnostic_payload["response_profile"] = "diagnostic"
+    diagnostic = handle_request(
+        "call",
+        "create-fact-object",
+        json.dumps(diagnostic_payload),
+    ).response
+
+    assert compact["outcome"] == diagnostic["outcome"] == "unavailable"
+    assert compact["gaps"][0]["code"] == "controlled_write_lock_unavailable"
+    assert compact["diagnostics"] == []
+    assert diagnostic["diagnostics"][0]["code"] == "controlled_write_lock_unavailable"
+    assert diagnostic["diagnostics"][0]["details"]["stage"] == "common_dir_lock"
+    assert not (project / ".git/ldvh").exists()
+    assert not (project / "facts").exists()
+
+
+def test_real_lock_entry_permission_failure_reaches_helper_without_target_or_counter_change(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    workspace, project = _fixture(tmp_path)
+    basis = _prepare(workspace, project)
+
+    @contextmanager
+    def denied_lock(*_args, **_kwargs):
+        raise PermissionError("simulated common-dir lock denial")
+        yield  # pragma: no cover - contextmanager shape only
+
+    monkeypatch.setattr("ldvh.facts.creation.exclusive_relative_file_lock", denied_lock)
+    response = handle_request(
+        "call",
+        "create-fact-object",
+        _create_payload(workspace, project, basis, _spark()),
+    ).response
+
+    assert_common_response(response)
+    assert response["outcome"] == "unavailable"
+    assert response["gaps"][0]["code"] == "controlled_write_lock_unavailable"
+    assert not (project / "ldvh-base" / "sparks" / "spark-0001.yaml").exists()
+    assert not list((project / ".git" / "ldvh" / "fact-id-allocators").glob("*.counter"))
 
 
 def test_two_ai_drafts_with_same_candidate_receive_distinct_final_ids(tmp_path: Path) -> None:

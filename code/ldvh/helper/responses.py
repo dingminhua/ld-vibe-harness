@@ -36,12 +36,21 @@ def gap(
     *,
     scope: list[object] | None = None,
     sources: list[dict[str, Any]] | None = None,
+    code: str | None = None,
+    member_count: int | None = None,
 ) -> dict[str, Any]:
-    return {
+    result: dict[str, Any] = {
         "summary": summary,
         "scope": [] if scope is None else scope,
         "source_refs": [] if sources is None else sources,
     }
+    if code is not None:
+        result["code"] = code
+    if member_count is not None:
+        if member_count < 1:
+            raise ValueError("gap member_count must be positive")
+        result["member_count"] = member_count
+    return result
 
 
 def diagnostic(summary: str, **details: Any) -> dict[str, Any]:

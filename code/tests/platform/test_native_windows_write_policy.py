@@ -121,11 +121,27 @@ def test_native_public_create_and_update_are_unavailable_without_side_effects(tm
             "fact_object": fact_object,
         },
     )
+    workcase_update_request = _request(
+        workspace,
+        project,
+        {
+            "fact_ref": {
+                "governed_project_id": "sample",
+                "fact_type_key": "workcase",
+                "object_id": "workcase-0001",
+            },
+            "expected_content_fingerprint": "0" * 64,
+            "set": {"summary": "Must not be written"},
+            "remove": [],
+            "managed_records": {},
+        },
+    )
     before = _project_bytes(project)
 
     for operation, request in (
         ("create-fact-object", create_request),
         ("update-fact-object", update_request),
+        ("update-workcase", workcase_update_request),
     ):
         for command in ("capabilities", "call"):
             exit_code, response = _cli(helper, project, command, operation, request)

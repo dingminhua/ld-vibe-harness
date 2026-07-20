@@ -106,7 +106,13 @@ def assert_common_response(response: dict[str, Any]) -> None:
             assert isinstance(part["reason"], str) and part["reason"]
     assert isinstance(response["gaps"], list)
     for item in response["gaps"]:
-        assert {"summary", "scope", "source_refs"} <= set(item) <= {"summary", "scope", "source_refs", "code"}
+        assert {"summary", "scope", "source_refs"} <= set(item) <= {
+            "summary",
+            "scope",
+            "source_refs",
+            "code",
+            "member_count",
+        }
         assert isinstance(item["summary"], str) and item["summary"]
         assert isinstance(item["scope"], list)
         assert isinstance(item["source_refs"], list)
@@ -114,6 +120,10 @@ def assert_common_response(response: dict[str, Any]) -> None:
             _assert_source_reference(reference)
         if "code" in item:
             assert isinstance(item["code"], str) and item["code"]
+        if "member_count" in item:
+            assert response["response_profile"] == "compact"
+            assert isinstance(item["member_count"], int) and not isinstance(item["member_count"], bool)
+            assert item["member_count"] > 0
     assert isinstance(response["changes"], list)
     for item in response["changes"]:
         assert set(item) == {"summary", "status", "target", "source_refs"}

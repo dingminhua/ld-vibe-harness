@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import errno
 import os
 import stat
 import subprocess
@@ -12,6 +13,7 @@ from ldvh import filesystem
 from ldvh.facts.contracts import LAYOUTS
 from ldvh.facts.creation import (
     CreationBoundary,
+    FactCoordinationUnavailable,
     _allocator_paths,
     allocate_object_id_locked,
     allocation_lock,
@@ -311,6 +313,48 @@ def test_allocator_lock_rejects_linked_final_lock_file(tmp_path: Path) -> None:
             pytest.fail("unsafe lock file must not be opened")
 
     assert outside.read_bytes() == b"outside"
+
+
+@pytest.mark.parametrize(
+    ("error", "category"),
+    [
+        (PermissionError(), "permission_denied"),
+        (OSError(errno.EROFS, "read-only filesystem"), "read_only_filesystem"),
+    ],
+)
+def test_allocator_lock_classifies_only_entry_permission_failures(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    error: OSError,
+    category: str,
+) -> None:
+    project, common_dir = _repository(tmp_path)
+    boundary = CreationBoundary("sample", project, common_dir)
+
+    class FailingLock:
+        def __enter__(self) -> None:
+            raise error
+
+        def __exit__(self, *_args: object) -> None:
+            return None
+
+    monkeypatch.setattr("ldvh.facts.creation.exclusive_relative_file_lock", lambda *_args: FailingLock())
+
+    with pytest.raises(FactCoordinationUnavailable) as observed:
+        with allocation_lock(boundary, LAYOUTS["spark"]):
+            pytest.fail("the lock body must not run")
+
+    assert observed.value.system_error_category == category
+    assert observed.value.stage == "common_dir_lock"
+
+
+def test_allocator_lock_does_not_reclassify_permission_failure_inside_body(tmp_path: Path) -> None:
+    project, common_dir = _repository(tmp_path)
+    boundary = CreationBoundary("sample", project, common_dir)
+
+    with pytest.raises(PermissionError):
+        with allocation_lock(boundary, LAYOUTS["spark"]):
+            raise PermissionError("target write failed after lock entry")
 
 
 def test_relative_lock_closes_descriptor_when_fstat_fails(

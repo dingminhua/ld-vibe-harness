@@ -5,5 +5,6 @@
 当前适用规划：
 
 - [full-v4 Working Tree 证据生产与运行记录接入](full-v4-working-tree-evidence.md)：覆盖 `code/ldvh/testing` 中的 Working Tree manifest 采集、full-v4 耐久运行记录和 `tools/run_full_tests.py` 入口。
+- [WorkCase 专属受控变更 Helper 操作](workcase-controlled-update.md)：覆盖共享单对象更新事务、统一事件时点、`update-workcase`、锁失败诊断、响应档位与 YAML 序列化。
 
 新增、替代或移动规划时，必须同步更新本入口；不在列表中的临时会话计划不承担当前 Code 实现规划责任。

@@ -27,6 +27,7 @@ OPERATIONS = (
     "prepare-fact-object-draft",
     "create-fact-object",
     "update-fact-object",
+    "update-workcase",
     "read-action-template-candidates",
     "read-action-template-content",
 )

@@ -1,4 +1,6 @@
 from ldvh.facts.carriers.yaml_object import parse_yaml_object
+from ldvh.facts.contracts import LAYOUTS
+from ldvh.facts.creation import serialize_fact_object
 from ldvh.facts.models import FactIssue
 
 
@@ -62,3 +64,25 @@ def test_keeps_timestamp_shaped_scalars_as_strings() -> None:
         "created_at": "2026-07-14",
         "updated_at": "2026-07-14T12:34:56+08:00",
     }
+
+
+def test_serializer_preserves_values_without_physical_trailing_whitespace() -> None:
+    fields = {
+        "title": "中文 WorkCase " + "长标题" * 300,
+        "source_refs": [
+            {
+                "kind": "working_tree",
+                "locator": "/workspace/" + "nested-directory/" * 300 + "workcase.yaml",
+            }
+        ],
+        "summary": "semantic trailing space is preserved inside the scalar ",
+        "notes": "line one\nline two with a semantic trailing space \nline three",
+    }
+
+    text = serialize_fact_object(LAYOUTS["workcase"], fields, None)
+    parsed = parse_yaml_object(text)
+
+    assert parsed.issues == ()
+    assert parsed.fields == fields
+    assert text.endswith("\n") and not text.endswith("\n\n")
+    assert all(not line.endswith((" ", "\t")) for line in text.splitlines())

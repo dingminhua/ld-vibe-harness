@@ -39,6 +39,7 @@ OPERATIONS = {
     "read-specification-content",
     "resolve-governance-scope",
     "update-fact-object",
+    "update-workcase",
 }
 
 LOCK_WORKER = r"""

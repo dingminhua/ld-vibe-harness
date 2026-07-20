@@ -352,10 +352,10 @@ def create_fact_object_locked(prepared: PreparedFactCreation, counter_path: Path
     return _complete_created_fact(prepared, actual_id, actual_fields, actual_text, creation_result)
 
 
-def create_fact_object(command: FactCreationCommand) -> FactCreationResult:
+def create_fact_object(command: FactCreationCommand, *, observed_at: str | None = None) -> FactCreationResult:
     """Validate, allocate, create, read back, and conditionally roll back one fact."""
 
-    prepared = prepare_fact_creation(command)
+    prepared = prepare_fact_creation(command, observed_at=observed_at)
     if isinstance(prepared, FactCreationResult):
         return prepared
     layout = LAYOUTS[command.fact_type_key]

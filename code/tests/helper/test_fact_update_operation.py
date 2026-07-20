@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import stat
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
@@ -11,10 +12,12 @@ from pathlib import Path
 import pytest
 from conftest import HELPER_EXECUTABLE, assert_common_response
 
+from ldvh.facts import update_application
+from ldvh.facts.creation import FactCoordinationUnavailable
 from ldvh.facts.models import FactIssue
 from ldvh.facts.repository import FactReadResult
 from ldvh.facts.workcase_projection import workcase_subject_fingerprint
-from ldvh.helper.operations import fact_update_operation
+from ldvh.helper.operations import fact_update_operation, workcase_update_operation
 from ldvh.helper.service import handle_request
 
 
@@ -113,6 +116,33 @@ def _update_payload(
                 "fact_ref": fact_ref or _ref(),
                 "expected_content_fingerprint": fingerprint,
                 "fact_object": fact_object,
+            },
+        }
+    )
+
+
+def _workcase_update_payload(
+    workspace: Path,
+    project: Path,
+    fact_ref: dict[str, str],
+    fingerprint: object,
+    *,
+    set_fields: dict[str, object] | None = None,
+    remove_fields: list[str] | None = None,
+    managed_records: dict[str, object] | None = None,
+    response_profile: str = "compact",
+) -> str:
+    return json.dumps(
+        {
+            "response_profile": response_profile,
+            "work_object_locators": [str(project)],
+            "arguments": {
+                "workspace_root": str(workspace),
+                "fact_ref": fact_ref,
+                "expected_content_fingerprint": fingerprint,
+                "set": {} if set_fields is None else set_fields,
+                "remove": [] if remove_fields is None else remove_fields,
+                "managed_records": {} if managed_records is None else managed_records,
             },
         }
     )
@@ -280,14 +310,10 @@ def test_workcase_helper_walks_controller_owned_review_and_atomic_closure(tmp_pa
                         "criterion_id": "criterion-01",
                         "outcome": "satisfied",
                         "summary": "The focused lifecycle result was produced and verified",
-                        "evidence_refs": [
-                            {"kind": "repository-path", "locator": "docs/evidence.md"}
-                        ],
+                        "evidence_refs": [{"kind": "repository-path", "locator": "docs/evidence.md"}],
                     }
                 ],
-                "evidence_refs": [
-                    {"kind": "repository-path", "locator": "docs/evidence.md"}
-                ],
+                "evidence_refs": [{"kind": "repository-path", "locator": "docs/evidence.md"}],
             }
         )
         item = fields["work_items"][0]
@@ -323,9 +349,7 @@ def test_workcase_helper_walks_controller_owned_review_and_atomic_closure(tmp_pa
                 "feedback": ["The reviewer would prefer another validation statement"],
                 "review_basis": {
                     "projection_key": "result_implementation",
-                    "subject_fingerprint": workcase_subject_fingerprint(
-                        fields, "result_implementation"
-                    ),
+                    "subject_fingerprint": workcase_subject_fingerprint(fields, "result_implementation"),
                 },
             }
         ]
@@ -405,6 +429,619 @@ def test_workcase_helper_walks_controller_owned_review_and_atomic_closure(tmp_pa
     assert closed["closure_approval"]["subject_version"] == closed["result_version"]
 
 
+def test_workcase_delta_records_execution_approval_with_one_event_and_idempotent_retry(tmp_path: Path) -> None:
+    workspace, project, _ = _fixture(tmp_path)
+    docs = project / "docs"
+    docs.mkdir()
+    (docs / "input.md").write_text("Human-authorized work\n", encoding="utf-8")
+    workcase_ref = _create_workcase(workspace, project)
+    before = _read(workspace, project, workcase_ref)
+    payload = _workcase_update_payload(
+        workspace,
+        project,
+        workcase_ref,
+        before["content_fingerprint"],
+        set_fields={
+            "phase": "executing",
+            "summary": "Human approved the plan; execution may start",
+            "resume_from": "Execute item-01",
+        },
+        remove_fields=["waiting_on"],
+        managed_records={"execution_approval": {"summary": "Human approved plan version 1"}},
+    )
+
+    response = handle_request("call", "update-workcase", payload).response
+
+    assert_common_response(response)
+    assert response["outcome"] == "ok", json.dumps(response, ensure_ascii=False, indent=2)
+    assert response["result"]["before_state"]["phase"] == "human_plan_confirming"
+    assert response["result"]["after_state"]["phase"] == "executing"
+    assert response["result"]["managed_record_receipts"] == [
+        {"action": "execution_approval_recorded", "subject_version": 1}
+    ]
+    assert response["result"]["event_at"] is not None
+    current = _read(workspace, project, workcase_ref)
+    fields = current["fact_object"]
+    assert fields["updated_at"] == response["result"]["event_at"]
+    assert fields["execution_approval"]["approved_at"] == response["result"]["event_at"]
+    observation = next(source for source in response["sources"] if source["kind"] == "working_tree")
+    assert observation["observed_at"] == response["result"]["event_at"]
+
+    fact_path = project / current["canonical_path"]
+    raw = fact_path.read_bytes()
+    retry = handle_request(
+        "call",
+        "update-workcase",
+        _workcase_update_payload(
+            workspace,
+            project,
+            workcase_ref,
+            current["content_fingerprint"],
+            managed_records={"execution_approval": {"summary": "Human approved plan version 1"}},
+        ),
+    ).response
+    assert retry["outcome"] == "no_change"
+    assert retry["result"]["event_at"] is None
+    assert retry["result"]["changed_fields"] == []
+    assert retry["result"]["managed_record_receipts"] == []
+    assert fact_path.read_bytes() == raw
+
+
+def test_workcase_delta_walks_controller_owned_review_and_atomic_closure(tmp_path: Path) -> None:
+    workspace, project, _ = _fixture(tmp_path)
+    docs = project / "docs"
+    docs.mkdir()
+    (docs / "input.md").write_text("Human-authorized work\n", encoding="utf-8")
+    (docs / "evidence.md").write_text("Verified result\n", encoding="utf-8")
+    workcase_ref = _create_workcase(workspace, project)
+
+    def update(
+        *,
+        set_fields: dict[str, object] | None = None,
+        remove_fields: list[str] | None = None,
+        managed_records: dict[str, object] | None = None,
+    ) -> dict[str, object]:
+        before = _read(workspace, project, workcase_ref)
+        response = handle_request(
+            "call",
+            "update-workcase",
+            _workcase_update_payload(
+                workspace,
+                project,
+                workcase_ref,
+                before["content_fingerprint"],
+                set_fields=set_fields,
+                remove_fields=remove_fields,
+                managed_records=managed_records,
+            ),
+        ).response
+        assert response["outcome"] == "ok", json.dumps(response, ensure_ascii=False, indent=2)
+        return _read(workspace, project, workcase_ref)["fact_object"]
+
+    pending = _read(workspace, project, workcase_ref)["fact_object"]["work_items"][0]
+    in_progress = {
+        **pending,
+        "status": "in_progress",
+        "current_summary": "Producing the bounded result",
+        "resume_from": "Finish and verify the result",
+    }
+    update(
+        set_fields={
+            "phase": "executing",
+            "summary": "Human approved the current plan; execution started",
+            "resume_from": "Complete item-01",
+            "work_items": [in_progress],
+        },
+        remove_fields=["waiting_on"],
+        managed_records={"execution_approval": {"summary": "Human approved the presented current plan"}},
+    )
+
+    completed_item = {
+        key: value for key, value in in_progress.items() if key not in {"current_summary", "resume_from"}
+    }
+    completed_item.update(
+        {
+            "status": "completed",
+            "result_summary": "The bounded result was produced and verified",
+            "evidence_refs": [{"kind": "repository-path", "locator": "docs/evidence.md"}],
+        }
+    )
+    update(
+        set_fields={
+            "phase": "controller_checking",
+            "summary": "Controller is checking the completed result",
+            "resume_from": "Check the result and initiate independent review",
+            "result_version": 1,
+            "controller_check_summary": "Controller checked the item result and focused evidence",
+            "work_items": [completed_item],
+            "success_criterion_results": [
+                {
+                    "criterion_id": "criterion-01",
+                    "outcome": "satisfied",
+                    "summary": "The focused lifecycle result was produced and verified",
+                    "evidence_refs": [{"kind": "repository-path", "locator": "docs/evidence.md"}],
+                }
+            ],
+            "evidence_refs": [{"kind": "repository-path", "locator": "docs/evidence.md"}],
+        }
+    )
+    update(
+        set_fields={
+            "phase": "independent_reviewing",
+            "summary": "Independent result review is in progress",
+            "resume_from": "Obtain review feedback and let Controller decide the next phase",
+        }
+    )
+    reviewed = update(
+        managed_records={
+            "append_result_reviews": [
+                {
+                    "reviewer": "independent-result-reviewer",
+                    "scope": "Item result, success criterion, Controller check, validation, and residual risk",
+                    "conclusion": "blocked",
+                    "feedback": ["The reviewer would prefer another validation statement"],
+                    "projection_key": "result_implementation",
+                }
+            ]
+        }
+    )
+    assert reviewed["phase"] == "independent_reviewing"
+    assert "controller_resolution" not in reviewed["result_reviews"][0]
+
+    handled = update(
+        set_fields={
+            "phase": "controller_checking",
+            "summary": "Controller handled the feedback and decided no rereview is required",
+            "resume_from": "Enter closure preparation with the retained current-version review",
+        },
+        managed_records={
+            "resolve_result_reviews": [
+                {
+                    "review_index": 0,
+                    "controller_resolution": (
+                        "Rejected as a phase veto; existing evidence is sufficient, so no rereview is needed."
+                    ),
+                }
+            ]
+        },
+    )
+    assert handled["phase"] == "controller_checking"
+    assert handled["result_reviews"][0]["conclusion"] == "blocked"
+
+    update(
+        set_fields={
+            "phase": "closure_preparing",
+            "summary": "Controller is preparing the final closure report",
+            "resume_from": "Complete validation, outcome, and disposition",
+        }
+    )
+    prepared = update(
+        set_fields={
+            "validation_summary": "The success criterion is supported by the focused evidence",
+            "closure_outcome": "completed",
+            "disposition_summary": "No residual responsibility remains",
+        }
+    )
+    assert prepared["result_version"] == 1
+    assert prepared["result_reviews"][0]["conclusion"] == "blocked"
+
+    update(
+        set_fields={
+            "phase": "human_closure_confirming",
+            "summary": "Controller judged the complete report ready for Human closure confirmation",
+            "resume_from": "Await Human decision on the current result and report",
+            "waiting_on": "Human closure confirmation",
+        }
+    )
+    closed = update(
+        set_fields={
+            "status": "closed",
+            "phase": "closed",
+            "summary": "Human approved the current result and report; the WorkCase is closed",
+        },
+        remove_fields=["priority", "resume_from", "waiting_on"],
+        managed_records={
+            "closure_approval": {"summary": "Human approved the current result version and complete report"}
+        },
+    )
+    assert closed["status"] == "closed"
+    assert closed["phase"] == "closed"
+    assert closed["closure_approval"]["approved_at"] == closed["closed_at"] == closed["updated_at"]
+
+
+def test_workcase_delta_current_dependent_construction_failure_is_rejected(tmp_path: Path) -> None:
+    workspace, project, _ = _fixture(tmp_path)
+    docs = project / "docs"
+    docs.mkdir()
+    (docs / "input.md").write_text("Human-authorized work\n", encoding="utf-8")
+    workcase_ref = _create_workcase(workspace, project)
+    before = _read(workspace, project, workcase_ref)
+
+    response = handle_request(
+        "call",
+        "update-workcase",
+        _workcase_update_payload(
+            workspace,
+            project,
+            workcase_ref,
+            before["content_fingerprint"],
+            set_fields={"plan_version": 2, "phase": "human_plan_confirming"},
+            managed_records={
+                "replace_creation_reviews": [
+                    {
+                        "reviewer": "reviewer",
+                        "scope": "Unchanged plan",
+                        "conclusion": "pass",
+                        "feedback": ["No plan change"],
+                        "controller_resolution": "Accepted",
+                    }
+                ]
+            },
+        ),
+    ).response
+
+    assert response["outcome"] == "rejected"
+    assert response["changes"] == []
+
+
+def test_workcase_delta_preserves_current_read_unavailable_classification(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    workspace, project, _ = _fixture(tmp_path)
+    docs = project / "docs"
+    docs.mkdir()
+    (docs / "input.md").write_text("Human-authorized work\n", encoding="utf-8")
+    workcase_ref = _create_workcase(workspace, project)
+    before = _read(workspace, project, workcase_ref)
+    unavailable = FactReadResult(
+        "ldvh-base/workcases/workcase-0001.yaml",
+        "yaml",
+        "unavailable",
+        None,
+        None,
+        (FactIssue("location", "simulated safe-read capability gap"),),
+    )
+    monkeypatch.setattr(workcase_update_operation, "_current_read", lambda *_args, **_kwargs: unavailable)
+
+    response = handle_request(
+        "call",
+        "update-workcase",
+        _workcase_update_payload(
+            workspace,
+            project,
+            workcase_ref,
+            before["content_fingerprint"],
+            set_fields={"summary": "Would update"},
+        ),
+    ).response
+
+    assert response["outcome"] == "unavailable"
+    assert response["changes"] == []
+
+
+def test_workcase_delta_platform_durability_unavailable_precedes_target_read(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    workspace, project, fact = _fixture(tmp_path)
+    monkeypatch.setattr(workcase_update_operation, "durable_writes_enabled", lambda: False)
+    reference = {
+        "governed_project_id": "sample",
+        "fact_type_key": "workcase",
+        "object_id": "workcase-0001",
+    }
+    original = fact.read_bytes()
+
+    response = handle_request(
+        "call",
+        "update-workcase",
+        _workcase_update_payload(
+            workspace,
+            project,
+            reference,
+            "0" * 64,
+            set_fields={"summary": "Must not be written"},
+        ),
+    ).response
+
+    assert response["outcome"] == "unavailable"
+    assert "file-only" in response["summary"]
+    assert fact.read_bytes() == original
+
+
+def test_workcase_delta_stale_fingerprint_rejects_without_writing(tmp_path: Path) -> None:
+    workspace, project, _ = _fixture(tmp_path)
+    docs = project / "docs"
+    docs.mkdir()
+    (docs / "input.md").write_text("Human-authorized work\n", encoding="utf-8")
+    workcase_ref = _create_workcase(workspace, project)
+    before = _read(workspace, project, workcase_ref)
+    fact_path = project / before["canonical_path"]
+    fact_path.write_text(
+        fact_path.read_text(encoding="utf-8").replace("Current plan is ready", "Current plan remains ready"),
+        encoding="utf-8",
+    )
+    changed = fact_path.read_bytes()
+
+    response = handle_request(
+        "call",
+        "update-workcase",
+        _workcase_update_payload(
+            workspace,
+            project,
+            workcase_ref,
+            before["content_fingerprint"],
+            set_fields={"summary": "Would overwrite stale content"},
+        ),
+    ).response
+
+    assert response["outcome"] == "rejected"
+    assert fact_path.read_bytes() == changed
+
+
+def test_workcase_delta_plan_bump_applies_fixed_reset_and_replaces_creation_review(tmp_path: Path) -> None:
+    workspace, project, _ = _fixture(tmp_path)
+    docs = project / "docs"
+    docs.mkdir()
+    (docs / "input.md").write_text("Human-authorized work\n", encoding="utf-8")
+    workcase_ref = _create_workcase(workspace, project)
+    before = _read(workspace, project, workcase_ref)
+    approved = handle_request(
+        "call",
+        "update-workcase",
+        _workcase_update_payload(
+            workspace,
+            project,
+            workcase_ref,
+            before["content_fingerprint"],
+            set_fields={
+                "phase": "executing",
+                "summary": "Execution approved",
+                "resume_from": "Execute item-01",
+            },
+            remove_fields=["waiting_on"],
+            managed_records={"execution_approval": {"summary": "Human approved plan version 1"}},
+        ),
+    ).response
+    assert approved["outcome"] == "ok"
+    current = _read(workspace, project, workcase_ref)
+    fields = current["fact_object"]
+    audit_summary = [
+        *fields["audit_summary"],
+        {
+            "audit_id": "audit-02",
+            "subject_kind": "superseded_plan",
+            "subject_version": 1,
+            "review_count": 1,
+            "summary": "The prior review value was consumed by the revised plan",
+        },
+    ]
+
+    response = handle_request(
+        "call",
+        "update-workcase",
+        _workcase_update_payload(
+            workspace,
+            project,
+            workcase_ref,
+            current["content_fingerprint"],
+            set_fields={
+                "goal": "Exercise the revised Controller-owned lifecycle",
+                "phase": "human_plan_confirming",
+                "plan_version": 2,
+                "summary": "Revised plan is ready for Human approval",
+                "resume_from": "Request approval for revised plan version 2",
+                "waiting_on": "Human execution approval",
+                "audit_summary": audit_summary,
+            },
+            managed_records={
+                "replace_creation_reviews": [
+                    {
+                        "reviewer": "independent-plan-reviewer-v2",
+                        "scope": "Revised goal and unchanged bounded implementation",
+                        "conclusion": "pass",
+                        "feedback": ["The revised plan is coherent"],
+                        "controller_resolution": "Accepted; the current plan includes the review feedback.",
+                    }
+                ]
+            },
+        ),
+    ).response
+
+    assert response["outcome"] == "ok", json.dumps(response, ensure_ascii=False, indent=2)
+    after = _read(workspace, project, workcase_ref)["fact_object"]
+    assert after["plan_version"] == 2
+    assert after["phase"] == "human_plan_confirming"
+    assert "execution_approval" not in after
+    assert after["creation_reviews"][0]["subject_version"] == 2
+    assert after["creation_reviews"][0]["reviewed_at"] == after["updated_at"]
+    assert response["result"]["managed_record_receipts"][0]["action"] == "creation_review_replaced"
+
+
+def test_workcase_delta_rejects_legacy_workcase_without_writing(tmp_path: Path) -> None:
+    workspace, project, _ = _fixture(tmp_path)
+    docs = project / "docs"
+    docs.mkdir()
+    (docs / "input.md").write_text("Legacy authorized work\n", encoding="utf-8")
+    fact_path = project / "ldvh-base" / "workcases" / "workcase-0001.yaml"
+    fact_path.parent.mkdir(parents=True)
+    fact_path.write_text(
+        """object_id: workcase-0001
+fact_type_key: workcase
+title: Legacy WorkCase
+created_at: 2026-07-14T09:00:00+08:00
+updated_at: 2026-07-14T10:00:00+08:00
+status: open
+source_refs:
+- kind: repository-path
+  locator: docs/input.md
+summary: Waiting for Human approval
+resume_from: Present the plan
+waiting_on: Human execution approval
+priority: P2
+goal: Complete legacy work
+scope: One legacy object
+success_criteria:
+- The result is verified
+phase: human_plan_confirming
+plan_version: 1
+work_items:
+- item_id: item-01
+  goal: Produce the result
+  expected_result: One result
+  status: pending
+  approach_summary: Use the bounded implementation path
+creation_reviews:
+- reviewer: independent-reviewer
+  reviewed_at: 2026-07-14T09:30:00+08:00
+  subject_version: 1
+  scope: Goal, scope, criteria, work item and risks
+  conclusion: pass
+  feedback:
+  - The plan is coherent
+  controller_resolution: Accepted; no change required.
+""",
+        encoding="utf-8",
+    )
+    reference = {
+        "governed_project_id": "sample",
+        "fact_type_key": "workcase",
+        "object_id": "workcase-0001",
+    }
+    before = _read(workspace, project, reference)
+    raw = fact_path.read_bytes()
+
+    response = handle_request(
+        "call",
+        "update-workcase",
+        _workcase_update_payload(
+            workspace,
+            project,
+            reference,
+            before["content_fingerprint"],
+            set_fields={"summary": "Must use the generic full-target update"},
+        ),
+    ).response
+
+    assert response["outcome"] == "rejected"
+    assert fact_path.read_bytes() == raw
+
+
+def test_workcase_delta_profiles_preserve_result_and_carrier_with_frozen_event(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    workspace, project, _ = _fixture(tmp_path)
+    docs = project / "docs"
+    docs.mkdir()
+    (docs / "input.md").write_text("Human-authorized work\n", encoding="utf-8")
+    workcase_ref = _create_workcase(workspace, project)
+    diagnostic_workspace = tmp_path / "diagnostic-workspace"
+    shutil.copytree(workspace, diagnostic_workspace)
+    diagnostic_project = diagnostic_workspace / "project"
+    config_path = diagnostic_workspace / "LDVH-GOVERNED-PROJECTS.yaml"
+    config_path.write_text(
+        config_path.read_text(encoding="utf-8").replace(str(project), str(diagnostic_project)),
+        encoding="utf-8",
+    )
+
+    class FrozenDateTime(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return cls.fromisoformat("2026-07-20T18:00:00+08:00")
+
+    monkeypatch.setattr("ldvh.helper.service.datetime", FrozenDateTime)
+    compact_before = _read(workspace, project, workcase_ref)
+    diagnostic_before = _read(diagnostic_workspace, diagnostic_project, workcase_ref)
+    assert compact_before["content_fingerprint"] == diagnostic_before["content_fingerprint"]
+    compact = handle_request(
+        "call",
+        "update-workcase",
+        _workcase_update_payload(
+            workspace,
+            project,
+            workcase_ref,
+            compact_before["content_fingerprint"],
+            set_fields={"summary": "Profile-equivalent controlled update"},
+            response_profile="compact",
+        ),
+    ).response
+    diagnostic = handle_request(
+        "call",
+        "update-workcase",
+        _workcase_update_payload(
+            diagnostic_workspace,
+            diagnostic_project,
+            workcase_ref,
+            diagnostic_before["content_fingerprint"],
+            set_fields={"summary": "Profile-equivalent controlled update"},
+            response_profile="diagnostic",
+        ),
+    ).response
+
+    assert compact["outcome"] == diagnostic["outcome"] == "ok"
+    assert compact["result"] == diagnostic["result"]
+    assert compact["changes"][0]["summary"] == diagnostic["changes"][0]["summary"]
+    assert compact["changes"][0]["status"] == diagnostic["changes"][0]["status"]
+    assert compact["changes"][0]["target"] == diagnostic["changes"][0]["target"]
+    compact_path = project / compact["result"]["canonical_path"]
+    diagnostic_path = diagnostic_project / diagnostic["result"]["canonical_path"]
+    assert compact_path.read_bytes() == diagnostic_path.read_bytes()
+    assert len(json.dumps(compact["result"], ensure_ascii=False, separators=(",", ":")).encode()) <= 4096
+
+
+def test_workcase_success_result_with_sixteen_receipts_stays_within_contract_limit() -> None:
+    before_fields = {
+        "status": "open",
+        "phase": "independent_reviewing",
+        "plan_version": 1,
+        "result_version": 1,
+    }
+    after_fields = {**before_fields, "updated_at": "2026-07-20T18:00:00+08:00", "result_reviews": []}
+    before = FactReadResult(
+        "ldvh-base/workcases/workcase-0001.yaml",
+        "yaml",
+        "mechanically_valid",
+        before_fields,
+        None,
+        (),
+        content_fingerprint="b" * 64,
+        raw_text="before\n",
+    )
+    after = FactReadResult(
+        "ldvh-base/workcases/workcase-0001.yaml",
+        "yaml",
+        "mechanically_valid",
+        after_fields,
+        None,
+        (),
+        content_fingerprint="c" * 64,
+        raw_text="after\n",
+    )
+    receipts = tuple(
+        {
+            "action": "result_review_appended",
+            "subject_version": 1,
+            "review_index": index,
+            "projection_key": "result_implementation",
+            "subject_fingerprint": "a" * 64,
+        }
+        for index in range(16)
+    )
+
+    result = workcase_update_operation._result(
+        before,
+        after,
+        "sample",
+        "workcase-0001",
+        event_at="2026-07-20T18:00:00+08:00",
+        receipts=receipts,
+    )
+
+    assert len(json.dumps(result, ensure_ascii=False, separators=(",", ":")).encode()) <= 4096
+
+
 def test_update_replaces_full_target_and_preserves_managed_identity(tmp_path: Path) -> None:
     workspace, project, fact = _fixture(tmp_path)
     before = _read(workspace, project)
@@ -431,6 +1068,8 @@ def test_update_replaces_full_target_and_preserves_managed_identity(tmp_path: Pa
     assert after_fields["fact_type_key"] == before_fields["fact_type_key"]
     assert after_fields["created_at"] == before_fields["created_at"]
     assert after_fields["updated_at"] != before_fields["updated_at"]
+    working_tree_source = next(source for source in response["sources"] if source["kind"] == "working_tree")
+    assert working_tree_source["observed_at"] == after_fields["updated_at"]
     assert fact.stat().st_mode & 0o777 == 0o640
     assert response["changes"][0]["status"] == "updated"
 
@@ -502,7 +1141,7 @@ def test_failed_write_back_read_rolls_back_only_matching_replacement(
     original = fact.read_bytes()
     target = _mutable(before)
     target["summary"] = "This replacement will fail its simulated readback"
-    actual_current_read = fact_update_operation._current_read
+    actual_project_read = update_application._project_read
     calls = 0
 
     def failing_readback(*args, **kwargs):
@@ -517,9 +1156,9 @@ def test_failed_write_back_read_rolls_back_only_matching_replacement(
                 None,
                 (FactIssue("schema", "simulated write-back failure"),),
             )
-        return actual_current_read(*args, **kwargs)
+        return actual_project_read(*args, **kwargs)
 
-    monkeypatch.setattr(fact_update_operation, "_current_read", failing_readback)
+    monkeypatch.setattr(update_application, "_project_read", failing_readback)
     response = handle_request(
         "call",
         "update-fact-object",
@@ -607,6 +1246,53 @@ def test_update_fails_before_lock_or_file_mutation_when_platform_durability_is_n
     assert response["outcome"] == "unavailable"
     assert "file-only" in response["summary"]
     assert not (project / ".git/ldvh").exists()
+    assert fact.read_bytes() == original
+
+
+def test_coordination_permission_failure_is_structured_unavailable_with_zero_write(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    workspace, project, fact = _fixture(tmp_path)
+    before = _read(workspace, project)
+    target = _mutable(before)
+    target["summary"] = "Must remain unwritten"
+    original = fact.read_bytes()
+
+    def unavailable(*args, **kwargs):
+        raise FactCoordinationUnavailable("permission_denied")
+
+    monkeypatch.setattr(fact_update_operation, "apply_fact_update", unavailable)
+    response = handle_request(
+        "call",
+        "update-fact-object",
+        json.dumps(
+            {
+                "response_profile": "diagnostic",
+                "work_object_locators": [str(project)],
+                "arguments": {
+                    "workspace_root": str(workspace),
+                    "fact_ref": _ref(),
+                    "expected_content_fingerprint": before["content_fingerprint"],
+                    "fact_object": target,
+                },
+            }
+        ),
+    ).response
+
+    assert response["outcome"] == "unavailable"
+    assert response["changes"] == []
+    assert response["gaps"][0]["code"] == "controlled_write_lock_unavailable"
+    assert response["diagnostics"][0]["code"] == "controlled_write_lock_unavailable"
+    assert response["diagnostics"][0]["details"] == {
+        "stage": "common_dir_lock",
+        "path_role": "git_common_dir_ldvh_coordination_root",
+        "required_access": "create_or_open_and_exclusively_lock",
+        "system_error_category": "permission_denied",
+        "target_unchanged": True,
+        "allocator_unchanged": True,
+        "counter_unchanged": True,
+    }
     assert fact.read_bytes() == original
 
 

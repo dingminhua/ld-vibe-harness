@@ -76,6 +76,7 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
         "read-specification-content",
         "resolve-governance-scope",
         "update-fact-object",
+        "update-workcase",
     ]
     declaration_sources = {
         declaration.operation_key: declaration.source.path for declaration in operations.candidate_declarations
@@ -92,6 +93,7 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
         "read-specification-content": "specs/01-规范模型基础规范.md",
         "resolve-governance-scope": "specs/02-工作对象与管辖范围规范.md",
         "update-fact-object": "specs/05-事实模型基础规范.md",
+        "update-workcase": "specs/21-WorkCase-工作项.md",
     }
     assert operations.issues == ()
     assert operations.incomplete_sources == ()

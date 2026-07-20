@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import errno
 import hashlib
 import json
 from collections.abc import Iterator
@@ -32,6 +33,18 @@ class CreationBoundary:
     governed_project_id: str
     worktree_root: Path
     git_common_dir: Path
+
+
+class FactCoordinationUnavailable(RuntimeError):
+    """A controlled write could not enter its durable shared coordination domain."""
+
+    stage = "common_dir_lock"
+    path_role = "git_common_dir_ldvh_coordination_root"
+    required_access = "create_or_open_and_exclusively_lock"
+
+    def __init__(self, system_error_category: Literal["permission_denied", "read_only_filesystem"]) -> None:
+        super().__init__("controlled fact coordination is unavailable")
+        self.system_error_category = system_error_category
 
 
 @dataclass(frozen=True, slots=True)
@@ -161,8 +174,19 @@ def candidate_object_id(boundary: CreationBoundary, layout: FactTypeLayout) -> s
 @contextmanager
 def allocation_lock(boundary: CreationBoundary, layout: FactTypeLayout) -> Iterator[Path]:
     lock_path, counter_path = _allocator_relative_paths(boundary, layout)
-    with exclusive_relative_file_lock(boundary.git_common_dir, lock_path):
-        yield counter_path
+    entered = False
+    try:
+        with exclusive_relative_file_lock(boundary.git_common_dir, lock_path):
+            entered = True
+            yield counter_path
+    except OSError as error:
+        if entered:
+            raise
+        if error.errno == errno.EROFS:
+            raise FactCoordinationUnavailable("read_only_filesystem") from error
+        if isinstance(error, PermissionError) or error.errno in {errno.EACCES, errno.EPERM}:
+            raise FactCoordinationUnavailable("permission_denied") from error
+        raise
 
 
 def allocate_object_id_locked(
@@ -245,6 +269,7 @@ def serialize_fact_object(layout: FactTypeLayout, fields: dict[str, object], bod
     yaml = YAML(typ="rt")
     yaml.default_flow_style = False
     yaml.allow_unicode = True
+    yaml.width = 2**31 - 1
     stream = StringIO()
     yaml.dump(fields, stream)
     frontmatter = stream.getvalue()
@@ -273,6 +298,7 @@ __all__ = [
     "AllocationCommitResult",
     "AllocationPreview",
     "CreationBoundary",
+    "FactCoordinationUnavailable",
     "allocate_object_id_locked",
     "allocation_lock",
     "atomic_create_text",

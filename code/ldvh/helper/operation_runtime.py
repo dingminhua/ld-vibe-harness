@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
 from types import MappingProxyType
 from typing import Any, Literal
@@ -40,6 +41,7 @@ class OperationExecutionContext:
     """Process observations captured once at the Helper service boundary."""
 
     cwd: Path
+    event_at: str = field(default_factory=lambda: datetime.now().astimezone().isoformat())
 
 
 @dataclass(frozen=True, slots=True)

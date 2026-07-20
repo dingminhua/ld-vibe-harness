@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import replace
+from datetime import datetime
 from pathlib import Path
 
 from ldvh.diagnostics import Issue, SourceLocation
@@ -12,6 +13,12 @@ from ldvh.helper.responses import gap, source_reference
 from ldvh.helper.rule_source import RuleSourceResult
 from ldvh.helper.service import handle_request
 from ldvh.specs.repository import RepositoryInspection, inspect_repository
+
+
+class _FrozenDateTime(datetime):
+    @classmethod
+    def now(cls, tz=None):
+        return cls.fromisoformat("2026-07-20T16:30:00+08:00")
 
 
 def _working_rule_source(tmp_path: Path) -> RuleSourceResult:
@@ -81,6 +88,29 @@ def test_rule_source_location_gap_is_unavailable(monkeypatch) -> None:
     assert result.exit_code == 5
     assert result.response["outcome"] == "unavailable"
     assert result.response["gaps"][0]["summary"] == "没有共置规则源"
+
+
+def test_capability_profiles_preserve_domain_result_and_compact_size(monkeypatch) -> None:
+    monkeypatch.setattr("ldvh.helper.service.datetime", _FrozenDateTime)
+
+    compact = handle_request("capabilities", None, json.dumps({"response_profile": "compact"})).response
+    diagnostic = handle_request("capabilities", None, json.dumps({"response_profile": "diagnostic"})).response
+    single_compact = handle_request(
+        "capabilities",
+        "resolve-governance-scope",
+        json.dumps({"response_profile": "compact"}),
+    ).response
+    single_diagnostic = handle_request(
+        "capabilities",
+        "resolve-governance-scope",
+        json.dumps({"response_profile": "diagnostic"}),
+    ).response
+
+    assert compact["result"] == diagnostic["result"]
+    assert single_compact["result"] == single_diagnostic["result"]
+    compact_bytes = len(json.dumps(compact, ensure_ascii=False, separators=(",", ":")).encode())
+    diagnostic_bytes = len(json.dumps(diagnostic, ensure_ascii=False, separators=(",", ":")).encode())
+    assert compact_bytes <= diagnostic_bytes * 0.65
 
 
 def test_repository_problem_is_not_rewritten_as_empty_discovery(monkeypatch, tmp_path: Path) -> None:
@@ -281,9 +311,10 @@ def test_unrelated_candidate_problem_does_not_block_defined_operation(
         "read-fact-objects",
         "read-specification-candidates",
         "read-specification-content",
-        "resolve-governance-scope",
-        "update-fact-object",
-    ]
+            "resolve-governance-scope",
+            "update-fact-object",
+            "update-workcase",
+        ]
     assert discovered.response["scope"]["not_completed"] == ["broken"]
     governance = next(
         item
