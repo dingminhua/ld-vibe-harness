@@ -17,6 +17,7 @@ ldvh_spec:
     - "specification-model-foundation"
     - "work-object-governance-scope"
     - "source-of-truth-traceability"
+    - "code-engineering-practices"
   authorized_attachments:
     - "helper-cli-request-response-fields"
 ```
@@ -48,6 +49,7 @@ Helper CLI 是 AI 的基础服务入口，不是所有普通求解的前置仪�
 2. `specification-model-foundation` 对当前规则源、规范身份、渐进式披露层级和来源规则完整上下文的定义；
 3. `work-object-governance-scope` 对工作对象、定位符、管辖项目配置和管辖范围解析结果的定义；
 4. `source-of-truth-traceability` 对当前信息、Working Tree、来源回指、派生信息、事实源更新和回读的定义。
+5. `code-engineering-practices` 及其 `working-tree-test-evidence-fields` 授权附件对 full-v4 Working Tree 证据 DTO 的唯一字段、指纹和状态定义；本文只定义 Helper 如何不改写地携带它。
 
 本文不重新定义上述对象及其领域语义。事实模型、行动模板和其它正式来源只有在各自进入当前规则源后，才能向 Helper 提供相应领域契约；本文不得提前替它们定义字段、状态或行动步骤。
 
@@ -109,6 +111,8 @@ ldvh call <operation_key>
 命令别名、自动补全和文本装饰属于实现便利，不得成为机器调用的唯一入口。公开操作不得要求 AI 知道内部 Python 模块、Web API、厂商 Hook 或缓存路径。
 
 本文授权 `helper-cli-request-response-fields` 附件承载上述三个入口的 JSON 输入通道、请求字段、共同响应字段、空值、闭集规则和 `capabilities` 结果结构。具体公开操作的 `arguments` 与 `result` Schema 仍由定义该操作语义的当前来源承担；附件不得替代领域来源。
+
+具体公开操作的当前来源确实需要返回 full-v4 Working Tree 证据时，只能在该操作自身 `result` 的明确 object 字段中，按 `working-tree-test-evidence-fields` 授权附件的当前契约原样嵌入完整 DTO，并由该操作的 `result_contract` 精确回指定义章节。本文和 `helper-cli-request-response-fields` 不复制其字段，不把它增加为 Helper 共同响应顶层字段，也不得改塞进 `verification[].evidence`、`diagnostics[].details`、来源 `details` 或 Human 文本输出。Helper 对 DTO 的紧凑或诊断呈现不得改变其字段、状态、指纹、覆盖边界或 `changes`。
 
 定义一个或多个公开操作的当前来源，必须在正文中使用附件定义的固定 Markdown 表格声明操作标识、摘要、读取或状态变更边界以及输入和结果契约位置。Code 只从当前规则源中的该表格发现领域公开操作；草案、普通示例、内部实现注册表和 tests 不得进入公开操作清单。同一 `operation_key` 重复、声明位置无法解析或契约位置不存在时，暂停受影响操作的发现和调用。
 

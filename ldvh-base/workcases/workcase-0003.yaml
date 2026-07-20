@@ -1,0 +1,245 @@
+title: 建立 WorkCase 控制契约与持续改进基础
+status: open
+source_refs:
+- kind: human-input
+  locator: 2026-07-20 Human：授权 A–E 整体改进意图，允许本地 commit、分支、worktree 和本地结果整合，禁止
+    push 或创建 PR
+- kind: human-input
+  locator: 2026-07-20 Human：实施过程中持续记录并判断可进一步完善的信息，使 00 的持续积累价值在 LDVH 中可操作
+- kind: working_tree
+  locator:
+    /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/ldvh-base/sparks/spark-0008.yaml
+- kind: working_tree
+  locator:
+    /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/ldvh-base/sparks/spark-0014.yaml
+- kind: working_tree
+  locator:
+    /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/ldvh-base/sparks/spark-0019.yaml
+summary: A 的实现、主控自检和最终独立审核均已完成；关闭报告分类为 partial，等待实际 C 承接对象形成后提交 Human。
+resume_from: 建立并回读承担 07.Att.01 DTO 生产与 runner 接入的 C WorkCase；关闭时建立真实
+  routed-to，再进入 Human 关闭确认。
+goal: 建立 A–E 共用的 WorkCase 控制契约基础：在不依赖中途 Git commit
+  的情况下保留紧凑审核连续性和可核验审核对象，结构化表达成功标准结果、残余责任、非约束后续、31/32 行动分类与持续改进观察，并冻结供后续 Working
+  Tree 证据生成和 Human 投影共同消费的唯一 evidence DTO。
+scope: A 只建立规则契约及其直接机械保护。规则范围为 specs/21、31、32；为 current WorkCase 字段与事实领域绑定所必需的
+  specs/05 和 05.Att.01；作为 Working Tree evidence DTO 唯一来源的 specs/07 及一个新授权附件；仅引用该
+  DTO 的 specs/04 和 04.Att.01。实现范围限统一字段登记和派生 Schema 的直接消费者、code/ldvh/facts 中
+  validation/transitions/relations、审核对象投影与指纹所需的最小纯函数、行动模板声明/发现的直接消费者及直接测试。现有
+  workcase-0001/0002 保持 legacy、原样有效且不补造历史；A 本身按现行 legacy 生命周期完成。明确排除 B 的 Helper
+  高层生命周期操作、统一事件时间、诊断和 compact 体验，C 的 Working Tree manifest 采集/比较实现，D 的
+  Human/Helper/Web/Codex 展示实现，E 的隔离验收，修改 00，批量迁移工具，多对象原子能力实现，修改或路由
+  spark-0008/0014/0019，以及 push/PR。创建由 fact-object-controlled-creation 组织；后续对象更新由
+  fact-object-lifecycle-change 组织；普通规则和 Code 实施仍按各自来源求解。本地 commit
+  不是成功标准，只能在验证后按既有授权精确隔离 A 文件与本 WorkCase 记录并另行遵循 git-commit；无法隔离则不提交。
+success_criteria:
+- 规则可机械区分 legacy 与 current WorkCase：生效边界前对象和 A 可按 legacy 生命周期原样有效；生效后新建对象必须使用
+  current；legacy 升级是可选显式行动，涉及计划覆盖字段时必须升版、重审并回 Human Gate，closed legacy 不补造历史。
+- current WorkCase 的成功标准具有稳定 criterion_id；结果对当前 criterion 完整且唯一覆盖。Code 只检查
+  ID、引用、覆盖、状态和证据结构，不判断成功标准或满足结论的真实性。
+- audit_summary、review_basis、projection_key 和 subject_fingerprint
+  形成唯一闭集；创建时审核和主控处置完整，对象内结果审核遵循 Reviewer 记录后由 Controller 单独处置，任何审核结论都不自动推进或否决。
+- 残余责任使用 WorkCase 内稳定 local ID，并只有显式 routed-to 映射才表示承接；nonbinding followup
+  不自动建立关系、Spark 或 WorkCase，当前计划和结果可被确定性投影。
+- 持续改进只登记影响成功标准、跨阶段恢复或有明确后续消费价值的观察；每项具有来源证据、去重与归属、V1–V8 净价值判断和四类终态处置，单一结果版本最多 20
+  项且同主题压缩；普通推理不记录，观察不自动扩张计划或创建、更新、路由事实对象。
+- 31 明确创建激活结果和交还，且只为 WorkCase 持久化 21 允许的字段；32 明确
+  fact_correction、content_update、single_object_lifecycle、multi_object_disposition，区分单对象
+  CAS、合法多步序列和真正多对象原子能力，不冒充未成立的原子成功。
+- Working Tree evidence DTO 由 07 的单一授权附件唯一定义 manifest coverage、before/after
+  fingerprints、complete/stale/incomplete、changes 和 include/exclude policy
+  refs；04 只引用其 Helper 嵌入方式，05 不把非事实对象 DTO 误登记为事实字段，C 与 D 可据此独立实现而不复制 Schema。
+- 隔离 fixture 的正反 contract、schema、validation、transitions、relations 和
+  action-template 测试覆盖兼容、生效、升级、审核、指纹、成功标准、承接映射、观察收敛和禁止自动语义；聚焦验证与 full-v4 通过，A
+  自身生命周期不作为新契约成立的证明。
+- 除 A 规则、直接实现与测试、本 WorkCase 流程记录以及范围精确隔离的可选本地 commit 外，不修改 B/C/D/E 实现、00、三项来源
+  Spark 或远端状态；未提交不影响 A 的审核、结果或关闭。
+phase: closure_preparing
+plan_version: 1
+priority: P1
+work_items:
+- item_id: item-01
+  goal: 冻结控制契约、兼容策略和直接影响闭包。
+  expected_result: 形成 current/legacy 生效与升级边界、criterion 与审核投影/指纹、残余和 followup
+    映射、持续改进准入/预算/处置以及 evidence DTO 的唯一结构，并列出全部直接消费者与排除项。
+  status: completed
+  approach_summary: 先对字段登记、派生 Schema、生命周期转换、关系、行动模板和 Helper
+    共同响应做只读影响闭包；把独立审核发现的兼容、自指、稳定身份、收敛和唯一归口问题纳入设计。A 执行期观察在新结构生效前只进入现有 work item
+    current/result summary 与最终处置，不要求 A 迁移自己。
+  result_summary: 已冻结显式 current profile 与精确生效边界、legacy 原样读取和可选升级、互斥 criterion
+    定义/结果、review basis 与三类审核投影指纹、紧凑 audit continuity、残余责任/非约束
+    followup/持续改进观察结构，以及 07 唯一 evidence DTO。调查同时形成两项后续处置观察：WorkCase 草案
+    conditional 字段缺少 constraint_ref 导致首次创建被正确拒绝；full-v4 record 的 starting 状态与 07
+    四态契约不一致，前者由 A/后续 B 分层处理，后者明确交给 C。
+  evidence_refs:
+  - kind: working_tree
+    locator:
+      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/specs/21-WorkCase-工作项.md
+  - kind: working_tree
+    locator:
+      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/specs/attachments/05.Att.01-事实对象统一字段登记.md
+  - kind: working_tree
+    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/specs/07-Code
+      实践与测试规范.md
+  - kind: working_tree
+    locator:
+      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/specs/31-事实对象判定与受控创建行动模板.md
+  - kind: working_tree
+    locator:
+      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/specs/32-事实对象生命周期变更与承接处置行动模板.md
+- item_id: item-02
+  goal: 把控制契约写入唯一规则源。
+  expected_result: 21、31、32 与必要的 04/05/07 及附件一致定义字段、权责、生效兼容、行动分类、持续改进和 evidence
+    DTO，不复制语义或反向修改 00。
+  status: completed
+  depends_on:
+  - item-01
+  approach_summary: 以 21 归口 WorkCase 语义和 current profile，以 05.Att.01 登记真实事实字段，以
+    07 新附件唯一归口跨实现 evidence DTO；04 只绑定 Helper 消费，31/32 只组织行动。规则冻结前不并行修改消费者。
+  result_summary: 已把 current/legacy 兼容、成功标准与审核连续性、残余/followup/持续改进结构写入 21 和
+    05.Att.01；31/32 已明确创建、CAS、合法序列与多对象原子边界；07.Att.01 唯一定义 Working Tree evidence
+    DTO，04/05 只按职责引用。规则仓库和行动模板定向测试 45 项通过。
+  evidence_refs:
+  - kind: working_tree
+    locator:
+      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/specs/21-WorkCase-工作项.md
+  - kind: working_tree
+    locator:
+      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/specs/attachments/05.Att.01-事实对象统一字段登记.md
+  - kind: working_tree
+    locator:
+      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/specs/attachments/07.Att.01-Working
+      Tree 测试证据字段表.md
+  - kind: working_tree
+    locator:
+      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/specs/31-事实对象判定与受控创建行动模板.md
+  - kind: working_tree
+    locator:
+      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/specs/32-事实对象生命周期变更与承接处置行动模板.md
+- item_id: item-03
+  goal: 实现新契约的直接机械保护与确定性投影基础。
+  expected_result: 字段派生、validation、transitions、relations、subject
+    projection/fingerprint 最小纯函数和行动模板直接消费者与规则一致，同时不实现 Helper 高层操作、manifest
+    采集或展示。
+  status: completed
+  depends_on:
+  - item-02
+  approach_summary: Code
+    只实现可机械确定的结构、闭集、身份、覆盖、版本、指纹、字段所有权、预算和关系映射检查；不裁决审核独立性、反馈含义、V1–V8
+    净价值、实质变化或流程推进。
+  evidence_refs:
+  - kind: working_tree
+    locator:
+      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/ldvh/facts/validation.py
+  - kind: working_tree
+    locator:
+      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/ldvh/facts/transitions.py
+  - kind: working_tree
+    locator:
+      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/ldvh/facts/relations.py
+  - kind: working_tree
+    locator:
+      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/ldvh/facts/workcase_projection.py
+  - kind: working_tree
+    locator:
+      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/ldvh/testing/working_tree_evidence.py
+  result_summary: 审核指纹最终机械边界已实现：64 位小写 SHA 格式始终校验；creation review 持续匹配当前计划；尚未处置
+    result review 在 whole-object 校验当前主体；所有新增/改写 Reviewer 记录由 transition 绑定当次
+    after snapshot；已处置记录的合法后来差异由 Controller 判断。错误形成、携处置绕过和处置后差异三类测试均覆盖，相关 74
+    项通过。
+- item_id: item-04
+  goal: 验证控制契约并形成 B/C/D 的稳定交接。
+  expected_result: 隔离 fixture 的正反测试、聚焦验证和 full-v4 支持全部成功标准；形成 B/C/D
+    可直接消费的契约交接，并对 A 实施中值得保留的完善观察逐项给出终态处置。
+  status: completed
+  depends_on:
+  - item-03
+  approach_summary: 使用 legacy/current、新建/升级、Reviewer/Controller 两步、criterion
+    覆盖、残余映射、观察预算和 31/32 分类场景验证；A 自身生命周期不作证明。验证后精确检查修改范围；本地 commit 仅在可隔离且符合现有授权与
+    30 时执行，禁止 push/PR。
+  result_summary: 最新 full-v4 的五个步骤全部 exit 0：ruff 通过，Code 823 passed/10
+    skipped，Web 26 passed，typecheck/build 通过；运行器尚未生成 07.Att.01 定义的 Working Tree
+    evidence DTO，因此这些是步骤级结果，当前 Working Tree 全量结论仍为 unknown，交由 C 补齐。
+  evidence_refs:
+  - kind: working_tree
+    locator:
+      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/.ldvh-test-runs/run-1972d8224328404287e4e948f64b8fc4/record.json
+  - kind: working_tree
+    locator:
+      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/.ldvh-test-runs/run-1972d8224328404287e4e948f64b8fc4/output.log
+  - kind: working_tree
+    locator:
+      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/specs/attachments/07.Att.01-Working
+      Tree 测试证据字段表.md
+creation_reviews:
+- reviewer: /root/workcase_plan_review
+  reviewed_at: '2026-07-19T23:11:50.424Z'
+  subject_version: 1
+  scope: 审核目标、规则与实现范围、九项成功标准、四个串行工作项、legacy/current 生效和升级、criterion
+    稳定身份、持续改进准入与收敛、创建与结果审核时序、evidence DTO 唯一归口、31/32 权责、B/C/D/E
+    排除、自指风险、验证和本地提交边界。
+  conclusion: pass
+  feedback:
+  - 独立审核发现并促成兼容、生效启动、自指消除、成功标准稳定身份、观察收敛、审核时序、DTO 唯一归口和提交隔离的计划修正；最终计划无剩余阻断或跟进意见。
+  controller_resolution: 接受全部审核反馈并已纳入当前目标、范围、成功标准、工作项和排除边界；最终复审为 pass。Controller
+    判断当前计划足以创建 WorkCase 并提交 Human 执行确认。
+execution_approval:
+  subject_version: 1
+  approved_at: '2026-07-20T07:17:52.693669+08:00'
+  summary: Human 明确批准执行 workcase-0003 当前完整计划。
+result_version: 3
+controller_check_summary: result_version 3 已修正第二次独立审核发现：所有审核主体指纹始终要求 64 位小写
+  SHA-256 格式；creation review 与未处置 result review 继续核对当前主体；新形成或改写的 Reviewer
+  记录即使同时携带 Controller 处置，也必须绑定当次 after snapshot；已处置记录的后来合法差异仍由 Controller 判断。相关
+  74 项聚焦测试通过。最新 full-v4 五步均 exit 0，Code 823 passed/10 skipped，Web 26
+  passed、typecheck/build 通过。运行器仍未携带 07.Att.01 DTO，故这里只证明步骤级结果，当前 Working Tree
+  全量结论为 unknown，需由 C 承接。
+evidence_refs:
+- kind: working_tree
+  locator:
+    /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/.ldvh-test-runs/run-1972d8224328404287e4e948f64b8fc4/record.json
+- kind: working_tree
+  locator:
+    /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/.ldvh-test-runs/run-1972d8224328404287e4e948f64b8fc4/output.log
+- kind: working_tree
+  locator:
+    /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/tests/facts/test_transitions.py
+- kind: working_tree
+  locator:
+    /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/tests/facts/test_validation.py
+- kind: working_tree
+  locator:
+    /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/specs/21-WorkCase-工作项.md
+- kind: working_tree
+  locator:
+    /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/specs/attachments/07.Att.01-Working
+    Tree 测试证据字段表.md
+result_reviews:
+- reviewer: /root/workcase_plan_review
+  reviewed_at: '2026-07-20T08:28:32+08:00'
+  subject_version: 3
+  scope: 复核第二轮 P2 指纹格式与携处置绕过修复、此前 P1 Controller 语义决定权、A 批准范围与规则实现一致性、最新 full-v4
+    步骤结果及 07.Att.01 DTO 边界。
+  conclusion: pass_with_followups
+  feedback:
+  - A 范围内没有剩余 must-fix：所有 current review 指纹始终检查 64 位小写 SHA-256；新增或改写 Reviewer
+    记录即使携带 Controller 处置也绑定当次 after snapshot；已处置 review 后普通结果变化仍由 Controller 判断。
+  - 最新 full-v4 五步均 exit 0，Code 823 passed/10 skipped，Web 26
+    passed、typecheck/build 通过。
+  - 唯一 followup 为 C carry：运行记录没有 07.Att.01 DTO，因此只证明步骤结果，当前 Working Tree 全量结论为
+    unknown；A 不应以 completed 关闭。
+  controller_resolution: 1. 接受 A 无剩余 must-fix 的结论；当前结果足以进入关闭准备，无需再次修正或复审。2.
+    接受步骤级测试证据。3. 接受 C carry；closure_outcome 采用 partial，不把旧
+    record.evidence_complete 冒充 07.Att.01 DTO。4. 在形成实际且可回读的 C WorkCase 前不写
+    routed-to；建立承接后再提交 Human 关闭确认。
+validation_summary: 成功标准 1–7、9 已由规则差异、聚焦正反测试、范围检查及最终独立审核支持；标准 8
+  的隔离契约和聚焦测试已满足，full-v4 的五个执行步骤也全部成功（Code 823 passed/10 skipped，Web 26
+  passed，typecheck/build 通过），但现有 runner 未生成 07.Att.01 DTO，无法证明运行前后 manifest 与当前
+  Working Tree 完整绑定，因此该标准中的当前树全量结论仍为 unknown。A 自身生命周期未作为新契约成立的证明。
+closure_outcome: partial
+disposition_summary: A 已交付可稳定复用的控制契约、机械保护和 DTO 定义。唯一仍适用责任是由后续 C 实现 manifest
+  采集/比较并把 07.Att.01 DTO 接入 runner；当前尚无实际、已审核且可回读的 C WorkCase，因此不伪造
+  routed-to，也不提前进入 Human 关闭确认。C 对象形成后再建立真实承接；若 Human 改为接受停止，则需在最终关闭 Gate 明确决定。
+object_id: workcase-0003
+fact_type_key: workcase
+created_at: '2026-07-20T07:11:51.119277+08:00'
+updated_at: '2026-07-20T08:29:52.915274+08:00'

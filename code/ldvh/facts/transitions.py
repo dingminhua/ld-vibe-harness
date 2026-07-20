@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import json
+from collections import Counter
 from collections.abc import Iterable
 
 from ldvh.facts.models import FactIssue
 from ldvh.facts.validation import parse_rfc3339
+from ldvh.facts.workcase_projection import PROJECTION_KEYS, workcase_subject_fingerprint
 
 _STATUS_EDGES = {
     "spark": {("open", "routed"), ("open", "discarded")},
@@ -39,7 +41,13 @@ _WORKCASE_PHASE_EDGES = {
     ("human_closure_confirming", "closed"),
 }
 
-_PLAN_TOP_FIELDS = ("goal", "scope", "success_criteria")
+_CURRENT_PROFILE = "control-contract-v1"
+_PLAN_TOP_FIELDS = (
+    "goal",
+    "scope",
+    "success_criteria",
+    "success_criterion_definitions",
+)
 _PLAN_ITEM_FIELDS = (
     "item_id",
     "goal",
@@ -52,8 +60,12 @@ _PLAN_ITEM_FIELDS = (
 _PLAN_RESET_FIELDS = (
     "execution_approval",
     "result_version",
+    "success_criterion_results",
     "controller_check_summary",
     "result_reviews",
+    "improvement_observations",
+    "residual_responsibilities",
+    "nonbinding_followups",
     "closure_approval",
     "validation_summary",
     "closure_outcome",
@@ -61,8 +73,12 @@ _PLAN_RESET_FIELDS = (
 )
 _RESULT_CONTEXT_FIELDS = (
     "result_version",
+    "success_criterion_results",
     "controller_check_summary",
     "result_reviews",
+    "improvement_observations",
+    "residual_responsibilities",
+    "nonbinding_followups",
     "validation_summary",
     "closure_outcome",
     "disposition_summary",
@@ -74,6 +90,7 @@ _REVIEWER_OWNED_FIELDS = (
     "scope",
     "conclusion",
     "feedback",
+    "review_basis",
 )
 
 
@@ -116,8 +133,81 @@ def _reviewer_records(fields: dict[str, object]) -> tuple[str, ...]:
     )
 
 
+def _new_reviewer_record_issues(
+    before: dict[str, object], after: dict[str, object]
+) -> list[FactIssue]:
+    """Check only Reviewer records formed or changed by this transition."""
+
+    if not _is_current(after):
+        return []
+    remaining = Counter(_reviewer_records(before))
+    values = after.get("result_reviews")
+    issues: list[FactIssue] = []
+    for index, review in enumerate(values if isinstance(values, list) else []):
+        if not isinstance(review, dict):
+            continue
+        record = _stable({key: review.get(key) for key in _REVIEWER_OWNED_FIELDS})
+        if remaining[record] > 0:
+            remaining[record] -= 1
+            continue
+        basis = review.get("review_basis")
+        if not isinstance(basis, dict):
+            continue
+        projection_key = basis.get("projection_key")
+        if projection_key not in PROJECTION_KEYS:
+            continue
+        expected = workcase_subject_fingerprint(after, projection_key)
+        if basis.get("subject_fingerprint") != expected:
+            issues.append(
+                FactIssue(
+                    "schema",
+                    "新形成或更新的 result review 必须绑定当次 after snapshot",
+                    f"result_reviews[{index}].review_basis.subject_fingerprint",
+                )
+            )
+    return issues
+
+
+def _creation_reviewer_records(fields: dict[str, object]) -> tuple[str, ...]:
+    values = fields.get("creation_reviews")
+    return tuple(
+        _stable({key: review.get(key) for key in _REVIEWER_OWNED_FIELDS})
+        for review in (values if isinstance(values, list) else [])
+        if isinstance(review, dict)
+    )
+
+
+def _audit_entries(fields: dict[str, object]) -> dict[str, str]:
+    values = fields.get("audit_summary")
+    return {
+        str(entry.get("audit_id")): _stable(entry)
+        for entry in (values if isinstance(values, list) else [])
+        if isinstance(entry, dict) and isinstance(entry.get("audit_id"), str)
+    }
+
+
+def _matching_audit_entry(
+    fields: dict[str, object], subject_kind: str, subject_version: int | None
+) -> dict[str, object] | None:
+    values = fields.get("audit_summary")
+    for entry in (values if isinstance(values, list) else []):
+        if (
+            isinstance(entry, dict)
+            and entry.get("subject_kind") == subject_kind
+            and entry.get("subject_version") == subject_version
+        ):
+            return entry
+    return None
+
+
+def _is_current(fields: dict[str, object]) -> bool:
+    return fields.get("workcase_profile") == _CURRENT_PROFILE
+
+
 def _workcase_transition(before: dict[str, object], after: dict[str, object]) -> list[FactIssue]:
     issues: list[FactIssue] = []
+    before_current = _is_current(before)
+    after_current = _is_current(after)
     before_phase = before.get("phase")
     after_phase = after.get("phase")
     before_plan = _version(before, "plan_version")
@@ -140,6 +230,12 @@ def _workcase_transition(before: dict[str, object], after: dict[str, object]) ->
             )
         )
 
+    if before_current and not after_current:
+        issues.append(FactIssue("schema", "current WorkCase profile 不得移除或降级", "workcase_profile"))
+    if not before_current and after_current:
+        if before_status == "closed":
+            issues.append(FactIssue("schema", "closed legacy WorkCase 禁止升级 profile", "workcase_profile"))
+
     plan_changed = _projection(before, _PLAN_TOP_FIELDS, _PLAN_ITEM_FIELDS) != _projection(
         after, _PLAN_TOP_FIELDS, _PLAN_ITEM_FIELDS
     )
@@ -155,9 +251,42 @@ def _workcase_transition(before: dict[str, object], after: dict[str, object]) ->
         for key in _PLAN_RESET_FIELDS:
             if key in after:
                 issues.append(FactIssue("schema", "plan_version 递增后旧批准和结果包必须移除", key))
+        if after_current:
+            audit_entry = _matching_audit_entry(after, "superseded_plan", before_plan)
+            if audit_entry is None:
+                issues.append(
+                    FactIssue(
+                        "schema",
+                        "current plan_version 递增必须保留被替代计划的 audit continuity",
+                        "audit_summary",
+                    )
+                )
+            elif audit_entry.get("review_count") != len(before.get("creation_reviews", [])):
+                issues.append(
+                    FactIssue(
+                        "schema",
+                        "superseded_plan audit review_count 必须等于被替代详细审核数",
+                        "audit_summary",
+                    )
+                )
+    if not before_current and after_current and not plan_bumped:
+        issues.append(FactIssue("schema", "legacy 升级 current profile 必须递增 plan_version", "plan_version"))
+
+    before_creation_reviews = _creation_reviewer_records(before)
+    after_creation_reviews = _creation_reviewer_records(after)
+    if not plan_bumped and before_creation_reviews != after_creation_reviews:
+        issues.append(
+            FactIssue(
+                "schema",
+                "creation review 的 Reviewer 自有字段只能随计划升版替换",
+                "creation_reviews",
+            )
+        )
 
     before_result = _version(before, "result_version")
     after_result = _version(after, "result_version")
+    before_reviews = _reviewer_records(before)
+    after_reviews = _reviewer_records(after)
     result_bumped = before_result is not None and after_result is not None and after_result > before_result
     if not plan_bumped and before_result is not None and (after_result is None or after_result < before_result):
         issues.append(FactIssue("schema", "result_version 不得减少或移除", "result_version"))
@@ -178,9 +307,25 @@ def _workcase_transition(before: dict[str, object], after: dict[str, object]) ->
         for key in ("result_reviews", "closure_approval"):
             if key in after:
                 issues.append(FactIssue("schema", "result_version 递增后必须重新形成审核且旧关闭批准失效", key))
+        if after_current and before_reviews:
+            audit_entry = _matching_audit_entry(after, "superseded_result", before_result)
+            if audit_entry is None:
+                issues.append(
+                    FactIssue(
+                        "schema",
+                        "current result_version 递增并移除旧审核时必须保留 audit continuity",
+                        "audit_summary",
+                    )
+                )
+            elif audit_entry.get("review_count") != len(before_reviews):
+                issues.append(
+                    FactIssue(
+                        "schema",
+                        "superseded_result audit review_count 必须等于被替代详细审核数",
+                        "audit_summary",
+                    )
+                )
 
-    before_reviews = _reviewer_records(before)
-    after_reviews = _reviewer_records(after)
     review_records_changed = before_reviews != after_reviews
     review_reset_for_new_version = result_bumped and not after_reviews
     if (
@@ -196,6 +341,8 @@ def _workcase_transition(before: dict[str, object], after: dict[str, object]) ->
                 "result_reviews",
             )
         )
+    if review_records_changed and not review_reset_for_new_version:
+        issues.extend(_new_reviewer_record_issues(before, after))
     if (before_phase, after_phase) == ("controller_checking", "closure_preparing"):
         if not before_reviews or before_reviews != after_reviews:
             issues.append(
@@ -205,6 +352,14 @@ def _workcase_transition(before: dict[str, object], after: dict[str, object]) ->
                     "result_reviews",
                 )
             )
+
+    before_audit = _audit_entries(before)
+    after_audit = _audit_entries(after)
+    for audit_id, before_entry in before_audit.items():
+        if audit_id not in after_audit:
+            issues.append(FactIssue("schema", "既有 audit_summary 条目不得移除", "audit_summary"))
+        elif after_audit[audit_id] != before_entry:
+            issues.append(FactIssue("schema", "既有 audit_summary 条目不得改写", "audit_summary"))
     return issues
 
 

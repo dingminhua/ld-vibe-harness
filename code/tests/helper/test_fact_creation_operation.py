@@ -12,6 +12,7 @@ from conftest import HELPER_EXECUTABLE, assert_common_response
 
 from ldvh.facts.models import FactIssue
 from ldvh.facts.repository import FactReadResult
+from ldvh.facts.workcase_projection import workcase_subject_fingerprint
 from ldvh.filesystem import AtomicWriteResult
 from ldvh.helper.service import handle_request
 
@@ -61,6 +62,22 @@ def _prepare(workspace: Path, project: Path, fact_type_key: str = "spark") -> di
     return response["result"]
 
 
+def test_prepare_projects_constraint_source_for_conditional_workcase_fields(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+
+    prepared = _prepare(workspace, project, "workcase")
+    contracts = {item["field_path"]: item for item in prepared["field_contracts"]}
+
+    resume_from = contracts["resume_from"]
+    assert resume_from == {
+        "field_path": "resume_from",
+        "json_type": "string",
+        "presence": "conditional",
+        "constraint_ref": "workcase-fact-type::6. 对象语义与生命周期",
+    }
+    assert all("constraint_ref" in item for item in prepared["field_contracts"])
+
+
 def _spark(title: str = "Controlled creation") -> dict[str, object]:
     return {
         "title": title,
@@ -82,7 +99,13 @@ def _workcase(*, status: str = "open") -> dict[str, object]:
         "priority": "P2",
         "goal": "Verify controlled creation.",
         "scope": "One test object.",
-        "success_criteria": ["The object passes write-back validation."],
+        "workcase_profile": "control-contract-v1",
+        "success_criterion_definitions": [
+            {
+                "criterion_id": "criterion-01",
+                "statement": "The object passes write-back validation.",
+            }
+        ],
         "phase": "human_plan_confirming",
         "plan_version": 1,
         "work_items": [
@@ -94,18 +117,31 @@ def _workcase(*, status: str = "open") -> dict[str, object]:
                 "approach_summary": "Use controlled creation and read back the object.",
             }
         ],
-        "creation_reviews": [
+        "audit_summary": [
             {
-                "reviewer": "independent-creation-reviewer",
-                "reviewed_at": "2026-07-14T09:00:00+08:00",
+                "audit_id": "audit-01",
+                "subject_kind": "pre_creation_plan",
                 "subject_version": 1,
-                "scope": "Goal, scope, criteria, work items, method, validation and risks.",
-                "conclusion": "pass",
-                "feedback": ["The plan is bounded and testable."],
-                "controller_resolution": "1. Accepted; no change required.",
+                "review_count": 1,
+                "summary": "Independent review confirmed the bounded plan and testable criterion.",
             }
         ],
     }
+    fact_object["creation_reviews"] = [
+        {
+            "reviewer": "independent-creation-reviewer",
+            "reviewed_at": "2026-07-14T09:00:00+08:00",
+            "subject_version": 1,
+            "scope": "Goal, scope, criteria, work items, method, validation and risks.",
+            "conclusion": "pass",
+            "feedback": ["The plan is bounded and testable."],
+            "review_basis": {
+                "projection_key": "plan_current",
+                "subject_fingerprint": workcase_subject_fingerprint(fact_object, "plan_current"),
+            },
+            "controller_resolution": "1. Accepted; no change required.",
+        }
+    ]
     if status == "blocked":
         fact_object["blocking_summary"] = "Required external evidence is not yet available."
         fact_object["evidence_refs"] = [{"kind": "repository-path", "locator": "docs/blocker.md"}]

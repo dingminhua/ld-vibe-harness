@@ -15,10 +15,11 @@ ldvh_spec:
   basis:
     - "ldvh-root"
     - "source-of-truth-traceability"
-  authorized_attachments: []
+  authorized_attachments:
+    - "working-tree-test-evidence-fields"
 ```
 
-> 文件状态：`active`。本文生效本身不证明任何 V4 Code、tests、Helper 实现、runner、环境接入或自动化能力可用或通过验证。
+> 文件状态：`active`。本文授权 `working-tree-test-evidence-fields` 附件承载 full-v4 将测试结果绑定到实际 Git Working Tree 内容时使用的唯一证据 DTO 字段、覆盖政策、指纹和比较规则。本文生效本身不证明任何 V4 Code、tests、Helper 实现、runner、环境接入或自动化能力可用或通过验证。
 
 ## 1. 价值判断
 
@@ -65,13 +66,14 @@ Code 实践与测试规范（Code Practices and Testing Specification）的价�
 8. AI 如何审核 Code 是否把机械结果提升为正式来源未定义的语义结论；
 9. 外部工程资料如何经过来源与适用性核验，才能候选进入 LDVH 当前规则源；
 10. Code 与 Code tests 在 LDVH 仓库中的顶层资产归属，以及统一测试执行入口不得改变资产归属和结论范围的边界。
+11. full-v4 Working Tree 证据 DTO 的唯一结构、固定覆盖政策、内容指纹、前后比较状态及生产与消费边界。
 
 本文不负责定义：
 
 1. Helper CLI 的公开命令、请求与响应字段、结果语义、能力清单或服务状态；
 2. 规范、事实、行动模板、管辖配置或其它领域 Schema 的业务含义、字段闭集和状态；
 3. 某一环境的事件、payload、manifest、安装接口、真实触发或回滚契约；
-4. 除本文明确的 Code 与 Code tests 顶层资产归属外，具体算法、编程语言、框架、包管理器、内部目录结构、文件清单、runner、profile、fixture、命令或覆盖率工具；
+4. 除本文明确的 Code 与 Code tests 顶层资产归属及授权附件定义的 full-v4 Working Tree 证据契约外，具体算法、编程语言、框架、包管理器、内部目录结构、runner、profile、fixture、命令或覆盖率工具；
 5. 单次实施计划、任务排期、当前实现进度或某次重构的逐步操作说明；
 6. 全局行数上限、统一复杂度阈值、固定测试金字塔或对所有 Code 一体适用的测试数量；
 7. 具体功能是否满足其来源规则、环境是否接入、Human 是否验收或项目是否完成。
@@ -324,7 +326,11 @@ Code tests 自身属于 Code，必须遵守适用的责任、依赖、可维护�
 
 对于“全量测试”或任何准备支持全范围通过、可用或完成声明的测试会话，以上信息必须由可回读的单一运行记录承载。记录至少包含稳定 `run_id`、启动时间、原始合并输出的固定位置、每个检查步骤及其 argv/工作目录、最终 exit code、结束时间和最终状态；状态只能是 `running`、`passed`、`failed` 或 `unknown`。启动端、终端会话、UI 回传或日志流中途断开时，不得根据已见输出推断通过；若不能通过 `run_id` 回读带最终 exit code 的终态，结果必须是 `unknown` 且 `evidence incomplete`，不得用于声明全量通过。原始输出因截断、缺失或无法读取而不能复核时，同样必须缩小为 `unknown`。
 
+准备用 full-v4 结果说明“当前 Working Tree 已通过”时，单一运行记录还必须原样携带 `working-tree-test-evidence-fields` 定义的 Working Tree 证据 DTO。它以实际 worktree 中受固定政策覆盖的当前普通文件 bytes 为输入，不以 tracked、staged、committed、ignored、`HEAD` 或单一 `dirty` 标志替代。只有原始输出及终态证据完整，且该 DTO 的 `status` 为 `complete`，全量运行才能使用 `passed` 或 `failed`；DTO 为 `stale` 或 `incomplete` 时，必须保留已执行步骤与诊断，但全量运行最终状态为 `unknown`，不得把局部失败或已见通过扩大为当前 Working Tree 结论。旧运行记录没有该 DTO 时，可继续在原有边界内回读其步骤与输出，但不得追溯性补造或声称已完成当前 Working Tree 内容绑定。
+
 LDVH 当前工作树的全量验证唯一规范入口是 `tools/run_full_tests.py start --plan full-v4`，并以 `tools/run_full_tests.py status --run-id <run_id>` 回读。该入口以脱离启动终端的 worker 执行固定检查计划，并将记录与原始输出存入被忽略的 `.ldvh-test-runs/<run_id>/`；直接执行局部 runner 可以用于开发诊断，但没有该记录时不得充当全量通过证据。`probe` 计划仅用于验证回读机制，不得充当产品测试结果。
+
+本次 A 增量只冻结附件的结构、政策、指纹和纯比较责任；它不表示当前 runner 已实现文件遍历、安全读取、before/after 采集、运行记录接入或过期降级。这些生产责任属于后续 Working Tree 证据实现；Human、Helper、Web 和 Codex 的投影只能消费该 DTO，不得重算指纹、改写状态或建立第二 Schema，相应展示和交互不属于本次 A 增量。
 
 具体命令、报告格式和保存位置由真实实现与适用来源决定。只有测试名称、测试文件静态存在、runner 返回成功、覆盖率数字或 Human 认可，均不能单独回答上述问题。
 

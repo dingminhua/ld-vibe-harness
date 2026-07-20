@@ -13,6 +13,7 @@ from conftest import HELPER_EXECUTABLE, assert_common_response
 
 from ldvh.facts.models import FactIssue
 from ldvh.facts.repository import FactReadResult
+from ldvh.facts.workcase_projection import workcase_subject_fingerprint
 from ldvh.helper.operations import fact_update_operation
 from ldvh.helper.service import handle_request
 
@@ -132,6 +133,59 @@ def _create_workcase(workspace: Path, project: Path) -> dict[str, str]:
             }
         ),
     ).response["result"]
+    fact_object: dict[str, object] = {
+        "title": "Controller-owned review lifecycle",
+        "status": "open",
+        "source_refs": [{"kind": "repository-path", "locator": "docs/input.md"}],
+        "summary": "Current plan is ready for Human approval",
+        "resume_from": "Request approval for the presented current plan",
+        "waiting_on": "Human execution approval",
+        "priority": "P1",
+        "goal": "Exercise the Controller-owned review and closure lifecycle",
+        "scope": "One bounded Helper lifecycle test",
+        "workcase_profile": "control-contract-v1",
+        "success_criterion_definitions": [
+            {
+                "criterion_id": "criterion-01",
+                "statement": "The WorkCase reaches closed through all required phases",
+            }
+        ],
+        "phase": "human_plan_confirming",
+        "plan_version": 1,
+        "work_items": [
+            {
+                "item_id": "item-01",
+                "goal": "Produce one verified result",
+                "expected_result": "One result is available for Controller check",
+                "status": "pending",
+                "approach_summary": "Use controlled full-object Helper updates",
+            }
+        ],
+        "audit_summary": [
+            {
+                "audit_id": "audit-01",
+                "subject_kind": "pre_creation_plan",
+                "subject_version": 1,
+                "review_count": 1,
+                "summary": "Independent review improved and confirmed the initial plan",
+            }
+        ],
+    }
+    fact_object["creation_reviews"] = [
+        {
+            "reviewer": "independent-plan-reviewer",
+            "reviewed_at": "2026-07-20T07:20:00+08:00",
+            "subject_version": 1,
+            "scope": "Goal, scope, success criterion, work item, method, and risk",
+            "conclusion": "changes_required",
+            "feedback": ["Controller should explicitly own the phase decision"],
+            "review_basis": {
+                "projection_key": "plan_current",
+                "subject_fingerprint": workcase_subject_fingerprint(fact_object, "plan_current"),
+            },
+            "controller_resolution": "1. Accepted; the plan records Controller ownership.",
+        }
+    ]
     created = handle_request(
         "call",
         "create-fact-object",
@@ -150,40 +204,7 @@ def _create_workcase(workspace: Path, project: Path) -> dict[str, str]:
                             "worktree_fingerprint",
                         )
                     },
-                    "fact_object": {
-                        "title": "Controller-owned review lifecycle",
-                        "status": "open",
-                        "source_refs": [{"kind": "repository-path", "locator": "docs/input.md"}],
-                        "summary": "Current plan is ready for Human approval",
-                        "resume_from": "Request approval for the presented current plan",
-                        "waiting_on": "Human execution approval",
-                        "priority": "P1",
-                        "goal": "Exercise the Controller-owned review and closure lifecycle",
-                        "scope": "One bounded Helper lifecycle test",
-                        "success_criteria": ["The WorkCase reaches closed through all required phases"],
-                        "phase": "human_plan_confirming",
-                        "plan_version": 1,
-                        "work_items": [
-                            {
-                                "item_id": "item-01",
-                                "goal": "Produce one verified result",
-                                "expected_result": "One result is available for Controller check",
-                                "status": "pending",
-                                "approach_summary": "Use controlled full-object Helper updates",
-                            }
-                        ],
-                        "creation_reviews": [
-                            {
-                                "reviewer": "independent-plan-reviewer",
-                                "reviewed_at": "2026-07-14T09:00:00+08:00",
-                                "subject_version": 1,
-                                "scope": "Goal, scope, success criterion, work item, method, and risk",
-                                "conclusion": "changes_required",
-                                "feedback": ["Controller should explicitly own the phase decision"],
-                                "controller_resolution": "1. Accepted; the plan records Controller ownership.",
-                            }
-                        ],
-                    },
+                    "fact_object": fact_object,
                 },
             }
         ),
@@ -254,6 +275,19 @@ def test_workcase_helper_walks_controller_owned_review_and_atomic_closure(tmp_pa
                 "resume_from": "Check the result and initiate independent review",
                 "result_version": 1,
                 "controller_check_summary": "Controller checked the item result and focused evidence",
+                "success_criterion_results": [
+                    {
+                        "criterion_id": "criterion-01",
+                        "outcome": "satisfied",
+                        "summary": "The focused lifecycle result was produced and verified",
+                        "evidence_refs": [
+                            {"kind": "repository-path", "locator": "docs/evidence.md"}
+                        ],
+                    }
+                ],
+                "evidence_refs": [
+                    {"kind": "repository-path", "locator": "docs/evidence.md"}
+                ],
             }
         )
         item = fields["work_items"][0]
@@ -278,25 +312,36 @@ def test_workcase_helper_walks_controller_owned_review_and_atomic_closure(tmp_pa
         )
     )
 
-    review = {
-        "reviewer": "independent-result-reviewer",
-        "reviewed_at": event_time(),
-        "subject_version": 1,
-        "scope": "Item result, success criterion, Controller check, validation, and residual risk",
-        "conclusion": "blocked",
-        "feedback": ["The reviewer would prefer another validation statement"],
-        "controller_resolution": (
-            "1. Rejected as a phase veto; existing evidence is sufficient, so no rereview is needed."
-        ),
-    }
+    def record_reviewer_feedback(fields: dict[str, object]) -> None:
+        fields["result_reviews"] = [
+            {
+                "reviewer": "independent-result-reviewer",
+                "reviewed_at": event_time(),
+                "subject_version": 1,
+                "scope": "Item result, success criterion, Controller check, validation, and residual risk",
+                "conclusion": "blocked",
+                "feedback": ["The reviewer would prefer another validation statement"],
+                "review_basis": {
+                    "projection_key": "result_implementation",
+                    "subject_fingerprint": workcase_subject_fingerprint(
+                        fields, "result_implementation"
+                    ),
+                },
+            }
+        ]
+
+    review_snapshot = update(record_reviewer_feedback)
+    assert "controller_resolution" not in review_snapshot["result_reviews"][0]
 
     def controller_handles_feedback(fields: dict[str, object]) -> None:
+        fields["result_reviews"][0]["controller_resolution"] = (
+            "1. Rejected as a phase veto; existing evidence is sufficient, so no rereview is needed."
+        )
         fields.update(
             {
                 "phase": "controller_checking",
                 "summary": "Controller handled review feedback and decided no rereview is required",
                 "resume_from": "Enter closure preparation with the retained current-version review",
-                "result_reviews": [review],
             }
         )
 
@@ -317,7 +362,6 @@ def test_workcase_helper_walks_controller_owned_review_and_atomic_closure(tmp_pa
                 "validation_summary": "The success criterion is supported by the focused evidence",
                 "closure_outcome": "completed",
                 "disposition_summary": "No residual responsibility remains",
-                "evidence_refs": [{"kind": "repository-path", "locator": "docs/evidence.md"}],
             }
         )
 

@@ -23,11 +23,11 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
     assert inspection.issues == ()
     assert inspection.implemented_checks_complete is True
     checked_documents = inspection.active_documents_passing_implemented_checks
-    assert len(checked_documents) == 23
+    assert len(checked_documents) == 24
     assert sum(document.kind != "attachment" for document in checked_documents) == 19
 
-    assert sum(document.kind == "attachment" for document in checked_documents) == 4
-    assert len(inspection.projections) == 69
+    assert sum(document.kind == "attachment" for document in checked_documents) == 5
+    assert len(inspection.projections) == 72
     assert {projection.layer for projection in inspection.projections} == {"L0", "L1", "L2"}
     field_registry = inspection.document_passing_implemented_checks_by_key("fact-object-field-registry")
     assert field_registry is not None
@@ -35,6 +35,24 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
     fact_model = inspection.document_passing_implemented_checks_by_key("fact-model-foundation")
     assert fact_model is not None
     assert "fact-object-field-registry" in fact_model.authorized_attachments
+    code_practices = inspection.document_passing_implemented_checks_by_key("code-engineering-practices")
+    assert code_practices is not None
+    assert code_practices.authorized_attachments == ("working-tree-test-evidence-fields",)
+    evidence_fields = inspection.document_passing_implemented_checks_by_key("working-tree-test-evidence-fields")
+    assert evidence_fields is not None
+    assert evidence_fields.current_id == "07.Att.01"
+    assert evidence_fields.canonical_path == (
+        "specs/attachments/07.Att.01-Working Tree 测试证据字段表.md"
+    )
+    helper_contract = inspection.document_passing_implemented_checks_by_key("helper-cli-service-contract")
+    assert helper_contract is not None
+    assert helper_contract.basis == (
+        "ldvh-root",
+        "specification-model-foundation",
+        "work-object-governance-scope",
+        "source-of-truth-traceability",
+        "code-engineering-practices",
+    )
     environment_integration = inspection.document_passing_implemented_checks_by_key("environment-integration")
     assert environment_integration is not None
     assert environment_integration.current_id == "09"
@@ -107,8 +125,8 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
     assert action_templates.issues == ()
     assert action_templates.incomplete_sources == ()
     assert fields.complete is True
-    assert len(fields.structures) == 8
-    assert len(fields.registrations) == 81
+    assert len(fields.structures) == 16
+    assert len(fields.registrations) == 126
 
 
 def test_mechanically_distinct_spec_does_not_create_a_semantic_duplicate_diagnosis(
@@ -123,6 +141,11 @@ def test_mechanically_distinct_spec_does_not_create_a_semantic_duplicate_diagnos
         .replace(
             'canonical_path: "specs/07-Code 实践与测试规范.md"',
             'canonical_path: "specs/90-Code-Semantic-Copy.md"',
+            1,
+        )
+        .replace(
+            '  authorized_attachments:\n    - "working-tree-test-evidence-fields"',
+            "  authorized_attachments: []",
             1,
         )
         .replace("# Code 实践与测试规范", "# Code 实践与测试规范语义副本", 1),
@@ -149,8 +172,8 @@ def test_invalid_working_tree_source_is_not_replaced_with_committed_content(
     assert any("YAML title 与 H1" in issue.summary for issue in inspection.issues)
     assert inspection.implemented_checks_complete is False
     assert inspection.document_passing_implemented_checks_by_key("web-presentation-interaction") is None
-    assert len(inspection.active_documents_passing_implemented_checks) == 21
-    assert len(inspection.projections) == 63
+    assert len(inspection.active_documents_passing_implemented_checks) == 17
+    assert len(inspection.projections) == 51
 
 
 def test_invalid_foundation_stops_dependent_current_projection(current_specs_repository: Path) -> None:

@@ -189,6 +189,70 @@ def _edge_identity(relation: dict[str, object]) -> tuple[object, object, object,
     )
 
 
+def _workcase_residual_mapping_issues(fields: dict[str, object]) -> list[FactIssue]:
+    if fields.get("workcase_profile") != "control-contract-v1":
+        return []
+    issues: list[FactIssue] = []
+    residuals = fields.get("residual_responsibilities")
+    dispositions = {
+        residual.get("residual_id"): residual.get("disposition")
+        for residual in (residuals if isinstance(residuals, list) else [])
+        if isinstance(residual, dict) and isinstance(residual.get("residual_id"), str)
+    }
+    mapped: set[str] = set()
+    for relation_index, relation in enumerate(_relations_from_fields(fields)):
+        relation_key = relation.get("relation_key")
+        responsibility_ids = relation.get("responsibility_ids")
+        path = f"relations[{relation_index}].responsibility_ids"
+        if relation_key != "routed-to":
+            if "responsibility_ids" in relation:
+                issues.append(FactIssue("relation", "只有 routed-to 可以声明 responsibility_ids", path))
+            continue
+        if not isinstance(responsibility_ids, list):
+            issues.append(FactIssue("relation", "current routed-to 必须显式映射 responsibility_ids", path))
+            continue
+        string_ids = [value for value in responsibility_ids if isinstance(value, str)]
+        if len(string_ids) != len(responsibility_ids) or len(string_ids) != len(set(string_ids)):
+            issues.append(FactIssue("relation", "responsibility_ids 必须是唯一 residual_id 闭集", path))
+        for residual_id in string_ids:
+            disposition = dispositions.get(residual_id)
+            if disposition != "routed":
+                issues.append(
+                    FactIssue(
+                        "relation",
+                        "responsibility_ids 只能映射已声明为 routed 的 residual",
+                        path,
+                    )
+                )
+            else:
+                mapped.add(residual_id)
+    for residual_id, disposition in dispositions.items():
+        if disposition == "routed" and residual_id not in mapped:
+            issues.append(
+                FactIssue(
+                    "relation",
+                    "routed residual 必须被至少一条 routed-to 关系显式映射",
+                    "relations",
+                )
+            )
+        if disposition == "accepted_stop" and residual_id in mapped:
+            issues.append(
+                FactIssue(
+                    "relation",
+                    "accepted_stop residual 不得被 routed-to 关系映射",
+                    "relations",
+                )
+            )
+    return issues
+
+
+def _relations_from_fields(fields: dict[str, object]) -> tuple[dict[str, object], ...]:
+    values = fields.get("relations")
+    if not isinstance(values, list):
+        return ()
+    return tuple(value for value in values if isinstance(value, dict))
+
+
 def _graph_status(
     index: ProjectFactIndex,
     start: tuple[str, str],
@@ -333,6 +397,8 @@ def validate_project_relations(
     issues: list[FactIssue] = []
     unavailable = False
     assert read.fields is not None
+    if fact_type_key == "workcase":
+        issues.extend(_workcase_residual_mapping_issues(read.fields))
     seen_edges: set[tuple[object, object, object, object]] = set()
     workcase_superseded_route = False
     for relation_index, relation in enumerate(_relations(read)):

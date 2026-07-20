@@ -6,6 +6,7 @@ import pytest
 
 from ldvh.facts.schema import project_fact_schemas
 from ldvh.facts.validation import validate_fact_object
+from ldvh.facts.workcase_projection import workcase_subject_fingerprint
 from ldvh.specs.repository import inspect_repository
 
 
@@ -123,6 +124,50 @@ def _workcase_phase_fields(phase: str) -> dict[str, object]:
         "summary": "Human approved closing result version 1",
     }
     fields["closed_at"] = "2026-07-14T09:55:00+08:00"
+    return fields
+
+
+def _current_workcase_fields(phase: str = "human_plan_confirming") -> dict[str, object]:
+    fields = _workcase_phase_fields(phase)
+    fields["workcase_profile"] = "control-contract-v1"
+    fields.pop("success_criteria")
+    fields["success_criterion_definitions"] = [
+        {"criterion_id": "criterion-01", "statement": "Tests pass"}
+    ]
+    fields["audit_summary"] = [
+        {
+            "audit_id": "audit-01",
+            "subject_kind": "pre_creation_plan",
+            "subject_version": 1,
+            "review_count": 1,
+            "summary": "Independent review improved and confirmed the initial plan",
+        }
+    ]
+    creation_review = fields["creation_reviews"][0]
+    assert isinstance(creation_review, dict)
+    creation_review["reviewed_at"] = "2026-07-20T07:20:00+08:00"
+    creation_review["review_basis"] = {
+        "projection_key": "plan_current",
+        "subject_fingerprint": workcase_subject_fingerprint(fields, "plan_current"),
+    }
+    if phase not in {"human_plan_confirming", "executing", "controller_checking"}:
+        fields["success_criterion_results"] = [
+            {
+                "criterion_id": "criterion-01",
+                "outcome": "satisfied",
+                "summary": "The focused tests pass",
+                "evidence_refs": [{"kind": "repository-path", "locator": "evidence/item-01.txt"}],
+            }
+        ]
+    reviews = fields.get("result_reviews")
+    if isinstance(reviews, list):
+        for review in reviews:
+            assert isinstance(review, dict)
+            review["reviewed_at"] = "2026-07-20T08:50:00+08:00"
+            review["review_basis"] = {
+                "projection_key": "result_implementation",
+                "subject_fingerprint": workcase_subject_fingerprint(fields, "result_implementation"),
+            }
     return fields
 
 
@@ -384,6 +429,141 @@ def test_review_conclusions_are_structural_values_not_phase_decisions(
     }
     result_fields["result_reviews"][0]["conclusion"] = conclusion
     assert validate_fact_object("workcase", result_fields, schema) == ()
+
+
+def test_workcase_profile_boundary_and_current_plan_contract(current_specs_repository: Path) -> None:
+    schema = project_fact_schemas(inspect_repository(current_specs_repository))["workcase"]
+    fields = {
+        **_common("workcase", "workcase-0004", "open"),
+        **_current_workcase_fields(),
+        "created_at": "2026-07-20T07:30:00+08:00",
+        "updated_at": "2026-07-20T08:00:00+08:00",
+    }
+
+    assert validate_fact_object("workcase", fields, schema) == ()
+
+    missing_profile = {**fields}
+    missing_profile.pop("workcase_profile")
+    issues = validate_fact_object("workcase", missing_profile, schema)
+    assert any(issue.field_path == "workcase_profile" and "生效边界" in issue.summary for issue in issues)
+
+    mixed = {**fields, "success_criteria": ["Legacy criterion"]}
+    issues = validate_fact_object("workcase", mixed, schema)
+    assert any(issue.field_path == "success_criteria" and "禁止" in issue.summary for issue in issues)
+
+
+def test_current_review_basis_and_controller_resolution_follow_phase_ownership(
+    current_specs_repository: Path,
+) -> None:
+    schema = project_fact_schemas(inspect_repository(current_specs_repository))["workcase"]
+    fields = {
+        **_common("workcase", "workcase-0004", "open"),
+        **_current_workcase_fields("independent_reviewing"),
+        "created_at": "2026-07-20T07:31:00+08:00",
+        "updated_at": "2026-07-20T09:00:00+08:00",
+    }
+    fields["execution_approval"] = {
+        "subject_version": 1,
+        "approved_at": "2026-07-20T08:00:00+08:00",
+        "summary": "Human approved the current plan",
+    }
+    fields["result_reviews"] = [
+        {
+            "reviewer": "independent-result-reviewer",
+            "reviewed_at": "2026-07-20T08:50:00+08:00",
+            "subject_version": 1,
+            "scope": "Implementation result and criterion evidence",
+            "conclusion": "changes_required",
+            "feedback": ["Controller must dispose this feedback"],
+            "review_basis": {
+                "projection_key": "result_implementation",
+                "subject_fingerprint": workcase_subject_fingerprint(fields, "result_implementation"),
+            },
+        }
+    ]
+
+    assert validate_fact_object("workcase", fields, schema) == ()
+
+    review = fields["result_reviews"][0]
+    assert isinstance(review, dict)
+    basis = review["review_basis"]
+    assert isinstance(basis, dict)
+    basis["subject_fingerprint"] = "0" * 64
+    issues = validate_fact_object("workcase", fields, schema)
+    assert any(issue.field_path.endswith("subject_fingerprint") for issue in issues)
+    basis["subject_fingerprint"] = workcase_subject_fingerprint(fields, "result_implementation")
+
+    fields["phase"] = "closure_preparing"
+    issues = validate_fact_object("workcase", fields, schema)
+    assert any(
+        issue.field_path == "result_reviews[0].controller_resolution" and "Controller" in issue.summary
+        for issue in issues
+    )
+
+    review["controller_resolution"] = "1. Accepted and corrected; no rereview required."
+    assert validate_fact_object("workcase", fields, schema) == ()
+
+    fields["controller_check_summary"] = "Controller refined the check after review"
+    assert basis["subject_fingerprint"] != workcase_subject_fingerprint(
+        fields, "result_implementation"
+    )
+    assert validate_fact_object("workcase", fields, schema) == ()
+
+    basis["subject_fingerprint"] = "garbage"
+    issues = validate_fact_object("workcase", fields, schema)
+    assert any(
+        issue.field_path.endswith("subject_fingerprint") and "64 位" in issue.summary
+        for issue in issues
+    )
+
+
+def test_current_criterion_audit_and_observation_mechanical_rules(current_specs_repository: Path) -> None:
+    schema = project_fact_schemas(inspect_repository(current_specs_repository))["workcase"]
+    fields = {
+        **_common("workcase", "workcase-0004", "open"),
+        **_current_workcase_fields("closure_preparing"),
+        "created_at": "2026-07-20T07:31:00+08:00",
+        "updated_at": "2026-07-20T09:00:00+08:00",
+    }
+    fields["execution_approval"] = {
+        "subject_version": 1,
+        "approved_at": "2026-07-20T08:00:00+08:00",
+        "summary": "Human approved the current plan",
+    }
+    fields["nonbinding_followups"] = [
+        {"followup_id": "followup-01", "summary": "Consider later UX", "rationale": "Outside current closure"}
+    ]
+    fields["improvement_observations"] = [
+        {
+            "observation_id": "observation-01",
+            "topic_key": "helper-ux",
+            "summary": "A later consumer needs clearer output",
+            "evidence_refs": [{"kind": "repository-path", "locator": "evidence/item-01.txt"}],
+            "ownership": "adjacent_project",
+            "value_dimensions": ["V1", "V7"],
+            "net_value_summary": "The compact record supports later UX work",
+            "disposition": "nonbinding_followup",
+            "disposition_ref": "followup-01",
+            "disposition_summary": "Recorded as a nonbinding followup",
+        }
+    ]
+    review = fields["result_reviews"][0]
+    assert isinstance(review, dict)
+    basis = review["review_basis"]
+    assert isinstance(basis, dict)
+    basis["subject_fingerprint"] = workcase_subject_fingerprint(fields, "result_implementation")
+
+    assert validate_fact_object("workcase", fields, schema) == ()
+
+    results = fields["success_criterion_results"]
+    assert isinstance(results, list) and isinstance(results[0], dict)
+    results[0].pop("evidence_refs")
+    observations = fields["improvement_observations"]
+    assert isinstance(observations, list) and isinstance(observations[0], dict)
+    observations[0]["disposition_ref"] = "residual-99"
+    issues = validate_fact_object("workcase", fields, schema)
+    assert any(issue.field_path.endswith("evidence_refs") and "satisfied" in issue.summary for issue in issues)
+    assert any(issue.field_path.endswith("disposition_ref") for issue in issues)
 
 
 def test_returned_execution_can_retain_current_result_context(current_specs_repository: Path) -> None:

@@ -35,6 +35,8 @@ def test_worktree_snapshot_separates_rules_and_mechanical_evidence(
 ) -> None:
     plan = snapshot_plan_for_source(current_specs_repository, "0.1.0")
     assert {item.role for item in plan.files} == {"rule_candidate"}
+    evidence_path = "specs/attachments/07.Att.01-Working Tree 测试证据字段表.md"
+    assert evidence_path in {item.path for item in plan.files}
 
     root = tmp_path / "snapshot"
     write_snapshot(plan, root)
@@ -45,6 +47,10 @@ def test_worktree_snapshot_separates_rules_and_mechanical_evidence(
     assert repository.source_identity is not None
     assert repository.source_identity.view == "installed_release_snapshot"
     assert all(candidate.relative_path.startswith("specs/") for candidate in repository.candidates)
+    evidence_fields = repository.document_passing_implemented_checks_by_key("working-tree-test-evidence-fields")
+    assert evidence_fields is not None
+    assert evidence_fields.current_id == "07.Att.01"
+    assert evidence_fields.canonical_path == evidence_path
 
 
 def test_worktree_snapshot_includes_ignored_current_rule_candidate(

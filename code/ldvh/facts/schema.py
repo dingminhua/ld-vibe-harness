@@ -14,6 +14,7 @@ class ProjectedField:
     json_type: str
     presence: str
     value_structure: str | None
+    constraint_ref: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -33,7 +34,13 @@ def project_fact_schemas(repository: RepositoryInspection) -> dict[str, FactSche
     grouped: dict[str, list[ProjectedField]] = {}
     for field in project_fact_type_fields(registry):
         grouped.setdefault(field.fact_type_key, []).append(
-            ProjectedField(field.field_path, field.json_type, field.presence, field.value_structure)
+            ProjectedField(
+                path=field.field_path,
+                json_type=field.json_type,
+                presence=field.presence,
+                value_structure=field.value_structure,
+                constraint_ref=field.constraint_ref,
+            )
         )
     return {key: FactSchema(key, tuple(fields)) for key, fields in grouped.items()}
 

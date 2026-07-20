@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from ldvh.facts.transitions import validate_fact_transition
+from ldvh.facts.workcase_projection import workcase_subject_fingerprint
 
 
 def _workcase() -> dict[str, object]:
@@ -243,6 +244,224 @@ def test_controller_can_bump_result_version_when_closure_change_needs_rereview()
     after.pop("result_reviews")
 
     assert validate_fact_transition("workcase", before, after) == ()
+
+
+def test_current_profile_cannot_downgrade_and_closed_legacy_cannot_upgrade() -> None:
+    current = {
+        **_workcase(),
+        "workcase_profile": "control-contract-v1",
+        "success_criterion_definitions": [
+            {"criterion_id": "criterion-01", "statement": "The result is verified"}
+        ],
+        "audit_summary": [
+            {
+                "audit_id": "audit-01",
+                "subject_kind": "pre_creation_plan",
+                "subject_version": 1,
+                "review_count": 1,
+                "summary": "Initial review value",
+            }
+        ],
+    }
+    current.pop("success_criteria")
+    downgraded = {**current}
+    downgraded.pop("workcase_profile")
+    issues = validate_fact_transition("workcase", current, downgraded)
+    assert any(issue.field_path == "workcase_profile" and "降级" in issue.summary for issue in issues)
+
+    legacy_closed = {**_workcase(), "status": "closed", "phase": "closed"}
+    upgraded = {
+        **legacy_closed,
+        "workcase_profile": "control-contract-v1",
+        "plan_version": 2,
+        "phase": "human_plan_confirming",
+        "success_criterion_definitions": [
+            {"criterion_id": "criterion-01", "statement": "The result is verified"}
+        ],
+        "audit_summary": [
+            {
+                "audit_id": "audit-01",
+                "subject_kind": "superseded_plan",
+                "subject_version": 1,
+                "review_count": 1,
+                "summary": "Legacy plan review value",
+            }
+        ],
+    }
+    upgraded.pop("success_criteria")
+    upgraded.pop("execution_approval")
+    issues = validate_fact_transition("workcase", legacy_closed, upgraded)
+    assert any(issue.field_path == "workcase_profile" and "closed legacy" in issue.summary for issue in issues)
+
+
+def test_current_plan_and_result_bumps_require_audit_continuity() -> None:
+    before = {
+        **_workcase(),
+        "workcase_profile": "control-contract-v1",
+        "success_criterion_definitions": [
+            {"criterion_id": "criterion-01", "statement": "The result is verified"}
+        ],
+        "audit_summary": [
+            {
+                "audit_id": "audit-01",
+                "subject_kind": "pre_creation_plan",
+                "subject_version": 1,
+                "review_count": 1,
+                "summary": "Initial review value",
+            }
+        ],
+    }
+    before.pop("success_criteria")
+    after_plan = {
+        **before,
+        "goal": "Deliver a changed result",
+        "phase": "human_plan_confirming",
+        "plan_version": 2,
+        "creation_reviews": [{"subject_version": 2}],
+    }
+    after_plan.pop("execution_approval")
+    issues = validate_fact_transition("workcase", before, after_plan)
+    assert any(issue.field_path == "audit_summary" and "continuity" in issue.summary for issue in issues)
+
+    after_plan["audit_summary"] = [
+        *before["audit_summary"],
+        {
+            "audit_id": "audit-02",
+            "subject_kind": "superseded_plan",
+            "subject_version": 1,
+            "review_count": 1,
+            "summary": "The prior plan review was compressed",
+        },
+    ]
+    assert validate_fact_transition("workcase", before, after_plan) == ()
+
+    reviewed = {
+        **before,
+        "phase": "controller_checking",
+        "result_version": 1,
+        "controller_check_summary": "Checked",
+        "result_reviews": [_review()],
+    }
+    after_result = {**reviewed, "result_version": 2}
+    after_result.pop("result_reviews")
+    issues = validate_fact_transition("workcase", reviewed, after_result)
+    assert any(issue.field_path == "audit_summary" and "continuity" in issue.summary for issue in issues)
+
+    after_result["audit_summary"] = [
+        *before["audit_summary"],
+        {
+            "audit_id": "audit-02",
+            "subject_kind": "superseded_result",
+            "subject_version": 1,
+            "review_count": 1,
+            "summary": "The prior result review was compressed",
+        },
+    ]
+    assert validate_fact_transition("workcase", reviewed, after_result) == ()
+
+
+def test_review_basis_is_reviewer_owned_and_audit_entries_are_immutable() -> None:
+    before = _reviewing()
+    before_review = before["result_reviews"][0]
+    assert isinstance(before_review, dict)
+    before_review["review_basis"] = {
+        "projection_key": "result_implementation",
+        "subject_fingerprint": "1" * 64,
+    }
+    changed_review = {
+        **before_review,
+        "review_basis": {
+            **before_review["review_basis"],
+            "subject_fingerprint": "2" * 64,
+        },
+    }
+    issues = validate_fact_transition(
+        "workcase",
+        {**before, "phase": "controller_checking"},
+        {**before, "phase": "controller_checking", "result_reviews": [changed_review]},
+    )
+    assert any(issue.field_path == "result_reviews" and "Reviewer" in issue.summary for issue in issues)
+
+    current = {
+        **before,
+        "workcase_profile": "control-contract-v1",
+        "audit_summary": [
+            {
+                "audit_id": "audit-01",
+                "subject_kind": "pre_creation_plan",
+                "subject_version": 1,
+                "review_count": 1,
+                "summary": "Initial value",
+            }
+        ],
+    }
+    rewritten = {
+        **current,
+        "audit_summary": [{**current["audit_summary"][0], "summary": "Rewritten value"}],
+    }
+    issues = validate_fact_transition("workcase", current, rewritten)
+    assert any(issue.field_path == "audit_summary" and "不得改写" in issue.summary for issue in issues)
+
+
+def test_current_result_review_fingerprint_is_checked_when_formed_not_forever() -> None:
+    before = {
+        **_workcase(),
+        "workcase_profile": "control-contract-v1",
+        "phase": "independent_reviewing",
+        "result_version": 1,
+        "controller_check_summary": "Initial check",
+        "success_criterion_definitions": [
+            {"criterion_id": "criterion-01", "statement": "The result is verified"}
+        ],
+        "success_criterion_results": [
+            {"criterion_id": "criterion-01", "outcome": "not_verified", "summary": "Pending review"}
+        ],
+        "audit_summary": [
+            {
+                "audit_id": "audit-01",
+                "subject_kind": "pre_creation_plan",
+                "subject_version": 1,
+                "review_count": 1,
+                "summary": "Initial review value",
+            }
+        ],
+    }
+    before.pop("success_criteria")
+    item = before["work_items"][0]
+    assert isinstance(item, dict)
+    item.update(status="completed", result_summary="Implemented")
+
+    review = _review()
+    review.pop("controller_resolution")
+    review["review_basis"] = {
+        "projection_key": "result_implementation",
+        "subject_fingerprint": "0" * 64,
+    }
+    formed = {**before, "result_reviews": [review]}
+    issues = validate_fact_transition("workcase", before, formed)
+    assert any(issue.field_path.endswith("subject_fingerprint") for issue in issues)
+
+    review_with_resolution = {
+        **review,
+        "controller_resolution": "1. Accepted, but this must not bypass formation checks.",
+    }
+    issues = validate_fact_transition(
+        "workcase", before, {**before, "result_reviews": [review_with_resolution]}
+    )
+    assert any(issue.field_path.endswith("subject_fingerprint") for issue in issues)
+
+    basis = review["review_basis"]
+    assert isinstance(basis, dict)
+    basis["subject_fingerprint"] = workcase_subject_fingerprint(formed, "result_implementation")
+    assert validate_fact_transition("workcase", before, formed) == ()
+
+    resolved_review = {**review, "controller_resolution": "1. Accepted; review remains applicable."}
+    resolved = {**formed, "phase": "controller_checking", "result_reviews": [resolved_review]}
+    assert validate_fact_transition("workcase", formed, resolved) == ()
+
+    refined = {**resolved, "controller_check_summary": "Refined after the review"}
+    assert workcase_subject_fingerprint(refined, "result_implementation") != basis["subject_fingerprint"]
+    assert validate_fact_transition("workcase", resolved, refined) == ()
 
 
 def test_single_object_transition_rejects_supersedes_and_superseded_status() -> None:

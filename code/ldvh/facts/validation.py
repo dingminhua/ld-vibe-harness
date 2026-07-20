@@ -12,6 +12,7 @@ from urllib.parse import urlparse
 from ldvh.facts.contracts import LAYOUTS, TERMINAL_COMMON
 from ldvh.facts.models import FactIssue
 from ldvh.facts.schema import FactSchema
+from ldvh.facts.workcase_projection import PROJECTION_KEYS, workcase_subject_fingerprint
 
 
 @dataclass(slots=True)
@@ -187,10 +188,334 @@ _WORKCASE_PHASES = {
 }
 _WORKCASE_ITEM_STATUSES = {"pending", "in_progress", "blocked", "completed", "cancelled"}
 _WORKCASE_REVIEW_CONCLUSIONS = {"pass", "pass_with_followups", "changes_required", "blocked"}
+_WORKCASE_CURRENT_PROFILE = "control-contract-v1"
+_WORKCASE_CURRENT_BOUNDARY = datetime.fromisoformat("2026-07-20T07:30:00+08:00")
+_SHA256_PATTERN = re.compile(r"[0-9a-f]{64}\Z")
+_WORKCASE_CURRENT_ONLY_FIELDS = {
+    "success_criterion_definitions",
+    "success_criterion_results",
+    "audit_summary",
+    "residual_responsibilities",
+    "nonbinding_followups",
+    "improvement_observations",
+}
+_WORKCASE_RESULT_PHASES = {
+    "independent_reviewing",
+    "closure_preparing",
+    "human_closure_confirming",
+    "closed",
+}
+_LOCAL_ID_PATTERNS = {
+    "criterion_id": re.compile(r"criterion-[0-9]{2,}\Z"),
+    "audit_id": re.compile(r"audit-[0-9]{2,}\Z"),
+    "finding_id": re.compile(r"finding-[0-9]{2,}\Z"),
+    "residual_id": re.compile(r"residual-[0-9]{2,}\Z"),
+    "followup_id": re.compile(r"followup-[0-9]{2,}\Z"),
+    "observation_id": re.compile(r"observation-[0-9]{2,}\Z"),
+    "topic_key": re.compile(r"[a-z][a-z0-9]*(?:-[a-z0-9]+)*\Z"),
+}
 
 
 def _positive_integer(value: object) -> bool:
     return isinstance(value, int) and not isinstance(value, bool) and value > 0
+
+
+def _workcase_profile(fields: dict[str, Any]) -> str:
+    return "current" if fields.get("workcase_profile") == _WORKCASE_CURRENT_PROFILE else "legacy"
+
+
+def _validate_unique_local_values(
+    values: list[Any],
+    *,
+    array_name: str,
+    member_name: str,
+    pattern_name: str | None,
+    issues: list[FactIssue],
+) -> set[str]:
+    observed: list[str] = []
+    pattern = _LOCAL_ID_PATTERNS.get(pattern_name or "")
+    for index, value in enumerate(values):
+        if not isinstance(value, dict):
+            continue
+        member = value.get(member_name)
+        path = f"{array_name}[{index}].{member_name}"
+        if not isinstance(member, str):
+            continue
+        observed.append(member)
+        if pattern is not None and pattern.fullmatch(member) is None:
+            issues.append(FactIssue("schema", f"{member_name} 格式不符合当前闭集", path))
+    if len(observed) != len(set(observed)):
+        issues.append(FactIssue("schema", f"{member_name} 在同一 WorkCase 内不得重复", array_name))
+    return set(observed)
+
+
+def _validate_workcase_profile(fields: dict[str, Any], issues: list[FactIssue]) -> str:
+    raw_profile = fields.get("workcase_profile")
+    created = parse_rfc3339(fields.get("created_at"))
+    if raw_profile is not None and raw_profile != _WORKCASE_CURRENT_PROFILE:
+        issues.append(
+            FactIssue("schema", f"workcase_profile 只允许 {_WORKCASE_CURRENT_PROFILE}", "workcase_profile")
+        )
+    current = raw_profile == _WORKCASE_CURRENT_PROFILE
+    if not current and created is not None and created >= _WORKCASE_CURRENT_BOUNDARY:
+        issues.append(
+            FactIssue(
+                "schema",
+                "生效边界后创建的 WorkCase 必须显式使用 current profile",
+                "workcase_profile",
+            )
+        )
+    if current:
+        _require(fields, {"success_criterion_definitions", "audit_summary"}, issues)
+        _forbid(fields, {"success_criteria"}, issues)
+    else:
+        _require(fields, {"success_criteria"}, issues)
+        _forbid(fields, _WORKCASE_CURRENT_ONLY_FIELDS, issues)
+        for array_name in ("creation_reviews", "result_reviews"):
+            reviews = fields.get(array_name)
+            if not isinstance(reviews, list):
+                continue
+            for index, review in enumerate(reviews):
+                if isinstance(review, dict) and "review_basis" in review:
+                    issues.append(
+                        FactIssue(
+                            "schema",
+                            "legacy WorkCase review 禁止 review_basis",
+                            f"{array_name}[{index}].review_basis",
+                        )
+                    )
+        relations = fields.get("relations")
+        if isinstance(relations, list):
+            for index, relation in enumerate(relations):
+                if isinstance(relation, dict) and "responsibility_ids" in relation:
+                    issues.append(
+                        FactIssue(
+                            "schema",
+                            "legacy WorkCase relation 禁止 responsibility_ids",
+                            f"relations[{index}].responsibility_ids",
+                        )
+                    )
+    return "current" if current else "legacy"
+
+
+def _validate_workcase_criteria(fields: dict[str, Any], profile: str, issues: list[FactIssue]) -> None:
+    if profile != "current":
+        criteria = fields.get("success_criteria")
+        if isinstance(criteria, list):
+            if any(not isinstance(item, str) or not item for item in criteria):
+                issues.append(FactIssue("schema", "success_criteria 成员必须是非空 string", "success_criteria"))
+            elif len(criteria) != len(set(criteria)):
+                issues.append(FactIssue("schema", "success_criteria 成员不得重复", "success_criteria"))
+        return
+
+    definitions = fields.get("success_criterion_definitions")
+    definition_values = definitions if isinstance(definitions, list) else []
+    criterion_ids = _validate_unique_local_values(
+        definition_values,
+        array_name="success_criterion_definitions",
+        member_name="criterion_id",
+        pattern_name="criterion_id",
+        issues=issues,
+    )
+    statements = [
+        item.get("statement")
+        for item in definition_values
+        if isinstance(item, dict) and isinstance(item.get("statement"), str)
+    ]
+    if len(statements) != len(set(statements)):
+        issues.append(
+            FactIssue("schema", "成功标准 statement 在同一 WorkCase 内不得重复", "success_criterion_definitions")
+        )
+
+    phase = fields.get("phase")
+    if phase in _WORKCASE_RESULT_PHASES:
+        _require(fields, {"success_criterion_results"}, issues)
+    results = fields.get("success_criterion_results")
+    if not isinstance(results, list):
+        return
+    result_ids = _validate_unique_local_values(
+        results,
+        array_name="success_criterion_results",
+        member_name="criterion_id",
+        pattern_name="criterion_id",
+        issues=issues,
+    )
+    if result_ids != criterion_ids:
+        issues.append(
+            FactIssue(
+                "schema",
+                "success_criterion_results 必须按 criterion_id 精确覆盖当前成功标准",
+                "success_criterion_results",
+            )
+        )
+    for index, result in enumerate(results):
+        if not isinstance(result, dict):
+            continue
+        path = f"success_criterion_results[{index}]"
+        outcome = result.get("outcome")
+        if outcome not in {"satisfied", "not_satisfied", "not_verified"}:
+            issues.append(FactIssue("schema", "criterion outcome 不在当前闭集中", f"{path}.outcome"))
+        if outcome == "satisfied" and "evidence_refs" not in result:
+            issues.append(FactIssue("schema", "satisfied criterion 必须提供 evidence_refs", f"{path}.evidence_refs"))
+
+
+def _validate_workcase_audit(fields: dict[str, Any], profile: str, issues: list[FactIssue]) -> None:
+    if profile != "current":
+        return
+    entries = fields.get("audit_summary")
+    if not isinstance(entries, list):
+        return
+    _validate_unique_local_values(
+        entries,
+        array_name="audit_summary",
+        member_name="audit_id",
+        pattern_name="audit_id",
+        issues=issues,
+    )
+    finding_values: list[dict[str, Any]] = []
+    subject_kinds: list[object] = []
+    for index, entry in enumerate(entries):
+        if not isinstance(entry, dict):
+            continue
+        path = f"audit_summary[{index}]"
+        subject_kind = entry.get("subject_kind")
+        subject_kinds.append(subject_kind)
+        if subject_kind not in {"pre_creation_plan", "superseded_plan", "superseded_result"}:
+            issues.append(FactIssue("schema", "audit subject_kind 不在当前闭集中", f"{path}.subject_kind"))
+        for name in ("subject_version", "review_count"):
+            if not _positive_integer(entry.get(name)):
+                issues.append(FactIssue("schema", f"audit {name} 必须是正整数", f"{path}.{name}"))
+        findings = entry.get("findings")
+        if isinstance(findings, list):
+            finding_values.extend(item for item in findings if isinstance(item, dict))
+    created = parse_rfc3339(fields.get("created_at"))
+    if created is not None and created >= _WORKCASE_CURRENT_BOUNDARY and "pre_creation_plan" not in subject_kinds:
+        issues.append(
+            FactIssue("schema", "current 新建 WorkCase 必须保留 pre_creation_plan audit", "audit_summary")
+        )
+    _validate_unique_local_values(
+        finding_values,
+        array_name="audit_summary.findings",
+        member_name="finding_id",
+        pattern_name="finding_id",
+        issues=issues,
+    )
+    for finding in finding_values:
+        finding_id = finding.get("finding_id")
+        path = f"audit_summary.findings[{finding_id if isinstance(finding_id, str) else '?'}]"
+        if finding.get("controller_disposition") not in {"accepted", "corrected", "rejected", "carried"}:
+            issues.append(
+                FactIssue("schema", "audit controller_disposition 不在当前闭集中", f"{path}.controller_disposition")
+            )
+        if finding.get("rereview_outcome") not in {"performed", "not_required"}:
+            issues.append(FactIssue("schema", "audit rereview_outcome 不在当前闭集中", f"{path}.rereview_outcome"))
+        if finding.get("final_route") not in {
+            "current_plan",
+            "current_result",
+            "nonbinding_followup",
+            "residual_responsibility",
+            "rejected",
+        }:
+            issues.append(FactIssue("schema", "audit final_route 不在当前闭集中", f"{path}.final_route"))
+
+
+def _validate_workcase_observations(fields: dict[str, Any], profile: str, issues: list[FactIssue]) -> None:
+    if profile != "current":
+        return
+    residuals = fields.get("residual_responsibilities")
+    residual_values = residuals if isinstance(residuals, list) else []
+    residual_ids = _validate_unique_local_values(
+        residual_values,
+        array_name="residual_responsibilities",
+        member_name="residual_id",
+        pattern_name="residual_id",
+        issues=issues,
+    )
+    for index, residual in enumerate(residual_values):
+        if isinstance(residual, dict) and residual.get("disposition") not in {"routed", "accepted_stop"}:
+            issues.append(
+                FactIssue(
+                    "schema",
+                    "residual disposition 不在当前闭集中",
+                    f"residual_responsibilities[{index}].disposition",
+                )
+            )
+
+    followups = fields.get("nonbinding_followups")
+    followup_values = followups if isinstance(followups, list) else []
+    followup_ids = _validate_unique_local_values(
+        followup_values,
+        array_name="nonbinding_followups",
+        member_name="followup_id",
+        pattern_name="followup_id",
+        issues=issues,
+    )
+    observations = fields.get("improvement_observations")
+    if not isinstance(observations, list):
+        return
+    if "result_version" not in fields:
+        issues.append(
+            FactIssue("schema", "improvement_observations 要求有效 result_version", "result_version")
+        )
+    if len(observations) > 20:
+        issues.append(FactIssue("schema", "单一 result_version 最多保留 20 项 observation", "improvement_observations"))
+    _validate_unique_local_values(
+        observations,
+        array_name="improvement_observations",
+        member_name="observation_id",
+        pattern_name="observation_id",
+        issues=issues,
+    )
+    _validate_unique_local_values(
+        observations,
+        array_name="improvement_observations",
+        member_name="topic_key",
+        pattern_name="topic_key",
+        issues=issues,
+    )
+    item_ids = {
+        item.get("item_id")
+        for item in fields.get("work_items", [])
+        if isinstance(item, dict) and isinstance(item.get("item_id"), str)
+    }
+    for index, observation in enumerate(observations):
+        if not isinstance(observation, dict):
+            continue
+        path = f"improvement_observations[{index}]"
+        if observation.get("ownership") not in {"current_scope", "adjacent_project", "external"}:
+            issues.append(FactIssue("schema", "observation ownership 不在当前闭集中", f"{path}.ownership"))
+        dimensions = observation.get("value_dimensions")
+        if isinstance(dimensions, list):
+            if any(value not in {f"V{number}" for number in range(1, 9)} for value in dimensions):
+                issues.append(FactIssue("schema", "value_dimensions 只允许 V1–V8", f"{path}.value_dimensions"))
+            elif len(dimensions) != len(set(dimensions)):
+                issues.append(FactIssue("schema", "value_dimensions 不得重复", f"{path}.value_dimensions"))
+        disposition = observation.get("disposition")
+        disposition_ref = observation.get("disposition_ref")
+        if disposition == "absorbed_current_scope":
+            expected_refs = item_ids
+        elif disposition == "nonbinding_followup":
+            expected_refs = followup_ids
+        elif disposition == "residual_responsibility":
+            expected_refs = residual_ids
+        elif disposition == "rejected":
+            expected_refs = None
+        else:
+            expected_refs = set()
+            issues.append(FactIssue("schema", "observation disposition 不在当前闭集中", f"{path}.disposition"))
+        if expected_refs is None:
+            if "disposition_ref" in observation:
+                issues.append(
+                    FactIssue(
+                        "schema",
+                        "rejected observation 禁止 disposition_ref",
+                        f"{path}.disposition_ref",
+                    )
+                )
+        elif disposition_ref not in expected_refs:
+            issues.append(
+                FactIssue("schema", "observation disposition_ref 未指向相应 local ID", f"{path}.disposition_ref")
+            )
 
 
 def _validate_workcase_items(fields: dict[str, Any], issues: list[FactIssue]) -> None:
@@ -278,6 +603,7 @@ def _validate_workcase_reviews(
     fields: dict[str, Any],
     array_name: str,
     version_name: str,
+    profile: str,
     issues: list[FactIssue],
 ) -> None:
     values = fields.get(array_name)
@@ -298,9 +624,69 @@ def _validate_workcase_reviews(
                 issues.append(FactIssue("schema", "review feedback 成员必须是非空 string", f"{path}.feedback"))
             elif len(feedback) != len(set(feedback)):
                 issues.append(FactIssue("schema", "review feedback 不得重复", f"{path}.feedback"))
+        if profile == "legacy":
+            if "controller_resolution" not in review:
+                issues.append(
+                    FactIssue(
+                        "schema",
+                        "legacy review 必须包含 Controller 处置",
+                        f"{path}.controller_resolution",
+                    )
+                )
+            continue
+        basis = review.get("review_basis")
+        if not isinstance(basis, dict):
+            issues.append(FactIssue("schema", "current review 必须包含 review_basis", f"{path}.review_basis"))
+        else:
+            projection_key = basis.get("projection_key")
+            subject_fingerprint = basis.get("subject_fingerprint")
+            allowed_keys = {"plan_current"} if array_name == "creation_reviews" else {
+                "result_implementation",
+                "result_with_closure_report",
+            }
+            if projection_key not in allowed_keys:
+                issues.append(
+                    FactIssue(
+                        "schema",
+                        "review projection_key 不适用于当前审核域",
+                        f"{path}.review_basis.projection_key",
+                    )
+                )
+            if not isinstance(subject_fingerprint, str) or _SHA256_PATTERN.fullmatch(
+                subject_fingerprint
+            ) is None:
+                issues.append(
+                    FactIssue(
+                        "schema",
+                        "review subject_fingerprint 必须是 64 位小写 SHA-256",
+                        f"{path}.review_basis.subject_fingerprint",
+                    )
+                )
+            elif projection_key in PROJECTION_KEYS and (
+                array_name == "creation_reviews" or "controller_resolution" not in review
+            ):
+                expected = workcase_subject_fingerprint(fields, projection_key)
+                if subject_fingerprint != expected:
+                    issues.append(
+                        FactIssue(
+                            "schema",
+                            "review subject_fingerprint 与形成时主体投影不一致",
+                            f"{path}.review_basis.subject_fingerprint",
+                        )
+                    )
+        if array_name == "creation_reviews" or fields.get("phase") != "independent_reviewing":
+            if "controller_resolution" not in review:
+                issues.append(
+                    FactIssue(
+                        "schema",
+                        "离开独立审核前 review 必须包含 Controller 处置",
+                        f"{path}.controller_resolution",
+                    )
+                )
 
 
 def _validate_workcase(fields: dict[str, Any], issues: list[FactIssue]) -> None:
+    profile = _validate_workcase_profile(fields, issues)
     status = fields.get("status")
     phase = fields.get("phase")
     if phase not in _WORKCASE_PHASES:
@@ -323,8 +709,12 @@ def _validate_workcase(fields: dict[str, Any], issues: list[FactIssue]) -> None:
             {
                 "execution_approval",
                 "result_version",
+                "success_criterion_results",
                 "controller_check_summary",
                 "result_reviews",
+                "improvement_observations",
+                "residual_responsibilities",
+                "nonbinding_followups",
                 "closure_approval",
                 "validation_summary",
                 "closure_outcome",
@@ -380,8 +770,12 @@ def _validate_workcase(fields: dict[str, Any], issues: list[FactIssue]) -> None:
         ):
             issues.append(FactIssue("schema", "进入结果阶段前全部 work item 必须完成或取消", "work_items"))
     result_context_fields = {
+        "success_criterion_results",
         "controller_check_summary",
         "result_reviews",
+        "improvement_observations",
+        "residual_responsibilities",
+        "nonbinding_followups",
         "validation_summary",
         "closure_outcome",
         "disposition_summary",
@@ -421,8 +815,11 @@ def _validate_workcase(fields: dict[str, Any], issues: list[FactIssue]) -> None:
             FactIssue("schema", "closure_approval 必须绑定当前 result_version", "closure_approval.subject_version")
         )
     _validate_workcase_items(fields, issues)
-    _validate_workcase_reviews(fields, "creation_reviews", "plan_version", issues)
-    _validate_workcase_reviews(fields, "result_reviews", "result_version", issues)
+    _validate_workcase_criteria(fields, profile, issues)
+    _validate_workcase_audit(fields, profile, issues)
+    _validate_workcase_observations(fields, profile, issues)
+    _validate_workcase_reviews(fields, "creation_reviews", "plan_version", profile, issues)
+    _validate_workcase_reviews(fields, "result_reviews", "result_version", profile, issues)
 
 
 def _validate_times(fact_type_key: str, fields: dict[str, Any], issues: list[FactIssue]) -> None:
@@ -622,12 +1019,6 @@ def validate_fact_object(fact_type_key: str, fields: dict[str, Any], schema: Fac
     if fact_type_key == "workcase":
         _validate_workcase(fields, issues)
     _validate_times(fact_type_key, fields, issues)
-    if fact_type_key == "workcase" and isinstance(fields.get("success_criteria"), list):
-        criteria = fields["success_criteria"]
-        if any(not isinstance(item, str) or not item for item in criteria):
-            issues.append(FactIssue("schema", "success_criteria 成员必须是非空 string", "success_criteria"))
-        elif len(criteria) != len(set(criteria)):
-            issues.append(FactIssue("schema", "success_criteria 成员不得重复", "success_criteria"))
     _validate_references(fact_type_key, fields, issues)
     _validate_relations(fact_type_key, fields, issues)
     return tuple(issues)

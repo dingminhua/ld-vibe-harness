@@ -6,6 +6,7 @@ from pathlib import Path
 
 from conftest import HELPER_EXECUTABLE, assert_common_response
 
+from ldvh.facts.workcase_projection import workcase_subject_fingerprint
 from ldvh.helper.service import handle_request
 
 
@@ -89,7 +90,7 @@ def _source() -> list[dict[str, str]]:
 
 
 def _workcase() -> dict[str, object]:
-    return {
+    fact_object: dict[str, object] = {
         "title": "Recall contract implementation",
         "status": "open",
         "source_refs": _source(),
@@ -99,7 +100,13 @@ def _workcase() -> dict[str, object]:
         "priority": "P1",
         "goal": "Complete the recall Helper operation.",
         "scope": "Stage 5 candidate discovery.",
-        "success_criteria": ["F1 and F2 cards are deterministic."],
+        "workcase_profile": "control-contract-v1",
+        "success_criterion_definitions": [
+            {
+                "criterion_id": "criterion-01",
+                "statement": "F1 and F2 cards are deterministic.",
+            }
+        ],
         "phase": "human_plan_confirming",
         "plan_version": 1,
         "work_items": [
@@ -111,18 +118,32 @@ def _workcase() -> dict[str, object]:
                 "approach_summary": "Use current fact sources and focused Helper tests.",
             }
         ],
-        "creation_reviews": [
+        "audit_summary": [
             {
-                "reviewer": "independent-candidate-reviewer",
-                "reviewed_at": "2026-07-14T09:00:00+08:00",
+                "audit_id": "audit-01",
+                "subject_kind": "pre_creation_plan",
                 "subject_version": 1,
-                "scope": "Goal, scope, criteria, work items, method, validation and risks.",
-                "conclusion": "pass",
-                "feedback": ["The plan is bounded and testable."],
-                "controller_resolution": "1. Accepted; no change required.",
+                "review_count": 1,
+                "summary": "Independent review confirmed the bounded candidate plan.",
             }
         ],
     }
+    fact_object["creation_reviews"] = [
+        {
+            "reviewer": "independent-candidate-reviewer",
+            "reviewed_at": "2026-07-20T07:35:00+08:00",
+            "subject_version": 1,
+            "scope": "Goal, scope, criteria, work items, method, validation and risks.",
+            "conclusion": "pass",
+            "feedback": ["The plan is bounded and testable."],
+            "review_basis": {
+                "projection_key": "plan_current",
+                "subject_fingerprint": workcase_subject_fingerprint(fact_object, "plan_current"),
+            },
+            "controller_resolution": "1. Accepted; no change required.",
+        }
+    ]
+    return fact_object
 
 
 def _adr() -> dict[str, object]:
@@ -173,10 +194,10 @@ def _study() -> dict[str, object]:
             "title": "Candidate projection Study",
             "status": "active",
             "source_refs": [{"kind": "repository-path", "locator": "docs/question.md", "observed_at": observed}],
-        "evidence_refs": [
-            {"kind": "repository-path", "locator": "docs/evidence.md", "observed_at": observed},
-            {"kind": "web-page", "locator": "https://example.invalid/study-evidence", "observed_at": observed},
-        ],
+            "evidence_refs": [
+                {"kind": "repository-path", "locator": "docs/evidence.md", "observed_at": observed},
+                {"kind": "web-page", "locator": "https://example.invalid/study-evidence", "observed_at": observed},
+            ],
             "applicability": "Current candidate projection contract.",
             "validation_summary": "Tracked evidence supports the bounded conclusion.",
             "research_question": "Can Study cards remain smaller than full reports?",
