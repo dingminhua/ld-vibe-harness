@@ -1,0 +1,22 @@
+title: 多管辖项目 Harness 全链路成熟度审视
+status: open
+priority: P1
+source_refs:
+- kind: human-input
+  locator: 2026-07-21 Human：LDVH 是一个支持多管辖项目的 Harness，需要思考哪些地方应加强与完善，并先创建一个 Spark
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0007
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0021
+summary: LDVH 的定位包含同时服务多个管辖项目，但现有规范和实现需要一次全链路成熟度盘点：逐层核对配置与项目身份、工作对象解析、共享上下文恢复、事实发现/读取/变更、Helper 操作与失败范围、跨项目引用和同号对象消歧、Git/Hook Gate、adapter 输入、验证证据、Web/CLI 可观察性及用户文档，识别仍隐含 governed_single 或当前项目假设的环节，明确多项目聚合与逐项目隔离的责任、授权、事务和错误边界，并将独立缺口分流。现有 spark-0007 只聚焦配置拓扑，spark-0021 只聚焦 Web 作用域；本 Spark 作为跨层审视入口，不预设立即实施、具体方案或把多个缺口捆成一个 WorkCase。
+object_id: spark-0025
+fact_type_key: spark
+created_at: '2026-07-21T11:58:06.482101+08:00'
+updated_at: '2026-07-21T11:58:06.482101+08:00'

@@ -1,0 +1,14 @@
+title: Web 多管辖项目作用域切换与聚合呈现
+status: open
+priority: P2
+source_refs:
+- kind: human-input
+  locator: 2026-07-21 Human：LDVH 有管辖项目概念，应有个地方选择"全部"或某一个管辖项目，呈现对应范围内容
+summary: Web 当前硬编码单项目作用域（localFactScopeFromEnv 仅从环境变量读单个 worktreeLocator，verifiedGovernanceProjects 要求 governed_single），所有事实读取锚定单一管辖项目的 ldvh-base/。需要引入项目作用域切换器（自然位置在侧栏 Logo 区，兼解决删 tagline 后的视觉空白），支持选"全部"或某一个管辖项目：选单项目时各视图只显示该项目事实；选全部时聚合所有已注册管辖项目事实。待 Human 决策的关键点：(1) 全部模式下对象归属标识方式——卡片/详情标注所属项目徽章还是按项目分组；(2) 跨项目对象 ID 冲突处理——不同项目可各有 spark-0001，详情 URL 是否需带 project 参数；(3) 全部模式下写操作（如 Spark 创建）禁止还是需先选目标项目；(4) 数据源——resolve-governance-scope 是否支持一次解析多项目 worktree，还是 Web 层仅聚合已注册 identities。
+evolution:
+- at: '2026-07-21T04:07:00+08:00'
+  summary: 与 Human 讨论确认现状为单项目硬编码，识别出四个待决策点（归属标识、ID 冲突、写操作边界、多项目解析数据源）。Human 表示先登记，后续再想如何推进。
+object_id: spark-0021
+fact_type_key: spark
+created_at: '2026-07-21T04:07:00+08:00'
+updated_at: '2026-07-21T04:07:00+08:00'

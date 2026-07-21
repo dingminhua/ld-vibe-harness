@@ -1,0 +1,15 @@
+title: 多人未同步时的事实对象 ID 冲突提交 Gate
+status: open
+priority: P1
+source_refs:
+- kind: human-input
+  locator: 2026-07-21 Human：你创建一个spark，如果提交的时候，事实对象发现分枝上已经有对应的id了，比如这次要提交spark21，提交的时候发现已经有了，那么要报告让人决策是否改变编号，这个能做到吗？
+- kind: human-input
+  locator: 2026-07-21 Human：我的意思是提交的时候，比如几个人协作的时候，因为都没有拉去最新的代码，提交的时候要能够发现
+- kind: human-input
+  locator: 2026-07-21 Human：只有含有事实对象的时候才会需要有这个流程，这点有明确吗，并不是所有的提交都要做这个步骤，事实对象就是ldvh-base里的内容
+summary: 本议题只适用于 Git Index 候选快照包含 ldvh-base/** 事实对象路径的提交；普通 Code、Web、规范、文档或其它不包含 ldvh-base 内容的提交必须跳过远端刷新与事实对象身份冲突流程，不增加网络访问或 Human Gate。多人、多 clone 或多分支协作时，各方若都没有获取目标远端分支的最新状态，可能在各自环境中合法分配并创建相同 object_id，例如分别创建 spark-0021。触发后，提交边界的 LDVH Git Gate 应先刷新或明确验证目标远端 ref 的新鲜度，再把 Index 中的 ldvh-base 事实对象身份与该目标树进行全局扫描；发现同一 ID 已存在且不是同一对象时必须停止受影响提交，报告远端 ref/commit、双方 canonical path、内容指纹及引用差异，交由 Human 决定为本地对象改号并迁移引用、改为更新既有对象、拆分或合并，或取消。不得自动覆盖、静默改号或只等 merge/push 冲突；无法刷新或证明目标 ref 新鲜时也不得宣称无冲突。改号方案还需一致迁移文件名、对象内 object_id、source_refs、evidence_refs 与 relations 中相关引用，并完成回读验证。
+object_id: spark-0022
+fact_type_key: spark
+created_at: '2026-07-21T04:10:57.798570+08:00'
+updated_at: '2026-07-21T04:17:05.381011+08:00'

@@ -1,0 +1,21 @@
+title: 受管项目语义选中后的 Helper-first 续接
+status: open
+priority: P1
+source_refs:
+- kind: human-input
+  locator: 2026-07-21 Human：00不需要动，要改改04及其他，你创建一个spark，我后续跟进此事
+- kind: repository-path
+  locator: specs/02-工作对象与管辖范围规范.md
+- kind: repository-path
+  locator: specs/04-Helper CLI 服务规范.md
+- kind: repository-path
+  locator: specs/05-事实模型基础规范.md
+- kind: repository-path
+  locator: specs/09-环境接入规范.md
+- kind: repository-path
+  locator: code/ldvh/hooks/context_recovery.py
+summary: 在不修改 00 上位理念、也不让 adapter 或 Code 从自然语言自动绑定项目的前提下，补齐 AI 已从用户目标语义判断出受管项目后的标准续接路径：以该项目实际 worktree 的显式 locator 重新执行管辖解析；仅在 Helper 返回 governed_single 后，优先通过 capabilities 和适用公开操作读取或变更 LDVH 已覆盖的项目事实；对多候选、解析失败、partial 或能力未覆盖的情况保留缺口并按边界分流。重点判断并完善 04 的 AI 消费/能力路由合同，02 的候选语义选择后再解析边界，05 的事实查询 Helper-first 消费约束，以及 09 与共享上下文恢复投影中的非绑定 continuation 和稳定 Helper 入口交付。当前不修改 00、不新增让环境 adapter 解释 prompt 的行为、不直接实施 Specs 或 Code 变更、不建立 WorkCase。
+object_id: spark-0024
+fact_type_key: spark
+created_at: '2026-07-21T10:34:17.820904+08:00'
+updated_at: '2026-07-21T10:34:17.820904+08:00'

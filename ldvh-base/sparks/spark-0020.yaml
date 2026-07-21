@@ -1,0 +1,13 @@
+title: 测试创建Spark
+status: open
+source_refs:
+- kind: web-direct-capture
+  locator: data:application/json;base64,eyJwcmlvcml0eSI6IlAzIiwic3VtbWFyeSI6Iua1i+ivlSIsInRpdGxlIjoi5rWL6K+V5Yib5bu6U3BhcmsifQ==
+  version: sha256:1d27c5f19fab881e598264172a6f1e4f0629f0fc42bd12a8cc438ed79759b6a0
+  observed_at: '2026-07-21T03:31:05.954860+08:00'
+summary: 测试
+priority: P3
+object_id: spark-0020
+fact_type_key: spark
+created_at: '2026-07-21T03:31:05.954860+08:00'
+updated_at: '2026-07-21T03:31:05.954860+08:00'
