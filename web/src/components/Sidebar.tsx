@@ -42,7 +42,7 @@ function ThemeIcon({ mode }: { mode: 'system' | 'light' | 'dark' }) {
 
 function BrandMark() {
   return (
-    <img src={ldvhPluginIcon} alt="" className="h-7 w-7 rounded-md" aria-hidden="true" />
+    <img src={ldvhPluginIcon} alt="" className="h-9 w-9 rounded-md" aria-hidden="true" />
   );
 }
 
@@ -87,18 +87,11 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             <div
               onMouseEnter={() => setVisibleTooltip('brand')}
               onMouseLeave={() => setVisibleTooltip(null)}
-              className="relative flex h-8 w-8 flex-shrink-0 items-center justify-center"
+              className="relative flex h-10 w-10 flex-shrink-0 items-center justify-center"
             >
               <BrandMark />
               {collapsed && <IconTooltip label="LDVH" visible={visibleTooltip === 'brand'} />}
             </div>
-            {!collapsed && (
-              <div className="min-w-0 flex-1">
-                <div className="ldvh-caption whitespace-normal break-keep">
-                  {t('logo.tagline')}
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>
