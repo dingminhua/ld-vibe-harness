@@ -1,5 +1,5 @@
 title: 建立 LDVH 多环境通用启用与 AI 自助接入基础
-status: open
+status: closed
 source_refs:
 - kind: human-input
   locator: 2026-07-21 Human：不同 AI 开发环境与各种模型应能按需要组合；完整使用需要获取、安装、配置、接入和验证；先提交 00，再根据计划构建 WorkCase
@@ -23,9 +23,7 @@ source_refs:
   locator: ldvh-base/sparks/spark-0023.yaml
 - kind: repository-path
   locator: ldvh-base/workcases/workcase-0007.yaml
-summary: workcase-0009 result_version 1 的完整结果与 completed 关闭报告已形成，等待 Human 关闭确认。
-resume_from: Human 审阅当前 result_version 1、completed 分类与处置说明后，明确批准关闭或退回受影响范围。
-priority: P1
+summary: Human 已批准 result_version 1 的完整结果和 completed 关闭报告；workcase-0009 正式关闭。
 goal: 建立 LDVH 自有的环境无关启用基础，使用户能够完成“获取→安装→配置→接入→验证”：LDVH 交付可回指的本地发行物、稳定配置与只读诊断入口、可由当前正式来源发现的 LDVH 接入面、供目标环境 AI 消费的接入方法和统一验证边界；具体 AI 开发环境的自动扩展或事件机制、安装位置与操作步骤，由用户在目标环境中让 AI 依据当前权威资料研究并在 Human Gate 下执行。只有当前权威资料或实际环境肯定证明该 AI 开发环境不存在能够自动调用所需 LDVH 共享行为、Helper 或相应机械 Gate 且承接必需输入与反馈的机制时，才判定完整接入 unsupported；未知、未调查、不可观察或只因厂商不使用“Hook”一词均保持 unverified。
 scope: 覆盖 specs/09 对共同接入方法、AI 自助适配职责、按功能识别 Hook、unsupported 证据门槛和真实验证边界的必要最小澄清；覆盖 specs/33 对一次明确目标环境在已有可安装接入单元前提下，由 AI 调查、形成方案、取得授权、安装或配置、验证、回滚和交还的行动组织；实际需要时仅在 03/04/06/07 的既有职责内澄清。覆盖当前源码构建的本地 wheel/sdist 身份与哈希、包声明范围与实测范围、依赖来源与联网前提、本地或源码获取、安装卸载、LDVH 自有配置入口、只读 doctor、LDVH 接入面权威发现合同、环境无关模拟 fixture、用户五步文档、面向目标环境 AI 的自助调查与分流说明、能力分类和验证清单。排除修改 00、维护厂商环境候选清单、逐厂商预研、在本案编写或安装任何具体环境 adapter、替用户修改任何具体 AI 开发环境、安装外部 CLI、账号登录、凭据、信任、重启、用户或全局配置、管辖项目登记、事实 Schema、WorkCase 生命周期、Web、公共 registry 或 marketplace 发布、发布 Specs 与发布行动模板（由 spark-0023 承接）、push 和 PR。Codex 只可作为范围受限的既有证据，不得成为共同模型或完成条件。
 workcase_profile: control-contract-v1
@@ -42,7 +40,7 @@ success_criterion_definitions:
   statement: 支持判定明确：Hook 按能否自动触发并承接所需输入与反馈的功能识别，不依赖厂商术语。只有当前权威资料或实际环境肯定证明所需机制不存在，完整接入才是 unsupported；未调查、资料未找到、权限不足或不可观察均为 unverified；存在机制只说明可进入调查，未安装或未真实触发仍为 unverified；静态对象、核心直调与真实环境触发分开，partial 不得掩盖 unsupported 或 unverified。
 - criterion_id: criterion-06
   statement: README 和用户文档给出获取、安装、配置、接入、验证五步入口，明确 artifact 边界与网络前提、doctor、LDVH 接入面发现方法、可交给目标环境 AI 的调查输入、直接配置与需要新 adapter 两条分支、Human Gate、验证与回滚清单及无 Hook 判定；聚焦规则、Code、打包、文档和必要综合验证通过。模拟 fixture 只证明 LDVH 侧入口和分类逻辑，不声明任何具体 AI 开发环境已支持、缺少能力或已真实接入，也不形成公共发布声明。
-phase: human_closure_confirming
+phase: closed
 plan_version: 2
 work_items:
 - item_id: item-01
@@ -333,8 +331,15 @@ result_reviews:
 validation_summary: plan_version 2 的五个工作项与六项成功标准全部满足。09/33 已固定环境无关方法、功能型 Hook、unsupported/unverified 证据门槛和直接配置/新 adapter 分流；当前 Code Plan 已稳定登记并诚实保留首次审核后补正时序。ldvh-doctor/1 保持只读，非 ok Helper outcome 不会误报 ready。当前 wheel/sdist SHA-256 分别为 64614788cf0b1e053dbcff7e06feb7234d4f7ed49947107725dab863f90f1544 与 5a9187a0dabe1f568418eba50777dc86f7fd2c4c7122dfb60db358d849e16187，archive doctor 与源码 SHA-256 同为 7f031953ca557d1e0f98878f6a15f7374b7c2d0299e581bf47f0ed6f925d5c85；wheel/sdist 均完成严格临时环境安装、12 operations、doctor ready、卸载及消失回读。tests-only synthetic fixtures 覆盖模拟 Hook success、unknown、confirmed-no-capability 和必要依据逐项负例，均不映射真实环境。最终 full-v4 run-517c166cb5cd44fca82a7002f9b66f8b 为 passed/evidence_complete/exit 0，Ruff、Python 973 passed/10 skipped、Web typecheck、34/34 tests、production build 通过；before/after 397 文件、8,233,580 bytes、同一指纹、changes=[]。三轮独立结果审核依次为 changes_required、changes_required、pass_with_followups；全部 must-fix 已处置，最终无 must-fix，无需升 result_version 或复审。未公共发布、未实现/安装具体 adapter、未真实验证具体 AI 环境、未 push/PR。
 closure_outcome: completed
 disposition_summary: workcase-0009 已完成批准的环境无关启用基础，没有未处置修复责任、accepted_stop 或需 routed-to 的残余。首次缺少事前 Code Plan 的时序违规不能追溯消除，已作为历史事实保留；当前补正规划恢复了后续维护基线。artifact 生命周期原始 transcript、原生 Windows 和具体 AI 环境真实触发属于当前证据边界或非约束完善，不自动建档或阻断关闭。spark-0003 继续保留未来选定具体目标环境的安装/验证问题，spark-0023 继续独立承接发布 Specs 与行动模板；二者都不是本 WorkCase 未完成责任。Controller 判断 result_version 1 足以提交 Human 关闭确认；最终 closed 仍须 Human 明确批准。
-waiting_on: Human closure confirmation for workcase-0009 result_version 1
+closure_approval:
+  subject_version: 1
+  approved_at: '2026-07-21T11:54:32.343937+08:00'
+  summary: Human 明确批准关闭 workcase-0009，接受当前 result_version 1、completed 分类、无未处置修复责任及已记录的范围边界。
+  source_refs:
+  - kind: human-input
+    locator: 2026-07-21 Human：批准关闭 workcase-0009
+closed_at: '2026-07-21T11:54:32.343937+08:00'
 object_id: workcase-0009
 fact_type_key: workcase
 created_at: '2026-07-21T08:45:57.944290+08:00'
-updated_at: '2026-07-21T11:06:03.001833+08:00'
+updated_at: '2026-07-21T11:54:32.343937+08:00'
