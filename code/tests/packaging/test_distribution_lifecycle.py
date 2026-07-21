@@ -49,6 +49,7 @@ class InstalledEnvironment:
     root: Path
     python: Path
     helper: Path
+    doctor: Path
     context_recovery_runner: Path
     commit_msg_runner: Path
     git_hook_manager: Path
@@ -73,6 +74,7 @@ def _copy_release_source(destination: Path) -> None:
     for name in ("README.md", "pyproject.toml", "setup.py"):
         shutil.copy2(PROJECT_ROOT / name, destination / name)
     shutil.copytree(PROJECT_ROOT / "code" / "ldvh", destination / "code" / "ldvh")
+    shutil.copytree(PROJECT_ROOT / "docs", destination / "docs")
     shutil.copytree(PROJECT_ROOT / "specs", destination / "specs")
     _run_checked(["git", "init", "-q", str(destination)], cwd=destination.parent)
 
@@ -181,6 +183,7 @@ def _create_installed_environment(root: Path) -> InstalledEnvironment:
     scripts = root / ("Scripts" if os.name == "nt" else "bin")
     python = scripts / ("python.exe" if os.name == "nt" else "python")
     helper = scripts / ("ldvh.exe" if os.name == "nt" else "ldvh")
+    doctor = scripts / ("ldvh-doctor.exe" if os.name == "nt" else "ldvh-doctor")
     context_recovery_runner = scripts / ("ldvh-context-recovery.exe" if os.name == "nt" else "ldvh-context-recovery")
     commit_msg_runner = scripts / ("ldvh-git-commit-msg.exe" if os.name == "nt" else "ldvh-git-commit-msg")
     git_hook_manager = scripts / ("ldvh-git-hook.exe" if os.name == "nt" else "ldvh-git-hook")
@@ -196,6 +199,7 @@ def _create_installed_environment(root: Path) -> InstalledEnvironment:
         root,
         python,
         helper,
+        doctor,
         context_recovery_runner,
         commit_msg_runner,
         git_hook_manager,
@@ -701,6 +705,38 @@ def _assert_context_recovery_runner(environment: InstalledEnvironment, root: Pat
     assert not tuple(environment.purelib.rglob("codex_context.py"))
 
 
+def _assert_doctor_runner(environment: InstalledEnvironment, root: Path) -> None:
+    workspace, project = _managed_project(root)
+    completed = subprocess.run(
+        [
+            str(environment.doctor),
+            "--workspace-root",
+            str(workspace),
+            "--work-object-locator",
+            str(project),
+            "--helper-executable",
+            str(environment.helper),
+        ],
+        cwd=root,
+        text=True,
+        encoding="utf-8",
+        errors="strict",
+        capture_output=True,
+        env=environment.process_environment,
+        check=False,
+    )
+    assert completed.returncode == 0, (completed.stdout, completed.stderr)
+    assert completed.stderr == ""
+    response = json.loads(completed.stdout)
+    assert response["contract"] == "ldvh-doctor/1"
+    assert response["status"] == "ready"
+    assert response["distribution"]["version"] == importlib.metadata.version("ld-vibe-harness")
+    assert response["configuration"]["scope_status"] == "governed_single"
+    assert all(item["state"] == "available" for item in response["integration_surfaces"])
+    assert all(item["state"] == "available" for item in response["documentation"])
+    assert {item["name"] for item in response["documentation"]} == {"LDVH接入面.md", "启用与AI环境接入.md"}
+
+
 def _assert_native_git_hook_runners(environment: InstalledEnvironment) -> None:
     for runner in (environment.commit_msg_runner, environment.git_hook_manager):
         completed = subprocess.run(
@@ -719,6 +755,7 @@ def _assert_native_git_hook_runners(environment: InstalledEnvironment) -> None:
 
 def _assert_uninstalled(environment: InstalledEnvironment) -> None:
     assert not environment.helper.exists()
+    assert not environment.doctor.exists()
     assert not environment.context_recovery_runner.exists()
     assert not environment.commit_msg_runner.exists()
     assert not environment.git_hook_manager.exists()
@@ -788,6 +825,7 @@ def test_direct_wheel_replaces_old_record_repairs_tampering_and_uninstalls(
         release_artifacts.current_snapshot_sha256,
     )
     _assert_context_recovery_runner(environment, tmp_path / "direct-context-recovery")
+    _assert_doctor_runner(environment, tmp_path / "direct-doctor")
     _assert_native_git_hook_runners(environment)
 
     _exercise_operation_matrix(
@@ -813,6 +851,7 @@ def test_sdist_derived_wheel_runs_the_same_process_matrix_and_uninstalls(
         release_artifacts.current_snapshot_sha256,
     )
     _assert_context_recovery_runner(environment, tmp_path / "sdist-context-recovery")
+    _assert_doctor_runner(environment, tmp_path / "sdist-doctor")
     _assert_native_git_hook_runners(environment)
     _exercise_operation_matrix(
         environment,

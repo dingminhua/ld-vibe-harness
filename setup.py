@@ -13,6 +13,9 @@ from setuptools.command.sdist import sdist as _sdist
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT / "code"))
 
+USER_DOCUMENTS = ("docs/LDVH接入面.md", "docs/启用与AI环境接入.md")
+USER_DOCUMENT_DIRECTORY = "_user_docs"
+
 from ldvh.rule_snapshot import SNAPSHOT_DIRECTORY, snapshot_plan_for_source, write_snapshot  # noqa: E402
 
 
@@ -23,14 +26,22 @@ class build_py(_build_py):
         plan = snapshot_plan_for_source(ROOT, self.distribution.get_version())
         destination = Path(self.build_lib) / "ldvh" / SNAPSHOT_DIRECTORY
         write_snapshot(plan, destination)
+        user_document_destination = Path(self.build_lib) / "ldvh" / USER_DOCUMENT_DIRECTORY
+        user_document_destination.mkdir(parents=True, exist_ok=True)
+        for relative in USER_DOCUMENTS:
+            shutil.copy2(ROOT / relative, user_document_destination / Path(relative).name)
         self._ldvh_snapshot_outputs = [str(destination / item.path) for item in plan.files] + [
             str(destination / "manifest.json")
+        ]
+        self._ldvh_user_document_outputs = [
+            str(user_document_destination / Path(relative).name) for relative in USER_DOCUMENTS
         ]
 
     def get_outputs(self, include_bytecode: bool = True) -> list[str]:
         return [
             *super().get_outputs(include_bytecode=include_bytecode),
             *getattr(self, "_ldvh_snapshot_outputs", ()),
+            *getattr(self, "_ldvh_user_document_outputs", ()),
         ]
 
 
@@ -48,6 +59,8 @@ class sdist(_sdist):
         ]
         for item in self._snapshot_plan().files:
             self.filelist.append(item.path)
+        for relative in USER_DOCUMENTS:
+            self.filelist.append(relative)
         self.filelist.sort()
         self.filelist.remove_duplicates()
         super().make_distribution()
