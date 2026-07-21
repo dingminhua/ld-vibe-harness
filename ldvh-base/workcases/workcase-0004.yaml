@@ -1,6 +1,5 @@
 title: Web 规范符合性与工程结构整改
-status: open
-priority: P1
+status: closed
 source_refs:
 - kind: repository-path
   locator: specs/08-Web 呈现与交互规范.md
@@ -8,8 +7,7 @@ source_refs:
   locator: web/docs/01-全局设计约束.md
 - kind: repository-path
   locator: web/docs/10-Web开发现状与设计语言基线.md
-summary: workcase-0004 result_version 2 的完整关闭报告已形成：6/6 成功标准、7/7 工作项完成，独立结果审核 pass_with_followups、无 must-fix，关闭分类 proposed=completed；等待 Human 最终关闭确认。
-resume_from: phase=human_closure_confirming：向 Human 展示 result_version 2 的验证总结、completed 分类、无残余责任及 3 项非约束后续；仅在 Human 明确批准后写 closure_approval 并进入 closed。
+summary: Human 已批准 result_version 2 的完整结果、关闭报告与 completed 分类；workcase-0004 正式关闭。
 goal: 使 LDVH V4 web/ 在 LDVH 规范符合性与行业工程规范两个维度达到可信基线，消除已知明文违规，并建立防止回归的验证。
 scope: 覆盖 i18n 合规、事实读取语义（空列表掩盖与治理 YAML 自行解析）、五类事实对象统一读取路径（直读本地文件机械映射、不校验、缺失标注）、巨石组件拆分、api/src 边界、tsconfig 双配置、vite.config 清理。范围限于 web/src、web/api、web/tests、web/tsconfig*、web/vite.config.ts。明确排除：不改动 Python 端 ldvh 包与 web_machine 协议定义；不改动 specs/ 任何规范；不新增 Web 写入能力（create-spark 仍走既有 Python 桥与 loopback 边界）；不做与整改无关的 UI 重设计；不做 tsconfig strict（留作 followup）；Git 日志(changelog)读取保留现状走 git 子进程。统一读取原则：事实对象 YAML/MD 由 Web 直读机械映射；治理/协议类 YAML 仍经 Code 受控路径；Git 日志走 git 子进程。
 workcase_profile: control-contract-v1
@@ -26,7 +24,7 @@ success_criterion_definitions:
   statement: ObjectDetail.tsx/ProjectFiles.tsx/ReadingPanel.tsx 拆分为符合单一职责的模块；api 不再反向 import src；tsconfig 拆分为 tsconfig.app.json/tsconfig.node.json 双配置并启用 strict、修复全部 strict 类型错误（当前实测 3 个：2 个 i18n t() key 字面量联合类型与 string 不兼容 + 1 个 ReferenceCard null/undefined 收窄）；vite.config 移除代理调试 console.log，allowedHosts 硬编码域名改为环境变量并保留默认值。
 - criterion_id: criterion-06
   statement: 行为保持核对：除标准 2/3/4 三项明确有意变更的呈现语义外，其余既有可观察行为（路由表、API 响应 shape 字段集、既有 Web API 测试断言集、布局/响应式）保持不变；web typecheck、lint、全部 Web API 测试、production build 通过；并记录本 WorkCase 与 spark-0005 的承接关系结论。
-phase: human_closure_confirming
+phase: closed
 plan_version: 2
 work_items:
 - item_id: item-01
@@ -326,8 +324,15 @@ nonbinding_followups:
 - followup_id: followup-03
   summary: 改进 WorkCase 接续提示：接手者先读取对象内 execution_approval 与当前 phase，只在规范定义的下一个真实 Human Gate 暂停，避免重复询问执行授权。
   rationale: 本次接续暴露了执行授权已经存在却被再次询问的流程摩擦；改进有明确价值，但不属于当前 Web 整改结果的完成门槛，也不自动新建 Spark。
-waiting_on: 等待 Human 对 workcase-0004 result_version 2、完整关闭报告和 completed 关闭分类作最终关闭确认。
+closure_approval:
+  subject_version: 2
+  approved_at: '2026-07-21T01:36:05.299456+08:00'
+  summary: Human 明确同意按建议推进，批准 workcase-0004 result_version 2 的完整结果、关闭报告与 completed 关闭分类。
+  source_refs:
+  - kind: human-input
+    locator: 2026-07-21 Human：那你建议推进吧
+closed_at: '2026-07-21T01:36:05.299456+08:00'
 object_id: workcase-0004
 fact_type_key: workcase
 created_at: '2026-07-20T08:06:53.865799+08:00'
-updated_at: '2026-07-20T18:35:45.237234+08:00'
+updated_at: '2026-07-21T01:36:05.299456+08:00'
