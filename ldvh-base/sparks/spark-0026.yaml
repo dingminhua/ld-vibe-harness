@@ -1,0 +1,28 @@
+title: 取消泛化降级概念并恢复具体原因语义
+intent: 保留 LDVH 曾将不同问题泛化表述为“降级”的语义回归，避免工具不可用、输入或证据不足、能力缺口、验证失败和风险接受被包装为已成立的替代方案。后续需逐处恢复问题原因、当前影响、主线是否可继续和后续承接位置，并只把旧 `degraded` 保留为有边界的兼容输入。
+status: open
+priority: P2
+source_refs:
+- kind: human-input
+  locator: 2026-07-22 Human：V3 已明确要求取消“降级”概念；调查后将这一理解写入 Spark，后续讨论如何完善 LDVH
+- kind: repository-path
+  locator: specs/06-行动模板基础规范.md
+- kind: repository-path
+  locator: specs/09-环境接入规范.md
+- kind: repository-path
+  locator: specs/33-环境接入安装与验证行动模板.md
+evidence_refs:
+- kind: repository-path
+  locator: code/ldvh/helper/operations/fact_creation_operation.py
+- kind: repository-path
+  locator: web/src/utils/executionFlowStatus.ts
+summary: "**当前判断**\n\n- “降级”不应继续作为 LDVH 的正式机制、状态、路径、验证方式、关闭结果或 Human-facing 主展示。它会把不同的问题压成看似可接受的替代方案，使真实缺口、成功标准和后续责任变得模糊。\n- 应始终拆开表达：问题原因、当前影响、主线是否仍可继续、以及后续承接位置。工具不可用、输入不足、证据不足、能力缺口、事实冲突、未验证、失败阻断、取消和风险接受都不是“降级”的同义词。\n\n**当前来源中的回归点**\n\n- 06 的“降级到普通求解”实际是退出模板分支；应恢复为“转回普通求解或交还”，不暗示已形成较弱的执行方案。\n- 09、33 把 no-op、拒绝、部分结果、失败、未验证、能力缺口和交还与“降级路径”并列，重新模糊了这些不同的结果与责任。\n- Windows `file-only` 写入需要直接说明较弱的是哪些耐久或并发保障、影响什么，以及 Human 是否接受；这不是可自动接受的“降级”。\n- Web 对 legacy `degraded` 输入的兼容只保留为迁移读取层；当前事实对象不重新引入该状态，页面继续呈现具体原因或“受限”。\n\n**处理边界**\n\n- 不全局机械替换词语，也不改写 V3 历史；每一处都先判断它实际表示的原因、影响和责任。\n- 本 Spark 不直接修改 Specs、Code 或 Web。逐处形成明确目标、范围与验收后，再决定更新现有来源或建立 WorkCase；长期允许带缺口运行属于 Human Gate 与 ADR 的风险接受，不得重新命名为“降级”。"
+evolution:
+- at: '2026-07-22T14:35:45+08:00'
+  summary: Human 指出 V3 已明确取消“降级”概念，并要求调查这一决策在 V4 中是否被重新引入。由此保留本 Spark：需要把泛化措辞还原为具体原因、影响、是否阻断与后续承接，而不是把不同问题包装为可接受的替代方案。
+- at: '2026-07-22T14:47:00+08:00'
+  summary: 初始表述曾错误保留“受限替代”作为可能成立的正式概念。经回读 V3 已确认的 Human 决定后，纠正为取消泛化“降级”概念：旧 degraded 只可作为有边界的兼容输入，当前规则和页面必须表达具体原因、影响、是否阻断与后续承接。
+object_id: spark-0026
+fact_type_key: spark
+created_at: '2026-07-22T14:35:45+08:00'
+updated_at: '2026-07-22T15:10:20+08:00'

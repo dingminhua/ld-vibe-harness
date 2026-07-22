@@ -252,7 +252,6 @@ export default function ObjectDetail() {
           ) : objType === 'spark' ? (
             <SparkReadingLayout
               obj={obj}
-              relatedEntries={relatedEntries}
               locale={locale}
             />
           ) : (

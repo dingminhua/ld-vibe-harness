@@ -123,8 +123,13 @@ function projectSparkAssociations(associations: ReturnType<typeof projectFactRea
 
   return {
     relationGroups: [...relationGroups.values()],
-    documents: dedupeMaterials(materials.filter((material) => material.category === 'project')),
+    documents: dedupeMaterials(materials.filter(isSparkReadableProjectDocument)),
   };
+}
+
+function isSparkReadableProjectDocument(material: ReadingMaterial): boolean {
+  if (material.category !== 'project') return false;
+  return /\.(md|mdx|markdown|rst|adoc|txt)$/i.test(material.locator);
 }
 
 function SparkRelationGroup({

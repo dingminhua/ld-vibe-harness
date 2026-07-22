@@ -169,11 +169,9 @@ type SparkEvolutionEntry = { key: string; at?: string; summary: string };
 
 export function SparkReadingLayout({
   obj,
-  relatedEntries,
   locale,
 }: {
   obj: Record<string, unknown>;
-  relatedEntries: RelatedContentEntry[];
   locale: string;
 }) {
   return (
@@ -193,7 +191,6 @@ export function SparkReadingLayout({
         title={locale === 'en' ? 'Related' : '关联'}
         variant="spark"
       />
-      <RelatedContentSection entries={relatedEntries} locale={locale} />
     </div>
   );
 }

@@ -230,9 +230,7 @@ function ObjectSemanticPreview({
     return <AdrReadingLayout obj={obj} relatedEntries={relatedEntries} locale={locale} />;
   }
   if (objectType === 'spark') {
-    const entries = getObjectDetailContentEntries(obj, objectType);
-    const { relatedEntries } = splitRelatedContentEntries(entries);
-    return <SparkReadingLayout obj={obj} relatedEntries={relatedEntries} locale={locale} />;
+    return <SparkReadingLayout obj={obj} locale={locale} />;
   }
   if (objectType === 'study') {
     const entries = getObjectDetailContentEntries(obj, objectType);
