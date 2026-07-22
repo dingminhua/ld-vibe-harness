@@ -155,12 +155,12 @@ const SPARK_READING_NODES: Array<{
   field: string;
   zh: string;
   en: string;
-  kind: 'intent' | 'summary' | 'evolution' | 'routing';
+  kind: 'intent' | 'summary' | 'evolution' | 'terminal';
 }> = [
   { field: 'intent', zh: '意图', en: 'Intent', kind: 'intent' },
   { field: 'summary', zh: '摘要', en: 'Current Summary', kind: 'summary' },
   { field: 'evolution', zh: '演变', en: 'Evolution', kind: 'evolution' },
-  { field: 'routing', zh: '分流', en: 'Routing', kind: 'routing' },
+  { field: 'terminal', zh: '分流', en: 'Routing', kind: 'terminal' },
 ];
 type SparkEvolutionEntry = { key: string; at?: string; summary: string };
 
@@ -176,7 +176,7 @@ export function SparkReadingLayout({
       {SPARK_READING_NODES.map((node) => (
         <SparkReadingNode
           key={node.field}
-          title={locale === 'en' ? node.en : node.zh}
+          title={getSparkReadingNodeTitle(node, obj, locale)}
           obj={obj}
           locale={locale}
           kind={node.kind}
@@ -192,6 +192,17 @@ export function SparkReadingLayout({
   );
 }
 
+function getSparkReadingNodeTitle(
+  node: (typeof SPARK_READING_NODES)[number],
+  obj: Record<string, unknown>,
+  locale: string,
+) {
+  if (node.kind === 'terminal' && obj.status === 'discarded') {
+    return locale === 'en' ? 'Discarded' : '废弃';
+  }
+  return locale === 'en' ? node.en : node.zh;
+}
+
 function SparkReadingNode({
   title,
   obj,
@@ -201,7 +212,7 @@ function SparkReadingNode({
   title: string;
   obj: Record<string, unknown>;
   locale: string;
-  kind: 'intent' | 'summary' | 'evolution' | 'routing';
+  kind: 'intent' | 'summary' | 'evolution' | 'terminal';
 }) {
   const [state, setState] = useState<ReadingNodeState>('expanded');
   const hasContent = kind === 'intent'
@@ -210,7 +221,7 @@ function SparkReadingNode({
     ? hasDetailContent(obj.summary)
     : kind === 'evolution'
       ? hasDetailContent(obj.evolution)
-      : hasSparkRoutingContent(obj);
+      : hasSparkTerminalContent(obj);
 
   if (!hasContent) return null;
 
@@ -224,7 +235,7 @@ function SparkReadingNode({
       {kind === 'intent' && <StudyTextNodeContent value={obj.intent} className="ldvh-spark-reading-prose" />}
       {kind === 'summary' && <SparkSummaryNode value={obj.summary} />}
       {kind === 'evolution' && <SparkEvolutionNode value={obj.evolution} locale={locale} />}
-      {kind === 'routing' && <SparkRoutingNode obj={obj} />}
+      {kind === 'terminal' && <SparkTerminalNode obj={obj} />}
     </ReadingNodeSection>
   );
 }
@@ -294,7 +305,7 @@ function SparkEvolutionTime({ value, locale }: { value?: string; locale: string 
   );
 }
 
-function SparkRoutingNode({ obj }: { obj: Record<string, unknown> }) {
+function SparkTerminalNode({ obj }: { obj: Record<string, unknown> }) {
   const closedAt = typeof obj.closed_at === 'string' && obj.closed_at.trim().length > 0 ? obj.closed_at : null;
   const disposition = typeof obj.disposition_summary === 'string' && obj.disposition_summary.trim().length > 0
     ? obj.disposition_summary
@@ -305,7 +316,7 @@ function SparkRoutingNode({ obj }: { obj: Record<string, unknown> }) {
       {closedAt && (
         <div className="mb-1.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
           <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-ldvh-accent" aria-hidden="true" />
-          <SparkRoutingTime value={closedAt} />
+          <SparkTerminalTime value={closedAt} />
         </div>
       )}
       {disposition && <StudyTextNodeContent value={disposition} compact />}
@@ -313,7 +324,7 @@ function SparkRoutingNode({ obj }: { obj: Record<string, unknown> }) {
   );
 }
 
-function SparkRoutingTime({ value }: { value: string }) {
+function SparkTerminalTime({ value }: { value: string }) {
   const [date, time] = formatDateTime(value).split(' ');
   return (
     <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 font-mono tabular-nums">
@@ -323,7 +334,7 @@ function SparkRoutingTime({ value }: { value: string }) {
   );
 }
 
-function hasSparkRoutingContent(obj: Record<string, unknown>) {
+function hasSparkTerminalContent(obj: Record<string, unknown>) {
   const status = String(obj.status ?? 'open');
   return status === 'routed'
     || status === 'discarded'

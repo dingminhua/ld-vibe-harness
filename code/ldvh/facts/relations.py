@@ -185,6 +185,10 @@ def _edge_time_valid(
 
 
 def _source_condition(source_type: str, relation_key: str, source_fields: dict[str, object]) -> bool:
+    if source_type == "spark" and relation_key == "routed-to":
+        return source_fields.get("status") == "routed"
+    if source_type == "spark" and relation_key == "supersedes":
+        return source_fields.get("status") == "open"
     if source_type == "workcase" and relation_key == "depends-on":
         return source_fields.get("status") in {"open", "blocked"}
     if source_type == "workcase" and relation_key == "routed-to":

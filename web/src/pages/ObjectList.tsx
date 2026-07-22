@@ -299,24 +299,12 @@ function ObjectCardFrame({
   );
 }
 
-type SparkRoutingRef = { ref: string; objectType?: string };
-
-function sparkRoutedTargets(obj: ObjectItem): SparkRoutingRef[] {
-  if (!Array.isArray(obj.relations)) return [];
-  return obj.relations.flatMap((relation) => {
-    if (relation.relation_key !== 'routed-to' || !relation.target || typeof relation.target !== 'object') return [];
-    const target = relation.target as Record<string, unknown>;
-    if (typeof target.object_id !== 'string' || typeof target.fact_type_key !== 'string') return [];
-    return [{ ref: target.object_id, objectType: target.fact_type_key }];
-  });
-}
-
 function hasSparkResolvedFact(obj: ObjectItem) {
-  return obj.status === 'routed' || sparkRoutedTargets(obj).length > 0;
+  return obj.status === 'routed';
 }
 
 function hasSparkDiscardFact(obj: ObjectItem) {
-  return obj.status === 'discarded' || Boolean(obj.disposition_summary?.trim());
+  return obj.status === 'discarded';
 }
 
 function SparkFactPanel({
@@ -325,7 +313,7 @@ function SparkFactPanel({
   children,
 }: {
   tone: 'open' | 'routed' | 'discarded';
-  title: string;
+  title?: string;
   children: ReactNode;
 }) {
   void tone;
@@ -334,10 +322,12 @@ function SparkFactPanel({
       onClick={(event) => event.stopPropagation()}
       className="min-w-0 cursor-default px-1.5 py-1"
     >
-      <div className="ldvh-meta mb-1 flex min-w-0 items-center gap-1.5 text-ldvh-text-secondary/75">
-        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-ldvh-text-secondary/75" aria-hidden="true" />
-        <span className="min-w-0 truncate">{title}</span>
-      </div>
+      {title && (
+        <div className="ldvh-meta mb-1 flex min-w-0 items-center gap-1.5 text-ldvh-text-secondary/75">
+          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-ldvh-text-secondary/75" aria-hidden="true" />
+          <span className="min-w-0 truncate">{title}</span>
+        </div>
+      )}
       <div className="min-w-0 text-ldvh-text-secondary/75">
         {children}
       </div>
@@ -345,48 +335,22 @@ function SparkFactPanel({
   );
 }
 
-function SparkMetaLine({ label, value }: { label: string; value: string }) {
-  if (!value.trim()) return null;
-  return (
-    <div className="grid min-w-0 gap-1 py-1 first:pt-0 last:pb-0 sm:grid-cols-[3.5rem_1fr]">
-      <span className="ldvh-meta text-ldvh-text-secondary/75">{label}</span>
-      <span className="min-w-0 break-words text-[12px] leading-5 text-ldvh-text-secondary/75">{formatReasonText(value)}</span>
-    </div>
-  );
-}
-
-function SparkResolvedCardContent({ obj }: { obj: ObjectItem }) {
+function SparkTerminalCardContent({ obj }: { obj: ObjectItem }) {
   const { t } = useI18n();
-  const routingTargets = sparkRoutedTargets(obj);
-  const targetLabel = routingTargets.length > 0
-    ? routingTargets.map((target) => `${target.objectType ?? ''} ${target.ref}`.trim()).join(', ')
-    : t('objectList.noRouteTarget');
-  const routedAt = obj.closed_at ? formatDateTime(obj.closed_at) : '';
+  const reason = obj.disposition_summary?.trim() || t('objectList.dispositionMissing');
+  const tone = obj.status === 'discarded' ? 'discarded' : 'routed';
 
   return (
-    <SparkFactPanel tone="routed" title={t('objectList.routed')}>
-      <div className="flex flex-col gap-0.5">
-        <SparkMetaLine label={t('objectList.target')} value={targetLabel} />
-        {routedAt && <SparkMetaLine label={t('objectList.time')} value={routedAt} />}
+    <SparkFactPanel tone={tone}>
+      <div className="min-w-0 whitespace-pre-line break-words text-[12px] leading-5 text-ldvh-text-secondary/75">
+        {formatReasonText(reason)}
       </div>
     </SparkFactPanel>
   );
 }
 
-function SparkDiscardedCardContent({ obj }: { obj: ObjectItem }) {
-  const { t } = useI18n();
-  const reason = obj.disposition_summary?.trim() || t('objectList.dispositionMissing');
-
-  return (
-    <SparkFactPanel tone="discarded" title={t('objectList.discarded')}>
-      <SparkMetaLine label={t('objectList.reason')} value={reason} />
-    </SparkFactPanel>
-  );
-}
-
 function SparkCardContent({ obj }: { obj: ObjectItem }) {
-  if (hasSparkDiscardFact(obj)) return <SparkDiscardedCardContent obj={obj} />;
-  if (hasSparkResolvedFact(obj)) return <SparkResolvedCardContent obj={obj} />;
+  if (hasSparkDiscardFact(obj) || hasSparkResolvedFact(obj)) return <SparkTerminalCardContent obj={obj} />;
   return null;
 }
 

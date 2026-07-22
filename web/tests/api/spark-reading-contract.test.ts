@@ -89,7 +89,7 @@ test('routed Spark presents one routing record instead of duplicate closure meta
 
   assert.match(detail, /closedAt=\{objType === 'spark' \|\| !obj\.closed_at \? undefined : formatDateTime/)
   assert.match(panel, /closedAt=\{objectType === 'spark' \|\| !obj\?\.closed_at \? undefined : formatDateTime/)
-  assert.match(layout, /function SparkRoutingTime/)
+  assert.match(layout, /function SparkTerminalTime/)
   assert.equal(layout.includes("getFieldLabel('resolved_at', locale)"), false)
   assert.equal(layout.includes("getFieldLabel('closed_at', locale)"), false)
   assert.equal(layout.includes("getFieldLabel('resolved_to', locale)"), false)
@@ -98,4 +98,24 @@ test('routed Spark presents one routing record instead of duplicate closure meta
   assert.equal(associations.includes(".filter((relation) => relation.relationKey !== 'routed-to')"), false)
   assert.equal(associations.includes('?? target.objectId'), false)
   assert.match(associations, /function readableTargetTitle/)
+})
+
+test('discarded Spark does not present its terminal disposition as routing', () => {
+  const layout = source('src/pages/object-detail/FactReadingLayouts.tsx')
+
+  assert.match(layout, /node\.kind === 'terminal' && obj\.status === 'discarded'[\s\S]*?'废弃'/)
+  assert.match(layout, /return locale === 'en' \? node\.en : node\.zh/)
+})
+
+test('Spark terminal cards keep only their explanatory content and never infer terminal status', () => {
+  const list = source('src/pages/ObjectList.tsx')
+
+  assert.match(list, /function hasSparkResolvedFact[\s\S]*?return obj\.status === 'routed'/)
+  assert.match(list, /function hasSparkDiscardFact[\s\S]*?return obj\.status === 'discarded'/)
+  assert.match(list, /function SparkTerminalCardContent[\s\S]*?<SparkFactPanel tone=\{tone\}>[\s\S]*?\{formatReasonText\(reason\)\}/)
+  assert.equal(list.includes('title={t(\'objectList.discarded\')}'), false)
+  assert.equal(list.includes('label={t(\'objectList.reason\')}'), false)
+  assert.equal(list.includes('sparkRoutedTargets'), false)
+  assert.equal(list.includes("t('objectList.target')"), false)
+  assert.equal(list.includes("t('objectList.time')"), false)
 })
