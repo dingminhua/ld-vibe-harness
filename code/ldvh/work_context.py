@@ -75,10 +75,17 @@ def _request() -> JsonObject:
     }
 
 
-def _run_helper(helper_executable: Path, *, cwd: Path) -> JsonObject:
+def _run_helper(helper_executable: Path, *, working_tree_cwd: Path) -> JsonObject:
+    """Read the current rule-source view without changing the fixed profile selection.
+
+    ``working_tree_cwd`` only gives the Helper process its current working-tree
+    location.  The profile selection is the constant returned by ``_request``;
+    it does not derive headings or rule choices from the native event path.
+    """
+
     completed = subprocess.run(
         [str(helper_executable), "call", RULE_ORIENTATION_OPERATION],
-        cwd=cwd,
+        cwd=working_tree_cwd,
         input=json.dumps(_request(), ensure_ascii=False, separators=(",", ":")),
         text=True,
         encoding="utf-8",
@@ -195,9 +202,9 @@ def _unavailable_context(summary: str) -> str:
 
 
 def run(native_event: Any, *, helper_executable: str) -> JsonObject:
-    event_name, cwd, trigger = _native_trigger(native_event)
+    event_name, working_tree_cwd, trigger = _native_trigger(native_event)
     helper = _helper_executable(helper_executable)
-    response = _run_helper(helper, cwd=cwd)
+    response = _run_helper(helper, working_tree_cwd=working_tree_cwd)
     return {
         "contract": WORK_CONTEXT_CONTRACT,
         "event_name": event_name,

@@ -67,6 +67,26 @@ def test_doctor_reports_ready_for_explicit_governed_project(tmp_path: Path) -> N
     assert result["diagnostics"] == []
 
 
+def test_doctor_ready_does_not_claim_environment_installation_or_triggering(tmp_path: Path) -> None:
+    workspace, project = _workspace(tmp_path)
+
+    result = doctor.run_doctor(
+        workspace_root=str(workspace),
+        work_object_locator=str(project),
+        helper_executable=str(HELPER_EXECUTABLE.resolve()),
+    )
+
+    assert result["status"] == "ready"
+    assert next(
+        item for item in result["integration_surfaces"] if item["surface_key"] == "work-context-core"
+    )["state"] == "available"
+    assert (
+        "static entry points do not prove installation into, automatic triggering by, "
+        "or verification of an environment"
+    ) in result["limitations"]
+    assert not any("environment_trigger" in item["check"] for item in result["checks"])
+
+
 def test_doctor_reports_attention_without_guessing_project_binding(tmp_path: Path) -> None:
     workspace, _ = _workspace(tmp_path)
     outside = tmp_path / "outside"

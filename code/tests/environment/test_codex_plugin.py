@@ -68,6 +68,30 @@ def _actual_work_context(tmp_path: Path) -> Path:
     )
 
 
+def _recording_actual_work_context(tmp_path: Path) -> tuple[Path, Path]:
+    actual_core = _actual_work_context(tmp_path)
+    records = tmp_path / "actual-core-records.jsonl"
+    body = "\n".join(
+        [
+            "import json",
+            "import subprocess",
+            "import sys",
+            "from pathlib import Path",
+            f"actual_core = {str(actual_core)!r}",
+            f"records = Path({str(records)!r})",
+            "raw = sys.stdin.buffer.read()",
+            "native = json.loads(raw)",
+            "with records.open('a', encoding='utf-8') as stream:",
+            "    stream.write(json.dumps({'native': native, 'raw': raw.decode('utf-8')}, ensure_ascii=False) + '\\n')",
+            "completed = subprocess.run([actual_core, *sys.argv[1:]], input=raw, capture_output=True, check=False)",
+            "sys.stdout.buffer.write(completed.stdout)",
+            "sys.stderr.buffer.write(completed.stderr)",
+            "raise SystemExit(completed.returncode)",
+        ]
+    ) + "\n"
+    return _executable(tmp_path, "recording-actual-work-context", body), records
+
+
 def _run_configure(*arguments: str) -> tuple[subprocess.CompletedProcess[str], dict[str, Any]]:
     completed = subprocess.run(
         [sys.executable, str(CONFIGURE), *arguments],
@@ -323,6 +347,30 @@ def test_adapter_rejects_a_core_result_with_a_different_event_identity(tmp_path:
     assert "hookSpecificOutput" not in response
 
 
+def test_adapter_forwards_exact_native_json_to_the_actual_core(tmp_path: Path) -> None:
+    plugin_data = tmp_path / "plugin-data"
+    cwd = tmp_path / "project"
+    cwd.mkdir()
+    helper = _executable(
+        tmp_path,
+        "helper",
+        "print('{\"contract\": \"ldvh-helper-cli/2\", \"request_kind\": \"call\", "
+        "\"operation_key\": \"read-specification-content\", \"outcome\": \"ok\", "
+        "\"result\": {\"items\": []}, \"scope\": {\"completed\": [], \"not_completed\": []}, "
+        "\"gaps\": [], \"follow_up\": {\"summary\": \"continue\"}}')\n",
+    )
+    core, records = _recording_actual_work_context(tmp_path)
+    _apply(plugin_data, helper, core)
+
+    completed, response, native = _run_hook(plugin_data, cwd, event="SessionStart", source="compact")
+
+    assert completed.returncode == 0
+    assert response["hookSpecificOutput"]["hookEventName"] == "SessionStart"
+    record = json.loads(records.read_text(encoding="utf-8").strip())
+    assert record["raw"] == json.dumps(native, ensure_ascii=False, separators=(",", ":"))
+    assert record["native"] == native
+
+
 def test_work_context_core_deduplicates_shared_rule_parts_without_hiding_delivery_scope() -> None:
     shared_part = {
         "content": "共同根上下文",
@@ -344,7 +392,7 @@ def test_work_context_core_deduplicates_shared_rule_parts_without_hiding_deliver
     ]
 
 
-def test_actual_core_delivers_only_rule_orientation_and_never_default_fact_recovery(tmp_path: Path) -> None:
+def test_actual_core_keeps_rule_selection_fixed_while_using_native_cwd_for_source_view(tmp_path: Path) -> None:
     plugin_data = tmp_path / "plugin-data"
     cwd = tmp_path / "project"
     cwd.mkdir()
@@ -372,14 +420,16 @@ def test_actual_core_delivers_only_rule_orientation_and_never_default_fact_recov
     )
     _apply(plugin_data, helper, _actual_work_context(tmp_path))
 
+    other_cwd = tmp_path / "other-project"
+    other_cwd.mkdir()
     completed, response, _ = _run_hook(plugin_data, cwd)
+    other_completed, other_response, _ = _run_hook(plugin_data, other_cwd)
 
     assert completed.returncode == 0
+    assert other_completed.returncode == 0
     assert "Facts: not_requested" in response["hookSpecificOutput"]["additionalContext"]
-    record = json.loads(helper_records.read_text(encoding="utf-8").strip())
-    assert record["argv"] == ["call", "read-specification-content"]
-    assert record["cwd"] == str(cwd)
-    assert record["stdin"] == {
+    assert "Facts: not_requested" in other_response["hookSpecificOutput"]["additionalContext"]
+    expected_request = {
         "arguments": {
             "selections": [
                 {
@@ -396,6 +446,13 @@ def test_actual_core_delivers_only_rule_orientation_and_never_default_fact_recov
         "response_profile": "compact",
         "observed_context": {},
     }
+    records = [json.loads(line) for line in helper_records.read_text(encoding="utf-8").splitlines()]
+    assert [record["argv"] for record in records] == [
+        ["call", "read-specification-content"],
+        ["call", "read-specification-content"],
+    ]
+    assert [record["cwd"] for record in records] == [str(cwd), str(other_cwd)]
+    assert [record["stdin"] for record in records] == [expected_request, expected_request]
 
 
 def test_actual_core_failure_preserves_the_native_event_for_thin_mapping(tmp_path: Path) -> None:
