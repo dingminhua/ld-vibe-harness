@@ -150,6 +150,30 @@ def _run_hook(
     return completed, json.loads(completed.stdout), native
 
 
+@pytest.mark.parametrize(
+    ("cwd", "message"),
+    [
+        ("relative-project", "current directory must be an absolute path"),
+        ("missing", "current directory does not identify an existing directory"),
+    ],
+)
+def test_work_context_reports_the_specific_native_cwd_problem(
+    tmp_path: Path,
+    cwd: str,
+    message: str,
+) -> None:
+    supplied_cwd = cwd if cwd == "relative-project" else str(tmp_path / cwd)
+
+    with pytest.raises(work_context.WorkContextError, match=message):
+        work_context._native_trigger(
+            {
+                "hook_event_name": "SessionStart",
+                "source": "startup",
+                "cwd": supplied_cwd,
+            }
+        )
+
+
 def test_manifest_keeps_only_the_current_five_event_registrations() -> None:
     hooks = json.loads((PLUGIN_ROOT / "hooks/hooks.json").read_text(encoding="utf-8"))
     assert hooks == {

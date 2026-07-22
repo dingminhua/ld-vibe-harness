@@ -61,8 +61,10 @@ def _native_trigger(value: Any) -> tuple[str, Path, str]:
     if not isinstance(cwd, str) or not cwd.strip():
         raise WorkContextError("native event does not provide a current directory")
     directory = Path(cwd)
-    if not directory.is_absolute() or not directory.is_dir():
-        raise WorkContextError("native event current directory is not usable")
+    if not directory.is_absolute():
+        raise WorkContextError("native event current directory must be an absolute path")
+    if not directory.is_dir():
+        raise WorkContextError("native event current directory does not identify an existing directory")
     return event_name, directory, trigger
 
 
