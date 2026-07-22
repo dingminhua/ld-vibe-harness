@@ -31,6 +31,7 @@ import { getSignalClassName, getSignalText, isSignalField } from '@/utils/object
 import { usePanel } from '@/utils/panelContext';
 import { WorkCaseReadingLayout } from '@/pages/object-detail/WorkCaseReadingLayout';
 import { AdrReadingLayout, PitfallReadingLayout, PitfallTextNodeContent, SparkReadingLayout } from '@/pages/object-detail/FactReadingLayouts';
+import { FactAssociationsSection } from '@/pages/object-detail/FactAssociationsSection';
 import {
   CHECKLIST_COMPAT_FIELDS,
   COLLAPSIBLE_FIELDS,
@@ -62,7 +63,8 @@ export type { RelatedContentEntry };
 export { WorkCaseReadingLayout } from '@/pages/object-detail/WorkCaseReadingLayout';
 export { AdrReadingLayout, PitfallReadingLayout, SparkReadingLayout } from '@/pages/object-detail/FactReadingLayouts';
 
-const STUDY_READING_NODE_FIELDS = new Set(['research_question', 'abstract', 'applicability', 'validation_summary', 'body']);
+const STUDY_READING_NODE_FIELDS = new Set(['research_question', 'abstract', 'applicability', 'validation_summary', 'report_body']);
+const FORMAL_ASSOCIATION_FIELDS = new Set(['source_refs', 'evidence_refs', 'relations']);
 export type ReadingNodeState = 'collapsed' | 'expanded';
 type RelatedAssociationValue = {
   ref: string;
@@ -374,6 +376,7 @@ export function ObjectIdentityHeader({
   const titleClassName = compact ? 'ldvh-reading-title' : 'ldvh-page-title';
   const iconSize = compact ? 16 : 18;
   const statusColor = status ? getStatusColor(status) : null;
+  const isObjectDetail = !compact;
   const tagMetaEntry = auxiliaryMetaEntries.find(([key]) => key === 'tags');
   const remainingAuxiliaryMetaEntries = auxiliaryMetaEntries.filter(([key]) => key !== 'priority' && key !== 'tags');
   const hasFooterMeta = showDefaultDates
@@ -388,13 +391,15 @@ export function ObjectIdentityHeader({
       <div className="flex min-w-0 items-center justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="mb-1.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-            <span
-              className="ldvh-chip shrink-0 rounded px-2 py-0.5"
-              style={{ backgroundColor: `${typeColor}18`, color: typeColor }}
-            >
-              {typeLabel}
-            </span>
-            {status && statusColor && (
+            {!isObjectDetail && (
+              <span
+                className="ldvh-chip shrink-0 rounded px-2 py-0.5"
+                style={{ backgroundColor: `${typeColor}18`, color: typeColor }}
+              >
+                {typeLabel}
+              </span>
+            )}
+            {!isObjectDetail && status && statusColor && (
               <span
                 className="ldvh-chip shrink-0 rounded px-2 py-0.5 font-mono"
                 style={{
@@ -407,6 +412,22 @@ export function ObjectIdentityHeader({
             )}
             {extraBadges}
             <span className="ldvh-meta-muted min-w-0 truncate">{id}</span>
+            {isObjectDetail && showCopyAction && (
+              <div className="ml-auto flex shrink-0 items-center gap-2">
+                <CopyPathButton path={target} label={copyLabel} copiedLabel={copiedLabel} />
+                {status && statusColor && (
+                  <span
+                    className="ldvh-chip shrink-0 rounded px-2 py-0.5 font-mono"
+                    style={{
+                      color: statusColor,
+                      backgroundColor: `${statusColor}18`,
+                    }}
+                  >
+                    {statusLabel || status}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
           <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
             <TitleTag className={`${titleClassName} flex min-w-0 flex-1 basis-full items-center gap-2 break-words`}>
@@ -423,7 +444,7 @@ export function ObjectIdentityHeader({
             )}
           </div>
         </div>
-        {showCopyAction && (
+        {showCopyAction && !isObjectDetail && (
           <div className="flex shrink-0 flex-col items-end justify-center gap-2">
             <CopyPathButton path={target} label={copyLabel} copiedLabel={copiedLabel} />
             {actionAlignedTitleMeta.length > 0 && (
@@ -1184,7 +1205,7 @@ const STUDY_READING_NODES: Array<{ field: string; kind: 'text' | 'report' }> = [
   { field: 'abstract', kind: 'text' },
   { field: 'applicability', kind: 'text' },
   { field: 'validation_summary', kind: 'text' },
-  { field: 'body', kind: 'report' },
+  { field: 'report_body', kind: 'report' },
 ];
 
 export function StudyReadingLayout({
@@ -1200,7 +1221,9 @@ export function StudyReadingLayout({
   locale: string;
   objectPath?: string;
 }) {
-  const extraPrimaryEntries = extraEntries.filter(([fieldKey]) => !STUDY_READING_NODE_FIELDS.has(fieldKey));
+  const extraPrimaryEntries = extraEntries.filter(
+    ([fieldKey]) => !STUDY_READING_NODE_FIELDS.has(fieldKey) && !FORMAL_ASSOCIATION_FIELDS.has(fieldKey),
+  );
 
   return (
     <div className="mb-6 flex flex-col gap-5">
@@ -1224,6 +1247,7 @@ export function StudyReadingLayout({
           objectPath={objectPath}
         />
       ))}
+      <FactAssociationsSection obj={obj} locale={locale} />
       <RelatedContentSection entries={relatedEntries} locale={locale} />
     </div>
   );
@@ -1308,11 +1332,19 @@ function StudyReportBodyEntry({ value, objectPath }: { value: unknown; objectPat
   );
 }
 
-export function StudyTextNodeContent({ value, compact = false }: { value: unknown; compact?: boolean }) {
+export function StudyTextNodeContent({
+  value,
+  compact = false,
+  className = '',
+}: {
+  value: unknown;
+  compact?: boolean;
+  className?: string;
+}) {
   const text = String(value);
 
   return (
-    <div className={`ldvh-study-node-content min-w-0 ${compact ? 'ldvh-study-node-content-compact' : ''}`}>
+    <div className={`ldvh-study-node-content min-w-0 ${compact ? 'ldvh-study-node-content-compact' : ''} ${className}`}>
       <div className="ldvh-inline-markdown max-w-none min-w-0 overflow-hidden break-words">
         <Markdown remarkPlugins={[remarkGfm]}>{text}</Markdown>
       </div>

@@ -558,6 +558,21 @@ input::-moz-focus-inner {
   line-height: 1.75;
 }
 
+.ldvh-study-node-content.ldvh-spark-reading-prose .ldvh-inline-markdown,
+.ldvh-study-node-content.ldvh-spark-reading-prose .ldvh-inline-markdown :where(p, li) {
+  line-height: 26px;
+}
+
+/* Preserve a readable group break when Markdown follows a list with a new paragraph. */
+.ldvh-study-node-content.ldvh-spark-reading-prose .ldvh-inline-markdown :where(ul, ol) + p {
+  margin-top: 12px;
+}
+
+/* Center the custom unordered-list marker on Spark's fixed 26px reading line. */
+.ldvh-study-node-content.ldvh-spark-reading-prose .ldvh-inline-markdown :where(ul > li)::before {
+  top: 10px;
+}
+
 .ldvh-study-node-content .ldvh-inline-markdown :where(ul) {
   padding-left: 0;
   list-style: none;

@@ -56,6 +56,14 @@ def test_rejects_invalid_yaml_without_leaking_an_exception() -> None:
     assert "ParserError" not in result.issues[0].summary
 
 
+def test_rejects_escaped_lone_surrogate_before_fact_strings_are_consumed() -> None:
+    result = parse_yaml_object('summary: "\\uD800"\n')
+
+    assert result.fields is None
+    assert len(result.issues) == 1
+    assert result.issues[0].category == "parse"
+
+
 def test_keeps_timestamp_shaped_scalars_as_strings() -> None:
     result = parse_yaml_object("created_at: 2026-07-14\nupdated_at: 2026-07-14T12:34:56+08:00\n")
 

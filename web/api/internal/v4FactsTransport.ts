@@ -291,8 +291,9 @@ function validateRequest(request: V4FactsMachineRequest): Buffer {
         || typeof request.arguments.object_id !== 'string'
         || !/^spark-[0-9]{4,}$/.test(request.arguments.object_id)))
     || (request.operation === 'create-spark'
-      && (Object.keys(request.arguments).sort().join(',') !== 'description,priority,title'
+      && (Object.keys(request.arguments).sort().join(',') !== 'description,intent,priority,title'
         || typeof request.arguments.title !== 'string'
+        || typeof request.arguments.intent !== 'string'
         || typeof request.arguments.description !== 'string'
         || typeof request.arguments.priority !== 'string'))) {
     throw new V4FactsTransportError('invalid_transport_request', 'Machine arguments do not match the operation')

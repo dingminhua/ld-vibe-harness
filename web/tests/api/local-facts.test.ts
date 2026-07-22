@@ -303,6 +303,9 @@ test('create-spark 写入（Python 桥）→ 列表/详情直读回读结构一�
     ].join('\n'),
   )
   try {
+    const description = '\u3000## 当前问题\n\n为什么需要保留 Cafe\u0301 观察？\n\n- 已知：Web 应完整阅读事实对象\n- 边界：Helper 才使用渐进式摘录\n\n```text\n内部换行和 Markdown 必须保留\n```\u00a0'
+    const expectedSummary = '## 当前问题\n\n为什么需要保留 Café 观察？\n\n- 已知：Web 应完整阅读事实对象\n- 边界：Helper 才使用渐进式摘录\n\n```text\n内部换行和 Markdown 必须保留\n```'
+    const intent = '验证 Web 写入与当前事实回读的一致性。'
     const machineScope = {
       workspace_root: workspaceRoot,
       worktree_locator: projectRoot,
@@ -312,7 +315,7 @@ test('create-spark 写入（Python 桥）→ 列表/详情直读回读结构一�
       protocol_version: 1,
       operation: 'create-spark',
       scope: machineScope,
-      arguments: { title: '回读一致性', description: '写入走 Python 桥，读取走本地直读。', priority: 'P2' },
+      arguments: { title: '回读一致性', intent, description, priority: 'P2' },
     }, { pythonExecutable })
     assert.equal(captured.status, 'created')
     const created = captured.result as Record<string, unknown>
@@ -333,7 +336,9 @@ test('create-spark 写入（Python 桥）→ 列表/详情直读回读结构一�
     assert.deepEqual(item.object_ref, createdRef)
     assert.equal(item.canonical_path, created.canonical_path)
     const bridgeFact = created.fact_object as Record<string, unknown>
-    for (const field of ['object_id', 'fact_type_key', 'title', 'summary', 'status', 'priority', 'created_at', 'updated_at', 'source_refs']) {
+    assert.equal(bridgeFact.summary, expectedSummary)
+    assert.equal(bridgeFact.intent, intent)
+    for (const field of ['object_id', 'fact_type_key', 'title', 'intent', 'summary', 'status', 'priority', 'created_at', 'updated_at', 'source_refs']) {
       assert.deepEqual(item[field], bridgeFact[field], `list item field ${field} matches bridge fact_object`)
     }
 
@@ -343,7 +348,9 @@ test('create-spark 写入（Python 桥）→ 列表/详情直读回读结构一�
     if (!detail.ok) return
     assert.deepEqual(detail.data.object_ref, createdRef)
     assert.equal(detail.data.canonical_path, created.canonical_path)
-    for (const field of ['object_id', 'fact_type_key', 'title', 'summary', 'status', 'created_at', 'updated_at']) {
+    assert.equal(detail.data.summary, expectedSummary)
+    assert.equal(detail.data.intent, intent)
+    for (const field of ['object_id', 'fact_type_key', 'title', 'intent', 'summary', 'status', 'created_at', 'updated_at']) {
       assert.deepEqual(detail.data[field], bridgeFact[field], `detail field ${field} matches bridge fact_object`)
     }
     assert.equal(detail.summary.id, objectId)

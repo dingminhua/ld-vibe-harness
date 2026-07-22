@@ -12,6 +12,7 @@ interface SparkCreateProps {
 export default function SparkCreate({ onCreated }: SparkCreateProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [title, setTitle] = useState('');
+  const [intent, setIntent] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState('P3');
   const [submitting, setSubmitting] = useState(false);
@@ -21,6 +22,7 @@ export default function SparkCreate({ onCreated }: SparkCreateProps) {
 
   const reset = () => {
     setTitle('');
+    setIntent('');
     setDescription('');
     setPriority('P3');
     setError(null);
@@ -46,7 +48,7 @@ export default function SparkCreate({ onCreated }: SparkCreateProps) {
       const res = await fetch(`${API_BASE}/sparks`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, description, priority }),
+        body: JSON.stringify({ title, intent, description, priority }),
       });
 
       if (!res.ok) {
@@ -123,15 +125,35 @@ export default function SparkCreate({ onCreated }: SparkCreateProps) {
             </div>
 
             <div>
+              <label className="ldvh-caption-strong mb-1 block">{t('spark.intent')}</label>
+              <textarea
+                value={intent}
+                onChange={e => setIntent(e.target.value)}
+                required
+                rows={3}
+                placeholder={t('spark.intentPlaceholder')}
+                aria-describedby="spark-intent-help"
+                className="ldvh-body w-full resize-y rounded-md border border-ldvh-border bg-ldvh-bg px-3 py-2 placeholder:text-ldvh-text-secondary focus:border-ldvh-accent/40 focus:outline-none"
+              />
+              <p id="spark-intent-help" className="ldvh-meta-muted mt-1.5">
+                {t('spark.intentHelp')}
+              </p>
+            </div>
+
+            <div>
               <label className="ldvh-caption-strong mb-1 block">{t('spark.description')}</label>
               <textarea
                 value={description}
                 onChange={e => setDescription(e.target.value)}
                 required
-                rows={3}
+                rows={8}
                 placeholder={t('spark.descriptionPlaceholder')}
-                className="ldvh-body w-full resize-none rounded-md border border-ldvh-border bg-ldvh-bg px-3 py-2 placeholder:text-ldvh-text-secondary focus:border-ldvh-accent/40 focus:outline-none"
+                aria-describedby="spark-description-help"
+                className="ldvh-body w-full resize-y rounded-md border border-ldvh-border bg-ldvh-bg px-3 py-2 placeholder:text-ldvh-text-secondary focus:border-ldvh-accent/40 focus:outline-none"
               />
+              <p id="spark-description-help" className="ldvh-meta-muted mt-1.5">
+                {t('spark.descriptionHelp')}
+              </p>
             </div>
 
             <div>

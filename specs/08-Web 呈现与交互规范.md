@@ -147,6 +147,14 @@ Web 检测到派生内容与当前来源不一致时，应优先呈现差异和�
 
 事实、状态、证据、风险、规则、诊断、验证结果和待确认事项在页面中出现时，必须保留能够回到其实际来源的入口。来源入口可以根据场景呈现为项目、对象、文件、规范章节、commit、外部地址或实际命令与观察范围，但不得只显示无法复核的“系统生成”“AI 判断”或颜色标签。
 
+事实对象的 `source_refs` 只能按具体类型来源规定的来源身份呈现；Web 不得因 locator 含有 Human 输入、问题描述或形成背景，就把它重命名、推导或投影为对象不存在的 `intent`、正文、判断或其它事实字段。需要呈现来源内容时仍须保留其来源身份，并与对象当前正文分开。
+
+同一状态码在不同事实类型中出现时，Web 必须按该类型来源的语义和面向 Human 的状态词呈现，不得用通用词表抹平类型差异；例如 20 定义的 Spark `open` 必须显示为“待处理”，不得显示为“未关闭”。Web 只负责显示，不由此改变状态码、状态机或转换。
+
+Spark 阅读中的“关联”只呈现正式事实对象关系及可供继续阅读的项目内文档；`human-input` 和 `web-direct-capture` 等原始输入来源不得被归类为“外部资料与输入”塞入关联区，也不得用其原话替代 `intent`。需要呈现这些来源时，必须作为来源身份与当前 Spark 的意图、摘要和关联分开。
+
+事实对象文本字段通过 Markdown 语法明确表达段落、强调式分组标签、小标题、编号、无序列表或嵌套关系时，Web 必须忠实渲染源文已经表达的结构，并保持这些结构可被 Human 扫描识别；编号与无序列表的选择同样保持源文原义，Web 不得相互替换。语义上类似标签但没有 Markdown 标记的普通文本仍按普通段落呈现；Web 不得根据文本含义自动猜测、补写或重写结构，不得擅自把普通文本提升为标签或标题、合并或拆分段落、重新编号、生成列表或套用统一文章骨架。结构选择属于事实内容形成责任，不属于 Web 派生责任。
+
 页面必须区分：
 
 1. 当前事实源内容；
@@ -187,25 +195,27 @@ Web 默认只读。页面、API 或表单的存在不授予 Web 修改事实源�
 
 ### 8.2 Spark Web direct capture 窄边界
 
-Human 已明确决定保留现有 Spark 创建表现且不增加页面字段。仅对本节定义的 `web-direct-capture`，§8.1 第 4 项使用以下窄化解释：现有表单明确呈现的 title、description 与 priority 是当次唯一对象内容和预期变化；“创建 Spark”只表示尝试在页面当前唯一项目中 no-overwrite 新增一个 `open` Spark。该交互不更新、重开、替代或关联既有对象，不创建其它事实类型，不修改配置或 Git，不触发其它工作，也不证明信息真实、语义唯一或后续工作已经开始。该窄边界不放宽 §8.1 的当前来源、当次授权、实际 Code 能力和写后回读要求。
+Human 现已明确要求 Spark 具有独立的“创建原因”字段。仅对本节定义的 `web-direct-capture`，§8.1 第 4 项使用以下窄化解释：表单明确呈现的 title、intent、description 与 priority 是当次唯一对象内容和预期变化；其中 intent 是 20 定义的创建原因，description 是完整当前 `summary` 输入，二者不合并、不互相推导。description 必须允许多段文本，并以标签、说明或 placeholder 告知 Human 应记录已知判断、相关边界、风险和剩余不确定性中对该 Spark 实际相关的当前内容；不得用字符下限、固定段落、自动填充或从其它字段猜测冒充语义充分。“创建 Spark”只表示尝试在页面当前唯一项目中 no-overwrite 新增一个 `open` Spark。该交互不更新、重开、替代或关联既有对象，不创建其它事实类型，不修改配置或 Git，不触发其它工作，也不证明信息真实、语义唯一、内容已经通过 AI 充分性审核或后续工作已经开始。该窄边界不放宽 §8.1 的当前来源、当次授权、实际 Code 能力和写后回读要求。
 
-每次点击提交只授权处理该次闭集请求中的一个 Spark；此前保留产品能力的 Human 决定只授权建设该入口，不替代逐次提交。请求 JSON object 只允许 `title`、`description` 和 `priority` 三个字段，不接受额外字段；`description` 映射为 canonical payload 的 `summary`。规范化与内容身份固定如下：
+每次点击提交只授权处理该次闭集请求中的一个 Spark；此前保留产品能力的 Human 决定只授权建设该入口，不替代逐次提交。当前新建请求 JSON object 只允许 `title`、`intent`、`description` 和 `priority` 四个字段，不接受额外字段；`intent` 映射为 canonical payload 的同名字段，`description` 映射为 `summary`。历史已经形成的三字段 source ref 作为 v1 只读兼容，新请求不得继续产生 v1。规范化与内容身份固定如下：
 
-1. `title`、`description` 必须是 Unicode string；先按 Unicode 15.1 NFC 规范化，再只从两端删除 White_Space code point 集合 `U+0009–U+000D`、`U+0020`、`U+0085`、`U+00A0`、`U+1680`、`U+2000–U+200A`、`U+2028`、`U+2029`、`U+202F`、`U+205F`、`U+3000`；`U+FEFF` 不属于本集合，不得删除；结果必须非空；
+1. `title`、`intent`、`description` 必须是 Unicode string；先按 Unicode 15.1 NFC 规范化，再只从两端删除 White_Space code point 集合 `U+0009–U+000D`、`U+0020`、`U+0085`、`U+00A0`、`U+1680`、`U+2000–U+200A`、`U+2028`、`U+2029`、`U+202F`、`U+205F`、`U+3000`；`U+FEFF` 不属于本集合，不得删除；结果必须非空；
 2. `priority` 必须精确为 `P0`、`P1`、`P2` 或 `P3`，不 trim、不折叠大小写、不修复；
-3. canonical object 的字段闭集恰为 `priority`、`summary`、`title`，按 ASCII key 升序输出为 JSON；冒号与逗号旁无空白、无末尾换行，非 ASCII 字符在 NFC 后直接使用 UTF-8；
+3. v2 canonical object 的字段闭集恰为 `intent`、`priority`、`summary`、`title`，按 ASCII key 升序输出为 JSON；验证历史 v1 时只接受精确的 `priority`、`summary`、`title` 闭集，不得接受其它字段组合或将 v1 自动升级为 v2。冒号与逗号旁无空白、无末尾换行，非 ASCII 字符在 NFC 后直接使用 UTF-8；
 4. JSON 必须把 `"` 和 `\` 分别转义为 `\"` 与 `\\`；C0 中 `U+0008/U+0009/U+000A/U+000C/U+000D` 分别使用 `\b/\t/\n/\f/\r`，其它 C0 使用小写十六进制 `\u00xx`；`/` 不转义，内部 `U+2028/U+2029` 保留为 UTF-8，unpaired surrogate 拒绝；
 5. canonical bytes 是上述 JSON 的 UTF-8 bytes。`version` 固定为 `sha256:<64 位小写十六进制>`；`locator` 固定为 `data:application/json;base64,<payload>`，其中 payload 使用 RFC 4648 standard Base64 alphabet、保留必要 `=` padding、禁止空白和非 canonical 编码；
-6. `source_refs` 的该项固定使用 `kind: web-direct-capture`，并包含上述 `locator`、`version` 与实际服务器观察提交事件时形成的带时区 RFC 3339 `observed_at`。locator 必须可解码回 canonical bytes；Code 必须重新规范化、逐 bytes 比较并复算 digest。创建前与首次写后回读时的历史 capture 与新对象初始 `title/summary/priority` 一致性核对按 20 §7 执行；对象随后发生合法生命周期变化时，该来源仍证明当时输入，不要求历史 payload 永远等于当前对象快照。
+6. `source_refs` 的该项固定使用 `kind: web-direct-capture`，并包含上述 `locator`、`version` 与实际服务器观察提交事件时形成的带时区 RFC 3339 `observed_at`。locator 必须可解码回 canonical bytes；Code 必须重新规范化、逐 bytes 比较并复算 digest。创建前与首次写后回读时，v2 capture 与新对象初始 `title/intent/summary/priority` 的一致性核对按 20 §7 执行；对象随后发生合法生命周期变化时，该来源仍证明当时输入，不要求历史 payload 永远等于当前对象快照。
 
 固定向量如下；输入转义只用于在本文可见地表示 code point，不是 canonical JSON 的另一种编码：
 
 | vector | 原始输入 | canonical 或 identity |
 |---|---|---|
-| `ascii-padding` | `title="  Alpha  "`、`description="  Beta  "`、`priority="P3"` | canonical 为 `{"priority":"P3","summary":"Beta","title":"Alpha"}`；SHA-256 为 `5626348cede47a57cdb59910a5b23e11013c5508554b1998ba92bcd4ab18ec69`；Base64 为 `eyJwcmlvcml0eSI6IlAzIiwic3VtbWFyeSI6IkJldGEiLCJ0aXRsZSI6IkFscGhhIn0=` |
-| `unicode-escaping` | title 两端为 `U+2003/U+00A0`，正文为 `Cafe + U+0301 + space + "A/B"`；description 两端为 `U+3000/U+00A0`，正文含中文、内部 `U+2028`、quote、backslash、LF、`U+0001`、emoji；`priority="P2"` | NFC/trim 后 SHA-256 为 `e3208211e97f642d5bb5e363cd5ea64c68c7f872c6aca294edca6ccc60d491ef`；Base64 为 `eyJwcmlvcml0eSI6IlAyIiwic3VtbWFyeSI6IuS4reKAqOaWhyBcIui3r+W+hFxcXCJcblx1MDAwMfCfmIAiLCJ0aXRsZSI6IkNhZsOpIFwiQS9CXCIifQ==` |
+| `legacy-v1-ascii-padding` | 历史 `title="  Alpha  "`、`description="  Beta  "`、`priority="P3"` | v1 canonical 为 `{"priority":"P3","summary":"Beta","title":"Alpha"}`；SHA-256 为 `5626348cede47a57cdb59910a5b23e11013c5508554b1998ba92bcd4ab18ec69`；Base64 为 `eyJwcmlvcml0eSI6IlAzIiwic3VtbWFyeSI6IkJldGEiLCJ0aXRsZSI6IkFscGhhIn0=` |
+| `legacy-v1-unicode-escaping` | 历史 title 两端为 `U+2003/U+00A0`，正文为 `Cafe + U+0301 + space + "A/B"`；description 两端为 `U+3000/U+00A0`，正文含中文、内部 `U+2028`、quote、backslash、LF、`U+0001`、emoji；`priority="P2"` | v1 NFC/trim 后 SHA-256 为 `e3208211e97f642d5bb5e363cd5ea64c68c7f872c6aca294edca6ccc60d491ef`；Base64 为 `eyJwcmlvcml0eSI6IlAyIiwic3VtbWFyeSI6IuS4reKAqOaWhyBcIui3r+W+hFxcXCJcblx1MDAwMfCfmIAiLCJ0aXRsZSI6IkNhZsOpIFwiQS9CXCIifQ==` |
+| `ascii-padding` | `title="  Alpha  "`、`intent="  Why now?  "`、`description="  Beta  "`、`priority="P3"` | canonical 为 `{"intent":"Why now?","priority":"P3","summary":"Beta","title":"Alpha"}`；SHA-256 为 `14da8203c14efe7aeae65dae898233cfdde6b024e104978cc6a2bcdb7da35868`；Base64 为 `eyJpbnRlbnQiOiJXaHkgbm93PyIsInByaW9yaXR5IjoiUDMiLCJzdW1tYXJ5IjoiQmV0YSIsInRpdGxlIjoiQWxwaGEifQ==` |
+| `unicode-escaping` | title 两端为 `U+2003/U+00A0`，正文为 `Cafe + U+0301 + space + "A/B"`；intent 两端为 `U+3000/U+00A0`，正文为“为什么现在保留？”；description 两端为 `U+3000/U+00A0`，正文含中文、内部 `U+2028`、quote、backslash、LF、`U+0001`、emoji；`priority="P2"` | NFC/trim 后 SHA-256 为 `e74b86ecc42584a4472dcd8841065dff600ff89b91461b26cf35572acf028bae`；Base64 为 `eyJpbnRlbnQiOiLkuLrku4DkuYjnjrDlnKjkv53nlZnvvJ8iLCJwcmlvcml0eSI6IlAyIiwic3VtbWFyeSI6IuS4reaWh+KAqOi3r+W+hCBcIui3ry/lvoRcIlxcXFxcblx1MDAwMfCfmIAiLCJ0aXRsZSI6IkNhZsOpIFwiQS9CXCIifQ==` |
 
-该来源项只证明本机受信 Web 在 `observed_at` 观察到 Human 提交了规范化后的三个字段。它不证明 Human 的远程身份、内容正确、语义没有重复或事实已经验证；bare `web-capture://sha256/<digest>`、泛化 `web`/`human-input` 字符串以及只能通过搜索当前对象反推 payload 的引用均不是合格 locator。
+当前 v2 来源项只证明本机受信 Web 在 `observed_at` 观察到 Human 提交了规范化后的四个字段；历史 v1 只证明其中的 title、summary 和 priority，不证明也不能推导 `intent`。它们都不证明 Human 的远程身份、内容正确、语义没有重复、`summary` 已经达到 20 的 AI 语义充分性，或事实已经验证；bare `web-capture://sha256/<digest>`、泛化 `web`/`human-input` 字符串以及只能通过搜索当前对象反推 payload 的引用均不是合格 locator。
 
 本能力只允许在 loopback 上运行的本机单用户进程中开放，并且运行时必须精确解析出一个 governed project、该项目的一个实际 Git worktree 和对应 common-dir。零项目、多项目、同项目多 worktree、fallback `workspace`、非 loopback 请求、监听或转发边界无法证明、Vercel/其它远程部署均拒绝且零写入；不得猜测运行根目录或回退任何非受控写入器。Web 不通过 Helper CLI 执行该操作；它只可调用与 Helper wrapper 分离、由正式来源约束的共享 Code application service。
 
@@ -256,8 +266,10 @@ Web API 或前端不得作为事实类型、字段、ID、初始状态和状态�
 | 读取范围与当前内容 | 新增或修改 Web 数据来源、项目选择或历史视图时 | 读取限定在允许的工作对象范围；当前与历史清楚区分；未用缓存、`HEAD` 或 Code 输出覆盖 Working Tree | 原始文件、管辖解析、Git 状态、API 输入输出和页面回读 | Web API tests、页面测试与实际文件对照 | 当次数据源、项目和视图 | 停止错误读取或当前性声明；呈现未知或过期范围 |
 | 派生内容 | 新增缓存、聚合、计数、筛选、排序或关系视图时 | 来源、观察时间、转换、遗漏范围和过期状态可复核，来源变化后刷新或标明过期 | 当前来源、派生输入输出、时间和差异 | API/component tests 与来源变更测试 | 当次派生功能和测试数据 | 不作为当前事实呈现；刷新、标记过期或移除误导结果 |
 | 来源与判断边界呈现 | 新增页面、字段、复制或导航时 | 事实、派生、诊断、Human 输入和未知范围可区分，关键内容能回到来源 | 页面、复制结果、导航目标和来源文件 | 页面、键盘和代表性辅助技术测试 | 当次页面及声明支持方式 | 修正呈现或缩小支持声明 |
+| Spark 状态与关联呈现 | 呈现 Spark 状态或“关联”区时 | `open` 按 20 显示为“待处理”，不套用“未关闭”；关联区只含正式关系和项目内文档，原始 Human/Web capture 输入保持来源身份且不替代 `intent` | 20、当前对象、页面 DOM 与来源投影 | component/API contract tests 与代表性浏览器页面对照 | 当次 Spark 页面与已检查来源类别 | 修正映射或投影；不得用通用状态词或来源原话补足页面内容 |
+| Markdown 结构忠实呈现 | 呈现包含 Markdown 结构的事实对象文本字段时 | 源文通过 Markdown 明确表达的段落、强调式分组标签、小标题、编号、列表及嵌套关系被原样解释并可扫描；无标记普通文本保持普通段落；Web 没有猜测、补写、重排或重写内容结构 | 当前事实对象 Markdown 源文、渲染 DOM、实际页面字号与间距 | component/API contract tests 与代表性浏览器页面对照 | 当次已检查字段、结构种类和视口 | 修正渲染或样式；在源文结构不足时交还内容形成责任，不由 Web 自动重写 |
 | 受控操作 | 新增或修改可能改变状态的交互时 | Human 当前指令已经授权，且适用于该行动的全部来源规则许可条件已经成立；实际 Code 能力可用；操作前信息完整；操作后回读并呈现失败和未完成范围 | 来源规则、Human 当前指令、Code 调用、目标前后内容和回读 | API/E2E tests 与实际目标回读 | 当次操作、对象和环境 | 维持只读、禁用操作或按实际结果呈现失败 |
-| Spark Web direct capture | 保留冻结表单并开放 Spark 创建时 | 只在 loopback 单用户和唯一项目/worktree/common-dir 中运行；闭集请求、自包含来源、资源预算、全状态精确重复、no-overwrite 创建与回读全部成立；不存在非受控或远程 fallback | 08、20、Human 当次提交、运行边界、源引用、对象前后内容与 Code 结果 | canonical 固定向量、API/Code contract tests、隔离项目写入/回读与冻结表现回归 | 本机单用户的一个 `open` Spark direct capture | 非 2xx 且零写入；报告 duplicate、invalid、unavailable、error、readback 或 rollback residue，不回退到其它写入路径 |
+| Spark Web direct capture | 保留冻结表单并开放 Spark 创建时 | 只在 loopback 单用户和唯一项目/worktree/common-dir 中运行；intent 独立承载创建原因，description 承载可多段的完整当前 `summary`，页面不合并或猜测二者；v2 四字段请求、v1/v2 只读来源验证、资源预算、全状态精确重复、no-overwrite 创建与回读全部成立；不存在非受控或远程 fallback；机械成功没有被写成 AI 内容充分性已审核 | 08、20、Human 当次提交、运行边界、源引用、对象前后内容与 Code 结果 | canonical 固定向量、API/Code contract tests、隔离项目写入/回读、表单说明与多段内容表现回归 | 本机单用户的一个 `open` Spark direct capture 及其未审核边界 | 非 2xx 且零写入；报告 duplicate、invalid、unavailable、error、readback 或 rollback residue，不回退到其它写入路径；内容未充分时保留后续 F2/F3 审核而不虚报已完成 |
 | Human 决定与技术结果 | Web 承载确认、验收或风险接受时 | 决定对象、选项、范围和时间可回指；页面没有扩大为技术通过或完成 | 交互记录、来源规则、技术验证与回读 | E2E 场景与 AI 回读 | 当次 Human 决定及单独验证的技术范围 | 分开呈现决定与技术状态，不声明未证明结果 |
 | Web 行为保持与变更 | 整治既有 Web、准备声明行为保持或有意改变可观察行为时 | 行为保持覆盖受改动影响的既有可观察行为，并有范围匹配证据；未基线化范围未被冒充为已证明不变；有意变更同时有当前来源支持和 Human 对明确范围的决定 | 当前来源、Web 实现规划、变更前后实现、范围匹配的 API、页面、可访问性和响应式测试、Human 决定 | Web tests、实际页面回读与 Human 验收 | 当次已检查的可观察行为和支持范围 | 暂停受影响重构或行为变更；缩小声明，补充来源、Human 决定或范围匹配证据 |
 
@@ -292,7 +304,9 @@ Human 已明确决定保留现有 Spark 创建表现、改由 V4 承接并且不
 7. 实际写入失败、部分完成或与回读不一致，却由页面乐观状态掩盖；
 8. 既有 Web 没有行为保持或有意变更所需的范围匹配依据，却被声明为未变、已符合、available、verified 或 completed。
 9. Spark direct capture 运行范围不是 loopback 单用户和唯一 governed project/worktree/common-dir，来源 locator 不能自包含恢复 canonical payload，精确重复/coverage 未完成，或实现准备回退到非受控写入路径。
+10. Web 正在根据事实文本含义自动生成、提升、拆分、合并或重排 Markdown 结构，或者用统一文章骨架覆盖源文结构。
+11. 当前 Spark 创建表单或请求缺失独立 `intent`，或 Web/Code 准备从 title、description、source ref 或历史 v1 capture 自动推导它。
 
 暂停范围及不受影响工作的处理按 00 §10 执行。
 
-受影响范围只能在与触发原因对应的条件满足后恢复：读取范围重新可确认，页面已回到当前来源并标明历史或过期内容，派生与来源身份重新分开，来源回指已经补齐，受控操作重新取得来源、授权、Code 能力和回读，交互声明已经缩小，行为保持已取得范围匹配证据，或者有意变更已取得当前来源支持、Human 明确决定和范围匹配测试。
+受影响范围只能在与触发原因对应的条件满足后恢复：读取范围重新可确认，页面已回到当前来源并标明历史或过期内容，派生与来源身份重新分开，来源回指已经补齐，受控操作重新取得来源、授权、Code 能力和回读，交互声明已经缩小，Spark 创建表单与请求已具有独立非空 `intent` 且从其它字段推导的逻辑已移除，行为保持已取得范围匹配证据，有意变更已取得当前来源支持、Human 明确决定和范围匹配测试，或者 Markdown 源文与渲染结构已经逐项对照且语义推断型转换已经移除。Human 决定或普通行为变更证据不能授权 Web 猜测事实内容结构。

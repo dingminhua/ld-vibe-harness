@@ -217,7 +217,7 @@ def handle_machine_request(value: dict[str, object]) -> dict[str, object]:
 
     capture_arguments = _closed_mapping(
         arguments,
-        frozenset({"title", "description", "priority"}),
+        frozenset({"title", "intent", "description", "priority"}),
         "arguments",
     )
     capture = create_web_spark_direct_capture(boundary, schemas, capture_arguments)

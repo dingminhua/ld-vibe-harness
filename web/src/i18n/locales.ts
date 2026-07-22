@@ -47,7 +47,17 @@ export function getStatusLocale(status: string, locale: string): string {
   return locale === 'en' ? entry.en : entry.zh;
 }
 
+// 状态码可在不同事实对象中复用，但展示语义不必相同。Spark 的 `open`
+// 表示「尚待判断或分流」，不是 WorkCase 式的「未关闭」。
+const OBJECT_STATUS_LOCALES: Record<string, Record<string, { zh: string; en: string }>> = {
+  spark: {
+    open: { zh: '待处理', en: 'Pending' },
+  },
+};
+
 export function getObjectStatusLocale(type: string, status: string, locale: string): string {
+  const objectEntry = OBJECT_STATUS_LOCALES[type]?.[status];
+  if (objectEntry) return locale === 'en' ? objectEntry.en : objectEntry.zh;
   return getStatusLocale(status, locale);
 }
 
@@ -128,6 +138,19 @@ export const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   date: { zh: '日期', en: 'Date' },
   source: { zh: '来源', en: 'Source' },
   source_detail: { zh: '来源说明', en: 'Source Detail' },
+  source_refs: { zh: '来源引用', en: 'Source References' },
+  relations: { zh: '事实对象关系', en: 'Fact Relations' },
+  associated_materials: { zh: '关联材料', en: 'Associated Materials' },
+  fact_relations: { zh: '事实对象关系', en: 'Fact Relations' },
+  project_materials: { zh: '项目内材料', en: 'Project Materials' },
+  external_inputs: { zh: '外部资料与输入', en: 'External Sources and Inputs' },
+  evidence_materials: { zh: '证据材料', en: 'Evidence Materials' },
+  associated_documents: { zh: '文档', en: 'Docs' },
+  unresolved_materials: { zh: '未解析材料', en: 'Unresolved Materials' },
+  relation_routed_to: { zh: '分流到', en: 'Routed To' },
+  relation_related_to: { zh: '关联到', en: 'Related To' },
+  relation_supersedes: { zh: '替代', en: 'Supersedes' },
+  relation_depends_on: { zh: '依赖', en: 'Depends On' },
   user_intent: { zh: '用户意图', en: 'User Intent' },
   description: { zh: '描述', en: 'Description' },
   evolution: { zh: '演变记录', en: 'Evolution' },
@@ -158,6 +181,8 @@ export const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   applicability: { zh: '适用范围', en: 'Applicability' },
   archive_reason: { zh: '归档原因', en: 'Archive Reason' },
   rationale: { zh: '理由', en: 'Rationale' },
+  decision_question: { zh: '决策问题', en: 'Decision Question' },
+  decided_at: { zh: '决策成立时间', en: 'Decided At' },
   context: { zh: '背景', en: 'Context' },
   consequences: { zh: '影响', en: 'Consequences' },
   observation: { zh: '观察', en: 'Observation' },
@@ -674,8 +699,12 @@ export const UI_LOCALES = {
     'spark.quickCapture': '创建火花',
     'spark.title': '标题',
     'spark.titlePlaceholder': '简短的火花标题',
-    'spark.description': '内容描述',
-    'spark.descriptionPlaceholder': '记录你想保留的信息...',
+    'spark.intent': '意图',
+    'spark.intentPlaceholder': '这个火花为什么需要被创建和保留？希望后续澄清、判断或分流什么？',
+    'spark.intentHelp': '只记录创建它的原因，不要复制标题或当前摘要。',
+    'spark.description': '完整摘要',
+    'spark.descriptionPlaceholder': '结构化记录当前已有事实或判断、相关边界、风险，以及仍不确定的内容。可使用多段 Markdown。',
+    'spark.descriptionHelp': '这里会成为事实对象的完整摘要，不是列表中的一句简介；只填写与当前火花实际相关的内容。',
     'spark.source': '来源',
     'spark.sourcePlaceholder': '谁在什么场景下发现或表达',
     'spark.priority': '优先级',
@@ -966,8 +995,12 @@ export const UI_LOCALES = {
     'spark.quickCapture': 'Create Spark',
     'spark.title': 'Title',
     'spark.titlePlaceholder': 'Short spark title',
-    'spark.description': 'Description',
-    'spark.descriptionPlaceholder': 'Record what you want to preserve...',
+    'spark.intent': 'Intent',
+    'spark.intentPlaceholder': 'Why should this Spark be created and retained? What should it help clarify, judge, or route?',
+    'spark.intentHelp': 'Record only why it was created; do not duplicate the title or current summary.',
+    'spark.description': 'Complete summary',
+    'spark.descriptionPlaceholder': 'Structure the current facts or judgment, relevant boundaries, risks, and remaining uncertainty. Multi-paragraph Markdown is supported.',
+    'spark.descriptionHelp': 'This becomes the fact object’s complete summary, not a one-line list description; include only what is relevant to this Spark.',
     'spark.source': 'Source',
     'spark.sourcePlaceholder': 'Who discovered or expressed this, in what context',
     'spark.priority': 'Priority',

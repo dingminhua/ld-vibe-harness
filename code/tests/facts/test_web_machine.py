@@ -60,7 +60,7 @@ def test_machine_create_list_and_detail_share_one_governed_boundary(tmp_path: Pa
             workspace,
             project,
             "create-spark",
-            {"title": "Machine", "description": "Closed bridge", "priority": "P1"},
+            {"title": "Machine", "intent": "Verify the bridge", "description": "Closed bridge", "priority": "P1"},
         )
     )
     listed = handle_machine_request(_request(workspace, project, "list-sparks", {}))
@@ -115,7 +115,7 @@ def test_unexpected_create_failure_after_write_is_completion_unknown(
             workspace,
             project,
             "create-spark",
-            {"title": "Unknown", "description": "Write then fail", "priority": "P1"},
+            {"title": "Unknown", "intent": "Exercise unknown completion", "description": "Write then fail", "priority": "P1"},
         ),
         separators=(",", ":"),
     ).encode("utf-8")
@@ -138,7 +138,7 @@ def test_create_response_overflow_after_write_is_completion_unknown(
             workspace,
             project,
             "create-spark",
-            {"title": "Overflow", "description": "Write then exceed response", "priority": "P1"},
+            {"title": "Overflow", "intent": "Exercise overflow handling", "description": "Write then exceed response", "priority": "P1"},
         ),
         separators=(",", ":"),
     ).encode("utf-8")

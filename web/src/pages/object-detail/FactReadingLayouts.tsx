@@ -4,11 +4,11 @@ import remarkGfm from 'remark-gfm';
 import StatusBadge from '@/components/StatusBadge';
 import { formatDateTime } from '@/utils/dateFormat';
 import { getObjectStatusLocale } from '@/i18n/locales';
+import { FactAssociationsSection } from '@/pages/object-detail/FactAssociationsSection';
 import { sortRelatedContentEntries, type RelatedContentEntry } from '@/pages/object-detail/model';
 import {
   DetailInlineField,
   DetailObjectRow,
-  EvidenceReadingNodes,
   ReadingNodeSection,
   RelatedContentSection,
   StudyTextNodeContent,
@@ -18,7 +18,15 @@ import {
   type ReadingNodeState,
 } from '@/pages/ObjectDetail';
 
-const ADR_READING_NODES = ['context', 'decision', 'consequences', 'archive_reason', 'deprecated_reason'];
+const ADR_READING_NODES: Array<{ field: string; kind?: 'date' }> = [
+  { field: 'decision_question' },
+  { field: 'decision' },
+  { field: 'applicability' },
+  { field: 'rationale' },
+  { field: 'consequences' },
+  { field: 'decided_at', kind: 'date' },
+  { field: 'disposition_summary' },
+];
 
 export function AdrReadingLayout({
   obj,
@@ -31,14 +39,16 @@ export function AdrReadingLayout({
 }) {
   return (
     <div className="mb-6 flex flex-col gap-5">
-      {ADR_READING_NODES.map((field) => (
+      {ADR_READING_NODES.map((node) => (
         <AdrReadingNode
-          key={field}
-          title={getFieldLabel(field, locale)}
-          value={obj[field]}
+          key={node.field}
+          title={getFieldLabel(node.field, locale)}
+          value={obj[node.field]}
           locale={locale}
+          kind={node.kind}
         />
       ))}
+      <FactAssociationsSection obj={obj} locale={locale} />
       <RelatedContentSection entries={relatedEntries} locale={locale} />
     </div>
   );
@@ -48,10 +58,12 @@ function AdrReadingNode({
   title,
   value,
   locale,
+  kind,
 }: {
   title: string;
   value: unknown;
   locale: string;
+  kind?: 'date';
 }) {
   const [state, setState] = useState<ReadingNodeState>('expanded');
   if (!hasDetailContent(value)) return null;
@@ -63,21 +75,24 @@ function AdrReadingNode({
       locale={locale}
       onToggle={() => setState((current) => getReadingNodeNextState(current))}
     >
-      <StudyTextNodeContent value={value} />
+      {kind === 'date' ? (
+        <span className="ldvh-definition-text">{formatDateTime(String(value))}</span>
+      ) : (
+        <StudyTextNodeContent value={value} />
+      )}
     </ReadingNodeSection>
   );
 }
 
-const PITFALL_READING_NODES: Array<{ field: string; kind?: 'evidence' }> = [
+const PITFALL_READING_NODES: Array<{ field: string }> = [
   { field: 'symptoms' },
   { field: 'trigger_conditions' },
+  { field: 'applicability' },
+  { field: 'validation_summary' },
   { field: 'root_cause' },
   { field: 'resolution' },
-  { field: 'verification', kind: 'evidence' },
   { field: 'avoidance' },
-  { field: 'applicability' },
-  { field: 'archive_reason' },
-  { field: 'notes' },
+  { field: 'disposition_summary' },
 ];
 
 export function PitfallReadingLayout({
@@ -89,11 +104,6 @@ export function PitfallReadingLayout({
   relatedEntries: RelatedContentEntry[];
   locale: string;
 }) {
-  const sourceSparkEntries: RelatedContentEntry[] = Array.isArray(obj.source_sparks) && hasDetailContent(obj.source_sparks)
-    ? [['source_sparks', obj.source_sparks]]
-    : [];
-  const allRelatedEntries = sortRelatedContentEntries([...sourceSparkEntries, ...relatedEntries]);
-
   return (
     <div className="mb-6 flex flex-col gap-5">
       {PITFALL_READING_NODES.map((node) => (
@@ -102,10 +112,10 @@ export function PitfallReadingLayout({
           title={getFieldLabel(node.field, locale)}
           value={obj[node.field]}
           locale={locale}
-          kind={node.kind}
         />
       ))}
-      <RelatedContentSection entries={allRelatedEntries} locale={locale} />
+      <FactAssociationsSection obj={obj} locale={locale} />
+      <RelatedContentSection entries={sortRelatedContentEntries(relatedEntries)} locale={locale} />
     </div>
   );
 }
@@ -114,12 +124,10 @@ function PitfallReadingNode({
   title,
   value,
   locale,
-  kind,
 }: {
   title: string;
   value: unknown;
   locale: string;
-  kind?: 'evidence';
 }) {
   const [state, setState] = useState<ReadingNodeState>('expanded');
   if (!hasDetailContent(value)) return null;
@@ -131,11 +139,7 @@ function PitfallReadingNode({
       locale={locale}
       onToggle={() => setState((current) => getReadingNodeNextState(current))}
     >
-      {kind === 'evidence' ? (
-        <EvidenceReadingNodes value={String(value)} />
-      ) : (
-        <PitfallTextNodeContent value={value} />
-      )}
+      <PitfallTextNodeContent value={value} />
     </ReadingNodeSection>
   );
 }
@@ -150,10 +154,16 @@ export function PitfallTextNodeContent({ value }: { value: unknown }) {
   );
 }
 
-const SPARK_READING_NODES: Array<{ field: string; kind: 'summary' | 'intent' | 'evolution' | 'routing' }> = [
-  { field: 'summary', kind: 'summary' },
-  { field: 'evolution', kind: 'evolution' },
-  { field: 'routing', kind: 'routing' },
+const SPARK_READING_NODES: Array<{
+  field: string;
+  zh: string;
+  en: string;
+  kind: 'intent' | 'summary' | 'evolution' | 'routing';
+}> = [
+  { field: 'intent', zh: '意图', en: 'Intent', kind: 'intent' },
+  { field: 'summary', zh: '摘要', en: 'Current Summary', kind: 'summary' },
+  { field: 'evolution', zh: '演变', en: 'Evolution', kind: 'evolution' },
+  { field: 'routing', zh: '分流', en: 'Routing', kind: 'routing' },
 ];
 type SparkEvolutionEntry = { key: string; at?: string; summary: string };
 
@@ -171,12 +181,18 @@ export function SparkReadingLayout({
       {SPARK_READING_NODES.map((node) => (
         <SparkReadingNode
           key={node.field}
-          title={getFieldLabel(node.field, locale)}
+          title={locale === 'en' ? node.en : node.zh}
           obj={obj}
           locale={locale}
           kind={node.kind}
         />
       ))}
+      <FactAssociationsSection
+        obj={obj}
+        locale={locale}
+        title={locale === 'en' ? 'Related' : '关联'}
+        variant="spark"
+      />
       <RelatedContentSection entries={relatedEntries} locale={locale} />
     </div>
   );
@@ -191,13 +207,13 @@ function SparkReadingNode({
   title: string;
   obj: Record<string, unknown>;
   locale: string;
-  kind: 'summary' | 'intent' | 'evolution' | 'routing';
+  kind: 'intent' | 'summary' | 'evolution' | 'routing';
 }) {
   const [state, setState] = useState<ReadingNodeState>('expanded');
-  const hasContent = kind === 'summary'
+  const hasContent = kind === 'intent'
+    ? hasDetailContent(obj.intent)
+    : kind === 'summary'
     ? hasDetailContent(obj.summary)
-    : kind === 'intent'
-      ? hasDetailContent(obj.source_detail)
     : kind === 'evolution'
       ? hasDetailContent(obj.evolution)
       : hasSparkRoutingContent(obj);
@@ -211,8 +227,8 @@ function SparkReadingNode({
       locale={locale}
       onToggle={() => setState((current) => getReadingNodeNextState(current))}
     >
+      {kind === 'intent' && <StudyTextNodeContent value={obj.intent} className="ldvh-spark-reading-prose" />}
       {kind === 'summary' && <SparkSummaryNode value={obj.summary} />}
-      {kind === 'intent' && <SparkSummaryNode value={obj.source_detail} />}
       {kind === 'evolution' && <SparkEvolutionNode value={obj.evolution} locale={locale} />}
       {kind === 'routing' && <SparkRoutingNode obj={obj} locale={locale} />}
     </ReadingNodeSection>
@@ -220,7 +236,12 @@ function SparkReadingNode({
 }
 
 function SparkSummaryNode({ value }: { value: unknown }) {
-  return <StudyTextNodeContent value={value} />;
+  return (
+    <StudyTextNodeContent
+      value={value}
+      className="ldvh-spark-reading-prose"
+    />
+  );
 }
 
 function SparkEvolutionNode({ value, locale }: { value: unknown; locale: string }) {

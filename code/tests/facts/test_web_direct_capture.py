@@ -25,13 +25,16 @@ from ldvh.facts.web_direct_capture import (
 from ldvh.filesystem import AtomicWriteResult
 from ldvh.specs.repository import inspect_repository
 
-ASCII_DIGEST = "5626348cede47a57cdb59910a5b23e11013c5508554b1998ba92bcd4ab18ec69"
-ASCII_BASE64 = "eyJwcmlvcml0eSI6IlAzIiwic3VtbWFyeSI6IkJldGEiLCJ0aXRsZSI6IkFscGhhIn0="
-UNICODE_DIGEST = "e3208211e97f642d5bb5e363cd5ea64c68c7f872c6aca294edca6ccc60d491ef"
+ASCII_DIGEST = "14da8203c14efe7aeae65dae898233cfdde6b024e104978cc6a2bcdb7da35868"
+ASCII_BASE64 = "eyJpbnRlbnQiOiJXaHkgbm93PyIsInByaW9yaXR5IjoiUDMiLCJzdW1tYXJ5IjoiQmV0YSIsInRpdGxlIjoiQWxwaGEifQ=="
+UNICODE_DIGEST = "e74b86ecc42584a4472dcd8841065dff600ff89b91461b26cf35572acf028bae"
 UNICODE_BASE64 = (
-    "eyJwcmlvcml0eSI6IlAyIiwic3VtbWFyeSI6IuS4reKAqOaWhyBcIui3r+W+hFxcXCJcblx1MDAwMfCfmIAi"
-    "LCJ0aXRsZSI6IkNhZsOpIFwiQS9CXCIifQ=="
+    "eyJpbnRlbnQiOiLkuLrku4DkuYjnjrDlnKjkv53nlZnvvJ8iLCJwcmlvcml0eSI6IlAyIiwic3VtbWFyeSI6"
+    "IuS4reaWh+KAqOi3r+W+hCBcIui3ry/lvoRcIlxcXFxcblx1MDAwMfCfmIAiLCJ0aXRsZSI6IkNhZsOpIFwi"
+    "QS9CXCIifQ=="
 )
+LEGACY_ASCII_DIGEST = "5626348cede47a57cdb59910a5b23e11013c5508554b1998ba92bcd4ab18ec69"
+LEGACY_ASCII_BASE64 = "eyJwcmlvcml0eSI6IlAzIiwic3VtbWFyeSI6IkJldGEiLCJ0aXRsZSI6IkFscGhhIn0="
 
 
 def _git(project: Path, *arguments: str) -> str:
@@ -53,8 +56,13 @@ def _fixture(current_specs_repository: Path, tmp_path: Path):
     return CreationBoundary("sample", project, common), schemas
 
 
-def _request(title: str = "Alpha", description: str = "Beta", priority: str = "P3") -> dict[str, str]:
-    return {"title": title, "description": description, "priority": priority}
+def _request(
+    title: str = "Alpha",
+    description: str = "Beta",
+    priority: str = "P3",
+    intent: str = "Why now?",
+) -> dict[str, str]:
+    return {"title": title, "intent": intent, "description": description, "priority": priority}
 
 
 def _counter(boundary: CreationBoundary) -> Path:
@@ -81,15 +89,18 @@ def _relate_created_spark(boundary: CreationBoundary, target_id: str) -> None:
 
 def test_canonical_vectors_match_rule_contract() -> None:
     ascii_identity = canonicalize_web_capture(_request("  Alpha  ", "  Beta  ", "P3"))
-    assert ascii_identity.canonical_bytes == b'{"priority":"P3","summary":"Beta","title":"Alpha"}'
+    assert ascii_identity.canonical_bytes == (
+        b'{"intent":"Why now?","priority":"P3","summary":"Beta","title":"Alpha"}'
+    )
     assert ascii_identity.digest == ASCII_DIGEST
     assert ascii_identity.locator.removeprefix("data:application/json;base64,") == ASCII_BASE64
 
     unicode_identity = canonicalize_web_capture(
         _request(
             '\u2003Cafe\u0301 "A/B"\u00a0',
-            '\u3000中\u2028文 "路径\\"\n\u0001😀\u00a0',
+            '\u3000中文\u2028路径 "路/径"\\\\\n\u0001😀\u00a0',
             "P2",
+            '\u3000为什么现在保留？\u00a0',
         )
     )
     assert unicode_identity.digest == UNICODE_DIGEST
@@ -112,11 +123,13 @@ def test_unicode_15_1_additions_are_nfc_inert_under_python_312_data() -> None:
 @pytest.mark.parametrize(
     "capture_request",
     [
-        {"title": "Alpha", "description": "Beta", "priority": "P3", "status": "open"},
-        {"title": "\u3000", "description": "Beta", "priority": "P3"},
-        {"title": "Alpha\ud800", "description": "Beta", "priority": "P3"},
-        {"title": "Alpha", "description": "Beta", "priority": "p3"},
-        {"title": True, "description": "Beta", "priority": "P3"},
+        {"title": "Alpha", "intent": "Why", "description": "Beta", "priority": "P3", "status": "open"},
+        {"title": "\u3000", "intent": "Why", "description": "Beta", "priority": "P3"},
+        {"title": "Alpha\ud800", "intent": "Why", "description": "Beta", "priority": "P3"},
+        {"title": "Alpha", "intent": "\u3000", "description": "Beta", "priority": "P3"},
+        {"title": "Alpha", "intent": "Why", "description": "Beta", "priority": "p3"},
+        {"title": True, "intent": "Why", "description": "Beta", "priority": "P3"},
+        {"title": "Alpha", "description": "Beta", "priority": "P3"},
     ],
 )
 def test_capture_request_is_closed_and_fail_closed(capture_request: dict[str, object]) -> None:
@@ -142,6 +155,18 @@ def test_source_ref_rejects_noncanonical_base64_and_digest_tampering() -> None:
         validate_web_direct_source_ref(noncanonical)
 
 
+def test_source_ref_accepts_exact_legacy_v1_identity_without_inventing_intent() -> None:
+    reference = {
+        "kind": "web-direct-capture",
+        "locator": "data:application/json;base64," + LEGACY_ASCII_BASE64,
+        "version": "sha256:" + LEGACY_ASCII_DIGEST,
+        "observed_at": "2026-07-15T16:00:00+08:00",
+    }
+    recovered = validate_web_direct_source_ref(reference)
+    assert recovered.intent is None
+    assert recovered.digest == LEGACY_ASCII_DIGEST
+
+
 def test_service_creates_once_and_duplicate_does_not_consume_counter(
     current_specs_repository: Path,
     tmp_path: Path,
@@ -160,6 +185,7 @@ def test_service_creates_once_and_duplicate_does_not_consume_counter(
     }
     assert created.fact_object is not None
     assert created.fact_object["status"] == "open"
+    assert created.fact_object["intent"] == "Why now?"
     assert created.fact_object["source_refs"][0]["kind"] == "web-direct-capture"
     assert duplicate.status == "exact_duplicate"
     assert duplicate.existing_ref == {

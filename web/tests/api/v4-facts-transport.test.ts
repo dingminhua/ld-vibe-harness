@@ -72,7 +72,7 @@ function request(operation: V4FactsMachineRequest['operation'] = 'list-sparks'):
   const argumentsByOperation: Record<V4FactsMachineRequest['operation'], Record<string, unknown>> = {
     'list-sparks': {},
     'read-spark': { object_id: 'spark-0001' },
-    'create-spark': { title: 'Capture', description: 'Closed transport', priority: 'P2' },
+    'create-spark': { title: 'Capture', intent: 'Exercise the transport', description: 'Closed transport', priority: 'P2' },
   }
   return {
     protocol_version: 1,
@@ -249,7 +249,7 @@ test('real transport runs through the ordinary project venv interpreter link', a
         worktree_locator: project,
         expected_governed_project_id: 'sample',
       },
-      arguments: { title: 'Real bridge', description: 'Validate the real create result.', priority: 'P2' },
+      arguments: { title: 'Real bridge', intent: 'Validate the real bridge', description: 'Validate the real create result.', priority: 'P2' },
     }, { pythonExecutable })
     assert.equal(captured.status, 'created')
     const detail = await invokeV4FactsMachine({

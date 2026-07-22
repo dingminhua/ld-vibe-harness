@@ -61,7 +61,7 @@ _WHITE_SPACE = "".join(
 _PRIORITIES = frozenset({"P0", "P1", "P2", "P3"})
 _DATA_PREFIX = "data:application/json;base64,"
 _VERSION_PATTERN = re.compile(r"sha256:([0-9a-f]{64})\Z")
-_REQUEST_FIELDS = frozenset({"title", "description", "priority"})
+_REQUEST_FIELDS = frozenset({"title", "intent", "description", "priority"})
 _SOURCE_FIELDS = frozenset({"kind", "locator", "version", "observed_at"})
 
 DirectCaptureStatus = Literal[
@@ -78,6 +78,7 @@ DirectCaptureStatus = Literal[
 @dataclass(frozen=True, slots=True)
 class WebCaptureIdentity:
     title: str
+    intent: str | None
     summary: str
     priority: str
     canonical_bytes: bytes
@@ -108,8 +109,15 @@ def _normalized_text(value: object, field: str) -> str:
     return normalized
 
 
-def _identity(title: object, summary: object, priority: object) -> WebCaptureIdentity:
+def _identity(
+    title: object,
+    summary: object,
+    priority: object,
+    *,
+    intent: object | None = None,
+) -> WebCaptureIdentity:
     normalized_title = _normalized_text(title, "title")
+    normalized_intent = None if intent is None else _normalized_text(intent, "intent")
     normalized_summary = _normalized_text(summary, "summary")
     if not isinstance(priority, str) or priority not in _PRIORITIES:
         raise ValueError("priority must be exactly P0, P1, P2, or P3")
@@ -118,18 +126,34 @@ def _identity(title: object, summary: object, priority: object) -> WebCaptureIde
         "summary": normalized_summary,
         "title": normalized_title,
     }
+    if normalized_intent is not None:
+        payload["intent"] = normalized_intent
+        payload = dict(sorted(payload.items()))
     canonical = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
     digest = hashlib.sha256(canonical).hexdigest()
     locator = _DATA_PREFIX + base64.b64encode(canonical).decode("ascii")
-    return WebCaptureIdentity(normalized_title, normalized_summary, priority, canonical, digest, locator)
+    return WebCaptureIdentity(
+        title=normalized_title,
+        intent=normalized_intent,
+        summary=normalized_summary,
+        priority=priority,
+        canonical_bytes=canonical,
+        digest=digest,
+        locator=locator,
+    )
 
 
 def canonicalize_web_capture(request: Mapping[str, object]) -> WebCaptureIdentity:
     """Validate the closed request and form its Unicode-15.1 canonical identity."""
 
     if set(request) != _REQUEST_FIELDS:
-        raise ValueError("request fields must be exactly title, description, and priority")
-    return _identity(request["title"], request["description"], request["priority"])
+        raise ValueError("request fields must be exactly title, intent, description, and priority")
+    return _identity(
+        request["title"],
+        request["description"],
+        request["priority"],
+        intent=request["intent"],
+    )
 
 
 def _pairs_no_duplicates(pairs: list[tuple[str, object]]) -> dict[str, object]:
@@ -164,9 +188,17 @@ def validate_web_direct_source_ref(reference: object) -> WebCaptureIdentity:
         payload = json.loads(decoded.decode("utf-8"), object_pairs_hook=_pairs_no_duplicates)
     except (UnicodeError, json.JSONDecodeError, ValueError) as error:
         raise ValueError("source locator JSON is invalid") from error
-    if not isinstance(payload, dict) or set(payload) != {"priority", "summary", "title"}:
+    if not isinstance(payload, dict) or set(payload) not in {
+        frozenset({"priority", "summary", "title"}),
+        frozenset({"intent", "priority", "summary", "title"}),
+    }:
         raise ValueError("source locator JSON fields are not closed")
-    recovered = _identity(payload["title"], payload["summary"], payload["priority"])
+    recovered = _identity(
+        payload["title"],
+        payload["summary"],
+        payload["priority"],
+        intent=payload.get("intent"),
+    )
     if recovered.canonical_bytes != decoded or recovered.locator != locator:
         raise ValueError("source locator bytes are not canonical")
     match = _VERSION_PATTERN.fullmatch(version) if isinstance(version, str) else None
@@ -197,6 +229,7 @@ def _conservative_envelope(
         "object_id": "spark-" + ("9" * digits),
         "fact_type_key": "spark",
         "title": identity.title,
+        "intent": identity.intent,
         "created_at": observed_at,
         "updated_at": observed_at,
         "status": "open",
@@ -277,6 +310,7 @@ def _snapshot_identities(
                     read.fields.get("title"),
                     read.fields.get("summary"),
                     read.fields.get("priority"),
+                    intent=read.fields.get("intent"),
                 )
             except ValueError as error:
                 return WebDirectCaptureResult(
@@ -372,6 +406,7 @@ def create_web_spark_direct_capture(
             candidate,
             {
                 "title": identity.title,
+                "intent": identity.intent,
                 "status": "open",
                 "source_refs": [source],
                 "summary": identity.summary,
