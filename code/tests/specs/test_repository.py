@@ -23,11 +23,11 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
     assert inspection.issues == ()
     assert inspection.implemented_checks_complete is True
     checked_documents = inspection.active_documents_passing_implemented_checks
-    assert len(checked_documents) == 24
+    assert len(checked_documents) == 25
     assert sum(document.kind != "attachment" for document in checked_documents) == 19
 
-    assert sum(document.kind == "attachment" for document in checked_documents) == 5
-    assert len(inspection.projections) == 72
+    assert sum(document.kind == "attachment" for document in checked_documents) == 6
+    assert len(inspection.projections) == 75
     assert {projection.layer for projection in inspection.projections} == {"L0", "L1", "L2"}
     field_registry = inspection.document_passing_implemented_checks_by_key("fact-object-field-registry")
     assert field_registry is not None
@@ -74,6 +74,7 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
         "read-fact-objects",
         "read-specification-candidates",
         "read-specification-content",
+        "read-specification-context",
         "resolve-governance-scope",
         "update-fact-object",
         "update-workcase",
@@ -91,6 +92,7 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
         "read-fact-objects": "specs/05-事实模型基础规范.md",
         "read-specification-candidates": "specs/01-规范模型基础规范.md",
         "read-specification-content": "specs/01-规范模型基础规范.md",
+        "read-specification-context": "specs/01-规范模型基础规范.md",
         "resolve-governance-scope": "specs/02-工作对象与管辖范围规范.md",
         "update-fact-object": "specs/05-事实模型基础规范.md",
         "update-workcase": "specs/21-WorkCase-工作项.md",
@@ -128,7 +130,7 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
     assert action_templates.incomplete_sources == ()
     assert fields.complete is True
     assert len(fields.structures) == 16
-    assert len(fields.registrations) == 126
+    assert len(fields.registrations) == 127
 
 
 def test_mechanically_distinct_spec_does_not_create_a_semantic_duplicate_diagnosis(

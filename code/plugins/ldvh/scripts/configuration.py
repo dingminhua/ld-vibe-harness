@@ -9,6 +9,7 @@ from typing import Any
 
 CONFIG_FILENAME = "ldvh.json"
 CONFIG_VERSION = 3
+WORK_CONTEXT_CONFIG_VERSION = 4
 FACT_RECOVERY_CONFIG_VERSION = 2
 LEGACY_CONFIG_VERSION = 1
 GOVERNED_PROJECTS_FILENAME = "LDVH-GOVERNED-PROJECTS.yaml"
@@ -94,6 +95,18 @@ def validate_configuration(value: Any) -> dict[str, Any]:
     if not isinstance(value, dict):
         raise ConfigurationError("configuration must be a JSON object")
     version = value.get("config_version")
+    if version == WORK_CONTEXT_CONFIG_VERSION:
+        current = _configuration_fields(
+            value,
+            {"config_version", "helper_executable", "work_context_executable"},
+        )
+        helper = _executable_path(current["helper_executable"], "helper_executable")
+        work_context = _executable_path(current["work_context_executable"], "work_context_executable")
+        return {
+            "config_version": WORK_CONTEXT_CONFIG_VERSION,
+            "helper_executable": str(helper.resolve()),
+            "work_context_executable": str(work_context.resolve()),
+        }
     if version == FACT_RECOVERY_CONFIG_VERSION:
         legacy_v2 = _configuration_fields(
             value,
@@ -111,7 +124,9 @@ def validate_configuration(value: Any) -> dict[str, Any]:
         allowed={"config_version", "helper_executable", "context_recovery_executable", "workspace_root"},
     )
     if value["config_version"] != CONFIG_VERSION:
-        raise ConfigurationError(f"config_version must be {FACT_RECOVERY_CONFIG_VERSION} or {CONFIG_VERSION}")
+        raise ConfigurationError(
+            f"config_version must be {FACT_RECOVERY_CONFIG_VERSION}, {CONFIG_VERSION}, or {WORK_CONTEXT_CONFIG_VERSION}"
+        )
     helper = _executable_path(value["helper_executable"], "helper_executable")
     return {
         "config_version": CONFIG_VERSION,
@@ -154,7 +169,9 @@ def _read_configuration(plugin_data: Path) -> Any:
 def load_configuration(plugin_data: Path) -> dict[str, Any]:
     value = _read_configuration(plugin_data)
     if isinstance(value, dict) and value.get("config_version") == LEGACY_CONFIG_VERSION:
-        raise ConfigurationError("configuration version 1 requires explicit v3 replacement")
+        raise ConfigurationError(
+            f"configuration version 1 requires explicit v{WORK_CONTEXT_CONFIG_VERSION} replacement"
+        )
     return validate_configuration(value)
 
 
@@ -175,10 +192,44 @@ def load_rule_orientation_configuration(plugin_data: Path) -> dict[str, Any]:
     return {"config_version": version, "helper_executable": str(helper.resolve())}
 
 
+def load_work_context_configuration(plugin_data: Path) -> dict[str, Any]:
+    value = _read_configuration(plugin_data)
+    if not isinstance(value, dict) or value.get("config_version") != WORK_CONTEXT_CONFIG_VERSION:
+        raise ConfigurationError(
+            f"configuration requires explicit migration to version {WORK_CONTEXT_CONFIG_VERSION} work-context core"
+        )
+    return validate_configuration(value)
+
+
 def load_existing_configuration(plugin_data: Path) -> dict[str, Any]:
     value = _read_configuration(plugin_data)
     if isinstance(value, dict) and value.get("config_version") == LEGACY_CONFIG_VERSION:
         return validate_legacy_configuration(value)
+    return validate_configuration(value)
+
+
+def load_migration_configuration(plugin_data: Path) -> dict[str, Any]:
+    value = _read_configuration(plugin_data)
+    if not isinstance(value, dict):
+        raise ConfigurationError("configuration must be a JSON object")
+    version = value.get("config_version")
+    if version == LEGACY_CONFIG_VERSION:
+        return dict(_configuration_fields(value, {"config_version", "helper_executable", "workspace_root"}))
+    if version == FACT_RECOVERY_CONFIG_VERSION:
+        return dict(
+            _configuration_fields(
+                value,
+                {"config_version", "helper_executable", "context_recovery_executable", "workspace_root"},
+            )
+        )
+    if version == CONFIG_VERSION:
+        return dict(
+            _configuration_allowed_fields(
+                value,
+                required={"config_version", "helper_executable"},
+                allowed={"config_version", "helper_executable", "context_recovery_executable", "workspace_root"},
+            )
+        )
     return validate_configuration(value)
 
 
@@ -197,6 +248,16 @@ def build_configuration(
         value["workspace_root"] = workspace_root
     return validate_configuration(
         value
+    )
+
+
+def build_work_context_configuration(helper_executable: str, work_context_executable: str) -> dict[str, Any]:
+    return validate_configuration(
+        {
+            "config_version": WORK_CONTEXT_CONFIG_VERSION,
+            "helper_executable": helper_executable,
+            "work_context_executable": work_context_executable,
+        }
     )
 
 

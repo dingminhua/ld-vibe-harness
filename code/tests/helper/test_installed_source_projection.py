@@ -145,6 +145,17 @@ def test_installed_snapshot_prechecks_a_real_governed_index(
                 }
             ),
         ),
+        (
+            "read-specification-context",
+            json.dumps(
+                {
+                    "arguments": {
+                        "contexts": [{"responsibility_key": "ldvh-root", "primary_heading_paths": []}]
+                    },
+                    "requested_disclosure": "L3",
+                }
+            ),
+        ),
         ("read-action-template-candidates", ""),
         (
             "read-action-template-content",

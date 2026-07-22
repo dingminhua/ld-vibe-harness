@@ -50,12 +50,13 @@ def test_doctor_reports_ready_for_explicit_governed_project(tmp_path: Path) -> N
     assert result["status"] == "ready"
     assert result["distribution"] == {"name": "ld-vibe-harness", "version": "0.1.0"}
     assert result["helper"]["contract"] == "ldvh-helper-cli/2"
-    assert result["helper"]["operation_count"] == 12
+    assert result["helper"]["operation_count"] == 13
     assert result["configuration"]["config_status"] == "valid"
     assert result["configuration"]["scope_status"] == "governed_single"
     assert result["configuration"]["governed_project_id"] == "sample"
     assert {item["surface_key"] for item in result["integration_surfaces"]} == {
         "helper-cli",
+        "work-context-core",
         "context-recovery",
         "git-commit-msg-gate",
         "git-hook-manager",

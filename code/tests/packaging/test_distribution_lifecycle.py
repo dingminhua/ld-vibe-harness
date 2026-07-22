@@ -20,6 +20,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 OPERATIONS = (
     "read-specification-candidates",
     "read-specification-content",
+    "read-specification-context",
     "resolve-governance-scope",
     "precheck-git-commit",
     "find-fact-object-candidates",
@@ -493,6 +494,26 @@ def _exercise_operation_matrix(
         project,
         "read-specification-content",
         json.dumps({"arguments": {"selections": []}, "requested_disclosure": "L4"}),
+    )
+    specification_context = json.dumps(
+        {
+            "arguments": {"contexts": [{"responsibility_key": "ldvh-root", "primary_heading_paths": []}]},
+            "requested_disclosure": "L3",
+        }
+    )
+    _valid_pair(
+        environment,
+        project,
+        "read-specification-context",
+        specification_context,
+        version,
+        snapshot_sha256,
+    )
+    _invalid_pair(
+        environment,
+        project,
+        "read-specification-context",
+        json.dumps({"arguments": {"contexts": []}, "requested_disclosure": "L3"}),
     )
 
     _valid_pair(environment, project, "read-action-template-candidates", "", version, snapshot_sha256)

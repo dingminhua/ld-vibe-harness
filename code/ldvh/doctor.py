@@ -33,6 +33,12 @@ _SURFACES = (
         "specs/04-Helper CLI 服务规范.md",
     ),
     (
+        "work-context-core",
+        "ldvh-work-context",
+        "环境无关的工作上下文规则引导核心",
+        "specs/09-环境接入规范.md",
+    ),
+    (
         "context-recovery",
         "ldvh-context-recovery",
         "环境无关的有界上下文恢复",

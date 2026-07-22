@@ -49,7 +49,7 @@ def test_general_discovery_reports_source_bound_implementation(tmp_path: Path) -
     assert response["outcome"] == "ok"
     assert response["operation_key"] is None
     assert response["result"]["mode"] == "discovery"
-    assert len(response["result"]["operations"]) == 12
+    assert len(response["result"]["operations"]) == 13
     operations = {item["operation_key"]: item for item in response["result"]["operations"]}
     candidates = operations["find-fact-object-candidates"]
     assert candidates["implementation"]["present"] is True
@@ -101,6 +101,14 @@ def test_general_discovery_reports_source_bound_implementation(tmp_path: Path) -
     assert content["required_inputs"] == ["arguments.selections", "requested_disclosure"]
     assert content["optional_inputs"] == []
     assert content["availability"] is None
+    context = operations["read-specification-context"]
+    _assert_working_tree_implementation(
+        context["implementation"],
+        "code/ldvh/helper/operations/specification_context_operation.py",
+    )
+    assert context["required_inputs"] == ["arguments.contexts", "requested_disclosure"]
+    assert context["optional_inputs"] == []
+    assert context["availability"] is None
     template_candidates = operations["read-action-template-candidates"]
     _assert_working_tree_implementation(
         template_candidates["implementation"],
@@ -130,7 +138,7 @@ def test_general_discovery_reports_source_bound_implementation(tmp_path: Path) -
     assert commit_precheck["required_inputs"] == ["work_object_locators", "arguments.message"]
     assert commit_precheck["optional_inputs"] == ["arguments.workspace_root"]
     assert len(response["gaps"]) == 2
-    assert sum(item["member_count"] for item in response["gaps"]) == 96
+    assert sum(item["member_count"] for item in response["gaps"]) == 104
 
 
 def test_diagnostic_profile_expands_qualification_details(tmp_path: Path) -> None:
@@ -142,7 +150,7 @@ def test_diagnostic_profile_expands_qualification_details(tmp_path: Path) -> Non
 
     assert completed.returncode == 0
     assert response["response_profile"] == "diagnostic"
-    assert len(response["gaps"]) == 96
+    assert len(response["gaps"]) == 104
     assert all(item["summary"].startswith("当前 Code 尚未自动证明：") for item in response["gaps"])
     assert all("member_count" not in item for item in response["gaps"])
 
@@ -155,13 +163,13 @@ def test_defined_operation_check_and_call_return_actual_l0_results(tmp_path: Pat
     assert check_response["outcome"] == "ok"
     checked_operation = check_response["result"]["operations"][0]
     assert checked_operation["availability"] == "available_for_request"
-    assert len(checked_operation["available_scope"]) == 24
+    assert len(checked_operation["available_scope"]) == 25
     assert "working-tree-test-evidence-fields" in checked_operation["available_scope"]
     assert checked_operation["unavailable_scope"] == []
 
     assert called.returncode == 0
     assert call_response["outcome"] == "ok"
-    assert len(call_response["result"]["items"]) == 24
+    assert len(call_response["result"]["items"]) == 25
     assert "working-tree-test-evidence-fields" in {
         item["key"] for item in call_response["result"]["items"]
     }
@@ -476,3 +484,76 @@ def test_specification_content_invalid_exact_selection_is_invalid_request(tmp_pa
     assert response["outcome"] == "invalid_request"
     assert response["result"] is None
     assert any("无法精确唯一匹配" in gap["summary"] for gap in response["gaps"])
+
+
+def test_specification_context_capability_and_call_return_complete_composite(tmp_path: Path) -> None:
+    request = {
+        "task": "must not select rules",
+        "work_object_locators": ["ignored"],
+        "arguments": {
+            "contexts": [
+                {
+                    "responsibility_key": "specification-model-foundation",
+                    "primary_heading_paths": [["5. 基础术语", "5.1 规范文档（Specification）"]],
+                }
+            ]
+        },
+        "requested_disclosure": "L3",
+        "authorization_reference": [{"kind": "human", "locator": "ignored"}],
+    }
+    checked, check_response = _run(
+        tmp_path,
+        "capabilities",
+        "read-specification-context",
+        stdin=json.dumps(request),
+    )
+    called, call_response = _run(
+        tmp_path,
+        "call",
+        "read-specification-context",
+        stdin=json.dumps(request),
+    )
+
+    assert checked.returncode == 0
+    operation = check_response["result"]["operations"][0]
+    assert operation["availability"] == "available_for_request"
+    assert operation["required_inputs"] == ["arguments.contexts", "requested_disclosure"]
+    assert operation["available_scope"] == request["arguments"]["contexts"]
+
+    assert called.returncode == 0
+    assert call_response["outcome"] == "ok"
+    assert call_response["changes"] == []
+    assert call_response["scope"]["governance_resolution"] is None
+    item = call_response["result"]["items"][0]
+    assert item["responsibility_key"] == "specification-model-foundation"
+    assert item["guard_coverage"] == {
+        "applicability_scope": "returned",
+        "verification": "returned",
+        "human_gate": "returned",
+        "stop_conditions": "returned",
+    }
+    assert call_response["disclosure"]["requested"] == "L3"
+    assert call_response["disclosure"]["parts"][0]["level"] == "L1"
+    assert all(part["level"] == "L3" for part in call_response["disclosure"]["parts"][1:])
+
+
+def test_specification_context_invalid_heading_is_whole_request_invalid(tmp_path: Path) -> None:
+    completed, response = _run(
+        tmp_path,
+        "call",
+        "read-specification-context",
+        stdin=json.dumps(
+            {
+                "arguments": {
+                    "contexts": [
+                        {"responsibility_key": "ldvh-root", "primary_heading_paths": [["Unknown H2"]]}
+                    ]
+                },
+                "requested_disclosure": "L3",
+            }
+        ),
+    )
+
+    assert completed.returncode == 2
+    assert response["outcome"] == "invalid_request"
+    assert response["result"] is None

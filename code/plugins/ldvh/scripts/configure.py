@@ -9,12 +9,11 @@ from typing import Any
 
 from configuration import (
     ConfigurationError,
-    build_configuration,
+    build_work_context_configuration,
     configuration_path,
     configure_utf8_standard_streams,
-    load_configuration,
-    load_existing_configuration,
-    load_rule_orientation_configuration,
+    load_migration_configuration,
+    load_work_context_configuration,
     write_configuration,
 )
 
@@ -25,7 +24,7 @@ def _emit(outcome: str, **details: Any) -> int:
 
 
 def _parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Configure the LDVH Codex adapter")
+    parser = argparse.ArgumentParser(description="Configure the LDVH Codex thin adapter")
     subparsers = parser.add_subparsers(dest="command", required=True)
     for command in ("check", "verify"):
         child = subparsers.add_parser(command)
@@ -34,8 +33,7 @@ def _parser() -> argparse.ArgumentParser:
         child = subparsers.add_parser(command)
         child.add_argument("--plugin-data", required=True)
         child.add_argument("--helper-executable", required=True)
-        child.add_argument("--context-recovery-executable")
-        child.add_argument("--workspace-root")
+        child.add_argument("--work-context-executable", required=True)
         if command == "apply":
             child.add_argument("--confirm-write", action="store_true")
             child.add_argument("--replace", action="store_true")
@@ -53,34 +51,22 @@ def _load_optional_configuration(plugin_data: Path) -> dict[str, Any] | None:
     path = configuration_path(plugin_data)
     if not path.exists() and not path.is_symlink():
         return None
-    return load_existing_configuration(plugin_data)
+    return load_migration_configuration(plugin_data)
 
 
 def _check(plugin_data: Path) -> int:
-    rule_orientation_configuration = load_rule_orientation_configuration(plugin_data)
-    try:
-        configuration = load_configuration(plugin_data)
-    except ConfigurationError as error:
-        return _emit(
-            "ok",
-            configuration_path=str(configuration_path(plugin_data)),
-            configuration=rule_orientation_configuration,
-            fact_recovery_configuration={"status": "invalid", "summary": str(error)},
-            changes=[],
-        )
+    configuration = load_work_context_configuration(plugin_data)
     return _emit(
         "ok",
         configuration_path=str(configuration_path(plugin_data)),
         configuration=configuration,
-        fact_recovery_configuration={
-            "status": "configured" if "context_recovery_executable" in configuration else "not_configured"
-        },
+        work_context_core_configuration="configured",
         changes=[],
     )
 
 
-def _plan(plugin_data: Path, helper: str, context_recovery: str | None, workspace: str | None) -> int:
-    proposed = build_configuration(helper, context_recovery, workspace)
+def _plan(plugin_data: Path, helper: str, work_context: str) -> int:
+    proposed = build_work_context_configuration(helper, work_context)
     path = configuration_path(plugin_data)
     current = _load_optional_configuration(plugin_data)
     change = "none" if current == proposed else ("create" if current is None else "replace")
@@ -97,13 +83,12 @@ def _plan(plugin_data: Path, helper: str, context_recovery: str | None, workspac
 def _apply(
     plugin_data: Path,
     helper: str,
-    context_recovery: str | None,
-    workspace: str | None,
+    work_context: str,
     *,
     confirm_write: bool,
     replace: bool,
 ) -> int:
-    proposed = build_configuration(helper, context_recovery, workspace)
+    proposed = build_work_context_configuration(helper, work_context)
     path = configuration_path(plugin_data)
     current = _load_optional_configuration(plugin_data)
     if current == proposed:
@@ -125,7 +110,7 @@ def _apply(
             changes=[],
         )
     written = write_configuration(plugin_data, proposed)
-    reread = load_configuration(plugin_data)
+    reread = load_work_context_configuration(plugin_data)
     return _emit(
         "ok",
         configuration_path=str(written),
@@ -135,14 +120,10 @@ def _apply(
 
 
 def _verify(plugin_data: Path) -> int:
-    configuration = load_rule_orientation_configuration(plugin_data)
+    configuration = load_work_context_configuration(plugin_data)
     completed = subprocess.run(
-        [
-            configuration["helper_executable"],
-            "capabilities",
-        ],
+        [configuration["work_context_executable"], "--help"],
         cwd=plugin_data,
-        input=json.dumps({"response_profile": "compact"}, ensure_ascii=False),
         text=True,
         encoding="utf-8",
         errors="strict",
@@ -151,41 +132,11 @@ def _verify(plugin_data: Path) -> int:
         check=False,
     )
     if completed.returncode != 0:
-        raise ConfigurationError("Rule orientation Helper verification did not complete successfully")
-    try:
-        parsed_response = json.loads(completed.stdout)
-    except json.JSONDecodeError as error:
-        raise ConfigurationError("Rule orientation Helper verification did not return JSON") from error
-    if (
-        not isinstance(parsed_response, dict)
-        or parsed_response.get("contract") != "ldvh-helper-cli/2"
-        or parsed_response.get("request_kind") != "capabilities"
-        or parsed_response.get("operation_key") is not None
-        or parsed_response.get("outcome") != "ok"
-    ):
-        raise ConfigurationError("Rule orientation Helper verification did not return Helper capabilities")
-    result = parsed_response.get("result")
-    operations = result.get("operations") if isinstance(result, dict) else []
-    if not isinstance(operations, list) or not any(
-        isinstance(item, dict)
-        and item.get("operation_key") == "read-specification-content"
-        and item.get("implementation", {}).get("present") is True
-        for item in operations
-    ):
-        raise ConfigurationError("Rule orientation Helper verification did not expose read-specification-content")
-    try:
-        full_configuration = load_configuration(plugin_data)
-    except ConfigurationError:
-        fact_recovery_configuration = "invalid"
-    else:
-        fact_recovery_configuration = (
-            "configured_not_checked" if "context_recovery_executable" in full_configuration else "not_configured"
-        )
+        raise ConfigurationError("work-context core verification did not complete successfully")
     return _emit(
         "ok",
         configuration_path=str(configuration_path(plugin_data)),
-        rule_orientation_helper_verified=True,
-        fact_recovery_configuration=fact_recovery_configuration,
+        work_context_core_launchable=True,
         real_environment_trigger_verified=False,
         changes=[],
     )
@@ -199,18 +150,12 @@ def main() -> int:
         if arguments.command == "check":
             return _check(plugin_data)
         if arguments.command == "plan":
-            return _plan(
-                plugin_data,
-                arguments.helper_executable,
-                arguments.context_recovery_executable,
-                arguments.workspace_root,
-            )
+            return _plan(plugin_data, arguments.helper_executable, arguments.work_context_executable)
         if arguments.command == "apply":
             return _apply(
                 plugin_data,
                 arguments.helper_executable,
-                arguments.context_recovery_executable,
-                arguments.workspace_root,
+                arguments.work_context_executable,
                 confirm_write=arguments.confirm_write,
                 replace=arguments.replace,
             )

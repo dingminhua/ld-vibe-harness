@@ -47,6 +47,12 @@ from ldvh.helper.operations.specification_content_operation import (
 from ldvh.helper.operations.specification_content_operation import (
     SPECIFICATION_CONTENT_IMPLEMENTATION,
 )
+from ldvh.helper.operations.specification_context_operation import (
+    OPERATION_KEY as SPECIFICATION_CONTEXT_OPERATION_KEY,
+)
+from ldvh.helper.operations.specification_context_operation import (
+    SPECIFICATION_CONTEXT_IMPLEMENTATION,
+)
 from ldvh.helper.operations.workcase_update_operation import (
     OPERATION_KEY as WORKCASE_UPDATE_OPERATION_KEY,
 )
@@ -67,6 +73,7 @@ IMPLEMENTATIONS = MappingProxyType[str, OperationImplementation](
         PREPARE_OPERATION_KEY: PREPARE_FACT_DRAFT_IMPLEMENTATION,
         SPECIFICATION_CANDIDATE_OPERATION_KEY: SPECIFICATION_CANDIDATE_IMPLEMENTATION,
         SPECIFICATION_CONTENT_OPERATION_KEY: SPECIFICATION_CONTENT_IMPLEMENTATION,
+        SPECIFICATION_CONTEXT_OPERATION_KEY: SPECIFICATION_CONTEXT_IMPLEMENTATION,
         WORKCASE_UPDATE_OPERATION_KEY: WORKCASE_UPDATE_IMPLEMENTATION,
     }
 )
