@@ -1,6 +1,12 @@
 from __future__ import annotations
 
-from ldvh.facts.relations import _workcase_residual_mapping_issues
+from ldvh.facts.relations import _target_condition, _workcase_residual_mapping_issues
+
+
+def test_spark_routed_to_rejects_study_but_accepts_other_stable_fact_types() -> None:
+    assert not _target_condition("spark", "routed-to", "study", "active")
+    assert not _target_condition("spark", "routed-to", "spark", "open")
+    assert _target_condition("spark", "routed-to", "workcase", "open")
 
 
 def _current_workcase_relations() -> dict[str, object]:

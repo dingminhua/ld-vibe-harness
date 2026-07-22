@@ -136,7 +136,7 @@ def _target_condition(source_type: str, relation_key: str, target_type: str, tar
             return target_type == "workcase" and target_status == "closed"
         return target_type == source_type and target_status == "superseded"
     if source_type == "spark" and relation_key == "routed-to":
-        return target_type != "spark"
+        return target_type not in {"spark", "study"}
     if source_type == "workcase" and relation_key == "depends-on":
         return target_type == "workcase" and target_status in {"open", "blocked"}
     if source_type == "workcase" and relation_key == "routed-to":
