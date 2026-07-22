@@ -5,7 +5,6 @@ import { formatDateTime } from '@/utils/dateFormat';
 import { FactAssociationsSection } from '@/pages/object-detail/FactAssociationsSection';
 import { sortRelatedContentEntries, type RelatedContentEntry } from '@/pages/object-detail/model';
 import {
-  DetailInlineField,
   ReadingNodeSection,
   RelatedContentSection,
   StudyTextNodeContent,

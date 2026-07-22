@@ -8,6 +8,7 @@ export const STATUS_LOCALES: Record<string, { zh: string; en: string }> = {
   proposed: { zh: '已提议', en: 'Proposed' },
   accepted: { zh: '已采纳', en: 'Accepted' },
   superseded: { zh: '已替代', en: 'Superseded' },
+  retired: { zh: '已退出', en: 'Retired' },
   rejected: { zh: '已拒绝', en: 'Rejected' },
   deprecated: { zh: '已废弃', en: 'Deprecated' },
   archived: { zh: '已归档', en: 'Archived' },

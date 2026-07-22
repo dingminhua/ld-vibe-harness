@@ -19,6 +19,7 @@ const STATUS_FILTER_ORDER = [
   'discarded',
   'archived',
   'superseded',
+  'retired',
   'rejected',
   'deprecated',
   'suspended',
@@ -28,8 +29,8 @@ const statusOrderIndex = new Map(STATUS_FILTER_ORDER.map((status, index) => [sta
 
 const FALLBACK_STATUSES_BY_TYPE: Record<string, string[]> = {
   workcase: [...WORKCASE_STATUS_ORDER],
-  adr: ['active', 'archived', 'deprecated'],
-  pitfall: ['active', 'archived'],
+  adr: ['active', 'superseded', 'retired'],
+  pitfall: ['active', 'superseded', 'retired'],
   spark: ['open', 'routed', 'discarded'],
   study: ['active', 'superseded', 'retired'],
 };
@@ -88,7 +89,7 @@ export default function ObjectStatusFilter({
   const sortedOptions = useMemo(() => sortStatusOptions(options), [options]);
   const fallbackStatuses = useMemo(() => getFallbackStatuses(type, activeStatus), [type, activeStatus]);
   const displayOptions = useMemo(() => {
-    if (type !== 'spark' && type !== 'study' && type !== 'workcase') return sortedOptions;
+    if (!(type in FALLBACK_STATUSES_BY_TYPE)) return sortedOptions;
     const counts = new Map(sortedOptions.map((option) => [option.status, option.count]));
     return fallbackStatuses.map((status) => ({ status, count: counts.get(status) ?? 0 }));
   }, [fallbackStatuses, sortedOptions, type]);
@@ -119,7 +120,7 @@ export default function ObjectStatusFilter({
     );
   }
 
-  if (displayOptions.length <= 1 && type !== 'spark') return null;
+  if (displayOptions.length <= 1 && !(type in FALLBACK_STATUSES_BY_TYPE)) return null;
 
   return (
     <div className={`ldvh-tab-list ${className}`} aria-label={t('objectList.statusFilter')}>
