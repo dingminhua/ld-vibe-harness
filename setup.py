@@ -13,7 +13,7 @@ from setuptools.command.sdist import sdist as _sdist
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT / "code"))
 
-USER_DOCUMENTS = ("docs/LDVH接入面.md", "docs/启用与AI环境接入.md")
+USER_DOCUMENTS = ("specs/attachments/09.Att.01-环境接入面.md",)
 USER_DOCUMENT_DIRECTORY = "_user_docs"
 
 from ldvh.rule_snapshot import SNAPSHOT_DIRECTORY, snapshot_plan_for_source, write_snapshot  # noqa: E402
