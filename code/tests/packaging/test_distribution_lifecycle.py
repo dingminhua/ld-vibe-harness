@@ -74,7 +74,6 @@ def _copy_release_source(destination: Path) -> None:
     for name in ("README.md", "pyproject.toml", "setup.py"):
         shutil.copy2(PROJECT_ROOT / name, destination / name)
     shutil.copytree(PROJECT_ROOT / "code" / "ldvh", destination / "code" / "ldvh")
-    shutil.copytree(PROJECT_ROOT / "docs", destination / "docs")
     shutil.copytree(PROJECT_ROOT / "specs", destination / "specs")
     _run_checked(["git", "init", "-q", str(destination)], cwd=destination.parent)
 
@@ -733,8 +732,7 @@ def _assert_doctor_runner(environment: InstalledEnvironment, root: Path) -> None
     assert response["distribution"]["version"] == importlib.metadata.version("ld-vibe-harness")
     assert response["configuration"]["scope_status"] == "governed_single"
     assert all(item["state"] == "available" for item in response["integration_surfaces"])
-    assert all(item["state"] == "available" for item in response["documentation"])
-    assert {item["name"] for item in response["documentation"]} == {"LDVH接入面.md", "启用与AI环境接入.md"}
+    assert "documentation" not in response
 
 
 def _assert_native_git_hook_runners(environment: InstalledEnvironment) -> None:

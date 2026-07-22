@@ -181,7 +181,7 @@ ldvh_spec:
 | 提交消息交付边界 | 形成 message 至 commit 返回后 | 完整 message 直接传给 Helper 与 Git；Working Tree 内没有临时提交消息文件；外部工具确需文件时只使用系统临时目录且调用后已清理 | 提交前后状态、临时文件检查、Helper 请求和实际 commit message | Working Tree 回读、系统临时文件回读及 Git message 回读 | 当次 worktree、message 交付和确有使用的外部临时文件 | 不创建 commit 或不声明闭环；删除本次可归属的外部临时文件并回读，Working Tree 内出现消息文件时先停止并按实际归属处置 |
 | commit 创建与回读 | Git 返回后准备声明成功时 | 新 commit 实际存在，身份、实际 message 与内容范围已回读，和已授权目标一致；既有原生 Git Gate 只在真实 Git 事件中复检，其拒绝、修改或其它可观察结果及剩余 Working Tree/Index 已纳入判断 | 实际 Git 结果、`HEAD`、commit 内容、Git Gate/Hook 可观察诊断和提交后状态 | 当次 Git/Code 入口及只读回读 | 当次本地新 commit、环境结果与已观察剩余变化 | 不声明成功或完整完成；报告拒绝、修改、部分结果、实际残留和可安全继续入口 |
 
-本文所涉模板发现、Git/Code、Skill、Hook 与环境能力声明，按 00 §8 及上表对应验证对象判断。
+本文所涉模板发现、Git/Code、Skill、Hook 与环境能力声明，按 00 §9 及上表对应验证对象判断。
 
 ## 7. Human Gate
 
@@ -193,7 +193,7 @@ ldvh_spec:
 4. 实际行动需要 amend、rebase、reset、清理、覆盖用户既有 Index、Hook/CI 安装或修改、push、PR、远端 ref 或其它本模板排除的副作用；
 5. 项目规则、Human 目标和当前 Git 状态冲突，来源关系无法决定应修改目标、拆分、保持现状还是放弃提交。
 
-Human 决定的复用按 00 §9 执行；Human 当前指令已经授权相应行动，且适用于该行动的全部来源规则许可条件已经成立时，不重复请求同一决定。Human 决定不能使错误 repo、超范围快照、虚假 message、未执行 Git 命令或未回读 commit 自动成立，也不能把本地 commit 扩张为 push、PR 或工作完成。
+Human 决定的复用按 00 §10 执行；Human 当前指令已经授权相应行动，且适用于该行动的全部来源规则许可条件已经成立时，不重复请求同一决定。Human 决定不能使错误 repo、超范围快照、虚假 message、未执行 Git 命令或未回读 commit 自动成立，也不能把本地 commit 扩张为 push、PR 或工作完成。
 
 ## 8. Stop Conditions
 
@@ -213,4 +213,4 @@ Human 决定的复用按 00 §9 执行；Human 当前指令已经授权相应行
 12. 目标为受管辖项目且 `precheck-git-commit` 当次可用，却准备跳过 Helper 预检，或者候选、完整 message、worktree、管辖、来源、验证变化后仍复用旧结果；
 13. 准备在 Git Working Tree 内创建临时提交消息文件，或者外部工具使用的系统临时文件没有清理与回读计划。
 
-暂停范围与允许继续的行动按 00 §10 执行；对本模板，只有授权、目标身份、候选范围、来源要求、验证、commit 实际结果和回读达到对应成立条件，或声明缩小到现有依据实际支持的范围后，才能恢复受影响的路径、快照或声明。
+暂停范围与允许继续的行动按 00 §11 执行；对本模板，只有授权、目标身份、候选范围、来源要求、验证、commit 实际结果和回读达到对应成立条件，或声明缩小到现有依据实际支持的范围后，才能恢复受影响的路径、快照或声明。

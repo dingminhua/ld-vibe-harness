@@ -3,6 +3,7 @@ from __future__ import annotations
 import ast
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -108,6 +109,29 @@ def _recording_runner(tmp_path: Path, response: Any, *, exit_code: int = 0) -> t
     return runner, records
 
 
+def _recording_helper(tmp_path: Path, response: Any, *, exit_code: int = 0) -> tuple[Path, Path]:
+    records = tmp_path / "helper-records.jsonl"
+    helper = _executable(
+        tmp_path,
+        "recording-helper",
+        "\n".join(
+            [
+                "import json",
+                "import sys",
+                "from pathlib import Path",
+                f"records = Path({str(records)!r})",
+                "with records.open('a', encoding='utf-8') as stream:",
+                "    record = {'argv': sys.argv[1:], 'cwd': str(Path.cwd()), 'stdin': sys.stdin.read()}",
+                "    stream.write(json.dumps(record) + '\\n')",
+                f"print(json.dumps({response!r}, ensure_ascii=False))",
+                f"raise SystemExit({exit_code})",
+            ]
+        )
+        + "\n",
+    )
+    return helper, records
+
+
 def _run_configure(*arguments: str) -> tuple[subprocess.CompletedProcess[str], dict[str, Any]]:
     completed = subprocess.run(
         [sys.executable, str(CONFIGURE), *arguments],
@@ -145,6 +169,20 @@ def _apply(plugin_data: Path, helper: Path, runner: Path, workspace: Path) -> di
     return response
 
 
+def _apply_rule_orientation_only(plugin_data: Path, helper: Path) -> dict[str, Any]:
+    completed, response = _run_configure(
+        "apply",
+        "--plugin-data",
+        str(plugin_data),
+        "--helper-executable",
+        str(helper),
+        "--confirm-write",
+    )
+    assert completed.returncode == 0
+    assert response["outcome"] == "ok"
+    return response
+
+
 def _run_hook(
     plugin_data: Path,
     cwd: Path,
@@ -173,11 +211,34 @@ def _run_hook(
     return completed, json.loads(completed.stdout)
 
 
-def _rendered_projection(context: str) -> dict[str, Any]:
-    encoded = context.split("Bounded recovery projection: ", 1)[1].rsplit(
-        ". Bindings are mechanical recovery state only", 1
-    )[0]
-    return json.loads(encoded)
+def _rule_orientation_response(
+    *,
+    outcome: str = "ok",
+    parts: list[dict[str, Any]] | None = None,
+    gaps: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    return {
+        "contract": "ldvh-helper-cli/2",
+        "request_kind": "call",
+        "operation_key": "read-specification-content",
+        "outcome": outcome,
+        "result": (
+            {"items": [{"parts": parts or []}]}
+            if parts is not None
+            else None
+        ),
+        "scope": {"completed": [], "not_completed": []},
+        "gaps": [] if gaps is None else gaps,
+        "follow_up": {"summary": "继续读取入口"},
+    }
+
+
+def _rule_part(content: str = "规则原文") -> dict[str, Any]:
+    return {
+        "content": content,
+        "heading_path": ["8. 系统级运行架构", "8.1 工作上下文的信息交付顺序与渐进式披露"],
+        "source": {"locator": "specs/00-理念与构成.md#L50-L60"},
+    }
 
 
 def test_manifest_hooks_and_assets_form_the_supported_thin_codex_mapping() -> None:
@@ -206,7 +267,7 @@ def test_manifest_hooks_and_assets_form_the_supported_thin_codex_mapping() -> No
                             "command": 'python3 -X utf8 "${PLUGIN_ROOT}/scripts/codex_context.py"',
                             "commandWindows": 'py -3.12 -X utf8 "${PLUGIN_ROOT}\\scripts\\codex_context.py"',
                             "timeout": 60,
-                            "statusMessage": "Restoring LDVH context",
+                            "statusMessage": "Loading LDVH rule context",
                         }
                     ],
                 }
@@ -219,7 +280,7 @@ def test_manifest_hooks_and_assets_form_the_supported_thin_codex_mapping() -> No
                             "command": 'python3 -X utf8 "${PLUGIN_ROOT}/scripts/codex_context.py"',
                             "commandWindows": 'py -3.12 -X utf8 "${PLUGIN_ROOT}\\scripts\\codex_context.py"',
                             "timeout": 60,
-                            "statusMessage": "Restoring LDVH context",
+                            "statusMessage": "Loading LDVH rule context",
                         }
                     ]
                 }
@@ -262,7 +323,7 @@ def test_plan_is_read_only_and_apply_requires_confirmation(tmp_path: Path) -> No
     assert not plugin_data.exists()
 
 
-def test_apply_writes_v2_configuration_and_requires_explicit_replace(tmp_path: Path) -> None:
+def test_apply_writes_v3_configuration_and_requires_explicit_replace(tmp_path: Path) -> None:
     plugin_data = tmp_path / "plugin-data"
     workspace = _workspace(tmp_path)
     runner = _core_runner(tmp_path)
@@ -294,7 +355,7 @@ def test_apply_writes_v2_configuration_and_requires_explicit_replace(tmp_path: P
     assert applied["changes"] == [{"kind": "created", "path": str(plugin_data / "ldvh.json")}]
     assert checked.returncode == 0
     assert check["configuration"] == {
-        "config_version": 2,
+        "config_version": 3,
         "helper_executable": str(HELPER_EXECUTABLE.resolve()),
         "context_recovery_executable": str(runner.resolve()),
         "workspace_root": str(workspace.resolve()),
@@ -353,21 +414,86 @@ def test_broken_configuration_symlink_is_not_treated_as_absent_or_overwritten(tm
     assert config_path.is_symlink()
 
 
-def test_static_verify_checks_the_configured_runner_without_claiming_a_real_trigger(tmp_path: Path) -> None:
+def test_static_verify_checks_rule_orientation_without_running_fact_recovery(tmp_path: Path) -> None:
     plugin_data = tmp_path / "plugin-data"
     workspace = _workspace(tmp_path)
-    helper = _executable(tmp_path, "helper", "raise SystemExit(0)\n")
-    expected_projection = {"contract": "ldvh-context-recovery/1", "opaque_core_projection": "verified"}
-    runner, _ = _recording_runner(tmp_path, expected_projection)
+    capabilities = {
+        "contract": "ldvh-helper-cli/2",
+        "request_kind": "capabilities",
+        "operation_key": None,
+        "outcome": "ok",
+        "result": {
+            "operations": [
+                {"operation_key": "read-specification-content", "implementation": {"present": True}}
+            ]
+        },
+    }
+    helper, helper_records = _recording_helper(tmp_path, capabilities)
+    runner, runner_records = _recording_runner(tmp_path, {"unexpected": "fact recovery was called"})
     _apply(plugin_data, helper, runner, workspace)
 
     completed, response = _run_configure("verify", "--plugin-data", str(plugin_data))
 
     assert completed.returncode == 0
     assert response["outcome"] == "ok"
-    assert response["context_recovery_runner_verified"] is True
+    assert response["rule_orientation_helper_verified"] is True
+    assert response["fact_recovery_configuration"] == "configured_not_checked"
     assert response["real_environment_trigger_verified"] is False
-    assert response["context_recovery_projection"] == expected_projection
+    assert json.loads(helper_records.read_text(encoding="utf-8")) == {
+        "argv": ["capabilities"],
+        "cwd": str(plugin_data),
+        "stdin": json.dumps({"response_profile": "compact"}, ensure_ascii=False),
+    }
+    assert not runner_records.exists()
+
+
+def test_rule_orientation_configuration_does_not_require_fact_recovery_configuration(tmp_path: Path) -> None:
+    plugin_data = tmp_path / "plugin-data"
+    project = tmp_path / "unconfigured-project"
+    project.mkdir()
+    helper, records = _recording_helper(tmp_path, _rule_orientation_response(parts=[_rule_part()]))
+
+    applied = _apply_rule_orientation_only(plugin_data, helper)
+    checked, check = _run_configure("check", "--plugin-data", str(plugin_data))
+    completed, response = _run_hook(plugin_data, project)
+
+    assert applied["configuration"] == {
+        "config_version": 3,
+        "helper_executable": str(helper.resolve()),
+    }
+    assert checked.returncode == 0
+    assert check["configuration"] == applied["configuration"]
+    assert completed.returncode == 0
+    assert "Facts: not_requested" in response["hookSpecificOutput"]["additionalContext"]
+    assert records.read_text(encoding="utf-8").splitlines()
+
+
+def test_rule_orientation_ignores_invalid_v2_fact_recovery_fields(tmp_path: Path) -> None:
+    plugin_data = tmp_path / "plugin-data"
+    plugin_data.mkdir()
+    project = tmp_path / "project"
+    project.mkdir()
+    helper, records = _recording_helper(tmp_path, _rule_orientation_response(parts=[_rule_part()]))
+    (plugin_data / "ldvh.json").write_text(
+        json.dumps(
+            {
+                "config_version": 2,
+                "helper_executable": str(helper),
+                "context_recovery_executable": str(tmp_path / "missing-runner"),
+                "workspace_root": str(tmp_path / "missing-workspace"),
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    checked, check = _run_configure("check", "--plugin-data", str(plugin_data))
+    completed, response = _run_hook(plugin_data, project)
+
+    assert checked.returncode == 0
+    assert check["fact_recovery_configuration"]["status"] == "invalid"
+    assert completed.returncode == 0
+    assert "Facts: not_requested" in response["hookSpecificOutput"]["additionalContext"]
+    assert records.read_text(encoding="utf-8").splitlines()
 
 
 @pytest.mark.parametrize(
@@ -380,7 +506,7 @@ def test_static_verify_checks_the_configured_runner_without_claiming_a_real_trig
         ("SubagentStart", None, "SubagentStart"),
     ],
 )
-def test_codex_adapter_projects_native_events_to_the_configured_core_runner(
+def test_codex_adapter_projects_native_events_to_the_rule_orientation_profile(
     tmp_path: Path,
     event: str,
     source: str | None,
@@ -390,9 +516,8 @@ def test_codex_adapter_projects_native_events_to_the_configured_core_runner(
     workspace = _workspace(tmp_path)
     project = tmp_path / "project"
     project.mkdir()
-    helper = _executable(tmp_path, "helper", "raise SystemExit(0)\n")
-    expected_projection = {"contract": "ldvh-context-recovery/1", "opaque_core_projection": "preserved"}
-    runner, records = _recording_runner(tmp_path, expected_projection)
+    helper, records = _recording_helper(tmp_path, _rule_orientation_response(parts=[_rule_part()]))
+    runner = _core_runner(tmp_path)
     _apply(plugin_data, helper, runner, workspace)
 
     completed, response = _run_hook(plugin_data, project, event=event, source=source)
@@ -401,26 +526,38 @@ def test_codex_adapter_projects_native_events_to_the_configured_core_runner(
     assert response["continue"] is True
     assert response["hookSpecificOutput"]["hookEventName"] == event
     context = response["hookSpecificOutput"]["additionalContext"]
-    assert f"mapped {native_trigger} to shared context recovery" in context
-    assert _rendered_projection(context) == expected_projection
+    assert f"mapped {native_trigger} to the source-defined rule orientation profile" in context
+    assert "Facts: not_requested" in context
+    assert "规则原文" in context
+    assert "Delivery scope, gaps, and follow-up" in context
+    assert "继续读取入口" in context
+    assert "did not perform governance resolution, fact discovery, fact reading" in context
     assert records.read_text(encoding="utf-8").splitlines()
     record = json.loads(records.read_text(encoding="utf-8").splitlines()[0])
     assert record == {
-        "argv": [
-            "--helper-executable",
-            str(helper.resolve()),
-            "--workspace-root",
-            str(workspace.resolve()),
-            "--work-object-locator",
-            str(project),
-            "--helper-cwd",
-            str(project),
-        ],
+        "argv": ["call", "read-specification-content"],
         "cwd": str(project),
+        "stdin": json.dumps(
+            {
+                "arguments": {
+                    "selections": [
+                        {
+                            "responsibility_key": "ldvh-root",
+                            "heading_path": ["8. 系统级运行架构", "8.1 工作上下文的信息交付顺序与渐进式披露"],
+                        },
+                    ]
+                },
+                "requested_disclosure": "L3",
+                "response_profile": "compact",
+                "observed_context": {},
+            },
+            ensure_ascii=False,
+            separators=(",", ":"),
+        ),
     }
 
 
-def test_complete_additional_context_obeys_frozen_governed_and_workspace_byte_budgets(tmp_path: Path) -> None:
+def test_default_additional_context_delivers_rules_without_project_fact_recovery(tmp_path: Path) -> None:
     plugin_data = tmp_path / "plugin-data"
     workspace, project = _governed_workspace(tmp_path)
     runner = _core_runner(tmp_path)
@@ -432,28 +569,78 @@ def test_complete_additional_context_obeys_frozen_governed_and_workspace_byte_bu
     assert governed_completed.returncode == workspace_completed.returncode == 0
     governed_context = governed_response["hookSpecificOutput"]["additionalContext"]
     workspace_context = workspace_response["hookSpecificOutput"]["additionalContext"]
-    assert len(governed_context.encode("utf-8")) <= 13_915
-    assert len(workspace_context.encode("utf-8")) <= 4_830
-    governed_projection = _rendered_projection(governed_context)
-    workspace_projection = _rendered_projection(workspace_context)
-    assert governed_projection["project_binding"]["reason"] == "governed_single"
-    assert governed_projection["delivery_coverage"]["status"] == "complete"
-    assert workspace_projection["project_binding"]["reason"] == "sole_registered_project_candidate"
-    assert workspace_projection["delivery_coverage"]["status"] == "incomplete"
-    assert workspace_projection["project_binding"]["status"] == "bound"
-    assert workspace_projection["workcase_binding"]["status"] == "unresolved"
+    for context in (governed_context, workspace_context):
+        assert "work-context-rule-orientation" in context
+        assert "8.1 工作上下文的信息交付顺序与渐进式披露" in context
+        assert "Facts: not_requested" in context
+        assert "project_binding" not in context
+        assert "workcase_binding" not in context
+        assert "delivery_coverage" not in context
+
+
+def test_rule_orientation_selection_is_source_declared_and_independent_of_cwd(tmp_path: Path) -> None:
+    source = (REPOSITORY_ROOT / "specs/01-规范模型基础规范.md").read_text(encoding="utf-8")
+    profile = source.split("### 9.10 工作上下文规则引导 profile", 1)[1].split("## 10.", 1)[0]
+    assert "`work-context-rule-orientation`" in profile
+    assert "`read-specification-content`" in profile
+    source_selections = [
+        {
+            "responsibility_key": responsibility_key,
+            "heading_path": [primary, *([secondary] if secondary else [])],
+        }
+        for responsibility_key, primary, secondary in re.findall(
+            r"^\d+\. `([^`]+)` 的 `([^`]+)`(?: / `([^`]+)`)?[；。]$",
+            profile,
+            flags=re.MULTILINE,
+        )
+    ]
+    script = ast.parse(CODEX_CONTEXT.read_text(encoding="utf-8"))
+    constants = {
+        target.id: ast.literal_eval(node.value)
+        for node in script.body
+        if isinstance(node, ast.Assign)
+        for target in node.targets
+        if isinstance(target, ast.Name)
+        and target.id in {"RULE_ORIENTATION_PROFILE", "RULE_ORIENTATION_OPERATION", "RULE_ORIENTATION_SELECTIONS"}
+    }
+    assert constants == {
+        "RULE_ORIENTATION_PROFILE": "work-context-rule-orientation",
+        "RULE_ORIENTATION_OPERATION": "read-specification-content",
+        "RULE_ORIENTATION_SELECTIONS": tuple(source_selections),
+    }
+
+    plugin_data = tmp_path / "plugin-data"
+    workspace = _workspace(tmp_path)
+    first = tmp_path / "first-project"
+    second = tmp_path / "second-project"
+    first.mkdir()
+    second.mkdir()
+    helper, records = _recording_helper(tmp_path, _rule_orientation_response(parts=[_rule_part()]))
+    _apply(plugin_data, helper, _core_runner(tmp_path), workspace)
+
+    first_completed, _ = _run_hook(plugin_data, first)
+    second_completed, _ = _run_hook(plugin_data, second)
+
+    assert first_completed.returncode == second_completed.returncode == 0
+    calls = [json.loads(line) for line in records.read_text(encoding="utf-8").splitlines()]
+    assert [call["cwd"] for call in calls] == [str(first), str(second)]
+    assert calls[0]["stdin"] == calls[1]["stdin"]
 
 
 @pytest.mark.parametrize(
-    ("runner_output", "exit_code", "expected"),
+    ("helper_output", "exit_code", "expected"),
     [
-        ([], 1, "context_recovery_executable did not complete successfully"),
-        ([], 0, "context_recovery_executable did not return ldvh-context-recovery/1"),
+        ([], 1, "Helper did not return a valid rule orientation response"),
+        (
+            _rule_orientation_response(parts=[_rule_part()]),
+            1,
+            "Helper exit code does not match the rule orientation outcome",
+        ),
     ],
 )
-def test_adapter_keeps_runner_failure_or_empty_output_non_blocking_and_context_unresolved(
+def test_adapter_keeps_rule_orientation_failure_non_blocking_and_facts_not_requested(
     tmp_path: Path,
-    runner_output: Any,
+    helper_output: Any,
     exit_code: int,
     expected: str,
 ) -> None:
@@ -461,8 +648,8 @@ def test_adapter_keeps_runner_failure_or_empty_output_non_blocking_and_context_u
     workspace = _workspace(tmp_path)
     project = tmp_path / "project"
     project.mkdir()
-    helper = _executable(tmp_path, "helper", "raise SystemExit(0)\n")
-    runner, _ = _recording_runner(tmp_path, runner_output, exit_code=exit_code)
+    helper, _ = _recording_helper(tmp_path, helper_output, exit_code=exit_code)
+    runner = _core_runner(tmp_path)
     _apply(plugin_data, helper, runner, workspace)
 
     completed, response = _run_hook(plugin_data, project)
@@ -470,7 +657,34 @@ def test_adapter_keeps_runner_failure_or_empty_output_non_blocking_and_context_u
     assert completed.returncode == 0
     assert response["continue"] is True
     assert expected in response["systemMessage"]
-    assert "LDVH context as unresolved" in response["hookSpecificOutput"]["additionalContext"]
+    assert "facts remain not requested" in response["hookSpecificOutput"]["additionalContext"]
+
+
+def test_adapter_delivers_rejected_rule_orientation_non_blocking_with_gap(tmp_path: Path) -> None:
+    plugin_data = tmp_path / "plugin-data"
+    workspace = _workspace(tmp_path)
+    project = tmp_path / "project"
+    project.mkdir()
+    helper, _ = _recording_helper(
+        tmp_path,
+        _rule_orientation_response(
+            outcome="rejected",
+            parts=[],
+            gaps=[{"summary": "当前规则源拒绝读取该范围"}],
+        ),
+        exit_code=4,
+    )
+    _apply(plugin_data, helper, _core_runner(tmp_path), workspace)
+
+    completed, response = _run_hook(plugin_data, project)
+
+    assert completed.returncode == 0
+    assert response["continue"] is True
+    context = response["hookSpecificOutput"]["additionalContext"]
+    assert "Rule delivery outcome: rejected" in context
+    assert "No rule part was completed by the Helper." in context
+    assert "当前规则源拒绝读取该范围" in context
+    assert "Facts: not_requested" in context
 
 
 def test_missing_configuration_is_an_explicit_non_blocking_gap(tmp_path: Path) -> None:
@@ -482,28 +696,27 @@ def test_missing_configuration_is_an_explicit_non_blocking_gap(tmp_path: Path) -
     assert completed.returncode == 0
     assert response["continue"] is True
     assert "configuration does not exist" in response["systemMessage"]
-    assert "LDVH context as unresolved" in response["hookSpecificOutput"]["additionalContext"]
+    assert "facts remain not requested" in response["hookSpecificOutput"]["additionalContext"]
 
 
-def test_utf8_native_paths_and_opaque_runner_output_are_preserved(tmp_path: Path) -> None:
+def test_utf8_native_paths_and_rule_source_content_are_preserved(tmp_path: Path) -> None:
     root = tmp_path / "含 空格"
     root.mkdir()
     plugin_data = root / "插件 数据"
     workspace = _workspace(root)
     project = root / "项目 甲"
     project.mkdir()
-    helper = _executable(root, "helper", "raise SystemExit(0)\n")
-    expected_projection = {"contract": "ldvh-context-recovery/1", "opaque_core_projection": "中文"}
-    runner, records = _recording_runner(root, expected_projection)
+    helper, records = _recording_helper(root, _rule_orientation_response(parts=[_rule_part("规则原文：中文")]))
+    runner = _core_runner(root)
     _apply(plugin_data, helper, runner, workspace)
 
     completed, response = _run_hook(plugin_data, project)
 
     assert completed.returncode == 0
-    assert _rendered_projection(response["hookSpecificOutput"]["additionalContext"]) == expected_projection
+    assert "规则原文：中文" in response["hookSpecificOutput"]["additionalContext"]
     record = json.loads(records.read_text(encoding="utf-8").splitlines()[0])
-    assert str(project) in record["argv"]
-    assert str(workspace.resolve()) in record["argv"]
+    assert record["cwd"] == str(project)
+    assert record["argv"] == ["call", "read-specification-content"]
 
 
 @pytest.mark.parametrize(
@@ -536,4 +749,4 @@ def test_relative_cwd_is_not_silently_reinterpreted(tmp_path: Path) -> None:
     assert response["continue"] is True
     assert "cwd must be a non-empty absolute path" in response["systemMessage"]
     assert "cwd must be a non-empty absolute path" in response["hookSpecificOutput"]["additionalContext"]
-    assert "LDVH context as unresolved" in response["hookSpecificOutput"]["additionalContext"]
+    assert "facts remain not requested" in response["hookSpecificOutput"]["additionalContext"]

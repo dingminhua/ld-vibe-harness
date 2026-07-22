@@ -17,8 +17,6 @@ from ldvh.helper.responses import EXIT_CODES
 CONTRACT = "ldvh-doctor/1"
 HELPER_TIMEOUT_SECONDS = 20.0
 _DISTRIBUTION_NAME = "ld-vibe-harness"
-_USER_DOCUMENT_DIRECTORY = "_user_docs"
-_USER_DOCUMENTS = ("LDVH接入面.md", "启用与AI环境接入.md")
 
 type JsonObject = dict[str, Any]
 
@@ -159,21 +157,6 @@ def _integration_surfaces(helper: Path) -> list[JsonObject]:
     return surfaces
 
 
-def _documentation() -> list[JsonObject]:
-    package = Path(__file__).resolve().parent
-    installed = package / _USER_DOCUMENT_DIRECTORY
-    colocated_source = package.parents[1] / "docs"
-    directory = installed if installed.is_dir() else colocated_source
-    return [
-        {
-            "name": name,
-            "path": str(directory / name),
-            "state": "available" if (directory / name).is_file() else "missing",
-        }
-        for name in _USER_DOCUMENTS
-    ]
-
-
 def _governance_summary(response: JsonObject, workspace: Path, locator: str) -> JsonObject:
     result = response.get("result")
     result = result if isinstance(result, dict) else {}
@@ -223,7 +206,6 @@ def run_doctor(*, workspace_root: str, work_object_locator: str, helper_executab
     )
     configuration = _governance_summary(governance, workspace, locator)
     surfaces = _integration_surfaces(helper)
-    documentation = _documentation()
     operations = capabilities.get("result", {}).get("operations")
     operation_count = len(operations) if isinstance(operations, list) else 0
     checks: list[JsonObject] = [
@@ -261,14 +243,6 @@ def run_doctor(*, workspace_root: str, work_object_locator: str, helper_executab
             "status": "passed" if all(item["state"] == "available" for item in surfaces) else "attention",
             "summary": f"{sum(item['state'] == 'available' for item in surfaces)}/{len(surfaces)} surfaces are present",
         },
-        {
-            "check": "user_documentation",
-            "status": "passed" if all(item["state"] == "available" for item in documentation) else "attention",
-            "summary": (
-                f"{sum(item['state'] == 'available' for item in documentation)}/{len(documentation)} "
-                "user documents are present"
-            ),
-        },
     ]
     status = "ready" if all(item["status"] == "passed" for item in checks) else "attention"
     return {
@@ -283,7 +257,6 @@ def run_doctor(*, workspace_root: str, work_object_locator: str, helper_executab
         },
         "configuration": configuration,
         "integration_surfaces": surfaces,
-        "documentation": documentation,
         "checks": checks,
         "limitations": [
             "doctor did not inspect or modify any target AI development environment",
@@ -304,7 +277,6 @@ def _unavailable(error: Exception) -> JsonObject:
         "helper": None,
         "configuration": None,
         "integration_surfaces": [],
-        "documentation": [],
         "checks": [],
         "limitations": ["doctor did not change any configuration or environment"],
         "diagnostics": [{"summary": str(error), "exception_type": type(error).__name__}],

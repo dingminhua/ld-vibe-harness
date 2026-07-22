@@ -9,7 +9,7 @@
             "command": "python3 -X utf8 \"${PLUGIN_ROOT}/scripts/codex_context.py\"",
             "commandWindows": "py -3.12 -X utf8 \"${PLUGIN_ROOT}\\scripts\\codex_context.py\"",
             "timeout": 60,
-            "statusMessage": "Restoring LDVH context"
+            "statusMessage": "Loading LDVH rule context"
           }
         ]
       }
@@ -22,7 +22,7 @@
             "command": "python3 -X utf8 \"${PLUGIN_ROOT}/scripts/codex_context.py\"",
             "commandWindows": "py -3.12 -X utf8 \"${PLUGIN_ROOT}\\scripts\\codex_context.py\"",
             "timeout": 60,
-            "statusMessage": "Restoring LDVH context"
+            "statusMessage": "Loading LDVH rule context"
           }
         ]
       }

@@ -61,8 +61,7 @@ def test_doctor_reports_ready_for_explicit_governed_project(tmp_path: Path) -> N
         "git-hook-manager",
     }
     assert all(item["state"] == "available" for item in result["integration_surfaces"])
-    assert {item["name"] for item in result["documentation"]} == {"LDVH接入面.md", "启用与AI环境接入.md"}
-    assert all(item["state"] == "available" for item in result["documentation"])
+    assert "documentation" not in result
     assert all(item["status"] == "passed" for item in result["checks"])
     assert result["diagnostics"] == []
 
@@ -163,5 +162,5 @@ def test_doctor_cli_returns_contractual_unavailable_result(tmp_path: Path) -> No
     response = json.loads(completed.stdout)
     assert response["contract"] == "ldvh-doctor/1"
     assert response["status"] == "unavailable"
-    assert response["documentation"] == []
+    assert "documentation" not in response
     assert response["diagnostics"][0]["exception_type"] == "DoctorError"

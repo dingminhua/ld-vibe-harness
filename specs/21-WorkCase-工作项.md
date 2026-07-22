@@ -555,7 +555,7 @@ AI 语义审核以本表各验证对象及其成立条件为准，不另建一�
 3. 扩大范围、改变目标、接受 `partial`、`not-achieved`、残余风险、豁免、取消或替代，或者行动本身包含高影响、不可逆及其它来源保留给 Human 的决定；
 4. 合并、拆分、删除或重组可能丢失身份、来源、证据、审核、批准或承接事实。
 
-第一次执行批准只覆盖其 subject_version；实质计划变化必须重审并再次请求 Human。第二次关闭批准只覆盖其 subject_version，必须与 closed 同一受控变更。工作意图确认、计划执行批准和结果关闭确认分别针对不同判断对象，不构成重复请求；Human 决定复用按 00 §9 执行，在批准计划边界内且适用于相应行动的全部来源规则许可条件仍成立时，更新工作项恢复快照、阶段结果、验证和客观状态不重复进入 Human Gate。Human 确认不能替代技术验证、独立审核或字段约束；技术验证和审核也不能替代 Human 的工作意图、执行与关闭决定。
+第一次执行批准只覆盖其 subject_version；实质计划变化必须重审并再次请求 Human。第二次关闭批准只覆盖其 subject_version，必须与 closed 同一受控变更。工作意图确认、计划执行批准和结果关闭确认分别针对不同判断对象，不构成重复请求；Human 决定复用按 00 §10 执行，在批准计划边界内且适用于相应行动的全部来源规则许可条件仍成立时，更新工作项恢复快照、阶段结果、验证和客观状态不重复进入 Human Gate。Human 确认不能替代技术验证、独立审核或字段约束；技术验证和审核也不能替代 Human 的工作意图、执行与关闭决定。
 
 ## 11. Stop Conditions
 
@@ -579,4 +579,4 @@ AI 语义审核以本表各验证对象及其成立条件为准，不另建一�
 16. 生效后新对象缺少 current profile、legacy/current 字段混用、current profile 被移除或降级、closed legacy 被补造历史，或者 legacy 升级改变计划覆盖字段却沿用旧审核与 Human 批准。
 17. creation review basis 指纹不匹配当前计划，result review basis 在 Reviewer 记录形成或更新时不匹配当次 after snapshot，旧 review 被移除却没有 audit continuity，观察未完成准入与终态处置、followup 冒充 residual，或 routed residual 没有显式 responsibility_ids 映射；不得把 result review 与后来当前投影的普通差异自动解释为审核失效。
 
-暂停范围与允许继续的行动按 00 §10 执行；对 WorkCase，实例服务、迁移与消费实现必须等待后续阶段明确推进。
+暂停范围与允许继续的行动按 00 §11 执行；对 WorkCase，实例服务、迁移与消费实现必须等待后续阶段明确推进。
