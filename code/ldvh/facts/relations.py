@@ -148,6 +148,19 @@ def _target_condition(source_type: str, relation_key: str, target_type: str, tar
     return True
 
 
+def _target_has_readable_title(
+    source_type: str,
+    relation_key: str,
+    target_fields: dict[str, object],
+) -> bool:
+    """Require the current title needed by Spark routed-to Human presentation."""
+
+    if source_type != "spark" or relation_key != "routed-to":
+        return True
+    title = target_fields.get("title")
+    return isinstance(title, str) and bool(title.strip())
+
+
 def _edge_time_valid(
     source_type: str,
     relation_key: str,
@@ -443,6 +456,8 @@ def validate_project_relations(
         assert target_read.fields is not None
         if not _target_condition(fact_type_key, relation_key, target_type, target_read.fields.get("status")):
             issues.append(FactIssue("relation", "关系目标类型或状态不满足当前类型机械条件", path))
+        if not _target_has_readable_title(fact_type_key, relation_key, target_read.fields):
+            issues.append(FactIssue("relation", "Spark routed-to 目标必须具有可呈现的非空 title", path))
         if not _edge_time_valid(fact_type_key, relation_key, read.fields, target_read.fields):
             issues.append(FactIssue("relation", "supersedes 跨对象时间顺序不成立", path))
         if (

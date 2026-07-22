@@ -3,7 +3,7 @@ import { AlertTriangle, ChevronLeft, ChevronRight, ExternalLink, FileText, Link2
 import CopyPathButton from '@/components/CopyPathButton';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
 import { useI18n } from '@/i18n/context';
-import { getFieldLabel, getLocalizedObjectTitle, getTypeLabel } from '@/i18n/locales';
+import { getFieldLabel, getTypeLabel } from '@/i18n/locales';
 import {
   DetailObjectRow,
   ReadingNodeSection,
@@ -96,7 +96,6 @@ type SparkRelationGroupView = {
 function projectSparkAssociations(associations: ReturnType<typeof projectFactReadingAssociations>) {
   const relationGroups = new Map<string, SparkRelationGroupView>();
   associations.relations
-    .filter((relation) => relation.relationKey !== 'routed-to')
     .forEach((relation) => {
       const key = relation.relationKey === 'related-to'
         ? `type:${relation.target.factTypeKey}`
@@ -170,10 +169,13 @@ function SparkRelationTarget({
   locale: string;
 }) {
   const { isOpen, content, openPanel } = usePanel();
+  const { t } = useI18n();
   const [objectInfo, setObjectInfo] = useState<{ title: string; path?: string } | null>(null);
+  const [targetReadState, setTargetReadState] = useState<'loading' | 'unavailable'>('loading');
   const target = relation.target;
   const isLocal = Boolean(currentProjectId && target.governedProjectId === currentProjectId);
-  const title = objectInfo?.title ?? target.objectId;
+  const title = objectInfo?.title ?? (targetReadState === 'loading' ? t('common.loading') : t('common.loadFailed'));
+  const isReadableLocalTarget = isLocal && objectInfo !== null;
   const isCurrentPanelOpen = Boolean(
     isOpen
     && content?.type === 'object'
@@ -186,14 +188,23 @@ function SparkRelationTarget({
   useEffect(() => {
     if (!isLocal) {
       setObjectInfo(null);
+      setTargetReadState('unavailable');
       return;
     }
+    setObjectInfo(null);
+    setTargetReadState('loading');
     let cancelled = false;
     fetchObjectDetail(target.factTypeKey, target.objectId)
       .then((detail) => {
         if (cancelled) return;
+        const targetTitle = readableTargetTitle(detail.data, locale);
+        if (!targetTitle) {
+          setObjectInfo(null);
+          setTargetReadState('unavailable');
+          return;
+        }
         setObjectInfo({
-          title: getLocalizedObjectTitle(detail.data, locale, target.objectId),
+          title: targetTitle,
           path: typeof detail.data.absolute_path === 'string'
             ? detail.data.absolute_path
             : typeof detail.data.canonical_path === 'string'
@@ -202,7 +213,10 @@ function SparkRelationTarget({
         });
       })
       .catch(() => {
-        if (!cancelled) setObjectInfo(null);
+        if (!cancelled) {
+          setObjectInfo(null);
+          setTargetReadState('unavailable');
+        }
       });
     return () => {
       cancelled = true;
@@ -210,7 +224,7 @@ function SparkRelationTarget({
   }, [isLocal, locale, target.factTypeKey, target.objectId]);
 
   const open = () => {
-    if (!isLocal) return;
+    if (!isReadableLocalTarget) return;
     openPanel({
       type: 'object',
       title,
@@ -223,16 +237,16 @@ function SparkRelationTarget({
 
   return (
     <div
-      role={isLocal ? 'button' : undefined}
-      tabIndex={isLocal ? 0 : undefined}
+      role={isReadableLocalTarget ? 'button' : undefined}
+      tabIndex={isReadableLocalTarget ? 0 : undefined}
       onClick={open}
       onKeyDown={(event) => {
-        if (!isLocal || (event.key !== 'Enter' && event.key !== ' ')) return;
+        if (!isReadableLocalTarget || (event.key !== 'Enter' && event.key !== ' ')) return;
         event.preventDefault();
         open();
       }}
       className={`ldvh-body group flex min-h-10 w-full min-w-0 items-center gap-2 rounded-md px-1.5 py-2 text-left transition-colors ${
-        isLocal ? 'cursor-pointer hover:bg-ldvh-border/25' : ''
+        isReadableLocalTarget ? 'cursor-pointer hover:bg-ldvh-border/25' : ''
       }`}
     >
       <ObjectTypeIcon type={target.factTypeKey} size={13} className="shrink-0" style={{ color }} />
@@ -241,9 +255,20 @@ function SparkRelationTarget({
       </div>
       {!isLocal && <span className="ldvh-meta-muted shrink-0">{target.governedProjectId}</span>}
       <CopyPathButton path={copyValue} />
-      {isLocal && <PanelIcon size={16} className="shrink-0 text-ldvh-text-secondary group-hover:text-ldvh-accent" />}
+      {isReadableLocalTarget && <PanelIcon size={16} className="shrink-0 text-ldvh-text-secondary group-hover:text-ldvh-accent" />}
     </div>
   );
+}
+
+function readableTargetTitle(data: Record<string, unknown>, locale: string): string | null {
+  const keys = locale === 'en'
+    ? ['title_en', 'title', 'title_zh']
+    : ['title_zh', 'title', 'title_en'];
+  for (const key of keys) {
+    const value = data[key];
+    if (typeof value === 'string' && value.trim()) return value.trim();
+  }
+  return null;
 }
 
 function RelationGroup({

@@ -1,0 +1,37 @@
+title: Helper 事实对象机械完整性校验闭环
+intent: 保留 Helper 如何对所有事实对象的可机械判定结构形成完整校验闭环的问题，避免 Specs 新增或收紧结构规则后只有文字要求、读取或受控写入仍把违规对象当作有效事实。后续需判断每项结构规则的 Code 归属、共享校验入口、未实现时的如实处置，以及规则、实现和测试的同步门槛。
+status: routed
+source_refs:
+- kind: fact-object
+  locator: ldvh-base/sparks/spark-0020.yaml
+- kind: repository-path
+  locator: code/ldvh/facts/validation.py
+- kind: repository-path
+  locator: code/ldvh/helper/operations/fact_update_operation.py
+- kind: repository-path
+  locator: specs/05-事实模型基础规范.md
+- kind: repository-path
+  locator: ldvh-base/workcases/workcase-0008.yaml
+summary: "**已稳定承接**\n\n- `workcase-0010` 已接手本 Spark 的完整工作责任：建立五类事实对象的 Code 机械结构校验闭环，并把规则清单、Specs 同步、统一校验入口与范围测试作为同一可验收目标。\n- 其中包括 `workcase-0008` 暴露的关键情形：合法的 `human_plan_confirming` 计划必须能被读取和候选发现正确识别；结构缺失则必须带字段路径如实成为 `invalid` 或 `unavailable`，不能被静默排除或自动执行。\n\n**承接边界**\n\n- WorkCase 覆盖由 Specs 明确归属 Code 的路径、字段、类型、条件、时间、状态、关系和引用等机械规则，以及读取、创建、更新、写后回读与候选消费的一致性。\n- 摘要语义、Human 意图、来源与证据是否充分、是否应创建对象等仍属于 AI 判断；环境 Hook 的外部直写防护仍由 `spark-0029` 承接。\n\n**当前状态**\n\n- `workcase-0010` 仅完成计划建立和独立创建审核，正等待 Human 对 `plan_version: 1` 的执行批准；本 Spark 已完成入口职责分流，不表示校验实现已经完成。"
+evolution:
+- at: '2026-07-22T17:16:21+08:00'
+  summary: 从 0020 暴露的来源 locator 漏检，明确扩展为所有事实对象可机械结构规则的规则—校验—测试闭环；来源 profile 是首个优先子项，而非全部范围。
+- at: '2026-07-22T17:31:02+08:00'
+  summary: 发现 0008 的等待 Human 确认计划因结构字段脱节而无法被 Helper 正确识别，范围扩展为待确认 WorkCase 的有效识别、诊断与受控恢复边界。
+- at: '2026-07-22T17:40:53.989641+08:00'
+  summary: 在 workcase-0008 完成历史正式化、恢复完整召回后，已建立 workcase-0010 承接全部机械结构校验闭环。该承接覆盖规则清单、Specs 同步、统一入口与范围测试；Spark 因入口职责已完整移交而 routed，不把 WorkCase 尚未执行误写为已完成。
+evidence_refs:
+- kind: fact-object
+  locator: ldvh-base/workcases/workcase-0010.yaml
+relations:
+- relation_key: routed-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: workcase
+    object_id: workcase-0010
+disposition_summary: 原信息需求已由 open 的 workcase-0010 完整承接：其目标、范围与五项成功标准覆盖本 Spark 的机械校验闭环、未实现即 unavailable、以及候选发现如实披露。0029 的 Hook 防护与所有语义判断明确不在此承接范围。WorkCase 尚未执行不影响 Spark 的入口职责已经完成分流。
+closed_at: '2026-07-22T17:40:53.989641+08:00'
+object_id: spark-0028
+fact_type_key: spark
+created_at: '2026-07-22T16:59:14.874483+08:00'
+updated_at: '2026-07-22T17:42:02.465421+08:00'

@@ -6,7 +6,6 @@ import { FactAssociationsSection } from '@/pages/object-detail/FactAssociationsS
 import { sortRelatedContentEntries, type RelatedContentEntry } from '@/pages/object-detail/model';
 import {
   DetailInlineField,
-  DetailObjectRow,
   ReadingNodeSection,
   RelatedContentSection,
   StudyTextNodeContent,
@@ -225,7 +224,7 @@ function SparkReadingNode({
       {kind === 'intent' && <StudyTextNodeContent value={obj.intent} className="ldvh-spark-reading-prose" />}
       {kind === 'summary' && <SparkSummaryNode value={obj.summary} />}
       {kind === 'evolution' && <SparkEvolutionNode value={obj.evolution} locale={locale} />}
-      {kind === 'routing' && <SparkRoutingNode obj={obj} locale={locale} />}
+      {kind === 'routing' && <SparkRoutingNode obj={obj} />}
     </ReadingNodeSection>
   );
 }
@@ -295,8 +294,7 @@ function SparkEvolutionTime({ value, locale }: { value?: string; locale: string 
   );
 }
 
-function SparkRoutingNode({ obj, locale }: { obj: Record<string, unknown>; locale: string }) {
-  const routedTargets = getSparkRoutedReferences(obj.relations);
+function SparkRoutingNode({ obj }: { obj: Record<string, unknown> }) {
   const closedAt = typeof obj.closed_at === 'string' && obj.closed_at.trim().length > 0 ? obj.closed_at : null;
   const disposition = typeof obj.disposition_summary === 'string' && obj.disposition_summary.trim().length > 0
     ? obj.disposition_summary
@@ -310,16 +308,6 @@ function SparkRoutingNode({ obj, locale }: { obj: Record<string, unknown>; local
           <SparkRoutingTime value={closedAt} />
         </div>
       )}
-      {routedTargets.map((target) => (
-        <DetailObjectRow
-          key={`${target.objectType}:${target.ref}`}
-          label={getFieldLabel('resolved_to', locale)}
-          fallbackId={target.ref}
-          objectType={target.objectType}
-          locale={locale}
-          variant="property"
-        />
-      ))}
       {disposition && <StudyTextNodeContent value={disposition} compact />}
     </div>
   );
@@ -339,19 +327,6 @@ function hasSparkRoutingContent(obj: Record<string, unknown>) {
   const status = String(obj.status ?? 'open');
   return status === 'routed'
     || status === 'discarded'
-    || getSparkRoutedReferences(obj.relations).length > 0
     || hasDetailContent(obj.closed_at)
     || hasDetailContent(obj.disposition_summary);
-}
-
-function getSparkRoutedReferences(value: unknown): Array<{ ref: string; objectType: string }> {
-  if (!Array.isArray(value)) return [];
-  return value.flatMap((relation) => {
-    if (!relation || typeof relation !== 'object') return [];
-    const record = relation as Record<string, unknown>;
-    if (record.relation_key !== 'routed-to' || !record.target || typeof record.target !== 'object') return [];
-    const target = record.target as Record<string, unknown>;
-    if (typeof target.object_id !== 'string' || typeof target.fact_type_key !== 'string') return [];
-    return [{ ref: target.object_id, objectType: target.fact_type_key }];
-  });
 }
