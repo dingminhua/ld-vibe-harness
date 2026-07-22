@@ -212,7 +212,7 @@ export default function ObjectDetail() {
                 locale={locale}
                 created={formatDateTime((obj.created_at ?? obj.created) as string | undefined)}
                 updated={formatDateTime((obj.updated_at ?? obj.updated) as string | undefined)}
-                closedAt={obj.closed_at ? formatDateTime(obj.closed_at as string) : undefined}
+                closedAt={objType === 'spark' || !obj.closed_at ? undefined : formatDateTime(obj.closed_at as string)}
                 auxiliaryMetaEntries={auxiliaryMetaEntries}
                 copyLabel={t('common.copyObjectPath')}
                 copiedLabel={t('common.copiedObjectPath')}
@@ -500,8 +500,8 @@ function HeaderDateMeta({ label, value, align = 'end' }: { label: string; value:
   const alignClassName = align === 'start' ? 'justify-start text-left' : 'justify-end text-right';
   return (
     <span className={`inline-flex min-w-0 items-center gap-1.5 ${alignClassName}`}>
-      <span className="ldvh-caption shrink-0">{label}</span>
-      <span className={valueClassName}>{value}</span>
+      <span className="ldvh-caption shrink-0 leading-4">{label}</span>
+      <span className={`${valueClassName} leading-4`}>{value}</span>
     </span>
   );
 }

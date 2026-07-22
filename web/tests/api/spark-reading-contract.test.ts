@@ -80,3 +80,16 @@ test('Object detail keeps its type label out of the title metadata and places st
   assert.match(detail, /<span className="ldvh-meta-muted min-w-0 truncate">\{id\}<\/span>[\s\S]*\{isObjectDetail && showCopyAction && \(/)
   assert.match(detail, /\{showCopyAction && !isObjectDetail && \(/)
 })
+
+test('routed Spark presents one routing record instead of duplicate closure metadata', () => {
+  const detail = source('src/pages/ObjectDetail.tsx')
+  const panel = source('src/components/reading-panel/PanelContent.tsx')
+  const layout = source('src/pages/object-detail/FactReadingLayouts.tsx')
+
+  assert.match(detail, /closedAt=\{objType === 'spark' \|\| !obj\.closed_at \? undefined : formatDateTime/)
+  assert.match(panel, /closedAt=\{objectType === 'spark' \|\| !obj\?\.closed_at \? undefined : formatDateTime/)
+  assert.match(layout, /function SparkRoutingTime/)
+  assert.equal(layout.includes("getFieldLabel('resolved_at', locale)"), false)
+  assert.equal(layout.includes("getFieldLabel('closed_at', locale)"), false)
+  assert.equal(layout.includes('statusLabel={statusLabel} objectType="spark"'), false)
+})

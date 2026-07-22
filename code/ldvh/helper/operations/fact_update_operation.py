@@ -190,7 +190,7 @@ def _application_failure(
             sources=sources,
             gaps=(
                 {
-                    "summary": "未创建锁状态或替换事实文件；需先决定是否接受 Windows file-only 耐久降级",
+                    "summary": "未创建锁状态或替换事实文件：当前 Windows 实现未满足锁及相应耐久/并发保障；需先说明受影响保障，并由 Human 决定是否接受具体残留风险",
                     "scope": list(requested),
                     "source_refs": [_CONTRACT],
                 },
@@ -422,7 +422,7 @@ def _execute(
             sources=request_sources,
             gaps=(
                 {
-                    "summary": "未创建锁状态或替换事实文件；需先决定是否接受 Windows file-only 耐久降级",
+                    "summary": "未创建锁状态或替换事实文件：当前 Windows 实现未满足锁及相应耐久/并发保障；需先说明受影响保障，并由 Human 决定是否接受具体残留风险",
                     "scope": list(requested),
                     "source_refs": [_CONTRACT],
                 },

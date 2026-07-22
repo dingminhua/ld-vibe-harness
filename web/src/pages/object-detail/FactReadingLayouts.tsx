@@ -1,9 +1,7 @@
 import { useState } from 'react';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import StatusBadge from '@/components/StatusBadge';
 import { formatDateTime } from '@/utils/dateFormat';
-import { getObjectStatusLocale } from '@/i18n/locales';
 import { FactAssociationsSection } from '@/pages/object-detail/FactAssociationsSection';
 import { sortRelatedContentEntries, type RelatedContentEntry } from '@/pages/object-detail/model';
 import {
@@ -298,8 +296,6 @@ function SparkEvolutionTime({ value, locale }: { value?: string; locale: string 
 }
 
 function SparkRoutingNode({ obj, locale }: { obj: Record<string, unknown>; locale: string }) {
-  const status = String(obj.status ?? 'open');
-  const statusLabel = getObjectStatusLocale('spark', status, locale);
   const routedTargets = getSparkRoutedReferences(obj.relations);
   const closedAt = typeof obj.closed_at === 'string' && obj.closed_at.trim().length > 0 ? obj.closed_at : null;
   const disposition = typeof obj.disposition_summary === 'string' && obj.disposition_summary.trim().length > 0
@@ -307,11 +303,13 @@ function SparkRoutingNode({ obj, locale }: { obj: Record<string, unknown>; local
     : null;
 
   return (
-    <div className="flex flex-col divide-y divide-ldvh-border/60">
-      <DetailInlineField
-        label={getFieldLabel('status', locale)}
-        value={<StatusBadge status={status} statusLabel={statusLabel} objectType="spark" size="sm" />}
-      />
+    <div className="min-w-0 rounded-md border border-ldvh-border/45 bg-ldvh-bg/45 px-3 py-2">
+      {closedAt && (
+        <div className="mb-1.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-ldvh-accent" aria-hidden="true" />
+          <SparkRoutingTime value={closedAt} />
+        </div>
+      )}
       {routedTargets.map((target) => (
         <DetailObjectRow
           key={`${target.objectType}:${target.ref}`}
@@ -322,18 +320,17 @@ function SparkRoutingNode({ obj, locale }: { obj: Record<string, unknown>; local
           variant="property"
         />
       ))}
-      {closedAt && (
-        <DetailInlineField
-          label={getFieldLabel('closed_at', locale)}
-          value={<span className="ldvh-definition-text">{formatDateTime(closedAt)}</span>}
-        />
-      )}
-      {disposition && (
-        <DetailInlineField
-          label={getFieldLabel('disposition_summary', locale)}
-          value={<StudyTextNodeContent value={disposition} />}
-        />
-      )}
+      {disposition && <StudyTextNodeContent value={disposition} compact />}
+    </div>
+  );
+}
+
+function SparkRoutingTime({ value }: { value: string }) {
+  const [date, time] = formatDateTime(value).split(' ');
+  return (
+    <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 font-mono tabular-nums">
+      <span className="ldvh-caption-strong min-w-0 break-words text-ldvh-text-secondary">{date}</span>
+      {time && <span className="ldvh-meta-muted min-w-0 break-words leading-4">{time}</span>}
     </div>
   );
 }
