@@ -1,20 +1,23 @@
-import { useState, type ReactNode } from 'react';
-import { AlertTriangle } from 'lucide-react';
+import { useEffect, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
 import CopyPathButton from '@/components/CopyPathButton';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
-import { getFieldLabel } from '@/i18n/locales';
+import StatusBadge from '@/components/StatusBadge';
+import { getFieldLabel, getLocalizedObjectTitle, getObjectStatusLocale, getTypeLabel } from '@/i18n/locales';
 import {
-  DetailObjectRow,
   ReadingNodeSection,
   getReadingNodeNextState,
   type ReadingNodeState,
 } from '@/pages/ObjectDetail';
 import {
+  groupRelationsByTargetType,
   projectFactReadingAssociations,
   type ReadingRelation,
   type UnresolvedAssociation,
 } from '@/pages/object-detail/factReadingProjection';
 import { CATEGORY_COLORS } from '@/utils/categoryColors';
+import { fetchObjectDetail, type ObjectDetail } from '@/utils/api';
+import { usePanel } from '@/utils/panelContext';
 
 /** Reads the deliberately minimal relation contract, not source or evidence projections. */
 export function FactAssociationsSection({
@@ -33,7 +36,7 @@ export function FactAssociationsSection({
   const currentProjectId = getCurrentProjectId(obj);
   return (
     <ReadingNodeSection
-      title={title ?? getFieldLabel('associated_materials', locale)}
+      title={title ?? getFieldLabel('fact_associations', locale)}
       state={state}
       locale={locale}
       onToggle={() => setState((current) => getReadingNodeNextState(current))}
@@ -52,48 +55,87 @@ function RelationGroup({ relations, currentProjectId, locale }: {
   locale: string;
 }) {
   if (relations.length === 0) return null;
-  const grouped = new Map<string, ReadingRelation[]>();
-  for (const relation of relations) {
-    grouped.set(relation.relationKey, [...(grouped.get(relation.relationKey) ?? []), relation]);
-  }
   return (
-    <AssociationGroup title={getFieldLabel('fact_relations', locale)}>
-      <div className="flex flex-col gap-4">
-        {[...grouped.entries()].map(([relationKey, items]) => (
-          <div key={relationKey} className="min-w-0">
-            <div className="ldvh-caption-strong mb-1.5 text-ldvh-text-secondary">
-              {getFieldLabel(`relation_${relationKey.replace(/-/g, '_')}`, locale)}
-            </div>
-            <div className="divide-y divide-ldvh-border/45">
-              {items.map((relation) => <RelationTarget key={relation.originPath} relation={relation} currentProjectId={currentProjectId} locale={locale} />)}
-            </div>
+    <div className="flex flex-col gap-4">
+      {groupRelationsByTargetType(relations).map(({ factTypeKey, relations: items }) => (
+        <div key={factTypeKey} className="min-w-0">
+          <div className="ldvh-caption-strong mb-1.5 text-ldvh-text-secondary">
+            {getTypeLabel(factTypeKey, locale)}
           </div>
-        ))}
-      </div>
-    </AssociationGroup>
+          <div className="divide-y divide-ldvh-border/45">
+            {items.map((relation) => <RelationTarget key={relation.originPath} relation={relation} currentProjectId={currentProjectId} locale={locale} />)}
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 
+/** A target is resolved on demand; title and status are never duplicated into relations. */
 function RelationTarget({ relation, currentProjectId, locale }: {
   relation: ReadingRelation;
   currentProjectId?: string;
   locale: string;
 }) {
   const target = relation.target;
-  const relationLabel = getFieldLabel(`relation_${relation.relationKey.replace(/-/g, '_')}`, locale);
   if (currentProjectId && target.governedProjectId === currentProjectId) {
-    return <DetailObjectRow label={relationLabel} fallbackId={target.objectId} objectType={target.factTypeKey} locale={locale} compact />;
+    return <ReadableRelationTarget target={target} locale={locale} />;
   }
-  const color = CATEGORY_COLORS[target.factTypeKey] || CATEGORY_COLORS.other;
+  return <ExternalRelationTarget target={target} locale={locale} />;
+}
+
+function ReadableRelationTarget({ target, locale }: {
+  target: ReadingRelation['target'];
+  locale: string;
+}) {
+  const { isOpen: panelOpen, content: panelContent, openPanel } = usePanel();
+  const [detail, setDetail] = useState<ObjectDetail | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setDetail(null);
+    fetchObjectDetail(target.factTypeKey, target.objectId)
+      .then((value) => { if (!cancelled) setDetail(value); })
+      .catch(() => { if (!cancelled) setDetail(null); });
+    return () => { cancelled = true; };
+  }, [target.factTypeKey, target.objectId]);
+
+  const title = detail
+    ? getLocalizedObjectTitle(detail.data as { title?: string; title_en?: string; title_zh?: string }, locale, target.objectId)
+    : target.objectId;
+  const status = detail?.summary.status;
+  const typeColor = CATEGORY_COLORS[target.factTypeKey] || CATEGORY_COLORS.other;
+  const isCurrentPanelOpen = Boolean(panelOpen && panelContent?.type === 'object'
+    && panelContent.objectType === target.factTypeKey && panelContent.objectId === target.objectId);
+  const PanelIcon = isCurrentPanelOpen ? ChevronLeft : ChevronRight;
+  const open = () => openPanel({ type: 'object', title, objectType: target.factTypeKey, objectId: target.objectId });
+  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    open();
+  };
+
   return (
-    <div className="grid min-w-0 items-center gap-2 py-2 sm:grid-cols-[5.625rem_1fr]">
-      <div className="ldvh-caption-strong text-ldvh-text-secondary">{relationLabel}</div>
-      <div className="flex min-w-0 items-center gap-2 rounded-md px-2 py-1.5">
-        <ObjectTypeIcon type={target.factTypeKey} size={12} className="shrink-0" style={{ color }} />
-        <span className="ldvh-body min-w-0 flex-1 truncate">{target.objectId}</span>
-        <span className="ldvh-meta-muted shrink-0">{target.governedProjectId}</span>
-        <CopyPathButton path={`${target.governedProjectId}:${target.factTypeKey}:${target.objectId}`} />
-      </div>
+    <div role="button" tabIndex={0} onClick={open} onKeyDown={onKeyDown} className="group flex min-w-0 cursor-pointer items-center gap-2 rounded-md px-1.5 py-2 text-left transition-colors hover:bg-ldvh-border/25 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ldvh-accent/50">
+      <ObjectTypeIcon type={target.factTypeKey} size={13} className="shrink-0" style={{ color: typeColor }} />
+      <span className="ldvh-meta-primary min-w-0 flex-1 truncate group-hover:text-ldvh-accent">{title}</span>
+      <span className="ldvh-meta-muted shrink-0">{target.objectId}</span>
+      {status && <StatusBadge status={status} statusLabel={getObjectStatusLocale(target.factTypeKey, status, locale)} objectType={target.factTypeKey} size="sm" />}
+      <CopyPathButton path={String(detail?.data.canonical_path ?? detail?.target ?? target.objectId)} />
+      <PanelIcon size={16} className="shrink-0 text-ldvh-text-secondary/70 transition-colors group-hover:text-ldvh-accent" aria-hidden="true" />
+    </div>
+  );
+}
+
+/** A target outside the currently readable project remains a reference, not a fabricated local object. */
+function ExternalRelationTarget({ target, locale }: { target: ReadingRelation['target']; locale: string }) {
+  const typeColor = CATEGORY_COLORS[target.factTypeKey] || CATEGORY_COLORS.other;
+  return (
+    <div className="flex min-w-0 items-center gap-2 rounded-md px-1.5 py-2">
+      <ObjectTypeIcon type={target.factTypeKey} size={13} className="shrink-0" style={{ color: typeColor }} />
+      <span className="ldvh-meta-primary min-w-0 flex-1 truncate">{target.objectId}</span>
+      <span className="ldvh-meta-muted shrink-0">{target.governedProjectId}</span>
+      <CopyPathButton path={`${target.governedProjectId}:${target.factTypeKey}:${target.objectId}`} />
     </div>
   );
 }

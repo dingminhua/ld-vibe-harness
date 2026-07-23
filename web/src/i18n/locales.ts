@@ -141,6 +141,7 @@ export const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   source_detail: { zh: '来源说明', en: 'Source Detail' },
   relations: { zh: '事实对象关系', en: 'Fact Relations' },
   associated_materials: { zh: '关联材料', en: 'Associated Materials' },
+  fact_associations: { zh: '关联', en: 'Related' },
   fact_relations: { zh: '事实对象关系', en: 'Fact Relations' },
   project_materials: { zh: '项目内材料', en: 'Project Materials' },
   external_inputs: { zh: '外部资料与输入', en: 'External Sources and Inputs' },

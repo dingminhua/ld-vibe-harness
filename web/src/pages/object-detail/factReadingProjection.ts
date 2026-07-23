@@ -19,10 +19,27 @@ export type FactReadingAssociations = {
   unresolved: UnresolvedAssociation[];
 };
 
+export type RelationTargetTypeGroup = {
+  factTypeKey: string;
+  relations: ReadingRelation[];
+};
+
 /** Project only the two-part fact-object relation contract. */
 export function projectFactReadingAssociations(obj: Record<string, unknown>): FactReadingAssociations {
   const unresolved: UnresolvedAssociation[] = [];
   return { relations: projectRelations(obj.relations, unresolved), unresolved };
+}
+
+/**
+ * A plain relation only says that two fact objects are associated.  The reading
+ * view therefore groups by the target's object type, not by relation_key.
+ */
+export function groupRelationsByTargetType(relations: ReadingRelation[]): RelationTargetTypeGroup[] {
+  const grouped = new Map<string, ReadingRelation[]>();
+  for (const relation of relations) {
+    grouped.set(relation.target.factTypeKey, [...(grouped.get(relation.target.factTypeKey) ?? []), relation]);
+  }
+  return [...grouped.entries()].map(([factTypeKey, items]) => ({ factTypeKey, relations: items }));
 }
 
 function projectRelations(value: unknown, unresolved: UnresolvedAssociation[]): ReadingRelation[] {
