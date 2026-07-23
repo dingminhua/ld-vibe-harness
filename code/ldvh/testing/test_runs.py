@@ -258,6 +258,11 @@ def plan_commands(workspace: Path, plan: str, probe_seconds: int) -> list[dict[s
     return [
         {"name": "code-lint", "cwd": str(workspace), "argv": [python, "-m", "ruff", "check", "code", "tools"]},
         {"name": "code-tests", "cwd": str(workspace), "argv": [python, "-m", "pytest", "code/tests", "-q"]},
+        {
+            "name": "fact-integrity",
+            "cwd": str(workspace),
+            "argv": [python, "-m", "ldvh.testing.fact_integrity", "--workspace", str(workspace)],
+        },
         {"name": "web-typecheck", "cwd": str(workspace / "web"), "argv": ["npm", "run", "check"]},
         {"name": "web-tests", "cwd": str(workspace / "web"), "argv": ["npm", "test"]},
         {"name": "web-build", "cwd": str(workspace / "web"), "argv": ["npm", "run", "build"]},

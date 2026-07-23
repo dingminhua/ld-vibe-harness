@@ -178,23 +178,25 @@ def _spark(title: str) -> dict[str, object]:
 
 
 def _study() -> dict[str, object]:
-    observed = "2026-07-13T09:00:00+08:00"
     return {
         "frontmatter": {
             "title": "Candidate projection Study",
             "status": "active",
-            "urls": [{"ref": "https://example.invalid/study-evidence", "title": "Study evidence", "summary": "External material used by this test Study."}],
-            "applicability": "Current candidate projection contract.",
-            "validation_summary": "Tracked evidence supports the bounded conclusion.",
+            "urls": [
+                {
+                    "ref": "https://example.invalid/study-evidence",
+                    "title": "Study evidence",
+                    "summary": "External material used by this test Study.",
+                }
+            ],
             "research_question": "Can Study cards remain smaller than full reports?",
             "abstract": "Study cards expose a bounded abstract before full report expansion.",
         },
         "body": "\n\n".join(
             [
                 "## 研究问题\n\n验证 Study 候选卡。",
-                "## 输入、方法与观察边界\n\n读取已跟踪问题、证据与外部网页资料。",
+                "## 输入与边界\n\n读取已跟踪问题与外部网页资料。",
                 "## 关键发现\n\n候选卡不需要注入完整正文。",
-                "## 结论与限制\n\n只适用于当前测试契约。",
                 "## 建议\n\n选中后再读取完整报告。",
                 "## 后续分流\n\n没有额外分流。",
             ]
@@ -381,9 +383,7 @@ def test_f2_spark_summary_is_a_bounded_verbatim_excerpt_with_f3_reference(tmp_pa
         "object_id": object_id,
     }
     assert "summary" not in card["fields"]
-    assert card["excerpts"] == [
-        {"field_path": "summary", "text": "界" * 512, "complete": False}
-    ]
+    assert card["excerpts"] == [{"field_path": "summary", "text": "界" * 512, "complete": False}]
     assert card["match_reasons"][-1] == {
         "kind": "field-text",
         "field_path": "summary",
@@ -436,9 +436,7 @@ def test_f2_spark_excerpt_marks_exact_512_scalar_summary_complete(tmp_path: Path
     ).response
 
     card = response["result"]["cards"][0]
-    assert card["excerpts"] == [
-        {"field_path": "summary", "text": summary, "complete": True}
-    ]
+    assert card["excerpts"] == [{"field_path": "summary", "text": summary, "complete": True}]
 
 
 def test_f2_spark_excerpt_marks_511_scalar_summary_complete(tmp_path: Path) -> None:
@@ -454,9 +452,7 @@ def test_f2_spark_excerpt_marks_511_scalar_summary_complete(tmp_path: Path) -> N
         _payload(workspace, project, "F2", fact_type_keys=["spark"]),
     ).response
 
-    assert response["result"]["cards"][0]["excerpts"] == [
-        {"field_path": "summary", "text": summary, "complete": True}
-    ]
+    assert response["result"]["cards"][0]["excerpts"] == [{"field_path": "summary", "text": summary, "complete": True}]
 
 
 def test_f2_spark_excerpt_marks_exact_513_scalar_summary_incomplete(tmp_path: Path) -> None:
@@ -656,7 +652,6 @@ def test_f2_combines_relation_locator_and_field_filters_deterministically(tmp_pa
                     "object_id": workcase_id,
                 }
             ],
-            locator_text="docs/input.md",
             text_match={"text": "unresolved", "field_paths": ["summary"]},
         ),
     ).response
@@ -666,7 +661,6 @@ def test_f2_combines_relation_locator_and_field_filters_deterministically(tmp_pa
     assert [reason["kind"] for reason in response["result"]["cards"][0]["match_reasons"]] == [
         "default-status",
         "relation-target",
-        "locator",
         "field-text",
     ]
 

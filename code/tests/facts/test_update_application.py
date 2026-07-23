@@ -129,6 +129,93 @@ def test_no_change_does_not_require_successor_or_rewrite(
     assert fact.stat().st_ino == inode
 
 
+def test_open_spark_can_enter_implemented_without_a_routed_to_target(
+    current_specs_repository: Path,
+    tmp_path: Path,
+) -> None:
+    command, _fact = _command(current_specs_repository, tmp_path)
+    supplied = dict(command.supplied)
+    supplied.update(
+        {
+            "status": "implemented",
+            "disposition_summary": (
+                "The bounded Spark content was directly implemented with no residual fact responsibility."
+            ),
+            "closed_at": command.event_at,
+        }
+    )
+    supplied.pop("priority")
+
+    result = apply_fact_update(
+        FactUpdateCommand(
+            boundary=command.boundary,
+            fact_type_key=command.fact_type_key,
+            object_id=command.object_id,
+            schemas=command.schemas,
+            schema=command.schema,
+            expected_content_fingerprint=command.expected_content_fingerprint,
+            supplied=supplied,
+            body=None,
+            event_at=command.event_at,
+        )
+    )
+
+    assert result.status == "updated"
+    assert result.readback is not None and result.readback.fields is not None
+    assert result.readback.fields["status"] == "implemented"
+
+
+def test_parseable_invalid_spark_can_be_repaired_to_implemented_with_exact_cas(
+    current_specs_repository: Path,
+    tmp_path: Path,
+) -> None:
+    command, fact = _command(current_specs_repository, tmp_path)
+    fact.write_text(
+        """object_id: spark-0001
+fact_type_key: spark
+title: Application update
+created_at: 2026-07-20T09:00:00+08:00
+updated_at: 2026-07-20T10:00:00+08:00
+status: routed
+summary: Before update
+disposition_summary: Incorrectly recorded as routed without a fact target.
+closed_at: 2026-07-20T10:00:00+08:00
+""",
+        encoding="utf-8",
+    )
+    current = update_application._project_read(command)
+    assert current.check_status == "invalid"
+    assert current.fields is not None and current.content_fingerprint is not None
+    supplied = {key: value for key, value in current.fields.items() if key not in update_application.MANAGED_FIELDS}
+    supplied.update(
+        {
+            "status": "implemented",
+            "disposition_summary": (
+                "The bounded Spark content was directly implemented with no residual fact responsibility."
+            ),
+            "closed_at": command.event_at,
+        }
+    )
+
+    result = apply_fact_update(
+        FactUpdateCommand(
+            boundary=command.boundary,
+            fact_type_key=command.fact_type_key,
+            object_id=command.object_id,
+            schemas=command.schemas,
+            schema=command.schema,
+            expected_content_fingerprint=current.content_fingerprint,
+            supplied=supplied,
+            body=None,
+            event_at=command.event_at,
+        )
+    )
+
+    assert result.status == "updated"
+    assert result.readback is not None and result.readback.check_status == "mechanically_valid"
+    assert result.readback.fields is not None and result.readback.fields["status"] == "implemented"
+
+
 def test_non_successor_event_time_and_stale_fingerprint_have_zero_writes(
     current_specs_repository: Path,
     tmp_path: Path,

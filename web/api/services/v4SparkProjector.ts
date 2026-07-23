@@ -60,7 +60,7 @@ export function projectV4Spark(item: unknown): V4SparkProjection {
     || typeof objectId !== 'string'
     || facts.fact_type_key !== 'spark'
     || typeof status !== 'string'
-    || !['open', 'routed', 'discarded'].includes(status)
+    || !['open', 'routed', 'implemented', 'discarded'].includes(status)
     || typeof facts.title !== 'string'
     || typeof facts.summary !== 'string'
     || typeof facts.created_at !== 'string'

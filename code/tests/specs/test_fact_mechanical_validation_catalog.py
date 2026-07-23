@@ -3,7 +3,6 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-
 _ROOT = Path(__file__).resolve().parents[3]
 _CATALOG = _ROOT / "specs/attachments/05.Att.02-事实对象机械校验目录.md"
 _REFERENCE = re.compile(r"`(code/(?:ldvh|tests)/[^`]+?\.py)::([A-Za-z_][A-Za-z0-9_]*)`")
@@ -49,9 +48,9 @@ def test_mechanical_catalog_has_one_executable_mapping_per_rule_and_real_evidenc
         for relative_path, symbol in references:
             source = _ROOT / relative_path
             assert source.is_file(), f"{rule_key}: missing {relative_path}"
-            assert re.search(rf"^(?:def|class) {re.escape(symbol)}\b", source.read_text(encoding="utf-8"), re.MULTILINE), (
-                f"{rule_key}: missing {relative_path}::{symbol}"
-            )
+            assert re.search(
+                rf"^(?:def|class) {re.escape(symbol)}\b", source.read_text(encoding="utf-8"), re.MULTILINE
+            ), f"{rule_key}: missing {relative_path}::{symbol}"
     for raw_rule_key, positive, negative in test_rows:
         rule_key = raw_rule_key.strip("`")
         assert positive and negative, rule_key

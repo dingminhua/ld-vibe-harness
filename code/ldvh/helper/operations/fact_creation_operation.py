@@ -440,7 +440,10 @@ def _create_execute(
             sources=request_sources,
             gaps=(
                 {
-                    "summary": "未创建 allocator 状态或事实文件：当前 Windows 实现未满足 allocator 及相应耐久/并发保障；需先说明受影响保障，并由 Human 决定是否接受具体残留风险",
+                    "summary": (
+                        "未创建 allocator 状态或事实文件：当前 Windows 实现未满足 allocator 及相应耐久/"
+                        "并发保障；需先说明受影响保障，并由 Human 决定是否接受具体残留风险"
+                    ),
                     "scope": list(requested),
                     "source_refs": [_CREATE_CONTRACT],
                 },

@@ -4,9 +4,6 @@ title: Fixed context recovery fixture
 created_at: 2026-07-14T09:00:00+08:00
 updated_at: 2026-07-14T10:00:00+08:00
 status: open
-source_refs:
-  - kind: repository-path
-    locator: docs/context-recovery-input.md
 summary: Execute the approved bounded context recovery plan.
 resume_from: Continue the second work item from its fixed fixture state.
 priority: P1

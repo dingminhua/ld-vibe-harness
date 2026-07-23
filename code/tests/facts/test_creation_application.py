@@ -82,7 +82,9 @@ def test_prepared_creation_defensively_freezes_nested_supplied_values(
     tmp_path: Path,
 ) -> None:
     command = _command(current_specs_repository, tmp_path)
-    command.supplied["urls"] = [{"ref": "https://example.invalid/original", "title": "Original", "summary": "Test material."}]
+    command.supplied["urls"] = [
+        {"ref": "https://example.invalid/original", "title": "Original", "summary": "Test material."}
+    ]
     prepared = prepare_fact_creation(command)
     assert isinstance(prepared, PreparedFactCreation)
 

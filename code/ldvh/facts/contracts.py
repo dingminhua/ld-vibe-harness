@@ -52,7 +52,7 @@ LAYOUTS = {
         "spark",
         "sparks",
         initial_statuses=("open",),
-        statuses=("open", "routed", "discarded"),
+        statuses=("open", "routed", "implemented", "discarded"),
         relation_keys=("routed-to", "related-to", "supersedes"),
     ),
     "workcase": _layout(
@@ -81,8 +81,8 @@ LAYOUTS = {
         "studies",
         suffix=".md",
         initial_statuses=("active",),
-        statuses=("active", "superseded", "retired"),
-        relation_keys=("supersedes",),
+        statuses=("active", "retired"),
+        relation_keys=(),
     ),
 }
 

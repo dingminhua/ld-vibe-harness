@@ -46,7 +46,8 @@ _MANAGED_FIELDS = frozenset(
 _CREATION_REVIEW_FIELDS = frozenset({"reviewer", "scope", "conclusion", "feedback", "controller_resolution"})
 _RESULT_REVIEW_FIELDS = frozenset({"reviewer", "scope", "conclusion", "feedback", "projection_key"})
 _RESOLUTION_FIELDS = frozenset({"review_index", "controller_resolution"})
-_APPROVAL_FIELDS = frozenset({"summary"})
+_APPROVAL_FIELDS = frozenset({"summary", "source_refs"})
+_SOURCE_REFERENCE_FIELDS = frozenset({"kind", "locator", "version", "observed_at", "details"})
 _REVIEW_CONCLUSIONS = frozenset({"pass", "pass_with_followups", "changes_required", "blocked"})
 _RESULT_PROJECTIONS = frozenset({"result_implementation", "result_with_closure_report"})
 _ORDINARY_MANAGED_FIELDS = frozenset(
@@ -149,6 +150,34 @@ def _approval(value: object, path: str, problems: list[str]) -> dict[str, Any] |
         problems.append(f"{path} 的字段名必须是 string")
     if not _nonempty_string(value.get("summary")):
         problems.append(f"{path}.summary 必须是非空 string")
+    source_refs = value.get("source_refs")
+    if source_refs is not None:
+        if not isinstance(source_refs, list) or not source_refs:
+            problems.append(f"{path}.source_refs 出现时必须是非空 array")
+        else:
+            for index, reference in enumerate(source_refs):
+                reference_path = f"{path}.source_refs[{index}]"
+                if not isinstance(reference, dict):
+                    problems.append(f"{reference_path} 必须是 object")
+                    continue
+                unknown_reference = sorted(
+                    key for key in reference if isinstance(key, str) and key not in _SOURCE_REFERENCE_FIELDS
+                )
+                if unknown_reference:
+                    problems.append(f"{reference_path} 包含未知字段: {', '.join(unknown_reference)}")
+                if any(not isinstance(key, str) for key in reference):
+                    problems.append(f"{reference_path} 的字段名必须是 string")
+                for name in ("kind", "locator"):
+                    if not _nonempty_string(reference.get(name)):
+                        problems.append(f"{reference_path}.{name} 必须是非空 string")
+                for name in ("version", "observed_at"):
+                    if name in reference and not _nonempty_string(reference[name]):
+                        problems.append(f"{reference_path}.{name} 出现时必须是非空 string")
+                observed_at = reference.get("observed_at")
+                if isinstance(observed_at, str) and observed_at and parse_rfc3339(observed_at) is None:
+                    problems.append(f"{reference_path}.observed_at 必须是带时区 RFC 3339 时间")
+                if "details" in reference and not isinstance(reference["details"], dict):
+                    problems.append(f"{reference_path}.details 出现时必须是 object")
     return value
 
 

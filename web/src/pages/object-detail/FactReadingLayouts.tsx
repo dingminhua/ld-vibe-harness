@@ -196,8 +196,9 @@ function getSparkReadingNodeTitle(
   obj: Record<string, unknown>,
   locale: string,
 ) {
-  if (node.kind === 'terminal' && obj.status === 'discarded') {
-    return locale === 'en' ? 'Discarded' : '废弃';
+  if (node.kind === 'terminal') {
+    if (obj.status === 'implemented') return locale === 'en' ? 'Implemented' : '落实';
+    if (obj.status === 'discarded') return locale === 'en' ? 'Discarded' : '废弃';
   }
   return locale === 'en' ? node.en : node.zh;
 }
@@ -336,6 +337,7 @@ function SparkTerminalTime({ value }: { value: string }) {
 function hasSparkTerminalContent(obj: Record<string, unknown>) {
   const status = String(obj.status ?? 'open');
   return status === 'routed'
+    || status === 'implemented'
     || status === 'discarded'
     || hasDetailContent(obj.closed_at)
     || hasDetailContent(obj.disposition_summary);

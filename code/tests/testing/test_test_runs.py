@@ -205,6 +205,7 @@ def test_full_plan_has_fixed_argv_steps_and_no_shell() -> None:
     assert [command["name"] for command in commands] == [
         "code-lint",
         "code-tests",
+        "fact-integrity",
         "web-typecheck",
         "web-tests",
         "web-build",

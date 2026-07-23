@@ -107,7 +107,7 @@ WorkCase 不使用普通字段卡片堆叠，而作为“一次目标的执行�
 
 带章节后缀的本地 Markdown 引用应区分展示文本与加载路径：列表行保留完整引用文本，例如 `specs/07-Code确定性执行实现规范.md §4.7`；点击整行或扩展阅读图标时，只用规范化后的 Markdown 文件路径加载右侧阅读区，例如 `specs/07-Code确定性执行实现规范.md`，不得把章节后缀拼入文件读取 API。
 
-V4 Study 阅读器读取当前 Study 的 `research_question`、`abstract`、`applicability`、`validation_summary`、Markdown 正文、`urls` 与 `relations`。不得读取或投影旧版路径型引用或兼容 DTO；提交记录仍应从 Git 提交记录视图派生。
+V4 Study 阅读器读取当前 Study 的 `research_question`、`abstract`、Markdown 正文与 `urls`。不得读取或投影旧版路径型引用、验证字段、关系字段或兼容 DTO；提交记录仍应从 Git 提交记录视图派生。
 
 关联区块内的工作对象引用不直接展示对象编号。对象编号属于打开后的对象详情、复制路径或 YAML 源码中的定位信息；列表态只展示对象类型图标、对象标题和必要操作图标，降低重复元信息对阅读的干扰。
 
@@ -115,7 +115,7 @@ V4 Study 阅读器读取当前 Study 的 `research_question`、`abstract`、`app
 
 V4 Study 阅读器从 `urls` 展示外部资料，并显示资料自身的标题和用途摘要。界面不得把 URL 转换为规则，或把内部路径呈现为外部研究对象。
 
-V4 Study 详情页是外部调研报告阅读界面，不按普通字段卡片表达主内容。主节点依次为“研究问题、摘要、适用范围、验证说明、正文、外部证据”；分别消费 `research_question`、`abstract`、`applicability`、`validation_summary`、Markdown body 和引用数组。正文和证据只可来自同一 V4 原生 Study 文件，不提供 V2/V3 兼容字段或双读。节点标题栏整行可点击，默认全部打开；详情页和右侧扩展阅读区必须复用同一布局。
+V4 Study 详情页是外部调研报告阅读界面，不按普通字段卡片表达主内容。主节点依次为“研究问题、摘要、正文、外部资料”；分别消费 `research_question`、`abstract`、Markdown body 和引用数组。正文中的五段骨架承载输入与边界、关键发现、建议和后续分流；正文和资料只可来自同一 V4 原生 Study 文件，不提供 V2/V3 兼容字段或双读。节点标题栏整行可点击，默认全部打开；详情页和右侧扩展阅读区必须复用同一布局。
 
 Spark 不使用普通字段卡片堆叠。Spark 是“分流前的信息对象”，页面目标不是证明结论、沉淀经验或呈现报告，而是帮助 Human 和 AI 判断这条信息当前应继续 pending、追加演变、分流到目标事实源，还是废弃。Spark 作为“待分流信息阅读页”展示，基础主节点固定为“意图、摘要、演变、关联”；“分流”是闭环事实节点，不是 pending 状态说明节点：
 

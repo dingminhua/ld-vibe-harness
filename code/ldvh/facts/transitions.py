@@ -11,7 +11,7 @@ from ldvh.facts.validation import parse_rfc3339
 from ldvh.facts.workcase_projection import PROJECTION_KEYS, workcase_subject_fingerprint
 
 _STATUS_EDGES = {
-    "spark": {("open", "routed"), ("open", "discarded")},
+    "spark": {("open", "routed"), ("open", "implemented"), ("open", "discarded")},
     "workcase": {
         ("open", "blocked"),
         ("blocked", "open"),
@@ -388,6 +388,8 @@ def validate_fact_transition(
     fact_type_key: str,
     before: dict[str, object],
     after: dict[str, object],
+    *,
+    repairing_invalid_before: bool = False,
 ) -> tuple[FactIssue, ...]:
     """Validate the mechanically observable edge between two full snapshots."""
 
@@ -398,7 +400,11 @@ def validate_fact_transition(
         issues.append(FactIssue("schema", "实际更新的 updated_at 必须晚于当前值", "updated_at"))
     before_status = before.get("status")
     after_status = after.get("status")
-    if before_status != after_status and (before_status, after_status) not in _STATUS_EDGES[fact_type_key]:
+    if (
+        not repairing_invalid_before
+        and before_status != after_status
+        and (before_status, after_status) not in _STATUS_EDGES[fact_type_key]
+    ):
         issues.append(FactIssue("schema", "status 转换不在当前单对象更新允许边中", "status"))
     if after_status == "superseded":
         issues.append(FactIssue("schema", "进入 superseded 要求多对象原子变更", "status"))

@@ -77,8 +77,13 @@ function formatReasonText(value: string): string {
     .trim();
 }
 
-function statusRequiresReason(status: string): boolean {
-  return status === 'archived' || status === 'deprecated' || status === 'discarded' || status === 'closed' || status === 'routed';
+function statusRequiresReason(obj: ObjectItem): boolean {
+  return obj.status === 'archived'
+    || obj.status === 'deprecated'
+    || obj.status === 'discarded'
+    || obj.status === 'closed'
+    || obj.status === 'routed'
+    || (obj.fact_type_key === 'spark' && obj.status === 'implemented');
 }
 
 function getNonActiveReason(obj: ObjectItem, t: Translate): StatusReason | null {
@@ -109,7 +114,7 @@ function getNonActiveReason(obj: ObjectItem, t: Translate): StatusReason | null 
     if (!text) continue;
     return { label: labels[field as keyof typeof labels], text };
   }
-  if (statusRequiresReason(obj.status)) {
+  if (statusRequiresReason(obj)) {
     return {
       label: t('objectList.missingReason'),
       text: t('objectList.missingReasonText'),
@@ -306,12 +311,16 @@ function hasSparkDiscardFact(obj: ObjectItem) {
   return obj.status === 'discarded';
 }
 
+function hasSparkImplementedFact(obj: ObjectItem) {
+  return obj.status === 'implemented';
+}
+
 function SparkFactPanel({
   tone,
   title,
   children,
 }: {
-  tone: 'open' | 'routed' | 'discarded';
+  tone: 'open' | 'routed' | 'implemented' | 'discarded';
   title?: string;
   children: ReactNode;
 }) {
@@ -337,7 +346,7 @@ function SparkFactPanel({
 function SparkTerminalCardContent({ obj }: { obj: ObjectItem }) {
   const { t } = useI18n();
   const reason = obj.disposition_summary?.trim() || t('objectList.dispositionMissing');
-  const tone = obj.status === 'discarded' ? 'discarded' : 'routed';
+  const tone = obj.status === 'discarded' ? 'discarded' : obj.status === 'implemented' ? 'implemented' : 'routed';
 
   return (
     <SparkFactPanel tone={tone}>
@@ -349,7 +358,7 @@ function SparkTerminalCardContent({ obj }: { obj: ObjectItem }) {
 }
 
 function SparkCardContent({ obj }: { obj: ObjectItem }) {
-  if (hasSparkDiscardFact(obj) || hasSparkResolvedFact(obj)) return <SparkTerminalCardContent obj={obj} />;
+  if (hasSparkDiscardFact(obj) || hasSparkImplementedFact(obj) || hasSparkResolvedFact(obj)) return <SparkTerminalCardContent obj={obj} />;
   return null;
 }
 

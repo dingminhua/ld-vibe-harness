@@ -1,10 +1,8 @@
 ---
 title: 主流 Agent 过程输出与 Human 可观察性调研
-status: active
-applicability: 用于 LDVH 过程输出、Web 观察面、测试 run 回读和 Human 可检查 Helper 的表达层设计；不声明 LDVH
-  已经具备外部产品的全部事件或 tracing 能力。
-validation_summary: 已读取 OpenAI 官方文档入口；Structured Outputs 与 tracing
-  的具体可用字段随产品/SDK 版本变化，本报告只吸收概念和边界，不锁定未经本地验证的协议字段。
+status: retired
+disposition_summary: 已按 v3 基线决定重新研究；本旧 v4 短报告不再作为当前研究入口，外部资料、发现与后续启发须在新 Study 中重新读取和表达。
+closed_at: '2026-07-23T18:21:16+08:00'
 research_question: OpenAI 的非交互/App Server/Structured Outputs/Tracing 公开能力如何支持
   Agent 过程的机器读取、人类观察和证据复核？
 abstract: 调研 OpenAI Codex 非交互与 App Server 文档、Structured Outputs 指南和 Agents
@@ -13,32 +11,32 @@ abstract: 调研 OpenAI Codex 非交互与 App Server 文档、Structured Output
 object_id: study-0005
 fact_type_key: study
 created_at: '2026-07-19T11:17:46.933030+08:00'
-updated_at: '2026-07-23T14:21:35.783731+08:00'
+updated_at: '2026-07-23T18:21:16+08:00'
 urls:
 - ref: https://developers.openai.com/codex/noninteractive
   title: developers.openai.com/codex/noninteractive
-  summary: 外部研究资料；具体支持范围与限制见本报告正文。
+  summary: 曾用于旧研究的 Codex 非交互文档；不单独支持 LDVH 的过程输出设计。
 - ref: https://developers.openai.com/codex/app-server
   title: developers.openai.com/codex/app-server
-  summary: 外部研究资料；具体支持范围与限制见本报告正文。
+  summary: 曾用于旧研究的 Codex App Server 文档；不单独支持当前观察面。
 - ref: https://developers.openai.com/api/docs/guides/structured-outputs
   title: developers.openai.com/api/docs/guides/structured-outputs
-  summary: 外部研究资料；具体支持范围与限制见本报告正文。
+  summary: 曾用于旧研究的 Structured Outputs 文档；不单独决定事实对象字段。
 - ref: https://openai.github.io/openai-agents-python/tracing/
   title: openai.github.io/openai-agents-python/tracing/
-  summary: 外部研究资料；具体支持范围与限制见本报告正文。
+  summary: 曾用于旧研究的 tracing 文档；不单独证明本项目具备追踪能力。
 ---
 
 ## 研究问题
 
 OpenAI 的非交互/App Server/Structured Outputs/Tracing 公开能力如何支持 Agent 过程的机器读取、人类观察和证据复核？
-## 输入、方法与观察边界
+## 输入与边界
 
 本报告读取并对照了以下外部公开资料：https://developers.openai.com/codex/noninteractive、https://developers.openai.com/codex/app-server、https://developers.openai.com/api/docs/guides/structured-outputs、https://openai.github.io/openai-agents-python/tracing/。外部资料条目记录在 urls 中；本报告只陈述页面可直接支持的内容，并将 LDVH 适用性与外部事实分开。
 ## 关键发现
 
 非交互模式和 App Server 面向宿主/自动化提供结构化交互；Structured Outputs 以 schema 约束模型输出；Tracing 把运行过程组织为可关联的 trace/span。共同要求是消费者处理不完整、失败和版本差异，而不是只显示“成功”文本。
-## 结论与限制
+### 旧研究的限制
 
 LDVH 应把原始事件/结果、最终终态、证据位置和人类阅读投影分层保存；Web 读模型可以友好表达，但不能成为事实源或丢失原始边界。限制是外部文档没有规定 LDVH 的字段命名、存储介质或 Human Gate。
 ## 建议

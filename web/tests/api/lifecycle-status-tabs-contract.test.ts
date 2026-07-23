@@ -14,7 +14,7 @@ test('V4 fact lists keep lifecycle status tabs even when a terminal state has ze
 
   assert.match(filter, /adr: \['active', 'superseded', 'retired'\]/)
   assert.match(filter, /pitfall: \['active', 'superseded', 'retired'\]/)
-  assert.match(filter, /study: \['active', 'superseded', 'retired'\]/)
+  assert.match(filter, /study: \['active', 'retired'\]/)
   assert.match(filter, /if \(!\(type in FALLBACK_STATUSES_BY_TYPE\)\) return sortedOptions;/)
   assert.match(filter, /if \(displayOptions\.length <= 1 && !\(type in FALLBACK_STATUSES_BY_TYPE\)\) return null;/)
 })
@@ -23,4 +23,5 @@ test('retired has an explicit lifecycle status label', () => {
   const locales = source('src/i18n/locales.ts')
 
   assert.match(locales, /retired: \{ zh: '已退出', en: 'Retired' \}/)
+  assert.match(locales, /implemented: \{ zh: '已落实', en: 'Implemented' \}/)
 })

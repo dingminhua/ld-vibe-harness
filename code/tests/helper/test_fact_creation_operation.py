@@ -676,14 +676,17 @@ def test_failed_write_back_reports_residue_when_exact_rollback_fails(tmp_path: P
 def test_create_study_validates_markdown_carrier_and_external_urls(tmp_path: Path) -> None:
     workspace, project = _fixture(tmp_path)
     basis = _prepare(workspace, project, "study")
-    observed = "2026-07-13T09:00:00+08:00"
     study = {
         "frontmatter": {
             "title": "Controlled Study creation",
             "status": "active",
-            "urls": [{"ref": "https://example.invalid/controlled-study-evidence", "title": "Controlled Study evidence", "summary": "External material used by the test Study."}],
-            "applicability": "This test repository and the current creation contract.",
-            "validation_summary": "The external material was read and its stated scope was mapped to the conclusion.",
+            "urls": [
+                {
+                    "ref": "https://example.invalid/controlled-study-evidence",
+                    "title": "Controlled Study evidence",
+                    "summary": "External material used by the test Study.",
+                }
+            ],
             "research_question": "Can Code create a complete Study only after AI supplies its semantics?",
             "abstract": (
                 "The controlled path validates frontmatter, report structure, and external material before creation."
@@ -692,9 +695,8 @@ def test_create_study_validates_markdown_carrier_and_external_urls(tmp_path: Pat
         "body": "\n\n".join(
             [
                 "## 研究问题\n\n验证受控创建是否承接完整 Study。",
-                "## 输入、方法与观察边界\n\n阅读外部资料，并保持结论在其公开范围内。",
+                "## 输入与边界\n\n阅读外部资料，并保持发现处于其公开范围内。",
                 "## 关键发现\n\nCode 可以在最终分配身份后验证完整载体。",
-                "## 结论与限制\n\n结论仅适用于当前测试仓库和当前契约。",
                 "## 建议\n\n继续保持草案阶段无正式文件副作用。",
                 "## 后续分流\n\n当前没有额外分流。",
             ]

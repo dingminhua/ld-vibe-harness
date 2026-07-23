@@ -2,7 +2,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from ldvh.facts.relations import _source_condition, _target_condition, _target_has_readable_title, validate_project_relations
+from ldvh.facts.relations import (
+    _source_condition,
+    _target_condition,
+    _target_has_readable_title,
+    validate_project_relations,
+)
 from ldvh.facts.repository import FactReadResult
 
 
@@ -71,3 +76,7 @@ def test_routed_spark_requires_at_least_one_routed_to_relation() -> None:
 
     assert not unavailable
     assert any(issue.summary == "routed Spark 至少需要一条 routed-to 关系" for issue in issues)
+
+
+def test_open_spark_can_supersede_an_implemented_terminal_spark() -> None:
+    assert _target_condition("spark", "supersedes", "spark", "implemented")

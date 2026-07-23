@@ -31,8 +31,8 @@ const FALLBACK_STATUSES_BY_TYPE: Record<string, string[]> = {
   workcase: [...WORKCASE_STATUS_ORDER],
   adr: ['active', 'superseded', 'retired'],
   pitfall: ['active', 'superseded', 'retired'],
-  spark: ['open', 'routed', 'discarded'],
-  study: ['active', 'superseded', 'retired'],
+  spark: ['open', 'routed', 'implemented', 'discarded'],
+  study: ['active', 'retired'],
 };
 
 interface ObjectStatusFilterProps {

@@ -528,9 +528,7 @@ def test_workcase_delta_withdraws_an_erroneously_recorded_execution_approval(tmp
                 ],
             },
             managed_records={
-                "withdraw_execution_approval": {
-                    "summary": "Human clarified that execution approval was not granted."
-                }
+                "withdraw_execution_approval": {"summary": "Human clarified that execution approval was not granted."}
             },
         ),
     ).response
@@ -595,9 +593,7 @@ def test_workcase_delta_walks_controller_owned_review_and_atomic_closure(tmp_pat
         managed_records={"execution_approval": {"summary": "Human approved the presented current plan"}},
     )
 
-    completed_item = {
-        key: value for key, value in in_progress.items() if key not in {"current_summary", "resume_from"}
-    }
+    completed_item = {key: value for key, value in in_progress.items() if key not in {"current_summary", "resume_from"}}
     completed_item.update(
         {
             "status": "completed",
@@ -1440,23 +1436,25 @@ def test_study_update_preserves_submitted_body_boundary(tmp_path: Path) -> None:
             }
         ),
     ).response["result"]
-    observed = "2026-07-14T09:00:00+08:00"
     study = {
         "frontmatter": {
             "title": "Study update",
             "status": "active",
-            "urls": [{"ref": "https://example.invalid/study-update", "title": "Study update evidence", "summary": "External material used by the test Study."}],
-            "applicability": "Current Study update test.",
-            "validation_summary": "The local evidence was checked.",
+            "urls": [
+                {
+                    "ref": "https://example.invalid/study-update",
+                    "title": "Study update evidence",
+                    "summary": "External material used by the test Study.",
+                }
+            ],
             "research_question": "Does update preserve the submitted Markdown body boundary?",
             "abstract": "The full target body remains stable across serialization.",
         },
         "body": "\n\n".join(
             [
                 "## 研究问题\n\n验证 Study 更新。",
-                "## 输入、方法与观察边界\n\n读取本地问题和证据。",
+                "## 输入与边界\n\n读取外部研究资料并限定当前问题。",
                 "## 关键发现\n\n完整目标不会积累空行。",
-                "## 结论与限制\n\n只覆盖当前载体序列化。",
                 "## 建议\n\n保持完整目标语义。",
                 "## 后续分流\n\n没有额外分流。",
             ]

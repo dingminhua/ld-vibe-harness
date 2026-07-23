@@ -9,9 +9,8 @@ from ldvh.facts.models import CarrierParseResult, FactIssue
 
 STUDY_H2_TITLES = (
     "研究问题",
-    "输入、方法与观察边界",
+    "输入与边界",
     "关键发现",
-    "结论与限制",
     "建议",
     "后续分流",
 )
@@ -97,7 +96,7 @@ def _validate_body(body: str) -> list[FactIssue]:
 
     actual_fixed_order = [title for _, title in h2_headings if title in STUDY_H2_TITLES]
     if actual_fixed_order != list(STUDY_H2_TITLES):
-        issues.append(FactIssue("schema", "Study 正文六个固定 H2 顺序不正确", field_path="body"))
+        issues.append(FactIssue("schema", "Study 正文五个固定 H2 顺序不正确", field_path="body"))
 
     if any(issue.summary.startswith("Study 正文 H2") for issue in issues):
         return issues

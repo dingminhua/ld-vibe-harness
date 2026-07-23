@@ -63,7 +63,7 @@ export type { RelatedContentEntry };
 export { WorkCaseReadingLayout } from '@/pages/object-detail/WorkCaseReadingLayout';
 export { AdrReadingLayout, PitfallReadingLayout, SparkReadingLayout } from '@/pages/object-detail/FactReadingLayouts';
 
-const STUDY_READING_NODE_FIELDS = new Set(['research_question', 'abstract', 'applicability', 'validation_summary', 'report_body']);
+const STUDY_READING_NODE_FIELDS = new Set(['research_question', 'abstract', 'report_body']);
 const FORMAL_ASSOCIATION_FIELDS = new Set(['relations']);
 export type ReadingNodeState = 'collapsed' | 'expanded';
 type RelatedAssociationValue = {
@@ -1202,8 +1202,6 @@ function basename(path: string) {
 const STUDY_READING_NODES: Array<{ field: string; kind: 'text' | 'report' }> = [
   { field: 'research_question', kind: 'text' },
   { field: 'abstract', kind: 'text' },
-  { field: 'applicability', kind: 'text' },
-  { field: 'validation_summary', kind: 'text' },
   { field: 'report_body', kind: 'report' },
 ];
 

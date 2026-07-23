@@ -93,6 +93,8 @@ def _project_read(command: FactUpdateCommand) -> FactReadResult:
 def _candidate(
     command: FactUpdateCommand,
     before: dict[str, Any],
+    *,
+    repairing_invalid_before: bool,
 ) -> tuple[FactReadResult, str]:
     layout = LAYOUTS[command.fact_type_key]
     fields = {
@@ -107,7 +109,14 @@ def _candidate(
     issues = list(parsed.issues)
     if parsed.fields is not None:
         issues.extend(validate_fact_object(command.fact_type_key, parsed.fields, command.schema))
-        issues.extend(validate_fact_transition(command.fact_type_key, before, parsed.fields))
+        issues.extend(
+            validate_fact_transition(
+                command.fact_type_key,
+                before,
+                parsed.fields,
+                repairing_invalid_before=repairing_invalid_before,
+            )
+        )
     read = FactReadResult(
         layout.canonical_path(command.object_id),
         layout.carrier,
@@ -146,7 +155,7 @@ def apply_fact_update_locked(command: FactUpdateCommand) -> FactUpdateResult:
     """Apply one update while the caller holds the fact type's common-dir lock."""
 
     current = _project_read(command)
-    if current.check_status != "mechanically_valid" or current.fields is None:
+    if current.check_status == "unavailable" or current.fields is None:
         status: UpdateStatus = "current_unavailable" if current.check_status == "unavailable" else "current_rejected"
         return FactUpdateResult(status, command.event_at, issues=current.issues, current=current)
     if current.content_fingerprint != command.expected_content_fingerprint or current.raw_text is None:
@@ -154,7 +163,8 @@ def apply_fact_update_locked(command: FactUpdateCommand) -> FactUpdateResult:
 
     layout = LAYOUTS[command.fact_type_key]
     mutable_current = {key: value for key, value in current.fields.items() if key not in MANAGED_FIELDS}
-    if mutable_current == dict(command.supplied) and (
+    repairing_invalid_before = current.check_status != "mechanically_valid"
+    if not repairing_invalid_before and mutable_current == dict(command.supplied) and (
         layout.carrier != "markdown" or (current.body or "") == command.body
     ):
         return FactUpdateResult("no_change", command.event_at, current=current, readback=current)
@@ -168,7 +178,11 @@ def apply_fact_update_locked(command: FactUpdateCommand) -> FactUpdateResult:
             current=current,
         )
 
-    candidate, candidate_text = _candidate(command, current.fields)
+    candidate, candidate_text = _candidate(
+        command,
+        current.fields,
+        repairing_invalid_before=repairing_invalid_before,
+    )
     if candidate.check_status != "mechanically_valid":
         status = "candidate_unavailable" if candidate.check_status == "unavailable" else "candidate_rejected"
         return FactUpdateResult(

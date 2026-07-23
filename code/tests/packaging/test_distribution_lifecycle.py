@@ -598,7 +598,6 @@ def _exercise_operation_matrix(
             "fact_object": {
                 "title": "Installed distribution lifecycle",
                 "status": "open",
-                "source_refs": [{"kind": "repository-path", "locator": "observed.txt"}],
                 "summary": "Created only in the isolated governed project.",
                 "priority": "P2",
             },

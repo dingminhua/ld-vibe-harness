@@ -52,8 +52,7 @@ const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
     'disposition_summary', 'closed_at',
   ],
   study: [
-    'research_question', 'abstract', 'applicability', 'validation_summary', 'report_body',
-    'urls', 'relations', 'disposition_summary', 'closed_at',
+    'research_question', 'abstract', 'report_body', 'urls', 'disposition_summary', 'closed_at',
   ],
 };
 

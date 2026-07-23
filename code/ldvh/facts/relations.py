@@ -131,7 +131,7 @@ def _target(relation: dict[str, object]) -> dict[str, object] | None:
 def _target_condition(source_type: str, relation_key: str, target_type: str, target_status: object) -> bool:
     if relation_key == "supersedes":
         if source_type == "spark":
-            return target_type == "spark" and target_status in {"routed", "discarded"}
+            return target_type == "spark" and target_status in {"routed", "implemented", "discarded"}
         if source_type == "workcase":
             return target_type == "workcase" and target_status == "closed"
         return target_type == source_type and target_status == "superseded"
