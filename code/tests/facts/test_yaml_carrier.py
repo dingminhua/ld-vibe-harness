@@ -77,10 +77,11 @@ def test_keeps_timestamp_shaped_scalars_as_strings() -> None:
 def test_serializer_preserves_values_without_physical_trailing_whitespace() -> None:
     fields = {
         "title": "中文 WorkCase " + "长标题" * 300,
-        "source_refs": [
+        "urls": [
             {
-                "kind": "working_tree",
-                "locator": "/workspace/" + "nested-directory/" * 300 + "workcase.yaml",
+                "ref": "https://example.invalid/" + "nested-directory/" * 300,
+                "title": "Long external reference",
+                "summary": "Serializer round-trip fixture.",
             }
         ],
         "summary": "semantic trailing space is preserved inside the scalar ",

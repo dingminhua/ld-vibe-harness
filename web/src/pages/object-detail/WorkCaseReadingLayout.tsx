@@ -124,8 +124,10 @@ export function WorkCaseReadingLayout({
     'review_requested_at',
     'closed_at',
     'closure_outcome',
-    'residual_risks',
-    'followup_refs',
+    'validation_summary',
+    'disposition_summary',
+    'residual_responsibilities',
+    'nonbinding_followups',
     'revision_history',
     'related_docs',
     'related_adrs',
@@ -155,6 +157,8 @@ export function WorkCaseReadingLayout({
         executionItems={executionItems}
         getStatus={getStatus}
       />
+
+      <WorkCaseCloseoutSection obj={obj} locale={locale} />
 
       <WorkCaseEvidenceSummarySection obj={obj} summary={summary} />
 
@@ -329,6 +333,34 @@ function ProgressMetric({
   );
 }
 
+function WorkCaseCloseoutSection({ obj, locale }: { obj: Record<string, unknown>; locale: string }) {
+  const { t } = useI18n();
+  const status = detailString(obj.status);
+  const entries: Array<[string, unknown]> = [
+    ['validation_summary', obj.validation_summary],
+    ['closure_outcome', obj.closure_outcome],
+    ['disposition_summary', obj.disposition_summary],
+    ['residual_responsibilities', obj.residual_responsibilities],
+    ['nonbinding_followups', obj.nonbinding_followups],
+  ].filter((entry): entry is [string, unknown] => hasDetailContent(entry[1]));
+
+  if (status !== 'closed' && entries.length === 0) return null;
+
+  return (
+    <DetailSection title={t('objectDetail.workcaseCloseout')} tone="default">
+      {entries.length > 0 ? (
+        <div className="flex flex-col gap-3">
+          {entries.map(([fieldKey, value]) => (
+            <ContentField key={fieldKey} fieldKey={fieldKey} value={value} locale={locale} objType="workcase" />
+          ))}
+        </div>
+      ) : (
+        <EmptyHint text={t('objectDetail.noWorkcaseCloseout')} />
+      )}
+    </DetailSection>
+  );
+}
+
 function WorkCaseHumanOverviewSection({
   obj,
   summary,
@@ -481,9 +513,6 @@ function WorkCaseAiContextSection({ obj, locale }: { obj: Record<string, unknown
     ['plan_confirmed_at', obj.plan_confirmed_at],
     ['closure_requested_at', obj.closure_requested_at ?? obj.review_requested_at],
     ['closed_at', obj.closed_at],
-    ['closure_outcome', obj.closure_outcome],
-    ['residual_risks', obj.residual_risks],
-    ['followup_refs', obj.followup_refs],
     ['revision_history', orchestration.revision_history],
     ['source', obj.source],
   ].filter((entry): entry is [string, unknown] => hasDetailContent(entry[1]));

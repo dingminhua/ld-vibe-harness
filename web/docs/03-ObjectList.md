@@ -97,17 +97,9 @@ Spark 是“待分流信息”卡片，列表态用于快速定位每条火花�
 - `discarded` 或存在 `discard_reason` 时，卡片中部展示"已废弃"区域，消费 `discard_reason`；缺少原因时展示原因缺失提示。不得再同时展示通用非活跃原因块造成重复。
 - Spark 卡片内部信息区域只用于阅读，不响应主路由跳转；点击外层卡片仍进入 Spark 详情页。
 
-### 3.6 Spark 创建入口
+### 3.6 Spark 创建边界
 
-Spark 列表页保持只读；Web 不提供 Spark 创建或直接捕获入口。
-
-- 入口仅出现在 Spark 类型列表页（`ObjectList.tsx` 中 `currentType === 'spark'` 时渲染 `SparkCreate`），不扩散到其他对象类型；其他类型的创建、修改、删除仍必须走 Helper CLI / Human 操作路径。
-- 入口默认折叠为弱化 chip（`ldvh-chip` + 虚线边框 + `Plus` 图标 + `spark.quickCapture`），不抢占列表主视觉；点击后打开居上模态表单。
-- 表单字段严格封闭为三件套：`title`、`description`、`priority`（下拉仅 `P0` / `P1` / `P2` / `P3`，默认 `P3`），与 08 §8.2 的字段闭集一致；不扩展来源、标签、状态等任何额外字段。
-- 提交走 `POST /api/sparks`；该路由仅接受 loopback 连接（`127.0.0.1` / `::1` / `::ffff:127.0.0.1`），非回环请求一律 `403 LOOPBACK_REQUIRED`，对应"单机单用户单项目"边界。
-- 状态码语义：`created` → 201，`invalid` → 400，`exact_duplicate` / `integrity_conflict` → 409，`unavailable` → 503；前端按 HTTP 错误统一展示服务端返回的错误文案（`errors` 列表或 `error`），不自行杜撰失败原因。
-- 创建成功后展示成功提示并回调 `onCreated` 触发列表重新加载（`setReloadKey`），约 1.5 秒后自动关闭表单并重置字段；失败时保留表单内容供修改重试。
-- 该入口只是捕获通道：回读校验、重复检测、完整性判断全部由 V4 Spark 写入机（Helper 侧）完成，Web 不在前端复制这些判断逻辑。
+Spark 列表页保持只读；Web 不提供 Spark 创建、直接捕获、写入或由表单生成 Spark 的入口。Spark 的对象化、既有对象查重和受控创建只由 AI 按 20 与 31 的规则调用 Helper 完成；Web 只呈现当前事实源中的结果。
 
 ### 3.7 空态、加载态、错误态
 

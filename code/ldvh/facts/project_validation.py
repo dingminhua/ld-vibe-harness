@@ -8,7 +8,6 @@ from ldvh.facts.contracts import LAYOUTS
 from ldvh.facts.models import FactIssue
 from ldvh.facts.relations import ProjectFactIndex, validate_project_relations
 from ldvh.facts.repository import FactReadResult
-from ldvh.facts.source_validation import validate_study_sources
 
 
 def stabilize_project_index(index: ProjectFactIndex) -> None:
@@ -38,19 +37,15 @@ def stabilize_project_index(index: ProjectFactIndex) -> None:
                 object_id,
                 base_read,
             )
-            source_issues: tuple[FactIssue, ...] = ()
-            source_unavailable = False
-            if fact_type_key == "study":
-                source_issues, source_unavailable = validate_study_sources(index, base_read)
-            project_issues = (*relation_issues, *source_issues)
-            if relation_unavailable or source_unavailable:
+            project_issues = relation_issues
+            if relation_unavailable:
                 evaluated[(fact_type_key, object_id)] = replace(
                     base_read,
                     check_status="unavailable",
                     issues=(
                         *base_read.issues,
                         *project_issues,
-                        FactIssue("reference", "项目级关系或来源集合未能完成必需机械检查"),
+                        FactIssue("reference", "项目级关系集合未能完成必需机械检查"),
                     ),
                 )
             elif project_issues:

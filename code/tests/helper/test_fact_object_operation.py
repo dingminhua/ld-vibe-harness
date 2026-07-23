@@ -31,9 +31,6 @@ def _fixture(tmp_path: Path) -> tuple[Path, Path]:
                 "created_at: 2026-07-14T09:00:00+08:00",
                 "updated_at: 2026-07-14T10:00:00+08:00",
                 "status: open",
-                "source_refs:",
-                "  - kind: repository-path",
-                "    locator: docs/input.md",
                 "summary: Read one object",
                 "priority: P2",
                 "",
@@ -181,9 +178,6 @@ def test_fact_read_checks_relation_targets_and_reachable_dag(tmp_path: Path) -> 
                     "created_at: 2026-07-14T09:00:00+08:00",
                     "updated_at: 2026-07-14T10:00:00+08:00",
                     "status: open",
-                    "source_refs:",
-                    "  - kind: repository-path",
-                    "    locator: docs/input.md",
                     "summary: Waiting for Human execution approval",
                     "resume_from: Present plan version 1 for Human approval",
                     "waiting_on: Human execution approval",
@@ -422,12 +416,6 @@ title: Closed item
 created_at: 2026-07-14T09:00:00+08:00
 updated_at: 2026-07-14T10:00:00+08:00
 status: closed
-source_refs:
-  - kind: repository-path
-    locator: docs/input.md
-evidence_refs:
-  - kind: repository-path
-    locator: docs/evidence.md
 summary: Closed
 goal: Finish
 scope: One object
@@ -442,9 +430,6 @@ work_items:
     status: completed
     approach_summary: Complete the bounded target and validate it
     result_summary: The work was replaced after producing a bounded result
-    evidence_refs:
-      - kind: repository-path
-        locator: docs/evidence.md
 creation_reviews:
   - reviewer: independent-plan-reviewer
     reviewed_at: 2026-07-14T09:05:00+08:00
@@ -498,12 +483,6 @@ title: Old decision
 created_at: 2026-07-14T09:00:00+08:00
 updated_at: 2026-07-14T10:00:00+08:00
 status: superseded
-source_refs:
-  - kind: repository-path
-    locator: docs/input.md
-evidence_refs:
-  - kind: repository-path
-    locator: docs/evidence.md
 disposition_summary: Replaced
 closed_at: 2026-07-14T10:00:00+08:00
 decision_question: Which?
@@ -529,12 +508,6 @@ title: New decision
 created_at: 2026-07-14T11:00:00+08:00
 updated_at: 2026-07-14T12:00:00+08:00
 status: active
-source_refs:
-  - kind: repository-path
-    locator: docs/input.md
-evidence_refs:
-  - kind: repository-path
-    locator: docs/evidence.md
 decision_question: Which?
 decision: B
 applicability: This project
@@ -628,9 +601,6 @@ title: Related
 created_at: 2026-07-14T09:00:00+08:00
 updated_at: 2026-07-14T10:00:00+08:00
 status: open
-source_refs:
-  - kind: repository-path
-    locator: docs/input.md
 summary: Related object
 priority: P2
 relations:

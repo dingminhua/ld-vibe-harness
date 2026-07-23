@@ -92,7 +92,6 @@ def test_workcase_result_fields_do_not_semantically_control_result_version() -> 
         "validation_summary": "Current validation summary",
         "closure_outcome": "completed",
         "disposition_summary": "No residual responsibility",
-        "evidence_refs": [{"kind": "repository-path", "locator": "evidence/final.txt"}],
     }
 
     assert validate_fact_transition("workcase", before, after) == ()

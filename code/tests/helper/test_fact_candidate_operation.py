@@ -85,15 +85,10 @@ def _create(workspace: Path, project: Path, fact_type_key: str, fields: dict[str
     return response["result"]["actual_ref"]["object_id"]
 
 
-def _source() -> list[dict[str, str]]:
-    return [{"kind": "repository-path", "locator": "docs/input.md"}]
-
-
 def _workcase() -> dict[str, object]:
     fact_object: dict[str, object] = {
         "title": "Recall contract implementation",
         "status": "open",
-        "source_refs": _source(),
         "summary": "Waiting for Human execution approval.",
         "resume_from": "Present plan version 1 for Human approval.",
         "waiting_on": "Human execution approval.",
@@ -150,8 +145,6 @@ def _adr() -> dict[str, object]:
     return {
         "title": "Direct scan before persistent index",
         "status": "active",
-        "source_refs": _source(),
-        "evidence_refs": [{"kind": "repository-path", "locator": "docs/evidence.md"}],
         "decision_question": "How should the first recall implementation find facts?",
         "decision": "Directly scan current authoritative objects.",
         "applicability": "Stage 5 fact recall implementation.",
@@ -165,8 +158,6 @@ def _pitfall() -> dict[str, object]:
     return {
         "title": "Stale cursor mixed with changed objects",
         "status": "active",
-        "source_refs": _source(),
-        "evidence_refs": [{"kind": "repository-path", "locator": "docs/evidence.md"}],
         "applicability": "Paginated fact candidate scans.",
         "validation_summary": "Changed object sets reject the old cursor.",
         "symptoms": "Cards from two different snapshots are combined.",
@@ -181,7 +172,6 @@ def _spark(title: str) -> dict[str, object]:
     return {
         "title": title,
         "status": "open",
-        "source_refs": _source(),
         "summary": "An unresolved candidate topic.",
         "priority": "P2",
     }
@@ -193,11 +183,7 @@ def _study() -> dict[str, object]:
         "frontmatter": {
             "title": "Candidate projection Study",
             "status": "active",
-            "source_refs": [{"kind": "repository-path", "locator": "docs/question.md", "observed_at": observed}],
-            "evidence_refs": [
-                {"kind": "repository-path", "locator": "docs/evidence.md", "observed_at": observed},
-                {"kind": "web-page", "locator": "https://example.invalid/study-evidence", "observed_at": observed},
-            ],
+            "urls": [{"ref": "https://example.invalid/study-evidence", "title": "Study evidence", "summary": "External material used by this test Study."}],
             "applicability": "Current candidate projection contract.",
             "validation_summary": "Tracked evidence supports the bounded conclusion.",
             "research_question": "Can Study cards remain smaller than full reports?",

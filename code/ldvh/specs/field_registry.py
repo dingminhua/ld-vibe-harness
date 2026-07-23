@@ -522,10 +522,6 @@ def _validate_definition(
         if registration.definition_scope == "foundation"
         and registration.applies_to is None
         and registration.container_ref == "fact-object"
-        else "来源与证据引用字段"
-        if registration.definition_scope == "foundation"
-        and registration.applies_to is None
-        and registration.container_ref == "source-ref"
         else "外部网址字段"
         if registration.definition_scope == "foundation"
         and registration.applies_to is None

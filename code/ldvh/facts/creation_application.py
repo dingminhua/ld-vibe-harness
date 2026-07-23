@@ -28,7 +28,6 @@ from ldvh.facts.models import FactIssue
 from ldvh.facts.relations import ProjectFactIndex, validate_project_relations
 from ldvh.facts.repository import FactReadResult, read_fact_object
 from ldvh.facts.schema import FactSchema
-from ldvh.facts.source_validation import validate_study_sources
 from ldvh.facts.validation import validate_fact_object
 from ldvh.filesystem import AtomicWriteResult, durable_writes_enabled
 
@@ -148,11 +147,7 @@ def _preflight(
         object_id,
         read,
     )
-    source_issues: tuple[FactIssue, ...] = ()
-    source_unavailable = False
-    if command.fact_type_key == "study":
-        source_issues, source_unavailable = validate_study_sources(index, read)
-    return fields, text, (*relation_issues, *source_issues), relation_unavailable or source_unavailable
+    return fields, text, relation_issues, relation_unavailable
 
 
 def prepare_fact_creation(
@@ -243,10 +238,6 @@ def _complete_created_fact(
         index.cache[(command.fact_type_key, actual_id)] = read
         index.base_cache[(command.fact_type_key, actual_id)] = read
         post_issues, post_unavailable = validate_project_relations(index, command.fact_type_key, actual_id, read)
-        if command.fact_type_key == "study":
-            source_issues, source_unavailable = validate_study_sources(index, read)
-            post_issues = (*post_issues, *source_issues)
-            post_unavailable = post_unavailable or source_unavailable
     elif read.check_status == "mechanically_valid":
         post_issues = (FactIssue("parse", "写后回读 bytes 与本次创建 payload 不一致"),)
     if read.check_status != "mechanically_valid" or post_issues or post_unavailable:

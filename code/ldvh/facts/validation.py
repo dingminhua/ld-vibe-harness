@@ -5,7 +5,6 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 from datetime import datetime
-from pathlib import PurePosixPath
 from typing import Any
 from urllib.parse import urlparse
 
@@ -883,49 +882,6 @@ def _validate_references(fact_type_key: str, fields: dict[str, Any], issues: lis
         if ref in seen:
             issues.append(FactIssue("reference", "同一对象中 urls.ref 不得重复", f"urls[{index}].ref"))
         seen.add(ref)
-
-
-_FACT_OBJECT_LOCATOR = re.compile(
-    r"ldvh-base/(?P<directory>sparks|workcases|adrs|pitfalls|studies)/"
-    r"(?P<object_id>spark|workcase|adr|pitfall|study)-[0-9]{4,}(?P<suffix>\.yaml|\.md)\Z"
-)
-
-
-def _stable_relative_path(locator: str) -> bool:
-    if (
-        not locator
-        or locator.startswith("/")
-        or locator.endswith("/")
-        or "//" in locator
-        or "\\" in locator
-        or re.match(r"^[A-Za-z][A-Za-z0-9+.-]*:", locator)
-    ):
-        return False
-    parts = PurePosixPath(locator).parts
-    return bool(parts) and all(part not in {"", ".", ".."} for part in parts)
-
-
-def _valid_study_locator(kind: str, locator: str) -> bool:
-    if kind in {"web-page", "api-observation"}:
-        parsed = urlparse(locator)
-        return parsed.scheme in {"http", "https"} and bool(parsed.netloc)
-    if kind == "fact-object":
-        match = _FACT_OBJECT_LOCATOR.fullmatch(locator)
-        if match is None:
-            return False
-        object_id = match.group("object_id")
-        directory = match.group("directory")
-        suffix = match.group("suffix")
-        expected = {
-            "spark": ("sparks", ".yaml"),
-            "workcase": ("workcases", ".yaml"),
-            "adr": ("adrs", ".yaml"),
-            "pitfall": ("pitfalls", ".yaml"),
-            "study": ("studies", ".md"),
-        }
-        prefix = object_id.split("-", 1)[0]
-        return expected.get(prefix) == (directory, suffix)
-    return _stable_relative_path(locator)
 
 
 def _validate_relations(fact_type_key: str, fields: dict[str, Any], issues: list[FactIssue]) -> None:

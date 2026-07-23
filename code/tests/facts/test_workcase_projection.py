@@ -29,7 +29,6 @@ def _workcase() -> dict[str, object]:
                 "status": "completed",
                 "approach_summary": "Run checks",
                 "result_summary": "Passed",
-                "evidence_refs": [{"locator": "z", "kind": "working_tree"}],
             },
             {
                 "item_id": "item-01",
@@ -45,10 +44,6 @@ def _workcase() -> dict[str, object]:
             {"criterion_id": "criterion-01", "outcome": "satisfied", "summary": "Yes"},
         ],
         "controller_check_summary": "Checked",
-        "evidence_refs": [
-            {"kind": "working_tree", "locator": "b"},
-            {"kind": "working_tree", "locator": "a"},
-        ],
         "improvement_observations": [
             {
                 "observation_id": "observation-01",
@@ -73,7 +68,6 @@ def _workcase() -> dict[str, object]:
                     "fact_type_key": "workcase",
                     "object_id": "workcase-0043",
                 },
-                "responsibility_ids": ["residual-01"],
             }
         ],
         "result_reviews": [{"reviewer": "someone"}],
@@ -98,9 +92,7 @@ def test_result_and_closure_projections_have_distinct_owned_fields() -> None:
     assert "validation_summary" not in implementation
     assert implementation["work_items"][0]["status"] == "completed"
     assert closure["validation_summary"] == "Validated"
-    assert closure["routed_to_responsibility_mappings"][0]["responsibility_ids"] == [
-        "residual-01"
-    ]
+    assert closure["residual_responsibilities"][0]["disposition"] == "routed"
 
 
 def test_fingerprint_is_order_stable_but_subject_changes_are_visible() -> None:
@@ -110,7 +102,6 @@ def test_fingerprint_is_order_stable_but_subject_changes_are_visible() -> None:
     second["success_criterion_definitions"] = list(
         reversed(second["success_criterion_definitions"])
     )
-    second["evidence_refs"] = list(reversed(second["evidence_refs"]))
     second["status"] = "blocked"
     second["result_reviews"] = [{"reviewer": "different"}]
 

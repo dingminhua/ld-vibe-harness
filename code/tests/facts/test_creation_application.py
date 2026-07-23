@@ -43,7 +43,6 @@ def _command(current_specs_repository: Path, tmp_path: Path) -> FactCreationComm
         supplied={
             "title": "Application boundary",
             "status": "open",
-            "source_refs": [{"kind": "repository-path", "locator": "docs/input.md"}],
             "summary": "The application layer owns the complete creation transaction.",
             "priority": "P2",
         },
@@ -83,19 +82,19 @@ def test_prepared_creation_defensively_freezes_nested_supplied_values(
     tmp_path: Path,
 ) -> None:
     command = _command(current_specs_repository, tmp_path)
-    command.supplied["source_refs"] = [{"kind": "repository-path", "locator": "docs/original.md"}]
+    command.supplied["urls"] = [{"ref": "https://example.invalid/original", "title": "Original", "summary": "Test material."}]
     prepared = prepare_fact_creation(command)
     assert isinstance(prepared, PreparedFactCreation)
 
     command.supplied["title"] = "mutated"
-    command.supplied["source_refs"][0]["locator"] = "docs/mutated.md"
+    command.supplied["urls"][0]["ref"] = "https://example.invalid/mutated"
     with allocation_lock(command.boundary, LAYOUTS["spark"]) as counter_path:
         result = create_fact_object_locked(prepared, counter_path)
 
     assert result.status == "created"
     assert result.read is not None and result.read.fields is not None
     assert result.read.fields["title"] == "Application boundary"
-    assert result.read.fields["source_refs"][0]["locator"] == "docs/original.md"
+    assert result.read.fields["urls"][0]["ref"] == "https://example.invalid/original"
 
 
 def test_caller_supplied_observation_time_binds_both_managed_timestamps(

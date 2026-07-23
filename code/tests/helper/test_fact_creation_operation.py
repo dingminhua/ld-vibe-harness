@@ -84,7 +84,6 @@ def _spark(title: str = "Controlled creation") -> dict[str, object]:
     return {
         "title": title,
         "status": "open",
-        "source_refs": [{"kind": "repository-path", "locator": "docs/input.md"}],
         "summary": "AI supplied semantic content; Code owns identity and timestamps.",
         "priority": "P2",
     }
@@ -94,7 +93,6 @@ def _workcase(*, status: str = "open") -> dict[str, object]:
     fact_object: dict[str, object] = {
         "title": "Controlled WorkCase",
         "status": status,
-        "source_refs": [{"kind": "repository-path", "locator": "docs/input.md"}],
         "summary": "Waiting for Human execution approval.",
         "resume_from": "Present plan version 1 for Human approval.",
         "waiting_on": "Human execution approval.",
@@ -146,7 +144,6 @@ def _workcase(*, status: str = "open") -> dict[str, object]:
     ]
     if status == "blocked":
         fact_object["blocking_summary"] = "Required external evidence is not yet available."
-        fact_object["evidence_refs"] = [{"kind": "repository-path", "locator": "docs/blocker.md"}]
     return fact_object
 
 
@@ -162,8 +159,6 @@ def _workcase(*, status: str = "open") -> dict[str, object]:
             {
                 "title": "Controlled ADR",
                 "status": "active",
-                "source_refs": [{"kind": "repository-path", "locator": "docs/input.md"}],
-                "evidence_refs": [{"kind": "repository-path", "locator": "docs/evidence.md"}],
                 "decision_question": "Who assigns the final object identity?",
                 "decision": "Code assigns it in the creation critical section.",
                 "applicability": "Single-object V4 fact creation.",
@@ -177,8 +172,6 @@ def _workcase(*, status: str = "open") -> dict[str, object]:
             {
                 "title": "Candidate identity treated as reserved",
                 "status": "active",
-                "source_refs": [{"kind": "repository-path", "locator": "docs/input.md"}],
-                "evidence_refs": [{"kind": "repository-path", "locator": "docs/evidence.md"}],
                 "applicability": "Concurrent V4 fact creation.",
                 "validation_summary": "Two drafts can safely receive different final identities.",
                 "symptoms": "Concurrent drafts expect the same final ID.",
@@ -493,9 +486,6 @@ def test_create_revalidates_cross_type_relation_with_complete_schema_set(tmp_pat
                 "created_at: 2026-07-14T09:00:00+08:00",
                 "updated_at: 2026-07-14T09:00:00+08:00",
                 "status: open",
-                "source_refs:",
-                "  - kind: repository-path",
-                "    locator: docs/input.md",
                 "summary: Waiting for Human execution approval",
                 "resume_from: Present plan version 1 for Human approval",
                 "waiting_on: Human execution approval",
@@ -683,49 +673,26 @@ def test_failed_write_back_reports_residue_when_exact_rollback_fails(tmp_path: P
     assert (project / "ldvh-base/sparks/spark-0001.yaml").is_file()
 
 
-def test_create_study_validates_markdown_carrier_and_tracked_sources(tmp_path: Path) -> None:
+def test_create_study_validates_markdown_carrier_and_external_urls(tmp_path: Path) -> None:
     workspace, project = _fixture(tmp_path)
-    docs = project / "docs"
-    docs.mkdir()
-    (docs / "question.md").write_text("Research request.\n", encoding="utf-8")
-    (docs / "evidence.md").write_text("Observed evidence.\n", encoding="utf-8")
-    _git(project, "add", "docs")
     basis = _prepare(workspace, project, "study")
     observed = "2026-07-13T09:00:00+08:00"
     study = {
         "frontmatter": {
             "title": "Controlled Study creation",
             "status": "active",
-            "source_refs": [
-                {
-                    "kind": "repository-path",
-                    "locator": "docs/question.md",
-                    "observed_at": observed,
-                }
-            ],
-            "evidence_refs": [
-                {
-                    "kind": "repository-path",
-                    "locator": "docs/evidence.md",
-                    "observed_at": observed,
-                },
-                {
-                    "kind": "web-page",
-                    "locator": "https://example.invalid/controlled-study-evidence",
-                    "observed_at": observed,
-                },
-            ],
+            "urls": [{"ref": "https://example.invalid/controlled-study-evidence", "title": "Controlled Study evidence", "summary": "External material used by the test Study."}],
             "applicability": "This test repository and the current creation contract.",
-            "validation_summary": "The tracked evidence file was read and mapped to the conclusion.",
+            "validation_summary": "The external material was read and its stated scope was mapped to the conclusion.",
             "research_question": "Can Code create a complete Study only after AI supplies its semantics?",
             "abstract": (
-                "The controlled path validates frontmatter, report structure, and tracked evidence before creation."
+                "The controlled path validates frontmatter, report structure, and external material before creation."
             ),
         },
         "body": "\n\n".join(
             [
                 "## 研究问题\n\n验证受控创建是否承接完整 Study。",
-                "## 输入、方法与观察边界\n\n读取 docs/question.md、docs/evidence.md 与外部网页资料。",
+                "## 输入、方法与观察边界\n\n阅读外部资料，并保持结论在其公开范围内。",
                 "## 关键发现\n\nCode 可以在最终分配身份后验证完整载体。",
                 "## 结论与限制\n\n结论仅适用于当前测试仓库和当前契约。",
                 "## 建议\n\n继续保持草案阶段无正式文件副作用。",

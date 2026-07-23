@@ -39,9 +39,6 @@ title: Exact update
 created_at: 2026-07-14T09:00:00+08:00
 updated_at: 2026-07-14T10:00:00+08:00
 status: open
-source_refs:
-  - kind: repository-path
-    locator: docs/input.md
 summary: Before update
 priority: P2
 """,
@@ -166,7 +163,6 @@ def _create_workcase(workspace: Path, project: Path) -> dict[str, str]:
     fact_object: dict[str, object] = {
         "title": "Controller-owned review lifecycle",
         "status": "open",
-        "source_refs": [{"kind": "repository-path", "locator": "docs/input.md"}],
         "summary": "Current plan is ready for Human approval",
         "resume_from": "Request approval for the presented current plan",
         "waiting_on": "Human execution approval",
@@ -310,10 +306,8 @@ def test_workcase_helper_walks_controller_owned_review_and_atomic_closure(tmp_pa
                         "criterion_id": "criterion-01",
                         "outcome": "satisfied",
                         "summary": "The focused lifecycle result was produced and verified",
-                        "evidence_refs": [{"kind": "repository-path", "locator": "docs/evidence.md"}],
                     }
                 ],
-                "evidence_refs": [{"kind": "repository-path", "locator": "docs/evidence.md"}],
             }
         )
         item = fields["work_items"][0]
@@ -323,7 +317,6 @@ def test_workcase_helper_walks_controller_owned_review_and_atomic_closure(tmp_pa
             {
                 "status": "completed",
                 "result_summary": "The bounded result was produced and verified",
-                "evidence_refs": [{"kind": "repository-path", "locator": "docs/evidence.md"}],
             }
         )
 
@@ -609,7 +602,6 @@ def test_workcase_delta_walks_controller_owned_review_and_atomic_closure(tmp_pat
         {
             "status": "completed",
             "result_summary": "The bounded result was produced and verified",
-            "evidence_refs": [{"kind": "repository-path", "locator": "docs/evidence.md"}],
         }
     )
     update(
@@ -625,10 +617,8 @@ def test_workcase_delta_walks_controller_owned_review_and_atomic_closure(tmp_pat
                     "criterion_id": "criterion-01",
                     "outcome": "satisfied",
                     "summary": "The focused lifecycle result was produced and verified",
-                    "evidence_refs": [{"kind": "repository-path", "locator": "docs/evidence.md"}],
                 }
             ],
-            "evidence_refs": [{"kind": "repository-path", "locator": "docs/evidence.md"}],
         }
     )
     update(
@@ -939,9 +929,6 @@ title: Legacy WorkCase
 created_at: 2026-07-14T09:00:00+08:00
 updated_at: 2026-07-14T10:00:00+08:00
 status: open
-source_refs:
-- kind: repository-path
-  locator: docs/input.md
 summary: Waiting for Human approval
 resume_from: Present the plan
 waiting_on: Human execution approval
@@ -1407,7 +1394,6 @@ def test_update_rejects_managed_fields_and_terminal_reopen(tmp_path: Path) -> No
     terminal["status"] = "discarded"
     terminal["disposition_summary"] = "Human chose to stop tracking this Spark"
     terminal["closed_at"] = "2026-07-14T11:00:00+08:00"
-    terminal["evidence_refs"] = [{"kind": "repository-path", "locator": "docs/evidence.md"}]
     terminal.pop("priority")
     response = handle_request(
         "call",
@@ -1420,7 +1406,7 @@ def test_update_rejects_managed_fields_and_terminal_reopen(tmp_path: Path) -> No
     terminal_read = _read(workspace, project)
     reopen = _mutable(terminal_read)
     reopen["status"] = "open"
-    for key in ("disposition_summary", "closed_at", "evidence_refs"):
+    for key in ("disposition_summary", "closed_at"):
         reopen.pop(key)
     reopen["priority"] = "P2"
     rejected = handle_request(
@@ -1459,10 +1445,7 @@ def test_study_update_preserves_submitted_body_boundary(tmp_path: Path) -> None:
         "frontmatter": {
             "title": "Study update",
             "status": "active",
-            "source_refs": [{"kind": "repository-path", "locator": "docs/question.md", "observed_at": observed}],
-            "evidence_refs": [
-                {"kind": "human-provided-artifact", "locator": "docs/evidence.md", "observed_at": observed}
-            ],
+            "urls": [{"ref": "https://example.invalid/study-update", "title": "Study update evidence", "summary": "External material used by the test Study."}],
             "applicability": "Current Study update test.",
             "validation_summary": "The local evidence was checked.",
             "research_question": "Does update preserve the submitted Markdown body boundary?",

@@ -1,6 +1,13 @@
 from __future__ import annotations
 
-from ldvh.facts.relations import _source_condition, _target_condition, _target_has_readable_title, _workcase_residual_mapping_issues
+from pathlib import Path
+
+from ldvh.facts.relations import _source_condition, _target_condition, _target_has_readable_title, validate_project_relations
+from ldvh.facts.repository import FactReadResult
+
+
+class _CurrentProjectIndex:
+    governed_project_id = "current-project"
 
 
 def test_spark_routed_to_rejects_study_but_accepts_other_stable_fact_types() -> None:
@@ -22,59 +29,45 @@ def test_spark_terminal_relation_sources_match_their_status_semantics() -> None:
     assert not _source_condition("spark", "supersedes", {"status": "routed"})
 
 
-def _current_workcase_relations() -> dict[str, object]:
-    return {
-        "workcase_profile": "control-contract-v1",
-        "residual_responsibilities": [
-            {
-                "residual_id": "residual-01",
-                "summary": "A downstream responsibility remains",
-                "disposition": "routed",
-            }
-        ],
-        "relations": [
-            {
-                "relation_key": "routed-to",
-                "target": {
-                    "governed_project_id": "sample",
-                    "fact_type_key": "workcase",
-                    "object_id": "workcase-0002",
-                },
-                "responsibility_ids": ["residual-01"],
-            }
-        ],
-    }
+def test_spark_relations_are_limited_to_the_current_project_until_cross_project_is_designed() -> None:
+    read = FactReadResult(
+        Path("ldvh-base/sparks/spark-0001.yaml"),
+        "yaml",
+        "mechanically_valid",
+        {
+            "status": "open",
+            "relations": [
+                {
+                    "relation_key": "related-to",
+                    "target": {
+                        "governed_project_id": "other-project",
+                        "fact_type_key": "workcase",
+                        "object_id": "workcase-0001",
+                    },
+                }
+            ],
+        },
+        None,
+        (),
+    )
+
+    issues, unavailable = validate_project_relations(_CurrentProjectIndex(), "spark", "spark-0001", read)  # type: ignore[arg-type]
+
+    assert not unavailable
+    assert any(issue.summary == "Spark 关系目标只允许同一管辖项目" for issue in issues)
 
 
-def test_current_routed_residual_has_an_explicit_valid_mapping() -> None:
-    assert _workcase_residual_mapping_issues(_current_workcase_relations()) == []
+def test_routed_spark_requires_at_least_one_routed_to_relation() -> None:
+    read = FactReadResult(
+        Path("ldvh-base/sparks/spark-0001.yaml"),
+        "yaml",
+        "mechanically_valid",
+        {"status": "routed", "relations": []},
+        None,
+        (),
+    )
 
+    issues, unavailable = validate_project_relations(_CurrentProjectIndex(), "spark", "spark-0001", read)  # type: ignore[arg-type]
 
-def test_current_routed_residual_rejects_missing_unknown_and_non_routed_mappings() -> None:
-    missing = _current_workcase_relations()
-    relations = missing["relations"]
-    assert isinstance(relations, list) and isinstance(relations[0], dict)
-    relations[0].pop("responsibility_ids")
-    issues = _workcase_residual_mapping_issues(missing)
-    assert any("必须显式映射" in issue.summary for issue in issues)
-    assert any("至少一条" in issue.summary for issue in issues)
-
-    accepted = _current_workcase_relations()
-    residuals = accepted["residual_responsibilities"]
-    assert isinstance(residuals, list) and isinstance(residuals[0], dict)
-    residuals[0]["disposition"] = "accepted_stop"
-    issues = _workcase_residual_mapping_issues(accepted)
-    assert any("只能映射" in issue.summary for issue in issues)
-
-    wrong_relation = _current_workcase_relations()
-    relations = wrong_relation["relations"]
-    assert isinstance(relations, list) and isinstance(relations[0], dict)
-    relations[0]["relation_key"] = "depends-on"
-    issues = _workcase_residual_mapping_issues(wrong_relation)
-    assert any("只有 routed-to" in issue.summary for issue in issues)
-
-
-def test_legacy_workcase_does_not_require_current_residual_mapping_contract() -> None:
-    fields = _current_workcase_relations()
-    fields.pop("workcase_profile")
-    assert _workcase_residual_mapping_issues(fields) == []
+    assert not unavailable
+    assert any(issue.summary == "routed Spark 至少需要一条 routed-to 关系" for issue in issues)

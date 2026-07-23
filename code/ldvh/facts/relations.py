@@ -391,6 +391,9 @@ def validate_project_relations(
         if not _source_condition(fact_type_key, relation_key, read.fields):
             issues.append(FactIssue("relation", "关系不允许由当前 source 状态声明", path))
         if target_project != index.governed_project_id:
+            if fact_type_key == "spark":
+                issues.append(FactIssue("relation", "Spark 关系目标只允许同一管辖项目", path))
+                continue
             if relation_key == "supersedes":
                 issues.append(FactIssue("relation", "supersedes 只允许同一管辖项目", path))
             else:
@@ -430,6 +433,10 @@ def validate_project_relations(
                 "relations",
             )
         )
+
+    if fact_type_key == "spark" and read.fields.get("status") == "routed":
+        if not any(item.get("relation_key") == "routed-to" for item in _relations(read)):
+            issues.append(FactIssue("relation", "routed Spark 至少需要一条 routed-to 关系", "relations"))
 
     relation_keys = {str(item.get("relation_key")) for item in _relations(read)} - {"related-to"}
     for relation_key in relation_keys:

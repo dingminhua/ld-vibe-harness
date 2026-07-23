@@ -4,7 +4,6 @@ import { ArrowRight, CheckCircle2, CircleAlert, ClipboardCheck } from 'lucide-re
 import StatusBadge from '@/components/StatusBadge';
 import ObjectStatusFilter from '@/components/ObjectStatusFilter';
 import CopyPathButton from '@/components/CopyPathButton';
-import SparkCreate from '@/components/SparkCreate';
 import ObjectSignalBadges from '@/components/ObjectSignalBadges';
 import PriorityIcon from '@/components/PriorityIcon';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
@@ -602,9 +601,6 @@ export default function ObjectList() {
         />
         {currentType === 'workcase' && (
           <ExecutionFlowLegend t={t} getStatus={getStatus} />
-        )}
-        {currentType === 'spark' && (
-          <SparkCreate onCreated={() => setReloadKey((value) => value + 1)} />
         )}
       </div>
 

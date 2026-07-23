@@ -33,7 +33,6 @@ def _before() -> dict[str, object]:
                 "status": "completed",
                 "approach_summary": "Implement",
                 "result_summary": "Built",
-                "evidence_refs": [{"kind": "working_tree", "locator": "code/module.py"}],
             }
         ],
         "audit_summary": [

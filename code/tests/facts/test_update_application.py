@@ -37,9 +37,6 @@ title: Application update
 created_at: 2026-07-20T09:00:00+08:00
 updated_at: 2026-07-20T10:00:00+08:00
 status: open
-source_refs:
-  - kind: repository-path
-    locator: docs/input.md
 summary: Before update
 priority: P2
 """,
