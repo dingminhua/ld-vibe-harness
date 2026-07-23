@@ -665,6 +665,625 @@ def test_f2_combines_relation_locator_and_field_filters_deterministically(tmp_pa
     ]
 
 
+def test_f2_relation_source_returns_one_hop_edges_with_single_edge_cursor(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    first_workcase = _create(workspace, project, "workcase", _workcase())
+    second_workcase = _create(workspace, project, "workcase", _workcase())
+    spark = _spark("Known source for direct navigation")
+    spark["relations"] = [
+        {
+            "relation_key": "related-to",
+            "target": {
+                "governed_project_id": "sample",
+                "fact_type_key": "workcase",
+                "object_id": first_workcase,
+            },
+        },
+        {
+            "relation_key": "related-to",
+            "target": {
+                "governed_project_id": "sample",
+                "fact_type_key": "workcase",
+                "object_id": second_workcase,
+            },
+        },
+    ]
+    spark_id = _create(workspace, project, "spark", spark)
+    source_ref = {
+        "governed_project_id": "sample",
+        "fact_type_key": "spark",
+        "object_id": spark_id,
+    }
+
+    first = handle_request(
+        "call",
+        "find-fact-object-candidates",
+        _payload(
+            workspace,
+            project,
+            "F2",
+            fact_type_keys=["workcase"],
+            relation_source_refs=[source_ref],
+            page_size=1,
+        ),
+    ).response
+
+    assert first["outcome"] == "ok"
+    assert first["result"]["coverage"] == {
+        "status": "complete",
+        "total_matching": 2,
+        "returned": 1,
+        "offset": 0,
+        "next_cursor": first["result"]["coverage"]["next_cursor"],
+        "object_set_fingerprint": first["result"]["recovery_manifest"]["object_set_fingerprint"],
+    }
+    cursor = first["result"]["coverage"]["next_cursor"]
+    assert isinstance(cursor, str) and cursor
+    navigation = first["result"]["relation_navigation"]
+    assert navigation["source_results"][0]["source_ref"] == source_ref
+    assert navigation["source_results"][0]["check_status"] == "mechanically_valid"
+    assert navigation["edges"][0]["edge_status"] == "returned"
+    assert navigation["edges"][0]["reasons"] == ["relation-source"]
+    assert navigation["edges"][0]["relation_definition_refs"][0]["locator"] == (
+        "spark-fact-type::7. 外部资料、关系与处置"
+    )
+    assert first["result"]["cards"][0]["match_reasons"] == [
+        {"kind": "relation-source", "field_path": "relations[0].target"}
+    ]
+
+    second = handle_request(
+        "call",
+        "find-fact-object-candidates",
+        _payload(
+            workspace,
+            project,
+            "F2",
+            fact_type_keys=["workcase"],
+            relation_source_refs=[source_ref],
+            page_size=1,
+            cursor=cursor,
+        ),
+    ).response
+
+    assert second["outcome"] == "ok"
+    assert second["result"]["coverage"]["offset"] == 1
+    assert second["result"]["coverage"]["returned"] == 1
+    assert second["result"]["coverage"]["next_cursor"] is None
+    assert second["result"]["relation_navigation"]["edges"][0]["relation_index"] == 1
+    assert second["result"]["cards"][0]["match_reasons"] == [
+        {"kind": "relation-source", "field_path": "relations[1].target"}
+    ]
+
+
+def test_f2_relation_source_keeps_relation_key_filter_observable_without_target_read(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    workcase_id = _create(workspace, project, "workcase", _workcase())
+    spark = _spark("Source with an unselected key")
+    spark["relations"] = [
+        {
+            "relation_key": "related-to",
+            "target": {
+                "governed_project_id": "sample",
+                "fact_type_key": "workcase",
+                "object_id": workcase_id,
+            },
+        }
+    ]
+    spark_id = _create(workspace, project, "spark", spark)
+
+    response = handle_request(
+        "call",
+        "find-fact-object-candidates",
+        _payload(
+            workspace,
+            project,
+            "F2",
+            fact_type_keys=["workcase"],
+            relation_source_refs=[{"governed_project_id": "sample", "fact_type_key": "spark", "object_id": spark_id}],
+            relation_keys=["supersedes"],
+        ),
+    ).response
+
+    assert response["outcome"] == "ok"
+    assert response["result"]["coverage"]["total_matching"] == 1
+    assert response["result"]["coverage"]["returned"] == 1
+    assert response["result"]["cards"] == []
+    edge = response["result"]["relation_navigation"]["edges"][0]
+    assert set(edge) == {
+        "source_ref",
+        "relation_index",
+        "relation_key",
+        "target_ref",
+        "relation_definition_refs",
+        "source_refs",
+        "edge_status",
+        "reasons",
+    }
+    assert edge["source_ref"]["object_id"] == spark_id
+    assert edge["relation_key"] == "related-to"
+    assert edge["target_ref"]["object_id"] == workcase_id
+    assert edge["edge_status"] == "filtered"
+    assert edge["reasons"] == ["relation-key-filter"]
+
+
+def test_f2_relation_source_reports_missing_target_without_hiding_the_edge(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    workcase_id = _create(workspace, project, "workcase", _workcase())
+    spark = _spark("Source whose target later disappears")
+    spark["relations"] = [
+        {
+            "relation_key": "related-to",
+            "target": {
+                "governed_project_id": "sample",
+                "fact_type_key": "workcase",
+                "object_id": workcase_id,
+            },
+        }
+    ]
+    spark_id = _create(workspace, project, "spark", spark)
+    (project / "ldvh-base" / "workcases" / f"{workcase_id}.yaml").unlink()
+
+    response = handle_request(
+        "call",
+        "find-fact-object-candidates",
+        _payload(
+            workspace,
+            project,
+            "F2",
+            fact_type_keys=["workcase"],
+            relation_source_refs=[{"governed_project_id": "sample", "fact_type_key": "spark", "object_id": spark_id}],
+        ),
+    ).response
+
+    assert response["outcome"] == "partial"
+    assert response["result"]["coverage"]["status"] == "partial"
+    edge = response["result"]["relation_navigation"]["edges"][0]
+    assert edge["target_ref"]["object_id"] == workcase_id
+    assert edge["edge_status"] == "not_found"
+    assert edge["reasons"] == ["target-not-found"]
+    assert response["result"]["cards"] == []
+    assert any(
+        isinstance(item, dict) and item.get("edge_status") == "not_found" for item in response["gaps"][0]["scope"]
+    )
+
+
+def test_f2_relation_source_reports_source_invalid_when_its_own_relation_is_not_allowed(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    workcase_id = _create(workspace, project, "workcase", _workcase())
+    spark_id = _create(workspace, project, "spark", _spark("Source with a disallowed routed-to declaration"))
+    spark_path = project / "ldvh-base" / "sparks" / f"{spark_id}.yaml"
+    spark_path.write_text(
+        spark_path.read_text(encoding="utf-8")
+        + "relations:\n"
+        + "- relation_key: routed-to\n"
+        + "  target:\n"
+        + "    governed_project_id: sample\n"
+        + "    fact_type_key: workcase\n"
+        + f"    object_id: {workcase_id}\n",
+        encoding="utf-8",
+    )
+
+    response = handle_request(
+        "call",
+        "find-fact-object-candidates",
+        _payload(
+            workspace,
+            project,
+            "F2",
+            fact_type_keys=["workcase"],
+            relation_source_refs=[{"governed_project_id": "sample", "fact_type_key": "spark", "object_id": spark_id}],
+        ),
+    ).response
+
+    assert response["outcome"] == "partial"
+    edge = response["result"]["relation_navigation"]["edges"][0]
+    assert edge["edge_status"] == "invalid"
+    assert edge["reasons"] == ["source-invalid"]
+    assert response["result"]["cards"] == []
+
+
+def test_f2_relation_source_reports_invalid_target_after_source_validation(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    workcase_id = _create(workspace, project, "workcase", _workcase())
+    spark = _spark("Source whose target becomes structurally invalid")
+    spark["relations"] = [
+        {
+            "relation_key": "related-to",
+            "target": {
+                "governed_project_id": "sample",
+                "fact_type_key": "workcase",
+                "object_id": workcase_id,
+            },
+        }
+    ]
+    spark_id = _create(workspace, project, "spark", spark)
+    (project / "ldvh-base" / "workcases" / f"{workcase_id}.yaml").write_text("not: [valid", encoding="utf-8")
+
+    response = handle_request(
+        "call",
+        "find-fact-object-candidates",
+        _payload(
+            workspace,
+            project,
+            "F2",
+            fact_type_keys=["workcase"],
+            relation_source_refs=[{"governed_project_id": "sample", "fact_type_key": "spark", "object_id": spark_id}],
+        ),
+    ).response
+
+    assert response["outcome"] == "partial"
+    edge = response["result"]["relation_navigation"]["edges"][0]
+    assert edge["edge_status"] == "invalid"
+    assert edge["reasons"] == ["target-invalid"]
+    assert response["result"]["cards"] == []
+
+
+def test_f2_relation_source_applies_type_status_and_reverse_relation_filters_with_and_semantics(
+    tmp_path: Path,
+) -> None:
+    workspace, project = _fixture(tmp_path)
+    dependency_id = _create(workspace, project, "workcase", _workcase())
+    target = _workcase()
+    target["relations"] = [
+        {
+            "relation_key": "depends-on",
+            "target": {
+                "governed_project_id": "sample",
+                "fact_type_key": "workcase",
+                "object_id": dependency_id,
+            },
+        }
+    ]
+    target_id = _create(workspace, project, "workcase", target)
+    source = _spark("Source used with forward and reverse filters")
+    source["relations"] = [
+        {
+            "relation_key": "related-to",
+            "target": {
+                "governed_project_id": "sample",
+                "fact_type_key": "workcase",
+                "object_id": target_id,
+            },
+        }
+    ]
+    source_id = _create(workspace, project, "spark", source)
+    source_ref = {"governed_project_id": "sample", "fact_type_key": "spark", "object_id": source_id}
+    dependency_ref = {"governed_project_id": "sample", "fact_type_key": "workcase", "object_id": dependency_id}
+
+    returned = handle_request(
+        "call",
+        "find-fact-object-candidates",
+        _payload(
+            workspace,
+            project,
+            "F2",
+            fact_type_keys=["workcase"],
+            statuses=["open"],
+            relation_targets=[dependency_ref],
+            relation_source_refs=[source_ref],
+        ),
+    ).response
+    wrong_type = handle_request(
+        "call",
+        "find-fact-object-candidates",
+        _payload(
+            workspace,
+            project,
+            "F2",
+            fact_type_keys=["spark"],
+            relation_source_refs=[source_ref],
+        ),
+    ).response
+    wrong_status = handle_request(
+        "call",
+        "find-fact-object-candidates",
+        _payload(
+            workspace,
+            project,
+            "F2",
+            fact_type_keys=["workcase"],
+            statuses=["blocked"],
+            relation_source_refs=[source_ref],
+        ),
+    ).response
+
+    assert returned["outcome"] == "ok"
+    assert [reason["kind"] for reason in returned["result"]["cards"][0]["match_reasons"]] == [
+        "status",
+        "relation-target",
+        "relation-source",
+    ]
+    assert wrong_type["result"]["cards"] == []
+    assert wrong_type["result"]["relation_navigation"]["edges"][0]["reasons"] == ["fact-type-filter"]
+    assert wrong_status["result"]["cards"] == []
+    assert wrong_status["result"]["relation_navigation"]["edges"][0]["reasons"] == ["explicit-status-filter"]
+
+
+def test_f2_relation_source_rejects_cross_project_duplicate_and_illegal_key_inputs(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    source_ref = {"governed_project_id": "sample", "fact_type_key": "spark", "object_id": "spark-0001"}
+
+    cross_project = handle_request(
+        "call",
+        "find-fact-object-candidates",
+        _payload(
+            workspace,
+            project,
+            "F2",
+            fact_type_keys=["spark"],
+            relation_source_refs=[{**source_ref, "governed_project_id": "other-project"}],
+        ),
+    ).response
+    duplicate = handle_request(
+        "call",
+        "find-fact-object-candidates",
+        _payload(
+            workspace,
+            project,
+            "F2",
+            fact_type_keys=["spark"],
+            relation_source_refs=[source_ref, source_ref],
+        ),
+    ).response
+    missing_source = handle_request(
+        "call",
+        "find-fact-object-candidates",
+        _payload(workspace, project, "F2", fact_type_keys=["spark"], relation_keys=["related-to"]),
+    ).response
+    illegal_key = handle_request(
+        "call",
+        "find-fact-object-candidates",
+        _payload(
+            workspace,
+            project,
+            "F2",
+            fact_type_keys=["spark"],
+            relation_source_refs=[source_ref],
+            relation_keys=["not-a-relation-key"],
+        ),
+    ).response
+
+    assert [response["outcome"] for response in (cross_project, duplicate, missing_source, illegal_key)] == [
+        "invalid_request",
+        "invalid_request",
+        "invalid_request",
+        "invalid_request",
+    ]
+
+
+def test_f2_relation_source_does_not_leak_later_failed_edge_gaps_before_its_page(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    first_workcase = _create(workspace, project, "workcase", _workcase())
+    second_workcase = _create(workspace, project, "workcase", _workcase())
+
+    def source_for(target_id: str, title: str) -> str:
+        spark = _spark(title)
+        spark["relations"] = [
+            {
+                "relation_key": "related-to",
+                "target": {
+                    "governed_project_id": "sample",
+                    "fact_type_key": "workcase",
+                    "object_id": target_id,
+                },
+            }
+        ]
+        return _create(workspace, project, "spark", spark)
+
+    first_source = source_for(first_workcase, "First source with a disappearing target")
+    second_source = source_for(second_workcase, "Second source with a disappearing target")
+    (project / "ldvh-base" / "workcases" / f"{first_workcase}.yaml").unlink()
+    (project / "ldvh-base" / "workcases" / f"{second_workcase}.yaml").unlink()
+
+    response = handle_request(
+        "call",
+        "find-fact-object-candidates",
+        _payload(
+            workspace,
+            project,
+            "F2",
+            fact_type_keys=["workcase"],
+            relation_source_refs=[
+                {"governed_project_id": "sample", "fact_type_key": "spark", "object_id": first_source},
+                {"governed_project_id": "sample", "fact_type_key": "spark", "object_id": second_source},
+            ],
+            page_size=1,
+        ),
+    ).response
+
+    assert response["outcome"] == "partial"
+    assert response["result"]["coverage"]["total_matching"] == 2
+    assert response["result"]["coverage"]["returned"] == 1
+    assert isinstance(response["result"]["coverage"]["next_cursor"], str)
+    assert len(response["result"]["relation_navigation"]["edges"]) == 1
+    delivered_edge_gaps = [
+        item for item in response["gaps"][0]["scope"] if isinstance(item, dict) and item.get("edge_status")
+    ]
+    assert delivered_edge_gaps == [
+        {
+            "source_ref": response["result"]["relation_navigation"]["edges"][0]["source_ref"],
+            "relation_key": "related-to",
+            "target_ref": response["result"]["relation_navigation"]["edges"][0]["target_ref"],
+            "edge_status": "not_found",
+            "reasons": ["target-not-found"],
+        }
+    ]
+
+
+def test_f2_relation_source_reports_each_missing_target_of_one_source_as_target_not_found(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    first_workcase = _create(workspace, project, "workcase", _workcase())
+    second_workcase = _create(workspace, project, "workcase", _workcase())
+    source = _spark("One source with two independently missing targets")
+    source["relations"] = [
+        {
+            "relation_key": "related-to",
+            "target": {
+                "governed_project_id": "sample",
+                "fact_type_key": "workcase",
+                "object_id": first_workcase,
+            },
+        },
+        {
+            "relation_key": "related-to",
+            "target": {
+                "governed_project_id": "sample",
+                "fact_type_key": "workcase",
+                "object_id": second_workcase,
+            },
+        },
+    ]
+    source_id = _create(workspace, project, "spark", source)
+    (project / "ldvh-base" / "workcases" / f"{first_workcase}.yaml").unlink()
+    (project / "ldvh-base" / "workcases" / f"{second_workcase}.yaml").unlink()
+
+    response = handle_request(
+        "call",
+        "find-fact-object-candidates",
+        _payload(
+            workspace,
+            project,
+            "F2",
+            fact_type_keys=["workcase"],
+            relation_source_refs=[{"governed_project_id": "sample", "fact_type_key": "spark", "object_id": source_id}],
+            page_size=2,
+        ),
+    ).response
+
+    assert response["outcome"] == "partial"
+    assert [edge["edge_status"] for edge in response["result"]["relation_navigation"]["edges"]] == [
+        "not_found",
+        "not_found",
+    ]
+    assert [edge["reasons"] for edge in response["result"]["relation_navigation"]["edges"]] == [
+        ["target-not-found"],
+        ["target-not-found"],
+    ]
+
+
+def test_f2_relation_source_deduplicates_target_cards_without_dropping_distinct_edges(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    workcase_id = _create(workspace, project, "workcase", _workcase())
+
+    def source_for(title: str) -> str:
+        spark = _spark(title)
+        spark["relations"] = [
+            {
+                "relation_key": "related-to",
+                "target": {
+                    "governed_project_id": "sample",
+                    "fact_type_key": "workcase",
+                    "object_id": workcase_id,
+                },
+            }
+        ]
+        return _create(workspace, project, "spark", spark)
+
+    first_source = source_for("First source to the same target")
+    second_source = source_for("Second source to the same target")
+    response = handle_request(
+        "call",
+        "find-fact-object-candidates",
+        _payload(
+            workspace,
+            project,
+            "F2",
+            fact_type_keys=["workcase"],
+            relation_source_refs=[
+                {"governed_project_id": "sample", "fact_type_key": "spark", "object_id": first_source},
+                {"governed_project_id": "sample", "fact_type_key": "spark", "object_id": second_source},
+            ],
+            page_size=2,
+        ),
+    ).response
+
+    assert response["outcome"] == "ok"
+    assert response["result"]["coverage"]["total_matching"] == 2
+    assert len(response["result"]["relation_navigation"]["edges"]) == 2
+    assert len(response["result"]["cards"]) == 1
+    assert response["result"]["cards"][0]["fact_ref"]["object_id"] == workcase_id
+
+
+def test_f2_relation_source_keeps_a_self_edge_as_source_invalid_without_recursing(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    source_id = _create(workspace, project, "spark", _spark("Source with a self edge"))
+    source_path = project / "ldvh-base" / "sparks" / f"{source_id}.yaml"
+    source_path.write_text(
+        source_path.read_text(encoding="utf-8")
+        + "relations:\n"
+        + "- relation_key: related-to\n"
+        + "  target:\n"
+        + "    governed_project_id: sample\n"
+        + "    fact_type_key: spark\n"
+        + f"    object_id: {source_id}\n",
+        encoding="utf-8",
+    )
+
+    response = handle_request(
+        "call",
+        "find-fact-object-candidates",
+        _payload(
+            workspace,
+            project,
+            "F2",
+            fact_type_keys=["spark"],
+            relation_source_refs=[{"governed_project_id": "sample", "fact_type_key": "spark", "object_id": source_id}],
+        ),
+    ).response
+
+    assert response["outcome"] == "partial"
+    assert len(response["result"]["relation_navigation"]["edges"]) == 1
+    edge = response["result"]["relation_navigation"]["edges"][0]
+    assert edge["target_ref"]["object_id"] == source_id
+    assert edge["edge_status"] == "invalid"
+    assert edge["reasons"] == ["source-invalid"]
+    assert response["result"]["cards"] == []
+
+
+def test_f2_relation_source_keeps_terminal_direct_target_without_default_status_filter(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    pitfall_id = _create(workspace, project, "pitfall", _pitfall())
+    spark = _spark("Source to a terminal direct target")
+    spark["relations"] = [
+        {
+            "relation_key": "related-to",
+            "target": {
+                "governed_project_id": "sample",
+                "fact_type_key": "pitfall",
+                "object_id": pitfall_id,
+            },
+        }
+    ]
+    spark_id = _create(workspace, project, "spark", spark)
+    pitfall_path = project / "ldvh-base" / "pitfalls" / f"{pitfall_id}.yaml"
+    pitfall_text = pitfall_path.read_text(encoding="utf-8")
+    updated_line = next(line for line in pitfall_text.splitlines() if line.startswith("updated_at:"))
+    pitfall_path.write_text(
+        pitfall_text.replace("status: active", "status: retired")
+        + f"disposition_summary: This experience is now historical.\nclosed_at: {updated_line.split(': ', 1)[1]}\n",
+        encoding="utf-8",
+    )
+
+    response = handle_request(
+        "call",
+        "find-fact-object-candidates",
+        _payload(
+            workspace,
+            project,
+            "F2",
+            fact_type_keys=["pitfall"],
+            relation_source_refs=[{"governed_project_id": "sample", "fact_type_key": "spark", "object_id": spark_id}],
+        ),
+    ).response
+
+    assert response["outcome"] == "ok"
+    assert response["result"]["coverage"]["status"] == "complete"
+    assert response["result"]["cards"][0]["fields"]["status"] == "retired"
+    assert response["result"]["cards"][0]["match_reasons"] == [
+        {"kind": "relation-source", "field_path": "relations[0].target"}
+    ]
+
+
 def test_candidate_scan_stays_bound_to_selected_linked_worktree(tmp_path: Path) -> None:
     workspace, project = _fixture(tmp_path)
     marker = project / "tracked.txt"

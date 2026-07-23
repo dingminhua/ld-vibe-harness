@@ -1,0 +1,105 @@
+title: 事实候选正向一跳关联导航
+status: open
+summary: 独立结果审核已通过，Controller 已接受其对来源失败归因、边分页和范围边界的复核；实现结果已就绪，尚未准备关闭报告。
+resume_from: 若要关闭 WorkCase，进入 closure_preparing，形成验证总结、结果分类和处置后再提交第二次 Human Gate。
+priority: P2
+goal: 在不让 Helper、Code 或环境入口裁决语义相关性、规则适用、授权或完成的前提下，扩展既有 find-fact-object-candidates，使 AI 能从已知事实稳定种子取得来源定义的一跳正向关系、可继续精确读取的 F2 候选以及可识别的未解析范围。
+scope: 仅覆盖 05 中既有 find-fact-object-candidates 的 F2 契约、实现与测试：新增事实源稳定引用和可选关系键的确定性筛选，交付边级来源、目标身份、候选卡、继续读取入口、分页、coverage、cursor 与 gaps。严格排除新增 operation_key、修改 00/01/04/09/20–24、规则种子、跨要素边、语义相似或排序、自动多跳、自动 F3、环境自动调用、写回和持久知识图。实现前必须记录并保护 specs/05-事实模型基础规范.md、fact_candidate_request.py、fact_candidate_operation.py、test_fact_candidate_operation.py 的既有未提交 Study/invalid 修复差异；方案 C 只能在该基线上非覆盖合并。
+workcase_profile: control-contract-v1
+success_criterion_definitions:
+- criterion_id: criterion-01
+  statement: 05 对既有 find-fact-object-candidates 明确定义正向一跳关系源输入、关系键过滤、边与来源回指、F2/精确读取边界、稳定排序、分页、partial、cursor 和 gaps；候选、边或排序不被表达为语义相关、规则适用、行动许可或完成结论。
+- criterion_id: criterion-02
+  statement: 给定有效事实源，Helper 仅按该对象 relations 返回一跳正向边和对应 F2 候选；终态显式关系目标不会因默认候选状态被静默遗漏，且不会自动读取 F3 或递归展开。
+- criterion_id: criterion-03
+  statement: 目标缺失、invalid、unavailable、被类型/状态/关系键过滤、预算或分页未展开的关系边均可回指源、relation_key、目标与原因，不会从结果中静默消失；cursor 与种子、过滤、worktree 和对象集连续性绑定。
+- criterion_id: criterion-04
+  statement: 实现和 contract tests 覆盖字段闭集、跨项目/重复/非法源引用、非法关系键、正反向过滤共存、终态、源或目标不可读、过滤可观察性、分页与 cursor 失效、多边同目标、自指/环一跳呈现，以及无语义评分、无自动递归；相关测试和规范回读通过。
+phase: controller_checking
+plan_version: 1
+work_items:
+- item_id: item-01
+  goal: 定义方案 C 的来源先行契约并保护并发工作基线。
+  expected_result: 05 的候选发现输入、结果和验证要求形成可审核的正向一跳关系契约：边/卡片/过滤/分页/cursor/coverage/gaps 的关系明确；既有四个未提交文件差异已回读并作为不可覆盖基线。
+  status: completed
+  approach_summary: 先记录当前差异与归属；仅修改 05 的相关契约位置，固定 relation_source_refs、可选 relation_keys、关系边来源与确定性位置、AND 组合过滤、边级排序、单跳和失败披露。任何基线归属或内容变化均暂停相关实现并重新核对。
+  result_summary: 已保护四个并发修改基线；05 §11.5–§11.6 与 §13 已定义来源种子、relation key、当页边分页、卡片投影、失败披露、coverage/cursor 与 gaps，并经独立复审通过。
+- item_id: item-02
+  goal: 在既有候选发现路径中实现方案 C 并建立范围匹配 contract tests。
+  expected_result: Helper 可按已定义的正向一跳契约返回边、可读取 F2 目标和未解析范围；现有 Study 卡片与 invalid 修复不被覆盖，新增行为由针对性正反测试证明。
+  status: completed
+  depends_on:
+  - item-01
+  approach_summary: 在现有请求解析、扫描、卡片和结果组织中作最小增量；不新建 operation、不写回关系、不进行语义筛选。测试覆盖显式关系目标、缺失/不可读目标、过滤与分页等契约边界。
+  result_summary: 已在既有 find-fact-object-candidates 中实现 relation_source_refs/relation_keys、来源结果、边级分页和目标 F2 投影；新增 contract tests 覆盖正常与失败路径，未覆盖并发的 Study/invalid 修改。
+- item_id: item-03
+  goal: 验证方案 C 的规范、实现和职责边界并形成可交付结果。
+  expected_result: 规范差异、结构与语义回读、相关 contract tests 和适当回归测试完成；00 未被扩张，未验证范围和并发基线影响如实记录，结果可进入独立审核。
+  status: completed
+  depends_on:
+  - item-02
+  approach_summary: 执行来源回读、实际 Helper 调用与测试；核对不新增跨要素/规则导航、环境自动调用或语义判断。对失败、partial 和未验证范围保留明确结果，不以测试通过扩大能力声明。
+  result_summary: 规范结构检查零问题；实际 CLI、候选发现/CLI/服务/类型投影相关回归、格式与 diff 检查通过；独立结果审核的两轮问题均已修复并复审通过。
+audit_summary:
+- audit_id: audit-01
+  subject_kind: pre_creation_plan
+  subject_version: 1
+  review_count: 2
+  summary: 独立审核确认方案 C 的最小范围与 00 相容；首轮指出授权记录、并发基线、边级分页与缺口披露、测试覆盖及 Spark 承接不足，主控修订计划并复审通过。
+  findings:
+  - finding_id: finding-01
+    topic: 方案 C 的边级契约与并发工作保护
+    controller_disposition: corrected
+    resolution_summary: 计划已明确将既有未提交差异设为不可覆盖基线，并固定边、过滤、分页、cursor、coverage/gaps 与扩展测试范围；创建后将 spark-0031 routed-to 新 WorkCase。
+    rereview_outcome: performed
+    final_route: current_plan
+creation_reviews:
+- reviewer: codex-agent:/root/workcase_creation_review
+  reviewed_at: '2026-07-23T13:14:32.490Z'
+  subject_version: 1
+  scope: 覆盖目标、范围、四项成功标准、三项工作项及依赖、方案 C 最小性、05 契约归属、并发基线保护、验证方式、Spark 承接与 00 职责边界。
+  conclusion: pass
+  feedback:
+  - 实施时必须先回读并保留既有四个未提交差异；任何归属或内容基线变化都应暂停相关实现并重新核对，不得借方案 C 回退既有 Study/invalid 修复。
+  review_basis:
+    projection_key: plan_current
+    subject_fingerprint: 2c610845e8292b4dd3fc401d969eb8ed4a51df8fdb3eee5dcb691a5d799c957b
+  controller_resolution: 1. 接受并落实：item-01 已将四个并发修改设为不可覆盖基线，任何变化暂停实现重新核对。复审结论为 pass。当前仅创建等待 Human 执行批准的计划，不写 execution_approval、不启动 item-01。
+execution_approval:
+  subject_version: 1
+  approved_at: '2026-07-23T23:38:17.363974+08:00'
+  summary: Human 已明确批准 workcase-0011 的 plan_version 1，并授权开始执行方案 C。
+  source_refs:
+  - kind: human
+    locator: conversation:user-approved-workcase-0011-plan-v1
+result_version: 1
+controller_check_summary: 已逐项回读 05 契约与实现：来源种子、关系键、边分页、cursor、partial/gaps、终态和 source/target 失败归因均由实际代码与测试覆盖。规范结构检查零问题；候选发现、CLI/服务与类型投影相关回归通过；实际 Helper 调用从 spark-0031 返回 routed-to workcase-0011 的可回指 F2 卡与一跳边。独立结果复核曾指出来源自身失效和失败边分页泄露，均已修复并复审通过。未执行全仓全量回归，且未改变 00/01/04/09/20–24、规则导航或环境入口。
+success_criterion_results:
+- criterion_id: criterion-01
+  outcome: satisfied
+  summary: 05 已明确 relation_source_refs/relation_keys、来源和边回指、F2/F3 边界、单一边分页、partial、cursor 与 gaps；候选和边未被表达为语义或授权结论。
+- criterion_id: criterion-02
+  outcome: satisfied
+  summary: Helper 仅沿输入事实对象的直接 relations 返回 F2 目标；终态直接目标测试通过，未实现自动 F3 或递归。
+- criterion_id: criterion-03
+  outcome: satisfied
+  summary: 目标缺失和 invalid、来源自身 invalid、键/类型/状态过滤与分页均可观察；后续失败边由同一 cursor 继续而不提前泄露。
+- criterion_id: criterion-04
+  outcome: satisfied
+  summary: 针对性测试覆盖输入拒绝、正反向 AND、终态、source/target invalid、多边同目标、自指、边分页与 cursor；规范检查、实际 CLI 与独立结果复核通过。
+result_reviews:
+- reviewer: codex-agent:/root/result_review
+  reviewed_at: '2026-07-24T00:12:10.848188+08:00'
+  subject_version: 1
+  scope: 全部 item 结果、四项成功标准、Controller 自检、05 契约、请求解析、边级实现、当前页 gaps、单一 cursor、实际测试和残余职责边界。
+  conclusion: pass
+  feedback:
+  - 复核两轮发现的来源自身失败归因、同一来源多目标失败与分页泄露均已修复；当前实现保持方案 C 的一跳、来源可回指和非语义边界。
+  review_basis:
+    projection_key: result_implementation
+    subject_fingerprint: 9edef9883d273f029c0eaef8b7e06d42a7af1011abba41630ad7f17805752118
+  controller_resolution: 1. 接受。两轮独立复核提出的来源自身失败归因、多条目标失败和后续边页泄露问题均已以契约、实现和反例测试修正；未发现需重开执行或再次审核的剩余问题。
+object_id: workcase-0011
+fact_type_key: workcase
+created_at: '2026-07-23T21:14:32.785735+08:00'
+updated_at: '2026-07-24T00:12:20.171848+08:00'

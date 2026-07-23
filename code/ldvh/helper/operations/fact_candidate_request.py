@@ -20,6 +20,8 @@ OPTIONAL_INPUTS = (
     "arguments.statuses",
     "arguments.exact_refs",
     "arguments.relation_targets",
+    "arguments.relation_source_refs",
+    "arguments.relation_keys",
     "arguments.current_workcase_ref",
     "arguments.selected_fact_refs",
     "arguments.locator_text",
@@ -37,6 +39,8 @@ _ARGUMENT_FIELDS = frozenset(
         "statuses",
         "exact_refs",
         "relation_targets",
+        "relation_source_refs",
+        "relation_keys",
         "current_workcase_ref",
         "selected_fact_refs",
         "locator_text",
@@ -95,6 +99,8 @@ _F2_ONLY_FIELDS = frozenset(
         "statuses",
         "exact_refs",
         "relation_targets",
+        "relation_source_refs",
+        "relation_keys",
         "locator_text",
         "text_match",
     }
@@ -117,6 +123,8 @@ class FactCandidateRequest:
     statuses: tuple[str, ...] | None
     exact_refs: tuple[FactReference, ...]
     relation_targets: tuple[FactReference, ...]
+    relation_source_refs: tuple[FactReference, ...]
+    relation_keys: tuple[str, ...]
     current_workcase_ref: FactReference | None
     selected_fact_refs: tuple[FactReference, ...]
     locator_text: str | None
@@ -260,6 +268,30 @@ def parse_fact_candidate_request(
             request.arguments["relation_targets"], "arguments.relation_targets", project_id, ()
         )
         problems.extend(reference_problems)
+    relation_source_refs: tuple[FactReference, ...] = ()
+    if layer == "F2" and "relation_source_refs" in request.arguments:
+        relation_source_refs, reference_problems = _references(
+            request.arguments["relation_source_refs"], "arguments.relation_source_refs", project_id, ()
+        )
+        problems.extend(reference_problems)
+    relation_keys: tuple[str, ...] = ()
+    if layer == "F2" and "relation_keys" in request.arguments:
+        if "relation_source_refs" not in request.arguments:
+            problems.append("arguments.relation_keys 要求同时提供 arguments.relation_source_refs")
+        relation_keys, key_problems = _unique_strings(
+            request.arguments["relation_keys"], "arguments.relation_keys", minimum=1, maximum=32
+        )
+        problems.extend(key_problems)
+        if relation_source_refs:
+            allowed_keys = set.intersection(
+                *(set(LAYOUTS[reference.fact_type_key].relation_keys) for reference in relation_source_refs)
+            )
+            invalid_keys = sorted(set(relation_keys) - allowed_keys)
+            if invalid_keys:
+                problems.append(
+                    "arguments.relation_keys 包含并非全部 relation_source_refs 来源类型允许的关系键: "
+                    + ", ".join(invalid_keys)
+                )
 
     current_workcase_ref: FactReference | None = None
     if "current_workcase_ref" in request.arguments:
@@ -345,6 +377,8 @@ def parse_fact_candidate_request(
             statuses,
             exact_refs,
             relation_targets,
+            relation_source_refs,
+            relation_keys,
             current_workcase_ref,
             selected_fact_refs,
             locator_text,
