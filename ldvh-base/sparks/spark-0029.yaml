@@ -11,9 +11,6 @@ source_refs:
   locator: code/plugins/ldvh/hooks/hooks.json
 - kind: fact-object
   locator: ldvh-base/pitfalls/pitfall-0001.yaml
-- kind: conversation
-  locator: ZCode 会话 spark-0029 渐进式披露扩展 2026-07-23
-  observed_at: '2026-07-23T07:55:00+08:00'
 relations:
 - relation_key: related-to
   target:

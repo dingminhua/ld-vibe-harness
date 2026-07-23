@@ -80,15 +80,15 @@ function AdrReadingNode({
   );
 }
 
-const PITFALL_READING_NODES: Array<{ field: string }> = [
-  { field: 'symptoms' },
-  { field: 'trigger_conditions' },
-  { field: 'applicability' },
-  { field: 'validation_summary' },
-  { field: 'root_cause' },
-  { field: 'resolution' },
-  { field: 'avoidance' },
-  { field: 'disposition_summary' },
+const PITFALL_READING_NODES: Array<{ field: string; zh: string; en: string }> = [
+  { field: 'symptoms', zh: '现象', en: 'Symptoms' },
+  { field: 'trigger_conditions', zh: '触发', en: 'Triggers' },
+  { field: 'applicability', zh: '范围', en: 'Scope' },
+  { field: 'validation_summary', zh: '验证', en: 'Validation' },
+  { field: 'root_cause', zh: '根因', en: 'Root Cause' },
+  { field: 'resolution', zh: '方案', en: 'Resolution' },
+  { field: 'avoidance', zh: '规避', en: 'Avoidance' },
+  { field: 'disposition_summary', zh: '处置', en: 'Disposition' },
 ];
 
 export function PitfallReadingLayout({
@@ -105,7 +105,7 @@ export function PitfallReadingLayout({
       {PITFALL_READING_NODES.map((node) => (
         <PitfallReadingNode
           key={node.field}
-          title={getFieldLabel(node.field, locale)}
+          title={locale === 'en' ? node.en : node.zh}
           value={obj[node.field]}
           locale={locale}
         />
