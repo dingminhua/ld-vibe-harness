@@ -192,10 +192,12 @@ export async function fetchDashboard(locale?: string): Promise<DashboardData> {
 
 export async function fetchObjects(
   type: string,
-  status?: string
-): Promise<{ ok: boolean; summary: { count: number }; data: { items: ObjectItem[]; statusOptions?: ObjectStatusOption[]; statusTotal?: number } }> {
+  status?: string,
+  priority?: string,
+): Promise<{ ok: boolean; summary: { count: number }; data: { items: ObjectItem[]; statusOptions?: ObjectStatusOption[]; priorityOptions?: ObjectStatusOption[]; statusTotal?: number } }> {
   const params = new URLSearchParams();
   if (status) params.set('status', status);
+  if (priority) params.set('priority', priority);
   const qs = params.toString();
   return request(`/objects/${type}${qs ? `?${qs}` : ''}`);
 }

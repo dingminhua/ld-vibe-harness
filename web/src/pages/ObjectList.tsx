@@ -3,6 +3,7 @@ import { useParams, useNavigate, useSearchParams, useLocation } from 'react-rout
 import { ArrowRight, CheckCircle2, CircleAlert, ClipboardCheck } from 'lucide-react';
 import StatusBadge from '@/components/StatusBadge';
 import ObjectStatusFilter from '@/components/ObjectStatusFilter';
+import ObjectPriorityFilter from '@/components/ObjectPriorityFilter';
 import CopyPathButton from '@/components/CopyPathButton';
 import ObjectSignalBadges from '@/components/ObjectSignalBadges';
 import PriorityIcon from '@/components/PriorityIcon';
@@ -369,6 +370,7 @@ export default function ObjectList() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [items, setItems] = useState<ObjectItem[]>([]);
   const [statusOptions, setStatusOptions] = useState<ObjectStatusOption[]>([]);
+  const [priorityOptions, setPriorityOptions] = useState<ObjectStatusOption[]>([]);
   const [statusTotal, setStatusTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -378,6 +380,14 @@ export default function ObjectList() {
   const currentType = type ?? 'workcase';
   const statusParam = searchParams.get('status');
   const activeStatus = getEffectiveListStatus(currentType, statusParam);
+  const priorityParam = searchParams.get('priority');
+  const supportsPriorityNavigation = currentType === 'spark' || currentType === 'workcase';
+  const activePriority = supportsPriorityNavigation && ['P0', 'P1', 'P2', 'P3'].includes(priorityParam ?? '')
+    ? priorityParam
+    : null;
+  const isPriorityApplicable = currentType === 'spark'
+    ? activeStatus === 'open' || activeStatus === null
+    : currentType === 'workcase' && activeStatus !== 'closed';
 
   useEffect(() => {
     if (currentType !== 'spark' || !searchParams.has('category')) return;
@@ -390,18 +400,20 @@ export default function ObjectList() {
     setLoading(true);
     setError(null);
     setStatusOptions([]);
+    setPriorityOptions([]);
     setStatusTotal(0);
-    fetchObjects(currentType, activeStatus ?? undefined)
+    fetchObjects(currentType, activeStatus ?? undefined, activePriority ?? undefined)
       .then((result) => {
         const receivedItems = result.data?.items ?? [];
         const nextItems = currentType === 'spark' ? receivedItems.map(sparkViewItem) : receivedItems;
         setItems(nextItems);
         setStatusOptions(result.data?.statusOptions ?? []);
+        setPriorityOptions(result.data?.priorityOptions ?? []);
         setStatusTotal(result.data?.statusTotal ?? nextItems.length);
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-  }, [currentType, activeStatus, reloadKey]);
+  }, [currentType, activeStatus, activePriority, reloadKey]);
 
   const sortedItems = sortObjectsForList(items, currentType);
   const typeNotIntegrated = sortedItems.find((item) => item.kind === 'type_not_integrated');
@@ -410,6 +422,21 @@ export default function ObjectList() {
   const handleStatusChange = (status: string | null) => {
     const nextParams = new URLSearchParams(searchParams);
     writeListStatusParam(currentType, nextParams, status);
+    if ((currentType === 'spark' && status !== 'open' && status !== null)
+      || (currentType === 'workcase' && status === 'closed')) {
+      nextParams.delete('priority');
+    }
+    setSearchParams(nextParams);
+  };
+
+  const handlePriorityChange = (priority: string | null) => {
+    const nextParams = new URLSearchParams(searchParams);
+    if (priority) {
+      nextParams.set('priority', priority);
+      if (currentType === 'spark') writeListStatusParam('spark', nextParams, 'open');
+    } else {
+      nextParams.delete('priority');
+    }
     setSearchParams(nextParams);
   };
 
@@ -600,15 +627,37 @@ export default function ObjectList() {
   return (
     <div className="ldvh-page-frame">
       <div className="sticky top-0 z-20 -mx-4 -mt-4 mb-4 flex min-h-8 flex-wrap items-center justify-between gap-3 border-b border-ldvh-border bg-ldvh-bg/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:-mt-6 sm:px-6">
-        <ObjectStatusFilter
-          type={currentType}
-          activeStatus={activeStatus}
-          onChange={handleStatusChange}
-          options={statusOptions}
-          total={statusTotal}
-          loading={loading}
-        />
-        {currentType === 'workcase' && (
+        <div className="min-w-0 flex-1">
+          {supportsPriorityNavigation && (
+            <div className="mb-2 flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-2">
+              {isPriorityApplicable ? (
+                <ObjectPriorityFilter
+                  activePriority={activePriority}
+                  onChange={handlePriorityChange}
+                  options={priorityOptions}
+                  loading={loading}
+                />
+              ) : (
+                <p className="ldvh-meta text-ldvh-text-secondary">{t('objectList.priorityNotApplicable')}</p>
+              )}
+              {currentType === 'workcase' && (
+                <ExecutionFlowLegend t={t} getStatus={getStatus} />
+              )}
+            </div>
+          )}
+          <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5">
+            {supportsPriorityNavigation && <span className="ldvh-meta shrink-0 text-ldvh-text-secondary">{t('objectList.lifecycleFilter')}</span>}
+            <ObjectStatusFilter
+              type={currentType}
+              activeStatus={activeStatus}
+              onChange={handleStatusChange}
+              options={statusOptions}
+              total={statusTotal}
+              loading={loading}
+            />
+          </div>
+        </div>
+        {!supportsPriorityNavigation && currentType === 'workcase' && (
           <ExecutionFlowLegend t={t} getStatus={getStatus} />
         )}
       </div>

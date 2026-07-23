@@ -29,6 +29,23 @@ fs.writeFileSync(
     '',
   ].join('\n'),
 )
+fs.writeFileSync(
+  path.join(projectRoot, 'ldvh-base', 'sparks', 'spark-0002.yaml'),
+  [
+    'title: Dashboard 优先级筛选回归',
+    'status: open',
+    'priority: P1',
+    'source_refs:',
+    '- kind: repository-path',
+    '  locator: specs/08.md',
+    'summary: 固定 Spark 生命周期与优先级交集筛选。',
+    'object_id: spark-0002',
+    'fact_type_key: spark',
+    "created_at: '2026-07-19T08:00:00+08:00'",
+    "updated_at: '2026-07-19T08:00:00+08:00'",
+    '',
+  ].join('\n'),
+)
 fs.mkdirSync(path.join(projectRoot, 'ldvh-base', 'workcases'), { recursive: true })
 fs.writeFileSync(
   path.join(projectRoot, 'ldvh-base', 'workcases', 'workcase-0001.yaml'),
@@ -181,6 +198,36 @@ test('preserves the shared commit DTO across current API consumers', async () =>
   assert.equal(workcase.hasPlanConfirmedAt, true)
   assert.equal(workcase.hasVerificationEvidence, true)
   assert.ok(workcases.data.statusOptions.some((option) => option.status === 'subagents_result_reviewing'))
+
+  const prioritizedWorkcases = await getJson('/api/objects/workcase?priority=P1') as {
+    data: {
+      items: Array<Record<string, unknown>>
+      priorityOptions: Array<{ status: string; count: number }>
+    }
+  }
+  assert.deepEqual(prioritizedWorkcases.data.items.map((item) => item.object_id), ['workcase-0001'])
+  assert.deepEqual(prioritizedWorkcases.data.priorityOptions, [
+    { status: 'P0', count: 0 },
+    { status: 'P1', count: 1 },
+    { status: 'P2', count: 0 },
+    { status: 'P3', count: 0 },
+  ])
+
+  const prioritizedSparks = await getJson('/api/objects/spark?status=open&priority=P1') as {
+    data: {
+      items: Array<Record<string, unknown>>
+      statusOptions: Array<{ status: string; count: number }>
+      priorityOptions: Array<{ status: string; count: number }>
+    }
+  }
+  assert.deepEqual(prioritizedSparks.data.items.map((item) => item.object_id), ['spark-0002'])
+  assert.deepEqual(prioritizedSparks.data.priorityOptions, [
+    { status: 'P0', count: 0 },
+    { status: 'P1', count: 1 },
+    { status: 'P2', count: 1 },
+    { status: 'P3', count: 0 },
+  ])
+  assert.ok(prioritizedSparks.data.statusOptions.some((option) => option.status === 'open' && option.count === 2))
 
   const reviewWorkcases = await getJson('/api/objects/workcase?status=subagents_result_reviewing') as {
     data: { items: Array<Record<string, unknown>> }

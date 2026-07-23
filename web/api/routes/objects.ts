@@ -60,6 +60,8 @@ interface StatusOption {
   count: number
 }
 
+const SPARK_PRIORITY_ORDER = ['P0', 'P1', 'P2', 'P3']
+
 const STATUS_PRIORITY: Record<string, number> = {
   ...Object.fromEntries(WORKCASE_STATUS_ORDER.map((status, index) => [status, index])),
   needs_human_gate: 10,
@@ -263,6 +265,20 @@ function getStatusOptions(items: ListedObject[]): StatusOption[] {
     })
 }
 
+function getPriorityOptions(items: ListedObject[]): StatusOption[] {
+  const counts = countByStatus(
+    items
+      .filter((item) => typeof item.priority === 'string')
+      .map((item) => ({ status: item.priority as string })),
+  )
+  return SPARK_PRIORITY_ORDER.map((status) => ({ status, count: counts[status] ?? 0 }))
+}
+
+function matchesSparkListFilter(item: ListedObject, status?: string, priority?: string): boolean {
+  return (!status || item.status === status)
+    && (!priority || item.priority === priority)
+}
+
 async function listObjectSummaries(type: ObjectType, baseDir?: string): Promise<ListedObject[]> {
   const result = await listObjects(type, baseDir)
   if (!result.ok) return []
@@ -357,8 +373,11 @@ router.get('/:type', async (req: Request, res: Response): Promise<void> => {
     return
   }
 
-  const status = req.query.status as string | undefined
-  const result = await listObjects(type, undefined, type === 'workcase' ? undefined : status)
+  const status = typeof req.query.status === 'string' ? req.query.status : undefined
+  const priority = (type === 'spark' || type === 'workcase') && typeof req.query.priority === 'string'
+    ? req.query.priority
+    : undefined
+  const result = await listObjects(type, undefined, type === 'workcase' || type === 'spark' ? undefined : status)
 
   if (!result.ok) {
     res.status(500).json(result)
@@ -367,14 +386,22 @@ router.get('/:type', async (req: Request, res: Response): Promise<void> => {
 
   const rawItems = getRawItems(result)
   const allItems = getResultItems(result)
-  const items = type === 'workcase' && status
-    ? allItems.filter((item) => item.status === status)
-    : allItems
+  const items = type === 'workcase'
+    ? allItems.filter((item) => (!status || item.status === status) && (!priority || item.priority === priority))
+    : type === 'spark'
+      ? allItems.filter((item) => matchesSparkListFilter(item, status, priority))
+      : allItems
   let enrichedItems = items
   if (isRecord(result.data)) {
-    const statusItems = type === 'workcase' ? allItems : status ? await listObjectSummaries(type) : items
+    const statusItems = type === 'workcase' || type === 'spark'
+      ? allItems
+      : status ? await listObjectSummaries(type) : items
     result.data.statusOptions = getStatusOptions(statusItems)
     result.data.statusTotal = statusItems.length
+    if (type === 'spark' || type === 'workcase') {
+      const lifecycleItems = status ? allItems.filter((item) => item.status === status) : allItems
+      result.data.priorityOptions = getPriorityOptions(lifecycleItems)
+    }
   }
   if (isRecord(result.data) && type === 'workcase') {
     enrichedItems = await enrichWorkCases(items)
@@ -387,7 +414,11 @@ router.get('/:type', async (req: Request, res: Response): Promise<void> => {
   }
   if (isRecord(result.data)) {
     result.data.items = type === 'spark'
-      ? [...rawItems].sort((left, right) => String(right.updated_at || '').localeCompare(String(left.updated_at || '')))
+      ? rawItems
+        .map(normalizeItem)
+        .filter((item): item is ListedObject => Boolean(item))
+        .filter((item) => matchesSparkListFilter(item, status, priority))
+        .sort((left, right) => String(right.updated || '').localeCompare(String(left.updated || '')))
       : sortByUpdatedDesc(enrichedItems)
   }
 

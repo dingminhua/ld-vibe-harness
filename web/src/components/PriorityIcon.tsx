@@ -10,14 +10,20 @@ export default function PriorityIcon({
   source: ObjectSignalSource;
   type?: SignalObjectType;
   locale: string;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'xs' | 'sm' | 'md' | 'lg';
   className?: string;
 }) {
   const priority = getObjectPriority(source, type);
   if (!priority) return null;
 
   const label = getPriorityLabel(priority, locale) ?? priority;
-  const sizeClassName = size === 'lg' ? 'h-7 px-2' : size === 'sm' ? 'h-5 px-1.5' : 'h-6 px-2';
+  const sizeClassName = size === 'lg'
+    ? 'h-7 px-2'
+    : size === 'sm'
+      ? 'h-5 px-1.5'
+      : size === 'xs'
+        ? 'h-4 px-1 text-[10px] leading-3'
+        : 'h-6 px-2';
 
   return (
     <span

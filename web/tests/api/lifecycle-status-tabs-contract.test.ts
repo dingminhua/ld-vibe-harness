@@ -25,3 +25,19 @@ test('retired has an explicit lifecycle status label', () => {
   assert.match(locales, /retired: \{ zh: '已退出', en: 'Retired' \}/)
   assert.match(locales, /implemented: \{ zh: '已落实', en: 'Implemented' \}/)
 })
+
+test('Spark list exposes lifecycle and priority as separate navigation dimensions', () => {
+  const list = source('src/pages/ObjectList.tsx')
+  const priorityFilter = source('src/components/ObjectPriorityFilter.tsx')
+  const route = source('api/routes/objects.ts')
+
+  assert.match(list, /objectList\.lifecycleFilter/)
+  assert.match(list, /ObjectPriorityFilter/)
+  assert.match(list, /writeListStatusParam\('spark', nextParams, 'open'\)/)
+  assert.ok(list.indexOf('<ObjectPriorityFilter') < list.indexOf("t('objectList.lifecycleFilter')"))
+  assert.match(priorityFilter, /const SPARK_PRIORITY_ORDER = \['P0', 'P1', 'P2', 'P3'\]/)
+  assert.match(priorityFilter, /import PriorityIcon from '@\/components\/PriorityIcon'/)
+  assert.match(priorityFilter, /<PriorityIcon source=\{\{ priority \}\} type="spark" locale=\{locale\} size="xs" \/>/)
+  assert.match(route, /function getPriorityOptions/)
+  assert.match(route, /matchesSparkListFilter/)
+})
