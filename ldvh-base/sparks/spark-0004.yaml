@@ -1,11 +1,15 @@
 title: 原生 Windows 支持范围与真实验收
+intent: 保留原生 Windows 支持范围与真实验收的独立议题，避免把其它平台的候选兼容、局部脚本可运行或某一环境的安装成功误作完整支持。后续需判断核心运行链路哪些已在授权的原生 Windows 环境得到证实、哪些仍缺少验收，以及是否值得转为明确的实施工作。
 status: open
 priority: P2
 source_refs:
 - kind: repository-path
   locator: specs/07-Code 实践与测试规范.md
-summary: 在 Human 指定并授权的原生 Windows runner 上，为核心 CLI 与环境 adapter 分别形成真实支持范围、未支持范围和验收结论，并处理耐久性等需要 Human 决定的风险。其它平台上的候选兼容与回归结果不构成原生 Windows 通过证据。
+summary: "**当前判断**\n\n- Windows 支持不是单个 Python 命令能够运行，而是从安装、入口触发、路径判定和 Git hook，到 Web 开发、测试与文档的完整运行链路。\n- 只有在 Human 指定并授权的原生 Windows runner 上取得的范围匹配证据，才能形成该范围的支持或未支持结论；其它平台的候选兼容、回归结果或局部安装成功都不能替代。\n- 操作系统支持与多环境 AI Hook 接入是相关但不同的问题：前者关注路径、shell、安装、Git 与测试等 Windows 差异，后者不能自动证明 Windows 已可用。\n\n**需要逐项界定的验收面**\n\n- CLI 与文档入口：Python 命令、PowerShell/cmd/Git Bash 的等价调用，以及无 Hook 时的 Rules 路径。\n- 路径与管辖判定：盘符、反斜杠、大小写、UNC、worktree、链接和路径规范化是否影响目标识别与 receipt。\n- Git 与 AI 入口：hook 的 shell、换行、可执行语义、带空格路径、环境变量、stdin JSON、cwd 与阻断语义。\n- Web 与测试：npm/启动链路、核心 CLI、adapter、hook 安装或 dry-run、路径单测与文档验收是否具有 Windows 上的实际结果。\n\n**边界与未决事项**\n\n- 不预设 Windows 已支持，也不因非 Windows 环境通过而宣布支持；每一项结论必须附带实际 runner 与覆盖范围。\n- 需要先形成最小验收矩阵，再判断哪些缺口应进入 WorkCase；耐久性、最低依赖、推荐 shell、已验证 AI 环境和已知限制中需要 Human 决定的部分仍保持待决。"
+evolution:
+- at: '2026-07-22T13:39:50+08:00'
+  summary: 迁移对照把 V3 的单点兼容检查扩展为当前的完整 Windows 运行链路验收：保留 CLI、路径、Git/AI 入口、Web、测试和文档等验收面，同时以原生 Windows 的实际范围证据作为唯一支持结论门槛。
 object_id: spark-0004
 fact_type_key: spark
 created_at: '2026-07-19T08:33:52.460274+08:00'
-updated_at: '2026-07-19T08:52:50.454878+08:00'
+updated_at: '2026-07-22T13:39:50+08:00'

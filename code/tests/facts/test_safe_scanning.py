@@ -119,7 +119,11 @@ def test_raw_type_scan_preserves_invalid_read_instead_of_filtering_it(
 ) -> None:
     path = tmp_path / "ldvh-base/sparks/spark-0001.yaml"
     monkeypatch.setattr(candidate_discovery, "_identity_issue", lambda *args: (None, None))
-    monkeypatch.setattr(candidate_discovery, "safe_list_directory", lambda *args, **kwargs: (path,))
+    monkeypatch.setattr(
+        candidate_discovery,
+        "safe_list_directory",
+        lambda _root, directory: (path,) if directory == "ldvh-base/sparks" else (),
+    )
     monkeypatch.setattr(
         ProjectFactIndex,
         "read",
@@ -143,3 +147,84 @@ def test_raw_type_scan_preserves_invalid_read_instead_of_filtering_it(
 
     assert snapshot.coverage_complete is True
     assert snapshot.objects[0][1].check_status == "invalid"
+
+
+def test_candidate_discovery_reports_noncanonical_carriers_as_incomplete(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    path = tmp_path / "ldvh-base/sparks/legacy.yaml"
+    monkeypatch.setattr(candidate_discovery, "_identity_issue", lambda *args: (None, None))
+    monkeypatch.setattr(
+        candidate_discovery,
+        "safe_list_directory",
+        lambda _root, directory: (path,) if directory == "ldvh-base/sparks" else (),
+    )
+
+    snapshot = discover_fact_candidates(
+        tmp_path,
+        "sample",
+        tmp_path / ".git",
+        {"spark": FactSchema("spark", ())},
+    )
+
+    assert snapshot.complete is False
+    assert snapshot.keys == ()
+    assert snapshot.structural_problems == (
+        {
+            "fact_type_key": "spark",
+            "canonical_path": "ldvh-base/sparks/legacy.yaml",
+            "check_status": "unavailable",
+            "issues": [
+                {
+                    "category": "location",
+                    "field_path": None,
+                    "summary": "事实载体不是当前类型的 canonical identity file",
+                }
+            ],
+        },
+    )
+
+
+def test_candidate_discovery_reports_wrong_suffix_without_consuming_canonical_budget(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    wrong_suffix = tmp_path / "ldvh-base/sparks/spark-0001.yml"
+    canonical = tmp_path / "ldvh-base/sparks/spark-0001.yaml"
+    canonical.parent.mkdir(parents=True)
+    canonical.write_text(
+        "object_id: spark-0001\nfact_type_key: spark\nsummary: carrier\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(candidate_discovery, "_identity_issue", lambda *args: (None, None))
+    monkeypatch.setattr(candidate_discovery, "MAX_GRAPH_OBJECTS", 1)
+    monkeypatch.setattr(
+        candidate_discovery,
+        "safe_list_directory",
+        lambda _root, directory: (wrong_suffix, canonical) if directory == "ldvh-base/sparks" else (),
+    )
+
+    snapshot = discover_fact_candidates(
+        tmp_path,
+        "sample",
+        tmp_path / ".git",
+        {"spark": FactSchema("spark", ())},
+    )
+
+    assert snapshot.complete is False
+    assert snapshot.keys == (("spark", "spark-0001"),)
+    assert snapshot.structural_problems == (
+        {
+            "fact_type_key": "spark",
+            "canonical_path": "ldvh-base/sparks/spark-0001.yml",
+            "check_status": "unavailable",
+            "issues": [
+                {
+                    "category": "location",
+                    "field_path": None,
+                    "summary": "事实载体不是当前类型的 canonical identity file",
+                }
+            ],
+        },
+    )

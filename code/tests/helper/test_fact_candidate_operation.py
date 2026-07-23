@@ -276,6 +276,7 @@ def test_f1_returns_complete_active_adr_and_open_workcase_baseline_with_paginati
         "applicability",
         "updated_at",
     }
+    assert first["result"]["cards"][0]["excerpts"] == []
     cursor = first["result"]["coverage"]["next_cursor"]
     assert isinstance(cursor, str) and cursor
 
@@ -306,6 +307,7 @@ def test_f1_returns_complete_active_adr_and_open_workcase_baseline_with_paginati
         "completed": 0,
         "cancelled": 0,
     }
+    assert second["result"]["cards"][0]["excerpts"] == []
 
 
 def test_f2_uses_pitfall_authoritative_fields_without_tags_or_scores(tmp_path: Path) -> None:
@@ -333,6 +335,7 @@ def test_f2_uses_pitfall_authoritative_fields_without_tags_or_scores(tmp_path: P
         "matched_text": "A fact changes",
     }
     assert "tags" not in card["fields"]
+    assert card["excerpts"] == []
     assert all("score" not in reason for reason in card["match_reasons"])
 
 
@@ -361,6 +364,131 @@ def test_f2_projects_study_frontmatter_without_injecting_report_body(tmp_path: P
     fields = response["result"]["cards"][0]["fields"]
     assert fields["research_question"] == "Can Study cards remain smaller than full reports?"
     assert "body" not in fields
+    assert response["result"]["cards"][0]["excerpts"] == []
+
+
+def test_f2_spark_summary_is_a_bounded_verbatim_excerpt_with_f3_reference(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    summary = "界" * 512 + "摘录之外的命中"
+    spark = _spark("Bounded Spark excerpt")
+    spark["summary"] = summary
+    object_id = _create(workspace, project, "spark", spark)
+
+    response = handle_request(
+        "call",
+        "find-fact-object-candidates",
+        _payload(
+            workspace,
+            project,
+            "F2",
+            fact_type_keys=["spark"],
+            text_match={"text": "摘录之外", "field_paths": ["summary"]},
+        ),
+    ).response
+
+    assert response["outcome"] == "ok"
+    assert response["result"]["coverage"]["total_matching"] == 1
+    card = response["result"]["cards"][0]
+    assert card["fact_ref"] == {
+        "governed_project_id": "sample",
+        "fact_type_key": "spark",
+        "object_id": object_id,
+    }
+    assert "summary" not in card["fields"]
+    assert card["excerpts"] == [
+        {"field_path": "summary", "text": "界" * 512, "complete": False}
+    ]
+    assert card["match_reasons"][-1] == {
+        "kind": "field-text",
+        "field_path": "summary",
+        "matched_text": "摘录之外",
+    }
+
+
+def test_f2_spark_intent_is_searchable_and_precedes_summary_excerpt(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    spark = _spark("Intent-aware Spark excerpt")
+    spark["intent"] = "为了分流阅读边界而创建"
+    spark["summary"] = "当前判断仍在形成中。"
+    _create(workspace, project, "spark", spark)
+
+    response = handle_request(
+        "call",
+        "find-fact-object-candidates",
+        _payload(
+            workspace,
+            project,
+            "F2",
+            fact_type_keys=["spark"],
+            text_match={"text": "阅读边界", "field_paths": ["intent"]},
+        ),
+    ).response
+
+    card = response["result"]["cards"][0]
+    assert card["excerpts"] == [
+        {"field_path": "intent", "text": "为了分流阅读边界而创建", "complete": True},
+        {"field_path": "summary", "text": "当前判断仍在形成中。", "complete": True},
+    ]
+    assert card["match_reasons"][-1] == {
+        "kind": "field-text",
+        "field_path": "intent",
+        "matched_text": "阅读边界",
+    }
+
+
+def test_f2_spark_excerpt_marks_exact_512_scalar_summary_complete(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    summary = "火" * 512
+    spark = _spark("Exactly complete Spark excerpt")
+    spark["summary"] = summary
+    _create(workspace, project, "spark", spark)
+
+    response = handle_request(
+        "call",
+        "find-fact-object-candidates",
+        _payload(workspace, project, "F2", fact_type_keys=["spark"]),
+    ).response
+
+    card = response["result"]["cards"][0]
+    assert card["excerpts"] == [
+        {"field_path": "summary", "text": summary, "complete": True}
+    ]
+
+
+def test_f2_spark_excerpt_marks_511_scalar_summary_complete(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    summary = "焰" * 511
+    spark = _spark("Short complete Spark excerpt")
+    spark["summary"] = summary
+    _create(workspace, project, "spark", spark)
+
+    response = handle_request(
+        "call",
+        "find-fact-object-candidates",
+        _payload(workspace, project, "F2", fact_type_keys=["spark"]),
+    ).response
+
+    assert response["result"]["cards"][0]["excerpts"] == [
+        {"field_path": "summary", "text": summary, "complete": True}
+    ]
+
+
+def test_f2_spark_excerpt_marks_exact_513_scalar_summary_incomplete(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    summary = "界" * 512 + "尾"
+    spark = _spark("Exact incomplete Spark excerpt")
+    spark["summary"] = summary
+    _create(workspace, project, "spark", spark)
+
+    response = handle_request(
+        "call",
+        "find-fact-object-candidates",
+        _payload(workspace, project, "F2", fact_type_keys=["spark"]),
+    ).response
+
+    assert response["result"]["cards"][0]["excerpts"] == [
+        {"field_path": "summary", "text": "界" * 512, "complete": False}
+    ]
 
 
 def test_cursor_is_rejected_after_any_canonical_fact_object_changes(tmp_path: Path) -> None:
@@ -441,6 +569,48 @@ def test_invalid_object_makes_coverage_partial_and_remains_observable(tmp_path: 
     assert invalid[0]["fact_ref"]["object_id"] == "spark-9999"
     assert [item["fact_type_key"] for item in response["scope"]["not_completed"]] == ["spark"]
     assert len(response["scope"]["completed"]) == 4
+
+
+def test_noncanonical_carrier_makes_candidate_coverage_partial_without_silent_exclusion(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    sparks = project / "ldvh-base" / "sparks"
+    sparks.mkdir(parents=True)
+    (sparks / "legacy.yaml").write_text("summary: old carrier\n", encoding="utf-8")
+
+    response = handle_request("call", "find-fact-object-candidates", _payload(workspace, project, "F1")).response
+
+    assert response["outcome"] == "partial"
+    assert response["result"]["coverage"]["status"] == "partial"
+    unavailable = response["result"]["recovery_manifest"]["unavailable_objects"]
+    assert unavailable == [
+        {
+            "fact_type_key": "spark",
+            "canonical_path": "ldvh-base/sparks/legacy.yaml",
+            "check_status": "unavailable",
+            "issues": [
+                {
+                    "category": "location",
+                    "field_path": None,
+                    "summary": "事实载体不是当前类型的 canonical identity file",
+                }
+            ],
+        }
+    ]
+    assert [item["fact_type_key"] for item in response["scope"]["not_completed"]] == ["spark"]
+
+
+def test_wrong_suffix_carrier_makes_candidate_coverage_partial_without_silent_exclusion(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    sparks = project / "ldvh-base" / "sparks"
+    sparks.mkdir(parents=True)
+    (sparks / "spark-0001.yml").write_text("summary: old carrier\n", encoding="utf-8")
+
+    response = handle_request("call", "find-fact-object-candidates", _payload(workspace, project, "F1")).response
+
+    assert response["outcome"] == "partial"
+    unavailable = response["result"]["recovery_manifest"]["unavailable_objects"]
+    assert unavailable[0]["canonical_path"] == "ldvh-base/sparks/spark-0001.yml"
+    assert unavailable[0]["issues"][0]["summary"] == "事实载体不是当前类型的 canonical identity file"
 
 
 def test_f1_rejects_candidate_filters_and_f2_rejects_unprojected_text_fields(tmp_path: Path) -> None:

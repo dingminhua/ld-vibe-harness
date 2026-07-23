@@ -295,6 +295,7 @@ def _card(object_id: str) -> dict[str, Any]:
         },
         "card_layer": "F1",
         "fields": {"object_id": object_id, "status": "open", "summary": object_id},
+        "excerpts": [],
         "source_refs": [{"kind": "test", "locator": object_id}],
     }
 
@@ -357,6 +358,26 @@ def test_recovery_consumes_every_f1_cursor_and_preserves_query_continuity(
     ]
     assert requests[1]["arguments"].get("cursor") is None
     assert requests[2]["arguments"]["cursor"] == "next"
+
+
+@pytest.mark.parametrize("invalid_excerpts", [None, [{"field_path": "summary", "text": "not-f1"}]])
+def test_recovery_rejects_f1_cards_without_an_explicit_empty_excerpts_envelope(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    invalid_excerpts: object,
+) -> None:
+    workspace, projects = _workspace(tmp_path)
+    response = _f1_response(projects[0], offset=0, next_cursor=None, object_id="workcase-0001")
+    card = response["result"]["cards"][0]
+    if invalid_excerpts is None:
+        card.pop("excerpts")
+    else:
+        card["excerpts"] = invalid_excerpts
+    responses = iter([_governance_response(projects[0]), response])
+    monkeypatch.setattr(context_recovery, "_run_helper", lambda *args, **kwargs: (0, next(responses)))
+
+    with pytest.raises(context_recovery.ContextRecoveryError, match="invalid card"):
+        _recover(HELPER_EXECUTABLE, workspace, projects[0], projects[0])
 
 
 def test_page_budget_keeps_coverage_and_binding_unresolved(

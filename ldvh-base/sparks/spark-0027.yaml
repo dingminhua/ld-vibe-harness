@@ -1,0 +1,12 @@
+title: Helper 规范附件契约与正向流程复现缺口
+status: open
+priority: P2
+intent: 保留本次 Helper 使用中发现的规范上下文与受控补充复现缺口，避免把 Helper 已公开操作误作已经提供完成判断所需的全部字段契约和测试证据。后续需判断如何让 AI 在不直读 Specs、不臆造 intent/演变/关联的前提下，稳定复现“Human Web 创建 → Human 与 AI 沟通 → AI 受控补充”的最小闭环，并明确附件规范不可读、资格未证明和操作请求格式不透明时的安全处置边界。
+summary: "**当前已复现的问题**\n\n- 对 Web 创建的 `spark-0020` 执行治理解析和 Helper 读取可以成功：对象位于 `ldvh` 项目，机械 Schema/身份/来源检查通过。\n- 对象原始内容只有标题“测试创建Spark”、摘要“测试”、状态 `open`、优先级 `P3` 和 `web-direct-capture` 来源。\n- Helper 能提供 Spark、Web、创建模板和生命周期模板的规范上下文，并明确不能从标题、摘要、来源或历史 capture 推导 `intent`、演变或关联；因此 AI 不能合法自动补全这些语义。\n- 但字段登记附件和 Working Tree 测试证据附件只能被发现为候选，无法通过规范上下文/内容接口读取正文；请求格式还需要多次试探才能确定，导致完成判断所需的精确字段契约和测试证据 DTO 不能稳定获得。\n- 规范候选与上下文响应还报告 `qualification_unproven`，所以公开操作可调用不等于规范资格和完成条件已经充分证明。\n\n**最小复现步骤**\n\n1. 通过 Web 创建只有原始标题/摘要的 open Spark。\n2. 通过 Helper 解析治理范围并读取该对象。\n3. 通过 Helper 请求 Spark、Web、创建模板、生命周期模板、字段登记和测试证据上下文。\n4. 观察：对象机械读取成功；语义字段不能从原始内容推导；附件正文无法通过当前规范读取入口取得；全流程完成判断因此只能停在“保留缺口、不得臆造”。\n5. 若 Human 随后明确提供真实 intent、当前边界、后续待判断问题和复现验收标准，再请求 AI 形成补充草案，并使用 Helper 的受控 CAS 更新与写后回读验证；当前缺少附件契约时不得声称该验证已完成。\n\n**后续改进方向**\n\n- 为规范附件提供与普通规范等价的 Helper 结构导航、精确章节读取和 L3 上下文组合能力。\n- 让 Helper 返回完成判断所需的字段契约、生命周期字段和 Working Tree 测试证据 DTO，而不要求 AI 试探请求格式。\n- 将 `qualification_unproven` 的逐项原因、影响范围和可恢复条件暴露为可操作诊断。\n- 为上述最小流程增加端到端测试：初始 Web capture 保留待审核缺口；Human 明确补充；AI 只基于该补充生成草案；Helper CAS 更新、回读和范围匹配验证；任何缺口均 fail closed。"
+source_refs:
+- kind: human-direct-input
+  locator: conversation://current-task/2026-07-22/ldvh-helper-experience
+object_id: spark-0027
+fact_type_key: spark
+created_at: '2026-07-22T16:47:10.971976+08:00'
+updated_at: '2026-07-22T16:47:10.971976+08:00'

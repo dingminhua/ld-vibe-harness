@@ -25,6 +25,7 @@ _STATUS_EDGES = {
 
 _WORKCASE_PHASE_EDGES = {
     ("human_plan_confirming", "executing"),
+    ("executing", "human_plan_confirming"),
     ("executing", "controller_checking"),
     ("controller_checking", "executing"),
     ("controller_checking", "independent_reviewing"),
@@ -204,6 +205,13 @@ def _is_current(fields: dict[str, object]) -> bool:
     return fields.get("workcase_profile") == _CURRENT_PROFILE
 
 
+def _all_work_items_pending(fields: dict[str, object]) -> bool:
+    items = fields.get("work_items")
+    return isinstance(items, list) and bool(items) and all(
+        isinstance(item, dict) and item.get("status") == "pending" for item in items
+    )
+
+
 def _workcase_transition(before: dict[str, object], after: dict[str, object]) -> list[FactIssue]:
     issues: list[FactIssue] = []
     before_current = _is_current(before)
@@ -235,6 +243,19 @@ def _workcase_transition(before: dict[str, object], after: dict[str, object]) ->
     if not before_current and after_current:
         if before_status == "closed":
             issues.append(FactIssue("schema", "closed legacy WorkCase 禁止升级 profile", "workcase_profile"))
+
+    approval_withdrawal = (
+        (before_phase, after_phase) == ("executing", "human_plan_confirming") and not plan_bumped
+    )
+    if approval_withdrawal:
+        if not before_current or not isinstance(before.get("execution_approval"), dict):
+            issues.append(FactIssue("schema", "撤回执行批准要求当前对象已有 execution_approval", "execution_approval"))
+        if "execution_approval" in after:
+            issues.append(FactIssue("schema", "撤回执行批准后 execution_approval 必须移除", "execution_approval"))
+        if any(key in before for key in _PLAN_RESET_FIELDS if key != "execution_approval"):
+            issues.append(FactIssue("schema", "撤回执行批准只适用于尚未形成结果包的计划", "phase"))
+        if not _all_work_items_pending(after):
+            issues.append(FactIssue("schema", "撤回执行批准后所有 work_items 必须恢复为 pending", "work_items"))
 
     plan_changed = _projection(before, _PLAN_TOP_FIELDS, _PLAN_ITEM_FIELDS) != _projection(
         after, _PLAN_TOP_FIELDS, _PLAN_ITEM_FIELDS

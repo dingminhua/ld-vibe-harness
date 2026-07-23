@@ -309,7 +309,11 @@ def _ref_key(value: JsonObject) -> tuple[str, str, str]:
 
 def _compact_card(value: JsonObject) -> JsonObject:
     ref = _fact_ref(value.get("fact_ref"), "cards[].fact_ref")
-    if value.get("card_layer") != "F1" or not isinstance(value.get("fields"), dict):
+    if (
+        value.get("card_layer") != "F1"
+        or not isinstance(value.get("fields"), dict)
+        or value.get("excerpts") != []
+    ):
         raise ContextRecoveryError("F1 response contains an invalid card")
     if ref["fact_type_key"] not in {"adr", "workcase"}:
         raise ContextRecoveryError("F1 response contains a type outside the recovery baseline")

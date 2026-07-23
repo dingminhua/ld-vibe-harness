@@ -1,11 +1,19 @@
 title: 生命周期触发与 Hook 动作分类
+intent: 保留已选目标环境中的 lifecycle 事件如何依据真实副作用、工作对象与 Gate 分类和验收的问题，避免把工具名、命令名、未知输入或旧环境实测误作通用阻断规则或当前 adapter 已验证。后续需形成目标环境的实际正反例、失败与停用恢复证据。
 status: open
 priority: P1
 source_refs:
 - kind: human-input
   locator: 2026-07-19 Human：建立有价值历史 Spark 的 V4 原生入口，后续研究推进
-summary: 研究环境 lifecycle 事件、只读与写入动作分类、受控阻断和真实验收链路；按副作用与目标判定，不以工具名白名单替代边界。
+- kind: repository-path
+  locator: specs/09-环境接入规范.md
+- kind: repository-path
+  locator: ldvh-base/workcases/workcase-0009.yaml
+summary: "**当前判断**\n\n- V4 已区分 Helper operation 的 `read` 与 `may_change_state`，也区分 Human Gate、Git Gate 与 Hook Gate；同一检查应复用同一实现。\n- 09 禁止从 tool、command 或 action 名称建立全局白名单，也禁止仅因动作未知或未分类就默认阻断。旧 receipt、具体插件、事件能力与环境实测不是当前事实。\n\n**目标环境验收条件**\n\n- 只有在 Human 已选定目标环境、具体 lifecycle 事件和工作对象范围后，才依据实际副作用、真实 target 与当前来源定义的 Gate，判断只读、可能改变仓库/外部状态，以及完成或提交声明。\n- 放行、阻断、反馈、超时、失败与回滚必须复用共享检查，并用该目标环境的真实事件完成正例、负例和停用恢复验收。\n- `workcase-0009` 只完成环境无关启用、doctor、接入面发现和 adapter 分流；它没有证明具体 adapter 或统一厂商事件路由已实现。\n\n**边界**\n\n- 事件选择与工作对象解析由 `spark-0001` 承接；能力封装由 `spark-0011` 承接。\n- 本 Spark 不建立跨环境固定动作闭集、通用 action envelope、receipt、permission token 或工具名白名单。"
+evolution:
+- at: '2026-07-22T13:56:41+08:00'
+  summary: 迁移复核保留 V3 对副作用分类和真实运行验收的要求，但移除机械 Git 来源、旧事件能力和白名单式方案；当前限定为已选目标环境中的实际 Gate 证据。
 object_id: spark-0013
 fact_type_key: spark
 created_at: '2026-07-19T10:28:41.696542+08:00'
-updated_at: '2026-07-19T10:28:41.696542+08:00'
+updated_at: '2026-07-22T13:56:41+08:00'

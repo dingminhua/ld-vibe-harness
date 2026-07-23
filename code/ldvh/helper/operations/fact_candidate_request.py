@@ -47,8 +47,8 @@ _ARGUMENT_FIELDS = frozenset(
 )
 _REFERENCE_FIELDS = frozenset({"governed_project_id", "fact_type_key", "object_id"})
 _TEXT_MATCH_FIELDS = frozenset({"text", "field_paths"})
-_F2_FIELDS = {
-    "spark": frozenset({"object_id", "title", "status", "summary", "priority", "updated_at"}),
+_F2_SEARCH_FIELDS = {
+    "spark": frozenset({"object_id", "title", "intent", "status", "summary", "priority", "updated_at"}),
     "workcase": frozenset(
         {
             "object_id",
@@ -306,7 +306,9 @@ def parse_fact_candidate_request(
                 raw.get("field_paths"), "arguments.text_match.field_paths", minimum=1, maximum=16
             )
             problems.extend(field_problems)
-            allowed_fields = set().union(*(_F2_FIELDS[key] for key in fact_type_keys if key in _F2_FIELDS))
+            allowed_fields = set().union(
+                *(_F2_SEARCH_FIELDS[key] for key in fact_type_keys if key in _F2_SEARCH_FIELDS)
+            )
             invalid_fields = sorted(set(fields) - allowed_fields)
             if invalid_fields:
                 problems.append(

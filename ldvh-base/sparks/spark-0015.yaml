@@ -1,11 +1,19 @@
 title: 全事实对象与工作状态的 Web 可观察表达
+intent: 保留 Web 在完整读取事实对象后如何让 Human 扫描摘要、状态、证据、关系、长文本、演变和待决事项的问题，避免把原始 YAML 平铺、视觉效果、颜色或摘要误作事实语义、证据或状态推断。后续需逐类形成阅读顺序与部分/无效内容诊断。
 status: open
 priority: P2
 source_refs:
 - kind: human-input
   locator: 2026-07-19 Human：建立有价值历史 Spark 的 V4 原生入口，后续研究推进
-summary: 评估 Web 如何逐步呈现五类事实对象、相关工作状态、证据和待 Human 判断点；保持只读观察边界，不把界面当作事实源。
+- kind: repository-path
+  locator: specs/08-Web 呈现与交互规范.md
+- kind: repository-path
+  locator: ldvh-base/sparks/spark-0005.yaml
+summary: "**当前判断**\n\n- Human 需要有阅读顺序、层次、语义重点和来源回指的事实表达，而不是原始 YAML 字段平铺。旧页面、字段模型、视觉方案和测试结果只提供体验参考，不证明 V4 应恢复同一设计。\n- 08 要求 Web 从当前 Working Tree 独立、完整读取并呈现事实，保留来源、无效、缺失和部分读取边界；它不通过 Helper 代读，也不成为第二事实源。\n\n**与 `spark-0005` 的分工**\n\n- `spark-0005` 处理 Web 独立完整读取、Helper 渐进读取、Working Tree、有效性与 coverage 等读取架构。\n- 本 Spark 只处理完整对象读到后，Human 如何理解五类对象的摘要、状态、证据、关系、长文本、演变和待判断事项。Spark 页面只是第一条纵切验证，不能据此宣布其它类型已完成。\n\n**未决阅读设计**\n\n- 为 ADR、Pitfall 和 Study 分别确定默认阅读顺序、首屏信息、正文层级、长文本排版、来源/证据展开、关系导航、状态与 Human Gate 表达，以及无效、未知和部分内容的诊断。\n- WorkCase 的执行、审核、批准、关闭和结果呈现最后单独设计。Web 不补写缺失语义、不按视觉效果推断状态，也不把颜色、卡片、图形或摘要升级为证据。"
+evolution:
+- at: '2026-07-22T13:57:34+08:00'
+  summary: 迁移复核保留 V3 对长文本与工作状态可读性的需求，但移除机械 Git 来源和旧页面断言；当前明确 Web 架构与五类对象 Human 阅读表达的分工。
 object_id: spark-0015
 fact_type_key: spark
 created_at: '2026-07-19T10:28:44.766489+08:00'
-updated_at: '2026-07-19T10:28:44.766489+08:00'
+updated_at: '2026-07-22T13:57:34+08:00'

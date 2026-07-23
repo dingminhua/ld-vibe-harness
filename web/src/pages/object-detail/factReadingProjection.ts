@@ -47,6 +47,7 @@ const PROJECT_REFERENCE_KINDS = new Set([
 
 const EXTERNAL_REFERENCE_KINDS = new Set([
   'api-observation',
+  'human-direct-input',
   'human-input',
   'human-provided-artifact',
   'runtime-observation',

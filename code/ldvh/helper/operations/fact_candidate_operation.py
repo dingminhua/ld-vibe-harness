@@ -70,7 +70,7 @@ _F1_FIELDS = {
     ),
 }
 _F2_FIELDS = {
-    "spark": ("object_id", "title", "status", "summary", "priority", "updated_at"),
+    "spark": ("object_id", "title", "status", "priority", "updated_at"),
     "workcase": _F1_FIELDS["workcase"],
     "adr": ("object_id", "title", "status", "decision_question", "decision", "applicability", "updated_at"),
     "pitfall": (
@@ -94,6 +94,7 @@ _F2_FIELDS = {
         "updated_at",
     ),
 }
+_EXCERPT_LIMIT = 512
 
 
 class CursorRejected(ValueError):
@@ -239,6 +240,19 @@ def _card(
     object_id = read.fields["object_id"]
     projection = _F1_FIELDS[fact_type_key] if domain.card_layer == "F1" else _F2_FIELDS[fact_type_key]
     fields = {field: read.fields[field] for field in projection if field in read.fields}
+    excerpts: list[dict[str, object]] = []
+    if domain.card_layer == "F2" and fact_type_key == "spark":
+        for field_path in ("intent", "summary"):
+            value = read.fields.get(field_path)
+            if not isinstance(value, str):
+                continue
+            excerpts.append(
+                {
+                    "field_path": field_path,
+                    "text": value[:_EXCERPT_LIMIT],
+                    "complete": len(value) <= _EXCERPT_LIMIT,
+                }
+            )
     if fact_type_key == "workcase":
         counts = Counter(
             item.get("status")
@@ -262,6 +276,7 @@ def _card(
         "fact_ref": FactReference(project_id, fact_type_key, object_id).to_json(),
         "card_layer": domain.card_layer,
         "fields": fields,
+        "excerpts": excerpts,
         "match_reasons": reasons,
         "source_refs": sources,
     }

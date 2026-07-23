@@ -487,6 +487,72 @@ def test_workcase_delta_records_execution_approval_with_one_event_and_idempotent
     assert fact_path.read_bytes() == raw
 
 
+def test_workcase_delta_withdraws_an_erroneously_recorded_execution_approval(tmp_path: Path) -> None:
+    workspace, project, _ = _fixture(tmp_path)
+    docs = project / "docs"
+    docs.mkdir()
+    (docs / "input.md").write_text("Human-authorized work\n", encoding="utf-8")
+    workcase_ref = _create_workcase(workspace, project)
+    before = _read(workspace, project, workcase_ref)
+    approved = handle_request(
+        "call",
+        "update-workcase",
+        _workcase_update_payload(
+            workspace,
+            project,
+            workcase_ref,
+            before["content_fingerprint"],
+            set_fields={
+                "phase": "executing",
+                "summary": "Execution was recorded as approved.",
+                "resume_from": "Begin item-01.",
+            },
+            remove_fields=["waiting_on"],
+            managed_records={"execution_approval": {"summary": "Human approved plan version 1"}},
+        ),
+    ).response
+    assert approved["outcome"] == "ok"
+
+    current = _read(workspace, project, workcase_ref)
+    response = handle_request(
+        "call",
+        "update-workcase",
+        _workcase_update_payload(
+            workspace,
+            project,
+            workcase_ref,
+            current["content_fingerprint"],
+            set_fields={
+                "phase": "human_plan_confirming",
+                "summary": "The plan awaits explicit Human approval.",
+                "resume_from": "Present the complete current plan to Human.",
+                "waiting_on": "Human execution approval for plan_version 1",
+                "work_items": [
+                    {
+                        **current["fact_object"]["work_items"][0],
+                        "status": "pending",
+                    }
+                ],
+            },
+            managed_records={
+                "withdraw_execution_approval": {
+                    "summary": "Human clarified that execution approval was not granted."
+                }
+            },
+        ),
+    ).response
+
+    assert response["outcome"] == "ok", json.dumps(response, ensure_ascii=False, indent=2)
+    assert response["result"]["managed_record_receipts"] == [
+        {"action": "execution_approval_withdrawn", "subject_version": 1}
+    ]
+    after = _read(workspace, project, workcase_ref)["fact_object"]
+    assert after["plan_version"] == 1
+    assert after["phase"] == "human_plan_confirming"
+    assert "execution_approval" not in after
+    assert after["work_items"][0]["status"] == "pending"
+
+
 def test_workcase_delta_walks_controller_owned_review_and_atomic_closure(tmp_path: Path) -> None:
     workspace, project, _ = _fixture(tmp_path)
     docs = project / "docs"
@@ -1339,7 +1405,7 @@ def test_update_rejects_managed_fields_and_terminal_reopen(tmp_path: Path) -> No
 
     terminal = _mutable(before)
     terminal["status"] = "discarded"
-    terminal["disposition_summary"] = "Human chose not to route this Spark"
+    terminal["disposition_summary"] = "Human chose to stop tracking this Spark"
     terminal["closed_at"] = "2026-07-14T11:00:00+08:00"
     terminal["evidence_refs"] = [{"kind": "repository-path", "locator": "docs/evidence.md"}]
     terminal.pop("priority")

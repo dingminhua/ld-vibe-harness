@@ -1,12 +1,20 @@
 workcase_profile: control-contract-v1
 title: Helper 事实对象机械结构校验闭环
 status: open
-phase: executing
-plan_version: 1
+phase: human_closure_confirming
+plan_version: 2
 priority: P1
 source_refs:
 - kind: fact-object
   locator: ldvh-base/sparks/spark-0028.yaml
+- kind: repository-path
+  locator: specs/01-规范模型基础规范.md
+- kind: repository-path
+  locator: specs/02-工作对象与管辖范围规范.md
+- kind: repository-path
+  locator: specs/03-事实源与信息溯源规范.md
+- kind: repository-path
+  locator: specs/04-Helper CLI 服务规范.md
 - kind: repository-path
   locator: specs/05-事实模型基础规范.md
 - kind: repository-path
@@ -14,82 +22,183 @@ source_refs:
 - kind: repository-path
   locator: specs/21-WorkCase-工作项.md
 - kind: repository-path
-  locator: specs/22-ADR-决策记录.md
+  locator: specs/22-ADR-决策.md
 - kind: repository-path
-  locator: specs/23-Pitfall-踩坑记录.md
+  locator: specs/23-Pitfall-踩坑经验.md
 - kind: repository-path
-  locator: specs/24-Study-研究.md
-- kind: repository-path
-  locator: code/ldvh/facts/validation.py
-- kind: repository-path
-  locator: code/ldvh/helper/operations/fact_creation_operation.py
-- kind: repository-path
-  locator: code/ldvh/helper/operations/fact_update_operation.py
-- kind: repository-path
-  locator: code/ldvh/helper/operations/fact_candidate_operation.py
+  locator: specs/24-Study-研究报告.md
 goal: 为五类事实对象建立可追溯、完整的 Code 机械校验闭环：所有由当前 Specs 明确交给 Code 判定的结构规则都有唯一清单、统一校验入口、读取/创建/更新/写后回读及候选消费的实际覆盖，以及范围匹配测试；适用检查尚未实现或无法完成时，Helper 必须返回 unavailable，不得报为 mechanically_valid。
-scope: 覆盖 specs/05 与 20–24 明确交给 Code 的身份、位置、Schema/字段闭集、类型、必填/条件/空值、枚举、时间/版本/生命周期、引用、关系、项目级约束及相应诊断；覆盖 read-fact-objects、create-fact-object、update-fact-object 和类型便利写入口、写后回读、find-fact-object-candidates 对 invalid/unavailable 对象的处置。排除自然语言意图、摘要充分性、来源真实性、证据充分性、关系领域语义、是否应建对象等 AI 判断；排除 Hook 外部直写保护（spark-0029）和批量迁移或修复已有对象。
+scope: 主要修改与归属载体为 specs/05、20–24 及其字段登记和附件，覆盖其中明确归 Code 的身份、载体/路径、Schema、字段闭集、类型、必填/条件/空值、枚举、时间/版本/允许转换、引用、关系、项目级约束和诊断。item-01 还必须读取 specs/01、02、03、04 及其字段附件，逐项判断是否已有适用 Code 机械规则或公开 invalid/unavailable 字段必须最小修改；这些上游契约不因读取而自动扩张实施范围。覆盖 read-fact-objects、prepare-fact-object-draft 的对象消费判断、create-fact-object、update-fact-object、update-workcase 等类型便利写入口、CAS 零写入、写后回读和 find-fact-object-candidates。排除自然语言意图、摘要充分性、来源真实性、证据充分性、关系领域语义、是否应建对象等 AI 判断；排除 Hook 外部直写保护和批量迁移或修复已有对象。
 success_criterion_definitions:
 - criterion_id: criterion-01
-  statement: 形成可回读的规则→类型→验证器/入口→测试映射，覆盖全部由当前 Specs 归属 Code 的结构规则，并对未实现项明确 unavailable 处置。
+  statement: 在不改 00 的前提下，定稿并审核适用机械规则的唯一定位、适用类型、机械/语义归属、Code owner、入口预期与 unavailable 边界；对 01–04 是否存在适用规则或须最小修改形成可回读结论。
 - criterion_id: criterion-02
-  statement: 读取、受控创建、更新/便利写入和写后回读使用同一适用规则集合，不存在任一入口把同类违规对象报为 mechanically_valid。
+  statement: 形成已审核的可检测闭集：每条已归 Code 的规则均映射到共享 validator/operation、读/建/更新/便利写入/回读/candidate 入口和正反测试；任一缺失均不得报告 mechanically_valid。
 - criterion_id: criterion-03
-  statement: 候选发现与恢复在遇到 invalid 或 unavailable 对象时完整披露，coverage 与 scope 如实为 partial，不静默排除。
+  statement: 仅按定稿 Specs 和已审核映射接入实现，使读取、创建、更新、便利写入、CAS 零写入与写后回读对同类违规给出一致 invalid 或 unavailable 处置。
 - criterion_id: criterion-04
-  statement: 每条新增或收紧的结构规则同步更新唯一 Specs 归属、验证器、受影响入口和正反/回归测试，测试能证明该同步门槛。
+  statement: 候选发现和恢复遇到 invalid 或 unavailable 的旧对象时完整披露诊断、coverage 与 scope partial，不静默排除。
 - criterion_id: criterion-05
-  statement: 能力声明只覆盖已实现的机械边界，不把语义判断或 Hook 防护冒充为本 WorkCase 的完成。
+  statement: 跨五类型范围测试证明新增或收紧机械规则缺 Specs 映射、validator、入口覆盖或测试时失败；能力声明不包含自然语言语义、Hook 防护或迁移。
 work_items:
 - item_id: item-01
-  goal: 建立并审核机械规则清单与 Specs 同步门槛。
-  expected_result: 逐条列明类型、来源、机械边界、验证器、入口、测试和未实现处置；必要的 Specs 归属与同步门槛得到修正。
-  status: in_progress
-  approach_summary: 交叉核对当前 05、20–24、Schema bindings 与现有实现；不修改 00 或 32。
-  current_summary: 正在处理 Spark routed-to 承接对象标题：关系仍以稳定身份为权威，Web 必须显示目标当前完整 title，Helper 必须核对可解析、有效的目标及非空 title，不能以 object_id 或页面猜测替代。
-  resume_from: 完成 20、05、08 与 validation/relations/Web 的精确改动和范围测试。
+  goal: 先完善并独立审核 Specs 的机械规则目录与硬门槛。
+  expected_result: 05、20–24 及其登记/附件中的适用机械规则逐项具有唯一定位、类型、机械/语义归属、Code owner、入口预期和 unavailable 边界；01–04 及字段附件完成逐项适用性和最小修改判断，矛盾或漏项已在必要时修正并独立审核。
+  status: completed
+  result_summary: 新增 05.Att.02 作为唯一机械校验目录，逐项完成 01、01.Att.01、02、02.Att.01、03、04、04.Att.01 的适用判断；独立审核通过，并修复候选扫描对非 canonical 载体的静默排除及预算语义。
+  evidence_refs:
+  - kind: repository-path
+    locator: specs/attachments/05.Att.02-事实对象机械校验目录.md
+  - kind: repository-path
+    locator: code/ldvh/facts/candidate_discovery.py
+  - kind: repository-path
+    locator: code/tests/facts/test_safe_scanning.py
+  approach_summary: 仅读取和修订 Specs；01–04 只在已有适用 Code 规则或公开结果字段须变更时最小修改；不改 00、不建立实现映射、不改 Helper/validator/测试。item-01 未完成即禁止后续工作项。
 - item_id: item-02
-  goal: 完成统一机械校验与各入口接入。
-  expected_result: 读写与候选入口对清单内规则给出一致判定，并正确区分 unavailable 与 invalid。
-  status: pending
+  goal: 基于已定稿 Specs 建立并审核可执行的机械规则映射闭集。
+  expected_result: 每条规则均映射到 validator/operation、read/create/update/类型便利写入/readback/candidate 和正反测试；05.Att.01 等字段契约作为映射输入，缺任一映射、入口或测试即明确失败。
+  status: completed
+  result_summary: 05.Att.02 已建立每条 rule_key 的具体实现符号、入口和正反测试映射；范围测试强制目录、入口映射和正反证据三表闭集及入口精确一致，并已通过独立审核。
+  evidence_refs:
+  - kind: repository-path
+    locator: specs/attachments/05.Att.02-事实对象机械校验目录.md
+  - kind: repository-path
+    locator: code/tests/specs/test_fact_mechanical_validation_catalog.py
   depends_on:
   - item-01
-  approach_summary: 对 validation 与 operation 层作最小变更；禁止以 Web 或 AI 回退替代机械检查。
+  approach_summary: 只核对现有实现和测试并形成映射/验收标准，不修改实现；与 item-01 的 Specs 规则目录严格区分。
 - item_id: item-03
-  goal: 完成范围匹配测试与实际 Helper 验证。
-  expected_result: 每类规则具备正反例、入口一致性与 candidate partial 证据；仅运行本范围测试和 CLI 场景。
-  status: pending
+  goal: 仅按已审核映射完善 Helper 机械校验与全部受影响入口。
+  expected_result: 共享 validator/operation 和读、建、更新、update-workcase 等便利写入、CAS 零写入、写后回读及 candidate 入口按映射一致处理 invalid/unavailable；旧违规对象和 candidate partial 均如实诊断。
+  status: completed
   depends_on:
   - item-02
-  approach_summary: 补充范围匹配测试与受控 CLI 场景；不运行 full-v4。
-summary: 已完成 Spark routed-to 承接对象标题这一条机械规则闭环：05 明确标题只能从目标当前对象派生，20 明确 Spark 关系的稳定身份与 Helper 实读标题校验，08 明确分流区不重复目标、关联区显示完整目标标题；Helper、范围测试、实际对象回读与浏览器页面均已核对。item-01 的全量规则清单与同步门槛仍未完成。
-resume_from: 继续 item-01：逐项建立 05 与 20–24 的规则→验证器/入口→测试映射；不要把本次 Spark routed-to 的完成误写为全对象校验闭环已完成。
+  approach_summary: 只作最小实现和必要 Specs 对应修正；不以 Web 或 AI 回退替代检查，不改语义判断、Hook 防护或迁移。
+  result_summary: 13 条规则的实际入口链路已核对并通过独立审核；候选扫描现将错误后缀和非 canonical 载体披露为 partial/unavailable，且仅 canonical identity 消耗扫描预算。
+  evidence_refs:
+  - kind: repository-path
+    locator: code/ldvh/facts/candidate_discovery.py
+  - kind: repository-path
+    locator: code/tests/facts/test_safe_scanning.py
+  - kind: repository-path
+    locator: specs/attachments/05.Att.02-事实对象机械校验目录.md
+- item_id: item-04
+  goal: 完成范围匹配测试与实际 Helper 验证。
+  expected_result: 跨五类型正反例、read/create/update/便利更新/CAS 零写入/写后回读/candidate partial 实测均通过；新增或收紧规则缺映射、validator、入口或测试的回归例明确失败。
+  status: completed
+  depends_on:
+  - item-03
+  approach_summary: 只运行范围匹配的单元、操作和 CLI 场景；不跑 full-v4，不用自然语言语义作为断言。
+  result_summary: 规则目录映射校验、五类型事实测试 57 项、候选操作 17 项、创建/更新关键正反例 6 项及实际 CLI 读回均通过；独立审核 PASS。
+  evidence_refs:
+  - kind: repository-path
+    locator: code/tests/specs/test_fact_mechanical_validation_catalog.py
+  - kind: repository-path
+    locator: code/tests/facts/test_validation.py
+  - kind: repository-path
+    locator: code/tests/facts/test_source_validation.py
+  - kind: repository-path
+    locator: code/tests/facts/test_safe_scanning.py
+  - kind: repository-path
+    locator: code/tests/helper/test_fact_candidate_operation.py
+summary: 执行、Controller 自检、独立结果审核和关闭报告均已完成；当前等待 Human 对 result_version 1 的关闭批准。
+resume_from: 等待 Human 明确批准或退回 result_version 1 的关闭报告。
 audit_summary:
 - audit_id: audit-01
   subject_kind: pre_creation_plan
   subject_version: 1
   review_count: 1
   summary: 独立审核确认该计划保持单一机械校验责任，读写与候选入口覆盖、未实现即 unavailable、以及排除语义与 Hook 防护的边界均清楚。
-creation_reviews:
-- reviewer: codex-agent:/root/review_workcase_0010
-  reviewed_at: '2026-07-22T17:40:07+08:00'
+- audit_id: audit-02
+  subject_kind: superseded_plan
   subject_version: 1
-  scope: 覆盖目标、范围、五项成功标准、三项工作项及依赖、验证方式、关键风险，以及仅建立 human_plan_confirming 计划且不含执行批准的边界。
+  review_count: 1
+  summary: v1 的三阶段计划未把 Specs 定稿与审核写成实现前硬门槛；其独立审核价值被保留，并由 v2 将规则来源、映射闭集、入口覆盖和范围测试改为四个串行关口。
+creation_reviews:
+- reviewer: codex-agent:/root/review_workcase_plan
+  reviewed_at: '2026-07-22T18:19:33.923929+08:00'
+  subject_version: 2
+  scope: 复核 v2 的单一机械校验目标、主要与上游规则来源边界、五项成功标准、四项严格依赖、Specs-first 禁止越级、入口与测试覆盖、风险排除，以及保持 human_plan_confirming 且无 execution_approval 的 Human Gate。
   conclusion: pass
   feedback:
-  - 计划的单一责任、范围与排除边界、成功标准、三项依赖顺序和 Human Gate 均可支撑受控创建；不得将审核通过解释为执行授权。
+  - v2 已将 Specs 定稿和独立审核设为不可越过的实现前硬门槛，并清楚区分 Specs 规则目录与后续可执行映射闭集。
+  - 05、20–24 作为主要修改载体，01–04 及字段附件作为按需判断的上游契约，避免遗漏来源规则或无依据扩大范围。
+  - 四项串行工作、五类型入口和范围测试、语义/Hook/迁移排除，以及 v2 Human Gate 均完整可执行。
   review_basis:
     projection_key: plan_current
-    subject_fingerprint: d0d2a0af70bfdae49cf66713fec034a8918b4440c9e446cc4a52490f84f56c36
-  controller_resolution: 接受审核结论。当前仅创建等待 Human 确认的计划，不写 execution_approval，不开始 Specs、代码或测试变更。
+    subject_fingerprint: 377e14c3fbb5e4ada963863a5a5fe96931a5de9835fafdb102c313b443f92729
+  controller_resolution: 接受并落实两轮独立审核反馈：补足可核验的 Specs 完成门槛、规则到入口和测试的映射闭集、prepare-fact-object-draft 与 update-workcase 等入口覆盖、候选 partial 场景、01–04 上游契约最小判断，以及 v1 audit continuity。当前只形成 v2 待确认计划，不写 execution_approval，不开始任何工作项。
 execution_approval:
+  subject_version: 2
+  approved_at: '2026-07-22T18:46:17.636645+08:00'
+  summary: Human 已明确批准执行 workcase-0010 的 plan_version 2，并授权按既定四项串行工作推进。
+result_version: 1
+success_criterion_results:
+- criterion_id: criterion-01
+  outcome: satisfied
+  summary: 唯一目录已登记适用类型、来源、owner、入口与 unavailable 边界，并完成上游契约适用性判断。
+  evidence_refs:
+  - kind: repository-path
+    locator: specs/attachments/05.Att.02-事实对象机械校验目录.md
+- criterion_id: criterion-02
+  outcome: satisfied
+  summary: 目录、实现映射与正反测试映射三表闭集及入口精确匹配由专门测试强制。
+  evidence_refs:
+  - kind: repository-path
+    locator: code/tests/specs/test_fact_mechanical_validation_catalog.py
+- criterion_id: criterion-03
+  outcome: satisfied
+  summary: 读、草案、创建、更新、WorkCase 更新、CAS/回读及候选入口均经共享校验链，独立实现审核通过。
+  evidence_refs:
+  - kind: repository-path
+    locator: code/ldvh/facts/candidate_discovery.py
+  - kind: repository-path
+    locator: code/ldvh/helper/operations/fact_operation_support.py
+- criterion_id: criterion-04
+  outcome: satisfied
+  summary: 错误后缀和非 canonical 旧载体均公开为 partial/unavailable，不再静默排除。
+  evidence_refs:
+  - kind: repository-path
+    locator: code/tests/helper/test_fact_candidate_operation.py
+  - kind: repository-path
+    locator: code/tests/facts/test_safe_scanning.py
+- criterion_id: criterion-05
+  outcome: satisfied
+  summary: 范围测试覆盖缺目录、入口或正反证据时失败；能力声明未扩张至自然语言语义、Hook 防护或迁移。
+  evidence_refs:
+  - kind: repository-path
+    locator: code/tests/specs/test_fact_mechanical_validation_catalog.py
+  - kind: repository-path
+    locator: specs/attachments/05.Att.02-事实对象机械校验目录.md
+controller_check_summary: Controller 已核对 result_version 1 的五项成功标准、13 条规则映射、候选 partial 修复、范围测试与 CLI 读回。结果仅声明 Code 机械校验闭环，不包含自然语言语义、Hook 防护或迁移。
+result_reviews:
+- reviewer: codex-agent:/root/audit_item01
+  reviewed_at: '2026-07-22T19:35:50.296207+08:00'
   subject_version: 1
-  approved_at: '2026-07-22T17:48:05.173320+08:00'
-  summary: 批准 plan_version 1 开始执行；本次先处理 Spark routed-to 承接对象在关联中显示当前完整标题、由 Helper 校验目标标题可用性，并同步唯一 Specs、Web 与范围测试。
-  source_refs:
-  - kind: human-input
-    locator: conversation://current-task/2026-07-22/approve-workcase-0010-routed-title
+  scope: 审核 result_implementation：05.Att.02 的13条 rule_key与三表映射、candidate partial/预算修复、五项成功标准、定向测试和实际 CLI 回读；排除语义、Hook、迁移、full-v4与性能/跨平台压力验证。
+  conclusion: pass
+  feedback:
+  - 13条目录、可执行映射与正反范围测试映射保持闭集，入口范围由目录测试强制精确匹配。
+  - 错误后缀和非 canonical 载体形成 structural unavailable/coverage partial，且仅 canonical identity 消耗扫描预算。
+  - 五项成功标准、定向测试和实际 CLI 回读均有证据支持；未发现 changes_required。
+  review_basis:
+    projection_key: result_implementation
+    subject_fingerprint: 43bc3fc3b2d34f113ff56f2f452da98509bde4fd5a3e75d1a13d4a40f5afd0b8
+  controller_resolution: 1. 接受：三表闭集与入口精确匹配已由专门测试验证；无需复审。2. 接受：candidate 非 canonical 披露和 canonical 预算语义已修复并有测试；无需复审。3. 接受：五项标准、定向测试与 CLI 回读证据充分覆盖本 WorkCase 范围；进入 closure_preparing。
+evidence_refs:
+- kind: repository-path
+  locator: specs/attachments/05.Att.02-事实对象机械校验目录.md
+- kind: repository-path
+  locator: code/tests/specs/test_fact_mechanical_validation_catalog.py
+- kind: repository-path
+  locator: code/tests/facts/test_safe_scanning.py
+- kind: repository-path
+  locator: code/tests/helper/test_fact_candidate_operation.py
+validation_summary: result_version 1 的五项成功标准均标记 satisfied：唯一目录、三表映射闭集、统一入口覆盖、candidate partial 披露和范围匹配测试均已验证。定向证据包括 facts 57 项、candidate 17 项、创建/更新关键正反例 6 项及实际 CLI readback；未验证范围限 full-v4、性能/并发压力与跨平台压力，均不在本 WorkCase 范围内。
+closure_outcome: completed
+disposition_summary: 原范围内没有未满足、未验证或仍适用的残余责任；已明确排除的自然语言语义、Hook 外部直写防护、迁移、full-v4及性能/跨平台压力不属于本 WorkCase 的关闭承接范围。
+waiting_on: Human 对 workcase-0010 result_version 1 的最终关闭确认。
 object_id: workcase-0010
 fact_type_key: workcase
 created_at: '2026-07-22T17:40:53.989641+08:00'
-updated_at: '2026-07-22T17:55:18.293155+08:00'
+updated_at: '2026-07-22T19:36:17.361498+08:00'

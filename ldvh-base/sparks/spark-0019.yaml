@@ -1,4 +1,5 @@
 title: Agent 友好的 LDVH Helper 创建工作流
+intent: 保留 Helper 创建流程中 Agent 发现、候选召回、请求形成、诊断修正与受控交还的交互摩擦，避免为了表面上的一步创建而降低来源、授权、语义判断、机械校验或写后回读边界。后续需判断哪些公开操作、示例与诊断能减少负担且不扩大自动化结论。
 status: open
 priority: P2
 source_refs:

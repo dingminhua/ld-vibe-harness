@@ -148,8 +148,11 @@ def _validate_status(fact_type_key: str, fields: dict[str, Any], issues: list[Fa
         if status == "open":
             _require(fields, {"priority"}, issues)
             _forbid(fields, {"disposition_summary", "closed_at"}, issues)
-        else:
+        elif status == "routed":
             _require(fields, TERMINAL_COMMON, issues)
+            _forbid(fields, {"priority"}, issues)
+        else:  # discarded
+            _require(fields, {"disposition_summary", "closed_at"}, issues)
             _forbid(fields, {"priority"}, issues)
     elif fact_type_key == "workcase":
         terminal = {"validation_summary", "closure_outcome", "disposition_summary", "closed_at", "evidence_refs"}

@@ -1,11 +1,17 @@
 title: WorkCase 编排控制面与可执行状态
+intent: 保留 WorkCase 应提供哪些稳定、可验证的编排状态而不变成调度器的问题，避免把执行期线程、工具调用、子 Agent API 或测试通过误作 WorkCase 状态推进或关闭。后续需判断当前字段能否支持恢复、协作与验证，并识别真实字段缺口。
 status: open
 priority: P1
 source_refs:
 - kind: human-input
   locator: 2026-07-19 Human：建立有价值历史 Spark 的 V4 原生入口，后续研究推进
-summary: 研究 WorkCase 如何承载可验证目标与稳定状态，并与依赖、阻塞、下一步选择和运行期编排分层；当前不引入外部任务系统或自动调度。
+- kind: repository-path
+  locator: specs/21-WorkCase-工作项.md
+summary: "**当前判断**\n\n- WorkCase 保存可验证目标、范围、成功标准、阶段工作项、内部依赖、当前推进、等待/阻塞、审核、证据和关闭判断。\n- “控制面”只表示运行时可以读取这一稳定工作契约；WorkCase 不是调度器或执行引擎，命令步骤、工具调用、平台线程、子 Agent API 与运行期实现不应写入其中。\n\n**需要验证的状态充分性**\n\n- 当前阶段、可开始工作项、显式依赖、等待/阻塞条件、恢复入口、审核与 Human Gate 位置及可回指证据，是否足以支持后续执行者或编排能力。\n- 哪些信息只能存在于按需投影或运行期，不能回写 WorkCase；Helper 或运行时如何读取而不形成第二权威。\n- 字段扩展或自动推进只能由真实消费缺口证明，不能以 V3 状态机、旧 WorkCase 或某次执行成功作为依据。\n\n**边界**\n\n- 子 Agent、线程与 worktree 的协作纪律由 `spark-0010` 承接，整体 Harness 成熟度由 `spark-0009` 承接。\n- 当前不引入外部任务系统或自动调度；Study、运行完成或测试通过都不能自动解释为 WorkCase 推进或关闭。"
+evolution:
+- at: '2026-07-22T13:53:39+08:00'
+  summary: 迁移复核保留 V3 关于协作结果回收与 WorkCase 控制面的价值，但移除旧 Git 来源、状态机和实现断言；当前问题收敛为稳定工作契约是否足够且不越界。
 object_id: spark-0008
 fact_type_key: spark
 created_at: '2026-07-19T10:28:34.053553+08:00'
-updated_at: '2026-07-19T10:28:34.053553+08:00'
+updated_at: '2026-07-22T13:53:39+08:00'

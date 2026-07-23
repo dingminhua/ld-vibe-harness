@@ -39,6 +39,7 @@ _MANAGED_FIELDS = frozenset(
         "append_result_reviews",
         "resolve_result_reviews",
         "execution_approval",
+        "withdraw_execution_approval",
         "closure_approval",
     }
 )
@@ -236,7 +237,7 @@ def _managed_records(value: object, problems: list[str]) -> dict[str, Any]:
     if len(review_indices) != len(set(review_indices)):
         problems.append("arguments.managed_records.resolve_result_reviews 的 review_index 不得重复")
 
-    for name in ("execution_approval", "closure_approval"):
+    for name in ("execution_approval", "withdraw_execution_approval", "closure_approval"):
         if name not in value or value[name] is None:
             continue
         action_count += 1
@@ -370,7 +371,7 @@ def parse_workcase_update_request(
         problems.append("arguments.set、arguments.remove、arguments.managed_records 不得同时为空")
     if {"append_result_reviews", "resolve_result_reviews"} <= active_actions:
         problems.append("append_result_reviews 与 resolve_result_reviews 不得同次出现")
-    for singleton in ("execution_approval", "closure_approval"):
+    for singleton in ("execution_approval", "withdraw_execution_approval", "closure_approval"):
         if singleton in active_actions and len(active_actions) != 1:
             problems.append(f"{singleton} 不得与其它托管动作同次出现")
 

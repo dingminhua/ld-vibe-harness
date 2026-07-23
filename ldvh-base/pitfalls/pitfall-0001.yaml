@@ -1,0 +1,58 @@
+title: ZCode 本地插件安装 data 目录缺失导致 Hook 不生效
+status: active
+source_refs:
+- kind: conversation
+  locator: ZCode 会话诊断记录 2026-07-22
+  observed_at: '2026-07-22T19:30:00+08:00'
+- kind: rule
+  locator: zcode-guide:diagnosing-hooks
+  observed_at: '2026-07-22T19:35:00+08:00'
+- kind: conversation
+  locator: ZCode 会话 pitfall 复盘记录 2026-07-23
+  observed_at: '2026-07-23T00:30:00+08:00'
+- kind: rule
+  locator: specs/23-Pitfall-踩坑经验.md
+  observed_at: '2026-07-23T00:30:00+08:00'
+evidence_refs:
+- kind: log
+  locator: /Users/dmh2002/.zcode/v2/logs/2026-07-22.log
+  observed_at: '2026-07-22T19:30:00+08:00'
+- kind: filesystem
+  locator: /Users/dmh2002/.zcode/cli/plugins/data/ldvh@zcode-plugins-official/
+  observed_at: '2026-07-22T19:35:00+08:00'
+- kind: filesystem
+  locator: /Users/dmh2002/.zcode/cli/plugins/cache/zcode-plugins-official/ldvh/0.1.0/data/ldvh.json
+  observed_at: '2026-07-22T19:35:00+08:00'
+- kind: filesystem
+  locator: /Users/dmh2002/.zcode/cli/plugins/data/ldvh@local/ldvh.json
+  observed_at: '2026-07-22T19:35:00+08:00'
+- kind: log
+  locator: /Users/dmh2002/.zcode/v2/logs/2026-07-22.log
+  observed_at: '2026-07-22T19:52:00+08:00'
+- kind: filesystem
+  locator: /Users/dmh2002/.zcode/cli/plugins/cache/zcode-plugins-official/ldvh/0.1.0/hooks/hooks.json
+  observed_at: '2026-07-22T19:55:00+08:00'
+- kind: filesystem
+  locator: /Users/dmh2002/.zcode/cli/plugins/cache/zcode-plugins-official/ldvh/0.1.0/scripts/codex_context.py
+  observed_at: '2026-07-22T19:55:00+08:00'
+relations:
+- relation_key: originated-from
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0003
+  source_refs:
+  - kind: conversation
+    locator: ZCode 会话 pitfall 复盘记录 2026-07-23
+    observed_at: '2026-07-23T00:30:00+08:00'
+applicability: 适用于通过本地 filesystem 方式向 ZCode 安装插件的场景；适用于含有 hooks 的插件安装
+validation_summary: "复制 ldvh.json 到 data 目录后重启 ZCode，SessionStart hook 成功触发并返回 work-context 内容（含 8.1 渐进式披露、8.2 环境 Hook 职责边界），日志中可见 hook 执行记录。但以下边界未充分验证：\n\n1. SubagentStart 事件是否也正常触发——未单独验证\n2. 未来插件版本升级后 data 目录是否会再次失效——未验证\n3. 会话 compact/resume 后 hook 是否每次都能触发——仅验证了一次 resume\n4. 同时存在 ldvh@local 和 ldvh@zcode-plugins-official 两个注册条目时，hook 运行时选择哪个 data 目录——未完全确定"
+symptoms: "1. 插件在 config.json 中已启用但 SessionStart 时无任何效果\n2. 日志中只有 rpc:register channel 'hooks' 但无 hook 执行事件（无 fired/completed/failed）\n3. 手动模拟 hook 脚本（codex_context.py）可以正常返回 work-context\n4. 以为是 hook 配置错误，但 hooks/hooks.json 结构正确、事件名合法\n5. 日志中无任何 hook 超时/失败/阻断记录，说明 hook 运行时从未执行该 hook"
+trigger_conditions: "1. 通过 filesystem 方式安装 ZCode 插件（marketplace: 'local', source: 'filesystem'），而非 marketplace 安装\n2. 插件含有 hooks 声明（plugin.json 中 hooks: 'hooks'）且 hooks/hooks.json 内容正确\n3. 插件 cache 目录中有 data/ldvh.json 但 data/ldvh@plugin-name/ 目录为空\n4. 插件在 config.json 的 enabledPlugins 中标记为 true\n5. 插件有两个注册来源（ldvh@local 和 ldvh@zcode-plugins-official），前者指向实际项目，后者指向空 data 目录"
+root_cause: "ZCode 的本地 filesystem 插件安装流程缺少 data 目录同步步骤，具体来说：\n\n1. 插件注册后，cache/ 目录中的 data/ldvh.json（包含 helper_executable 和 work_context_executable 路径）没有被自动复制到 data/ldvh@zcode-plugins-official/ 目录下\n2. hook 脚本 codex_context.py 在运行时通过 ZCODE_PLUGIN_DATA 或 PLUGIN_DATA 环境变量查找 data 目录，读取其中的 ldvh.json 来定位 helper 可执行文件\n3. data 目录为空，脚本找不到配置，抛出 ConfigurationError，返回 connection_failure\n4. 但 hook 运行时层面（ZCode 主进程）没有记录这次失败——日志中既无 hook fired 也无 hook failed，表现为静默不触发\n5. 注意 ldvh@local 和 ldvh@zcode-plugins-official 是两个独立注册条目：local 的 data 目录有 ldvh.json（手动维护），但官方插件来源的 data 目录为空（自动安装未同步）"
+resolution: "手动将插件缓存中的 data/ldvh.json 复制到目标 data 目录：\n\n# 源：插件缓存中的 data 配置\nsource=cache/zcode-plugins-official/ldvh/0.1.0/data/ldvh.json\n# 目标：插件运行时 data 目录\ntarget=data/ldvh@zcode-plugins-official/ldvh.json\ncp \"$source\" \"$target\"\n\n注意：目标目录名中的 @zcode-plugins-official 后缀对应插件 marketplace 来源，由 ZCode 自动生成；\n不同来源安装同一插件时 data 目录路径不同（如 ldvh@local → data/ldvh@local/）。\n\n复制后需要重启 ZCode 应用使 hooks 重新加载。验证方法：\n1. 启动新会话，观察是否有 'Loading LDVH rule context' 状态提示\n2. 检查日志中是否有 hook fired / completed 记录\n3. 查看 system-reminder 中是否包含 work-context 内容\n4. 测试 SubagentStart 事件是否也正常触发"
+avoidance: "1. 安装本地 filesystem 插件后，检查 data/<plugin-name>/ 目录是否已同步\n2. 查看 ZCode 日志确认 hook 是否被触发\n3. 手动模拟 hook 脚本执行，提前发现问题\n4. 优先使用 marketplace 安装方式（如果可用）以确保 data 目录自动同步"
+object_id: pitfall-0001
+fact_type_key: pitfall
+created_at: '2026-07-22T20:01:58.169820+08:00'
+updated_at: '2026-07-22T20:01:58.169820+08:00'

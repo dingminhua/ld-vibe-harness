@@ -61,6 +61,22 @@ test('Spark sources remain source materials and are never projected as intent', 
   assert.equal(Object.prototype.hasOwnProperty.call(projected, 'intent'), false);
 });
 
+test('human-direct-input conversation locators remain recognized external materials', () => {
+  const projected = projectFactReadingAssociations({
+    source_refs: [
+      {
+        kind: 'human-direct-input',
+        locator: 'conversation://current-task/2026-07-22/spark-0020-ai-continuation',
+      },
+    ],
+  });
+
+  assert.deepEqual(projected.externalInputs.map((item) => item.locator), [
+    'conversation://current-task/2026-07-22/spark-0020-ai-continuation',
+  ]);
+  assert.deepEqual(projected.unresolved, []);
+});
+
 test('malformed and unknown associations remain visible as unresolved', () => {
   const projected = projectFactReadingAssociations({
     source_refs: [

@@ -87,6 +87,7 @@ def discover_fact_candidates(
     structural: list[dict[str, object]] = []
     complete = True
     budget_exhausted = False
+    scanned_canonical_identities = 0
     for fact_type_key, layout in sorted(LAYOUTS.items()):
         if budget_exhausted:
             structural.append(
@@ -104,12 +105,18 @@ def discover_fact_candidates(
             complete = False
             continue
         for path in paths:
-            if path.suffix != layout.suffix:
-                continue
             object_id = path.name.removesuffix(layout.suffix)
-            if layout.object_id_pattern.fullmatch(object_id) is None:
+            if path.suffix != layout.suffix or layout.object_id_pattern.fullmatch(object_id) is None:
+                structural.append(
+                    _structural_problem(
+                        fact_type_key,
+                        f"{layout.directory}/{path.name}",
+                        "事实载体不是当前类型的 canonical identity file",
+                    )
+                )
+                complete = False
                 continue
-            if len(keys) >= MAX_GRAPH_OBJECTS:
+            if scanned_canonical_identities >= MAX_GRAPH_OBJECTS:
                 structural.append(
                     _structural_problem(
                         fact_type_key,
@@ -120,6 +127,7 @@ def discover_fact_candidates(
                 complete = False
                 budget_exhausted = True
                 break
+            scanned_canonical_identities += 1
             keys.append((fact_type_key, object_id))
             index.read(fact_type_key, object_id)
     stabilize_project_index(index)

@@ -116,6 +116,13 @@ def _sequence(value: object) -> Sequence[Any]:
     return value if isinstance(value, list) else ()
 
 
+def _all_items_pending(fields: Mapping[str, Any]) -> bool:
+    items = fields.get("work_items")
+    return isinstance(items, list) and bool(items) and all(
+        isinstance(item, Mapping) and item.get("status") == "pending" for item in items
+    )
+
+
 def construct_workcase_update(
     before: Mapping[str, Any],
     *,
@@ -188,8 +195,9 @@ def construct_workcase_update(
         "resolve_result_reviews"
     ) is not None:
         problems.append("append_result_reviews 与 resolve_result_reviews 不得同次出现")
-    if "execution_approval" in actions and len(actions) != 1:
-        problems.append("execution_approval 不得与其它托管动作同次出现")
+    for action in ("execution_approval", "withdraw_execution_approval"):
+        if action in actions and len(actions) != 1:
+            problems.append(f"{action} 不得与其它托管动作同次出现")
     if "closure_approval" in actions and len(actions) != 1:
         problems.append("closure_approval 不得与其它托管动作同次出现")
     if "closure_approval" in actions:
@@ -199,6 +207,18 @@ def construct_workcase_update(
         remaining = terminal_forbidden & set(after)
         if remaining:
             problems.append("关闭批准必须同次移除终态禁止字段: " + ", ".join(sorted(remaining)))
+
+    if "withdraw_execution_approval" in actions:
+        if plan_bump:
+            problems.append("撤回执行批准不得同时升版计划")
+        if before.get("phase") != "executing" or set_fields.get("phase") != "human_plan_confirming":
+            problems.append("撤回执行批准必须从 executing 回到 human_plan_confirming")
+        if not isinstance(before.get("execution_approval"), Mapping):
+            problems.append("撤回执行批准要求 before 已有 execution_approval")
+        if any(key in before for key in PLAN_RESET_FIELDS if key != "execution_approval"):
+            problems.append("撤回执行批准只适用于尚未形成结果包的计划")
+        if not _all_items_pending(after):
+            problems.append("撤回执行批准后所有 work_items 必须恢复为 pending")
 
     if problems:
         return WorkCaseUpdateConstruction(None, problems=tuple(problems))
@@ -300,6 +320,13 @@ def construct_workcase_update(
                 **dict(approval_input),
             }
             receipts.append(_receipt("execution_approval_recorded", plan_version))
+
+    if managed_records.get("withdraw_execution_approval") is not None:
+        plan_version = after.get("plan_version")
+        if not _positive_integer(plan_version):
+            return WorkCaseUpdateConstruction(None, problems=("撤回执行批准要求有效 plan_version",))
+        after.pop("execution_approval", None)
+        receipts.append(_receipt("execution_approval_withdrawn", plan_version))
 
     closure_input = managed_records.get("closure_approval")
     if closure_input is not None:

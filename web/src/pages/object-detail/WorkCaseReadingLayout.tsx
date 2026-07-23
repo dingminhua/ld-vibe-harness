@@ -10,6 +10,7 @@ import { executionFlowRowClass, getExecutionFlowLabel, getExecutionFlowTone, sor
 import { getWorkCaseDisplayStatus, isWorkCaseResultReviewStatus } from '@/shared/workcaseStatus';
 import type { ObjectItem, RelatedObjectSummary } from '@/utils/api';
 import { META_KEYS, sortRelatedContentEntries, type RelatedContentEntry } from '@/pages/object-detail/model';
+import { FactAssociationsSection } from '@/pages/object-detail/FactAssociationsSection';
 import {
   ContentField,
   DetailSection,
@@ -103,12 +104,18 @@ export function WorkCaseReadingLayout({
   const hidden = new Set([
     ...META_KEYS,
     'goal',
+    'summary',
+    'scope',
+    'phase',
     'priority',
     'description',
     'success_criteria',
     'success_criterion_definitions',
     'success_criterion_results',
     'source',
+    'source_refs',
+    'evidence_refs',
+    'relations',
     'orchestration',
     'work_items',
     'verification_evidence',
@@ -185,6 +192,8 @@ export function WorkCaseReadingLayout({
       </DetailSection>
 
       <WorkCaseAiContextSection obj={obj} locale={locale} />
+
+      <FactAssociationsSection obj={obj} locale={locale} />
 
       <RelatedContentSection
         entries={sortRelatedContentEntries([
@@ -335,7 +344,7 @@ function WorkCaseHumanOverviewSection({
   const { t } = useI18n();
   const [state, setState] = useState<ReadingNodeState>('expanded');
   const goal = detailString(obj.goal);
-  const description = detailString(obj.description);
+  const currentSummary = detailString(obj.summary, detailString(obj.description));
   const priority = detailString(obj.priority) || detailString(summary?.priority);
   const checklistProgress = getWorkCaseChecklistProgress(obj);
   const successCriteriaTotal = summary?.successCriteriaTotal ?? checklistProgress.total;
@@ -377,9 +386,9 @@ function WorkCaseHumanOverviewSection({
               <EmptyHint text={t('objectDetail.noPlanGoal')} />
             )}
             <div className="mt-3 border-t border-ldvh-border/70 pt-3">
-              <div className="ldvh-caption-strong mb-1 text-ldvh-text-secondary">{t('objectDetail.planDescription')}</div>
-              {hasDetailContent(description) ? (
-                <SummaryText value={description} collapseThreshold={900} />
+              <div className="ldvh-caption-strong mb-1 text-ldvh-text-secondary">{getFieldLabel('summary', locale)}</div>
+              {hasDetailContent(currentSummary) ? (
+                <SummaryText value={currentSummary} collapseThreshold={900} />
               ) : (
                 <EmptyHint text={t('objectDetail.noPlanDescription')} />
               )}

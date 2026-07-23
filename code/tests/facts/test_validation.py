@@ -759,6 +759,21 @@ def test_each_terminal_or_blocked_state_enforces_its_condition_fields(
     assert any(issue.field_path == required_field for issue in issues)
 
 
+def test_discarded_spark_allows_no_evidence_but_routed_requires_it(current_specs_repository: Path) -> None:
+    schema = project_fact_schemas(inspect_repository(current_specs_repository))["spark"]
+    discarded = {
+        **_common("spark", "spark-0001", "discarded"),
+        "summary": "A bounded test input that should no longer be tracked",
+        "disposition_summary": "The test input is no longer needed",
+        "closed_at": "2026-07-14T10:00:00+08:00",
+    }
+    assert validate_fact_object("spark", discarded, schema) == ()
+
+    routed = {**discarded, "status": "routed"}
+    issues = validate_fact_object("spark", routed, schema)
+    assert any(issue.field_path == "evidence_refs" for issue in issues)
+
+
 @pytest.mark.parametrize(
     ("kind", "locator", "version"),
     [

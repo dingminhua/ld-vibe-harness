@@ -252,6 +252,86 @@ def test_execution_approval_is_version_bound_and_semantically_idempotent() -> No
     assert unchanged.supplied == formed.supplied
 
 
+def test_execution_approval_withdrawal_restores_pending_plan_without_a_version_bump() -> None:
+    before = _before()
+    for field in (
+        "result_version",
+        "success_criterion_results",
+        "controller_check_summary",
+        "result_reviews",
+        "improvement_observations",
+        "residual_responsibilities",
+        "nonbinding_followups",
+        "closure_approval",
+        "validation_summary",
+        "closure_outcome",
+        "disposition_summary",
+    ):
+        before.pop(field, None)
+    before["phase"] = "executing"
+    before["work_items"] = [
+        {
+            **before["work_items"][0],
+            "status": "in_progress",
+            "current_summary": "An approval was recorded before execution could begin.",
+            "resume_from": "Wait for the actual Human decision.",
+        }
+    ]
+
+    withdrawal = construct_workcase_update(
+        before,
+        set_fields={
+            "phase": "human_plan_confirming",
+            "work_items": [{**before["work_items"][0], "status": "pending"}],
+            "summary": "The current plan is waiting for explicit Human approval.",
+            "resume_from": "Present the current plan to Human.",
+            "waiting_on": "Human execution approval for plan_version 1",
+        },
+        remove_fields=(),
+        managed_records={
+            "withdraw_execution_approval": {
+                "summary": "Human clarified that the recorded execution approval was not granted."
+            }
+        },
+        event_at=EVENT_AT,
+    )
+
+    assert withdrawal.problems == ()
+    assert withdrawal.supplied is not None
+    assert withdrawal.supplied["plan_version"] == 1
+    assert withdrawal.supplied["phase"] == "human_plan_confirming"
+    assert "execution_approval" not in withdrawal.supplied
+    assert withdrawal.supplied["work_items"][0]["status"] == "pending"
+    assert withdrawal.receipts == (
+        {"action": "execution_approval_withdrawn", "subject_version": 1},
+    )
+
+
+def test_execution_approval_withdrawal_rejects_result_or_active_work() -> None:
+    before = _before()
+    before["phase"] = "executing"
+    before["work_items"] = [
+        {
+            **before["work_items"][0],
+            "status": "in_progress",
+            "current_summary": "Already working.",
+            "resume_from": "Continue.",
+        }
+    ]
+
+    rejected = construct_workcase_update(
+        before,
+        set_fields={"phase": "human_plan_confirming", "work_items": before["work_items"]},
+        remove_fields=(),
+        managed_records={"withdraw_execution_approval": {"summary": "Retract."}},
+        event_at=EVENT_AT,
+    )
+
+    assert rejected.supplied is None
+    assert any("尚未形成结果包" in problem for problem in rejected.problems)
+    assert any("恢复为 pending" in problem for problem in rejected.problems)
+
+
 def test_closure_approval_requires_explicit_atomic_closed_snapshot() -> None:
     before = {
         **_before(),
