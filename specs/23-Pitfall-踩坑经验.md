@@ -100,8 +100,7 @@ AI 负责判断失败是否实际发生、根因和解决是否有证据、经�
 | `created-at` | required | `inherit` |
 | `updated-at` | required | `pitfall-fact-type::8. 变更、删除与类型退出` |
 | `status` | required | `pitfall-fact-type::6. 对象语义与生命周期` |
-| `source-refs` | required | `pitfall-fact-type::7. 来源、证据与替代关系` |
-| `evidence-refs` | required | `pitfall-fact-type::7. 来源、证据与替代关系` |
+| `urls` | conditional | `pitfall-fact-type::7. 来源、证据与替代关系` |
 | `relations` | conditional | `pitfall-fact-type::7. 来源、证据与替代关系` |
 | `disposition-summary` | conditional | `pitfall-fact-type::6. 对象语义与生命周期` |
 | `closed-at` | conditional | `pitfall-fact-type::6. 对象语义与生命周期` |
@@ -131,15 +130,15 @@ Pitfall 对象使用 UTF-8 YAML，一文件一对象，当前权威位置固定�
 
 ## 6. 对象语义与生命周期
 
-Pitfall 只记录已解决、已验证且可复用的失败机制。问题尚未解决、根因仍是推测、验证不足或适用边界不清时不得创建 active Pitfall。经验的存在不证明外部环境、协议或实现仍与验证时相同；消费前必须按 applicability、source_refs 的版本与 observed_at 重新判断现时适用性。
+Pitfall 只记录已解决、已验证且可复用的失败机制。问题尚未解决、根因仍是推测、验证不足或适用边界不清时不得创建 active Pitfall。经验的存在不证明外部环境、协议或实现仍与验证时相同；消费前必须按 applicability、对象自有语义字段 的版本与 observed_at 重新判断现时适用性。
 
 状态闭集为：
 
 | status | 语义 | 必须成立 |
 |---|---|---|
 | `active` | 根因、解决和验证仍可信，经验在 applicability 内仍可安全参考 | 只能作为新建初态；终态字段禁止；全部核心字段与证据成立；不表示规则权威 |
-| `superseded` | 原经验已被一个后来成立的新 Pitfall 整体替代 | disposition_summary、closed_at、evidence_refs 必填；旧对象必须成为一个在建边时为 active 的新 Pitfall 的有效 supersedes 目标 |
-| `retired` | 适用条件消失、关键证据被推翻或经验不再安全复用，且没有被新 Pitfall 整体替代 | disposition_summary、closed_at、evidence_refs 必填；必须有具体退出依据，不得用已被规则吸收冒充退出 |
+| `superseded` | 原经验已被一个后来成立的新 Pitfall 整体替代 | disposition_summary、closed_at、自然语言验证说明 必填；旧对象必须成为一个在建边时为 active 的新 Pitfall 的有效 supersedes 目标 |
+| `retired` | 适用条件消失、关键证据被推翻或经验不再安全复用，且没有被新 Pitfall 整体替代 | disposition_summary、closed_at、自然语言验证说明 必填；必须有具体退出依据，不得用已被规则吸收冒充退出 |
 
 初始状态只能是 active。正常转换只有 `active → superseded` 和 `active → retired`；终态不直接重开。根因、解决方式、规避方式或 applicability 的实质改变通常建立新 Pitfall；只有来源充分且仍是同一失败机制的事实更正、症状与触发补强、验证更新可以原地修正。
 
@@ -147,9 +146,9 @@ Pitfall 只记录已解决、已验证且可复用的失败机制。问题尚未
 
 ## 7. 来源、证据与替代关系
 
-source_refs 至少回指原始事故或误判、调查输入和经验形成来源。evidence_refs 必须实际支持根因、解决已经生效、验证覆盖及 applicability；命令文本、“测试通过”叙述、文件存在或一次成功不能自证超出其覆盖的结论。外部来源会变化时必须记录 version 和 observed_at。
+对象自有语义字段 至少回指原始事故或误判、调查输入和经验形成来源。自然语言验证说明 必须实际支持根因、解决已经生效、验证覆盖及 applicability；命令文本、“测试通过”叙述、文件存在或一次成功不能自证超出其覆盖的结论。外部来源会变化时必须记录 version 和 observed_at。
 
-Pitfall 来自 Spark、WorkCase 或 ADR 时可以把源对象作为 source_ref；源对象已有分流关系时不复制反向关系。落实规避措施的 WorkCase 可以把 Pitfall 作为 source_ref；Pitfall 不维护双写 related_workcases。规范、Code、commit、文档、日志或外部页面不是事实对象，分别进入 source_refs 或 evidence_refs。
+Pitfall 来自 Spark、WorkCase 或 ADR 时可以把源对象作为 source_ref；源对象已有分流关系时不复制反向关系。落实规避措施的 WorkCase 可以把 Pitfall 作为 source_ref；Pitfall 不维护双写 related_workcases。规范、Code、commit、文档、日志或外部页面不是事实对象，分别进入 对象自有语义字段 或 自然语言验证说明。
 
 Pitfall relation_key 第一版只允许 supersedes：
 
@@ -183,7 +182,7 @@ Pitfall 类型停止新增、合并、替代或取消时，必须按 05 处置�
 | Pitfall 准入与查重 | 创建对象前 | 失败已发生、解决、根因与验证成立、经验可复用、边界清楚且没有无损现有承载 | 原始事故、调查与验证来源、召回结果及 AI 语义比较 | AI 来源回读与全局检索；Code 只辅助精确检索 | 当次候选与直接相邻事实 | 不创建；留在当前行动、WorkCase、Spark、ADR、文档或已有对象 |
 | Pitfall 召回与消费 | 出现相似症状、进入触发条件、采用高风险方案、调查修复故障或压缩恢复已选经验时 | F2 卡片只投影现有权威字段并保留字面命中依据，不恢复 `tags`；`active` 候选的症状、触发、环境、版本与 applicability 可能相容；终态只作追溯或替代链候选；召回未被冒充为根因证明或行动授权 | 当前症状与环境、候选卡与命中字段、对象全文、来源版本、证据和验证范围 | 候选范围走查、对象与当前环境回读、AI 因果与适用审核 | 当次症状、环境与已展开经验 | 不复用规避结论；继续调查、重新验证、缩小边界或建立 WorkCase |
 | 对象 Schema 与身份 | 创建、读取或更新对象时 | 路径、身份、字段闭集、类型、条件、时间和引用符合当前来源 | 当前文件、统一登记、本文与派生 Schema | 实际 parser/validator；未实现时逐项来源回读 | 当次对象当前 Working Tree 内容 | 不作为有效 Pitfall 消费；报告字段和未验证范围 |
-| 根因、解决与复用 | 创建或消费 active Pitfall 时 | 根因有证据、解决已执行验证、applicability 匹配当前环境、验证边界未被扩大 | source_refs、evidence_refs、当前环境和相邻规则 | AI 语义审核、来源及实际环境回读 | 当次经验及声明范围 | 不创建或暂停复用；补证据、缩小边界、重新验证或建立 WorkCase |
+| 根因、解决与复用 | 创建或消费 active Pitfall 时 | 根因有证据、解决已执行验证、applicability 匹配当前环境、验证边界未被扩大 | 对象自有语义字段、自然语言验证说明、当前环境和相邻规则 | AI 语义审核、来源及实际环境回读 | 当次经验及声明范围 | 不创建或暂停复用；补证据、缩小边界、重新验证或建立 WorkCase |
 | 替代或退出 | 准备 superseded 或 retired 时 | 新经验或退出依据成立，对象、关系、证据、适用边界和时间一致 | 新旧 Pitfall、来源、证据、当前规则与 Human 决定 | AI 语义审核、目标回读和结构校验 | 当次终态与替代声明 | 保持 active；修正替代范围、补证据或进入 Human Gate |
 | 变更与回读 | 创建、更正、补强、替代、退出、拆分、合并或删除后 | 获准变更已写入、回读并验证；失败和部分结果如实保留 | Human 指令、文件差异、Working Tree 回读和验证结果 | 实际写入入口与当前文件回读 | 当次实际变更 | 不声明成功；修正、回滚或保留部分结果与残余风险 |
 

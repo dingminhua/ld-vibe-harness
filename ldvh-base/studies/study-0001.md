@@ -1,38 +1,6 @@
 ---
 title: 开源项目公共契约与发布就绪外部实践调研
 status: active
-source_refs:
-- kind: web-page
-  locator:
-    https://docs.github.com/en/communities/setting-up-your-project-for-healthy-contributions/adding-a-license-to-a-repository
-  observed_at: '2026-07-19T10:00:00+08:00'
-- kind: web-page
-  locator:
-    https://docs.github.com/en/enterprise-cloud@latest/repositories/creating-and-managing-repositories/best-practices-for-repositories
-  observed_at: '2026-07-19T10:00:00+08:00'
-- kind: web-page
-  locator:
-    https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases
-  observed_at: '2026-07-19T10:00:00+08:00'
-- kind: web-page
-  locator: https://baseline.openssf.org/
-  observed_at: '2026-07-19T10:00:00+08:00'
-evidence_refs:
-- kind: web-page
-  locator:
-    https://docs.github.com/en/communities/setting-up-your-project-for-healthy-contributions/adding-a-license-to-a-repository
-  observed_at: '2026-07-19T10:00:00+08:00'
-- kind: web-page
-  locator:
-    https://docs.github.com/en/enterprise-cloud@latest/repositories/creating-and-managing-repositories/best-practices-for-repositories
-  observed_at: '2026-07-19T10:00:00+08:00'
-- kind: web-page
-  locator:
-    https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases
-  observed_at: '2026-07-19T10:00:00+08:00'
-- kind: web-page
-  locator: https://baseline.openssf.org/
-  observed_at: '2026-07-19T10:00:00+08:00'
 applicability: 用于 LDVH V4 的开源发布就绪检查、公共文档和可复核 Release 契约设计；不替代 Human
   对许可证、隐私、威胁模型和首次发布范围的决定。
 validation_summary: 已读取 GitHub 官方许可、仓库最佳实践与 Release 文档，以及 OpenSSF OSPS Baseline
@@ -44,7 +12,26 @@ abstract: 调研 GitHub 官方仓库治理/许可/Release 指南与 OpenSSF OSPS
 object_id: study-0001
 fact_type_key: study
 created_at: '2026-07-19T11:17:38.765050+08:00'
-updated_at: '2026-07-19T11:17:38.765050+08:00'
+updated_at: '2026-07-23T14:21:35.783731+08:00'
+urls:
+- ref:
+    https://docs.github.com/en/communities/setting-up-your-project-for-healthy-contributions/adding-a-license-to-a-repository
+  title:
+    docs.github.com/en/communities/setting-up-your-project-for-healthy-contributions/adding-a-license-to-a-repository
+  summary: 外部研究资料；具体支持范围与限制见本报告正文。
+- ref:
+    https://docs.github.com/en/enterprise-cloud@latest/repositories/creating-and-managing-repositories/best-practices-for-repositories
+  title:
+    docs.github.com/en/enterprise-cloud@latest/repositories/creating-and-managing-repositories/best-practices-for-repositories
+  summary: 外部研究资料；具体支持范围与限制见本报告正文。
+- ref:
+    https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases
+  title:
+    docs.github.com/en/repositories/releasing-projects-on-github/about-releases
+  summary: 外部研究资料；具体支持范围与限制见本报告正文。
+- ref: https://baseline.openssf.org/
+  title: baseline.openssf.org
+  summary: 外部研究资料；具体支持范围与限制见本报告正文。
 ---
 
 ## 研究问题
@@ -52,7 +39,7 @@ updated_at: '2026-07-19T11:17:38.765050+08:00'
 GitHub 与 OpenSSF 当前如何定义一个可公开协作、可发布和可复核的开源项目最低公共契约？
 ## 输入、方法与观察边界
 
-本报告读取并对照了以下外部公开资料：https://docs.github.com/en/communities/setting-up-your-project-for-healthy-contributions/adding-a-license-to-a-repository、https://docs.github.com/en/enterprise-cloud@latest/repositories/creating-and-managing-repositories/best-practices-for-repositories、https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases、https://baseline.openssf.org/。观察时间统一记录在 evidence_refs；本报告只陈述页面可直接支持的内容，并将 LDVH 适用性与外部事实分开。
+本报告读取并对照了以下外部公开资料：https://docs.github.com/en/communities/setting-up-your-project-for-healthy-contributions/adding-a-license-to-a-repository、https://docs.github.com/en/enterprise-cloud@latest/repositories/creating-and-managing-repositories/best-practices-for-repositories、https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases、https://baseline.openssf.org/。外部资料条目记录在 urls 中；本报告只陈述页面可直接支持的内容，并将 LDVH 适用性与外部事实分开。
 ## 关键发现
 
 GitHub 把 README、许可证、贡献说明、行为准则等视为让公共协作者理解项目边界的基础材料；没有许可证时，公开代码并不自动授予他人按开源方式使用的权利。GitHub Release 以 tag 对应的代码快照和发布说明组织可复核交付。OpenSSF OSPS Baseline 是有版本的控制基线，应明确采用的基线版本和未满足项。

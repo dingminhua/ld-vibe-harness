@@ -1,15 +1,22 @@
 title: Adapter payload 与 target 身份完整性
-intent: 保留环境 adapter 是否完整传递真实工作对象的独立问题，避免把核心管辖判定、target-first 规则或某次 no-op 结果误认为可靠输入已经抵达。后续需判断各目标环境的 payload、target、cwd 与工具输入是否可验证地贯通，以及缺失或冲突时应如何安全且可诊断地处理。
+intent: 保留环境 adapter 是否完整传递真实工作对象的独立问题，避免把核心管辖判定、target-first 规则或某次 no-op
+  结果误认为可靠输入已经抵达。后续需判断各目标环境的 payload、target、cwd
+  与工具输入是否可验证地贯通，以及缺失或冲突时应如何安全且可诊断地处理。
 status: open
 priority: P2
-source_refs:
-- kind: repository-path
-  locator: specs/09-环境接入规范.md
-summary: "**当前判断**\n\n- adapter 的职责是原样交接环境提供的 payload 和可定位工作对象；核心已有 target-first 或管辖判定逻辑，并不能证明 adapter 已把真实 target、cwd、locator 与工具输入送达。\n- 因而一次 `not_governed` 或 cwd fallback 不能直接解释为目标确实不受管辖；需要区分明确非管辖、明确管辖和输入不足三种结果，并保留可定位诊断。\n- 09 已禁止 adapter 猜测或补全输入。真正的可靠性仍需以各环境、关键事件的端到端输入证据证明，而非仅凭 adapter 或核心代码存在。\n\n**需验证的交接链**\n\n- Hook/adapter 是否转发原始 stdin payload，以及可用的 target、cwd、session、工具名与工具输入。\n- 真实输入抵达核心后，target-first、worktree/管辖判定与 receipt 等后续判断是否获得正确的对象，而非被父目录或进程 cwd 的兜底值遮蔽。\n- 输入缺失、冲突或只能 cwd fallback 时，诊断、只读放行与可能写入的阻断策略是否能清楚区分未知和非管辖，且不把风险静默成 no-op。\n- adapter 属于仓库受管固定资产还是现场安装脚本必须分开处理：前者可接受受管验证，后者只能作为安装、doctor 或现场证据，不得被写成固定部署事实。\n\n**未决事项**\n\n- 先选择实际目标环境和关键事件形成最小端到端矩阵，再判断哪些缺口值得进入 WorkCase。\n- 安装与验收入口应在 runtime 尚未可用时仍可检查输入交接；同时保持确认非管辖项目的低打扰行为。"
+summary: "**当前判断**\n\n- adapter 的职责是原样交接环境提供的 payload 和可定位工作对象；核心已有 target-first 或管辖判定逻辑，并不能证明
+  adapter 已把真实 target、cwd、locator 与工具输入送达。\n- 因而一次 `not_governed` 或 cwd fallback 不能直接解释为目标确实不受管辖；需要区分明确非管辖、明确管辖和输入不足三种结果，并保留可定位诊断。\n\
+  - 09 已禁止 adapter 猜测或补全输入。真正的可靠性仍需以各环境、关键事件的端到端输入证据证明，而非仅凭 adapter 或核心代码存在。\n\n**需验证的交接链**\n\
+  \n- Hook/adapter 是否转发原始 stdin payload，以及可用的 target、cwd、session、工具名与工具输入。\n- 真实输入抵达核心后，target-first、worktree/管辖判定与
+  receipt 等后续判断是否获得正确的对象，而非被父目录或进程 cwd 的兜底值遮蔽。\n- 输入缺失、冲突或只能 cwd fallback 时，诊断、只读放行与可能写入的阻断策略是否能清楚区分未知和非管辖，且不把风险静默成
+  no-op。\n- adapter 属于仓库受管固定资产还是现场安装脚本必须分开处理：前者可接受受管验证，后者只能作为安装、doctor 或现场证据，不得被写成固定部署事实。\n\
+  \n**未决事项**\n\n- 先选择实际目标环境和关键事件形成最小端到端矩阵，再判断哪些缺口值得进入 WorkCase。\n- 安装与验收入口应在 runtime
+  尚未可用时仍可检查输入交接；同时保持确认非管辖项目的低打扰行为。"
 evolution:
 - at: '2026-07-22T13:39:50+08:00'
-  summary: 迁移对照将 V3 在具体 Hook 环境中发现的 payload 断裂收敛为当前通用边界：不再把某个旧脚本或实现状态当作结论，而是明确 adapter 交接、核心判定和安装现场证据的分层，并把未知输入与明确非管辖区分为待验收问题。
+  summary: 迁移对照将 V3 在具体 Hook 环境中发现的 payload 断裂收敛为当前通用边界：不再把某个旧脚本或实现状态当作结论，而是明确
+    adapter 交接、核心判定和安装现场证据的分层，并把未知输入与明确非管辖区分为待验收问题。
 object_id: spark-0002
 fact_type_key: spark
 created_at: '2026-07-19T08:33:49.319864+08:00'
-updated_at: '2026-07-22T13:39:50+08:00'
+updated_at: '2026-07-23T14:21:35.783731+08:00'

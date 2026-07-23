@@ -37,7 +37,6 @@ interface RelatedObjectSummary {
   resultSummary?: string
   blockingReason?: string
   inputRefs?: string[]
-  evidenceRefs?: string[]
 }
 
 interface RelatedWorkCaseSummary extends RelatedObjectSummary {
@@ -180,7 +179,6 @@ function toExecutionItemSummary(value: unknown, workcase: ListedObject, index: n
     resultSummary: toStringValue(value.result_summary) || undefined,
     blockingReason: toStringValue(value.blocking_summary) || toStringValue(value.blocking_reason) || undefined,
     inputRefs: toStringArray(value.input_refs),
-    evidenceRefs: toStringArray(value.evidence_refs),
   }
 }
 
@@ -299,7 +297,7 @@ export async function buildWorkCaseSummaries(workcaseItems: ListedObject[]): Pro
       hasSuccessCriteria: successCriteriaProgress.total > 0,
       hasPlanConfirmedAt: hasContent(data.execution_approval) || hasContent(data.plan_confirmed_at),
       hasClosureRequestedAt: toStringValue(data.phase) === 'human_closure_confirming' || hasContent(data.closure_requested_at) || hasContent(data.review_requested_at),
-      hasVerificationEvidence: hasContent(data.evidence_refs) || hasContent(data.controller_check_summary) || hasContent(data.verification_evidence),
+      hasVerificationEvidence: hasContent(data.controller_check_summary) || hasContent(data.validation_summary),
       hasClosureEvidence: hasContent(data.validation_summary) || hasContent(data.closure_evidence),
       hasClosedAt: hasContent(data.closed_at),
     }
@@ -428,7 +426,7 @@ router.get('/:type/:id', async (req: Request, res: Response): Promise<void> => {
     return
   }
 
-  // WorkCase 派生阅读材料：工作项自身材料 + execution_items 的输入和证据引用。
+  // WorkCase 派生阅读材料：仅保留旧兼容输入项；事实对象证据以自然语言字段表达。
   if (type === 'workcase' && result.data) {
     const relatedDocsSet = new Set<string>()
     const relatedAdrsSet = new Set<string>()
@@ -450,7 +448,6 @@ router.get('/:type/:id', async (req: Request, res: Response): Promise<void> => {
     for (const executionItem of executionItems) {
       if (!isRecord(executionItem)) continue
       addStringArray(executionRefsSet, executionItem.input_refs)
-      addStringArray(executionRefsSet, executionItem.evidence_refs)
     }
 
     result.data.aggregated_related_docs = [...relatedDocsSet]

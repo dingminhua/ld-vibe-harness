@@ -3,58 +3,82 @@ fact_type_key: workcase
 workcase_profile: control-contract-v1
 title: 真 Windows 上 spark-0004 的 preflight 与 core-readonly 真实验收
 created_at: '2026-07-21T04:23:03+08:00'
-updated_at: '2026-07-22T17:36:54+08:00'
+updated_at: '2026-07-23T14:21:35.783731+08:00'
 status: open
 phase: human_plan_confirming
 plan_version: 1
 priority: P2
-source_refs:
-- kind: repository-path
-  locator: specs/07-Code 实践与测试规范.md
-- kind: repository-path
-  locator: ldvh-base/sparks/spark-0004.yaml
 audit_summary:
 - audit_id: audit-01
   subject_kind: pre_creation_plan
   subject_version: 1
   review_count: 2
-  summary: 独立审核先指出 item-01 将证据落盘与禁止副作用混为一谈；Controller 已将其收紧为仅允许预定 evidence-dir 落盘，并复审通过。
+  summary: 独立审核先指出 item-01 将证据落盘与禁止副作用混为一谈；Controller 已将其收紧为仅允许预定 evidence-dir
+    落盘，并复审通过。
 creation_reviews:
 - reviewer: codex-agent:/root/review_wc0008_plan
   reviewed_at: '2026-07-22T17:36:54+08:00'
   subject_version: 1
-  scope: 覆盖 goal、scope、四项成功标准、两个工作项及依赖、方法边界、验证方式、未执行范围与风险；确认对象停留在 human_plan_confirming，不含执行批准。
+  scope: 覆盖 goal、scope、四项成功标准、两个工作项及依赖、方法边界、验证方式、未执行范围与风险；确认对象停留在
+    human_plan_confirming，不含执行批准。
   conclusion: pass
   feedback:
   - '[resolved] item-01 已明确仅允许预定 evidence-dir 落盘；不得提交、推送、修改受管源码树或远端。'
   review_basis:
     projection_key: plan_current
-    subject_fingerprint: 672d1fcf5528daf275cac60d4f512502af1efa27d94d8e9d8aaebaa5e18e31e1
-  controller_resolution: 接受审核反馈并完成 item-01 的副作用边界修正；复审结论为 pass。当前只形成等待 Human 确认的计划，不写 execution_approval、不启动任何 Windows 验收执行。
-goal: 在 Human 指定并授权的原生 Windows（win32/nt，NTFS 固定卷）runner 上，通过 tools/verify_native_windows.py 的 preflight 与 core-readonly 两阶段，为 spark-0004「原生 Windows 支持范围与真实验收」形成可读、可复核的真实验收证据；明确记录未验证范围，不把只读/策略阶段结果扩大为写能力通过。
-scope: 覆盖 tools/verify_native_windows.py 的 preflight（8 个基础探针）与 core-readonly（追加 public_write_fail_closed 策略探针及 ruff 检查）两阶段在真 Windows 上的实际运行与证据收集；覆盖 evidence 落盘（源码树外固定 NTFS 卷、干净 Git worktree）与 core-summary.json 等产物的读取。排除 core-full 写矩阵（受 file_only 耐久性 Human Gate 阻塞，不在本案范围）、adapter-handoff（独立 Human Gate，本案只记录不执行）、以及任何 Git commit/push/PR 与远端发布动作。本 WorkCase 推进 spark-0004 的「真实支持范围/未支持范围/验收结论」中的只读与公开写策略部分；写能力的耐久性等 Human 决定项保持为 spark-0004 的未决风险，不在本案关闭。
+    subject_fingerprint:
+      672d1fcf5528daf275cac60d4f512502af1efa27d94d8e9d8aaebaa5e18e31e1
+  controller_resolution: 接受审核反馈并完成 item-01 的副作用边界修正；复审结论为 pass。当前只形成等待 Human
+    确认的计划，不写 execution_approval、不启动任何 Windows 验收执行。
+goal: 在 Human 指定并授权的原生 Windows（win32/nt，NTFS 固定卷）runner 上，通过
+  tools/verify_native_windows.py 的 preflight 与 core-readonly 两阶段，为 spark-0004「原生
+  Windows 支持范围与真实验收」形成可读、可复核的真实验收证据；明确记录未验证范围，不把只读/策略阶段结果扩大为写能力通过。
+scope: 覆盖 tools/verify_native_windows.py 的 preflight（8 个基础探针）与 core-readonly（追加
+  public_write_fail_closed 策略探针及 ruff 检查）两阶段在真 Windows 上的实际运行与证据收集；覆盖 evidence
+  落盘（源码树外固定 NTFS 卷、干净 Git worktree）与 core-summary.json 等产物的读取。排除 core-full 写矩阵（受
+  file_only 耐久性 Human Gate 阻塞，不在本案范围）、adapter-handoff（独立 Human
+  Gate，本案只记录不执行）、以及任何 Git commit/push/PR 与远端发布动作。本 WorkCase 推进 spark-0004
+  的「真实支持范围/未支持范围/验收结论」中的只读与公开写策略部分；写能力的耐久性等 Human 决定项保持为 spark-0004
+  的未决风险，不在本案关闭。
 success_criterion_definitions:
 - criterion_id: criterion-01
-  statement: 在真 Windows（sys.platform=win32, os.name=nt, NTFS 固定卷）上，preflight 阶段的 8 个基础探针全部 passed：native_environment_and_console、junction_rejection、symlink_rejection、lock_kill_recovery、file_only_atomic_boundaries、git_linked_worktree_temp_index、drive_case_alias、unc_fail_closed。
+  statement: 在真 Windows（sys.platform=win32, os.name=nt, NTFS 固定卷）上，preflight 阶段的
+    8 个基础探针全部
+    passed：native_environment_and_console、junction_rejection、symlink_rejection、lock_kill_recovery、file_only_atomic_boundaries、git_linked_worktree_temp_index、drive_case_alias、unc_fail_closed。
 - criterion_id: criterion-02
-  statement: core-readonly 阶段 public_write_fail_closed 探针 passed：未经 Human 授权的公开 create/update 在真实 Windows 上不可用且没有任何副作用（fail-closed）。
+  statement: core-readonly 阶段 public_write_fail_closed 探针 passed：未经 Human 授权的公开
+    create/update 在真实 Windows 上不可用且没有任何副作用（fail-closed）。
 - criterion_id: criterion-03
-  statement: 证据由 tools/verify_native_windows.py 产出并落盘于源码树外固定 NTFS 卷；source_root 为干净 Git worktree，core-summary.json 等产物可被独立回读，且明确标注 contract=ldvh-native-windows-verification/1。
+  statement: 证据由 tools/verify_native_windows.py 产出并落盘于源码树外固定 NTFS 卷；source_root
+    为干净 Git worktree，core-summary.json 等产物可被独立回读，且明确标注
+    contract=ldvh-native-windows-verification/1。
 - criterion_id: criterion-04
-  statement: 结果如实记录未验证范围：core-full 写耐久性 Human Gate 未接受、adapter-handoff 未执行，不在本案中声明为通过或失败；只读/策略证据不被扩大为写能力验收。
+  statement: 结果如实记录未验证范围：core-full 写耐久性 Human Gate 未接受、adapter-handoff
+    未执行，不在本案中声明为通过或失败；只读/策略证据不被扩大为写能力验收。
 work_items:
 - item_id: item-01
   goal: 在真 Windows 上执行 preflight 验证并收集基础探针证据。
-  expected_result: tools/verify_native_windows.py --phase preflight 退出码 0，core-summary.json 中 8 个基础探针状态均为 passed；除预定 evidence-dir 的证据落盘外，不提交、不推送、不修改受管源码树或远端。
+  expected_result: tools/verify_native_windows.py --phase preflight 退出码
+    0，core-summary.json 中 8 个基础探针状态均为 passed；除预定 evidence-dir
+    的证据落盘外，不提交、不推送、不修改受管源码树或远端。
   status: pending
-  approach_summary: 使用隔离 Python 创建临时 venv 并 pip install --isolated [dev]；evidence-dir 置于源码树外固定 NTFS 卷（E:/ldvh-evidence/preflight-001）；以 argv + 有界超时 + 最小子环境运行 test_native_windows.py；结果由工具写回 core-summary.json、commands.jsonl 等。
+  approach_summary: 使用隔离 Python 创建临时 venv 并 pip install --isolated
+    [dev]；evidence-dir 置于源码树外固定 NTFS 卷（E:/ldvh-evidence/preflight-001）；以 argv +
+    有界超时 + 最小子环境运行 test_native_windows.py；结果由工具写回
+    core-summary.json、commands.jsonl 等。
 - item_id: item-02
   goal: 在真 Windows 上执行 core-readonly 验证并收集公开写策略证据。
-  expected_result: tools/verify_native_windows.py --phase core-readonly 退出码 0，core-summary.json 中追加的 public_write_fail_closed 探针为 passed，ruff check/format 通过；写策略证据与 preflight 合并形成只读/策略阶段验收结论。
+  expected_result: tools/verify_native_windows.py --phase core-readonly 退出码
+    0，core-summary.json 中追加的 public_write_fail_closed 探针为 passed，ruff
+    check/format 通过；写策略证据与 preflight 合并形成只读/策略阶段验收结论。
   status: pending
   depends_on:
   - item-01
-  approach_summary: 复用同一隔离安装，追加运行 test_native_windows_write_policy.py 与 ruff；以 argv + 有界超时 + 最小子环境运行；结果由工具写回 core-summary.json。
-summary: 计划阶段：在真 Windows 上以 verify_native_windows.py 的 preflight 与 core-readonly 两阶段为 spark-0004 形成只读与公开写策略的真实验收证据；尚未执行，等待独立创建审核与 Human 执行批准。
-resume_from: 等待独立创建审核（creation_reviews）形成与 Human 执行批准（execution_approval）后，从 item-01 开始在真 Windows 上运行 preflight。
-waiting_on: Human 对 plan_version 1 的执行批准（Human Gate 1）；core-full 写耐久性与 adapter-handoff 不在本案范围。
+  approach_summary: 复用同一隔离安装，追加运行 test_native_windows_write_policy.py 与 ruff；以
+    argv + 有界超时 + 最小子环境运行；结果由工具写回 core-summary.json。
+summary: 计划阶段：在真 Windows 上以 verify_native_windows.py 的 preflight 与 core-readonly
+  两阶段为 spark-0004 形成只读与公开写策略的真实验收证据；尚未执行，等待独立创建审核与 Human 执行批准。
+resume_from: 等待独立创建审核（creation_reviews）形成与 Human 执行批准（execution_approval）后，从
+  item-01 开始在真 Windows 上运行 preflight。
+waiting_on: Human 对 plan_version 1 的执行批准（Human Gate 1）；core-full 写耐久性与
+  adapter-handoff 不在本案范围。

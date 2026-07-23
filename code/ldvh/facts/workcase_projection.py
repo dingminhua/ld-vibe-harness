@@ -24,7 +24,7 @@ _PLAN_ITEM_FIELDS = (
     "template_keys",
     "template_deviation_summary",
 )
-_RESULT_ITEM_FIELDS = (*_PLAN_ITEM_FIELDS, "status", "result_summary", "evidence_refs")
+_RESULT_ITEM_FIELDS = (*_PLAN_ITEM_FIELDS, "status", "result_summary")
 
 
 def _canonical_json(value: object) -> str:
@@ -55,10 +55,7 @@ def _normalize(value: object) -> object:
     if isinstance(value, Mapping):
         normalized: dict[str, object] = {}
         for key, item in value.items():
-            if key in {"source_refs", "evidence_refs"} and isinstance(item, list):
-                refs = [_normalize(member) for member in item]
-                normalized[str(key)] = sorted(refs, key=_canonical_json)
-            elif key in {"depends_on", "template_keys", "responsibility_ids", "value_dimensions"} and isinstance(
+            if key in {"depends_on", "template_keys", "value_dimensions"} and isinstance(
                 item, list
             ):
                 normalized[str(key)] = sorted((_normalize(member) for member in item), key=_canonical_json)
@@ -76,10 +73,7 @@ def _selected(raw: Mapping[str, object], names: tuple[str, ...]) -> dict[str, ob
         if name not in raw:
             continue
         value = raw[name]
-        if name in {"source_refs", "evidence_refs"} and isinstance(value, list):
-            selected[name] = sorted((_normalize(member) for member in value), key=_canonical_json)
-        else:
-            selected[name] = _normalize(value)
+        selected[name] = _normalize(value)
     return selected
 
 
@@ -89,21 +83,6 @@ def _items(fields: Mapping[str, object], names: tuple[str, ...]) -> list[dict[st
         return []
     selected = [_selected(item, names) for item in raw_items if isinstance(item, dict)]
     return sorted(selected, key=lambda item: (str(item.get("item_id", "")), _canonical_json(item)))
-
-
-def _routed_mappings(fields: Mapping[str, object]) -> list[dict[str, object]]:
-    raw_relations = fields.get("relations")
-    if not isinstance(raw_relations, list):
-        return []
-    mappings: list[dict[str, object]] = []
-    for relation in raw_relations:
-        if not isinstance(relation, dict) or relation.get("relation_key") != "routed-to":
-            continue
-        mappings.append(_selected(relation, ("relation_key", "target", "responsibility_ids")))
-    return sorted(
-        mappings,
-        key=lambda item: (_canonical_json(item.get("target")), _canonical_json(item)),
-    )
 
 
 def project_workcase_subject(
@@ -138,7 +117,6 @@ def project_workcase_subject(
             (
                 "success_criterion_results",
                 "controller_check_summary",
-                "evidence_refs",
                 "improvement_observations",
             ),
         )
@@ -174,7 +152,6 @@ def project_workcase_subject(
         projected["nonbinding_followups"] = _sort_objects(
             projected["nonbinding_followups"], "followup_id"
         )
-    projected["routed_to_responsibility_mappings"] = _routed_mappings(fields)
     return _plain(projected)  # type: ignore[return-value]
 
 

@@ -1,32 +1,6 @@
 ---
 title: OpenAI Codex 子 Agent、工作树与协作实践调研
 status: active
-source_refs:
-- kind: web-page
-  locator: https://developers.openai.com/codex/subagents
-  observed_at: '2026-07-19T10:00:00+08:00'
-- kind: web-page
-  locator: https://developers.openai.com/codex/app/worktrees
-  observed_at: '2026-07-19T10:00:00+08:00'
-- kind: web-page
-  locator: https://developers.openai.com/codex/noninteractive
-  observed_at: '2026-07-19T10:00:00+08:00'
-- kind: web-page
-  locator: https://developers.openai.com/codex/app-server
-  observed_at: '2026-07-19T10:00:00+08:00'
-evidence_refs:
-- kind: web-page
-  locator: https://developers.openai.com/codex/subagents
-  observed_at: '2026-07-19T10:00:00+08:00'
-- kind: web-page
-  locator: https://developers.openai.com/codex/app/worktrees
-  observed_at: '2026-07-19T10:00:00+08:00'
-- kind: web-page
-  locator: https://developers.openai.com/codex/noninteractive
-  observed_at: '2026-07-19T10:00:00+08:00'
-- kind: web-page
-  locator: https://developers.openai.com/codex/app-server
-  observed_at: '2026-07-19T10:00:00+08:00'
 applicability: 用于 LDVH 多 Agent 角色、linked worktree、Helper/Code/Web
   接口和回传可观察性的方案比较；不改变 Git identity、Human Gate 或当前项目授权边界。
 validation_summary: 已读取 developers.openai.com/codex 下四份官方入口（当前页面重定向至 ChatGPT
@@ -38,7 +12,20 @@ abstract: 调研 Codex 官方 Subagents、Worktrees、Non-interactive mode 与 A
 object_id: study-0002
 fact_type_key: study
 created_at: '2026-07-19T11:17:40.443524+08:00'
-updated_at: '2026-07-19T11:17:40.443524+08:00'
+updated_at: '2026-07-23T14:21:35.783731+08:00'
+urls:
+- ref: https://developers.openai.com/codex/subagents
+  title: developers.openai.com/codex/subagents
+  summary: 外部研究资料；具体支持范围与限制见本报告正文。
+- ref: https://developers.openai.com/codex/app/worktrees
+  title: developers.openai.com/codex/app/worktrees
+  summary: 外部研究资料；具体支持范围与限制见本报告正文。
+- ref: https://developers.openai.com/codex/noninteractive
+  title: developers.openai.com/codex/noninteractive
+  summary: 外部研究资料；具体支持范围与限制见本报告正文。
+- ref: https://developers.openai.com/codex/app-server
+  title: developers.openai.com/codex/app-server
+  summary: 外部研究资料；具体支持范围与限制见本报告正文。
 ---
 
 ## 研究问题
@@ -46,7 +33,7 @@ updated_at: '2026-07-19T11:17:40.443524+08:00'
 OpenAI Codex 官方能力如何组织子 Agent、隔离工作树、非交互执行和 App Server 集成，哪些边界可供 LDVH 参考？
 ## 输入、方法与观察边界
 
-本报告读取并对照了以下外部公开资料：https://developers.openai.com/codex/subagents、https://developers.openai.com/codex/app/worktrees、https://developers.openai.com/codex/noninteractive、https://developers.openai.com/codex/app-server。观察时间统一记录在 evidence_refs；本报告只陈述页面可直接支持的内容，并将 LDVH 适用性与外部事实分开。
+本报告读取并对照了以下外部公开资料：https://developers.openai.com/codex/subagents、https://developers.openai.com/codex/app/worktrees、https://developers.openai.com/codex/noninteractive、https://developers.openai.com/codex/app-server。外部资料条目记录在 urls 中；本报告只陈述页面可直接支持的内容，并将 LDVH 适用性与外部事实分开。
 ## 关键发现
 
 Subagents 文档描述可并行启动专门 Agent 并汇总结果，也支持定义自定义 Agent。Worktrees 文档把隔离工作目录作为并行变更的边界。Non-interactive 与 App Server 文档提供面向自动化或宿主集成的机器交互入口。官方能力仍要求调用方自行管理权限、结果验证、冲突合并与 Human 审核。

@@ -113,8 +113,7 @@ export function WorkCaseReadingLayout({
     'success_criterion_definitions',
     'success_criterion_results',
     'source',
-    'source_refs',
-    'evidence_refs',
+    'urls',
     'relations',
     'orchestration',
     'work_items',
@@ -603,11 +602,10 @@ function ExecutionItemRow({
       {item.blockingReason && (
         <p className="ldvh-body mt-2 border-l-2 border-amber-500/60 pl-2 text-amber-300">{item.blockingReason}</p>
       )}
-      {(item.inputRefs?.length || item.evidenceRefs?.length) && (
+      {item.inputRefs?.length && (
         <div className="mt-2 flex min-w-0 flex-wrap gap-1.5">
           {[
             ...(item.inputRefs ?? []).map((ref) => ({ kind: 'input', ref })),
-            ...(item.evidenceRefs ?? []).map((ref) => ({ kind: 'evidence', ref })),
           ].map(({ kind, ref }, index) => (
             <span key={`${kind}-${index}-${ref}`} className="ldvh-chip max-w-full truncate rounded-md border border-ldvh-border bg-ldvh-bg px-1.5 py-0.5 text-ldvh-text-secondary">
               {ref}
@@ -920,7 +918,6 @@ function getWorkCaseExecutionItems(obj: Record<string, unknown>): RelatedObjectS
         resultSummary: detailString(rawItem.result_summary) || undefined,
         blockingReason: detailString(rawItem.blocking_summary, detailString(rawItem.blocking_reason)) || undefined,
         inputRefs: detailStringArray(rawItem.input_refs),
-        evidenceRefs: detailStringArray(rawItem.evidence_refs),
       } satisfies RelatedObjectSummary;
     })
     .filter((item): item is RelatedObjectSummary => Boolean(item));

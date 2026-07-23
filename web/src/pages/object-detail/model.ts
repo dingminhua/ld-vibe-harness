@@ -40,20 +40,20 @@ const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
   ],
   adr: [
     'decision_question', 'decision', 'applicability', 'rationale', 'consequences', 'decided_at',
-    'source_refs', 'evidence_refs', 'relations', 'disposition_summary', 'closed_at',
+    'urls', 'relations', 'disposition_summary', 'closed_at',
   ],
   pitfall: [
     'symptoms', 'trigger_conditions', 'applicability', 'validation_summary', 'root_cause',
-    'resolution', 'avoidance', 'source_refs', 'evidence_refs', 'relations',
+    'resolution', 'avoidance', 'urls', 'relations',
     'disposition_summary', 'closed_at',
   ],
   spark: [
-    'summary', 'evolution', 'source_refs', 'evidence_refs', 'relations',
+    'summary', 'evolution', 'urls', 'relations',
     'disposition_summary', 'closed_at',
   ],
   study: [
     'research_question', 'abstract', 'applicability', 'validation_summary', 'report_body',
-    'source_refs', 'evidence_refs', 'relations', 'disposition_summary', 'closed_at',
+    'urls', 'relations', 'disposition_summary', 'closed_at',
   ],
 };
 

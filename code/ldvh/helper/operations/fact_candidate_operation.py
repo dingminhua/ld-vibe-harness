@@ -159,13 +159,12 @@ def _relations(fields: dict[str, Any]) -> set[tuple[object, object, object]]:
 
 
 def _locator_match(fields: dict[str, Any], needle: str) -> str | None:
-    for field in ("source_refs", "evidence_refs"):
-        raw = fields.get(field)
-        if not isinstance(raw, list):
-            continue
-        for item in raw:
-            if isinstance(item, dict) and isinstance(item.get("locator"), str) and needle in item["locator"]:
-                return item["locator"]
+    raw = fields.get("urls")
+    if not isinstance(raw, list):
+        return None
+    for item in raw:
+        if isinstance(item, dict) and isinstance(item.get("ref"), str) and needle in item["ref"]:
+            return item["ref"]
     return None
 
 
@@ -216,7 +215,7 @@ def _reasons(domain: FactCandidateRequest, fields: dict[str, Any]) -> list[dict[
         reasons.append(
             {
                 "kind": "locator",
-                "field_path": "source_refs/evidence_refs[].locator",
+                "field_path": "urls[].ref",
                 "matched_text": matched,
             }
         )

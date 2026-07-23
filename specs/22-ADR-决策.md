@@ -96,8 +96,7 @@ AI 负责判断决定是否已实际成立、是否值得对象化、是否重�
 | `created-at` | required | `adr-fact-type::8. 变更、删除与类型退出` |
 | `updated-at` | required | `adr-fact-type::8. 变更、删除与类型退出` |
 | `status` | required | `adr-fact-type::6. 对象语义与生命周期` |
-| `source-refs` | required | `adr-fact-type::7. 来源、证据与替代关系` |
-| `evidence-refs` | required | `adr-fact-type::7. 来源、证据与替代关系` |
+| `urls` | conditional | `adr-fact-type::7. 来源、证据与替代关系` |
 | `relations` | conditional | `adr-fact-type::7. 来源、证据与替代关系` |
 | `disposition-summary` | conditional | `adr-fact-type::6. 对象语义与生命周期` |
 | `closed-at` | conditional | `adr-fact-type::6. 对象语义与生命周期` |
@@ -133,18 +132,18 @@ ADR 只记录已经成立的决定。选项仍在收集、方向仍在比较或�
 | status | 语义 | 必须成立 |
 |---|---|---|
 | `active` | 决定在其声明适用范围内仍是当前选择 | 只能作为新建初态；终态字段禁止；决定来源与授权证据持续可回指；不表示规则权威或实现状态 |
-| `superseded` | 原决定已经被一个后来成立的 ADR 整体替代 | disposition_summary、closed_at、evidence_refs 必填；旧对象必须成为一个在关系建立时为 active 的新 ADR 的有效 supersedes 目标；替代源后来进入终态不使既有边失效 |
-| `retired` | 原决定因适用条件消失、方向撤回或不再需要而退出当前选择，且没有被新 ADR 整体替代 | disposition_summary、closed_at、evidence_refs 必填；必须有具体退出依据，不得用低优先级或已实现冒充退出 |
+| `superseded` | 原决定已经被一个后来成立的 ADR 整体替代 | disposition_summary、closed_at、自然语言验证说明 必填；旧对象必须成为一个在关系建立时为 active 的新 ADR 的有效 supersedes 目标；替代源后来进入终态不使既有边失效 |
+| `retired` | 原决定因适用条件消失、方向撤回或不再需要而退出当前选择，且没有被新 ADR 整体替代 | disposition_summary、closed_at、自然语言验证说明 必填；必须有具体退出依据，不得用低优先级或已实现冒充退出 |
 
 初始状态只能是 `active`。正常转换只有 `active → superseded` 和 `active → retired`；终态不直接重开。六个 ADR 专属字段发生实质改变时建立新 ADR；只有来源充分且不改变原决定语义的事实更正可以原地修正，不把语义改写伪装成生命周期变化。
 
-规范、Code 或其它正式来源吸收决定不会使 ADR 自动终态。ADR 即使 active 也只是当前决定记录，实际规则与行为始终来自相应正式来源；吸收位置和实现结果按实际作用进入 evidence_refs。不得用单一 `archived` 状态混合“已经被吸收”和“不再是当前决定”两种含义。
+规范、Code 或其它正式来源吸收决定不会使 ADR 自动终态。ADR 即使 active 也只是当前决定记录，实际规则与行为始终来自相应正式来源；吸收位置和实现结果按实际作用进入 自然语言验证说明。不得用单一 `archived` 状态混合“已经被吸收”和“不再是当前决定”两种含义。
 
 ## 7. 来源、证据与替代关系
 
-`source_refs` 回指决策问题、关键输入和实际决定来源。`evidence_refs` 必须支持选择确已成立及其授权范围；Human 当前指令可以成为证据，但必须能够稳定定位，不能伪造对话 locator。事实来源、Human 确认、提交、测试和实现结果各自只证明实际覆盖范围，不能互相替代。
+对象自有语义字段 回指决策问题、关键输入和实际决定来源。自然语言验证说明 必须支持选择确已成立及其授权范围；Human 当前指令可以成为证据，但必须能够稳定定位，不能伪造对话 locator。事实来源、Human 确认、提交、测试和实现结果各自只证明实际覆盖范围，不能互相替代。
 
-ADR 来自 Spark 或 WorkCase 时可以把源对象作为 source_ref；Spark 的 routed-to 已表达分流，ADR 不复制反向关系。实施决定的 WorkCase 可以把 ADR 作为 source_ref；ADR 不维护双写 related_workcases。规范、Code、commit、文档或外部页面不是事实对象，分别进入 source_refs 或 evidence_refs。
+ADR 来自 Spark 或 WorkCase 时可以把源对象作为 source_ref；Spark 的 routed-to 已表达分流，ADR 不复制反向关系。实施决定的 WorkCase 可以把 ADR 作为 source_ref；ADR 不维护双写 related_workcases。规范、Code、commit、文档或外部页面不是事实对象，分别进入 对象自有语义字段 或 自然语言验证说明。
 
 ADR `relation_key` 第一版只允许 `supersedes`：
 
@@ -178,7 +177,7 @@ ADR 类型停止新增、合并、替代或取消时，必须按 05 处置唯一
 | ADR 准入与查重 | 创建对象前 | 单一选择已实际成立、影响长期、边界与理由清楚、来源授权可回指且没有现有无损承载 | 当前输入、决定来源、授权依据、召回结果与 AI 语义比较 | AI 来源回读与全局检索；Code 只辅助精确检索 | 当次候选与直接相邻事实 | 不创建；留在当前行动、Spark、WorkCase、Study 或已有来源 |
 | ADR 召回与消费 | 会话开始/恢复/压缩恢复，或作出、重议、改变长期选择与高影响行动前 | 全部 `active` ADR 权威 F1 决策卡 coverage 完整；可能适用者已展开回读；终态只作追溯或替代链候选；卡片/全文未被冒充为规范权威或实施授权 | 管辖与 worktree 结果、全部 `active` 卡片、coverage/cursor、当前选择问题、已展开 ADR、来源、证据与替代关系 | 完整卡片分页回读、范围走查、完整对象回读与 AI applicability 核对 | 当次已读卡片范围、选择问题与已展开决定 | 不声称 ADR 基础上下文完整或将受影响 ADR 作为当次约束；继续分页、补读来源、缩小范围或交还冲突 |
 | 对象 Schema 与身份 | 创建、读取或更新对象时 | 路径、身份、字段闭集、类型、条件、时间和引用符合当前来源 | 当前文件、统一登记、本文与派生 Schema | 实际 parser/validator；未实现时逐项来源回读 | 当次对象当前 Working Tree 内容 | 不作为有效 ADR 消费；报告字段和未验证范围 |
-| 决定与适用边界 | 创建或消费 active ADR 时 | 决定确已成立，授权、适用和排除范围有来源支持，未与当前规范或其它 active ADR 冲突 | source_refs、evidence_refs、当前规范、相邻 ADR 与 Human 决定 | AI 语义审核、来源与规范回读 | 当次决定及声明范围 | 不创建或暂停当前决定消费；缩小范围、补依据或进入 Human Gate |
+| 决定与适用边界 | 创建或消费 active ADR 时 | 决定确已成立，授权、适用和排除范围有来源支持，未与当前规范或其它 active ADR 冲突 | 对象自有语义字段、自然语言验证说明、当前规范、相邻 ADR 与 Human 决定 | AI 语义审核、来源与规范回读 | 当次决定及声明范围 | 不创建或暂停当前决定消费；缩小范围、补依据或进入 Human Gate |
 | 替代或退出 | 准备 superseded 或 retired 时 | 新决定或退出依据成立，两个对象、关系、证据、适用边界和时间一致 | 新旧 ADR、来源、证据、当前规范与 Human 决定 | AI 语义审核、目标回读和结构校验 | 当次终态与替代声明 | 保持 active；修正替代范围、补证据或进入 Human Gate |
 | 变更与回读 | 创建、更正、替代、退出、拆分、合并或删除后 | 获准变更已写入、回读并验证；失败和部分结果如实保留 | Human 指令、文件差异、Working Tree 回读和验证结果 | 实际写入入口与当前文件回读 | 当次实际变更 | 不声明成功；修正、回滚或保留部分结果与残余风险 |
 

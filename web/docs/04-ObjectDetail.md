@@ -107,13 +107,13 @@ WorkCase 不使用普通字段卡片堆叠，而作为“一次目标的执行�
 
 带章节后缀的本地 Markdown 引用应区分展示文本与加载路径：列表行保留完整引用文本，例如 `specs/07-Code确定性执行实现规范.md §4.7`；点击整行或扩展阅读图标时，只用规范化后的 Markdown 文件路径加载右侧阅读区，例如 `specs/07-Code确定性执行实现规范.md`，不得把章节后缀拼入文件读取 API。
 
-未来 V4 Study 阅读器只读取当前 Study 的 `research_question`、`abstract`、`applicability`、`validation_summary`、Markdown 正文、`source_refs`、`evidence_refs` 与 `relations`。不得读取或投影 V2/V3 的 `urls`、`user_intent`、`summary`、`conclusion`、`related_*`、`archive_reason` 或任何兼容 DTO；提交记录仍应从 Git 提交记录视图派生。
+V4 Study 阅读器读取当前 Study 的 `research_question`、`abstract`、`applicability`、`validation_summary`、Markdown 正文、`urls` 与 `relations`。不得读取或投影旧版路径型引用或兼容 DTO；提交记录仍应从 Git 提交记录视图派生。
 
 关联区块内的工作对象引用不直接展示对象编号。对象编号属于打开后的对象详情、复制路径或 YAML 源码中的定位信息；列表态只展示对象类型图标、对象标题和必要操作图标，降低重复元信息对阅读的干扰。
 
 关联区块内每个具体条目必须使用统一行结构：左侧为语义图标和标题/路径/网址文本，右侧固定提供复制入口和扩展阅读入口。整行必须可点击并触发扩展阅读；复制入口只执行复制，不触发扩展阅读。对象引用、文档路径和外部 URL 不得各自使用不同的卡片、文字按钮或标签样式。行内语义图标、标题文本、复制入口和扩展阅读入口必须垂直居中；复制和扩展阅读入口使用同一 28px 操作容器，长标题截断或出现摘要次行时也不得让右侧操作图标下坠或上浮。
 
-V4 Study 阅读器实现后，外部证据只从 `source_refs` 与 `evidence_refs` 展示：`web-page` 和 `api-observation` 显示为可展开的外部来源，项目内引用只作为调研委托、适用范围或验证上下文展示。界面不得自行生成 URL 摘要、把证据转换为规则，或把内部来源呈现为外部研究对象。
+V4 Study 阅读器从 `urls` 展示外部资料，并显示资料自身的标题和用途摘要。界面不得把 URL 转换为规则，或把内部路径呈现为外部研究对象。
 
 V4 Study 详情页是外部调研报告阅读界面，不按普通字段卡片表达主内容。主节点依次为“研究问题、摘要、适用范围、验证说明、正文、外部证据”；分别消费 `research_question`、`abstract`、`applicability`、`validation_summary`、Markdown body 和引用数组。正文和证据只可来自同一 V4 原生 Study 文件，不提供 V2/V3 兼容字段或双读。节点标题栏整行可点击，默认全部打开；详情页和右侧扩展阅读区必须复用同一布局。
 

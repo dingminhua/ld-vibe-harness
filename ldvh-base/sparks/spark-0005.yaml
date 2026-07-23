@@ -1,21 +1,31 @@
 title: Web 完整阅读、Markdown 呈现与 Helper 渐进式阅读的边界
-intent: 保留 Web 对当前事实对象的完整 Markdown 阅读与 Helper 渐进式阅读之间的边界，避免后续将 Human 页面做成 Helper 投影、将派生视图误作事实权威，或重复定位读取与渲染问题。后续需判断共享只读读取核心的必要性、性能、复杂度和第二权威风险。
+intent: 保留 Web 对当前事实对象的完整 Markdown 阅读与 Helper 渐进式阅读之间的边界，避免后续将 Human 页面做成 Helper
+  投影、将派生视图误作事实权威，或重复定位读取与渲染问题。后续需判断共享只读读取核心的必要性、性能、复杂度和第二权威风险。
 status: open
 priority: P1
-source_refs:
-- kind: repository-path
-  locator: specs/08-Web 呈现与交互规范.md
-- kind: human-input
-  locator: 2026-07-21 Human：评估 Web 使用 Helper CLI/结构化能力统一数据显示、暴露 Helper 问题，以及性能、复杂度和渐进式披露的 Web 检查；将该想法加入 Spark
-summary: "**当前判断**\n\n- **结构化事实与 Markdown 阅读。** YAML 和字段结构仍是当前事实权威；叙述性长文本可以使用 Markdown 表达，由 Web 忠实呈现。Web 是事实对象阅读器，不是原始 YAML 查看器；把正文拆到外部 Markdown 文件会改变事实源组织，不能由当前阅读实现默认引入。\n- **Helper 面向 AI。** 渐进式阅读属于 Helper/AI 的上下文控制。Helper 以 F0–F4 分层提供恢复清单、基础卡、候选摘录、完整对象和必要来源；F2 只承载有界原样摘录，不能反向要求事实对象缩短。\n- **Web 面向 Human。** Web 应独立读取当前 Working Tree 的完整事实对象并直接呈现完整正文，不以 Helper CLI 或 Helper operation contract 作为事实读取的必经入口，也不把 F0–F4 搬成页面信息深度。\n- **可以共享读取核心，但不能共享第二权威。** 两条路径可以复用同一套事实 Schema、纯解析库或不带 Helper envelope 的只读 application service，以减少语义漂移；这种复用不能使 Code DTO、缓存、UI 或 Helper 响应成为新的事实权威。\n\n**必须保持的边界**\n\n- Web 必须忠实呈现 Markdown 已明确表达的段落、强调式分组标签、小标题、编号、无序列表和嵌套关系；不得猜测、补写或重排内容结构。\n- Web 必须如实呈现 `complete`、`partial`、`error`、机械检查状态、诊断和未解析引用，并保持来源、证据、关系与对象正文的身份区别。\n- Helper 失败不能由 Web 静默回退后仍宣称读取完整；Web 的独立读取也不应因为 Helper 不可用而失去读取当前事实的能力。\n- Helper 的渐进式投影和 Web 的完整 Human 阅读是两个消费投影，不能反向改变事实对象内容。\n\n**风险与未决验证**\n\n- 共享读取核心是否确有必要，以及它的延迟、并发和复杂度成本。\n- Web 的完整对象传输、Working Tree 失效检测与错误传播是否可靠。\n- 浏览器级测试能否覆盖完整摘要、来源分组、状态诊断、字号、行高和窄屏阅读。\n- 共用解析或 application service 后，Helper envelope、Web DTO、缓存或 UI 是否仍可能形成语义漂移或第二权威。"
+summary: "**当前判断**\n\n- **结构化事实与 Markdown 阅读。** YAML 和字段结构仍是当前事实权威；叙述性长文本可以使用 Markdown
+  表达，由 Web 忠实呈现。Web 是事实对象阅读器，不是原始 YAML 查看器；把正文拆到外部 Markdown 文件会改变事实源组织，不能由当前阅读实现默认引入。\n\
+  - **Helper 面向 AI。** 渐进式阅读属于 Helper/AI 的上下文控制。Helper 以 F0–F4 分层提供恢复清单、基础卡、候选摘录、完整对象和必要来源；F2
+  只承载有界原样摘录，不能反向要求事实对象缩短。\n- **Web 面向 Human。** Web 应独立读取当前 Working Tree 的完整事实对象并直接呈现完整正文，不以
+  Helper CLI 或 Helper operation contract 作为事实读取的必经入口，也不把 F0–F4 搬成页面信息深度。\n- **可以共享读取核心，但不能共享第二权威。**
+  两条路径可以复用同一套事实 Schema、纯解析库或不带 Helper envelope 的只读 application service，以减少语义漂移；这种复用不能使
+  Code DTO、缓存、UI 或 Helper 响应成为新的事实权威。\n\n**必须保持的边界**\n\n- Web 必须忠实呈现 Markdown 已明确表达的段落、强调式分组标签、小标题、编号、无序列表和嵌套关系；不得猜测、补写或重排内容结构。\n\
+  - Web 必须如实呈现 `complete`、`partial`、`error`、机械检查状态、诊断和未解析引用，并保持来源、证据、关系与对象正文的身份区别。\n\
+  - Helper 失败不能由 Web 静默回退后仍宣称读取完整；Web 的独立读取也不应因为 Helper 不可用而失去读取当前事实的能力。\n- Helper
+  的渐进式投影和 Web 的完整 Human 阅读是两个消费投影，不能反向改变事实对象内容。\n\n**风险与未决验证**\n\n- 共享读取核心是否确有必要，以及它的延迟、并发和复杂度成本。\n\
+  - Web 的完整对象传输、Working Tree 失效检测与错误传播是否可靠。\n- 浏览器级测试能否覆盖完整摘要、来源分组、状态诊断、字号、行高和窄屏阅读。\n\
+  - 共用解析或 application service 后，Helper envelope、Web DTO、缓存或 UI 是否仍可能形成语义漂移或第二权威。"
 evolution:
 - at: '2026-07-19T08:33:54.065365+08:00'
-  summary: 初始关注点是让 Human 通过 Web 直接查看 V4 当前事实、状态、关系、证据与长文本；Helper 只承担底层读取与一致性核对，Web 需以 bridge、read/list/detail 与 DTO 投影接管生产读取，但不扩大写入范围。
+  summary: 初始关注点是让 Human 通过 Web 直接查看 V4 当前事实、状态、关系、证据与长文本；Helper
+    只承担底层读取与一致性核对，Web 需以 bridge、read/list/detail 与 DTO 投影接管生产读取，但不扩大写入范围。
 - at: '2026-07-22T10:47:49+08:00'
-  summary: 重新界定两种消费方式的边界：Web 应独立提供完整的 Human 阅读，Helper 的 F0–F4 渐进式投影服务 AI 上下文控制；两者可复用只读读取核心，但不得让 Helper envelope、DTO、缓存或 UI 成为第二事实权威。
+  summary: 重新界定两种消费方式的边界：Web 应独立提供完整的 Human 阅读，Helper 的 F0–F4 渐进式投影服务 AI
+    上下文控制；两者可复用只读读取核心，但不得让 Helper envelope、DTO、缓存或 UI 成为第二事实权威。
 - at: '2026-07-22T13:36:18+08:00'
-  summary: 迁移比较确认 Web 完整阅读还必须保留 Markdown 边界：YAML/结构化字段仍为权威，长文本字段可直接以 Markdown 承载；外部 Markdown 正文会改变事实源组织，须另行判断，不能被当前阅读实现默认引入。
+  summary: 迁移比较确认 Web 完整阅读还必须保留 Markdown 边界：YAML/结构化字段仍为权威，长文本字段可直接以 Markdown
+    承载；外部 Markdown 正文会改变事实源组织，须另行判断，不能被当前阅读实现默认引入。
 object_id: spark-0005
 fact_type_key: spark
 created_at: '2026-07-19T08:33:54.065365+08:00'
-updated_at: '2026-07-22T13:36:18+08:00'
+updated_at: '2026-07-23T14:21:35.783731+08:00'

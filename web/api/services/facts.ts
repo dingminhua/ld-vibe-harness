@@ -4,16 +4,13 @@ import {
   V4FactsTransportError,
 } from '../internal/v4FactsTransport.js'
 import { V4FactsConfigurationError } from './v4FactsConfig.js'
-// create-spark 写入路径（captureV4Spark，见 routes/sparks.ts）保持不变；
-// 列表/详情读取已切换为本地直读，不再调用 listV4Sparks/readV4Spark。
+// 列表/详情读取已切换为本地直读，不再调用 V4 Spark machine。
 import { listLocalFacts, readLocalFact, type LocalFactItem, type LocalFactScope } from './localFactReader.js'
 import { getWorkCaseDisplayStatus } from '../../shared/workcaseStatus.js'
 
 export const ACTIVE_OBJECT_TYPES = ['workcase', 'adr', 'pitfall', 'spark', 'study'] as const
 export const OBJECT_TYPES = ACTIVE_OBJECT_TYPES
 export type ObjectType = (typeof OBJECT_TYPES)[number]
-
-type SourceRef = { path: string; role: string }
 
 export interface WebFactResult {
   ok: true
@@ -38,7 +35,7 @@ function result(action: string, target: string, data: Record<string, unknown>): 
     command: 'v4-web-facts',
     action,
     target,
-    summary: { count: Array.isArray(data.items) ? data.items.length : undefined, source_refs: data.source_refs ?? [] },
+    summary: { count: Array.isArray(data.items) ? data.items.length : undefined },
     issues: [],
     data,
   }
@@ -64,7 +61,6 @@ function notIntegrated(type: ObjectType, message: string): WebFactResult {
       kind: 'type_not_integrated',
       message,
     }],
-    source_refs: [],
     coverage_status: 'type_not_integrated',
   })
   listed.issues = [{ code: 'type_not_integrated', message }]
@@ -106,10 +102,8 @@ export async function listObjects(type: ObjectType, _baseDir?: string, status?: 
     const items = listed.items
       .map(projectItem)
       .filter((item) => !status || item.status === status)
-    const sourceRefs = items.flatMap((item) => Array.isArray(item.source_refs) ? item.source_refs : []) as SourceRef[]
     const response = result('list', type, {
       items,
-      source_refs: sourceRefs,
       coverage_status: listed.status,
       projection_problems: projectionProblems,
     })
@@ -152,7 +146,6 @@ export async function showObject(id: string, scope?: LocalFactScope): Promise<We
     }
     const data: Record<string, unknown> = {
       ...projectItem(detail.item),
-      source_refs: Array.isArray(detail.item.fact_object.source_refs) ? detail.item.fact_object.source_refs : [],
       coverage_status: 'complete',
       check_status: detail.item.check_status,
       read_issues: detail.item.issues,

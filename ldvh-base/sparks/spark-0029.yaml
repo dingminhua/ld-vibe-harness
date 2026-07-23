@@ -1,16 +1,10 @@
 title: 环境 Hook 对规范路径写入的主动保护与渐进式事实披露
-intent: 保留目标环境能否在 AI 通过文件工具直接改写 ldvh 规范路径时，在写入前识别 canonical 目标、提供对应规范、行动模板和相关事实候选作为规则引导，阻止绕过 Helper 的直接改写并如实报告自身能力边界的问题，避免把只读上下文恢复误作写前保护，或以工具名和命令白名单替代实际操作与目标判断。后续需判断可用事件、输入 payload、受控写入放行、停用恢复和真实验收边界。
+intent: 保留目标环境能否在 AI 通过文件工具直接改写 ldvh 规范路径时，在写入前识别 canonical
+  目标、提供对应规范、行动模板和相关事实候选作为规则引导，阻止绕过 Helper
+  的直接改写并如实报告自身能力边界的问题，避免把只读上下文恢复误作写前保护，或以工具名和命令白名单替代实际操作与目标判断。后续需判断可用事件、输入
+  payload、受控写入放行、停用恢复和真实验收边界。
 status: open
 priority: P1
-source_refs:
-- kind: fact-object
-  locator: ldvh-base/sparks/spark-0013.yaml
-- kind: fact-object
-  locator: ldvh-base/sparks/spark-0028.yaml
-- kind: repository-path
-  locator: code/plugins/ldvh/hooks/hooks.json
-- kind: fact-object
-  locator: ldvh-base/pitfalls/pitfall-0001.yaml
 relations:
 - relation_key: related-to
   target:
@@ -22,8 +16,36 @@ relations:
     governed_project_id: ldvh
     fact_type_key: spark
     object_id: spark-0018
-summary: "**当前缺口**\n\n- 当前插件只在 SessionStart 与 SubagentStart 进行只读上下文恢复，没有已验证的写前 Hook。\n- 因此 AI 直接改写 canonical 事实对象或规范文件时，不能保证 Helper 的来源校验、CAS、写后回读或诊断一定被调用，也不能保证 AI 在写入前已读取对应类型的规范、行动模板和相关事实候选。\n- 2026-07-23 实际验证确认该缺口成立：更新 pitfall-0001 和 spark-0003 时，AI 直接使用 Edit 工具写入 ldvh-base/ 下的文件，绕过了 Helper 受控写入，且写入前没有自动收到对应类型的规范引导或相邻事实召回。事后才去读规范，但写入时没有任何约束阻止。\n\n**需要保护的目标路径**\n\nAI 可以用文件编辑工具（Write/Edit/ApplyPatch）绕过受控流程直接操作的规范路径有两类：\n\n1. **ldvh-base/** — 事实对象文件（spark、workcase、adr、pitfall、study）\n   对应规范：各类型的唯一定义来源（20-24）+ 05-事实模型基础规范 + 31/32 行动模板\n\n2. **specs/** — 规范文件（00-33 及 attachments）\n   对应规范：01-规范模型基础规范 + 00-理念与构成\n\nHelper 调用（ldvh call）和环境安装不需要 Hook 保护，因为不存在绕过问题。\n\n**渐进式披露与行动前事实召回**\n\n按照 work-context 8.1 节的渐进式披露原则，在进入需要项目事实的行动前，应自动触发对应的事实召回，而非全部依赖 AI 自觉：\n\n| 行动意图 | 行动前应自动披露的内容 |\n|---------|-------------------|\n| 写入 pitfall | F2 召回相邻 pitfall 查重；F3 展开可能受影响的 ADR |\n| 写入 ADR | F2 召回相关 ADR 了解已有长期决定；F2 召回相关 pitfall 了解已有经验 |\n| 写入 spark / workcase | F2 召回相关 spark、workcase、ADR 了解当前判断和未决事项 |\n| 修改 specs | 读取 01 规范的修改规则、受影响规范的关系扫描 |\n| 调用 helper 操作 | 读取 04 规范的请求/响应字段表 |\n\n这些召回不是每次全量展开，而是根据目标路径和操作意图自动匹配相关事实类型进行 F2 候选发现，避免上下文爆炸。\n\n**要验证的主动保护方向**\n\n借鉴 Git commit-msg hook 的 fail-closed 设计（source → governance → candidate → validation 四阶段），ZCode 环境可考虑以下两层：\n\n**写前（PreToolUse）：**\n- 拦截 Write/Edit/ApplyPatch 到匹配 ldvh-base/ 或 specs/ 的 canonical 路径\n- 识别目标路径对应的事实类型或规范类型\n- 通过 helper 执行渐进式披露：\n  - read-specification-content 读取对应类型的当前规范（规则）\n  - read-action-template-content 读取对应类型的行动模板（步骤）\n  - find-fact-object-candidates 进行 F2 召回相邻事实（经验、决定、当前工作）\n- 返回 additionalContext 告知 AI 应遵守的规范、可用行动模板、Helper 操作和相关事实候选\n- 不阻断写入，但提供规则引导（类似 work-context 的渐进式披露，不代替 AI 语义判断）\n\n**写后（PostToolUse）：**\n- 对 ldvh-base/ 路径：通过 read-fact-objects 回读刚写入的文件，机械校验 Schema\n- 对 specs/ 路径：通过 read-specification-candidates 检查规范结构和关系一致性\n- 校验不通过时报告违规详情，要求修复\n- 可参照 git hook 的 fail-closed 原则：回读发现 Schema 无效时，应如实报告而非静默通过\n\n**边界与未决问题**\n\n- 本对象不建立全局工具/命令白名单，也不把普通 AI 文件工作纳入保护范围。\n- 来源引用本身的 profile 校验由 `spark-0028` 承接；本对象只保证该校验不能被直接写入绕过。\n- PreToolUse 的拦截需要可靠区分 ldvh-base/ 和 specs/ 的 canonical 路径与普通文件写入；PostToolUse 的校验需要确定什么程度的结构违规应当阻断、什么程度仅报告。\n- 不同事实类型有不同的 Schema 和更新规则，PreToolUse 需要根据目标路径识别当前应读取哪个类型的规范。\n- F2 召回的 scope 需要合理控制：pitfall 只召回相邻 pitfall 和 adr，不展开全部 spark；adr 召回相关 adr 和 pitfall，不展开全部 workcase。召回的范围边界需要实际验证。\n- 仍需判断目标环境可提供的事件与 payload、如何可靠区分受控写入和直接改写，以及无法强制保护时的如实降落与 Human 决定。\n- 无环境 Hook 时的自约束运行由 spark-0018 承接。"
+summary: "**当前缺口**\n\n- 当前插件只在 SessionStart 与 SubagentStart 进行只读上下文恢复，没有已验证的写前 Hook。\n\
+  - 因此 AI 直接改写 canonical 事实对象或规范文件时，不能保证 Helper 的来源校验、CAS、写后回读或诊断一定被调用，也不能保证 AI 在写入前已读取对应类型的规范、行动模板和相关事实候选。\n\
+  - 2026-07-23 实际验证确认该缺口成立：更新 pitfall-0001 和 spark-0003 时，AI 直接使用 Edit 工具写入 ldvh-base/
+  下的文件，绕过了 Helper 受控写入，且写入前没有自动收到对应类型的规范引导或相邻事实召回。事后才去读规范，但写入时没有任何约束阻止。\n\n**需要保护的目标路径**\n\
+  \nAI 可以用文件编辑工具（Write/Edit/ApplyPatch）绕过受控流程直接操作的规范路径有两类：\n\n1. **ldvh-base/** —
+  事实对象文件（spark、workcase、adr、pitfall、study）\n   对应规范：各类型的唯一定义来源（20-24）+ 05-事实模型基础规范
+  + 31/32 行动模板\n\n2. **specs/** — 规范文件（00-33 及 attachments）\n   对应规范：01-规范模型基础规范 +
+  00-理念与构成\n\nHelper 调用（ldvh call）和环境安装不需要 Hook 保护，因为不存在绕过问题。\n\n**渐进式披露与行动前事实召回**\n\
+  \n按照 work-context 8.1 节的渐进式披露原则，在进入需要项目事实的行动前，应自动触发对应的事实召回，而非全部依赖 AI 自觉：\n\n| 行动意图
+  | 行动前应自动披露的内容 |\n|---------|-------------------|\n| 写入 pitfall | F2 召回相邻 pitfall
+  查重；F3 展开可能受影响的 ADR |\n| 写入 ADR | F2 召回相关 ADR 了解已有长期决定；F2 召回相关 pitfall 了解已有经验 |\n\
+  | 写入 spark / workcase | F2 召回相关 spark、workcase、ADR 了解当前判断和未决事项 |\n| 修改 specs | 读取
+  01 规范的修改规则、受影响规范的关系扫描 |\n| 调用 helper 操作 | 读取 04 规范的请求/响应字段表 |\n\n这些召回不是每次全量展开，而是根据目标路径和操作意图自动匹配相关事实类型进行
+  F2 候选发现，避免上下文爆炸。\n\n**要验证的主动保护方向**\n\n借鉴 Git commit-msg hook 的 fail-closed 设计（source
+  → governance → candidate → validation 四阶段），ZCode 环境可考虑以下两层：\n\n**写前（PreToolUse）：**\n\
+  - 拦截 Write/Edit/ApplyPatch 到匹配 ldvh-base/ 或 specs/ 的 canonical 路径\n- 识别目标路径对应的事实类型或规范类型\n\
+  - 通过 helper 执行渐进式披露：\n  - read-specification-content 读取对应类型的当前规范（规则）\n  - read-action-template-content
+  读取对应类型的行动模板（步骤）\n  - find-fact-object-candidates 进行 F2 召回相邻事实（经验、决定、当前工作）\n- 返回
+  additionalContext 告知 AI 应遵守的规范、可用行动模板、Helper 操作和相关事实候选\n- 不阻断写入，但提供规则引导（类似 work-context
+  的渐进式披露，不代替 AI 语义判断）\n\n**写后（PostToolUse）：**\n- 对 ldvh-base/ 路径：通过 read-fact-objects
+  回读刚写入的文件，机械校验 Schema\n- 对 specs/ 路径：通过 read-specification-candidates 检查规范结构和关系一致性\n\
+  - 校验不通过时报告违规详情，要求修复\n- 可参照 git hook 的 fail-closed 原则：回读发现 Schema 无效时，应如实报告而非静默通过\n\
+  \n**边界与未决问题**\n\n- 本对象不建立全局工具/命令白名单，也不把普通 AI 文件工作纳入保护范围。\n- 来源引用本身的 profile 校验由
+  `spark-0028` 承接；本对象只保证该校验不能被直接写入绕过。\n- PreToolUse 的拦截需要可靠区分 ldvh-base/ 和 specs/
+  的 canonical 路径与普通文件写入；PostToolUse 的校验需要确定什么程度的结构违规应当阻断、什么程度仅报告。\n- 不同事实类型有不同的 Schema
+  和更新规则，PreToolUse 需要根据目标路径识别当前应读取哪个类型的规范。\n- F2 召回的 scope 需要合理控制：pitfall 只召回相邻 pitfall
+  和 adr，不展开全部 spark；adr 召回相关 adr 和 pitfall，不展开全部 workcase。召回的范围边界需要实际验证。\n- 仍需判断目标环境可提供的事件与
+  payload、如何可靠区分受控写入和直接改写，以及无法强制保护时的如实降落与 Human 决定。\n- 无环境 Hook 时的自约束运行由 spark-0018
+  承接。"
 object_id: spark-0029
 fact_type_key: spark
 created_at: '2026-07-22T16:59:43.719295+08:00'
-updated_at: '2026-07-23T07:53:58.365660+08:00'
+updated_at: '2026-07-23T14:21:35.783731+08:00'

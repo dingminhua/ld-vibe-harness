@@ -64,7 +64,7 @@ def _has_audit(
 def _same_approval(existing: object, submitted: Mapping[str, Any], version: int) -> bool:
     if not isinstance(existing, Mapping) or existing.get("subject_version") != version:
         return False
-    caller_owned = {key: existing[key] for key in ("summary", "source_refs") if key in existing}
+    caller_owned = {key: existing[key] for key in ("summary",) if key in existing}
     return caller_owned == dict(submitted)
 
 

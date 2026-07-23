@@ -10,9 +10,7 @@ from typing import Any
 
 import ldvh
 from ldvh.facts.contracts import LAYOUTS
-from ldvh.facts.creation import CreationBoundary
 from ldvh.facts.schema import project_fact_schemas
-from ldvh.facts.web_direct_capture import WebDirectCaptureResult, create_web_spark_direct_capture
 from ldvh.facts.web_read_application import read_web_spark_detail, read_web_spark_list
 from ldvh.governance.models import ObjectStatus, ScopeStatus, explicit_scope
 from ldvh.governance.resolver import resolve_governance_scope
@@ -23,7 +21,7 @@ MAX_REQUEST_BYTES = 12 * 1024 * 1024
 MAX_RESPONSE_BYTES = 32 * 1024 * 1024
 _ROOT_FIELDS = frozenset({"protocol_version", "operation", "scope", "arguments"})
 _SCOPE_FIELDS = frozenset({"workspace_root", "worktree_locator", "expected_governed_project_id"})
-_OPERATIONS = frozenset({"list-sparks", "read-spark", "create-spark"})
+_OPERATIONS = frozenset({"list-sparks", "read-spark"})
 
 
 class MachineRequestError(ValueError):
@@ -162,19 +160,6 @@ def _response(
     }
 
 
-def _capture_json(value: WebDirectCaptureResult) -> dict[str, object]:
-    return {
-        "status": value.status,
-        "code": value.code,
-        "summary": value.summary,
-        "actual_ref": _plain(value.actual_ref),
-        "existing_ref": _plain(value.existing_ref),
-        "canonical_path": value.canonical_path,
-        "fact_object": _plain(value.fact_object),
-        "details": list(value.details),
-    }
-
-
 def handle_machine_request(value: dict[str, object]) -> dict[str, object]:
     _closed_mapping(value, _ROOT_FIELDS, "request")
     operation, scope, arguments = _request_parts(value)
@@ -215,13 +200,7 @@ def handle_machine_request(value: dict[str, object]) -> dict[str, object]:
         }
         return _response(operation, detail.status, result=result)
 
-    capture_arguments = _closed_mapping(
-        arguments,
-        frozenset({"title", "intent", "description", "priority"}),
-        "arguments",
-    )
-    capture = create_web_spark_direct_capture(boundary, schemas, capture_arguments)
-    return _response(operation, capture.status, result={**_capture_json(capture), "governance_resolution": governance})
+    raise MachineRequestError("operation is not supported")
 
 
 def _encode_response(value: dict[str, object]) -> bytes:
@@ -229,12 +208,7 @@ def _encode_response(value: dict[str, object]) -> bytes:
     if len(encoded) <= MAX_RESPONSE_BYTES:
         return encoded
     operation = value.get("operation") if isinstance(value.get("operation"), str) else None
-    fallback = _response(
-        operation,
-        "error" if operation == "create-spark" else "unavailable",
-        error="response exceeds the 32 MiB transport budget",
-        completion_unknown=operation == "create-spark",
-    )
+    fallback = _response(operation, "unavailable", error="response exceeds the 32 MiB transport budget")
     return json.dumps(fallback, ensure_ascii=False, separators=(",", ":")).encode("utf-8") + b"\n"
 
 
@@ -255,7 +229,7 @@ def _process_request_bytes(raw: bytes) -> bytes:
             operation,
             "error",
             error=f"internal machine failure: {type(exc).__name__}",
-            completion_unknown=operation == "create-spark",
+            completion_unknown=False,
         )
     return _encode_response(response)
 

@@ -41,10 +41,3 @@ export async function readV4Spark(
 ): Promise<V4FactsMachineResponse> {
   return await invokeV4FactsMachine(request('read-spark', config.scope, { object_id: objectId }), transport(config))
 }
-
-export async function captureV4Spark(
-  config: V4SparkReaderConfig,
-  capture: { title: string; intent: string; description: string; priority: string },
-): Promise<V4FactsMachineResponse> {
-  return await invokeV4FactsMachine(request('create-spark', config.scope, { ...capture }), transport(config))
-}

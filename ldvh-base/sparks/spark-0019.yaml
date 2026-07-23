@@ -1,19 +1,21 @@
 title: Agent 友好的 LDVH Helper 创建工作流
-intent: 保留 Helper 创建流程中 Agent 发现、候选召回、请求形成、诊断修正与受控交还的交互摩擦，避免为了表面上的一步创建而降低来源、授权、语义判断、机械校验或写后回读边界。后续需判断哪些公开操作、示例与诊断能减少负担且不扩大自动化结论。
+intent: 保留 Helper 创建流程中 Agent
+  发现、候选召回、请求形成、诊断修正与受控交还的交互摩擦，避免为了表面上的一步创建而降低来源、授权、语义判断、机械校验或写后回读边界。后续需判断哪些公开操作、示例与诊断能减少负担且不扩大自动化结论。
 status: open
 priority: P2
-source_refs:
-- kind: human-input
-  locator: 2026-07-19 Human：将 LDVH Helper 创建过程的 Agent 可用性作为后续深入议题
-- kind: human-input
-  locator: 2026-07-19 Human：将本次 Helper 创建与提交过程的改进点记录到 spark-0019
-summary: 研究如何让 LDVH Helper CLI 对 Agent 更易发现、更少负担且保持治理可靠：重点包括创建前通过 Helper 完成候选事实召回与重复辅助、提供公开操作说明和最小 JSON 请求示例、降低两阶段草案依据传递负担、聚合诊断反馈，并清晰分层机械校验、语义判断、Human Gate、验证结论与提交交接；不以降低校验、来源和授权边界换取表面上的一步创建。
+summary: 研究如何让 LDVH Helper CLI 对 Agent 更易发现、更少负担且保持治理可靠：重点包括创建前通过 Helper
+  完成候选事实召回与重复辅助、提供公开操作说明和最小 JSON 请求示例、降低两阶段草案依据传递负担、聚合诊断反馈，并清晰分层机械校验、语义判断、Human
+  Gate、验证结论与提交交接；不以降低校验、来源和授权边界换取表面上的一步创建。
 evolution:
 - at: '2026-07-19T18:50:24+08:00'
-  summary: 本次创建、预检和提交复盘显示，流程安全闭环已经成立，但 Agent 仍需承担候选召回、协议发现、内部 fingerprint 搬运和多轮诊断修正；后续应优先改善这些交互摩擦，同时保留严格校验、范围隔离和写后回读。
+  summary: 本次创建、预检和提交复盘显示，流程安全闭环已经成立，但 Agent 仍需承担候选召回、协议发现、内部 fingerprint
+    搬运和多轮诊断修正；后续应优先改善这些交互摩擦，同时保留严格校验、范围隔离和写后回读。
 - at: '2026-07-20T17:42:31+08:00'
-  summary: 本次真实 Helper 使用暴露出共同请求校验不一致：authorization_reference 与 text_match 类型错误能稳定返回 invalid_request 和定位诊断，但 read-specification-candidates 的 requested_disclosure 误传对象时触发 TypeError 并降级为 outcome=error。后续应统一公共字段的入口验证与 invalid_request 封装，提供最小合法请求示例，使 Agent 能据诊断修正请求而不是遭遇实现异常。
+  summary: 本次真实 Helper 使用暴露出共同请求校验不一致：authorization_reference 与 text_match
+    类型错误能稳定返回 invalid_request 和定位诊断，但 read-specification-candidates 的
+    requested_disclosure 误传对象时触发 TypeError 并降级为 outcome=error。后续应统一公共字段的入口验证与
+    invalid_request 封装，提供最小合法请求示例，使 Agent 能据诊断修正请求而不是遭遇实现异常。
 object_id: spark-0019
 fact_type_key: spark
 created_at: '2026-07-19T18:47:20.417174+08:00'
-updated_at: '2026-07-20T17:42:42.086035+08:00'
+updated_at: '2026-07-23T14:21:35.783731+08:00'

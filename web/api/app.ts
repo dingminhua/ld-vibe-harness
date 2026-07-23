@@ -14,7 +14,6 @@ import dashboardRoutes from './routes/dashboard.js'
 import objectsRoutes from './routes/objects.js'
 import changelogRoutes from './routes/changelog.js'
 import docsRoutes from './routes/docs.js'
-import sparksRoutes from './routes/sparks.js'
 import projectFilesRoutes from './routes/project-files.js'
 
 dotenv.config()
@@ -41,7 +40,6 @@ app.use('/api/dashboard', dashboardRoutes)
 app.use('/api/objects', objectsRoutes)
 app.use('/api/changelog', changelogRoutes)
 app.use('/api/docs', docsRoutes)
-app.use('/api/sparks', sparksRoutes)
 app.use('/api/project-files', projectFilesRoutes)
 
 /**

@@ -20,23 +20,15 @@ const LIST_RESULT_FIELDS = new Set([
 const DETAIL_RESULT_FIELDS = new Set([
   'status', 'item', 'problems', 'coverage_status', 'governance_resolution',
 ])
-const CREATE_RESULT_FIELDS = new Set([
-  'status', 'code', 'summary', 'actual_ref', 'existing_ref', 'canonical_path',
-  'fact_object', 'details', 'governance_resolution',
-])
 const ITEM_FIELDS = new Set([
   'object_ref', 'canonical_path', 'absolute_path', 'carrier', 'check_status',
   'fact_object', 'content_fingerprint', 'issues',
 ])
 const LIST_STATUSES = new Set(['complete', 'partial', 'unavailable', 'integrity_conflict'])
 const DETAIL_STATUSES = new Set(['ok', 'not_found', 'invalid', 'unavailable'])
-const CREATE_STATUSES = new Set([
-  'created', 'exact_duplicate', 'invalid', 'unavailable', 'integrity_conflict',
-  'readback_failed', 'rollback_residue',
-])
 const COMMON_ERROR_STATUSES = new Set(['invalid', 'unavailable', 'error'])
 
-export type V4FactsOperation = 'list-sparks' | 'read-spark' | 'create-spark'
+export type V4FactsOperation = 'list-sparks' | 'read-spark'
 
 export interface V4FactsScope {
   workspace_root: string
@@ -204,30 +196,7 @@ function validateOperationResult(value: Record<string, unknown>, operation: V4Fa
     }
     return item === null && problems.length > 0
   }
-  const validShape = hasExactFields(value, CREATE_RESULT_FIELDS)
-    && CREATE_STATUSES.has(String(value.status))
-    && typeof value.code === 'string' && value.code.length > 0
-    && typeof value.summary === 'string' && value.summary.length > 0
-    && (value.actual_ref === null || isObjectRef(value.actual_ref))
-    && (value.existing_ref === null || isObjectRef(value.existing_ref, true))
-    && (value.canonical_path === null || typeof value.canonical_path === 'string')
-    && (value.fact_object === null || isRecord(value.fact_object))
-    && isStringArray(value.details)
-    && isRecord(value.governance_resolution)
-  if (!validShape) return false
-  if (value.status === 'created') {
-    return value.actual_ref !== null
-      && value.existing_ref === null
-      && typeof value.canonical_path === 'string'
-      && value.fact_object !== null
-  }
-  if (value.status === 'exact_duplicate') {
-    return value.actual_ref === null
-      && value.existing_ref !== null
-      && value.canonical_path === null
-      && value.fact_object === null
-  }
-  return value.actual_ref === null && value.existing_ref === null && value.fact_object === null
+  return false
 }
 
 function safeEnvironment(): NodeJS.ProcessEnv {
@@ -269,7 +238,7 @@ function validateRequest(request: V4FactsMachineRequest): Buffer {
   if (!isRecord(request) || Object.keys(request).sort().join(',') !== 'arguments,operation,protocol_version,scope') {
     throw new V4FactsTransportError('invalid_transport_request', 'Machine request fields are not closed')
   }
-  if (request.protocol_version !== 1 || !['list-sparks', 'read-spark', 'create-spark'].includes(request.operation)) {
+  if (request.protocol_version !== 1 || !['list-sparks', 'read-spark'].includes(request.operation)) {
     throw new V4FactsTransportError('invalid_transport_request', 'Machine request protocol or operation is invalid')
   }
   if (!isRecord(request.scope)
@@ -289,13 +258,7 @@ function validateRequest(request: V4FactsMachineRequest): Buffer {
     || (request.operation === 'read-spark'
       && (Object.keys(request.arguments).sort().join(',') !== 'object_id'
         || typeof request.arguments.object_id !== 'string'
-        || !/^spark-[0-9]{4,}$/.test(request.arguments.object_id)))
-    || (request.operation === 'create-spark'
-      && (Object.keys(request.arguments).sort().join(',') !== 'description,intent,priority,title'
-        || typeof request.arguments.title !== 'string'
-        || typeof request.arguments.intent !== 'string'
-        || typeof request.arguments.description !== 'string'
-        || typeof request.arguments.priority !== 'string'))) {
+        || !/^spark-[0-9]{4,}$/.test(request.arguments.object_id)))) {
     throw new V4FactsTransportError('invalid_transport_request', 'Machine arguments do not match the operation')
   }
   let encoded: Buffer
@@ -340,10 +303,9 @@ function decodeResponse(raw: Buffer, operation: V4FactsOperation): V4FactsMachin
     throw new V4FactsTransportError('malformed_machine_response', 'Machine response envelope is invalid')
   }
   if (value.result === null) {
-    const expectedUnknown = operation === 'create-spark' && value.status === 'error'
     if (!COMMON_ERROR_STATUSES.has(value.status)
       || typeof value.error !== 'string' || value.error.length === 0
-      || value.completion_unknown !== expectedUnknown) {
+      || value.completion_unknown) {
       throw new V4FactsTransportError('malformed_machine_response', 'Machine error response is inconsistent')
     }
   } else if (!isRecord(value.result)
@@ -362,7 +324,7 @@ export async function invokeV4FactsMachine(
 ): Promise<V4FactsMachineResponse> {
   const pythonExecutable = validatePythonExecutable(options.pythonExecutable)
   const input = validateRequest(request)
-  const timeoutMs = options.timeoutMs ?? (request.operation === 'create-spark' ? 45_000 : 30_000)
+  const timeoutMs = options.timeoutMs ?? 30_000
   if (!Number.isInteger(timeoutMs) || timeoutMs <= 0 || timeoutMs > 120_000) {
     throw new V4FactsTransportError('invalid_transport_timeout', 'Machine timeout is outside the allowed range')
   }
@@ -422,7 +384,7 @@ export async function invokeV4FactsMachine(
     const timer = setTimeout(() => {
       const diagnostic = Buffer.concat(stderr).toString('utf8')
       fail(new V4FactsTransportError('transport_timeout', 'V4 facts machine timed out', {
-        completionUnknown: request.operation === 'create-spark',
+        completionUnknown: false,
         diagnostic,
       }))
       terminate()
@@ -435,7 +397,7 @@ export async function invokeV4FactsMachine(
       stdoutBytes += data.length
       if (stdoutBytes > RESPONSE_LIMIT) {
         fail(new V4FactsTransportError('transport_response_overflow', 'Machine stdout exceeded 32 MiB', {
-          completionUnknown: request.operation === 'create-spark',
+          completionUnknown: false,
         }))
         terminate()
         boundedDetach()
@@ -454,7 +416,7 @@ export async function invokeV4FactsMachine(
       fail(new V4FactsTransportError(
         started ? 'transport_process_error' : 'transport_spawn_failed',
         started ? 'V4 facts machine process failed' : 'Unable to start the V4 facts machine', {
-        completionUnknown: started && request.operation === 'create-spark',
+        completionUnknown: false,
         diagnostic: error.message,
       }))
       if (started) {
@@ -464,7 +426,7 @@ export async function invokeV4FactsMachine(
     })
     child.stdin.once('error', (error) => {
       fail(new V4FactsTransportError('transport_stdin_error', 'V4 facts machine stdin failed', {
-        completionUnknown: started && request.operation === 'create-spark',
+        completionUnknown: false,
         diagnostic: error.message,
       }))
       terminate()
@@ -472,7 +434,7 @@ export async function invokeV4FactsMachine(
     })
     child.stdout.once('error', (error) => {
       fail(new V4FactsTransportError('transport_stdout_error', 'V4 facts machine stdout failed', {
-        completionUnknown: started && request.operation === 'create-spark',
+        completionUnknown: false,
         diagnostic: error.message,
       }))
       terminate()
@@ -480,7 +442,7 @@ export async function invokeV4FactsMachine(
     })
     child.stderr.once('error', (error) => {
       fail(new V4FactsTransportError('transport_stderr_error', 'V4 facts machine stderr failed', {
-        completionUnknown: started && request.operation === 'create-spark',
+        completionUnknown: false,
         diagnostic: error.message,
       }))
       terminate()
@@ -490,7 +452,7 @@ export async function invokeV4FactsMachine(
       const diagnostic = Buffer.concat(stderr).toString('utf8')
       if (code !== 0 || signal !== null) {
         fail(new V4FactsTransportError('transport_process_failed', 'V4 facts machine exited unexpectedly', {
-          completionUnknown: request.operation === 'create-spark',
+          completionUnknown: false,
           diagnostic,
         }))
         return
@@ -503,7 +465,7 @@ export async function invokeV4FactsMachine(
           ? error
           : new V4FactsTransportError('malformed_machine_response', 'Machine response validation failed')
         fail(new V4FactsTransportError(observed.code, observed.message, {
-          completionUnknown: observed.completionUnknown || request.operation === 'create-spark',
+          completionUnknown: observed.completionUnknown,
           diagnostic: observed.diagnostic,
         }))
       }
@@ -512,7 +474,7 @@ export async function invokeV4FactsMachine(
       child.stdin.end(input)
     } catch (error) {
       fail(new V4FactsTransportError('transport_stdin_error', 'V4 facts machine stdin failed', {
-        completionUnknown: started && request.operation === 'create-spark',
+        completionUnknown: false,
         diagnostic: error instanceof Error ? error.message : String(error),
       }))
       terminate()

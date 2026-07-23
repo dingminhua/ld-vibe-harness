@@ -155,12 +155,12 @@ def _validate_status(fact_type_key: str, fields: dict[str, Any], issues: list[Fa
             _require(fields, {"disposition_summary", "closed_at"}, issues)
             _forbid(fields, {"priority"}, issues)
     elif fact_type_key == "workcase":
-        terminal = {"validation_summary", "closure_outcome", "disposition_summary", "closed_at", "evidence_refs"}
+        terminal = {"validation_summary", "closure_outcome", "disposition_summary", "closed_at"}
         if status == "open":
             _require(fields, {"priority"}, issues)
             _forbid(fields, {"blocking_summary", "closure_approval", "closed_at"}, issues)
         elif status == "blocked":
-            _require(fields, {"priority", "blocking_summary", "evidence_refs"}, issues)
+            _require(fields, {"priority", "blocking_summary"}, issues)
             _forbid(fields, {"closure_approval", "closed_at"}, issues)
         else:
             _require(fields, terminal, issues)
@@ -287,17 +287,6 @@ def _validate_workcase_profile(fields: dict[str, Any], issues: list[FactIssue]) 
                             f"{array_name}[{index}].review_basis",
                         )
                     )
-        relations = fields.get("relations")
-        if isinstance(relations, list):
-            for index, relation in enumerate(relations):
-                if isinstance(relation, dict) and "responsibility_ids" in relation:
-                    issues.append(
-                        FactIssue(
-                            "schema",
-                            "legacy WorkCase relation 禁止 responsibility_ids",
-                            f"relations[{index}].responsibility_ids",
-                        )
-                    )
     return "current" if current else "legacy"
 
 
@@ -358,8 +347,6 @@ def _validate_workcase_criteria(fields: dict[str, Any], profile: str, issues: li
         outcome = result.get("outcome")
         if outcome not in {"satisfied", "not_satisfied", "not_verified"}:
             issues.append(FactIssue("schema", "criterion outcome 不在当前闭集中", f"{path}.outcome"))
-        if outcome == "satisfied" and "evidence_refs" not in result:
-            issues.append(FactIssue("schema", "satisfied criterion 必须提供 evidence_refs", f"{path}.evidence_refs"))
 
 
 def _validate_workcase_audit(fields: dict[str, Any], profile: str, issues: list[FactIssue]) -> None:
@@ -547,21 +534,21 @@ def _validate_workcase_items(fields: dict[str, Any], issues: list[FactIssue]) ->
         if status not in _WORKCASE_ITEM_STATUSES:
             issues.append(FactIssue("schema", "work item status 不在当前闭集中", f"{path}.status"))
             continue
-        conditions = {"current_summary", "resume_from", "blocking_summary", "result_summary", "evidence_refs"}
+        conditions = {"current_summary", "resume_from", "blocking_summary", "result_summary"}
         required: set[str] = set()
         allowed: set[str] = set()
         if status == "in_progress":
             required = {"current_summary", "resume_from"}
-            allowed = {"current_summary", "resume_from", "evidence_refs"}
+            allowed = {"current_summary", "resume_from"}
         elif status == "blocked":
-            required = {"current_summary", "resume_from", "blocking_summary", "evidence_refs"}
+            required = {"current_summary", "resume_from", "blocking_summary"}
             allowed = required
         elif status == "completed":
-            required = {"result_summary", "evidence_refs"}
+            required = {"result_summary"}
             allowed = required
         elif status == "cancelled":
             required = {"result_summary"}
-            allowed = {"result_summary", "evidence_refs"}
+            allowed = {"result_summary"}
         for name in sorted(required - set(item)):
             issues.append(FactIssue("schema", "当前 work item 状态要求该字段", f"{path}.{name}"))
         for name in sorted((conditions - allowed) & set(item)):
@@ -792,7 +779,7 @@ def _validate_workcase(fields: dict[str, Any], issues: list[FactIssue]) -> None:
     if phase in {"closure_preparing", "human_closure_confirming", "closed"}:
         _require(fields, {"result_reviews"}, issues)
     if phase in {"human_closure_confirming", "closed"}:
-        _require(fields, {"validation_summary", "closure_outcome", "disposition_summary", "evidence_refs"}, issues)
+        _require(fields, {"validation_summary", "closure_outcome", "disposition_summary"}, issues)
     if phase == "human_closure_confirming":
         _forbid(fields, {"closure_approval", "closed_at"}, issues)
     if phase == "closed":
@@ -878,83 +865,24 @@ def _validate_times(fact_type_key: str, fields: dict[str, Any], issues: list[Fac
 
 
 def _validate_references(fact_type_key: str, fields: dict[str, Any], issues: list[FactIssue]) -> None:
-    updated = None
-    if fact_type_key == "study" and "updated_at" in fields:
-        updated = _time(fields["updated_at"], "updated_at", [])
-    study_kinds = {
-        "fact-object",
-        "repository-path",
-        "git-revision",
-        "web-page",
-        "api-observation",
-        "runtime-observation",
-        "human-provided-artifact",
-    }
-    arrays: list[tuple[str, object, bool]] = [
-        ("source_refs", fields.get("source_refs"), True),
-        ("evidence_refs", fields.get("evidence_refs"), True),
-    ]
-    relations = fields.get("relations")
-    if isinstance(relations, list):
-        for relation_index, relation in enumerate(relations):
-            if not isinstance(relation, dict):
-                continue
-            arrays.append((f"relations[{relation_index}].source_refs", relation.get("source_refs"), False))
-            target = relation.get("target")
-            if isinstance(target, dict):
-                arrays.append(
-                    (f"relations[{relation_index}].target.governance_refs", target.get("governance_refs"), False)
-                )
-    for array_name, values, study_top_level in arrays:
-        if not isinstance(values, list):
+    urls = fields.get("urls")
+    if urls is None:
+        if fact_type_key == "study":
+            issues.append(FactIssue("reference", "Study 必须至少包含一项 urls", "urls"))
+        return
+    if not isinstance(urls, list):
+        return
+    seen: set[str] = set()
+    for index, value in enumerate(urls):
+        if not isinstance(value, dict):
             continue
-        seen: set[tuple[object, ...]] = set()
-        for index, reference in enumerate(values):
-            if not isinstance(reference, dict):
-                continue
-            path = f"{array_name}[{index}]"
-            identity = tuple(reference.get(key) for key in ("kind", "locator", "version", "observed_at"))
-            if fact_type_key == "study" and study_top_level and identity in seen:
-                issues.append(FactIssue("reference", "同一引用数组中不得重复引用", path))
-            seen.add(identity)
-            if "observed_at" in reference:
-                observed = _time(reference["observed_at"], f"{path}.observed_at", issues)
-            else:
-                observed = None
-            if fact_type_key != "study" or not study_top_level:
-                continue
-            kind = reference.get("kind")
-            if kind not in study_kinds:
-                issues.append(FactIssue("reference", "Study 引用 kind 不在当前闭集中", f"{path}.kind"))
-            if "observed_at" not in reference:
-                issues.append(FactIssue("reference", "Study 的每项引用必须包含 observed_at", f"{path}.observed_at"))
-            else:
-                if observed is not None and updated is not None and observed > updated:
-                    issues.append(FactIssue("reference", "observed_at 不得晚于 updated_at", f"{path}.observed_at"))
-            if kind in {"git-revision", "api-observation", "runtime-observation"} and "version" not in reference:
-                issues.append(FactIssue("reference", f"{kind} 引用必须包含 version", f"{path}.version"))
-            locator = reference.get("locator")
-            if isinstance(kind, str) and isinstance(locator, str) and not _valid_study_locator(kind, locator):
-                issues.append(FactIssue("reference", f"locator 不符合 {kind} profile", f"{path}.locator"))
-
-    if fact_type_key == "study":
-        evidence_refs = fields.get("evidence_refs")
-        has_external_evidence = isinstance(evidence_refs, list) and any(
-            isinstance(reference, dict)
-            and reference.get("kind") in {"web-page", "api-observation", "human-provided-artifact"}
-            for reference in evidence_refs
-        )
-        if not has_external_evidence:
-            issues.append(
-                FactIssue(
-                    "reference",
-                    (
-                        "Study 的 evidence_refs 必须至少包含一项 web-page、api-observation "
-                        "或 human-provided-artifact 外部证据"
-                    ),
-                    "evidence_refs",
-                )
-            )
+        ref = value.get("ref")
+        if not isinstance(ref, str) or urlparse(ref).scheme not in {"http", "https"} or not urlparse(ref).netloc:
+            issues.append(FactIssue("reference", "urls.ref 必须是绝对 HTTP(S) URL", f"urls[{index}].ref"))
+            continue
+        if ref in seen:
+            issues.append(FactIssue("reference", "同一对象中 urls.ref 不得重复", f"urls[{index}].ref"))
+        seen.add(ref)
 
 
 _FACT_OBJECT_LOCATOR = re.compile(

@@ -1,26 +1,6 @@
 ---
 title: Task Master AI 任务编排模型调研
 status: active
-source_refs:
-- kind: web-page
-  locator: https://github.com/eyaltoledano/claude-task-master
-  observed_at: '2026-07-19T10:00:00+08:00'
-- kind: web-page
-  locator: https://docs.task-master.dev/
-  observed_at: '2026-07-19T10:00:00+08:00'
-- kind: web-page
-  locator: https://docs.task-master.dev/introduction
-  observed_at: '2026-07-19T10:00:00+08:00'
-evidence_refs:
-- kind: web-page
-  locator: https://github.com/eyaltoledano/claude-task-master
-  observed_at: '2026-07-19T10:00:00+08:00'
-- kind: web-page
-  locator: https://docs.task-master.dev/
-  observed_at: '2026-07-19T10:00:00+08:00'
-- kind: web-page
-  locator: https://docs.task-master.dev/introduction
-  observed_at: '2026-07-19T10:00:00+08:00'
 applicability: 用于比较 LDVH WorkCase 控制面、任务依赖、研究入口和上下文开销；不引入 Task Master 的字段或执行权。
 validation_summary: 已读取项目 README 和官方文档入口，观察到其当前公开安装、MCP
   配置、PRD、依赖、研究命令及工具加载模式；未安装或运行 Task Master。
@@ -32,7 +12,17 @@ abstract: 调研 Task Master AI GitHub README 与官方文档入口。其公开�
 object_id: study-0007
 fact_type_key: study
 created_at: '2026-07-19T11:17:52.509274+08:00'
-updated_at: '2026-07-19T11:17:52.509274+08:00'
+updated_at: '2026-07-23T14:21:35.783731+08:00'
+urls:
+- ref: https://github.com/eyaltoledano/claude-task-master
+  title: github.com/eyaltoledano/claude-task-master
+  summary: 外部研究资料；具体支持范围与限制见本报告正文。
+- ref: https://docs.task-master.dev/
+  title: docs.task-master.dev
+  summary: 外部研究资料；具体支持范围与限制见本报告正文。
+- ref: https://docs.task-master.dev/introduction
+  title: docs.task-master.dev/introduction
+  summary: 外部研究资料；具体支持范围与限制见本报告正文。
 ---
 
 ## 研究问题
@@ -40,7 +30,7 @@ updated_at: '2026-07-19T11:17:52.509274+08:00'
 Task Master AI 当前公开文档如何把 PRD、任务依赖、研究、标签/工作流与 MCP 工具组织成 AI 任务管理？
 ## 输入、方法与观察边界
 
-本报告读取并对照了以下外部公开资料：https://github.com/eyaltoledano/claude-task-master、https://docs.task-master.dev/、https://docs.task-master.dev/introduction。观察时间统一记录在 evidence_refs；本报告只陈述页面可直接支持的内容，并将 LDVH 适用性与外部事实分开。
+本报告读取并对照了以下外部公开资料：https://github.com/eyaltoledano/claude-task-master、https://docs.task-master.dev/、https://docs.task-master.dev/introduction。外部资料条目记录在 urls 中；本报告只陈述页面可直接支持的内容，并将 LDVH 适用性与外部事实分开。
 ## 关键发现
 
 README 展示了 MCP/CLI 两种接入，建议以 PRD 作为复杂项目起点，并提供 parse-prd、list、next、show、expand、research、move 等任务操作。MCP 工具可按 all/standard/core/custom 模式加载，以控制上下文成本。任务依赖与标签/工作流是其组织复杂项目的重要结构。

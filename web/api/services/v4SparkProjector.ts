@@ -65,10 +65,8 @@ export function projectV4Spark(item: unknown): V4SparkProjection {
     || typeof facts.summary !== 'string'
     || typeof facts.created_at !== 'string'
     || typeof facts.updated_at !== 'string'
-    || !Array.isArray(facts.source_refs)
-    || facts.source_refs.length === 0
     || typeof item.absolute_path !== 'string'
-    || !optionalArray(facts, 'evidence_refs')
+    || !optionalArray(facts, 'urls')
     || !optionalArray(facts, 'relations')
     || !optionalArray(facts, 'evolution')
     || (status === 'open'
@@ -78,9 +76,7 @@ export function projectV4Spark(item: unknown): V4SparkProjection {
     || (status !== 'open'
       && ('priority' in facts
         || typeof facts.disposition_summary !== 'string'
-        || typeof facts.closed_at !== 'string'
-        || !Array.isArray(facts.evidence_refs)
-        || facts.evidence_refs.length === 0))) {
+        || typeof facts.closed_at !== 'string'))) {
     return projectionProblem(item, 'spark_projection_invalid', 'Spark fields cannot form the existing DTO')
   }
 

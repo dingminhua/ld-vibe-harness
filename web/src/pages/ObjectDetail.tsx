@@ -64,7 +64,7 @@ export { WorkCaseReadingLayout } from '@/pages/object-detail/WorkCaseReadingLayo
 export { AdrReadingLayout, PitfallReadingLayout, SparkReadingLayout } from '@/pages/object-detail/FactReadingLayouts';
 
 const STUDY_READING_NODE_FIELDS = new Set(['research_question', 'abstract', 'applicability', 'validation_summary', 'report_body']);
-const FORMAL_ASSOCIATION_FIELDS = new Set(['source_refs', 'evidence_refs', 'relations']);
+const FORMAL_ASSOCIATION_FIELDS = new Set(['relations']);
 export type ReadingNodeState = 'collapsed' | 'expanded';
 type RelatedAssociationValue = {
   ref: string;

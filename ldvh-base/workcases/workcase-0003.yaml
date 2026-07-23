@@ -1,20 +1,5 @@
 title: 建立 WorkCase 控制契约与持续改进基础
 status: closed
-source_refs:
-- kind: human-input
-  locator: 2026-07-20 Human：授权 A–E 整体改进意图，允许本地 commit、分支、worktree 和本地结果整合，禁止
-    push 或创建 PR
-- kind: human-input
-  locator: 2026-07-20 Human：实施过程中持续记录并判断可进一步完善的信息，使 00 的持续积累价值在 LDVH 中可操作
-- kind: working_tree
-  locator:
-    /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/ldvh-base/sparks/spark-0008.yaml
-- kind: working_tree
-  locator:
-    /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/ldvh-base/sparks/spark-0014.yaml
-- kind: working_tree
-  locator:
-    /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/ldvh-base/sparks/spark-0019.yaml
 summary: Human 已批准 result_version 3 的完整结果和 completed 关闭报告；workcase-0003 正式关闭。
 goal: 建立 A–E 共用的 WorkCase 控制契约基础：在不依赖中途 Git commit
   的情况下保留紧凑审核连续性和可核验审核对象，结构化表达成功标准结果、残余责任、非约束后续、31/32 行动分类与持续改进观察，并冻结供后续 Working
@@ -67,22 +52,6 @@ work_items:
     followup/持续改进观察结构，以及 07 唯一 evidence DTO。调查同时形成两项后续处置观察：WorkCase 草案
     conditional 字段缺少 constraint_ref 导致首次创建被正确拒绝；full-v4 record 的 starting 状态与 07
     四态契约不一致，前者由 A/后续 B 分层处理，后者明确交给 C。
-  evidence_refs:
-  - kind: working_tree
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/specs/21-WorkCase-工作项.md
-  - kind: working_tree
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/specs/attachments/05.Att.01-事实对象统一字段登记.md
-  - kind: working_tree
-    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/specs/07-Code
-      实践与测试规范.md
-  - kind: working_tree
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/specs/31-事实对象判定与受控创建行动模板.md
-  - kind: working_tree
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/specs/32-事实对象生命周期变更与承接处置行动模板.md
 - item_id: item-02
   goal: 把控制契约写入唯一规则源。
   expected_result: 21、31、32 与必要的 04/05/07 及附件一致定义字段、权责、生效兼容、行动分类、持续改进和 evidence
@@ -95,23 +64,6 @@ work_items:
   result_summary: 已把 current/legacy 兼容、成功标准与审核连续性、残余/followup/持续改进结构写入 21 和
     05.Att.01；31/32 已明确创建、CAS、合法序列与多对象原子边界；07.Att.01 唯一定义 Working Tree evidence
     DTO，04/05 只按职责引用。规则仓库和行动模板定向测试 45 项通过。
-  evidence_refs:
-  - kind: working_tree
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/specs/21-WorkCase-工作项.md
-  - kind: working_tree
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/specs/attachments/05.Att.01-事实对象统一字段登记.md
-  - kind: working_tree
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/specs/attachments/07.Att.01-Working
-      Tree 测试证据字段表.md
-  - kind: working_tree
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/specs/31-事实对象判定与受控创建行动模板.md
-  - kind: working_tree
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/specs/32-事实对象生命周期变更与承接处置行动模板.md
 - item_id: item-03
   goal: 实现新契约的直接机械保护与确定性投影基础。
   expected_result: 字段派生、validation、transitions、relations、subject
@@ -123,22 +75,6 @@ work_items:
   approach_summary: Code
     只实现可机械确定的结构、闭集、身份、覆盖、版本、指纹、字段所有权、预算和关系映射检查；不裁决审核独立性、反馈含义、V1–V8
     净价值、实质变化或流程推进。
-  evidence_refs:
-  - kind: working_tree
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/ldvh/facts/validation.py
-  - kind: working_tree
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/ldvh/facts/transitions.py
-  - kind: working_tree
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/ldvh/facts/relations.py
-  - kind: working_tree
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/ldvh/facts/workcase_projection.py
-  - kind: working_tree
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/ldvh/testing/working_tree_evidence.py
   result_summary: 审核指纹最终机械边界已实现：64 位小写 SHA 格式始终校验；creation review 持续匹配当前计划；尚未处置
     result review 在 whole-object 校验当前主体；所有新增/改写 Reviewer 记录由 transition 绑定当次
     after snapshot；已处置记录的合法后来差异由 Controller 判断。错误形成、携处置绕过和处置后差异三类测试均覆盖，相关 74
@@ -156,17 +92,6 @@ work_items:
   result_summary: 最新 full-v4 的五个步骤全部 exit 0：ruff 通过，Code 823 passed/10
     skipped，Web 26 passed，typecheck/build 通过；运行器尚未生成 07.Att.01 定义的 Working Tree
     evidence DTO，因此这些是步骤级结果，当前 Working Tree 全量结论仍为 unknown，交由 C 补齐。
-  evidence_refs:
-  - kind: working_tree
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/.ldvh-test-runs/run-1972d8224328404287e4e948f64b8fc4/record.json
-  - kind: working_tree
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/.ldvh-test-runs/run-1972d8224328404287e4e948f64b8fc4/output.log
-  - kind: working_tree
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/specs/attachments/07.Att.01-Working
-      Tree 测试证据字段表.md
 creation_reviews:
 - reviewer: /root/workcase_plan_review
   reviewed_at: '2026-07-19T23:11:50.424Z'
@@ -190,37 +115,6 @@ controller_check_summary: result_version 3 的 A 实现和审核结论保持不�
   passed、typecheck/build 通过。DTO complete，before/after 同为 360 文件、7,741,963 bytes
   和同一指纹，changes=[]、无诊断；raw output 6,913 bytes 与 SHA-256 一致。该证据精确补齐此前 Reviewer
   指出的唯一 C carry，不改变 A 实现结果；Controller 判断无需再次独立审核，当前结果足以提交 Human 关闭确认。
-evidence_refs:
-- kind: working_tree
-  locator:
-    /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/.ldvh-test-runs/run-1972d8224328404287e4e948f64b8fc4/record.json
-- kind: working_tree
-  locator:
-    /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/.ldvh-test-runs/run-1972d8224328404287e4e948f64b8fc4/output.log
-- kind: working_tree
-  locator:
-    /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/tests/facts/test_transitions.py
-- kind: working_tree
-  locator:
-    /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/tests/facts/test_validation.py
-- kind: working_tree
-  locator:
-    /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/specs/21-WorkCase-工作项.md
-- kind: working_tree
-  locator:
-    /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/specs/attachments/07.Att.01-Working
-    Tree 测试证据字段表.md
-- kind: working_tree
-  locator:
-    /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/ldvh-base/workcases/workcase-0005.yaml
-- kind: runtime-observation
-  locator:
-    /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/.ldvh-test-runs/run-e0edd06fcaa34770befc2ad67dea24c6/record.json
-  version: run-e0edd06fcaa34770befc2ad67dea24c6
-- kind: runtime-observation
-  locator:
-    /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/.ldvh-test-runs/run-e0edd06fcaa34770befc2ad67dea24c6/output.log
-  version: run-e0edd06fcaa34770befc2ad67dea24c6
 result_reviews:
 - reviewer: /root/workcase_plan_review
   reviewed_at: '2026-07-20T08:28:32+08:00'
@@ -255,11 +149,8 @@ closure_approval:
   subject_version: 3
   approved_at: '2026-07-20T14:24:40.958810+08:00'
   summary: Human 明确批准关闭 workcase-0003，接受九项成功标准全部满足、completed 分类和无残余责任处置。
-  source_refs:
-  - kind: human-input
-    locator: 2026-07-20 Human：批准关闭 workcase-0003
 closed_at: '2026-07-20T14:24:40.958810+08:00'
 object_id: workcase-0003
 fact_type_key: workcase
 created_at: '2026-07-20T07:11:51.119277+08:00'
-updated_at: '2026-07-20T14:24:41.662594+08:00'
+updated_at: '2026-07-23T14:21:35.783731+08:00'

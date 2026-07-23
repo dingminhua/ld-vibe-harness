@@ -1,50 +1,6 @@
 ---
 title: Firecrawl 外部网页证据获取能力调研
 status: active
-source_refs:
-- kind: web-page
-  locator: https://docs.firecrawl.dev/api-reference/introduction
-  observed_at: '2026-07-19T10:00:00+08:00'
-- kind: web-page
-  locator: https://docs.firecrawl.dev/api-reference/endpoint/scrape
-  observed_at: '2026-07-19T10:00:00+08:00'
-- kind: web-page
-  locator: https://docs.firecrawl.dev/api-reference/endpoint/crawl-post
-  observed_at: '2026-07-19T10:00:00+08:00'
-- kind: web-page
-  locator: https://docs.firecrawl.dev/api-reference/endpoint/map
-  observed_at: '2026-07-19T10:00:00+08:00'
-- kind: web-page
-  locator: https://docs.firecrawl.dev/api-reference/endpoint/search
-  observed_at: '2026-07-19T10:00:00+08:00'
-- kind: web-page
-  locator: https://docs.firecrawl.dev/api-reference/endpoint/extract
-  observed_at: '2026-07-19T10:00:00+08:00'
-- kind: web-page
-  locator: https://github.com/firecrawl/firecrawl
-  observed_at: '2026-07-19T10:00:00+08:00'
-evidence_refs:
-- kind: web-page
-  locator: https://docs.firecrawl.dev/api-reference/introduction
-  observed_at: '2026-07-19T10:00:00+08:00'
-- kind: web-page
-  locator: https://docs.firecrawl.dev/api-reference/endpoint/scrape
-  observed_at: '2026-07-19T10:00:00+08:00'
-- kind: web-page
-  locator: https://docs.firecrawl.dev/api-reference/endpoint/crawl-post
-  observed_at: '2026-07-19T10:00:00+08:00'
-- kind: web-page
-  locator: https://docs.firecrawl.dev/api-reference/endpoint/map
-  observed_at: '2026-07-19T10:00:00+08:00'
-- kind: web-page
-  locator: https://docs.firecrawl.dev/api-reference/endpoint/search
-  observed_at: '2026-07-19T10:00:00+08:00'
-- kind: web-page
-  locator: https://docs.firecrawl.dev/api-reference/endpoint/extract
-  observed_at: '2026-07-19T10:00:00+08:00'
-- kind: web-page
-  locator: https://github.com/firecrawl/firecrawl
-  observed_at: '2026-07-19T10:00:00+08:00'
 applicability: 用于 LDVH Web/Study 外部资料获取边界、可回读证据和失败/限流表达；不在本次直接接入 Firecrawl
   或承诺抓取任何网站。
 validation_summary: 已读取 Firecrawl API introduction、Scrape 等官方文档与 GitHub
@@ -57,7 +13,29 @@ abstract: 调研 Firecrawl v2 API 文档与官方仓库。API 将网页搜索、
 object_id: study-0008
 fact_type_key: study
 created_at: '2026-07-19T11:17:55.692023+08:00'
-updated_at: '2026-07-19T11:17:55.692023+08:00'
+updated_at: '2026-07-23T14:21:35.783731+08:00'
+urls:
+- ref: https://docs.firecrawl.dev/api-reference/introduction
+  title: docs.firecrawl.dev/api-reference/introduction
+  summary: 外部研究资料；具体支持范围与限制见本报告正文。
+- ref: https://docs.firecrawl.dev/api-reference/endpoint/scrape
+  title: docs.firecrawl.dev/api-reference/endpoint/scrape
+  summary: 外部研究资料；具体支持范围与限制见本报告正文。
+- ref: https://docs.firecrawl.dev/api-reference/endpoint/crawl-post
+  title: docs.firecrawl.dev/api-reference/endpoint/crawl-post
+  summary: 外部研究资料；具体支持范围与限制见本报告正文。
+- ref: https://docs.firecrawl.dev/api-reference/endpoint/map
+  title: docs.firecrawl.dev/api-reference/endpoint/map
+  summary: 外部研究资料；具体支持范围与限制见本报告正文。
+- ref: https://docs.firecrawl.dev/api-reference/endpoint/search
+  title: docs.firecrawl.dev/api-reference/endpoint/search
+  summary: 外部研究资料；具体支持范围与限制见本报告正文。
+- ref: https://docs.firecrawl.dev/api-reference/endpoint/extract
+  title: docs.firecrawl.dev/api-reference/endpoint/extract
+  summary: 外部研究资料；具体支持范围与限制见本报告正文。
+- ref: https://github.com/firecrawl/firecrawl
+  title: github.com/firecrawl/firecrawl
+  summary: 外部研究资料；具体支持范围与限制见本报告正文。
 ---
 
 ## 研究问题
@@ -65,7 +43,7 @@ updated_at: '2026-07-19T11:17:55.692023+08:00'
 Firecrawl 当前 API 如何提供 Search、Scrape、Crawl、Map、Extract 等网页证据获取能力，其可靠性、隐私与许可边界是什么？
 ## 输入、方法与观察边界
 
-本报告读取并对照了以下外部公开资料：https://docs.firecrawl.dev/api-reference/introduction、https://docs.firecrawl.dev/api-reference/endpoint/scrape、https://docs.firecrawl.dev/api-reference/endpoint/crawl-post、https://docs.firecrawl.dev/api-reference/endpoint/map、https://docs.firecrawl.dev/api-reference/endpoint/search、https://docs.firecrawl.dev/api-reference/endpoint/extract、https://github.com/firecrawl/firecrawl。观察时间统一记录在 evidence_refs；本报告只陈述页面可直接支持的内容，并将 LDVH 适用性与外部事实分开。
+本报告读取并对照了以下外部公开资料：https://docs.firecrawl.dev/api-reference/introduction、https://docs.firecrawl.dev/api-reference/endpoint/scrape、https://docs.firecrawl.dev/api-reference/endpoint/crawl-post、https://docs.firecrawl.dev/api-reference/endpoint/map、https://docs.firecrawl.dev/api-reference/endpoint/search、https://docs.firecrawl.dev/api-reference/endpoint/extract、https://github.com/firecrawl/firecrawl。外部资料条目记录在 urls 中；本报告只陈述页面可直接支持的内容，并将 LDVH 适用性与外部事实分开。
 ## 关键发现
 
 官方文档把 Scrape、Crawl、Map、Search、Extract 明确分层；Scrape 可输出 Markdown、HTML、截图或结构化数据，Crawl 面向站点，Map 面向 URL 发现，Search 返回搜索结果内容，Extract 面向结构化抽取。文档明确 2xx/4xx/5xx、408/429 等失败类别和认证要求；仓库说明开源核心为 AGPL-3.0，SDK/部分组件可能不同许可，并提醒遵守网站政策。

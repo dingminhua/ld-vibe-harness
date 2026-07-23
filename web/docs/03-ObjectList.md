@@ -99,7 +99,7 @@ Spark 是“待分流信息”卡片，列表态用于快速定位每条火花�
 
 ### 3.6 Spark 创建入口
 
-Spark 列表页提供 Spark 直接捕获入口，属于 `specs/08-Web 呈现与交互规范.md` §8.2 的 web-direct-capture 窄例外边界，不改变"Web 默认只读"的基线。
+Spark 列表页保持只读；Web 不提供 Spark 创建或直接捕获入口。
 
 - 入口仅出现在 Spark 类型列表页（`ObjectList.tsx` 中 `currentType === 'spark'` 时渲染 `SparkCreate`），不扩散到其他对象类型；其他类型的创建、修改、删除仍必须走 Helper CLI / Human 操作路径。
 - 入口默认折叠为弱化 chip（`ldvh-chip` + 虚线边框 + `Plus` 图标 + `spark.quickCapture`），不抢占列表主视觉；点击后打开居上模态表单。

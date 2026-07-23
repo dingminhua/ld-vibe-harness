@@ -1,26 +1,6 @@
 ---
 title: OpenAI Codex Harness Engineering 与 Symphony 调研
 status: active
-source_refs:
-- kind: web-page
-  locator: https://openai.com/index/harness-engineering/
-  observed_at: '2026-07-19T10:00:00+08:00'
-- kind: web-page
-  locator: https://openai.com/index/open-source-codex-orchestration-symphony/
-  observed_at: '2026-07-19T10:00:00+08:00'
-- kind: web-page
-  locator: https://github.com/openai/symphony
-  observed_at: '2026-07-19T10:00:00+08:00'
-evidence_refs:
-- kind: web-page
-  locator: https://openai.com/index/harness-engineering/
-  observed_at: '2026-07-19T10:00:00+08:00'
-- kind: web-page
-  locator: https://openai.com/index/open-source-codex-orchestration-symphony/
-  observed_at: '2026-07-19T10:00:00+08:00'
-- kind: web-page
-  locator: https://github.com/openai/symphony
-  observed_at: '2026-07-19T10:00:00+08:00'
 applicability: 用于 LDVH WorkCase 编排、Agent-first Harness 和人类可读证据链的外部参考；不把 OpenAI
   内部实践或 Symphony 的任务模型直接作为 LDVH 规范。
 validation_summary: 已读取 OpenAI 官方 Harness Engineering 与 Symphony
@@ -33,7 +13,17 @@ abstract: 调研 OpenAI Harness Engineering 文章与 Symphony
 object_id: study-0003
 fact_type_key: study
 created_at: '2026-07-19T11:17:42.310359+08:00'
-updated_at: '2026-07-19T11:17:42.310359+08:00'
+updated_at: '2026-07-23T14:21:35.783731+08:00'
+urls:
+- ref: https://openai.com/index/harness-engineering/
+  title: openai.com/index/harness-engineering/
+  summary: 外部研究资料；具体支持范围与限制见本报告正文。
+- ref: https://openai.com/index/open-source-codex-orchestration-symphony/
+  title: openai.com/index/open-source-codex-orchestration-symphony/
+  summary: 外部研究资料；具体支持范围与限制见本报告正文。
+- ref: https://github.com/openai/symphony
+  title: github.com/openai/symphony
+  summary: 外部研究资料；具体支持范围与限制见本报告正文。
 ---
 
 ## 研究问题
@@ -41,7 +31,7 @@ updated_at: '2026-07-19T11:17:42.310359+08:00'
 OpenAI 的 Harness Engineering 与 Symphony 公开实践如何把 Agent 工作变成可验证、可编排的工程控制面？
 ## 输入、方法与观察边界
 
-本报告读取并对照了以下外部公开资料：https://openai.com/index/harness-engineering/、https://openai.com/index/open-source-codex-orchestration-symphony/、https://github.com/openai/symphony。观察时间统一记录在 evidence_refs；本报告只陈述页面可直接支持的内容，并将 LDVH 适用性与外部事实分开。
+本报告读取并对照了以下外部公开资料：https://openai.com/index/harness-engineering/、https://openai.com/index/open-source-codex-orchestration-symphony/、https://github.com/openai/symphony。外部资料条目记录在 urls 中；本报告只陈述页面可直接支持的内容，并将 LDVH 适用性与外部事实分开。
 ## 关键发现
 
 Harness Engineering 把人的主要工作放到环境、脚手架、反馈循环、工具/文档/可观测性和机械边界上，并用自定义 linter/结构测试约束架构边界。Symphony 以 issue tracker 作为控制面，为每项工作创建 Agent 与 workspace，要求人工 review，并明确并非所有任务都适合自动编排。

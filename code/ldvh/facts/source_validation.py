@@ -65,47 +65,8 @@ def validate_study_sources(
     index: ProjectFactIndex,
     read: FactReadResult,
 ) -> tuple[tuple[FactIssue, ...], bool]:
-    """Validate only source properties explicitly observable in the governed repository."""
-
-    assert read.fields is not None
-    issues: list[FactIssue] = []
-    unavailable = False
-    for array_name in ("source_refs", "evidence_refs"):
-        references = read.fields.get(array_name)
-        if not isinstance(references, list):
-            continue
-        for reference_index, reference in enumerate(references):
-            if not isinstance(reference, dict):
-                continue
-            kind = reference.get("kind")
-            locator = reference.get("locator")
-            if not isinstance(kind, str) or not isinstance(locator, str):
-                continue
-            path = f"{array_name}[{reference_index}].locator"
-            issue: FactIssue | None = None
-            technical = False
-            if kind == "fact-object":
-                target = _fact_locator(locator)
-                if target is not None:
-                    target_read = index.read(*target)
-                    if target_read is None or target_read.check_status in {"not_found", "invalid"}:
-                        issue = FactIssue("reference", "fact-object locator 不是当前 mechanically valid 对象", path)
-                    elif target_read.check_status == "unavailable":
-                        technical = True
-            elif kind in _REPOSITORY_KINDS:
-                issue, technical = _repository_path_status(index, locator)
-                if issue is not None:
-                    issue = FactIssue(issue.category, issue.summary, path)
-                if issue is None and not technical and kind == "git-revision":
-                    version = reference.get("version")
-                    if isinstance(version, str):
-                        issue, technical = _git_revision_status(index, locator, version)
-                        if issue is not None:
-                            issue = FactIssue(issue.category, issue.summary, path)
-            if issue is not None:
-                issues.append(issue)
-            unavailable = unavailable or technical
-    return tuple(issues), unavailable
+    """External Study material is represented by URLs and validated in the fact schema."""
+    return (), False
 
 
 __all__ = ["validate_study_sources"]

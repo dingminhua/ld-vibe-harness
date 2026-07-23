@@ -1,345 +1,350 @@
 title: 建立 LDVH 多环境通用启用与 AI 自助接入基础
 status: closed
-source_refs:
-- kind: human-input
-  locator: 2026-07-21 Human：不同 AI 开发环境与各种模型应能按需要组合；完整使用需要获取、安装、配置、接入和验证；先提交 00，再根据计划构建 WorkCase
-- kind: human-input
-  locator: 2026-07-21 Human：LDVH 提供接入方法，具体环境由用户让 AI 研究；AI 开发环境无 Hook 则不支持；发布规范与行动模板另建 Spark
-- kind: repository-path
-  locator: specs/00-理念与构成.md
-- kind: repository-path
-  locator: specs/09-环境接入规范.md
-- kind: repository-path
-  locator: specs/33-环境接入安装与验证行动模板.md
-- kind: repository-path
-  locator: ldvh-base/sparks/spark-0003.yaml
-- kind: repository-path
-  locator: ldvh-base/sparks/spark-0001.yaml
-- kind: repository-path
-  locator: ldvh-base/sparks/spark-0002.yaml
-- kind: repository-path
-  locator: ldvh-base/sparks/spark-0013.yaml
-- kind: repository-path
-  locator: ldvh-base/sparks/spark-0023.yaml
-- kind: repository-path
-  locator: ldvh-base/workcases/workcase-0007.yaml
 summary: Human 已批准 result_version 1 的完整结果和 completed 关闭报告；workcase-0009 正式关闭。
-goal: 建立 LDVH 自有的环境无关启用基础，使用户能够完成“获取→安装→配置→接入→验证”：LDVH 交付可回指的本地发行物、稳定配置与只读诊断入口、可由当前正式来源发现的 LDVH 接入面、供目标环境 AI 消费的接入方法和统一验证边界；具体 AI 开发环境的自动扩展或事件机制、安装位置与操作步骤，由用户在目标环境中让 AI 依据当前权威资料研究并在 Human Gate 下执行。只有当前权威资料或实际环境肯定证明该 AI 开发环境不存在能够自动调用所需 LDVH 共享行为、Helper 或相应机械 Gate 且承接必需输入与反馈的机制时，才判定完整接入 unsupported；未知、未调查、不可观察或只因厂商不使用“Hook”一词均保持 unverified。
-scope: 覆盖 specs/09 对共同接入方法、AI 自助适配职责、按功能识别 Hook、unsupported 证据门槛和真实验证边界的必要最小澄清；覆盖 specs/33 对一次明确目标环境在已有可安装接入单元前提下，由 AI 调查、形成方案、取得授权、安装或配置、验证、回滚和交还的行动组织；实际需要时仅在 03/04/06/07 的既有职责内澄清。覆盖当前源码构建的本地 wheel/sdist 身份与哈希、包声明范围与实测范围、依赖来源与联网前提、本地或源码获取、安装卸载、LDVH 自有配置入口、只读 doctor、LDVH 接入面权威发现合同、环境无关模拟 fixture、用户五步文档、面向目标环境 AI 的自助调查与分流说明、能力分类和验证清单。排除修改 00、维护厂商环境候选清单、逐厂商预研、在本案编写或安装任何具体环境 adapter、替用户修改任何具体 AI 开发环境、安装外部 CLI、账号登录、凭据、信任、重启、用户或全局配置、管辖项目登记、事实 Schema、WorkCase 生命周期、Web、公共 registry 或 marketplace 发布、发布 Specs 与发布行动模板（由 spark-0023 承接）、push 和 PR。Codex 只可作为范围受限的既有证据，不得成为共同模型或完成条件。
+goal: 建立 LDVH 自有的环境无关启用基础，使用户能够完成“获取→安装→配置→接入→验证”：LDVH
+  交付可回指的本地发行物、稳定配置与只读诊断入口、可由当前正式来源发现的 LDVH 接入面、供目标环境 AI 消费的接入方法和统一验证边界；具体 AI
+  开发环境的自动扩展或事件机制、安装位置与操作步骤，由用户在目标环境中让 AI 依据当前权威资料研究并在 Human Gate
+  下执行。只有当前权威资料或实际环境肯定证明该 AI 开发环境不存在能够自动调用所需 LDVH 共享行为、Helper 或相应机械 Gate
+  且承接必需输入与反馈的机制时，才判定完整接入 unsupported；未知、未调查、不可观察或只因厂商不使用“Hook”一词均保持 unverified。
+scope: 覆盖 specs/09 对共同接入方法、AI 自助适配职责、按功能识别 Hook、unsupported
+  证据门槛和真实验证边界的必要最小澄清；覆盖 specs/33 对一次明确目标环境在已有可安装接入单元前提下，由 AI
+  调查、形成方案、取得授权、安装或配置、验证、回滚和交还的行动组织；实际需要时仅在 03/04/06/07 的既有职责内澄清。覆盖当前源码构建的本地
+  wheel/sdist 身份与哈希、包声明范围与实测范围、依赖来源与联网前提、本地或源码获取、安装卸载、LDVH 自有配置入口、只读 doctor、LDVH
+  接入面权威发现合同、环境无关模拟 fixture、用户五步文档、面向目标环境 AI 的自助调查与分流说明、能力分类和验证清单。排除修改
+  00、维护厂商环境候选清单、逐厂商预研、在本案编写或安装任何具体环境 adapter、替用户修改任何具体 AI 开发环境、安装外部
+  CLI、账号登录、凭据、信任、重启、用户或全局配置、管辖项目登记、事实 Schema、WorkCase 生命周期、Web、公共 registry 或
+  marketplace 发布、发布 Specs 与发布行动模板（由 spark-0023 承接）、push 和 PR。Codex
+  只可作为范围受限的既有证据，不得成为共同模型或完成条件。
 workcase_profile: control-contract-v1
 success_criterion_definitions:
 - criterion_id: criterion-01
-  statement: 权威方向成立：09 唯一定义共同接入成立条件与环境无关方法；具体环境当前权威资料定义厂商协议；33 只组织一个已有接入单元的一次安装、验证与回滚；adapter 设计或编写先按具体环境来源、07 和普通 Code 计划独立完成，之后才可进入 33；03/04/06/07 只在自身既有职责中修改，全部实际 Specs 差异按 01 完成独立语义复核，00 不再扩写。
+  statement: 权威方向成立：09 唯一定义共同接入成立条件与环境无关方法；具体环境当前权威资料定义厂商协议；33
+    只组织一个已有接入单元的一次安装、验证与回滚；adapter 设计或编写先按具体环境来源、07 和普通 Code 计划独立完成，之后才可进入
+    33；03/04/06/07 只在自身既有职责中修改，全部实际 Specs 差异按 01 完成独立语义复核，00 不再扩写。
 - criterion_id: criterion-02
-  statement: 从当前源码构建固定 wheel 和 sdist，记录版本、SHA-256、包声明 Python/OS 范围、实际验证组合、本地获取位置、依赖来源和联网前提；从干净临时环境完成安装、核心能力直调、卸载和回读。公共发布未发生时明确只可从源码或本地 artifact 获取，未实测组合保持 unverified，不把本地 artifact 表述为离线可安装。
+  statement: 从当前源码构建固定 wheel 和 sdist，记录版本、SHA-256、包声明 Python/OS
+    范围、实际验证组合、本地获取位置、依赖来源和联网前提；从干净临时环境完成安装、核心能力直调、卸载和回读。公共发布未发生时明确只可从源码或本地
+    artifact 获取，未实测组合保持 unverified，不把本地 artifact 表述为离线可安装。
 - criterion_id: criterion-03
-  statement: LDVH 自有配置入口和 doctor 可从安装后入口使用；doctor 固定只读，只检查 LDVH 版本与核心入口、显式工作对象与管辖解析、LDVH 自有配置可读性以及显式传入的调用或验证缺口；不扫描、猜测或修改目标环境配置，不写用户或全局配置、不安装外部工具、不登录、不触发信任或重启。
+  statement: LDVH 自有配置入口和 doctor 可从安装后入口使用；doctor 固定只读，只检查 LDVH
+    版本与核心入口、显式工作对象与管辖解析、LDVH
+    自有配置可读性以及显式传入的调用或验证缺口；不扫描、猜测或修改目标环境配置，不写用户或全局配置、不安装外部工具、不登录、不触发信任或重启。
 - criterion_id: criterion-04
-  statement: 从 09、04 及其它实际适用来源冻结可供环境接入的既有共享行为、Helper、Git Gate 或 Hook Gate 核心入口清单或唯一权威发现方式，并记录每项适用来源、输入、输出、partial/error、超时和反馈边界；不得另造统一厂商 payload、事件路由或默认语义。目标环境 AI 若能直接把原生机制配置到既有入口，则在 Human 授权后进入 33；若需要新增 manifest、script 或薄 adapter，先停止安装分支，按具体环境来源与 07 形成独立普通 Code 计划并完成 adapter，之后才能进入 33。本案只提供该分流方法，不实现 adapter。
+  statement: 从 09、04 及其它实际适用来源冻结可供环境接入的既有共享行为、Helper、Git Gate 或 Hook Gate
+    核心入口清单或唯一权威发现方式，并记录每项适用来源、输入、输出、partial/error、超时和反馈边界；不得另造统一厂商
+    payload、事件路由或默认语义。目标环境 AI 若能直接把原生机制配置到既有入口，则在 Human 授权后进入 33；若需要新增
+    manifest、script 或薄 adapter，先停止安装分支，按具体环境来源与 07 形成独立普通 Code 计划并完成
+    adapter，之后才能进入 33。本案只提供该分流方法，不实现 adapter。
 - criterion_id: criterion-05
-  statement: 支持判定明确：Hook 按能否自动触发并承接所需输入与反馈的功能识别，不依赖厂商术语。只有当前权威资料或实际环境肯定证明所需机制不存在，完整接入才是 unsupported；未调查、资料未找到、权限不足或不可观察均为 unverified；存在机制只说明可进入调查，未安装或未真实触发仍为 unverified；静态对象、核心直调与真实环境触发分开，partial 不得掩盖 unsupported 或 unverified。
+  statement: 支持判定明确：Hook
+    按能否自动触发并承接所需输入与反馈的功能识别，不依赖厂商术语。只有当前权威资料或实际环境肯定证明所需机制不存在，完整接入才是
+    unsupported；未调查、资料未找到、权限不足或不可观察均为 unverified；存在机制只说明可进入调查，未安装或未真实触发仍为
+    unverified；静态对象、核心直调与真实环境触发分开，partial 不得掩盖 unsupported 或 unverified。
 - criterion_id: criterion-06
-  statement: README 和用户文档给出获取、安装、配置、接入、验证五步入口，明确 artifact 边界与网络前提、doctor、LDVH 接入面发现方法、可交给目标环境 AI 的调查输入、直接配置与需要新 adapter 两条分支、Human Gate、验证与回滚清单及无 Hook 判定；聚焦规则、Code、打包、文档和必要综合验证通过。模拟 fixture 只证明 LDVH 侧入口和分类逻辑，不声明任何具体 AI 开发环境已支持、缺少能力或已真实接入，也不形成公共发布声明。
+  statement: README 和用户文档给出获取、安装、配置、接入、验证五步入口，明确 artifact 边界与网络前提、doctor、LDVH
+    接入面发现方法、可交给目标环境 AI 的调查输入、直接配置与需要新 adapter 两条分支、Human Gate、验证与回滚清单及无 Hook
+    判定；聚焦规则、Code、打包、文档和必要综合验证通过。模拟 fixture 只证明 LDVH 侧入口和分类逻辑，不声明任何具体 AI
+    开发环境已支持、缺少能力或已真实接入，也不形成公共发布声明。
 phase: closed
 plan_version: 2
 work_items:
 - item_id: item-01
   goal: 冻结环境无关启用基础的当前基线、责任边界和稳定实现方向。
-  expected_result: 形成当前发行与依赖、配置、Helper/共享行为/Gate 接入面、doctor、09/33、tests 和 README 的差距清单，以及可发现接入面和最小 Specs、Code、打包与文档计划。
+  expected_result: 形成当前发行与依赖、配置、Helper/共享行为/Gate 接入面、doctor、09/33、tests 和 README
+    的差距清单，以及可发现接入面和最小 Specs、Code、打包与文档计划。
   status: completed
-  approach_summary: 回读 00/03/04/06/07/09/33、当前发行与依赖声明、配置实现、共享行为或 Gate、tests 和 README；以 spark-0003 为主要输入，比较 spark-0001/0002/0013 的实际相关范围。普通来源驱动，不采用具体环境安装模板。
-  result_summary: 基线与当前实现规划均已冻结。首轮结果审核发现原实现缺少 07 要求的稳定 Code Implementation Plan；现已新增并在 code/plans/README.md 登记 environment-neutral-enablement.md，诚实标注为审核后补正，覆盖来源、实现起点、未提交范围、组合关系、模块责任、依赖、ldvh-doctor/1、文档唯一维护方向、打包、诊断、风险和测试映射。独立有限比较结论 pass，确认规划与当前实现一致且不追溯消除原始时序缺口。
-  evidence_refs:
-  - kind: working-tree
-    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/plans/environment-neutral-enablement.md
-  - kind: working-tree
-    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/plans/README.md
-  - kind: runtime-observation
-    locator: independent-design-comparison:codex-agent:/root/wc0007_plan_review
-    version: pass
+  approach_summary: 回读 00/03/04/06/07/09/33、当前发行与依赖声明、配置实现、共享行为或 Gate、tests 和
+    README；以 spark-0003 为主要输入，比较 spark-0001/0002/0013
+    的实际相关范围。普通来源驱动，不采用具体环境安装模板。
+  result_summary: 基线与当前实现规划均已冻结。首轮结果审核发现原实现缺少 07 要求的稳定 Code Implementation
+    Plan；现已新增并在 code/plans/README.md 登记
+    environment-neutral-enablement.md，诚实标注为审核后补正，覆盖来源、实现起点、未提交范围、组合关系、模块责任、依赖、ldvh-doctor/1、文档唯一维护方向、打包、诊断、风险和测试映射。独立有限比较结论
+    pass，确认规划与当前实现一致且不追溯消除原始时序缺口。
 - item_id: item-02
   goal: 收敛共同规则、AI 自助接入分流和 LDVH 接入面发现合同。
-  expected_result: 09/33 及确有需要的相邻来源以最小差异固定 AI 自助职责、功能型 Hook 判定、unsupported 证据门槛、已有接入单元才能进入 33、需要新 adapter 时的独立 Code 分流，以及接入面的来源、输入输出、partial/error、超时、反馈和回滚边界；01 独立语义复核通过。
+  expected_result: 09/33 及确有需要的相邻来源以最小差异固定 AI 自助职责、功能型 Hook 判定、unsupported
+    证据门槛、已有接入单元才能进入 33、需要新 adapter 时的独立 Code
+    分流，以及接入面的来源、输入输出、partial/error、超时、反馈和回滚边界；01 独立语义复核通过。
   status: completed
   depends_on:
   - item-01
-  approach_summary: 保持 09、04、具体环境来源、07 和 33 的单向权威；不建立统一厂商 payload、事件路由、默认语义或 adapter 登记。冻结规则后再允许生产 Code 和文档消费。普通来源驱动，不采用行动模板。
-  result_summary: 09 已明确 LDVH 提供环境无关方法、目标环境 AI 按当前权威资料调查、Hook 按功能识别、unsupported 只接受肯定依据、未知保持 unverified、直接配置与新 adapter 独立 Code 分流、接入面投影和只读 doctor 边界；33 只消费 09 的状态权威并组织已有接入单元安装验证。规范机械测试 125 passed；两轮独立语义复核发现并修正 33 重复权威后结论为 pass。
-  evidence_refs:
-  - kind: working-tree
-    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/specs/09-环境接入规范.md
-  - kind: working-tree
-    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/specs/33-环境接入安装与验证行动模板.md
-  - kind: runtime-observation
-    locator: pytest:code/tests/specs
-    version: 125 passed
+  approach_summary: 保持 09、04、具体环境来源、07 和 33 的单向权威；不建立统一厂商 payload、事件路由、默认语义或
+    adapter 登记。冻结规则后再允许生产 Code 和文档消费。普通来源驱动，不采用行动模板。
+  result_summary: 09 已明确 LDVH 提供环境无关方法、目标环境 AI 按当前权威资料调查、Hook 按功能识别、unsupported
+    只接受肯定依据、未知保持 unverified、直接配置与新 adapter 独立 Code 分流、接入面投影和只读 doctor 边界；33 只消费
+    09 的状态权威并组织已有接入单元安装验证。规范机械测试 125 passed；两轮独立语义复核发现并修正 33 重复权威后结论为 pass。
 - item_id: item-03
   goal: 实现并验证本地获取、安装、配置、只读 doctor 和既有接入面发现基础。
-  expected_result: wheel/sdist 具有可回指身份与哈希，依赖来源和网络前提清楚；干净临时环境能够安装、直调核心、读取 LDVH 配置、运行只读 doctor、发现或检查既有接入面、运行环境无关 fixture、卸载并回读，且不产生具体环境副作用。
+  expected_result: wheel/sdist 具有可回指身份与哈希，依赖来源和网络前提清楚；干净临时环境能够安装、直调核心、读取 LDVH
+    配置、运行只读 doctor、发现或检查既有接入面、运行环境无关 fixture、卸载并回读，且不产生具体环境副作用。
   status: completed
   depends_on:
   - item-02
-  approach_summary: 只修改 LDVH 自有发行物、依赖说明、安装卸载、配置读取、doctor、既有接入面发现入口或可检查说明及环境无关 fixture 的 Code/tests；不新增公开协议，不实现具体 adapter，不触碰目标环境或用户全局资产。若必须新增公开 Helper 操作或 Gate 合同，停止并判断是否升 plan_version。
-  result_summary: 已从 doctor 修复与 synthetic fixture 当前源码重建固定 0.1.0 wheel/sdist；wheel SHA-256 64614788cf0b1e053dbcff7e06feb7234d4f7ed49947107725dab863f90f1544，sdist SHA-256 5a9187a0dabe1f568418eba50777dc86f7fd2c4c7122dfb60db358d849e16187。两个 archive 内 doctor.py 均与当前源码 SHA-256 7f031953ca557d1e0f98878f6a15f7374b7c2d0299e581bf47f0ed6f925d5c85 一致并包含两份用户文档。wheel 与 sdist 分别在严格 fail-fast 独立临时环境完成 no-index/no-deps 安装、12 operations、doctor ready（valid/governed_single、4/4 surfaces、2/2 docs）、卸载及命令/distribution 消失回读。首次 sdist 手工脚本因不完整 setuptools 且未 fail-fast 产生误报，已明确排除，不作为证据；随后补齐 backend 的严格运行成功。doctor 当前聚焦文件为 7 cases；与新增 synthetic fixture 合计 14 passed。
-  evidence_refs:
-  - kind: runtime-observation
-    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/dist/ld_vibe_harness-0.1.0-py3-none-any.whl
-    version: sha256:64614788cf0b1e053dbcff7e06feb7234d4f7ed49947107725dab863f90f1544
-  - kind: runtime-observation
-    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/dist/ld_vibe_harness-0.1.0.tar.gz
-    version: sha256:5a9187a0dabe1f568418eba50777dc86f7fd2c4c7122dfb60db358d849e16187
-  - kind: runtime-observation
-    locator: artifact-content:doctor.py
-    version: sha256:7f031953ca557d1e0f98878f6a15f7374b7c2d0299e581bf47f0ed6f925d5c85; wheel=match; sdist=match
-  - kind: runtime-observation
-    locator: artifact-lifecycle:wheel:strict-temp-environment
-    version: install; 12 operations; doctor ready; uninstall; entrypoints/distribution absent
-  - kind: runtime-observation
-    locator: artifact-lifecycle:sdist:strict-temp-environment
-    version: install; 12 operations; doctor ready; uninstall; entrypoints/distribution absent
-  - kind: working-tree
-    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/tests/doctor/test_doctor.py
+  approach_summary: 只修改 LDVH 自有发行物、依赖说明、安装卸载、配置读取、doctor、既有接入面发现入口或可检查说明及环境无关
+    fixture 的 Code/tests；不新增公开协议，不实现具体 adapter，不触碰目标环境或用户全局资产。若必须新增公开 Helper 操作或
+    Gate 合同，停止并判断是否升 plan_version。
+  result_summary: 已从 doctor 修复与 synthetic fixture 当前源码重建固定 0.1.0
+    wheel/sdist；wheel SHA-256
+    64614788cf0b1e053dbcff7e06feb7234d4f7ed49947107725dab863f90f1544，sdist
+    SHA-256 5a9187a0dabe1f568418eba50777dc86f7fd2c4c7122dfb60db358d849e16187。两个
+    archive 内 doctor.py 均与当前源码 SHA-256
+    7f031953ca557d1e0f98878f6a15f7374b7c2d0299e581bf47f0ed6f925d5c85
+    一致并包含两份用户文档。wheel 与 sdist 分别在严格 fail-fast 独立临时环境完成 no-index/no-deps 安装、12
+    operations、doctor ready（valid/governed_single、4/4 surfaces、2/2
+    docs）、卸载及命令/distribution 消失回读。首次 sdist 手工脚本因不完整 setuptools 且未 fail-fast
+    产生误报，已明确排除，不作为证据；随后补齐 backend 的严格运行成功。doctor 当前聚焦文件为 7 cases；与新增 synthetic
+    fixture 合计 14 passed。
 - item_id: item-04
   goal: 建立共同五步文档和面向目标环境 AI 的自助接入说明。
-  expected_result: 文档覆盖 artifact 与网络边界、LDVH 自有配置、doctor、接入面发现、目标环境权威资料调查、功能型 Hook 判定、直接配置与新 adapter 独立计划两条分支、Human Gate、静态/直调/真实触发验证、禁用与回滚。
+  expected_result: 文档覆盖 artifact 与网络边界、LDVH 自有配置、doctor、接入面发现、目标环境权威资料调查、功能型
+    Hook 判定、直接配置与新 adapter 独立计划两条分支、Human Gate、静态/直调/真实触发验证、禁用与回滚。
   status: completed
   depends_on:
   - item-02
   - item-03
-  approach_summary: 提供环境无关的方法、输入和检查清单，供用户交给目标环境 AI 使用；不提供厂商候选矩阵、预制厂商步骤或具体 adapter，不把 LDVH 自有配置与目标环境 Hook 配置混为一体。普通 Code/docs 路径，不采用具体环境安装模板。
-  result_summary: README 已建立通用五步入口；新增环境无关启用指南和 LDVH 接入面说明，覆盖 artifact/网络边界、配置与 doctor、可交给目标环境 AI 的调查任务、功能型 Hook 状态、直接配置与新 adapter 分流、Human Gate、分层验证、禁用与回滚。两份文档已随 wheel/sdist 分发；文档测试 3 passed。
-  evidence_refs:
-  - kind: working-tree
-    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/README.md
-  - kind: working-tree
-    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/docs/启用与AI环境接入.md
-  - kind: working-tree
-    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/docs/LDVH接入面.md
-  - kind: working-tree
-    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/tests/docs/test_enablement_docs.py
-  - kind: runtime-observation
-    locator: pytest:code/tests/docs
-    version: 3 passed
+  approach_summary: 提供环境无关的方法、输入和检查清单，供用户交给目标环境 AI 使用；不提供厂商候选矩阵、预制厂商步骤或具体
+    adapter，不把 LDVH 自有配置与目标环境 Hook 配置混为一体。普通 Code/docs 路径，不采用具体环境安装模板。
+  result_summary: README 已建立通用五步入口；新增环境无关启用指南和 LDVH 接入面说明，覆盖 artifact/网络边界、配置与
+    doctor、可交给目标环境 AI 的调查任务、功能型 Hook 状态、直接配置与新 adapter 分流、Human
+    Gate、分层验证、禁用与回滚。两份文档已随 wheel/sdist 分发；文档测试 3 passed。
 - item_id: item-05
   goal: 完成环境无关启用基础的综合验证并如实交还未完成范围。
-  expected_result: 干净临时环境中的 artifact 安装、核心直调、配置与 doctor、接入面发现、模拟 Hook 成功、unknown 与 confirmed-no-capability 分类负例、卸载回读，以及聚焦规则、Code、打包、文档和必要全量验证通过；未公共发布、未实现具体 adapter、未真实验证具体环境等范围明确。
+  expected_result: 干净临时环境中的 artifact 安装、核心直调、配置与 doctor、接入面发现、模拟 Hook 成功、unknown
+    与 confirmed-no-capability 分类负例、卸载回读，以及聚焦规则、Code、打包、文档和必要全量验证通过；未公共发布、未实现具体
+    adapter、未真实验证具体环境等范围明确。
   status: completed
   depends_on:
   - item-03
   - item-04
-  approach_summary: 模拟 fixture 只验证给定输入下的 LDVH 侧入口和分类逻辑，confirmed-no-capability fixture 不作为任何真实环境缺少能力的证据；按实际风险完成验证和回读，不执行公共发布、具体环境安装、push 或 PR。
-  result_summary: 全部补正后的综合验证完成。三类 synthetic fixture 可执行验证模拟 Hook success 只证明 fixture 且完整接入仍 unverified；未知证据保持 unverified；权威种类、范围匹配、肯定缺失三项同时成立才为 unsupported，任一缺失均回落 unverified；所有 fixture 明确 maps_to_real_environment=false。正式 full-v4 run-517c166cb5cd44fca82a7002f9b66f8b 为 passed、evidence_complete=true、exit 0：Ruff、Python 973 passed/10 skipped、Web typecheck、34/34 tests、production build 全部通过；before/after 均 397 文件、8,233,580 bytes、fingerprint d7ed0452ba190ed81e6afc93d5cc09ce89a49aa3f3df8fea704ece5e5c8f50fb，changes=[]。git diff --check 通过。
-  evidence_refs:
-  - kind: runtime-observation
-    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/.ldvh-test-runs/run-517c166cb5cd44fca82a7002f9b66f8b/record.json
-    version: run-517c166cb5cd44fca82a7002f9b66f8b
-  - kind: working-tree
-    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/tests/environment/fixtures/environment_neutral_capability_scenarios.json
-  - kind: working-tree
-    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/tests/environment/test_environment_neutral_capability_fixtures.py
-  - kind: runtime-observation
-    locator: pytest:doctor+environment-neutral-fixtures
-    version: 14 passed; doctor file 7 cases; fixture file 7 cases
-  - kind: runtime-observation
-    locator: git diff --check
-    version: passed
+  approach_summary: 模拟 fixture 只验证给定输入下的 LDVH 侧入口和分类逻辑，confirmed-no-capability
+    fixture 不作为任何真实环境缺少能力的证据；按实际风险完成验证和回读，不执行公共发布、具体环境安装、push 或 PR。
+  result_summary: 全部补正后的综合验证完成。三类 synthetic fixture 可执行验证模拟 Hook success 只证明
+    fixture 且完整接入仍 unverified；未知证据保持 unverified；权威种类、范围匹配、肯定缺失三项同时成立才为
+    unsupported，任一缺失均回落 unverified；所有 fixture 明确
+    maps_to_real_environment=false。正式 full-v4
+    run-517c166cb5cd44fca82a7002f9b66f8b 为 passed、evidence_complete=true、exit
+    0：Ruff、Python 973 passed/10 skipped、Web typecheck、34/34 tests、production
+    build 全部通过；before/after 均 397 文件、8,233,580 bytes、fingerprint
+    d7ed0452ba190ed81e6afc93d5cc09ce89a49aa3f3df8fea704ece5e5c8f50fb，changes=[]。git
+    diff --check 通过。
 audit_summary:
 - audit_id: audit-01
   subject_kind: pre_creation_plan
   subject_version: 1
   review_count: 2
-  summary: 首轮独立审核发现未命名环境会实质改变计划、三环境配额导致不可关闭、33 与相邻规范职责越界、doctor/bootstrap 副作用、支持证据时效和发布 Spark 错误承接；Controller 全部吸收并将计划缩为共同基础与逐环境分流，复审确认阻断已清除。
+  summary: 首轮独立审核发现未命名环境会实质改变计划、三环境配额导致不可关闭、33 与相邻规范职责越界、doctor/bootstrap
+    副作用、支持证据时效和发布 Spark 错误承接；Controller 全部吸收并将计划缩为共同基础与逐环境分流，复审确认阻断已清除。
 - audit_id: audit-02
   subject_kind: superseded_plan
   subject_version: 1
   review_count: 1
-  summary: Human 重新确定由 LDVH 提供通用接入方法、具体环境由用户让 AI 研究，并要求 AI 开发环境无 Hook 时明确不支持；plan_version 1 的逐环境候选调查与 WorkCase 分流被替代。旧审核中关于证据范围、doctor 只读、发布排除和 Codex 不得默认化的价值已吸收进 plan_version 2。
+  summary: Human 重新确定由 LDVH 提供通用接入方法、具体环境由用户让 AI 研究，并要求 AI 开发环境无 Hook
+    时明确不支持；plan_version 1 的逐环境候选调查与 WorkCase 分流被替代。旧审核中关于证据范围、doctor 只读、发布排除和
+    Codex 不得默认化的价值已吸收进 plan_version 2。
 creation_reviews:
 - reviewer: codex-agent:/root/wc0007_plan_review
   reviewed_at: '2026-07-21T09:24:23.664274+08:00'
   subject_version: 2
-  scope: 两轮独立只读审核 workcase-0009 plan_version 2 的目标、范围、成功标准、工作项与依赖；重点核对 09/33 职责、AI 自助适配、新 adapter 分流、功能型 Hook 的 unsupported 证据门槛、LDVH 接入面的权威发现与可验收合同、Code/docs 验证、发布排除和可关闭性。
+  scope: 两轮独立只读审核 workcase-0009 plan_version 2 的目标、范围、成功标准、工作项与依赖；重点核对 09/33
+    职责、AI 自助适配、新 adapter 分流、功能型 Hook 的 unsupported 证据门槛、LDVH
+    接入面的权威发现与可验收合同、Code/docs 验证、发布排除和可关闭性。
   conclusion: pass
   feedback:
-  - '[resolved] 直接配置与需新 adapter 两分支已经成立。33 只消费已有可安装接入单元；需要 manifest、script 或薄 adapter 时停止安装分支，先按具体环境来源、07 和普通 Code 计划独立完成，当前 WorkCase 不实现或安装具体 adapter。'
-  - '[resolved] unsupported 已改为功能型且需要肯定证据：只有当前权威资料或实际环境明确证明不存在能够自动触发并承接必需输入与反馈的机制时才成立；未调查、未找到资料、权限不足和不可观察均保持 unverified，不依赖厂商是否使用 Hook 术语。'
-  - '[resolved] LDVH 接入面已有确定验收边界：从 09/04 及实际适用来源冻结既有入口清单或唯一权威发现方式，并覆盖适用来源、输入、输出、partial/error、超时和反馈边界；同时禁止另造统一厂商 payload、事件路由或默认语义。'
+  - '[resolved] 直接配置与需新 adapter 两分支已经成立。33 只消费已有可安装接入单元；需要 manifest、script 或薄 adapter
+    时停止安装分支，先按具体环境来源、07 和普通 Code 计划独立完成，当前 WorkCase 不实现或安装具体 adapter。'
+  - '[resolved] unsupported 已改为功能型且需要肯定证据：只有当前权威资料或实际环境明确证明不存在能够自动触发并承接必需输入与反馈的机制时才成立；未调查、未找到资料、权限不足和不可观察均保持
+    unverified，不依赖厂商是否使用 Hook 术语。'
+  - '[resolved] LDVH 接入面已有确定验收边界：从 09/04 及实际适用来源冻结既有入口清单或唯一权威发现方式，并覆盖适用来源、输入、输出、partial/error、超时和反馈边界；同时禁止另造统一厂商
+    payload、事件路由或默认语义。'
   - '[non-blocking] confirmed-no-capability fixture 只验证给定肯定依据后的分类逻辑，不能充当任何真实环境缺少能力的证据；执行时必须保持该边界。'
-  - '[non-blocking] 若实现中发现必须新增公开接入协议、Helper 操作或 Gate 合同，而不是投影既有接入面，应停止并由 Controller 判断升 plan_version，不能借发现入口扩张合同。'
+  - '[non-blocking] 若实现中发现必须新增公开接入协议、Helper 操作或 Gate 合同，而不是投影既有接入面，应停止并由 Controller
+    判断升 plan_version，不能借发现入口扩张合同。'
   review_basis:
     projection_key: plan_current
-    subject_fingerprint: d9c01ca1a17fc38c4c97c0c75d2ad0065cdfdbc7ffd217eb70f5067480e73c12
-  controller_resolution: 1. 确认 adapter 编写与 33 安装验证已经分流。2. 确认 unsupported 只接受功能能力缺失的肯定依据，未知范围保持 unverified。3. 确认接入面发现、输入输出及失败边界可验收且不建立统一厂商协议。4. 两项非阻断反馈已经写入 criterion-06、item-03 和 item-05 的执行约束，不要求继续修改当前计划。
+    subject_fingerprint:
+      d9c01ca1a17fc38c4c97c0c75d2ad0065cdfdbc7ffd217eb70f5067480e73c12
+  controller_resolution: 1. 确认 adapter 编写与 33 安装验证已经分流。2. 确认 unsupported
+    只接受功能能力缺失的肯定依据，未知范围保持 unverified。3. 确认接入面发现、输入输出及失败边界可验收且不建立统一厂商协议。4.
+    两项非阻断反馈已经写入 criterion-06、item-03 和 item-05 的执行约束，不要求继续修改当前计划。
 execution_approval:
   subject_version: 2
   approved_at: '2026-07-21T09:38:04.325000+08:00'
   summary: Human 明确批准执行 workcase-0009 plan_version 2。
-  source_refs:
-  - kind: human-input
-    locator: 2026-07-21 Human：批准执行 workcase-0009 plan_version 2
 result_version: 1
 success_criterion_results:
 - criterion_id: criterion-01
   outcome: satisfied
-  summary: 09/33 权威与 adapter 分流成立；审核后补正并登记当前 Code Implementation Plan，诚实记录时序缺口，覆盖来源、基线、模块、依赖、接口/Schema、诊断、打包、风险与测试，并通过独立有限设计比较；00 未再修改。
-  evidence_refs:
-  - kind: working-tree
-    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/specs/09-环境接入规范.md
-  - kind: working-tree
-    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/specs/33-环境接入安装与验证行动模板.md
-  - kind: working-tree
-    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/plans/environment-neutral-enablement.md
-  - kind: runtime-observation
-    locator: independent-design-comparison:codex-agent:/root/wc0007_plan_review
-    version: pass
+  summary: 09/33 权威与 adapter 分流成立；审核后补正并登记当前 Code Implementation
+    Plan，诚实记录时序缺口，覆盖来源、基线、模块、依赖、接口/Schema、诊断、打包、风险与测试，并通过独立有限设计比较；00 未再修改。
 - criterion_id: criterion-02
   outcome: satisfied
-  summary: 当前源码已重建固定 0.1.0 wheel/sdist；archive 内 doctor 与当前源码哈希一致。wheel/sdist 分别在严格临时环境完成 no-index/no-deps 安装、12 operations、doctor ready、卸载和命令/distribution 消失回读；文档明确声明、实测、依赖、联网与本地 artifact 边界。
-  evidence_refs:
-  - kind: runtime-observation
-    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/dist/ld_vibe_harness-0.1.0-py3-none-any.whl
-    version: sha256:64614788cf0b1e053dbcff7e06feb7234d4f7ed49947107725dab863f90f1544
-  - kind: runtime-observation
-    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/dist/ld_vibe_harness-0.1.0.tar.gz
-    version: sha256:5a9187a0dabe1f568418eba50777dc86f7fd2c4c7122dfb60db358d849e16187
-  - kind: runtime-observation
-    locator: artifact-content:doctor.py
-    version: sha256:7f031953ca557d1e0f98878f6a15f7374b7c2d0299e581bf47f0ed6f925d5c85; current source=wheel=sdist
-  - kind: runtime-observation
-    locator: artifact-lifecycle:wheel+sdist:strict-temp-environments
-    version: each install; 12 operations; doctor ready; uninstall; entrypoints/distribution absent
+  summary: 当前源码已重建固定 0.1.0 wheel/sdist；archive 内 doctor 与当前源码哈希一致。wheel/sdist
+    分别在严格临时环境完成 no-index/no-deps 安装、12 operations、doctor
+    ready、卸载和命令/distribution 消失回读；文档明确声明、实测、依赖、联网与本地 artifact 边界。
 - criterion_id: criterion-03
   outcome: satisfied
-  summary: 安装后 ldvh-doctor/1 只复用 capabilities 与 resolve-governance-scope，不扫描或修改目标环境；非 ok Helper outcome 即使有残留 valid 字段也保持 attention。doctor 文件 7 cases 通过，当前 wheel/sdist 实装 doctor 均 ready。
-  evidence_refs:
-  - kind: working-tree
-    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/ldvh/doctor.py
-  - kind: working-tree
-    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/tests/doctor/test_doctor.py
-  - kind: runtime-observation
-    locator: artifact-lifecycle:wheel+sdist:strict-temp-environments
-    version: doctor ready; 4/4 surfaces; 2/2 docs
+  summary: 安装后 ldvh-doctor/1 只复用 capabilities 与
+    resolve-governance-scope，不扫描或修改目标环境；非 ok Helper outcome 即使有残留 valid 字段也保持
+    attention。doctor 文件 7 cases 通过，当前 wheel/sdist 实装 doctor 均 ready。
 - criterion_id: criterion-04
   outcome: satisfied
-  summary: LDVH 接入面说明从当前 04/09 与现有入口投影 Helper CLI、上下文恢复、commit-msg Gate 和 Git Hook 管理器，逐项给出来源、输入输出、失败、超时与反馈边界；未新增统一厂商 payload、事件路由、Helper 操作或 Gate 合同，并明确直接配置/新 adapter 分流。
-  evidence_refs:
-  - kind: working-tree
-    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/docs/LDVH接入面.md
-  - kind: working-tree
-    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/tests/docs/test_enablement_docs.py
+  summary: LDVH 接入面说明从当前 04/09 与现有入口投影 Helper CLI、上下文恢复、commit-msg Gate 和 Git
+    Hook 管理器，逐项给出来源、输入输出、失败、超时与反馈边界；未新增统一厂商 payload、事件路由、Helper 操作或 Gate
+    合同，并明确直接配置/新 adapter 分流。
 - criterion_id: criterion-05
   outcome: satisfied
-  summary: 09/用户指南的功能型 Hook 与 unsupported/unverified 边界成立。可执行 synthetic fixtures 覆盖模拟 Hook success、unknown、confirmed-no-capability 及三项肯定依据逐项缺失负例；它们只固定来源定义的确定性边界，均明确不映射真实 AI 开发环境。
-  evidence_refs:
-  - kind: working-tree
-    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/specs/09-环境接入规范.md
-  - kind: working-tree
-    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/tests/environment/fixtures/environment_neutral_capability_scenarios.json
-  - kind: working-tree
-    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/tests/environment/test_environment_neutral_capability_fixtures.py
+  summary: 09/用户指南的功能型 Hook 与 unsupported/unverified 边界成立。可执行 synthetic fixtures
+    覆盖模拟 Hook success、unknown、confirmed-no-capability
+    及三项肯定依据逐项缺失负例；它们只固定来源定义的确定性边界，均明确不映射真实 AI 开发环境。
 - criterion_id: criterion-06
   outcome: satisfied
-  summary: README 与随包用户文档已覆盖获取、安装、配置、接入、验证五步、artifact/网络边界、doctor、接入面、可交给目标环境 AI 的调查输入、两条分支、Human Gate、分层验证及回滚。正式 full-v4 五步全部通过；未声明公共发布、具体 adapter 或具体环境已验证。
-  evidence_refs:
-  - kind: working-tree
-    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/README.md
-  - kind: working-tree
-    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/docs/启用与AI环境接入.md
-  - kind: runtime-observation
-    locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/.ldvh-test-runs/run-517c166cb5cd44fca82a7002f9b66f8b/record.json
-    version: run-517c166cb5cd44fca82a7002f9b66f8b
-evidence_refs:
-- kind: runtime-observation
-  locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/.ldvh-test-runs/run-517c166cb5cd44fca82a7002f9b66f8b/record.json
-  version: run-517c166cb5cd44fca82a7002f9b66f8b
-- kind: runtime-observation
-  locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/dist/ld_vibe_harness-0.1.0-py3-none-any.whl
-  version: sha256:64614788cf0b1e053dbcff7e06feb7234d4f7ed49947107725dab863f90f1544
-- kind: runtime-observation
-  locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/dist/ld_vibe_harness-0.1.0.tar.gz
-  version: sha256:5a9187a0dabe1f568418eba50777dc86f7fd2c4c7122dfb60db358d849e16187
-- kind: working-tree
-  locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/plans/environment-neutral-enablement.md
-- kind: working-tree
-  locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/tests/environment/test_environment_neutral_capability_fixtures.py
-- kind: working-tree
-  locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/specs/09-环境接入规范.md
-- kind: working-tree
-  locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/specs/33-环境接入安装与验证行动模板.md
-- kind: working-tree
-  locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/docs/启用与AI环境接入.md
-- kind: working-tree
-  locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/docs/LDVH接入面.md
-controller_check_summary: Controller 已处置两轮 changes_required。首轮补建并登记当前 Code Plan，诚实保留其审核后补正时序，并修复 doctor 非 ok outcome 误报 ready；有限独立设计比较 pass。第二轮从当前源码重建 dist wheel/sdist，archive 内 doctor 与源码 SHA-256 同为 7f031953…，新 artifact SHA-256 分别为 64614788… 与 5a9187a0…；wheel 和 sdist 各自在严格 fail-fast 临时环境完成安装、12 operations、doctor ready（valid/governed_single、4/4 surfaces、2/2 docs）、卸载及入口/distribution 消失回读。首次 sdist 手工验证因 build backend 不完整且脚本未 fail-fast 产生误报，已明确排除；严格复跑成功。item-05 已增加只存在 tests 的三类 synthetic fixture 与肯定依据逐项负例，不新增生产分类权威且不映射真实环境。正式 run-517c166cb5cd44fca82a7002f9b66f8b 为 passed/evidence_complete=true/exit 0，Ruff、Python 973 passed/10 skipped、Web typecheck、34/34 tests、production build 通过；before/after 397 文件、8,233,580 bytes、fingerprint d7ed0452ba190ed81e6afc93d5cc09ce89a49aa3f3df8fea704ece5e5c8f50fb，changes=[]。较早 run-d6be… 因 spark-0024 并行新增正确 unknown/stale，后续 run-823… 与当前最终 run 均稳定；并行 Spark 未被覆盖。六项标准现均满足；Code Plan 原始时序违规仍作为历史事实保留。未公共发布、未实现具体 adapter、未真实验证具体 AI 环境；发布流程仍由 spark-0023 承接。Controller 判断 result_version 1 已修复，必须再次独立复审。
+  summary: README 与随包用户文档已覆盖获取、安装、配置、接入、验证五步、artifact/网络边界、doctor、接入面、可交给目标环境 AI
+    的调查输入、两条分支、Human Gate、分层验证及回滚。正式 full-v4 五步全部通过；未声明公共发布、具体 adapter 或具体环境已验证。
+controller_check_summary: Controller 已处置两轮 changes_required。首轮补建并登记当前 Code
+  Plan，诚实保留其审核后补正时序，并修复 doctor 非 ok outcome 误报 ready；有限独立设计比较 pass。第二轮从当前源码重建
+  dist wheel/sdist，archive 内 doctor 与源码 SHA-256 同为 7f031953…，新 artifact SHA-256
+  分别为 64614788… 与 5a9187a0…；wheel 和 sdist 各自在严格 fail-fast 临时环境完成安装、12
+  operations、doctor ready（valid/governed_single、4/4 surfaces、2/2
+  docs）、卸载及入口/distribution 消失回读。首次 sdist 手工验证因 build backend 不完整且脚本未 fail-fast
+  产生误报，已明确排除；严格复跑成功。item-05 已增加只存在 tests 的三类 synthetic fixture
+  与肯定依据逐项负例，不新增生产分类权威且不映射真实环境。正式 run-517c166cb5cd44fca82a7002f9b66f8b 为
+  passed/evidence_complete=true/exit 0，Ruff、Python 973 passed/10 skipped、Web
+  typecheck、34/34 tests、production build 通过；before/after 397 文件、8,233,580
+  bytes、fingerprint
+  d7ed0452ba190ed81e6afc93d5cc09ce89a49aa3f3df8fea704ece5e5c8f50fb，changes=[]。较早
+  run-d6be… 因 spark-0024 并行新增正确 unknown/stale，后续 run-823… 与当前最终 run 均稳定；并行 Spark
+  未被覆盖。六项标准现均满足；Code Plan 原始时序违规仍作为历史事实保留。未公共发布、未实现具体 adapter、未真实验证具体 AI
+  环境；发布流程仍由 spark-0023 承接。Controller 判断 result_version 1 已修复，必须再次独立复审。
 result_reviews:
 - reviewer: codex-agent:/root/wc0007_plan_review
   reviewed_at: '2026-07-21T10:21:54.046752+08:00'
   subject_version: 1
-  scope: 独立只读审核 workcase-0009 result_version 1 对 plan_version 2 的完整实现覆盖：5 个 work item、6 项 success criteria、09/33 规则差异、doctor、发行物与打包测试、两份用户文档、README 声明、正式 full-v4 记录、排除范围及 spark-0023 独立承接；未修改文件，也未将 Web、workcase-0004 等并行变化归入本 WorkCase。
+  scope: 独立只读审核 workcase-0009 result_version 1 对 plan_version 2 的完整实现覆盖：5 个 work
+    item、6 项 success criteria、09/33 规则差异、doctor、发行物与打包测试、两份用户文档、README 声明、正式
+    full-v4 记录、排除范围及 spark-0023 独立承接；未修改文件，也未将 Web、workcase-0004 等并行变化归入本
+    WorkCase。
   conclusion: changes_required
   feedback:
-  - '[must-fix] 缺少 07 要求的稳定 Code Implementation Plan。item-01 要求最小 Code 计划，item-03 新增 doctor 模块、console entry point、打包逻辑、诊断 DTO 和测试策略，但 code/plans 未登记对应规划。必须重开受影响工作项，形成并登记当前 Code Plan，覆盖模块责任、只读依赖、ldvh-doctor/1、接入面与文档维护方向、打包、诊断、风险和测试映射；不得伪称事后计划在实现前已成立；修复后更新当前快照并复审。'
-  - '[verified] 09/33 权威方向、功能型 Hook、肯定依据下 unsupported、未知保持 unverified、直接配置/新 adapter 分流成立。'
-  - '[verified] doctor 只调用既有 Helper capabilities 与 resolve-governance-scope，其余为显式路径、distribution、entry point 与随包文档读取，没有目标环境副作用。'
+  - '[must-fix] 缺少 07 要求的稳定 Code Implementation Plan。item-01 要求最小 Code 计划，item-03
+    新增 doctor 模块、console entry point、打包逻辑、诊断 DTO 和测试策略，但 code/plans 未登记对应规划。必须重开受影响工作项，形成并登记当前
+    Code Plan，覆盖模块责任、只读依赖、ldvh-doctor/1、接入面与文档维护方向、打包、诊断、风险和测试映射；不得伪称事后计划在实现前已成立；修复后更新当前快照并复审。'
+  - '[verified] 09/33 权威方向、功能型 Hook、肯定依据下 unsupported、未知保持 unverified、直接配置/新 adapter
+    分流成立。'
+  - '[verified] doctor 只调用既有 Helper capabilities 与 resolve-governance-scope，其余为显式路径、distribution、entry
+    point 与随包文档读取，没有目标环境副作用。'
   - '[verified] wheel/sdist 哈希、doctor/entry point/两份用户文档打包和隔离安装、核心直调、卸载回读证据成立。'
   - '[verified] README/docs 为环境无关方法，未以 Codex 定义共同模型，也未声明公共发布或具体环境已支持。'
-  - '[verified] full-v4 run-28350345cf7e4cb8b7162a427e8b3f71 有效：五步通过、Python 965 passed/10 skipped、Web 34 passed、before/after 393 文件同指纹且 changes=[]。'
+  - '[verified] full-v4 run-28350345cf7e4cb8b7162a427e8b3f71 有效：五步通过、Python 965 passed/10
+    skipped、Web 34 passed、before/after 393 文件同指纹且 changes=[]。'
   - '[verified] spark-0023 保持 open 且独立承接未来发布 Specs 与行动模板。'
   - '[non-blocking] 建议增加 doctor 对非 ok Helper outcome 保持 attention/unavailable 的防回归测试；当前输入闭集下不单独阻断。'
   review_basis:
     projection_key: result_implementation
-    subject_fingerprint: 65f66a4eb558ede28bb65b6a15d9d2fbe1e9e18a85caacb823cb9a138dce95c7
-  controller_resolution: 1. 接受唯一 must-fix：当前实现新增 doctor 模块、命令入口、打包和诊断测试，但 code/plans 没有稳定登记相应 Code Implementation Plan，违反 07 与 item-01 的计划交付要求。2. plan_version 2 无需变更，缺口属于已批准范围未完整履行；Controller 将回到 executing，重开 item-01 与 item-05，形成并登记当前来源驱动 Code Plan，明确其为审核后补正，不伪称实现前已存在，并逐项比较当前实现与规划。3. 接受非阻断建议并一并增加 doctor 对非 ok Helper outcome 不得成为 ready 的防回归测试。4. 接受其余 verified 结论：09/33、doctor 只读、发行物、通用文档、full-v4 与 spark-0023 分流均成立。5. 当前 result_version 1 尚未被接受，修复可保持版本；修复后必须更新正式测试快照并重新独立审核，不能直接进入关闭准备。
+    subject_fingerprint:
+      65f66a4eb558ede28bb65b6a15d9d2fbe1e9e18a85caacb823cb9a138dce95c7
+  controller_resolution: 1. 接受唯一 must-fix：当前实现新增 doctor 模块、命令入口、打包和诊断测试，但
+    code/plans 没有稳定登记相应 Code Implementation Plan，违反 07 与 item-01 的计划交付要求。2.
+    plan_version 2 无需变更，缺口属于已批准范围未完整履行；Controller 将回到 executing，重开 item-01 与
+    item-05，形成并登记当前来源驱动 Code Plan，明确其为审核后补正，不伪称实现前已存在，并逐项比较当前实现与规划。3.
+    接受非阻断建议并一并增加 doctor 对非 ok Helper outcome 不得成为 ready 的防回归测试。4. 接受其余 verified
+    结论：09/33、doctor 只读、发行物、通用文档、full-v4 与 spark-0023 分流均成立。5. 当前 result_version
+    1 尚未被接受，修复可保持版本；修复后必须更新正式测试快照并重新独立审核，不能直接进入关闭准备。
 - reviewer: codex-agent:/root/wc0007_plan_review
   reviewed_at: '2026-07-21T10:47:16.535501+08:00'
   subject_version: 1
-  scope: 独立只读复审 workcase-0009 修复后的 result_version 1：首轮 must-fix/Controller resolution、稳定 Code Plan、doctor 修复、6 项 success criteria、5 个 work item、两次 full-v4、发行物、范围排除及 spark-0023/0024；未修改文件。
+  scope: 独立只读复审 workcase-0009 修复后的 result_version 1：首轮 must-fix/Controller
+    resolution、稳定 Code Plan、doctor 修复、6 项 success criteria、5 个 work item、两次
+    full-v4、发行物、范围排除及 spark-0023/0024；未修改文件。
   conclusion: changes_required
   feedback:
-  - '[must-fix] 当前登记的 dist wheel/sdist 仍是 doctor 修复前产物，内部 doctor 哈希 dc16ddc2…，而当前源码哈希 7f031953…；full-v4 packaging tests 临时重建当前源码，但不能验证 WorkCase 引用的旧 artifact。必须从当前源码重建固定 artifact、更新 SHA-256，并对被引用 artifact 完成安装、doctor、卸载回读证据。'
-  - '[must-fix] item-05 明确要求模拟 Hook 成功、unknown 与 confirmed-no-capability 分类负例；当前只有计划文字和文档静态断言，没有对应可执行 fixture 或执行证据。必须在不新增生产分类权威、不冒充真实环境证据的边界内补齐。'
+  - '[must-fix] 当前登记的 dist wheel/sdist 仍是 doctor 修复前产物，内部 doctor 哈希 dc16ddc2…，而当前源码哈希
+    7f031953…；full-v4 packaging tests 临时重建当前源码，但不能验证 WorkCase 引用的旧 artifact。必须从当前源码重建固定
+    artifact、更新 SHA-256，并对被引用 artifact 完成安装、doctor、卸载回读证据。'
+  - '[must-fix] item-05 明确要求模拟 Hook 成功、unknown 与 confirmed-no-capability 分类负例；当前只有计划文字和文档静态断言，没有对应可执行
+    fixture 或执行证据。必须在不新增生产分类权威、不冒充真实环境证据的边界内补齐。'
   - '[must-fix] 更新 item-03 聚焦计数：新增非 ok 回归后 doctor tests 为 7 cases，不再是 6 passed。'
   - '[verified] environment-neutral-enablement.md 已稳定登记并覆盖 07，且诚实保留审核后补正时序。'
   - '[verified] 当前源码 doctor 非 ok outcome 修复与 partial 回归正确。'
-  - '[verified] run-8230161ed05e469d8c0c8da92e81ac37 有效：966 passed/10 skipped、Web 34、395 文件同指纹 changes=[]。'
+  - '[verified] run-8230161ed05e469d8c0c8da92e81ac37 有效：966 passed/10 skipped、Web
+    34、395 文件同指纹 changes=[]。'
   - '[verified] run-d6be… 正确因 spark-0024 并行新增降为 unknown/stale；最终 run 已稳定覆盖 spark-0024。'
   - '[verified] 排除范围成立，spark-0023 保持 open 并独立承接发布 Specs/行动模板。'
   - '[non-blocking] 原始 Code Plan 时序违规不可追溯消除，关闭记录应继续保留该历史事实。'
   review_basis:
     projection_key: result_implementation
-    subject_fingerprint: 225b647fb42d7a5d4753c959a5b4c6d8042110a2bd50e71b76762c4fe5347424
-  controller_resolution: 1. 接受 artifact must-fix：WorkCase 引用的 dist wheel/sdist 是 doctor 修复前产物；临时 packaging build 不能替代对被引用 artifact 的重建、哈希和实装回读。2. 接受 fixture must-fix：item-05 的 Hook success、unknown、confirmed-no-capability 三类模拟要求必须形成可执行测试证据；fixture 只承载给定证据状态并检验 09 已定义边界，不新增生产分类权威、不映射真实厂商。3. 接受 item-03 doctor tests 计数需由 6 更新为 7，并在新增 fixture 后按实际结果继续校正。4. 接受其余 verified 结论和历史 Code Plan 时序说明。5. 缺口均属于 plan_version 2 已批准范围，无需升计划或重新批准；result_version 1 尚未接受，可以保持版本。Controller 将回到 executing，重开 item-03/item-05，修复后更新 artifact、结果包、正式 full-v4 并再次独立审核。
+    subject_fingerprint:
+      225b647fb42d7a5d4753c959a5b4c6d8042110a2bd50e71b76762c4fe5347424
+  controller_resolution: 1. 接受 artifact must-fix：WorkCase 引用的 dist wheel/sdist 是
+    doctor 修复前产物；临时 packaging build 不能替代对被引用 artifact 的重建、哈希和实装回读。2. 接受 fixture
+    must-fix：item-05 的 Hook success、unknown、confirmed-no-capability
+    三类模拟要求必须形成可执行测试证据；fixture 只承载给定证据状态并检验 09 已定义边界，不新增生产分类权威、不映射真实厂商。3. 接受
+    item-03 doctor tests 计数需由 6 更新为 7，并在新增 fixture 后按实际结果继续校正。4. 接受其余 verified
+    结论和历史 Code Plan 时序说明。5. 缺口均属于 plan_version 2 已批准范围，无需升计划或重新批准；result_version
+    1 尚未接受，可以保持版本。Controller 将回到 executing，重开 item-03/item-05，修复后更新
+    artifact、结果包、正式 full-v4 并再次独立审核。
 - reviewer: codex-agent:/root/wc0007_plan_review
   reviewed_at: '2026-07-21T11:04:43.268498+08:00'
   subject_version: 1
-  scope: 第三次独立只读复审 workcase-0009 当前 result_version 1，仅核对第二轮 must-fix 修复、最终验证、六项成功标准及关闭边界；未修改文件、未重跑写入型流程。
+  scope: 第三次独立只读复审 workcase-0009 当前 result_version 1，仅核对第二轮 must-fix
+    修复、最终验证、六项成功标准及关闭边界；未修改文件、未重跑写入型流程。
   conclusion: pass_with_followups
   feedback:
   - '[must-fix] 无。'
-  - '[verified] 当前 wheel 64614788…、sdist 5a9187a0…；两个 archive 的 doctor 与源码 SHA-256 均为 7f031953…，包含两份同哈希用户文档和 ldvh-doctor 入口。'
-  - '[verified] wheel/sdist 严格临时环境生命周期登记成立：no-index/no-deps 安装、12 operations、doctor ready、valid/governed_single、4/4 surfaces、2/2 docs、卸载及入口/distribution 消失；首次 sdist 非 fail-fast 误报已明确排除。'
-  - '[verified] tests-only capability fixtures 覆盖 simulated Hook success、unknown、confirmed-no-capability 和三项必要依据逐项缺失回落 unverified；全部 maps_to_real_environment=false，无生产权威或真实环境结论。'
+  - '[verified] 当前 wheel 64614788…、sdist 5a9187a0…；两个 archive 的 doctor 与源码 SHA-256
+    均为 7f031953…，包含两份同哈希用户文档和 ldvh-doctor 入口。'
+  - '[verified] wheel/sdist 严格临时环境生命周期登记成立：no-index/no-deps 安装、12 operations、doctor
+    ready、valid/governed_single、4/4 surfaces、2/2 docs、卸载及入口/distribution 消失；首次 sdist
+    非 fail-fast 误报已明确排除。'
+  - '[verified] tests-only capability fixtures 覆盖 simulated Hook success、unknown、confirmed-no-capability
+    和三项必要依据逐项缺失回落 unverified；全部 maps_to_real_environment=false，无生产权威或真实环境结论。'
   - '[verified] item-03 已校正 doctor 7 cases，fixture 7 cases，聚焦 14 passed。'
-  - '[verified] final full-v4 run-517c166cb5cd44fca82a7002f9b66f8b 为 passed/evidence_complete/exit 0：973 passed/10 skipped、Web 34、397 文件同指纹 changes=[]。'
+  - '[verified] final full-v4 run-517c166cb5cd44fca82a7002f9b66f8b 为 passed/evidence_complete/exit
+    0：973 passed/10 skipped、Web 34、397 文件同指纹 changes=[]。'
   - '[verified] 六项标准、五个工作项和范围排除成立；spark-0023 独立承接发布；Code Plan 继续诚实保留审核后补正时序。'
-  - '[non-blocking] 精确 artifact 生命周期主要以 WorkCase runtime-observation 摘要登记，未来可增加耐久原始命令 transcript；当前字节、archive 内容、入口、全量打包测试与失败尝试排除足以关闭。'
+  - '[non-blocking] 精确 artifact 生命周期主要以 WorkCase runtime-observation 摘要登记，未来可增加耐久原始命令
+    transcript；当前字节、archive 内容、入口、全量打包测试与失败尝试排除足以关闭。'
   - '[non-blocking] 原始 Code Plan 时序违规不可追溯修复；原生 Windows 与具体 AI 环境真实触发保持 unverified。'
   review_basis:
     projection_key: result_implementation
-    subject_fingerprint: d105dc0b38987e229d006d6bb02e5f07e730af91dcd921302265241e393dab11
-  controller_resolution: 1. 接受 pass_with_followups：当前六项成功标准与五个工作项均满足，无 must-fix。2. 接受当前 wheel/sdist 哈希、archive doctor/docs/entry point、严格安装/doctor/卸载回读、synthetic fixtures 和 final full-v4 的 verified 结论。3. 接受首次 sdist 非 fail-fast 误报已被明确排除，不进入最终证据；当前严格复跑与 artifact 字节足以支持关闭。4. 接受未来增加 artifact 生命周期原始 transcript 为非约束完善，不表示当前责任残留，不自动建档。5. 原始 Code Plan 时序违规作为历史事实继续保留；当前补正规划足以恢复后续维护基线。原生 Windows 与具体 AI 环境真实触发是已声明未验证范围，不阻断本环境无关基础。6. 无需提升 result_version，也无需再次独立审核；Controller 决定进入 closure_preparing。
-validation_summary: plan_version 2 的五个工作项与六项成功标准全部满足。09/33 已固定环境无关方法、功能型 Hook、unsupported/unverified 证据门槛和直接配置/新 adapter 分流；当前 Code Plan 已稳定登记并诚实保留首次审核后补正时序。ldvh-doctor/1 保持只读，非 ok Helper outcome 不会误报 ready。当前 wheel/sdist SHA-256 分别为 64614788cf0b1e053dbcff7e06feb7234d4f7ed49947107725dab863f90f1544 与 5a9187a0dabe1f568418eba50777dc86f7fd2c4c7122dfb60db358d849e16187，archive doctor 与源码 SHA-256 同为 7f031953ca557d1e0f98878f6a15f7374b7c2d0299e581bf47f0ed6f925d5c85；wheel/sdist 均完成严格临时环境安装、12 operations、doctor ready、卸载及消失回读。tests-only synthetic fixtures 覆盖模拟 Hook success、unknown、confirmed-no-capability 和必要依据逐项负例，均不映射真实环境。最终 full-v4 run-517c166cb5cd44fca82a7002f9b66f8b 为 passed/evidence_complete/exit 0，Ruff、Python 973 passed/10 skipped、Web typecheck、34/34 tests、production build 通过；before/after 397 文件、8,233,580 bytes、同一指纹、changes=[]。三轮独立结果审核依次为 changes_required、changes_required、pass_with_followups；全部 must-fix 已处置，最终无 must-fix，无需升 result_version 或复审。未公共发布、未实现/安装具体 adapter、未真实验证具体 AI 环境、未 push/PR。
+    subject_fingerprint:
+      d105dc0b38987e229d006d6bb02e5f07e730af91dcd921302265241e393dab11
+  controller_resolution: 1. 接受 pass_with_followups：当前六项成功标准与五个工作项均满足，无
+    must-fix。2. 接受当前 wheel/sdist 哈希、archive doctor/docs/entry
+    point、严格安装/doctor/卸载回读、synthetic fixtures 和 final full-v4 的 verified 结论。3.
+    接受首次 sdist 非 fail-fast 误报已被明确排除，不进入最终证据；当前严格复跑与 artifact 字节足以支持关闭。4. 接受未来增加
+    artifact 生命周期原始 transcript 为非约束完善，不表示当前责任残留，不自动建档。5. 原始 Code Plan
+    时序违规作为历史事实继续保留；当前补正规划足以恢复后续维护基线。原生 Windows 与具体 AI
+    环境真实触发是已声明未验证范围，不阻断本环境无关基础。6. 无需提升 result_version，也无需再次独立审核；Controller 决定进入
+    closure_preparing。
+validation_summary: plan_version 2 的五个工作项与六项成功标准全部满足。09/33 已固定环境无关方法、功能型
+  Hook、unsupported/unverified 证据门槛和直接配置/新 adapter 分流；当前 Code Plan
+  已稳定登记并诚实保留首次审核后补正时序。ldvh-doctor/1 保持只读，非 ok Helper outcome 不会误报 ready。当前
+  wheel/sdist SHA-256 分别为
+  64614788cf0b1e053dbcff7e06feb7234d4f7ed49947107725dab863f90f1544 与
+  5a9187a0dabe1f568418eba50777dc86f7fd2c4c7122dfb60db358d849e16187，archive
+  doctor 与源码 SHA-256 同为
+  7f031953ca557d1e0f98878f6a15f7374b7c2d0299e581bf47f0ed6f925d5c85；wheel/sdist
+  均完成严格临时环境安装、12 operations、doctor ready、卸载及消失回读。tests-only synthetic fixtures
+  覆盖模拟 Hook success、unknown、confirmed-no-capability 和必要依据逐项负例，均不映射真实环境。最终
+  full-v4 run-517c166cb5cd44fca82a7002f9b66f8b 为 passed/evidence_complete/exit
+  0，Ruff、Python 973 passed/10 skipped、Web typecheck、34/34 tests、production build
+  通过；before/after 397 文件、8,233,580 bytes、同一指纹、changes=[]。三轮独立结果审核依次为
+  changes_required、changes_required、pass_with_followups；全部 must-fix 已处置，最终无
+  must-fix，无需升 result_version 或复审。未公共发布、未实现/安装具体 adapter、未真实验证具体 AI 环境、未
+  push/PR。
 closure_outcome: completed
-disposition_summary: workcase-0009 已完成批准的环境无关启用基础，没有未处置修复责任、accepted_stop 或需 routed-to 的残余。首次缺少事前 Code Plan 的时序违规不能追溯消除，已作为历史事实保留；当前补正规划恢复了后续维护基线。artifact 生命周期原始 transcript、原生 Windows 和具体 AI 环境真实触发属于当前证据边界或非约束完善，不自动建档或阻断关闭。spark-0003 继续保留未来选定具体目标环境的安装/验证问题，spark-0023 继续独立承接发布 Specs 与行动模板；二者都不是本 WorkCase 未完成责任。Controller 判断 result_version 1 足以提交 Human 关闭确认；最终 closed 仍须 Human 明确批准。
+disposition_summary: workcase-0009 已完成批准的环境无关启用基础，没有未处置修复责任、accepted_stop 或需
+  routed-to 的残余。首次缺少事前 Code Plan 的时序违规不能追溯消除，已作为历史事实保留；当前补正规划恢复了后续维护基线。artifact
+  生命周期原始 transcript、原生 Windows 和具体 AI 环境真实触发属于当前证据边界或非约束完善，不自动建档或阻断关闭。spark-0003
+  继续保留未来选定具体目标环境的安装/验证问题，spark-0023 继续独立承接发布 Specs 与行动模板；二者都不是本 WorkCase
+  未完成责任。Controller 判断 result_version 1 足以提交 Human 关闭确认；最终 closed 仍须 Human 明确批准。
 closure_approval:
   subject_version: 1
   approved_at: '2026-07-21T11:54:32.343937+08:00'
-  summary: Human 明确批准关闭 workcase-0009，接受当前 result_version 1、completed 分类、无未处置修复责任及已记录的范围边界。
-  source_refs:
-  - kind: human-input
-    locator: 2026-07-21 Human：批准关闭 workcase-0009
+  summary: Human 明确批准关闭 workcase-0009，接受当前 result_version 1、completed
+    分类、无未处置修复责任及已记录的范围边界。
 closed_at: '2026-07-21T11:54:32.343937+08:00'
 object_id: workcase-0009
 fact_type_key: workcase
 created_at: '2026-07-21T08:45:57.944290+08:00'
-updated_at: '2026-07-21T11:54:32.343937+08:00'
+updated_at: '2026-07-23T14:21:35.783731+08:00'

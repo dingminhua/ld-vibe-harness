@@ -1,19 +1,5 @@
 title: 将 full-v4 绑定到实际 Working Tree 证据
 status: closed
-source_refs:
-- kind: human-input
-  locator: 2026-07-20 Human：授权 A–E 整体改进意图，允许本地 commit、分支、worktree 和本地结果整合，禁止
-    push 或创建 PR
-- kind: working_tree
-  locator:
-    /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/ldvh-base/workcases/workcase-0003.yaml
-- kind: working_tree
-  locator: /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/specs/07-Code
-    实践与测试规范.md
-- kind: working_tree
-  locator:
-    /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/specs/attachments/07.Att.01-Working
-    Tree 测试证据字段表.md
 summary: Human 已批准 result_version 3 的完整结果和关闭报告；workcase-0005 正式关闭。
 goal: 让唯一 full-v4 runner 在任何检查前和最后一次已尝试检查后，对实际唯一管辖 Git worktree 按 07.Att.01
   固定政策安全采集 before/after manifest，将合法 Working Tree evidence DTO
@@ -76,13 +62,6 @@ work_items:
     checkpoint、DTO、governance、collector、test_runs、CLI 的责任和单向依赖，不复制来源 Schema。
   result_summary: 已建立 code/plans 稳定入口及 C 实现规划，冻结模块依赖、v2 Schema、身份/状态矩阵、安全
     I/O、兼容和风险测试；独立审核修正 07 章节定位后确认无其它阻断。
-  evidence_refs:
-  - kind: working_tree
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/plans/README.md
-  - kind: working_tree
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/plans/full-v4-working-tree-evidence.md
 - item_id: item-02
   goal: 实现政策感知的安全 Working Tree 采集器。
   expected_result: 对唯一实际 worktree 形成符合附件的 complete/incomplete manifest 与
@@ -95,13 +74,6 @@ work_items:
   result_summary: 已实现自动发现治理配置且只接受唯一精确 worktree 身份的边界解析，以及政策剪枝、原始 bytes
     读取、链接/特殊条目/竞态/NFC 冲突失败闭合的采集器；47 项聚焦测试、Ruff 与实现差异检查通过。真实仓库采集为 complete，纳入未跟踪
     workcase-0005，并排除 .git 与 .venv。
-  evidence_refs:
-  - kind: working_tree
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/ldvh/testing/working_tree_capture.py
-  - kind: working_tree
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/tests/testing/test_working_tree_capture.py
 - item_id: item-03
   goal: 把采集编排接入 v2 full-v4 运行记录。
   expected_result: before/checks/after/finally 与 durable record
@@ -114,13 +86,6 @@ work_items:
   result_summary: 已完成 v2 before/checks/after/finally
     编排、终态降级和耐久记录绑定；三轮修复闭合执行异常、固定步骤/状态矩阵、raw output 完整性，以及
     run_id、record、workspace、checkpoint/DTO 和 output 精确交叉引用。
-  evidence_refs:
-  - kind: working_tree
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/ldvh/testing/test_runs.py
-  - kind: working_tree
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/ldvh/testing/working_tree_evidence.py
 - item_id: item-04
   goal: 完成兼容、失败和 CLI 集成验证。
   expected_result: v1/v2/probe、管辖拒绝、linked worktree、worker/raw-output/DTO
@@ -132,16 +97,6 @@ work_items:
     原观察降级与无 DTO 边界单独断言。
   result_summary: v1/v2/probe、管辖拒绝、linked worktree、采集失败、worker/output/DTO
     失败、状态矩阵和跨引用篡改均有正反测试；87 项聚焦测试、Ruff 通过，完整 Code 回归 879 passed、10 skipped。
-  evidence_refs:
-  - kind: working_tree
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/tests/testing/test_test_runs.py
-  - kind: working_tree
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/tests/testing/test_working_tree_evidence.py
-  - kind: working_tree
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/tests/testing/test_working_tree_capture.py
 - item_id: item-05
   goal: 用新 runner 完成 dogfood 与 A 恢复交接。
   expected_result: 实际 full-v4 形成 complete DTO 和五步成功结果，范围检查成立，workcase-0003
@@ -155,15 +110,6 @@ work_items:
     skipped，Web 26 passed，typecheck/build 通过；DTO complete，360 文件、7,741,963
     bytes，before/after 指纹相同、changes=[]、无诊断，raw output 的 6,913 bytes 与 SHA-256
     均与记录一致。
-  evidence_refs:
-  - kind: runtime-observation
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/.ldvh-test-runs/run-e0edd06fcaa34770befc2ad67dea24c6/record.json
-    version: run-e0edd06fcaa34770befc2ad67dea24c6
-  - kind: runtime-observation
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/.ldvh-test-runs/run-e0edd06fcaa34770befc2ad67dea24c6/output.log
-    version: run-e0edd06fcaa34770befc2ad67dea24c6
 audit_summary:
 - audit_id: audit-01
   subject_kind: pre_creation_plan
@@ -229,9 +175,6 @@ execution_approval:
   subject_version: 1
   approved_at: '2026-07-20T08:51:13+08:00'
   summary: Human 明确批准执行 workcase-0005 当前完整计划。
-  source_refs:
-  - kind: human-input
-    locator: 2026-07-20 Human：批准执行 workcase-0005
 result_version: 3
 controller_check_summary: result_version 3 已闭合三轮独立审核发现：执行中断不能误报 passed/failed；v2
   reader 校验固定五步、字段和顶层矩阵；raw output
@@ -248,121 +191,31 @@ success_criterion_results:
   outcome: satisfied
   summary: 稳定 Code Plan 入口及增量规划在生产实现前形成并记录实现起点、Working Tree
     范围、模块、接口、副作用、诊断和测试风险。
-  evidence_refs:
-  - kind: working_tree
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/plans/README.md
-  - kind: working_tree
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/plans/full-v4-working-tree-evidence.md
 - criterion_id: criterion-02
   outcome: satisfied
   summary: 采集器按唯一政策对实际 bytes 形成全普通文件 manifest；真实 dogfood 纳入未提交与未跟踪载体且不使用 Git
     分类决定集合。
-  evidence_refs:
-  - kind: working_tree
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/ldvh/testing/working_tree_capture.py
-  - kind: runtime-observation
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/.ldvh-test-runs/run-e0edd06fcaa34770befc2ad67dea24c6/record.json
-    version: run-e0edd06fcaa34770befc2ad67dea24c6
 - criterion_id: criterion-03
   outcome: satisfied
   summary: 路径拓扑、特殊条目、读取竞态、规范化与管辖拒绝均 fail-closed，唯一实际 worktree 身份才可启动检查。
-  evidence_refs:
-  - kind: working_tree
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/tests/testing/test_working_tree_capture.py
 - criterion_id: criterion-04
   outcome: satisfied
   summary: v2 的 before checkpoint、finally after 和终态 DTO 编排已实现，身份复核与 incomplete
     路径有独立正反测试。
-  evidence_refs:
-  - kind: working_tree
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/ldvh/testing/test_runs.py
-  - kind: working_tree
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/tests/testing/test_test_runs.py
 - criterion_id: criterion-05
   outcome: satisfied
   summary: passed/failed/unknown、步骤与 exit、DTO 完整性及 raw output
     可回读矩阵已机械校验并由篡改反例覆盖。
-  evidence_refs:
-  - kind: working_tree
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/tests/testing/test_test_runs.py
-  - kind: runtime-observation
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/.ldvh-test-runs/run-e0edd06fcaa34770befc2ad67dea24c6/record.json
-    version: run-e0edd06fcaa34770befc2ad67dea24c6
 - criterion_id: criterion-06
   outcome: satisfied
   summary: reader 保留 v1/probe 兼容并仅对新 full-v4 使用 v2；probe 不表示产品或当前树验证。
-  evidence_refs:
-  - kind: working_tree
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/ldvh/testing/test_runs.py
-  - kind: working_tree
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/tests/testing/test_test_runs.py
 - criterion_id: criterion-07
   outcome: satisfied
   summary: 87 项聚焦测试覆盖计划所列正反路径；原生 Windows 语义不由测试替身冒充平台证明。
-  evidence_refs:
-  - kind: working_tree
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/tests/testing/test_test_runs.py
-  - kind: working_tree
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/tests/testing/test_working_tree_evidence.py
-  - kind: working_tree
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/tests/testing/test_working_tree_capture.py
 - criterion_id: criterion-08
   outcome: satisfied
   summary: 真实 run 可按 run_id 回读 complete DTO 和五步成功结果；范围符合 C，随后将恢复
     workcase-0003，不把 C 流程写入 dogfood 快照后冒充运行输入。
-  evidence_refs:
-  - kind: runtime-observation
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/.ldvh-test-runs/run-e0edd06fcaa34770befc2ad67dea24c6/record.json
-    version: run-e0edd06fcaa34770befc2ad67dea24c6
-  - kind: runtime-observation
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/.ldvh-test-runs/run-e0edd06fcaa34770befc2ad67dea24c6/output.log
-    version: run-e0edd06fcaa34770befc2ad67dea24c6
-  - kind: working_tree
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/ldvh-base/workcases/workcase-0003.yaml
-evidence_refs:
-- kind: runtime-observation
-  locator:
-    /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/.ldvh-test-runs/run-e0edd06fcaa34770befc2ad67dea24c6/record.json
-  version: run-e0edd06fcaa34770befc2ad67dea24c6
-- kind: runtime-observation
-  locator:
-    /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/.ldvh-test-runs/run-e0edd06fcaa34770befc2ad67dea24c6/output.log
-  version: run-e0edd06fcaa34770befc2ad67dea24c6
-- kind: working_tree
-  locator:
-    /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/plans/full-v4-working-tree-evidence.md
-- kind: working_tree
-  locator:
-    /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/ldvh/testing/working_tree_capture.py
-- kind: working_tree
-  locator:
-    /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/ldvh/testing/test_runs.py
-- kind: working_tree
-  locator:
-    /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/tests/testing/test_test_runs.py
-- kind: working_tree
-  locator:
-    /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/tests/testing/test_working_tree_capture.py
-- kind: working_tree
-  locator:
-    /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/tests/testing/test_working_tree_evidence.py
 result_reviews:
 - reviewer: /root/c_result_review
   reviewed_at: '2026-07-20T10:30:36.310742+08:00'
@@ -431,13 +284,6 @@ improvement_observations:
   topic_key: dogfood-self-reference-boundary
   summary: dogfood 只能绑定运行窗口当时的 Working Tree；运行后的 WorkCase
     状态写入会改变当前树，必须明确区分历史证据与后来事实。
-  evidence_refs:
-  - kind: working_tree
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/.ldvh-test-runs/run-e0edd06fcaa34770befc2ad67dea24c6/record.json
-  - kind: working_tree
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/ldvh-base/workcases/workcase-0005.yaml
   ownership: current_scope
   value_dimensions:
   - V3
@@ -450,13 +296,6 @@ improvement_observations:
 - observation_id: observation-02
   topic_key: native-windows-evidence
   summary: Windows reparse 仅由显式分支和 test double 覆盖，尚无原生 Windows 运行证据。
-  evidence_refs:
-  - kind: working_tree
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/tests/testing/test_working_tree_capture.py
-  - kind: working_tree
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/tests/platform/test_native_windows.py
   ownership: adjacent_project
   value_dimensions:
   - V3
@@ -468,13 +307,6 @@ improvement_observations:
 - observation_id: observation-03
   topic_key: filesystem-stable-signature-reuse
   summary: working_tree_capture 的稳定签名逻辑与 filesystem 私有安全签名存在最小重复。
-  evidence_refs:
-  - kind: working_tree
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/ldvh/testing/working_tree_capture.py
-  - kind: working_tree
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/ldvh/filesystem.py
   ownership: adjacent_project
   value_dimensions:
   - V4
@@ -487,10 +319,6 @@ improvement_observations:
   topic_key: helper-yaml-whitespace-noise
   summary: Helper CAS 序列化的 WorkCase YAML 在折行和空 locator 场景产生行尾空格，造成 diff-check
     噪音。
-  evidence_refs:
-  - kind: working_tree
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/ldvh-base/workcases/workcase-0003.yaml
   ownership: adjacent_project
   value_dimensions:
   - V4
@@ -504,13 +332,6 @@ improvement_observations:
   topic_key: run-output-physical-identity
   summary: v2 已锁定 output.log 的 lexical path、size 和 hash，但 carrier 本身尚未显式使用
     no-follow 打开和物理身份复核。
-  evidence_refs:
-  - kind: working_tree
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/ldvh/testing/test_runs.py
-  - kind: working_tree
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/tests/testing/test_test_runs.py
   ownership: adjacent_project
   value_dimensions:
   - V3
@@ -523,10 +344,6 @@ improvement_observations:
 - observation_id: observation-06
   topic_key: historical-launcher-validation
   summary: v2 reader 重新派生固定步骤时会观察当前 .venv 是否存在，长期回读可能受运行后环境变化影响。
-  evidence_refs:
-  - kind: working_tree
-    locator:
-      /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4/code/ldvh/testing/test_runs.py
   ownership: adjacent_project
   value_dimensions:
   - V5
@@ -545,4 +362,4 @@ closed_at: '2026-07-20T13:55:15+08:00'
 object_id: workcase-0005
 fact_type_key: workcase
 created_at: '2026-07-20T08:44:23.509741+08:00'
-updated_at: '2026-07-20T13:55:15+08:00'
+updated_at: '2026-07-23T14:21:35.783731+08:00'
