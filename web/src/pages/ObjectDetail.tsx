@@ -1383,7 +1383,7 @@ function StudyReportBodyEntry({
     >
       <FileText size={13} className="shrink-0 text-ldvh-accent" />
       <span className="ldvh-meta-primary min-w-0 flex-1 truncate">{title}</span>
-      <span className="ldvh-meta-muted shrink-0">{t('objectDetail.openReadingPanel')}</span>
+      <ChevronRight size={14} className="shrink-0 text-ldvh-text-secondary/70" />
     </div>
   );
 }
