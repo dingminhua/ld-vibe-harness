@@ -12,11 +12,11 @@ summary: |-
 
   **ZCode 实际验证：五层状态**
 
-  1. 资产完整性：初始失败。运行时实际选用的 data 目录缺少 `ldvh.json`；补入后已修复。
-  2. 可执行性：通过。手动执行 hook 脚本可以返回 work-context。
-  3. 触发验证：初始失败。Hook 曾静默不触发；修复 data 后，SessionStart 已触发。
-  4. 功能验证：已在一次新 SessionStart 中通过。Hook 返回 work-context，且可观察到执行记录。
-  5. 边界验证：未完成。重启、compact/resume、插件升级与多个注册来源的运行时选择尚未验证。
+  1. 资产完整性：初始失败。运行时实际选用的 data 目录曾缺少 `ldvh.json`；现已补入。文件存在只证明该资产完整，不能证明运行时会执行 Hook。
+  2. 可执行性：通过。手动执行 hook 脚本可以返回 work-context；这不等于环境事件已调用该脚本。
+  3. 实时触发验证：当前未通过。一轮新的 cold startup 中，ZCode 报告已注册一个 Hook，却没有 `hook_run_started` 或 `hook_run_completed`，执行目录为空。会话中出现的 work-context 可能来自 hydrate，不能当作本轮实时触发证据。
+  4. 功能验证：降级为历史有限观察。补入 data 后曾有一次会话交付 work-context；新证据不能确认那次或当前会话由实时 Hook 产生，因此不能再写成当前功能已通过。
+  5. 边界验证：未完成。已部署缓存缺少源码中定义的 SubagentStart；compact/resume、升级/重装、两个注册来源同时启用时的数据目录选择，以及 data 完整时仍不实时执行的原因，均未验证。
 
   上述案例已形成 `pitfall-0001`，只证明该已观察的 ZCode 安装场景；它不构成其它环境或配置拓扑的安装闭环。
 
@@ -46,7 +46,9 @@ evolution:
     summary: ZCode 实际安装暴露 data 目录缺失：手动脚本可执行而 Hook 静默不触发。修复运行时 data 后，SessionStart 与 work-context 返回获得一次实际验证，边界验证仍未完成。
   - at: '2026-07-24T21:42:45+08:00'
     summary: 将实际案例的五层成功、失败与未验证范围收敛为当前摘要，并建立到 pitfall-0001 的主题关联；安装验证自动化仍由 spark-0029 独立承接。
+  - at: '2026-07-24T21:55:46+08:00'
+    summary: ZCode 只读 cold-start 验证发现已注册 Hook 没有实时执行记录，且 work-context 可能来自 hydrate；因此撤回“补入 data 后当前实时触发和功能已通过”的结论，转为待诊断的运行时边界。
 object_id: spark-0003
 fact_type_key: spark
 created_at: '2026-07-19T08:33:50.911048+08:00'
-updated_at: '2026-07-24T21:42:45+08:00'
+updated_at: '2026-07-24T21:55:46+08:00'
