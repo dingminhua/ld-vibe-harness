@@ -68,7 +68,7 @@ export const TYPE_DESCRIPTION_LOCALES: Record<string, { zh: string; en: string }
   adr: { zh: '决策记录', en: 'Architecture Decision Record' },
   pitfall: { zh: '可复用经验', en: 'Reusable pitfalls' },
   spark: { zh: '待分流的火花', en: 'Spark pending routing' },
-  study: { zh: '调研', en: 'External study' },
+  study: { zh: '研究', en: 'Study' },
   change: { zh: '提交', en: 'Commit' },
 };
 
@@ -91,7 +91,7 @@ export const TYPE_LOCALES: Record<string, { zh: string; en: string }> = {
   adr: { zh: '决策', en: 'ADR' },
   pitfall: { zh: '经验', en: 'Pitfall' },
   spark: { zh: '火花', en: 'Spark' },
-  study: { zh: '调研', en: 'External study' },
+  study: { zh: '研究', en: 'Study' },
   change: { zh: '提交', en: 'Commit' },
 };
 
@@ -390,7 +390,7 @@ const COMMIT_SCOPE_LOCALES: Record<string, { zh: string; en: string }> = {
   code: { zh: 'Code', en: 'Code' }, web: { zh: 'Web', en: 'Web' },
   tests: { zh: 'Tests', en: 'Tests' }, config: { zh: '配置', en: 'Config' },
   workcase: { zh: '工作', en: 'WorkCase' }, adr: { zh: '决策', en: 'ADR' },
-  spark: { zh: '火花', en: 'Spark' }, study: { zh: '调研', en: 'External study' },
+  spark: { zh: '火花', en: 'Spark' }, study: { zh: '研究', en: 'Study' },
   pitfall: { zh: '经验', en: 'Pitfall' },
 };
 
@@ -463,7 +463,7 @@ export const UI_LOCALES = {
     'nav.adrs': '决策',
     'nav.pitfalls': '经验',
     'nav.sparks': '火花',
-    'nav.studies': '调研',
+    'nav.studies': '研究',
     'nav.changes': '提交',
     'nav.changelog': '提交',
     'nav.collapseSidebar': '收起侧栏',
