@@ -1358,30 +1358,32 @@ function StudyReportBodyEntry({
   const title = objectPath ? basename(objectPath) : t('objectDetail.reportBody');
   const openLabel = t('objectDetail.openReadingPanel');
   const isCurrentPanelOpen = Boolean(docPath && panelOpen && panelContent?.type === 'doc' && panelContent.docPath === docPath);
-  const PanelIcon = isCurrentPanelOpen ? ChevronLeft : ChevronRight;
+
   const openReportBody = () => {
     if (!docPath || carrier !== 'markdown') return;
     openPanel({ type: 'doc', title, docPath, data: String(value), carrier });
   };
 
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    openReportBody();
+  };
+
+  if (!docPath || carrier !== 'markdown') return null;
+
   return (
-    <div className="flex flex-col gap-3">
-      <div className="ldvh-body group flex w-full items-center gap-2 rounded-md px-1.5 py-2 text-left">
-        <BookOpenText size={13} className="shrink-0 text-ldvh-accent" />
-        <span className="ldvh-meta-primary min-w-0 flex-1 truncate">{title}</span>
-        <CopyPathButton path={objectPath} label={t('common.copyDocPath')} copiedLabel={t('common.copiedDocPath')} />
-        {docPath && carrier === 'markdown' && (
-          <button
-            type="button"
-            onClick={openReportBody}
-            title={openLabel}
-            aria-label={openLabel}
-            className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-transparent bg-transparent text-ldvh-text-secondary/70 transition-colors hover:bg-ldvh-border/30 hover:text-ldvh-accent focus-visible:border-ldvh-accent/50 focus-visible:outline-none"
-          >
-            <PanelIcon size={16} aria-hidden="true" />
-          </button>
-        )}
-      </div>
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={openReportBody}
+      onKeyDown={handleKeyDown}
+      title={openLabel}
+      className="ldvh-body group flex min-h-10 w-full cursor-pointer items-center gap-2 rounded-md px-1.5 py-2 text-left transition-colors hover:bg-ldvh-border/25 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ldvh-accent/50"
+    >
+      <FileText size={13} className="shrink-0 text-ldvh-accent" />
+      <span className="ldvh-meta-primary min-w-0 flex-1 truncate">{title}</span>
+      <span className="ldvh-meta-muted shrink-0">{t('objectDetail.openReadingPanel')}</span>
     </div>
   );
 }
