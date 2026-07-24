@@ -103,7 +103,7 @@ Spark 与 WorkCase 的分界不取决于“以后是否可能做”。Spark 尚�
 | `workcase-audit-finding` | 一项已由 Controller 处理的历史审核发现及其最终去向 | 不表示未处理意见、当前结果或 Reviewer 的流程决定 | finding_id 唯一；主题、处置、复审结果和最终去向必须同项保存，不使用平行数组 |
 | `workcase-residual-responsibility` | 当前 WorkCase 停止推进后仍适用的一项具体责任 | 不表示建议、风险、关系目标已完成或下游自动承接 | 使用 residual_id；routed 必须在摘要中明确后续承接的事实对象与责任边界，accepted_stop 必须明确 Human 接受停止的原因、未完成事项与风险边界 |
 | `workcase-nonbinding-followup` | 有后续参考价值但不属于当前关闭责任的非约束建议 | 不表示残余责任、承接关系、Spark 或新 WorkCase | 不自动建立关系或事实对象；是否以后对象化必须重新按相应来源判断 |
-| `workcase-improvement-observation` | 执行中具有跨阶段恢复或明确后续消费价值、已经完成价值判断和终态处置的改进观察 | 不表示普通推理、工具噪声、未收敛想法、自动范围扩张或自动建档 | 单一结果版本最多 20 项；topic_key 唯一；V1–V8 净价值和语义去重由 Controller 判断，Code 只检查结构与引用 |
+| `workcase-improvement-observation` | 执行中具有跨阶段恢复或明确后续消费价值、已经完成价值判断和终态处置的改进观察 | 不表示普通推理、工具噪声、未收敛想法、自动范围扩张或自动建档 | 单一结果版本最多 20 项；topic_key 唯一；V1-V8 净价值和语义去重由 Controller 判断，Code 只检查结构与引用 |
 
 ### 类型字段使用绑定
 
@@ -153,20 +153,20 @@ Spark 与 WorkCase 的分界不取决于“以后是否可能做”。Spark 尚�
 | `workcase-goal` | `goal` | string | WorkCase 期望达成并可独立判断关闭的单一目标状态 | 不表示标题、当前进展、步骤、成功标准或结果 | 必填非空；必须能够与范围和成功标准共同产生独立关闭判断；实质改成另一目标时新建对象 |
 | `workcase-scope` | `scope` | string | WorkCase 承诺覆盖的内容、重要约束和明确排除边界 | 不表示当前进展、完整计划、实现细节或来源全文 | 必填非空；边界变化时同步复核目标、成功标准、授权和对象身份 |
 | `workcase-success-criteria` | `success_criteria` | array | 共同构成目标达成判断的可观察条件闭集 | 不表示执行步骤、todo 状态、证据、测试命令或关闭结果 | 至少一项非空唯一字符串；每项可独立检查；不嵌入 checklist 标记或可变完成状态 |
-| `workcase-profile` | `workcase_profile` | string | 选择 WorkCase 当前控制契约的显式兼容 profile | 不表示计划版本、结果版本、Git revision、对象版本或迁移完成 | 当前唯一值 `control-contract-v1`；存在后不得移除或降级；缺省只按 §6 的精确生效边界解释 legacy |
+| `workcase-profile` | `workcase_profile` | string | 选择 WorkCase 当前控制契约的显式兼容 profile | 不表示计划版本、结果版本、Git revision、对象版本或迁移完成 | 当前唯一值 `control-contract-v1`；存在后不得移除或降级；默认只按 §6 的精确生效边界解释 legacy |
 | `workcase-success-criterion-definitions` | `success_criterion_definitions` | array | current profile 的稳定成功标准定义闭集 | 不表示结果、证据、工作项或旧 success_criteria 的别名副本 | current profile 必填且至少一项；成员使用 `workcase-success-criterion`；与 legacy `success_criteria` 互斥 |
 | `workcase-success-criterion-results` | `success_criterion_results` | array | current profile 对当前成功标准逐项形成的结果闭集 | 不表示 Reviewer、Human 或 Code 已自动确认结论 | 进入 independent_reviewing 起必填；成员使用 `workcase-success-result`，按 criterion_id 精确唯一覆盖当前定义 |
 | `workcase-audit-summary` | `audit_summary` | array | 在不依赖中途 Git commit 的情况下保留被替代审核的紧凑价值和 Controller 处置连续性 | 不表示当前详细 review、草案全文、审核次数展示或 revision history | current profile 创建时至少包含 pre_creation_plan；计划/结果升版清除旧详细审核时追加对应 superseded entry；audit_id 和 finding_id 不可改写 |
 | `workcase-residual-responsibilities` | `residual_responsibilities` | array | 关闭准备中识别的仍适用具体责任闭集 | 不表示 followup、一般风险、目标已完成或路由自动成立 | 成员使用 `workcase-residual-responsibility`；没有残余时省略；routed 项必须被 routed-to 关系显式映射 |
 | `workcase-nonbinding-followups` | `nonbinding_followups` | array | 不影响当前责任关闭、但具有明确参考价值的后续建议 | 不表示未完成责任、关系、自动创建或下游授权 | 成员使用 `workcase-nonbinding-followup`；没有时省略；任何后续对象化重新走 31 |
-| `workcase-improvement-observations` | `improvement_observations` | array | 已完成准入、去重、V1–V8 净价值判断和处置的持续改进观察 | 不表示推理日志、临时修正、工具输出、自动扩张计划或自动路由 | current profile 条件出现；成员使用 `workcase-improvement-observation`；单一结果版本至多 20 项，同 topic_key 先合并压缩 |
+| `workcase-improvement-observations` | `improvement_observations` | array | 已完成准入、去重、V1-V8 净价值判断和处置的持续改进观察 | 不表示推理日志、临时修正、工具输出、自动扩张计划或自动路由 | current profile 条件出现；成员使用 `workcase-improvement-observation`；单一结果版本至多 20 项，同 topic_key 先合并压缩 |
 | `workcase-phase` | `phase` | string | WorkCase 当前处于哪一个方案确认、执行、质量控制或关闭确认位置 | 不表示责任是否阻塞或终止、完成比例、命令阶段或模板运行事件 | 必填；闭集和转换条件由 §6 定义；必须与 status 正交且不得用 summary 代替 |
 | `workcase-plan-version` | `plan_version` | integer | 当前目标、范围、成功标准、工作项及其依赖、方法和模板偏离共同形成的计划绑定身份 | 不表示 Git revision、对象版本、审核次数、修订历史、执行进度或面向 Human 的计划摘要 | 必填且从 1 单调递增；任何影响 Human 执行判断的计划覆盖字段变化必须递增；创建审核和执行批准只对同版本有效；向 Human 交付时必须直接展示当前计划内容，不得用版本号代替 |
 | `workcase-items` | `work_items` | array | 当前计划中共同服务 WorkCase 关闭判断的阶段性目标与结果集合 | 不表示环境内部步骤、独立事实对象、命令清单或完整运行日志 | 必填且至少一项；成员使用 `workcase-item`；item_id 唯一，依赖无缺失、自指或环；不得用数组顺序暗示未声明依赖 |
 | `workcase-creation-reviews` | `creation_reviews` | array | 创建及执行批准前对当前计划版本完成的独立审核与主控处置记录 | 不表示审核者决定是否创建或提交 Human，也不表示 Human 已批准执行、主控自检或结果审核 | 必填且至少一项；成员使用 `workcase-review`；只保留当前 plan_version 的实际审核，旧版本由 Git 追溯；全部当前审核的联合 scope 必须覆盖 §6 规定的完整计划，主控必须逐项处置反馈；结论值不自动推进或否决 |
 | `workcase-execution-approval` | `execution_approval` | object | Human 对当前计划版本开始执行的明确批准 | 不表示创建批准、技术验证、关闭批准或后续计划版本继续获批 | 仅在 Human 实际批准后出现；成员使用 `workcase-human-approval` 且 subject_version 等于当前 plan_version；计划版本变化时立即失效并移除，phase 回到 human_plan_confirming；若这条批准记录本身被 Human 明确否认或撤回，只能按本节的受控撤回动作清除，不能手改 |
 | `workcase-result-version` | `result_version` | integer | 工作项结果、主控自检及当前关闭报告共同形成的结果绑定身份 | 不表示 plan_version、Git revision、结果审核次数，也不表示 Code 已根据普通字段差异判定实质变化 | 首次从 executing 进入 controller_checking 时建立为 1；只在主控判断实施结果发生需要重新审核的实质变化时单调递增；结果审核与关闭批准只对同版本有效 |
-| `workcase-controller-check-summary` | `controller_check_summary` | string | 主控逐项检查成功标准、工作项结果、验证、残余问题并完成修复后的当前自检说明 | 不表示独立结果审核、Human 验收或工具日志 | controller_checking 后必填非空；必须说明检查覆盖、发现、修复和未验证范围，并由当前 自然语言验证说明 支持 |
+| `workcase-controller-check-summary` | `controller_check_summary` | string | 主控逐项检查成功标准、工作项结果、验证、残余问题并完成修复后的当前自检说明 | 不表示独立结果审核、Human 验收或工具日志 | controller_checking 后必填非空；必须说明检查覆盖、发现、修复和未验证范围，并由当前自然语言验证说明支持 |
 | `workcase-result-reviews` | `result_reviews` | array | 独立审核者对当前结果版本提供第二视角以及主控处理反馈的记录 | 不表示审核者决定返回、复审、进入关闭准备或提交 Human，也不表示创建审核、主控自检或 Human 关闭确认 | 由 independent_reviewing 阶段形成且至少一项；成员使用 `workcase-review`；只保留当前 result_version 的实际审核，旧版本由 Git 追溯；主控必须逐项处置反馈；离开 independent_reviewing 后 reviewer、reviewed_at、subject_version、scope、conclusion 和 feedback 不得被主控替换、追加或改写，controller_resolution 可由主控更新；结论值不自动推进或否决 |
 | `workcase-closure-approval` | `closure_approval` | object | Human 对当前结果版本、最终报告和分流建议作出的关闭批准 | 不表示技术验证、Git 已提交、下游责任完成或后续结果版本获批 | 仅在 Human 实际批准关闭后出现；成员使用 `workcase-human-approval` 且 subject_version 等于当前 result_version；写入与 status/phase 进入 closed 必须属于同一受控变更 |
 | `workcase-resume-from` | `resume_from` | string | 当前非终态推进阶段在中断、压缩或执行者交接后继续的最小明确入口 | 不表示完整执行步骤、历史日志或单个工作项自己的恢复点 | status 非 closed 时必填非空；与 summary 共同覆盖当前 phase 的已完成范围、下一动作和所需输入；阶段变化时覆盖更新 |
@@ -222,7 +222,7 @@ Spark 与 WorkCase 的分界不取决于“以后是否可能做”。Spark 尚�
 | `workcase-observation-topic-key` | `topic_key` | string | 用于同一结果版本机械防重复的规范化主题 key | 不表示语义相似度已由 Code 判断 | 匹配稳定 key 格式且唯一；语义同主题由 Controller 合并 |
 | `workcase-observation-summary` | `summary` | string | 说明可恢复、可消费的观察事实 | 不表示推理过程或工具日志 | 必填非空；只登记影响成功标准、跨阶段恢复或有明确后续消费价值的事项 |
 | `workcase-observation-ownership` | `ownership` | string | Controller 判断该观察属于当前范围、相邻项目还是外部责任 | 不表示自动路由 | 闭集 `current_scope`、`adjacent_project`、`external` |
-| `workcase-observation-value-dimensions` | `value_dimensions` | array | 说明观察对 00 V1–V8 哪些价值维度产生净收益 | 不表示 Code 已作价值判断 | 至少一项、唯一，成员闭集 V1–V8 |
+| `workcase-observation-value-dimensions` | `value_dimensions` | array | 说明观察对 00 V1-V8 哪些价值维度产生净收益 | 不表示 Code 已作价值判断 | 至少一项、唯一，成员闭集 V1-V8 |
 | `workcase-observation-net-value-summary` | `net_value_summary` | string | Controller 对记录收益和治理成本的净价值判断 | 不表示自动准入 | 必填非空 |
 | `workcase-observation-disposition` | `disposition` | string | 观察的终态处置分类 | 不表示事实对象自动变化 | 闭集 `absorbed_current_scope`、`nonbinding_followup`、`residual_responsibility`、`rejected` |
 | `workcase-observation-disposition-ref` | `disposition_ref` | string | 指向实际吸收 item、followup 或 residual 的局部 ID | 不表示关系或目标事实对象 | absorbed 引用 item；followup/residual 分别引用对应 ID；rejected 禁止出现 |
@@ -246,7 +246,7 @@ current profile 使用 `success_criterion_definitions`，禁止 `success_criteri
 
 current profile 的创建审核必须同时具有 `review_basis.projection_key: plan_current`、与当前计划投影相等的 `subject_fingerprint` 和完整 `controller_resolution`；对象创建前的多轮价值压缩到 `audit_summary` 的 `pre_creation_plan` 条目。对象内 result review 在 `independent_reviewing` 可以先由 Reviewer 写入自身字段、feedback 和 review_basis，暂不写 `controller_resolution`；Reviewer 记录首次形成、追加或更新的同一受控变更必须把其 fingerprint 与该次 after snapshot 的所选 result 投影核对。Controller 只能随后补充或更新 `controller_resolution`，离开本阶段前全部 review 都必须完成处置。此后同一 result_version 的当前投影与 review fingerprint 出现差异，只说明当前内容已经不同于当时审核主体；whole-object validator 不得据此自动使审核失效，是否仍适用、是否升版和复审由 Controller 判断并在处置与阶段选择中负责。Reviewer conclusion、Controller 处置内容和 projection key 均不自动改变 phase、决定复审或替代 Human Gate。
 
-审核主体投影使用 UTF-8 compact canonical JSON、object key ASCII 排序、稳定 local ID 数组按 ID 排序、来源原文s 与 relations 按 canonical identity 排序，并取 64 位小写十六进制 SHA-256。三种 `projection_key` 唯一表示：
+审核主体投影使用 UTF-8 compact canonical JSON、object key ASCII 排序、稳定 local ID 数组按 ID 排序、来源原文与 relations 按 canonical identity 排序，并取 64 位小写十六进制 SHA-256。三种 `projection_key` 唯一表示：
 
 1. `plan_current`：`goal`、`scope`、current criterion definitions，以及 work_items 的 item_id、goal、expected_result、depends_on、approach_summary、template_keys、template_deviation_summary；
 2. `result_implementation`：计划投影，加上 work item 当前 status/result/evidence、success criterion results、controller check、顶层实现 evidence 和 improvement observations；
@@ -376,7 +376,7 @@ Human 选择建立 WorkCase 表示选择由本文完整管理该工作的当前�
 
 `absorbed_current_scope` 只能吸收已批准范围内的修正；实际触及目标、范围、criterion 或其它计划覆盖字段时，先按计划升版、重新独立审核并回 Human Gate。`nonbinding_followup`、`residual_responsibility` 必须分别引用已经存在的 local followup/residual ID；`rejected` 不得保留 disposition_ref。没有满足完整准入和终态处置的观察，只能暂时进入 work item 的 current_summary/resume_from，不能用半成品 observation 扩张对象。
 
-关闭准备必须区分残余责任和非约束后续。`routed` residual 必须被至少一条 `routed-to.残余摘要中的承接说明` 显式映射；`accepted_stop` 表示 Human 将在关闭 Gate 中看到并判断未分配停止，不得被关系映射。nonbinding followup 永不产生 relation、Spark 或 WorkCase；以后确需对象化时重新按 31 完成查重、准入和授权。
+关闭准备必须区分残余责任和非约束后续。`routed` residual 必须有对应的 `routed-to` 关系，且其 `summary` 必须明确说明承接对象；`accepted_stop` 表示 Human 将在关闭 Gate 中看到并判断未分配停止，不得被关系映射。nonbinding followup 永不产生 relation、Spark 或 WorkCase；以后确需对象化时重新按 31 完成查重、准入和授权。
 
 ```mermaid
 flowchart TD
@@ -416,17 +416,17 @@ flowchart TD
 
 | item status | 必须出现 | 禁止出现 |
 |---|---|---|
-| `pending` | 基础必填字段 | current_summary、resume_from、blocking_summary、result_summary、自然语言验证说明 |
+| `pending` | 基础必填字段 | current_summary、resume_from、blocking_summary、result_summary、自然语言验证说明|
 | `in_progress` | current_summary、resume_from | blocking_summary、result_summary；以自然语言说明实际观察与边界 |
-| `blocked` | current_summary、resume_from、blocking_summary、自然语言验证说明 | result_summary |
-| `completed` | result_summary、自然语言验证说明 | current_summary、resume_from、blocking_summary |
+| `blocked` | current_summary、resume_from、blocking_summary、自然语言验证说明| result_summary |
+| `completed` | result_summary、自然语言验证说明| current_summary、resume_from、blocking_summary |
 | `cancelled` | result_summary | current_summary、resume_from、blocking_summary；以自然语言说明实际观察与边界 |
 
 工作项 blocked 不自动使 WorkCase status=blocked；只有当前 phase 内没有任何可继续活动，且具体条件确实阻止整个责任推进时，才将 WorkCase 置为 blocked。工作项只有在已获批准的计划明确预设取消条件且该条件实际成立时，才可直接进入 cancelled；其它取消改变计划承诺，必须递增 plan_version、重新独立审核并重新取得 Human 执行批准。中断、上下文压缩和执行者交接前，进行中或阻塞工作项必须更新 `current_summary` 与 `resume_from`；正常连续执行不要求为每条命令或每个内部步骤更新。恢复快照在工作项完成或取消时由结果与证据吸收并移除，Git 保留历史变化。
 
 计划版本覆盖 goal、scope、legacy success_criteria 或 current success_criterion_definitions、work_items 的目标、预期结果、依赖、方法边界、模板选择、偏离以及非预设取消。这些已登记覆盖字段的确定性差异必须递增 plan_version，移除旧 `execution_approval`、`result_version`、`success_criterion_results`、`controller_check_summary`、`result_reviews`、`improvement_observations`、`residual_responsibilities`、`nonbinding_followups`、`closure_approval`、`validation_summary`、`closure_outcome` 和 `disposition_summary`，把 creation reviews 整体替换为新计划已经完成的审核与主控处置，把受影响 work item 恢复为符合新计划的状态，并回到 human_plan_confirming。current profile 同一更新还必须把被替代审核压缩进入 audit_summary；只支持旧结果包的 相关结果与关系 由 Controller 根据实际含义显式移除，Code 不作该语义判断。legacy 的旧值在实际形成 commit 后可以由 Git 追溯。这项机械防护只防止已审核和已批准计划被静默改写，不由 Code 解释自然语言是否语义等价。plan_version 只用于当前计划、审核与批准绑定；早期草案的详细修改过程不得挤占当前计划交付，只需在 audit summary 或当前审核处置中简要说明审核产生了什么价值。
 
-结果版本由 Controller 负责语义判断。工作项结果、controller_check_summary、validation_summary、closure_outcome、disposition_summary、相关关系与 自然语言验证说明 发生普通字段差异，不自动意味审核失效或 result_version 必须递增。只有 Controller 根据实际影响判断实施结果发生了需要重新审核的实质变化时，才递增 result_version 并重新发起 independent_reviewing；旧版本 result_reviews 与 closure_approval 不得绑定新版本。在 closure_preparing 中形成或完善验证总结、关闭分类、处置和分流建议是 Controller 的正常职责，不自动使本阶段前已形成的当前版本 reviews 失效。Human 要求修正结果或报告但没有改变计划覆盖内容时，不得递增 plan_version，不得移除仍有效的 creation_reviews/execution_approval，也不得把未受影响的 completed/cancelled 工作项恢复为待执行；Controller 根据实际影响决定是否递增 result_version、是否复审以及返回哪一 phase。
+结果版本由 Controller 负责语义判断。工作项结果、controller_check_summary、validation_summary、closure_outcome、disposition_summary、相关关系与自然语言验证说明发生普通字段差异，不自动意味审核失效或 result_version 必须递增。只有 Controller 根据实际影响判断实施结果发生了需要重新审核的实质变化时，才递增 result_version 并重新发起 independent_reviewing；旧版本 result_reviews 与 closure_approval 不得绑定新版本。在 closure_preparing 中形成或完善验证总结、关闭分类、处置和分流建议是 Controller 的正常职责，不自动使本阶段前已形成的当前版本 reviews 失效。Human 要求修正结果或报告但没有改变计划覆盖内容时，不得递增 plan_version，不得移除仍有效的 creation_reviews/execution_approval，也不得把未受影响的 completed/cancelled 工作项恢复为待执行；Controller 根据实际影响决定是否递增 result_version、是否复审以及返回哪一 phase。
 
 creation reviews 对当前计划的联合覆盖至少包括 goal、scope、适用 profile 的成功标准定义、全部 work items、item 依赖/并行边界、方法、行动模板选择与偏离、验证方式和重要风险；result reviews 对当前结果版本的联合覆盖至少包括全部 item 结果、criterion results、主控自检、已实施的验证、未验证范围、改进观察和残余问题。关闭准备中后续形成的 closure_outcome、disposition_summary、residual/followup 与 routed-to 建议由 Controller 负责综合；Controller 判断其改变了需要审核的实施结果时才升版复审。窄范围审核不得伪冒全量覆盖，但 pass、pass_with_followups、changes_required 或 blocked 均只是 Reviewer 观点；Controller 必须对每项反馈记录处置与复审判断。
 
@@ -478,7 +478,7 @@ WorkCase 的目标、范围与计划由 `goal`、`scope`、成功标准和工作
 
 在管辖项目和实际 Working Tree 成立后，新会话开始、会话恢复和上下文压缩后恢复都必须向 AI 提供该项目全部 `open` 与 `blocked` WorkCase 的 F1 责任卡。每张卡直接投影 `object_id`、`title`、`status`、`phase`、`goal`、`scope`、`summary`、`priority`、`blocking_summary`、`updated_at`，并以 `work_item_counts` 返回从当前 work_items 派生的五类状态计数；条件字段不适用时保持省略，不用 AI 摘要或索引改写。`work_item_counts` 是非权威派生结果，不登记或写回事实对象。卡片可分页，但必须完整披露 coverage、cursor、未读、无效和不可读对象；未完整时不得声称已恢复当前全部稳定工作责任。
 
-Web、Helper 消费方和共享恢复可以从当前对象派生推进阶段条、`pending/in_progress/blocked/completed/cancelled` 五类工作项计数，以及 `active_items[]` 中全部 `in_progress`/`blocked` item。成员按 `item_id` 排序并投影 `item_id`、`status`、`goal` 与实际存在的 `current_summary`、`resume_from`、`blocking_summary`、自然语言结果说明；blocked item 必须保留其已有 evidence，in_progress item 没有 自然语言验证说明 时不得补造 locator。零个或多个 active item 都不得推断单一焦点。`status=blocked` 作为阶段条之上的责任阻塞提示，不替换 phase；cancelled 必须单列，不计作 completed；没有显式权重时不得按 item 数量或 phase 序号生成完成百分比。派生展示不得写回对象或取得状态权威，具体 UI 由 08 承接。
+Web、Helper 消费方和共享恢复可以从当前对象派生推进阶段条、`pending/in_progress/blocked/completed/cancelled` 五类工作项计数，以及 `active_items[]` 中全部 `in_progress`/`blocked` item。成员按 `item_id` 排序并投影 `item_id`、`status`、`goal` 与实际存在的 `current_summary`、`resume_from`、`blocking_summary`、自然语言结果说明；blocked item 必须保留其已有 evidence，in_progress item 没有自然语言验证说明时不得补造 locator。零个或多个 active item 都不得推断单一焦点。`status=blocked` 作为阶段条之上的责任阻塞提示，不替换 phase；cancelled 必须单列，不计作 completed；没有显式权重时不得按 item 数量或 phase 序号生成完成百分比。派生展示不得写回对象或取得状态权威，具体 UI 由 08 承接。
 
 `current_workcase_ref` 只有来自环境或上层输入的精确稳定引用时才能表示当前绑定；F1 中恰有一个 `open`/`blocked` 对象、对象优先级最高、Git Working Tree 有变化或标题与任务相似都不能替代该输入。没有精确引用时，消费方可以按 05 展开唯一机械候选以便 AI 判断，但必须同时表达 `current_binding=unresolved`。完整分页、查询和对象集连续性未成立时，任何候选数量都不能作为唯一性依据。
 
@@ -496,7 +496,7 @@ AI 可以在建议阶段只读召回相邻 WorkCase、Spark 和其它稳定来�
 
 目标、范围、成功标准或已登记计划覆盖字段变化时，必须重新检查来源、对象身份、当前授权和已有验证，递增 plan_version、撤销旧 execution_approval、重新独立审核并回到 Human 执行确认。仍是同一工作责任时更新当前字段与 `updated_at`；变成不同关闭责任时新建对象并明确旧对象处置。结果或报告变化是否需要递增 result_version 并重审由 Controller 按 §6 判断，Code 不根据普通字段差异代为裁决。过程历史由 Git 保留，不写 revision history。
 
-从外部记录提取信息时，不得整体复制 `orchestration`、`execution_items`、review/confirmation 或其它未登记结构。只有满足当前对象准入、字段、来源、证据、状态与授权条件的内容，才可由受控创建能力形成新的 V4 WorkCase；命令、工具顺序、临时 todo、角色占位、运行日志、失效步骤和空结构不得作为对象内容写入。
+从外部记录提取信息时，不得整体复制 `orchestration`、`execution_items`、review/confirmation 或其它未登记结构。只有满足当前对象准入、字段、来源、证据、状态与授权条件的内容，才可由受控创建能力形成新的 current-profile WorkCase；命令、工具顺序、临时 todo、角色占位、运行日志、失效步骤和空结构不得作为对象内容写入。
 
 closed 文件默认保留在当前类型载体中供历史、来源和关系回读；本文不建立 `archived` 状态或归档位置。删除只有在适用来源规则允许、全部引用和剩余责任已经处置且不会丢失仍适用事实时才成立，不能用删除替代 closed。WorkCase 类型停止新增、合并、替代或取消时，必须按 05 处置唯一定义来源、全部现有对象（包括 closed）、引用消费者和仍适用责任；全部未终态责任还必须获得明确承接，不得只删除类型规范或隐藏对象目录。
 
@@ -514,7 +514,7 @@ closed 文件默认保留在当前类型载体中供历史、来源和关系回�
 | 来源、证据与关系 | 写入当前说明、验证结论、阻塞或关系时 | 来源可定位，证据支持声明，关系方向、目标和状态稳定且无环 | 原始来源、目标对象、引用成员和当前说明 | 来源与目标回读；Code 检查结构、身份及可确定环 | 当次声明与关系 | 缩小声明、修正引用或移除无依据关系 |
 | 变更与回读 | 创建、更新、更正、拆分、合并、替代或删除后 | 获准变更已写入、回读并验证；失败和部分结果如实保留 | Human 指令、文件差异、Working Tree 回读和验证结果 | 实际写入入口与当前文件回读 | 当次实际变更 | 不声明成功；修正、回滚或保留部分结果与残余风险 |
 
-AI 语义审核以本表各验证对象及其成立条件为准，不另建一份跨章审核清单。Code 的共同机械边界按 05 §§10–11 执行；对 WorkCase，只可机械检查 §§5–7 明确给出的载体与身份、Schema、profile/生效边界、值闭集与条件字段、criterion ID/覆盖、item 依赖、review projection/fingerprint 与字段所有权、audit ID、观察预算和引用、residual/routed-to 映射、plan_version 覆盖字段的确定性变化、版本与审核/批准绑定、时间与允许转换边。Code 不能裁决 review conclusion 是否应推进或否决、主控对反馈的处置是否正确、criterion outcome 是否真实、观察的 V1–V8 净价值或语义去重、普通结果字段差异是否实质、已有审核语义上是否仍适用、目标和拆分是否合理、审核是否真正独立、证据是否充分、Human 决定含义、责任承接充分性、风险接受或自然语言同义性。
+AI 语义审核以本表各验证对象及其成立条件为准，不另建一份跨章审核清单。Code 的共同机械边界按 05 §§10–11 执行；对 WorkCase，只可机械检查 §§5–7 明确给出的载体与身份、Schema、profile/生效边界、值闭集与条件字段、criterion ID/覆盖、item 依赖、review projection/fingerprint 与字段所有权、audit ID、观察预算和引用、residual/routed-to 映射、plan_version 覆盖字段的确定性变化、版本与审核/批准绑定、时间与允许转换边。Code 不能裁决 review conclusion 是否应推进或否决、主控对反馈的处置是否正确、criterion outcome 是否真实、观察的 V1-V8 净价值或语义去重、普通结果字段差异是否实质、已有审核语义上是否仍适用、目标和拆分是否合理、审核是否真正独立、证据是否充分、Human 决定含义、责任承接充分性、风险接受或自然语言同义性。
 
 最低验证样例必须覆盖：
 
@@ -527,7 +527,7 @@ AI 语义审核以本表各验证对象及其成立条件为准，不另建一�
 7. work_items 为空，item 身份重复，依赖缺失、自指或成环，状态条件错误，以及把命令或日志伪装成 work item；
 8. completed 但验证范围不完整、blocked 无解除条件、closed 有未处置或未映射残余内容；
 9. 三种对象关系的 source/target 状态、基数、跨项目治理引用、自指、缺失目标，以及 depends-on 和 routed-to 各自的环；
-10. `orchestration`、环境内部 execution step、空 review/approval、重复 confirmation、related_*、空占位和其它未登记内容被拒绝直接作为 V4 对象消费。
+10. `orchestration`、环境内部 execution step、空 review/approval、重复 confirmation、related_*、空占位和其它未登记内容被拒绝直接作为当前事实对象消费。
 
 ## 10. Human Gate
 
@@ -565,6 +565,6 @@ AI 语义审核以本表各验证对象及其成立条件为准，不另建一�
 15. 高影响行动、范围扩张或风险接受缺少实际授权；
 16. 正在从本文越界推导实例服务、Helper、迁移、Web 或行动模板已经成立。
 17. 生效后新对象缺少 current profile、legacy/current 字段混用、current profile 被移除或降级、closed legacy 被补造历史，或者 legacy 升级改变计划覆盖字段却沿用旧审核与 Human 批准。
-18. creation review basis 指纹不匹配当前计划，result review basis 在 Reviewer 记录形成或更新时不匹配当次 after snapshot，旧 review 被移除却没有 audit continuity，观察未完成准入与终态处置、followup 冒充 residual，或 routed residual 没有显式 残余摘要中的承接说明 映射；不得把 result review 与后来当前投影的普通差异自动解释为审核失效。
+18. creation review basis 指纹不匹配当前计划，result review basis 在 Reviewer 记录形成或更新时不匹配当次 after snapshot，旧 review 被移除却没有 audit continuity，观察未完成准入与终态处置、followup 冒充 residual，或 routed residual 缺少对应的 `routed-to` 关系或其 `summary` 未说明承接对象；不得把 result review 与后来当前投影的普通差异自动解释为审核失效。
 
 暂停范围与允许继续的行动按 00 §11 执行；对 WorkCase，实例服务、迁移与消费实现必须等待后续阶段明确推进。

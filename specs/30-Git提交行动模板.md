@@ -39,7 +39,7 @@ ldvh_spec:
 
 `code-engineering-practices`、具体领域规范、项目正式规则、Human 当前指令及实际 Git/测试能力按当次对象提供输入、验证和行动边界，但不是每次 Git 提交共同成立所必需的直接规范依据。本文不得把它们的字段、枚举、命令、测试集合、branch 策略、message 格式、Hook 或实现接口复制为自身规则。
 
-未经当前规则采纳的模板、附件、Skill、validator、Hook、WorkCase 和实例不取得 V4 当前效力。本文不自行恢复未被当前规则定义的 Conventional Commit 契约、固定七结构、全局 validator/Hook、自动提交或文件类别触发的普遍 Human Gate；受管辖项目的共同拆分和 message 基线由 `source-of-truth-traceability` §9 定义，本文只组织消费。
+未经当前规则源采纳的模板、附件、Skill、validator、Hook、WorkCase 和实例不取得当前效力。本文不自行恢复未被当前规则源定义的 Conventional Commit 契约、固定七结构、全局 validator/Hook、自动提交或文件类别触发的普遍 Human Gate；受管辖项目的共同拆分和 message 基线由 `source-of-truth-traceability` §9 定义，本文只组织消费。
 
 ## 3. 职责边界
 
@@ -209,7 +209,7 @@ Human 决定的复用按 00 §10 执行；Human 当前指令已经授权相应�
 8. 提交后没有核对新 commit 和剩余 Working Tree/Index，或者目标相关残留和无关变化准备被静默省略；
 9. 准备通过本模板执行或暗示已经执行 push、PR、amend、rebase、merge、tag、发布、Hook/CI 安装、修改、禁用或绕过；目标仓库既有 Hook 随 Git 自动执行不属于模板安装或主动调用，但其实际结果必须回读；
 10. 模板正文、Skill、Agent、Hook、Code 或项目说明正在复制另一来源的 message、branch、拆分、验证或授权规则，形成第二权威；
-11. 本文仍为 `draft`、声明无效、定义来源冲突或具体模板不适用，却准备以其当前规则效力约束行动；AI 的普通求解不因此停止。
+11. 本文仍为 `draft`、声明无效、定义来源冲突或具体模板不适用，却准备以其当前规则源效力约束行动；AI 的普通求解不因此停止。
 12. 目标为受管辖项目且 `precheck-git-commit` 当次可用，却准备跳过 Helper 预检，或者候选、完整 message、worktree、管辖、来源、验证变化后仍复用旧结果；
 13. 准备在 Git Working Tree 内创建临时提交消息文件，或者外部工具使用的系统临时文件没有清理与回读计划。
 
