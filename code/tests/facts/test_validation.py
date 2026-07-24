@@ -81,6 +81,28 @@ def test_legacy_reference_fields_are_rejected(current_specs_repository: Path) ->
     assert {issue.field_path for issue in issues} >= {"source_refs", "evidence_refs"}
 
 
+def test_pitfall_uses_natural_language_boundaries_without_reference_fields(current_specs_repository: Path) -> None:
+    schema = _schemas(current_specs_repository)["pitfall"]
+    fields = {
+        **_common("pitfall", "pitfall-0001", "active"),
+        "applicability": "Only the observed local installation conditions; other environments remain unverified.",
+        "validation_summary": "The handling restored the observed behavior; upgrade and secondary event coverage remain unverified.",
+        "symptoms": "The declared hook did not run.",
+        "trigger_conditions": "The runtime data directory was empty in the observed local installation.",
+        "root_cause": "In the observed conditions, the runtime could not find its required configuration.",
+        "resolution": "Copy the required configuration into the selected runtime data directory and restart.",
+        "avoidance": "Check the selected runtime data directory and confirm the observed event before generalizing.",
+    }
+
+    assert validate_fact_object("pitfall", fields, schema) == ()
+
+    fields["source_ref"] = {"kind": "repository-path", "locator": "docs/input.md"}
+    fields["evidence_ref"] = {"kind": "repository-path", "locator": "docs/output.md"}
+    issues = validate_fact_object("pitfall", fields, schema)
+
+    assert {issue.field_path for issue in issues} >= {"source_ref", "evidence_ref"}
+
+
 def test_relations_accept_only_key_and_target(current_specs_repository: Path) -> None:
     schema = _schemas(current_specs_repository)["spark"]
     fields = {

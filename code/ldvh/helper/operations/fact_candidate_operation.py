@@ -51,7 +51,7 @@ _RELATION_DEFINITION_LOCATORS = {
     "spark": "spark-fact-type::7. 外部资料、关系与处置",
     "workcase": "workcase-fact-type::7. 外部网址、自然语言证据与关系",
     "adr": "adr-fact-type::7. 来源、证据与替代关系",
-    "pitfall": "pitfall-fact-type::7. 来源、证据与替代关系",
+    "pitfall": "pitfall-fact-type::7. 形成边界、验证说明与替代关系",
 }
 _DEFAULT_STATUSES = {
     "spark": frozenset({"open"}),

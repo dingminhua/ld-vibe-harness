@@ -1,11 +1,7 @@
 title: ZCode 本地插件安装 data 目录缺失导致 Hook 不生效
 status: active
-applicability: 适用于通过本地 filesystem 方式向 ZCode 安装插件的场景；适用于含有 hooks 的插件安装
-validation_summary: "复制 ldvh.json 到 data 目录后重启 ZCode，SessionStart hook 成功触发并返回 work-context
-  内容（含 8.1 渐进式披露、8.2 环境 Hook 职责边界），日志中可见 hook 执行记录。但以下边界未充分验证：\n\n1. SubagentStart
-  事件是否也正常触发——未单独验证\n2. 未来插件版本升级后 data 目录是否会再次失效——未验证\n3. 会话 compact/resume 后 hook
-  是否每次都能触发——仅验证了一次 resume\n4. 同时存在 ldvh@local 和 ldvh@zcode-plugins-official 两个注册条目时，hook
-  运行时选择哪个 data 目录——未完全确定"
+applicability: 仅适用于已观察到的 ZCode 本地 filesystem 安装：插件声明 hooks、运行时实际选用的 data/ldvh@zcode-plugins-official/ 目录为空，且将其中的 ldvh.json 补入后重启。marketplace 安装、其它插件或 data 路径、SubagentStart、未来升级、compact/resume 稳定性及多个注册来源的运行时选择均未验证，不得据此复用。
+validation_summary: "在已观察场景中，将 ldvh.json 补入运行时选用的 data 目录并重启后，SessionStart 成功触发并返回 work-context，且可观察到 hook 执行记录。以下范围仍未覆盖：\n\n1. SubagentStart 是否也正常触发\n2. 未来插件版本升级后 data 目录是否再次失效\n3. compact/resume 后是否每次都触发\n4. 同时存在 ldvh@local 与 ldvh@zcode-plugins-official 时运行时如何选择 data 目录"
 symptoms: "1. 插件在 config.json 中已启用但 SessionStart 时无任何效果\n2. 日志中只有 rpc:register channel
   'hooks' 但无 hook 执行事件（无 fired/completed/failed）\n3. 手动模拟 hook 脚本（codex_context.py）可以正常返回
   work-context\n4. 以为是 hook 配置错误，但 hooks/hooks.json 结构正确、事件名合法\n5. 日志中无任何 hook 超时/失败/阻断记录，说明
@@ -15,23 +11,10 @@ trigger_conditions: "1. 通过 filesystem 方式安装 ZCode 插件（marketplac
   hooks/hooks.json 内容正确\n3. 插件 cache 目录中有 data/ldvh.json 但 data/ldvh@plugin-name/
   目录为空\n4. 插件在 config.json 的 enabledPlugins 中标记为 true\n5. 插件有两个注册来源（ldvh@local 和 ldvh@zcode-plugins-official），前者指向实际项目，后者指向空
   data 目录"
-root_cause: "ZCode 的本地 filesystem 插件安装流程缺少 data 目录同步步骤，具体来说：\n\n1. 插件注册后，cache/ 目录中的
-  data/ldvh.json（包含 helper_executable 和 work_context_executable 路径）没有被自动复制到 data/ldvh@zcode-plugins-official/
-  目录下\n2. hook 脚本 codex_context.py 在运行时通过 ZCODE_PLUGIN_DATA 或 PLUGIN_DATA 环境变量查找 data
-  目录，读取其中的 ldvh.json 来定位 helper 可执行文件\n3. data 目录为空，脚本找不到配置，抛出 ConfigurationError，返回
-  connection_failure\n4. 但 hook 运行时层面（ZCode 主进程）没有记录这次失败——日志中既无 hook fired 也无 hook
-  failed，表现为静默不触发\n5. 注意 ldvh@local 和 ldvh@zcode-plugins-official 是两个独立注册条目：local
-  的 data 目录有 ldvh.json（手动维护），但官方插件来源的 data 目录为空（自动安装未同步）"
-resolution: "手动将插件缓存中的 data/ldvh.json 复制到目标 data 目录：\n\n# 源：插件缓存中的 data 配置\nsource=cache/zcode-plugins-official/ldvh/0.1.0/data/ldvh.json\n\
-  # 目标：插件运行时 data 目录\ntarget=data/ldvh@zcode-plugins-official/ldvh.json\ncp \"$source\"\
-  \ \"$target\"\n\n注意：目标目录名中的 @zcode-plugins-official 后缀对应插件 marketplace 来源，由 ZCode
-  自动生成；\n不同来源安装同一插件时 data 目录路径不同（如 ldvh@local → data/ldvh@local/）。\n\n复制后需要重启 ZCode
-  应用使 hooks 重新加载。验证方法：\n1. 启动新会话，观察是否有 'Loading LDVH rule context' 状态提示\n2. 检查日志中是否有
-  hook fired / completed 记录\n3. 查看 system-reminder 中是否包含 work-context 内容\n4. 测试 SubagentStart
-  事件是否也正常触发"
-avoidance: "1. 安装本地 filesystem 插件后，检查 data/<plugin-name>/ 目录是否已同步\n2. 查看 ZCode 日志确认
-  hook 是否被触发\n3. 手动模拟 hook 脚本执行，提前发现问题\n4. 优先使用 marketplace 安装方式（如果可用）以确保 data 目录自动同步"
+root_cause: "在已观察的本地 filesystem 安装中，运行时实际选用的 data/ldvh@zcode-plugins-official/ 目录没有 ldvh.json；hook 脚本因此无法读取定位 helper 所需的配置，表现为 SessionStart 没有触发。该判断只解释这个已观察目录、注册来源和安装状态，不证明所有 filesystem 安装或 ZCode 版本都缺少同步步骤。"
+resolution: "在已观察场景中，先确认运行时实际选用的 data 目录，再将对应缓存中的 ldvh.json 复制到该目录并重启 ZCode。该处理恢复了 SessionStart；不把它表述为对 SubagentStart、升级后安装或其它注册来源的通用修复。"
+avoidance: "本地 filesystem 安装后，先确认运行时实际选用的 data/<plugin-name>/ 目录是否有 ldvh.json，再通过新 SessionStart 的实际触发确认 Hook 生效。手动脚本成功或配置已声明都不足以代替触发确认；marketplace 安装是否自动同步 data 目录仍是未验证的另一条路径。"
 object_id: pitfall-0001
 fact_type_key: pitfall
 created_at: '2026-07-22T20:01:58.169820+08:00'
-updated_at: '2026-07-23T14:21:35.783731+08:00'
+updated_at: '2026-07-24T21:23:35+08:00'
