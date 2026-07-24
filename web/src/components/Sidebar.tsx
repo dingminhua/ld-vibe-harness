@@ -61,15 +61,17 @@ function IconTooltip({ label, visible }: { label: string; visible: boolean }) {
 
 interface SidebarProps {
   collapsed: boolean;
-  onToggle: () => void;
+  compact?: boolean;
+  onToggle?: () => void;
 }
 
-export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
+export default function Sidebar({ collapsed, compact = false, onToggle }: SidebarProps) {
   const { locale, setLocale, t } = useI18n();
   const { mode, cycleTheme } = useTheme();
   const [visibleTooltip, setVisibleTooltip] = useState<string | null>(null);
+  const isCollapsed = compact || collapsed;
   const languageLabel = t(getLanguageSwitchKey(locale));
-  const sidebarToggleLabel = collapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar');
+  const sidebarToggleLabel = isCollapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar');
   const themeLabel =
     mode === 'system' ? t('theme.system') :
     mode === 'light' ? t('theme.light') :
@@ -78,31 +80,31 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   return (
     <aside
       className={`flex h-screen flex-shrink-0 flex-col border-r border-ldvh-border bg-ldvh-panel transition-[width] duration-200 ease-in-out ${
-        collapsed ? 'w-14' : 'w-[186px]'
+        isCollapsed ? 'w-14' : 'w-[186px]'
       }`}
     >
-      <div className={`border-b border-ldvh-border ${collapsed ? 'px-2 py-3' : 'px-3 py-4'}`}>
-        <div className={collapsed ? 'flex flex-col items-center gap-2' : 'flex items-center gap-2'}>
-          <div className={`flex min-w-0 items-center ${collapsed ? 'justify-center' : 'gap-2'}`}>
+      <div className={`border-b border-ldvh-border ${isCollapsed ? 'px-2 py-3' : 'px-3 py-4'}`}>
+        <div className={isCollapsed ? 'flex flex-col items-center gap-2' : 'flex items-center gap-2'}>
+          <div className={`flex min-w-0 items-center ${isCollapsed ? 'justify-center' : 'gap-2'}`}>
             <div
               onMouseEnter={() => setVisibleTooltip('brand')}
               onMouseLeave={() => setVisibleTooltip(null)}
               className="relative flex h-10 w-10 flex-shrink-0 items-center justify-center"
             >
               <BrandMark />
-              {collapsed && <IconTooltip label="LDVH" visible={visibleTooltip === 'brand'} />}
+              {isCollapsed && <IconTooltip label="LDVH" visible={visibleTooltip === 'brand'} />}
             </div>
           </div>
         </div>
       </div>
-      <nav className={`flex-1 px-2 py-3 ${collapsed ? 'overflow-visible' : 'overflow-y-auto'}`}>
+      <nav className={`flex-1 px-2 py-3 ${isCollapsed && !compact ? 'overflow-visible' : 'overflow-y-auto'}`}>
         <ul className="flex flex-col gap-0.5">
           {NAV_ITEMS.map((item) => (
             <li key={item.to}>
               <NavLink
                 to={item.to}
                 end={item.to === '/'}
-                aria-label={collapsed ? getNavItemLabel(item, t) : undefined}
+                aria-label={isCollapsed ? getNavItemLabel(item, t) : undefined}
                 onMouseEnter={() => setVisibleTooltip(`nav-${item.to}`)}
                 onMouseLeave={() => setVisibleTooltip(null)}
                 onFocus={() => setVisibleTooltip(`nav-${item.to}`)}
@@ -110,7 +112,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 onClick={() => setVisibleTooltip(null)}
                 className={({ isActive }) =>
                   `ldvh-card-title relative flex items-center rounded-md transition-colors ${
-                    collapsed ? 'h-10 justify-center px-0' : 'gap-2.5 px-3 py-2'
+                    isCollapsed ? 'h-10 justify-center px-0' : 'gap-2.5 px-3 py-2'
                   } ${
                     isActive
                       ? 'bg-ldvh-accent/10 text-ldvh-accent'
@@ -119,15 +121,15 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 }
               >
                 <item.icon size={16} className="flex-shrink-0" />
-                {!collapsed && <span className="truncate">{getNavItemLabel(item, t)}</span>}
-                {collapsed && <IconTooltip label={getNavItemLabel(item, t)} visible={visibleTooltip === `nav-${item.to}`} />}
+                {!isCollapsed && <span className="truncate">{getNavItemLabel(item, t)}</span>}
+                {isCollapsed && <IconTooltip label={getNavItemLabel(item, t)} visible={visibleTooltip === `nav-${item.to}`} />}
               </NavLink>
             </li>
           ))}
         </ul>
       </nav>
-      <div className={`border-t border-ldvh-border ${collapsed ? 'px-2 py-3' : 'px-3 py-3'}`}>
-        <div className={collapsed ? 'flex flex-col items-center gap-1' : 'flex items-center gap-1'}>
+      <div className={`border-t border-ldvh-border ${isCollapsed ? 'px-2 py-3' : 'px-3 py-3'}`}>
+        <div className={isCollapsed ? 'flex flex-col items-center gap-1' : 'flex items-center gap-1'}>
           <button
             onClick={() => {
               setVisibleTooltip(null);
@@ -139,12 +141,12 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             onBlur={() => setVisibleTooltip(null)}
             aria-label={languageLabel}
             className={`ldvh-card-title relative flex items-center rounded-md text-ldvh-text-secondary transition-colors hover:bg-ldvh-border/50 hover:text-ldvh-text-primary ${
-              collapsed ? 'h-9 w-9 justify-center px-0' : 'flex-1 gap-2 px-3 py-1.5'
+              isCollapsed ? 'h-9 w-9 justify-center px-0' : 'flex-1 gap-2 px-3 py-1.5'
             }`}
           >
             <Globe size={16} />
-            {!collapsed && t(getOppositeLanguageNameKey(locale))}
-            {collapsed && <IconTooltip label={languageLabel} visible={visibleTooltip === 'language'} />}
+            {!isCollapsed && t(getOppositeLanguageNameKey(locale))}
+            {isCollapsed && <IconTooltip label={languageLabel} visible={visibleTooltip === 'language'} />}
           </button>
           <button
             onClick={() => {
@@ -161,21 +163,23 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             <ThemeIcon mode={mode} />
             <IconTooltip label={themeLabel} visible={visibleTooltip === 'theme'} />
           </button>
-          <button
-            onClick={() => {
-              setVisibleTooltip(null);
-              onToggle();
-            }}
-            onMouseEnter={() => setVisibleTooltip('sidebar-toggle')}
-            onMouseLeave={() => setVisibleTooltip(null)}
-            onFocus={() => setVisibleTooltip('sidebar-toggle')}
-            onBlur={() => setVisibleTooltip(null)}
-            aria-label={sidebarToggleLabel}
-            className="relative flex h-9 w-9 items-center justify-center rounded-md text-ldvh-text-secondary transition-colors hover:bg-ldvh-border/50 hover:text-ldvh-text-primary"
-          >
-            <PanelLeft size={16} className={collapsed ? 'rotate-180' : ''} />
-            <IconTooltip label={sidebarToggleLabel} visible={visibleTooltip === 'sidebar-toggle'} />
-          </button>
+          {!compact && onToggle && (
+            <button
+              onClick={() => {
+                setVisibleTooltip(null);
+                onToggle();
+              }}
+              onMouseEnter={() => setVisibleTooltip('sidebar-toggle')}
+              onMouseLeave={() => setVisibleTooltip(null)}
+              onFocus={() => setVisibleTooltip('sidebar-toggle')}
+              onBlur={() => setVisibleTooltip(null)}
+              aria-label={sidebarToggleLabel}
+              className="relative flex h-9 w-9 items-center justify-center rounded-md text-ldvh-text-secondary transition-colors hover:bg-ldvh-border/50 hover:text-ldvh-text-primary"
+            >
+              <PanelLeft size={16} className={isCollapsed ? 'rotate-180' : ''} />
+              <IconTooltip label={sidebarToggleLabel} visible={visibleTooltip === 'sidebar-toggle'} />
+            </button>
+          )}
         </div>
       </div>
     </aside>

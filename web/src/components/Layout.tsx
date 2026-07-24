@@ -85,6 +85,9 @@ function LayoutInner({ children }: LayoutProps) {
   return (
     <div className="flex h-screen min-w-[375px] overflow-hidden bg-ldvh-bg">
       {/* 左侧导航 — 可折叠 */}
+      <div className="flex flex-shrink-0 sm:hidden">
+        <Sidebar collapsed compact />
+      </div>
       <div className="hidden flex-shrink-0 sm:block">
         <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} />
       </div>
