@@ -139,6 +139,10 @@ def _target_condition(source_type: str, relation_key: str, target_type: str, tar
         if target_type == "spark":
             return target_status == "open"
         return False
+    if source_type == "study" and relation_key == "inspired-by":
+        return target_type in {"spark", "workcase", "adr"}
+    if source_type == "study" and relation_key == "informs":
+        return target_type in {"workcase", "adr", "spark"}
     return True
 
 

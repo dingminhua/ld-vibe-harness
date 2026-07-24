@@ -82,7 +82,7 @@ LAYOUTS = {
         suffix=".md",
         initial_statuses=("active",),
         statuses=("active", "retired"),
-        relation_keys=(),
+        relation_keys=("inspired-by", "informs"),
     ),
 }
 
