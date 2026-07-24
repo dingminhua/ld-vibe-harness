@@ -369,26 +369,6 @@ def _create_execute(
                 },
             ),
         )
-    relations = supplied.get("relations")
-    if isinstance(relations, list) and any(
-        isinstance(relation, dict) and relation.get("relation_key") == "supersedes" for relation in relations
-    ):
-        return OperationExecution(
-            outcome="rejected",
-            summary="首版单对象创建不承接 supersedes 多对象变更",
-            requested_scope=requested,
-            not_completed_scope=requested,
-            governance_resolution=run.result.to_json() if run.result else None,
-            sources=request_sources,
-            gaps=(
-                {
-                    "summary": "移除 supersedes，或等待后续多对象原子变更能力",
-                    "scope": list(requested),
-                    "source_refs": [_CREATE_CONTRACT],
-                },
-            ),
-        )
-
     try:
         creation = create_fact_object(
             FactCreationCommand(

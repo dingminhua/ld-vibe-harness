@@ -425,7 +425,7 @@ def test_oversized_fact_is_unavailable_without_affecting_other_exact_reads(tmp_p
     ]
 
 
-def test_closed_superseded_workcase_requires_a_routed_to_successor(tmp_path: Path) -> None:
+def test_legacy_workcase_superseded_closure_outcome_is_rejected(tmp_path: Path) -> None:
     workspace, project = _fixture(tmp_path)
     directory = project / "ldvh-base" / "workcases"
     directory.mkdir()
@@ -489,10 +489,10 @@ closed_at: 2026-07-14T10:00:00+08:00
     payload["arguments"]["fact_refs"][0].update({"fact_type_key": "workcase", "object_id": "workcase-0001"})
     item = handle_request("call", "read-fact-objects", json.dumps(payload)).response["result"]["items"][0]
     assert item["check_status"] == "invalid"
-    assert any("routed-to" in issue["summary"] for issue in item["issues"])
+    assert any(issue["field_path"] == "closure_outcome" for issue in item["issues"])
 
 
-def test_superseded_adr_requires_exactly_one_valid_incoming_source(tmp_path: Path) -> None:
+def test_legacy_superseded_adr_status_and_relation_are_rejected(tmp_path: Path) -> None:
     workspace, project = _fixture(tmp_path)
     directory = project / "ldvh-base" / "adrs"
     directory.mkdir()
@@ -518,7 +518,7 @@ decided_at: 2026-07-14T08:00:00+08:00
     payload["arguments"]["fact_refs"][0].update({"fact_type_key": "adr", "object_id": "adr-0001"})
     item = handle_request("call", "read-fact-objects", json.dumps(payload)).response["result"]["items"][0]
     assert item["check_status"] == "invalid"
-    assert any("有且只有一个" in issue["summary"] for issue in item["issues"])
+    assert any(issue["field_path"] == "status" for issue in item["issues"])
 
     successor = directory / "adr-0002.yaml"
     successor.write_text(
@@ -549,7 +549,6 @@ relations:
     ]
     out_of_range = handle_request("call", "read-fact-objects", json.dumps(payload)).response
     assert {item["check_status"] for item in out_of_range["result"]["items"]} == {"invalid"}
-    assert any("时间顺序" in issue["summary"] for item in out_of_range["result"]["items"] for issue in item["issues"])
 
     successor.write_text(
         successor.read_text(encoding="utf-8")
@@ -557,11 +556,8 @@ relations:
         .replace("decided_at: 2026-07-14T11:00:00+08:00", "decided_at: 2026-07-14T09:30:00+08:00"),
         encoding="utf-8",
     )
-    valid = handle_request("call", "read-fact-objects", json.dumps(payload)).response
-    assert [item["check_status"] for item in valid["result"]["items"]] == [
-        "mechanically_valid",
-        "mechanically_valid",
-    ]
+    still_invalid = handle_request("call", "read-fact-objects", json.dumps(payload)).response
+    assert {item["check_status"] for item in still_invalid["result"]["items"]} == {"invalid"}
 
     successor.write_text(
         successor.read_text(encoding="utf-8").replace(
@@ -572,11 +568,8 @@ relations:
         ),
         encoding="utf-8",
     )
-    retained_edge = handle_request("call", "read-fact-objects", json.dumps(payload)).response
-    assert [item["check_status"] for item in retained_edge["result"]["items"]] == [
-        "mechanically_valid",
-        "mechanically_valid",
-    ]
+    retained_legacy_relation = handle_request("call", "read-fact-objects", json.dumps(payload)).response
+    assert {item["check_status"] for item in retained_legacy_relation["result"]["items"]} == {"invalid"}
 
     invalid_candidate = directory / "adr-0003.yaml"
     invalid_candidate.write_text(
@@ -600,11 +593,7 @@ relations:
         {"governed_project_id": "sample", "fact_type_key": "adr", "object_id": "adr-0003"},
     ]
     recovered = handle_request("call", "read-fact-objects", json.dumps(payload)).response
-    assert [item["check_status"] for item in recovered["result"]["items"]] == [
-        "mechanically_valid",
-        "mechanically_valid",
-        "invalid",
-    ]
+    assert {item["check_status"] for item in recovered["result"]["items"]} == {"invalid"}
 
 
 def test_project_relation_results_are_stable_across_request_order(tmp_path: Path) -> None:

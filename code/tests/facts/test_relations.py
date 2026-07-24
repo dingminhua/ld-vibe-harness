@@ -27,11 +27,9 @@ def test_spark_routed_to_requires_a_nonempty_current_target_title() -> None:
     assert _target_has_readable_title("spark", "related-to", {})
 
 
-def test_spark_terminal_relation_sources_match_their_status_semantics() -> None:
+def test_spark_routed_to_source_matches_its_status_semantics() -> None:
     assert _source_condition("spark", "routed-to", {"status": "routed"})
     assert not _source_condition("spark", "routed-to", {"status": "discarded"})
-    assert _source_condition("spark", "supersedes", {"status": "open"})
-    assert not _source_condition("spark", "supersedes", {"status": "routed"})
 
 
 def test_spark_relations_are_limited_to_the_current_project_until_cross_project_is_designed() -> None:
@@ -78,5 +76,5 @@ def test_routed_spark_requires_at_least_one_routed_to_relation() -> None:
     assert any(issue.summary == "routed Spark 至少需要一条 routed-to 关系" for issue in issues)
 
 
-def test_open_spark_can_supersede_an_implemented_terminal_spark() -> None:
-    assert _target_condition("spark", "supersedes", "spark", "implemented")
+def test_spark_related_to_can_target_an_implemented_spark() -> None:
+    assert _target_condition("spark", "related-to", "spark", "implemented")

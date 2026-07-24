@@ -26,7 +26,7 @@ function isFactItem(item: Record<string, unknown>): boolean {
 
 /** 判断状态是否为"可推进"（非终态） */
 function isActionableStatus(type: string, status: string): boolean {
-  const terminalStatuses = ['closed', 'accepted', 'rejected', 'superseded', 'deprecated', 'archived', 'resolved', 'discarded']
+  const terminalStatuses = ['closed', 'retired', 'accepted', 'rejected', 'deprecated', 'archived', 'resolved', 'discarded']
   return !terminalStatuses.includes(status)
 }
 

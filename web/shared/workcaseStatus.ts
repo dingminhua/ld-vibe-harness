@@ -34,7 +34,7 @@ export function getWorkCaseDisplayStatus(phase: string, status: string): string 
   return WORKCASE_PHASE_DISPLAY_STATUS[phase] ?? status;
 }
 
-const WORKCASE_TERMINAL_STATUSES = new Set(['closed', 'archived', 'discarded', 'superseded']);
+const WORKCASE_TERMINAL_STATUSES = new Set(['closed']);
 const WORKCASE_HUMAN_CONFIRMING_STATUSES = new Set([
   'human_plan_confirming',
   'human_closure_confirming',

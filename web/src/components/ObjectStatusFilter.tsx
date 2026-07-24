@@ -18,7 +18,6 @@ const STATUS_FILTER_ORDER = [
   'routed',
   'discarded',
   'archived',
-  'superseded',
   'retired',
   'rejected',
   'deprecated',
@@ -29,8 +28,8 @@ const statusOrderIndex = new Map(STATUS_FILTER_ORDER.map((status, index) => [sta
 
 const FALLBACK_STATUSES_BY_TYPE: Record<string, string[]> = {
   workcase: [...WORKCASE_STATUS_ORDER],
-  adr: ['active', 'superseded', 'retired'],
-  pitfall: ['active', 'superseded', 'retired'],
+  adr: ['active', 'retired'],
+  pitfall: ['active', 'retired'],
   spark: ['open', 'routed', 'implemented', 'discarded'],
   study: ['active', 'retired'],
 };

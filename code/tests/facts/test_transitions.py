@@ -463,26 +463,13 @@ def test_current_result_review_fingerprint_is_checked_when_formed_not_forever() 
     assert validate_fact_transition("workcase", resolved, refined) == ()
 
 
-def test_single_object_transition_rejects_supersedes_and_superseded_status() -> None:
+def test_removed_superseded_status_is_rejected_by_the_current_lifecycle() -> None:
     before = {"status": "active", "relations": []}
-    after = {
-        "status": "superseded",
-        "relations": [
-            {
-                "relation_key": "supersedes",
-                "target": {
-                    "governed_project_id": "sample",
-                    "fact_type_key": "adr",
-                    "object_id": "adr-0001",
-                },
-            }
-        ],
-    }
+    after = {"status": "superseded", "relations": []}
 
     issues = validate_fact_transition("adr", before, after)
 
-    assert any(issue.field_path == "status" and "多对象" in issue.summary for issue in issues)
-    assert any(issue.field_path == "relations" and "多对象" in issue.summary for issue in issues)
+    assert any(issue.field_path == "status" and "不在当前单对象更新允许边中" in issue.summary for issue in issues)
 
 
 def test_workcase_open_blocked_change_cannot_move_phase() -> None:

@@ -74,7 +74,7 @@ WorkCase 不使用普通字段卡片堆叠，而作为“一次目标的执行�
 - ADR 的“影响”节点消费 `consequences` 字段。active ADR 必须按 `## 正向价值`、`## 逆向价值`、`## 实施成本`、`## 风险评估`、`## 注意事项` 五段式书写；有逆向价值时必须引用 V1-V9，无逆向价值时 `## 逆向价值` 填写 `当前决策无逆向价值`。Web 在节点内按 Markdown 分段展示，不把五段拆成独立工作对象字段。
 - ADR 不展示“备选”节点，也不维护 `alternatives` 字段。未采纳方案若来自 Spark，应保留在 Spark 的演变记录或讨论上下文中；若只来自临时对话且未进入决策，不进入 ADR。
 - ADR 不展示独立“承接”节点，也不维护 `affects` 字段。`related_rules`、`related_workcases`、`related_workcases`、`related_adrs`、`related_sparks` 等统一进入“关联”，按关联内容的通用行样式展示。关联提交由 Git 派生视图呈现。
-- ADR 状态只显示 `active / archived / deprecated`。详情页不得展示或派生 `proposed`、`accepted`、`rejected`、`superseded` 或 `superseded_by` 旧生命周期语义。
+- ADR 状态只显示 `active / retired`。详情页不得展示或派生 `proposed`、`accepted`、`rejected`、`superseded` 或 `superseded_by` 旧生命周期语义。
 - Pitfall `verification` 节点消费 05.02 四段式结构，但在 Pitfall 页面内渲染为轻量分段阅读，不使用表格左列重复“计划/记录/结果/结论”。验证节点内部按“验证计划、验证命令、验证结果、结论”顺序展示。
 - Pitfall `root_cause`、`resolution`、`avoidance` 等经验节点应把 Markdown 列表渲染为清晰的条目阅读，而不是使用浏览器默认列表缩进。无序列表只使用灰色圆点；有序列表应保留 Markdown 原文的普通 `1.`、`2.`、`3.` 文本编号，不得额外渲染为徽标、强调色或状态标记。
 - 未定义专用语义布局的对象使用普通字段卡片兜底；每个字段一个轻量卡片，字段标题用 `ldvh-caption-strong`。

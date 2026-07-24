@@ -169,7 +169,6 @@ def _validate_status(fact_type_key: str, fields: dict[str, Any], issues: list[Fa
                 "partial",
                 "not-achieved",
                 "cancelled",
-                "superseded",
             }:
                 issues.append(FactIssue("schema", "closure_outcome 不在当前闭集中", "closure_outcome"))
     elif fact_type_key == "study":

@@ -12,8 +12,8 @@ function source(relativePath: string): string {
 test('V4 fact lists keep lifecycle status tabs even when a terminal state has zero objects', () => {
   const filter = source('src/components/ObjectStatusFilter.tsx')
 
-  assert.match(filter, /adr: \['active', 'superseded', 'retired'\]/)
-  assert.match(filter, /pitfall: \['active', 'superseded', 'retired'\]/)
+  assert.match(filter, /adr: \['active', 'retired'\]/)
+  assert.match(filter, /pitfall: \['active', 'retired'\]/)
   assert.match(filter, /study: \['active', 'retired'\]/)
   assert.match(filter, /if \(!\(type in FALLBACK_STATUSES_BY_TYPE\)\) return sortedOptions;/)
   assert.match(filter, /if \(displayOptions\.length <= 1 && !\(type in FALLBACK_STATUSES_BY_TYPE\)\) return null;/)

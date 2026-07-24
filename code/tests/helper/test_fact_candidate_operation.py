@@ -292,7 +292,7 @@ def test_f1_returns_complete_active_adr_and_open_workcase_baseline_with_paginati
     assert first["result"]["coverage"]["status"] == "complete"
     assert first["result"]["coverage"]["total_matching"] == 2
     assert first["result"]["coverage"]["returned"] == 1
-    assert len(first["result"]["recovery_manifest"]["counts"]) == 15
+    assert len(first["result"]["recovery_manifest"]["counts"]) == 13
     assert first["result"]["recovery_manifest"]["current_workcase_ref"] == current_workcase_ref
     assert first["result"]["recovery_manifest"]["selected_fact_refs"] == selected_fact_refs
     assert first["result"]["cards"][0]["fact_ref"]["fact_type_key"] == "adr"
@@ -826,7 +826,7 @@ def test_f2_relation_source_keeps_relation_key_filter_observable_without_target_
             "F2",
             fact_type_keys=["workcase"],
             relation_source_refs=[{"governed_project_id": "sample", "fact_type_key": "spark", "object_id": spark_id}],
-            relation_keys=["supersedes"],
+            relation_keys=["routed-to"],
         ),
     ).response
 
