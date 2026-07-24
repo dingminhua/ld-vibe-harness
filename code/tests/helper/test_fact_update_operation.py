@@ -410,7 +410,6 @@ def test_workcase_helper_walks_controller_owned_review_and_atomic_closure(tmp_pa
                     "approved_at": approved_at,
                     "summary": "Human approved the current result version and complete report",
                 },
-                "closed_at": approved_at,
             }
         )
         for key in ("priority", "resume_from", "waiting_on"):
@@ -698,7 +697,7 @@ def test_workcase_delta_walks_controller_owned_review_and_atomic_closure(tmp_pat
     )
     assert closed["status"] == "closed"
     assert closed["phase"] == "closed"
-    assert closed["closure_approval"]["approved_at"] == closed["closed_at"] == closed["updated_at"]
+    assert closed["closure_approval"]["approved_at"] == closed["updated_at"]
 
 
 def test_workcase_delta_current_dependent_construction_failure_is_rejected(tmp_path: Path) -> None:
@@ -1134,7 +1133,6 @@ updated_at: 2026-07-14T10:00:00+08:00
 status: routed
 summary: Before update
 disposition_summary: Incorrectly recorded as routed without a fact target.
-closed_at: 2026-07-14T10:00:00+08:00
 """,
         encoding="utf-8",
     )
@@ -1169,7 +1167,6 @@ closed_at: 2026-07-14T10:00:00+08:00
                 "disposition_summary": (
                     "The bounded Spark content was directly implemented with no residual fact responsibility."
                 ),
-                "closed_at": "2026-07-14T10:00:00+08:00",
             },
         ),
     ).response
@@ -1444,7 +1441,6 @@ def test_update_rejects_managed_fields_and_terminal_reopen(tmp_path: Path) -> No
     terminal = _mutable(before)
     terminal["status"] = "discarded"
     terminal["disposition_summary"] = "Human chose to stop tracking this Spark"
-    terminal["closed_at"] = "2026-07-14T11:00:00+08:00"
     terminal.pop("priority")
     response = handle_request(
         "call",
@@ -1457,7 +1453,7 @@ def test_update_rejects_managed_fields_and_terminal_reopen(tmp_path: Path) -> No
     terminal_read = _read(workspace, project)
     reopen = _mutable(terminal_read)
     reopen["status"] = "open"
-    for key in ("disposition_summary", "closed_at"):
+    for key in ("disposition_summary",):
         reopen.pop(key)
     reopen["priority"] = "P2"
     rejected = handle_request(

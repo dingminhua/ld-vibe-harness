@@ -2,7 +2,6 @@
 title: AI 能力资产、Hook 与工程门禁行业实践调研
 status: retired
 disposition_summary: 已按 v3 基线决定重新研究；本旧 v4 短报告不再作为当前研究入口，外部资料、发现与后续启发须在新 Study 中重新读取和表达。
-closed_at: '2026-07-23T18:21:16+08:00'
 research_question: Codex Skills/Hooks、Git hooks 与 Agent guardrails
   的公开文档如何区分可复用能力、生命周期自动化和强制门禁？
 abstract: 调研 Codex Skills/Hooks、Git hooks 与 OpenAI Agents guardrails/HITL

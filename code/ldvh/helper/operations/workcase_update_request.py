@@ -61,7 +61,6 @@ _ORDINARY_MANAGED_FIELDS = frozenset(
         "result_reviews",
         "execution_approval",
         "closure_approval",
-        "closed_at",
     }
 )
 _VERSION_FIELDS = frozenset({"plan_version", "result_version"})

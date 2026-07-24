@@ -544,11 +544,9 @@ def test_exact_ref_can_recall_terminal_object_without_bypassing_explicit_status_
     object_id = _create(workspace, project, "pitfall", _pitfall())
     path = project / "ldvh-base" / "pitfalls" / f"{object_id}.yaml"
     text = path.read_text(encoding="utf-8")
-    updated_line = next(line for line in text.splitlines() if line.startswith("updated_at:"))
-    closed_at = updated_line.split(": ", 1)[1]
     path.write_text(
         text.replace("status: active", "status: retired")
-        + f"disposition_summary: Experience no longer applies.\nclosed_at: {closed_at}\n",
+        + "disposition_summary: Experience no longer applies.\n",
         encoding="utf-8",
     )
     exact_ref = {
@@ -1302,10 +1300,9 @@ def test_f2_relation_source_keeps_terminal_direct_target_without_default_status_
     spark_id = _create(workspace, project, "spark", spark)
     pitfall_path = project / "ldvh-base" / "pitfalls" / f"{pitfall_id}.yaml"
     pitfall_text = pitfall_path.read_text(encoding="utf-8")
-    updated_line = next(line for line in pitfall_text.splitlines() if line.startswith("updated_at:"))
     pitfall_path.write_text(
         pitfall_text.replace("status: active", "status: retired")
-        + f"disposition_summary: This experience is now historical.\nclosed_at: {updated_line.split(': ', 1)[1]}\n",
+        + "disposition_summary: This experience is now historical.\n",
         encoding="utf-8",
     )
 

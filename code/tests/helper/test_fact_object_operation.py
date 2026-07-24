@@ -481,7 +481,6 @@ closure_approval:
 validation_summary: Validated
 closure_outcome: superseded
 disposition_summary: Replaced
-closed_at: 2026-07-14T10:00:00+08:00
 """,
         encoding="utf-8",
     )
@@ -504,7 +503,6 @@ created_at: 2026-07-14T09:00:00+08:00
 updated_at: 2026-07-14T10:00:00+08:00
 status: superseded
 disposition_summary: Replaced
-closed_at: 2026-07-14T10:00:00+08:00
 decision_question: Which?
 decision: A
 applicability: This project
@@ -560,8 +558,7 @@ relations:
         successor.read_text(encoding="utf-8").replace(
             "status: active\n",
             "status: retired\n"
-            "disposition_summary: Replacement later retired without deleting its established edge\n"
-            "closed_at: 2026-07-14T11:00:00+08:00\n",
+            "disposition_summary: Replacement later retired without deleting its established edge\n",
         ),
         encoding="utf-8",
     )

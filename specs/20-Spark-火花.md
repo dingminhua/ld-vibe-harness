@@ -114,7 +114,6 @@ AI 创建在写入前满足上述全部条件；既有对象的确定性候选�
 | `priority` | conditional | `spark-fact-type::6. 对象语义与生命周期` |
 | `evolution` | conditional | `spark-fact-type::6. 对象语义与生命周期` |
 | `disposition-summary` | conditional | `spark-fact-type::6. 对象语义与生命周期` |
-| `closed-at` | conditional | `spark-fact-type::6. 对象语义与生命周期` |
 
 ### 类型专属字段定义
 
@@ -157,10 +156,10 @@ Spark 对象使用 UTF-8 YAML，一文件一对象，当前权威位置固定为
 
 | status | 语义 | 必须成立 |
 |---|---|---|
-| `open` | Spark 仍有未被稳定位置完整承接的内容，需要继续召回、判断、拆分或分流；面向 Human 的状态词为“待处理”，不把它泛化表述为“未关闭” | `priority` 必填；`disposition_summary` 与 `closed_at` 不得出现；已有关系不等于完整承接 |
-| `routed` | 原始信息需求已经由一个或多个同项目稳定事实对象完整承接，Spark 不再承担待处置入口；它记录当次分流已经成立，不承担下游对象后续状态、阶段、关闭或完成的跟踪 | `priority` 禁止；`disposition_summary`、`closed_at` 必填；进入 `routed` 时至少一条 `routed-to` 已实际指向非 Spark、非 Study 的同项目 mechanically valid 事实对象。多个目标时，摘要必须逐项说明各自承接范围且无残留 |
-| `implemented` | Spark 限定的信息需求已经由该 Spark 范围内的直接工作落实到适用规则、实现或其它非事实承载边界，且没有剩余待处置内容或事实承接对象；它只结束该 Spark 入口，不表示项目、规则、代码、Git 提交或下游工作完成，也不得因已分流目标后来完成而取得 | `priority` 禁止；`disposition_summary`、`closed_at` 必填；不得有 `routed-to`；说明必须如实限定已落实范围与无剩余责任，不得把文件存在、命令成功、测试通过或 Human 回应单独写成落实成立 |
-| `discarded` | 明确决定该信息不再继续跟踪；这是不产生承接目标的废弃终态，不是分流 | `priority` 禁止；`disposition_summary`、`closed_at` 必填；不得仅因暂时无行动或优先级低而废弃 |
+| `open` | Spark 仍有未被稳定位置完整承接的内容，需要继续召回、判断、拆分或分流；面向 Human 的状态词为“待处理”，不把它泛化表述为“未关闭” | `priority` 必填；`disposition_summary` 不得出现；已有关系不等于完整承接 |
+| `routed` | 原始信息需求已经由一个或多个同项目稳定事实对象完整承接，Spark 不再承担待处置入口；它记录当次分流已经成立，不承担下游对象后续状态、阶段、关闭或完成的跟踪 | `priority` 禁止；`disposition_summary` 必填；进入 `routed` 时至少一条 `routed-to` 已实际指向非 Spark、非 Study 的同项目 mechanically valid 事实对象。多个目标时，摘要必须逐项说明各自承接范围且无残留 |
+| `implemented` | Spark 限定的信息需求已经由该 Spark 范围内的直接工作落实到适用规则、实现或其它非事实承载边界，且没有剩余待处置内容或事实承接对象；它只结束该 Spark 入口，不表示项目、规则、代码、Git 提交或下游工作完成，也不得因已分流目标后来完成而取得 | `priority` 禁止；`disposition_summary` 必填；不得有 `routed-to`；说明必须如实限定已落实范围与无剩余责任，不得把文件存在、命令成功、测试通过或 Human 回应单独写成落实成立 |
+| `discarded` | 明确决定该信息不再继续跟踪；这是不产生承接目标的废弃终态，不是分流 | `priority` 禁止；`disposition_summary` 必填；不得仅因暂时无行动或优先级低而废弃 |
 
 正常状态转换只有 `open → routed`、`open → implemented` 和 `open → discarded`。终态不直接重开；后来出现新的未处置信息时创建新 Spark；新 Spark 独立 open，在 `disposition_summary` 中说明接替的旧 Spark。若原终态记录本身错误，应按 05 的事实更正规则修正，而不是把更正伪装成领域状态转换；不得建立普通 `routed → implemented` 转换。
 

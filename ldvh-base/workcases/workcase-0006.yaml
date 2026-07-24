@@ -34,7 +34,7 @@ success_criterion_definitions:
     event_at，no_change 或非法后继保持零写入。
 - criterion_id: criterion-05
   statement: stale fingerprint、并发、非法 transition、写后回读和回滚保持现有 CAS 语义；Human closure
-    approval、status/phase closed 与 closed_at 只在同一原子变更形成。
+    approval 与 status/phase closed 只在同一原子变更形成。
 - criterion_id: criterion-06
   statement: common-dir 不可写等预期失败在 target/counter 改变前形成稳定 unavailable 与恢复条件；既有
     linked-worktree 并发唯一编号、counter 单调性和共同串行保证不退化。
@@ -131,7 +131,7 @@ creation_reviews:
   review_basis:
     projection_key: plan_current
     subject_fingerprint:
-      1d2b5907628b068c7d60c223a828e55d8b1ddd0dd2ea287578bf3eef4bdcab4f
+      cbc3b4900d1b0b75650712f88c3919aa2d614e2cdd153bcab5ff6d3dbeffc235
   controller_resolution: 接受全部独立审核反馈并已写入当前完整计划；Controller 反查 Schema 后消除了最后的 B-05
     生命周期循环。最终复审 PASS，当前计划足以提交 Human 执行确认。
 execution_approval:
@@ -282,7 +282,6 @@ closure_approval:
   approved_at: '2026-07-20T16:29:00.449574+08:00'
   summary: Human 明确批准关闭 workcase-0006，接受当前 result_version 1、completed
     分类、无残余修复责任处置和已记录的非约束完善建议。
-closed_at: '2026-07-20T16:29:00.449574+08:00'
 object_id: workcase-0006
 fact_type_key: workcase
 created_at: '2026-07-20T14:50:12.378355+08:00'

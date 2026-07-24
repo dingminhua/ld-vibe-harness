@@ -2,7 +2,6 @@
 title: Superpowers 工程约束工作流调研
 status: retired
 disposition_summary: 已按 v3 基线决定重新研究；本旧 v4 短报告不再作为当前研究入口，外部资料、发现与后续启发须在新 Study 中重新读取和表达。
-closed_at: '2026-07-23T18:21:16+08:00'
 research_question: obra/superpowers 当前公开技能框架如何把头脑风暴、计划、工作树、TDD、并行 Agent、Review
   和收尾串成强制工作流？
 abstract: 调研 Superpowers README 与公开技能清单。其基本流程从

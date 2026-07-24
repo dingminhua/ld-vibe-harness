@@ -149,7 +149,6 @@ closure_approval:
   subject_version: 3
   approved_at: '2026-07-20T14:24:40.958810+08:00'
   summary: Human 明确批准关闭 workcase-0003，接受九项成功标准全部满足、completed 分类和无残余责任处置。
-closed_at: '2026-07-20T14:24:40.958810+08:00'
 object_id: workcase-0003
 fact_type_key: workcase
 created_at: '2026-07-20T07:11:51.119277+08:00'

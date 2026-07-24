@@ -174,7 +174,6 @@ interface ObjectItem {
   hasClosureRequestedAt?: boolean;
   hasVerificationEvidence?: boolean;
   hasClosureEvidence?: boolean;
-  hasClosedAt?: boolean;
   archive_reason?: string;             // 非活跃归档原因，卡片完整原因说明展示
   deprecated_reason?: string;          // 非活跃废弃原因，卡片完整原因说明展示
   discard_reason?: string;             // 非活跃废弃原因，卡片完整原因说明展示

@@ -499,7 +499,6 @@ export default function ObjectList() {
       const closureRequestedState: WorkCaseRecordState = obj.hasClosureRequestedAt ? 'recorded' : 'missing';
       const verificationEvidenceState: WorkCaseRecordState = obj.hasVerificationEvidence ? 'recorded' : 'missing';
       const closureEvidenceState: WorkCaseRecordState = obj.hasClosureEvidence ? 'recorded' : 'missing';
-      const closedAtState: WorkCaseRecordState = obj.hasClosedAt ? 'recorded' : 'missing';
       const closeDecisionFields = [
         { label: t('objectList.successCriteria'), state: successCriteriaState },
         { label: t('objectList.planConfirmedAt'), state: planConfirmedState },
@@ -507,7 +506,7 @@ export default function ObjectList() {
         { label: t('objectList.verificationEvidence'), state: verificationEvidenceState },
         { label: t('objectList.closureEvidence'), state: closureEvidenceState },
       ];
-      const closedIntegrityFields = [...closeDecisionFields, { label: t('objectList.closedAt'), state: closedAtState }];
+      const closedIntegrityFields = closeDecisionFields;
       const hasClosedIntegrityIssue = isClosedWorkCase && closedIntegrityFields.some((field) => field.state === 'missing');
       const shouldShowCloseDecision = needsCloseDecision || hasClosedIntegrityIssue;
       const closeDecisionTitle = hasClosedIntegrityIssue && !needsCloseDecision

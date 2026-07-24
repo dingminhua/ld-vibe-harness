@@ -15,7 +15,6 @@ from ldvh.facts.repository import (
     read_fact_object,
 )
 from ldvh.facts.schema import FactSchema
-from ldvh.facts.validation import parse_rfc3339
 from ldvh.filesystem import safe_list_directory
 
 MAX_GRAPH_OBJECTS = 10_000

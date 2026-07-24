@@ -2,7 +2,6 @@
 title: OpenAI Codex Harness Engineering 与 Symphony 调研
 status: retired
 disposition_summary: 已按 v3 基线决定重新研究；本旧 v4 短报告不再作为当前研究入口，外部资料、发现与后续启发须在新 Study 中重新读取和表达。
-closed_at: '2026-07-23T18:21:16+08:00'
 research_question: OpenAI 的 Harness Engineering 与 Symphony 公开实践如何把 Agent
   工作变成可验证、可编排的工程控制面？
 abstract: 调研 OpenAI Harness Engineering 文章与 Symphony

@@ -122,7 +122,6 @@ export function WorkCaseReadingLayout({
     'plan_confirmed_at',
     'closure_requested_at',
     'review_requested_at',
-    'closed_at',
     'closure_outcome',
     'validation_summary',
     'disposition_summary',
@@ -260,9 +259,6 @@ function WorkCaseLifecycleSection({
     { label: t('objectList.closureRequestedAt'), recorded: Boolean(summary?.hasClosureRequestedAt ?? (hasDetailContent(obj.closure_requested_at) || hasDetailContent(obj.review_requested_at))) },
     { label: t('objectList.verificationEvidence'), recorded: Boolean(summary?.hasVerificationEvidence ?? hasDetailContent(obj.verification_evidence)) },
     { label: t('objectList.closureEvidence'), recorded: Boolean(summary?.hasClosureEvidence ?? hasDetailContent(obj.closure_evidence)) },
-    ...(rawStatus === 'closed'
-      ? [{ label: t('objectList.closedAt'), recorded: Boolean(summary?.hasClosedAt ?? hasDetailContent(obj.closed_at)) }]
-      : []),
   ];
 
   return (
@@ -512,7 +508,6 @@ function WorkCaseAiContextSection({ obj, locale }: { obj: Record<string, unknown
     ['orchestration', obj.orchestration],
     ['plan_confirmed_at', obj.plan_confirmed_at],
     ['closure_requested_at', obj.closure_requested_at ?? obj.review_requested_at],
-    ['closed_at', obj.closed_at],
     ['revision_history', orchestration.revision_history],
     ['source', obj.source],
   ].filter((entry): entry is [string, unknown] => hasDetailContent(entry[1]));
@@ -556,14 +551,12 @@ function summarizeRecordState(obj: Record<string, unknown>, summary: ObjectItem 
   const verificationRecorded = Boolean(summary?.hasVerificationEvidence ?? hasDetailContent(obj.verification_evidence));
   const closureRecorded = Boolean(summary?.hasClosureEvidence ?? hasDetailContent(obj.closure_evidence));
   const closureRequested = Boolean(summary?.hasClosureRequestedAt ?? (hasDetailContent(obj.closure_requested_at) || hasDetailContent(obj.review_requested_at)));
-  const closedAtRecorded = Boolean(summary?.hasClosedAt ?? hasDetailContent(obj.closed_at));
   const blockedCount = executionItems.filter((item) => item.status === 'blocked' || Boolean(item.blockingReason)).length;
   const items = [
     planConfirmed ? t('objectList.planConfirmedAt') : null,
     verificationRecorded ? t('objectList.verificationEvidence') : null,
     closureRecorded ? t('objectList.closureEvidence') : null,
     closureRequested ? t('objectList.closureRequestedAt') : null,
-    closedAtRecorded ? t('objectList.closedAt') : null,
     blockedCount > 0 ? `${blockedCount} ${t('objectDetail.lifecycleBlocked')}` : null,
   ].filter(Boolean);
 

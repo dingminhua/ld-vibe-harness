@@ -71,12 +71,10 @@ export function projectV4Spark(item: unknown): V4SparkProjection {
     || !optionalArray(facts, 'evolution')
     || (status === 'open'
       && (typeof facts.priority !== 'string'
-        || 'disposition_summary' in facts
-        || 'closed_at' in facts))
+        || 'disposition_summary' in facts))
     || (status !== 'open'
       && ('priority' in facts
-        || typeof facts.disposition_summary !== 'string'
-        || typeof facts.closed_at !== 'string'))) {
+        || typeof facts.disposition_summary !== 'string'))) {
     return projectionProblem(item, 'spark_projection_invalid', 'Spark fields cannot form the existing DTO')
   }
 

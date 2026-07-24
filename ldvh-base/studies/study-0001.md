@@ -2,7 +2,6 @@
 title: 开源项目公共契约与发布就绪外部实践调研
 status: retired
 disposition_summary: 已按 v3 基线决定重新研究；本旧 v4 短报告不再作为当前研究入口，外部资料、发现与后续启发须在新 Study 中重新读取和表达。
-closed_at: '2026-07-23T18:21:16+08:00'
 research_question: GitHub 与 OpenSSF 当前如何定义一个可公开协作、可发布和可复核的开源项目最低公共契约？
 abstract: 调研 GitHub 官方仓库治理/许可/Release 指南与 OpenSSF OSPS
   Baseline。共同结论是：开源发布不是只公开代码，而是同时提供许可、README、贡献与行为边界、可复核的发布快照以及按版本管理的安全基线；这些资料提供检查维度，不自动决定

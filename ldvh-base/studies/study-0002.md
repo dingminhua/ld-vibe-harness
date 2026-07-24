@@ -2,7 +2,6 @@
 title: OpenAI Codex 子 Agent、工作树与协作实践调研
 status: retired
 disposition_summary: 已按 v3 基线决定重新研究；本旧 v4 短报告不再作为当前研究入口，外部资料、发现与后续启发须在新 Study 中重新读取和表达。
-closed_at: '2026-07-23T18:21:16+08:00'
 research_question: OpenAI Codex 官方能力如何组织子 Agent、隔离工作树、非交互执行和 App Server
   集成，哪些边界可供 LDVH 参考？
 abstract: 调研 Codex 官方 Subagents、Worktrees、Non-interactive mode 与 App Server

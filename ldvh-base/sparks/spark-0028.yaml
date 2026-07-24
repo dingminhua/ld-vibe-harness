@@ -30,7 +30,6 @@ relations:
 disposition_summary: 原信息需求已由 open 的 workcase-0010 完整承接：其目标、范围与五项成功标准覆盖本 Spark
   的机械校验闭环、未实现即 unavailable、以及候选发现如实披露。0029 的 Hook 防护与所有语义判断明确不在此承接范围。WorkCase
   尚未执行不影响 Spark 的入口职责已经完成分流。
-closed_at: '2026-07-22T17:40:53.989641+08:00'
 object_id: spark-0028
 fact_type_key: spark
 created_at: '2026-07-22T16:59:14.874483+08:00'

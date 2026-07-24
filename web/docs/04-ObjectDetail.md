@@ -41,7 +41,7 @@ YAML 载体的源码折叠区（Markdown Study 不显示第二份 YAML 正文）
 - WorkCase 和 Spark 如存在 `priority`，在标题行最前面展示 `P0` / `P1` / `P2` / `P3` 字符徽标，随后才是 `ObjectTypeIcon(obj.type)` 和标题；徽标使用颜色和 tooltip 表达优先级，不在头部、元信息行、正文模块或其他字段区重复展示 priority 文字 chip / 字段。
 - ID 使用 `ldvh-meta`，不做大号标题；右上角只提供 `CopyPathButton`，tooltip 为“复制对象路径”。仅在精确读取为 `readable` 且返回 `canonical_path` 时显示，复制值必须等于该路径；不得使用 `data.path`、对象 ID 或路由 `target` 猜测路径，也不得再放状态标签或其他对象身份信息。
 - 如对象存在 `tags`，标签应在标题下方独立成行，并位于创建/更新时间之上；标签不与时间或其他辅助属性挤在同一行。Pitfall `tags` 展示事实源英文原值，不做中文翻译。
-- 创建/更新时间在标签行下方以短标签展示，统一使用 `formatDateTime()`，格式为 `YYYY-MM-DD HH:mm`；关闭时间或必要辅助属性可在同一元信息行弱化展示，不另起 MetaChip 行。
+- 创建/更新时间在标签行下方以短标签展示，统一使用 `formatDateTime()`，格式为 `YYYY-MM-DD HH:mm`；必要辅助属性可在同一元信息行弱化展示，不另起 MetaChip 行。
 - 对象字段必须以对应事实模型主规范为准；只有该对象字段契约内定义的辅助属性才可在元信息行降权展示，不进入主阅读流。`priority` 只适用于 WorkCase 和 Spark，且在详情头部以字符徽标展示；importance 已由 priority 统一承载，不再作为独立字段。
 - 右侧扩展阅读区中的对象头部应复用同一套身份头部的小号版本，字段顺序、类型/状态标签规则、复制入口和时间展示不得另起一套。
 
@@ -181,4 +181,4 @@ interface ObjectDetail {
 
 精确可读详情的 `data` 同时带回 `canonical_path`、`carrier` 和 `check_status: 'readable'`；读取失败返回 `fact_read_failure: true`、预期路径、声明载体、读取状态和问题，但不返回可消费正文或领域状态。列表/仪表盘是候选发现，不能以其 `path`、ID 或 `target` 作为源路径。
 
-WorkCase 详情页可以额外消费 WorkCase 只读派生摘要，用于展示推进阶段、成功标准进度、执行态势、关闭材料完备性、阻塞关系和对象路径。当前 Web API 可派生 `executionItems`、`executionItemTotal`、`executionItemDone`、`executionItemBlocked`、`executionItemOpen`、`executionItemByStatus`、`successCriteriaTotal`、`successCriteriaDone`、`hasPlanConfirmedAt`、`hasClosureRequestedAt`、`hasVerificationEvidence`、`hasClosureEvidence` 和 `hasClosedAt`；历史 `review_requested_at` 可兼容为 `hasClosureRequestedAt`。派生摘要仍来自 Git 文件事实源的确定性读取，不写回事实源，也不作为第二事实源。
+WorkCase 详情页可以额外消费 WorkCase 只读派生摘要，用于展示推进阶段、成功标准进度、执行态势、关闭材料完备性、阻塞关系和对象路径。当前 Web API 可派生 `executionItems`、`executionItemTotal`、`executionItemDone`、`executionItemBlocked`、`executionItemOpen`、`executionItemByStatus`、`successCriteriaTotal`、`successCriteriaDone`、`hasPlanConfirmedAt`、`hasClosureRequestedAt`、`hasVerificationEvidence` 和 `hasClosureEvidence`；历史 `review_requested_at` 可兼容为 `hasClosureRequestedAt`。派生摘要仍来自 Git 文件事实源的确定性读取，不写回事实源，也不作为第二事实源。

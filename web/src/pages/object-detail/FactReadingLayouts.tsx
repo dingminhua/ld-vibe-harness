@@ -305,17 +305,17 @@ function SparkEvolutionTime({ value, locale }: { value?: string; locale: string 
 }
 
 function SparkTerminalNode({ obj }: { obj: Record<string, unknown> }) {
-  const closedAt = typeof obj.closed_at === 'string' && obj.closed_at.trim().length > 0 ? obj.closed_at : null;
+  const updatedAt = typeof obj.updated_at === 'string' && obj.updated_at.trim().length > 0 ? obj.updated_at : null;
   const disposition = typeof obj.disposition_summary === 'string' && obj.disposition_summary.trim().length > 0
     ? obj.disposition_summary
     : null;
 
   return (
     <div className="min-w-0 rounded-md border border-ldvh-border/45 bg-ldvh-bg/45 px-3 py-2">
-      {closedAt && (
+      {updatedAt && (
         <div className="mb-1.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
           <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-ldvh-accent" aria-hidden="true" />
-          <SparkTerminalTime value={closedAt} />
+          <SparkTerminalTime value={updatedAt} />
         </div>
       )}
       {disposition && <StudyTextNodeContent value={disposition} compact />}
@@ -338,6 +338,5 @@ function hasSparkTerminalContent(obj: Record<string, unknown>) {
   return status === 'routed'
     || status === 'implemented'
     || status === 'discarded'
-    || hasDetailContent(obj.closed_at)
     || hasDetailContent(obj.disposition_summary);
 }

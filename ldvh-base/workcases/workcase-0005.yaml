@@ -358,7 +358,6 @@ closure_approval:
   subject_version: 3
   approved_at: '2026-07-20T13:55:15+08:00'
   summary: Human 明确批准关闭 workcase-0005，接受当前完整结果、completed 分类、无残余责任处置和已记录的非约束完善建议。
-closed_at: '2026-07-20T13:55:15+08:00'
 object_id: workcase-0005
 fact_type_key: workcase
 created_at: '2026-07-20T08:44:23.509741+08:00'

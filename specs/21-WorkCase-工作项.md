@@ -122,7 +122,6 @@ Spark 与 WorkCase 的分界不取决于“以后是否可能做”。Spark 尚�
 | `workcase-waiting-on` | conditional | `workcase-fact-type::6. 对象语义与生命周期` |
 | `priority` | conditional | `workcase-fact-type::6. 对象语义与生命周期` |
 | `disposition-summary` | conditional | `workcase-fact-type::6. 对象语义与生命周期` |
-| `closed-at` | conditional | `workcase-fact-type::6. 对象语义与生命周期` |
 | `workcase-goal` | required | `inherit` |
 | `workcase-scope` | required | `inherit` |
 | `workcase-success-criteria` | conditional | `workcase-fact-type::6. 对象语义与生命周期` |
@@ -277,7 +276,7 @@ current profile 的创建审核必须同时具有 `review_basis.projection_key: 
 | `remove` | array | 必填；成员是唯一非空顶层字段名，可以为空 | 明确要求 after 中不存在的普通字段；不得与 `set` key 交叉 |
 | `managed_records` | object | 必填；使用下述字段闭集，可以为空 | 只构造本文明确交给 Helper 托管的审核、处置与批准记录 |
 
-`set` 与 `remove` 只能引用当前派生 WorkCase Schema 已登记的顶层字段。`object_id`、`fact_type_key`、`created_at`、`updated_at`、`workcase_profile`、`creation_reviews`、`result_reviews`、`execution_approval`、`closure_approval` 和 `closed_at` 禁止由普通 delta 触碰；`plan_version` 与 `result_version` 可以由 Controller 在 `set` 中显式给出，但禁止进入 `remove`。请求结构、字段闭集、类型、重叠或恒定组合约束错误使用 `invalid_request`；普通字段值或最终 after 不满足当前 Schema、phase、transition、关系或 CAS 时使用 `rejected`，Code 不根据自然语言替调用方修正。
+`set` 与 `remove` 只能引用当前派生 WorkCase Schema 已登记的顶层字段。`object_id`、`fact_type_key`、`created_at`、`updated_at`、`workcase_profile`、`creation_reviews`、`result_reviews`、`execution_approval` 和 `closure_approval` 禁止由普通 delta 触碰；`plan_version` 与 `result_version` 可以由 Controller 在 `set` 中显式给出，但禁止进入 `remove`。请求结构、字段闭集、类型、重叠或恒定组合约束错误使用 `invalid_request`；普通字段值或最终 after 不满足当前 Schema、phase、transition、关系或 CAS 时使用 `rejected`，Code 不根据自然语言替调用方修正。
 
 `managed_records` 使用以下字段闭集；五个字段均可选，省略等同于 `null`，但出现时必须满足表中类型和非空要求。单次请求按数组成员和非空 singleton 合计最多 16 项：
 
@@ -287,21 +286,21 @@ current profile 的创建审核必须同时具有 `review_basis.projection_key: 
 | `append_result_reviews` | array 或 null | 每项精确包含 `reviewer`、`scope`、`conclusion`、`feedback`、`projection_key`；projection 只允许 `result_implementation` 或 `result_with_closure_report` | 追加当前结果审核；写入统一 `reviewed_at`、after `result_version` 和所选 after projection fingerprint；不得生成 Controller 处置 |
 | `resolve_result_reviews` | array 或 null | 每项精确包含基线 `review_index` 和 `controller_resolution`；index 不得重复 | 只新增或替换 expected fingerprint 绑定的对应 current review 的 Controller 处置，Reviewer 自有字段保持不变 |
 | `execution_approval` | object 或 null | 包含 `summary` 与可选 `source_refs`；来源项复用 04 授权附件的来源回指字段闭集，内容必须是 Human 本次实际决定 | 写入 after `plan_version` 和统一 `approved_at` |
-| `closure_approval` | object 或 null | 包含 `summary` 与可选 `source_refs`；来源项复用 04 授权附件的来源回指字段闭集，内容必须是 Human 本次实际决定 | 写入 after `result_version`、统一 `approved_at`，并在同一合法 closed 快照写 `closed_at` |
+| `closure_approval` | object 或 null | 包含 `summary` 与可选 `source_refs`；来源项复用 04 授权附件的来源回指字段闭集，内容必须是 Human 本次实际决定 | 写入 after `result_version` 与统一 `approved_at` |
 
-调用方不得在托管记录中提交 `reviewed_at`、`approved_at`、`closed_at`、`updated_at`、`subject_version`、`review_basis` 或 `subject_fingerprint`。Helper 不生成、解释或验证 Reviewer、Controller 或 Human 决定的自然语言真实性；它只把调用方本次正式提交的真实决定形成受控记录。需要保留更早历史发生时点时，调用方必须退出本便利层，按 05 与 32 的普通受控更正边界形成完整目标；Helper 不根据正文判断一项输入是否“历史”。
+调用方不得在托管记录中提交 `reviewed_at`、`approved_at`、`updated_at`、`subject_version`、`review_basis` 或 `subject_fingerprint`。Helper 不生成、解释或验证 Reviewer、Controller 或 Human 决定的自然语言真实性；它只把调用方本次正式提交的真实决定形成受控记录。需要保留更早历史发生时点时，调用方必须退出本便利层，按 05 与 32 的普通受控更正边界形成完整目标；Helper 不根据正文判断一项输入是否“历史”。
 
 构造顺序固定为：先对 before 应用普通 `set/remove`，再执行由显式版本变化触发的固定 reset，再形成 `managed_records`，最后填入唯一 event fields；任何更早步骤的冲突不得依赖后一步覆盖来消解。组合约束如下：
 
 1. `set.plan_version` 只有精确等于 before `plan_version + 1` 时才表示计划升版；它必须与 `replace_creation_reviews`、实际计划覆盖字段变化、`set.phase=human_plan_confirming` 和 Controller 提供的 `superseded_plan` audit continuity 同次成立。计划升版精确移除 `execution_approval`、`result_version`、`success_criterion_results`、`controller_check_summary`、`result_reviews`、`improvement_observations`、`residual_responsibilities`、`nonbinding_followups`、`closure_approval`、`validation_summary`、`closure_outcome` 和 `disposition_summary`，且不得在同次托管动作中重新形成。`set` 包含任一固定 reset 字段属于恒定冲突并使用 `invalid_request`；`remove` 可以重复声明这些字段应不存在，结果与固定 reset 相同。reset 后只允许同次形成新的 `creation_reviews`；work items、evidence、relations 与 audit 自然语言由 Controller 明确提交，Helper 不判断哪些内容只支持旧计划。
 2. `set.result_version` 在 before 尚无结果版本时只能精确建立为 `1`；已有版本时只能精确递增 `1`。递增已有结果版本时精确移除 `result_reviews` 与 `closure_approval`，旧 reviews 存在时要求 Controller 提供 `superseded_result` audit continuity；同次禁止追加、处置 result review 或形成关闭批准。Helper 不根据普通结果字段差异决定是否升版。
 3. `replace_creation_reviews` 只能与计划升版出现；`append_result_reviews` 与 `resolve_result_reviews` 互斥，Reviewer 记录形成与 Controller 处置必须分成两个 CAS。新增 result review 的同次 delta 不得改变其显式选择的 subject projection；review index 只指 expected fingerprint 所绑定的 before 数组，CAS 冲突后不得重放。处置动作只允许新增或替换 `controller_resolution`，已有值不使请求自动无效。
-4. `execution_approval`、`withdraw_execution_approval` 和 `closure_approval` 都是 singleton，分别不得与任何其它托管动作同次出现。`withdraw_execution_approval` 只处理“已记录的批准并非 Human 实际批准，或 Human 明确撤回”的更正：它必须从 `executing` 回到 `human_plan_confirming`，保持 plan_version 和计划覆盖内容不变，移除 execution_approval，并把全部 work item 恢复为 pending；只有尚未形成任何结果包时才能使用，不能借此抹去已发生的执行或结果。关闭批准还要求调用方在普通 delta 中显式形成 `status=closed`、`phase=closed` 并移除终态禁止字段；Helper 不替 Controller 或 Human 决定关闭。`closure_approval` 不存在可先写后失效的中间态，只能与 `closed_at` 同次形成。
+4. `execution_approval`、`withdraw_execution_approval` 和 `closure_approval` 都是 singleton，分别不得与任何其它托管动作同次出现。`withdraw_execution_approval` 只处理“已记录的批准并非 Human 实际批准，或 Human 明确撤回”的更正：它必须从 `executing` 回到 `human_plan_confirming`，保持 plan_version 和计划覆盖内容不变，移除 execution_approval，并把全部 work item 恢复为 pending；只有尚未形成任何结果包时才能使用，不能借此抹去已发生的执行或结果。关闭批准还要求调用方在普通 delta 中显式形成 `status=closed`、`phase=closed` 并移除终态禁止字段；Helper 不替 Controller 或 Human 决定关闭。`closure_approval` 不存在可先写后失效的中间态，只能与该合法 closed 快照同次形成。
 5. phase、status、计划/结果内容、是否复审、是否进入 Human Gate 和 audit continuity 的语义内容全部由 Controller 显式决定；任何 review conclusion 均不得触发隐式 set、remove、升版、推进或否决。
 
 请求中的 `fact_ref.fact_type_key` 不是 `workcase` 属于 `invalid_request`。请求结构有效并声明 workcase，但安全读取后的载体 identity/type 不一致、当前对象不存在、不是 `control-contract-v1` 或 expected fingerprint 已过期时，本操作零写入并使用 `rejected`；legacy WorkCase 继续使用通用完整目标更新，不由本操作升级。
 
-有效请求在 Helper 服务边界只形成一个带时区 RFC 3339 `event_at`。它表示本次审核、处置或批准在当前事实对象中正式形成受控记录的规范时点，不声称重建更早对话时间。应用普通 delta、固定 reset 和全部 managed records 后，必须先排除尚未形成的 event fields 与 receipts 比较领域候选和 before；没有任何领域变化时统一返回 `no_change`，`event_at` 为 `null`、`managed_record_receipts` 为空，不重写载体。managed action 的存在不单独构成状态变化。实际发生变化时同一 event_at 用于 `updated_at`、本次新形成的 `reviewed_at`/`approved_at`、合法关闭的 `closed_at` 和本操作生成的 Working Tree observation；该值必须严格晚于当前 `updated_at`，否则使用 `rejected` 且零写入。
+有效请求在 Helper 服务边界只形成一个带时区 RFC 3339 `event_at`。它表示本次审核、处置或批准在当前事实对象中正式形成受控记录的规范时点，不声称重建更早对话时间。应用普通 delta、固定 reset 和全部 managed records 后，必须先排除尚未形成的 event fields 与 receipts 比较领域候选和 before；没有任何领域变化时统一返回 `no_change`，`event_at` 为 `null`、`managed_record_receipts` 为空，不重写载体。managed action 的存在不单独构成状态变化。实际发生变化时同一 event_at 用于 `updated_at`、本次新形成的 `reviewed_at`/`approved_at` 和本操作生成的 Working Tree observation；合法关闭的最后一次对象更新时间就是其终态记录时间。该值必须严格晚于当前 `updated_at`，否则使用 `rejected` 且零写入。
 
 ### current-profile WorkCase 专属受控变更结果字段
 
@@ -328,7 +327,7 @@ current profile 的创建审核必须同时具有 `review_basis.projection_key: 
 | `result_review_resolved` | `review_index`：非负 integer | `projection_key`、`subject_fingerprint` | 每个实际新增或替换 Controller resolution 的 review 一项 |
 | `execution_approval_recorded` | — | `review_index`、`projection_key`、`subject_fingerprint` | 实际形成 execution approval 时一项 |
 | `execution_approval_withdrawn` | — | `review_index`、`projection_key`、`subject_fingerprint` | 在尚未形成结果包时受控撤回或更正一条错误记录的 execution approval 时一项 |
-| `closure_approval_recorded` | — | `review_index`、`projection_key`、`subject_fingerprint` | 实际形成 closure approval 与 closed_at 时一项 |
+| `closure_approval_recorded` | — | `review_index`、`projection_key`、`subject_fingerprint` | 实际形成 closure approval 时一项 |
 
 固定 plan/result reset 不单独生成 receipt；其实际效果由 `changed_fields` 和前后 state 表达。receipt 成员不得增加表外字段，也不回显审核、处置或批准正文。
 
@@ -352,9 +351,9 @@ Human 选择建立 WorkCase 表示选择由本文完整管理该工作的当前�
 
 | status | 语义 | 必须成立 |
 |---|---|---|
-| `open` | 目标已经准入，仍有未完成内容；可以继续完成当前 phase 允许的准备、确认或执行活动 | `priority` 必填，blocking_summary、closure_approval、closed_at 禁止；结果包字段是否出现由 phase 决定；summary 明确当前 phase、焦点和剩余工作 |
-| `blocked` | 仍有未完成内容，但明确的外部依赖、Human 决定、授权、证据或能力缺口使当前不能继续 | `priority`、`blocking_summary`、对应自然语言说明必填，closure_approval、closed_at 禁止；结果包字段是否出现由 phase 决定 |
-| `closed` | Human 已确认该 WorkCase 身份下不再继续推进，不等于成功、已提交或下游责任完成 | phase=closed；priority 与 blocking_summary 省略；result_version、controller_check_summary、result_reviews、closure_approval、validation_summary、closure_outcome、disposition_summary、closed_at、对应自然语言说明必填 |
+| `open` | 目标已经准入，仍有未完成内容；可以继续完成当前 phase 允许的准备、确认或执行活动 | `priority` 必填，blocking_summary、closure_approval 禁止；结果包字段是否出现由 phase 决定；summary 明确当前 phase、焦点和剩余工作 |
+| `blocked` | 仍有未完成内容，但明确的外部依赖、Human 决定、授权、证据或能力缺口使当前不能继续 | `priority`、`blocking_summary`、对应自然语言说明必填，closure_approval 禁止；结果包字段是否出现由 phase 决定 |
+| `closed` | Human 已确认该 WorkCase 身份下不再继续推进，不等于成功、已提交或下游责任完成 | phase=closed；priority 与 blocking_summary 省略；result_version、controller_check_summary、result_reviews、closure_approval、validation_summary、closure_outcome、disposition_summary、对应自然语言说明必填；终态记录时间使用 `updated_at` |
 
 新建 WorkCase 必须已经取得 Human 对工作意图和建立项目记录的明确确认，并在该授权范围内完成计划形成、创建方案独立审核和主控对审核反馈的处置；初始 `phase` 固定为 `human_plan_confirming`，`execution_approval` 禁止出现。初始 `status` 可以是 `open` 或 `blocked`：正常等待对象建立后的计划执行批准不构成 blocked；只有另有具体、可证且使方案确认也无法继续的条件时才可 blocked。`closed` 不能作为普通新建初态。
 
@@ -452,7 +451,7 @@ WorkCase 顶层 `summary`、`resume_from` 和按需出现的 `waiting_on` 共同
 | `closure_preparing` | `independent_reviewing` | 主控判断实施结果发生了需要重新审核的实质变化 | 主控递增 result_version，不沿用旧版本 result_reviews/closure_approval，保留待审的当前报告并重新发起审核 |
 | `closure_preparing` | `human_closure_confirming` | 主控已形成完整验证报告、关闭分类、处置和承接建议，并主动判断当前结果足以提交 Human | 更新 summary/resume_from/waiting_on；closure_approval 禁止；Reviewer 或 Code 不得自动触发本边 |
 | `human_closure_confirming` | 任一非终态 phase | Human 退回，目标阶段由主控根据受影响范围决定 | 若改计划覆盖字段则按 plan_version 级联失效；结果或报告变化是否需要升版复审由主控判断；更新恢复快照 |
-| `human_closure_confirming` | `closed` | Human 明确批准当前 result_version，且全部终态条件成立 | 同一受控变更写 closure_approval、closed_at、status/phase=closed，并移除 resume_from/waiting_on |
+| `human_closure_confirming` | `closed` | Human 明确批准当前 result_version，且全部终态条件成立 | 同一受控变更写 closure_approval、status/phase=closed，并移除 resume_from/waiting_on；`updated_at` 记录终态变更时间 |
 
 `open ↔ blocked` 只改变责任状态，不改变 phase；解除阻塞通常先恢复 open 再继续阶段转换。`blocked → closed` 只允许在 Human 取消、替代或接受停止且仍完整经过结果分类、独立审核、分流和第二 Human Gate 的同一终止事务中发生，不得绕过阶段闭集。closed 不允许正常重开。
 

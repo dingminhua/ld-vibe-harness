@@ -75,7 +75,6 @@ export interface ObjectItem {
   hasClosureRequestedAt?: boolean;
   hasVerificationEvidence?: boolean;
   hasClosureEvidence?: boolean;
-  hasClosedAt?: boolean;
   archive_reason?: string;
   deprecated_reason?: string;
   discard_reason?: string;
@@ -104,7 +103,6 @@ export interface ObjectItem {
   created_at?: string;
   updated_at?: string;
   disposition_summary?: string;
-  closed_at?: string;
   relations?: Array<Record<string, unknown>>;
   /** Study-specific */
   research_intent?: string;
@@ -163,7 +161,6 @@ export interface RelatedWorkCaseSummary extends RelatedObjectSummary {
   hasClosureRequestedAt: boolean;
   hasVerificationEvidence?: boolean;
   hasClosureEvidence?: boolean;
-  hasClosedAt: boolean;
 }
 
 export interface ObjectDetail {

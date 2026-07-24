@@ -21,7 +21,7 @@ success_criteria:
 - closure_preparing 可在同一 result_version 下新增或完善验证总结、关闭分类、处置、关系与证据而不自动使已有 review
   失效；Controller 主动升版时，审核和批准只能绑定新版本。
 - human_closure_confirming 只有在 Controller 形成完整报告并主动转换后成立；Human closure_approval
-  必须绑定当前 result_version，并与 status/phase=closed 及 closed_at 在同一受控更新中写入。
+  必须绑定当前 result_version，并与 status/phase=closed 在同一受控更新中写入。
 - 直接单元测试和 Helper 更新测试覆盖四类审核结论、Controller 四类选择、审核记录来源与字段所有权、首次不得跳审、返回
   executing、显式升版、关闭报告不失效 review、完整报告门槛及 Human 原子关闭；聚焦验证与 full-v4 通过。
 - 除限定实现与测试文件和本 WorkCase 流程记录外不产生修改；workcase-0001、Spark、既有 Working Tree 修改与 Git
@@ -141,7 +141,6 @@ closure_approval:
   subject_version: 2
   approved_at: '2026-07-20T05:46:29+08:00'
   summary: Human 明确批准关闭 workcase-0002，接受当前结果、completed 分类和无残余责任处置。
-closed_at: '2026-07-20T05:46:29+08:00'
 object_id: workcase-0002
 fact_type_key: workcase
 created_at: '2026-07-20T04:33:43.299829+08:00'

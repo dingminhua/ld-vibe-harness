@@ -2,7 +2,6 @@
 title: Task Master AI 任务编排模型调研
 status: retired
 disposition_summary: 已按 v3 基线决定重新研究；本旧 v4 短报告不再作为当前研究入口，外部资料、发现与后续启发须在新 Study 中重新读取和表达。
-closed_at: '2026-07-23T18:21:16+08:00'
 research_question: Task Master AI 当前公开文档如何把 PRD、任务依赖、研究、标签/工作流与 MCP 工具组织成 AI
   任务管理？
 abstract: 调研 Task Master AI GitHub README 与官方文档入口。其公开模型以 PRD/需求解析生成任务、任务依赖与

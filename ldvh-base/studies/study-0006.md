@@ -2,7 +2,6 @@
 title: 代码智能索引与知识图谱实践调研
 status: retired
 disposition_summary: 已按 v3 基线决定重新研究；本旧 v4 短报告不再作为当前研究入口，外部资料、发现与后续启发须在新 Study 中重新读取和表达。
-closed_at: '2026-07-23T18:21:16+08:00'
 research_question: Codebase Memory MCP 等公开工具如何建立代码知识索引、提供 Agent 查询和团队共享，哪些限制对
   LDVH 有意义？
 abstract: 调研 DeusData/codebase-memory-mcp、Tree-sitter 公开资料。Codebase Memory MCP 以

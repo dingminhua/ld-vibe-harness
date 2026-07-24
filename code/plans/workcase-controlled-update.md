@@ -21,7 +21,7 @@
 
 ## 3. 请求与结果维护
 
-`update-workcase` 接收稳定 `fact_ref`、`expected_content_fingerprint`、顶层 `set`、`remove` 和闭集 `managed_records`。`set` 与 `remove` 只处理顶层整值，不做 JSON Patch 或嵌套 merge。Controller 必须显式给出 phase、status、plan/result version 及其它语义字段；Helper 只填统一时间、审核 basis/fingerprint、审批版本、固定 reset 和 `closed_at`。
+`update-workcase` 接收稳定 `fact_ref`、`expected_content_fingerprint`、顶层 `set`、`remove` 和闭集 `managed_records`。`set` 与 `remove` 只处理顶层整值，不做 JSON Patch 或嵌套 merge。Controller 必须显式给出 phase、status、plan/result version 及其它语义字段；Helper 只填统一时间、审核 basis/fingerprint、审批版本和固定 reset。
 
 托管动作只覆盖：计划审核整体替换、结果审核新增、结果审核 Controller 处置、执行批准和关闭批准。result review 的 `projection_key` 由调用方显式选择。审核新增与 Controller 处置不得同次形成。单次托管动作最多 16 项，receipt 只返回稳定引用、前后指纹、`event_at`、前后状态投影、变化字段和托管记录索引/指纹；完整对象另行读取。
 
@@ -33,7 +33,7 @@
 
 结构错误使用 `invalid_request`；完整 after、当前状态、CAS 或现有 transition 不接受使用 `rejected`；预期环境能力缺失且零写入使用 `unavailable`；未知实现异常或无法形成可信残留结论使用 `error`。诊断不得包含原始异常正文，只返回稳定 code、stage、资源角色、系统错误类别、零写入声明和恢复条件。
 
-`event_at` 在 service 边界只观察一次。确有变化时，它同时用于 `updated_at`、本次托管审核/批准时间、合法关闭的 `closed_at` 和当次 Working Tree observation；不能严格晚于当前 `updated_at` 时拒绝。`no_change` 不生成对象事件或写入。
+`event_at` 在 service 边界只观察一次。确有变化时，它同时用于 `updated_at`、本次托管审核/批准时间和当次 Working Tree observation；不能严格晚于当前 `updated_at` 时拒绝。`no_change` 不生成对象事件或写入。
 
 ## 5. Schema、序列化与响应档位
 

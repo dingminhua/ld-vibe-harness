@@ -146,21 +146,21 @@ def _validate_status(fact_type_key: str, fields: dict[str, Any], issues: list[Fa
     if fact_type_key == "spark":
         if status == "open":
             _require(fields, {"priority"}, issues)
-            _forbid(fields, {"disposition_summary", "closed_at"}, issues)
+            _forbid(fields, {"disposition_summary"}, issues)
         elif status == "routed":
             _require(fields, TERMINAL_COMMON, issues)
             _forbid(fields, {"priority"}, issues)
         else:  # discarded
-            _require(fields, {"disposition_summary", "closed_at"}, issues)
+            _require(fields, {"disposition_summary"}, issues)
             _forbid(fields, {"priority"}, issues)
     elif fact_type_key == "workcase":
-        terminal = {"validation_summary", "closure_outcome", "disposition_summary", "closed_at"}
+        terminal = {"validation_summary", "closure_outcome", "disposition_summary"}
         if status == "open":
             _require(fields, {"priority"}, issues)
-            _forbid(fields, {"blocking_summary", "closure_approval", "closed_at"}, issues)
+            _forbid(fields, {"blocking_summary", "closure_approval"}, issues)
         elif status == "blocked":
             _require(fields, {"priority", "blocking_summary"}, issues)
-            _forbid(fields, {"closure_approval", "closed_at"}, issues)
+            _forbid(fields, {"closure_approval"}, issues)
         else:
             _require(fields, terminal, issues)
             _forbid(fields, {"priority", "blocking_summary"}, issues)
@@ -174,12 +174,12 @@ def _validate_status(fact_type_key: str, fields: dict[str, Any], issues: list[Fa
     elif fact_type_key == "study":
         if status == "active":
             _require(fields, {"research_intent", "recommendation_summary"}, issues)
-            _forbid(fields, {"disposition_summary", "closed_at"}, issues)
+            _forbid(fields, {"disposition_summary"}, issues)
         else:
             _require(fields, TERMINAL_COMMON, issues)
     else:
         if status == "active":
-            _forbid(fields, {"disposition_summary", "closed_at"}, issues)
+            _forbid(fields, {"disposition_summary"}, issues)
         else:
             _require(fields, TERMINAL_COMMON, issues)
 
@@ -713,7 +713,6 @@ def _validate_workcase(fields: dict[str, Any], issues: list[FactIssue]) -> None:
                 "validation_summary",
                 "closure_outcome",
                 "disposition_summary",
-                "closed_at",
             },
             issues,
         )
@@ -725,16 +724,15 @@ def _validate_workcase(fields: dict[str, Any], issues: list[FactIssue]) -> None:
                 "validation_summary",
                 "closure_outcome",
                 "disposition_summary",
-                "closed_at",
             },
             issues,
         )
     if phase == "controller_checking":
-        _forbid(fields, {"closure_approval", "closed_at"}, issues)
+        _forbid(fields, {"closure_approval"}, issues)
     if phase == "independent_reviewing":
-        _forbid(fields, {"closure_approval", "closed_at"}, issues)
+        _forbid(fields, {"closure_approval"}, issues)
     if phase == "closure_preparing":
-        _forbid(fields, {"closure_approval", "closed_at"}, issues)
+        _forbid(fields, {"closure_approval"}, issues)
     if phase in {
         "executing",
         "controller_checking",
@@ -785,7 +783,7 @@ def _validate_workcase(fields: dict[str, Any], issues: list[FactIssue]) -> None:
     if phase in {"human_closure_confirming", "closed"}:
         _require(fields, {"validation_summary", "closure_outcome", "disposition_summary"}, issues)
     if phase == "human_closure_confirming":
-        _forbid(fields, {"closure_approval", "closed_at"}, issues)
+        _forbid(fields, {"closure_approval"}, issues)
     if phase == "closed":
         _require(fields, {"closure_approval"}, issues)
     plan_version = fields.get("plan_version")
@@ -821,11 +819,6 @@ def _validate_times(fact_type_key: str, fields: dict[str, Any], issues: list[Fac
     updated = _time(fields.get("updated_at"), "updated_at", issues) if "updated_at" in fields else None
     if created is not None and updated is not None and created > updated:
         issues.append(FactIssue("schema", "created_at 不得晚于 updated_at", "created_at"))
-    closed = _time(fields.get("closed_at"), "closed_at", issues) if "closed_at" in fields else None
-    if created is not None and closed is not None and created > closed:
-        issues.append(FactIssue("schema", "closed_at 不得早于 created_at", "closed_at"))
-    if updated is not None and closed is not None and closed > updated:
-        issues.append(FactIssue("schema", "closed_at 不得晚于 updated_at", "closed_at"))
     if fact_type_key == "spark" and isinstance(fields.get("evolution"), list):
         evolution = fields["evolution"]
         if len(evolution) > 8:

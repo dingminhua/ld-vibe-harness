@@ -343,7 +343,6 @@ closure_approval:
   approved_at: '2026-07-21T11:54:32.343937+08:00'
   summary: Human 明确批准关闭 workcase-0009，接受当前 result_version 1、completed
     分类、无未处置修复责任及已记录的范围边界。
-closed_at: '2026-07-21T11:54:32.343937+08:00'
 object_id: workcase-0009
 fact_type_key: workcase
 created_at: '2026-07-21T08:45:57.944290+08:00'

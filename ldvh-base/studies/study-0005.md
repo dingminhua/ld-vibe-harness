@@ -2,7 +2,6 @@
 title: 主流 Agent 过程输出与 Human 可观察性调研
 status: retired
 disposition_summary: 已按 v3 基线决定重新研究；本旧 v4 短报告不再作为当前研究入口，外部资料、发现与后续启发须在新 Study 中重新读取和表达。
-closed_at: '2026-07-23T18:21:16+08:00'
 research_question: OpenAI 的非交互/App Server/Structured Outputs/Tracing 公开能力如何支持
   Agent 过程的机器读取、人类观察和证据复核？
 abstract: 调研 OpenAI Codex 非交互与 App Server 文档、Structured Outputs 指南和 Agents

@@ -52,7 +52,6 @@ interface RelatedWorkCaseSummary extends RelatedObjectSummary {
   hasClosureRequestedAt: boolean
   hasVerificationEvidence?: boolean
   hasClosureEvidence?: boolean
-  hasClosedAt: boolean
 }
 
 interface StatusOption {
@@ -315,7 +314,6 @@ export async function buildWorkCaseSummaries(workcaseItems: ListedObject[]): Pro
       hasClosureRequestedAt: toStringValue(data.phase) === 'human_closure_confirming' || hasContent(data.closure_requested_at) || hasContent(data.review_requested_at),
       hasVerificationEvidence: hasContent(data.controller_check_summary) || hasContent(data.validation_summary),
       hasClosureEvidence: hasContent(data.validation_summary) || hasContent(data.closure_evidence),
-      hasClosedAt: hasContent(data.closed_at),
     }
   })
 }
@@ -341,7 +339,6 @@ async function enrichWorkCases(items: ListedObject[]): Promise<ListedObject[]> {
       hasClosureRequestedAt: summary.hasClosureRequestedAt,
       hasVerificationEvidence: summary.hasVerificationEvidence,
       hasClosureEvidence: summary.hasClosureEvidence,
-      hasClosedAt: summary.hasClosedAt,
       closure_evidence: toStringValue(item.disposition_summary) || toStringValue(item.validation_summary) || toStringValue(item.closure_evidence) || undefined,
       executionItemByStatus: countByStatus(summary.executionItems ?? []),
     }

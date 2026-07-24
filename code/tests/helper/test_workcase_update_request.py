@@ -55,7 +55,6 @@ SCHEMA = FactSchema(
             "result_reviews[].reviewer",
             "execution_approval.summary",
             "closure_approval.summary",
-            "closed_at",
         )
     ),
 )

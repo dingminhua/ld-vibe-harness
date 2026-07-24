@@ -1,0 +1,9 @@
+title: 治理范围解析结果的防误判交付
+status: open
+priority: P1
+summary: '已观察到：当调用方把项目 Git worktree 误作为显式 workspace_root 时，Helper 会按契约只检查该目录，并可返回 outcome: ok、config_status: missing、scope_status: scope_unknown。上层 AI 若只读取顶层 outcome 或把该局部 missing 概括为全局配置不存在，就可能错误建议创建配置，即使上级工作区已有有效配置。需要在不突破显式工作区边界、不擅自选择上级配置的前提下，明确区分“请求已完成”与“已形成可用管辖范围”，交付本次配置搜索边界和 missing 的直接原因，并防止 adapter 以当前项目目录默认填充 workspace_root。'
+intent: 厘清治理范围解析及其上层调用的防误判交付：保留 Human 对工作区根和配置位置的选择权，不让 Helper 自动越过显式边界；同时使局部配置缺失、有效管辖范围未形成和全局配置不存在这三件事不再被混同。后续应界定 Helper 响应、诊断字段、调用方默认行为和回归测试的最小改动。
+object_id: spark-0030
+fact_type_key: spark
+created_at: '2026-07-23T20:01:04.538394+08:00'
+updated_at: '2026-07-23T20:01:04.538394+08:00'

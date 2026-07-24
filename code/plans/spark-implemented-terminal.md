@@ -4,7 +4,7 @@
 
 为 Spark 增加专属终态 `implemented`：它只表示该 Spark 限定的信息需求已被规则或实现边界直接落实、且没有剩余事实责任对象；它不表示项目、规则、代码、Git 提交或下游工作已经完成。它不建立跨类型泛化“完成”状态，也不把 Spec、代码路径、Git 提交或 Web 页面伪装成事实关系目标。
 
-本纵切直接服务 `00` 的 V1、V3、V5、V6、V8，并服从 `00` §8.1 的 F0–F4 渐进式披露、§10 Human Gate 与 §11 Stop Conditions。`implemented` 的依据在 AI 准备处置或追溯时按需通过 F4 展开；不新增 Spark 事实字段、Spec 关联字段、关系类型或 Hook 自动判定。Spark 仅保留现有 `disposition_summary` 与 `closed_at` 作为终态记录。
+本纵切直接服务 `00` 的 V1、V3、V5、V6、V8，并服从 `00` §8.1 的 F0–F4 渐进式披露、§10 Human Gate 与 §11 Stop Conditions。`implemented` 的依据在 AI 准备处置或追溯时按需通过 F4 展开；不新增 Spark 事实字段、Spec 关联字段、关系类型或 Hook 自动判定。Spark 仅保留现有 `disposition_summary` 作为终态处置记录，最后一次有效记录时间使用 `updated_at`。
 
 初始范围包含 `spark-0026` 的历史终态更正。Human 已授权在规则、机械边界和验证条件均满足后直接实施该更正；该授权不放宽其它对象的创建、更新或状态推进条件。
 

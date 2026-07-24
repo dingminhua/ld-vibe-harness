@@ -16,7 +16,6 @@ evolution:
 - at: '2026-07-22T16:16:28+08:00'
   summary: 00 已移除泛化处理入口；随后发现并修正普通事实更新与 WorkCase 更新中三处 Windows file-only 耐久降级文案，使其与创建操作一致地说明未写入对象、缺少的锁/allocator/耐久/并发保障和 Human 具体风险决定。最终扫描确认 Specs 其余命中均为普通技术约束，Web degraded 仅保留历史读取兼容；原始信息需求已由当前稳定位置完整承接。
 disposition_summary: V3 取消泛化“降级”概念的要求已由 00、06、09、33、三类事实写入 Helper 操作及 Web 的历史输入兼容边界完整承接。其余 Specs 与附件命中均经分类确认不建立泛化状态或处理路径，因此本 Spark 不再保留待处置内容。
-closed_at: '2026-07-22T16:16:28+08:00'
 object_id: spark-0026
 fact_type_key: spark
 created_at: '2026-07-22T14:35:45+08:00'

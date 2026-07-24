@@ -358,7 +358,6 @@ def test_closure_approval_requires_explicit_atomic_closed_snapshot() -> None:
     )
     assert formed.problems == ()
     assert formed.supplied is not None
-    assert formed.supplied["closed_at"] == EVENT_AT
     assert formed.supplied["closure_approval"]["approved_at"] == EVENT_AT
     assert formed.receipts == (
         {"action": "closure_approval_recorded", "subject_version": 1},

@@ -8,7 +8,6 @@ export const META_KEYS = [
   'created_at',
   'updated',
   'updated_at',
-  'closed_at',
   'title',
   'title_en',
   'title_zh',
@@ -42,20 +41,20 @@ const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
   ],
   adr: [
     'decision_question', 'decision', 'applicability', 'rationale', 'consequences',
-    'urls', 'relations', 'disposition_summary', 'closed_at',
+    'urls', 'relations', 'disposition_summary',
   ],
   pitfall: [
     'symptoms', 'trigger_conditions', 'applicability', 'validation_summary', 'root_cause',
     'resolution', 'avoidance', 'urls', 'relations',
-    'disposition_summary', 'closed_at',
+    'disposition_summary',
   ],
   spark: [
     'summary', 'evolution', 'urls', 'relations',
-    'disposition_summary', 'closed_at',
+    'disposition_summary',
   ],
   study: [
     'research_intent', 'research_question', 'abstract', 'recommendation_summary', 'report_body',
-    'urls', 'disposition_summary', 'closed_at',
+    'urls', 'disposition_summary',
   ],
 };
 

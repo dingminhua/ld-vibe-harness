@@ -1,61 +1,69 @@
-title: 移除 supersedes 关系与 superseded 状态
+title: 移除事实对象 supersedes 关系与 superseded 状态
 status: open
-summary: 审查确认 supersedes 关系类型和 superseded 状态在 V4 中无实际使用价值，所有关系语义可被已有关系类型（related-to、routed-to、informs）和 disposition_summary 覆盖。本 WorkCase 负责从 specs、Code 校验和状态集中移除 supersedes。
-goal: 从 specs/20-24、contracts.py、relations.py 中移除 supersedes 关系类型定义和 superseded 状态，简化 ADR/Pitfall 状态集为 {active, retired}，释放约 60 行校验逻辑和 4 个状态的维护负担。
-scope: 覆盖 specs/20-Spark-火花.md、specs/21-WorkCase-工作项.md、specs/22-ADR-决策.md、specs/23-Pitfall-踩坑经验.md、code/ldvh/facts/contracts.py、code/ldvh/facts/relations.py 中与 supersedes 相关的全部定义和校验逻辑。排除修改 specs/00、修改其他关系类型、修改五类对象实例（当前零实例使用 supersedes）、修改 Web 或测试文件。
+summary: 校正后的 plan_version 2 已完成独立计划审核；已有提交和当前差异仅作为待审计历史输入，现等待 Human 批准执行来源核对、实现收束与范围匹配验证。
+resume_from: 向 Human 展示并请求批准 plan_version 2；获批后进入 executing，从 item-01 的只读来源与历史实现审计开始。
+waiting_on: Human 对 plan_version 2 的执行批准。
+priority: P1
+goal: 在不改变规范模型自身的 supersedes 关系和 WorkCase 审核历史结构的前提下，按 ADR-0001 的来源先行顺序，审计并收束已经发生的事实对象 supersedes 关系与 ADR/Pitfall superseded 状态清理，使当前 Specs、Code、Helper、Web、测试和机械覆盖目录一致，并形成可验证结果。
+scope: 覆盖事实模型及类型规则 specs/05、20、21、22、23、24，行动模板 specs/31、32，机械目录 specs/attachments/05.Att.02；核对 code/ldvh/facts/contracts.py、validation.py、transitions.py、relations.py 和事实创建、读取、候选、更新相关 Helper 路径；核对 Web 中当前事实生命周期的状态词汇、过滤和列表/详情展示，包括历史实际触及的 dashboard、workcaseStatus、ObjectStatusFilter、ObjectDetail、locales 及对应文档和测试，但不扩大到无关通用 UI 兼容。历史审计输入包括提交 f1645554c、7ba29c6d7、7d2dd25aa 以及当前 05.Att.02 测试引用修正；既有实现只有经 plan_version 2 重新审计后才能作为当前结果沿用。明确排除 Specs 规范模型自身的 supersedes（Specs 01 与 code/ldvh/specs/*）、WorkCase audit 的 superseded_plan/superseded_result、证明旧事实值会被拒绝的负向测试和“不得出现 superseded”的规范说明、当前工作树中 Pitfall 及其它 Spark/ADR/WorkCase 的无关变更、新增关系类型，以及把普通字符串零命中作为完成证明。
 workcase_profile: control-contract-v1
 success_criterion_definitions:
 - criterion_id: criterion-01
-  statement: specs/20-24 中所有对 supersedes 关系类型的定义、约束和引用被移除，不再作为当前事实类型的合法 relation_key。
+  statement: 当前事实对象规则不再定义 supersedes relation_key，也不再把 superseded 作为 ADR、Pitfall、WorkCase 等当前事实状态或关闭结果；规范模型关系、WorkCase audit 字段、负向测试和禁止性说明等不同语义域的合法名称仍被保留。
 - criterion_id: criterion-02
-  statement: ADR 和 Pitfall 的状态集从 {active, superseded, retired} 简化为 {active, retired}，所有状态转换规则相应更新，不保留 superseded 作为合法状态值。
+  statement: Code、Helper 和 Web 的当前事实生命周期行为与规则一致；旧事实输入被明确拒绝，Web 不把已移除状态作为当前事实筛选或展示选项，无关通用兼容不被误删。
 - criterion_id: criterion-03
-  statement: contracts.py 中所有类型的 relation_keys 不再包含 supersedes；relations.py 中 _incoming_supersedes、_valid_supersedes_source、_edge_time_valid 中与 supersedes 相关的逻辑被移除，主校验函数中不再有 supersedes 分支。
+  statement: 05.Att.02 指向真实存在且覆盖相应机械责任的测试；相关 Python Specs、facts、Helper 与 Web 合约测试通过，并据实记录未运行或未覆盖范围。
 - criterion_id: criterion-04
-  statement: 移除后，当前零实例使用 supersedes 的状态不受影响；替换语义通过 disposition_summary 或已有关系类型（related-to、routed-to、informs）表达，不新增其他关系类型。
-plan_version: 1
+  statement: 结果包逐项区分历史实现、plan_version 2 获批后的实际审计、保留或修正、无关 Working Tree 差异和未验证范围，不把历史提交或旧测试声明冒充本计划的执行结果。
+phase: human_plan_confirming
+plan_version: 2
 work_items:
 - item_id: item-01
-  goal: 修改 specs/20-Spark-火花.md，移除 supersedes 关系定义和状态引用。
-  expected_result: Spark 的 relation_keys 闭集不再包含 supersedes；正文中所有涉及 supersedes 的状态转换说明被移除或替换为等价表述（新 Spark 独立 open，不通过 supersedes 指向旧 Spark）。
-  status: completed
+  goal: 审计当前规则源、三个历史提交、当前 Working Tree 和 supersedes/superseded 的语义域边界。
+  expected_result: 形成可回指的规则、实现、测试和合法残留映射，明确历史修改、当前偏差、无关并行差异以及来源是否充分，不修改实现。
+  status: pending
+  approach_summary: 只读核对当前规则、f1645554c、7ba29c6d7、7d2dd25aa 和 Working Tree；区分事实生命周期、规范模型关系、WorkCase audit、负向证明与通用 UI 兼容，不用字符串零命中替代语义审计。
 - item_id: item-02
-  goal: 修改 specs/22-ADR-决策.md 和 specs/23-Pitfall-踩坑经验.md，移除 supersedes 关系和 superseded 状态。
-  expected_result: ADR 和 Pitfall 的状态集从 {active, superseded, retired} 简化为 {active, retired}；supersedes 关系定义被移除；正文中所有涉及 supersedes 和 superseded 的引用被更新或移除；终态转换规则只保留 active → retired。
-  status: completed
+  goal: 根据 item-01 的来源审计结论，收束事实生命周期相关来源和实现。
+  expected_result: 若存在规则或授权附件缺口，最小充分来源修正先完成独立复核；若来源已经充分，则保留其依据并直接核对实现。之后 Code、Helper、Web 和测试仅作范围内必要保留或最小修正。
+  status: pending
+  depends_on:
+  - item-01
+  approach_summary: 以 ADR-0001 为顺序约束；只有实际发现来源缺口时才先修改 Specs 并独立复核，来源充分时不制造规范变更。所有实现动作回指已确认规则并保护明确排除的合法名称和无关差异。
 - item_id: item-03
-  goal: 修改 specs/21-WorkCase-工作项.md，移除 supersedes 关系引用。
-  expected_result: WorkCase 的 relation_keys 闭集不再包含 supersedes；正文中所有涉及 supersedes 的引用被移除；closure_outcome superseded 相关逻辑被移除或替换。
-  status: completed
-- item_id: item-04
-  goal: 修改 code/ldvh/facts/contracts.py，从所有类型的 relation_keys 中移除 supersedes。
-  expected_result: 四个类型（spark、workcase、adr、pitfall）的 relation_keys 不再包含 supersedes；ADR 和 Pitfall 的 statuses 不再包含 superseded。
-  status: completed
-- item_id: item-05
-  goal: 修改 code/ldvh/facts/relations.py，移除所有与 supersedes 相关的校验逻辑。
-  expected_result: _incoming_supersedes、_valid_supersedes_source 函数被移除；_edge_time_valid 中 supersedes 分支被移除；主校验函数（validate_project_relations）中所有 supersedes 相关的条件分支、入边检查、时间顺序检查、环检测被移除；workcase_superseded_route 逻辑被移除。注意 findings audit-01/finding-01 和 finding-02 的处理要求。
-  status: completed
-- item_id: item-06
-  goal: 验证修改后 specs 结构检查和 Code 测试通过。
-  expected_result: specs 结构检查零问题；relations.py 相关测试通过；无 supersedes 残留引用。
-  status: completed
-execution_approval:
-  subject_version: 1
-  approved_at: '2026-07-24T09:46:14.094720+08:00'
-  summary: Human 已明确批准 workcase-0012 的 plan_version 1，授权开始执行。
-  source_refs:
-  - kind: human
-    locator: conversation:user-approved-workcase-0012-plan-v1
-result_version: 0
-controller_check_summary: null
-success_criterion_results: []
-result_reviews: []
-validation_summary: null
-closure_outcome: null
-disposition_summary: null
-closure_approval: null
-closed_at: null
+  goal: 运行范围匹配验证、回读实际差异并形成当前结果包。
+  expected_result: Specs、Python facts/Helper、Web 合约和机械目录引用得到范围匹配验证；成功标准逐项形成结果，历史输入、本计划实际执行和未验证范围可区分。
+  status: pending
+  depends_on:
+  - item-02
+  approach_summary: 运行真实测试入口并核对 05.Att.02 引用目标；回读实际 Working Tree，披露未运行、不可用和范围外内容，不以 grep 零命中、历史提交说明或旧测试结果代替当前验证。
+audit_summary:
+- audit_id: audit-01
+  subject_kind: pre_creation_plan
+  subject_version: 2
+  review_count: 3
+  summary: 独立审核用三轮收束校正计划：首轮补齐来源先行、实际历史范围、合法残留排除和可观察成功标准；第二轮将来源处理改为条件分支，避免预设必须修改 Specs；第三轮确认当前 plan_version 2 可提交 Human 执行批准。
+  findings:
+  - finding_id: finding-01
+    topic: 来源先行条件分支与 supersedes/superseded 多语义域边界
+    controller_disposition: corrected
+    resolution_summary: 计划已把 item-01 设为只读来源审计，并让 item-02 仅在确认规则缺口时先修正和独立复核来源；同时明确保留规范模型关系、WorkCase audit、负向测试和无关通用兼容。
+    rereview_outcome: performed
+    final_route: current_plan
+creation_reviews:
+- reviewer: codex-agent:/root/workcase_0012_independent_review
+  reviewed_at: '2026-07-24T21:43:17+08:00'
+  subject_version: 2
+  scope: 目标、实际历史输入、来源先行条件分支、事实生命周期范围、合法残留排除、四项成功标准、三个工作项及依赖、验证边界和恢复 Human Gate。
+  conclusion: pass
+  feedback:
+  - plan_version 2 已明确以 item-01 的来源审计结论决定后续路径：存在规则缺口时先完成最小充分来源修正及独立复核，来源已经充分时不制造规范变更；其目标、实际历史输入、事实生命周期范围、合法残留排除、成功标准、工作项依赖和 Human Gate 恢复状态完整一致，可以提交 Human 执行批准。
+  review_basis:
+    projection_key: plan_current
+    subject_fingerprint: df20c51db6ede8361aefaef24751bd754b50657e67eb27932c43100b690c9f75
+  controller_resolution: 接受并已落实三轮独立审核反馈：补齐实际历史范围与合法残留排除，以 item-01 先形成来源审计；item-02 仅在确认规则缺口时先修正规则并独立复核，来源充分时不制造 Specs 变更。当前计划据此提交 Human 执行批准。
 object_id: workcase-0012
 fact_type_key: workcase
 created_at: '2026-07-24T09:46:14.094720+08:00'
-updated_at: '2026-07-24T09:46:14.094720+08:00'
+updated_at: '2026-07-24T21:44:56+08:00'

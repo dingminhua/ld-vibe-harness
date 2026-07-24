@@ -100,7 +100,6 @@ AI 负责判断研究是否完成、来源是否充分、推断是否越界、�
 | `urls` | required | `study-fact-type::7. 外部网址、研究边界、关系与时效` |
 | `relations` | conditional | `study-fact-type::7. 外部网址、研究边界、关系与时效` |
 | `disposition-summary` | conditional | `study-fact-type::6. 对象语义与生命周期` |
-| `closed-at` | conditional | `study-fact-type::6. 对象语义与生命周期` |
 | `study-research-question` | required | `inherit` |
 | `study-abstract` | required | `inherit` |
 | `study-research-intent` | conditional | `study-fact-type::5. Study 类型定义` |
@@ -155,7 +154,7 @@ Study 只记录完成的一轮外部内容调研。搜索、阅读、实验或�
 | status | 语义 | 必须成立 |
 |---|---|---|
 | `active` | 报告在明示版本、观察时点、适用与限制内仍可作为当前研究入口 | 只能作为新建初态；终态字段禁止；全部核心字段、正文和证据成立；不证明外部事实仍当前 |
-| `retired` | 报告不再作为当前研究入口，包括已被重新研究、资料失效、范围不再相关或不再值得复读 | disposition_summary、closed_at 必填；必须说明退出依据；不要求或建立替代关系 |
+| `retired` | 报告不再作为当前研究入口，包括已被重新研究、资料失效、范围不再相关或不再值得复读 | disposition_summary 必填；必须说明退出依据；终态更新以 `updated_at` 记录；不要求或建立替代关系 |
 
 初始状态只能是 active。正常转换只有 `active → retired`；终态不直接重开。错字、来源定位修正、同问题同边界的资料补充或不改变主要发现的时效复核可以原地更正；研究问题、核心方法或主要发现实质变化时建立新的 Study。新研究可以在正文或后续分流中参考旧研究，但不以 `supersedes` 建立对象关系。被规范、ADR、WorkCase、Pitfall、Spark 或普通文档吸收不会自动使 Study 终态。
 

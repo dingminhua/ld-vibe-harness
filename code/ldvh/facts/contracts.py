@@ -87,6 +87,6 @@ LAYOUTS = {
 }
 
 
-TERMINAL_COMMON = frozenset({"disposition_summary", "closed_at"})
+TERMINAL_COMMON = frozenset({"disposition_summary"})
 
 __all__ = ["LAYOUTS", "TERMINAL_COMMON", "FactTypeLayout"]

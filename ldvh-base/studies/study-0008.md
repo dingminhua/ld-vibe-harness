@@ -2,7 +2,6 @@
 title: Firecrawl 外部网页证据获取能力调研
 status: retired
 disposition_summary: 已按 v3 基线决定重新研究；本旧 v4 短报告不再作为当前研究入口，外部资料、发现与后续启发须在新 Study 中重新读取和表达。
-closed_at: '2026-07-23T18:21:16+08:00'
 research_question: Firecrawl 当前 API 如何提供 Search、Scrape、Crawl、Map、Extract
   等网页证据获取能力，其可靠性、隐私与许可边界是什么？
 abstract: 调研 Firecrawl v2 API 文档与官方仓库。API 将网页搜索、单页抓取、整站 Crawl、URL Map 和自然语言

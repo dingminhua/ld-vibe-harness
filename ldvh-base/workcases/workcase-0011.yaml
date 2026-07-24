@@ -1,8 +1,6 @@
 title: 事实候选正向一跳关联导航
-status: open
-summary: 独立结果审核已通过，Controller 已接受其对来源失败归因、边分页和范围边界的复核；实现结果已就绪，尚未准备关闭报告。
-resume_from: 若要关闭 WorkCase，进入 closure_preparing，形成验证总结、结果分类和处置后再提交第二次 Human Gate。
-priority: P2
+status: closed
+summary: WorkCase 已获 Human 对 result_version 1 的关闭批准并完成关闭；原范围内无残余责任或分流对象，相关能力按限定边界交付。
 goal: 在不让 Helper、Code 或环境入口裁决语义相关性、规则适用、授权或完成的前提下，扩展既有 find-fact-object-candidates，使 AI 能从已知事实稳定种子取得来源定义的一跳正向关系、可继续精确读取的 F2 候选以及可识别的未解析范围。
 scope: 仅覆盖 05 中既有 find-fact-object-candidates 的 F2 契约、实现与测试：新增事实源稳定引用和可选关系键的确定性筛选，交付边级来源、目标身份、候选卡、继续读取入口、分页、coverage、cursor 与 gaps。严格排除新增 operation_key、修改 00/01/04/09/20–24、规则种子、跨要素边、语义相似或排序、自动多跳、自动 F3、环境自动调用、写回和持久知识图。实现前必须记录并保护 specs/05-事实模型基础规范.md、fact_candidate_request.py、fact_candidate_operation.py、test_fact_candidate_operation.py 的既有未提交 Study/invalid 修复差异；方案 C 只能在该基线上非覆盖合并。
 workcase_profile: control-contract-v1
@@ -15,7 +13,7 @@ success_criterion_definitions:
   statement: 目标缺失、invalid、unavailable、被类型/状态/关系键过滤、预算或分页未展开的关系边均可回指源、relation_key、目标与原因，不会从结果中静默消失；cursor 与种子、过滤、worktree 和对象集连续性绑定。
 - criterion_id: criterion-04
   statement: 实现和 contract tests 覆盖字段闭集、跨项目/重复/非法源引用、非法关系键、正反向过滤共存、终态、源或目标不可读、过滤可观察性、分页与 cursor 失效、多边同目标、自指/环一跳呈现，以及无语义评分、无自动递归；相关测试和规范回读通过。
-phase: controller_checking
+phase: closed
 plan_version: 1
 work_items:
 - item_id: item-01
@@ -99,7 +97,17 @@ result_reviews:
     projection_key: result_implementation
     subject_fingerprint: 9edef9883d273f029c0eaef8b7e06d42a7af1011abba41630ad7f17805752118
   controller_resolution: 1. 接受。两轮独立复核提出的来源自身失败归因、多条目标失败和后续边页泄露问题均已以契约、实现和反例测试修正；未发现需重开执行或再次审核的剩余问题。
+validation_summary: 四项成功标准均有当前结果支持：05 已定义一跳关系来源、边级分页和范围披露；Helper 仅沿显式直接关系返回 F2 目标；失败、过滤和分页范围可观察；相关契约测试、规范结构检查、实际 CLI 调用和独立结果审核均已通过。全仓全量回归未执行，原因是工作区存在本 WorkCase 范围外的并行未提交改动；本报告不将其表述为已验证。
+closure_outcome: completed
+disposition_summary: 本 WorkCase 原范围内不存在未满足、未验证或需移交的残余责任：能力已在既有候选发现操作中按限定边界实现并经相关验证和独立审核。未执行全仓全量回归是范围外验证限制，不构成原成功标准残余或新的承接责任。
+closure_approval:
+  subject_version: 1
+  approved_at: '2026-07-24T08:59:17.136905+08:00'
+  summary: Human 已明确批准关闭 workcase-0011 的 result_version 1；批准范围包括当前验证总结、completed 关闭分类和无残余分流处置。
+  source_refs:
+  - kind: human
+    locator: conversation:user-approved-workcase-0011-result-v1-closure
 object_id: workcase-0011
 fact_type_key: workcase
 created_at: '2026-07-23T21:14:32.785735+08:00'
-updated_at: '2026-07-24T00:12:20.171848+08:00'
+updated_at: '2026-07-24T08:59:17.136905+08:00'

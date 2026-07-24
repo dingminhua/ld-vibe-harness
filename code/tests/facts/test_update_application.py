@@ -141,7 +141,6 @@ def test_open_spark_can_enter_implemented_without_a_routed_to_target(
             "disposition_summary": (
                 "The bounded Spark content was directly implemented with no residual fact responsibility."
             ),
-            "closed_at": command.event_at,
         }
     )
     supplied.pop("priority")
@@ -179,7 +178,6 @@ updated_at: 2026-07-20T10:00:00+08:00
 status: routed
 summary: Before update
 disposition_summary: Incorrectly recorded as routed without a fact target.
-closed_at: 2026-07-20T10:00:00+08:00
 """,
         encoding="utf-8",
     )
@@ -193,7 +191,6 @@ closed_at: 2026-07-20T10:00:00+08:00
             "disposition_summary": (
                 "The bounded Spark content was directly implemented with no residual fact responsibility."
             ),
-            "closed_at": command.event_at,
         }
     )
 

@@ -338,7 +338,6 @@ def construct_workcase_update(
             "approved_at": event_at,
             **dict(closure_input),
         }
-        after["closed_at"] = event_at
         receipts.append(_receipt("closure_approval_recorded", result_version))
 
     supplied = {

@@ -219,7 +219,6 @@ export default function ObjectDetail() {
                 locale={locale}
                 created={formatDateTime((obj.created_at ?? obj.created) as string | undefined)}
                 updated={formatDateTime((obj.updated_at ?? obj.updated) as string | undefined)}
-                closedAt={objType === 'spark' || !obj.closed_at ? undefined : formatDateTime(obj.closed_at as string)}
                 auxiliaryMetaEntries={auxiliaryMetaEntries}
                 copyLabel={t('common.copyObjectPath')}
                 copiedLabel={t('common.copiedObjectPath')}
@@ -398,7 +397,6 @@ export function ObjectIdentityHeader({
   locale,
   created,
   updated,
-  closedAt,
   auxiliaryMetaEntries = [],
   extraBadges,
   titleMetaEntries = [],
@@ -422,7 +420,6 @@ export function ObjectIdentityHeader({
   locale: string;
   created: string;
   updated: string;
-  closedAt?: string;
   auxiliaryMetaEntries?: Array<[string, unknown]>;
   extraBadges?: ReactNode;
   titleMetaEntries?: Array<{ label: string; value: ReactNode }>;
@@ -443,8 +440,7 @@ export function ObjectIdentityHeader({
   const remainingAuxiliaryMetaEntries = auxiliaryMetaEntries.filter(([key]) => key !== 'priority' && key !== 'tags');
   const hasFooterMeta = showDefaultDates
     || remainingAuxiliaryMetaEntries.length > 0
-    || customMetaEntries.length > 0
-    || Boolean(closedAt);
+    || customMetaEntries.length > 0;
   const inlineTitleMeta = titleMetaAlign === 'content' ? titleMetaEntries : [];
   const actionAlignedTitleMeta = titleMetaAlign === 'actions' ? titleMetaEntries : [];
   const footerEndTitleMeta = titleMetaAlign === 'footerEnd' ? titleMetaEntries : [];
@@ -529,7 +525,6 @@ export function ObjectIdentityHeader({
           {customMetaEntries.map((entry) => (
             <HeaderDateMeta key={entry.label} label={entry.label} value={entry.value} />
           ))}
-          {closedAt && <HeaderDateMeta label={t('objectDetail.closedAt')} value={closedAt} />}
         </div>
       )}
       {footerEndTitleMeta.length > 0 && (

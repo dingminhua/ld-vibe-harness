@@ -15,10 +15,11 @@ class _CurrentProjectIndex:
     governed_project_id = "current-project"
 
 
-def test_spark_routed_to_rejects_study_but_accepts_other_stable_fact_types() -> None:
+def test_spark_routed_to_rejects_study_but_accepts_other_stable_fact_types_across_target_lifecycle_states() -> None:
     assert not _target_condition("spark", "routed-to", "study", "active")
     assert not _target_condition("spark", "routed-to", "spark", "open")
     assert _target_condition("spark", "routed-to", "workcase", "open")
+    assert _target_condition("spark", "routed-to", "workcase", "closed")
 
 
 def test_spark_routed_to_requires_a_nonempty_current_target_title() -> None:

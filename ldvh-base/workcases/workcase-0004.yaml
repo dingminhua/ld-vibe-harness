@@ -327,7 +327,6 @@ closure_approval:
   approved_at: '2026-07-21T01:36:05.299456+08:00'
   summary: Human 明确同意按建议推进，批准 workcase-0004 result_version 2 的完整结果、关闭报告与
     completed 关闭分类。
-closed_at: '2026-07-21T01:36:05.299456+08:00'
 object_id: workcase-0004
 fact_type_key: workcase
 created_at: '2026-07-20T08:06:53.865799+08:00'

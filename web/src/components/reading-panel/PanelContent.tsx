@@ -155,7 +155,6 @@ function ObjectPreview({ content }: { content: PanelContent }) {
         locale={locale}
         created={formatDateTime((obj?.created_at ?? obj?.created) as string | undefined)}
         updated={formatDateTime((obj?.updated_at ?? obj?.updated) as string | undefined)}
-        closedAt={objectType === 'spark' || !obj?.closed_at ? undefined : formatDateTime(obj.closed_at as string)}
         auxiliaryMetaEntries={obj ? getAuxiliaryMetaEntries(obj, objectType || '') : []}
         copyLabel={t('common.copyObjectPath')}
         copiedLabel={t('common.copiedObjectPath')}
