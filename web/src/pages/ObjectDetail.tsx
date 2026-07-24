@@ -1258,7 +1258,7 @@ const STUDY_READING_NODES: Array<{ field: string; kind: 'text' | 'report' }> = [
   { field: 'research_intent', kind: 'text' },
   { field: 'abstract', kind: 'text' },
   { field: 'recommendation_summary', kind: 'text' },
-  { field: 'report_body', kind: 'report' },
+  { field: 'report_body', kind: 'text' },
 ];
 
 export function StudyReadingLayout({
