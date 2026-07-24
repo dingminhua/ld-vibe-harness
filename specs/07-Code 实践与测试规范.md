@@ -19,7 +19,7 @@ ldvh_spec:
     - "working-tree-test-evidence-fields"
 ```
 
-> 文件状态：`active`。本文授权 `working-tree-test-evidence-fields` 附件承载 full-v4 将测试结果绑定到实际 Git Working Tree 内容时使用的唯一证据 DTO 字段、覆盖政策、指纹和比较规则。本文生效本身不证明任何 V4 Code、tests、Helper 实现、runner、环境接入或自动化能力可用或通过验证。
+> 文件状态：`active`。本文授权 `working-tree-test-evidence-fields` 附件承载 full-v4 将测试结果绑定到实际 Git Working Tree 内容时使用的唯一证据 DTO 字段、覆盖政策、指纹和比较规则。本文生效本身不证明任何当前 Code、tests、Helper 实现、runner、环境接入或自动化能力可用或通过验证。
 
 ## 1. 价值判断
 
