@@ -112,7 +112,7 @@ AI 负责判断决定是否已实际成立、是否值得对象化、是否重�
 | field_key | field_path | JSON type | meaning | not_meaning | constraints |
 |---|---|---|---|---|---|
 | `adr-decision-question` | `decision_question` | string | ADR 所回答的单一长期选择问题 | 不表示当前摘要、工作目标、研究问题列表或标题 | 必填非空；必须能独立替代或退出；多个独立问题必须拆分 |
-| `adr-decision` | `decision` | string | 在可回指来源与授权范围内已经实际选择的方向 | 不表示提案、规则正文、实施计划、完成状态或对未来行为的自行授权 | 必填非空；实质改变时建立新 ADR 并按 supersedes 处置，原记录只做事实更正 |
+| `adr-decision` | `decision` | string | 在可回指来源与授权范围内已经实际选择的方向 | 不表示提案、规则正文、实施计划、完成状态或对未来行为的自行授权 | 必填非空；实质改变时建立新 ADR，原记录只做事实更正 |
 | `adr-rationale` | `rationale` | string | 选择理由、关键取舍以及未选择主要方向的原因 | 不表示来源全文、证据列表、传统 alternatives 结构或事后合理化 | 必填非空；只保留理解决定所需取舍；事实依据进入 refs |
 | `adr-consequences` | `consequences` | string | 作出决定时接受的正负后果、限制、风险和后续义务 | 不表示规范条款、实施 todo、验证结果、完成声明或终态处置 | 必填非空；未知后果必须如实标明，不为满足模板补造固定段落 |
 | `adr-decided-at` | `decided_at` | string | 决定在所述来源与授权范围内实际成立的时间 | 不表示 ADR 对象创建、最近更新、实现或规则生效时间 | 必填；带时区 RFC 3339 date-time；`decided_at <= created_at <= updated_at`，补录历史决定不得用创建时间冒充 |
@@ -121,7 +121,7 @@ AI 负责判断决定是否已实际成立、是否值得对象化、是否重�
 
 ADR 对象使用 UTF-8 YAML，一文件一对象，当前权威位置固定为管辖项目仓库中的 `ldvh-base/adrs/<object_id>.yaml`。`object_id` 必须匹配 `adr-[0-9]{4,}`；文件名必须与 `object_id` 完全一致，分配后的身份不得因标题、路径、状态或内容改变。`title` 只简短识别决定主题，不复制 `decision_question` 或 `decision`。未知或不适用的条件字段必须省略，不使用 `null`、空字符串、空数组、占位时间、默认状态或默认关系。
 
-完整 Schema 由统一登记的 `fact-object` 直接字段、本节绑定、跨类型共享定义和类型专属字段定义组合。ADR 不得出现 current summary、priority、evolution、WorkCase 字段、`alternatives` 结构、`affects`、`superseded_by`、`archive_reason`、`deprecated_reason`、implementation/absorption status、revision history、按目标类型拆分的关系或其它未登记内容。
+完整 Schema 由统一登记的 `fact-object` 直接字段、本节绑定、跨类型共享定义和类型专属字段定义组合。ADR 不得出现 current summary、priority、evolution、WorkCase 字段、`alternatives` 结构、`affects`、`archive_reason`、`deprecated_reason`、implementation/absorption status、revision history、按目标类型拆分的关系或其它未登记内容。
 
 ## 6. 对象语义与生命周期
 
@@ -132,10 +132,9 @@ ADR 只记录已经成立的决定。选项仍在收集、方向仍在比较或�
 | status | 语义 | 必须成立 |
 |---|---|---|
 | `active` | 决定在其声明适用范围内仍是当前选择 | 只能作为新建初态；终态字段禁止；决定来源与授权证据持续可回指；不表示规则权威或实现状态 |
-| `superseded` | 原决定已经被一个后来成立的 ADR 整体替代 | disposition_summary、closed_at、自然语言验证说明 必填；旧对象必须成为一个在关系建立时为 active 的新 ADR 的有效 supersedes 目标；替代源后来进入终态不使既有边失效 |
-| `retired` | 原决定因适用条件消失、方向撤回或不再需要而退出当前选择，且没有被新 ADR 整体替代 | disposition_summary、closed_at、自然语言验证说明 必填；必须有具体退出依据，不得用低优先级或已实现冒充退出 |
+| `retired` | 原决定因适用条件消失、方向撤回、不再需要或已被新 ADR 的决定范围覆盖而退出当前选择 | disposition_summary、closed_at、自然语言验证说明 必填；必须有具体退出依据；被新 ADR 覆盖时在 disposition_summary 中说明替代关系，不建立独立关系边 |
 
-初始状态只能是 `active`。正常转换只有 `active → superseded` 和 `active → retired`；终态不直接重开。六个 ADR 专属字段发生实质改变时建立新 ADR；只有来源充分且不改变原决定语义的事实更正可以原地修正，不把语义改写伪装成生命周期变化。
+初始状态只能是 `active`。正常转换只有 `active → retired`；终态不直接重开。六个 ADR 专属字段发生实质改变时建立新 ADR；只有来源充分且不改变原决定语义的事实更正可以原地修正，不把语义改写伪装成生命周期变化。
 
 规范、Code 或其它正式来源吸收决定不会使 ADR 自动终态。ADR 即使 active 也只是当前决定记录，实际规则与行为始终来自相应正式来源；吸收位置和实现结果按实际作用进入 自然语言验证说明。不得用单一 `archived` 状态混合“已经被吸收”和“不再是当前决定”两种含义。
 
@@ -145,13 +144,7 @@ ADR 只记录已经成立的决定。选项仍在收集、方向仍在比较或�
 
 ADR 来自 Spark 或 WorkCase 时可以把源对象作为 source_ref；Spark 的 routed-to 已表达分流，ADR 不复制反向关系。实施决定的 WorkCase 可以把 ADR 作为 source_ref；ADR 不维护双写 related_workcases。规范、Code、commit、文档或外部页面不是事实对象，分别进入 对象自有语义字段 或 自然语言验证说明。
 
-ADR `relation_key` 第一版只允许 `supersedes`：
-
-| source condition | target condition | cardinality | reverse authority | missing and cycle boundary |
-|---|---|---|---|---|
-| 关系建立时新 ADR 必须为 active；关系与旧 ADR 状态转换在同一获准变更中成立，建立后可以随 source 后续进入终态而永久保留 | 目标是可恢复的 superseded ADR，且关系建立前为 active；只允许同一管辖项目的 `adr` | 每个旧 ADR 全生命周期最多一个直接 supersedes source，既有关系不因 source 状态变化而释放基数；一个新 ADR 只有在多个旧决定不可分割合并时才可指向多个不同目标 | `superseded-by` 只由 Code 派生，不写回；旧 ADR 不复制新对象引用 | 目标缺失、非 superseded、类型或项目不符、自指时无效；必须满足 `target.decided_at <= source.decided_at <= target.closed_at`；全部保留的 supersedes 边必须组成 DAG |
-
-如果新决定只替代旧决定的一部分，不能把旧对象整体标为 superseded；应拆分新决定或让旧决定保持 active，并修正适用边界所需的正式来源。关系存在不单独证明替代成立，必须与两个对象、来源、证据、适用范围和同一变更一致。
+ADR 不定义 relation_key。新旧 ADR 之间的替代或覆盖关系通过 `disposition_summary` 表达，不建立独立关系边。如果新决定只替代旧决定的一部分，应拆分新决定或让旧决定保持 active，并修正适用边界所需的正式来源。
 
 ### 主动召回与消费时机
 
@@ -159,13 +152,13 @@ ADR `relation_key` 第一版只允许 `supersedes`：
 
 决策卡可以分页，但必须披露全部 `active` 数量、已读数量、未读范围、指纹和后续 cursor。coverage 未完整时，不得声称已恢复全部当前决策约束，也不得在可能受未读 ADR 影响的高影响行动前宣称 ADR 检查完成。AI 审阅全部决策卡后，对当前对象、环境或选择问题可能适用的 ADR 展开 F3；准备作出、重议或改变长期选择，以及影响架构边界、数据模型、稳定接口或运行约束前，必须重新完成这一筛选与全文核对。
 
-`superseded` 与 `retired` ADR 不作为当前决定默认约束；只在精确引用、决定或授权追溯、检查替代链，或判断新选择是事实更正、整体替代还是独立决定时展开。AI 消费 `active` ADR 时必须同时核对 decision question、decision、applicability、rationale、consequences、来源与证据；召回 ADR 不代表它取代正式规范，也不授权当次实施或改变决定。
+`retired` ADR 不作为当前决定默认约束；只在精确引用、决定或授权追溯、检查替代链，或判断新选择是事实更正、整体替代还是独立决定时展开。AI 消费 `active` ADR 时必须同时核对 decision question、decision、applicability、rationale、consequences、来源与证据；召回 ADR 不代表它取代正式规范，也不授权当次实施或改变决定。
 
 ## 8. 变更、删除与类型退出
 
-创建前必须召回相邻 ADR、适用规范、Spark、WorkCase 和稳定来源，先判断不对象化、更新事实更正、拆分或建立新身份。ADR 创建后，decision_question、decision、applicability、rationale、consequences 和 decided_at 六个专属字段除有来源的事实更正外均不得原地实质改变；任何语义变化都必须建立新 ADR，并在整体替代成立时走 supersedes。文字澄清只有不改变原决定语义且有来源时才作为事实更正。
+创建前必须召回相邻 ADR、适用规范、Spark、WorkCase 和稳定来源，先判断不对象化、更新事实更正、拆分或建立新身份。ADR 创建后，decision_question、decision、applicability、rationale、consequences 和 decided_at 六个专属字段除有来源的事实更正外均不得原地实质改变；任何语义变化都必须建立新 ADR。文字澄清只有不改变原决定语义且有来源时才作为事实更正。
 
-active、superseded 和 retired 文件均默认保留在当前载体中供来源、理由和关系回读；本文不建立 archived 状态或归档位置。删除只有在适用来源允许、全部引用和仍适用事实已处置且不会丢失决定历史时才成立，不能用删除代替终态。
+active 和 retired 文件均默认保留在当前载体中供来源、理由和关系回读；本文不建立 archived 状态或归档位置。删除只有在适用来源允许、全部引用和仍适用事实已处置且不会丢失决定历史时才成立，不能用删除代替终态。
 
 ADR 类型停止新增、合并、替代或取消时，必须按 05 处置唯一定义来源、全部现有对象、引用消费者和仍适用决定；全部 active 决定还必须获得明确稳定承接，不得只删除类型规范或隐藏对象目录。
 
@@ -178,14 +171,14 @@ ADR 类型停止新增、合并、替代或取消时，必须按 05 处置唯一
 | ADR 召回与消费 | 会话开始/恢复/压缩恢复，或作出、重议、改变长期选择与高影响行动前 | 全部 `active` ADR 权威 F1 决策卡 coverage 完整；可能适用者已展开回读；终态只作追溯或替代链候选；卡片/全文未被冒充为规范权威或实施授权 | 管辖与 worktree 结果、全部 `active` 卡片、coverage/cursor、当前选择问题、已展开 ADR、来源、证据与替代关系 | 完整卡片分页回读、范围走查、完整对象回读与 AI applicability 核对 | 当次已读卡片范围、选择问题与已展开决定 | 不声称 ADR 基础上下文完整或将受影响 ADR 作为当次约束；继续分页、补读来源、缩小范围或交还冲突 |
 | 对象 Schema 与身份 | 创建、读取或更新对象时 | 路径、身份、字段闭集、类型、条件、时间和引用符合当前来源 | 当前文件、统一登记、本文与派生 Schema | 实际 parser/validator；未实现时逐项来源回读 | 当次对象当前 Working Tree 内容 | 不作为有效 ADR 消费；报告字段和未验证范围 |
 | 决定与适用边界 | 创建或消费 active ADR 时 | 决定确已成立，授权、适用和排除范围有来源支持，未与当前规范或其它 active ADR 冲突 | 对象自有语义字段、自然语言验证说明、当前规范、相邻 ADR 与 Human 决定 | AI 语义审核、来源与规范回读 | 当次决定及声明范围 | 不创建或暂停当前决定消费；缩小范围、补依据或进入 Human Gate |
-| 替代或退出 | 准备 superseded 或 retired 时 | 新决定或退出依据成立，两个对象、关系、证据、适用边界和时间一致 | 新旧 ADR、来源、证据、当前规范与 Human 决定 | AI 语义审核、目标回读和结构校验 | 当次终态与替代声明 | 保持 active；修正替代范围、补证据或进入 Human Gate |
+| 退出 | 准备 retired 时 | 退出依据成立，证据、适用边界和时间一致 | 当前 ADR、来源、证据与 Human 决定 | AI 语义审核和结构校验 | 当次终态声明 | 保持 active；补证据或进入 Human Gate |
 | 变更与回读 | 创建、更正、替代、退出、拆分、合并或删除后 | 获准变更已写入、回读并验证；失败和部分结果如实保留 | Human 指令、文件差异、Working Tree 回读和验证结果 | 实际写入入口与当前文件回读 | 当次实际变更 | 不声明成功；修正、回滚或保留部分结果与残余风险 |
 
 AI 必须审核决定是否实际成立、是否值得对象化、对象粒度、来源授权、适用边界、理由、后果、与当前规范及 active ADR 的冲突、替代完整性和退出依据。当前字段定义只能在已实现范围内验证结构与语义边界，不能把缺少实际消费证据宣称为已验证的样本消费。
 
-Code 的共同机械边界按 05 §§10–11 执行；对 ADR，只可额外检查本文明确给出的状态条件、跨对象时间顺序、全生命周期单一直接替代源和 supersedes DAG。决定是否值得记录、Human 决定权、理由、适用范围、后果及自然语言冲突仍由 AI 依据当前来源审核。
+Code 的共同机械边界按 05 §§10–11 执行；对 ADR，只可额外检查本文明确给出的状态条件、跨对象时间顺序。决定是否值得记录、Human 决定权、理由、适用范围、后果及自然语言冲突仍由 AI 依据当前来源审核。
 
-最低验证样例必须覆盖：active、superseded、retired；每个状态缺少条件字段或带禁止字段；decided_at 的对象内与 `target.decided_at <= source.decided_at <= target.closed_at` 跨对象边界；决定来源与授权缺失；未决提案冒充决定；多个独立问题捆绑；ADR 与当前规范或 active ADR 冲突；supersedes 的建立时与持久 source/target 状态、项目、全生命周期单一直接替代源、自指、缺失目标和全部保留关系 DAG；patch/archived/deprecated/related_* 与空占位被拒绝；任何外部实例不得直接作为有效 fixture。
+最低验证样例必须覆盖：active、retired；每个状态缺少条件字段或带禁止字段；decided_at 的对象内时间边界；决定来源与授权缺失；未决提案冒充决定；多个独立问题捆绑；ADR 与当前规范或 active ADR 冲突；与 retired 终态条件；patch/archived/deprecated/related_* 与空占位被拒绝；任何外部实例不得直接作为有效 fixture。
 
 ## 10. Human Gate
 
@@ -193,7 +186,7 @@ Code 的共同机械边界按 05 §§10–11 执行；对 ADR，只可额外检�
 
 1. 决定本身属于产品方向、长期规则、重大架构、事实权威归属、Human Gate 变化或风险接受，且未由 Human 当前指令明确决定或授权 AI 在该范围自主选择；
 2. 决定来源、授权主体或作用范围不清，AI 无法从当前来源无损确定；
-3. 准备 supersede、retire、合并或拆分决定，实际取舍或剩余适用范围需要 Human 判断；
+3. 准备 retire、合并或拆分决定，实际取舍或剩余适用范围需要 Human 判断；
 4. 修改 active ADR 的六个专属字段会实质改写原决定，而不是有来源的事实更正；
 5. 删除或重组可能丢失决定身份、来源、证据、理由或替代历史。
 
@@ -210,8 +203,8 @@ Human 决定的复用按 00 §10 执行；Human 当前指令已经授权作出�
 5. 多个可以独立替代或退出的决定被捆绑；
 6. decision、applicability、rationale 或 consequences 为空、过度泛化或事后补造；
 7. 用关系、commit、测试成功或实现存在冒充决定已实施、规则已生效或行动已授权；
-8. superseded 没有有效新 ADR 与单向关系，retired 没有具体退出依据；
-9. 准备写入 proposed、archived、deprecated、alternatives、affects、superseded_by、related_*、空占位或其它未登记内容；
+8. retired 没有具体退出依据；
+9. 准备写入 proposed、archived、deprecated、alternatives、affects、related_*、空占位或其它未登记内容；
 10. 高影响决定没有实际授权，或获准写入后没有回读与范围匹配验证。
 
 暂停范围与允许继续的行动按 00 §11 执行；对 ADR，只有选择实际成立、来源授权可回指、冲突与对象粒度得到处置、Schema 和关系一致并完成写后回读后，才能恢复相应范围。

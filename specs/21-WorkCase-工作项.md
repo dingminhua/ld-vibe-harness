@@ -172,7 +172,7 @@ Spark 与 WorkCase 的分界不取决于“以后是否可能做”。Spark 尚�
 | `workcase-resume-from` | `resume_from` | string | 当前非终态推进阶段在中断、压缩或执行者交接后继续的最小明确入口 | 不表示完整执行步骤、历史日志或单个工作项自己的恢复点 | status 非 closed 时必填非空；与 summary 共同覆盖当前 phase 的已完成范围、下一动作和所需输入；阶段变化时覆盖更新 |
 | `workcase-waiting-on` | `waiting_on` | string | 当前阶段正在等待的 Human 决定、独立审核、外部能力、证据或其它明确条件 | 不表示普通下一步、低优先级或历史阻塞 | 实际等待时条件出现且非空；等待解除后移除；Human 确认阶段必须说明等待的具体 Human Gate，blocked 仍由 blocking_summary 表达整体阻塞 |
 | `workcase-blocking-summary` | `blocking_summary` | string | WorkCase 当前不能继续的具体事实、影响范围和解除条件 | 不表示低优先级、普通剩余工作、失败历史或终态理由 | 非空；解除条件必须可观察且有依据；不保留已经解除的历史阻塞占位 |
-| `workcase-closure-outcome` | `closure_outcome` | string | WorkCase 在当前身份下停止推进时的结果分类 | 不表示状态、成功标准验证详情、终态理由或 Git 已提交 | 闭集 completed、partial、cancelled、superseded、not-achieved；各值的互斥语义与成立条件由 §6 唯一定义 |
+| `workcase-closure-outcome` | `closure_outcome` | string | WorkCase 在当前身份下停止推进时的结果分类 | 不表示状态、成功标准验证详情、终态理由或 Git 已提交 | 闭集 completed、partial、cancelled、not-achieved；各值的互斥语义与成立条件由 §6 唯一定义 |
 | `workcase-item-id` | `item_id` | string | 同一 WorkCase 内稳定识别一个阶段性工作项的局部身份 | 不表示事实对象身份、数组序号或执行者身份 | 必填；匹配 `item-[0-9]{2,}`；同一 WorkCase 内唯一，形成后不得因排序、状态或执行者变化而改变 |
 | `workcase-item-goal` | `goal` | string | 该工作项需要达成的阶段目标 | 不表示 WorkCase 总目标、命令、方法或结果 | 必填非空；必须直接服务 WorkCase goal 与至少一项 success criterion |
 | `workcase-item-expected-result` | `expected_result` | string | 该阶段目标完成时应形成的可观察结果 | 不表示实现步骤、验证证据或完成声明 | 必填非空；必须能据此判断工作项是否形成阶段结果 |
@@ -358,7 +358,7 @@ Human 选择建立 WorkCase 表示选择由本文完整管理该工作的当前�
 
 新建 WorkCase 必须已经取得 Human 对工作意图和建立项目记录的明确确认，并在该授权范围内完成计划形成、创建方案独立审核和主控对审核反馈的处置；初始 `phase` 固定为 `human_plan_confirming`，`execution_approval` 禁止出现。初始 `status` 可以是 `open` 或 `blocked`：正常等待对象建立后的计划执行批准不构成 blocked；只有另有具体、可证且使方案确认也无法继续的条件时才可 blocked。`closed` 不能作为普通新建初态。
 
-正常转换只有 `open → blocked`、`blocked → open`、`open → closed` 和 `blocked → closed`。`closed` 不直接重开；后来出现的新工作建立新 WorkCase，确属替代时由新对象使用 `supersedes` 指向旧对象。原终态记录本身错误时按 05 的事实更正规则修正，不把更正伪装成重新推进。
+正常转换只有 `open → blocked`、`blocked → open`、`open → closed` 和 `blocked → closed`。`closed` 不直接重开；后来出现的新工作建立新 WorkCase，确属替代时在 disposition_summary 中说明替代的旧对象。原终态记录本身错误时按 05 的事实更正规则修正，不把更正伪装成重新推进。
 
 推进阶段闭集与进入条件如下：
 
@@ -456,7 +456,7 @@ WorkCase 顶层 `summary`、`resume_from` 和按需出现的 `waiting_on` 共同
 
 `open ↔ blocked` 只改变责任状态，不改变 phase；解除阻塞通常先恢复 open 再继续阶段转换。`blocked → closed` 只允许在 Human 取消、替代或接受停止且仍完整经过结果分类、独立审核、分流和第二 Human Gate 的同一终止事务中发生，不得绕过阶段闭集。closed 不允许正常重开。
 
-`closure_outcome` 使用以下互斥语义。先判断原责任是否已由其它 WorkCase 整体接替，是则使用 `superseded`；再判断是否在足以评价成功标准前被明确撤回，是则使用 `cancelled`；其余情况才按成功标准的实际满足程度选择 `completed`、`partial` 或 `not-achieved`：
+`closure_outcome` 使用以下互斥语义。先判断是否在足以评价成功标准前被明确撤回，是则使用 `cancelled`；其余情况按成功标准的实际满足程度选择 `completed`、`partial` 或 `not-achieved`：
 
 | closure_outcome | 成立条件 | 不得冒充 |
 |---|---|---|
@@ -464,9 +464,9 @@ WorkCase 顶层 `summary`、`resume_from` 和按需出现的 `waiting_on` 共同
 | `partial` | 至少一项成功标准已充分满足且至少一项未满足或未验证；已完成部分仍有稳定价值，剩余责任已明确承接或由 Human 接受停止 | “基本完成”、全部失败或只产生过程输出 |
 | `not-achieved` | 没有任何成功标准得到充分满足，或已有输出不足以构成任一成功标准的稳定完成结果；停止理由和实际尝试边界有依据 | 尚未执行就被撤销，或把部分成功隐藏为整体失败 |
 | `cancelled` | 在尚不足以对成功标准形成 `completed`、`partial` 或 `not-achieved` 判断时，授权、方向或继续投入决定被明确撤回 | 已经能够据实分类的完成或失败结果 |
-| `superseded` | 原工作责任不再由本对象推进，并已由 `routed-to` 指向能够继续承担该责任的当前 open 或 blocked WorkCase | 普通拆分、取消、部分完成或只有新对象但没有责任承接 |
 
-`closed` 必须逐项核对成功标准，并在 `validation_summary` 说明已满足、未满足与未验证范围。新对象需要表达身份沿革时可以单向 `supersedes` 本对象，但该入向关系由 Code 派生读取，不是旧对象关闭成立的第二权威，也不能替代旧对象的 `routed-to` 承接声明。所有仍适用责任都必须由 `routed-to` 指向能够按目标类型与当前状态稳定承接该具体责任的事实对象，或在 `disposition_summary` 明确证明没有残余内容。
+
+`closed` 必须逐项核对成功标准，并在 `validation_summary` 说明已满足、未满足与未验证范围。新对象与旧对象之间的替代关系通过 `disposition_summary` 表达，不建立独立关系边。所有仍适用责任都必须由 `routed-to` 指向能够按目标类型与当前状态稳定承接该具体责任的事实对象，或在 `disposition_summary` 明确证明没有残余内容。
 
 ## 7. 外部网址、自然语言证据与关系
 
@@ -486,7 +486,7 @@ Web、Helper 消费方和共享恢复可以从当前对象派生推进阶段条�
 
 当前工作对象精确绑定某个 WorkCase 时，必须展开该对象和其直接 `open`/`blocked` `depends-on` 目标到 F3，核对 goal、scope、适用 profile 的 success criteria、status、phase、当前版本、work items、审核、批准、summary、blocking summary、依赖与当前授权。开始、继续、改变或交还一项可能由稳定工作责任承接的行动，检查阻塞或依赖，以及准备新建 WorkCase 时，AI 仍必须使用责任卡与完整对象判断当前实际承接者。卡片或对象被召回不表示当次已获得推进、解除阻塞、改变范围或关闭的授权。
 
-`closed` WorkCase 只在精确引用、来源或验证追溯、检查未承接剩余责任、`routed-to`/`supersedes` 关系，或准备建立可能重复的新责任时作为历史候选。AI 展开后必须核对 `goal`、`scope`、`success_criteria`、工作项结果、审核、批准、验证、处置和关系；不得因标题相似就把当前临时步骤绑定到 WorkCase，也不得把 Web 派生进度当作第二事实源。
+`closed` WorkCase 只在精确引用、来源或验证追溯、检查未承接剩余责任、`routed-to` 关系，或准备建立可能重复的新责任时作为历史候选。AI 展开后必须核对 `goal`、`scope`、`success_criteria`、工作项结果、审核、批准、验证、处置和关系；不得因标题相似就把当前临时步骤绑定到 WorkCase，也不得把 Web 派生进度当作第二事实源。
 
 ## 8. 对象变化与授权边界
 
@@ -526,7 +526,7 @@ AI 语义审核以本表各验证对象及其成立条件为准，不另建一�
 6. observation 超过 20 项、topic_key 重复、未终态、disposition_ref 类型不匹配，普通建议冒充 residual、followup 自动建立关系，routed residual 缺少映射或 accepted_stop 被映射；
 7. work_items 为空，item 身份重复，依赖缺失、自指或成环，状态条件错误，以及把命令或日志伪装成 work item；
 8. completed 但验证范围不完整、blocked 无解除条件、closed 有未处置或未映射残余内容；
-9. 三种对象关系的 source/target 状态、基数、跨项目治理引用、自指、缺失目标，以及 depends-on、routed-to 和 supersedes 各自的环；
+9. 三种对象关系的 source/target 状态、基数、跨项目治理引用、自指、缺失目标，以及 depends-on 和 routed-to 各自的环；
 10. `orchestration`、环境内部 execution step、空 review/approval、重复 confirmation、related_*、空占位和其它未登记内容被拒绝直接作为 V4 对象消费。
 
 ## 10. Human Gate

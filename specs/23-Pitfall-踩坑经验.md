@@ -126,7 +126,7 @@ AI 负责判断失败是否实际发生、根因和解决是否有证据、经�
 
 Pitfall 对象使用 UTF-8 YAML，一文件一对象，当前权威位置固定为管辖项目仓库中的 `ldvh-base/pitfalls/<object_id>.yaml`。`object_id` 必须匹配 `pitfall-[0-9]{4,}`；文件名必须与 `object_id` 完全一致，分配后的身份不得因标题、路径、状态或内容改变。`title` 只简短识别失败机制，不复制 `symptoms` 或 `root_cause`。未知或不适用的条件字段必须省略，不使用 `null`、空字符串、空数组、占位时间、默认状态或默认关系。
 
-完整 Schema 由统一登记的 `fact-object` 直接字段、本节绑定、跨类型共享定义和类型专属字段定义组合。Pitfall 不得出现 current summary、priority、evolution、tags、`archive_reason`、repeatability、severity、superseded_by、source_objects/source_sparks、related_*、长命令日志字段、实现状态、revision history 或其它未登记内容。
+完整 Schema 由统一登记的 `fact-object` 直接字段、本节绑定、跨类型共享定义和类型专属字段定义组合。Pitfall 不得出现 current summary、priority、evolution、tags、`archive_reason`、repeatability、severity、source_objects/source_sparks、related_*、长命令日志字段、实现状态、revision history 或其它未登记内容。
 
 ## 6. 对象语义与生命周期
 
@@ -137,10 +137,9 @@ Pitfall 只记录已解决、已验证且可复用的失败机制。问题尚未
 | status | 语义 | 必须成立 |
 |---|---|---|
 | `active` | 根因、解决和验证仍可信，经验在 applicability 内仍可安全参考 | 只能作为新建初态；终态字段禁止；全部核心字段与证据成立；不表示规则权威 |
-| `superseded` | 原经验已被一个后来成立的新 Pitfall 整体替代 | disposition_summary、closed_at、自然语言验证说明 必填；旧对象必须成为一个在建边时为 active 的新 Pitfall 的有效 supersedes 目标 |
-| `retired` | 适用条件消失、关键证据被推翻或经验不再安全复用，且没有被新 Pitfall 整体替代 | disposition_summary、closed_at、自然语言验证说明 必填；必须有具体退出依据，不得用已被规则吸收冒充退出 |
+| `retired` | 原经验因适用条件消失、方向撤回、不再需要或已被新 Pitfall 的经验范围覆盖而退出当前选择 | disposition_summary、closed_at、自然语言验证说明 必填；必须有具体退出依据；被新 Pitfall 覆盖时在 disposition_summary 中说明替代关系，不建立独立关系边 |
 
-初始状态只能是 active。正常转换只有 `active → superseded` 和 `active → retired`；终态不直接重开。根因、解决方式、规避方式或 applicability 的实质改变通常建立新 Pitfall；只有来源充分且仍是同一失败机制的事实更正、症状与触发补强、验证更新可以原地修正。
+初始状态只能是 active。正常转换只有 `active → retired`；终态不直接重开。根因、解决方式、规避方式或 applicability 的实质改变通常建立新 Pitfall；只有来源充分且仍是同一失败机制的事实更正、症状与触发补强、验证更新可以原地修正。
 
 规范、Code 或行动模板吸收经验不会自动使 Pitfall 终态。Pitfall 即使 active 也只是经验参考，实际规则和行为来自相应正式来源。不得用单一 `archived` 状态混合存储、吸收和不再有效。
 
@@ -150,13 +149,7 @@ Pitfall 只记录已解决、已验证且可复用的失败机制。问题尚未
 
 Pitfall 来自 Spark、WorkCase 或 ADR 时可以把源对象作为 source_ref；源对象已有分流关系时不复制反向关系。落实规避措施的 WorkCase 可以把 Pitfall 作为 source_ref；Pitfall 不维护双写 related_workcases。规范、Code、commit、文档、日志或外部页面不是事实对象，分别进入 对象自有语义字段 或 自然语言验证说明。
 
-Pitfall relation_key 第一版只允许 supersedes：
-
-| source condition | target condition | cardinality | reverse authority | missing, time and cycle boundary |
-|---|---|---|---|---|
-| 关系建立时新 Pitfall 必须为 active；关系与旧对象状态转换在同一获准变更中成立，建立后随 source 后续终态永久保留 | 目标是可恢复的 superseded Pitfall，且关系建立前为 active；只允许同一管辖项目的 pitfall | 每个旧 Pitfall 全生命周期最多一个直接 supersedes source，既有关系不因 source 状态变化释放基数；多个旧机制只有在不可分割合并时才允许同一 source 指向 | superseded-by 只由 Code 派生，不写回；旧对象不复制新对象引用 | 目标缺失、非 superseded、类型或项目不符、自指时无效；`target.created_at <= source.created_at <= target.closed_at`；全部保留边必须组成 DAG |
-
-新经验只替代旧经验的一部分时，不能把旧对象整体标为 superseded；应拆分新经验或让旧经验保持 active，并收紧其适用边界。关系存在不单独证明替代成立，必须与对象、证据、适用范围和同一变更一致。
+Pitfall 不定义 relation_key。新旧 Pitfall 之间的替代或覆盖关系通过 `disposition_summary` 表达，不建立独立关系边。新经验只替代旧经验的一部分时，应拆分新经验或让旧经验保持 active，并收紧其适用边界。
 
 ### 主动召回与消费时机
 
@@ -164,13 +157,13 @@ Pitfall 在当前出现可能相似的失败症状、进入已知触发条件、
 
 默认候选只包含症状、触发条件、环境、版本或 applicability 与当前情形可能相容的 `active` Pitfall；不得因标题、错误文本或某个工具名相同就自动采用规避结论。上下文压缩后必须对当次已经语义选中且仍影响行动的 Pitfall 重新回读 F3，并重新核对当前环境、版本和 applicability；不在会话开始时全量展开全部 Pitfall。
 
-`superseded` 与 `retired` Pitfall 只在精确引用、追溯历史失败或验证、检查替代链，或判断当前经验是新机制还是旧机制的变体时展开。AI 消费任何 Pitfall 前必须重新核对 symptoms、trigger conditions、root cause、resolution、avoidance、applicability、validation summary、来源版本与当前环境；对象被召回不表示根因已在当次重现，也不表示规避方法已获授权执行。
+`retired` Pitfall 只在精确引用、追溯历史失败或验证、检查替代链，或判断当前经验是新机制还是旧机制的变体时展开。AI 消费任何 Pitfall 前必须重新核对 symptoms、trigger conditions、root cause、resolution、avoidance、applicability、validation summary、来源版本与当前环境；对象被召回不表示根因已在当次重现，也不表示规避方法已获授权执行。
 
 ## 8. 变更、删除与类型退出
 
 创建前必须召回相邻 Pitfall、当前规则、ADR、WorkCase、Spark 和稳定来源，先判断不对象化、更新同一机制、拆分或建立新身份。更新 active Pitfall 时必须重新验证 root cause、resolution、avoidance、applicability 和 validation summary 的一致性；不能让新增样例把经验无依据泛化。
 
-active、superseded 和 retired 文件均默认保留在当前载体中供来源、经验和关系回读；本文不建立 archived 状态或归档位置。删除只有在适用来源允许、全部引用和仍适用事实已处置且不会丢失经验历史时才成立，不能用删除代替终态。
+active 和 retired 文件均默认保留在当前载体中供来源、经验和关系回读；本文不建立 archived 状态或归档位置。删除只有在适用来源允许、全部引用和仍适用事实已处置且不会丢失经验历史时才成立，不能用删除代替终态。
 
 Pitfall 类型停止新增、合并、替代或取消时，必须按 05 处置唯一定义来源、全部现有对象、引用消费者和仍适用经验；全部 active 经验还必须获得明确稳定承接，不得只删除类型规范或隐藏对象目录。
 
@@ -183,14 +176,14 @@ Pitfall 类型停止新增、合并、替代或取消时，必须按 05 处置�
 | Pitfall 召回与消费 | 出现相似症状、进入触发条件、采用高风险方案、调查修复故障或压缩恢复已选经验时 | F2 卡片只投影现有权威字段并保留字面命中依据，不恢复 `tags`；`active` 候选的症状、触发、环境、版本与 applicability 可能相容；终态只作追溯或替代链候选；召回未被冒充为根因证明或行动授权 | 当前症状与环境、候选卡与命中字段、对象全文、来源版本、证据和验证范围 | 候选范围走查、对象与当前环境回读、AI 因果与适用审核 | 当次症状、环境与已展开经验 | 不复用规避结论；继续调查、重新验证、缩小边界或建立 WorkCase |
 | 对象 Schema 与身份 | 创建、读取或更新对象时 | 路径、身份、字段闭集、类型、条件、时间和引用符合当前来源 | 当前文件、统一登记、本文与派生 Schema | 实际 parser/validator；未实现时逐项来源回读 | 当次对象当前 Working Tree 内容 | 不作为有效 Pitfall 消费；报告字段和未验证范围 |
 | 根因、解决与复用 | 创建或消费 active Pitfall 时 | 根因有证据、解决已执行验证、applicability 匹配当前环境、验证边界未被扩大 | 对象自有语义字段、自然语言验证说明、当前环境和相邻规则 | AI 语义审核、来源及实际环境回读 | 当次经验及声明范围 | 不创建或暂停复用；补证据、缩小边界、重新验证或建立 WorkCase |
-| 替代或退出 | 准备 superseded 或 retired 时 | 新经验或退出依据成立，对象、关系、证据、适用边界和时间一致 | 新旧 Pitfall、来源、证据、当前规则与 Human 决定 | AI 语义审核、目标回读和结构校验 | 当次终态与替代声明 | 保持 active；修正替代范围、补证据或进入 Human Gate |
+| 退出 | 准备 retired 时 | 退出依据成立，证据、适用边界和时间一致 | 当前 Pitfall、来源、证据与 Human 决定 | AI 语义审核和结构校验 | 当次终态声明 | 保持 active；补证据或进入 Human Gate |
 | 变更与回读 | 创建、更正、补强、替代、退出、拆分、合并或删除后 | 获准变更已写入、回读并验证；失败和部分结果如实保留 | Human 指令、文件差异、Working Tree 回读和验证结果 | 实际写入入口与当前文件回读 | 当次实际变更 | 不声明成功；修正、回滚或保留部分结果与残余风险 |
 
 AI 必须审核实际发生、对象粒度、因果证据、解决与验证、现时适用、复用安全、规则边界、替代完整性和退出依据。外部样本不能证明经验当前有效、tags 必需或终态已被真实消费。
 
-Code 的共同机械边界按 05 §§10–11 执行；对 Pitfall，只可额外检查本文明确给出的状态条件、跨对象时间顺序、全生命周期单一直接替代源和 supersedes DAG。根因真实性、验证充分性、外部协议当前性、迁移安全、规则吸收及自然语言同义性仍由 AI 依据当前来源审核。
+Code 的共同机械边界按 05 §§10–11 执行；对 Pitfall，只可额外检查本文明确给出的状态条件、跨对象时间顺序。根因真实性、验证充分性、外部协议当前性、迁移安全、规则吸收及自然语言同义性仍由 AI 依据当前来源审核。
 
-最低验证样例必须覆盖：active、superseded、retired；每个状态缺条件字段或带禁止字段；外部材料不得直接写入；根因无证据、解决未执行、验证边界扩大、外部版本变化、多个独立机制捆绑；supersedes 的建立时与持久 source/target 状态、项目、全生命周期单一直接替代源、跨对象时间、自指、缺失目标和全部保留关系 DAG；archived/tags/related_*/空占位被拒绝。
+最低验证样例必须覆盖：active、retired；每个状态缺条件字段或带禁止字段；外部材料不得直接写入；根因无证据、解决未执行、验证边界扩大、外部版本变化、多个独立机制捆绑；与 retired 终态条件；archived/tags/related_*/空占位被拒绝。
 
 ## 10. Human Gate
 
@@ -198,7 +191,7 @@ Code 的共同机械边界按 05 §§10–11 执行；对 Pitfall，只可额外
 
 1. 当前来源之间对根因、验证充分性或 applicability 存在相互冲突的证据、权威或适用边界，且需要 Human 在可保留的解释、方向或风险取舍之间作选择；仅因根因证据不足、验证不足或需要补充当前来源时，不进入 Human Gate；
 2. 准备把经验提升为强制规则、接受重大风险，或决定超出 Human 已授权给 AI 的判断范围；
-3. 准备 supersede、retire、合并或拆分经验，实际因果、复用安全或剩余适用范围需要 Human 判断；
+3. 准备 retire、合并或拆分经验，实际因果、复用安全或剩余适用范围需要 Human 判断；
 4. 删除或迁移可能丢失对象身份、来源、证据、经验或替代历史；
 5. 涉及安全、产品方向、责任归属或其它来源明确保留给 Human 的决定。
 
@@ -215,8 +208,8 @@ Human 决定的复用按 00 §10 执行；Human 当前指令已经授权据实�
 5. 多个独立根因或不相容解决方式被捆绑；
 6. 与当前规范或 active Pitfall 冲突，但没有完成获准的冲突处置；
 7. 用关系、commit、测试成功或实现存在冒充经验普遍有效、规则已生效或行动已授权；
-8. superseded 没有有效新 Pitfall 与单向关系，retired 没有具体退出依据；
-9. 准备写入 archived、archive_reason、tags、repeatability、severity、superseded_by、source_objects、source_sparks、related_*、空占位或其它未登记内容；
+8. retired 没有具体退出依据；
+9. 准备写入 archived、archive_reason、tags、repeatability、severity、source_objects、source_sparks、related_*、空占位或其它未登记内容；
 10. 高影响取舍没有实际授权，或获准写入后没有回读与范围匹配验证。
 
 暂停范围与允许继续的行动按 00 §11 执行；对 Pitfall，只有失败、根因、解决、验证、复用价值与边界成立，冲突和 Schema 得到处置并完成写后回读后，才能恢复相应范围。

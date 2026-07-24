@@ -129,12 +129,6 @@ def _target(relation: dict[str, object]) -> dict[str, object] | None:
 
 
 def _target_condition(source_type: str, relation_key: str, target_type: str, target_status: object) -> bool:
-    if relation_key == "supersedes":
-        if source_type == "spark":
-            return target_type == "spark" and target_status in {"routed", "implemented", "discarded"}
-        if source_type == "workcase":
-            return target_type == "workcase" and target_status == "closed"
-        return target_type == source_type and target_status == "superseded"
     if source_type == "spark" and relation_key == "routed-to":
         return target_type not in {"spark", "study"}
     if source_type == "workcase" and relation_key == "depends-on":
@@ -167,28 +161,12 @@ def _edge_time_valid(
     source_fields: dict[str, object],
     target_fields: dict[str, object],
 ) -> bool:
-    if relation_key != "supersedes" or source_type not in {"adr", "pitfall", "study"}:
-        return True
-    if source_type == "adr":
-        target_start = parse_rfc3339(target_fields.get("decided_at"))
-        source_start = parse_rfc3339(source_fields.get("decided_at"))
-    else:
-        target_start = parse_rfc3339(target_fields.get("created_at"))
-        source_start = parse_rfc3339(source_fields.get("created_at"))
-    target_closed = parse_rfc3339(target_fields.get("closed_at"))
-    return (
-        target_start is not None
-        and source_start is not None
-        and target_closed is not None
-        and target_start <= source_start <= target_closed
-    )
+    return True
 
 
 def _source_condition(source_type: str, relation_key: str, source_fields: dict[str, object]) -> bool:
     if source_type == "spark" and relation_key == "routed-to":
         return source_fields.get("status") == "routed"
-    if source_type == "spark" and relation_key == "supersedes":
-        return source_fields.get("status") == "open"
     if source_type == "workcase" and relation_key == "depends-on":
         return source_fields.get("status") in {"open", "blocked"}
     if source_type == "workcase" and relation_key == "routed-to":
@@ -262,94 +240,6 @@ def _graph_status(
     return False, True
 
 
-def _incoming_supersedes(
-    index: ProjectFactIndex,
-    fact_type_key: str,
-    object_id: str,
-    target_read: FactReadResult,
-) -> tuple[set[tuple[str, str]], bool]:
-    candidates, complete = index.scan_valid_objects(fact_type_key, base=True)
-    sources: set[tuple[str, str]] = set()
-    assert target_read.fields is not None
-    for candidate in candidates:
-        assert candidate.fields is not None
-        candidate_id = candidate.fields.get("object_id")
-        if not isinstance(candidate_id, str):
-            continue
-        if not _valid_supersedes_source(index, fact_type_key, candidate_id, candidate):
-            continue
-        matching = [
-            relation
-            for relation in _relations(candidate)
-            if relation.get("relation_key") == "supersedes"
-            and (_target(relation) or {}).get("governed_project_id") == index.governed_project_id
-            and (_target(relation) or {}).get("fact_type_key") == fact_type_key
-            and (_target(relation) or {}).get("object_id") == object_id
-        ]
-        if len(matching) != 1:
-            continue
-        target_condition = _target_condition(
-            fact_type_key,
-            "supersedes",
-            fact_type_key,
-            target_read.fields.get("status"),
-        )
-        edge_time_valid = _edge_time_valid(
-            fact_type_key,
-            "supersedes",
-            candidate.fields,
-            target_read.fields,
-        )
-        if target_condition and edge_time_valid:
-            sources.add((fact_type_key, candidate_id))
-    return sources, complete
-
-
-def _valid_supersedes_source(
-    index: ProjectFactIndex,
-    fact_type_key: str,
-    object_id: str,
-    candidate: FactReadResult,
-) -> bool:
-    """Check a persisted replacement edge independently of incoming cardinality.
-
-    Establishment requires an active source and a multi-object mutation. Static
-    reads must keep the edge valid after that source later reaches a terminal
-    status; controlled single-object create/update paths cannot establish it.
-    """
-
-    assert candidate.fields is not None
-    seen: set[tuple[object, object, object, object]] = set()
-    for relation in _relations(candidate):
-        identity = _edge_identity(relation)
-        if identity in seen:
-            return False
-        seen.add(identity)
-        if relation.get("relation_key") != "supersedes":
-            return False
-        target = _target(relation)
-        if target is None:
-            return False
-        target_project = target.get("governed_project_id")
-        target_type = target.get("fact_type_key")
-        target_id = target.get("object_id")
-        if (
-            target_project != index.governed_project_id
-            or target_type != fact_type_key
-            or not isinstance(target_id, str)
-            or target_id == object_id
-        ):
-            return False
-        target_read = index.base_read(fact_type_key, target_id)
-        if target_read is None or target_read.check_status != "mechanically_valid" or target_read.fields is None:
-            return False
-        if not _target_condition(fact_type_key, "supersedes", fact_type_key, target_read.fields.get("status")):
-            return False
-        if not _edge_time_valid(fact_type_key, "supersedes", candidate.fields, target_read.fields):
-            return False
-    cycle, complete = _graph_status(index, (fact_type_key, object_id), "supersedes", base=True)
-    return complete and not cycle
-
 
 def validate_project_relations(
     index: ProjectFactIndex,
@@ -365,7 +255,6 @@ def validate_project_relations(
     if fact_type_key == "workcase":
         issues.extend(_workcase_residual_mapping_issues(read.fields))
     seen_edges: set[tuple[object, object, object, object]] = set()
-    workcase_superseded_route = False
     for relation_index, relation in enumerate(_relations(read)):
         relation_key = relation.get("relation_key")
         target = _target(relation)
@@ -394,10 +283,7 @@ def validate_project_relations(
             if fact_type_key == "spark":
                 issues.append(FactIssue("relation", "Spark 关系目标只允许同一管辖项目", path))
                 continue
-            if relation_key == "supersedes":
-                issues.append(FactIssue("relation", "supersedes 只允许同一管辖项目", path))
-            else:
-                unavailable = True
+            unavailable = True
             continue
         target_read = index.read(target_type, target_id)
         if target_read is None or target_read.check_status in {"not_found", "invalid"}:
@@ -411,28 +297,6 @@ def validate_project_relations(
             issues.append(FactIssue("relation", "关系目标类型或状态不满足当前类型机械条件", path))
         if not _target_has_readable_title(fact_type_key, relation_key, target_read.fields):
             issues.append(FactIssue("relation", "Spark routed-to 目标必须具有可呈现的非空 title", path))
-        if not _edge_time_valid(fact_type_key, relation_key, read.fields, target_read.fields):
-            issues.append(FactIssue("relation", "supersedes 跨对象时间顺序不成立", path))
-        if (
-            fact_type_key == "workcase"
-            and relation_key == "routed-to"
-            and target_type == "workcase"
-            and target_read.fields.get("status") in {"open", "blocked"}
-        ):
-            workcase_superseded_route = True
-
-    if (
-        fact_type_key == "workcase"
-        and read.fields.get("closure_outcome") == "superseded"
-        and not workcase_superseded_route
-    ):
-        issues.append(
-            FactIssue(
-                "relation",
-                "closure_outcome superseded 要求 routed-to 当前 open/blocked WorkCase",
-                "relations",
-            )
-        )
 
     if fact_type_key == "spark" and read.fields.get("status") == "routed":
         if not any(item.get("relation_key") == "routed-to" for item in _relations(read)):
@@ -446,21 +310,6 @@ def validate_project_relations(
         elif cycle:
             issues.append(FactIssue("relation", f"{relation_key} 关系形成有向循环", "relations"))
 
-    if fact_type_key in {"adr", "pitfall", "study"}:
-        incoming, complete = _incoming_supersedes(index, fact_type_key, object_id, read)
-        if not complete:
-            unavailable = True
-        status = read.fields.get("status")
-        if status == "superseded" and len(incoming) != 1:
-            issues.append(
-                FactIssue(
-                    "relation",
-                    "superseded 对象必须有且只有一个有效直接 supersedes source",
-                    "relations",
-                )
-            )
-        elif status != "superseded" and incoming:
-            issues.append(FactIssue("relation", "非 superseded 对象不得成为有效 supersedes 目标", "relations"))
     return tuple(issues), unavailable
 
 

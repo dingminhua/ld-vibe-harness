@@ -1,0 +1,61 @@
+title: 移除 supersedes 关系与 superseded 状态
+status: open
+summary: 审查确认 supersedes 关系类型和 superseded 状态在 V4 中无实际使用价值，所有关系语义可被已有关系类型（related-to、routed-to、informs）和 disposition_summary 覆盖。本 WorkCase 负责从 specs、Code 校验和状态集中移除 supersedes。
+goal: 从 specs/20-24、contracts.py、relations.py 中移除 supersedes 关系类型定义和 superseded 状态，简化 ADR/Pitfall 状态集为 {active, retired}，释放约 60 行校验逻辑和 4 个状态的维护负担。
+scope: 覆盖 specs/20-Spark-火花.md、specs/21-WorkCase-工作项.md、specs/22-ADR-决策.md、specs/23-Pitfall-踩坑经验.md、code/ldvh/facts/contracts.py、code/ldvh/facts/relations.py 中与 supersedes 相关的全部定义和校验逻辑。排除修改 specs/00、修改其他关系类型、修改五类对象实例（当前零实例使用 supersedes）、修改 Web 或测试文件。
+workcase_profile: control-contract-v1
+success_criterion_definitions:
+- criterion_id: criterion-01
+  statement: specs/20-24 中所有对 supersedes 关系类型的定义、约束和引用被移除，不再作为当前事实类型的合法 relation_key。
+- criterion_id: criterion-02
+  statement: ADR 和 Pitfall 的状态集从 {active, superseded, retired} 简化为 {active, retired}，所有状态转换规则相应更新，不保留 superseded 作为合法状态值。
+- criterion_id: criterion-03
+  statement: contracts.py 中所有类型的 relation_keys 不再包含 supersedes；relations.py 中 _incoming_supersedes、_valid_supersedes_source、_edge_time_valid 中与 supersedes 相关的逻辑被移除，主校验函数中不再有 supersedes 分支。
+- criterion_id: criterion-04
+  statement: 移除后，当前零实例使用 supersedes 的状态不受影响；替换语义通过 disposition_summary 或已有关系类型（related-to、routed-to、informs）表达，不新增其他关系类型。
+plan_version: 1
+work_items:
+- item_id: item-01
+  goal: 修改 specs/20-Spark-火花.md，移除 supersedes 关系定义和状态引用。
+  expected_result: Spark 的 relation_keys 闭集不再包含 supersedes；正文中所有涉及 supersedes 的状态转换说明被移除或替换为等价表述（新 Spark 独立 open，不通过 supersedes 指向旧 Spark）。
+  status: completed
+- item_id: item-02
+  goal: 修改 specs/22-ADR-决策.md 和 specs/23-Pitfall-踩坑经验.md，移除 supersedes 关系和 superseded 状态。
+  expected_result: ADR 和 Pitfall 的状态集从 {active, superseded, retired} 简化为 {active, retired}；supersedes 关系定义被移除；正文中所有涉及 supersedes 和 superseded 的引用被更新或移除；终态转换规则只保留 active → retired。
+  status: completed
+- item_id: item-03
+  goal: 修改 specs/21-WorkCase-工作项.md，移除 supersedes 关系引用。
+  expected_result: WorkCase 的 relation_keys 闭集不再包含 supersedes；正文中所有涉及 supersedes 的引用被移除；closure_outcome superseded 相关逻辑被移除或替换。
+  status: completed
+- item_id: item-04
+  goal: 修改 code/ldvh/facts/contracts.py，从所有类型的 relation_keys 中移除 supersedes。
+  expected_result: 四个类型（spark、workcase、adr、pitfall）的 relation_keys 不再包含 supersedes；ADR 和 Pitfall 的 statuses 不再包含 superseded。
+  status: completed
+- item_id: item-05
+  goal: 修改 code/ldvh/facts/relations.py，移除所有与 supersedes 相关的校验逻辑。
+  expected_result: _incoming_supersedes、_valid_supersedes_source 函数被移除；_edge_time_valid 中 supersedes 分支被移除；主校验函数（validate_project_relations）中所有 supersedes 相关的条件分支、入边检查、时间顺序检查、环检测被移除；workcase_superseded_route 逻辑被移除。注意 findings audit-01/finding-01 和 finding-02 的处理要求。
+  status: completed
+- item_id: item-06
+  goal: 验证修改后 specs 结构检查和 Code 测试通过。
+  expected_result: specs 结构检查零问题；relations.py 相关测试通过；无 supersedes 残留引用。
+  status: completed
+execution_approval:
+  subject_version: 1
+  approved_at: '2026-07-24T09:46:14.094720+08:00'
+  summary: Human 已明确批准 workcase-0012 的 plan_version 1，授权开始执行。
+  source_refs:
+  - kind: human
+    locator: conversation:user-approved-workcase-0012-plan-v1
+result_version: 0
+controller_check_summary: null
+success_criterion_results: []
+result_reviews: []
+validation_summary: null
+closure_outcome: null
+disposition_summary: null
+closure_approval: null
+closed_at: null
+object_id: workcase-0012
+fact_type_key: workcase
+created_at: '2026-07-24T09:46:14.094720+08:00'
+updated_at: '2026-07-24T09:46:14.094720+08:00'
