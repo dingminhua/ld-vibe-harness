@@ -1123,6 +1123,61 @@ def test_update_replaces_full_target_and_preserves_managed_identity(tmp_path: Pa
     assert response["changes"][0]["status"] == "updated"
 
 
+def test_update_repairs_a_parseable_invalid_snapshot_with_its_read_fingerprint(tmp_path: Path) -> None:
+    workspace, project, fact = _fixture(tmp_path)
+    fact.write_text(
+        """object_id: spark-0001
+fact_type_key: spark
+title: Exact update
+created_at: 2026-07-14T09:00:00+08:00
+updated_at: 2026-07-14T10:00:00+08:00
+status: routed
+summary: Before update
+disposition_summary: Incorrectly recorded as routed without a fact target.
+closed_at: 2026-07-14T10:00:00+08:00
+""",
+        encoding="utf-8",
+    )
+    read = handle_request(
+        "call",
+        "read-fact-objects",
+        json.dumps(
+            {
+                "work_object_locators": [str(project)],
+                "arguments": {
+                    "workspace_root": str(workspace),
+                    "fact_refs": [_ref()],
+                },
+            }
+        ),
+    ).response
+    item = read["result"]["items"][0]
+
+    assert item["check_status"] == "invalid"
+    assert item["content_fingerprint"] is not None
+    response = handle_request(
+        "call",
+        "update-fact-object",
+        _update_payload(
+            workspace,
+            project,
+            item["content_fingerprint"],
+            {
+                "title": "Exact update",
+                "status": "implemented",
+                "summary": "Before update",
+                "disposition_summary": (
+                    "The bounded Spark content was directly implemented with no residual fact responsibility."
+                ),
+                "closed_at": "2026-07-14T10:00:00+08:00",
+            },
+        ),
+    ).response
+
+    assert response["outcome"] == "ok", json.dumps(response, ensure_ascii=False, indent=2)
+    assert response["result"]["fact_object"]["status"] == "implemented"
+
+
 def test_no_change_does_not_rewrite_or_change_timestamp(tmp_path: Path) -> None:
     workspace, project, fact = _fixture(tmp_path)
     before = _read(workspace, project)
@@ -1449,16 +1504,54 @@ def test_study_update_preserves_submitted_body_boundary(tmp_path: Path) -> None:
             ],
             "research_question": "Does update preserve the submitted Markdown body boundary?",
             "abstract": "The full target body remains stable across serialization.",
+            "research_intent": (
+                "Confirm that a controlled update retains the project reason for this external research."
+            ),
+            "recommendation_summary": "Use the complete target boundary when updating a Study report.",
         },
-        "body": "\n\n".join(
-            [
-                "## 研究问题\n\n验证 Study 更新。",
-                "## 输入与边界\n\n读取外部研究资料并限定当前问题。",
-                "## 关键发现\n\n完整目标不会积累空行。",
-                "## 建议\n\n保持完整目标语义。",
-                "## 后续分流\n\n没有额外分流。",
-            ]
-        ),
+        "body": """
+## 研究问题
+
+### 项目问题
+
+验证 Study 更新。
+
+### 外部问题
+
+外部资料如何限定完整目标更新？
+
+## 输入与边界
+
+### 已读外部资料
+
+读取外部研究资料并限定当前问题。
+
+### 本次边界
+
+不把序列化行为当作研究结论。
+
+## 关键发现
+
+### 完整目标
+
+完整目标不会积累空行，启发是保持一次完整替换；不等于任意内容均可更新。
+
+### 载体边界
+
+提交正文会被保留，启发是避免隐式改写；不证明外部资料当前。
+
+## 建议
+
+### 可立即采用的工作方式
+
+保持完整目标语义。
+
+## 后续分流
+
+| 分流类别 | 触发条件 | 下一步或不创建理由 |
+|---|---|---|
+| 无需对象化 | 仅验证更新路径 | 不创建额外对象。 |
+""",
     }
     created = handle_request(
         "call",
@@ -1497,7 +1590,10 @@ def test_study_update_preserves_submitted_body_boundary(tmp_path: Path) -> None:
     ).response["result"]["items"][0]
     target = {
         "frontmatter": dict(read["fact_object"]["frontmatter"]),
-        "body": read["fact_object"]["body"].replace("完整目标不会积累空行。", "更新后的正文不会积累空行。"),
+        "body": read["fact_object"]["body"].replace(
+            "完整目标不会积累空行，启发是保持一次完整替换；不等于任意内容均可更新。",
+            "更新后的正文不会积累空行，启发是保持一次完整替换；不等于任意内容均可更新。",
+        ),
     }
     for key in ("object_id", "fact_type_key", "created_at", "updated_at"):
         target["frontmatter"].pop(key)

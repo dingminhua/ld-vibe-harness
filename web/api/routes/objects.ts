@@ -447,7 +447,7 @@ router.get('/:type/:id', async (req: Request, res: Response): Promise<void> => {
     res.status(404).json(result)
     return
   }
-  if (isRecord(result.data) && result.data.fact_type_key !== type) {
+  if (isRecord(result.data) && typeof result.data.fact_type_key === 'string' && result.data.fact_type_key !== type) {
     res.status(404).json({
       ok: false,
       error: `Object not found for type ${type}: ${id}`,

@@ -18,6 +18,7 @@ import { fetchDocContent, fetchObjectDetail, fetchObjects, type CommitDetailPane
 import { CATEGORY_COLORS } from '@/utils/categoryColors';
 import { getCommitScopeLabel, getCommitTypeLabel } from '@/utils/commitLabels';
 import { formatDateTime } from '@/utils/dateFormat';
+import { getFactReadMeta, isReadableFact, type FactCarrier, type FactReadMeta } from '@/utils/factReadMeta';
 import {
   getCommitBodySectionsForReading,
   getCommitNodeNextState,
@@ -87,10 +88,11 @@ function ObjectPreview({ content }: { content: PanelContent }) {
   const [detail, setDetail] = useState<ApiObjectDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const obj = (data as Record<string, unknown> | undefined) ?? detail?.data;
-  const status = detail?.summary.status ?? (obj?.status as string | undefined);
-  const headerStatus = isObjectDetailLayoutType(objectType) ? undefined : status;
+  const readMeta = getFactReadMeta(obj);
+  const readable = Boolean(obj && isReadableFact(readMeta));
+  const status = readable ? detail?.summary.status ?? (obj?.status as string | undefined) : undefined;
   const title = getObjectTitle(obj, objectId, locale);
-  const targetPath = String(obj?.path || detail?.target || objectId || '');
+  const targetPath = readable ? readMeta.canonicalPath : undefined;
   const loading = !obj && !error && Boolean(objectType && objectId);
   const typeColor = objectType ? (CATEGORY_COLORS[objectType] || CATEGORY_COLORS.other) : CATEGORY_COLORS.other;
 
@@ -134,6 +136,10 @@ function ObjectPreview({ content }: { content: PanelContent }) {
     );
   }
 
+  if (obj && !readable) {
+    return <FactReadFailureNotice objectType={objectType} objectId={objectId} meta={readMeta} />;
+  }
+
   return (
     <div className="space-y-4">
       <ObjectIdentityHeader
@@ -143,12 +149,12 @@ function ObjectPreview({ content }: { content: PanelContent }) {
         target={targetPath}
         typeColor={typeColor}
         typeLabel={getObjectTypeLabel(objectType, locale)}
-        status={headerStatus}
-        statusLabel={headerStatus ? getObjectStatusLocale(objectType || '', headerStatus, locale) : undefined}
+        status={status}
+        statusLabel={status ? getObjectStatusLocale(objectType || '', status, locale) : undefined}
         source={obj || {}}
         locale={locale}
-        created={formatDateTime(obj?.created as string | undefined)}
-        updated={formatDateTime(obj?.updated as string | undefined)}
+        created={formatDateTime((obj?.created_at ?? obj?.created) as string | undefined)}
+        updated={formatDateTime((obj?.updated_at ?? obj?.updated) as string | undefined)}
         closedAt={objectType === 'spark' || !obj?.closed_at ? undefined : formatDateTime(obj.closed_at as string)}
         auxiliaryMetaEntries={obj ? getAuxiliaryMetaEntries(obj, objectType || '') : []}
         copyLabel={t('common.copyObjectPath')}
@@ -160,16 +166,53 @@ function ObjectPreview({ content }: { content: PanelContent }) {
           objectType={objectType}
           obj={obj}
           objectId={objectId}
-          objectPath={typeof obj.path === 'string' ? obj.path : targetPath}
+          objectPath={targetPath}
+          carrier={readMeta.carrier}
         />
       )}
       {obj && !isObjectDetailLayoutType(objectType) && (
         <GenericObjectPreview
           objectType={objectType}
           obj={obj}
-          objectPath={typeof obj.path === 'string' ? obj.path : targetPath}
+          objectPath={targetPath}
         />
       )}
+    </div>
+  );
+}
+
+function FactReadFailureNotice({
+  objectType,
+  objectId,
+  meta,
+}: {
+  objectType?: string;
+  objectId?: string;
+  meta: FactReadMeta;
+}) {
+  const { locale, t } = useI18n();
+  const typeLabel = getObjectTypeLabel(objectType, locale);
+  const status = meta.checkStatus ?? 'unavailable';
+  return (
+    <div className="space-y-3 rounded-md border border-red-500/20 bg-red-500/10 p-3">
+      <p className="ldvh-body text-red-300">{t('objectDetail.readUnavailable')}</p>
+      <dl className="grid gap-x-3 gap-y-1 text-sm sm:grid-cols-[5rem_1fr]">
+        <dt className="ldvh-meta-muted">{t('objectDetail.readType')}</dt>
+        <dd className="ldvh-meta-primary">{typeLabel} · {objectId || '—'}</dd>
+        <dt className="ldvh-meta-muted">{t('objectDetail.readStatus')}</dt>
+        <dd className="ldvh-meta-primary">{status}</dd>
+        {meta.canonicalPath && (
+          <>
+            <dt className="ldvh-meta-muted">{t('objectDetail.expectedPath')}</dt>
+            <dd className="ldvh-meta-primary break-all font-mono">{meta.canonicalPath}</dd>
+          </>
+        )}
+      </dl>
+      {meta.issues.map((issue, index) => (
+        <p key={`${issue.code ?? 'issue'}-${index}`} className="ldvh-meta text-red-300/80">
+          {issue.message ?? issue.code ?? t('objectDetail.readIssue')}
+        </p>
+      ))}
     </div>
   );
 }
@@ -179,11 +222,13 @@ function ObjectSemanticPreview({
   obj,
   objectId,
   objectPath,
+  carrier,
 }: {
   objectType?: string;
   obj: Record<string, unknown>;
   objectId?: string;
   objectPath?: string;
+  carrier?: FactCarrier;
 }) {
   const [summary, setSummary] = useState<ObjectItem | null>(null);
   const [loading, setLoading] = useState(false);
@@ -242,6 +287,7 @@ function ObjectSemanticPreview({
         relatedEntries={relatedEntries}
         locale={locale}
         objectPath={objectPath}
+        carrier={carrier}
       />
     );
   }
@@ -280,12 +326,12 @@ function GenericObjectPreview({ objectType, obj, objectPath }: { objectType?: st
 
 function DocPreview({ content }: { content: PanelContent }) {
   const { t } = useI18n();
-  const { docPath, data } = content;
+  const { docPath, data, carrier } = content;
   const [doc, setDoc] = useState<DocContent | null>(null);
   const [error, setError] = useState<string | null>(null);
   const docContent = typeof data === 'string' ? data : doc?.content ?? '';
   const truncated = doc?.truncated ?? false;
-  const isMarkdown = Boolean(docPath && /\.(md|markdown)$/i.test(docPath));
+  const isMarkdown = carrier === 'markdown' || (!carrier && Boolean(docPath && /\.(md|markdown)$/i.test(docPath)));
 
   useEffect(() => {
     if (typeof data === 'string' || !docPath) {

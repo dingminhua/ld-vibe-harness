@@ -99,6 +99,26 @@ def test_exact_fact_read_preserves_valid_and_not_found_local_results(tmp_path: P
     assert response["changes"] == []
 
 
+def test_parseable_invalid_fact_exposes_only_the_complete_cas_repair_snapshot(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    fact = project / "ldvh-base" / "sparks" / "spark-0001.yaml"
+    fact.write_text(
+        fact.read_text(encoding="utf-8").replace("priority: P2\n", ""),
+        encoding="utf-8",
+    )
+
+    response = handle_request("call", "read-fact-objects", _payload(workspace, project, "spark-0001")).response
+    item = response["result"]["items"][0]
+
+    assert response["outcome"] == "ok"
+    assert item["check_status"] == "invalid"
+    assert item["fact_object"]["object_id"] == "spark-0001"
+    assert "priority" not in item["fact_object"]
+    raw = fact.read_bytes()
+    assert item["content_fingerprint"] == hashlib.sha256(raw).hexdigest()
+    assert any(issue["field_path"] == "priority" for issue in item["issues"])
+
+
 def test_fact_read_supports_space_and_unicode_worktree_paths(tmp_path: Path) -> None:
     workspace, project = _fixture(tmp_path / "工作区 with space")
 

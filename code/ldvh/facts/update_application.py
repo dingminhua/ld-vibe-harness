@@ -75,7 +75,9 @@ def _project_read(command: FactUpdateCommand) -> FactReadResult:
         command.object_id,
         expected_common_dir=command.boundary.git_common_dir,
     )
-    if read.check_status != "mechanically_valid" or read.fields is None:
+    if read.check_status == "unavailable" or read.fields is None:
+        return read
+    if read.check_status != "mechanically_valid":
         return read
     index = ProjectFactIndex(
         command.boundary.worktree_root,
@@ -158,6 +160,8 @@ def apply_fact_update_locked(command: FactUpdateCommand) -> FactUpdateResult:
     if current.check_status == "unavailable" or current.fields is None:
         status: UpdateStatus = "current_unavailable" if current.check_status == "unavailable" else "current_rejected"
         return FactUpdateResult(status, command.event_at, issues=current.issues, current=current)
+    if current.check_status != "mechanically_valid" and current.content_fingerprint is None:
+        return FactUpdateResult("current_rejected", command.event_at, issues=current.issues, current=current)
     if current.content_fingerprint != command.expected_content_fingerprint or current.raw_text is None:
         return FactUpdateResult("fingerprint_stale", command.event_at, current=current)
 

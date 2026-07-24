@@ -34,7 +34,10 @@ export type LocalFactIssue = {
   path?: string
 }
 
-export type LocalFactItem = {
+export type LocalFactCarrier = 'yaml' | 'markdown'
+export type LocalFactCheckStatus = 'readable' | 'invalid'
+
+export type LocalFactMetadata = {
   object_ref: {
     governed_project_id: string
     fact_type_key: string
@@ -42,7 +45,11 @@ export type LocalFactItem = {
   }
   canonical_path: string
   absolute_path: string
-  check_status: 'unverified' | 'parse_failed'
+  carrier: LocalFactCarrier
+}
+
+export type LocalFactItem = LocalFactMetadata & {
+  check_status: LocalFactCheckStatus
   fact_object: Record<string, unknown>
   issues: LocalFactIssue[]
 }
@@ -72,6 +79,24 @@ function baseDirOf(scope: LocalFactScope, type: LocalFactType): string {
 
 function expectedFileName(type: LocalFactType, objectId: string): string {
   return `${objectId}${FACT_TYPE_CARRIERS[type]}`
+}
+
+function carrierFor(type: LocalFactType): LocalFactCarrier {
+  return type === 'study' ? 'markdown' : 'yaml'
+}
+
+function metadataFor(scope: LocalFactScope, type: LocalFactType, objectId: string): LocalFactMetadata {
+  const fileName = expectedFileName(type, objectId)
+  return {
+    object_ref: {
+      governed_project_id: scope.governedProjectId,
+      fact_type_key: type,
+      object_id: objectId,
+    },
+    canonical_path: path.posix.join('ldvh-base', FACT_TYPE_DIRS[type], fileName),
+    absolute_path: path.join(baseDirOf(scope, type), fileName),
+    carrier: carrierFor(type),
+  }
 }
 
 function isExpectedCarrierName(type: LocalFactType, fileName: string): boolean {
@@ -136,33 +161,33 @@ function toItem(
   extraFields: Record<string, unknown>,
   parseIssues: LocalFactIssue[],
 ): LocalFactItem {
-  const absolutePath = path.join(baseDirOf(scope, type), fileName)
-  const canonicalPath = path.posix.join('ldvh-base', FACT_TYPE_DIRS[type], fileName)
-  const issues: LocalFactIssue[] = parseIssues.map((issue) => ({ ...issue, path: canonicalPath }))
+  const objectIdFromName = fileName.replace(/\.(yaml|yml|md)$/i, '')
+  const metadata = metadataFor(scope, type, objectIdFromName)
+  const issues: LocalFactIssue[] = parseIssues.map((issue) => ({ ...issue, path: metadata.canonical_path }))
 
   const factObject: Record<string, unknown> = { ...parsed, ...extraFields }
   for (const field of REQUIRED_FIELDS) {
     if (typeof factObject[field] !== 'string' || !factObject[field]) {
-      issues.push({ code: 'field_missing', message: `缺失必需字段：${field}`, path: canonicalPath })
+      issues.push({ code: 'field_missing', message: `缺失必需字段：${field}`, path: metadata.canonical_path })
     }
   }
-  const objectId = typeof factObject.object_id === 'string' && factObject.object_id
-    ? factObject.object_id
-    : fileName.replace(/\.(yaml|yml|md)$/i, '')
-  const factTypeKey = typeof factObject.fact_type_key === 'string' && factObject.fact_type_key
-    ? factObject.fact_type_key
-    : type
-
-  const failed = parseIssues.some((issue) => issue.code.endsWith('parse_failed'))
+  if (typeof factObject.object_id === 'string' && factObject.object_id !== objectIdFromName) {
+    issues.push({
+      code: 'object_id_mismatch',
+      message: `对象身份与文件名不一致：期望 ${objectIdFromName}，实际为 ${factObject.object_id}`,
+      path: metadata.canonical_path,
+    })
+  }
+  if (typeof factObject.fact_type_key === 'string' && factObject.fact_type_key !== type) {
+    issues.push({
+      code: 'fact_type_key_mismatch',
+      message: `对象类型与载体目录不一致：期望 ${type}，实际为 ${factObject.fact_type_key}`,
+      path: metadata.canonical_path,
+    })
+  }
   return {
-    object_ref: {
-      governed_project_id: scope.governedProjectId,
-      fact_type_key: factTypeKey,
-      object_id: objectId,
-    },
-    canonical_path: canonicalPath,
-    absolute_path: absolutePath,
-    check_status: failed ? 'parse_failed' : 'unverified',
+    ...metadata,
+    check_status: issues.length === 0 ? 'readable' : 'invalid',
     fact_object: factObject,
     issues,
   }
@@ -251,12 +276,13 @@ export async function readLocalFact(
   scope: LocalFactScope = localFactScopeFromEnv(),
 ): Promise<
   | { status: 'ok'; item: LocalFactItem }
-  | { status: 'not_found' }
-  | { status: 'type_not_integrated'; issues: LocalFactIssue[] }
-  | { status: 'unavailable'; issues: LocalFactIssue[] }
+  | { status: 'not_found'; metadata: LocalFactMetadata; issues: LocalFactIssue[] }
+  | { status: 'type_not_integrated'; metadata: LocalFactMetadata; issues: LocalFactIssue[] }
+  | { status: 'unavailable'; metadata: LocalFactMetadata; issues: LocalFactIssue[] }
 > {
+  const metadata = metadataFor(scope, type, objectId)
   const missing = directoryStatus(scope, type)
-  if (missing) return { status: 'type_not_integrated', issues: missing.issues }
+  if (missing) return { status: 'type_not_integrated', metadata, issues: missing.issues }
 
   const dir = baseDirOf(scope, type)
   const entries = await readdir(dir, { withFileTypes: true })
@@ -272,6 +298,7 @@ export async function readLocalFact(
   if (wrongCarrier) {
     return {
       status: 'unavailable',
+      metadata,
       issues: [{
         code: 'unexpected_fact_carrier',
         message: `${objectId} 使用了错载体 ${wrongCarrier.name}；${type} 必须使用 ${expectedName}`,
@@ -279,5 +306,13 @@ export async function readLocalFact(
       }],
     }
   }
-  return { status: 'not_found' }
+  return {
+    status: 'not_found',
+    metadata,
+    issues: [{
+      code: 'not_found',
+      message: `未找到预期事实对象 ${expectedName}`,
+      path: metadata.canonical_path,
+    }],
+  }
 }

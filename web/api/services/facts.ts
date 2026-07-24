@@ -5,7 +5,7 @@ import {
 } from '../internal/v4FactsTransport.js'
 import { V4FactsConfigurationError } from './v4FactsConfig.js'
 // 列表/详情读取已切换为本地直读，不再调用 V4 Spark machine。
-import { listLocalFacts, readLocalFact, type LocalFactItem, type LocalFactScope } from './localFactReader.js'
+import { listLocalFacts, readLocalFact, type LocalFactItem, type LocalFactMetadata, type LocalFactScope } from './localFactReader.js'
 import { getWorkCaseDisplayStatus } from '../../shared/workcaseStatus.js'
 
 export const ACTIVE_OBJECT_TYPES = ['workcase', 'adr', 'pitfall', 'spark', 'study'] as const
@@ -68,14 +68,45 @@ function notIntegrated(type: ObjectType, message: string): WebFactResult {
   return listed
 }
 
-/** 与 v4SparkProjector 输出一致的扁平 DTO：fact_object 字段 + 传输元数据。 */
-function projectItem(item: LocalFactItem): Record<string, unknown> {
+/** 精确详情的扁平 DTO：事实字段与读取元数据同时交给详情消费者。 */
+function projectDetailItem(item: LocalFactItem): Record<string, unknown> {
   return {
     ...item.fact_object,
     object_ref: item.object_ref,
     canonical_path: item.canonical_path,
     absolute_path: item.absolute_path,
+    carrier: item.carrier,
+    check_status: item.check_status,
   }
+}
+
+/**
+ * 列表只承担候选发现；不得把尚未由该消费点精确读取的 source metadata
+ * 或正文载体承诺给卡片、复制和预览。
+ */
+function projectListItem(item: LocalFactItem): Record<string, unknown> {
+  return { ...item.fact_object }
+}
+
+function readFailure(
+  id: string,
+  type: ObjectType,
+  status: 'invalid' | 'not_found' | 'unavailable',
+  metadata: LocalFactMetadata,
+  issues: LocalFactItem['issues'],
+): WebFactResult {
+  const response = result('show', id, {
+    fact_read_failure: true,
+    object_ref: metadata.object_ref,
+    canonical_path: metadata.canonical_path,
+    absolute_path: metadata.absolute_path,
+    carrier: metadata.carrier,
+    check_status: status,
+    read_issues: issues,
+  })
+  response.summary = { id, type, read_status: status }
+  response.issues = issues.map((issue) => ({ ...issue }) as Record<string, unknown>)
+  return response
 }
 
 export async function listObjects(type: ObjectType, _baseDir?: string, status?: string, scope?: LocalFactScope): Promise<WebFactResult | WebFactError> {
@@ -86,7 +117,7 @@ export async function listObjects(type: ObjectType, _baseDir?: string, status?: 
       return notIntegrated(type, message)
     }
     const projectionProblems: Array<Record<string, unknown>> = listed.items
-      .filter((item) => item.issues.length > 0)
+      .filter((item) => item.check_status !== 'readable')
       .map((item) => ({
         code: 'local_read_issue',
         error: item.issues.map((issue) => issue.message).join('；'),
@@ -100,7 +131,8 @@ export async function listObjects(type: ObjectType, _baseDir?: string, status?: 
       targets: [],
     })))
     const items = listed.items
-      .map(projectItem)
+      .filter((item) => item.check_status === 'readable')
+      .map(projectListItem)
       .filter((item) => !status || item.status === status)
     const response = result('list', type, {
       items,
@@ -127,27 +159,19 @@ export async function showObject(id: string, scope?: LocalFactScope): Promise<We
   const type = match[1] as ObjectType
   try {
     const detail = await readLocalFact(type, id, scope)
-    if (detail.status === 'not_found') return { ok: false, error: `Object not found: ${id}`, stderr: '', exitCode: 1 }
+    if (detail.status === 'not_found') return readFailure(id, type, 'not_found', detail.metadata, detail.issues)
     if (detail.status === 'type_not_integrated') {
-      return {
-        ok: false,
-        error: detail.issues[0]?.message ?? `Object not found: ${id}`,
-        stderr: '',
-        exitCode: 'type_not_integrated',
-      }
+      return readFailure(id, type, 'unavailable', detail.metadata, detail.issues)
     }
     if (detail.status === 'unavailable') {
-      return {
-        ok: false,
-        error: detail.issues[0]?.message ?? `Object unavailable: ${id}`,
-        stderr: '',
-        exitCode: 'unexpected_fact_carrier',
-      }
+      return readFailure(id, type, 'unavailable', detail.metadata, detail.issues)
+    }
+    if (detail.item.check_status !== 'readable') {
+      return readFailure(id, type, 'invalid', detail.item, detail.item.issues)
     }
     const data: Record<string, unknown> = {
-      ...projectItem(detail.item),
+      ...projectDetailItem(detail.item),
       coverage_status: 'complete',
-      check_status: detail.item.check_status,
       read_issues: detail.item.issues,
     }
     const response = {

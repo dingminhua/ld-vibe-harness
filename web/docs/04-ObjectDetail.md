@@ -4,14 +4,14 @@
 > 源码：`web/src/pages/ObjectDetail.tsx`
 > 字段格式规则：`web/src/utils/fieldFormats.ts`
 
-> V4 读取边界：当前 Web 事实读取器只连接 V4 原生 Spark。Study 的界面原型不得读取 V2/V3 文件、旧字段或兼容 DTO；在 V4 原生 Study 读取能力和外部证据投影实际建立前，不得把该原型宣称为可用的 Study 阅读入口。
+> V4 读取边界：详情、对象预览、来源路径复制和正文入口先取得精确读取。`canonical_path`、`carrier` 和 `check_status` 只来自该读取；候选列表、路由 `target` 和 object ID 不能代替它。Study 只连接 V4 原生的 `research_intent`、`research_question`、`abstract`、`recommendation_summary`、唯一 Markdown 正文与 `urls`，不读取 V2/V3 文件、旧字段或兼容 DTO。
 > API：`GET /api/objects/:type/:id`
 > 全局设计语言：`web/docs/01-全局设计约束.md` §1.10
 > 图标规范：[`09-图标语义规范.md`](./09-图标语义规范.md)
 
 ## 1. 页面目标
 
-对象详情页是事实对象阅读器，不是 YAML 文件查看器。页面应按字段语义展示对象目标、证据、引用、状态和产出，并把 YAML 源码作为折叠兜底。
+对象详情页是事实对象阅读器，不是载体文件查看器。页面按字段语义展示对象目标、证据、引用、状态和产出；YAML 载体可以有折叠的原始数据兜底，Markdown Study 的完整阅读只进入同一份正文的扩展阅读，不在主页面重建或伪装为 YAML。
 
 ## 2. 当前页面结构
 
@@ -22,10 +22,10 @@
   WorkCase：执行态势 + 成功标准 / 验证证据 / 关闭证据 + 检查安排 + 目标 / 所属工作项 / 来源 + 文档 / 决策 / 火花 / 踩坑经验
   ADR：背景 / 决策 / 影响 / 关联
   Pitfall：现象 / 触发 / 根因 / 方案 / 验证 / 规避 / 范围 / 关联
-  Study：研究问题 / 摘要 / 适用范围 / 验证说明 / 正文 / 外部证据
+  Study：研究意图 / 摘要 / 建议摘要 / 报告正文进入扩展阅读 / 外部资料
   Spark：意图 / 摘要 / 演变 / 分流 / 关联
   其他对象：字段卡片布局
-YAML 源码折叠区
+YAML 载体的源码折叠区（Markdown Study 不显示第二份 YAML 正文）
 右侧扩展阅读区（App Shell 提供，不属于本页卡片）
 ```
 
@@ -39,7 +39,7 @@ YAML 源码折叠区
 - 类型标签使用对象类型颜色，显示本地化类型名；状态标签显示本地化状态名，不放在右上操作区。
 - 标题优先使用 `title_zh/title_en`，回退 `title`，再回退 ID；工作对象和普通对象标题前均使用 `ObjectTypeIcon(obj.type)` 识别对象身份。
 - WorkCase 和 Spark 如存在 `priority`，在标题行最前面展示 `P0` / `P1` / `P2` / `P3` 字符徽标，随后才是 `ObjectTypeIcon(obj.type)` 和标题；徽标使用颜色和 tooltip 表达优先级，不在头部、元信息行、正文模块或其他字段区重复展示 priority 文字 chip / 字段。
-- ID 使用 `ldvh-meta`，不做大号标题；右上角只提供 `CopyPathButton`，tooltip 为“复制对象路径”，复制 API 返回的 `data.path` / 对象 `path`，只有缺失时才使用 `target`，不得再放状态标签或其他对象身份信息。
+- ID 使用 `ldvh-meta`，不做大号标题；右上角只提供 `CopyPathButton`，tooltip 为“复制对象路径”。仅在精确读取为 `readable` 且返回 `canonical_path` 时显示，复制值必须等于该路径；不得使用 `data.path`、对象 ID 或路由 `target` 猜测路径，也不得再放状态标签或其他对象身份信息。
 - 如对象存在 `tags`，标签应在标题下方独立成行，并位于创建/更新时间之上；标签不与时间或其他辅助属性挤在同一行。Pitfall `tags` 展示事实源英文原值，不做中文翻译。
 - 创建/更新时间在标签行下方以短标签展示，统一使用 `formatDateTime()`，格式为 `YYYY-MM-DD HH:mm`；关闭时间或必要辅助属性可在同一元信息行弱化展示，不另起 MetaChip 行。
 - 对象字段必须以对应事实模型主规范为准；只有该对象字段契约内定义的辅助属性才可在元信息行降权展示，不进入主阅读流。`priority` 只适用于 WorkCase 和 Spark，且在详情头部以字符徽标展示；importance 已由 priority 统一承载，不再作为独立字段。
@@ -64,7 +64,7 @@ WorkCase 不使用普通字段卡片堆叠，而作为“一次目标的执行�
 
 1. Pitfall / 踩坑经验：作为“可复用经验阅读页”展示；
 2. ADR / 决策：作为“决策补丁阅读页”展示；
-3. Study / 外部内容调研：作为“外部调研报告阅读界面”展示；当前 V4 读取器尚未实现；
+3. Study / 外部内容调研：作为“外部调研报告阅读界面”展示。摘要层依次读取研究意图、摘要、建议摘要；研究问题留在唯一 Markdown 报告，完整正文和外部资料按需展开；
 4. Spark / 火花：作为“待分流信息阅读页”展示。
 
 上述四类方案作为后续非工作主线对象页面设计的参照，不再回退到普通字段卡片堆叠。提交详情不是工作对象详情，但它是五个基准模块之一，已经进入同一阅读语言族：标准身份头部、指标区、圆点正文节点和右侧扩展阅读都必须与这四类详情保持一致。
@@ -96,26 +96,26 @@ WorkCase 不使用普通字段卡片堆叠，而作为“一次目标的执行�
 | 检查清单 | `ChecklistCard` | 进度条 + 勾选/未勾选图标 + inline Markdown |
 | 兼容检查清单字段 | `ChecklistCard` 或 `SummaryText` | 只有内容包含 `- [ ]` / `- [x]` 时才按检查清单渲染 |
 | 验证证据 | `EvidenceBlock` | Markdown 渲染，命令、路径和代码突出显示；按 05.02 四段式二级标题派生为分段证据视图 |
-| 对象 ID 引用 | `ReferenceCard` | 点击在右侧扩展阅读区打开对象；卡片内提供复制对象路径图标 |
+| 对象 ID 引用 | `ReferenceCard` | 点击在右侧扩展阅读区取得精确读取并打开对象；只有精确读取返回可消费 `canonical_path` 时提供复制对象路径图标 |
 | 文档路径 / URL | `DocPreviewLink` | 本地 Markdown 文档和外部 URL 均优先在右侧扩展阅读区预览；复制 tooltip 分别为“复制文档路径”和“复制链接”；外部 URL 在扩展阅读区提供新标签备用入口 |
 | 路径文本 | `PathText` | 等宽、可换行的路径标签 |
 | 其他短文本 | `ldvh-body` | 普通文本 |
 
-当前 V4 可点击对象引用只覆盖已实际接入读取器的 Spark。Study、WorkCase、ADR 和 Pitfall 在其各自 V4 原生读取器实际建立前，只能作为普通引用文本展示，不跳转到历史兼容页面。
+对象引用只可打开已经实际接入的 V4 原生读取器；Study 已读取当前 V4 原生载体，且不得回退到历史兼容页面、旧字段或第二份正文结构。
 
 路径类字段应按字段语义区分：`related_docs` 指向关联文档，`urls` 只指向报告正文提炼出的外部 `http(s)` 网址及用途摘要，`related_rules` 指向关联规范、Rules、Skill、Agent、Code 或 Web 路径。Web 可预览本地 Markdown 或展示路径，但不得把可预览路径集合解释为所有路径字段的合法范围。
 
 带章节后缀的本地 Markdown 引用应区分展示文本与加载路径：列表行保留完整引用文本，例如 `specs/07-Code确定性执行实现规范.md §4.7`；点击整行或扩展阅读图标时，只用规范化后的 Markdown 文件路径加载右侧阅读区，例如 `specs/07-Code确定性执行实现规范.md`，不得把章节后缀拼入文件读取 API。
 
-V4 Study 阅读器读取当前 Study 的 `research_question`、`abstract`、Markdown 正文与 `urls`。不得读取或投影旧版路径型引用、验证字段、关系字段或兼容 DTO；提交记录仍应从 Git 提交记录视图派生。
+V4 Study 阅读器读取当前 Study 的 `research_intent`、`research_question`、`abstract`、`recommendation_summary`、Markdown 正文与 `urls`。首级详情与对象预览只按“研究意图 → 摘要 → 建议摘要”展示；`research_question` 留在报告“研究问题”段，正文只通过同一精确读取的 Markdown carrier 进入扩展阅读。不得读取或投影旧版路径型引用、验证字段、关系字段或兼容 DTO；提交记录仍应从 Git 提交记录视图派生。
 
 关联区块内的工作对象引用不直接展示对象编号。对象编号属于打开后的对象详情、复制路径或 YAML 源码中的定位信息；列表态只展示对象类型图标、对象标题和必要操作图标，降低重复元信息对阅读的干扰。
 
-关联区块内每个具体条目必须使用统一行结构：左侧为语义图标和标题/路径/网址文本，右侧固定提供复制入口和扩展阅读入口。整行必须可点击并触发扩展阅读；复制入口只执行复制，不触发扩展阅读。对象引用、文档路径和外部 URL 不得各自使用不同的卡片、文字按钮或标签样式。行内语义图标、标题文本、复制入口和扩展阅读入口必须垂直居中；复制和扩展阅读入口使用同一 28px 操作容器，长标题截断或出现摘要次行时也不得让右侧操作图标下坠或上浮。
+关联区块内每个具体条目必须使用统一行结构：左侧为语义图标和标题/路径/网址文本，右侧提供扩展阅读入口；对象引用只有在该行完成精确读取并获得可消费 `canonical_path` 时才增加复制入口。整行必须可点击并触发扩展阅读；复制入口只执行复制，不触发扩展阅读。对象引用、文档路径和外部 URL 不得各自使用不同的卡片、文字按钮或标签样式。行内语义图标、标题文本、复制入口和扩展阅读入口必须垂直居中；复制和扩展阅读入口使用同一 28px 操作容器，长标题截断或出现摘要次行时也不得让右侧操作图标下坠或上浮。
 
 V4 Study 阅读器从 `urls` 展示外部资料，并显示资料自身的标题和用途摘要。界面不得把 URL 转换为规则，或把内部路径呈现为外部研究对象。
 
-V4 Study 详情页是外部调研报告阅读界面，不按普通字段卡片表达主内容。主节点依次为“研究问题、摘要、正文、外部资料”；分别消费 `research_question`、`abstract`、Markdown body 和引用数组。正文中的五段骨架承载输入与边界、关键发现、建议和后续分流；正文和资料只可来自同一 V4 原生 Study 文件，不提供 V2/V3 兼容字段或双读。节点标题栏整行可点击，默认全部打开；详情页和右侧扩展阅读区必须复用同一布局。
+V4 Study 详情页不按普通字段卡片表达主内容。主阅读节点依次为“研究意图、摘要、建议摘要、报告正文、外部资料”；前三项分别消费 `research_intent`、`abstract`、`recommendation_summary`。报告正文节点只是同一文件的进入与复制行：仅在精确读取的 `carrier: markdown` 和 `canonical_path` 可用时，才可在右侧扩展阅读区打开完整正文；正文保留其原有 H2、H3、表格、链接和段落，主页面不按 H2 拆开、复制或重组。`research_question` 仅在正文“研究问题”中展开，同时可保留给机器候选消费，但不属于详情摘要层。资料只可来自同一 V4 原生 Study 文件，不提供 V2/V3 兼容字段或双读。
 
 Spark 不使用普通字段卡片堆叠。Spark 是“分流前的信息对象”，页面目标不是证明结论、沉淀经验或呈现报告，而是帮助 Human 和 AI 判断这条信息当前应继续 pending、追加演变、分流到目标事实源，还是废弃。Spark 作为“待分流信息阅读页”展示，基础主节点固定为“意图、摘要、演变、关联”；“分流”是闭环事实节点，不是 pending 状态说明节点：
 
@@ -140,15 +140,15 @@ Pitfall、ADR、Study 和 Spark 等非工作主线对象的长文本阅读组织
 - 同一对象或文档入口再次点击关闭扩展阅读区；点击不同入口才切换右侧预览内容。
 - 对象预览不是“摘要卡片”，而是对象详情页阅读内容的右侧视口；同一个对象在详情页和扩展阅读区必须使用同一套字段顺序、字段标签、字段过滤和字段渲染。
 - WorkCase、Pitfall、ADR、Study 和 Spark 必须复用详情页导出的专用阅读布局。
-- WorkCase、Pitfall、ADR、Study 和 Spark 的扩展阅读头部同样不显示状态 chip；右侧面板按详情页身份区顺序展示 `类型 + ID + 标题 + 创建/更新时间 + 复制对象路径入口`，状态由复用的语义阅读布局表达。
+- WorkCase、Pitfall、ADR、Study 和 Spark 的扩展阅读头部复用详情页身份区，清楚展示 `类型 + 类型状态词 + ID + 标题 + 创建/更新时间`；读取失败时不显示领域状态，而显示实际读取状态与未读取范围。
 - Spark 必须复用详情页专用 Spark 阅读布局，不得在 `ReadingPanel` 中维护另一套 `PREVIEW_FIELD_ORDER`、字段 label map、关联分组或独立字段渲染器。
-- 对象预览头部提供复制对象路径图标，复制 API 返回的 `data.path` / 对象 `path`，只有缺失时才使用 `target`。
+- 对象预览头部只在精确读取返回 `check_status: readable` 与 `canonical_path` 时提供复制对象路径图标；`target` 仅用于导航，绝不作为路径回退。
 - Markdown 文档预览使用 `MarkdownPreview` + `github-markdown-css`，不是手写 Markdown 标签样式。
 - Markdown 正文基准字号为 14px；表格横向滚动，代码块、引用块、任务列表由全局 Markdown 样式统一控制。
 
 ## 8. YAML 源码
 
-- 默认折叠。
+- 只对声明 `carrier: yaml` 的精确可读对象显示，默认折叠；Markdown Study 不显示由字段重组出的 YAML 版本。
 - 展开后使用 `react-syntax-highlighter` + YAML + oneDark。
 - 显示行号，最大高度 400px。
 - 折叠图标与详情页主节点保持一致：收拢状态使用 `ChevronDown`，表示可以向下打开；打开状态使用 `ChevronUp`，表示可以向上收起。
@@ -163,7 +163,7 @@ Pitfall、ADR、Study 和 Spark 等非工作主线对象的长文本阅读组织
 5. 不恢复右侧“关联对象列表导航”；右侧只做访问历史前进/后退。
 6. 不把详情页内关联对象入口做成重复点击仍保持打开；重复点击当前入口必须收起扩展阅读。
 7. 不在业务组件里新增另一套字段格式判断；新增字段先更新 `fieldFormats.ts`，并按性质同步 05.01 字段语义、05.02 内容格式或 05.03 注册消费规则。
-8. 对象详情头部、对象引用卡片和扩展区对象预览必须保留复制对象路径入口。
+8. 详情头部、对象引用卡片和扩展区对象预览只在各自完成精确读取且有 `canonical_path` 时保留复制对象路径入口；候选列表不承诺或复制源路径。
 9. 不把扩展阅读对象内容实现成详情页之外的第二套摘要；右侧对象内容必须从详情页阅读布局或详情页字段组件派生。
 10. 项目画像类入口不属于当前 LDVH 工作对象、管辖配置或 Web 对象路由；ObjectDetail 不维护此类字段顺序、字段标签、详情路由、引用卡片或扩展阅读支持。
 
@@ -174,9 +174,11 @@ interface ObjectDetail {
   ok: boolean;
   action: string;
   target: string;
-  summary: { id: string; type: string; status: string };
+  summary: { id: string; type: string; status?: string; read_status?: 'readable' | 'invalid' | 'not_found' | 'unavailable' };
   data: Record<string, unknown>;
 }
 ```
+
+精确可读详情的 `data` 同时带回 `canonical_path`、`carrier` 和 `check_status: 'readable'`；读取失败返回 `fact_read_failure: true`、预期路径、声明载体、读取状态和问题，但不返回可消费正文或领域状态。列表/仪表盘是候选发现，不能以其 `path`、ID 或 `target` 作为源路径。
 
 WorkCase 详情页可以额外消费 WorkCase 只读派生摘要，用于展示推进阶段、成功标准进度、执行态势、关闭材料完备性、阻塞关系和对象路径。当前 Web API 可派生 `executionItems`、`executionItemTotal`、`executionItemDone`、`executionItemBlocked`、`executionItemOpen`、`executionItemByStatus`、`successCriteriaTotal`、`successCriteriaDone`、`hasPlanConfirmedAt`、`hasClosureRequestedAt`、`hasVerificationEvidence`、`hasClosureEvidence` 和 `hasClosedAt`；历史 `review_requested_at` 可兼容为 `hasClosureRequestedAt`。派生摘要仍来自 Git 文件事实源的确定性读取，不写回事实源，也不作为第二事实源。

@@ -177,7 +177,11 @@ test('preserves the shared commit DTO across current API consumers', async () =>
   assertCommitDto(dashboard.recentChanges[0])
   assert.equal(dashboard.actionItems[0].object_id, 'spark-0001')
   assert.equal(dashboard.actionItems[0].id, 'spark-0001')
-  assert.equal(dashboard.actionItems[0].path, 'ldvh-base/sparks/spark-0001.yaml')
+  // Dashboard rows are discovery candidates.  Source paths are only available
+  // after the detail consumer performs an exact fact read.
+  assert.equal(dashboard.actionItems[0].path, '')
+  assert.equal('canonical_path' in dashboard.actionItems[0], false)
+  assert.equal('carrier' in dashboard.actionItems[0], false)
   assert.equal(dashboard.actionItems[0].updated, '2026-07-20T08:00:00+08:00')
   assert.doesNotMatch(String(dashboard.actionItems[0].relativeTime), /NaN/)
   assert.equal(dashboard.recentItems[0].object_id, 'spark-0001')

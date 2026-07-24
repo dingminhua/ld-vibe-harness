@@ -16,9 +16,11 @@ export const META_KEYS = [
   'object_ref',
   'canonical_path',
   'absolute_path',
+  'carrier',
   'coverage_status',
   'check_status',
   'read_issues',
+  'fact_read_failure',
   'aggregated_related_docs',
   'aggregated_related_adrs',
   'aggregated_related_sparks',
@@ -52,7 +54,8 @@ const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
     'disposition_summary', 'closed_at',
   ],
   study: [
-    'research_question', 'abstract', 'report_body', 'urls', 'disposition_summary', 'closed_at',
+    'research_intent', 'research_question', 'abstract', 'recommendation_summary', 'report_body',
+    'urls', 'disposition_summary', 'closed_at',
   ],
 };
 

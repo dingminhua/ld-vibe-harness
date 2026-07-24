@@ -78,7 +78,9 @@ def _item_sources(root: Path, scope: FactReferenceScope, canonical_path: str) ->
 def _item(scope: FactReferenceScope, root: Path, read: FactReadResult) -> dict[str, Any]:
     sources = _item_sources(root, scope, read.canonical_path)
     fact_object: dict[str, Any] | None = None
-    if read.check_status == "mechanically_valid" and read.fields is not None:
+    if read.fields is not None and (
+        read.check_status == "mechanically_valid" or read.content_fingerprint is not None
+    ):
         fact_object = (
             {"frontmatter": read.fields, "body": read.body or ""} if read.carrier == "markdown" else read.fields
         )
@@ -89,7 +91,7 @@ def _item(scope: FactReferenceScope, root: Path, read: FactReadResult) -> dict[s
         "carrier": read.carrier,
         "check_status": read.check_status,
         "fact_object": fact_object,
-        "content_fingerprint": (read.content_fingerprint if read.check_status == "mechanically_valid" else None),
+        "content_fingerprint": read.content_fingerprint,
         "issues": [
             {
                 "category": issue.category,

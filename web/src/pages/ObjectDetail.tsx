@@ -29,6 +29,7 @@ import { formatDateTime } from '@/utils/dateFormat';
 import { getStatusColor } from '@/utils/statusColors';
 import { getSignalClassName, getSignalText, isSignalField } from '@/utils/objectSignals';
 import { usePanel } from '@/utils/panelContext';
+import { getFactReadMeta, isReadableFact, type FactCarrier, type FactReadMeta } from '@/utils/factReadMeta';
 import { WorkCaseReadingLayout } from '@/pages/object-detail/WorkCaseReadingLayout';
 import { AdrReadingLayout, PitfallReadingLayout, PitfallTextNodeContent, SparkReadingLayout } from '@/pages/object-detail/FactReadingLayouts';
 import { FactAssociationsSection } from '@/pages/object-detail/FactAssociationsSection';
@@ -63,7 +64,9 @@ export type { RelatedContentEntry };
 export { WorkCaseReadingLayout } from '@/pages/object-detail/WorkCaseReadingLayout';
 export { AdrReadingLayout, PitfallReadingLayout, SparkReadingLayout } from '@/pages/object-detail/FactReadingLayouts';
 
-const STUDY_READING_NODE_FIELDS = new Set(['research_question', 'abstract', 'report_body']);
+const STUDY_READING_NODE_FIELDS = new Set([
+  'research_intent', 'research_question', 'abstract', 'recommendation_summary', 'report_body',
+]);
 const FORMAL_ASSOCIATION_FIELDS = new Set(['relations']);
 export type ReadingNodeState = 'collapsed' | 'expanded';
 type RelatedAssociationValue = {
@@ -160,23 +163,27 @@ export default function ObjectDetail() {
   const obj = displayDetail.data;
   const objId = displayDetail.summary.id;
   const objType = displayDetail.summary.type;
-  const objStatus = displayDetail.summary.status;
+  const readMeta = getFactReadMeta(obj);
+  const objStatus = typeof displayDetail.summary.status === 'string'
+    ? displayDetail.summary.status
+    : undefined;
   const typeColor = CATEGORY_COLORS[objType] || CATEGORY_COLORS.other;
-
-  const displayTitle = getLocalizedObjectTitle(obj as LocalizedTitleItem, locale, objId);
-
-  const contentEntries = getObjectDetailContentEntries(obj, objType);
-  const { primaryEntries, relatedEntries } = splitRelatedContentEntries(contentEntries);
-
-  const auxiliaryMetaEntries = getAuxiliaryMetaEntries(obj, objType);
-
-  // 生成真正的 YAML 源码
-  const yamlSource = objectToYaml(obj);
   const listSearch = searchParams.toString();
   const listPath = `/objects/${objType}${listSearch ? `?${listSearch}` : ''}`;
   const currentPath = `${location.pathname}${location.search}`;
   const returnPath = getReturnPath(location.state, currentPath) ?? listPath;
-  const copyTarget = String(obj.path || displayDetail.target || objId);
+
+  if (!isReadableFact(readMeta)) {
+    return <FactReadFailurePage returnPath={returnPath} type={objType} id={objId} meta={readMeta} />;
+  }
+
+  const displayTitle = getLocalizedObjectTitle(obj as LocalizedTitleItem, locale, objId);
+  const contentEntries = getObjectDetailContentEntries(obj, objType);
+  const { primaryEntries, relatedEntries } = splitRelatedContentEntries(contentEntries);
+  const auxiliaryMetaEntries = getAuxiliaryMetaEntries(obj, objType);
+  const showYamlSource = readMeta.carrier === 'yaml';
+  const yamlSource = showYamlSource ? objectToYaml(obj) : '';
+  const copyTarget = readMeta.canonicalPath;
 
   return (
     <div className="flex h-full">
@@ -207,7 +214,7 @@ export default function ObjectDetail() {
                 typeColor={typeColor}
                 typeLabel={getTypeLabel(objType, locale)}
                 status={objStatus}
-                statusLabel={getObjectStatusLocale(objType, objStatus, locale)}
+                statusLabel={objStatus ? getObjectStatusLocale(objType, objStatus, locale) : undefined}
                 source={obj}
                 locale={locale}
                 created={formatDateTime((obj.created_at ?? obj.created) as string | undefined)}
@@ -235,7 +242,8 @@ export default function ObjectDetail() {
               extraEntries={primaryEntries}
               relatedEntries={relatedEntries}
               locale={locale}
-              objectPath={typeof obj.path === 'string' ? obj.path : displayDetail.target}
+              objectPath={copyTarget}
+              carrier={readMeta.carrier}
             />
           ) : objType === 'adr' ? (
             <AdrReadingLayout
@@ -263,36 +271,37 @@ export default function ObjectDetail() {
                   value={value}
                   locale={locale}
                   objType={objType}
-                  objectPath={typeof obj.path === 'string' ? obj.path : displayDetail.target}
+                  objectPath={copyTarget}
                 />
               ))}
               <RelatedContentSection entries={relatedEntries} locale={locale} />
             </div>
           )}
 
-          {/* YAML source */}
-          <div className="overflow-hidden rounded-xl border border-ldvh-border bg-ldvh-panel">
-            <button
-              onClick={() => setShowYaml(!showYaml)}
-              className="ldvh-body-muted flex w-full items-center gap-2 p-3 transition-colors hover:bg-ldvh-border/30 hover:text-ldvh-text-primary"
-            >
-              <Code2 size={14} />
-              <span>{t('objectDetail.yamlSource')}</span>
-              <span className="ml-auto">{showYaml ? <ChevronUp size={14} /> : <ChevronDown size={14} />}</span>
-            </button>
-            {showYaml && (
-              <div className="border-t border-ldvh-border">
-                <SyntaxHighlighter
-                  language="yaml"
-                  style={oneDark}
-                  customStyle={{ margin: 0, borderRadius: 0, fontSize: '12px', maxHeight: '400px' }}
-                  showLineNumbers
-                >
-                  {yamlSource}
-                </SyntaxHighlighter>
-              </div>
-            )}
-          </div>
+          {showYamlSource && (
+            <div className="overflow-hidden rounded-xl border border-ldvh-border bg-ldvh-panel">
+              <button
+                onClick={() => setShowYaml(!showYaml)}
+                className="ldvh-body-muted flex w-full items-center gap-2 p-3 transition-colors hover:bg-ldvh-border/30 hover:text-ldvh-text-primary"
+              >
+                <Code2 size={14} />
+                <span>{t('objectDetail.yamlSource')}</span>
+                <span className="ml-auto">{showYaml ? <ChevronUp size={14} /> : <ChevronDown size={14} />}</span>
+              </button>
+              {showYaml && (
+                <div className="border-t border-ldvh-border">
+                  <SyntaxHighlighter
+                    language="yaml"
+                    style={oneDark}
+                    customStyle={{ margin: 0, borderRadius: 0, fontSize: '12px', maxHeight: '400px' }}
+                    showLineNumbers
+                  >
+                    {yamlSource}
+                  </SyntaxHighlighter>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -308,6 +317,61 @@ function getReturnPath(state: unknown, currentPath: string): string | null {
   if (from === currentPath) return null;
   if (!from.startsWith('/')) return null;
   return from;
+}
+
+function FactReadFailurePage({
+  returnPath,
+  type,
+  id,
+  meta,
+}: {
+  returnPath: string;
+  type: string;
+  id: string;
+  meta: FactReadMeta;
+}) {
+  const navigate = useNavigate();
+  const { t, locale } = useI18n();
+  const status = meta.checkStatus ?? 'unavailable';
+  return (
+    <div className="flex h-full">
+      <div className="flex-1 overflow-y-auto">
+        <div className="mx-auto max-w-4xl p-4 sm:p-6">
+          <button
+            onClick={() => navigate(returnPath)}
+            className="ldvh-body-muted mb-4 flex items-center gap-1.5 rounded-md px-2 py-1 transition-colors hover:bg-ldvh-border/50 hover:text-ldvh-text-primary"
+          >
+            <ArrowLeft size={14} />
+            {t('objectDetail.back')}
+          </button>
+          <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-4">
+            <p className="ldvh-body text-red-300">{t('objectDetail.readUnavailable')}</p>
+            <dl className="mt-3 grid gap-x-4 gap-y-2 sm:grid-cols-[7rem_1fr]">
+              <dt className="ldvh-meta-muted">{t('objectDetail.readType')}</dt>
+              <dd className="ldvh-meta-primary">{getTypeLabel(type, locale)} · {id}</dd>
+              <dt className="ldvh-meta-muted">{t('objectDetail.readStatus')}</dt>
+              <dd className="ldvh-meta-primary">{status}</dd>
+              {meta.canonicalPath && (
+                <>
+                  <dt className="ldvh-meta-muted">{t('objectDetail.expectedPath')}</dt>
+                  <dd className="ldvh-meta-primary break-all font-mono">{meta.canonicalPath}</dd>
+                </>
+              )}
+            </dl>
+            {meta.issues.length > 0 && (
+              <div className="mt-3 space-y-1">
+                {meta.issues.map((issue, index) => (
+                  <p key={`${issue.code ?? 'issue'}-${index}`} className="ldvh-meta text-red-300/80">
+                    {issue.message ?? issue.code ?? t('objectDetail.readIssue')}
+                  </p>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 type LocalizedTitleItem = {
@@ -375,7 +439,6 @@ export function ObjectIdentityHeader({
   const titleClassName = compact ? 'ldvh-reading-title' : 'ldvh-page-title';
   const iconSize = compact ? 16 : 18;
   const statusColor = status ? getStatusColor(status) : null;
-  const isObjectDetail = !compact;
   const tagMetaEntry = auxiliaryMetaEntries.find(([key]) => key === 'tags');
   const remainingAuxiliaryMetaEntries = auxiliaryMetaEntries.filter(([key]) => key !== 'priority' && key !== 'tags');
   const hasFooterMeta = showDefaultDates
@@ -390,15 +453,13 @@ export function ObjectIdentityHeader({
       <div className="flex min-w-0 items-center justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="mb-1.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-            {!isObjectDetail && (
-              <span
-                className="ldvh-chip shrink-0 rounded px-2 py-0.5"
-                style={{ backgroundColor: `${typeColor}18`, color: typeColor }}
-              >
-                {typeLabel}
-              </span>
-            )}
-            {!isObjectDetail && status && statusColor && (
+            <span
+              className="ldvh-chip shrink-0 rounded px-2 py-0.5"
+              style={{ backgroundColor: `${typeColor}18`, color: typeColor }}
+            >
+              {typeLabel}
+            </span>
+            {status && statusColor && (
               <span
                 className="ldvh-chip shrink-0 rounded px-2 py-0.5 font-mono"
                 style={{
@@ -411,20 +472,9 @@ export function ObjectIdentityHeader({
             )}
             {extraBadges}
             <span className="ldvh-meta-muted min-w-0 truncate">{id}</span>
-            {isObjectDetail && showCopyAction && (
+            {!compact && showCopyAction && (
               <div className="ml-auto flex shrink-0 items-center gap-2">
                 <CopyPathButton path={target} label={copyLabel} copiedLabel={copiedLabel} />
-                {status && statusColor && (
-                  <span
-                    className="ldvh-chip shrink-0 rounded px-2 py-0.5 font-mono"
-                    style={{
-                      color: statusColor,
-                      backgroundColor: `${statusColor}18`,
-                    }}
-                  >
-                    {statusLabel || status}
-                  </span>
-                )}
               </div>
             )}
           </div>
@@ -443,7 +493,7 @@ export function ObjectIdentityHeader({
             )}
           </div>
         </div>
-        {showCopyAction && !isObjectDetail && (
+        {showCopyAction && compact && (
           <div className="flex shrink-0 flex-col items-end justify-center gap-2">
             <CopyPathButton path={target} label={copyLabel} copiedLabel={copiedLabel} />
             {actionAlignedTitleMeta.length > 0 && (
@@ -669,7 +719,7 @@ function parseRelatedAssociationValue(item: unknown): RelatedAssociationValue | 
 function RelatedAssociationRow({ fieldKey, reference, locale }: { fieldKey: string; reference: RelatedAssociationValue; locale: string }) {
   const { t } = useI18n();
   const { isOpen: panelOpen, content: panelContent, openPanel } = usePanel();
-  const [objectInfo, setObjectInfo] = useState<{ type: string; title: string; path: string } | null>(null);
+  const [objectInfo, setObjectInfo] = useState<{ type: string; title: string; path?: string } | null>(null);
   const [objectMissing, setObjectMissing] = useState(false);
   const value = reference.ref;
   const objectType = parseRefType(value);
@@ -721,8 +771,13 @@ function RelatedAssociationRow({ fieldKey, reference, locale }: { fieldKey: stri
       .then((detail) => {
         if (cancelled) return;
         const obj = detail.data;
+        const meta = getFactReadMeta(obj);
         const title = getLocalizedObjectTitle(obj as LocalizedTitleItem, locale, value);
-        setObjectInfo({ type: objectType, title, path: String(obj.path || detail.target || '') });
+        setObjectInfo({
+          type: objectType,
+          title,
+          path: isReadableFact(meta) ? meta.canonicalPath : undefined,
+        });
       })
       .catch(() => {
         if (!cancelled) setObjectMissing(true);
@@ -924,7 +979,7 @@ export function buildCurrentFlowItem(
     title_en: obj.title_en as string | undefined,
     title_zh: obj.title_zh as string | undefined,
     status: String(obj.status ?? 'unknown'),
-    path: String(obj.path ?? ''),
+    path: String(obj.canonical_path ?? obj.path ?? ''),
     updated: String(obj.updated ?? ''),
   };
 }
@@ -1200,8 +1255,9 @@ function basename(path: string) {
 }
 
 const STUDY_READING_NODES: Array<{ field: string; kind: 'text' | 'report' }> = [
-  { field: 'research_question', kind: 'text' },
+  { field: 'research_intent', kind: 'text' },
   { field: 'abstract', kind: 'text' },
+  { field: 'recommendation_summary', kind: 'text' },
   { field: 'report_body', kind: 'report' },
 ];
 
@@ -1211,12 +1267,14 @@ export function StudyReadingLayout({
   relatedEntries,
   locale,
   objectPath,
+  carrier,
 }: {
   obj: Record<string, unknown>;
   extraEntries: Array<[string, unknown]>;
   relatedEntries: RelatedContentEntry[];
   locale: string;
   objectPath?: string;
+  carrier?: FactCarrier;
 }) {
   const extraPrimaryEntries = extraEntries.filter(
     ([fieldKey]) => !STUDY_READING_NODE_FIELDS.has(fieldKey) && !FORMAL_ASSOCIATION_FIELDS.has(fieldKey),
@@ -1232,6 +1290,7 @@ export function StudyReadingLayout({
           locale={locale}
           kind={node.kind}
           objectPath={objectPath}
+          carrier={carrier}
         />
       ))}
       {extraPrimaryEntries.map(([fieldKey, value]) => (
@@ -1256,12 +1315,14 @@ function StudyReadingNode({
   locale,
   kind,
   objectPath,
+  carrier,
 }: {
   title: string;
   value: unknown;
   locale: string;
   kind: 'text' | 'report';
   objectPath?: string;
+  carrier?: FactCarrier;
 }) {
   const [state, setState] = useState<ReadingNodeState>('expanded');
   if (!hasDetailContent(value)) return null;
@@ -1274,7 +1335,7 @@ function StudyReadingNode({
       onToggle={() => setState((current) => getReadingNodeNextState(current))}
     >
       {kind === 'report' ? (
-        <StudyReportBodyEntry value={value} objectPath={objectPath} />
+        <StudyReportBodyEntry value={value} objectPath={objectPath} carrier={carrier} />
       ) : (
         <StudyTextNodeContent value={value} />
       )}
@@ -1282,49 +1343,45 @@ function StudyReadingNode({
   );
 }
 
-function StudyReportBodyEntry({ value, objectPath }: { value: unknown; objectPath?: string }) {
+function StudyReportBodyEntry({
+  value,
+  objectPath,
+  carrier,
+}: {
+  value: unknown;
+  objectPath?: string;
+  carrier?: FactCarrier;
+}) {
   const { t } = useI18n();
   const { isOpen: panelOpen, content: panelContent, openPanel } = usePanel();
-  const docPath = objectPath || 'study-report.md';
+  const docPath = objectPath;
   const title = objectPath ? basename(objectPath) : t('objectDetail.reportBody');
   const openLabel = t('objectDetail.openReadingPanel');
-  const isCurrentPanelOpen = Boolean(panelOpen && panelContent?.type === 'doc' && panelContent.docPath === docPath);
+  const isCurrentPanelOpen = Boolean(docPath && panelOpen && panelContent?.type === 'doc' && panelContent.docPath === docPath);
   const PanelIcon = isCurrentPanelOpen ? ChevronLeft : ChevronRight;
-
   const openReportBody = () => {
-    openPanel({ type: 'doc', title, docPath, data: String(value) });
-  };
-
-  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (event.key !== 'Enter' && event.key !== ' ') return;
-    event.preventDefault();
-    openReportBody();
+    if (!docPath || carrier !== 'markdown') return;
+    openPanel({ type: 'doc', title, docPath, data: String(value), carrier });
   };
 
   return (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={openReportBody}
-      onKeyDown={handleKeyDown}
-      title={openLabel}
-      className="ldvh-body group flex w-full cursor-pointer items-center gap-2 rounded-md px-1.5 py-2 text-left transition-colors hover:bg-ldvh-border/25 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ldvh-accent/50"
-    >
-      <BookOpenText size={13} className="shrink-0 text-ldvh-accent" />
-      <span className="ldvh-meta-primary min-w-0 flex-1 truncate">{title}</span>
-      <CopyPathButton path={objectPath} label={t('common.copyDocPath')} copiedLabel={t('common.copiedDocPath')} />
-      <button
-        type="button"
-        onClick={(event) => {
-          event.stopPropagation();
-          openReportBody();
-        }}
-        title={openLabel}
-        aria-label={openLabel}
-        className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-transparent bg-transparent text-ldvh-text-secondary/70 transition-colors hover:bg-ldvh-border/30 hover:text-ldvh-accent focus-visible:border-ldvh-accent/50 focus-visible:outline-none"
-      >
-        <PanelIcon size={16} aria-hidden="true" />
-      </button>
+    <div className="flex flex-col gap-3">
+      <div className="ldvh-body group flex w-full items-center gap-2 rounded-md px-1.5 py-2 text-left">
+        <BookOpenText size={13} className="shrink-0 text-ldvh-accent" />
+        <span className="ldvh-meta-primary min-w-0 flex-1 truncate">{title}</span>
+        <CopyPathButton path={objectPath} label={t('common.copyDocPath')} copiedLabel={t('common.copiedDocPath')} />
+        {docPath && carrier === 'markdown' && (
+          <button
+            type="button"
+            onClick={openReportBody}
+            title={openLabel}
+            aria-label={openLabel}
+            className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-transparent bg-transparent text-ldvh-text-secondary/70 transition-colors hover:bg-ldvh-border/30 hover:text-ldvh-accent focus-visible:border-ldvh-accent/50 focus-visible:outline-none"
+          >
+            <PanelIcon size={16} aria-hidden="true" />
+          </button>
+        )}
+      </div>
     </div>
   );
 }

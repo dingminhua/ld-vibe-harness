@@ -1,3 +1,5 @@
+import type { FactCarrier, FactReadStatus } from '@/utils/factReadMeta';
+
 const API_BASE = '/api';
 const inFlightRequests = new Map<string, Promise<unknown>>();
 
@@ -96,12 +98,19 @@ export interface ObjectItem {
   fact_type_key?: string;
   canonical_path?: string;
   absolute_path?: string;
+  carrier?: FactCarrier;
+  check_status?: FactReadStatus;
+  read_issues?: Array<Record<string, unknown>>;
   created_at?: string;
   updated_at?: string;
   disposition_summary?: string;
   closed_at?: string;
   relations?: Array<Record<string, unknown>>;
   /** Study-specific */
+  research_intent?: string;
+  research_question?: string;
+  abstract?: string;
+  recommendation_summary?: string;
   summary?: string;
   conclusion?: string;
   urls?: Array<string | UrlItem>;
@@ -161,7 +170,7 @@ export interface ObjectDetail {
   ok: boolean;
   action: string;
   target: string;
-  summary: { id: string; type: string; status: string };
+  summary: { id: string; type: string; status?: string; read_status?: FactReadStatus };
   data: Record<string, unknown>;
 }
 

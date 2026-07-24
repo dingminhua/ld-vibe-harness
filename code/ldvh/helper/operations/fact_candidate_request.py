@@ -87,6 +87,8 @@ _F2_SEARCH_FIELDS = {
             "status",
             "research_question",
             "abstract",
+            "research_intent",
+            "recommendation_summary",
             "applicability",
             "validation_summary",
             "updated_at",

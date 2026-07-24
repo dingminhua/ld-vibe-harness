@@ -14,7 +14,7 @@ from ldvh.facts.carriers.yaml_object import parse_yaml_object
 from ldvh.facts.contracts import FactTypeLayout
 from ldvh.facts.models import FactIssue
 from ldvh.facts.schema import FactSchema
-from ldvh.facts.validation import validate_fact_object
+from ldvh.facts.validation import parse_rfc3339, validate_fact_object
 from ldvh.filesystem import ReadBudgetExceeded, UnsafePathError, safe_read_relative, validate_relative_regular_file
 from ldvh.governance.git import isolated_git_environment, windows_path_problem
 
@@ -176,9 +176,12 @@ def read_fact_object(
 
     parsed = parse_study_markdown(text) if layout.carrier == "markdown" else parse_yaml_object(text)
     if parsed.fields is None or parsed.issues:
+        fingerprint = _repair_fingerprint(parsed.fields, layout, object_id, text)
         return FactReadResult(
             relative_path, layout.carrier, "invalid", parsed.fields, parsed.body, parsed.issues,
-            raw_text=text, raw_byte_count=raw_byte_count,
+            content_fingerprint=fingerprint,
+            raw_text=text,
+            raw_byte_count=raw_byte_count,
         )
 
     issues = list(validate_fact_object(layout.fact_type_key, parsed.fields, schema))
@@ -193,10 +196,27 @@ def read_fact_object(
         parsed.fields,
         parsed.body,
         tuple(issues),
-        fingerprint if status == "mechanically_valid" else None,
+        fingerprint if status == "mechanically_valid" else _repair_fingerprint(parsed.fields, layout, object_id, text),
         text,
         raw_byte_count,
     )
+
+
+def _repair_fingerprint(
+    fields: dict[str, Any] | None,
+    layout: FactTypeLayout,
+    object_id: str,
+    text: str,
+) -> str | None:
+    """Return a CAS fingerprint only for a parseable historical repair target."""
+
+    if fields is None:
+        return None
+    if fields.get("object_id") != object_id or fields.get("fact_type_key") != layout.fact_type_key:
+        return None
+    if parse_rfc3339(fields.get("created_at")) is None or parse_rfc3339(fields.get("updated_at")) is None:
+        return None
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
 __all__ = ["CheckStatus", "FactReadResult", "read_fact_object"]

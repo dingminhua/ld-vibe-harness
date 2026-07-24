@@ -95,6 +95,8 @@ _F2_FIELDS = {
         "status",
         "research_question",
         "abstract",
+        "research_intent",
+        "recommendation_summary",
         "applicability",
         "validation_summary",
         "updated_at",

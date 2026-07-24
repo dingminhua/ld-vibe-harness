@@ -31,6 +31,8 @@ def test_urls_are_validated(current_specs_repository: Path) -> None:
         ],
         "research_question": "What is the external contract?",
         "abstract": "A bounded answer.",
+        "research_intent": "Determine whether the external contract changes the current project judgment.",
+        "recommendation_summary": "Use the bounded finding as an input to a later project decision.",
     }
     assert validate_fact_object("study", fields, schema) == ()
 
@@ -45,6 +47,8 @@ def test_study_requires_urls(current_specs_repository: Path) -> None:
         **_common("study", "study-0001", "active"),
         "research_question": "What is the external contract?",
         "abstract": "A bounded answer.",
+        "research_intent": "Determine whether the external contract changes the current project judgment.",
+        "recommendation_summary": "Use the bounded finding as an input to a later project decision.",
     }
     issues = validate_fact_object("study", fields, schema)
     assert any(issue.field_path == "urls" for issue in issues)

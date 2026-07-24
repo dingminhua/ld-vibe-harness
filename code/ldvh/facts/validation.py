@@ -172,6 +172,12 @@ def _validate_status(fact_type_key: str, fields: dict[str, Any], issues: list[Fa
                 "superseded",
             }:
                 issues.append(FactIssue("schema", "closure_outcome 不在当前闭集中", "closure_outcome"))
+    elif fact_type_key == "study":
+        if status == "active":
+            _require(fields, {"research_intent", "recommendation_summary"}, issues)
+            _forbid(fields, {"disposition_summary", "closed_at"}, issues)
+        else:
+            _require(fields, TERMINAL_COMMON, issues)
     else:
         if status == "active":
             _forbid(fields, {"disposition_summary", "closed_at"}, issues)

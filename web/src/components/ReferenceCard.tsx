@@ -10,6 +10,7 @@ import CopyPathButton from '@/components/CopyPathButton';
 import { getLocalizedObjectTitle, getObjectStatusLocale, getTypeLabel } from '@/i18n/locales';
 import { usePanel } from '@/utils/panelContext';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
+import { getFactReadMeta, isReadableFact } from '@/utils/factReadMeta';
 
 /** 从引用 ID 解析对象类型（如 workcase-0001 → workcase） */
 function parseRefType(refId: string): string | null {
@@ -54,7 +55,7 @@ function ReferenceItem({
   const navigate = useNavigate();
   const { locale, t } = useI18n();
   const { isOpen: panelOpen, content: panelContent } = usePanel();
-  const [info, setInfo] = useState<{ type: string; title: string; status: string; path: string } | null>(null);
+  const [info, setInfo] = useState<{ type: string; title: string; status?: string; path?: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
   const refType = parseRefType(refId);
@@ -64,8 +65,14 @@ function ReferenceItem({
     fetchObjectDetail(refType, refId)
       .then((detail) => {
         const obj = detail.data;
+        const meta = getFactReadMeta(obj);
         const title = getLocalizedObjectTitle(obj as { title?: string; title_en?: string; title_zh?: string }, locale, refId);
-        setInfo({ type: refType, title, status: detail.summary.status, path: String(obj.path || detail.target || '') });
+        setInfo({
+          type: refType,
+          title,
+          status: typeof detail.summary.status === 'string' ? detail.summary.status : undefined,
+          path: isReadableFact(meta) ? meta.canonicalPath : undefined,
+        });
       })
       .catch(() => setInfo(null))
       .finally(() => setLoading(false));

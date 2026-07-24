@@ -691,16 +691,56 @@ def test_create_study_validates_markdown_carrier_and_external_urls(tmp_path: Pat
             "abstract": (
                 "The controlled path validates frontmatter, report structure, and external material before creation."
             ),
+            "research_intent": (
+                "Confirm that a Study can preserve the project reason for researching an external contract."
+            ),
+            "recommendation_summary": (
+                "Use the controlled creation path only after the complete research report is ready."
+            ),
         },
-        "body": "\n\n".join(
-            [
-                "## 研究问题\n\n验证受控创建是否承接完整 Study。",
-                "## 输入与边界\n\n阅读外部资料，并保持发现处于其公开范围内。",
-                "## 关键发现\n\nCode 可以在最终分配身份后验证完整载体。",
-                "## 建议\n\n继续保持草案阶段无正式文件副作用。",
-                "## 后续分流\n\n当前没有额外分流。",
-            ]
-        ),
+        "body": """
+## 研究问题
+
+### 项目问题
+
+验证受控创建是否承接完整 Study。
+
+### 外部问题
+
+外部资料如何说明完整载体？
+
+## 输入与边界
+
+### 已读外部资料
+
+阅读外部资料，并保持发现处于其公开范围内。
+
+### 本次边界
+
+不把测试资料提升为项目规则。
+
+## 关键发现
+
+### 创建后回读
+
+Code 可以在最终分配身份后验证完整载体，启发是保留回读；不证明研究结论。
+
+### 草案无副作用
+
+草案阶段不写入正式文件，启发是先形成完整输入；不等于跳过最终校验。
+
+## 建议
+
+### 可立即采用的工作方式
+
+继续保持草案阶段无正式文件副作用。
+
+## 后续分流
+
+| 分流类别 | 触发条件 | 下一步或不创建理由 |
+|---|---|---|
+| 无需对象化 | 仅验证创建路径 | 不创建额外对象。 |
+""",
     }
 
     response = handle_request(

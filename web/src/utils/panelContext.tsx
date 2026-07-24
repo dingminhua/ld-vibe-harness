@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from 'react';
+import type { FactCarrier } from '@/utils/factReadMeta';
 
 export type PanelContentType = 'object' | 'doc' | 'web' | 'yaml' | 'evidence' | 'diff' | 'empty';
 
@@ -8,6 +9,7 @@ export interface PanelContent {
   objectType?: string;
   objectId?: string;
   docPath?: string;
+  carrier?: FactCarrier;
   url?: string;
   data?: unknown;
 }

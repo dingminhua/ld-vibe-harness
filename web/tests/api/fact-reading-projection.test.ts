@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { groupRelationsByTargetType, projectFactReadingAssociations } from '../../src/pages/object-detail/factReadingProjection.ts';
+import { getObjectDetailContentEntries } from '../../src/pages/object-detail/model.ts';
 
 test('projects only relation_key and stable target', () => {
   const projected = projectFactReadingAssociations({
@@ -36,4 +37,18 @@ test('groups ordinary relations by target type rather than their relation key', 
     ['spark', ['spark-0002', 'spark-0003']],
     ['study', ['study-0001']],
   ]);
+});
+
+test('exact read metadata never becomes an object content field', () => {
+  const entries = getObjectDetailContentEntries({
+    object_id: 'study-0001',
+    fact_type_key: 'study',
+    status: 'active',
+    canonical_path: 'ldvh-base/studies/study-0001.md',
+    carrier: 'markdown',
+    check_status: 'readable',
+    read_issues: [],
+    report_body: '## 研究问题',
+  }, 'study');
+  assert.deepEqual(entries, [['report_body', '## 研究问题']]);
 });

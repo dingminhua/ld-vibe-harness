@@ -17,6 +17,7 @@ import {
 } from '@/pages/object-detail/factReadingProjection';
 import { CATEGORY_COLORS } from '@/utils/categoryColors';
 import { fetchObjectDetail, type ObjectDetail } from '@/utils/api';
+import { getFactReadMeta, isReadableFact } from '@/utils/factReadMeta';
 import { usePanel } from '@/utils/panelContext';
 
 /** Reads the deliberately minimal relation contract, not source or evidence projections. */
@@ -81,7 +82,7 @@ function RelationTarget({ relation, currentProjectId, locale }: {
   if (currentProjectId && target.governedProjectId === currentProjectId) {
     return <ReadableRelationTarget target={target} locale={locale} />;
   }
-  return <ExternalRelationTarget target={target} locale={locale} />;
+  return <ExternalRelationTarget target={target} />;
 }
 
 function ReadableRelationTarget({ target, locale }: {
@@ -104,6 +105,8 @@ function ReadableRelationTarget({ target, locale }: {
     ? getLocalizedObjectTitle(detail.data as { title?: string; title_en?: string; title_zh?: string }, locale, target.objectId)
     : target.objectId;
   const status = detail?.summary.status;
+  const readMeta = getFactReadMeta(detail?.data);
+  const canonicalPath = isReadableFact(readMeta) ? readMeta.canonicalPath : undefined;
   const typeColor = CATEGORY_COLORS[target.factTypeKey] || CATEGORY_COLORS.other;
   const isCurrentPanelOpen = Boolean(panelOpen && panelContent?.type === 'object'
     && panelContent.objectType === target.factTypeKey && panelContent.objectId === target.objectId);
@@ -121,14 +124,14 @@ function ReadableRelationTarget({ target, locale }: {
       <span className="ldvh-meta-primary min-w-0 flex-1 truncate group-hover:text-ldvh-accent">{title}</span>
       <span className="ldvh-meta-muted shrink-0">{target.objectId}</span>
       {status && <StatusBadge status={status} statusLabel={getObjectStatusLocale(target.factTypeKey, status, locale)} objectType={target.factTypeKey} size="sm" />}
-      <CopyPathButton path={String(detail?.data.canonical_path ?? detail?.target ?? target.objectId)} />
+      <CopyPathButton path={canonicalPath} />
       <PanelIcon size={16} className="shrink-0 text-ldvh-text-secondary/70 transition-colors group-hover:text-ldvh-accent" aria-hidden="true" />
     </div>
   );
 }
 
 /** A target outside the currently readable project remains a reference, not a fabricated local object. */
-function ExternalRelationTarget({ target, locale }: { target: ReadingRelation['target']; locale: string }) {
+function ExternalRelationTarget({ target }: { target: ReadingRelation['target'] }) {
   const typeColor = CATEGORY_COLORS[target.factTypeKey] || CATEGORY_COLORS.other;
   return (
     <div className="flex min-w-0 items-center gap-2 rounded-md px-1.5 py-2">

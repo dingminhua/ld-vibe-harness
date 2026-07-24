@@ -191,16 +191,56 @@ def _study() -> dict[str, object]:
             ],
             "research_question": "Can Study cards remain smaller than full reports?",
             "abstract": "Study cards expose a bounded abstract before full report expansion.",
+            "research_intent": (
+                "Preserve the project reason for studying a readable card without expanding the full report."
+            ),
+            "recommendation_summary": (
+                "Show the study's core advice before a reader decides whether to open the full report."
+            ),
         },
-        "body": "\n\n".join(
-            [
-                "## 研究问题\n\n验证 Study 候选卡。",
-                "## 输入与边界\n\n读取已跟踪问题与外部网页资料。",
-                "## 关键发现\n\n候选卡不需要注入完整正文。",
-                "## 建议\n\n选中后再读取完整报告。",
-                "## 后续分流\n\n没有额外分流。",
-            ]
-        ),
+        "body": """
+## 研究问题
+
+### 项目问题
+
+验证 Study 候选卡。
+
+### 外部问题
+
+外部阅读器如何保持候选卡简洁？
+
+## 输入与边界
+
+### 已读外部资料
+
+读取已跟踪问题与外部网页资料。
+
+### 本次边界
+
+不把候选卡当作完整报告。
+
+## 关键发现
+
+### 候选卡保持简洁
+
+候选卡不需要注入完整正文，启发是按需展开；不等于省略研究正文。
+
+### 正文按需读取
+
+完整报告保留在对象中，启发是减少初始噪音；不证明发现已经采纳。
+
+## 建议
+
+### 可立即采用的工作方式
+
+选中后再读取完整报告。
+
+## 后续分流
+
+| 分流类别 | 触发条件 | 下一步或不创建理由 |
+|---|---|---|
+| 无需对象化 | 仅验证候选卡投影 | 不创建额外对象。 |
+""",
     }
 
 
@@ -351,6 +391,12 @@ def test_f2_projects_study_frontmatter_without_injecting_report_body(tmp_path: P
     assert response["outcome"] == "ok"
     fields = response["result"]["cards"][0]["fields"]
     assert fields["research_question"] == "Can Study cards remain smaller than full reports?"
+    assert fields["research_intent"] == (
+        "Preserve the project reason for studying a readable card without expanding the full report."
+    )
+    assert fields["recommendation_summary"] == (
+        "Show the study's core advice before a reader decides whether to open the full report."
+    )
     assert "body" not in fields
     assert response["result"]["cards"][0]["excerpts"] == []
 
