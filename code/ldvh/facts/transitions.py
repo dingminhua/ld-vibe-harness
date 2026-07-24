@@ -110,16 +110,6 @@ def _projection(fields: dict[str, object], top: Iterable[str], item: Iterable[st
     return _stable(projected)
 
 
-def _supersedes(fields: dict[str, object]) -> str:
-    relations = fields.get("relations")
-    edges = [
-        relation
-        for relation in (relations if isinstance(relations, list) else [])
-        if isinstance(relation, dict) and relation.get("relation_key") == "supersedes"
-    ]
-    return _stable(edges)
-
-
 def _version(fields: dict[str, object], key: str) -> int | None:
     value = fields.get(key)
     return value if isinstance(value, int) and not isinstance(value, bool) else None
@@ -406,10 +396,6 @@ def validate_fact_transition(
         and (before_status, after_status) not in _STATUS_EDGES[fact_type_key]
     ):
         issues.append(FactIssue("schema", "status 转换不在当前单对象更新允许边中", "status"))
-    if after_status == "superseded":
-        issues.append(FactIssue("schema", "进入 superseded 要求多对象原子变更", "status"))
-    if _supersedes(before) != _supersedes(after):
-        issues.append(FactIssue("relation", "supersedes 边只能由多对象原子变更维护", "relations"))
     if fact_type_key == "workcase":
         issues.extend(_workcase_transition(before, after))
     return tuple(issues)
