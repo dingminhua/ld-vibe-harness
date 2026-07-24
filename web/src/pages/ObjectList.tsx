@@ -316,12 +316,12 @@ function hasSparkImplementedFact(obj: ObjectItem) {
   return obj.status === 'implemented';
 }
 
-function SparkFactPanel({
+function TerminalFactPanel({
   tone,
   title,
   children,
 }: {
-  tone: 'open' | 'routed' | 'implemented' | 'discarded';
+  tone: 'routed' | 'implemented' | 'discarded' | 'retired';
   title?: string;
   children: ReactNode;
 }) {
@@ -350,16 +350,34 @@ function SparkTerminalCardContent({ obj }: { obj: ObjectItem }) {
   const tone = obj.status === 'discarded' ? 'discarded' : obj.status === 'implemented' ? 'implemented' : 'routed';
 
   return (
-    <SparkFactPanel tone={tone}>
+    <TerminalFactPanel tone={tone}>
       <div className="min-w-0 whitespace-pre-line break-words text-[12px] leading-5 text-ldvh-text-secondary/75">
         {formatReasonText(reason)}
       </div>
-    </SparkFactPanel>
+    </TerminalFactPanel>
   );
 }
 
 function SparkCardContent({ obj }: { obj: ObjectItem }) {
   if (hasSparkDiscardFact(obj) || hasSparkImplementedFact(obj) || hasSparkResolvedFact(obj)) return <SparkTerminalCardContent obj={obj} />;
+  return null;
+}
+
+function PitfallTerminalCardContent({ obj }: { obj: ObjectItem }) {
+  const { t } = useI18n();
+  const disposition = obj.disposition_summary?.trim() || t('objectList.dispositionMissing');
+
+  return (
+    <TerminalFactPanel tone="retired">
+      <div className="min-w-0 whitespace-pre-line break-words text-[12px] leading-5 text-ldvh-text-secondary/75">
+        {formatReasonText(disposition)}
+      </div>
+    </TerminalFactPanel>
+  );
+}
+
+function PitfallCardContent({ obj }: { obj: ObjectItem }) {
+  if (obj.status === 'retired') return <PitfallTerminalCardContent obj={obj} />;
   return null;
 }
 
@@ -602,8 +620,9 @@ export default function ObjectList() {
 
     if (currentType === 'pitfall') {
       return (
-        <ObjectCardFrame key={obj.id} obj={obj} locale={locale} onOpen={openObject}>
+        <ObjectCardFrame key={obj.id} obj={obj} locale={locale} onOpen={openObject} showNonActiveReason={false}>
           <ObjectSignalBadges source={obj} type={obj.type} locale={locale} />
+          <PitfallCardContent obj={obj} />
         </ObjectCardFrame>
       );
     }

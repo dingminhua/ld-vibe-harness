@@ -137,7 +137,7 @@ Pitfall 只记录已解决、已验证且可复用的失败机制。问题尚未
 | status | 语义 | 必须成立 |
 |---|---|---|
 | `active` | 根因判断、解决和验证说明仍可信，经验在 applicability 内仍可安全参考 | 只能作为新建初态；终态字段禁止；全部核心字段、验证说明和适用边界成立；不表示规则权威 |
-| `retired` | 原经验因适用条件消失、方向撤回、不再需要或已被新 Pitfall 的经验范围覆盖而退出当前选择 | disposition_summary、closed_at、自然语言验证说明必填；必须有具体退出依据；被新 Pitfall 覆盖时在 disposition_summary 中说明替代关系，不建立独立关系边 |
+| `retired` | 原经验因适用条件消失、方向撤回、不再需要或已被新 Pitfall 的经验范围覆盖而退出当前选择 | disposition_summary、closed_at、自然语言验证说明必填；必须有具体退出依据；disposition_summary 直接写处置结论，不重复 `retired` 状态或添加“退出理由：”等字段标签；被新 Pitfall 覆盖时在其中说明替代关系，不建立独立关系边 |
 
 初始状态只能是 active。正常转换只有 `active → retired`；终态不直接重开。任何 Pitfall 转为 `retired` 都必须在写入前取得 Human 对该对象退出的明确授权；仅授权创建、普通更新、事实更正、阅读、验证或记录经验，不覆盖退出。根因判断、解决方式、规避方式或 applicability 的实质改变通常建立新 Pitfall；只有仍是同一失败机制的事实更正、症状与触发补强、验证说明更新可以原地修正。
 
