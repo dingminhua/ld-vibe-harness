@@ -97,7 +97,7 @@ AI 负责判断研究是否完成、来源是否充分、推断是否越界、�
 | `created-at` | required | `inherit` |
 | `updated-at` | required | `study-fact-type::8. 变更、更正、删除与类型退出` |
 | `status` | required | `study-fact-type::6. 对象语义与生命周期` |
-| `urls` | required | `study-fact-type::7. 外部网址、研究边界与时效` |
+| `urls` | required | `study-fact-type::7. 外部网址、研究边界、关系与时效` |
 | `relations` | conditional | `study-fact-type::7. 外部网址、研究边界、关系与时效` |
 | `disposition-summary` | conditional | `study-fact-type::6. 对象语义与生命周期` |
 | `closed-at` | conditional | `study-fact-type::6. 对象语义与生命周期` |
