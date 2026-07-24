@@ -2,18 +2,32 @@
 
 LDVH（LD Vibe Harness）是帮助 AI 在长期项目中保持判断有据、行动可续、结果可验的工具集。它以规范模型、事实模型和行动模板为三类语义构成要素，通过 Helper CLI、环境 Hook 和 Web 三种方式交付价值。
 
-## 快速开始
+## 安装 LDVH 核心
 
 AI 在新环境中接入 LDVH 的完整流程：获取 → 安装 → 配置 → 接入 → 验证。
 
-在项目目录中安装并启动：
+交给新环境时，应提供固定的发行版本或 Git commit、LDVH 的绝对路径，以及目标工作区和工作对象的绝对路径；不得以含未提交改动的工作目录作为交付版本。
+
+在该固定版本的项目目录中安装 LDVH 核心：
 
 ```bash
 python3.12 -m venv .venv
 .venv/bin/pip install -e '.[dev]'
-.venv/bin/ldvh capabilities          # 查看当前 13 个公开操作
-.venv/bin/ldvh-doctor                # 诊断当前环境状态
+.venv/bin/ldvh capabilities          # 查看当前可用公开操作
 ```
+
+## 只读诊断已有工作区
+
+`ldvh-doctor` 必须显式传入管辖配置所在工作区、目标项目或 worktree，以及 Helper 可执行文件的绝对路径：
+
+```bash
+.venv/bin/ldvh-doctor \
+  --workspace-root "<管辖配置所在工作区的绝对路径>" \
+  --work-object-locator "<目标项目或 worktree 的绝对路径>" \
+  --helper-executable "<LDVH_ROOT>/.venv/bin/ldvh"
+```
+
+Doctor 只诊断当前发行物、显式工作区和已交付入口的静态状态；它不扫描目标 AI 环境，也不证明环境已经接入、自动触发或完成真实验证。
 
 AI 在新环境中接入 LDVH 的完整流程见 [`specs/33-环境接入安装与验证行动模板.md`](specs/33-环境接入安装与验证行动模板.md)。当前发行物的环境无关入口清单见 [`specs/attachments/09.Att.01-环境接入面.md`](specs/attachments/09.Att.01-环境接入面.md)。
 
