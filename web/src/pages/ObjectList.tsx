@@ -47,6 +47,7 @@ const TITLE_ACCENT_CLASS: Record<string, string> = {
   pending: 'border-amber-400/75',
   open: 'border-amber-400/75',
   closed: 'border-zinc-500/50',
+  retired: 'border-zinc-500/50',
   resolved: 'border-zinc-500/50',
   routed: 'border-zinc-500/50',
   archived: 'border-zinc-500/50',
@@ -381,6 +382,24 @@ function PitfallCardContent({ obj }: { obj: ObjectItem }) {
   return null;
 }
 
+function AdrTerminalCardContent({ obj }: { obj: ObjectItem }) {
+  const { t } = useI18n();
+  const disposition = obj.disposition_summary?.trim() || t('objectList.dispositionMissing');
+
+  return (
+    <TerminalFactPanel tone="retired">
+      <div className="min-w-0 whitespace-pre-line break-words text-[12px] leading-5 text-ldvh-text-secondary/75">
+        {formatReasonText(disposition)}
+      </div>
+    </TerminalFactPanel>
+  );
+}
+
+function AdrCardContent({ obj }: { obj: ObjectItem }) {
+  if (obj.status === 'retired') return <AdrTerminalCardContent obj={obj} />;
+  return null;
+}
+
 export default function ObjectList() {
   const { type } = useParams<{ type: string }>();
   const navigate = useNavigate();
@@ -614,7 +633,9 @@ export default function ObjectList() {
 
     if (currentType === 'adr') {
       return (
-        <ObjectCardFrame key={obj.id} obj={obj} locale={locale} onOpen={openObject} />
+        <ObjectCardFrame key={obj.id} obj={obj} locale={locale} onOpen={openObject} showNonActiveReason={false}>
+          <AdrCardContent obj={obj} />
+        </ObjectCardFrame>
       );
     }
 

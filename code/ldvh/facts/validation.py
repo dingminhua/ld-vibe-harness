@@ -826,10 +826,6 @@ def _validate_times(fact_type_key: str, fields: dict[str, Any], issues: list[Fac
         issues.append(FactIssue("schema", "closed_at 不得早于 created_at", "closed_at"))
     if updated is not None and closed is not None and closed > updated:
         issues.append(FactIssue("schema", "closed_at 不得晚于 updated_at", "closed_at"))
-    if fact_type_key == "adr" and "decided_at" in fields:
-        decided = _time(fields["decided_at"], "decided_at", issues)
-        if decided is not None and created is not None and decided > created:
-            issues.append(FactIssue("schema", "decided_at 不得晚于 created_at", "decided_at"))
     if fact_type_key == "spark" and isinstance(fields.get("evolution"), list):
         evolution = fields["evolution"]
         if len(evolution) > 8:

@@ -164,7 +164,6 @@ def _workcase(*, status: str = "open") -> dict[str, object]:
                 "applicability": "Single-object V4 fact creation.",
                 "rationale": "A shared allocator avoids same-repository identity collisions.",
                 "consequences": "Draft candidate identities are explicitly non-reserved.",
-                "decided_at": "2026-07-13T09:00:00+08:00",
             },
         ),
         (

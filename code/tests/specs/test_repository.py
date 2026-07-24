@@ -114,7 +114,7 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
     } == {
         "environment-integration-installation-verification": (
             "environment-integration-installation-verification-action-template",
-            "5. 环境接入安装与验证行动模板定义",
+            "5. 环境安装、部署、接入与验证行动模板定义",
         ),
         "fact-object-controlled-creation": (
             "fact-object-controlled-creation-action-template",
@@ -130,7 +130,7 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
     assert action_templates.incomplete_sources == ()
     assert fields.complete is True
     assert len(fields.structures) == 16
-    assert len(fields.registrations) == 122
+    assert len(fields.registrations) == 121
 
 
 def test_mechanically_distinct_spec_does_not_create_a_semantic_duplicate_diagnosis(

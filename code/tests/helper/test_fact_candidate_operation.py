@@ -150,7 +150,6 @@ def _adr() -> dict[str, object]:
         "applicability": "Stage 5 fact recall implementation.",
         "rationale": "A direct scan avoids a second authority.",
         "consequences": "Large repositories use a fixed scan budget.",
-        "decided_at": "2026-07-13T09:00:00+08:00",
     }
 
 

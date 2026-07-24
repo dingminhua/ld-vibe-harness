@@ -186,7 +186,6 @@ export const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   archive_reason: { zh: '归档原因', en: 'Archive Reason' },
   rationale: { zh: '理由', en: 'Rationale' },
   decision_question: { zh: '决策问题', en: 'Decision Question' },
-  decided_at: { zh: '决策成立时间', en: 'Decided At' },
   context: { zh: '背景', en: 'Context' },
   consequences: { zh: '影响', en: 'Consequences' },
   observation: { zh: '观察', en: 'Observation' },

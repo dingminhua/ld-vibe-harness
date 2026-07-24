@@ -41,7 +41,7 @@ const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
     'related_docs', 'related_adrs', 'related_sparks', 'related_pitfalls',
   ],
   adr: [
-    'decision_question', 'decision', 'applicability', 'rationale', 'consequences', 'decided_at',
+    'decision_question', 'decision', 'applicability', 'rationale', 'consequences',
     'urls', 'relations', 'disposition_summary', 'closed_at',
   ],
   pitfall: [

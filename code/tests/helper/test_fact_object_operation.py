@@ -510,7 +510,6 @@ decision: A
 applicability: This project
 rationale: Lower risk
 consequences: Maintain A
-decided_at: 2026-07-14T08:00:00+08:00
 """,
         encoding="utf-8",
     )
@@ -533,7 +532,6 @@ decision: B
 applicability: This project
 rationale: Better
 consequences: Maintain B
-decided_at: 2026-07-14T11:00:00+08:00
 relations:
   - relation_key: supersedes
     target:
@@ -552,8 +550,7 @@ relations:
 
     successor.write_text(
         successor.read_text(encoding="utf-8")
-        .replace("created_at: 2026-07-14T11:00:00+08:00", "created_at: 2026-07-14T09:30:00+08:00")
-        .replace("decided_at: 2026-07-14T11:00:00+08:00", "decided_at: 2026-07-14T09:30:00+08:00"),
+        .replace("created_at: 2026-07-14T11:00:00+08:00", "created_at: 2026-07-14T09:30:00+08:00"),
         encoding="utf-8",
     )
     still_invalid = handle_request("call", "read-fact-objects", json.dumps(payload)).response

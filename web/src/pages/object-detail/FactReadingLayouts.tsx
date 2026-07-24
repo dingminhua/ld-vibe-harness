@@ -14,14 +14,13 @@ import {
   type ReadingNodeState,
 } from '@/pages/ObjectDetail';
 
-const ADR_READING_NODES: Array<{ field: string; kind?: 'date' }> = [
-  { field: 'decision_question' },
-  { field: 'decision' },
-  { field: 'applicability' },
-  { field: 'rationale' },
-  { field: 'consequences' },
-  { field: 'decided_at', kind: 'date' },
-  { field: 'disposition_summary' },
+const ADR_READING_NODES: Array<{ field: string; zh: string; en: string; kind?: 'date' }> = [
+  { field: 'decision_question', zh: '问题', en: 'Question' },
+  { field: 'decision', zh: '决策', en: 'Decision' },
+  { field: 'applicability', zh: '范围', en: 'Scope' },
+  { field: 'rationale', zh: '理由', en: 'Rationale' },
+  { field: 'consequences', zh: '影响', en: 'Consequences' },
+  { field: 'disposition_summary', zh: '处置', en: 'Disposition' },
 ];
 
 export function AdrReadingLayout({
@@ -38,7 +37,7 @@ export function AdrReadingLayout({
       {ADR_READING_NODES.map((node) => (
         <AdrReadingNode
           key={node.field}
-          title={getFieldLabel(node.field, locale)}
+          title={locale === 'en' ? node.en : node.zh}
           value={obj[node.field]}
           locale={locale}
           kind={node.kind}

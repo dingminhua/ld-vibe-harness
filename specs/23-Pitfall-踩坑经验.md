@@ -128,6 +128,12 @@ Pitfall 对象使用 UTF-8 YAML，一文件一对象，当前权威位置固定�
 
 完整 Schema 由统一登记的 `fact-object` 直接字段、本节绑定、跨类型共享定义和类型专属字段定义组合。Pitfall 不得出现 current summary、priority、evolution、tags、`archive_reason`、repeatability、severity、source_objects/source_sparks、related_*、长命令日志字段、实现状态、revision history 或其它未登记内容。
 
+### 面向 Human 的详情阅读投影
+
+当 Web 或其它 Human 阅读面呈现可消费 Pitfall 的详情时，必须按对象实际存在字段依次使用下列中文区段标题：`现象`（`symptoms`）、`触发`（`trigger_conditions`）、`范围`（`applicability`）、`验证`（`validation_summary`）、`根因`（`root_cause`）、`方案`（`resolution`）、`规避`（`avoidance`）；`retired` 对象的 `disposition_summary` 另以 `处置` 呈现。八个标题均为两个汉字。字段不存在时如实省略对应区段，不生成空态、默认结论或替代内容。
+
+这些标题只帮助 Human 按字段身份阅读：`现象`是实际可观察表现，`触发`是失败前置条件，`范围`是经验复用边界，`验证`是已观察结果与未知覆盖，`根因`是当前机制判断，`方案`是实际采用的处理，`规避`是可复用的预防经验，`处置`只说明终态如何退出。它们不新增字段、不改写 YAML 字段名，也不允许 Web 用通用或旧字段词替代，或合并字段后要求读者自行分辨。
+
 ## 6. 对象语义与生命周期
 
 Pitfall 只记录已解决、已验证且可复用的失败机制。问题尚未解决、无法形成与已观察症状和触发条件相容的根因判断、无法如实说明处理结果与未覆盖范围，或适用边界不清时不得创建 active Pitfall。经验的存在不证明外部环境、协议或实现仍与验证时相同；消费前必须按 applicability 以及对象自有语义字段中实际记录的环境、版本或观察时点，重新判断现时适用性。

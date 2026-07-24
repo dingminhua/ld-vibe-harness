@@ -86,7 +86,9 @@ def test_pitfall_uses_natural_language_boundaries_without_reference_fields(curre
     fields = {
         **_common("pitfall", "pitfall-0001", "active"),
         "applicability": "Only the observed local installation conditions; other environments remain unverified.",
-        "validation_summary": "The handling restored the observed behavior; upgrade and secondary event coverage remain unverified.",
+        "validation_summary": (
+                "The handling restored the observed behavior; upgrade and secondary event coverage remain unverified."
+            ),
         "symptoms": "The declared hook did not run.",
         "trigger_conditions": "The runtime data directory was empty in the observed local installation.",
         "root_cause": "In the observed conditions, the runtime could not find its required configuration.",
@@ -99,6 +101,26 @@ def test_pitfall_uses_natural_language_boundaries_without_reference_fields(curre
     fields["source_ref"] = {"kind": "repository-path", "locator": "docs/input.md"}
     fields["evidence_ref"] = {"kind": "repository-path", "locator": "docs/output.md"}
     issues = validate_fact_object("pitfall", fields, schema)
+
+    assert {issue.field_path for issue in issues} >= {"source_ref", "evidence_ref"}
+
+
+def test_adr_uses_natural_language_boundaries_without_reference_fields(current_specs_repository: Path) -> None:
+    schema = _schemas(current_specs_repository)["adr"]
+    fields = {
+        **_common("adr", "adr-0001", "active"),
+        "decision_question": "Which bounded direction has already been selected?",
+        "decision": "The Human has selected the bounded direction described here.",
+        "applicability": "Only the declared long-term choice; implementation effects remain unverified.",
+        "rationale": "The selection records the contemporaneous trade-off, not a proof of its premises.",
+        "consequences": "The selected direction does not itself prove implementation, rule effectiveness, or authorization.",
+    }
+
+    assert validate_fact_object("adr", fields, schema) == ()
+
+    fields["source_ref"] = {"kind": "repository-path", "locator": "docs/input.md"}
+    fields["evidence_ref"] = {"kind": "repository-path", "locator": "docs/output.md"}
+    issues = validate_fact_object("adr", fields, schema)
 
     assert {issue.field_path for issue in issues} >= {"source_ref", "evidence_ref"}
 
