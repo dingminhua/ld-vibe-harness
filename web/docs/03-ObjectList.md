@@ -19,7 +19,7 @@
 状态筛选（ObjectStatusFilter）
 对象卡片自适应网格（ldvh-section-grid）
   通用卡片：ID + 复制对象路径图标 + 状态徽章 + 优先级字符徽标 + 标题 + 信号标签 + 更新时间
-  WorkCase 卡片：工作项自身信息 + 生命周期状态层 + 执行态势条 + 关闭判断信号
+  WorkCase 卡片：工作项自身信息 + 进展分组层 + 执行态势条 + 关闭判断信号
 加载态 / 错误态 / 空态
 ```
 
@@ -74,12 +74,15 @@ WorkCase 是“工作项执行态势”卡片，帮助用户从工作项判断�
 - 不展示所属工作项行；归属信息留在详情页属性区，列表卡片优先保留工作项标题、关闭判断和执行态势。
 - 执行态势条归入执行态势区域，不再作为独立卡片；区域标题下直接展示整体态势条，态势段 hover / focus 时显示状态和数量。
 - 执行项状态图例在列表顶部右侧展示，卡片执行项行只保留图标和颜色，不重复状态文字。
-- WorkCase 卡片必须展示正式对象创建后的当前 WorkCase 状态机：`human_plan_confirming`（方案待确认）、`executing`（执行中）、`result_self_checking`（结果自检中）、`subagents_result_reviewing`（结果复核中）、`human_closure_confirming`（关闭待确认）、`closed`（已关闭）。创建前方案审核不属于 WorkCase 状态，不提供“方案审核中”筛选或卡片；历史 `draft`、`active`、`review_needed` 只作为 legacy 兼容状态展示，不作为新建工作项语言。
-- 前述七种状态分为两类视觉语义：
-  - **动态态**：执行中、结果自检中、结果复核中。状态层只在正式对象生命周期内表达当前推进；当前段可用轻微、遵守减弱动态偏好的动效提示，不能借此推断具体执行项已经完成。
-  - **静止态**：方案待确认、关闭待确认、已关闭。前两者显示“等待 Human 处理”，已关闭显示“工作已关闭”；三者不显示脉冲或生命周期推进轨迹。状态标签仍保留精确阶段，避免把两个 Human 确认关口混为同一授权判断。
-- 生命周期状态层位于通用卡片头部之后、执行和关闭材料之前。它只表达当前阶段的阅读语义；状态、phase 与授权的事实含义仍以事实源和详情阅读为准。
-- 内部 `closure_preparing` 阶段继续显示为“结果复核中”：此时 Controller 正在吸收当前结果复核并形成关闭报告与分流建议，尚未向 Human 提交关闭请求。只有事实 phase 实际进入 `human_closure_confirming` 后才显示“关闭待确认”；不得把 `closure_preparing` 倒退显示为“结果自检中”，也不得提前制造 Human 待办。
+- WorkCase Card 和列表筛选只使用四个进展分组：`plan_confirmation`（方案待确认）、`progressing`（推进中）、`closure_confirmation`（关闭待确认）、`closed`（已关闭）。界面分类轴命名为“进展分组”，不得显示为“生命周期”。创建前方案审核尚无正式 WorkCase，不提供 Card 或筛选项。
+- 每张 Card 必须直接显示自己的进展分组，不能要求 Human 只靠顶部筛选位置推断；来源 phase 不再作为与四个分组同级的 Card 主状态。
+- “方案待确认”Card 在通用身份、标题和进展分组之外只显示“目标”和“成功标准”：目标直接读取 `goal`，成功标准读取 current profile 的 `success_criterion_definitions[].statement` 或 legacy 的 `success_criteria`。两项必须完整显示，不截断、不折叠、不限制标准条数，也不生成摘要。“覆盖”和“排除”属于 `scope` 中的技术边界，留在同源详情读取；Card 不展示工作项、执行步骤、审核详情、执行统计或关闭材料，完整计划批准仍进入详情完成。
+- “方案待确认”Card 使用四级排版层级：对象标题使用 16px 强调卡片标题，两个判断区标题使用 13px 卡片判断项标题，事实原文使用 12px 卡片判断项正文，ID、数量和时间使用元信息。判断项正文仍是事实正文，不得使用弱色或 mono 把它降成辅助信息；不得在业务组件内用临时字号制造层级。
+- 成功标准没有先后关系，统一使用圆点无序列表；不得因数组位置、criterion ID 或当前显示顺序使用数字序号。只有来源明确规定步骤、优先级、排名或依赖顺序的内容才使用编号。
+- 只有“推进中”继续显示四个推进环节：工作项执行、主控自检、独立复核、主控收敛。推进环节只帮助 Human 识别推进位置，不成为第五个以上的列表分组，也不代替正式 phase。
+- “推进中”可用轻微、遵守减弱动态偏好的动效提示当前位置；方案待确认、关闭待确认和已关闭不显示脉冲或推进轨迹。两个 Human 确认关口必须保持为不同进展分组。
+- 进展分组层位于通用卡片头部之后、执行和关闭材料之前。它只表达当前浏览语义；status、phase 与授权的事实含义仍以事实源和详情阅读为准。
+- 内部 `closure_preparing` 投影为“推进中 / 主控收敛”：此时 Controller 正在吸收当前结果复核并形成关闭报告与分流建议，尚未向 Human 提交关闭请求。只有事实 phase 实际进入 `human_closure_confirming` 后才显示“关闭待确认”，不得提前制造 Human 待办。
 - WorkCase 卡片态势按“已完成 / 已跳过 / 已阻塞 / 执行中 / 待执行”从左到右排列，完成和跳过靠左，阻塞、执行中和待执行用于提示 Human 当前推进位置。
 - WorkCase 卡片态势遵守 `specs/05-Web信息同步规范.md` 的派生态势原因语义规则。执行项事实状态以 `pending / in_progress / blocked / done / skipped` 为准；历史 `planned / executing / verifying` 等旧状态只作兼容读取，不作为新图例或新写入语言。
 - 仅当工作项处于 `human_closure_confirming`、历史 `review_needed` 或已关闭工作项缺少关闭字段时，展示关闭判断 / 收口异常区域。关闭判断材料检查 `success_criteria`、`plan_confirmed_at`、`closure_requested_at`、`verification_evidence`、`closure_evidence`；历史对象可用 `review_requested_at` 兼容 `closure_requested_at`。

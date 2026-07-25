@@ -4,7 +4,13 @@
 
 import { Router, type Request, type Response } from 'express'
 import { listObjects, showObject, OBJECT_TYPES, type ObjectType } from '../services/facts.js'
-import { WORKCASE_STATUS_ORDER, getWorkCaseDisplayStatus } from '../../shared/workcaseStatus.ts'
+import {
+  WORKCASE_PROGRESS_GROUP_ORDER,
+  WORKCASE_STATUS_ORDER,
+  getWorkCaseDisplayStatus,
+  getWorkCaseProgressProjection,
+  isWorkCaseProgressGroup,
+} from '../../shared/workcaseStatus.ts'
 
 const router = Router()
 
@@ -47,6 +53,7 @@ interface RelatedWorkCaseSummary extends RelatedObjectSummary {
   executionItemOpen?: number
   successCriteriaTotal?: number
   successCriteriaDone?: number
+  successCriteria?: string[]
   hasSuccessCriteria: boolean
   hasPlanConfirmedAt: boolean
   hasClosureRequestedAt: boolean
@@ -56,6 +63,11 @@ interface RelatedWorkCaseSummary extends RelatedObjectSummary {
 
 interface StatusOption {
   status: string
+  count: number
+}
+
+interface ProgressOption {
+  group: string
   count: number
 }
 
@@ -115,6 +127,9 @@ function normalizeItem(value: unknown): ListedObject | null {
   if (!id) return null
   const type = toStringValue(value.fact_type_key) || toStringValue(value.type)
   const responsibilityStatus = toStringValue(value.status, 'unknown')
+  const progressProjection = type === 'workcase'
+    ? getWorkCaseProgressProjection(toStringValue(value.phase))
+    : null
   const status = type === 'workcase'
     ? getWorkCaseDisplayStatus(toStringValue(value.phase), responsibilityStatus)
     : responsibilityStatus
@@ -125,6 +140,8 @@ function normalizeItem(value: unknown): ListedObject | null {
     type,
     status,
     responsibilityStatus,
+    progress_group: progressProjection?.progressGroup,
+    progress_step: progressProjection?.progressStep,
     title: toStringValue(value.title, id),
     title_en: toStringValue(value.title_en) || undefined,
     title_zh: toStringValue(value.title_zh) || undefined,
@@ -207,11 +224,34 @@ function getChecklistProgress(value: unknown): { total: number; done: number } {
   )
 }
 
+function getWorkCaseCriterionStatements(data: Record<string, unknown>): string[] {
+  const definitions = Array.isArray(data.success_criterion_definitions)
+    ? data.success_criterion_definitions.filter(isRecord)
+    : []
+  if (definitions.length > 0) {
+    return definitions
+      .map((item) => toStringValue(item.statement).trim())
+      .filter(Boolean)
+  }
+
+  const legacyCriteria = toStringArray(data.success_criteria).map((item) => item.trim()).filter(Boolean)
+  if (legacyCriteria.length > 0) return legacyCriteria
+  if (typeof data.success_criteria !== 'string') return []
+
+  return data.success_criteria
+    .split(/\r?\n/)
+    .map((line) => line.replace(/^\s*[-*]\s+(?:\[[ xX]\]\s*)?/, '').trim())
+    .filter(Boolean)
+}
+
 function getWorkCaseCriterionProgress(data: Record<string, unknown>): { total: number; done: number } {
   const definitions = Array.isArray(data.success_criterion_definitions)
     ? data.success_criterion_definitions.filter(isRecord)
     : []
-  if (definitions.length === 0) return getChecklistProgress(data.success_criteria)
+  if (definitions.length === 0) {
+    const checklist = getChecklistProgress(data.success_criteria)
+    return { total: getWorkCaseCriterionStatements(data).length, done: checklist.done }
+  }
 
   const satisfied = new Set(
     (Array.isArray(data.success_criterion_results) ? data.success_criterion_results : [])
@@ -272,6 +312,15 @@ function getPriorityOptions(items: ListedObject[]): StatusOption[] {
   return SPARK_PRIORITY_ORDER.map((status) => ({ status, count: counts[status] ?? 0 }))
 }
 
+function getWorkCaseProgressOptions(items: ListedObject[]): ProgressOption[] {
+  const counts = new Map<string, number>()
+  for (const item of items) {
+    if (typeof item.progress_group !== 'string') continue
+    counts.set(item.progress_group, (counts.get(item.progress_group) ?? 0) + 1)
+  }
+  return WORKCASE_PROGRESS_GROUP_ORDER.map((group) => ({ group, count: counts.get(group) ?? 0 }))
+}
+
 function matchesSparkListFilter(item: ListedObject, status?: string, priority?: string): boolean {
   return (!status || item.status === status)
     && (!priority || item.priority === priority)
@@ -298,6 +347,7 @@ export async function buildWorkCaseSummaries(workcaseItems: ListedObject[]): Pro
       .map((executionItem, index) => toExecutionItemSummary(executionItem, item, index))
       .filter((executionItem): executionItem is RelatedObjectSummary => Boolean(executionItem))
     const successCriteriaProgress = getWorkCaseCriterionProgress(data)
+    const successCriteria = getWorkCaseCriterionStatements(data)
 
     return {
       ...toRelatedSummary(item, 'workcase'),
@@ -308,6 +358,7 @@ export async function buildWorkCaseSummaries(workcaseItems: ListedObject[]): Pro
       executionItemOpen: countOpenExecutionItems(executionItems),
       successCriteriaTotal: successCriteriaProgress.total,
       successCriteriaDone: successCriteriaProgress.done,
+      successCriteria,
       hasSuccessCriteria: successCriteriaProgress.total > 0,
       hasPlanConfirmedAt: hasContent(data.execution_approval) || hasContent(data.plan_confirmed_at),
       hasClosureRequestedAt: toStringValue(data.phase) === 'human_closure_confirming' || hasContent(data.closure_requested_at) || hasContent(data.review_requested_at),
@@ -333,6 +384,7 @@ async function enrichWorkCases(items: ListedObject[]): Promise<ListedObject[]> {
       executionItemOpen: summary.executionItemOpen ?? 0,
       successCriteriaTotal: summary.successCriteriaTotal ?? 0,
       successCriteriaDone: summary.successCriteriaDone ?? 0,
+      successCriteria: summary.successCriteria ?? [],
       hasSuccessCriteria: summary.hasSuccessCriteria,
       hasPlanConfirmedAt: summary.hasPlanConfirmedAt,
       hasClosureRequestedAt: summary.hasClosureRequestedAt,
@@ -370,6 +422,13 @@ router.get('/:type', async (req: Request, res: Response): Promise<void> => {
   }
 
   const status = typeof req.query.status === 'string' ? req.query.status : undefined
+  const progress = type === 'workcase' && typeof req.query.progress === 'string'
+    ? req.query.progress
+    : undefined
+  if (progress && !isWorkCaseProgressGroup(progress)) {
+    res.status(400).json({ ok: false, error: `Invalid WorkCase progress group: ${progress}` })
+    return
+  }
   const priority = (type === 'spark' || type === 'workcase') && typeof req.query.priority === 'string'
     ? req.query.priority
     : undefined
@@ -383,7 +442,7 @@ router.get('/:type', async (req: Request, res: Response): Promise<void> => {
   const rawItems = getRawItems(result)
   const allItems = getResultItems(result)
   const items = type === 'workcase'
-    ? allItems.filter((item) => (!status || item.status === status) && (!priority || item.priority === priority))
+    ? allItems.filter((item) => (!progress || item.progress_group === progress) && (!priority || item.priority === priority))
     : type === 'spark'
       ? allItems.filter((item) => matchesSparkListFilter(item, status, priority))
       : allItems
@@ -392,11 +451,17 @@ router.get('/:type', async (req: Request, res: Response): Promise<void> => {
     const statusItems = type === 'workcase' || type === 'spark'
       ? allItems
       : status ? await listObjectSummaries(type) : items
-    result.data.statusOptions = getStatusOptions(statusItems)
+    if (type === 'workcase') {
+      result.data.progressOptions = getWorkCaseProgressOptions(allItems)
+    } else {
+      result.data.statusOptions = getStatusOptions(statusItems)
+    }
     result.data.statusTotal = statusItems.length
     if (type === 'spark' || type === 'workcase') {
-      const lifecycleItems = status ? allItems.filter((item) => item.status === status) : allItems
-      result.data.priorityOptions = getPriorityOptions(lifecycleItems)
+      const groupItems = type === 'workcase' && progress
+        ? allItems.filter((item) => item.progress_group === progress)
+        : status ? allItems.filter((item) => item.status === status) : allItems
+      result.data.priorityOptions = getPriorityOptions(groupItems)
     }
   }
   if (isRecord(result.data) && type === 'workcase') {

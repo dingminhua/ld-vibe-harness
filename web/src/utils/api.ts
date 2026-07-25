@@ -55,6 +55,12 @@ export interface ObjectItem {
   title_en?: string;
   title_zh?: string;
   status: string;
+  responsibilityStatus?: string;
+  progress_group?: string;
+  progress_step?: string;
+  phase?: string;
+  goal?: string;
+  scope?: string;
   path: string;
   created?: string;
   updated: string;
@@ -70,6 +76,7 @@ export interface ObjectItem {
   executionItemByStatus?: Record<string, number>;
   successCriteriaTotal?: number;
   successCriteriaDone?: number;
+  successCriteria?: string[];
   hasSuccessCriteria?: boolean;
   hasPlanConfirmedAt?: boolean;
   hasClosureRequestedAt?: boolean;
@@ -126,6 +133,11 @@ export interface UrlItem {
 
 export interface ObjectStatusOption {
   status: string;
+  count: number;
+}
+
+export interface WorkCaseProgressOption {
+  group: string;
   count: number;
 }
 
@@ -200,10 +212,12 @@ export async function fetchObjects(
   type: string,
   status?: string,
   priority?: string,
-): Promise<{ ok: boolean; summary: { count: number }; data: { items: ObjectItem[]; statusOptions?: ObjectStatusOption[]; priorityOptions?: ObjectStatusOption[]; statusTotal?: number } }> {
+  progress?: string,
+): Promise<{ ok: boolean; summary: { count: number }; data: { items: ObjectItem[]; statusOptions?: ObjectStatusOption[]; progressOptions?: WorkCaseProgressOption[]; priorityOptions?: ObjectStatusOption[]; statusTotal?: number } }> {
   const params = new URLSearchParams();
   if (status) params.set('status', status);
   if (priority) params.set('priority', priority);
+  if (progress) params.set('progress', progress);
   const qs = params.toString();
   return request(`/objects/${type}${qs ? `?${qs}` : ''}`);
 }

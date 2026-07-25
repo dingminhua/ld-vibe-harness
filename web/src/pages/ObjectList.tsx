@@ -3,13 +3,14 @@ import { useParams, useNavigate, useSearchParams, useLocation } from 'react-rout
 import { ArrowRight, CheckCircle2, CircleAlert, ClipboardCheck, PauseCircle } from 'lucide-react';
 import StatusBadge from '@/components/StatusBadge';
 import ObjectStatusFilter from '@/components/ObjectStatusFilter';
+import WorkCaseProgressFilter from '@/components/WorkCaseProgressFilter';
 import ObjectPriorityFilter from '@/components/ObjectPriorityFilter';
 import CopyPathButton from '@/components/CopyPathButton';
 import ObjectSignalBadges from '@/components/ObjectSignalBadges';
 import PriorityIcon from '@/components/PriorityIcon';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
 import { ExecutionFlowBar, ExecutionFlowLegend, ExecutionFlowMarker } from '@/components/ExecutionFlowStatus';
-import { fetchObjects, type ObjectItem, type ObjectStatusOption } from '@/utils/api';
+import { fetchObjects, type ObjectItem, type ObjectStatusOption, type WorkCaseProgressOption } from '@/utils/api';
 import { formatDateTime } from '@/utils/dateFormat';
 import { useI18n } from '@/i18n/context';
 import { getLocalizedObjectTitle, getObjectStatusLocale } from '@/i18n/locales';
@@ -17,11 +18,12 @@ import { CATEGORY_COLORS } from '@/utils/categoryColors';
 import { getEffectiveListStatus, writeListStatusParam } from '@/utils/listStatus';
 import { getExecutionFlowLabel, getExecutionFlowTone, sortWorkCaseExecutionItems } from '@/utils/executionFlowStatus';
 import {
-  WORKCASE_STATUS_ORDER,
-  WORKCASE_DYNAMIC_STATUSES,
-  getWorkCaseCardState,
-  getWorkCaseDynamicStageIndex,
+  WORKCASE_PROGRESS_GROUP_ORDER,
+  WORKCASE_PROGRESS_STEP_ORDER,
+  isWorkCaseProgressGroup,
   isWorkCaseClosureConfirmingStatus,
+  type WorkCaseProgressGroup,
+  type WorkCaseProgressStep,
 } from '@/shared/workcaseStatus';
 
 type Translate = ReturnType<typeof useI18n>['t'];
@@ -29,8 +31,12 @@ type WorkCaseRecordState = 'recorded' | 'missing';
 type StatusReason = { label: string; text: string; missing?: boolean };
 type WorkCaseCardSummaryTone = 'default' | 'risk' | 'ready' | 'gate';
 
-const WORKCASE_STATUS_ORDER_INDEX = new Map<string, number>(
-  WORKCASE_STATUS_ORDER.map((status, index) => [status, index]),
+const WORKCASE_PROGRESS_GROUP_INDEX = new Map<string, number>(
+  WORKCASE_PROGRESS_GROUP_ORDER.map((group, index) => [group, index]),
+);
+
+const WORKCASE_PROGRESS_STEP_INDEX = new Map<string, number>(
+  WORKCASE_PROGRESS_STEP_ORDER.map((step, index) => [step, index]),
 );
 
 const TITLE_ACCENT_CLASS: Record<string, string> = {
@@ -40,6 +46,9 @@ const TITLE_ACCENT_CLASS: Record<string, string> = {
   result_self_checking: 'border-blue-400/80',
   subagents_result_reviewing: 'border-indigo-400/80',
   human_closure_confirming: 'border-violet-400/80',
+  plan_confirmation: 'border-violet-400/80',
+  progressing: 'border-sky-400/80',
+  closure_confirmation: 'border-violet-400/80',
   accepted: 'border-emerald-400/70',
   review_needed: 'border-violet-400/80',
   verifying: 'border-blue-400/80',
@@ -223,30 +232,76 @@ function WorkCaseCardSummary({
   );
 }
 
-function WorkCaseLifecycleSignal({
-  status,
+function WorkCasePlanConfirmationContent({
+  goal,
+  successCriteria,
+  t,
+}: {
+  goal?: string;
+  successCriteria?: string[];
+  t: Translate;
+}) {
+  const criteria = successCriteria?.filter((criterion) => criterion.trim()) ?? [];
+
+  return (
+    <div className="grid min-w-0 gap-2">
+      <section className="min-w-0 rounded-md border border-ldvh-border/80 border-l-2 border-l-ldvh-accent/45 bg-ldvh-bg/65 px-3.5 py-3">
+        <h3 className="ldvh-card-decision-title">{t('objectList.workcaseGoal')}</h3>
+        <p className={`ldvh-card-decision-body mt-1.5 max-w-[82ch] whitespace-pre-line break-words ${goal?.trim() ? '' : 'text-red-400'}`}>
+          {goal?.trim() ? formatReasonText(goal) : t('objectList.workcaseFieldMissing')}
+        </p>
+      </section>
+      <section className="min-w-0 rounded-md border border-ldvh-border/80 border-l-2 border-l-ldvh-accent/45 bg-ldvh-bg/65 px-3.5 py-3">
+        <div className="flex min-w-0 items-center justify-between gap-2">
+          <h3 className="ldvh-card-decision-title">{t('objectList.successCriteria')}</h3>
+          {criteria.length > 0 && (
+            <span className="ldvh-meta-muted shrink-0">{t('objectList.workcaseCriteriaCount', { count: String(criteria.length) })}</span>
+          )}
+        </div>
+        {criteria.length > 0 ? (
+          <ul className="mt-2 grid min-w-0 gap-1.5">
+            {criteria.map((criterion, index) => (
+              <li key={`${index}-${criterion}`} className="flex min-w-0 items-start gap-2">
+                <span aria-hidden="true" className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-ldvh-text-secondary/60" />
+                <span className="ldvh-card-decision-body min-w-0 break-words">{formatReasonText(criterion)}</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="ldvh-card-decision-body mt-1.5 text-red-400">{t('objectList.workcaseFieldMissing')}</p>
+        )}
+      </section>
+    </div>
+  );
+}
+
+function WorkCaseProgressSignal({
+  progressGroup,
+  progressStep,
   locale,
   t,
 }: {
-  status: string;
+  progressGroup: WorkCaseProgressGroup | null;
+  progressStep: WorkCaseProgressStep | null;
   locale: string;
   t: Translate;
 }) {
-  const cardState = getWorkCaseCardState(status);
-  const currentStage = getWorkCaseDynamicStageIndex(status);
-  const stageLabels = [
+  const progressing = progressGroup === 'progressing';
+  const closed = progressGroup === 'closed';
+  const currentStep = progressStep ? WORKCASE_PROGRESS_STEP_ORDER.indexOf(progressStep) : -1;
+  const stepLabels = [
     t('objectList.workcaseStageExecute'),
     t('objectList.workcaseStageSelfCheck'),
     t('objectList.workcaseStageResultReview'),
+    t('objectList.workcaseStageSynthesis'),
   ];
-  const stateLabel = cardState === 'dynamic'
-    ? t('objectList.workcaseStateDynamic')
-    : cardState === 'closed'
-      ? t('objectList.workcaseStateClosed')
-      : t('objectList.workcaseStateWaiting');
-  const toneClass = cardState === 'dynamic'
+  const groupLabel = progressGroup
+    ? getObjectStatusLocale('workcase', progressGroup, locale)
+    : t('objectList.workcaseProgressUnavailable');
+  const stepLabel = currentStep >= 0 ? stepLabels[currentStep] : null;
+  const toneClass = progressing
     ? 'border-sky-500/25 bg-sky-500/5 text-sky-400'
-    : cardState === 'closed'
+    : closed
       ? 'border-zinc-500/30 bg-zinc-500/5 text-zinc-400'
       : 'border-violet-500/25 bg-violet-500/5 text-violet-400';
 
@@ -256,32 +311,30 @@ function WorkCaseLifecycleSignal({
       className={`min-w-0 cursor-default rounded-md border px-3 py-2.5 ${toneClass}`}
     >
       <div className="flex min-w-0 items-center gap-2">
-        {cardState === 'dynamic' ? (
+        {progressing ? (
           <span className="relative flex h-2 w-2 shrink-0" aria-hidden="true">
             <span className="motion-safe:animate-ping absolute inline-flex h-full w-full rounded-full bg-current opacity-35" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-current" />
           </span>
-        ) : cardState === 'closed' ? (
+        ) : closed ? (
           <CheckCircle2 size={14} className="shrink-0" aria-hidden="true" />
         ) : (
           <PauseCircle size={14} className="shrink-0" aria-hidden="true" />
         )}
-        <span className="ldvh-caption-strong min-w-0 truncate">{stateLabel}</span>
-        <span className="ldvh-meta-muted min-w-0 truncate">
-          {getObjectStatusLocale('workcase', status, locale)}
-        </span>
+        <span className="ldvh-caption-strong min-w-0 truncate">{groupLabel}</span>
+        {stepLabel && <span className="ldvh-meta-muted min-w-0 truncate">{stepLabel}</span>}
       </div>
 
-      {cardState === 'dynamic' && currentStage >= 0 && (
+      {progressing && currentStep >= 0 && (
         <div
-          className="mt-2.5 grid grid-cols-3 gap-1.5"
-          aria-label={`${t('objectList.workcaseDynamicStages')}：${getObjectStatusLocale('workcase', status, locale)}`}
+          className="mt-2.5 grid grid-cols-4 gap-1.5"
+          aria-label={`${t('objectList.workcaseDynamicStages')}：${stepLabel}`}
         >
-          {WORKCASE_DYNAMIC_STATUSES.map((stageStatus, index) => {
-            const isCurrent = index === currentStage;
-            const isPast = index < currentStage;
+          {WORKCASE_PROGRESS_STEP_ORDER.map((step, index) => {
+            const isCurrent = index === currentStep;
+            const isPast = index < currentStep;
             return (
-              <div key={stageStatus} className="min-w-0">
+              <div key={step} className="min-w-0">
                 <div className="flex items-center gap-1" aria-hidden="true">
                   <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${
                     isCurrent
@@ -290,12 +343,12 @@ function WorkCaseLifecycleSignal({
                         ? 'bg-current/55'
                         : 'bg-ldvh-border'
                   }`} />
-                  {index < WORKCASE_DYNAMIC_STATUSES.length - 1 && (
+                  {index < WORKCASE_PROGRESS_STEP_ORDER.length - 1 && (
                     <span className={`h-px min-w-0 flex-1 ${isPast ? 'bg-current/45' : 'bg-ldvh-border'}`} />
                   )}
                 </div>
                 <span className={`mt-1 block truncate text-[10px] leading-4 ${isCurrent ? 'font-medium text-current' : 'text-ldvh-text-secondary/70'}`}>
-                  {stageLabels[index]}
+                  {stepLabels[index]}
                 </span>
               </div>
             );
@@ -306,17 +359,15 @@ function WorkCaseLifecycleSignal({
   );
 }
 
-function getWorkCaseLifecycleOrder(status: string): number {
-  if (status === 'review_needed') return WORKCASE_STATUS_ORDER_INDEX.get('human_closure_confirming') ?? 999;
-  if (status === 'active' || status === 'draft') return WORKCASE_STATUS_ORDER_INDEX.get('executing') ?? 999;
-  return WORKCASE_STATUS_ORDER_INDEX.get(status) ?? 999;
-}
-
 function sortObjectsForList(items: ObjectItem[], currentType: string): ObjectItem[] {
   if (currentType !== 'workcase') return items;
   return [...items].sort((a, b) => {
-    const statusDelta = getWorkCaseLifecycleOrder(a.status) - getWorkCaseLifecycleOrder(b.status);
-    if (statusDelta !== 0) return statusDelta;
+    const groupDelta = (WORKCASE_PROGRESS_GROUP_INDEX.get(a.progress_group ?? '') ?? 999)
+      - (WORKCASE_PROGRESS_GROUP_INDEX.get(b.progress_group ?? '') ?? 999);
+    if (groupDelta !== 0) return groupDelta;
+    const stepDelta = (WORKCASE_PROGRESS_STEP_INDEX.get(a.progress_step ?? '') ?? 999)
+      - (WORKCASE_PROGRESS_STEP_INDEX.get(b.progress_step ?? '') ?? 999);
+    if (stepDelta !== 0) return stepDelta;
     const updatedDelta = Date.parse(b.updated || '') - Date.parse(a.updated || '');
     if (Number.isFinite(updatedDelta) && updatedDelta !== 0) return updatedDelta;
     return a.id.localeCompare(b.id);
@@ -342,15 +393,20 @@ function ObjectCardFrame({
   onOpen,
   children,
   showNonActiveReason = true,
+  displayStatus,
+  prominentTitle = false,
 }: {
   obj: ObjectItem;
   locale: string;
   onOpen: (objId: string) => void;
   children?: ReactNode;
   showNonActiveReason?: boolean;
+  displayStatus?: string;
+  prominentTitle?: boolean;
 }) {
   const { t } = useI18n();
-  const titleAccentClass = getTitleAccentClass(obj.status);
+  const presentedStatus = displayStatus ?? obj.status;
+  const titleAccentClass = getTitleAccentClass(presentedStatus);
   const typeColor = CATEGORY_COLORS[obj.type] || CATEGORY_COLORS.other;
   const nonActiveReason = getNonActiveReason(obj, t);
   return (
@@ -365,7 +421,7 @@ function ObjectCardFrame({
         <span className="ldvh-meta-muted min-w-0 truncate">{obj.id}</span>
         <div className="flex shrink-0 items-center gap-2">
           <CopyPathButton path={obj.path} label={t('common.copyObjectPath')} copiedLabel={t('common.copiedObjectPath')} />
-          <StatusBadge status={obj.status} statusLabel={getObjectStatusLocale(obj.type, obj.status, locale)} objectType={obj.type} />
+          <StatusBadge status={presentedStatus} statusLabel={getObjectStatusLocale(obj.type, presentedStatus, locale)} objectType={obj.type} />
         </div>
       </div>
       <div
@@ -373,9 +429,9 @@ function ObjectCardFrame({
       >
         <PriorityIcon source={obj} type={obj.type} locale={locale} size="sm" />
         <ObjectTypeIcon type={obj.type} size={14} className="shrink-0" style={{ color: typeColor }} />
-        <span className="ldvh-card-title min-w-0 flex-1 whitespace-normal break-words leading-snug transition-colors group-hover/card:text-ldvh-accent">
+        <h2 className={`${prominentTitle ? 'ldvh-card-title-prominent' : 'ldvh-card-title'} min-w-0 flex-1 whitespace-normal break-words transition-colors group-hover/card:text-ldvh-accent`}>
           {getLocalizedObjectTitle(obj, locale)}
-        </span>
+        </h2>
         <ArrowRight size={14} className="shrink-0 text-ldvh-text-secondary transition-all group-hover/card:translate-x-0.5 group-hover/card:text-ldvh-accent" />
       </div>
       {showNonActiveReason && nonActiveReason && <StatusReasonNote reason={nonActiveReason} />}
@@ -491,6 +547,7 @@ export default function ObjectList() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [items, setItems] = useState<ObjectItem[]>([]);
   const [statusOptions, setStatusOptions] = useState<ObjectStatusOption[]>([]);
+  const [progressOptions, setProgressOptions] = useState<WorkCaseProgressOption[]>([]);
   const [priorityOptions, setPriorityOptions] = useState<ObjectStatusOption[]>([]);
   const [statusTotal, setStatusTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -500,7 +557,11 @@ export default function ObjectList() {
 
   const currentType = type ?? 'workcase';
   const statusParam = searchParams.get('status');
-  const activeStatus = getEffectiveListStatus(currentType, statusParam);
+  const activeStatus = currentType === 'workcase' ? null : getEffectiveListStatus(currentType, statusParam);
+  const progressParam = searchParams.get('progress');
+  const activeProgressGroup = currentType === 'workcase' && isWorkCaseProgressGroup(progressParam)
+    ? progressParam
+    : null;
   const priorityParam = searchParams.get('priority');
   const supportsPriorityNavigation = currentType === 'spark' || currentType === 'workcase';
   const activePriority = supportsPriorityNavigation && ['P0', 'P1', 'P2', 'P3'].includes(priorityParam ?? '')
@@ -508,12 +569,17 @@ export default function ObjectList() {
     : null;
   const isPriorityApplicable = currentType === 'spark'
     ? activeStatus === 'open' || activeStatus === null
-    : currentType === 'workcase' && activeStatus !== 'closed';
+    : currentType === 'workcase' && activeProgressGroup !== 'closed';
 
   useEffect(() => {
-    if (currentType !== 'spark' || !searchParams.has('category')) return;
+    const removesLegacyCategory = currentType === 'spark' && searchParams.has('category');
+    const removesWorkCaseStatus = currentType === 'workcase' && searchParams.has('status');
+    const removesForeignProgress = currentType !== 'workcase' && searchParams.has('progress');
+    if (!removesLegacyCategory && !removesWorkCaseStatus && !removesForeignProgress) return;
     const nextParams = new URLSearchParams(searchParams);
-    nextParams.delete('category');
+    if (removesLegacyCategory) nextParams.delete('category');
+    if (removesWorkCaseStatus) nextParams.delete('status');
+    if (removesForeignProgress) nextParams.delete('progress');
     setSearchParams(nextParams, { replace: true });
   }, [currentType, searchParams, setSearchParams]);
 
@@ -521,20 +587,22 @@ export default function ObjectList() {
     setLoading(true);
     setError(null);
     setStatusOptions([]);
+    setProgressOptions([]);
     setPriorityOptions([]);
     setStatusTotal(0);
-    fetchObjects(currentType, activeStatus ?? undefined, activePriority ?? undefined)
+    fetchObjects(currentType, activeStatus ?? undefined, activePriority ?? undefined, activeProgressGroup ?? undefined)
       .then((result) => {
         const receivedItems = result.data?.items ?? [];
         const nextItems = currentType === 'spark' ? receivedItems.map(sparkViewItem) : receivedItems;
         setItems(nextItems);
         setStatusOptions(result.data?.statusOptions ?? []);
+        setProgressOptions(result.data?.progressOptions ?? []);
         setPriorityOptions(result.data?.priorityOptions ?? []);
         setStatusTotal(result.data?.statusTotal ?? nextItems.length);
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-  }, [currentType, activeStatus, activePriority, reloadKey]);
+  }, [currentType, activeStatus, activePriority, activeProgressGroup, reloadKey]);
 
   const sortedItems = sortObjectsForList(items, currentType);
   const typeNotIntegrated = sortedItems.find((item) => item.kind === 'type_not_integrated');
@@ -543,10 +611,18 @@ export default function ObjectList() {
   const handleStatusChange = (status: string | null) => {
     const nextParams = new URLSearchParams(searchParams);
     writeListStatusParam(currentType, nextParams, status);
-    if ((currentType === 'spark' && status !== 'open' && status !== null)
-      || (currentType === 'workcase' && status === 'closed')) {
+    if (currentType === 'spark' && status !== 'open' && status !== null) {
       nextParams.delete('priority');
     }
+    setSearchParams(nextParams);
+  };
+
+  const handleProgressGroupChange = (group: WorkCaseProgressGroup | null) => {
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete('status');
+    if (group) nextParams.set('progress', group);
+    else nextParams.delete('progress');
+    if (group === 'closed') nextParams.delete('priority');
     setSearchParams(nextParams);
   };
 
@@ -572,12 +648,31 @@ export default function ObjectList() {
   const renderObjectCard = (obj: ObjectItem) => {
 
     if (currentType === 'workcase') {
+      const progressGroup = isWorkCaseProgressGroup(obj.progress_group) ? obj.progress_group : null;
+      const progressStep = WORKCASE_PROGRESS_STEP_ORDER.includes(obj.progress_step as WorkCaseProgressStep)
+        ? obj.progress_step as WorkCaseProgressStep
+        : null;
+      if (progressGroup === 'plan_confirmation') {
+        return (
+          <ObjectCardFrame
+            key={obj.id}
+            obj={obj}
+            locale={locale}
+            onOpen={openObject}
+            showNonActiveReason={false}
+            displayStatus={progressGroup}
+            prominentTitle
+          >
+            <WorkCasePlanConfirmationContent goal={obj.goal} successCriteria={obj.successCriteria} t={t} />
+          </ObjectCardFrame>
+        );
+      }
       const executionItems = obj.executionItems ?? [];
       const sortedExecutionItems = sortWorkCaseExecutionItems(executionItems);
       const visibleExecutionItems = sortedExecutionItems.slice(0, 8);
       const moreCount = Math.max(0, sortedExecutionItems.length - visibleExecutionItems.length);
-      const needsCloseDecision = isWorkCaseClosureConfirmingStatus(obj.status);
-      const isClosedWorkCase = obj.status === 'closed';
+      const needsCloseDecision = progressGroup === 'closure_confirmation' || isWorkCaseClosureConfirmingStatus(obj.status);
+      const isClosedWorkCase = progressGroup === 'closed';
       const successCriteriaState: WorkCaseRecordState = obj.hasSuccessCriteria ? 'recorded' : 'missing';
       const planConfirmedState: WorkCaseRecordState = obj.hasPlanConfirmedAt ? 'recorded' : 'missing';
       const closureRequestedState: WorkCaseRecordState = obj.hasClosureRequestedAt ? 'recorded' : 'missing';
@@ -632,8 +727,15 @@ export default function ObjectList() {
             };
 
       return (
-        <ObjectCardFrame key={obj.id} obj={obj} locale={locale} onOpen={openObject} showNonActiveReason={false}>
-          <WorkCaseLifecycleSignal status={obj.status} locale={locale} t={t} />
+        <ObjectCardFrame
+          key={obj.id}
+          obj={obj}
+          locale={locale}
+          onOpen={openObject}
+          showNonActiveReason={false}
+          displayStatus={progressGroup ?? 'unknown'}
+        >
+          <WorkCaseProgressSignal progressGroup={progressGroup} progressStep={progressStep} locale={locale} t={t} />
           <div onClick={(event) => event.stopPropagation()} className="min-w-0 cursor-default">
             <WorkCaseCardSummary {...primarySummary} />
           </div>
@@ -770,15 +872,30 @@ export default function ObjectList() {
             </div>
           )}
           <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5">
-            {supportsPriorityNavigation && <span className="ldvh-meta shrink-0 text-ldvh-text-secondary">{t('objectList.lifecycleFilter')}</span>}
-            <ObjectStatusFilter
-              type={currentType}
-              activeStatus={activeStatus}
-              onChange={handleStatusChange}
-              options={statusOptions}
-              total={statusTotal}
-              loading={loading}
-            />
+            {currentType === 'workcase' ? (
+              <>
+                <span className="ldvh-meta shrink-0 text-ldvh-text-secondary">{t('objectList.progressGroupFilter')}</span>
+                <WorkCaseProgressFilter
+                  activeGroup={activeProgressGroup}
+                  onChange={handleProgressGroupChange}
+                  options={progressOptions}
+                  total={statusTotal}
+                  loading={loading}
+                />
+              </>
+            ) : (
+              <>
+                {currentType === 'spark' && <span className="ldvh-meta shrink-0 text-ldvh-text-secondary">{t('objectList.lifecycleFilter')}</span>}
+                <ObjectStatusFilter
+                  type={currentType}
+                  activeStatus={activeStatus}
+                  onChange={handleStatusChange}
+                  options={statusOptions}
+                  total={statusTotal}
+                  loading={loading}
+                />
+              </>
+            )}
           </div>
         </div>
         {!supportsPriorityNavigation && currentType === 'workcase' && (

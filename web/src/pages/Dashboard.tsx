@@ -14,7 +14,6 @@ import { useI18n } from '@/i18n/context';
 import { getLocaleListSeparator, getLocalizedObjectTitle } from '@/i18n/locales';
 import { getObjectStatusLocale, type LocaleKey } from '@/i18n/locales';
 import { CATEGORY_COLORS, getCategoryLocale } from '@/utils/categoryColors';
-import { WORKCASE_CURRENT_STATUSES } from '@/shared/workcaseStatus';
 
 const TYPE_LABEL_KEYS: Record<string, LocaleKey> = {
   workcase: 'nav.workcases',
@@ -26,7 +25,7 @@ const TYPE_LABEL_KEYS: Record<string, LocaleKey> = {
 
 const TYPE_ORDER = ['spark', 'workcase', 'adr', 'pitfall', 'study'];
 
-const HIGHLIGHT_STATUSES = new Set([...WORKCASE_CURRENT_STATUSES.filter((status) => status !== 'closed'), 'verifying', 'review_needed']);
+const HIGHLIGHT_STATUSES = new Set(['plan_confirmation', 'progressing', 'closure_confirmation', 'verifying', 'review_needed']);
 
 function getLocalizedTitle(item: { id: string; title?: string; title_en?: string; title_zh?: string }, locale: string): string {
   return getLocalizedObjectTitle(item, locale, item.id);
@@ -72,11 +71,9 @@ export default function Dashboard() {
   }
   const parts: string[] = [];
   const statusKeys: Array<{ status: string; key: LocaleKey }> = [
-    { status: 'human_plan_confirming', key: 'dashboard.summary.planConfirming' },
-    { status: 'executing', key: 'dashboard.summary.executing' },
-    { status: 'result_self_checking', key: 'dashboard.summary.verifying' },
-    { status: 'subagents_result_reviewing', key: 'dashboard.summary.resultReview' },
-    { status: 'human_closure_confirming', key: 'dashboard.summary.closureConfirming' },
+    { status: 'plan_confirmation', key: 'dashboard.summary.planConfirming' },
+    { status: 'progressing', key: 'dashboard.summary.progressing' },
+    { status: 'closure_confirmation', key: 'dashboard.summary.closureConfirming' },
     { status: 'review_needed', key: 'dashboard.summary.reviewNeeded' },
     { status: 'planned', key: 'dashboard.summary.planned' },
   ];

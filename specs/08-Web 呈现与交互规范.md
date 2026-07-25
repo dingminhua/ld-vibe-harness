@@ -18,6 +18,7 @@ ldvh_spec:
     - "source-of-truth-traceability"
     - "fact-model-foundation"
     - "spark-fact-type"
+    - "workcase-fact-type"
     - "code-engineering-practices"
   authorized_attachments: []
 ```
@@ -161,6 +162,8 @@ Study 详情页的摘要层（research_intent、abstract、recommendation_summar
 
 事实对象文本字段通过 Markdown 语法明确表达段落、强调式分组标签、小标题、编号、无序列表或嵌套关系时，Web 必须忠实渲染源文已经表达的结构，并保持这些结构可被 Human 扫描识别；编号与无序列表的选择同样保持源文原义，Web 不得相互替换。语义上类似标签但没有 Markdown 标记的普通文本仍按普通段落呈现；Web 不得根据文本含义自动猜测、补写或重写结构，不得擅自把普通文本提升为标签或标题、合并或拆分段落、重新编号、生成列表或套用统一文章骨架。结构选择属于事实内容形成责任，不属于 Web 派生责任。
 
+Web 自身为了 Card、摘要、属性组或派生视图组织同级成员时，只有来源明确规定步骤先后、优先级、排名、依赖顺序或其它顺序语义，才可以使用数字序号；没有这种顺序语义的并列成员必须统一使用圆点无序列表。数组位置、稳定 ID 后缀、字段登记顺序、显示排序和成员数量都不自动产生先后语义，不得据此添加编号。来源已经用 Markdown 明确选择有序或无序列表时，仍优先遵守前款的忠实呈现要求。
+
 Web 消费**精确事实读取结果**时，必须保留其中已有的 `canonical_path`、`carrier` 与 `check_status` 作为源元数据；它们不是对象字段、Web 新事实或独立 DTO 定义。候选发现卡不承诺这些元数据或正文；需要打开对象预览、复制源路径或阅读正文时，Web 必须先对该稳定事实引用取得精确读取结果。`canonical_path` 存在时，任何实现内部的 `path` 投影、对象路径复制和来源定位都必须等于它，不得以 `object_id`、路由 `target`、列表键或其它导航值替代。`target` 只可作为导航/控制定位信息，不能充当源文件路径。`canonical_path` 缺失时，页面可以如实显示路径不可用，但不得复制或显示对象 ID 假装是文件路径。
 
 05 定义的 `canonical_path` 只是预期权威位置，不单独证明文件存在、可读或机械有效。只有 `check_status` 表明精确读取已取得可消费对象和正文时，页面才可把它作为正文来源进入详情或深入阅读；`invalid`、`not_found` 或 `unavailable` 时，页面只能以“预期位置”连同实际读取状态、问题和未读取范围呈现，不能渲染、拼装或暗示已经读到正文，也不能从无效内容推断对象状态。
@@ -188,6 +191,55 @@ Web 消费**精确事实读取结果**时，必须保留其中已有的 `canonic
 在产品声明支持的语言、视口和交互方式下，用户必须能够识别页面身份、信息来源、当前/历史或过期状态、主要操作及其结果。对已取得可消费对象的事实详情和对象预览，身份区必须同时可识别地呈现类型、该类型的状态词和稳定 object ID；对无效、缺失或不可用读取则呈现读取状态与未知范围，不得猜测其领域状态。不能只依赖颜色、悬停或单一视觉位置传达关键状态。
 
 具体设计 token、组件和布局留在 `web/docs/` 与实现中。实现可以演进，但不得破坏本文定义的信息身份、来源和操作结果边界。支持范围必须由真实测试证明，不得用设计文档或组件存在代替。
+
+### 7.4 WorkCase 外部卡片的进展分组投影
+
+WorkCase 列表中的外部 Card 直接服务 Human 对当前工作责任的定位、注意力分配和继续阅读。它可以把 21 定义的正式对象 `phase` 派生为较少的 Human-facing 进展分组，但该结果只是 Web 派生信息，不是 WorkCase 的 `status`、`phase`、生命周期分类、授权、完成结论或新增事实字段。Web 不得把进展分组或推进环节写回事实对象，不得用其替代精确 phase，也不得让中文或英文显示文案成为 API、事实源或筛选语义的权威值。
+
+外部 Card 的进展分组使用以下闭集；括号中的中文只是当前 Human-facing 显示词，稳定派生身份由 `progress_group` 值表达。界面中的这条分类轴必须命名为“进展分组”或等义的本地化文本，不得显示为“生命周期”“生命周期分类”或 WorkCase 正式状态：
+
+| `progress_group` | 中文显示 | 边界 |
+|---|---|---|
+| `plan_confirmation` | 方案待确认 | 正式 WorkCase 已创建，等待 Human 判断是否执行当前计划 |
+| `progressing` | 推进中 | WorkCase 正在执行、质量检查、独立复核或形成关闭材料，当前没有已成立的 Human Gate |
+| `closure_confirmation` | 关闭待确认 | 完整关闭材料已经形成并实际提交 Human 判断 |
+| `closed` | 已关闭 | Human 已批准当前结果与报告，WorkCase 已进入终态 |
+
+每张 WorkCase 外部 Card 必须直接、可识别地显示其当前 `progress_group`，不能只在列表筛选、分组标题或 Dashboard 汇总中显示。Card 不得把来源 phase 的精确名称另列为与四个进展分组同级的主状态；处于 `progressing` 时，才在“推进中”之下补充当前 `progress_step`。
+
+`progressing` 必须同时使用以下推进环节之一；其它三个进展分组的 `progress_step` 固定省略：
+
+| `progress_step` | 中文显示 | 来源 phase |
+|---|---|---|
+| `item_execution` | 工作项执行 | `executing` |
+| `controller_self_check` | 主控自检 | `controller_checking` |
+| `independent_review` | 独立复核 | `independent_reviewing` |
+| `controller_synthesis` | 主控收敛 | `closure_preparing` |
+
+current profile 的确定性映射闭集如下：
+
+| WorkCase `phase` | `progress_group` | `progress_step` |
+|---|---|---|
+| `human_plan_confirming` | `plan_confirmation` | 省略 |
+| `executing` | `progressing` | `item_execution` |
+| `controller_checking` | `progressing` | `controller_self_check` |
+| `independent_reviewing` | `progressing` | `independent_review` |
+| `closure_preparing` | `progressing` | `controller_synthesis` |
+| `human_closure_confirming` | `closure_confirmation` | 省略 |
+| `closed` | `closed` | 省略 |
+
+创建前计划形成与 creation review 尚未产生正式 WorkCase，不得投影为外部 WorkCase Card、进展分组或推进环节。`status=blocked` 是覆盖在任一非终态 phase 上的责任阻塞事实；Web 必须在保留按 phase 得出的进展分组和推进环节时另行呈现阻塞，不得把 blocked 改成第五个进展分组，也不得用分组掩盖 `blocking_summary`。表外 phase、缺失 phase 或违反 21 的 status/phase 组合不能按相似名称、数组位置或前后阶段猜测；Web 只能如实呈现读取或一致性问题及未能形成进展分组的范围。
+
+WorkCase 列表筛选、Dashboard 聚合或其它以外部 Card 为成员的 Human-facing 分组如果表达工作当前进展，必须使用四个 `progress_group`，并明确它是“进展分组”而非生命周期分类；需要说明推进内部位置时再使用四个 `progress_step`。它们仍须保留到来源对象和原始 phase 的读取入口，不得把聚合数量表达为事实源自有计数。
+
+`plan_confirmation` Card 在通用对象身份、标题和进展分组之外，正文只显示以下两项 Human 计划判断输入：
+
+1. **目标**：直接读取当前 WorkCase 的 `goal`，回答准备实现什么结果；
+2. **成功标准**：current profile 直接读取 `success_criterion_definitions[].statement`，legacy 直接读取 `success_criteria`，回答完成后按哪些可观察条件判断结果。
+
+Web 不得为这两项重新生成 AI 摘要，不得从 `scope`、work items、审核记录或其它字段拼凑替代文本。目标与全部成功标准必须完整显示，不得截断、折叠、限制标准条数或用“其余若干项”代替；字段缺失或不可读时必须明确显示相应信息缺失。成功标准是没有先后关系的并列集合，在 Card 中必须统一使用圆点，不得按数组位置、criterion ID 或显示次序添加数字序号。该 Card 不显示 `scope` 中的覆盖、排除或限制，也不显示 work items、依赖、执行步骤、方法、模板、验证安排、创建审核详情、执行统计或关闭材料；这些技术边界和完整计划批准材料仍从同源详情读取。Card 只帮助 Human 识别当前待确认计划，不单独构成 21 §10 要求的完整计划批准材料。
+
+本节当前只确定 `plan_confirmation` Card 的上述正文；`progressing`、`closure_confirmation` 和 `closed` Card 的具体正文、事实字段、信息数量、优先级和折叠方式仍待 Human 后续设计判断，不得由 Web 自行补造。颜色、图标和操作继续由 `web/docs/` 与实现承接。WorkCase 详情页不使用进展分组或推进环节切换、隐藏、重排或另建阅读结构；所有状态复用同一详情阅读结构，具体字段是否实际存在只由当前事实内容及其类型来源决定。
 
 ## 8. Web 交互边界
 

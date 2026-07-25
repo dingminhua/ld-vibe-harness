@@ -187,21 +187,29 @@ test('preserves the shared commit DTO across current API consumers', async () =>
   assert.equal(dashboard.recentItems[0].object_id, 'spark-0001')
   const dashboardWorkcase = dashboard.actionItems.find((item) => item.object_id === 'workcase-0001')
   assert.ok(dashboardWorkcase)
-  assert.equal(dashboardWorkcase.status, 'subagents_result_reviewing')
+  assert.equal(dashboardWorkcase.status, 'progressing')
 
   const workcases = await getJson('/api/objects/workcase') as {
-    data: { items: Array<Record<string, unknown>>; statusOptions: Array<Record<string, unknown>> }
+    data: { items: Array<Record<string, unknown>>; progressOptions: Array<Record<string, unknown>> }
   }
   const workcase = workcases.data.items.find((item) => item.object_id === 'workcase-0001')
   assert.ok(workcase)
   assert.equal(workcase.status, 'subagents_result_reviewing')
+  assert.equal(workcase.progress_group, 'progressing')
+  assert.equal(workcase.progress_step, 'independent_review')
   assert.equal(workcase.executionItemTotal, 1)
   assert.equal(workcase.executionItemDone, 1)
   assert.equal(workcase.successCriteriaTotal, 1)
   assert.equal(workcase.successCriteriaDone, 1)
+  assert.deepEqual(workcase.successCriteria, ['当前标准已满足。'])
   assert.equal(workcase.hasPlanConfirmedAt, true)
   assert.equal(workcase.hasVerificationEvidence, true)
-  assert.ok(workcases.data.statusOptions.some((option) => option.status === 'subagents_result_reviewing'))
+  assert.deepEqual(workcases.data.progressOptions, [
+    { group: 'plan_confirmation', count: 0 },
+    { group: 'progressing', count: 1 },
+    { group: 'closure_confirmation', count: 0 },
+    { group: 'closed', count: 0 },
+  ])
 
   const prioritizedWorkcases = await getJson('/api/objects/workcase?priority=P1') as {
     data: {
@@ -233,7 +241,7 @@ test('preserves the shared commit DTO across current API consumers', async () =>
   ])
   assert.ok(prioritizedSparks.data.statusOptions.some((option) => option.status === 'open' && option.count === 2))
 
-  const reviewWorkcases = await getJson('/api/objects/workcase?status=subagents_result_reviewing') as {
+  const reviewWorkcases = await getJson('/api/objects/workcase?progress=progressing') as {
     data: { items: Array<Record<string, unknown>> }
   }
   assert.deepEqual(reviewWorkcases.data.items.map((item) => item.object_id), ['workcase-0001'])

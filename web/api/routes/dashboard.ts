@@ -7,7 +7,7 @@ import { listObjects, ACTIVE_OBJECT_TYPES } from '../services/facts.js'
 import { getGitLog } from '../services/git.js'
 import { getRelativeTime } from '../services/time.js'
 import { getTypeColor } from '../services/typeColors.js'
-import { getWorkCaseDisplayStatus } from '../../shared/workcaseStatus.js'
+import { getWorkCaseProgressGroup } from '../../shared/workcaseStatus.js'
 
 const router = Router()
 
@@ -17,7 +17,7 @@ function getUpdatedAt(item: Record<string, unknown>): string {
 
 function getDisplayStatus(type: string, item: Record<string, unknown>): string {
   const status = String(item.status || 'unknown')
-  return type === 'workcase' ? getWorkCaseDisplayStatus(String(item.phase || ''), status) : status
+  return type === 'workcase' ? getWorkCaseProgressGroup(String(item.phase || '')) ?? 'unknown' : status
 }
 
 function isFactItem(item: Record<string, unknown>): boolean {

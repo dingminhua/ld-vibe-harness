@@ -345,6 +345,8 @@ WorkCase 的正式计划形成与对象创建存在一个对象外前提：Human
 
 计划形成与 creation review 均发生在正式 WorkCase 创建以前；`subagents_plan_reviewing` 不是 WorkCase 的 `status`、`phase` 或当前生命周期展示状态。当前计划完成独立审核、Controller 处理反馈并受控创建对象后，WorkCase 才从 `human_plan_confirming` 开始。Web、Helper、Dashboard 和其它消费方不得把创建前方案审核投影为已经存在的 WorkCase 状态；创建后的 `creation_reviews` 与 `audit_summary` 只保存这段创建前质量控制的事实结果，不把它改写成对象内生命周期。
 
+Web 可以唯一按 `web-presentation-interaction::7.4 WorkCase 外部卡片的进展分组投影`，把本节已成立的正式对象 phase 派生为四个外部 Card 进展分组，并在“推进中”派生工作项执行、主控自检、独立复核或主控收敛推进环节。该派生只是浏览与筛选视图，不是生命周期分类，不改变本文的 status/phase 闭集、转换条件、Human Gate、授权或终态判断，不写回 WorkCase，也不反向规定每个 Card 展示哪些事实内容。WorkCase 详情阅读保持同一结构，不按外部 Card 进展分组建立不同事实投影。
+
 本文所称“双 Human Gate”只指 WorkCase 对象建立后的当前计划执行批准与最终结果关闭确认。对象创建前的工作意图确认承接 05 对当次事实对象写入授权的共同边界，不因 WorkCase 生命周期另造第三个对象内 Human Gate；三项判断的对象分别是工作意图、具体计划和实际结果，不得互相替代。
 
 Human 选择建立 WorkCase 表示选择由本文完整管理该工作的当前计划、执行结果、审核、批准与关闭；工作持续时间短、实现简单、只有一个 work item 或 Code 能验证部分结果，都不改变已经生效的审核、批准与关闭边界。不需要这条完整链路的工作不建立 WorkCase，不在建立后通过跳过关口将它降级为普通工作记录。

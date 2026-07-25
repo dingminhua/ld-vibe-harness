@@ -21,6 +21,19 @@
     @apply text-sm font-medium leading-5 text-ldvh-text-primary;
   }
 
+  .ldvh-card-title-prominent {
+    @apply text-base font-semibold leading-6 text-ldvh-text-primary;
+  }
+
+  .ldvh-card-decision-title {
+    @apply font-semibold leading-5 text-ldvh-text-primary;
+    font-size: 0.8125rem;
+  }
+
+  .ldvh-card-decision-body {
+    @apply text-xs font-normal leading-5 text-ldvh-text-primary;
+  }
+
   .ldvh-body {
     @apply text-sm leading-6 text-ldvh-text-primary;
   }
