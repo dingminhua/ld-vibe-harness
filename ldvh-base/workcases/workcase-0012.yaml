@@ -1,8 +1,8 @@
 title: 移除事实对象 supersedes 关系与 superseded 状态
-status: open
-summary: plan_version 2 全部 work item 已完成。独立结果审核通过（pass），四项成功标准确认满足。关闭报告和分流建议已形成，提交 Human 关闭确认。
-resume_from: 已进入 human_closure_confirming。validation_summary、closure_outcome=completed、disposition_summary 已写入。等待 Human 明确批准关闭。
-waiting_on: Human 关闭确认。
+status: closed
+summary: plan_version 2 执行完成，Human 已确认关闭。事实生命周期 supersedes/superseded 已从 Specs、Code、Helper、Web、测试和机械目录中完整移除，四项成功标准全部满足，closure_outcome=completed。
+resume_from: null
+waiting_on: null
 priority: P1
 goal: 在不改变规范模型自身的 supersedes 关系和 WorkCase 审核历史结构的前提下，按 ADR-0001 的来源先行顺序，审计并收束已经发生的事实对象 supersedes 关系与 ADR/Pitfall superseded 状态清理，使当前 Specs、Code、Helper、Web、测试和机械覆盖目录一致，并形成可验证结果。
 scope: 覆盖事实模型及类型规则 specs/05、20、21、22、23、24，行动模板 specs/31、32，机械目录 specs/attachments/05.Att.02；核对 code/ldvh/facts/contracts.py、validation.py、transitions.py、relations.py 和事实创建、读取、候选、更新相关 Helper 路径；核对 Web 中当前事实生命周期的状态词汇、过滤和列表/详情展示，包括历史实际触及的 dashboard、workcaseStatus、ObjectStatusFilter、ObjectDetail、locales 及对应文档和测试，但不扩大到无关通用 UI 兼容。历史审计输入包括提交 f1645554c、7ba29c6d7、7d2dd25aa 以及当前 05.Att.02 测试引用修正；既有实现只有经 plan_version 2 重新审计后才能作为当前结果沿用。明确排除 Specs 规范模型自身的 supersedes（Specs 01 与 code/ldvh/specs/*）、WorkCase audit 的 superseded_plan/superseded_result、证明旧事实值会被拒绝的负向测试和“不得出现 superseded”的规范说明、当前工作树中 Pitfall 及其它 Spark/ADR/WorkCase 的无关变更、新增关系类型，以及把普通字符串零命中作为完成证明。
@@ -16,7 +16,7 @@ success_criterion_definitions:
   statement: 05.Att.02 指向真实存在且覆盖相应机械责任的测试；相关 Python Specs、facts、Helper 与 Web 合约测试通过，并据实记录未运行或未覆盖范围。
 - criterion_id: criterion-04
   statement: 结果包逐项区分历史实现、plan_version 2 获批后的实际审计、保留或修正、无关 Working Tree 差异和未验证范围，不把历史提交或旧测试声明冒充本计划的执行结果。
-phase: human_closure_confirming
+phase: closed
 result_version: 1
 controller_check_summary: |-
   全部三项成功标准均有充分满足依据：
@@ -49,6 +49,10 @@ validation_summary: |-
 closure_outcome: completed
 disposition_summary: |-
   目标已达成。当前事实对象规则不再定义 supersedes relation_key 和 superseded 状态。所有事实生命周期范围内的 Specs、Code、Helper、Web、测试和 05.Att.02 引用已收束一致。合法残留（规范模型关系、WorkCase audit 字段、负向测试、禁止性说明）有明确规则依据和 scope 排除边界，无需进一步处理。无未承接残留责任。
+closure_approval:
+  subject_version: 1
+  approved_at: '2026-07-25T18:10:00+08:00'
+  approved_by: Human
 plan_version: 2
 work_items:
 - item_id: item-01
@@ -101,4 +105,4 @@ creation_reviews:
 object_id: workcase-0012
 fact_type_key: workcase
 created_at: '2026-07-24T09:46:14.094720+08:00'
-updated_at: '2026-07-25T18:08:00+08:00'
+updated_at: '2026-07-25T18:10:00+08:00'
