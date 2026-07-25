@@ -48,7 +48,7 @@
   - 中部：本地化标题，`ldvh-card-title`，放入轻量标题带，左侧使用状态语义短线突出，不通过放大字号突出；标题必须允许换行完整显示，不得用截断省略代替阅读；
   - 优先级字符徽标：WorkCase 和 Spark 如存在 `priority`，在标题行最前面展示 `P0` / `P1` / `P2` / `P3` 字符徽标，随后才是 `ObjectTypeIcon(obj.type)` 和标题；徽标使用颜色、轻量边框和 tooltip 表达优先级，不作为错误或阻塞状态；
   - 可选信号：仅当对应对象的字段契约定义该字段时展示；`priority` 只适用于 WorkCase 和 Spark，不得为 WorkCase、ADR、Pitfall 或 Study 杜撰 priority、importance、category 或 tags；Spark 不维护 category；Pitfall 不维护 repeatability；importance 字段已由 priority 统一承载，不作为独立字段使用
-  - 非活跃原因：当对象状态不是 `active` 且事实源存在 `archive_reason`、`deprecated_reason`、`discard_reason` 或 `closure_evidence` 时，卡片标题下展示完整原因说明；原因必须弱于对象 ID、状态、标题和更新时间，不得使用醒目的外框、左侧强线或 section 样式。说明标签单独一行，使用“弱圆点 + 原因标签”，标签文字与正文使用同一弱阅读颜色；正文另起一行，使用小号阅读文本但仍弱于标题，保留换行、项目符号和数字顺序，不得压缩为单行标签，也不得截断为两行。`archived`、`deprecated`、`discarded` 和 `closed` 卡片如缺少对应原因字段，应展示“原因缺失”异常提示，但仍应弱于标题主视觉。
+  - 终态处置：ADR、Pitfall 与 Spark 不复用泛化的“非活跃原因”字段。它们在各自终态卡片中只读取 `disposition_summary`，用弱圆点与小号正文承载，不另造“退出理由”“关闭时间”“分流时间”标签；缺失时如实显示处置缺失提示，仍不得压过标题、状态和更新时间。
   - Pitfall 状态筛选只认 `active / retired`，不得展示 `draft`、`superseded` 或“已替代”入口；Pitfall 卡片不展示 `tags`，也不展示“已解决/未解决”等冗余解决态；Pitfall 标签是事实源索引和详情页辅助信息，不作为列表卡片信号或二层筛选 tab。
   - 底部：只展示更新时间，使用 `formatDateTime()`，格式为 `YYYY-MM-DD HH:mm`，样式为弱化元信息 `ldvh-meta-muted`；更新时间行使用 `mt-auto` 贴近卡片下边距，避免不同标题行数或中部内容高度导致时间上浮；对象列表以更新时间排序，创建时间留在详情页身份区展示。
 - 复制图标展示“复制对象路径”，复制对象事实源文件完整路径，使用 API 返回的 `path`。
@@ -61,8 +61,8 @@
 ADR 是“已确认但尚未完全吸收到 specs/rules/code/web/skill/agent/workflow 的决策补丁”。列表卡片只帮助用户定位当前补丁，不在卡片内展示补丁影响范围。
 
 - ADR 状态筛选只认 `active / retired`。`active` 是当前有效补丁；`retired` 表示不再作为当前决策入口。
-- ADR 卡片使用通用卡片结构：ID、复制对象路径、状态、完整标题、非活跃原因、更新时间。
-- ADR 标题就是最好的摘要；除通用非活跃原因阅读块外，卡片不展示 `context`、`decision`、`related_rules` 或未采纳备选摘要。
+- ADR 卡片使用通用卡片结构：ID、复制对象路径、状态、完整标题、更新时间；`retired` 时在标题之后以弱处置正文展示 `disposition_summary`。
+- ADR 标题就是最好的摘要；除 retired 的处置正文外，卡片不展示 `decision_question`、`decision`、`applicability`、`rationale`、`consequences`、关联或未采纳备选摘要。
 - ADR 卡片标题必须允许换行完整显示，避免用截断标题替代决策识别。
 - ADR 卡片不展示 `related_rules` chip，也不展示 `superseded_by`、`proposed`、`accepted`、`rejected`、`superseded`、`alternatives` 或 `affects` 等旧生命周期和旧字段信息。
 
@@ -87,14 +87,13 @@ WorkCase 是“工作项执行态势”卡片，帮助用户从工作项判断�
 
 ### 3.5 Spark 卡片
 
-Spark 是“待分流信息”卡片，列表态用于快速定位每条火花，并在已经分流或废弃时提示闭环事实；待处理卡片不展开来源、意图或长正文。
+Spark 是“待分流信息”卡片，列表态用于快速定位每条火花，并在已经形成终态处置时提示闭环事实；待处理卡片不展开意图、摘要、演变或长正文。
 
 - Spark 卡片保留通用头部、标题、优先级字符徽标、状态和更新时间。
 - Spark 卡片不使用通用非活跃原因块；卡片中部只由 Spark 闭环状态驱动。
 - Spark 卡片中部状态内容必须使用与 Pitfall 归档原因一致的弱说明表达：弱圆点、小号标签、小号正文，无彩色外框、无大面积状态底色、无 section 标题级强调。
-- `open` 且没有分流闭环事实时，卡片中部不展示 `source`、`source_detail` 或 `description`；来源和意图留在 Spark 详情页的正文节点中阅读。
-- `routed` 或存在 `resolved_to` / `resolved_at` 时，卡片中部展示"已分流"区域，消费 `resolved_to` 和 `resolved_at`：`resolved_to` 显示分流目标，`resolved_at` 显示分流时间。不得只用状态徽章表达已分流。
-- `discarded` 或存在 `discard_reason` 时，卡片中部展示"已废弃"区域，消费 `discard_reason`；缺少原因时展示原因缺失提示。不得再同时展示通用非活跃原因块造成重复。
+- `open` 时，卡片中部不展示 `intent`、`summary` 或 `evolution`；这些内容留在详情页按阅读节点展开。
+- `routed`、`implemented` 与 `discarded` 时，卡片中部只展示 `disposition_summary`。状态徽章说明终态类别，正文说明实际处置；不在卡片中显示承接目标、额外终态时间或旧的 `resolved_to` / `resolved_at` / `discard_reason` 投影。
 - Spark 卡片内部信息区域只用于阅读，不响应主路由跳转；点击外层卡片仍进入 Spark 详情页。
 
 ### 3.6 Spark 创建边界
@@ -115,8 +114,8 @@ Spark 列表页保持只读；Web 不提供 Spark 创建、直接捕获、写入
 - 顶部区域统一为左侧对象 ID、右侧复制对象路径和状态徽章；不得把状态移到标题带右侧，也不得在右侧操作区加入与复制不相关的强视觉按钮。
 - 标题带统一使用弱背景、内圈边框、左侧语义短线、对象类型图标、完整标题和右侧进入箭头；标题使用 `ldvh-card-title`，必须允许换行完整显示。
 - 更新时间统一放在卡片底部右侧，使用 `formatDateTime()` 和 `ldvh-meta-muted`；列表排序统一按 `updated` 倒序，最近发生变化的对象在最前。
-- 研究、决策、火花和经验在列表态只展示对象定位所需信息，不展开长正文；火花列表态只在已分流或已废弃时展示闭环事实，并使用弱说明表达，不升级为强状态模块。
-- 非活跃原因表达在决策和经验中保持一致：弱圆点、小号标签、小号正文，不使用醒目外框、大面积状态底色或标题级强调。
+- 研究、决策、火花和经验在列表态只展示对象定位所需信息，不展开长正文；ADR/Pitfall 的 `retired` 与 Spark 的 `routed` / `implemented` / `discarded` 才展示终态 `disposition_summary`，并使用弱说明表达，不升级为强状态模块。
+- 终态处置在决策、经验和火花中保持一致：弱圆点、小号正文、无额外标签、无醒目外框、大面积状态底色或标题级强调。
 - 四类对象必须继续使用同一 `ObjectStatusFilter` tab 视觉；状态数量数字使用 `ldvh-tab-count`，不得在单个对象页局部改大、改粗或拉开间距。
 
 ## 4. 交互
@@ -174,14 +173,13 @@ interface ObjectItem {
   hasClosureRequestedAt?: boolean;
   hasVerificationEvidence?: boolean;
   hasClosureEvidence?: boolean;
-  archive_reason?: string;             // 非活跃归档原因，卡片完整原因说明展示
-  deprecated_reason?: string;          // 非活跃废弃原因，卡片完整原因说明展示
-  discard_reason?: string;             // 非活跃废弃原因，卡片完整原因说明展示
-  closure_evidence?: string;           // closed WorkCase 关闭原因来源，卡片完整原因说明展示
-  source?: string;                      // Spark 来源，详情页正文节点展示，pending 卡片不展示
-  source_detail?: string;               // Spark 意图，详情页正文节点展示，pending 卡片不展示
-  resolved_to?: string | { type?: string; ref?: string }; // Spark 分流目标，resolved 卡片展示
-  resolved_at?: string;                 // Spark 分流时间，resolved 卡片展示
+  disposition_summary?: string;         // ADR/Pitfall/Spark 的终态弱处置正文
+  intent?: string;                      // Spark 详情节点；列表不展开
+  summary?: string;                     // Spark 详情节点；列表不展开
+  evolution?: Array<{ at?: string; summary?: string }>; // Spark 详情节点；列表不展开
+  research_intent?: string;             // Study 详情节点；列表不展开
+  abstract?: string;                    // Study 详情节点；列表不展开
+  recommendation_summary?: string;      // Study 详情节点；列表不展开
 }
 
 interface RelatedObjectSummary {

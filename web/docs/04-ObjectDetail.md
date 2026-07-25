@@ -20,10 +20,10 @@
 统一对象身份头部：类型标签 + 状态标签 + ID + 优先级字符徽标 + 标题 + 创建/更新时间 + 复制对象路径图标
 内容区：
   WorkCase：执行态势 + 成功标准 / 验证证据 / 关闭证据 + 检查安排 + 目标 / 所属工作项 / 来源 + 文档 / 决策 / 火花 / 踩坑经验
-  ADR：背景 / 决策 / 影响 / 关联
-  Pitfall：现象 / 触发 / 根因 / 方案 / 验证 / 规避 / 范围 / 关联
-  Study：研究意图 / 摘要 / 建议摘要 / 报告正文进入扩展阅读 / 外部资料
-  Spark：意图 / 摘要 / 演变 / 分流 / 关联
+  ADR：问题 / 决策 / 范围 / 理由 / 影响 / 处置（终态时）/ 关联（存在时）
+  Pitfall：现象 / 触发 / 范围 / 验证 / 根因 / 方案 / 规避 / 处置（终态时）/ 关联（存在时）
+  Study：研究意图 / 摘要 / 建议摘要 / 正文进入扩展阅读 / 处置（终态且存在时）/ 关联
+  Spark：意图 / 摘要 / 演变 / 分流、落实或废弃（终态时）/ 关联（存在时）
   其他对象：字段卡片布局
 YAML 载体的源码折叠区（Markdown Study 不显示第二份 YAML 正文）
 右侧扩展阅读区（App Shell 提供，不属于本页卡片）
@@ -69,14 +69,19 @@ WorkCase 不使用普通字段卡片堆叠，而作为“一次目标的执行�
 
 上述四类方案作为后续非工作主线对象页面设计的参照，不再回退到普通字段卡片堆叠。提交详情不是工作对象详情，但它是五个基准模块之一，已经进入同一阅读语言族：标准身份头部、指标区、圆点正文节点和右侧扩展阅读都必须与这四类详情保持一致。
 
-- Pitfall 不使用普通字段卡片堆叠，而作为“可复用经验阅读页”展示。主节点固定为“现象、触发、根因、方案、验证、规避、范围、关联”，节点标题栏整行可点击，默认全部打开，折叠图标规则与 Study 一致。
-- ADR 不使用普通字段卡片堆叠，而作为“决策补丁阅读页”展示。主节点固定为“背景、决策、影响、关联”，节点标题栏整行可点击，默认全部打开，折叠图标规则与 Study 一致。
-- ADR 的“影响”节点消费 `consequences` 字段。active ADR 必须按 `## 正向价值`、`## 逆向价值`、`## 实施成本`、`## 风险评估`、`## 注意事项` 五段式书写；有逆向价值时必须引用 V1-V9，无逆向价值时 `## 逆向价值` 填写 `当前决策无逆向价值`。Web 在节点内按 Markdown 分段展示，不把五段拆成独立工作对象字段。
-- ADR 不展示“备选”节点，也不维护 `alternatives` 字段。未采纳方案若来自 Spark，应保留在 Spark 的演变记录或讨论上下文中；若只来自临时对话且未进入决策，不进入 ADR。
-- ADR 不展示独立“承接”节点，也不维护 `affects` 字段。`related_rules`、`related_workcases`、`related_workcases`、`related_adrs`、`related_sparks` 等统一进入“关联”，按关联内容的通用行样式展示。关联提交由 Git 派生视图呈现。
-- ADR 状态只显示 `active / retired`。详情页不得展示或派生 `proposed`、`accepted`、`rejected`、`superseded` 或 `superseded_by` 旧生命周期语义。
-- Pitfall `verification` 节点消费 05.02 四段式结构，但在 Pitfall 页面内渲染为轻量分段阅读，不使用表格左列重复“计划/记录/结果/结论”。验证节点内部按“验证计划、验证命令、验证结果、结论”顺序展示。
-- Pitfall `root_cause`、`resolution`、`avoidance` 等经验节点应把 Markdown 列表渲染为清晰的条目阅读，而不是使用浏览器默认列表缩进。无序列表只使用灰色圆点；有序列表应保留 Markdown 原文的普通 `1.`、`2.`、`3.` 文本编号，不得额外渲染为徽标、强调色或状态标记。
+四类对象的固定节点与字段映射如下；字段不存在时不渲染空节点，关联不存在时不渲染“关联”。所有节点默认展开、标题整行可点击，详情与右侧扩展阅读复用同一布局。
+
+| 对象 | 阅读顺序 | 终态呈现 | 不得回退为 |
+|---|---|---|---|
+| ADR | 问题 `decision_question` → 决策 `decision` → 范围 `applicability` → 理由 `rationale` → 影响 `consequences` → 关联 | `retired` 时在“影响”后显示处置 `disposition_summary` | “背景”“选择”“备选”“承接”或旧生命周期节点 |
+| Pitfall | 现象 `symptoms` → 触发 `trigger_conditions` → 范围 `applicability` → 验证 `validation_summary` → 根因 `root_cause` → 方案 `resolution` → 规避 `avoidance` → 关联 | `retired` 时在“规避”后显示处置 `disposition_summary` | 把没有日志等观察写成已经证明的运行时机制，或把经验做成缺陷状态卡 |
+| Study | 研究意图 `research_intent` → 摘要 `abstract` → 建议 `recommendation_summary` → 正文入口 `report_body` → 关联 | 终态存在 `disposition_summary` 时按同一阅读顺序作为补充说明显示 | 在主详情重组第二份 Markdown 正文，或用摘要替代报告原文 |
+| Spark | 意图 `intent` → 摘要 `summary` → 演变 `evolution` → 关联 | `routed` 显示“分流”、`implemented` 显示“落实”、`discarded` 显示“废弃”；三者内容均只读 `disposition_summary` 与 `updated_at` | 用旧 `source_detail`、`description`、`resolved_to`、`resolved_at`、`discard_reason` 字段，或在 `open` 状态制造终态占位 |
+
+- ADR 状态只显示 `active / retired`；Pitfall 状态只显示 `active / retired`。两者的 retired 处置只说明对象不再作为当前入口的原因与去向，不生成额外的“退出理由”标签或退出时间。
+- Spark 的 `evolution` 以最近条目优先的短卡片呈现，每项只显示事实中的 `at` 和 `summary`。Spark 终态只说明该信息对象的处置类别与事实正文；不能由终态处置推导目标对象已经完成。
+- Study 正文入口仅在精确读取是 Markdown carrier 时可打开；`research_question` 留在该正文内部。外部资料和正式关系进入同一“关联”阅读区，不被解释为研究结论或规则。
+- Pitfall 的验证、根因、方案和规避必须保留正文中的已确认、未确认与不适用边界；Markdown 列表按正常条目阅读，不用状态徽标替代原意。
 - 未定义专用语义布局的对象使用普通字段卡片兜底；每个字段一个轻量卡片，字段标题用 `ldvh-caption-strong`。
 - 普通字段卡片中的关联类字段可折叠；默认折叠长关联集合，避免压过主阅读路径。
 - Pitfall、ADR、Spark、WorkCase 等长文本字段必须按 Markdown 渲染。
@@ -107,24 +112,17 @@ WorkCase 不使用普通字段卡片堆叠，而作为“一次目标的执行�
 
 带章节后缀的本地 Markdown 引用应区分展示文本与加载路径：列表行保留完整引用文本，例如 `specs/07-Code确定性执行实现规范.md §4.7`；点击整行或扩展阅读图标时，只用规范化后的 Markdown 文件路径加载右侧阅读区，例如 `specs/07-Code确定性执行实现规范.md`，不得把章节后缀拼入文件读取 API。
 
-V4 Study 阅读器读取当前 Study 的 `research_intent`、`research_question`、`abstract`、`recommendation_summary`、Markdown 正文与 `urls`。首级详情与对象预览只按“研究意图 → 摘要 → 建议摘要”展示；`research_question` 留在报告“研究问题”段，正文只通过同一精确读取的 Markdown carrier 进入扩展阅读。不得读取或投影旧版路径型引用、验证字段、关系字段或兼容 DTO；提交记录仍应从 Git 提交记录视图派生。
+V4 Study 阅读器读取当前 Study 的 `research_intent`、`research_question`、`abstract`、`recommendation_summary`、Markdown 正文与 `urls`。首级详情与对象预览按“研究意图 → 摘要 → 建议 → 正文入口 → 关联”组织；`research_question` 留在报告“研究问题”段，正文只通过同一精确读取的 Markdown carrier 进入扩展阅读。终态对象若实际带有 `disposition_summary`，在正文入口之后如实显示该补充说明；不得读取或投影旧版兼容 DTO。
 
-关联区块内的工作对象引用不直接展示对象编号。对象编号属于打开后的对象详情、复制路径或 YAML 源码中的定位信息；列表态只展示对象类型图标、对象标题和必要操作图标，降低重复元信息对阅读的干扰。
+关联区块内的可读工作对象引用显示对象类型图标、已解析标题、稳定对象编号与当前状态；对象编号帮助 Human 回指事实，不能替代标题或被表现为对象名称。尚未解析或跨项目引用只如实显示已知稳定身份，不猜测标题、状态或来源路径。
 
 关联区块内每个具体条目必须使用统一行结构：左侧为语义图标和标题/路径/网址文本，右侧提供扩展阅读入口；对象引用只有在该行完成精确读取并获得可消费 `canonical_path` 时才增加复制入口。整行必须可点击并触发扩展阅读；复制入口只执行复制，不触发扩展阅读。对象引用、文档路径和外部 URL 不得各自使用不同的卡片、文字按钮或标签样式。行内语义图标、标题文本、复制入口和扩展阅读入口必须垂直居中；复制和扩展阅读入口使用同一 28px 操作容器，长标题截断或出现摘要次行时也不得让右侧操作图标下坠或上浮。
 
 V4 Study 阅读器从 `urls` 展示外部资料，并显示资料自身的标题和用途摘要。界面不得把 URL 转换为规则，或把内部路径呈现为外部研究对象。
 
-V4 Study 详情页不按普通字段卡片表达主内容。主阅读节点依次为“研究意图、摘要、建议摘要、报告正文、外部资料”；前三项分别消费 `research_intent`、`abstract`、`recommendation_summary`。报告正文节点只是同一文件的进入与复制行：仅在精确读取的 `carrier: markdown` 和 `canonical_path` 可用时，才可在右侧扩展阅读区打开完整正文；正文保留其原有 H2、H3、表格、链接和段落，主页面不按 H2 拆开、复制或重组。`research_question` 仅在正文“研究问题”中展开，同时可保留给机器候选消费，但不属于详情摘要层。资料只可来自同一 V4 原生 Study 文件，不提供 V2/V3 兼容字段或双读。
+V4 Study 详情页不按普通字段卡片表达主内容。报告正文节点只是同一文件的进入行：仅在精确读取的 `carrier: markdown` 和 `canonical_path` 可用时，才可在右侧扩展阅读区打开完整正文；正文保留其原有 H2、H3、表格、链接和段落，主页面不按 H2 拆开、复制或重组。`research_question` 仅在正文“研究问题”中展开，同时可保留给机器候选消费，但不属于详情摘要层。资料只可来自同一 V4 原生 Study 文件，不提供 V2/V3 兼容字段或双读。
 
-Spark 不使用普通字段卡片堆叠。Spark 是“分流前的信息对象”，页面目标不是证明结论、沉淀经验或呈现报告，而是帮助 Human 和 AI 判断这条信息当前应继续 pending、追加演变、分流到目标事实源，还是废弃。Spark 作为“待分流信息阅读页”展示，基础主节点固定为“意图、摘要、演变、关联”；“分流”是闭环事实节点，不是 pending 状态说明节点：
-
-1. “意图”消费 `source_detail`，使用与 Study “意图”一致的主节点样式表达这条 Spark 的来源意图、问题触发或对话背景；不得再以“来源说明”字段卡片或来源子字段表达。
-2. “摘要”消费 `description`，展示当前问题焦点、保留价值和阶段性收敛方向；这是 Spark 主阅读节点，不得被压在普通字段卡片中。
-3. “演变”消费 `evolution`，按倒序展示关键语义转折；每条展示 `at` 和 `summary`，`at` 拆成日期与时间两行展示，不做聊天流水账样式，不额外创建时间线事实源。
-4. "分流"只在 `status` 为 `routed` / `discarded`，或存在 `resolved_to`、`resolved_at`、`discard_reason` 任一真实闭环事实时渲染；`open` 且没有上述事实时不得渲染"分流"节点，不得用固定提示文案占位。节点内消费 `status`、`resolved_to`、`resolved_at`、`discard_reason`：`routed` 显示分流目标引用和分流日期；`discarded` 显示废弃原因。Web 只读展示，不提供状态修改、分流或废弃按钮。
-5. `source` 不进入正文节点，必须作为对象头部弱元信息展示在“更新”之后，表达方式与创建/更新元信息一致。
-6. “关联”统一收纳 `related_workcases`、`related_workcases`、`related_adrs`、`related_studies` 和 `related_docs`，按关联区通用行样式展示；Spark 当前字段契约没有 `related_sparks` 或 `related_pitfalls`，Web 不得为 Spark 杜撰这两类字段。
+Spark 不使用普通字段卡片堆叠。Spark 是“待分流信息对象”，页面目标是说明当前信息如何继续被理解或已经如何处置，而不是证明结论、沉淀经验或呈现报告。意图读取 `intent`，摘要读取 `summary`，演变读取 `evolution` 并以倒序的 `at + summary` 短卡片显示。`open` 不显示终态节点；`routed`、`implemented`、`discarded` 分别显示“分流”“落实”“废弃”，都只读取 `disposition_summary` 和对象 `updated_at`。Web 只读展示，不提供状态修改、分流或废弃按钮，也不从终态处置推断被关联对象的完成状态。
 
 Spark 节点标题栏应与 ADR / Pitfall / Study 保持一致：整行可点击，默认全部打开，折叠图标使用 `ChevronDown` / `ChevronUp`。详情页和右侧扩展阅读区必须复用同一套 Spark 阅读布局。
 
