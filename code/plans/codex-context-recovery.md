@@ -6,6 +6,8 @@
 
 规则权威单向流动为：00 → 01/04/05/09 → LDVH 工作上下文核心与共享事实恢复 Code → Codex adapter。实现不得反向以事件名、任务文字、cwd、工作对象、缓存或父上下文定义规则选择、事实相关性、规则适用、授权或完成。
 
+本规划同时承担 Codex adapter 作为 LDVH 仓库参考实现的维护责任。Codex adapter 不是 LDVH 核心的组成部分；其它 AI 开发环境的 adapter 不在本规划范围内，由处理该目标环境的 AI 在该环境自己的仓库按 09 §5.2 薄引用规则独立开发，不在 LDVH 仓库收纳或维护。
+
 ## 2. 目标与明确排除
 
 本增量使 Codex `SessionStart(startup|resume|clear|compact)` 与 `SubagentStart` 都通过同一个冻结的薄引用调用 `ldvh-work-context`。核心执行来源定义的规则引导 profile，只向 AI 交付 `ldvh-root` 的 `8. 系统级运行架构` / `8.1 工作上下文的信息交付顺序与渐进式披露` 及 `8.2 环境 Hook 的薄引用与核心职责边界` 两个当前 L3 选择。Human Gate、Stop Conditions 和其它规则在目标明确后按需读取，不再作为每次工作上下文进入的固定负载。
