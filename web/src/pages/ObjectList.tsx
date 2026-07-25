@@ -52,7 +52,6 @@ const TITLE_ACCENT_CLASS: Record<string, string> = {
   routed: 'border-zinc-500/50',
   archived: 'border-zinc-500/50',
   discarded: 'border-red-400/75',
-  superseded: 'border-zinc-500/50',
   rejected: 'border-red-400/75',
   deprecated: 'border-red-400/75',
   suspended: 'border-red-400/75',

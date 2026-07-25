@@ -13,7 +13,7 @@ import type { RelatedObjectSummary } from '@/utils/api';
 
 export type ExecutionFlowTranslate = (key: LocaleKey, params?: Record<string, string>) => string;
 
-const DONE_COMPAT_STATUSES = new Set(['done', 'completed', 'closed', 'resolved', 'accepted', 'archived', 'discarded', 'superseded', 'review_needed']);
+const DONE_COMPAT_STATUSES = new Set(['done', 'completed', 'closed', 'resolved', 'accepted', 'archived', 'discarded', 'review_needed']);
 const IN_PROGRESS_COMPAT_STATUSES = new Set(['in_progress', 'executing', 'verifying']);
 // `degraded` is accepted only as legacy backend input; UI labels render the concrete limited/risk tone.
 const EXECUTION_RISK_STATUSES = new Set(['open', 'degraded', 'suspended', 'rejected', 'deprecated', 'unknown']);

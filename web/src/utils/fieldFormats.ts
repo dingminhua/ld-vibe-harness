@@ -24,13 +24,12 @@ export const REFERENCE_FIELDS = [
   'workcase',
   'related_workcases', 'related_adrs', 'related_sparks', 'related_pitfalls',
   'related_studies', 'source_sparks',
-  'superseded_by', 'resolved_to',
+  'resolved_to',
 ];
 
 /** Path / URL reference fields render through DocPreviewLink when values are previewable paths. */
 export const DOC_LINK_FIELDS = [
   'related_docs', 'related_rules', 'urls',
-  'superseded_by',
 ];
 
 export const PATH_TEXT_FIELDS = ['project_path', 'ldvh_base_path', 'docs_path', 'rules_path', 'skills_path'];

@@ -81,7 +81,6 @@ const STATUS_PRIORITY: Record<string, number> = {
   accepted: 24,
   archived: 25,
   discarded: 26,
-  superseded: 26,
   rejected: 27,
   deprecated: 28,
 }
