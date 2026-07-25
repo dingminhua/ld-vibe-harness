@@ -72,7 +72,6 @@ export default function Dashboard() {
   }
   const parts: string[] = [];
   const statusKeys: Array<{ status: string; key: LocaleKey }> = [
-    { status: 'subagents_plan_reviewing', key: 'dashboard.summary.planReview' },
     { status: 'human_plan_confirming', key: 'dashboard.summary.planConfirming' },
     { status: 'executing', key: 'dashboard.summary.executing' },
     { status: 'result_self_checking', key: 'dashboard.summary.verifying' },

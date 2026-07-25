@@ -49,7 +49,7 @@ YAML 载体的源码折叠区（Markdown Study 不显示第二份 YAML 正文）
 
 WorkCase 不使用普通字段卡片堆叠，而作为“一次目标的执行态势”展示。WorkCase 的设计语言必须先继承提交、研究、决策、火花、经验五个成熟模块的基线，新的专用表达只能围绕“工作项对象更复杂”来增加，不能另起一套视觉和信息秩序。执行项只作为 WorkCase 内部编排的只读态势呈现，不在本文定义独立字段契约、对象路由或长期事实源结构。
 
-1. 工作项进度：页面主区域第一块，展示 WorkCase 自身推进阶段、成功标准完成度、执行项完成度、执行项状态分布和关闭材料记录状态。推进阶段直接消费当前 WorkCase 状态机：`subagents_plan_reviewing`、`human_plan_confirming`、`executing`、`result_self_checking`、`subagents_result_reviewing`、`human_closure_confirming`、`closed`；历史 `draft`、`active`、`review_needed` 只作为 legacy 兼容显示。该模块只消费确定性只读派生摘要，不写回事实源。
+1. 工作项进度：页面主区域第一块，展示 WorkCase 自身推进阶段、成功标准完成度、执行项完成度、执行项状态分布和关闭材料记录状态。推进阶段直接消费正式对象创建后的当前 WorkCase 状态机：`human_plan_confirming`、`executing`、`result_self_checking`、`subagents_result_reviewing`、`human_closure_confirming`、`closed`；创建前方案审核只作为 `creation_reviews` 事实结果读取，不成为详情状态；历史 `draft`、`active`、`review_needed` 只作为 legacy 兼容显示。该模块只消费确定性只读派生摘要，不写回事实源。
 2. 执行态势：展示整体执行态势条，并按 Human 关注顺序展示执行项行：已阻塞、执行中、待执行、已跳过、已完成；区块标题只使用小圆点。
 3. 成功标准、验证证据和关闭证据不再收进“关闭判断”总区块；分别作为同级模块展示 `success_criteria/verification_evidence/closure_evidence`。不展示额外顶部结论条，不单列待确认项或记录状态，未完成项由 checklist 或证据模块自身表达。成功标准是关闭判断依据，但不再用外层总模块包住。
 4. `orchestration.plan_review` 和 `orchestration.result_review` 作为“检查安排”模块展示方案审核、结果自检、结果复核、主控处理和 Human 确认摘要。Web 只展示已有审核事实和关键摘要，不把审核记录改写成独立 Review 对象；完整事实仍以 WorkCase YAML 为准。历史 `orchestration.review` 仅作为 legacy fallback 展示主控自检、专业复检和 Human 关闭审查要求。

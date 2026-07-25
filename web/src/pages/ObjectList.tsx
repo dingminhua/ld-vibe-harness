@@ -1,6 +1,6 @@
 import { useEffect, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { ArrowRight, CheckCircle2, CircleAlert, ClipboardCheck } from 'lucide-react';
+import { ArrowRight, CheckCircle2, CircleAlert, ClipboardCheck, PauseCircle } from 'lucide-react';
 import StatusBadge from '@/components/StatusBadge';
 import ObjectStatusFilter from '@/components/ObjectStatusFilter';
 import ObjectPriorityFilter from '@/components/ObjectPriorityFilter';
@@ -18,6 +18,9 @@ import { getEffectiveListStatus, writeListStatusParam } from '@/utils/listStatus
 import { getExecutionFlowLabel, getExecutionFlowTone, sortWorkCaseExecutionItems } from '@/utils/executionFlowStatus';
 import {
   WORKCASE_STATUS_ORDER,
+  WORKCASE_DYNAMIC_STATUSES,
+  getWorkCaseCardState,
+  getWorkCaseDynamicStageIndex,
   isWorkCaseClosureConfirmingStatus,
 } from '@/shared/workcaseStatus';
 
@@ -32,7 +35,6 @@ const WORKCASE_STATUS_ORDER_INDEX = new Map<string, number>(
 
 const TITLE_ACCENT_CLASS: Record<string, string> = {
   active: 'border-emerald-400/80',
-  subagents_plan_reviewing: 'border-sky-400/80',
   human_plan_confirming: 'border-violet-400/80',
   executing: 'border-emerald-400/80',
   result_self_checking: 'border-blue-400/80',
@@ -217,6 +219,89 @@ function WorkCaseCardSummary({
         {helper && <div className="ldvh-meta-muted mt-0.5 truncate">{helper}</div>}
       </div>
       <div className="shrink-0 font-mono text-[15px] leading-none tracking-tight">{value}</div>
+    </div>
+  );
+}
+
+function WorkCaseLifecycleSignal({
+  status,
+  locale,
+  t,
+}: {
+  status: string;
+  locale: string;
+  t: Translate;
+}) {
+  const cardState = getWorkCaseCardState(status);
+  const currentStage = getWorkCaseDynamicStageIndex(status);
+  const stageLabels = [
+    t('objectList.workcaseStageExecute'),
+    t('objectList.workcaseStageSelfCheck'),
+    t('objectList.workcaseStageResultReview'),
+  ];
+  const stateLabel = cardState === 'dynamic'
+    ? t('objectList.workcaseStateDynamic')
+    : cardState === 'closed'
+      ? t('objectList.workcaseStateClosed')
+      : t('objectList.workcaseStateWaiting');
+  const toneClass = cardState === 'dynamic'
+    ? 'border-sky-500/25 bg-sky-500/5 text-sky-400'
+    : cardState === 'closed'
+      ? 'border-zinc-500/30 bg-zinc-500/5 text-zinc-400'
+      : 'border-violet-500/25 bg-violet-500/5 text-violet-400';
+
+  return (
+    <div
+      onClick={(event) => event.stopPropagation()}
+      className={`min-w-0 cursor-default rounded-md border px-3 py-2.5 ${toneClass}`}
+    >
+      <div className="flex min-w-0 items-center gap-2">
+        {cardState === 'dynamic' ? (
+          <span className="relative flex h-2 w-2 shrink-0" aria-hidden="true">
+            <span className="motion-safe:animate-ping absolute inline-flex h-full w-full rounded-full bg-current opacity-35" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-current" />
+          </span>
+        ) : cardState === 'closed' ? (
+          <CheckCircle2 size={14} className="shrink-0" aria-hidden="true" />
+        ) : (
+          <PauseCircle size={14} className="shrink-0" aria-hidden="true" />
+        )}
+        <span className="ldvh-caption-strong min-w-0 truncate">{stateLabel}</span>
+        <span className="ldvh-meta-muted min-w-0 truncate">
+          {getObjectStatusLocale('workcase', status, locale)}
+        </span>
+      </div>
+
+      {cardState === 'dynamic' && currentStage >= 0 && (
+        <div
+          className="mt-2.5 grid grid-cols-3 gap-1.5"
+          aria-label={`${t('objectList.workcaseDynamicStages')}：${getObjectStatusLocale('workcase', status, locale)}`}
+        >
+          {WORKCASE_DYNAMIC_STATUSES.map((stageStatus, index) => {
+            const isCurrent = index === currentStage;
+            const isPast = index < currentStage;
+            return (
+              <div key={stageStatus} className="min-w-0">
+                <div className="flex items-center gap-1" aria-hidden="true">
+                  <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${
+                    isCurrent
+                      ? 'motion-safe:animate-pulse bg-current'
+                      : isPast
+                        ? 'bg-current/55'
+                        : 'bg-ldvh-border'
+                  }`} />
+                  {index < WORKCASE_DYNAMIC_STATUSES.length - 1 && (
+                    <span className={`h-px min-w-0 flex-1 ${isPast ? 'bg-current/45' : 'bg-ldvh-border'}`} />
+                  )}
+                </div>
+                <span className={`mt-1 block truncate text-[10px] leading-4 ${isCurrent ? 'font-medium text-current' : 'text-ldvh-text-secondary/70'}`}>
+                  {stageLabels[index]}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -547,7 +632,8 @@ export default function ObjectList() {
             };
 
       return (
-        <ObjectCardFrame key={obj.id} obj={obj} locale={locale} onOpen={openObject}>
+        <ObjectCardFrame key={obj.id} obj={obj} locale={locale} onOpen={openObject} showNonActiveReason={false}>
+          <WorkCaseLifecycleSignal status={obj.status} locale={locale} t={t} />
           <div onClick={(event) => event.stopPropagation()} className="min-w-0 cursor-default">
             <WorkCaseCardSummary {...primarySummary} />
           </div>

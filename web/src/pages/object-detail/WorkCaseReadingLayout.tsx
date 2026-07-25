@@ -221,11 +221,10 @@ export function WorkCaseReadingLayout({
   );
 }
 
-type WorkCaseLifecycleTone = 'draft' | 'planReview' | 'planConfirming' | 'active' | 'blocked' | 'verification' | 'resultReview' | 'review' | 'closed';
+type WorkCaseLifecycleTone = 'draft' | 'planConfirming' | 'active' | 'blocked' | 'verification' | 'resultReview' | 'review' | 'closed';
 
 const workCaseLifecycleClass: Record<WorkCaseLifecycleTone, string> = {
   draft: 'border-sky-500/25 bg-sky-500/10 text-sky-400',
-  planReview: 'border-sky-500/25 bg-sky-500/10 text-sky-400',
   planConfirming: 'border-violet-500/25 bg-violet-500/10 text-violet-400',
   active: 'border-emerald-500/25 bg-emerald-500/10 text-emerald-400',
   blocked: 'border-amber-500/30 bg-amber-500/10 text-amber-400',
@@ -568,10 +567,9 @@ function getWorkCaseLifecycle(
   obj: Record<string, unknown>,
   summary: ObjectItem | null,
   executionItems: RelatedObjectSummary[],
-): { tone: WorkCaseLifecycleTone; labelKey: 'objectDetail.lifecycleDraft' | 'objectDetail.lifecyclePlanReview' | 'objectDetail.lifecyclePlanConfirming' | 'objectDetail.lifecycleActive' | 'objectDetail.lifecycleBlocked' | 'objectDetail.lifecycleVerification' | 'objectDetail.lifecycleResultReview' | 'objectDetail.lifecycleReview' | 'objectDetail.lifecycleClosed' } {
+): { tone: WorkCaseLifecycleTone; labelKey: 'objectDetail.lifecycleDraft' | 'objectDetail.lifecyclePlanConfirming' | 'objectDetail.lifecycleActive' | 'objectDetail.lifecycleBlocked' | 'objectDetail.lifecycleVerification' | 'objectDetail.lifecycleResultReview' | 'objectDetail.lifecycleReview' | 'objectDetail.lifecycleClosed' } {
   const status = getWorkCaseDisplayStatus(detailString(obj.phase), detailString(obj.status, detailString(summary?.status)));
   if (status === 'closed') return { tone: 'closed', labelKey: 'objectDetail.lifecycleClosed' };
-  if (status === 'subagents_plan_reviewing') return { tone: 'planReview', labelKey: 'objectDetail.lifecyclePlanReview' };
   if (status === 'human_plan_confirming') return { tone: 'planConfirming', labelKey: 'objectDetail.lifecyclePlanConfirming' };
   if (status === 'human_closure_confirming') return { tone: 'review', labelKey: 'objectDetail.lifecycleReview' };
   if (isWorkCaseResultReviewStatus(status)) return { tone: 'resultReview', labelKey: 'objectDetail.lifecycleResultReview' };
