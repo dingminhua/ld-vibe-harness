@@ -227,6 +227,10 @@ def main() -> int:
     event_name: str | None = None
     try:
         native_event = json.load(sys.stdin)
+        if isinstance(native_event, dict):
+            raw_name = native_event.get("hook_event_name")
+            if isinstance(raw_name, str) and raw_name:
+                event_name = raw_name
         event_name, _, _ = _native_trigger(native_event)
         result = run(native_event, helper_executable=arguments.helper_executable)
     except (WorkContextError, OSError, UnicodeError, json.JSONDecodeError, subprocess.SubprocessError) as error:

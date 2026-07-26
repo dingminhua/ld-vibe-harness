@@ -28,18 +28,22 @@ def _core_result(value: Any, *, native_event: Any) -> dict[str, Any]:
         raise ConfigurationError("work-context core did not return a JSON object")
     event_name = value.get("event_name")
     context = value.get("additional_context")
+    outcome = value.get("outcome")
     native_event_name = native_event.get("hook_event_name") if isinstance(native_event, dict) else None
-    if (
-        value.get("contract") != WORK_CONTEXT_CONTRACT
-        or not isinstance(event_name, str)
-        or not event_name
-        or event_name != native_event_name
-        or value.get("outcome") not in WORK_CONTEXT_OUTCOMES
-        or value.get("facts") != "not_requested"
-        or not isinstance(context, str)
-        or not context
-    ):
+    if value.get("contract") != WORK_CONTEXT_CONTRACT:
         raise ConfigurationError("work-context core did not return a valid result")
+    if outcome not in WORK_CONTEXT_OUTCOMES:
+        raise ConfigurationError("work-context core did not return a valid result")
+    if value.get("facts") != "not_requested":
+        raise ConfigurationError("work-context core did not return a valid result")
+    if outcome == "unavailable":
+        if not isinstance(context, str) or not context:
+            raise ConfigurationError("work-context core did not return a valid result")
+    else:
+        if not isinstance(event_name, str) or not event_name or event_name != native_event_name:
+            raise ConfigurationError("work-context core did not return a valid result")
+        if not isinstance(context, str) or not context:
+            raise ConfigurationError("work-context core did not return a valid result")
     return value
 
 
