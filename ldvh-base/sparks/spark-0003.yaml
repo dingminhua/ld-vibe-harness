@@ -32,6 +32,12 @@ summary: |-
   - 缺少一个面向 Human 的 Hook 生效验证方法：安装后应提供可执行的步骤（如启动新会话后检查 hook_run_started/hook_run_completed 日志、执行目录产物等），使 Human 能自行确认 Hook 是否实时触发，而非依赖 AI 单方面声称"已安装完成"。
   - 上述两项缺口属于安装闭环中 Human 侧的落地确认环节，当前 README、09 和 33 均未覆盖。
 
+  **已落实的补充**
+
+  - `code/plugins/ldvh/README.md` 已新增"安装后操作"章节，说明开启 Hook 的步骤和 hydrate 风险。
+  - `specs/33` 已新增 §5.3.D2 "安装后 Human 操作引导"，要求执行者提示 Human 开启/信任 Hook、提供验证方法并说明 hydrate 风险。
+  - 上述补充覆盖了接入后的操作引导，不替代真实事件触发验证。
+
   **未决事项**
 
   - 不预设通用 CLI、Skill 或单一配置拓扑；先按目标环境形成最小闭环，再判断是否需要把稳定安装流程转为 WorkCase 或行动模板。
@@ -56,6 +62,8 @@ evolution:
     summary: ZCode 只读 cold-start 验证发现已注册 Hook 没有实时执行记录，且 work-context 可能来自 hydrate；因此撤回"补入 data 后当前实时触发和功能已通过"的结论，转为待诊断的运行时边界。
   - at: '2026-07-26T09:00:00+08:00'
     summary: Human 确认接入后缺少两个关键环节——提示用户去 AI 环境设置开启 Hook，以及提供面向 Human 的 Hook 生效验证方法；当前 README、09 和 33 均未覆盖。摘要新增 Human 操作引导缺口章节。
+  - at: '2026-07-26T09:30:00+08:00'
+    summary: README 新增"安装后操作"章节，specs/33 新增 §5.3.D2 安装后 Human 操作引导；Human 操作引导缺口已落实，摘要新增"已落实的补充"章节。
 object_id: spark-0003
 fact_type_key: spark
 created_at: '2026-07-19T08:33:50.911048+08:00'
