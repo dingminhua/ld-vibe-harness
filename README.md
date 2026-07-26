@@ -1,12 +1,14 @@
-# LDVH V4
+# LDVH — LD Vibe Harness
 
-LDVH（LD Vibe Harness）帮助 AI 在长期项目中保持判断有据、行动可续、结果可验。它由规范、事实对象与行动模板构成，并通过 Helper CLI、环境 Hook 和 Web 交付。
+LDVH 帮助 AI 在长期项目中保持**判断有据、行动可续、结果可验**。它由规范（Specs）、事实对象（Fact Objects）与行动模板（Action Templates）构成，通过 Helper CLI、环境 Hook 和 Web 界面交付。
 
-## 安装 LDVH 核心
+适用于需要 AI 跨会话维护上下文一致性、记录决策和失败经验、以及在不同 AI 开发环境中复用规则的项目。
 
-交付到新环境时，请提供固定的发行版本或 Git commit、LDVH 根目录、目标工作区和工作对象的绝对路径；不要把含未提交改动的工作目录作为交付版本。
+---
 
-在该固定版本的项目目录中安装核心：
+## 快速开始
+
+### 安装
 
 ```bash
 python3.12 -m venv .venv
@@ -16,37 +18,22 @@ python3.12 -m venv .venv
 
 `ldvh capabilities` 用于发现当前公开能力。安装核心不等于已经将 LDVH 接入目标开发环境。
 
-## 启动 Web（本地开发）
+### 接入 AI 开发环境
 
-需要 Node.js 与 npm。在仓库根目录执行：
+环境接入的完整流程：**获取核心 → 安装 → 部署 → 接入 → 验证**。
 
-```bash
-cd web
-npm ci
-npm run dev
-```
-
-按当前本地开发脚本，前端固定监听 [http://127.0.0.1:5173](http://127.0.0.1:5173)；端口被占用时会启动失败。本地 API 默认使用 `3001`，可由 `PORT` 覆盖；如已通过环境变量调整 API 目标或端口，以实际输出和配置为准。
-
-## 接入新的开发环境
-
-环境接入的完整流程是：获取核心 → 安装 → 部署 → 接入 → 验证。安装只取得核心；部署将既有接入单元和配置放到位；接入才是原生事件连接既有入口；验证需要对应真实事件的证据。
-
-可复制给目标环境 AI 的提示：
+将以下提示复制给你的 AI 开发环境（如 Trae、Cursor、ZCode 等）：
 
 > 请阅读 README，完成 LDVH 的安装、部署、接入与验证，并如实报告已验证与未验证的范围。
 
-安装完成后，目标环境 AI 应提示 Human 去 AI 环境设置中启用并信任已部署的 LDVH 插件 Hook（如 `SessionStart`），然后启动一次新的 cold startup 会话验证 Hook 是否实时触发。仅完成文件安装和注册不等于 Hook 已生效。
+AI 完成安装后应提示你执行以下操作：
 
-详细规则不在 README 重复：
+1. **开启 Hook** — 在 AI 环境设置中启用并信任已部署的 LDVH 插件 Hook（如 `SessionStart`）
+2. **验证实时触发** — 启动一次新的 cold startup 会话，确认 Hook 是否实时触发，而非来自历史上下文恢复（hydrate）
 
-- [环境安装、部署、接入与验证行动模板](specs/33-环境安装、部署、接入与验证行动模板.md)：给 AI 的最简提示、执行步骤、授权、逐事件验证与交还。
-- [环境接入规范](specs/09-环境接入规范.md)：接入成立条件和验证边界。
-- [环境接入面](specs/attachments/09.Att.01-环境接入面.md)：当前发行物已交付的环境无关入口。
+仅完成文件安装和注册不等于 Hook 已生效。
 
-## 诊断已有工作区（可选）
-
-`ldvh-doctor` 必须显式传入管辖配置所在工作区、目标项目或 worktree，以及 Helper 可执行文件的绝对路径：
+### 诊断已有工作区
 
 ```bash
 .venv/bin/ldvh-doctor \
@@ -55,18 +42,83 @@ npm run dev
   --helper-executable "<LDVH_ROOT>/.venv/bin/ldvh"
 ```
 
-Doctor 只诊断当前发行物、显式工作区和已交付入口的静态状态；它不扫描目标 AI 环境，也不证明环境已经接入、自动触发或完成真实验证。
+Doctor 只诊断当前发行物、显式工作区和已交付入口的静态状态，不扫描目标 AI 环境，也不证明环境已经接入或完成真实验证。
 
-## 项目地图与构建
+---
 
-- `code/`：确定性执行层，包括 Helper CLI、Hook 和 Git Gate。
-- `web/`：面向 Human 的 Web 交互层。
-- `ldvh-base/`：V4 事实对象载体。
-- `specs/`：规则、事实类型和行动模板。
+## 为什么需要 LDVH？
 
-构建 Python 发行物：
+AI 在长期项目中常见的问题：
+
+- **上下文断裂** — 新会话丢失了之前的判断和决策，需要重复讨论
+- **经验丢失** — 踩过的坑没有记录，下次可能再犯
+- **行动不可追溯** — 不清楚某个决定是怎么做出的，依据是什么
+- **跨环境不一致** — 在不同 AI 开发环境中行为不同
+
+LDVH 通过以下方式解决：
+
+| 机制 | 作用 |
+|---|---|
+| **规范（Specs）** | 定义项目规则、事实类型和行动模板，作为 AI 行为的权威依据 |
+| **事实对象（Fact Objects）** | 结构化记录决策（ADR）、失败经验（Pitfall）、待处理问题（Spark）、研究报告（Study）和工作项（WorkCase） |
+| **环境 Hook** | 在 AI 会话启动时自动注入项目上下文和规则引导 |
+| **Helper CLI** | 提供可审计的只读查询和受控写入操作 |
+| **Git Gate** | 在 commit 时自动校验提交信息是否符合项目规范 |
+
+---
+
+## 项目结构
+
+```
+├── code/               # 确定性执行层：Helper CLI、Hook、Git Gate
+├── web/                # 面向 Human 的 Web 交互层
+├── ldvh-base/          # 事实对象载体（ADR、Pitfall、Spark、Study、WorkCase）
+├── specs/              # 规则、事实类型定义和行动模板
+└── README.md
+```
+
+---
+
+## 核心概念
+
+### 规范驱动
+
+所有行为由 `specs/` 下的规范文件定义，而非硬编码逻辑。规范文件是 AI 行为的权威来源。
+
+### 事实对象
+
+| 类型 | 用途 | 状态 |
+|---|---|---|
+| **ADR** | 架构决策记录 | active → retired |
+| **Pitfall** | 踩坑经验与规避方法 | active → retired |
+| **Spark** | 待处理的议题或缺口 | open → routed / implemented / discarded |
+| **Study** | 研究报告 | active → retired |
+| **WorkCase** | 有明确验收标准的工作项 | open → blocked / closed |
+
+### 环境无关设计
+
+LDVH 核心是环境无关的——它不绑定任何特定 AI 开发环境。每个环境的接入通过薄 adapter 实现，参考实现见 `code/plugins/ldvh/`。
+
+---
+
+## 构建发行物
 
 ```bash
 python3.12 -m pip install -e '.[dev]'
 python3.12 -m build --sdist --wheel
 ```
+
+---
+
+## 详细文档
+
+- [环境安装、部署、接入与验证行动模板](specs/33-环境安装、部署、接入与验证行动模板.md) — 给 AI 的最简提示、执行步骤与授权
+- [环境接入规范](specs/09-环境接入规范.md) — 接入成立条件和验证边界
+- [环境接入面](specs/attachments/09.Att.01-环境接入面.md) — 当前发行物已交付的环境无关入口
+- [事实模型基础规范](specs/05-事实模型基础规范.md) — 事实对象的完整 Schema 和生命周期
+
+---
+
+## 许可证
+
+本项目采用 [MIT License](LICENSE)。
