@@ -6,6 +6,7 @@ import shutil
 import stat
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
+from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 
@@ -13,7 +14,8 @@ import pytest
 from conftest import HELPER_EXECUTABLE, assert_common_response
 
 from ldvh.facts import update_application
-from ldvh.facts.creation import FactCoordinationUnavailable
+from ldvh.facts.contracts import LAYOUTS
+from ldvh.facts.creation import FactCoordinationUnavailable, serialize_fact_object
 from ldvh.facts.models import FactIssue
 from ldvh.facts.repository import FactReadResult
 from ldvh.facts.workcase_projection import workcase_subject_fingerprint
@@ -75,6 +77,16 @@ def _read(
     project: Path,
     fact_ref: dict[str, str] | None = None,
 ) -> dict[str, object]:
+    item = _read_unchecked(workspace, project, fact_ref)
+    assert item["check_status"] == "mechanically_valid"
+    return item
+
+
+def _read_unchecked(
+    workspace: Path,
+    project: Path,
+    fact_ref: dict[str, str] | None = None,
+) -> dict[str, object]:
     response = handle_request(
         "call",
         "read-fact-objects",
@@ -87,7 +99,6 @@ def _read(
     ).response
     assert response["outcome"] == "ok"
     item = response["result"]["items"][0]
-    assert item["check_status"] == "mechanically_valid"
     return item
 
 
@@ -169,7 +180,7 @@ def _create_workcase(workspace: Path, project: Path) -> dict[str, str]:
         "priority": "P1",
         "goal": "Exercise the Controller-owned review and closure lifecycle",
         "scope": "One bounded Helper lifecycle test",
-        "workcase_profile": "control-contract-v1",
+        "workcase_profile": "control-contract-v2",
         "success_criterion_definitions": [
             {
                 "criterion_id": "criterion-01",
@@ -187,15 +198,6 @@ def _create_workcase(workspace: Path, project: Path) -> dict[str, str]:
                 "approach_summary": "Use controlled full-object Helper updates",
             }
         ],
-        "audit_summary": [
-            {
-                "audit_id": "audit-01",
-                "subject_kind": "pre_creation_plan",
-                "subject_version": 1,
-                "review_count": 1,
-                "summary": "Independent review improved and confirmed the initial plan",
-            }
-        ],
     }
     fact_object["creation_reviews"] = [
         {
@@ -205,10 +207,6 @@ def _create_workcase(workspace: Path, project: Path) -> dict[str, str]:
             "scope": "Goal, scope, success criterion, work item, method, and risk",
             "conclusion": "changes_required",
             "feedback": ["Controller should explicitly own the phase decision"],
-            "review_basis": {
-                "projection_key": "plan_current",
-                "subject_fingerprint": workcase_subject_fingerprint(fact_object, "plan_current"),
-            },
             "controller_resolution": "1. Accepted; the plan records Controller ownership.",
         }
     ]
@@ -239,54 +237,82 @@ def _create_workcase(workspace: Path, project: Path) -> dict[str, str]:
     return created["result"]["actual_ref"]
 
 
-def test_current_workcase_progress_rejects_generic_full_object_update(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    workspace, project, _ = _fixture(tmp_path)
-    docs = project / "docs"
-    docs.mkdir()
-    (docs / "input.md").write_text("Human-authorized work\n", encoding="utf-8")
-    (docs / "evidence.md").write_text("Verified result\n", encoding="utf-8")
-    workcase_ref = _create_workcase(workspace, project)
-
-    def update(mutator) -> dict[str, object]:
-        before = _read(workspace, project, workcase_ref)
-        target = _mutable(before)
-        mutator(target)
-        response = handle_request(
-            "call",
-            "update-fact-object",
-            _update_payload(
-                workspace,
-                project,
-                before["content_fingerprint"],
-                target,
-                workcase_ref,
-            ),
-        ).response
-        return response
-
-    event_at = "2027-01-01T12:00:00+08:00"
-
-    class FrozenDateTime(datetime):
-        @classmethod
-        def now(cls, tz=None):
-            value = cls.fromisoformat(event_at)
-            return value if tz is None else value.astimezone(tz)
-
-    monkeypatch.setattr("ldvh.helper.service.datetime", FrozenDateTime)
-
-    def approve_execution(fields: dict[str, object]) -> None:
+def _write_v1_workcase(project: Path, *, closed: bool = False) -> tuple[dict[str, str], Path]:
+    fields: dict[str, object] = {
+        "object_id": "workcase-0001",
+        "fact_type_key": "workcase",
+        "title": "V1 migration fixture",
+        "created_at": "2026-07-20T08:00:00+08:00",
+        "updated_at": "2026-07-20T09:00:00+08:00",
+        "status": "open",
+        "summary": "Waiting for Human execution approval",
+        "resume_from": "Present the current plan",
+        "waiting_on": "Human execution approval",
+        "priority": "P2",
+        "goal": "Migrate one V1 WorkCase without changing its plan",
+        "scope": "One compatibility fixture",
+        "workcase_profile": "control-contract-v1",
+        "success_criterion_definitions": [
+            {"criterion_id": "criterion-01", "statement": "The current object migrates without history fields"}
+        ],
+        "phase": "human_plan_confirming",
+        "plan_version": 1,
+        "work_items": [
+            {
+                "item_id": "item-01",
+                "goal": "Perform the controlled migration",
+                "expected_result": "One mechanically valid V2 object",
+                "status": "pending",
+                "approach_summary": "Use the generic full-snapshot update with exact CAS",
+            }
+        ],
+        "audit_summary": [
+            {
+                "audit_id": "audit-01",
+                "subject_kind": "pre_creation_plan",
+                "subject_version": 1,
+                "review_count": 1,
+                "summary": "The current plan was reviewed before object creation",
+            }
+        ],
+    }
+    if closed:
         fields.update(
             {
-                "phase": "executing",
-                "summary": "Human approved the current plan; execution started",
-                "resume_from": "Complete item-01",
+                "status": "closed",
+                "summary": "The V1 WorkCase is closed",
+                "phase": "closed",
+                "result_version": 1,
+                "work_items": [
+                    {
+                        "item_id": "item-01",
+                        "goal": "Perform the controlled migration",
+                        "expected_result": "One mechanically valid V2 object",
+                        "status": "completed",
+                        "approach_summary": "Use the generic full-snapshot update with exact CAS",
+                        "result_summary": "The bounded work completed",
+                    }
+                ],
+                "success_criterion_results": [
+                    {
+                        "criterion_id": "criterion-01",
+                        "outcome": "satisfied",
+                        "summary": "The bounded result was verified",
+                    }
+                ],
                 "execution_approval": {
                     "subject_version": 1,
-                    "approved_at": event_at,
-                    "summary": "Human approved the presented current plan",
+                    "approved_at": "2026-07-20T08:35:00+08:00",
+                    "summary": "Human approved plan version 1",
+                },
+                "controller_check_summary": "The Controller checked the current result",
+                "validation_summary": "The current result satisfies the criterion",
+                "closure_outcome": "completed",
+                "disposition_summary": "No residual responsibility remains",
+                "closure_approval": {
+                    "subject_version": 1,
+                    "approved_at": "2026-07-20T08:55:00+08:00",
+                    "summary": "Human approved the completed result",
                 },
                 "progress_history": {
                     "coverage": "full",
@@ -296,29 +322,136 @@ def test_current_workcase_progress_rejects_generic_full_object_update(
                             "plan_version": 1,
                             "round": 1,
                             "phase": "executing",
-                            "entered_at": event_at,
+                            "entered_at": "2026-07-20T08:36:00+08:00",
                             "transition_kind": "started",
-                            "transition_summary": "Begin the approved current plan",
-                        }
+                            "transition_summary": "Execution started after Human approval",
+                        },
+                        {
+                            "event_id": "progress-002",
+                            "plan_version": 1,
+                            "round": 1,
+                            "phase": "controller_checking",
+                            "entered_at": "2026-07-20T08:42:00+08:00",
+                            "transition_kind": "advanced",
+                            "transition_summary": "Controller began checking the completed item",
+                        },
+                        {
+                            "event_id": "progress-003",
+                            "plan_version": 1,
+                            "round": 1,
+                            "phase": "independent_reviewing",
+                            "entered_at": "2026-07-20T08:47:00+08:00",
+                            "transition_kind": "advanced",
+                            "transition_summary": "The current result entered independent review",
+                        },
+                        {
+                            "event_id": "progress-004",
+                            "plan_version": 1,
+                            "round": 1,
+                            "phase": "closure_preparing",
+                            "entered_at": "2026-07-20T08:52:00+08:00",
+                            "transition_kind": "advanced",
+                            "transition_summary": "Controller prepared the closure report",
+                        },
                     ],
                 },
+                "nonbinding_followups": [
+                    {
+                        "followup_id": "followup-01",
+                        "summary": "Consider simplifying compatibility fixtures later",
+                        "rationale": "This is not part of the completed migration responsibility",
+                    }
+                ],
+                "improvement_observations": [
+                    {
+                        "observation_id": "observation-01",
+                        "topic_key": "compatibility-fixture-simplification",
+                        "summary": "The compatibility fixture could be easier to maintain",
+                        "ownership": "current_scope",
+                        "value_dimensions": ["V6"],
+                        "net_value_summary": "A later cleanup may reduce maintenance cost",
+                        "disposition": "nonbinding_followup",
+                        "disposition_ref": "followup-01",
+                        "disposition_summary": "Deferred because it does not affect the current result",
+                    }
+                ],
             }
         )
-        fields.pop("waiting_on")
-        fields["work_items"][0].update(
+        for field_name in ("resume_from", "waiting_on", "priority"):
+            fields.pop(field_name, None)
+    creation_fingerprint = workcase_subject_fingerprint(fields, "plan_current")
+    fields["creation_reviews"] = [
+        {
+            "reviewer": reviewer,
+            "reviewed_at": reviewed_at,
+            "subject_version": 1,
+            "scope": scope,
+            "conclusion": "pass",
+            "feedback": [feedback],
+            "controller_resolution": "Accepted",
+            "review_basis": {
+                "projection_key": "plan_current",
+                "subject_fingerprint": creation_fingerprint,
+            },
+        }
+        for reviewer, reviewed_at, scope, feedback in (
+            (
+                "independent-plan-reviewer-a",
+                "2026-07-20T08:25:00+08:00",
+                "Current goal, scope, and criteria",
+                "The migration fixture has a bounded objective",
+            ),
+            (
+                "independent-plan-reviewer-b",
+                "2026-07-20T08:30:00+08:00",
+                "Current item and compatibility method",
+                "The compatibility method is explicit",
+            ),
+        )
+    ]
+    fields["audit_summary"][0]["review_count"] = len(fields["creation_reviews"])
+    if closed:
+        result_fingerprint = workcase_subject_fingerprint(fields, "result_implementation")
+        fields["result_reviews"] = [
             {
-                "status": "in_progress",
-                "current_summary": "Producing the bounded result",
-                "resume_from": "Finish and verify the result",
+                "reviewer": reviewer,
+                "reviewed_at": reviewed_at,
+                "subject_version": 1,
+                "scope": scope,
+                "conclusion": "pass",
+                "feedback": [feedback],
+                "controller_resolution": "Accepted",
+                "review_basis": {
+                    "projection_key": "result_implementation",
+                    "subject_fingerprint": result_fingerprint,
+                },
             }
-        )
+            for reviewer, reviewed_at, scope, feedback in (
+                (
+                    "independent-result-reviewer-a",
+                    "2026-07-20T08:48:00+08:00",
+                    "Current implementation result",
+                    "The implementation result matches the item outcome",
+                ),
+                (
+                    "independent-result-reviewer-b",
+                    "2026-07-20T08:50:00+08:00",
+                    "Current criterion result and closure readiness",
+                    "The current result is ready for closure",
+                ),
+            )
+        ]
+    path = project / "ldvh-base/workcases/workcase-0001.yaml"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(serialize_fact_object(LAYOUTS["workcase"], fields, None), encoding="utf-8")
+    return {
+        "governed_project_id": "sample",
+        "fact_type_key": "workcase",
+        "object_id": "workcase-0001",
+    }, path
 
-    approve_response = update(approve_execution)
-    assert approve_response["outcome"] == "rejected"
-    assert any("只能由 update-workcase 托管追加" in gap["summary"] for gap in approve_response["gaps"])
 
-
-def test_generic_full_snapshot_can_update_non_progress_content_without_changing_history(tmp_path: Path) -> None:
+def test_generic_full_snapshot_can_update_v2_content_without_process_history(tmp_path: Path) -> None:
     workspace, project, _ = _fixture(tmp_path)
     docs = project / "docs"
     docs.mkdir()
@@ -339,10 +472,7 @@ def test_generic_full_snapshot_can_update_non_progress_content_without_changing_
                 "resume_from": "Execute item-01",
             },
             remove_fields=["waiting_on"],
-            managed_records={
-                "execution_approval": {"summary": "Human approved plan version 1"},
-                "progress_transition": {"summary": "Begin the approved current plan"},
-            },
+            managed_records={"execution_approval": {"summary": "Human approved plan version 1"}},
         ),
     ).response
     assert approved["outcome"] == "ok"
@@ -359,16 +489,32 @@ def test_generic_full_snapshot_can_update_non_progress_content_without_changing_
     assert response["outcome"] == "ok", json.dumps(response, ensure_ascii=False, indent=2)
     after = _read(workspace, project, workcase_ref)["fact_object"]
     assert after["summary"] == target["summary"]
-    assert after["progress_history"] == current["fact_object"]["progress_history"]
+    assert "progress_history" not in after
 
 
-def test_workcase_delta_records_same_phase_repetition_as_a_new_round(tmp_path: Path) -> None:
+def test_generic_v2_fact_correction_preserves_managed_event_identity_and_blocks_new_events(tmp_path: Path) -> None:
     workspace, project, _ = _fixture(tmp_path)
-    docs = project / "docs"
-    docs.mkdir()
-    (docs / "input.md").write_text("Human-authorized work\n", encoding="utf-8")
     workcase_ref = _create_workcase(workspace, project)
-    before = _read(workspace, project, workcase_ref)
+
+    before_review_correction = _read(workspace, project, workcase_ref)
+    corrected_review_target = _mutable(before_review_correction)
+    corrected_review_target["creation_reviews"][0]["scope"] = "Corrected current plan review scope"
+    corrected_review_target["creation_reviews"][0]["feedback"] = ["Corrected current plan finding"]
+    corrected_review_target["creation_reviews"][0]["controller_resolution"] = "Corrected current disposition"
+    corrected_review = handle_request(
+        "call",
+        "update-fact-object",
+        _update_payload(
+            workspace,
+            project,
+            before_review_correction["content_fingerprint"],
+            corrected_review_target,
+            workcase_ref,
+        ),
+    ).response
+    assert corrected_review["outcome"] == "ok", json.dumps(corrected_review, ensure_ascii=False, indent=2)
+
+    current = _read(workspace, project, workcase_ref)
     approved = handle_request(
         "call",
         "update-workcase",
@@ -376,47 +522,514 @@ def test_workcase_delta_records_same_phase_repetition_as_a_new_round(tmp_path: P
             workspace,
             project,
             workcase_ref,
-            before["content_fingerprint"],
-            set_fields={
-                "phase": "executing",
-                "summary": "Human approved the plan; execution may start",
-                "resume_from": "Execute item-01",
-            },
+            current["content_fingerprint"],
+            set_fields={"phase": "executing", "summary": "Human approved execution"},
             remove_fields=["waiting_on"],
-            managed_records={
-                "execution_approval": {"summary": "Human approved plan version 1"},
-                "progress_transition": {"summary": "Begin the approved current plan"},
-            },
+            managed_records={"execution_approval": {"summary": "Human approved plan version 1"}},
         ),
     ).response
-    assert approved["outcome"] == "ok"
+    assert approved["outcome"] == "ok", json.dumps(approved, ensure_ascii=False, indent=2)
 
-    current = _read(workspace, project, workcase_ref)
-    repeated = handle_request(
+    before_approval_correction = _read(workspace, project, workcase_ref)
+    corrected_approval_target = _mutable(before_approval_correction)
+    corrected_approval_target["execution_approval"]["summary"] = "Corrected wording for the same Human approval"
+    corrected_approval = handle_request(
         "call",
-        "update-workcase",
-        _workcase_update_payload(
+        "update-fact-object",
+        _update_payload(
             workspace,
             project,
+            before_approval_correction["content_fingerprint"],
+            corrected_approval_target,
             workcase_ref,
-            current["content_fingerprint"],
-            set_fields={"summary": "Controller began another execution iteration"},
-            managed_records={
-                "progress_transition": {"summary": "Repeat execution after reviewing the current result"}
+        ),
+    ).response
+    assert corrected_approval["outcome"] == "ok", json.dumps(corrected_approval, ensure_ascii=False, indent=2)
+
+    corrected = _read(workspace, project, workcase_ref)
+    fact_path = project / corrected["canonical_path"]
+    raw = fact_path.read_bytes()
+    retimed = _mutable(corrected)
+    retimed["execution_approval"]["approved_at"] = "2026-07-26T18:00:00+08:00"
+    rejected = handle_request(
+        "call",
+        "update-fact-object",
+        _update_payload(workspace, project, corrected["content_fingerprint"], retimed, workcase_ref),
+    ).response
+    assert rejected["outcome"] == "rejected"
+    assert any("事件身份" in gap["summary"] for gap in rejected["gaps"])
+    assert fact_path.read_bytes() == raw
+
+    formed_review = _mutable(corrected)
+    formed_review["creation_reviews"].append(
+        {
+            **formed_review["creation_reviews"][0],
+            "reviewer": "new-review-event",
+        }
+    )
+    rejected = handle_request(
+        "call",
+        "update-fact-object",
+        _update_payload(workspace, project, corrected["content_fingerprint"], formed_review, workcase_ref),
+    ).response
+    assert rejected["outcome"] == "rejected"
+    assert any("review 必须使用 update-workcase" in gap["summary"] for gap in rejected["gaps"])
+    assert fact_path.read_bytes() == raw
+
+
+def test_generic_full_snapshot_cannot_form_v2_approval_records(tmp_path: Path) -> None:
+    workspace, project, _ = _fixture(tmp_path)
+    docs = project / "docs"
+    docs.mkdir()
+    (docs / "input.md").write_text("Human-authorized work\n", encoding="utf-8")
+    workcase_ref = _create_workcase(workspace, project)
+    before = _read(workspace, project, workcase_ref)
+    target = _mutable(before)
+    target.update(
+        {
+            "phase": "executing",
+            "summary": "Attempted generic approval formation",
+            "execution_approval": {
+                "subject_version": 1,
+                "approved_at": before["fact_object"]["updated_at"],
+                "summary": "Human approved plan version 1",
             },
+        }
+    )
+    target.pop("waiting_on")
+
+    rejected = handle_request(
+        "call",
+        "update-fact-object",
+        _update_payload(workspace, project, before["content_fingerprint"], target, workcase_ref),
+    ).response
+
+    assert rejected["outcome"] == "rejected"
+    assert any("approval 必须使用 update-workcase" in gap["summary"] for gap in rejected["gaps"])
+
+
+def test_generic_full_snapshot_rejects_controller_resolution_without_feedback(tmp_path: Path) -> None:
+    workspace, project, _ = _fixture(tmp_path)
+    workcase_ref = _create_workcase(workspace, project)
+    before = _read(workspace, project, workcase_ref)
+    fact_path = project / before["canonical_path"]
+    raw = fact_path.read_bytes()
+    target = _mutable(before)
+    review = target["creation_reviews"][0]
+    review["conclusion"] = "pass"
+    review.pop("feedback")
+    review["controller_resolution"] = "Nothing remains to resolve"
+
+    rejected = handle_request(
+        "call",
+        "update-fact-object",
+        _update_payload(workspace, project, before["content_fingerprint"], target, workcase_ref),
+    ).response
+
+    assert rejected["outcome"] == "rejected"
+    assert any("没有 feedback" in gap["summary"] for gap in rejected["gaps"])
+    assert fact_path.read_bytes() == raw
+
+
+def test_generic_invalid_repair_can_restore_missing_creation_resolution_without_retiming(tmp_path: Path) -> None:
+    workspace, project, _ = _fixture(tmp_path)
+    workcase_ref = _create_workcase(workspace, project)
+    valid = _read(workspace, project, workcase_ref)
+    fact_path = project / valid["canonical_path"]
+    invalid_fields = deepcopy(valid["fact_object"])
+    invalid_fields["creation_reviews"][0].pop("controller_resolution")
+    fact_path.write_text(
+        serialize_fact_object(LAYOUTS["workcase"], invalid_fields, None),
+        encoding="utf-8",
+    )
+    invalid = _read_unchecked(workspace, project, workcase_ref)
+    assert invalid["check_status"] == "invalid"
+    assert invalid["content_fingerprint"] is not None
+    raw = fact_path.read_bytes()
+
+    retimed_target = deepcopy(_mutable(invalid))
+    retimed_target["creation_reviews"][0]["reviewed_at"] = "2026-07-26T12:45:00+08:00"
+    retimed_target["creation_reviews"][0]["controller_resolution"] = "Accepted and handled."
+    retimed = handle_request(
+        "call",
+        "update-fact-object",
+        _update_payload(
+            workspace,
+            project,
+            invalid["content_fingerprint"],
+            retimed_target,
+            workcase_ref,
+        ),
+    ).response
+    assert retimed["outcome"] == "rejected"
+    assert any("review 必须使用 update-workcase" in gap["summary"] for gap in retimed["gaps"])
+    assert fact_path.read_bytes() == raw
+
+    widened_target = deepcopy(_mutable(invalid))
+    widened_target["summary"] = "Also changed while repairing the invalid review"
+    widened_target["creation_reviews"][0]["feedback"] = ["Also rewrote Reviewer-owned feedback"]
+    widened_target["creation_reviews"][0]["controller_resolution"] = "Accepted and handled."
+    widened = handle_request(
+        "call",
+        "update-fact-object",
+        _update_payload(
+            workspace,
+            project,
+            invalid["content_fingerprint"],
+            widened_target,
+            workcase_ref,
+        ),
+    ).response
+    assert widened["outcome"] == "rejected"
+    assert any("invalid-before 窄修复" in gap["summary"] for gap in widened["gaps"])
+    assert fact_path.read_bytes() == raw
+
+    repaired_target = deepcopy(_mutable(invalid))
+    repaired_target["creation_reviews"][0]["controller_resolution"] = "Accepted and handled."
+    repaired = handle_request(
+        "call",
+        "update-fact-object",
+        _update_payload(
+            workspace,
+            project,
+            invalid["content_fingerprint"],
+            repaired_target,
+            workcase_ref,
+        ),
+    ).response
+    assert repaired["outcome"] == "ok", json.dumps(repaired, ensure_ascii=False, indent=2)
+    after = _read(workspace, project, workcase_ref)["fact_object"]
+    assert after["creation_reviews"][0]["controller_resolution"] == "Accepted and handled."
+
+
+def test_generic_invalid_repair_can_restore_missing_result_resolution(tmp_path: Path) -> None:
+    workspace, project, _ = _fixture(tmp_path)
+    workcase_ref = _create_workcase(workspace, project)
+    created = _read(workspace, project, workcase_ref)
+    fact_path = project / created["canonical_path"]
+    valid_fields = deepcopy(created["fact_object"])
+    event_at = valid_fields["updated_at"]
+    valid_fields.update(
+        {
+            "phase": "controller_checking",
+            "summary": "Controller handled the independent result feedback",
+            "result_version": 1,
+            "success_criterion_results": [
+                {
+                    "criterion_id": "criterion-01",
+                    "outcome": "satisfied",
+                    "summary": "The bounded result was produced and checked",
+                }
+            ],
+            "controller_check_summary": "The Controller checked the completed item and criterion result",
+            "execution_approval": {
+                "subject_version": 1,
+                "approved_at": event_at,
+                "summary": "Human approved plan version 1",
+            },
+            "result_reviews": [
+                {
+                    "reviewer": "independent-result-reviewer",
+                    "reviewed_at": event_at,
+                    "subject_version": 1,
+                    "scope": "Current item and criterion result",
+                    "conclusion": "changes_required",
+                    "feedback": ["Clarify the Controller check"],
+                    "controller_resolution": "Accepted and clarified in the current check",
+                }
+            ],
+            "work_items": [
+                {
+                    **valid_fields["work_items"][0],
+                    "status": "completed",
+                    "result_summary": "The bounded result was produced",
+                }
+            ],
+        }
+    )
+    valid_fields.pop("waiting_on")
+    fact_path.write_text(
+        serialize_fact_object(LAYOUTS["workcase"], valid_fields, None),
+        encoding="utf-8",
+    )
+    assert _read(workspace, project, workcase_ref)["check_status"] == "mechanically_valid"
+
+    invalid_fields = deepcopy(valid_fields)
+    invalid_fields["result_reviews"][0].pop("controller_resolution")
+    fact_path.write_text(
+        serialize_fact_object(LAYOUTS["workcase"], invalid_fields, None),
+        encoding="utf-8",
+    )
+    invalid = _read_unchecked(workspace, project, workcase_ref)
+    assert invalid["check_status"] == "invalid"
+    repaired_target = _mutable(invalid)
+    repaired_target["result_reviews"][0]["controller_resolution"] = "Accepted and clarified in the current check"
+
+    repaired = handle_request(
+        "call",
+        "update-fact-object",
+        _update_payload(
+            workspace,
+            project,
+            invalid["content_fingerprint"],
+            repaired_target,
+            workcase_ref,
         ),
     ).response
 
-    assert repeated["outcome"] == "ok", json.dumps(repeated, ensure_ascii=False, indent=2)
-    history = _read(workspace, project, workcase_ref)["fact_object"]["progress_history"]
-    assert len(history["entries"]) == 2
-    assert history["entries"][-1]["event_id"] == "progress-002"
-    assert history["entries"][-1]["round"] == 2
-    assert history["entries"][-1]["phase"] == "executing"
-    assert history["entries"][-1]["transition_kind"] == "repeated"
+    assert repaired["outcome"] == "ok", json.dumps(repaired, ensure_ascii=False, indent=2)
+    after = _read(workspace, project, workcase_ref)["fact_object"]
+    assert after["result_reviews"][0]["controller_resolution"] == "Accepted and clarified in the current check"
 
 
-def test_workcase_delta_records_execution_approval_with_one_event_and_idempotent_retry(tmp_path: Path) -> None:
+def test_generic_invalid_repair_adds_only_the_profile_required_by_created_at(tmp_path: Path) -> None:
+    workspace, project, _ = _fixture(tmp_path)
+    workcase_ref = _create_workcase(workspace, project)
+    valid = _read(workspace, project, workcase_ref)
+    fact_path = project / valid["canonical_path"]
+    invalid_fields = deepcopy(valid["fact_object"])
+    invalid_fields.pop("workcase_profile")
+    fact_path.write_text(
+        serialize_fact_object(LAYOUTS["workcase"], invalid_fields, None),
+        encoding="utf-8",
+    )
+    invalid = _read_unchecked(workspace, project, workcase_ref)
+    assert invalid["check_status"] == "invalid"
+    assert invalid["content_fingerprint"] is not None
+    raw = fact_path.read_bytes()
+
+    expanded_target = deepcopy(_mutable(invalid))
+    expanded_target["workcase_profile"] = "control-contract-v2"
+    expanded_target["goal"] = "Changed while adding the missing profile"
+    rejected = handle_request(
+        "call",
+        "update-fact-object",
+        _update_payload(
+            workspace,
+            project,
+            invalid["content_fingerprint"],
+            expanded_target,
+            workcase_ref,
+        ),
+    ).response
+    assert rejected["outcome"] == "rejected"
+    assert any("不得同次改变其它领域内容" in gap["summary"] for gap in rejected["gaps"])
+    assert fact_path.read_bytes() == raw
+
+    repaired_target = deepcopy(_mutable(invalid))
+    repaired_target["workcase_profile"] = "control-contract-v2"
+    repaired = handle_request(
+        "call",
+        "update-fact-object",
+        _update_payload(
+            workspace,
+            project,
+            invalid["content_fingerprint"],
+            repaired_target,
+            workcase_ref,
+        ),
+    ).response
+    assert repaired["outcome"] == "ok", json.dumps(repaired, ensure_ascii=False, indent=2)
+    after = _read(workspace, project, workcase_ref)["fact_object"]
+    assert after["workcase_profile"] == "control-contract-v2"
+    assert after["goal"] == valid["fact_object"]["goal"]
+
+
+def test_generic_invalid_unknown_profile_repair_cannot_form_a_new_creation_review(tmp_path: Path) -> None:
+    workspace, project, _ = _fixture(tmp_path)
+    workcase_ref = _create_workcase(workspace, project)
+    valid = _read(workspace, project, workcase_ref)
+    fact_path = project / valid["canonical_path"]
+    invalid_fields = deepcopy(valid["fact_object"])
+    invalid_fields["workcase_profile"] = "unknown-contract"
+    fact_path.write_text(
+        serialize_fact_object(LAYOUTS["workcase"], invalid_fields, None),
+        encoding="utf-8",
+    )
+    invalid = _read_unchecked(workspace, project, workcase_ref)
+    assert invalid["check_status"] == "invalid"
+    raw = fact_path.read_bytes()
+
+    forged_target = deepcopy(_mutable(invalid))
+    forged_target["workcase_profile"] = "control-contract-v2"
+    forged_target["goal"] = "Silently replace the reviewed plan while repairing the profile"
+    forged_target["plan_version"] = 2
+    forged_target["creation_reviews"] = [
+        {
+            "reviewer": "forged-plan-reviewer",
+            "reviewed_at": "2026-07-26T14:00:00+08:00",
+            "subject_version": 2,
+            "scope": "The silently replaced plan",
+            "conclusion": "pass",
+        }
+    ]
+    rejected = handle_request(
+        "call",
+        "update-fact-object",
+        _update_payload(
+            workspace,
+            project,
+            invalid["content_fingerprint"],
+            forged_target,
+            workcase_ref,
+        ),
+    ).response
+
+    assert rejected["outcome"] == "rejected"
+    assert any(
+        "新增或替换 WorkCase review 必须使用 update-workcase" in gap["summary"]
+        for gap in rejected["gaps"]
+    )
+    assert fact_path.read_bytes() == raw
+
+
+def test_generic_invalid_ordinary_repair_cannot_rewrite_existing_managed_review(tmp_path: Path) -> None:
+    workspace, project, _ = _fixture(tmp_path)
+    workcase_ref = _create_workcase(workspace, project)
+    valid = _read(workspace, project, workcase_ref)
+    fact_path = project / valid["canonical_path"]
+    invalid_fields = deepcopy(valid["fact_object"])
+    invalid_fields["summary"] = ""
+    fact_path.write_text(
+        serialize_fact_object(LAYOUTS["workcase"], invalid_fields, None),
+        encoding="utf-8",
+    )
+    invalid = _read_unchecked(workspace, project, workcase_ref)
+    assert invalid["check_status"] == "invalid"
+    raw = fact_path.read_bytes()
+
+    rewritten_target = deepcopy(_mutable(invalid))
+    rewritten_target["summary"] = "Repaired current summary"
+    rewritten_target["creation_reviews"][0]["scope"] = "Silently rewritten review scope"
+    rejected = handle_request(
+        "call",
+        "update-fact-object",
+        _update_payload(
+            workspace,
+            project,
+            invalid["content_fingerprint"],
+            rewritten_target,
+            workcase_ref,
+        ),
+    ).response
+
+    assert rejected["outcome"] == "rejected"
+    assert any(
+        "invalid-before 修复必须原样保留 WorkCase 托管 review/approval" in gap["summary"]
+        for gap in rejected["gaps"]
+    )
+    assert fact_path.read_bytes() == raw
+
+
+def test_generic_v2_fact_correction_cannot_delete_an_existing_review_event(tmp_path: Path) -> None:
+    workspace, project, _ = _fixture(tmp_path)
+    workcase_ref = _create_workcase(workspace, project)
+    current = _read(workspace, project, workcase_ref)
+    fact_path = project / current["canonical_path"]
+    fields = deepcopy(current["fact_object"])
+    fields["creation_reviews"].append(
+        {
+            "reviewer": "second-plan-reviewer",
+            "reviewed_at": "2026-07-26T13:05:00+08:00",
+            "subject_version": 1,
+            "scope": "A second independent view of the current plan",
+            "conclusion": "pass",
+        }
+    )
+    fact_path.write_text(
+        serialize_fact_object(LAYOUTS["workcase"], fields, None),
+        encoding="utf-8",
+    )
+    before = _read(workspace, project, workcase_ref)
+    raw = fact_path.read_bytes()
+    target = deepcopy(_mutable(before))
+    target["creation_reviews"].pop()
+
+    rejected = handle_request(
+        "call",
+        "update-fact-object",
+        _update_payload(workspace, project, before["content_fingerprint"], target, workcase_ref),
+    ).response
+
+    assert rejected["outcome"] == "rejected"
+    assert any("移除 WorkCase review 事件" in gap["summary"] for gap in rejected["gaps"])
+    assert fact_path.read_bytes() == raw
+
+
+def test_generic_v2_same_event_reviewer_correction_can_form_its_required_creation_resolution(
+    tmp_path: Path,
+) -> None:
+    workspace, project, _ = _fixture(tmp_path)
+    workcase_ref = _create_workcase(workspace, project)
+    current = _read(workspace, project, workcase_ref)
+    fact_path = project / current["canonical_path"]
+    fields = deepcopy(current["fact_object"])
+    review = fields["creation_reviews"][0]
+    review["conclusion"] = "pass"
+    review.pop("feedback")
+    review.pop("controller_resolution")
+    fact_path.write_text(
+        serialize_fact_object(LAYOUTS["workcase"], fields, None),
+        encoding="utf-8",
+    )
+    before = _read(workspace, project, workcase_ref)
+    target = deepcopy(_mutable(before))
+    corrected_review = target["creation_reviews"][0]
+    corrected_review["conclusion"] = "changes_required"
+    corrected_review["feedback"] = ["The original review omitted one finding"]
+    corrected_review["controller_resolution"] = "Accepted the corrected finding."
+
+    corrected = handle_request(
+        "call",
+        "update-fact-object",
+        _update_payload(workspace, project, before["content_fingerprint"], target, workcase_ref),
+    ).response
+
+    assert corrected["outcome"] == "ok", json.dumps(corrected, ensure_ascii=False, indent=2)
+    after = _read(workspace, project, workcase_ref)["fact_object"]
+    assert after["creation_reviews"][0]["controller_resolution"] == "Accepted the corrected finding."
+
+
+def test_generic_invalid_repair_cannot_add_resolutions_to_multiple_reviews_at_once(tmp_path: Path) -> None:
+    workspace, project, _ = _fixture(tmp_path)
+    workcase_ref = _create_workcase(workspace, project)
+    valid = _read(workspace, project, workcase_ref)
+    fact_path = project / valid["canonical_path"]
+    invalid_fields = deepcopy(valid["fact_object"])
+    invalid_fields["creation_reviews"][0].pop("controller_resolution")
+    invalid_fields["creation_reviews"].append(
+        {
+            "reviewer": "second-plan-reviewer",
+            "reviewed_at": "2026-07-26T13:05:00+08:00",
+            "subject_version": 1,
+            "scope": "A second review with one finding",
+            "conclusion": "changes_required",
+            "feedback": ["Clarify the second boundary"],
+        }
+    )
+    fact_path.write_text(
+        serialize_fact_object(LAYOUTS["workcase"], invalid_fields, None),
+        encoding="utf-8",
+    )
+    invalid = _read_unchecked(workspace, project, workcase_ref)
+    assert invalid["check_status"] == "invalid"
+    raw = fact_path.read_bytes()
+    target = deepcopy(_mutable(invalid))
+    target["creation_reviews"][0]["controller_resolution"] = "Accepted the first finding."
+    target["creation_reviews"][1]["controller_resolution"] = "Accepted the second finding."
+
+    rejected = handle_request(
+        "call",
+        "update-fact-object",
+        _update_payload(workspace, project, invalid["content_fingerprint"], target, workcase_ref),
+    ).response
+
+    assert rejected["outcome"] == "rejected"
+    assert any("唯一窄例外" in gap["summary"] for gap in rejected["gaps"])
+    assert fact_path.read_bytes() == raw
+
+
+def test_workcase_delta_records_execution_approval_and_idempotent_retry(tmp_path: Path) -> None:
     workspace, project, _ = _fixture(tmp_path)
     docs = project / "docs"
     docs.mkdir()
@@ -434,10 +1047,7 @@ def test_workcase_delta_records_execution_approval_with_one_event_and_idempotent
             "resume_from": "Execute item-01",
         },
         remove_fields=["waiting_on"],
-        managed_records={
-            "execution_approval": {"summary": "Human approved plan version 1"},
-            "progress_transition": {"summary": "Begin the approved current plan"},
-        },
+        managed_records={"execution_approval": {"summary": "Human approved plan version 1"}},
     )
 
     response = handle_request("call", "update-workcase", payload).response
@@ -447,22 +1057,18 @@ def test_workcase_delta_records_execution_approval_with_one_event_and_idempotent
     assert response["result"]["before_state"]["phase"] == "human_plan_confirming"
     assert response["result"]["after_state"]["phase"] == "executing"
     assert response["result"]["managed_record_receipts"] == [
-        {"action": "execution_approval_recorded", "subject_version": 1},
-        {
-            "action": "progress_recorded",
-            "subject_version": 1,
-            "progress_event_id": "progress-001",
-            "progress_round": 1,
-            "progress_phase": "executing",
-            "transition_kind": "started",
-        },
+        {"action": "execution_approval_recorded", "subject_version": 1}
     ]
+    assert any(
+        source["kind"] == "rule" and source["locator"] == "workcase-fact-type::v2 WorkCase 专属受控变更输入字段"
+        for source in response["sources"]
+    )
     assert response["result"]["event_at"] is not None
     current = _read(workspace, project, workcase_ref)
     fields = current["fact_object"]
     assert fields["updated_at"] == response["result"]["event_at"]
     assert fields["execution_approval"]["approved_at"] == response["result"]["event_at"]
-    assert fields["progress_history"]["entries"][0]["entered_at"] == response["result"]["event_at"]
+    assert "progress_history" not in fields
     observation = next(source for source in response["sources"] if source["kind"] == "working_tree")
     assert observation["observed_at"] == response["result"]["event_at"]
 
@@ -486,109 +1092,6 @@ def test_workcase_delta_records_execution_approval_with_one_event_and_idempotent
     assert fact_path.read_bytes() == raw
 
 
-def test_generic_full_snapshot_can_correct_progress_content_but_not_event_identity(tmp_path: Path) -> None:
-    workspace, project, _ = _fixture(tmp_path)
-    docs = project / "docs"
-    docs.mkdir()
-    (docs / "input.md").write_text("Human-authorized work\n", encoding="utf-8")
-    workcase_ref = _create_workcase(workspace, project)
-    before = _read(workspace, project, workcase_ref)
-    approved = handle_request(
-        "call",
-        "update-workcase",
-        _workcase_update_payload(
-            workspace,
-            project,
-            workcase_ref,
-            before["content_fingerprint"],
-            set_fields={
-                "phase": "executing",
-                "summary": "Human approved the plan; execution may start",
-                "resume_from": "Execute item-01",
-            },
-            remove_fields=["waiting_on"],
-            managed_records={
-                "execution_approval": {"summary": "Human approved plan version 1"},
-                "progress_transition": {"summary": "Initial description that requires correction"},
-            },
-        ),
-    ).response
-    assert approved["outcome"] == "ok"
-
-    current = _read(workspace, project, workcase_ref)
-    corrected = _mutable(current)
-    corrected["progress_history"]["entries"][0]["transition_summary"] = (
-        "Corrected factual description without inventing another progress round"
-    )
-    correction = handle_request(
-        "call",
-        "update-fact-object",
-        _update_payload(
-            workspace,
-            project,
-            current["content_fingerprint"],
-            corrected,
-            workcase_ref,
-        ),
-    ).response
-    assert correction["outcome"] == "ok", json.dumps(correction, ensure_ascii=False, indent=2)
-    corrected_read = _read(workspace, project, workcase_ref)
-    corrected_entry = corrected_read["fact_object"]["progress_history"]["entries"][0]
-    assert corrected_entry["event_id"] == "progress-001"
-    assert corrected_entry["transition_summary"].startswith("Corrected factual description")
-
-    rewritten = _mutable(corrected_read)
-    rewritten["progress_history"]["entries"][0]["event_id"] = "progress-002"
-    rejected = handle_request(
-        "call",
-        "update-fact-object",
-        _update_payload(
-            workspace,
-            project,
-            corrected_read["content_fingerprint"],
-            rewritten,
-            workcase_ref,
-        ),
-    ).response
-    assert rejected["outcome"] == "rejected"
-    assert any("progress_history" in gap["summary"] for gap in rejected["gaps"])
-
-    fact_path = project / corrected_read["canonical_path"]
-    fact_path.write_text(
-        fact_path.read_text(encoding="utf-8").replace(
-            "transition_kind: started",
-            "transition_kind: advanced",
-            1,
-        ),
-        encoding="utf-8",
-    )
-    invalid_read = handle_request(
-        "call",
-        "read-fact-objects",
-        json.dumps(
-            {
-                "work_object_locators": [str(project)],
-                "arguments": {"workspace_root": str(workspace), "fact_refs": [workcase_ref]},
-            }
-        ),
-    ).response["result"]["items"][0]
-    assert invalid_read["check_status"] == "invalid"
-    repaired = _mutable(invalid_read)
-    repaired["progress_history"]["entries"][0]["transition_kind"] = "started"
-    repaired_response = handle_request(
-        "call",
-        "update-fact-object",
-        _update_payload(
-            workspace,
-            project,
-            invalid_read["content_fingerprint"],
-            repaired,
-            workcase_ref,
-        ),
-    ).response
-    assert repaired_response["outcome"] == "ok", json.dumps(repaired_response, ensure_ascii=False, indent=2)
-
-
 def test_workcase_delta_withdraws_an_erroneously_recorded_execution_approval(tmp_path: Path) -> None:
     workspace, project, _ = _fixture(tmp_path)
     docs = project / "docs"
@@ -610,10 +1113,7 @@ def test_workcase_delta_withdraws_an_erroneously_recorded_execution_approval(tmp
                 "resume_from": "Begin item-01.",
             },
             remove_fields=["waiting_on"],
-            managed_records={
-                "execution_approval": {"summary": "Human approved plan version 1"},
-                "progress_transition": {"summary": "Begin the recorded execution"},
-            },
+            managed_records={"execution_approval": {"summary": "Human approved plan version 1"}},
         ),
     ).response
     assert approved["outcome"] == "ok"
@@ -703,10 +1203,7 @@ def test_workcase_delta_walks_controller_owned_review_and_atomic_closure(tmp_pat
             "work_items": [in_progress],
         },
         remove_fields=["waiting_on"],
-        managed_records={
-            "execution_approval": {"summary": "Human approved the presented current plan"},
-            "progress_transition": {"summary": "Begin the approved current plan"},
-        },
+        managed_records={"execution_approval": {"summary": "Human approved the presented current plan"}},
     )
 
     completed_item = {key: value for key, value in in_progress.items() if key not in {"current_summary", "resume_from"}}
@@ -732,7 +1229,6 @@ def test_workcase_delta_walks_controller_owned_review_and_atomic_closure(tmp_pat
                 }
             ],
         },
-        managed_records={"progress_transition": {"summary": "Enter Controller self-check"}},
     )
     update(
         set_fields={
@@ -740,8 +1236,34 @@ def test_workcase_delta_walks_controller_owned_review_and_atomic_closure(tmp_pat
             "summary": "Independent result review is in progress",
             "resume_from": "Obtain review feedback and let Controller decide the next phase",
         },
-        managed_records={"progress_transition": {"summary": "Enter independent result review"}},
     )
+    before_invalid_review = _read(workspace, project, workcase_ref)
+    fact_path = project / before_invalid_review["canonical_path"]
+    raw = fact_path.read_bytes()
+    invalid_review = handle_request(
+        "call",
+        "update-workcase",
+        _workcase_update_payload(
+            workspace,
+            project,
+            workcase_ref,
+            before_invalid_review["content_fingerprint"],
+            set_fields={"controller_check_summary": "Changed while the review event was recorded"},
+            managed_records={
+                "append_result_reviews": [
+                    {
+                        "reviewer": "independent-result-reviewer",
+                        "scope": "Current result subject",
+                        "conclusion": "pass",
+                    }
+                ]
+            },
+        ),
+    ).response
+    assert invalid_review["outcome"] == "invalid_request"
+    assert any("不得变更被审结果主体" in gap["summary"] for gap in invalid_review["gaps"])
+    assert fact_path.read_bytes() == raw
+
     reviewed = update(
         managed_records={
             "append_result_reviews": [
@@ -750,7 +1272,6 @@ def test_workcase_delta_walks_controller_owned_review_and_atomic_closure(tmp_pat
                     "scope": "Item result, success criterion, Controller check, validation, and residual risk",
                     "conclusion": "blocked",
                     "feedback": ["The reviewer would prefer another validation statement"],
-                    "projection_key": "result_implementation",
                 }
             ]
         }
@@ -773,7 +1294,6 @@ def test_workcase_delta_walks_controller_owned_review_and_atomic_closure(tmp_pat
                     ),
                 }
             ],
-            "progress_transition": {"summary": "Return to Controller self-check after review"},
         },
     )
     assert handled["phase"] == "controller_checking"
@@ -785,7 +1305,6 @@ def test_workcase_delta_walks_controller_owned_review_and_atomic_closure(tmp_pat
             "summary": "Controller is preparing the final closure report",
             "resume_from": "Complete validation, outcome, and disposition",
         },
-        managed_records={"progress_transition": {"summary": "Enter Controller convergence"}},
     )
     prepared = update(
         set_fields={
@@ -819,6 +1338,25 @@ def test_workcase_delta_walks_controller_owned_review_and_atomic_closure(tmp_pat
     assert closed["status"] == "closed"
     assert closed["phase"] == "closed"
     assert closed["closure_approval"]["approved_at"] == closed["updated_at"]
+
+    persisted = _read(workspace, project, workcase_ref)
+    fact_path = project / persisted["canonical_path"]
+    raw = fact_path.read_bytes()
+    rewritten_approval = handle_request(
+        "call",
+        "update-workcase",
+        _workcase_update_payload(
+            workspace,
+            project,
+            workcase_ref,
+            persisted["content_fingerprint"],
+            set_fields={"status": "closed", "phase": "closed"},
+            managed_records={"closure_approval": {"summary": "A different closure approval statement"}},
+        ),
+    ).response
+    assert rewritten_approval["outcome"] == "rejected"
+    assert any("通用事实修正" in gap["summary"] for gap in rewritten_approval["gaps"])
+    assert fact_path.read_bytes() == raw
 
 
 def test_workcase_delta_current_dependent_construction_failure_is_rejected(tmp_path: Path) -> None:
@@ -973,26 +1511,11 @@ def test_workcase_delta_plan_bump_applies_fixed_reset_and_replaces_creation_revi
                 "resume_from": "Execute item-01",
             },
             remove_fields=["waiting_on"],
-            managed_records={
-                "execution_approval": {"summary": "Human approved plan version 1"},
-                "progress_transition": {"summary": "Begin the approved current plan"},
-            },
+            managed_records={"execution_approval": {"summary": "Human approved plan version 1"}},
         ),
     ).response
     assert approved["outcome"] == "ok"
     current = _read(workspace, project, workcase_ref)
-    fields = current["fact_object"]
-    audit_summary = [
-        *fields["audit_summary"],
-        {
-            "audit_id": "audit-02",
-            "subject_kind": "superseded_plan",
-            "subject_version": 1,
-            "review_count": 1,
-            "summary": "The prior review value was consumed by the revised plan",
-        },
-    ]
-
     response = handle_request(
         "call",
         "update-workcase",
@@ -1008,7 +1531,6 @@ def test_workcase_delta_plan_bump_applies_fixed_reset_and_replaces_creation_revi
                 "summary": "Revised plan is ready for Human approval",
                 "resume_from": "Request approval for revised plan version 2",
                 "waiting_on": "Human execution approval",
-                "audit_summary": audit_summary,
             },
             managed_records={
                 "replace_creation_reviews": [
@@ -1032,83 +1554,6 @@ def test_workcase_delta_plan_bump_applies_fixed_reset_and_replaces_creation_revi
     assert after["creation_reviews"][0]["subject_version"] == 2
     assert after["creation_reviews"][0]["reviewed_at"] == after["updated_at"]
     assert response["result"]["managed_record_receipts"][0]["action"] == "creation_review_replaced"
-
-
-def test_new_workcase_plan_v2_first_execution_writes_full_history(tmp_path: Path) -> None:
-    workspace, project, _ = _fixture(tmp_path)
-    docs = project / "docs"
-    docs.mkdir()
-    (docs / "input.md").write_text("Human-authorized work\n", encoding="utf-8")
-    workcase_ref = _create_workcase(workspace, project)
-    before = _read(workspace, project, workcase_ref)
-    fields = before["fact_object"]
-    audit_summary = [
-        *fields["audit_summary"],
-        {
-            "audit_id": "audit-02",
-            "subject_kind": "superseded_plan",
-            "subject_version": 1,
-            "review_count": 1,
-            "summary": "The unexecuted first plan review was consumed by plan version 2",
-        },
-    ]
-    bumped = handle_request(
-        "call",
-        "update-workcase",
-        _workcase_update_payload(
-            workspace,
-            project,
-            workcase_ref,
-            before["content_fingerprint"],
-            set_fields={
-                "goal": "Exercise the revised plan before any execution",
-                "phase": "human_plan_confirming",
-                "plan_version": 2,
-                "summary": "Revised unexecuted plan is ready for Human approval",
-                "resume_from": "Request approval for plan version 2",
-                "audit_summary": audit_summary,
-            },
-            managed_records={
-                "replace_creation_reviews": [
-                    {
-                        "reviewer": "independent-plan-reviewer-v2",
-                        "scope": "Revised goal before first execution",
-                        "conclusion": "pass",
-                        "feedback": ["The revised plan is coherent"],
-                        "controller_resolution": "Accepted; plan version 2 is ready for Human approval.",
-                    }
-                ]
-            },
-        ),
-    ).response
-    assert bumped["outcome"] == "ok", json.dumps(bumped, ensure_ascii=False, indent=2)
-
-    current = _read(workspace, project, workcase_ref)
-    approved = handle_request(
-        "call",
-        "update-workcase",
-        _workcase_update_payload(
-            workspace,
-            project,
-            workcase_ref,
-            current["content_fingerprint"],
-            set_fields={
-                "phase": "executing",
-                "summary": "Human approved plan version 2; first execution begins",
-                "resume_from": "Execute item-01",
-            },
-            remove_fields=["waiting_on"],
-            managed_records={
-                "execution_approval": {"summary": "Human approved plan version 2"},
-                "progress_transition": {"summary": "Begin the first execution of this WorkCase"},
-            },
-        ),
-    ).response
-    assert approved["outcome"] == "ok", json.dumps(approved, ensure_ascii=False, indent=2)
-    history = _read(workspace, project, workcase_ref)["fact_object"]["progress_history"]
-    assert history["coverage"] == "full"
-    assert history["entries"][0]["round"] == 1
-    assert history["entries"][0]["transition_kind"] == "started"
 
 
 def test_workcase_delta_rejects_legacy_workcase_without_writing(tmp_path: Path) -> None:
@@ -1175,6 +1620,140 @@ creation_reviews:
 
     assert response["outcome"] == "rejected"
     assert fact_path.read_bytes() == raw
+
+
+def test_v1_migration_uses_generic_full_snapshot_and_update_workcase_rejects_v1(tmp_path: Path) -> None:
+    workspace, project, _ = _fixture(tmp_path)
+    reference, fact_path = _write_v1_workcase(project)
+    before = _read(workspace, project, reference)
+    raw = fact_path.read_bytes()
+
+    convenience = handle_request(
+        "call",
+        "update-workcase",
+        _workcase_update_payload(
+            workspace,
+            project,
+            reference,
+            before["content_fingerprint"],
+            set_fields={"summary": "Attempted V1 convenience update"},
+        ),
+    ).response
+    assert convenience["outcome"] == "rejected"
+    assert fact_path.read_bytes() == raw
+
+    target = _mutable(before)
+    target["workcase_profile"] = "control-contract-v2"
+    target.pop("audit_summary")
+    target["creation_reviews"] = [
+        {key: value for key, value in target["creation_reviews"][0].items() if key != "review_basis"}
+    ]
+    migrated = handle_request(
+        "call",
+        "update-fact-object",
+        _update_payload(workspace, project, before["content_fingerprint"], target, reference),
+    ).response
+
+    assert migrated["outcome"] == "ok", json.dumps(migrated, ensure_ascii=False, indent=2)
+    after = _read(workspace, project, reference)["fact_object"]
+    assert after["workcase_profile"] == "control-contract-v2"
+    assert "audit_summary" not in after
+    assert "review_basis" not in after["creation_reviews"][0]
+    assert after["plan_version"] == before["fact_object"]["plan_version"]
+    assert after["phase"] == before["fact_object"]["phase"]
+
+
+def test_closed_v1_generic_migration_preserves_terminal_event_identity_and_classification(tmp_path: Path) -> None:
+    workspace, project, _ = _fixture(tmp_path)
+    reference, fact_path = _write_v1_workcase(project, closed=True)
+    before = _read(workspace, project, reference)
+    raw = fact_path.read_bytes()
+
+    ordinary = _mutable(before)
+    ordinary["summary"] = "Attempted ordinary V1 rewrite"
+    rejected = handle_request(
+        "call",
+        "update-fact-object",
+        _update_payload(workspace, project, before["content_fingerprint"], ordinary, reference),
+    ).response
+    assert rejected["outcome"] == "rejected"
+    assert fact_path.read_bytes() == raw
+
+    migrated_target = _mutable(before)
+    migrated_target["workcase_profile"] = "control-contract-v2"
+    for field_name in (
+        "audit_summary",
+        "progress_history",
+        "improvement_observations",
+        "nonbinding_followups",
+    ):
+        migrated_target.pop(field_name)
+    for field_name in ("creation_reviews", "result_reviews"):
+        migrated_target[field_name] = [
+            {key: value for key, value in review.items() if key != "review_basis"}
+            for review in migrated_target[field_name]
+        ]
+
+    invalid_targets = []
+    reopened = deepcopy(migrated_target)
+    reopened.update({"status": "open", "phase": "human_closure_confirming", "waiting_on": "Human decision"})
+    invalid_targets.append(reopened)
+    reclassified = deepcopy(migrated_target)
+    reclassified["closure_outcome"] = "partial"
+    invalid_targets.append(reclassified)
+    retimed = deepcopy(migrated_target)
+    retimed["closure_approval"]["approved_at"] = "2026-07-20T08:56:00+08:00"
+    invalid_targets.append(retimed)
+    execution_reversioned = deepcopy(migrated_target)
+    execution_reversioned["execution_approval"]["subject_version"] = 2
+    invalid_targets.append(execution_reversioned)
+    closure_reversioned = deepcopy(migrated_target)
+    closure_reversioned["closure_approval"]["subject_version"] = 2
+    invalid_targets.append(closure_reversioned)
+    reordered_reviews = deepcopy(migrated_target)
+    reordered_reviews["creation_reviews"] = list(reversed(reordered_reviews["creation_reviews"]))
+    reordered_reviews["result_reviews"] = list(reversed(reordered_reviews["result_reviews"]))
+    invalid_targets.append(reordered_reviews)
+    for invalid in invalid_targets:
+        response = handle_request(
+            "call",
+            "update-fact-object",
+            _update_payload(workspace, project, before["content_fingerprint"], invalid, reference),
+        ).response
+        assert response["outcome"] == "rejected"
+        assert fact_path.read_bytes() == raw
+
+    migrated_target["creation_reviews"] = migrated_target["creation_reviews"][1:]
+    migrated_target["result_reviews"] = migrated_target["result_reviews"][1:]
+    migrated_target["validation_summary"] = "The current result satisfies the same criterion; wording corrected"
+    migrated_target["disposition_summary"] = "No current residual responsibility remains"
+    migrated_target["closure_approval"]["summary"] = "Human approved the same completed result"
+    response = handle_request(
+        "call",
+        "update-fact-object",
+        _update_payload(workspace, project, before["content_fingerprint"], migrated_target, reference),
+    ).response
+
+    assert response["outcome"] == "ok", json.dumps(response, ensure_ascii=False, indent=2)
+    after = _read(workspace, project, reference)["fact_object"]
+    assert (after["status"], after["phase"], after["closure_outcome"]) == ("closed", "closed", "completed")
+    assert after["plan_version"] == before["fact_object"]["plan_version"]
+    assert after["result_version"] == before["fact_object"]["result_version"]
+    assert after["execution_approval"]["subject_version"] == 1
+    assert after["execution_approval"]["approved_at"] == "2026-07-20T08:35:00+08:00"
+    assert after["closure_approval"]["subject_version"] == 1
+    assert after["closure_approval"]["approved_at"] == "2026-07-20T08:55:00+08:00"
+    assert [review["reviewer"] for review in after["creation_reviews"]] == ["independent-plan-reviewer-b"]
+    assert [review["reviewer"] for review in after["result_reviews"]] == ["independent-result-reviewer-b"]
+    for field_name in (
+        "audit_summary",
+        "progress_history",
+        "improvement_observations",
+        "nonbinding_followups",
+    ):
+        assert field_name not in after
+    assert all("review_basis" not in review for review in after["creation_reviews"])
+    assert all("review_basis" not in review for review in after["result_reviews"])
 
 
 def test_workcase_delta_profiles_preserve_result_and_carrier_with_frozen_event(
@@ -1273,8 +1852,6 @@ def test_workcase_success_result_with_sixteen_receipts_stays_within_contract_lim
             "action": "result_review_appended",
             "subject_version": 1,
             "review_index": index,
-            "projection_key": "result_implementation",
-            "subject_fingerprint": "a" * 64,
         }
         for index in range(16)
     )

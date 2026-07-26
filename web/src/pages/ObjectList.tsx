@@ -284,29 +284,27 @@ function WorkCaseGoalSection({ goal, t }: { goal?: string; t: Translate }) {
 function WorkCaseProgressingContent({
   goal,
   progressStep,
-  progressHistoryCoverage,
-  progressHistoryState,
-  progressRound,
   executionItemsProjectionValid,
   executionItemTotal,
   executionItemDone,
   executionItemCancelled,
-  executionItemsInProgress,
+  executionItemOpen,
+  executionItemsActive,
   isBlocked,
+  waitingOn,
   blockingSummary,
   t,
 }: {
   goal?: string;
   progressStep: WorkCaseProgressStep | null;
-  progressHistoryCoverage?: 'full' | 'partial';
-  progressHistoryState?: 'missing' | 'valid' | 'invalid';
-  progressRound?: number;
   executionItemsProjectionValid: boolean;
   executionItemTotal: number;
   executionItemDone: number;
   executionItemCancelled: number;
-  executionItemsInProgress: RelatedObjectSummary[];
+  executionItemOpen: number;
+  executionItemsActive: RelatedObjectSummary[];
   isBlocked: boolean;
+  waitingOn?: string;
   blockingSummary?: string;
   t: Translate;
 }) {
@@ -319,61 +317,61 @@ function WorkCaseProgressingContent({
   const currentStep = progressStep ? WORKCASE_PROGRESS_STEP_ORDER.indexOf(progressStep) : -1;
   const currentStepLabel = currentStep >= 0
     ? stepLabels[currentStep]
-    : t('objectList.workcaseProgressUnavailable');
-  const roundLabel = progressHistoryState === 'invalid'
-    ? t('objectList.workcaseRoundInvalid')
-    : progressRound && progressHistoryCoverage === 'full'
-    ? t('objectList.workcaseRoundFull', { round: String(progressRound) })
-    : progressRound && progressHistoryCoverage === 'partial'
-      ? t('objectList.workcaseRoundPartial', { round: String(progressRound) })
-      : t('objectList.workcaseRoundMissing');
+    : t('objectList.workcaseStageUnavailable');
+  const itemExecution = progressStep === 'item_execution';
+  const itemStageMismatch = executionItemsProjectionValid && currentStep >= 0 && (
+    (itemExecution && executionItemsActive.length === 0 && executionItemOpen === 0)
+    || (!itemExecution && executionItemOpen > 0)
+  );
+  const showActiveItems = !executionItemsProjectionValid
+    || itemExecution
+    || executionItemsActive.length > 0
+    || itemStageMismatch;
 
   return (
     <div className="grid min-w-0 gap-2">
       <WorkCaseGoalSection goal={goal} t={t} />
       <section className="min-w-0 rounded-md border border-ldvh-border/80 border-l-2 border-l-sky-400/55 bg-ldvh-bg/65 px-3.5 py-3">
-        <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
-          <h3 className="ldvh-card-decision-title">{t('objectList.workcaseCurrentProgress')}</h3>
-          <span className="ldvh-chip inline-flex shrink-0 items-center rounded-md border border-sky-500/30 bg-sky-500/10 px-2 py-1 text-sky-400">
-            {roundLabel}
-          </span>
-        </div>
+        <h3 className="ldvh-card-decision-title">{t('objectList.workcaseCurrentProgress')}</h3>
 
-        <div className="mt-2.5 flex min-w-0 flex-wrap items-center gap-2">
-          <span className={`ldvh-chip inline-flex min-w-0 items-center gap-1.5 rounded-md border px-2 py-1 ${
-            currentStep >= 0
-              ? 'border-sky-500/30 bg-sky-500/10 text-sky-400'
-              : 'border-red-500/35 bg-red-500/10 text-red-400'
-          }`}>
-            {currentStep >= 0 && (
-              <span className="relative flex h-1.5 w-1.5 shrink-0" aria-hidden="true">
-                <span className="motion-safe:animate-ping absolute inline-flex h-full w-full rounded-full bg-current opacity-30" />
-                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-current" />
-              </span>
-            )}
-            <span className="min-w-0">{currentStepLabel}</span>
-          </span>
-          {executionItemsProjectionValid ? (
-            <span className="ldvh-meta inline-flex items-center rounded-md border border-ldvh-border/75 bg-ldvh-panel/45 px-2 py-1 text-ldvh-text-secondary">
-              {t('objectList.workcaseItemProgress', {
-                done: String(executionItemDone),
-                total: String(executionItemTotal),
-              })}
-            </span>
-          ) : (
-            <span className="ldvh-meta inline-flex items-center rounded-md border border-red-500/35 bg-red-500/10 px-2 py-1 text-red-400">
-              {t('objectList.workcaseProgressUnavailable')}
-            </span>
-          )}
-          {executionItemsProjectionValid && executionItemCancelled > 0 && (
-            <span className="ldvh-meta inline-flex items-center rounded-md border border-ldvh-border/75 bg-ldvh-panel/45 px-2 py-1 text-ldvh-text-secondary">
-              {t('objectList.workcaseItemsCancelled', { count: String(executionItemCancelled) })}
-            </span>
-          )}
+        <div className={`mt-2.5 min-w-0 rounded-md border px-3 py-2.5 ${
+          currentStep >= 0
+            ? 'border-sky-500/25 bg-sky-500/[0.07]'
+            : 'border-red-500/30 bg-red-500/[0.07]'
+        }`}>
+          <div className="flex min-w-0 flex-wrap items-start justify-between gap-x-4 gap-y-2">
+            <div className={`flex min-w-0 items-center gap-2 ${currentStep >= 0 ? 'text-sky-400' : 'text-red-400'}`}>
+              {currentStep >= 0 && (
+                <span className="relative flex h-2 w-2 shrink-0" aria-hidden="true">
+                  <span className="motion-safe:animate-ping absolute inline-flex h-full w-full rounded-full bg-current opacity-25" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-current" />
+                </span>
+              )}
+              <div className="ldvh-card-decision-title min-w-0 break-words text-current">{currentStepLabel}</div>
+            </div>
+
+            <div className="min-w-0 text-left sm:text-right">
+              {executionItemsProjectionValid ? (
+                <div className="ldvh-meta-primary whitespace-nowrap">
+                  {t('objectList.workcaseItemProgress', {
+                    done: String(executionItemDone),
+                    total: String(executionItemTotal),
+                  })}
+                </div>
+              ) : (
+                <div className="ldvh-meta text-red-400">{t('objectList.workcaseItemsUnavailable')}</div>
+              )}
+              {executionItemsProjectionValid && executionItemCancelled > 0 && (
+                <div className="ldvh-meta-muted mt-0.5">
+                  {t('objectList.workcaseItemsCancelled', { count: String(executionItemCancelled) })}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         <ol
-          className="mt-2.5 grid min-w-0 grid-cols-2 gap-1.5"
+          className="mt-3 grid min-w-0 grid-cols-4"
           aria-label={`${t('objectList.workcaseDynamicStages')}：${currentStepLabel}`}
         >
           {WORKCASE_PROGRESS_STEP_ORDER.map((step, index) => {
@@ -382,18 +380,24 @@ function WorkCaseProgressingContent({
               <li
                 key={step}
                 aria-current={isCurrent ? 'step' : undefined}
-                className={`flex min-w-0 items-center gap-1.5 rounded-md border px-2 py-2 ${
-                  isCurrent
-                    ? 'border-sky-500/35 bg-sky-500/10 text-sky-400'
-                    : 'border-ldvh-border/75 bg-ldvh-panel/45 text-ldvh-text-secondary'
-                }`}
+                className="relative flex min-w-0 flex-col items-center px-1 text-center"
               >
-                <span className={`ldvh-meta inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
-                  isCurrent ? 'border-sky-400/50 text-sky-400' : 'border-ldvh-border text-ldvh-text-secondary'
+                {index > 0 && (
+                  <span className="absolute left-0 right-1/2 top-2.5 h-px bg-ldvh-border" aria-hidden="true" />
+                )}
+                {index < WORKCASE_PROGRESS_STEP_ORDER.length - 1 && (
+                  <span className="absolute left-1/2 right-0 top-2.5 h-px bg-ldvh-border" aria-hidden="true" />
+                )}
+                <span className={`ldvh-meta relative z-10 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border bg-ldvh-bg ${
+                  isCurrent
+                    ? 'border-sky-400/60 bg-sky-500/15 font-semibold text-sky-400 ring-2 ring-sky-500/10'
+                    : 'border-ldvh-border text-ldvh-text-secondary'
                 }`}>
                   {index + 1}
                 </span>
-                <span className={`ldvh-card-decision-body min-w-0 ${isCurrent ? 'font-medium text-sky-400' : 'text-ldvh-text-secondary'}`}>
+                <span className={`ldvh-card-decision-body mt-1.5 min-w-0 break-words leading-4 ${
+                  isCurrent ? 'font-medium text-sky-400' : 'text-ldvh-text-secondary/80'
+                }`}>
                   {stepLabels[index]}
                 </span>
               </li>
@@ -401,31 +405,74 @@ function WorkCaseProgressingContent({
           })}
         </ol>
 
-        <div className="mt-2.5 border-t border-ldvh-border/70 pt-2.5">
-          <div className="ldvh-caption-strong text-ldvh-text-secondary">{t('objectList.workcaseCurrentItems')}</div>
-          {!executionItemsProjectionValid ? (
-            <p className="ldvh-card-decision-body mt-1.5 text-red-400">
-              {t('objectList.workcaseProgressUnavailable')}
-            </p>
-          ) : executionItemsInProgress.length > 0 ? (
-            <ul className="mt-1.5 grid min-w-0 gap-1.5">
-              {executionItemsInProgress.map((item) => (
-                <li key={item.id} className="flex min-w-0 items-start gap-2">
-                  <span aria-hidden="true" className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-sky-400/75" />
-                  <span className="ldvh-card-decision-body min-w-0 break-words">
-                    <span className="font-medium text-sky-400">{item.id}</span>
-                    <span className="text-ldvh-text-secondary"> · </span>
-                    {formatReasonText(item.title)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="ldvh-card-decision-body mt-1.5 text-ldvh-text-secondary">
-              {t('objectList.workcaseNoCurrentItems')}
-            </p>
-          )}
-        </div>
+        {showActiveItems && (
+          <div className="mt-2.5 border-t border-ldvh-border/70 pt-2.5">
+            <div className="ldvh-caption-strong text-ldvh-text-secondary">{t('objectList.workcaseCurrentItems')}</div>
+            {!executionItemsProjectionValid ? (
+              <p className="ldvh-card-decision-body mt-1.5 text-red-400">
+                {t('objectList.workcaseItemsUnavailable')}
+              </p>
+            ) : (
+              <>
+                {itemStageMismatch && (
+                  <p className="ldvh-card-decision-body mt-1.5 text-red-400">
+                    {t('objectList.workcaseItemStageMismatch')}
+                  </p>
+                )}
+                {executionItemsActive.length > 0 ? (
+                  <ul className="mt-1.5 grid min-w-0 gap-2">
+                    {executionItemsActive.map((item) => {
+                      const blocked = item.status === 'blocked';
+                      return (
+                        <li key={item.id} className="flex min-w-0 items-start gap-2">
+                          <span
+                            aria-hidden="true"
+                            className={`mt-2 h-1.5 w-1.5 shrink-0 rounded-full ${blocked ? 'bg-amber-400/80' : 'bg-sky-400/75'}`}
+                          />
+                          <div className="min-w-0">
+                            <div className={`ldvh-meta-muted break-all ${blocked ? 'text-amber-400' : ''}`}>
+                              {item.id}
+                              <span className="px-1 text-ldvh-text-secondary/60" aria-hidden="true">·</span>
+                              {blocked
+                                ? t('objectList.workcaseItemBlocked')
+                                : t('objectList.workcaseItemInProgress')}
+                            </div>
+                            <p className="ldvh-card-decision-body mt-0.5 min-w-0 break-words">
+                              {formatReasonText(item.title)}
+                            </p>
+                            {blocked && (
+                              <p className={`ldvh-card-decision-body mt-0.5 whitespace-pre-line break-words ${item.blockingReason?.trim() ? 'text-amber-300' : 'text-red-400'}`}>
+                                {item.blockingReason?.trim()
+                                  ? formatReasonText(item.blockingReason)
+                                  : t('objectList.workcaseFieldMissing')}
+                              </p>
+                            )}
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : !itemStageMismatch ? (
+                  <p className="ldvh-caption mt-1 text-ldvh-text-secondary/75">
+                    {t('objectList.workcaseNoCurrentItems')}
+                  </p>
+                ) : null}
+              </>
+            )}
+          </div>
+        )}
+
+        {waitingOn?.trim() && (
+          <div className="mt-2.5 flex min-w-0 items-start gap-2 rounded-md border border-ldvh-border/80 bg-ldvh-panel/45 px-2.5 py-2 text-ldvh-text-secondary">
+            <PauseCircle size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
+            <div className="min-w-0">
+              <div className="ldvh-caption-strong">{t('objectList.workcaseWaitingOn')}</div>
+              <p className="ldvh-card-decision-body mt-0.5 whitespace-pre-line break-words">
+                {formatReasonText(waitingOn)}
+              </p>
+            </div>
+          </div>
+        )}
 
         {isBlocked && (
           <div className="mt-2.5 flex min-w-0 items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-2.5 py-2 text-amber-400">
@@ -500,19 +547,16 @@ function WorkCaseProgressSignal({
         >
           {WORKCASE_PROGRESS_STEP_ORDER.map((step, index) => {
             const isCurrent = index === currentStep;
-            const isPast = index < currentStep;
             return (
               <div key={step} className="min-w-0">
                 <div className="flex items-center gap-1" aria-hidden="true">
                   <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${
                     isCurrent
                       ? 'motion-safe:animate-pulse bg-current'
-                      : isPast
-                        ? 'bg-current/55'
-                        : 'bg-ldvh-border'
+                      : 'bg-ldvh-border'
                   }`} />
                   {index < WORKCASE_PROGRESS_STEP_ORDER.length - 1 && (
-                    <span className={`h-px min-w-0 flex-1 ${isPast ? 'bg-current/45' : 'bg-ldvh-border'}`} />
+                    <span className="h-px min-w-0 flex-1 bg-ldvh-border" />
                   )}
                 </div>
                 <span className={`mt-1 block truncate text-[10px] leading-4 ${isCurrent ? 'font-medium text-current' : 'text-ldvh-text-secondary/70'}`}>
@@ -849,15 +893,14 @@ export default function ObjectList() {
             <WorkCaseProgressingContent
               goal={obj.goal}
               progressStep={progressStep}
-              progressHistoryCoverage={obj.progressHistoryCoverage}
-              progressHistoryState={obj.progressHistoryState}
-              progressRound={obj.progressRound}
               executionItemsProjectionValid={obj.executionItemsProjectionValid ?? false}
               executionItemTotal={obj.executionItemTotal ?? 0}
               executionItemDone={obj.executionItemDone ?? 0}
               executionItemCancelled={obj.executionItemCancelled ?? 0}
-              executionItemsInProgress={obj.executionItemsInProgress ?? []}
+              executionItemOpen={obj.executionItemOpen ?? 0}
+              executionItemsActive={obj.executionItemsActive ?? []}
               isBlocked={obj.responsibilityStatus === 'blocked'}
+              waitingOn={obj.waiting_on}
               blockingSummary={obj.blocking_summary}
               t={t}
             />

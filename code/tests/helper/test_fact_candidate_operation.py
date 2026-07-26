@@ -6,7 +6,6 @@ from pathlib import Path
 
 from conftest import HELPER_EXECUTABLE, assert_common_response
 
-from ldvh.facts.workcase_projection import workcase_subject_fingerprint
 from ldvh.helper.service import handle_request
 
 
@@ -90,12 +89,11 @@ def _workcase() -> dict[str, object]:
         "title": "Recall contract implementation",
         "status": "open",
         "summary": "Waiting for Human execution approval.",
-        "resume_from": "Present plan version 1 for Human approval.",
         "waiting_on": "Human execution approval.",
         "priority": "P1",
         "goal": "Complete the recall Helper operation.",
         "scope": "Stage 5 candidate discovery.",
-        "workcase_profile": "control-contract-v1",
+        "workcase_profile": "control-contract-v2",
         "success_criterion_definitions": [
             {
                 "criterion_id": "criterion-01",
@@ -110,16 +108,6 @@ def _workcase() -> dict[str, object]:
                 "goal": "Implement deterministic candidate cards.",
                 "expected_result": "F1 and F2 cards are deterministic.",
                 "status": "pending",
-                "approach_summary": "Use current fact sources and focused Helper tests.",
-            }
-        ],
-        "audit_summary": [
-            {
-                "audit_id": "audit-01",
-                "subject_kind": "pre_creation_plan",
-                "subject_version": 1,
-                "review_count": 1,
-                "summary": "Independent review confirmed the bounded candidate plan.",
             }
         ],
     }
@@ -130,12 +118,6 @@ def _workcase() -> dict[str, object]:
             "subject_version": 1,
             "scope": "Goal, scope, criteria, work items, method, validation and risks.",
             "conclusion": "pass",
-            "feedback": ["The plan is bounded and testable."],
-            "review_basis": {
-                "projection_key": "plan_current",
-                "subject_fingerprint": workcase_subject_fingerprint(fact_object, "plan_current"),
-            },
-            "controller_resolution": "1. Accepted; no change required.",
         }
     ]
     return fact_object
@@ -545,8 +527,7 @@ def test_exact_ref_can_recall_terminal_object_without_bypassing_explicit_status_
     path = project / "ldvh-base" / "pitfalls" / f"{object_id}.yaml"
     text = path.read_text(encoding="utf-8")
     path.write_text(
-        text.replace("status: active", "status: retired")
-        + "disposition_summary: Experience no longer applies.\n",
+        text.replace("status: active", "status: retired") + "disposition_summary: Experience no longer applies.\n",
         encoding="utf-8",
     )
     exact_ref = {

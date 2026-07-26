@@ -1,4 +1,4 @@
-workcase_profile: control-contract-v1
+workcase_profile: control-contract-v2
 title: Helper 事实对象机械结构校验闭环
 status: closed
 phase: closed
@@ -15,7 +15,7 @@ success_criterion_definitions:
 - criterion_id: criterion-04
   statement: 候选发现和恢复遇到 invalid 或 unavailable 的旧对象时完整披露诊断、coverage 与 scope partial，不静默排除。
 - criterion_id: criterion-05
-  statement: 跨五类型范围测试证明新增或收紧机械规则缺 Specs 映射、validator、入口覆盖或测试时失败；能力声明不包含自然语言语义、Hook 防护或迁移。
+  statement: 跨五类型的正反测试覆盖新增或收紧的机械规则；任一必要的 Specs 映射、validator、入口覆盖或对应测试缺失时，验证失败。能力声明不包含自然语言语义、Hook 防护或迁移。
 work_items:
 - item_id: item-01
   goal: 先完善并独立审核 Specs 的机械规则目录与硬门槛。
@@ -48,17 +48,6 @@ work_items:
   approach_summary: 只运行范围匹配的单元、操作和 CLI 场景；不跑 full-v4，不用自然语言语义作为断言。
   result_summary: 规则目录映射校验、五类型事实测试 57 项、候选操作 17 项、创建/更新关键正反例 6 项及实际 CLI 读回均通过；独立审核 PASS。
 summary: 复测确认机械规则目录、事实校验、候选发现、受控创建、CAS/回读和原子关闭范围均无回归；Human 已批准关闭 result_version 1。
-audit_summary:
-- audit_id: audit-01
-  subject_kind: pre_creation_plan
-  subject_version: 1
-  review_count: 1
-  summary: 独立审核确认该计划保持单一机械校验责任，读写与候选入口覆盖、未实现即 unavailable、以及排除语义与 Hook 防护的边界均清楚。
-- audit_id: audit-02
-  subject_kind: superseded_plan
-  subject_version: 1
-  review_count: 1
-  summary: v1 的三阶段计划未把 Specs 定稿与审核写成实现前硬门槛；其独立审核价值被保留，并由 v2 将规则来源、映射闭集、入口覆盖和范围测试改为四个串行关口。
 creation_reviews:
 - reviewer: codex-agent:/root/review_workcase_plan
   reviewed_at: '2026-07-22T18:19:33.923929+08:00'
@@ -69,9 +58,6 @@ creation_reviews:
   - v2 已将 Specs 定稿和独立审核设为不可越过的实现前硬门槛，并清楚区分 Specs 规则目录与后续可执行映射闭集。
   - 05、20–24 作为主要修改载体，01–04 及字段附件作为按需判断的上游契约，避免遗漏来源规则或无依据扩大范围。
   - 四项串行工作、五类型入口和范围测试、语义/Hook/迁移排除，以及 v2 Human Gate 均完整可执行。
-  review_basis:
-    projection_key: plan_current
-    subject_fingerprint: 377e14c3fbb5e4ada963863a5a5fe96931a5de9835fafdb102c313b443f92729
   controller_resolution: 接受并落实两轮独立审核反馈：补足可核验的 Specs 完成门槛、规则到入口和测试的映射闭集、prepare-fact-object-draft 与 update-workcase 等入口覆盖、候选 partial 场景、01–04 上游契约最小判断，以及 v1 audit continuity。当前只形成 v2 待确认计划，不写 execution_approval，不开始任何工作项。
 execution_approval:
   subject_version: 2
@@ -105,9 +91,6 @@ result_reviews:
   - 13条目录、可执行映射与正反范围测试映射保持闭集，入口范围由目录测试强制精确匹配。
   - 错误后缀和非 canonical 载体形成 structural unavailable/coverage partial，且仅 canonical identity 消耗扫描预算。
   - 五项成功标准、定向测试和实际 CLI 回读均有证据支持；未发现 changes_required。
-  review_basis:
-    projection_key: result_implementation
-    subject_fingerprint: 43bc3fc3b2d34f113ff56f2f452da98509bde4fd5a3e75d1a13d4a40f5afd0b8
   controller_resolution: 1. 接受：三表闭集与入口精确匹配已由专门测试验证；无需复审。2. 接受：candidate 非 canonical 披露和 canonical 预算语义已修复并有测试；无需复审。3. 接受：五项标准、定向测试与 CLI 回读证据充分覆盖本 WorkCase 范围；进入 closure_preparing。
 validation_summary: result_version 1 的五项成功标准均标记 satisfied：唯一目录、三表映射闭集、统一入口覆盖、candidate partial 披露和范围匹配测试均已验证。定向证据包括 facts 57 项、candidate 17 项、创建/更新关键正反例 6 项及实际 CLI readback；未验证范围限 full-v4、性能/并发压力与跨平台压力，均不在本 WorkCase 范围内。
 closure_outcome: completed
@@ -119,4 +102,4 @@ closure_approval:
 object_id: workcase-0010
 fact_type_key: workcase
 created_at: '2026-07-22T17:40:53.989641+08:00'
-updated_at: '2026-07-24T21:46:13.241497+08:00'
+updated_at: '2026-07-26T12:45:00+08:00'

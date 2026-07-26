@@ -11,7 +11,7 @@ from ldvh.facts.contracts import LAYOUTS
 from ldvh.facts.models import FactReference
 from ldvh.facts.schema import FactSchema
 from ldvh.facts.validation import parse_rfc3339
-from ldvh.facts.workcase_update import PLAN_RESET_FIELDS
+from ldvh.facts.workcase_update import PLAN_RESET_FIELDS, RESULT_REVIEW_CONTEXT_FIELDS
 from ldvh.governance.models import ScopeDescriptor, cwd_scope, explicit_scope
 from ldvh.helper.operation_runtime import OperationExecutionContext
 from ldvh.helper.requests import CommonRequest
@@ -41,17 +41,14 @@ _MANAGED_FIELDS = frozenset(
         "execution_approval",
         "withdraw_execution_approval",
         "closure_approval",
-        "progress_transition",
     }
 )
 _CREATION_REVIEW_FIELDS = frozenset({"reviewer", "scope", "conclusion", "feedback", "controller_resolution"})
-_RESULT_REVIEW_FIELDS = frozenset({"reviewer", "scope", "conclusion", "feedback", "projection_key"})
+_RESULT_REVIEW_FIELDS = frozenset({"reviewer", "scope", "conclusion", "feedback"})
 _RESOLUTION_FIELDS = frozenset({"review_index", "controller_resolution"})
 _APPROVAL_FIELDS = frozenset({"summary", "source_refs"})
-_PROGRESS_TRANSITION_FIELDS = frozenset({"summary"})
 _SOURCE_REFERENCE_FIELDS = frozenset({"kind", "locator", "version", "observed_at", "details"})
 _REVIEW_CONCLUSIONS = frozenset({"pass", "pass_with_followups", "changes_required", "blocked"})
-_RESULT_PROJECTIONS = frozenset({"result_implementation", "result_with_closure_report"})
 _ORDINARY_MANAGED_FIELDS = frozenset(
     {
         "object_id",
@@ -63,10 +60,12 @@ _ORDINARY_MANAGED_FIELDS = frozenset(
         "result_reviews",
         "execution_approval",
         "closure_approval",
-        "progress_history",
     }
 )
 _VERSION_FIELDS = frozenset({"plan_version", "result_version"})
+_V2_FORBIDDEN_TOP_LEVEL_FIELDS = frozenset(
+    {"audit_summary", "progress_history", "improvement_observations", "nonbinding_followups"}
+)
 _FINGERPRINT = re.compile(r"[0-9a-f]{64}\Z")
 
 
@@ -122,9 +121,19 @@ def _closed_member(value: object, path: str, fields: frozenset[str], problems: l
 
 
 def _review_member(value: object, path: str, fields: frozenset[str], problems: list[str]) -> dict[str, Any] | None:
-    member = _closed_member(value, path, fields, problems)
-    if member is None:
+    if not isinstance(value, dict):
+        problems.append(f"{path} 必须是 object")
         return None
+    unknown = sorted(key for key in value if isinstance(key, str) and key not in fields)
+    if unknown:
+        problems.append(f"{path} 包含未知字段: {', '.join(unknown)}")
+    if any(not isinstance(key, str) for key in value):
+        problems.append(f"{path} 的字段名必须是 string")
+    required = {"reviewer", "scope", "conclusion"}
+    missing = sorted(required - {key for key in value if isinstance(key, str)})
+    if missing:
+        problems.append(f"{path} 缺少字段: {', '.join(missing)}")
+    member = value
     for name in ("reviewer", "scope"):
         if not _nonempty_string(member.get(name)):
             problems.append(f"{path}.{name} 必须是非空 string")
@@ -132,12 +141,15 @@ def _review_member(value: object, path: str, fields: frozenset[str], problems: l
     if conclusion not in _REVIEW_CONCLUSIONS:
         problems.append(f"{path}.conclusion 不在当前闭集中")
     feedback = member.get("feedback")
-    if not isinstance(feedback, list) or not feedback:
-        problems.append(f"{path}.feedback 必须是非空 array")
-    elif any(not _nonempty_string(item) for item in feedback):
-        problems.append(f"{path}.feedback 成员必须是非空 string")
-    elif len(feedback) != len(set(feedback)):
-        problems.append(f"{path}.feedback 成员不得重复")
+    if conclusion in {"pass_with_followups", "changes_required", "blocked"} and feedback is None:
+        problems.append(f"{path}.feedback 对非 pass conclusion 必须提供")
+    if feedback is not None:
+        if not isinstance(feedback, list) or not feedback:
+            problems.append(f"{path}.feedback 出现时必须是非空 array")
+        elif any(not _nonempty_string(item) for item in feedback):
+            problems.append(f"{path}.feedback 成员必须是非空 string")
+        elif len(feedback) != len(set(feedback)):
+            problems.append(f"{path}.feedback 成员不得重复")
     return member
 
 
@@ -231,10 +243,13 @@ def _managed_records(value: object, problems: list[str]) -> dict[str, Any]:
             if member is None:
                 continue
             if name == "replace_creation_reviews":
-                if not _nonempty_string(member.get("controller_resolution")):
-                    problems.append(f"{member_path}.controller_resolution 必须是非空 string")
-            elif member.get("projection_key") not in _RESULT_PROJECTIONS:
-                problems.append(f"{member_path}.projection_key 不在结果投影闭集中")
+                resolution = member.get("controller_resolution")
+                if resolution is not None and not _nonempty_string(resolution):
+                    problems.append(f"{member_path}.controller_resolution 出现时必须是非空 string")
+                if member.get("feedback") and resolution is None:
+                    problems.append(f"{member_path}.controller_resolution 在 feedback 出现时必须提供")
+                if not member.get("feedback") and resolution is not None:
+                    problems.append(f"{member_path}.controller_resolution 在没有 feedback 时必须省略")
     if len(review_indices) != len(set(review_indices)):
         problems.append("arguments.managed_records.resolve_result_reviews 的 review_index 不得重复")
 
@@ -245,14 +260,6 @@ def _managed_records(value: object, problems: list[str]) -> dict[str, Any]:
         approval = _approval(value[name], f"arguments.managed_records.{name}", problems)
         if approval is not None:
             normalized[name] = dict(approval)
-    if value.get("progress_transition") is not None:
-        action_count += 1
-        path = "arguments.managed_records.progress_transition"
-        transition = _closed_member(value["progress_transition"], path, _PROGRESS_TRANSITION_FIELDS, problems)
-        if transition is not None:
-            if not _nonempty_string(transition.get("summary")):
-                problems.append(f"{path}.summary 必须是非空 string")
-            normalized["progress_transition"] = dict(transition)
     if action_count > 16:
         problems.append("arguments.managed_records 单次最多包含 16 项托管动作")
     return normalized
@@ -266,9 +273,9 @@ def parse_workcase_update_request(
     """Parse rules that do not require reading the current WorkCase snapshot.
 
     When supplied, ``workcase_schema`` is the current source-derived schema and
-    closes ordinary delta field membership.  Before-dependent version, reset,
-    projection-change, index-existence, and final-state checks remain with the
-    domain constructor and shared update transaction.
+    closes ordinary delta field membership. Before-dependent version, reset,
+    index-existence, and final-state checks remain with the domain constructor
+    and shared update transaction.
     """
 
     problems: list[str] = []
@@ -362,6 +369,12 @@ def parse_workcase_update_request(
         problems.append(f"arguments.set 不得触碰 Helper 托管字段: {', '.join(set_managed)}")
     if remove_managed:
         problems.append(f"arguments.remove 不得触碰 Helper 托管字段: {', '.join(remove_managed)}")
+    forbidden_set = sorted(set(set_fields) & _V2_FORBIDDEN_TOP_LEVEL_FIELDS)
+    forbidden_remove = sorted(set(remove_fields) & _V2_FORBIDDEN_TOP_LEVEL_FIELDS)
+    if forbidden_set:
+        problems.append(f"V2 update-workcase 的 arguments.set 禁止 V1-only 字段: {', '.join(forbidden_set)}")
+    if forbidden_remove:
+        problems.append(f"V2 update-workcase 的 arguments.remove 禁止 V1-only 字段: {', '.join(forbidden_remove)}")
     removed_versions = sorted(set(remove_fields) & _VERSION_FIELDS)
     if removed_versions:
         problems.append(f"arguments.remove 不得包含版本字段: {', '.join(removed_versions)}")
@@ -380,11 +393,23 @@ def parse_workcase_update_request(
         problems.append("arguments.set、arguments.remove、arguments.managed_records 不得同时为空")
     if {"append_result_reviews", "resolve_result_reviews"} <= active_actions:
         problems.append("append_result_reviews 与 resolve_result_reviews 不得同次出现")
+    if "append_result_reviews" in active_actions:
+        forbidden_set = sorted(set(set_fields) - RESULT_REVIEW_CONTEXT_FIELDS)
+        forbidden_remove = sorted(set(remove_fields) - RESULT_REVIEW_CONTEXT_FIELDS)
+        if forbidden_set or forbidden_remove:
+            details = []
+            if forbidden_set:
+                details.append("set: " + ", ".join(forbidden_set))
+            if forbidden_remove:
+                details.append("remove: " + ", ".join(forbidden_remove))
+            problems.append(
+                "append_result_reviews 同次 arguments.set/arguments.remove 只允许 status、phase、summary、"
+                "resume_from、waiting_on、blocking_summary，不得变更被审结果主体（" + "; ".join(details) + "）"
+            )
     for singleton in ("execution_approval", "withdraw_execution_approval", "closure_approval"):
         if singleton not in active_actions:
             continue
-        allowed = {singleton, "progress_transition"} if singleton == "execution_approval" else {singleton}
-        if active_actions - allowed:
+        if active_actions - {singleton}:
             problems.append(f"{singleton} 不得与其它托管动作同次出现")
 
     if "plan_version" in set_fields:
@@ -404,6 +429,8 @@ def parse_workcase_update_request(
         set_fields.get("status") != "closed" or set_fields.get("phase") != "closed"
     ):
         problems.append("closure_approval 要求显式 set.status=closed 且 set.phase=closed")
+    if "withdraw_execution_approval" in active_actions and set_fields.get("phase") != "human_plan_confirming":
+        problems.append("withdraw_execution_approval 要求显式 set.phase=human_plan_confirming")
 
     if request.observed_context:
         problems.append("observed_context 对 WorkCase 更新操作必须为空 object")

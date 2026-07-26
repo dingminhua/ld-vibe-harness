@@ -50,6 +50,51 @@ def _command(current_specs_repository: Path, tmp_path: Path) -> FactCreationComm
     )
 
 
+def _workcase_command(current_specs_repository: Path, tmp_path: Path) -> FactCreationCommand:
+    base = _command(current_specs_repository, tmp_path)
+    supplied = {
+        "title": "Initial WorkCase boundary",
+        "status": "open",
+        "summary": "The plan is waiting for Human execution approval",
+        "priority": "P2",
+        "goal": "Exercise the initial WorkCase creation boundary",
+        "scope": "One controlled creation",
+        "workcase_profile": "control-contract-v2",
+        "success_criterion_definitions": [
+            {"criterion_id": "criterion-01", "statement": "The initial boundary is enforced"}
+        ],
+        "phase": "human_plan_confirming",
+        "plan_version": 1,
+        "waiting_on": "Human execution approval",
+        "work_items": [
+            {
+                "item_id": "item-01",
+                "goal": "Exercise the creation boundary",
+                "expected_result": "The invalid initial state is rejected",
+                "status": "pending",
+            }
+        ],
+        "creation_reviews": [
+            {
+                "reviewer": "independent-creation-reviewer",
+                "reviewed_at": "2026-07-26T12:50:00+08:00",
+                "subject_version": 1,
+                "scope": "Current initial plan",
+                "conclusion": "pass",
+            }
+        ],
+    }
+    return FactCreationCommand(
+        boundary=base.boundary,
+        fact_type_key="workcase",
+        schemas=base.schemas,
+        schema=base.schemas["workcase"],
+        requested_candidate_id="workcase-0001",
+        supplied=supplied,
+        body=None,
+    )
+
+
 def test_application_module_has_no_helper_dependency() -> None:
     module = Path(__file__).resolve().parents[2] / "ldvh/facts/creation_application.py"
     tree = ast.parse(module.read_text(encoding="utf-8"))
@@ -57,6 +102,40 @@ def test_application_module_has_no_helper_dependency() -> None:
         node.module or "" for node in ast.walk(tree) if isinstance(node, ast.ImportFrom)
     }
     assert not any(name == "ldvh.helper" or name.startswith("ldvh.helper.") for name in imports)
+
+
+def test_workcase_creation_preflight_rejects_noninitial_phase_approval_and_plan_version(
+    current_specs_repository: Path,
+    tmp_path: Path,
+) -> None:
+    command = _workcase_command(current_specs_repository, tmp_path)
+    command.supplied.update(
+        {
+            "phase": "executing",
+            "execution_approval": {
+                "subject_version": 1,
+                "approved_at": "2026-07-26T13:00:00+08:00",
+                "summary": "Claimed approval before object creation",
+            },
+        }
+    )
+    command.supplied.pop("waiting_on")
+
+    rejected = prepare_fact_creation(command, observed_at="2026-07-26T13:00:00+08:00")
+    assert isinstance(rejected, FactCreationResult)
+    assert rejected.status == "candidate_rejected"
+    assert any(issue.field_path == "phase" and "初始 phase" in issue.summary for issue in rejected.issues)
+    assert any(issue.field_path == "execution_approval" and "禁止预置" in issue.summary for issue in rejected.issues)
+
+    second_root = tmp_path / "second"
+    second_root.mkdir()
+    revised = _workcase_command(current_specs_repository, second_root)
+    revised.supplied["plan_version"] = 99
+    revised.supplied["creation_reviews"][0]["subject_version"] = 99
+    rejected = prepare_fact_creation(revised, observed_at="2026-07-26T13:00:00+08:00")
+    assert isinstance(rejected, FactCreationResult)
+    assert rejected.status == "candidate_rejected"
+    assert any(issue.field_path == "plan_version" and "必须是 1" in issue.summary for issue in rejected.issues)
 
 
 def test_prepared_creation_can_run_under_one_external_allocation_lock(

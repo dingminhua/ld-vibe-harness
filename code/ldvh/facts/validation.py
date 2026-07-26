@@ -195,8 +195,10 @@ _WORKCASE_PHASES = {
 }
 _WORKCASE_ITEM_STATUSES = {"pending", "in_progress", "blocked", "completed", "cancelled"}
 _WORKCASE_REVIEW_CONCLUSIONS = {"pass", "pass_with_followups", "changes_required", "blocked"}
-_WORKCASE_CURRENT_PROFILE = "control-contract-v1"
-_WORKCASE_CURRENT_BOUNDARY = datetime.fromisoformat("2026-07-20T07:30:00+08:00")
+_WORKCASE_V1_PROFILE = "control-contract-v1"
+_WORKCASE_V2_PROFILE = "control-contract-v2"
+_WORKCASE_V1_BOUNDARY = datetime.fromisoformat("2026-07-20T07:30:00+08:00")
+_WORKCASE_V2_BOUNDARY = datetime.fromisoformat("2026-07-26T12:45:00+08:00")
 _WORKCASE_PROGRESS_BOUNDARY = datetime.fromisoformat("2026-07-26T07:30:00+08:00")
 _WORKCASE_PROGRESS_PHASE_ORDER = {
     "executing": 0,
@@ -212,6 +214,12 @@ _WORKCASE_CURRENT_ONLY_FIELDS = {
     "audit_summary",
     "progress_history",
     "residual_responsibilities",
+    "nonbinding_followups",
+    "improvement_observations",
+}
+_WORKCASE_V2_FORBIDDEN_FIELDS = {
+    "audit_summary",
+    "progress_history",
     "nonbinding_followups",
     "improvement_observations",
 }
@@ -238,7 +246,12 @@ def _positive_integer(value: object) -> bool:
 
 
 def _workcase_profile(fields: dict[str, Any]) -> str:
-    return "current" if fields.get("workcase_profile") == _WORKCASE_CURRENT_PROFILE else "legacy"
+    value = fields.get("workcase_profile")
+    if value == _WORKCASE_V1_PROFILE:
+        return "v1"
+    if value == _WORKCASE_V2_PROFILE:
+        return "v2"
+    return "legacy" if value is None else "invalid"
 
 
 def _validate_unique_local_values(
@@ -269,21 +282,40 @@ def _validate_unique_local_values(
 def _validate_workcase_profile(fields: dict[str, Any], issues: list[FactIssue]) -> str:
     raw_profile = fields.get("workcase_profile")
     created = parse_rfc3339(fields.get("created_at"))
-    if raw_profile is not None and raw_profile != _WORKCASE_CURRENT_PROFILE:
-        issues.append(FactIssue("schema", f"workcase_profile 只允许 {_WORKCASE_CURRENT_PROFILE}", "workcase_profile"))
-    current = raw_profile == _WORKCASE_CURRENT_PROFILE
-    if not current and created is not None and created >= _WORKCASE_CURRENT_BOUNDARY:
+    if raw_profile is not None and raw_profile not in {_WORKCASE_V1_PROFILE, _WORKCASE_V2_PROFILE}:
         issues.append(
             FactIssue(
                 "schema",
-                "生效边界后创建的 WorkCase 必须显式使用 current profile",
+                f"workcase_profile 只允许 {_WORKCASE_V1_PROFILE} 或 {_WORKCASE_V2_PROFILE}",
                 "workcase_profile",
             )
         )
-    if current:
+        return "invalid"
+    profile = _workcase_profile(fields)
+    if profile == "legacy" and created is not None and created >= _WORKCASE_V1_BOUNDARY:
+        required_profile = _WORKCASE_V2_PROFILE if created >= _WORKCASE_V2_BOUNDARY else _WORKCASE_V1_PROFILE
+        issues.append(
+            FactIssue(
+                "schema",
+                f"该创建时点的 WorkCase 必须显式使用 {required_profile}",
+                "workcase_profile",
+            )
+        )
+    if profile == "v1":
         _require(fields, {"success_criterion_definitions", "audit_summary"}, issues)
         _forbid(fields, {"success_criteria"}, issues)
-    else:
+        if created is not None and created >= _WORKCASE_V2_BOUNDARY:
+            issues.append(
+                FactIssue(
+                    "schema",
+                    "V2 生效边界后创建的 WorkCase 必须使用 control-contract-v2",
+                    "workcase_profile",
+                )
+            )
+    elif profile == "v2":
+        _require(fields, {"success_criterion_definitions"}, issues)
+        _forbid(fields, {"success_criteria", *_WORKCASE_V2_FORBIDDEN_FIELDS}, issues)
+    elif profile == "legacy":
         _require(fields, {"success_criteria"}, issues)
         _forbid(fields, _WORKCASE_CURRENT_ONLY_FIELDS, issues)
         for array_name in ("creation_reviews", "result_reviews"):
@@ -299,11 +331,11 @@ def _validate_workcase_profile(fields: dict[str, Any], issues: list[FactIssue]) 
                             f"{array_name}[{index}].review_basis",
                         )
                     )
-    return "current" if current else "legacy"
+    return profile
 
 
 def _validate_workcase_criteria(fields: dict[str, Any], profile: str, issues: list[FactIssue]) -> None:
-    if profile != "current":
+    if profile == "legacy":
         criteria = fields.get("success_criteria")
         if isinstance(criteria, list):
             if any(not isinstance(item, str) or not item for item in criteria):
@@ -362,7 +394,7 @@ def _validate_workcase_criteria(fields: dict[str, Any], profile: str, issues: li
 
 
 def _validate_workcase_audit(fields: dict[str, Any], profile: str, issues: list[FactIssue]) -> None:
-    if profile != "current":
+    if profile != "v1":
         return
     entries = fields.get("audit_summary")
     if not isinstance(entries, list):
@@ -391,8 +423,8 @@ def _validate_workcase_audit(fields: dict[str, Any], profile: str, issues: list[
         if isinstance(findings, list):
             finding_values.extend(item for item in findings if isinstance(item, dict))
     created = parse_rfc3339(fields.get("created_at"))
-    if created is not None and created >= _WORKCASE_CURRENT_BOUNDARY and "pre_creation_plan" not in subject_kinds:
-        issues.append(FactIssue("schema", "current 新建 WorkCase 必须保留 pre_creation_plan audit", "audit_summary"))
+    if created is not None and created >= _WORKCASE_V1_BOUNDARY and "pre_creation_plan" not in subject_kinds:
+        issues.append(FactIssue("schema", "V1 新建 WorkCase 必须保留 pre_creation_plan audit", "audit_summary"))
     _validate_unique_local_values(
         finding_values,
         array_name="audit_summary.findings",
@@ -420,7 +452,7 @@ def _validate_workcase_audit(fields: dict[str, Any], profile: str, issues: list[
 
 
 def _validate_workcase_progress_history(fields: dict[str, Any], profile: str, issues: list[FactIssue]) -> None:
-    if profile != "current":
+    if profile != "v1":
         return
     history = fields.get("progress_history")
     created = parse_rfc3339(fields.get("created_at"))
@@ -550,7 +582,7 @@ def _validate_workcase_progress_history(fields: dict[str, Any], profile: str, is
 
 
 def _validate_workcase_observations(fields: dict[str, Any], profile: str, issues: list[FactIssue]) -> None:
-    if profile != "current":
+    if profile not in {"v1", "v2"}:
         return
     residuals = fields.get("residual_responsibilities")
     residual_values = residuals if isinstance(residuals, list) else []
@@ -570,6 +602,9 @@ def _validate_workcase_observations(fields: dict[str, Any], profile: str, issues
                     f"residual_responsibilities[{index}].disposition",
                 )
             )
+
+    if profile != "v1":
+        return
 
     followups = fields.get("nonbinding_followups")
     followup_values = followups if isinstance(followups, list) else []
@@ -646,7 +681,7 @@ def _validate_workcase_observations(fields: dict[str, Any], profile: str, issues
             )
 
 
-def _validate_workcase_items(fields: dict[str, Any], issues: list[FactIssue]) -> None:
+def _validate_workcase_items(fields: dict[str, Any], profile: str, issues: list[FactIssue]) -> None:
     values = fields.get("work_items")
     if not isinstance(values, list):
         return
@@ -668,6 +703,19 @@ def _validate_workcase_items(fields: dict[str, Any], issues: list[FactIssue]) ->
         item_id = item.get("item_id")
         if isinstance(item_id, str) and re.fullmatch(r"item-[0-9]{2,}", item_id) is None:
             issues.append(FactIssue("schema", "item_id 必须匹配 item-[0-9]{2,}", f"{path}.item_id"))
+        approach_summary = item.get("approach_summary")
+        if profile != "v2" and (not isinstance(approach_summary, str) or not approach_summary):
+            issues.append(
+                FactIssue("schema", "legacy/V1 work item 必须包含非空 approach_summary", f"{path}.approach_summary")
+            )
+        elif "approach_summary" in item and (not isinstance(approach_summary, str) or not approach_summary):
+            issues.append(FactIssue("schema", "approach_summary 出现时必须是非空 string", f"{path}.approach_summary"))
+        template_keys = item.get("template_keys")
+        if isinstance(template_keys, list):
+            if any(not isinstance(key, str) or not key for key in template_keys):
+                issues.append(FactIssue("schema", "template_keys 成员必须是非空 string", f"{path}.template_keys"))
+            elif len(template_keys) != len(set(template_keys)):
+                issues.append(FactIssue("schema", "template_keys 成员不得重复", f"{path}.template_keys"))
         status = item.get("status")
         if status not in _WORKCASE_ITEM_STATUSES:
             issues.append(FactIssue("schema", "work item status 不在当前闭集中", f"{path}.status"))
@@ -746,12 +794,35 @@ def _validate_workcase_reviews(
             issues.append(FactIssue("schema", f"审核必须绑定当前 {version_name}", f"{path}.subject_version"))
         if review.get("conclusion") not in _WORKCASE_REVIEW_CONCLUSIONS:
             issues.append(FactIssue("schema", "review conclusion 不在当前闭集中", f"{path}.conclusion"))
+        conclusion = review.get("conclusion")
         feedback = review.get("feedback")
-        if isinstance(feedback, list):
+        feedback_required = profile != "v2" or conclusion != "pass"
+        if not isinstance(feedback, list) or not feedback:
+            if feedback_required:
+                issues.append(
+                    FactIssue(
+                        "schema",
+                        "legacy/V1 review 或非 pass 的 V2 review 必须包含非空 feedback",
+                        f"{path}.feedback",
+                    )
+                )
+            elif "feedback" in review:
+                issues.append(FactIssue("schema", "review feedback 出现时必须是非空 array", f"{path}.feedback"))
+        else:
             if any(not isinstance(item, str) or not item for item in feedback):
                 issues.append(FactIssue("schema", "review feedback 成员必须是非空 string", f"{path}.feedback"))
             elif len(feedback) != len(set(feedback)):
                 issues.append(FactIssue("schema", "review feedback 不得重复", f"{path}.feedback"))
+        if "controller_resolution" in review and (
+            not isinstance(review.get("controller_resolution"), str) or not review["controller_resolution"]
+        ):
+            issues.append(
+                FactIssue(
+                    "schema",
+                    "controller_resolution 出现时必须是非空 string",
+                    f"{path}.controller_resolution",
+                )
+            )
         if profile == "legacy":
             if "controller_resolution" not in review:
                 issues.append(
@@ -762,9 +833,30 @@ def _validate_workcase_reviews(
                     )
                 )
             continue
+        if profile == "v2":
+            if "review_basis" in review:
+                issues.append(FactIssue("schema", "V2 review 禁止 review_basis", f"{path}.review_basis"))
+            if "controller_resolution" in review and not review.get("feedback"):
+                issues.append(
+                    FactIssue(
+                        "schema",
+                        "没有 feedback 的 V2 review 必须省略 Controller 处置",
+                        f"{path}.controller_resolution",
+                    )
+                )
+            needs_resolution = array_name == "creation_reviews" or fields.get("phase") != "independent_reviewing"
+            if needs_resolution and review.get("feedback") and "controller_resolution" not in review:
+                issues.append(
+                    FactIssue(
+                        "schema",
+                        "存在待处置 feedback 时，离开独立审核前必须包含 Controller 处置",
+                        f"{path}.controller_resolution",
+                    )
+                )
+            continue
         basis = review.get("review_basis")
         if not isinstance(basis, dict):
-            issues.append(FactIssue("schema", "current review 必须包含 review_basis", f"{path}.review_basis"))
+            issues.append(FactIssue("schema", "V1 review 必须包含 review_basis", f"{path}.review_basis"))
         else:
             projection_key = basis.get("projection_key")
             subject_fingerprint = basis.get("subject_fingerprint")
@@ -815,6 +907,50 @@ def _validate_workcase_reviews(
                 )
 
 
+def _validate_workcase_approval_source_refs(fields: dict[str, Any], issues: list[FactIssue]) -> None:
+    allowed = {"kind", "locator", "version", "observed_at", "details"}
+    for approval_name in ("execution_approval", "closure_approval"):
+        approval = fields.get(approval_name)
+        if not isinstance(approval, dict):
+            continue
+        references = approval.get("source_refs")
+        if not isinstance(references, list):
+            continue
+        for index, reference in enumerate(references):
+            path = f"{approval_name}.source_refs[{index}]"
+            if not isinstance(reference, dict):
+                issues.append(FactIssue("schema", "approval source_refs 成员必须是 object", path))
+                continue
+            unknown = sorted(key for key in reference if isinstance(key, str) and key not in allowed)
+            if unknown:
+                issues.append(FactIssue("schema", f"approval source_refs 包含未知字段: {', '.join(unknown)}", path))
+            if any(not isinstance(key, str) for key in reference):
+                issues.append(FactIssue("schema", "approval source_refs 字段名必须是 string", path))
+            for name in ("kind", "locator"):
+                if not isinstance(reference.get(name), str) or not reference[name]:
+                    issues.append(
+                        FactIssue("schema", f"approval source_refs.{name} 必须是非空 string", f"{path}.{name}")
+                    )
+            for name in ("version", "observed_at"):
+                if name in reference and (not isinstance(reference[name], str) or not reference[name]):
+                    issues.append(
+                        FactIssue("schema", f"approval source_refs.{name} 出现时必须是非空 string", f"{path}.{name}")
+                    )
+            observed_at = reference.get("observed_at")
+            if isinstance(observed_at, str) and observed_at and parse_rfc3339(observed_at) is None:
+                issues.append(
+                    FactIssue(
+                        "schema",
+                        "approval source_refs.observed_at 必须是带时区 RFC 3339 时间",
+                        f"{path}.observed_at",
+                    )
+                )
+            if "details" in reference and not isinstance(reference["details"], dict):
+                issues.append(
+                    FactIssue("schema", "approval source_refs.details 出现时必须是 object", f"{path}.details")
+                )
+
+
 def _validate_workcase(fields: dict[str, Any], issues: list[FactIssue]) -> None:
     profile = _validate_workcase_profile(fields, issues)
     status = fields.get("status")
@@ -828,7 +964,6 @@ def _validate_workcase(fields: dict[str, Any], issues: list[FactIssue]) -> None:
             issues.append(FactIssue("schema", "closed WorkCase 的 phase 必须为 closed", "phase"))
         _forbid(fields, {"resume_from", "waiting_on"}, issues)
     else:
-        _require(fields, {"resume_from"}, issues)
         if phase == "closed":
             issues.append(FactIssue("schema", "非 closed WorkCase 不得使用 closed phase", "phase"))
     if phase in {"human_plan_confirming", "human_closure_confirming"}:
@@ -942,13 +1077,14 @@ def _validate_workcase(fields: dict[str, Any], issues: list[FactIssue]) -> None:
         issues.append(
             FactIssue("schema", "closure_approval 必须绑定当前 result_version", "closure_approval.subject_version")
         )
-    _validate_workcase_items(fields, issues)
+    _validate_workcase_items(fields, profile, issues)
     _validate_workcase_criteria(fields, profile, issues)
     _validate_workcase_audit(fields, profile, issues)
     _validate_workcase_progress_history(fields, profile, issues)
     _validate_workcase_observations(fields, profile, issues)
     _validate_workcase_reviews(fields, "creation_reviews", "plan_version", profile, issues)
     _validate_workcase_reviews(fields, "result_reviews", "result_version", profile, issues)
+    _validate_workcase_approval_source_refs(fields, issues)
 
 
 def _validate_times(fact_type_key: str, fields: dict[str, Any], issues: list[FactIssue]) -> None:

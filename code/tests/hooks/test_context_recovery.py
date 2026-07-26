@@ -126,7 +126,9 @@ def test_governed_recovery_returns_bounded_projection_and_expands_sole_candidate
     assert projection["workcase_binding"]["status"] == "unresolved"
     assert projection["workcase_binding"]["reason"] == "sole_mechanical_candidate"
     assert projection["workcase"]["fact_ref"]["object_id"] == "workcase-0007"
+    assert "resume_from" not in projection["workcase"]
     assert [item["item_id"] for item in projection["active_items"]] == ["item-02"]
+    assert projection["active_items"][0]["resume_from"] == "Assert the bounded projection and operation sequence."
     assert [call["argv"][1:] for call in calls] == [
         ["call", "resolve-governance-scope"],
         ["call", "find-fact-object-candidates"],
@@ -399,9 +401,7 @@ def test_page_budget_keeps_coverage_and_binding_unresolved(
     assert projection["project_binding"]["status"] == "bound"
     assert projection["workcase_binding"]["status"] == "unresolved"
     assert projection["workcase_binding"]["helper_coverage"]["status"] == "incomplete"
-    assert projection["diagnostics"] == [
-        {"code": "resource_budget_exceeded", "summary": "F1 page budget exceeded"}
-    ]
+    assert projection["diagnostics"] == [{"code": "resource_budget_exceeded", "summary": "F1 page budget exceeded"}]
 
 
 def test_partial_f1_keeps_helper_and_delivery_coverage_incomplete(

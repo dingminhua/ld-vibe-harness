@@ -1,11 +1,12 @@
 title: 环境安装、部署、接入与验证契约收束
 status: open
-summary: Hook 受限操作请求已审核通过；等待字段登记并行测试失败由所属工作处理后再准备关闭。
-resume_from: 字段登记测试恢复后，复跑 docs/specs 并形成关闭报告。
+summary: 环境 Hook 受限操作请求已审核通过；等待字段登记测试所属工作修复实际登记 122 与测试预期 121 的数量不一致后再准备关闭。
+waiting_on: 字段登记测试所属工作修复实际登记 122 与测试预期 121 的数量不一致。
+resume_from: 该数量不一致修复后，复跑全量 docs/specs 并形成关闭报告。
 priority: P1
 goal: 将环境安装、部署、接入与验证的职责边界，以及逐事件验证交还契约收束到当前规则源和入口文档，使接入行动不能把静态、直调或 hydrate 等有限观察写成真实环境接入通过。
 scope: 覆盖 specs/09、33 及 09.Att.01、README 和直接文档测试引用：将 33 迁移为 specs/33-环境安装、部署、接入与验证行动模板.md，保持 spec_key/template_key；在 09 定义安装/部署/接入/验证四层与环境专属事件表责任，在 33 定义每次行动的逐事件矩阵和最终交还；更新全部直接路径/标题断言。矩阵是一次行动交还，不是永久环境状态、事实对象或跨厂商注册表。排除生产 Code/CLI/Doctor/Helper/Git Gate、ZCode 或其他 adapter/manifest/cache/data、实际环境配置、运行时诊断/启动、升级/重装/信任/重启、填写具体事件表和更新 Spark/Pitfall。
-workcase_profile: control-contract-v1
+workcase_profile: control-contract-v2
 success_criterion_definitions:
 - criterion_id: criterion-01
   statement: 09 明确安装、部署、接入、验证四层和环境专属事件表责任；新增 manifest、script 或 adapter 仍分流至独立 Code 计划。
@@ -33,7 +34,7 @@ work_items:
   depends_on:
   - item-01
   approach_summary: 仅修改规则和文档；环境专属事件由对应环境来源维护，新增 manifest、script 或 adapter 转入独立 Code 计划；不改变稳定 spec_key/template_key。
-  result_summary: 09 已收束四层、环境专属事件责任以及 AI 生命周期 Hook 的用户级原生插件交付边界；33 已迁移新路径、要求逐事件矩阵，并删除 Codex/ZCode、具体 manifest、图标和构建规则。具体目录、插件结构、缓存和构建验证下沉到目标环境来源。未新增 adapter、命令、环境状态或事实对象。
+  result_summary: 09 已收束四层、环境专属事件责任以及 AI 生命周期所用环境 Hook 的用户级原生插件交付边界；33 已迁移新路径、要求逐事件矩阵，并删除 Codex/ZCode、具体 manifest、图标和构建规则。具体目录、插件结构、缓存和构建验证下沉到目标环境来源。未新增 adapter、命令、环境状态或事实对象。
 - item_id: item-03
   goal: 验证规则和文档迁移，回读差异并形成当前计划结果。
   expected_result: 规则解析和文档测试、标题/路径直接引用核对通过；实际验证范围、未运行和非环境结论清晰可追溯。
@@ -41,152 +42,7 @@ work_items:
   depends_on:
   - item-02
   approach_summary: 运行范围内真实测试并核对差异；不以字符串零命中、静态部署或 Helper 直调代替真实环境事件验证。
-  result_summary: 33 已补入：AI 对已声明事件先只读调查 Hook/等价机制的启用、信任、权限和用户级配置限制；若证实必须由 Human 操作，则先交还最小 Human 受限操作请求。请求明确不是默认指令或授权，禁止猜测厂商开关；Human 完成操作不等于部署或真实触发，缺 manifest/脚本/adapter 仍分流独立 Code 计划。README 仍提供人可复制的最简提示。直接文档测试 3 passed，`git diff --check` 通过；全量 docs/specs 为 127 passed、2 failed，失败为并行字段登记数量 122/121，未由本次改动修复或掩盖。
-audit_summary:
-- audit_id: audit-01
-  subject_kind: pre_creation_plan
-  subject_version: 1
-  review_count: 2
-  summary: 独立首轮审核要求将 33 的标题与文件路径一并迁移、限定环境专属事件表和一次性验证矩阵语义、在正文写明四层边界和独立 Code 分流，并补足明确排除项；修订后的计划经独立复审通过。
-  findings:
-  - finding_id: finding-01
-    topic: 33 路径迁移与事件验证矩阵语义
-    controller_disposition: corrected
-    resolution_summary: 计划已同时覆盖标题、文件路径、canonical path、入口引用和文档测试；事件表限定为对应环境来源，矩阵限定为一次行动交还，缺少真实事件证据必须标记未验证，新增 adapter 等实现分流独立 Code 计划。
-    rereview_outcome: performed
-    final_route: current_plan
-- audit_id: audit-02
-  subject_kind: superseded_result
-  subject_version: 1
-  review_count: 1
-  summary: Human 在关闭确认前发现 33 将 Codex/ZCode 插件、manifest 与图标构建细节误写为通用接入前提；result_version 1 的独立审核已记录为历史输入，修订后的结果进入新的审核版本。
-  findings:
-  - finding_id: finding-02
-    topic: 通用模板混入具体环境插件实现
-    controller_disposition: corrected
-    resolution_summary: 33 已删除厂商、插件文件、manifest、图标与构建规则，改为目标环境原生插件在用户级范围部署且具体实现下沉；09 与验证表同步边界。
-    rereview_outcome: not_required
-    final_route: current_result
-- audit_id: audit-03
-  subject_kind: superseded_result
-  subject_version: 2
-  review_count: 1
-  summary: result_version 2 的独立审核发现结果记录把“无厂商专属 manifest 字段或构建规则”误写为“无 manifest 词汇”，并要求明确外部报告未作为当前真实触发证据；该版本保留为历史审核输入。
-  findings:
-  - finding_id: finding-03
-    topic: 结果记录的通用 manifest 与外部报告证据表述
-    controller_disposition: corrected
-    resolution_summary: 仅更正 WorkCase 结果记录：保留目标环境来源定义具体 manifest 的责任，排除厂商名称、厂商插件文件名、manifest 字段和构建规则；明确外部报告未被视为当前真实触发证据。
-    rereview_outcome: performed
-    final_route: current_result
-- audit_id: audit-04
-  subject_kind: superseded_result
-  subject_version: 3
-  review_count: 1
-  summary: Human 在关闭确认前要求将可直接交给新环境的一句入口请求写入 README；该文档成果补充形成 result_version 4，result_version 3 的独立审核保留为历史输入。
-  findings:
-  - finding_id: finding-04
-    topic: README 的最简新环境交付提示
-    controller_disposition: accepted
-    resolution_summary: README 已增加“请阅读 README，完成 LDVH 的安装、部署、接入与验证，并如实报告已验证与未验证的范围”，不改变 09/33 的环境来源和真实事件证据边界。
-    rereview_outcome: performed
-    final_route: current_result
-- audit_id: audit-05
-  subject_kind: superseded_result
-  subject_version: 4
-  review_count: 1
-  summary: result_version 4 的独立审核发现最简入口句可能被理解为预先授权环境副作用；已将授权 Gate 写入该句，形成 result_version 5。
-  findings:
-  - finding_id: finding-05
-    topic: README 最简入口句的 Human 授权边界
-    controller_disposition: corrected
-    resolution_summary: 入口句现要求先形成接入方案，仅在获得所需 Human 授权后才执行安装、部署与接入；如实报告验证范围的要求保留。
-    rereview_outcome: performed
-    final_route: current_result
-- audit_id: audit-06
-  subject_kind: superseded_result
-  subject_version: 5
-  review_count: 1
-  summary: Human 明确要求 README 的用户交付提示只保留一句最简原文，详细执行边界不在该提示中重复；该决定形成 result_version 6。
-  findings:
-  - finding_id: finding-06
-    topic: README 用户交付提示的最简原文
-    controller_disposition: accepted
-    resolution_summary: 按 Human 指令写为“请阅读 README，完成 LDVH 的安装、部署、接入与验证，并如实报告已验证与未验证的范围。”；详细边界仍由 README 后续内容和 09、33 承接。
-    rereview_outcome: performed
-    final_route: current_result
-- audit_id: audit-07
-  subject_kind: superseded_result
-  subject_version: 6
-  review_count: 1
-  summary: Human 明确纠正 README 与 Specs 的受众边界：README 面向人，AI 提示与详细执行内容进入 33；该职责迁移形成 result_version 7。
-  findings:
-  - finding_id: finding-07
-    topic: README 与 33 的 Human/AI 受众边界
-    controller_disposition: corrected
-    resolution_summary: README 删除“给 AI”章节和最简提示，仅保留人类读者所需安装说明与规范链接；33 新增最简提示并承接 AI 的输入、授权、步骤、验证与交还边界。
-    rereview_outcome: performed
-    final_route: current_result
-- audit_id: audit-08
-  subject_kind: superseded_result
-  subject_version: 7
-  review_count: 1
-  summary: result_version 7 的独立审核发现 WorkCase 将“本次未验证”绝对化为“没有任何具体环境历史结论”；已收窄表述，形成 result_version 8。
-  findings:
-  - finding_id: finding-08
-    topic: 既有具体环境历史状态与本次验证范围
-    controller_disposition: corrected
-    resolution_summary: WorkCase 现仅声明本次未新增、变更或重新验证具体环境结论；README 中既有的 Codex 历史状态保持原有范围，不由本次测试重新证明。
-    rereview_outcome: performed
-    final_route: current_result
-- audit_id: audit-09
-  subject_kind: superseded_result
-  subject_version: 8
-  review_count: 1
-  summary: Human 发现 README 缺少面向人的 Web 启动说明；补入实际 package scripts、前端地址和本地 API 端口，形成 result_version 9。
-  findings:
-  - finding_id: finding-09
-    topic: README 的 Web 本地启动说明
-    controller_disposition: corrected
-    resolution_summary: README 新增 Web 启动章节：`cd web`、`npm ci`、`npm run dev`、浏览器地址 `http://127.0.0.1:5173`，并说明本地 API 使用 3001。
-    rereview_outcome: performed
-    final_route: current_result
-- audit_id: audit-10
-  subject_kind: superseded_result
-  subject_version: 9
-  review_count: 1
-  summary: Human 要求全面梳理混乱的 README，并要求 Subagent 共同审查；按独立方案将 README 收束为人类快速上手入口，形成 result_version 10。
-  findings:
-  - finding_id: finding-10
-    topic: README 信息架构、稳定性与 Human/AI 受众边界
-    controller_disposition: corrected
-    resolution_summary: README 重组为六个面向人的短章节；环境细节链接 09、33 与接入面；Web 端口标为默认/固定的实际范围；删除易过期使用状态，并新增文档断言。
-    rereview_outcome: performed
-    final_route: current_result
-- audit_id: audit-11
-  subject_kind: superseded_result
-  subject_version: 10
-  review_count: 1
-  summary: Human 指出 README 中没有可直接复制的提示词；在面向人的环境接入章节补入最简提示，形成 result_version 11。
-  findings:
-  - finding_id: finding-11
-    topic: README 中人可复制给 AI 的最简提示
-    controller_disposition: corrected
-    resolution_summary: README 的“接入新的开发环境”章节现直接展示可复制提示；33 仍为 AI 详细执行边界的唯一来源。
-    rereview_outcome: performed
-    final_route: current_result
-- audit_id: audit-12
-  subject_kind: superseded_result
-  subject_version: 11
-  review_count: 1
-  summary: Human 要求补足 AI 对当前环境 Hook 启用限制的主动调研和可执行 Human 提示；33 增加 Human 受限操作请求边界，形成 result_version 12。
-  findings:
-  - finding_id: finding-12
-    topic: Hook 启用限制调查与 Human 受限操作请求
-    controller_disposition: corrected
-    resolution_summary: 33 仅新增调查、最小请求和恢复边界，不改 09，不默认启用或授权，不猜测厂商设置；直接文档断言覆盖关键边界。
-    rereview_outcome: performed
-    final_route: current_result
+  result_summary: 33 已补入：AI 对已声明事件先只读调查环境 Hook 或等价机制的启用、信任、权限和用户级配置限制；若证实必须由 Human 操作，则先交还最小 Human 受限操作请求。请求明确不是默认指令或授权，禁止猜测厂商开关；Human 完成操作不等于部署或真实触发，缺 manifest/脚本/adapter 仍分流独立 Code 计划。README 已收束为面向 Human 的快速上手入口，保留本地 Web 启动说明和人可复制的最简提示；AI 的详细执行边界仍由 33 承接。直接文档测试 3 passed，`git diff --check` 通过；全量 docs/specs 为 127 passed、2 failed，失败为并行字段登记数量 122/121，未由本次改动修复或掩盖。
 creation_reviews:
 - reviewer: codex-agent:Raman
   reviewed_at: '2026-07-24T22:12:45+08:00'
@@ -196,26 +52,23 @@ creation_reviews:
   feedback:
   - 该计划是一个可关闭的规则与文档契约 WorkCase，不包含具体环境实现或运行时测试；责任范围和排除项清晰。
   - 逐事件矩阵可复用本接入单元的静态部署证据，不应假装每个事件各自拥有独立部署事实；真实事件未取得证据时必须明确未验证。
-  review_basis:
-    projection_key: plan_current
-    subject_fingerprint: 91c703709b6f9f6e79934a598c63342c041ed95d4d94ea46be1eff2bd4a06c50
   controller_resolution: 接受并落实独立审核反馈：33 同时迁移标题和文件路径；事件表由相应环境来源维护，矩阵仅作为本次行动交还；规则正文明确四层边界和独立 Code 分流；排除具体环境、运行时和实现工作。当前计划仅提交 Human 执行批准。
 execution_approval:
   subject_version: 1
   approved_at: '2026-07-24T22:18:04.010370+08:00'
   summary: Human 已明确批准 workcase-0013 的当前 plan_version 1 执行。
 result_version: 12
-controller_check_summary: 33 已要求 AI 调查已声明事件相关的 Hook/等价机制启用、信任、权限和用户级配置限制；发现 Human-only 操作时，必须先交还可恢复的最小请求，而不是只停在 unverified。请求不构成指令或授权，Human 完成操作不等于真实触发，缺 adapter 对象仍分流 Code 计划。直接文档测试 3 passed、diff check 通过；全量 docs/specs 当前 127 passed、2 failed，失败来自并行字段登记数量 122/121。
+controller_check_summary: 33 已要求 AI 调查已声明事件相关的环境 Hook 或等价机制启用、信任、权限和用户级配置限制；发现 Human-only 操作时，必须先交还可恢复的最小请求，而不是只停在 unverified。请求不构成指令或授权，Human 完成操作不等于真实触发，缺 adapter 对象仍分流 Code 计划。直接文档测试 3 passed、diff check 通过；全量 docs/specs 当前 127 passed、2 failed，失败来自并行字段登记数量 122/121。
 success_criterion_results:
 - criterion_id: criterion-01
   outcome: satisfied
-  summary: 09 §6.1 明确安装、部署、接入、验证四层，并明确 AI 生命周期 Hook 采用目标环境原生用户级插件，具体实现仍由环境来源定义。
+  summary: 09 §6.1 明确安装、部署、接入、验证四层，并明确 AI 生命周期所用环境 Hook 采用目标环境原生用户级插件，具体实现仍由环境来源定义。
 - criterion_id: criterion-02
   outcome: satisfied
-  summary: 33 的逐事件矩阵与验证边界保持；新增 Hook 限制调查和 Human 受限操作请求，避免 AI 仅报告 unverified 而不交还 Human 可执行动作。
+  summary: 33 的逐事件矩阵与验证边界保持；新增环境 Hook 限制调查和 Human 受限操作请求，避免 AI 仅报告 unverified 而不交还 Human 可执行动作。
 - criterion_id: criterion-03
   outcome: satisfied
-  summary: README 与 09.Att.01 继续引导新环境先读取规则、确认来源声明事件、形成矩阵并取得 Human 授权；33 已不再将任何具体厂商插件结构作为前提。
+  summary: README 已作为 Human 快速上手入口保留 Web 启动说明和可复制提示；09.Att.01 继续引导新环境先读取规则、确认来源声明事件、形成矩阵并取得 Human 授权；AI 的详细执行边界由 33 承接，且不再预设任何具体厂商插件结构。
 - criterion_id: criterion-04
   outcome: satisfied
   summary: 33 的新标题、canonical path、README、附件和测试引用仍一致，稳定 spec_key/template_key 未改变。
@@ -232,11 +85,8 @@ result_reviews:
   - 33 的新增边界和 WorkCase 表述准确，未声称真实环境验证。
   - 直接文档测试 3 passed、diff check 通过。
   - 全量 docs/specs 的 127 passed、2 failed 应由字段登记所属工作处理后，再形成关闭报告。
-  review_basis:
-    projection_key: result_implementation
-    subject_fingerprint: 3d31fba8aae09711ff129361ed7a71e0b7b6a3af3523268e9495982b967932f0
   controller_resolution: 接受：本次 33 和文档断言已通过独立审核。为避免把并行字段登记失败带入 completed 结论，返回 controller_checking，等待其所属工作修复 122/121 数量漂移后再复跑全量 docs/specs。
 object_id: workcase-0013
 fact_type_key: workcase
 created_at: '2026-07-24T22:13:34.001208+08:00'
-updated_at: '2026-07-24T23:40:15.886445+08:00'
+updated_at: '2026-07-26T12:45:00+08:00'

@@ -15,7 +15,7 @@ scope: 覆盖 specs/09 对共同接入方法、AI 自助适配职责、按功能
   CLI、账号登录、凭据、信任、重启、用户或全局配置、管辖项目登记、事实 Schema、WorkCase 生命周期、Web、公共 registry 或
   marketplace 发布、发布 Specs 与发布行动模板（由 spark-0023 承接）、push 和 PR。Codex
   只可作为范围受限的既有证据，不得成为共同模型或完成条件。
-workcase_profile: control-contract-v1
+workcase_profile: control-contract-v2
 success_criterion_definitions:
 - criterion_id: criterion-01
   statement: 权威方向成立：09 唯一定义共同接入成立条件与环境无关方法；具体环境当前权威资料定义厂商协议；33
@@ -56,10 +56,7 @@ work_items:
   approach_summary: 回读 00/03/04/06/07/09/33、当前发行与依赖声明、配置实现、共享行为或 Gate、tests 和
     README；以 spark-0003 为主要输入，比较 spark-0001/0002/0013
     的实际相关范围。普通来源驱动，不采用具体环境安装模板。
-  result_summary: 基线与当前实现规划均已冻结。首轮结果审核发现原实现缺少 07 要求的稳定 Code Implementation
-    Plan；现已新增并在 code/plans/README.md 登记
-    environment-neutral-enablement.md，诚实标注为审核后补正，覆盖来源、实现起点、未提交范围、组合关系、模块责任、依赖、ldvh-doctor/1、文档唯一维护方向、打包、诊断、风险和测试映射。独立有限比较结论
-    pass，确认规划与当前实现一致且不追溯消除原始时序缺口。
+  result_summary: 环境无关启用基线与当前实现规划已冻结；稳定 Code Implementation Plan 已登记来源、实现起点、范围、模块责任、依赖、doctor、文档、打包、诊断、风险和测试映射，并经独立设计核对。
 - item_id: item-02
   goal: 收敛共同规则、AI 自助接入分流和 LDVH 接入面发现合同。
   expected_result: 09/33 及确有需要的相邻来源以最小差异固定 AI 自助职责、功能型 Hook 判定、unsupported
@@ -70,9 +67,8 @@ work_items:
   - item-01
   approach_summary: 保持 09、04、具体环境来源、07 和 33 的单向权威；不建立统一厂商 payload、事件路由、默认语义或
     adapter 登记。冻结规则后再允许生产 Code 和文档消费。普通来源驱动，不采用行动模板。
-  result_summary: 09 已明确 LDVH 提供环境无关方法、目标环境 AI 按当前权威资料调查、Hook 按功能识别、unsupported
-    只接受肯定依据、未知保持 unverified、直接配置与新 adapter 独立 Code 分流、接入面投影和只读 doctor 边界；33 只消费
-    09 的状态权威并组织已有接入单元安装验证。规范机械测试 125 passed；两轮独立语义复核发现并修正 33 重复权威后结论为 pass。
+  result_summary: 09 已明确环境无关方法、目标环境 AI 调查、功能型 Hook、unsupported/unverified、直接配置与新
+    adapter 分流、接入面投影和只读 doctor 边界；33 只消费 09 的状态权威并组织已有接入单元安装验证。规范机械检查和独立语义复核通过。
 - item_id: item-03
   goal: 实现并验证本地获取、安装、配置、只读 doctor 和既有接入面发现基础。
   expected_result: wheel/sdist 具有可回指身份与哈希，依赖来源和网络前提清楚；干净临时环境能够安装、直调核心、读取 LDVH
@@ -83,17 +79,7 @@ work_items:
   approach_summary: 只修改 LDVH 自有发行物、依赖说明、安装卸载、配置读取、doctor、既有接入面发现入口或可检查说明及环境无关
     fixture 的 Code/tests；不新增公开协议，不实现具体 adapter，不触碰目标环境或用户全局资产。若必须新增公开 Helper 操作或
     Gate 合同，停止并判断是否升 plan_version。
-  result_summary: 已从 doctor 修复与 synthetic fixture 当前源码重建固定 0.1.0
-    wheel/sdist；wheel SHA-256
-    64614788cf0b1e053dbcff7e06feb7234d4f7ed49947107725dab863f90f1544，sdist
-    SHA-256 5a9187a0dabe1f568418eba50777dc86f7fd2c4c7122dfb60db358d849e16187。两个
-    archive 内 doctor.py 均与当前源码 SHA-256
-    7f031953ca557d1e0f98878f6a15f7374b7c2d0299e581bf47f0ed6f925d5c85
-    一致并包含两份用户文档。wheel 与 sdist 分别在严格 fail-fast 独立临时环境完成 no-index/no-deps 安装、12
-    operations、doctor ready（valid/governed_single、4/4 surfaces、2/2
-    docs）、卸载及命令/distribution 消失回读。首次 sdist 手工脚本因不完整 setuptools 且未 fail-fast
-    产生误报，已明确排除，不作为证据；随后补齐 backend 的严格运行成功。doctor 当前聚焦文件为 7 cases；与新增 synthetic
-    fixture 合计 14 passed。
+  result_summary: 已从当前源码重建固定 0.1.0 wheel/sdist，archive 内 doctor 与源码一致并包含用户文档。两类发行物均在独立临时环境完成安装、核心操作、只读 doctor、卸载及入口消失回读；相关 doctor、fixture 和打包验证通过。
 - item_id: item-04
   goal: 建立共同五步文档和面向目标环境 AI 的自助接入说明。
   expected_result: 文档覆盖 artifact 与网络边界、LDVH 自有配置、doctor、接入面发现、目标环境权威资料调查、功能型
@@ -104,9 +90,8 @@ work_items:
   - item-03
   approach_summary: 提供环境无关的方法、输入和检查清单，供用户交给目标环境 AI 使用；不提供厂商候选矩阵、预制厂商步骤或具体
     adapter，不把 LDVH 自有配置与目标环境 Hook 配置混为一体。普通 Code/docs 路径，不采用具体环境安装模板。
-  result_summary: README 已建立通用五步入口；新增环境无关启用指南和 LDVH 接入面说明，覆盖 artifact/网络边界、配置与
-    doctor、可交给目标环境 AI 的调查任务、功能型 Hook 状态、直接配置与新 adapter 分流、Human
-    Gate、分层验证、禁用与回滚。两份文档已随 wheel/sdist 分发；文档测试 3 passed。
+  result_summary: README、环境无关启用指南和 LDVH 接入面说明已覆盖 artifact/网络边界、配置与 doctor、目标环境 AI
+    调查、功能型 Hook、直接配置与新 adapter 分流、Human Gate、分层验证、禁用与回滚；文档已随 wheel/sdist 分发并通过文档检查。
 - item_id: item-05
   goal: 完成环境无关启用基础的综合验证并如实交还未完成范围。
   expected_result: 干净临时环境中的 artifact 安装、核心直调、配置与 doctor、接入面发现、模拟 Hook 成功、unknown
@@ -118,29 +103,8 @@ work_items:
   - item-04
   approach_summary: 模拟 fixture 只验证给定输入下的 LDVH 侧入口和分类逻辑，confirmed-no-capability
     fixture 不作为任何真实环境缺少能力的证据；按实际风险完成验证和回读，不执行公共发布、具体环境安装、push 或 PR。
-  result_summary: 全部补正后的综合验证完成。三类 synthetic fixture 可执行验证模拟 Hook success 只证明
-    fixture 且完整接入仍 unverified；未知证据保持 unverified；权威种类、范围匹配、肯定缺失三项同时成立才为
-    unsupported，任一缺失均回落 unverified；所有 fixture 明确
-    maps_to_real_environment=false。正式 full-v4
-    run-517c166cb5cd44fca82a7002f9b66f8b 为 passed、evidence_complete=true、exit
-    0：Ruff、Python 973 passed/10 skipped、Web typecheck、34/34 tests、production
-    build 全部通过；before/after 均 397 文件、8,233,580 bytes、fingerprint
-    d7ed0452ba190ed81e6afc93d5cc09ce89a49aa3f3df8fea704ece5e5c8f50fb，changes=[]。git
-    diff --check 通过。
-audit_summary:
-- audit_id: audit-01
-  subject_kind: pre_creation_plan
-  subject_version: 1
-  review_count: 2
-  summary: 首轮独立审核发现未命名环境会实质改变计划、三环境配额导致不可关闭、33 与相邻规范职责越界、doctor/bootstrap
-    副作用、支持证据时效和发布 Spark 错误承接；Controller 全部吸收并将计划缩为共同基础与逐环境分流，复审确认阻断已清除。
-- audit_id: audit-02
-  subject_kind: superseded_plan
-  subject_version: 1
-  review_count: 1
-  summary: Human 重新确定由 LDVH 提供通用接入方法、具体环境由用户让 AI 研究，并要求 AI 开发环境无 Hook
-    时明确不支持；plan_version 1 的逐环境候选调查与 WorkCase 分流被替代。旧审核中关于证据范围、doctor 只读、发布排除和
-    Codex 不得默认化的价值已吸收进 plan_version 2。
+  result_summary: synthetic fixture 已验证模拟 Hook success、unknown 与 confirmed-no-capability
+    的确定性分类；fixture 均不映射真实环境，依据不足时保持 unverified。规则、Code、打包、文档、full-v4 和差异检查通过。
 creation_reviews:
 - reviewer: codex-agent:/root/wc0007_plan_review
   reviewed_at: '2026-07-21T09:24:23.664274+08:00'
@@ -159,10 +123,6 @@ creation_reviews:
   - '[non-blocking] confirmed-no-capability fixture 只验证给定肯定依据后的分类逻辑，不能充当任何真实环境缺少能力的证据；执行时必须保持该边界。'
   - '[non-blocking] 若实现中发现必须新增公开接入协议、Helper 操作或 Gate 合同，而不是投影既有接入面，应停止并由 Controller
     判断升 plan_version，不能借发现入口扩张合同。'
-  review_basis:
-    projection_key: plan_current
-    subject_fingerprint:
-      d9c01ca1a17fc38c4c97c0c75d2ad0065cdfdbc7ffd217eb70f5067480e73c12
   controller_resolution: 1. 确认 adapter 编写与 33 安装验证已经分流。2. 确认 unsupported
     只接受功能能力缺失的肯定依据，未知范围保持 unverified。3. 确认接入面发现、输入输出及失败边界可验收且不建立统一厂商协议。4.
     两项非阻断反馈已经写入 criterion-06、item-03 和 item-05 的执行约束，不要求继续修改当前计划。
@@ -174,18 +134,15 @@ result_version: 1
 success_criterion_results:
 - criterion_id: criterion-01
   outcome: satisfied
-  summary: 09/33 权威与 adapter 分流成立；审核后补正并登记当前 Code Implementation
-    Plan，诚实记录时序缺口，覆盖来源、基线、模块、依赖、接口/Schema、诊断、打包、风险与测试，并通过独立有限设计比较；00 未再修改。
+  summary: 09/33 权威与 adapter 分流成立；当前 Code Implementation Plan 已登记来源、基线、模块、依赖、接口、诊断、打包、风险与测试，并通过独立设计核对；00 未再修改。
 - criterion_id: criterion-02
   outcome: satisfied
-  summary: 当前源码已重建固定 0.1.0 wheel/sdist；archive 内 doctor 与当前源码哈希一致。wheel/sdist
-    分别在严格临时环境完成 no-index/no-deps 安装、12 operations、doctor
-    ready、卸载和命令/distribution 消失回读；文档明确声明、实测、依赖、联网与本地 artifact 边界。
+  summary: 当前源码已重建固定 0.1.0 wheel/sdist，archive 内 doctor 与源码一致；两类发行物均在独立临时环境完成安装、核心操作、doctor、卸载和入口消失回读，文档明确声明范围、依赖、联网与本地 artifact 边界。
 - criterion_id: criterion-03
   outcome: satisfied
   summary: 安装后 ldvh-doctor/1 只复用 capabilities 与
     resolve-governance-scope，不扫描或修改目标环境；非 ok Helper outcome 即使有残留 valid 字段也保持
-    attention。doctor 文件 7 cases 通过，当前 wheel/sdist 实装 doctor 均 ready。
+    attention；当前 wheel/sdist 实装 doctor 均为 ready，相关验证通过。
 - criterion_id: criterion-04
   outcome: satisfied
   summary: LDVH 接入面说明从当前 04/09 与现有入口投影 Helper CLI、上下文恢复、commit-msg Gate 和 Git
@@ -199,89 +156,11 @@ success_criterion_results:
 - criterion_id: criterion-06
   outcome: satisfied
   summary: README 与随包用户文档已覆盖获取、安装、配置、接入、验证五步、artifact/网络边界、doctor、接入面、可交给目标环境 AI
-    的调查输入、两条分支、Human Gate、分层验证及回滚。正式 full-v4 五步全部通过；未声明公共发布、具体 adapter 或具体环境已验证。
-controller_check_summary: Controller 已处置两轮 changes_required。首轮补建并登记当前 Code
-  Plan，诚实保留其审核后补正时序，并修复 doctor 非 ok outcome 误报 ready；有限独立设计比较 pass。第二轮从当前源码重建
-  dist wheel/sdist，archive 内 doctor 与源码 SHA-256 同为 7f031953…，新 artifact SHA-256
-  分别为 64614788… 与 5a9187a0…；wheel 和 sdist 各自在严格 fail-fast 临时环境完成安装、12
-  operations、doctor ready（valid/governed_single、4/4 surfaces、2/2
-  docs）、卸载及入口/distribution 消失回读。首次 sdist 手工验证因 build backend 不完整且脚本未 fail-fast
-  产生误报，已明确排除；严格复跑成功。item-05 已增加只存在 tests 的三类 synthetic fixture
-  与肯定依据逐项负例，不新增生产分类权威且不映射真实环境。正式 run-517c166cb5cd44fca82a7002f9b66f8b 为
-  passed/evidence_complete=true/exit 0，Ruff、Python 973 passed/10 skipped、Web
-  typecheck、34/34 tests、production build 通过；before/after 397 文件、8,233,580
-  bytes、fingerprint
-  d7ed0452ba190ed81e6afc93d5cc09ce89a49aa3f3df8fea704ece5e5c8f50fb，changes=[]。较早
-  run-d6be… 因 spark-0024 并行新增正确 unknown/stale，后续 run-823… 与当前最终 run 均稳定；并行 Spark
-  未被覆盖。六项标准现均满足；Code Plan 原始时序违规仍作为历史事实保留。未公共发布、未实现具体 adapter、未真实验证具体 AI
-  环境；发布流程仍由 spark-0023 承接。Controller 判断 result_version 1 已修复，必须再次独立复审。
+    的调查输入、两条分支、Human Gate、分层验证及回滚。full-v4 通过；未声明公共发布、具体 adapter 或具体环境已验证。
+controller_check_summary: 主控已确认六项成功标准满足：环境无关规则与实现计划、可安装发行物、只读 doctor、既有接入面、功能分类
+  fixture 和五步文档均已形成并通过范围内验证。fixture 不映射真实环境，依据不足时保持 unverified。未公共发布、未实现具体
+  adapter、未真实验证具体 AI 环境；发布流程仍由 spark-0023 承接。
 result_reviews:
-- reviewer: codex-agent:/root/wc0007_plan_review
-  reviewed_at: '2026-07-21T10:21:54.046752+08:00'
-  subject_version: 1
-  scope: 独立只读审核 workcase-0009 result_version 1 对 plan_version 2 的完整实现覆盖：5 个 work
-    item、6 项 success criteria、09/33 规则差异、doctor、发行物与打包测试、两份用户文档、README 声明、正式
-    full-v4 记录、排除范围及 spark-0023 独立承接；未修改文件，也未将 Web、workcase-0004 等并行变化归入本
-    WorkCase。
-  conclusion: changes_required
-  feedback:
-  - '[must-fix] 缺少 07 要求的稳定 Code Implementation Plan。item-01 要求最小 Code 计划，item-03
-    新增 doctor 模块、console entry point、打包逻辑、诊断 DTO 和测试策略，但 code/plans 未登记对应规划。必须重开受影响工作项，形成并登记当前
-    Code Plan，覆盖模块责任、只读依赖、ldvh-doctor/1、接入面与文档维护方向、打包、诊断、风险和测试映射；不得伪称事后计划在实现前已成立；修复后更新当前快照并复审。'
-  - '[verified] 09/33 权威方向、功能型 Hook、肯定依据下 unsupported、未知保持 unverified、直接配置/新 adapter
-    分流成立。'
-  - '[verified] doctor 只调用既有 Helper capabilities 与 resolve-governance-scope，其余为显式路径、distribution、entry
-    point 与随包文档读取，没有目标环境副作用。'
-  - '[verified] wheel/sdist 哈希、doctor/entry point/两份用户文档打包和隔离安装、核心直调、卸载回读证据成立。'
-  - '[verified] README/docs 为环境无关方法，未以 Codex 定义共同模型，也未声明公共发布或具体环境已支持。'
-  - '[verified] full-v4 run-28350345cf7e4cb8b7162a427e8b3f71 有效：五步通过、Python 965 passed/10
-    skipped、Web 34 passed、before/after 393 文件同指纹且 changes=[]。'
-  - '[verified] spark-0023 保持 open 且独立承接未来发布 Specs 与行动模板。'
-  - '[non-blocking] 建议增加 doctor 对非 ok Helper outcome 保持 attention/unavailable 的防回归测试；当前输入闭集下不单独阻断。'
-  review_basis:
-    projection_key: result_implementation
-    subject_fingerprint:
-      65f66a4eb558ede28bb65b6a15d9d2fbe1e9e18a85caacb823cb9a138dce95c7
-  controller_resolution: 1. 接受唯一 must-fix：当前实现新增 doctor 模块、命令入口、打包和诊断测试，但
-    code/plans 没有稳定登记相应 Code Implementation Plan，违反 07 与 item-01 的计划交付要求。2.
-    plan_version 2 无需变更，缺口属于已批准范围未完整履行；Controller 将回到 executing，重开 item-01 与
-    item-05，形成并登记当前来源驱动 Code Plan，明确其为审核后补正，不伪称实现前已存在，并逐项比较当前实现与规划。3.
-    接受非阻断建议并一并增加 doctor 对非 ok Helper outcome 不得成为 ready 的防回归测试。4. 接受其余 verified
-    结论：09/33、doctor 只读、发行物、通用文档、full-v4 与 spark-0023 分流均成立。5. 当前 result_version
-    1 尚未被接受，修复可保持版本；修复后必须更新正式测试快照并重新独立审核，不能直接进入关闭准备。
-- reviewer: codex-agent:/root/wc0007_plan_review
-  reviewed_at: '2026-07-21T10:47:16.535501+08:00'
-  subject_version: 1
-  scope: 独立只读复审 workcase-0009 修复后的 result_version 1：首轮 must-fix/Controller
-    resolution、稳定 Code Plan、doctor 修复、6 项 success criteria、5 个 work item、两次
-    full-v4、发行物、范围排除及 spark-0023/0024；未修改文件。
-  conclusion: changes_required
-  feedback:
-  - '[must-fix] 当前登记的 dist wheel/sdist 仍是 doctor 修复前产物，内部 doctor 哈希 dc16ddc2…，而当前源码哈希
-    7f031953…；full-v4 packaging tests 临时重建当前源码，但不能验证 WorkCase 引用的旧 artifact。必须从当前源码重建固定
-    artifact、更新 SHA-256，并对被引用 artifact 完成安装、doctor、卸载回读证据。'
-  - '[must-fix] item-05 明确要求模拟 Hook 成功、unknown 与 confirmed-no-capability 分类负例；当前只有计划文字和文档静态断言，没有对应可执行
-    fixture 或执行证据。必须在不新增生产分类权威、不冒充真实环境证据的边界内补齐。'
-  - '[must-fix] 更新 item-03 聚焦计数：新增非 ok 回归后 doctor tests 为 7 cases，不再是 6 passed。'
-  - '[verified] environment-neutral-enablement.md 已稳定登记并覆盖 07，且诚实保留审核后补正时序。'
-  - '[verified] 当前源码 doctor 非 ok outcome 修复与 partial 回归正确。'
-  - '[verified] run-8230161ed05e469d8c0c8da92e81ac37 有效：966 passed/10 skipped、Web
-    34、395 文件同指纹 changes=[]。'
-  - '[verified] run-d6be… 正确因 spark-0024 并行新增降为 unknown/stale；最终 run 已稳定覆盖 spark-0024。'
-  - '[verified] 排除范围成立，spark-0023 保持 open 并独立承接发布 Specs/行动模板。'
-  - '[non-blocking] 原始 Code Plan 时序违规不可追溯消除，关闭记录应继续保留该历史事实。'
-  review_basis:
-    projection_key: result_implementation
-    subject_fingerprint:
-      225b647fb42d7a5d4753c959a5b4c6d8042110a2bd50e71b76762c4fe5347424
-  controller_resolution: 1. 接受 artifact must-fix：WorkCase 引用的 dist wheel/sdist 是
-    doctor 修复前产物；临时 packaging build 不能替代对被引用 artifact 的重建、哈希和实装回读。2. 接受 fixture
-    must-fix：item-05 的 Hook success、unknown、confirmed-no-capability
-    三类模拟要求必须形成可执行测试证据；fixture 只承载给定证据状态并检验 09 已定义边界，不新增生产分类权威、不映射真实厂商。3. 接受
-    item-03 doctor tests 计数需由 6 更新为 7，并在新增 fixture 后按实际结果继续校正。4. 接受其余 verified
-    结论和历史 Code Plan 时序说明。5. 缺口均属于 plan_version 2 已批准范围，无需升计划或重新批准；result_version
-    1 尚未接受，可以保持版本。Controller 将回到 executing，重开 item-03/item-05，修复后更新
-    artifact、结果包、正式 full-v4 并再次独立审核。
 - reviewer: codex-agent:/root/wc0007_plan_review
   reviewed_at: '2026-07-21T11:04:43.268498+08:00'
   subject_version: 1
@@ -304,10 +183,6 @@ result_reviews:
   - '[non-blocking] 精确 artifact 生命周期主要以 WorkCase runtime-observation 摘要登记，未来可增加耐久原始命令
     transcript；当前字节、archive 内容、入口、全量打包测试与失败尝试排除足以关闭。'
   - '[non-blocking] 原始 Code Plan 时序违规不可追溯修复；原生 Windows 与具体 AI 环境真实触发保持 unverified。'
-  review_basis:
-    projection_key: result_implementation
-    subject_fingerprint:
-      d105dc0b38987e229d006d6bb02e5f07e730af91dcd921302265241e393dab11
   controller_resolution: 1. 接受 pass_with_followups：当前六项成功标准与五个工作项均满足，无
     must-fix。2. 接受当前 wheel/sdist 哈希、archive doctor/docs/entry
     point、严格安装/doctor/卸载回读、synthetic fixtures 和 final full-v4 的 verified 结论。3.
@@ -317,27 +192,14 @@ result_reviews:
     环境真实触发是已声明未验证范围，不阻断本环境无关基础。6. 无需提升 result_version，也无需再次独立审核；Controller 决定进入
     closure_preparing。
 validation_summary: plan_version 2 的五个工作项与六项成功标准全部满足。09/33 已固定环境无关方法、功能型
-  Hook、unsupported/unverified 证据门槛和直接配置/新 adapter 分流；当前 Code Plan
-  已稳定登记并诚实保留首次审核后补正时序。ldvh-doctor/1 保持只读，非 ok Helper outcome 不会误报 ready。当前
-  wheel/sdist SHA-256 分别为
-  64614788cf0b1e053dbcff7e06feb7234d4f7ed49947107725dab863f90f1544 与
-  5a9187a0dabe1f568418eba50777dc86f7fd2c4c7122dfb60db358d849e16187，archive
-  doctor 与源码 SHA-256 同为
-  7f031953ca557d1e0f98878f6a15f7374b7c2d0299e581bf47f0ed6f925d5c85；wheel/sdist
-  均完成严格临时环境安装、12 operations、doctor ready、卸载及消失回读。tests-only synthetic fixtures
-  覆盖模拟 Hook success、unknown、confirmed-no-capability 和必要依据逐项负例，均不映射真实环境。最终
-  full-v4 run-517c166cb5cd44fca82a7002f9b66f8b 为 passed/evidence_complete/exit
-  0，Ruff、Python 973 passed/10 skipped、Web typecheck、34/34 tests、production build
-  通过；before/after 397 文件、8,233,580 bytes、同一指纹、changes=[]。三轮独立结果审核依次为
-  changes_required、changes_required、pass_with_followups；全部 must-fix 已处置，最终无
-  must-fix，无需升 result_version 或复审。未公共发布、未实现/安装具体 adapter、未真实验证具体 AI 环境、未
-  push/PR。
+  Hook、unsupported/unverified 门槛和直接配置/新 adapter 分流；Code Plan 已登记。ldvh-doctor/1
+  保持只读，非 ok Helper outcome 不会误报 ready。wheel/sdist 的安装、核心操作、doctor、卸载与回读，功能分类
+  fixture，以及规则、Code、打包、文档和 full-v4 验证均通过。fixture 不映射真实环境。未公共发布、未实现或安装具体
+  adapter，也未真实验证具体 AI 环境。
 closure_outcome: completed
-disposition_summary: workcase-0009 已完成批准的环境无关启用基础，没有未处置修复责任、accepted_stop 或需
-  routed-to 的残余。首次缺少事前 Code Plan 的时序违规不能追溯消除，已作为历史事实保留；当前补正规划恢复了后续维护基线。artifact
-  生命周期原始 transcript、原生 Windows 和具体 AI 环境真实触发属于当前证据边界或非约束完善，不自动建档或阻断关闭。spark-0003
-  继续保留未来选定具体目标环境的安装/验证问题，spark-0023 继续独立承接发布 Specs 与行动模板；二者都不是本 WorkCase
-  未完成责任。Controller 判断 result_version 1 足以提交 Human 关闭确认；最终 closed 仍须 Human 明确批准。
+disposition_summary: 已完成批准的环境无关启用基础，原范围内没有残余责任或需 routed-to 的对象。具体 AI 环境真实触发与原生
+  Windows 仍属未验证边界，不自动形成后续责任；spark-0003 继续保留具体目标环境的安装与验证问题，spark-0023 独立承接发布
+  Specs 与行动模板，均不是本 WorkCase 的未完成责任。
 closure_approval:
   subject_version: 1
   approved_at: '2026-07-21T11:54:32.343937+08:00'
@@ -346,4 +208,4 @@ closure_approval:
 object_id: workcase-0009
 fact_type_key: workcase
 created_at: '2026-07-21T08:45:57.944290+08:00'
-updated_at: '2026-07-23T14:21:35.783731+08:00'
+updated_at: '2026-07-26T12:45:00+08:00'

@@ -11,7 +11,7 @@
 
 ## 1. 页面目标
 
-对象详情页是事实对象阅读器，不是载体文件查看器。页面按字段语义展示对象目标、证据、引用、状态和产出；YAML 载体可以有折叠的原始数据兜底，Markdown Study 的完整阅读只进入同一份正文的扩展阅读，不在主页面重建或伪装为 YAML。
+对象详情页是事实对象阅读器，不是载体文件查看器。页面按字段语义展示对象目标、边界、当前状态、结果、验证说明和关系；YAML 载体可以有折叠的原始数据兜底，Markdown Study 的完整阅读只进入同一份正文的扩展阅读，不在主页面重建或伪装为 YAML。
 
 ## 2. 当前页面结构
 
@@ -19,7 +19,7 @@
 返回按钮
 统一对象身份头部：类型标签 + 状态标签 + ID + 优先级字符徽标 + 标题 + 创建/更新时间 + 复制对象路径图标
 内容区：
-  WorkCase：执行态势 + 成功标准 / 验证证据 / 关闭证据 + 检查安排 + 目标 / 所属工作项 / 来源 + 文档 / 决策 / 火花 / 踩坑经验
+  WorkCase：目标与边界 + 当前快照 + 成功标准 + 工作项 + 当前复核、处置与 Human 批准 + 验证与关闭 + 关系
   ADR：问题 / 决策 / 范围 / 理由 / 影响 / 处置（终态时）/ 关联（存在时）
   Pitfall：现象 / 触发 / 范围 / 验证 / 根因 / 方案 / 规避 / 处置（终态时）/ 关联（存在时）
   Study：研究意图 / 摘要 / 建议摘要 / 正文进入扩展阅读 / 处置（终态且存在时）/ 关联
@@ -45,18 +45,24 @@ YAML 载体的源码折叠区（Markdown Study 不显示第二份 YAML 正文）
 - 对象字段必须以对应事实模型主规范为准；只有该对象字段契约内定义的辅助属性才可在元信息行降权展示，不进入主阅读流。`priority` 只适用于 WorkCase 和 Spark，且在详情头部以字符徽标展示；importance 已由 priority 统一承载，不再作为独立字段。
 - 右侧扩展阅读区中的对象头部应复用同一套身份头部的小号版本，字段顺序、类型/状态标签规则、复制入口和时间展示不得另起一套。
 
-## 4. WorkCase 语义阅读布局
+## 4. WorkCase 状态无关阅读契约
 
-WorkCase 不使用普通字段卡片堆叠，而作为“一次目标的执行态势”展示。WorkCase 的设计语言必须先继承提交、研究、决策、火花、经验五个成熟模块的基线，新的专用表达只能围绕“工作项对象更复杂”来增加，不能另起一套视觉和信息秩序。执行项只作为 WorkCase 内部编排的只读态势呈现，不在本文定义独立字段契约、对象路由或长期事实源结构。
+WorkCase 详情页用于完整理解同一项当前工作责任，不复刻外部 Card。`plan_confirmation / progressing / closure_confirmation / closed` 只服务列表和 Dashboard 的注意力分配；详情页不得根据这些进展分组或推进环节切换、隐藏、重排字段，也不得为不同状态维护四套阅读结构。`human_plan_confirming`、`executing`、`controller_checking`、`independent_reviewing`、`closure_preparing`、`human_closure_confirming` 与 `closed` 全部复用同一阅读顺序，某个条件字段尚未形成时只如实省略或说明缺失。
 
-1. 工作项进度：页面主区域第一块，展示 WorkCase 自身推进阶段、成功标准完成度、执行项完成度、执行项状态分布和关闭材料记录状态。推进阶段直接消费正式对象创建后的当前 WorkCase 状态机：`human_plan_confirming`、`executing`、`result_self_checking`、`subagents_result_reviewing`、`human_closure_confirming`、`closed`；创建前方案审核只作为 `creation_reviews` 事实结果读取，不成为详情状态；历史 `draft`、`active`、`review_needed` 只作为 legacy 兼容显示。该模块只消费确定性只读派生摘要，不写回事实源。
-2. 执行态势：展示整体执行态势条，并按 Human 关注顺序展示执行项行：已阻塞、执行中、待执行、已跳过、已完成；区块标题只使用小圆点。
-3. 成功标准、验证证据和关闭证据不再收进“关闭判断”总区块；分别作为同级模块展示 `success_criteria/verification_evidence/closure_evidence`。不展示额外顶部结论条，不单列待确认项或记录状态，未完成项由 checklist 或证据模块自身表达。成功标准是关闭判断依据，但不再用外层总模块包住。
-4. `orchestration.plan_review` 和 `orchestration.result_review` 作为“检查安排”模块展示方案审核、结果自检、结果复核、主控处理和 Human 确认摘要。Web 只展示已有审核事实和关键摘要，不把审核记录改写成独立 Review 对象；完整事实仍以 WorkCase YAML 为准。历史 `orchestration.review` 仅作为 legacy fallback 展示主控自检、专业复检和 Human 关闭审查要求。
-5. 定义事实不再收进“属性”总区块；目标、所属工作项、来源分别作为同级模块展示 `description/workcase/source`。`description` 是目标叙述，必须按 Markdown 正文渲染，不得用定义行拆分、短前缀标签或字段 chip 重排原文。所属工作项入口使用模块内对象引用值，显示 WorkCase 对象图标和工作项标题，不显示 ID 或状态徽章，点击只打开右侧辅助阅读，不切换主路由。
-6. 执行项行在 WorkCase 详情中与 WorkCase card 的动作体验保持一致：复用状态色弱背景、左侧状态图标、执行项标题、内部编号、证据入口和辅助阅读入口；执行项不得使用 WorkCase 对象图标或 WorkCase 状态徽章。
-7. 关联材料不再收进“关联材料”总区块；文档、决策、火花、踩坑经验按 `related_docs/related_adrs/related_sparks/related_pitfalls` 分别作为同级模块展示。材料来源只聚合 WorkCase 自身和已明确纳入 WorkCase 证据的引用，按 ID 或路径去重；不得从执行项派生出另一套对象级材料事实源。关联提交由 Git 历史、文件路径、对象 ID 和提交正文自然文本派生，不从对象字段手写维护。
-8. WorkCase 详情页点击执行项行只打开右侧辅助阅读区，不切换主路由到独立对象详情；主路由跳转只属于对象列表卡片。
+详情页只以 21 当前 WorkCase 字段为事实契约。读取顺序围绕以下八个问题组织；分区名称、折叠粒度和具体组件仍可在后续 Human 讨论后细化，但任何视觉方案都不得丢失这些内容：
+
+1. **这项工作是什么**：身份头部读取 `object_id`、`fact_type_key`、`workcase_profile`、`title`、`status`、`priority`（存在时）、`created_at` 与 `updated_at`。
+2. **目标和边界是什么**：完整读取 `goal` 与 `scope`，不把 Card 摘要或标题改写成目标，不把范围压成覆盖/排除标签后丢失原文。
+3. **现在实际处在哪里**：读取精确 `phase`、当前 `summary`，以及实际存在的 `waiting_on`、顶层 `blocking_summary` 和 `resume_from`。这些字段共同形成当前快照；页面不得从 phase 自动补写等待、阻塞或下一步。
+4. **按什么判断结果**：读取 `success_criterion_definitions`；结果已经形成时，同屏读取与当前定义逐项对应的 `success_criterion_results`。定义和结果必须能按 `criterion_id` 对照，不能用完成比例替代陈述与当前结论。
+5. **当前计划和阶段结果是什么**：按事实数组顺序读取 `work_items`。每项至少保留 `item_id`、`goal`、`expected_result`、`status`，并按实际存在呈现依赖、方法边界、模板偏离、`current_summary`、item `resume_from`、item `blocking_summary` 与 `result_summary`。数组顺序只用于稳定展示并列集合，不表示线性执行顺序。
+6. **当前复核、处置与批准是什么**：读取 `plan_version`、当前 `creation_reviews`、`execution_approval`，以及已经形成时的 `result_version`、`controller_check_summary`、当前 `result_reviews` 和 `closure_approval`。详情必须把 Reviewer 的创建前计划复核或独立结果复核、Controller 处置与 Human 批准分别呈现，不能把其中任一项改写成另一方的决定；在本组内容中，只有 Human 确认或批准才可称为 Human Gate。
+7. **验证和关闭如何判断**：读取实际存在的 `validation_summary`、`closure_outcome`、`disposition_summary` 与 `residual_responsibilities`。关闭内容说明当前工作在自身身份下如何停止推进以及仍适用责任的去向，不等于成功、已提交或下游已经完成。
+8. **还应回到哪些来源或承接对象**：读取 `urls` 与 `relations`。关系按其正式 kind 和目标身份展示；导航标题、路径解析或 Git 提交可以帮助继续阅读，但不得被写成新的 WorkCase 关系事实。
+
+上述顺序是状态无关的信息架构，不要求所有阶段都出现同样多的内容。条件字段不存在时，Web 不制造空复核、空处置、空批准、空结果或空关闭模块；字段存在时，又不能因为当前 Card 分组“不需要”就把它隐藏。派生的工作项计数、active 项或标准完成数可以辅助扫读，但只能附着在对应事实内容旁，不能替代原始目标、标准、工作项、复核、处置、批准或验证说明。
+
+当前 `WorkCaseReadingLayout` 仍保留部分旧字段分组和历史兼容投影，尚未完整实现本节契约。本轮只确定信息契约并暴露这一实现缺口，不在未经 Human 继续讨论具体视觉内容时重做详情布局。后续实现必须从 21 当前字段重新建立读取映射；历史兼容只能留在读取适配层，不能反向增加 current WorkCase 字段、模块或状态分支。
 
 ## 5. 非工作主线对象字段布局
 
@@ -91,16 +97,16 @@ WorkCase 不使用普通字段卡片堆叠，而作为“一次目标的执行�
 
 字段分类由 `web/src/utils/fieldFormats.ts` 统一维护，详情页和右侧扩展阅读区必须共同消费同一套规则。字段分类只决定 Web 如何阅读和渲染字段，不定义字段是否存在、是否必填或适用于哪些对象；字段契约以 `specs/20-29` 对应事实模型主文件为准；公共字段语义以 `specs/05.01-字段定义与语义规范.md` 为准；内容格式以 `specs/05.02-字段内容与格式规范.md` 为准；字段注册与消费语义以 `specs/05.03-字段注册与消费规范.md` 为准。
 
-同名字段在不同工作对象详情页中必须使用同一套标题、组件和基础视觉权重。例：`description` 统一显示为“目标”，`source` 统一显示为普通定义文本，`related_docs` 统一显示为“文档”材料模块。对象层级差异只允许体现在字段顺序、是否聚合派生数据和是否出现对象特有字段上，不允许同名字段在 WorkCase 与其他工作对象中换标题、降权或换交互样式。
+同名字段在不同工作对象详情页中必须使用同一套标题、组件和基础视觉权重。例如 `scope` 统一表达对象适用边界，`urls` 统一表达外部网址，`relations` 统一表达正式对象关系。对象层级差异只允许体现在字段顺序、是否出现对象特有字段和阅读问题上，不允许同名字段在 WorkCase 与其他工作对象中换标题、降权或改变语义。
 
-详情页专用阅读布局已经由 `DetailSection` 提供外层卡片边界；`verification`、`verification_evidence`、`closure_evidence` 等证据字段在这些模块内必须使用 embedded 证据渲染，不再额外套一层证据色边框。证据色边框只用于没有外层详情模块的独立证据块。证据字段应消费 `specs/05.02-字段内容与格式规范.md` §3.3 的四段式结构：`验证计划 / 验证命令 / 验证结果 / 结论`；Web 可以兼容存量旧格式，但不得鼓励或新增无结构验证段落。
+详情页专用阅读布局已经由 `DetailSection` 提供外层卡片边界；WorkCase 的 `validation_summary` 与其它对象已登记的验证说明在模块内使用 embedded Markdown 渲染，不再额外套一层强提示边框。Web 必须忠实保留事实正文中的验证覆盖、实际结果和未验证范围，不得把自然语言说明自动改写成通过证明或结构化证据包。
 
 | 字段类型 | 渲染组件 | 当前行为 |
 |---|---|---|
 | 叙述说明 / 决策 / 过程记录 | `SummaryText` | Markdown 渲染，长内容按段落摘要/展开 |
 | 检查清单 | `ChecklistCard` | 进度条 + 勾选/未勾选图标 + inline Markdown |
 | 兼容检查清单字段 | `ChecklistCard` 或 `SummaryText` | 只有内容包含 `- [ ]` / `- [x]` 时才按检查清单渲染 |
-| 验证证据 | `EvidenceBlock` | Markdown 渲染，命令、路径和代码突出显示；按 05.02 四段式二级标题派生为分段证据视图 |
+| 验证说明 | `EvidenceBlock` 或对象专用正文节点 | Markdown 渲染；只按来源已有结构突出命令、路径、实际结果与未验证范围，不补造结论 |
 | 对象 ID 引用 | `ReferenceCard` | 点击在右侧扩展阅读区取得精确读取并打开对象；只有精确读取返回可消费 `canonical_path` 时提供复制对象路径图标 |
 | 文档路径 / URL | `DocPreviewLink` | 本地 Markdown 文档和外部 URL 均优先在右侧扩展阅读区预览；复制 tooltip 分别为“复制文档路径”和“复制链接”；外部 URL 在扩展阅读区提供新标签备用入口 |
 | 路径文本 | `PathText` | 等宽、可换行的路径标签 |
@@ -179,4 +185,6 @@ interface ObjectDetail {
 
 精确可读详情的 `data` 同时带回 `canonical_path`、`carrier` 和 `check_status: 'readable'`；读取失败返回 `fact_read_failure: true`、预期路径、声明载体、读取状态和问题，但不返回可消费正文或领域状态。列表/仪表盘是候选发现，不能以其 `path`、ID 或 `target` 作为源路径。
 
-WorkCase 详情页可以额外消费 WorkCase 只读派生摘要，用于展示推进阶段、成功标准进度、执行态势、关闭材料完备性、阻塞关系和对象路径。当前 Web API 可派生 `executionItems`、`executionItemsProjectionValid`、`executionItemTotal`、`executionItemDone`、`executionItemCancelled`、`executionItemBlocked`、`executionItemOpen`、`executionItemsInProgress`、`executionItemByStatus`、`progressHistoryState`、`progressHistoryCoverage`、`progressRound`、`progressEventId`、`successCriteriaTotal`、`successCriteriaDone`、`hasPlanConfirmedAt`、`hasClosureRequestedAt`、`hasVerificationEvidence` 和 `hasClosureEvidence`；历史 `review_requested_at` 可兼容为 `hasClosureRequestedAt`。轮次字段只投影完整通过 21 相关机械约束的推进历史，不能由 result_version 或审核数量替代；current work item 不满足结构时不得生成 fallback 身份或部分统计。legacy fallback 只适用于早于 current-profile 边界且没有 profile 的对象；边界后的缺 profile、未知 profile 及 legacy 携带 current-only 字段都必须保留为不可判定，不得借兼容投影补造内容。派生摘要仍来自 Git 文件事实源的确定性读取，不写回事实源，也不作为第二事实源。
+WorkCase 详情契约直接读取精确返回的 `data` 中由 21 定义的当前字段；列表 API 的 `progress_group`、`progress_step`、计数、active 项和兼容诊断布尔值不驱动详情结构。详情可以在当前字段全部可判定时形成只读计数或交叉引用，但必须同时保留来源字段和不可判定范围，且不写回事实源。
+
+当前详情 API 与 `WorkCaseReadingLayout` 仍会暴露或消费少量历史聚合字段。这是待迁移的实现兼容层，不是本文认可的 current WorkCase 契约，也不能用来补造 21 未登记的关系、验证或关闭内容。后续修复应在不改变本节状态无关阅读结构的前提下完成，并补充 API、组件和代表性页面测试；本轮不把实现缺口描述成已经符合。

@@ -7,10 +7,10 @@ scope: 覆盖 i18n 合规、事实读取语义（空列表掩盖与治理 YAML
   双配置、vite.config 清理。范围限于
   web/src、web/api、web/tests、web/tsconfig*、web/vite.config.ts。明确排除：不改动 Python 端
   ldvh 包与 web_machine 协议定义；不改动 specs/ 任何规范；不新增 Web 写入能力（create-spark 仍走既有 Python
-  桥与 loopback 边界）；不做与整改无关的 UI 重设计；不做 tsconfig strict（留作 followup）；Git
+  桥与 loopback 边界）；不做与整改无关的 UI 重设计；Git
   日志(changelog)读取保留现状走 git 子进程。统一读取原则：事实对象 YAML/MD 由 Web 直读机械映射；治理/协议类 YAML 仍经
   Code 受控路径；Git 日志走 git 子进程。
-workcase_profile: control-contract-v1
+workcase_profile: control-contract-v2
 success_criterion_definitions:
 - criterion_id: criterion-01
   statement: web/src 不再存在 JSX 内联中英文案分支或自建平行 i18n；全部用户可见文案走 useI18n()/t()，文案资源集中于
@@ -126,10 +126,7 @@ work_items:
   approach_summary: 运行 web typecheck、lint、全部 Web API 测试与 production build；对照成功标准
     2/3/4 三项有意变更与其余行为保持项逐项核对并记录；形成本 WorkCase 与 spark-0005
     的承接关系结论（supersede/部分承接/驳回及依据）。
-  result_summary: result_version 2 综合验证通过：npm run check；lint 0 errors（14 条 Fast
-    Refresh warnings）；34/34 Web API tests；production build。浏览器实测
-    Dashboard、WorkCase 详情、ADR 未接入提示、Project Files 多项目清单，Dashboard/详情均以共享 phase
-    投影显示执行中，页面无 load failure/NaN，浏览器日志为空。spark-0005 仍为部分承接并保持 open。
+  result_summary: typecheck、lint、Web API tests、production build 和浏览器回归通过；有意变更与其余行为保持边界已核对，spark-0005 仍为部分承接并保持 open。
 creation_reviews:
 - reviewer: independent-subagent-reviewer/agent-7a9605e2
   reviewed_at: '2026-07-20T16:03:45.753687+08:00'
@@ -155,73 +152,12 @@ creation_reviews:
   - 可独立检查性保持：修订后标准 5 以“双配置文件存在 + strict 启用 + tsc --strict
     通过”形成可判定闭集；goal/scope/其余标准/依赖结构相对 v1 未动，v1 已审通过的 spark-0005 承接与 study
     文件形态前置步骤结论不受影响，整体仍自洽。
-  review_basis:
-    projection_key: plan_current
-    subject_fingerprint:
-      fc0ea004e85a66c4d1a25aaf55c2bf932d1293e19cb2c04bc8a73fc827236d33
   controller_resolution: 1. 接受；strict 纳入与 Web 只读定位不冲突，成本前提被实测证伪。2. 接受；item-05
     expected_result 与成功标准 5 已写明错误构成（2 i18n key 类型 + 1 null 收窄）。3. 接受；item-05 已增加
     depends_on item-01，strict 修复以 item-01 落地后 t() 签名为准、同执行者串行。4. 接受；item-05 明确
     tests/ 归 app project、strict 同施于 api 与 tests，验收命令与 criterion-06 typecheck
     对齐。5. 接受；标准 5 可判定闭集保持。followup 2/3/4 已吸收进 plan_version 2 正文，无需再次升版重审，进入
     Human Gate 等待对 plan_version 2 的执行批准。
-audit_summary:
-- audit_id: audit-01
-  subject_kind: pre_creation_plan
-  subject_version: 1
-  review_count: 2
-  summary: 对象创建前经历两轮独立审核：plan_version 1 草案首审为 changes_required（9 条反馈，含 E
-    项方法定义、成功标准可检性、item 拆分等），主控逐项处置并升版；Human 随后明确“Web 只读呈现、不做业务校验”的定位，消解了“TS
-    重写校验导致双实现漂移”的核心争议，并据此收敛读取方案与 strict 范围；plan_version 2 重审为
-    pass_with_followups。审核机制促使读取路径从“每请求 spawn Python”修正为“直读本地文件机械映射”，并把 study
-    文件形态与 spark-0005 承接两条执行期风险写入计划。
-  findings:
-  - finding_id: finding-01
-    topic: E 项“复用 Code schema/校验”机制未定义，存在 TS 重写校验导致双实现漂移风险
-    controller_disposition: corrected
-    resolution_summary: Human 明确 Web 不做业务校验、只读呈现，Web 对事实对象仅做 YAML/MD→DTO
-      机械映射，不重写校验，漂移前提被排除；读取方案收敛为直读本地文件。
-    rereview_outcome: performed
-    final_route: current_plan
-  - finding_id: finding-02
-    topic: 成功标准“行为保持不变”“性能可感知提升”不可独立检查
-    controller_disposition: corrected
-    resolution_summary: 改为可核对形式：明确受保护行为集合与有意变更项清单；性能改为“读取路径不产生 Python 子进程（可断言）+
-      实测耗时对比”。
-    rereview_outcome: performed
-    final_route: current_plan
-  - finding_id: finding-03
-    topic: C 与 E 规范立场冲突（何时允许直读 YAML），且 item-04 耦合过强、H(strict) 工作量风险大
-    controller_disposition: corrected
-    resolution_summary: 建立统一读取原则（事实对象 YAML/MD 直读，治理 YAML 经 Code，Git 日志走 git
-      子进程）；H(strict) 拆分独立并最终决定本轮不做、留作 followup；item-04 范围随之收敛。
-    rereview_outcome: performed
-    final_route: current_plan
-- audit_id: audit-02
-  subject_kind: superseded_plan
-  subject_version: 1
-  review_count: 1
-  summary: plan_version 1（排除 tsconfig strict、留作 followup）经一轮独立审核为
-    pass_with_followups，已创建对象并进入 human_plan_confirming；随后 Human 要求将 strict
-    纳入本轮，主控实测 strict 下仅 3 个类型错误、证伪了原“40+ 处类型债”的成本前提，故升版为 plan_version 2。v1
-    的其余定位（Web 只读不校验、统一读取路径、i18n/读取语义/巨石拆分/综合验证与 spark-0005 承接）原样保留并被 v2 继承。
-  findings:
-  - finding_id: finding-04
-    topic: v1 排除 strict 的成本前提（40+ 处类型债）与实测不符
-    controller_disposition: corrected
-    resolution_summary: 实测 tsc --strict 仅 3 个错误（2 i18n key 类型 + 1 null
-      收窄），成本远低于预估；应 Human 要求将 strict 纳入 item-05 并升版重审。
-    rereview_outcome: performed
-    final_route: current_plan
-- audit_id: audit-03
-  subject_kind: superseded_result
-  subject_version: 1
-  review_count: 1
-  summary: result_version 1 的独立审核以 changes_required 识别并推动 7 类改进：恢复批准的
-    type_not_integrated 非空语义；Project Files 接入 Code
-    管辖解析并恢复多项目/拒绝不确定状态；三个巨型组件按职责实质拆分；统一 Dashboard/详情 WorkCase phase 投影；明确 scope
-    旧括注不覆盖 plan v2 criterion/item/Human approval；收紧五类正式载体；补齐行为测试。Controller
-    全部处置后形成 result_version 2，旧详细 review 由本审计连续性承接，新结果将重新独立审核。
 execution_approval:
   subject_version: 2
   approved_at: '2026-07-20T16:04:42.206830+08:00'
@@ -254,16 +190,12 @@ success_criterion_results:
     清理保持通过。
 - criterion_id: criterion-06
   outcome: satisfied
-  summary: 共享 WorkCase phase 投影覆盖列表、Dashboard 与详情 summary/header；34/34 API
-    tests、strict typecheck、lint 0 errors、production build 与浏览器回归通过，spark-0005
+  summary: 共享 WorkCase phase 投影覆盖列表、Dashboard 与详情 summary/header；API
+    tests、strict typecheck、lint、production build 与浏览器回归通过，spark-0005
     部分承接结论保持。
-controller_check_summary: result_version 2 主控执行检查已覆盖 Reviewer 7
-  项反馈：type_not_integrated 与空数据区分、Helper Code 管辖解析/多项目/失败关闭、正式载体限制、组件职责拆分、共享
-  WorkCase phase 投影及对应测试均已实现。npm run check 通过；lint 0 errors（14 Fast Refresh
-  warnings）；34/34 API tests；production build；浏览器实测 Dashboard/WorkCase 详情/ADR
-  未接入/Project Files，多处状态一致、无 NaN/load failure，浏览器日志为空。scope 中旧“不做 strict”括注与同一
-  plan v2 criterion-05/item-05/creation review处置/Human execution approval 冲突，本
-  Controller 按已批准的 strict 纳入记录解释，不改写计划投影或制造新 Human Gate。
+controller_check_summary: 主控已确认六项成功标准满足：i18n、未接入语义、治理读取、五类事实直读、组件与 API 边界、双
+  tsconfig strict 和 Vite 清理均已实现；typecheck、lint、Web API tests、production build 与浏览器回归通过。实施范围与
+  Human 批准一致。
 result_reviews:
 - reviewer: codex-agent:/root/wc0004_result_v2_review
   reviewed_at: '2026-07-20T18:34:47.703773+08:00'
@@ -282,46 +214,17 @@ result_reviews:
   - '[info][workcase_continuity] scope 中“不做 tsconfig strict”是 stale parenthetical；同一
     plan v2 的 criterion-05、item-05、creation review 处置和 Human execution approval 明确覆盖，故不构成关闭阻断。不要为修正文案静默改写已批准计划或制造重复
     Human Gate。'
-  review_basis:
-    projection_key: result_implementation
-    subject_fingerprint:
-      69626ebf173736a7b915c868eb3caa34660e24dee4131b8c801595aa48f79094
-  controller_resolution: 1. 接受 Reviewer 对上一轮 7 项 changes_required 已全部实质闭合的结论，当前
-    6/6 success criteria、7/7 work items 和完整验证证据成立。2. 接受组件循环依赖为 medium
-    非阻断维护性后续；当前职责拆分已达到本计划验收边界，strict/build/API tests/浏览器回归均无运行阻断，不修改
-    result_version 2，也不要求复审。3. 接受 UI 组件级断言及畸形 Helper 响应表驱动测试为 low
-    非约束覆盖增强；现有测试与人工浏览器证据足以支持当前标准。4. 接受 scope 中 strict 排除括注为 stale parenthetical
-    的连续性解释；同一 plan v2 的 criterion-05、item-05、creation review 处置及 Human execution
-    approval 是明确控制记录，不静默改写已批准计划，也不制造重复 Human Gate。5. Controller 判断无需返回
-    executing/controller_checking 或再次 independent_reviewing，进入
-    closure_preparing。
-validation_summary: plan_version 2 的 6 项成功标准和 7 个工作项全部满足。上一轮独立审核提出的
-  type_not_integrated、Helper Code governance、多项目 fail-closed、组件职责拆分、WorkCase
-  phase 状态投影、strict 记录连续性、正式载体边界和测试缺口均已修复或完成控制解释；result_version 2 独立审核为
-  pass_with_followups、无 must-fix。独立复跑 npm run check、lint（0 errors，14 Fast
-  Refresh warnings）、34/34 Web API tests、production build 与 git diff --check
-  均通过；浏览器实测 Dashboard、WorkCase 详情、ADR 未接入和 Project Files 多项目清单，状态一致、无 NaN/load
-  failure，日志为空。未执行 Git commit/push/PR，符合授权排除边界。
+  controller_resolution: 1. 接受 Reviewer 对上一轮 7 项 changes_required 已全部实质闭合的结论；六项成功标准和七个工作项均有已运行的
+    typecheck、lint、Web API tests、production build 与浏览器回归支持；未覆盖的组件级断言和畸形 Helper 响应组合见第 3 项，不把它们表述为已验证。2. 接受组件循环依赖为 medium
+    非阻断维护建议，不纳入本案残余责任。3. 接受 UI 组件级断言及畸形 Helper 响应表驱动测试为 low
+    覆盖建议；现有验证已满足当前标准，该建议不纳入本案残余责任。4. 接受 scope 中 strict 排除括注为 stale parenthetical
+    的连续性判断；本次 Human 明确授权的 V1→V2 事实更正已移除该冲突表达，不改变 plan_version 2、执行批准或实施结果，也不属于普通生命周期中的静默改计划。5. 当前结果无需重新执行、自检或独立复核。
+validation_summary: plan_version 2 的六项成功标准和七个工作项全部满足。i18n、未接入语义、治理读取、多项目
+  fail-closed、正式载体、五类事实直读、组件职责、WorkCase phase 投影、strict 与 Vite 清理均有当前结果支持；typecheck、lint、Web
+  API tests、production build、差异检查和浏览器回归通过。
 closure_outcome: completed
-disposition_summary: workcase-0004 批准的 Web 规范符合性与工程结构整改范围已完成，无残余修复责任，不需要
-  routed-to，也不需要为当前关闭另建 Spark。Reviewer 提出的循环依赖解耦、额外 UI/畸形响应测试，以及接手 WorkCase
-  时继承既有 execution_approval、只在真实 Human Gate
-  暂停的流程提示，均登记为非约束后续：它们不影响当前目标完成，不自动授权实现，也不表示下游已承接。当前 Working Tree
-  保留用户已有其它变更；本次未提交、未 push、未创建 PR。
-nonbinding_followups:
-- followup_id: followup-01
-  summary: 进一步拆出 ObjectDetail 的共享 UI primitives 与 Study layout，消除 ObjectDetail
-    与子布局模块之间的 ESM 循环依赖。
-  rationale: 当前职责拆分、strict、build 和浏览器行为均已通过，本项用于降低后续维护耦合，不是当前成功标准的未完成责任。
-- followup_id: followup-02
-  summary: 补充 ObjectList 未接入提示的组件渲染测试，以及 Project Files 对畸形或身份不匹配 Helper 响应的表驱动
-    fail-closed 测试。
-  rationale: 现有 API、真实 Helper 和浏览器证据已覆盖当前验收；新增测试属于覆盖深度增强。
-- followup_id: followup-03
-  summary: 改进 WorkCase 接续提示：接手者先读取对象内 execution_approval 与当前 phase，只在规范定义的下一个真实
-    Human Gate 暂停，避免重复询问执行授权。
-  rationale: 本次接续暴露了执行授权已经存在却被再次询问的流程摩擦；改进有明确价值，但不属于当前 Web 整改结果的完成门槛，也不自动新建
-    Spark。
+disposition_summary: 批准的 Web 规范符合性与工程结构整改范围已完成，原范围内没有残余责任或需 routed-to 的对象。循环依赖进一步解耦和额外
+  UI/畸形响应测试未被接纳为本案责任，也没有形成下游承接；如需推进，应另行建立明确责任。
 closure_approval:
   subject_version: 2
   approved_at: '2026-07-21T01:36:05.299456+08:00'
@@ -330,4 +233,4 @@ closure_approval:
 object_id: workcase-0004
 fact_type_key: workcase
 created_at: '2026-07-20T08:06:53.865799+08:00'
-updated_at: '2026-07-23T14:21:35.783731+08:00'
+updated_at: '2026-07-26T12:45:00+08:00'

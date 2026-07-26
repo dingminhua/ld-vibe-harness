@@ -2,6 +2,10 @@ export const STATUS_COLORS: Record<string, { light: string; dark: string }> = {
   active: { light: '#059669', dark: '#00d4aa' },
   human_plan_confirming: { light: '#8b5cf6', dark: '#a78bfa' },
   executing: { light: '#059669', dark: '#00d4aa' },
+  controller_checking: { light: '#2563eb', dark: '#60a5fa' },
+  independent_reviewing: { light: '#4f46e5', dark: '#818cf8' },
+  closure_preparing: { light: '#0284c7', dark: '#38bdf8' },
+  // 旧 WorkCase 显示键只为 legacy 兼容投影保留。
   result_self_checking: { light: '#3b82f6', dark: '#60a5fa' },
   subagents_result_reviewing: { light: '#6366f1', dark: '#818cf8' },
   human_closure_confirming: { light: '#8b5cf6', dark: '#a78bfa' },

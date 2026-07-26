@@ -1,4 +1,4 @@
-"""Apply a source-defined controlled delta to one current-profile WorkCase."""
+"""Apply a source-defined controlled delta to one control-contract-v2 WorkCase."""
 
 from __future__ import annotations
 
@@ -36,7 +36,7 @@ from ldvh.specs.repository import RepositoryInspection
 OPERATION_KEY = "update-workcase"
 _CONTRACT = source_reference(
     "rule",
-    "workcase-fact-type::current-profile WorkCase 专属受控变更输入字段",
+    "workcase-fact-type::v2 WorkCase 专属受控变更输入字段",
 )
 _SHARED_WRITE_CONTRACT = source_reference("rule", "fact-model-foundation::11.8 共享单对象受控写事务")
 _IMPLEMENTATION_SOURCE = source_reference(
@@ -445,7 +445,10 @@ def _execute(
             domain,
             run,
             "目标对象不适用于 WorkCase 专属更新",
-            "legacy 或身份不一致对象应使用通用更新",
+            (
+                "V1 对象须先按规则迁移到 V2；legacy 对象继续使用 generic 完整目标并遵守既有兼容边界；"
+                "身份不一致对象不得更新"
+            ),
             request_sources,
         )
     if current.content_fingerprint != domain.expected_content_fingerprint:
@@ -484,7 +487,7 @@ def _execute(
                 supplied=construction.supplied,
                 body=None,
                 event_at=context.event_at,
-                allow_workcase_progress_mutation=True,
+                allow_workcase_managed_record_mutation=True,
             )
         )
     except FactCoordinationUnavailable as error:

@@ -1,9 +1,9 @@
 title: 移除事实对象 supersedes 关系与 superseded 状态
 status: closed
-summary: workcase-0012 已完成并关闭。plan_version 2 的三个 work item 均已完成，四项成功标准均有满足依据；独立结果审核已通过，Human 已批准关闭 result_version 1。本次更正仅修复原终态记录的 YAML、当前 Schema 字段和可回指时间，不重新打开已终止责任。
+summary: workcase-0012 已完成并关闭。plan_version 2 的三个 work item 均已完成，四项成功标准均有满足依据；独立结果审核已通过，Human 已批准关闭 result_version 1。既有批准事件身份、关闭结论与已终止责任均保持不变。
 goal: 在不改变规范模型自身的 supersedes 关系和 WorkCase 审核历史结构的前提下，按 ADR-0001 的来源先行顺序，审计并收束已经发生的事实对象 supersedes 关系与 ADR/Pitfall superseded 状态清理，使当前 Specs、Code、Helper、Web、测试和机械覆盖目录一致，并形成可验证结果。
 scope: 覆盖事实模型及类型规则 specs/05、20、21、22、23、24，行动模板 specs/31、32，机械目录 specs/attachments/05.Att.02；核对 code/ldvh/facts/contracts.py、validation.py、transitions.py、relations.py 和事实创建、读取、候选、更新相关 Helper 路径；核对 Web 中当前事实生命周期的状态词汇、过滤和列表/详情展示，包括历史实际触及的 dashboard、workcaseStatus、ObjectStatusFilter、ObjectDetail、locales 及对应文档和测试，但不扩大到无关通用 UI 兼容。历史审计输入包括提交 f1645554c、7ba29c6d7、7d2dd25aa 以及当前 05.Att.02 测试引用修正；既有实现只有经 plan_version 2 重新审计后才能作为当前结果沿用。明确排除 Specs 规范模型自身的 supersedes（Specs 01 与 code/ldvh/specs/*）、WorkCase audit 的 superseded_plan/superseded_result、证明旧事实值会被拒绝的负向测试和“不得出现 superseded”的规范说明、当前工作树中 Pitfall 及其它 Spark/ADR/WorkCase 的无关变更、新增关系类型，以及把普通字符串零命中作为完成证明。
-workcase_profile: control-contract-v1
+workcase_profile: control-contract-v2
 success_criterion_definitions:
 - criterion_id: criterion-01
   statement: 当前事实对象规则不再定义 supersedes relation_key，也不再把 superseded 作为 ADR、Pitfall、WorkCase 等当前事实状态或关闭结果；规范模型关系、WorkCase audit 字段、负向测试和禁止性说明等不同语义域的合法名称仍被保留。
@@ -38,19 +38,6 @@ work_items:
   approach_summary: 运行真实测试入口并核对 05.Att.02 引用目标；回读实际 Working Tree，披露未运行、不可用和范围外内容，不以 grep 零命中、历史提交说明或旧测试结果代替当前验证。
   status: completed
   result_summary: 45 个核心测试全部通过（test_fact_object_operation/transitions/validation）；旧 superseded 值拒绝负向测试通过。后续更正审核又确认 Web TypeScript 检查通过且 33 项 Web 测试通过。结果包已区分历史提交（f1645554c/7ba29c6d7/7d2dd25aa）与本计划产出（d0528a610）。
-audit_summary:
-- audit_id: audit-01
-  subject_kind: pre_creation_plan
-  subject_version: 2
-  review_count: 3
-  summary: 独立审核用三轮收束校正计划：首轮补齐来源先行、实际历史范围、合法残留排除和可观察成功标准；第二轮将来源处理改为条件分支，避免预设必须修改 Specs；第三轮确认当前 plan_version 2 可提交 Human 执行批准。
-  findings:
-  - finding_id: finding-01
-    topic: 来源先行条件分支与 supersedes/superseded 多语义域边界
-    controller_disposition: corrected
-    resolution_summary: 计划已把 item-01 设为只读来源审计，并让 item-02 仅在确认规则缺口时先修正和独立复核来源；同时明确保留规范模型关系、WorkCase audit、负向测试和无关通用兼容。
-    rereview_outcome: performed
-    final_route: current_plan
 creation_reviews:
 - reviewer: codex-agent:/root/workcase_0012_independent_review
   reviewed_at: '2026-07-24T21:43:17+08:00'
@@ -59,14 +46,12 @@ creation_reviews:
   conclusion: pass
   feedback:
   - plan_version 2 已明确以 item-01 的来源审计结论决定后续路径：存在规则缺口时先完成最小充分来源修正及独立复核，来源已经充分时不制造规范变更；其目标、实际历史输入、事实生命周期范围、合法残留排除、成功标准、工作项依赖和 Human Gate 恢复状态完整一致，可以提交 Human 执行批准。
-  review_basis:
-    projection_key: plan_current
-    subject_fingerprint: df20c51db6ede8361aefaef24751bd754b50657e67eb27932c43100b690c9f75
   controller_resolution: 接受并已落实三轮独立审核反馈：补齐实际历史范围与合法残留排除，以 item-01 先形成来源审计；item-02 仅在确认规则缺口时先修正规则并独立复核，来源充分时不制造 Specs 变更。当前计划据此提交 Human 执行批准。
 execution_approval:
   subject_version: 2
   approved_at: '2026-07-25T08:30:26+08:00'
-  summary: Human 此前已明确指示按 plan_version 2 推进。原对象遗漏该记录；本次历史更正以获批范围内首个实施提交 d0528a610 的时间作为可回指登记时点，该提交本身不替代 Human 批准。
+  summary: 既有记录表明 Human 已批准按 plan_version 2 推进；本次 V1→V2 迁移仅锁定并沿用该
+    approved_at，其与原始批准实际发生时间的对应关系尚未核实，不得据此推断；迁移完成后需专项核查。
 result_version: 1
 success_criterion_results:
 - criterion_id: criterion-01
@@ -92,9 +77,6 @@ result_reviews:
   - 四项成功标准和三个 work item 均已形成结果。
   - 历史提交与本计划执行产出的区分清晰。
   - 合法残留边界有 scope 排除依据，未发现当时范围内的未承接责任。
-  review_basis:
-    projection_key: result_implementation
-    subject_fingerprint: 8af2a0c7a45206ae3bdefd9ea2391dacbfc42ce0ecfadcef7e6156295bedf464
   controller_resolution: 1. 接受：四项成功标准和三个 work item 结果已核对；无需重新执行。2. 接受：历史提交与本计划产出已在结果包区分；无需复审。3. 接受：合法残留和无残余责任结论已进入关闭报告；当时结果可进入 closure_preparing。
 validation_summary: 四项成功标准均已满足。规则源不再定义事实生命周期 supersedes/superseded，合法异义残留已区分；Code/Helper/Web 行为与规则一致；05.Att.02 引用可定位；45 项 Python 核心测试、Web TypeScript 检查和 33 项 Web 测试均通过。结果包已区分历史实现与 plan_version 2 产出。
 closure_outcome: completed
@@ -102,8 +84,9 @@ disposition_summary: 目标已达成。当前事实对象规则不再定义 supe
 closure_approval:
   subject_version: 1
   approved_at: '2026-07-25T08:45:19+08:00'
-  summary: Human 已明确确认 workcase-0012 的当前结果已完成，并批准关闭 result_version 1；本次只更正原关闭记录的结构与可回指时间。
+  summary: 既有记录表明 Human 已确认 workcase-0012 的当前结果并批准关闭 result_version 1；本次
+    V1→V2 迁移仅锁定并沿用该 approved_at，其与原始关闭批准实际发生时间的对应关系尚未核实，不得据此推断；迁移完成后需专项核查。
 object_id: workcase-0012
 fact_type_key: workcase
 created_at: '2026-07-24T09:46:14.094720+08:00'
-updated_at: '2026-07-25T08:45:19+08:00'
+updated_at: '2026-07-26T12:45:00+08:00'

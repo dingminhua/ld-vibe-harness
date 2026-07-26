@@ -29,7 +29,7 @@
 ### 3.1 态势摘要
 
 - 位于页面标题下方。
-- 只展示非零关键状态。WorkCase 使用正式对象创建后的当前状态机关键节点：`human_plan_confirming`、`executing`、`result_self_checking`、`subagents_result_reviewing`、`human_closure_confirming`；历史 `review_needed` 和通用 `planned` 只作为兼容态势展示。创建前方案审核不属于 WorkCase 状态，不进入 Dashboard。
+- 只展示非零关键状态。WorkCase 只使用四个进展分组：`plan_confirmation`、`progressing`、`closure_confirmation`、`closed`；Dashboard 不输出原始 phase 或历史显示状态作为 WorkCase 的聚合键。创建前方案审核尚无正式 WorkCase，不进入 Dashboard。
 - 使用 `ldvh-caption`，不得做成大号 banner 或重复统计卡。
 
 ### 3.2 对象统计网格
@@ -89,6 +89,8 @@ interface DashboardData {
   recentChanges: { hash: string; shortHash: string; message: string; body: string; category: string; scope: string; description: string; isBreaking: boolean; author: string; date: string; relativeTime: string }[];
 }
 ```
+
+WorkCase 统计的 `byStatus` 键，以及 `recentItems` / `actionItems` 中 WorkCase 条目的 `status`，都是由来源 `phase` 确定性派生的四个进展分组值；它们不是 WorkCase 事实源状态，也不写回对象。
 
 `recentChanges` 复用 Changelog 的 commit DTO 和 parser；Dashboard 只选择其中少量字段展示，不单独解析 commit message。
 

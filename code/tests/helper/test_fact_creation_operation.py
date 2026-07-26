@@ -14,7 +14,6 @@ from conftest import HELPER_EXECUTABLE, assert_common_response
 from ldvh.facts.creation import FactCoordinationUnavailable
 from ldvh.facts.models import FactIssue
 from ldvh.facts.repository import FactReadResult
-from ldvh.facts.workcase_projection import workcase_subject_fingerprint
 from ldvh.filesystem import AtomicWriteResult
 from ldvh.helper.service import handle_request
 
@@ -77,6 +76,18 @@ def test_prepare_projects_constraint_source_for_conditional_workcase_fields(tmp_
         "presence": "conditional",
         "constraint_ref": "workcase-fact-type::6. 对象语义与生命周期",
     }
+    for field_path in (
+        "work_items[].approach_summary",
+        "creation_reviews[].feedback",
+        "result_reviews[].feedback",
+        "creation_reviews[].review_basis",
+        "result_reviews[].review_basis",
+        "audit_summary",
+        "progress_history",
+        "improvement_observations",
+        "nonbinding_followups",
+    ):
+        assert contracts[field_path]["presence"] == "conditional"
     assert all("constraint_ref" in item for item in prepared["field_contracts"])
 
 
@@ -94,12 +105,11 @@ def _workcase(*, status: str = "open") -> dict[str, object]:
         "title": "Controlled WorkCase",
         "status": status,
         "summary": "Waiting for Human execution approval.",
-        "resume_from": "Present plan version 1 for Human approval.",
         "waiting_on": "Human execution approval.",
         "priority": "P2",
         "goal": "Verify controlled creation.",
         "scope": "One test object.",
-        "workcase_profile": "control-contract-v1",
+        "workcase_profile": "control-contract-v2",
         "success_criterion_definitions": [
             {
                 "criterion_id": "criterion-01",
@@ -114,16 +124,6 @@ def _workcase(*, status: str = "open") -> dict[str, object]:
                 "goal": "Create and validate one WorkCase.",
                 "expected_result": "The object passes write-back validation.",
                 "status": "pending",
-                "approach_summary": "Use controlled creation and read back the object.",
-            }
-        ],
-        "audit_summary": [
-            {
-                "audit_id": "audit-01",
-                "subject_kind": "pre_creation_plan",
-                "subject_version": 1,
-                "review_count": 1,
-                "summary": "Independent review confirmed the bounded plan and testable criterion.",
             }
         ],
     }
@@ -134,12 +134,6 @@ def _workcase(*, status: str = "open") -> dict[str, object]:
             "subject_version": 1,
             "scope": "Goal, scope, criteria, work items, method, validation and risks.",
             "conclusion": "pass",
-            "feedback": ["The plan is bounded and testable."],
-            "review_basis": {
-                "projection_key": "plan_current",
-                "subject_fingerprint": workcase_subject_fingerprint(fact_object, "plan_current"),
-            },
-            "controller_resolution": "1. Accepted; no change required.",
         }
     ]
     if status == "blocked":
@@ -215,6 +209,38 @@ def test_create_accepts_workcase_blocked_initial_state_defined_by_type_source(tm
     assert response["outcome"] == "ok"
     assert response["result"]["fact_object"]["status"] == "blocked"
     assert response["result"]["fact_object"]["blocking_summary"]
+
+
+def test_create_rejects_workcase_that_bypasses_the_initial_human_gate(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    basis = _prepare(workspace, project, "workcase")
+    fact_object = _workcase()
+    fact_object.update(
+        {
+            "phase": "executing",
+            "plan_version": 99,
+            "execution_approval": {
+                "subject_version": 99,
+                "approved_at": "2026-07-14T09:30:00+08:00",
+                "summary": "Claimed approval before controlled creation",
+            },
+        }
+    )
+    fact_object.pop("waiting_on")
+    fact_object["creation_reviews"][0]["subject_version"] = 99
+
+    response = handle_request(
+        "call",
+        "create-fact-object",
+        _create_payload(workspace, project, basis, fact_object),
+    ).response
+
+    assert response["outcome"] == "rejected"
+    summary = response["gaps"][0]["summary"]
+    assert "初始 phase" in summary
+    assert "初始 plan_version" in summary
+    assert "禁止预置 execution_approval" in summary
+    assert not (project / "ldvh-base/workcases").exists()
 
 
 def _create_payload(

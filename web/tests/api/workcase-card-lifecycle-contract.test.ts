@@ -27,6 +27,7 @@ test('WorkCase cards present four progress groups instead of lifecycle categorie
   assert.match(status, /export function getWorkCaseProgressProjection/);
   assert.match(list, /function WorkCaseProgressSignal/);
   assert.match(list, /WORKCASE_PROGRESS_STEP_ORDER\.map/);
+  assert.doesNotMatch(list, /const isPast|isPast \?/);
   assert.match(list, /objectList\.progressGroupFilter/);
   assert.match(list, /displayStatus=\{progressGroup \?\? 'unknown'\}/);
   assert.match(list, /<WorkCaseProgressSignal progressGroup=\{progressGroup\}/);
@@ -74,7 +75,7 @@ test('plan confirmation cards fully show only goal and success criteria as Human
   assert.match(locales, /'objectList\.workcaseGoal': '目标'/);
 });
 
-test('progressing cards fully show goal and one truthful four-step current-progress projection', () => {
+test('progressing cards show current step, item progress, active items, waiting, and blocking without rounds', () => {
   const list = source('src/pages/ObjectList.tsx');
   const locales = source('src/i18n/locales.ts');
   const branchStart = list.indexOf("if (progressGroup === 'progressing')");
@@ -86,100 +87,62 @@ test('progressing cards fully show goal and one truthful four-step current-progr
   assert.match(branch, /<WorkCaseProgressingContent/);
   assert.match(branch, /goal=\{obj\.goal\}/);
   assert.match(branch, /progressStep=\{progressStep\}/);
-  assert.match(branch, /progressHistoryCoverage=\{obj\.progressHistoryCoverage\}/);
-  assert.match(branch, /progressRound=\{obj\.progressRound\}/);
   assert.match(branch, /executionItemDone=\{obj\.executionItemDone \?\? 0\}/);
   assert.match(branch, /executionItemCancelled=\{obj\.executionItemCancelled \?\? 0\}/);
-  assert.match(branch, /executionItemsInProgress=\{obj\.executionItemsInProgress \?\? \[\]\}/);
+  assert.match(branch, /executionItemOpen=\{obj\.executionItemOpen \?\? 0\}/);
+  assert.match(branch, /executionItemsActive=\{obj\.executionItemsActive \?\? \[\]\}/);
+  assert.match(branch, /waitingOn=\{obj\.waiting_on\}/);
   assert.match(branch, /isBlocked=\{obj\.responsibilityStatus === 'blocked'\}/);
   assert.match(branch, /blockingSummary=\{obj\.blocking_summary\}/);
   assert.match(branch, /prominentTitle/);
-  assert.doesNotMatch(branch, /successCriteria|WorkCaseProgressSignal|WorkCaseCardSummary|ExecutionFlowBar|visibleExecutionItems/);
+  assert.doesNotMatch(branch, /progressHistory|progressRound|successCriteria|WorkCaseProgressSignal|WorkCaseCardSummary|ExecutionFlowBar|visibleExecutionItems/);
 
   const content = list.slice(list.indexOf('function WorkCaseProgressingContent'), list.indexOf('function WorkCaseProgressSignal'));
   assert.match(content, /<WorkCaseGoalSection goal=\{goal\}/);
   assert.match(content, /objectList\.workcaseCurrentProgress/);
-  assert.match(content, /objectList\.workcaseRoundFull/);
-  assert.match(content, /objectList\.workcaseRoundPartial/);
-  assert.match(content, /objectList\.workcaseRoundMissing/);
+  assert.match(content, /objectList\.workcaseStageUnavailable/);
+  assert.match(content, /objectList\.workcaseItemsUnavailable/);
   assert.match(content, /objectList\.workcaseItemProgress/);
   assert.match(content, /objectList\.workcaseItemsCancelled/);
   assert.match(content, /objectList\.workcaseCurrentItems/);
-  assert.match(content, /executionItemsInProgress\.map/);
-  assert.match(content, /\{item\.id\}/);
-  assert.match(content, /formatReasonText\(item\.title\)/);
+  assert.match(content, /executionItemsActive\.map/);
+  assert.match(content, /item\.status === 'blocked'/);
+  assert.match(content, /item\.blockingReason/);
+  assert.match(content, /objectList\.workcaseWaitingOn/);
+  assert.match(content, /objectList\.workcaseBlockingReason/);
   assert.match(content, /<ol/);
-  assert.match(content, /grid-cols-2/);
-  assert.doesNotMatch(content, /sm:grid-cols-4/);
+  assert.match(content, /grid-cols-4/);
+  assert.doesNotMatch(content, /grid-cols-2/);
   assert.match(content, /WORKCASE_PROGRESS_STEP_ORDER\.map/);
   assert.match(content, /aria-current=\{isCurrent \? 'step'/);
   assert.match(content, /\{index \+ 1\}/);
-  assert.match(content, /objectList\.workcaseBlockingReason/);
-  assert.doesNotMatch(content, /isPast|CheckCircle2|successCriteria|ExecutionFlowBar|slice\(0,/);
+  assert.match(content, /ldvh-card-decision-title min-w-0 break-words text-current/);
+  assert.match(content, /ldvh-meta-muted break-all/);
+  assert.doesNotMatch(content, /roundLabel|workcaseRound|progressHistory|ldvh-chip|isPast|CheckCircle2|successCriteria|ExecutionFlowBar|slice\(0,/);
   assert.doesNotMatch(content, /text-\[\d+px\]/);
   assert.match(locales, /'objectList\.workcaseCurrentProgress': '当前进展'/);
+  assert.match(locales, /'objectList\.workcaseWaitingOn': '正在等待'/);
   assert.match(locales, /'objectList\.workcaseBlockingReason': '阻塞原因'/);
-  assert.match(locales, /'objectList\.workcaseRoundPartial': '自记录起第 \{round\} 轮'/);
   assert.match(locales, /'objectList\.workcaseItemProgress': '已完成 \{done\}\/\{total\}'/);
+  assert.doesNotMatch(locales, /objectList\.workcaseRound/);
 });
 
-test('WorkCase list projection preserves partial rounds and non-linear item progress', async () => {
+test('WorkCase list projection preserves non-linear active items and ignores progress history', async () => {
   const [summary] = await buildWorkCaseSummaries([{
     id: 'workcase-0099',
     object_id: 'workcase-0099',
     type: 'workcase',
     fact_type_key: 'workcase',
-    status: 'progressing',
+    status: 'open',
     phase: 'executing',
     title: '并行推进投影',
     path: 'ldvh-base/workcases/workcase-0099.yaml',
-    created_at: '2026-07-25T12:00:00+08:00',
+    created_at: '2026-07-26T08:00:00+08:00',
     updated_at: '2026-07-26T12:00:00+08:00',
     updated: '2026-07-26T12:00:00+08:00',
     workcase_profile: 'control-contract-v1',
     plan_version: 2,
-    result_version: 99,
-    progress_history: {
-      coverage: 'partial',
-      entries: [
-        {
-          event_id: 'progress-001',
-          plan_version: 2,
-          round: 1,
-          phase: 'executing',
-          entered_at: '2026-07-26T08:00:00+08:00',
-          transition_kind: 'baseline',
-          transition_summary: '从当前可确认位置开始记录。',
-        },
-        {
-          event_id: 'progress-002',
-          plan_version: 2,
-          round: 1,
-          phase: 'controller_checking',
-          entered_at: '2026-07-26T09:00:00+08:00',
-          transition_kind: 'advanced',
-          transition_summary: '进入主控自检。',
-        },
-        {
-          event_id: 'progress-003',
-          plan_version: 2,
-          round: 2,
-          phase: 'executing',
-          entered_at: '2026-07-26T10:00:00+08:00',
-          transition_kind: 'returned',
-          transition_summary: '自检后返回执行修正。',
-        },
-        {
-          event_id: 'progress-004',
-          plan_version: 2,
-          round: 3,
-          phase: 'executing',
-          entered_at: '2026-07-26T11:00:00+08:00',
-          transition_kind: 'repeated',
-          transition_summary: '执行环节开始新一轮修正。',
-        },
-      ],
-    },
+    progress_history: { malformed: 'Web must not consume this field' },
     work_items: [
       {
         item_id: 'item-01', goal: '已完成项', expected_result: '形成结果 A', approach_summary: '执行 A',
@@ -194,52 +157,28 @@ test('WorkCase list projection preserves partial rounds and non-linear item prog
         status: 'in_progress', current_summary: '正在执行 C', resume_from: '继续 C',
       },
       {
-        item_id: 'item-04', goal: '并行当前项 B', expected_result: '形成结果 D', approach_summary: '执行 D',
-        status: 'in_progress', current_summary: '正在执行 D', resume_from: '继续 D',
+        item_id: 'item-04', goal: '并行阻塞项 B', expected_result: '形成结果 D', approach_summary: '执行 D',
+        status: 'blocked', current_summary: 'D 正在等待', resume_from: '条件解除后继续 D',
+        blocking_summary: '等待外部输入。',
+      },
+      {
+        item_id: 'item-05', goal: '待执行项', expected_result: '形成结果 E', approach_summary: '执行 E',
+        status: 'pending',
       },
     ],
   }]);
 
-  assert.equal(summary.progressHistoryCoverage, 'partial');
-  assert.equal(summary.progressHistoryState, 'valid');
-  assert.equal(summary.progressRound, 3);
-  assert.equal(summary.progressEventId, 'progress-004');
-  assert.equal(summary.executionItemTotal, 4);
+  assert.equal(summary.executionItemTotal, 5);
   assert.equal(summary.executionItemDone, 1);
   assert.equal(summary.executionItemCancelled, 1);
+  assert.equal(summary.executionItemOpen, 3);
   assert.equal(summary.executionItemsProjectionValid, true);
-  assert.deepEqual(summary.executionItemsInProgress?.map((item) => item.id), ['item-03', 'item-04']);
-});
-
-test('WorkCase list projection does not present a stale progress round as current', async () => {
-  const [summary] = await buildWorkCaseSummaries([{
-    id: 'workcase-0100',
-    object_id: 'workcase-0100',
-    type: 'workcase',
-    fact_type_key: 'workcase',
-    status: 'progressing',
-    phase: 'controller_checking',
-    title: '不投影失配轮次',
-    path: 'ldvh-base/workcases/workcase-0100.yaml',
-    updated: '2026-07-26T13:00:00+08:00',
-    workcase_profile: 'control-contract-v1',
-    plan_version: 1,
-    progress_history: {
-      coverage: 'full',
-      entries: [{
-        event_id: 'progress-001',
-        plan_version: 1,
-        round: 1,
-        phase: 'executing',
-      }],
-    },
-    work_items: [],
-  }]);
-
-  assert.equal(summary.progressHistoryCoverage, undefined);
-  assert.equal(summary.progressHistoryState, 'invalid');
-  assert.equal(summary.progressRound, undefined);
-  assert.equal(summary.progressEventId, undefined);
+  assert.deepEqual(summary.executionItemsInProgress?.map((item) => item.id), ['item-03']);
+  assert.deepEqual(summary.executionItemsActive?.map((item) => item.id), ['item-03', 'item-04']);
+  assert.equal(summary.executionItemsActive?.[1].blockingReason, '等待外部输入。');
+  assert.equal('progressHistoryState' in summary, false);
+  assert.equal('progressRound' in summary, false);
+  assert.equal('progressEventId' in summary, false);
 });
 
 test('current WorkCase item projection never invents missing IDs or goals', async () => {
@@ -248,7 +187,7 @@ test('current WorkCase item projection never invents missing IDs or goals', asyn
     object_id: 'workcase-0101',
     type: 'workcase',
     fact_type_key: 'workcase',
-    status: 'progressing',
+    status: 'open',
     phase: 'executing',
     title: '拒绝补造当前工作项',
     path: 'ldvh-base/workcases/workcase-0101.yaml',
@@ -269,6 +208,7 @@ test('current WorkCase item projection never invents missing IDs or goals', asyn
   assert.equal(summary.executionItemsProjectionValid, false);
   assert.equal(summary.executionItemTotal, 0);
   assert.deepEqual(summary.executionItemsInProgress, []);
+  assert.deepEqual(summary.executionItemsActive, []);
   assert.equal(summary.executionItems?.some((item) => item.id.startsWith('execution-item-')), false);
 });
 
@@ -278,7 +218,7 @@ test('a boundary-new WorkCase without the required profile cannot use legacy car
     object_id: 'workcase-0102',
     type: 'workcase',
     fact_type_key: 'workcase',
-    status: 'progressing',
+    status: 'open',
     phase: 'executing',
     title: '拒绝错误兼容',
     path: 'ldvh-base/workcases/workcase-0102.yaml',
@@ -293,144 +233,159 @@ test('a boundary-new WorkCase without the required profile cannot use legacy car
   assert.equal(summary.executionItemsProjectionValid, false);
   assert.equal(summary.executionItemTotal, 0);
   assert.deepEqual(summary.executionItems, []);
+  assert.deepEqual(summary.executionItemsActive, []);
   assert.equal(summary.hasSuccessCriteria, false);
   assert.deepEqual(summary.successCriteria, []);
-  assert.equal(summary.progressHistoryState, 'invalid');
 });
 
-test('a boundary-new current WorkCase in progress must not present absent history as legacy missing data', async () => {
-  const [summary] = await buildWorkCaseSummaries([{
-    id: 'workcase-0103',
-    object_id: 'workcase-0103',
-    type: 'workcase',
-    fact_type_key: 'workcase',
-    status: 'progressing',
-    phase: 'executing',
-    title: '缺失必需推进历史',
-    path: 'ldvh-base/workcases/workcase-0103.yaml',
-    created_at: '2026-07-26T08:00:00+08:00',
-    updated_at: '2026-07-26T10:00:00+08:00',
-    updated: '2026-07-26T10:00:00+08:00',
-    workcase_profile: 'control-contract-v1',
-    plan_version: 1,
-    work_items: [{
-      item_id: 'item-01', goal: '执行目标', expected_result: '执行结果', approach_summary: '执行方法',
-      status: 'in_progress', current_summary: '执行中', resume_from: '继续执行',
-    }],
-  }]);
-
-  assert.equal(summary.progressHistoryState, 'invalid');
-  assert.equal(summary.progressRound, undefined);
-});
-
-test('absence remains truthful before first execution and for pre-boundary current compatibility', async () => {
+test('Web accepts v2 work items without approach summaries and rejects v1 objects after the v2 boundary', async () => {
   const common = {
     type: 'workcase',
     fact_type_key: 'workcase',
-    status: 'progressing',
-    path: 'ldvh-base/workcases/workcase-0107.yaml',
-    updated_at: '2026-07-26T10:00:00+08:00',
-    updated: '2026-07-26T10:00:00+08:00',
-    workcase_profile: 'control-contract-v1',
+    status: 'open',
+    phase: 'executing',
+    path: 'ldvh-base/workcases/workcase-0110.yaml',
+    created_at: '2026-07-26T12:45:00+08:00',
+    updated_at: '2026-07-26T13:00:00+08:00',
+    updated: '2026-07-26T13:00:00+08:00',
     plan_version: 1,
+    success_criterion_definitions: [{ criterion_id: 'criterion-01', statement: '形成结果。' }],
     work_items: [{
-      item_id: 'item-01', goal: '执行目标', expected_result: '执行结果', approach_summary: '执行方法',
-      status: 'pending',
+      item_id: 'item-01', goal: '执行目标', expected_result: '执行结果', status: 'in_progress',
+      current_summary: '执行中', resume_from: '继续执行',
     }],
   };
-  const [waiting, olderCurrent] = await buildWorkCaseSummaries([
+  const [v2, lateV1] = await buildWorkCaseSummaries([
     {
       ...common,
-      id: 'workcase-0107',
-      object_id: 'workcase-0107',
-      title: '首次执行前不建空历史',
-      phase: 'human_plan_confirming',
-      created_at: '2026-07-26T08:00:00+08:00',
+      id: 'workcase-0110', object_id: 'workcase-0110', title: 'V2 结构化对象',
+      workcase_profile: 'control-contract-v2',
     },
     {
       ...common,
-      id: 'workcase-0108',
-      object_id: 'workcase-0108',
-      title: '边界前 current 兼容缺失历史',
-      phase: 'executing',
-      created_at: '2026-07-24T08:00:00+08:00',
-      work_items: [{
-        item_id: 'item-01', goal: '执行目标', expected_result: '执行结果', approach_summary: '执行方法',
-        status: 'in_progress', current_summary: '执行中', resume_from: '继续执行',
-      }],
+      id: 'workcase-0111', object_id: 'workcase-0111', title: '边界后 V1 对象',
+      workcase_profile: 'control-contract-v1',
     },
   ]);
 
-  assert.equal(waiting.progressHistoryState, 'missing');
-  assert.equal(olderCurrent.progressHistoryState, 'missing');
+  assert.equal(v2.executionItemsProjectionValid, true);
+  assert.deepEqual(v2.executionItemsActive?.map((item) => item.id), ['item-01']);
+  assert.equal(v2.hasSuccessCriteria, true);
+  assert.equal(lateV1.executionItemsProjectionValid, false);
+  assert.deepEqual(lateV1.executionItemsActive, []);
+  assert.equal(lateV1.hasSuccessCriteria, false);
 });
 
-test('legacy WorkCase compatibility remains bounded and rejects current-only progress history', async () => {
-  const base = {
+test('closed current WorkCases recognize closure approval without inventing a request timestamp', async () => {
+  const currentBase = {
     type: 'workcase',
     fact_type_key: 'workcase',
-    status: 'progressing',
+    status: 'closed',
+    phase: 'closed',
+    plan_version: 1,
+    result_version: 1,
+    execution_approval: {
+      subject_version: 1,
+      approved_at: '2026-07-26T13:05:00+08:00',
+      summary: 'Human 已批准执行。',
+    },
+    success_criterion_definitions: [{ criterion_id: 'criterion-01', statement: '形成可观察结果。' }],
+    success_criterion_results: [{ criterion_id: 'criterion-01', outcome: 'satisfied', summary: '标准已满足。' }],
+    controller_check_summary: '主控自检完成。',
+    validation_summary: '当前结果已经验证。',
+    closure_outcome: 'completed',
+    disposition_summary: '没有残余责任。',
+    work_items: [{
+      item_id: 'item-01', goal: '完成目标', expected_result: '形成结果', status: 'completed', result_summary: '已完成。',
+    }],
+  };
+  const [v2, v1, missingApproval, legacyReviewRequested, legacyClosureRequested] = await buildWorkCaseSummaries([
+    {
+      ...currentBase,
+      id: 'workcase-0120', object_id: 'workcase-0120', title: 'V2 已关闭对象',
+      path: 'ldvh-base/workcases/workcase-0120.yaml',
+      created_at: '2026-07-26T13:00:00+08:00', updated_at: '2026-07-26T14:00:00+08:00', updated: '2026-07-26T14:00:00+08:00',
+      workcase_profile: 'control-contract-v2',
+      closure_approval: {
+        subject_version: 1,
+        approved_at: '2026-07-26T14:00:00+08:00',
+        summary: 'Human 已批准关闭。',
+      },
+    },
+    {
+      ...currentBase,
+      id: 'workcase-0121', object_id: 'workcase-0121', title: 'V1 已关闭对象',
+      path: 'ldvh-base/workcases/workcase-0121.yaml',
+      created_at: '2026-07-25T08:00:00+08:00', updated_at: '2026-07-25T10:00:00+08:00', updated: '2026-07-25T10:00:00+08:00',
+      workcase_profile: 'control-contract-v1',
+      work_items: [{
+        item_id: 'item-01', goal: '完成目标', expected_result: '形成结果', approach_summary: '按计划执行。',
+        status: 'completed', result_summary: '已完成。',
+      }],
+      closure_approval: {
+        subject_version: 1,
+        approved_at: '2026-07-25T10:00:00+08:00',
+        summary: 'Human 已批准关闭。',
+      },
+    },
+    {
+      ...currentBase,
+      id: 'workcase-0122', object_id: 'workcase-0122', title: '缺少关闭批准的 V2 对象',
+      path: 'ldvh-base/workcases/workcase-0122.yaml',
+      created_at: '2026-07-26T13:00:00+08:00', updated_at: '2026-07-26T14:00:00+08:00', updated: '2026-07-26T14:00:00+08:00',
+      workcase_profile: 'control-contract-v2',
+    },
+    {
+      id: 'workcase-0123', object_id: 'workcase-0123', title: 'Legacy 已关闭对象',
+      type: 'workcase', fact_type_key: 'workcase', status: 'closed', phase: 'closed',
+      path: 'ldvh-base/workcases/workcase-0123.yaml',
+      created_at: '2026-07-19T08:00:00+08:00', updated_at: '2026-07-19T10:00:00+08:00', updated: '2026-07-19T10:00:00+08:00',
+      review_requested_at: '2026-07-19T09:00:00+08:00',
+    },
+    {
+      id: 'workcase-0124', object_id: 'workcase-0124', title: 'Legacy 关闭请求对象',
+      type: 'workcase', fact_type_key: 'workcase', status: 'closed', phase: 'closed',
+      path: 'ldvh-base/workcases/workcase-0124.yaml',
+      created_at: '2026-07-19T08:00:00+08:00', updated_at: '2026-07-19T10:00:00+08:00', updated: '2026-07-19T10:00:00+08:00',
+      closure_requested_at: '2026-07-19T09:00:00+08:00',
+    },
+  ]);
+
+  assert.equal(v2.hasClosureRequestedAt, true);
+  assert.equal(v2.hasSuccessCriteria, true);
+  assert.equal(v2.hasPlanConfirmedAt, true);
+  assert.equal(v2.hasVerificationEvidence, true);
+  assert.equal(v2.hasClosureEvidence, true);
+  assert.equal(v1.hasClosureRequestedAt, true);
+  assert.equal(missingApproval.hasClosureRequestedAt, false);
+  assert.equal(legacyReviewRequested.hasClosureRequestedAt, true);
+  assert.equal(legacyClosureRequested.hasClosureRequestedAt, true);
+});
+
+test('legacy WorkCase compatibility remains bounded for item identities and active states', async () => {
+  const [legacy] = await buildWorkCaseSummaries([{
+    id: 'workcase-0104',
+    object_id: 'workcase-0104',
+    type: 'workcase',
+    fact_type_key: 'workcase',
+    status: 'open',
     phase: 'executing',
+    title: '合法旧版兼容',
     path: 'ldvh-base/workcases/workcase-0104.yaml',
     created_at: '2026-07-19T08:00:00+08:00',
     updated_at: '2026-07-19T10:00:00+08:00',
     updated: '2026-07-19T10:00:00+08:00',
     plan_version: 1,
     success_criteria: ['旧版标准'],
-    work_items: [{ title: '旧版执行项', status: 'done' }],
-  };
-  const [legacy, forbiddenHistory] = await buildWorkCaseSummaries([
-    { ...base, id: 'workcase-0104', object_id: 'workcase-0104', title: '合法旧版兼容' },
-    {
-      ...base,
-      id: 'workcase-0105',
-      object_id: 'workcase-0105',
-      title: '旧版禁止推进历史',
-      progress_history: {
-        coverage: 'partial',
-        entries: [{
-          event_id: 'progress-001', plan_version: 1, round: 1, phase: 'executing',
-          entered_at: '2026-07-19T09:00:00+08:00', transition_kind: 'baseline', transition_summary: '错误结构。',
-        }],
-      },
-    },
-  ]);
-
-  assert.equal(legacy.executionItemsProjectionValid, true);
-  assert.equal(legacy.executionItems?.[0].id, 'execution-item-1');
-  assert.equal(legacy.executionItemDone, 1);
-  assert.equal(legacy.progressHistoryState, 'missing');
-  assert.equal(forbiddenHistory.progressHistoryState, 'invalid');
-});
-
-test('progress history timestamps require the same strict RFC 3339 lexical form as the fact validator', async () => {
-  const [summary] = await buildWorkCaseSummaries([{
-    id: 'workcase-0106',
-    object_id: 'workcase-0106',
-    type: 'workcase',
-    fact_type_key: 'workcase',
-    status: 'progressing',
-    phase: 'executing',
-    title: '拒绝宽松时间解析',
-    path: 'ldvh-base/workcases/workcase-0106.yaml',
-    created_at: '2026-07-26T08:00:00+08:00',
-    updated_at: '2026-07-26T10:00:00+08:00',
-    updated: '2026-07-26T10:00:00+08:00',
-    workcase_profile: 'control-contract-v1',
-    plan_version: 1,
-    progress_history: {
-      coverage: 'full',
-      entries: [{
-        event_id: 'progress-001', plan_version: 1, round: 1, phase: 'executing',
-        entered_at: '2026-07-26 09:00:00+08:00', transition_kind: 'started', transition_summary: '错误时间格式。',
-      }],
-    },
-    work_items: [{
-      item_id: 'item-01', goal: '执行目标', expected_result: '执行结果', approach_summary: '执行方法',
-      status: 'in_progress', current_summary: '执行中', resume_from: '继续执行',
-    }],
+    work_items: [
+      { title: '旧版完成项', status: 'done' },
+      { title: '旧版进行项', status: 'executing' },
+      { title: '旧版阻塞项', status: 'blocked', blocking_summary: '旧版阻塞。' },
+    ],
   }]);
 
-  assert.equal(summary.progressHistoryState, 'invalid');
-  assert.equal(summary.progressRound, undefined);
+  assert.equal(legacy.executionItemsProjectionValid, true);
+  assert.deepEqual(legacy.executionItems?.map((item) => item.id), ['execution-item-2', 'execution-item-1', 'execution-item-3']);
+  assert.equal(legacy.executionItemDone, 1);
+  assert.deepEqual(legacy.executionItemsActive?.map((item) => item.id), ['execution-item-2', 'execution-item-3']);
 });

@@ -17,7 +17,7 @@ scope: 覆盖 specs/02、必要时
   bug、clear/compact/SubagentStart 真实通过声明、多环境、原生 Windows、发布、Web 后续、push 和
   PR。clear/compact/SubagentStart 若复用同一实现只做防回归。spark-0001 与 spark-0012 只作为部分来源并保持
   open，不写 routed-to；spark-0019 只作排除边界对照。
-workcase_profile: control-contract-v1
+workcase_profile: control-contract-v2
 success_criterion_definitions:
 - criterion_id: criterion-01
   statement: 02 明确定义项目外 workspace 根仍为
@@ -63,8 +63,7 @@ work_items:
   approach_summary: 先冻结 0.145.0-alpha.18、两个固定 fixture、27,831/9,660 bytes 基线与
     13,915/4,830 budgets；形成稳定 Code plan。实际规则差异在生产 Code 消费前另按 01
     完成独立语义复核，覆盖责任归口、重复内容与更小承载方案。本项普通来源驱动，无行动模板。
-  result_summary: 已冻结 02/05/09/21 规则合同与稳定 Code plan；独立语义复核经历两轮修正后最终 pass，spec
-    tests 125/125 通过。
+  result_summary: 已冻结 02/05/09/21 规则合同与稳定 Code plan；独立语义复核和规范测试通过。
 - item_id: item-02
   goal: 实现宽 workspace 登记项目候选与 fail-closed binding。
   expected_result: 有效配置与现场 Git identity 形成确定性候选；唯一、零个、多个、配置无效和来源不完整分支均按来源返回
@@ -98,10 +97,9 @@ work_items:
   - item-03
   approach_summary: 让共享 Code 拥有内部投影、binding 与按需展开入口；adapter 不从 Helper raw JSON
     重解释语义。预算测试覆盖 adapter 固定前缀并冻结非目标波动。普通来源驱动，无行动模板。
-  result_summary: 共享投影与薄 adapter 已完成；独立结果审核发现的极端超预算缺陷已修复为 deterministic hard
-    fallback：保留最小 operation/outcome/scope/首个真实
-    source/coverage/expand，无法合法容纳时明确失败，不返回超预算投影。4000-byte 长 locator/summary
-    反例、packaging 与新 full-v4 均通过。
+  result_summary: 共享投影与薄 adapter 已完成；deterministic hard fallback
+    在预算不足时只保留合法的最小范围与继续入口，仍无法容纳时明确失败，不返回超预算投影。边界反例、packaging 与 full-v4
+    验证通过。
 - item_id: item-05
   goal: 完成综合验证，并在独立精确环境 Gate 后取得当前 Codex 真实证据。
   expected_result: 聚焦、ruff、full-v4
@@ -115,51 +113,8 @@ work_items:
     execution approval 只有在已直接展示并覆盖这些精确变化时才可复用，否则不替代该 Gate；批准后才升级和真实验证。
   template_keys:
   - environment-integration-installation-verification
-  result_summary: 最终正式 full-v4 run-0d5949b5f9e54372bb8f0be920b60cda 通过并覆盖 README
-    当前声明与预算修复，956 passed/10 skipped、五步 PASS、证据完整、Working Tree 前后指纹相同且
-    changes=[]。Codex 0.145.0-alpha.18 / ldvh@personal 0.1.0+codex.20260720191158
-    的 startup、resume、宽 workspace 歧义、升级前旧 adapter
-    失败和停用/恢复均真实验证；测试线程已删除。config.toml 写前/写后均
-    e71aa2d0616d20734969e040455b99ae624257908f06f4826ee2889e721bfd27，ldvh.json
-    写前/写后均
-    652f90fe7cb1115c9790a7550882ea4c47919ce8f3513c17e618d1111fcee407；marketplace
-    未变。
-audit_summary:
-- audit_id: audit-01
-  subject_kind: pre_creation_plan
-  subject_version: 1
-  review_count: 2
-  summary: 两轮独立创建前审核先发现 02 归口、当前绑定、分页 coverage、量化预算、active item、模板 key、环境 Gate
-    与版本声明八类问题；Controller 全部吸收后复审为 pass_with_followups，无执行阻断。
-  findings:
-  - finding_id: finding-01
-    topic: 宽 workspace 登记候选与项目管辖/绑定语义归口不清
-    controller_disposition: corrected
-    resolution_summary: 纳入 02 并区分 non_governed workspace、登记候选与 selected
-      binding；全部不确定分支 fail closed。
-    rereview_outcome: performed
-    final_route: current_plan
-  - finding_id: finding-02
-    topic: 唯一 WorkCase、F1 单页和 active item 可能被误解释为当前完整责任
-    controller_disposition: corrected
-    resolution_summary: 精确引用才形成绑定；sole candidate 非绑定；完整分页与 coverage
-      必须成立；active_items 投影全部实际项且不补造字段。
-    rereview_outcome: performed
-    final_route: current_plan
-  - finding_id: finding-03
-    topic: 最小输出成功标准缺少创建前冻结的量化阈值
-    controller_disposition: corrected
-    resolution_summary: 固定两个 fixture、当前基线与完整 additionalContext 50% byte
-      budgets，并要求阈值变化升版重审。
-    rereview_outcome: performed
-    final_route: current_plan
-  - finding_id: finding-04
-    topic: 真实环境升级授权、模板身份与 Codex 版本声明边界不完整
-    controller_disposition: corrected
-    resolution_summary: 纠正模板 key，记录 0.145.0-alpha.18 基线，并要求写前形成精确安装计划后单独进入 09
-      Human Gate。
-    rereview_outcome: performed
-    final_route: current_plan
+  result_summary: full-v4 及范围检查通过；在当前用户的 Codex 0.145.0-alpha.18 环境中，startup、resume、宽
+    workspace 歧义、升级前旧 adapter 失败和停用/恢复均已真实验证。验证后用户配置与 LDVH 数据保持不变。
 creation_reviews:
 - reviewer: codex-agent:/root/wc0007_plan_review
   reviewed_at: '2026-07-21T01:46:27+08:00'
@@ -176,10 +131,6 @@ creation_reviews:
     fixture 隔离时间戳和临时路径长度等非目标波动。'
   - '[non-blocking] binding 状态与按需展开入口保持为共享 Code 内部投影合同，不新增 Helper 公开操作、事实字段、规则副本或
     adapter 语义解释。'
-  review_basis:
-    projection_key: plan_current
-    subject_fingerprint:
-      5c100d281933ea9d5ccbbf1d27a9e7588ec13c73cf5e9fa21e60337754996dcb
   controller_resolution: 1. 接受规则差异需在生产 Code 消费前另按 01 独立复核；已写入 item-01。2. 接受
     active_items 不得补造 evidence；已写入 criterion-02 与 item-03。3. 接受预算测完整
     additionalContext 并隔离非目标波动；已写入 criterion-03、item-01 与 item-04。4. 接受
@@ -210,60 +161,13 @@ success_criterion_results:
     boundary；adapter 只验证 payload 并包装投影。startup/resume、packaging 正反测试与实际事件通过。
 - criterion_id: criterion-05
   outcome: satisfied
-  summary: 最终 full-v4 run-0d5949b5f9e54372bb8f0be920b60cda 五步 PASS，956 passed/10
-    skipped，README 当前哈希与预算修复已纳入，before/after
-    07a13f7f5ed1189b5fb1fb278de38239cf6a8902ec9a4bbd08f4581cf197197e 且
-    changes=[]；精确 Codex 环境 Gate 的失败、startup/resume、歧义、停用/恢复与 0 净变化均已登记。
-controller_check_summary: 'Controller 已处置首轮 changes_required 的三项 must-fix。1) byte
-  budget：_fit_delivery_budget 新增 deterministic hard fallback，4000-byte 长 locator/summary
-  反例证明返回值不超过预算；若保留最小合法 operation/outcome/scope/source/coverage/expand 后仍超限则明确失败，不再交付超预算投影。聚焦/packaging
-  36 项与 Ruff 通过。2) 最终 full-v4：第一次重跑 run-42010c9017134a2a8fa172ddf654dd6a 五步 exit 0，但运行窗口内用户并发修改
-  web/src/pages/ObjectDetail.tsx，正确判 stale/unknown，未冒充通过；未覆盖该用户改动。第二次 run-0d5949b5f9e54372bb8f0be920b60cda
-  纳入该最新 bytes、README 当前哈希 a141463bfe81d8b1675ed0f826c2c8c844a0198a36f8dbbe9dc746c6a27e1e38
-  与预算修复，最终 passed/evidence_complete=true/final_exit=0，五步 PASS，Python 956 passed/10
-  skipped，before/after 均 383 文件、8,124,963 bytes、fingerprint 07a13f7f5ed1189b5fb1fb278de38239cf6a8902ec9a4bbd08f4581cf197197e，changes=[]。3)
-  环境耐久证据：升级前旧 adapter 实际返回“LDVH Codex adapter unavailable: context_recovery_executable
-  did not return a non-empty JSON exchange array”；升级后 startup 线程 019f80f2-0cee-71b3-930d-5ec2a1fe2044
-  返回 ldvh-context-recovery/1、project bound/governed_single、workcase unresolved/sole_mechanical_candidate、item-05；宽
-  workspace 线程 019f80f3-15cd-7043-8328-9cc381e32dbe 返回 project unresolved/registered_project_choice_unresolved、候选
-  ldvh/poker-train-card/poker-train-video、workcase unresolved/project_unresolved；临时禁用时明确返回无
-  LDVH SessionStart context，恢复线程 019f80f3-e8b2-7662-b05e-a349ed81e330 返回 ldvh-context-recovery/1
-  和 item-05；持久线程 019f80f4-20eb-7951-bbea-1085edd23f8a 首轮返回 SessionStart/startup/item-05，resume
-  返回 SessionStart/resume、project bound/governed_single、workcase unresolved/sole_mechanical_candidate、item-05，随后该专用线程已删除。config.toml
-  写前与写后均为 e71aa2d0616d20734969e040455b99ae624257908f06f4826ee2889e721bfd27；ldvh.json
-  写前与写后均为 652f90fe7cb1115c9790a7550882ea4c47919ce8f3513c17e618d1111fcee407；marketplace
-  哈希保持 ce0bb1…，source/cache/repo adapter 与 configure 分别同哈希 b830fc…/f75946…。README
-  保持 macOS arm64、当前用户、Codex 0.145.0-alpha.18 与实际事件边界；clear、compact、SubagentStart、其它平台或版本未真实验证。Controller
-  判断 result_version 1 已修复且需要重新独立审核。'
+  summary: full-v4 与范围检查通过；精确 Codex 环境 Gate 下的升级前失败、startup、resume、宽 workspace
+    歧义及停用/恢复均已真实验证，验证后用户配置与 LDVH 数据无变化。
+controller_check_summary: 主控已确认五项成功标准满足：候选与绑定保持 fail-closed，有界投影具备硬字节边界，薄 adapter
+  未承担语义判断；聚焦、packaging 和 full-v4 验证通过。在 macOS arm64、当前用户、Codex
+  0.145.0-alpha.18 范围内，startup、resume、宽 workspace 歧义、升级前失败和停用/恢复已真实验证，用户配置与
+  LDVH 数据无变化。clear、compact、SubagentStart、其它平台或版本未真实验证。
 result_reviews:
-- reviewer: codex-agent:/root/wc0007_plan_review
-  reviewed_at: '2026-07-21T03:31:54.867484+08:00'
-  subject_version: 1
-  scope: 独立审核 workcase-0007 result_version 1 的完整实施结果：五个 work item、五项 success
-    criterion、Controller 自检、02/05/09/21 规则及语义复核、共享恢复实现、Codex
-    adapter/configure/packaging、测试与正式 full-v4 记录、README 环境声明、当前安装缓存
-    0.1.0+codex.20260720191158 与源码一致性、配置/数据零净变化声明，以及 startup、resume、workspace
-    歧义、升级前失败、停用/恢复和测试线程删除的环境证据边界。
-  conclusion: changes_required
-  feedback:
-  - '[blocking] _fit_delivery_budget 不能保证返回投影实际落入指定 byte budget；4000-byte workspace
-    budget 输入曾返回 4285 bytes。必须增加最终硬边界降级路径，并覆盖长 locator/summary 等无法通过候选裁剪解决的测试。'
-  - '[blocking] 正式 full-v4 记录不是当前完整结果快照：该 record 早于 README 环境声明更新。应在最终 README 和结果证据稳定后重新运行
-    full-v4，并登记新的 evidence-complete 记录。'
-  - '[blocking-evidence] config.toml 与 ldvh.json 当前哈希可确认，但结果包未保存可独立比对的写前哈希；已删除 resume
-    测试线程也没有可回读耐久证据。关闭前应登记耐久的前后哈希和真实事件摘要/输出；已有原始证据可补登，无需仅为形式重复环境变更。'
-  - '[non-blocking] README 已正确把真实声明限制在 macOS arm64、当前用户、Codex 0.145.0-alpha.18 和实际声称验证的事件；clear、compact、SubagentStart、其他平台或版本继续列为未验证是合适的。'
-  review_basis:
-    projection_key: result_implementation
-    subject_fingerprint:
-      02d588e6f4706bb1162ff1a4675940683ae8d52b93f238695a99fa27e33eebf7
-  controller_resolution: 1. 接受 byte budget must-fix：已新增 hard fallback，保留最小
-    contract/operation/outcome/scope/source/coverage/expand，无法合法容纳时明确失败；已加入
-    4000-byte 长 locator/summary 回归并通过。2. 接受 full-v4 时点问题：将在最终实现和 README 稳定后重跑正式
-    full-v4，以新 evidence-complete record 替换结果引用。3. 接受耐久环境证据问题：不重复有副作用的环境
-    Gate，改为把既有原始观察的精确输出、线程标识和 config/data 写前写后哈希补入 WorkCase。4. 接受 README
-    未验证边界结论并保持不变。5. 三项均影响当前结果证据，Controller 决定回到 executing，重开
-    item-04/item-05；result_version 1 暂不递增，修复后必须重新独立审核。
 - reviewer: codex-agent:/root/wc0007_plan_review
   reviewed_at: '2026-07-21T03:50:44.343512+08:00'
   subject_version: 1
@@ -286,36 +190,19 @@ result_reviews:
     result_implementation，不构成本版本 must-fix。'
   - '[non-blocking] README 与 WorkCase 明确排除 clear、compact、SubagentStart、其他平台及其他 Codex
     版本的真实验证声明，边界正确。'
-  review_basis:
-    projection_key: result_implementation
-    subject_fingerprint:
-      afe371fc5aa229dc347e57e7cbfd4835818b3db9376da17964620b54a5e4be1c
   controller_resolution: 1. 接受 hard fallback 已关闭超预算返回路径且反例充分，无新增修复。2. 接受新
     full-v4 记录及 README/实现/测试哈希一致性，WorkCase 后续生命周期写入不触发循环重跑。3.
     接受环境前后哈希与事件输出已经耐久登记。4. 证据索引进一步细分为非阻断建议；当前 controller_check_summary
     已精确记录，不新增重复索引。5. 接受未验证边界并保持 README/WorkCase 声明。6. must-fix 已清零，Controller
     判断无需升 result_version 或再次复审，进入 closure_preparing。
-validation_summary: 五个工作项和五项成功标准全部满足。规则及独立语义复核、共享恢复与薄
-  adapter、候选/binding/F1/active_items、固定 additionalContext budgets、极端 hard byte
-  boundary、configure/packaging 均通过。正式 run-0d5949b5f9e54372bb8f0be920b60cda 为
-  passed/evidence_complete=true/final_exit=0，五步全 PASS，Python 956 passed/10
-  skipped，Web typecheck/tests/build 全通过，before/after 均 383 文件、8,124,963
-  bytes、fingerprint
-  07a13f7f5ed1189b5fb1fb278de38239cf6a8902ec9a4bbd08f4581cf197197e，changes=[]；此前
-  run-42010c9017134a2a8fa172ddf654dd6a 因用户并发修改 ObjectDetail 正确降级
-  stale/unknown，未充当通过证据。Codex 0.145.0-alpha.18 / ldvh@personal
-  0.1.0+codex.20260720191158 的升级前失败、startup、resume、宽 workspace
-  歧义、停用/恢复与测试线程删除已真实验证并耐久登记；config.toml 与 ldvh.json 写前写后哈希分别完全相同，marketplace
-  未变。首轮独立审核 changes_required 的三项阻断均已修复；复审 pass_with_followups，must-fix
-  cleared，Controller 已逐项处置。未验证范围为 clear、compact、SubagentStart、其它平台与其它 Codex
-  版本；没有 staging、commit、push 或 PR。
+validation_summary: 五个工作项和五项成功标准全部满足。规则语义、共享恢复、候选与绑定、active_items、有界投影、薄
+  adapter、configure、packaging 和 full-v4 均已验证。在 macOS arm64、当前用户、Codex
+  0.145.0-alpha.18 范围内，startup、resume、宽 workspace 歧义、升级前失败和停用/恢复已真实验证，用户配置与
+  LDVH 数据无变化。clear、compact、SubagentStart、其它平台与其它 Codex 版本未验证。
 closure_outcome: completed
-disposition_summary: workcase-0007 的批准目标已在实际 macOS arm64 / 当前用户 / Codex
-  0.145.0-alpha.18 边界内完成：startup/resume 能恢复受管项目和有界 WorkCase 候选，宽 workspace
-  与输入不足保持 unresolved，byte budget 有硬边界，旧 adapter 失败已由新 personal plugin
-  修复，停用/恢复可控且用户配置/LDVH 数据 0 净变化。没有未处置修复责任、accepted_stop 或需 routed-to
-  的残余；clear、compact、SubagentStart、其它平台/版本仅为当前声明边界，不自动形成后续对象。Controller 判断
-  result_version 1 足以提交 Human 关闭确认；最终 closed 仍须 Human 明确批准。
+disposition_summary: 批准目标已在 macOS arm64、当前用户、Codex 0.145.0-alpha.18 边界内完成：startup/resume
+  可恢复受管项目和有界 WorkCase 候选，宽 workspace 与输入不足保持 unresolved，字节预算具备硬边界，停用/恢复可控且用户配置与
+  LDVH 数据无变化。原范围内没有残余责任或分流对象；clear、compact、SubagentStart、其它平台或版本仅为未验证边界，不自动形成后续责任。
 closure_approval:
   subject_version: 1
   approved_at: '2026-07-21T04:02:47.388459+08:00'
@@ -323,4 +210,4 @@ closure_approval:
 object_id: workcase-0007
 fact_type_key: workcase
 created_at: '2026-07-21T01:49:09.625339+08:00'
-updated_at: '2026-07-23T14:21:35.783731+08:00'
+updated_at: '2026-07-26T12:45:00+08:00'

@@ -73,30 +73,6 @@ fs.writeFileSync(
     '  approach_summary: 按测试边界完成实现。',
     '  status: completed',
     '  result_summary: 已完成。',
-    'progress_history:',
-    '  coverage: full',
-    '  entries:',
-    '  - event_id: progress-001',
-    '    plan_version: 1',
-    '    round: 1',
-    '    phase: executing',
-    "    entered_at: '2026-07-20T06:10:00+08:00'",
-    '    transition_kind: started',
-    '    transition_summary: 开始执行。',
-    '  - event_id: progress-002',
-    '    plan_version: 1',
-    '    round: 1',
-    '    phase: controller_checking',
-    "    entered_at: '2026-07-20T06:30:00+08:00'",
-    '    transition_kind: advanced',
-    '    transition_summary: 进入主控自检。',
-    '  - event_id: progress-003',
-    '    plan_version: 1',
-    '    round: 1',
-    '    phase: independent_reviewing',
-    "    entered_at: '2026-07-20T06:45:00+08:00'",
-    '    transition_kind: advanced',
-    '    transition_summary: 进入独立复核。',
     'execution_approval:',
     '  subject_version: 1',
     "  approved_at: '2026-07-20T06:00:00+08:00'",
@@ -197,6 +173,7 @@ test('preserves the shared commit DTO across current API consumers', async () =>
     actionItems: Array<Record<string, unknown>>
     recentChanges: Array<Record<string, unknown>>
     recentItems: Array<Record<string, unknown>>
+    stats: Array<{ type: string; total: number; byStatus: Record<string, number> }>
   }
   assert.equal(dashboard.recentChanges.length, 1)
   assertCommitDto(dashboard.recentChanges[0])
@@ -213,6 +190,15 @@ test('preserves the shared commit DTO across current API consumers', async () =>
   const dashboardWorkcase = dashboard.actionItems.find((item) => item.object_id === 'workcase-0001')
   assert.ok(dashboardWorkcase)
   assert.equal(dashboardWorkcase.status, 'progressing')
+  const workcaseStats = dashboard.stats.find((stat) => stat.type === 'workcase')
+  assert.ok(workcaseStats)
+  assert.deepEqual(workcaseStats.byStatus, { progressing: 1 })
+  const workcaseProgressGroups = new Set(['plan_confirmation', 'progressing', 'closure_confirmation', 'closed'])
+  for (const item of [...dashboard.actionItems, ...dashboard.recentItems]) {
+    if (item.type === 'workcase') {
+      assert.equal(workcaseProgressGroups.has(String(item.status)), true)
+    }
+  }
 
   const workcases = await getJson('/api/objects/workcase') as {
     data: { items: Array<Record<string, unknown>>; progressOptions: Array<Record<string, unknown>> }
@@ -227,10 +213,9 @@ test('preserves the shared commit DTO across current API consumers', async () =>
   assert.equal(workcase.executionItemDone, 1)
   assert.equal(workcase.executionItemCancelled, 0)
   assert.deepEqual(workcase.executionItemsInProgress, [])
-  assert.equal(workcase.progressHistoryCoverage, 'full')
-  assert.equal(workcase.progressHistoryState, 'valid')
-  assert.equal(workcase.progressRound, 1)
-  assert.equal(workcase.progressEventId, 'progress-003')
+  assert.deepEqual(workcase.executionItemsActive, [])
+  assert.equal('progressHistoryState' in workcase, false)
+  assert.equal('progressRound' in workcase, false)
   assert.equal(workcase.successCriteriaTotal, 1)
   assert.equal(workcase.successCriteriaDone, 1)
   assert.deepEqual(workcase.successCriteria, ['当前标准已满足。'])

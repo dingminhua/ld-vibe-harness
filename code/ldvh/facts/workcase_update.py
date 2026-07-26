@@ -1,4 +1,4 @@
-"""Deterministically construct one current-profile WorkCase update candidate.
+"""Deterministically construct one control-contract-v2 WorkCase update candidate.
 
 This module owns only the mechanical delta and managed-record rules declared by
 the WorkCase fact source.  Lifecycle choices remain explicit caller fields and
@@ -12,10 +12,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
-from ldvh.facts.validation import parse_rfc3339
-from ldvh.facts.workcase_projection import workcase_subject_fingerprint
-
-CURRENT_PROFILE = "control-contract-v1"
+CURRENT_PROFILE = "control-contract-v2"
 PLAN_RESET_FIELDS = frozenset(
     {
         "execution_approval",
@@ -23,9 +20,7 @@ PLAN_RESET_FIELDS = frozenset(
         "success_criterion_results",
         "controller_check_summary",
         "result_reviews",
-        "improvement_observations",
         "residual_responsibilities",
-        "nonbinding_followups",
         "closure_approval",
         "validation_summary",
         "closure_outcome",
@@ -33,13 +28,9 @@ PLAN_RESET_FIELDS = frozenset(
     }
 )
 RESULT_RESET_FIELDS = frozenset({"result_reviews", "closure_approval"})
-PROGRESS_BOUNDARY = parse_rfc3339("2026-07-26T07:30:00+08:00")
-PROGRESS_PHASE_ORDER = {
-    "executing": 0,
-    "controller_checking": 1,
-    "independent_reviewing": 2,
-    "closure_preparing": 3,
-}
+RESULT_REVIEW_CONTEXT_FIELDS = frozenset(
+    {"status", "phase", "summary", "resume_from", "waiting_on", "blocking_summary"}
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -57,20 +48,10 @@ def _managed_actions(managed: Mapping[str, Any]) -> tuple[str, ...]:
     return tuple(key for key, value in managed.items() if value is not None)
 
 
-def _has_audit(fields: Mapping[str, Any], subject_kind: str, subject_version: int) -> bool:
-    values = fields.get("audit_summary")
-    return any(
-        isinstance(item, Mapping)
-        and item.get("subject_kind") == subject_kind
-        and item.get("subject_version") == subject_version
-        for item in (values if isinstance(values, list) else [])
-    )
-
-
 def _same_approval(existing: object, submitted: Mapping[str, Any], version: int) -> bool:
     if not isinstance(existing, Mapping) or existing.get("subject_version") != version:
         return False
-    caller_owned = {key: existing[key] for key in ("summary",) if key in existing}
+    caller_owned = {key: existing[key] for key in ("summary", "source_refs") if key in existing}
     return caller_owned == dict(submitted)
 
 
@@ -79,8 +60,6 @@ def _review_record(
     *,
     event_at: str,
     version: int,
-    projection_key: str,
-    fingerprint: str,
     include_resolution: bool,
 ) -> dict[str, Any]:
     record = {
@@ -89,13 +68,10 @@ def _review_record(
         "subject_version": version,
         "scope": submitted["scope"],
         "conclusion": submitted["conclusion"],
-        "feedback": submitted["feedback"],
-        "review_basis": {
-            "projection_key": projection_key,
-            "subject_fingerprint": fingerprint,
-        },
     }
-    if include_resolution:
+    if "feedback" in submitted:
+        record["feedback"] = submitted["feedback"]
+    if include_resolution and "controller_resolution" in submitted:
         record["controller_resolution"] = submitted["controller_resolution"]
     return record
 
@@ -105,16 +81,10 @@ def _receipt(
     version: int,
     *,
     index: int | None = None,
-    projection_key: str | None = None,
-    fingerprint: str | None = None,
 ) -> dict[str, Any]:
     value: dict[str, Any] = {"action": action, "subject_version": version}
     if index is not None:
         value["review_index"] = index
-    if projection_key is not None:
-        value["projection_key"] = projection_key
-    if fingerprint is not None:
-        value["subject_fingerprint"] = fingerprint
     return value
 
 
@@ -131,94 +101,6 @@ def _all_items_pending(fields: Mapping[str, Any]) -> bool:
     )
 
 
-def _progress_entries(fields: Mapping[str, Any]) -> list[dict[str, Any]]:
-    history = fields.get("progress_history")
-    entries = history.get("entries") if isinstance(history, Mapping) else None
-    return [dict(item) for item in entries if isinstance(item, Mapping)] if isinstance(entries, list) else []
-
-
-def _has_result_context(fields: Mapping[str, Any]) -> bool:
-    return any(key in fields for key in PLAN_RESET_FIELDS if key != "execution_approval")
-
-
-def _construct_progress_event(
-    before: Mapping[str, Any],
-    after: Mapping[str, Any],
-    *,
-    event_at: str,
-    summary: str,
-) -> tuple[dict[str, Any], dict[str, Any]]:
-    plan_version = after["plan_version"]
-    phase = after["phase"]
-    before_history = before.get("progress_history")
-    entries = _progress_entries(before)
-    if entries:
-        coverage = before_history.get("coverage") if isinstance(before_history, Mapping) else "partial"
-        previous = entries[-1]
-        if previous.get("plan_version") != plan_version:
-            round_number, transition_kind = 1, "started"
-        else:
-            previous_round = previous["round"]
-            previous_rank = PROGRESS_PHASE_ORDER[previous["phase"]]
-            current_rank = PROGRESS_PHASE_ORDER[phase]
-            if current_rank > previous_rank:
-                round_number, transition_kind = previous_round, "advanced"
-            elif current_rank < previous_rank:
-                round_number, transition_kind = previous_round + 1, "returned"
-            else:
-                round_number, transition_kind = previous_round + 1, "repeated"
-    else:
-        created_at = parse_rfc3339(before.get("created_at"))
-        created_after_boundary = (
-            created_at is not None and PROGRESS_BOUNDARY is not None and created_at >= PROGRESS_BOUNDARY
-        )
-        first_execution = (
-            before.get("phase") == "human_plan_confirming"
-            and phase == "executing"
-            and not _has_result_context(before)
-            and (created_after_boundary or plan_version == 1)
-        )
-        coverage = "full" if first_execution else "partial"
-        round_number = 1
-        transition_kind = "started" if first_execution else "baseline"
-
-    event = {
-        "event_id": f"progress-{len(entries) + 1:03d}",
-        "plan_version": plan_version,
-        "round": round_number,
-        "phase": phase,
-        "entered_at": event_at,
-        "transition_kind": transition_kind,
-        "transition_summary": summary,
-    }
-    entries.append(event)
-    return {"coverage": coverage, "entries": entries}, event
-
-
-def _withdraw_erroneous_progress_event(before: Mapping[str, Any], after: dict[str, Any]) -> None:
-    entries = _progress_entries(before)
-    if not entries:
-        return
-    plan_version = before.get("plan_version")
-    current_entries = [entry for entry in entries if entry.get("plan_version") == plan_version]
-    final = entries[-1]
-    if not (
-        len(current_entries) == 1
-        and final.get("plan_version") == plan_version
-        and final.get("round") == 1
-        and final.get("phase") == "executing"
-        and final.get("transition_kind") == "started"
-    ):
-        return
-    remaining = entries[:-1]
-    if remaining:
-        history = before.get("progress_history")
-        coverage = history.get("coverage") if isinstance(history, Mapping) else "partial"
-        after["progress_history"] = {"coverage": coverage, "entries": remaining}
-    else:
-        after.pop("progress_history", None)
-
-
 def construct_workcase_update(
     before: Mapping[str, Any],
     *,
@@ -231,7 +113,7 @@ def construct_workcase_update(
 
     problems: list[str] = []
     if before.get("fact_type_key") != "workcase" or before.get("workcase_profile") != CURRENT_PROFILE:
-        return WorkCaseUpdateConstruction(None, problems=("对象不是 current-profile WorkCase",))
+        return WorkCaseUpdateConstruction(None, problems=("对象不是 control-contract-v2 WorkCase",))
 
     after = dict(before)
     for key, value in set_fields.items():
@@ -254,10 +136,6 @@ def construct_workcase_update(
             problems.append("计划升版时 set 不得包含固定 reset 字段")
         if any(action != "replace_creation_reviews" for action in actions):
             problems.append("计划升版后同次托管动作只允许 replace_creation_reviews")
-        if _positive_integer(plan_before) and not _has_audit(after, "superseded_plan", plan_before):
-            problems.append("计划升版必须提供 superseded_plan audit continuity")
-        if workcase_subject_fingerprint(before, "plan_current") == workcase_subject_fingerprint(after, "plan_current"):
-            problems.append("计划内容未变化时不得递增 plan_version")
         for key in PLAN_RESET_FIELDS:
             after.pop(key, None)
     elif managed_records.get("replace_creation_reviews") is not None:
@@ -277,12 +155,6 @@ def construct_workcase_update(
                 action in {"append_result_reviews", "resolve_result_reviews", "closure_approval"} for action in actions
             ):
                 problems.append("结果升版不得同次追加、处置结果审核或形成关闭批准")
-            if (
-                before.get("result_reviews")
-                and _positive_integer(result_before)
-                and not _has_audit(after, "superseded_result", result_before)
-            ):
-                problems.append("结果升版必须提供 superseded_result audit continuity")
             for key in RESULT_RESET_FIELDS:
                 after.pop(key, None)
 
@@ -294,8 +166,7 @@ def construct_workcase_update(
     for action in ("execution_approval", "withdraw_execution_approval"):
         if action not in actions:
             continue
-        allowed = {action, "progress_transition"} if action == "execution_approval" else {action}
-        if set(actions) - allowed:
+        if set(actions) - {action}:
             problems.append(f"{action} 不得与其它托管动作同次出现")
     if "closure_approval" in actions and len(actions) != 1:
         problems.append("closure_approval 不得与其它托管动作同次出现")
@@ -319,21 +190,20 @@ def construct_workcase_update(
         if not _all_items_pending(after):
             problems.append("撤回执行批准后所有 work_items 必须恢复为 pending")
 
-    progress_input = managed_records.get("progress_transition")
-    before_phase = before.get("phase")
-    after_phase = after.get("phase")
-    event_time = parse_rfc3339(event_at)
-    entering_progress = before_phase != after_phase and after_phase in PROGRESS_PHASE_ORDER
-    if (
-        entering_progress
-        and event_time is not None
-        and PROGRESS_BOUNDARY is not None
-        and event_time >= PROGRESS_BOUNDARY
-        and progress_input is None
-    ):
-        problems.append("进入推进 phase 必须同次提供 progress_transition")
-    if progress_input is not None and after_phase not in PROGRESS_PHASE_ORDER:
-        problems.append("progress_transition 只能用于进入或重新进入正式推进 phase")
+    append_inputs = managed_records.get("append_result_reviews")
+    if append_inputs is not None:
+        forbidden_set = sorted(set(set_fields) - RESULT_REVIEW_CONTEXT_FIELDS)
+        forbidden_remove = sorted(set(remove_fields) - RESULT_REVIEW_CONTEXT_FIELDS)
+        if forbidden_set or forbidden_remove:
+            details = []
+            if forbidden_set:
+                details.append("set: " + ", ".join(forbidden_set))
+            if forbidden_remove:
+                details.append("remove: " + ", ".join(forbidden_remove))
+            problems.append(
+                "append_result_reviews 同次只能变更 status、phase、summary、resume_from、waiting_on、"
+                "blocking_summary，不得变更被审结果主体（" + "; ".join(details) + "）"
+            )
 
     if problems:
         return WorkCaseUpdateConstruction(None, problems=tuple(problems))
@@ -343,14 +213,11 @@ def construct_workcase_update(
     if creation_inputs is not None:
         assert _positive_integer(after.get("plan_version"))
         plan_version = after["plan_version"]
-        fingerprint = workcase_subject_fingerprint(after, "plan_current")
         reviews = [
             _review_record(
                 item,
                 event_at=event_at,
                 version=plan_version,
-                projection_key="plan_current",
-                fingerprint=fingerprint,
                 include_resolution=True,
             )
             for item in _sequence(creation_inputs)
@@ -361,33 +228,20 @@ def construct_workcase_update(
                 "creation_review_replaced",
                 plan_version,
                 index=index,
-                projection_key="plan_current",
-                fingerprint=fingerprint,
             )
             for index in range(len(reviews))
         )
 
-    append_inputs = managed_records.get("append_result_reviews")
     if append_inputs is not None:
         result_version = after.get("result_version")
         if not _positive_integer(result_version):
             return WorkCaseUpdateConstruction(None, problems=("追加结果审核要求有效 result_version",))
         reviews = list(_sequence(after.get("result_reviews")))
         for item in _sequence(append_inputs):
-            projection_key = item["projection_key"]
-            before_fingerprint = workcase_subject_fingerprint(before, projection_key)
-            fingerprint = workcase_subject_fingerprint(after, projection_key)
-            if fingerprint != before_fingerprint:
-                return WorkCaseUpdateConstruction(
-                    None,
-                    problems=("新增 result review 的同次 delta 不得改变其 subject projection",),
-                )
             review = _review_record(
                 item,
                 event_at=event_at,
                 version=result_version,
-                projection_key=projection_key,
-                fingerprint=fingerprint,
                 include_resolution=False,
             )
             reviews.append(review)
@@ -396,8 +250,6 @@ def construct_workcase_update(
                     "result_review_appended",
                     result_version,
                     index=len(reviews) - 1,
-                    projection_key=projection_key,
-                    fingerprint=fingerprint,
                 )
             )
         if reviews != list(_sequence(after.get("result_reviews"))):
@@ -415,6 +267,11 @@ def construct_workcase_update(
             index = item["review_index"]
             if index >= len(reviews) or not isinstance(reviews[index], dict):
                 return WorkCaseUpdateConstruction(None, problems=(f"review_index {index} 不存在",))
+            if not reviews[index].get("feedback"):
+                return WorkCaseUpdateConstruction(
+                    None,
+                    problems=(f"review_index {index} 没有 feedback，不得形成 Controller 处置",),
+                )
             if reviews[index].get("controller_resolution") == item["controller_resolution"]:
                 continue
             reviews[index]["controller_resolution"] = item["controller_resolution"]
@@ -427,7 +284,15 @@ def construct_workcase_update(
         plan_version = after.get("plan_version")
         if not _positive_integer(plan_version):
             return WorkCaseUpdateConstruction(None, problems=("执行批准要求有效 plan_version",))
-        if not _same_approval(after.get("execution_approval"), approval_input, plan_version):
+        existing_approval = after.get("execution_approval")
+        if isinstance(existing_approval, Mapping) and not _same_approval(
+            existing_approval, approval_input, plan_version
+        ):
+            return WorkCaseUpdateConstruction(
+                None,
+                problems=("既有执行批准不得由 update-workcase 改写；获授权的同事件修正须使用通用事实修正",),
+            )
+        if not isinstance(existing_approval, Mapping):
             after["execution_approval"] = {
                 "subject_version": plan_version,
                 "approved_at": event_at,
@@ -435,34 +300,11 @@ def construct_workcase_update(
             }
             receipts.append(_receipt("execution_approval_recorded", plan_version))
 
-    if progress_input is not None:
-        plan_version = after.get("plan_version")
-        if not _positive_integer(plan_version):
-            return WorkCaseUpdateConstruction(None, problems=("推进记录要求有效 plan_version",))
-        progress_history, progress_event = _construct_progress_event(
-            before,
-            after,
-            event_at=event_at,
-            summary=progress_input["summary"],
-        )
-        after["progress_history"] = progress_history
-        receipts.append(
-            {
-                "action": "progress_recorded",
-                "subject_version": plan_version,
-                "progress_event_id": progress_event["event_id"],
-                "progress_round": progress_event["round"],
-                "progress_phase": progress_event["phase"],
-                "transition_kind": progress_event["transition_kind"],
-            }
-        )
-
     if managed_records.get("withdraw_execution_approval") is not None:
         plan_version = after.get("plan_version")
         if not _positive_integer(plan_version):
             return WorkCaseUpdateConstruction(None, problems=("撤回执行批准要求有效 plan_version",))
         after.pop("execution_approval", None)
-        _withdraw_erroneous_progress_event(before, after)
         receipts.append(_receipt("execution_approval_withdrawn", plan_version))
 
     closure_input = managed_records.get("closure_approval")
@@ -470,12 +312,21 @@ def construct_workcase_update(
         result_version = after.get("result_version")
         if not _positive_integer(result_version):
             return WorkCaseUpdateConstruction(None, problems=("关闭批准要求有效 result_version",))
-        after["closure_approval"] = {
-            "subject_version": result_version,
-            "approved_at": event_at,
-            **dict(closure_input),
-        }
-        receipts.append(_receipt("closure_approval_recorded", result_version))
+        existing_approval = after.get("closure_approval")
+        if isinstance(existing_approval, Mapping) and not _same_approval(
+            existing_approval, closure_input, result_version
+        ):
+            return WorkCaseUpdateConstruction(
+                None,
+                problems=("既有关闭批准不得由 update-workcase 改写；获授权的同事件修正须使用通用事实修正",),
+            )
+        if not isinstance(existing_approval, Mapping):
+            after["closure_approval"] = {
+                "subject_version": result_version,
+                "approved_at": event_at,
+                **dict(closure_input),
+            }
+            receipts.append(_receipt("closure_approval_recorded", result_version))
 
     supplied = {
         key: value

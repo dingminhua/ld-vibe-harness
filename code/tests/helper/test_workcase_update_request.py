@@ -50,12 +50,16 @@ SCHEMA = FactSchema(
             "plan_version",
             "result_version",
             "work_items[].item_id",
+            "controller_check_summary",
+            "validation_summary",
             "audit_summary[].audit_id",
             "creation_reviews[].reviewer",
             "result_reviews[].reviewer",
             "execution_approval.summary",
             "closure_approval.summary",
             "progress_history.coverage",
+            "improvement_observations[].observation_id",
+            "nonbinding_followups[].followup_id",
         )
     ),
 )
@@ -237,6 +241,30 @@ def test_plan_version_requires_only_replacement_reviews_and_fixed_phase() -> Non
     assert any("固定 reset 字段" in item and "result_version" in item for item in result.problems)
 
 
+@pytest.mark.parametrize("managed_reset_field", ("execution_approval", "result_reviews", "closure_approval"))
+def test_plan_bump_cannot_redeclare_helper_managed_reset_fields_in_remove(managed_reset_field: str) -> None:
+    result = _parse(
+        _request(
+            arguments=_arguments(
+                set={"plan_version": 2, "phase": "human_plan_confirming"},
+                remove=[managed_reset_field],
+                managed_records={
+                    "replace_creation_reviews": [
+                        {
+                            "reviewer": "reviewer-1",
+                            "scope": "Current plan",
+                            "conclusion": "pass",
+                        }
+                    ]
+                },
+            )
+        )
+    )
+
+    assert result.request is None
+    assert any("remove 不得触碰 Helper 托管字段" in problem for problem in result.problems)
+
+
 def test_valid_plan_replacement_review_has_exact_shape() -> None:
     review = {
         "reviewer": "reviewer-1",
@@ -259,6 +287,57 @@ def test_valid_plan_replacement_review_has_exact_shape() -> None:
     assert result.request.managed_records == {"replace_creation_reviews": [review]}
 
 
+def test_review_feedback_is_optional_only_for_plain_pass() -> None:
+    passed = _parse(
+        _request(
+            arguments=_arguments(
+                set={"plan_version": 2, "phase": "human_plan_confirming"},
+                managed_records={
+                    "replace_creation_reviews": [
+                        {"reviewer": "reviewer-1", "scope": "Current plan", "conclusion": "pass"}
+                    ]
+                },
+            )
+        )
+    )
+    assert passed.problems == ()
+
+    needless_resolution = _parse(
+        _request(
+            arguments=_arguments(
+                set={"plan_version": 2, "phase": "human_plan_confirming"},
+                managed_records={
+                    "replace_creation_reviews": [
+                        {
+                            "reviewer": "reviewer-1",
+                            "scope": "Current plan",
+                            "conclusion": "pass",
+                            "controller_resolution": "Nothing to resolve",
+                        }
+                    ]
+                },
+            )
+        )
+    )
+    assert needless_resolution.request is None
+    assert any("没有 feedback 时必须省略" in item for item in needless_resolution.problems)
+
+    missing_feedback = _parse(
+        _request(
+            arguments=_arguments(
+                set={},
+                managed_records={
+                    "append_result_reviews": [
+                        {"reviewer": "reviewer-1", "scope": "Current result", "conclusion": "blocked"}
+                    ]
+                },
+            )
+        )
+    )
+    assert missing_feedback.request is None
+    assert any("feedback 对非 pass conclusion 必须提供" in item for item in missing_feedback.problems)
+
+
 @pytest.mark.parametrize(
     ("managed", "problem"),
     (
@@ -272,7 +351,6 @@ def test_valid_plan_replacement_review_has_exact_shape() -> None:
                         "scope": "result",
                         "conclusion": "pass",
                         "feedback": ["same", "same"],
-                        "projection_key": "plan_current",
                     }
                 ]
             },
@@ -320,7 +398,6 @@ def test_managed_action_limit_and_action_exclusivity_are_structural() -> None:
             "scope": "result",
             "conclusion": "pass",
             "feedback": [f"feedback-{index}"],
-            "projection_key": "result_implementation",
         }
         for index in range(17)
     ]
@@ -340,6 +417,33 @@ def test_managed_action_limit_and_action_exclusivity_are_structural() -> None:
     assert any("最多包含 16" in item for item in over_limit.problems)
     assert any("append_result_reviews 与 resolve_result_reviews" in item for item in mixed.problems)
     assert any("execution_approval 不得与其它" in item for item in mixed.problems)
+
+
+def test_result_review_append_allows_only_review_context_companions() -> None:
+    review = {"reviewer": "reviewer", "scope": "Current result", "conclusion": "pass"}
+    allowed = _parse(
+        _request(
+            arguments=_arguments(
+                set={"phase": "controller_checking", "summary": "Review completed"},
+                remove=["blocking_summary"],
+                managed_records={"append_result_reviews": [review]},
+            )
+        )
+    )
+    rejected = _parse(
+        _request(
+            arguments=_arguments(
+                set={"controller_check_summary": "Changed reviewed subject", "work_items": []},
+                remove=["validation_summary"],
+                managed_records={"append_result_reviews": [review]},
+            )
+        )
+    )
+
+    assert allowed.problems == ()
+    assert allowed.request is not None
+    assert rejected.request is None
+    assert any("不得变更被审结果主体" in problem for problem in rejected.problems)
 
 
 def test_approval_source_reference_accepts_typed_details() -> None:
@@ -366,35 +470,35 @@ def test_approval_source_reference_accepts_typed_details() -> None:
     assert result.request is not None
 
 
-def test_execution_approval_can_atomically_include_one_progress_transition() -> None:
+def test_execution_approval_is_a_complete_managed_action_without_progress_transition() -> None:
     result = _parse(
         _request(
             arguments=_arguments(
                 set={"phase": "executing"},
-                managed_records={
-                    "execution_approval": {"summary": "Human approved"},
-                    "progress_transition": {"summary": "Begin the approved plan"},
-                },
+                managed_records={"execution_approval": {"summary": "Human approved"}},
             )
         )
     )
 
     assert result.problems == ()
     assert result.request is not None
-    assert result.request.managed_records["progress_transition"] == {"summary": "Begin the approved plan"}
+    assert result.request.managed_records == {"execution_approval": {"summary": "Human approved"}}
 
 
-def test_progress_history_is_helper_managed_in_ordinary_delta() -> None:
-    result = _parse(
-        _request(
-            arguments=_arguments(
-                set={"progress_history": {"coverage": "full"}},
-            )
-        )
-    )
+def test_v2_only_update_rejects_registered_v1_process_fields() -> None:
+    for field_name, value in {
+        "audit_summary": [],
+        "progress_history": {"coverage": "full"},
+        "improvement_observations": [],
+        "nonbinding_followups": [],
+    }.items():
+        result = _parse(_request(arguments=_arguments(set={field_name: value})))
+        assert result.request is None
+        assert any("禁止 V1-only 字段" in item and field_name in item for item in result.problems)
 
-    assert result.request is None
-    assert any("set 不得触碰 Helper 托管字段" in item and "progress_history" in item for item in result.problems)
+        removed = _parse(_request(arguments=_arguments(set={}, remove=[field_name])))
+        assert removed.request is None
+        assert any("禁止 V1-only 字段" in item and field_name in item for item in removed.problems)
 
 
 def test_approval_source_reference_details_must_be_object() -> None:
@@ -422,6 +526,30 @@ def test_closure_approval_requires_explicit_closed_status_and_phase() -> None:
 
     assert result.request is None
     assert any("set.status=closed" in item for item in result.problems)
+
+
+def test_withdraw_execution_approval_requires_explicit_human_plan_phase() -> None:
+    missing = _parse(
+        _request(
+            arguments=_arguments(
+                set={"summary": "Human withdrew the recorded approval"},
+                managed_records={"withdraw_execution_approval": {"summary": "Human withdrew approval"}},
+            )
+        )
+    )
+    valid_shape = _parse(
+        _request(
+            arguments=_arguments(
+                set={"phase": "human_plan_confirming"},
+                managed_records={"withdraw_execution_approval": {"summary": "Human withdrew approval"}},
+            )
+        )
+    )
+
+    assert missing.request is None
+    assert any("set.phase=human_plan_confirming" in problem for problem in missing.problems)
+    assert valid_shape.problems == ()
+    assert valid_shape.request is not None
 
 
 def test_all_three_delta_inputs_cannot_be_empty_or_null_only() -> None:

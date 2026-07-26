@@ -11,9 +11,7 @@ import hashlib
 import json
 from collections.abc import Mapping, Sequence
 
-PROJECTION_KEYS = frozenset(
-    {"plan_current", "result_implementation", "result_with_closure_report"}
-)
+PROJECTION_KEYS = frozenset({"plan_current", "result_implementation", "result_with_closure_report"})
 
 _PLAN_ITEM_FIELDS = (
     "item_id",
@@ -55,9 +53,7 @@ def _normalize(value: object) -> object:
     if isinstance(value, Mapping):
         normalized: dict[str, object] = {}
         for key, item in value.items():
-            if key in {"depends_on", "template_keys", "value_dimensions"} and isinstance(
-                item, list
-            ):
+            if key in {"depends_on", "template_keys", "value_dimensions"} and isinstance(item, list):
                 normalized[str(key)] = sorted((_normalize(member) for member in item), key=_canonical_json)
             else:
                 normalized[str(key)] = _normalize(item)
@@ -68,12 +64,13 @@ def _normalize(value: object) -> object:
 
 
 def _selected(raw: Mapping[str, object], names: tuple[str, ...]) -> dict[str, object]:
+    normalized_raw = _normalize(raw)
+    assert isinstance(normalized_raw, dict)
     selected: dict[str, object] = {}
     for name in names:
-        if name not in raw:
+        if name not in normalized_raw:
             continue
-        value = raw[name]
-        selected[name] = _normalize(value)
+        selected[name] = normalized_raw[name]
     return selected
 
 
@@ -85,9 +82,7 @@ def _items(fields: Mapping[str, object], names: tuple[str, ...]) -> list[dict[st
     return sorted(selected, key=lambda item: (str(item.get("item_id", "")), _canonical_json(item)))
 
 
-def project_workcase_subject(
-    fields: Mapping[str, object], projection_key: str
-) -> dict[str, object]:
+def project_workcase_subject(fields: Mapping[str, object], projection_key: str) -> dict[str, object]:
     """Return the canonical review subject selected by ``projection_key``.
 
     Unknown keys are programmer errors.  Mechanical fact validation is
@@ -97,9 +92,7 @@ def project_workcase_subject(
     if projection_key not in PROJECTION_KEYS:
         raise ValueError(f"unknown WorkCase projection key: {projection_key}")
 
-    projected: dict[str, object] = _selected(
-        fields, ("goal", "scope", "success_criterion_definitions")
-    )
+    projected: dict[str, object] = _selected(fields, ("goal", "scope", "success_criterion_definitions"))
     if "success_criterion_definitions" in projected:
         projected["success_criterion_definitions"] = _sort_objects(
             projected["success_criterion_definitions"], "criterion_id"
@@ -122,13 +115,9 @@ def project_workcase_subject(
         )
     )
     if "success_criterion_results" in projected:
-        projected["success_criterion_results"] = _sort_objects(
-            projected["success_criterion_results"], "criterion_id"
-        )
+        projected["success_criterion_results"] = _sort_objects(projected["success_criterion_results"], "criterion_id")
     if "improvement_observations" in projected:
-        projected["improvement_observations"] = _sort_objects(
-            projected["improvement_observations"], "observation_id"
-        )
+        projected["improvement_observations"] = _sort_objects(projected["improvement_observations"], "observation_id")
     if projection_key == "result_implementation":
         return _plain(projected)  # type: ignore[return-value]
 
@@ -145,13 +134,9 @@ def project_workcase_subject(
         )
     )
     if "residual_responsibilities" in projected:
-        projected["residual_responsibilities"] = _sort_objects(
-            projected["residual_responsibilities"], "residual_id"
-        )
+        projected["residual_responsibilities"] = _sort_objects(projected["residual_responsibilities"], "residual_id")
     if "nonbinding_followups" in projected:
-        projected["nonbinding_followups"] = _sort_objects(
-            projected["nonbinding_followups"], "followup_id"
-        )
+        projected["nonbinding_followups"] = _sort_objects(projected["nonbinding_followups"], "followup_id")
     return _plain(projected)  # type: ignore[return-value]
 
 

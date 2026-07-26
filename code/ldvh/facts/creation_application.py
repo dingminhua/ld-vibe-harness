@@ -109,6 +109,19 @@ def _thaw_json(value: Any) -> Any:
     return value
 
 
+def _creation_context_issues(fact_type_key: str, fields: Mapping[str, Any]) -> tuple[FactIssue, ...]:
+    if fact_type_key != "workcase":
+        return ()
+    issues: list[FactIssue] = []
+    if fields.get("phase") != "human_plan_confirming":
+        issues.append(FactIssue("schema", "新建 WorkCase 的初始 phase 必须是 human_plan_confirming", "phase"))
+    if fields.get("plan_version") != 1:
+        issues.append(FactIssue("schema", "新建 WorkCase 的初始 plan_version 必须是 1", "plan_version"))
+    if "execution_approval" in fields:
+        issues.append(FactIssue("schema", "新建 WorkCase 禁止预置 execution_approval", "execution_approval"))
+    return tuple(issues)
+
+
 def _preflight(
     command: FactCreationCommand,
     object_id: str,
@@ -128,6 +141,7 @@ def _preflight(
     if parsed.fields is None:
         return fields, text, tuple(issues), False
     issues.extend(validate_fact_object(command.fact_type_key, parsed.fields, command.schema))
+    issues.extend(_creation_context_issues(command.fact_type_key, parsed.fields))
     if issues:
         return fields, text, tuple(issues), False
     read = FactReadResult(

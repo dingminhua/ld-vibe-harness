@@ -5,11 +5,14 @@ from __future__ import annotations
 import json
 from collections import Counter
 from collections.abc import Iterable
-from datetime import datetime
 
 from ldvh.facts.models import FactIssue
 from ldvh.facts.validation import parse_rfc3339
-from ldvh.facts.workcase_projection import PROJECTION_KEYS, workcase_subject_fingerprint
+from ldvh.facts.workcase_projection import (
+    PROJECTION_KEYS,
+    project_workcase_subject,
+    workcase_subject_fingerprint,
+)
 
 _STATUS_EDGES = {
     "spark": {("open", "routed"), ("open", "implemented"), ("open", "discarded")},
@@ -43,14 +46,10 @@ _WORKCASE_PHASE_EDGES = {
     ("human_closure_confirming", "closed"),
 }
 
-_CURRENT_PROFILE = "control-contract-v1"
-_WORKCASE_PROGRESS_BOUNDARY = datetime.fromisoformat("2026-07-26T07:30:00+08:00")
-_WORKCASE_PROGRESS_PHASES = {
-    "executing",
-    "controller_checking",
-    "independent_reviewing",
-    "closure_preparing",
-}
+_V1_PROFILE = "control-contract-v1"
+_V2_PROFILE = "control-contract-v2"
+_V1_BOUNDARY = parse_rfc3339("2026-07-20T07:30:00+08:00")
+_V2_BOUNDARY = parse_rfc3339("2026-07-26T12:45:00+08:00")
 _PLAN_TOP_FIELDS = (
     "goal",
     "scope",
@@ -118,6 +117,29 @@ def _projection(fields: dict[str, object], top: Iterable[str], item: Iterable[st
     return _stable(projected)
 
 
+def _plan_projection(fields: dict[str, object]) -> str:
+    if _is_control_profile(fields):
+        return _stable(project_workcase_subject(fields, "plan_current"))
+    return _projection(fields, _PLAN_TOP_FIELDS, _PLAN_ITEM_FIELDS)
+
+
+def _cancelled_item_status_changed(before: dict[str, object], after: dict[str, object]) -> bool:
+    def statuses(fields: dict[str, object]) -> dict[str, object]:
+        items = fields.get("work_items")
+        return {
+            str(item.get("item_id")): item.get("status")
+            for item in (items if isinstance(items, list) else [])
+            if isinstance(item, dict) and isinstance(item.get("item_id"), str)
+        }
+
+    existing = statuses(before)
+    supplied = statuses(after)
+    return any(
+        existing[item_id] != supplied[item_id] and "cancelled" in {existing[item_id], supplied[item_id]}
+        for item_id in existing.keys() & supplied.keys()
+    )
+
+
 def _version(fields: dict[str, object], key: str) -> int | None:
     value = fields.get(key)
     return value if isinstance(value, int) and not isinstance(value, bool) else None
@@ -135,7 +157,7 @@ def _reviewer_records(fields: dict[str, object]) -> tuple[str, ...]:
 def _new_reviewer_record_issues(before: dict[str, object], after: dict[str, object]) -> list[FactIssue]:
     """Check only Reviewer records formed or changed by this transition."""
 
-    if not _is_current(after):
+    if not _is_v1(after):
         return []
     remaining = Counter(_reviewer_records(before))
     values = after.get("result_reviews")
@@ -174,6 +196,21 @@ def _creation_reviewer_records(fields: dict[str, object]) -> tuple[str, ...]:
     )
 
 
+def _review_event_identities(fields: dict[str, object], array_name: str) -> Counter[str]:
+    values = fields.get(array_name)
+    return Counter(
+        _stable({key: review.get(key) for key in ("reviewer", "reviewed_at", "subject_version")})
+        for review in (values if isinstance(values, list) else [])
+        if isinstance(review, dict)
+    )
+
+
+def _forms_review_event(before: dict[str, object], after: dict[str, object], array_name: str) -> bool:
+    existing = _review_event_identities(before, array_name)
+    supplied = _review_event_identities(after, array_name)
+    return any(count > existing[identity] for identity, count in supplied.items())
+
+
 def _audit_entries(fields: dict[str, object]) -> dict[str, str]:
     values = fields.get("audit_summary")
     return {
@@ -197,8 +234,76 @@ def _matching_audit_entry(
     return None
 
 
-def _is_current(fields: dict[str, object]) -> bool:
-    return fields.get("workcase_profile") == _CURRENT_PROFILE
+def _profile(fields: dict[str, object]) -> str:
+    value = fields.get("workcase_profile")
+    if value == _V1_PROFILE:
+        return "v1"
+    if value == _V2_PROFILE:
+        return "v2"
+    return "legacy" if value is None else "invalid"
+
+
+def _is_v1(fields: dict[str, object]) -> bool:
+    return _profile(fields) == "v1"
+
+
+def _is_control_profile(fields: dict[str, object]) -> bool:
+    return _profile(fields) in {"v1", "v2"}
+
+
+def _required_profile_for_missing_value(fields: dict[str, object]) -> str | None:
+    created = parse_rfc3339(fields.get("created_at"))
+    if created is None or _V1_BOUNDARY is None or _V2_BOUNDARY is None or created < _V1_BOUNDARY:
+        return None
+    return "v2" if created >= _V2_BOUNDARY else "v1"
+
+
+def _is_profile_only_repair(
+    before: dict[str, object],
+    after: dict[str, object],
+    required_profile: str,
+) -> bool:
+    before_content = {key: value for key, value in before.items() if key != "updated_at"}
+    after_content = {key: value for key, value in after.items() if key not in {"updated_at", "workcase_profile"}}
+    return (
+        after.get("workcase_profile") == (_V2_PROFILE if required_profile == "v2" else _V1_PROFILE)
+        and before_content == after_content
+    )
+
+
+def _migration_locked_reviews(fields: dict[str, object], array_name: str) -> tuple[str, ...]:
+    values = fields.get(array_name)
+    normalized: list[str] = []
+    for review in values if isinstance(values, list) else []:
+        if not isinstance(review, dict):
+            continue
+        member = dict(review)
+        member.pop("review_basis", None)
+        member.pop("controller_resolution", None)
+        normalized.append(_stable(member))
+    return tuple(normalized)
+
+
+def _reviews_are_preserved_subset(
+    before: dict[str, object],
+    after: dict[str, object],
+    array_name: str,
+) -> bool:
+    """Check only ordered record preservation; sources, not Code, decide whether any removal is warranted."""
+
+    existing = _migration_locked_reviews(before, array_name)
+    retained = _migration_locked_reviews(after, array_name)
+    if existing and not retained:
+        return False
+    cursor = iter(existing)
+    return all(any(candidate == review for candidate in cursor) for review in retained)
+
+
+def _approval_event_identity(fields: dict[str, object], key: str) -> tuple[object, object] | None:
+    value = fields.get(key)
+    if not isinstance(value, dict):
+        return None
+    return value.get("subject_version"), value.get("approved_at")
 
 
 def _all_work_items_pending(fields: dict[str, object]) -> bool:
@@ -210,160 +315,120 @@ def _all_work_items_pending(fields: dict[str, object]) -> bool:
     )
 
 
-def _progress_entries(fields: dict[str, object]) -> tuple[dict[str, object], ...]:
-    history = fields.get("progress_history")
-    entries = history.get("entries") if isinstance(history, dict) else None
-    if not isinstance(entries, list):
-        return ()
-    return tuple(entry for entry in entries if isinstance(entry, dict))
-
-
-def is_workcase_progress_correction(before: dict[str, object], after: dict[str, object]) -> bool:
-    """Recognize the narrow full-snapshot shape allowed for fact correction."""
-
-    if not _is_current(before) or not _is_current(after):
-        return False
-    if (
-        before.get("status") != after.get("status")
-        or before.get("phase") != after.get("phase")
-        or before.get("plan_version") != after.get("plan_version")
-    ):
-        return False
-    before_history = before.get("progress_history")
-    after_history = after.get("progress_history")
-    if not isinstance(before_history, dict) or not isinstance(after_history, dict):
-        return False
-    before_entries = before_history.get("entries")
-    after_entries = after_history.get("entries")
-    if not isinstance(before_entries, list) or not isinstance(after_entries, list) or not before_entries:
-        return False
-    if len(before_entries) != len(after_entries):
-        return False
-    before_ids: list[object] = []
-    after_ids: list[object] = []
-    for before_entry, after_entry in zip(before_entries, after_entries, strict=True):
-        if not isinstance(before_entry, dict) or not isinstance(after_entry, dict):
-            return False
-        before_ids.append(before_entry.get("event_id"))
-        after_ids.append(after_entry.get("event_id"))
-    return before_ids == after_ids and all(isinstance(event_id, str) and event_id for event_id in before_ids)
-
-
-def _valid_progress_withdrawal(
-    before: dict[str, object], after: dict[str, object], before_entries: tuple[dict[str, object], ...]
-) -> bool:
-    """Allow removal only for the event created by an erroneous first approval."""
-
-    if not before_entries:
-        return False
-    current_plan = _version(before, "plan_version")
-    current_plan_entries = [entry for entry in before_entries if entry.get("plan_version") == current_plan]
-    withdrawn = before_entries[-1]
-    expected_after_entries = before_entries[:-1]
-    actual_after_entries = _progress_entries(after)
-    if expected_after_entries:
-        history = after.get("progress_history")
-        before_history = before.get("progress_history")
-        same_coverage = (
-            isinstance(history, dict)
-            and isinstance(before_history, dict)
-            and history.get("coverage") == before_history.get("coverage")
-        )
-    else:
-        same_coverage = "progress_history" not in after
-    return (
-        len(current_plan_entries) == 1
-        and withdrawn.get("event_id") == f"progress-{len(before_entries):03d}"
-        and withdrawn.get("plan_version") == current_plan
-        and withdrawn.get("round") == 1
-        and withdrawn.get("phase") == "executing"
-        and withdrawn.get("transition_kind") == "started"
-        and actual_after_entries == expected_after_entries
-        and same_coverage
-    )
-
-
-def _progress_history_issues(
+def _workcase_transition(
     before: dict[str, object],
     after: dict[str, object],
     *,
-    approval_withdrawal: bool,
+    repairing_invalid_before: bool,
 ) -> list[FactIssue]:
     issues: list[FactIssue] = []
-    before_history = before.get("progress_history")
-    after_history = after.get("progress_history")
-    before_entries = _progress_entries(before)
-    after_entries = _progress_entries(after)
-    changed = _stable(before_history) != _stable(after_history)
-
-    if approval_withdrawal and changed and _valid_progress_withdrawal(before, after, before_entries):
-        return issues
-
-    appended = False
-    correction = changed and is_workcase_progress_correction(before, after)
-    if changed:
-        same_coverage = isinstance(after_history, dict) and (
-            not isinstance(before_history, dict) or after_history.get("coverage") == before_history.get("coverage")
-        )
-        appended = (
-            same_coverage and len(after_entries) == len(before_entries) + 1 and after_entries[:-1] == before_entries
-        )
-        if not appended and not correction:
-            issues.append(
-                FactIssue(
-                    "schema",
-                    "progress_history 只能精确追加、按稳定 event_id 原位更正，或受控移除错误批准首项",
-                    "progress_history",
-                )
-            )
-
+    before_profile = _profile(before)
+    after_profile = _profile(after)
+    before_control = _is_control_profile(before)
+    v1_to_v2 = before_profile == "v1" and after_profile == "v2"
     before_phase = before.get("phase")
     after_phase = after.get("phase")
-    after_updated = parse_rfc3339(after.get("updated_at"))
-    enforce_event = after_updated is not None and after_updated >= _WORKCASE_PROGRESS_BOUNDARY
-    entering_progress = before_phase != after_phase and after_phase in _WORKCASE_PROGRESS_PHASES
-    if enforce_event and entering_progress and not appended:
-        issues.append(
-            FactIssue(
-                "schema",
-                "进入推进 phase 必须在同一更新中追加 progress event",
-                "progress_history",
-            )
-        )
-    if appended:
-        if after_phase not in _WORKCASE_PROGRESS_PHASES:
-            issues.append(FactIssue("schema", "progress event 只能记录正式推进 phase", "progress_history"))
-        if after_entries:
-            entered_at = parse_rfc3339(after_entries[-1].get("entered_at"))
-            if entered_at is None or entered_at != after_updated:
-                issues.append(
-                    FactIssue(
-                        "schema",
-                        "新增 progress event 的 entered_at 必须等于本次 updated_at",
-                        "progress_history.entries",
-                    )
-                )
-    return issues
-
-
-def _workcase_transition(before: dict[str, object], after: dict[str, object]) -> list[FactIssue]:
-    issues: list[FactIssue] = []
-    before_current = _is_current(before)
-    after_current = _is_current(after)
-    before_phase = before.get("phase")
-    after_phase = after.get("phase")
+    before_status = before.get("status")
+    after_status = after.get("status")
+    lifecycle_position_changed = before_status != after_status or before_phase != after_phase
     before_plan = _version(before, "plan_version")
     after_plan = _version(after, "plan_version")
     plan_bumped = before_plan is not None and after_plan is not None and after_plan > before_plan
     plan_reset = before_phase != after_phase and after_phase == "human_plan_confirming" and plan_bumped
+    required_missing_profile = _required_profile_for_missing_value(before)
+    missing_profile_repair_attempt = (
+        repairing_invalid_before
+        and before.get("workcase_profile") is None
+        and required_missing_profile is not None
+        and after_profile == required_missing_profile
+    )
+    missing_profile_repair = missing_profile_repair_attempt and _is_profile_only_repair(
+        before,
+        after,
+        required_missing_profile,
+    )
+
+    if missing_profile_repair_attempt and not missing_profile_repair:
+        issues.append(
+            FactIssue(
+                "schema",
+                "缺失 workcase_profile 的修复只允许补入 created_at 对应 profile，不得同次改变其它领域内容",
+                "workcase_profile",
+            )
+        )
+
+    if (
+        repairing_invalid_before
+        and before.get("workcase_profile") is None
+        and required_missing_profile is not None
+        and after_profile != required_missing_profile
+    ):
+        required_value = _V2_PROFILE if required_missing_profile == "v2" else _V1_PROFILE
+        issues.append(
+            FactIssue(
+                "schema",
+                f"缺失 workcase_profile 的修复必须按 created_at 补为 {required_value}",
+                "workcase_profile",
+            )
+        )
+
+    if before_profile == "v2" and after_profile != "v2":
+        issues.append(FactIssue("schema", "V2 WorkCase profile 不得移除或降级", "workcase_profile"))
+    if before_profile == "v1" and after_profile == "v1":
+        issues.append(FactIssue("schema", "V1 WorkCase 只允许显式迁移到 V2，不再接受普通更新", "workcase_profile"))
+        return issues
+    if before_profile == "v1" and after_profile not in {"v1", "v2"}:
+        issues.append(FactIssue("schema", "V1 WorkCase profile 不得移除或降级", "workcase_profile"))
+    if before_profile == "legacy" and after_profile == "v2" and not missing_profile_repair:
+        issues.append(FactIssue("schema", "legacy WorkCase 不得借 V2 简化直接升级", "workcase_profile"))
+    if (
+        before_profile == "legacy"
+        and after_profile in {"v1", "v2"}
+        and before_status == "closed"
+        and not missing_profile_repair
+    ):
+        issues.append(FactIssue("schema", "closed legacy WorkCase 禁止升级 profile", "workcase_profile"))
+
+    if v1_to_v2:
+        if before_status != after_status or before_phase != after_phase:
+            issues.append(FactIssue("schema", "V1→V2 迁移必须保持 status 与 phase 不变", "workcase_profile"))
+        for key in ("plan_version", "result_version"):
+            if before.get(key) != after.get(key) or (key in before) != (key in after):
+                issues.append(FactIssue("schema", f"V1→V2 迁移不得改变 {key}", key))
+        for key in ("execution_approval", "closure_approval"):
+            if (key in before) != (key in after) or _approval_event_identity(before, key) != _approval_event_identity(
+                after, key
+            ):
+                issues.append(FactIssue("schema", f"V1→V2 迁移不得改变 {key} 的版本或形成时点", key))
+        if before_status == "closed":
+            if before.get("closure_outcome") != after.get("closure_outcome") or ("closure_outcome" in before) != (
+                "closure_outcome" in after
+            ):
+                issues.append(FactIssue("schema", "closed V1→V2 迁移不得改变 closure_outcome", "closure_outcome"))
+        for array_name in ("creation_reviews", "result_reviews"):
+            if not _reviews_are_preserved_subset(before, after, array_name):
+                issues.append(
+                    FactIssue(
+                        "schema",
+                        (
+                            "V1→V2 review 对 before 已存在的同类记录必须在移除 review_basis 与"
+                            " controller_resolution 后保持 Reviewer 自有字段的非空有序子序列；"
+                            "before 未形成该类记录时不得新增"
+                        ),
+                        array_name,
+                    )
+                )
+
     if before_phase != after_phase and (before_phase, after_phase) not in _WORKCASE_PHASE_EDGES and not plan_reset:
         issues.append(FactIssue("schema", "WorkCase phase 转换不在当前允许边中", "phase"))
 
-    before_status = before.get("status")
-    after_status = after.get("status")
     if before_status != after_status and after_status != "closed" and before_phase != after_phase:
         issues.append(FactIssue("schema", "open/blocked 状态变化不得同时改变 phase", "phase"))
-    if after_status == "closed" and (before_phase != "human_closure_confirming" or after_phase != "closed"):
+    if (
+        before_status != "closed"
+        and after_status == "closed"
+        and (before_phase != "human_closure_confirming" or after_phase != "closed")
+    ):
         issues.append(
             FactIssue(
                 "schema",
@@ -372,15 +437,9 @@ def _workcase_transition(before: dict[str, object], after: dict[str, object]) ->
             )
         )
 
-    if before_current and not after_current:
-        issues.append(FactIssue("schema", "current WorkCase profile 不得移除或降级", "workcase_profile"))
-    if not before_current and after_current:
-        if before_status == "closed":
-            issues.append(FactIssue("schema", "closed legacy WorkCase 禁止升级 profile", "workcase_profile"))
-
     approval_withdrawal = (before_phase, after_phase) == ("executing", "human_plan_confirming") and not plan_bumped
     if approval_withdrawal:
-        if not before_current or not isinstance(before.get("execution_approval"), dict):
+        if not before_control or not isinstance(before.get("execution_approval"), dict):
             issues.append(FactIssue("schema", "撤回执行批准要求当前对象已有 execution_approval", "execution_approval"))
         if "execution_approval" in after:
             issues.append(FactIssue("schema", "撤回执行批准后 execution_approval 必须移除", "execution_approval"))
@@ -389,21 +448,13 @@ def _workcase_transition(before: dict[str, object], after: dict[str, object]) ->
         if not _all_work_items_pending(after):
             issues.append(FactIssue("schema", "撤回执行批准后所有 work_items 必须恢复为 pending", "work_items"))
 
-    if after_current:
-        issues.extend(
-            _progress_history_issues(
-                before,
-                after,
-                approval_withdrawal=approval_withdrawal,
-            )
-        )
-
-    plan_changed = _projection(before, _PLAN_TOP_FIELDS, _PLAN_ITEM_FIELDS) != _projection(
-        after, _PLAN_TOP_FIELDS, _PLAN_ITEM_FIELDS
+    plan_changed = not missing_profile_repair and (
+        _plan_projection(before) != _plan_projection(after)
+        or (plan_bumped and _cancelled_item_status_changed(before, after))
     )
     if before_plan is not None and (after_plan is None or after_plan < before_plan):
         issues.append(FactIssue("schema", "plan_version 不得减少或移除", "plan_version"))
-    if plan_changed and not plan_bumped:
+    if plan_changed and not plan_bumped and not v1_to_v2:
         issues.append(FactIssue("schema", "计划覆盖内容变化必须递增 plan_version", "plan_version"))
     if not plan_changed and plan_bumped:
         issues.append(FactIssue("schema", "计划内容未变化时不得递增 plan_version", "plan_version"))
@@ -413,13 +464,13 @@ def _workcase_transition(before: dict[str, object], after: dict[str, object]) ->
         for key in _PLAN_RESET_FIELDS:
             if key in after:
                 issues.append(FactIssue("schema", "plan_version 递增后旧批准和结果包必须移除", key))
-        if after_current:
+        if after_profile == "v1":
             audit_entry = _matching_audit_entry(after, "superseded_plan", before_plan)
             if audit_entry is None:
                 issues.append(
                     FactIssue(
                         "schema",
-                        "current plan_version 递增必须保留被替代计划的 audit continuity",
+                        "V1 plan_version 递增必须保留被替代计划的 audit continuity",
                         "audit_summary",
                     )
                 )
@@ -431,16 +482,31 @@ def _workcase_transition(before: dict[str, object], after: dict[str, object]) ->
                         "audit_summary",
                     )
                 )
-    if not before_current and after_current and not plan_bumped:
-        issues.append(FactIssue("schema", "legacy 升级 current profile 必须递增 plan_version", "plan_version"))
+    if before_profile == "legacy" and after_profile in {"v1", "v2"} and not plan_bumped and not missing_profile_repair:
+        issues.append(
+            FactIssue("schema", "legacy 显式升级到 control-contract-v1 必须递增 plan_version", "plan_version")
+        )
 
     before_creation_reviews = _creation_reviewer_records(before)
     after_creation_reviews = _creation_reviewer_records(after)
-    if not plan_bumped and before_creation_reviews != after_creation_reviews:
+    creation_reviews_changed = before_creation_reviews != after_creation_reviews
+    creation_review_formed = _forms_review_event(before, after, "creation_reviews")
+    if (
+        not v1_to_v2
+        and not plan_bumped
+        and creation_reviews_changed
+        and (after_profile != "v2" or creation_review_formed or lifecycle_position_changed)
+    ):
+        if after_profile != "v2":
+            summary = "creation review 的 Reviewer 自有字段只能随计划升版替换"
+        elif creation_review_formed:
+            summary = "creation review 新事件只能随计划升版形成"
+        else:
+            summary = "creation review 同事件事实修正必须保持 status 与 phase 不变"
         issues.append(
             FactIssue(
                 "schema",
-                "creation review 的 Reviewer 自有字段只能随计划升版替换",
+                summary,
                 "creation_reviews",
             )
         )
@@ -469,13 +535,13 @@ def _workcase_transition(before: dict[str, object], after: dict[str, object]) ->
         for key in ("result_reviews", "closure_approval"):
             if key in after:
                 issues.append(FactIssue("schema", "result_version 递增后必须重新形成审核且旧关闭批准失效", key))
-        if after_current and before_reviews:
+        if after_profile == "v1" and before_reviews:
             audit_entry = _matching_audit_entry(after, "superseded_result", before_result)
             if audit_entry is None:
                 issues.append(
                     FactIssue(
                         "schema",
-                        "current result_version 递增并移除旧审核时必须保留 audit continuity",
+                        "V1 result_version 递增并移除旧审核时必须保留 audit continuity",
                         "audit_summary",
                     )
                 )
@@ -489,24 +555,53 @@ def _workcase_transition(before: dict[str, object], after: dict[str, object]) ->
                 )
 
     review_records_changed = before_reviews != after_reviews
+    result_review_formed = _forms_review_event(before, after, "result_reviews")
     review_reset_for_new_version = result_bumped and not after_reviews
     if (
-        not plan_bumped
+        not v1_to_v2
+        and not plan_bumped
         and review_records_changed
+        and (after_profile != "v2" or result_review_formed)
         and before_phase != "independent_reviewing"
         and not review_reset_for_new_version
+    ):
+        summary = (
+            "result review 新事件只能在 independent_reviewing 形成；既有事件的获授权事实修正不在此机械规则裁决"
+            if after_profile == "v2"
+            else "result review 只能在 independent_reviewing 形成；离开后 Reviewer 自有字段不得改写"
+        )
+        issues.append(
+            FactIssue(
+                "schema",
+                summary,
+                "result_reviews",
+            )
+        )
+    if not v1_to_v2 and review_records_changed and not review_reset_for_new_version:
+        issues.extend(_new_reviewer_record_issues(before, after))
+    if (
+        after_profile == "v2"
+        and not v1_to_v2
+        and not plan_bumped
+        and not result_bumped
+        and review_records_changed
+        and not result_review_formed
+        and lifecycle_position_changed
     ):
         issues.append(
             FactIssue(
                 "schema",
-                "result review 只能在 independent_reviewing 形成；离开后 Reviewer 自有字段不得改写",
+                "result review 同事件事实修正必须保持 status 与 phase 不变",
                 "result_reviews",
             )
         )
-    if review_records_changed and not review_reset_for_new_version:
-        issues.extend(_new_reviewer_record_issues(before, after))
     if (before_phase, after_phase) == ("controller_checking", "closure_preparing"):
-        if not before_reviews or before_reviews != after_reviews:
+        v2_reviews_preserved = after_profile == "v2" and bool(after_reviews) and not result_review_formed
+        if (
+            not before_reviews
+            or (after_profile == "v2" and not v2_reviews_preserved)
+            or (after_profile != "v2" and before_reviews != after_reviews)
+        ):
             issues.append(
                 FactIssue(
                     "schema",
@@ -515,13 +610,14 @@ def _workcase_transition(before: dict[str, object], after: dict[str, object]) ->
                 )
             )
 
-    before_audit = _audit_entries(before)
-    after_audit = _audit_entries(after)
-    for audit_id, before_entry in before_audit.items():
-        if audit_id not in after_audit:
-            issues.append(FactIssue("schema", "既有 audit_summary 条目不得移除", "audit_summary"))
-        elif after_audit[audit_id] != before_entry:
-            issues.append(FactIssue("schema", "既有 audit_summary 条目不得改写", "audit_summary"))
+    if after_profile == "v1":
+        before_audit = _audit_entries(before)
+        after_audit = _audit_entries(after)
+        for audit_id, before_entry in before_audit.items():
+            if audit_id not in after_audit:
+                issues.append(FactIssue("schema", "既有 audit_summary 条目不得移除", "audit_summary"))
+            elif after_audit[audit_id] != before_entry:
+                issues.append(FactIssue("schema", "既有 audit_summary 条目不得改写", "audit_summary"))
     return issues
 
 
@@ -548,8 +644,14 @@ def validate_fact_transition(
     ):
         issues.append(FactIssue("schema", "status 转换不在当前单对象更新允许边中", "status"))
     if fact_type_key == "workcase":
-        issues.extend(_workcase_transition(before, after))
+        issues.extend(
+            _workcase_transition(
+                before,
+                after,
+                repairing_invalid_before=repairing_invalid_before,
+            )
+        )
     return tuple(issues)
 
 
-__all__ = ["is_workcase_progress_correction", "validate_fact_transition"]
+__all__ = ["validate_fact_transition"]
