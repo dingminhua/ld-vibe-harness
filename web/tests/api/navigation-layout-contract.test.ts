@@ -43,6 +43,15 @@ test('workspace changes reads status and diffs for the globally selected project
   assert.match(controller, /fetchProjectGitDiff\(entry\.projectId, entry\.path, entry\.status\)/);
 });
 
+test('workspace changes defaults to split on wide screens and unified below xl', () => {
+  const changes = fs.readFileSync(path.resolve('src/pages/Changes.tsx'), 'utf8');
+
+  assert.match(changes, /WIDE_DIFF_LAYOUT_QUERY = '\(min-width: 1280px\)'/);
+  assert.match(changes, /mediaQuery\.matches \? 'split' : 'unified'/);
+  assert.match(changes, /useState<DiffViewMode>\(getDefaultDiffViewMode\)/);
+  assert.match(changes, /diffViewModeWasSelected\.current = true/);
+});
+
 test('project files is a focused browser without nested Git views or eager Git reads', () => {
   const filesPage = fs.readFileSync(path.resolve('src/pages/ProjectFiles.tsx'), 'utf8');
   const controller = fs.readFileSync(path.resolve('src/pages/project-files/useProjectFilesController.ts'), 'utf8');

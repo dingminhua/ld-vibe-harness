@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   AlertCircle,
   Columns2,
@@ -20,6 +20,13 @@ import {
 } from '@/pages/project-files/model';
 import { useWorkspaceChanges } from '@/pages/changes/useWorkspaceChanges';
 import { useProjectScope } from '@/utils/projectContext';
+
+const WIDE_DIFF_LAYOUT_QUERY = '(min-width: 1280px)';
+
+function getDefaultDiffViewMode(): DiffViewMode {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return 'unified';
+  return window.matchMedia(WIDE_DIFF_LAYOUT_QUERY).matches ? 'split' : 'unified';
+}
 
 function EmptyState({ text }: { text: string }) {
   return (
@@ -57,7 +64,27 @@ export default function Changes() {
     openDiff,
     reload,
   } = useWorkspaceChanges(projectId);
-  const [diffViewMode, setDiffViewMode] = useState<DiffViewMode>('unified');
+  const [diffViewMode, setDiffViewMode] = useState<DiffViewMode>(getDefaultDiffViewMode);
+  const diffViewModeWasSelected = useRef(false);
+
+  useEffect(() => {
+    if (typeof window.matchMedia !== 'function') return undefined;
+    const mediaQuery = window.matchMedia(WIDE_DIFF_LAYOUT_QUERY);
+    const syncDefaultDiffViewMode = () => {
+      if (!diffViewModeWasSelected.current) {
+        setDiffViewMode(mediaQuery.matches ? 'split' : 'unified');
+      }
+    };
+
+    syncDefaultDiffViewMode();
+    mediaQuery.addEventListener('change', syncDefaultDiffViewMode);
+    return () => mediaQuery.removeEventListener('change', syncDefaultDiffViewMode);
+  }, []);
+
+  const selectDiffViewMode = (mode: DiffViewMode) => {
+    diffViewModeWasSelected.current = true;
+    setDiffViewMode(mode);
+  };
 
   if (projectsLoading) {
     return (
@@ -190,7 +217,7 @@ export default function Changes() {
                 <button
                   type="button"
                   aria-pressed={diffViewMode === 'unified'}
-                  onClick={() => setDiffViewMode('unified')}
+                  onClick={() => selectDiffViewMode('unified')}
                   className={`ldvh-chip inline-flex items-center justify-center gap-1 rounded px-2 py-1 transition-colors ${
                     diffViewMode === 'unified'
                       ? 'bg-ldvh-panel text-ldvh-accent'
@@ -203,7 +230,7 @@ export default function Changes() {
                 <button
                   type="button"
                   aria-pressed={diffViewMode === 'split'}
-                  onClick={() => setDiffViewMode('split')}
+                  onClick={() => selectDiffViewMode('split')}
                   className={`ldvh-chip inline-flex items-center justify-center gap-1 rounded px-2 py-1 transition-colors ${
                     diffViewMode === 'split'
                       ? 'bg-ldvh-panel text-ldvh-accent'
