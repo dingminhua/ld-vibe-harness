@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from collections import Counter
 from collections.abc import Iterable
+from datetime import datetime
 
 from ldvh.facts.models import FactIssue
 from ldvh.facts.validation import parse_rfc3339
@@ -43,6 +44,13 @@ _WORKCASE_PHASE_EDGES = {
 }
 
 _CURRENT_PROFILE = "control-contract-v1"
+_WORKCASE_PROGRESS_BOUNDARY = datetime.fromisoformat("2026-07-26T07:30:00+08:00")
+_WORKCASE_PROGRESS_PHASES = {
+    "executing",
+    "controller_checking",
+    "independent_reviewing",
+    "closure_preparing",
+}
 _PLAN_TOP_FIELDS = (
     "goal",
     "scope",
@@ -124,9 +132,7 @@ def _reviewer_records(fields: dict[str, object]) -> tuple[str, ...]:
     )
 
 
-def _new_reviewer_record_issues(
-    before: dict[str, object], after: dict[str, object]
-) -> list[FactIssue]:
+def _new_reviewer_record_issues(before: dict[str, object], after: dict[str, object]) -> list[FactIssue]:
     """Check only Reviewer records formed or changed by this transition."""
 
     if not _is_current(after):
@@ -181,7 +187,7 @@ def _matching_audit_entry(
     fields: dict[str, object], subject_kind: str, subject_version: int | None
 ) -> dict[str, object] | None:
     values = fields.get("audit_summary")
-    for entry in (values if isinstance(values, list) else []):
+    for entry in values if isinstance(values, list) else []:
         if (
             isinstance(entry, dict)
             and entry.get("subject_kind") == subject_kind
@@ -197,9 +203,147 @@ def _is_current(fields: dict[str, object]) -> bool:
 
 def _all_work_items_pending(fields: dict[str, object]) -> bool:
     items = fields.get("work_items")
-    return isinstance(items, list) and bool(items) and all(
-        isinstance(item, dict) and item.get("status") == "pending" for item in items
+    return (
+        isinstance(items, list)
+        and bool(items)
+        and all(isinstance(item, dict) and item.get("status") == "pending" for item in items)
     )
+
+
+def _progress_entries(fields: dict[str, object]) -> tuple[dict[str, object], ...]:
+    history = fields.get("progress_history")
+    entries = history.get("entries") if isinstance(history, dict) else None
+    if not isinstance(entries, list):
+        return ()
+    return tuple(entry for entry in entries if isinstance(entry, dict))
+
+
+def is_workcase_progress_correction(before: dict[str, object], after: dict[str, object]) -> bool:
+    """Recognize the narrow full-snapshot shape allowed for fact correction."""
+
+    if not _is_current(before) or not _is_current(after):
+        return False
+    if (
+        before.get("status") != after.get("status")
+        or before.get("phase") != after.get("phase")
+        or before.get("plan_version") != after.get("plan_version")
+    ):
+        return False
+    before_history = before.get("progress_history")
+    after_history = after.get("progress_history")
+    if not isinstance(before_history, dict) or not isinstance(after_history, dict):
+        return False
+    before_entries = before_history.get("entries")
+    after_entries = after_history.get("entries")
+    if not isinstance(before_entries, list) or not isinstance(after_entries, list) or not before_entries:
+        return False
+    if len(before_entries) != len(after_entries):
+        return False
+    before_ids: list[object] = []
+    after_ids: list[object] = []
+    for before_entry, after_entry in zip(before_entries, after_entries, strict=True):
+        if not isinstance(before_entry, dict) or not isinstance(after_entry, dict):
+            return False
+        before_ids.append(before_entry.get("event_id"))
+        after_ids.append(after_entry.get("event_id"))
+    return before_ids == after_ids and all(isinstance(event_id, str) and event_id for event_id in before_ids)
+
+
+def _valid_progress_withdrawal(
+    before: dict[str, object], after: dict[str, object], before_entries: tuple[dict[str, object], ...]
+) -> bool:
+    """Allow removal only for the event created by an erroneous first approval."""
+
+    if not before_entries:
+        return False
+    current_plan = _version(before, "plan_version")
+    current_plan_entries = [entry for entry in before_entries if entry.get("plan_version") == current_plan]
+    withdrawn = before_entries[-1]
+    expected_after_entries = before_entries[:-1]
+    actual_after_entries = _progress_entries(after)
+    if expected_after_entries:
+        history = after.get("progress_history")
+        before_history = before.get("progress_history")
+        same_coverage = (
+            isinstance(history, dict)
+            and isinstance(before_history, dict)
+            and history.get("coverage") == before_history.get("coverage")
+        )
+    else:
+        same_coverage = "progress_history" not in after
+    return (
+        len(current_plan_entries) == 1
+        and withdrawn.get("event_id") == f"progress-{len(before_entries):03d}"
+        and withdrawn.get("plan_version") == current_plan
+        and withdrawn.get("round") == 1
+        and withdrawn.get("phase") == "executing"
+        and withdrawn.get("transition_kind") == "started"
+        and actual_after_entries == expected_after_entries
+        and same_coverage
+    )
+
+
+def _progress_history_issues(
+    before: dict[str, object],
+    after: dict[str, object],
+    *,
+    approval_withdrawal: bool,
+) -> list[FactIssue]:
+    issues: list[FactIssue] = []
+    before_history = before.get("progress_history")
+    after_history = after.get("progress_history")
+    before_entries = _progress_entries(before)
+    after_entries = _progress_entries(after)
+    changed = _stable(before_history) != _stable(after_history)
+
+    if approval_withdrawal and changed and _valid_progress_withdrawal(before, after, before_entries):
+        return issues
+
+    appended = False
+    correction = changed and is_workcase_progress_correction(before, after)
+    if changed:
+        same_coverage = isinstance(after_history, dict) and (
+            not isinstance(before_history, dict) or after_history.get("coverage") == before_history.get("coverage")
+        )
+        appended = (
+            same_coverage and len(after_entries) == len(before_entries) + 1 and after_entries[:-1] == before_entries
+        )
+        if not appended and not correction:
+            issues.append(
+                FactIssue(
+                    "schema",
+                    "progress_history 只能精确追加、按稳定 event_id 原位更正，或受控移除错误批准首项",
+                    "progress_history",
+                )
+            )
+
+    before_phase = before.get("phase")
+    after_phase = after.get("phase")
+    after_updated = parse_rfc3339(after.get("updated_at"))
+    enforce_event = after_updated is not None and after_updated >= _WORKCASE_PROGRESS_BOUNDARY
+    entering_progress = before_phase != after_phase and after_phase in _WORKCASE_PROGRESS_PHASES
+    if enforce_event and entering_progress and not appended:
+        issues.append(
+            FactIssue(
+                "schema",
+                "进入推进 phase 必须在同一更新中追加 progress event",
+                "progress_history",
+            )
+        )
+    if appended:
+        if after_phase not in _WORKCASE_PROGRESS_PHASES:
+            issues.append(FactIssue("schema", "progress event 只能记录正式推进 phase", "progress_history"))
+        if after_entries:
+            entered_at = parse_rfc3339(after_entries[-1].get("entered_at"))
+            if entered_at is None or entered_at != after_updated:
+                issues.append(
+                    FactIssue(
+                        "schema",
+                        "新增 progress event 的 entered_at 必须等于本次 updated_at",
+                        "progress_history.entries",
+                    )
+                )
+    return issues
 
 
 def _workcase_transition(before: dict[str, object], after: dict[str, object]) -> list[FactIssue]:
@@ -234,9 +378,7 @@ def _workcase_transition(before: dict[str, object], after: dict[str, object]) ->
         if before_status == "closed":
             issues.append(FactIssue("schema", "closed legacy WorkCase 禁止升级 profile", "workcase_profile"))
 
-    approval_withdrawal = (
-        (before_phase, after_phase) == ("executing", "human_plan_confirming") and not plan_bumped
-    )
+    approval_withdrawal = (before_phase, after_phase) == ("executing", "human_plan_confirming") and not plan_bumped
     if approval_withdrawal:
         if not before_current or not isinstance(before.get("execution_approval"), dict):
             issues.append(FactIssue("schema", "撤回执行批准要求当前对象已有 execution_approval", "execution_approval"))
@@ -246,6 +388,15 @@ def _workcase_transition(before: dict[str, object], after: dict[str, object]) ->
             issues.append(FactIssue("schema", "撤回执行批准只适用于尚未形成结果包的计划", "phase"))
         if not _all_work_items_pending(after):
             issues.append(FactIssue("schema", "撤回执行批准后所有 work_items 必须恢复为 pending", "work_items"))
+
+    if after_current:
+        issues.extend(
+            _progress_history_issues(
+                before,
+                after,
+                approval_withdrawal=approval_withdrawal,
+            )
+        )
 
     plan_changed = _projection(before, _PLAN_TOP_FIELDS, _PLAN_ITEM_FIELDS) != _projection(
         after, _PLAN_TOP_FIELDS, _PLAN_ITEM_FIELDS
@@ -401,4 +552,4 @@ def validate_fact_transition(
     return tuple(issues)
 
 
-__all__ = ["validate_fact_transition"]
+__all__ = ["is_workcase_progress_correction", "validate_fact_transition"]

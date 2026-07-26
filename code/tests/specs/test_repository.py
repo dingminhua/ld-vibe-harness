@@ -41,9 +41,7 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
     evidence_fields = inspection.document_passing_implemented_checks_by_key("working-tree-test-evidence-fields")
     assert evidence_fields is not None
     assert evidence_fields.current_id == "07.Att.01"
-    assert evidence_fields.canonical_path == (
-        "specs/attachments/07.Att.01-Working Tree 测试证据字段表.md"
-    )
+    assert evidence_fields.canonical_path == ("specs/attachments/07.Att.01-Working Tree 测试证据字段表.md")
     helper_contract = inspection.document_passing_implemented_checks_by_key("helper-cli-service-contract")
     assert helper_contract is not None
     assert helper_contract.basis == (
@@ -129,8 +127,8 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
     assert action_templates.issues == ()
     assert action_templates.incomplete_sources == ()
     assert fields.complete is True
-    assert len(fields.structures) == 16
-    assert len(fields.registrations) == 120
+    assert len(fields.structures) == 18
+    assert len(fields.registrations) == 130
 
 
 def test_mechanically_distinct_spec_does_not_create_a_semantic_duplicate_diagnosis(

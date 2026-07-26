@@ -197,11 +197,20 @@ _WORKCASE_ITEM_STATUSES = {"pending", "in_progress", "blocked", "completed", "ca
 _WORKCASE_REVIEW_CONCLUSIONS = {"pass", "pass_with_followups", "changes_required", "blocked"}
 _WORKCASE_CURRENT_PROFILE = "control-contract-v1"
 _WORKCASE_CURRENT_BOUNDARY = datetime.fromisoformat("2026-07-20T07:30:00+08:00")
+_WORKCASE_PROGRESS_BOUNDARY = datetime.fromisoformat("2026-07-26T07:30:00+08:00")
+_WORKCASE_PROGRESS_PHASE_ORDER = {
+    "executing": 0,
+    "controller_checking": 1,
+    "independent_reviewing": 2,
+    "closure_preparing": 3,
+}
+_WORKCASE_PROGRESS_KINDS = {"started", "advanced", "returned", "repeated", "baseline"}
 _SHA256_PATTERN = re.compile(r"[0-9a-f]{64}\Z")
 _WORKCASE_CURRENT_ONLY_FIELDS = {
     "success_criterion_definitions",
     "success_criterion_results",
     "audit_summary",
+    "progress_history",
     "residual_responsibilities",
     "nonbinding_followups",
     "improvement_observations",
@@ -215,6 +224,7 @@ _WORKCASE_RESULT_PHASES = {
 _LOCAL_ID_PATTERNS = {
     "criterion_id": re.compile(r"criterion-[0-9]{2,}\Z"),
     "audit_id": re.compile(r"audit-[0-9]{2,}\Z"),
+    "progress_event_id": re.compile(r"progress-[0-9]{3,}\Z"),
     "finding_id": re.compile(r"finding-[0-9]{2,}\Z"),
     "residual_id": re.compile(r"residual-[0-9]{2,}\Z"),
     "followup_id": re.compile(r"followup-[0-9]{2,}\Z"),
@@ -260,9 +270,7 @@ def _validate_workcase_profile(fields: dict[str, Any], issues: list[FactIssue]) 
     raw_profile = fields.get("workcase_profile")
     created = parse_rfc3339(fields.get("created_at"))
     if raw_profile is not None and raw_profile != _WORKCASE_CURRENT_PROFILE:
-        issues.append(
-            FactIssue("schema", f"workcase_profile 只允许 {_WORKCASE_CURRENT_PROFILE}", "workcase_profile")
-        )
+        issues.append(FactIssue("schema", f"workcase_profile 只允许 {_WORKCASE_CURRENT_PROFILE}", "workcase_profile"))
     current = raw_profile == _WORKCASE_CURRENT_PROFILE
     if not current and created is not None and created >= _WORKCASE_CURRENT_BOUNDARY:
         issues.append(
@@ -384,9 +392,7 @@ def _validate_workcase_audit(fields: dict[str, Any], profile: str, issues: list[
             finding_values.extend(item for item in findings if isinstance(item, dict))
     created = parse_rfc3339(fields.get("created_at"))
     if created is not None and created >= _WORKCASE_CURRENT_BOUNDARY and "pre_creation_plan" not in subject_kinds:
-        issues.append(
-            FactIssue("schema", "current 新建 WorkCase 必须保留 pre_creation_plan audit", "audit_summary")
-        )
+        issues.append(FactIssue("schema", "current 新建 WorkCase 必须保留 pre_creation_plan audit", "audit_summary"))
     _validate_unique_local_values(
         finding_values,
         array_name="audit_summary.findings",
@@ -411,6 +417,136 @@ def _validate_workcase_audit(fields: dict[str, Any], profile: str, issues: list[
             "rejected",
         }:
             issues.append(FactIssue("schema", "audit final_route 不在当前闭集中", f"{path}.final_route"))
+
+
+def _validate_workcase_progress_history(fields: dict[str, Any], profile: str, issues: list[FactIssue]) -> None:
+    if profile != "current":
+        return
+    history = fields.get("progress_history")
+    created = parse_rfc3339(fields.get("created_at"))
+    phase = fields.get("phase")
+    progressed_phase = phase in _WORKCASE_PROGRESS_PHASE_ORDER or phase in {
+        "human_closure_confirming",
+        "closed",
+    }
+    if not isinstance(history, dict):
+        if created is not None and created >= _WORKCASE_PROGRESS_BOUNDARY and progressed_phase:
+            issues.append(
+                FactIssue(
+                    "schema",
+                    "推进历史边界后创建的 WorkCase 进入推进后必须记录 progress_history",
+                    "progress_history",
+                )
+            )
+        return
+
+    coverage = history.get("coverage")
+    if coverage not in {"full", "partial"}:
+        issues.append(FactIssue("schema", "progress_history.coverage 不在当前闭集中", "progress_history.coverage"))
+    if created is not None and created >= _WORKCASE_PROGRESS_BOUNDARY and coverage != "full":
+        issues.append(
+            FactIssue(
+                "schema",
+                "推进历史边界后创建的 WorkCase 只能形成 full history",
+                "progress_history.coverage",
+            )
+        )
+    entries = history.get("entries")
+    if not isinstance(entries, list) or not entries:
+        return
+
+    _validate_unique_local_values(
+        entries,
+        array_name="progress_history.entries",
+        member_name="event_id",
+        pattern_name="progress_event_id",
+        issues=issues,
+    )
+    current_plan = fields.get("plan_version")
+    created_at = parse_rfc3339(fields.get("created_at"))
+    updated_at = parse_rfc3339(fields.get("updated_at"))
+    previous: dict[str, Any] | None = None
+    previous_time: datetime | None = None
+    for index, entry in enumerate(entries):
+        if not isinstance(entry, dict):
+            continue
+        path = f"progress_history.entries[{index}]"
+        expected_id = f"progress-{index + 1:03d}"
+        if entry.get("event_id") != expected_id:
+            issues.append(FactIssue("schema", "progress event_id 必须连续单调形成", f"{path}.event_id"))
+        event_plan = entry.get("plan_version")
+        event_round = entry.get("round")
+        event_phase = entry.get("phase")
+        event_kind = entry.get("transition_kind")
+        if not _positive_integer(event_plan) or (
+            _positive_integer(current_plan) and isinstance(event_plan, int) and event_plan > current_plan
+        ):
+            issues.append(FactIssue("schema", "progress plan_version 必须是当前范围内正整数", f"{path}.plan_version"))
+        if not _positive_integer(event_round):
+            issues.append(FactIssue("schema", "progress round 必须是正整数", f"{path}.round"))
+        if event_phase not in _WORKCASE_PROGRESS_PHASE_ORDER:
+            issues.append(FactIssue("schema", "progress phase 不在推进环节闭集中", f"{path}.phase"))
+        if event_kind not in _WORKCASE_PROGRESS_KINDS:
+            issues.append(FactIssue("schema", "progress transition_kind 不在当前闭集中", f"{path}.transition_kind"))
+        event_at = parse_rfc3339(entry.get("entered_at"))
+        if event_at is None:
+            issues.append(
+                FactIssue(
+                    "schema",
+                    "progress entered_at 必须是包含 UTC 偏移的 RFC 3339 string",
+                    f"{path}.entered_at",
+                )
+            )
+        else:
+            if created_at is not None and event_at < created_at:
+                issues.append(FactIssue("schema", "progress entered_at 不得早于 created_at", f"{path}.entered_at"))
+            if updated_at is not None and event_at > updated_at:
+                issues.append(FactIssue("schema", "progress entered_at 不得晚于 updated_at", f"{path}.entered_at"))
+            if previous_time is not None and event_at <= previous_time:
+                issues.append(FactIssue("schema", "progress entered_at 必须严格递增", f"{path}.entered_at"))
+            previous_time = event_at
+
+        if previous is None:
+            expected_kind = "baseline" if coverage == "partial" else "started"
+            if event_round != 1 or event_kind != expected_kind:
+                issues.append(FactIssue("schema", "progress 首项轮次或转换种类不符合 coverage", path))
+        else:
+            previous_plan = previous.get("plan_version")
+            previous_round = previous.get("round")
+            previous_phase = previous.get("phase")
+            if isinstance(event_plan, int) and isinstance(previous_plan, int) and event_plan < previous_plan:
+                issues.append(FactIssue("schema", "progress plan_version 必须单调不减", f"{path}.plan_version"))
+            elif event_plan != previous_plan:
+                if event_round != 1 or event_kind != "started":
+                    issues.append(FactIssue("schema", "新 plan_version 的推进历史必须从第 1 轮 started 开始", path))
+            elif (
+                isinstance(previous_round, int)
+                and previous_phase in _WORKCASE_PROGRESS_PHASE_ORDER
+                and event_phase in _WORKCASE_PROGRESS_PHASE_ORDER
+            ):
+                previous_rank = _WORKCASE_PROGRESS_PHASE_ORDER[previous_phase]
+                current_rank = _WORKCASE_PROGRESS_PHASE_ORDER[event_phase]
+                if current_rank > previous_rank:
+                    expected_round, expected_kind = previous_round, "advanced"
+                elif current_rank < previous_rank:
+                    expected_round, expected_kind = previous_round + 1, "returned"
+                else:
+                    expected_round, expected_kind = previous_round + 1, "repeated"
+                if event_round != expected_round or event_kind != expected_kind:
+                    issues.append(FactIssue("schema", "progress round/transition_kind 与相邻环节不一致", path))
+        previous = entry
+
+    last = entries[-1] if isinstance(entries[-1], dict) else None
+    if last is None:
+        return
+    if phase in _WORKCASE_PROGRESS_PHASE_ORDER:
+        if last.get("plan_version") != current_plan or last.get("phase") != phase:
+            issues.append(FactIssue("schema", "当前推进 phase 必须匹配最后一条 progress event", "progress_history"))
+    elif phase in {"human_closure_confirming", "closed"}:
+        if last.get("plan_version") != current_plan or last.get("phase") != "closure_preparing":
+            issues.append(FactIssue("schema", "关闭确认前最后推进事件必须是当前计划主控收敛", "progress_history"))
+    elif phase == "human_plan_confirming" and last.get("plan_version") == current_plan:
+        issues.append(FactIssue("schema", "当前待确认计划不得保留同版本推进事件", "progress_history"))
 
 
 def _validate_workcase_observations(fields: dict[str, Any], profile: str, issues: list[FactIssue]) -> None:
@@ -448,9 +584,7 @@ def _validate_workcase_observations(fields: dict[str, Any], profile: str, issues
     if not isinstance(observations, list):
         return
     if "result_version" not in fields:
-        issues.append(
-            FactIssue("schema", "improvement_observations 要求有效 result_version", "result_version")
-        )
+        issues.append(FactIssue("schema", "improvement_observations 要求有效 result_version", "result_version"))
     if len(observations) > 20:
         issues.append(FactIssue("schema", "单一 result_version 最多保留 20 项 observation", "improvement_observations"))
     _validate_unique_local_values(
@@ -634,10 +768,14 @@ def _validate_workcase_reviews(
         else:
             projection_key = basis.get("projection_key")
             subject_fingerprint = basis.get("subject_fingerprint")
-            allowed_keys = {"plan_current"} if array_name == "creation_reviews" else {
-                "result_implementation",
-                "result_with_closure_report",
-            }
+            allowed_keys = (
+                {"plan_current"}
+                if array_name == "creation_reviews"
+                else {
+                    "result_implementation",
+                    "result_with_closure_report",
+                }
+            )
             if projection_key not in allowed_keys:
                 issues.append(
                     FactIssue(
@@ -646,9 +784,7 @@ def _validate_workcase_reviews(
                         f"{path}.review_basis.projection_key",
                     )
                 )
-            if not isinstance(subject_fingerprint, str) or _SHA256_PATTERN.fullmatch(
-                subject_fingerprint
-            ) is None:
+            if not isinstance(subject_fingerprint, str) or _SHA256_PATTERN.fullmatch(subject_fingerprint) is None:
                 issues.append(
                     FactIssue(
                         "schema",
@@ -809,6 +945,7 @@ def _validate_workcase(fields: dict[str, Any], issues: list[FactIssue]) -> None:
     _validate_workcase_items(fields, issues)
     _validate_workcase_criteria(fields, profile, issues)
     _validate_workcase_audit(fields, profile, issues)
+    _validate_workcase_progress_history(fields, profile, issues)
     _validate_workcase_observations(fields, profile, issues)
     _validate_workcase_reviews(fields, "creation_reviews", "plan_version", profile, issues)
     _validate_workcase_reviews(fields, "result_reviews", "result_version", profile, issues)

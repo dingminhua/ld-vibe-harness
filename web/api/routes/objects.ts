@@ -47,10 +47,17 @@ interface RelatedObjectSummary {
 
 interface RelatedWorkCaseSummary extends RelatedObjectSummary {
   executionItems?: RelatedObjectSummary[]
+  executionItemsProjectionValid?: boolean
   executionItemTotal?: number
   executionItemDone?: number
+  executionItemCancelled?: number
   executionItemBlocked?: number
   executionItemOpen?: number
+  executionItemsInProgress?: RelatedObjectSummary[]
+  progressHistoryCoverage?: 'full' | 'partial'
+  progressHistoryState?: 'missing' | 'valid' | 'invalid'
+  progressRound?: number
+  progressEventId?: string
   successCriteriaTotal?: number
   successCriteriaDone?: number
   successCriteria?: string[]
@@ -70,6 +77,11 @@ interface ProgressOption {
   group: string
   count: number
 }
+
+type WorkCaseProfileKind = 'current' | 'legacy' | 'invalid'
+
+const WORKCASE_CURRENT_BOUNDARY = '2026-07-20T07:30:00+08:00'
+const WORKCASE_PROGRESS_BOUNDARY = '2026-07-26T07:30:00+08:00'
 
 const SPARK_PRIORITY_ORDER = ['P0', 'P1', 'P2', 'P3']
 
@@ -99,6 +111,53 @@ const STATUS_PRIORITY: Record<string, number> = {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value && typeof value === 'object' && !Array.isArray(value))
+}
+
+function hasOwn(value: object, key: PropertyKey): boolean {
+  return Object.prototype.hasOwnProperty.call(value, key)
+}
+
+function parseStrictRfc3339(value: string): bigint | null {
+  const match = value.match(
+    /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?(Z|([+-])(\d{2}):(\d{2}))$/,
+  )
+  if (!match) return null
+  const [, yearText, monthText, dayText, hourText, minuteText, secondText, fraction = '', zone, sign, offsetHourText, offsetMinuteText] = match
+  const year = Number(yearText)
+  const month = Number(monthText)
+  const day = Number(dayText)
+  const hour = Number(hourText)
+  const minute = Number(minuteText)
+  const second = Number(secondText)
+  const offsetHour = zone === 'Z' ? 0 : Number(offsetHourText)
+  const offsetMinute = zone === 'Z' ? 0 : Number(offsetMinuteText)
+  const leapYear = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0)
+  const daysInMonth = [31, leapYear ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+  if (
+    year < 1
+    || month < 1 || month > 12
+    || day < 1 || day > daysInMonth[month - 1]
+    || hour > 23 || minute > 59 || second > 59
+    || offsetHour > 23 || offsetMinute > 59
+  ) return null
+
+  const base = new Date(0)
+  base.setUTCFullYear(year, month - 1, day)
+  base.setUTCHours(hour, minute, second, 0)
+  const offsetDirection = sign === '-' ? -1 : 1
+  const offsetMilliseconds = offsetDirection * (offsetHour * 60 + offsetMinute) * 60_000
+  const epochMilliseconds = base.getTime() - offsetMilliseconds
+  if (!Number.isFinite(epochMilliseconds)) return null
+  const microseconds = BigInt(fraction.slice(0, 6).padEnd(6, '0'))
+  return BigInt(epochMilliseconds) * 1_000n + microseconds
+}
+
+function getWorkCaseProfileKind(data: Record<string, unknown>): WorkCaseProfileKind {
+  const createdAt = parseStrictRfc3339(toStringValue(data.created_at))
+  if (data.workcase_profile === 'control-contract-v1') return createdAt === null ? 'invalid' : 'current'
+  if (hasOwn(data, 'workcase_profile')) return 'invalid'
+  const currentBoundary = parseStrictRfc3339(WORKCASE_CURRENT_BOUNDARY)
+  return createdAt !== null && currentBoundary !== null && createdAt < currentBoundary ? 'legacy' : 'invalid'
 }
 
 function toStringValue(value: unknown, fallback = ''): string {
@@ -177,11 +236,27 @@ function toRelatedSummary(item: ListedObject, type = item.type): RelatedObjectSu
   }
 }
 
-function toExecutionItemSummary(value: unknown, workcase: ListedObject, index: number): RelatedObjectSummary | null {
+function toExecutionItemSummary(
+  value: unknown,
+  workcase: ListedObject,
+  index: number,
+  currentProfile = false,
+): RelatedObjectSummary | null {
   if (!isRecord(value)) return null
-  const id = toStringValue(value.item_id) || toStringValue(value.id) || `execution-item-${index + 1}`
+  const currentId = toStringValue(value.item_id)
+  const currentGoal = toStringValue(value.goal)
+  const currentStatus = toStringValue(value.status)
+  if (
+    currentProfile
+    && (!/^item-[0-9]{2,}$/.test(currentId)
+      || !currentGoal.trim()
+      || !['pending', 'in_progress', 'blocked', 'completed', 'cancelled'].includes(currentStatus))
+  ) return null
+  const id = currentProfile
+    ? currentId
+    : currentId || toStringValue(value.id) || `execution-item-${index + 1}`
   const status = toStringValue(value.status, 'unknown')
-  const title = toStringValue(value.goal) || toStringValue(value.title, id)
+  const title = currentProfile ? currentGoal : currentGoal || toStringValue(value.title, id)
 
   return {
     id,
@@ -197,6 +272,84 @@ function toExecutionItemSummary(value: unknown, workcase: ListedObject, index: n
     blockingReason: toStringValue(value.blocking_summary) || toStringValue(value.blocking_reason) || undefined,
     inputRefs: toStringArray(value.input_refs),
   }
+}
+
+function hasNonEmptyString(value: unknown): boolean {
+  return typeof value === 'string' && value.trim().length > 0
+}
+
+function hasUniqueNonEmptyStrings(value: unknown): value is string[] {
+  return Array.isArray(value)
+    && value.length > 0
+    && value.every(hasNonEmptyString)
+    && new Set(value).size === value.length
+}
+
+function hasValidCurrentWorkItems(value: unknown): value is Array<Record<string, unknown>> {
+  if (!Array.isArray(value) || value.length === 0 || value.some((item) => !isRecord(item))) return false
+  const items = value as Array<Record<string, unknown>>
+  const allowedFields = new Set([
+    'item_id', 'goal', 'expected_result', 'status', 'depends_on', 'approach_summary', 'template_keys',
+    'template_deviation_summary', 'current_summary', 'resume_from', 'blocking_summary', 'result_summary',
+  ])
+  const ids = items.map((item) => toStringValue(item.item_id))
+  if (new Set(ids).size !== items.length) return false
+  const statuses = new Map(ids.map((id, index) => [id, toStringValue(items[index].status)]))
+
+  for (const item of items) {
+    const id = toStringValue(item.item_id)
+    const status = toStringValue(item.status)
+    if (
+      Object.keys(item).some((key) => !allowedFields.has(key))
+      || !/^item-[0-9]{2,}$/.test(id)
+      || !hasNonEmptyString(item.goal)
+      || !hasNonEmptyString(item.expected_result)
+      || !hasNonEmptyString(item.approach_summary)
+      || !['pending', 'in_progress', 'blocked', 'completed', 'cancelled'].includes(status)
+    ) return false
+
+    const conditional = ['current_summary', 'resume_from', 'blocking_summary', 'result_summary']
+    const required = status === 'blocked'
+      ? ['current_summary', 'resume_from', 'blocking_summary']
+      : status === 'in_progress'
+        ? ['current_summary', 'resume_from']
+        : ['completed', 'cancelled'].includes(status)
+          ? ['result_summary']
+          : []
+    const allowed = new Set(required)
+    if (required.some((key) => !hasNonEmptyString(item[key]))) return false
+    if (conditional.some((key) => hasOwn(item, key) && !allowed.has(key))) return false
+
+    if (hasOwn(item, 'depends_on')) {
+      if (!hasUniqueNonEmptyStrings(item.depends_on)) return false
+      if (item.depends_on.some((dependency) => !statuses.has(dependency) || dependency === id)) return false
+      if (
+        status === 'in_progress'
+        && item.depends_on.some((dependency) => !['completed', 'cancelled'].includes(statuses.get(dependency) ?? ''))
+      ) return false
+    }
+    if (hasOwn(item, 'template_keys') && !hasUniqueNonEmptyStrings(item.template_keys)) return false
+    if (hasOwn(item, 'template_deviation_summary') && !hasNonEmptyString(item.template_deviation_summary)) {
+      return false
+    }
+  }
+
+  const dependencies = new Map(items.map((item) => [
+    toStringValue(item.item_id),
+    Array.isArray(item.depends_on) ? item.depends_on as string[] : [],
+  ]))
+  const visiting = new Set<string>()
+  const visited = new Set<string>()
+  const hasCycle = (id: string): boolean => {
+    if (visiting.has(id)) return true
+    if (visited.has(id)) return false
+    visiting.add(id)
+    if ((dependencies.get(id) ?? []).some(hasCycle)) return true
+    visiting.delete(id)
+    visited.add(id)
+    return false
+  }
+  return !ids.some(hasCycle)
 }
 
 function countByStatus(items: Array<{ status: string }>): Record<string, number> {
@@ -224,11 +377,15 @@ function getChecklistProgress(value: unknown): { total: number; done: number } {
   )
 }
 
-function getWorkCaseCriterionStatements(data: Record<string, unknown>): string[] {
+function getWorkCaseCriterionStatements(
+  data: Record<string, unknown>,
+  profileKind: WorkCaseProfileKind,
+): string[] {
+  if (profileKind === 'invalid') return []
   const definitions = Array.isArray(data.success_criterion_definitions)
     ? data.success_criterion_definitions.filter(isRecord)
     : []
-  if (definitions.length > 0) {
+  if (profileKind === 'current') {
     return definitions
       .map((item) => toStringValue(item.statement).trim())
       .filter(Boolean)
@@ -244,13 +401,17 @@ function getWorkCaseCriterionStatements(data: Record<string, unknown>): string[]
     .filter(Boolean)
 }
 
-function getWorkCaseCriterionProgress(data: Record<string, unknown>): { total: number; done: number } {
+function getWorkCaseCriterionProgress(
+  data: Record<string, unknown>,
+  profileKind: WorkCaseProfileKind,
+): { total: number; done: number } {
+  if (profileKind === 'invalid') return { total: 0, done: 0 }
   const definitions = Array.isArray(data.success_criterion_definitions)
     ? data.success_criterion_definitions.filter(isRecord)
     : []
-  if (definitions.length === 0) {
+  if (profileKind === 'legacy') {
     const checklist = getChecklistProgress(data.success_criteria)
-    return { total: getWorkCaseCriterionStatements(data).length, done: checklist.done }
+    return { total: getWorkCaseCriterionStatements(data, profileKind).length, done: checklist.done }
   }
 
   const satisfied = new Set(
@@ -264,8 +425,150 @@ function getWorkCaseCriterionProgress(data: Record<string, unknown>): { total: n
   return { total: definitions.length, done: criterionIds.filter((id) => satisfied.has(id)).length }
 }
 
-function isExecutionItemDone(status: string): boolean {
-  return status === 'done' || status === 'completed'
+function isExecutionItemDone(status: string, currentProfile: boolean): boolean {
+  return status === 'completed' || (!currentProfile && status === 'done')
+}
+
+function isExecutionItemCancelled(status: string, currentProfile: boolean): boolean {
+  return status === 'cancelled' || (!currentProfile && status === 'skipped')
+}
+
+function isExecutionItemInProgress(status: string, currentProfile: boolean): boolean {
+  return status === 'in_progress' || (!currentProfile && status === 'executing')
+}
+
+function getWorkCaseProgressHistoryProjection(
+  data: Record<string, unknown>,
+  profileKind: WorkCaseProfileKind,
+): {
+  progressHistoryState: 'missing' | 'valid' | 'invalid'
+  progressHistoryCoverage?: 'full' | 'partial'
+  progressRound?: number
+  progressEventId?: string
+} {
+  if (profileKind === 'invalid') return { progressHistoryState: 'invalid' }
+  if (profileKind === 'legacy') {
+    return { progressHistoryState: hasOwn(data, 'progress_history') ? 'invalid' : 'missing' }
+  }
+  const currentPhase = toStringValue(data.phase)
+  const validPhases = new Set([
+    'human_plan_confirming', 'executing', 'controller_checking', 'independent_reviewing',
+    'closure_preparing', 'human_closure_confirming', 'closed',
+  ])
+  if (!validPhases.has(currentPhase)) return { progressHistoryState: 'invalid' }
+  if (!hasOwn(data, 'progress_history')) {
+    const createdTime = parseStrictRfc3339(toStringValue(data.created_at))
+    const boundaryTime = parseStrictRfc3339(WORKCASE_PROGRESS_BOUNDARY)
+    const progressedPhase = currentPhase !== 'human_plan_confirming'
+    if (createdTime === null || boundaryTime === null || (createdTime >= boundaryTime && progressedPhase)) {
+      return { progressHistoryState: 'invalid' }
+    }
+    return { progressHistoryState: 'missing' }
+  }
+  if (!isRecord(data.progress_history)) return { progressHistoryState: 'invalid' }
+  const coverage = data.progress_history.coverage
+  if (coverage !== 'full' && coverage !== 'partial') return { progressHistoryState: 'invalid' }
+  if (Object.keys(data.progress_history).some((key) => !['coverage', 'entries'].includes(key))) {
+    return { progressHistoryState: 'invalid' }
+  }
+  const entries = Array.isArray(data.progress_history.entries)
+    ? data.progress_history.entries
+    : []
+  if (entries.length === 0 || entries.some((entry) => !isRecord(entry))) {
+    return { progressHistoryState: 'invalid' }
+  }
+  const planVersion = data.plan_version
+  const createdAt = toStringValue(data.created_at)
+  const updatedAt = toStringValue(data.updated_at)
+  const createdTime = parseStrictRfc3339(createdAt)
+  const updatedTime = parseStrictRfc3339(updatedAt)
+  const boundaryTime = parseStrictRfc3339(WORKCASE_PROGRESS_BOUNDARY)
+  if (!Number.isInteger(planVersion) || Number(planVersion) <= 0 || createdTime === null || updatedTime === null) {
+    return { progressHistoryState: 'invalid' }
+  }
+  if (boundaryTime === null || (createdTime >= boundaryTime && coverage !== 'full')) {
+    return { progressHistoryState: 'invalid' }
+  }
+
+  let previous: Record<string, unknown> | null = null
+  let previousTime: bigint | null = null
+  for (const [index, rawEntry] of entries.entries()) {
+    const entry = rawEntry as Record<string, unknown>
+    if (
+      Object.keys(entry).some((key) => ![
+        'event_id', 'plan_version', 'round', 'phase', 'entered_at', 'transition_kind', 'transition_summary',
+      ].includes(key))
+      || entry.event_id !== `progress-${String(index + 1).padStart(3, '0')}`
+      || !Number.isInteger(entry.plan_version)
+      || Number(entry.plan_version) <= 0
+      || Number(entry.plan_version) > Number(planVersion)
+      || !Number.isInteger(entry.round)
+      || Number(entry.round) <= 0
+      || !['executing', 'controller_checking', 'independent_reviewing', 'closure_preparing'].includes(String(entry.phase))
+      || !['started', 'advanced', 'returned', 'repeated', 'baseline'].includes(String(entry.transition_kind))
+      || !toStringValue(entry.transition_summary).trim()
+    ) return { progressHistoryState: 'invalid' }
+    const enteredTime = parseStrictRfc3339(toStringValue(entry.entered_at))
+    if (
+      enteredTime === null
+      || enteredTime < createdTime
+      || enteredTime > updatedTime
+      || (previousTime !== null && enteredTime <= previousTime)
+    ) return { progressHistoryState: 'invalid' }
+
+    if (previous === null) {
+      const firstKind = coverage === 'partial' ? 'baseline' : 'started'
+      if (entry.round !== 1 || entry.transition_kind !== firstKind) {
+        return { progressHistoryState: 'invalid' }
+      }
+    } else {
+      const previousPlan = Number(previous.plan_version)
+      const eventPlan = Number(entry.plan_version)
+      if (eventPlan < previousPlan) return { progressHistoryState: 'invalid' }
+      if (eventPlan !== previousPlan) {
+        if (entry.round !== 1 || entry.transition_kind !== 'started') {
+          return { progressHistoryState: 'invalid' }
+        }
+      } else {
+        const ranks: Record<string, number> = {
+          executing: 0,
+          controller_checking: 1,
+          independent_reviewing: 2,
+          closure_preparing: 3,
+        }
+        const previousRound = Number(previous.round)
+        const previousRank = ranks[String(previous.phase)]
+        const currentRank = ranks[String(entry.phase)]
+        const expectedRound = currentRank > previousRank ? previousRound : previousRound + 1
+        const expectedKind = currentRank > previousRank
+          ? 'advanced'
+          : currentRank < previousRank
+            ? 'returned'
+            : 'repeated'
+        if (entry.round !== expectedRound || entry.transition_kind !== expectedKind) {
+          return { progressHistoryState: 'invalid' }
+        }
+      }
+    }
+    previous = entry
+    previousTime = enteredTime
+  }
+
+  const latest = entries.at(-1) as Record<string, unknown>
+  const round = latest.round
+  const progressPhases = new Set(['executing', 'controller_checking', 'independent_reviewing', 'closure_preparing'])
+  if (
+    latest.plan_version !== planVersion
+    || (progressPhases.has(currentPhase) && latest.phase !== currentPhase)
+    || (['human_closure_confirming', 'closed'].includes(currentPhase) && latest.phase !== 'closure_preparing')
+    || (currentPhase === 'human_plan_confirming' && latest.plan_version === planVersion)
+  ) return { progressHistoryState: 'invalid' }
+  return {
+    progressHistoryState: 'valid',
+    progressHistoryCoverage: coverage,
+    progressRound: Number(round),
+    progressEventId: toStringValue(latest.event_id) || undefined,
+  }
 }
 
 function getUpdatedTime(value: string | undefined): number {
@@ -343,19 +646,34 @@ export async function buildWorkCaseSummaries(workcaseItems: ListedObject[]): Pro
       : Array.isArray(orchestration.execution_items)
         ? orchestration.execution_items
         : []
-    const executionItems = rawExecutionItems
-      .map((executionItem, index) => toExecutionItemSummary(executionItem, item, index))
+    const profileKind = getWorkCaseProfileKind(data)
+    const currentProfile = profileKind === 'current'
+    const strictWorkItems = profileKind !== 'legacy'
+    const currentWorkItemsValid = currentProfile && hasValidCurrentWorkItems(data.work_items)
+    const projectedExecutionItems = rawExecutionItems
+      .map((executionItem, index) => toExecutionItemSummary(executionItem, item, index, strictWorkItems))
       .filter((executionItem): executionItem is RelatedObjectSummary => Boolean(executionItem))
-    const successCriteriaProgress = getWorkCaseCriterionProgress(data)
-    const successCriteria = getWorkCaseCriterionStatements(data)
+    const uniqueItemIds = new Set(projectedExecutionItems.map((executionItem) => executionItem.id))
+    const executionItemsProjectionValid = profileKind === 'legacy' || (currentProfile
+      && currentWorkItemsValid
+      && projectedExecutionItems.length === rawExecutionItems.length
+      && uniqueItemIds.size === projectedExecutionItems.length)
+    const executionItems = executionItemsProjectionValid ? projectedExecutionItems : []
+    const successCriteriaProgress = getWorkCaseCriterionProgress(data, profileKind)
+    const successCriteria = getWorkCaseCriterionStatements(data, profileKind)
+    const progressHistory = getWorkCaseProgressHistoryProjection(data, profileKind)
 
     return {
       ...toRelatedSummary(item, 'workcase'),
       executionItems: sortExecutionItems(executionItems),
+      executionItemsProjectionValid,
       executionItemTotal: executionItems.length,
-      executionItemDone: executionItems.filter((executionItem) => isExecutionItemDone(executionItem.status)).length,
+      executionItemDone: executionItems.filter((executionItem) => isExecutionItemDone(executionItem.status, currentProfile)).length,
+      executionItemCancelled: executionItems.filter((executionItem) => isExecutionItemCancelled(executionItem.status, currentProfile)).length,
       executionItemBlocked: executionItems.filter((executionItem) => executionItem.status === 'blocked').length,
       executionItemOpen: countOpenExecutionItems(executionItems),
+      executionItemsInProgress: executionItems.filter((executionItem) => isExecutionItemInProgress(executionItem.status, currentProfile)),
+      ...progressHistory,
       successCriteriaTotal: successCriteriaProgress.total,
       successCriteriaDone: successCriteriaProgress.done,
       successCriteria,
@@ -378,10 +696,17 @@ async function enrichWorkCases(items: ListedObject[]): Promise<ListedObject[]> {
     return {
       ...item,
       executionItems: summary.executionItems ?? [],
+      executionItemsProjectionValid: summary.executionItemsProjectionValid ?? true,
       executionItemTotal: summary.executionItemTotal ?? 0,
       executionItemDone: summary.executionItemDone ?? 0,
+      executionItemCancelled: summary.executionItemCancelled ?? 0,
       executionItemBlocked: summary.executionItemBlocked ?? 0,
       executionItemOpen: summary.executionItemOpen ?? 0,
+      executionItemsInProgress: summary.executionItemsInProgress ?? [],
+      progressHistoryCoverage: summary.progressHistoryCoverage,
+      progressHistoryState: summary.progressHistoryState,
+      progressRound: summary.progressRound,
+      progressEventId: summary.progressEventId,
       successCriteriaTotal: summary.successCriteriaTotal ?? 0,
       successCriteriaDone: summary.successCriteriaDone ?? 0,
       successCriteria: summary.successCriteria ?? [],

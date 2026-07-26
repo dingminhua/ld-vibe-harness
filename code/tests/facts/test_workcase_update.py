@@ -4,6 +4,7 @@ from ldvh.facts.workcase_projection import workcase_subject_fingerprint
 from ldvh.facts.workcase_update import construct_workcase_update
 
 EVENT_AT = "2026-07-20T16:00:00+08:00"
+PROGRESS_EVENT_AT = "2026-07-26T10:00:00+08:00"
 
 
 def _before() -> dict[str, object]:
@@ -22,9 +23,7 @@ def _before() -> dict[str, object]:
         "scope": "One module",
         "plan_version": 1,
         "result_version": 1,
-        "success_criterion_definitions": [
-            {"criterion_id": "criterion-01", "statement": "Tests pass"}
-        ],
+        "success_criterion_definitions": [{"criterion_id": "criterion-01", "statement": "Tests pass"}],
         "work_items": [
             {
                 "item_id": "item-01",
@@ -116,26 +115,20 @@ def test_result_review_append_and_resolution_are_separate() -> None:
         set_fields={},
         remove_fields=(),
         managed_records={
-            "resolve_result_reviews": [
-                {"review_index": 0, "controller_resolution": "Accepted and corrected."}
-            ]
+            "resolve_result_reviews": [{"review_index": 0, "controller_resolution": "Accepted and corrected."}]
         },
         event_at=EVENT_AT,
     )
     assert resolved.supplied is not None
     assert resolved.supplied["result_reviews"][0]["controller_resolution"] == "Accepted and corrected."
-    assert resolved.receipts == (
-        {"action": "result_review_resolved", "subject_version": 1, "review_index": 0},
-    )
+    assert resolved.receipts == ({"action": "result_review_resolved", "subject_version": 1, "review_index": 0},)
 
     unchanged = construct_workcase_update(
         {**before, "result_reviews": resolved.supplied["result_reviews"]},
         set_fields={},
         remove_fields=(),
         managed_records={
-            "resolve_result_reviews": [
-                {"review_index": 0, "controller_resolution": "Accepted and corrected."}
-            ]
+            "resolve_result_reviews": [{"review_index": 0, "controller_resolution": "Accepted and corrected."}]
         },
         event_at="2026-07-20T17:00:00+08:00",
     )
@@ -236,9 +229,7 @@ def test_execution_approval_is_version_bound_and_semantically_idempotent() -> No
     )
     assert formed.supplied is not None
     assert formed.supplied["execution_approval"]["approved_at"] == EVENT_AT
-    assert formed.receipts == (
-        {"action": "execution_approval_recorded", "subject_version": 1},
-    )
+    assert formed.receipts == ({"action": "execution_approval_recorded", "subject_version": 1},)
 
     unchanged = construct_workcase_update(
         {**before, **formed.supplied},
@@ -249,6 +240,248 @@ def test_execution_approval_is_version_bound_and_semantically_idempotent() -> No
     )
     assert unchanged.receipts == ()
     assert unchanged.supplied == formed.supplied
+
+
+def test_first_execution_atomically_forms_full_progress_history() -> None:
+    before = _before()
+    for field in (
+        "execution_approval",
+        "result_version",
+        "success_criterion_results",
+        "controller_check_summary",
+        "result_reviews",
+        "improvement_observations",
+        "residual_responsibilities",
+        "nonbinding_followups",
+        "closure_approval",
+        "validation_summary",
+        "closure_outcome",
+        "disposition_summary",
+    ):
+        before.pop(field, None)
+    before.update(
+        {
+            "phase": "human_plan_confirming",
+            "summary": "Waiting for approval",
+            "resume_from": "Present the plan",
+            "waiting_on": "Human execution approval",
+            "work_items": [{key: value for key, value in before["work_items"][0].items() if key != "result_summary"}],
+        }
+    )
+    before["work_items"][0]["status"] = "pending"
+    in_progress = {
+        **before["work_items"][0],
+        "status": "in_progress",
+        "current_summary": "Beginning the approved work",
+        "resume_from": "Continue item-01",
+    }
+
+    formed = construct_workcase_update(
+        before,
+        set_fields={"phase": "executing", "work_items": [in_progress]},
+        remove_fields=("waiting_on",),
+        managed_records={
+            "execution_approval": {"summary": "Human approved plan version 1"},
+            "progress_transition": {"summary": "Begin the approved plan"},
+        },
+        event_at=PROGRESS_EVENT_AT,
+    )
+
+    assert formed.problems == ()
+    assert formed.supplied is not None
+    assert formed.supplied["progress_history"] == {
+        "coverage": "full",
+        "entries": [
+            {
+                "event_id": "progress-001",
+                "plan_version": 1,
+                "round": 1,
+                "phase": "executing",
+                "entered_at": PROGRESS_EVENT_AT,
+                "transition_kind": "started",
+                "transition_summary": "Begin the approved plan",
+            }
+        ],
+    }
+    assert formed.receipts[-1] == {
+        "action": "progress_recorded",
+        "subject_version": 1,
+        "progress_event_id": "progress-001",
+        "progress_round": 1,
+        "progress_phase": "executing",
+        "transition_kind": "started",
+    }
+
+
+def test_future_progress_phase_change_requires_managed_transition() -> None:
+    result = construct_workcase_update(
+        _before(),
+        set_fields={"phase": "independent_reviewing"},
+        remove_fields=(),
+        managed_records={},
+        event_at=PROGRESS_EVENT_AT,
+    )
+
+    assert result.supplied is None
+    assert any("必须同次提供 progress_transition" in problem for problem in result.problems)
+
+
+def test_progress_round_increments_on_return_and_partial_history_is_explicit() -> None:
+    before = _before()
+    before["progress_history"] = {
+        "coverage": "full",
+        "entries": [
+            {
+                "event_id": "progress-001",
+                "plan_version": 1,
+                "round": 1,
+                "phase": "executing",
+                "entered_at": "2026-07-26T08:00:00+08:00",
+                "transition_kind": "started",
+                "transition_summary": "Started",
+            },
+            {
+                "event_id": "progress-002",
+                "plan_version": 1,
+                "round": 1,
+                "phase": "controller_checking",
+                "entered_at": "2026-07-26T09:00:00+08:00",
+                "transition_kind": "advanced",
+                "transition_summary": "Entered Controller check",
+            },
+        ],
+    }
+    returned = construct_workcase_update(
+        before,
+        set_fields={"phase": "executing"},
+        remove_fields=(),
+        managed_records={"progress_transition": {"summary": "Controller returned the result for correction"}},
+        event_at=PROGRESS_EVENT_AT,
+    )
+    assert returned.supplied is not None
+    event = returned.supplied["progress_history"]["entries"][-1]
+    assert (event["round"], event["transition_kind"]) == (2, "returned")
+
+    adopted = construct_workcase_update(
+        _before(),
+        set_fields={"phase": "independent_reviewing"},
+        remove_fields=(),
+        managed_records={"progress_transition": {"summary": "Start recording this existing flow"}},
+        event_at=PROGRESS_EVENT_AT,
+    )
+    assert adopted.supplied is not None
+    history = adopted.supplied["progress_history"]
+    assert history["coverage"] == "partial"
+    assert (history["entries"][0]["round"], history["entries"][0]["transition_kind"]) == (1, "baseline")
+
+
+def test_later_plan_without_history_cannot_claim_full_coverage() -> None:
+    before = _before()
+    for field in (
+        "execution_approval",
+        "result_version",
+        "success_criterion_results",
+        "controller_check_summary",
+        "result_reviews",
+        "improvement_observations",
+        "residual_responsibilities",
+        "nonbinding_followups",
+        "closure_approval",
+        "validation_summary",
+        "closure_outcome",
+        "disposition_summary",
+    ):
+        before.pop(field, None)
+    before.update(
+        {
+            "phase": "human_plan_confirming",
+            "plan_version": 2,
+            "summary": "Waiting for approval of the revised plan",
+            "resume_from": "Present plan version 2",
+            "waiting_on": "Human execution approval",
+            "work_items": [{key: value for key, value in before["work_items"][0].items() if key != "result_summary"}],
+        }
+    )
+    before["work_items"][0]["status"] = "pending"
+    in_progress = {
+        **before["work_items"][0],
+        "status": "in_progress",
+        "current_summary": "Beginning the revised work",
+        "resume_from": "Continue item-01",
+    }
+
+    formed = construct_workcase_update(
+        before,
+        set_fields={"phase": "executing", "work_items": [in_progress]},
+        remove_fields=("waiting_on",),
+        managed_records={
+            "execution_approval": {"summary": "Human approved plan version 2"},
+            "progress_transition": {"summary": "Begin the revised current plan"},
+        },
+        event_at=PROGRESS_EVENT_AT,
+    )
+
+    assert formed.problems == ()
+    assert formed.supplied is not None
+    history = formed.supplied["progress_history"]
+    assert history["coverage"] == "partial"
+    assert history["entries"][-1]["transition_kind"] == "baseline"
+
+
+def test_new_workcase_first_execution_remains_full_after_pre_execution_plan_bump() -> None:
+    before = _before()
+    for field in (
+        "execution_approval",
+        "result_version",
+        "success_criterion_results",
+        "controller_check_summary",
+        "result_reviews",
+        "improvement_observations",
+        "residual_responsibilities",
+        "nonbinding_followups",
+        "closure_approval",
+        "validation_summary",
+        "closure_outcome",
+        "disposition_summary",
+    ):
+        before.pop(field, None)
+    before.update(
+        {
+            "created_at": "2026-07-26T08:00:00+08:00",
+            "updated_at": "2026-07-26T09:00:00+08:00",
+            "phase": "human_plan_confirming",
+            "plan_version": 2,
+            "summary": "Waiting for approval of the revised unexecuted plan",
+            "resume_from": "Present plan version 2",
+            "waiting_on": "Human execution approval",
+            "work_items": [{key: value for key, value in before["work_items"][0].items() if key != "result_summary"}],
+        }
+    )
+    before["work_items"][0]["status"] = "pending"
+    in_progress = {
+        **before["work_items"][0],
+        "status": "in_progress",
+        "current_summary": "Beginning the first execution",
+        "resume_from": "Continue item-01",
+    }
+
+    formed = construct_workcase_update(
+        before,
+        set_fields={"phase": "executing", "work_items": [in_progress]},
+        remove_fields=("waiting_on",),
+        managed_records={
+            "execution_approval": {"summary": "Human approved plan version 2"},
+            "progress_transition": {"summary": "Begin the first execution after plan revision"},
+        },
+        event_at=PROGRESS_EVENT_AT,
+    )
+
+    assert formed.problems == ()
+    assert formed.supplied is not None
+    history = formed.supplied["progress_history"]
+    assert history["coverage"] == "full"
+    assert history["entries"][-1]["round"] == 1
+    assert history["entries"][-1]["transition_kind"] == "started"
 
 
 def test_execution_approval_withdrawal_restores_pending_plan_without_a_version_bump() -> None:
@@ -276,6 +509,20 @@ def test_execution_approval_withdrawal_restores_pending_plan_without_a_version_b
             "resume_from": "Wait for the actual Human decision.",
         }
     ]
+    before["progress_history"] = {
+        "coverage": "full",
+        "entries": [
+            {
+                "event_id": "progress-001",
+                "plan_version": 1,
+                "round": 1,
+                "phase": "executing",
+                "entered_at": "2026-07-20T15:30:00+08:00",
+                "transition_kind": "started",
+                "transition_summary": "Execution was recorded as approved",
+            }
+        ],
+    }
 
     withdrawal = construct_workcase_update(
         before,
@@ -300,10 +547,9 @@ def test_execution_approval_withdrawal_restores_pending_plan_without_a_version_b
     assert withdrawal.supplied["plan_version"] == 1
     assert withdrawal.supplied["phase"] == "human_plan_confirming"
     assert "execution_approval" not in withdrawal.supplied
+    assert "progress_history" not in withdrawal.supplied
     assert withdrawal.supplied["work_items"][0]["status"] == "pending"
-    assert withdrawal.receipts == (
-        {"action": "execution_approval_withdrawn", "subject_version": 1},
-    )
+    assert withdrawal.receipts == ({"action": "execution_approval_withdrawn", "subject_version": 1},)
 
 
 def test_execution_approval_withdrawal_rejects_result_or_active_work() -> None:
@@ -359,6 +605,4 @@ def test_closure_approval_requires_explicit_atomic_closed_snapshot() -> None:
     assert formed.problems == ()
     assert formed.supplied is not None
     assert formed.supplied["closure_approval"]["approved_at"] == EVENT_AT
-    assert formed.receipts == (
-        {"action": "closure_approval_recorded", "subject_version": 1},
-    )
+    assert formed.receipts == ({"action": "closure_approval_recorded", "subject_version": 1},)

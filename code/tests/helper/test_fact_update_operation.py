@@ -239,7 +239,10 @@ def _create_workcase(workspace: Path, project: Path) -> dict[str, str]:
     return created["result"]["actual_ref"]
 
 
-def test_workcase_helper_walks_controller_owned_review_and_atomic_closure(tmp_path: Path) -> None:
+def test_current_workcase_progress_rejects_generic_full_object_update(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     workspace, project, _ = _fixture(tmp_path)
     docs = project / "docs"
     docs.mkdir()
@@ -262,11 +265,17 @@ def test_workcase_helper_walks_controller_owned_review_and_atomic_closure(tmp_pa
                 workcase_ref,
             ),
         ).response
-        assert response["outcome"] == "ok", json.dumps(response, ensure_ascii=False, indent=2)
-        return response["result"]["fact_object"]
+        return response
 
-    def event_time() -> str:
-        return datetime.now().astimezone().isoformat(timespec="microseconds")
+    event_at = "2027-01-01T12:00:00+08:00"
+
+    class FrozenDateTime(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            value = cls.fromisoformat(event_at)
+            return value if tz is None else value.astimezone(tz)
+
+    monkeypatch.setattr("ldvh.helper.service.datetime", FrozenDateTime)
 
     def approve_execution(fields: dict[str, object]) -> None:
         fields.update(
@@ -276,8 +285,22 @@ def test_workcase_helper_walks_controller_owned_review_and_atomic_closure(tmp_pa
                 "resume_from": "Complete item-01",
                 "execution_approval": {
                     "subject_version": 1,
-                    "approved_at": event_time(),
+                    "approved_at": event_at,
                     "summary": "Human approved the presented current plan",
+                },
+                "progress_history": {
+                    "coverage": "full",
+                    "entries": [
+                        {
+                            "event_id": "progress-001",
+                            "plan_version": 1,
+                            "round": 1,
+                            "phase": "executing",
+                            "entered_at": event_at,
+                            "transition_kind": "started",
+                            "transition_summary": "Begin the approved current plan",
+                        }
+                    ],
                 },
             }
         )
@@ -290,135 +313,107 @@ def test_workcase_helper_walks_controller_owned_review_and_atomic_closure(tmp_pa
             }
         )
 
-    approve_snapshot = update(approve_execution)
-    assert "result_version" not in approve_snapshot
+    approve_response = update(approve_execution)
+    assert approve_response["outcome"] == "rejected"
+    assert any("只能由 update-workcase 托管追加" in gap["summary"] for gap in approve_response["gaps"])
 
-    def enter_controller_check(fields: dict[str, object]) -> None:
-        fields.update(
-            {
-                "phase": "controller_checking",
-                "summary": "Controller is checking the completed result",
-                "resume_from": "Check the result and initiate independent review",
-                "result_version": 1,
-                "controller_check_summary": "Controller checked the item result and focused evidence",
-                "success_criterion_results": [
-                    {
-                        "criterion_id": "criterion-01",
-                        "outcome": "satisfied",
-                        "summary": "The focused lifecycle result was produced and verified",
-                    }
-                ],
-            }
-        )
-        item = fields["work_items"][0]
-        item.pop("current_summary")
-        item.pop("resume_from")
-        item.update(
-            {
-                "status": "completed",
-                "result_summary": "The bounded result was produced and verified",
-            }
-        )
 
-    update(enter_controller_check)
-    update(
-        lambda fields: fields.update(
-            {
-                "phase": "independent_reviewing",
-                "summary": "Independent result review is in progress",
-                "resume_from": "Obtain review feedback and let Controller decide the next phase",
-            }
-        )
-    )
+def test_generic_full_snapshot_can_update_non_progress_content_without_changing_history(tmp_path: Path) -> None:
+    workspace, project, _ = _fixture(tmp_path)
+    docs = project / "docs"
+    docs.mkdir()
+    (docs / "input.md").write_text("Human-authorized work\n", encoding="utf-8")
+    workcase_ref = _create_workcase(workspace, project)
+    before = _read(workspace, project, workcase_ref)
+    approved = handle_request(
+        "call",
+        "update-workcase",
+        _workcase_update_payload(
+            workspace,
+            project,
+            workcase_ref,
+            before["content_fingerprint"],
+            set_fields={
+                "phase": "executing",
+                "summary": "Human approved the plan; execution may start",
+                "resume_from": "Execute item-01",
+            },
+            remove_fields=["waiting_on"],
+            managed_records={
+                "execution_approval": {"summary": "Human approved plan version 1"},
+                "progress_transition": {"summary": "Begin the approved current plan"},
+            },
+        ),
+    ).response
+    assert approved["outcome"] == "ok"
 
-    def record_reviewer_feedback(fields: dict[str, object]) -> None:
-        fields["result_reviews"] = [
-            {
-                "reviewer": "independent-result-reviewer",
-                "reviewed_at": event_time(),
-                "subject_version": 1,
-                "scope": "Item result, success criterion, Controller check, validation, and residual risk",
-                "conclusion": "blocked",
-                "feedback": ["The reviewer would prefer another validation statement"],
-                "review_basis": {
-                    "projection_key": "result_implementation",
-                    "subject_fingerprint": workcase_subject_fingerprint(fields, "result_implementation"),
-                },
-            }
-        ]
+    current = _read(workspace, project, workcase_ref)
+    target = _mutable(current)
+    target["summary"] = "Execution continues with a clarified current summary"
+    response = handle_request(
+        "call",
+        "update-fact-object",
+        _update_payload(workspace, project, current["content_fingerprint"], target, workcase_ref),
+    ).response
 
-    review_snapshot = update(record_reviewer_feedback)
-    assert "controller_resolution" not in review_snapshot["result_reviews"][0]
+    assert response["outcome"] == "ok", json.dumps(response, ensure_ascii=False, indent=2)
+    after = _read(workspace, project, workcase_ref)["fact_object"]
+    assert after["summary"] == target["summary"]
+    assert after["progress_history"] == current["fact_object"]["progress_history"]
 
-    def controller_handles_feedback(fields: dict[str, object]) -> None:
-        fields["result_reviews"][0]["controller_resolution"] = (
-            "1. Rejected as a phase veto; existing evidence is sufficient, so no rereview is needed."
-        )
-        fields.update(
-            {
-                "phase": "controller_checking",
-                "summary": "Controller handled review feedback and decided no rereview is required",
-                "resume_from": "Enter closure preparation with the retained current-version review",
-            }
-        )
 
-    update(controller_handles_feedback)
-    update(
-        lambda fields: fields.update(
-            {
-                "phase": "closure_preparing",
-                "summary": "Controller is preparing the final closure report",
-                "resume_from": "Complete validation, outcome, and disposition",
-            }
-        )
-    )
+def test_workcase_delta_records_same_phase_repetition_as_a_new_round(tmp_path: Path) -> None:
+    workspace, project, _ = _fixture(tmp_path)
+    docs = project / "docs"
+    docs.mkdir()
+    (docs / "input.md").write_text("Human-authorized work\n", encoding="utf-8")
+    workcase_ref = _create_workcase(workspace, project)
+    before = _read(workspace, project, workcase_ref)
+    approved = handle_request(
+        "call",
+        "update-workcase",
+        _workcase_update_payload(
+            workspace,
+            project,
+            workcase_ref,
+            before["content_fingerprint"],
+            set_fields={
+                "phase": "executing",
+                "summary": "Human approved the plan; execution may start",
+                "resume_from": "Execute item-01",
+            },
+            remove_fields=["waiting_on"],
+            managed_records={
+                "execution_approval": {"summary": "Human approved plan version 1"},
+                "progress_transition": {"summary": "Begin the approved current plan"},
+            },
+        ),
+    ).response
+    assert approved["outcome"] == "ok"
 
-    def complete_report(fields: dict[str, object]) -> None:
-        fields.update(
-            {
-                "validation_summary": "The success criterion is supported by the focused evidence",
-                "closure_outcome": "completed",
-                "disposition_summary": "No residual responsibility remains",
-            }
-        )
+    current = _read(workspace, project, workcase_ref)
+    repeated = handle_request(
+        "call",
+        "update-workcase",
+        _workcase_update_payload(
+            workspace,
+            project,
+            workcase_ref,
+            current["content_fingerprint"],
+            set_fields={"summary": "Controller began another execution iteration"},
+            managed_records={
+                "progress_transition": {"summary": "Repeat execution after reviewing the current result"}
+            },
+        ),
+    ).response
 
-    prepared = update(complete_report)
-    assert prepared["result_version"] == 1
-    assert prepared["result_reviews"][0]["conclusion"] == "blocked"
-
-    def request_human_closure(fields: dict[str, object]) -> None:
-        fields.update(
-            {
-                "phase": "human_closure_confirming",
-                "summary": "Controller judged the complete report ready for Human closure confirmation",
-                "resume_from": "Await Human decision on the current result and report",
-                "waiting_on": "Human closure confirmation",
-            }
-        )
-
-    update(request_human_closure)
-
-    def close_with_human_approval(fields: dict[str, object]) -> None:
-        approved_at = event_time()
-        fields.update(
-            {
-                "status": "closed",
-                "phase": "closed",
-                "summary": "Human approved the current result and report; the WorkCase is closed",
-                "closure_approval": {
-                    "subject_version": 1,
-                    "approved_at": approved_at,
-                    "summary": "Human approved the current result version and complete report",
-                },
-            }
-        )
-        for key in ("priority", "resume_from", "waiting_on"):
-            fields.pop(key, None)
-
-    closed = update(close_with_human_approval)
-    assert closed["status"] == "closed"
-    assert closed["phase"] == "closed"
-    assert closed["closure_approval"]["subject_version"] == closed["result_version"]
+    assert repeated["outcome"] == "ok", json.dumps(repeated, ensure_ascii=False, indent=2)
+    history = _read(workspace, project, workcase_ref)["fact_object"]["progress_history"]
+    assert len(history["entries"]) == 2
+    assert history["entries"][-1]["event_id"] == "progress-002"
+    assert history["entries"][-1]["round"] == 2
+    assert history["entries"][-1]["phase"] == "executing"
+    assert history["entries"][-1]["transition_kind"] == "repeated"
 
 
 def test_workcase_delta_records_execution_approval_with_one_event_and_idempotent_retry(tmp_path: Path) -> None:
@@ -439,7 +434,10 @@ def test_workcase_delta_records_execution_approval_with_one_event_and_idempotent
             "resume_from": "Execute item-01",
         },
         remove_fields=["waiting_on"],
-        managed_records={"execution_approval": {"summary": "Human approved plan version 1"}},
+        managed_records={
+            "execution_approval": {"summary": "Human approved plan version 1"},
+            "progress_transition": {"summary": "Begin the approved current plan"},
+        },
     )
 
     response = handle_request("call", "update-workcase", payload).response
@@ -449,13 +447,22 @@ def test_workcase_delta_records_execution_approval_with_one_event_and_idempotent
     assert response["result"]["before_state"]["phase"] == "human_plan_confirming"
     assert response["result"]["after_state"]["phase"] == "executing"
     assert response["result"]["managed_record_receipts"] == [
-        {"action": "execution_approval_recorded", "subject_version": 1}
+        {"action": "execution_approval_recorded", "subject_version": 1},
+        {
+            "action": "progress_recorded",
+            "subject_version": 1,
+            "progress_event_id": "progress-001",
+            "progress_round": 1,
+            "progress_phase": "executing",
+            "transition_kind": "started",
+        },
     ]
     assert response["result"]["event_at"] is not None
     current = _read(workspace, project, workcase_ref)
     fields = current["fact_object"]
     assert fields["updated_at"] == response["result"]["event_at"]
     assert fields["execution_approval"]["approved_at"] == response["result"]["event_at"]
+    assert fields["progress_history"]["entries"][0]["entered_at"] == response["result"]["event_at"]
     observation = next(source for source in response["sources"] if source["kind"] == "working_tree")
     assert observation["observed_at"] == response["result"]["event_at"]
 
@@ -479,6 +486,109 @@ def test_workcase_delta_records_execution_approval_with_one_event_and_idempotent
     assert fact_path.read_bytes() == raw
 
 
+def test_generic_full_snapshot_can_correct_progress_content_but_not_event_identity(tmp_path: Path) -> None:
+    workspace, project, _ = _fixture(tmp_path)
+    docs = project / "docs"
+    docs.mkdir()
+    (docs / "input.md").write_text("Human-authorized work\n", encoding="utf-8")
+    workcase_ref = _create_workcase(workspace, project)
+    before = _read(workspace, project, workcase_ref)
+    approved = handle_request(
+        "call",
+        "update-workcase",
+        _workcase_update_payload(
+            workspace,
+            project,
+            workcase_ref,
+            before["content_fingerprint"],
+            set_fields={
+                "phase": "executing",
+                "summary": "Human approved the plan; execution may start",
+                "resume_from": "Execute item-01",
+            },
+            remove_fields=["waiting_on"],
+            managed_records={
+                "execution_approval": {"summary": "Human approved plan version 1"},
+                "progress_transition": {"summary": "Initial description that requires correction"},
+            },
+        ),
+    ).response
+    assert approved["outcome"] == "ok"
+
+    current = _read(workspace, project, workcase_ref)
+    corrected = _mutable(current)
+    corrected["progress_history"]["entries"][0]["transition_summary"] = (
+        "Corrected factual description without inventing another progress round"
+    )
+    correction = handle_request(
+        "call",
+        "update-fact-object",
+        _update_payload(
+            workspace,
+            project,
+            current["content_fingerprint"],
+            corrected,
+            workcase_ref,
+        ),
+    ).response
+    assert correction["outcome"] == "ok", json.dumps(correction, ensure_ascii=False, indent=2)
+    corrected_read = _read(workspace, project, workcase_ref)
+    corrected_entry = corrected_read["fact_object"]["progress_history"]["entries"][0]
+    assert corrected_entry["event_id"] == "progress-001"
+    assert corrected_entry["transition_summary"].startswith("Corrected factual description")
+
+    rewritten = _mutable(corrected_read)
+    rewritten["progress_history"]["entries"][0]["event_id"] = "progress-002"
+    rejected = handle_request(
+        "call",
+        "update-fact-object",
+        _update_payload(
+            workspace,
+            project,
+            corrected_read["content_fingerprint"],
+            rewritten,
+            workcase_ref,
+        ),
+    ).response
+    assert rejected["outcome"] == "rejected"
+    assert any("progress_history" in gap["summary"] for gap in rejected["gaps"])
+
+    fact_path = project / corrected_read["canonical_path"]
+    fact_path.write_text(
+        fact_path.read_text(encoding="utf-8").replace(
+            "transition_kind: started",
+            "transition_kind: advanced",
+            1,
+        ),
+        encoding="utf-8",
+    )
+    invalid_read = handle_request(
+        "call",
+        "read-fact-objects",
+        json.dumps(
+            {
+                "work_object_locators": [str(project)],
+                "arguments": {"workspace_root": str(workspace), "fact_refs": [workcase_ref]},
+            }
+        ),
+    ).response["result"]["items"][0]
+    assert invalid_read["check_status"] == "invalid"
+    repaired = _mutable(invalid_read)
+    repaired["progress_history"]["entries"][0]["transition_kind"] = "started"
+    repaired_response = handle_request(
+        "call",
+        "update-fact-object",
+        _update_payload(
+            workspace,
+            project,
+            invalid_read["content_fingerprint"],
+            repaired,
+            workcase_ref,
+        ),
+    ).response
+    assert repaired_response["outcome"] == "ok", json.dumps(repaired_response, ensure_ascii=False, indent=2)
+
+
 def test_workcase_delta_withdraws_an_erroneously_recorded_execution_approval(tmp_path: Path) -> None:
     workspace, project, _ = _fixture(tmp_path)
     docs = project / "docs"
@@ -500,7 +610,10 @@ def test_workcase_delta_withdraws_an_erroneously_recorded_execution_approval(tmp
                 "resume_from": "Begin item-01.",
             },
             remove_fields=["waiting_on"],
-            managed_records={"execution_approval": {"summary": "Human approved plan version 1"}},
+            managed_records={
+                "execution_approval": {"summary": "Human approved plan version 1"},
+                "progress_transition": {"summary": "Begin the recorded execution"},
+            },
         ),
     ).response
     assert approved["outcome"] == "ok"
@@ -540,6 +653,7 @@ def test_workcase_delta_withdraws_an_erroneously_recorded_execution_approval(tmp
     assert after["plan_version"] == 1
     assert after["phase"] == "human_plan_confirming"
     assert "execution_approval" not in after
+    assert "progress_history" not in after
     assert after["work_items"][0]["status"] == "pending"
 
 
@@ -589,7 +703,10 @@ def test_workcase_delta_walks_controller_owned_review_and_atomic_closure(tmp_pat
             "work_items": [in_progress],
         },
         remove_fields=["waiting_on"],
-        managed_records={"execution_approval": {"summary": "Human approved the presented current plan"}},
+        managed_records={
+            "execution_approval": {"summary": "Human approved the presented current plan"},
+            "progress_transition": {"summary": "Begin the approved current plan"},
+        },
     )
 
     completed_item = {key: value for key, value in in_progress.items() if key not in {"current_summary", "resume_from"}}
@@ -614,14 +731,16 @@ def test_workcase_delta_walks_controller_owned_review_and_atomic_closure(tmp_pat
                     "summary": "The focused lifecycle result was produced and verified",
                 }
             ],
-        }
+        },
+        managed_records={"progress_transition": {"summary": "Enter Controller self-check"}},
     )
     update(
         set_fields={
             "phase": "independent_reviewing",
             "summary": "Independent result review is in progress",
             "resume_from": "Obtain review feedback and let Controller decide the next phase",
-        }
+        },
+        managed_records={"progress_transition": {"summary": "Enter independent result review"}},
     )
     reviewed = update(
         managed_records={
@@ -653,7 +772,8 @@ def test_workcase_delta_walks_controller_owned_review_and_atomic_closure(tmp_pat
                         "Rejected as a phase veto; existing evidence is sufficient, so no rereview is needed."
                     ),
                 }
-            ]
+            ],
+            "progress_transition": {"summary": "Return to Controller self-check after review"},
         },
     )
     assert handled["phase"] == "controller_checking"
@@ -664,7 +784,8 @@ def test_workcase_delta_walks_controller_owned_review_and_atomic_closure(tmp_pat
             "phase": "closure_preparing",
             "summary": "Controller is preparing the final closure report",
             "resume_from": "Complete validation, outcome, and disposition",
-        }
+        },
+        managed_records={"progress_transition": {"summary": "Enter Controller convergence"}},
     )
     prepared = update(
         set_fields={
@@ -852,7 +973,10 @@ def test_workcase_delta_plan_bump_applies_fixed_reset_and_replaces_creation_revi
                 "resume_from": "Execute item-01",
             },
             remove_fields=["waiting_on"],
-            managed_records={"execution_approval": {"summary": "Human approved plan version 1"}},
+            managed_records={
+                "execution_approval": {"summary": "Human approved plan version 1"},
+                "progress_transition": {"summary": "Begin the approved current plan"},
+            },
         ),
     ).response
     assert approved["outcome"] == "ok"
@@ -908,6 +1032,83 @@ def test_workcase_delta_plan_bump_applies_fixed_reset_and_replaces_creation_revi
     assert after["creation_reviews"][0]["subject_version"] == 2
     assert after["creation_reviews"][0]["reviewed_at"] == after["updated_at"]
     assert response["result"]["managed_record_receipts"][0]["action"] == "creation_review_replaced"
+
+
+def test_new_workcase_plan_v2_first_execution_writes_full_history(tmp_path: Path) -> None:
+    workspace, project, _ = _fixture(tmp_path)
+    docs = project / "docs"
+    docs.mkdir()
+    (docs / "input.md").write_text("Human-authorized work\n", encoding="utf-8")
+    workcase_ref = _create_workcase(workspace, project)
+    before = _read(workspace, project, workcase_ref)
+    fields = before["fact_object"]
+    audit_summary = [
+        *fields["audit_summary"],
+        {
+            "audit_id": "audit-02",
+            "subject_kind": "superseded_plan",
+            "subject_version": 1,
+            "review_count": 1,
+            "summary": "The unexecuted first plan review was consumed by plan version 2",
+        },
+    ]
+    bumped = handle_request(
+        "call",
+        "update-workcase",
+        _workcase_update_payload(
+            workspace,
+            project,
+            workcase_ref,
+            before["content_fingerprint"],
+            set_fields={
+                "goal": "Exercise the revised plan before any execution",
+                "phase": "human_plan_confirming",
+                "plan_version": 2,
+                "summary": "Revised unexecuted plan is ready for Human approval",
+                "resume_from": "Request approval for plan version 2",
+                "audit_summary": audit_summary,
+            },
+            managed_records={
+                "replace_creation_reviews": [
+                    {
+                        "reviewer": "independent-plan-reviewer-v2",
+                        "scope": "Revised goal before first execution",
+                        "conclusion": "pass",
+                        "feedback": ["The revised plan is coherent"],
+                        "controller_resolution": "Accepted; plan version 2 is ready for Human approval.",
+                    }
+                ]
+            },
+        ),
+    ).response
+    assert bumped["outcome"] == "ok", json.dumps(bumped, ensure_ascii=False, indent=2)
+
+    current = _read(workspace, project, workcase_ref)
+    approved = handle_request(
+        "call",
+        "update-workcase",
+        _workcase_update_payload(
+            workspace,
+            project,
+            workcase_ref,
+            current["content_fingerprint"],
+            set_fields={
+                "phase": "executing",
+                "summary": "Human approved plan version 2; first execution begins",
+                "resume_from": "Execute item-01",
+            },
+            remove_fields=["waiting_on"],
+            managed_records={
+                "execution_approval": {"summary": "Human approved plan version 2"},
+                "progress_transition": {"summary": "Begin the first execution of this WorkCase"},
+            },
+        ),
+    ).response
+    assert approved["outcome"] == "ok", json.dumps(approved, ensure_ascii=False, indent=2)
+    history = _read(workspace, project, workcase_ref)["fact_object"]["progress_history"]
+    assert history["coverage"] == "full"
+    assert history["entries"][0]["round"] == 1
+    assert history["entries"][0]["transition_kind"] == "started"
 
 
 def test_workcase_delta_rejects_legacy_workcase_without_writing(tmp_path: Path) -> None:

@@ -10,7 +10,7 @@ import ObjectSignalBadges from '@/components/ObjectSignalBadges';
 import PriorityIcon from '@/components/PriorityIcon';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
 import { ExecutionFlowBar, ExecutionFlowLegend, ExecutionFlowMarker } from '@/components/ExecutionFlowStatus';
-import { fetchObjects, type ObjectItem, type ObjectStatusOption, type WorkCaseProgressOption } from '@/utils/api';
+import { fetchObjects, type ObjectItem, type ObjectStatusOption, type RelatedObjectSummary, type WorkCaseProgressOption } from '@/utils/api';
 import { formatDateTime } from '@/utils/dateFormat';
 import { useI18n } from '@/i18n/context';
 import { getLocalizedObjectTitle, getObjectStatusLocale } from '@/i18n/locales';
@@ -245,12 +245,7 @@ function WorkCasePlanConfirmationContent({
 
   return (
     <div className="grid min-w-0 gap-2">
-      <section className="min-w-0 rounded-md border border-ldvh-border/80 border-l-2 border-l-ldvh-accent/45 bg-ldvh-bg/65 px-3.5 py-3">
-        <h3 className="ldvh-card-decision-title">{t('objectList.workcaseGoal')}</h3>
-        <p className={`ldvh-card-decision-body mt-1.5 max-w-[82ch] whitespace-pre-line break-words ${goal?.trim() ? '' : 'text-red-400'}`}>
-          {goal?.trim() ? formatReasonText(goal) : t('objectList.workcaseFieldMissing')}
-        </p>
-      </section>
+      <WorkCaseGoalSection goal={goal} t={t} />
       <section className="min-w-0 rounded-md border border-ldvh-border/80 border-l-2 border-l-ldvh-accent/45 bg-ldvh-bg/65 px-3.5 py-3">
         <div className="flex min-w-0 items-center justify-between gap-2">
           <h3 className="ldvh-card-decision-title">{t('objectList.successCriteria')}</h3>
@@ -269,6 +264,179 @@ function WorkCasePlanConfirmationContent({
           </ul>
         ) : (
           <p className="ldvh-card-decision-body mt-1.5 text-red-400">{t('objectList.workcaseFieldMissing')}</p>
+        )}
+      </section>
+    </div>
+  );
+}
+
+function WorkCaseGoalSection({ goal, t }: { goal?: string; t: Translate }) {
+  return (
+    <section className="min-w-0 rounded-md border border-ldvh-border/80 border-l-2 border-l-ldvh-accent/45 bg-ldvh-bg/65 px-3.5 py-3">
+      <h3 className="ldvh-card-decision-title">{t('objectList.workcaseGoal')}</h3>
+      <p className={`ldvh-card-decision-body mt-1.5 max-w-[82ch] whitespace-pre-line break-words ${goal?.trim() ? '' : 'text-red-400'}`}>
+        {goal?.trim() ? formatReasonText(goal) : t('objectList.workcaseFieldMissing')}
+      </p>
+    </section>
+  );
+}
+
+function WorkCaseProgressingContent({
+  goal,
+  progressStep,
+  progressHistoryCoverage,
+  progressHistoryState,
+  progressRound,
+  executionItemsProjectionValid,
+  executionItemTotal,
+  executionItemDone,
+  executionItemCancelled,
+  executionItemsInProgress,
+  isBlocked,
+  blockingSummary,
+  t,
+}: {
+  goal?: string;
+  progressStep: WorkCaseProgressStep | null;
+  progressHistoryCoverage?: 'full' | 'partial';
+  progressHistoryState?: 'missing' | 'valid' | 'invalid';
+  progressRound?: number;
+  executionItemsProjectionValid: boolean;
+  executionItemTotal: number;
+  executionItemDone: number;
+  executionItemCancelled: number;
+  executionItemsInProgress: RelatedObjectSummary[];
+  isBlocked: boolean;
+  blockingSummary?: string;
+  t: Translate;
+}) {
+  const stepLabels = [
+    t('objectList.workcaseStageExecute'),
+    t('objectList.workcaseStageSelfCheck'),
+    t('objectList.workcaseStageResultReview'),
+    t('objectList.workcaseStageSynthesis'),
+  ];
+  const currentStep = progressStep ? WORKCASE_PROGRESS_STEP_ORDER.indexOf(progressStep) : -1;
+  const currentStepLabel = currentStep >= 0
+    ? stepLabels[currentStep]
+    : t('objectList.workcaseProgressUnavailable');
+  const roundLabel = progressHistoryState === 'invalid'
+    ? t('objectList.workcaseRoundInvalid')
+    : progressRound && progressHistoryCoverage === 'full'
+    ? t('objectList.workcaseRoundFull', { round: String(progressRound) })
+    : progressRound && progressHistoryCoverage === 'partial'
+      ? t('objectList.workcaseRoundPartial', { round: String(progressRound) })
+      : t('objectList.workcaseRoundMissing');
+
+  return (
+    <div className="grid min-w-0 gap-2">
+      <WorkCaseGoalSection goal={goal} t={t} />
+      <section className="min-w-0 rounded-md border border-ldvh-border/80 border-l-2 border-l-sky-400/55 bg-ldvh-bg/65 px-3.5 py-3">
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+          <h3 className="ldvh-card-decision-title">{t('objectList.workcaseCurrentProgress')}</h3>
+          <span className="ldvh-chip inline-flex shrink-0 items-center rounded-md border border-sky-500/30 bg-sky-500/10 px-2 py-1 text-sky-400">
+            {roundLabel}
+          </span>
+        </div>
+
+        <div className="mt-2.5 flex min-w-0 flex-wrap items-center gap-2">
+          <span className={`ldvh-chip inline-flex min-w-0 items-center gap-1.5 rounded-md border px-2 py-1 ${
+            currentStep >= 0
+              ? 'border-sky-500/30 bg-sky-500/10 text-sky-400'
+              : 'border-red-500/35 bg-red-500/10 text-red-400'
+          }`}>
+            {currentStep >= 0 && (
+              <span className="relative flex h-1.5 w-1.5 shrink-0" aria-hidden="true">
+                <span className="motion-safe:animate-ping absolute inline-flex h-full w-full rounded-full bg-current opacity-30" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-current" />
+              </span>
+            )}
+            <span className="min-w-0">{currentStepLabel}</span>
+          </span>
+          {executionItemsProjectionValid ? (
+            <span className="ldvh-meta inline-flex items-center rounded-md border border-ldvh-border/75 bg-ldvh-panel/45 px-2 py-1 text-ldvh-text-secondary">
+              {t('objectList.workcaseItemProgress', {
+                done: String(executionItemDone),
+                total: String(executionItemTotal),
+              })}
+            </span>
+          ) : (
+            <span className="ldvh-meta inline-flex items-center rounded-md border border-red-500/35 bg-red-500/10 px-2 py-1 text-red-400">
+              {t('objectList.workcaseProgressUnavailable')}
+            </span>
+          )}
+          {executionItemsProjectionValid && executionItemCancelled > 0 && (
+            <span className="ldvh-meta inline-flex items-center rounded-md border border-ldvh-border/75 bg-ldvh-panel/45 px-2 py-1 text-ldvh-text-secondary">
+              {t('objectList.workcaseItemsCancelled', { count: String(executionItemCancelled) })}
+            </span>
+          )}
+        </div>
+
+        <ol
+          className="mt-2.5 grid min-w-0 grid-cols-2 gap-1.5"
+          aria-label={`${t('objectList.workcaseDynamicStages')}：${currentStepLabel}`}
+        >
+          {WORKCASE_PROGRESS_STEP_ORDER.map((step, index) => {
+            const isCurrent = index === currentStep;
+            return (
+              <li
+                key={step}
+                aria-current={isCurrent ? 'step' : undefined}
+                className={`flex min-w-0 items-center gap-1.5 rounded-md border px-2 py-2 ${
+                  isCurrent
+                    ? 'border-sky-500/35 bg-sky-500/10 text-sky-400'
+                    : 'border-ldvh-border/75 bg-ldvh-panel/45 text-ldvh-text-secondary'
+                }`}
+              >
+                <span className={`ldvh-meta inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
+                  isCurrent ? 'border-sky-400/50 text-sky-400' : 'border-ldvh-border text-ldvh-text-secondary'
+                }`}>
+                  {index + 1}
+                </span>
+                <span className={`ldvh-card-decision-body min-w-0 ${isCurrent ? 'font-medium text-sky-400' : 'text-ldvh-text-secondary'}`}>
+                  {stepLabels[index]}
+                </span>
+              </li>
+            );
+          })}
+        </ol>
+
+        <div className="mt-2.5 border-t border-ldvh-border/70 pt-2.5">
+          <div className="ldvh-caption-strong text-ldvh-text-secondary">{t('objectList.workcaseCurrentItems')}</div>
+          {!executionItemsProjectionValid ? (
+            <p className="ldvh-card-decision-body mt-1.5 text-red-400">
+              {t('objectList.workcaseProgressUnavailable')}
+            </p>
+          ) : executionItemsInProgress.length > 0 ? (
+            <ul className="mt-1.5 grid min-w-0 gap-1.5">
+              {executionItemsInProgress.map((item) => (
+                <li key={item.id} className="flex min-w-0 items-start gap-2">
+                  <span aria-hidden="true" className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-sky-400/75" />
+                  <span className="ldvh-card-decision-body min-w-0 break-words">
+                    <span className="font-medium text-sky-400">{item.id}</span>
+                    <span className="text-ldvh-text-secondary"> · </span>
+                    {formatReasonText(item.title)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="ldvh-card-decision-body mt-1.5 text-ldvh-text-secondary">
+              {t('objectList.workcaseNoCurrentItems')}
+            </p>
+          )}
+        </div>
+
+        {isBlocked && (
+          <div className="mt-2.5 flex min-w-0 items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-2.5 py-2 text-amber-400">
+            <CircleAlert size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
+            <div className="min-w-0">
+              <div className="ldvh-caption-strong">{t('objectList.workcaseBlockingReason')}</div>
+              <p className={`ldvh-card-decision-body mt-0.5 whitespace-pre-line break-words ${blockingSummary?.trim() ? 'text-amber-300' : 'text-red-400'}`}>
+                {blockingSummary?.trim() ? formatReasonText(blockingSummary) : t('objectList.workcaseFieldMissing')}
+              </p>
+            </div>
+          </div>
         )}
       </section>
     </div>
@@ -664,6 +832,35 @@ export default function ObjectList() {
             prominentTitle
           >
             <WorkCasePlanConfirmationContent goal={obj.goal} successCriteria={obj.successCriteria} t={t} />
+          </ObjectCardFrame>
+        );
+      }
+      if (progressGroup === 'progressing') {
+        return (
+          <ObjectCardFrame
+            key={obj.id}
+            obj={obj}
+            locale={locale}
+            onOpen={openObject}
+            showNonActiveReason={false}
+            displayStatus={progressGroup}
+            prominentTitle
+          >
+            <WorkCaseProgressingContent
+              goal={obj.goal}
+              progressStep={progressStep}
+              progressHistoryCoverage={obj.progressHistoryCoverage}
+              progressHistoryState={obj.progressHistoryState}
+              progressRound={obj.progressRound}
+              executionItemsProjectionValid={obj.executionItemsProjectionValid ?? false}
+              executionItemTotal={obj.executionItemTotal ?? 0}
+              executionItemDone={obj.executionItemDone ?? 0}
+              executionItemCancelled={obj.executionItemCancelled ?? 0}
+              executionItemsInProgress={obj.executionItemsInProgress ?? []}
+              isBlocked={obj.responsibilityStatus === 'blocked'}
+              blockingSummary={obj.blocking_summary}
+              t={t}
+            />
           </ObjectCardFrame>
         );
       }

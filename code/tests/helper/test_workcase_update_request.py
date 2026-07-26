@@ -55,6 +55,7 @@ SCHEMA = FactSchema(
             "result_reviews[].reviewer",
             "execution_approval.summary",
             "closure_approval.summary",
+            "progress_history.coverage",
         )
     ),
 )
@@ -287,6 +288,7 @@ def test_valid_plan_replacement_review_has_exact_shape() -> None:
             "review_index 不得重复",
         ),
         ({"execution_approval": {"summary": ""}}, "summary 必须是非空 string"),
+        ({"progress_transition": {"summary": "", "extra": True}}, "包含未知字段"),
         (
             {
                 "closure_approval": {
@@ -364,6 +366,37 @@ def test_approval_source_reference_accepts_typed_details() -> None:
     assert result.request is not None
 
 
+def test_execution_approval_can_atomically_include_one_progress_transition() -> None:
+    result = _parse(
+        _request(
+            arguments=_arguments(
+                set={"phase": "executing"},
+                managed_records={
+                    "execution_approval": {"summary": "Human approved"},
+                    "progress_transition": {"summary": "Begin the approved plan"},
+                },
+            )
+        )
+    )
+
+    assert result.problems == ()
+    assert result.request is not None
+    assert result.request.managed_records["progress_transition"] == {"summary": "Begin the approved plan"}
+
+
+def test_progress_history_is_helper_managed_in_ordinary_delta() -> None:
+    result = _parse(
+        _request(
+            arguments=_arguments(
+                set={"progress_history": {"coverage": "full"}},
+            )
+        )
+    )
+
+    assert result.request is None
+    assert any("set 不得触碰 Helper 托管字段" in item and "progress_history" in item for item in result.problems)
+
+
 def test_approval_source_reference_details_must_be_object() -> None:
     result = _parse(
         _request(
@@ -371,9 +404,7 @@ def test_approval_source_reference_details_must_be_object() -> None:
                 managed_records={
                     "execution_approval": {
                         "summary": "Human approved",
-                        "source_refs": [
-                            {"kind": "human-input", "locator": "turn-1", "details": "not-an-object"}
-                        ],
+                        "source_refs": [{"kind": "human-input", "locator": "turn-1", "details": "not-an-object"}],
                     }
                 }
             )

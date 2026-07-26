@@ -15,7 +15,7 @@ from ldvh.facts.project_validation import stabilize_project_index
 from ldvh.facts.relations import ProjectFactIndex
 from ldvh.facts.repository import FactReadResult, read_fact_object
 from ldvh.facts.schema import FactSchema
-from ldvh.facts.transitions import validate_fact_transition
+from ldvh.facts.transitions import is_workcase_progress_correction, validate_fact_transition
 from ldvh.facts.update import atomic_replace_text_if_unchanged
 from ldvh.facts.validation import parse_rfc3339, validate_fact_object
 from ldvh.filesystem import AtomicWriteResult, durable_writes_enabled
@@ -51,6 +51,7 @@ class FactUpdateCommand:
     supplied: Mapping[str, Any]
     body: str | None
     event_at: str
+    allow_workcase_progress_mutation: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -111,6 +112,20 @@ def _candidate(
     issues = list(parsed.issues)
     if parsed.fields is not None:
         issues.extend(validate_fact_object(command.fact_type_key, parsed.fields, command.schema))
+        if (
+            command.fact_type_key == "workcase"
+            and before.get("workcase_profile") == "control-contract-v1"
+            and before.get("progress_history") != parsed.fields.get("progress_history")
+            and not command.allow_workcase_progress_mutation
+            and not is_workcase_progress_correction(before, parsed.fields)
+        ):
+            issues.append(
+                FactIssue(
+                    "schema",
+                    "current WorkCase 的 progress_history 只能由 update-workcase 托管追加，或按稳定 event_id 原位更正",
+                    "progress_history",
+                )
+            )
         issues.extend(
             validate_fact_transition(
                 command.fact_type_key,
@@ -168,8 +183,10 @@ def apply_fact_update_locked(command: FactUpdateCommand) -> FactUpdateResult:
     layout = LAYOUTS[command.fact_type_key]
     mutable_current = {key: value for key, value in current.fields.items() if key not in MANAGED_FIELDS}
     repairing_invalid_before = current.check_status != "mechanically_valid"
-    if not repairing_invalid_before and mutable_current == dict(command.supplied) and (
-        layout.carrier != "markdown" or (current.body or "") == command.body
+    if (
+        not repairing_invalid_before
+        and mutable_current == dict(command.supplied)
+        and (layout.carrier != "markdown" or (current.body or "") == command.body)
     ):
         return FactUpdateResult("no_change", command.event_at, current=current, readback=current)
 

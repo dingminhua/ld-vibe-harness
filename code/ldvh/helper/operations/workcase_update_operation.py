@@ -484,6 +484,7 @@ def _execute(
                 supplied=construction.supplied,
                 body=None,
                 event_at=context.event_at,
+                allow_workcase_progress_mutation=True,
             )
         )
     except FactCoordinationUnavailable as error:

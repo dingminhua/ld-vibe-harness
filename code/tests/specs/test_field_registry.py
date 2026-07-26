@@ -15,8 +15,8 @@ def test_current_registry_is_complete_and_resolves_all_current_types(current_spe
     inspection = _inspection(current_specs_repository)
 
     assert inspection.complete is True
-    assert len(inspection.structures) == 16
-    assert len(inspection.registrations) == 122
+    assert len(inspection.structures) == 18
+    assert len(inspection.registrations) == 130
     assert {item.fact_type_key for item in inspection.fact_types} == {
         "spark",
         "workcase",
@@ -58,3 +58,20 @@ def test_required_foundation_field_cannot_be_weakened_by_type_binding(current_sp
 
     assert inspection.complete is False
     assert any("基础必填字段 'object-id' 必须绑定为 required" == issue.summary for issue in inspection.issues)
+
+
+def test_workcase_progress_structures_keep_their_admission_decisions(current_specs_repository: Path) -> None:
+    registry = (
+        current_specs_repository / "specs/attachments/05.Att.01-事实对象统一字段登记.md"
+    ).read_text(encoding="utf-8")
+    workcase = (current_specs_repository / "specs/21-WorkCase-工作项.md").read_text(encoding="utf-8")
+
+    assert "| information_need | compared_structure_keys | decision | resulting_structure_key | rationale |" in registry
+    obsolete_header = (
+        "| information_need | compared_structure_keys | decision | resulting_structure_key | "
+        "rationale | review_ref |"
+    )
+    assert obsolete_header not in registry
+    assert workcase.count("### workcase 结构准入记录") == 1
+    assert "| `differentiate` | `workcase-progress-history` |" in workcase
+    assert "| `differentiate` | `workcase-progress-entry` |" in workcase

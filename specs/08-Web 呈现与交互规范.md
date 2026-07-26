@@ -239,7 +239,20 @@ WorkCase 列表筛选、Dashboard 聚合或其它以外部 Card 为成员的 Hum
 
 Web 不得为这两项重新生成 AI 摘要，不得从 `scope`、work items、审核记录或其它字段拼凑替代文本。目标与全部成功标准必须完整显示，不得截断、折叠、限制标准条数或用“其余若干项”代替；字段缺失或不可读时必须明确显示相应信息缺失。成功标准是没有先后关系的并列集合，在 Card 中必须统一使用圆点，不得按数组位置、criterion ID 或显示次序添加数字序号。该 Card 不显示 `scope` 中的覆盖、排除或限制，也不显示 work items、依赖、执行步骤、方法、模板、验证安排、创建审核详情、执行统计或关闭材料；这些技术边界和完整计划批准材料仍从同源详情读取。Card 只帮助 Human 识别当前待确认计划，不单独构成 21 §10 要求的完整计划批准材料。
 
-本节当前只确定 `plan_confirmation` Card 的上述正文；`progressing`、`closure_confirmation` 和 `closed` Card 的具体正文、事实字段、信息数量、优先级和折叠方式仍待 Human 后续设计判断，不得由 Web 自行补造。颜色、图标和操作继续由 `web/docs/` 与实现承接。WorkCase 详情页不使用进展分组或推进环节切换、隐藏、重排或另建阅读结构；所有状态复用同一详情阅读结构，具体字段是否实际存在只由当前事实内容及其类型来源决定。
+`progressing` Card 在相同通用对象身份、标题和进展分组之外，正文只显示“目标”和“当前进展”两个区域：
+
+- **目标**：与 `plan_confirmation` Card 一样直接、完整读取当前 WorkCase 的 `goal`，不得重新摘要、截断、折叠或从其它字段拼凑替代文本；
+- **当前进展**：同时显示当前轮次、四个推进环节中的当前位置、工作项完成数和当前工作项；这些内容分别派生自 21 的 `progress_history`、phase 投影和 `work_items[].status`，不得由 Web 自行补写事实。
+
+轮次只读取当前 plan_version 最后一项完整通过 21 结构、连续性、严格 RFC 3339 时间和当前 phase 匹配校验的 `progress_history.entries[].round`。当 `coverage=full` 时显示“第 N 轮”；当 `coverage=partial` 时必须显示“自记录起第 N 轮”，不得省略范围限定；只有 `created_at` 早于 21 的 current-profile 生效边界且没有 `workcase_profile` 的对象才能作为 legacy 兼容对象，确实缺少历史时显示“轮次未记录”。生效边界后的对象缺少 required profile、current 新对象进入推进后缺少必需历史、legacy 对象携带 current-only 历史，或者现有历史无法通过校验时，统一显示“轮次不可判定”，不得退回 legacy fallback。时间必须采用与事实 Schema 相同的 `YYYY-MM-DDTHH:MM:SS[.fraction](Z|±HH:MM)` 词法与有效日期时间，不得依赖浏览器对空格日期等宽松格式的解析。Web 不得从 `result_version`、审核次数、数组位置、更新时间、Git history 或当前 phase 补猜轮次，也不得把 Card 上的轮次投影写回事实源。完整推进历史保留在同源详情读取，Card 只显示当前轮次。
+
+四个推进环节具有本节已定义的固定顺序，因此 Web 可以使用 1–4 的数字序号帮助 Human 扫读；该序号和位置强调只表达推进结构与当前所在环节，不是执行历史或环节完成事实。Web 不得仅根据当前环节位于后方，就把任何前序环节标成“已完成”、添加完成勾选或生成经过记录；WorkCase 允许按 21 的规则回到先前环节，真实历史只能由 `progress_history` 支撑。当前 `progress_step` 缺失或不可映射时，必须明确显示进展信息不可判定，不得按 phase 名称相似度或相邻位置猜测。
+
+工作项进度按 21 的确定性规则投影为“已完成 N/T”：`T` 是全部当前 work item 数，`N` 对 current profile 只计 `status=completed`；`cancelled` 必须另行显示数量，不能并入完成数。Card 同时按事实数组顺序列出全部 `in_progress` 项的稳定 `item_id` 与完整 `goal`；存在多个并行项时全部列出，不得只挑一个。没有 `in_progress` 项时明确显示“当前无执行中工作项”。current profile 的任何 work item 缺少合法稳定 `item_id`、完整 `goal` 或当前状态，或出现重复 ID 时，整个工作项进度投影必须显示“进展信息不可判定”，不得只丢弃错误成员后继续计算部分总数，也不得用数组位置、title、ID 或其它字段生成替代身份/目标。数组位置与 item_id 数字尾缀都不是执行序号，Web 不得把 `item-03` 改写成“第三项”或声称已经完成到线性第几项。只有按上一段精确边界成立的 legacy 对象可以兼容读取其既有 done/skipped 状态与既有显示 fallback；缺少 required profile、使用未知 profile 或时间不足以证明 legacy 身份的对象必须显示不可判定，不得生成 `execution-item-N` 或从 title 补造 current 身份/目标。兼容语言不得写回 current profile。
+
+当 `status=blocked` 时，`progressing` Card 必须在保留上述四环节及当前位置的同时，附加完整显示来源 `blocking_summary`；未记录阻塞原因时明确显示缺失。阻塞提示是覆盖在推进位置上的异常信息，不替代“推进中”或当前推进环节。`progressing` Card 不显示成功标准、scope、依赖、方法、完整工作项计划、执行态势条、验证安排、审核记录或关闭材料；除上述完成数、取消数和当前项身份/目标外，其余工作项内容仍从同源详情读取。
+
+本节当前只确定 `plan_confirmation` 与 `progressing` Card 的上述正文；`closure_confirmation` 和 `closed` Card 的具体正文、事实字段、信息数量、优先级和折叠方式仍待 Human 后续设计判断，不得由 Web 自行补造。颜色、图标和操作继续由 `web/docs/` 与实现承接。WorkCase 详情页不使用进展分组或推进环节切换、隐藏、重排或另建阅读结构；所有状态复用同一详情阅读结构，具体字段是否实际存在只由当前事实内容及其类型来源决定。
 
 ## 8. Web 交互边界
 

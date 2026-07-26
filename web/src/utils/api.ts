@@ -61,6 +61,7 @@ export interface ObjectItem {
   phase?: string;
   goal?: string;
   scope?: string;
+  blocking_summary?: string;
   path: string;
   created?: string;
   updated: string;
@@ -69,11 +70,18 @@ export interface ObjectItem {
   priority?: string;
   importance?: string;
   executionItems?: RelatedObjectSummary[];
+  executionItemsProjectionValid?: boolean;
   executionItemTotal?: number;
   executionItemDone?: number;
+  executionItemCancelled?: number;
   executionItemBlocked?: number;
   executionItemOpen?: number;
+  executionItemsInProgress?: RelatedObjectSummary[];
   executionItemByStatus?: Record<string, number>;
+  progressHistoryCoverage?: 'full' | 'partial';
+  progressHistoryState?: 'missing' | 'valid' | 'invalid';
+  progressRound?: number;
+  progressEventId?: string;
   successCriteriaTotal?: number;
   successCriteriaDone?: number;
   successCriteria?: string[];
@@ -162,10 +170,17 @@ export interface RelatedObjectSummary {
 
 export interface RelatedWorkCaseSummary extends RelatedObjectSummary {
   executionItems?: RelatedObjectSummary[];
+  executionItemsProjectionValid?: boolean;
   executionItemTotal?: number;
   executionItemDone?: number;
+  executionItemCancelled?: number;
   executionItemBlocked?: number;
   executionItemOpen?: number;
+  executionItemsInProgress?: RelatedObjectSummary[];
+  progressHistoryCoverage?: 'full' | 'partial';
+  progressHistoryState?: 'missing' | 'valid' | 'invalid';
+  progressRound?: number;
+  progressEventId?: string;
   successCriteriaTotal?: number;
   successCriteriaDone?: number;
   hasSuccessCriteria: boolean;

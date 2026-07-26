@@ -68,30 +68,24 @@ ADR 是“已确认但尚未完全吸收到 specs/rules/code/web/skill/agent/wor
 
 ### 3.4 WorkCase 卡片
 
-WorkCase 是“工作项执行态势”卡片，帮助用户从工作项判断当前执行处在哪个阶段、是否存在前置等待，以及关闭判断材料是否齐备。它首先区分“仍在推进”与“稳定停留”，不能把等待 Human 或已经关闭的工作项画成仍有自动推进。
+WorkCase 卡片帮助 Human 识别当前工作责任所处的进展分组，并按各分组真正需要关注的信息继续阅读。它首先区分“仍在推进”与“稳定停留”，不能把等待 Human 或已经关闭的工作项画成仍有自动推进。
 
 - 保留通用卡片头部：ID、复制对象路径、状态、标题。
-- 不展示所属工作项行；归属信息留在详情页属性区，列表卡片优先保留工作项标题、关闭判断和执行态势。
-- 执行态势条归入执行态势区域，不再作为独立卡片；区域标题下直接展示整体态势条，态势段 hover / focus 时显示状态和数量。
-- 执行项状态图例在列表顶部右侧展示，卡片执行项行只保留图标和颜色，不重复状态文字。
+- 不展示所属工作项行；归属信息留在详情页属性区，列表卡片优先保留工作项标题和当前分组所需内容。
 - WorkCase Card 和列表筛选只使用四个进展分组：`plan_confirmation`（方案待确认）、`progressing`（推进中）、`closure_confirmation`（关闭待确认）、`closed`（已关闭）。界面分类轴命名为“进展分组”，不得显示为“生命周期”。创建前方案审核尚无正式 WorkCase，不提供 Card 或筛选项。
 - 每张 Card 必须直接显示自己的进展分组，不能要求 Human 只靠顶部筛选位置推断；来源 phase 不再作为与四个分组同级的 Card 主状态。
 - “方案待确认”Card 在通用身份、标题和进展分组之外只显示“目标”和“成功标准”：目标直接读取 `goal`，成功标准读取 current profile 的 `success_criterion_definitions[].statement` 或 legacy 的 `success_criteria`。两项必须完整显示，不截断、不折叠、不限制标准条数，也不生成摘要。“覆盖”和“排除”属于 `scope` 中的技术边界，留在同源详情读取；Card 不展示工作项、执行步骤、审核详情、执行统计或关闭材料，完整计划批准仍进入详情完成。
 - “方案待确认”Card 使用四级排版层级：对象标题使用 16px 强调卡片标题，两个判断区标题使用 13px 卡片判断项标题，事实原文使用 12px 卡片判断项正文，ID、数量和时间使用元信息。判断项正文仍是事实正文，不得使用弱色或 mono 把它降成辅助信息；不得在业务组件内用临时字号制造层级。
 - 成功标准没有先后关系，统一使用圆点无序列表；不得因数组位置、criterion ID 或当前显示顺序使用数字序号。只有来源明确规定步骤、优先级、排名或依赖顺序的内容才使用编号。
-- 只有“推进中”继续显示四个推进环节：工作项执行、主控自检、独立复核、主控收敛。推进环节只帮助 Human 识别推进位置，不成为第五个以上的列表分组，也不代替正式 phase。
+- “推进中”Card 保留“目标”，并把第二个区域从“成功标准”替换为“当前进展”：目标继续完整读取 `goal`；当前进展显示 `progress_history` 支撑的当前轮次、由 `progress_step` 指定的四环节当前位置、`work_items` 支撑的“已完成 N/T”和全部当前 `in_progress` 项。Card 不显示成功标准、scope、依赖、方法、完整工作项计划、态势条、验证安排、审核记录或关闭材料。
+- 完整推进历史记录在 WorkCase 事实源，Card 只投影当前 plan_version 的最后一项：完整通过 21 的结构、连续性、严格 RFC 3339 时间与当前 phase 匹配校验后，`full` 显示“第 N 轮”，`partial` 显示“自记录起第 N 轮”。只有早于 current-profile 边界且没有 profile 的合法 legacy 对象缺少历史时显示“轮次未记录”；边界后的对象缺少 required profile、current 新对象推进后缺失历史、legacy 携带 current-only 历史或已有历史无效时显示“轮次不可判定”。不得依赖浏览器宽松时间解析，也不得从 result_version、审核次数、数组位置或 Git history 补猜。
+- 工作项完成数对 current profile 只计 `completed`，`cancelled` 单独显示；当前项按事实顺序列出全部 `in_progress` 项的稳定 item_id 和完整 goal。current work item 投影必须先确认完整结构、唯一稳定 ID、目标、状态条件和依赖图均有效；任一成员不成立时整组显示“进展信息不可判定”，不得丢弃错误成员后计算部分总数，也不得用数组位置、title 或 ID 生成替代身份/目标。只有按时间和 profile 精确成立的 legacy 对象允许旧字段 fallback；边界后的缺 profile 对象和未知 profile 对象不得补造 `execution-item-N`。不得把 item ID 尾号解释成执行顺序，也不得在并行项中挑一个冒充唯一当前项。
+- 四个推进环节存在确定顺序，可以使用 1–4 编号；编号只表达环节次序，不能根据当前位置把前序环节标成已完成或生成经过历史。当前位置缺失时明确显示进展不可判定。
+- `status=blocked` 是推进位置上的独立异常信号；Card 保留当前推进环节，并在“当前进展”区域完整显示 `blocking_summary`，缺失时明确提示。
 - “推进中”可用轻微、遵守减弱动态偏好的动效提示当前位置；方案待确认、关闭待确认和已关闭不显示脉冲或推进轨迹。两个 Human 确认关口必须保持为不同进展分组。
-- 进展分组层位于通用卡片头部之后、执行和关闭材料之前。它只表达当前浏览语义；status、phase 与授权的事实含义仍以事实源和详情阅读为准。
+- 进展分组直接显示在通用卡片头部；正文中的推进环节只表达当前浏览语义。status、phase 与授权的事实含义仍以事实源和详情阅读为准。
 - 内部 `closure_preparing` 投影为“推进中 / 主控收敛”：此时 Controller 正在吸收当前结果复核并形成关闭报告与分流建议，尚未向 Human 提交关闭请求。只有事实 phase 实际进入 `human_closure_confirming` 后才显示“关闭待确认”，不得提前制造 Human 待办。
-- WorkCase 卡片态势按“已完成 / 已跳过 / 已阻塞 / 执行中 / 待执行”从左到右排列，完成和跳过靠左，阻塞、执行中和待执行用于提示 Human 当前推进位置。
-- WorkCase 卡片态势遵守 `specs/05-Web信息同步规范.md` 的派生态势原因语义规则。执行项事实状态以 `pending / in_progress / blocked / done / skipped` 为准；历史 `planned / executing / verifying` 等旧状态只作兼容读取，不作为新图例或新写入语言。
-- 仅当工作项处于 `human_closure_confirming`、历史 `review_needed` 或已关闭工作项缺少关闭字段时，展示关闭判断 / 收口异常区域。关闭判断材料检查 `success_criteria`、`plan_confirmed_at`、`closure_requested_at`、`verification_evidence`、`closure_evidence`；历史对象可用 `review_requested_at` 兼容 `closure_requested_at`。
-- 展示执行态势区域：
-  - 标题为 `objectList.planExecutionQueue`；
-  - 标题前只使用小圆点，不使用独立对象图标；执行项不是一级工作对象；
-  - 默认展示最多 10 个执行项，队列优先级为：已阻塞、执行中、待执行、已跳过、已完成；
-  - 执行项行包含标题、内部编号或角色、状态图标和同色弱背景；执行项不得使用 WorkCase 对象图标或 WorkCase 状态徽章，也不得拥有独立对象详情路由；
-  - 执行态势区域、态势条和普通信息区域不响应主路由跳转，避免误触外层卡片。
+- “关闭待确认”和“已关闭”Card 的正文仍待后续设计；在结论进入规范前不得自行套用旧执行态势布局。
 
 ### 3.5 Spark 卡片
 
@@ -172,10 +166,17 @@ interface ObjectItem {
   workcaseRisk?: number;
   workcaseByStatus?: Record<string, number>;
   executionItems?: RelatedObjectSummary[]; // WorkCase 列表项；字段名待 API 契约稳定
+  executionItemsProjectionValid?: boolean;
   executionItemTotal?: number;
   executionItemDone?: number;
+  executionItemCancelled?: number;
   executionItemBlocked?: number;
   executionItemOpen?: number;
+  executionItemsInProgress?: RelatedObjectSummary[];
+  progressHistoryCoverage?: 'full' | 'partial';
+  progressHistoryState?: 'missing' | 'valid' | 'invalid';
+  progressRound?: number;
+  progressEventId?: string;
   hasSuccessCriteria?: boolean;
   hasPlanConfirmedAt?: boolean;
   hasClosureRequestedAt?: boolean;

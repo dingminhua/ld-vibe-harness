@@ -48,6 +48,29 @@ def _reviewing() -> dict[str, object]:
     }
 
 
+def _progressing_current() -> dict[str, object]:
+    return {
+        **_workcase(),
+        "workcase_profile": "control-contract-v1",
+        "created_at": "2026-07-25T08:00:00+08:00",
+        "updated_at": "2026-07-26T09:00:00+08:00",
+        "progress_history": {
+            "coverage": "full",
+            "entries": [
+                {
+                    "event_id": "progress-001",
+                    "plan_version": 1,
+                    "round": 1,
+                    "phase": "executing",
+                    "entered_at": "2026-07-26T09:00:00+08:00",
+                    "transition_kind": "started",
+                    "transition_summary": "Begin execution",
+                }
+            ],
+        },
+    }
+
+
 def test_workcase_plan_change_requires_version_bump_and_reset() -> None:
     before = _workcase()
     unchanged_version = {**before, "goal": "A materially different result"}
@@ -136,6 +159,47 @@ def test_first_execution_cannot_carry_result_context() -> None:
     assert any(issue.field_path == "result_version" and "首次" in issue.summary for issue in issues)
 
 
+def test_future_progress_transition_requires_one_exact_appended_event() -> None:
+    before = _progressing_current()
+    after = {
+        **before,
+        "phase": "controller_checking",
+        "result_version": 1,
+        "updated_at": "2026-07-26T10:00:00+08:00",
+    }
+
+    issues = validate_fact_transition("workcase", before, after)
+    assert any("必须在同一更新中追加" in issue.summary for issue in issues)
+
+    first = before["progress_history"]["entries"][0]
+    after["progress_history"] = {
+        "coverage": "full",
+        "entries": [
+            first,
+            {
+                "event_id": "progress-002",
+                "plan_version": 1,
+                "round": 1,
+                "phase": "controller_checking",
+                "entered_at": "2026-07-26T10:00:00+08:00",
+                "transition_kind": "advanced",
+                "transition_summary": "Enter Controller check",
+            },
+        ],
+    }
+    assert validate_fact_transition("workcase", before, after) == ()
+
+    rewritten = {
+        **after,
+        "progress_history": {
+            "coverage": "full",
+            "entries": [{**first, "transition_summary": "Rewritten"}, after["progress_history"]["entries"][1]],
+        },
+    }
+    issues = validate_fact_transition("workcase", before, rewritten)
+    assert any("只能精确追加" in issue.summary for issue in issues)
+
+
 def test_review_must_originate_from_independent_reviewing() -> None:
     controller = {
         **_workcase(),
@@ -147,8 +211,7 @@ def test_review_must_originate_from_independent_reviewing() -> None:
 
     issues = validate_fact_transition("workcase", controller, forged)
     assert any(
-        issue.field_path == "result_reviews" and "只能在 independent_reviewing" in issue.summary
-        for issue in issues
+        issue.field_path == "result_reviews" and "只能在 independent_reviewing" in issue.summary for issue in issues
     )
     assert any(issue.field_path == "result_reviews" and "转换前" in issue.summary for issue in issues)
 
@@ -169,10 +232,7 @@ def test_reviewer_fields_are_immutable_after_independent_reviewing() -> None:
     assert any(issue.field_path == "result_reviews" and "Reviewer" in issue.summary for issue in issues)
 
     appended = {**before, "result_reviews": [*before["result_reviews"], _review("pass")]}
-    assert any(
-        issue.field_path == "result_reviews"
-        for issue in validate_fact_transition("workcase", before, appended)
-    )
+    assert any(issue.field_path == "result_reviews" for issue in validate_fact_transition("workcase", before, appended))
 
     resolution_only = {
         **before,
@@ -185,16 +245,17 @@ def test_controller_has_all_four_post_review_choices() -> None:
     before = _reviewing()
     for phase in ("executing", "controller_checking", "closure_preparing"):
         assert validate_fact_transition("workcase", before, {**before, "phase": phase}) == ()
-    assert validate_fact_transition(
-        "workcase",
-        before,
-        {
-            **before,
-            "result_reviews": [
-                {**_review(), "controller_resolution": "1. Accepted; request another review."}
-            ],
-        },
-    ) == ()
+    assert (
+        validate_fact_transition(
+            "workcase",
+            before,
+            {
+                **before,
+                "result_reviews": [{**_review(), "controller_resolution": "1. Accepted; request another review."}],
+            },
+        )
+        == ()
+    )
 
 
 def test_controller_can_bump_and_return_to_execution_without_reusing_reviews() -> None:
@@ -249,9 +310,7 @@ def test_current_profile_cannot_downgrade_and_closed_legacy_cannot_upgrade() -> 
     current = {
         **_workcase(),
         "workcase_profile": "control-contract-v1",
-        "success_criterion_definitions": [
-            {"criterion_id": "criterion-01", "statement": "The result is verified"}
-        ],
+        "success_criterion_definitions": [{"criterion_id": "criterion-01", "statement": "The result is verified"}],
         "audit_summary": [
             {
                 "audit_id": "audit-01",
@@ -274,9 +333,7 @@ def test_current_profile_cannot_downgrade_and_closed_legacy_cannot_upgrade() -> 
         "workcase_profile": "control-contract-v1",
         "plan_version": 2,
         "phase": "human_plan_confirming",
-        "success_criterion_definitions": [
-            {"criterion_id": "criterion-01", "statement": "The result is verified"}
-        ],
+        "success_criterion_definitions": [{"criterion_id": "criterion-01", "statement": "The result is verified"}],
         "audit_summary": [
             {
                 "audit_id": "audit-01",
@@ -297,9 +354,7 @@ def test_current_plan_and_result_bumps_require_audit_continuity() -> None:
     before = {
         **_workcase(),
         "workcase_profile": "control-contract-v1",
-        "success_criterion_definitions": [
-            {"criterion_id": "criterion-01", "statement": "The result is verified"}
-        ],
+        "success_criterion_definitions": [{"criterion_id": "criterion-01", "statement": "The result is verified"}],
         "audit_summary": [
             {
                 "audit_id": "audit-01",
@@ -409,9 +464,7 @@ def test_current_result_review_fingerprint_is_checked_when_formed_not_forever() 
         "phase": "independent_reviewing",
         "result_version": 1,
         "controller_check_summary": "Initial check",
-        "success_criterion_definitions": [
-            {"criterion_id": "criterion-01", "statement": "The result is verified"}
-        ],
+        "success_criterion_definitions": [{"criterion_id": "criterion-01", "statement": "The result is verified"}],
         "success_criterion_results": [
             {"criterion_id": "criterion-01", "outcome": "not_verified", "summary": "Pending review"}
         ],
@@ -444,9 +497,7 @@ def test_current_result_review_fingerprint_is_checked_when_formed_not_forever() 
         **review,
         "controller_resolution": "1. Accepted, but this must not bypass formation checks.",
     }
-    issues = validate_fact_transition(
-        "workcase", before, {**before, "result_reviews": [review_with_resolution]}
-    )
+    issues = validate_fact_transition("workcase", before, {**before, "result_reviews": [review_with_resolution]})
     assert any(issue.field_path.endswith("subject_fingerprint") for issue in issues)
 
     basis = review["review_basis"]
@@ -488,3 +539,45 @@ def test_actual_update_timestamp_must_move_forward() -> None:
     issues = validate_fact_transition("spark", before, after)
 
     assert any(issue.field_path == "updated_at" and "晚于" in issue.summary for issue in issues)
+
+
+def test_progress_history_allows_narrow_same_identity_fact_correction() -> None:
+    before = _progressing_current()
+    after = {
+        **before,
+        "updated_at": "2026-07-26T10:00:00+08:00",
+        "progress_history": {
+            "coverage": "full",
+            "entries": [
+                {
+                    **before["progress_history"]["entries"][0],
+                    "entered_at": "2026-07-26T08:30:00+08:00",
+                    "transition_summary": "Corrected factual start description",
+                }
+            ],
+        },
+    }
+
+    assert validate_fact_transition("workcase", before, after) == ()
+
+
+def test_progress_history_correction_cannot_change_event_identity_or_order() -> None:
+    before = _progressing_current()
+    after = {
+        **before,
+        "updated_at": "2026-07-26T10:00:00+08:00",
+        "progress_history": {
+            "coverage": "full",
+            "entries": [
+                {
+                    **before["progress_history"]["entries"][0],
+                    "event_id": "progress-002",
+                    "transition_summary": "Attempted identity rewrite",
+                }
+            ],
+        },
+    }
+
+    issues = validate_fact_transition("workcase", before, after)
+
+    assert any(issue.field_path == "progress_history" and "原位更正" in issue.summary for issue in issues)

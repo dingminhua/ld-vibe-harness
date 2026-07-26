@@ -41,12 +41,14 @@ _MANAGED_FIELDS = frozenset(
         "execution_approval",
         "withdraw_execution_approval",
         "closure_approval",
+        "progress_transition",
     }
 )
 _CREATION_REVIEW_FIELDS = frozenset({"reviewer", "scope", "conclusion", "feedback", "controller_resolution"})
 _RESULT_REVIEW_FIELDS = frozenset({"reviewer", "scope", "conclusion", "feedback", "projection_key"})
 _RESOLUTION_FIELDS = frozenset({"review_index", "controller_resolution"})
 _APPROVAL_FIELDS = frozenset({"summary", "source_refs"})
+_PROGRESS_TRANSITION_FIELDS = frozenset({"summary"})
 _SOURCE_REFERENCE_FIELDS = frozenset({"kind", "locator", "version", "observed_at", "details"})
 _REVIEW_CONCLUSIONS = frozenset({"pass", "pass_with_followups", "changes_required", "blocked"})
 _RESULT_PROJECTIONS = frozenset({"result_implementation", "result_with_closure_report"})
@@ -61,6 +63,7 @@ _ORDINARY_MANAGED_FIELDS = frozenset(
         "result_reviews",
         "execution_approval",
         "closure_approval",
+        "progress_history",
     }
 )
 _VERSION_FIELDS = frozenset({"plan_version", "result_version"})
@@ -242,6 +245,14 @@ def _managed_records(value: object, problems: list[str]) -> dict[str, Any]:
         approval = _approval(value[name], f"arguments.managed_records.{name}", problems)
         if approval is not None:
             normalized[name] = dict(approval)
+    if value.get("progress_transition") is not None:
+        action_count += 1
+        path = "arguments.managed_records.progress_transition"
+        transition = _closed_member(value["progress_transition"], path, _PROGRESS_TRANSITION_FIELDS, problems)
+        if transition is not None:
+            if not _nonempty_string(transition.get("summary")):
+                problems.append(f"{path}.summary 必须是非空 string")
+            normalized["progress_transition"] = dict(transition)
     if action_count > 16:
         problems.append("arguments.managed_records 单次最多包含 16 项托管动作")
     return normalized
@@ -370,7 +381,10 @@ def parse_workcase_update_request(
     if {"append_result_reviews", "resolve_result_reviews"} <= active_actions:
         problems.append("append_result_reviews 与 resolve_result_reviews 不得同次出现")
     for singleton in ("execution_approval", "withdraw_execution_approval", "closure_approval"):
-        if singleton in active_actions and len(active_actions) != 1:
+        if singleton not in active_actions:
+            continue
+        allowed = {singleton, "progress_transition"} if singleton == "execution_approval" else {singleton}
+        if active_actions - allowed:
             problems.append(f"{singleton} 不得与其它托管动作同次出现")
 
     if "plan_version" in set_fields:
