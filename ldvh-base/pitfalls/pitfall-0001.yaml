@@ -1,13 +1,14 @@
 title: ZCode Hook 静态状态被误判为实时触发
-status: active
+status: retired
 applicability: 适用于已观察到的 ZCode 本地 filesystem 插件安装与验证：插件可能已注册 Hook、data 文件可能存在或已补全，且会话中可能出现 work-context；但当前环境、缓存插件版本、事件或启动路径尚未由实时执行记录确认。它不说明 marketplace、其它插件、其它运行时、SubagentStart、compact/resume、未来升级或多个注册来源同时启用时的真实触发行为。
-validation_summary: "2026-07-24 的只读 cold-start 验证已实际采用以下区分：\n\n1. 资产：运行时 data 目录曾缺少 ldvh.json，后已补全；两个 data 目录当前内容一致。\n2. 注册：启动日志报告 hookCount:1。\n3. 实时执行：本轮没有 hook_run_started/hook_run_completed，执行目录为空。\n4. 结果：会话中有 work-context，但可能来自 hydrate，不能倒推本轮 Hook 执行。\n\n该分层使“Hook 已恢复”的原结论被及时撤回。它证明这套验证方法能识别证据不足；不证明 ZCode 为什么没有实时调度 Hook。"
+validation_summary: "2026-07-24 的只读 cold-start 验证已实际采用以下区分：\n\n1. 资产：运行时 data 目录曾缺少 ldvh.json，后已补全；两个 data 目录当前内容一致。\n2. 注册：启动日志报告 hookCount:1。\n3. 实时执行：本轮没有 hook_run_started/hook_run_completed，执行目录为空。\n4. 结果：会话中有 work-context，但可能来自 hydrate，不能倒推本轮 Hook 执行。\n\n该分层使"Hook 已恢复"的原结论被及时撤回。它证明这套验证方法能识别证据不足；不证明 ZCode 为什么没有实时调度 Hook。"
 symptoms: "1. 插件已启用、Hook 已注册或 data 文件已存在时，仍没有对应的实时 hook_run_started/hook_run_completed\n2. 手动执行 hook 脚本可以返回 work-context，但环境事件没有可回指的执行记录\n3. 会话中出现 work-context，然而无法区分实时 Hook 结果与 hydrate 恢复\n4. 容易据此误报 Hook 已触发、功能已通过或 data 补全已修复运行时问题"
 trigger_conditions: "1. 通过 filesystem 方式安装 ZCode 插件，插件声明 SessionStart Hook 且 enabledPlugins 已启用\n2. 验证只观察 data 文件、Hook 注册、手动脚本输出或系统上下文内容中的任一项，而未同时观察本轮冷启动的实时 Hook 执行与结果交付\n3. 目标环境存在 hydrate、缓存恢复或其它会把历史上下文带入新会话的机制"
 root_cause: "失败机制是把不同证据层级混为一谈：data 文件只说明资产完整性，hookCount 只说明注册，手动脚本只说明可执行性，work-context 还可能来自 hydrate；这些都不能单独证明目标环境在本轮事件中实时调用了 Hook。ZCode 未实时执行的底层原因仍未知，属于 spark-0003 的未解运行时问题。"
 resolution: "在一次新的非 hydrate cold startup 中，将资产完整性、Hook 注册、实时 hook_run_started/hook_run_completed、Hook 结果交付和边界事件分开检查。只有同一轮事件同时可回指实时执行与预期结果时，才记录实时触发通过；任一层缺失时据实标为未验证或失败，并继续调查，不把 data 补全当作运行时修复。该方法已在本次只读验证中采用并识别出原结论的证据不足。"
 avoidance: "后续排查或验收时，至少分别记录 data 完整性、注册状态、手动可执行性、实时执行记录和结果来源；会话内容、文件存在、静态配置或单次手动调用都不能替代实时触发证据。若实时执行仍不可证明，保留或新建 Spark 承接调查，不把未解运行时故障写成已验证 Pitfall 解决方案。"
+disposition_summary: "Human 决定重新安排 ZCode 完成一次全新安装，届时重新验证实时 Hook 触发行为；原经验因适用条件将随新安装被覆盖而退出当前选择。"
 object_id: pitfall-0001
 fact_type_key: pitfall
 created_at: '2026-07-22T20:01:58.169820+08:00'
-updated_at: '2026-07-24T21:59:46+08:00'
+updated_at: '2026-07-26T09:00:00+08:00'

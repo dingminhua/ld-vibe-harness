@@ -26,6 +26,12 @@ summary: |-
   - 安装前检查、安装后功能验证、停用或卸载后的残留检查分别证明什么；doctor/bootstrap 需要如实暴露未安装、部分安装、不可验证和故障定位，而不是制造成功结论。
   - 固定受管资产与现场配置/临时脚本分层：前者可作为受管资产核验，后者只能保留其实际安装或观察范围。
 
+  **Human 操作引导缺口**
+
+  - 接入完成后缺少对 Human 的明确提示：需要去目标 AI 环境设置中手动开启或信任已安装的 Hook（例如 ZCode 的 enabledPlugins、Hook 信任开关等），仅完成文件安装和注册并不等于 Hook 已生效。
+  - 缺少一个面向 Human 的 Hook 生效验证方法：安装后应提供可执行的步骤（如启动新会话后检查 hook_run_started/hook_run_completed 日志、执行目录产物等），使 Human 能自行确认 Hook 是否实时触发，而非依赖 AI 单方面声称"已安装完成"。
+  - 上述两项缺口属于安装闭环中 Human 侧的落地确认环节，当前 README、09 和 33 均未覆盖。
+
   **未决事项**
 
   - 不预设通用 CLI、Skill 或单一配置拓扑；先按目标环境形成最小闭环，再判断是否需要把稳定安装流程转为 WorkCase 或行动模板。
@@ -47,7 +53,9 @@ evolution:
   - at: '2026-07-24T21:42:45+08:00'
     summary: 将实际案例的五层成功、失败与未验证范围收敛为当前摘要，并建立到 pitfall-0001 的主题关联；安装验证自动化仍由 spark-0029 独立承接。
   - at: '2026-07-24T21:55:46+08:00'
-    summary: ZCode 只读 cold-start 验证发现已注册 Hook 没有实时执行记录，且 work-context 可能来自 hydrate；因此撤回“补入 data 后当前实时触发和功能已通过”的结论，转为待诊断的运行时边界。
+    summary: ZCode 只读 cold-start 验证发现已注册 Hook 没有实时执行记录，且 work-context 可能来自 hydrate；因此撤回"补入 data 后当前实时触发和功能已通过"的结论，转为待诊断的运行时边界。
+  - at: '2026-07-26T09:00:00+08:00'
+    summary: Human 确认接入后缺少两个关键环节——提示用户去 AI 环境设置开启 Hook，以及提供面向 Human 的 Hook 生效验证方法；当前 README、09 和 33 均未覆盖。摘要新增 Human 操作引导缺口章节。
 object_id: spark-0003
 fact_type_key: spark
 created_at: '2026-07-19T08:33:50.911048+08:00'
