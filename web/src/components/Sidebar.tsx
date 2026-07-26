@@ -5,6 +5,7 @@ import {
   LayoutDashboard,
   Globe,
   FolderTree,
+  GitPullRequestArrow,
   Sun,
   Moon,
   Monitor,
@@ -15,18 +16,20 @@ import { useI18n } from '@/i18n/context';
 import { useTheme } from '@/hooks/useTheme';
 import { getLanguageSwitchKey, getOppositeLanguageNameKey, getOppositeLocale, type LocaleKey } from '@/i18n/locales';
 import { OBJECT_TYPE_ICONS } from '@/components/SemanticIcon';
+import ProjectSwitcher from '@/components/ProjectSwitcher';
 import ldvhPluginIcon from '@/assets/ldvh-plugin-icon.png';
 
 type NavIcon = ElementType<LucideProps>;
 
 const NAV_ITEMS: { to: string; labelKey: LocaleKey; icon: NavIcon }[] = [
   { to: '/', labelKey: 'nav.dashboard', icon: LayoutDashboard },
-  { to: '/project-files', labelKey: 'nav.projectFiles', icon: FolderTree },
   { to: '/objects/spark', labelKey: 'nav.sparks', icon: OBJECT_TYPE_ICONS.spark },
   { to: '/objects/workcase', labelKey: 'nav.workcases', icon: OBJECT_TYPE_ICONS.workcase },
   { to: '/objects/adr', labelKey: 'nav.adrs', icon: OBJECT_TYPE_ICONS.adr },
   { to: '/objects/pitfall', labelKey: 'nav.pitfalls', icon: OBJECT_TYPE_ICONS.pitfall },
   { to: '/objects/study', labelKey: 'nav.studies', icon: OBJECT_TYPE_ICONS.study },
+  { to: '/project-files', labelKey: 'nav.projectFiles', icon: FolderTree },
+  { to: '/changes', labelKey: 'nav.changes', icon: GitPullRequestArrow },
   { to: '/changelog', labelKey: 'nav.changelog', icon: OBJECT_TYPE_ICONS.changelog },
 ];
 
@@ -84,8 +87,8 @@ export default function Sidebar({ collapsed, compact = false, onToggle }: Sideba
       }`}
     >
       <div className={`border-b border-ldvh-border ${isCollapsed ? 'px-2 py-3' : 'px-3 py-4'}`}>
-        <div className={isCollapsed ? 'flex flex-col items-center gap-2' : 'flex items-center gap-2'}>
-          <div className={`flex min-w-0 items-center ${isCollapsed ? 'justify-center' : 'gap-2'}`}>
+        <div className={isCollapsed ? 'flex flex-col items-center gap-2' : 'flex min-w-0 items-center gap-2'}>
+          <div className={`flex min-w-0 items-center ${isCollapsed ? 'justify-center' : ''}`}>
             <div
               onMouseEnter={() => setVisibleTooltip('brand')}
               onMouseLeave={() => setVisibleTooltip(null)}
@@ -95,6 +98,7 @@ export default function Sidebar({ collapsed, compact = false, onToggle }: Sideba
               {isCollapsed && <IconTooltip label="LDVH" visible={visibleTooltip === 'brand'} />}
             </div>
           </div>
+          <ProjectSwitcher collapsed={isCollapsed} />
         </div>
       </div>
       <nav className={`flex-1 px-2 py-3 ${isCollapsed && !compact ? 'overflow-visible' : 'overflow-y-auto'}`}>

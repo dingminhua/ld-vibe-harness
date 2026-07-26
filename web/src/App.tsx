@@ -3,10 +3,12 @@ import { I18nProvider } from '@/i18n/context';
 import Layout from '@/components/Layout';
 import Dashboard from '@/pages/Dashboard';
 import ProjectFiles from '@/pages/ProjectFiles';
+import Changes from '@/pages/Changes';
 import ObjectList from '@/pages/ObjectList';
 import ObjectDetail from '@/pages/ObjectDetail';
 import Changelog from '@/pages/Changelog';
 import ChangelogDetail from '@/pages/ChangelogDetail';
+import { ProjectScopeProvider } from '@/utils/projectContext';
 
 function AppRoutes() {
   return (
@@ -14,6 +16,7 @@ function AppRoutes() {
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/project-files" element={<ProjectFiles />} />
+        <Route path="/changes" element={<Changes />} />
         <Route path="/objects/:type" element={<ObjectList />} />
         <Route path="/objects/:type/:id" element={<ObjectDetail />} />
         <Route path="/changelog" element={<Changelog />} />
@@ -28,7 +31,9 @@ export default function App() {
   return (
     <BrowserRouter>
       <I18nProvider>
-        <AppRoutes />
+        <ProjectScopeProvider>
+          <AppRoutes />
+        </ProjectScopeProvider>
       </I18nProvider>
     </BrowserRouter>
   );

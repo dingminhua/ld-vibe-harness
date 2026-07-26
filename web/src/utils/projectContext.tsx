@@ -1,0 +1,97 @@
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { fetchProjectFilesProjects, type GovernedProject } from '@/utils/api';
+
+const PROJECT_STORAGE_KEY = 'ldvh-active-project-id';
+
+type ProjectScopeContextValue = {
+  projects: GovernedProject[];
+  selectedProjectId: string;
+  selectedProject: GovernedProject | null;
+  loading: boolean;
+  error: string | null;
+  selectProject: (projectId: string) => void;
+  reloadProjects: () => void;
+};
+
+const ProjectScopeContext = createContext<ProjectScopeContextValue | null>(null);
+
+function readStoredProjectId(): string {
+  try {
+    return localStorage.getItem(PROJECT_STORAGE_KEY) ?? '';
+  } catch {
+    return '';
+  }
+}
+
+export function ProjectScopeProvider({ children }: { children: ReactNode }) {
+  const [projects, setProjects] = useState<GovernedProject[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState(readStoredProjectId);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+
+    fetchProjectFilesProjects()
+      .then((result) => {
+        if (cancelled) return;
+        const nextProjects = result.projects ?? [];
+        setProjects(nextProjects);
+        setSelectedProjectId((current) => (
+          current && nextProjects.some((project) => project.id === current) ? current : ''
+        ));
+      })
+      .catch((reason) => {
+        if (cancelled) return;
+        setProjects([]);
+        setError(reason instanceof Error ? reason.message : String(reason));
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [reloadKey]);
+
+  const selectProject = useCallback((projectId: string) => {
+    setSelectedProjectId(projectId);
+    try {
+      if (projectId) localStorage.setItem(PROJECT_STORAGE_KEY, projectId);
+      else localStorage.removeItem(PROJECT_STORAGE_KEY);
+    } catch {
+      // The in-memory selection remains usable when storage is unavailable.
+    }
+  }, []);
+
+  const reloadProjects = useCallback(() => setReloadKey((current) => current + 1), []);
+  const selectedProject = useMemo(
+    () => projects.find((project) => project.id === selectedProjectId) ?? null,
+    [projects, selectedProjectId],
+  );
+
+  return (
+    <ProjectScopeContext.Provider value={{
+      projects,
+      selectedProjectId,
+      selectedProject,
+      loading,
+      error,
+      selectProject,
+      reloadProjects,
+    }}>
+      {children}
+    </ProjectScopeContext.Provider>
+  );
+}
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function useProjectScope() {
+  const context = useContext(ProjectScopeContext);
+  if (!context) throw new Error('useProjectScope must be used within ProjectScopeProvider');
+  return context;
+}

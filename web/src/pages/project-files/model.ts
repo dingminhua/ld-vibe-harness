@@ -1,8 +1,6 @@
 import type {
   ProjectFileContentData,
   ProjectFileEntry,
-  ProjectGitCommitDetail,
-  ProjectGitDiffData,
 } from '@/utils/api';
 
 export type FilePanelState = {
@@ -11,20 +9,7 @@ export type FilePanelState = {
   error: string | null;
 };
 
-export type DiffPanelState = {
-  data: ProjectGitDiffData | null;
-  loading: boolean;
-  error: string | null;
-};
-
-export type ActiveProjectFilesTab = 'files' | 'changes' | 'history';
 export type DiffViewMode = 'unified' | 'split';
-
-export type CommitPanelState = {
-  data: ProjectGitCommitDetail | null;
-  loading: boolean;
-  error: string | null;
-};
 
 export type SplitDiffCell = {
   kind: 'context' | 'delete' | 'add' | 'empty';

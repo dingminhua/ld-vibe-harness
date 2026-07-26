@@ -13,3 +13,57 @@ test('compact viewport keeps the primary navigation as an icon rail', () => {
   assert.match(sidebar, /isCollapsed \? 'w-14' : 'w-\[186px\]'/);
   assert.match(sidebar, /!compact && onToggle && \(/);
 });
+
+test('files, workspace changes, and commit records form one ordered navigation group', () => {
+  const app = fs.readFileSync(path.resolve('src/App.tsx'), 'utf8');
+  const sidebar = fs.readFileSync(path.resolve('src/components/Sidebar.tsx'), 'utf8');
+
+  assert.match(app, /<Route path="\/changes" element=\{<Changes \/>\} \/>/);
+  assert.match(
+    sidebar,
+    /\{ to: '\/project-files', labelKey: 'nav\.projectFiles'.*\},\s*\{ to: '\/changes', labelKey: 'nav\.changes'.*\},\s*\{ to: '\/changelog', labelKey: 'nav\.changelog'/s,
+  );
+});
+
+test('the governed project switcher lives beside the brand in global navigation', () => {
+  const app = fs.readFileSync(path.resolve('src/App.tsx'), 'utf8');
+  const sidebar = fs.readFileSync(path.resolve('src/components/Sidebar.tsx'), 'utf8');
+
+  assert.match(app, /<ProjectScopeProvider>\s*<AppRoutes \/>\s*<\/ProjectScopeProvider>/);
+  assert.match(sidebar, /<BrandMark \/>[\s\S]*<ProjectSwitcher collapsed=\{isCollapsed\} \/>/);
+});
+
+test('workspace changes reads status and diffs for the globally selected project', () => {
+  const changes = fs.readFileSync(path.resolve('src/pages/Changes.tsx'), 'utf8');
+  const controller = fs.readFileSync(path.resolve('src/pages/changes/useWorkspaceChanges.ts'), 'utf8');
+
+  assert.match(changes, /const projectId = selectedProject\?\.id \?\? '';/);
+  assert.match(changes, /useWorkspaceChanges\(projectId\)/);
+  assert.match(controller, /fetchProjectGitStatus\(projectId\)/);
+  assert.match(controller, /fetchProjectGitDiff\(entry\.projectId, entry\.path, entry\.status\)/);
+});
+
+test('project files is a focused browser without nested Git views or eager Git reads', () => {
+  const filesPage = fs.readFileSync(path.resolve('src/pages/ProjectFiles.tsx'), 'utf8');
+  const controller = fs.readFileSync(path.resolve('src/pages/project-files/useProjectFilesController.ts'), 'utf8');
+
+  assert.doesNotMatch(filesPage, /role="tablist"|quickDirs|projectFiles\.(changesTab|historyTab|quickRoots)/);
+  assert.match(controller, /fetchProjectFileEntries\(projectId, nextDir, nextShowHidden\)/);
+  assert.doesNotMatch(controller, /fetchProjectGit(Status|Diff|Commits|CommitDetail|CommitFileDiff)/);
+});
+
+test('files and changes share a compact divided page toolbar', () => {
+  const filesPage = fs.readFileSync(path.resolve('src/pages/ProjectFiles.tsx'), 'utf8');
+  const changesPage = fs.readFileSync(path.resolve('src/pages/Changes.tsx'), 'utf8');
+  const styles = fs.readFileSync(path.resolve('src/index.css'), 'utf8');
+
+  for (const page of [filesPage, changesPage]) {
+    assert.match(page, /ldvh-page-toolbar mb-4/);
+    assert.match(page, /<PageHeader[^>]* compact \/>/);
+    assert.match(page, /ldvh-page-toolbar-badge/);
+    assert.match(page, /ldvh-page-toolbar-action/);
+  }
+  assert.match(styles, /\.ldvh-page-toolbar \{\s*@apply[^;]*border-b[^;]*pb-4;/s);
+  assert.match(styles, /\.ldvh-page-toolbar-(?:badge|action) \{\s*@apply[^;]*h-8/s);
+  assert.doesNotMatch(changesPage, /changes\.(activeProject|activeProjectHint|projectScopeHint)/);
+});
