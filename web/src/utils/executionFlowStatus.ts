@@ -38,7 +38,6 @@ export const executionFlowRowClass: Record<ExecutionFlowTone, string> = {
 };
 
 export const EXECUTION_FLOW_ORDER: ExecutionFlowTone[] = ['completed', 'cancelled', 'blocked', 'inProgress', 'pending', 'risk', 'neutral'];
-export const EXECUTION_FLOW_LEGEND_ORDER: ExecutionFlowTone[] = ['blocked', 'inProgress', 'pending', 'completed', 'cancelled'];
 const EXECUTION_FLOW_QUEUE_ORDER: ExecutionFlowTone[] = ['blocked', 'inProgress', 'pending', 'cancelled', 'completed', 'risk', 'neutral'];
 
 export const executionFlowBarClass: Record<ExecutionFlowTone, string> = {

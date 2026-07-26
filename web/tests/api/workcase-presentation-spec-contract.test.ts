@@ -113,7 +113,7 @@ test('Current Web docs describe the same latest-only Card and detail boundaries'
   assert.match(listDoc, /不得新增 `responsibilityStatus` 兼容别名/);
   assert.match(listDoc, /浏览器响应不得出现 `executionItems`/);
   assert.match(listDoc, /`closure_confirmation \/ closed` 不携带正文或 priority/);
-  assert.match(listDoc, /无论完整读取是否发现问题，都显示 machine 观察时间和“重新读取”入口/);
+  assert.match(listDoc, /不设置列表级“观察时间”或“重新读取”控件/);
   assert.doesNotMatch(listSection, /control-contract|workcase_profile|closure_requested_at|review_requested_at|closure_approval/);
 
   assert.match(detailSection, /`human_plan_confirming`、`plan_revising`、`executing`/);

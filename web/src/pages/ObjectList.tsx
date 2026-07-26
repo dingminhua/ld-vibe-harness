@@ -1,6 +1,6 @@
 import { useEffect, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { ArrowRight, CircleAlert, PauseCircle, RefreshCw } from 'lucide-react';
+import { ArrowRight, CircleAlert, PauseCircle } from 'lucide-react';
 import StatusBadge from '@/components/StatusBadge';
 import ObjectStatusFilter from '@/components/ObjectStatusFilter';
 import WorkCaseProgressFilter from '@/components/WorkCaseProgressFilter';
@@ -10,7 +10,6 @@ import ObjectSignalBadges from '@/components/ObjectSignalBadges';
 import PriorityIcon from '@/components/PriorityIcon';
 import SummaryText from '@/components/SummaryText';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
-import { ExecutionFlowLegend } from '@/components/ExecutionFlowStatus';
 import { fetchObjects, type FactCoverageStatus, type FactListProblem, type ObjectItem, type ObjectStatusOption, type WorkCaseActiveItem, type WorkCaseProgressOption } from '@/utils/api';
 import { formatDateTime } from '@/utils/dateFormat';
 import { useI18n } from '@/i18n/context';
@@ -131,37 +130,6 @@ function handleKeyboardOpen(event: KeyboardEvent<HTMLElement>, onOpen: () => voi
     event.stopPropagation();
     onOpen();
   }
-}
-
-function WorkCaseObservationControls({
-  observedAt,
-  onReload,
-  t,
-}: {
-  observedAt: string | null;
-  onReload: () => void;
-  t: Translate;
-}) {
-  return (
-    <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
-      <span className="ldvh-meta">
-        {t('objectList.workcaseObservedAt')}：
-        <time dateTime={observedAt ?? undefined} className="ml-1 font-mono">
-          {observedAt
-            ? formatDateTime(observedAt)
-            : t('objectList.workcaseObservationUnavailable')}
-        </time>
-      </span>
-      <button
-        type="button"
-        onClick={onReload}
-        className="ldvh-meta inline-flex items-center gap-1 rounded border border-current/25 px-2 py-1 transition-colors hover:bg-current/10"
-      >
-        <RefreshCw size={12} aria-hidden="true" />
-        {t('objectList.workcaseReload')}
-      </button>
-    </div>
-  );
 }
 
 function WorkCasePlanConfirmationContent({
@@ -653,13 +621,11 @@ export default function ObjectList() {
   const [priorityOptions, setPriorityOptions] = useState<ObjectStatusOption[]>([]);
   const [statusTotal, setStatusTotal] = useState(0);
   const [coverageStatus, setCoverageStatus] = useState<FactCoverageStatus>('complete');
-  const [coverageObservedAt, setCoverageObservedAt] = useState<string | null>(null);
   const [coverageProblemCount, setCoverageProblemCount] = useState(0);
   const [coverageProblems, setCoverageProblems] = useState<FactListProblem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [reloadVersion, setReloadVersion] = useState(0);
-  const { t, getStatus, locale } = useI18n();
+  const { t, locale } = useI18n();
 
   const currentType = type ?? 'workcase';
   const statusParam = searchParams.get('status');
@@ -697,7 +663,6 @@ export default function ObjectList() {
     setPriorityOptions([]);
     setStatusTotal(0);
     setCoverageStatus('complete');
-    setCoverageObservedAt(null);
     setCoverageProblemCount(0);
     setCoverageProblems([]);
     fetchObjects(currentType, activeStatus ?? undefined, activePriority ?? undefined, activeProgressGroup ?? undefined)
@@ -710,7 +675,6 @@ export default function ObjectList() {
         setPriorityOptions(result.data?.priorityOptions ?? []);
         setStatusTotal(result.data?.statusTotal ?? nextItems.length);
         setCoverageStatus(result.data?.coverage_status ?? 'complete');
-        setCoverageObservedAt(result.data?.observed_at ?? null);
         const nextCoverageProblems = [
           ...(result.data?.object_read_problems ?? []),
           ...(result.data?.coverage_problems ?? []),
@@ -720,7 +684,7 @@ export default function ObjectList() {
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-  }, [currentType, activeStatus, activePriority, activeProgressGroup, reloadVersion]);
+  }, [currentType, activeStatus, activePriority, activeProgressGroup]);
 
   const sortedItems = sortObjectsForList(items, currentType);
   const typeNotIntegrated = sortedItems.find((item) => item.kind === 'type_not_integrated');
@@ -881,9 +845,6 @@ export default function ObjectList() {
               ) : (
                 <p className="ldvh-meta text-ldvh-text-secondary">{t('objectList.priorityNotApplicable')}</p>
               )}
-              {currentType === 'workcase' && (
-                <ExecutionFlowLegend t={t} getStatus={getStatus} />
-              )}
             </div>
           )}
           <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5">
@@ -914,9 +875,6 @@ export default function ObjectList() {
             )}
           </div>
         </div>
-        {!supportsPriorityNavigation && currentType === 'workcase' && (
-          <ExecutionFlowLegend t={t} getStatus={getStatus} />
-        )}
       </div>
 
       {!loading && !error && currentType === 'workcase'
@@ -940,13 +898,6 @@ export default function ObjectList() {
                 ? t('objectList.workcaseCoveragePartial')
                 : t('objectList.workcaseCoverageUnavailable')}
             </p>
-            <div className="mt-2">
-              <WorkCaseObservationControls
-                observedAt={coverageObservedAt}
-                onReload={() => setReloadVersion((version) => version + 1)}
-                t={t}
-              />
-            </div>
             {coverageProblemCount > 0 && (
               <details className="mt-2">
                 <summary className="ldvh-meta cursor-pointer">
@@ -981,17 +932,6 @@ export default function ObjectList() {
         </div>
       )}
 
-      {!loading && !error && currentType === 'workcase'
-        && coverageStatus === 'complete' && coverageProblemCount === 0 && (
-        <div className="mb-4 flex justify-end text-ldvh-text-secondary">
-          <WorkCaseObservationControls
-            observedAt={coverageObservedAt}
-            onReload={() => setReloadVersion((version) => version + 1)}
-            t={t}
-          />
-        </div>
-      )}
-
       {/* Content */}
       {loading ? (
         <div className="flex items-center justify-center py-20">
@@ -1003,13 +943,6 @@ export default function ObjectList() {
             <CircleAlert className="mx-auto mb-3 text-red-400" size={24} />
             <p className="ldvh-card-title text-red-300">{t('objectList.workcaseCoverageUnavailable')}</p>
             <p className="ldvh-meta mt-2 break-words text-red-300/80">{error}</p>
-            <div className="mt-4 flex justify-center text-red-300">
-              <WorkCaseObservationControls
-                observedAt={null}
-                onReload={() => setReloadVersion((version) => version + 1)}
-                t={t}
-              />
-            </div>
           </div>
         ) : (
           <div className="py-20 text-center">

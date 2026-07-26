@@ -352,16 +352,11 @@ test('detail copy actions never fall back from an exact canonical path to a list
   assert.doesNotMatch(detail, /function DetailObjectRow|function buildCurrentFlowItem/);
 });
 
-test('WorkCase list always exposes observation and genuine reread controls', () => {
+test('WorkCase list does not expose list-level observation or reread controls', () => {
   const list = source('src/pages/ObjectList.tsx');
 
-  assert.match(list, /function WorkCaseObservationControls/);
-  assert.match(list, /coverageStatus === 'complete' && coverageProblemCount === 0/);
-  assert.match(list, /observedAt=\{coverageObservedAt\}/);
-  assert.match(list, /setReloadVersion\(\(version\) => version \+ 1\)/);
-  assert.match(list, /activeProgressGroup, reloadVersion/);
+  assert.doesNotMatch(list, /WorkCaseObservationControls|coverageObservedAt|reloadVersion|setReloadVersion|RefreshCw/);
   assert.match(list, /currentType === 'workcase' \? \(/);
-  assert.match(list, /observedAt=\{null\}/);
 });
 
 test('WorkCase list diagnostics expose stable scope identities but no source metadata', () => {

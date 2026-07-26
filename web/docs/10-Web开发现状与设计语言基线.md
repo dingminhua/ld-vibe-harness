@@ -141,7 +141,7 @@ WorkCase 身份 / 优先级 / 进展分组
 
 “关闭待确认”和“已关闭”在专属正文确定前不显示关闭完整性诊断。前者由 `human_closure_confirming` 直接确定，后者由 `status=closed` 且不具有 phase 直接确定；closed 不保存关闭 approval 或关闭时间，Web 不得把这些已移除的过程字段当作缺失。
 
-WorkCase 列表是当次 Web machine 基于 Core 精确读取与校验能力形成的派生视图，必须携带 machine 实际形成结果的 `observed_at`。完整扫描中的 `invalid / not_found` 候选与 coverage 分开呈现：它们是已完成的对象读取问题，不得冒充范围未完成；只有 `unavailable`、结构问题或无法完成全集时才显示 `partial / unavailable`。异常或存在候选问题时，页面保留可消费 Card、观察时间、明确诊断和“重新读取”入口；该入口必须发起新的 machine 请求，不能复用旧 payload、对象 `updated_at` 或浏览器渲染时刻冒充新观察。
+WorkCase 列表是当次 Web machine 基于 Core 精确读取与校验能力形成的派生视图；响应保留 machine 实际形成结果的 `observed_at` 作为读取元数据，但页面不设置列表级“观察时间”或“重新读取”控件。完整扫描中的 `invalid / not_found` 候选与 coverage 分开呈现：它们是已完成的对象读取问题，不得冒充范围未完成；只有 `unavailable`、结构问题或无法完成全集时才显示 `partial / unavailable`。异常或存在候选问题时，页面保留可消费 Card 和明确诊断；筛选或导航触发新的 machine 请求，不能复用旧 payload、对象 `updated_at` 或浏览器渲染时刻冒充新观察。
 
 Web 专用 JSON machine、类型目录扫描和 list/detail 投影编排归属 `web/python/ldvh_web_facts/`，不属于 `ldvh.facts` Core。Node 只以 `-I -B -X utf8` 调用该目录中确定的绝对 `machine.py`；Core 保留可复用的候选发现、精确读取、Schema、关系与校验能力。不得恢复旧 Core module、并行双路径或 local fallback。定向回归命令为 `.venv/bin/python -B -m pytest web/tests/python/test_v4_facts_machine.py`、`cd web && npm run test:web:api` 和 `cd web && npm run check`。
 

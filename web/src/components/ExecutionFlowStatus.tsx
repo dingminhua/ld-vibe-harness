@@ -1,6 +1,5 @@
 import type { RelatedObjectSummary } from '@/utils/api';
 import {
-  EXECUTION_FLOW_LEGEND_ORDER,
   EXECUTION_FLOW_ORDER,
   getExecutionFlowCounts,
   getExecutionFlowIcon,
@@ -63,29 +62,6 @@ export function ExecutionFlowBar({
           <div className="h-full w-full rounded-full bg-ldvh-border/45" />
         )}
       </div>
-    </div>
-  );
-}
-
-export function ExecutionFlowLegend({
-  t,
-  getStatus,
-}: {
-  t: ExecutionFlowTranslate;
-  getStatus: (status: string) => string;
-}) {
-  return (
-    <div className="flex min-h-7 flex-wrap items-center justify-end gap-x-2.5 gap-y-1" aria-label={t('objectList.executionFlowLegend')}>
-      {EXECUTION_FLOW_LEGEND_ORDER.map((tone) => {
-        const label = getExecutionFlowToneLabel(tone, t, getStatus);
-        const Icon = getExecutionFlowIcon(tone);
-        return (
-          <span key={tone} className="ldvh-caption inline-flex items-center gap-1.5 text-ldvh-text-secondary">
-            <Icon size={12} strokeWidth={2.2} className={executionFlowIconClass[tone]} />
-            <span>{label}</span>
-          </span>
-        );
-      })}
     </div>
   );
 }
