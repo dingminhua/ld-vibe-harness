@@ -14,7 +14,7 @@ summary: |-
 
   1. 资产完整性：初始失败。运行时实际选用的 data 目录曾缺少 `ldvh.json`；现已补入。文件存在只证明该资产完整，不能证明运行时会执行 Hook。
   2. 可执行性：通过。手动执行 hook 脚本可以返回 work-context；这不等于环境事件已调用该脚本。
-  3. 实时触发验证：当前未通过。一轮新的 cold startup 中，ZCode 报告已注册一个 Hook，却没有 `hook_run_started` 或 `hook_run_completed`，执行目录为空。会话中出现的 work-context 可能来自 hydrate，不能当作本轮实时触发证据。
+  3. 实时触发验证：已通过。2026-07-26 ZCode 重装后在设置中启用/信任 Hook，新一轮 cold startup 出现 hook_run_started/hook_run_completed 记录。根因已形成 pitfall-0004。
   4. 功能验证：降级为历史有限观察。补入 data 后曾有一次会话交付 work-context；新证据不能确认那次或当前会话由实时 Hook 产生，因此不能再写成当前功能已通过。
   5. 边界验证：未完成。已部署缓存缺少源码中定义的 SubagentStart；compact/resume、升级/重装、两个注册来源同时启用时的数据目录选择，以及 data 完整时仍不实时执行的原因，均未验证。
 
@@ -49,6 +49,11 @@ relations:
       governed_project_id: ldvh
       fact_type_key: pitfall
       object_id: pitfall-0001
+  - relation_key: related-to
+    target:
+      governed_project_id: ldvh
+      fact_type_key: pitfall
+      object_id: pitfall-0004
 evolution:
   - at: '2026-07-22T13:47:42+08:00'
     summary: 迁移对照将 V3 的“规范变化到能力资产再到环境”责任链收窄为当前安装议题，保留安装与验证不能互相替代、资产与现场状态必须分层的判断，移除旧命令和旧环境已落地断言。
@@ -64,6 +69,8 @@ evolution:
     summary: Human 确认接入后缺少两个关键环节——提示用户去 AI 环境设置开启 Hook，以及提供面向 Human 的 Hook 生效验证方法；当前 README、09 和 33 均未覆盖。摘要新增 Human 操作引导缺口章节。
   - at: '2026-07-26T09:30:00+08:00'
     summary: README 新增"安装后操作"章节，specs/33 新增 §5.3.D2 安装后 Human 操作引导；Human 操作引导缺口已落实，摘要新增"已落实的补充"章节。
+  - at: '2026-07-26T10:00:00+08:00'
+    summary: ZCode 重装后实时触发验证通过，根因（Hook 注册后未在环境设置中启用/信任）已形成 pitfall-0004；spark-0003 的 ZCode 闭环基本完成。
 object_id: spark-0003
 fact_type_key: spark
 created_at: '2026-07-19T08:33:50.911048+08:00'
