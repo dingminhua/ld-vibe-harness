@@ -63,6 +63,8 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
     )
     assert inspection.unchecked_conditions == UNCHECKED_CONDITIONS
     assert [declaration.operation_key for declaration in operations.candidate_declarations] == [
+        "close-workcase",
+        "correct-closed-workcase",
         "create-fact-object",
         "find-fact-object-candidates",
         "precheck-git-commit",
@@ -81,6 +83,8 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
         declaration.operation_key: declaration.source.path for declaration in operations.candidate_declarations
     }
     assert declaration_sources == {
+        "close-workcase": "specs/21-WorkCase-工作项.md",
+        "correct-closed-workcase": "specs/21-WorkCase-工作项.md",
         "create-fact-object": "specs/05-事实模型基础规范.md",
         "find-fact-object-candidates": "specs/05-事实模型基础规范.md",
         "precheck-git-commit": "specs/03-事实源与信息溯源规范.md",
@@ -127,8 +131,8 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
     assert action_templates.issues == ()
     assert action_templates.incomplete_sources == ()
     assert fields.complete is True
-    assert len(fields.structures) == 18
-    assert len(fields.registrations) == 130
+    assert len(fields.structures) == 14
+    assert len(fields.registrations) == 98
 
 
 def test_mechanically_distinct_spec_does_not_create_a_semantic_duplicate_diagnosis(

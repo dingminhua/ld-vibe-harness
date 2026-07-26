@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useI18n } from '@/i18n/context';
 import { getObjectStatusLocale } from '@/i18n/locales';
-import type { WorkCaseProgressOption } from '@/utils/api';
+import type { FactCoverageStatus, WorkCaseProgressOption } from '@/utils/api';
 import {
   WORKCASE_PROGRESS_GROUP_ORDER,
   type WorkCaseProgressGroup,
@@ -13,6 +13,7 @@ interface WorkCaseProgressFilterProps {
   options?: WorkCaseProgressOption[];
   total?: number;
   loading?: boolean;
+  coverageStatus?: FactCoverageStatus;
 }
 
 function getButtonClass(active: boolean): string {
@@ -25,6 +26,7 @@ export default function WorkCaseProgressFilter({
   options = [],
   total = 0,
   loading = false,
+  coverageStatus = 'complete',
 }: WorkCaseProgressFilterProps) {
   const { t, locale } = useI18n();
   const counts = useMemo(() => new Map(options.map((option) => [option.group, option.count])), [options]);
@@ -39,7 +41,9 @@ export default function WorkCaseProgressFilter({
           className={getButtonClass(activeGroup === group)}
         >
           {getObjectStatusLocale('workcase', group, locale)}
-          <span className="ldvh-tab-count">{loading ? '·' : counts.get(group) ?? 0}</span>
+          <span className="ldvh-tab-count">
+            {loading ? '·' : formatCoverageCount(counts.get(group) ?? 0, coverageStatus)}
+          </span>
         </button>
       ))}
       <button
@@ -48,8 +52,13 @@ export default function WorkCaseProgressFilter({
         className={getButtonClass(activeGroup === null)}
       >
         {t('objectList.all')}
-        <span className="ldvh-tab-count">{loading ? '·' : total}</span>
+        <span className="ldvh-tab-count">{loading ? '·' : formatCoverageCount(total, coverageStatus)}</span>
       </button>
     </div>
   );
+}
+
+function formatCoverageCount(count: number, coverageStatus: FactCoverageStatus): string {
+  if (coverageStatus === 'unavailable') return '—';
+  return coverageStatus === 'partial' ? `${count}+` : String(count);
 }

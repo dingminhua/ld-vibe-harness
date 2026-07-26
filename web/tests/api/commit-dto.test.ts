@@ -53,14 +53,10 @@ fs.writeFileSync(
     'title: Dashboard WorkCase 投影回归',
     'status: open',
     'priority: P1',
-    'source_refs:',
-    '- kind: repository-path',
-    '  locator: specs/21.md',
     'summary: 当前结果等待独立复核。',
     'resume_from: 继续独立复核。',
-    'goal: 固定 current profile 的 Web 投影。',
+    'goal: 固定当前 WorkCase 的 Web 投影。',
     'scope: 仅测试。',
-    'workcase_profile: control-contract-v1',
     'success_criterion_definitions:',
     '- criterion_id: criterion-01',
     '  statement: 当前标准已满足。',
@@ -82,15 +78,39 @@ fs.writeFileSync(
     '- criterion_id: criterion-01',
     '  outcome: satisfied',
     '  summary: 已满足。',
+    'result_summary: 当前实现已经形成。',
     'controller_check_summary: 已完成自检。',
-    'evidence_refs:',
-    '- kind: working_tree',
-    '  locator: web/api/routes/objects.ts',
+    'validation_summary: 已检查当前 Web 投影。',
     'waiting_on: 等待独立复核。',
     'object_id: workcase-0001',
     'fact_type_key: workcase',
     "created_at: '2026-07-20T06:00:00+08:00'",
     "updated_at: '2026-07-20T07:00:00+08:00'",
+    '',
+  ].join('\n'),
+)
+fs.writeFileSync(
+  path.join(projectRoot, 'ldvh-base', 'workcases', 'workcase-0002.yaml'),
+  [
+    'title: Dashboard 已关闭 WorkCase 投影回归',
+    'status: closed',
+    'goal: 固定无 phase 的 closed WorkCase Web 投影。',
+    'scope: 仅测试 closed 分组。',
+    'success_criterion_definitions:',
+    '- criterion_id: criterion-closed-group',
+    '  statement: 已关闭对象进入已关闭分组。',
+    'success_criterion_results:',
+    '- criterion_id: criterion-closed-group',
+    '  outcome: satisfied',
+    '  summary: 列表与 Dashboard 均投影为已关闭。',
+    'result_summary: closed 投影已经形成。',
+    'validation_summary: 已检查无 phase 的 closed 投影。',
+    'closure_outcome: completed',
+    'disposition_summary: 当前责任已经完成并关闭。',
+    'object_id: workcase-0002',
+    'fact_type_key: workcase',
+    "created_at: '2026-07-20T05:00:00+08:00'",
+    "updated_at: '2026-07-20T05:30:00+08:00'",
     '',
   ].join('\n'),
 )
@@ -128,6 +148,11 @@ process.env.LDVH_HELPER_EXECUTABLE = process.platform === 'win32'
   ? path.join(repositoryRoot, '.venv', 'Scripts', 'ldvh.exe')
   : path.join(repositoryRoot, '.venv', 'bin', 'ldvh')
 process.env.LDVH_WEB_WORKTREE_LOCATOR = projectRoot
+process.env.LDVH_WEB_WORKSPACE_ROOT = workspaceRoot
+process.env.LDVH_WEB_GOVERNED_PROJECT_ID = 'demo'
+process.env.LDVH_WEB_PYTHON = process.platform === 'win32'
+  ? path.join(repositoryRoot, '.venv', 'Scripts', 'python.exe')
+  : path.join(repositoryRoot, '.venv', 'bin', 'python')
 
 let server: Server
 let baseUrl = ''
@@ -160,8 +185,9 @@ function assertCommitDto(entry: Record<string, unknown>) {
 
 async function getJson(pathname: string) {
   const response = await fetch(`${baseUrl}${pathname}`)
-  assert.equal(response.status, 200)
-  return await response.json() as unknown
+  const body = await response.text()
+  assert.equal(response.status, 200, body)
+  return JSON.parse(body) as unknown
 }
 
 test('preserves the shared commit DTO across current API consumers', async () => {
@@ -173,59 +199,101 @@ test('preserves the shared commit DTO across current API consumers', async () =>
     actionItems: Array<Record<string, unknown>>
     recentChanges: Array<Record<string, unknown>>
     recentItems: Array<Record<string, unknown>>
-    stats: Array<{ type: string; total: number; byStatus: Record<string, number> }>
+    stats: Array<{
+      type: string
+      total: number
+      byStatus?: Record<string, number>
+      byProgressGroup?: Record<string, number>
+      coverageStatus?: string
+    }>
   }
   assert.equal(dashboard.recentChanges.length, 1)
   assertCommitDto(dashboard.recentChanges[0])
-  assert.equal(dashboard.actionItems[0].object_id, 'spark-0001')
   assert.equal(dashboard.actionItems[0].id, 'spark-0001')
-  // Dashboard rows are discovery candidates.  Source paths are only available
-  // after the detail consumer performs an exact fact read.
-  assert.equal(dashboard.actionItems[0].path, '')
+  assert.equal('object_id' in dashboard.actionItems[0], false)
+  assert.equal('path' in dashboard.actionItems[0], false)
   assert.equal('canonical_path' in dashboard.actionItems[0], false)
   assert.equal('carrier' in dashboard.actionItems[0], false)
-  assert.equal(dashboard.actionItems[0].updated, '2026-07-20T08:00:00+08:00')
+  assert.equal('updated' in dashboard.actionItems[0], false)
   assert.doesNotMatch(String(dashboard.actionItems[0].relativeTime), /NaN/)
-  assert.equal(dashboard.recentItems[0].object_id, 'spark-0001')
-  const dashboardWorkcase = dashboard.actionItems.find((item) => item.object_id === 'workcase-0001')
+  assert.equal(dashboard.recentItems[0].id, 'spark-0001')
+  const dashboardWorkcase = dashboard.actionItems.find((item) => item.id === 'workcase-0001')
   assert.ok(dashboardWorkcase)
-  assert.equal(dashboardWorkcase.status, 'progressing')
+  assert.equal(dashboardWorkcase.progress_group, 'progressing')
+  assert.equal('status' in dashboardWorkcase, false)
+  assert.equal('source_status' in dashboardWorkcase, false)
+  for (const item of [...dashboard.actionItems, ...dashboard.recentItems]) {
+    const unexpected = Object.keys(item).filter((key) => ![
+      'id', 'type', 'title', 'title_en', 'title_zh', 'status', 'progress_group', 'relativeTime', 'typeColor',
+    ].includes(key))
+    assert.deepEqual(unexpected, [], `dashboard item leaked fields: ${unexpected.join(', ')}`)
+    assert.equal('source_status' in item, false)
+    if (item.type === 'workcase') {
+      assert.equal(typeof item.progress_group, 'string')
+      assert.equal('status' in item, false)
+    } else {
+      assert.equal(typeof item.status, 'string')
+      assert.equal('progress_group' in item, false)
+    }
+  }
   const workcaseStats = dashboard.stats.find((stat) => stat.type === 'workcase')
   assert.ok(workcaseStats)
-  assert.deepEqual(workcaseStats.byStatus, { progressing: 1 })
+  assert.deepEqual(workcaseStats.byProgressGroup, { progressing: 1, closed: 1 })
+  assert.equal('byStatus' in workcaseStats, false)
+  const sparkStats = dashboard.stats.find((stat) => stat.type === 'spark')
+  assert.ok(sparkStats)
+  assert.deepEqual(sparkStats.byStatus, { open: 2 })
+  assert.equal('byProgressGroup' in sparkStats, false)
   const workcaseProgressGroups = new Set(['plan_confirmation', 'progressing', 'closure_confirmation', 'closed'])
   for (const item of [...dashboard.actionItems, ...dashboard.recentItems]) {
     if (item.type === 'workcase') {
-      assert.equal(workcaseProgressGroups.has(String(item.status)), true)
+      assert.equal(workcaseProgressGroups.has(String(item.progress_group)), true)
     }
   }
 
   const workcases = await getJson('/api/objects/workcase') as {
-    data: { items: Array<Record<string, unknown>>; progressOptions: Array<Record<string, unknown>> }
+    data: {
+      items: Array<Record<string, unknown>>
+      progressOptions: Array<Record<string, unknown>>
+      observed_at: string
+    }
   }
+  assert.match(workcases.data.observed_at, /T.+(?:Z|[+-]\d{2}:\d{2})$/)
   const workcase = workcases.data.items.find((item) => item.object_id === 'workcase-0001')
+  const closedWorkcase = workcases.data.items.find((item) => item.object_id === 'workcase-0002')
   assert.ok(workcase)
-  assert.equal(workcase.status, 'subagents_result_reviewing')
+  assert.ok(closedWorkcase)
+  assert.equal(workcase.status, 'open')
+  assert.equal(workcase.phase, 'independent_reviewing')
+  assert.equal('responsibilityStatus' in workcase, false)
   assert.equal(workcase.progress_group, 'progressing')
   assert.equal(workcase.progress_step, 'independent_review')
   assert.equal(workcase.executionItemTotal, 1)
   assert.equal(workcase.executionItemsProjectionValid, true)
   assert.equal(workcase.executionItemDone, 1)
   assert.equal(workcase.executionItemCancelled, 0)
-  assert.deepEqual(workcase.executionItemsInProgress, [])
   assert.deepEqual(workcase.executionItemsActive, [])
+  assert.equal('executionItems' in workcase, false)
   assert.equal('progressHistoryState' in workcase, false)
   assert.equal('progressRound' in workcase, false)
-  assert.equal(workcase.successCriteriaTotal, 1)
-  assert.equal(workcase.successCriteriaDone, 1)
-  assert.deepEqual(workcase.successCriteria, ['当前标准已满足。'])
-  assert.equal(workcase.hasPlanConfirmedAt, true)
-  assert.equal(workcase.hasVerificationEvidence, true)
+  assert.equal('successCriteria' in workcase, false)
+  assert.equal('success_criterion_definitions' in workcase, false)
+  assert.equal('work_items' in workcase, false)
+  assert.equal('hasPlanConfirmedAt' in workcase, false)
+  assert.equal('hasClosureRequestedAt' in workcase, false)
+  assert.equal('hasVerificationEvidence' in workcase, false)
+  assert.equal('hasClosureEvidence' in workcase, false)
+  assert.equal(closedWorkcase.status, 'closed')
+  assert.equal(closedWorkcase.progress_group, 'closed')
+  assert.equal('progress_step' in closedWorkcase, false)
+  assert.equal('executionItems' in closedWorkcase, false)
+  assert.equal('successCriteria' in closedWorkcase, false)
+  assert.equal('success_criterion_definitions' in closedWorkcase, false)
   assert.deepEqual(workcases.data.progressOptions, [
     { group: 'plan_confirmation', count: 0 },
     { group: 'progressing', count: 1 },
     { group: 'closure_confirmation', count: 0 },
-    { group: 'closed', count: 0 },
+    { group: 'closed', count: 1 },
   ])
 
   const prioritizedWorkcases = await getJson('/api/objects/workcase?priority=P1') as {
@@ -263,10 +331,16 @@ test('preserves the shared commit DTO across current API consumers', async () =>
   }
   assert.deepEqual(reviewWorkcases.data.items.map((item) => item.object_id), ['workcase-0001'])
 
+  const closedWorkcases = await getJson('/api/objects/workcase?progress=closed') as {
+    data: { items: Array<Record<string, unknown>> }
+  }
+  assert.deepEqual(closedWorkcases.data.items.map((item) => item.object_id), ['workcase-0002'])
+
   const workcaseDetail = await getJson('/api/objects/workcase/workcase-0001') as {
     summary: Record<string, unknown>
   }
-  assert.equal(workcaseDetail.summary.status, 'subagents_result_reviewing')
+  assert.equal(workcaseDetail.summary.status, 'open')
+  assert.equal(workcaseDetail.summary.phase, 'independent_reviewing')
 
   const commits = await getJson('/api/project-files/git/commits?projectId=demo&count=1') as {
     entries: Array<Record<string, unknown>>

@@ -201,13 +201,13 @@ WorkCase 列表中的外部 Card 直接服务 Human 对当前工作责任的定�
 | `progress_group` | 中文显示 | 边界 |
 |---|---|---|
 | `plan_confirmation` | 方案待确认 | 正式 WorkCase 已创建，等待 Human 判断是否执行当前计划 |
-| `progressing` | 推进中 | WorkCase 正在执行、质量检查、独立复核或形成关闭材料，当前没有已成立的 Human Gate |
+| `progressing` | 推进中 | WorkCase 的 `phase` 为 `plan_revising`、`executing`、`controller_checking`、`independent_reviewing` 或 `closure_preparing`；实际存在的 Human 等待或责任阻塞另行呈现，不改变进展分组 |
 | `closure_confirmation` | 关闭待确认 | 完整关闭材料已经形成并实际提交 Human 判断 |
-| `closed` | 已关闭 | Human 已批准当前结果与报告，WorkCase 已进入终态 |
+| `closed` | 已关闭 | Human 已依据完整关闭提案决定停止推进并接受相应责任处置，WorkCase 已进入终态 |
 
-每张 WorkCase 外部 Card 必须直接、可识别地显示其当前 `progress_group`，不能只在列表筛选、分组标题或 Dashboard 汇总中显示。Card 不得把来源 phase 的精确名称另列为与四个进展分组同级的主状态；处于 `progressing` 时，才在“推进中”之下补充当前 `progress_step`。
+每张 WorkCase 外部 Card 必须直接、可识别地显示其当前 `progress_group`，不能只在列表筛选、分组标题或 Dashboard 汇总中显示。Card 不得把来源 phase 的精确名称另列为与四个进展分组同级的主状态；处于 `progressing` 时，在“推进中”之下补充当前 `progress_step`，或按本节显示轨迹外的“方案修订中”。
 
-`progressing` 必须同时使用以下推进环节之一；其它三个进展分组的 `progress_step` 固定省略：
+`progressing` 中属于结果推进主链的 phase 必须同时使用以下推进环节之一；`plan_revising` 与其它三个进展分组的 `progress_step` 固定省略：
 
 | `progress_step` | 中文显示 | 来源 phase |
 |---|---|---|
@@ -216,45 +216,48 @@ WorkCase 列表中的外部 Card 直接服务 Human 对当前工作责任的定�
 | `independent_review` | 独立复核 | `independent_reviewing` |
 | `controller_synthesis` | 主控收敛 | `closure_preparing` |
 
-`control-contract-v1` 与 `control-contract-v2` 的确定性映射闭集如下：
+当前 WorkCase 的确定性映射闭集如下。活动期分组只由 `phase` 映射；`closed` 不是 phase，而是 `status=closed` 且 `phase` 省略时的唯一终态映射。`plan_revising` 属于“推进中”，但它表示当前计划正在返修，不是结果推进主链中的第五个环节，因此固定省略 `progress_step`：
 
-| WorkCase `phase` | `progress_group` | `progress_step` |
+| WorkCase 当前 `status` / `phase` | `progress_group` | `progress_step` |
 |---|---|---|
-| `human_plan_confirming` | `plan_confirmation` | 省略 |
-| `executing` | `progressing` | `item_execution` |
-| `controller_checking` | `progressing` | `controller_self_check` |
-| `independent_reviewing` | `progressing` | `independent_review` |
-| `closure_preparing` | `progressing` | `controller_synthesis` |
-| `human_closure_confirming` | `closure_confirmation` | 省略 |
-| `closed` | `closed` | 省略 |
+| 活动期；`phase=human_plan_confirming` | `plan_confirmation` | 省略 |
+| 活动期；`phase=plan_revising` | `progressing` | 省略；Card 显示轨迹外内部位置“方案修订中” |
+| 活动期；`phase=executing` | `progressing` | `item_execution` |
+| 活动期；`phase=controller_checking` | `progressing` | `controller_self_check` |
+| 活动期；`phase=independent_reviewing` | `progressing` | `independent_review` |
+| 活动期；`phase=closure_preparing` | `progressing` | `controller_synthesis` |
+| 活动期；`phase=human_closure_confirming` | `closure_confirmation` | 省略 |
+| `status=closed`；`phase` 省略 | `closed` | 省略 |
 
-创建前计划形成与 creation review 尚未产生正式 WorkCase，不得投影为外部 WorkCase Card、进展分组或推进环节。`status=blocked` 是覆盖在任一非终态 phase 上的责任阻塞事实；Web 必须在保留按 phase 得出的进展分组和推进环节时另行呈现阻塞，不得把 blocked 改成第五个进展分组，也不得用分组掩盖 `blocking_summary`。表外 phase、缺失 phase 或违反 21 的 status/phase 组合不能按相似名称、数组位置或前后阶段猜测；Web 只能如实呈现读取或一致性问题及未能形成进展分组的范围。
+创建前计划形成与 creation review 尚未产生正式 WorkCase，不得投影为外部 WorkCase Card、进展分组或推进环节。`status=blocked` 是覆盖在任一非终态 phase 上的责任阻塞事实；除了本节已明示限定为“只显示通用身份”的 `closure_confirmation` Card 外，Web 必须在保留按 phase 得出的进展分组和推进环节时另行呈现阻塞，不得把 blocked 改成第五个进展分组，也不得用分组掩盖 `blocking_summary`。`closure_confirmation` 的当前 Card 正文契约尚未定义，即使实际 `status=blocked` 也不在 Card 额外展示阻塞；这不允许详情页、精确读取诊断或其它已经定义的支持范围隐藏实际 `blocking_summary`。表外 phase、缺失 phase 或违反 21 的 status/phase 组合不能按相似名称、数组位置或前后阶段猜测；Web 只能如实呈现读取或一致性问题及未能形成进展分组的范围。
 
-WorkCase 列表筛选、Dashboard 聚合或其它以外部 Card 为成员的 Human-facing 分组如果表达工作当前进展，必须使用四个 `progress_group`，并明确它是“进展分组”而非生命周期分类；需要说明推进内部位置时再使用四个 `progress_step`。Dashboard 的 WorkCase `byStatus` 键和条目 `status` 也必须使用这四个值，不得再输出原始 phase、历史显示状态或另一套 Dashboard 分组。它们仍须保留到来源对象和原始 phase 的读取入口，不得把聚合数量表达为事实源自有计数。
+WorkCase 列表筛选、Dashboard 聚合或其它以外部 Card 为成员的 Human-facing 分组如果表达工作当前进展，必须使用四个 `progress_group`，并明确它是“进展分组”而非生命周期分类；需要说明推进内部位置时再使用四个 `progress_step`。Dashboard 的 WorkCase 聚合键必须命名为 `byProgressGroup`，其条目必须以 `progress_group` 承载这四个值，不得把派生分组写入名为 `status` 的字段，也不得再输出原始 phase、历史显示状态或另一套 Dashboard 分组。如 Dashboard 确有消费实际事实责任状态的需要，必须另以 `source_status` 原样承载，不能用它替代 `progress_group`；两者仍须保留到来源对象和原始 phase 的读取入口，不得把聚合数量表达为事实源自有计数。
 
-`plan_confirmation` Card 在通用对象身份、标题和进展分组之外，正文只显示以下两项 Human 计划判断输入：
+`plan_confirmation` Card 在通用对象身份、标题和进展分组之外，**计划判断输入区**只显示以下两项 Human 计划判断输入：
 
 1. **目标**：直接读取当前 WorkCase 的 `goal`，回答准备实现什么结果；
-2. **成功标准**：`control-contract-v1` 与 `control-contract-v2` 直接读取 `success_criterion_definitions[].statement`，legacy 直接读取 `success_criteria`，回答完成后按哪些可观察条件判断结果。
+2. **成功标准**：直接读取 `success_criterion_definitions[].statement`，回答完成后按哪些可观察条件判断结果。
 
-Web 不得为这两项重新生成 AI 摘要，不得从 `scope`、work items、审核记录或其它字段拼凑替代文本。目标与全部成功标准必须完整显示，不得截断、折叠、限制标准条数或用“其余若干项”代替；字段缺失或不可读时必须明确显示相应信息缺失。成功标准是没有先后关系的并列集合，在 Card 中必须统一使用圆点，不得按数组位置、criterion ID 或显示次序添加数字序号。该 Card 不显示 `scope` 中的覆盖、排除或限制，也不显示 work items、依赖、执行步骤、方法、模板、验证安排、创建审核详情、执行统计或关闭材料；这些技术边界和完整计划批准材料仍从同源详情读取。Card 只帮助 Human 识别当前待确认计划，不单独构成 21 §10 要求的完整计划批准材料。
+Web 不得为这两项重新生成 AI 摘要，不得从 `scope`、work items、审核记录或其它字段拼凑替代文本。目标与全部成功标准必须完整显示，不得截断、折叠、限制标准条数或用“其余若干项”代替；字段缺失或不可读时必须明确显示相应信息缺失。成功标准是没有先后关系的并列集合，在 Card 中必须统一使用圆点，不得按数组位置、criterion ID 或显示次序添加数字序号。当实际 `status=blocked` 时，Card 必须在计划判断输入区之外另设独立的当前状态提示区，完整显示顶层 `blocking_summary`；该提示不构成第三项计划判断输入，未记录阻塞原因时明确显示相应信息缺失。除这一阻塞提示外，该 Card 不显示 `scope` 中的覆盖、排除或限制，也不显示 work items、依赖、执行步骤、方法、模板、验证安排、创建审核详情、执行统计或关闭材料；这些技术边界和完整计划批准材料仍从同源详情读取。Card 只帮助 Human 识别当前待确认计划，不单独构成 21 §10 要求的完整计划批准材料。
 
 `progressing` Card 在相同通用对象身份、标题和进展分组之外，正文只显示“目标”和“当前进展”两个区域：
 
 - **目标**：与 `plan_confirmation` Card 一样直接、完整读取当前 WorkCase 的 `goal`，不得重新摘要、截断、折叠或从其它字段拼凑替代文本；
 - **当前进展**：同时显示四个推进环节中的当前位置、工作项完成数、当前 active 工作项，以及实际存在的等待或阻塞；这些内容只能派生自 phase 投影、`work_items[].item_id`、`work_items[].goal`、`work_items[].status`、实际存在的 `work_items[].blocking_summary`、顶层 `waiting_on` 和顶层 `blocking_summary`，不得由 Web 自行补写事实。
 
-“当前进展”的首要 Human 扫读判断是“现在处在哪个推进环节、工作项完成到什么范围”。Card 必须把当前环节作为主进展信息，在同一摘要层把工作项完成数作为次级信息；不得引入全局轮次、返回次数、审核次数或其它过程计数。四个环节应保持为一条连续的 1–4 结构轨迹，只有当前位置可以使用强调色和轻微动态信号；轨迹线和其它位置必须保持中性，不得借颜色、连线、勾选或图标暗示已完成、已经过或不会返回。窄屏可以让当前环节与完成数换行，但不得改变阅读顺序或把四环节拆成会弱化连续关系的 2×2 宫格。
+“当前进展”的首要 Human 扫读判断是“现在处在哪个内部位置、工作项完成到什么范围”。结果推进主链中的 Card 必须把当前环节作为主进展信息，在同一摘要层把工作项完成数作为次级信息；不得引入全局轮次、返回次数、审核次数或其它过程计数。四个环节应保持为一条连续的 1–4 结构轨迹，只有当前位置可以使用强调色和轻微动态信号；轨迹线和其它位置必须保持中性，不得借颜色、连线、勾选或图标暗示已完成、已经过或不会返回。窄屏可以让当前环节与完成数换行，但不得改变阅读顺序或把四环节拆成会弱化连续关系的 2×2 宫格。
+
+`phase=plan_revising` 时，Card 必须在“推进中”下明确显示“方案修订中”，并说明它位于四步结果推进轨迹之外；不得高亮四步中的任一项，不得显示“当前环节不可判定”，也不得新增第五个稳定 `progress_step`。工作项完成数、真实 active item、`waiting_on` 与 `blocking_summary` 仍按当前事实显示；计划返修期间被冻结的 item 状态不得被 Web 改写为返修进度或完成历史。
 
 四个推进环节具有本节已定义的固定顺序，因此 Web 可以使用 1–4 的数字序号帮助 Human 扫读；该序号和位置强调只表达推进结构与当前所在环节，不是执行历史或环节完成事实。Web 不得仅根据当前环节位于后方，就把任何前序环节标成“已完成”、添加完成勾选或生成经过记录。当前 `progress_step` 缺失或不可映射时，必须明确显示“当前环节不可判定”，不得按 phase 名称相似度、工作项状态或相邻位置猜测。
 
-工作项进度按 21 的确定性规则投影为“已完成 N/T”：`T` 是全部当前 work item 数，`N` 对 `control-contract-v1` 与 `control-contract-v2` 只计 `status=completed`；`cancelled` 必须另行显示数量，不能并入完成数。Card 同时按事实数组顺序列出全部 active 项，即 `in_progress` 与 `blocked` 项的稳定 `item_id`、完整 `goal` 和当前状态；阻塞项还必须完整显示它自身已记录的 `blocking_summary`。存在多个并行 active 项时全部列出，不得只挑一个。active 项是没有额外线性顺序的并列集合，使用圆点而非数字序号；`item_id` 与状态作为元信息，完整 `goal` 作为事实正文，不得让技术身份在视觉上压过 Human 需要理解的工作目标。
+工作项进度按 21 的确定性规则投影为“已完成 N/T”：`T` 是全部当前 work item 数，`N` 只计 `status=completed`；`cancelled` 必须另行显示数量，不能并入完成数。Card 同时列出全部 active 项，即 `in_progress` 与 `blocked` 项的稳定 `item_id`、完整 `goal` 和当前状态；阻塞项还必须完整显示它自身已记录的 `blocking_summary`。存在多个并行 active 项时全部列出，不得只挑一个。active 项是没有额外线性顺序的并列集合，使用圆点而非数字序号；渲染顺序不表示推进顺序，`item_id` 与状态作为元信息，完整 `goal` 作为事实正文，不得让技术身份在视觉上压过 Human 需要理解的工作目标。
 
-当前环节为 `item_execution` 且没有 active 项时，如仍有 `pending` 项，以弱化正文显示“尚无进行中工作项”；如全部项均为 `completed` 或 `cancelled`，则必须明确显示工作项状态与当前环节不一致。`controller_self_check`、`independent_review` 和 `controller_synthesis` 不为预期为空的 active 项生成“无执行项”噪声；如这三个环节仍有 `pending`、`in_progress` 或 `blocked` 项，则显示状态与环节不一致。`control-contract-v1` 或 `control-contract-v2` 的任何 work item 缺少合法稳定 `item_id`、完整 `goal` 或当前状态，或出现重复 ID 时，工作项完成数和 active 项整组显示“工作项进展不可判定”，但不得因此隐藏仍可由 phase 确定的当前环节。Web 不得只丢弃错误成员后继续计算部分总数，也不得用数组位置、title、ID 或其它字段生成替代身份/目标。数组位置与 item_id 数字尾缀都不是执行序号，Web 不得把 `item-03` 改写成“第三项”或声称已经完成到线性第几项。只有 21 已定义的 legacy 对象可以兼容读取其既有 done/skipped/executing 状态与既有显示 fallback；缺少 required profile、使用未知 profile 或时间不足以确定 legacy 身份的对象必须显示不可判定，不得生成 `execution-item-N` 或从 title 补造替代身份/目标。兼容语言不得写回任何 control-contract profile。
+当前环节为 `item_execution` 且没有 active 项时，如仍有 `pending` 项，以弱化正文显示“尚无进行中工作项”；如全部项均为 `completed` 或 `cancelled`，则必须明确显示工作项状态与当前环节不一致。`controller_self_check`、`independent_review` 和 `controller_synthesis` 不为预期为空的 active 项生成“无执行项”噪声；如这三个环节仍有 `pending`、`in_progress` 或 `blocked` 项，则显示状态与环节不一致。任何 work item 缺少合法稳定 `item_id`、完整 `goal` 或当前状态，或出现重复 ID 时，工作项完成数和 active 项整组显示“工作项进展不可判定”，但不得因此隐藏仍可由 phase 确定的当前内部位置。Web 不得只丢弃错误成员后继续计算部分总数，也不得用数组位置、title、ID、已退出字段或生成值补造身份/目标。数组位置与 item_id 数字尾缀都不是执行序号，Web 不得把 `item-03` 改写成“第三项”或声称已经完成到线性第几项。
 
 当 `waiting_on` 实际存在时，`progressing` Card 必须完整显示正在等待的对象或条件；不存在时不从当前环节自动推断“等待独立复核”等文案。当 `status=blocked` 时，Card 必须在保留上述四环节及当前位置的同时，附加完整显示顶层 `blocking_summary`；未记录阻塞原因时明确显示缺失。等待回答“正在等什么”，阻塞回答“为什么不能继续”；两者实际同时存在时均保留，不由 Web 进行语义去重。它们都是覆盖在推进位置上的当前信息，不替代“推进中”或当前推进环节。`progressing` Card 不显示成功标准、scope、依赖、方法、完整工作项计划、执行态势条、验证安排、审核记录或关闭材料；除上述完成数、取消数、active 项的身份/目标/状态/阻塞，以及顶层等待与阻塞外，其余工作项内容仍从同源详情读取。
 
-`closure_confirmation` 与 `closed` 两类 Card 的具体正文尚未确定；在此期间，已有的关闭完整性诊断仍必须忠实识别当前合同：`human_closure_confirming` 表示关闭确认请求当前成立；`closed` 对象的 `closure_approval` 表示该 Human Gate 已经完成。Web 不得因 `control-contract-v1` 或 `control-contract-v2` 没有 legacy `closure_requested_at` 或 `review_requested_at` 而报告“请求关闭未完成”。v1/legacy 对象已有的 `closure_requested_at` 与 `review_requested_at` 继续作为只读兼容来源。这项兼容投影只用于避免错误诊断，不生成请求时间，不把批准改写为请求，也不预先规定 Card 正文。
+`closure_confirmation` 与 `closed` 两类 Card 的具体正文尚未确定。在正文契约形成前，这两类 Card 只显示通用对象身份、标题、进展分组和更新时间，不显示关闭完整性诊断，不从已退出的请求、审核、批准或时间字段推断缺失，也不把活动期过程字段当作 closed 必须保留的内容。`human_closure_confirming` 本身足以确定“关闭待确认”分组；`status=closed` 且不具有 phase 本身足以确定“已关闭”分组，关闭决定由专属事务消费，不持久化 approval 或关闭时间收据。
 
 本节当前只确定 `plan_confirmation` 与 `progressing` Card 的上述正文；`closure_confirmation` 和 `closed` Card 的具体正文、事实字段、信息数量、优先级和折叠方式仍待 Human 后续设计判断，不得由 Web 自行补造。颜色、图标和操作继续由 `web/docs/` 与实现承接。WorkCase 详情页不使用进展分组或推进环节切换、隐藏、重排或另建阅读结构；所有状态复用同一详情阅读结构，具体字段是否实际存在只由当前事实内容及其类型来源决定。
 

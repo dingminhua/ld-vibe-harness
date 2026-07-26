@@ -1,70 +1,39 @@
+object_id: workcase-0014
+fact_type_key: workcase
 title: Codex 参考实现定位与多环境 adapter 开发责任明确
+created_at: '2026-07-25T08:50:27.386550+08:00'
+updated_at: '2026-07-26T22:27:30+08:00'
 status: closed
-summary: workcase-0014 已关闭。result_version 2 的七项成功标准全部满足，README 引用有效；Human 已批准当前结果、最终报告和 closure_outcome=completed，原范围内无残余责任。
-goal: 在 LDVH 规则与文档中明确：LDVH 核心只提供环境无关入口与一个 Codex 参考实现，其它 AI 开发环境的 adapter 由该环境的 AI 自己照参考实现开发，不在 LDVH 仓库收纳或维护。
-scope: "覆盖：\n- specs/09-环境接入规范.md §8 明确\"不承诺预制\"是设计原则而非临时状态\n- specs/09-环境接入规范.md §6.1 明确原生插件/adapter 由处理该目标环境的 AI 在该环境自己的仓库开发\n- specs/attachments/09.Att.01-环境接入面.md 的\"入口选择\"第 7 项明确独立 Code 计划在目标 AI 环境自己的仓库建立；新增\"参考实现位置\"指向 code/plugins/ldvh/\n- code/plugins/ldvh/README.md 新建，说明参考实现定位\n- code/plans/codex-context-recovery.md §1 补一句参考实现定位\n\n排除：\n- 修改 specs/00-理念与构成.md（避免触发 §10.1 第 11 项 Human Gate 且 00 是上位概念层）\n- 修改 code/plans/environment-neutral-enablement.md（已完成的历史 plan，不回改）\n- 实装任何非 Codex 的 adapter（不在本 WorkCase 范围）\n- 修改 setup.py 打包逻辑\n- 修改 09 §1-5 或 §7 的现有规则正文（只在 §6.1 和 §8 加最少必要句子）"
-workcase_profile: control-contract-v2
+goal: >-
+  在 LDVH 规则与文档中明确：LDVH 核心只提供环境无关入口与一个 Codex 参考实现，其它 AI 开发环境的 adapter
+  由该环境的 AI 自己照参考实现开发，不在 LDVH 仓库收纳或维护。
+scope: >-
+  覆盖 specs/09-环境接入规范.md §8，明确“不承诺预制”是设计原则而非临时状态；覆盖 §6.1，明确原生插件/adapter
+  由处理该目标环境的 AI 在该环境自己的仓库开发；覆盖 specs/attachments/09.Att.01-环境接入面.md 的“入口选择”第 7 项，
+  明确独立 Code 计划在目标 AI 环境自己的仓库建立，并新增“参考实现位置”指向 code/plugins/ldvh/；
+  新建 code/plugins/ldvh/README.md 说明参考实现定位，并在 code/plans/codex-context-recovery.md §1 补充同一定位。
+  排除修改 specs/00-理念与构成.md、已完成的 code/plans/environment-neutral-enablement.md、任何非 Codex adapter、
+  setup.py 打包逻辑，以及 09 §1–5 或 §7 的现有规则正文。
 success_criterion_definitions:
 - criterion_id: criterion-01
-  statement: 09 §8 明确表达"LDVH 不主动为每个 AI 环境提供 adapter 是设计原则而非临时状态"，且不引入 specs 未定义的新术语（如"范例""官方支持"）
+  statement: >-
+    09 §8 明确表达“LDVH 不主动为每个 AI 环境提供 adapter 是设计原则而非临时状态”，且不引入 specs 未定义的新术语。
 - criterion_id: criterion-02
-  statement: 09 §6.1 明确"原生插件/adapter 由处理该目标环境的 AI 在该环境自己的仓库开发，不在 LDVH 仓库收纳"
+  statement: >-
+    09 §6.1 明确“原生插件/adapter 由处理该目标环境的 AI 在该环境自己的仓库开发，不在 LDVH 仓库收纳”。
 - criterion_id: criterion-03
-  statement: 09.Att.01 的“入口选择”第 7 项明确"独立 Code 计划在目标 AI 环境自己的仓库建立，不在 LDVH 仓库"，并新增"参考实现位置"指向 code/plugins/ldvh/
+  statement: >-
+    09.Att.01 的“入口选择”第 7 项明确独立 Code 计划在目标 AI 环境自己的仓库建立，并新增“参考实现位置”指向 code/plugins/ldvh/。
 - criterion_id: criterion-04
-  statement: code/plugins/ldvh/README.md 存在且说明"Codex adapter 是参考实现，其它环境 adapter 不在本仓库维护"
+  statement: code/plugins/ldvh/README.md 存在且说明 Codex adapter 是参考实现，其它环境 adapter 不在本仓库维护。
 - criterion_id: criterion-05
-  statement: code/plans/codex-context-recovery.md §1 明确 Codex adapter 是参考实现
+  statement: code/plans/codex-context-recovery.md §1 明确 Codex adapter 是参考实现。
 - criterion_id: criterion-06
-  statement: 直接文档测试 python -m pytest code/tests/docs/test_enablement_docs.py 通过；setup.py 第 58 行仍排除 code/plugins/ 且 code/tests/packaging/test_distribution_lifecycle.py 通过
+  statement: >-
+    直接文档测试 python -m pytest code/tests/docs/test_enablement_docs.py 通过；setup.py 对 code/plugins/ 的排除规则保持成立，
+    code/tests/packaging/test_distribution_lifecycle.py 通过。
 - criterion_id: criterion-07
-  statement: 09 和 09.Att.01 正文不举具体厂商名（Trae/Cursor/Claude Code 只出现在 code/plugins/ldvh/README.md）
-phase: closed
-plan_version: 1
-work_items:
-- item_id: item-01
-  goal: 只读核对 09 §6.1/§8、09.Att.01 的“入口选择”第 7 项、codex-context-recovery.md §3、code/plugins/ldvh/ 当前内容，记录精确插入位置和现有断言
-  expected_result: 形成可回指的当前职责、精确插入位置、现有测试断言清单；不修改文件
-  approach_summary: 只读核对来源和引用，区分通用规则与目标环境实现；不改生产 Code
-  status: completed
-  result_summary: 已核对 09 §6.1/§8、09.Att.01、Codex 恢复计划、参考实现目录和现有文档断言，确认通用规则与环境专属说明的插入位置及措辞边界；本项未修改文件。
-- item_id: item-02
-  goal: 按计划修改 09 §8 + §6.1、09.Att.01 入口选择第 7 项 + 新增参考实现位置段，新建 code/plugins/ldvh/README.md，补 codex-context-recovery.md §1
-  expected_result: 09、09.Att.01、code/plugins/ldvh/README.md、codex-context-recovery.md 形成一致表述；不新增 adapter，不改 setup.py
-  depends_on:
-  - item-01
-  approach_summary: 仅修改规则和文档；环境专属事件由对应环境来源维护，新增 manifest/script/adapter 仍转入独立 Code 计划；不改变稳定 spec_key/template_key
-  status: completed
-  result_summary: 09 已明确不预制每个环境的 adapter 是长期设计原则，并将其它环境 adapter 的开发责任交给处理该环境的 AI；09.Att.01 已明确独立 Code 计划的仓库位置和 Codex 参考实现入口；参考实现 README 与 Codex 恢复计划已形成一致定位，README 引用均可解析。
-- item_id: item-03
-  goal: 跑直接文档测试 + diff check，形成结果报告
-  expected_result: 直接文档测试通过，diff check 通过；实际验证范围、未运行和非环境结论清晰可追溯
-  depends_on:
-  - item-02
-  approach_summary: 运行 python -m pytest code/tests/docs/test_enablement_docs.py 和 git diff --check；不以字符串零命中、静态部署或 Helper 直调代替真实环境事件验证
-  status: completed
-  result_summary: 文档、打包生命周期和规范仓库定向测试通过，差异检查无空白错误；setup.py 对 code/plugins/
-    的排除规则保持有效。09 的环境无关措辞、09.Att.01 的入口边界及 README 引用均已核对。
-creation_reviews:
-- reviewer: trae-search-subagent
-  reviewed_at: '2026-07-25T08:50:27.386550+08:00'
-  subject_version: 1
-  scope: goal 是否清楚可关闭、scope 覆盖与排除边界、7 项成功标准可检查性与机械可验证性、3 个 work items 拆分与依赖、relations 与 spark-0003 关系、整体风险与与 workcase-0013 重叠、验证方式充分性
-  conclusion: changes_required
-  feedback:
-  - goal 清楚但需要与成功标准 explicit tie（A1）
-  - scope 排除 specs/00 可能遗漏厂商专属术语或 adapter 开发模型的提及（B2）
-  - 未明确"直接文档测试"具体指什么测试，对 item-03 验证关键（D6）
-  - 未定义如何验证 setup.py 排除规则未被破坏，影响 criterion-06（C6/G3）
-  - related-to spark-0003 未澄清承接范围或重叠（E2）
-  controller_resolution: "逐项处置：\n1. 接受（item-03 测试入口）：已在 item-03 approach_summary 补充 python -m pytest code/tests/docs/test_enablement_docs.py 和 git diff --check\n2. 接受（criterion-06 setup.py 验证）：已在 criterion-06 补充 setup.py 第 58 行排除规则验证和 test_distribution_lifecycle.py\n3. 拒绝（goal 与成功标准 explicit tie）：21 §5 字段分工明确 goal 是目标状态、成功标准是可观察条件，规范设计就是分开的，不需要 goal 里 explicit tie\n4. 拒绝（scope 排除 00）：scope 已明确排除 specs/00 并给出理由（避免触发 §10.1 第 11 项 Human Gate 且 00 是上位概念层），审核未给出为什么该排除不合理的具体理由\n5. 拒绝（related-to 承接范围）：21 §7 related-to 是主题相关关系，不需要承接范围（那是 routed-to 的要求）；related-to 只表达主题相关，不声明承接\n\n修正后计划已形成最终 plan_version 1，提交 Human 执行批准。"
-execution_approval:
-  subject_version: 1
-  approved_at: '2026-07-25T09:16:24.361296+08:00'
-  summary: Human 批准 workcase-0014 plan_version 1 执行，从 human_plan_confirming 进入 executing。批准范围包括 item-01 只读核对、item-02 修改 09/09.Att.01/README/codex-context-recovery.md、item-03 跑直接文档测试 + diff check。
-controller_check_summary: 主控已确认七项成功标准和三个工作项满足。09 §6.1/§8、09.Att.01、Codex 参考实现 README
-  与维护计划的职责表述一致，README 引用有效；文档、打包和规范定向测试及差异检查通过。其它 AI 环境的真实 adapter 实现与原生事件触发未验证，且不属于本 WorkCase。
-result_version: 2
+  statement: 09 和 09.Att.01 正文不举具体厂商名；具体厂商名只出现在 code/plugins/ldvh/README.md。
 success_criterion_results:
 - criterion_id: criterion-01
   outcome: satisfied
@@ -77,7 +46,9 @@ success_criterion_results:
   summary: 09.Att.01 入口选择第 7 项已约束独立 Code 计划的仓库位置，参考实现位置段可精确定位 code/plugins/ldvh/。
 - criterion_id: criterion-04
   outcome: satisfied
-  summary: code/plugins/ldvh/README.md 已说明 Codex adapter 的参考实现身份与其它环境 adapter 责任边界；5 处相对链接均已修正并回读到存在目标。
+  summary: >-
+    code/plugins/ldvh/README.md 已说明 Codex adapter 的参考实现身份与其它环境 adapter 责任边界；
+    5 处相对链接均已修正并回读到存在目标。
 - criterion_id: criterion-05
   outcome: satisfied
   summary: code/plans/codex-context-recovery.md 已明确承接 Codex adapter 参考实现的维护责任。
@@ -87,29 +58,14 @@ success_criterion_results:
 - criterion_id: criterion-07
   outcome: satisfied
   summary: 09 和 09.Att.01 正文不含 Codex、Claude、Trae 或 Cursor；具体厂商名只在参考实现 README 出现。
-result_reviews:
-- reviewer: codex-result-reviewer-workcase-0014-v2
-  reviewed_at: '2026-07-25T10:25:41.941709+08:00'
-  subject_version: 2
-  scope: 独立检查 result_version 2 的 3 个 work item 结果、7 项成功标准结果、controller_check_summary、09 §6.1/§8、09.Att.01 入口选择第 7 项与参考实现位置、code/plugins/ldvh/README.md、codex-context-recovery.md §1、setup.py 排除规则；逐项解析 README 的 5 个相对链接并检查目标存在；亲自复跑文档、打包生命周期和规范仓库定向测试及 git diff --check。未覆盖其它 AI 环境 adapter 的实际实现、目标环境原生事件真实触发、Codex 插件安装/发布运行效果、非定向全量测试，以及当前工作区中与本 WorkCase 无关的 Web 未提交改动。
-  conclusion: pass_with_followups
-  feedback:
-  - result_version 2 的实际交付满足 7 项成功标准：09 §6.1/§8、09.Att.01、Codex 参考实现 README 与维护计划的职责表述一致；README 的 5 个链接引用已全部解析到存在目标，此前链接失效问题已经完全解决。
-  - 关闭准备时应把 summary 和 item-02 result_summary 中“6 个文件修改”改为准确口径：实际是 4 个交付文档文件，计入 WorkCase 事实记录后原交付提交共有 5 个路径；这属于结果自述精度修正，不改变实施结果，也不要求 result_version 再升版。
-  - scope、criterion-03 和相关结果中把“09.Att.01 §7”称为“09.Att.01 入口选择第 7 项”更准确，因为附件不存在编号为 §7 的章节；该定位修正不影响对应内容已经满足。
-  - 当前 14 项定向测试不检查 code/plugins/ldvh/README.md 的相对链接；本次通过独立逐项回读补足了当前证据。建议把本地 Markdown 链接有效性测试作为非阻塞后续，以防同类路径回归，但它不阻止本 WorkCase 关闭准备。
-  controller_resolution: 1. 接受：result_version 2 的七项成功标准、三个 work item、链接修复和范围验证均成立。2. 接受交付口径反馈；本次 Human 明确授权的 V1→V2 事实更正已从当前结果与验证中移除易误读的文件和提交路径计数，保留实际交付内容，不改变实施结果或 result_version。3. 接受来源定位反馈；当前 scope、criterion 与结果已统一使用附件“入口选择”第 7 项的准确称呼，这是定位精度更正，不改变已批准计划语义或重开计划。4. Markdown 相对链接自动检查不属于本案成功标准或残余责任；当前链接已逐项回读，如需推进自动检查应另行建立明确责任。当前结果无需再次独立审核。
-validation_summary: result_version 2 的七项成功标准均已满足。09 §6.1/§8、附件入口选择第 7 项与参考实现位置、README
-  和维护计划的职责表述一致；README 引用已逐项回读。文档、打包和规范定向测试及差异检查通过，setup.py 的排除规则保持有效。当前测试不自动检查
-  README 相对链接；其它 AI 环境 adapter 的实际实现、目标环境原生事件触发、Codex 插件安装或发布运行效果和非定向全量测试未验证，均不属于本 WorkCase 的承诺范围。
+result_summary: >-
+  09 §6.1/§8、09.Att.01、Codex 参考实现 README 与维护计划已经形成一致的 adapter 职责表述；
+  LDVH 仓库只保留 Codex 参考实现，其它环境 adapter 由处理目标环境的 AI 在对应环境仓库开发。README 的 5 处相对链接均可解析。
+validation_summary: >-
+  七项成功标准均已满足。文档、打包生命周期和规范仓库定向测试及差异检查通过，setup.py 的排除规则保持有效，
+  README 引用已逐项回读。当前测试不自动检查 README 相对链接；其它 AI 环境 adapter 的实际实现、目标环境原生事件真实触发、
+  Codex 插件安装或发布运行效果和非定向全量测试未验证，均不属于本 WorkCase 的承诺范围。
 closure_outcome: completed
-disposition_summary: 目标已达成，原范围内没有残余责任或需 routed-to 的对象。其它环境 adapter 实现、真实事件验证和
-  Markdown 相对链接自动化检查均未被接纳为本案责任；如需推进，应另行建立明确责任。
-closure_approval:
-  subject_version: 2
-  approved_at: '2026-07-25T10:56:01.904243+08:00'
-  summary: Human 已明确批准关闭 WorkCase-0014 result_version 2，并接受最终验证报告与 closure_outcome=completed；原范围内无残余责任。
-object_id: workcase-0014
-fact_type_key: workcase
-created_at: '2026-07-25T08:50:27.386550+08:00'
-updated_at: '2026-07-26T12:45:00+08:00'
+disposition_summary: >-
+  目标已达成，原范围内没有残余责任或需 routed-to 的对象。其它环境 adapter 实现、真实事件验证和 Markdown 相对链接自动化检查
+  均未被接纳为本案责任；如需推进，应另行建立明确责任。

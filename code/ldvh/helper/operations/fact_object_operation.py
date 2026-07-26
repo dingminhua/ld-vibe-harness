@@ -138,6 +138,7 @@ def _execute(
     schemas = project_fact_schemas(repository)
     fact_index = ProjectFactIndex(root, project_id, schemas, common_dir)
     first_pass: dict[int, FactReadResult] = {}
+    seed_keys: list[tuple[str, str]] = []
     for scope in domain.fact_scopes:
         reference = scope.requested_ref
         layout = LAYOUTS[reference.fact_type_key]
@@ -152,9 +153,11 @@ def _execute(
             expected_common_dir=common_dir,
         )
         first_pass[scope.fact_ref_index] = read
-        fact_index.cache[(reference.fact_type_key, reference.object_id)] = read
-        fact_index.base_cache[(reference.fact_type_key, reference.object_id)] = read
-    stabilize_project_index(fact_index)
+        key = (reference.fact_type_key, reference.object_id)
+        fact_index.cache[key] = read
+        fact_index.base_cache[key] = read
+        seed_keys.append(key)
+    stabilize_project_index(fact_index, seed_keys)
 
     items: list[dict[str, Any]] = []
     completed: list[dict[str, object]] = []

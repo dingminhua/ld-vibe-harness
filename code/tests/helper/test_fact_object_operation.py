@@ -199,13 +199,13 @@ def test_fact_read_checks_relation_targets_and_reachable_dag(tmp_path: Path) -> 
                     "updated_at: 2026-07-14T10:00:00+08:00",
                     "status: open",
                     "summary: Waiting for Human execution approval",
-                    "resume_from: Present plan version 1 for Human approval",
                     "waiting_on: Human execution approval",
                     "priority: P2",
                     "goal: Finish",
                     "scope: One object",
-                    "success_criteria:",
-                    "  - Done",
+                    "success_criterion_definitions:",
+                    "  - criterion_id: criterion-01",
+                    "    statement: The bounded object is complete",
                     "phase: human_plan_confirming",
                     "plan_version: 1",
                     "work_items:",
@@ -220,9 +220,6 @@ def test_fact_read_checks_relation_targets_and_reachable_dag(tmp_path: Path) -> 
                     "    subject_version: 1",
                     "    scope: Goal, scope, criteria, work items, method, validation and risks",
                     "    conclusion: pass",
-                    "    feedback:",
-                    "      - The dependency plan is bounded",
-                    "    controller_resolution: '1. Accepted; no change required.'",
                     "relations:",
                     "  - relation_key: depends-on",
                     "    target:",
@@ -425,7 +422,7 @@ def test_oversized_fact_is_unavailable_without_affecting_other_exact_reads(tmp_p
     ]
 
 
-def test_legacy_workcase_superseded_closure_outcome_is_rejected(tmp_path: Path) -> None:
+def test_current_closed_workcase_rejects_an_unregistered_unknown_field(tmp_path: Path) -> None:
     workspace, project = _fixture(tmp_path)
     directory = project / "ldvh-base" / "workcases"
     directory.mkdir()
@@ -436,51 +433,20 @@ title: Closed item
 created_at: 2026-07-14T09:00:00+08:00
 updated_at: 2026-07-14T10:00:00+08:00
 status: closed
-summary: Closed
 goal: Finish
 scope: One object
-success_criteria:
-  - Done
-phase: closed
-plan_version: 1
-work_items:
-  - item_id: item-01
-    goal: Finish the object
-    expected_result: Done
-    status: completed
-    approach_summary: Complete the bounded target and validate it
-    result_summary: The work was replaced after producing a bounded result
-creation_reviews:
-  - reviewer: independent-plan-reviewer
-    reviewed_at: 2026-07-14T09:05:00+08:00
-    subject_version: 1
-    scope: Goal, scope, criteria, work items, method, validation and risks
-    conclusion: pass
-    feedback:
-      - The plan was bounded
-    controller_resolution: '1. Accepted; no change required.'
-execution_approval:
-  subject_version: 1
-  approved_at: 2026-07-14T09:10:00+08:00
-  summary: Human approved execution of plan version 1
-result_version: 1
-controller_check_summary: The controller checked the result and replacement boundary
-result_reviews:
-  - reviewer: independent-result-reviewer
-    reviewed_at: 2026-07-14T09:50:00+08:00
-    subject_version: 1
-    scope: Item results, criteria, validation, residuals, outcome and routing
-    conclusion: pass
-    feedback:
-      - A routed-to successor is required
-    controller_resolution: '1. Accepted; routing remains required.'
-closure_approval:
-  subject_version: 1
-  approved_at: 2026-07-14T10:00:00+08:00
-  summary: Human approved closure of result version 1
-validation_summary: Validated
-closure_outcome: superseded
-disposition_summary: Replaced
+success_criterion_definitions:
+  - criterion_id: criterion-01
+    statement: The bounded object is complete
+success_criterion_results:
+  - criterion_id: criterion-01
+    outcome: satisfied
+    summary: The bounded object was completed
+result_summary: The bounded object was completed
+validation_summary: The current closed result was read back successfully
+closure_outcome: completed
+disposition_summary: The original scope is complete with no remaining responsibility
+unknown_field: rejected
 """,
         encoding="utf-8",
     )
@@ -488,7 +454,7 @@ disposition_summary: Replaced
     payload["arguments"]["fact_refs"][0].update({"fact_type_key": "workcase", "object_id": "workcase-0001"})
     item = handle_request("call", "read-fact-objects", json.dumps(payload)).response["result"]["items"][0]
     assert item["check_status"] == "invalid"
-    assert any(issue["field_path"] == "closure_outcome" for issue in item["issues"])
+    assert any(issue["field_path"] == "unknown_field" for issue in item["issues"])
 
 
 def test_legacy_superseded_adr_status_and_relation_are_rejected(tmp_path: Path) -> None:
@@ -547,8 +513,9 @@ relations:
     assert {item["check_status"] for item in out_of_range["result"]["items"]} == {"invalid"}
 
     successor.write_text(
-        successor.read_text(encoding="utf-8")
-        .replace("created_at: 2026-07-14T11:00:00+08:00", "created_at: 2026-07-14T09:30:00+08:00"),
+        successor.read_text(encoding="utf-8").replace(
+            "created_at: 2026-07-14T11:00:00+08:00", "created_at: 2026-07-14T09:30:00+08:00"
+        ),
         encoding="utf-8",
     )
     still_invalid = handle_request("call", "read-fact-objects", json.dumps(payload)).response
@@ -557,8 +524,7 @@ relations:
     successor.write_text(
         successor.read_text(encoding="utf-8").replace(
             "status: active\n",
-            "status: retired\n"
-            "disposition_summary: Replacement later retired without deleting its established edge\n",
+            "status: retired\ndisposition_summary: Replacement later retired without deleting its established edge\n",
         ),
         encoding="utf-8",
     )

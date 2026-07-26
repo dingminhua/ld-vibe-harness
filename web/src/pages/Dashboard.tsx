@@ -6,9 +6,13 @@ import {
 import StatsCard from '@/components/StatsCard';
 import StatusBadge from '@/components/StatusBadge';
 import PageHeader from '@/components/PageHeader';
-import CopyPathButton from '@/components/CopyPathButton';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
-import { fetchDashboard, type DashboardData } from '@/utils/api';
+import {
+  fetchDashboard,
+  type DashboardData,
+  type DashboardFactItem,
+  type DashboardObjectType,
+} from '@/utils/api';
 import { usePanel } from '@/utils/panelContext';
 import { useI18n } from '@/i18n/context';
 import { getLocaleListSeparator, getLocalizedObjectTitle } from '@/i18n/locales';
@@ -23,12 +27,18 @@ const TYPE_LABEL_KEYS: Record<string, LocaleKey> = {
   study: 'nav.studies',
 };
 
-const TYPE_ORDER = ['spark', 'workcase', 'adr', 'pitfall', 'study'];
+const TYPE_ORDER: DashboardObjectType[] = ['spark', 'workcase', 'adr', 'pitfall', 'study'];
 
-const HIGHLIGHT_STATUSES = new Set(['plan_confirmation', 'progressing', 'closure_confirmation', 'verifying', 'review_needed']);
+const HIGHLIGHT_PROGRESS_GROUPS = new Set(['plan_confirmation', 'progressing', 'closure_confirmation']);
 
 function getLocalizedTitle(item: { id: string; title?: string; title_en?: string; title_zh?: string }, locale: string): string {
   return getLocalizedObjectTitle(item, locale, item.id);
+}
+
+function getDashboardDisplayState(item: DashboardFactItem): string {
+  return item.type === 'workcase'
+    ? item.progress_group ?? 'unknown'
+    : item.status ?? 'unknown';
 }
 
 export default function Dashboard() {
@@ -65,20 +75,19 @@ export default function Dashboard() {
   }
 
   // 态势摘要
-  const statusCounts: Record<string, number> = {};
+  const progressGroupCounts: Record<string, number> = {};
   for (const item of data.actionItems) {
-    statusCounts[item.status] = (statusCounts[item.status] || 0) + 1;
+    if (item.type !== 'workcase' || !item.progress_group) continue;
+    progressGroupCounts[item.progress_group] = (progressGroupCounts[item.progress_group] || 0) + 1;
   }
   const parts: string[] = [];
-  const statusKeys: Array<{ status: string; key: LocaleKey }> = [
-    { status: 'plan_confirmation', key: 'dashboard.summary.planConfirming' },
-    { status: 'progressing', key: 'dashboard.summary.progressing' },
-    { status: 'closure_confirmation', key: 'dashboard.summary.closureConfirming' },
-    { status: 'review_needed', key: 'dashboard.summary.reviewNeeded' },
-    { status: 'planned', key: 'dashboard.summary.planned' },
+  const progressGroupKeys: Array<{ progressGroup: string; key: LocaleKey }> = [
+    { progressGroup: 'plan_confirmation', key: 'dashboard.summary.planConfirming' },
+    { progressGroup: 'progressing', key: 'dashboard.summary.progressing' },
+    { progressGroup: 'closure_confirmation', key: 'dashboard.summary.closureConfirming' },
   ];
-  for (const { status, key } of statusKeys) {
-    const count = statusCounts[status];
+  for (const { progressGroup, key } of progressGroupKeys) {
+    const count = progressGroupCounts[progressGroup];
     if (count) {
       parts.push(t(key, { count: String(count) }));
     }
@@ -103,7 +112,8 @@ export default function Dashboard() {
               type={type}
               label={t(TYPE_LABEL_KEYS[type] || 'nav.dashboard')}
               count={stat?.total ?? 0}
-              byStatus={stat?.byStatus ?? {}}
+              distribution={type === 'workcase' ? stat?.byProgressGroup ?? {} : stat?.byStatus ?? {}}
+              coverageStatus={stat?.coverageStatus}
               getStatus={getStatus}
               onClick={() => navigate(`/objects/${type}`)}
             />
@@ -123,7 +133,8 @@ export default function Dashboard() {
           ) : (
             <ul className="flex flex-col gap-2">
               {data.actionItems.map((item) => {
-                const isHighlight = HIGHLIGHT_STATUSES.has(item.status);
+                const displayState = getDashboardDisplayState(item);
+                const isHighlight = item.type === 'workcase' && HIGHLIGHT_PROGRESS_GROUPS.has(displayState);
                 return (
                   <li
                     key={`${item.type}-${item.id}`}
@@ -146,8 +157,7 @@ export default function Dashboard() {
                       </span>
                     </div>
                     <div className="flex shrink-0 items-center gap-3">
-                      <CopyPathButton path={item.path} label={t('common.copyObjectPath')} copiedLabel={t('common.copiedObjectPath')} />
-                      <StatusBadge status={item.status} statusLabel={getObjectStatusLocale(item.type, item.status, locale)} objectType={item.type} />
+                      <StatusBadge status={displayState} statusLabel={getObjectStatusLocale(item.type, displayState, locale)} objectType={item.type} />
                       <span className="ldvh-caption whitespace-nowrap">
                         {item.relativeTime}
                       </span>
@@ -208,36 +218,38 @@ export default function Dashboard() {
             <p className="ldvh-body-muted">{t('dashboard.noRecentActivity')}</p>
           ) : (
             <ul className="flex flex-col gap-2">
-              {data.recentItems.map((item) => (
-                <li
-                  key={`${item.type}-${item.id}`}
-                  className="flex cursor-pointer items-center justify-between gap-4 rounded-md px-3 py-2 transition-colors hover:bg-ldvh-border/30"
-                  onClick={() => openPanel({ type: 'object', title: getLocalizedTitle(item, locale) || item.id, objectType: item.type, objectId: item.id })}
-                >
-                  <div className="flex min-w-0 flex-1 items-center gap-3">
-                    <span
-                      className="ldvh-chip inline-flex shrink-0 items-center gap-1.5 rounded px-1.5 py-0.5"
-                      style={{
-                        backgroundColor: `${item.typeColor}20`,
-                        color: item.typeColor,
-                      }}
-                    >
-                      <ObjectTypeIcon type={item.type} size={12} className="shrink-0" />
-                      {t(TYPE_LABEL_KEYS[item.type] || 'nav.dashboard')}
-                    </span>
-                    <span className="ldvh-body truncate">
-                      {getLocalizedTitle(item, locale) || item.id}
-                    </span>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-3">
-                    <CopyPathButton path={item.path} label={t('common.copyObjectPath')} copiedLabel={t('common.copiedObjectPath')} />
-                    <StatusBadge status={item.status} statusLabel={getObjectStatusLocale(item.type, item.status, locale)} objectType={item.type} />
-                    <span className="ldvh-caption whitespace-nowrap">
-                      {item.relativeTime}
-                    </span>
-                  </div>
-                </li>
-              ))}
+              {data.recentItems.map((item) => {
+                const displayState = getDashboardDisplayState(item);
+                return (
+                  <li
+                    key={`${item.type}-${item.id}`}
+                    className="flex cursor-pointer items-center justify-between gap-4 rounded-md px-3 py-2 transition-colors hover:bg-ldvh-border/30"
+                    onClick={() => openPanel({ type: 'object', title: getLocalizedTitle(item, locale) || item.id, objectType: item.type, objectId: item.id })}
+                  >
+                    <div className="flex min-w-0 flex-1 items-center gap-3">
+                      <span
+                        className="ldvh-chip inline-flex shrink-0 items-center gap-1.5 rounded px-1.5 py-0.5"
+                        style={{
+                          backgroundColor: `${item.typeColor}20`,
+                          color: item.typeColor,
+                        }}
+                      >
+                        <ObjectTypeIcon type={item.type} size={12} className="shrink-0" />
+                        {t(TYPE_LABEL_KEYS[item.type] || 'nav.dashboard')}
+                      </span>
+                      <span className="ldvh-body truncate">
+                        {getLocalizedTitle(item, locale) || item.id}
+                      </span>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-3">
+                      <StatusBadge status={displayState} statusLabel={getObjectStatusLocale(item.type, displayState, locale)} objectType={item.type} />
+                      <span className="ldvh-caption whitespace-nowrap">
+                        {item.relativeTime}
+                      </span>
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>

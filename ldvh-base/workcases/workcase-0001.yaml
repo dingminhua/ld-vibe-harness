@@ -1,157 +1,83 @@
-title: 统一 Working Tree 当前规则与事实边界
-status: closed
-summary: Human 已批准当前完整结果和关闭报告；workcase-0001 正式关闭。
-goal: 使 LDVH 下位规范、规则与事实读取实现、Helper/Web 行为和验证与 00 的当前 Working Tree 根原则一致，并完整实践一次
-  V4 WorkCase 生命周期、形成可复核的流程改进观察。
-scope: 覆盖全仓相关命中清单及 01、02、03、05、07、08、20–24、31、附件、README 等实际下位引用的修改/消歧/保留分类；覆盖规则
-  discovery、事实 repository/source validation 及其 Helper 读取/创建/更新、Web 读取/direct
-  capture、Working Tree 规则快照继承链和相关 Python/Web/packaging tests。明确保留并验证
-  09/30、commit 实现、显式 git-revision、ProjectFiles Git 观察视图、管辖 identity
-  和安装快照完整性。排除再次修改 00、自动 commit/push/PR、无关 Web 功能及在本案中顺手修改 WorkCase 流程。保留并区分现有
-  candidate_discovery.py、relations.py、repository.py 用户修改。WorkCase 创建由
-  fact-object-controlled-creation 组织，后续对象阶段和结果写入由 fact-object-lifecycle-change
-  组织；二者不侵入实施项的普通来源驱动求解。
-success_criteria:
-- 下位规范不再以单个文件的 Git 状态作为当前规则或事实资格门槛，且当前内容、历史读取与提交动作的职责分层一致。
-- canonical 且安全的当前规则、事实对象和项目内证据不因 tracked、untracked、ignored、staged 或 committed
-  状态不同而改变资格，显式 git-revision 与 commit 专属校验仍然保留。
-- Helper 读取、创建、更新与 Web 读取、direct capture 继承同一语义，规则快照、管辖 identity 和 ProjectFiles
-  Git 观察视图没有被误改。
-- 规则、事实、证据、Web 和快照具有覆盖目标语义的正反测试，风险匹配的相关验证与 full-v4 验证形成可信结果，未验证范围被如实记录。
-- 当前计划已具有独立创建审核和 Human 对同一 plan_version 的执行批准；全部工作项与主控自检按 21 形成；WorkCase
-  流程观察已进入待审核结果包。
-phase: closed
-plan_version: 3
-work_items:
-- item_id: item-01
-  goal: 形成并闭合全仓相关命中清单，校正下位规范和交叉引用。
-  expected_result: 每个相关命中均被分类为需要修改、术语消歧或有意保留；下位规范形成一致、可读且职责分层的规则，保留项有明确依据。
-  status: completed
-  approach_summary: 扫描 01、02、03、05、07、08、20–24、31、附件、README 及其它实际命中，按 00
-    正向原则逐项分类和修改；明确保留 09/30、commit、显式历史、ProjectFiles
-    与安装快照边界。规范实施采用普通来源驱动求解；WorkCase 对象写入模板不改变本项方法。
-  result_summary: 已完成全仓相关命中分类：01、02、03、05、07、08、20–24 的直接冲突和易误解措辞已按 00
-    正向原则校正；09/30、commit、显式历史、ProjectFiles Git 观察和安装快照完整性被确认有意保留。规范结构测试 128
-    项通过，未发现 item-01 残留冲突。
-- item_id: item-02
-  goal: 修正核心规则与事实读取实现。
-  expected_result: spec discovery、fact repository 和 source validation 不再使用单文件
-    Git 状态作为资格门槛，同时保留 worktree 身份、安全路径、Schema、关系和显式历史校验。
-  status: completed
-  depends_on:
-  - item-01
-  approach_summary: 以共享根链的最小修改消除错误门槛，先识别并保护
-    candidate_discovery.py、relations.py、repository.py
-    的现有用户差异；代码实施采用普通来源驱动求解，不声明不存在的专属模板。
-  result_summary: 已从 spec discovery、fact repository 和 Study repository-path
-    校验中移除单文件 tracked/ignored 资格门槛；保留实际 worktree/common-dir
-    身份、安全路径、UTF-8/预算、Schema、关系及显式 git-revision 校验，并完整保留现有 Git identity cache
-    用户修改。聚焦测试除两项旧语义断言外均通过。
-- item_id: item-03
-  goal: 对齐 Helper、Web 和规则快照继承行为并补齐测试。
-  expected_result: 读取、创建、更新、direct capture 与 Working Tree 规则快照行为一致，Git 观察 UI
-    和安装快照完整性保持原职责，相关 Python、TypeScript 和 packaging 覆盖成立。
-  status: completed
-  depends_on:
-  - item-02
-  approach_summary: 优先让消费链继承共享根修复，只在真实消费边界需要时修改；补充 ignored/untracked/tracked
-    等正反覆盖并验证未改边界。实施采用普通来源驱动求解。
-  result_summary: Helper create/read/update、Web direct capture/list/detail、Study
-    项目内证据和 Working Tree 规则快照均已覆盖 ignored 当前文件并通过；符号链接、Schema、显式
-    git-revision、安装快照完整性和 ProjectFiles Git 观察职责保持。相关 Python 测试 98 项、Web API 测试
-    26 项通过。
-- item_id: item-04
-  goal: 完成综合验证并形成 WorkCase 流程观察及承接判断。
-  expected_result: 形成命中清单闭合检查、相关与 full-v4
-    验证、未验证范围和残余风险；每项流程观察被分类为无需后续责任或需要稳定改进责任，并具有可执行的承接结论。
-  status: completed
-  depends_on:
-  - item-01
-  - item-02
-  - item-03
-  approach_summary: 分层执行相关测试后运行 full-v4，逐项核对成功标准和保留边界。流程问题只记录和分类，不在本案修改 WorkCase
-    规则；优先评估 spark-0008、spark-0014、spark-0015
-    的现有承接能力。只有准入、授权、查重及相应单对象或多对象原子能力实际成立时才创建或更新承接对象并建立
-    routed-to；现有对象已能直接承接时只在关闭事务中写 routed-to；能力不足时保持本 WorkCase 非终态并记录缺口。
-  result_summary: 已完成相关验证、全仓残留复核和 full-v4。首轮全量发现并促成修正一项 Study 测试夹具漂移；最终 full-v4
-    的 lint、761 项 Python 测试、Web typecheck、26 项 Web API 测试和 production build
-    全部通过，10 项原生 Windows 测试按平台跳过。流程观察已有 open Spark
-    承接建议：spark-0008、spark-0014、spark-0019，无需新建重复对象。
-creation_reviews:
-- reviewer: /root/workcase_plan_review
-  reviewed_at: '2026-07-19T18:22:55+08:00'
-  subject_version: 3
-  scope: 独立完整审核 plan_version 3 的单一 goal、scope 与排除边界、五项 success criteria、item-01
-    至 item-04 的目标和预期结果、串行依赖与内部并行边界、普通来源驱动方法、fact-object-controlled-creation 和
-    fact-object-lifecycle-change 的选择及无偏离声明、相关测试与 full-v4
-    验证、未验证范围、重要风险、对象化净收益和重复比较；同时覆盖全仓命中清单分类、现有用户差异保护、流程观察的 routed-to
-    承接能力边界及结果审核时序。未审核尚未产生的实施结果，不代替 Human 执行批准或关闭确认。
-  conclusion: pass
-  feedback:
-  - plan_version 3 已消除 success criterion 的自指循环；结果审核、关闭报告准备、第二 Human Gate 与
-    closed 继续由 21 的阶段闭集强制推进。
-  - item-04 已正确区分无需后续责任的观察和需要稳定承接的改进责任，并把准入、授权、查重及单/多对象原子能力作为写入条件。
-  - 创建时只能保存当前 plan_version 3 的 pass 审核；v1/v2 在对象存在前无法由 WorkCase 或 Git
-    保存的问题作为流程观察保留，不补造历史。
-  - 对象化与查重成立；四个工作项服务同一关闭判断，依赖无环，现有用户差异及 commit/history/安装快照保留边界已进入计划。
-  controller_resolution: "1. 接受；criterion 5 只覆盖结果审核前已形成的可观察事实，plan_version 3 无需修改。\n\
-    2. 接受；按 item-04 的准入、授权、查重和原子能力边界执行。\n3. 接受；仅写入当前 v3 审核，v1/v2 的保存缺口由 item-04 记录，不补造历史。\n\
-    4. 接受；对象化、重复比较、工作项拆分、依赖和风险边界成立。"
-execution_approval:
-  subject_version: 3
-  approved_at: '2026-07-19T18:41:00+08:00'
-  summary: Human 明确批准执行 workcase-0001 的 plan_version
-    3；批准范围为对象中已审核的目标、范围、成功标准和四个工作项，不包含 Git commit、push、PR 或计划外扩张。
-result_version: 3
-controller_check_summary: Controller 恢复检查：workcase-0002 已独立修复并走通 WorkCase/CAS
-  生命周期，原关闭机械阻断已解除。workcase-0001 的四项实施结果仍保持：下位规范使用实际 Git Working Tree
-  当前文件原则；规则、事实和证据实现移除单文件 tracked/ignored 资格门槛；Helper、Web、direct capture
-  与规则快照继承覆盖成立；显式 git-revision、commit/Index、ProjectFiles Git 观察、worktree
-  identity、安全路径、Schema/关系和安装快照边界保留。最新 full-v4
-  run-a7fcaf6a66d543ad8af3fcdc0c8d73b6 覆盖当前代码与规范，lint、779 项 Python 测试、Web
-  typecheck、26 项 Web 测试和 build 全部通过，10 项 native Windows 自动化按平台跳过。仍需重新独立审核当前结果及
-  completed/分流判断。
-result_reviews:
-- reviewer: /root/workcase_plan_review
-  reviewed_at: '2026-07-20T05:49:33+08:00'
-  subject_version: 3
-  scope: 只读审核五项成功标准、四个 completed work item、Controller 自检、相关规范/Code/tests
-    diff、Git identity cache 保留差异、Git/安全/Schema/快照保留边界、workcase-0002 关闭记录、三个相关
-    Spark 及 full-v4 持久证据；未修改文件、未重跑验证。
-  conclusion: pass
-  feedback:
-  - 核心意图已一致落实：合法 Git worktree 是项目边界，单文件 tracked、untracked、ignored、staged 或
-    committed 状态不决定当前规则、事实或项目内证据资格，提交时机由用户决定。
-  - 规则 discovery、事实 repository、Study、Helper、Web 和规则快照消费链一致；worktree
-    identity、安全读取、Schema/关系、显式 git-revision、commit/Index、ProjectFiles Git
-    观察和安装快照完整性等保留边界成立。
-  - 用户既有 Git identity cache 差异完整保留；最新 full-v4 的 lint、779 项 Python 测试、Web
-    typecheck、26 项 Web 测试和 build 通过，10 项平台测试按条件跳过。
-  - workcase-0002 已正式关闭并解除生命周期机械循环；五项成功标准和四项工作项均有证据，closure_outcome=completed
-    成立。
-  - spark-0008、spark-0014、spark-0019 是后续研究建议，不是本案未完成责任，不应仅因语义相关写 routed-to。
-  controller_resolution: "1. 接受；核心 Working Tree 边界符合 Human 意图。\n2. 接受；消费链和明确保留边界成立。\n\
-    3. 接受；用户差异与最新完整验证证据有效。\n4. 接受；原机械阻断已解除，全部成功标准满足，Controller 采用 completed 分类。\n\
-    5. 接受；三个 Spark 不是原范围剩余责任，不写 routed-to。无需修改结果、升版或复审；Controller 决定进入 closure_preparing。"
-validation_summary: 五项成功标准逐项满足：1) 下位规范已统一为实际 Git Working Tree 当前文件原则，单文件 Git
-  状态不再是资格门槛，当前内容、显式历史和提交动作职责分层清楚；2) canonical 且安全的规则、事实和项目内证据在
-  tracked、untracked、ignored、staged、committed 状态间资格一致，git-revision 与 commit
-  专属历史校验保留；3) Helper 创建/读取/更新、Web 读取/direct capture 和规则快照继承同一语义，管辖
-  identity、ProjectFiles Git 观察和安装快照完整性未被误改；4) 规则、事实、Study 证据、Helper、Web
-  和快照具有正反测试，最新 full-v4 的 lint、779 项 Python 测试、Web typecheck、26 项 Web 测试和
-  production build 全部通过，10 项 native Windows 自动化按平台条件跳过；5) 计划独立审核、Human
-  执行批准、四项工作项、Controller 自检、两轮结果审核反馈处置、生命周期修复后的恢复和关闭准备均已实际走通。未满足项：无。未验证项：native
-  Windows 专属自动化未在当前 macOS 环境运行；commit、push、PR 和远端发布属于明确排除范围，未执行。
-closure_outcome: completed
-disposition_summary: workcase-0001
-  原目标范围内的规范、实现、测试与流程观察责任均已完成，没有需要转交的剩余责任。spark-0008、spark-0014、spark-0019
-  仅作为控制面、过程输出契约和 Helper Agent 体验的后续研究建议继续存在，不因语义相关写 routed-to。本案全部修改仍在实际 Working
-  Tree，允许用户自行决定提交时机；未 commit、push 或创建 PR。
-closure_approval:
-  subject_version: 3
-  approved_at: '2026-07-20T05:56:22+08:00'
-  summary: Human 明确批准关闭 workcase-0001，接受当前结果、completed 分类和无残余责任处置。
 object_id: workcase-0001
 fact_type_key: workcase
+title: 统一 Working Tree 当前规则与事实边界
 created_at: '2026-07-19T18:24:02.127750+08:00'
-updated_at: '2026-07-23T14:21:35.783731+08:00'
+updated_at: '2026-07-26T22:27:30+08:00'
+status: closed
+goal: >-
+  使 LDVH 下位规范、规则与事实读取实现、Helper/Web 行为和验证与 00
+  的当前 Working Tree 根原则一致，并完整实践一次 V4 WorkCase
+  生命周期、形成可复核的流程改进观察。
+scope: >-
+  覆盖全仓相关命中清单及 01、02、03、05、07、08、20–24、31、附件、README
+  等实际下位引用的修改、消歧与保留分类；覆盖规则 discovery、事实
+  repository/source validation 及其 Helper 读取、创建、更新，Web 读取和
+  direct capture，Working Tree 规则快照继承链及相关 Python、Web、packaging
+  tests。明确保留并验证 09/30、commit 实现、显式 git-revision、ProjectFiles
+  Git 观察视图、管辖 identity 和安装快照完整性。排除再次修改 00、自动
+  commit/push/PR、无关 Web 功能及在本案中顺手修改 WorkCase 流程。保留并区分
+  现有 candidate_discovery.py、relations.py、repository.py 用户修改。
+success_criterion_definitions:
+- criterion_id: criterion-01
+  statement: >-
+    下位规范不再以单个文件的 Git 状态作为当前规则或事实资格门槛，且当前内容、
+    历史读取与提交动作的职责分层一致。
+- criterion_id: criterion-02
+  statement: >-
+    canonical 且安全的当前规则、事实对象和项目内证据不因 tracked、untracked、
+    ignored、staged 或 committed 状态不同而改变资格，显式 git-revision 与
+    commit 专属校验仍然保留。
+- criterion_id: criterion-03
+  statement: >-
+    Helper 读取、创建、更新与 Web 读取、direct capture 继承同一语义，规则快照、
+    管辖 identity 和 ProjectFiles Git 观察视图没有被误改。
+- criterion_id: criterion-04
+  statement: >-
+    规则、事实、证据、Web 和快照具有覆盖目标语义的正反测试，风险匹配的相关验证与
+    full-v4 验证形成可信结果，未验证范围被如实记录。
+- criterion_id: criterion-05
+  statement: >-
+    当前计划已具有独立创建审核和 Human 对同一 plan_version 的执行批准；全部工作项与
+    主控自检按 21 形成；WorkCase 流程观察已进入待审核结果包。
+success_criterion_results:
+- criterion_id: criterion-01
+  outcome: satisfied
+  summary: >-
+    下位规范已统一为实际 Git Working Tree 当前文件原则，单文件 Git 状态不再是
+    当前规则或事实的资格门槛，当前内容、显式历史与提交动作的职责分层清楚。
+- criterion_id: criterion-02
+  outcome: satisfied
+  summary: >-
+    canonical 且安全的规则、事实和项目内证据在 tracked、untracked、ignored、
+    staged、committed 状态间资格一致；git-revision 与 commit 专属历史校验保留。
+- criterion_id: criterion-03
+  outcome: satisfied
+  summary: >-
+    Helper 创建、读取、更新，Web 读取、direct capture 和规则快照继承同一语义；
+    管辖 identity、ProjectFiles Git 观察和安装快照完整性未被误改。
+- criterion_id: criterion-04
+  outcome: satisfied
+  summary: >-
+    规则、事实、Study 证据、Helper、Web 和快照均有正反测试；最后一次 full-v4
+    的 lint、779 项 Python 测试、Web typecheck、26 项 Web 测试和 production
+    build 全部通过，10 项原生 Windows 自动化按平台条件跳过。
+- criterion_id: criterion-05
+  outcome: satisfied
+  summary: >-
+    独立计划审核、Human 执行批准、四项工作项、Controller 自检、两轮结果审核反馈
+    处置、生命周期修复后的恢复及关闭准备均已实际完成。
+result_summary: >-
+  下位规范以及规则、事实、Study、Helper、Web 与快照消费链已统一采用实际 Git
+  Working Tree 当前文件原则，并保留显式历史、提交、Git 观察、管辖身份、安全路径、
+  Schema、关系和安装快照的原有边界；相关实现、正反测试和 full-v4 验证均已完成。
+validation_summary: >-
+  五项成功标准逐项满足。最后一次 full-v4 的 lint、779 项 Python 测试、Web
+  typecheck、26 项 Web 测试和 production build 全部通过，10 项原生 Windows
+  自动化按平台条件跳过。原生 Windows 专属自动化未在当前 macOS 环境运行；commit、
+  push、PR 和远端发布属于明确排除范围，未执行。
+closure_outcome: completed
+disposition_summary: >-
+  workcase-0001 原目标范围内的规范、实现、测试与流程观察责任均已完成，没有需要转交的
+  剩余责任。spark-0008、spark-0014、spark-0019 仅作为控制面、过程输出契约和
+  Helper Agent 体验的后续研究建议继续存在，不因语义相关写 routed-to。本案全部修改
+  仍在实际 Working Tree，允许用户自行决定提交时机；未 commit、push 或创建 PR。

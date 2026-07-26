@@ -187,7 +187,7 @@ Study 在当前问题需要外部研究启发、准备调研实质相同或相�
 
 `active` Study 可进入当前研究候选，但仍必须按本节时效规则核对版本、观察时点、已知变化和冲突；`retired` Study 只在精确引用、研究历史、来源追溯或比较研究变化时展开。上下文压缩后，已在当次被引用且仍影响判断的 Study 必须重新回读 F3 中的研究问题、关键发现、建议与限制，并恢复需要复核的版本、观察时点和来源范围；Study 被召回不证明外部事实仍当前、建议已采纳或发现取得规则与决定权威。
 
-Study 的 `relations` 使反向召回成为可能：其他事实类型通过 `relation_source_refs` 过滤，可以沿 `inspired-by` 和 `informs` 边反向发现相关 Study。反向召回是候选发现的结果，不自动改变 Study 状态、时效或结论当前性。Study 不定义自己的 relation key，反向召回依赖 05 §11.5–11.6 的通用关系导航机制。
+Study 的 `relations` 支持两种方向明确的候选导航：已知目标对象并需反查哪些 Study 指向它时，F2 使用 `fact_type_keys=[study]` 与 `relation_targets=[目标]`；已知一个 Study 并需沿其已声明的 `inspired-by` 或 `informs` 边取得直接目标时，使用 `relation_source_refs=[Study]`。两者都只形成候选及关系边结果，不自动改变 Study 状态、时效或结论当前性。Study 不另定义反向 relation key；两种导航均依赖 05 §11.5–11.6 的通用关系导航机制。
 
 ## 8. 变更、更正、删除与类型退出
 

@@ -93,7 +93,6 @@ def _workcase() -> dict[str, object]:
         "priority": "P1",
         "goal": "Complete the recall Helper operation.",
         "scope": "Stage 5 candidate discovery.",
-        "workcase_profile": "control-contract-v2",
         "success_criterion_definitions": [
             {
                 "criterion_id": "criterion-01",
@@ -121,6 +120,33 @@ def _workcase() -> dict[str, object]:
         }
     ]
     return fact_object
+
+
+def _write_closed_workcase(project: Path, object_id: str) -> None:
+    path = project / "ldvh-base" / "workcases" / f"{object_id}.yaml"
+    path.write_text(
+        f"""object_id: {object_id}
+fact_type_key: workcase
+title: Closed recall contract implementation
+created_at: 2026-07-26T09:00:00+08:00
+updated_at: 2026-07-26T10:00:00+08:00
+status: closed
+goal: Complete the recall Helper operation.
+scope: Stage 5 candidate discovery.
+success_criterion_definitions:
+  - criterion_id: criterion-01
+    statement: F1 and F2 cards are deterministic.
+success_criterion_results:
+  - criterion_id: criterion-01
+    outcome: satisfied
+    summary: Active and closed cards use their current projections.
+result_summary: The candidate projection now distinguishes active and closed WorkCases.
+validation_summary: Candidate queries covered the active default and explicit closed status.
+closure_outcome: completed
+disposition_summary: The original scope is complete with no remaining responsibility.
+""",
+        encoding="utf-8",
+    )
 
 
 def _adr() -> dict[str, object]:
@@ -319,6 +345,99 @@ def test_f1_returns_complete_active_adr_and_open_workcase_baseline_with_paginati
     assert second["result"]["cards"][0]["excerpts"] == []
 
 
+def test_f2_workcase_uses_distinct_current_active_and_closed_projections(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    active_id = _create(workspace, project, "workcase", _workcase())
+    closed_id = _create(workspace, project, "workcase", _workcase())
+    _write_closed_workcase(project, closed_id)
+
+    active = handle_request(
+        "call",
+        "find-fact-object-candidates",
+        _payload(workspace, project, "F2", fact_type_keys=["workcase"]),
+    ).response
+    closed = handle_request(
+        "call",
+        "find-fact-object-candidates",
+        _payload(workspace, project, "F2", fact_type_keys=["workcase"], statuses=["closed"]),
+    ).response
+
+    assert active["outcome"] == "ok"
+    assert active["result"]["coverage"]["total_matching"] == 1
+    active_card = active["result"]["cards"][0]
+    assert active_card["fact_ref"]["object_id"] == active_id
+    assert set(active_card["fields"]) == {
+        "object_id",
+        "title",
+        "status",
+        "phase",
+        "goal",
+        "scope",
+        "summary",
+        "priority",
+        "updated_at",
+        "work_item_counts",
+    }
+
+    assert closed["outcome"] == "ok"
+    closed_card = closed["result"]["cards"][0]
+    assert closed_card["fact_ref"]["object_id"] == closed_id
+    assert set(closed_card["fields"]) == {
+        "object_id",
+        "title",
+        "status",
+        "goal",
+        "scope",
+        "result_summary",
+        "closure_outcome",
+        "disposition_summary",
+        "updated_at",
+    }
+    assert "phase" not in closed_card["fields"]
+    assert "work_item_counts" not in closed_card["fields"]
+    assert closed_card["excerpts"] == []
+
+
+def test_f2_workcase_text_match_uses_only_the_current_direct_text_field_closure(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    closed_id = _create(workspace, project, "workcase", _workcase())
+    _write_closed_workcase(project, closed_id)
+
+    matched = handle_request(
+        "call",
+        "find-fact-object-candidates",
+        _payload(
+            workspace,
+            project,
+            "F2",
+            fact_type_keys=["workcase"],
+            statuses=["closed"],
+            text_match={"text": "distinguishes active", "field_paths": ["result_summary"]},
+        ),
+    ).response
+    forbidden = handle_request(
+        "call",
+        "find-fact-object-candidates",
+        _payload(
+            workspace,
+            project,
+            "F2",
+            fact_type_keys=["workcase"],
+            text_match={"text": "human_plan_confirming", "field_paths": ["phase"]},
+        ),
+    ).response
+
+    assert matched["outcome"] == "ok"
+    assert matched["result"]["cards"][0]["fact_ref"]["object_id"] == closed_id
+    assert matched["result"]["cards"][0]["match_reasons"][-1] == {
+        "kind": "field-text",
+        "field_path": "result_summary",
+        "matched_text": "distinguishes active",
+    }
+    assert forbidden["outcome"] == "invalid_request"
+    assert "F2 投影之外" in forbidden["gaps"][0]["summary"]
+
+
 def test_f2_uses_pitfall_authoritative_fields_without_tags_or_scores(tmp_path: Path) -> None:
     workspace, project = _fixture(tmp_path)
     _create(workspace, project, "pitfall", _pitfall())
@@ -355,7 +474,19 @@ def test_f2_projects_study_frontmatter_without_injecting_report_body(tmp_path: P
     (docs / "question.md").write_text("Research question.\n", encoding="utf-8")
     (docs / "evidence.md").write_text("Observed evidence.\n", encoding="utf-8")
     _git(project, "add", "docs")
-    _create(workspace, project, "study", _study())
+    workcase_id = _create(workspace, project, "workcase", _workcase())
+    study = _study()
+    study["frontmatter"]["relations"] = [
+        {
+            "relation_key": "informs",
+            "target": {
+                "governed_project_id": "sample",
+                "fact_type_key": "workcase",
+                "object_id": workcase_id,
+            },
+        }
+    ]
+    _create(workspace, project, "study", study)
 
     response = handle_request(
         "call",
@@ -371,6 +502,17 @@ def test_f2_projects_study_frontmatter_without_injecting_report_body(tmp_path: P
 
     assert response["outcome"] == "ok"
     fields = response["result"]["cards"][0]["fields"]
+    assert set(fields) == {
+        "object_id",
+        "title",
+        "status",
+        "research_intent",
+        "research_question",
+        "abstract",
+        "recommendation_summary",
+        "relations",
+        "updated_at",
+    }
     assert fields["research_question"] == "Can Study cards remain smaller than full reports?"
     assert fields["research_intent"] == (
         "Preserve the project reason for studying a readable card without expanding the full report."
@@ -380,6 +522,26 @@ def test_f2_projects_study_frontmatter_without_injecting_report_body(tmp_path: P
     )
     assert "body" not in fields
     assert response["result"]["cards"][0]["excerpts"] == []
+
+
+def test_f2_study_rejects_text_fields_outside_its_exact_projection(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+
+    for field_path in ("applicability", "validation_summary"):
+        response = handle_request(
+            "call",
+            "find-fact-object-candidates",
+            _payload(
+                workspace,
+                project,
+                "F2",
+                fact_type_keys=["study"],
+                text_match={"text": "not projected", "field_paths": [field_path]},
+            ),
+        ).response
+
+        assert response["outcome"] == "invalid_request"
+        assert "F2 投影之外" in response["gaps"][0]["summary"]
 
 
 def test_f2_spark_summary_is_a_bounded_verbatim_excerpt_with_f3_reference(tmp_path: Path) -> None:
@@ -597,7 +759,7 @@ def test_noncanonical_carrier_makes_candidate_coverage_partial_without_silent_ex
                 {
                     "category": "location",
                     "field_path": None,
-                    "summary": "事实载体不是当前类型的 canonical identity file",
+                        "summary": "该载体不符合当前事实类型的权威文件路径与对象身份规则",
                 }
             ],
         }
@@ -616,7 +778,7 @@ def test_wrong_suffix_carrier_makes_candidate_coverage_partial_without_silent_ex
     assert response["outcome"] == "partial"
     unavailable = response["result"]["recovery_manifest"]["unavailable_objects"]
     assert unavailable[0]["canonical_path"] == "ldvh-base/sparks/spark-0001.yml"
-    assert unavailable[0]["issues"][0]["summary"] == "事实载体不是当前类型的 canonical identity file"
+    assert unavailable[0]["issues"][0]["summary"] == "该载体不符合当前事实类型的权威文件路径与对象身份规则"
 
 
 def test_f1_rejects_candidate_filters_and_f2_rejects_unprojected_text_fields(tmp_path: Path) -> None:
@@ -777,6 +939,51 @@ def test_f2_relation_source_returns_one_hop_edges_with_single_edge_cursor(tmp_pa
     assert second["result"]["cards"][0]["match_reasons"] == [
         {"kind": "relation-source", "field_path": "relations[1].target"}
     ]
+
+
+def test_f2_relation_source_uses_the_study_relation_definition_without_crashing(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    target_id = _create(workspace, project, "workcase", _workcase())
+    study = _study()
+    study["frontmatter"]["relations"] = [
+        {
+            "relation_key": "informs",
+            "target": {
+                "governed_project_id": "sample",
+                "fact_type_key": "workcase",
+                "object_id": target_id,
+            },
+        }
+    ]
+    study_id = _create(workspace, project, "study", study)
+
+    response = handle_request(
+        "call",
+        "find-fact-object-candidates",
+        _payload(
+            workspace,
+            project,
+            "F2",
+            fact_type_keys=["workcase"],
+            relation_source_refs=[
+                {
+                    "governed_project_id": "sample",
+                    "fact_type_key": "study",
+                    "object_id": study_id,
+                }
+            ],
+        ),
+    ).response
+
+    assert response["outcome"] == "ok"
+    edge = response["result"]["relation_navigation"]["edges"][0]
+    assert edge["edge_status"] == "returned"
+    assert edge["target_ref"]["object_id"] == target_id
+    assert len(edge["relation_definition_refs"]) == 1
+    assert edge["relation_definition_refs"][0]["kind"] == "rule"
+    assert edge["relation_definition_refs"][0]["locator"] == (
+        "study-fact-type::7. 外部网址、研究边界、关系与时效"
+    )
 
 
 def test_f2_relation_source_keeps_relation_key_filter_observable_without_target_read(tmp_path: Path) -> None:
@@ -973,6 +1180,7 @@ def test_f2_relation_source_applies_type_status_and_reverse_relation_filters_wit
     source_id = _create(workspace, project, "spark", source)
     source_ref = {"governed_project_id": "sample", "fact_type_key": "spark", "object_id": source_id}
     dependency_ref = {"governed_project_id": "sample", "fact_type_key": "workcase", "object_id": dependency_id}
+    target_ref = {"governed_project_id": "sample", "fact_type_key": "workcase", "object_id": target_id}
 
     returned = handle_request(
         "call",
@@ -1010,6 +1218,17 @@ def test_f2_relation_source_applies_type_status_and_reverse_relation_filters_wit
             relation_source_refs=[source_ref],
         ),
     ).response
+    dependency_navigation = handle_request(
+        "call",
+        "find-fact-object-candidates",
+        _payload(
+            workspace,
+            project,
+            "F2",
+            fact_type_keys=["workcase"],
+            relation_source_refs=[target_ref],
+        ),
+    ).response
 
     assert returned["outcome"] == "ok"
     assert [reason["kind"] for reason in returned["result"]["cards"][0]["match_reasons"]] == [
@@ -1021,6 +1240,11 @@ def test_f2_relation_source_applies_type_status_and_reverse_relation_filters_wit
     assert wrong_type["result"]["relation_navigation"]["edges"][0]["reasons"] == ["fact-type-filter"]
     assert wrong_status["result"]["cards"] == []
     assert wrong_status["result"]["relation_navigation"]["edges"][0]["reasons"] == ["explicit-status-filter"]
+    assert dependency_navigation["outcome"] == "ok"
+    assert (
+        dependency_navigation["result"]["relation_navigation"]["edges"][0]["relation_definition_refs"][0]["locator"]
+        == "workcase-fact-type::8. 来源、外部资料与关系"
+    )
 
 
 def test_f2_relation_source_rejects_cross_project_duplicate_and_illegal_key_inputs(tmp_path: Path) -> None:

@@ -58,7 +58,7 @@ LAYOUTS = {
     "workcase": _layout(
         "workcase",
         "workcases",
-        initial_statuses=("open", "blocked"),
+        initial_statuses=("open",),
         statuses=("open", "blocked", "closed"),
         relation_keys=("depends-on", "routed-to"),
     ),

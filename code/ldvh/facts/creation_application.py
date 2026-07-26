@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 from pathlib import Path
 from types import MappingProxyType
@@ -14,9 +14,8 @@ from ldvh.facts.carriers.study_markdown import parse_study_markdown
 from ldvh.facts.carriers.yaml_object import parse_yaml_object
 from ldvh.facts.contracts import LAYOUTS
 from ldvh.facts.creation import (
-    AllocationPreview,
+    AllocationCommitResult,
     CreationBoundary,
-    allocate_object_id_locked,
     allocation_lock,
     atomic_create_text,
     commit_object_id_locked,
@@ -25,6 +24,7 @@ from ldvh.facts.creation import (
     serialize_fact_object,
 )
 from ldvh.facts.models import FactIssue
+from ldvh.facts.project_validation import stabilize_project_index
 from ldvh.facts.relations import ProjectFactIndex, validate_project_relations
 from ldvh.facts.repository import FactReadResult, read_fact_object
 from ldvh.facts.schema import FactSchema
@@ -37,11 +37,10 @@ CreationStatus = Literal[
     "durability_unavailable",
     "final_rejected",
     "final_unavailable",
-    "attempt_rejected",
-    "attempt_unavailable",
     "allocation_stale",
     "allocation_unavailable",
     "creation_conflict",
+    "creation_unavailable",
     "readback_failed",
     "created",
 ]
@@ -66,25 +65,19 @@ class FactCreationResult:
     actual_fields: dict[str, Any] | None = None
     actual_text: str | None = None
     read: FactReadResult | None = None
-    allocation_consumed: bool = False
+    allocation_consumed: bool | None = False
     creation_result: AtomicWriteResult | None = None
     rollback_result: AtomicWriteResult | None = None
+    residual_readback: FactReadResult | None = None
     allocation_status: str | None = None
+    allocation_result: AllocationCommitResult | None = None
+    coordination_release_uncertain: bool = False
 
 
 @dataclass(frozen=True, slots=True)
 class PreparedFactCreation:
     command: FactCreationCommand
     observed_at: str
-
-
-@dataclass(frozen=True, slots=True)
-class PreparedFactCreationAttempt:
-    prepared: PreparedFactCreation
-    allocation: AllocationPreview
-    fields: Mapping[str, Any]
-    text: str
-    payload: bytes
 
 
 def _freeze_json(value: Any) -> Any:
@@ -113,13 +106,91 @@ def _creation_context_issues(fact_type_key: str, fields: Mapping[str, Any]) -> t
     if fact_type_key != "workcase":
         return ()
     issues: list[FactIssue] = []
+    if fields.get("status") != "open":
+        issues.append(FactIssue("schema", "新建 WorkCase 的初始 status 必须是 open", "status"))
     if fields.get("phase") != "human_plan_confirming":
         issues.append(FactIssue("schema", "新建 WorkCase 的初始 phase 必须是 human_plan_confirming", "phase"))
     if fields.get("plan_version") != 1:
         issues.append(FactIssue("schema", "新建 WorkCase 的初始 plan_version 必须是 1", "plan_version"))
+    work_items = fields.get("work_items")
+    if isinstance(work_items, list) and any(
+        not isinstance(item, Mapping) or item.get("status") != "pending" for item in work_items
+    ):
+        issues.append(FactIssue("schema", "新建 WorkCase 的全部 work item 必须是 pending", "work_items"))
     if "execution_approval" in fields:
         issues.append(FactIssue("schema", "新建 WorkCase 禁止预置 execution_approval", "execution_approval"))
     return tuple(issues)
+
+
+def _stabilized_project_relation_check(
+    command: FactCreationCommand,
+    object_id: str,
+    read: FactReadResult,
+) -> tuple[tuple[FactIssue, ...], bool]:
+    """Validate the candidate and its relation closure against one stable project view.
+
+    Stabilization is required before accepting the candidate: a direct target can
+    be locally schema-valid while becoming project-invalid because one of its own
+    required targets is missing or invalid.  A mechanically-valid candidate after
+    stabilization therefore also confirms that every direct target consumed by
+    its relation checks is mechanically valid in that same project view.
+    """
+
+    index = ProjectFactIndex(
+        command.boundary.worktree_root,
+        command.boundary.governed_project_id,
+        command.schemas,
+        command.boundary.git_common_dir,
+    )
+    key = (command.fact_type_key, object_id)
+    index.cache[key] = read
+    index.base_cache[key] = read
+    stabilize_project_index(index, (key,))
+    stabilized = index.cache.get(key)
+    if stabilized is None:
+        return (FactIssue("reference", "项目级关系检查未返回当前候选的稳定检查结果"),), True
+    if stabilized.check_status == "unavailable":
+        return stabilized.issues, True
+    if stabilized.check_status != "mechanically_valid":
+        return stabilized.issues, False
+
+    # Re-run the direct-edge check against the stabilized cache.  This makes the
+    # acceptance condition explicit instead of relying only on an earlier
+    # iteration in which a target may still have looked locally valid.
+    return validate_project_relations(index, command.fact_type_key, object_id, stabilized)
+
+
+def _project_read(command: FactCreationCommand, object_id: str) -> FactReadResult:
+    """Read one created identity through the current project-level mechanical boundary."""
+
+    layout = LAYOUTS[command.fact_type_key]
+    read = read_fact_object(
+        command.boundary.worktree_root,
+        layout,
+        command.schema,
+        object_id,
+        expected_common_dir=command.boundary.git_common_dir,
+    )
+    if read.check_status != "mechanically_valid" or read.fields is None:
+        return read
+    relation_issues, relation_unavailable = _stabilized_project_relation_check(
+        command,
+        object_id,
+        read,
+    )
+    if relation_unavailable:
+        return replace(
+            read,
+            check_status="unavailable",
+            issues=(*read.issues, *relation_issues),
+        )
+    if relation_issues:
+        return replace(
+            read,
+            check_status="invalid",
+            issues=(*read.issues, *relation_issues),
+        )
+    return read
 
 
 def _preflight(
@@ -147,20 +218,7 @@ def _preflight(
     read = FactReadResult(
         layout.canonical_path(object_id), layout.carrier, "mechanically_valid", parsed.fields, parsed.body, ()
     )
-    index = ProjectFactIndex(
-        command.boundary.worktree_root,
-        command.boundary.governed_project_id,
-        command.schemas,
-        command.boundary.git_common_dir,
-    )
-    index.cache[(command.fact_type_key, object_id)] = read
-    index.base_cache[(command.fact_type_key, object_id)] = read
-    relation_issues, relation_unavailable = validate_project_relations(
-        index,
-        command.fact_type_key,
-        object_id,
-        read,
-    )
+    relation_issues, relation_unavailable = _stabilized_project_relation_check(command, object_id, read)
     return fields, text, relation_issues, relation_unavailable
 
 
@@ -198,67 +256,27 @@ def prepare_fact_creation(
     return PreparedFactCreation(snapshot, now)
 
 
-def preview_fact_creation_locked(
-    prepared: PreparedFactCreation,
-    counter_path: Path,
-) -> PreparedFactCreationAttempt | FactCreationResult:
-    """Preview the exact final identity and bytes without mutating allocator or fact state."""
-
-    command = prepared.command
-    allocation = preview_object_id_locked(command.boundary, LAYOUTS[command.fact_type_key], counter_path)
-    if allocation is None:
-        return FactCreationResult("allocation_unavailable", allocation_status="unavailable")
-    fields, text, issues, unavailable = _preflight(command, allocation.object_id, prepared.observed_at)
-    if issues or unavailable:
-        return FactCreationResult(
-            "attempt_unavailable" if unavailable else "attempt_rejected",
-            issues=issues,
-            actual_id=allocation.object_id,
-        )
-    return PreparedFactCreationAttempt(
-        prepared,
-        allocation,
-        _freeze_json(fields),
-        text,
-        text.encode("utf-8"),
-    )
-
-
 def _complete_created_fact(
     prepared: PreparedFactCreation,
     actual_id: str,
     actual_fields: dict[str, Any],
     actual_text: str,
+    allocation_result: AllocationCommitResult,
     creation_result: AtomicWriteResult,
 ) -> FactCreationResult:
     command = prepared.command
     layout = LAYOUTS[command.fact_type_key]
-    read = read_fact_object(
-        command.boundary.worktree_root,
-        layout,
-        command.schema,
-        actual_id,
-        expected_common_dir=command.boundary.git_common_dir,
-    )
-    post_issues: tuple[FactIssue, ...] = ()
-    post_unavailable = False
-    if read.check_status == "mechanically_valid" and read.fields is not None and read.raw_text == actual_text:
-        index = ProjectFactIndex(
-            command.boundary.worktree_root,
-            command.boundary.governed_project_id,
-            command.schemas,
-            command.boundary.git_common_dir,
-        )
-        index.cache[(command.fact_type_key, actual_id)] = read
-        index.base_cache[(command.fact_type_key, actual_id)] = read
-        post_issues, post_unavailable = validate_project_relations(index, command.fact_type_key, actual_id, read)
-    elif read.check_status == "mechanically_valid":
-        post_issues = (FactIssue("parse", "写后回读 bytes 与本次创建 payload 不一致"),)
-    if read.check_status != "mechanically_valid" or post_issues or post_unavailable:
+    read = _project_read(command, actual_id)
+    readback_issues = read.issues
+    if read.check_status == "mechanically_valid" and read.raw_text != actual_text:
+        readback_issues = (*readback_issues, FactIssue("parse", "写后回读 bytes 与本次创建 payload 不一致"))
+    if read.check_status != "mechanically_valid" or read.fields is None or read.raw_text != actual_text:
         rollback = rollback_created_text(command.boundary.worktree_root, layout, actual_id, actual_text)
+        rolled_back = rollback.outcome == "removed" and rollback.namespace_state == "committed"
+        residual_readback = None if rolled_back else _project_read(command, actual_id)
         return FactCreationResult(
             "readback_failed",
-            issues=(*read.issues, *post_issues),
+            issues=readback_issues,
             actual_id=actual_id,
             actual_fields=actual_fields,
             actual_text=actual_text,
@@ -266,6 +284,9 @@ def _complete_created_fact(
             allocation_consumed=True,
             creation_result=creation_result,
             rollback_result=rollback,
+            residual_readback=residual_readback,
+            allocation_status="committed",
+            allocation_result=allocation_result,
         )
     return FactCreationResult(
         "created",
@@ -275,86 +296,92 @@ def _complete_created_fact(
         read=read,
         allocation_consumed=True,
         creation_result=creation_result,
-    )
-
-
-def commit_fact_creation_attempt_locked(attempt: PreparedFactCreationAttempt) -> FactCreationResult:
-    """Commit one exact preview, publish it no-overwrite, and verify its exact bytes."""
-
-    command = attempt.prepared.command
-    layout = LAYOUTS[command.fact_type_key]
-    allocation = commit_object_id_locked(command.boundary, layout, attempt.allocation)
-    if allocation.status == "stale":
-        return FactCreationResult("allocation_stale", allocation_status="stale")
-    if allocation.status != "committed" or allocation.object_id != attempt.allocation.object_id:
-        return FactCreationResult("allocation_unavailable", allocation_status=allocation.status)
-    created = atomic_create_text(command.boundary.worktree_root, layout, allocation.object_id, attempt.text)
-    if created.outcome == "conflict" and created.namespace_state == "not_committed":
-        return FactCreationResult(
-            "creation_conflict",
-            actual_id=allocation.object_id,
-            allocation_consumed=True,
-            creation_result=created,
-        )
-    if created.outcome != "created" or created.namespace_state != "committed":
-        return FactCreationResult(
-            "allocation_unavailable",
-            actual_id=allocation.object_id,
-            allocation_consumed=True,
-            creation_result=created,
-            allocation_status=("uncertain" if created.namespace_state == "uncertain" else "unavailable"),
-        )
-    return _complete_created_fact(
-        attempt.prepared,
-        allocation.object_id,
-        _thaw_json(attempt.fields),
-        attempt.text,
-        created,
+        allocation_status="committed",
+        allocation_result=allocation_result,
     )
 
 
 def create_fact_object_locked(prepared: PreparedFactCreation, counter_path: Path) -> FactCreationResult:
-    """Allocate and create while the caller holds the fact type's allocation lock."""
+    """Perform the public creation call's single allocation and target attempt."""
 
     command = prepared.command
     now = prepared.observed_at
     layout = LAYOUTS[command.fact_type_key]
-    allocation_consumed = False
-    actual_id: str | None = None
-    actual_fields: dict[str, Any] | None = None
-    actual_text: str | None = None
-    creation_result: AtomicWriteResult | None = None
-    for _ in range(16):
-        actual_id = allocate_object_id_locked(command.boundary, layout, counter_path)
-        if actual_id is None:
-            break
-        allocation_consumed = True
-        actual_fields, actual_text, issues, unavailable = _preflight(command, actual_id, now)
-        if issues or unavailable:
-            return FactCreationResult(
-                "final_unavailable" if unavailable else "final_rejected",
-                issues=issues,
-                actual_id=actual_id,
-                actual_fields=actual_fields,
-                actual_text=actual_text,
-                allocation_consumed=True,
-            )
-        creation_result = atomic_create_text(command.boundary.worktree_root, layout, actual_id, actual_text)
-        if creation_result.outcome == "created" and creation_result.namespace_state == "committed":
-            break
-        if creation_result.outcome != "conflict":
-            actual_id = None
-            break
-        actual_id = None
-    if actual_id is None or actual_fields is None or actual_text is None:
+    preview = preview_object_id_locked(command.boundary, layout, counter_path)
+    if preview is None:
         return FactCreationResult(
             "allocation_unavailable",
-            allocation_consumed=allocation_consumed,
-            creation_result=creation_result,
+            allocation_status="unavailable",
         )
 
-    assert creation_result is not None
-    return _complete_created_fact(prepared, actual_id, actual_fields, actual_text, creation_result)
+    allocation = commit_object_id_locked(command.boundary, layout, preview)
+    if allocation.status in {"stale", "unavailable"} and allocation.write_result is None:
+        return FactCreationResult(
+            "allocation_stale" if allocation.status == "stale" else "allocation_unavailable",
+            allocation_consumed=False,
+            allocation_status=allocation.status,
+            allocation_result=allocation,
+        )
+    if allocation.status == "stale":
+        return FactCreationResult(
+            "allocation_stale",
+            actual_id=preview.object_id,
+            allocation_consumed=False,
+            allocation_status="stale",
+            allocation_result=allocation,
+        )
+    if allocation.status == "committed" and allocation.object_id != preview.object_id:
+        allocation = AllocationCommitResult("uncertain", None, allocation.write_result)
+    if allocation.status != "committed":
+        residual_readback = _project_read(command, preview.object_id) if allocation.status == "uncertain" else None
+        return FactCreationResult(
+            "allocation_unavailable",
+            actual_id=preview.object_id,
+            allocation_consumed=None if allocation.status == "uncertain" else False,
+            residual_readback=residual_readback,
+            allocation_status=allocation.status,
+            allocation_result=allocation,
+        )
+
+    actual_id = allocation.object_id
+    actual_fields, actual_text, issues, unavailable = _preflight(command, actual_id, now)
+    if issues or unavailable:
+        return FactCreationResult(
+            "final_unavailable" if unavailable else "final_rejected",
+            issues=issues,
+            actual_id=actual_id,
+            actual_fields=actual_fields,
+            actual_text=actual_text,
+            allocation_consumed=True,
+            allocation_status="committed",
+            allocation_result=allocation,
+        )
+
+    creation_result = atomic_create_text(command.boundary.worktree_root, layout, actual_id, actual_text)
+    if creation_result.outcome == "created" and creation_result.namespace_state == "committed":
+        return _complete_created_fact(
+            prepared,
+            actual_id,
+            actual_fields,
+            actual_text,
+            allocation,
+            creation_result,
+        )
+
+    residual_readback = _project_read(command, actual_id)
+    return FactCreationResult(
+        "creation_conflict"
+        if creation_result.outcome == "conflict" and creation_result.namespace_state == "not_committed"
+        else "creation_unavailable",
+        actual_id=actual_id,
+        actual_fields=actual_fields,
+        actual_text=actual_text,
+        allocation_consumed=True,
+        creation_result=creation_result,
+        residual_readback=residual_readback,
+        allocation_status="committed",
+        allocation_result=allocation,
+    )
 
 
 def create_fact_object(command: FactCreationCommand, *, observed_at: str | None = None) -> FactCreationResult:
@@ -364,8 +391,16 @@ def create_fact_object(command: FactCreationCommand, *, observed_at: str | None 
     if isinstance(prepared, FactCreationResult):
         return prepared
     layout = LAYOUTS[command.fact_type_key]
-    with allocation_lock(command.boundary, layout) as counter_path:
-        return create_fact_object_locked(prepared, counter_path)
+    completed: FactCreationResult | None = None
+    try:
+        with allocation_lock(command.boundary, layout) as counter_path:
+            completed = create_fact_object_locked(prepared, counter_path)
+    except OSError:
+        if completed is None:
+            raise
+        return replace(completed, coordination_release_uncertain=True)
+    assert completed is not None
+    return completed
 
 
 __all__ = [
@@ -373,10 +408,7 @@ __all__ = [
     "FactCreationCommand",
     "FactCreationResult",
     "PreparedFactCreation",
-    "PreparedFactCreationAttempt",
-    "commit_fact_creation_attempt_locked",
     "create_fact_object",
     "create_fact_object_locked",
-    "preview_fact_creation_locked",
     "prepare_fact_creation",
 ]

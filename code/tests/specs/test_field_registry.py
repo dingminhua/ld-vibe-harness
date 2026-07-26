@@ -16,8 +16,8 @@ def test_current_registry_is_complete_and_resolves_all_current_types(current_spe
     inspection = _inspection(current_specs_repository)
 
     assert inspection.complete is True
-    assert len(inspection.structures) == 18
-    assert len(inspection.registrations) == 130
+    assert len(inspection.structures) == 14
+    assert len(inspection.registrations) == 98
     assert {item.fact_type_key for item in inspection.fact_types} == {
         "spark",
         "workcase",
@@ -61,25 +61,39 @@ def test_required_foundation_field_cannot_be_weakened_by_type_binding(current_sp
     assert any("基础必填字段 'object-id' 必须绑定为 required" == issue.summary for issue in inspection.issues)
 
 
-def test_workcase_v1_progress_structures_keep_compatibility_admission_records(
+def test_workcase_current_structures_have_admission_records(
     current_specs_repository: Path,
 ) -> None:
-    registry = (current_specs_repository / "specs/attachments/05.Att.01-事实对象统一字段登记.md").read_text(
-        encoding="utf-8"
-    )
+    inspection = _inspection(current_specs_repository)
     workcase = (current_specs_repository / "specs/21-WorkCase-工作项.md").read_text(encoding="utf-8")
+    workcase_structures = {
+        item.structure_key for item in inspection.structures if item.applies_to == ("workcase",)
+    }
 
-    assert "| information_need | compared_structure_keys | decision | resulting_structure_key | rationale |" in registry
-    obsolete_header = (
-        "| information_need | compared_structure_keys | decision | resulting_structure_key | rationale | review_ref |"
-    )
-    assert obsolete_header not in registry
+    assert workcase_structures == {
+        "workcase-item",
+        "workcase-review",
+        "workcase-human-approval",
+        "workcase-success-criterion",
+        "workcase-success-result",
+        "workcase-closure-proposal",
+        "workcase-residual-decision",
+        "workcase-proposed-route-target",
+        "workcase-residual-responsibility",
+    }
     assert workcase.count("### workcase 结构准入记录") == 1
-    assert "| `differentiate` | `workcase-progress-history` |" in workcase
-    assert "| `differentiate` | `workcase-progress-entry` |" in workcase
+    for structure_key in (
+        "workcase-closure-proposal",
+        "workcase-residual-decision",
+        "workcase-proposed-route-target",
+        "workcase-residual-responsibility",
+        "workcase-review",
+        "workcase-human-approval",
+    ):
+        assert f"| `{structure_key}` |" in workcase
 
 
-def test_workcase_v2_optional_members_are_conditional_while_v1_compatibility_fields_remain_registered(
+def test_workcase_current_optional_members_are_conditionally_projected(
     current_specs_repository: Path,
 ) -> None:
     inspection = _inspection(current_specs_repository)
@@ -89,26 +103,28 @@ def test_workcase_v2_optional_members_are_conditional_while_v1_compatibility_fie
 
     assert registrations["workcase-item-approach-summary"].base_presence == "conditional"
     assert registrations["workcase-review-feedback"].base_presence == "conditional"
-    assert registrations["workcase-review-basis-member"].base_presence == "conditional"
+    assert registrations["workcase-proposal-residual-decisions"].base_presence == "conditional"
+    assert registrations["workcase-residual-decision-route-target"].base_presence == "conditional"
     for field_path in (
         "work_items[].approach_summary",
         "creation_reviews[].feedback",
         "result_reviews[].feedback",
-        "creation_reviews[].review_basis",
-        "result_reviews[].review_basis",
+        "closure_proposal.residual_decisions",
+        "closure_proposal.residual_decisions[].route_target",
+        "residual_responsibilities",
     ):
         assert projected[field_path].presence == "conditional"
     for field_key in (
-        "workcase-audit-summary",
-        "workcase-progress-history",
-        "workcase-improvement-observations",
-        "workcase-nonbinding-followups",
+        "workcase-overall-result-summary",
+        "workcase-closure-proposal",
+        "workcase-closure-outcome",
+        "workcase-residual-responsibilities",
     ):
         assert registrations[field_key].status == "current"
     for field_path in (
-        "audit_summary",
-        "progress_history",
-        "improvement_observations",
-        "nonbinding_followups",
+        "result_summary",
+        "closure_proposal",
+        "closure_outcome",
+        "residual_responsibilities",
     ):
         assert projected[field_path].presence == "conditional"

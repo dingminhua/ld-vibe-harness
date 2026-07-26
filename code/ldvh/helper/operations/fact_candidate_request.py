@@ -55,16 +55,14 @@ _F2_SEARCH_FIELDS = {
     "spark": frozenset({"object_id", "title", "intent", "status", "summary", "priority", "updated_at"}),
     "workcase": frozenset(
         {
-            "object_id",
             "title",
-            "status",
-            "phase",
             "goal",
             "scope",
             "summary",
-            "priority",
             "blocking_summary",
-            "updated_at",
+            "result_summary",
+            "validation_summary",
+            "disposition_summary",
         }
     ),
     "adr": frozenset({"object_id", "title", "status", "decision_question", "decision", "applicability", "updated_at"}),
@@ -89,8 +87,6 @@ _F2_SEARCH_FIELDS = {
             "abstract",
             "research_intent",
             "recommendation_summary",
-            "applicability",
-            "validation_summary",
             "updated_at",
         }
     ),

@@ -15,7 +15,7 @@ def test_projected_field_retains_constraint_ref_and_fingerprint_covers_it(
     resume_from = next(field for field in schema.fields if field.path == "resume_from")
 
     assert resume_from.presence == "conditional"
-    assert resume_from.constraint_ref == "workcase-fact-type::6. 对象语义与生命周期"
+    assert resume_from.constraint_ref == "workcase-fact-type::6. 状态、阶段与生命周期"
 
     changed_fields = tuple(
         replace(field, constraint_ref="workcase-fact-type::changed") if field.path == "resume_from" else field

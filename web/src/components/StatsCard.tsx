@@ -1,20 +1,24 @@
 import { useTheme } from '@/hooks/useTheme';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
 import { getStatusColor } from '@/utils/statusColors';
+import { useI18n } from '@/i18n/context';
+import type { FactCoverageStatus } from '@/utils/api';
 
 interface StatsCardProps {
   type: string;
   label?: string;
   count: number;
-  byStatus: Record<string, number>;
+  distribution: Record<string, number>;
   getStatus?: (status: string) => string;
   onClick?: () => void;
+  coverageStatus?: FactCoverageStatus;
 }
 
-export default function StatsCard({ type, label, count, byStatus, getStatus, onClick }: StatsCardProps) {
+export default function StatsCard({ type, label, count, distribution, getStatus, onClick, coverageStatus = 'complete' }: StatsCardProps) {
   const { resolved } = useTheme();
+  const { t } = useI18n();
   const total = count;
-  const entries = Object.entries(byStatus);
+  const entries = Object.entries(distribution);
 
   return (
     <button
@@ -26,34 +30,43 @@ export default function StatsCard({ type, label, count, byStatus, getStatus, onC
           <ObjectTypeIcon type={type} size={14} className="shrink-0 text-ldvh-accent" />
           <span className="min-w-0 truncate">{label ?? type}</span>
         </span>
-        <span className="font-mono text-xl font-semibold text-ldvh-accent">{total}</span>
+        <span className="font-mono text-xl font-semibold text-ldvh-accent">
+          {coverageStatus === 'unavailable' ? '—' : coverageStatus === 'partial' ? `${total}+` : total}
+        </span>
       </div>
-      {/* Status distribution bar */}
-      {entries.length > 0 && (
+      {coverageStatus !== 'complete' && (
+        <p className={`ldvh-meta ${coverageStatus === 'partial' ? 'text-amber-400' : 'text-red-400'}`}>
+          {coverageStatus === 'partial'
+            ? t('dashboard.coveragePartial')
+            : t('dashboard.coverageUnavailable')}
+        </p>
+      )}
+      {/* Current-state distribution bar */}
+      {coverageStatus !== 'unavailable' && total > 0 && entries.length > 0 && (
         <div key={resolved} className="flex h-1.5 w-full overflow-hidden rounded-full bg-ldvh-border/50">
-          {entries.map(([status, statusCount]) => (
+          {entries.map(([state, stateCount]) => (
             <div
-              key={status}
+              key={state}
               className="h-full"
               style={{
-                width: `${(statusCount / total) * 100}%`,
-                backgroundColor: getStatusColor(status),
+                width: `${(stateCount / total) * 100}%`,
+                backgroundColor: getStatusColor(state),
               }}
-              title={`${getStatus ? getStatus(status) : status}: ${statusCount}`}
+              title={`${getStatus ? getStatus(state) : state}: ${stateCount}`}
             />
           ))}
         </div>
       )}
-      {/* Status labels */}
-      {entries.length > 0 && (
+      {/* Current-state labels */}
+      {coverageStatus !== 'unavailable' && entries.length > 0 && (
         <div key={`labels-${resolved}`} className="flex flex-wrap gap-1">
-          {entries.map(([status, statusCount]) => (
+          {entries.map(([state, stateCount]) => (
             <span
-              key={status}
+              key={state}
               className="ldvh-meta"
-              style={{ color: getStatusColor(status) }}
+              style={{ color: getStatusColor(state) }}
             >
-              {getStatus ? getStatus(status) : status} {statusCount}
+              {getStatus ? getStatus(state) : state} {stateCount}
             </span>
           ))}
         </div>

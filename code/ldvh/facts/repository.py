@@ -152,7 +152,7 @@ def read_fact_object(
     if effective_max_bytes <= 0:
         return FactReadResult(
             relative_path, layout.carrier, "unavailable", None, None,
-            (FactIssue("budget", "事实对象聚合读取预算已耗尽"),),
+            (FactIssue("reference", "事实对象聚合读取预算已耗尽"),),
         )
     text, raw_byte_count, read_issue, read_status = _read_utf8_without_symlinks(
         root, relative_path, max_bytes=effective_max_bytes,

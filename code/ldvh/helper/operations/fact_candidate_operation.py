@@ -49,9 +49,10 @@ _TYPE_SOURCES = {
 }
 _RELATION_DEFINITION_LOCATORS = {
     "spark": "spark-fact-type::7. 外部资料、关系与处置",
-    "workcase": "workcase-fact-type::7. 外部网址、自然语言证据与关系",
+    "workcase": "workcase-fact-type::8. 来源、外部资料与关系",
     "adr": "adr-fact-type::7. 形成边界、取舍说明与替代关系",
     "pitfall": "pitfall-fact-type::7. 形成边界、验证说明与替代关系",
+    "study": "study-fact-type::7. 外部网址、研究边界、关系与时效",
 }
 _DEFAULT_STATUSES = {
     "spark": frozenset({"open"}),
@@ -75,9 +76,19 @@ _F1_FIELDS = {
         "updated_at",
     ),
 }
+_WORKCASE_F2_CLOSED_FIELDS = (
+    "object_id",
+    "title",
+    "status",
+    "goal",
+    "scope",
+    "result_summary",
+    "closure_outcome",
+    "disposition_summary",
+    "updated_at",
+)
 _F2_FIELDS = {
     "spark": ("object_id", "title", "status", "priority", "updated_at"),
-    "workcase": _F1_FIELDS["workcase"],
     "adr": ("object_id", "title", "status", "decision_question", "decision", "applicability", "updated_at"),
     "pitfall": (
         "object_id",
@@ -97,8 +108,7 @@ _F2_FIELDS = {
         "abstract",
         "research_intent",
         "recommendation_summary",
-        "applicability",
-        "validation_summary",
+        "relations",
         "updated_at",
     ),
 }
@@ -472,7 +482,14 @@ def _card(
 ) -> dict[str, object]:
     assert read.fields is not None
     object_id = read.fields["object_id"]
-    projection = _F1_FIELDS[fact_type_key] if domain.card_layer == "F1" else _F2_FIELDS[fact_type_key]
+    if fact_type_key == "workcase":
+        projection = (
+            _WORKCASE_F2_CLOSED_FIELDS
+            if domain.card_layer == "F2" and read.fields.get("status") == "closed"
+            else _F1_FIELDS["workcase"]
+        )
+    else:
+        projection = _F1_FIELDS[fact_type_key] if domain.card_layer == "F1" else _F2_FIELDS[fact_type_key]
     fields = {field: read.fields[field] for field in projection if field in read.fields}
     excerpts: list[dict[str, object]] = []
     if domain.card_layer == "F2" and fact_type_key == "spark":
@@ -487,7 +504,7 @@ def _card(
                     "complete": len(value) <= _EXCERPT_LIMIT,
                 }
             )
-    if fact_type_key == "workcase":
+    if fact_type_key == "workcase" and read.fields.get("status") in {"open", "blocked"}:
         counts = Counter(
             item.get("status")
             for item in read.fields.get("work_items", [])

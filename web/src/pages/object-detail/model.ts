@@ -16,15 +16,12 @@ export const META_KEYS = [
   'canonical_path',
   'absolute_path',
   'carrier',
+  'content_fingerprint',
   'coverage_status',
   'check_status',
+  'observed_at',
   'read_issues',
   'fact_read_failure',
-  'aggregated_related_docs',
-  'aggregated_related_adrs',
-  'aggregated_related_sparks',
-  'aggregated_related_pitfalls',
-  'aggregated_execution_refs',
 ];
 
 export const COMMON_AUXILIARY_META_KEYS = ['priority', 'importance', 'tags', 'scope', 'impact', 'assignee'];
@@ -35,9 +32,11 @@ export const AUXILIARY_META_KEYS_BY_TYPE: Record<string, string[]> = {
 
 const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
   workcase: [
-    'priority', 'description', 'success_criteria', 'source',
-    'orchestration', 'verification_evidence', 'closure_evidence', 'related_workcases',
-    'related_docs', 'related_adrs', 'related_sparks', 'related_pitfalls',
+    'goal', 'scope', 'phase', 'summary', 'resume_from', 'waiting_on', 'blocking_summary',
+    'success_criterion_definitions', 'success_criterion_results', 'plan_version', 'work_items',
+    'creation_reviews', 'execution_approval', 'result_version', 'result_summary',
+    'controller_check_summary', 'result_reviews', 'validation_summary', 'closure_proposal',
+    'closure_outcome', 'disposition_summary', 'residual_responsibilities', 'urls', 'relations',
   ],
   adr: [
     'decision_question', 'decision', 'applicability', 'rationale', 'consequences',
@@ -58,23 +57,10 @@ const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
   ],
 };
 
-const RELATED_OBJECT_FIELD_ORDER: Record<string, number> = {
-  related_workcases: 21,
-  related_adrs: 22,
-  related_pitfalls: 23,
-  related_sparks: 20,
-  related_studies: 24,
-};
-
 export type RelatedContentEntry = [string, unknown[]];
 
-function normalizeRelatedFieldKey(fieldKey: string) {
-  return fieldKey.startsWith('aggregated_') ? fieldKey.slice('aggregated_'.length) : fieldKey;
-}
-
 function isRelatedContentField(fieldKey: string) {
-  const normalized = normalizeRelatedFieldKey(fieldKey);
-  return normalized === 'urls' || normalized.startsWith('related_');
+  return fieldKey === 'urls';
 }
 
 function hasContent(value: unknown): boolean {
@@ -84,19 +70,7 @@ function hasContent(value: unknown): boolean {
 }
 
 export function sortRelatedContentEntries(entries: RelatedContentEntry[]) {
-  return [...entries].sort((a, b) => {
-    const aKey = normalizeRelatedFieldKey(a[0]);
-    const bKey = normalizeRelatedFieldKey(b[0]);
-    const aOrder = RELATED_OBJECT_FIELD_ORDER[aKey];
-    const bOrder = RELATED_OBJECT_FIELD_ORDER[bKey];
-    const aIsObject = aOrder !== undefined;
-    const bIsObject = bOrder !== undefined;
-
-    if (aIsObject && bIsObject) return aOrder - bOrder;
-    if (aIsObject) return -1;
-    if (bIsObject) return 1;
-    return aKey.localeCompare(bKey, 'en');
-  });
+  return [...entries].sort((a, b) => a[0].localeCompare(b[0], 'en'));
 }
 
 export function splitRelatedContentEntries(entries: Array<[string, unknown]>) {

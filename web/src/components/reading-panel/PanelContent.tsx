@@ -13,8 +13,8 @@ import {
 import { AdrReadingLayout, PitfallReadingLayout, SparkReadingLayout } from '@/pages/object-detail/FactReadingLayouts';
 import { WorkCaseReadingLayout } from '@/pages/object-detail/WorkCaseReadingLayout';
 import { getObjectDetailContentEntries, splitRelatedContentEntries } from '@/pages/object-detail/model';
-import { getCommitDetailLabels, getLocalizedObjectTitle, getObjectStatusLocale, getToggleLabel, getTypeLabel, type CommitDetailLabels } from '@/i18n/locales';
-import { fetchDocContent, fetchObjectDetail, fetchObjects, type CommitDetailPanelData, type DocContent, type ObjectDetail as ApiObjectDetail, type ObjectItem } from '@/utils/api';
+import { getCommitDetailLabels, getFieldValueLabel, getLocalizedObjectTitle, getObjectStatusLocale, getToggleLabel, getTypeLabel, type CommitDetailLabels } from '@/i18n/locales';
+import { fetchDocContent, fetchObjectDetail, type CommitDetailPanelData, type DocContent, type ObjectDetail as ApiObjectDetail, type WorkCaseDetailData } from '@/utils/api';
 import { CATEGORY_COLORS } from '@/utils/categoryColors';
 import { getCommitScopeLabel, getCommitTypeLabel } from '@/utils/commitLabels';
 import { formatDateTime } from '@/utils/dateFormat';
@@ -164,7 +164,6 @@ function ObjectPreview({ content }: { content: PanelContent }) {
         <ObjectSemanticPreview
           objectType={objectType}
           obj={obj}
-          objectId={objectId}
           objectPath={targetPath}
           carrier={readMeta.carrier}
         />
@@ -199,7 +198,15 @@ function FactReadFailureNotice({
         <dt className="ldvh-meta-muted">{t('objectDetail.readType')}</dt>
         <dd className="ldvh-meta-primary">{typeLabel} · {objectId || '—'}</dd>
         <dt className="ldvh-meta-muted">{t('objectDetail.readStatus')}</dt>
-        <dd className="ldvh-meta-primary">{status}</dd>
+        <dd className="ldvh-meta-primary">{getFieldValueLabel('check_status', status, locale)}</dd>
+        {meta.observedAt && (
+          <>
+            <dt className="ldvh-meta-muted">{t('objectDetail.observedAt')}</dt>
+            <dd className="ldvh-meta-primary break-all font-mono">
+              <time dateTime={meta.observedAt}>{formatDateTime(meta.observedAt)}</time>
+            </dd>
+          </>
+        )}
         {meta.canonicalPath && (
           <>
             <dt className="ldvh-meta-muted">{t('objectDetail.expectedPath')}</dt>
@@ -208,8 +215,8 @@ function FactReadFailureNotice({
         )}
       </dl>
       {meta.issues.map((issue, index) => (
-        <p key={`${issue.code ?? 'issue'}-${index}`} className="ldvh-meta text-red-300/80">
-          {issue.message ?? issue.code ?? t('objectDetail.readIssue')}
+        <p key={`${issue.category}-${issue.fieldPath ?? 'root'}-${index}`} className="ldvh-meta text-red-300/80">
+          {issue.fieldPath ? `${issue.fieldPath}：${issue.summary}` : issue.summary}
         </p>
       ))}
     </div>
@@ -219,49 +226,18 @@ function FactReadFailureNotice({
 function ObjectSemanticPreview({
   objectType,
   obj,
-  objectId,
   objectPath,
   carrier,
 }: {
   objectType?: string;
   obj: Record<string, unknown>;
-  objectId?: string;
   objectPath?: string;
   carrier?: FactCarrier;
 }) {
-  const [summary, setSummary] = useState<ObjectItem | null>(null);
-  const [loading, setLoading] = useState(false);
-  const { locale, getStatus } = useI18n();
-
-  useEffect(() => {
-    if (!objectType || !objectId) return;
-    if (!isObjectDetailLayoutType(objectType)) return;
-    if (objectType === 'pitfall' || objectType === 'adr' || objectType === 'spark' || objectType === 'study') {
-      setSummary(null);
-      setLoading(false);
-      return;
-    }
-    let cancelled = false;
-    setLoading(true);
-    setSummary(null);
-
-    fetchObjects('workcase')
-      .then((result) => {
-        if (cancelled) return;
-        const items = result.data?.items ?? [];
-        setSummary(items.find((plan) => plan.id === objectId) ?? null);
-      })
-      .catch(() => {
-        if (!cancelled) setSummary(null);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => { cancelled = true; };
-  }, [objectType, objectId]);
+  const { locale } = useI18n();
 
   if (objectType === 'workcase') {
-    return <WorkCaseReadingLayout obj={obj} summary={summary} loading={loading} locale={locale} getStatus={getStatus} />;
+    return <WorkCaseReadingLayout obj={obj as WorkCaseDetailData} locale={locale} />;
   }
   if (objectType === 'pitfall') {
     const entries = getObjectDetailContentEntries(obj, objectType);

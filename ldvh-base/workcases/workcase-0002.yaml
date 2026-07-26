@@ -1,147 +1,99 @@
-title: 修正 WorkCase 独立审核反馈与关闭控制权
-status: closed
-summary: Human 已批准当前完整结果和关闭报告；workcase-0002 正式关闭。
-goal: 使 WorkCase 独立审核只提供第二视角、问题和建议，由 Controller AI 独占反馈处置、结果版本、复审、阶段推进与进入 Human
-  关闭确认的判断，并由 Human 对当前结果和报告作最终关闭决定。
-scope: 修复仅覆盖
-  specs/21-WorkCase-工作项.md、code/ldvh/facts/validation.py、code/ldvh/facts/transitions.py，以及与该状态机直接相关的
-  code/tests/facts/test_validation.py、code/tests/facts/test_transitions.py 和必要的
-  code/tests/helper/test_fact_update_operation.py。workcase-0002.yaml
-  仅作为本案受控流程记录创建和更新，不属于实现修复范围。保留 specs/21 中 workcase-0001 已产生的既有 Working Tree
-  修改。明确排除 00、其它 specs、其它 facts 模块、Helper API/Schema、Web、行动模板、workcase-0001、任何
-  Spark、一般 Git/Working Tree 语义与 plan_version 机制重构；不 commit、push 或创建 PR。
-success_criteria:
-- 规范明确 Independent Reviewer 只提供咨询性判断，Controller AI 逐项处置反馈并独占是否复审、返回何阶段、进入关闭准备及
-  Human Gate 的判断，Human 保留最终关闭决定。
-- validation 只检查字段、枚举、阶段条件、版本、引用与时间绑定；四类 review conclusion 均不自动推进或阻断，同时 review 和
-  controller_resolution 仍保持结构完整。
-- transitions 不再根据普通结果字段差异裁决 result_version；Controller 可在处理审核反馈后选择
-  executing、controller_checking、继续或再次
-  independent_reviewing、closure_preparing，且首次 controller_checking 不能绕过实际独立审核。
-- closure_preparing 可在同一 result_version 下新增或完善验证总结、关闭分类、处置、关系与证据而不自动使已有 review
-  失效；Controller 主动升版时，审核和批准只能绑定新版本。
-- human_closure_confirming 只有在 Controller 形成完整报告并主动转换后成立；Human closure_approval
-  必须绑定当前 result_version，并与 status/phase=closed 在同一受控更新中写入。
-- 直接单元测试和 Helper 更新测试覆盖四类审核结论、Controller 四类选择、审核记录来源与字段所有权、首次不得跳审、返回
-  executing、显式升版、关闭报告不失效 review、完整报告门槛及 Human 原子关闭；聚焦验证与 full-v4 通过。
-- 除限定实现与测试文件和本 WorkCase 流程记录外不产生修改；workcase-0001、Spark、既有 Working Tree 修改与 Git
-  远端状态保持不变。
-phase: closed
-plan_version: 3
-work_items:
-- item_id: item-01
-  goal: 重写 WorkCase 审核反馈与关闭控制权的规范契约。
-  expected_result: specs/21 的字段定义、阶段语义、版本规则、流程图、转换表、验证样例和停止条件一致表达 Reviewer
-    建议权、Controller 决定权和 Human 最终关闭权。
-  status: completed
-  approach_summary: 只在 specs/21 内完整清除由审核结论自动推进或否决的表述，定义 Controller
-    对反馈、复审、结果版本和关闭准备的职责；保留双 Human Gate、plan_version 既有确定性计划覆盖防护和 workcase-0001
-    已有措辞修改。
-  result_summary: 已统一修订字段定义、阶段语义、版本职责、流程图、转换表、验证边界和 Human Gate；Reviewer
-    仅提供咨询意见，Controller 决定反馈处置、复审与推进；closure_preparing
-    返回审核明确区分同版本追加第二视角与实质变化升版复审；plan_version 仅作内部绑定且不得替代当前计划呈现。
-- item_id: item-02
-  goal: 把 WorkCase validator 收敛为结构一致性检查。
-  expected_result: validation.py
-    允许咨询性审核结论和合法反馈循环，只检查字段、闭集、阶段条件、版本、引用及时间等可机械确定事项。
-  status: completed
-  depends_on:
-  - item-01
-  approach_summary: 移除 creation/result review 非 pass
-    结论的流程门槛，调整执行、自检、独立审核和关闭准备阶段的条件字段以支持返回路径；保留 review
-    枚举、必填内容、subject_version、批准与时间绑定。
-  result_summary: Validator 已移除 review conclusion
-    的自动阻断，只保留字段、闭集、阶段条件、版本、引用和时间绑定；支持返回执行、自检和复审所需的结果上下文。
-- item_id: item-03
-  goal: 修正 WorkCase 转换边、版本职责与审核记录来源。
-  expected_result: transitions.py 不再用结果字段投影代替 Controller
-    判断，四类反馈后选择和关闭链路均可达，同时首次结果版本、审核形成、Reviewer 字段所有权与 Human 原子关闭具有确定性机械保护。
-  status: completed
-  depends_on:
-  - item-01
-  approach_summary: 删除 result projection 的自动升版和失效裁决，保留版本不倒退、plan_version 既有防护及
-    closed 原子边；增加 controller_checking 到 closure_preparing 的受限边，并检查
-    result_version 首次建立、result_reviews 只能源自 independent_reviewing、离开审核后 Reviewer
-    自有字段不可替换或追加，controller_resolution 仍可由 Controller 更新。
-  result_summary: 转换器已删除普通结果字段差异的自动升版裁决，增加审核来源、Reviewer
-    字段所有权、首次结果版本、受限关闭准备边和原子关闭机械保护。
-- item_id: item-04
-  goal: 验证修复后的完整状态机与真实 Helper 更新入口。
-  expected_result: 正反单元测试、Helper 更新链路、聚焦测试和 full-v4
-    共同证明限定状态机行为成立，并形成可供主控自检和后续独立结果审核使用的证据。
-  status: completed
-  depends_on:
-  - item-02
-  - item-03
-  approach_summary: 补齐 validation/transitions 直接测试和必要的 Helper 单对象更新集成测试，覆盖四类
-    conclusion、四种 Controller 路径、review 来源与防篡改、报告补充、显式升版和 Human 原子关闭；随后运行聚焦与
-    full-v4。全部 work item 完成后，再把本 WorkCase 依次推进到
-    controller_checking、independent_reviewing、Controller 处置、closure_preparing 和
-    human_closure_confirming，每次 Helper 更新后回读，Human 批准后才正式 closed。
-  result_summary: 首轮独立结果审核发现一处规范与实现不一致；Controller
-    接受并补齐同版本追加第二视角和实质变化升版复审两条路径及正例。首次 full-v4 暴露 Helper
-    生命周期测试的秒级时间截断偶发失败，修正为微秒精度后目标测试通过；新 full-v4 的 lint、779 项 Python 测试、Web
-    类型检查、Web 测试和生产构建全部通过，10 项平台测试按条件跳过。
-creation_reviews:
-- reviewer: /root/workcase_plan_review
-  reviewed_at: '2026-07-20T04:32:42+08:00'
-  subject_version: 3
-  scope: 审核目标、严格文件范围与排除、七项可观察成功标准、四个工作项及依赖、Reviewer/Controller/Human
-    权限、结果版本与审核来源边、返回执行和关闭准备可达性、测试方案、自用生命周期与自指风险；未审核尚未产生的实施结果。
-  conclusion: pass_with_followups
-  feedback:
-  - plan_version 3 已消除计划自指、首次跳审和结果字段差异自动裁决，范围、成功标准、工作项及全部实施项完成后的自用生命周期可以进入 Human
-    执行确认。
-  - 审核离开 independent_reviewing 后应确定性保护 Reviewer 自有字段不被替换、追加或改写，只允许 Controller 更新
-    controller_resolution，并补正反测试。
-  controller_resolution: "1. 接受；plan_version 3 保持当前目标、范围、成功标准和依赖，进入 Human 执行确认。\n\
-    2. 接受；作为 item-03 的字段来源保护和 item-04 的反例测试落实，不改变计划边界，因此无需形成新计划版本或再次审核。"
-execution_approval:
-  subject_version: 3
-  approved_at: '2026-07-20T04:36:35+08:00'
-  summary: Human 明确批准执行 plan_version 3。
-result_version: 2
-controller_check_summary: Controller 已逐项核对目标和七项成功标准：Reviewer
-  结论仅为咨询意见；反馈处置、结果版本、复审、阶段和 Human Gate 均由 Controller 判断；Human 仍独占最终关闭；Validator
-  只作机械一致性检查；普通结果与关闭报告字段不自动升版；四种反馈后选择、同版本追加第二视角、实质变化升版复审、review 来源与字段所有权、完整报告门槛和
-  Human 原子关闭均有正反测试。首轮 Reviewer 指出的唯一不一致已接受并修正，时间精度偶发测试失败也已修正；新 full-v4
-  全部通过。限定实现范围之外没有由本案新增的修改，workcase-0001、Spark 和 Git 远端状态未改动。Controller
-  判断当前结果需要再次独立审核。
-result_reviews:
-- reviewer: /root/workcase_plan_review
-  reviewed_at: '2026-07-20T05:20:17+08:00'
-  subject_version: 2
-  scope: 只读检查限定的规范、验证器、转换器及三个直接测试文件的当前内容与 diff，并核对 full-v4 持久证据
-    run-a7fcaf6a66d543ad8af3fcdc0c8d73b6；未修改文件、未重跑验证。
-  conclusion: pass_with_followups
-  feedback:
-  - 上轮问题已解决：规范明确区分同版本保留 reviews/报告追加第二视角，与实质变化升版、清除旧 reviews/approval 后复审。
-  - 实现与规范一致，Code 未判断何为实质变化；新增正例与既有 review 来源、防篡改和 controller_resolution 测试形成闭环。
-  - Helper 事件时间保留微秒合理；新 full-v4 证据完整成功，七项成功标准均有支撑，未发现新的越权、跳审、Human Gate
-    绕过或范围外实现修改。
-  - 非阻断建议：把新增 review 测试中的 Pending Controller handling. 改为编号处置文字，避免看起来像占位。
-  controller_resolution: "1. 接受；首轮不一致已经解决。\n2. 接受；实现、规范和测试保持一致，无需修改。\n3. 接受；时间精度修复和完整验证证据有效，成功标准已满足。\n\
-    4. 拒绝；该测试刻意停在 review 刚形成、Controller 尚未处理的中间状态，Pending Controller handling. 准确表达阶段边界，预写已完成处置反而会掩盖所测行为。该建议不改变实施结果，无需升版或复审。Controller
-    决定进入 closure_preparing。"
-validation_summary: 七项成功标准逐项满足：1) 规范明确 Reviewer 仅提供咨询意见，Controller 独占反馈处置、复审、阶段与
-  Human Gate 判断，Human 独占最终关闭；2) Validator 仅检查结构、枚举、阶段、版本、引用和时间绑定，四类 conclusion
-  不自动推进或阻断；3) 转换器删除普通结果字段投影裁决，并支持 Controller 的 executing、controller_checking、再次
-  independent_reviewing、closure_preparing 四种选择及首次不可跳审；4) closure_preparing
-  同版本完善报告不使 review 失效，同版本追加第二视角与实质变化升版复审均有规范和正例；5) 完整报告由 Controller 形成，Human
-  approval 绑定当前结果并与 closed 原子写入；6) 直接测试和 Helper 真实 CAS 生命周期覆盖所列行为，新 full-v4
-  全部通过：lint、779 项 Python 测试（10 项平台条件跳过）、Web typecheck、26 项 Web 测试和 build；7)
-  本案限定实现文件与 workcase-0002 流程记录外未新增修改，workcase-0001、Spark、commit、push、PR
-  均未触碰。未满足项：无。未验证项：原计划明确排除的其它模块与远端发布行为未验证。首轮独立审核发现的一处规范/实现不一致已由 Controller
-  接受、修正、升版并复审；第二次审核为 pass_with_followups，非阻断建议经 Controller 明确拒绝并说明理由。
-closure_outcome: completed
-disposition_summary: 本 WorkCase 原范围责任全部完成，无残余修复责任，不需要 routed-to 或 Spark。所有实现修改和
-  workcase-0002 记录仍仅在 Working Tree，未 commit、push 或创建 PR。Human 正式关闭后，按既定顺序恢复
-  workcase-0001；该后续动作不是本案未完成责任。
-closure_approval:
-  subject_version: 2
-  approved_at: '2026-07-20T05:46:29+08:00'
-  summary: Human 明确批准关闭 workcase-0002，接受当前结果、completed 分类和无残余责任处置。
 object_id: workcase-0002
 fact_type_key: workcase
+title: 修正 WorkCase 独立审核反馈与关闭控制权
 created_at: '2026-07-20T04:33:43.299829+08:00'
-updated_at: '2026-07-23T14:21:35.783731+08:00'
+updated_at: '2026-07-26T22:27:30+08:00'
+status: closed
+goal: >-
+  使 WorkCase 独立审核只提供第二视角、问题和建议，由 Controller AI 独占反馈处置、
+  结果版本、复审、阶段推进与进入 Human 关闭确认的判断，并由 Human 对当前结果和报告
+  作最终关闭决定。
+scope: >-
+  修复仅覆盖 specs/21-WorkCase-工作项.md、code/ldvh/facts/validation.py、
+  code/ldvh/facts/transitions.py，以及与该状态机直接相关的
+  code/tests/facts/test_validation.py、code/tests/facts/test_transitions.py 和必要的
+  code/tests/helper/test_fact_update_operation.py。workcase-0002.yaml 仅作为本案受控
+  流程记录创建和更新，不属于实现修复范围。保留 specs/21 中 workcase-0001 已产生的
+  既有 Working Tree 修改。明确排除 00、其它 specs、其它 facts 模块、Helper API/
+  Schema、Web、行动模板、workcase-0001、任何 Spark、一般 Git/Working Tree 语义与
+  plan_version 机制重构；不 commit、push 或创建 PR。
+success_criterion_definitions:
+- criterion_id: criterion-01
+  statement: >-
+    规范明确 Independent Reviewer 只提供咨询性判断，Controller AI 逐项处置反馈并
+    独占是否复审、返回何阶段、进入关闭准备及 Human Gate 的判断，Human 保留最终关闭决定。
+- criterion_id: criterion-02
+  statement: >-
+    validation 只检查字段、枚举、阶段条件、版本、引用与时间绑定；四类 review
+    conclusion 均不自动推进或阻断，同时 review 和 controller_resolution 仍保持结构完整。
+- criterion_id: criterion-03
+  statement: >-
+    transitions 不再根据普通结果字段差异裁决 result_version；Controller 可在处理审核
+    反馈后选择 executing、controller_checking、继续或再次 independent_reviewing、
+    closure_preparing，且首次 controller_checking 不能绕过实际独立审核。
+- criterion_id: criterion-04
+  statement: >-
+    closure_preparing 可在同一 result_version 下新增或完善验证总结、关闭分类、处置、
+    关系与证据而不自动使已有 review 失效；Controller 主动升版时，审核和批准只能绑定新版本。
+- criterion_id: criterion-05
+  statement: >-
+    human_closure_confirming 只有在 Controller 形成完整报告并主动转换后成立；Human
+    closure_approval 必须绑定当前 result_version，并与 status/phase=closed 在同一受控
+    更新中写入。
+- criterion_id: criterion-06
+  statement: >-
+    直接单元测试和 Helper 更新测试覆盖四类审核结论、Controller 四类选择、审核记录来源与
+    字段所有权、首次不得跳审、返回 executing、显式升版、关闭报告不失效 review、完整报告
+    门槛及 Human 原子关闭；聚焦验证与 full-v4 通过。
+- criterion_id: criterion-07
+  statement: >-
+    除限定实现与测试文件和本 WorkCase 流程记录外不产生修改；workcase-0001、Spark、
+    既有 Working Tree 修改与 Git 远端状态保持不变。
+success_criterion_results:
+- criterion_id: criterion-01
+  outcome: satisfied
+  summary: >-
+    规范已明确 Reviewer 只提供咨询意见，Controller 独占反馈处置、复审、阶段和进入
+    Human Gate 的判断，Human 独占最终关闭决定。
+- criterion_id: criterion-02
+  outcome: satisfied
+  summary: >-
+    Validator 只检查结构、枚举、阶段、版本、引用与时间绑定；四类 conclusion 均不自动
+    推进或阻断，review 与 controller_resolution 结构保持完整。
+- criterion_id: criterion-03
+  outcome: satisfied
+  summary: >-
+    转换器已删除普通结果字段投影裁决，支持 Controller 选择 executing、
+    controller_checking、再次 independent_reviewing 或 closure_preparing，并阻止首次跳审。
+- criterion_id: criterion-04
+  outcome: satisfied
+  summary: >-
+    closure_preparing 可在同一结果版本完善报告而不使 review 失效；同版本追加第二视角和
+    实质变化升版复审均已有规范与正例覆盖。
+- criterion_id: criterion-05
+  outcome: satisfied
+  summary: >-
+    完整报告由 Controller 形成，Human 关闭决定绑定当前结果，并与 closed 在同一受控变更中形成。
+- criterion_id: criterion-06
+  outcome: satisfied
+  summary: >-
+    直接测试和 Helper 真实 CAS 生命周期覆盖所列行为；最后一次 full-v4 的 lint、779 项
+    Python 测试、Web typecheck、26 项 Web 测试和 build 全部通过，10 项平台测试按条件跳过。
+- criterion_id: criterion-07
+  outcome: satisfied
+  summary: >-
+    本案限定实现文件与 workcase-0002 流程记录之外未新增修改；workcase-0001、Spark、
+    commit、push 和 PR 均未触碰。
+result_summary: >-
+  WorkCase 的审核与关闭控制权已收敛：Reviewer 只提供咨询性第二视角，Controller 负责
+  反馈处置、复审和阶段推进，Human 保留最终关闭决定；Validator、转换器及 Helper CAS
+  生命周期已按该边界修正并通过相关验证。
+validation_summary: >-
+  七项成功标准逐项满足。首轮独立审核发现的一处规范与实现不一致已由 Controller 接受、
+  修正、升版并复审；第二次审核为 pass_with_followups，非阻断建议已由 Controller 明确
+  处置。最后一次 full-v4 全部通过。原计划排除的其它模块与远端发布行为未验证。
+closure_outcome: completed
+disposition_summary: >-
+  本 WorkCase 原范围责任全部完成，无残余修复责任，不需要 routed-to 或 Spark。所有实现
+  修改和 workcase-0002 记录仍仅在 Working Tree，未 commit、push 或创建 PR。Human 正式
+  关闭后按既定顺序恢复 workcase-0001；该后续动作不是本案未完成责任。

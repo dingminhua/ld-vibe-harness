@@ -3,7 +3,7 @@ export const SUMMARY_TEXT_FIELDS = [
   'description', 'source', 'context', 'consequences', 'success_criteria', 'constraints',
   'rationale', 'observation', 'analysis', 'mitigation', 'resolution', 'decision',
   'symptoms', 'trigger_conditions', 'root_cause', 'avoidance', 'applicability',
-  'governance_scope', 'archive_reason', 'deprecated_reason', 'discard_reason', 'notes', 'transition_reasons',
+  'governance_scope', 'notes',
   'source_detail', 'user_intent', 'conclusion', 'report_body',
   'reason',
   'scope', 'impact', 'summary', 'details', 'outcome', 'next_steps',
@@ -17,30 +17,18 @@ export const CHECKLIST_COMPAT_FIELDS = [
 ];
 
 /** Evidence fields use the EvidenceBlock renderer. */
-export const EVIDENCE_FIELDS = ['closure_evidence', 'verification_evidence', 'verification', 'evidence'];
+export const EVIDENCE_FIELDS = ['verification', 'evidence'];
 
 /** Object ID reference fields render through ReferenceCard when values look like LDVH object IDs. */
-export const REFERENCE_FIELDS = [
-  'workcase',
-  'related_workcases', 'related_adrs', 'related_sparks', 'related_pitfalls',
-  'related_studies', 'source_sparks',
-  'resolved_to',
-];
+export const REFERENCE_FIELDS: string[] = [];
 
 /** Path / URL reference fields render through DocPreviewLink when values are previewable paths. */
-export const DOC_LINK_FIELDS = [
-  'related_docs', 'related_rules', 'urls',
-];
+export const DOC_LINK_FIELDS = ['urls'];
 
 export const PATH_TEXT_FIELDS = ['project_path', 'ldvh_base_path', 'docs_path', 'rules_path', 'skills_path'];
 
 /** Fields that can be folded in detail view. */
-export const COLLAPSIBLE_FIELDS = [
-  'related_workcases',
-  'related_docs', 'related_adrs', 'related_sparks', 'related_studies',
-  'related_pitfalls', 'related_rules', 'urls',
-  'source_sparks',
-];
+export const COLLAPSIBLE_FIELDS = ['urls'];
 
 export function getPreviewableDocPath(value: string) {
   const trimmed = value.trim();
@@ -59,15 +47,7 @@ export function isAffectedDocPath(value: string) {
   return /\.(md|mdx)$/i.test(value) && /^(docs\/|specs\/|web\/docs\/)/.test(value);
 }
 
-export function isRelatedDocPath(value: string) {
-  const docPath = getPreviewableDocPath(value);
-  return docPath.startsWith('http://')
-    || docPath.startsWith('https://')
-    || (/\.(md|mdx)$/i.test(docPath) && /^(docs\/|specs\/|web\/docs\/)/.test(docPath));
-}
-
-export function isPreviewablePathForField(fieldKey: string, value: string) {
-  if (fieldKey === 'related_docs') return isRelatedDocPath(value);
+export function isPreviewablePathForField(_fieldKey: string, value: string) {
   return isPreviewableDocPath(value);
 }
 

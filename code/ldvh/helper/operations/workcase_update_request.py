@@ -1,4 +1,4 @@
-"""Parse inputs for the source-defined update-workcase operation."""
+"""Parse the three source-defined full-after WorkCase write requests."""
 
 from __future__ import annotations
 
@@ -9,287 +9,158 @@ from typing import Any
 
 from ldvh.facts.contracts import LAYOUTS
 from ldvh.facts.models import FactReference
-from ldvh.facts.schema import FactSchema
-from ldvh.facts.validation import parse_rfc3339
-from ldvh.facts.workcase_update import PLAN_RESET_FIELDS, RESULT_REVIEW_CONTEXT_FIELDS
 from ldvh.governance.models import ScopeDescriptor, cwd_scope, explicit_scope
 from ldvh.helper.operation_runtime import OperationExecutionContext
 from ldvh.helper.requests import CommonRequest
+from ldvh.source_references import source_reference_problems
 
-REQUIRED_INPUTS = (
+UPDATE_REQUIRED_INPUTS = (
     "arguments.fact_ref",
     "arguments.expected_content_fingerprint",
-    "arguments.set",
-    "arguments.remove",
-    "arguments.managed_records",
+    "arguments.fact_object",
 )
-OPTIONAL_INPUTS = (
+UPDATE_OPTIONAL_INPUTS = (
     "work_object_locators",
     "arguments.workspace_root",
     "authorization_reference",
 )
+CLOSE_REQUIRED_INPUTS = (*UPDATE_REQUIRED_INPUTS, "authorization_reference")
+CLOSE_OPTIONAL_INPUTS = (
+    "work_object_locators",
+    "arguments.workspace_root",
+)
+CORRECT_CLOSED_REQUIRED_INPUTS = (
+    *UPDATE_REQUIRED_INPUTS,
+    "arguments.route_target_fingerprints",
+    "arguments.independent_review_reference",
+)
+CORRECT_CLOSED_OPTIONAL_INPUTS = UPDATE_OPTIONAL_INPUTS
 
-_ARGUMENT_FIELDS = frozenset(
-    {"workspace_root", "fact_ref", "expected_content_fingerprint", "set", "remove", "managed_records"}
+_COMMON_ARGUMENT_FIELDS = frozenset({"workspace_root", "fact_ref", "expected_content_fingerprint", "fact_object"})
+_CORRECT_ARGUMENT_FIELDS = frozenset(
+    {*_COMMON_ARGUMENT_FIELDS, "route_target_fingerprints", "independent_review_reference"}
 )
 _FACT_REF_FIELDS = frozenset({"governed_project_id", "fact_type_key", "object_id"})
-_MANAGED_FIELDS = frozenset(
-    {
-        "replace_creation_reviews",
-        "append_result_reviews",
-        "resolve_result_reviews",
-        "execution_approval",
-        "withdraw_execution_approval",
-        "closure_approval",
-    }
-)
-_CREATION_REVIEW_FIELDS = frozenset({"reviewer", "scope", "conclusion", "feedback", "controller_resolution"})
-_RESULT_REVIEW_FIELDS = frozenset({"reviewer", "scope", "conclusion", "feedback"})
-_RESOLUTION_FIELDS = frozenset({"review_index", "controller_resolution"})
-_APPROVAL_FIELDS = frozenset({"summary", "source_refs"})
-_SOURCE_REFERENCE_FIELDS = frozenset({"kind", "locator", "version", "observed_at", "details"})
-_REVIEW_CONCLUSIONS = frozenset({"pass", "pass_with_followups", "changes_required", "blocked"})
-_ORDINARY_MANAGED_FIELDS = frozenset(
-    {
-        "object_id",
-        "fact_type_key",
-        "created_at",
-        "updated_at",
-        "workcase_profile",
-        "creation_reviews",
-        "result_reviews",
-        "execution_approval",
-        "closure_approval",
-    }
-)
-_VERSION_FIELDS = frozenset({"plan_version", "result_version"})
-_V2_FORBIDDEN_TOP_LEVEL_FIELDS = frozenset(
-    {"audit_summary", "progress_history", "improvement_observations", "nonbinding_followups"}
-)
+_ROUTE_TARGET_FINGERPRINT_FIELDS = frozenset({"target", "content_fingerprint"})
+_CODE_MANAGED_FIELDS = frozenset({"object_id", "fact_type_key", "created_at", "updated_at"})
 _FINGERPRINT = re.compile(r"[0-9a-f]{64}\Z")
 
 
 @dataclass(frozen=True, slots=True)
-class WorkCaseUpdateRequest:
+class WorkCaseWriteRequest:
     workspace_root: Path | None
     governance_scope: tuple[ScopeDescriptor, ...]
     fact_ref: FactReference
     expected_content_fingerprint: str
-    set_fields: dict[str, Any]
-    remove_fields: tuple[str, ...]
-    managed_records: dict[str, Any]
+    fact_object: dict[str, Any]
     authorization_reference: tuple[dict[str, Any], ...]
     base: Path
 
 
 @dataclass(frozen=True, slots=True)
-class WorkCaseUpdateRequestParseResult:
-    request: WorkCaseUpdateRequest | None
+class UpdateWorkCaseRequest(WorkCaseWriteRequest):
+    """One complete desired active WorkCase snapshot."""
+
+
+@dataclass(frozen=True, slots=True)
+class CloseWorkCaseRequest(WorkCaseWriteRequest):
+    """One complete desired closed snapshot plus a Human authorization reference."""
+
+
+@dataclass(frozen=True, slots=True)
+class RouteTargetFingerprint:
+    target: FactReference
+    content_fingerprint: str
+
+
+@dataclass(frozen=True, slots=True)
+class CorrectClosedWorkCaseRequest(WorkCaseWriteRequest):
+    route_target_fingerprints: tuple[RouteTargetFingerprint, ...]
+    independent_review_reference: dict[str, Any] | None
+
+
+@dataclass(frozen=True, slots=True)
+class WorkCaseWriteRequestParseResult:
+    request: WorkCaseWriteRequest | None
     problems: tuple[str, ...]
 
 
-def workcase_top_level_fields(schema: FactSchema) -> frozenset[str]:
-    """Project top-level names from the current source-derived WorkCase schema."""
+@dataclass(frozen=True, slots=True)
+class _ParsedBase:
+    workspace_root: Path | None
+    governance_scope: tuple[ScopeDescriptor, ...]
+    fact_ref: FactReference
+    expected_content_fingerprint: str
+    fact_object: dict[str, Any]
+    authorization_reference: tuple[dict[str, Any], ...]
+    base: Path
 
-    if schema.fact_type_key != "workcase":
-        raise ValueError("workcase schema required")
-    return frozenset(field.path.split(".", 1)[0].split("[]", 1)[0] for field in schema.fields)
+    def values(self) -> tuple[object, ...]:
+        return (
+            self.workspace_root,
+            self.governance_scope,
+            self.fact_ref,
+            self.expected_content_fingerprint,
+            self.fact_object,
+            self.authorization_reference,
+            self.base,
+        )
 
 
 def _nonempty_string(value: object) -> bool:
-    return isinstance(value, str) and bool(value)
+    return isinstance(value, str) and bool(value.strip())
 
 
-def _positive_integer(value: object) -> bool:
-    return isinstance(value, int) and not isinstance(value, bool) and value > 0
+def _unknown_string_fields(value: dict[object, object], allowed: frozenset[str]) -> list[str]:
+    return sorted(key for key in value if isinstance(key, str) and key not in allowed)
 
 
-def _closed_member(value: object, path: str, fields: frozenset[str], problems: list[str]) -> dict[str, Any] | None:
+def _fact_reference(value: object, path: str, problems: list[str]) -> FactReference | None:
     if not isinstance(value, dict):
         problems.append(f"{path} 必须是 object")
         return None
-    unknown = sorted(key for key in value if isinstance(key, str) and key not in fields)
-    if unknown:
-        problems.append(f"{path} 包含未知字段: {', '.join(unknown)}")
-    non_string_keys = [key for key in value if not isinstance(key, str)]
-    if non_string_keys:
-        problems.append(f"{path} 的字段名必须是 string")
-    missing = sorted(fields - {key for key in value if isinstance(key, str)})
-    if missing:
-        problems.append(f"{path} 缺少字段: {', '.join(missing)}")
-    return value
-
-
-def _review_member(value: object, path: str, fields: frozenset[str], problems: list[str]) -> dict[str, Any] | None:
-    if not isinstance(value, dict):
-        problems.append(f"{path} 必须是 object")
-        return None
-    unknown = sorted(key for key in value if isinstance(key, str) and key not in fields)
+    unknown = _unknown_string_fields(value, _FACT_REF_FIELDS)
     if unknown:
         problems.append(f"{path} 包含未知字段: {', '.join(unknown)}")
     if any(not isinstance(key, str) for key in value):
         problems.append(f"{path} 的字段名必须是 string")
-    required = {"reviewer", "scope", "conclusion"}
-    missing = sorted(required - {key for key in value if isinstance(key, str)})
-    if missing:
-        problems.append(f"{path} 缺少字段: {', '.join(missing)}")
-    member = value
-    for name in ("reviewer", "scope"):
-        if not _nonempty_string(member.get(name)):
-            problems.append(f"{path}.{name} 必须是非空 string")
-    conclusion = member.get("conclusion")
-    if conclusion not in _REVIEW_CONCLUSIONS:
-        problems.append(f"{path}.conclusion 不在当前闭集中")
-    feedback = member.get("feedback")
-    if conclusion in {"pass_with_followups", "changes_required", "blocked"} and feedback is None:
-        problems.append(f"{path}.feedback 对非 pass conclusion 必须提供")
-    if feedback is not None:
-        if not isinstance(feedback, list) or not feedback:
-            problems.append(f"{path}.feedback 出现时必须是非空 array")
-        elif any(not _nonempty_string(item) for item in feedback):
-            problems.append(f"{path}.feedback 成员必须是非空 string")
-        elif len(feedback) != len(set(feedback)):
-            problems.append(f"{path}.feedback 成员不得重复")
-    return member
 
-
-def _approval(value: object, path: str, problems: list[str]) -> dict[str, Any] | None:
-    if not isinstance(value, dict):
-        problems.append(f"{path} 必须是 object 或 null")
-        return None
-    unknown = sorted(key for key in value if isinstance(key, str) and key not in _APPROVAL_FIELDS)
-    if unknown:
-        problems.append(f"{path} 包含未知字段: {', '.join(unknown)}")
-    if any(not isinstance(key, str) for key in value):
-        problems.append(f"{path} 的字段名必须是 string")
-    if not _nonempty_string(value.get("summary")):
-        problems.append(f"{path}.summary 必须是非空 string")
-    source_refs = value.get("source_refs")
-    if source_refs is not None:
-        if not isinstance(source_refs, list) or not source_refs:
-            problems.append(f"{path}.source_refs 出现时必须是非空 array")
+    parsed: dict[str, str] = {}
+    for name in sorted(_FACT_REF_FIELDS):
+        member = value.get(name)
+        if not _nonempty_string(member):
+            problems.append(f"{path}.{name} 必须是非空 string（至少包含一个非空白字符）")
         else:
-            for index, reference in enumerate(source_refs):
-                reference_path = f"{path}.source_refs[{index}]"
-                if not isinstance(reference, dict):
-                    problems.append(f"{reference_path} 必须是 object")
-                    continue
-                unknown_reference = sorted(
-                    key for key in reference if isinstance(key, str) and key not in _SOURCE_REFERENCE_FIELDS
-                )
-                if unknown_reference:
-                    problems.append(f"{reference_path} 包含未知字段: {', '.join(unknown_reference)}")
-                if any(not isinstance(key, str) for key in reference):
-                    problems.append(f"{reference_path} 的字段名必须是 string")
-                for name in ("kind", "locator"):
-                    if not _nonempty_string(reference.get(name)):
-                        problems.append(f"{reference_path}.{name} 必须是非空 string")
-                for name in ("version", "observed_at"):
-                    if name in reference and not _nonempty_string(reference[name]):
-                        problems.append(f"{reference_path}.{name} 出现时必须是非空 string")
-                observed_at = reference.get("observed_at")
-                if isinstance(observed_at, str) and observed_at and parse_rfc3339(observed_at) is None:
-                    problems.append(f"{reference_path}.observed_at 必须是带时区 RFC 3339 时间")
-                if "details" in reference and not isinstance(reference["details"], dict):
-                    problems.append(f"{reference_path}.details 出现时必须是 object")
-    return value
+            parsed[name] = member
+    if len(parsed) != len(_FACT_REF_FIELDS):
+        return None
+    if parsed["fact_type_key"] != "workcase":
+        problems.append(f"{path}.fact_type_key 必须精确等于 workcase")
+        return None
+    if LAYOUTS["workcase"].object_id_pattern.fullmatch(parsed["object_id"]) is None:
+        problems.append(f"{path}.object_id 必须匹配 workcase-[0-9]{{4,}}")
+        return None
+    return FactReference(parsed["governed_project_id"], "workcase", parsed["object_id"])
 
 
-def _managed_records(value: object, problems: list[str]) -> dict[str, Any]:
-    if not isinstance(value, dict):
-        problems.append("arguments.managed_records 必须是 object")
-        return {}
-    unknown = sorted(key for key in value if isinstance(key, str) and key not in _MANAGED_FIELDS)
-    if unknown:
-        problems.append(f"arguments.managed_records 包含未知字段: {', '.join(unknown)}")
-    if any(not isinstance(key, str) for key in value):
-        problems.append("arguments.managed_records 的字段名必须是 string")
-
-    normalized: dict[str, Any] = {}
-    array_fields = {
-        "replace_creation_reviews": _CREATION_REVIEW_FIELDS,
-        "append_result_reviews": _RESULT_REVIEW_FIELDS,
-        "resolve_result_reviews": _RESOLUTION_FIELDS,
-    }
-    action_count = 0
-    review_indices: list[int] = []
-    for name, fields in array_fields.items():
-        if name not in value or value[name] is None:
-            continue
-        items = value[name]
-        path = f"arguments.managed_records.{name}"
-        if not isinstance(items, list):
-            problems.append(f"{path} 必须是 array 或 null")
-            continue
-        if not items:
-            problems.append(f"{path} 出现时必须是非空 array")
-        action_count += len(items)
-        normalized[name] = [dict(item) if isinstance(item, dict) else item for item in items]
-        for index, item in enumerate(items):
-            member_path = f"{path}[{index}]"
-            if name == "resolve_result_reviews":
-                member = _closed_member(item, member_path, fields, problems)
-                if member is None:
-                    continue
-                review_index = member.get("review_index")
-                if not isinstance(review_index, int) or isinstance(review_index, bool) or review_index < 0:
-                    problems.append(f"{member_path}.review_index 必须是非负 integer")
-                else:
-                    review_indices.append(review_index)
-                if not _nonempty_string(member.get("controller_resolution")):
-                    problems.append(f"{member_path}.controller_resolution 必须是非空 string")
-                continue
-            member = _review_member(item, member_path, fields, problems)
-            if member is None:
-                continue
-            if name == "replace_creation_reviews":
-                resolution = member.get("controller_resolution")
-                if resolution is not None and not _nonempty_string(resolution):
-                    problems.append(f"{member_path}.controller_resolution 出现时必须是非空 string")
-                if member.get("feedback") and resolution is None:
-                    problems.append(f"{member_path}.controller_resolution 在 feedback 出现时必须提供")
-                if not member.get("feedback") and resolution is not None:
-                    problems.append(f"{member_path}.controller_resolution 在没有 feedback 时必须省略")
-    if len(review_indices) != len(set(review_indices)):
-        problems.append("arguments.managed_records.resolve_result_reviews 的 review_index 不得重复")
-
-    for name in ("execution_approval", "withdraw_execution_approval", "closure_approval"):
-        if name not in value or value[name] is None:
-            continue
-        action_count += 1
-        approval = _approval(value[name], f"arguments.managed_records.{name}", problems)
-        if approval is not None:
-            normalized[name] = dict(approval)
-    if action_count > 16:
-        problems.append("arguments.managed_records 单次最多包含 16 项托管动作")
-    return normalized
-
-
-def parse_workcase_update_request(
+def _parse_base(
     request: CommonRequest,
     context: OperationExecutionContext,
-    workcase_schema: FactSchema | None = None,
-) -> WorkCaseUpdateRequestParseResult:
-    """Parse rules that do not require reading the current WorkCase snapshot.
-
-    When supplied, ``workcase_schema`` is the current source-derived schema and
-    closes ordinary delta field membership. Before-dependent version, reset,
-    index-existence, and final-state checks remain with the domain constructor
-    and shared update transaction.
-    """
-
+    *,
+    allowed_argument_fields: frozenset[str],
+) -> tuple[_ParsedBase | None, list[str]]:
     problems: list[str] = []
     if not context.cwd.is_absolute():
         problems.append("Helper 进程实际 cwd 必须是绝对路径")
 
     locators: list[str] = []
     for index, locator in enumerate(request.work_object_locators):
-        if not isinstance(locator, str) or not locator:
+        if not _nonempty_string(locator):
             problems.append(f"work_object_locators[{index}] 必须是非空路径 string")
         else:
             locators.append(locator)
 
-    unknown = sorted(key for key in request.arguments if isinstance(key, str) and key not in _ARGUMENT_FIELDS)
+    unknown = _unknown_string_fields(request.arguments, allowed_argument_fields)
     if unknown:
         problems.append(f"arguments 包含未知字段: {', '.join(unknown)}")
     if any(not isinstance(key, str) for key in request.arguments):
@@ -298,170 +169,169 @@ def parse_workcase_update_request(
     workspace_root: Path | None = None
     if "workspace_root" in request.arguments:
         value = request.arguments["workspace_root"]
-        if not isinstance(value, str) or not value or not Path(value).is_absolute():
+        if not _nonempty_string(value) or not Path(value).is_absolute():
             problems.append("arguments.workspace_root 必须是非空绝对路径 string")
         else:
             workspace_root = Path(value)
 
-    fact_ref: FactReference | None = None
-    raw_ref = request.arguments.get("fact_ref")
-    if not isinstance(raw_ref, dict):
-        problems.append("arguments.fact_ref 必须是 object")
-    else:
-        unknown_ref = sorted(key for key in raw_ref if isinstance(key, str) and key not in _FACT_REF_FIELDS)
-        if unknown_ref:
-            problems.append(f"arguments.fact_ref 包含未知字段: {', '.join(unknown_ref)}")
-        if any(not isinstance(key, str) for key in raw_ref):
-            problems.append("arguments.fact_ref 的字段名必须是 string")
-        values: dict[str, str] = {}
-        for name in sorted(_FACT_REF_FIELDS):
-            value = raw_ref.get(name)
-            if not _nonempty_string(value):
-                problems.append(f"arguments.fact_ref.{name} 必须是非空 string")
-            else:
-                values[name] = value
-        if len(values) == len(_FACT_REF_FIELDS):
-            if values["fact_type_key"] != "workcase":
-                problems.append("arguments.fact_ref.fact_type_key 必须精确等于 workcase")
-            elif LAYOUTS["workcase"].object_id_pattern.fullmatch(values["object_id"]) is None:
-                problems.append("arguments.fact_ref.object_id 必须匹配 workcase-[0-9]{4,}")
-            else:
-                fact_ref = FactReference(values["governed_project_id"], "workcase", values["object_id"])
+    fact_ref = _fact_reference(request.arguments.get("fact_ref"), "arguments.fact_ref", problems)
 
     fingerprint = request.arguments.get("expected_content_fingerprint")
     if not isinstance(fingerprint, str) or _FINGERPRINT.fullmatch(fingerprint) is None:
         problems.append("arguments.expected_content_fingerprint 必须是 64 位小写十六进制 string")
 
-    raw_set = request.arguments.get("set")
-    set_fields: dict[str, Any] = {}
-    if not isinstance(raw_set, dict):
-        problems.append("arguments.set 必须是 object")
+    raw_fact_object = request.arguments.get("fact_object")
+    fact_object: dict[str, Any] = {}
+    if not isinstance(raw_fact_object, dict):
+        problems.append("arguments.fact_object 必须是 object")
     else:
-        if any(not isinstance(key, str) or not key for key in raw_set):
-            problems.append("arguments.set 的字段名必须是非空 string")
-        set_fields = {key: value for key, value in raw_set.items() if isinstance(key, str) and key}
-
-    raw_remove = request.arguments.get("remove")
-    remove_fields: list[str] = []
-    if not isinstance(raw_remove, list):
-        problems.append("arguments.remove 必须是 array")
-    else:
-        if any(not _nonempty_string(item) for item in raw_remove):
-            problems.append("arguments.remove 成员必须是非空顶层字段名 string")
-        remove_fields = [item for item in raw_remove if isinstance(item, str) and item]
-        if len(remove_fields) != len(set(remove_fields)):
-            problems.append("arguments.remove 成员不得重复")
-
-    managed_records = _managed_records(request.arguments.get("managed_records"), problems)
-
-    if workcase_schema is not None:
-        allowed = workcase_top_level_fields(workcase_schema)
-        unknown_set = sorted(set(set_fields) - allowed)
-        unknown_remove = sorted(set(remove_fields) - allowed)
-        if unknown_set:
-            problems.append(f"arguments.set 引用了未在当前 WorkCase Schema 登记的字段: {', '.join(unknown_set)}")
-        if unknown_remove:
-            problems.append(f"arguments.remove 引用了未在当前 WorkCase Schema 登记的字段: {', '.join(unknown_remove)}")
-
-    set_managed = sorted(set(set_fields) & _ORDINARY_MANAGED_FIELDS)
-    remove_managed = sorted(set(remove_fields) & _ORDINARY_MANAGED_FIELDS)
-    if set_managed:
-        problems.append(f"arguments.set 不得触碰 Helper 托管字段: {', '.join(set_managed)}")
-    if remove_managed:
-        problems.append(f"arguments.remove 不得触碰 Helper 托管字段: {', '.join(remove_managed)}")
-    forbidden_set = sorted(set(set_fields) & _V2_FORBIDDEN_TOP_LEVEL_FIELDS)
-    forbidden_remove = sorted(set(remove_fields) & _V2_FORBIDDEN_TOP_LEVEL_FIELDS)
-    if forbidden_set:
-        problems.append(f"V2 update-workcase 的 arguments.set 禁止 V1-only 字段: {', '.join(forbidden_set)}")
-    if forbidden_remove:
-        problems.append(f"V2 update-workcase 的 arguments.remove 禁止 V1-only 字段: {', '.join(forbidden_remove)}")
-    removed_versions = sorted(set(remove_fields) & _VERSION_FIELDS)
-    if removed_versions:
-        problems.append(f"arguments.remove 不得包含版本字段: {', '.join(removed_versions)}")
-    overlap = sorted(set(set_fields) & set(remove_fields))
-    if overlap:
-        problems.append(f"arguments.set 与 arguments.remove 不得交叉: {', '.join(overlap)}")
-    for name in sorted(_VERSION_FIELDS & set(set_fields)):
-        if not _positive_integer(set_fields[name]):
-            problems.append(f"arguments.set.{name} 必须是正整数")
-
-    raw_managed = request.arguments.get("managed_records")
-    active_actions = {
-        name for name in _MANAGED_FIELDS if isinstance(raw_managed, dict) and raw_managed.get(name) is not None
-    }
-    if not set_fields and not remove_fields and not active_actions:
-        problems.append("arguments.set、arguments.remove、arguments.managed_records 不得同时为空")
-    if {"append_result_reviews", "resolve_result_reviews"} <= active_actions:
-        problems.append("append_result_reviews 与 resolve_result_reviews 不得同次出现")
-    if "append_result_reviews" in active_actions:
-        forbidden_set = sorted(set(set_fields) - RESULT_REVIEW_CONTEXT_FIELDS)
-        forbidden_remove = sorted(set(remove_fields) - RESULT_REVIEW_CONTEXT_FIELDS)
-        if forbidden_set or forbidden_remove:
-            details = []
-            if forbidden_set:
-                details.append("set: " + ", ".join(forbidden_set))
-            if forbidden_remove:
-                details.append("remove: " + ", ".join(forbidden_remove))
-            problems.append(
-                "append_result_reviews 同次 arguments.set/arguments.remove 只允许 status、phase、summary、"
-                "resume_from、waiting_on、blocking_summary，不得变更被审结果主体（" + "; ".join(details) + "）"
-            )
-    for singleton in ("execution_approval", "withdraw_execution_approval", "closure_approval"):
-        if singleton not in active_actions:
-            continue
-        if active_actions - {singleton}:
-            problems.append(f"{singleton} 不得与其它托管动作同次出现")
-
-    if "plan_version" in set_fields:
-        if set_fields.get("phase") != "human_plan_confirming":
-            problems.append("set.plan_version 要求显式 set.phase=human_plan_confirming")
-        if "replace_creation_reviews" not in active_actions:
-            problems.append("set.plan_version 要求同次 replace_creation_reviews")
-        if active_actions - {"replace_creation_reviews"}:
-            problems.append("set.plan_version 后同次托管动作只允许 replace_creation_reviews")
-        reset_conflicts = sorted(set(set_fields) & PLAN_RESET_FIELDS)
-        if reset_conflicts:
-            problems.append(f"计划升版时 arguments.set 不得包含固定 reset 字段: {', '.join(reset_conflicts)}")
-    elif "replace_creation_reviews" in active_actions:
-        problems.append("replace_creation_reviews 只能与 set.plan_version 同次出现")
-
-    if "closure_approval" in active_actions and (
-        set_fields.get("status") != "closed" or set_fields.get("phase") != "closed"
-    ):
-        problems.append("closure_approval 要求显式 set.status=closed 且 set.phase=closed")
-    if "withdraw_execution_approval" in active_actions and set_fields.get("phase") != "human_plan_confirming":
-        problems.append("withdraw_execution_approval 要求显式 set.phase=human_plan_confirming")
+        if any(not isinstance(key, str) for key in raw_fact_object):
+            problems.append("arguments.fact_object 的字段名必须是 string")
+        fact_object = {key: value for key, value in raw_fact_object.items() if isinstance(key, str)}
+        managed = sorted(set(fact_object) & _CODE_MANAGED_FIELDS)
+        if managed:
+            problems.append(f"arguments.fact_object 不得提交 Code 托管字段: {', '.join(managed)}")
 
     if request.observed_context:
-        problems.append("observed_context 对 WorkCase 更新操作必须为空 object")
+        problems.append("observed_context 对 WorkCase 写入操作必须为空 object")
     if request.requested_disclosure is not None:
-        problems.append("requested_disclosure 对 WorkCase 更新操作必须为 null 或省略")
-    if problems:
-        return WorkCaseUpdateRequestParseResult(None, tuple(problems))
+        problems.append("requested_disclosure 对 WorkCase 写入操作必须为 null 或省略")
+    for index, reference in enumerate(request.authorization_reference):
+        problems.extend(source_reference_problems(reference, f"authorization_reference[{index}]"))
+    if problems or fact_ref is None or not isinstance(fingerprint, str):
+        return None, problems
 
-    assert fact_ref is not None and isinstance(fingerprint, str)
     governance_scope = explicit_scope(locators) if locators else cwd_scope(str(context.cwd))
-    return WorkCaseUpdateRequestParseResult(
-        WorkCaseUpdateRequest(
+    return (
+        _ParsedBase(
             workspace_root=workspace_root,
             governance_scope=governance_scope,
             fact_ref=fact_ref,
             expected_content_fingerprint=fingerprint,
-            set_fields=dict(set_fields),
-            remove_fields=tuple(remove_fields),
-            managed_records=managed_records,
+            fact_object=fact_object,
             authorization_reference=request.authorization_reference,
             base=context.cwd,
+        ),
+        problems,
+    )
+
+
+def parse_update_workcase_request(
+    request: CommonRequest,
+    context: OperationExecutionContext,
+) -> WorkCaseWriteRequestParseResult:
+    parsed, problems = _parse_base(request, context, allowed_argument_fields=_COMMON_ARGUMENT_FIELDS)
+    if parsed is None:
+        return WorkCaseWriteRequestParseResult(None, tuple(problems))
+    return WorkCaseWriteRequestParseResult(UpdateWorkCaseRequest(*parsed.values()), ())
+
+
+def parse_close_workcase_request(
+    request: CommonRequest,
+    context: OperationExecutionContext,
+) -> WorkCaseWriteRequestParseResult:
+    parsed, problems = _parse_base(request, context, allowed_argument_fields=_COMMON_ARGUMENT_FIELDS)
+    if not request.authorization_reference:
+        problems.append("authorization_reference 对 close-workcase 必须至少包含一项 Human 决定来源")
+    if parsed is None or problems:
+        return WorkCaseWriteRequestParseResult(None, tuple(problems))
+    return WorkCaseWriteRequestParseResult(CloseWorkCaseRequest(*parsed.values()), ())
+
+
+def _route_target_fingerprints(
+    value: object,
+    problems: list[str],
+) -> tuple[RouteTargetFingerprint, ...]:
+    path = "arguments.route_target_fingerprints"
+    if not isinstance(value, list):
+        problems.append(f"{path} 必须是 array")
+        return ()
+    parsed: list[RouteTargetFingerprint] = []
+    identities: set[tuple[str, str, str]] = set()
+    for index, item in enumerate(value):
+        member_path = f"{path}[{index}]"
+        if not isinstance(item, dict):
+            problems.append(f"{member_path} 必须是 object")
+            continue
+        unknown = _unknown_string_fields(item, _ROUTE_TARGET_FINGERPRINT_FIELDS)
+        if unknown:
+            problems.append(f"{member_path} 包含未知字段: {', '.join(unknown)}")
+        if any(not isinstance(key, str) for key in item):
+            problems.append(f"{member_path} 的字段名必须是 string")
+        missing = sorted(_ROUTE_TARGET_FINGERPRINT_FIELDS - set(item))
+        if missing:
+            problems.append(f"{member_path} 缺少字段: {', '.join(missing)}")
+        target = _fact_reference(item.get("target"), f"{member_path}.target", problems)
+        fingerprint = item.get("content_fingerprint")
+        if not isinstance(fingerprint, str) or _FINGERPRINT.fullmatch(fingerprint) is None:
+            problems.append(f"{member_path}.content_fingerprint 必须是 64 位小写十六进制 string")
+        if target is None or not isinstance(fingerprint, str) or _FINGERPRINT.fullmatch(fingerprint) is None:
+            continue
+        identity = (target.governed_project_id, target.fact_type_key, target.object_id)
+        if identity in identities:
+            problems.append(f"{path} 不得包含重复 target")
+            continue
+        identities.add(identity)
+        parsed.append(RouteTargetFingerprint(target, fingerprint))
+    return tuple(parsed)
+
+
+def parse_correct_closed_workcase_request(
+    request: CommonRequest,
+    context: OperationExecutionContext,
+) -> WorkCaseWriteRequestParseResult:
+    parsed, problems = _parse_base(request, context, allowed_argument_fields=_CORRECT_ARGUMENT_FIELDS)
+
+    if "route_target_fingerprints" not in request.arguments:
+        problems.append("arguments.route_target_fingerprints 必填")
+        route_targets: tuple[RouteTargetFingerprint, ...] = ()
+    else:
+        route_targets = _route_target_fingerprints(request.arguments["route_target_fingerprints"], problems)
+
+    review_reference: dict[str, Any] | None = None
+    if "independent_review_reference" not in request.arguments:
+        problems.append("arguments.independent_review_reference 必填且值必须是 object 或 null")
+    else:
+        value = request.arguments["independent_review_reference"]
+        if value is not None:
+            reference_problems = source_reference_problems(value, "arguments.independent_review_reference")
+            problems.extend(reference_problems)
+            if not reference_problems and isinstance(value, dict):
+                review_reference = dict(value)
+
+    if parsed is not None:
+        for index, target in enumerate(route_targets):
+            if target.target.governed_project_id != parsed.fact_ref.governed_project_id:
+                problems.append(
+                    f"arguments.route_target_fingerprints[{index}].target.governed_project_id "
+                    "必须与 source WorkCase 属于同一项目"
+                )
+    if parsed is None or problems:
+        return WorkCaseWriteRequestParseResult(None, tuple(problems))
+    return WorkCaseWriteRequestParseResult(
+        CorrectClosedWorkCaseRequest(
+            *parsed.values(),
+            route_target_fingerprints=route_targets,
+            independent_review_reference=review_reference,
         ),
         (),
     )
 
 
 __all__ = [
-    "OPTIONAL_INPUTS",
-    "REQUIRED_INPUTS",
-    "WorkCaseUpdateRequest",
-    "WorkCaseUpdateRequestParseResult",
-    "parse_workcase_update_request",
-    "workcase_top_level_fields",
+    "CLOSE_OPTIONAL_INPUTS",
+    "CLOSE_REQUIRED_INPUTS",
+    "CORRECT_CLOSED_OPTIONAL_INPUTS",
+    "CORRECT_CLOSED_REQUIRED_INPUTS",
+    "UPDATE_OPTIONAL_INPUTS",
+    "UPDATE_REQUIRED_INPUTS",
+    "CloseWorkCaseRequest",
+    "CorrectClosedWorkCaseRequest",
+    "RouteTargetFingerprint",
+    "UpdateWorkCaseRequest",
+    "WorkCaseWriteRequest",
+    "WorkCaseWriteRequestParseResult",
+    "parse_close_workcase_request",
+    "parse_correct_closed_workcase_request",
+    "parse_update_workcase_request",
 ]

@@ -1,8 +1,11 @@
 import path from 'node:path'
 
+import type { V4FactReaderConfig } from './v4FactReader.js'
 import type { V4SparkReaderConfig } from './v4SparkReader.js'
 
 export class V4FactsConfigurationError extends Error {
+  readonly code = 'v4_facts_unavailable'
+
   constructor(message: string) {
     super(message)
     this.name = 'V4FactsConfigurationError'
@@ -22,7 +25,7 @@ function requiredProjectId(): string {
   return value
 }
 
-export function v4SparkReaderConfig(): V4SparkReaderConfig {
+export function v4FactReaderConfig(): V4FactReaderConfig {
   return {
     pythonExecutable: required('LDVH_WEB_PYTHON'),
     scope: {
@@ -31,4 +34,8 @@ export function v4SparkReaderConfig(): V4SparkReaderConfig {
       expected_governed_project_id: requiredProjectId(),
     },
   }
+}
+
+export function v4SparkReaderConfig(): V4SparkReaderConfig {
+  return v4FactReaderConfig()
 }

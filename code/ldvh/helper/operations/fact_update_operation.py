@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from typing import Any
 
 from ldvh.facts.contracts import LAYOUTS
@@ -49,6 +50,14 @@ def _validated_request(request: CommonRequest, context: OperationExecutionContex
     parsed = parse_fact_update_request(request, context)
     if parsed.request is None:
         raise OperationRequestError(parsed.problems, sources=(_CONTRACT,))
+    if parsed.request.fact_ref.fact_type_key == "workcase":
+        raise OperationRequestError(
+            (
+                "通用 update-fact-object 不接受 WorkCase；活动期更新、关闭与终态更正必须分别使用 "
+                "update-workcase、close-workcase 与 correct-closed-workcase",
+            ),
+            sources=(_CONTRACT,),
+        )
     return parsed.request
 
 
@@ -122,7 +131,7 @@ def _current_read(
     key = (fact_type_key, object_id)
     index.cache[key] = read
     index.base_cache[key] = read
-    stabilize_project_index(index)
+    stabilize_project_index(index, (key,))
     return index.cache.get(key, read)
 
 
@@ -133,6 +142,147 @@ def _working_tree_source(boundary: CreationBoundary, canonical_path: str, event_
         "observed_at": event_at,
         "details": {"view": "Working Tree"},
     }
+
+
+def _residual_working_tree_source(
+    boundary: CreationBoundary,
+    read: FactReadResult,
+    event_at: str,
+) -> dict[str, Any]:
+    source = _working_tree_source(boundary, read.canonical_path, event_at)
+    details = source["details"]
+    details["check_status"] = read.check_status
+    if read.content_fingerprint is not None:
+        details["content_fingerprint"] = read.content_fingerprint
+    return source
+
+
+def _coordination_release_gap(
+    requested: tuple[dict[str, str], ...],
+    *,
+    committed: bool,
+) -> dict[str, Any]:
+    gap = {
+        "summary": (
+            "事实目标的原子替换已在 Working Tree 生效并成功回读；共同锁释放未能确认，"
+            "后续受控写的串行协调状态未知；再次执行受控写入前须人工核对锁状态"
+            if committed
+            else (
+                "事实目标确认未变化；共同锁释放未能确认，后续受控写的串行协调状态未知；"
+                "再次执行受控写入前须人工核对锁状态"
+            )
+        ),
+        "scope": list(requested),
+        "source_refs": [_SHARED_WRITE_CONTRACT],
+    }
+    if committed:
+        gap["code"] = "controlled_write_lock_release_uncertain"
+    return gap
+
+
+def _coordination_release_diagnostic(*, committed: bool) -> dict[str, Any]:
+    diagnostic = {
+        "summary": "共同协调锁释放状态未能确认",
+        "details": {
+            "stage": "common_dir_lock_release",
+            "fact_target_state": "committed_and_read_back" if committed else "unchanged_and_read_back",
+            "subsequent_controlled_write_serialization": "uncertain",
+        },
+        "source_refs": [_SHARED_WRITE_CONTRACT],
+    }
+    if committed:
+        diagnostic["code"] = "controlled_write_lock_release_uncertain"
+    return diagnostic
+
+
+def _coordination_release_follow_up(requested: tuple[dict[str, str], ...]) -> dict[str, Any]:
+    return {
+        "summary": "再次执行受控写入前，需要恢复并确认共同锁的串行协调状态",
+        "required_inputs": [],
+        "required_human_decisions": [],
+        "resume_conditions": [
+            {
+                "summary": "人工核对共同锁状态，并确认受控写入口能够重新取得和释放该锁",
+                "scope": list(requested),
+                "source_refs": [_SHARED_WRITE_CONTRACT],
+            }
+        ],
+        "suggested_operations": [],
+    }
+
+
+def _merge_follow_up(
+    existing: dict[str, Any] | None,
+    coordination: dict[str, Any],
+) -> dict[str, Any]:
+    if existing is None:
+        return coordination
+    return {
+        "summary": f"{existing['summary']}；{coordination['summary']}",
+        "required_inputs": [*existing["required_inputs"], *coordination["required_inputs"]],
+        "required_human_decisions": [
+            *existing["required_human_decisions"],
+            *coordination["required_human_decisions"],
+        ],
+        "resume_conditions": [*existing["resume_conditions"], *coordination["resume_conditions"]],
+        "suggested_operations": [*existing["suggested_operations"], *coordination["suggested_operations"]],
+    }
+
+
+def _coordination_preserved_result_overlay(
+    execution: OperationExecution,
+    application: object,
+    requested: tuple[dict[str, str], ...],
+    *,
+    diagnostic_profile: bool,
+) -> OperationExecution:
+    if not bool(getattr(application, "coordination_release_uncertain", False)):
+        return execution
+    status = getattr(application, "status", None)
+    gap = {
+        "summary": (
+            f"事实对象更新领域结果（status={status}）已在共同锁释放前形成并保留；"
+            "共同锁释放未能确认，"
+            "后续受控写的串行协调状态未知；目标、残留与未完成验证仍以本响应原结果为准，"
+            "再次执行受控写入前须人工核对锁状态"
+        ),
+        "scope": list(requested),
+        "source_refs": [_SHARED_WRITE_CONTRACT],
+    }
+    diagnostic = {
+        "summary": "共同协调锁释放状态未能确认",
+        "details": {
+            "stage": "common_dir_lock_release",
+            "domain_result_status": status,
+            "fact_target_state": "as_reported_by_domain_result",
+            "subsequent_controlled_write_serialization": "uncertain",
+        },
+        "source_refs": [_SHARED_WRITE_CONTRACT],
+    }
+    sources = (
+        execution.sources
+        if _SHARED_WRITE_CONTRACT in execution.sources
+        else (*execution.sources, _SHARED_WRITE_CONTRACT)
+    )
+    coordination_follow_up = _coordination_release_follow_up(requested)
+    return replace(
+        execution,
+        sources=sources,
+        gaps=(*execution.gaps, gap),
+        diagnostics=(*execution.diagnostics, *((diagnostic,) if diagnostic_profile else ())),
+        follow_up=_merge_follow_up(execution.follow_up, coordination_follow_up),
+    )
+
+
+def _rollback_failure_prefix(rollback: object) -> str:
+    namespace_state = getattr(rollback, "namespace_state", None)
+    if namespace_state == "uncertain":
+        return "条件回滚在文件命名空间（namespace）中的生效情况无法确认"
+    if namespace_state == "not_committed":
+        if getattr(rollback, "outcome", None) == "conflict":
+            return "条件回滚发生冲突，确认未在文件命名空间（namespace）生效"
+        return "条件回滚确认未在文件命名空间（namespace）生效"
+    return "条件回滚未完成"
 
 
 def _result(read: FactReadResult, project_id: str, fact_type_key: str, object_id: str, previous: str) -> dict[str, Any]:
@@ -176,10 +326,28 @@ def _application_failure(
     run: GovernanceResolutionRun,
     requested: tuple[dict[str, str], ...],
     sources: tuple[dict[str, Any], ...],
+    boundary: CreationBoundary,
+    event_at: str,
 ) -> OperationExecution | None:
     governance = run.result.to_json() if run.result else None
     if result.status in {"updated", "no_change"}:
         return None
+    if result.status == "invalid_request":
+        return OperationExecution(
+            outcome="invalid_request",
+            summary="通用事实对象更新请求不适用于目标类型",
+            requested_scope=requested,
+            not_completed_scope=requested,
+            governance_resolution=governance,
+            sources=sources,
+            gaps=(
+                {
+                    "summary": _issue_summary(result.issues),
+                    "scope": list(requested),
+                    "source_refs": [_CONTRACT],
+                },
+            ),
+        )
     if result.status == "durability_unavailable":
         return OperationExecution(
             outcome="unavailable",
@@ -273,19 +441,76 @@ def _application_failure(
     rollback = result.rollback_result
     assert rollback is not None
     rolled_back = rollback.outcome == "replaced" and rollback.namespace_state == "committed"
+    residual = result.residual_readback
+    residual_source = (
+        _residual_working_tree_source(boundary, residual, event_at) if isinstance(residual, FactReadResult) else None
+    )
+    current = result.current
+    rollback_failure_prefix = _rollback_failure_prefix(rollback)
+    if rolled_back:
+        change_summary = "已恢复更新前载体"
+    elif not isinstance(residual, FactReadResult) or residual.check_status == "unavailable":
+        change_summary = f"{rollback_failure_prefix}；实际事实对象载体的残留状态无法确认"
+    elif residual.raw_text == result.candidate_text:
+        change_summary = f"{rollback_failure_prefix}；当前重新读取观察到的实际事实对象载体完整字节内容与本次新载体一致"
+    elif isinstance(current, FactReadResult) and residual.raw_text == current.raw_text:
+        change_summary = f"{rollback_failure_prefix}；当前重新读取观察到的实际事实对象载体完整字节内容与更新前载体一致"
+    elif residual.check_status == "mechanically_valid":
+        change_summary = f"{rollback_failure_prefix}；当前重新读取观察到的实际事实对象载体是另一机械有效版本"
+    elif residual.check_status == "not_found":
+        change_summary = f"{rollback_failure_prefix}；当前重新读取确认实际事实对象载体的预期位置不存在"
+    elif residual.raw_text is not None:
+        change_summary = f"{rollback_failure_prefix}；当前实际事实对象载体已安全完整读取，但对象未通过机械检查"
+    else:
+        change_summary = (
+            f"{rollback_failure_prefix}；当前实际事实对象载体未能安全完整读取，机械检查未通过（状态为 `invalid`）"
+        )
+    residual_unknown = not rolled_back and (
+        not isinstance(residual, FactReadResult) or residual.check_status == "unavailable"
+    )
+    residual_refs = () if residual_source is None else (residual_source,)
+    residual_gap = (
+        (
+            {
+                "summary": "条件回滚后的实际事实对象载体无法确认",
+                "scope": list(requested),
+                "source_refs": [_CONTRACT],
+            },
+        )
+        if residual_unknown
+        else ()
+    )
+    residual_verification = (
+        (
+            {
+                "check": "条件回滚后重新精确读取并机械检查实际事实对象载体",
+                "status": (
+                    "unavailable"
+                    if not isinstance(residual, FactReadResult) or residual.check_status == "unavailable"
+                    else "passed"
+                    if residual.check_status == "mechanically_valid"
+                    else "failed"
+                ),
+                "scope": list(requested),
+                "evidence": [*residual_refs, _CONTRACT],
+            },
+        )
+        if not rolled_back
+        else ()
+    )
     return OperationExecution(
         outcome="error",
-        summary="写后回读未通过；已回滚" if rolled_back else "写后回读未通过且无法安全回滚",
+        summary=("写后回读未通过；已完成条件回滚" if rolled_back else "写后回读未通过，且未能确认条件回滚已经完成"),
         requested_scope=requested,
         not_completed_scope=requested,
         governance_resolution=governance,
-        sources=(*sources, _IMPLEMENTATION_SOURCE),
+        sources=(*sources, *residual_refs, _IMPLEMENTATION_SOURCE),
         changes=(
             {
-                "summary": "已恢复更新前载体" if rolled_back else "新载体可能残留且未完成验证",
+                "summary": change_summary,
                 "status": "rolled-back" if rolled_back else "rollback-failed",
                 "target": domain.fact_ref.to_json(),
-                "source_refs": [_CONTRACT],
+                "source_refs": [_CONTRACT, *residual_refs],
             },
         ),
         gaps=(
@@ -294,7 +519,9 @@ def _application_failure(
                 "scope": list(requested),
                 "source_refs": [_CONTRACT],
             },
+            *residual_gap,
         ),
+        verification=residual_verification,
     )
 
 
@@ -315,7 +542,6 @@ def _coordination_unavailable(
             "required_access": error.required_access,
             "system_error_category": error.system_error_category,
             "target_unchanged": True,
-            "allocator_unchanged": True,
             "counter_unchanged": True,
         },
         "source_refs": [_SHARED_WRITE_CONTRACT],
@@ -457,14 +683,33 @@ def _execute(
             request_sources,
             diagnostic_profile=request.response_profile == "diagnostic",
         )
-    failure = _application_failure(application, domain, run, requested, request_sources)
+    failure = _application_failure(
+        application,
+        domain,
+        run,
+        requested,
+        request_sources,
+        boundary,
+        context.event_at,
+    )
     if failure is not None:
-        return failure
+        return _coordination_preserved_result_overlay(
+            failure,
+            application,
+            requested,
+            diagnostic_profile=request.response_profile == "diagnostic",
+        )
     readback = application.readback
     assert readback is not None and readback.content_fingerprint is not None
+    coordination_release_uncertain = application.coordination_release_uncertain
     if application.status == "no_change":
         working_tree_source = _working_tree_source(boundary, readback.canonical_path, context.event_at)
-        sources = (*request_sources, working_tree_source, _IMPLEMENTATION_SOURCE)
+        sources = (
+            *request_sources,
+            working_tree_source,
+            *((_SHARED_WRITE_CONTRACT,) if coordination_release_uncertain else ()),
+            _IMPLEMENTATION_SOURCE,
+        )
         return OperationExecution(
             outcome="no_change",
             summary="提交的完整目标与当前对象相同，未重写文件",
@@ -479,6 +724,7 @@ def _execute(
             completed_scope=requested,
             governance_resolution=run.result.to_json() if run.result else None,
             sources=sources,
+            gaps=(_coordination_release_gap(requested, committed=False),) if coordination_release_uncertain else (),
             verification=(
                 {
                     "check": "当前完整目标与请求内容相同且内容指纹仍匹配",
@@ -487,12 +733,21 @@ def _execute(
                     "evidence": [working_tree_source, _CONTRACT],
                 },
             ),
+            diagnostics=(_coordination_release_diagnostic(committed=False),)
+            if coordination_release_uncertain and request.response_profile == "diagnostic"
+            else (),
+            follow_up=(_coordination_release_follow_up(requested) if coordination_release_uncertain else None),
         )
 
     replacement = application.replacement_result
     assert replacement is not None
     working_tree_source = _working_tree_source(boundary, readback.canonical_path, context.event_at)
-    sources = (*request_sources, working_tree_source, _IMPLEMENTATION_SOURCE)
+    sources = (
+        *request_sources,
+        working_tree_source,
+        *((_SHARED_WRITE_CONTRACT,) if coordination_release_uncertain else ()),
+        _IMPLEMENTATION_SOURCE,
+    )
     return OperationExecution(
         outcome="ok",
         summary="事实对象已完成单对象 CAS 替换和写后回读",
@@ -507,6 +762,7 @@ def _execute(
         completed_scope=requested,
         governance_resolution=run.result.to_json() if run.result else None,
         sources=sources,
+        gaps=(_coordination_release_gap(requested, committed=True),) if coordination_release_uncertain else (),
         changes=(
             {
                 "summary": (
@@ -529,6 +785,10 @@ def _execute(
                 "evidence": [working_tree_source, _CONTRACT],
             },
         ),
+        diagnostics=(_coordination_release_diagnostic(committed=True),)
+        if coordination_release_uncertain and request.response_profile == "diagnostic"
+        else (),
+        follow_up=(_coordination_release_follow_up(requested) if coordination_release_uncertain else None),
     )
 
 

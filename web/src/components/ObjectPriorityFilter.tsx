@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { ObjectStatusOption } from '@/utils/api';
+import type { FactCoverageStatus, ObjectStatusOption } from '@/utils/api';
 import { useI18n } from '@/i18n/context';
 import PriorityIcon from '@/components/PriorityIcon';
 
@@ -10,6 +10,7 @@ interface ObjectPriorityFilterProps {
   onChange: (priority: string | null) => void;
   options?: ObjectStatusOption[];
   loading?: boolean;
+  coverageStatus?: FactCoverageStatus;
 }
 
 function getButtonClass(active: boolean): string {
@@ -21,6 +22,7 @@ export default function ObjectPriorityFilter({
   onChange,
   options = [],
   loading = false,
+  coverageStatus = 'complete',
 }: ObjectPriorityFilterProps) {
   const { t, locale } = useI18n();
   const counts = useMemo(() => new Map(options.map((option) => [option.status, option.count])), [options]);
@@ -38,7 +40,9 @@ export default function ObjectPriorityFilter({
             className={getButtonClass(activePriority === priority)}
           >
             <PriorityIcon source={{ priority }} type="spark" locale={locale} size="xs" />
-            <span className="ldvh-tab-count">{loading ? '·' : counts.get(priority) ?? 0}</span>
+            <span className="ldvh-tab-count">
+              {loading ? '·' : formatCoverageCount(counts.get(priority) ?? 0, coverageStatus)}
+            </span>
           </button>
         ))}
         <button
@@ -47,9 +51,14 @@ export default function ObjectPriorityFilter({
           className={getButtonClass(activePriority === null)}
         >
           {t('objectList.all')}
-          <span className="ldvh-tab-count">{loading ? '·' : total}</span>
+          <span className="ldvh-tab-count">{loading ? '·' : formatCoverageCount(total, coverageStatus)}</span>
         </button>
       </div>
     </div>
   );
+}
+
+function formatCoverageCount(count: number, coverageStatus: FactCoverageStatus): string {
+  if (coverageStatus === 'unavailable') return '—';
+  return coverageStatus === 'partial' ? `${count}+` : String(count);
 }

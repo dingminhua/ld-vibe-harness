@@ -4,35 +4,9 @@ const API_BASE = '/api';
 const inFlightRequests = new Map<string, Promise<unknown>>();
 
 export interface DashboardData {
-  stats: Array<{
-    type: string;
-    total: number;
-    byStatus: Record<string, number>;
-  }>;
-  recentItems: Array<{
-    id: string;
-    type: string;
-    title: string;
-    title_en?: string;
-    title_zh?: string;
-    status: string;
-    path: string;
-    updated: string;
-    relativeTime: string;
-    typeColor: string;
-  }>;
-  actionItems: Array<{
-    id: string;
-    type: string;
-    title: string;
-    title_en?: string;
-    title_zh?: string;
-    status: string;
-    path: string;
-    updated: string;
-    relativeTime: string;
-    typeColor: string;
-  }>;
+  stats: DashboardStat[];
+  recentItems: DashboardFactItem[];
+  actionItems: DashboardFactItem[];
   recentChanges: Array<{
     hash: string;
     shortHash: string;
@@ -48,6 +22,47 @@ export interface DashboardData {
   }>;
 }
 
+export type DashboardObjectType = 'workcase' | 'adr' | 'pitfall' | 'spark' | 'study';
+export type DashboardWorkCaseProgressGroup = 'plan_confirmation' | 'progressing' | 'closure_confirmation' | 'closed';
+
+interface DashboardStatBase {
+  total: number;
+  coverageStatus?: FactCoverageStatus;
+}
+
+export type DashboardStat =
+  | DashboardStatBase & {
+    type: 'workcase';
+    byProgressGroup: Partial<Record<DashboardWorkCaseProgressGroup, number>>;
+    byStatus?: never;
+  }
+  | DashboardStatBase & {
+    type: Exclude<DashboardObjectType, 'workcase'>;
+    byStatus: Record<string, number>;
+    byProgressGroup?: never;
+  };
+
+interface DashboardFactItemBase {
+  id: string;
+  title: string;
+  title_en?: string;
+  title_zh?: string;
+  relativeTime: string;
+  typeColor: string;
+}
+
+export type DashboardFactItem =
+  | DashboardFactItemBase & {
+    type: 'workcase';
+    progress_group: DashboardWorkCaseProgressGroup;
+    status?: never;
+  }
+  | DashboardFactItemBase & {
+    type: Exclude<DashboardObjectType, 'workcase'>;
+    status: string;
+    progress_group?: never;
+  };
+
 export interface ObjectItem {
   id: string;
   type: string;
@@ -55,7 +70,6 @@ export interface ObjectItem {
   title_en?: string;
   title_zh?: string;
   status: string;
-  responsibilityStatus?: string;
   progress_group?: string;
   progress_step?: string;
   phase?: string;
@@ -70,33 +84,16 @@ export interface ObjectItem {
   message?: string;
   priority?: string;
   importance?: string;
-  executionItems?: RelatedObjectSummary[];
   executionItemsProjectionValid?: boolean;
   executionItemTotal?: number;
   executionItemDone?: number;
   executionItemCancelled?: number;
-  executionItemBlocked?: number;
   executionItemOpen?: number;
-  executionItemsInProgress?: RelatedObjectSummary[];
-  executionItemsActive?: RelatedObjectSummary[];
-  executionItemByStatus?: Record<string, number>;
-  successCriteriaTotal?: number;
-  successCriteriaDone?: number;
+  executionItemsActive?: WorkCaseActiveItem[];
   successCriteria?: string[];
-  hasSuccessCriteria?: boolean;
-  hasPlanConfirmedAt?: boolean;
-  hasClosureRequestedAt?: boolean;
-  hasVerificationEvidence?: boolean;
-  hasClosureEvidence?: boolean;
-  archive_reason?: string;
-  deprecated_reason?: string;
-  discard_reason?: string;
-  closure_evidence?: string;
   /** ADR-specific fields */
-  date?: string;
   decision?: string;
   consequences?: string;
-  related_rules?: string[];
   /** Spark-specific */
   source?: string;
   description?: string;
@@ -128,7 +125,13 @@ export interface ObjectItem {
   report_body?: string;
   /** Pitfall-specific */
   resolution?: string;
-  source_sparks?: string[];
+}
+
+export interface WorkCaseActiveItem {
+  id: string;
+  title: string;
+  status: 'in_progress' | 'blocked';
+  blockingReason?: string;
 }
 
 export interface UrlItem {
@@ -145,6 +148,21 @@ export interface ObjectStatusOption {
 export interface WorkCaseProgressOption {
   group: string;
   count: number;
+}
+
+export type FactCoverageStatus = 'complete' | 'partial' | 'unavailable';
+
+export interface FactListProblem {
+  code?: string;
+  error?: string;
+  object_ref?: {
+    governed_project_id?: string;
+    fact_type_key?: string;
+    object_id?: string;
+  };
+  scope?: 'workcase_collection';
+  check_status?: string;
+  issues?: Array<Record<string, unknown>>;
 }
 
 export interface RelatedObjectSummary {
@@ -166,31 +184,138 @@ export interface RelatedObjectSummary {
   evidenceRefs?: string[];
 }
 
-export interface RelatedWorkCaseSummary extends RelatedObjectSummary {
-  executionItems?: RelatedObjectSummary[];
-  executionItemsProjectionValid?: boolean;
-  executionItemTotal?: number;
-  executionItemDone?: number;
-  executionItemCancelled?: number;
-  executionItemBlocked?: number;
-  executionItemOpen?: number;
-  executionItemsInProgress?: RelatedObjectSummary[];
-  executionItemsActive?: RelatedObjectSummary[];
-  successCriteriaTotal?: number;
-  successCriteriaDone?: number;
-  hasSuccessCriteria: boolean;
-  hasPlanConfirmedAt: boolean;
-  hasClosureRequestedAt: boolean;
-  hasVerificationEvidence?: boolean;
-  hasClosureEvidence?: boolean;
+export interface WorkCaseCriterionDefinition {
+  criterion_id: string;
+  statement: string;
 }
 
-export interface ObjectDetail {
+export interface WorkCaseCriterionResult {
+  criterion_id: string;
+  outcome: 'satisfied' | 'not_satisfied' | 'not_verified';
+  summary: string;
+}
+
+export interface WorkCaseItem {
+  item_id: string;
+  goal: string;
+  expected_result: string;
+  status: 'pending' | 'in_progress' | 'blocked' | 'completed' | 'cancelled';
+  depends_on?: string[];
+  approach_summary?: string;
+  template_keys?: string[];
+  template_deviation_summary?: string;
+  current_summary?: string;
+  resume_from?: string;
+  blocking_summary?: string;
+  result_summary?: string;
+}
+
+export interface WorkCaseReview {
+  reviewer: string;
+  reviewed_at: string;
+  subject_version: number;
+  scope: string;
+  conclusion: 'pass' | 'pass_with_followups' | 'changes_required' | 'blocked';
+  feedback?: string[];
+  controller_resolution?: string;
+}
+
+export interface WorkCaseExecutionApproval {
+  subject_version: number;
+  approved_at: string;
+  summary: string;
+  source_refs?: string[];
+}
+
+export interface WorkCaseRouteTarget {
+  governed_project_id: string;
+  fact_type_key: 'workcase';
+  object_id: string;
+  content_fingerprint: string;
+}
+
+export interface WorkCaseRelationTarget {
+  governed_project_id: string;
+  fact_type_key: 'workcase';
+  object_id: string;
+}
+
+export interface WorkCaseRelation {
+  relation_key: 'depends-on' | 'routed-to';
+  target: WorkCaseRelationTarget;
+}
+
+export interface WorkCaseResidualDecision {
+  residual_id: string;
+  summary: string;
+  proposed_disposition: 'route' | 'accept_stop';
+  route_target?: WorkCaseRouteTarget;
+}
+
+export interface WorkCaseClosureProposal {
+  proposed_outcome: 'completed' | 'partial' | 'not-achieved' | 'cancelled';
+  proposed_disposition_summary: string;
+  residual_decisions?: WorkCaseResidualDecision[];
+}
+
+export interface WorkCaseResidualResponsibility {
+  residual_id: string;
+  summary: string;
+}
+
+/** Exact-detail fields from the single current WorkCase contract. */
+export interface WorkCaseDetailData extends Record<string, unknown> {
+  object_id: string;
+  fact_type_key: 'workcase';
+  title: string;
+  status: 'open' | 'blocked' | 'closed';
+  created_at: string;
+  updated_at: string;
+  goal: string;
+  scope: string;
+  success_criterion_definitions: WorkCaseCriterionDefinition[];
+  phase?: 'human_plan_confirming' | 'plan_revising' | 'executing' | 'controller_checking' | 'independent_reviewing' | 'closure_preparing' | 'human_closure_confirming';
+  priority?: 'P0' | 'P1' | 'P2' | 'P3';
+  summary?: string;
+  resume_from?: string;
+  waiting_on?: string;
+  blocking_summary?: string;
+  plan_version?: number;
+  work_items?: WorkCaseItem[];
+  creation_reviews?: WorkCaseReview[];
+  execution_approval?: WorkCaseExecutionApproval;
+  result_version?: number;
+  success_criterion_results?: WorkCaseCriterionResult[];
+  result_summary?: string;
+  controller_check_summary?: string;
+  result_reviews?: WorkCaseReview[];
+  validation_summary?: string;
+  closure_proposal?: WorkCaseClosureProposal;
+  closure_outcome?: 'completed' | 'partial' | 'not-achieved' | 'cancelled';
+  disposition_summary?: string;
+  residual_responsibilities?: WorkCaseResidualResponsibility[];
+  relations?: WorkCaseRelation[];
+  urls?: UrlItem[];
+}
+
+export interface ObjectDetail<TData extends Record<string, unknown> = Record<string, unknown>> {
   ok: boolean;
   action: string;
   target: string;
-  summary: { id: string; type: string; status?: string; read_status?: FactReadStatus };
-  data: Record<string, unknown>;
+  summary: { id: string; type: string; status?: string; phase?: string; read_status?: FactReadStatus };
+  data: TData;
+}
+
+export class ApiRequestError extends Error {
+  readonly status: number;
+  readonly code?: string;
+
+  constructor(status: number, message: string, code?: string) {
+    super(message);
+    this.name = 'ApiRequestError';
+    this.status = status;
+    this.code = code;
+  }
 }
 
 async function request<T>(url: string): Promise<T> {
@@ -199,11 +324,16 @@ async function request<T>(url: string): Promise<T> {
   if (existing) return existing as Promise<T>;
 
   const promise = fetch(fullUrl)
-    .then((res) => {
+    .then(async (res) => {
+      const body = await res.json().catch(() => null) as Record<string, unknown> | null;
       if (!res.ok) {
-        throw new Error(`API error: ${res.status} ${res.statusText}`);
+        const message = typeof body?.error === 'string' && body.error.trim()
+          ? body.error
+          : `API error: ${res.status} ${res.statusText}`;
+        const code = typeof body?.exitCode === 'string' ? body.exitCode : undefined;
+        throw new ApiRequestError(res.status, message, code);
       }
-      return res.json() as Promise<T>;
+      return body as T;
     })
     .finally(() => {
       inFlightRequests.delete(fullUrl);
@@ -223,7 +353,21 @@ export async function fetchObjects(
   status?: string,
   priority?: string,
   progress?: string,
-): Promise<{ ok: boolean; summary: { count: number }; data: { items: ObjectItem[]; statusOptions?: ObjectStatusOption[]; progressOptions?: WorkCaseProgressOption[]; priorityOptions?: ObjectStatusOption[]; statusTotal?: number } }> {
+): Promise<{
+  ok: boolean;
+  summary: { count: number; coverage_status?: FactCoverageStatus };
+  data: {
+    items: ObjectItem[];
+    coverage_status?: FactCoverageStatus;
+    observed_at?: string;
+    object_read_problems?: FactListProblem[];
+    coverage_problems?: FactListProblem[];
+    statusOptions?: ObjectStatusOption[];
+    progressOptions?: WorkCaseProgressOption[];
+    priorityOptions?: ObjectStatusOption[];
+    statusTotal?: number;
+  };
+}> {
   const params = new URLSearchParams();
   if (status) params.set('status', status);
   if (priority) params.set('priority', priority);
@@ -232,8 +376,11 @@ export async function fetchObjects(
   return request(`/objects/${type}${qs ? `?${qs}` : ''}`);
 }
 
-export async function fetchObjectDetail(type: string, id: string): Promise<ObjectDetail> {
-  return request<ObjectDetail>(`/objects/${type}/${encodeURIComponent(id)}`);
+export async function fetchObjectDetail<TData extends Record<string, unknown> = Record<string, unknown>>(
+  type: string,
+  id: string,
+): Promise<ObjectDetail<TData>> {
+  return request<ObjectDetail<TData>>(`/objects/${type}/${encodeURIComponent(id)}`);
 }
 
 export interface ChangelogEntry {

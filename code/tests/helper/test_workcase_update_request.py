@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import FrozenInstanceError
 from pathlib import Path
 from typing import Any
@@ -7,613 +8,404 @@ from typing import Any
 import pytest
 
 from ldvh.facts.models import FactReference
-from ldvh.facts.schema import FactSchema, ProjectedField
 from ldvh.governance.models import LocatorSource, ScopeDescriptor
 from ldvh.helper.operation_runtime import OperationExecutionContext
 from ldvh.helper.operations.workcase_update_request import (
-    OPTIONAL_INPUTS,
-    REQUIRED_INPUTS,
-    WorkCaseUpdateRequest,
-    parse_workcase_update_request,
-    workcase_top_level_fields,
+    CLOSE_OPTIONAL_INPUTS,
+    CLOSE_REQUIRED_INPUTS,
+    CORRECT_CLOSED_OPTIONAL_INPUTS,
+    CORRECT_CLOSED_REQUIRED_INPUTS,
+    UPDATE_OPTIONAL_INPUTS,
+    UPDATE_REQUIRED_INPUTS,
+    CloseWorkCaseRequest,
+    CorrectClosedWorkCaseRequest,
+    RouteTargetFingerprint,
+    UpdateWorkCaseRequest,
+    WorkCaseWriteRequestParseResult,
+    parse_close_workcase_request,
+    parse_correct_closed_workcase_request,
+    parse_update_workcase_request,
 )
 from ldvh.helper.requests import CommonRequest
 
 CWD = Path("/workspace/current-worktree")
 FINGERPRINT = "a" * 64
+TARGET_FINGERPRINT = "b" * 64
+HUMAN_REFERENCE = {"kind": "human", "locator": "turn:12"}
+
+Parser = Callable[[CommonRequest, OperationExecutionContext], WorkCaseWriteRequestParseResult]
 
 
-def _field(path: str, json_type: str = "string") -> ProjectedField:
-    return ProjectedField(path, json_type, "conditional", None, "workcase-fact-type::test")
+def _fact_ref(*, project: str = "ldvh", object_id: str = "workcase-0006") -> dict[str, str]:
+    return {
+        "governed_project_id": project,
+        "fact_type_key": "workcase",
+        "object_id": object_id,
+    }
 
 
-SCHEMA = FactSchema(
-    "workcase",
-    tuple(
-        _field(path)
-        for path in (
-            "object_id",
-            "fact_type_key",
-            "created_at",
-            "updated_at",
-            "workcase_profile",
-            "title",
-            "status",
-            "phase",
-            "summary",
-            "priority",
-            "resume_from",
-            "waiting_on",
-            "blocking_summary",
-            "goal",
-            "scope",
-            "plan_version",
-            "result_version",
-            "work_items[].item_id",
-            "controller_check_summary",
-            "validation_summary",
-            "audit_summary[].audit_id",
-            "creation_reviews[].reviewer",
-            "result_reviews[].reviewer",
-            "execution_approval.summary",
-            "closure_approval.summary",
-            "progress_history.coverage",
-            "improvement_observations[].observation_id",
-            "nonbinding_followups[].followup_id",
-        )
-    ),
-)
-
-
-def _arguments(**changes: object) -> dict[str, object]:
+def _fact_object(**changes: object) -> dict[str, object]:
     value: dict[str, object] = {
-        "fact_ref": {
-            "governed_project_id": "ldvh",
-            "fact_type_key": "workcase",
-            "object_id": "workcase-0006",
-        },
-        "expected_content_fingerprint": FINGERPRINT,
-        "set": {"summary": "Updated"},
-        "remove": [],
-        "managed_records": {},
+        "title": "Current WorkCase",
+        "status": "open",
+        "phase": "executing",
     }
     value.update(changes)
     return value
 
 
+def _closed_fact_object() -> dict[str, object]:
+    value = _fact_object(status="closed")
+    value.pop("phase")
+    return value
+
+
+def _arguments(**changes: object) -> dict[str, object]:
+    value: dict[str, object] = {
+        "fact_ref": _fact_ref(),
+        "expected_content_fingerprint": FINGERPRINT,
+        "fact_object": _fact_object(),
+    }
+    value.update(changes)
+    return value
+
+
+def _correct_arguments(**changes: object) -> dict[str, object]:
+    value = _arguments(
+        fact_object=_closed_fact_object(),
+        route_target_fingerprints=[],
+        independent_review_reference=None,
+    )
+    value.update(changes)
+    return value
+
+
 def _request(
+    arguments: dict[str, object],
     *,
-    arguments: dict[str, object] | None = None,
     locators: tuple[str | dict[str, Any], ...] = (),
+    authorization: tuple[dict[str, Any], ...] = (HUMAN_REFERENCE,),
     observed_context: dict[str, Any] | None = None,
     requested_disclosure: str | None = None,
 ) -> CommonRequest:
     return CommonRequest(
-        task="ignored",
+        task="write one WorkCase",
         work_object_locators=locators,
-        arguments=_arguments() if arguments is None else arguments,
+        arguments=arguments,
         requested_disclosure=requested_disclosure,
         observed_context={} if observed_context is None else observed_context,
-        authorization_reference=({"kind": "human", "locator": "turn:1"},),
+        authorization_reference=authorization,
     )
 
 
-def _parse(request: CommonRequest, *, schema: FactSchema | None = SCHEMA):
-    return parse_workcase_update_request(
-        request,
-        OperationExecutionContext(cwd=CWD),
-        schema,
-    )
+def _parse(parser: Parser, request: CommonRequest) -> WorkCaseWriteRequestParseResult:
+    return parser(request, OperationExecutionContext(cwd=CWD))
 
 
-def test_parses_closed_request_and_projects_nested_schema_fields_to_top_level() -> None:
+def test_update_parses_one_complete_after_request() -> None:
+    after = _fact_object(summary="Stable checkpoint")
     result = _parse(
+        parse_update_workcase_request,
         _request(
-            arguments=_arguments(
-                workspace_root="/workspace",
-                set={"summary": "Updated", "work_items": [{"item_id": "item-01"}]},
-                remove=["waiting_on"],
-            ),
+            _arguments(workspace_root="/workspace", fact_object=after),
             locators=("relative/object",),
-        )
+        ),
     )
 
     assert result.problems == ()
-    assert result.request == WorkCaseUpdateRequest(
+    assert result.request == UpdateWorkCaseRequest(
         workspace_root=Path("/workspace"),
         governance_scope=(ScopeDescriptor(0, "relative/object", LocatorSource.EXPLICIT_LOCATOR),),
         fact_ref=FactReference("ldvh", "workcase", "workcase-0006"),
         expected_content_fingerprint=FINGERPRINT,
-        set_fields={"summary": "Updated", "work_items": [{"item_id": "item-01"}]},
-        remove_fields=("waiting_on",),
-        managed_records={},
-        authorization_reference=({"kind": "human", "locator": "turn:1"},),
+        fact_object=after,
+        authorization_reference=(HUMAN_REFERENCE,),
         base=CWD,
     )
-    assert "work_items" in workcase_top_level_fields(SCHEMA)
 
 
-def test_empty_locators_use_actual_cwd_scope_and_result_is_immutable() -> None:
-    result = _parse(_request())
-    assert result.request is not None
-    assert result.request.governance_scope == (ScopeDescriptor(0, str(CWD), LocatorSource.CWD),)
+def test_close_requires_and_preserves_nonempty_human_authorization() -> None:
+    after = _fact_object(status="closed")
+    parsed = _parse(parse_close_workcase_request, _request(_arguments(fact_object=after)))
 
-    with pytest.raises(FrozenInstanceError):
-        result.request.base = Path("/changed")  # type: ignore[misc]
+    assert parsed.problems == ()
+    assert isinstance(parsed.request, CloseWorkCaseRequest)
+    assert parsed.request.fact_object == after
+    assert parsed.request.authorization_reference == (HUMAN_REFERENCE,)
+
+    missing = _parse(
+        parse_close_workcase_request,
+        _request(_arguments(fact_object=after), authorization=()),
+    )
+    assert missing.request is None
+    assert any("authorization_reference" in problem for problem in missing.problems)
+
+
+def test_close_rejects_whitespace_only_authorization_members_from_a_common_request() -> None:
+    parsed = _parse(
+        parse_close_workcase_request,
+        _request(
+            _arguments(fact_object=_closed_fact_object()),
+            authorization=({"kind": "   ", "locator": "\t"},),
+        ),
+    )
+
+    assert parsed.request is None
+    assert sum("非空白字符" in problem for problem in parsed.problems) == 2
+    assert any("authorization_reference[0].kind" in problem for problem in parsed.problems)
+    assert any("authorization_reference[0].locator" in problem for problem in parsed.problems)
+
+
+def test_correct_parses_route_snapshots_and_nullable_review_reference() -> None:
+    route = {
+        "target": _fact_ref(object_id="workcase-0042"),
+        "content_fingerprint": TARGET_FINGERPRINT,
+    }
+    parsed = _parse(
+        parse_correct_closed_workcase_request,
+        _request(_correct_arguments(route_target_fingerprints=[route])),
+    )
+
+    assert parsed.problems == ()
+    assert parsed.request == CorrectClosedWorkCaseRequest(
+        workspace_root=None,
+        governance_scope=(ScopeDescriptor(0, str(CWD), LocatorSource.CWD),),
+        fact_ref=FactReference("ldvh", "workcase", "workcase-0006"),
+        expected_content_fingerprint=FINGERPRINT,
+        fact_object=_closed_fact_object(),
+        authorization_reference=(HUMAN_REFERENCE,),
+        base=CWD,
+        route_target_fingerprints=(
+            RouteTargetFingerprint(
+                FactReference("ldvh", "workcase", "workcase-0042"),
+                TARGET_FINGERPRINT,
+            ),
+        ),
+        independent_review_reference=None,
+    )
+
+
+def test_correct_accepts_one_common_source_reference_for_independent_review() -> None:
+    reference = {
+        "kind": "review",
+        "locator": "review:workcase-0006:closed-correction",
+        "observed_at": "2026-07-26T15:00:00+08:00",
+        "details": {"scope": "complete before and after"},
+    }
+    parsed = _parse(
+        parse_correct_closed_workcase_request,
+        _request(_correct_arguments(independent_review_reference=reference)),
+    )
+
+    assert parsed.problems == ()
+    assert isinstance(parsed.request, CorrectClosedWorkCaseRequest)
+    assert parsed.request.independent_review_reference == reference
+
+
+def test_correct_rejects_whitespace_only_independent_review_reference() -> None:
+    parsed = _parse(
+        parse_correct_closed_workcase_request,
+        _request(
+            _correct_arguments(
+                independent_review_reference={"kind": "   ", "locator": "\t"},
+            )
+        ),
+    )
+
+    assert parsed.request is None
+    assert sum("非空白字符" in problem for problem in parsed.problems) == 2
+    assert any("arguments.independent_review_reference.kind" in problem for problem in parsed.problems)
+    assert any("arguments.independent_review_reference.locator" in problem for problem in parsed.problems)
 
 
 @pytest.mark.parametrize(
-    ("changes", "problem"),
+    ("parser", "arguments"),
     (
-        ({"unknown": True}, "arguments 包含未知字段"),
-        ({"workspace_root": "relative"}, "workspace_root"),
+        (parse_update_workcase_request, _arguments(set={"summary": "old delta"})),
+        (parse_update_workcase_request, _arguments(remove=["waiting_on"])),
+        (parse_update_workcase_request, _arguments(managed_records={})),
+        (parse_close_workcase_request, _arguments(set={})),
+        (parse_correct_closed_workcase_request, _correct_arguments(remove=[])),
+    ),
+)
+def test_retired_delta_arguments_are_unknown(parser: Parser, arguments: dict[str, object]) -> None:
+    parsed = _parse(parser, _request(arguments))
+
+    assert parsed.request is None
+    assert any("arguments 包含未知字段" in problem for problem in parsed.problems)
+
+
+@pytest.mark.parametrize("field", ("object_id", "fact_type_key", "created_at", "updated_at"))
+def test_complete_after_rejects_code_managed_fields(field: str) -> None:
+    parsed = _parse(
+        parse_update_workcase_request,
+        _request(_arguments(fact_object={**_fact_object(), field: "caller supplied"})),
+    )
+
+    assert parsed.request is None
+    assert any("Code 托管字段" in problem and field in problem for problem in parsed.problems)
+
+
+def test_fact_object_schema_membership_is_left_to_the_current_core_schema() -> None:
+    parsed = _parse(
+        parse_update_workcase_request,
+        _request(_arguments(fact_object={**_fact_object(), "unknown_domain_field": True})),
+    )
+
+    assert isinstance(parsed.request, UpdateWorkCaseRequest)
+
+
+@pytest.mark.parametrize(
+    ("changes", "expected"),
+    (
+        ({"unknown": True}, "未知字段"),
+        ({"workspace_root": "relative"}, "绝对路径"),
         ({"fact_ref": []}, "fact_ref 必须是 object"),
         (
-            {
-                "fact_ref": {
-                    "governed_project_id": "ldvh",
-                    "fact_type_key": "spark",
-                    "object_id": "spark-0001",
-                }
-            },
+            {"fact_ref": {**_fact_ref(), "fact_type_key": "spark"}},
             "fact_type_key 必须精确等于 workcase",
         ),
-        (
-            {
-                "fact_ref": {
-                    "governed_project_id": "ldvh",
-                    "fact_type_key": "workcase",
-                    "object_id": "bad",
-                }
-            },
-            "object_id 必须匹配",
-        ),
+        ({"fact_ref": _fact_ref(object_id="bad")}, "object_id 必须匹配"),
         ({"expected_content_fingerprint": "A" * 64}, "64 位小写"),
-        ({"set": []}, "arguments.set 必须是 object"),
-        ({"remove": {}}, "arguments.remove 必须是 array"),
-        ({"managed_records": []}, "managed_records 必须是 object"),
+        ({"fact_object": []}, "fact_object 必须是 object"),
     ),
 )
-def test_rejects_argument_shape_and_identity_errors(changes: dict[str, object], problem: str) -> None:
-    result = _parse(_request(arguments=_arguments(**changes)))
+def test_common_full_after_request_shape_is_closed(changes: dict[str, object], expected: str) -> None:
+    parsed = _parse(parse_update_workcase_request, _request(_arguments(**changes)))
 
-    assert result.request is None
-    assert any(problem in item for item in result.problems)
+    assert parsed.request is None
+    assert any(expected in problem for problem in parsed.problems)
 
 
-def test_closes_ordinary_delta_against_current_schema_and_managed_fields() -> None:
-    result = _parse(
-        _request(
-            arguments=_arguments(
-                set={"vendor": 1, "updated_at": "forged", "summary": "x"},
-                remove=["title", "title", "plan_version", "result_reviews", "summary"],
-            )
-        )
+def test_workcase_reference_and_locator_nonempty_checks_reject_whitespace_only_values() -> None:
+    reference = _parse(
+        parse_update_workcase_request,
+        _request(_arguments(fact_ref=_fact_ref(project="   "))),
+    )
+    locator = _parse(
+        parse_update_workcase_request,
+        _request(_arguments(), locators=("\t",)),
     )
 
-    assert result.request is None
-    assert any("未在当前 WorkCase Schema" in item and "vendor" in item for item in result.problems)
-    assert any("remove 成员不得重复" in item for item in result.problems)
-    assert any("set 不得触碰 Helper 托管字段" in item for item in result.problems)
-    assert any("remove 不得触碰 Helper 托管字段" in item for item in result.problems)
-    assert any("remove 不得包含版本字段" in item for item in result.problems)
-    assert any("set 与 arguments.remove 不得交叉" in item for item in result.problems)
-
-
-def test_schema_membership_can_be_deferred_until_current_schema_is_available() -> None:
-    result = _parse(_request(arguments=_arguments(set={"future_field": "value"})), schema=None)
-
-    assert result.problems == ()
-    assert result.request is not None
-    assert result.request.set_fields == {"future_field": "value"}
-
-
-@pytest.mark.parametrize("name", ("plan_version", "result_version"))
-@pytest.mark.parametrize("value", (True, 0, -1, "1"))
-def test_set_versions_must_be_positive_integers(name: str, value: object) -> None:
-    set_fields: dict[str, object] = {name: value}
-    if name == "plan_version":
-        set_fields["phase"] = "human_plan_confirming"
-    managed = {"replace_creation_reviews": []} if name == "plan_version" else {}
-    result = _parse(_request(arguments=_arguments(set=set_fields, managed_records=managed)))
-
-    assert result.request is None
-    assert any(f"set.{name} 必须是正整数" in item for item in result.problems)
-
-
-def test_plan_version_requires_only_replacement_reviews_and_fixed_phase() -> None:
-    result = _parse(
-        _request(
-            arguments=_arguments(
-                set={"plan_version": 2, "phase": "executing", "result_version": 2},
-                managed_records={
-                    "append_result_reviews": [],
-                    "execution_approval": None,
-                },
-            )
-        )
-    )
-
-    assert result.request is None
-    assert any("set.phase=human_plan_confirming" in item for item in result.problems)
-    assert any("要求同次 replace_creation_reviews" in item for item in result.problems)
-    assert any("只允许 replace_creation_reviews" in item for item in result.problems)
-    assert any("固定 reset 字段" in item and "result_version" in item for item in result.problems)
-
-
-@pytest.mark.parametrize("managed_reset_field", ("execution_approval", "result_reviews", "closure_approval"))
-def test_plan_bump_cannot_redeclare_helper_managed_reset_fields_in_remove(managed_reset_field: str) -> None:
-    result = _parse(
-        _request(
-            arguments=_arguments(
-                set={"plan_version": 2, "phase": "human_plan_confirming"},
-                remove=[managed_reset_field],
-                managed_records={
-                    "replace_creation_reviews": [
-                        {
-                            "reviewer": "reviewer-1",
-                            "scope": "Current plan",
-                            "conclusion": "pass",
-                        }
-                    ]
-                },
-            )
-        )
-    )
-
-    assert result.request is None
-    assert any("remove 不得触碰 Helper 托管字段" in problem for problem in result.problems)
-
-
-def test_valid_plan_replacement_review_has_exact_shape() -> None:
-    review = {
-        "reviewer": "reviewer-1",
-        "scope": "Current plan",
-        "conclusion": "pass",
-        "feedback": ["Plan is coherent"],
-        "controller_resolution": "Accepted.",
-    }
-    result = _parse(
-        _request(
-            arguments=_arguments(
-                set={"plan_version": 2, "phase": "human_plan_confirming"},
-                managed_records={"replace_creation_reviews": [review]},
-            )
-        )
-    )
-
-    assert result.problems == ()
-    assert result.request is not None
-    assert result.request.managed_records == {"replace_creation_reviews": [review]}
-
-
-def test_review_feedback_is_optional_only_for_plain_pass() -> None:
-    passed = _parse(
-        _request(
-            arguments=_arguments(
-                set={"plan_version": 2, "phase": "human_plan_confirming"},
-                managed_records={
-                    "replace_creation_reviews": [
-                        {"reviewer": "reviewer-1", "scope": "Current plan", "conclusion": "pass"}
-                    ]
-                },
-            )
-        )
-    )
-    assert passed.problems == ()
-
-    needless_resolution = _parse(
-        _request(
-            arguments=_arguments(
-                set={"plan_version": 2, "phase": "human_plan_confirming"},
-                managed_records={
-                    "replace_creation_reviews": [
-                        {
-                            "reviewer": "reviewer-1",
-                            "scope": "Current plan",
-                            "conclusion": "pass",
-                            "controller_resolution": "Nothing to resolve",
-                        }
-                    ]
-                },
-            )
-        )
-    )
-    assert needless_resolution.request is None
-    assert any("没有 feedback 时必须省略" in item for item in needless_resolution.problems)
-
-    missing_feedback = _parse(
-        _request(
-            arguments=_arguments(
-                set={},
-                managed_records={
-                    "append_result_reviews": [
-                        {"reviewer": "reviewer-1", "scope": "Current result", "conclusion": "blocked"}
-                    ]
-                },
-            )
-        )
-    )
-    assert missing_feedback.request is None
-    assert any("feedback 对非 pass conclusion 必须提供" in item for item in missing_feedback.problems)
+    assert reference.request is None
+    assert any("fact_ref.governed_project_id" in problem and "非空白字符" in problem for problem in reference.problems)
+    assert locator.request is None
+    assert any("work_object_locators[0]" in problem for problem in locator.problems)
 
 
 @pytest.mark.parametrize(
-    ("managed", "problem"),
+    ("changes", "expected"),
     (
-        ({"unknown": []}, "包含未知字段"),
-        ({"append_result_reviews": {}}, "必须是 array 或 null"),
+        ({"route_target_fingerprints": None}, "必须是 array"),
+        ({"route_target_fingerprints": [{}]}, "缺少字段"),
         (
             {
-                "append_result_reviews": [
+                "route_target_fingerprints": [
                     {
-                        "reviewer": "reviewer",
-                        "scope": "result",
-                        "conclusion": "pass",
-                        "feedback": ["same", "same"],
+                        "target": _fact_ref(object_id="workcase-0042"),
+                        "content_fingerprint": "A" * 64,
                     }
                 ]
             },
-            "feedback 成员不得重复",
+            "64 位小写",
         ),
         (
             {
-                "resolve_result_reviews": [
-                    {"review_index": 0, "controller_resolution": "done"},
-                    {"review_index": 0, "controller_resolution": "again"},
+                "route_target_fingerprints": [
+                    {
+                        "target": _fact_ref(project="other", object_id="workcase-0042"),
+                        "content_fingerprint": TARGET_FINGERPRINT,
+                    }
                 ]
             },
-            "review_index 不得重复",
+            "同一项目",
         ),
-        ({"execution_approval": {"summary": ""}}, "summary 必须是非空 string"),
-        ({"progress_transition": {"summary": "", "extra": True}}, "包含未知字段"),
+        ({"independent_review_reference": []}, "必须是对象"),
         (
-            {
-                "closure_approval": {
-                    "summary": "approved",
-                    "source_refs": [{"kind": "human", "locator": "turn", "extra": True}],
-                }
-            },
-            "source_refs[0] 包含未知字段",
+            {"independent_review_reference": {"kind": "review", "locator": ""}},
+            "locator 必须是非空",
         ),
     ),
 )
-def test_managed_record_members_are_closed_and_typed(
-    managed: dict[str, object],
-    problem: str,
-) -> None:
-    set_fields = {"summary": "updated"}
-    if "closure_approval" in managed:
-        set_fields = {"status": "closed", "phase": "closed"}
-    result = _parse(_request(arguments=_arguments(set=set_fields, managed_records=managed)))
-
-    assert result.request is None
-    assert any(problem in item for item in result.problems)
-
-
-def test_managed_action_limit_and_action_exclusivity_are_structural() -> None:
-    reviews = [
-        {
-            "reviewer": f"reviewer-{index}",
-            "scope": "result",
-            "conclusion": "pass",
-            "feedback": [f"feedback-{index}"],
-        }
-        for index in range(17)
-    ]
-    over_limit = _parse(_request(arguments=_arguments(set={}, managed_records={"append_result_reviews": reviews})))
-    mixed = _parse(
-        _request(
-            arguments=_arguments(
-                managed_records={
-                    "append_result_reviews": [],
-                    "resolve_result_reviews": [],
-                    "execution_approval": {"summary": "approved"},
-                }
-            )
-        )
+def test_correct_specific_members_are_closed_and_typed(changes: dict[str, object], expected: str) -> None:
+    parsed = _parse(
+        parse_correct_closed_workcase_request,
+        _request(_correct_arguments(**changes)),
     )
 
-    assert any("最多包含 16" in item for item in over_limit.problems)
-    assert any("append_result_reviews 与 resolve_result_reviews" in item for item in mixed.problems)
-    assert any("execution_approval 不得与其它" in item for item in mixed.problems)
+    assert parsed.request is None
+    assert any(expected in problem for problem in parsed.problems)
 
 
-def test_result_review_append_allows_only_review_context_companions() -> None:
-    review = {"reviewer": "reviewer", "scope": "Current result", "conclusion": "pass"}
-    allowed = _parse(
-        _request(
-            arguments=_arguments(
-                set={"phase": "controller_checking", "summary": "Review completed"},
-                remove=["blocking_summary"],
-                managed_records={"append_result_reviews": [review]},
-            )
-        )
-    )
-    rejected = _parse(
-        _request(
-            arguments=_arguments(
-                set={"controller_check_summary": "Changed reviewed subject", "work_items": []},
-                remove=["validation_summary"],
-                managed_records={"append_result_reviews": [review]},
-            )
-        )
+def test_correct_requires_both_operation_specific_fields_even_when_null_is_allowed() -> None:
+    parsed = _parse(
+        parse_correct_closed_workcase_request,
+        _request(_arguments()),
     )
 
-    assert allowed.problems == ()
-    assert allowed.request is not None
-    assert rejected.request is None
-    assert any("不得变更被审结果主体" in problem for problem in rejected.problems)
+    assert parsed.request is None
+    assert any("route_target_fingerprints 必填" in problem for problem in parsed.problems)
+    assert any("independent_review_reference 必填" in problem for problem in parsed.problems)
 
 
-def test_approval_source_reference_accepts_typed_details() -> None:
-    result = _parse(
-        _request(
-            arguments=_arguments(
-                managed_records={
-                    "execution_approval": {
-                        "summary": "Human approved",
-                        "source_refs": [
-                            {
-                                "kind": "human-input",
-                                "locator": "turn-1",
-                                "details": {"channel": "current-task"},
-                            }
-                        ],
-                    }
-                }
-            )
-        )
+def test_correct_rejects_duplicate_route_targets() -> None:
+    route = {
+        "target": _fact_ref(object_id="workcase-0042"),
+        "content_fingerprint": TARGET_FINGERPRINT,
+    }
+    parsed = _parse(
+        parse_correct_closed_workcase_request,
+        _request(_correct_arguments(route_target_fingerprints=[route, route])),
     )
 
-    assert result.problems == ()
-    assert result.request is not None
+    assert parsed.request is None
+    assert any("不得包含重复 target" in problem for problem in parsed.problems)
 
 
-def test_execution_approval_is_a_complete_managed_action_without_progress_transition() -> None:
-    result = _parse(
-        _request(
-            arguments=_arguments(
-                set={"phase": "executing"},
-                managed_records={"execution_approval": {"summary": "Human approved"}},
-            )
-        )
-    )
+def test_empty_locators_use_actual_cwd_and_requests_are_immutable() -> None:
+    parsed = _parse(parse_update_workcase_request, _request(_arguments()))
+    assert isinstance(parsed.request, UpdateWorkCaseRequest)
+    assert parsed.request.governance_scope == (ScopeDescriptor(0, str(CWD), LocatorSource.CWD),)
 
-    assert result.problems == ()
-    assert result.request is not None
-    assert result.request.managed_records == {"execution_approval": {"summary": "Human approved"}}
-
-
-def test_v2_only_update_rejects_registered_v1_process_fields() -> None:
-    for field_name, value in {
-        "audit_summary": [],
-        "progress_history": {"coverage": "full"},
-        "improvement_observations": [],
-        "nonbinding_followups": [],
-    }.items():
-        result = _parse(_request(arguments=_arguments(set={field_name: value})))
-        assert result.request is None
-        assert any("禁止 V1-only 字段" in item and field_name in item for item in result.problems)
-
-        removed = _parse(_request(arguments=_arguments(set={}, remove=[field_name])))
-        assert removed.request is None
-        assert any("禁止 V1-only 字段" in item and field_name in item for item in removed.problems)
-
-
-def test_approval_source_reference_details_must_be_object() -> None:
-    result = _parse(
-        _request(
-            arguments=_arguments(
-                managed_records={
-                    "execution_approval": {
-                        "summary": "Human approved",
-                        "source_refs": [{"kind": "human-input", "locator": "turn-1", "details": "not-an-object"}],
-                    }
-                }
-            )
-        )
-    )
-
-    assert result.request is None
-    assert any("details 出现时必须是 object" in item for item in result.problems)
-
-
-def test_closure_approval_requires_explicit_closed_status_and_phase() -> None:
-    result = _parse(
-        _request(arguments=_arguments(managed_records={"closure_approval": {"summary": "Human approved closure"}}))
-    )
-
-    assert result.request is None
-    assert any("set.status=closed" in item for item in result.problems)
-
-
-def test_withdraw_execution_approval_requires_explicit_human_plan_phase() -> None:
-    missing = _parse(
-        _request(
-            arguments=_arguments(
-                set={"summary": "Human withdrew the recorded approval"},
-                managed_records={"withdraw_execution_approval": {"summary": "Human withdrew approval"}},
-            )
-        )
-    )
-    valid_shape = _parse(
-        _request(
-            arguments=_arguments(
-                set={"phase": "human_plan_confirming"},
-                managed_records={"withdraw_execution_approval": {"summary": "Human withdrew approval"}},
-            )
-        )
-    )
-
-    assert missing.request is None
-    assert any("set.phase=human_plan_confirming" in problem for problem in missing.problems)
-    assert valid_shape.problems == ()
-    assert valid_shape.request is not None
-
-
-def test_all_three_delta_inputs_cannot_be_empty_or_null_only() -> None:
-    result = _parse(
-        _request(
-            arguments=_arguments(
-                set={},
-                remove=[],
-                managed_records={"execution_approval": None},
-            )
-        )
-    )
-
-    assert result.request is None
-    assert any("不得同时为空" in item for item in result.problems)
-
-
-@pytest.mark.parametrize(
-    "name",
-    ("replace_creation_reviews", "append_result_reviews", "resolve_result_reviews"),
-)
-def test_managed_record_arrays_are_nonempty_when_present(name: str) -> None:
-    set_fields = {"plan_version": 2, "phase": "human_plan_confirming"} if name == "replace_creation_reviews" else {}
-    result = _parse(
-        _request(
-            arguments=_arguments(
-                set=set_fields,
-                managed_records={name: []},
-            )
-        )
-    )
-
-    assert result.request is None
-    assert any("出现时必须是非空 array" in item for item in result.problems)
+    with pytest.raises(FrozenInstanceError):
+        parsed.request.base = Path("/changed")  # type: ignore[misc]
 
 
 def test_common_operation_restrictions_are_enforced() -> None:
-    result = parse_workcase_update_request(
-        _request(
-            locators=("", {}),
-            observed_context={"forged": True},
-            requested_disclosure="L3",
-        ),
-        OperationExecutionContext(cwd=Path("relative")),
-        SCHEMA,
+    observed = _parse(
+        parse_update_workcase_request,
+        _request(_arguments(), observed_context={"tool": "output"}),
+    )
+    disclosure = _parse(
+        parse_update_workcase_request,
+        _request(_arguments(), requested_disclosure="L1"),
+    )
+    object_locator = _parse(
+        parse_update_workcase_request,
+        _request(_arguments(), locators=({"path": "/workspace"},)),
     )
 
-    assert result.request is None
-    assert any("cwd 必须是绝对路径" in item for item in result.problems)
-    assert sum("必须是非空路径 string" in item for item in result.problems) == 2
-    assert any("observed_context" in item for item in result.problems)
-    assert any("requested_disclosure" in item for item in result.problems)
+    assert observed.request is None
+    assert disclosure.request is None
+    assert object_locator.request is None
 
 
-def test_input_metadata_matches_public_contract() -> None:
-    assert REQUIRED_INPUTS == (
+def test_input_metadata_matches_the_three_public_contracts() -> None:
+    assert UPDATE_REQUIRED_INPUTS == (
         "arguments.fact_ref",
         "arguments.expected_content_fingerprint",
-        "arguments.set",
-        "arguments.remove",
-        "arguments.managed_records",
+        "arguments.fact_object",
     )
-    assert OPTIONAL_INPUTS == (
+    assert UPDATE_OPTIONAL_INPUTS == (
         "work_object_locators",
         "arguments.workspace_root",
         "authorization_reference",
     )
+    assert CLOSE_REQUIRED_INPUTS == (*UPDATE_REQUIRED_INPUTS, "authorization_reference")
+    assert CLOSE_OPTIONAL_INPUTS == ("work_object_locators", "arguments.workspace_root")
+    assert CORRECT_CLOSED_REQUIRED_INPUTS == (
+        *UPDATE_REQUIRED_INPUTS,
+        "arguments.route_target_fingerprints",
+        "arguments.independent_review_reference",
+    )
+    assert CORRECT_CLOSED_OPTIONAL_INPUTS == UPDATE_OPTIONAL_INPUTS

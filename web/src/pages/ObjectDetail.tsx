@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { ArrowLeft, BookOpenText, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Code2, ExternalLink, FileText } from 'lucide-react';
+import { ArrowLeft, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Code2, ExternalLink, FileText } from 'lucide-react';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import StatusBadge from '@/components/StatusBadge';
 import ChecklistCard from '@/components/ChecklistCard';
 import ReferenceCard from '@/components/ReferenceCard';
 import SummaryText from '@/components/SummaryText';
@@ -14,7 +13,7 @@ import EvidenceBlock from '@/components/EvidenceBlock';
 import CopyPathButton from '@/components/CopyPathButton';
 import PriorityIcon from '@/components/PriorityIcon';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
-import { fetchObjectDetail, fetchObjects, type ObjectDetail, type ObjectItem, type RelatedObjectSummary } from '@/utils/api';
+import { fetchObjectDetail, type ObjectDetail, type WorkCaseDetailData } from '@/utils/api';
 import { useI18n } from '@/i18n/context';
 import {
   getFieldLabel as getLocalizedFieldLabel,
@@ -29,7 +28,7 @@ import { formatDateTime } from '@/utils/dateFormat';
 import { getStatusColor } from '@/utils/statusColors';
 import { getSignalClassName, getSignalText, isSignalField } from '@/utils/objectSignals';
 import { usePanel } from '@/utils/panelContext';
-import { getFactReadMeta, isReadableFact, type FactCarrier, type FactReadMeta } from '@/utils/factReadMeta';
+import { getFactReadMeta, isReadableFact, reconstructFactYaml, type FactCarrier, type FactReadMeta } from '@/utils/factReadMeta';
 import { WorkCaseReadingLayout } from '@/pages/object-detail/WorkCaseReadingLayout';
 import { AdrReadingLayout, PitfallReadingLayout, PitfallTextNodeContent, SparkReadingLayout } from '@/pages/object-detail/FactReadingLayouts';
 import { FactAssociationsSection } from '@/pages/object-detail/FactAssociationsSection';
@@ -81,11 +80,9 @@ export default function ObjectDetail() {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const [detail, setDetail] = useState<ObjectDetail | null>(null);
-  const [relatedWorkCaseSummary, setRelatedWorkCaseSummary] = useState<ObjectItem | null>(null);
-  const [relatedSummaryLoading, setRelatedSummaryLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showYaml, setShowYaml] = useState(false);
-  const { t, getStatus, locale } = useI18n();
+  const { t, locale } = useI18n();
 
   // 保留上一次成功渲染的详情，仅当路由与缓存对象一致时复用（前进/后退/面板往返），
   // 避免全屏空白闪烁；切到不同对象时不展示旧内容，改走骨架加载
@@ -107,8 +104,6 @@ export default function ObjectDetail() {
     if (!type || !id) return;
     let cancelled = false;
     // 不再 setDetail(null)：保留旧详情做占位，新数据到达再替换，消除全屏空白闪烁
-    setRelatedWorkCaseSummary(null);
-    setRelatedSummaryLoading(type === 'workcase');
     setError(null);
 
     fetchObjectDetail(type, id)
@@ -118,22 +113,6 @@ export default function ObjectDetail() {
       .catch((e) => {
         if (!cancelled) setError(e.message);
       });
-
-
-    if (type === 'workcase') {
-      fetchObjects('workcase')
-        .then((result) => {
-          if (cancelled) return;
-          setRelatedWorkCaseSummary(result.data?.items?.find((workcase) => workcase.id === id) ?? null);
-        })
-        .catch(() => {
-          if (!cancelled) setRelatedWorkCaseSummary(null);
-        })
-        .finally(() => {
-          if (!cancelled) setRelatedSummaryLoading(false);
-        });
-    }
-
     return () => {
       cancelled = true;
     };
@@ -182,7 +161,7 @@ export default function ObjectDetail() {
   const { primaryEntries, relatedEntries } = splitRelatedContentEntries(contentEntries);
   const auxiliaryMetaEntries = getAuxiliaryMetaEntries(obj, objType);
   const showYamlSource = readMeta.carrier === 'yaml';
-  const yamlSource = showYamlSource ? objectToYaml(obj) : '';
+  const yamlSource = showYamlSource ? reconstructFactYaml(obj) : '';
   const copyTarget = readMeta.canonicalPath;
 
   return (
@@ -220,6 +199,10 @@ export default function ObjectDetail() {
                 created={formatDateTime((obj.created_at ?? obj.created) as string | undefined)}
                 updated={formatDateTime((obj.updated_at ?? obj.updated) as string | undefined)}
                 auxiliaryMetaEntries={auxiliaryMetaEntries}
+                customMetaEntries={readMeta.observedAt ? [{
+                  label: t('objectDetail.observedAt'),
+                  value: <time dateTime={readMeta.observedAt}>{formatDateTime(readMeta.observedAt)}</time>,
+                }] : []}
                 copyLabel={t('common.copyObjectPath')}
                 copiedLabel={t('common.copiedObjectPath')}
               />
@@ -229,11 +212,8 @@ export default function ObjectDetail() {
           {/* Content fields */}
           {objType === 'workcase' ? (
             <WorkCaseReadingLayout
-              obj={obj}
-              summary={relatedWorkCaseSummary}
-              loading={relatedSummaryLoading}
+              obj={obj as WorkCaseDetailData}
               locale={locale}
-              getStatus={getStatus}
             />
           ) : objType === 'study' ? (
             <StudyReadingLayout
@@ -349,7 +329,15 @@ function FactReadFailurePage({
               <dt className="ldvh-meta-muted">{t('objectDetail.readType')}</dt>
               <dd className="ldvh-meta-primary">{getTypeLabel(type, locale)} · {id}</dd>
               <dt className="ldvh-meta-muted">{t('objectDetail.readStatus')}</dt>
-              <dd className="ldvh-meta-primary">{status}</dd>
+              <dd className="ldvh-meta-primary">{getFieldValueLabel('check_status', status, locale)}</dd>
+              {meta.observedAt && (
+                <>
+                  <dt className="ldvh-meta-muted">{t('objectDetail.observedAt')}</dt>
+                  <dd className="ldvh-meta-primary break-all font-mono">
+                    <time dateTime={meta.observedAt}>{formatDateTime(meta.observedAt)}</time>
+                  </dd>
+                </>
+              )}
               {meta.canonicalPath && (
                 <>
                   <dt className="ldvh-meta-muted">{t('objectDetail.expectedPath')}</dt>
@@ -360,8 +348,8 @@ function FactReadFailurePage({
             {meta.issues.length > 0 && (
               <div className="mt-3 space-y-1">
                 {meta.issues.map((issue, index) => (
-                  <p key={`${issue.code ?? 'issue'}-${index}`} className="ldvh-meta text-red-300/80">
-                    {issue.message ?? issue.code ?? t('objectDetail.readIssue')}
+                  <p key={`${issue.category}-${issue.fieldPath ?? 'root'}-${index}`} className="ldvh-meta text-red-300/80">
+                    {issue.fieldPath ? `${issue.fieldPath}：${issue.summary}` : issue.summary}
                   </p>
                 ))}
               </div>
@@ -824,7 +812,7 @@ function RelatedAssociationRow({ fieldKey, reference, locale }: { fieldKey: stri
       <div className="min-w-0 flex-1">
         <div className="ldvh-meta-primary truncate">{displayTitle}</div>
         {reference.summary && (
-          <div className="ldvh-caption mt-1 line-clamp-2 text-ldvh-text-secondary/70">{reference.summary}</div>
+          <div className="ldvh-caption mt-1 whitespace-pre-wrap text-ldvh-text-secondary/70">{reference.summary}</div>
         )}
       </div>
       <div className="flex h-7 shrink-0 items-center gap-1">
@@ -912,13 +900,21 @@ function parseEvidenceReadingSections(value: string): Array<{ title: string; bod
     .filter((section) => section.body.length > 0);
 }
 
-export function RelatedContentSection({ entries, locale }: { entries: RelatedContentEntry[]; locale: string }) {
+export function RelatedContentSection({
+  entries,
+  locale,
+  title,
+}: {
+  entries: RelatedContentEntry[];
+  locale: string;
+  title?: string;
+}) {
   const { t } = useI18n();
   const [state, setState] = useState<ReadingNodeState>('expanded');
   if (entries.length === 0) return null;
   return (
     <ReadingNodeSection
-      title={t('objectDetail.related')}
+      title={title ?? t('objectDetail.related')}
       state={state}
       locale={locale}
       onToggle={() => setState((current) => getReadingNodeNextState(current))}
@@ -935,125 +931,11 @@ export function RelatedContentSection({ entries, locale }: { entries: RelatedCon
   );
 }
 
-export function LoadingHint({ text }: { text: string }) {
-  return (
-    <div className="rounded-md border border-dashed border-ldvh-border bg-ldvh-bg/50 px-3 py-6 text-center">
-      <span className="ldvh-body-muted">{text}</span>
-    </div>
-  );
-}
-
-export function getObjectRefType(refId: string): string | null {
-  if (!isObjectRef(refId)) return null;
-  return refId.match(/^([a-z]+)-\d+$/)?.[1] ?? null;
-}
-
-export function findRelatedSummary(
-  refId: string,
-  currentItem: RelatedObjectSummary | null,
-  parentWorkCase: ObjectItem | null,
-): RelatedObjectSummary | null {
-  void currentItem;
-  void parentWorkCase;
-  void refId;
-  return null;
-}
-
-export function buildCurrentFlowItem(
-  obj: Record<string, unknown>,
-  objType: string,
-  locale: string,
-  currentSummary: RelatedObjectSummary | null,
-): RelatedObjectSummary {
-  if (currentSummary) return currentSummary;
-  const title = getLocalizedObjectTitle(obj as LocalizedTitleItem, locale, String(obj.id ?? ''));
-  return {
-    id: String(obj.id ?? ''),
-    type: objType,
-    title,
-    title_en: obj.title_en as string | undefined,
-    title_zh: obj.title_zh as string | undefined,
-    status: String(obj.status ?? 'unknown'),
-    path: String(obj.canonical_path ?? obj.path ?? ''),
-    updated: String(obj.updated ?? ''),
-  };
-}
-
-export function DetailObjectRow({
-  label,
-  item,
-  fallbackId,
-  objectType,
-  locale,
-  compact = false,
-  variant = 'default',
-}: {
-  label: string;
-  item?: RelatedObjectSummary | ObjectItem | null;
-  fallbackId?: string;
-  objectType: string;
-  locale: string;
-  compact?: boolean;
-  variant?: 'default' | 'property';
-}) {
-  const { t } = useI18n();
-  const { isOpen: panelOpen, content: panelContent, openPanel } = usePanel();
-  const objectId = item?.id ?? fallbackId;
-  if (!objectId) return null;
-
-  const title = item ? getLocalizedTitle(item, locale) : objectId;
-  const isCurrentPanelOpen = panelOpen && panelContent?.type === 'object' && panelContent.objectType === objectType && panelContent.objectId === objectId;
-  const PanelIcon = isCurrentPanelOpen ? ChevronLeft : ChevronRight;
-  const objectTypeColor = CATEGORY_COLORS[objectType] || CATEGORY_COLORS.other;
-  const labelIcon = <ObjectTypeIcon type={objectType} size={12} className="shrink-0" style={{ color: objectTypeColor }} />;
-  const open = () => openPanel({ type: 'object', title, objectType, objectId });
-  const rowClassName = variant === 'property'
-    ? 'group/detail-ref grid min-w-0 cursor-pointer items-center gap-2 py-3 text-left transition-colors first:pt-0 last:pb-0 sm:grid-cols-[5.625rem_1fr]'
-    : `group/detail-ref grid min-w-0 cursor-pointer items-center gap-2 text-left transition-colors first:pt-0 last:pb-0 sm:grid-cols-[5.625rem_1fr] ${compact ? 'py-2' : 'py-3'}`;
-
-  return (
-    <div
-      role="button"
-      tabIndex={0}
-      data-detail-object-id={objectId}
-      data-detail-object-type={objectType}
-      onClick={open}
-      onKeyDown={(event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault();
-          open();
-        }
-      }}
-      className={rowClassName}
-    >
-      <div className={`ldvh-caption-strong text-ldvh-text-secondary ${
-        variant === 'property' ? '' : 'flex min-w-0 items-center gap-1.5'
-      }`}
-      >
-        {variant !== 'property' && labelIcon}
-        <span className="min-w-0 truncate">{label}</span>
-      </div>
-      <div className={`flex min-w-0 items-center gap-2 transition-colors ${
-        variant === 'property'
-          ? 'ldvh-definition-text'
-          : 'rounded-md px-2 py-1.5 group-hover/detail-ref:bg-ldvh-border/35'
-      }`}
-      >
-        {variant === 'property' && labelIcon}
-        <span className="ldvh-body min-w-0 flex-1 truncate transition-colors group-hover/detail-ref:text-ldvh-accent">{title}</span>
-        {variant !== 'property' && <span className="ldvh-meta-muted shrink-0">{objectId}</span>}
-        {variant !== 'property' && item?.status && <StatusBadge status={item.status} statusLabel={getObjectStatusLocale(objectType, item.status, locale)} objectType={objectType} size="sm" />}
-        <CopyPathButton path={item?.path} label={t('common.copyObjectPath')} copiedLabel={t('common.copiedObjectPath')} />
-        <PanelIcon size={16} className={`shrink-0 transition-colors ${isCurrentPanelOpen ? 'text-ldvh-accent' : 'text-ldvh-text-secondary group-hover/detail-ref:text-ldvh-accent'}`} />
-      </div>
-    </div>
-  );
-}
-
 export function getAuxiliaryMetaEntries(obj: Record<string, unknown>, objType: string) {
   const keys = Array.from(new Set([...(AUXILIARY_META_KEYS_BY_TYPE[objType] || []), ...COMMON_AUXILIARY_META_KEYS]));
   return keys
     .filter((key) => key !== 'priority' || (objType !== 'spark' && objType !== 'workcase'))
+    .filter((key) => key !== 'scope' || objType !== 'workcase')
     .map((key) => [key, obj[key]] as [string, unknown])
     .filter(([, value]) => value !== null && value !== undefined && value !== '' && (!Array.isArray(value) || value.length > 0));
 }
@@ -1348,12 +1230,10 @@ function StudyReportBodyEntry({
   carrier?: FactCarrier;
 }) {
   const { t } = useI18n();
-  const { isOpen: panelOpen, content: panelContent, openPanel } = usePanel();
+  const { openPanel } = usePanel();
   const docPath = objectPath;
   const title = objectPath ? basename(objectPath) : t('objectDetail.reportBody');
   const openLabel = t('objectDetail.openReadingPanel');
-  const isCurrentPanelOpen = Boolean(docPath && panelOpen && panelContent?.type === 'doc' && panelContent.docPath === docPath);
-
   const openReportBody = () => {
     if (!docPath || carrier !== 'markdown') return;
     openPanel({ type: 'doc', title, docPath, data: String(value), carrier });
@@ -1558,44 +1438,4 @@ function parseRefType(refId: string): string | null {
   if (!isObjectRef(refId)) return null;
   const m = refId.match(/^([a-z]+)-\d+$/);
   return m ? m[1] : null;
-}
-
-/** 简单对象转 YAML 字符串 */
-function objectToYaml(obj: Record<string, unknown>, indent: number = 0): string {
-  const prefix = '  '.repeat(indent);
-  const lines: string[] = [];
-
-  for (const [key, value] of Object.entries(obj)) {
-    if (value === null || value === undefined) {
-      lines.push(`${prefix}${key}: null`);
-    } else if (typeof value === 'string') {
-      if (value.includes('\n') || value.includes(':') || value.includes('#') || value.startsWith(' ')) {
-        lines.push(`${prefix}${key}: |`);
-        for (const line of value.split('\n')) {
-          lines.push(`${prefix}  ${line}`);
-        }
-      } else {
-        lines.push(`${prefix}${key}: ${value}`);
-      }
-    } else if (typeof value === 'boolean' || typeof value === 'number') {
-      lines.push(`${prefix}${key}: ${value}`);
-    } else if (Array.isArray(value)) {
-      lines.push(`${prefix}${key}:`);
-      for (const item of value) {
-        if (typeof item === 'string') {
-          lines.push(`${prefix}- ${item}`);
-        } else if (typeof item === 'object' && item !== null) {
-          const subLines = objectToYaml(item as Record<string, unknown>, indent + 1);
-          lines.push(`${prefix}- ${subLines.trimStart()}`);
-        } else {
-          lines.push(`${prefix}- ${item}`);
-        }
-      }
-    } else if (typeof value === 'object') {
-      lines.push(`${prefix}${key}:`);
-      lines.push(objectToYaml(value as Record<string, unknown>, indent + 1));
-    }
-  }
-
-  return lines.join('\n');
 }

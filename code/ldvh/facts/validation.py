@@ -1,17 +1,17 @@
-"""Deterministic fact-object checks derived from projected fields and type sources."""
+"""Deterministic fact-object checks derived from current projected fields."""
 
 from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import date
 from typing import Any
 from urllib.parse import urlparse
 
 from ldvh.facts.contracts import LAYOUTS, TERMINAL_COMMON
 from ldvh.facts.models import FactIssue
 from ldvh.facts.schema import FactSchema
-from ldvh.facts.workcase_projection import PROJECTION_KEYS, workcase_subject_fingerprint
+from ldvh.facts.workcase_validation import validate_workcase_snapshot
 
 
 @dataclass(slots=True)
@@ -58,8 +58,8 @@ def _validate_node(value: Any, node: _Node, path: str, issues: list[FactIssue]) 
     if expected is None or not _matches_type(value, expected):
         issues.append(FactIssue("schema", f"字段必须是 {expected or '已登记类型'}", path))
         return
-    if isinstance(value, str) and not value:
-        issues.append(FactIssue("schema", "string 字段不得为空", path))
+    if isinstance(value, str) and not value.strip():
+        issues.append(FactIssue("schema", "string 字段不得为空或只包含空白", path))
         return
     if isinstance(value, list):
         if not value:
@@ -101,21 +101,69 @@ def _validate_mapping(value: dict[str, Any], node: _Node, path: str, issues: lis
 
 
 _RFC3339 = re.compile(
-    r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]+)?(?:Z|[+-][0-9]{2}:[0-9]{2})\Z"
+    r"(?P<year>[0-9]{4})-(?P<month>0[1-9]|1[0-2])-(?P<day>0[1-9]|[12][0-9]|3[01])"
+    r"T(?P<hour>[01][0-9]|2[0-3]):(?P<minute>[0-5][0-9]):(?P<second>[0-5][0-9])"
+    r"(?:\.(?P<fraction>[0-9]+))?"
+    r"(?P<offset>Z|(?P<offset_sign>[+-])(?P<offset_hour>[01][0-9]|2[0-3]):"
+    r"(?P<offset_minute>[0-5][0-9]))\Z"
 )
+_EPOCH_ORDINAL = date(1970, 1, 1).toordinal()
 
 
-def parse_rfc3339(value: object) -> datetime | None:
-    if not isinstance(value, str) or _RFC3339.fullmatch(value) is None:
+@dataclass(frozen=True, order=True, slots=True)
+class RFC3339Instant:
+    """One lossless instant used only for validation and ordering.
+
+    ``fractional_digits`` is the exact decimal fraction after removing only
+    trailing zeroes, which preserves the represented instant while making
+    numerically equal spellings compare equal.  The caller-owned timestamp
+    string is never normalized or rewritten.
+    """
+
+    utc_second: int
+    fractional_digits: str
+
+
+def parse_rfc3339(value: object) -> RFC3339Instant | None:
+    """Parse LDVH's strict regular RFC 3339 timestamp form.
+
+    This common boundary deliberately rejects ISO 8601 alternatives such as
+    week/basic dates and non-colon offsets.  Leap-second support requires a
+    separately governed time-scale source and is not inferred here.
+    """
+
+    if not isinstance(value, str):
+        return None
+    match = _RFC3339.fullmatch(value)
+    if match is None:
+        return None
+    if match["offset"] == "-00:00":
         return None
     try:
-        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        local_date = date(
+            int(match["year"]),
+            int(match["month"]),
+            int(match["day"]),
+        )
     except ValueError:
         return None
-    return parsed if parsed.tzinfo is not None else None
+
+    local_second = (
+        (local_date.toordinal() - _EPOCH_ORDINAL) * 86_400
+        + int(match["hour"]) * 3_600
+        + int(match["minute"]) * 60
+        + int(match["second"])
+    )
+    offset_second = 0
+    if match["offset"] != "Z":
+        offset_second = int(match["offset_hour"]) * 3_600 + int(match["offset_minute"]) * 60
+        if match["offset_sign"] == "-":
+            offset_second = -offset_second
+    fraction = (match["fraction"] or "").rstrip("0")
+    return RFC3339Instant(local_second - offset_second, fraction)
 
 
-def _time(value: object, path: str, issues: list[FactIssue]) -> datetime | None:
+def _time(value: object, path: str, issues: list[FactIssue]) -> RFC3339Instant | None:
     parsed = parse_rfc3339(value)
     if parsed is None:
         issues.append(FactIssue("schema", "时间必须是包含 UTC 偏移的 RFC 3339 string", path))
@@ -154,23 +202,9 @@ def _validate_status(fact_type_key: str, fields: dict[str, Any], issues: list[Fa
             _require(fields, {"disposition_summary"}, issues)
             _forbid(fields, {"priority"}, issues)
     elif fact_type_key == "workcase":
-        terminal = {"validation_summary", "closure_outcome", "disposition_summary"}
-        if status == "open":
-            _require(fields, {"priority"}, issues)
-            _forbid(fields, {"blocking_summary", "closure_approval"}, issues)
-        elif status == "blocked":
-            _require(fields, {"priority", "blocking_summary"}, issues)
-            _forbid(fields, {"closure_approval"}, issues)
-        else:
-            _require(fields, terminal, issues)
-            _forbid(fields, {"priority", "blocking_summary"}, issues)
-            if fields.get("closure_outcome") not in {
-                "completed",
-                "partial",
-                "not-achieved",
-                "cancelled",
-            }:
-                issues.append(FactIssue("schema", "closure_outcome 不在当前闭集中", "closure_outcome"))
+        # The type has a phase-dependent single current shape.  Its complete
+        # presence contract is centralized in workcase_validation.py.
+        return
     elif fact_type_key == "study":
         if status == "active":
             _require(fields, {"research_intent", "recommendation_summary"}, issues)
@@ -182,909 +216,6 @@ def _validate_status(fact_type_key: str, fields: dict[str, Any], issues: list[Fa
             _forbid(fields, {"disposition_summary"}, issues)
         else:
             _require(fields, TERMINAL_COMMON, issues)
-
-
-_WORKCASE_PHASES = {
-    "human_plan_confirming",
-    "executing",
-    "controller_checking",
-    "independent_reviewing",
-    "closure_preparing",
-    "human_closure_confirming",
-    "closed",
-}
-_WORKCASE_ITEM_STATUSES = {"pending", "in_progress", "blocked", "completed", "cancelled"}
-_WORKCASE_REVIEW_CONCLUSIONS = {"pass", "pass_with_followups", "changes_required", "blocked"}
-_WORKCASE_V1_PROFILE = "control-contract-v1"
-_WORKCASE_V2_PROFILE = "control-contract-v2"
-_WORKCASE_V1_BOUNDARY = datetime.fromisoformat("2026-07-20T07:30:00+08:00")
-_WORKCASE_V2_BOUNDARY = datetime.fromisoformat("2026-07-26T12:45:00+08:00")
-_WORKCASE_PROGRESS_BOUNDARY = datetime.fromisoformat("2026-07-26T07:30:00+08:00")
-_WORKCASE_PROGRESS_PHASE_ORDER = {
-    "executing": 0,
-    "controller_checking": 1,
-    "independent_reviewing": 2,
-    "closure_preparing": 3,
-}
-_WORKCASE_PROGRESS_KINDS = {"started", "advanced", "returned", "repeated", "baseline"}
-_SHA256_PATTERN = re.compile(r"[0-9a-f]{64}\Z")
-_WORKCASE_CURRENT_ONLY_FIELDS = {
-    "success_criterion_definitions",
-    "success_criterion_results",
-    "audit_summary",
-    "progress_history",
-    "residual_responsibilities",
-    "nonbinding_followups",
-    "improvement_observations",
-}
-_WORKCASE_V2_FORBIDDEN_FIELDS = {
-    "audit_summary",
-    "progress_history",
-    "nonbinding_followups",
-    "improvement_observations",
-}
-_WORKCASE_RESULT_PHASES = {
-    "independent_reviewing",
-    "closure_preparing",
-    "human_closure_confirming",
-    "closed",
-}
-_LOCAL_ID_PATTERNS = {
-    "criterion_id": re.compile(r"criterion-[0-9]{2,}\Z"),
-    "audit_id": re.compile(r"audit-[0-9]{2,}\Z"),
-    "progress_event_id": re.compile(r"progress-[0-9]{3,}\Z"),
-    "finding_id": re.compile(r"finding-[0-9]{2,}\Z"),
-    "residual_id": re.compile(r"residual-[0-9]{2,}\Z"),
-    "followup_id": re.compile(r"followup-[0-9]{2,}\Z"),
-    "observation_id": re.compile(r"observation-[0-9]{2,}\Z"),
-    "topic_key": re.compile(r"[a-z][a-z0-9]*(?:-[a-z0-9]+)*\Z"),
-}
-
-
-def _positive_integer(value: object) -> bool:
-    return isinstance(value, int) and not isinstance(value, bool) and value > 0
-
-
-def _workcase_profile(fields: dict[str, Any]) -> str:
-    value = fields.get("workcase_profile")
-    if value == _WORKCASE_V1_PROFILE:
-        return "v1"
-    if value == _WORKCASE_V2_PROFILE:
-        return "v2"
-    return "legacy" if value is None else "invalid"
-
-
-def _validate_unique_local_values(
-    values: list[Any],
-    *,
-    array_name: str,
-    member_name: str,
-    pattern_name: str | None,
-    issues: list[FactIssue],
-) -> set[str]:
-    observed: list[str] = []
-    pattern = _LOCAL_ID_PATTERNS.get(pattern_name or "")
-    for index, value in enumerate(values):
-        if not isinstance(value, dict):
-            continue
-        member = value.get(member_name)
-        path = f"{array_name}[{index}].{member_name}"
-        if not isinstance(member, str):
-            continue
-        observed.append(member)
-        if pattern is not None and pattern.fullmatch(member) is None:
-            issues.append(FactIssue("schema", f"{member_name} 格式不符合当前闭集", path))
-    if len(observed) != len(set(observed)):
-        issues.append(FactIssue("schema", f"{member_name} 在同一 WorkCase 内不得重复", array_name))
-    return set(observed)
-
-
-def _validate_workcase_profile(fields: dict[str, Any], issues: list[FactIssue]) -> str:
-    raw_profile = fields.get("workcase_profile")
-    created = parse_rfc3339(fields.get("created_at"))
-    if raw_profile is not None and raw_profile not in {_WORKCASE_V1_PROFILE, _WORKCASE_V2_PROFILE}:
-        issues.append(
-            FactIssue(
-                "schema",
-                f"workcase_profile 只允许 {_WORKCASE_V1_PROFILE} 或 {_WORKCASE_V2_PROFILE}",
-                "workcase_profile",
-            )
-        )
-        return "invalid"
-    profile = _workcase_profile(fields)
-    if profile == "legacy" and created is not None and created >= _WORKCASE_V1_BOUNDARY:
-        required_profile = _WORKCASE_V2_PROFILE if created >= _WORKCASE_V2_BOUNDARY else _WORKCASE_V1_PROFILE
-        issues.append(
-            FactIssue(
-                "schema",
-                f"该创建时点的 WorkCase 必须显式使用 {required_profile}",
-                "workcase_profile",
-            )
-        )
-    if profile == "v1":
-        _require(fields, {"success_criterion_definitions", "audit_summary"}, issues)
-        _forbid(fields, {"success_criteria"}, issues)
-        if created is not None and created >= _WORKCASE_V2_BOUNDARY:
-            issues.append(
-                FactIssue(
-                    "schema",
-                    "V2 生效边界后创建的 WorkCase 必须使用 control-contract-v2",
-                    "workcase_profile",
-                )
-            )
-    elif profile == "v2":
-        _require(fields, {"success_criterion_definitions"}, issues)
-        _forbid(fields, {"success_criteria", *_WORKCASE_V2_FORBIDDEN_FIELDS}, issues)
-    elif profile == "legacy":
-        _require(fields, {"success_criteria"}, issues)
-        _forbid(fields, _WORKCASE_CURRENT_ONLY_FIELDS, issues)
-        for array_name in ("creation_reviews", "result_reviews"):
-            reviews = fields.get(array_name)
-            if not isinstance(reviews, list):
-                continue
-            for index, review in enumerate(reviews):
-                if isinstance(review, dict) and "review_basis" in review:
-                    issues.append(
-                        FactIssue(
-                            "schema",
-                            "legacy WorkCase review 禁止 review_basis",
-                            f"{array_name}[{index}].review_basis",
-                        )
-                    )
-    return profile
-
-
-def _validate_workcase_criteria(fields: dict[str, Any], profile: str, issues: list[FactIssue]) -> None:
-    if profile == "legacy":
-        criteria = fields.get("success_criteria")
-        if isinstance(criteria, list):
-            if any(not isinstance(item, str) or not item for item in criteria):
-                issues.append(FactIssue("schema", "success_criteria 成员必须是非空 string", "success_criteria"))
-            elif len(criteria) != len(set(criteria)):
-                issues.append(FactIssue("schema", "success_criteria 成员不得重复", "success_criteria"))
-        return
-
-    definitions = fields.get("success_criterion_definitions")
-    definition_values = definitions if isinstance(definitions, list) else []
-    criterion_ids = _validate_unique_local_values(
-        definition_values,
-        array_name="success_criterion_definitions",
-        member_name="criterion_id",
-        pattern_name="criterion_id",
-        issues=issues,
-    )
-    statements = [
-        item.get("statement")
-        for item in definition_values
-        if isinstance(item, dict) and isinstance(item.get("statement"), str)
-    ]
-    if len(statements) != len(set(statements)):
-        issues.append(
-            FactIssue("schema", "成功标准 statement 在同一 WorkCase 内不得重复", "success_criterion_definitions")
-        )
-
-    phase = fields.get("phase")
-    if phase in _WORKCASE_RESULT_PHASES:
-        _require(fields, {"success_criterion_results"}, issues)
-    results = fields.get("success_criterion_results")
-    if not isinstance(results, list):
-        return
-    result_ids = _validate_unique_local_values(
-        results,
-        array_name="success_criterion_results",
-        member_name="criterion_id",
-        pattern_name="criterion_id",
-        issues=issues,
-    )
-    if result_ids != criterion_ids:
-        issues.append(
-            FactIssue(
-                "schema",
-                "success_criterion_results 必须按 criterion_id 精确覆盖当前成功标准",
-                "success_criterion_results",
-            )
-        )
-    for index, result in enumerate(results):
-        if not isinstance(result, dict):
-            continue
-        path = f"success_criterion_results[{index}]"
-        outcome = result.get("outcome")
-        if outcome not in {"satisfied", "not_satisfied", "not_verified"}:
-            issues.append(FactIssue("schema", "criterion outcome 不在当前闭集中", f"{path}.outcome"))
-
-
-def _validate_workcase_audit(fields: dict[str, Any], profile: str, issues: list[FactIssue]) -> None:
-    if profile != "v1":
-        return
-    entries = fields.get("audit_summary")
-    if not isinstance(entries, list):
-        return
-    _validate_unique_local_values(
-        entries,
-        array_name="audit_summary",
-        member_name="audit_id",
-        pattern_name="audit_id",
-        issues=issues,
-    )
-    finding_values: list[dict[str, Any]] = []
-    subject_kinds: list[object] = []
-    for index, entry in enumerate(entries):
-        if not isinstance(entry, dict):
-            continue
-        path = f"audit_summary[{index}]"
-        subject_kind = entry.get("subject_kind")
-        subject_kinds.append(subject_kind)
-        if subject_kind not in {"pre_creation_plan", "superseded_plan", "superseded_result"}:
-            issues.append(FactIssue("schema", "audit subject_kind 不在当前闭集中", f"{path}.subject_kind"))
-        for name in ("subject_version", "review_count"):
-            if not _positive_integer(entry.get(name)):
-                issues.append(FactIssue("schema", f"audit {name} 必须是正整数", f"{path}.{name}"))
-        findings = entry.get("findings")
-        if isinstance(findings, list):
-            finding_values.extend(item for item in findings if isinstance(item, dict))
-    created = parse_rfc3339(fields.get("created_at"))
-    if created is not None and created >= _WORKCASE_V1_BOUNDARY and "pre_creation_plan" not in subject_kinds:
-        issues.append(FactIssue("schema", "V1 新建 WorkCase 必须保留 pre_creation_plan audit", "audit_summary"))
-    _validate_unique_local_values(
-        finding_values,
-        array_name="audit_summary.findings",
-        member_name="finding_id",
-        pattern_name="finding_id",
-        issues=issues,
-    )
-    for finding in finding_values:
-        finding_id = finding.get("finding_id")
-        path = f"audit_summary.findings[{finding_id if isinstance(finding_id, str) else '?'}]"
-        if finding.get("controller_disposition") not in {"accepted", "corrected", "rejected", "carried"}:
-            issues.append(
-                FactIssue("schema", "audit controller_disposition 不在当前闭集中", f"{path}.controller_disposition")
-            )
-        if finding.get("rereview_outcome") not in {"performed", "not_required"}:
-            issues.append(FactIssue("schema", "audit rereview_outcome 不在当前闭集中", f"{path}.rereview_outcome"))
-        if finding.get("final_route") not in {
-            "current_plan",
-            "current_result",
-            "nonbinding_followup",
-            "residual_responsibility",
-            "rejected",
-        }:
-            issues.append(FactIssue("schema", "audit final_route 不在当前闭集中", f"{path}.final_route"))
-
-
-def _validate_workcase_progress_history(fields: dict[str, Any], profile: str, issues: list[FactIssue]) -> None:
-    if profile != "v1":
-        return
-    history = fields.get("progress_history")
-    created = parse_rfc3339(fields.get("created_at"))
-    phase = fields.get("phase")
-    progressed_phase = phase in _WORKCASE_PROGRESS_PHASE_ORDER or phase in {
-        "human_closure_confirming",
-        "closed",
-    }
-    if not isinstance(history, dict):
-        if created is not None and created >= _WORKCASE_PROGRESS_BOUNDARY and progressed_phase:
-            issues.append(
-                FactIssue(
-                    "schema",
-                    "推进历史边界后创建的 WorkCase 进入推进后必须记录 progress_history",
-                    "progress_history",
-                )
-            )
-        return
-
-    coverage = history.get("coverage")
-    if coverage not in {"full", "partial"}:
-        issues.append(FactIssue("schema", "progress_history.coverage 不在当前闭集中", "progress_history.coverage"))
-    if created is not None and created >= _WORKCASE_PROGRESS_BOUNDARY and coverage != "full":
-        issues.append(
-            FactIssue(
-                "schema",
-                "推进历史边界后创建的 WorkCase 只能形成 full history",
-                "progress_history.coverage",
-            )
-        )
-    entries = history.get("entries")
-    if not isinstance(entries, list) or not entries:
-        return
-
-    _validate_unique_local_values(
-        entries,
-        array_name="progress_history.entries",
-        member_name="event_id",
-        pattern_name="progress_event_id",
-        issues=issues,
-    )
-    current_plan = fields.get("plan_version")
-    created_at = parse_rfc3339(fields.get("created_at"))
-    updated_at = parse_rfc3339(fields.get("updated_at"))
-    previous: dict[str, Any] | None = None
-    previous_time: datetime | None = None
-    for index, entry in enumerate(entries):
-        if not isinstance(entry, dict):
-            continue
-        path = f"progress_history.entries[{index}]"
-        expected_id = f"progress-{index + 1:03d}"
-        if entry.get("event_id") != expected_id:
-            issues.append(FactIssue("schema", "progress event_id 必须连续单调形成", f"{path}.event_id"))
-        event_plan = entry.get("plan_version")
-        event_round = entry.get("round")
-        event_phase = entry.get("phase")
-        event_kind = entry.get("transition_kind")
-        if not _positive_integer(event_plan) or (
-            _positive_integer(current_plan) and isinstance(event_plan, int) and event_plan > current_plan
-        ):
-            issues.append(FactIssue("schema", "progress plan_version 必须是当前范围内正整数", f"{path}.plan_version"))
-        if not _positive_integer(event_round):
-            issues.append(FactIssue("schema", "progress round 必须是正整数", f"{path}.round"))
-        if event_phase not in _WORKCASE_PROGRESS_PHASE_ORDER:
-            issues.append(FactIssue("schema", "progress phase 不在推进环节闭集中", f"{path}.phase"))
-        if event_kind not in _WORKCASE_PROGRESS_KINDS:
-            issues.append(FactIssue("schema", "progress transition_kind 不在当前闭集中", f"{path}.transition_kind"))
-        event_at = parse_rfc3339(entry.get("entered_at"))
-        if event_at is None:
-            issues.append(
-                FactIssue(
-                    "schema",
-                    "progress entered_at 必须是包含 UTC 偏移的 RFC 3339 string",
-                    f"{path}.entered_at",
-                )
-            )
-        else:
-            if created_at is not None and event_at < created_at:
-                issues.append(FactIssue("schema", "progress entered_at 不得早于 created_at", f"{path}.entered_at"))
-            if updated_at is not None and event_at > updated_at:
-                issues.append(FactIssue("schema", "progress entered_at 不得晚于 updated_at", f"{path}.entered_at"))
-            if previous_time is not None and event_at <= previous_time:
-                issues.append(FactIssue("schema", "progress entered_at 必须严格递增", f"{path}.entered_at"))
-            previous_time = event_at
-
-        if previous is None:
-            expected_kind = "baseline" if coverage == "partial" else "started"
-            if event_round != 1 or event_kind != expected_kind:
-                issues.append(FactIssue("schema", "progress 首项轮次或转换种类不符合 coverage", path))
-        else:
-            previous_plan = previous.get("plan_version")
-            previous_round = previous.get("round")
-            previous_phase = previous.get("phase")
-            if isinstance(event_plan, int) and isinstance(previous_plan, int) and event_plan < previous_plan:
-                issues.append(FactIssue("schema", "progress plan_version 必须单调不减", f"{path}.plan_version"))
-            elif event_plan != previous_plan:
-                if event_round != 1 or event_kind != "started":
-                    issues.append(FactIssue("schema", "新 plan_version 的推进历史必须从第 1 轮 started 开始", path))
-            elif (
-                isinstance(previous_round, int)
-                and previous_phase in _WORKCASE_PROGRESS_PHASE_ORDER
-                and event_phase in _WORKCASE_PROGRESS_PHASE_ORDER
-            ):
-                previous_rank = _WORKCASE_PROGRESS_PHASE_ORDER[previous_phase]
-                current_rank = _WORKCASE_PROGRESS_PHASE_ORDER[event_phase]
-                if current_rank > previous_rank:
-                    expected_round, expected_kind = previous_round, "advanced"
-                elif current_rank < previous_rank:
-                    expected_round, expected_kind = previous_round + 1, "returned"
-                else:
-                    expected_round, expected_kind = previous_round + 1, "repeated"
-                if event_round != expected_round or event_kind != expected_kind:
-                    issues.append(FactIssue("schema", "progress round/transition_kind 与相邻环节不一致", path))
-        previous = entry
-
-    last = entries[-1] if isinstance(entries[-1], dict) else None
-    if last is None:
-        return
-    if phase in _WORKCASE_PROGRESS_PHASE_ORDER:
-        if last.get("plan_version") != current_plan or last.get("phase") != phase:
-            issues.append(FactIssue("schema", "当前推进 phase 必须匹配最后一条 progress event", "progress_history"))
-    elif phase in {"human_closure_confirming", "closed"}:
-        if last.get("plan_version") != current_plan or last.get("phase") != "closure_preparing":
-            issues.append(FactIssue("schema", "关闭确认前最后推进事件必须是当前计划主控收敛", "progress_history"))
-    elif phase == "human_plan_confirming" and last.get("plan_version") == current_plan:
-        issues.append(FactIssue("schema", "当前待确认计划不得保留同版本推进事件", "progress_history"))
-
-
-def _validate_workcase_observations(fields: dict[str, Any], profile: str, issues: list[FactIssue]) -> None:
-    if profile not in {"v1", "v2"}:
-        return
-    residuals = fields.get("residual_responsibilities")
-    residual_values = residuals if isinstance(residuals, list) else []
-    residual_ids = _validate_unique_local_values(
-        residual_values,
-        array_name="residual_responsibilities",
-        member_name="residual_id",
-        pattern_name="residual_id",
-        issues=issues,
-    )
-    for index, residual in enumerate(residual_values):
-        if isinstance(residual, dict) and residual.get("disposition") not in {"routed", "accepted_stop"}:
-            issues.append(
-                FactIssue(
-                    "schema",
-                    "residual disposition 不在当前闭集中",
-                    f"residual_responsibilities[{index}].disposition",
-                )
-            )
-
-    if profile != "v1":
-        return
-
-    followups = fields.get("nonbinding_followups")
-    followup_values = followups if isinstance(followups, list) else []
-    followup_ids = _validate_unique_local_values(
-        followup_values,
-        array_name="nonbinding_followups",
-        member_name="followup_id",
-        pattern_name="followup_id",
-        issues=issues,
-    )
-    observations = fields.get("improvement_observations")
-    if not isinstance(observations, list):
-        return
-    if "result_version" not in fields:
-        issues.append(FactIssue("schema", "improvement_observations 要求有效 result_version", "result_version"))
-    if len(observations) > 20:
-        issues.append(FactIssue("schema", "单一 result_version 最多保留 20 项 observation", "improvement_observations"))
-    _validate_unique_local_values(
-        observations,
-        array_name="improvement_observations",
-        member_name="observation_id",
-        pattern_name="observation_id",
-        issues=issues,
-    )
-    _validate_unique_local_values(
-        observations,
-        array_name="improvement_observations",
-        member_name="topic_key",
-        pattern_name="topic_key",
-        issues=issues,
-    )
-    item_ids = {
-        item.get("item_id")
-        for item in fields.get("work_items", [])
-        if isinstance(item, dict) and isinstance(item.get("item_id"), str)
-    }
-    for index, observation in enumerate(observations):
-        if not isinstance(observation, dict):
-            continue
-        path = f"improvement_observations[{index}]"
-        if observation.get("ownership") not in {"current_scope", "adjacent_project", "external"}:
-            issues.append(FactIssue("schema", "observation ownership 不在当前闭集中", f"{path}.ownership"))
-        dimensions = observation.get("value_dimensions")
-        if isinstance(dimensions, list):
-            if any(value not in {f"V{number}" for number in range(1, 9)} for value in dimensions):
-                issues.append(FactIssue("schema", "value_dimensions 只允许 V1–V8", f"{path}.value_dimensions"))
-            elif len(dimensions) != len(set(dimensions)):
-                issues.append(FactIssue("schema", "value_dimensions 不得重复", f"{path}.value_dimensions"))
-        disposition = observation.get("disposition")
-        disposition_ref = observation.get("disposition_ref")
-        if disposition == "absorbed_current_scope":
-            expected_refs = item_ids
-        elif disposition == "nonbinding_followup":
-            expected_refs = followup_ids
-        elif disposition == "residual_responsibility":
-            expected_refs = residual_ids
-        elif disposition == "rejected":
-            expected_refs = None
-        else:
-            expected_refs = set()
-            issues.append(FactIssue("schema", "observation disposition 不在当前闭集中", f"{path}.disposition"))
-        if expected_refs is None:
-            if "disposition_ref" in observation:
-                issues.append(
-                    FactIssue(
-                        "schema",
-                        "rejected observation 禁止 disposition_ref",
-                        f"{path}.disposition_ref",
-                    )
-                )
-        elif disposition_ref not in expected_refs:
-            issues.append(
-                FactIssue("schema", "observation disposition_ref 未指向相应 local ID", f"{path}.disposition_ref")
-            )
-
-
-def _validate_workcase_items(fields: dict[str, Any], profile: str, issues: list[FactIssue]) -> None:
-    values = fields.get("work_items")
-    if not isinstance(values, list):
-        return
-    item_ids = [item.get("item_id") for item in values if isinstance(item, dict)]
-    string_ids = [item_id for item_id in item_ids if isinstance(item_id, str)]
-    if len(string_ids) != len(set(string_ids)):
-        issues.append(FactIssue("schema", "work_items.item_id 不得重复", "work_items"))
-    known = set(string_ids)
-    statuses = {
-        item.get("item_id"): item.get("status")
-        for item in values
-        if isinstance(item, dict) and isinstance(item.get("item_id"), str)
-    }
-    graph: dict[str, set[str]] = {item_id: set() for item_id in string_ids}
-    for index, item in enumerate(values):
-        if not isinstance(item, dict):
-            continue
-        path = f"work_items[{index}]"
-        item_id = item.get("item_id")
-        if isinstance(item_id, str) and re.fullmatch(r"item-[0-9]{2,}", item_id) is None:
-            issues.append(FactIssue("schema", "item_id 必须匹配 item-[0-9]{2,}", f"{path}.item_id"))
-        approach_summary = item.get("approach_summary")
-        if profile != "v2" and (not isinstance(approach_summary, str) or not approach_summary):
-            issues.append(
-                FactIssue("schema", "legacy/V1 work item 必须包含非空 approach_summary", f"{path}.approach_summary")
-            )
-        elif "approach_summary" in item and (not isinstance(approach_summary, str) or not approach_summary):
-            issues.append(FactIssue("schema", "approach_summary 出现时必须是非空 string", f"{path}.approach_summary"))
-        template_keys = item.get("template_keys")
-        if isinstance(template_keys, list):
-            if any(not isinstance(key, str) or not key for key in template_keys):
-                issues.append(FactIssue("schema", "template_keys 成员必须是非空 string", f"{path}.template_keys"))
-            elif len(template_keys) != len(set(template_keys)):
-                issues.append(FactIssue("schema", "template_keys 成员不得重复", f"{path}.template_keys"))
-        status = item.get("status")
-        if status not in _WORKCASE_ITEM_STATUSES:
-            issues.append(FactIssue("schema", "work item status 不在当前闭集中", f"{path}.status"))
-            continue
-        conditions = {"current_summary", "resume_from", "blocking_summary", "result_summary"}
-        required: set[str] = set()
-        allowed: set[str] = set()
-        if status == "in_progress":
-            required = {"current_summary", "resume_from"}
-            allowed = {"current_summary", "resume_from"}
-        elif status == "blocked":
-            required = {"current_summary", "resume_from", "blocking_summary"}
-            allowed = required
-        elif status == "completed":
-            required = {"result_summary"}
-            allowed = required
-        elif status == "cancelled":
-            required = {"result_summary"}
-            allowed = {"result_summary"}
-        for name in sorted(required - set(item)):
-            issues.append(FactIssue("schema", "当前 work item 状态要求该字段", f"{path}.{name}"))
-        for name in sorted((conditions - allowed) & set(item)):
-            issues.append(FactIssue("schema", "当前 work item 状态禁止该字段", f"{path}.{name}"))
-        dependencies = item.get("depends_on")
-        if not isinstance(dependencies, list):
-            continue
-        if any(not isinstance(target, str) or not target for target in dependencies):
-            issues.append(FactIssue("schema", "depends_on 成员必须是非空 item_id", f"{path}.depends_on"))
-            continue
-        if len(dependencies) != len(set(dependencies)):
-            issues.append(FactIssue("schema", "depends_on 成员不得重复", f"{path}.depends_on"))
-        for target in dependencies:
-            if target not in known:
-                issues.append(FactIssue("schema", "depends_on 目标不存在", f"{path}.depends_on"))
-            elif target == item_id:
-                issues.append(FactIssue("schema", "work item 不得依赖自身", f"{path}.depends_on"))
-            elif isinstance(item_id, str):
-                graph[item_id].add(target)
-            if status == "in_progress" and statuses.get(target) not in {"completed", "cancelled"}:
-                issues.append(FactIssue("schema", "in_progress work item 的依赖必须已完成或取消", f"{path}.depends_on"))
-    visiting: set[str] = set()
-    visited: set[str] = set()
-
-    def visit(node: str) -> bool:
-        if node in visiting:
-            return True
-        if node in visited:
-            return False
-        visiting.add(node)
-        if any(visit(target) for target in graph.get(node, ())):
-            return True
-        visiting.remove(node)
-        visited.add(node)
-        return False
-
-    if any(visit(node) for node in graph if node not in visited):
-        issues.append(FactIssue("schema", "work item depends_on 有向图不得成环", "work_items"))
-
-
-def _validate_workcase_reviews(
-    fields: dict[str, Any],
-    array_name: str,
-    version_name: str,
-    profile: str,
-    issues: list[FactIssue],
-) -> None:
-    values = fields.get(array_name)
-    version = fields.get(version_name)
-    if not isinstance(values, list):
-        return
-    for index, review in enumerate(values):
-        if not isinstance(review, dict):
-            continue
-        path = f"{array_name}[{index}]"
-        if _positive_integer(version) and review.get("subject_version") != version:
-            issues.append(FactIssue("schema", f"审核必须绑定当前 {version_name}", f"{path}.subject_version"))
-        if review.get("conclusion") not in _WORKCASE_REVIEW_CONCLUSIONS:
-            issues.append(FactIssue("schema", "review conclusion 不在当前闭集中", f"{path}.conclusion"))
-        conclusion = review.get("conclusion")
-        feedback = review.get("feedback")
-        feedback_required = profile != "v2" or conclusion != "pass"
-        if not isinstance(feedback, list) or not feedback:
-            if feedback_required:
-                issues.append(
-                    FactIssue(
-                        "schema",
-                        "legacy/V1 review 或非 pass 的 V2 review 必须包含非空 feedback",
-                        f"{path}.feedback",
-                    )
-                )
-            elif "feedback" in review:
-                issues.append(FactIssue("schema", "review feedback 出现时必须是非空 array", f"{path}.feedback"))
-        else:
-            if any(not isinstance(item, str) or not item for item in feedback):
-                issues.append(FactIssue("schema", "review feedback 成员必须是非空 string", f"{path}.feedback"))
-            elif len(feedback) != len(set(feedback)):
-                issues.append(FactIssue("schema", "review feedback 不得重复", f"{path}.feedback"))
-        if "controller_resolution" in review and (
-            not isinstance(review.get("controller_resolution"), str) or not review["controller_resolution"]
-        ):
-            issues.append(
-                FactIssue(
-                    "schema",
-                    "controller_resolution 出现时必须是非空 string",
-                    f"{path}.controller_resolution",
-                )
-            )
-        if profile == "legacy":
-            if "controller_resolution" not in review:
-                issues.append(
-                    FactIssue(
-                        "schema",
-                        "legacy review 必须包含 Controller 处置",
-                        f"{path}.controller_resolution",
-                    )
-                )
-            continue
-        if profile == "v2":
-            if "review_basis" in review:
-                issues.append(FactIssue("schema", "V2 review 禁止 review_basis", f"{path}.review_basis"))
-            if "controller_resolution" in review and not review.get("feedback"):
-                issues.append(
-                    FactIssue(
-                        "schema",
-                        "没有 feedback 的 V2 review 必须省略 Controller 处置",
-                        f"{path}.controller_resolution",
-                    )
-                )
-            needs_resolution = array_name == "creation_reviews" or fields.get("phase") != "independent_reviewing"
-            if needs_resolution and review.get("feedback") and "controller_resolution" not in review:
-                issues.append(
-                    FactIssue(
-                        "schema",
-                        "存在待处置 feedback 时，离开独立审核前必须包含 Controller 处置",
-                        f"{path}.controller_resolution",
-                    )
-                )
-            continue
-        basis = review.get("review_basis")
-        if not isinstance(basis, dict):
-            issues.append(FactIssue("schema", "V1 review 必须包含 review_basis", f"{path}.review_basis"))
-        else:
-            projection_key = basis.get("projection_key")
-            subject_fingerprint = basis.get("subject_fingerprint")
-            allowed_keys = (
-                {"plan_current"}
-                if array_name == "creation_reviews"
-                else {
-                    "result_implementation",
-                    "result_with_closure_report",
-                }
-            )
-            if projection_key not in allowed_keys:
-                issues.append(
-                    FactIssue(
-                        "schema",
-                        "review projection_key 不适用于当前审核域",
-                        f"{path}.review_basis.projection_key",
-                    )
-                )
-            if not isinstance(subject_fingerprint, str) or _SHA256_PATTERN.fullmatch(subject_fingerprint) is None:
-                issues.append(
-                    FactIssue(
-                        "schema",
-                        "review subject_fingerprint 必须是 64 位小写 SHA-256",
-                        f"{path}.review_basis.subject_fingerprint",
-                    )
-                )
-            elif projection_key in PROJECTION_KEYS and (
-                array_name == "creation_reviews" or "controller_resolution" not in review
-            ):
-                expected = workcase_subject_fingerprint(fields, projection_key)
-                if subject_fingerprint != expected:
-                    issues.append(
-                        FactIssue(
-                            "schema",
-                            "review subject_fingerprint 与形成时主体投影不一致",
-                            f"{path}.review_basis.subject_fingerprint",
-                        )
-                    )
-        if array_name == "creation_reviews" or fields.get("phase") != "independent_reviewing":
-            if "controller_resolution" not in review:
-                issues.append(
-                    FactIssue(
-                        "schema",
-                        "离开独立审核前 review 必须包含 Controller 处置",
-                        f"{path}.controller_resolution",
-                    )
-                )
-
-
-def _validate_workcase_approval_source_refs(fields: dict[str, Any], issues: list[FactIssue]) -> None:
-    allowed = {"kind", "locator", "version", "observed_at", "details"}
-    for approval_name in ("execution_approval", "closure_approval"):
-        approval = fields.get(approval_name)
-        if not isinstance(approval, dict):
-            continue
-        references = approval.get("source_refs")
-        if not isinstance(references, list):
-            continue
-        for index, reference in enumerate(references):
-            path = f"{approval_name}.source_refs[{index}]"
-            if not isinstance(reference, dict):
-                issues.append(FactIssue("schema", "approval source_refs 成员必须是 object", path))
-                continue
-            unknown = sorted(key for key in reference if isinstance(key, str) and key not in allowed)
-            if unknown:
-                issues.append(FactIssue("schema", f"approval source_refs 包含未知字段: {', '.join(unknown)}", path))
-            if any(not isinstance(key, str) for key in reference):
-                issues.append(FactIssue("schema", "approval source_refs 字段名必须是 string", path))
-            for name in ("kind", "locator"):
-                if not isinstance(reference.get(name), str) or not reference[name]:
-                    issues.append(
-                        FactIssue("schema", f"approval source_refs.{name} 必须是非空 string", f"{path}.{name}")
-                    )
-            for name in ("version", "observed_at"):
-                if name in reference and (not isinstance(reference[name], str) or not reference[name]):
-                    issues.append(
-                        FactIssue("schema", f"approval source_refs.{name} 出现时必须是非空 string", f"{path}.{name}")
-                    )
-            observed_at = reference.get("observed_at")
-            if isinstance(observed_at, str) and observed_at and parse_rfc3339(observed_at) is None:
-                issues.append(
-                    FactIssue(
-                        "schema",
-                        "approval source_refs.observed_at 必须是带时区 RFC 3339 时间",
-                        f"{path}.observed_at",
-                    )
-                )
-            if "details" in reference and not isinstance(reference["details"], dict):
-                issues.append(
-                    FactIssue("schema", "approval source_refs.details 出现时必须是 object", f"{path}.details")
-                )
-
-
-def _validate_workcase(fields: dict[str, Any], issues: list[FactIssue]) -> None:
-    profile = _validate_workcase_profile(fields, issues)
-    status = fields.get("status")
-    phase = fields.get("phase")
-    if phase not in _WORKCASE_PHASES:
-        issues.append(FactIssue("schema", "phase 不在 WorkCase 推进阶段闭集中", "phase"))
-    if not _positive_integer(fields.get("plan_version")):
-        issues.append(FactIssue("schema", "plan_version 必须是正整数", "plan_version"))
-    if status == "closed":
-        if phase != "closed":
-            issues.append(FactIssue("schema", "closed WorkCase 的 phase 必须为 closed", "phase"))
-        _forbid(fields, {"resume_from", "waiting_on"}, issues)
-    else:
-        if phase == "closed":
-            issues.append(FactIssue("schema", "非 closed WorkCase 不得使用 closed phase", "phase"))
-    if phase in {"human_plan_confirming", "human_closure_confirming"}:
-        _require(fields, {"waiting_on"}, issues)
-    if phase == "human_plan_confirming":
-        _forbid(
-            fields,
-            {
-                "execution_approval",
-                "result_version",
-                "success_criterion_results",
-                "controller_check_summary",
-                "result_reviews",
-                "improvement_observations",
-                "residual_responsibilities",
-                "nonbinding_followups",
-                "closure_approval",
-                "validation_summary",
-                "closure_outcome",
-                "disposition_summary",
-            },
-            issues,
-        )
-    if phase == "executing":
-        _forbid(
-            fields,
-            {
-                "closure_approval",
-                "validation_summary",
-                "closure_outcome",
-                "disposition_summary",
-            },
-            issues,
-        )
-    if phase == "controller_checking":
-        _forbid(fields, {"closure_approval"}, issues)
-    if phase == "independent_reviewing":
-        _forbid(fields, {"closure_approval"}, issues)
-    if phase == "closure_preparing":
-        _forbid(fields, {"closure_approval"}, issues)
-    if phase in {
-        "executing",
-        "controller_checking",
-        "independent_reviewing",
-        "closure_preparing",
-        "human_closure_confirming",
-        "closed",
-    }:
-        _require(fields, {"execution_approval"}, issues)
-    if phase == "executing":
-        items = fields.get("work_items")
-        if isinstance(items, list) and not any(
-            isinstance(item, dict) and item.get("status") not in {"completed", "cancelled"} for item in items
-        ):
-            issues.append(FactIssue("schema", "executing 阶段必须仍有未完成工作项", "work_items"))
-    if phase in {
-        "controller_checking",
-        "independent_reviewing",
-        "closure_preparing",
-        "human_closure_confirming",
-        "closed",
-    }:
-        _require(fields, {"result_version"}, issues)
-        items = fields.get("work_items")
-        if isinstance(items, list) and any(
-            isinstance(item, dict) and item.get("status") not in {"completed", "cancelled"} for item in items
-        ):
-            issues.append(FactIssue("schema", "进入结果阶段前全部 work item 必须完成或取消", "work_items"))
-    result_context_fields = {
-        "success_criterion_results",
-        "controller_check_summary",
-        "result_reviews",
-        "improvement_observations",
-        "residual_responsibilities",
-        "nonbinding_followups",
-        "validation_summary",
-        "closure_outcome",
-        "disposition_summary",
-    }
-    if "result_version" in fields and not _positive_integer(fields.get("result_version")):
-        issues.append(FactIssue("schema", "result_version 必须是正整数", "result_version"))
-    if any(key in fields for key in result_context_fields) and "result_version" not in fields:
-        issues.append(FactIssue("schema", "结果从属字段要求有效 result_version", "result_version"))
-    if phase in {"independent_reviewing", "closure_preparing", "human_closure_confirming", "closed"}:
-        _require(fields, {"controller_check_summary"}, issues)
-    if phase in {"closure_preparing", "human_closure_confirming", "closed"}:
-        _require(fields, {"result_reviews"}, issues)
-    if phase in {"human_closure_confirming", "closed"}:
-        _require(fields, {"validation_summary", "closure_outcome", "disposition_summary"}, issues)
-    if phase == "human_closure_confirming":
-        _forbid(fields, {"closure_approval"}, issues)
-    if phase == "closed":
-        _require(fields, {"closure_approval"}, issues)
-    plan_version = fields.get("plan_version")
-    approval = fields.get("execution_approval")
-    if (
-        isinstance(approval, dict)
-        and _positive_integer(plan_version)
-        and approval.get("subject_version") != plan_version
-    ):
-        issues.append(
-            FactIssue("schema", "execution_approval 必须绑定当前 plan_version", "execution_approval.subject_version")
-        )
-    result_version = fields.get("result_version")
-    closure = fields.get("closure_approval")
-    if (
-        isinstance(closure, dict)
-        and _positive_integer(result_version)
-        and closure.get("subject_version") != result_version
-    ):
-        issues.append(
-            FactIssue("schema", "closure_approval 必须绑定当前 result_version", "closure_approval.subject_version")
-        )
-    _validate_workcase_items(fields, profile, issues)
-    _validate_workcase_criteria(fields, profile, issues)
-    _validate_workcase_audit(fields, profile, issues)
-    _validate_workcase_progress_history(fields, profile, issues)
-    _validate_workcase_observations(fields, profile, issues)
-    _validate_workcase_reviews(fields, "creation_reviews", "plan_version", profile, issues)
-    _validate_workcase_reviews(fields, "result_reviews", "result_version", profile, issues)
-    _validate_workcase_approval_source_refs(fields, issues)
 
 
 def _validate_times(fact_type_key: str, fields: dict[str, Any], issues: list[FactIssue]) -> None:
@@ -1118,10 +249,9 @@ def _validate_times(fact_type_key: str, fields: dict[str, Any], issues: list[Fac
                     for index, value in enumerate(values)
                     if isinstance(value, dict) and "reviewed_at" in value
                 )
-        for approval_name in ("execution_approval", "closure_approval"):
-            value = fields.get(approval_name)
-            if isinstance(value, dict) and "approved_at" in value:
-                nested_times.append((f"{approval_name}.approved_at", value["approved_at"], True))
+        approval = fields.get("execution_approval")
+        if isinstance(approval, dict) and "approved_at" in approval:
+            nested_times.append(("execution_approval.approved_at", approval["approved_at"], True))
         for path, value, requires_created_lower_bound in nested_times:
             at = _time(value, path, issues)
             if at is not None and created is not None and requires_created_lower_bound and at < created:
@@ -1171,7 +301,7 @@ def validate_fact_object(fact_type_key: str, fields: dict[str, Any], schema: Fac
         issues.append(FactIssue("identity", "fact_type_key 与请求类型不一致", "fact_type_key"))
     _validate_status(fact_type_key, fields, issues)
     if fact_type_key == "workcase":
-        _validate_workcase(fields, issues)
+        issues.extend(validate_workcase_snapshot(fields))
     _validate_times(fact_type_key, fields, issues)
     _validate_references(fact_type_key, fields, issues)
     _validate_relations(fact_type_key, fields, issues)

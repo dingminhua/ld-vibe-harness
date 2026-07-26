@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { getFactReadMeta, isReadableFact } from '../../src/utils/factReadMeta.ts';
+import { load as loadYaml } from 'js-yaml';
+import {
+  getFactReadMeta,
+  isReadableFact,
+  projectFactObjectFields,
+  reconstructFactYaml,
+} from '../../src/utils/factReadMeta.ts';
 
 test('source metadata is consumable only from a readable exact result', () => {
   const meta = getFactReadMeta({
@@ -29,9 +35,70 @@ test('a route target, ID, or expected path alone never becomes a source path', (
     canonical_path: 'ldvh-base/studies/study-0010.md',
     carrier: 'markdown',
     check_status: 'invalid',
-    read_issues: [{ code: 'object_id_mismatch', message: 'identity does not match' }],
+    read_issues: [{ category: 'identity', field_path: 'object_id', summary: 'identity does not match' }],
   });
   assert.equal(isReadableFact(failure), false);
   assert.equal(failure.canonicalPath, 'ldvh-base/studies/study-0010.md');
-  assert.equal(failure.issues[0]?.code, 'object_id_mismatch');
+  assert.equal(failure.issues[0]?.category, 'identity');
+  assert.equal(failure.issues[0]?.fieldPath, 'object_id');
+  assert.equal(failure.issues[0]?.summary, 'identity does not match');
+});
+
+test('Core mechanically_valid is preserved as the exact WorkCase success state', () => {
+  const meta = getFactReadMeta({
+    canonical_path: 'ldvh-base/workcases/workcase-0010.yaml',
+    carrier: 'yaml',
+    check_status: 'mechanically_valid',
+    observed_at: '2026-07-26T15:00:00+08:00',
+  });
+
+  assert.equal(isReadableFact(meta), true);
+  assert.equal(meta.checkStatus, 'mechanically_valid');
+  assert.equal(meta.observedAt, '2026-07-26T15:00:00+08:00');
+});
+
+test('reconstructed carrier data excludes exact-read metadata without dropping fact identity', () => {
+  const fact = projectFactObjectFields({
+    object_id: 'workcase-0010',
+    fact_type_key: 'workcase',
+    title: '当前事实',
+    status: 'open',
+    object_ref: { governed_project_id: 'project-current' },
+    canonical_path: 'ldvh-base/workcases/workcase-0010.yaml',
+    carrier: 'yaml',
+    check_status: 'mechanically_valid',
+    content_fingerprint: 'a'.repeat(64),
+    coverage_status: 'complete',
+    observed_at: '2026-07-26T15:00:00+08:00',
+    read_issues: [],
+  });
+
+  assert.deepEqual(fact, {
+    object_id: 'workcase-0010',
+    fact_type_key: 'workcase',
+    title: '当前事实',
+    status: 'open',
+  });
+});
+
+test('reconstructed YAML preserves strings that resemble YAML scalars', () => {
+  const source = {
+    object_id: 'workcase-0010',
+    string_true: 'true',
+    string_number: '123',
+    empty_string: '',
+    actual_boolean: true,
+    actual_number: 123,
+    canonical_path: 'ldvh-base/workcases/workcase-0010.yaml',
+  };
+
+  const reconstructed = reconstructFactYaml(source);
+  assert.deepEqual(loadYaml(reconstructed), {
+    object_id: 'workcase-0010',
+    string_true: 'true',
+    string_number: '123',
+    empty_string: '',
+    actual_boolean: true,
+    actual_number: 123,
+  });
 });

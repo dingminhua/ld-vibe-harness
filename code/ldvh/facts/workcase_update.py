@@ -1,345 +1,796 @@
-"""Deterministically construct one control-contract-v2 WorkCase update candidate.
+"""Type-owned, full-after write transaction for the current WorkCase contract.
 
-This module owns only the mechanical delta and managed-record rules declared by
-the WorkCase fact source.  Lifecycle choices remain explicit caller fields and
-the existing schema/transition validators remain the authority for the final
-candidate.
+The three public modes share one source-file CAS boundary.  Route targets are
+read-only participants: they are fingerprint-checked while the WorkCase type
+lock is held, and checked again after the source replacement.  No audit receipt
+or compatibility shape is constructed here.
 """
 
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, replace
+from typing import Any, Literal
 
-CURRENT_PROFILE = "control-contract-v2"
-PLAN_RESET_FIELDS = frozenset(
-    {
-        "execution_approval",
-        "result_version",
-        "success_criterion_results",
-        "controller_check_summary",
-        "result_reviews",
-        "residual_responsibilities",
-        "closure_approval",
-        "validation_summary",
-        "closure_outcome",
-        "disposition_summary",
-    }
+from ldvh.facts.carriers.yaml_object import parse_yaml_object
+from ldvh.facts.contracts import LAYOUTS
+from ldvh.facts.creation import CreationBoundary, allocation_lock, serialize_fact_object
+from ldvh.facts.models import FactIssue
+from ldvh.facts.project_validation import stabilize_project_index
+from ldvh.facts.relations import (
+    ProjectFactIndex,
+    WorkCaseRouteTargetSnapshot,
+    proposal_route_target_snapshots,
+    validate_workcase_incoming_dependencies,
+    validate_workcase_route_target_alignment,
+    validate_workcase_route_target_snapshots,
+    workcase_routed_target_identities,
 )
-RESULT_RESET_FIELDS = frozenset({"result_reviews", "closure_approval"})
-RESULT_REVIEW_CONTEXT_FIELDS = frozenset(
-    {"status", "phase", "summary", "resume_from", "waiting_on", "blocking_summary"}
-)
+from ldvh.facts.repository import FactReadResult, read_fact_object
+from ldvh.facts.schema import FactSchema
+from ldvh.facts.transitions import validate_workcase_transition
+from ldvh.facts.update import atomic_replace_text_if_unchanged
+from ldvh.facts.update_application import MANAGED_FIELDS, UpdateStatus
+from ldvh.facts.validation import parse_rfc3339, validate_fact_object
+from ldvh.filesystem import AtomicWriteResult, durable_writes_enabled
+from ldvh.source_references import validate_source_reference
+
+WorkCaseWriteMode = Literal["update", "close", "correct"]
 
 
 @dataclass(frozen=True, slots=True)
-class WorkCaseUpdateConstruction:
-    supplied: dict[str, Any] | None
-    receipts: tuple[dict[str, Any], ...] = ()
-    problems: tuple[str, ...] = ()
+class WorkCaseWriteCommand:
+    """One exact WorkCase after bound to its source and read-only targets."""
+
+    boundary: CreationBoundary
+    schemas: Mapping[str, FactSchema]
+    schema: FactSchema
+    object_id: str
+    expected_content_fingerprint: str
+    supplied: Mapping[str, Any]
+    event_at: str
+    mode: WorkCaseWriteMode
+    authorization_reference: tuple[Mapping[str, Any], ...] = ()
+    route_target_fingerprints: tuple[WorkCaseRouteTargetSnapshot, ...] = ()
+    independent_review_reference: Mapping[str, Any] | None = None
 
 
-def _positive_integer(value: object) -> bool:
-    return isinstance(value, int) and not isinstance(value, bool) and value > 0
+@dataclass(frozen=True, slots=True)
+class WorkCaseWriteResult:
+    status: UpdateStatus
+    event_at: str
+    issues: tuple[FactIssue, ...] = ()
+    current: FactReadResult | None = None
+    candidate: FactReadResult | None = None
+    readback: FactReadResult | None = None
+    candidate_text: str | None = None
+    replacement_result: AtomicWriteResult | None = None
+    rollback_result: AtomicWriteResult | None = None
+    residual_readback: FactReadResult | None = None
+    coordination_release_uncertain: bool = False
 
 
-def _managed_actions(managed: Mapping[str, Any]) -> tuple[str, ...]:
-    return tuple(key for key, value in managed.items() if value is not None)
-
-
-def _same_approval(existing: object, submitted: Mapping[str, Any], version: int) -> bool:
-    if not isinstance(existing, Mapping) or existing.get("subject_version") != version:
-        return False
-    caller_owned = {key: existing[key] for key in ("summary", "source_refs") if key in existing}
-    return caller_owned == dict(submitted)
-
-
-def _review_record(
-    submitted: Mapping[str, Any],
+def _result(
+    command: WorkCaseWriteCommand,
+    status: UpdateStatus,
     *,
-    event_at: str,
-    version: int,
-    include_resolution: bool,
-) -> dict[str, Any]:
-    record = {
-        "reviewer": submitted["reviewer"],
-        "reviewed_at": event_at,
-        "subject_version": version,
-        "scope": submitted["scope"],
-        "conclusion": submitted["conclusion"],
-    }
-    if "feedback" in submitted:
-        record["feedback"] = submitted["feedback"]
-    if include_resolution and "controller_resolution" in submitted:
-        record["controller_resolution"] = submitted["controller_resolution"]
-    return record
-
-
-def _receipt(
-    action: str,
-    version: int,
-    *,
-    index: int | None = None,
-) -> dict[str, Any]:
-    value: dict[str, Any] = {"action": action, "subject_version": version}
-    if index is not None:
-        value["review_index"] = index
-    return value
-
-
-def _sequence(value: object) -> Sequence[Any]:
-    return value if isinstance(value, list) else ()
-
-
-def _all_items_pending(fields: Mapping[str, Any]) -> bool:
-    items = fields.get("work_items")
-    return (
-        isinstance(items, list)
-        and bool(items)
-        and all(isinstance(item, Mapping) and item.get("status") == "pending" for item in items)
+    issues: Sequence[FactIssue] = (),
+    current: FactReadResult | None = None,
+    candidate: FactReadResult | None = None,
+    readback: FactReadResult | None = None,
+    candidate_text: str | None = None,
+    replacement_result: AtomicWriteResult | None = None,
+    rollback_result: AtomicWriteResult | None = None,
+    residual_readback: FactReadResult | None = None,
+) -> WorkCaseWriteResult:
+    return WorkCaseWriteResult(
+        status=status,
+        event_at=command.event_at,
+        issues=tuple(issues),
+        current=current,
+        candidate=candidate,
+        readback=readback,
+        candidate_text=candidate_text,
+        replacement_result=replacement_result,
+        rollback_result=rollback_result,
+        residual_readback=residual_readback,
     )
 
 
-def construct_workcase_update(
+def _project_index(command: WorkCaseWriteCommand) -> ProjectFactIndex:
+    return ProjectFactIndex(
+        command.boundary.worktree_root,
+        command.boundary.governed_project_id,
+        dict(command.schemas),
+        command.boundary.git_common_dir,
+    )
+
+
+def _project_read(command: WorkCaseWriteCommand) -> FactReadResult:
+    layout = LAYOUTS["workcase"]
+    read = read_fact_object(
+        command.boundary.worktree_root,
+        layout,
+        command.schema,
+        command.object_id,
+        expected_common_dir=command.boundary.git_common_dir,
+    )
+    if read.check_status == "unavailable" or read.fields is None:
+        return read
+    if read.check_status != "mechanically_valid":
+        return read
+    index = _project_index(command)
+    key = ("workcase", command.object_id)
+    index.cache[key] = read
+    index.base_cache[key] = read
+    stabilize_project_index(index, (key,))
+    return index.cache.get(key, read)
+
+
+def _complete_after(
+    command: WorkCaseWriteCommand,
     before: Mapping[str, Any],
     *,
-    set_fields: Mapping[str, Any],
-    remove_fields: Sequence[str],
-    managed_records: Mapping[str, Any],
-    event_at: str,
-) -> WorkCaseUpdateConstruction:
-    """Apply the source-defined construction order without deciding lifecycle semantics."""
+    updated_at: object,
+) -> dict[str, Any]:
+    return {
+        **dict(command.supplied),
+        "object_id": before["object_id"],
+        "fact_type_key": before["fact_type_key"],
+        "created_at": before["created_at"],
+        "updated_at": updated_at,
+    }
 
-    problems: list[str] = []
-    if before.get("fact_type_key") != "workcase" or before.get("workcase_profile") != CURRENT_PROFILE:
-        return WorkCaseUpdateConstruction(None, problems=("对象不是 control-contract-v2 WorkCase",))
 
-    after = dict(before)
-    for key, value in set_fields.items():
-        after[key] = value
-    for key in remove_fields:
-        after.pop(key, None)
+def _operation_boundary_issues(
+    command: WorkCaseWriteCommand,
+    before: Mapping[str, Any],
+    after: Mapping[str, Any],
+) -> tuple[FactIssue, ...]:
+    issues: list[FactIssue] = []
+    before_status = before.get("status")
+    after_status = after.get("status")
+    if command.mode == "update":
+        if before_status not in {"open", "blocked"} or after_status not in {"open", "blocked"}:
+            issues.append(FactIssue("schema", "update-workcase 只接受活动期 before 与活动期完整 after", "status"))
+    elif command.mode == "close":
+        if before_status != "open" or before.get("phase") != "human_closure_confirming":
+            issues.append(
+                FactIssue(
+                    "schema",
+                    "close-workcase 要求 before 为 open/human_closure_confirming",
+                    "phase",
+                )
+            )
+        if after_status != "closed":
+            issues.append(FactIssue("schema", "close-workcase 的完整 after 必须为 closed", "status"))
+    elif command.mode == "correct":
+        if before_status != "closed" or after_status != "closed":
+            issues.append(FactIssue("schema", "correct-closed-workcase 只接受 closed → closed", "status"))
+    else:
+        issues.append(FactIssue("schema", "未知 WorkCase 写入 mode"))
 
-    actions = _managed_actions(managed_records)
-    plan_before = before.get("plan_version")
-    plan_target = set_fields.get("plan_version")
-    plan_bump = "plan_version" in set_fields
-    if plan_bump:
-        if not _positive_integer(plan_before) or plan_target != plan_before + 1:
-            problems.append("set.plan_version 必须精确等于 before plan_version + 1")
-        if set_fields.get("phase") != "human_plan_confirming":
-            problems.append("计划升版必须显式 set.phase=human_plan_confirming")
-        if managed_records.get("replace_creation_reviews") is None:
-            problems.append("计划升版必须同次 replace_creation_reviews")
-        if any(key in set_fields for key in PLAN_RESET_FIELDS):
-            problems.append("计划升版时 set 不得包含固定 reset 字段")
-        if any(action != "replace_creation_reviews" for action in actions):
-            problems.append("计划升版后同次托管动作只允许 replace_creation_reviews")
-        for key in PLAN_RESET_FIELDS:
-            after.pop(key, None)
-    elif managed_records.get("replace_creation_reviews") is not None:
-        problems.append("replace_creation_reviews 只能与计划升版同次出现")
+    if command.mode != "correct" and command.route_target_fingerprints:
+        issues.append(
+            FactIssue(
+                "schema",
+                "只有 correct-closed-workcase 接受独立 route_target_fingerprints 请求字段",
+                "route_target_fingerprints",
+            )
+        )
+    if command.mode != "correct" and command.independent_review_reference is not None:
+        issues.append(
+            FactIssue(
+                "schema",
+                "只有 correct-closed-workcase 接受 independent_review_reference",
+                "independent_review_reference",
+            )
+        )
+    if command.mode == "close" and not command.authorization_reference:
+        issues.append(
+            FactIssue(
+                "schema",
+                "close-workcase 必须取得回指 Human 当次关闭决定的 authorization_reference",
+                "authorization_reference",
+            )
+        )
+    return tuple(issues)
 
-    result_before = before.get("result_version")
-    result_bump = "result_version" in set_fields
-    result_target = set_fields.get("result_version")
-    if result_bump:
-        expected = 1 if result_before is None else result_before + 1 if _positive_integer(result_before) else None
-        if result_target != expected:
-            problems.append("set.result_version 必须首次建立为 1 或精确递增 1")
-        if result_before is not None:
-            if any(key in set_fields for key in RESULT_RESET_FIELDS):
-                problems.append("结果升版时 set 不得包含固定 reset 字段")
-            if any(
-                action in {"append_result_reviews", "resolve_result_reviews", "closure_approval"} for action in actions
-            ):
-                problems.append("结果升版不得同次追加、处置结果审核或形成关闭批准")
-            for key in RESULT_RESET_FIELDS:
-                after.pop(key, None)
 
-    if (
-        managed_records.get("append_result_reviews") is not None
-        and managed_records.get("resolve_result_reviews") is not None
+def _changed_roots(before: Mapping[str, Any], after: Mapping[str, Any]) -> set[str]:
+    return {
+        key
+        for key in set(before) | set(after)
+        if key not in MANAGED_FIELDS and before.get(key, _MISSING) != after.get(key, _MISSING)
+    }
+
+
+_MISSING = object()
+_SUBSTANTIVE_CLOSED_ROOTS = frozenset(
+    {
+        "goal",
+        "scope",
+        "success_criterion_definitions",
+        "success_criterion_results",
+        "result_summary",
+        "validation_summary",
+        "closure_outcome",
+        "disposition_summary",
+        "residual_responsibilities",
+        "relations",
+    }
+)
+
+
+def _gate_issues(
+    command: WorkCaseWriteCommand,
+    before: Mapping[str, Any],
+    after: Mapping[str, Any],
+) -> tuple[FactIssue, ...]:
+    changed = _changed_roots(before, after)
+    issues: list[FactIssue] = []
+    if command.mode == "correct":
+        title_only = changed == {"title"}
+        urls_only = changed == {"urls"}
+        conservative_urls = urls_only and (
+            command.independent_review_reference is not None or bool(command.authorization_reference)
+        )
+        substantive = (
+            bool(changed & _SUBSTANTIVE_CLOSED_ROOTS)
+            or conservative_urls
+            or (bool(changed) and not title_only and not urls_only)
+        )
+        if substantive:
+            if command.independent_review_reference is None:
+                issues.append(
+                    FactIssue(
+                        "schema",
+                        "closed 实质更正必须回指当次实际独立复核",
+                        "independent_review_reference",
+                    )
+                )
+            if not command.authorization_reference:
+                issues.append(
+                    FactIssue(
+                        "schema",
+                        "closed 实质更正必须回指 Human 对完整更正的决定",
+                        "authorization_reference",
+                    )
+                )
+        elif command.independent_review_reference is not None:
+            issues.append(
+                FactIssue(
+                    "schema",
+                    "title-only 或无变化的非实质更正不得提交 independent_review_reference",
+                    "independent_review_reference",
+                )
+            )
+    return tuple(issues)
+
+
+def _close_mapping_issues(
+    before: Mapping[str, Any],
+    after: Mapping[str, Any],
+) -> tuple[FactIssue, ...]:
+    """Require the closed after to be the exact projection of the current proposal."""
+
+    issues: list[FactIssue] = []
+    for field_name in (
+        "title",
+        "goal",
+        "scope",
+        "success_criterion_definitions",
+        "success_criterion_results",
+        "result_summary",
+        "validation_summary",
+        "urls",
     ):
-        problems.append("append_result_reviews 与 resolve_result_reviews 不得同次出现")
-    for action in ("execution_approval", "withdraw_execution_approval"):
-        if action not in actions:
+        if before.get(field_name, _MISSING) != after.get(field_name, _MISSING):
+            issues.append(
+                FactIssue(
+                    "schema",
+                    "close-workcase 必须逐值保留关闭前已成立的终态事实",
+                    field_name,
+                )
+            )
+
+    proposal = before.get("closure_proposal")
+    if not isinstance(proposal, Mapping):
+        return (
+            *issues,
+            FactIssue(
+                "schema",
+                "close-workcase before 必须包含完整 closure_proposal",
+                "closure_proposal",
+            ),
+        )
+    for proposal_name, terminal_name in (
+        ("proposed_outcome", "closure_outcome"),
+        ("proposed_disposition_summary", "disposition_summary"),
+    ):
+        if proposal.get(proposal_name, _MISSING) != after.get(terminal_name, _MISSING):
+            issues.append(
+                FactIssue(
+                    "schema",
+                    f"closed {terminal_name} 必须精确映射 proposal {proposal_name}",
+                    terminal_name,
+                )
+            )
+
+    expected_residuals: list[dict[str, object]] = []
+    expected_route_targets: set[tuple[object, object, object]] = set()
+    decisions = proposal.get("residual_decisions")
+    for decision in decisions if isinstance(decisions, list) else []:
+        if not isinstance(decision, Mapping):
             continue
-        if set(actions) - {action}:
-            problems.append(f"{action} 不得与其它托管动作同次出现")
-    if "closure_approval" in actions and len(actions) != 1:
-        problems.append("closure_approval 不得与其它托管动作同次出现")
-    if "closure_approval" in actions:
-        if set_fields.get("status") != "closed" or set_fields.get("phase") != "closed":
-            problems.append("关闭批准必须显式 set status=closed 且 phase=closed")
-        terminal_forbidden = {"priority", "blocking_summary", "resume_from", "waiting_on"}
-        remaining = terminal_forbidden & set(after)
-        if remaining:
-            problems.append("关闭批准必须同次移除终态禁止字段: " + ", ".join(sorted(remaining)))
-
-    if "withdraw_execution_approval" in actions:
-        if plan_bump:
-            problems.append("撤回执行批准不得同时升版计划")
-        if before.get("phase") != "executing" or set_fields.get("phase") != "human_plan_confirming":
-            problems.append("撤回执行批准必须从 executing 回到 human_plan_confirming")
-        if not isinstance(before.get("execution_approval"), Mapping):
-            problems.append("撤回执行批准要求 before 已有 execution_approval")
-        if any(key in before for key in PLAN_RESET_FIELDS if key != "execution_approval"):
-            problems.append("撤回执行批准只适用于尚未形成结果包的计划")
-        if not _all_items_pending(after):
-            problems.append("撤回执行批准后所有 work_items 必须恢复为 pending")
-
-    append_inputs = managed_records.get("append_result_reviews")
-    if append_inputs is not None:
-        forbidden_set = sorted(set(set_fields) - RESULT_REVIEW_CONTEXT_FIELDS)
-        forbidden_remove = sorted(set(remove_fields) - RESULT_REVIEW_CONTEXT_FIELDS)
-        if forbidden_set or forbidden_remove:
-            details = []
-            if forbidden_set:
-                details.append("set: " + ", ".join(forbidden_set))
-            if forbidden_remove:
-                details.append("remove: " + ", ".join(forbidden_remove))
-            problems.append(
-                "append_result_reviews 同次只能变更 status、phase、summary、resume_from、waiting_on、"
-                "blocking_summary，不得变更被审结果主体（" + "; ".join(details) + "）"
+        if decision.get("proposed_disposition") == "accept_stop":
+            expected_residuals.append(
+                {
+                    "residual_id": decision.get("residual_id"),
+                    "summary": decision.get("summary"),
+                }
             )
+        elif decision.get("proposed_disposition") == "route":
+            target = decision.get("route_target")
+            if isinstance(target, Mapping):
+                expected_route_targets.add(
+                    (
+                        target.get("governed_project_id"),
+                        target.get("fact_type_key"),
+                        target.get("object_id"),
+                    )
+                )
 
-    if problems:
-        return WorkCaseUpdateConstruction(None, problems=tuple(problems))
+    actual_residuals = after.get("residual_responsibilities")
+    actual_residual_values = actual_residuals if isinstance(actual_residuals, list) else []
+    expected_by_id = {
+        value["residual_id"]: value for value in expected_residuals if isinstance(value.get("residual_id"), str)
+    }
+    actual_by_id = {
+        value.get("residual_id"): dict(value)
+        for value in actual_residual_values
+        if isinstance(value, Mapping) and isinstance(value.get("residual_id"), str)
+    }
+    if (
+        (bool(expected_residuals) != isinstance(actual_residuals, list))
+        or len(expected_by_id) != len(expected_residuals)
+        or len(actual_by_id) != len(actual_residual_values)
+        or actual_by_id != expected_by_id
+    ):
+        issues.append(
+            FactIssue(
+                "schema",
+                "closed residual_responsibilities 必须按 residual_id 精确等于 proposal 中全部 accept_stop decisions",
+                "residual_responsibilities",
+            )
+        )
+    actual_route_targets = set(workcase_routed_target_identities(after))
+    if actual_route_targets != expected_route_targets:
+        issues.append(
+            FactIssue(
+                "relation",
+                "closed routed-to targets 必须精确等于 proposal 中全部 route decisions 的去重目标集",
+                "relations",
+            )
+        )
+    return tuple(issues)
 
-    receipts: list[dict[str, Any]] = []
-    creation_inputs = managed_records.get("replace_creation_reviews")
-    if creation_inputs is not None:
-        assert _positive_integer(after.get("plan_version"))
-        plan_version = after["plan_version"]
-        reviews = [
-            _review_record(
-                item,
-                event_at=event_at,
-                version=plan_version,
-                include_resolution=True,
+
+def _candidate(
+    command: WorkCaseWriteCommand,
+    before: dict[str, Any],
+) -> tuple[FactReadResult, str]:
+    layout = LAYOUTS["workcase"]
+    fields = _complete_after(command, before, updated_at=command.event_at)
+    text = serialize_fact_object(layout, fields, None)
+    parsed = parse_yaml_object(text)
+    issues = list(parsed.issues)
+    if parsed.fields is not None:
+        snapshot_issues = validate_fact_object("workcase", parsed.fields, command.schema)
+        issues.extend(snapshot_issues)
+        if not snapshot_issues:
+            issues.extend(
+                validate_workcase_transition(
+                    before,
+                    parsed.fields,
+                    operation=command.mode,
+                )
             )
-            for item in _sequence(creation_inputs)
-        ]
-        after["creation_reviews"] = reviews
-        receipts.extend(
-            _receipt(
-                "creation_review_replaced",
-                plan_version,
-                index=index,
+    read = FactReadResult(
+        layout.canonical_path(command.object_id),
+        layout.carrier,
+        "invalid" if issues or parsed.fields is None else "mechanically_valid",
+        parsed.fields,
+        parsed.body,
+        tuple(issues),
+        raw_text=text,
+        raw_byte_count=len(text.encode("utf-8")),
+    )
+    if read.check_status != "mechanically_valid" or read.fields is None:
+        return read, text
+    index = _project_index(command)
+    key = ("workcase", command.object_id)
+    index.cache[key] = read
+    index.base_cache[key] = read
+    stabilize_project_index(index, (key,))
+    return index.cache.get(key, read), text
+
+
+def _event_time_issue(current: FactReadResult, event_at: str) -> FactIssue | None:
+    assert current.fields is not None
+    before = parse_rfc3339(current.fields.get("updated_at"))
+    event = parse_rfc3339(event_at)
+    if before is None or event is None or event <= before:
+        return FactIssue("schema", "event_at 必须严格晚于当前 updated_at", "updated_at")
+    return None
+
+
+def _update_proposal_route_guard_required(
+    before: Mapping[str, Any],
+    after: Mapping[str, Any],
+) -> bool:
+    """Return whether this active update consumes proposal target snapshots."""
+
+    before_phase = before.get("phase")
+    after_phase = after.get("phase")
+    if after_phase == "human_closure_confirming" and before_phase != after_phase:
+        return True
+    return (
+        after_phase == "closure_preparing"
+        and "closure_proposal" in after
+        and before.get("closure_proposal", _MISSING) != after.get("closure_proposal", _MISSING)
+    )
+
+
+def _project_stable_route_target_issues(
+    index: ProjectFactIndex,
+    snapshots: Sequence[WorkCaseRouteTargetSnapshot],
+) -> tuple[tuple[FactIssue, ...], bool]:
+    """Confirm that freshly read targets remain valid after project relation stabilization."""
+
+    stabilize_project_index(
+        index,
+        (("workcase", snapshot.target.object_id) for snapshot in snapshots),
+    )
+    issues: list[FactIssue] = []
+    unavailable = False
+    for snapshot in snapshots:
+        path = snapshot.origin_path
+        target_read = index.cache.get(("workcase", snapshot.target.object_id))
+        if target_read is None or target_read.fields is None:
+            if target_read is not None and target_read.check_status == "unavailable":
+                unavailable = True
+                issues.append(
+                    FactIssue(
+                        "reference",
+                        "WorkCase route target 的项目级关系检查当前不可用",
+                        path,
+                    )
+                )
+            else:
+                issues.append(
+                    FactIssue(
+                        "relation",
+                        "WorkCase route target 的项目级关系未稳定为 mechanically valid 当前对象",
+                        path,
+                    )
+                )
+            continue
+        if target_read.check_status == "unavailable":
+            unavailable = True
+            issues.append(
+                FactIssue(
+                    "reference",
+                    "WorkCase route target 的项目级关系检查当前不可用",
+                    path,
+                )
             )
-            for index in range(len(reviews))
+        elif target_read.check_status != "mechanically_valid":
+            issues.append(
+                FactIssue(
+                    "relation",
+                    "WorkCase route target 的项目级关系未稳定为 mechanically valid 当前对象",
+                    path,
+                )
+            )
+        elif target_read.content_fingerprint != snapshot.content_fingerprint:
+            issues.append(
+                FactIssue(
+                    "reference",
+                    "WorkCase route target content_fingerprint 已变化",
+                    path,
+                )
+            )
+    return tuple(issues), unavailable
+
+
+def _route_checks(
+    command: WorkCaseWriteCommand,
+    before: Mapping[str, Any],
+    after: Mapping[str, Any],
+    *,
+    post_write: bool = False,
+) -> tuple[tuple[FactIssue, ...], bool, tuple[WorkCaseRouteTargetSnapshot, ...]]:
+    issues: list[FactIssue] = []
+    if command.mode == "close":
+        snapshots, snapshot_issues = proposal_route_target_snapshots(before)
+        issues.extend(snapshot_issues)
+        issues.extend(validate_workcase_route_target_alignment(after, proposal_snapshots=snapshots))
+        existing = frozenset()
+    elif command.mode == "correct":
+        snapshots = command.route_target_fingerprints
+        issues.extend(validate_workcase_route_target_alignment(after, request_snapshots=snapshots))
+        existing = workcase_routed_target_identities(before)
+    elif command.mode == "update" and _update_proposal_route_guard_required(before, after):
+        snapshots, snapshot_issues = proposal_route_target_snapshots(after)
+        issues.extend(snapshot_issues)
+        existing = frozenset()
+    else:
+        return (), False, ()
+
+    if issues:
+        return tuple(issues), False, tuple(snapshots)
+    if not snapshots:
+        return (), False, ()
+    index = _project_index(command)
+    target_issues, unavailable = validate_workcase_route_target_snapshots(
+        index,
+        command.object_id,
+        snapshots,
+        existing_routed_targets=existing,
+    )
+    issues.extend(target_issues)
+    if not issues and not unavailable:
+        stable_issues, stable_unavailable = _project_stable_route_target_issues(index, snapshots)
+        issues.extend(stable_issues)
+        unavailable = stable_unavailable
+    if post_write and unavailable:
+        issues.append(FactIssue("reference", "写后未能重新确认全部 route targets"))
+    return tuple(issues), unavailable, tuple(snapshots)
+
+
+def _route_alignment_issues(
+    command: WorkCaseWriteCommand,
+    before: Mapping[str, Any],
+    after: Mapping[str, Any],
+) -> tuple[FactIssue, ...]:
+    """Validate request/after target identity alignment without reading targets."""
+
+    if command.mode == "close":
+        snapshots, snapshot_issues = proposal_route_target_snapshots(before)
+        return (
+            *snapshot_issues,
+            *validate_workcase_route_target_alignment(after, proposal_snapshots=snapshots),
+        )
+    if command.mode == "correct":
+        return validate_workcase_route_target_alignment(
+            after,
+            request_snapshots=command.route_target_fingerprints,
+        )
+    return ()
+
+
+def _request_source_reference_issues(command: WorkCaseWriteCommand) -> tuple[FactIssue, ...]:
+    problems = [
+        problem
+        for index, reference in enumerate(command.authorization_reference)
+        for problem in validate_source_reference(reference, f"authorization_reference[{index}]")
+    ]
+    if command.independent_review_reference is not None:
+        problems.extend(
+            validate_source_reference(
+                command.independent_review_reference,
+                "independent_review_reference",
+            )
+        )
+    return tuple(FactIssue("schema", problem.summary, problem.path) for problem in problems)
+
+
+def apply_workcase_write_locked(command: WorkCaseWriteCommand) -> WorkCaseWriteResult:
+    """Apply one WorkCase write while the caller holds the WorkCase type lock."""
+
+    reference_issues = _request_source_reference_issues(command)
+    if (
+        command.schema.fact_type_key != "workcase"
+        or command.schemas.get("workcase") != command.schema
+        or any(field in command.supplied for field in MANAGED_FIELDS)
+        or reference_issues
+    ):
+        issues: tuple[FactIssue, ...] = reference_issues or (
+            FactIssue(
+                "schema",
+                "WorkCase 写入必须使用当前 schema、完整非托管 after 与有效来源回指",
+            ),
+        )
+        return _result(
+            command,
+            "invalid_request",
+            issues=issues,
         )
 
-    if append_inputs is not None:
-        result_version = after.get("result_version")
-        if not _positive_integer(result_version):
-            return WorkCaseUpdateConstruction(None, problems=("追加结果审核要求有效 result_version",))
-        reviews = list(_sequence(after.get("result_reviews")))
-        for item in _sequence(append_inputs):
-            review = _review_record(
-                item,
-                event_at=event_at,
-                version=result_version,
-                include_resolution=False,
+    current = _project_read(command)
+    if current.check_status == "unavailable" or current.fields is None:
+        status: UpdateStatus = "current_unavailable" if current.check_status == "unavailable" else "current_rejected"
+        return _result(command, status, issues=current.issues, current=current)
+    if current.check_status != "mechanically_valid":
+        return _result(command, "current_rejected", issues=current.issues, current=current)
+    if current.content_fingerprint != command.expected_content_fingerprint or current.raw_text is None:
+        return _result(command, "fingerprint_stale", current=current)
+
+    preview = _complete_after(command, current.fields, updated_at=current.fields["updated_at"])
+    boundary_issues = _operation_boundary_issues(command, current.fields, preview)
+    alignment_issues = _route_alignment_issues(command, current.fields, preview)
+    if boundary_issues or alignment_issues:
+        return _result(
+            command,
+            "candidate_rejected",
+            issues=(*boundary_issues, *alignment_issues),
+            current=current,
+        )
+
+    mutable_current = {key: value for key, value in current.fields.items() if key not in MANAGED_FIELDS}
+    gate_issues = _gate_issues(command, current.fields, preview)
+    close_mapping_issues = _close_mapping_issues(current.fields, preview) if command.mode == "close" else ()
+    preflight_issues = (
+        *gate_issues,
+        *close_mapping_issues,
+    )
+    if preflight_issues:
+        return _result(command, "candidate_rejected", issues=preflight_issues, current=current)
+
+    route_issues, route_unavailable, _snapshots = _route_checks(
+        command,
+        current.fields,
+        preview,
+    )
+    if route_issues or route_unavailable:
+        status = "candidate_unavailable" if route_unavailable else "candidate_rejected"
+        return _result(command, status, issues=route_issues, current=current)
+
+    if mutable_current == dict(command.supplied):
+        return _result(command, "no_change", current=current, readback=current)
+
+    if command.mode == "close":
+        dependency_index = _project_index(command)
+        dependency_issues, dependency_unavailable = validate_workcase_incoming_dependencies(
+            dependency_index,
+            command.object_id,
+        )
+        if dependency_issues or dependency_unavailable:
+            status = "candidate_unavailable" if dependency_unavailable else "candidate_rejected"
+            return _result(command, status, issues=dependency_issues, current=current)
+
+    time_issue = _event_time_issue(current, command.event_at)
+    if time_issue is not None:
+        return _result(
+            command,
+            "event_time_not_successor",
+            issues=(time_issue,),
+            current=current,
+        )
+
+    candidate, candidate_text = _candidate(command, current.fields)
+    if candidate.check_status != "mechanically_valid":
+        status = "candidate_unavailable" if candidate.check_status == "unavailable" else "candidate_rejected"
+        return _result(
+            command,
+            status,
+            issues=candidate.issues,
+            current=current,
+            candidate=candidate,
+            candidate_text=candidate_text,
+        )
+
+    layout = LAYOUTS["workcase"]
+    replacement = atomic_replace_text_if_unchanged(
+        command.boundary.worktree_root,
+        layout,
+        command.object_id,
+        current.raw_text,
+        candidate_text,
+    )
+    if replacement.outcome != "replaced" or replacement.namespace_state != "committed":
+        status = "replacement_conflict" if replacement.outcome == "conflict" else "replacement_unavailable"
+        return _result(
+            command,
+            status,
+            current=current,
+            candidate=candidate,
+            candidate_text=candidate_text,
+            replacement_result=replacement,
+        )
+
+    readback = _project_read(command)
+    readback_issues: tuple[FactIssue, ...] = readback.issues
+    if readback.check_status == "mechanically_valid" and readback.raw_text != candidate_text:
+        readback_issues = (
+            *readback_issues,
+            FactIssue("parse", "写后回读 bytes 与本次 WorkCase payload 不一致"),
+        )
+
+    post_route_issues, post_route_unavailable, _post_snapshots = _route_checks(
+        command,
+        current.fields,
+        readback.fields if readback.fields is not None else preview,
+        post_write=True,
+    )
+    post_dependency_issues: tuple[FactIssue, ...] = ()
+    post_dependency_unavailable = False
+    if command.mode == "close":
+        post_dependency_index = _project_index(command)
+        post_dependency_issues, post_dependency_unavailable = validate_workcase_incoming_dependencies(
+            post_dependency_index,
+            command.object_id,
+        )
+        if post_dependency_unavailable:
+            post_dependency_issues = (
+                *post_dependency_issues,
+                FactIssue("reference", "写后未能重新确认全部入向 depends-on"),
             )
-            reviews.append(review)
-            receipts.append(
-                _receipt(
-                    "result_review_appended",
-                    result_version,
-                    index=len(reviews) - 1,
-                )
-            )
-        if reviews != list(_sequence(after.get("result_reviews"))):
-            after["result_reviews"] = reviews
+    readback_ok = (
+        readback.check_status == "mechanically_valid"
+        and readback.fields is not None
+        and readback.raw_text == candidate_text
+        and not post_route_issues
+        and not post_route_unavailable
+        and not post_dependency_issues
+        and not post_dependency_unavailable
+    )
+    if not readback_ok:
+        rollback = atomic_replace_text_if_unchanged(
+            command.boundary.worktree_root,
+            layout,
+            command.object_id,
+            candidate_text,
+            current.raw_text,
+        )
+        rolled_back = rollback.outcome == "replaced" and rollback.namespace_state == "committed"
+        residual_readback = None if rolled_back else _project_read(command)
+        return _result(
+            command,
+            "readback_failed",
+            issues=(*readback_issues, *post_route_issues, *post_dependency_issues),
+            current=current,
+            candidate=candidate,
+            readback=readback,
+            candidate_text=candidate_text,
+            replacement_result=replacement,
+            rollback_result=rollback,
+            residual_readback=residual_readback,
+        )
 
-    resolution_inputs = managed_records.get("resolve_result_reviews")
-    if resolution_inputs is not None:
-        result_version = after.get("result_version")
-        if not _positive_integer(result_version):
-            return WorkCaseUpdateConstruction(None, problems=("处置结果审核要求有效 result_version",))
-        reviews = [
-            dict(item) if isinstance(item, Mapping) else item for item in _sequence(before.get("result_reviews"))
-        ]
-        for item in _sequence(resolution_inputs):
-            index = item["review_index"]
-            if index >= len(reviews) or not isinstance(reviews[index], dict):
-                return WorkCaseUpdateConstruction(None, problems=(f"review_index {index} 不存在",))
-            if not reviews[index].get("feedback"):
-                return WorkCaseUpdateConstruction(
-                    None,
-                    problems=(f"review_index {index} 没有 feedback，不得形成 Controller 处置",),
-                )
-            if reviews[index].get("controller_resolution") == item["controller_resolution"]:
-                continue
-            reviews[index]["controller_resolution"] = item["controller_resolution"]
-            receipts.append(_receipt("result_review_resolved", result_version, index=index))
-        if reviews != list(_sequence(before.get("result_reviews"))):
-            after["result_reviews"] = reviews
+    return _result(
+        command,
+        "updated",
+        current=current,
+        candidate=candidate,
+        readback=readback,
+        candidate_text=candidate_text,
+        replacement_result=replacement,
+    )
 
-    approval_input = managed_records.get("execution_approval")
-    if approval_input is not None:
-        plan_version = after.get("plan_version")
-        if not _positive_integer(plan_version):
-            return WorkCaseUpdateConstruction(None, problems=("执行批准要求有效 plan_version",))
-        existing_approval = after.get("execution_approval")
-        if isinstance(existing_approval, Mapping) and not _same_approval(
-            existing_approval, approval_input, plan_version
-        ):
-            return WorkCaseUpdateConstruction(
-                None,
-                problems=("既有执行批准不得由 update-workcase 改写；获授权的同事件修正须使用通用事实修正",),
-            )
-        if not isinstance(existing_approval, Mapping):
-            after["execution_approval"] = {
-                "subject_version": plan_version,
-                "approved_at": event_at,
-                **dict(approval_input),
-            }
-            receipts.append(_receipt("execution_approval_recorded", plan_version))
 
-    if managed_records.get("withdraw_execution_approval") is not None:
-        plan_version = after.get("plan_version")
-        if not _positive_integer(plan_version):
-            return WorkCaseUpdateConstruction(None, problems=("撤回执行批准要求有效 plan_version",))
-        after.pop("execution_approval", None)
-        receipts.append(_receipt("execution_approval_withdrawn", plan_version))
+def apply_workcase_write(command: WorkCaseWriteCommand) -> WorkCaseWriteResult:
+    """Validate, lock, CAS-replace, re-read targets, and conditionally roll back."""
 
-    closure_input = managed_records.get("closure_approval")
-    if closure_input is not None:
-        result_version = after.get("result_version")
-        if not _positive_integer(result_version):
-            return WorkCaseUpdateConstruction(None, problems=("关闭批准要求有效 result_version",))
-        existing_approval = after.get("closure_approval")
-        if isinstance(existing_approval, Mapping) and not _same_approval(
-            existing_approval, closure_input, result_version
-        ):
-            return WorkCaseUpdateConstruction(
-                None,
-                problems=("既有关闭批准不得由 update-workcase 改写；获授权的同事件修正须使用通用事实修正",),
-            )
-        if not isinstance(existing_approval, Mapping):
-            after["closure_approval"] = {
-                "subject_version": result_version,
-                "approved_at": event_at,
-                **dict(closure_input),
-            }
-            receipts.append(_receipt("closure_approval_recorded", result_version))
-
-    supplied = {
-        key: value
-        for key, value in after.items()
-        if key not in {"object_id", "fact_type_key", "created_at", "updated_at"}
-    }
-    return WorkCaseUpdateConstruction(supplied, tuple(receipts))
+    if not durable_writes_enabled():
+        return _result(command, "durability_unavailable")
+    completed: WorkCaseWriteResult | None = None
+    try:
+        with allocation_lock(command.boundary, LAYOUTS["workcase"]):
+            completed = apply_workcase_write_locked(command)
+    except OSError:
+        if completed is None:
+            raise
+        return replace(completed, coordination_release_uncertain=True)
+    assert completed is not None
+    return completed
 
 
 __all__ = [
-    "CURRENT_PROFILE",
-    "PLAN_RESET_FIELDS",
-    "RESULT_RESET_FIELDS",
-    "WorkCaseUpdateConstruction",
-    "construct_workcase_update",
+    "WorkCaseWriteCommand",
+    "WorkCaseWriteMode",
+    "WorkCaseWriteResult",
+    "apply_workcase_write",
+    "apply_workcase_write_locked",
 ]

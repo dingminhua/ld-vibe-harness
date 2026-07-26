@@ -1,8 +1,9 @@
-"""Apply a source-defined controlled delta to one control-contract-v2 WorkCase."""
+"""Expose the three source-defined WorkCase full-after write operations."""
 
 from __future__ import annotations
 
-from typing import Any
+from dataclasses import replace
+from typing import Any, Literal
 
 from ldvh.facts.contracts import LAYOUTS
 from ldvh.facts.creation import CreationBoundary, FactCoordinationUnavailable
@@ -11,8 +12,6 @@ from ldvh.facts.project_validation import stabilize_project_index
 from ldvh.facts.relations import ProjectFactIndex
 from ldvh.facts.repository import FactReadResult, read_fact_object
 from ldvh.facts.schema import FactSchema, project_fact_schemas
-from ldvh.facts.update_application import FactUpdateCommand, FactUpdateResult, apply_fact_update
-from ldvh.facts.workcase_update import CURRENT_PROFILE, construct_workcase_update
 from ldvh.filesystem import durable_writes_enabled
 from ldvh.governance.resolver import GovernanceResolutionRun, resolve_governance_scope
 from ldvh.helper.operation_runtime import (
@@ -24,20 +23,33 @@ from ldvh.helper.operation_runtime import (
 )
 from ldvh.helper.operations.fact_operation_support import plain, reading_boundary
 from ldvh.helper.operations.workcase_update_request import (
-    OPTIONAL_INPUTS,
-    REQUIRED_INPUTS,
-    WorkCaseUpdateRequest,
-    parse_workcase_update_request,
+    CLOSE_OPTIONAL_INPUTS,
+    CLOSE_REQUIRED_INPUTS,
+    CORRECT_CLOSED_OPTIONAL_INPUTS,
+    CORRECT_CLOSED_REQUIRED_INPUTS,
+    UPDATE_OPTIONAL_INPUTS,
+    UPDATE_REQUIRED_INPUTS,
+    CorrectClosedWorkCaseRequest,
+    WorkCaseWriteRequest,
+    parse_close_workcase_request,
+    parse_correct_closed_workcase_request,
+    parse_update_workcase_request,
 )
 from ldvh.helper.requests import CommonRequest
 from ldvh.helper.responses import source_reference
 from ldvh.specs.repository import RepositoryInspection
 
-OPERATION_KEY = "update-workcase"
-_CONTRACT = source_reference(
-    "rule",
-    "workcase-fact-type::v2 WorkCase 专属受控变更输入字段",
-)
+WorkCaseWriteMode = Literal["update", "close", "correct"]
+
+UPDATE_OPERATION_KEY = "update-workcase"
+CLOSE_OPERATION_KEY = "close-workcase"
+CORRECT_CLOSED_OPERATION_KEY = "correct-closed-workcase"
+
+_CONTRACTS = {
+    "update": source_reference("rule", "workcase-fact-type::update-workcase 输入与结果"),
+    "close": source_reference("rule", "workcase-fact-type::close-workcase 输入与结果"),
+    "correct": source_reference("rule", "workcase-fact-type::correct-closed-workcase 输入与结果"),
+}
 _SHARED_WRITE_CONTRACT = source_reference("rule", "fact-model-foundation::11.8 共享单对象受控写事务")
 _IMPLEMENTATION_SOURCE = source_reference(
     "implementation",
@@ -46,17 +58,22 @@ _IMPLEMENTATION_SOURCE = source_reference(
 
 
 def _validated_request(
+    mode: WorkCaseWriteMode,
     request: CommonRequest,
     context: OperationExecutionContext,
-    schema: FactSchema | None = None,
-) -> WorkCaseUpdateRequest:
-    parsed = parse_workcase_update_request(request, context, schema)
+) -> WorkCaseWriteRequest:
+    if mode == "update":
+        parsed = parse_update_workcase_request(request, context)
+    elif mode == "close":
+        parsed = parse_close_workcase_request(request, context)
+    else:
+        parsed = parse_correct_closed_workcase_request(request, context)
     if parsed.request is None:
-        raise OperationRequestError(parsed.problems, sources=(_CONTRACT,))
+        raise OperationRequestError(parsed.problems, sources=(_CONTRACTS[mode],))
     return parsed.request
 
 
-def _governance(domain: WorkCaseUpdateRequest) -> GovernanceResolutionRun:
+def _governance(domain: WorkCaseWriteRequest) -> GovernanceResolutionRun:
     return resolve_governance_scope(
         domain.governance_scope,
         base=domain.base,
@@ -93,7 +110,7 @@ def _current_read(
     key = ("workcase", object_id)
     index.cache[key] = read
     index.base_cache[key] = read
-    stabilize_project_index(index)
+    stabilize_project_index(index, (key,))
     return index.cache.get(key, read)
 
 
@@ -112,13 +129,151 @@ def _working_tree_source(
     return source
 
 
-def _state(fields: dict[str, Any]) -> dict[str, Any]:
-    return {
-        "status": fields.get("status"),
-        "phase": fields.get("phase"),
-        "plan_version": fields.get("plan_version"),
-        "result_version": fields.get("result_version"),
+def _residual_working_tree_source(
+    boundary: CreationBoundary,
+    read: FactReadResult,
+    event_at: str,
+) -> dict[str, Any]:
+    source = _working_tree_source(boundary, read.canonical_path, event_at)
+    details = source["details"]
+    details["check_status"] = read.check_status
+    if read.content_fingerprint is not None:
+        details["content_fingerprint"] = read.content_fingerprint
+    return source
+
+
+def _coordination_release_gap(
+    requested: tuple[dict[str, str], ...],
+    *,
+    committed: bool,
+) -> dict[str, Any]:
+    gap = {
+        "summary": (
+            "事实目标的原子替换已在 Working Tree 生效并成功回读；共同锁释放未能确认，"
+            "后续受控写的串行协调状态未知；再次执行受控写入前须人工核对锁状态"
+            if committed
+            else (
+                "事实目标确认未变化；共同锁释放未能确认，后续受控写的串行协调状态未知；"
+                "再次执行受控写入前须人工核对锁状态"
+            )
+        ),
+        "scope": list(requested),
+        "source_refs": [_SHARED_WRITE_CONTRACT],
     }
+    if committed:
+        gap["code"] = "controlled_write_lock_release_uncertain"
+    return gap
+
+
+def _coordination_release_diagnostic(*, committed: bool) -> dict[str, Any]:
+    diagnostic = {
+        "summary": "共同协调锁释放状态未能确认",
+        "details": {
+            "stage": "common_dir_lock_release",
+            "fact_target_state": "committed_and_read_back" if committed else "unchanged_and_read_back",
+            "subsequent_controlled_write_serialization": "uncertain",
+        },
+        "source_refs": [_SHARED_WRITE_CONTRACT],
+    }
+    if committed:
+        diagnostic["code"] = "controlled_write_lock_release_uncertain"
+    return diagnostic
+
+
+def _coordination_release_follow_up(requested: tuple[dict[str, str], ...]) -> dict[str, Any]:
+    return {
+        "summary": "再次执行受控写入前，需要恢复并确认共同锁的串行协调状态",
+        "required_inputs": [],
+        "required_human_decisions": [],
+        "resume_conditions": [
+            {
+                "summary": "人工核对共同锁状态，并确认受控写入口能够重新取得和释放该锁",
+                "scope": list(requested),
+                "source_refs": [_SHARED_WRITE_CONTRACT],
+            }
+        ],
+        "suggested_operations": [],
+    }
+
+
+def _merge_follow_up(
+    existing: dict[str, Any] | None,
+    coordination: dict[str, Any],
+) -> dict[str, Any]:
+    if existing is None:
+        return coordination
+    return {
+        "summary": f"{existing['summary']}；{coordination['summary']}",
+        "required_inputs": [*existing["required_inputs"], *coordination["required_inputs"]],
+        "required_human_decisions": [
+            *existing["required_human_decisions"],
+            *coordination["required_human_decisions"],
+        ],
+        "resume_conditions": [*existing["resume_conditions"], *coordination["resume_conditions"]],
+        "suggested_operations": [*existing["suggested_operations"], *coordination["suggested_operations"]],
+    }
+
+
+def _coordination_preserved_result_overlay(
+    execution: OperationExecution,
+    application: object,
+    requested: tuple[dict[str, str], ...],
+    *,
+    diagnostic_profile: bool,
+) -> OperationExecution:
+    if not bool(getattr(application, "coordination_release_uncertain", False)):
+        return execution
+    status = getattr(application, "status", None)
+    gap = {
+        "summary": (
+            f"WorkCase 领域结果（status={status}）已在共同锁释放前形成并保留；共同锁释放未能确认，"
+            "后续受控写的串行协调状态未知；目标、残留与未完成验证仍以本响应原结果为准，"
+            "再次执行受控写入前须人工核对锁状态"
+        ),
+        "scope": list(requested),
+        "source_refs": [_SHARED_WRITE_CONTRACT],
+    }
+    diagnostic = {
+        "summary": "共同协调锁释放状态未能确认",
+        "details": {
+            "stage": "common_dir_lock_release",
+            "domain_result_status": status,
+            "fact_target_state": "as_reported_by_domain_result",
+            "subsequent_controlled_write_serialization": "uncertain",
+        },
+        "source_refs": [_SHARED_WRITE_CONTRACT],
+    }
+    sources = (
+        execution.sources
+        if _SHARED_WRITE_CONTRACT in execution.sources
+        else (*execution.sources, _SHARED_WRITE_CONTRACT)
+    )
+    coordination_follow_up = _coordination_release_follow_up(requested)
+    return replace(
+        execution,
+        sources=sources,
+        gaps=(*execution.gaps, gap),
+        diagnostics=(*execution.diagnostics, *((diagnostic,) if diagnostic_profile else ())),
+        follow_up=_merge_follow_up(execution.follow_up, coordination_follow_up),
+    )
+
+
+def _rollback_failure_prefix(rollback: object) -> str:
+    """Describe only the rollback result's own namespace evidence."""
+
+    namespace_state = getattr(rollback, "namespace_state", None)
+    if namespace_state == "uncertain":
+        return "条件回滚在文件命名空间（namespace）中的生效情况无法确认"
+    if namespace_state == "not_committed":
+        if getattr(rollback, "outcome", None) == "conflict":
+            return "条件回滚发生冲突，确认未在文件命名空间（namespace）生效"
+        return "条件回滚确认未在文件命名空间（namespace）生效"
+    return "条件回滚未完成"
+
+
+def _fact_object(read: FactReadResult) -> dict[str, Any]:
+    assert read.fields is not None
+    return read.fields
 
 
 def _result(
@@ -126,17 +281,9 @@ def _result(
     after: FactReadResult,
     project_id: str,
     object_id: str,
-    *,
-    event_at: str | None,
-    receipts: tuple[dict[str, Any], ...],
 ) -> dict[str, Any]:
-    assert before.fields is not None and before.content_fingerprint is not None
-    assert after.fields is not None and after.content_fingerprint is not None
-    changed_fields = sorted(
-        key
-        for key in set(before.fields) | set(after.fields)
-        if before.fields.get(key) != after.fields.get(key) or (key in before.fields) != (key in after.fields)
-    )
+    assert before.content_fingerprint is not None
+    assert after.content_fingerprint is not None
     return {
         "actual_ref": {
             "governed_project_id": project_id,
@@ -144,13 +291,10 @@ def _result(
             "object_id": object_id,
         },
         "canonical_path": after.canonical_path,
+        "carrier": after.carrier,
         "previous_content_fingerprint": before.content_fingerprint,
         "content_fingerprint": after.content_fingerprint,
-        "event_at": event_at,
-        "before_state": _state(before.fields),
-        "after_state": _state(after.fields),
-        "changed_fields": changed_fields,
-        "managed_record_receipts": list(receipts),
+        "fact_object": _fact_object(after),
     }
 
 
@@ -158,8 +302,25 @@ def _issue_summary(issues: tuple[FactIssue, ...]) -> str:
     return "; ".join(f"{issue.field_path + ': ' if issue.field_path else ''}{issue.summary}" for issue in issues)
 
 
+def _request_sources(
+    mode: WorkCaseWriteMode,
+    domain: WorkCaseWriteRequest,
+    run: GovernanceResolutionRun,
+) -> tuple[dict[str, Any], ...]:
+    review_reference: tuple[dict[str, Any], ...] = ()
+    if isinstance(domain, CorrectClosedWorkCaseRequest) and domain.independent_review_reference is not None:
+        review_reference = (plain(domain.independent_review_reference),)
+    return (
+        *tuple(plain(source) for source in run.sources),
+        *tuple(plain(source) for source in domain.authorization_reference),
+        *review_reference,
+        _CONTRACTS[mode],
+    )
+
+
 def _rejected(
-    domain: WorkCaseUpdateRequest,
+    mode: WorkCaseWriteMode,
+    domain: WorkCaseWriteRequest,
     run: GovernanceResolutionRun,
     summary: str,
     detail: str,
@@ -173,125 +334,282 @@ def _rejected(
         not_completed_scope=requested,
         governance_resolution=run.result.to_json() if run.result else None,
         sources=sources,
-        gaps=({"summary": detail, "scope": list(requested), "source_refs": [_CONTRACT]},),
+        gaps=(
+            {
+                "summary": detail,
+                "scope": list(requested),
+                "source_refs": [_CONTRACTS[mode]],
+            },
+        ),
+    )
+
+
+def _apply_core_workcase_write(
+    mode: WorkCaseWriteMode,
+    domain: WorkCaseWriteRequest,
+    boundary: CreationBoundary,
+    schemas: dict[str, FactSchema],
+    schema: FactSchema,
+    event_at: str,
+) -> object:
+    """The only Helper-to-Core WorkCase transaction adapter."""
+
+    from ldvh.facts.relations import WorkCaseRouteTargetSnapshot
+    from ldvh.facts.workcase_update import WorkCaseWriteCommand, apply_workcase_write
+
+    route_targets = ()
+    independent_review_reference = None
+    if isinstance(domain, CorrectClosedWorkCaseRequest):
+        route_targets = tuple(
+            WorkCaseRouteTargetSnapshot(
+                item.target,
+                item.content_fingerprint,
+                f"route_target_fingerprints[{index}].target",
+            )
+            for index, item in enumerate(domain.route_target_fingerprints)
+        )
+        independent_review_reference = domain.independent_review_reference
+    return apply_workcase_write(
+        WorkCaseWriteCommand(
+            boundary=boundary,
+            schemas=schemas,
+            schema=schema,
+            object_id=domain.fact_ref.object_id,
+            expected_content_fingerprint=domain.expected_content_fingerprint,
+            supplied=domain.fact_object,
+            event_at=event_at,
+            mode=mode,
+            authorization_reference=domain.authorization_reference,
+            route_target_fingerprints=route_targets,
+            independent_review_reference=independent_review_reference,
+        )
     )
 
 
 def _application_failure(
-    result: FactUpdateResult,
-    domain: WorkCaseUpdateRequest,
+    mode: WorkCaseWriteMode,
+    result: object,
+    domain: WorkCaseWriteRequest,
     run: GovernanceResolutionRun,
     sources: tuple[dict[str, Any], ...],
+    boundary: CreationBoundary,
+    event_at: str,
 ) -> OperationExecution | None:
+    status = getattr(result, "status", None)
+    if status in {"updated", "no_change"}:
+        return None
     requested = (domain.fact_ref.to_json(),)
     governance = run.result.to_json() if run.result else None
-    if result.status in {"updated", "no_change"}:
-        return None
-    if result.status == "durability_unavailable":
+    issues = getattr(result, "issues", ())
+    issue_summary = _issue_summary(issues) if isinstance(issues, tuple) else ""
+
+    if status == "invalid_request":
+        return OperationExecution(
+            outcome="invalid_request",
+            summary="提交给 WorkCase 核心事务的请求结构不符合规范",
+            requested_scope=requested,
+            not_completed_scope=requested,
+            governance_resolution=governance,
+            sources=sources,
+            gaps=({"summary": issue_summary, "scope": list(requested), "source_refs": [_CONTRACTS[mode]]},),
+        )
+    if status == "durability_unavailable":
         return OperationExecution(
             outcome="unavailable",
-            summary="当前平台尚未获准以 file-only 耐久等级更新 WorkCase",
+            summary="当前平台尚未获准执行 WorkCase 耐久写入",
             requested_scope=requested,
             not_completed_scope=requested,
             governance_resolution=governance,
             sources=sources,
-            gaps=({"summary": "未写入目标载体", "scope": list(requested), "source_refs": [_CONTRACT]},),
+            gaps=({"summary": "未写入目标载体", "scope": list(requested), "source_refs": [_SHARED_WRITE_CONTRACT]},),
         )
-    if result.status in {"current_rejected", "current_unavailable"}:
+    if status in {"current_rejected", "current_unavailable"}:
         return OperationExecution(
-            outcome="unavailable" if result.status == "current_unavailable" else "rejected",
-            summary="当前 WorkCase 未形成可更新的 mechanically valid 快照",
+            outcome="unavailable" if status == "current_unavailable" else "rejected",
+            summary="当前 WorkCase 不满足该操作对变更前快照的要求",
             requested_scope=requested,
             not_completed_scope=requested,
             governance_resolution=governance,
             sources=sources,
             gaps=(
                 {
-                    "summary": _issue_summary(result.issues) or "当前对象读取未通过机械检查",
+                    "summary": issue_summary or "当前对象读取或 operation before 条件不成立",
                     "scope": list(requested),
-                    "source_refs": [_CONTRACT],
+                    "source_refs": [_CONTRACTS[mode]],
                 },
             ),
         )
-    if result.status == "fingerprint_stale":
-        return _rejected(domain, run, "WorkCase 内容指纹已经过期", "重新精确读取当前对象后再形成 delta", sources)
-    if result.status == "event_time_not_successor":
+    if status == "fingerprint_stale":
+        return _rejected(mode, domain, run, "WorkCase 内容指纹已经过期", "重新精确读取当前对象后重试", sources)
+    if status == "event_time_not_successor":
         return _rejected(
+            mode,
             domain,
             run,
-            "本次 event_at 不能形成 updated_at 严格后继",
-            _issue_summary(result.issues),
+            "本次事件时间不能形成 updated_at 严格后继",
+            issue_summary,
             sources,
         )
-    if result.status in {"candidate_rejected", "candidate_unavailable"}:
+    if status in {"candidate_rejected", "candidate_unavailable"}:
         return OperationExecution(
-            outcome="unavailable" if result.status == "candidate_unavailable" else "rejected",
-            summary="WorkCase 完整 after 未通过机械检查",
+            outcome="unavailable" if status == "candidate_unavailable" else "rejected",
+            summary="WorkCase 完整 after 未通过专属机械检查",
             requested_scope=requested,
             not_completed_scope=requested,
             governance_resolution=governance,
             sources=sources,
             gaps=(
                 {
-                    "summary": _issue_summary(result.issues) or "项目级机械检查未完成",
+                    "summary": issue_summary or "完整 after、转换、Gate 或目标检查未成立",
                     "scope": list(requested),
-                    "source_refs": [_CONTRACT],
+                    "source_refs": [_CONTRACTS[mode]],
                 },
             ),
         )
-    if result.status in {"replacement_conflict", "replacement_unavailable"}:
+    if status in {"replacement_conflict", "replacement_unavailable"}:
+        replacement = getattr(result, "replacement_result", None)
+        namespace_uncertain = getattr(replacement, "namespace_state", None) == "uncertain"
         return OperationExecution(
-            outcome="rejected" if result.status == "replacement_conflict" else "unavailable",
-            summary="原子替换前对象发生变化" if result.status == "replacement_conflict" else "原子替换技术条件不成立",
+            outcome="rejected" if status == "replacement_conflict" else "unavailable",
+            summary=(
+                "原子替换前 WorkCase 已发生变化" if status == "replacement_conflict" else "原子替换技术条件不成立"
+            ),
             requested_scope=requested,
             not_completed_scope=requested,
             governance_resolution=governance,
             sources=(*sources, _IMPLEMENTATION_SOURCE),
             gaps=(
                 {
-                    "summary": "重新精确读取当前对象后再形成 delta",
+                    "summary": (
+                        "文件命名空间（namespace）中的原子替换是否生效无法确认；"
+                        "必须重新精确读取当前 WorkCase 事实载体与全部分流目标（route targets）"
+                        if namespace_uncertain
+                        else (
+                            "已确认原子替换未在文件命名空间（namespace）生效；"
+                            "重新精确读取当前 WorkCase 事实载体与全部分流目标（route targets）后重试"
+                        )
+                    ),
                     "scope": list(requested),
-                    "source_refs": [_CONTRACT],
+                    "source_refs": [_CONTRACTS[mode]],
                 },
             ),
         )
-    assert result.status == "readback_failed"
-    rollback = result.rollback_result
-    assert rollback is not None
-    rolled_back = rollback.outcome == "replaced" and rollback.namespace_state == "committed"
+    if status == "readback_failed":
+        rollback = getattr(result, "rollback_result", None)
+        rolled_back = (
+            rollback is not None
+            and getattr(rollback, "outcome", None) == "replaced"
+            and getattr(rollback, "namespace_state", None) == "committed"
+        )
+        residual = getattr(result, "residual_readback", None)
+        residual_source: dict[str, Any] | None = None
+        if isinstance(residual, FactReadResult):
+            residual_source = _residual_working_tree_source(boundary, residual, event_at)
+        current = getattr(result, "current", None)
+        rollback_failure_prefix = _rollback_failure_prefix(rollback)
+        if rolled_back:
+            change_summary = "已恢复更新前载体"
+        elif not isinstance(residual, FactReadResult) or residual.check_status == "unavailable":
+            change_summary = f"{rollback_failure_prefix}；实际 WorkCase 事实载体的残留状态无法确认"
+        elif residual.raw_text == getattr(result, "candidate_text", None):
+            change_summary = (
+                f"{rollback_failure_prefix}；当前重新读取观察到的实际 WorkCase 事实载体完整字节内容与本次新载体一致"
+            )
+        elif isinstance(current, FactReadResult) and residual.raw_text == current.raw_text:
+            change_summary = (
+                f"{rollback_failure_prefix}；当前重新读取观察到的实际 WorkCase 事实载体完整字节内容与更新前载体一致"
+            )
+        elif residual.check_status == "mechanically_valid":
+            change_summary = f"{rollback_failure_prefix}；当前重新读取观察到的实际 WorkCase 事实载体是另一机械有效版本"
+        elif residual.check_status == "not_found":
+            change_summary = f"{rollback_failure_prefix}；当前重新读取确认实际 WorkCase 事实载体的预期位置不存在"
+        elif residual.raw_text is not None:
+            change_summary = (
+                f"{rollback_failure_prefix}；当前实际 WorkCase 事实载体已安全完整读取，但对象未通过机械检查"
+            )
+        else:
+            change_summary = (
+                f"{rollback_failure_prefix}；当前实际 WorkCase 事实载体未能安全完整读取，"
+                "机械检查未通过（状态为 `invalid`）"
+            )
+        residual_unknown = not rolled_back and (
+            not isinstance(residual, FactReadResult) or residual.check_status == "unavailable"
+        )
+        residual_refs = () if residual_source is None else (residual_source,)
+        residual_gap = (
+            (
+                {
+                    "summary": "条件回滚后的实际 WorkCase 事实载体无法确认",
+                    "scope": list(requested),
+                    "source_refs": [_CONTRACTS[mode]],
+                },
+            )
+            if residual_unknown
+            else ()
+        )
+        residual_verification = (
+            (
+                {
+                    "check": "条件回滚后重新精确读取并机械检查实际 WorkCase 事实载体",
+                    "status": (
+                        "unavailable"
+                        if not isinstance(residual, FactReadResult) or residual.check_status == "unavailable"
+                        else "passed"
+                        if residual.check_status == "mechanically_valid"
+                        else "failed"
+                    ),
+                    "scope": list(requested),
+                    "evidence": [*residual_refs, _CONTRACTS[mode]],
+                },
+            )
+            if not rolled_back
+            else ()
+        )
+        return OperationExecution(
+            outcome="error",
+            summary=("写后回读未通过；已完成条件回滚" if rolled_back else "写后回读未通过，且未能确认条件回滚已经完成"),
+            requested_scope=requested,
+            not_completed_scope=requested,
+            governance_resolution=governance,
+            sources=(*sources, *residual_refs, _IMPLEMENTATION_SOURCE),
+            changes=(
+                {
+                    "summary": change_summary,
+                    "status": "rolled-back" if rolled_back else "rollback-failed",
+                    "target": domain.fact_ref.to_json(),
+                    "source_refs": [_CONTRACTS[mode], *residual_refs],
+                },
+            ),
+            gaps=(
+                {
+                    "summary": issue_summary or "写后项目级检查未完成",
+                    "scope": list(requested),
+                    "source_refs": [_CONTRACTS[mode]],
+                },
+                *residual_gap,
+            ),
+            verification=residual_verification,
+        )
     return OperationExecution(
         outcome="error",
-        summary="写后回读未通过；已回滚" if rolled_back else "写后回读未通过且无法安全回滚",
+        summary="WorkCase 专属事务返回未知内部状态",
         requested_scope=requested,
         not_completed_scope=requested,
         governance_resolution=governance,
         sources=(*sources, _IMPLEMENTATION_SOURCE),
-        changes=(
-            {
-                "summary": "已恢复更新前载体" if rolled_back else "新载体可能残留且未完成验证",
-                "status": "rolled-back" if rolled_back else "rollback-failed",
-                "target": domain.fact_ref.to_json(),
-                "source_refs": [_CONTRACT],
-            },
-        ),
-        gaps=(
-            {
-                "summary": _issue_summary(result.issues) or "写后项目级检查未完成",
-                "scope": list(requested),
-                "source_refs": [_CONTRACT],
-            },
-        ),
     )
 
 
 def _coordination_unavailable(
+    mode: WorkCaseWriteMode,
     error: FactCoordinationUnavailable,
-    requested: tuple[dict[str, str], ...],
+    domain: WorkCaseWriteRequest,
     run: GovernanceResolutionRun,
     sources: tuple[dict[str, Any], ...],
     *,
     diagnostic_profile: bool,
 ) -> OperationExecution:
+    requested = (domain.fact_ref.to_json(),)
     diagnostic = {
         "summary": "受控写入共同协调锁不可用",
         "code": "controlled_write_lock_unavailable",
@@ -301,7 +619,6 @@ def _coordination_unavailable(
             "required_access": error.required_access,
             "system_error_category": error.system_error_category,
             "target_unchanged": True,
-            "allocator_unchanged": True,
             "counter_unchanged": True,
         },
         "source_refs": [_SHARED_WRITE_CONTRACT],
@@ -315,69 +632,46 @@ def _coordination_unavailable(
         sources=(*sources, _SHARED_WRITE_CONTRACT),
         gaps=(
             {
-                "summary": "恢复 git common-dir 下 LDVH 协调根的创建、打开与排他锁权限后重试",
+                "summary": "恢复 git common-dir 下 LDVH 协调根访问后重试",
                 "scope": list(requested),
                 "source_refs": [_SHARED_WRITE_CONTRACT],
                 "code": "controlled_write_lock_unavailable",
             },
         ),
         diagnostics=(diagnostic,) if diagnostic_profile else (),
-        follow_up={
-            "summary": "恢复共同协调根访问后重新读取当前对象并重试",
-            "required_inputs": [],
-            "required_human_decisions": [],
-            "resume_conditions": [
-                {
-                    "summary": "git common-dir 的 LDVH 协调根允许创建或打开锁并取得排他锁",
-                    "scope": list(requested),
-                    "source_refs": [_SHARED_WRITE_CONTRACT],
-                }
-            ],
-            "suggested_operations": [
-                {
-                    "summary": "重新精确读取当前 WorkCase",
-                    "scope": list(requested),
-                    "source_refs": [_SHARED_WRITE_CONTRACT],
-                    "operation_key": "read-fact-objects",
-                }
-            ],
-        },
     )
 
 
 def _execute(
+    mode: WorkCaseWriteMode,
     request: CommonRequest,
     repository: RepositoryInspection,
     context: OperationExecutionContext,
 ) -> OperationExecution:
-    domain = _validated_request(request, context)
+    domain = _validated_request(mode, request, context)
     reference = domain.fact_ref
     requested = (reference.to_json(),)
     run = _governance(domain)
+    sources = _request_sources(mode, domain, run)
     boundary = _boundary(run)
-    request_sources = (
-        *tuple(plain(source) for source in run.sources),
-        *tuple(plain(source) for source in domain.authorization_reference),
-        _CONTRACT,
-    )
     if boundary is None:
         return OperationExecution(
             outcome="unavailable",
-            summary="当前管辖结果不能形成唯一 WorkCase 更新边界",
+            summary="当前管辖结果不能形成唯一 WorkCase 写入边界",
             requested_scope=requested,
             not_completed_scope=requested,
             governance_resolution=run.result.to_json() if run.result else None,
-            sources=request_sources,
+            sources=sources,
             gaps=(
                 {
                     "summary": "管辖输入未形成同一项目、实际 worktree 和 common-dir 的唯一边界",
                     "scope": list(requested),
-                    "source_refs": [_CONTRACT],
+                    "source_refs": [_CONTRACTS[mode]],
                 },
             ),
         )
     if boundary.governed_project_id != reference.governed_project_id:
-        return _rejected(domain, run, "请求项目与实际管辖项目不一致", "fact_ref 已过期或属于另一项目", request_sources)
+        return _rejected(mode, domain, run, "请求项目与实际管辖项目不一致", "fact_ref 属于另一项目", sources)
 
     schemas = project_fact_schemas(repository)
     schema = schemas.get("workcase")
@@ -388,169 +682,118 @@ def _execute(
             requested_scope=requested,
             not_completed_scope=requested,
             governance_resolution=run.result.to_json() if run.result else None,
-            sources=request_sources,
-            gaps=({"summary": "WorkCase Schema 不可用", "scope": list(requested), "source_refs": [_CONTRACT]},),
+            sources=sources,
         )
-    domain = _validated_request(request, context, schema)
     if not durable_writes_enabled():
         return OperationExecution(
             outcome="unavailable",
-            summary="当前平台尚未获准以 file-only 耐久等级更新 WorkCase",
+            summary="当前平台尚未获准执行 WorkCase 耐久写入",
             requested_scope=requested,
             not_completed_scope=requested,
             governance_resolution=run.result.to_json() if run.result else None,
-            sources=request_sources,
-            gaps=(
-                {
-                    "summary": (
-                        "未创建锁状态或替换 WorkCase：当前 Windows 实现未满足锁及相应耐久/"
-                        "并发保障；需先说明受影响保障，并由 Human 决定是否接受具体残留风险"
-                    ),
-                    "scope": list(requested),
-                    "source_refs": [_SHARED_WRITE_CONTRACT],
-                },
-            ),
-        )
-    current = _current_read(boundary, schemas, reference.object_id)
-    if current.check_status != "mechanically_valid" or current.fields is None:
-        if current.check_status == "unavailable":
-            return OperationExecution(
-                outcome="unavailable",
-                summary="当前 WorkCase 的技术读取条件不成立",
-                requested_scope=requested,
-                not_completed_scope=requested,
-                governance_resolution=run.result.to_json() if run.result else None,
-                sources=request_sources,
-                gaps=(
-                    {
-                        "summary": _issue_summary(current.issues) or "恢复目标读取条件后重试",
-                        "scope": list(requested),
-                        "source_refs": [_CONTRACT],
-                    },
-                ),
-            )
-        return _rejected(
-            domain,
-            run,
-            "当前 WorkCase 不存在或未形成 mechanically valid 快照",
-            _issue_summary(current.issues) or "重新精确读取并修复当前对象",
-            request_sources,
-        )
-    if (
-        current.fields.get("object_id") != reference.object_id
-        or current.fields.get("fact_type_key") != "workcase"
-        or current.fields.get("workcase_profile") != CURRENT_PROFILE
-    ):
-        return _rejected(
-            domain,
-            run,
-            "目标对象不适用于 WorkCase 专属更新",
-            (
-                "V1 对象须先按规则迁移到 V2；legacy 对象继续使用 generic 完整目标并遵守既有兼容边界；"
-                "身份不一致对象不得更新"
-            ),
-            request_sources,
-        )
-    if current.content_fingerprint != domain.expected_content_fingerprint:
-        return _rejected(
-            domain,
-            run,
-            "WorkCase 内容指纹已经过期",
-            "重新精确读取当前对象后再形成 delta",
-            request_sources,
+            sources=(*sources, _SHARED_WRITE_CONTRACT),
         )
 
-    construction = construct_workcase_update(
-        current.fields,
-        set_fields=domain.set_fields,
-        remove_fields=domain.remove_fields,
-        managed_records=domain.managed_records,
-        event_at=context.event_at,
-    )
-    if construction.supplied is None:
-        return _rejected(
-            domain,
-            run,
-            "显式 WorkCase delta 不能基于当前快照形成合法 after",
-            "; ".join(construction.problems),
-            request_sources,
-        )
     try:
-        application = apply_fact_update(
-            FactUpdateCommand(
-                boundary=boundary,
-                fact_type_key="workcase",
-                object_id=reference.object_id,
-                schemas=schemas,
-                schema=schema,
-                expected_content_fingerprint=domain.expected_content_fingerprint,
-                supplied=construction.supplied,
-                body=None,
-                event_at=context.event_at,
-                allow_workcase_managed_record_mutation=True,
-            )
+        application = _apply_core_workcase_write(
+            mode,
+            domain,
+            boundary,
+            schemas,
+            schema,
+            context.event_at,
         )
     except FactCoordinationUnavailable as error:
         return _coordination_unavailable(
+            mode,
             error,
-            requested,
+            domain,
             run,
-            request_sources,
+            sources,
             diagnostic_profile=request.response_profile == "diagnostic",
         )
-    failure = _application_failure(application, domain, run, request_sources)
+
+    failure = _application_failure(
+        mode,
+        application,
+        domain,
+        run,
+        sources,
+        boundary,
+        context.event_at,
+    )
     if failure is not None:
-        return failure
-    before = application.current
-    after = application.readback
-    assert before is not None and after is not None
-    no_change = application.status == "no_change"
-    if no_change:
-        assert construction.receipts == ()
+        return _coordination_preserved_result_overlay(
+            failure,
+            application,
+            requested,
+            diagnostic_profile=request.response_profile == "diagnostic",
+        )
+    before = getattr(application, "current", None)
+    after = getattr(application, "readback", None)
+    if not isinstance(before, FactReadResult) or not isinstance(after, FactReadResult):
+        return OperationExecution(
+            outcome="error",
+            summary="WorkCase 专属事务没有返回可回读的 before/after",
+            requested_scope=requested,
+            not_completed_scope=requested,
+            governance_resolution=run.result.to_json() if run.result else None,
+            sources=(*sources, _IMPLEMENTATION_SOURCE),
+        )
+    no_change = getattr(application, "status", None) == "no_change"
+    coordination_release_uncertain = bool(getattr(application, "coordination_release_uncertain", False))
     working_tree_source = _working_tree_source(
         boundary,
         after.canonical_path,
-        None if no_change else context.event_at,
+        context.event_at,
     )
-    result = _result(
-        before,
-        after,
-        boundary.governed_project_id,
-        reference.object_id,
-        event_at=None if no_change else context.event_at,
-        receipts=() if no_change else construction.receipts,
-    )
+    result = _result(before, after, boundary.governed_project_id, reference.object_id)
     if no_change:
         return OperationExecution(
             outcome="no_change",
-            summary="显式 delta 与托管动作未形成领域变化，未重写 WorkCase",
+            summary="完整 after 与当前 WorkCase 相同，未重写目标",
             result=result,
             requested_scope=requested,
             completed_scope=requested,
             governance_resolution=run.result.to_json() if run.result else None,
-            sources=(*request_sources, working_tree_source, _IMPLEMENTATION_SOURCE),
+            sources=(
+                *sources,
+                working_tree_source,
+                *((_SHARED_WRITE_CONTRACT,) if coordination_release_uncertain else ()),
+                _IMPLEMENTATION_SOURCE,
+            ),
+            gaps=(_coordination_release_gap(requested, committed=False),) if coordination_release_uncertain else (),
             verification=(
                 {
-                    "check": "当前对象指纹仍匹配且领域 after 与 before 相同",
+                    "check": "当前对象指纹匹配且完整 after 与 before 相同",
                     "status": "passed",
                     "scope": list(requested),
-                    "evidence": [working_tree_source, _CONTRACT],
+                    "evidence": [working_tree_source, _CONTRACTS[mode]],
                 },
             ),
+            diagnostics=(_coordination_release_diagnostic(committed=False),)
+            if coordination_release_uncertain and request.response_profile == "diagnostic"
+            else (),
+            follow_up=(_coordination_release_follow_up(requested) if coordination_release_uncertain else None),
         )
-    replacement = application.replacement_result
-    assert replacement is not None
+    replacement = getattr(application, "replacement_result", None)
     return OperationExecution(
         outcome="ok",
-        summary="WorkCase 已完成专属 delta 构造、单对象 CAS 替换和写后回读",
+        summary="WorkCase 已完成专属完整 after 校验、CAS 替换和写后回读",
         result=result,
         requested_scope=requested,
         completed_scope=requested,
         governance_resolution=run.result.to_json() if run.result else None,
-        sources=(*request_sources, working_tree_source, _IMPLEMENTATION_SOURCE),
+        sources=(
+            *sources,
+            working_tree_source,
+            *((_SHARED_WRITE_CONTRACT,) if coordination_release_uncertain else ()),
+            _IMPLEMENTATION_SOURCE,
+        ),
+        gaps=(_coordination_release_gap(requested, committed=True),) if coordination_release_uncertain else (),
         changes=(
             {
-                "summary": f"已更新字段：{', '.join(result['changed_fields'])}",
+                "summary": "已原子更新 WorkCase 当前完整快照",
                 "status": "updated",
                 "target": reference.to_json(),
                 "source_refs": [working_tree_source],
@@ -559,30 +802,45 @@ def _execute(
         verification=(
             {
                 "check": (
-                    "指纹、完整 after、转换、原子替换和写后读取已通过；"
-                    f"namespace={replacement.namespace_state}, durability={replacement.durability}, "
-                    f"cleanup={replacement.cleanup}"
+                    "完整 after 的结构与转换机械检查、CAS 与写后回读已通过"
+                    if replacement is None
+                    else (
+                        "完整 after 的结构与转换机械检查、CAS 与写后回读已通过；"
+                        f"namespace={replacement.namespace_state}, durability={replacement.durability}, "
+                        f"cleanup={replacement.cleanup}"
+                    )
                 ),
                 "status": "passed",
                 "scope": list(requested),
-                "evidence": [working_tree_source, _CONTRACT],
+                "evidence": [working_tree_source, _CONTRACTS[mode]],
             },
         ),
+        diagnostics=(_coordination_release_diagnostic(committed=True),)
+        if coordination_release_uncertain and request.response_profile == "diagnostic"
+        else (),
+        follow_up=(_coordination_release_follow_up(requested) if coordination_release_uncertain else None),
     )
 
 
 def _check_availability(
+    mode: WorkCaseWriteMode,
     request: CommonRequest,
     repository: RepositoryInspection,
     context: OperationExecutionContext,
 ) -> AvailabilityEvaluation:
-    domain = _validated_request(request, context)
+    domain = _validated_request(mode, request, context)
     requested = domain.fact_ref.to_json()
     if not durable_writes_enabled():
         return AvailabilityEvaluation(
             availability="unavailable_for_request",
             unavailable_scope=(requested,),
-            gaps=({"summary": "当前平台耐久写能力未获准", "scope": [requested], "source_refs": [_CONTRACT]},),
+            gaps=(
+                {
+                    "summary": "当前平台耐久写能力未获准",
+                    "scope": [requested],
+                    "source_refs": [_SHARED_WRITE_CONTRACT],
+                },
+            ),
         )
     run = _governance(domain)
     boundary = _boundary(run)
@@ -596,16 +854,13 @@ def _check_availability(
                 {
                     "summary": "当前请求的管辖、项目或 WorkCase Schema 前置条件不成立",
                     "scope": [requested],
-                    "source_refs": [_CONTRACT],
+                    "source_refs": [_CONTRACTS[mode]],
                 },
             ),
         )
-    _validated_request(request, context, schema)
     current = _current_read(boundary, schemas, domain.fact_ref.object_id)
     if (
         current.check_status != "mechanically_valid"
-        or current.fields is None
-        or current.fields.get("workcase_profile") != CURRENT_PROFILE
         or current.content_fingerprint != domain.expected_content_fingerprint
     ):
         return AvailabilityEvaluation(
@@ -613,22 +868,91 @@ def _check_availability(
             unavailable_scope=(requested,),
             gaps=(
                 {
-                    "summary": "当前对象不适用、不可更新或请求指纹已过期",
+                    "summary": "当前对象不可读取、不能进入该操作或请求指纹已过期",
                     "scope": [requested],
-                    "source_refs": [_CONTRACT],
+                    "source_refs": [_CONTRACTS[mode]],
                 },
             ),
         )
     return AvailabilityEvaluation(availability="available_for_request", available_scope=(requested,))
 
 
-WORKCASE_UPDATE_IMPLEMENTATION = OperationImplementation(
-    required_inputs=REQUIRED_INPUTS,
-    optional_inputs=OPTIONAL_INPUTS,
-    evidence=(_IMPLEMENTATION_SOURCE, _CONTRACT),
-    check_availability=_check_availability,
-    call=_execute,
+def _update_call(
+    request: CommonRequest,
+    repository: RepositoryInspection,
+    context: OperationExecutionContext,
+) -> OperationExecution:
+    return _execute("update", request, repository, context)
+
+
+def _close_call(
+    request: CommonRequest,
+    repository: RepositoryInspection,
+    context: OperationExecutionContext,
+) -> OperationExecution:
+    return _execute("close", request, repository, context)
+
+
+def _correct_call(
+    request: CommonRequest,
+    repository: RepositoryInspection,
+    context: OperationExecutionContext,
+) -> OperationExecution:
+    return _execute("correct", request, repository, context)
+
+
+def _update_availability(
+    request: CommonRequest,
+    repository: RepositoryInspection,
+    context: OperationExecutionContext,
+) -> AvailabilityEvaluation:
+    return _check_availability("update", request, repository, context)
+
+
+def _close_availability(
+    request: CommonRequest,
+    repository: RepositoryInspection,
+    context: OperationExecutionContext,
+) -> AvailabilityEvaluation:
+    return _check_availability("close", request, repository, context)
+
+
+def _correct_availability(
+    request: CommonRequest,
+    repository: RepositoryInspection,
+    context: OperationExecutionContext,
+) -> AvailabilityEvaluation:
+    return _check_availability("correct", request, repository, context)
+
+
+UPDATE_WORKCASE_IMPLEMENTATION = OperationImplementation(
+    required_inputs=UPDATE_REQUIRED_INPUTS,
+    optional_inputs=UPDATE_OPTIONAL_INPUTS,
+    evidence=(_IMPLEMENTATION_SOURCE, _CONTRACTS["update"]),
+    check_availability=_update_availability,
+    call=_update_call,
+)
+CLOSE_WORKCASE_IMPLEMENTATION = OperationImplementation(
+    required_inputs=CLOSE_REQUIRED_INPUTS,
+    optional_inputs=CLOSE_OPTIONAL_INPUTS,
+    evidence=(_IMPLEMENTATION_SOURCE, _CONTRACTS["close"]),
+    check_availability=_close_availability,
+    call=_close_call,
+)
+CORRECT_CLOSED_WORKCASE_IMPLEMENTATION = OperationImplementation(
+    required_inputs=CORRECT_CLOSED_REQUIRED_INPUTS,
+    optional_inputs=CORRECT_CLOSED_OPTIONAL_INPUTS,
+    evidence=(_IMPLEMENTATION_SOURCE, _CONTRACTS["correct"]),
+    check_availability=_correct_availability,
+    call=_correct_call,
 )
 
 
-__all__ = ["OPERATION_KEY", "WORKCASE_UPDATE_IMPLEMENTATION"]
+__all__ = [
+    "CLOSE_OPERATION_KEY",
+    "CLOSE_WORKCASE_IMPLEMENTATION",
+    "CORRECT_CLOSED_OPERATION_KEY",
+    "CORRECT_CLOSED_WORKCASE_IMPLEMENTATION",
+    "UPDATE_OPERATION_KEY",
+    "UPDATE_WORKCASE_IMPLEMENTATION",
+]

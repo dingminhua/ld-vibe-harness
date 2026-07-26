@@ -7,17 +7,15 @@ import { listObjects, showObject } from '../../api/services/facts.ts';
 import type { LocalFactScope } from '../../api/services/localFactReader.ts';
 
 const fixtures = [
-  { type: 'workcase', id: 'workcase-0001', directory: 'workcases', carrier: 'yaml', body: 'object_id: workcase-0001\nfact_type_key: workcase\ntitle: WorkCase fixture\nstatus: draft\n' },
   { type: 'adr', id: 'adr-0001', directory: 'adrs', carrier: 'yaml', body: 'object_id: adr-0001\nfact_type_key: adr\ntitle: ADR fixture\nstatus: proposed\n' },
   { type: 'pitfall', id: 'pitfall-0001', directory: 'pitfalls', carrier: 'yaml', body: 'object_id: pitfall-0001\nfact_type_key: pitfall\ntitle: Pitfall fixture\nstatus: active\n' },
-  { type: 'spark', id: 'spark-0001', directory: 'sparks', carrier: 'yaml', body: 'object_id: spark-0001\nfact_type_key: spark\ntitle: Spark fixture\nstatus: open\n' },
   {
     type: 'study', id: 'study-0001', directory: 'studies', carrier: 'markdown',
     body: '---\nobject_id: study-0001\nfact_type_key: study\ntitle: Study fixture\nstatus: active\n---\n\n## 研究问题\n\nFixture body.\n',
   },
 ] as const;
 
-test('exact V4 reads carry source metadata for every fact carrier, while list candidates do not', async () => {
+test('local exact reads carry source metadata for each local carrier, while list candidates do not', async () => {
   const root = await mkdtemp(path.join(tmpdir(), 'ldvh-web-facts-'));
   const scope: LocalFactScope = { worktreeLocator: root, governedProjectId: 'fixture' };
   try {

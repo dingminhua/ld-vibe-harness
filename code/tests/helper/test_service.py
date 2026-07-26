@@ -302,6 +302,8 @@ def test_unrelated_candidate_problem_does_not_block_defined_operation(
 
     assert discovered.response["outcome"] == "partial"
     assert discovered.response["scope"]["completed"] == [
+        "close-workcase",
+        "correct-closed-workcase",
         "create-fact-object",
         "find-fact-object-candidates",
         "precheck-git-commit",
@@ -312,10 +314,10 @@ def test_unrelated_candidate_problem_does_not_block_defined_operation(
         "read-specification-candidates",
         "read-specification-content",
         "read-specification-context",
-            "resolve-governance-scope",
-            "update-fact-object",
-            "update-workcase",
-        ]
+        "resolve-governance-scope",
+        "update-fact-object",
+        "update-workcase",
+    ]
     assert discovered.response["scope"]["not_completed"] == ["broken"]
     governance = next(
         item

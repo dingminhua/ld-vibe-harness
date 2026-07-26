@@ -8,7 +8,6 @@ summary: Execute the approved bounded context recovery plan.
 priority: P1
 goal: Exercise bounded context recovery without depending on a live WorkCase.
 scope: A deterministic test-only WorkCase with one active item.
-workcase_profile: control-contract-v2
 success_criterion_definitions:
   - criterion_id: criterion-01
     statement: Recovery projects the single in-progress item without inventing evidence.
@@ -25,12 +24,6 @@ work_items:
     status: in_progress
     current_summary: The deterministic recovery fixture is under test.
     resume_from: Assert the bounded projection and operation sequence.
-creation_reviews:
-  - reviewer: independent-context-fixture-reviewer
-    reviewed_at: 2026-07-26T13:15:00+08:00
-    subject_version: 1
-    scope: Goal, scope, criteria, work items, method, validation and risks.
-    conclusion: pass
 execution_approval:
   subject_version: 1
   approved_at: 2026-07-26T13:30:00+08:00

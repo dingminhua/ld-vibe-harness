@@ -1,10 +1,11 @@
-"""Closed JSON machine transport for the unmounted V4 Web bridge."""
+"""Closed JSON machine transport owned and executed by the V4 Web application."""
 
 from __future__ import annotations
 
 import json
 import sys
 from collections.abc import Mapping
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -12,17 +13,37 @@ import ldvh
 from ldvh.facts.contracts import LAYOUTS
 from ldvh.facts.creation import CreationBoundary
 from ldvh.facts.schema import project_fact_schemas
-from ldvh.facts.web_read_application import read_web_spark_detail, read_web_spark_list
-from ldvh.governance.models import ObjectStatus, ScopeStatus, explicit_scope
-from ldvh.governance.resolver import resolve_governance_scope
-from ldvh.rule_source import inspect_colocated_rule_repository
+
+if __package__ in {None, ""}:
+    # ``python -I /absolute/path/machine.py`` intentionally omits ambient import
+    # paths. Add only this repository-controlled Web package root.
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from ldvh_web_facts.read_application import (  # noqa: E402
+    read_web_spark_detail,
+    read_web_spark_list,
+    read_web_workcase_detail,
+    read_web_workcase_list,
+)
+from ldvh.governance.models import ObjectStatus, ScopeStatus, explicit_scope  # noqa: E402
+from ldvh.governance.resolver import resolve_governance_scope  # noqa: E402
+from ldvh.rule_source import inspect_colocated_rule_repository  # noqa: E402
 
 PROTOCOL_VERSION = 1
 MAX_REQUEST_BYTES = 12 * 1024 * 1024
 MAX_RESPONSE_BYTES = 32 * 1024 * 1024
 _ROOT_FIELDS = frozenset({"protocol_version", "operation", "scope", "arguments"})
 _SCOPE_FIELDS = frozenset({"workspace_root", "worktree_locator", "expected_governed_project_id"})
-_OPERATIONS = frozenset({"list-sparks", "read-spark"})
+_OPERATION_FACT_TYPE = {
+    "list-sparks": ("spark", "list"),
+    "read-spark": ("spark", "read"),
+    "list-workcases": ("workcase", "list"),
+    "read-workcase": ("workcase", "read"),
+}
+_OPERATIONS = frozenset(_OPERATION_FACT_TYPE)
+_FACT_TYPE_DISPLAY_NAMES = {"spark": "Spark", "workcase": "WorkCase"}
+_LIST_READERS = {"spark": read_web_spark_list, "workcase": read_web_workcase_list}
+_DETAIL_READERS = {"spark": read_web_spark_detail, "workcase": read_web_workcase_detail}
 
 
 class MachineRequestError(ValueError):
@@ -172,32 +193,38 @@ def handle_machine_request(value: dict[str, object]) -> dict[str, object]:
     if source.repository is None:
         return _response(operation, "unavailable", error=source.problem)
     schemas = project_fact_schemas(source.repository)
-    if "spark" not in schemas:
-        return _response(operation, "unavailable", error="the verified rule source has no Spark schema")
+    fact_type_key, operation_kind = _OPERATION_FACT_TYPE[operation]
+    display_name = _FACT_TYPE_DISPLAY_NAMES[fact_type_key]
 
-    if operation == "list-sparks":
+    if operation_kind == "list":
         _closed_mapping(arguments, frozenset(), "arguments")
-        listed = read_web_spark_list(boundary, schemas)
+        listed = _LIST_READERS[fact_type_key](boundary, schemas)
+        observed_at = datetime.now(UTC).isoformat()
         result = {
             "status": listed.status,
             "items": list(listed.items),
             "object_problems": list(listed.object_problems),
             "structural_problems": list(listed.structural_problems),
             "governance_resolution": governance,
+            "observed_at": observed_at,
         }
         return _response(operation, listed.status, result=result)
-    if operation == "read-spark":
+    if operation_kind == "read":
         detail_arguments = _closed_mapping(arguments, frozenset({"object_id"}), "arguments")
         object_id = _non_empty_string(detail_arguments["object_id"], "arguments.object_id")
-        if LAYOUTS["spark"].object_id_pattern.fullmatch(object_id) is None:
-            raise MachineRequestError("arguments.object_id is not a canonical Spark identity")
-        detail = read_web_spark_detail(boundary, schemas, object_id)
+        if LAYOUTS[fact_type_key].object_id_pattern.fullmatch(object_id) is None:
+            raise MachineRequestError(
+                f"arguments.object_id is not a canonical {display_name} identity"
+            )
+        detail = _DETAIL_READERS[fact_type_key](boundary, schemas, object_id)
+        observed_at = datetime.now(UTC).isoformat()
         result = {
             "status": detail.status,
             "item": detail.item,
             "problems": list(detail.problems),
             "coverage_status": detail.coverage_status,
             "governance_resolution": governance,
+            "observed_at": observed_at,
         }
         return _response(operation, detail.status, result=result)
 

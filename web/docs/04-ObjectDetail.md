@@ -11,7 +11,7 @@
 
 ## 1. 页面目标
 
-对象详情页是事实对象阅读器，不是载体文件查看器。页面按字段语义展示对象目标、边界、当前状态、结果、验证说明和关系；YAML 载体可以有折叠的原始数据兜底，Markdown Study 的完整阅读只进入同一份正文的扩展阅读，不在主页面重建或伪装为 YAML。
+对象详情页是事实对象阅读器，不是载体文件查看器。页面按字段语义展示对象目标、边界、当前状态、结果、验证说明和关系；YAML 载体可以提供折叠的“YAML 数据”，其内容由精确读取后的事实对象字段重建并剥离读取 envelope，不是原始载体源码或字节级兜底。Markdown Study 的完整阅读只进入同一份正文的扩展阅读，不在主页面重建或伪装为 YAML。
 
 ## 2. 当前页面结构
 
@@ -25,7 +25,7 @@
   Study：研究意图 / 摘要 / 建议摘要 / 正文进入扩展阅读 / 处置（终态且存在时）/ 关联
   Spark：意图 / 摘要 / 演变 / 分流、落实或废弃（终态时）/ 关联（存在时）
   其他对象：字段卡片布局
-YAML 载体的源码折叠区（Markdown Study 不显示第二份 YAML 正文）
+YAML 数据折叠区：由精确读取后的事实对象字段重建（Markdown Study 不显示第二份 YAML 正文）
 右侧扩展阅读区（App Shell 提供，不属于本页卡片）
 ```
 
@@ -39,7 +39,7 @@ YAML 载体的源码折叠区（Markdown Study 不显示第二份 YAML 正文）
 - 类型标签使用对象类型颜色，显示本地化类型名；状态标签显示本地化状态名，不放在右上操作区。
 - 标题优先使用 `title_zh/title_en`，回退 `title`，再回退 ID；工作对象和普通对象标题前均使用 `ObjectTypeIcon(obj.type)` 识别对象身份。
 - WorkCase 和 Spark 如存在 `priority`，在标题行最前面展示 `P0` / `P1` / `P2` / `P3` 字符徽标，随后才是 `ObjectTypeIcon(obj.type)` 和标题；徽标使用颜色和 tooltip 表达优先级，不在头部、元信息行、正文模块或其他字段区重复展示 priority 文字 chip / 字段。
-- ID 使用 `ldvh-meta`，不做大号标题；右上角只提供 `CopyPathButton`，tooltip 为“复制对象路径”。仅在精确读取为 `readable` 且返回 `canonical_path` 时显示，复制值必须等于该路径；不得使用 `data.path`、对象 ID 或路由 `target` 猜测路径，也不得再放状态标签或其他对象身份信息。
+- ID 使用 `ldvh-meta`，不做大号标题；右上角只提供 `CopyPathButton`，tooltip 为“复制对象路径”。本地读取类型须为可消费的 `readable`，WorkCase 须为 Core `mechanically_valid`，且都必须返回 `canonical_path` 后才显示；复制值必须等于该路径。不得使用 `data.path`、对象 ID 或路由 `target` 猜测路径，也不得再放状态标签或其他对象身份信息。
 - 如对象存在 `tags`，标签应在标题下方独立成行，并位于创建/更新时间之上；标签不与时间或其他辅助属性挤在同一行。Pitfall `tags` 展示事实源英文原值，不做中文翻译。
 - 创建/更新时间在标签行下方以短标签展示，统一使用 `formatDateTime()`，格式为 `YYYY-MM-DD HH:mm`；必要辅助属性可在同一元信息行弱化展示，不另起 MetaChip 行。
 - 对象字段必须以对应事实模型主规范为准；只有该对象字段契约内定义的辅助属性才可在元信息行降权展示，不进入主阅读流。`priority` 只适用于 WorkCase 和 Spark，且在详情头部以字符徽标展示；importance 已由 priority 统一承载，不再作为独立字段。
@@ -47,29 +47,29 @@ YAML 载体的源码折叠区（Markdown Study 不显示第二份 YAML 正文）
 
 ## 4. WorkCase 状态无关阅读契约
 
-WorkCase 详情页用于完整理解同一项当前工作责任，不复刻外部 Card。`plan_confirmation / progressing / closure_confirmation / closed` 只服务列表和 Dashboard 的注意力分配；详情页不得根据这些进展分组或推进环节切换、隐藏、重排字段，也不得为不同状态维护四套阅读结构。`human_plan_confirming`、`executing`、`controller_checking`、`independent_reviewing`、`closure_preparing`、`human_closure_confirming` 与 `closed` 全部复用同一阅读顺序，某个条件字段尚未形成时只如实省略或说明缺失。
+WorkCase 详情页用于完整理解同一项当前工作责任，不复刻外部 Card。`plan_confirmation / progressing / closure_confirmation / closed` 只服务列表和 Dashboard 的注意力分配；详情页不得根据这些进展分组或推进环节切换、隐藏、重排字段，也不得为不同状态维护四套阅读结构。`human_plan_confirming`、`plan_revising`、`executing`、`controller_checking`、`independent_reviewing`、`closure_preparing`、`human_closure_confirming` 与 `closed` 全部复用同一阅读顺序。当前契约允许省略的字段不存在时不渲染相应节点；机械必填字段缺失时对象应在 API 读取边界进入 `invalid`，详情页不补“未完成”或“缺少记录”占位。
 
 详情页只以 21 当前 WorkCase 字段为事实契约。读取顺序围绕以下八个问题组织；分区名称、折叠粒度和具体组件仍可在后续 Human 讨论后细化，但任何视觉方案都不得丢失这些内容：
 
-1. **这项工作是什么**：身份头部读取 `object_id`、`fact_type_key`、`workcase_profile`、`title`、`status`、`priority`（存在时）、`created_at` 与 `updated_at`。
+1. **这项工作是什么**：身份头部读取 `object_id`、`fact_type_key`、`title`、`status`、`priority`（活动期存在时）、`created_at` 与 `updated_at`。
 2. **目标和边界是什么**：完整读取 `goal` 与 `scope`，不把 Card 摘要或标题改写成目标，不把范围压成覆盖/排除标签后丢失原文。
 3. **现在实际处在哪里**：读取精确 `phase`、当前 `summary`，以及实际存在的 `waiting_on`、顶层 `blocking_summary` 和 `resume_from`。这些字段共同形成当前快照；页面不得从 phase 自动补写等待、阻塞或下一步。
 4. **按什么判断结果**：读取 `success_criterion_definitions`；结果已经形成时，同屏读取与当前定义逐项对应的 `success_criterion_results`。定义和结果必须能按 `criterion_id` 对照，不能用完成比例替代陈述与当前结论。
-5. **当前计划和阶段结果是什么**：按事实数组顺序读取 `work_items`。每项至少保留 `item_id`、`goal`、`expected_result`、`status`，并按实际存在呈现依赖、方法边界、模板偏离、`current_summary`、item `resume_from`、item `blocking_summary` 与 `result_summary`。数组顺序只用于稳定展示并列集合，不表示线性执行顺序。
-6. **当前复核、处置与批准是什么**：读取 `plan_version`、当前 `creation_reviews`、`execution_approval`，以及已经形成时的 `result_version`、`controller_check_summary`、当前 `result_reviews` 和 `closure_approval`。详情必须把 Reviewer 的创建前计划复核或独立结果复核、Controller 处置与 Human 批准分别呈现，不能把其中任一项改写成另一方的决定；在本组内容中，只有 Human 确认或批准才可称为 Human Gate。
-7. **验证和关闭如何判断**：读取实际存在的 `validation_summary`、`closure_outcome`、`disposition_summary` 与 `residual_responsibilities`。关闭内容说明当前工作在自身身份下如何停止推进以及仍适用责任的去向，不等于成功、已提交或下游已经完成。
+5. **当前计划和阶段结果是什么**：完整读取 `work_items`。每项至少保留 `item_id`、`goal`、`expected_result`、`status`，并按实际存在呈现依赖、方法边界、模板偏离、`current_summary`、item `resume_from`、item `blocking_summary` 与 `result_summary`。工作项以无序圆点显示为并列集合；渲染顺序和 `item_id` 都不表示线性执行顺序。
+6. **当前复核、处置与批准是什么**：活动期读取 `plan_version`、当前 `creation_reviews`、`execution_approval`，以及已经形成时的 `result_version`、`controller_check_summary` 和当前 `result_reviews`。详情必须把 Reviewer 的复核、Controller 处置与 Human 执行批准分别呈现，不能把其中任一项改写成另一方的决定；关闭决定由专属事务消费，不作为 approval 收据保存在对象中。
+7. **验证和关闭如何判断**：活动期读取实际存在的 `validation_summary` 与 `closure_proposal`；终态读取 `validation_summary`、`closure_outcome`、`disposition_summary` 与 `residual_responsibilities`。关闭内容说明当前工作在自身身份下如何停止推进以及仍适用责任的去向，不等于成功、已提交或下游已经完成；closed 不具有 phase、关闭 approval 或关闭时间字段。
 8. **还应回到哪些来源或承接对象**：读取 `urls` 与 `relations`。关系按其正式 kind 和目标身份展示；导航标题、路径解析或 Git 提交可以帮助继续阅读，但不得被写成新的 WorkCase 关系事实。
 
-上述顺序是状态无关的信息架构，不要求所有阶段都出现同样多的内容。条件字段不存在时，Web 不制造空复核、空处置、空批准、空结果或空关闭模块；字段存在时，又不能因为当前 Card 分组“不需要”就把它隐藏。派生的工作项计数、active 项或标准完成数可以辅助扫读，但只能附着在对应事实内容旁，不能替代原始目标、标准、工作项、复核、处置、批准或验证说明。
+上述顺序是状态无关的信息架构，不要求所有阶段都出现同样多的内容。条件字段不存在时，Web 不制造空复核、空处置、空批准、空结果或空关闭模块；字段存在时，又不能因为当前 Card 分组“不需要”就把它隐藏。详情不读取列表的工作项计数、active 项、进展分组或推进环节，也不生成标准完成比例；这些 Card 派生值不能替代原始目标、标准、工作项、复核、处置、批准或验证说明。
 
-当前 `WorkCaseReadingLayout` 仍保留部分旧字段分组和历史兼容投影，尚未完整实现本节契约。本轮只确定信息契约并暴露这一实现缺口，不在未经 Human 继续讨论具体视觉内容时重做详情布局。后续实现必须从 21 当前字段重新建立读取映射；历史兼容只能留在读取适配层，不能反向增加 current WorkCase 字段、模块或状态分支。
+当前 `WorkCaseReadingLayout` 已直接按 21 单一当前字段族实现以下固定节点顺序：目标与边界 → 当前情况 → 成功标准 → 当前计划与工作项 → 独立方案复核 → 执行批准 → 结果与验证 → 主控自检 → 独立结果复核 → 关闭提案 → 终态处置 → 正式关系 → 外部网址。节点只按对应字段实际存在显示。成功标准定义与三值结果按 `criterion_id` 对照；Reviewer、Controller、Human 执行批准、Controller 关闭提案和终态处置保持独立节点；关系显示正式 `relation_key`。详情与右侧扩展阅读复用同一组件和同一投影，不存在历史字段、列表回退或状态分支。
 
 ## 5. 非工作主线对象字段布局
 
 当前已进入五个基准模块的非工作主线对象专用阅读方案为：
 
 1. Pitfall / 踩坑经验：作为“可复用经验阅读页”展示；
-2. ADR / 决策：作为“决策补丁阅读页”展示；
+2. ADR / 决策：作为“当前决策阅读页”展示；
 3. Study / 外部内容调研：作为“外部调研报告阅读界面”展示。摘要层依次读取研究意图、摘要、建议摘要；研究问题留在唯一 Markdown 报告，完整正文和外部资料按需展开；
 4. Spark / 火花：作为“待分流信息阅读页”展示。
 
@@ -114,7 +114,7 @@ WorkCase 详情页用于完整理解同一项当前工作责任，不复刻外�
 
 对象引用只可打开已经实际接入的 V4 原生读取器；Study 已读取当前 V4 原生载体，且不得回退到历史兼容页面、旧字段或第二份正文结构。
 
-路径类字段应按字段语义区分：`related_docs` 指向关联文档，`urls` 只指向报告正文提炼出的外部 `http(s)` 网址及用途摘要，`related_rules` 指向关联规范、Rules、Skill、Agent、Code 或 Web 路径。Web 可预览本地 Markdown 或展示路径，但不得把可预览路径集合解释为所有路径字段的合法范围。
+当前事实对象不使用按目标类型拆分的 `related_*` 或本地路径引用字段。`urls` 只承载带标题和用途摘要的外部 `http(s)` 网址；`relations` 只承载关系语义和稳定对象目标，不复制目标标题、状态或内容。对象规范路径属于 machine 精确读取元数据，只能在读取成功后提供复制入口，不能写入事实正文或由对象 ID 推测。
 
 带章节后缀的本地 Markdown 引用应区分展示文本与加载路径：列表行保留完整引用文本，例如 `specs/07-Code确定性执行实现规范.md §4.7`；点击整行或扩展阅读图标时，只用规范化后的 Markdown 文件路径加载右侧阅读区，例如 `specs/07-Code确定性执行实现规范.md`，不得把章节后缀拼入文件读取 API。
 
@@ -146,17 +146,18 @@ Pitfall、ADR、Study 和 Spark 等非工作主线对象的长文本阅读组织
 - WorkCase、Pitfall、ADR、Study 和 Spark 必须复用详情页导出的专用阅读布局。
 - WorkCase、Pitfall、ADR、Study 和 Spark 的扩展阅读头部复用详情页身份区，清楚展示 `类型 + 类型状态词 + ID + 标题 + 创建/更新时间`；读取失败时不显示领域状态，而显示实际读取状态与未读取范围。
 - Spark 必须复用详情页专用 Spark 阅读布局，不得在 `ReadingPanel` 中维护另一套 `PREVIEW_FIELD_ORDER`、字段 label map、关联分组或独立字段渲染器。
-- 对象预览头部只在精确读取返回 `check_status: readable` 与 `canonical_path` 时提供复制对象路径图标；`target` 仅用于导航，绝不作为路径回退。
+- 对象预览头部只在该类型的精确读取返回可消费状态与 `canonical_path` 时提供复制对象路径图标；WorkCase 的可消费状态精确为 `mechanically_valid`，其它当前本地读取类型仍按其 `readable` 契约。`target` 仅用于导航，绝不作为路径回退。
 - Markdown 文档预览使用 `MarkdownPreview` + `github-markdown-css`，不是手写 Markdown 标签样式。
 - Markdown 正文基准字号为 14px；表格横向滚动，代码块、引用块、任务列表由全局 Markdown 样式统一控制。
 
-## 8. YAML 源码
+## 8. YAML 数据
 
 - 只对声明 `carrier: yaml` 的精确可读对象显示，默认折叠；Markdown Study 不显示由字段重组出的 YAML 版本。
+- 显示内容是 Web 对当前事实对象字段的 YAML 重组，不是事实载体的原始 bytes 或源码；重组前必须剥离 machine envelope、`object_ref`、路径、载体、读取状态、指纹、观察时间和问题等读取元数据。
 - 展开后使用 `react-syntax-highlighter` + YAML + oneDark。
 - 显示行号，最大高度 400px。
 - 折叠图标与详情页主节点保持一致：收拢状态使用 `ChevronDown`，表示可以向下打开；打开状态使用 `ChevronUp`，表示可以向上收起。
-- YAML 源码是事实完整性兜底，不作为主阅读体验。
+- YAML 数据只帮助核对当前事实对象字段，不证明原始载体内容或事实完整性，也不作为主阅读体验。
 
 ## 9. 实现约束
 
@@ -178,13 +179,15 @@ interface ObjectDetail {
   ok: boolean;
   action: string;
   target: string;
-  summary: { id: string; type: string; status?: string; read_status?: 'readable' | 'invalid' | 'not_found' | 'unavailable' };
+  summary: { id: string; type: string; status?: string; phase?: string; read_status?: 'readable' | 'mechanically_valid' | 'invalid' | 'not_found' | 'unavailable' };
   data: Record<string, unknown>;
 }
 ```
 
-精确可读详情的 `data` 同时带回 `canonical_path`、`carrier` 和 `check_status: 'readable'`；读取失败返回 `fact_read_failure: true`、预期路径、声明载体、读取状态和问题，但不返回可消费正文或领域状态。列表/仪表盘是候选发现，不能以其 `path`、ID 或 `target` 作为源路径。
+精确可读详情的 `data` 同时带回 `canonical_path`、`carrier`、实际 `check_status` 与当次 machine `observed_at`；WorkCase 成功状态保持为 `mechanically_valid`，不得在 Node 改名为 `readable`。读取失败返回 `fact_read_failure: true`、预期路径、声明载体、读取状态、观察时间和问题，但不返回可消费正文或领域状态；详情页与右侧阅读区都要显示该观察时间。WorkCase 的 `summary.status` 只返回 `open / blocked / closed` 责任状态，当前 `phase` 作为独立字段返回；不得再以 `phase || status` 覆盖 status。列表/仪表盘是候选发现，不能以其 `path`、ID 或 `target` 作为源路径。
 
-WorkCase 详情契约直接读取精确返回的 `data` 中由 21 定义的当前字段；列表 API 的 `progress_group`、`progress_step`、计数、active 项和兼容诊断布尔值不驱动详情结构。详情可以在当前字段全部可判定时形成只读计数或交叉引用，但必须同时保留来源字段和不可判定范围，且不写回事实源。
+WorkCase 详情契约直接读取精确返回的 `data` 中由 21 定义的当前字段；列表 API 的 `progress_group`、`progress_step`、计数和 active 项不驱动详情结构。Web 读取边界必须消费 Core 对单一当前 WorkCase 契约形成的 `mechanically_valid` 结果；旧字段、旧状态、非法 presence 或非法嵌套结构一律进入 `invalid`，不得把“YAML 可解析且身份匹配”冒充 current WorkCase 可读，也不得在 Node 复制 21、Schema 和 phase presence 形成第二机械契约。
 
-当前详情 API 与 `WorkCaseReadingLayout` 仍会暴露或消费少量历史聚合字段。这是待迁移的实现兼容层，不是本文认可的 current WorkCase 契约，也不能用来补造 21 未登记的关系、验证或关闭内容。后续修复应在不改变本节状态无关阅读结构的前提下完成，并补充 API、组件和代表性页面测试；本轮不把实现缺口描述成已经符合。
+当前 WorkCase list/read 只经 Web 自有的 `web/python/ldvh_web_facts/machine.py`、严格 Node transport 和精确详情 API 连接 Core；Core 只提供候选发现、精确读取、Schema、关系稳定化与机械校验等可复用能力，不承载 Web transport 或 Web 投影编排。Node 使用配置的 Python 以 `-I -B -X utf8` 执行仓库内确定的绝对 Web 脚本，不保留旧 Core module 入口，也没有 `localFactReader` fallback。transport 必须把 object identity、当前管辖项目、realpath worktree identity、规范载体路径和 `observed_at` 独立绑定后才接受结果，并原样保留 Core 的 `mechanically_valid / invalid / unavailable / not_found` 边界。详情 API 不生成历史聚合字段、不从列表补字段；配置缺失、脚本缺失或边界无法核实时明确返回 unavailable。
+
+该边界的定向验证分别运行 `.venv/bin/python -B -m pytest web/tests/python/test_v4_facts_machine.py` 与 `cd web && npm run test:web:api && npm run check`；前者覆盖 Web Python 读取编排、严格单行 JSON 和 `-I -B -X utf8` 绝对脚本启动，后者覆盖 Node 请求/响应边界与 API 消费。`-B` 与运行入口中的同一选项防止 Web 测试或服务在源码目录生成 Python 字节码缓存。

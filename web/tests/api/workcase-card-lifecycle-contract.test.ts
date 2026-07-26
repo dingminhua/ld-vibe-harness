@@ -3,13 +3,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import {
-  WORKCASE_CURRENT_STATUSES,
-  WORKCASE_STATUS_ORDER,
+  WORKCASE_CURRENT_PHASES,
   WORKCASE_PROGRESS_GROUP_ORDER,
   WORKCASE_PROGRESS_STEP_ORDER,
+  deriveWorkCaseProgressProjection,
   getWorkCaseProgressProjection,
 } from '../../shared/workcaseStatus.ts';
-import { buildWorkCaseSummaries } from '../../api/routes/objects.ts';
+import { projectWorkCaseCard } from '../../api/services/facts.ts';
 
 const webRoot = path.resolve(import.meta.dirname, '../..');
 
@@ -17,375 +17,367 @@ function source(relativePath: string): string {
   return fs.readFileSync(path.join(webRoot, relativePath), 'utf8');
 }
 
-test('WorkCase cards present four progress groups instead of lifecycle categories', () => {
-  const status = source('shared/workcaseStatus.ts');
-  const list = source('src/pages/ObjectList.tsx');
-  const locales = source('src/i18n/locales.ts');
-
-  assert.deepEqual(WORKCASE_PROGRESS_GROUP_ORDER, ['plan_confirmation', 'progressing', 'closure_confirmation', 'closed']);
-  assert.deepEqual(WORKCASE_PROGRESS_STEP_ORDER, ['item_execution', 'controller_self_check', 'independent_review', 'controller_synthesis']);
-  assert.match(status, /export function getWorkCaseProgressProjection/);
-  assert.match(list, /function WorkCaseProgressSignal/);
-  assert.match(list, /WORKCASE_PROGRESS_STEP_ORDER\.map/);
-  assert.doesNotMatch(list, /const isPast|isPast \?/);
-  assert.match(list, /objectList\.progressGroupFilter/);
-  assert.match(list, /displayStatus=\{progressGroup \?\? 'unknown'\}/);
-  assert.match(list, /<WorkCaseProgressSignal progressGroup=\{progressGroup\}/);
-  assert.match(list, /showNonActiveReason=\{false\}/);
-  assert.match(locales, /plan_confirmation: \{ zh: '方案待确认'/);
-  assert.match(locales, /progressing: \{ zh: '推进中'/);
-  assert.match(locales, /closure_confirmation: \{ zh: '关闭待确认'/);
-});
-
-test('pre-creation plan review is not exposed as a current WorkCase status', () => {
-  assert.equal(WORKCASE_CURRENT_STATUSES.includes('subagents_plan_reviewing' as never), false);
-  assert.equal(WORKCASE_STATUS_ORDER.includes('subagents_plan_reviewing' as never), false);
-  assert.equal(WORKCASE_CURRENT_STATUSES[0], 'human_plan_confirming');
-});
-
-test('closure preparation remains progressing and is identified as controller synthesis', () => {
-  assert.deepEqual(getWorkCaseProgressProjection('closure_preparing'), {
-    progressGroup: 'progressing',
-    progressStep: 'controller_synthesis',
-  });
-  assert.equal(getWorkCaseProgressProjection('human_closure_confirming')?.progressGroup, 'closure_confirmation');
-});
-
-test('plan confirmation cards fully show only goal and success criteria as Human decision inputs', () => {
-  const list = source('src/pages/ObjectList.tsx');
-  const locales = source('src/i18n/locales.ts');
-  const branchStart = list.indexOf("if (progressGroup === 'plan_confirmation')");
-  const otherStateBodyStart = list.indexOf('const executionItems = obj.executionItems', branchStart);
-  const branch = list.slice(branchStart, otherStateBodyStart);
-
-  assert.ok(branchStart >= 0);
-  assert.ok(otherStateBodyStart > branchStart);
-  assert.match(branch, /<WorkCasePlanConfirmationContent goal=\{obj\.goal\} successCriteria=\{obj\.successCriteria\}/);
-  assert.doesNotMatch(branch, /WorkCaseProgressSignal|WorkCaseCardSummary|ExecutionFlowBar|visibleExecutionItems/);
-  assert.match(branch, /prominentTitle/);
-  const content = list.slice(list.indexOf('function WorkCasePlanConfirmationContent'), list.indexOf('function WorkCaseProgressingContent'));
-  assert.match(content, /ldvh-card-decision-title/);
-  assert.match(content, /ldvh-card-decision-body/);
-  assert.match(content, /<ul className=/);
-  assert.match(content, /rounded-full bg-ldvh-text-secondary\/60/);
-  assert.doesNotMatch(content, /<ol|\{index \+ 1\}\.\s*<\/span>/);
-  assert.doesNotMatch(content, /scope|Coverage|Exclusion|line-clamp|slice\(0,/);
-  assert.doesNotMatch(content, /text-\[\d+px\]/);
-  assert.doesNotMatch(content, /stopPropagation|cursor-default/);
-  assert.match(locales, /'objectList\.workcaseGoal': '目标'/);
-});
-
-test('progressing cards show current step, item progress, active items, waiting, and blocking without rounds', () => {
-  const list = source('src/pages/ObjectList.tsx');
-  const locales = source('src/i18n/locales.ts');
-  const branchStart = list.indexOf("if (progressGroup === 'progressing')");
-  const otherStateBodyStart = list.indexOf('const executionItems = obj.executionItems', branchStart);
-  const branch = list.slice(branchStart, otherStateBodyStart);
-
-  assert.ok(branchStart >= 0);
-  assert.ok(otherStateBodyStart > branchStart);
-  assert.match(branch, /<WorkCaseProgressingContent/);
-  assert.match(branch, /goal=\{obj\.goal\}/);
-  assert.match(branch, /progressStep=\{progressStep\}/);
-  assert.match(branch, /executionItemDone=\{obj\.executionItemDone \?\? 0\}/);
-  assert.match(branch, /executionItemCancelled=\{obj\.executionItemCancelled \?\? 0\}/);
-  assert.match(branch, /executionItemOpen=\{obj\.executionItemOpen \?\? 0\}/);
-  assert.match(branch, /executionItemsActive=\{obj\.executionItemsActive \?\? \[\]\}/);
-  assert.match(branch, /waitingOn=\{obj\.waiting_on\}/);
-  assert.match(branch, /isBlocked=\{obj\.responsibilityStatus === 'blocked'\}/);
-  assert.match(branch, /blockingSummary=\{obj\.blocking_summary\}/);
-  assert.match(branch, /prominentTitle/);
-  assert.doesNotMatch(branch, /progressHistory|progressRound|successCriteria|WorkCaseProgressSignal|WorkCaseCardSummary|ExecutionFlowBar|visibleExecutionItems/);
-
-  const content = list.slice(list.indexOf('function WorkCaseProgressingContent'), list.indexOf('function WorkCaseProgressSignal'));
-  assert.match(content, /<WorkCaseGoalSection goal=\{goal\}/);
-  assert.match(content, /objectList\.workcaseCurrentProgress/);
-  assert.match(content, /objectList\.workcaseStageUnavailable/);
-  assert.match(content, /objectList\.workcaseItemsUnavailable/);
-  assert.match(content, /objectList\.workcaseItemProgress/);
-  assert.match(content, /objectList\.workcaseItemsCancelled/);
-  assert.match(content, /objectList\.workcaseCurrentItems/);
-  assert.match(content, /executionItemsActive\.map/);
-  assert.match(content, /item\.status === 'blocked'/);
-  assert.match(content, /item\.blockingReason/);
-  assert.match(content, /objectList\.workcaseWaitingOn/);
-  assert.match(content, /objectList\.workcaseBlockingReason/);
-  assert.match(content, /<ol/);
-  assert.match(content, /grid-cols-4/);
-  assert.doesNotMatch(content, /grid-cols-2/);
-  assert.match(content, /WORKCASE_PROGRESS_STEP_ORDER\.map/);
-  assert.match(content, /aria-current=\{isCurrent \? 'step'/);
-  assert.match(content, /\{index \+ 1\}/);
-  assert.match(content, /ldvh-card-decision-title min-w-0 break-words text-current/);
-  assert.match(content, /ldvh-meta-muted break-all/);
-  assert.doesNotMatch(content, /roundLabel|workcaseRound|progressHistory|ldvh-chip|isPast|CheckCircle2|successCriteria|ExecutionFlowBar|slice\(0,/);
-  assert.doesNotMatch(content, /text-\[\d+px\]/);
-  assert.match(locales, /'objectList\.workcaseCurrentProgress': '当前进展'/);
-  assert.match(locales, /'objectList\.workcaseWaitingOn': '正在等待'/);
-  assert.match(locales, /'objectList\.workcaseBlockingReason': '阻塞原因'/);
-  assert.match(locales, /'objectList\.workcaseItemProgress': '已完成 \{done\}\/\{total\}'/);
-  assert.doesNotMatch(locales, /objectList\.workcaseRound/);
-});
-
-test('WorkCase list projection preserves non-linear active items and ignores progress history', async () => {
-  const [summary] = await buildWorkCaseSummaries([{
+function currentWorkCase(overrides: Record<string, unknown> = {}) {
+  return {
     id: 'workcase-0099',
     object_id: 'workcase-0099',
     type: 'workcase',
     fact_type_key: 'workcase',
     status: 'open',
     phase: 'executing',
-    title: '并行推进投影',
+    progress_group: 'progressing',
+    progress_step: 'item_execution',
+    title: '当前 WorkCase 投影',
     path: 'ldvh-base/workcases/workcase-0099.yaml',
     created_at: '2026-07-26T08:00:00+08:00',
     updated_at: '2026-07-26T12:00:00+08:00',
     updated: '2026-07-26T12:00:00+08:00',
-    workcase_profile: 'control-contract-v1',
-    plan_version: 2,
-    progress_history: { malformed: 'Web must not consume this field' },
+    goal: '只消费当前字段。',
+    scope: '只测试当前 Card 投影。',
+    success_criterion_definitions: [
+      { criterion_id: 'criterion-visible-result', statement: '完整显示当前成功标准。' },
+    ],
+    plan_version: 1,
     work_items: [
       {
-        item_id: 'item-01', goal: '已完成项', expected_result: '形成结果 A', approach_summary: '执行 A',
-        status: 'completed', result_summary: 'A 已完成',
+        item_id: 'item-done',
+        goal: '保留已完成项',
+        expected_result: '形成已完成结果',
+        status: 'completed',
+        result_summary: '已形成结果。',
       },
       {
-        item_id: 'item-02', goal: '已取消项', expected_result: '形成结果 B', approach_summary: '执行 B',
-        status: 'cancelled', result_summary: 'B 已取消',
+        item_id: 'item-running',
+        goal: '继续当前推进',
+        expected_result: '形成当前结果',
+        status: 'in_progress',
+        current_summary: '已完成基础修改。',
+        resume_from: '继续运行当前验证。',
+        depends_on: ['item-done'],
       },
       {
-        item_id: 'item-03', goal: '并行当前项 A', expected_result: '形成结果 C', approach_summary: '执行 C',
-        status: 'in_progress', current_summary: '正在执行 C', resume_from: '继续 C',
+        item_id: 'item-blocked',
+        goal: '等待外部输入',
+        expected_result: '取得外部输入',
+        status: 'blocked',
+        current_summary: '输入尚未取得。',
+        blocking_summary: '等待 Human 提供输入。',
+        depends_on: ['item-done'],
       },
       {
-        item_id: 'item-04', goal: '并行阻塞项 B', expected_result: '形成结果 D', approach_summary: '执行 D',
-        status: 'blocked', current_summary: 'D 正在等待', resume_from: '条件解除后继续 D',
-        blocking_summary: '等待外部输入。',
-      },
-      {
-        item_id: 'item-05', goal: '待执行项', expected_result: '形成结果 E', approach_summary: '执行 E',
-        status: 'pending',
+        item_id: 'item-cancelled',
+        goal: '停止不再适用的局部工作',
+        expected_result: '清楚记录停止范围',
+        status: 'cancelled',
+        result_summary: '该局部工作已经停止。',
       },
     ],
-  }]);
+    ...overrides,
+  };
+}
 
-  assert.equal(summary.executionItemTotal, 5);
+test('WorkCase cards use four progress groups over the single current phase set', () => {
+  assert.deepEqual(WORKCASE_PROGRESS_GROUP_ORDER, ['plan_confirmation', 'progressing', 'closure_confirmation', 'closed']);
+  assert.deepEqual(WORKCASE_PROGRESS_STEP_ORDER, ['item_execution', 'controller_self_check', 'independent_review', 'controller_synthesis']);
+  assert.deepEqual(WORKCASE_CURRENT_PHASES, [
+    'human_plan_confirming',
+    'plan_revising',
+    'executing',
+    'controller_checking',
+    'independent_reviewing',
+    'closure_preparing',
+    'human_closure_confirming',
+  ]);
+  assert.deepEqual(getWorkCaseProgressProjection('closure_preparing'), {
+    progressGroup: 'progressing',
+    progressStep: 'controller_synthesis',
+  });
+  assert.equal(getWorkCaseProgressProjection('human_closure_confirming')?.progressGroup, 'closure_confirmation');
+  assert.equal(getWorkCaseProgressProjection('closed'), null);
+  assert.deepEqual(deriveWorkCaseProgressProjection('closed', undefined), { progressGroup: 'closed' });
+  assert.equal(deriveWorkCaseProgressProjection('closed', 'executing'), null);
+  assert.equal(deriveWorkCaseProgressProjection('open', undefined), null);
+  assert.equal(deriveWorkCaseProgressProjection('blocked', 'not-a-current-phase'), null);
+  assert.deepEqual(deriveWorkCaseProgressProjection('open', 'executing'), {
+    progressGroup: 'progressing',
+    progressStep: 'item_execution',
+  });
+});
+
+test('plan revision is progressing but remains outside the four-step track', () => {
+  const list = source('src/pages/ObjectList.tsx');
+  const locales = source('src/i18n/locales.ts');
+
+  assert.deepEqual(getWorkCaseProgressProjection('plan_revising'), { progressGroup: 'progressing' });
+  assert.equal(getWorkCaseProgressProjection('plan_revising')?.progressStep, undefined);
+  assert.match(list, /const planRevising = phase === 'plan_revising'/);
+  assert.match(list, /objectList\.workcasePlanRevising/);
+  assert.match(list, /objectList\.workcaseOutsideProgressTrack/);
+  assert.match(list, /\{!planRevising && \(/);
+  assert.match(locales, /plan_revising: \{ zh: '方案修订中'/);
+  assert.match(locales, /'objectList\.workcaseOutsideProgressTrack': '四步轨迹之外'/);
+});
+
+test('plan confirmation keeps goal and criteria as the only plan-decision inputs', () => {
+  const list = source('src/pages/ObjectList.tsx');
+  const branchStart = list.indexOf("if (progressGroup === 'plan_confirmation')");
+  const branchEnd = list.indexOf("if (progressGroup === 'progressing')", branchStart);
+  const branch = list.slice(branchStart, branchEnd);
+  const contentStart = list.indexOf('function WorkCasePlanConfirmationContent');
+  const contentEnd = list.indexOf('function WorkCaseGoalSection', contentStart);
+  const content = list.slice(contentStart, contentEnd);
+  const noticeStart = list.indexOf('function WorkCaseBlockingNotice');
+  const noticeEnd = list.indexOf('function WorkCaseProgressingContent', noticeStart);
+  const notice = list.slice(noticeStart, noticeEnd);
+
+  assert.ok(branchStart >= 0 && branchEnd > branchStart);
+  assert.ok(contentStart >= 0 && contentEnd > contentStart);
+  assert.ok(noticeStart >= 0 && noticeEnd > noticeStart);
+  assert.match(branch, /<WorkCasePlanConfirmationContent goal=\{obj\.goal\} successCriteria=\{obj\.successCriteria\}/);
+  assert.match(branch, /prominentTitle/);
+  assert.doesNotMatch(branch, /executionItem|waiting_on/);
+  assert.match(branch, /obj\.status === 'blocked'/);
+  assert.match(branch, /WorkCaseBlockingNotice blockingSummary=\{obj\.blocking_summary\}/);
+  assert.ok(branch.indexOf('<WorkCasePlanConfirmationContent') < branch.indexOf("obj.status === 'blocked'"));
+  assert.ok(branch.indexOf("obj.status === 'blocked'") < branch.indexOf('<WorkCaseBlockingNotice'));
+  assert.match(content, /ldvh-card-decision-title/);
+  assert.match(content, /ldvh-card-decision-body/);
+  assert.match(content, /<ul className=/);
+  assert.doesNotMatch(content, /<ol|line-clamp|slice\(0,|scope|blockingSummary|BlockingNotice/);
+  assert.match(notice, /role="status"/);
+  assert.match(notice, /aria-label=\{t\('objectList\.workcaseBlockingReason'\)\}/);
+});
+
+test('progressing cards show only goal and current progress facts', () => {
+  const list = source('src/pages/ObjectList.tsx');
+  const branchStart = list.indexOf("if (progressGroup === 'progressing')");
+  const terminalStatus = list.indexOf("displayStatus={progressGroup ?? 'unknown'}", branchStart);
+  const branchEnd = list.lastIndexOf('      return (', terminalStatus);
+  const branch = list.slice(branchStart, branchEnd);
+  const content = list.slice(list.indexOf('function WorkCaseProgressingContent'), list.indexOf('function sortObjectsForList'));
+
+  assert.ok(branchStart >= 0 && branchEnd > branchStart);
+  assert.match(branch, /<WorkCaseProgressingContent/);
+  assert.match(branch, /goal=\{obj\.goal\}/);
+  assert.match(branch, /phase=\{obj\.phase\}/);
+  assert.match(branch, /executionItemsActive=\{obj\.executionItemsActive \?\? \[\]\}/);
+  assert.match(branch, /waitingOn=\{obj\.waiting_on\}/);
+  assert.match(branch, /blockingSummary=\{obj\.blocking_summary\}/);
+  assert.doesNotMatch(branch, /successCriteria|closure|approval/);
+  assert.match(content, /objectList\.workcaseItemProgress/);
+  assert.match(content, /executionItemsActive\.map/);
+  assert.match(content, /objectList\.workcaseWaitingOn/);
+  assert.match(content, /<WorkCaseBlockingNotice blockingSummary=\{blockingSummary\}/);
+  assert.doesNotMatch(content, /progressHistory|roundLabel|workcaseRound/);
+});
+
+test('list ordering follows updated time and never groups WorkCases by progress position', () => {
+  const list = source('src/pages/ObjectList.tsx');
+  const start = list.indexOf('function sortObjectsForList');
+  const end = list.indexOf('function sparkViewItem', start);
+  const sorting = list.slice(start, end);
+
+  assert.ok(start >= 0 && end > start);
+  assert.match(sorting, /Date\.parse\(b\.updated/);
+  assert.match(sorting, /a\.id\.localeCompare\(b\.id\)/);
+  assert.doesNotMatch(sorting, /progress_group|progress_step|PROGRESS_GROUP_INDEX|PROGRESS_STEP_INDEX/);
+});
+
+test('closure confirmation and closed cards keep only the common identity and progress group', () => {
+  const list = source('src/pages/ObjectList.tsx');
+  const terminalStatus = list.indexOf("displayStatus={progressGroup ?? 'unknown'}");
+  const progressingEnd = list.lastIndexOf('      return (', terminalStatus);
+  const adrStart = list.indexOf("if (currentType === 'adr')");
+  const terminalBranch = list.slice(progressingEnd, adrStart);
+
+  assert.match(terminalBranch, /<ObjectCardFrame/);
+  assert.match(terminalBranch, /displayStatus=\{progressGroup \?\? 'unknown'\}/);
+  assert.match(terminalBranch, /\/>/);
+  assert.doesNotMatch(terminalBranch, /executionItems|successCriteria|CloseDecision|RecordItem|Integrity|Evidence|BlockingNotice|blocking_summary/);
+  assert.doesNotMatch(list, /hasClosureRequestedAt|hasClosureEvidence|hasClosedIntegrityIssue|WorkCaseRecordItem/);
+});
+
+test('closure confirmation and closed public Card projections contain no blocked or detail body', () => {
+  const closure = projectWorkCaseCard({
+    object_id: 'workcase-0100',
+    fact_type_key: 'workcase',
+    title: '等待关闭确认',
+    status: 'blocked',
+    phase: 'human_closure_confirming',
+    priority: 'P0',
+    updated_at: '2026-07-27T00:00:00+08:00',
+    goal: '不得进入关闭确认 Card 正文',
+    blocking_summary: '详情仍应保留的阻塞事实',
+    success_criterion_definitions: [{ criterion_id: 'criterion-hidden', statement: '不得透传' }],
+    work_items: [{ item_id: 'item-hidden', goal: '不得透传', status: 'completed' }],
+  });
+  const closed = projectWorkCaseCard({
+    object_id: 'workcase-0101',
+    fact_type_key: 'workcase',
+    title: '已经关闭',
+    status: 'closed',
+    priority: 'P0',
+    updated_at: '2026-07-27T00:00:00+08:00',
+    goal: '不得进入已关闭 Card 正文',
+    disposition_summary: '仅详情可读',
+  });
+
+  assert.deepEqual(Object.keys(closure).sort(), [
+    'fact_type_key', 'object_id', 'phase', 'status', 'title', 'updated_at',
+  ]);
+  assert.deepEqual(Object.keys(closed).sort(), [
+    'fact_type_key', 'object_id', 'status', 'title', 'updated_at',
+  ]);
+});
+
+test('current list projection preserves real item identities, statuses, and active members', () => {
+  const summary = projectWorkCaseCard(currentWorkCase());
+
+  assert.equal(summary.executionItemsProjectionValid, true);
+  assert.equal(summary.executionItemTotal, 4);
   assert.equal(summary.executionItemDone, 1);
   assert.equal(summary.executionItemCancelled, 1);
-  assert.equal(summary.executionItemOpen, 3);
-  assert.equal(summary.executionItemsProjectionValid, true);
-  assert.deepEqual(summary.executionItemsInProgress?.map((item) => item.id), ['item-03']);
-  assert.deepEqual(summary.executionItemsActive?.map((item) => item.id), ['item-03', 'item-04']);
-  assert.equal(summary.executionItemsActive?.[1].blockingReason, '等待外部输入。');
-  assert.equal('progressHistoryState' in summary, false);
-  assert.equal('progressRound' in summary, false);
-  assert.equal('progressEventId' in summary, false);
+  assert.equal(summary.executionItemOpen, 2);
+  const active = summary.executionItemsActive as Array<Record<string, unknown>>;
+  assert.deepEqual(active.map((item) => item.id), ['item-running', 'item-blocked']);
+  assert.equal(active[1]?.blockingReason, '等待 Human 提供输入。');
+  assert.equal('successCriteria' in summary, false);
 });
 
-test('current WorkCase item projection never invents missing IDs or goals', async () => {
-  const [summary] = await buildWorkCaseSummaries([{
-    id: 'workcase-0101',
-    object_id: 'workcase-0101',
-    type: 'workcase',
-    fact_type_key: 'workcase',
-    status: 'open',
-    phase: 'executing',
-    title: '拒绝补造当前工作项',
-    path: 'ldvh-base/workcases/workcase-0101.yaml',
-    created_at: '2026-07-26T08:00:00+08:00',
-    updated_at: '2026-07-26T10:00:00+08:00',
-    updated: '2026-07-26T10:00:00+08:00',
-    workcase_profile: 'control-contract-v1',
-    plan_version: 1,
+test('public progressing projection keeps counts and active items without the complete item plan', () => {
+  const facts = source('api/services/facts.ts');
+  const projectionStart = facts.indexOf('export function projectWorkCaseCard');
+  const projectionEnd = facts.indexOf('function machineIssueRecords', projectionStart);
+  const publicProjection = facts.slice(projectionStart, projectionEnd);
+
+  assert.ok(projectionStart >= 0 && projectionEnd > projectionStart);
+  assert.match(publicProjection, /projectCardWorkItems\(fact\.work_items\)/);
+  assert.doesNotMatch(publicProjection, /projected\.work_items|projected\.executionItems/);
+});
+
+test('public active-item projection exposes only fields consumed by the Card', () => {
+  const projected = projectWorkCaseCard(currentWorkCase());
+  const active = projected.executionItemsActive as Array<Record<string, unknown>>;
+
+  assert.deepEqual(Object.keys(active[0] ?? {}).sort(), ['id', 'status', 'title']);
+  assert.deepEqual(Object.keys(active[1] ?? {}).sort(), ['blockingReason', 'id', 'status', 'title']);
+});
+
+test('malformed current items and criteria become unavailable without generated replacements', () => {
+  const summary = projectWorkCaseCard(currentWorkCase({
+    success_criterion_definitions: [{ criterion_id: 'criterion-visible-result' }],
+    success_criteria: ['不得读取的已退出标准'],
     work_items: [
       {
-        goal: '缺少稳定 ID', expected_result: '结果一', approach_summary: '方法一', status: 'in_progress',
-        current_summary: '执行中', resume_from: '继续执行',
+        goal: '缺少稳定 item_id',
+        expected_result: '不应形成投影',
+        status: 'in_progress',
+        current_summary: '正在执行。',
+        resume_from: '继续执行。',
       },
-      { item_id: 'item-02', expected_result: '结果二', approach_summary: '方法二', status: 'pending' },
     ],
-  }]);
+  }));
 
   assert.equal(summary.executionItemsProjectionValid, false);
   assert.equal(summary.executionItemTotal, 0);
-  assert.deepEqual(summary.executionItemsInProgress, []);
   assert.deepEqual(summary.executionItemsActive, []);
-  assert.equal(summary.executionItems?.some((item) => item.id.startsWith('execution-item-')), false);
+  assert.equal('successCriteria' in summary, false);
 });
 
-test('a boundary-new WorkCase without the required profile cannot use legacy card fallbacks', async () => {
-  const [summary] = await buildWorkCaseSummaries([{
-    id: 'workcase-0102',
-    object_id: 'workcase-0102',
-    type: 'workcase',
-    fact_type_key: 'workcase',
-    status: 'open',
-    phase: 'executing',
-    title: '拒绝错误兼容',
-    path: 'ldvh-base/workcases/workcase-0102.yaml',
-    created_at: '2026-07-26T08:00:00+08:00',
-    updated_at: '2026-07-26T10:00:00+08:00',
-    updated: '2026-07-26T10:00:00+08:00',
-    plan_version: 1,
-    success_criteria: ['不应作为 legacy 成功标准显示'],
-    work_items: [{ title: '不应补造身份', status: 'done' }],
-  }]);
-
-  assert.equal(summary.executionItemsProjectionValid, false);
-  assert.equal(summary.executionItemTotal, 0);
-  assert.deepEqual(summary.executionItems, []);
-  assert.deepEqual(summary.executionItemsActive, []);
-  assert.equal(summary.hasSuccessCriteria, false);
-  assert.deepEqual(summary.successCriteria, []);
-});
-
-test('Web accepts v2 work items without approach summaries and rejects v1 objects after the v2 boundary', async () => {
-  const common = {
-    type: 'workcase',
-    fact_type_key: 'workcase',
-    status: 'open',
-    phase: 'executing',
-    path: 'ldvh-base/workcases/workcase-0110.yaml',
-    created_at: '2026-07-26T12:45:00+08:00',
-    updated_at: '2026-07-26T13:00:00+08:00',
-    updated: '2026-07-26T13:00:00+08:00',
-    plan_version: 1,
-    success_criterion_definitions: [{ criterion_id: 'criterion-01', statement: '形成结果。' }],
-    work_items: [{
-      item_id: 'item-01', goal: '执行目标', expected_result: '执行结果', status: 'in_progress',
-      current_summary: '执行中', resume_from: '继续执行',
-    }],
-  };
-  const [v2, lateV1] = await buildWorkCaseSummaries([
-    {
-      ...common,
-      id: 'workcase-0110', object_id: 'workcase-0110', title: 'V2 结构化对象',
-      workcase_profile: 'control-contract-v2',
-    },
-    {
-      ...common,
-      id: 'workcase-0111', object_id: 'workcase-0111', title: '边界后 V1 对象',
-      workcase_profile: 'control-contract-v1',
-    },
-  ]);
-
-  assert.equal(v2.executionItemsProjectionValid, true);
-  assert.deepEqual(v2.executionItemsActive?.map((item) => item.id), ['item-01']);
-  assert.equal(v2.hasSuccessCriteria, true);
-  assert.equal(lateV1.executionItemsProjectionValid, false);
-  assert.deepEqual(lateV1.executionItemsActive, []);
-  assert.equal(lateV1.hasSuccessCriteria, false);
-});
-
-test('closed current WorkCases recognize closure approval without inventing a request timestamp', async () => {
-  const currentBase = {
-    type: 'workcase',
-    fact_type_key: 'workcase',
+test('closed summaries do not reconstruct removed process fields or completeness diagnostics', () => {
+  const summary = projectWorkCaseCard(currentWorkCase({
     status: 'closed',
-    phase: 'closed',
-    plan_version: 1,
-    result_version: 1,
-    execution_approval: {
-      subject_version: 1,
-      approved_at: '2026-07-26T13:05:00+08:00',
-      summary: 'Human 已批准执行。',
-    },
-    success_criterion_definitions: [{ criterion_id: 'criterion-01', statement: '形成可观察结果。' }],
-    success_criterion_results: [{ criterion_id: 'criterion-01', outcome: 'satisfied', summary: '标准已满足。' }],
-    controller_check_summary: '主控自检完成。',
-    validation_summary: '当前结果已经验证。',
+    phase: undefined,
+    progress_group: 'closed',
+    progress_step: undefined,
+    priority: undefined,
+    plan_version: undefined,
+    work_items: undefined,
     closure_outcome: 'completed',
-    disposition_summary: '没有残余责任。',
-    work_items: [{
-      item_id: 'item-01', goal: '完成目标', expected_result: '形成结果', status: 'completed', result_summary: '已完成。',
-    }],
-  };
-  const [v2, v1, missingApproval, legacyReviewRequested, legacyClosureRequested] = await buildWorkCaseSummaries([
-    {
-      ...currentBase,
-      id: 'workcase-0120', object_id: 'workcase-0120', title: 'V2 已关闭对象',
-      path: 'ldvh-base/workcases/workcase-0120.yaml',
-      created_at: '2026-07-26T13:00:00+08:00', updated_at: '2026-07-26T14:00:00+08:00', updated: '2026-07-26T14:00:00+08:00',
-      workcase_profile: 'control-contract-v2',
-      closure_approval: {
-        subject_version: 1,
-        approved_at: '2026-07-26T14:00:00+08:00',
-        summary: 'Human 已批准关闭。',
-      },
-    },
-    {
-      ...currentBase,
-      id: 'workcase-0121', object_id: 'workcase-0121', title: 'V1 已关闭对象',
-      path: 'ldvh-base/workcases/workcase-0121.yaml',
-      created_at: '2026-07-25T08:00:00+08:00', updated_at: '2026-07-25T10:00:00+08:00', updated: '2026-07-25T10:00:00+08:00',
-      workcase_profile: 'control-contract-v1',
-      work_items: [{
-        item_id: 'item-01', goal: '完成目标', expected_result: '形成结果', approach_summary: '按计划执行。',
-        status: 'completed', result_summary: '已完成。',
-      }],
-      closure_approval: {
-        subject_version: 1,
-        approved_at: '2026-07-25T10:00:00+08:00',
-        summary: 'Human 已批准关闭。',
-      },
-    },
-    {
-      ...currentBase,
-      id: 'workcase-0122', object_id: 'workcase-0122', title: '缺少关闭批准的 V2 对象',
-      path: 'ldvh-base/workcases/workcase-0122.yaml',
-      created_at: '2026-07-26T13:00:00+08:00', updated_at: '2026-07-26T14:00:00+08:00', updated: '2026-07-26T14:00:00+08:00',
-      workcase_profile: 'control-contract-v2',
-    },
-    {
-      id: 'workcase-0123', object_id: 'workcase-0123', title: 'Legacy 已关闭对象',
-      type: 'workcase', fact_type_key: 'workcase', status: 'closed', phase: 'closed',
-      path: 'ldvh-base/workcases/workcase-0123.yaml',
-      created_at: '2026-07-19T08:00:00+08:00', updated_at: '2026-07-19T10:00:00+08:00', updated: '2026-07-19T10:00:00+08:00',
-      review_requested_at: '2026-07-19T09:00:00+08:00',
-    },
-    {
-      id: 'workcase-0124', object_id: 'workcase-0124', title: 'Legacy 关闭请求对象',
-      type: 'workcase', fact_type_key: 'workcase', status: 'closed', phase: 'closed',
-      path: 'ldvh-base/workcases/workcase-0124.yaml',
-      created_at: '2026-07-19T08:00:00+08:00', updated_at: '2026-07-19T10:00:00+08:00', updated: '2026-07-19T10:00:00+08:00',
-      closure_requested_at: '2026-07-19T09:00:00+08:00',
-    },
-  ]);
+    disposition_summary: '责任已经关闭。',
+  }));
 
-  assert.equal(v2.hasClosureRequestedAt, true);
-  assert.equal(v2.hasSuccessCriteria, true);
-  assert.equal(v2.hasPlanConfirmedAt, true);
-  assert.equal(v2.hasVerificationEvidence, true);
-  assert.equal(v2.hasClosureEvidence, true);
-  assert.equal(v1.hasClosureRequestedAt, true);
-  assert.equal(missingApproval.hasClosureRequestedAt, false);
-  assert.equal(legacyReviewRequested.hasClosureRequestedAt, true);
-  assert.equal(legacyClosureRequested.hasClosureRequestedAt, true);
+  assert.equal('executionItemsProjectionValid' in summary, false);
+  assert.equal('executionItems' in summary, false);
+  assert.equal('hasClosureRequestedAt' in summary, false);
+  assert.equal('hasPlanConfirmedAt' in summary, false);
+  assert.equal('hasVerificationEvidence' in summary, false);
+  assert.equal('hasClosureEvidence' in summary, false);
+  assert.equal('successCriteria' in summary, false);
 });
 
-test('legacy WorkCase compatibility remains bounded for item identities and active states', async () => {
-  const [legacy] = await buildWorkCaseSummaries([{
-    id: 'workcase-0104',
-    object_id: 'workcase-0104',
-    type: 'workcase',
-    fact_type_key: 'workcase',
-    status: 'open',
-    phase: 'executing',
-    title: '合法旧版兼容',
-    path: 'ldvh-base/workcases/workcase-0104.yaml',
-    created_at: '2026-07-19T08:00:00+08:00',
-    updated_at: '2026-07-19T10:00:00+08:00',
-    updated: '2026-07-19T10:00:00+08:00',
-    plan_version: 1,
-    success_criteria: ['旧版标准'],
-    work_items: [
-      { title: '旧版完成项', status: 'done' },
-      { title: '旧版进行项', status: 'executing' },
-      { title: '旧版阻塞项', status: 'blocked', blocking_summary: '旧版阻塞。' },
-    ],
-  }]);
+test('plan confirmation projection preserves every criterion statement without truncation', () => {
+  const summary = projectWorkCaseCard(currentWorkCase({
+    phase: 'human_plan_confirming',
+    progress_group: 'plan_confirmation',
+    progress_step: undefined,
+  }));
 
-  assert.equal(legacy.executionItemsProjectionValid, true);
-  assert.deepEqual(legacy.executionItems?.map((item) => item.id), ['execution-item-2', 'execution-item-1', 'execution-item-3']);
-  assert.equal(legacy.executionItemDone, 1);
-  assert.deepEqual(legacy.executionItemsActive?.map((item) => item.id), ['execution-item-2', 'execution-item-3']);
+  assert.deepEqual(summary.successCriteria, ['完整显示当前成功标准。']);
+  assert.equal('executionItems' in summary, false);
+});
+
+test('blocked plan confirmation projects a separate complete state-alert fact', () => {
+  const summary = projectWorkCaseCard(currentWorkCase({
+    status: 'blocked',
+    phase: 'human_plan_confirming',
+    progress_group: 'plan_confirmation',
+    progress_step: undefined,
+    blocking_summary: '等待 Human 明确当前计划边界。',
+  }));
+
+  assert.equal(summary.goal, '只消费当前字段。');
+  assert.deepEqual(summary.successCriteria, ['完整显示当前成功标准。']);
+  assert.equal(summary.blocking_summary, '等待 Human 明确当前计划边界。');
+  assert.equal('executionItems' in summary, false);
+  assert.equal('waiting_on' in summary, false);
+});
+
+test('WorkCase list code has no profile, date-boundary, or historical item projection path', () => {
+  const route = source('api/routes/objects.ts');
+  const shared = source('shared/workcaseStatus.ts');
+
+  assert.doesNotMatch(route, /WorkCaseProfileKind|WORKCASE_CURRENT_BOUNDARY|WORKCASE_V2_BOUNDARY|workcase_profile/);
+  assert.doesNotMatch(route, /parseStrictRfc3339|execution-item-|orchestration\.execution_items/);
+  assert.doesNotMatch(route, /closure_requested_at|review_requested_at|closure_approval/);
+  assert.doesNotMatch(route, /hasClosureRequestedAt|hasPlanConfirmedAt|hasVerificationEvidence|hasClosureEvidence/);
+  assert.doesNotMatch(shared, /result_self_checking|subagents_result_reviewing|review_needed|draft|active/);
+});
+
+test('detail copy actions never fall back from an exact canonical path to a list or route path', () => {
+  const detail = source('src/pages/ObjectDetail.tsx');
+
+  assert.doesNotMatch(detail, /canonical_path\s*\?\?\s*(?:obj\.)?path/);
+  assert.doesNotMatch(detail, /CopyPathButton path=\{item\?\.path\}/);
+  assert.doesNotMatch(detail, /function DetailObjectRow|function buildCurrentFlowItem/);
+});
+
+test('WorkCase list always exposes observation and genuine reread controls', () => {
+  const list = source('src/pages/ObjectList.tsx');
+
+  assert.match(list, /function WorkCaseObservationControls/);
+  assert.match(list, /coverageStatus === 'complete' && coverageProblemCount === 0/);
+  assert.match(list, /observedAt=\{coverageObservedAt\}/);
+  assert.match(list, /setReloadVersion\(\(version\) => version \+ 1\)/);
+  assert.match(list, /activeProgressGroup, reloadVersion/);
+  assert.match(list, /currentType === 'workcase' \? \(/);
+  assert.match(list, /observedAt=\{null\}/);
+});
+
+test('WorkCase list diagnostics expose stable scope identities but no source metadata', () => {
+  const facts = source('api/services/facts.ts');
+  const problemStart = facts.indexOf('function machineIssueRecords');
+  const problemEnd = facts.indexOf('function workCaseReaderConfig', problemStart);
+  const listStart = facts.indexOf('async function listWorkCasesFromMachine');
+  const listEnd = facts.indexOf('function readFailure', listStart);
+  const diagnostics = `${facts.slice(problemStart, problemEnd)}\n${facts.slice(listStart, listEnd)}`;
+  const list = source('src/pages/ObjectList.tsx');
+
+  assert.ok(problemStart >= 0 && problemEnd > problemStart);
+  assert.ok(listStart >= 0 && listEnd > listStart);
+  assert.match(diagnostics, /object_ref: item\.object_ref/);
+  assert.match(diagnostics, /scope: 'workcase_collection'/);
+  assert.doesNotMatch(diagnostics, /canonical_path|absolute_path|content_fingerprint|carrier:/);
+  assert.doesNotMatch(list, /problem\.canonical_path/);
+  assert.match(list, /problem\.object_ref\?\.object_id/);
 });
