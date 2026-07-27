@@ -120,6 +120,22 @@ function projectCriterionStatements(value: unknown): string[] {
     .filter((statement): statement is string => statement !== null)
 }
 
+function projectContributedToTargets(value: unknown): Array<Record<string, string>> {
+  if (!Array.isArray(value)) return []
+  return value.flatMap((candidate) => {
+    if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) return []
+    const relation = candidate as Record<string, unknown>
+    if (relation.relation_key !== 'contributed-to') return []
+    const target = relation.target
+    if (!target || typeof target !== 'object' || Array.isArray(target)) return []
+    const triple = target as Record<string, unknown>
+    if (typeof triple.governed_project_id !== 'string' || !triple.governed_project_id.trim()
+      || typeof triple.fact_type_key !== 'string' || !triple.fact_type_key.trim()
+      || typeof triple.object_id !== 'string' || !triple.object_id.trim()) return []
+    return [{ governedProjectId: triple.governed_project_id, factTypeKey: triple.fact_type_key, objectId: triple.object_id }]
+  })
+}
+
 export function projectWorkCaseCard(fact: Record<string, unknown>): Record<string, unknown> {
   const projected = copyPresentFields(fact, ['object_id', 'fact_type_key', 'title', 'status', 'phase', 'updated_at'])
   const phase = typeof fact.phase === 'string' ? fact.phase : ''
@@ -128,6 +144,9 @@ export function projectWorkCaseCard(fact: Record<string, unknown>): Record<strin
     Object.assign(projected, copyPresentFields(fact, ['priority', 'goal']), { successCriteria: projectCriterionStatements(fact.success_criterion_definitions) })
   } else if (progress?.progressGroup === 'progressing') {
     Object.assign(projected, copyPresentFields(fact, ['priority', 'goal', 'waiting_on']), projectCardWorkItems(fact.work_items))
+  } else if (progress?.progressGroup === 'closure_confirmation') {
+    const contributedTo = projectContributedToTargets(fact.relations)
+    if (contributedTo.length > 0) projected.contributedTo = contributedTo
   }
   if (fact.status === 'blocked' && (progress?.progressGroup === 'plan_confirmation' || progress?.progressGroup === 'progressing')) Object.assign(projected, copyPresentFields(fact, ['blocking_summary']))
   return projected

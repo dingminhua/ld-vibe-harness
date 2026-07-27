@@ -625,3 +625,135 @@ def test_spark_routed_to_current_rules_remain_independent_from_workcase_rules() 
     assert not _target_has_readable_title("spark", "routed-to", {"title": "  "})
     assert _source_condition("spark", "routed-to", {"status": "routed"})
     assert not _source_condition("spark", "routed-to", {"status": "discarded"})
+
+
+@pytest.mark.parametrize(
+    ("target_type", "object_id", "target_status"),
+    [
+        ("spark", "spark-0002", "open"),
+        ("spark", "spark-0002", "routed"),
+        ("spark", "spark-0002", "implemented"),
+        ("spark", "spark-0002", "discarded"),
+        ("adr", "adr-0002", "active"),
+        ("adr", "adr-0002", "retired"),
+        ("pitfall", "pitfall-0002", "active"),
+        ("pitfall", "pitfall-0002", "retired"),
+    ],
+)
+def test_workcase_contributed_to_accepts_spark_adr_pitfall_targets_across_target_lifecycle(
+    target_type: str,
+    object_id: str,
+    target_status: str,
+) -> None:
+    source = _read(
+        "workcase-0001",
+        "open",
+        phase="executing",
+        relations=[_relation("contributed-to", object_id, fact_type_key=target_type)],
+    )
+    issues, unavailable = _validate(source, _read(object_id, target_status, fact_type_key=target_type))
+
+    assert issues == ()
+    assert unavailable is False
+
+
+@pytest.mark.parametrize("source_status", ["open", "blocked", "closed"])
+def test_workcase_contributed_to_source_condition_allows_active_and_closed_sources(source_status: str) -> None:
+    assert _source_condition("workcase", "contributed-to", {"status": source_status})
+    assert _source_condition(
+        "workcase",
+        "contributed-to",
+        {"status": "open", "phase": "human_closure_confirming"},
+    )
+    assert _target_condition("workcase", "contributed-to", "spark", "discarded")
+    assert _target_condition("workcase", "contributed-to", "adr", "retired")
+    assert _target_condition("workcase", "contributed-to", "pitfall", "retired")
+    assert not _target_condition("workcase", "contributed-to", "workcase", "open")
+    assert not _target_condition("workcase", "contributed-to", "study", "active")
+
+
+def test_closed_workcase_contributed_to_remains_valid_when_target_later_retired() -> None:
+    source = _read(
+        "workcase-0001",
+        "closed",
+        relations=[_relation("contributed-to", "adr-0002", fact_type_key="adr")],
+    )
+    issues, unavailable = _validate(source, _read("adr-0002", "retired", fact_type_key="adr"))
+
+    assert issues == ()
+    assert unavailable is False
+
+
+def test_workcase_contributed_to_rejects_workcase_and_study_targets() -> None:
+    workcase_target_source = _read(
+        "workcase-0001",
+        "open",
+        phase="executing",
+        relations=[_relation("contributed-to", "workcase-0002")],
+    )
+    workcase_issues, _ = _validate(workcase_target_source, _read("workcase-0002", "open", phase="executing"))
+
+    study_target_source = _read(
+        "workcase-0001",
+        "open",
+        phase="executing",
+        relations=[_relation("contributed-to", "study-0002", fact_type_key="study")],
+    )
+    study_issues, _ = _validate(study_target_source, _read("study-0002", "active", fact_type_key="study"))
+
+    assert any("目标类型或状态" in issue.summary for issue in workcase_issues)
+    assert any("目标类型或状态" in issue.summary for issue in study_issues)
+
+
+def test_workcase_contributed_to_reports_missing_invalid_and_unavailable_targets() -> None:
+    missing_source = _read(
+        "workcase-0001",
+        "open",
+        phase="executing",
+        relations=[_relation("contributed-to", "adr-0002", fact_type_key="adr")],
+    )
+    missing_issues, missing_unavailable = _validate(missing_source)
+    assert missing_unavailable is False
+    assert any("不存在" in issue.summary for issue in missing_issues)
+
+    invalid_target = _read("adr-0002", "active", fact_type_key="adr", check_status="invalid")
+    invalid_issues, _ = _validate(missing_source, invalid_target)
+    assert any("mechanically valid" in issue.summary for issue in invalid_issues)
+
+    unavailable_target = _read("adr-0002", "active", fact_type_key="adr", check_status="unavailable")
+    unavailable_issues, unavailable = _validate(missing_source, unavailable_target)
+    assert unavailable_issues == ()
+    assert unavailable is True
+
+
+def test_workcase_contributed_to_rejects_cross_project_duplicate_and_self_reference() -> None:
+    cross_project = _read(
+        "workcase-0001",
+        "open",
+        phase="executing",
+        relations=[_relation("contributed-to", "adr-0002", project_id="other-project", fact_type_key="adr")],
+    )
+    issues, unavailable = _validate(cross_project)
+    assert unavailable is False
+    assert any("同一管辖项目" in issue.summary for issue in issues)
+
+    duplicate = _read(
+        "workcase-0001",
+        "open",
+        phase="executing",
+        relations=[
+            _relation("contributed-to", "adr-0002", fact_type_key="adr"),
+            _relation("contributed-to", "adr-0002", fact_type_key="adr"),
+        ],
+    )
+    issues, _ = _validate(duplicate, _read("adr-0002", "active", fact_type_key="adr"))
+    assert any("不得重复" in issue.summary for issue in issues)
+
+    self_ref = _read(
+        "workcase-0001",
+        "open",
+        phase="executing",
+        relations=[_relation("contributed-to", "workcase-0001")],
+    )
+    issues, _ = _validate(self_ref)
+    assert any("禁止自指" in issue.summary for issue in issues)

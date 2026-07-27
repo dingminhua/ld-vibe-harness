@@ -268,6 +268,24 @@ def _gate_issues(
     return tuple(issues)
 
 
+def _contributed_to_identities(fields: Mapping[str, Any]) -> list[tuple[object, object, object]]:
+    relations = fields.get("relations")
+    identities: list[tuple[object, object, object]] = []
+    for relation in relations if isinstance(relations, list) else []:
+        if not isinstance(relation, Mapping) or relation.get("relation_key") != "contributed-to":
+            continue
+        target = relation.get("target")
+        target_mapping = target if isinstance(target, Mapping) else {}
+        identities.append(
+            (
+                target_mapping.get("governed_project_id"),
+                target_mapping.get("fact_type_key"),
+                target_mapping.get("object_id"),
+            )
+        )
+    return sorted(identities, key=repr)
+
+
 def _close_mapping_issues(
     before: Mapping[str, Any],
     after: Mapping[str, Any],
@@ -370,6 +388,14 @@ def _close_mapping_issues(
             FactIssue(
                 "relation",
                 "closed routed-to targets 必须精确等于 proposal 中全部 route decisions 的去重目标集",
+                "relations",
+            )
+        )
+    if _contributed_to_identities(before) != _contributed_to_identities(after):
+        issues.append(
+            FactIssue(
+                "relation",
+                "close-workcase after 的 contributed-to relations 必须与 before 解析后精确相同",
                 "relations",
             )
         )

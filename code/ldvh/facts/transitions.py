@@ -805,7 +805,7 @@ def _validate_same_phase(
             _require_equal(
                 before,
                 after,
-                ("work_items", *_RESULT_STATE_FIELDS, "closure_proposal"),
+                ("work_items", *_RESULT_STATE_FIELDS, "closure_proposal", "relations"),
                 "Human 关闭判断对象在同 phase 必须冻结",
             )
         )
@@ -1020,7 +1020,7 @@ def _validate_phase_edge(
             _require_equal(
                 before,
                 after,
-                ("work_items", *_RESULT_STATE_FIELDS, "closure_proposal"),
+                ("work_items", *_RESULT_STATE_FIELDS, "closure_proposal", "relations"),
                 "进入 Human 关闭判断时完整质量链和 proposal 必须冻结",
             )
         )

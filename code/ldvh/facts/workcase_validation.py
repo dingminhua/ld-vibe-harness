@@ -6,7 +6,7 @@ import re
 from collections import deque
 from collections.abc import Mapping, Sequence
 
-from ldvh.facts.contracts import ACTIVE_STATUSES
+from ldvh.facts.contracts import ACTIVE_STATUSES, LAYOUTS
 from ldvh.facts.models import FactIssue
 from ldvh.facts.workcase_projection import (
     all_terminal,
@@ -476,27 +476,47 @@ def _validate_relations(fields: Mapping[str, object], issues: list[FactIssue]) -
     status = fields.get("status")
     phase = fields.get("phase")
     source_id = fields.get("object_id")
+    allowed = {"routed-to", "contributed-to"} if status == "closed" else {"depends-on", "contributed-to"}
     observed: list[tuple[object, object, object, object]] = []
     for index, relation in enumerate(relations):
         path = f"relations[{index}]"
         if not isinstance(relation, Mapping):
             continue
         relation_key = relation.get("relation_key")
-        allowed = "routed-to" if status == "closed" else "depends-on"
-        if phase == "human_closure_confirming":
-            _issue(issues, "human_closure_confirming 禁止 outgoing relation", f"{path}.relation_key")
-        elif relation_key != allowed:
-            _issue(issues, f"当前 WorkCase 只允许 {allowed} relation", f"{path}.relation_key")
+        if relation_key == "depends-on" and phase == "human_closure_confirming":
+            _issue(issues, "human_closure_confirming 禁止 depends-on relation", f"{path}.relation_key")
+        elif relation_key not in allowed:
+            _issue(issues, f"当前 WorkCase 只允许 {'/'.join(sorted(allowed))} relation", f"{path}.relation_key")
         target = relation.get("target")
         if not isinstance(target, Mapping):
             continue
-        if target.get("fact_type_key") != "workcase":
-            _issue(issues, "WorkCase relation target 必须为 workcase", f"{path}.target.fact_type_key")
         target_id = target.get("object_id")
-        if not isinstance(target_id, str) or _WORKCASE_ID.fullmatch(target_id) is None:
-            _issue(issues, "relation target.object_id 必须是 WorkCase 稳定身份", f"{path}.target.object_id")
-        elif target_id == source_id:
-            _issue(issues, "WorkCase relation 禁止自指", f"{path}.target.object_id")
+        if relation_key == "contributed-to":
+            target_type = target.get("fact_type_key")
+            if target_type not in {"spark", "adr", "pitfall"}:
+                _issue(
+                    issues,
+                    "contributed-to relation target 必须为 spark/adr/pitfall",
+                    f"{path}.target.fact_type_key",
+                )
+            layout = LAYOUTS.get(target_type) if isinstance(target_type, str) else None
+            if (
+                not isinstance(target_id, str)
+                or layout is None
+                or layout.object_id_pattern.fullmatch(target_id) is None
+            ):
+                _issue(
+                    issues,
+                    "contributed-to relation target.object_id 必须是目标类型稳定身份",
+                    f"{path}.target.object_id",
+                )
+        else:
+            if target.get("fact_type_key") != "workcase":
+                _issue(issues, "WorkCase relation target 必须为 workcase", f"{path}.target.fact_type_key")
+            if not isinstance(target_id, str) or _WORKCASE_ID.fullmatch(target_id) is None:
+                _issue(issues, "relation target.object_id 必须是 WorkCase 稳定身份", f"{path}.target.object_id")
+            elif target_id == source_id:
+                _issue(issues, "WorkCase relation 禁止自指", f"{path}.target.object_id")
         identity = (relation_key, target.get("governed_project_id"), target.get("fact_type_key"), target_id)
         observed.append(identity)
     if len(observed) != len(set(observed)):

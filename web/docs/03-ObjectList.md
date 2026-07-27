@@ -86,7 +86,7 @@ WorkCase 卡片帮助 Human 识别当前工作责任所处的进展分组，并�
 - “推进中”可用轻微、遵守减弱动态偏好的动效提示当前位置；方案待确认、关闭待确认和已关闭不显示脉冲或推进轨迹。两个 Human 确认关口必须保持为不同进展分组。
 - 进展分组直接显示在通用卡片头部；正文中的推进环节只表达当前浏览语义。status、phase 与授权的事实含义仍以事实源和详情阅读为准。
 - 内部 `closure_preparing` 投影为“推进中 / 主控收敛”：此时 Controller 正在吸收当前结果复核并形成关闭报告与分流建议，尚未向 Human 提交关闭请求。只有事实 phase 实际进入 `human_closure_confirming` 后才显示“关闭待确认”，不得提前制造 Human 待办。
-- “关闭待确认”和“已关闭”Card 的正文仍待后续设计；在结论进入规范前只显示通用身份、标题、进展分组和更新时间，不套用执行态势或关闭完整性诊断。`human_closure_confirming` 直接确定前一分组；`status=closed` 且不具有 phase 直接确定后一分组。closed 不保存关闭 approval 或关闭时间，Web 不得据此报缺。
+- “关闭待确认”Card 正文当前只有“后续贡献”区：逐项列出当前 WorkCase 实际声明的 `contributed-to` relations 目标，每项只显示目标事实类型的本地化名称与由目标当前对象 `title` 派生的名称，并可导航到同源详情；目标尚未读到、不可读或缺失时如实呈现读取状态，不以 object_id 冒充名称。当前对象没有任何 `contributed-to` 时该区整体省略，不生成空态文案；区的缺失不表示“已核对且无贡献”。“已关闭”Card 的正文仍待后续设计，只显示通用身份、标题、进展分组和更新时间，不套用执行态势或关闭完整性诊断。`human_closure_confirming` 直接确定前一分组；`status=closed` 且不具有 phase 直接确定后一分组。closed 不保存关闭 approval 或关闭时间，Web 不得据此报缺。
 
 ### 3.5 Spark 卡片
 
@@ -138,7 +138,7 @@ Spark 列表页保持只读；Web 不提供 Spark 创建、直接捕获、写入
 1. 不恢复顶部对象类型标签页；类型导航已经统一到左侧侧栏。
 2. 不把列表改成表格；当前事实对象用卡片扫描。
 3. 不展示 raw ISO 时间，统一使用 `formatDateTime()`。
-4. 不在列表卡片里复述完整详情；WorkCase 只按 §3.4 展示当前已经确定的分组专属内容，关闭待确认和已关闭正文在 Human 完成设计前不扩张。
+4. 不在列表卡片里复述完整详情；WorkCase 只按 §3.4 展示当前已经确定的分组专属内容，已关闭正文在 Human 完成设计前不扩张。
 5. 候选对象卡片不得用对象 ID、导航 target 或空 `path` 冒充来源路径；精确读取成功后再在详情或引用消费点提供复制入口。
 6. 执行项不作为一级导航 tab，也不拥有独立详情路由。
 7. 对象卡片外层可作为当前对象入口，提供统一 hover/focus 反馈；内部信息框必须显式阻止外层点击并使用默认光标。只有 WorkCase 关联行等明确通向另一处的内部控件可以单独响应；内部工作项不拥有独立详情路由。
@@ -172,9 +172,14 @@ interface WorkCaseCardItem {
     status: 'in_progress' | 'blocked';
     blockingReason?: string;
   }>;
+  contributedTo?: Array<{            // 仅 closure_confirmation 且实际声明 contributed-to；稳定三元组，不含标题副本
+    governedProjectId: string;
+    factTypeKey: string;
+    objectId: string;
+  }>;
 }
 ```
 
-`status` 始终保留事实责任状态，`phase` 独立保留当前阶段；不得把 phase 填进 `status`，也不得新增 `responsibilityStatus` 兼容别名。`progress_group`、`progress_step`、工作项计数和 `executionItemsActive` 是只读派生；`goal`、成功标准陈述、`waiting_on` 和允许显示的 `blocking_summary` 仍是事实原文。`plan_confirmation` 的 `blocking_summary` 只供计划判断输入区之外的独立阻塞状态提示消费，不构成第三项计划输入；`progressing` 的阻塞提示属于当前进展区域。全部工作项只在服务端用于计算计数和 active 项，浏览器响应不得出现 `executionItems` 或完整 `work_items`。`closure_confirmation / closed` 不携带正文或 priority。Card 响应不得出现 `canonical_path`、`absolute_path`、`carrier`、`content_fingerprint`、完整 `success_criterion_definitions`、完整 `work_items` 或其它详情字段。
+`status` 始终保留事实责任状态，`phase` 独立保留当前阶段；不得把 phase 填进 `status`，也不得新增 `responsibilityStatus` 兼容别名。`progress_group`、`progress_step`、工作项计数和 `executionItemsActive` 是只读派生；`goal`、成功标准陈述、`waiting_on` 和允许显示的 `blocking_summary` 仍是事实原文。`plan_confirmation` 的 `blocking_summary` 只供计划判断输入区之外的独立阻塞状态提示消费，不构成第三项计划输入；`progressing` 的阻塞提示属于当前进展区域。全部工作项只在服务端用于计算计数和 active 项，浏览器响应不得出现 `executionItems` 或完整 `work_items`。`closed` 不携带正文或 priority；`closure_confirmation` 除通用字段外只携带实际声明的 `contributed-to` 目标三元组投影 `contributedTo`，目标标题由 Card 按需同源读取，不随列表响应复制。Card 响应不得出现 `canonical_path`、`absolute_path`、`carrier`、`content_fingerprint`、完整 `success_criterion_definitions`、完整 `work_items` 或其它详情字段。
 
 列表顶层返回字段级直读的范围与集合问题：`coverage_status` 与 `collection_issues`。对象卡携带自己的 `read_status`、`read_issues`、`field_issues` 与 `unparsed_structures`；集合问题保留准确路径、原因和消息，不以旧 machine 的 `invalid / not_found` 分类替代。页面必须保留已形成的可消费 Card，独立展示集合问题与未完成范围；不设置列表级“观察时间”或“重新读取”控件。筛选或导航发生时照常发起新的列表请求，不能复用旧 payload。读取失败时页面必须保留实际失败原因，不得回退其它读取路径或显示伪零值。

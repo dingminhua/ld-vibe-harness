@@ -10,11 +10,12 @@ import ObjectSignalBadges from '@/components/ObjectSignalBadges';
 import PriorityIcon from '@/components/PriorityIcon';
 import SummaryText from '@/components/SummaryText';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
-import { fetchObjects, type FactCoverageStatus, type FactListProblem, type ObjectItem, type ObjectStatusOption, type WorkCaseActiveItem, type WorkCaseProgressOption } from '@/utils/api';
+import { fetchObjectDetail, fetchObjects, type FactCoverageStatus, type FactListProblem, type ObjectDetail, type ObjectItem, type ObjectStatusOption, type WorkCaseActiveItem, type WorkCaseContributionTarget, type WorkCaseProgressOption } from '@/utils/api';
 import { formatDateTime } from '@/utils/dateFormat';
 import { useI18n } from '@/i18n/context';
-import { getFieldValueLabel, getLocalizedObjectTitle, getObjectStatusLocale } from '@/i18n/locales';
+import { getFieldValueLabel, getLocalizedObjectTitle, getObjectStatusLocale, getTypeLabel } from '@/i18n/locales';
 import { CATEGORY_COLORS } from '@/utils/categoryColors';
+import { getFactReadMeta, isReadableFact } from '@/utils/factReadMeta';
 import { getEffectiveListStatus, writeListStatusParam } from '@/utils/listStatus';
 import {
   WORKCASE_PROGRESS_STEP_ORDER,
@@ -453,6 +454,79 @@ function WorkCaseProgressingContent({
   );
 }
 
+function WorkCaseContributionsContent({
+  contributions,
+  locale,
+}: {
+  contributions?: WorkCaseContributionTarget[];
+  locale: string;
+}) {
+  const { t } = useI18n();
+  if (!contributions || contributions.length === 0) return null;
+  return (
+    <section className="min-w-0 rounded-md border border-ldvh-border/80 border-l-2 border-l-ldvh-accent/45 bg-ldvh-bg/65 px-3.5 py-3">
+      <h3 className="ldvh-card-title">{t('objectList.workcaseContributions')}</h3>
+      <div className="mt-1.5 divide-y divide-ldvh-border/45">
+        {contributions.map((target) => (
+          <WorkCaseContributionTargetRow
+            key={`${target.governedProjectId}/${target.factTypeKey}/${target.objectId}`}
+            target={target}
+            locale={locale}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/** Targets resolve on demand exactly like the detail relation rows; titles are never duplicated into the Card. */
+function WorkCaseContributionTargetRow({ target, locale }: { target: WorkCaseContributionTarget; locale: string }) {
+  const navigate = useNavigate();
+  const [detail, setDetail] = useState<ObjectDetail | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setDetail(null);
+    fetchObjectDetail(target.factTypeKey, target.objectId)
+      .then((value) => { if (!cancelled) setDetail(value); })
+      .catch(() => { if (!cancelled) setDetail(null); });
+    return () => { cancelled = true; };
+  }, [target.factTypeKey, target.objectId]);
+
+  const title = contributionTargetTitle(detail, getFactReadMeta(detail?.data), locale);
+  const typeColor = CATEGORY_COLORS[target.factTypeKey] || CATEGORY_COLORS.other;
+  const open = () => navigate(`/objects/${target.factTypeKey}/${target.objectId}`);
+  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    event.stopPropagation();
+    open();
+  };
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={(event) => { event.stopPropagation(); open(); }}
+      onKeyDown={onKeyDown}
+      className="group flex min-w-0 cursor-pointer items-center gap-2 rounded-md px-1.5 py-2 text-left transition-colors hover:bg-ldvh-border/25 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ldvh-accent/50"
+    >
+      <ObjectTypeIcon type={target.factTypeKey} size={13} className="shrink-0" style={{ color: typeColor }} />
+      <span className="ldvh-meta-muted shrink-0">{getTypeLabel(target.factTypeKey, locale)}</span>
+      <span className="ldvh-meta-primary min-w-0 flex-1 truncate group-hover:text-ldvh-accent">{title}</span>
+      <span className="ldvh-meta-muted shrink-0">{target.objectId}</span>
+    </div>
+  );
+}
+
+function contributionTargetTitle(detail: ObjectDetail | null, readMeta: ReturnType<typeof getFactReadMeta>, locale: string): string {
+  if (!detail || !isReadableFact(readMeta)) return '—';
+  const source = detail.data as { title?: unknown; title_en?: unknown; title_zh?: unknown };
+  const localized = locale === 'en' ? source.title_en : source.title_zh;
+  if (typeof localized === 'string' && localized.trim()) return localized;
+  return typeof source.title === 'string' && source.title.trim() ? source.title : '—';
+}
+
 function sortObjectsForList(items: ObjectItem[], _currentType: string): ObjectItem[] {
   return [...items].sort((a, b) => {
     const updatedDelta = Date.parse(b.updated || '') - Date.parse(a.updated || '');
@@ -794,6 +868,20 @@ export default function ObjectList() {
               blockingSummary={obj.blocking_summary}
               t={t}
             />
+          </ObjectCardFrame>
+        );
+      }
+      if (progressGroup === 'closure_confirmation') {
+        return (
+          <ObjectCardFrame
+            key={obj.id}
+            obj={obj}
+            locale={locale}
+            onOpen={openObject}
+            showNonActiveReason={false}
+            displayStatus={progressGroup}
+          >
+            <WorkCaseContributionsContent contributions={obj.contributedTo} locale={locale} />
           </ObjectCardFrame>
         );
       }

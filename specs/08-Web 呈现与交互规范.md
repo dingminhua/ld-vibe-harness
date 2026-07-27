@@ -258,7 +258,7 @@ WorkCase 列表中的外部 Card 直接服务 Human 对当前工作责任的定�
 | 活动期；`phase=human_closure_confirming` | `closure_confirmation` | 省略 |
 | `status=closed`；`phase` 省略 | `closed` | 省略 |
 
-创建前计划形成与 creation review 尚未产生正式 WorkCase，不得投影为外部 WorkCase Card、进展分组或推进环节。`status=blocked` 是覆盖在任一非终态 phase 上的责任阻塞事实；除了本节已明示限定为“只显示通用身份”的 `closure_confirmation` Card 外，Web 必须在保留按 phase 得出的进展分组和推进环节时另行呈现阻塞，不得把 blocked 改成第五个进展分组，也不得用分组掩盖 `blocking_summary`。`closure_confirmation` 的当前 Card 正文契约尚未定义，即使实际 `status=blocked` 也不在 Card 额外展示阻塞；这不允许详情页、精确读取诊断或其它已经定义的支持范围隐藏实际 `blocking_summary`。表外 phase、缺失 phase 或违反 21 的 status/phase 组合不能按相似名称、数组位置或前后阶段猜测；Web 只能如实呈现读取或一致性问题及未能形成进展分组的范围。
+创建前计划形成与 creation review 尚未产生正式 WorkCase，不得投影为外部 WorkCase Card、进展分组或推进环节。`status=blocked` 是覆盖在任一非终态 phase 上的责任阻塞事实；除了 `closure_confirmation` Card 外，Web 必须在保留按 phase 得出的进展分组和推进环节时另行呈现阻塞，不得把 blocked 改成第五个进展分组，也不得用分组掩盖 `blocking_summary`。`closure_confirmation` 的当前 Card 正文只定义“后续贡献”区，即使实际 `status=blocked` 也不在 Card 额外展示阻塞；这不允许详情页、精确读取诊断或其它已经定义的支持范围隐藏实际 `blocking_summary`。表外 phase、缺失 phase 或违反 21 的 status/phase 组合不能按相似名称、数组位置或前后阶段猜测；Web 只能如实呈现读取或一致性问题及未能形成进展分组的范围。
 
 WorkCase 列表筛选、Dashboard 聚合或其它以外部 Card 为成员的 Human-facing 分组如果表达工作当前进展，必须使用四个 `progress_group`，并明确它是“进展分组”而非生命周期分类；需要说明推进内部位置时再使用四个 `progress_step`。Dashboard 的 WorkCase 聚合键必须命名为 `byProgressGroup`，其条目必须以 `progress_group` 承载这四个值，不得把派生分组写入名为 `status` 的字段，也不得再输出原始 phase、历史显示状态或另一套 Dashboard 分组。如 Dashboard 确有消费实际事实责任状态的需要，必须另以 `source_status` 原样承载，不能用它替代 `progress_group`；两者仍须保留到来源对象和原始 phase 的读取入口，不得把聚合数量表达为事实源自有计数。
 
@@ -286,9 +286,9 @@ Web 不得为这两项重新生成 AI 摘要，不得从 `scope`、work items、
 
 当 `waiting_on` 实际存在时，`progressing` Card 必须完整显示正在等待的对象或条件；不存在时不从当前环节自动推断“等待独立复核”等文案。当 `status=blocked` 时，Card 必须在保留上述四环节及当前位置的同时，附加完整显示顶层 `blocking_summary`；未记录阻塞原因时明确显示缺失。等待回答“正在等什么”，阻塞回答“为什么不能继续”；两者实际同时存在时均保留，不由 Web 进行语义去重。它们都是覆盖在推进位置上的当前信息，不替代“推进中”或当前推进环节。`progressing` Card 不显示成功标准、scope、依赖、方法、完整工作项计划、执行态势条、验证安排、审核记录或关闭材料；除上述完成数、取消数、active 项的身份/目标/状态/阻塞，以及顶层等待与阻塞外，其余工作项内容仍从同源详情读取。
 
-`closure_confirmation` 与 `closed` 两类 Card 的具体正文尚未确定。在正文契约形成前，这两类 Card 只显示通用对象身份、标题、进展分组和更新时间，不显示关闭完整性诊断，不从已退出的请求、审核、批准或时间字段推断缺失，也不把活动期过程字段当作 closed 必须保留的内容。`human_closure_confirming` 本身足以确定“关闭待确认”分组；`status=closed` 且不具有 phase 本身足以确定“已关闭”分组，关闭决定由专属事务消费，不持久化 approval 或关闭时间收据。
+`closure_confirmation` Card 在通用对象身份、标题、进展分组和更新时间之外，正文当前只定义一个“后续贡献”区：该区逐项列出当前 WorkCase 实际声明的 `contributed-to` relations 目标，每项只显示目标事实类型的本地化名称与由目标当前对象 `title` 派生的名称，并提供到同源详情的导航；目标尚未读到、不可读或缺失时如实呈现读取状态，不以 object_id 冒充名称，不从文字、时间邻近或主题相似推断关联，也不把该区表达为剩余责任去向（责任去向只由 `routed-to` 与关闭提案承担）。当前对象没有任何 `contributed-to` 时该区整体省略，不生成空态文案；区的缺失不表示“已核对且无贡献”，Web 不呈现 21 §6.8 核对义务是否履行的任何结论。除该区外，`closure_confirmation` 与 `closed` 两类 Card 的具体正文尚未确定。在正文契约形成前，这两类 Card 不显示关闭完整性诊断，不从已退出的请求、审核、批准或时间字段推断缺失，也不把活动期过程字段当作 closed 必须保留的内容。`human_closure_confirming` 本身足以确定“关闭待确认”分组；`status=closed` 且不具有 phase 本身足以确定“已关闭”分组，关闭决定由专属事务消费，不持久化 approval 或关闭时间收据。
 
-本节当前只确定 `plan_confirmation` 与 `progressing` Card 的上述正文；`closure_confirmation` 和 `closed` Card 的具体正文、事实字段、信息数量、优先级和折叠方式仍待 Human 后续设计判断，不得由 Web 自行补造。颜色、图标和操作继续由 `web/docs/` 与实现承接。WorkCase 详情页不使用进展分组或推进环节切换、隐藏、重排或另建阅读结构；所有状态复用同一详情阅读结构，具体字段是否实际存在只由当前事实内容及其类型来源决定。
+本节当前只确定 `plan_confirmation`、`progressing` Card 的上述正文与 `closure_confirmation` Card 的“后续贡献”区；`closure_confirmation` 的其余正文和 `closed` Card 的具体正文、事实字段、信息数量、优先级和折叠方式仍待 Human 后续设计判断，不得由 Web 自行补造。颜色、图标和操作继续由 `web/docs/` 与实现承接。WorkCase 详情页不使用进展分组或推进环节切换、隐藏、重排或另建阅读结构；所有状态复用同一详情阅读结构，`contributed-to` 与其它关系一样在详情关系区呈现，具体字段是否实际存在只由当前事实内容及其类型来源决定。
 
 ## 8. Web 交互边界
 

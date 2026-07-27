@@ -73,13 +73,21 @@ test('Specs fix plan-confirmation and progressing Card inputs to the latest fiel
   assert.doesNotMatch(cardSection, /progress_history|第 N 轮|轮次未记录/);
 });
 
-test('Specs leave closure cards generic without reconstructing removed process records', () => {
+test('Specs define only the contributed-to section for closure confirmation cards', () => {
   const cardSection = workCaseCardSection();
 
-  assert.match(cardSection, /这两类 Card 只显示通用对象身份、标题、进展分组和更新时间/);
+  assert.match(cardSection, /`closure_confirmation` Card 在通用对象身份、标题、进展分组和更新时间之外，正文当前只定义一个“后续贡献”区/);
+  assert.match(cardSection, /逐项列出当前 WorkCase 实际声明的 `contributed-to` relations 目标/);
+  assert.match(cardSection, /每项只显示目标事实类型的本地化名称与由目标当前对象 `title` 派生的名称/);
+  assert.match(cardSection, /不以 object_id 冒充名称/);
+  assert.match(cardSection, /不从文字、时间邻近或主题相似推断关联/);
+  assert.match(cardSection, /不把该区表达为剩余责任去向/);
+  assert.match(cardSection, /当前对象没有任何 `contributed-to` 时该区整体省略，不生成空态文案/);
+  assert.match(cardSection, /区的缺失不表示“已核对且无贡献”/);
   assert.match(cardSection, /不显示关闭完整性诊断/);
   assert.match(cardSection, /关闭决定由专属事务消费，不持久化 approval 或关闭时间收据/);
-  assert.match(cardSection, /`closure_confirmation` 和 `closed` Card 的具体正文.*仍待 Human 后续设计判断/);
+  assert.match(cardSection, /`closure_confirmation` 的其余正文和 `closed` Card 的具体正文.*仍待 Human 后续设计判断/);
+  assert.match(cardSection, /`contributed-to` 与其它关系一样在详情关系区呈现/);
   assert.doesNotMatch(cardSection, /control-contract|workcase_profile|closure_requested_at|review_requested_at|closure_approval/);
 });
 
@@ -112,7 +120,11 @@ test('Current Web docs describe the same latest-only Card and detail boundaries'
   assert.match(listDoc, /不得把 phase 填进 `status`/);
   assert.match(listDoc, /不得新增 `responsibilityStatus` 兼容别名/);
   assert.match(listDoc, /浏览器响应不得出现 `executionItems`/);
-  assert.match(listDoc, /`closure_confirmation \/ closed` 不携带正文或 priority/);
+  assert.match(listDoc, /`closed` 不携带正文或 priority；`closure_confirmation` 除通用字段外只携带实际声明的 `contributed-to` 目标三元组投影 `contributedTo`/);
+  assert.match(listDoc, /contributedTo\?: Array<\{/);
+  assert.match(listDoc, /governedProjectId: string;/);
+  assert.match(listDoc, /factTypeKey: string;/);
+  assert.match(listDoc, /objectId: string;/);
   assert.match(listDoc, /不设置列表级“观察时间”或“重新读取”控件/);
   assert.doesNotMatch(listSection, /control-contract|workcase_profile|closure_requested_at|review_requested_at|closure_approval/);
 

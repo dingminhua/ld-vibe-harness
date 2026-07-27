@@ -153,8 +153,7 @@ test('plan confirmation keeps goal and criteria as the only plan-decision inputs
 test('progressing cards show only goal and current progress facts', () => {
   const list = source('src/pages/ObjectList.tsx');
   const branchStart = list.indexOf("if (progressGroup === 'progressing')");
-  const terminalStatus = list.indexOf("displayStatus={progressGroup ?? 'unknown'}", branchStart);
-  const branchEnd = list.lastIndexOf('      return (', terminalStatus);
+  const branchEnd = list.indexOf("if (progressGroup === 'closure_confirmation')", branchStart);
   const branch = list.slice(branchStart, branchEnd);
   const content = list.slice(list.indexOf('function WorkCaseProgressingContent'), list.indexOf('function sortObjectsForList'));
 
@@ -189,7 +188,26 @@ test('list ordering follows updated time and never groups WorkCases by progress 
   assert.doesNotMatch(sorting, /progress_group|progress_step|PROGRESS_GROUP_INDEX|PROGRESS_STEP_INDEX/);
 });
 
-test('closure confirmation and closed cards keep only the common identity and progress group', () => {
+test('closure confirmation cards render only the declared contributed-to targets', () => {
+  const list = source('src/pages/ObjectList.tsx');
+  const branchStart = list.indexOf("if (progressGroup === 'closure_confirmation')");
+  const terminalStatus = list.indexOf("displayStatus={progressGroup ?? 'unknown'}", branchStart);
+  const branchEnd = list.lastIndexOf('      return (', terminalStatus);
+  const branch = list.slice(branchStart, branchEnd);
+  const content = list.slice(list.indexOf('function WorkCaseContributionsContent'), list.indexOf('function sortObjectsForList'));
+
+  assert.ok(branchStart >= 0 && branchEnd > branchStart);
+  assert.match(branch, /displayStatus=\{progressGroup\}/);
+  assert.match(branch, /<WorkCaseContributionsContent contributions=\{obj\.contributedTo\} locale=\{locale\} \/>/);
+  assert.doesNotMatch(branch, /executionItems|successCriteria|blocking_summary|goal=\{obj\.goal\}/);
+  assert.match(content, /if \(!contributions \|\| contributions\.length === 0\) return null;/);
+  assert.match(content, /objectList\.workcaseContributions/);
+  assert.match(content, /fetchObjectDetail\(target\.factTypeKey, target\.objectId\)/);
+  assert.match(content, /getTypeLabel\(target\.factTypeKey, locale\)/);
+  assert.match(content, /if \(!detail \|\| !isReadableFact\(readMeta\)\) return '—';/);
+});
+
+test('closed and unclassified cards keep only the common identity and progress group', () => {
   const list = source('src/pages/ObjectList.tsx');
   const terminalStatus = list.indexOf("displayStatus={progressGroup ?? 'unknown'}");
   const progressingEnd = list.lastIndexOf('      return (', terminalStatus);
@@ -199,7 +217,7 @@ test('closure confirmation and closed cards keep only the common identity and pr
   assert.match(terminalBranch, /<ObjectCardFrame/);
   assert.match(terminalBranch, /displayStatus=\{progressGroup \?\? 'unknown'\}/);
   assert.match(terminalBranch, /workcaseProgressGroupUnavailable/);
-  assert.doesNotMatch(terminalBranch, /executionItems|successCriteria|CloseDecision|RecordItem|Integrity|Evidence|BlockingNotice|blocking_summary/);
+  assert.doesNotMatch(terminalBranch, /executionItems|successCriteria|CloseDecision|RecordItem|Integrity|Evidence|BlockingNotice|blocking_summary|contributedTo|ContributionsContent/);
   assert.doesNotMatch(list, /hasClosureRequestedAt|hasClosureEvidence|hasClosedIntegrityIssue|WorkCaseRecordItem/);
 });
 
@@ -234,6 +252,56 @@ test('closure confirmation and closed public Card projections contain no blocked
   assert.deepEqual(Object.keys(closed).sort(), [
     'fact_type_key', 'object_id', 'status', 'title', 'updated_at',
   ]);
+  assert.equal('contributedTo' in closure, false);
+  assert.equal('contributedTo' in closed, false);
+});
+
+test('closure confirmation projection carries only stable contributed-to target triples', () => {
+  const closure = projectWorkCaseCard({
+    object_id: 'workcase-0102',
+    fact_type_key: 'workcase',
+    title: '等待关闭确认',
+    status: 'open',
+    phase: 'human_closure_confirming',
+    updated_at: '2026-07-27T00:00:00+08:00',
+    relations: [
+      { relation_key: 'contributed-to', target: { governed_project_id: 'sample', fact_type_key: 'adr', object_id: 'adr-0007' } },
+      { relation_key: 'contributed-to', target: { governed_project_id: 'sample', fact_type_key: 'pitfall', object_id: 'pitfall-0003' } },
+      { relation_key: 'routed-to', target: { governed_project_id: 'sample', fact_type_key: 'workcase', object_id: 'workcase-0103' } },
+      { relation_key: 'contributed-to', target: { fact_type_key: 'spark' } },
+      { relation_key: 'contributed-to' },
+    ],
+  });
+
+  assert.deepEqual(closure.contributedTo, [
+    { governedProjectId: 'sample', factTypeKey: 'adr', objectId: 'adr-0007' },
+    { governedProjectId: 'sample', factTypeKey: 'pitfall', objectId: 'pitfall-0003' },
+  ]);
+});
+
+test('closed projection never carries the contributions section', () => {
+  const closed = projectWorkCaseCard({
+    object_id: 'workcase-0104',
+    fact_type_key: 'workcase',
+    title: '已经关闭',
+    status: 'closed',
+    updated_at: '2026-07-27T00:00:00+08:00',
+    relations: [
+      { relation_key: 'contributed-to', target: { governed_project_id: 'sample', fact_type_key: 'spark', object_id: 'spark-0009' } },
+    ],
+  });
+
+  assert.equal('contributedTo' in closed, false);
+});
+
+test('relation labels include contributed-to and the detail chip resolves it by key', () => {
+  const locales = source('src/i18n/locales.ts');
+  const associations = source('src/pages/object-detail/FactAssociationsSection.tsx');
+
+  assert.match(locales, /relation_contributed_to: \{ zh: '贡献了', en: 'Contributed To' \}/);
+  assert.match(locales, /'objectList\.workcaseContributions': '后续贡献'/);
+  assert.match(locales, /'objectList\.workcaseContributions': 'Follow-up contributions'/);
+  assert.match(associations, /relation_\$\{relationKey\.replace\(\/-\/g, '_'\)\}/);
 });
 
 test('current list projection preserves real item identities, statuses, and active members', () => {

@@ -92,6 +92,8 @@ export interface ObjectItem {
   executionItemOpen?: number;
   executionItemsActive?: WorkCaseActiveItem[];
   successCriteria?: string[];
+  /** closure_confirmation Card 的"后续贡献"区；仅实际声明 contributed-to 时出现 */
+  contributedTo?: WorkCaseContributionTarget[];
   /** ADR-specific fields */
   decision?: string;
   consequences?: string;
@@ -248,13 +250,20 @@ export interface WorkCaseRouteTarget {
 
 export interface WorkCaseRelationTarget {
   governed_project_id: string;
-  fact_type_key: 'workcase';
+  fact_type_key: 'workcase' | 'spark' | 'adr' | 'pitfall';
   object_id: string;
 }
 
 export interface WorkCaseRelation {
-  relation_key: 'depends-on' | 'routed-to';
+  relation_key: 'depends-on' | 'routed-to' | 'contributed-to';
   target: WorkCaseRelationTarget;
+}
+
+/** closure_confirmation Card 只消费稳定目标三元组，不复制目标标题。 */
+export interface WorkCaseContributionTarget {
+  governedProjectId: string;
+  factTypeKey: string;
+  objectId: string;
 }
 
 export interface WorkCaseResidualDecision {

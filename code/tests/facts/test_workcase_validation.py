@@ -513,3 +513,89 @@ def test_snapshot_validation_preserves_meaningful_surrounding_whitespace(
 
     assert validate_fact_object("workcase", fields, schema) == ()
     assert fields == before
+
+
+def _contributed(fact_type_key: str, object_id: str) -> dict[str, object]:
+    return {
+        "relation_key": "contributed-to",
+        "target": {
+            "governed_project_id": "current-project",
+            "fact_type_key": fact_type_key,
+            "object_id": object_id,
+        },
+    }
+
+
+@pytest.mark.parametrize(
+    ("fact_type_key", "object_id"),
+    [("spark", "spark-0007"), ("adr", "adr-0007"), ("pitfall", "pitfall-0007")],
+)
+def test_contributed_to_targets_spark_adr_pitfall_in_active_and_closed_snapshots(
+    fact_type_key: str,
+    object_id: str,
+) -> None:
+    active = _base("executing")
+    active["execution_approval"] = _approval()
+    active["relations"] = [_contributed(fact_type_key, object_id)]
+    assert validate_workcase_snapshot(active) == ()
+
+    closed = _closed()
+    closed["relations"] = [_contributed(fact_type_key, object_id)]
+    assert validate_workcase_snapshot(closed) == ()
+
+
+def test_contributed_to_rejects_workcase_and_study_targets_and_mismatched_object_id() -> None:
+    for fact_type_key, object_id in (("workcase", "workcase-0007"), ("study", "study-0007")):
+        fields = _base("executing")
+        fields["execution_approval"] = _approval()
+        fields["relations"] = [_contributed(fact_type_key, object_id)]
+        issues = validate_workcase_snapshot(fields)
+        assert any(issue.field_path == "relations[0].target.fact_type_key" for issue in issues)
+
+    mismatched = _base("executing")
+    mismatched["execution_approval"] = _approval()
+    mismatched["relations"] = [_contributed("spark", "adr-0007")]
+    issues = validate_workcase_snapshot(mismatched)
+    assert any(issue.field_path == "relations[0].target.object_id" for issue in issues)
+
+
+def test_human_closure_confirming_retains_contributed_to_but_rejects_depends_on() -> None:
+    fields = _human_closure_confirming()
+    fields["relations"] = [_contributed("adr", "adr-0007")]
+    assert validate_workcase_snapshot(fields) == ()
+
+    fields["relations"] = [
+        {
+            "relation_key": "depends-on",
+            "target": {
+                "governed_project_id": "current-project",
+                "fact_type_key": "workcase",
+                "object_id": "workcase-0007",
+            },
+        }
+    ]
+    issues = validate_workcase_snapshot(fields)
+    assert any(
+        issue.field_path == "relations[0].relation_key" and "depends-on" in issue.summary for issue in issues
+    )
+
+
+def test_closed_contributed_to_is_retained_but_never_counts_as_residual_disposition() -> None:
+    completed = _closed()
+    completed["relations"] = [_contributed("pitfall", "pitfall-0007")]
+    assert validate_workcase_snapshot(completed) == ()
+
+    partial = _closed()
+    partial["closure_outcome"] = "not-achieved"
+    partial["success_criterion_results"][0].update(
+        {"outcome": "not_satisfied", "summary": "The criterion did not form a satisfied result."}
+    )
+    partial["disposition_summary"] = "The remaining responsibility was explicitly addressed."
+    partial["relations"] = [_contributed("adr", "adr-0007")]
+    issues = validate_workcase_snapshot(partial)
+    assert any(issue.field_path == "disposition_summary" for issue in issues)
+
+    partial["residual_responsibilities"] = [
+        {"residual_id": "residual-result", "summary": "The unmet criterion responsibility is accepted as stopped."}
+    ]
+    assert validate_workcase_snapshot(partial) == ()

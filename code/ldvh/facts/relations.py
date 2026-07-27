@@ -199,6 +199,11 @@ def _target_condition(source_type: str, relation_key: str, target_type: str, tar
         # validate_workcase_route_target_snapshots.  Once formed, the stable
         # relation remains valid when its WorkCase target later closes.
         return target_type == "workcase" and target_status in {"open", "blocked", "closed"}
+    if source_type == "workcase" and relation_key == "contributed-to":
+        # The mechanically-valid-at-formation requirement is carried by the
+        # shared target read above; later target state changes (spark
+        # routed/discarded, adr/pitfall retired) do not affect the edge.
+        return target_type in {"spark", "adr", "pitfall"}
     if source_type == "study" and relation_key == "inspired-by":
         return target_type in {"spark", "workcase", "adr"}
     if source_type == "study" and relation_key == "informs":
@@ -229,6 +234,10 @@ def _source_condition(source_type: str, relation_key: str, source_fields: dict[s
         )
     if source_type == "workcase" and relation_key == "routed-to":
         return source_fields.get("status") == "closed"
+    if source_type == "workcase" and relation_key == "contributed-to":
+        # The edge must be able to exist legally in human_closure_confirming;
+        # formation timing is enforced by the update-path transition checks.
+        return source_fields.get("status") in {"open", "blocked", "closed"}
     return True
 
 

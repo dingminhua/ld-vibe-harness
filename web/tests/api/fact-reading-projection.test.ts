@@ -14,6 +14,17 @@ test('projects only relation_key and stable target', () => {
   assert.deepEqual(projected.unresolved, []);
 });
 
+test('contributed-to relations project through with their stable target', () => {
+  const projected = projectFactReadingAssociations({
+    relations: [{ relation_key: 'contributed-to', target: { governed_project_id: 'sample', fact_type_key: 'pitfall', object_id: 'pitfall-0003' } }],
+  });
+  assert.deepEqual(projected.relations, [{
+    originPath: 'relations[0]', relationKey: 'contributed-to',
+    target: { governedProjectId: 'sample', factTypeKey: 'pitfall', objectId: 'pitfall-0003' },
+  }]);
+  assert.deepEqual(projected.unresolved, []);
+});
+
 test('legacy reference fields are not projected', () => {
   const projected = projectFactReadingAssociations({ source_refs: [{ kind: 'web-page', locator: 'https://example.com' }], evidence_refs: [] });
   assert.deepEqual(projected.relations, []);

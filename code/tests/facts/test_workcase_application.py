@@ -1874,3 +1874,246 @@ def test_correct_closed_rejects_a_new_route_target_that_is_already_closed(
     assert result.status == "candidate_rejected"
     assert any("新形成" in issue.summary for issue in result.issues)
     assert path.read_bytes() == original
+
+
+def _contributed(fact_type_key: str, object_id: str) -> dict[str, Any]:
+    return {
+        "relation_key": "contributed-to",
+        "target": {
+            "governed_project_id": "sample",
+            "fact_type_key": fact_type_key,
+            "object_id": object_id,
+        },
+    }
+
+
+def _write_adr(project: _Project, object_id: str) -> Path:
+    fields = {
+        "object_id": object_id,
+        "fact_type_key": "adr",
+        "title": "当前有界决定",
+        "created_at": "2026-07-26T09:00:00+08:00",
+        "updated_at": "2026-07-26T09:30:00+08:00",
+        "status": "active",
+        "decision_question": "当前有界问题。",
+        "decision": "当前实际决定。",
+        "applicability": "只适用于当前项目边界。",
+        "rationale": "当前决定的实际理由。",
+        "consequences": "当前决定的实际后果。",
+    }
+    path = project.boundary.worktree_root / LAYOUTS["adr"].canonical_path(object_id)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(serialize_fact_object(LAYOUTS["adr"], fields, None), encoding="utf-8")
+    return path
+
+
+def test_close_preserves_contributed_to_and_rejects_any_add_remove_or_change(
+    current_specs_repository: Path,
+    tmp_path: Path,
+) -> None:
+    project = _project(current_specs_repository, tmp_path)
+    _write_adr(project, "adr-0001")
+    _write_adr(project, "adr-0002")
+    before = _closing("workcase-0001")
+    before["relations"] = [_contributed("adr", "adr-0001")]
+    path = _write(project, before)
+    original = path.read_bytes()
+
+    for mutated in (
+        [],
+        [_contributed("adr", "adr-0002")],
+        [_contributed("adr", "adr-0001"), _contributed("adr", "adr-0002")],
+    ):
+        rejected_after = _closed_from(before)
+        rejected_after["relations"] = mutated
+        rejected = apply_workcase_write(
+            _command(
+                project,
+                before,
+                rejected_after,
+                mode="close",
+                authorization_reference=_human_reference(),
+            )
+        )
+        assert rejected.status == "candidate_rejected"
+        assert any(issue.field_path == "relations" for issue in rejected.issues)
+        assert path.read_bytes() == original
+
+    after = _closed_from(before)
+    after["relations"] = deepcopy(before["relations"])
+    result = apply_workcase_write(
+        _command(
+            project,
+            before,
+            after,
+            mode="close",
+            authorization_reference=_human_reference(),
+        )
+    )
+
+    assert result.status == "updated"
+    assert result.readback is not None and result.readback.fields is not None
+    assert result.readback.fields["relations"] == before["relations"]
+
+
+def test_close_mapping_requires_contributed_to_before_after_exact_equality() -> None:
+    before = _closing("workcase-0001")
+    before["relations"] = [_contributed("adr", "adr-0001")]
+    after = _closed_from(before)
+    after["relations"] = deepcopy(before["relations"])
+
+    assert workcase_update._close_mapping_issues(before, after) == ()
+
+    for mutated in (
+        [],
+        [_contributed("adr", "adr-0002")],
+        [_contributed("adr", "adr-0001"), _contributed("adr", "adr-0002")],
+    ):
+        changed = _closed_from(before)
+        changed["relations"] = mutated
+        assert any(
+            issue.field_path == "relations" and "contributed-to" in issue.summary
+            for issue in workcase_update._close_mapping_issues(before, changed)
+        )
+
+
+def test_correct_closed_contributed_to_change_is_substantive_and_ignores_route_fingerprint_set(
+    current_specs_repository: Path,
+    tmp_path: Path,
+) -> None:
+    project = _project(current_specs_repository, tmp_path)
+    _write_adr(project, "adr-0001")
+    before = _closed_from(_closing("workcase-0001"))
+    before["updated_at"] = "2026-07-26T12:00:00+08:00"
+    path = _write(project, before)
+    original = path.read_bytes()
+    after = {**before, "relations": [_contributed("adr", "adr-0001")]}
+
+    rejected = apply_workcase_write(_command(project, before, after, mode="correct"))
+
+    assert rejected.status == "candidate_rejected"
+    assert {issue.field_path for issue in rejected.issues} == {
+        "independent_review_reference",
+        "authorization_reference",
+    }
+    assert path.read_bytes() == original
+
+    accepted = apply_workcase_write(
+        _command(
+            project,
+            before,
+            after,
+            mode="correct",
+            authorization_reference=_human_reference(),
+            independent_review_reference=_review_reference(),
+        )
+    )
+
+    assert accepted.status == "updated"
+    assert not any("精确一致" in issue.summary for issue in accepted.issues)
+    readback = _read(project, "workcase-0001")
+    assert readback.fields is not None
+    assert readback.fields["relations"] == after["relations"]
+
+
+def test_update_workcase_forms_contributed_to_in_an_active_phase(
+    current_specs_repository: Path,
+    tmp_path: Path,
+) -> None:
+    project = _project(current_specs_repository, tmp_path)
+    _write_adr(project, "adr-0001")
+    before = _preparing("workcase-0001")
+    _write(project, before)
+    after = {**before, "relations": [_contributed("adr", "adr-0001")]}
+
+    result = apply_workcase_write(_command(project, before, after, mode="update"))
+
+    assert result.status == "updated"
+    assert result.readback is not None and result.readback.fields is not None
+    assert result.readback.fields["relations"] == after["relations"]
+
+
+def test_update_workcase_blocked_freeze_rejects_contributed_to_change(
+    current_specs_repository: Path,
+    tmp_path: Path,
+) -> None:
+    project = _project(current_specs_repository, tmp_path)
+    _write_adr(project, "adr-0001")
+    before = {
+        **_active("workcase-0001"),
+        "status": "blocked",
+        "blocking_summary": "外部输入到达前当前责任无法推进。",
+    }
+    path = _write(project, before)
+    original = path.read_bytes()
+    after = {**before, "relations": [_contributed("adr", "adr-0001")]}
+
+    result = apply_workcase_write(_command(project, before, after, mode="update"))
+
+    assert result.status == "candidate_rejected"
+    assert any(issue.field_path == "relations" for issue in result.issues)
+    assert path.read_bytes() == original
+
+
+def test_update_workcase_human_closure_confirming_freezes_contributed_to_but_allows_legal_existence(
+    current_specs_repository: Path,
+    tmp_path: Path,
+) -> None:
+    project = _project(current_specs_repository, tmp_path)
+    _write_adr(project, "adr-0001")
+    before = _closing("workcase-0001")
+    before["relations"] = [_contributed("adr", "adr-0001")]
+    path = _write(project, before)
+    unchanged_after = {**before, "waiting_on": "等待 Human 对同一关闭提案作出新的判断。"}
+
+    accepted = apply_workcase_write(_command(project, before, unchanged_after, mode="update"))
+
+    assert accepted.status == "updated"
+
+    frozen_before = _read(project, "workcase-0001").fields
+    assert frozen_before is not None
+    original = path.read_bytes()
+    changed_after = dict(frozen_before)
+    changed_after.pop("relations")
+
+    rejected = apply_workcase_write(
+        _command(project, frozen_before, changed_after, mode="update", event_at="2026-07-26T14:00:00+08:00")
+    )
+
+    assert rejected.status == "candidate_rejected"
+    assert any(issue.field_path == "relations" for issue in rejected.issues)
+    assert path.read_bytes() == original
+
+
+def test_update_workcase_entering_human_closure_confirming_freezes_contributed_to(
+    current_specs_repository: Path,
+    tmp_path: Path,
+) -> None:
+    project = _project(current_specs_repository, tmp_path)
+    _write_adr(project, "adr-0001")
+    _write_adr(project, "adr-0002")
+    before = _preparing("workcase-0001")
+    before["relations"] = [_contributed("adr", "adr-0001")]
+    path = _write(project, before)
+    original = path.read_bytes()
+    entering_after = {
+        **before,
+        "phase": "human_closure_confirming",
+        "waiting_on": "等待 Human 判断关闭与责任处置。",
+    }
+    rejected_after = {
+        **entering_after,
+        "relations": [_contributed("adr", "adr-0001"), _contributed("adr", "adr-0002")],
+    }
+
+    rejected = apply_workcase_write(_command(project, before, rejected_after, mode="update"))
+
+    assert rejected.status == "candidate_rejected"
+    assert any(issue.field_path == "relations" for issue in rejected.issues)
+    assert path.read_bytes() == original
+
+    accepted = apply_workcase_write(_command(project, before, entering_after, mode="update"))
+
+    assert accepted.status == "updated"
+    assert accepted.readback is not None and accepted.readback.fields is not None
+    assert accepted.readback.fields["relations"] == before["relations"]
