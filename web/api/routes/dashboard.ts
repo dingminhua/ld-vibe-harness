@@ -92,9 +92,14 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       return { type, result }
     })
 
-    const [listResults, gitLog] = await Promise.all([
+    const [listResults, gitLogResult] = await Promise.all([
       Promise.all(listPromises),
-      getGitLog(10, locale).catch(() => []),
+      getGitLog(10, locale)
+        .then((entries) => ({ entries, issue: undefined }))
+        .catch((error) => ({
+          entries: [],
+          issue: { code: 'git_log_unavailable', message: error instanceof Error ? error.message : String(error) },
+        })),
     ])
 
     // 聚合统计信息
@@ -170,7 +175,8 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       stats,
       recentItems,
       actionItems,
-      recentChanges: gitLog,
+      recentChanges: gitLogResult.entries,
+      ...(gitLogResult.issue ? { recentChangesIssue: gitLogResult.issue } : {}),
     })
   } catch (err) {
     void err

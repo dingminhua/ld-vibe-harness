@@ -175,7 +175,9 @@ export default function Dashboard() {
             <GitCommit size={16} className="text-ldvh-accent" />
             <h3 className="ldvh-section-title">{t('dashboard.recentChanges')}</h3>
           </div>
-          {data.recentChanges.length === 0 ? (
+          {data.recentChangesIssue ? (
+            <p className="ldvh-body-muted text-red-400">{data.recentChangesIssue.message}</p>
+          ) : data.recentChanges.length === 0 ? (
             <p className="ldvh-body-muted">{t('dashboard.noRecentChanges')}</p>
           ) : (
             <ul className="flex flex-col gap-2">

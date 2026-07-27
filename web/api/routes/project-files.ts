@@ -186,15 +186,14 @@ router.get('/git/status', async (req: Request, res: Response): Promise<void> => 
     const entries = []
 
     for (const project of projects) {
-      if (!project) continue
-      try {
-        await runCommand('git', ['rev-parse', '--is-inside-work-tree'], project.path)
-        const stdout = await runCommand('git', ['status', '--short', '--untracked-files=all'], project.path)
-        for (const line of stdout.split('\n').filter(Boolean)) {
-          entries.push(parseGitStatusLine(project, line))
-        }
-      } catch {
-        // 非 Git 管辖项目不阻塞其它项目。
+      if (!project) {
+        res.status(404).json({ ok: false, error: 'Project not found' })
+        return
+      }
+      await runCommand('git', ['rev-parse', '--is-inside-work-tree'], project.path)
+      const stdout = await runCommand('git', ['status', '--short', '--untracked-files=all'], project.path)
+      for (const line of stdout.split('\n').filter(Boolean)) {
+        entries.push(parseGitStatusLine(project, line))
       }
     }
 

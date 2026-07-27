@@ -20,6 +20,7 @@ export interface DashboardData {
     isBreaking: boolean;
     relativeTime: string;
   }>;
+  recentChangesIssue?: { code: 'git_log_unavailable'; message: string };
 }
 
 export type DashboardObjectType = 'workcase' | 'adr' | 'pitfall' | 'spark' | 'study';

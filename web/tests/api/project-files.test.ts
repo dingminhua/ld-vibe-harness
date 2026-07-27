@@ -126,6 +126,13 @@ test('preserves truncation and binary responses', async () => {
   assert.equal(binary.body.truncated, false)
 })
 
+test('does not represent an unknown project Git status as an empty success result', async () => {
+  const status = await get('/api/project-files/git/status?projectId=missing')
+  assert.equal(status.response.status, 404)
+  assert.equal(status.body.ok, false)
+  assert.equal(status.body.error, 'Project not found')
+})
+
 test('rejects Project Files when Code governance cannot verify the workspace', async () => {
   const configPath = path.join(workspaceRoot, 'LDVH-GOVERNED-PROJECTS.yaml')
   const parkedPath = path.join(workspaceRoot, 'LDVH-GOVERNED-PROJECTS.parked')
