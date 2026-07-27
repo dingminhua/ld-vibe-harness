@@ -569,6 +569,10 @@ export async function fetchGovernedProjectsSettings(): Promise<GovernedProjectsS
   return request<GovernedProjectsSettingsData>('/settings/governed-projects');
 }
 
+export async function verifyGovernedProjectsSettings(): Promise<void> {
+  await request<{ ok: true }>('/settings/governed-projects/verify', { method: 'POST' });
+}
+
 export async function saveGovernedProjectsSettings(
   projects: GovernedProjectSetting[],
   expectedFingerprint: string,

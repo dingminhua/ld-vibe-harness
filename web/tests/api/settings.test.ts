@@ -65,6 +65,12 @@ test('reads the editable project projection without changing the configuration',
   assert.match(fs.readFileSync(configPath, 'utf8'), /description: This description must survive/)
 })
 
+test('validates existing entries only when the explicit verification endpoint is requested', async () => {
+  const { response, body } = await request('/api/settings/governed-projects/verify', { method: 'POST' })
+  assert.equal(response.status, 200)
+  assert.equal(body.ok, true)
+})
+
 test('renames, adds and removes entries while preserving unmanaged description fields', async () => {
   const initial = await request('/api/settings/governed-projects')
   const fingerprint = String(initial.body.fingerprint)

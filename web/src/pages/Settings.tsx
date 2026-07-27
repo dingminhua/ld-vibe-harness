@@ -1,7 +1,7 @@
 import { FormEvent, useCallback, useEffect, useState } from 'react';
-import { FolderPlus, Loader2, Save, Trash2 } from 'lucide-react';
+import { CheckCircle2, FolderPlus, Loader2, Save, ShieldCheck, Trash2 } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
-import { fetchGovernedProjectsSettings, saveGovernedProjectsSettings, type GovernedProjectSetting, type GovernedProjectsSettingsData } from '@/utils/api';
+import { fetchGovernedProjectsSettings, saveGovernedProjectsSettings, verifyGovernedProjectsSettings, type GovernedProjectSetting, type GovernedProjectsSettingsData } from '@/utils/api';
 import { useProjectScope } from '@/utils/projectContext';
 
 const blankProject = (): GovernedProjectSetting => ({ id: '', path: '', name: '' });
@@ -11,11 +11,13 @@ export default function Settings() {
   const [newProject, setNewProject] = useState<GovernedProjectSetting>(blankProject);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [verifiedMessage, setVerifiedMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { reloadProjects } = useProjectScope();
 
   const reload = useCallback(() => {
-    setLoading(true); setError(null);
+    setLoading(true); setError(null); setVerifiedMessage(null);
     fetchGovernedProjectsSettings().then(setSettings).catch((reason) => setError(reason.message)).finally(() => setLoading(false));
   }, []);
   useEffect(reload, [reload]);
@@ -25,11 +27,20 @@ export default function Settings() {
     setSaving(true); setError(null);
     try {
       const next = await saveGovernedProjectsSettings(projects, settings.fingerprint);
-      setSettings(next); reloadProjects();
+      setSettings(next); reloadProjects(); setVerifiedMessage('保存成功，当前项目登记已通过 Git 工作区验证。');
       return true;
     } catch (reason) { setError(reason instanceof Error ? reason.message : String(reason)); }
     finally { setSaving(false); }
     return false;
+  };
+
+  const verify = async () => {
+    setVerifying(true); setError(null); setVerifiedMessage(null);
+    try {
+      await verifyGovernedProjectsSettings();
+      setVerifiedMessage('当前全部项目登记均已通过 Git 工作区验证。');
+    } catch (reason) { setError(reason instanceof Error ? reason.message : String(reason)); }
+    finally { setVerifying(false); }
   };
 
   const rename = (project: GovernedProjectSetting, name: string) => {
@@ -56,8 +67,9 @@ export default function Settings() {
         <div className="mt-6 rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-red-300">{error}</div>
       ) : settings && <>
         <div className="mt-6 rounded-xl border border-ldvh-border bg-ldvh-panel p-4">
-          <p className="ldvh-caption-strong">管辖项目</p>
+          <div className="flex flex-wrap items-center justify-between gap-3"><p className="ldvh-caption-strong">管辖项目</p><button type="button" disabled={saving || verifying} onClick={() => void verify()} className="ldvh-card-title inline-flex items-center gap-2 rounded-md border border-ldvh-border px-3 py-2 text-ldvh-text-secondary hover:text-ldvh-text-primary disabled:opacity-50"><ShieldCheck size={15} />{verifying ? '正在验证…' : '验证当前配置'}</button></div>
           <p className="ldvh-meta mt-1 break-all">{settings.configPath}</p>
+          {verifiedMessage && <p className="mt-3 flex items-center gap-2 text-sm text-emerald-500"><CheckCircle2 size={16} />{verifiedMessage}</p>}
           <div className="mt-4 grid gap-3">
             {settings.projects.map((project) => <ProjectRow key={project.id} project={project} saving={saving} onRename={rename} onRemove={remove} />)}
           </div>

@@ -1,11 +1,19 @@
 import { Router, type Request, type Response } from 'express'
 import { readGovernedProjectsSettings, updateGovernedProjectsSettings, type GovernedProjectSetting } from '../services/governedProjectsSettings.js'
+import { verifyWebGovernanceConfiguration } from '../services/governanceScope.js'
 
 const router = Router()
 
 router.get('/governed-projects', async (_req: Request, res: Response): Promise<void> => {
   try { res.json({ ok: true, ...(await readGovernedProjectsSettings()) }) }
   catch (error) { res.status(422).json({ ok: false, error: error instanceof Error ? error.message : String(error) }) }
+})
+
+router.post('/governed-projects/verify', async (_req: Request, res: Response): Promise<void> => {
+  try {
+    await verifyWebGovernanceConfiguration()
+    res.json({ ok: true })
+  } catch (error) { res.status(422).json({ ok: false, error: error instanceof Error ? error.message : String(error) }) }
 })
 
 router.put('/governed-projects', async (req: Request, res: Response): Promise<void> => {
