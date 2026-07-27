@@ -211,12 +211,16 @@ function WorkCaseBlockingNotice({
       aria-label={t('objectList.workcaseBlockingReason')}
       className="flex min-w-0 items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-2.5 py-2 text-amber-400"
     >
-      <CircleAlert size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
+      <CircleAlert size={14} className="mt-[3px] shrink-0" aria-hidden="true" />
       <div className="min-w-0">
         <div className="ldvh-caption-strong">{t('objectList.workcaseBlockingReason')}</div>
         {blockingSummary?.trim() ? (
-          <div className="ldvh-card-decision-body mt-0.5 break-words text-amber-300">
-            <SummaryText value={blockingSummary} collapseThreshold={Number.MAX_SAFE_INTEGER} />
+          <div className="mt-0.5 break-words">
+            <SummaryText
+              value={blockingSummary}
+              collapseThreshold={Number.MAX_SAFE_INTEGER}
+              className="text-[13px] leading-5 text-amber-700 dark:text-amber-300"
+            />
           </div>
         ) : (
           <p className="ldvh-card-decision-body mt-0.5 text-red-400">{t('objectList.workcaseFieldMissing')}</p>
@@ -284,50 +288,22 @@ function WorkCaseProgressingContent({
     <div className="grid min-w-0 gap-2">
       <WorkCaseGoalSection goal={goal} t={t} />
       <section className="min-w-0 rounded-md border border-ldvh-border/80 border-l-2 border-l-sky-400/55 bg-ldvh-bg/65 px-3.5 py-3">
-        <h3 className="ldvh-card-decision-title">{t('objectList.workcaseCurrentProgress')}</h3>
+        <h3 className="ldvh-card-title">{t('objectList.workcaseCurrentProgress')}</h3>
 
-        <div className={`mt-2.5 min-w-0 rounded-md border px-3 py-2.5 ${
-          currentPositionKnown
-            ? 'border-sky-500/25 bg-sky-500/[0.07]'
-            : 'border-red-500/30 bg-red-500/[0.07]'
-        }`}>
-          <div className="flex min-w-0 flex-wrap items-start justify-between gap-x-4 gap-y-2">
-            <div className={`flex min-w-0 items-center gap-2 ${currentPositionKnown ? 'text-sky-400' : 'text-red-400'}`}>
-              {currentPositionKnown && (
-                <span className="relative flex h-2 w-2 shrink-0" aria-hidden="true">
-                  <span className="motion-safe:animate-ping absolute inline-flex h-full w-full rounded-full bg-current opacity-25" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-current" />
-                </span>
-              )}
-              <div className="ldvh-card-decision-title min-w-0 break-words text-current">{currentStepLabel}</div>
-              {planRevising && (
-                <span className="ldvh-meta-muted">{t('objectList.workcaseOutsideProgressTrack')}</span>
-              )}
-            </div>
-
-            <div className="min-w-0 text-left sm:text-right">
-              {executionItemsProjectionValid ? (
-                <div className="ldvh-meta-primary whitespace-nowrap">
-                  {t('objectList.workcaseItemProgress', {
-                    done: String(executionItemDone),
-                    total: String(executionItemTotal),
-                  })}
-                </div>
-              ) : (
-                <div className="ldvh-meta text-red-400">{t('objectList.workcaseItemsUnavailable')}</div>
-              )}
-              {executionItemsProjectionValid && executionItemCancelled > 0 && (
-                <div className="ldvh-meta-muted mt-0.5">
-                  {t('objectList.workcaseItemsCancelled', { count: String(executionItemCancelled) })}
-                </div>
-              )}
-            </div>
+        {planRevising && (
+          <div className="ldvh-caption mt-2 flex min-w-0 items-center gap-2 text-sky-500 dark:text-sky-400">
+            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-current" aria-hidden="true" />
+            <span className="min-w-0 break-words">{currentStepLabel}</span>
+            <span className="ldvh-meta-muted">{t('objectList.workcaseOutsideProgressTrack')}</span>
           </div>
-        </div>
+        )}
+        {!currentPositionKnown && (
+          <p role="status" className="ldvh-caption mt-2 text-red-400">{currentStepLabel}</p>
+        )}
 
         {!planRevising && (
           <ol
-            className="mt-3 grid min-w-0 grid-cols-4"
+            className="mt-2.5 grid min-w-0 grid-cols-4"
             aria-label={`${t('objectList.workcaseDynamicStages')}：${currentStepLabel}`}
           >
             {WORKCASE_PROGRESS_STEP_ORDER.map((step, index) => {
@@ -351,11 +327,30 @@ function WorkCaseProgressingContent({
                   }`}>
                     {index + 1}
                   </span>
-                  <span className={`ldvh-card-decision-body mt-1.5 min-w-0 break-words leading-4 ${
-                    isCurrent ? 'font-medium text-sky-400' : 'text-ldvh-text-secondary/80'
-                  }`}>
-                    {stepLabels[index]}
-                  </span>
+                  <div className="mt-1.5 min-w-0">
+                    <div className={`ldvh-card-decision-body break-words leading-4 ${
+                      isCurrent ? 'font-medium text-sky-400' : 'text-ldvh-text-secondary/80'
+                    }`}>
+                      {stepLabels[index]}
+                    </div>
+                    {index === 0 && (
+                      executionItemsProjectionValid ? (
+                        <div className="ldvh-meta-primary mt-0.5 whitespace-nowrap">
+                          {t('objectList.workcaseItemProgress', {
+                            done: String(executionItemDone),
+                            total: String(executionItemTotal),
+                          })}
+                        </div>
+                      ) : (
+                        <div className="ldvh-meta mt-0.5 text-red-400">{t('objectList.workcaseItemsUnavailable')}</div>
+                      )
+                    )}
+                    {index === 0 && executionItemsProjectionValid && executionItemCancelled > 0 && (
+                      <div className="ldvh-meta-muted mt-0.5">
+                        {t('objectList.workcaseItemsCancelled', { count: String(executionItemCancelled) })}
+                      </div>
+                    )}
+                  </div>
                 </li>
               );
             })}
@@ -394,13 +389,21 @@ function WorkCaseProgressingContent({
                                 ? t('objectList.workcaseItemBlocked')
                                 : t('objectList.workcaseItemInProgress')}
                             </div>
-                            <div className="ldvh-card-decision-body mt-0.5 min-w-0 break-words">
-                              <SummaryText value={item.title} collapseThreshold={Number.MAX_SAFE_INTEGER} />
+                            <div className="mt-0.5 min-w-0 break-words">
+                              <SummaryText
+                                value={item.title}
+                                collapseThreshold={Number.MAX_SAFE_INTEGER}
+                                className="text-[13px] leading-5 text-ldvh-text-secondary"
+                              />
                             </div>
                             {blocked && (
                               item.blockingReason?.trim() ? (
-                                <div className="ldvh-card-decision-body mt-0.5 break-words text-amber-300">
-                                  <SummaryText value={item.blockingReason} collapseThreshold={Number.MAX_SAFE_INTEGER} />
+                                <div className="mt-0.5 break-words">
+                                  <SummaryText
+                                    value={item.blockingReason}
+                                    collapseThreshold={Number.MAX_SAFE_INTEGER}
+                                    className="text-[13px] leading-5 text-amber-700 dark:text-amber-300"
+                                  />
                                 </div>
                               ) : (
                                 <p className="ldvh-card-decision-body mt-0.5 text-red-400">
@@ -425,11 +428,15 @@ function WorkCaseProgressingContent({
 
         {waitingOn?.trim() && (
           <div className="mt-2.5 flex min-w-0 items-start gap-2 rounded-md border border-ldvh-border/80 bg-ldvh-panel/45 px-2.5 py-2 text-ldvh-text-secondary">
-            <PauseCircle size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
+            <PauseCircle size={14} className="mt-[3px] shrink-0" aria-hidden="true" />
             <div className="min-w-0">
               <div className="ldvh-caption-strong">{t('objectList.workcaseWaitingOn')}</div>
-              <div className="ldvh-card-decision-body mt-0.5 break-words">
-                <SummaryText value={waitingOn} collapseThreshold={Number.MAX_SAFE_INTEGER} />
+              <div className="mt-0.5 break-words">
+                <SummaryText
+                  value={waitingOn}
+                  collapseThreshold={Number.MAX_SAFE_INTEGER}
+                  className="text-[13px] leading-5 text-ldvh-text-secondary"
+                />
               </div>
             </div>
           </div>

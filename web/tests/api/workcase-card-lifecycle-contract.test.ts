@@ -167,6 +167,9 @@ test('progressing cards show only goal and current progress facts', () => {
   assert.match(branch, /blockingSummary=\{obj\.blocking_summary\}/);
   assert.doesNotMatch(branch, /successCriteria|closure|approval/);
   assert.match(content, /objectList\.workcaseItemProgress/);
+  assert.match(content, /<h3 className="ldvh-card-title">\{t\('objectList\.workcaseCurrentProgress'\)\}<\/h3>/);
+  assert.match(content, /className="text-\[13px\] leading-5 text-ldvh-text-secondary"/);
+  assert.ok(content.indexOf('objectList.workcaseItemProgress') > content.indexOf('<ol'));
   assert.match(content, /executionItemsActive\.map/);
   assert.match(content, /objectList\.workcaseWaitingOn/);
   assert.match(content, /<WorkCaseBlockingNotice blockingSummary=\{blockingSummary\}/);
