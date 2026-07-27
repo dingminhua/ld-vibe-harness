@@ -237,7 +237,6 @@ function WorkCaseProgressingContent({
   executionItemsProjectionValid,
   executionItemTotal,
   executionItemDone,
-  executionItemCancelled,
   executionItemOpen,
   executionItemsActive,
   isBlocked,
@@ -251,7 +250,6 @@ function WorkCaseProgressingContent({
   executionItemsProjectionValid: boolean;
   executionItemTotal: number;
   executionItemDone: number;
-  executionItemCancelled: number;
   executionItemOpen: number;
   executionItemsActive: WorkCaseActiveItem[];
   isBlocked: boolean;
@@ -274,6 +272,14 @@ function WorkCaseProgressingContent({
       ? stepLabels[currentStep]
       : t('objectList.workcaseStageUnavailable');
   const itemExecution = progressStep === 'item_execution';
+  const currentExecutionItem = itemExecution && executionItemsActive.length === 1
+    ? executionItemsActive[0]
+    : undefined;
+  const currentExecutionPosition = currentExecutionItem
+    && executionItemsProjectionValid
+    && executionItemTotal > 0
+    ? `${Math.min(executionItemDone + 1, executionItemTotal)}/${executionItemTotal}`
+    : undefined;
   const itemStageMismatch = executionItemsProjectionValid && currentStep >= 0 && (
     (itemExecution && executionItemsActive.length === 0 && executionItemOpen === 0)
     || (!itemExecution && executionItemOpen > 0)
@@ -289,6 +295,18 @@ function WorkCaseProgressingContent({
       <WorkCaseGoalSection goal={goal} t={t} />
       <section className="min-w-0 rounded-md border border-ldvh-border/80 border-l-2 border-l-sky-400/55 bg-ldvh-bg/65 px-3.5 py-3">
         <h3 className="ldvh-card-title">{t('objectList.workcaseCurrentProgress')}</h3>
+
+        {currentExecutionItem && (
+          <div role="status" className="mt-2 flex min-w-0 items-center gap-2 text-sky-500 dark:text-sky-400">
+            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-current" aria-hidden="true" />
+            <span className="min-w-0 flex-1 break-words text-[13px] font-medium leading-5">
+              {currentExecutionItem.title}
+            </span>
+            {currentExecutionPosition && (
+              <span className="ldvh-meta-primary shrink-0 text-current">{currentExecutionPosition}</span>
+            )}
+          </div>
+        )}
 
         {planRevising && (
           <div className="ldvh-caption mt-2 flex min-w-0 items-center gap-2 text-sky-500 dark:text-sky-400">
@@ -333,23 +351,6 @@ function WorkCaseProgressingContent({
                     }`}>
                       {stepLabels[index]}
                     </div>
-                    {index === 0 && (
-                      executionItemsProjectionValid ? (
-                        <div className="ldvh-meta-primary mt-0.5 whitespace-nowrap">
-                          {t('objectList.workcaseItemProgress', {
-                            done: String(executionItemDone),
-                            total: String(executionItemTotal),
-                          })}
-                        </div>
-                      ) : (
-                        <div className="ldvh-meta mt-0.5 text-red-400">{t('objectList.workcaseItemsUnavailable')}</div>
-                      )
-                    )}
-                    {index === 0 && executionItemsProjectionValid && executionItemCancelled > 0 && (
-                      <div className="ldvh-meta-muted mt-0.5">
-                        {t('objectList.workcaseItemsCancelled', { count: String(executionItemCancelled) })}
-                      </div>
-                    )}
                   </div>
                 </li>
               );
@@ -788,7 +789,6 @@ export default function ObjectList() {
               executionItemsProjectionValid={obj.executionItemsProjectionValid ?? false}
               executionItemTotal={obj.executionItemTotal ?? 0}
               executionItemDone={obj.executionItemDone ?? 0}
-              executionItemCancelled={obj.executionItemCancelled ?? 0}
               executionItemOpen={obj.executionItemOpen ?? 0}
               executionItemsActive={obj.executionItemsActive ?? []}
               isBlocked={obj.status === 'blocked'}
