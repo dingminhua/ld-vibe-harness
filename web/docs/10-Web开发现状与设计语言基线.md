@@ -141,7 +141,7 @@ WorkCase 身份 / 优先级 / 进展分组
 
 “关闭待确认”和“已关闭”在专属正文确定前不显示关闭完整性诊断。前者由 `human_closure_confirming` 直接确定，后者由 `status=closed` 且不具有 phase 直接确定；closed 不保存关闭 approval 或关闭时间，Web 不得把这些已移除的过程字段当作缺失。
 
-WorkCase 列表是当次 Web machine 基于 Core 精确读取与校验能力形成的派生视图；响应保留 machine 实际形成结果的 `observed_at` 作为读取元数据，但页面不设置列表级“观察时间”或“重新读取”控件。完整扫描中的 `invalid / not_found` 候选与 coverage 分开呈现：它们是已完成的对象读取问题，不得冒充范围未完成；只有 `unavailable`、结构问题或无法完成全集时才显示 `partial / unavailable`。异常或存在候选问题时，页面保留可消费 Card 和明确诊断；筛选或导航触发新的 machine 请求，不能复用旧 payload、对象 `updated_at` 或浏览器渲染时刻冒充新观察。
+WorkCase 列表在 Helper 已确认的管辖 worktree 内由 Web 直接读取当前正式载体；它不启动 Web machine 或完整机械校验。列表把可解析字段投影为 Card，并把字段问题、未解析结构和集合问题如实保留；只有载体 I/O 或 YAML 无法解析时才是读取失败。页面不设置列表级“观察时间”或“重新读取”控件；筛选或导航触发新的直读请求，不能复用旧 payload、对象 `updated_at` 或浏览器渲染时刻冒充新观察。
 
 字段级读取与 list/detail 投影归属 `web/api/services/localFactReader.ts` 和 `facts.ts`。Node 仅通过 `resolve-governance-scope` Helper 调用取得受管辖 worktree，随后直接读取载体；不得恢复 Web Python machine、并行双路径或全量机械校验。定向回归命令为 `cd web && npm run test:web:api && npm run check`。
 
@@ -163,7 +163,7 @@ WorkCase 详情页用于完整理解同一项当前责任。它在所有状态�
 正式关系与外部网址
 ```
 
-当前实现把这套顺序收敛为固定阅读节点：目标与边界、当前情况、成功标准、当前计划与工作项、独立方案复核、执行批准、结果与验证、主控自检、独立结果复核、关闭提案、终态处置、正式关系、外部网址。条件字段可以随事实是否形成而省略，但已存在字段不能因对象处于某个进展分组而消失；机械必填字段缺失时由 API 返回 `invalid`，页面不生成“缺少记录”占位。详情与右侧扩展阅读直接复用 `WorkCaseReadingLayout`，不读取列表摘要、计数或 active 项作为第二快照。
+当前实现把这套顺序收敛为固定阅读节点：目标与边界、当前情况、成功标准、当前计划与工作项、独立方案复核、执行批准、结果与验证、主控自检、独立结果复核、关闭提案、终态处置、正式关系、外部网址。条件字段可以随事实是否形成而省略，但已存在字段不能因对象处于某个进展分组而消失；类型来源必填字段缺失或类型不符时，API 返回逐字段问题，页面在对应区段显示“缺失”或“类型不符”空态。详情与右侧扩展阅读直接复用 `WorkCaseReadingLayout`，不读取列表摘要、计数或 active 项作为第二快照。
 
 工作项只表达 WorkCase 内部的阶段目标、预期结果、依赖、当前恢复、阻塞和阶段结果。current work item 状态闭集是 `pending / in_progress / blocked / completed / cancelled`，UI 文案对应“待处理 / 进行中 / 已阻塞 / 已完成 / 已取消”。Web 只消费这套当前状态闭集；其它状态值不进入当前 WorkCase 呈现合同，也不建立适配分支。
 

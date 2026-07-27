@@ -675,10 +675,7 @@ export default function ObjectList() {
         setPriorityOptions(result.data?.priorityOptions ?? []);
         setStatusTotal(result.data?.statusTotal ?? nextItems.length);
         setCoverageStatus(result.data?.coverage_status ?? 'complete');
-        const nextCoverageProblems = [
-          ...(result.data?.object_read_problems ?? []),
-          ...(result.data?.coverage_problems ?? []),
-        ];
+        const nextCoverageProblems = result.data?.collection_issues ?? [];
         setCoverageProblems(nextCoverageProblems);
         setCoverageProblemCount(nextCoverageProblems.length);
       })
@@ -923,11 +920,11 @@ export default function ObjectList() {
                           {getFieldValueLabel('check_status', problem.check_status, locale)}
                         </div>
                       )}
-                      {(problem.issues ?? []).map((issue, issueIndex) => (
-                        <p key={issueIndex} className="ldvh-meta mt-1 break-words">
-                          {typeof issue.summary === 'string' ? issue.summary : problem.error}
+                      {(problem.message ?? problem.error ?? problem.code) && (
+                        <p className="ldvh-meta mt-1 break-words">
+                          {problem.message ?? problem.error ?? problem.code}
                         </p>
-                      ))}
+                      )}
                     </li>
                     );
                   })}

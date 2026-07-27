@@ -11,6 +11,19 @@ const router = Router()
 /** 允许读取的目录前缀（安全白名单） */
 const ALLOWED_PREFIXES = ['specs/', 'web/docs/']
 
+function isWithinDirectory(candidate: string, directory: string): boolean {
+  const relative = path.relative(directory, candidate)
+  return relative === '' || (!relative.startsWith(`..${path.sep}`) && relative !== '..' && !path.isAbsolute(relative))
+}
+
+export function resolveAllowedDocPath(root: string, requestedPath: string): string | null {
+  const resolvedPath = path.resolve(root, requestedPath)
+  const allowedRoots = ALLOWED_PREFIXES.map(prefix => path.resolve(root, prefix))
+  return allowedRoots.some(directory => isWithinDirectory(resolvedPath, directory))
+    ? resolvedPath
+    : null
+}
+
 router.get('/', async (req: Request, res: Response): Promise<void> => {
   const docPath = String(req.query.path || '')
 
@@ -19,17 +32,11 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     return
   }
 
-  // 安全检查：只允许白名单目录
-  const isAllowed = ALLOWED_PREFIXES.some(prefix => docPath.startsWith(prefix))
-  if (!isAllowed) {
+  // Resolve first, then apply the allow-list to the resolved location. Checking
+  // the raw prefix would allow e.g. "specs/../.env" to escape the docs roots.
+  const resolvedPath = resolveAllowedDocPath(LDVH_ROOT, docPath)
+  if (resolvedPath === null) {
     res.status(403).json({ error: 'Path not allowed' })
-    return
-  }
-
-  // 防止路径穿越
-  const resolvedPath = path.resolve(LDVH_ROOT, docPath)
-  if (!resolvedPath.startsWith(path.resolve(LDVH_ROOT))) {
-    res.status(403).json({ error: 'Invalid path' })
     return
   }
 

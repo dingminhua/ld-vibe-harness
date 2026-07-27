@@ -39,7 +39,9 @@ function configuredLocator(): string {
 }
 
 function configuredWorkspaceRoot(): string {
-  const raw = process.env.LDVH_WEB_WORKSPACE_ROOT || LDVH_WORKSPACE_ROOT
+  // Use the shared workspace setting first, matching the Project Files and
+  // Helper contract. The older Web-specific name remains only as fallback.
+  const raw = process.env.LDVH_WORKSPACE_ROOT || process.env.LDVH_WEB_WORKSPACE_ROOT || LDVH_WORKSPACE_ROOT
   return path.resolve(raw)
 }
 
@@ -91,15 +93,12 @@ function verifiedResolution(response: Record<string, unknown>, expectedLocator: 
   const resolution = result.object_resolutions[0]
   if (!isRecord(resolution)
     || resolution.status !== 'governed'
-    || resolution.source !== 'explicit_locator'
-    || typeof resolution.locator !== 'string'
     || typeof resolution.governed_project_id !== 'string'
     || !resolution.governed_project_id
     || typeof resolution.git_worktree_root !== 'string'
     || !path.isAbsolute(resolution.git_worktree_root)
     || typeof resolution.git_common_dir !== 'string'
-    || !path.isAbsolute(resolution.git_common_dir)
-    || typeof resolution.resolved_identity !== 'string') {
+    || !path.isAbsolute(resolution.git_common_dir)) {
     throw new WebGovernanceError('Governance resolution did not verify the requested worktree identity')
   }
   const worktree = normalizedExistingPath(resolution.git_worktree_root)

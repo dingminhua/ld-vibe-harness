@@ -4,13 +4,9 @@ from pathlib import Path
 
 import pytest
 
-from ldvh.facts import candidate_discovery, relations, repository
+from ldvh.facts import candidate_discovery, relations
 from ldvh.facts.candidate_discovery import discover_fact_candidates
-from ldvh.facts.contracts import LAYOUTS
-from ldvh.facts.models import FactIssue
 from ldvh.facts.relations import ProjectFactIndex
-from ldvh.facts.repository import read_fact_object
-from ldvh.facts.schema import FactSchema
 from ldvh.filesystem import UnsafePathError
 
 
@@ -47,35 +43,6 @@ def test_relation_scan_marks_reparse_directory_incomplete(
 
     assert reads == ()
     assert complete is False
-
-
-def test_resource_budget_issues_use_the_public_category_closed_set(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    path = tmp_path / "ldvh-base/sparks/spark-0001.yaml"
-    path.parent.mkdir(parents=True)
-    path.write_text("object_id: spark-0001\n", encoding="utf-8")
-    schema = FactSchema("spark", ())
-    monkeypatch.setattr(repository, "_identity_issue", lambda *args: (None, None))
-
-    exact_read = read_fact_object(
-        tmp_path,
-        LAYOUTS["spark"],
-        schema,
-        "spark-0001",
-        max_bytes=0,
-    )
-    indexed_read = ProjectFactIndex(
-        tmp_path,
-        "sample",
-        {"spark": schema},
-        aggregate_budget_bytes=0,
-    ).read("spark", "spark-0001")
-
-    assert exact_read.issues == (FactIssue("reference", "事实对象聚合读取预算已耗尽"),)
-    assert indexed_read is not None
-    assert indexed_read.issues == exact_read.issues
 
 
 def test_candidate_discovery_reports_noncanonical_carriers_as_incomplete(

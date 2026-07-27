@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
-from ldvh.governance.git import resolve_git_identity
+from ldvh.governance.git import isolated_git_environment, resolve_git_identity
 from ldvh.governance.models import LocatorSource, ScopeDescriptor, ScopeStatus
 from ldvh.governance.resolver import resolve_governance_scope
 
@@ -74,20 +74,7 @@ def _has_runtime_config_injection() -> bool:
 
 
 def _installation_environment() -> dict[str, str]:
-    blocked = {
-        "GIT_ALTERNATE_OBJECT_DIRECTORIES",
-        "GIT_CEILING_DIRECTORIES",
-        "GIT_COMMON_DIR",
-        "GIT_DIR",
-        "GIT_DISCOVERY_ACROSS_FILESYSTEM",
-        "GIT_IMPLICIT_WORK_TREE",
-        "GIT_INDEX_FILE",
-        "GIT_OBJECT_DIRECTORY",
-        "GIT_WORK_TREE",
-    }
-    environment = {key: value for key, value in os.environ.items() if key not in blocked}
-    environment.update({"GIT_TERMINAL_PROMPT": "0", "LC_ALL": "C"})
-    return environment
+    return isolated_git_environment()
 
 
 def _run_git(worktree: Path, *arguments: str) -> tuple[str | None, str | None]:

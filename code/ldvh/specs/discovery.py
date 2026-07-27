@@ -12,22 +12,11 @@ from typing import Literal
 
 from ldvh.diagnostics import Issue, SourceLocation
 from ldvh.filesystem import is_link_or_reparse
-from ldvh.governance.git import windows_path_problem
+from ldvh.governance.git import isolated_git_environment, windows_path_problem
 
 _SPEC_NAME = re.compile(r"[0-9]{2,}-.+\.md")
 _ATTACHMENT_NAME = re.compile(r"[0-9]{2,}\.Att\.[0-9]{2,}-.+\.md")
 _GIT_TIMEOUT_SECONDS = 10
-_GIT_REPOSITORY_OVERRIDES = (
-    "GIT_DIR",
-    "GIT_WORK_TREE",
-    "GIT_COMMON_DIR",
-    "GIT_INDEX_FILE",
-    "GIT_OBJECT_DIRECTORY",
-    "GIT_ALTERNATE_OBJECT_DIRECTORIES",
-    "GIT_IMPLICIT_WORK_TREE",
-)
-
-
 @dataclass(frozen=True, slots=True)
 class Candidate:
     """A regular current file at one of the two candidate path shapes."""
@@ -590,10 +579,7 @@ def _run_git(
 
 
 def _git_environment() -> dict[str, str]:
-    environment = os.environ.copy()
-    for variable in _GIT_REPOSITORY_OVERRIDES:
-        environment.pop(variable, None)
-    return environment
+    return isolated_git_environment()
 
 
 def _git_failure_cause(completed: subprocess.CompletedProcess[bytes]) -> str:

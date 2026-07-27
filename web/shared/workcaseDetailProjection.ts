@@ -91,6 +91,6 @@ function record(value: unknown): Record<string, unknown> | null {
 }
 
 function records(value: unknown): Array<Record<string, unknown>> {
-  if (!Array.isArray(value) || !value.every((item) => record(item))) return [];
-  return value as Array<Record<string, unknown>>;
+  if (!Array.isArray(value)) return [];
+  return value.filter((item): item is Record<string, unknown> => record(item) !== null);
 }

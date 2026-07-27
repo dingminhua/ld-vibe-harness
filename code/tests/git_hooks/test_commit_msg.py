@@ -17,6 +17,7 @@ from ldvh.git_hooks.commit_msg import (
     render_commit_msg_hook,
     uninstall_commit_msg_hook,
 )
+from ldvh.git_hooks import commit_msg
 from ldvh.governance.models import LocatorSource, ScopeDescriptor
 from ldvh.governance.resolver import resolve_governance_scope
 from ldvh.specs.repository import inspect_repository
@@ -45,6 +46,17 @@ def _environment() -> dict[str, str]:
         }
     )
     return environment
+
+
+def test_hook_git_environment_uses_shared_isolation(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("GIT_CONFIG_GLOBAL", "attacker.gitconfig")
+    monkeypatch.setenv("GIT_CONFIG_SYSTEM", "attacker-system.gitconfig")
+
+    environment = commit_msg._installation_environment()
+
+    assert environment["GIT_CONFIG_GLOBAL"] == os.devnull
+    assert environment["GIT_CONFIG_NOSYSTEM"] == "1"
+    assert "GIT_CONFIG_SYSTEM" not in environment
 
 
 def _git(path: Path, *arguments: str) -> subprocess.CompletedProcess[str]:

@@ -61,3 +61,30 @@ test('unclosed Markdown frontmatter is the only Study field-path failure that be
     await rm(root, { recursive: true, force: true });
   }
 });
+
+test('WorkCase object fields and malformed consumed array members remain visible separately', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'ldvh-field-reader-'));
+  const scope: LocalFactScope = { worktreeLocator: root, governedProjectId: 'fixture' };
+  const directory = path.join(root, 'ldvh-base', 'workcases');
+  await mkdir(directory, { recursive: true });
+  try {
+    await writeFile(path.join(directory, 'workcase-0001.yaml'), [
+      'object_id: workcase-0001', 'fact_type_key: workcase', 'title: Object fields',
+      'status: open', 'created_at: "2026-01-01"', 'updated_at: "2026-01-02"',
+      'execution_approval:', '  subject_version: 1', 'closure_proposal:', '  proposed_outcome: partial',
+      'work_items:', '  - item_id: item-valid', '    goal: Keep this item', '  - malformed member',
+    ].join('\n'), 'utf8');
+
+    const detail = await readLocalFact('workcase', 'workcase-0001', scope);
+    assert.equal(detail.status, 'ok');
+    if (detail.status === 'ok') {
+      assert.equal(detail.item.fact_object?.execution_approval && typeof detail.item.fact_object.execution_approval, 'object');
+      assert.equal(detail.item.fact_object?.closure_proposal && typeof detail.item.fact_object.closure_proposal, 'object');
+      assert.deepEqual(detail.item.unparsed_structures, [{
+        path: 'work_items[1]', reason: 'unparseable_member', raw_value: 'malformed member',
+      }]);
+    }
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});

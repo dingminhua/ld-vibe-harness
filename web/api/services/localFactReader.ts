@@ -44,7 +44,7 @@ export type FieldIssue = {
 
 export type UnparsedStructure = {
   path: string
-  reason: 'unconsumed_field'
+  reason: 'unconsumed_field' | 'unparseable_member'
   raw_value?: unknown
 }
 
@@ -78,7 +78,7 @@ export interface LocalFactScope {
   governedProjectId: string
 }
 
-type FieldExpectation = 'string' | 'number' | 'array'
+type FieldExpectation = 'string' | 'number' | 'array' | 'object'
 
 const COMMON_FIELDS: Record<string, FieldExpectation> = {
   object_id: 'string', fact_type_key: 'string', title: 'string', status: 'string',
@@ -102,9 +102,9 @@ const DETAIL_FIELDS: Record<LocalFactType, Record<string, FieldExpectation>> = {
     goal: 'string', scope: 'string', phase: 'string', summary: 'string', resume_from: 'string',
     waiting_on: 'string', blocking_summary: 'string', priority: 'string',
     success_criterion_definitions: 'array', success_criterion_results: 'array', plan_version: 'number',
-    work_items: 'array', creation_reviews: 'array', execution_approval: 'array', result_version: 'number',
+    work_items: 'array', creation_reviews: 'array', execution_approval: 'object', result_version: 'number',
     result_summary: 'string', controller_check_summary: 'string', result_reviews: 'array',
-    validation_summary: 'string', closure_proposal: 'array', closure_outcome: 'string',
+    validation_summary: 'string', closure_proposal: 'object', closure_outcome: 'string',
     disposition_summary: 'string', residual_responsibilities: 'array',
   },
   adr: {
@@ -180,7 +180,17 @@ function parseMarkdownWithFrontmatter(content: string): { metadata: Record<strin
 }
 
 function matchesExpectation(value: unknown, expected: FieldExpectation): boolean {
-  return expected === 'array' ? Array.isArray(value) : typeof value === expected
+  if (expected === 'array') return Array.isArray(value)
+  if (expected === 'object') return isRecord(value)
+  return typeof value === expected
+}
+
+const RECORD_ARRAY_FIELDS: Partial<Record<LocalFactType, ReadonlySet<string>>> = {
+  workcase: new Set([
+    'success_criterion_definitions', 'success_criterion_results', 'work_items',
+    'creation_reviews', 'result_reviews', 'residual_responsibilities', 'relations',
+  ]),
+  spark: new Set(['evolution', 'relations']),
 }
 
 function projectFields(type: LocalFactType, objectId: string, parsed: Record<string, unknown>, extra: Record<string, unknown>): Pick<LocalFactItem, 'fact_object' | 'field_issues' | 'unparsed_structures'> {
@@ -188,6 +198,7 @@ function projectFields(type: LocalFactType, objectId: string, parsed: Record<str
   const expected = { ...COMMON_FIELDS, ...DETAIL_FIELDS[type] }
   const factObject: Record<string, unknown> = {}
   const fieldIssues: FieldIssue[] = []
+  const unparsedStructures: UnparsedStructure[] = []
   for (const [field, kind] of Object.entries(expected)) {
     const value = all[field]
     if (value === undefined || value === null) {
@@ -199,6 +210,13 @@ function projectFields(type: LocalFactType, objectId: string, parsed: Record<str
       continue
     }
     factObject[field] = value
+    if (kind === 'array' && Array.isArray(value) && RECORD_ARRAY_FIELDS[type]?.has(field)) {
+      value.forEach((member, index) => {
+        if (!isRecord(member)) {
+          unparsedStructures.push({ path: `${field}[${index}]`, reason: 'unparseable_member', raw_value: member })
+        }
+      })
+    }
   }
   if (typeof all.object_id === 'string' && all.object_id !== objectId) {
     fieldIssues.push({ path: 'object_id', reason: 'identity_mismatch', expected: objectId, raw_value: all.object_id })
@@ -206,9 +224,9 @@ function projectFields(type: LocalFactType, objectId: string, parsed: Record<str
   if (typeof all.fact_type_key === 'string' && all.fact_type_key !== type) {
     fieldIssues.push({ path: 'fact_type_key', reason: 'identity_mismatch', expected: type, raw_value: all.fact_type_key })
   }
-  const unparsedStructures = Object.entries(all)
+  unparsedStructures.push(...Object.entries(all)
     .filter(([field]) => !(field in expected))
-    .map(([field, value]) => ({ path: field, reason: 'unconsumed_field' as const, raw_value: value }))
+    .map(([field, value]) => ({ path: field, reason: 'unconsumed_field' as const, raw_value: value })))
   return { fact_object: factObject, field_issues: fieldIssues, unparsed_structures: unparsedStructures }
 }
 

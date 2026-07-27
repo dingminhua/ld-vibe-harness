@@ -1,12 +1,30 @@
 from __future__ import annotations
 
 import subprocess
+import os
 from pathlib import Path
 
 import pytest
 
 from ldvh.specs import discovery
 from ldvh.specs.discovery import Candidate, discover_candidates
+
+
+def test_discovery_git_environment_uses_the_shared_isolation(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("GIT_CONFIG_GLOBAL", "attacker.gitconfig")
+    monkeypatch.setenv("GIT_CONFIG_SYSTEM", "attacker-system.gitconfig")
+    monkeypatch.setenv("GIT_CONFIG_COUNT", "1")
+    monkeypatch.setenv("GIT_CONFIG_KEY_0", "core.hooksPath")
+    monkeypatch.setenv("GIT_CONFIG_VALUE_0", "/tmp/attacker-hooks")
+
+    environment = discovery._git_environment()
+
+    assert environment["GIT_CONFIG_GLOBAL"] == os.devnull
+    assert environment["GIT_CONFIG_NOSYSTEM"] == "1"
+    assert "GIT_CONFIG_SYSTEM" not in environment
+    assert "GIT_CONFIG_COUNT" not in environment
+    assert "GIT_CONFIG_KEY_0" not in environment
+    assert "GIT_CONFIG_VALUE_0" not in environment
 
 
 @pytest.fixture

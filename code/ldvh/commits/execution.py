@@ -19,7 +19,7 @@ from ldvh.commits.candidate_index import (
 from ldvh.commits.contract_source import CommitContractProjection
 from ldvh.commits.git_adapter import _observe_index, _parse_name_status, observe_commit_candidate
 from ldvh.commits.validation import validate_commit
-from ldvh.governance.git import windows_path_problem
+from ldvh.governance.git import isolated_git_environment, windows_path_problem
 from ldvh.governance.models import GovernanceScopeResult
 
 _GIT_TIMEOUT_SECONDS = 120
@@ -82,27 +82,7 @@ def _issue(stage: ExecutionStage, message: str) -> CommitExecutionIssue:
 
 
 def _commit_environment(index_path: Path) -> dict[str, str]:
-    blocked = {
-        "GIT_ALTERNATE_OBJECT_DIRECTORIES",
-        "GIT_CEILING_DIRECTORIES",
-        "GIT_COMMON_DIR",
-        "GIT_CONFIG_GLOBAL",
-        "GIT_CONFIG_SYSTEM",
-        "GIT_DIR",
-        "GIT_DISCOVERY_ACROSS_FILESYSTEM",
-        "GIT_IMPLICIT_WORK_TREE",
-        "GIT_INDEX_FILE",
-        "GIT_OBJECT_DIRECTORY",
-        "GIT_WORK_TREE",
-    }
-    environment = {
-        key: value
-        for key, value in os.environ.items()
-        if key not in blocked
-        and key != "GIT_CONFIG_COUNT"
-        and not key.startswith("GIT_CONFIG_KEY_")
-        and not key.startswith("GIT_CONFIG_VALUE_")
-    }
+    environment = isolated_git_environment()
     environment.update(
         {
             "GIT_INDEX_FILE": str(index_path),

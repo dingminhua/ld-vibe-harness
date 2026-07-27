@@ -64,7 +64,9 @@ function getCoverageStatus(result: unknown): 'complete' | 'partial' | 'unavailab
   if (!data || typeof data !== 'object' || !('coverage_status' in data)) return 'complete'
   return data.coverage_status === 'partial' || data.coverage_status === 'unavailable'
     ? data.coverage_status
-    : 'complete'
+    : data.coverage_status === 'complete'
+      ? 'complete'
+      : 'unavailable'
 }
 
 /** 按每种当前事实类型的唯一定义识别终态，不共享历史状态词。 */

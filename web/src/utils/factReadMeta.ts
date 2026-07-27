@@ -50,12 +50,23 @@ function asIssues(value: unknown): FactReadIssue[] {
   if (!Array.isArray(value)) return [];
   return value
     .filter(isRecord)
-    .filter((issue) => typeof issue.category === 'string' && typeof issue.summary === 'string')
-    .map((issue) => ({
-      category: issue.category as string,
-      fieldPath: typeof issue.field_path === 'string' ? issue.field_path : null,
-      summary: issue.summary as string,
-    }));
+    .flatMap((issue) => {
+      if (typeof issue.category === 'string' && typeof issue.summary === 'string') {
+        return [{
+          category: issue.category,
+          fieldPath: typeof issue.field_path === 'string' ? issue.field_path : null,
+          summary: issue.summary,
+        }];
+      }
+      if (typeof issue.code === 'string' && typeof issue.message === 'string') {
+        return [{
+          category: issue.code,
+          fieldPath: typeof issue.path === 'string' ? issue.path : null,
+          summary: issue.message,
+        }];
+      }
+      return [];
+    });
 }
 
 /** Source metadata is accepted only from an exact fact-detail payload, never from a route target or object ID. */

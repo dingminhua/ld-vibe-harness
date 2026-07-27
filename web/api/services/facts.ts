@@ -173,5 +173,3 @@ export async function showObject(id: string, scope?: LocalFactScope): Promise<We
     return error(caught)
   }
 }
-
-export function readFactData(_filePath: string): Record<string, unknown> { return {} }

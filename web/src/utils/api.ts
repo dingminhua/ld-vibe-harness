@@ -158,6 +158,8 @@ export type FactCoverageStatus = 'complete' | 'partial' | 'unavailable';
 
 export interface FactListProblem {
   code?: string;
+  message?: string;
+  path?: string;
   error?: string;
   object_ref?: {
     governed_project_id?: string;
@@ -166,7 +168,6 @@ export interface FactListProblem {
   };
   scope?: 'workcase_collection';
   check_status?: string;
-  issues?: Array<Record<string, unknown>>;
 }
 
 export interface FieldIssue {
@@ -377,8 +378,7 @@ export async function fetchObjects(
     items: ObjectItem[];
     coverage_status?: FactCoverageStatus;
     observed_at?: string;
-    object_read_problems?: FactListProblem[];
-    coverage_problems?: FactListProblem[];
+    collection_issues?: FactListProblem[];
     statusOptions?: ObjectStatusOption[];
     progressOptions?: WorkCaseProgressOption[];
     priorityOptions?: ObjectStatusOption[];

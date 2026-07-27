@@ -35,13 +35,13 @@ test('a route target, ID, or expected path alone never becomes a source path', (
     canonical_path: 'ldvh-base/studies/study-0010.md',
     carrier: 'markdown',
     check_status: 'unreadable',
-    read_issues: [{ category: 'identity', field_path: 'object_id', summary: 'identity does not match' }],
+    read_issues: [{ code: 'yaml_parse_failed', path: 'ldvh-base/studies/study-0010.md', message: 'frontmatter cannot be parsed' }],
   });
   assert.equal(isReadableFact(failure), false);
   assert.equal(failure.canonicalPath, 'ldvh-base/studies/study-0010.md');
-  assert.equal(failure.issues[0]?.category, 'identity');
-  assert.equal(failure.issues[0]?.fieldPath, 'object_id');
-  assert.equal(failure.issues[0]?.summary, 'identity does not match');
+  assert.equal(failure.issues[0]?.category, 'yaml_parse_failed');
+  assert.equal(failure.issues[0]?.fieldPath, 'ldvh-base/studies/study-0010.md');
+  assert.equal(failure.issues[0]?.summary, 'frontmatter cannot be parsed');
 });
 
 test('WorkCase uses the same readable state as every current fact type', () => {
