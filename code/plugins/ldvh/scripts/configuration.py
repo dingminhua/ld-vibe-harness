@@ -135,20 +135,6 @@ def validate_configuration(value: Any) -> dict[str, Any]:
     }
 
 
-def validate_legacy_configuration(value: Any) -> dict[str, Any]:
-    expected = {"config_version", "helper_executable", "workspace_root"}
-    value = _configuration_fields(value, expected)
-    if value["config_version"] != LEGACY_CONFIG_VERSION:
-        raise ConfigurationError(f"config_version must be {LEGACY_CONFIG_VERSION}")
-    helper = _executable_path(value["helper_executable"], "helper_executable")
-    workspace = _workspace(value["workspace_root"])
-    return {
-        "config_version": LEGACY_CONFIG_VERSION,
-        "helper_executable": str(helper.resolve()),
-        "workspace_root": str(workspace.resolve()),
-    }
-
-
 def configuration_path(plugin_data: Path) -> Path:
     if not plugin_data.is_absolute():
         raise ConfigurationError("plugin_data must be an absolute path")
@@ -166,45 +152,12 @@ def _read_configuration(plugin_data: Path) -> Any:
     return value
 
 
-def load_configuration(plugin_data: Path) -> dict[str, Any]:
-    value = _read_configuration(plugin_data)
-    if isinstance(value, dict) and value.get("config_version") == LEGACY_CONFIG_VERSION:
-        raise ConfigurationError(
-            f"configuration version 1 requires explicit v{WORK_CONTEXT_CONFIG_VERSION} replacement"
-        )
-    return validate_configuration(value)
-
-
-def load_rule_orientation_configuration(plugin_data: Path) -> dict[str, Any]:
-    value = _read_configuration(plugin_data)
-    if not isinstance(value, dict):
-        raise ConfigurationError("configuration must be a JSON object")
-    version = value.get("config_version")
-    if version not in {FACT_RECOVERY_CONFIG_VERSION, CONFIG_VERSION}:
-        raise ConfigurationError(f"config_version must be {FACT_RECOVERY_CONFIG_VERSION} or {CONFIG_VERSION}")
-    allowed = {"config_version", "helper_executable", "context_recovery_executable", "workspace_root"}
-    unknown = sorted(set(value) - allowed)
-    if unknown:
-        raise ConfigurationError(f"configuration contains unknown fields: {', '.join(unknown)}")
-    if "helper_executable" not in value:
-        raise ConfigurationError("configuration is missing fields: helper_executable")
-    helper = _executable_path(value["helper_executable"], "helper_executable")
-    return {"config_version": version, "helper_executable": str(helper.resolve())}
-
-
 def load_work_context_configuration(plugin_data: Path) -> dict[str, Any]:
     value = _read_configuration(plugin_data)
     if not isinstance(value, dict) or value.get("config_version") != WORK_CONTEXT_CONFIG_VERSION:
         raise ConfigurationError(
             f"configuration requires explicit migration to version {WORK_CONTEXT_CONFIG_VERSION} work-context core"
         )
-    return validate_configuration(value)
-
-
-def load_existing_configuration(plugin_data: Path) -> dict[str, Any]:
-    value = _read_configuration(plugin_data)
-    if isinstance(value, dict) and value.get("config_version") == LEGACY_CONFIG_VERSION:
-        return validate_legacy_configuration(value)
     return validate_configuration(value)
 
 

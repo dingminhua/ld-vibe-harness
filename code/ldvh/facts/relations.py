@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal
 
-from ldvh.facts.contracts import LAYOUTS
+from ldvh.facts.contracts import ACTIVE_STATUSES, LAYOUTS
 from ldvh.facts.models import FactIssue, FactReference
 from ldvh.facts.repository import (
     MAX_FACT_BYTES,
@@ -193,7 +193,7 @@ def _target_condition(source_type: str, relation_key: str, target_type: str, tar
     if source_type == "spark" and relation_key == "routed-to":
         return target_type not in {"spark", "study"}
     if source_type == "workcase" and relation_key == "depends-on":
-        return target_type == "workcase" and target_status in {"open", "blocked"}
+        return target_type == "workcase" and target_status in ACTIVE_STATUSES
     if source_type == "workcase" and relation_key == "routed-to":
         # Formation is intentionally stricter and is checked by
         # validate_workcase_route_target_snapshots.  Once formed, the stable
@@ -224,7 +224,7 @@ def _source_condition(source_type: str, relation_key: str, source_fields: dict[s
         return source_fields.get("status") == "routed"
     if source_type == "workcase" and relation_key == "depends-on":
         return (
-            source_fields.get("status") in {"open", "blocked"}
+            source_fields.get("status") in ACTIVE_STATUSES
             and source_fields.get("phase") != "human_closure_confirming"
         )
     if source_type == "workcase" and relation_key == "routed-to":
@@ -601,14 +601,14 @@ def validate_project_relations(
             continue
         target_read = index.read(target_type, target_id)
         if target_read is None or target_read.check_status in {"not_found", "invalid"}:
-            issues.append(FactIssue("relation", "关系目标不存在或不是 mechanically valid 当前对象", path))
+            issues.append(FactIssue("relation", "关系目标不存在或不是 mechanically valid 当前对象", code="TARGET_NOT_EXIST", field_path=path))
             continue
         if target_read.check_status == "unavailable":
             unavailable = True
             continue
         assert target_read.fields is not None
         if not _target_condition(fact_type_key, relation_key, target_type, target_read.fields.get("status")):
-            issues.append(FactIssue("relation", "关系目标类型或状态不满足当前类型机械条件", path))
+            issues.append(FactIssue("relation", "关系目标类型或状态不满足当前类型机械条件", code="TARGET_NOT_VALID", field_path=path))
         if not _target_has_readable_title(fact_type_key, relation_key, target_read.fields):
             issues.append(FactIssue("relation", "Spark routed-to 目标必须具有可呈现的非空 title", path))
 

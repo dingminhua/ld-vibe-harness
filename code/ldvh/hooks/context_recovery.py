@@ -11,6 +11,7 @@ import time
 from pathlib import Path
 from typing import Any
 
+from ldvh.facts.contracts import ACTIVE_STATUSES
 from ldvh.helper.responses import CONTRACT, EXIT_CODES
 
 RECOVERY_CONTRACT = "ldvh-context-recovery/1"
@@ -317,7 +318,7 @@ def _compact_card(value: JsonObject) -> JsonObject:
         raise ContextRecoveryError("F1 response contains an invalid card")
     if ref["fact_type_key"] not in {"adr", "workcase"}:
         raise ContextRecoveryError("F1 response contains a type outside the recovery baseline")
-    if ref["fact_type_key"] == "workcase" and value["fields"].get("status") not in {"open", "blocked"}:
+    if ref["fact_type_key"] == "workcase" and value["fields"].get("status") not in ACTIVE_STATUSES:
         raise ContextRecoveryError("F1 response contains a terminal WorkCase")
     source_locators, omitted = _source_locators(value.get("source_refs"), limit=3)
     return {

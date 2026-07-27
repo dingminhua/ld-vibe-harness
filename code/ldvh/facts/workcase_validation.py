@@ -6,6 +6,7 @@ import re
 from collections import deque
 from collections.abc import Mapping, Sequence
 
+from ldvh.facts.contracts import ACTIVE_STATUSES
 from ldvh.facts.models import FactIssue
 from ldvh.facts.workcase_projection import (
     all_terminal,
@@ -641,7 +642,7 @@ def validate_workcase_snapshot(fields: Mapping[str, object]) -> tuple[FactIssue,
     if fields.get("fact_type_key") != "workcase":
         _issue(issues, "fact_type_key 必须为 workcase", "fact_type_key")
     status = fields.get("status")
-    if status in {"open", "blocked"}:
+    if status in ACTIVE_STATUSES:
         _validate_active_presence(fields, issues)
     elif status == "closed":
         _validate_closed_presence(fields, issues)

@@ -10,6 +10,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Literal
 
+from ldvh.facts.contracts import ACTIVE_STATUSES
 from ldvh.facts.models import FactIssue
 from ldvh.facts.validation import parse_rfc3339
 from ldvh.facts.workcase_projection import (
@@ -30,7 +31,6 @@ _STATUS_EDGES = {
     "study": {("active", "retired")},
 }
 
-_ACTIVE_STATUSES = frozenset({"open", "blocked"})
 _ACTIVE_PHASES = frozenset(
     {
         "human_plan_confirming",
@@ -1091,7 +1091,7 @@ def validate_workcase_transition(
             issues.append(_issue("closed WorkCase 不得恢复或保存 phase", "phase"))
         return tuple(issues)
 
-    if before_status not in _ACTIVE_STATUSES or after_status not in _ACTIVE_STATUSES:
+    if before_status not in ACTIVE_STATUSES or after_status not in ACTIVE_STATUSES:
         issues.append(_issue("update-workcase 只接受活动期 WorkCase，不能形成或更正 closed", "status"))
         return tuple(issues)
     if before_phase not in _ACTIVE_PHASES or after_phase not in _ACTIVE_PHASES:

@@ -169,7 +169,7 @@ def _evaluated_read(
             issues=(
                 *base_read.issues,
                 *relation_issues,
-                FactIssue("reference", "项目级关系集合未能完成必需机械检查"),
+                FactIssue("reference", "项目级关系集合未能完成必需机械检查", code="RELATION_CHECK_UNAVAILABLE"),
             ),
         )
     if relation_issues:

@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 from ldvh.facts.candidate_discovery import discover_fact_candidates
-from ldvh.facts.contracts import LAYOUTS
+from ldvh.facts.contracts import ACTIVE_STATUSES, LAYOUTS
 from ldvh.facts.models import FactReference
 from ldvh.facts.repository import FactReadResult
 from ldvh.facts.schema import project_fact_schemas
@@ -56,7 +56,7 @@ _RELATION_DEFINITION_LOCATORS = {
 }
 _DEFAULT_STATUSES = {
     "spark": frozenset({"open"}),
-    "workcase": frozenset({"open", "blocked"}),
+    "workcase": ACTIVE_STATUSES,
     "adr": frozenset({"active"}),
     "pitfall": frozenset({"active"}),
     "study": frozenset({"active"}),
@@ -253,9 +253,9 @@ def _source_edge_failure(
             isinstance(issue.field_path, str)
             and issue.field_path.startswith("relations[")
             and issue.field_path.endswith("].target")
-            and issue.summary == "关系目标不存在或不是 mechanically valid 当前对象"
+            and issue.code == "TARGET_NOT_EXIST"
         )
-        or (issue.category == "reference" and issue.summary == "项目级关系集合未能完成必需机械检查")
+        or issue.code == "RELATION_CHECK_UNAVAILABLE"
         for issue in source_read.issues
     )
     if target_failure and only_target_resolution_failures:
@@ -430,7 +430,7 @@ def _reasons(domain: FactCandidateRequest, fields: dict[str, Any]) -> list[dict[
     if domain.card_layer == "F1":
         if fact_type_key not in _F1_FIELDS:
             return None
-        expected = status == "active" if fact_type_key == "adr" else status in {"open", "blocked"}
+        expected = status == "active" if fact_type_key == "adr" else status in ACTIVE_STATUSES
         return [{"kind": "recovery-baseline", "field_path": "status"}] if expected else None
     if fact_type_key not in domain.fact_type_keys:
         return None
@@ -504,7 +504,7 @@ def _card(
                     "complete": len(value) <= _EXCERPT_LIMIT,
                 }
             )
-    if fact_type_key == "workcase" and read.fields.get("status") in {"open", "blocked"}:
+    if fact_type_key == "workcase" and read.fields.get("status") in ACTIVE_STATUSES:
         counts = Counter(
             item.get("status")
             for item in read.fields.get("work_items", [])

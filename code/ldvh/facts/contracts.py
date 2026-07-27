@@ -10,6 +10,10 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
+# Specs 21 §5: "活跃" 语义下的 open / blocked 工作态集合。
+# 单一事实真源在 specs/21；此处仅镜像闭集供实现引用。
+ACTIVE_STATUSES = frozenset({"open", "blocked"})
+
 
 @dataclass(frozen=True, slots=True)
 class FactTypeLayout:

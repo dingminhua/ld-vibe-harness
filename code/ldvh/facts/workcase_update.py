@@ -13,7 +13,7 @@ from dataclasses import dataclass, replace
 from typing import Any, Literal
 
 from ldvh.facts.carriers.yaml_object import parse_yaml_object
-from ldvh.facts.contracts import LAYOUTS
+from ldvh.facts.contracts import ACTIVE_STATUSES, LAYOUTS
 from ldvh.facts.creation import CreationBoundary, allocation_lock, serialize_fact_object
 from ldvh.facts.models import FactIssue
 from ldvh.facts.project_validation import stabilize_project_index
@@ -151,7 +151,7 @@ def _operation_boundary_issues(
     before_status = before.get("status")
     after_status = after.get("status")
     if command.mode == "update":
-        if before_status not in {"open", "blocked"} or after_status not in {"open", "blocked"}:
+        if before_status not in ACTIVE_STATUSES or after_status not in ACTIVE_STATUSES:
             issues.append(FactIssue("schema", "update-workcase 只接受活动期 before 与活动期完整 after", "status"))
     elif command.mode == "close":
         if before_status != "open" or before.get("phase") != "human_closure_confirming":
