@@ -18,7 +18,9 @@ from ldvh.governance.models import ConfigStatus
 
 CONFIGURATION_FILENAME = "LDVH-GOVERNED-PROJECTS.yaml"
 
-_ROOT_FIELDS = frozenset({"product_name", "product_description", "projects"})
+_REQUIRED_ROOT_FIELDS = frozenset({"product_name", "product_description", "projects"})
+_OPTIONAL_ROOT_FIELDS = frozenset({"default_project_id"})
+_ROOT_FIELDS = _REQUIRED_ROOT_FIELDS | _OPTIONAL_ROOT_FIELDS
 _PROJECT_REQUIRED_FIELDS = frozenset({"id", "path"})
 _PROJECT_OPTIONAL_FIELDS = frozenset({"name", "description"})
 _PROJECT_FIELDS = _PROJECT_REQUIRED_FIELDS | _PROJECT_OPTIONAL_FIELDS
@@ -75,6 +77,7 @@ class GovernedProjectsConfiguration:
 
     product_name: str
     product_description: str
+    default_project_id: str | None
     projects: tuple[GovernedProjectRegistration, ...]
     workspace_root: Path
     source_path: Path
@@ -200,8 +203,8 @@ def _parse_configuration(
         return None, (_diagnostic("管辖项目配置根必须是映射", source_path),)
 
     actual_root_fields = set(loaded)
-    if actual_root_fields != _ROOT_FIELDS:
-        missing = sorted(_ROOT_FIELDS - actual_root_fields, key=str)
+    if not _REQUIRED_ROOT_FIELDS.issubset(actual_root_fields) or actual_root_fields - _ROOT_FIELDS:
+        missing = sorted(_REQUIRED_ROOT_FIELDS - actual_root_fields, key=str)
         unknown = sorted(actual_root_fields - _ROOT_FIELDS, key=str)
         if missing:
             diagnostics.append(_diagnostic(f"配置根缺少字段: {missing!r}", source_path))
@@ -298,12 +301,31 @@ def _parse_configuration(
                 )
             )
 
+    default_project_id = None
+    if "default_project_id" in loaded:
+        default_project_id = _non_empty_string(
+            loaded.get("default_project_id"), "default_project_id", source_path, diagnostics
+        )
+        if not raw_projects:
+            diagnostics.append(
+                _diagnostic("projects 为空时不得设置 default_project_id", source_path, field="default_project_id")
+            )
+        elif default_project_id is not None and default_project_id not in ids:
+            diagnostics.append(
+                _diagnostic(
+                    "default_project_id 必须引用已登记项目的 id",
+                    source_path,
+                    field="default_project_id",
+                )
+            )
+
     if diagnostics or product_name is None or product_description is None:
         return None, tuple(diagnostics)
     return (
         GovernedProjectsConfiguration(
             product_name=product_name,
             product_description=product_description,
+            default_project_id=default_project_id,
             projects=tuple(projects),
             workspace_root=workspace_root,
             source_path=source_path,

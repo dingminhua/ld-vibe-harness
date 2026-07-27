@@ -17,12 +17,12 @@ router.post('/governed-projects/verify', async (_req: Request, res: Response): P
 })
 
 router.put('/governed-projects', async (req: Request, res: Response): Promise<void> => {
-  const body = req.body as { projects?: GovernedProjectSetting[]; expectedFingerprint?: string }
+  const body = req.body as { projects?: GovernedProjectSetting[]; expectedFingerprint?: string; defaultProjectId?: unknown }
   if (!Array.isArray(body.projects) || typeof body.expectedFingerprint !== 'string') {
     res.status(400).json({ ok: false, error: 'projects 与 expectedFingerprint 是必填字段' })
     return
   }
-  try { res.json({ ok: true, ...(await updateGovernedProjectsSettings(body.projects, body.expectedFingerprint)) }) }
+  try { res.json({ ok: true, ...(await updateGovernedProjectsSettings(body.projects, body.expectedFingerprint, body.defaultProjectId)) }) }
   catch (error) { res.status(422).json({ ok: false, error: error instanceof Error ? error.message : String(error) }) }
 })
 

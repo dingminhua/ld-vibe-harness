@@ -35,6 +35,8 @@ test('settings is the final navigation entry and only exposes governed-project c
   assert.match(settings, /LDVH-GOVERNED-PROJECTS\.yaml/);
   assert.match(settings, /无需填写 Git 远程地址/);
   assert.match(settings, /验证为有效 Git 工作区/);
+  assert.match(settings, /默认项目/);
+  assert.match(settings, /保存默认项目/);
   assert.doesNotMatch(settings, /fetchProjectGit|fetchObject|saveObject/);
 });
 
@@ -44,6 +46,13 @@ test('the governed project switcher lives beside the brand in global navigation'
 
   assert.match(app, /<ProjectScopeProvider>\s*<AppRoutes \/>\s*<\/ProjectScopeProvider>/);
   assert.match(sidebar, /<BrandMark \/>[\s\S]*<ProjectSwitcher collapsed=\{isCollapsed\} \/>/);
+});
+
+test('global project selection uses the configured default when no valid Human selection remains', () => {
+  const context = fs.readFileSync(path.resolve('src/utils/projectContext.tsx'), 'utf8');
+
+  assert.match(context, /result\.defaultProjectId/);
+  assert.match(context, /nextProjects\.some\(\(project\) => project\.id === current\)/);
 });
 
 test('workspace changes reads status and diffs for the globally selected project', () => {

@@ -1,5 +1,7 @@
 import { execFile } from 'node:child_process'
+import { createHash } from 'node:crypto'
 import { realpathSync } from 'node:fs'
+import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { LDVH_ROOT, LDVH_WORKSPACE_ROOT } from './pytools.js'
 
@@ -14,6 +16,17 @@ type GovernanceProjectIdentity = {
   git_worktree_root: string
   git_common_dir: string
 }
+
+type VerifiedScopeSnapshot = {
+  configurationFingerprint: string
+  current: WebGovernedProject
+  projects: WebGovernedProject[]
+}
+
+let verifiedSnapshot: VerifiedScopeSnapshot | null = null
+let failedFingerprint: string | null = null
+let failedError: WebGovernanceError | null = null
+let verificationInFlight: Promise<VerifiedScopeSnapshot> | null = null
 
 export class WebGovernanceError extends Error {
   constructor(message: string) {
@@ -43,6 +56,15 @@ function configuredWorkspaceRoot(): string {
   // Helper contract. The older Web-specific name remains only as fallback.
   const raw = process.env.LDVH_WORKSPACE_ROOT || process.env.LDVH_WEB_WORKSPACE_ROOT || LDVH_WORKSPACE_ROOT
   return path.resolve(raw)
+}
+
+function configurationPath(): string {
+  return path.join(configuredWorkspaceRoot(), 'LDVH-GOVERNED-PROJECTS.yaml')
+}
+
+async function configurationFingerprint(): Promise<string> {
+  const content = await readFile(configurationPath(), 'utf8')
+  return createHash('sha256').update(content).digest('hex')
 }
 
 function normalizedExistingPath(value: string): string {
@@ -79,15 +101,6 @@ function invokeGovernanceScope(locator: string, workspaceRoot: string): Promise<
   })
 }
 
-/** Verify a candidate configuration without interpreting it as a current fact read. */
-export async function verifyWebGovernanceConfiguration(): Promise<void> {
-  const response = await invokeGovernanceScope(configuredWorkspaceRoot(), configuredWorkspaceRoot())
-  if (response.outcome !== 'ok' || !isRecord(response.result) || response.result.config_status !== 'valid') {
-    const result = isRecord(response.result) ? response.result : {}
-    throw new WebGovernanceError(`Governance configuration is not valid: ${String(result.config_status ?? response.outcome ?? 'unknown')}`)
-  }
-}
-
 function verifiedResolution(response: Record<string, unknown>, expectedLocator: string): Record<string, unknown> {
   if (response.outcome !== 'ok' || !isRecord(response.result)) {
     throw new WebGovernanceError(`Governance resolution did not complete: ${String(response.outcome || 'unknown')}`)
@@ -118,21 +131,7 @@ function verifiedResolution(response: Record<string, unknown>, expectedLocator: 
   return resolution
 }
 
-/** The sole Web→Helper boundary: resolve a current, single governed worktree. */
-export async function resolveCurrentWebProject(): Promise<WebGovernedProject> {
-  const locator = configuredLocator()
-  const resolution = verifiedResolution(await invokeGovernanceScope(locator, configuredWorkspaceRoot()), locator)
-  return {
-    id: String(resolution.governed_project_id),
-    path: path.resolve(String(resolution.git_worktree_root)),
-    gitCommonDir: path.resolve(String(resolution.git_common_dir)),
-  }
-}
-
-/** The only project discovery path available to Web file browsing. */
-export async function resolveWebGovernedProjects(): Promise<WebGovernedProject[]> {
-  const locator = configuredLocator()
-  const current = verifiedResolution(await invokeGovernanceScope(locator, configuredWorkspaceRoot()), locator)
+function projectsFromResolution(current: Record<string, unknown>): WebGovernedProject[] {
   const identities = new Map<string, GovernanceProjectIdentity>()
   if (Array.isArray(current.identity_evidence)) {
     for (const evidence of current.identity_evidence) {
@@ -163,4 +162,90 @@ export async function resolveWebGovernedProjects(): Promise<WebGovernedProject[]
       path: path.resolve(identity.git_worktree_root),
       gitCommonDir: path.resolve(identity.git_common_dir),
     }))
+}
+
+async function refreshVerifiedScope(fingerprint: string): Promise<VerifiedScopeSnapshot> {
+  const locator = configuredLocator()
+  const resolution = verifiedResolution(await invokeGovernanceScope(locator, configuredWorkspaceRoot()), locator)
+  return {
+    configurationFingerprint: fingerprint,
+    current: {
+      id: String(resolution.governed_project_id),
+      path: path.resolve(String(resolution.git_worktree_root)),
+      gitCommonDir: path.resolve(String(resolution.git_common_dir)),
+    },
+    projects: projectsFromResolution(resolution),
+  }
+}
+
+/**
+ * Reuse a verified configuration scope while its exact YAML content is unchanged.
+ * The cheap fingerprint observation is not a Git validation; it prevents a changed
+ * configuration from silently using a previous range snapshot.
+ */
+async function currentVerifiedScope(force = false): Promise<VerifiedScopeSnapshot> {
+  let fingerprint: string
+  try {
+    fingerprint = await configurationFingerprint()
+  } catch (error) {
+    throw new WebGovernanceError(`Governance configuration is unavailable: ${error instanceof Error ? error.message : String(error)}`)
+  }
+  if (!force && verifiedSnapshot?.configurationFingerprint === fingerprint) return verifiedSnapshot
+  if (!force && failedFingerprint === fingerprint && failedError) throw failedError
+  if (verificationInFlight) return verificationInFlight
+
+  verifiedSnapshot = null
+  verificationInFlight = refreshVerifiedScope(fingerprint)
+    .then((snapshot) => {
+      verifiedSnapshot = snapshot
+      failedFingerprint = null
+      failedError = null
+      return snapshot
+    })
+    .catch((error: unknown) => {
+      const normalized = error instanceof WebGovernanceError
+        ? error
+        : new WebGovernanceError(error instanceof Error ? error.message : String(error))
+      failedFingerprint = fingerprint
+      failedError = normalized
+      throw normalized
+    })
+    .finally(() => { verificationInFlight = null })
+  return verificationInFlight
+}
+
+/** Start the one-time validation without making app construction await it. */
+export function primeWebGovernanceScope(): void {
+  void currentVerifiedScope().catch(() => undefined)
+}
+
+/** Explicit Human-requested validation or controlled configuration write. */
+export async function verifyWebGovernanceConfiguration(): Promise<void> {
+  let fingerprint: string
+  try {
+    fingerprint = await configurationFingerprint()
+  } catch (error) {
+    throw new WebGovernanceError(`Governance configuration is unavailable: ${error instanceof Error ? error.message : String(error)}`)
+  }
+  verifiedSnapshot = null
+  failedFingerprint = null
+  failedError = null
+  const response = await invokeGovernanceScope(configuredWorkspaceRoot(), configuredWorkspaceRoot())
+  if (response.outcome !== 'ok' || !isRecord(response.result) || response.result.config_status !== 'valid') {
+    const result = isRecord(response.result) ? response.result : {}
+    const error = new WebGovernanceError(`Governance configuration is not valid: ${String(result.config_status ?? response.outcome ?? 'unknown')}`)
+    failedFingerprint = fingerprint
+    failedError = error
+    throw error
+  }
+}
+
+/** The sole Web→Helper boundary: resolve a current, single governed worktree. */
+export async function resolveCurrentWebProject(): Promise<WebGovernedProject> {
+  return (await currentVerifiedScope()).current
+}
+
+/** The only project discovery path available to Web file browsing. */
+export async function resolveWebGovernedProjects(): Promise<WebGovernedProject[]> {
+  return (await currentVerifiedScope()).projects
 }

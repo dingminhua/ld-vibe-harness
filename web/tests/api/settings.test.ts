@@ -61,6 +61,8 @@ test('reads the editable project projection without changing the configuration',
   assert.equal(response.status, 200)
   assert.equal(body.ok, true)
   assert.equal(body.configPath, configPath)
+  assert.equal(body.defaultProjectId, 'first')
+  assert.equal(body.hasExplicitDefault, false)
   assert.deepEqual(body.projects, [{ id: 'first', path: firstProject, name: 'First project' }])
   assert.match(fs.readFileSync(configPath, 'utf8'), /description: This description must survive/)
 })
@@ -85,11 +87,13 @@ test('renames, adds and removes entries while preserving unmanaged description f
       ],
     }),
   })
-  assert.equal(update.response.status, 200)
+  assert.equal(update.response.status, 200, JSON.stringify(update.body))
   assert.deepEqual(update.body.projects, [
     { id: 'first', path: firstProject, name: 'Renamed project' },
     { id: 'second', path: secondProject, name: 'Second project' },
   ])
+  assert.equal(update.body.defaultProjectId, 'first')
+  assert.equal(update.body.hasExplicitDefault, true)
   assert.match(fs.readFileSync(configPath, 'utf8'), /description: This description must survive a name edit\./)
 
   const remove = await request('/api/settings/governed-projects', {
@@ -100,8 +104,9 @@ test('renames, adds and removes entries while preserving unmanaged description f
       projects: [{ id: 'second', path: secondProject, name: 'Second project' }],
     }),
   })
-  assert.equal(remove.response.status, 200)
+  assert.equal(remove.response.status, 200, JSON.stringify(remove.body))
   assert.deepEqual(remove.body.projects, [{ id: 'second', path: secondProject, name: 'Second project' }])
+  assert.equal(remove.body.defaultProjectId, 'second')
 })
 
 test('rejects stale or invalid updates and leaves the configuration untouched', async () => {

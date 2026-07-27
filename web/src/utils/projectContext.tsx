@@ -41,7 +41,9 @@ export function ProjectScopeProvider({ children }: { children: ReactNode }) {
         const nextProjects = result.projects ?? [];
         setProjects(nextProjects);
         setSelectedProjectId((current) => (
-          current && nextProjects.some((project) => project.id === current) ? current : ''
+          current && nextProjects.some((project) => project.id === current)
+            ? current
+            : (nextProjects.some((project) => project.id === result.defaultProjectId) ? result.defaultProjectId : (nextProjects[0]?.id ?? ''))
         ));
       })
       .catch((reason) => {

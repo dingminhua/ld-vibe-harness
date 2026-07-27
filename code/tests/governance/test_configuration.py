@@ -139,6 +139,38 @@ projects:
     assert result.configuration.projects[0].path == project.resolve()
 
 
+def test_default_project_id_must_reference_a_registered_project(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"
+    _write_configuration(
+        workspace,
+        """product_name: Workspace
+product_description: Test
+default_project_id: project
+projects:
+  - id: project
+    path: project
+""",
+    )
+
+    valid = read_governed_projects_configuration(explicit_workspace_root=workspace)
+    assert valid.configuration is not None
+    assert valid.configuration.default_project_id == "project"
+
+    _write_configuration(
+        workspace,
+        """product_name: Workspace
+product_description: Test
+default_project_id: missing
+projects:
+  - id: project
+    path: project
+""",
+    )
+    invalid = read_governed_projects_configuration(explicit_workspace_root=workspace)
+    assert invalid.status is ConfigurationStatus.INVALID
+    assert any(diagnostic.field == "default_project_id" for diagnostic in invalid.diagnostics)
+
+
 @pytest.mark.parametrize(
     "body, expected_summary",
     [

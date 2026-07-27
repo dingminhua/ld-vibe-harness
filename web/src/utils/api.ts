@@ -457,6 +457,7 @@ export interface GovernedProject {
 export interface ProjectFilesProjectsData {
   ok: boolean;
   workspaceRoot: string;
+  defaultProjectId: string;
   projects: GovernedProject[];
 }
 
@@ -562,6 +563,8 @@ export interface GovernedProjectsSettingsData {
   workspaceRoot: string;
   configPath: string;
   fingerprint: string;
+  defaultProjectId: string;
+  hasExplicitDefault: boolean;
   projects: GovernedProjectSetting[];
 }
 
@@ -576,11 +579,12 @@ export async function verifyGovernedProjectsSettings(): Promise<void> {
 export async function saveGovernedProjectsSettings(
   projects: GovernedProjectSetting[],
   expectedFingerprint: string,
+  defaultProjectId: string,
 ): Promise<GovernedProjectsSettingsData> {
   return request<GovernedProjectsSettingsData>('/settings/governed-projects', {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ projects, expectedFingerprint }),
+    body: JSON.stringify({ projects, expectedFingerprint, defaultProjectId }),
   });
 }
 

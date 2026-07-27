@@ -76,6 +76,7 @@ test('lists and reads the current supported file kinds', async () => {
   assert.equal(projects.response.status, 200)
   const governed = projects.body.projects as Array<Record<string, unknown>>
   assert.equal(governed.length, 2)
+  assert.equal(projects.body.defaultProjectId, 'demo')
   const demo = governed.find((project) => project.id === 'demo')
   const secondary = governed.find((project) => project.id === 'secondary')
   assert.ok(demo)
@@ -134,7 +135,7 @@ test('rejects Project Files when Code governance cannot verify the workspace', a
     const body = await response.json() as Record<string, unknown>
     assert.equal(response.status, 500)
     assert.equal(body.ok, false)
-    assert.match(String(body.error), /not verified/)
+    assert.match(String(body.error), /(不可读取|unavailable|not verified)/)
   } finally {
     fs.renameSync(parkedPath, configPath)
   }

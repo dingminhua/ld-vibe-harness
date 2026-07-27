@@ -16,8 +16,10 @@ import changelogRoutes from './routes/changelog.js'
 import docsRoutes from './routes/docs.js'
 import projectFilesRoutes from './routes/project-files.js'
 import settingsRoutes from './routes/settings.js'
+import { primeWebGovernanceScope } from './services/governanceScope.js'
 
 dotenv.config()
+primeWebGovernanceScope()
 
 const app: express.Application = express()
 

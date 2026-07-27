@@ -6,7 +6,7 @@ import { LDVH_WORKSPACE_ROOT } from './pytools.js'
 import { verifyWebGovernanceConfiguration } from './governanceScope.js'
 
 export type GovernedProjectSetting = { id: string; path: string; name?: string }
-type Configuration = { product_name: string; product_description: string; projects: Array<Record<string, unknown>> }
+type Configuration = { product_name: string; product_description: string; projects: Array<Record<string, unknown>>; default_project_id?: string }
 
 function configPath(): string { return path.join(LDVH_WORKSPACE_ROOT, 'LDVH-GOVERNED-PROJECTS.yaml') }
 function fingerprint(content: string): string { return createHash('sha256').update(content).digest('hex') }
@@ -14,7 +14,7 @@ function isRecord(value: unknown): value is Record<string, unknown> { return Boo
 
 function parse(content: string): Configuration {
   const value = yaml.load(content)
-  if (!isRecord(value) || typeof value.product_name !== 'string' || typeof value.product_description !== 'string' || !Array.isArray(value.projects)) {
+  if (!isRecord(value) || typeof value.product_name !== 'string' || typeof value.product_description !== 'string' || !Array.isArray(value.projects) || (value.default_project_id !== undefined && typeof value.default_project_id !== 'string')) {
     throw new Error('管辖项目配置缺少必填根字段，无法在设置页修改')
   }
   return value as Configuration
@@ -51,6 +51,22 @@ function validateProjects(projects: GovernedProjectSetting[]): void {
   }
 }
 
+function resolvedDefaultProjectId(config: Configuration, projects: GovernedProjectSetting[]): string {
+  if (typeof config.default_project_id === 'string' && config.default_project_id) return config.default_project_id
+  return projects[0]?.id ?? ''
+}
+
+function normalizeDefaultProjectId(input: unknown, projects: GovernedProjectSetting[], fallback: string): string {
+  const value = input === undefined ? fallback : input
+  if (typeof value !== 'string') throw new Error('默认项目必须是项目 ID')
+  if (!projects.length) {
+    if (value) throw new Error('没有管辖项目时不能设置默认项目')
+    return ''
+  }
+  if (!value || !projects.some((project) => project.id === value)) throw new Error('默认项目必须引用当前登记的项目 ID')
+  return value
+}
+
 function header(content: string): string {
   const match = /^(.*?)(?=^product_name:)/ms.exec(content)
   return match?.[1] ?? ''
@@ -58,18 +74,33 @@ function header(content: string): string {
 
 export async function readGovernedProjectsSettings() {
   const filePath = configPath()
-  const content = await readFile(filePath, 'utf8')
+  let content: string
+  try { content = await readFile(filePath, 'utf8') }
+  catch (error) { throw new Error(`管辖项目配置不可读取：${error instanceof Error ? error.message : String(error)}`) }
   const config = parse(content)
-  return { workspaceRoot: LDVH_WORKSPACE_ROOT, configPath: filePath, fingerprint: fingerprint(content), projects: projectSettings(config.projects) }
+  const projects = projectSettings(config.projects)
+  return {
+    workspaceRoot: LDVH_WORKSPACE_ROOT,
+    configPath: filePath,
+    fingerprint: fingerprint(content),
+    defaultProjectId: resolvedDefaultProjectId(config, projects),
+    hasExplicitDefault: typeof config.default_project_id === 'string',
+    projects,
+  }
 }
 
-export async function updateGovernedProjectsSettings(input: unknown, expectedFingerprint: string) {
+export async function updateGovernedProjectsSettings(input: unknown, expectedFingerprint: string, requestedDefaultProjectId?: unknown) {
   const projects = normalizeProjects(input)
   validateProjects(projects)
   const filePath = configPath()
   const original = await readFile(filePath, 'utf8')
   if (fingerprint(original) !== expectedFingerprint) throw new Error('配置已被其它操作修改，请重新读取后再保存')
   const config = parse(original)
+  const existingDefaultProjectId = resolvedDefaultProjectId(config, projectSettings(config.projects))
+  const fallbackDefaultProjectId = projects.some((project) => project.id === existingDefaultProjectId)
+    ? existingDefaultProjectId
+    : (projects[0]?.id ?? '')
+  const defaultProjectId = normalizeDefaultProjectId(requestedDefaultProjectId, projects, fallbackDefaultProjectId)
   const existing = new Map(config.projects.filter(isRecord).map((project) => [String(project.id), project]))
   config.projects = projects.map((project) => {
     const previous = existing.get(project.id)
@@ -82,6 +113,8 @@ export async function updateGovernedProjectsSettings(input: unknown, expectedFin
     else delete next.name
     return next
   })
+  if (defaultProjectId) config.default_project_id = defaultProjectId
+  else delete config.default_project_id
   const next = `${header(original)}${yaml.dump(config, { lineWidth: 120, noRefs: true })}`
   const temporaryPath = `${filePath}.${randomUUID()}.tmp`
   await writeFile(temporaryPath, next, 'utf8')

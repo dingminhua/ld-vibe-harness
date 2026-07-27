@@ -8,6 +8,7 @@ import { lstat, readdir, readFile, stat } from 'fs/promises'
 import path from 'path'
 import { parseCommitMessage, splitCommitMessage } from '../services/git.js'
 import { LDVH_WORKSPACE_ROOT } from '../services/pytools.js'
+import { readGovernedProjectsSettings } from '../services/governedProjectsSettings.js'
 import {
   EXCLUDED_DIRS,
   MAX_DIRECTORY_ENTRIES,
@@ -32,10 +33,11 @@ function isValidCommitHash(hash: string): boolean {
 
 router.get('/projects', async (_req: Request, res: Response): Promise<void> => {
   try {
-    const projects = await loadProjects()
+    const [projects, settings] = await Promise.all([loadProjects(), readGovernedProjectsSettings()])
     res.json({
       ok: true,
       workspaceRoot: LDVH_WORKSPACE_ROOT,
+      defaultProjectId: settings.defaultProjectId,
       projects: projects.map((project) => ({
         ...project,
         docsPath: path.join(project.path, 'docs'),

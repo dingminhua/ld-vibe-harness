@@ -22,11 +22,11 @@ export default function Settings() {
   }, []);
   useEffect(reload, [reload]);
 
-  const save = async (projects: GovernedProjectSetting[]): Promise<boolean> => {
+  const save = async (projects: GovernedProjectSetting[], requestedDefaultProjectId = settings?.defaultProjectId ?? ''): Promise<boolean> => {
     if (!settings) return false;
     setSaving(true); setError(null);
     try {
-      const next = await saveGovernedProjectsSettings(projects, settings.fingerprint);
+      const next = await saveGovernedProjectsSettings(projects, settings.fingerprint, requestedDefaultProjectId);
       setSettings(next); reloadProjects(); setVerifiedMessage('保存成功，当前项目登记已通过 Git 工作区验证。');
       return true;
     } catch (reason) { setError(reason instanceof Error ? reason.message : String(reason)); }
@@ -50,7 +50,8 @@ export default function Settings() {
   };
   const remove = (project: GovernedProjectSetting) => {
     if (!settings || !window.confirm(`移除管辖项目“${project.name || project.id}”？这只会修改工作区配置。`)) return;
-    void save(settings.projects.filter((item) => item.id !== project.id));
+    const projects = settings.projects.filter((item) => item.id !== project.id);
+    void save(projects, project.id === settings.defaultProjectId ? (projects[0]?.id ?? '') : settings.defaultProjectId);
   };
   const add = (event: FormEvent) => {
     event.preventDefault();
@@ -70,6 +71,7 @@ export default function Settings() {
           <div className="flex flex-wrap items-center justify-between gap-3"><p className="ldvh-caption-strong">管辖项目</p><button type="button" disabled={saving || verifying} onClick={() => void verify()} className="ldvh-card-title inline-flex items-center gap-2 rounded-md border border-ldvh-border px-3 py-2 text-ldvh-text-secondary hover:text-ldvh-text-primary disabled:opacity-50"><ShieldCheck size={15} />{verifying ? '正在验证…' : '验证当前配置'}</button></div>
           <p className="ldvh-meta mt-1 break-all">{settings.configPath}</p>
           {verifiedMessage && <p className="mt-3 flex items-center gap-2 text-sm text-emerald-500"><CheckCircle2 size={16} />{verifiedMessage}</p>}
+          <div className="mt-4 grid max-w-sm gap-2"><label className="grid gap-1"><span className="ldvh-meta">默认项目</span><select value={settings.defaultProjectId} disabled={saving || !settings.projects.length} onChange={(event) => void save(settings.projects, event.target.value)} className="rounded-md border border-ldvh-border bg-ldvh-bg px-2.5 py-2 text-sm outline-none focus:border-ldvh-accent">{settings.projects.map((project) => <option key={project.id} value={project.id}>{project.name || project.id}</option>)}</select></label><div className="flex items-center gap-2"><button type="button" disabled={saving || !settings.projects.length} onClick={() => void save(settings.projects, settings.defaultProjectId)} className="ldvh-card-title inline-flex w-fit items-center gap-2 rounded-md border border-ldvh-border px-3 py-2 text-ldvh-text-secondary hover:text-ldvh-text-primary disabled:opacity-50"><Save size={15} />保存默认项目</button><span className="ldvh-meta">{settings.hasExplicitDefault ? '启动时默认选中此项目。' : '当前按配置列表首项临时选中。'}</span></div></div>
           <div className="mt-4 grid gap-3">
             {settings.projects.map((project) => <ProjectRow key={project.id} project={project} saving={saving} onRename={rename} onRemove={remove} />)}
           </div>
