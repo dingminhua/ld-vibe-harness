@@ -12,7 +12,7 @@ test('source metadata is consumable only from a readable exact result', () => {
   const meta = getFactReadMeta({
     canonical_path: 'ldvh-base/studies/study-0010.md',
     carrier: 'markdown',
-    check_status: 'readable',
+    read_status: 'readable',
   });
 
   assert.equal(isReadableFact(meta), true);
@@ -25,7 +25,7 @@ test('a route target, ID, or expected path alone never becomes a source path', (
     target: 'study-0010',
     object_id: 'study-0010',
     carrier: 'markdown',
-    check_status: 'readable',
+    read_status: 'readable',
   });
   assert.equal(isReadableFact(fromNavigation), false);
   assert.equal(fromNavigation.canonicalPath, undefined);
@@ -34,7 +34,7 @@ test('a route target, ID, or expected path alone never becomes a source path', (
     fact_read_failure: true,
     canonical_path: 'ldvh-base/studies/study-0010.md',
     carrier: 'markdown',
-    check_status: 'unreadable',
+    read_status: 'unreadable',
     read_issues: [{ code: 'yaml_parse_failed', path: 'ldvh-base/studies/study-0010.md', message: 'frontmatter cannot be parsed' }],
   });
   assert.equal(isReadableFact(failure), false);
@@ -48,11 +48,11 @@ test('WorkCase uses the same readable state as every current fact type', () => {
   const meta = getFactReadMeta({
     canonical_path: 'ldvh-base/workcases/workcase-0010.yaml',
     carrier: 'yaml',
-    check_status: 'readable',
+    read_status: 'readable',
   });
 
   assert.equal(isReadableFact(meta), true);
-  assert.equal(meta.checkStatus, 'readable');
+  assert.equal(meta.readStatus, 'readable');
 });
 
 test('reconstructed carrier data excludes exact-read metadata without dropping fact identity', () => {
@@ -64,7 +64,7 @@ test('reconstructed carrier data excludes exact-read metadata without dropping f
     object_ref: { governed_project_id: 'project-current' },
     canonical_path: 'ldvh-base/workcases/workcase-0010.yaml',
     carrier: 'yaml',
-    check_status: 'readable',
+    read_status: 'readable',
     content_fingerprint: 'a'.repeat(64),
     coverage_status: 'complete',
     observed_at: '2026-07-26T15:00:00+08:00',

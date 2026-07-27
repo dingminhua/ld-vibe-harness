@@ -12,7 +12,7 @@ export type FactReadIssue = {
 export type FactReadMeta = {
   canonicalPath?: string;
   carrier?: FactCarrier;
-  checkStatus?: FactReadStatus;
+  readStatus?: FactReadStatus;
   observedAt?: string;
   issues: FactReadIssue[];
   isFailure: boolean;
@@ -24,7 +24,6 @@ const EXACT_READ_METADATA_FIELDS = new Set([
   'canonical_path',
   'absolute_path',
   'carrier',
-  'check_status',
   'read_status',
   'field_issues',
   'unparsed_structures',
@@ -71,13 +70,13 @@ function asIssues(value: unknown): FactReadIssue[] {
 
 /** Source metadata is accepted only from an exact fact-detail payload, never from a route target or object ID. */
 export function getFactReadMeta(value: Record<string, unknown> | undefined): FactReadMeta {
-  const checkStatus = asReadStatus(value?.check_status);
+  const readStatus = asReadStatus(value?.read_status);
   return {
     canonicalPath: typeof value?.canonical_path === 'string' && value.canonical_path.length > 0
       ? value.canonical_path
       : undefined,
     carrier: asCarrier(value?.carrier),
-    checkStatus,
+    readStatus,
     observedAt: typeof value?.observed_at === 'string' && value.observed_at.length > 0
       ? value.observed_at
       : undefined,
@@ -89,10 +88,10 @@ export function getFactReadMeta(value: Record<string, unknown> | undefined): Fac
 export function isReadableFact(meta: FactReadMeta): meta is FactReadMeta & {
   canonicalPath: string;
   carrier: FactCarrier;
-  checkStatus: 'readable';
+  readStatus: 'readable';
 } {
   return !meta.isFailure
-    && meta.checkStatus === 'readable'
+    && meta.readStatus === 'readable'
     && typeof meta.canonicalPath === 'string'
     && meta.carrier !== undefined;
 }

@@ -32,7 +32,8 @@ test('local exact reads carry source metadata for each local carrier, while list
       assert.equal(result.ok, true);
       assert.equal(result.data.canonical_path, `ldvh-base/${fixture.directory}/${fixture.id}${fixture.carrier === 'markdown' ? '.md' : '.yaml'}`);
       assert.equal(result.data.carrier, fixture.carrier);
-      assert.equal(result.data.check_status, 'readable');
+      assert.equal(result.data.read_status, 'readable');
+      assert.equal(result.data.check_status, undefined);
       assert.equal(result.data.fact_read_failure, undefined);
     }
 
@@ -43,7 +44,8 @@ test('local exact reads carry source metadata for each local carrier, while list
     assert.equal(candidate?.object_id, 'study-0001');
     assert.equal('canonical_path' in (candidate ?? {}), false);
     assert.equal('carrier' in (candidate ?? {}), false);
-    assert.equal(candidate?.check_status, 'readable');
+    assert.equal(candidate?.read_status, 'readable');
+    assert.deepEqual(candidate?.read_issues, []);
   } finally {
     await rm(root, { recursive: true, force: true });
   }
@@ -63,8 +65,8 @@ test('identity and required-field problems remain readable field-level results',
     const readable = await showObject('study-0002', scope);
     if (!readable.ok) throw new Error(readable.error);
     assert.equal(readable.ok, true);
-    assert.equal(readable.summary.check_status, undefined);
-    assert.equal(readable.data.check_status, 'readable');
+    assert.equal(readable.summary.read_status, undefined);
+    assert.equal(readable.data.read_status, 'readable');
     assert.equal(readable.data.fact_read_failure, undefined);
     assert.equal(readable.data.status, 'active');
     const issues = readable.data.field_issues as Array<Record<string, unknown>>;
@@ -76,10 +78,34 @@ test('identity and required-field problems remain readable field-level results',
     const missing = await showObject('study-9999', scope);
     if (!missing.ok) throw new Error(missing.error);
     assert.equal(missing.ok, true);
-    assert.equal(missing.summary.check_status, 'unreadable');
+    assert.equal(missing.summary.read_status, 'unreadable');
     assert.equal(missing.data.fact_read_failure, true);
     assert.equal(missing.data.canonical_path, 'ldvh-base/studies/study-9999.md');
     assert.equal(missing.data.report_body, undefined);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('list responses keep per-object read failures and collection coverage in their declared channels', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'ldvh-web-facts-'));
+  const scope: LocalFactScope = { worktreeLocator: root, governedProjectId: 'fixture' };
+  const adrDir = path.join(root, 'ldvh-base', 'adrs');
+  await mkdir(adrDir, { recursive: true });
+  await writeFile(path.join(adrDir, 'adr-0001.yaml'), 'object_id: [unterminated\n', 'utf8');
+  try {
+    const listed = await listObjects('adr', undefined, undefined, scope);
+    if (!listed.ok) throw new Error(listed.error);
+    const candidate = (listed.data.items as Array<Record<string, unknown>>)[0];
+    assert.equal(candidate?.read_status, 'unreadable');
+    assert.equal(candidate?.check_status, undefined);
+    assert.deepEqual((candidate?.read_issues as Array<Record<string, unknown>>).map((issue) => issue.code), ['yaml_parse_failed']);
+    assert.deepEqual(listed.issues.map((issue) => issue.code), ['yaml_parse_failed']);
+
+    const notIntegrated = await listObjects('study', undefined, undefined, scope);
+    if (!notIntegrated.ok) throw new Error(notIntegrated.error);
+    assert.equal(notIntegrated.data.coverage_status, 'type_not_integrated');
+    assert.deepEqual((notIntegrated.data.collection_issues as Array<Record<string, unknown>>).map((issue) => issue.code), ['type_not_integrated']);
   } finally {
     await rm(root, { recursive: true, force: true });
   }

@@ -392,7 +392,7 @@ function FactReadFailurePage({
 }) {
   const navigate = useNavigate();
   const { t, locale } = useI18n();
-  const status = meta.checkStatus ?? 'unavailable';
+  const status = meta.readStatus ?? 'unavailable';
   return (
     <div className="flex h-full">
       <div className="flex-1 overflow-y-auto">
@@ -410,7 +410,7 @@ function FactReadFailurePage({
               <dt className="ldvh-meta-muted">{t('objectDetail.readType')}</dt>
               <dd className="ldvh-meta-primary">{getTypeLabel(type, locale)} · {id}</dd>
               <dt className="ldvh-meta-muted">{t('objectDetail.readStatus')}</dt>
-              <dd className="ldvh-meta-primary">{getFieldValueLabel('check_status', status, locale)}</dd>
+              <dd className="ldvh-meta-primary">{getFieldValueLabel('read_status', status, locale)}</dd>
               {meta.observedAt && (
                 <>
                   <dt className="ldvh-meta-muted">{t('objectDetail.observedAt')}</dt>

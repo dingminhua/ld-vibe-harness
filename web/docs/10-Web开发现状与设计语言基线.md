@@ -10,7 +10,7 @@
 
 本文不替代 `specs/08-Web 呈现与交互规范.md`、`specs/07-Code 实践与测试规范.md` 中适用于 Web 的测试规则、事实模型规范或 Git 文件事实源。本文只说明当前 `web/` 参考实现如何把这些规则呈现给 Human。
 
-当前字段级读取器读取 WorkCase、ADR、Pitfall、Spark 和 Study 的当前正式载体；不读取 V2/V3 资产。WorkCase 不根据对象年代、缺失字段或实现版本切换结构。详情、对象预览、源路径复制和正文阅读必须先取得字段级精确读取，并把 `canonical_path`、`carrier`、`check_status`、字段问题与未解析结构传到消费面。Study 定位为“外部内容调研报告”，不提供兼容双读。
+当前字段级读取器读取 WorkCase、ADR、Pitfall、Spark 和 Study 的当前正式载体；不读取 V2/V3 资产。WorkCase 不根据对象年代、缺失字段或实现版本切换结构。详情、对象预览、源路径复制和正文阅读必须先取得字段级直读，并把 `canonical_path`、`carrier`、`read_status`、读取问题、字段问题与未解析结构传到消费面。Study 定位为“外部内容调研报告”，不提供兼容双读。
 
 ## 1.1 已确认与待确认边界
 
@@ -194,7 +194,7 @@ WorkCase 详情页用于完整理解同一项当前责任。它在所有状态�
 | 提交详情 | 复制提交 hash | 完整 commit hash |
 | ProjectFiles 工具页 | 复制路径 | 项目路径、文件路径或 diff 文件路径 |
 
-对象路径复制不得依赖可能只是对象 ID 的 `target`、列表 `path` 或导航键作为来源。`canonical_path` 只是预期位置，仍须与字段级精确读取的 `check_status: readable` 一起成立；否则页面显示实际读取状态、字段问题和未读取范围，而不复制路径。
+对象路径复制不得依赖可能只是对象 ID 的 `target`、列表 `path` 或导航键作为来源。`canonical_path` 只是预期位置，仍须与字段级直读的 `read_status: readable` 一起成立；否则页面显示实际读取状态、字段问题和未读取范围，而不复制路径。
 
 ## 6. 后续开发顺序
 

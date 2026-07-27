@@ -271,7 +271,7 @@ export function getFieldLabel(fieldKey: string, locale: string): string {
 
 /** 字段枚举值中英映射 */
 export const FIELD_VALUE_LOCALES: Record<string, Record<string, { zh: string; en: string }>> = {
-  check_status: {
+  read_status: {
     readable: { zh: '可读取', en: 'Readable' },
     unreadable: { zh: '无法读取', en: 'Unreadable' },
   },

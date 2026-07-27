@@ -46,7 +46,7 @@ test('exact read metadata never becomes an object content field', () => {
     status: 'active',
     canonical_path: 'ldvh-base/studies/study-0001.md',
     carrier: 'markdown',
-    check_status: 'readable',
+    read_status: 'readable',
     read_issues: [],
     report_body: '## 研究问题',
   }, 'study');

@@ -190,7 +190,7 @@ function FactReadFailureNotice({
 }) {
   const { locale, t } = useI18n();
   const typeLabel = getObjectTypeLabel(objectType, locale);
-  const status = meta.checkStatus ?? 'unavailable';
+  const status = meta.readStatus ?? 'unavailable';
   return (
     <div className="space-y-3 rounded-md border border-red-500/20 bg-red-500/10 p-3">
       <p className="ldvh-body text-red-300">{t('objectDetail.readUnavailable')}</p>
@@ -198,7 +198,7 @@ function FactReadFailureNotice({
         <dt className="ldvh-meta-muted">{t('objectDetail.readType')}</dt>
         <dd className="ldvh-meta-primary">{typeLabel} · {objectId || '—'}</dd>
         <dt className="ldvh-meta-muted">{t('objectDetail.readStatus')}</dt>
-        <dd className="ldvh-meta-primary">{getFieldValueLabel('check_status', status, locale)}</dd>
+        <dd className="ldvh-meta-primary">{getFieldValueLabel('read_status', status, locale)}</dd>
         {meta.observedAt && (
           <>
             <dt className="ldvh-meta-muted">{t('objectDetail.observedAt')}</dt>

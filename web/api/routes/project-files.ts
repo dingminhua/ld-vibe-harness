@@ -243,8 +243,8 @@ router.get('/git/diff', async (req: Request, res: Response): Promise<void> => {
         ].filter((line, index) => line || index !== 1).join('\n')
       }
     } else {
-      const unstaged = await runCommand('git', ['diff', '--', relativePath], project.path).catch(() => '')
-      const staged = await runCommand('git', ['diff', '--cached', '--', relativePath], project.path).catch(() => '')
+      const unstaged = await runCommand('git', ['diff', '--', relativePath], project.path)
+      const staged = await runCommand('git', ['diff', '--cached', '--', relativePath], project.path)
       diff = [staged && '## Staged changes', staged, unstaged && '## Unstaged changes', unstaged]
         .filter(Boolean)
         .join('\n\n')

@@ -47,8 +47,9 @@ async function readingScope(scope?: LocalFactScope): Promise<LocalFactScope> {
 }
 
 function notIntegrated(type: ObjectType, message: string): WebFactResult {
-  const response = result('list', type, { items: [], coverage_status: 'type_not_integrated', field_issues: [], unparsed_structures: [] })
-  response.issues = [{ code: 'type_not_integrated', message }]
+  const issue = { code: 'type_not_integrated', message }
+  const response = result('list', type, { items: [], coverage_status: 'type_not_integrated', collection_issues: [issue] })
+  response.issues = [issue]
   response.summary.coverage_status = 'type_not_integrated'
   return response
 }
@@ -59,12 +60,12 @@ function readFailure(id: string, type: ObjectType, metadata: LocalFactMetadata, 
     object_ref: metadata.object_ref,
     canonical_path: metadata.canonical_path,
     carrier: metadata.carrier,
-    check_status: 'unreadable',
+    read_status: 'unreadable',
     field_issues: [],
     unparsed_structures: [],
     read_issues: issues,
   })
-  response.summary = { id, type, check_status: 'unreadable' }
+  response.summary = { id, type, read_status: 'unreadable' }
   response.issues = issues
   return response
 }
@@ -74,7 +75,8 @@ function projectListItem(type: ObjectType, item: LocalFactItem): Record<string, 
   const base = type === 'workcase' ? projectWorkCaseCard(source) : source
   return {
     ...base,
-    check_status: item.read_status,
+    read_status: item.read_status,
+    read_issues: item.issues,
     field_issues: item.field_issues,
     unparsed_structures: item.unparsed_structures,
   }
@@ -137,7 +139,13 @@ export async function listObjects(type: ObjectType, _baseDir?: string, status?: 
     const response = result('list', type, { items, coverage_status: 'complete', collection_issues: listed.issues })
     response.issues = [
       ...listed.issues.map((issue) => ({ ...issue })),
-      ...listed.items.flatMap((item) => [...item.issues, ...item.field_issues].map((issue) => ({ ...issue, object_ref: item.object_ref }))),
+      ...listed.items.flatMap((item) => item.issues.map((issue) => ({ ...issue, object_ref: item.object_ref }))),
+      ...listed.items.flatMap((item) => item.field_issues.map((issue) => ({
+        code: issue.reason,
+        message: `字段 ${issue.path} ${issue.reason}；期望 ${issue.expected}`,
+        path: issue.path,
+        object_ref: item.object_ref,
+      }))),
     ]
     return response
   } catch (caught) {
@@ -161,7 +169,7 @@ export async function showObject(id: string, scope?: LocalFactScope): Promise<We
       object_ref: item.object_ref,
       canonical_path: item.canonical_path,
       carrier: item.carrier,
-      check_status: item.read_status,
+      read_status: item.read_status,
       field_issues: item.field_issues,
       unparsed_structures: item.unparsed_structures,
       read_issues: item.issues,

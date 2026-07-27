@@ -23,11 +23,11 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
     assert inspection.issues == ()
     assert inspection.implemented_checks_complete is True
     checked_documents = inspection.active_documents_passing_implemented_checks
-    assert len(checked_documents) == 26
+    assert len(checked_documents) == 27
     assert sum(document.kind != "attachment" for document in checked_documents) == 19
 
-    assert sum(document.kind == "attachment" for document in checked_documents) == 7
-    assert len(inspection.projections) == 78
+    assert sum(document.kind == "attachment" for document in checked_documents) == 8
+    assert len(inspection.projections) == 81
     assert {projection.layer for projection in inspection.projections} == {"L0", "L1", "L2"}
     field_registry = inspection.document_passing_implemented_checks_by_key("fact-object-field-registry")
     assert field_registry is not None
@@ -42,6 +42,13 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
     assert evidence_fields is not None
     assert evidence_fields.current_id == "07.Att.01"
     assert evidence_fields.canonical_path == ("specs/attachments/07.Att.01-Working Tree 测试证据字段表.md")
+    web_reading_contract = inspection.document_passing_implemented_checks_by_key("web-api-reading-contract")
+    assert web_reading_contract is not None
+    assert web_reading_contract.current_id == "08.Att.01"
+    assert web_reading_contract.canonical_path == "specs/attachments/08.Att.01-Web API 阅读契约字段表.md"
+    web_presentation = inspection.document_passing_implemented_checks_by_key("web-presentation-interaction")
+    assert web_presentation is not None
+    assert web_presentation.authorized_attachments == ("web-api-reading-contract",)
     helper_contract = inspection.document_passing_implemented_checks_by_key("helper-cli-service-contract")
     assert helper_contract is not None
     assert helper_contract.basis == (

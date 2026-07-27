@@ -6,9 +6,12 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 from ldvh.commits.candidate_index import prepare_commit_candidate
 from ldvh.commits.contract_source import CommitContractProjection, project_commit_contract
 from ldvh.commits.execution import CallerCommitApproval, execute_prepared_commit
+from ldvh.git_hooks import commit_msg
 from ldvh.git_hooks.commit_msg import (
     CommitMsgHookStatus,
     bootstrap_commit_msg_hook,
@@ -17,7 +20,6 @@ from ldvh.git_hooks.commit_msg import (
     render_commit_msg_hook,
     uninstall_commit_msg_hook,
 )
-from ldvh.git_hooks import commit_msg
 from ldvh.governance.models import LocatorSource, ScopeDescriptor
 from ldvh.governance.resolver import resolve_governance_scope
 from ldvh.specs.repository import inspect_repository

@@ -7,6 +7,7 @@ import pytest
 from ldvh.facts import candidate_discovery, relations
 from ldvh.facts.candidate_discovery import discover_fact_candidates
 from ldvh.facts.relations import ProjectFactIndex
+from ldvh.facts.schema import FactSchema
 from ldvh.filesystem import UnsafePathError
 
 

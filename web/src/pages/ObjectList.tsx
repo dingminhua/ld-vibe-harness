@@ -915,9 +915,9 @@ export default function ObjectList() {
                       <div className="ldvh-meta-primary break-all font-mono">
                         {problemIdentity}
                       </div>
-                      {problem.check_status && (
+                      {problem.read_status && (
                         <div className="ldvh-meta mt-1">
-                          {getFieldValueLabel('check_status', problem.check_status, locale)}
+                          {getFieldValueLabel('read_status', problem.read_status, locale)}
                         </div>
                       )}
                       {(problem.message ?? problem.error ?? problem.code) && (

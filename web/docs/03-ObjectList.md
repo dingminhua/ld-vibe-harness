@@ -145,7 +145,7 @@ Spark 列表页保持只读；Web 不提供 Spark 创建、直接捕获、写入
 
 ## 6. API 数据结构
 
-对象列表 API 只向 Card 交付当组实际消费的最小字段。所有当前事实类型（包括 WorkCase）在 Helper 已确认的管辖 worktree 内由 Web 直接读取正式载体；页面字段缺失或类型不符保留为逐字段问题，额外、旧或无法归类的结构保留在 `unparsed_structures`，不经过 Core 全量校验、Python machine 或第二份 Schema。列表使用同一字段级读取结果投影 Card，并保留 `check_status`、字段问题与未解析结构供范围提示。
+对象列表 API 只向 Card 交付当组实际消费的最小字段。所有当前事实类型（包括 WorkCase）在 Helper 已确认的管辖 worktree 内由 Web 直接读取正式载体；页面字段缺失或类型不符保留为逐字段问题，额外、旧或无法归类的结构保留在 `unparsed_structures`，不经过 Core 全量校验、Python machine 或第二份 Schema。列表使用同一字段级读取结果投影 Card，并保留 `read_status`、读取问题、字段问题与未解析结构供范围提示。
 
 ```typescript
 interface WorkCaseCardItem {
@@ -177,4 +177,4 @@ interface WorkCaseCardItem {
 
 `status` 始终保留事实责任状态，`phase` 独立保留当前阶段；不得把 phase 填进 `status`，也不得新增 `responsibilityStatus` 兼容别名。`progress_group`、`progress_step`、工作项计数和 `executionItemsActive` 是只读派生；`goal`、成功标准陈述、`waiting_on` 和允许显示的 `blocking_summary` 仍是事实原文。`plan_confirmation` 的 `blocking_summary` 只供计划判断输入区之外的独立阻塞状态提示消费，不构成第三项计划输入；`progressing` 的阻塞提示属于当前进展区域。全部工作项只在服务端用于计算计数和 active 项，浏览器响应不得出现 `executionItems` 或完整 `work_items`。`closure_confirmation / closed` 不携带正文或 priority。Card 响应不得出现 `canonical_path`、`absolute_path`、`carrier`、`content_fingerprint`、完整 `success_criterion_definitions`、完整 `work_items` 或其它详情字段。
 
-列表顶层返回字段级直读的范围与集合问题：`coverage_status` 与 `collection_issues`。对象卡携带自己的 `check_status`、`field_issues` 与 `unparsed_structures`；集合问题保留准确路径、原因和消息，不以旧 machine 的 `invalid / not_found` 分类替代。页面必须保留已形成的可消费 Card，独立展示集合问题与未完成范围；不设置列表级“观察时间”或“重新读取”控件。筛选或导航发生时照常发起新的列表请求，不能复用旧 payload。读取失败时页面必须保留实际失败原因，不得回退其它读取路径或显示伪零值。
+列表顶层返回字段级直读的范围与集合问题：`coverage_status` 与 `collection_issues`。对象卡携带自己的 `read_status`、`read_issues`、`field_issues` 与 `unparsed_structures`；集合问题保留准确路径、原因和消息，不以旧 machine 的 `invalid / not_found` 分类替代。页面必须保留已形成的可消费 Card，独立展示集合问题与未完成范围；不设置列表级“观察时间”或“重新读取”控件。筛选或导航发生时照常发起新的列表请求，不能复用旧 payload。读取失败时页面必须保留实际失败原因，不得回退其它读取路径或显示伪零值。

@@ -110,7 +110,7 @@ export interface ObjectItem {
   canonical_path?: string;
   absolute_path?: string;
   carrier?: FactCarrier;
-  check_status?: FactReadStatus;
+  read_status?: FactReadStatus;
   field_issues?: FieldIssue[];
   unparsed_structures?: UnparsedStructure[];
   read_issues?: Array<Record<string, unknown>>;
@@ -167,7 +167,7 @@ export interface FactListProblem {
     object_id?: string;
   };
   scope?: 'workcase_collection';
-  check_status?: string;
+  read_status?: string;
 }
 
 export interface FieldIssue {
@@ -320,7 +320,7 @@ export interface ObjectDetail<TData extends Record<string, unknown> = Record<str
   ok: boolean;
   action: string;
   target: string;
-  summary: { id: string; type: string; status?: string; phase?: string; check_status?: FactReadStatus };
+  summary: { id: string; type: string; status?: string; phase?: string; read_status?: FactReadStatus };
   data: TData;
 }
 
