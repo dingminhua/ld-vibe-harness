@@ -34,7 +34,7 @@ test('a route target, ID, or expected path alone never becomes a source path', (
     fact_read_failure: true,
     canonical_path: 'ldvh-base/studies/study-0010.md',
     carrier: 'markdown',
-    check_status: 'invalid',
+    check_status: 'unreadable',
     read_issues: [{ category: 'identity', field_path: 'object_id', summary: 'identity does not match' }],
   });
   assert.equal(isReadableFact(failure), false);
@@ -44,17 +44,15 @@ test('a route target, ID, or expected path alone never becomes a source path', (
   assert.equal(failure.issues[0]?.summary, 'identity does not match');
 });
 
-test('Core mechanically_valid is preserved as the exact WorkCase success state', () => {
+test('WorkCase uses the same readable state as every current fact type', () => {
   const meta = getFactReadMeta({
     canonical_path: 'ldvh-base/workcases/workcase-0010.yaml',
     carrier: 'yaml',
-    check_status: 'mechanically_valid',
-    observed_at: '2026-07-26T15:00:00+08:00',
+    check_status: 'readable',
   });
 
   assert.equal(isReadableFact(meta), true);
-  assert.equal(meta.checkStatus, 'mechanically_valid');
-  assert.equal(meta.observedAt, '2026-07-26T15:00:00+08:00');
+  assert.equal(meta.checkStatus, 'readable');
 });
 
 test('reconstructed carrier data excludes exact-read metadata without dropping fact identity', () => {
@@ -66,7 +64,7 @@ test('reconstructed carrier data excludes exact-read metadata without dropping f
     object_ref: { governed_project_id: 'project-current' },
     canonical_path: 'ldvh-base/workcases/workcase-0010.yaml',
     carrier: 'yaml',
-    check_status: 'mechanically_valid',
+    check_status: 'readable',
     content_fingerprint: 'a'.repeat(64),
     coverage_status: 'complete',
     observed_at: '2026-07-26T15:00:00+08:00',

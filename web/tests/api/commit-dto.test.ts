@@ -255,10 +255,8 @@ test('preserves the shared commit DTO across current API consumers', async () =>
     data: {
       items: Array<Record<string, unknown>>
       progressOptions: Array<Record<string, unknown>>
-      observed_at: string
     }
   }
-  assert.match(workcases.data.observed_at, /T.+(?:Z|[+-]\d{2}:\d{2})$/)
   const workcase = workcases.data.items.find((item) => item.object_id === 'workcase-0001')
   const closedWorkcase = workcases.data.items.find((item) => item.object_id === 'workcase-0002')
   assert.ok(workcase)
@@ -340,7 +338,7 @@ test('preserves the shared commit DTO across current API consumers', async () =>
     summary: Record<string, unknown>
   }
   assert.equal(workcaseDetail.summary.status, 'open')
-  assert.equal(workcaseDetail.summary.phase, 'independent_reviewing')
+  assert.equal(workcaseDetail.summary.phase, undefined)
 
   const commits = await getJson('/api/project-files/git/commits?projectId=demo&count=1') as {
     entries: Array<Record<string, unknown>>

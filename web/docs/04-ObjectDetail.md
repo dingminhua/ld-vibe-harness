@@ -4,7 +4,7 @@
 > 源码：`web/src/pages/ObjectDetail.tsx`
 > 字段格式规则：`web/src/utils/fieldFormats.ts`
 
-> V4 读取边界：详情、对象预览、来源路径复制和正文入口先取得精确读取。`canonical_path`、`carrier` 和 `check_status` 只来自该读取；候选列表、路由 `target` 和 object ID 不能代替它。Study 只连接 V4 原生的 `research_intent`、`research_question`、`abstract`、`recommendation_summary`、唯一 Markdown 正文与 `urls`，不读取 V2/V3 文件、旧字段或兼容 DTO。
+> 字段级读取边界：详情、对象预览、来源路径复制和正文入口先读取当前正式载体。`canonical_path`、`carrier` 和 `check_status` 来自该读取；候选列表、路由 `target` 和 object ID 不能代替它。可解析字段正常呈现，缺失或类型不符字段保留为空态，额外、旧或无法归类结构进入“未解析结构”；不读取 V2/V3 文件、旧 DTO 或兼容路径。
 > API：`GET /api/objects/:type/:id`
 > 全局设计语言：`web/docs/01-全局设计约束.md` §1.10
 > 图标规范：[`09-图标语义规范.md`](./09-图标语义规范.md)
@@ -39,7 +39,7 @@ YAML 数据折叠区：由精确读取后的事实对象字段重建（Markdown 
 - 类型标签使用对象类型颜色，显示本地化类型名；状态标签显示本地化状态名，不放在右上操作区。
 - 标题优先使用 `title_zh/title_en`，回退 `title`，再回退 ID；工作对象和普通对象标题前均使用 `ObjectTypeIcon(obj.type)` 识别对象身份。
 - WorkCase 和 Spark 如存在 `priority`，在标题行最前面展示 `P0` / `P1` / `P2` / `P3` 字符徽标，随后才是 `ObjectTypeIcon(obj.type)` 和标题；徽标使用颜色和 tooltip 表达优先级，不在头部、元信息行、正文模块或其他字段区重复展示 priority 文字 chip / 字段。
-- ID 使用 `ldvh-meta`，不做大号标题；右上角只提供 `CopyPathButton`，tooltip 为“复制对象路径”。本地读取类型须为可消费的 `readable`，WorkCase 须为 Core `mechanically_valid`，且都必须返回 `canonical_path` 后才显示；复制值必须等于该路径。不得使用 `data.path`、对象 ID 或路由 `target` 猜测路径，也不得再放状态标签或其他对象身份信息。
+- ID 使用 `ldvh-meta`，不做大号标题；右上角只提供 `CopyPathButton`，tooltip 为“复制对象路径”。所有当前类型都须由字段级精确读取返回 `check_status: readable` 和 `canonical_path` 后才显示；复制值必须等于该路径。不得使用 `data.path`、对象 ID 或路由 `target` 猜测路径，也不得再放状态标签或其他对象身份信息。
 - 如对象存在 `tags`，标签应在标题下方独立成行，并位于创建/更新时间之上；标签不与时间或其他辅助属性挤在同一行。Pitfall `tags` 展示事实源英文原值，不做中文翻译。
 - 创建/更新时间在标签行下方以短标签展示，统一使用 `formatDateTime()`，格式为 `YYYY-MM-DD HH:mm`；必要辅助属性可在同一元信息行弱化展示，不另起 MetaChip 行。
 - 对象字段必须以对应事实模型主规范为准；只有该对象字段契约内定义的辅助属性才可在元信息行降权展示，不进入主阅读流。`priority` 只适用于 WorkCase 和 Spark，且在详情头部以字符徽标展示；importance 已由 priority 统一承载，不再作为独立字段。
@@ -146,7 +146,7 @@ Pitfall、ADR、Study 和 Spark 等非工作主线对象的长文本阅读组织
 - WorkCase、Pitfall、ADR、Study 和 Spark 必须复用详情页导出的专用阅读布局。
 - WorkCase、Pitfall、ADR、Study 和 Spark 的扩展阅读头部复用详情页身份区，清楚展示 `类型 + 类型状态词 + ID + 标题 + 创建/更新时间`；读取失败时不显示领域状态，而显示实际读取状态与未读取范围。
 - Spark 必须复用详情页专用 Spark 阅读布局，不得在 `ReadingPanel` 中维护另一套 `PREVIEW_FIELD_ORDER`、字段 label map、关联分组或独立字段渲染器。
-- 对象预览头部只在该类型的精确读取返回可消费状态与 `canonical_path` 时提供复制对象路径图标；WorkCase 的可消费状态精确为 `mechanically_valid`，其它当前本地读取类型仍按其 `readable` 契约。`target` 仅用于导航，绝不作为路径回退。
+- 对象预览头部只在该类型的字段级精确读取返回 `check_status: readable` 与 `canonical_path` 时提供复制对象路径图标；所有当前类型使用同一可消费状态。`target` 仅用于导航，绝不作为路径回退。
 - Markdown 文档预览使用 `MarkdownPreview` + `github-markdown-css`，不是手写 Markdown 标签样式。
 - Markdown 正文基准字号为 14px；表格横向滚动，代码块、引用块、任务列表由全局 Markdown 样式统一控制。
 
@@ -179,15 +179,15 @@ interface ObjectDetail {
   ok: boolean;
   action: string;
   target: string;
-  summary: { id: string; type: string; status?: string; phase?: string; read_status?: 'readable' | 'mechanically_valid' | 'invalid' | 'not_found' | 'unavailable' };
+  summary: { id: string; type: string; status?: string; check_status?: 'readable' | 'unreadable' };
   data: Record<string, unknown>;
 }
 ```
 
-精确可读详情的 `data` 同时带回 `canonical_path`、`carrier`、实际 `check_status` 与当次 machine `observed_at`；WorkCase 成功状态保持为 `mechanically_valid`，不得在 Node 改名为 `readable`。读取失败返回 `fact_read_failure: true`、预期路径、声明载体、读取状态、观察时间和问题，但不返回可消费正文或领域状态；详情页与右侧阅读区都要显示该观察时间。WorkCase 的 `summary.status` 只返回 `open / blocked / closed` 责任状态，当前 `phase` 作为独立字段返回；不得再以 `phase || status` 覆盖 status。列表/仪表盘是候选发现，不能以其 `path`、ID 或 `target` 作为源路径。
+精确可读详情的 `data` 同时带回 `canonical_path`、`carrier`、`check_status`、`field_issues` 与 `unparsed_structures`；这些结果不构成机械校验结论。读取失败返回 `fact_read_failure: true`、预期路径、声明载体、读取状态和问题，但不返回可消费正文或领域状态。WorkCase 的 `summary.status` 只返回 `open / blocked / closed` 责任状态；列表/仪表盘是候选发现，不能以其 `path`、ID 或 `target` 作为源路径。
 
-WorkCase 详情契约直接读取精确返回的 `data` 中由 21 定义的当前字段；列表 API 的 `progress_group`、`progress_step`、计数和 active 项不驱动详情结构。Web 读取边界必须消费 Core 对单一当前 WorkCase 契约形成的 `mechanically_valid` 结果；旧字段、旧状态、非法 presence 或非法嵌套结构一律进入 `invalid`，不得把“YAML 可解析且身份匹配”冒充 current WorkCase 可读，也不得在 Node 复制 21、Schema 和 phase presence 形成第二机械契约。
+WorkCase 详情契约直接读取精确返回的 `data` 中由 21 定义的当前字段；列表 API 的 `progress_group`、`progress_step`、计数和 active 项不驱动详情结构。缺失或类型不符的页面消费字段按字段问题呈现为空；旧字段、额外字段和无法归类嵌套结构进入未解析结构，既不构成 `invalid`，也不阻断其它字段。Web 不在 Node 复制 21、Schema 或 phase presence 形成第二机械契约。
 
-当前 WorkCase list/read 只经 Web 自有的 `web/python/ldvh_web_facts/machine.py`、严格 Node transport 和精确详情 API 连接 Core；Core 只提供候选发现、精确读取、Schema、关系稳定化与机械校验等可复用能力，不承载 Web transport 或 Web 投影编排。Node 使用配置的 Python 以 `-I -B -X utf8` 执行仓库内确定的绝对 Web 脚本，不保留旧 Core module 入口，也没有 `localFactReader` fallback。transport 必须把 object identity、当前管辖项目、realpath worktree identity、规范载体路径和 `observed_at` 独立绑定后才接受结果，并原样保留 Core 的 `mechanically_valid / invalid / unavailable / not_found` 边界。详情 API 不生成历史聚合字段、不从列表补字段；配置缺失、脚本缺失或边界无法核实时明确返回 unavailable。
+当前 WorkCase 与其它当前类型统一经过 `localFactReader` 的字段级直读。Web 只调用 Helper 的 `resolve-governance-scope` 确认管辖范围，随后直接读取已确认 worktree 中的正式载体；不启动 Python machine、不做完整机械校验、不扫描关系稳定化链路。身份不一致、字段缺失和字段类型不符均作为字段问题保留，未消费结构进入 `unparsed_structures`；只有载体 I/O 或 YAML/frontmatter 无法解析时才为 `check_status: unreadable`。详情 API 不从列表补字段，也不把字段级可解析表述成校验通过。
 
-该边界的定向验证分别运行 `.venv/bin/python -B -m pytest web/tests/python/test_v4_facts_machine.py` 与 `cd web && npm run test:web:api && npm run check`；前者覆盖 Web Python 读取编排、严格单行 JSON 和 `-I -B -X utf8` 绝对脚本启动，后者覆盖 Node 请求/响应边界与 API 消费。`-B` 与运行入口中的同一选项防止 Web 测试或服务在源码目录生成 Python 字节码缓存。
+该边界的定向验证运行 `cd web && npm run test:web:api && npm run check`，覆盖字段级读取、未解析结构、API 契约与页面消费；不再保留 Web Python 读取编排测试。

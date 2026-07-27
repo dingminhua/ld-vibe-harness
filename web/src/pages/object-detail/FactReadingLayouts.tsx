@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { formatDateTime } from '@/utils/dateFormat';
+import { useI18n } from '@/i18n/context';
 import { FactAssociationsSection } from '@/pages/object-detail/FactAssociationsSection';
 import { sortRelatedContentEntries, type RelatedContentEntry } from '@/pages/object-detail/model';
 import {
@@ -13,6 +14,30 @@ import {
   hasDetailContent,
   type ReadingNodeState,
 } from '@/pages/ObjectDetail';
+
+type FieldPresentationIssue = { path: string; reason: 'missing' | 'type_mismatch' | 'identity_mismatch'; expected: string; raw_value?: unknown };
+
+function fieldIssue(obj: Record<string, unknown>, field: string): FieldPresentationIssue | undefined {
+  const issues = obj.field_issues;
+  if (!Array.isArray(issues)) return undefined;
+  return issues.find((issue): issue is FieldPresentationIssue => Boolean(
+    issue && typeof issue === 'object' && !Array.isArray(issue)
+      && (issue as Record<string, unknown>).path === field
+      && typeof (issue as Record<string, unknown>).reason === 'string'
+      && typeof (issue as Record<string, unknown>).expected === 'string',
+  ));
+}
+
+function FieldProblem({ issue }: { issue?: FieldPresentationIssue }) {
+  const { t } = useI18n();
+  if (!issue) return null;
+  const text = issue.reason === 'missing'
+    ? t('objectDetail.fieldMissing')
+    : issue.reason === 'type_mismatch'
+      ? t('objectDetail.fieldTypeMismatch')
+      : t('objectDetail.fieldIdentityMismatch');
+  return <p className="ldvh-meta rounded-md border border-amber-500/25 bg-amber-500/5 px-3 py-2 text-amber-300">{text}</p>;
+}
 
 const ADR_READING_NODES: Array<{ field: string; zh: string; en: string; kind?: 'date' }> = [
   { field: 'decision_question', zh: '问题', en: 'Question' },
@@ -39,6 +64,7 @@ export function AdrReadingLayout({
           key={node.field}
           title={locale === 'en' ? node.en : node.zh}
           value={obj[node.field]}
+          issue={fieldIssue(obj, node.field)}
           locale={locale}
           kind={node.kind}
         />
@@ -52,16 +78,18 @@ export function AdrReadingLayout({
 function AdrReadingNode({
   title,
   value,
+  issue,
   locale,
   kind,
 }: {
   title: string;
   value: unknown;
+  issue?: FieldPresentationIssue;
   locale: string;
   kind?: 'date';
 }) {
   const [state, setState] = useState<ReadingNodeState>('expanded');
-  if (!hasDetailContent(value)) return null;
+  if (!hasDetailContent(value) && !issue) return null;
 
   return (
     <ReadingNodeSection
@@ -70,7 +98,7 @@ function AdrReadingNode({
       locale={locale}
       onToggle={() => setState((current) => getReadingNodeNextState(current))}
     >
-      {kind === 'date' ? (
+      {issue ? <FieldProblem issue={issue} /> : kind === 'date' ? (
         <span className="ldvh-definition-text">{formatDateTime(String(value))}</span>
       ) : (
         <StudyTextNodeContent value={value} />
@@ -106,6 +134,7 @@ export function PitfallReadingLayout({
           key={node.field}
           title={locale === 'en' ? node.en : node.zh}
           value={obj[node.field]}
+          issue={fieldIssue(obj, node.field)}
           locale={locale}
         />
       ))}
@@ -118,14 +147,16 @@ export function PitfallReadingLayout({
 function PitfallReadingNode({
   title,
   value,
+  issue,
   locale,
 }: {
   title: string;
   value: unknown;
+  issue?: FieldPresentationIssue;
   locale: string;
 }) {
   const [state, setState] = useState<ReadingNodeState>('expanded');
-  if (!hasDetailContent(value)) return null;
+  if (!hasDetailContent(value) && !issue) return null;
 
   return (
     <ReadingNodeSection
@@ -134,7 +165,7 @@ function PitfallReadingNode({
       locale={locale}
       onToggle={() => setState((current) => getReadingNodeNextState(current))}
     >
-      <PitfallTextNodeContent value={value} />
+      {issue ? <FieldProblem issue={issue} /> : <PitfallTextNodeContent value={value} />}
     </ReadingNodeSection>
   );
 }
@@ -178,6 +209,7 @@ export function SparkReadingLayout({
           obj={obj}
           locale={locale}
           kind={node.kind}
+          issue={fieldIssue(obj, node.field)}
         />
       ))}
       <FactAssociationsSection
@@ -207,11 +239,13 @@ function SparkReadingNode({
   obj,
   locale,
   kind,
+  issue,
 }: {
   title: string;
   obj: Record<string, unknown>;
   locale: string;
   kind: 'intent' | 'summary' | 'evolution' | 'terminal';
+  issue?: FieldPresentationIssue;
 }) {
   const [state, setState] = useState<ReadingNodeState>('expanded');
   const hasContent = kind === 'intent'
@@ -222,7 +256,7 @@ function SparkReadingNode({
       ? hasDetailContent(obj.evolution)
       : hasSparkTerminalContent(obj);
 
-  if (!hasContent) return null;
+  if (!hasContent && !issue) return null;
 
   return (
     <ReadingNodeSection
@@ -231,10 +265,12 @@ function SparkReadingNode({
       locale={locale}
       onToggle={() => setState((current) => getReadingNodeNextState(current))}
     >
+      {issue ? <FieldProblem issue={issue} /> : <>
       {kind === 'intent' && <StudyTextNodeContent value={obj.intent} className="ldvh-spark-reading-prose" />}
       {kind === 'summary' && <SparkSummaryNode value={obj.summary} />}
       {kind === 'evolution' && <SparkEvolutionNode value={obj.evolution} locale={locale} />}
       {kind === 'terminal' && <SparkTerminalNode obj={obj} />}
+      </>}
     </ReadingNodeSection>
   );
 }

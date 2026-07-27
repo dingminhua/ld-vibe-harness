@@ -105,12 +105,16 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       const items = ((result.data as { items: Array<Record<string, unknown>> }).items || []).filter(isFactItem)
       if (type === 'workcase') {
         const byProgressGroup: Record<string, number> = {}
+        let unclassifiedCount = 0
         for (const item of items) {
           const progressGroup = getWorkCaseProgressGroup(item)
-          if (!progressGroup) continue
+          if (!progressGroup) {
+            unclassifiedCount += 1
+            continue
+          }
           byProgressGroup[progressGroup] = (byProgressGroup[progressGroup] || 0) + 1
         }
-        return { type, total: items.length, byProgressGroup, coverageStatus: getCoverageStatus(result) }
+        return { type, total: items.length, byProgressGroup, unclassifiedCount, coverageStatus: getCoverageStatus(result) }
       }
       const byStatus: Record<string, number> = {}
       for (const item of items) {

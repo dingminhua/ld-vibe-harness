@@ -192,7 +192,7 @@ test('closure confirmation and closed cards keep only the common identity and pr
 
   assert.match(terminalBranch, /<ObjectCardFrame/);
   assert.match(terminalBranch, /displayStatus=\{progressGroup \?\? 'unknown'\}/);
-  assert.match(terminalBranch, /\/>/);
+  assert.match(terminalBranch, /workcaseProgressGroupUnavailable/);
   assert.doesNotMatch(terminalBranch, /executionItems|successCriteria|CloseDecision|RecordItem|Integrity|Evidence|BlockingNotice|blocking_summary/);
   assert.doesNotMatch(list, /hasClosureRequestedAt|hasClosureEvidence|hasClosedIntegrityIssue|WorkCaseRecordItem/);
 });
@@ -247,7 +247,7 @@ test('current list projection preserves real item identities, statuses, and acti
 test('public progressing projection keeps counts and active items without the complete item plan', () => {
   const facts = source('api/services/facts.ts');
   const projectionStart = facts.indexOf('export function projectWorkCaseCard');
-  const projectionEnd = facts.indexOf('function machineIssueRecords', projectionStart);
+  const projectionEnd = facts.indexOf('export async function listObjects', projectionStart);
   const publicProjection = facts.slice(projectionStart, projectionEnd);
 
   assert.ok(projectionStart >= 0 && projectionEnd > projectionStart);
@@ -359,20 +359,15 @@ test('WorkCase list does not expose list-level observation or reread controls', 
   assert.match(list, /currentType === 'workcase' \? \(/);
 });
 
-test('WorkCase list diagnostics expose stable scope identities but no source metadata', () => {
+test('WorkCase list reports field-level issues without restoring the V4 machine transport', () => {
   const facts = source('api/services/facts.ts');
-  const problemStart = facts.indexOf('function machineIssueRecords');
-  const problemEnd = facts.indexOf('function workCaseReaderConfig', problemStart);
-  const listStart = facts.indexOf('async function listWorkCasesFromMachine');
-  const listEnd = facts.indexOf('function readFailure', listStart);
-  const diagnostics = `${facts.slice(problemStart, problemEnd)}\n${facts.slice(listStart, listEnd)}`;
+  const listStart = facts.indexOf('export async function listObjects');
+  const listEnd = facts.indexOf('export async function showObject', listStart);
+  const diagnostics = facts.slice(listStart, listEnd);
   const list = source('src/pages/ObjectList.tsx');
 
-  assert.ok(problemStart >= 0 && problemEnd > problemStart);
   assert.ok(listStart >= 0 && listEnd > listStart);
-  assert.match(diagnostics, /object_ref: item\.object_ref/);
-  assert.match(diagnostics, /scope: 'workcase_collection'/);
-  assert.doesNotMatch(diagnostics, /canonical_path|absolute_path|content_fingerprint|carrier:/);
-  assert.doesNotMatch(list, /problem\.canonical_path/);
-  assert.match(list, /problem\.object_ref\?\.object_id/);
+  assert.match(diagnostics, /item\.field_issues/);
+  assert.doesNotMatch(facts, /v4FactReader|v4FactsTransport|machine\.py/);
+  assert.match(list, /workcaseProgressGroupUnavailable/);
 });

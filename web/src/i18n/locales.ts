@@ -273,10 +273,7 @@ export function getFieldLabel(fieldKey: string, locale: string): string {
 export const FIELD_VALUE_LOCALES: Record<string, Record<string, { zh: string; en: string }>> = {
   check_status: {
     readable: { zh: '可读取', en: 'Readable' },
-    mechanically_valid: { zh: '机械检查通过', en: 'Mechanical checks passed' },
-    invalid: { zh: '机械检查未通过', en: 'Mechanical checks failed' },
-    not_found: { zh: '预期位置不存在', en: 'Expected location not found' },
-    unavailable: { zh: '机械检查未完成', en: 'Mechanical checks unavailable' },
+    unreadable: { zh: '无法读取', en: 'Unreadable' },
   },
   outcome: {
     satisfied: { zh: '已满足', en: 'Satisfied' },
@@ -590,6 +587,7 @@ export const UI_LOCALES = {
     'objectList.workcaseStateWaiting': '等待 Human 处理',
     'objectList.workcaseStateClosed': '工作已关闭',
     'objectList.workcaseProgressUnavailable': '进展信息不可判定',
+    'objectList.workcaseProgressGroupUnavailable': '未能形成进展分组。',
     'objectList.workcaseStageUnavailable': '当前环节不可判定',
     'objectList.workcasePlanRevising': '方案修订中',
     'objectList.workcaseOutsideProgressTrack': '四步轨迹之外',
@@ -622,6 +620,12 @@ export const UI_LOCALES = {
     'objectList.workcaseStageSynthesis': '主控收敛',
 
     'objectDetail.back': '返回',
+    'objectDetail.fieldIssues': '来源字段问题',
+    'objectDetail.unparsedStructures': '未解析结构',
+    'objectDetail.fieldMissing': '缺失',
+    'objectDetail.fieldTypeMismatch': '类型不符',
+    'objectDetail.fieldIdentityMismatch': '身份不符',
+    'objectDetail.fieldExpected': '预期 {expected}',
     'objectDetail.content': '内容',
     'objectDetail.yamlSource': 'YAML 数据',
     'objectDetail.id': 'ID',
@@ -923,6 +927,7 @@ export const UI_LOCALES = {
     'objectList.workcaseStateWaiting': 'Waiting for Human',
     'objectList.workcaseStateClosed': 'WorkCase closed',
     'objectList.workcaseProgressUnavailable': 'Progress unavailable',
+    'objectList.workcaseProgressGroupUnavailable': 'Unable to form a progress group from source status/phase.',
     'objectList.workcaseStageUnavailable': 'Current step unavailable',
     'objectList.workcasePlanRevising': 'Plan revision',
     'objectList.workcaseOutsideProgressTrack': 'Outside the four-step track',
@@ -955,6 +960,12 @@ export const UI_LOCALES = {
     'objectList.workcaseStageSynthesis': 'Controller synthesis',
 
     'objectDetail.back': 'Back',
+    'objectDetail.fieldIssues': 'Source field issues',
+    'objectDetail.unparsedStructures': 'Unparsed structures',
+    'objectDetail.fieldMissing': 'Missing',
+    'objectDetail.fieldTypeMismatch': 'Type mismatch',
+    'objectDetail.fieldIdentityMismatch': 'Identity mismatch',
+    'objectDetail.fieldExpected': 'Expected {expected}',
     'objectDetail.content': 'Content',
     'objectDetail.yamlSource': 'YAML Data',
     'objectDetail.id': 'ID',

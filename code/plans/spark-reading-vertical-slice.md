@@ -44,7 +44,7 @@ Helper 方向固定为：20 的完整事实语义 → 05 的 F2/F3 契约 → re
 | `web/src/pages/object-detail/FactReadingLayouts.tsx` | 直接完整渲染 `summary` Markdown；按“摘要、演变、分流、关联”组织 Spark 阅读 | 建立虚构 `intent_source` 节点，按 Helper F2 预算截断 Web，或隐藏内容不足 |
 | `web/src/pages/object-detail/FactAssociationsSection.tsx` | 将关系、项目材料、Human/外部输入、URL 与未解析项分组；删除意图节点后仍完整保留 Human source | 把 locator 提升为正文，或为了简洁过滤 Human input |
 | `web/src/components/SparkCreate.tsx` 与 `web/src/i18n/locales.ts` | 保持三字段 capture；通过标签、帮助文本和可多行输入提示 Human 记录形成原因、当前问题、已知判断、边界和剩余不确定性 | 新增必填字段、固定段落模板、字符门槛或由 Web 宣称内容充分 |
-| `web/api/services/facts.ts`、`localFactReader.ts` 与 `v4SparkProjector.ts` | 保持 Web 从当前事实文件独立读取 list/detail，并只加 transport metadata | 调用 Helper 候选接口、裁剪摘要或创造事实字段 |
+| `web/api/services/facts.ts` 与 `localFactReader.ts` | 保持 Web 在 Helper 已确认的管辖 worktree 中字段级读取 list/detail，并只投影页面消费字段与读取元数据 | 调用 Helper 候选接口、完整机械校验、裁剪摘要或创造事实字段 |
 | `web/tests/api/fact-reading-projection.test.ts`、`local-facts.test.ts` 与 Spark reading contract test | 验证 Human source 保留、完整 Markdown 经过唯一 canonicalization 后在创建/list/detail 一致，以及组件不恢复 intent/摘要改写 | 以静态文件存在代替 API/事实回读全部证据 |
 | `web/src/pages/ObjectDetail.tsx`、`object-detail/model.ts`、`web/src/index.css` | 继续提供共享 ReadingNode、Markdown renderer、字段隐藏和既有 14px/26px 阅读样式；本纵切只消费并回归当前未提交 Spark 相关变化 | 在本纵切重构通用详情、WorkCase 或另定事实语义 |
 

@@ -10,7 +10,7 @@
 
 本文不替代 `specs/08-Web 呈现与交互规范.md`、`specs/07-Code 实践与测试规范.md` 中适用于 Web 的测试规则、事实模型规范或 Git 文件事实源。本文只说明当前 `web/` 参考实现如何把这些规则呈现给 Human。
 
-当前 V4 事实读取器读取 WorkCase、ADR、Pitfall、Spark 和 Study 的 V4 原生载体；不读取 V2/V3 资产。WorkCase 只读取 21 定义的单一当前形状，不根据对象年代、缺失字段或实现版本切换结构。详情、对象预览、源路径复制和正文阅读必须先取得精确读取，并把 `canonical_path`、`carrier` 和 `check_status` 从读取结果传到消费面；候选列表不承诺这些元数据。Study 定位为“外部内容调研报告”，不提供兼容双读。
+当前字段级读取器读取 WorkCase、ADR、Pitfall、Spark 和 Study 的当前正式载体；不读取 V2/V3 资产。WorkCase 不根据对象年代、缺失字段或实现版本切换结构。详情、对象预览、源路径复制和正文阅读必须先取得字段级精确读取，并把 `canonical_path`、`carrier`、`check_status`、字段问题与未解析结构传到消费面。Study 定位为“外部内容调研报告”，不提供兼容双读。
 
 ## 1.1 已确认与待确认边界
 
@@ -143,7 +143,7 @@ WorkCase 身份 / 优先级 / 进展分组
 
 WorkCase 列表是当次 Web machine 基于 Core 精确读取与校验能力形成的派生视图；响应保留 machine 实际形成结果的 `observed_at` 作为读取元数据，但页面不设置列表级“观察时间”或“重新读取”控件。完整扫描中的 `invalid / not_found` 候选与 coverage 分开呈现：它们是已完成的对象读取问题，不得冒充范围未完成；只有 `unavailable`、结构问题或无法完成全集时才显示 `partial / unavailable`。异常或存在候选问题时，页面保留可消费 Card 和明确诊断；筛选或导航触发新的 machine 请求，不能复用旧 payload、对象 `updated_at` 或浏览器渲染时刻冒充新观察。
 
-Web 专用 JSON machine、类型目录扫描和 list/detail 投影编排归属 `web/python/ldvh_web_facts/`，不属于 `ldvh.facts` Core。Node 只以 `-I -B -X utf8` 调用该目录中确定的绝对 `machine.py`；Core 保留可复用的候选发现、精确读取、Schema、关系与校验能力。不得恢复旧 Core module、并行双路径或 local fallback。定向回归命令为 `.venv/bin/python -B -m pytest web/tests/python/test_v4_facts_machine.py`、`cd web && npm run test:web:api` 和 `cd web && npm run check`。
+字段级读取与 list/detail 投影归属 `web/api/services/localFactReader.ts` 和 `facts.ts`。Node 仅通过 `resolve-governance-scope` Helper 调用取得受管辖 worktree，随后直接读取载体；不得恢复 Web Python machine、并行双路径或全量机械校验。定向回归命令为 `cd web && npm run test:web:api && npm run check`。
 
 WorkCase 详情页用于完整理解同一项当前责任。它在所有状态和 phase 下使用同一信息结构，不根据 Card 进展分组或推进环节切换、隐藏或重排内容。稳定阅读顺序为：
 
@@ -194,7 +194,7 @@ WorkCase 详情页用于完整理解同一项当前责任。它在所有状态�
 | 提交详情 | 复制提交 hash | 完整 commit hash |
 | ProjectFiles 工具页 | 复制路径 | 项目路径、文件路径或 diff 文件路径 |
 
-对象路径复制不得依赖可能只是对象 ID 的 `target`、列表 `path` 或导航键作为来源。`canonical_path` 只是预期位置，仍须与该类型精确读取的可消费状态一起成立；WorkCase 精确要求 Core `check_status: mechanically_valid`，其它本地读取类型按其 `readable` 契约。否则页面显示实际读取状态、问题和未读取范围，而不复制路径。
+对象路径复制不得依赖可能只是对象 ID 的 `target`、列表 `path` 或导航键作为来源。`canonical_path` 只是预期位置，仍须与字段级精确读取的 `check_status: readable` 一起成立；否则页面显示实际读取状态、字段问题和未读取范围，而不复制路径。
 
 ## 6. 后续开发顺序
 

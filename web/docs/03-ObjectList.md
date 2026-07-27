@@ -145,7 +145,7 @@ Spark 列表页保持只读；Web 不提供 Spark 创建、直接捕获、写入
 
 ## 6. API 数据结构
 
-对象列表 API 只向 Card 交付当组实际消费的最小字段，不把完整事实对象、精确来源元数据或详情节点透传到浏览器。WorkCase 的完整 YAML 由 Web 自有 machine 组织读取，并经 Core 共享校验形成 `mechanically_valid` 结果，再在服务端按进展分组投影；Node 不复制 21 的 Schema、presence 或状态机作为第二机械契约。
+对象列表 API 只向 Card 交付当组实际消费的最小字段。所有当前事实类型（包括 WorkCase）在 Helper 已确认的管辖 worktree 内由 Web 直接读取正式载体；页面字段缺失或类型不符保留为逐字段问题，额外、旧或无法归类的结构保留在 `unparsed_structures`，不经过 Core 全量校验、Python machine 或第二份 Schema。列表使用同一字段级读取结果投影 Card，并保留 `check_status`、字段问题与未解析结构供范围提示。
 
 ```typescript
 interface WorkCaseCardItem {

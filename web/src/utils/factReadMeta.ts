@@ -1,7 +1,7 @@
 import { dump as dumpYaml } from 'js-yaml';
 
 export type FactCarrier = 'yaml' | 'markdown';
-export type FactReadStatus = 'readable' | 'mechanically_valid' | 'invalid' | 'not_found' | 'unavailable';
+export type FactReadStatus = 'readable' | 'unreadable';
 
 export type FactReadIssue = {
   category: string;
@@ -25,6 +25,9 @@ const EXACT_READ_METADATA_FIELDS = new Set([
   'absolute_path',
   'carrier',
   'check_status',
+  'read_status',
+  'field_issues',
+  'unparsed_structures',
   'content_fingerprint',
   'coverage_status',
   'observed_at',
@@ -40,13 +43,7 @@ function asCarrier(value: unknown): FactCarrier | undefined {
 }
 
 function asReadStatus(value: unknown): FactReadStatus | undefined {
-  return value === 'readable'
-    || value === 'mechanically_valid'
-    || value === 'invalid'
-    || value === 'not_found'
-    || value === 'unavailable'
-    ? value
-    : undefined;
+  return value === 'readable' || value === 'unreadable' ? value : undefined;
 }
 
 function asIssues(value: unknown): FactReadIssue[] {
@@ -81,10 +78,10 @@ export function getFactReadMeta(value: Record<string, unknown> | undefined): Fac
 export function isReadableFact(meta: FactReadMeta): meta is FactReadMeta & {
   canonicalPath: string;
   carrier: FactCarrier;
-  checkStatus: 'readable' | 'mechanically_valid';
+  checkStatus: 'readable';
 } {
   return !meta.isFailure
-    && (meta.checkStatus === 'readable' || meta.checkStatus === 'mechanically_valid')
+    && meta.checkStatus === 'readable'
     && typeof meta.canonicalPath === 'string'
     && meta.carrier !== undefined;
 }

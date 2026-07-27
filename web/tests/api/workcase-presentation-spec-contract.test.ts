@@ -124,7 +124,7 @@ test('Current Web docs describe the same latest-only Card and detail boundaries'
   assert.match(detailSection, /closed 不具有 phase、关闭 approval 或关闭时间字段/);
   assert.doesNotMatch(detailSection, /workcase_profile|closure_approval/);
 
-  assert.match(baselineDoc, /WorkCase 只读取 21 定义的单一当前形状/);
+  assert.match(baselineDoc, /WorkCase 不根据对象年代、缺失字段或实现版本切换结构/);
   assert.match(baselineSection, /`plan_revising` 同样归入“推进中”/);
   assert.match(baselineSection, /Card 在计划判断输入区之外完整显示独立的 `blocking_summary` 状态提示/);
   assert.match(baselineSection, /不是第三项计划判断输入/);

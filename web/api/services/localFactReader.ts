@@ -1,10 +1,9 @@
 /**
- * 本地事实对象直读服务（V4 五类统一读取路径）。
+ * Web-owned field-level reader for current fact carriers.
  *
- * Web 是只读呈现层：对 ldvh-base/<type>/ 下的 YAML / Markdown(frontmatter) 做
- * 机械映射，不 spawn Python、不做业务校验。读不出或缺失字段如实记录在 issues 中。
+ * It deliberately does not call the Core validator: readable source fields,
+ * field problems, and unconsumed source structure must remain distinguishable.
  */
-
 import { existsSync } from 'node:fs'
 import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
@@ -27,15 +26,27 @@ export const FACT_TYPE_CARRIERS = {
 } as const
 
 export type LocalFactType = keyof typeof FACT_TYPE_DIRS
+export type LocalFactCarrier = 'yaml' | 'markdown'
+export type LocalFactReadStatus = 'readable' | 'unreadable'
 
 export type LocalFactIssue = {
-  code: string
+  code: 'read_failed' | 'yaml_parse_failed' | 'frontmatter_missing' | 'frontmatter_unclosed' | 'frontmatter_parse_failed' | 'unexpected_fact_carrier'
   message: string
   path?: string
 }
 
-export type LocalFactCarrier = 'yaml' | 'markdown'
-export type LocalFactCheckStatus = 'readable' | 'invalid'
+export type FieldIssue = {
+  path: string
+  reason: 'missing' | 'type_mismatch' | 'identity_mismatch'
+  expected: string
+  raw_value?: unknown
+}
+
+export type UnparsedStructure = {
+  path: string
+  reason: 'unconsumed_field'
+  raw_value?: unknown
+}
 
 export type LocalFactMetadata = {
   object_ref: {
@@ -49,8 +60,10 @@ export type LocalFactMetadata = {
 }
 
 export type LocalFactItem = LocalFactMetadata & {
-  check_status: LocalFactCheckStatus
-  fact_object: Record<string, unknown>
+  read_status: LocalFactReadStatus
+  fact_object: Record<string, unknown> | null
+  field_issues: FieldIssue[]
+  unparsed_structures: UnparsedStructure[]
   issues: LocalFactIssue[]
 }
 
@@ -61,16 +74,58 @@ export type LocalFactList = {
 }
 
 export interface LocalFactScope {
-  /** governed project 根目录（worktree locator），其下应有 ldvh-base/ */
   worktreeLocator: string
   governedProjectId: string
 }
 
-export function localFactScopeFromEnv(): LocalFactScope {
-  return {
-    worktreeLocator: process.env.LDVH_WEB_WORKTREE_LOCATOR || process.env.LDVH_ROOT || '',
-    governedProjectId: process.env.LDVH_WEB_GOVERNED_PROJECT_ID || 'workspace',
-  }
+type FieldExpectation = 'string' | 'number' | 'array'
+
+const COMMON_FIELDS: Record<string, FieldExpectation> = {
+  object_id: 'string', fact_type_key: 'string', title: 'string', status: 'string',
+  created_at: 'string', updated_at: 'string', urls: 'array', relations: 'array',
+}
+
+const REQUIRED_FIELDS: Record<LocalFactType, ReadonlySet<string>> = {
+  workcase: new Set(['object_id', 'fact_type_key', 'title', 'status', 'created_at', 'updated_at']),
+  adr: new Set(['object_id', 'fact_type_key', 'title', 'status', 'created_at', 'updated_at']),
+  pitfall: new Set(['object_id', 'fact_type_key', 'title', 'status', 'created_at', 'updated_at']),
+  spark: new Set(['object_id', 'fact_type_key', 'title', 'status', 'created_at', 'updated_at', 'summary']),
+  study: new Set(['object_id', 'fact_type_key', 'title', 'status', 'created_at', 'updated_at']),
+}
+
+/**
+ * Page-consumed field names only. Their semantics, requiredness, and titles
+ * remain in the current field registry and type specifications.
+ */
+const DETAIL_FIELDS: Record<LocalFactType, Record<string, FieldExpectation>> = {
+  workcase: {
+    goal: 'string', scope: 'string', phase: 'string', summary: 'string', resume_from: 'string',
+    waiting_on: 'string', blocking_summary: 'string', priority: 'string',
+    success_criterion_definitions: 'array', success_criterion_results: 'array', plan_version: 'number',
+    work_items: 'array', creation_reviews: 'array', execution_approval: 'array', result_version: 'number',
+    result_summary: 'string', controller_check_summary: 'string', result_reviews: 'array',
+    validation_summary: 'string', closure_proposal: 'array', closure_outcome: 'string',
+    disposition_summary: 'string', residual_responsibilities: 'array',
+  },
+  adr: {
+    decision_question: 'string', decision: 'string', applicability: 'string', rationale: 'string',
+    consequences: 'string', disposition_summary: 'string',
+  },
+  pitfall: {
+    symptoms: 'string', trigger_conditions: 'string', applicability: 'string', validation_summary: 'string',
+    root_cause: 'string', resolution: 'string', avoidance: 'string', disposition_summary: 'string', tags: 'array',
+  },
+  spark: {
+    intent: 'string', summary: 'string', evolution: 'array', disposition_summary: 'string', priority: 'string',
+  },
+  study: {
+    research_intent: 'string', research_question: 'string', abstract: 'string',
+    recommendation_summary: 'string', report_body: 'string', disposition_summary: 'string',
+  },
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value && typeof value === 'object' && !Array.isArray(value))
 }
 
 function baseDirOf(scope: LocalFactScope, type: LocalFactType): string {
@@ -88,11 +143,7 @@ function carrierFor(type: LocalFactType): LocalFactCarrier {
 function metadataFor(scope: LocalFactScope, type: LocalFactType, objectId: string): LocalFactMetadata {
   const fileName = expectedFileName(type, objectId)
   return {
-    object_ref: {
-      governed_project_id: scope.governedProjectId,
-      fact_type_key: type,
-      object_id: objectId,
-    },
+    object_ref: { governed_project_id: scope.governedProjectId, fact_type_key: type, object_id: objectId },
     canonical_path: path.posix.join('ldvh-base', FACT_TYPE_DIRS[type], fileName),
     absolute_path: path.join(baseDirOf(scope, type), fileName),
     carrier: carrierFor(type),
@@ -100,219 +151,123 @@ function metadataFor(scope: LocalFactScope, type: LocalFactType, objectId: strin
 }
 
 function isExpectedCarrierName(type: LocalFactType, fileName: string): boolean {
-  const escapedType = type.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  const escapedExtension = FACT_TYPE_CARRIERS[type].replace('.', '\\.')
-  return new RegExp(`^${escapedType}-\\d{4,}${escapedExtension}$`).test(fileName)
+  const extension = FACT_TYPE_CARRIERS[type].replace('.', '\\.')
+  return new RegExp(`^${type}-\\d{4,}${extension}$`).test(fileName)
 }
 
 function looksLikeFactCarrier(fileName: string): boolean {
   return /\.(?:yaml|yml|md)$/i.test(fileName)
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value && typeof value === 'object' && !Array.isArray(value))
-}
-
-/** 手写 frontmatter 解析：首个 `---` 与下一个 `---` 之间为 YAML 元数据，其后为 Markdown 正文。 */
-function parseMarkdownWithFrontmatter(content: string): { metadata: Record<string, unknown>; body: string; issues: LocalFactIssue[] } {
-  const issues: LocalFactIssue[] = []
+function parseMarkdownWithFrontmatter(content: string): { metadata: Record<string, unknown> | null; body: string; issues: LocalFactIssue[] } {
   const lines = content.split(/\r?\n/)
   if (lines[0]?.trim() !== '---') {
-    issues.push({ code: 'frontmatter_missing', message: 'Markdown 缺少 frontmatter，正文按全文呈现' })
-    return { metadata: {}, body: content, issues }
+    return { metadata: null, body: '', issues: [{ code: 'frontmatter_missing', message: 'Markdown 缺少 frontmatter' }] }
   }
-  let end = -1
-  for (let index = 1; index < lines.length; index += 1) {
-    if (lines[index].trim() === '---') {
-      end = index
-      break
-    }
-  }
+  const end = lines.findIndex((line, index) => index > 0 && line.trim() === '---')
   if (end === -1) {
-    issues.push({ code: 'frontmatter_unclosed', message: 'frontmatter 未闭合，正文按全文呈现' })
-    return { metadata: {}, body: content, issues }
+    return { metadata: null, body: '', issues: [{ code: 'frontmatter_unclosed', message: 'frontmatter 未闭合' }] }
   }
-  const rawMeta = lines.slice(1, end).join('\n')
-  let metadata: Record<string, unknown> = {}
   try {
-    const parsed = yaml.load(rawMeta)
-    if (isRecord(parsed)) {
-      metadata = parsed
-    } else if (parsed !== null && parsed !== undefined) {
-      issues.push({ code: 'frontmatter_not_mapping', message: 'frontmatter 不是键值映射，已忽略' })
+    const value = yaml.load(lines.slice(1, end).join('\n'))
+    if (!isRecord(value)) {
+      return { metadata: null, body: '', issues: [{ code: 'frontmatter_parse_failed', message: 'frontmatter 顶层不是键值映射' }] }
     }
+    return { metadata: value, body: lines.slice(end + 1).join('\n').replace(/^\s*\n/, ''), issues: [] }
   } catch (error) {
-    issues.push({
-      code: 'frontmatter_parse_failed',
-      message: `frontmatter YAML 解析失败：${error instanceof Error ? error.message : String(error)}`,
-    })
+    return { metadata: null, body: '', issues: [{ code: 'frontmatter_parse_failed', message: `frontmatter YAML 解析失败：${error instanceof Error ? error.message : String(error)}` }] }
   }
-  const body = lines.slice(end + 1).join('\n').replace(/^\s*\n/, '')
-  return { metadata, body, issues }
 }
 
-const REQUIRED_FIELDS = ['object_id', 'fact_type_key'] as const
+function matchesExpectation(value: unknown, expected: FieldExpectation): boolean {
+  return expected === 'array' ? Array.isArray(value) : typeof value === expected
+}
 
-function toItem(
-  scope: LocalFactScope,
-  type: LocalFactType,
-  fileName: string,
-  parsed: Record<string, unknown>,
-  extraFields: Record<string, unknown>,
-  parseIssues: LocalFactIssue[],
-): LocalFactItem {
-  const objectIdFromName = fileName.replace(/\.(yaml|yml|md)$/i, '')
-  const metadata = metadataFor(scope, type, objectIdFromName)
-  const issues: LocalFactIssue[] = parseIssues.map((issue) => ({ ...issue, path: metadata.canonical_path }))
-
-  const factObject: Record<string, unknown> = { ...parsed, ...extraFields }
-  for (const field of REQUIRED_FIELDS) {
-    if (typeof factObject[field] !== 'string' || !factObject[field]) {
-      issues.push({ code: 'field_missing', message: `缺失必需字段：${field}`, path: metadata.canonical_path })
+function projectFields(type: LocalFactType, objectId: string, parsed: Record<string, unknown>, extra: Record<string, unknown>): Pick<LocalFactItem, 'fact_object' | 'field_issues' | 'unparsed_structures'> {
+  const all = { ...parsed, ...extra }
+  const expected = { ...COMMON_FIELDS, ...DETAIL_FIELDS[type] }
+  const factObject: Record<string, unknown> = {}
+  const fieldIssues: FieldIssue[] = []
+  for (const [field, kind] of Object.entries(expected)) {
+    const value = all[field]
+    if (value === undefined || value === null) {
+      if (REQUIRED_FIELDS[type].has(field)) fieldIssues.push({ path: field, reason: 'missing', expected: kind })
+      continue
     }
+    if (!matchesExpectation(value, kind)) {
+      fieldIssues.push({ path: field, reason: 'type_mismatch', expected: kind, raw_value: value })
+      continue
+    }
+    factObject[field] = value
   }
-  if (typeof factObject.object_id === 'string' && factObject.object_id !== objectIdFromName) {
-    issues.push({
-      code: 'object_id_mismatch',
-      message: `对象身份与文件名不一致：期望 ${objectIdFromName}，实际为 ${factObject.object_id}`,
-      path: metadata.canonical_path,
-    })
+  if (typeof all.object_id === 'string' && all.object_id !== objectId) {
+    fieldIssues.push({ path: 'object_id', reason: 'identity_mismatch', expected: objectId, raw_value: all.object_id })
   }
-  if (typeof factObject.fact_type_key === 'string' && factObject.fact_type_key !== type) {
-    issues.push({
-      code: 'fact_type_key_mismatch',
-      message: `对象类型与载体目录不一致：期望 ${type}，实际为 ${factObject.fact_type_key}`,
-      path: metadata.canonical_path,
-    })
+  if (typeof all.fact_type_key === 'string' && all.fact_type_key !== type) {
+    fieldIssues.push({ path: 'fact_type_key', reason: 'identity_mismatch', expected: type, raw_value: all.fact_type_key })
   }
-  return {
-    ...metadata,
-    check_status: issues.length === 0 ? 'readable' : 'invalid',
-    fact_object: factObject,
-    issues,
-  }
+  const unparsedStructures = Object.entries(all)
+    .filter(([field]) => !(field in expected))
+    .map(([field, value]) => ({ path: field, reason: 'unconsumed_field' as const, raw_value: value }))
+  return { fact_object: factObject, field_issues: fieldIssues, unparsed_structures: unparsedStructures }
+}
+
+function unreadable(metadata: LocalFactMetadata, issues: LocalFactIssue[]): LocalFactItem {
+  return { ...metadata, read_status: 'unreadable', fact_object: null, field_issues: [], unparsed_structures: [], issues: issues.map((issue) => ({ ...issue, path: issue.path ?? metadata.canonical_path })) }
 }
 
 async function readItemFile(scope: LocalFactScope, type: LocalFactType, fileName: string): Promise<LocalFactItem> {
-  const absolutePath = path.join(baseDirOf(scope, type), fileName)
-  const canonicalPath = path.posix.join('ldvh-base', FACT_TYPE_DIRS[type], fileName)
+  const objectId = fileName.replace(/\.(yaml|yml|md)$/i, '')
+  const metadata = metadataFor(scope, type, objectId)
   let content: string
   try {
-    content = await readFile(absolutePath, 'utf-8')
+    content = await readFile(metadata.absolute_path, 'utf-8')
   } catch (error) {
-    return toItem(scope, type, fileName, {}, {}, [{
-      code: 'read_failed',
-      message: `文件读取失败：${error instanceof Error ? error.message : String(error)}`,
-      path: canonicalPath,
-    }])
+    return unreadable(metadata, [{ code: 'read_failed', message: `文件读取失败：${error instanceof Error ? error.message : String(error)}` }])
   }
-
-  if (/\.md$/i.test(fileName)) {
-    const { metadata, body, issues } = parseMarkdownWithFrontmatter(content)
-    return toItem(scope, type, fileName, metadata, { report_body: body }, issues)
+  if (metadata.carrier === 'markdown') {
+    const parsed = parseMarkdownWithFrontmatter(content)
+    if (parsed.metadata === null) return unreadable(metadata, parsed.issues)
+    return { ...metadata, read_status: 'readable', ...projectFields(type, objectId, parsed.metadata, { report_body: parsed.body }), issues: [] }
   }
-
   try {
     const parsed = yaml.load(content)
     if (!isRecord(parsed)) {
-      return toItem(scope, type, fileName, {}, {}, [{
-        code: 'yaml_not_mapping',
-        message: 'YAML 顶层不是键值映射',
-        path: canonicalPath,
-      }])
+      return unreadable(metadata, [{ code: 'yaml_parse_failed', message: 'YAML 顶层不是键值映射' }])
     }
-    return toItem(scope, type, fileName, parsed, {}, [])
+    return { ...metadata, read_status: 'readable', ...projectFields(type, objectId, parsed, {}), issues: [] }
   } catch (error) {
-    return toItem(scope, type, fileName, {}, {}, [{
-      code: 'yaml_parse_failed',
-      message: `YAML 解析失败：${error instanceof Error ? error.message : String(error)}`,
-      path: canonicalPath,
-    }])
+    return unreadable(metadata, [{ code: 'yaml_parse_failed', message: `YAML 解析失败：${error instanceof Error ? error.message : String(error)}` }])
   }
 }
 
 function directoryStatus(scope: LocalFactScope, type: LocalFactType): LocalFactList | null {
-  const dir = baseDirOf(scope, type)
-  if (existsSync(dir)) return null
-  return {
-    status: 'type_not_integrated',
-    items: [],
-    issues: [{
-      code: 'type_not_integrated',
-      message: `该类型尚未接入：缺少正式对象目录 ${path.posix.join('ldvh-base', FACT_TYPE_DIRS[type])}`,
-    }],
-  }
+  if (existsSync(baseDirOf(scope, type))) return null
+  return { status: 'type_not_integrated', items: [], issues: [{ code: 'read_failed', message: `该类型尚未接入：缺少正式对象目录 ${path.posix.join('ldvh-base', FACT_TYPE_DIRS[type])}` }] }
 }
 
-/** 列出某类型的全部事实对象；目录不存在时返回独立的 type_not_integrated。 */
-export async function listLocalFacts(type: LocalFactType, scope: LocalFactScope = localFactScopeFromEnv()): Promise<LocalFactList> {
+export async function listLocalFacts(type: LocalFactType, scope: LocalFactScope): Promise<LocalFactList> {
   const missing = directoryStatus(scope, type)
   if (missing) return missing
-
-  const dir = baseDirOf(scope, type)
-  const entries = await readdir(dir, { withFileTypes: true })
-  const carrierEntries = entries.filter((entry) => entry.isFile() && looksLikeFactCarrier(entry.name))
-  const fileNames = carrierEntries
-    .filter((entry) => isExpectedCarrierName(type, entry.name))
-    .map((entry) => entry.name)
-    .sort((left, right) => left.localeCompare(right))
-
-  const carrierIssues = carrierEntries
-    .filter((entry) => !isExpectedCarrierName(type, entry.name))
-    .map((entry) => ({
-      code: 'unexpected_fact_carrier',
-      message: `${type} 正式载体必须是 ${type}-NNNN${FACT_TYPE_CARRIERS[type]}，已忽略错载体 ${entry.name}`,
-      path: path.posix.join('ldvh-base', FACT_TYPE_DIRS[type], entry.name),
-    }))
-
-  const items = await Promise.all(fileNames.map((fileName) => readItemFile(scope, type, fileName)))
-  return { status: 'complete', items, issues: carrierIssues }
+  const entries = await readdir(baseDirOf(scope, type), { withFileTypes: true })
+  const carriers = entries.filter((entry) => entry.isFile() && looksLikeFactCarrier(entry.name))
+  const fileNames = carriers.filter((entry) => isExpectedCarrierName(type, entry.name)).map((entry) => entry.name).sort((left, right) => left.localeCompare(right))
+  const issues = carriers.filter((entry) => !isExpectedCarrierName(type, entry.name)).map((entry) => ({
+    code: 'unexpected_fact_carrier' as const,
+    message: `${type} 正式载体必须是 ${type}-NNNN${FACT_TYPE_CARRIERS[type]}，已忽略错载体 ${entry.name}`,
+    path: path.posix.join('ldvh-base', FACT_TYPE_DIRS[type], entry.name),
+  }))
+  return { status: 'complete', items: await Promise.all(fileNames.map((fileName) => readItemFile(scope, type, fileName))), issues }
 }
 
-/** 按 object_id 直读单个事实对象文件；找不到返回 null，目录缺失原样上报。 */
-export async function readLocalFact(
-  type: LocalFactType,
-  objectId: string,
-  scope: LocalFactScope = localFactScopeFromEnv(),
-): Promise<
-  | { status: 'ok'; item: LocalFactItem }
-  | { status: 'not_found'; metadata: LocalFactMetadata; issues: LocalFactIssue[] }
-  | { status: 'type_not_integrated'; metadata: LocalFactMetadata; issues: LocalFactIssue[] }
-  | { status: 'unavailable'; metadata: LocalFactMetadata; issues: LocalFactIssue[] }
-> {
+export async function readLocalFact(type: LocalFactType, objectId: string, scope: LocalFactScope): Promise<{ status: 'ok'; item: LocalFactItem } | { status: 'not_found' | 'type_not_integrated'; metadata: LocalFactMetadata; issues: LocalFactIssue[] }> {
   const metadata = metadataFor(scope, type, objectId)
   const missing = directoryStatus(scope, type)
   if (missing) return { status: 'type_not_integrated', metadata, issues: missing.issues }
-
-  const dir = baseDirOf(scope, type)
-  const entries = await readdir(dir, { withFileTypes: true })
   const expectedName = expectedFileName(type, objectId)
-  if (entries.some((entry) => entry.isFile() && entry.name === expectedName)) {
-    return { status: 'ok', item: await readItemFile(scope, type, expectedName) }
+  const entries = await readdir(baseDirOf(scope, type), { withFileTypes: true })
+  if (!entries.some((entry) => entry.isFile() && entry.name === expectedName)) {
+    return { status: 'not_found', metadata, issues: [{ code: 'read_failed', message: `未找到预期事实对象 ${expectedName}`, path: metadata.canonical_path }] }
   }
-  const wrongCarrier = entries.find((entry) =>
-    entry.isFile()
-    && looksLikeFactCarrier(entry.name)
-    && entry.name.replace(/\.(yaml|yml|md)$/i, '') === objectId,
-  )
-  if (wrongCarrier) {
-    return {
-      status: 'unavailable',
-      metadata,
-      issues: [{
-        code: 'unexpected_fact_carrier',
-        message: `${objectId} 使用了错载体 ${wrongCarrier.name}；${type} 必须使用 ${expectedName}`,
-        path: path.posix.join('ldvh-base', FACT_TYPE_DIRS[type], wrongCarrier.name),
-      }],
-    }
-  }
-  return {
-    status: 'not_found',
-    metadata,
-    issues: [{
-      code: 'not_found',
-      message: `未找到预期事实对象 ${expectedName}`,
-      path: metadata.canonical_path,
-    }],
-  }
+  return { status: 'ok', item: await readItemFile(scope, type, expectedName) }
 }

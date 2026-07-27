@@ -257,6 +257,9 @@ export default function ObjectDetail() {
             </div>
           )}
 
+          <FieldIssuesSection value={obj.field_issues} />
+          <UnparsedStructuresSection value={obj.unparsed_structures} />
+
           {showYamlSource && (
             <div className="overflow-hidden rounded-xl border border-ldvh-border bg-ldvh-panel">
               <button
@@ -287,6 +290,84 @@ export default function ObjectDetail() {
       {/* Right reading panel */}
     </div>
   );
+}
+
+type UnparsedStructure = { path: string; reason: string; raw_value?: unknown };
+type FieldIssue = { path: string; reason: 'missing' | 'type_mismatch' | 'identity_mismatch'; expected: string; raw_value?: unknown };
+
+function FieldIssuesSection({ value }: { value: unknown }) {
+  const { t } = useI18n();
+  const entries = Array.isArray(value)
+    ? value.filter((entry): entry is FieldIssue => Boolean(
+      entry && typeof entry === 'object' && !Array.isArray(entry)
+        && typeof (entry as Record<string, unknown>).path === 'string'
+        && typeof (entry as Record<string, unknown>).reason === 'string'
+        && typeof (entry as Record<string, unknown>).expected === 'string',
+    ))
+    : [];
+  if (entries.length === 0) return null;
+  const reasonLabel = (issue: FieldIssue) => {
+    if (issue.reason === 'missing') return t('objectDetail.fieldMissing');
+    if (issue.reason === 'type_mismatch') return t('objectDetail.fieldTypeMismatch');
+    return t('objectDetail.fieldIdentityMismatch');
+  };
+  return (
+    <section className="mb-6 rounded-xl border border-amber-500/25 bg-amber-500/5 p-4">
+      <h2 className="ldvh-body text-amber-200">{t('objectDetail.fieldIssues')}</h2>
+      <div className="mt-3 space-y-2">
+        {entries.map((entry) => (
+          <div key={`${entry.path}-${entry.reason}`} className="ldvh-meta rounded-md border border-amber-500/15 bg-ldvh-bg/50 px-3 py-2">
+            <span className="font-mono text-ldvh-text-primary">{entry.path}</span>
+            <span className="mx-2 text-amber-300">{reasonLabel(entry)}</span>
+            <span>{t('objectDetail.fieldExpected', { expected: entry.expected })}</span>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function UnparsedStructuresSection({ value }: { value: unknown }) {
+  const { t } = useI18n();
+  const [open, setOpen] = useState(false);
+  const entries = Array.isArray(value)
+    ? value.filter((entry): entry is UnparsedStructure => Boolean(
+      entry && typeof entry === 'object' && !Array.isArray(entry)
+        && typeof (entry as Record<string, unknown>).path === 'string'
+        && typeof (entry as Record<string, unknown>).reason === 'string',
+    ))
+    : [];
+  if (entries.length === 0) return null;
+  return (
+    <section className="mb-6 overflow-hidden rounded-xl border border-amber-500/25 bg-amber-500/5">
+      <button
+        type="button"
+        onClick={() => setOpen((current) => !current)}
+        className="ldvh-body-muted flex w-full items-center gap-2 px-4 py-3 text-left hover:bg-amber-500/5"
+      >
+        <span>{t('objectDetail.unparsedStructures')}</span>
+        <span className="ldvh-meta-muted">{entries.length}</span>
+        <span className="ml-auto">{open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}</span>
+      </button>
+      {open && (
+        <div className="space-y-3 border-t border-amber-500/20 px-4 py-3">
+          {entries.map((entry) => (
+            <div key={`${entry.path}-${entry.reason}`} className="rounded-md border border-amber-500/15 bg-ldvh-bg/50 p-3">
+              <p className="ldvh-meta-primary break-all font-mono">{entry.path}</p>
+              <p className="ldvh-meta mt-1">{entry.reason}</p>
+              {Object.prototype.hasOwnProperty.call(entry, 'raw_value') && (
+                <pre className="ldvh-meta-primary mt-2 max-h-64 overflow-auto whitespace-pre-wrap">{safeJson(entry.raw_value)}</pre>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function safeJson(value: unknown): string {
+  try { return JSON.stringify(value, null, 2); } catch { return String(value); }
 }
 
 function getReturnPath(state: unknown, currentPath: string): string | null {

@@ -34,6 +34,8 @@ export type DashboardStat =
   | DashboardStatBase & {
     type: 'workcase';
     byProgressGroup: Partial<Record<DashboardWorkCaseProgressGroup, number>>;
+    /** Included in total but deliberately outside the four stable groups. */
+    unclassifiedCount?: number;
     byStatus?: never;
   }
   | DashboardStatBase & {
@@ -102,13 +104,15 @@ export interface ObjectItem {
   resolved_to?: string | { type?: string; ref?: string };
   resolved_at?: string;
   related_studies?: string[];
-  /** V4-native Spark fields. */
+  /** Exact field-level source metadata. */
   object_id?: string;
   fact_type_key?: string;
   canonical_path?: string;
   absolute_path?: string;
   carrier?: FactCarrier;
   check_status?: FactReadStatus;
+  field_issues?: FieldIssue[];
+  unparsed_structures?: UnparsedStructure[];
   read_issues?: Array<Record<string, unknown>>;
   created_at?: string;
   updated_at?: string;
@@ -163,6 +167,19 @@ export interface FactListProblem {
   scope?: 'workcase_collection';
   check_status?: string;
   issues?: Array<Record<string, unknown>>;
+}
+
+export interface FieldIssue {
+  path: string;
+  reason: 'missing' | 'type_mismatch' | 'identity_mismatch';
+  expected: string;
+  raw_value?: unknown;
+}
+
+export interface UnparsedStructure {
+  path: string;
+  reason: string;
+  raw_value?: unknown;
 }
 
 export interface RelatedObjectSummary {
@@ -302,7 +319,7 @@ export interface ObjectDetail<TData extends Record<string, unknown> = Record<str
   ok: boolean;
   action: string;
   target: string;
-  summary: { id: string; type: string; status?: string; phase?: string; read_status?: FactReadStatus };
+  summary: { id: string; type: string; status?: string; phase?: string; check_status?: FactReadStatus };
   data: TData;
 }
 

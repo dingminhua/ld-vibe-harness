@@ -791,7 +791,13 @@ export default function ObjectList() {
           onOpen={openObject}
           showNonActiveReason={false}
           displayStatus={progressGroup ?? 'unknown'}
-        />
+        >
+          {!progressGroup && (
+            <p className="ldvh-card-decision-body rounded-md border border-red-500/30 bg-red-500/[0.07] px-3 py-2 text-red-400">
+              {t('objectList.workcaseProgressGroupUnavailable')}
+            </p>
+          )}
+        </ObjectCardFrame>
       );
     }
 

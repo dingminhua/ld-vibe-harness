@@ -4,6 +4,8 @@
 
 当前适用规划：
 
+- [Web 字段级事实读取迁移](web-field-level-reading.md)：覆盖经 Helper 管辖解析约束的 Web 当前事实直读、字段级问题与未解析结构呈现、WorkCase 统一读取、旧 V4 Python machine 退役及对应验证。
+
 - [Study 重建事实契约](study-rebuild-fact-contract.md)：覆盖 v3 基线下的 Study 五段正文、`active / retired` 生命周期、共用 URLs 字段、Code/Web 派生面、历史对象退出与验证边界。
 - [Spark 完整语义与分层阅读纵切](spark-reading-vertical-slice.md)：覆盖 Spark 完整 `summary`、Helper F2 有界原样摘录、Web 独立完整阅读、三字段 direct capture 提示与对应测试边界。
 - [规范上下文组合读取](specification-context-reading.md)：覆盖 `read-specification-context` 的精确请求解析、同快照 L3 组合、标题导航、L1 scope 回指、摘要、partial 结果与发行快照验证。

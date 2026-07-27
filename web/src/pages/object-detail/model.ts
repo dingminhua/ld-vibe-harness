@@ -19,6 +19,8 @@ export const META_KEYS = [
   'content_fingerprint',
   'coverage_status',
   'check_status',
+  'field_issues',
+  'unparsed_structures',
   'observed_at',
   'read_issues',
   'fact_read_failure',

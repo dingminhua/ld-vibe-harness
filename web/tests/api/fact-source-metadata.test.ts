@@ -43,13 +43,13 @@ test('local exact reads carry source metadata for each local carrier, while list
     assert.equal(candidate?.object_id, 'study-0001');
     assert.equal('canonical_path' in (candidate ?? {}), false);
     assert.equal('carrier' in (candidate ?? {}), false);
-    assert.equal('check_status' in (candidate ?? {}), false);
+    assert.equal(candidate?.check_status, 'readable');
   } finally {
     await rm(root, { recursive: true, force: true });
   }
 });
 
-test('unreadable exact reads expose only read metadata, not a partial fact or domain status', async () => {
+test('identity and required-field problems remain readable field-level results', async () => {
   const root = await mkdtemp(path.join(tmpdir(), 'ldvh-web-facts-'));
   const scope: LocalFactScope = { worktreeLocator: root, governedProjectId: 'fixture' };
   const studyDir = path.join(root, 'ldvh-base', 'studies');
@@ -60,21 +60,23 @@ test('unreadable exact reads expose only read metadata, not a partial fact or do
     'utf8',
   );
   try {
-    const invalid = await showObject('study-0002', scope);
-    if (!invalid.ok) throw new Error(invalid.error);
-    assert.equal(invalid.ok, true);
-    assert.equal(invalid.summary.read_status, 'invalid');
-    assert.equal(invalid.summary.status, undefined);
-    assert.equal(invalid.data.fact_read_failure, true);
-    assert.equal(invalid.data.canonical_path, 'ldvh-base/studies/study-0002.md');
-    assert.equal(invalid.data.carrier, 'markdown');
-    assert.equal(invalid.data.report_body, undefined);
-    assert.equal(invalid.data.status, undefined);
+    const readable = await showObject('study-0002', scope);
+    if (!readable.ok) throw new Error(readable.error);
+    assert.equal(readable.ok, true);
+    assert.equal(readable.summary.check_status, undefined);
+    assert.equal(readable.data.check_status, 'readable');
+    assert.equal(readable.data.fact_read_failure, undefined);
+    assert.equal(readable.data.status, 'active');
+    const issues = readable.data.field_issues as Array<Record<string, unknown>>;
+    assert.deepEqual(issues.map((issue) => [issue.path, issue.reason]).sort(), [
+      ['created_at', 'missing'],
+      ['object_id', 'identity_mismatch'], ['title', 'missing'], ['updated_at', 'missing'],
+    ]);
 
     const missing = await showObject('study-9999', scope);
     if (!missing.ok) throw new Error(missing.error);
     assert.equal(missing.ok, true);
-    assert.equal(missing.summary.read_status, 'not_found');
+    assert.equal(missing.summary.check_status, 'unreadable');
     assert.equal(missing.data.fact_read_failure, true);
     assert.equal(missing.data.canonical_path, 'ldvh-base/studies/study-9999.md');
     assert.equal(missing.data.report_body, undefined);
