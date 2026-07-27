@@ -154,13 +154,10 @@ function WorkCasePlanConfirmationContent({
           )}
         </div>
         {criteria.length > 0 ? (
-          <ul className="mt-2 grid min-w-0 gap-1.5">
+          <ul className="mt-2 grid min-w-0 list-disc gap-1.5 pl-5 marker:text-ldvh-text-secondary/60">
             {criteria.map((criterion, index) => (
-              <li key={`${index}-${criterion}`} className="flex min-w-0 items-start gap-2">
-                <span aria-hidden="true" className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-ldvh-text-secondary/60" />
-                <div className="ldvh-card-decision-body min-w-0 break-words">
-                  <SummaryText value={criterion} collapseThreshold={Number.MAX_SAFE_INTEGER} />
-                </div>
+              <li key={`${index}-${criterion}`} className="ldvh-card-decision-body min-w-0 break-words pl-0.5">
+                <SummaryText value={criterion} collapseThreshold={Number.MAX_SAFE_INTEGER} />
               </li>
             ))}
           </ul>
