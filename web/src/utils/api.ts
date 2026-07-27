@@ -100,9 +100,6 @@ export interface ObjectItem {
   description?: string;
   evolution?: Array<Record<string, unknown>>;
   source_detail?: string;
-  resolved_to?: string | { type?: string; ref?: string };
-  resolved_at?: string;
-  related_studies?: string[];
   /** Exact field-level source metadata. */
   object_id?: string;
   fact_type_key?: string;

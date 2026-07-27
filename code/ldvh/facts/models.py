@@ -20,8 +20,8 @@ IssueCategory = Literal[
 class FactIssue:
     category: IssueCategory
     summary: str
-    code: str | None = None
     field_path: str | None = None
+    code: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
