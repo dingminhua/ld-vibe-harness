@@ -22,7 +22,7 @@
   }
 
   .ldvh-card-title-prominent {
-    @apply text-base font-semibold leading-6 text-ldvh-text-primary;
+    @apply text-sm font-semibold leading-5 text-ldvh-text-primary;
   }
 
   .ldvh-card-decision-title {
@@ -500,6 +500,20 @@ input::-moz-focus-inner {
   background: rgb(var(--ldvh-accent) / 0.06);
   padding: 0.5rem 0.75rem;
   color: rgb(var(--ldvh-text-secondary));
+}
+
+/* Plan-confirmation cards: violet-tinted surface to distinguish the
+   "方案待确认" group, reusing the LDVH plan_confirmation token (#8b5cf6)
+   without changing any card content. */
+@layer utilities {
+  .ldvh-card-plan-confirmation {
+    border-color: rgb(196 181 253);
+    background-color: rgb(245 243 255 / 0.55);
+  }
+  .dark .ldvh-card-plan-confirmation {
+    border-color: rgb(139 92 246 / 0.45);
+    background-color: rgb(139 92 246 / 0.08);
+  }
 }
 
 .ldvh-inline-markdown :where(table) {

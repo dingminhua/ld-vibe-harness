@@ -154,20 +154,18 @@ function WorkCasePlanConfirmationContent({
           )}
         </div>
         {criteria.length > 0 ? (
-          <ul className="mt-2 grid min-w-0 gap-1.5">
+          <ul className="mt-2 grid min-w-0 gap-0">
             {criteria.map((criterion, index) => (
               <li key={`${index}-${criterion}`} className="flex min-w-0 items-start gap-2">
                 <span
                   aria-hidden="true"
-                  className="flex h-5 w-2 shrink-0 items-center justify-center"
-                >
-                  <span className="h-1.5 w-1.5 rounded-full bg-ldvh-text-secondary/60" />
-                </span>
+                  className="mt-3.5 h-1 w-1 shrink-0 rounded-full bg-ldvh-text-secondary/70"
+                />
                 <div className="ldvh-caption min-w-0 flex-1 break-words">
                   <SummaryText
                     value={criterion}
                     collapseThreshold={Number.MAX_SAFE_INTEGER}
-                    className="text-xs leading-5 text-ldvh-text-secondary"
+                    className="text-[13px] leading-5 text-ldvh-text-secondary"
                   />
                 </div>
               </li>
@@ -190,7 +188,7 @@ function WorkCaseGoalSection({ goal, t }: { goal?: string; t: Translate }) {
           <SummaryText
             value={goal}
             collapseThreshold={Number.MAX_SAFE_INTEGER}
-            className="text-xs leading-5 text-ldvh-text-secondary"
+            className="text-[13px] leading-5 text-ldvh-text-secondary"
           />
         </div>
       ) : (
@@ -490,6 +488,7 @@ function ObjectCardFrame({
   const { t } = useI18n();
   const presentedStatus = displayStatus ?? obj.status;
   const titleAccentClass = getTitleAccentClass(presentedStatus);
+  const isPlanConfirmation = presentedStatus === 'plan_confirmation';
   const typeColor = CATEGORY_COLORS[obj.type] || CATEGORY_COLORS.other;
   const nonActiveReason = getNonActiveReason(obj, t);
   return (
@@ -498,7 +497,7 @@ function ObjectCardFrame({
       tabIndex={0}
       onClick={() => onOpen(obj.id)}
       onKeyDown={(event) => handleKeyboardOpen(event, () => onOpen(obj.id))}
-      className="group/card flex min-w-0 cursor-pointer flex-col gap-3 rounded-lg border border-ldvh-border bg-ldvh-panel p-4 text-left outline-none transition-colors hover:border-ldvh-accent/40 hover:bg-ldvh-panel/95 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ldvh-accent/70"
+      className={`group/card flex min-w-0 cursor-pointer flex-col gap-3 rounded-lg border border-ldvh-border bg-ldvh-panel p-4 text-left outline-none transition-colors hover:border-ldvh-accent/40 hover:bg-ldvh-panel/95 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ldvh-accent/70 ${isPlanConfirmation ? 'ldvh-card-plan-confirmation' : ''}`}
     >
       <div className="flex min-w-0 items-center justify-between gap-2">
         <span className="ldvh-meta-muted min-w-0 truncate">{obj.id}</span>
