@@ -8,6 +8,7 @@ import { existsSync } from 'node:fs'
 import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
 import yaml from 'js-yaml'
+import { FACT_FIELD_CONTRACT, type FactType, type FieldExpectation } from './factFieldContract.js'
 
 export const FACT_TYPE_DIRS = {
   workcase: 'workcases',
@@ -25,7 +26,7 @@ export const FACT_TYPE_CARRIERS = {
   study: '.md',
 } as const
 
-export type LocalFactType = keyof typeof FACT_TYPE_DIRS
+export type LocalFactType = FactType
 export type LocalFactCarrier = 'yaml' | 'markdown'
 export type LocalFactReadStatus = 'readable' | 'unreadable'
 
@@ -76,52 +77,6 @@ export type LocalFactList = {
 export interface LocalFactScope {
   worktreeLocator: string
   governedProjectId: string
-}
-
-type FieldExpectation = 'string' | 'number' | 'array' | 'object'
-
-const COMMON_FIELDS: Record<string, FieldExpectation> = {
-  object_id: 'string', fact_type_key: 'string', title: 'string', status: 'string',
-  created_at: 'string', updated_at: 'string', urls: 'array', relations: 'array',
-}
-
-const REQUIRED_FIELDS: Record<LocalFactType, ReadonlySet<string>> = {
-  workcase: new Set(['object_id', 'fact_type_key', 'title', 'status', 'created_at', 'updated_at']),
-  adr: new Set(['object_id', 'fact_type_key', 'title', 'status', 'created_at', 'updated_at']),
-  pitfall: new Set(['object_id', 'fact_type_key', 'title', 'status', 'created_at', 'updated_at']),
-  spark: new Set(['object_id', 'fact_type_key', 'title', 'status', 'created_at', 'updated_at', 'summary']),
-  study: new Set(['object_id', 'fact_type_key', 'title', 'status', 'created_at', 'updated_at']),
-}
-
-/**
- * Page-consumed field names only. Their semantics, requiredness, and titles
- * remain in the current field registry and type specifications.
- */
-const DETAIL_FIELDS: Record<LocalFactType, Record<string, FieldExpectation>> = {
-  workcase: {
-    goal: 'string', scope: 'string', phase: 'string', summary: 'string', resume_from: 'string',
-    waiting_on: 'string', blocking_summary: 'string', priority: 'string',
-    success_criterion_definitions: 'array', success_criterion_results: 'array', plan_version: 'number',
-    work_items: 'array', creation_reviews: 'array', execution_approval: 'object', result_version: 'number',
-    result_summary: 'string', controller_check_summary: 'string', result_reviews: 'array',
-    validation_summary: 'string', closure_proposal: 'object', closure_outcome: 'string',
-    disposition_summary: 'string', residual_responsibilities: 'array',
-  },
-  adr: {
-    decision_question: 'string', decision: 'string', applicability: 'string', rationale: 'string',
-    consequences: 'string', disposition_summary: 'string',
-  },
-  pitfall: {
-    symptoms: 'string', trigger_conditions: 'string', applicability: 'string', validation_summary: 'string',
-    root_cause: 'string', resolution: 'string', avoidance: 'string', disposition_summary: 'string',
-  },
-  spark: {
-    intent: 'string', summary: 'string', evolution: 'array', disposition_summary: 'string', priority: 'string',
-  },
-  study: {
-    research_intent: 'string', research_question: 'string', abstract: 'string',
-    recommendation_summary: 'string', report_body: 'string', disposition_summary: 'string',
-  },
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -201,14 +156,15 @@ function isConsumableRecordMember(type: LocalFactType, field: string, member: Re
 
 function projectFields(type: LocalFactType, objectId: string, parsed: Record<string, unknown>, extra: Record<string, unknown>): Pick<LocalFactItem, 'fact_object' | 'field_issues' | 'unparsed_structures'> {
   const all = { ...parsed, ...extra }
-  const expected = { ...COMMON_FIELDS, ...DETAIL_FIELDS[type] }
+  const expected = FACT_FIELD_CONTRACT[type]
   const factObject: Record<string, unknown> = {}
   const fieldIssues: FieldIssue[] = []
   const unparsedStructures: UnparsedStructure[] = []
-  for (const [field, kind] of Object.entries(expected)) {
+  for (const [field, contract] of Object.entries(expected)) {
+    const { expected: kind } = contract
     const value = all[field]
     if (value === undefined || value === null) {
-      if (REQUIRED_FIELDS[type].has(field)) fieldIssues.push({ path: field, reason: 'missing', expected: kind })
+      if (contract.required) fieldIssues.push({ path: field, reason: 'missing', expected: kind })
       continue
     }
     if (!matchesExpectation(value, kind)) {

@@ -728,7 +728,7 @@ def test_invalid_object_makes_coverage_partial_and_remains_observable(tmp_path: 
     workspace, project = _fixture(tmp_path)
     _create(workspace, project, "workcase", _workcase())
     sparks = project / "ldvh-base" / "sparks"
-    sparks.mkdir(parents=True)
+    sparks.mkdir(parents=True, exist_ok=True)
     (sparks / "spark-9999.yaml").write_text("not: [valid", encoding="utf-8")
 
     response = handle_request("call", "find-fact-object-candidates", _payload(workspace, project, "F1")).response
@@ -744,7 +744,7 @@ def test_invalid_object_makes_coverage_partial_and_remains_observable(tmp_path: 
 def test_noncanonical_carrier_makes_candidate_coverage_partial_without_silent_exclusion(tmp_path: Path) -> None:
     workspace, project = _fixture(tmp_path)
     sparks = project / "ldvh-base" / "sparks"
-    sparks.mkdir(parents=True)
+    sparks.mkdir(parents=True, exist_ok=True)
     (sparks / "legacy.yaml").write_text("summary: old carrier\n", encoding="utf-8")
 
     response = handle_request("call", "find-fact-object-candidates", _payload(workspace, project, "F1")).response
@@ -772,7 +772,7 @@ def test_noncanonical_carrier_makes_candidate_coverage_partial_without_silent_ex
 def test_wrong_suffix_carrier_makes_candidate_coverage_partial_without_silent_exclusion(tmp_path: Path) -> None:
     workspace, project = _fixture(tmp_path)
     sparks = project / "ldvh-base" / "sparks"
-    sparks.mkdir(parents=True)
+    sparks.mkdir(parents=True, exist_ok=True)
     (sparks / "spark-0001.yml").write_text("summary: old carrier\n", encoding="utf-8")
 
     response = handle_request("call", "find-fact-object-candidates", _payload(workspace, project, "F1")).response

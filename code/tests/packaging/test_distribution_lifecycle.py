@@ -326,6 +326,8 @@ def _managed_project(root: Path) -> tuple[Path, Path]:
     workspace = root / "workspace"
     project = workspace / "project"
     project.mkdir(parents=True)
+    for directory in ("workcases", "adrs", "pitfalls", "sparks", "studies"):
+        (project / "ldvh-base" / directory).mkdir(parents=True, exist_ok=True)
     _run_checked(["git", "init", "-q", str(project)], cwd=root)
     (project / "observed.txt").write_text("governed project\n", encoding="utf-8")
     (workspace / "LDVH-GOVERNED-PROJECTS.yaml").write_text(

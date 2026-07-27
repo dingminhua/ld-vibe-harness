@@ -28,8 +28,9 @@ def _workspace(tmp_path: Path, *, project_count: int = 1, with_workcase: bool = 
     workspace.mkdir()
     projects = [_git_repository(tmp_path / f"project-{index}") for index in range(project_count)]
     if with_workcase and projects:
+        for directory in ("workcases", "adrs", "pitfalls", "sparks", "studies"):
+            (projects[0] / "ldvh-base" / directory).mkdir(parents=True, exist_ok=True)
         target = projects[0] / "ldvh-base/workcases/workcase-0007.yaml"
-        target.parent.mkdir(parents=True)
         shutil.copyfile(WORKCASE_FIXTURE, target)
     lines = [
         "product_name: Test",

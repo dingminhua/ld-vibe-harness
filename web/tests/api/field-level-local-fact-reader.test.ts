@@ -10,6 +10,11 @@ const base = [
   'status: proposed',
   'created_at: "2026-01-01"',
   'updated_at: "2026-01-02"',
+  'decision_question: Which option?',
+  'decision: Use the current option',
+  'applicability: This fixture',
+  'rationale: It is sufficient here',
+  'consequences: No production effect',
 ].join('\n');
 
 test('field-level reader keeps recoverable field defects separate from unreadable carriers', async () => {

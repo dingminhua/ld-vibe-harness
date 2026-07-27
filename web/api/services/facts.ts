@@ -8,6 +8,7 @@ import {
 } from './localFactReader.js'
 import { resolveCurrentWebProject, WebGovernanceError } from './governanceScope.js'
 import { deriveWorkCaseProgressProjection } from '../../shared/workcaseStatus.js'
+import { FACT_LIST_FIELD_NAMES } from './factFieldContract.js'
 
 export const ACTIVE_OBJECT_TYPES = ['workcase', 'adr', 'pitfall', 'spark', 'study'] as const
 export const OBJECT_TYPES = ACTIVE_OBJECT_TYPES
@@ -72,7 +73,7 @@ function readFailure(id: string, type: ObjectType, metadata: LocalFactMetadata, 
 
 function projectListItem(type: ObjectType, item: LocalFactItem): Record<string, unknown> {
   const source = item.fact_object ?? {}
-  const base = type === 'workcase' ? projectWorkCaseCard(source) : source
+  const base = type === 'workcase' ? projectWorkCaseCard(source) : copyPresentFields(source, FACT_LIST_FIELD_NAMES[type])
   return {
     ...base,
     read_status: item.read_status,

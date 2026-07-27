@@ -46,6 +46,7 @@ test('local exact reads carry source metadata for each local carrier, while list
     assert.equal('carrier' in (candidate ?? {}), false);
     assert.equal(candidate?.read_status, 'readable');
     assert.deepEqual(candidate?.read_issues, []);
+    assert.equal(candidate?.report_body, undefined);
   } finally {
     await rm(root, { recursive: true, force: true });
   }
@@ -71,8 +72,10 @@ test('identity and required-field problems remain readable field-level results',
     assert.equal(readable.data.status, 'active');
     const issues = readable.data.field_issues as Array<Record<string, unknown>>;
     assert.deepEqual(issues.map((issue) => [issue.path, issue.reason]).sort(), [
+      ['abstract', 'missing'],
       ['created_at', 'missing'],
-      ['object_id', 'identity_mismatch'], ['title', 'missing'], ['updated_at', 'missing'],
+      ['object_id', 'identity_mismatch'], ['research_question', 'missing'], ['title', 'missing'],
+      ['updated_at', 'missing'], ['urls', 'missing'],
     ]);
 
     const missing = await showObject('study-9999', scope);
