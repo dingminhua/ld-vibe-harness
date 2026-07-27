@@ -96,8 +96,6 @@ export interface ObjectItem {
   decision?: string;
   consequences?: string;
   /** Spark-specific */
-  source?: string;
-  description?: string;
   evolution?: Array<Record<string, unknown>>;
   source_detail?: string;
   /** Exact field-level source metadata. */

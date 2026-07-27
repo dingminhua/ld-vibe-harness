@@ -4,6 +4,7 @@
 
 import { Router, type Request, type Response } from 'express'
 import { listObjects, ACTIVE_OBJECT_TYPES } from '../services/facts.js'
+import { FACT_TERMINAL_STATUSES } from '../services/factFieldContract.js'
 import { getGitLog } from '../services/git.js'
 import { getRelativeTime } from '../services/time.js'
 import { getTypeColor } from '../services/typeColors.js'
@@ -65,14 +66,9 @@ function getCoverageStatus(result: unknown): 'complete' | 'partial' | 'unavailab
       : 'unavailable'
 }
 
-/** 按每种当前事实类型的唯一定义识别终态，不共享历史状态词。
- * 终态闭集同步义务：sparks → specs/20 §2.2，adr → specs/21 §5，pitfall → specs/22 §5，study → specs/24 §5。
- * 变更任一类型的终态定义时必须同时更新对应 specs 与此处的闭集。
- */
+/** 终态闭集统一来自 factFieldContract（回指各类型规范 §6 状态闭集），不在此复述。 */
 function isActionableSourceStatus(type: Exclude<DashboardObjectType, 'workcase'>, status: string): boolean {
-  if (type === 'spark') return !['routed', 'implemented', 'discarded'].includes(status)
-  if (type === 'adr' || type === 'pitfall' || type === 'study') return status !== 'retired'
-  return false
+  return !FACT_TERMINAL_STATUSES[type].includes(status)
 }
 
 function isActionableItem(item: DashboardCandidate): boolean {

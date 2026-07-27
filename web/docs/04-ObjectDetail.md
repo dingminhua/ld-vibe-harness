@@ -116,7 +116,7 @@ WorkCase 详情页用于完整理解同一项当前工作责任，不复刻外�
 
 当前事实对象不使用按目标类型拆分的 `related_*` 或本地路径引用字段。`urls` 只承载带标题和用途摘要的外部 `http(s)` 网址；`relations` 只承载关系语义和稳定对象目标，不复制目标标题、状态或内容。对象规范路径属于 machine 精确读取元数据，只能在读取成功后提供复制入口，不能写入事实正文或由对象 ID 推测。
 
-带章节后缀的本地 Markdown 引用应区分展示文本与加载路径：列表行保留完整引用文本，例如 `specs/07-Code 实践与测试规范.md §4.7`；点击整行或扩展阅读图标时，只用规范化后的 Markdown 文件路径加载右侧阅读区，例如 `specs/07-Code 实践与测试规范.md`，不得把章节后缀拼入文件读取 API。
+带章节后缀的本地 Markdown 引用应区分展示文本与加载路径：列表行保留完整引用文本，例如 `specs/08-Web 呈现与交互规范.md §5.3`；点击整行或扩展阅读图标时，只用规范化后的 Markdown 文件路径加载右侧阅读区，例如 `specs/08-Web 呈现与交互规范.md`，不得把章节后缀拼入文件读取 API。
 
 V4 Study 阅读器读取当前 Study 的 `research_intent`、`research_question`、`abstract`、`recommendation_summary`、Markdown 正文与 `urls`。首级详情与对象预览按“研究意图 → 摘要 → 建议 → 正文入口 → 关联”组织；`research_question` 留在报告“研究问题”段，正文只通过同一精确读取的 Markdown carrier 进入扩展阅读。终态对象若实际带有 `disposition_summary`，在正文入口之后如实显示该补充说明；不得读取或投影旧版兼容 DTO。
 

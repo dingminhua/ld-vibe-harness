@@ -103,3 +103,16 @@ export const FACT_LIST_FIELD_NAMES: Record<Exclude<FactType, 'workcase'>, readon
   spark: Object.keys(FACT_FIELD_CONTRACT.spark),
   study: Object.keys(FACT_FIELD_CONTRACT.study).filter((name) => name !== 'report_body'),
 }
+
+/**
+ * Terminal status sets per fact type. Unique definition sources are the
+ * status closures in each type spec's "§6 对象语义与生命周期"
+ * (specs/20–24); changing any set requires updating the type spec first.
+ */
+export const FACT_TERMINAL_STATUSES: Record<FactType, readonly string[]> = {
+  workcase: ['closed'],
+  adr: ['retired'],
+  pitfall: ['retired'],
+  spark: ['routed', 'implemented', 'discarded'],
+  study: ['retired'],
+}
