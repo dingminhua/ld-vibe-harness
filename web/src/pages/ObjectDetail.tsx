@@ -505,8 +505,7 @@ export function ObjectIdentityHeader({
   const titleClassName = compact ? 'ldvh-reading-title' : 'ldvh-page-title';
   const iconSize = compact ? 16 : 18;
   const statusColor = status ? getStatusColor(status) : null;
-  const tagMetaEntry = auxiliaryMetaEntries.find(([key]) => key === 'tags');
-  const remainingAuxiliaryMetaEntries = auxiliaryMetaEntries.filter(([key]) => key !== 'priority' && key !== 'tags');
+  const remainingAuxiliaryMetaEntries = auxiliaryMetaEntries.filter(([key]) => key !== 'priority');
   const hasFooterMeta = showDefaultDates
     || remainingAuxiliaryMetaEntries.length > 0
     || customMetaEntries.length > 0;
@@ -571,15 +570,6 @@ export function ObjectIdentityHeader({
           </div>
         )}
       </div>
-      {tagMetaEntry && (
-        <div className="mt-2 flex min-w-0 flex-wrap items-center justify-start gap-x-4 gap-y-1 text-left">
-          <HeaderDateMeta
-            label={getFieldLabel(tagMetaEntry[0], locale)}
-            value={formatAuxiliaryMetaValue(tagMetaEntry[0], tagMetaEntry[1], locale)}
-            align="start"
-          />
-        </div>
-      )}
       {hasFooterMeta && (
         <div className="mt-2 flex min-w-0 flex-wrap items-center justify-end gap-x-4 gap-y-1 text-right">
           {showDefaultDates && <HeaderDateMeta label={t('objectDetail.createdShort')} value={created} />}
@@ -618,89 +608,6 @@ function HeaderDateMeta({ label, value, align = 'end' }: { label: string; value:
       <span className={`${valueClassName} leading-4`}>{value}</span>
     </span>
   );
-}
-
-export function DefinitionRow({
-  label,
-  value,
-  muted = false,
-  emphasis = false,
-}: {
-  label: string;
-  value: unknown;
-  muted?: boolean;
-  emphasis?: boolean;
-}) {
-  if (!value || (typeof value === 'string' && value.trim().length === 0)) return null;
-  return (
-    <div className="grid gap-2 py-3 first:pt-0 last:pb-0 sm:grid-cols-[5.625rem_1fr]">
-      <div className="ldvh-caption-strong text-ldvh-text-secondary">{label}</div>
-      <div className={`ldvh-definition-text min-w-0 ${muted ? 'opacity-85' : ''} ${emphasis ? 'rounded-md border border-amber-500/20 bg-amber-500/5 px-3 py-2' : ''}`}>
-        <DefinitionValue value={String(value)} muted={muted} />
-      </div>
-    </div>
-  );
-}
-
-function DefinitionValue({ value, muted = false }: { value: string; muted?: boolean }) {
-  const lines = value
-    .split('\n')
-    .map((line) => normalizeDefinitionLine(line))
-    .filter(Boolean);
-
-  if (lines.length <= 1) {
-    return <p className={muted ? 'ldvh-body-muted' : 'ldvh-body'}>{value}</p>;
-  }
-
-  return (
-    <div className="flex min-w-0 flex-col gap-1.5">
-      {lines.map((line, index) => (
-        <DefinitionStatement key={`${index}-${line}`} line={line} muted={muted} />
-      ))}
-    </div>
-  );
-}
-
-function DefinitionStatement({ line, muted = false }: { line: string; muted?: boolean }) {
-  const statement = splitDefinitionStatement(line);
-  const textClassName = muted ? 'ldvh-body-muted' : 'ldvh-body';
-
-  if (statement) {
-    const tone = statement.term === '不包含'
-      ? 'border-rose-500/20 bg-rose-500/5 text-rose-400'
-      : 'border-ldvh-accent/20 bg-ldvh-accent/5 text-ldvh-accent';
-    return (
-      <div className="grid min-w-0 gap-2 py-0.5 sm:grid-cols-[4rem_1fr]">
-        <span className={`ldvh-caption-strong inline-flex h-6 w-fit items-center rounded-md border px-1.5 ${tone}`}>
-          {statement.term}
-        </span>
-        <p className={textClassName}>{statement.content}</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="grid min-w-0 gap-2 py-0.5 sm:grid-cols-[0.625rem_1fr]">
-      <span className="mt-2 h-1.5 w-1.5 rounded-full bg-ldvh-text-secondary/45" aria-hidden="true" />
-      <p className={textClassName}>{line}</p>
-    </div>
-  );
-}
-
-function splitDefinitionStatement(line: string): { term: string; content: string } | null {
-  const match = line.match(/^([^：:]{1,6})[：:]\s*(.+)$/);
-  if (!match) return null;
-  const [, term, content] = match;
-  return { term: term.trim(), content: content.trim() };
-}
-
-function normalizeDefinitionLine(line: string): string {
-  return line
-    .trim()
-    .replace(/^[-*]\s+/, '')
-    .replace(/^\d+[.)]\s+/, '')
-    .replace(/^\[[ xX]\]\s+/, '')
-    .trim();
 }
 
 export function MaterialRow({
@@ -1026,7 +933,6 @@ export function getFieldLabel(fieldKey: string, locale: string) {
 }
 
 function localizeMetaValue(fieldKey: string, rawValue: string, locale: string) {
-  if (fieldKey === 'tags') return rawValue.trim();
   if (isSignalField(fieldKey)) {
     return getSignalText(fieldKey, rawValue, locale) || rawValue.trim();
   }
@@ -1047,8 +953,6 @@ function MetaValueChip({ fieldKey, value, children }: { fieldKey?: string; value
 }
 
 function formatAuxiliaryMetaValue(fieldKey: string, value: unknown, locale: string): ReactNode {
-  if (fieldKey === 'source') return localizeMetaValue(fieldKey, String(value), locale);
-
   if (Array.isArray(value)) {
     return (
       <span className="flex flex-wrap gap-1.5">

@@ -7,7 +7,7 @@ import { listLocalFacts, readLocalFact, type LocalFactScope } from '../../api/se
 
 const base = [
   'fact_type_key: adr',
-  'status: proposed',
+  'status: active',
   'created_at: "2026-01-01"',
   'updated_at: "2026-01-02"',
   'decision_question: Which option?',

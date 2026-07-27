@@ -83,8 +83,6 @@ export interface ObjectItem {
   path: string;
   created?: string;
   updated: string;
-  kind?: 'type_not_integrated';
-  message?: string;
   priority?: string;
   importance?: string;
   executionItemsProjectionValid?: boolean;
@@ -155,7 +153,7 @@ export interface WorkCaseProgressOption {
   count: number;
 }
 
-export type FactCoverageStatus = 'complete' | 'partial' | 'unavailable';
+export type FactCoverageStatus = 'complete' | 'partial' | 'unavailable' | 'type_not_integrated';
 
 export interface FactListProblem {
   code?: string;

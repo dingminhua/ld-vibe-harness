@@ -59,6 +59,6 @@ export default function WorkCaseProgressFilter({
 }
 
 function formatCoverageCount(count: number, coverageStatus: FactCoverageStatus): string {
-  if (coverageStatus === 'unavailable') return '—';
+  if (coverageStatus === 'unavailable' || coverageStatus === 'type_not_integrated') return '—';
   return coverageStatus === 'partial' ? `${count}+` : String(count);
 }

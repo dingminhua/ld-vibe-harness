@@ -704,8 +704,6 @@ export default function ObjectList() {
   }, [currentType, activeStatus, activePriority, activeProgressGroup]);
 
   const sortedItems = sortObjectsForList(items, currentType);
-  const typeNotIntegrated = sortedItems.find((item) => item.kind === 'type_not_integrated');
-  const visibleItems = sortedItems.filter((item) => item.kind !== 'type_not_integrated');
 
   const handleStatusChange = (status: string | null) => {
     const nextParams = new URLSearchParams(searchParams);
@@ -862,7 +860,7 @@ export default function ObjectList() {
                   onChange={handlePriorityChange}
                   options={priorityOptions}
                   loading={loading}
-                  coverageStatus={currentType === 'workcase' ? coverageStatus : 'complete'}
+                  coverageStatus={coverageStatus}
                 />
               ) : (
                 <p className="ldvh-meta text-ldvh-text-secondary">{t('objectList.priorityNotApplicable')}</p>
@@ -899,14 +897,13 @@ export default function ObjectList() {
         </div>
       </div>
 
-      {!loading && !error && currentType === 'workcase'
-        && (coverageStatus !== 'complete' || coverageProblemCount > 0) && (
+      {!loading && !error && (coverageStatus !== 'complete' || coverageProblemCount > 0) && (
         <div
           role="status"
           className={`mb-4 flex min-w-0 items-start gap-2 rounded-lg border px-4 py-3 ${
             coverageStatus === 'unavailable'
               ? 'border-red-500/30 bg-red-500/10 text-red-300'
-              : coverageStatus === 'partial'
+              : coverageStatus === 'partial' || coverageStatus === 'type_not_integrated'
               ? 'border-amber-500/30 bg-amber-500/10 text-amber-300'
               : 'border-sky-500/30 bg-sky-500/10 text-sky-300'
           }`}
@@ -914,21 +911,23 @@ export default function ObjectList() {
           <CircleAlert size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
           <div className="min-w-0">
             <p className="ldvh-body">
-              {coverageStatus === 'complete'
-                ? t('objectList.workcaseObjectProblems')
+              {coverageStatus === 'type_not_integrated'
+                ? t('objectList.typeNotIntegrated')
+                : coverageStatus === 'complete'
+                ? t(currentType === 'workcase' ? 'objectList.workcaseObjectProblems' : 'objectList.objectProblems')
                 : coverageStatus === 'partial'
-                ? t('objectList.workcaseCoveragePartial')
-                : t('objectList.workcaseCoverageUnavailable')}
+                ? t(currentType === 'workcase' ? 'objectList.workcaseCoveragePartial' : 'objectList.coveragePartial')
+                : t(currentType === 'workcase' ? 'objectList.workcaseCoverageUnavailable' : 'objectList.coverageUnavailable')}
             </p>
             {coverageProblemCount > 0 && (
               <details className="mt-2">
                 <summary className="ldvh-meta cursor-pointer">
-                  {t('objectList.workcaseCoverageProblemCount', { count: String(coverageProblemCount) })}
+                  {t(currentType === 'workcase' ? 'objectList.workcaseCoverageProblemCount' : 'objectList.coverageProblemCount', { count: String(coverageProblemCount) })}
                 </summary>
                 <ul className="mt-2 grid gap-2">
                   {coverageProblems.map((problem, index) => {
                     const problemIdentity = problem.object_ref?.object_id
-                      ?? t('objectList.workcaseCoverageCollectionScope');
+                      ?? t(currentType === 'workcase' ? 'objectList.workcaseCoverageCollectionScope' : 'objectList.coverageCollectionScope');
                     return (
                     <li key={`${problem.object_ref?.object_id ?? problem.scope ?? 'scope'}-${index}`} className="rounded-md border border-current/20 px-3 py-2">
                       <div className="ldvh-meta-primary break-all font-mono">
@@ -972,31 +971,29 @@ export default function ObjectList() {
             <p className="ldvh-meta text-red-400">{error}</p>
           </div>
         )
-      ) : typeNotIntegrated ? (
-        <div className="mx-auto max-w-2xl rounded-lg border border-amber-500/30 bg-amber-500/10 px-5 py-8 text-center">
-          <CircleAlert className="mx-auto mb-3 text-amber-400" size={24} />
-          <p className="ldvh-card-title text-amber-300">{t('objectList.typeNotIntegrated')}</p>
-          <p className="ldvh-body-muted mt-2">{typeNotIntegrated.message || typeNotIntegrated.title}</p>
-        </div>
-      ) : currentType === 'workcase' && coverageStatus === 'unavailable' ? (
+      ) : coverageStatus === 'type_not_integrated' ? (
         <div className="ldvh-body-muted py-20 text-center">
-          {t('objectList.workcaseCoverageUnavailableEmpty')}
+          {t('objectList.typeNotIntegrated')}
         </div>
-      ) : visibleItems.length === 0 && currentType === 'workcase' && coverageStatus === 'partial' ? (
+      ) : coverageStatus === 'unavailable' ? (
         <div className="ldvh-body-muted py-20 text-center">
-          {t('objectList.workcaseCoveragePartialEmpty')}
+          {t(currentType === 'workcase' ? 'objectList.workcaseCoverageUnavailableEmpty' : 'objectList.coverageUnavailableEmpty')}
         </div>
-      ) : visibleItems.length === 0 && currentType === 'workcase' && coverageProblemCount > 0 ? (
+      ) : sortedItems.length === 0 && coverageStatus === 'partial' ? (
         <div className="ldvh-body-muted py-20 text-center">
-          {t('objectList.workcaseObjectProblemsEmpty')}
+          {t(currentType === 'workcase' ? 'objectList.workcaseCoveragePartialEmpty' : 'objectList.coveragePartialEmpty')}
         </div>
-      ) : visibleItems.length === 0 ? (
+      ) : sortedItems.length === 0 && coverageProblemCount > 0 ? (
+        <div className="ldvh-body-muted py-20 text-center">
+          {t(currentType === 'workcase' ? 'objectList.workcaseObjectProblemsEmpty' : 'objectList.objectProblemsEmpty')}
+        </div>
+      ) : sortedItems.length === 0 ? (
         <div className="ldvh-body-muted py-20 text-center">
           {t('objectList.noObjects', { type: currentType })}
         </div>
       ) : (
         <div className="ldvh-section-grid">
-          {visibleItems.map((obj) => renderObjectCard(obj))}
+          {sortedItems.map((obj) => renderObjectCard(obj))}
         </div>
       )}
     </div>

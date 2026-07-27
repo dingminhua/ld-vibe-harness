@@ -7,7 +7,7 @@ import { listObjects, showObject } from '../../api/services/facts.ts';
 import type { LocalFactScope } from '../../api/services/localFactReader.ts';
 
 const fixtures = [
-  { type: 'adr', id: 'adr-0001', directory: 'adrs', carrier: 'yaml', body: 'object_id: adr-0001\nfact_type_key: adr\ntitle: ADR fixture\nstatus: proposed\n' },
+  { type: 'adr', id: 'adr-0001', directory: 'adrs', carrier: 'yaml', body: 'object_id: adr-0001\nfact_type_key: adr\ntitle: ADR fixture\nstatus: active\n' },
   { type: 'pitfall', id: 'pitfall-0001', directory: 'pitfalls', carrier: 'yaml', body: 'object_id: pitfall-0001\nfact_type_key: pitfall\ntitle: Pitfall fixture\nstatus: active\n' },
   {
     type: 'study', id: 'study-0001', directory: 'studies', carrier: 'markdown',

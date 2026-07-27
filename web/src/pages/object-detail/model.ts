@@ -28,7 +28,7 @@ export const META_KEYS = [
 
 export const COMMON_AUXILIARY_META_KEYS = ['priority', 'importance', 'scope', 'impact', 'assignee'];
 export const AUXILIARY_META_KEYS_BY_TYPE: Record<string, string[]> = {
-  spark: ['priority', 'tags', 'source'],
+  spark: ['priority'],
   pitfall: [],
 };
 

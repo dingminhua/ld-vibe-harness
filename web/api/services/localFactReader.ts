@@ -5,7 +5,7 @@
  * field problems, and unconsumed source structure must remain distinguishable.
  */
 import { existsSync } from 'node:fs'
-import { readdir, readFile } from 'node:fs/promises'
+import { readdir, readFile, stat } from 'node:fs/promises'
 import path from 'node:path'
 import yaml from 'js-yaml'
 import { FACT_FIELD_CONTRACT, type FactType, type FieldExpectation } from './factFieldContract.js'
@@ -245,8 +245,13 @@ export async function readLocalFact(type: LocalFactType, objectId: string, scope
   const missing = directoryStatus(scope, type)
   if (missing) return { status: 'type_not_integrated', metadata, issues: missing.issues }
   const expectedName = expectedFileName(type, objectId)
-  const entries = await readdir(baseDirOf(scope, type), { withFileTypes: true })
-  if (!entries.some((entry) => entry.isFile() && entry.name === expectedName)) {
+  const filePath = path.join(baseDirOf(scope, type), expectedName)
+  try {
+    const statResult = await stat(filePath)
+    if (!statResult.isFile()) {
+      return { status: 'not_found', metadata, issues: [{ code: 'read_failed', message: `未找到预期事实对象 ${expectedName}`, path: metadata.canonical_path }] }
+    }
+  } catch {
     return { status: 'not_found', metadata, issues: [{ code: 'read_failed', message: `未找到预期事实对象 ${expectedName}`, path: metadata.canonical_path }] }
   }
   return { status: 'ok', item: await readItemFile(scope, type, expectedName) }

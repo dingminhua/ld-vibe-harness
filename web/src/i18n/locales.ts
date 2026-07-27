@@ -106,8 +106,8 @@ export function getLocalizedObjectTitle(
   locale: string,
   fallback = '—',
 ): string {
-  if (locale === 'en') return item.title_en || item.title || item.id || fallback;
-  return item.title_zh || item.title || item.title_en || item.id || fallback;
+  if (locale === 'en') return item.title_en || item.title || fallback;
+  return item.title_zh || item.title || item.title_en || fallback;
 }
 
 export function getLocaleListSeparator(locale: string): string {
@@ -544,6 +544,7 @@ export const UI_LOCALES = {
     'dashboard.noRecentActivity': '暂无最近活动',
     'dashboard.coveragePartial': '读取范围不完整，数字仅表示当前可呈现卡片数',
     'dashboard.coverageUnavailable': '读取不可用，不能形成对象总数',
+    'dashboard.typeNotIntegrated': '该类型尚未接入',
     'dashboard.noRecentChanges': '暂无最近提交',
     'dashboard.noActionItems': '所有事项已完成',
     'dashboard.actionItems': '待推进',
@@ -637,6 +638,14 @@ export const UI_LOCALES = {
     'objectList.workcaseCoverageUnavailableEmpty': 'WorkCase 列表读取不可用，不能判断当前是否存在对象。',
     'objectList.workcaseCoveragePartialEmpty': '已观察范围内没有可呈现卡片，但读取范围不完整，不能判断当前没有 WorkCase。',
     'objectList.workcaseObjectProblemsEmpty': '读取范围中发现了 WorkCase 候选，但没有候选通过机械检查并形成可呈现对象；请查看上方诊断。',
+    'objectList.objectProblems': '读取范围完整，但部分候选存在问题，无法呈现；请查看诊断。',
+    'objectList.coveragePartial': '读取范围不完整；以下卡片只来自已取得且可以呈现的对象，不能据此判断项目中只有这些对象。',
+    'objectList.coverageUnavailable': '当前技术条件不足，无法可靠确定列表的读取范围；页面不会把它显示成完整空列表。',
+    'objectList.coverageProblemCount': '查看 {count} 项读取或覆盖诊断',
+    'objectList.coverageCollectionScope': '对象集合',
+    'objectList.coverageUnavailableEmpty': '列表读取不可用，不能判断当前是否存在对象。',
+    'objectList.coveragePartialEmpty': '已观察范围内没有可呈现卡片，但读取范围不完整，不能判断当前没有对象。',
+    'objectList.objectProblemsEmpty': '读取范围中发现了候选，但没有候选形成可呈现对象；请查看上方诊断。',
     'objectList.workcaseDynamicStages': '推进环节',
     'objectList.workcaseStageExecute': '工作项执行',
     'objectList.workcaseStageSelfCheck': '主控自检',
@@ -908,6 +917,7 @@ export const UI_LOCALES = {
     'dashboard.noRecentActivity': 'No recent activity',
     'dashboard.coveragePartial': 'Read coverage is incomplete; this is only the observed count',
     'dashboard.coverageUnavailable': 'Read unavailable; no object total can be established',
+    'dashboard.typeNotIntegrated': 'This type is not yet integrated',
     'dashboard.noRecentChanges': 'No recent commits',
     'dashboard.noActionItems': 'All items completed',
     'dashboard.actionItems': 'Action Items',
@@ -1001,6 +1011,14 @@ export const UI_LOCALES = {
     'objectList.workcaseCoverageUnavailableEmpty': 'The WorkCase list is unavailable, so object presence cannot be determined.',
     'objectList.workcaseCoveragePartialEmpty': 'No cards are displayable in the observed range, but coverage is incomplete; this does not mean there are no WorkCases.',
     'objectList.workcaseObjectProblemsEmpty': 'WorkCase candidates were found in the completed read scope, but none formed a displayable mechanically valid object. Review the diagnostics above.',
+    'objectList.objectProblems': 'Read coverage is complete, but some candidates have issues and cannot be displayed. Review the diagnostics.',
+    'objectList.coveragePartial': 'Read coverage is incomplete. The cards shown come only from successfully read objects; this does not prove these are the only objects in the project.',
+    'objectList.coverageUnavailable': 'Technical conditions did not produce a reliable list scope. The page will not present this as a complete empty list.',
+    'objectList.coverageProblemCount': 'View {count} read or coverage diagnostics',
+    'objectList.coverageCollectionScope': 'Object collection',
+    'objectList.coverageUnavailableEmpty': 'The list is unavailable, so object presence cannot be determined.',
+    'objectList.coveragePartialEmpty': 'No cards are displayable in the observed range, but coverage is incomplete; this does not mean there are no objects.',
+    'objectList.objectProblemsEmpty': 'Candidates were found in the completed read scope, but none formed a displayable object. Review the diagnostics above.',
     'objectList.workcaseDynamicStages': 'Progress step',
     'objectList.workcaseStageExecute': 'Item execution',
     'objectList.workcaseStageSelfCheck': 'Controller self-check',

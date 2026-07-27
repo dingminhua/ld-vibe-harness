@@ -80,6 +80,7 @@ export function getCommitNodeNextState(state: 'collapsed' | 'expanded') {
   return state === 'collapsed' ? 'expanded' : 'collapsed';
 }
 
+// specs/03 §9.8 固定提交正文小标题集；渲染必须忠实，不得增删或改义。
 const COMMIT_BODY_SECTION_TITLES = new Set(['关键变更', '动机', '验证结论', '影响边界', '风险与后续']);
 
 function formatCommitBodyForReading(value: string) {

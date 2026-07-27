@@ -13,7 +13,6 @@ export type FactReadMeta = {
   canonicalPath?: string;
   carrier?: FactCarrier;
   readStatus?: FactReadStatus;
-  observedAt?: string;
   issues: FactReadIssue[];
   isFailure: boolean;
 };
@@ -77,9 +76,6 @@ export function getFactReadMeta(value: Record<string, unknown> | undefined): Fac
       : undefined,
     carrier: asCarrier(value?.carrier),
     readStatus,
-    observedAt: typeof value?.observed_at === 'string' && value.observed_at.length > 0
-      ? value.observed_at
-      : undefined,
     issues: asIssues(value?.read_issues),
     isFailure: value?.fact_read_failure === true,
   };

@@ -111,12 +111,13 @@ function projectCardWorkItems(value: unknown): Record<string, unknown> {
 
 function projectCriterionStatements(value: unknown): string[] {
   if (!Array.isArray(value) || value.length === 0) return []
-  const statements = value.map((candidate) => {
-    if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) return null
-    const statement = (candidate as Record<string, unknown>).statement
-    return typeof statement === 'string' && statement.trim() ? statement : null
-  })
-  return statements.every((statement): statement is string => statement !== null) ? statements : []
+  return value
+    .map((candidate) => {
+      if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) return null
+      const statement = (candidate as Record<string, unknown>).statement
+      return typeof statement === 'string' && statement.trim() ? statement : null
+    })
+    .filter((statement): statement is string => statement !== null)
 }
 
 export function projectWorkCaseCard(fact: Record<string, unknown>): Record<string, unknown> {

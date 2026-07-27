@@ -52,10 +52,6 @@ function getWorkCaseProgressGroup(item: Record<string, unknown>): WorkCaseProgre
   return deriveWorkCaseProgressProjection(status, phase)?.progressGroup ?? null
 }
 
-function isFactItem(item: Record<string, unknown>): boolean {
-  return item.kind !== 'type_not_integrated'
-}
-
 function getCoverageStatus(result: unknown): 'complete' | 'partial' | 'unavailable' {
   if (!result || typeof result !== 'object' || !('ok' in result) || result.ok !== true || !('data' in result)) {
     return 'unavailable'
@@ -69,7 +65,10 @@ function getCoverageStatus(result: unknown): 'complete' | 'partial' | 'unavailab
       : 'unavailable'
 }
 
-/** 按每种当前事实类型的唯一定义识别终态，不共享历史状态词。 */
+/** 按每种当前事实类型的唯一定义识别终态，不共享历史状态词。
+ * 终态闭集同步义务：sparks → specs/20 §2.2，adr → specs/21 §5，pitfall → specs/22 §5，study → specs/24 §5。
+ * 变更任一类型的终态定义时必须同时更新对应 specs 与此处的闭集。
+ */
 function isActionableSourceStatus(type: Exclude<DashboardObjectType, 'workcase'>, status: string): boolean {
   if (type === 'spark') return !['routed', 'implemented', 'discarded'].includes(status)
   if (type === 'adr' || type === 'pitfall' || type === 'study') return status !== 'retired'
@@ -109,7 +108,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
           ? { type, total: 0, byProgressGroup: {} as Record<string, number>, coverageStatus: 'unavailable' as const }
           : { type, total: 0, byStatus: {} as Record<string, number>, coverageStatus: 'unavailable' as const }
       }
-      const items = ((result.data as { items: Array<Record<string, unknown>> }).items || []).filter(isFactItem)
+      const items = (result.data as { items: Array<Record<string, unknown>> }).items || []
       if (type === 'workcase') {
         const byProgressGroup: Record<string, number> = {}
         let unclassifiedCount = 0
@@ -135,7 +134,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     const allItems: DashboardCandidate[] = []
     for (const { type, result } of listResults) {
       if (!result.ok || !('data' in result)) continue
-      const items = ((result.data as { items: Array<Record<string, unknown>> }).items || []).filter(isFactItem)
+      const items = (result.data as { items: Array<Record<string, unknown>> }).items || []
       for (const item of items) {
         const updatedAt = getUpdatedAt(item)
         const sourceStatus = String(item.status || 'unknown')

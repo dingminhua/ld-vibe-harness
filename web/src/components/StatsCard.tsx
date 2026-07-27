@@ -31,18 +31,20 @@ export default function StatsCard({ type, label, count, distribution, getStatus,
           <span className="min-w-0 truncate">{label ?? type}</span>
         </span>
         <span className="font-mono text-xl font-semibold text-ldvh-accent">
-          {coverageStatus === 'unavailable' ? '—' : coverageStatus === 'partial' ? `${total}+` : total}
+          {coverageStatus === 'unavailable' || coverageStatus === 'type_not_integrated' ? '—' : coverageStatus === 'partial' ? `${total}+` : total}
         </span>
       </div>
       {coverageStatus !== 'complete' && (
         <p className={`ldvh-meta ${coverageStatus === 'partial' ? 'text-amber-400' : 'text-red-400'}`}>
           {coverageStatus === 'partial'
             ? t('dashboard.coveragePartial')
+            : coverageStatus === 'type_not_integrated'
+            ? t('dashboard.typeNotIntegrated')
             : t('dashboard.coverageUnavailable')}
         </p>
       )}
       {/* Current-state distribution bar */}
-      {coverageStatus !== 'unavailable' && total > 0 && entries.length > 0 && (
+      {coverageStatus !== 'unavailable' && coverageStatus !== 'type_not_integrated' && total > 0 && entries.length > 0 && (
         <div key={resolved} className="flex h-1.5 w-full overflow-hidden rounded-full bg-ldvh-border/50">
           {entries.map(([state, stateCount]) => (
             <div
@@ -58,7 +60,7 @@ export default function StatsCard({ type, label, count, distribution, getStatus,
         </div>
       )}
       {/* Current-state labels */}
-      {coverageStatus !== 'unavailable' && entries.length > 0 && (
+      {coverageStatus !== 'unavailable' && coverageStatus !== 'type_not_integrated' && entries.length > 0 && (
         <div key={`labels-${resolved}`} className="flex flex-wrap gap-1">
           {entries.map(([state, stateCount]) => (
             <span
