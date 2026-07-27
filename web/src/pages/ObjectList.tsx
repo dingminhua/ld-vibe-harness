@@ -159,18 +159,22 @@ function WorkCasePlanConfirmationContent({
               <li key={`${index}-${criterion}`} className="flex min-w-0 items-start gap-2">
                 <span
                   aria-hidden="true"
-                  className="flex h-6 w-2 shrink-0 translate-y-1.5 items-center justify-center"
+                  className="flex h-5 w-2 shrink-0 items-center justify-center"
                 >
                   <span className="h-1.5 w-1.5 rounded-full bg-ldvh-text-secondary/60" />
                 </span>
-                <div className="ldvh-body min-w-0 flex-1 break-words">
-                  <SummaryText value={criterion} collapseThreshold={Number.MAX_SAFE_INTEGER} />
+                <div className="ldvh-caption min-w-0 flex-1 break-words">
+                  <SummaryText
+                    value={criterion}
+                    collapseThreshold={Number.MAX_SAFE_INTEGER}
+                    className="text-xs leading-5 text-ldvh-text-secondary"
+                  />
                 </div>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="ldvh-body mt-1.5 text-red-400">{t('objectList.workcaseFieldMissing')}</p>
+          <p className="ldvh-caption mt-1.5 text-red-400">{t('objectList.workcaseFieldMissing')}</p>
         )}
       </section>
     </div>
@@ -182,11 +186,15 @@ function WorkCaseGoalSection({ goal, t }: { goal?: string; t: Translate }) {
     <section className="min-w-0 rounded-md border border-ldvh-border/80 border-l-2 border-l-ldvh-accent/45 bg-ldvh-bg/65 px-3.5 py-3">
       <h3 className="ldvh-card-title">{t('objectList.workcaseGoal')}</h3>
       {goal?.trim() ? (
-        <div className="ldvh-body mt-1.5 max-w-[82ch] break-words">
-          <SummaryText value={goal} collapseThreshold={Number.MAX_SAFE_INTEGER} />
+        <div className="ldvh-caption mt-1.5 max-w-[82ch] break-words">
+          <SummaryText
+            value={goal}
+            collapseThreshold={Number.MAX_SAFE_INTEGER}
+            className="text-xs leading-5 text-ldvh-text-secondary"
+          />
         </div>
       ) : (
-        <p className="ldvh-body mt-1.5 text-red-400">{t('objectList.workcaseFieldMissing')}</p>
+        <p className="ldvh-caption mt-1.5 text-red-400">{t('objectList.workcaseFieldMissing')}</p>
       )}
     </section>
   );

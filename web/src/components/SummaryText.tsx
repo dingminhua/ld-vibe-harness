@@ -8,6 +8,7 @@ interface SummaryTextProps {
   value: string;
   collapseThreshold?: number;
   previewLines?: number;
+  className?: string;
 }
 
 const COLLAPSE_THRESHOLD = 150;
@@ -72,6 +73,7 @@ export default function SummaryText({
   value,
   collapseThreshold = COLLAPSE_THRESHOLD,
   previewLines,
+  className,
 }: SummaryTextProps) {
   const { t } = useI18n();
   const [expanded, setExpanded] = useState(false);
@@ -85,7 +87,7 @@ export default function SummaryText({
 
   return (
     <div>
-      <div className="ldvh-inline-markdown max-w-none">
+      <div className={`ldvh-inline-markdown max-w-none ${className ?? ''}`}>
         <Markdown remarkPlugins={[remarkGfm]}>
           {needsTruncation && !expanded ? displayText + '…' : value}
         </Markdown>
