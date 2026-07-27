@@ -392,7 +392,6 @@ router.get('/git/commit/:hash/diff', async (req: Request, res: Response): Promis
 
     const relativePath = toProjectRelative(project, target)
     const diff = await runCommand('git', ['show', '--format=', '--find-renames', hash, '--', relativePath], project.path)
-      .catch(() => '')
 
     res.json({
       ok: true,
