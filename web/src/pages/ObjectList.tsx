@@ -159,7 +159,7 @@ function WorkCasePlanConfirmationContent({
               <li key={`${index}-${criterion}`} className="flex min-w-0 items-start gap-2">
                 <span
                   aria-hidden="true"
-                  className="mt-[9px] h-1.5 w-1.5 shrink-0 rounded-full bg-ldvh-text-secondary/60"
+                  className="mt-3 h-1.5 w-1.5 shrink-0 rounded-full bg-ldvh-text-secondary/60"
                 />
                 <div className="ldvh-body min-w-0 flex-1 break-words">
                   <SummaryText value={criterion} collapseThreshold={Number.MAX_SAFE_INTEGER} />
