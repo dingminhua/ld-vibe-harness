@@ -79,6 +79,15 @@ function invokeGovernanceScope(locator: string, workspaceRoot: string): Promise<
   })
 }
 
+/** Verify a candidate configuration without interpreting it as a current fact read. */
+export async function verifyWebGovernanceConfiguration(): Promise<void> {
+  const response = await invokeGovernanceScope(configuredWorkspaceRoot(), configuredWorkspaceRoot())
+  if (response.outcome !== 'ok' || !isRecord(response.result) || response.result.config_status !== 'valid') {
+    const result = isRecord(response.result) ? response.result : {}
+    throw new WebGovernanceError(`Governance configuration is not valid: ${String(result.config_status ?? response.outcome ?? 'unknown')}`)
+  }
+}
+
 function verifiedResolution(response: Record<string, unknown>, expectedLocator: string): Record<string, unknown> {
   if (response.outcome !== 'ok' || !isRecord(response.result)) {
     throw new WebGovernanceError(`Governance resolution did not complete: ${String(response.outcome || 'unknown')}`)

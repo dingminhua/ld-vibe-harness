@@ -25,6 +25,17 @@ test('files, workspace changes, and commit records form one ordered navigation g
   );
 });
 
+test('settings is the final navigation entry and only exposes governed-project configuration', () => {
+  const app = fs.readFileSync(path.resolve('src/App.tsx'), 'utf8');
+  const sidebar = fs.readFileSync(path.resolve('src/components/Sidebar.tsx'), 'utf8');
+  const settings = fs.readFileSync(path.resolve('src/pages/Settings.tsx'), 'utf8');
+
+  assert.match(app, /<Route path="\/settings" element=\{<Settings \/>\} \/>/);
+  assert.match(sidebar, /\{ to: '\/changelog'[\s\S]*\{ to: '\/settings', labelKey: 'nav\.settings'[\s\S]*\];/);
+  assert.match(settings, /LDVH-GOVERNED-PROJECTS\.yaml/);
+  assert.doesNotMatch(settings, /fetchProjectGit|fetchObject|saveObject/);
+});
+
 test('the governed project switcher lives beside the brand in global navigation', () => {
   const app = fs.readFileSync(path.resolve('src/App.tsx'), 'utf8');
   const sidebar = fs.readFileSync(path.resolve('src/components/Sidebar.tsx'), 'utf8');

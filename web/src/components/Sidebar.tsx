@@ -10,6 +10,7 @@ import {
   Moon,
   Monitor,
   PanelLeft,
+  Settings,
   type LucideProps,
 } from 'lucide-react';
 import { useI18n } from '@/i18n/context';
@@ -31,6 +32,7 @@ const NAV_ITEMS: { to: string; labelKey: LocaleKey; icon: NavIcon }[] = [
   { to: '/project-files', labelKey: 'nav.projectFiles', icon: FolderTree },
   { to: '/changes', labelKey: 'nav.changes', icon: GitPullRequestArrow },
   { to: '/changelog', labelKey: 'nav.changelog', icon: OBJECT_TYPE_ICONS.changelog },
+  { to: '/settings', labelKey: 'nav.settings', icon: Settings },
 ];
 
 function getNavItemLabel(item: (typeof NAV_ITEMS)[number], t: (key: LocaleKey) => string): string {

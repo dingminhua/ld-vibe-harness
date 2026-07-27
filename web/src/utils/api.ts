@@ -336,12 +336,13 @@ export class ApiRequestError extends Error {
   }
 }
 
-async function request<T>(url: string): Promise<T> {
+async function request<T>(url: string, init?: RequestInit): Promise<T> {
   const fullUrl = `${API_BASE}${url}`;
-  const existing = inFlightRequests.get(fullUrl);
+  const cacheKey = init ? `${init.method ?? 'GET'} ${fullUrl}` : fullUrl;
+  const existing = !init || init.method === undefined || init.method === 'GET' ? inFlightRequests.get(cacheKey) : undefined;
   if (existing) return existing as Promise<T>;
 
-  const promise = fetch(fullUrl)
+  const promise = fetch(fullUrl, init)
     .then(async (res) => {
       const body = await res.json().catch(() => null) as Record<string, unknown> | null;
       if (!res.ok) {
@@ -354,10 +355,10 @@ async function request<T>(url: string): Promise<T> {
       return body as T;
     })
     .finally(() => {
-      inFlightRequests.delete(fullUrl);
+      inFlightRequests.delete(cacheKey);
     });
 
-  inFlightRequests.set(fullUrl, promise);
+  if (!init || init.method === undefined || init.method === 'GET') inFlightRequests.set(cacheKey, promise);
   return promise;
 }
 
@@ -553,6 +554,30 @@ export interface ProjectGitCommitDetailData {
 
 export async function fetchProjectFilesProjects(): Promise<ProjectFilesProjectsData> {
   return request<ProjectFilesProjectsData>('/project-files/projects');
+}
+
+export interface GovernedProjectSetting { id: string; path: string; name?: string }
+export interface GovernedProjectsSettingsData {
+  ok: boolean;
+  workspaceRoot: string;
+  configPath: string;
+  fingerprint: string;
+  projects: GovernedProjectSetting[];
+}
+
+export async function fetchGovernedProjectsSettings(): Promise<GovernedProjectsSettingsData> {
+  return request<GovernedProjectsSettingsData>('/settings/governed-projects');
+}
+
+export async function saveGovernedProjectsSettings(
+  projects: GovernedProjectSetting[],
+  expectedFingerprint: string,
+): Promise<GovernedProjectsSettingsData> {
+  return request<GovernedProjectsSettingsData>('/settings/governed-projects', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ projects, expectedFingerprint }),
+  });
 }
 
 export async function fetchProjectFileEntries(projectId: string, dir = '', showHidden = false): Promise<ProjectFileEntriesData> {

@@ -15,6 +15,7 @@ import objectsRoutes from './routes/objects.js'
 import changelogRoutes from './routes/changelog.js'
 import docsRoutes from './routes/docs.js'
 import projectFilesRoutes from './routes/project-files.js'
+import settingsRoutes from './routes/settings.js'
 
 dotenv.config()
 
@@ -41,6 +42,7 @@ app.use('/api/objects', objectsRoutes)
 app.use('/api/changelog', changelogRoutes)
 app.use('/api/docs', docsRoutes)
 app.use('/api/project-files', projectFilesRoutes)
+app.use('/api/settings', settingsRoutes)
 
 /**
  * health
