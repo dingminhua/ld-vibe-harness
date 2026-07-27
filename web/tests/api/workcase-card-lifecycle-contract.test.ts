@@ -140,10 +140,10 @@ test('plan confirmation keeps goal and criteria as the only plan-decision inputs
   assert.match(branch, /WorkCaseBlockingNotice blockingSummary=\{obj\.blocking_summary\}/);
   assert.ok(branch.indexOf('<WorkCasePlanConfirmationContent') < branch.indexOf("obj.status === 'blocked'"));
   assert.ok(branch.indexOf("obj.status === 'blocked'") < branch.indexOf('<WorkCaseBlockingNotice'));
-  assert.match(content, /ldvh-card-decision-title/);
-  assert.match(content, /ldvh-card-decision-body/);
-  assert.match(content, /<ul className="[^"]*list-disc/);
-  assert.doesNotMatch(content, /h-1\.5 w-1\.5 shrink-0 rounded-full/);
+  assert.match(content, /ldvh-card-title/);
+  assert.match(content, /ldvh-body/);
+  assert.match(content, /mt-\[9px\] h-1\.5 w-1\.5 shrink-0 rounded-full/);
+  assert.doesNotMatch(content, /list-disc/);
   assert.doesNotMatch(content, /<ol|line-clamp|slice\(0,|scope|blockingSummary|BlockingNotice/);
   assert.match(notice, /role="status"/);
   assert.match(notice, /aria-label=\{t\('objectList\.workcaseBlockingReason'\)\}/);

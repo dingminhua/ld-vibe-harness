@@ -148,21 +148,27 @@ function WorkCasePlanConfirmationContent({
       <WorkCaseGoalSection goal={goal} t={t} />
       <section className="min-w-0 rounded-md border border-ldvh-border/80 border-l-2 border-l-ldvh-accent/45 bg-ldvh-bg/65 px-3.5 py-3">
         <div className="flex min-w-0 items-center justify-between gap-2">
-          <h3 className="ldvh-card-decision-title">{t('objectList.successCriteria')}</h3>
+          <h3 className="ldvh-card-title">{t('objectList.successCriteria')}</h3>
           {criteria.length > 0 && (
             <span className="ldvh-meta-muted shrink-0">{t('objectList.workcaseCriteriaCount', { count: String(criteria.length) })}</span>
           )}
         </div>
         {criteria.length > 0 ? (
-          <ul className="mt-2 grid min-w-0 list-disc gap-1.5 pl-5 marker:text-ldvh-text-secondary/60">
+          <ul className="mt-2 grid min-w-0 gap-1.5">
             {criteria.map((criterion, index) => (
-              <li key={`${index}-${criterion}`} className="ldvh-card-decision-body min-w-0 break-words pl-0.5">
-                <SummaryText value={criterion} collapseThreshold={Number.MAX_SAFE_INTEGER} />
+              <li key={`${index}-${criterion}`} className="flex min-w-0 items-start gap-2">
+                <span
+                  aria-hidden="true"
+                  className="mt-[9px] h-1.5 w-1.5 shrink-0 rounded-full bg-ldvh-text-secondary/60"
+                />
+                <div className="ldvh-body min-w-0 flex-1 break-words">
+                  <SummaryText value={criterion} collapseThreshold={Number.MAX_SAFE_INTEGER} />
+                </div>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="ldvh-card-decision-body mt-1.5 text-red-400">{t('objectList.workcaseFieldMissing')}</p>
+          <p className="ldvh-body mt-1.5 text-red-400">{t('objectList.workcaseFieldMissing')}</p>
         )}
       </section>
     </div>
@@ -172,13 +178,13 @@ function WorkCasePlanConfirmationContent({
 function WorkCaseGoalSection({ goal, t }: { goal?: string; t: Translate }) {
   return (
     <section className="min-w-0 rounded-md border border-ldvh-border/80 border-l-2 border-l-ldvh-accent/45 bg-ldvh-bg/65 px-3.5 py-3">
-      <h3 className="ldvh-card-decision-title">{t('objectList.workcaseGoal')}</h3>
+      <h3 className="ldvh-card-title">{t('objectList.workcaseGoal')}</h3>
       {goal?.trim() ? (
-        <div className="ldvh-card-decision-body mt-1.5 max-w-[82ch] break-words">
+        <div className="ldvh-body mt-1.5 max-w-[82ch] break-words">
           <SummaryText value={goal} collapseThreshold={Number.MAX_SAFE_INTEGER} />
         </div>
       ) : (
-        <p className="ldvh-card-decision-body mt-1.5 text-red-400">{t('objectList.workcaseFieldMissing')}</p>
+        <p className="ldvh-body mt-1.5 text-red-400">{t('objectList.workcaseFieldMissing')}</p>
       )}
     </section>
   );
