@@ -17,6 +17,8 @@ def _fixture(tmp_path: Path) -> tuple[Path, Path]:
     workspace = tmp_path / "workspace"
     project = workspace / "project"
     project.mkdir(parents=True)
+    for directory in ("workcases", "adrs", "pitfalls", "sparks", "studies"):
+        (project / "ldvh-base" / directory).mkdir(parents=True, exist_ok=True)
     _git(project, "init", "-q")
     (workspace / "LDVH-GOVERNED-PROJECTS.yaml").write_text(
         "\n".join(

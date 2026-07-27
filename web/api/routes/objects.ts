@@ -72,7 +72,7 @@ function normalizeItem(value: unknown): ListedObject | null {
   const id = toStringValue(value.object_id) || toStringValue(value.id)
   if (!id) return null
   const type = toStringValue(value.fact_type_key) || toStringValue(value.type)
-  const status = toStringValue(value.status, 'unknown')
+  const status = toStringValue(value.status)
   const phase = toStringValue(value.phase)
   const progressProjection = type === 'workcase'
     ? deriveWorkCaseProgressProjection(status, phase || undefined)
@@ -85,7 +85,7 @@ function normalizeItem(value: unknown): ListedObject | null {
     status,
     progress_group: progressProjection?.progressGroup,
     progress_step: progressProjection?.progressStep,
-    title: toStringValue(value.title, id),
+    title: toStringValue(value.title),
     title_en: toStringValue(value.title_en) || undefined,
     title_zh: toStringValue(value.title_zh) || undefined,
     path: v4Object ? toStringValue(value.canonical_path) : toStringValue(value.path),

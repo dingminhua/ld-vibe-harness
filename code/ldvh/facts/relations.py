@@ -118,7 +118,10 @@ class ProjectFactIndex:
         try:
             paths = safe_list_directory(self.root, layout.directory)
         except FileNotFoundError:
-            return (), True
+            # A missing type directory does not prove that no peer of this
+            # type exists.  In particular, callers using this scan for a
+            # negative relation proof must treat the project set as partial.
+            return (), False
         except OSError:
             return (), False
         if len(paths) > MAX_GRAPH_OBJECTS:

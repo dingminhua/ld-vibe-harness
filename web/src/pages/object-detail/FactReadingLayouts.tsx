@@ -191,7 +191,7 @@ const SPARK_READING_NODES: Array<{
   { field: 'evolution', zh: '演变', en: 'Evolution', kind: 'evolution' },
   { field: 'terminal', zh: '分流', en: 'Routing', kind: 'terminal' },
 ];
-type SparkEvolutionEntry = { key: string; at?: string; summary: string };
+type SparkEvolutionEntry = { key: string; at: string; summary: string };
 
 export function SparkReadingLayout({
   obj,
@@ -268,7 +268,7 @@ function SparkReadingNode({
       {issue ? <FieldProblem issue={issue} /> : <>
       {kind === 'intent' && <StudyTextNodeContent value={obj.intent} className="ldvh-spark-reading-prose" />}
       {kind === 'summary' && <SparkSummaryNode value={obj.summary} />}
-      {kind === 'evolution' && <SparkEvolutionNode value={obj.evolution} locale={locale} />}
+      {kind === 'evolution' && <SparkEvolutionNode value={obj.evolution} />}
       {kind === 'terminal' && <SparkTerminalNode obj={obj} />}
       </>}
     </ReadingNodeSection>
@@ -284,7 +284,7 @@ function SparkSummaryNode({ value }: { value: unknown }) {
   );
 }
 
-function SparkEvolutionNode({ value, locale }: { value: unknown; locale: string }) {
+function SparkEvolutionNode({ value }: { value: unknown }) {
   if (!Array.isArray(value)) return <StudyTextNodeContent value={value} />;
   const entries = value
     .map((item, index) => parseSparkEvolutionEntry(item, index))
@@ -299,7 +299,7 @@ function SparkEvolutionNode({ value, locale }: { value: unknown; locale: string 
         <div key={entry.key} className="min-w-0 rounded-md border border-ldvh-border/45 bg-ldvh-bg/45 px-3 py-2">
           <div className="mb-1.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
             <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-ldvh-accent" aria-hidden="true" />
-            <SparkEvolutionTime value={entry.at} locale={locale} />
+            <SparkEvolutionTime value={entry.at} />
           </div>
           <StudyTextNodeContent value={entry.summary} compact />
         </div>
@@ -309,28 +309,19 @@ function SparkEvolutionNode({ value, locale }: { value: unknown; locale: string 
 }
 
 function parseSparkEvolutionEntry(item: unknown, index: number): SparkEvolutionEntry | null {
-  if (typeof item === 'string' && item.trim().length > 0) {
-    return { key: `${index}-${item}`, summary: item };
-  }
   if (!item || typeof item !== 'object') return null;
   const record = item as Record<string, unknown>;
+  const at = typeof record.at === 'string' ? record.at.trim() : '';
   const summary = typeof record.summary === 'string' ? record.summary.trim() : '';
-  if (!summary) return null;
+  if (!at || !summary) return null;
   return {
-    key: `${index}-${String(record.at ?? summary)}`,
-    at: typeof record.at === 'string' ? record.at : undefined,
+    key: `${index}-${at}`,
+    at,
     summary,
   };
 }
 
-function SparkEvolutionTime({ value, locale }: { value?: string; locale: string }) {
-  if (!value) {
-    return (
-      <div className="ldvh-caption-strong min-w-0 break-words text-ldvh-text-secondary">
-        {getFieldLabel('evolution', locale)}
-      </div>
-    );
-  }
+function SparkEvolutionTime({ value }: { value: string }) {
   const [date, time] = formatDateTime(value).split(' ');
   return (
     <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 font-mono tabular-nums">
@@ -370,7 +361,7 @@ function SparkTerminalTime({ value }: { value: string }) {
 }
 
 function hasSparkTerminalContent(obj: Record<string, unknown>) {
-  const status = String(obj.status ?? 'open');
+  const status = typeof obj.status === 'string' ? obj.status : '';
   return status === 'routed'
     || status === 'implemented'
     || status === 'discarded'

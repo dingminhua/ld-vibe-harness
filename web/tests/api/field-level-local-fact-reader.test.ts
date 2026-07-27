@@ -88,3 +88,36 @@ test('WorkCase object fields and malformed consumed array members remain visible
     await rm(root, { recursive: true, force: true });
   }
 });
+
+test('Spark evolution members without a timestamp and forbidden Pitfall tags remain unparsed', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'ldvh-field-reader-'));
+  const scope: LocalFactScope = { worktreeLocator: root, governedProjectId: 'fixture' };
+  const sparkDir = path.join(root, 'ldvh-base', 'sparks');
+  const pitfallDir = path.join(root, 'ldvh-base', 'pitfalls');
+  await mkdir(sparkDir, { recursive: true });
+  await mkdir(pitfallDir, { recursive: true });
+  try {
+    await writeFile(path.join(sparkDir, 'spark-0001.yaml'), [
+      'object_id: spark-0001', 'fact_type_key: spark', 'title: Missing event time',
+      'status: open', 'summary: Current observation', 'created_at: "2026-01-01"', 'updated_at: "2026-01-02"',
+      'evolution:', '  - summary: This entry has no source time',
+    ].join('\n'), 'utf8');
+    await writeFile(path.join(pitfallDir, 'pitfall-0001.yaml'), [
+      'object_id: pitfall-0001', 'fact_type_key: pitfall', 'title: Forbidden tag',
+      'status: active', 'created_at: "2026-01-01"', 'updated_at: "2026-01-02"', 'tags: [legacy]',
+    ].join('\n'), 'utf8');
+
+    const spark = await readLocalFact('spark', 'spark-0001', scope);
+    const pitfall = await readLocalFact('pitfall', 'pitfall-0001', scope);
+    assert.equal(spark.status, 'ok');
+    assert.equal(pitfall.status, 'ok');
+    if (spark.status === 'ok') assert.deepEqual(spark.item.unparsed_structures, [{
+      path: 'evolution[0]', reason: 'unparseable_member', raw_value: { summary: 'This entry has no source time' },
+    }]);
+    if (pitfall.status === 'ok') assert.deepEqual(pitfall.item.unparsed_structures, [{
+      path: 'tags', reason: 'unconsumed_field', raw_value: ['legacy'],
+    }]);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});

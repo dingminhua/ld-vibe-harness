@@ -91,6 +91,14 @@ def discover_fact_candidates(
         try:
             paths = sorted(safe_list_directory(root, layout.directory), key=lambda item: item.name)
         except FileNotFoundError:
+            structural.append(
+                _structural_problem(
+                    fact_type_key,
+                    layout.directory,
+                    "事实类型目录缺失，无法证明当前项目的对象集合完整",
+                )
+            )
+            complete = False
             continue
         except OSError:
             structural.append(

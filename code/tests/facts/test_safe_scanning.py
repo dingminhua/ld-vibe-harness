@@ -46,6 +46,19 @@ def test_relation_scan_marks_reparse_directory_incomplete(
     assert complete is False
 
 
+def test_missing_type_directories_are_incomplete_for_discovery_and_negative_relation_proofs(tmp_path: Path) -> None:
+    snapshot = discover_fact_candidates(tmp_path, "sample", tmp_path / ".git", {})
+    index = ProjectFactIndex(tmp_path, "sample", {})
+
+    reads, complete = index.scan_valid_objects("workcase", require_all_canonical_valid=True)
+
+    assert snapshot.complete is False
+    assert len(snapshot.structural_problems) == 5
+    assert all(item["check_status"] == "unavailable" for item in snapshot.structural_problems)
+    assert reads == ()
+    assert complete is False
+
+
 def test_candidate_discovery_reports_noncanonical_carriers_as_incomplete(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

@@ -113,7 +113,7 @@ const DETAIL_FIELDS: Record<LocalFactType, Record<string, FieldExpectation>> = {
   },
   pitfall: {
     symptoms: 'string', trigger_conditions: 'string', applicability: 'string', validation_summary: 'string',
-    root_cause: 'string', resolution: 'string', avoidance: 'string', disposition_summary: 'string', tags: 'array',
+    root_cause: 'string', resolution: 'string', avoidance: 'string', disposition_summary: 'string',
   },
   spark: {
     intent: 'string', summary: 'string', evolution: 'array', disposition_summary: 'string', priority: 'string',
@@ -193,6 +193,12 @@ const RECORD_ARRAY_FIELDS: Partial<Record<LocalFactType, ReadonlySet<string>>> =
   spark: new Set(['evolution', 'relations']),
 }
 
+function isConsumableRecordMember(type: LocalFactType, field: string, member: Record<string, unknown>): boolean {
+  if (type !== 'spark' || field !== 'evolution') return true
+  return typeof member.at === 'string' && member.at.trim().length > 0
+    && typeof member.summary === 'string' && member.summary.trim().length > 0
+}
+
 function projectFields(type: LocalFactType, objectId: string, parsed: Record<string, unknown>, extra: Record<string, unknown>): Pick<LocalFactItem, 'fact_object' | 'field_issues' | 'unparsed_structures'> {
   const all = { ...parsed, ...extra }
   const expected = { ...COMMON_FIELDS, ...DETAIL_FIELDS[type] }
@@ -212,7 +218,7 @@ function projectFields(type: LocalFactType, objectId: string, parsed: Record<str
     factObject[field] = value
     if (kind === 'array' && Array.isArray(value) && RECORD_ARRAY_FIELDS[type]?.has(field)) {
       value.forEach((member, index) => {
-        if (!isRecord(member)) {
+        if (!isRecord(member) || !isConsumableRecordMember(type, field, member)) {
           unparsedStructures.push({ path: `${field}[${index}]`, reason: 'unparseable_member', raw_value: member })
         }
       })

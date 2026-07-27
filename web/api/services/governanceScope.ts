@@ -1,6 +1,6 @@
 import { execFile } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { realpathSync } from 'node:fs'
+import { constants, realpathSync, statSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { LDVH_ROOT, LDVH_WORKSPACE_ROOT } from './pytools.js'
@@ -39,11 +39,24 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value && typeof value === 'object' && !Array.isArray(value))
 }
 
-function helperExecutable(): string {
-  if (process.env.LDVH_HELPER_EXECUTABLE) return path.resolve(process.env.LDVH_HELPER_EXECUTABLE)
-  return process.platform === 'win32'
+export function helperExecutable(): string {
+  const defaultExecutable = process.platform === 'win32'
     ? path.join(LDVH_ROOT, '.venv', 'Scripts', 'ldvh.exe')
     : path.join(LDVH_ROOT, '.venv', 'bin', 'ldvh')
+  const configured = process.env.LDVH_HELPER_EXECUTABLE || defaultExecutable
+  const candidate = path.resolve(configured)
+  let resolved: string
+  try {
+    resolved = realpathSync.native(candidate)
+    const metadata = statSync(resolved)
+    if (!metadata.isFile()) throw new Error('not a regular file')
+    if (process.platform !== 'win32' && (metadata.mode & constants.S_IXUSR) === 0) {
+      throw new Error('not executable')
+    }
+  } catch (error) {
+    throw new WebGovernanceError(`Configured Helper executable is unavailable: ${error instanceof Error ? error.message : String(error)}`)
+  }
+  return resolved
 }
 
 function configuredLocator(): string {
