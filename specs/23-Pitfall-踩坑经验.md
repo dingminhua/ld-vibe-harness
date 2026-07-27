@@ -129,7 +129,7 @@ Pitfall 对象使用 UTF-8 YAML，一文件一对象，当前权威位置固定�
 
 ### 面向 Human 的详情阅读投影
 
-当 Web 或其它 Human 阅读面呈现可消费 Pitfall 的详情时，必须按对象实际存在字段依次使用下列中文区段标题：`现象`（`symptoms`）、`触发`（`trigger_conditions`）、`范围`（`applicability`）、`验证`（`validation_summary`）、`根因`（`root_cause`）、`方案`（`resolution`）、`规避`（`avoidance`）；`retired` 对象的 `disposition_summary` 另以 `处置` 呈现。八个标题均为两个汉字。条件或可选字段不存在时如实省略对应区段，不生成空态、默认结论或替代内容；类型来源定义为必填的字段缺失或类型不符时，按 08 §5.3 如实显示空态与字段问题。
+当 Web 或其它 Human 阅读面按 08 §5.3 呈现 Pitfall 详情时，必须按对象实际存在字段依次使用下列中文区段标题：`现象`（`symptoms`）、`触发`（`trigger_conditions`）、`范围`（`applicability`）、`验证`（`validation_summary`）、`根因`（`root_cause`）、`方案`（`resolution`）、`规避`（`avoidance`）；`retired` 对象的 `disposition_summary` 另以 `处置` 呈现。八个标题均为两个汉字。条件或可选字段不存在时如实省略对应区段，不生成空态、默认结论或替代内容；类型来源定义为必填的字段缺失或类型不符时，按 08 §5.3 如实显示空态与字段问题。
 
 这些标题只帮助 Human 按字段身份阅读：`现象`是实际可观察表现，`触发`是失败前置条件，`范围`是经验复用边界，`验证`是已观察结果与未知覆盖，`根因`是当前机制判断，`方案`是实际采用的处理，`规避`是可复用的预防经验，`处置`只说明终态如何退出。它们不新增字段、不改写 YAML 字段名，也不允许 Web 用通用或旧字段词替代，或合并字段后要求读者自行分辨。
 
