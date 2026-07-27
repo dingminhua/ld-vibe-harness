@@ -51,6 +51,7 @@ export default function Settings() {
     <div className="mx-auto max-w-5xl px-5 py-7 sm:px-8">
       <PageHeader title="设置" subtitle="管理工作区的管辖项目配置" />
       <p className="ldvh-body-muted mt-2">这里只管理 LDVH-GOVERNED-PROJECTS.yaml 中的项目登记；不修改项目事实、Git 分支或执行状态。</p>
+      <p className="ldvh-body-muted mt-1">无需填写 Git 远程地址。每个本地路径在保存时必须能现场验证为有效 Git 工作区；远程地址、分支和 HEAD 不参与管辖项目判定。</p>
       {loading ? <div className="flex justify-center py-16"><Loader2 className="animate-spin" /></div> : error ? (
         <div className="mt-6 rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-red-300">{error}</div>
       ) : settings && <>
@@ -65,10 +66,10 @@ export default function Settings() {
           <div className="flex items-center gap-2"><FolderPlus size={16} /><p className="ldvh-caption-strong">添加项目</p></div>
           <div className="mt-4 grid gap-3 lg:grid-cols-3">
             <Field label="稳定 ID" value={newProject.id} onChange={(id) => setNewProject((value) => ({ ...value, id }))} required />
-            <Field label="本地路径" value={newProject.path} onChange={(path) => setNewProject((value) => ({ ...value, path }))} required />
+            <Field label="本地 Git 工作区路径" value={newProject.path} onChange={(path) => setNewProject((value) => ({ ...value, path }))} required />
             <Field label="简称" value={newProject.name ?? ''} onChange={(name) => setNewProject((value) => ({ ...value, name }))} />
           </div>
-          <button disabled={saving} className="ldvh-card-title mt-4 inline-flex items-center gap-2 rounded-md bg-ldvh-accent px-3 py-2 text-white disabled:opacity-50"><Save size={15} />添加并验证</button>
+          <button disabled={saving} className="ldvh-card-title mt-4 inline-flex items-center gap-2 rounded-md bg-ldvh-accent px-3 py-2 text-white disabled:opacity-50"><Save size={15} />添加并验证 Git 项目</button>
         </form>
       </>}
     </div>

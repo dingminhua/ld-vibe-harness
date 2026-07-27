@@ -33,6 +33,8 @@ test('settings is the final navigation entry and only exposes governed-project c
   assert.match(app, /<Route path="\/settings" element=\{<Settings \/>\} \/>/);
   assert.match(sidebar, /\{ to: '\/changelog'[\s\S]*\{ to: '\/settings', labelKey: 'nav\.settings'[\s\S]*\];/);
   assert.match(settings, /LDVH-GOVERNED-PROJECTS\.yaml/);
+  assert.match(settings, /无需填写 Git 远程地址/);
+  assert.match(settings, /验证为有效 Git 工作区/);
   assert.doesNotMatch(settings, /fetchProjectGit|fetchObject|saveObject/);
 });
 
