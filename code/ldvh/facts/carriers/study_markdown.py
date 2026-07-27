@@ -91,6 +91,7 @@ def _validate_body(body: str) -> list[FactIssue]:
                     "schema",
                     f"Study 正文 H2 {title!r} 必须精确出现一次，实际为 {count} 次",
                     field_path="body",
+                    code="STUDY_H2_CARDINALITY",
                 )
             )
 
@@ -98,7 +99,7 @@ def _validate_body(body: str) -> list[FactIssue]:
     if actual_fixed_order != list(STUDY_H2_TITLES):
         issues.append(FactIssue("schema", "Study 正文五个固定 H2 顺序不正确", field_path="body"))
 
-    if any(issue.summary.startswith("Study 正文 H2") for issue in issues):
+    if any(issue.code == "STUDY_H2_CARDINALITY" for issue in issues):
         return issues
 
     lines = body.splitlines()
