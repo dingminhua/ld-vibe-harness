@@ -150,8 +150,8 @@ test('plan confirmation keeps goal and criteria as the only plan-decision inputs
   assert.ok(branch.indexOf("obj.status === 'blocked'") < branch.indexOf('<WorkCaseBlockingNotice'));
   assert.match(content, /ldvh-card-title/);
   assert.match(content, /ldvh-caption/);
-  assert.match(content, /className="text-\[13px\] leading-5 text-ldvh-text-secondary"/);
-  assert.match(content, /mt-3\.5 h-1 w-1 shrink-0 rounded-full bg-ldvh-text-secondary\/70/);
+  assert.match(content, /className="text-\[13px\] leading-5 text-blue-700\/80 dark:text-blue-200\/80"/);
+  assert.match(content, /mt-2 h-1 w-1 shrink-0 rounded-full bg-blue-400\/70 dark:bg-blue-400\/80/);
   assert.doesNotMatch(content, /list-disc/);
   assert.doesNotMatch(content, /<ol|line-clamp|slice\(0,|scope|blockingSummary|BlockingNotice/);
   assert.match(notice, /role="status"/);
@@ -175,8 +175,7 @@ test('progressing cards show only goal and current progress facts', () => {
   assert.match(branch, /waitingOn=\{obj\.waiting_on\}/);
   assert.match(branch, /blockingSummary=\{obj\.blocking_summary\}/);
   assert.doesNotMatch(branch, /successCriteria|closure|approval/);
-  assert.match(content, /<h3 className="ldvh-card-title">\{t\('objectList\.workcaseCurrentProgress'\)\}<\/h3>/);
-  assert.match(content, /className="text-\[13px\] leading-5 text-ldvh-text-secondary"/);
+  assert.match(content, /<h3 className="ldvh-card-title text-sky-700 dark:text-sky-200">\{t\('objectList\.workcaseCurrentProgress'\)\}<\/h3>/);
   assert.doesNotMatch(content, /currentExecutionPosition|currentExecutionItem|workcaseItemProgress/);
   assert.match(content, /const displayedExecutionItems = itemExecution/);
   assert.match(content, /completed: 0, in_progress: 1, blocked: 2, pending: 3, cancelled: 4/);
@@ -237,19 +236,22 @@ test('closure confirmation cards render the closure-decision input zone and decl
 
   assert.match(content, /<WorkCaseGoalSection goal=\{goal\} t=\{t\} \/>/);
   assert.match(content, /closureProposal \? \(/);
-  assert.match(content, /getFieldValueLabel\('proposed_outcome', closureProposal\.proposedOutcome, locale\)/);
+  assert.match(content, /<WorkCaseOutcomeNotice outcome=\{closureProposal\.proposedOutcome\} dispositionSummary=\{closureProposal\.dispositionSummary\} \/>/);
   assert.match(content, /closureProposal\.residualDecisions\.map/);
   assert.match(content, /getFieldValueLabel\('proposed_disposition', decision\.proposedDisposition, locale\)/);
   assert.match(content, /objectList\.workcaseClosureProposalMissing/);
   assert.match(content, /WorkCaseSparkSuggestions suggestions=\{closureProposal\.sparkSuggestions\}/);
-  assert.match(content, /PROPOSED_OUTCOME_NOTICE_CLASS\[closureProposal\.proposedOutcome\]/);
+  assert.match(list, /PROPOSED_OUTCOME_NOTICE_CLASS\[outcome\]/);
   assert.match(content, /PROPOSED_DISPOSITION_NOTICE_CLASS\[decision\.proposedDisposition\]/);
-  assert.match(content, /rounded-md border border-l-2 px-2\.5 py-2/);
-  assert.match(content, /Circle size=\{8\}/);
+  assert.match(content, /rounded-md border border-l-2 px-3\.5 py-3/);
+  assert.match(list, /function WorkCaseSparkSuggestions/);
+  assert.match(list, /const WORKCASE_SECTION_ICON_SIZE = 16/);
+  assert.match(content, /Lightbulb size=\{WORKCASE_SECTION_ICON_SIZE\}/);
+  assert.match(content, /ArrowRight size=\{WORKCASE_SECTION_ICON_SIZE\}/);
   assert.match(list, /function QuarterCircle/);
-  assert.match(content, /<QuarterCircle className="shrink-0 text-amber-500/);
+  assert.match(list, /<QuarterCircle className="shrink-0 text-amber-500/);
   assert.match(content, /decision\.proposedDisposition === 'accept_stop'/);
-  assert.match(content, /ldvh-card-title min-w-0 \$\{PROPOSED_OUTCOME_TEXT_CLASS/);
+  assert.match(list, /ldvh-card-title min-w-0 \$\{tone\}/);
   assert.match(content, /ldvh-card-title min-w-0 \$\{PROPOSED_DISPOSITION_TEXT_CLASS/);
   assert.match(content, /decision\.routeTarget/);
   assert.doesNotMatch(content, /<ol|successCriterionResults|controller_check|validation_summary/);
@@ -267,6 +269,7 @@ test('closure confirmation cards render the closure-decision input zone and decl
 
 test('closed cards use terminal closure content while unclassified cards stay minimal', () => {
   const list = source('src/pages/ObjectList.tsx');
+  const closedContent = list.slice(list.indexOf('function WorkCaseClosedContent'), list.indexOf('function WorkCaseContributionsContent'));
   const terminalStatus = list.indexOf("displayStatus={progressGroup ?? 'unknown'}");
   const progressingEnd = list.lastIndexOf('      return (', terminalStatus);
   const adrStart = list.indexOf("if (currentType === 'adr')");
@@ -279,6 +282,13 @@ test('closed cards use terminal closure content while unclassified cards stay mi
   assert.match(list, /<WorkCaseContributionsContent contributions=\{obj\.contributedTo\}/);
   assert.match(list, /getFieldValueLabel\('proposed_disposition', 'route_existing', locale\)/);
   assert.match(list, /getFieldValueLabel\('proposed_disposition', 'suggest_spark', locale\)/);
+  assert.match(closedContent, /<WorkCaseOutcomeNotice outcome=\{terminal\.outcome\} dispositionSummary=\{terminal\.dispositionSummary\} \/>/);
+  assert.match(closedContent, /terminal\.routedTo\.map/);
+  assert.match(closedContent, /terminal\.acceptedStop\.map/);
+  assert.match(closedContent, /<WorkCaseSparkSuggestions suggestions=\{terminal\.sparkSuggestions\} \/>/);
+  assert.match(closedContent, /CircleMinus size=\{WORKCASE_SECTION_ICON_SIZE\}/);
+  assert.match(closedContent, /ArrowRight size=\{WORKCASE_SECTION_ICON_SIZE\}/);
+  assert.doesNotMatch(closedContent, /border-t border-ldvh-border\/45/);
   assert.doesNotMatch(terminalBranch, /executionItems|successCriteria|RecordItem|Integrity|Evidence|BlockingNotice|blocking_summary/);
   assert.doesNotMatch(list, /hasClosureRequestedAt|hasClosureEvidence|hasClosedIntegrityIssue|WorkCaseRecordItem/);
 });
