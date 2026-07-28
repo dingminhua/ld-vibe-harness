@@ -422,6 +422,30 @@ input::-moz-focus-inner {
   margin-bottom: 0.125rem;
 }
 
+/* Terminal fact cards use the same compact, circular list marker as WorkCase criteria.
+ * Terminal source text can use either Markdown list form; both are non-sequential here. */
+.ldvh-terminal-fact-content .ldvh-inline-markdown :where(ul, ol) {
+  list-style: none;
+  padding-left: 0;
+}
+
+.ldvh-terminal-fact-content .ldvh-inline-markdown :where(ul > li, ol > li) {
+  position: relative;
+  padding-left: 0.875rem;
+}
+
+.ldvh-terminal-fact-content .ldvh-inline-markdown :where(ul > li, ol > li)::before {
+  content: "";
+  position: absolute;
+  left: 0.25rem;
+  top: 0.5rem;
+  width: 0.25rem;
+  height: 0.25rem;
+  border-radius: 999px;
+  background: currentColor;
+  opacity: 0.65;
+}
+
 .ldvh-commit-body-markdown :where(ul) {
   display: flex;
   flex-direction: column;

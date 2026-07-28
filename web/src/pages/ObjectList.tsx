@@ -1,4 +1,4 @@
-import { useEffect, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { ArrowRight, Circle, CircleAlert, CircleCheck, CircleMinus, CirclePlay, Lightbulb, ListChecks, PauseCircle, Target } from 'lucide-react';
 import StatusBadge from '@/components/StatusBadge';
@@ -13,7 +13,7 @@ import { ObjectTypeIcon } from '@/components/SemanticIcon';
 import { fetchObjectDetail, fetchObjects, type FactCoverageStatus, type FactListProblem, type ObjectDetail, type ObjectItem, type ObjectStatusOption, type WorkCaseClosureProposalCard, type WorkCaseClosureTerminalCard, type WorkCaseContributionTarget, type WorkCaseExecutionItem, type WorkCaseProgressOption, type WorkCaseSparkSuggestionCard } from '@/utils/api';
 import { formatDateTime } from '@/utils/dateFormat';
 import { useI18n } from '@/i18n/context';
-import { getFieldValueLabel, getLocalizedObjectTitle, getObjectStatusLocale, getTypeLabel } from '@/i18n/locales';
+import { getFieldValueLabel, getLocalizedObjectTitle, getObjectStatusLocale } from '@/i18n/locales';
 import { CATEGORY_COLORS } from '@/utils/categoryColors';
 import { getFactReadMeta, isReadableFact } from '@/utils/factReadMeta';
 import { getEffectiveListStatus, writeListStatusParam } from '@/utils/listStatus';
@@ -28,6 +28,8 @@ type Translate = ReturnType<typeof useI18n>['t'];
 type StatusReason = { label: string; text: string; missing?: boolean };
 
 const WORKCASE_SECTION_ICON_SIZE = 16;
+/** Shared vertical rhythm between a semantic card title and its first body block. */
+const WORKCASE_CARD_TITLE_BODY_GAP_CLASS = 'mt-1.5';
 
 const TITLE_ACCENT_CLASS: Record<string, string> = {
   active: 'border-emerald-400/80',
@@ -127,14 +129,6 @@ function StatusReasonNote({ reason }: { reason: StatusReason }) {
   );
 }
 
-function handleKeyboardOpen(event: KeyboardEvent<HTMLElement>, onOpen: () => void) {
-  if (event.key === 'Enter' || event.key === ' ') {
-    event.preventDefault();
-    event.stopPropagation();
-    onOpen();
-  }
-}
-
 function WorkCasePlanConfirmationContent({
   goal,
   successCriteria,
@@ -160,7 +154,7 @@ function WorkCasePlanConfirmationContent({
           )}
         </div>
         {criteria.length > 0 ? (
-          <ul className="mt-2 grid min-w-0 gap-1">
+          <ul className={`${WORKCASE_CARD_TITLE_BODY_GAP_CLASS} grid min-w-0 gap-1`}>
             {criteria.map((criterion, index) => (
               <li key={`${index}-${criterion}`} className="flex min-w-0 items-start gap-2">
                 <span
@@ -193,7 +187,7 @@ function WorkCaseGoalSection({ goal, t }: { goal?: string; t: Translate }) {
         <h3 className="ldvh-card-title text-violet-700 dark:text-violet-200">{t('objectList.workcaseGoal')}</h3>
       </div>
       {goal?.trim() ? (
-        <div className="ldvh-caption mt-1.5 w-full break-words">
+        <div className={`ldvh-caption ${WORKCASE_CARD_TITLE_BODY_GAP_CLASS} w-full break-words`}>
           <SummaryText
             value={goal}
             collapseThreshold={Number.MAX_SAFE_INTEGER}
@@ -201,7 +195,7 @@ function WorkCaseGoalSection({ goal, t }: { goal?: string; t: Translate }) {
           />
         </div>
       ) : (
-        <p className="ldvh-caption mt-1.5 text-red-400">{t('objectList.workcaseFieldMissing')}</p>
+        <p className={`ldvh-caption ${WORKCASE_CARD_TITLE_BODY_GAP_CLASS} text-red-400`}>{t('objectList.workcaseFieldMissing')}</p>
       )}
     </section>
   );
@@ -227,7 +221,7 @@ function WorkCaseBlockingNotice({
         </div>
       </div>
       {blockingSummary?.trim() ? (
-        <div className="mt-0.5 break-words">
+        <div className={`${WORKCASE_CARD_TITLE_BODY_GAP_CLASS} break-words`}>
           <SummaryText
             value={blockingSummary}
             collapseThreshold={Number.MAX_SAFE_INTEGER}
@@ -235,7 +229,7 @@ function WorkCaseBlockingNotice({
           />
         </div>
       ) : (
-        <p className="ldvh-card-decision-body mt-0.5 text-red-400">{t('objectList.workcaseFieldMissing')}</p>
+        <p className={`ldvh-card-decision-body ${WORKCASE_CARD_TITLE_BODY_GAP_CLASS} text-red-400`}>{t('objectList.workcaseFieldMissing')}</p>
       )}
     </div>
   );
@@ -477,7 +471,7 @@ function WorkCaseProgressingContent({
                 {t('objectList.workcaseWaitingOn')}
               </div>
             </div>
-            <div className="mt-0.5 break-words">
+            <div className={`${WORKCASE_CARD_TITLE_BODY_GAP_CLASS} break-words`}>
               <SummaryText
                 value={waitingOn}
                 collapseThreshold={Number.MAX_SAFE_INTEGER}
@@ -553,7 +547,7 @@ function WorkCaseOutcomeNotice({
           {getFieldValueLabel('proposed_outcome', outcome, locale)}
         </span>
       </div>
-      <div className="mt-0.5 min-w-0 break-words">
+      <div className={`${WORKCASE_CARD_TITLE_BODY_GAP_CLASS} min-w-0 break-words`}>
         <SummaryText value={dispositionSummary} collapseThreshold={Number.MAX_SAFE_INTEGER} className={`[&_p]:my-0 text-[13px] leading-5 ${bodyTone}`} />
       </div>
     </section>
@@ -586,7 +580,7 @@ function WorkCaseSparkSuggestions({ suggestions }: { suggestions: WorkCaseSparkS
               {getFieldValueLabel('proposed_disposition', 'suggest_spark', locale)}
             </span>
           </div>
-          <div className="mt-0.5 min-w-0 break-words">
+          <div className={`${WORKCASE_CARD_TITLE_BODY_GAP_CLASS} min-w-0 break-words`}>
             <SummaryText value={suggestion.summary} collapseThreshold={Number.MAX_SAFE_INTEGER} className="[&_p]:my-0 text-[13px] leading-5 text-amber-800/75 dark:text-amber-200/75" />
           </div>
           {suggestion.restrictionReason && <div className="ldvh-caption mt-1 text-amber-800/80 dark:text-amber-200/80">{t('objectList.workcaseRestrictionReason')}: {suggestion.restrictionReason}</div>}
@@ -629,10 +623,10 @@ function WorkCaseClosureConfirmationContent({
                       {getFieldValueLabel('proposed_disposition', decision.proposedDisposition, locale)}
                     </span>
                   </div>
-                  <div className="mt-0.5 min-w-0 break-words">
+                  <div className={`${WORKCASE_CARD_TITLE_BODY_GAP_CLASS} min-w-0 break-words`}>
                     <SummaryText value={decision.summary} collapseThreshold={Number.MAX_SAFE_INTEGER} className={`[&_p]:my-0 text-[13px] leading-5 ${PROPOSED_DISPOSITION_BODY_CLASS[decision.proposedDisposition] ?? 'text-ldvh-text-secondary'}`} />
                   </div>
-                  {decision.routeTarget && <WorkCaseContributionTargetRow target={decision.routeTarget} locale={locale} showStatus={false} />}
+                  {decision.routeTarget && <WorkCaseContributionTargetRow target={decision.routeTarget} locale={locale} showStatus={false} compact />}
                 </li>
               ))}
             </ul>
@@ -666,7 +660,7 @@ function WorkCaseClosedContent({ goal, terminal }: { goal?: string; terminal?: W
                       {getFieldValueLabel('proposed_disposition', 'route_existing', locale)}
                     </span>
                   </div>
-                  <WorkCaseContributionTargetRow target={target} locale={locale} showStatus={false} />
+                  <WorkCaseContributionTargetRow target={target} locale={locale} showStatus={false} compact />
                 </li>
               ))}
             </ul>
@@ -681,7 +675,7 @@ function WorkCaseClosedContent({ goal, terminal }: { goal?: string; terminal?: W
                       {getFieldValueLabel('proposed_disposition', 'accept_stop', locale)}
                     </span>
                   </div>
-                  <div className="mt-0.5 min-w-0 break-words">
+                  <div className={`${WORKCASE_CARD_TITLE_BODY_GAP_CLASS} min-w-0 break-words`}>
                     <SummaryText value={residual.summary} collapseThreshold={Number.MAX_SAFE_INTEGER} className="[&_p]:my-0 text-[13px] leading-5 text-cyan-700/75 dark:text-cyan-200/75" />
                   </div>
                 </li>
@@ -725,7 +719,7 @@ function WorkCaseContributionsContent({
 }
 
 /** Targets resolve on demand exactly like the detail relation rows; titles are never duplicated into the Card. */
-function WorkCaseContributionTargetRow({ target, locale, showStatus = true }: { target: WorkCaseContributionTarget; locale: string; showStatus?: boolean }) {
+function WorkCaseContributionTargetRow({ target, locale, showStatus = true, compact = false }: { target: WorkCaseContributionTarget; locale: string; showStatus?: boolean; compact?: boolean }) {
   const { t } = useI18n();
   const navigate = useNavigate();
   const [detail, setDetail] = useState<ObjectDetail | null>(null);
@@ -763,25 +757,15 @@ function WorkCaseContributionTargetRow({ target, locale, showStatus = true }: { 
       ? t('objectList.workcaseTargetReading')
       : getFieldValueLabel('read_status', readMeta.readStatus ?? 'unreadable', locale);
   const typeColor = CATEGORY_COLORS[target.factTypeKey] || CATEGORY_COLORS.other;
-  const open = () => navigate(`/objects/${target.factTypeKey}/${target.objectId}`);
-  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (event.key !== 'Enter' && event.key !== ' ') return;
-    event.preventDefault();
-    event.stopPropagation();
-    open();
-  };
-
   return (
     <div
-      role="button"
-      tabIndex={0}
-      onClick={(event) => { event.stopPropagation(); open(); }}
-      onKeyDown={onKeyDown}
-      className="group flex min-w-0 cursor-pointer items-start gap-2 rounded-md px-1.5 py-2 text-left transition-colors hover:bg-ldvh-border/25 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ldvh-accent/50"
+      className={`flex min-w-0 items-center gap-2 rounded-md px-1.5 text-left ${compact ? 'pb-1 pt-1.5' : 'py-2'}`}
     >
-      <ObjectTypeIcon type={target.factTypeKey} size={13} className="mt-0.5 shrink-0" style={{ color: typeColor }} />
-      <span className="ldvh-meta-muted shrink-0">{getTypeLabel(target.factTypeKey, locale)}</span>
-      <span className="ldvh-meta-primary min-w-0 flex-1 whitespace-normal break-words group-hover:text-ldvh-accent">{title}</span>
+      <ObjectTypeIcon type={target.factTypeKey} size={13} className="-translate-y-0.5 shrink-0" style={{ color: typeColor }} />
+      <span className="ldvh-meta-primary min-w-0 flex-1 whitespace-normal break-words text-left">
+        {title}
+      </span>
+      <span className="ldvh-meta-muted shrink-0">{target.objectId}</span>
       {targetStatus && <span className="ldvh-meta-muted shrink-0">{targetStatus}</span>}
       {readStatus && <span className="ldvh-meta-muted shrink-0">{readStatus}</span>}
     </div>
@@ -825,6 +809,7 @@ function ObjectCardFrame({
   onOpen,
   children,
   showNonActiveReason = true,
+  showStatusBadge = true,
   displayStatus,
   prominentTitle = false,
 }: {
@@ -833,6 +818,7 @@ function ObjectCardFrame({
   onOpen: (objId: string) => void;
   children?: ReactNode;
   showNonActiveReason?: boolean;
+  showStatusBadge?: boolean;
   displayStatus?: string;
   prominentTitle?: boolean;
 }) {
@@ -844,28 +830,29 @@ function ObjectCardFrame({
   const nonActiveReason = getNonActiveReason(obj, t);
   return (
     <div
-      role="button"
-      tabIndex={0}
-      onClick={() => onOpen(obj.id)}
-      onKeyDown={(event) => handleKeyboardOpen(event, () => onOpen(obj.id))}
-      className={`group/card flex min-w-0 cursor-pointer flex-col gap-3 rounded-lg border border-ldvh-border bg-ldvh-panel p-4 text-left outline-none transition-colors hover:border-ldvh-accent/40 hover:bg-ldvh-panel/95 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ldvh-accent/70 ${isPlanConfirmation ? 'ldvh-card-plan-confirmation' : ''}`}
+      className={`flex min-w-0 flex-col gap-3 rounded-lg border border-ldvh-border bg-ldvh-panel p-4 text-left ${isPlanConfirmation ? 'ldvh-card-plan-confirmation' : ''}`}
     >
       <div className="flex min-w-0 items-center justify-between gap-2">
         <span className="ldvh-meta-muted min-w-0 truncate">{obj.id}</span>
         <div className="flex shrink-0 items-center gap-2">
           <CopyPathButton path={obj.path} label={t('common.copyObjectPath')} copiedLabel={t('common.copiedObjectPath')} />
-          <StatusBadge status={presentedStatus} statusLabel={getObjectStatusLocale(obj.type, presentedStatus, locale)} objectType={obj.type} />
+          {showStatusBadge && <StatusBadge status={presentedStatus} statusLabel={getObjectStatusLocale(obj.type, presentedStatus, locale)} objectType={obj.type} />}
         </div>
       </div>
       <div
-        className={`-mx-1 flex min-w-0 items-center gap-1.5 rounded-md border-l-2 bg-ldvh-bg/65 px-2.5 py-2 text-left ring-1 ring-inset ring-ldvh-border/50 transition-colors group-hover/card:bg-ldvh-bg/85 ${titleAccentClass}`}
+        className={`-mx-1 flex min-w-0 items-center gap-1.5 rounded-md border-l-2 bg-ldvh-bg/65 px-2.5 py-2 text-left ring-1 ring-inset ring-ldvh-border/50 ${titleAccentClass}`}
       >
         <PriorityIcon source={obj} type={obj.type} locale={locale} size="sm" />
         <ObjectTypeIcon type={obj.type} size={14} className="shrink-0" style={{ color: typeColor }} />
-        <h2 className={`${prominentTitle ? 'ldvh-card-title-prominent' : 'ldvh-card-title'} min-w-0 flex-1 whitespace-normal break-words transition-colors group-hover/card:text-ldvh-accent`}>
-          {getLocalizedObjectTitle(obj, locale)}
+        <h2 className={`${prominentTitle ? 'ldvh-card-title-prominent' : 'ldvh-card-title'} min-w-0 flex-1 whitespace-normal break-words`}>
+          <button
+            type="button"
+            onClick={() => onOpen(obj.id)}
+            className="text-left transition-colors hover:text-ldvh-accent focus-visible:outline-none focus-visible:text-ldvh-accent focus-visible:underline"
+          >
+            {getLocalizedObjectTitle(obj, locale)}
+          </button>
         </h2>
-        <ArrowRight size={14} className="shrink-0 text-ldvh-text-secondary transition-all group-hover/card:translate-x-0.5 group-hover/card:text-ldvh-accent" />
       </div>
       {showNonActiveReason && nonActiveReason && <StatusReasonNote reason={nonActiveReason} />}
       {children}
@@ -892,29 +879,39 @@ function hasSparkImplementedFact(obj: ObjectItem) {
 
 function TerminalFactPanel({
   tone,
-  title,
-  children,
+  content,
 }: {
   tone: 'routed' | 'implemented' | 'discarded' | 'retired';
-  title?: string;
-  children: ReactNode;
+  content: string;
 }) {
-  void tone;
+  const styles = {
+    routed: {
+      panel: 'border-emerald-400/25 border-l-emerald-400 bg-emerald-500/5',
+      body: 'text-emerald-700/75 dark:text-emerald-200/75',
+    },
+    implemented: {
+      panel: 'border-emerald-400/25 border-l-emerald-400 bg-emerald-500/5',
+      body: 'text-emerald-700/75 dark:text-emerald-200/75',
+    },
+    discarded: {
+      panel: 'border-red-400/25 border-l-red-400 bg-red-500/5',
+      body: 'text-red-700/75 dark:text-red-200/75',
+    },
+    retired: {
+      panel: 'border-zinc-400/25 border-l-zinc-400 bg-zinc-500/5',
+      body: 'text-zinc-600/75 dark:text-zinc-300/75',
+    },
+  }[tone];
+
   return (
-    <div
+    <section
       onClick={(event) => event.stopPropagation()}
-      className="min-w-0 cursor-default px-1.5 py-1"
+      className={`min-w-0 cursor-default rounded-md border border-l-2 px-3.5 py-3 ${styles.panel}`}
     >
-      {title && (
-        <div className="ldvh-meta mb-1 flex min-w-0 items-center gap-1.5 text-ldvh-text-secondary/75">
-          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-ldvh-text-secondary/75" aria-hidden="true" />
-          <span className="min-w-0 truncate">{title}</span>
-        </div>
-      )}
-      <div className="min-w-0 text-ldvh-text-secondary/75">
-        {children}
+      <div className="ldvh-terminal-fact-content min-w-0 break-words">
+        <SummaryText value={content} collapseThreshold={Number.MAX_SAFE_INTEGER} className={`[&_p]:my-0 text-[13px] leading-5 ${styles.body}`} />
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -924,11 +921,7 @@ function SparkTerminalCardContent({ obj }: { obj: ObjectItem }) {
   const tone = obj.status === 'discarded' ? 'discarded' : obj.status === 'implemented' ? 'implemented' : 'routed';
 
   return (
-    <TerminalFactPanel tone={tone}>
-      <div className="min-w-0 whitespace-pre-line break-words text-[12px] leading-5 text-ldvh-text-secondary/75">
-        {formatReasonText(reason)}
-      </div>
-    </TerminalFactPanel>
+    <TerminalFactPanel tone={tone} content={formatReasonText(reason)} />
   );
 }
 
@@ -940,18 +933,15 @@ function SparkCardContent({ obj }: { obj: ObjectItem }) {
 function PitfallTerminalCardContent({ obj }: { obj: ObjectItem }) {
   const { t } = useI18n();
   const disposition = obj.disposition_summary?.trim() || t('objectList.dispositionMissing');
+  const tone = obj.status === 'discarded' ? 'discarded' : 'retired';
 
   return (
-    <TerminalFactPanel tone="retired">
-      <div className="min-w-0 whitespace-pre-line break-words text-[12px] leading-5 text-ldvh-text-secondary/75">
-        {formatReasonText(disposition)}
-      </div>
-    </TerminalFactPanel>
+    <TerminalFactPanel tone={tone} content={formatReasonText(disposition)} />
   );
 }
 
 function PitfallCardContent({ obj }: { obj: ObjectItem }) {
-  if (obj.status === 'retired') return <PitfallTerminalCardContent obj={obj} />;
+  if (obj.status === 'retired' || obj.status === 'discarded') return <PitfallTerminalCardContent obj={obj} />;
   return null;
 }
 
@@ -960,16 +950,26 @@ function AdrTerminalCardContent({ obj }: { obj: ObjectItem }) {
   const disposition = obj.disposition_summary?.trim() || t('objectList.dispositionMissing');
 
   return (
-    <TerminalFactPanel tone="retired">
-      <div className="min-w-0 whitespace-pre-line break-words text-[12px] leading-5 text-ldvh-text-secondary/75">
-        {formatReasonText(disposition)}
-      </div>
-    </TerminalFactPanel>
+    <TerminalFactPanel tone="retired" content={formatReasonText(disposition)} />
   );
 }
 
 function AdrCardContent({ obj }: { obj: ObjectItem }) {
   if (obj.status === 'retired') return <AdrTerminalCardContent obj={obj} />;
+  return null;
+}
+
+function StudyTerminalCardContent({ obj }: { obj: ObjectItem }) {
+  const { t } = useI18n();
+  const disposition = obj.disposition_summary?.trim() || t('objectList.dispositionMissing');
+
+  return (
+    <TerminalFactPanel tone="retired" content={formatReasonText(disposition)} />
+  );
+}
+
+function StudyCardContent({ obj }: { obj: ObjectItem }) {
+  if (obj.status === 'retired') return <StudyTerminalCardContent obj={obj} />;
   return null;
 }
 
@@ -1193,7 +1193,7 @@ export default function ObjectList() {
 
     if (currentType === 'adr') {
       return (
-        <ObjectCardFrame key={obj.id} obj={obj} locale={locale} onOpen={openObject} showNonActiveReason={false}>
+        <ObjectCardFrame key={obj.id} obj={obj} locale={locale} onOpen={openObject} showNonActiveReason={false} showStatusBadge={obj.status !== 'retired'}>
           <AdrCardContent obj={obj} />
         </ObjectCardFrame>
       );
@@ -1201,7 +1201,7 @@ export default function ObjectList() {
 
     if (currentType === 'pitfall') {
       return (
-        <ObjectCardFrame key={obj.id} obj={obj} locale={locale} onOpen={openObject} showNonActiveReason={false}>
+        <ObjectCardFrame key={obj.id} obj={obj} locale={locale} onOpen={openObject} showNonActiveReason={false} showStatusBadge={obj.status !== 'retired' && obj.status !== 'discarded'}>
           <ObjectSignalBadges source={obj} type={obj.type} locale={locale} />
           <PitfallCardContent obj={obj} />
         </ObjectCardFrame>
@@ -1210,9 +1210,18 @@ export default function ObjectList() {
 
     if (currentType === 'spark') {
       return (
-        <ObjectCardFrame key={obj.id} obj={obj} locale={locale} onOpen={openObject} showNonActiveReason={false}>
+        <ObjectCardFrame key={obj.id} obj={obj} locale={locale} onOpen={openObject} showNonActiveReason={false} showStatusBadge={!hasSparkDiscardFact(obj) && !hasSparkImplementedFact(obj) && !hasSparkResolvedFact(obj)}>
           <ObjectSignalBadges source={obj} type={obj.type} locale={locale} />
           <SparkCardContent obj={obj} />
+        </ObjectCardFrame>
+      );
+    }
+
+    if (currentType === 'study') {
+      return (
+        <ObjectCardFrame key={obj.id} obj={obj} locale={locale} onOpen={openObject} showNonActiveReason={false} showStatusBadge={obj.status !== 'retired'}>
+          <ObjectSignalBadges source={obj} type={obj.type} locale={locale} />
+          <StudyCardContent obj={obj} />
         </ObjectCardFrame>
       );
     }

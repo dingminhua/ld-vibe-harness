@@ -160,6 +160,38 @@ test('plan confirmation keeps goal and criteria as the only plan-decision inputs
   assert.match(notice, /flex min-w-0 items-center gap-2/);
 });
 
+test('semantic WorkCase cards share one title-to-body spacing token', () => {
+  const list = source('src/pages/ObjectList.tsx');
+  const goal = list.slice(list.indexOf('function WorkCaseGoalSection'), list.indexOf('function WorkCaseBlockingNotice'));
+  const outcome = list.slice(list.indexOf('function WorkCaseOutcomeNotice'), list.indexOf('function WorkCaseSparkSuggestions'));
+  const suggestions = list.slice(list.indexOf('function WorkCaseSparkSuggestions'), list.indexOf('function WorkCaseClosureConfirmationContent'));
+  const closure = list.slice(list.indexOf('function WorkCaseClosureConfirmationContent'), list.indexOf('function WorkCaseContributionsContent'));
+  const closed = list.slice(list.indexOf('function WorkCaseClosedContent'), list.indexOf('function WorkCaseContributionsContent'));
+
+  assert.match(list, /const WORKCASE_CARD_TITLE_BODY_GAP_CLASS = 'mt-1\.5'/);
+  for (const section of [goal, outcome, suggestions, closure, closed]) {
+    assert.match(section, /WORKCASE_CARD_TITLE_BODY_GAP_CLASS/);
+  }
+  assert.match(closure, /showStatus=\{false\} compact/);
+  assert.match(closed, /showStatus=\{false\} compact/);
+});
+
+test('Only Card titles navigate; routed targets remain plain relationship facts', () => {
+  const list = source('src/pages/ObjectList.tsx');
+  const target = list.slice(list.indexOf('function WorkCaseContributionTargetRow'), list.indexOf('function contributionTargetTitle'));
+  const frame = list.slice(list.indexOf('function ObjectCardFrame'), list.indexOf('function hasSparkResolvedFact'));
+
+  assert.match(target, /<ObjectTypeIcon type=\{target\.factTypeKey\}/);
+  assert.match(target, /flex min-w-0 items-center gap-2/);
+  assert.match(target, /size=\{13\} className="-translate-y-0\.5 shrink-0"/);
+  assert.match(target, /<span className="ldvh-meta-primary min-w-0 flex-1 whitespace-normal break-words text-left">[\s\S]*\{title\}/);
+  assert.match(target, /\{target\.objectId\}/);
+  assert.doesNotMatch(target, /role="button"|tabIndex=\{0\}|onKeyDown|onClick=\{open\}|<button/);
+  assert.match(frame, /<button[\s\S]*onClick=\{\(\) => onOpen\(obj\.id\)\}[\s\S]*getLocalizedObjectTitle/);
+  assert.doesNotMatch(frame, /role="button"|tabIndex=\{0\}|onClick=\{\(\) => onOpen\(obj\.id\)\}\n\s*onKeyDown/);
+  assert.doesNotMatch(frame, /<ArrowRight size=\{14\}/);
+});
+
 test('progressing cards show only goal and current progress facts', () => {
   const list = source('src/pages/ObjectList.tsx');
   const branchStart = list.indexOf("if (progressGroup === 'progressing')");
@@ -259,7 +291,9 @@ test('closure confirmation cards render the closure-decision input zone and decl
   assert.match(contributions, /if \(!contributions \|\| contributions\.length === 0\) return null;/);
   assert.match(contributions, /objectList\.workcaseContributions/);
   assert.match(contributions, /fetchObjectDetail\(target\.factTypeKey, target\.objectId\)/);
-  assert.match(contributions, /getTypeLabel\(target\.factTypeKey, locale\)/);
+  assert.match(contributions, /<ObjectTypeIcon type=\{target\.factTypeKey\}/);
+  assert.match(contributions, /\{target\.objectId\}/);
+  assert.doesNotMatch(contributions, /getTypeLabel\(target\.factTypeKey, locale\)/);
   assert.match(contributions, /if \(!detail \|\| !isReadableFact\(readMeta\)\) return '—';/);
   assert.match(contributions, /objectList\.workcaseTargetReading/);
   assert.match(contributions, /getFieldValueLabel\('read_status', readMeta\.readStatus \?\? 'unreadable', locale\)/);

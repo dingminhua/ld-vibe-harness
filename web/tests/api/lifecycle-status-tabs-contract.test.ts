@@ -41,3 +41,11 @@ test('Spark list exposes lifecycle and priority as separate navigation dimension
   assert.match(route, /function getPriorityOptions/)
   assert.match(route, /matchesSparkListFilter/)
 })
+
+test('filtered lifecycle counts reuse the request fact scope', () => {
+  const route = source('api/routes/objects.ts')
+
+  assert.match(route, /async function listObjectSummaries\(type: ObjectType, scope: LocalFactScope\)/)
+  assert.match(route, /listObjects\(type, undefined, undefined, scope\)/)
+  assert.match(route, /status \? await listObjectSummaries\(type, factScope\) : items/)
+})

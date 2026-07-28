@@ -266,12 +266,16 @@ test('preserves the shared commit DTO across current API consumers', async () =>
   assert.equal('responsibilityStatus' in workcase, false)
   assert.equal(workcase.progress_group, 'progressing')
   assert.equal(workcase.progress_step, 'independent_review')
-  assert.equal(workcase.executionItemTotal, 1)
   assert.equal(workcase.executionItemsProjectionValid, true)
-  assert.equal(workcase.executionItemDone, 1)
-  assert.equal(workcase.executionItemCancelled, 0)
-  assert.deepEqual(workcase.executionItemsActive, [])
-  assert.equal('executionItems' in workcase, false)
+  assert.deepEqual(workcase.executionItems, [{
+    id: 'item-01',
+    title: '完成实现',
+    status: 'completed',
+  }])
+  assert.equal('executionItemTotal' in workcase, false)
+  assert.equal('executionItemDone' in workcase, false)
+  assert.equal('executionItemCancelled' in workcase, false)
+  assert.equal('executionItemsActive' in workcase, false)
   assert.equal('progressHistoryState' in workcase, false)
   assert.equal('progressRound' in workcase, false)
   assert.equal('successCriteria' in workcase, false)
@@ -285,6 +289,7 @@ test('preserves the shared commit DTO across current API consumers', async () =>
   assert.equal(closedWorkcase.progress_group, 'closed')
   assert.equal('progress_step' in closedWorkcase, false)
   assert.equal('executionItems' in closedWorkcase, false)
+  assert.equal('executionItemsProjectionValid' in closedWorkcase, false)
   assert.equal('successCriteria' in closedWorkcase, false)
   assert.equal('success_criterion_definitions' in closedWorkcase, false)
   assert.deepEqual(workcases.data.progressOptions, [

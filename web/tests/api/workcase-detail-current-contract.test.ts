@@ -38,8 +38,8 @@ test('WorkCase detail source consumes only the single current shape in one fixed
   assert.doesNotMatch(panel, /fetchObjects\(['"]workcase['"]\)/);
   assert.doesNotMatch(layout, /summary:\s*ObjectItem|loading:\s*boolean|getStatus:/);
   assert.doesNotMatch(layout, /EmptyHint|missingRecord|recorded|recordState/);
-  assert.match(objectDetail, /customMetaEntries=\{readMeta\.observedAt/);
-  assert.match(objectDetail, /objectDetail\.observedAt/);
+  assert.match(objectDetail, /customMetaEntries=\{\[\]\}/);
+  assert.doesNotMatch(objectDetail, /readMeta\.observedAt|meta\.observedAt/);
   assert.match(objectDetail, /reconstructFactYaml\(obj\)/);
   assert.doesNotMatch(objectDetail, /function objectToYaml|objectToYaml\(obj\)/);
 

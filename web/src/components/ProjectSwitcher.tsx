@@ -5,7 +5,7 @@ import { useProjectScope } from '@/utils/projectContext';
 
 export default function ProjectSwitcher({ collapsed }: { collapsed: boolean }) {
   const { t } = useI18n();
-  const { projects, selectedProject, selectedProjectId, loading, error, selectProject, reloadProjects } = useProjectScope();
+  const { projects, selectedProject, selectedProjectId, loading, error, selectProject, reloadProjects, refreshData } = useProjectScope();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const triggerLabel = selectedProject?.name || t('projectSwitcher.choose');
@@ -41,8 +41,9 @@ export default function ProjectSwitcher({ collapsed }: { collapsed: boolean }) {
             : 'border-ldvh-border bg-ldvh-bg text-ldvh-text-secondary hover:border-ldvh-accent/35 hover:text-ldvh-text-primary'
         } ${collapsed ? 'h-9 w-9 justify-center' : 'h-10 w-full gap-2 px-2.5 text-left'}`}
       >
-        <FolderGit2 size={15} className="shrink-0" />
-        {!collapsed && (
+        {collapsed ? (
+          <FolderGit2 size={15} className="shrink-0" />
+        ) : (
           <>
             <span className="ldvh-caption-strong min-w-0 flex-1 truncate">{triggerLabel}</span>
             <ChevronDown size={13} className={`shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
@@ -65,12 +66,13 @@ export default function ProjectSwitcher({ collapsed }: { collapsed: boolean }) {
             </div>
             <button
               type="button"
-              onClick={reloadProjects}
+              onClick={() => { reloadProjects(); refreshData(); }}
+              disabled={loading}
               aria-label={t('projectSwitcher.reload')}
               title={t('projectSwitcher.reload')}
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-ldvh-text-secondary transition-colors hover:bg-ldvh-border/40 hover:text-ldvh-text-primary"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-ldvh-text-secondary transition-colors hover:bg-ldvh-border/40 hover:text-ldvh-text-primary disabled:opacity-50"
             >
-              <RefreshCcw size={13} />
+              <RefreshCcw size={13} className={loading ? 'animate-spin' : ''} />
             </button>
           </div>
 

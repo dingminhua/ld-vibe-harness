@@ -88,12 +88,12 @@ export function splitCommitMessage(fullMessage: string): SplitCommitMessage {
 /**
  * 获取 git log 列表
  */
-export async function getGitLog(count: number = 50, locale: string = 'zh'): Promise<GitLogEntry[]> {
+export async function getGitLog(count: number = 50, locale: string = 'zh', cwd: string = LDVH_ROOT): Promise<GitLogEntry[]> {
   return new Promise((resolve, reject) => {
     execFile(
       'git',
       ['log', `-${count}`, '--format=%H%x1f%h%x1f%an%x1f%ai%x1f%B%x1e'],
-      { cwd: LDVH_ROOT, maxBuffer: 5 * 1024 * 1024 },
+      { cwd, maxBuffer: 5 * 1024 * 1024 },
       (error, stdout) => {
         if (error) {
           reject(new Error(`git log failed: ${error.message}`))
@@ -129,12 +129,12 @@ export async function getGitLog(count: number = 50, locale: string = 'zh'): Prom
 /**
  * 获取指定 commit 的解析后 message 信息
  */
-export async function getGitCommit(hash: string, locale: string = 'zh'): Promise<GitLogEntry> {
+export async function getGitCommit(hash: string, locale: string = 'zh', cwd: string = LDVH_ROOT): Promise<GitLogEntry> {
   return new Promise((resolve, reject) => {
     execFile(
       'git',
       ['show', '-s', '--format=%H%x1f%h%x1f%an%x1f%ai%x1f%B', hash],
-      { cwd: LDVH_ROOT, maxBuffer: 5 * 1024 * 1024 },
+      { cwd, maxBuffer: 5 * 1024 * 1024 },
       (error, stdout) => {
         if (error) {
           reject(new Error(`git show commit failed: ${error.message}`))
@@ -165,12 +165,12 @@ export async function getGitCommit(hash: string, locale: string = 'zh'): Promise
 /**
  * 获取指定 commit 的 show --stat 输出
  */
-export async function getGitShow(hash: string): Promise<string> {
+export async function getGitShow(hash: string, cwd: string = LDVH_ROOT): Promise<string> {
   return new Promise((resolve, reject) => {
     execFile(
       'git',
       ['show', '--stat', hash],
-      { cwd: LDVH_ROOT, maxBuffer: 5 * 1024 * 1024 },
+      { cwd, maxBuffer: 5 * 1024 * 1024 },
       (error, stdout) => {
         if (error) {
           reject(new Error(`git show failed: ${error.message}`))

@@ -3,6 +3,20 @@ import type { FactCarrier, FactReadStatus } from '@/utils/factReadMeta';
 const API_BASE = '/api';
 const inFlightRequests = new Map<string, Promise<unknown>>();
 
+/** Selected governed-project id, kept in sync by ProjectScopeProvider. Appended to
+ *  every request so the backend scopes facts + git to the project shown in the UI.
+ *  Lives outside React state so request() can read it synchronously at call time. */
+let currentProjectId = '';
+export function setCurrentProjectId(projectId: string): void {
+  currentProjectId = projectId || '';
+}
+
+function withProjectId(url: string): string {
+  if (!currentProjectId || /[?&]projectId=/.test(url)) return url;
+  const separator = url.includes('?') ? '&' : '?';
+  return `${url}${separator}projectId=${encodeURIComponent(currentProjectId)}`;
+}
+
 export interface DashboardData {
   stats: DashboardStat[];
   recentItems: DashboardFactItem[];
@@ -86,14 +100,14 @@ export interface ObjectItem {
   priority?: string;
   importance?: string;
   executionItemsProjectionValid?: boolean;
-  executionItemTotal?: number;
-  executionItemDone?: number;
-  executionItemCancelled?: number;
-  executionItemOpen?: number;
-  executionItemsActive?: WorkCaseActiveItem[];
+  executionItems?: WorkCaseExecutionItem[];
   successCriteria?: string[];
   /** closure_confirmation Card 的“后续贡献”区；仅实际声明 contributed-to 时出现 */
   contributedTo?: WorkCaseContributionTarget[];
+  /** closure_confirmation Card 的关闭判断输入区；仅 closure_proposal 结构合法时出现 */
+  closureProposal?: WorkCaseClosureProposalCard;
+  /** closed Card 的终态关闭扫读投影；不反推原 proposal 身份 */
+  closureTerminal?: WorkCaseClosureTerminalCard;
   /** ADR-specific fields */
   decision?: string;
   consequences?: string;
@@ -104,10 +118,6 @@ export interface ObjectItem {
   object_id?: string;
   fact_type_key?: string;
   canonical_path?: string;
-  /** closure_confirmation Card 的关闭判断输入区；仅 closure_proposal 结构合法时出现 */
-  closureProposal?: WorkCaseClosureProposalCard;
-  /** closed Card 的终态关闭扫读投影；不反推原 proposal 身份 */
-  closureTerminal?: WorkCaseClosureTerminalCard;
   absolute_path?: string;
   carrier?: FactCarrier;
   read_status?: FactReadStatus;
@@ -131,10 +141,10 @@ export interface ObjectItem {
   resolution?: string;
 }
 
-export interface WorkCaseActiveItem {
+export interface WorkCaseExecutionItem {
   id: string;
   title: string;
-  status: 'in_progress' | 'blocked';
+  status: 'pending' | 'in_progress' | 'blocked' | 'completed' | 'cancelled';
   blockingReason?: string;
 }
 
@@ -270,16 +280,6 @@ export interface WorkCaseContributionTarget {
   objectId: string;
 }
 
-export interface WorkCaseResidualDecision {
-  residual_id: string;
-  summary: string;
-  proposed_disposition: 'route_existing' | 'suggest_spark' | 'accept_stop';
-  route_target?: WorkCaseRouteTarget;
-}
-
-export interface WorkCaseClosureProposal {
-  proposed_outcome: 'completed' | 'partial' | 'not-achieved' | 'cancelled';
-  proposed_disposition_summary: string;
 /**
  * closure_confirmation Card 只消费关闭提案的稳定子集，不透传整对象；
  * route target 只携带稳定三元组，标题与类型由当前目标回读呈现。
@@ -316,18 +316,18 @@ export interface WorkCaseClosureTerminalCard {
   sparkSuggestions: WorkCaseSparkSuggestionCard[];
 }
 
-  residual_decisions?: WorkCaseResidualDecision[];
-}
-
-export interface WorkCaseResidualResponsibility {
+export interface WorkCaseResidualDecision {
   residual_id: string;
-  spark_suggestion_id?: string;
   summary: string;
+  proposed_disposition: 'route_existing' | 'suggest_spark' | 'accept_stop';
+  route_target?: WorkCaseRouteTarget;
+  spark_suggestion_id?: string;
 }
 
-/** Exact-detail fields from the single current WorkCase contract. */
-export interface WorkCaseDetailData extends Record<string, unknown> {
-  object_id: string;
+export interface WorkCaseClosureProposal {
+  proposed_outcome: 'completed' | 'partial' | 'not-achieved' | 'cancelled';
+  proposed_disposition_summary: string;
+  residual_decisions?: WorkCaseResidualDecision[];
   spark_suggestions?: WorkCaseSparkSuggestion[];
 }
 
@@ -339,6 +339,16 @@ export interface WorkCaseSparkSuggestion {
   restriction_reason?: string;
   impact_summary?: string;
   resume_condition?: string;
+}
+
+export interface WorkCaseResidualResponsibility {
+  residual_id: string;
+  summary: string;
+}
+
+/** Exact-detail fields from the single current WorkCase contract. */
+export interface WorkCaseDetailData extends Record<string, unknown> {
+  object_id: string;
   fact_type_key: 'workcase';
   title: string;
   status: 'open' | 'blocked' | 'closed';
@@ -367,6 +377,7 @@ export interface WorkCaseSparkSuggestion {
   closure_outcome?: 'completed' | 'partial' | 'not-achieved' | 'cancelled';
   disposition_summary?: string;
   residual_responsibilities?: WorkCaseResidualResponsibility[];
+  spark_suggestions?: WorkCaseSparkSuggestion[];
   relations?: WorkCaseRelation[];
   urls?: UrlItem[];
 }
@@ -377,7 +388,6 @@ export interface ObjectDetail<TData extends Record<string, unknown> = Record<str
   target: string;
   summary: { id: string; type: string; status?: string; phase?: string; read_status?: FactReadStatus };
   data: TData;
-  spark_suggestions?: WorkCaseSparkSuggestion[];
 }
 
 export class ApiRequestError extends Error {
@@ -393,7 +403,7 @@ export class ApiRequestError extends Error {
 }
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
-  const fullUrl = `${API_BASE}${url}`;
+  const fullUrl = `${API_BASE}${withProjectId(url)}`;
   const cacheKey = init ? `${init.method ?? 'GET'} ${fullUrl}` : fullUrl;
   const existing = !init || init.method === undefined || init.method === 'GET' ? inFlightRequests.get(cacheKey) : undefined;
   if (existing) return existing as Promise<T>;

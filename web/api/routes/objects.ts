@@ -4,6 +4,8 @@
 
 import { Router, type Request, type Response } from 'express'
 import { listObjects, showObject, OBJECT_TYPES, type ObjectType } from '../services/facts.js'
+import { ProjectScopeError, requestFactScope } from '../services/requestScope.js'
+import type { LocalFactScope } from '../services/localFactReader.js'
 import {
   WORKCASE_PROGRESS_GROUP_ORDER,
   deriveWorkCaseProgressProjection,
@@ -161,8 +163,8 @@ function matchesSparkListFilter(item: ListedObject, status?: string, priority?: 
     && (!priority || item.priority === priority)
 }
 
-async function listObjectSummaries(type: ObjectType, baseDir?: string): Promise<ListedObject[]> {
-  const result = await listObjects(type, baseDir)
+async function listObjectSummaries(type: ObjectType, scope: LocalFactScope): Promise<ListedObject[]> {
+  const result = await listObjects(type, undefined, undefined, scope)
   if (!result.ok) return []
   return getResultItems(result)
 }
@@ -192,7 +194,17 @@ router.get('/:type', async (req: Request, res: Response): Promise<void> => {
   const priority = (type === 'spark' || type === 'workcase') && typeof req.query.priority === 'string'
     ? req.query.priority
     : undefined
-  const result = await listObjects(type, undefined, type === 'workcase' || type === 'spark' ? undefined : status)
+  let factScope
+  try {
+    factScope = await requestFactScope(req)
+  } catch (scopeError) {
+    if (scopeError instanceof ProjectScopeError) {
+      res.status(400).json({ ok: false, error: scopeError.message })
+      return
+    }
+    throw scopeError
+  }
+  const result = await listObjects(type, undefined, type === 'workcase' || type === 'spark' ? undefined : status, factScope)
 
   if (!result.ok) {
     res.status(typeof result.exitCode === 'string' ? 503 : 500).json(result)
@@ -209,7 +221,7 @@ router.get('/:type', async (req: Request, res: Response): Promise<void> => {
   if (isRecord(result.data)) {
     const statusItems = type === 'workcase' || type === 'spark'
       ? allItems
-      : status ? await listObjectSummaries(type) : items
+      : status ? await listObjectSummaries(type, factScope) : items
     if (type === 'workcase') {
       result.data.progressOptions = getWorkCaseProgressOptions(allItems)
     } else {
@@ -251,7 +263,17 @@ router.get('/:type/:id', async (req: Request, res: Response): Promise<void> => {
     return
   }
 
-  const result = await showObject(id)
+  let factScope
+  try {
+    factScope = await requestFactScope(req)
+  } catch (scopeError) {
+    if (scopeError instanceof ProjectScopeError) {
+      res.status(400).json({ ok: false, error: scopeError.message })
+      return
+    }
+    throw scopeError
+  }
+  const result = await showObject(id, factScope)
 
   if (!result.ok) {
     res.status(typeof result.exitCode === 'string' ? 503 : 404).json(result)

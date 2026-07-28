@@ -6,6 +6,7 @@ import { Router, type Request, type Response } from 'express'
 import { listObjects, ACTIVE_OBJECT_TYPES } from '../services/facts.js'
 import { FACT_TERMINAL_STATUSES } from '../services/factFieldContract.js'
 import { getGitLog } from '../services/git.js'
+import { ProjectScopeError, requestProject } from '../services/requestScope.js'
 import { getRelativeTime } from '../services/time.js'
 import { getTypeColor } from '../services/typeColors.js'
 import {
@@ -80,16 +81,18 @@ function isActionableItem(item: DashboardCandidate): boolean {
 router.get('/', async (req: Request, res: Response): Promise<void> => {
   try {
     const locale = String(req.query.locale || 'zh')
+    const project = await requestProject(req)
+    const factScope = { worktreeLocator: project.path, governedProjectId: project.id }
 
     // 并行请求所有对象类型列表
     const listPromises = ACTIVE_OBJECT_TYPES.map(async (type) => {
-      const result = await listObjects(type)
+      const result = await listObjects(type, undefined, undefined, factScope)
       return { type, result }
     })
 
     const [listResults, gitLogResult] = await Promise.all([
       Promise.all(listPromises),
-      getGitLog(10, locale)
+      getGitLog(10, locale, project.path)
         .then((entries) => ({ entries, issue: undefined }))
         .catch((error) => ({
           entries: [],
@@ -174,7 +177,10 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       ...(gitLogResult.issue ? { recentChangesIssue: gitLogResult.issue } : {}),
     })
   } catch (err) {
-    void err
+    if (err instanceof ProjectScopeError) {
+      res.status(400).json({ ok: false, error: err.message })
+      return
+    }
     res.status(500).json({ ok: false, error: 'Dashboard aggregation failed' })
   }
 })

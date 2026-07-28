@@ -199,10 +199,7 @@ export default function ObjectDetail() {
                 created={formatDateTime((obj.created_at ?? obj.created) as string | undefined)}
                 updated={formatDateTime((obj.updated_at ?? obj.updated) as string | undefined)}
                 auxiliaryMetaEntries={auxiliaryMetaEntries}
-                customMetaEntries={readMeta.observedAt ? [{
-                  label: t('objectDetail.observedAt'),
-                  value: <time dateTime={readMeta.observedAt}>{formatDateTime(readMeta.observedAt)}</time>,
-                }] : []}
+                customMetaEntries={[]}
                 copyLabel={t('common.copyObjectPath')}
                 copiedLabel={t('common.copiedObjectPath')}
               />
@@ -411,14 +408,6 @@ function FactReadFailurePage({
               <dd className="ldvh-meta-primary">{getTypeLabel(type, locale)} · {id}</dd>
               <dt className="ldvh-meta-muted">{t('objectDetail.readStatus')}</dt>
               <dd className="ldvh-meta-primary">{getFieldValueLabel('read_status', status, locale)}</dd>
-              {meta.observedAt && (
-                <>
-                  <dt className="ldvh-meta-muted">{t('objectDetail.observedAt')}</dt>
-                  <dd className="ldvh-meta-primary break-all font-mono">
-                    <time dateTime={meta.observedAt}>{formatDateTime(meta.observedAt)}</time>
-                  </dd>
-                </>
-              )}
               {meta.canonicalPath && (
                 <>
                   <dt className="ldvh-meta-muted">{t('objectDetail.expectedPath')}</dt>

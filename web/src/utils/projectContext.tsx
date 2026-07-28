@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { fetchProjectFilesProjects, type GovernedProject } from '@/utils/api';
+import { fetchProjectFilesProjects, setCurrentProjectId, type GovernedProject } from '@/utils/api';
 
 const PROJECT_STORAGE_KEY = 'ldvh-active-project-id';
 
@@ -11,6 +11,10 @@ type ProjectScopeContextValue = {
   error: string | null;
   selectProject: (projectId: string) => void;
   reloadProjects: () => void;
+  /** Bumps whenever workspace data should be re-read; pages/panels key off it to refetch. */
+  dataVersion: number;
+  /** Signal every data view (current page + open reading panel) to refetch from the server. */
+  refreshData: () => void;
 };
 
 const ProjectScopeContext = createContext<ProjectScopeContextValue | null>(null);
@@ -29,6 +33,7 @@ export function ProjectScopeProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [dataVersion, setDataVersion] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -71,10 +76,16 @@ export function ProjectScopeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const reloadProjects = useCallback(() => setReloadKey((current) => current + 1), []);
+  const refreshData = useCallback(() => setDataVersion((current) => current + 1), []);
   const selectedProject = useMemo(
     () => projects.find((project) => project.id === selectedProjectId) ?? null,
     [projects, selectedProjectId],
   );
+
+  // Keep the api client's project id in sync with the selection, synchronously during
+  // render so children's mount-time fetches already carry the correct id. Idempotent
+  // external-store sync (not React state), safe under StrictMode double-render.
+  setCurrentProjectId(selectedProjectId);
 
   return (
     <ProjectScopeContext.Provider value={{
@@ -85,6 +96,8 @@ export function ProjectScopeProvider({ children }: { children: ReactNode }) {
       error,
       selectProject,
       reloadProjects,
+      dataVersion,
+      refreshData,
     }}>
       {children}
     </ProjectScopeContext.Provider>

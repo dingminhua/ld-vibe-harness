@@ -90,7 +90,7 @@ function copyPresentFields(source: Record<string, unknown>, fields: readonly str
 type CardWorkItem = { id: string; title: string; status: string; blockingReason?: string }
 
 function projectCardWorkItems(value: unknown): Record<string, unknown> {
-  if (!Array.isArray(value) || value.length === 0) return { executionItemsProjectionValid: false, executionItemTotal: 0, executionItemDone: 0, executionItemCancelled: 0, executionItemOpen: 0, executionItemsActive: [] }
+  if (!Array.isArray(value) || value.length === 0) return { executionItemsProjectionValid: false, executionItems: [] }
   const items = value.map((candidate): CardWorkItem | null => {
     if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) return null
     const item = candidate as Record<string, unknown>
@@ -101,11 +101,7 @@ function projectCardWorkItems(value: unknown): Record<string, unknown> {
   const valid = items as CardWorkItem[]
   return {
     executionItemsProjectionValid: true,
-    executionItemTotal: valid.length,
-    executionItemDone: valid.filter((item) => item.status === 'completed').length,
-    executionItemCancelled: valid.filter((item) => item.status === 'cancelled').length,
-    executionItemOpen: valid.filter((item) => ['pending', 'in_progress', 'blocked'].includes(item.status)).length,
-    executionItemsActive: valid.filter((item) => ['in_progress', 'blocked'].includes(item.status)),
+    executionItems: valid,
   }
 }
 
@@ -132,6 +128,10 @@ function projectContributedToTargets(value: unknown): Array<Record<string, strin
     if (typeof triple.governed_project_id !== 'string' || !triple.governed_project_id.trim()
       || triple.fact_type_key !== 'pitfall'
       || typeof triple.object_id !== 'string' || !triple.object_id.trim()) return []
+    return [{ governedProjectId: triple.governed_project_id, factTypeKey: triple.fact_type_key, objectId: triple.object_id }]
+  })
+}
+
 const CLOSURE_PROPOSAL_OUTCOMES = new Set(['completed', 'partial', 'not-achieved', 'cancelled'])
 const RESIDUAL_DISPOSITIONS = new Set(['route_existing', 'suggest_spark', 'accept_stop'])
 
@@ -304,15 +304,15 @@ function projectClosedDisposition(fact: Record<string, unknown>): Record<string,
   }
 }
 
-    return [{ governedProjectId: triple.governed_project_id, factTypeKey: triple.fact_type_key, objectId: triple.object_id }]
-  })
-}
-
 export function projectWorkCaseCard(fact: Record<string, unknown>): Record<string, unknown> {
   const projected = copyPresentFields(fact, ['object_id', 'fact_type_key', 'title', 'status', 'phase', 'updated_at'])
   const phase = typeof fact.phase === 'string' ? fact.phase : ''
   const progress = deriveWorkCaseProgressProjection(typeof fact.status === 'string' ? fact.status : '', phase)
   if (progress?.progressGroup === 'plan_confirmation') {
+    Object.assign(projected, copyPresentFields(fact, ['priority', 'goal']), { successCriteria: projectCriterionStatements(fact.success_criterion_definitions) })
+  } else if (progress?.progressGroup === 'progressing') {
+    Object.assign(projected, copyPresentFields(fact, ['priority', 'goal', 'waiting_on']), projectCardWorkItems(fact.work_items))
+  } else if (progress?.progressGroup === 'closure_confirmation') {
     Object.assign(projected, copyPresentFields(fact, ['goal']))
     const closureProposal = projectClosureProposal(fact.closure_proposal)
     if (closureProposal) projected.closureProposal = closureProposal
@@ -322,10 +322,6 @@ export function projectWorkCaseCard(fact: Record<string, unknown>): Record<strin
     Object.assign(projected, copyPresentFields(fact, ['goal']))
     const closureTerminal = projectClosedDisposition(fact)
     if (closureTerminal) projected.closureTerminal = closureTerminal
-    Object.assign(projected, copyPresentFields(fact, ['priority', 'goal']), { successCriteria: projectCriterionStatements(fact.success_criterion_definitions) })
-  } else if (progress?.progressGroup === 'progressing') {
-    Object.assign(projected, copyPresentFields(fact, ['priority', 'goal', 'waiting_on']), projectCardWorkItems(fact.work_items))
-  } else if (progress?.progressGroup === 'closure_confirmation') {
     const contributedTo = projectContributedToTargets(fact.relations)
     if (contributedTo.length > 0) projected.contributedTo = contributedTo
   }
