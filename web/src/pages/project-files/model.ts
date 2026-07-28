@@ -52,12 +52,12 @@ export function getDiffLineClass(line: string): string {
   if (line.startsWith('+')) return 'text-emerald-400';
   if (line.startsWith('-')) return 'text-red-400';
   if (line.startsWith('@@')) return 'text-ldvh-accent';
-  if (line.startsWith('diff ') || line.startsWith('index ')) return 'text-sky-300';
+  if (line.startsWith('diff ') || line.startsWith('index ')) return 'text-sky-700 dark:text-sky-300';
   return 'text-ldvh-text-primary';
 }
 
 export function getSplitDiffCellClass(cell: SplitDiffCell): string {
-  if (cell.kind === 'delete') return 'bg-red-500/10 text-red-300';
+  if (cell.kind === 'delete') return 'bg-red-500/10 text-red-700 dark:text-red-300';
   if (cell.kind === 'add') return 'bg-emerald-500/10 text-emerald-300';
   if (cell.kind === 'empty') return 'bg-ldvh-panel/60 text-ldvh-text-secondary';
   return 'text-ldvh-text-primary';

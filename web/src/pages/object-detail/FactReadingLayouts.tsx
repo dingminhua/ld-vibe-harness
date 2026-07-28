@@ -3,6 +3,7 @@ import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { formatDateTime } from '@/utils/dateFormat';
 import { useI18n } from '@/i18n/context';
+import { getFieldLabel, getObjectStatusLocale } from '@/i18n/locales';
 import { FactAssociationsSection } from '@/pages/object-detail/FactAssociationsSection';
 import { sortRelatedContentEntries, type RelatedContentEntry } from '@/pages/object-detail/model';
 import {
@@ -26,16 +27,16 @@ export function FieldProblem({ issue }: { issue?: FieldPresentationIssue }) {
     : issue.reason === 'type_mismatch'
       ? t('objectDetail.fieldTypeMismatch')
       : t('objectDetail.fieldIdentityMismatch');
-  return <p className="ldvh-meta rounded-md border border-amber-500/25 bg-amber-500/5 px-3 py-2 text-amber-300">{text}</p>;
+  return <p className="ldvh-meta rounded-md border border-amber-500/25 bg-amber-500/5 px-3 py-2 text-amber-700 dark:text-amber-300">{text}</p>;
 }
 
-const ADR_READING_NODES: Array<{ field: string; zh: string; en: string; kind?: 'date' }> = [
-  { field: 'decision_question', zh: '问题', en: 'Question' },
-  { field: 'decision', zh: '决策', en: 'Decision' },
-  { field: 'applicability', zh: '范围', en: 'Scope' },
-  { field: 'rationale', zh: '理由', en: 'Rationale' },
-  { field: 'consequences', zh: '影响', en: 'Consequences' },
-  { field: 'disposition_summary', zh: '处置', en: 'Disposition' },
+const ADR_READING_NODES: Array<{ field: string; kind?: 'date' }> = [
+  { field: 'decision_question' },
+  { field: 'decision' },
+  { field: 'applicability' },
+  { field: 'rationale' },
+  { field: 'consequences' },
+  { field: 'disposition_summary' },
 ];
 
 export function AdrReadingLayout({
@@ -52,7 +53,7 @@ export function AdrReadingLayout({
       {ADR_READING_NODES.map((node) => (
         <AdrReadingNode
           key={node.field}
-          title={locale === 'en' ? node.en : node.zh}
+          title={getFieldLabel(node.field, locale)}
           value={obj[node.field]}
           issue={fieldIssue(obj, node.field)}
           locale={locale}
@@ -97,15 +98,15 @@ function AdrReadingNode({
   );
 }
 
-const PITFALL_READING_NODES: Array<{ field: string; zh: string; en: string }> = [
-  { field: 'symptoms', zh: '现象', en: 'Symptoms' },
-  { field: 'trigger_conditions', zh: '触发', en: 'Triggers' },
-  { field: 'applicability', zh: '范围', en: 'Scope' },
-  { field: 'validation_summary', zh: '验证', en: 'Validation' },
-  { field: 'root_cause', zh: '根因', en: 'Root Cause' },
-  { field: 'resolution', zh: '方案', en: 'Resolution' },
-  { field: 'avoidance', zh: '规避', en: 'Avoidance' },
-  { field: 'disposition_summary', zh: '处置', en: 'Disposition' },
+const PITFALL_READING_NODES: Array<{ field: string }> = [
+  { field: 'symptoms' },
+  { field: 'trigger_conditions' },
+  { field: 'applicability' },
+  { field: 'validation_summary' },
+  { field: 'root_cause' },
+  { field: 'resolution' },
+  { field: 'avoidance' },
+  { field: 'disposition_summary' },
 ];
 
 export function PitfallReadingLayout({
@@ -122,7 +123,7 @@ export function PitfallReadingLayout({
       {PITFALL_READING_NODES.map((node) => (
         <PitfallReadingNode
           key={node.field}
-          title={locale === 'en' ? node.en : node.zh}
+          title={getFieldLabel(node.field, locale)}
           value={obj[node.field]}
           issue={fieldIssue(obj, node.field)}
           locale={locale}
@@ -172,14 +173,13 @@ export function PitfallTextNodeContent({ value }: { value: unknown }) {
 
 const SPARK_READING_NODES: Array<{
   field: string;
-  zh: string;
-  en: string;
+  labelKey?: string;
   kind: 'intent' | 'summary' | 'evolution' | 'terminal';
 }> = [
-  { field: 'intent', zh: '意图', en: 'Intent', kind: 'intent' },
-  { field: 'summary', zh: '摘要', en: 'Current Summary', kind: 'summary' },
-  { field: 'evolution', zh: '演变', en: 'Evolution', kind: 'evolution' },
-  { field: 'terminal', zh: '分流', en: 'Routing', kind: 'terminal' },
+  { field: 'intent', kind: 'intent' },
+  { field: 'summary', labelKey: 'current_summary', kind: 'summary' },
+  { field: 'evolution', kind: 'evolution' },
+  { field: 'terminal', labelKey: 'routing', kind: 'terminal' },
 ];
 type SparkEvolutionEntry = { key: string; at: string; summary: string };
 
@@ -205,7 +205,7 @@ export function SparkReadingLayout({
       <FactAssociationsSection
         obj={obj}
         locale={locale}
-        title={locale === 'en' ? 'Related' : '关联'}
+        title={getFieldLabel('fact_associations', locale)}
         variant="spark"
       />
     </div>
@@ -218,10 +218,11 @@ function getSparkReadingNodeTitle(
   locale: string,
 ) {
   if (node.kind === 'terminal') {
-    if (obj.status === 'implemented') return locale === 'en' ? 'Implemented' : '落实';
-    if (obj.status === 'discarded') return locale === 'en' ? 'Discarded' : '废弃';
+    if (obj.status === 'implemented' || obj.status === 'discarded') {
+      return getObjectStatusLocale('spark', String(obj.status), locale);
+    }
   }
-  return locale === 'en' ? node.en : node.zh;
+  return getFieldLabel(node.labelKey ?? node.field, locale);
 }
 
 function SparkReadingNode({

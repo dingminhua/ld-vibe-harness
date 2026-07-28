@@ -98,7 +98,6 @@ export interface ObjectItem {
   created?: string;
   updated: string;
   priority?: string;
-  importance?: string;
   executionItemsProjectionValid?: boolean;
   executionItems?: WorkCaseExecutionItem[];
   successCriteria?: string[];
@@ -113,7 +112,6 @@ export interface ObjectItem {
   consequences?: string;
   /** Spark-specific */
   evolution?: Array<Record<string, unknown>>;
-  source_detail?: string;
   /** Exact field-level source metadata. */
   object_id?: string;
   fact_type_key?: string;

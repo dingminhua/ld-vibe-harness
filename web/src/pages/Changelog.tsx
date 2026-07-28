@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type KeyboardEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AlertCircle, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import CopyPathButton from '@/components/CopyPathButton';
+import CommitBreakingBadge from '@/components/CommitBreakingBadge';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
 import { fetchChangelog, fetchCommitDetail, type ChangelogEntry } from '@/utils/api';
 import { getCommitScopeLabel, getCommitTypeLabel } from '@/utils/commitLabels';
@@ -275,9 +276,7 @@ export default function Changelog() {
                     </>
                   )}
                   {entry.isBreaking && (
-                    <span className="ldvh-chip rounded-md border border-red-500/40 bg-red-500/10 px-1.5 py-0.5 text-red-400">
-                      !
-                    </span>
+                    <CommitBreakingBadge className="ml-1.5" />
                   )}
                 </div>
                 <div className="flex shrink-0 items-center gap-2">

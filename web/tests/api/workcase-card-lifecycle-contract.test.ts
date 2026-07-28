@@ -152,7 +152,7 @@ test('plan confirmation keeps goal and criteria as the only plan-decision inputs
   assert.match(content, /ldvh-card-title/);
   assert.match(content, /ldvh-caption/);
   assert.match(content, /bg-blue-500\/\[0\.025\]/);
-  assert.match(content, /className="text-\[13px\] leading-5 text-blue-950\/65 dark:text-blue-100\/75"/);
+  assert.match(content, /className="ldvh-card-decision-body text-blue-950\/65 dark:text-blue-100\/75"/);
   assert.match(content, /mt-\[0\.5rem\] h-1 w-1 shrink-0 rounded-full bg-blue-400\/65 dark:bg-blue-400\/75/);
   assert.doesNotMatch(content, /list-disc/);
   assert.doesNotMatch(content, /<ol|line-clamp|slice\(0,|scope|blockingSummary|BlockingNotice/);
@@ -227,7 +227,7 @@ test('progressing cards show only goal and current progress facts', () => {
   assert.match(content, /<Circle size=\{14\}/);
   assert.match(content, /flex min-w-0 items-center gap-2/);
   assert.match(content, /<div className="mt-0\.5">/);
-  assert.match(content, /\[&_p\]:my-0 text-\[13px\] leading-5/);
+  assert.match(content, /ldvh-card-decision-body \[&_p\]:my-0/);
   assert.match(content, /bg-emerald-500\/5/);
   assert.match(content, /bg-ldvh-bg\/60/);
   assert.match(content, /top-2\.5 z-0 h-px bg-ldvh-border/);
@@ -240,7 +240,7 @@ test('progressing cards show only goal and current progress facts', () => {
   assert.doesNotMatch(content, /workcaseItemCompleted|workcaseItemInProgress|workcaseItemBlocked|workcaseItemPending|workcaseItemCancelled/);
   assert.match(content, /objectList\.workcaseWaitingOn/);
   assert.match(content, /border-l-2 border-l-ldvh-text-secondary\/35 bg-ldvh-bg\/60/);
-  assert.match(content, /\[&_p\]:my-0 text-\[13px\] leading-5 text-slate-700\/70/);
+  assert.match(content, /ldvh-card-decision-body \[&_p\]:my-0 text-slate-700\/70/);
   assert.match(content, /<WorkCaseBlockingNotice blockingSummary=\{blockingSummary\}/);
   assert.doesNotMatch(content, /progressHistory|roundLabel|workcaseRound/);
 });

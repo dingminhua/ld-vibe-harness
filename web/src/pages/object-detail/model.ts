@@ -26,7 +26,7 @@ export const META_KEYS = [
   'fact_read_failure',
 ];
 
-export const COMMON_AUXILIARY_META_KEYS = ['priority', 'importance', 'scope', 'impact', 'assignee'];
+export const COMMON_AUXILIARY_META_KEYS = ['priority'];
 export const AUXILIARY_META_KEYS_BY_TYPE: Record<string, string[]> = {
   spark: ['priority'],
   pitfall: [],

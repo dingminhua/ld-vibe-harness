@@ -277,7 +277,7 @@ export default function Changes() {
                           <div
                             key={`${row.kind}-${index}-${row.text.slice(0, 12)}`}
                             className={`whitespace-pre-wrap break-words border-b border-ldvh-border/40 px-3 py-1 ${
-                              row.kind === 'hunk' ? 'bg-ldvh-accent/10 text-ldvh-accent' : 'text-sky-300'
+                              row.kind === 'hunk' ? 'bg-ldvh-accent/10 text-ldvh-accent' : 'text-sky-700 dark:text-sky-300'
                             }`}
                           >
                             {row.text || ' '}

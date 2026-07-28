@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { ChevronDown, ChevronUp, FileText, ExternalLink } from 'lucide-react';
 import type { PanelContent } from '@/utils/panelContext';
 import MarkdownPreview from '@/components/MarkdownPreview';
+import CommitBreakingBadge from '@/components/CommitBreakingBadge';
 import { useI18n } from '@/i18n/context';
 import {
   ContentField,
@@ -132,8 +133,8 @@ function ObjectPreview({ content }: { content: PanelContent }) {
   if (error) {
     return (
       <div className="rounded-md border border-red-500/20 bg-red-500/10 p-3">
-        <p className="ldvh-body text-red-300">{t('readingPanel.loadFailed')}</p>
-        <p className="ldvh-meta mt-1 text-red-300/80">{error}</p>
+        <p className="ldvh-body text-red-700 dark:text-red-300">{t('readingPanel.loadFailed')}</p>
+        <p className="ldvh-meta mt-1 text-red-700/80 dark:text-red-300/80">{error}</p>
       </div>
     );
   }
@@ -195,7 +196,7 @@ function FactReadFailureNotice({
   const status = meta.readStatus ?? 'unavailable';
   return (
     <div className="space-y-3 rounded-md border border-red-500/20 bg-red-500/10 p-3">
-      <p className="ldvh-body text-red-300">{t('objectDetail.readUnavailable')}</p>
+      <p className="ldvh-body text-red-700 dark:text-red-300">{t('objectDetail.readUnavailable')}</p>
       <dl className="grid gap-x-3 gap-y-1 text-sm sm:grid-cols-[5rem_1fr]">
         <dt className="ldvh-meta-muted">{t('objectDetail.readType')}</dt>
         <dd className="ldvh-meta-primary">{typeLabel} · {objectId || '—'}</dd>
@@ -209,7 +210,7 @@ function FactReadFailureNotice({
         )}
       </dl>
       {meta.issues.map((issue, index) => (
-        <p key={`${issue.category}-${issue.fieldPath ?? 'root'}-${index}`} className="ldvh-meta text-red-300/80">
+        <p key={`${issue.category}-${issue.fieldPath ?? 'root'}-${index}`} className="ldvh-meta text-red-700/80 dark:text-red-300/80">
           {issue.fieldPath ? `${issue.fieldPath}：${issue.summary}` : issue.summary}
         </p>
       ))}
@@ -329,8 +330,8 @@ function DocPreview({ content }: { content: PanelContent }) {
     return (
       <div className="space-y-3">
         <div className="rounded-md border border-red-500/20 bg-red-500/10 p-3">
-          <p className="ldvh-body text-red-300">{t('readingPanel.docLoadFailed')}</p>
-          <p className="ldvh-meta mt-1 text-red-300/80">{error}</p>
+          <p className="ldvh-body text-red-700 dark:text-red-300">{t('readingPanel.docLoadFailed')}</p>
+          <p className="ldvh-meta mt-1 text-red-700/80 dark:text-red-300/80">{error}</p>
         </div>
       </div>
     );
@@ -411,7 +412,7 @@ function CommitMetric({
   const toneClass = tone === 'add'
     ? 'text-emerald-300'
     : tone === 'delete'
-      ? 'text-red-300'
+      ? 'text-red-700 dark:text-red-300'
       : 'text-ldvh-text-primary';
 
   return (
@@ -499,9 +500,7 @@ function CommitIdentitySection({
       extraBadges={(
         <>
         {entry?.isBreaking && (
-          <span className="ldvh-chip shrink-0 rounded bg-red-500/10 px-2 py-0.5 text-red-300">
-            !
-          </span>
+          <CommitBreakingBadge />
         )}
         </>
       )}

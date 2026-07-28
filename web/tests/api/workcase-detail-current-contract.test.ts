@@ -360,6 +360,12 @@ test('narrative fields read as prose while structured records keep label rows', 
   assert.match(layout, /function ReviewProseBlock\(/);
   assert.match(layout, /function ExecutionApproval\([\s\S]*?border-violet-400\/30/);
   assert.match(layout, /function ReadingBoundaryNote\(/);
+  assert.match(layout, /<Info size=\{14\}/);
+  assert.match(layout, /items-center gap-2 rounded-md bg-ldvh-border/);
+  assert.doesNotMatch(layout.slice(layout.indexOf('function ReadingBoundaryNote'), layout.indexOf('function PlanVersionMeta')), /CircleHelp/);
+  assert.match(layout, /getFieldValueLabel\("reviewer", reviewer, locale\)/);
+  assert.match(layout, /getFieldLabel\("subject_version", locale\)[\s\S]{0,500}getFieldLabel\("reviewed_at", locale\)/);
+  assert.ok(layout.indexOf('getFieldLabel("subject_version", locale)') < layout.indexOf('<ReviewConclusionChip value={conclusion}'));
   assert.match(layout, /function ResidualDispositionChip\(/);
   assert.match(layout, /function SuggestionDetail\(/);
   assert.doesNotMatch(layout, /function (?:NumberField|MonoField|EnumField|DateField|TextValueField)\(/);

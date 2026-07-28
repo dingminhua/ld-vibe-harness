@@ -9,6 +9,7 @@ import {
   CircleCheck,
   CircleDot,
   CircleHelp,
+  Info,
   CircleMinus,
   CirclePlay,
   CircleX,
@@ -420,8 +421,8 @@ function WorkCaseReadingNode({
 
 function ReadingBoundaryNote({ value }: { value: string }) {
   return (
-    <div className="flex min-w-0 items-start gap-2 rounded-md bg-ldvh-border/20 px-3 py-2.5 text-ldvh-text-secondary/80">
-      <CircleHelp size={14} strokeWidth={2} className="mt-[0.1rem] shrink-0" aria-hidden="true" />
+    <div className="flex min-w-0 items-center gap-2 rounded-md bg-ldvh-border/20 px-3 py-2.5 text-ldvh-text-secondary/80">
+      <Info size={14} strokeWidth={2} className="shrink-0" aria-hidden="true" />
       <p className="ldvh-caption min-w-0 flex-1">{value}</p>
     </div>
   );
@@ -1132,27 +1133,33 @@ function ReviewList({
             key={`${reviewer}-${reviewedAt}-${subjectVersion ?? "version"}-${index}`}
             className="min-w-0 overflow-hidden rounded-lg border border-sky-400/25 bg-sky-500/[0.025]"
           >
-            <div className="flex min-w-0 flex-wrap items-center gap-2 border-b border-sky-400/20 px-3.5 py-2.5">
+            <div className="flex min-w-0 items-start gap-2 border-b border-sky-400/20 px-3.5 py-2.5">
               <Activity size={16} strokeWidth={2} className="shrink-0 text-sky-600 dark:text-sky-300" aria-hidden="true" />
-              <span className="ldvh-meta min-w-0 flex-1 break-all text-sky-800/75 dark:text-sky-100/75">
-                {reviewer}
-              </span>
+              <div className="min-w-0 flex-1">
+                <div className="ldvh-meta break-all text-sky-800/75 dark:text-sky-100/75">
+                  {getFieldValueLabel("reviewer", reviewer, locale)}
+                </div>
+                {(subjectVersion !== undefined || reviewedAt) && (
+                  <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-ldvh-text-secondary/70">
+                    {subjectVersion !== undefined && (
+                      <span className="ldvh-meta-muted inline-flex items-center gap-1">
+                        <span>{getFieldLabel("subject_version", locale)}</span>
+                        <span className="font-mono tabular-nums">{subjectVersion}</span>
+                      </span>
+                    )}
+                    {subjectVersion !== undefined && reviewedAt && <span className="ldvh-meta-muted" aria-hidden="true">·</span>}
+                    {reviewedAt && (
+                      <span className="ldvh-meta-muted inline-flex items-center gap-1">
+                        <span>{getFieldLabel("reviewed_at", locale)}</span>
+                        <time dateTime={reviewedAt} className="font-mono tabular-nums">{formatDateTime(reviewedAt)}</time>
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
               <ReviewConclusionChip value={conclusion} locale={locale} />
             </div>
             <div className="grid min-w-0 gap-3 px-3.5 py-3">
-              <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1 text-ldvh-text-secondary/75">
-                {subjectVersion !== undefined && (
-                  <span className="ldvh-meta-muted inline-flex items-center gap-1.5">
-                    <span>{getFieldLabel("subject_version", locale)}</span>
-                    <span className="font-mono tabular-nums">{subjectVersion}</span>
-                  </span>
-                )}
-                {reviewedAt && (
-                  <time dateTime={reviewedAt} className="ldvh-meta-muted font-mono tabular-nums">
-                    {formatDateTime(reviewedAt)}
-                  </time>
-                )}
-              </div>
               <ReviewProseBlock
                 label={t("objectDetail.workcaseReviewScope")}
                 value={review.scope}

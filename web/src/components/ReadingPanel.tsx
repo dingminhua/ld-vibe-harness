@@ -135,7 +135,7 @@ export default function ReadingPanel() {
         type="button"
         onClick={goBack}
         disabled={!canGoBack}
-        className="rounded p-1 text-ldvh-text-secondary transition-colors hover:bg-ldvh-border/30 hover:text-ldvh-text-primary disabled:cursor-default disabled:opacity-35"
+        className="inline-flex h-11 w-11 items-center justify-center rounded text-ldvh-text-secondary transition-colors hover:bg-ldvh-border/30 hover:text-ldvh-text-primary disabled:cursor-default disabled:opacity-35 md:h-7 md:w-7"
         title={t('readingPanel.previous')}
         aria-label={t('readingPanel.previous')}
       >
@@ -145,7 +145,7 @@ export default function ReadingPanel() {
         type="button"
         onClick={goForward}
         disabled={!canGoForward}
-        className="rounded p-1 text-ldvh-text-secondary transition-colors hover:bg-ldvh-border/30 hover:text-ldvh-text-primary disabled:cursor-default disabled:opacity-35"
+        className="inline-flex h-11 w-11 items-center justify-center rounded text-ldvh-text-secondary transition-colors hover:bg-ldvh-border/30 hover:text-ldvh-text-primary disabled:cursor-default disabled:opacity-35 md:h-7 md:w-7"
         title={t('readingPanel.next')}
         aria-label={t('readingPanel.next')}
       >
@@ -164,16 +164,17 @@ export default function ReadingPanel() {
           className="fixed bottom-0 left-0 right-0 z-50 flex flex-col rounded-t-xl border-t border-ldvh-border bg-ldvh-panel shadow-lg shadow-black/20 transition-transform duration-300 ease-out"
           style={{ height: `${bottomSheetHeight}vh` }}
         >
-          <div className="z-10 flex shrink-0 items-center justify-between gap-2 border-b border-ldvh-border bg-ldvh-panel/95 px-4 py-2 backdrop-blur">
+          <div className="z-10 flex min-h-11 shrink-0 items-center justify-between gap-1 border-b border-ldvh-border bg-ldvh-panel/95 px-2 backdrop-blur">
             <div className="flex min-w-0 flex-1 items-center gap-2">
               {navigationControls}
               <div
-                className="flex min-h-7 min-w-0 flex-1 cursor-ns-resize items-center justify-center"
+                className="relative flex min-h-11 min-w-0 flex-1 cursor-ns-resize flex-col items-center justify-center px-2"
                 onMouseDown={onSheetHandleDown}
                 onTouchStart={onSheetHandleDown}
                 aria-label={panelTitle}
               >
-                <div className="h-1 w-10 rounded-full bg-ldvh-border" />
+                <span className="ldvh-card-title w-full truncate text-center">{panelTitle}</span>
+                <div className="absolute bottom-1 h-0.5 w-8 rounded-full bg-ldvh-border" />
               </div>
             </div>
             <button
@@ -181,7 +182,7 @@ export default function ReadingPanel() {
               onClick={closePanel}
               title={t('readingPanel.close')}
               aria-label={t('readingPanel.close')}
-              className="rounded p-1 text-ldvh-text-secondary hover:bg-ldvh-border/30"
+              className="inline-flex h-11 w-11 items-center justify-center rounded text-ldvh-text-secondary hover:bg-ldvh-border/30"
             >
               <X size={14} />
             </button>
@@ -219,7 +220,7 @@ export default function ReadingPanel() {
           onClick={closePanel}
           title={t('readingPanel.close')}
           aria-label={t('readingPanel.close')}
-          className="rounded p-1 text-ldvh-text-secondary hover:bg-ldvh-border/30"
+          className="inline-flex h-7 w-7 items-center justify-center rounded text-ldvh-text-secondary hover:bg-ldvh-border/30"
         >
           <X size={14} />
         </button>

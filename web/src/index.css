@@ -22,7 +22,7 @@
   }
 
   .ldvh-card-title-prominent {
-    @apply text-sm font-semibold leading-5 text-ldvh-text-primary;
+    @apply text-base font-semibold leading-6 text-ldvh-text-primary;
   }
 
   .ldvh-card-decision-title {
@@ -70,11 +70,11 @@
   }
 
   .ldvh-tab-list {
-    @apply flex min-h-7 flex-wrap items-center gap-1.5;
+    @apply flex min-h-11 flex-wrap items-center gap-1.5 sm:min-h-7;
   }
 
   .ldvh-tab-button {
-    @apply inline-flex min-w-0 items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-medium leading-4 transition-colors;
+    @apply inline-flex min-h-11 min-w-0 items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-medium leading-4 transition-colors sm:min-h-0;
   }
 
   .ldvh-tab-button-active {

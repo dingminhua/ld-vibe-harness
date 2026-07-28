@@ -270,7 +270,7 @@ export default function ProjectFiles() {
                   </span>
                   <span className="ldvh-meta">{formatBytes(filePanel.data.size)}</span>
                   {filePanel.data.truncated && (
-                    <span className="ldvh-chip rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-amber-300">
+                    <span className="ldvh-chip rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-amber-700 dark:text-amber-300">
                       {copy.truncated}
                     </span>
                   )}

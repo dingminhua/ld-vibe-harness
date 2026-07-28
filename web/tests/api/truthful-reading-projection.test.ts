@@ -19,9 +19,9 @@ test('Web direct projections do not manufacture object status, title, associatio
   assert.doesNotMatch(objects, /toStringValue\(value\.status, 'unknown'\)/);
   assert.doesNotMatch(objects, /toStringValue\(value\.title, id\)/);
   assert.match(associations, /if \(!detail \|\| !isReadableFact\(readMeta\)\) return '—';/);
-  assert.doesNotMatch(associations, /getLocalizedObjectTitle/);
+  assert.match(associations, /getLocalizedObjectTitle\(source, locale\)/);
   assert.doesNotMatch(layouts, /obj\.status \?\? 'open'/);
-  assert.doesNotMatch(reader.match(/pitfall:\s*\{[\s\S]*?\n  \},/)?.[0] ?? '', /tags:/);
+  assert.doesNotMatch(reader.match(/pitfall:\s*\{[\s\S]*?\n {2}\},/)?.[0] ?? '', /tags:/);
 });
 
 test('a configured Helper must resolve to a regular executable before Web invokes it', async () => {

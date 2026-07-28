@@ -63,7 +63,7 @@ export default function ChangelogDetail() {
             <button
               type="button"
               onClick={() => navigate('/changelog')}
-              className="ldvh-body-muted mb-3 flex items-center gap-1.5 rounded-md px-2 py-1 transition-colors hover:bg-ldvh-border/50 hover:text-ldvh-text-primary"
+              className="ldvh-body-muted mb-3 flex min-h-11 items-center gap-1.5 rounded-md px-2 py-1 transition-colors hover:bg-ldvh-border/50 hover:text-ldvh-text-primary sm:min-h-0"
             >
               <ArrowLeft size={14} />
               {t('objectDetail.back')}

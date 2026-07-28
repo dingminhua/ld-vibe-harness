@@ -3,7 +3,7 @@ import { AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
 import CopyPathButton from '@/components/CopyPathButton';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
 import StatusBadge from '@/components/StatusBadge';
-import { getFieldLabel, getObjectStatusLocale, getTypeLabel } from '@/i18n/locales';
+import { getFieldLabel, getLocalizedObjectTitle, getObjectStatusLocale, getTypeLabel } from '@/i18n/locales';
 import {
   ReadingNodeSection,
   getReadingNodeNextState,
@@ -151,10 +151,8 @@ function ReadableRelationTarget({ relation, locale, showRelationKey }: {
 
 function relationTargetTitle(detail: ObjectDetail | null, readMeta: ReturnType<typeof getFactReadMeta>, locale: string): string {
   if (!detail || !isReadableFact(readMeta)) return '—';
-  const source = detail.data as { title?: unknown; title_en?: unknown; title_zh?: unknown };
-  const localized = locale === 'en' ? source.title_en : source.title_zh;
-  if (typeof localized === 'string' && localized.trim()) return localized;
-  return typeof source.title === 'string' && source.title.trim() ? source.title : '—';
+  const source = detail.data as { title?: string; title_en?: string; title_zh?: string };
+  return getLocalizedObjectTitle(source, locale);
 }
 
 /** A target outside the currently readable project remains a reference, not a fabricated local object. */

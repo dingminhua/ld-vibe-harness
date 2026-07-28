@@ -67,7 +67,7 @@ export default function Settings() {
       <p className="ldvh-body-muted mt-2">{t('settings.configOnly')}</p>
       <p className="ldvh-body-muted mt-1">{t('settings.gitNotice')}</p>
       {loading ? <div className="flex justify-center py-16"><Loader2 className="animate-spin" /></div> : error ? (
-        <div className="mt-6 rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-red-300">{error}</div>
+        <div className="mt-6 rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-red-700 dark:text-red-300">{error}</div>
       ) : settings && <>
         <div className="mt-6 rounded-xl border border-ldvh-border bg-ldvh-panel p-4">
           <div className="flex flex-wrap items-center justify-between gap-3"><p className="ldvh-caption-strong">{t('settings.governedProjects')}</p><button type="button" disabled={saving || verifying} onClick={() => void verify()} className="ldvh-card-title inline-flex items-center gap-2 rounded-md border border-ldvh-border px-3 py-2 text-ldvh-text-secondary hover:text-ldvh-text-primary disabled:opacity-50"><ShieldCheck size={15} />{verifying ? t('settings.verifying') : t('settings.verifyCurrent')}</button></div>

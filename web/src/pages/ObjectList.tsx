@@ -5,8 +5,6 @@ import StatusBadge from '@/components/StatusBadge';
 import ObjectStatusFilter from '@/components/ObjectStatusFilter';
 import WorkCaseProgressFilter from '@/components/WorkCaseProgressFilter';
 import ObjectPriorityFilter from '@/components/ObjectPriorityFilter';
-import CopyPathButton from '@/components/CopyPathButton';
-import ObjectSignalBadges from '@/components/ObjectSignalBadges';
 import PriorityIcon from '@/components/PriorityIcon';
 import SummaryText from '@/components/SummaryText';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
@@ -165,7 +163,7 @@ function WorkCasePlanConfirmationContent({
                   <SummaryText
                     value={criterion}
                     collapseThreshold={Number.MAX_SAFE_INTEGER}
-                    className="text-[13px] leading-5 text-blue-950/65 dark:text-blue-100/75"
+                    className="ldvh-card-decision-body text-blue-950/65 dark:text-blue-100/75"
                   />
                 </div>
               </li>
@@ -191,7 +189,7 @@ function WorkCaseGoalSection({ goal, t }: { goal?: string; t: Translate }) {
           <SummaryText
             value={goal}
             collapseThreshold={Number.MAX_SAFE_INTEGER}
-            className="text-[13px] leading-5 text-violet-950/65 dark:text-violet-100/75"
+            className="ldvh-card-decision-body text-violet-950/65 dark:text-violet-100/75"
           />
         </div>
       ) : (
@@ -225,7 +223,7 @@ function WorkCaseBlockingNotice({
           <SummaryText
             value={blockingSummary}
             collapseThreshold={Number.MAX_SAFE_INTEGER}
-            className="[&_p]:my-0 text-[13px] leading-5 text-amber-950/70 dark:text-amber-100/75"
+            className="ldvh-card-decision-body [&_p]:my-0 text-amber-950/70 dark:text-amber-100/75"
           />
         </div>
       ) : (
@@ -430,7 +428,7 @@ function WorkCaseProgressingContent({
                               <SummaryText
                                 value={item.title}
                                 collapseThreshold={Number.MAX_SAFE_INTEGER}
-                                className={`[&_p]:my-0 text-[13px] leading-5 ${itemTextTone}`}
+                                className={`ldvh-card-decision-body [&_p]:my-0 ${itemTextTone}`}
                               />
                             </div>
                             {blocked && (
@@ -439,7 +437,7 @@ function WorkCaseProgressingContent({
                                   <SummaryText
                                     value={item.blockingReason}
                                     collapseThreshold={Number.MAX_SAFE_INTEGER}
-                                    className="[&_p]:my-0 text-[13px] leading-5 text-amber-950/70 dark:text-amber-100/75"
+                                    className="ldvh-card-decision-body [&_p]:my-0 text-amber-950/70 dark:text-amber-100/75"
                                   />
                                 </div>
                               ) : (
@@ -475,7 +473,7 @@ function WorkCaseProgressingContent({
               <SummaryText
                 value={waitingOn}
                 collapseThreshold={Number.MAX_SAFE_INTEGER}
-                className="[&_p]:my-0 text-[13px] leading-5 text-slate-700/70 dark:text-slate-200/70"
+                className="ldvh-card-decision-body [&_p]:my-0 text-slate-700/70 dark:text-slate-200/70"
               />
             </div>
           </div>
@@ -548,7 +546,7 @@ function WorkCaseOutcomeNotice({
         </span>
       </div>
       <div className={`${WORKCASE_CARD_TITLE_BODY_GAP_CLASS} min-w-0 break-words`}>
-        <SummaryText value={dispositionSummary} collapseThreshold={Number.MAX_SAFE_INTEGER} className={`[&_p]:my-0 text-[13px] leading-5 ${bodyTone}`} />
+        <SummaryText value={dispositionSummary} collapseThreshold={Number.MAX_SAFE_INTEGER} className={`ldvh-card-decision-body [&_p]:my-0 ${bodyTone}`} />
       </div>
     </section>
   );
@@ -581,7 +579,7 @@ function WorkCaseSparkSuggestions({ suggestions }: { suggestions: WorkCaseSparkS
             </span>
           </div>
           <div className={`${WORKCASE_CARD_TITLE_BODY_GAP_CLASS} min-w-0 break-words`}>
-            <SummaryText value={suggestion.summary} collapseThreshold={Number.MAX_SAFE_INTEGER} className="[&_p]:my-0 text-[13px] leading-5 text-amber-950/70 dark:text-amber-100/75" />
+            <SummaryText value={suggestion.summary} collapseThreshold={Number.MAX_SAFE_INTEGER} className="ldvh-card-decision-body [&_p]:my-0 text-amber-950/70 dark:text-amber-100/75" />
           </div>
           {suggestion.restrictionReason && <div className="ldvh-caption mt-1 text-amber-950/65 dark:text-amber-100/70">{t('objectList.workcaseRestrictionReason')}: {suggestion.restrictionReason}</div>}
           {suggestion.impactSummary && <div className="ldvh-caption mt-0.5 text-amber-950/65 dark:text-amber-100/70">{t('objectList.workcaseImpactSummary')}: {suggestion.impactSummary}</div>}
@@ -624,7 +622,7 @@ function WorkCaseClosureConfirmationContent({
                     </span>
                   </div>
                   <div className={`${WORKCASE_CARD_TITLE_BODY_GAP_CLASS} min-w-0 break-words`}>
-                    <SummaryText value={decision.summary} collapseThreshold={Number.MAX_SAFE_INTEGER} className={`[&_p]:my-0 text-[13px] leading-5 ${PROPOSED_DISPOSITION_BODY_CLASS[decision.proposedDisposition] ?? 'text-ldvh-text-secondary'}`} />
+                    <SummaryText value={decision.summary} collapseThreshold={Number.MAX_SAFE_INTEGER} className={`ldvh-card-decision-body [&_p]:my-0 ${PROPOSED_DISPOSITION_BODY_CLASS[decision.proposedDisposition] ?? 'text-ldvh-text-secondary'}`} />
                   </div>
                   {decision.routeTarget && <WorkCaseContributionTargetRow target={decision.routeTarget} locale={locale} showStatus={false} compact />}
                 </li>
@@ -676,7 +674,7 @@ function WorkCaseClosedContent({ goal, terminal }: { goal?: string; terminal?: W
                     </span>
                   </div>
                   <div className={`${WORKCASE_CARD_TITLE_BODY_GAP_CLASS} min-w-0 break-words`}>
-                    <SummaryText value={residual.summary} collapseThreshold={Number.MAX_SAFE_INTEGER} className="[&_p]:my-0 text-[13px] leading-5 text-cyan-950/70 dark:text-cyan-100/75" />
+                    <SummaryText value={residual.summary} collapseThreshold={Number.MAX_SAFE_INTEGER} className="ldvh-card-decision-body [&_p]:my-0 text-cyan-950/70 dark:text-cyan-100/75" />
                   </div>
                 </li>
               ))}
@@ -721,7 +719,6 @@ function WorkCaseContributionsContent({
 /** Targets resolve on demand exactly like the detail relation rows; titles are never duplicated into the Card. */
 function WorkCaseContributionTargetRow({ target, locale, showStatus = true, compact = false }: { target: WorkCaseContributionTarget; locale: string; showStatus?: boolean; compact?: boolean }) {
   const { t } = useI18n();
-  const navigate = useNavigate();
   const [detail, setDetail] = useState<ObjectDetail | null>(null);
   const [readState, setReadState] = useState<'loading' | 'resolved' | 'unavailable'>('loading');
 
@@ -774,10 +771,7 @@ function WorkCaseContributionTargetRow({ target, locale, showStatus = true, comp
 
 function contributionTargetTitle(detail: ObjectDetail | null, readMeta: ReturnType<typeof getFactReadMeta>, locale: string): string {
   if (!detail || !isReadableFact(readMeta)) return '—';
-  const source = detail.data as { title?: unknown; title_en?: unknown; title_zh?: unknown };
-  const localized = locale === 'en' ? source.title_en : source.title_zh;
-  if (typeof localized === 'string' && localized.trim()) return localized;
-  return typeof source.title === 'string' && source.title.trim() ? source.title : '—';
+  return getLocalizedObjectTitle(detail.data as { title?: string; title_en?: string; title_zh?: string }, locale);
 }
 
 function sortObjectsForList(items: ObjectItem[], _currentType: string): ObjectItem[] {
@@ -809,7 +803,6 @@ function ObjectCardFrame({
   onOpen,
   children,
   showNonActiveReason = true,
-  showStatusBadge = true,
   displayStatus,
   prominentTitle = false,
 }: {
@@ -818,7 +811,6 @@ function ObjectCardFrame({
   onOpen: (objId: string) => void;
   children?: ReactNode;
   showNonActiveReason?: boolean;
-  showStatusBadge?: boolean;
   displayStatus?: string;
   prominentTitle?: boolean;
 }) {
@@ -835,8 +827,7 @@ function ObjectCardFrame({
       <div className="flex min-w-0 items-center justify-between gap-2">
         <span className="ldvh-meta-muted min-w-0 truncate">{obj.id}</span>
         <div className="flex shrink-0 items-center gap-2">
-          <CopyPathButton path={obj.path} label={t('common.copyObjectPath')} copiedLabel={t('common.copiedObjectPath')} />
-          {showStatusBadge && <StatusBadge status={presentedStatus} statusLabel={getObjectStatusLocale(obj.type, presentedStatus, locale)} objectType={obj.type} />}
+          <StatusBadge status={presentedStatus} statusLabel={getObjectStatusLocale(obj.type, presentedStatus, locale)} objectType={obj.type} />
         </div>
       </div>
       <div
@@ -848,7 +839,7 @@ function ObjectCardFrame({
           <button
             type="button"
             onClick={() => onOpen(obj.id)}
-            className="text-left transition-colors hover:text-ldvh-accent focus-visible:outline-none focus-visible:text-ldvh-accent focus-visible:underline"
+            className="min-h-11 text-left transition-colors hover:text-ldvh-accent focus-visible:outline-none focus-visible:text-ldvh-accent focus-visible:underline sm:min-h-0"
           >
             {getLocalizedObjectTitle(obj, locale)}
           </button>
@@ -909,7 +900,7 @@ function TerminalFactPanel({
       className={`min-w-0 cursor-default rounded-md border border-l-2 px-3.5 py-3 ${styles.panel}`}
     >
       <div className="ldvh-terminal-fact-content min-w-0 break-words">
-        <SummaryText value={content} collapseThreshold={Number.MAX_SAFE_INTEGER} className={`[&_p]:my-0 text-[13px] leading-5 ${styles.body}`} />
+        <SummaryText value={content} collapseThreshold={Number.MAX_SAFE_INTEGER} className={`ldvh-card-decision-body [&_p]:my-0 ${styles.body}`} />
       </div>
     </section>
   );
@@ -1192,7 +1183,7 @@ export default function ObjectList() {
 
     if (currentType === 'adr') {
       return (
-        <ObjectCardFrame key={obj.id} obj={obj} locale={locale} onOpen={openObject} showNonActiveReason={false} showStatusBadge={obj.status !== 'retired'}>
+        <ObjectCardFrame key={obj.id} obj={obj} locale={locale} onOpen={openObject} showNonActiveReason={false}>
           <AdrCardContent obj={obj} />
         </ObjectCardFrame>
       );
@@ -1200,8 +1191,7 @@ export default function ObjectList() {
 
     if (currentType === 'pitfall') {
       return (
-        <ObjectCardFrame key={obj.id} obj={obj} locale={locale} onOpen={openObject} showNonActiveReason={false} showStatusBadge={obj.status !== 'discarded'}>
-          <ObjectSignalBadges source={obj} type={obj.type} locale={locale} />
+        <ObjectCardFrame key={obj.id} obj={obj} locale={locale} onOpen={openObject} showNonActiveReason={false}>
           <PitfallCardContent obj={obj} />
         </ObjectCardFrame>
       );
@@ -1209,8 +1199,7 @@ export default function ObjectList() {
 
     if (currentType === 'spark') {
       return (
-        <ObjectCardFrame key={obj.id} obj={obj} locale={locale} onOpen={openObject} showNonActiveReason={false} showStatusBadge={!hasSparkDiscardFact(obj) && !hasSparkImplementedFact(obj) && !hasSparkResolvedFact(obj)}>
-          <ObjectSignalBadges source={obj} type={obj.type} locale={locale} />
+        <ObjectCardFrame key={obj.id} obj={obj} locale={locale} onOpen={openObject} showNonActiveReason={false}>
           <SparkCardContent obj={obj} />
         </ObjectCardFrame>
       );
@@ -1218,8 +1207,7 @@ export default function ObjectList() {
 
     if (currentType === 'study') {
       return (
-        <ObjectCardFrame key={obj.id} obj={obj} locale={locale} onOpen={openObject} showNonActiveReason={false} showStatusBadge={obj.status !== 'retired'}>
-          <ObjectSignalBadges source={obj} type={obj.type} locale={locale} />
+        <ObjectCardFrame key={obj.id} obj={obj} locale={locale} onOpen={openObject} showNonActiveReason={false}>
           <StudyCardContent obj={obj} />
         </ObjectCardFrame>
       );
@@ -1227,7 +1215,6 @@ export default function ObjectList() {
 
     return (
       <ObjectCardFrame key={obj.id} obj={obj} locale={locale} onOpen={openObject}>
-        <ObjectSignalBadges source={obj} type={obj.type} locale={locale} />
       </ObjectCardFrame>
     );
   };
@@ -1286,10 +1273,10 @@ export default function ObjectList() {
           role="status"
           className={`mb-4 flex min-w-0 items-start gap-2 rounded-lg border px-4 py-3 ${
             coverageStatus === 'unavailable'
-              ? 'border-red-500/30 bg-red-500/10 text-red-300'
+              ? 'border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-300'
               : coverageStatus === 'partial' || coverageStatus === 'type_not_integrated'
-              ? 'border-amber-500/30 bg-amber-500/10 text-amber-300'
-              : 'border-sky-500/30 bg-sky-500/10 text-sky-300'
+              ? 'border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300'
+              : 'border-sky-500/30 bg-sky-500/10 text-sky-700 dark:text-sky-300'
           }`}
         >
           <CircleAlert size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
@@ -1346,8 +1333,8 @@ export default function ObjectList() {
         currentType === 'workcase' ? (
           <div className="mx-auto max-w-2xl rounded-lg border border-red-500/30 bg-red-500/10 px-5 py-8 text-center">
             <CircleAlert className="mx-auto mb-3 text-red-400" size={24} />
-            <p className="ldvh-card-title text-red-300">{t('objectList.workcaseCoverageUnavailable')}</p>
-            <p className="ldvh-meta mt-2 break-words text-red-300/80">{error}</p>
+            <p className="ldvh-card-title text-red-700 dark:text-red-300">{t('objectList.workcaseCoverageUnavailable')}</p>
+            <p className="ldvh-meta mt-2 break-words text-red-700/80 dark:text-red-300/80">{error}</p>
           </div>
         ) : (
           <div className="py-20 text-center">

@@ -12,7 +12,7 @@ test('Spark association UI reads only relations', () => {
 test('Spark terminal headings distinguish routed, implemented, and discarded', () => {
   const source = fs.readFileSync(path.resolve('src/pages/object-detail/FactReadingLayouts.tsx'), 'utf8');
 
-  assert.match(source, /obj\.status === 'implemented'.*'落实'/);
-  assert.match(source, /obj\.status === 'discarded'.*'废弃'/);
-  assert.match(source, /zh: '分流', en: 'Routing'/);
+  assert.match(source, /obj\.status === 'implemented' \|\| obj\.status === 'discarded'/);
+  assert.match(source, /getObjectStatusLocale\('spark', String\(obj\.status\), locale\)/);
+  assert.match(source, /labelKey: 'routing'/);
 });
