@@ -24,6 +24,8 @@ test('WorkCase detail source consumes only the single current shape in one fixed
     'utf8',
   );
   const objectDetail = fs.readFileSync(path.join(repositoryRoot, 'web/src/pages/ObjectDetail.tsx'), 'utf8');
+
+  assert.match(layout, /<div className="ldvh-study-node-content">[\s\S]*divide-y divide-ldvh-border\/60/);
   const panel = fs.readFileSync(
     path.join(repositoryRoot, 'web/src/components/reading-panel/PanelContent.tsx'),
     'utf8',

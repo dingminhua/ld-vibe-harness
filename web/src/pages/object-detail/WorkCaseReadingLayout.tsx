@@ -1,17 +1,21 @@
-import { useState, type ReactNode } from 'react';
-import SummaryText from '@/components/SummaryText';
-import { useI18n } from '@/i18n/context';
-import { getFieldLabel, getFieldValueLabel, getStatusLocale } from '@/i18n/locales';
-import type { WorkCaseDetailData } from '@/utils/api';
-import { projectCurrentWorkCaseDetail } from '@/shared/workcaseDetailProjection';
-import { FactAssociationsSection } from '@/pages/object-detail/FactAssociationsSection';
+import { useState, type ReactNode } from "react";
+import SummaryText from "@/components/SummaryText";
+import { useI18n } from "@/i18n/context";
+import {
+  getFieldLabel,
+  getFieldValueLabel,
+  getStatusLocale,
+} from "@/i18n/locales";
+import type { WorkCaseDetailData } from "@/utils/api";
+import { projectCurrentWorkCaseDetail } from "@/shared/workcaseDetailProjection";
+import { FactAssociationsSection } from "@/pages/object-detail/FactAssociationsSection";
 import {
   DetailInlineField,
   ReadingNodeSection,
   RelatedContentSection,
   getReadingNodeNextState,
   type ReadingNodeState,
-} from '@/pages/ObjectDetail';
+} from "@/pages/ObjectDetail";
 
 /**
  * WorkCase detail has one current reading structure.  Field presence decides
@@ -43,24 +47,51 @@ export function WorkCaseReadingLayout({
   return (
     <div className="mb-6 flex flex-col gap-5">
       {detail.responsibility && (
-        <WorkCaseReadingNode title={t('objectDetail.workcaseResponsibility')} locale={locale}>
+        <WorkCaseReadingNode
+          title={t("objectDetail.workcaseResponsibility")}
+          locale={locale}
+        >
           <TextField fieldKey="goal" value={obj.goal} locale={locale} />
           <TextField fieldKey="scope" value={obj.scope} locale={locale} />
         </WorkCaseReadingNode>
       )}
 
       {detail.currentSnapshot && (
-        <WorkCaseReadingNode title={t('objectDetail.workcaseCurrentSnapshot')} locale={locale}>
-          <EnumField fieldKey="phase" value={obj.phase} locale={locale} statusValue />
+        <WorkCaseReadingNode
+          title={t("objectDetail.workcaseCurrentSnapshot")}
+          locale={locale}
+        >
+          <EnumField
+            fieldKey="phase"
+            value={obj.phase}
+            locale={locale}
+            statusValue
+          />
           <TextField fieldKey="summary" value={obj.summary} locale={locale} />
-          <TextField fieldKey="resume_from" value={obj.resume_from} locale={locale} />
-          <TextField fieldKey="waiting_on" value={obj.waiting_on} locale={locale} />
-          <TextField fieldKey="blocking_summary" value={obj.blocking_summary} locale={locale} tone="warning" />
+          <TextField
+            fieldKey="resume_from"
+            value={obj.resume_from}
+            locale={locale}
+          />
+          <TextField
+            fieldKey="waiting_on"
+            value={obj.waiting_on}
+            locale={locale}
+          />
+          <TextField
+            fieldKey="blocking_summary"
+            value={obj.blocking_summary}
+            locale={locale}
+            tone="warning"
+          />
         </WorkCaseReadingNode>
       )}
 
       {criteria.length > 0 && (
-        <WorkCaseReadingNode title={t('objectDetail.workcaseSuccessCriteria')} locale={locale}>
+        <WorkCaseReadingNode
+          title={t("objectDetail.workcaseSuccessCriteria")}
+          locale={locale}
+        >
           <SuccessCriteria
             definitions={criteria}
             results={criterionResults}
@@ -70,16 +101,25 @@ export function WorkCaseReadingLayout({
       )}
 
       {detail.planAndItems && (
-        <WorkCaseReadingNode title={t('objectDetail.workcasePlanAndItems')} locale={locale}>
-          <NumberField fieldKey="plan_version" value={obj.plan_version} locale={locale} />
-          {workItems.length > 0 && <WorkItemList items={workItems} locale={locale} />}
+        <WorkCaseReadingNode
+          title={t("objectDetail.workcasePlanAndItems")}
+          locale={locale}
+        >
+          <NumberField
+            fieldKey="plan_version"
+            value={obj.plan_version}
+            locale={locale}
+          />
+          {workItems.length > 0 && (
+            <WorkItemList items={workItems} locale={locale} />
+          )}
         </WorkCaseReadingNode>
       )}
 
       {creationReviews.length > 0 && (
         <WorkCaseReadingNode
-          title={t('objectDetail.workcaseCreationReviews')}
-          note={t('objectDetail.workcaseCreationReviewsBoundary')}
+          title={t("objectDetail.workcaseCreationReviews")}
+          note={t("objectDetail.workcaseCreationReviewsBoundary")}
           locale={locale}
         >
           <ReviewList reviews={creationReviews} locale={locale} />
@@ -88,8 +128,8 @@ export function WorkCaseReadingLayout({
 
       {executionApproval && (
         <WorkCaseReadingNode
-          title={t('objectDetail.workcaseExecutionApproval')}
-          note={t('objectDetail.workcaseExecutionApprovalBoundary')}
+          title={t("objectDetail.workcaseExecutionApproval")}
+          note={t("objectDetail.workcaseExecutionApprovalBoundary")}
           locale={locale}
         >
           <ExecutionApproval approval={executionApproval} locale={locale} />
@@ -97,17 +137,32 @@ export function WorkCaseReadingLayout({
       )}
 
       {detail.resultAndValidation && (
-        <WorkCaseReadingNode title={t('objectDetail.workcaseResultAndValidation')} locale={locale}>
-          <NumberField fieldKey="result_version" value={obj.result_version} locale={locale} />
-          <TextField fieldKey="result_summary" value={obj.result_summary} locale={locale} />
-          <TextField fieldKey="validation_summary" value={obj.validation_summary} locale={locale} />
+        <WorkCaseReadingNode
+          title={t("objectDetail.workcaseResultAndValidation")}
+          locale={locale}
+        >
+          <NumberField
+            fieldKey="result_version"
+            value={obj.result_version}
+            locale={locale}
+          />
+          <TextField
+            fieldKey="result_summary"
+            value={obj.result_summary}
+            locale={locale}
+          />
+          <TextField
+            fieldKey="validation_summary"
+            value={obj.validation_summary}
+            locale={locale}
+          />
         </WorkCaseReadingNode>
       )}
 
       {detail.controllerCheck && (
         <WorkCaseReadingNode
-          title={t('objectDetail.workcaseControllerCheck')}
-          note={t('objectDetail.workcaseControllerCheckBoundary')}
+          title={t("objectDetail.workcaseControllerCheck")}
+          note={t("objectDetail.workcaseControllerCheckBoundary")}
           locale={locale}
         >
           <TextField
@@ -120,8 +175,8 @@ export function WorkCaseReadingLayout({
 
       {resultReviews.length > 0 && (
         <WorkCaseReadingNode
-          title={t('objectDetail.workcaseResultReviews')}
-          note={t('objectDetail.workcaseResultReviewsBoundary')}
+          title={t("objectDetail.workcaseResultReviews")}
+          note={t("objectDetail.workcaseResultReviewsBoundary")}
           locale={locale}
         >
           <ReviewList reviews={resultReviews} locale={locale} />
@@ -130,8 +185,8 @@ export function WorkCaseReadingLayout({
 
       {closureProposal && (
         <WorkCaseReadingNode
-          title={t('objectDetail.workcaseClosureProposal')}
-          note={t('objectDetail.workcaseClosureProposalBoundary')}
+          title={t("objectDetail.workcaseClosureProposal")}
+          note={t("objectDetail.workcaseClosureProposalBoundary")}
           locale={locale}
         >
           <ClosureProposal proposal={closureProposal} locale={locale} />
@@ -140,31 +195,41 @@ export function WorkCaseReadingLayout({
 
       {detail.terminalDisposition && (
         <WorkCaseReadingNode
-          title={t('objectDetail.workcaseTerminalDisposition')}
-          note={t('objectDetail.workcaseTerminalDispositionBoundary')}
+          title={t("objectDetail.workcaseTerminalDisposition")}
+          note={t("objectDetail.workcaseTerminalDispositionBoundary")}
           locale={locale}
         >
-          <EnumField fieldKey="closure_outcome" value={obj.closure_outcome} locale={locale} />
-          <TextField fieldKey="disposition_summary" value={obj.disposition_summary} locale={locale} />
+          <EnumField
+            fieldKey="closure_outcome"
+            value={obj.closure_outcome}
+            locale={locale}
+          />
+          <TextField
+            fieldKey="disposition_summary"
+            value={obj.disposition_summary}
+            locale={locale}
+          />
           {terminalResiduals.length > 0 && (
             <TerminalResidualList items={terminalResiduals} locale={locale} />
           )}
-          {terminalSuggestions.length > 0 && <SparkSuggestionList items={terminalSuggestions} locale={locale} />}
+          {terminalSuggestions.length > 0 && (
+            <SparkSuggestionList items={terminalSuggestions} locale={locale} />
+          )}
         </WorkCaseReadingNode>
       )}
 
       <FactAssociationsSection
         obj={obj}
         locale={locale}
-        title={t('objectDetail.workcaseRelations')}
+        title={t("objectDetail.workcaseRelations")}
         showRelationKey
       />
 
       {urls.length > 0 && (
         <RelatedContentSection
-          entries={[['urls', urls]]}
+          entries={[["urls", urls]]}
           locale={locale}
-          title={t('objectDetail.workcaseUrls')}
+          title={t("objectDetail.workcaseUrls")}
         />
       )}
     </div>
@@ -182,7 +247,7 @@ function WorkCaseReadingNode({
   locale: string;
   children: ReactNode;
 }) {
-  const [state, setState] = useState<ReadingNodeState>('expanded');
+  const [state, setState] = useState<ReadingNodeState>("expanded");
   return (
     <ReadingNodeSection
       title={title}
@@ -190,12 +255,14 @@ function WorkCaseReadingNode({
       locale={locale}
       onToggle={() => setState((current) => getReadingNodeNextState(current))}
     >
-      {note && (
-        <p className="ldvh-caption mb-3 border-l-2 border-ldvh-border pl-2 text-ldvh-text-secondary">
-          {note}
-        </p>
-      )}
-      <div className="divide-y divide-ldvh-border/60">{children}</div>
+      <div className="ldvh-study-node-content">
+        {note && (
+          <p className="ldvh-caption mb-2 border-b border-ldvh-border/60 pb-2 text-ldvh-text-secondary">
+            {note}
+          </p>
+        )}
+        <div className="divide-y divide-ldvh-border/60">{children}</div>
+      </div>
     </ReadingNodeSection>
   );
 }
@@ -204,34 +271,71 @@ function TextField({
   fieldKey,
   value,
   locale,
-  tone = 'default',
+  tone = "default",
   label,
 }: {
   fieldKey: string;
   value: unknown;
   locale: string;
-  tone?: 'default' | 'warning';
+  tone?: "default" | "warning";
   label?: string;
 }) {
-  if (typeof value !== 'string' || !value.trim()) return null;
+  if (typeof value !== "string" || !value.trim()) return null;
   return (
     <DetailInlineField
       label={label ?? getFieldLabel(fieldKey, locale)}
-      value={(
-        <div className={tone === 'warning' ? 'rounded-md border border-amber-500/25 bg-amber-500/5 px-3 py-2' : ''}>
-          <SummaryText value={value} collapseThreshold={Number.MAX_SAFE_INTEGER} />
+      value={
+        <div
+          className={
+            tone === "warning"
+              ? "rounded-md border border-amber-500/25 bg-amber-500/5 px-3 py-2"
+              : ""
+          }
+        >
+          <SummaryText
+            value={value}
+            collapseThreshold={Number.MAX_SAFE_INTEGER}
+          />
         </div>
-      )}
+      }
     />
   );
 }
 
-function NumberField({ fieldKey, value, locale }: { fieldKey: string; value: unknown; locale: string }) {
-  if (typeof value !== 'number' || !Number.isFinite(value)) return null;
+function NumberField({
+  fieldKey,
+  value,
+  locale,
+}: {
+  fieldKey: string;
+  value: unknown;
+  locale: string;
+}) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return null;
   return (
     <DetailInlineField
       label={getFieldLabel(fieldKey, locale)}
       value={<span className="ldvh-meta-primary font-mono">{value}</span>}
+    />
+  );
+}
+
+function MonoField({
+  fieldKey,
+  value,
+  locale,
+}: {
+  fieldKey: string;
+  value: unknown;
+  locale: string;
+}) {
+  if (typeof value !== "string" || !value.trim()) return null;
+  return (
+    <DetailInlineField
+      label={getFieldLabel(fieldKey, locale)}
+      value={
+        <span className="ldvh-meta-primary break-all font-mono">{value}</span>
+      }
     />
   );
 }
@@ -247,7 +351,7 @@ function EnumField({
   locale: string;
   statusValue?: boolean;
 }) {
-  if (typeof value !== 'string' || !value.trim()) return null;
+  if (typeof value !== "string" || !value.trim()) return null;
   const label = statusValue
     ? getStatusLocale(value, locale)
     : getFieldValueLabel(fieldKey, value, locale);
@@ -289,26 +393,34 @@ function SuccessCriteria({
         const criterionId = detailString(definition.criterion_id);
         const result = resultById.get(criterionId);
         return (
-          <li key={criterionId} className="flex min-w-0 items-start gap-2 py-3 first:pt-0 last:pb-0">
-            <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-ldvh-text-secondary/55" aria-hidden="true" />
-            <div className="min-w-0 flex-1 rounded-md border border-ldvh-border bg-ldvh-bg/55 px-3 py-2.5">
-              <div className="mb-2 flex min-w-0 flex-wrap items-center gap-2">
-                <span className="ldvh-meta-muted font-mono">{criterionId}</span>
-              </div>
-              <SummaryText value={detailString(definition.statement)} collapseThreshold={Number.MAX_SAFE_INTEGER} />
+          <li
+            key={criterionId}
+            className="min-w-0 rounded-md border border-ldvh-border bg-ldvh-bg/55 px-3 py-3"
+          >
+            <div className="divide-y divide-ldvh-border/45">
+              <MonoField
+                fieldKey="criterion_id"
+                value={criterionId}
+                locale={locale}
+              />
+              <TextField
+                fieldKey="statement"
+                value={definition.statement}
+                locale={locale}
+              />
               {result && (
-                <div className="mt-3 border-t border-ldvh-border/60 pt-3">
-                  <div className="mb-2 flex min-w-0 flex-wrap items-center gap-2">
-                    <span className="ldvh-caption-strong text-ldvh-text-secondary">
-                      {getFieldLabel('outcome', locale)}
-                    </span>
-                    <ValueChip
-                      value={detailString(result.outcome)}
-                      label={getFieldValueLabel('outcome', detailString(result.outcome), locale)}
-                    />
-                  </div>
-                  <SummaryText value={detailString(result.summary)} collapseThreshold={Number.MAX_SAFE_INTEGER} />
-                </div>
+                <EnumField
+                  fieldKey="outcome"
+                  value={result.outcome}
+                  locale={locale}
+                />
+              )}
+              {result && (
+                <TextField
+                  fieldKey="summary"
+                  value={result.summary}
+                  locale={locale}
+                />
               )}
             </div>
           </li>
@@ -318,80 +430,107 @@ function SuccessCriteria({
   );
 }
 
-function WorkItemList({ items, locale }: { items: Array<Record<string, unknown>>; locale: string }) {
+function WorkItemList({
+  items,
+  locale,
+}: {
+  items: Array<Record<string, unknown>>;
+  locale: string;
+}) {
   return (
     <div className="py-3 first:pt-0 last:pb-0">
       <div className="ldvh-caption-strong mb-3 text-ldvh-text-secondary">
-        {getFieldLabel('work_items', locale)}
+        {getFieldLabel("work_items", locale)}
       </div>
       <ul className="grid min-w-0 gap-3">
-        {items.map((item) => <WorkItem key={detailString(item.item_id)} item={item} locale={locale} />)}
+        {items.map((item) => (
+          <WorkItem
+            key={detailString(item.item_id)}
+            item={item}
+            locale={locale}
+          />
+        ))}
       </ul>
     </div>
   );
 }
 
-function WorkItem({ item, locale }: { item: Record<string, unknown>; locale: string }) {
-  const status = detailString(item.status);
+function WorkItem({
+  item,
+  locale,
+}: {
+  item: Record<string, unknown>;
+  locale: string;
+}) {
   return (
-    <li className="flex min-w-0 items-start gap-2">
-      <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-ldvh-text-secondary/55" aria-hidden="true" />
-      <div className="min-w-0 flex-1 rounded-md border border-ldvh-border bg-ldvh-bg/55 px-3 py-3">
-        <div className="mb-3 flex min-w-0 flex-wrap items-center gap-2">
-          <span className="ldvh-meta-primary font-mono">{detailString(item.item_id)}</span>
-          <ValueChip value={status} label={getStatusLocale(status, locale)} />
-        </div>
-        <div className="divide-y divide-ldvh-border/45">
-          <CompactTextField fieldKey="goal" value={item.goal} locale={locale} />
-          <CompactTextField fieldKey="expected_result" value={item.expected_result} locale={locale} />
-          <StringArrayField fieldKey="depends_on" value={item.depends_on} locale={locale} />
-          <CompactTextField fieldKey="approach_summary" value={item.approach_summary} locale={locale} />
-          <StringArrayField fieldKey="template_keys" value={item.template_keys} locale={locale} />
-          <CompactTextField fieldKey="template_deviation_summary" value={item.template_deviation_summary} locale={locale} />
-          <CompactTextField fieldKey="current_summary" value={item.current_summary} locale={locale} />
-          <CompactTextField fieldKey="resume_from" value={item.resume_from} locale={locale} />
-          <CompactTextField fieldKey="work_item_blocking_summary" value={item.blocking_summary} locale={locale} warning />
-          <CompactTextField fieldKey="work_item_result_summary" value={item.result_summary} locale={locale} />
-        </div>
+    <li className="min-w-0 rounded-md border border-ldvh-border bg-ldvh-bg/55 px-3 py-3">
+      <div className="divide-y divide-ldvh-border/45">
+        <MonoField fieldKey="item_id" value={item.item_id} locale={locale} />
+        <EnumField
+          fieldKey="status"
+          value={item.status}
+          locale={locale}
+          statusValue
+        />
+        <TextField fieldKey="goal" value={item.goal} locale={locale} />
+        <TextField
+          fieldKey="expected_result"
+          value={item.expected_result}
+          locale={locale}
+        />
+        <InlineStringArrayField
+          fieldKey="depends_on"
+          value={item.depends_on}
+          locale={locale}
+        />
+        <TextField
+          fieldKey="approach_summary"
+          value={item.approach_summary}
+          locale={locale}
+        />
+        <InlineStringArrayField
+          fieldKey="template_keys"
+          value={item.template_keys}
+          locale={locale}
+        />
+        <TextField
+          fieldKey="template_deviation_summary"
+          value={item.template_deviation_summary}
+          locale={locale}
+        />
+        <TextField
+          fieldKey="current_summary"
+          value={item.current_summary}
+          locale={locale}
+        />
+        <TextField
+          fieldKey="resume_from"
+          value={item.resume_from}
+          locale={locale}
+        />
+        <TextField
+          fieldKey="work_item_blocking_summary"
+          value={item.blocking_summary}
+          locale={locale}
+          tone="warning"
+        />
+        <TextField
+          fieldKey="work_item_result_summary"
+          value={item.result_summary}
+          locale={locale}
+        />
       </div>
     </li>
   );
 }
 
-function CompactTextField({
-  fieldKey,
-  value,
+function ReviewList({
+  reviews,
   locale,
-  warning = false,
 }: {
-  fieldKey: string;
-  value: unknown;
+  reviews: Array<Record<string, unknown>>;
   locale: string;
-  warning?: boolean;
 }) {
-  if (typeof value !== 'string' || !value.trim()) return null;
-  return (
-    <div className="grid gap-2 py-2.5 first:pt-0 last:pb-0 sm:grid-cols-[6.5rem_1fr]">
-      <span className="ldvh-caption-strong text-ldvh-text-secondary">{getFieldLabel(fieldKey, locale)}</span>
-      <div className={`min-w-0 ${warning ? 'text-amber-300' : ''}`}>
-        <SummaryText value={value} collapseThreshold={Number.MAX_SAFE_INTEGER} />
-      </div>
-    </div>
-  );
-}
-
-function StringArrayField({ fieldKey, value, locale }: { fieldKey: string; value: unknown; locale: string }) {
-  const items = detailStrings(value);
-  if (items.length === 0) return null;
-  return (
-    <div className="grid gap-2 py-2.5 first:pt-0 last:pb-0 sm:grid-cols-[6.5rem_1fr]">
-      <span className="ldvh-caption-strong text-ldvh-text-secondary">{getFieldLabel(fieldKey, locale)}</span>
-      <StringChips items={items} />
-    </div>
-  );
-}
-
-function ReviewList({ reviews, locale }: { reviews: Array<Record<string, unknown>>; locale: string }) {
   const { t } = useI18n();
   return (
     <ul className="grid min-w-0 gap-3">
@@ -403,41 +542,45 @@ function ReviewList({ reviews, locale }: { reviews: Array<Record<string, unknown
         const feedback = detailStrings(review.feedback);
         return (
           <li
-            key={`${reviewer}-${reviewedAt}-${subjectVersion ?? 'version'}-${index}`}
-            className="flex min-w-0 items-start gap-2 py-3 first:pt-0 last:pb-0"
+            key={`${reviewer}-${reviewedAt}-${subjectVersion ?? "version"}-${index}`}
+            className="min-w-0 rounded-md border border-ldvh-border bg-ldvh-bg/55 px-3 py-3"
           >
-            <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-ldvh-text-secondary/55" aria-hidden="true" />
-            <div className="min-w-0 flex-1 rounded-md border border-ldvh-border bg-ldvh-bg/55 px-3 py-3">
-              <div className="mb-3 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5">
-                <span className="ldvh-body">{reviewer}</span>
-                <time dateTime={reviewedAt} className="ldvh-meta-muted">{reviewedAt}</time>
-                {subjectVersion !== null && (
-                  <span className="ldvh-meta-muted font-mono">
-                    {getFieldLabel('subject_version', locale)} {subjectVersion}
-                  </span>
-                )}
-              </div>
-              <div className="divide-y divide-ldvh-border/45">
-                <ReviewTextField label={t('objectDetail.workcaseReviewScope')} value={review.scope} />
-                <div className="grid gap-2 py-2.5 first:pt-0 last:pb-0 sm:grid-cols-[6.5rem_1fr]">
-                  <span className="ldvh-caption-strong text-ldvh-text-secondary">
-                    {t('objectDetail.workcaseReviewConclusion')}
-                  </span>
-                  <div><ValueChip value={conclusion} label={getFieldValueLabel('conclusion', conclusion, locale)} /></div>
-                </div>
-                {feedback.length > 0 && (
-                  <div className="grid gap-2 py-2.5 first:pt-0 last:pb-0 sm:grid-cols-[6.5rem_1fr]">
-                    <span className="ldvh-caption-strong text-ldvh-text-secondary">
-                      {getFieldLabel('feedback', locale)}
-                    </span>
-                    <BulletTextList items={feedback} />
-                  </div>
-                )}
-                <ReviewTextField
-                  label={getFieldLabel('controller_resolution', locale)}
-                  value={review.controller_resolution}
+            <div className="divide-y divide-ldvh-border/45">
+              <TextValueField
+                label={getFieldLabel("reviewer", locale)}
+                value={reviewer}
+              />
+              <DateField
+                fieldKey="reviewed_at"
+                value={reviewedAt}
+                locale={locale}
+              />
+              <NumberField
+                fieldKey="subject_version"
+                value={subjectVersion}
+                locale={locale}
+              />
+              <TextValueField
+                label={t("objectDetail.workcaseReviewScope")}
+                value={review.scope}
+              />
+              <EnumField
+                fieldKey="conclusion"
+                value={conclusion}
+                locale={locale}
+              />
+              {feedback.length > 0 && (
+                <InlineStringArrayField
+                  fieldKey="feedback"
+                  value={feedback}
+                  locale={locale}
                 />
-              </div>
+              )}
+              <TextField
+                fieldKey="controller_resolution"
+                value={review.controller_resolution}
+                locale={locale}
+              />
             </div>
           </li>
         );
@@ -446,44 +589,87 @@ function ReviewList({ reviews, locale }: { reviews: Array<Record<string, unknown
   );
 }
 
-function ReviewTextField({ label, value }: { label: string; value: unknown }) {
-  if (typeof value !== 'string' || !value.trim()) return null;
-  return (
-    <div className="grid gap-2 py-2.5 first:pt-0 last:pb-0 sm:grid-cols-[6.5rem_1fr]">
-      <span className="ldvh-caption-strong text-ldvh-text-secondary">{label}</span>
-      <SummaryText value={value} collapseThreshold={Number.MAX_SAFE_INTEGER} />
-    </div>
-  );
-}
-
-function ExecutionApproval({ approval, locale }: { approval: Record<string, unknown>; locale: string }) {
-  const { t } = useI18n();
-  return (
-    <>
-      <NumberField fieldKey="subject_version" value={approval.subject_version} locale={locale} />
-      <DateField fieldKey="approved_at" value={approval.approved_at} locale={locale} />
-      <TextField
-        fieldKey="summary"
-        value={approval.summary}
-        locale={locale}
-        label={t('objectDetail.workcaseApprovalSummary')}
-      />
-      <InlineStringArrayField fieldKey="source_refs" value={approval.source_refs} locale={locale} />
-    </>
-  );
-}
-
-function DateField({ fieldKey, value, locale }: { fieldKey: string; value: unknown; locale: string }) {
-  if (typeof value !== 'string' || !value.trim()) return null;
+function TextValueField({ label, value }: { label: string; value: unknown }) {
+  if (typeof value !== "string" || !value.trim()) return null;
   return (
     <DetailInlineField
-      label={getFieldLabel(fieldKey, locale)}
-      value={<time dateTime={value} className="ldvh-meta-primary">{value}</time>}
+      label={label}
+      value={
+        <SummaryText
+          value={value}
+          collapseThreshold={Number.MAX_SAFE_INTEGER}
+        />
+      }
     />
   );
 }
 
-function InlineStringArrayField({ fieldKey, value, locale }: { fieldKey: string; value: unknown; locale: string }) {
+function ExecutionApproval({
+  approval,
+  locale,
+}: {
+  approval: Record<string, unknown>;
+  locale: string;
+}) {
+  const { t } = useI18n();
+  return (
+    <>
+      <NumberField
+        fieldKey="subject_version"
+        value={approval.subject_version}
+        locale={locale}
+      />
+      <DateField
+        fieldKey="approved_at"
+        value={approval.approved_at}
+        locale={locale}
+      />
+      <TextField
+        fieldKey="summary"
+        value={approval.summary}
+        locale={locale}
+        label={t("objectDetail.workcaseApprovalSummary")}
+      />
+      <InlineStringArrayField
+        fieldKey="source_refs"
+        value={approval.source_refs}
+        locale={locale}
+      />
+    </>
+  );
+}
+
+function DateField({
+  fieldKey,
+  value,
+  locale,
+}: {
+  fieldKey: string;
+  value: unknown;
+  locale: string;
+}) {
+  if (typeof value !== "string" || !value.trim()) return null;
+  return (
+    <DetailInlineField
+      label={getFieldLabel(fieldKey, locale)}
+      value={
+        <time dateTime={value} className="ldvh-meta-primary">
+          {value}
+        </time>
+      }
+    />
+  );
+}
+
+function InlineStringArrayField({
+  fieldKey,
+  value,
+  locale,
+}: {
+  fieldKey: string;
+  value: unknown;
+  locale: string;
+}) {
   const items = detailStrings(value);
   if (items.length === 0) return null;
   return (
@@ -494,46 +680,87 @@ function InlineStringArrayField({ fieldKey, value, locale }: { fieldKey: string;
   );
 }
 
-function ClosureProposal({ proposal, locale }: { proposal: Record<string, unknown>; locale: string }) {
+function ClosureProposal({
+  proposal,
+  locale,
+}: {
+  proposal: Record<string, unknown>;
+  locale: string;
+}) {
   const decisions = detailRecords(proposal.residual_decisions);
   const suggestions = detailRecords(proposal.spark_suggestions);
   return (
     <>
-      <EnumField fieldKey="proposed_outcome" value={proposal.proposed_outcome} locale={locale} />
-      <TextField fieldKey="proposed_disposition_summary" value={proposal.proposed_disposition_summary} locale={locale} />
-      {decisions.length > 0 && <ResidualDecisionList decisions={decisions} locale={locale} />}
-      {suggestions.length > 0 && <SparkSuggestionList items={suggestions} locale={locale} />}
+      <EnumField
+        fieldKey="proposed_outcome"
+        value={proposal.proposed_outcome}
+        locale={locale}
+      />
+      <TextField
+        fieldKey="proposed_disposition_summary"
+        value={proposal.proposed_disposition_summary}
+        locale={locale}
+      />
+      {decisions.length > 0 && (
+        <ResidualDecisionList decisions={decisions} locale={locale} />
+      )}
+      {suggestions.length > 0 && (
+        <SparkSuggestionList items={suggestions} locale={locale} />
+      )}
     </>
   );
 }
 
-function ResidualDecisionList({ decisions, locale }: { decisions: Array<Record<string, unknown>>; locale: string }) {
+function ResidualDecisionList({
+  decisions,
+  locale,
+}: {
+  decisions: Array<Record<string, unknown>>;
+  locale: string;
+}) {
   return (
     <div className="py-3 first:pt-0 last:pb-0">
       <div className="ldvh-caption-strong mb-3 text-ldvh-text-secondary">
-        {getFieldLabel('residual_decisions', locale)}
+        {getFieldLabel("residual_decisions", locale)}
       </div>
       <ul className="grid min-w-0 gap-3">
         {decisions.map((decision) => (
-          <li key={detailString(decision.residual_id)} className="flex min-w-0 items-start gap-2">
-            <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-ldvh-text-secondary/55" aria-hidden="true" />
-            <div className="min-w-0 flex-1 rounded-md border border-ldvh-border bg-ldvh-bg/55 px-3 py-3">
-              <div className="mb-3 flex min-w-0 flex-wrap items-center gap-2">
-                <span className="ldvh-meta-primary font-mono">{detailString(decision.residual_id)}</span>
-                <ValueChip
-                  value={detailString(decision.proposed_disposition)}
-                  label={getFieldValueLabel(
-                    'proposed_disposition',
-                    detailString(decision.proposed_disposition),
-                    locale,
-                  )}
-                />
-              </div>
-              <SummaryText value={detailString(decision.summary)} collapseThreshold={Number.MAX_SAFE_INTEGER} />
+          <li
+            key={detailString(decision.residual_id)}
+            className="min-w-0 rounded-md border border-ldvh-border bg-ldvh-bg/55 px-3 py-3"
+          >
+            <div className="divide-y divide-ldvh-border/45">
+              <MonoField
+                fieldKey="residual_id"
+                value={decision.residual_id}
+                locale={locale}
+              />
+              <EnumField
+                fieldKey="proposed_disposition"
+                value={decision.proposed_disposition}
+                locale={locale}
+              />
+              <TextField
+                fieldKey="summary"
+                value={decision.summary}
+                locale={locale}
+              />
               {detailRecord(decision.route_target) && (
-                <RouteTarget target={detailRecord(decision.route_target)!} locale={locale} />
+                <DetailInlineField
+                  label={getFieldLabel("route_target", locale)}
+                  value={
+                    <RouteTarget
+                      target={detailRecord(decision.route_target)!}
+                      locale={locale}
+                    />
+                  }
+                />
               )}
-              <TextField fieldKey="spark_suggestion_id" value={decision.spark_suggestion_id} locale={locale} />
+              <MonoField
+                fieldKey="spark_suggestion_id"
+                value={decision.spark_suggestion_id}
+                locale={locale}
+              />
             </div>
           </li>
         ))}
@@ -542,44 +769,81 @@ function ResidualDecisionList({ decisions, locale }: { decisions: Array<Record<s
   );
 }
 
-function RouteTarget({ target, locale }: { target: Record<string, unknown>; locale: string }) {
+function RouteTarget({
+  target,
+  locale,
+}: {
+  target: Record<string, unknown>;
+  locale: string;
+}) {
   return (
-    <div className="mt-3 border-t border-ldvh-border/60 pt-3">
-      <div className="ldvh-caption-strong mb-2 text-ldvh-text-secondary">
-        {getFieldLabel('route_target', locale)}
-      </div>
-      <dl className="grid min-w-0 gap-x-3 gap-y-1.5 sm:grid-cols-[9rem_1fr]">
-        {['governed_project_id', 'fact_type_key', 'object_id', 'content_fingerprint'].map((fieldKey) => (
-          <RouteTargetField key={fieldKey} fieldKey={fieldKey} value={target[fieldKey]} locale={locale} />
-        ))}
-      </dl>
-    </div>
+    <dl className="grid min-w-0 gap-x-3 gap-y-1.5 sm:grid-cols-[9rem_1fr]">
+      {[
+        "governed_project_id",
+        "fact_type_key",
+        "object_id",
+        "content_fingerprint",
+      ].map((fieldKey) => (
+        <RouteTargetField
+          key={fieldKey}
+          fieldKey={fieldKey}
+          value={target[fieldKey]}
+          locale={locale}
+        />
+      ))}
+    </dl>
   );
 }
 
-function RouteTargetField({ fieldKey, value, locale }: { fieldKey: string; value: unknown; locale: string }) {
-  if (typeof value !== 'string' || !value.trim()) return null;
+function RouteTargetField({
+  fieldKey,
+  value,
+  locale,
+}: {
+  fieldKey: string;
+  value: unknown;
+  locale: string;
+}) {
+  if (typeof value !== "string" || !value.trim()) return null;
   return (
     <>
-      <dt className="ldvh-caption-strong text-ldvh-text-secondary">{getFieldLabel(fieldKey, locale)}</dt>
+      <dt className="ldvh-caption-strong text-ldvh-text-secondary">
+        {getFieldLabel(fieldKey, locale)}
+      </dt>
       <dd className="ldvh-meta-primary min-w-0 break-all font-mono">{value}</dd>
     </>
   );
 }
 
-function TerminalResidualList({ items, locale }: { items: Array<Record<string, unknown>>; locale: string }) {
+function TerminalResidualList({
+  items,
+  locale,
+}: {
+  items: Array<Record<string, unknown>>;
+  locale: string;
+}) {
   return (
     <div className="py-3 first:pt-0 last:pb-0">
       <div className="ldvh-caption-strong mb-3 text-ldvh-text-secondary">
-        {getFieldLabel('residual_responsibilities', locale)}
+        {getFieldLabel("residual_responsibilities", locale)}
       </div>
       <ul className="grid min-w-0 gap-2">
         {items.map((item) => (
-          <li key={detailString(item.residual_id)} className="flex min-w-0 items-start gap-2">
-            <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-ldvh-text-secondary/55" aria-hidden="true" />
-            <div className="min-w-0 flex-1 rounded-md border border-ldvh-border bg-ldvh-bg/55 px-3 py-2.5">
-              <div className="ldvh-meta-muted mb-1.5 font-mono">{detailString(item.residual_id)}</div>
-              <SummaryText value={detailString(item.summary)} collapseThreshold={Number.MAX_SAFE_INTEGER} />
+          <li
+            key={detailString(item.residual_id)}
+            className="min-w-0 rounded-md border border-ldvh-border bg-ldvh-bg/55 px-3 py-3"
+          >
+            <div className="divide-y divide-ldvh-border/45">
+              <MonoField
+                fieldKey="residual_id"
+                value={item.residual_id}
+                locale={locale}
+              />
+              <TextField
+                fieldKey="summary"
+                value={item.summary}
+                locale={locale}
+              />
             </div>
           </li>
         ))}
@@ -588,19 +852,61 @@ function TerminalResidualList({ items, locale }: { items: Array<Record<string, u
   );
 }
 
-function SparkSuggestionList({ items, locale }: { items: Array<Record<string, unknown>>; locale: string }) {
+function SparkSuggestionList({
+  items,
+  locale,
+}: {
+  items: Array<Record<string, unknown>>;
+  locale: string;
+}) {
   return (
     <div className="py-3 first:pt-0 last:pb-0">
-      <div className="ldvh-caption-strong mb-3 text-ldvh-text-secondary">{getFieldLabel('spark_suggestions', locale)}</div>
+      <div className="ldvh-caption-strong mb-3 text-ldvh-text-secondary">
+        {getFieldLabel("spark_suggestions", locale)}
+      </div>
       <ul className="grid min-w-0 gap-2">
         {items.map((item) => (
-          <li key={detailString(item.suggestion_id)} className="rounded-md border border-ldvh-border bg-ldvh-bg/55 px-3 py-2.5">
-            <EnumField fieldKey="suggestion_kind" value={item.suggestion_kind} locale={locale} />
-            <TextField fieldKey="summary" value={item.summary} locale={locale} />
-            <TextField fieldKey="restriction_reason" value={item.restriction_reason} locale={locale} />
-            <TextField fieldKey="impact_summary" value={item.impact_summary} locale={locale} />
-            <TextField fieldKey="resume_condition" value={item.resume_condition} locale={locale} />
-            <TextField fieldKey="follow_up_summary" value={item.follow_up_summary} locale={locale} />
+          <li
+            key={detailString(item.suggestion_id)}
+            className="rounded-md border border-ldvh-border bg-ldvh-bg/55 px-3 py-2.5"
+          >
+            <div className="divide-y divide-ldvh-border/45">
+              <MonoField
+                fieldKey="spark_suggestion_id"
+                value={item.suggestion_id}
+                locale={locale}
+              />
+              <EnumField
+                fieldKey="suggestion_kind"
+                value={item.suggestion_kind}
+                locale={locale}
+              />
+              <TextField
+                fieldKey="summary"
+                value={item.summary}
+                locale={locale}
+              />
+              <TextField
+                fieldKey="restriction_reason"
+                value={item.restriction_reason}
+                locale={locale}
+              />
+              <TextField
+                fieldKey="impact_summary"
+                value={item.impact_summary}
+                locale={locale}
+              />
+              <TextField
+                fieldKey="resume_condition"
+                value={item.resume_condition}
+                locale={locale}
+              />
+              <TextField
+                fieldKey="follow_up_summary"
+                value={item.follow_up_summary}
+                locale={locale}
+              />
+            </div>
           </li>
         ))}
       </ul>
@@ -612,7 +918,10 @@ function StringChips({ items }: { items: string[] }) {
   return (
     <div className="flex min-w-0 flex-wrap gap-1.5">
       {items.map((item) => (
-        <span key={item} className="ldvh-chip max-w-full break-all rounded-md border border-ldvh-border bg-ldvh-bg px-2 py-0.5 text-ldvh-text-primary">
+        <span
+          key={item}
+          className="ldvh-chip max-w-full break-all rounded-md border border-ldvh-border bg-ldvh-bg px-2 py-0.5 text-ldvh-text-primary"
+        >
           {item}
         </span>
       ))}
@@ -620,41 +929,28 @@ function StringChips({ items }: { items: string[] }) {
   );
 }
 
-function BulletTextList({ items }: { items: string[] }) {
-  return (
-    <ul className="grid min-w-0 gap-1.5">
-      {items.map((item) => (
-        <li key={item} className="flex min-w-0 items-start gap-2">
-          <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-ldvh-text-secondary/55" aria-hidden="true" />
-          <div className="min-w-0 flex-1">
-            <SummaryText value={item} collapseThreshold={Number.MAX_SAFE_INTEGER} />
-          </div>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
 function detailRecord(value: unknown): Record<string, unknown> | null {
-  return value && typeof value === 'object' && !Array.isArray(value)
-    ? value as Record<string, unknown>
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
     : null;
 }
 
 function detailRecords(value: unknown): Array<Record<string, unknown>> {
-  if (!Array.isArray(value) || !value.every((item) => detailRecord(item))) return [];
+  if (!Array.isArray(value) || !value.every((item) => detailRecord(item)))
+    return [];
   return value as Array<Record<string, unknown>>;
 }
 
 function detailString(value: unknown): string {
-  return typeof value === 'string' ? value : '';
+  return typeof value === "string" ? value : "";
 }
 
 function detailStrings(value: unknown): string[] {
-  if (!Array.isArray(value) || !value.every((item) => typeof item === 'string')) return [];
+  if (!Array.isArray(value) || !value.every((item) => typeof item === "string"))
+    return [];
   return value as string[];
 }
 
 function detailNumber(value: unknown): number | null {
-  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
 }

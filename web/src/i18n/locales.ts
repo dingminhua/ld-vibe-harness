@@ -52,6 +52,9 @@ export function getStatusLocale(status: string, locale: string): string {
 // 状态码可在不同事实对象中复用，但展示语义不必相同。Spark 的 `open`
 // 表示「尚待判断或分流」，不是 WorkCase 式的「未关闭」。
 const OBJECT_STATUS_LOCALES: Record<string, Record<string, { zh: string; en: string }>> = {
+  adr: {
+    retired: { zh: '已废弃', en: 'Retired' },
+  },
   spark: {
     open: { zh: '待处理', en: 'Pending' },
   },
@@ -60,6 +63,9 @@ const OBJECT_STATUS_LOCALES: Record<string, Record<string, { zh: string; en: str
     active: { zh: '已确认', en: 'Confirmed' },
     discarded: { zh: '已废弃', en: 'Discarded' },
     retired: { zh: '已退出', en: 'Retired' },
+  },
+  study: {
+    retired: { zh: '已废弃', en: 'Retired' },
   },
 };
 

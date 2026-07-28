@@ -105,11 +105,13 @@ test('WorkCase cards use four progress groups over the single current phase set'
   });
 });
 
-test('Pitfall lifecycle labels remain type-specific across all four states', () => {
+test('terminal status labels remain type-specific across fact types', () => {
+  assert.equal(getObjectStatusLocale('adr', 'retired', 'zh'), '已废弃');
   assert.equal(getObjectStatusLocale('pitfall', 'draft', 'zh'), '待确认');
   assert.equal(getObjectStatusLocale('pitfall', 'active', 'zh'), '已确认');
   assert.equal(getObjectStatusLocale('pitfall', 'discarded', 'zh'), '已废弃');
   assert.equal(getObjectStatusLocale('pitfall', 'retired', 'zh'), '已退出');
+  assert.equal(getObjectStatusLocale('study', 'retired', 'zh'), '已废弃');
 });
 
 test('plan revision is progressing but remains outside the four-step track', () => {
