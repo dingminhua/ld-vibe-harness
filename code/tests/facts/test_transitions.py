@@ -1178,3 +1178,26 @@ def test_actual_update_timestamp_must_move_forward_for_all_fact_types() -> None:
 def test_removed_status_edges_for_other_fact_types_stay_rejected() -> None:
     issues = validate_fact_transition("adr", {"status": "active"}, {"status": "superseded"})
     assert any(issue.field_path == "status" and "不在当前单对象更新允许边" in issue.summary for issue in issues)
+
+
+def test_pitfall_promote_is_status_only_and_discard_preserves_body_with_disposition() -> None:
+    before = {
+        "status": "draft",
+        "updated_at": "2026-07-26T10:00:00+08:00",
+        "title": "完整现场",
+        "symptoms": "实际症状",
+    }
+    promoted = {**before, "status": "active", "updated_at": "2026-07-26T10:01:00+08:00"}
+    assert validate_fact_transition("pitfall", before, promoted) == ()
+
+    rewritten = {**promoted, "symptoms": "在 promote 中改写"}
+    issues = validate_fact_transition("pitfall", before, rewritten)
+    assert any(issue.field_path == "symptoms" and "不得夹带" in issue.summary for issue in issues)
+
+    discarded = {
+        **before,
+        "status": "discarded",
+        "updated_at": "2026-07-26T10:01:00+08:00",
+        "disposition_summary": "Human 不接受该最终快照。",
+    }
+    assert validate_fact_transition("pitfall", before, discarded) == ()

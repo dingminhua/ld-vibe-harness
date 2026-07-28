@@ -135,11 +135,12 @@ WorkCase 身份 / 优先级 / 进展分组
 方案待确认且阻塞：在计划判断输入区之外追加独立阻塞状态提示
 推进中：四环节当前位置 / 工作项完成数与 active 项 / 实际等待与阻塞
 推进中方案返修：轨迹外“方案修订中” / 工作项完成数与 active 项 / 实际等待与阻塞
-关闭待确认、已关闭：通用身份与分组；专属正文待后续定义
+关闭待确认：关闭判断输入区（目标 / 关闭结论提议 / 处置摘要 / 遗留事项处置建议）/ 后续贡献
+已关闭：通用身份与分组；专属正文待后续定义
 更新时间
 ```
 
-“关闭待确认”和“已关闭”在专属正文确定前不显示关闭完整性诊断。前者由 `human_closure_confirming` 直接确定，后者由 `status=closed` 且不具有 phase 直接确定；closed 不保存关闭 approval 或关闭时间，Web 不得把这些已移除的过程字段当作缺失。
+“关闭待确认”Card 的关闭判断输入区直读 `goal` 与完整 `closure_proposal`，显示 route_existing、suggest_spark、accept_stop 三类处置及 Spark suggestions；“后续贡献”只列 `contributed-to` Pitfall 的当前标题与待确认/已确认/已废弃/已退出状态，不提供审核控件。“已关闭”Card 从终态 `goal`、outcome、disposition、`routed-to`、顶层 suggestions 和 residuals 使用同一扫读结构；`related-to` 只在详情呈现。closed 不保存关闭 approval 或关闭时间，Web 不得把这些已移除的过程字段当作缺失。
 
 WorkCase 列表在 Helper 已确认的管辖 worktree 内由 Web 直接读取当前正式载体；它不启动 Web machine 或完整机械校验。列表把可解析字段投影为 Card，并把字段问题、未解析结构和集合问题如实保留；只有载体 I/O 或 YAML 无法解析时才是读取失败。页面不设置列表级“观察时间”或“重新读取”控件；筛选或导航触发新的直读请求，不能复用旧 payload、对象 `updated_at` 或浏览器渲染时刻冒充新观察。
 

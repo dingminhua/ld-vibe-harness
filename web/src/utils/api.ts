@@ -92,7 +92,7 @@ export interface ObjectItem {
   executionItemOpen?: number;
   executionItemsActive?: WorkCaseActiveItem[];
   successCriteria?: string[];
-  /** closure_confirmation Card 的"后续贡献"区；仅实际声明 contributed-to 时出现 */
+  /** closure_confirmation Card 的“后续贡献”区；仅实际声明 contributed-to 时出现 */
   contributedTo?: WorkCaseContributionTarget[];
   /** ADR-specific fields */
   decision?: string;
@@ -104,6 +104,10 @@ export interface ObjectItem {
   object_id?: string;
   fact_type_key?: string;
   canonical_path?: string;
+  /** closure_confirmation Card 的关闭判断输入区；仅 closure_proposal 结构合法时出现 */
+  closureProposal?: WorkCaseClosureProposalCard;
+  /** closed Card 的终态关闭扫读投影；不反推原 proposal 身份 */
+  closureTerminal?: WorkCaseClosureTerminalCard;
   absolute_path?: string;
   carrier?: FactCarrier;
   read_status?: FactReadStatus;
@@ -243,19 +247,19 @@ export interface WorkCaseExecutionApproval {
 
 export interface WorkCaseRouteTarget {
   governed_project_id: string;
-  fact_type_key: 'workcase';
+  fact_type_key: 'workcase' | 'spark';
   object_id: string;
   content_fingerprint: string;
 }
 
 export interface WorkCaseRelationTarget {
   governed_project_id: string;
-  fact_type_key: 'workcase' | 'spark' | 'adr' | 'pitfall';
+  fact_type_key: 'workcase' | 'spark' | 'adr' | 'pitfall' | 'study';
   object_id: string;
 }
 
 export interface WorkCaseRelation {
-  relation_key: 'depends-on' | 'routed-to' | 'contributed-to';
+  relation_key: 'depends-on' | 'routed-to' | 'contributed-to' | 'related-to';
   target: WorkCaseRelationTarget;
 }
 
@@ -269,24 +273,72 @@ export interface WorkCaseContributionTarget {
 export interface WorkCaseResidualDecision {
   residual_id: string;
   summary: string;
-  proposed_disposition: 'route' | 'accept_stop';
+  proposed_disposition: 'route_existing' | 'suggest_spark' | 'accept_stop';
   route_target?: WorkCaseRouteTarget;
 }
 
 export interface WorkCaseClosureProposal {
   proposed_outcome: 'completed' | 'partial' | 'not-achieved' | 'cancelled';
   proposed_disposition_summary: string;
+/**
+ * closure_confirmation Card 只消费关闭提案的稳定子集，不透传整对象；
+ * route target 只携带稳定三元组，标题与类型由当前目标回读呈现。
+ */
+export interface WorkCaseClosureProposalCard {
+  proposedOutcome: 'completed' | 'partial' | 'not-achieved' | 'cancelled';
+  dispositionSummary: string;
+  residualDecisions: WorkCaseResidualDecisionCard[];
+  sparkSuggestions: WorkCaseSparkSuggestionCard[];
+}
+
+export interface WorkCaseResidualDecisionCard {
+  residualId: string;
+  summary: string;
+  proposedDisposition: 'route_existing' | 'suggest_spark' | 'accept_stop';
+  routeTarget?: WorkCaseContributionTarget;
+}
+
+export interface WorkCaseSparkSuggestionCard {
+  suggestionId: string;
+  suggestionKind: 'constrained_responsibility' | 'follow_up_opportunity';
+  summary: string;
+  followUpSummary: string;
+  restrictionReason?: string;
+  impactSummary?: string;
+  resumeCondition?: string;
+}
+
+export interface WorkCaseClosureTerminalCard {
+  outcome: 'completed' | 'partial' | 'not-achieved' | 'cancelled';
+  dispositionSummary: string;
+  routedTo: WorkCaseContributionTarget[];
+  acceptedStop: Array<{ residualId: string; summary: string }>;
+  sparkSuggestions: WorkCaseSparkSuggestionCard[];
+}
+
   residual_decisions?: WorkCaseResidualDecision[];
 }
 
 export interface WorkCaseResidualResponsibility {
   residual_id: string;
+  spark_suggestion_id?: string;
   summary: string;
 }
 
 /** Exact-detail fields from the single current WorkCase contract. */
 export interface WorkCaseDetailData extends Record<string, unknown> {
   object_id: string;
+  spark_suggestions?: WorkCaseSparkSuggestion[];
+}
+
+export interface WorkCaseSparkSuggestion {
+  suggestion_id: string;
+  suggestion_kind: 'constrained_responsibility' | 'follow_up_opportunity';
+  summary: string;
+  follow_up_summary: string;
+  restriction_reason?: string;
+  impact_summary?: string;
+  resume_condition?: string;
   fact_type_key: 'workcase';
   title: string;
   status: 'open' | 'blocked' | 'closed';
@@ -325,6 +377,7 @@ export interface ObjectDetail<TData extends Record<string, unknown> = Record<str
   target: string;
   summary: { id: string; type: string; status?: string; phase?: string; read_status?: FactReadStatus };
   data: TData;
+  spark_suggestions?: WorkCaseSparkSuggestion[];
 }
 
 export class ApiRequestError extends Error {

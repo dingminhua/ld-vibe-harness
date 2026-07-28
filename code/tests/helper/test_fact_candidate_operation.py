@@ -59,6 +59,10 @@ def _prepare(workspace: Path, project: Path, fact_type_key: str) -> dict[str, ob
 
 def _create(workspace: Path, project: Path, fact_type_key: str, fields: dict[str, object]) -> str:
     basis = _prepare(workspace, project, fact_type_key)
+    creation_fields = dict(fields)
+    promote_after_create = fact_type_key == "pitfall" and creation_fields.get("status") == "active"
+    if promote_after_create:
+        creation_fields["status"] = "draft"
     response = handle_request(
         "call",
         "create-fact-object",
@@ -77,13 +81,17 @@ def _create(workspace: Path, project: Path, fact_type_key: str, fields: dict[str
                             "worktree_fingerprint",
                         )
                     },
-                    "fact_object": fields,
+                    "fact_object": creation_fields,
                 },
             }
         ),
     ).response
     assert response["outcome"] == "ok"
-    return response["result"]["actual_ref"]["object_id"]
+    object_id = response["result"]["actual_ref"]["object_id"]
+    if promote_after_create:
+        path = project / "ldvh-base" / "pitfalls" / f"{object_id}.yaml"
+        path.write_text(path.read_text(encoding="utf-8").replace("status: draft", "status: active"), encoding="utf-8")
+    return object_id
 
 
 def _workcase() -> dict[str, object]:
@@ -301,7 +309,7 @@ def test_f1_returns_complete_active_adr_and_open_workcase_baseline_with_paginati
     assert first["result"]["coverage"]["status"] == "complete"
     assert first["result"]["coverage"]["total_matching"] == 2
     assert first["result"]["coverage"]["returned"] == 1
-    assert len(first["result"]["recovery_manifest"]["counts"]) == 13
+    assert len(first["result"]["recovery_manifest"]["counts"]) == 15
     assert first["result"]["recovery_manifest"]["current_workcase_ref"] == current_workcase_ref
     assert first["result"]["recovery_manifest"]["selected_fact_refs"] == selected_fact_refs
     assert first["result"]["cards"][0]["fact_ref"]["fact_type_key"] == "adr"

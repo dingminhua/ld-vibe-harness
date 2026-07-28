@@ -129,7 +129,7 @@ def _closing(
             {
                 "residual_id": "residual-main",
                 "summary": "继续承担当前未完成责任。",
-                "proposed_disposition": "route",
+                "proposed_disposition": "route_existing",
                 "route_target": {
                     **target.target.to_json(),
                     "content_fingerprint": target.content_fingerprint,
@@ -233,6 +233,8 @@ def _closed_from(before: dict[str, Any]) -> dict[str, Any]:
     ]
     if residuals:
         fields["residual_responsibilities"] = residuals
+    if "spark_suggestions" in proposal:
+        fields["spark_suggestions"] = [dict(item) for item in proposal["spark_suggestions"]]
     route_targets = {
         (
             item["route_target"]["governed_project_id"],
@@ -240,7 +242,7 @@ def _closed_from(before: dict[str, Any]) -> dict[str, Any]:
             item["route_target"]["object_id"],
         )
         for item in decisions
-        if item["proposed_disposition"] == "route"
+        if item["proposed_disposition"] == "route_existing"
     }
     if route_targets:
         fields["relations"] = [
@@ -830,8 +832,8 @@ def test_same_phase_proposal_replacement_guard_reads_the_new_after_target(
         ("unavailable", "candidate_unavailable", "当前不可用"),
         ("stale", "candidate_rejected", "已变化"),
         ("cross_project", "candidate_rejected", "同一管辖项目"),
-        ("cross_type", "candidate_rejected", "只能指向 WorkCase"),
-        ("closed", "candidate_rejected", "open 或 blocked"),
+        ("cross_type", "candidate_rejected", "只能指向 WorkCase 或 Spark"),
+        ("closed", "candidate_rejected", "open/blocked WorkCase"),
     ],
 )
 def test_update_proposal_target_failures_have_zero_source_writes(
@@ -862,7 +864,7 @@ def test_update_proposal_target_failures_have_zero_source_writes(
         )
     elif case == "cross_type":
         target = WorkCaseRouteTargetSnapshot(
-            FactReference("sample", "spark", "spark-0002"),
+                FactReference("sample", "adr", "adr-0002"),
             "0" * 64,
             "closure_proposal.residual_decisions[0].route_target",
         )
@@ -1240,6 +1242,40 @@ def test_close_mapping_compares_terminal_residuals_by_stable_id_not_array_order(
     after["residual_responsibilities"][0]["summary"] = "被改写的责任。"
     assert any(
         issue.field_path == "residual_responsibilities"
+        for issue in workcase_update._close_mapping_issues(before, after)
+    )
+
+
+def test_close_mapping_preserves_spark_suggestions_without_creating_a_relation() -> None:
+    before = _closing("workcase-0001", outcome="not-achieved")
+    before["closure_proposal"]["spark_suggestions"] = [
+        {
+            "suggestion_id": "suggestion-resume",
+            "suggestion_kind": "constrained_responsibility",
+            "summary": "外部条件恢复后继续验证。",
+            "restriction_reason": "当前缺少受控环境。",
+            "impact_summary": "无法验证当前成功标准。",
+            "resume_condition": "取得受控环境。",
+            "follow_up_summary": "由 Human 判断是否创建 Spark。",
+        }
+    ]
+    before["closure_proposal"]["residual_decisions"] = [
+        {
+            "residual_id": "residual-main",
+            "summary": "恢复环境后完成验证。",
+            "proposed_disposition": "suggest_spark",
+            "spark_suggestion_id": "suggestion-resume",
+        }
+    ]
+    after = _closed_from(before)
+
+    assert workcase_update._close_mapping_issues(before, after) == ()
+    assert after["spark_suggestions"] == before["closure_proposal"]["spark_suggestions"]
+    assert "relations" not in after
+
+    after["spark_suggestions"][0]["summary"] = "关闭时被改写。"
+    assert any(
+        issue.field_path == "spark_suggestions"
         for issue in workcase_update._close_mapping_issues(before, after)
     )
 
@@ -1907,22 +1943,46 @@ def _write_adr(project: _Project, object_id: str) -> Path:
     return path
 
 
+def _write_pitfall(project: _Project, object_id: str, *, status: str = "draft") -> Path:
+    fields = {
+        "object_id": object_id,
+        "fact_type_key": "pitfall",
+        "title": "当前完整现场经验",
+        "created_at": "2026-07-26T09:00:00+08:00",
+        "updated_at": "2026-07-26T09:30:00+08:00",
+        "status": status,
+        "symptoms": "可稳定识别的实际症状。",
+        "trigger_conditions": "能够复现问题的完整触发条件。",
+        "root_cause": "已经验证的根因。",
+        "resolution": "已经完成并验证的解决方式。",
+        "avoidance": "以后避免同类问题的具体方法。",
+        "applicability": "只适用于当前项目边界。",
+        "validation_summary": "已按实际现场完成验证。",
+    }
+    if status in {"discarded", "retired"}:
+        fields["disposition_summary"] = "Human 已作出当前生命周期处置。"
+    path = project.boundary.worktree_root / LAYOUTS["pitfall"].canonical_path(object_id)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(serialize_fact_object(LAYOUTS["pitfall"], fields, None), encoding="utf-8")
+    return path
+
+
 def test_close_preserves_contributed_to_and_rejects_any_add_remove_or_change(
     current_specs_repository: Path,
     tmp_path: Path,
 ) -> None:
     project = _project(current_specs_repository, tmp_path)
-    _write_adr(project, "adr-0001")
-    _write_adr(project, "adr-0002")
+    _write_pitfall(project, "pitfall-0001")
+    _write_pitfall(project, "pitfall-0002")
     before = _closing("workcase-0001")
-    before["relations"] = [_contributed("adr", "adr-0001")]
+    before["relations"] = [_contributed("pitfall", "pitfall-0001")]
     path = _write(project, before)
     original = path.read_bytes()
 
     for mutated in (
         [],
-        [_contributed("adr", "adr-0002")],
-        [_contributed("adr", "adr-0001"), _contributed("adr", "adr-0002")],
+        [_contributed("pitfall", "pitfall-0002")],
+        [_contributed("pitfall", "pitfall-0001"), _contributed("pitfall", "pitfall-0002")],
     ):
         rejected_after = _closed_from(before)
         rejected_after["relations"] = mutated
@@ -1958,7 +2018,7 @@ def test_close_preserves_contributed_to_and_rejects_any_add_remove_or_change(
 
 def test_close_mapping_requires_contributed_to_before_after_exact_equality() -> None:
     before = _closing("workcase-0001")
-    before["relations"] = [_contributed("adr", "adr-0001")]
+    before["relations"] = [_contributed("pitfall", "pitfall-0001")]
     after = _closed_from(before)
     after["relations"] = deepcopy(before["relations"])
 
@@ -1966,8 +2026,8 @@ def test_close_mapping_requires_contributed_to_before_after_exact_equality() -> 
 
     for mutated in (
         [],
-        [_contributed("adr", "adr-0002")],
-        [_contributed("adr", "adr-0001"), _contributed("adr", "adr-0002")],
+        [_contributed("pitfall", "pitfall-0002")],
+        [_contributed("pitfall", "pitfall-0001"), _contributed("pitfall", "pitfall-0002")],
     ):
         changed = _closed_from(before)
         changed["relations"] = mutated
@@ -1982,12 +2042,12 @@ def test_correct_closed_contributed_to_change_is_substantive_and_ignores_route_f
     tmp_path: Path,
 ) -> None:
     project = _project(current_specs_repository, tmp_path)
-    _write_adr(project, "adr-0001")
+    _write_pitfall(project, "pitfall-0001")
     before = _closed_from(_closing("workcase-0001"))
     before["updated_at"] = "2026-07-26T12:00:00+08:00"
     path = _write(project, before)
     original = path.read_bytes()
-    after = {**before, "relations": [_contributed("adr", "adr-0001")]}
+    after = {**before, "relations": [_contributed("pitfall", "pitfall-0001")]}
 
     rejected = apply_workcase_write(_command(project, before, after, mode="correct"))
 
@@ -2021,10 +2081,10 @@ def test_update_workcase_forms_contributed_to_in_an_active_phase(
     tmp_path: Path,
 ) -> None:
     project = _project(current_specs_repository, tmp_path)
-    _write_adr(project, "adr-0001")
+    _write_pitfall(project, "pitfall-0001")
     before = _preparing("workcase-0001")
     _write(project, before)
-    after = {**before, "relations": [_contributed("adr", "adr-0001")]}
+    after = {**before, "relations": [_contributed("pitfall", "pitfall-0001")]}
 
     result = apply_workcase_write(_command(project, before, after, mode="update"))
 
@@ -2038,7 +2098,7 @@ def test_update_workcase_blocked_freeze_rejects_contributed_to_change(
     tmp_path: Path,
 ) -> None:
     project = _project(current_specs_repository, tmp_path)
-    _write_adr(project, "adr-0001")
+    _write_pitfall(project, "pitfall-0001")
     before = {
         **_active("workcase-0001"),
         "status": "blocked",
@@ -2046,7 +2106,7 @@ def test_update_workcase_blocked_freeze_rejects_contributed_to_change(
     }
     path = _write(project, before)
     original = path.read_bytes()
-    after = {**before, "relations": [_contributed("adr", "adr-0001")]}
+    after = {**before, "relations": [_contributed("pitfall", "pitfall-0001")]}
 
     result = apply_workcase_write(_command(project, before, after, mode="update"))
 
@@ -2060,9 +2120,9 @@ def test_update_workcase_human_closure_confirming_freezes_contributed_to_but_all
     tmp_path: Path,
 ) -> None:
     project = _project(current_specs_repository, tmp_path)
-    _write_adr(project, "adr-0001")
+    _write_pitfall(project, "pitfall-0001")
     before = _closing("workcase-0001")
-    before["relations"] = [_contributed("adr", "adr-0001")]
+    before["relations"] = [_contributed("pitfall", "pitfall-0001")]
     path = _write(project, before)
     unchanged_after = {**before, "waiting_on": "等待 Human 对同一关闭提案作出新的判断。"}
 
@@ -2090,10 +2150,10 @@ def test_update_workcase_entering_human_closure_confirming_freezes_contributed_t
     tmp_path: Path,
 ) -> None:
     project = _project(current_specs_repository, tmp_path)
-    _write_adr(project, "adr-0001")
-    _write_adr(project, "adr-0002")
+    _write_pitfall(project, "pitfall-0001")
+    _write_pitfall(project, "pitfall-0002")
     before = _preparing("workcase-0001")
-    before["relations"] = [_contributed("adr", "adr-0001")]
+    before["relations"] = [_contributed("pitfall", "pitfall-0001")]
     path = _write(project, before)
     original = path.read_bytes()
     entering_after = {
@@ -2103,7 +2163,7 @@ def test_update_workcase_entering_human_closure_confirming_freezes_contributed_t
     }
     rejected_after = {
         **entering_after,
-        "relations": [_contributed("adr", "adr-0001"), _contributed("adr", "adr-0002")],
+        "relations": [_contributed("pitfall", "pitfall-0001"), _contributed("pitfall", "pitfall-0002")],
     }
 
     rejected = apply_workcase_write(_command(project, before, rejected_after, mode="update"))

@@ -130,8 +130,180 @@ function projectContributedToTargets(value: unknown): Array<Record<string, strin
     if (!target || typeof target !== 'object' || Array.isArray(target)) return []
     const triple = target as Record<string, unknown>
     if (typeof triple.governed_project_id !== 'string' || !triple.governed_project_id.trim()
-      || typeof triple.fact_type_key !== 'string' || !triple.fact_type_key.trim()
+      || triple.fact_type_key !== 'pitfall'
       || typeof triple.object_id !== 'string' || !triple.object_id.trim()) return []
+const CLOSURE_PROPOSAL_OUTCOMES = new Set(['completed', 'partial', 'not-achieved', 'cancelled'])
+const RESIDUAL_DISPOSITIONS = new Set(['route_existing', 'suggest_spark', 'accept_stop'])
+
+function projectRelationTarget(value: unknown): Record<string, string> | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null
+  const target = value as Record<string, unknown>
+  if (typeof target.governed_project_id !== 'string' || !target.governed_project_id.trim()
+    || typeof target.fact_type_key !== 'string' || !target.fact_type_key.trim()
+    || typeof target.object_id !== 'string' || !target.object_id.trim()) return null
+  return { governedProjectId: target.governed_project_id, factTypeKey: target.fact_type_key, objectId: target.object_id }
+}
+
+function projectProposalRouteTarget(value: unknown): Record<string, string> | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null
+  const target = value as Record<string, unknown>
+  const allowed = new Set(['governed_project_id', 'fact_type_key', 'object_id', 'content_fingerprint'])
+  if (Object.keys(target).some((key) => !allowed.has(key))
+    || typeof target.content_fingerprint !== 'string'
+    || !/^[0-9a-f]{64}$/.test(target.content_fingerprint)) return null
+  const projected = projectRelationTarget(target)
+  if (projected === null) return null
+  if (projected.factTypeKey === 'workcase' && !/^workcase-[0-9]{4,}$/.test(projected.objectId)) return null
+  if (projected.factTypeKey === 'spark' && !/^spark-[0-9]{4,}$/.test(projected.objectId)) return null
+  return projected
+}
+
+function projectSparkSuggestions(value: unknown): Array<Record<string, string>> | null {
+  if (value === undefined) return []
+  if (!Array.isArray(value) || value.length === 0) return null
+  const projected: Array<Record<string, string>> = []
+  const identifiers = new Set<string>()
+  const allowed = new Set([
+    'suggestion_id', 'suggestion_kind', 'summary', 'follow_up_summary',
+    'restriction_reason', 'impact_summary', 'resume_condition',
+  ])
+  for (const candidate of value) {
+    if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) return null
+    const suggestion = candidate as Record<string, unknown>
+    if (Object.keys(suggestion).some((key) => !allowed.has(key))) return null
+    if (typeof suggestion.suggestion_id !== 'string' || !/^suggestion-[a-z0-9][a-z0-9-]*$/.test(suggestion.suggestion_id)
+      || identifiers.has(suggestion.suggestion_id)
+      || !['constrained_responsibility', 'follow_up_opportunity'].includes(String(suggestion.suggestion_kind))
+      || typeof suggestion.summary !== 'string' || !suggestion.summary.trim()
+      || typeof suggestion.follow_up_summary !== 'string' || !suggestion.follow_up_summary.trim()) return null
+    const constrainedFields = ['restriction_reason', 'impact_summary', 'resume_condition']
+    if (suggestion.suggestion_kind === 'constrained_responsibility'
+      && constrainedFields.some((key) => typeof suggestion[key] !== 'string' || !(suggestion[key] as string).trim())) return null
+    if (suggestion.suggestion_kind === 'follow_up_opportunity'
+      && constrainedFields.some((key) => key in suggestion)) return null
+    identifiers.add(suggestion.suggestion_id)
+    projected.push({
+      suggestionId: suggestion.suggestion_id,
+      suggestionKind: String(suggestion.suggestion_kind),
+      summary: suggestion.summary,
+      followUpSummary: suggestion.follow_up_summary,
+      ...(typeof suggestion.restriction_reason === 'string' ? { restrictionReason: suggestion.restriction_reason } : {}),
+      ...(typeof suggestion.impact_summary === 'string' ? { impactSummary: suggestion.impact_summary } : {}),
+      ...(typeof suggestion.resume_condition === 'string' ? { resumeCondition: suggestion.resume_condition } : {}),
+    })
+  }
+  return projected
+}
+
+function projectResidualDecisions(
+  value: unknown,
+  outcome: string,
+  suggestions: Array<Record<string, string>>,
+): Array<Record<string, unknown>> | null {
+  if (value === undefined) return outcome === 'completed' ? [] : null
+  if (!Array.isArray(value) || value.length === 0 || outcome === 'completed') return null
+  const projected: Array<Record<string, unknown>> = []
+  const identifiers = new Set<string>()
+  const suggestionKinds = new Map(suggestions.map((item) => [item.suggestionId, item.suggestionKind]))
+  const allowed = new Set(['residual_id', 'summary', 'proposed_disposition', 'route_target', 'spark_suggestion_id'])
+  for (const candidate of value) {
+    if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) return null
+    const decision = candidate as Record<string, unknown>
+    if (Object.keys(decision).some((key) => !allowed.has(key))) return null
+    if (typeof decision.residual_id !== 'string' || !/^residual-[a-z0-9][a-z0-9-]*$/.test(decision.residual_id)
+      || identifiers.has(decision.residual_id)) return null
+    if (typeof decision.summary !== 'string' || !decision.summary.trim()) return null
+    if (typeof decision.proposed_disposition !== 'string' || !RESIDUAL_DISPOSITIONS.has(decision.proposed_disposition)) return null
+    const routeTarget = decision.proposed_disposition === 'route_existing' ? projectProposalRouteTarget(decision.route_target) : null
+    if (decision.proposed_disposition === 'route_existing'
+      && (routeTarget === null || !['workcase', 'spark'].includes(routeTarget.factTypeKey))) return null
+    if (decision.proposed_disposition !== 'route_existing' && decision.route_target !== undefined) return null
+    if (decision.proposed_disposition === 'suggest_spark') {
+      if (typeof decision.spark_suggestion_id !== 'string'
+        || suggestionKinds.get(decision.spark_suggestion_id) !== 'constrained_responsibility') return null
+    } else if (decision.spark_suggestion_id !== undefined) return null
+    identifiers.add(decision.residual_id)
+    projected.push({
+      residualId: decision.residual_id,
+      summary: decision.summary,
+      proposedDisposition: decision.proposed_disposition,
+      ...(routeTarget ? { routeTarget } : {}),
+    })
+  }
+  return projected
+}
+
+/**
+ * Projects the stable closure-decision subset consumed by the Card. The whole
+ * projection is dropped unless every required proposal member is readable and
+ * complete. No malformed decision or suggestion is silently omitted.
+ */
+function projectClosureProposal(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null
+  const proposal = value as Record<string, unknown>
+  const allowed = new Set(['proposed_outcome', 'proposed_disposition_summary', 'residual_decisions', 'spark_suggestions'])
+  if (Object.keys(proposal).some((key) => !allowed.has(key))) return null
+  if (typeof proposal.proposed_outcome !== 'string' || !CLOSURE_PROPOSAL_OUTCOMES.has(proposal.proposed_outcome)) return null
+  if (typeof proposal.proposed_disposition_summary !== 'string' || !proposal.proposed_disposition_summary.trim()) return null
+  const suggestions = projectSparkSuggestions(proposal.spark_suggestions)
+  if (suggestions === null) return null
+  if (proposal.proposed_outcome === 'completed'
+    && suggestions.some((item) => item.suggestionKind === 'constrained_responsibility')) return null
+  const decisions = projectResidualDecisions(proposal.residual_decisions, proposal.proposed_outcome, suggestions)
+  if (decisions === null) return null
+  return {
+    proposedOutcome: proposal.proposed_outcome,
+    dispositionSummary: proposal.proposed_disposition_summary,
+    residualDecisions: decisions,
+    sparkSuggestions: suggestions,
+  }
+}
+
+function projectClosedDisposition(fact: Record<string, unknown>): Record<string, unknown> | null {
+  if (typeof fact.closure_outcome !== 'string' || !CLOSURE_PROPOSAL_OUTCOMES.has(fact.closure_outcome)) return null
+  if (typeof fact.disposition_summary !== 'string' || !fact.disposition_summary.trim()) return null
+  const suggestions = projectSparkSuggestions(fact.spark_suggestions)
+  if (suggestions === null) return null
+  const routedTo: Array<Record<string, string>> = []
+  if (Array.isArray(fact.relations)) {
+    for (const candidate of fact.relations) {
+      if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) continue
+      const relation = candidate as Record<string, unknown>
+      if (relation.relation_key !== 'routed-to') continue
+      const target = projectRelationTarget(relation.target)
+      if (target === null || !['workcase', 'spark'].includes(target.factTypeKey)) return null
+      routedTo.push(target)
+    }
+  } else if (fact.relations !== undefined) return null
+  const acceptedStop: Array<Record<string, string>> = []
+  const residualIdentifiers = new Set<string>()
+  if (fact.residual_responsibilities !== undefined) {
+    if (!Array.isArray(fact.residual_responsibilities) || fact.residual_responsibilities.length === 0) return null
+    for (const candidate of fact.residual_responsibilities) {
+      if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) return null
+      const residual = candidate as Record<string, unknown>
+      if (typeof residual.residual_id !== 'string' || !residual.residual_id.trim()
+        || residualIdentifiers.has(residual.residual_id)
+        || typeof residual.summary !== 'string' || !residual.summary.trim()) return null
+      residualIdentifiers.add(residual.residual_id)
+      acceptedStop.push({ residualId: residual.residual_id, summary: residual.summary })
+    }
+  }
+  if (fact.closure_outcome === 'completed'
+    && (routedTo.length > 0 || acceptedStop.length > 0
+      || suggestions.some((item) => item.suggestionKind === 'constrained_responsibility'))) return null
+  if (fact.closure_outcome !== 'completed'
+    && routedTo.length === 0 && acceptedStop.length === 0
+    && !suggestions.some((item) => item.suggestionKind === 'constrained_responsibility')) return null
+  return {
+    outcome: fact.closure_outcome,
+    dispositionSummary: fact.disposition_summary,
+    routedTo,
+    acceptedStop,
+    sparkSuggestions: suggestions,
+  }
+}
+
     return [{ governedProjectId: triple.governed_project_id, factTypeKey: triple.fact_type_key, objectId: triple.object_id }]
   })
 }
@@ -141,6 +313,15 @@ export function projectWorkCaseCard(fact: Record<string, unknown>): Record<strin
   const phase = typeof fact.phase === 'string' ? fact.phase : ''
   const progress = deriveWorkCaseProgressProjection(typeof fact.status === 'string' ? fact.status : '', phase)
   if (progress?.progressGroup === 'plan_confirmation') {
+    Object.assign(projected, copyPresentFields(fact, ['goal']))
+    const closureProposal = projectClosureProposal(fact.closure_proposal)
+    if (closureProposal) projected.closureProposal = closureProposal
+    const contributedTo = projectContributedToTargets(fact.relations)
+    if (contributedTo.length > 0) projected.contributedTo = contributedTo
+  } else if (progress?.progressGroup === 'closed') {
+    Object.assign(projected, copyPresentFields(fact, ['goal']))
+    const closureTerminal = projectClosedDisposition(fact)
+    if (closureTerminal) projected.closureTerminal = closureTerminal
     Object.assign(projected, copyPresentFields(fact, ['priority', 'goal']), { successCriteria: projectCriterionStatements(fact.success_criterion_definitions) })
   } else if (progress?.progressGroup === 'progressing') {
     Object.assign(projected, copyPresentFields(fact, ['priority', 'goal', 'waiting_on']), projectCardWorkItems(fact.work_items))

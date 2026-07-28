@@ -36,6 +36,7 @@ _RESULT_CONTEXT_FIELDS = frozenset(
         "closure_outcome",
         "disposition_summary",
         "residual_responsibilities",
+        "spark_suggestions",
     }
 )
 _TERMINAL_ITEM_STATUSES = frozenset({"completed", "cancelled"})

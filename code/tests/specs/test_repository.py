@@ -138,8 +138,8 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
     assert action_templates.issues == ()
     assert action_templates.incomplete_sources == ()
     assert fields.complete is True
-    assert len(fields.structures) == 14
-    assert len(fields.registrations) == 98
+    assert len(fields.structures) == 15
+    assert len(fields.registrations) == 108
 
 
 def test_mechanically_distinct_spec_does_not_create_a_semantic_duplicate_diagnosis(

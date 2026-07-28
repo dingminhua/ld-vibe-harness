@@ -37,6 +37,7 @@ export interface CurrentWorkCaseDetailProjection {
   closureProposal: Record<string, unknown> | null;
   terminalDisposition: boolean;
   terminalResiduals: Array<Record<string, unknown>>;
+  terminalSuggestions: Array<Record<string, unknown>>;
   relations: Array<Record<string, unknown>>;
   urls: unknown[];
 }
@@ -67,8 +68,10 @@ export function projectCurrentWorkCaseDetail(
       obj.closure_outcome,
       obj.disposition_summary,
       obj.residual_responsibilities,
+      obj.spark_suggestions,
     ),
     terminalResiduals: records(obj.residual_responsibilities),
+    terminalSuggestions: records(obj.spark_suggestions),
     relations: records(obj.relations),
     urls: Array.isArray(obj.urls) ? obj.urls : [],
   };

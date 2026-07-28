@@ -1,0 +1,97 @@
+title: 实现 WorkCase 关闭责任、Pitfall 草稿与 related-to 模型
+status: open
+phase: human_closure_confirming
+plan_version: 1
+priority: P1
+summary: 完整结果、独立 pass 复核与关闭提案均已形成，正在等待 Human 决定是否按 proposed_outcome=completed 关闭。
+goal: 把 spark-0036 中 Human 已确认的统一模型完整落入当前规则源、派生 Schema、Helper 受控操作、Web 呈现与验证，使 WorkCase 执行期对象创建边界、Pitfall draft/active/discarded/retired 生命周期、三类关闭责任处置和 WorkCase related-to 关系都可一致理解、机械检查并由 Human 使用。
+scope: 覆盖 specs/05、20、21、23、31、32、相关附件（至少 05.Att.01、05.Att.02、08.Att.01）和 specs/08；覆盖 Code 中事实 Schema、validation、relations、Pitfall 更新或专属 lifecycle 操作、WorkCase update/close/correct、F1/F2/F3 投影与默认召回；覆盖 Web closure Card、Pitfall 状态标签与关系详情；更新直接契约/回归测试与必要文档。按 adr-0001 先修规则源再实现。必须逐段保留当前 Working Tree 已有 specs/08 与 Web 改动，不覆盖、不回退。排除：迁移或批改既有事实对象、修复 spark-0003/workcase-0015 的既有无效问题、给 closed WorkCase 补历史关系、创建或处置本案范围外事实对象、Git commit/push/PR、真实环境部署。
+success_criterion_definitions:
+- criterion_id: criterion-contract
+  statement: 目标模型在所有责任来源与附件中完整一致，明确 execution approval 的局部作用域、四状态 Pitfall、非原子 draft→WorkCase 写边、两类 spark_suggestions 条件、route_existing 两类 target、related-to 替换/环/closed 更正规则及消费闭集，并消除旧规则矛盾。
+- criterion_id: criterion-mechanics
+  statement: 派生 Schema 和 Helper/Code 对新增状态、字段、条件、关系目标、转换、CAS、关闭映射和默认召回具有机械约束与正反测试；promote 只改变状态，discard 保留完整正文。
+- criterion_id: criterion-web
+  statement: Web 将 draft/active/discarded 显示为待确认/已确认/已废弃；closure Card 显示三类责任处置及 Pitfall 标题/状态，不在关闭卡提供 promote/discard，related-to 只进入关系详情；执行前已有未提交改动得到保留。
+- criterion_id: criterion-validation
+  statement: 相关 specs/docs、Helper/Code、Web 测试通过；更广验证实际执行，并如实区分本案失败与既有或范围外失败。
+- criterion_id: criterion-handoff
+  statement: 完成 Controller 自检与独立结果复核，逐项回指产物和验证；执行期间未借本 WorkCase 创建 Spark、ADR、Study 或新 WorkCase，只有实际满足完整准入时才允许 draft Pitfall 例外。
+work_items:
+- item_id: item-contract
+  goal: 冻结本案机器契约并系统修订规则源与附件。
+  expected_result: 规则源形成可派生的唯一完整契约，上一轮独立审计 B.1–B.8 均有明确承载且旧语义已消除。
+  approach_summary: 先建立跨文件责任矩阵；将 spark_suggestions 定义为统一数组，并以 suggestion_kind=constrained_responsibility|follow_up_opportunity 及按 kind 条件化的限制、影响、恢复与跟进字段区分两类语义；采用最小充分修改，不建立第二权威。
+  status: completed
+  result_summary: 已完成规则源与附件修订：执行期创建边界、完整 draft Pitfall 四状态、三类关闭处置、两类 Spark 建议、route_existing 双目标与 WorkCase related-to 的来源契约已经统一，旧语义静态清扫通过。
+- item_id: item-mechanics
+  goal: 使派生 Schema、事实校验、关系和 Helper lifecycle/WorkCase 操作与新契约一致。
+  expected_result: 新增状态、结构、转换、关系、关闭映射与召回边界均被机械执行，并具有正反回归测试。
+  depends_on:
+  - item-contract
+  approach_summary: 从当前规则源派生修改 validation、relations、Helper 操作与投影；promote 使用状态-only 比较，避免 Code 自行解释自然语言。
+  status: completed
+  result_summary: 已实现四状态 Pitfall Schema 与状态边、status-only promote、保留正文 discard、WorkCase suggestions 与三类 disposition、route_existing 到 WorkCase/Spark、contributed-to 仅 draft Pitfall、related-to 成环/重叠/关闭保留及候选召回边界，并补齐正反测试。
+- item_id: item-web
+  goal: 按新契约更新 Human 可见的 Pitfall 状态、关闭卡和关系详情。
+  expected_result: Web 准确呈现三种 Pitfall 审核状态和三类关闭责任处置，同时保留当前已有 Working Tree 改动。
+  depends_on:
+  - item-contract
+  - item-mechanics
+  approach_summary: 先逐文件检查现有 dirty diff 并在其上小步融合；只实现来源要求的展示与交互，使用页面契约测试验证。
+  status: completed
+  result_summary: 已完成 closure-confirming 与 closed Card 的 goal/outcome/disposition/route_existing/suggest_spark/accept_stop 展示，Pitfall 四状态类型化标签、contributed Pitfall 当前标题与状态、详情 suggestions 与 related-to 关系呈现；未加入 promote/discard 控件，生产构建通过。
+- item_id: item-validation
+  goal: 完成跨层一致性审计、目标测试、更广验证和结果复核准备。
+  expected_result: 五项成功标准分别具有可回指证据或明确未满足项，能够进入独立结果复核与关闭判断。
+  depends_on:
+  - item-contract
+  - item-mechanics
+  - item-web
+  approach_summary: 结合旧术语静态搜索、机械测试、Working Tree diff 与精确回读；不以局部测试通过替代完成判断，并如实保留既有无效对象或范围外失败。
+  status: completed
+  result_summary: 完成跨层一致性审计与最终验证：核心全量 1285 passed、10 项仅原生 Windows 跳过；Web 类型检查、相关契约测试与生产构建通过；全量 Web 唯一失败为范围外 commit-dto 旧断言，已明确记录；独立审计发现的完整性偏差均已修复并复跑通过。
+execution_approval:
+  subject_version: 1
+  approved_at: '2026-07-28T11:13:02+08:00'
+  summary: Human 明确批准执行 workcase-0016 的 plan_version=1；批准范围为对象中记录的完整目标、scope、五项成功标准、四个工作项、依赖、方法边界与排除项，不包含关闭批准或范围外行动。
+resume_from: Human 若明确批准当前关闭提案，使用 close-workcase 绑定当时完整指纹原子形成 closed；若要求调整则退回相应 phase。
+result_version: 1
+success_criterion_results:
+- criterion_id: criterion-contract
+  outcome: satisfied
+  summary: 规则源与登记附件已统一 execution approval 局部边界、完整四状态 Pitfall、两类 Spark 建议、三类责任处置、route_existing 双目标、related-to 与消费闭集；旧术语静态核对未发现未处置冲突。
+- criterion_id: criterion-mechanics
+  outcome: satisfied
+  summary: Schema、validation、transition、relations、WorkCase 更新/关闭/更正、候选投影与 Helper 正反测试已覆盖新增状态、条件、CAS 和映射；promote 为 status-only，discard 保留正文。
+- criterion_id: criterion-web
+  outcome: satisfied
+  summary: Web 已按类型显示 Pitfall 四状态，完整呈现 closure proposal/terminal 三类处置与 contributed Pitfall 当前标题、状态和不可读状态，不提供审核控件且 related-to 只在详情呈现；执行前内容均保留。执行期间外部 actor 将两个原 dirty Web 文件提交为 ae9a0912f，Controller 未执行 Git 提交。
+- criterion_id: criterion-validation
+  outcome: satisfied
+  summary: 核心全量 1285 passed、10 项仅原生 Windows 跳过；Web check、相关契约回归和 build 通过。Web 全量 101/102，唯一 commit-dto 失败期待已退出的 executionItemTotal，属于执行前已有且本 scope 明确排除的投影契约漂移，未被误报为本案通过或擅自修复。
+- criterion_id: criterion-handoff
+  outcome: satisfied
+  summary: Controller 自检与独立实现审计已逐项回指规则、Code、Web 和验证；审计发现均已修复并复跑，冻结结果将由同一独立 reviewer 正式复核。执行批准后事实目录仅 workcase-0016 被更新，未创建 Spark、ADR、Study、新 WorkCase 或 draft Pitfall。
+result_summary: 已把 Human 确认的 WorkCase 关闭责任、完整 Pitfall 草稿生命周期与 WorkCase related-to 模型落实到当前规则源、机械实现、Helper 投影和 Web；关闭责任不再要求执行期创建后续对象，draft Pitfall 保持完整同形并独立审核，三类处置和关系保留/更正规则可被机械检查与呈现。
+controller_check_summary: Controller 逐层核对规则责任、字段闭集、状态与 phase 边、关系目标、CAS/关闭映射、Web 如实投影及测试。独立审计先后发现 completed+constrained 建议、坏成员静默丢弃、贡献目标不可读/截断、proposal 指纹与 ID/闭集校验等偏差，均已修复并由针对性测试复跑通过；未发现剩余本 scope blocker。
+validation_summary: 核心全量 pytest：1285 passed、10 skipped（全部要求原生 Windows）；聚焦核心回归：343 passed；Web npm run check 与生产 build 通过，相关 Card/真实读取测试 31 passed，独立 reviewer 扩展相关复跑 37/37。Web 全量 102 项中 101 passed，唯一失败为 tests/api/commit-dto.test.ts:269 的既有 executionItemTotal 旧断言，与当前 executionItems 投影不一致，属于执行前已有且 scope 排除的契约漂移。git diff --check、旧语义静态核对和 ldvh-doctor 通过；doctor 不证明真实目标 AI 环境的安装或自动触发。批准后 ldvh-base 仅 workcase-0016 更新，未创建其它事实对象。执行期间出现外部提交 ae9a0912ffd20601f83e4d5db32bc1e80afdc7fe（LaoDing，2026-07-28T12:21:43+08:00，两个此前 dirty Web 文件）；Controller 未运行 commit、push 或 PR，原内容得到保留，但不能再声称这两个文件保持未提交。
+result_reviews:
+- reviewer: independent-final-result-auditor
+  reviewed_at: '2026-07-28T12:59:41+08:00'
+  subject_version: 1
+  scope: 精确复核 workcase-0016 result_version=1（content_fingerprint 7272d8c68314e581404d97bf14dda98ae0c5dbc00728f32832ee7aa834dab692）的五项结果判断、总体结果、Controller 自检与验证边界；对照实际规则/Code/Helper/Web 工作树复查 Pitfall 生命周期、status-only promote、discard 正文保留、三类 residual disposition、两类 Spark suggestion、route target、contributed-to 与 related-to；并核对执行期事实对象创建、外部 Git 提交、dirty 内容保留及进入 closure_preparing 的条件。
+  conclusion: pass
+closure_proposal:
+  proposed_outcome: completed
+  proposed_disposition_summary: 当前 WorkCase 批准范围内的责任已完成，没有需要路由、建议后续承接或接受停止的当前剩余责任；一个范围外 Web 契约漂移仅作为后续机会保留，是否建立 Spark 由 Human 日后独立判断。
+  spark_suggestions:
+  - suggestion_id: suggestion-web-commit-dto-alignment
+    suggestion_kind: follow_up_opportunity
+    summary: 统一 WorkCase 执行项当前投影与 commit-dto 旧断言
+    follow_up_summary: 由 Human 独立判断是否另行建立 Spark，核对 tests/api/commit-dto.test.ts 对 executionItemTotal 的旧期待与当前 executionItems 投影契约；本建议不表示对象已创建或责任已承接。
+waiting_on: Human 对 workcase-0016 当前完整 closure_proposal 的关闭决定。
+object_id: workcase-0016
+fact_type_key: workcase
+created_at: '2026-07-28T11:07:07.624171+08:00'
+updated_at: '2026-07-28T13:01:05.520600+08:00'

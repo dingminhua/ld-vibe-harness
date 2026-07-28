@@ -211,6 +211,11 @@ def _validate_status(fact_type_key: str, fields: dict[str, Any], issues: list[Fa
             _forbid(fields, {"disposition_summary"}, issues)
         else:
             _require(fields, TERMINAL_COMMON, issues)
+    elif fact_type_key == "pitfall":
+        if status in {"draft", "active"}:
+            _forbid(fields, {"disposition_summary"}, issues)
+        else:
+            _require(fields, TERMINAL_COMMON, issues)
     else:
         if status == "active":
             _forbid(fields, {"disposition_summary"}, issues)

@@ -217,6 +217,7 @@ _SUBSTANTIVE_CLOSED_ROOTS = frozenset(
         "closure_outcome",
         "disposition_summary",
         "residual_responsibilities",
+        "spark_suggestions",
         "relations",
     }
 )
@@ -235,11 +236,17 @@ def _gate_issues(
         conservative_urls = urls_only and (
             command.independent_review_reference is not None or bool(command.authorization_reference)
         )
+        relation_only = changed == {"relations"}
+        before_relations = _relation_identities(before)
+        after_relations = _relation_identities(after)
+        related_only = relation_only and all(
+            identity[0] == "related-to" for identity in before_relations ^ after_relations
+        )
         substantive = (
             bool(changed & _SUBSTANTIVE_CLOSED_ROOTS)
             or conservative_urls
             or (bool(changed) and not title_only and not urls_only)
-        )
+        ) and not related_only
         if substantive:
             if command.independent_review_reference is None:
                 issues.append(
@@ -265,7 +272,34 @@ def _gate_issues(
                     "independent_review_reference",
                 )
             )
+        if related_only and not command.authorization_reference:
+            issues.append(
+                FactIssue(
+                    "schema",
+                    "closed related-to 记录更正必须回指 Human 的实质更正决定",
+                    "authorization_reference",
+                )
+            )
     return tuple(issues)
+
+
+def _relation_identities(fields: Mapping[str, Any]) -> set[tuple[object, object, object, object]]:
+    relations = fields.get("relations")
+    identities: set[tuple[object, object, object, object]] = set()
+    for relation in relations if isinstance(relations, list) else []:
+        if not isinstance(relation, Mapping):
+            continue
+        target = relation.get("target")
+        target_mapping = target if isinstance(target, Mapping) else {}
+        identities.add(
+            (
+                relation.get("relation_key"),
+                target_mapping.get("governed_project_id"),
+                target_mapping.get("fact_type_key"),
+                target_mapping.get("object_id"),
+            )
+        )
+    return identities
 
 
 def _contributed_to_identities(fields: Mapping[str, Any]) -> list[tuple[object, object, object]]:
@@ -335,6 +369,16 @@ def _close_mapping_issues(
                 )
             )
 
+    expected_suggestions = proposal.get("spark_suggestions", _MISSING)
+    if expected_suggestions != after.get("spark_suggestions", _MISSING):
+        issues.append(
+            FactIssue(
+                "schema",
+                "closed spark_suggestions 必须精确映射 proposal 同名数组",
+                "spark_suggestions",
+            )
+        )
+
     expected_residuals: list[dict[str, object]] = []
     expected_route_targets: set[tuple[object, object, object]] = set()
     decisions = proposal.get("residual_decisions")
@@ -348,7 +392,7 @@ def _close_mapping_issues(
                     "summary": decision.get("summary"),
                 }
             )
-        elif decision.get("proposed_disposition") == "route":
+        elif decision.get("proposed_disposition") == "route_existing":
             target = decision.get("route_target")
             if isinstance(target, Mapping):
                 expected_route_targets.add(
@@ -391,11 +435,15 @@ def _close_mapping_issues(
                 "relations",
             )
         )
-    if _contributed_to_identities(before) != _contributed_to_identities(after):
+    for relation_key in ("contributed-to", "related-to"):
+        before_relations = {identity for identity in _relation_identities(before) if identity[0] == relation_key}
+        after_relations = {identity for identity in _relation_identities(after) if identity[0] == relation_key}
+        if before_relations == after_relations:
+            continue
         issues.append(
             FactIssue(
                 "relation",
-                "close-workcase after 的 contributed-to relations 必须与 before 解析后精确相同",
+                f"close-workcase after 的 {relation_key} relations 必须与 before 解析后精确相同",
                 "relations",
             )
         )
@@ -476,13 +524,13 @@ def _project_stable_route_target_issues(
 
     stabilize_project_index(
         index,
-        (("workcase", snapshot.target.object_id) for snapshot in snapshots),
+        ((snapshot.target.fact_type_key, snapshot.target.object_id) for snapshot in snapshots),
     )
     issues: list[FactIssue] = []
     unavailable = False
     for snapshot in snapshots:
         path = snapshot.origin_path
-        target_read = index.cache.get(("workcase", snapshot.target.object_id))
+        target_read = index.cache.get((snapshot.target.fact_type_key, snapshot.target.object_id))
         if target_read is None or target_read.fields is None:
             if target_read is not None and target_read.check_status == "unavailable":
                 unavailable = True
@@ -596,6 +644,42 @@ def _route_alignment_issues(
     return ()
 
 
+def _new_contributed_to_issues(
+    command: WorkCaseWriteCommand,
+    before: Mapping[str, Any],
+    after: Mapping[str, Any],
+) -> tuple[tuple[FactIssue, ...], bool]:
+    """Require every newly formed WorkCase contribution edge to target a current draft Pitfall."""
+
+    if command.mode != "update":
+        return (), False
+    before_edges = {identity for identity in _relation_identities(before) if identity[0] == "contributed-to"}
+    new_edges = [identity for identity in _relation_identities(after) - before_edges if identity[0] == "contributed-to"]
+    if not new_edges:
+        return (), False
+    issues: list[FactIssue] = []
+    if before.get("status") == "blocked" or after.get("status") == "blocked":
+        issues.append(FactIssue("relation", "blocked WorkCase 禁止形成 contributed-to", "relations"))
+    if after.get("phase") == "human_closure_confirming":
+        issues.append(FactIssue("relation", "human_closure_confirming 禁止形成 contributed-to", "relations"))
+    index = _project_index(command)
+    unavailable = False
+    for _, project_id, target_type, target_id in new_edges:
+        if project_id != index.governed_project_id or target_type != "pitfall" or not isinstance(target_id, str):
+            continue
+        target_read = index.read_fresh("pitfall", target_id)
+        if target_read is not None and target_read.check_status == "unavailable":
+            unavailable = True
+            issues.append(FactIssue("reference", "新 contributed-to target 当前不可用", "relations"))
+            continue
+        if target_read is None or target_read.check_status in {"not_found", "invalid"} or target_read.fields is None:
+            issues.append(FactIssue("relation", "新 contributed-to target 必须是可读的 mechanically valid draft Pitfall", "relations"))
+            continue
+        if target_read.fields.get("status") != "draft":
+            issues.append(FactIssue("relation", "新 contributed-to 只能指向 status=draft Pitfall", "relations"))
+    return tuple(issues), unavailable
+
+
 def _request_source_reference_issues(command: WorkCaseWriteCommand) -> tuple[FactIssue, ...]:
     problems = [
         problem
@@ -672,6 +756,15 @@ def apply_workcase_write_locked(command: WorkCaseWriteCommand) -> WorkCaseWriteR
     if route_issues or route_unavailable:
         status = "candidate_unavailable" if route_unavailable else "candidate_rejected"
         return _result(command, status, issues=route_issues, current=current)
+
+    contribution_issues, contribution_unavailable = _new_contributed_to_issues(
+        command,
+        current.fields,
+        preview,
+    )
+    if contribution_issues or contribution_unavailable:
+        status = "candidate_unavailable" if contribution_unavailable else "candidate_rejected"
+        return _result(command, status, issues=contribution_issues, current=current)
 
     if mutable_current == dict(command.supplied):
         return _result(command, "no_change", current=current, readback=current)

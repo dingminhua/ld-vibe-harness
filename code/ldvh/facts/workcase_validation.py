@@ -34,6 +34,7 @@ CLOSURE_OUTCOMES = frozenset({"completed", "partial", "not-achieved", "cancelled
 _ITEM_ID = re.compile(r"item-[a-z0-9][a-z0-9-]*\Z")
 _CRITERION_ID = re.compile(r"criterion-[a-z0-9][a-z0-9-]*\Z")
 _RESIDUAL_ID = re.compile(r"residual-[a-z0-9][a-z0-9-]*\Z")
+_SUGGESTION_ID = re.compile(r"suggestion-[a-z0-9][a-z0-9-]*\Z")
 _WORKCASE_ID = re.compile(r"workcase-[0-9]{4,}\Z")
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 
@@ -44,7 +45,7 @@ _RESULT_CHAIN_FIELDS = frozenset(
     {"result_version", *_RESULT_PROJECTION_FIELDS, "result_reviews", "closure_proposal"}
 )
 _TERMINAL_FIELDS = frozenset(
-    {"closure_outcome", "disposition_summary", "residual_responsibilities"}
+    {"closure_outcome", "disposition_summary", "residual_responsibilities", "spark_suggestions"}
 )
 _CLOSED_REQUIRED = frozenset(
     {
@@ -64,7 +65,9 @@ _CLOSED_REQUIRED = frozenset(
         "disposition_summary",
     }
 )
-_CLOSED_ALLOWED = frozenset({*_CLOSED_REQUIRED, "residual_responsibilities", "relations", "urls"})
+_CLOSED_ALLOWED = frozenset(
+    {*_CLOSED_REQUIRED, "residual_responsibilities", "spark_suggestions", "relations", "urls"}
+)
 
 
 def _positive_integer(value: object) -> bool:
@@ -382,6 +385,53 @@ def _validate_outcome(
         _issue(issues, "没有 satisfied 且全部标准均为 not_satisfied 时只能形成 not-achieved", path)
 
 
+def _validate_suggestions(value: object, path: str, issues: list[FactIssue]) -> dict[str, str]:
+    if value is None:
+        return {}
+    if not isinstance(value, list) or not value:
+        _issue(issues, "spark_suggestions 出现时必须是非空 array", path)
+        return {}
+    kinds: dict[str, str] = {}
+    for index, suggestion in enumerate(value):
+        member_path = f"{path}[{index}]"
+        if not isinstance(suggestion, Mapping):
+            continue
+        allowed_fields = {
+            "suggestion_id",
+            "suggestion_kind",
+            "summary",
+            "restriction_reason",
+            "impact_summary",
+            "resume_condition",
+            "follow_up_summary",
+        }
+        for name in set(suggestion) - allowed_fields:
+            _issue(issues, "spark suggestion 包含未登记字段", f"{member_path}.{name}")
+        suggestion_id = suggestion.get("suggestion_id")
+        if not isinstance(suggestion_id, str) or _SUGGESTION_ID.fullmatch(suggestion_id) is None:
+            _issue(issues, "suggestion_id 格式不符合当前闭集", f"{member_path}.suggestion_id")
+        elif suggestion_id in kinds:
+            _issue(issues, "suggestion_id 不得重复", f"{member_path}.suggestion_id")
+        kind = suggestion.get("suggestion_kind")
+        if kind not in {"constrained_responsibility", "follow_up_opportunity"}:
+            _issue(issues, "suggestion_kind 不在当前闭集中", f"{member_path}.suggestion_kind")
+        if isinstance(suggestion_id, str) and isinstance(kind, str):
+            kinds[suggestion_id] = kind
+        for name in ("summary", "follow_up_summary"):
+            if not _nonempty_string(suggestion.get(name)):
+                _issue(issues, f"{name} 必须是非空 string", f"{member_path}.{name}")
+        constrained = {"restriction_reason", "impact_summary", "resume_condition"}
+        if kind == "constrained_responsibility":
+            for name in constrained:
+                if not _nonempty_string(suggestion.get(name)):
+                    _issue(issues, f"受限责任建议要求非空 {name}", f"{member_path}.{name}")
+        elif kind == "follow_up_opportunity":
+            for name in constrained:
+                if name in suggestion:
+                    _issue(issues, f"后续机会建议禁止 {name}", f"{member_path}.{name}")
+    return kinds
+
+
 def _validate_proposal(fields: Mapping[str, object], issues: list[FactIssue]) -> None:
     proposal = fields.get("closure_proposal")
     if proposal is None or not isinstance(proposal, Mapping):
@@ -394,9 +444,22 @@ def _validate_proposal(fields: Mapping[str, object], issues: list[FactIssue]) ->
             "proposed_disposition_summary 必须是非空 string",
             "closure_proposal.proposed_disposition_summary",
         )
+    suggestion_kinds = _validate_suggestions(
+        proposal.get("spark_suggestions"),
+        "closure_proposal.spark_suggestions",
+        issues,
+    )
     decisions = proposal.get("residual_decisions")
     if outcome == "completed" and decisions is not None:
         _issue(issues, "completed proposal 必须省略 residual_decisions", "closure_proposal.residual_decisions")
+    if outcome == "completed" and any(
+        kind == "constrained_responsibility" for kind in suggestion_kinds.values()
+    ):
+        _issue(
+            issues,
+            "completed proposal 只允许 follow_up_opportunity suggestion",
+            "closure_proposal.spark_suggestions",
+        )
     if outcome in CLOSURE_OUTCOMES - {"completed"} and (not isinstance(decisions, list) or not decisions):
         _issue(issues, "非 completed proposal 必须处置剩余责任", "closure_proposal.residual_decisions")
     if not isinstance(decisions, list):
@@ -415,13 +478,23 @@ def _validate_proposal(fields: Mapping[str, object], issues: list[FactIssue]) ->
         if not _nonempty_string(decision.get("summary")):
             _issue(issues, "residual decision summary 必须是非空 string", f"{path}.summary")
         disposition = decision.get("proposed_disposition")
-        if disposition not in {"route", "accept_stop"}:
+        if disposition not in {"route_existing", "suggest_spark", "accept_stop"}:
             _issue(issues, "proposed_disposition 不在当前闭集中", f"{path}.proposed_disposition")
         route_target = decision.get("route_target")
-        if disposition == "route" and not isinstance(route_target, Mapping):
-            _issue(issues, "route decision 必须包含 route_target", f"{path}.route_target")
-        if disposition == "accept_stop" and route_target is not None:
-            _issue(issues, "accept_stop decision 禁止 route_target", f"{path}.route_target")
+        suggestion_id = decision.get("spark_suggestion_id")
+        if disposition == "route_existing" and not isinstance(route_target, Mapping):
+            _issue(issues, "route_existing decision 必须包含 route_target", f"{path}.route_target")
+        if disposition != "route_existing" and route_target is not None:
+            _issue(issues, "非 route_existing decision 禁止 route_target", f"{path}.route_target")
+        if disposition == "suggest_spark":
+            if not isinstance(suggestion_id, str) or suggestion_kinds.get(suggestion_id) != "constrained_responsibility":
+                _issue(
+                    issues,
+                    "suggest_spark 必须引用同一 proposal 的 constrained_responsibility suggestion",
+                    f"{path}.spark_suggestion_id",
+                )
+        elif suggestion_id is not None:
+            _issue(issues, "非 suggest_spark decision 禁止 spark_suggestion_id", f"{path}.spark_suggestion_id")
         if isinstance(route_target, Mapping):
             if not _nonempty_string(route_target.get("governed_project_id")):
                 _issue(
@@ -429,11 +502,17 @@ def _validate_proposal(fields: Mapping[str, object], issues: list[FactIssue]) ->
                     "route_target.governed_project_id 必须是非空 string",
                     f"{path}.route_target.governed_project_id",
                 )
-            if route_target.get("fact_type_key") != "workcase":
-                _issue(issues, "route_target.fact_type_key 必须为 workcase", f"{path}.route_target.fact_type_key")
+            target_type = route_target.get("fact_type_key")
+            if target_type not in {"workcase", "spark"}:
+                _issue(
+                    issues,
+                    "route_target.fact_type_key 必须为 workcase 或 spark",
+                    f"{path}.route_target.fact_type_key",
+                )
             target_id = route_target.get("object_id")
-            if not isinstance(target_id, str) or _WORKCASE_ID.fullmatch(target_id) is None:
-                _issue(issues, "route_target.object_id 必须是 WorkCase 稳定身份", f"{path}.route_target.object_id")
+            layout = LAYOUTS.get(target_type) if isinstance(target_type, str) else None
+            if not isinstance(target_id, str) or layout is None or layout.object_id_pattern.fullmatch(target_id) is None:
+                _issue(issues, "route_target.object_id 必须匹配目标类型稳定身份", f"{path}.route_target.object_id")
             elif target_id == fields.get("object_id"):
                 _issue(issues, "route_target 禁止指向当前 WorkCase 自身", f"{path}.route_target.object_id")
             fingerprint = route_target.get("content_fingerprint")
@@ -476,7 +555,11 @@ def _validate_relations(fields: Mapping[str, object], issues: list[FactIssue]) -
     status = fields.get("status")
     phase = fields.get("phase")
     source_id = fields.get("object_id")
-    allowed = {"routed-to", "contributed-to"} if status == "closed" else {"depends-on", "contributed-to"}
+    allowed = (
+        {"routed-to", "contributed-to", "related-to"}
+        if status == "closed"
+        else {"depends-on", "contributed-to", "related-to"}
+    )
     observed: list[tuple[object, object, object, object]] = []
     for index, relation in enumerate(relations):
         path = f"relations[{index}]"
@@ -493,10 +576,10 @@ def _validate_relations(fields: Mapping[str, object], issues: list[FactIssue]) -
         target_id = target.get("object_id")
         if relation_key == "contributed-to":
             target_type = target.get("fact_type_key")
-            if target_type not in {"spark", "adr", "pitfall"}:
+            if target_type != "pitfall":
                 _issue(
                     issues,
-                    "contributed-to relation target 必须为 spark/adr/pitfall",
+                    "contributed-to relation target 必须为 pitfall",
                     f"{path}.target.fact_type_key",
                 )
             layout = LAYOUTS.get(target_type) if isinstance(target_type, str) else None
@@ -510,17 +593,32 @@ def _validate_relations(fields: Mapping[str, object], issues: list[FactIssue]) -
                     "contributed-to relation target.object_id 必须是目标类型稳定身份",
                     f"{path}.target.object_id",
                 )
+        elif relation_key == "related-to":
+            target_type = target.get("fact_type_key")
+            layout = LAYOUTS.get(target_type) if isinstance(target_type, str) else None
+            if not isinstance(target_id, str) or layout is None or layout.object_id_pattern.fullmatch(target_id) is None:
+                _issue(issues, "related-to target 必须是当前事实类型的稳定身份", f"{path}.target.object_id")
         else:
-            if target.get("fact_type_key") != "workcase":
-                _issue(issues, "WorkCase relation target 必须为 workcase", f"{path}.target.fact_type_key")
-            if not isinstance(target_id, str) or _WORKCASE_ID.fullmatch(target_id) is None:
-                _issue(issues, "relation target.object_id 必须是 WorkCase 稳定身份", f"{path}.target.object_id")
+            target_type = target.get("fact_type_key")
+            if relation_key == "routed-to" and target_type not in {"workcase", "spark"}:
+                _issue(issues, "routed-to target 必须为 workcase 或 spark", f"{path}.target.fact_type_key")
+            elif relation_key == "depends-on" and target_type != "workcase":
+                _issue(issues, "depends-on target 必须为 workcase", f"{path}.target.fact_type_key")
+            layout = LAYOUTS.get(target_type) if isinstance(target_type, str) else None
+            if not isinstance(target_id, str) or layout is None or layout.object_id_pattern.fullmatch(target_id) is None:
+                _issue(issues, "relation target.object_id 必须匹配目标类型稳定身份", f"{path}.target.object_id")
             elif target_id == source_id:
                 _issue(issues, "WorkCase relation 禁止自指", f"{path}.target.object_id")
         identity = (relation_key, target.get("governed_project_id"), target.get("fact_type_key"), target_id)
         observed.append(identity)
     if len(observed) != len(set(observed)):
         _issue(issues, "同一 relation_key 与 target 不得重复", "relations")
+    keys_by_target: dict[tuple[object, object, object], set[object]] = {}
+    for relation_key, project_id, target_type, target_id in observed:
+        target_identity = (project_id, target_type, target_id)
+        keys_by_target.setdefault(target_identity, set()).add(relation_key)
+    if any("related-to" in keys and len(keys) > 1 for keys in keys_by_target.values()):
+        _issue(issues, "related-to 不得与同一 target 的强关系重叠", "relations")
 
 
 def _require_complete_result(fields: Mapping[str, object], issues: list[FactIssue], *, context: str) -> None:
@@ -637,6 +735,7 @@ def _validate_closed_presence(fields: Mapping[str, object], issues: list[FactIss
         _issue(issues, "closed WorkCase 白名单禁止该字段", name)
     _validate_outcome(fields.get("closure_outcome"), fields, "closure_outcome", issues)
     residuals = fields.get("residual_responsibilities")
+    suggestion_kinds = _validate_suggestions(fields.get("spark_suggestions"), "spark_suggestions", issues)
     routed = any(
         isinstance(relation, Mapping) and relation.get("relation_key") == "routed-to"
         for relation in fields.get("relations", [])
@@ -648,8 +747,15 @@ def _validate_closed_presence(fields: Mapping[str, object], issues: list[FactIss
             _issue(issues, "completed closed WorkCase 必须省略 residual_responsibilities", "residual_responsibilities")
         if routed:
             _issue(issues, "completed closed WorkCase 必须省略 routed-to", "relations")
-    elif outcome in CLOSURE_OUTCOMES and not isinstance(residuals, list) and not routed:
-        _issue(issues, "非 completed closed WorkCase 必须保留剩余责任或 routed-to", "disposition_summary")
+        if any(kind == "constrained_responsibility" for kind in suggestion_kinds.values()):
+            _issue(issues, "completed 只允许 follow_up_opportunity suggestion", "spark_suggestions")
+    elif (
+        outcome in CLOSURE_OUTCOMES
+        and not isinstance(residuals, list)
+        and not routed
+        and not any(kind == "constrained_responsibility" for kind in suggestion_kinds.values())
+    ):
+        _issue(issues, "非 completed closed WorkCase 必须保留剩余责任、routed-to 或受限 Spark 建议", "disposition_summary")
 
 
 def validate_workcase_snapshot(fields: Mapping[str, object]) -> tuple[FactIssue, ...]:

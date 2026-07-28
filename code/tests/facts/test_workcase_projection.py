@@ -149,6 +149,9 @@ def test_no_execution_facts_is_exact_and_rejects_result_or_item_progress() -> No
     with_result_version = {**fields, "result_version": 1}
     assert not no_execution_facts(with_result_version)
 
+    with_suggestion = {**fields, "spark_suggestions": [{"suggestion_id": "suggestion-later"}]}
+    assert not no_execution_facts(with_suggestion)
+
 
 def test_pre_execution_stop_shape_is_the_only_approval_less_result_shape() -> None:
     fields = {

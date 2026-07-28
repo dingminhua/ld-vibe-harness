@@ -27,7 +27,7 @@ WorkCaseOperation = Literal["update", "close", "correct"]
 _STATUS_EDGES = {
     "spark": {("open", "routed"), ("open", "implemented"), ("open", "discarded")},
     "adr": {("active", "retired")},
-    "pitfall": {("active", "retired")},
+    "pitfall": {("draft", "active"), ("draft", "discarded"), ("active", "retired")},
     "study": {("active", "retired")},
 }
 
@@ -192,6 +192,12 @@ def _normalized_proposal(value: object) -> object:
         normalized["residual_decisions"] = sorted(
             (decision for decision in decisions if isinstance(decision, dict)),
             key=lambda decision: str(decision.get("residual_id", "")),
+        )
+    suggestions = normalized.get("spark_suggestions")
+    if isinstance(suggestions, list):
+        normalized["spark_suggestions"] = sorted(
+            (suggestion for suggestion in suggestions if isinstance(suggestion, dict)),
+            key=lambda suggestion: str(suggestion.get("suggestion_id", "")),
         )
     return normalized
 
@@ -1169,6 +1175,15 @@ def validate_fact_transition(
         and (before_status, after_status) not in _STATUS_EDGES[fact_type_key]
     ):
         issues.append(_issue("status 转换不在当前单对象更新允许边中", "status"))
+    if fact_type_key == "pitfall" and before_status != after_status:
+        changed = _changed_fields(before, after) - {"updated_at"}
+        allowed = {"status"}
+        if (before_status, after_status) in {("draft", "discarded"), ("active", "retired")}:
+            allowed.add("disposition_summary")
+        if changed - allowed:
+            issues.append(_issue("Pitfall 生命周期转换不得夹带正文或引用更正", sorted(changed - allowed)[0]))
+        if (before_status, after_status) == ("draft", "active") and "disposition_summary" in after:
+            issues.append(_issue("Pitfall promote 只执行 draft → active", "disposition_summary"))
     return tuple(issues)
 
 

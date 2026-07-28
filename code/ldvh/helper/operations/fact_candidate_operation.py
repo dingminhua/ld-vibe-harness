@@ -85,6 +85,7 @@ _WORKCASE_F2_CLOSED_FIELDS = (
     "result_summary",
     "closure_outcome",
     "disposition_summary",
+    "spark_suggestions",
     "updated_at",
 )
 _F2_FIELDS = {

@@ -73,21 +73,36 @@ test('Specs fix plan-confirmation and progressing Card inputs to the latest fiel
   assert.doesNotMatch(cardSection, /progress_history|第 N 轮|轮次未记录/);
 });
 
-test('Specs define only the contributed-to section for closure confirmation cards', () => {
+test('Specs define the closure-decision input zone and contributed-to section for closure confirmation cards', () => {
   const cardSection = workCaseCardSection();
 
-  assert.match(cardSection, /`closure_confirmation` Card 在通用对象身份、标题、进展分组和更新时间之外，正文当前只定义一个“后续贡献”区/);
-  assert.match(cardSection, /逐项列出当前 WorkCase 实际声明的 `contributed-to` relations 目标/);
-  assert.match(cardSection, /每项只显示目标事实类型的本地化名称与由目标当前对象 `title` 派生的名称/);
+  assert.match(cardSection, /`closure_confirmation` Card 在通用对象身份、标题、进展分组和更新时间之外，正文定义以下两区/);
+  assert.match(cardSection, /\*\*关闭判断输入区\*\*：回答“当前请求确认的是哪一种关闭结论与责任处置”/);
+  assert.match(cardSection, /\*\*目标\*\*：直接读取当前 WorkCase 的 `goal`/);
+  assert.match(cardSection, /\*\*关闭结论（提议）\*\*：直接读取 `closure_proposal\.proposed_outcome`/);
+  assert.match(cardSection, /`completed \/ partial \/ not-achieved \/ cancelled` 四值闭集的本地化标签/);
+  assert.match(cardSection, /使用弱信号标签表达，不渲染为大面积实心色块或强告警色/);
+  assert.match(cardSection, /\*\*处置摘要\*\*：直接读取 `closure_proposal\.proposed_disposition_summary`，完整显示/);
+  assert.match(cardSection, /\*\*遗留事项处置建议\*\*：直接读取 `closure_proposal\.residual_decisions\[\]`/);
+  assert.match(cardSection, /`route_existing`“路由到已有对象”、`suggest_spark`“建议后续建立 Spark”、`accept_stop`“接受停止”/);
+  assert.match(cardSection, /各项是没有先后关系的并列集合，统一使用圆点/);
+  assert.match(cardSection, /route_existing 显示已回读目标的当前标题与类型/);
+  assert.match(cardSection, /直接读取 `closure_proposal\.spark_suggestions\[\]`/);
+  assert.match(cardSection, /`closure_proposal` 缺失、结构不符或其必要成员不可读时/);
+  assert.match(cardSection, /Web 也不得为 `closure_proposal` 补写生成的占位提案/);
+  assert.match(cardSection, /\*\*后续贡献\*\*区：该区逐项列出当前 WorkCase 实际声明的 `contributed-to` Pitfall 目标/);
+  assert.match(cardSection, /`draft`“待确认”、`active`“已确认”、`discarded`“已废弃”、`retired`“已退出”/);
   assert.match(cardSection, /不以 object_id 冒充名称/);
-  assert.match(cardSection, /不从文字、时间邻近或主题相似推断关联/);
   assert.match(cardSection, /不把该区表达为剩余责任去向/);
   assert.match(cardSection, /当前对象没有任何 `contributed-to` 时该区整体省略，不生成空态文案/);
-  assert.match(cardSection, /区的缺失不表示“已核对且无贡献”/);
-  assert.match(cardSection, /不显示关闭完整性诊断/);
+  assert.match(cardSection, /不提供 promote、discard、批量审核或自动过期控件/);
+  assert.match(cardSection, /`closure_confirmation` Card 不显示关闭完整性诊断/);
+  assert.match(cardSection, /除上述两区外，不展开成功标准结果、结果与验证、主控自检、独立结果复核或执行统计/);
+  assert.match(cardSection, /即使实际 `status=blocked` 也不在 Card 额外展示阻塞/);
   assert.match(cardSection, /关闭决定由专属事务消费，不持久化 approval 或关闭时间收据/);
-  assert.match(cardSection, /`closure_confirmation` 的其余正文和 `closed` Card 的具体正文.*仍待 Human 后续设计判断/);
-  assert.match(cardSection, /`contributed-to` 与其它关系一样在详情关系区呈现/);
+  assert.match(cardSection, /`closed` Card 使用与上述关闭 Card 相同的扫读结构/);
+  assert.match(cardSection, /route_existing 从 `routed-to` 与当前 target title 呈现/);
+  assert.match(cardSection, /`related-to` 只在详情关系区呈现/);
   assert.doesNotMatch(cardSection, /control-contract|workcase_profile|closure_requested_at|review_requested_at|closure_approval/);
 });
 
@@ -108,7 +123,7 @@ test('Current Web docs describe the same latest-only Card and detail boundaries'
   assert.match(listSection, /在计划判断输入区之外完整显示独立的阻塞状态提示/);
   assert.match(listSection, /不是第三项计划判断输入/);
   assert.match(listSection, /轨迹外内部位置“方案修订中”/);
-  assert.match(listSection, /只显示通用身份、标题、进展分组和更新时间/);
+  assert.match(listSection, /“已关闭”Card 使用相同扫读结构/);
   assert.match(listDoc, /progress_group\?: 'plan_confirmation' \| 'progressing' \| 'closure_confirmation' \| 'closed'/);
   assert.match(listDoc, /progress_step\?: 'item_execution' \| 'controller_self_check' \| 'independent_review' \| 'controller_synthesis'/);
   assert.match(listDoc, /executionItemsActive\?: Array<\{/);
@@ -120,10 +135,15 @@ test('Current Web docs describe the same latest-only Card and detail boundaries'
   assert.match(listDoc, /不得把 phase 填进 `status`/);
   assert.match(listDoc, /不得新增 `responsibilityStatus` 兼容别名/);
   assert.match(listDoc, /浏览器响应不得出现 `executionItems`/);
-  assert.match(listDoc, /`closed` 不携带正文或 priority；`closure_confirmation` 除通用字段外只携带实际声明的 `contributed-to` 目标三元组投影 `contributedTo`/);
+  assert.match(listDoc, /`closure_confirmation` 携带 `goal`、Pitfall `contributedTo` 和 `closureProposal`；`closed` 携带 `goal`、Pitfall `contributedTo` 和 `closureTerminal`/);
   assert.match(listDoc, /contributedTo\?: Array<\{/);
   assert.match(listDoc, /governedProjectId: string;/);
   assert.match(listDoc, /factTypeKey: string;/);
+  assert.match(listDoc, /closureProposal\?: \{/);
+  assert.match(listDoc, /proposedOutcome: 'completed' \| 'partial' \| 'not-achieved' \| 'cancelled';/);
+  assert.match(listDoc, /residualDecisions: Array<\{/);
+  assert.match(listDoc, /proposedDisposition: 'route_existing' \| 'suggest_spark' \| 'accept_stop';/);
+  assert.match(listDoc, /完整 `closure_proposal`/);
   assert.match(listDoc, /objectId: string;/);
   assert.match(listDoc, /不设置列表级“观察时间”或“重新读取”控件/);
   assert.doesNotMatch(listSection, /control-contract|workcase_profile|closure_requested_at|review_requested_at|closure_approval/);

@@ -54,6 +54,7 @@ export const FACT_FIELD_CONTRACT: Record<FactType, FactFieldContract> = {
     validation_summary: field('workcase-validation-summary', 'string', false),
     blocking_summary: field('workcase-blocking-summary', 'string', false),
     closure_proposal: field('workcase-closure-proposal', 'object', false),
+    spark_suggestions: field('workcase-spark-suggestions', 'array', false),
     closure_outcome: field('workcase-closure-outcome', 'string', false),
   },
   adr: {
@@ -112,7 +113,7 @@ export const FACT_LIST_FIELD_NAMES: Record<Exclude<FactType, 'workcase'>, readon
 export const FACT_TERMINAL_STATUSES: Record<FactType, readonly string[]> = {
   workcase: ['closed'],
   adr: ['retired'],
-  pitfall: ['retired'],
+  pitfall: ['discarded', 'retired'],
   spark: ['routed', 'implemented', 'discarded'],
   study: ['retired'],
 }

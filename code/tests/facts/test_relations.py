@@ -288,7 +288,7 @@ def test_closed_workcase_routed_to_remains_valid_across_target_lifecycle(target_
     assert unavailable is False
 
 
-def test_workcase_routed_to_never_targets_spark_and_only_closed_source_can_declare_it() -> None:
+def test_workcase_routed_to_accepts_open_spark_and_only_closed_source_can_declare_it() -> None:
     spark_target = _read("spark-0002", "open", fact_type_key="spark")
     closed_source = _read(
         "workcase-0001",
@@ -305,7 +305,7 @@ def test_workcase_routed_to_never_targets_spark_and_only_closed_source_can_decla
     )
     source_issues, _ = _validate(active_source, _read("workcase-0002", "open", phase="executing"))
 
-    assert any("目标类型或状态" in issue.summary for issue in target_issues)
+    assert target_issues == ()
     assert any("source 状态" in issue.summary for issue in source_issues)
 
 
@@ -370,6 +370,38 @@ def test_workcase_relations_reject_cross_project_duplicate_self_missing_invalid_
     assert any("有向循环" in issue.summary for issue in issues)
 
 
+def test_workcase_related_to_allows_cycles_but_cannot_overlap_a_strong_edge() -> None:
+    source = _read(
+        "workcase-0001",
+        "open",
+        phase="executing",
+        relations=[_relation("related-to", "workcase-0002")],
+    )
+    target = _read(
+        "workcase-0002",
+        "open",
+        phase="executing",
+        relations=[_relation("related-to", "workcase-0001")],
+    )
+
+    issues, unavailable = _validate(source, target)
+
+    assert issues == ()
+    assert unavailable is False
+
+    overlapping = _read(
+        "workcase-0001",
+        "open",
+        phase="executing",
+        relations=[
+            _relation("related-to", "workcase-0002"),
+            _relation("depends-on", "workcase-0002"),
+        ],
+    )
+    issues, _ = _validate(overlapping, target)
+    assert any("强关系重叠" in issue.summary for issue in issues)
+
+
 def test_unreadable_relation_target_makes_required_project_check_unavailable() -> None:
     source = _read(
         "workcase-0001",
@@ -396,12 +428,12 @@ def test_proposal_snapshots_deduplicate_same_target_but_reject_conflicting_finge
             "residual_decisions": [
                 {
                     "residual_id": "residual-one",
-                    "proposed_disposition": "route",
+                    "proposed_disposition": "route_existing",
                     "route_target": {**_target("workcase-0002"), "content_fingerprint": _FINGERPRINT_A},
                 },
                 {
                     "residual_id": "residual-two",
-                    "proposed_disposition": "route",
+                    "proposed_disposition": "route_existing",
                     "route_target": {**_target("workcase-0002"), "content_fingerprint": _FINGERPRINT_A},
                 },
             ]
@@ -507,7 +539,7 @@ def test_route_target_snapshot_guard_rejects_stale_invalid_cross_type_cross_proj
             "route_target_fingerprints[0].target",
         ),
         WorkCaseRouteTargetSnapshot(
-            FactReference(_PROJECT, "spark", "spark-0002"),
+            FactReference(_PROJECT, "adr", "adr-0002"),
             _FINGERPRINT_A,
             "route_target_fingerprints[1].target",
         ),
@@ -531,7 +563,7 @@ def test_route_target_snapshot_guard_rejects_stale_invalid_cross_type_cross_proj
 
     assert unavailable is False
     assert any("已变化" in issue.summary for issue in issues)
-    assert any("只能指向 WorkCase" in issue.summary for issue in issues)
+    assert any("只能指向 WorkCase 或 Spark" in issue.summary for issue in issues)
     assert any("同一管辖项目" in issue.summary for issue in issues)
     assert any("禁止自指" in issue.summary for issue in issues)
 
@@ -627,31 +659,15 @@ def test_spark_routed_to_current_rules_remain_independent_from_workcase_rules() 
     assert not _source_condition("spark", "routed-to", {"status": "discarded"})
 
 
-@pytest.mark.parametrize(
-    ("target_type", "object_id", "target_status"),
-    [
-        ("spark", "spark-0002", "open"),
-        ("spark", "spark-0002", "routed"),
-        ("spark", "spark-0002", "implemented"),
-        ("spark", "spark-0002", "discarded"),
-        ("adr", "adr-0002", "active"),
-        ("adr", "adr-0002", "retired"),
-        ("pitfall", "pitfall-0002", "active"),
-        ("pitfall", "pitfall-0002", "retired"),
-    ],
-)
-def test_workcase_contributed_to_accepts_spark_adr_pitfall_targets_across_target_lifecycle(
-    target_type: str,
-    object_id: str,
-    target_status: str,
-) -> None:
+@pytest.mark.parametrize("target_status", ["draft", "active", "discarded", "retired"])
+def test_workcase_contributed_to_accepts_pitfall_across_target_lifecycle(target_status: str) -> None:
     source = _read(
         "workcase-0001",
         "open",
         phase="executing",
-        relations=[_relation("contributed-to", object_id, fact_type_key=target_type)],
+        relations=[_relation("contributed-to", "pitfall-0002", fact_type_key="pitfall")],
     )
-    issues, unavailable = _validate(source, _read(object_id, target_status, fact_type_key=target_type))
+    issues, unavailable = _validate(source, _read("pitfall-0002", target_status, fact_type_key="pitfall"))
 
     assert issues == ()
     assert unavailable is False
@@ -665,20 +681,20 @@ def test_workcase_contributed_to_source_condition_allows_active_and_closed_sourc
         "contributed-to",
         {"status": "open", "phase": "human_closure_confirming"},
     )
-    assert _target_condition("workcase", "contributed-to", "spark", "discarded")
-    assert _target_condition("workcase", "contributed-to", "adr", "retired")
+    assert not _target_condition("workcase", "contributed-to", "spark", "discarded")
+    assert not _target_condition("workcase", "contributed-to", "adr", "retired")
     assert _target_condition("workcase", "contributed-to", "pitfall", "retired")
     assert not _target_condition("workcase", "contributed-to", "workcase", "open")
     assert not _target_condition("workcase", "contributed-to", "study", "active")
 
 
-def test_closed_workcase_contributed_to_remains_valid_when_target_later_retired() -> None:
+def test_closed_workcase_contributed_to_remains_valid_when_pitfall_later_retired() -> None:
     source = _read(
         "workcase-0001",
         "closed",
-        relations=[_relation("contributed-to", "adr-0002", fact_type_key="adr")],
+        relations=[_relation("contributed-to", "pitfall-0002", fact_type_key="pitfall")],
     )
-    issues, unavailable = _validate(source, _read("adr-0002", "retired", fact_type_key="adr"))
+    issues, unavailable = _validate(source, _read("pitfall-0002", "retired", fact_type_key="pitfall"))
 
     assert issues == ()
     assert unavailable is False

@@ -198,12 +198,18 @@ def _target_condition(source_type: str, relation_key: str, target_type: str, tar
         # Formation is intentionally stricter and is checked by
         # validate_workcase_route_target_snapshots.  Once formed, the stable
         # relation remains valid when its WorkCase target later closes.
-        return target_type == "workcase" and target_status in {"open", "blocked", "closed"}
+        return (
+            target_type == "workcase" and target_status in {"open", "blocked", "closed"}
+        ) or (
+            target_type == "spark" and target_status in {"open", "routed", "implemented", "discarded"}
+        )
     if source_type == "workcase" and relation_key == "contributed-to":
         # The mechanically-valid-at-formation requirement is carried by the
-        # shared target read above; later target state changes (spark
-        # routed/discarded, adr/pitfall retired) do not affect the edge.
-        return target_type in {"spark", "adr", "pitfall"}
+        # shared target read above; later Pitfall state changes do not affect
+        # the edge.  Formation-at-draft is checked by the WorkCase write path.
+        return target_type == "pitfall" and target_status in {"draft", "active", "discarded", "retired"}
+    if source_type == "workcase" and relation_key == "related-to":
+        return target_type in LAYOUTS
     if source_type == "study" and relation_key == "inspired-by":
         return target_type in {"spark", "workcase", "adr"}
     if source_type == "study" and relation_key == "informs":
@@ -237,6 +243,8 @@ def _source_condition(source_type: str, relation_key: str, source_fields: dict[s
     if source_type == "workcase" and relation_key == "contributed-to":
         # The edge must be able to exist legally in human_closure_confirming;
         # formation timing is enforced by the update-path transition checks.
+        return source_fields.get("status") in {"open", "blocked", "closed"}
+    if source_type == "workcase" and relation_key == "related-to":
         return source_fields.get("status") in {"open", "blocked", "closed"}
     return True
 
@@ -328,7 +336,7 @@ def proposal_route_target_snapshots(
     issues: list[FactIssue] = []
     snapshots: dict[WorkCaseTargetIdentity, WorkCaseRouteTargetSnapshot] = {}
     for index, decision in enumerate(decisions):
-        if not isinstance(decision, Mapping) or decision.get("proposed_disposition") != "route":
+        if not isinstance(decision, Mapping) or decision.get("proposed_disposition") != "route_existing":
             continue
         path = f"closure_proposal.residual_decisions[{index}].route_target"
         snapshot = _snapshot(decision.get("route_target"), target_is_nested=False, path=path, issues=issues)
@@ -433,17 +441,17 @@ def validate_workcase_route_target_snapshots(
         if snapshot.target.governed_project_id != index.governed_project_id:
             issues.append(FactIssue("relation", "WorkCase route target 只允许同一管辖项目", path))
             continue
-        if snapshot.target.fact_type_key != "workcase":
-            issues.append(FactIssue("relation", "WorkCase routed-to 只能指向 WorkCase", path))
+        if snapshot.target.fact_type_key not in {"workcase", "spark"}:
+            issues.append(FactIssue("relation", "WorkCase routed-to 只能指向 WorkCase 或 Spark", path))
             continue
-        layout = LAYOUTS["workcase"]
+        layout = LAYOUTS[snapshot.target.fact_type_key]
         if layout.object_id_pattern.fullmatch(snapshot.target.object_id) is None:
-            issues.append(FactIssue("relation", "WorkCase route target object_id 格式无效", path))
+            issues.append(FactIssue("relation", "WorkCase route target object_id 与目标类型不匹配", path))
             continue
         if identity == source_identity:
             issues.append(FactIssue("relation", "WorkCase route target 禁止自指", path))
             continue
-        target_read = index.read_fresh("workcase", snapshot.target.object_id)
+        target_read = index.read_fresh(snapshot.target.fact_type_key, snapshot.target.object_id)
         if target_read is None or target_read.check_status in {"not_found", "invalid"}:
             issues.append(FactIssue("relation", "WorkCase route target 不存在或不是 mechanically valid 当前对象", path))
             continue
@@ -461,19 +469,15 @@ def validate_workcase_route_target_snapshots(
             issues.append(FactIssue("reference", "WorkCase route target content_fingerprint 已变化", path))
             continue
         target_status = target_read.fields.get("status")
-        allowed_statuses = (
-            {"open", "blocked", "closed"}
-            if identity in existing_routed_targets
-            else {
-                "open",
-                "blocked",
-            }
-        )
+        if snapshot.target.fact_type_key == "workcase":
+            allowed_statuses = {"open", "blocked", "closed"} if identity in existing_routed_targets else {"open", "blocked"}
+        else:
+            allowed_statuses = {"open", "routed", "implemented", "discarded"} if identity in existing_routed_targets else {"open"}
         if target_status not in allowed_statuses:
             summary = (
-                "未改变的既有 routed-to target 必须为 open、blocked 或 closed WorkCase"
+                "未改变的既有 routed-to target 必须保持目标类型的合法后续状态"
                 if identity in existing_routed_targets
-                else "新形成的 routed-to target 必须为 open 或 blocked WorkCase"
+                else "新形成的 routed-to target 必须为 open/blocked WorkCase 或 open Spark"
             )
             issues.append(FactIssue("relation", summary, path))
     return tuple(issues), unavailable
@@ -620,6 +624,18 @@ def validate_project_relations(
             issues.append(FactIssue("relation", "关系目标类型或状态不满足当前类型机械条件", code="TARGET_NOT_VALID", field_path=path))
         if not _target_has_readable_title(fact_type_key, relation_key, target_read.fields):
             issues.append(FactIssue("relation", "Spark routed-to 目标必须具有可呈现的非空 title", path))
+
+    keys_by_target: dict[tuple[object, object, object], set[object]] = {}
+    for relation in _relations(read):
+        target = _target(relation) or {}
+        identity = (
+            target.get("governed_project_id"),
+            target.get("fact_type_key"),
+            target.get("object_id"),
+        )
+        keys_by_target.setdefault(identity, set()).add(relation.get("relation_key"))
+    if any("related-to" in keys and len(keys) > 1 for keys in keys_by_target.values()):
+        issues.append(FactIssue("relation", "related-to 不得与同一 target 的强关系重叠", "relations"))
 
     if fact_type_key == "spark" and read.fields.get("status") == "routed":
         if not any(item.get("relation_key") == "routed-to" for item in _relations(read)):

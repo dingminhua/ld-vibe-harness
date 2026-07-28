@@ -49,7 +49,7 @@
   - 优先级字符徽标：WorkCase 和 Spark 如存在 `priority`，在标题行最前面展示 `P0` / `P1` / `P2` / `P3` 字符徽标，随后才是 `ObjectTypeIcon(obj.type)` 和标题；徽标使用颜色、轻量边框和 tooltip 表达优先级，不作为错误或阻塞状态；
   - 可选信号：仅当对应对象的字段契约定义该字段时展示；`priority` 只适用于 WorkCase 和 Spark，不得为 ADR、Pitfall 或 Study 杜撰 priority，也不得为任何对象杜撰 importance、category 或 tags；Spark 不维护 category；Pitfall 不维护 repeatability；importance 字段已由 priority 统一承载，不作为独立字段使用
   - 终态处置：ADR、Pitfall 与 Spark 不复用泛化的“非活跃原因”字段。它们在各自终态卡片中只读取 `disposition_summary`，用弱圆点与小号正文承载，不另造“退出理由”“关闭时间”“分流时间”标签；缺失时如实显示处置缺失提示，仍不得压过标题、状态和更新时间。
-  - Pitfall 状态筛选只认 `active / retired`，不得展示 `draft`、`superseded` 或“已替代”入口；Pitfall 卡片不展示 `tags`，也不展示“已解决/未解决”等冗余解决态；Pitfall 标签是事实源索引和详情页辅助信息，不作为列表卡片信号或二层筛选 tab。
+  - Pitfall 状态筛选使用 `draft / active / discarded / retired`，分别显示“待确认 / 已确认 / 已废弃 / 已退出”；Pitfall 卡片不提供 promote、discard 或批量审核控件，也不展示 `tags` 或冗余解决态。
   - 底部：只展示更新时间，使用 `formatDateTime()`，格式为 `YYYY-MM-DD HH:mm`，样式为弱化元信息 `ldvh-meta-muted`；更新时间行使用 `mt-auto` 贴近卡片下边距，避免不同标题行数或中部内容高度导致时间上浮；对象列表以更新时间排序，创建时间留在详情页身份区展示。
 - 点击卡片外层空白、标题带、ID、状态徽章或更新时间进入对象详情页。只有详情或引用行完成精确读取并取得可消费 `canonical_path` 后，才可另行显示复制对象路径入口。
 - hover 时边框变为 `border-ldvh-accent/40`，标题变 accent 色。
@@ -86,7 +86,8 @@ WorkCase 卡片帮助 Human 识别当前工作责任所处的进展分组，并�
 - “推进中”可用轻微、遵守减弱动态偏好的动效提示当前位置；方案待确认、关闭待确认和已关闭不显示脉冲或推进轨迹。两个 Human 确认关口必须保持为不同进展分组。
 - 进展分组直接显示在通用卡片头部；正文中的推进环节只表达当前浏览语义。status、phase 与授权的事实含义仍以事实源和详情阅读为准。
 - 内部 `closure_preparing` 投影为“推进中 / 主控收敛”：此时 Controller 正在吸收当前结果复核并形成关闭报告与分流建议，尚未向 Human 提交关闭请求。只有事实 phase 实际进入 `human_closure_confirming` 后才显示“关闭待确认”，不得提前制造 Human 待办。
-- “关闭待确认”Card 正文当前只有“后续贡献”区：逐项列出当前 WorkCase 实际声明的 `contributed-to` relations 目标，每项只显示目标事实类型的本地化名称与由目标当前对象 `title` 派生的名称，并可导航到同源详情；目标尚未读到、不可读或缺失时如实呈现读取状态，不以 object_id 冒充名称。当前对象没有任何 `contributed-to` 时该区整体省略，不生成空态文案；区的缺失不表示“已核对且无贡献”。“已关闭”Card 的正文仍待后续设计，只显示通用身份、标题、进展分组和更新时间，不套用执行态势或关闭完整性诊断。`human_closure_confirming` 直接确定前一分组；`status=closed` 且不具有 phase 直接确定后一分组。closed 不保存关闭 approval 或关闭时间，Web 不得据此报缺。
+- “关闭待确认”Card 正文由“关闭判断输入区”和“后续贡献”区构成。关闭判断输入区直读 `goal` 与 `closure_proposal`，完整显示目标、拟议关闭结论、处置摘要、三类 `residual_decisions[]` 和完整 `spark_suggestions[]`。三类处置显示为 `route_existing`“路由到已有对象”、`suggest_spark`“建议后续建立 Spark”、`accept_stop`“接受停止”；route_existing 按保存的稳定目标读取当前标题和类型，不以 object ID 冒充名称。受限责任建议显示摘要、受限原因、影响、恢复条件和后续定位；后续机会显示摘要和后续定位，不生成受限字段空态，也不显示或猜测未来 Spark ID。后续贡献区只列实际 `contributed-to` Pitfall 的当前标题和状态：draft“待确认”、active“已确认”、discarded“已废弃”、retired“已退出”，并导航到同源详情；不提供 promote、discard、批量审核或自动过期控件。`closure_proposal` 缺失或结构不符时明确显示信息缺失，不拼凑替代文本。该 Card 不显示关闭完整性诊断、结果复核或执行统计，即使 `status=blocked` 也不额外展示阻塞。
+- “已关闭”Card 使用相同扫读结构，从 `goal`、`closure_outcome` 和 `disposition_summary` 读取终态内容；route_existing 从 `routed-to` 呈现，suggest_spark 从顶层 `spark_suggestions` 呈现，accept_stop 从 `residual_responsibilities` 呈现，不反推原 proposal ID。后续贡献仍只显示 Pitfall 标题与当前状态。`related-to` 只在详情关系区呈现，不进入 Card。closed 不保存关闭 approval 或关闭时间，Web 不得据此报缺。
 
 ### 3.5 Spark 卡片
 
@@ -138,7 +139,7 @@ Spark 列表页保持只读；Web 不提供 Spark 创建、直接捕获、写入
 1. 不恢复顶部对象类型标签页；类型导航已经统一到左侧侧栏。
 2. 不把列表改成表格；当前事实对象用卡片扫描。
 3. 不展示 raw ISO 时间，统一使用 `formatDateTime()`。
-4. 不在列表卡片里复述完整详情；WorkCase 只按 §3.4 展示当前已经确定的分组专属内容，已关闭正文在 Human 完成设计前不扩张。
+4. 不在列表卡片里复述完整详情；WorkCase 只按 §3.4 展示当前已经确定的分组专属内容。
 5. 候选对象卡片不得用对象 ID、导航 target 或空 `path` 冒充来源路径；精确读取成功后再在详情或引用消费点提供复制入口。
 6. 执行项不作为一级导航 tab，也不拥有独立详情路由。
 7. 对象卡片外层可作为当前对象入口，提供统一 hover/focus 反馈；内部信息框必须显式阻止外层点击并使用默认光标。只有 WorkCase 关联行等明确通向另一处的内部控件可以单独响应；内部工作项不拥有独立详情路由。
@@ -158,7 +159,7 @@ interface WorkCaseCardItem {
   updated_at: string;
   progress_group?: 'plan_confirmation' | 'progressing' | 'closure_confirmation' | 'closed';
   progress_step?: 'item_execution' | 'controller_self_check' | 'independent_review' | 'controller_synthesis';
-  goal?: string;                       // 仅 plan_confirmation / progressing
+  goal?: string;                       // 所有四个进展分组
   successCriteria?: string[];          // 仅 plan_confirmation；全部 statement 原文
   waiting_on?: string;                 // 仅 progressing 且实际存在
   blocking_summary?: string;           // plan_confirmation / progressing 的独立阻塞状态提示
@@ -172,7 +173,25 @@ interface WorkCaseCardItem {
     status: 'in_progress' | 'blocked';
     blockingReason?: string;
   }>;
-  contributedTo?: Array<{            // 仅 closure_confirmation 且实际声明 contributed-to；稳定三元组，不含标题副本
+  contributedTo?: Array<{            // closure_confirmation / closed 的 Pitfall contributed-to；稳定三元组
+  closureProposal?: {                // 仅 closure_confirmation 且 closure_proposal 结构合法；稳定子集，不透传整对象
+    proposedOutcome: 'completed' | 'partial' | 'not-achieved' | 'cancelled';
+    dispositionSummary: string;
+    residualDecisions: Array<{
+      residualId: string;
+      summary: string;
+      proposedDisposition: 'route_existing' | 'suggest_spark' | 'accept_stop';
+      routeTarget?: { governedProjectId: string; factTypeKey: string; objectId: string };
+    }>;
+    sparkSuggestions: Array<{ suggestionId: string; suggestionKind: 'constrained_responsibility' | 'follow_up_opportunity'; summary: string; followUpSummary: string; restrictionReason?: string; impactSummary?: string; resumeCondition?: string }>;
+  }>;
+  closureTerminal?: {                // 仅 closed；直接投影终态字段
+    outcome: 'completed' | 'partial' | 'not-achieved' | 'cancelled';
+    dispositionSummary: string;
+    routedTo: Array<{ governedProjectId: string; factTypeKey: string; objectId: string }>;
+    acceptedStop: Array<{ residualId: string; summary: string }>;
+    sparkSuggestions: Array<{ suggestionId: string; suggestionKind: 'constrained_responsibility' | 'follow_up_opportunity'; summary: string; followUpSummary: string; restrictionReason?: string; impactSummary?: string; resumeCondition?: string }>;
+  };
     governedProjectId: string;
     factTypeKey: string;
     objectId: string;
@@ -180,6 +199,6 @@ interface WorkCaseCardItem {
 }
 ```
 
-`status` 始终保留事实责任状态，`phase` 独立保留当前阶段；不得把 phase 填进 `status`，也不得新增 `responsibilityStatus` 兼容别名。`progress_group`、`progress_step`、工作项计数和 `executionItemsActive` 是只读派生；`goal`、成功标准陈述、`waiting_on` 和允许显示的 `blocking_summary` 仍是事实原文。`plan_confirmation` 的 `blocking_summary` 只供计划判断输入区之外的独立阻塞状态提示消费，不构成第三项计划输入；`progressing` 的阻塞提示属于当前进展区域。全部工作项只在服务端用于计算计数和 active 项，浏览器响应不得出现 `executionItems` 或完整 `work_items`。`closed` 不携带正文或 priority；`closure_confirmation` 除通用字段外只携带实际声明的 `contributed-to` 目标三元组投影 `contributedTo`，目标标题由 Card 按需同源读取，不随列表响应复制。Card 响应不得出现 `canonical_path`、`absolute_path`、`carrier`、`content_fingerprint`、完整 `success_criterion_definitions`、完整 `work_items` 或其它详情字段。
+`status` 始终保留事实责任状态，`phase` 独立保留当前阶段；不得把 phase 填进 `status`，也不得新增 `responsibilityStatus` 兼容别名。`progress_group`、`progress_step`、工作项计数和 `executionItemsActive` 是只读派生；`goal`、成功标准陈述、`waiting_on` 和允许显示的 `blocking_summary` 仍是事实原文。`plan_confirmation` 的 `blocking_summary` 只供计划判断输入区之外的独立阻塞状态提示消费，不构成第三项计划输入；`progressing` 的阻塞提示属于当前进展区域。全部工作项只在服务端用于计算计数和 active 项，浏览器响应不得出现 `executionItems` 或完整 `work_items`。`closure_confirmation` 携带 `goal`、Pitfall `contributedTo` 和 `closureProposal`；`closed` 携带 `goal`、Pitfall `contributedTo` 和 `closureTerminal`。关联目标标题和状态由 Card 按需同源读取，不复制到列表响应；`related-to` 不进入 Card 投影。Card 响应不得出现完整 `work_items`、完整 `closure_proposal` 或其它详情字段。
 
 列表顶层返回字段级直读的范围与集合问题：`coverage_status` 与 `collection_issues`。对象卡携带自己的 `read_status`、`read_issues`、`field_issues` 与 `unparsed_structures`；集合问题保留准确路径、原因和消息，不以旧 machine 的 `invalid / not_found` 分类替代。页面必须保留已形成的可消费 Card，独立展示集合问题与未完成范围；不设置列表级“观察时间”或“重新读取”控件。筛选或导航发生时照常发起新的列表请求，不能复用旧 payload。读取失败时页面必须保留实际失败原因，不得回退其它读取路径或显示伪零值。

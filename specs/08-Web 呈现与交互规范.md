@@ -179,7 +179,7 @@ Web 检测到派生内容与当前来源不一致时，应优先呈现差异和�
 
 事实对象的对象自有语义字段只能按具体类型来源规定的来源身份呈现；Web 不得因 locator 含有 Human 输入、问题描述或形成背景，就把它重命名、推导或投影为对象不存在的 `intent`、正文、判断或其它事实字段。需要呈现来源内容时仍须保留其来源身份，并与对象当前正文分开。
 
-同一状态码在不同事实类型中出现时，Web 必须按该类型来源的语义和面向 Human 的状态词呈现，不得用通用词表抹平类型差异；例如 20 定义的 Spark `open` 必须显示为“待处理”，不得显示为“未关闭”。Web 只负责显示，不由此改变状态码、状态机或转换。
+同一状态码在不同事实类型中出现时，Web 必须按该类型来源的语义和面向 Human 的状态词呈现，不得用通用词表抹平类型差异；例如 20 定义的 Spark `open` 必须显示为“待处理”，不得显示为“未关闭”；Pitfall 的 `draft`、`active`、`discarded`、`retired` 必须分别显示为“待确认”、“已确认”、“已废弃”、“已退出”。Web 只负责显示，不由此改变状态码、状态机或转换。
 
 具体事实类型已经定义面向 Human 的详情阅读投影时，Web 必须按该来源规定的区段顺序、字段身份和中文标题分别呈现实际存在的字段；这些标题只是阅读词，不是新事实字段、派生摘要或字段别名。Web 不得用全局字段词表、历史文案或实现方便替代类型来源的标题，不得将多个字段并入一段、补造缺失区段，或从标题、关系、Git 历史和其它材料推断字段内容。按 §5.3 字段级解析呈现时，上述区段顺序、字段身份和标题同样适用；类型来源定义为必填但来源缺失或类型不符的字段，按 §5.3 第 2 项在对应区段如实呈现为空并标明缺失，这不视为补造缺失区段；类型来源定义为条件或可选的字段不存在时，仍按类型投影如实省略，不生成空态。视觉样式与交互仍由 Web 实现负责，但不得改变该投影的语义分工。
 
@@ -258,7 +258,7 @@ WorkCase 列表中的外部 Card 直接服务 Human 对当前工作责任的定�
 | 活动期；`phase=human_closure_confirming` | `closure_confirmation` | 省略 |
 | `status=closed`；`phase` 省略 | `closed` | 省略 |
 
-创建前计划形成与 creation review 尚未产生正式 WorkCase，不得投影为外部 WorkCase Card、进展分组或推进环节。`status=blocked` 是覆盖在任一非终态 phase 上的责任阻塞事实；除了 `closure_confirmation` Card 外，Web 必须在保留按 phase 得出的进展分组和推进环节时另行呈现阻塞，不得把 blocked 改成第五个进展分组，也不得用分组掩盖 `blocking_summary`。`closure_confirmation` 的当前 Card 正文只定义“后续贡献”区，即使实际 `status=blocked` 也不在 Card 额外展示阻塞；这不允许详情页、精确读取诊断或其它已经定义的支持范围隐藏实际 `blocking_summary`。表外 phase、缺失 phase 或违反 21 的 status/phase 组合不能按相似名称、数组位置或前后阶段猜测；Web 只能如实呈现读取或一致性问题及未能形成进展分组的范围。
+创建前计划形成与 creation review 尚未产生正式 WorkCase，不得投影为外部 WorkCase Card、进展分组或推进环节。`status=blocked` 是覆盖在任一非终态 phase 上的责任阻塞事实；除了 `closure_confirmation` Card 外，Web 必须在保留按 phase 得出的进展分组和推进环节时另行呈现阻塞，不得把 blocked 改成第五个进展分组，也不得用分组掩盖 `blocking_summary`。`closure_confirmation` 的当前 Card 正文只定义“关闭判断输入区”和“后续贡献”区，即使实际 `status=blocked` 也不在 Card 额外展示阻塞；这不允许详情页、精确读取诊断或其它已经定义的支持范围隐藏实际 `blocking_summary`。表外 phase、缺失 phase 或违反 21 的 status/phase 组合不能按相似名称、数组位置或前后阶段猜测；Web 只能如实呈现读取或一致性问题及未能形成进展分组的范围。
 
 WorkCase 列表筛选、Dashboard 聚合或其它以外部 Card 为成员的 Human-facing 分组如果表达工作当前进展，必须使用四个 `progress_group`，并明确它是“进展分组”而非生命周期分类；需要说明推进内部位置时再使用四个 `progress_step`。Dashboard 的 WorkCase 聚合键必须命名为 `byProgressGroup`，其条目必须以 `progress_group` 承载这四个值，不得把派生分组写入名为 `status` 的字段，也不得再输出原始 phase、历史显示状态或另一套 Dashboard 分组。如 Dashboard 确有消费实际事实责任状态的需要，必须另以 `source_status` 原样承载，不能用它替代 `progress_group`；两者仍须保留到来源对象和原始 phase 的读取入口，不得把聚合数量表达为事实源自有计数。
 
@@ -286,9 +286,26 @@ Web 不得为这两项重新生成 AI 摘要，不得从 `scope`、work items、
 
 当 `waiting_on` 实际存在时，`progressing` Card 必须完整显示正在等待的对象或条件；不存在时不从当前环节自动推断“等待独立复核”等文案。当 `status=blocked` 时，Card 必须在保留上述四环节及当前位置的同时，附加完整显示顶层 `blocking_summary`；未记录阻塞原因时明确显示缺失。等待回答“正在等什么”，阻塞回答“为什么不能继续”；两者实际同时存在时均保留，不由 Web 进行语义去重。它们都是覆盖在推进位置上的当前信息，不替代“推进中”或当前推进环节。`progressing` Card 不显示成功标准、scope、依赖、方法、完整工作项计划、执行态势条、验证安排、审核记录或关闭材料；除上述完成数、取消数、active 项的身份/目标/状态/阻塞，以及顶层等待与阻塞外，其余工作项内容仍从同源详情读取。
 
-`closure_confirmation` Card 在通用对象身份、标题、进展分组和更新时间之外，正文当前只定义一个“后续贡献”区：该区逐项列出当前 WorkCase 实际声明的 `contributed-to` relations 目标，每项只显示目标事实类型的本地化名称与由目标当前对象 `title` 派生的名称，并提供到同源详情的导航；目标尚未读到、不可读或缺失时如实呈现读取状态，不以 object_id 冒充名称，不从文字、时间邻近或主题相似推断关联，也不把该区表达为剩余责任去向（责任去向只由 `routed-to` 与关闭提案承担）。当前对象没有任何 `contributed-to` 时该区整体省略，不生成空态文案；区的缺失不表示“已核对且无贡献”，Web 不呈现 21 §6.8 核对义务是否履行的任何结论。除该区外，`closure_confirmation` 与 `closed` 两类 Card 的具体正文尚未确定。在正文契约形成前，这两类 Card 不显示关闭完整性诊断，不从已退出的请求、审核、批准或时间字段推断缺失，也不把活动期过程字段当作 closed 必须保留的内容。`human_closure_confirming` 本身足以确定“关闭待确认”分组；`status=closed` 且不具有 phase 本身足以确定“已关闭”分组，关闭决定由专属事务消费，不持久化 approval 或关闭时间收据。
 
-本节当前只确定 `plan_confirmation`、`progressing` Card 的上述正文与 `closure_confirmation` Card 的“后续贡献”区；`closure_confirmation` 的其余正文和 `closed` Card 的具体正文、事实字段、信息数量、优先级和折叠方式仍待 Human 后续设计判断，不得由 Web 自行补造。颜色、图标和操作继续由 `web/docs/` 与实现承接。WorkCase 详情页不使用进展分组或推进环节切换、隐藏、重排或另建阅读结构；所有状态复用同一详情阅读结构，`contributed-to` 与其它关系一样在详情关系区呈现，具体字段是否实际存在只由当前事实内容及其类型来源决定。
+`closure_confirmation` Card 在通用对象身份、标题、进展分组和更新时间之外，正文定义以下两区：
+
+**关闭判断输入区**：回答“当前请求确认的是哪一种关闭结论与责任处置”，只显示以下 Human 关闭判断输入，全部直接读取当前 WorkCase 的 `goal` 与 `closure_proposal`：
+
+1. **目标**：直接读取当前 WorkCase 的 `goal`，读取与展示要求与 `plan_confirmation`、`progressing` Card 一致，不重新摘要、不截断、不折叠，也不从其它字段拼凑替代文本；
+2. **关闭结论（提议）**：直接读取 `closure_proposal.proposed_outcome`，显示 `completed / partial / not-achieved / cancelled` 四值闭集的本地化标签；该结论是本 Card 的首要扫读信息，使用弱信号标签表达，不渲染为大面积实心色块或强告警色；
+3. **处置摘要**：直接读取 `closure_proposal.proposed_disposition_summary`，完整显示，不重新生成 AI 摘要；
+4. **遗留事项处置建议**：直接读取 `closure_proposal.residual_decisions[]`，逐项完整显示 `summary` 与 `proposed_disposition` 的本地化标签：`route_existing`“路由到已有对象”、`suggest_spark`“建议后续建立 Spark”、`accept_stop`“接受停止”。各项是没有先后关系的并列集合，使用与处置语义相称的状态图标，不按数组位置、`residual_id` 或 `spark_suggestion_id` 改写为序号；route_existing 显示已回读目标的当前标题与类型，不以 object ID 冒充名称；
+5. **Spark 建议**：直接读取 `closure_proposal.spark_suggestions[]`。`constrained_responsibility` 完整显示建议摘要、受限原因、影响、恢复条件与后续定位；`follow_up_opportunity` 显示建议摘要与后续定位，不生成“受限原因”空态。建议不显示、不猜测未来 Spark ID，也不表达为已创建、已承接或必须推进。
+
+Web 不得为上述输入重新摘要，不得从 `result_summary`、`validation_summary`、复核记录、工作项或其它字段拼凑替代文本。`closure_proposal` 缺失、结构不符或其必要成员不可读时，关闭判断输入区必须明确显示相应信息缺失，不得按 phase、状态或对象内容推断关闭结论；Web 也不得为 `closure_proposal` 补写生成的占位提案。`closure_proposal` 只在 Controller 已形成完整关闭报告与分流建议后出现，其出现本身即表示关闭材料已提交 Human 判断，Card 不另行显示“材料已齐备”之类的完整性结论。
+
+**后续贡献**区：该区逐项列出当前 WorkCase 实际声明的 `contributed-to` Pitfall 目标，每项显示由目标当前对象 `title` 派生的完整名称与当前状态：`draft`“待确认”、`active`“已确认”、`discarded`“已废弃”、`retired`“已退出”，并提供到同源详情的导航。目标尚未读到、不可读或缺失时如实呈现读取状态，不以 object_id 冒充名称，不从文字、时间邻近或主题相似推断关联，也不把该区表达为剩余责任去向。当前对象没有任何 `contributed-to` 时该区整体省略，不生成空态文案。Card 只显示标题、状态与导航，不提供 promote、discard、批量审核或自动过期控件；draft 审核是与 WC 关闭独立的逐对象 Human 行动。
+
+`closure_confirmation` Card 不显示关闭完整性诊断，不从已退出的请求、审核、批准或时间字段推断缺失，也不把活动期过程字段当作 closed 必须保留的内容；除上述两区外，不展开成功标准结果、结果与验证、主控自检、独立结果复核或执行统计，这些内容仍从同源详情读取。即使实际 `status=blocked` 也不在 Card 额外展示阻塞。`human_closure_confirming` 本身足以确定“关闭待确认”分组；`status=closed` 且不具有 phase 本身足以确定“已关闭”分组，关闭决定由专属事务消费，不持久化 approval 或关闭时间收据。
+
+`closed` Card 使用与上述关闭 Card 相同的扫读结构，但从终态字段读取：目标来自 `goal`，关闭结论来自 `closure_outcome`，处置摘要来自 `disposition_summary`；route_existing 从 `routed-to` 与当前 target title 呈现，suggest_spark 从顶层 `spark_suggestions` 呈现，accept_stop 从 `residual_responsibilities` 呈现，三者均不反推原 proposal ID。后续贡献仍只显示 `contributed-to` Pitfall 的标题与当前状态，不提供审核控件。`related-to` 只在详情关系区呈现，不进入任一 WorkCase Card 正文。
+
+本节确定 `plan_confirmation`、`progressing`、`closure_confirmation` 与 `closed` Card 的上述正文。颜色、图标和操作继续由 `web/docs/` 与实现承接，但关闭 Card 不得增加 Pitfall promote/discard 控件。WorkCase 详情页不使用进展分组或推进环节切换、隐藏、重排或另建阅读结构；所有状态复用同一详情阅读结构，`contributed-to`、`related-to` 与其它关系一样在详情关系区呈现，具体字段是否实际存在只由当前事实内容及其类型来源决定。
 
 ## 8. Web 交互边界
 
@@ -357,6 +374,7 @@ Web API 或前端不得作为事实类型、字段、ID、初始状态和状态�
 | Spark 状态、演变、终态处置与关联呈现 | 呈现 Spark 状态、演变、终态处置或“关联”区时 | `open` 按 20 显示为“待处理”，不套用“未关闭”；创建缘由仍影响理解时，首条演变直接说明其来源语境；`routed` 的分流区只显示 `updated_at` 的日期/时间与处置说明，以演变同层级的时间/正文卡片组织，不重复状态、“分流目标”或“分流时间”标签；`discarded` 必须显示为“废弃”而不是“分流”，并且只显示 `updated_at` 的日期/时间与废弃理由，不显示承接目标或分流标签；`routed-to` 只在关联区出现，并从当前目标 `title` 显示完整名称，绝不以 object_id 作名称回退；关联区只含正式关系及项目内可阅读文档，没有“来源”“证据”或重复扩展阅读投影 | 20、当前对象、页面 DOM 与来源投影 | component/API contract tests 与代表性浏览器页面对照 | 当次 Spark 页面与已检查来源类别 | 修正映射或投影；不得用通用状态词、来源原文原话、object_id 名称或代码路径补足页面内容 |
 | Spark 详情语义区段呈现 | 呈现 Spark 详情，或改动 `intent`、`summary`、`evolution` 的读取/组件时 | 实际存在的 `intent`、当前 `summary` 和 `evolution` 分别可识别；每项演变直接显示对象 `at` 与 `summary`，没有被隐藏、并入摘要或由 Git、更新时间、来源推导；字段缺失只按对象实际缺失呈现，不补造“无演变”判断 | 20、当前对象、页面 DOM 与来源字段 | component/API contract tests 与代表性浏览器页面对照 | 当次 Spark 页面、字段和已检查视口 | 修正投影或样式；不由 Web 重建、补写或省略对象已有演变 |
 | Markdown 结构忠实呈现 | 呈现包含 Markdown 结构的事实对象文本字段时 | 源文通过 Markdown 明确表达的段落、强调式分组标签、小标题、编号、列表及嵌套关系被原样解释并可扫描；无标记普通文本保持普通段落；Web 没有猜测、补写、重排或重写内容结构 | 当前事实对象 Markdown 源文、渲染 DOM、实际页面字号与间距 | component/API contract tests 与代表性浏览器页面对照 | 当次已检查字段、结构种类和视口 | 修正渲染或样式；在源文结构不足时交还内容形成责任，不由 Web 自动重写 |
+| Pitfall 状态与 WorkCase 关闭 Card | 呈现 Pitfall，或呈现 closure-confirmation/closed WorkCase Card 时 | Pitfall 四状态使用待确认/已确认/已废弃/已退出；Card 显示 goal、outcome、disposition、route_existing/suggest_spark/accept_stop 三类处置和 contributed Pitfall 标题/状态；suggestions 完整且无未来 ID；没有 promote/discard 控件；related-to 只在详情呈现 | 21、23、当前对象、API payload 与页面 DOM | component/API contract tests 与代表性页面对照 | 当次四状态和两种 WorkCase Card | 修正状态词、字段映射或交互；不推断建议对象、不在 Card 执行 draft 审核 |
 | 事实源元数据、载体与身份呈现 | 新增或修改事实详情、对象预览、复制或正文阅读入口时 | 正文/源路径/对象预览先取得精确读取；`canonical_path`、`carrier` 与 `check_status` 从读取结果到消费面保持可追溯；有 canonical path 时不会回退复制 object ID 或 route target；正文只在可消费读取时按声明 carrier 渲染；有效详情和预览均能识别类型、状态词和稳定 ID，无效读取只显示实际读取状态与范围 | 05 §§11.2–11.7 的读取/写入结果、类型来源、API payload、页面与预览 DOM | API/contract tests、组件测试和代表性浏览器页面对照，至少覆盖候选卡到精确读取、canonical path 存在/缺失、Markdown carrier 与非路径式对象 target、invalid/not_found/unavailable | 当次事实类型、读取投影、复制、正文入口和已检查视口 | 修正投影、传递或渲染；无法确定载体或来源路径时如实呈现不可用范围，不得回退为 ID 路径、推测状态或原始 Markdown 标记 |
 | 受控操作 | 新增或修改可能改变状态的交互时 | Human 当前指令已经授权，且适用于该行动的全部来源规则许可条件已经成立；实际 Code 能力可用；操作前信息完整；操作后回读并呈现失败和未完成范围 | 来源规则、Human 当前指令、Code 调用、目标前后内容和回读 | API/E2E tests 与实际目标回读 | 当次操作、对象和环境 | 维持只读、禁用操作或按实际结果呈现失败 |
 | Human 决定与技术结果 | Web 承载确认、验收或风险接受时 | 决定对象、选项、范围和时间可回指；页面没有扩大为技术通过或完成 | 交互记录、来源规则、技术验证与回读 | E2E 场景与 AI 回读 | 当次 Human 决定及单独验证的技术范围 | 分开呈现决定与技术状态，不声明未证明结果 |
@@ -397,6 +415,7 @@ Web API 或前端不得作为事实类型、字段、ID、初始状态和状态�
 13. `discarded` Spark 被呈现为“分流”，显示分流目标、分流时间或虚构承接内容，或者复用 routed 的分流文案来解释废弃理由。
 14. 页面正在静默丢弃来源中实际存在的字段或嵌套结构，把字段级缺失或类型不符升级为整个对象的读取失败，或者在文件本身可解析时伪造读取失败或内容。
 
+15. Pitfall draft/active/discarded 使用了非“待确认/已确认/已废弃”的通用状态词，或 WorkCase 关闭 Card 漏掉三类处置、Spark suggestions、contributed Pitfall 标题/状态，显示未来对象 ID，增加 Pitfall promote/discard 控件，或将 `related-to` 放入 Card 正文。
 暂停范围及不受影响工作的处理按 00 §11 执行。
 
 受影响范围只能在与触发原因对应的条件满足后恢复：读取范围重新可确认，页面已回到当前来源并标明历史或过期内容，派生与来源身份重新分开，来源回指已经补齐，受控操作重新取得来源、授权、Code 能力和回读，交互声明已经缩小，Spark 详情已逐项回读并独立呈现实际存在的 `intent`、`summary` 与 `evolution`，关联只保留正式关系和实际面向阅读的项目文档且没有来源/证据或扩展阅读重复投影，行为保持已取得范围匹配证据，有意变更已取得当前来源支持、Human 明确决定和范围匹配测试，或者 Markdown 源文与渲染结构已经逐项对照且语义推断型转换已经移除。被静默丢弃的字段或结构已按 §5.3 恢复呈现，字段级问题与读取失败的边界已回到 §5.3 的呈现分级。Human 决定或普通行为变更证据不能授权 Web 猜测事实内容结构。

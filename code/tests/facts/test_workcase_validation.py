@@ -526,14 +526,9 @@ def _contributed(fact_type_key: str, object_id: str) -> dict[str, object]:
     }
 
 
-@pytest.mark.parametrize(
-    ("fact_type_key", "object_id"),
-    [("spark", "spark-0007"), ("adr", "adr-0007"), ("pitfall", "pitfall-0007")],
-)
-def test_contributed_to_targets_spark_adr_pitfall_in_active_and_closed_snapshots(
-    fact_type_key: str,
-    object_id: str,
-) -> None:
+def test_contributed_to_targets_pitfall_in_active_and_closed_snapshots() -> None:
+    fact_type_key = "pitfall"
+    object_id = "pitfall-0007"
     active = _base("executing")
     active["execution_approval"] = _approval()
     active["relations"] = [_contributed(fact_type_key, object_id)]
@@ -544,8 +539,13 @@ def test_contributed_to_targets_spark_adr_pitfall_in_active_and_closed_snapshots
     assert validate_workcase_snapshot(closed) == ()
 
 
-def test_contributed_to_rejects_workcase_and_study_targets_and_mismatched_object_id() -> None:
-    for fact_type_key, object_id in (("workcase", "workcase-0007"), ("study", "study-0007")):
+def test_contributed_to_rejects_non_pitfall_targets_and_mismatched_object_id() -> None:
+    for fact_type_key, object_id in (
+        ("workcase", "workcase-0007"),
+        ("study", "study-0007"),
+        ("spark", "spark-0007"),
+        ("adr", "adr-0007"),
+    ):
         fields = _base("executing")
         fields["execution_approval"] = _approval()
         fields["relations"] = [_contributed(fact_type_key, object_id)]
@@ -554,14 +554,14 @@ def test_contributed_to_rejects_workcase_and_study_targets_and_mismatched_object
 
     mismatched = _base("executing")
     mismatched["execution_approval"] = _approval()
-    mismatched["relations"] = [_contributed("spark", "adr-0007")]
+    mismatched["relations"] = [_contributed("pitfall", "adr-0007")]
     issues = validate_workcase_snapshot(mismatched)
     assert any(issue.field_path == "relations[0].target.object_id" for issue in issues)
 
 
 def test_human_closure_confirming_retains_contributed_to_but_rejects_depends_on() -> None:
     fields = _human_closure_confirming()
-    fields["relations"] = [_contributed("adr", "adr-0007")]
+    fields["relations"] = [_contributed("pitfall", "pitfall-0007")]
     assert validate_workcase_snapshot(fields) == ()
 
     fields["relations"] = [
@@ -591,7 +591,7 @@ def test_closed_contributed_to_is_retained_but_never_counts_as_residual_disposit
         {"outcome": "not_satisfied", "summary": "The criterion did not form a satisfied result."}
     )
     partial["disposition_summary"] = "The remaining responsibility was explicitly addressed."
-    partial["relations"] = [_contributed("adr", "adr-0007")]
+    partial["relations"] = [_contributed("pitfall", "pitfall-0007")]
     issues = validate_workcase_snapshot(partial)
     assert any(issue.field_path == "disposition_summary" for issue in issues)
 
@@ -599,3 +599,85 @@ def test_closed_contributed_to_is_retained_but_never_counts_as_residual_disposit
         {"residual_id": "residual-result", "summary": "The unmet criterion responsibility is accepted as stopped."}
     ]
     assert validate_workcase_snapshot(partial) == ()
+
+
+def test_suggest_spark_requires_one_complete_constrained_suggestion_and_never_a_future_id() -> None:
+    fields = _human_closure_confirming()
+    fields["closure_proposal"] = {
+        "proposed_outcome": "not-achieved",
+        "proposed_disposition_summary": "当前责任受外部条件限制，Human 可先关闭并日后独立判断 Spark。",
+        "residual_decisions": [
+            {
+                "residual_id": "residual-limited",
+                "summary": "外部条件恢复后继续验证当前责任。",
+                "proposed_disposition": "suggest_spark",
+                "spark_suggestion_id": "suggestion-limited",
+            }
+        ],
+        "spark_suggestions": [
+            {
+                "suggestion_id": "suggestion-limited",
+                "suggestion_kind": "constrained_responsibility",
+                "summary": "外部条件恢复后继续验证。",
+                "restriction_reason": "当前缺少只能由外部系统提供的输入。",
+                "impact_summary": "成功标准当前不能验证。",
+                "resume_condition": "外部输入可用。",
+                "follow_up_summary": "由 Human 日后判断是否建立 Spark。",
+            }
+        ],
+    }
+    fields["success_criterion_results"][0].update(
+        {"outcome": "not_satisfied", "summary": "外部条件限制使当前标准未满足。"}
+    )
+
+    assert validate_workcase_snapshot(fields) == ()
+
+    fields["closure_proposal"]["spark_suggestions"][0]["object_id"] = "spark-9999"
+    issues = validate_workcase_snapshot(fields)
+    assert any("object_id" in (issue.field_path or "") for issue in issues)
+
+
+def test_completed_allows_only_follow_up_opportunity_suggestions() -> None:
+    fields = _closed()
+    fields["spark_suggestions"] = [
+        {
+            "suggestion_id": "suggestion-opportunity",
+            "suggestion_kind": "follow_up_opportunity",
+            "summary": "结果中出现了一个范围外优化机会。",
+            "follow_up_summary": "由 Human 日后独立判断是否建立 Spark。",
+        }
+    ]
+    assert validate_workcase_snapshot(fields) == ()
+
+    fields["spark_suggestions"][0].update(
+        {
+            "suggestion_kind": "constrained_responsibility",
+            "restriction_reason": "当前受限。",
+            "impact_summary": "当前结果受影响。",
+            "resume_condition": "限制解除。",
+        }
+    )
+    issues = validate_workcase_snapshot(fields)
+    assert any(issue.field_path == "spark_suggestions" and "completed" in issue.summary for issue in issues)
+
+
+def test_completed_proposal_rejects_constrained_responsibility_suggestions() -> None:
+    fields = _human_closure_confirming()
+    fields["closure_proposal"]["spark_suggestions"] = [
+        {
+            "suggestion_id": "suggestion-invalid-constraint",
+            "suggestion_kind": "constrained_responsibility",
+            "summary": "这不是 completed 可以携带的受限责任。",
+            "restriction_reason": "仍有条件限制。",
+            "impact_summary": "当前责任仍受影响。",
+            "resume_condition": "限制解除。",
+            "follow_up_summary": "日后继续当前责任。",
+        }
+    ]
+
+    issues = validate_workcase_snapshot(fields)
+
+    assert any(
+        issue.field_path == "closure_proposal.spark_suggestions" and "completed" in issue.summary
+        for issue in issues
+    )

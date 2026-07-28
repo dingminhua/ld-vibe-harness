@@ -84,7 +84,7 @@ WorkCase 详情页用于完整理解同一项当前工作责任，不复刻外�
 | Study | 研究意图 `research_intent` → 摘要 `abstract` → 建议 `recommendation_summary` → 正文入口 `report_body` → 关联 | 终态存在 `disposition_summary` 时按同一阅读顺序作为补充说明显示 | 在主详情重组第二份 Markdown 正文，或用摘要替代报告原文 |
 | Spark | 意图 `intent` → 摘要 `summary` → 演变 `evolution` → 关联 | `routed` 显示“分流”、`implemented` 显示“落实”、`discarded` 显示“废弃”；三者内容均只读 `disposition_summary` 与 `updated_at` | 用旧 `source_detail`、`description`、`resolved_to`、`resolved_at`、`discard_reason` 字段，或在 `open` 状态制造终态占位 |
 
-- ADR 状态只显示 `active / retired`；Pitfall 状态只显示 `active / retired`。两者的 retired 处置只说明对象不再作为当前入口的原因与去向，不生成额外的“退出理由”标签或退出时间。
+- ADR 状态只显示 `active / retired`；Pitfall 状态显示 `draft / active / discarded / retired`，分别使用“待确认 / 已确认 / 已废弃 / 已退出”。Pitfall 的 draft、discarded 仍使用与 active 相同的完整正文阅读形状；discarded 与 retired 的处置只说明废弃或退出原因与去向，不生成额外时间字段。详情页不提供 promote、discard、批量审核或自动过期控件。
 - Spark 的 `evolution` 以最近条目优先的短卡片呈现，每项只显示事实中的 `at` 和 `summary`。Spark 终态只说明该信息对象的处置类别与事实正文；不能由终态处置推导目标对象已经完成。
 - Study 正文入口仅在精确读取是 Markdown carrier 时可打开；`research_question` 留在该正文内部。外部资料和正式关系进入同一“关联”阅读区，不被解释为研究结论或规则。
 - Pitfall 的验证、根因、方案和规避必须保留正文中的已确认、未确认与不适用边界；Markdown 列表按正常条目阅读，不用状态徽标替代原意。

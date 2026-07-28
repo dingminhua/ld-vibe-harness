@@ -36,6 +36,7 @@ export function WorkCaseReadingLayout({
     resultReviews,
     closureProposal,
     terminalResiduals,
+    terminalSuggestions,
     urls,
   } = detail;
 
@@ -148,6 +149,7 @@ export function WorkCaseReadingLayout({
           {terminalResiduals.length > 0 && (
             <TerminalResidualList items={terminalResiduals} locale={locale} />
           )}
+          {terminalSuggestions.length > 0 && <SparkSuggestionList items={terminalSuggestions} locale={locale} />}
         </WorkCaseReadingNode>
       )}
 
@@ -494,11 +496,13 @@ function InlineStringArrayField({ fieldKey, value, locale }: { fieldKey: string;
 
 function ClosureProposal({ proposal, locale }: { proposal: Record<string, unknown>; locale: string }) {
   const decisions = detailRecords(proposal.residual_decisions);
+  const suggestions = detailRecords(proposal.spark_suggestions);
   return (
     <>
       <EnumField fieldKey="proposed_outcome" value={proposal.proposed_outcome} locale={locale} />
       <TextField fieldKey="proposed_disposition_summary" value={proposal.proposed_disposition_summary} locale={locale} />
       {decisions.length > 0 && <ResidualDecisionList decisions={decisions} locale={locale} />}
+      {suggestions.length > 0 && <SparkSuggestionList items={suggestions} locale={locale} />}
     </>
   );
 }
@@ -529,6 +533,7 @@ function ResidualDecisionList({ decisions, locale }: { decisions: Array<Record<s
               {detailRecord(decision.route_target) && (
                 <RouteTarget target={detailRecord(decision.route_target)!} locale={locale} />
               )}
+              <TextField fieldKey="spark_suggestion_id" value={decision.spark_suggestion_id} locale={locale} />
             </div>
           </li>
         ))}
@@ -576,6 +581,26 @@ function TerminalResidualList({ items, locale }: { items: Array<Record<string, u
               <div className="ldvh-meta-muted mb-1.5 font-mono">{detailString(item.residual_id)}</div>
               <SummaryText value={detailString(item.summary)} collapseThreshold={Number.MAX_SAFE_INTEGER} />
             </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function SparkSuggestionList({ items, locale }: { items: Array<Record<string, unknown>>; locale: string }) {
+  return (
+    <div className="py-3 first:pt-0 last:pb-0">
+      <div className="ldvh-caption-strong mb-3 text-ldvh-text-secondary">{getFieldLabel('spark_suggestions', locale)}</div>
+      <ul className="grid min-w-0 gap-2">
+        {items.map((item) => (
+          <li key={detailString(item.suggestion_id)} className="rounded-md border border-ldvh-border bg-ldvh-bg/55 px-3 py-2.5">
+            <EnumField fieldKey="suggestion_kind" value={item.suggestion_kind} locale={locale} />
+            <TextField fieldKey="summary" value={item.summary} locale={locale} />
+            <TextField fieldKey="restriction_reason" value={item.restriction_reason} locale={locale} />
+            <TextField fieldKey="impact_summary" value={item.impact_summary} locale={locale} />
+            <TextField fieldKey="resume_condition" value={item.resume_condition} locale={locale} />
+            <TextField fieldKey="follow_up_summary" value={item.follow_up_summary} locale={locale} />
           </li>
         ))}
       </ul>

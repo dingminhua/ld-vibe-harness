@@ -210,7 +210,7 @@ def _write_existing_workcase(
             "pitfall",
             {
                 "title": "Candidate identity treated as reserved",
-                "status": "active",
+                "status": "draft",
                 "applicability": "Concurrent V4 fact creation.",
                 "validation_summary": "Two drafts can safely receive different final identities.",
                 "symptoms": "Concurrent drafts expect the same final ID.",
