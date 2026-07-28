@@ -207,7 +207,7 @@ def _target_condition(source_type: str, relation_key: str, target_type: str, tar
         # The mechanically-valid-at-formation requirement is carried by the
         # shared target read above; later Pitfall state changes do not affect
         # the edge.  Formation-at-draft is checked by the WorkCase write path.
-        return target_type == "pitfall" and target_status in {"draft", "active", "discarded", "retired"}
+        return target_type == "pitfall" and target_status in {"draft", "active", "discarded"}
     if source_type == "workcase" and relation_key == "related-to":
         return target_type in LAYOUTS
     if source_type == "study" and relation_key == "inspired-by":

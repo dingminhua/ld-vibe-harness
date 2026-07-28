@@ -9,11 +9,11 @@ function source(relativePath: string): string {
   return fs.readFileSync(path.join(webRoot, relativePath), 'utf8')
 }
 
-test('V4 fact lists keep lifecycle status tabs even when a terminal state has zero objects', () => {
+test('V4 fact lists keep every declared lifecycle status tab even when its count is zero', () => {
   const filter = source('src/components/ObjectStatusFilter.tsx')
 
   assert.match(filter, /adr: \['active', 'retired'\]/)
-  assert.match(filter, /pitfall: \['active', 'retired'\]/)
+  assert.match(filter, /pitfall: \['draft', 'active', 'discarded'\]/)
   assert.match(filter, /study: \['active', 'retired'\]/)
   assert.match(filter, /if \(!\(type in FALLBACK_STATUSES_BY_TYPE\)\) return sortedOptions;/)
   assert.match(filter, /if \(displayOptions\.length <= 1 && !\(type in FALLBACK_STATUSES_BY_TYPE\)\) return null;/)
@@ -24,6 +24,8 @@ test('retired has an explicit lifecycle status label', () => {
 
   assert.match(locales, /retired: \{ zh: '已退出', en: 'Retired' \}/)
   assert.match(locales, /implemented: \{ zh: '已落实', en: 'Implemented' \}/)
+  assert.match(locales, /pitfall: \{[\s\S]*draft: \{ zh: '待确认', en: 'Pending confirmation' \}/)
+  assert.match(locales, /pitfall: \{[\s\S]*active: \{ zh: '活跃', en: 'Active' \}/)
 })
 
 test('Spark list exposes lifecycle and priority as separate navigation dimensions', () => {

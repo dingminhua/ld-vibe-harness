@@ -95,7 +95,7 @@ test('Specs define the closure-decision input zone and contributed-to section fo
   assert.match(cardSection, /`closure_proposal` 缺失、结构不符或其必要成员不可读时/);
   assert.match(cardSection, /Web 也不得为 `closure_proposal` 补写生成的占位提案/);
   assert.match(cardSection, /\*\*后续贡献\*\*区：该区逐项列出当前 WorkCase 实际声明的 `contributed-to` Pitfall 目标/);
-  assert.match(cardSection, /`draft`“待确认”、`active`“已确认”、`discarded`“已废弃”、`retired`“已退出”/);
+  assert.match(cardSection, /`draft`“待确认”、`active`“活跃”、`discarded`“已废弃”/);
   assert.match(cardSection, /不以 object_id 冒充名称/);
   assert.match(cardSection, /不把该区表达为剩余责任去向/);
   assert.match(cardSection, /当前对象没有任何 `contributed-to` 时该区整体省略，不生成空态文案/);

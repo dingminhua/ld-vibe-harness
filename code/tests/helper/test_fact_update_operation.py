@@ -416,6 +416,72 @@ disposition_summary: Incorrectly recorded as routed without a fact target.
     assert response["result"]["fact_object"]["status"] == "implemented"
 
 
+def test_update_repairs_legacy_retired_pitfall_to_equal_body_discarded_with_exact_cas(tmp_path: Path) -> None:
+    workspace, project, _spark = _fixture(tmp_path)
+    fact = project / "ldvh-base/pitfalls/pitfall-0001.yaml"
+    fact.parent.mkdir(parents=True)
+    fact.write_text(
+        """object_id: pitfall-0001
+fact_type_key: pitfall
+title: Legacy complete experience
+created_at: 2026-07-14T09:00:00+08:00
+updated_at: 2026-07-14T10:00:00+08:00
+status: retired
+applicability: Only the observed runtime conditions.
+validation_summary: The bounded handling was verified; other environments remain unknown.
+symptoms: The declared operation did not run.
+trigger_conditions: The required runtime input was absent.
+root_cause: The runtime could not locate its required input.
+resolution: Restore the required input and rerun the operation.
+avoidance: Check the required input before relying on the operation.
+disposition_summary: The experience no longer applies under the current runtime conditions.
+""",
+        encoding="utf-8",
+    )
+    reference = {
+        "governed_project_id": "sample",
+        "fact_type_key": "pitfall",
+        "object_id": "pitfall-0001",
+    }
+    before = _read_unchecked(workspace, project, reference)
+    assert before["check_status"] == "invalid"
+    assert before["content_fingerprint"] is not None
+    target = _mutable(before)
+    target["status"] = "discarded"
+
+    rewritten = dict(target)
+    rewritten["symptoms"] = "A migration-time rewrite that must be rejected."
+    rejected = handle_request(
+        "call",
+        "update-fact-object",
+        _update_payload(workspace, project, before["content_fingerprint"], rewritten, reference),
+    ).response
+    assert rejected["outcome"] == "rejected"
+    assert "status: retired" in fact.read_text(encoding="utf-8")
+
+    response = handle_request(
+        "call",
+        "update-fact-object",
+        _update_payload(workspace, project, before["content_fingerprint"], target, reference),
+    ).response
+
+    assert response["outcome"] == "ok", json.dumps(response, ensure_ascii=False, indent=2)
+    after = response["result"]["fact_object"]
+    assert after["status"] == "discarded"
+    for field in (
+        "title",
+        "applicability",
+        "validation_summary",
+        "symptoms",
+        "trigger_conditions",
+        "root_cause",
+        "resolution",
+        "avoidance",
+        "disposition_summary",
+    ):
+        assert after[field] == before["fact_object"][field]
+
+
 def test_no_change_does_not_rewrite_or_change_timestamp(tmp_path: Path) -> None:
     workspace, project, fact = _fixture(tmp_path)
     before = _read(workspace, project)

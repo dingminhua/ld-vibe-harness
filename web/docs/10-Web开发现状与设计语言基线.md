@@ -43,7 +43,7 @@
 | 外部调研 | `/objects/study`、`/objects/study/:id` | 外部调研报告阅读界面 | 研究意图、摘要、建议、唯一 Markdown 正文入口和关联资料；终态只在事实存在时显示处置 |
 | 决策 | `/objects/adr`、`/objects/adr/:id` | 决策阅读页 | 对象卡片、标准身份头部、问题/决策/范围/理由/影响节点；retired 以处置收束 |
 | 火花 | `/objects/spark`、`/objects/spark/:id` | 待分流信息阅读页 | 对象卡片、标准身份头部、意图/摘要/演变节点；routed、implemented、discarded 才显示对应终态处置 |
-| 经验 | `/objects/pitfall`、`/objects/pitfall/:id` | 可复用经验阅读页 | 对象卡片、标准身份头部、现象/触发/范围/验证/根因/方案/规避节点；retired 以处置收束 |
+| 经验 | `/objects/pitfall`、`/objects/pitfall/:id` | 可复用经验阅读页 | 对象卡片、标准身份头部、现象/触发/范围/验证/根因/方案/规避节点；discarded 以处置收束 |
 
 这五个模块不是孤立样板，而是后续 Web 页面继续收敛的中心。新页面或旧页面改造如涉及列表、详情、右侧扩展阅读、复制入口、关联行、节点折叠或提交证据，应优先复用这五个模块已经形成的语言。
 
@@ -97,7 +97,7 @@ Study、ADR、Spark 与 Pitfall 已经形成 WorkCase 必须继承的阅读秩�
 1. **先身份，后判断。** 统一身份头部先说明类型、状态、稳定 ID、标题、创建/更新时间与可用复制动作；不把状态、时间或复制混入正文节点。
 2. **详情按阅读问题组织。** 每个对象以少量固定语义节点承接当前最需要理解的事实，而不是逐字段铺开。节点默认展开，使用同一圆点、整行折叠和 Markdown 正文。
 3. **终态是处置，不是另一套时间线。** 只有终态对象才出现 `disposition_summary`；它与对象的 `updated_at` 共同构成最后一次有效记录，不新增关闭、退出或分流时间字段，也不把处置做成强警报模块。
-4. **列表只帮助定位。** 卡片保留身份、状态、标题、必要优先级和更新时间；ADR/Pitfall retired、Spark terminal 才补一段弱处置正文，Study 不在列表复述报告摘要。
+4. **列表只帮助定位。** 卡片保留身份、状态、标题、必要优先级和更新时间；ADR retired、Pitfall discarded、Spark terminal 才补一段弱处置正文，Study 不在列表复述报告摘要。
 5. **关联在主阅读之后。** 关联区只呈现来源已有的正式关系或外部资料。可读对象先解析标题、状态与可复制路径；未解析或跨项目引用如实保留其稳定身份，不把导航信息写成新的事实判断。
 6. **详情与扩展阅读同源。** ReadingPanel 复用同一身份头部和阅读布局；Study 正文是同一 Markdown carrier 的进入入口，不在主详情复制第二份全文。
 
@@ -140,7 +140,7 @@ WorkCase 身份 / 优先级 / 进展分组
 更新时间
 ```
 
-“关闭待确认”Card 的关闭判断输入区直读 `goal` 与完整 `closure_proposal`，显示 route_existing、suggest_spark、accept_stop 三类处置及 Spark suggestions；“后续贡献”只列 `contributed-to` Pitfall 的当前标题与待确认/已确认/已废弃/已退出状态，不提供审核控件。“已关闭”Card 从终态 `goal`、outcome、disposition、`routed-to`、顶层 suggestions 和 residuals 使用同一扫读结构；`related-to` 只在详情呈现。closed 不保存关闭 approval 或关闭时间，Web 不得把这些已移除的过程字段当作缺失。
+“关闭待确认”Card 的关闭判断输入区直读 `goal` 与完整 `closure_proposal`，显示 route_existing、suggest_spark、accept_stop 三类处置及 Spark suggestions；“后续贡献”只列 `contributed-to` Pitfall 的当前标题与待确认/活跃/已废弃状态，不提供审核控件。“已关闭”Card 从终态 `goal`、outcome、disposition、`routed-to`、顶层 suggestions 和 residuals 使用同一扫读结构；`related-to` 只在详情呈现。closed 不保存关闭 approval 或关闭时间，Web 不得把这些已移除的过程字段当作缺失。
 
 WorkCase 列表在 Helper 已确认的管辖 worktree 内由 Web 直接读取当前正式载体；它不启动 Web machine 或完整机械校验。列表把可解析字段投影为 Card，并把字段问题、未解析结构和集合问题如实保留；只有载体 I/O 或 YAML 无法解析时才是读取失败。页面不设置列表级“观察时间”或“重新读取”控件；筛选或导航触发新的直读请求，不能复用旧 payload、对象 `updated_at` 或浏览器渲染时刻冒充新观察。
 

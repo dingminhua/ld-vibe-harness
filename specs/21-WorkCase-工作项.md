@@ -553,7 +553,7 @@ closed 的任何更正都必须使用 §7 `correct-closed-workcase`。只要改�
 
 WorkCase 的执行批准只授权完成当前 WC 的已批准计划。执行者在该 WC 推进期间不得借该 approval 创建 Spark、ADR、Study 或新 WorkCase；即使发现范围外机会、Human 已作出长期决定、完成了调研或出现后续问题，也先在当前结果/处置或结构化 `spark_suggestions` 中保留准确边界，由 Human 在 WC 之外独立判断是否发起新事实对象。这一禁止不拦截 Human 在同期独立发起、具有自身准入与授权的其它工作。
 
-唯一创建例外是完整 `status=draft` Pitfall：失败必须在当前 WC 执行中实际发生，已经解决、验证、查重并满足 23 的全部正文与单一机制准入。当前 execution approval 同时覆盖创建该 draft，无需为“保存现场”再逐项请求 Human Gate；它不覆盖 active 初态、半成品、promote、discard 或 retire。独立 subagent 复核 draft 只是推荐机制，不是创建成立的机械前置。
+唯一创建例外是完整 `status=draft` Pitfall：失败必须在当前 WC 执行中实际发生，已经解决、验证、查重并满足 23 的全部正文与单一机制准入。当前 execution approval 同时覆盖创建该 draft，无需为“保存现场”再逐项请求 Human Gate；它不覆盖 active 初态、半成品、promote 或 discard。独立 subagent 复核 draft 只是推荐机制，不是创建成立的机械前置。
 
 draft 的形成顺序固定为两个各自独立合法的操作：先按 31 创建完整 Pitfall 并回读，再在 source WC 的下一个合法稳定检查点写 `contributed-to`。两步不是跨对象原子事务；第二步失败不删除已成立 draft，而是保留回读结果并在 WC 还处于允许写边的 phase 时重试。`blocked` 期间不借旧 approval 创建 draft；`human_closure_confirming` 发现应保存现场时先退回 `closure_preparing`。
 
@@ -682,7 +682,7 @@ WorkCase 只允许四种正向关系；反向导航由 Code 派生，不写第�
 |---|---|---|---|
 | `depends-on` | 同项目 `open` / `blocked` WorkCase | 形成和保留期间均为同项目 `open` / `blocked` WorkCase | source 当前某项行动或关闭判断确实依赖 target 仍在承担的责任 |
 | `routed-to` | `closed` WorkCase，只由 `close-workcase` 形成，或由 `correct-closed-workcase` 在相应 Human Gate 下更正原关闭记录错误/遗漏 | 首次形成或更正新增时，target 为同项目 mechanically valid 的 `open` / `blocked` WorkCase，或 `status=open` Spark；形成后 target 按自身规则继续生命周期 | source 经 Human 关闭决定，将不再由自身承担的剩余责任转交给已稳定承载同一问题的 target；Spark 目标不被表达为执行中，target 后续进展不构成回溯换路理由 |
-| `contributed-to` | 活动期或 `closed` WorkCase；活动期按 §6.8 在 target 实际创建回读后形成，closed 上增删只由 `correct-closed-workcase` 按原关闭记录的实质更正执行 | 形成时只能为同项目 mechanically valid 的 `status=draft` Pitfall；形成后 target 可为 draft/active/discarded/retired | source 执行中实际发生、解决并验证的完整现场经验已保存为 target；仅作形成来源追溯，不表示 Human 已确认、经验仍适用或 target 承接责任 |
+| `contributed-to` | 活动期或 `closed` WorkCase；活动期按 §6.8 在 target 实际创建回读后形成，closed 上增删只由 `correct-closed-workcase` 按原关闭记录的实质更正执行 | 形成时只能为同项目 mechanically valid 的 `status=draft` Pitfall；形成后 target 可为 draft/active/discarded | source 执行中实际发生、解决并验证的完整现场经验已保存为 target；仅作形成来源追溯，不表示 Human 已确认、经验仍适用或 target 承接责任 |
 | `related-to` | 活动期或 `closed` WorkCase；活动期可形成，close 原样保留，closed 只能更正原关闭时的记录错误 | 形成时为同项目已存在且 mechanically valid 的任一五类当前事实对象 | source 与 target 存在对当次理解有价值、但不表示依赖、责任转交、贡献来源或证明的主题联系 |
 
 共同约束：
@@ -705,7 +705,7 @@ WorkCase 只允许四种正向关系；反向导航由 Code 派生，不写第�
 
 `routed-to` 形成时，WorkCase target 的当前 goal/scope 或 Spark target 的当前问题正文必须语义覆盖被转交事项，AI 负责判断，Code 只检查引用、状态、指纹和图约束。形成后 target 按自身生命周期继续，upstream relation 仍保留；消费者沿 target 当前内容理解去向。WorkCase target 关闭/改 scope 或 Spark target 转为 routed/discarded 前必须检查入向 `routed-to`，不得静默丢失已转入责任；必要时由 target 自身当前或终态正文、下一跳关系或 accepted-stop residual 继续说明。
 
-`contributed-to` 形成时，target 必须实际存在、可读、mechanically valid 且为 draft Pitfall；形成后 target 变为 active、discarded 或 retired 不影响边，也不回写 WC。target 后来被删除或不可读时，该边失效但不自动改变 source 的状态与终态；机械读取如实报告。该边不承载未完成责任，不建立 target 状态变化前的入向检查义务；删除方仍必须按 05 §9.3 先处置全部入向引用。
+`contributed-to` 形成时，target 必须实际存在、可读、mechanically valid 且为 draft Pitfall；形成后 target 变为 active 或 discarded 不影响边，也不回写 WC。target 后来被删除或不可读时，该边失效但不自动改变 source 的状态与终态；机械读取如实报告。该边不承载未完成责任，不建立 target 状态变化前的入向检查义务；删除方仍必须按 05 §9.3 先处置全部入向引用。
 
 `related-to` 只记录形成时的存量主题联系，不做有向环检查，其它共同引用检查仍成立。close 必须原样保留 before 中已有边。closed WC 不追加未来出现的新关系；后续对象应从自身一侧指向该 WC。一项更正只能修正原关闭时已存在但记错/遗漏的当时事实，不得将后来新建对象冒充“当时遗漏”。
 
@@ -772,7 +772,7 @@ Web 只显示四个“进展分组”，不是生命周期或 YAML 字段：
 | 关闭待确认 | `phase=human_closure_confirming` |
 | 已关闭 | `status=closed` |
 
-status=blocked 仍保留其 phase 所属分组，且在具体 Card 正文契约允许时额外如实表达阻塞。当前 `closure_confirmation` Card 正文由 08 §7.4 定义，它即使处于 `status=blocked` 也不在 Card 中增加阻塞信息；详情页、精确读取诊断和其它已定义的支持范围仍须如实保留 `blocking_summary`。Card 可以派生 item 五状态计数、当前活动 item 和精确环节，但不得把派生结果写回 YAML，不得猜测“第几轮”“第几项”或完成百分比。详情页使用同一信息结构，不按 status 建立不同事实模型；具体 Card 内容与视觉设计由 Web 规范承接，不能反向要求新增事实字段。Card 的“后续贡献”只列实际 `contributed-to` Pitfall 的标题与当前状态，并以待确认/已确认/已废弃/已退出呈现；关闭处置另显示三类 decision 与 Spark suggestions。`related-to` 只在详情中作关系导航，不进入关闭 Card 正文。
+status=blocked 仍保留其 phase 所属分组，且在具体 Card 正文契约允许时额外如实表达阻塞。当前 `closure_confirmation` Card 正文由 08 §7.4 定义，它即使处于 `status=blocked` 也不在 Card 中增加阻塞信息；详情页、精确读取诊断和其它已定义的支持范围仍须如实保留 `blocking_summary`。Card 可以派生 item 五状态计数、当前活动 item 和精确环节，但不得把派生结果写回 YAML，不得猜测“第几轮”“第几项”或完成百分比。详情页使用同一信息结构，不按 status 建立不同事实模型；具体 Card 内容与视觉设计由 Web 规范承接，不能反向要求新增事实字段。Card 的“后续贡献”只列实际 `contributed-to` Pitfall 的标题与当前状态，并以待确认/活跃/已废弃呈现；关闭处置另显示三类 decision 与 Spark suggestions。`related-to` 只在详情中作关系导航，不进入关闭 Card 正文。
 
 ## 10. 验证要求
 

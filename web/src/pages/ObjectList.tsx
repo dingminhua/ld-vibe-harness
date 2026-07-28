@@ -933,15 +933,14 @@ function SparkCardContent({ obj }: { obj: ObjectItem }) {
 function PitfallTerminalCardContent({ obj }: { obj: ObjectItem }) {
   const { t } = useI18n();
   const disposition = obj.disposition_summary?.trim() || t('objectList.dispositionMissing');
-  const tone = obj.status === 'discarded' ? 'discarded' : 'retired';
 
   return (
-    <TerminalFactPanel tone={tone} content={formatReasonText(disposition)} />
+    <TerminalFactPanel tone="discarded" content={formatReasonText(disposition)} />
   );
 }
 
 function PitfallCardContent({ obj }: { obj: ObjectItem }) {
-  if (obj.status === 'retired' || obj.status === 'discarded') return <PitfallTerminalCardContent obj={obj} />;
+  if (obj.status === 'discarded') return <PitfallTerminalCardContent obj={obj} />;
   return null;
 }
 
@@ -1201,7 +1200,7 @@ export default function ObjectList() {
 
     if (currentType === 'pitfall') {
       return (
-        <ObjectCardFrame key={obj.id} obj={obj} locale={locale} onOpen={openObject} showNonActiveReason={false} showStatusBadge={obj.status !== 'retired' && obj.status !== 'discarded'}>
+        <ObjectCardFrame key={obj.id} obj={obj} locale={locale} onOpen={openObject} showNonActiveReason={false} showStatusBadge={obj.status !== 'discarded'}>
           <ObjectSignalBadges source={obj} type={obj.type} locale={locale} />
           <PitfallCardContent obj={obj} />
         </ObjectCardFrame>

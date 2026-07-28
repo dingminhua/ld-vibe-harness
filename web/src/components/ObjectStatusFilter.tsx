@@ -4,6 +4,8 @@ import { useI18n } from '@/i18n/context';
 import { getObjectStatusLocale } from '@/i18n/locales';
 
 const STATUS_FILTER_ORDER = [
+  'draft',
+  'active',
   'in_progress',
   'blocked',
   'pending',
@@ -24,7 +26,7 @@ const statusOrderIndex = new Map(STATUS_FILTER_ORDER.map((status, index) => [sta
 
 const FALLBACK_STATUSES_BY_TYPE: Record<string, string[]> = {
   adr: ['active', 'retired'],
-  pitfall: ['active', 'retired'],
+  pitfall: ['draft', 'active', 'discarded'],
   spark: ['open', 'routed', 'implemented', 'discarded'],
   study: ['active', 'retired'],
 };

@@ -40,6 +40,8 @@ interface ProgressOption {
 const SPARK_PRIORITY_ORDER = ['P0', 'P1', 'P2', 'P3']
 
 const STATUS_PRIORITY: Record<string, number> = {
+  draft: 8,
+  active: 9,
   needs_human_gate: 10,
   open: 11,
   limited: 12,

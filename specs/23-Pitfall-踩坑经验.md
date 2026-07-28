@@ -129,9 +129,9 @@ Pitfall 对象使用 UTF-8 YAML，一文件一对象，当前权威位置固定�
 
 ### 面向 Human 的详情阅读投影
 
-当 Web 或其它 Human 阅读面按 08 §5.3 呈现 Pitfall 详情时，必须按对象实际存在字段依次使用下列中文区段标题：`现象`（`symptoms`）、`触发`（`trigger_conditions`）、`范围`（`applicability`）、`验证`（`validation_summary`）、`根因`（`root_cause`）、`方案`（`resolution`）、`规避`（`avoidance`）；`discarded` 或 `retired` 对象的 `disposition_summary` 另以 `处置` 呈现。八个标题均为两个汉字。条件或可选字段不存在时如实省略对应区段，不生成空态、默认结论或替代内容；类型来源定义为必填的字段缺失或类型不符时，按 08 §5.3 如实显示空态与字段问题。
+当 Web 或其它 Human 阅读面按 08 §5.3 呈现 Pitfall 详情时，必须按对象实际存在字段依次使用下列中文区段标题：`现象`（`symptoms`）、`触发`（`trigger_conditions`）、`范围`（`applicability`）、`验证`（`validation_summary`）、`根因`（`root_cause`）、`方案`（`resolution`）、`规避`（`avoidance`）；`discarded` 对象的 `disposition_summary` 另以 `处置` 呈现。八个标题均为两个汉字。条件或可选字段不存在时如实省略对应区段，不生成空态、默认结论或替代内容；类型来源定义为必填的字段缺失或类型不符时，按 08 §5.3 如实显示空态与字段问题。
 
-这些标题只帮助 Human 按字段身份阅读：`现象`是实际可观察表现，`触发`是失败前置条件，`范围`是经验复用边界，`验证`是已观察结果与未知覆盖，`根因`是当前机制判断，`方案`是实际采用的处理，`规避`是可复用的预防经验，`处置`只说明终态如何退出。对象状态必须按当前值分别显示为 `draft`“待确认”、`active`“已确认”、`discarded`“已废弃”、`retired`“已退出”；这些中文词是 Human 投影，不改写事实状态。它们不新增字段、不改写 YAML 字段名，也不允许 Web 用通用或旧字段词替代，或合并字段后要求读者自行分辨。
+这些标题只帮助 Human 按字段身份阅读：`现象`是实际可观察表现，`触发`是失败前置条件，`范围`是经验复用边界，`验证`是已观察结果与未知覆盖，`根因`是当前机制判断，`方案`是实际采用的处理，`规避`是可复用的预防经验，`处置`只说明为何废弃。对象状态必须按当前值分别显示为 `draft`“待确认”、`active`“活跃”、`discarded`“已废弃”；这些中文词是 Human 投影，不改写事实状态。它们不新增字段、不改写 YAML 字段名，也不允许 Web 用通用或旧字段词替代，或合并字段后要求读者自行分辨。
 
 ## 6. 对象语义与生命周期
 
@@ -141,16 +141,17 @@ Pitfall 只记录已解决、已验证且可复用的失败机制。问题尚未
 
 | status | 语义 | 必须成立 |
 |---|---|---|
-| `draft` | 全部现场信息、根因判断、解决、规避、验证和适用边界已经按正式 Pitfall 的完整形状保存，但 Human 尚未确认其成为已确认经验 | 只能作为新建初态；全部 active 核心字段和验证条件逐项成立；`disposition_summary` 禁止；可以在确认前据实更正，但每个成功回读快照都必须完整合法 |
-| `active` | Human 已针对最终 draft 快照确认该经验可以作为已确认 Pitfall；根因判断、解决和验证说明仍可信，经验在 applicability 内仍可安全参考 | 只能由同一对象 `draft → active` 形成；除 Code 托管的 `updated_at` 与 `status` 外，promote 前后解析值必须逐值相同；终态字段禁止；不表示规则权威或技术观察由 Human 代替 |
-| `discarded` | Human 不接受该完整 draft 作为已确认经验，原对象继续保留以保存现场信息和否定处置 | 只能由 `draft → discarded` 形成；全部核心正文、验证与边界继续保留；`disposition_summary` 必填并说明不接受的决定和边界；不表示对象未曾完整、可以删除或应被普通经验召回 |
-| `retired` | 原经验因适用条件消失、方向撤回、不再需要或已被新 Pitfall 的经验范围覆盖而退出当前选择 | disposition_summary、自然语言验证说明必填；必须有具体退出依据；终态更新以 `updated_at` 记录；disposition_summary 直接写处置结论，不重复 `retired` 状态或添加“退出理由：”等字段标签；被新 Pitfall 覆盖时在其中说明替代关系，不建立独立关系边 |
+| `draft` | 全部现场信息、根因判断、解决、规避、验证和适用边界已经按正式 Pitfall 的完整形状保存，但 Human 尚未确认其成为活跃经验 | 只能作为新建初态；全部 active 核心字段和验证条件逐项成立；`disposition_summary` 禁止；可以在确认前据实更正，但每个成功回读快照都必须完整合法 |
+| `active` | Human 已针对最终 draft 快照确认该 Pitfall；根因判断、解决和验证说明仍可信，经验在 applicability 内仍可安全参考 | 只能由同一对象 `draft → active` 形成；除 Code 托管的 `updated_at` 与 `status` 外，promote 前后解析值必须逐值相同；终态字段禁止；不表示规则权威或技术观察由 Human 代替 |
+| `discarded` | 完整 draft 未被 Human 接受，或曾活跃经验因适用条件消失、方向撤回、不再需要或已被新 Pitfall 覆盖而废弃 | 对当前合法对象只能由 `draft → discarded` 或 `active → discarded` 形成；全部核心正文、验证、边界和关系继续保留；`disposition_summary` 必填并据实区分“draft 未被接受”与“曾活跃但已不再适用”的处置依据；终态不重开，不表示对象未曾完整或可以删除 |
 
-初始状态只能是 `draft`。正常转换只有 `draft → active`、`draft → discarded` 和 `active → retired`；终态不直接重开。draft 的普通更正保持 `status=draft`，可以修改任一对象自有语义字段以形成更准确的最终快照，但不得在任一中间写入中缺字段、写占位或降低验证充分性。Human 只审核最终回读快照；此前更正不构成 promote，也不要求把一组 draft 批量原子处理。
+初始状态只能是 `draft`。正常转换只有 `draft → active`、`draft → discarded` 和 `active → discarded`；`discarded` 是终态，不直接重开。draft 的普通更正保持 `status=draft`，可以修改任一对象自有语义字段以形成更准确的最终快照，但不得在任一中间写入中缺字段、写占位或降低验证充分性。Human 只审核最终回读快照；此前更正不构成 promote，也不要求把一组 draft 批量原子处理。
 
-`draft → active` 的 promote 只改变 `status`：同一次完整 after 中，除 Code 托管的 `updated_at` 外，`title`、`urls`、`relations`、`applicability`、`validation_summary`、五个 Pitfall 专属字段、身份和 `created_at` 都必须与 before 解析值精确相同，且不得新增 `disposition_summary`。需要完善内容时必须先保持 draft 更正并回读，再由 Human 针对最终指纹确认；不得在 promote 中夹带“顺便完善”。`draft → discarded` 必须保持全部正文与关系不变，只允许 `status` 变化并新增非空 `disposition_summary`；`active → retired` 继续按原退出边界形成处置说明。三个转换都必须在写入前取得 Human 对准确对象、当前完整快照和目标动作的明确授权。Human 确认或拒绝只决定经验对象状态，不替代实际症状、处理、技术验证和 applicability。
+`retired` 不是 Pitfall 的当前合法状态、初态或普通转换节点。迁移三态模型前已经存在且因此机械无效的 `status=retired` 载体，只能复用 05 的 invalid-before exact-CAS 修复边界，在显式迁移中改为 `discarded`：after 必须完整合法，除 `status` 与 Code 托管的 `updated_at` 外，全部解析后正文、关系、身份、`created_at` 和既有非空 `disposition_summary` 必须逐值保持；不得借修复新增、删除或改写内容，不提供 retired 到其它状态、当前合法对象到 retired、无指纹写入或迁移专用旁路。该边界只使旧无效载体能够收敛到当前三态，不使 retired 重新成为可创建、可召回或可消费的合法状态。
 
-WorkCase 的准确 `execution_approval` 是一个窄例外：只有失败确在该 WC 推进中实际发生、已经解决和验证、完整 draft 满足本文全部准入与查重条件时，它才同时授权执行者创建该一个 `status=draft` Pitfall，并在 draft 创建回读后由 source WC 写 `contributed-to`。该授权不允许 active 初态，不覆盖 promote、discard、retire、规则化、其它事实对象创建或另一个 WC；独立 subagent 只作为推荐复核机制，不是 draft 成立条件。Human 在 WC 之外另行发起的独立行动不受“当前 WC 执行者不得借该 approval 创建其它对象”的限制。
+`draft → active` 的 promote 只改变 `status`：同一次完整 after 中，除 Code 托管的 `updated_at` 外，`title`、`urls`、`relations`、`applicability`、`validation_summary`、五个 Pitfall 专属字段、身份和 `created_at` 都必须与 before 解析值精确相同，且不得新增 `disposition_summary`。需要完善内容时必须先保持 draft 更正并回读，再由 Human 针对最终指纹确认；不得在 promote 中夹带“顺便完善”。`draft → discarded` 和 `active → discarded` 都必须保持全部正文与关系不变，只允许 `status` 变化并新增非空 `disposition_summary`；前者说明 Human 不接受的决定和边界，后者说明曾活跃经验不再适用的具体依据。三个转换都必须在写入前取得 Human 对准确对象、当前完整快照和目标动作的明确授权。Human 确认或废弃决定只决定经验对象状态，不替代实际症状、处理、技术验证和 applicability。
+
+WorkCase 的准确 `execution_approval` 是一个窄例外：只有失败确在该 WC 推进中实际发生、已经解决和验证、完整 draft 满足本文全部准入与查重条件时，它才同时授权执行者创建该一个 `status=draft` Pitfall，并在 draft 创建回读后由 source WC 写 `contributed-to`。该授权不允许 active 初态，不覆盖 promote、discard、规则化、其它事实对象创建或另一个 WC；独立 subagent 只作为推荐复核机制，不是 draft 成立条件。Human 在 WC 之外另行发起的独立行动不受“当前 WC 执行者不得借该 approval 创建其它对象”的限制。
 
 每个 draft 独立审核。WC 可以在 draft 尚未 promote 或 discard 时关闭；WC 关闭不批量处理 draft，不要求“全部已审核”收据，也不改变 draft 状态。审核时只沿 WC 实际 `contributed-to` 关系定位并筛选当前 draft：准确则 Human 确认后 promote；需完善则保持 draft 更正、回读并重新提交最终快照；不接受则 discarded；延期则保持 draft。没有数量上限、时间阈值或自动过期转换。
 
@@ -172,13 +173,13 @@ Pitfall 在当前出现可能相似的失败症状、进入已知触发条件、
 
 默认候选只包含症状、触发条件、环境、版本或 applicability 与当前情形可能相容的 `active` Pitfall；`draft` 和 `discarded` 不进入普通经验召回，也不得被当作已确认规避经验。draft 审核只能由精确引用或来源定义的关系导航定位，不能因标题或文本命中形成批量审核队列。不得因标题、错误文本或某个工具名相同就自动采用规避结论。上下文压缩后必须对当次已经语义选中且仍影响行动的 Pitfall 重新回读 F3，并重新核对当前环境、版本和 applicability；不在会话开始时全量展开全部 Pitfall。
 
-`draft`、`discarded` 和 `retired` Pitfall 只在精确引用、来源关系导航、审核最终 draft、追溯历史失败或验证、检查替代链，或判断当前经验是新机制还是旧机制的变体时展开。AI 消费任何 active Pitfall 前必须重新核对 symptoms、trigger conditions、root cause、resolution、avoidance、applicability、validation summary、对象实际记录的环境或版本与当前环境；对象被召回不表示根因已在当次重现，也不表示规避方法已获授权执行。
+`draft` 和 `discarded` Pitfall 只在精确引用、来源关系导航、审核最终 draft、追溯历史失败或验证、检查替代说明，或判断当前经验是新机制还是旧机制的变体时展开。AI 消费任何 active Pitfall 前必须重新核对 symptoms、trigger conditions、root cause、resolution、avoidance、applicability、validation summary、对象实际记录的环境或版本与当前环境；对象被召回不表示根因已在当次重现，也不表示规避方法已获授权执行。
 
 ## 8. 变更、删除与类型退出
 
 创建前必须召回相邻 Pitfall、当前规则、ADR、WorkCase 和 Spark，先判断不对象化、更新同一机制、拆分或建立新身份。创建只能形成完整 draft。更新 draft 或 active Pitfall 时必须重新核对 root cause、resolution、avoidance、applicability 和 validation summary 的一致性；不能让新增样例把经验无依据泛化。draft 的完善、更正和最终审核不改变对象身份。
 
-draft、active、discarded 和 retired 文件均默认保留在当前载体中供来源、经验和关系回读；本文不建立 archived 状态或归档位置。删除只有在适用来源允许、全部引用和仍适用事实已处置且不会丢失经验历史时才成立，不能用删除代替 discarded 或 retired。draft 不按时间自动删除、discard 或 promote。
+draft、active 和 discarded 文件均默认保留在当前载体中供来源、经验和关系回读；本文不建立 archived 状态或归档位置。删除只有在适用来源允许、全部引用和仍适用事实已处置且不会丢失经验历史时才成立，不能用删除代替 discarded。draft 不按时间自动删除、discard 或 promote。
 
 Pitfall 类型停止新增、合并、替代或取消时，必须按 05 处置唯一定义来源、全部现有对象、引用消费者和仍适用经验；全部 active 经验还必须获得明确稳定承接，不得只删除类型规范或隐藏对象目录。
 
@@ -192,14 +193,14 @@ Pitfall 类型停止新增、合并、替代或取消时，必须按 05 处置�
 | 对象 Schema 与身份 | 创建、读取或更新对象时 | 路径、身份、字段闭集、类型、条件、时间和引用符合当前来源 | 当前文件、统一登记、本文与派生 Schema | 实际 parser/validator；未实现时逐项来源回读 | 当次对象当前 Working Tree 内容 | 不作为有效 Pitfall 消费；报告字段和未验证范围 |
 | 根因、解决与复用 | 创建或消费 active Pitfall 时 | 根因判断与症状、触发条件和验证说明相容；已观察事实、当前判断和未知机制未被混写；处理已实际采用并观察到结果，且能说明适用前提、处理、成功信号及不命中时的边界；applicability 匹配当前环境，验证边界未被扩大 |对象自有语义字段、自然语言验证说明、当前环境和相邻规则 | AI 语义审核与实际环境回读 | 当次经验及声明范围 | 不创建或暂停复用；缩小边界、继续调查、重新验证或建立 WorkCase |
 | draft 审核与处置 | 准备 promote、discard 或延后审核时 | 已精确读取最终 draft；Human 决定绑定该完整快照；promote 只改变状态，discard 保留正文并增加处置，延期保持 draft；不依赖 WC 是否已关闭 | 当前 draft、Human 明确决定与对象指纹 | AI 语义审核、CAS、转换校验和写后回读 | 当次一个 draft 的状态处置 | 保持 draft；先更正完善、重新回读或取得准确决定，不批量原子处理 |
-| 退出 | 准备 retired 时 | 已取得针对该 active Pitfall 退出的明确 Human 授权，且退出依据、适用边界、验证说明和时间一致 | 当前 Pitfall 与 Human 明确授权 | AI 语义审核和结构校验 | 当次终态声明 | 保持 active；补充退出说明并取得 Human 授权 |
+| active 废弃 | 准备 `active → discarded` 时 | 已取得针对该 active Pitfall 废弃的明确 Human 授权，且不再适用的依据、适用边界、验证说明和时间一致 | 当前 Pitfall 与 Human 明确授权 | AI 语义审核、CAS、转换校验和写后回读 | 当次终态声明 | 保持 active；补充具体处置说明并取得 Human 授权 |
 | 变更与回读 | 创建、更正、补强、替代、退出、拆分、合并或删除后 | 获准变更已写入、回读并验证；失败和部分结果如实保留 | Human 指令、文件差异、Working Tree 回读和验证结果 | 实际写入入口与当前文件回读 | 当次实际变更 | 不声明成功；修正、回滚或保留部分结果与残余风险 |
 
 AI 必须审核实际发生、对象粒度、根因判断与观察的相容性、解决与验证说明、现时适用、复用安全、规则边界、替代完整性和退出依据。外部样本不能证明经验当前有效、tags 必需或终态已被真实消费。
 
 Code 的共同机械边界按 05 §§10–11 执行；对 Pitfall，只可额外检查本文明确给出的状态条件、跨对象时间顺序。根因真实性、验证充分性、外部协议当前性、迁移安全、规则吸收及自然语言同义性仍由 AI 依据当前来源审核。
 
-最低验证样例必须覆盖：draft、active、discarded、retired；初态只允许完整 draft；draft 与 active 正文 shape 相同；draft 原地完善后回读；promote 状态-only 的正例和夹带正文修改的拒绝；discard 保留完整正文与关系并要求处置说明；每个状态缺条件字段或带禁止字段；默认召回只含 active；不带 `urls`、`relations`、`source_ref` 或 `evidence_ref` 的完整 Pitfall；`source_ref`、`evidence_ref` 与其它未登记字段被拒绝；根因判断与症状、触发或验证说明不相容、解决未实际采用、验证边界扩大、外部版本变化、多个独立机制捆绑；与 discarded/retired 终态条件；archived/tags/related_*/空占位被拒绝。
+最低验证样例必须覆盖：draft、active、discarded；初态只允许完整 draft；draft 与 active 正文 shape 相同；draft 原地完善后回读；promote 状态-only 的正例和夹带正文修改的拒绝；draft 不接受与 active 不再适用均转为 discarded，两类 discard 都保留完整正文与关系并要求具体处置说明；discarded 终态不重开；legacy retired invalid-before 只能在 exact-CAS 下保持全部解析值与既有处置不变并修复为 discarded，改正文、改关系、改处置、改为其它状态或缺少精确指纹均拒绝；每个状态缺条件字段或带禁止字段；默认召回只含 active；不带 `urls`、`relations`、`source_ref` 或 `evidence_ref` 的完整 Pitfall；`source_ref`、`evidence_ref` 与其它未登记字段被拒绝；根因判断与症状、触发或验证说明不相容、解决未实际采用、验证边界扩大、外部版本变化、多个独立机制捆绑；archived/retired/tags/related_*/空占位被拒绝。
 
 ## 10. Human Gate
 
@@ -207,7 +208,7 @@ Code 的共同机械边界按 05 §§10–11 执行；对 Pitfall，只可额外
 
 1. 当前对象、规则或环境之间对根因判断、验证说明或 applicability 存在相互冲突的内容、权威或适用边界，且需要 Human 在可保留的解释、方向或风险取舍之间作选择；仅因当前说明不足、验证不足或需要补充观察时，不进入 Human Gate；
 2. 准备把经验提升为强制规则、接受重大风险，或决定超出 Human 已授权给 AI 的判断范围；
-3. 准备将 draft promote 为 active、discard 为 discarded，或将 active 转为 retired；每项始终需要 Human 对准确对象、最终快照和目标动作的明确授权，不因 AI 已判断依据充分、WC 已关闭或 draft 来自获批 WC 而豁免。准备合并或拆分经验且实际因果、复用安全或剩余适用范围需要 Human 判断时，也进入 Human Gate；
+3. 准备将 draft promote 为 active，或将 draft/active discard 为 discarded；每项始终需要 Human 对准确对象、最终快照和目标动作的明确授权，不因 AI 已判断依据充分、WC 已关闭或 draft 来自获批 WC 而豁免。准备合并或拆分经验且实际因果、复用安全或剩余适用范围需要 Human 判断时，也进入 Human Gate；
 4. 删除或迁移可能丢失对象身份、经验、验证说明或替代历史；
 5. 涉及安全、产品方向、责任归属或其它来源明确保留给 Human 的决定。
 
@@ -224,10 +225,10 @@ Human 决定的复用按 00 §10 执行；Human 当前指令已经授权据实�
 5. 多个独立根因或不相容解决方式被捆绑；
 6. 与当前规范或 active Pitfall 冲突，但没有完成获准的冲突处置；
 7. 用关系、commit、测试成功或实现存在冒充经验普遍有效、规则已生效或行动已授权；
-8. 准备 promote、discard 或 retire 却没有针对准确对象与最终快照的明确 Human 授权；promote 夹带任何正文/关系修改；discard 删除或改写完整正文/关系、缺少具体处置；retired 没有具体退出依据；
+8. 准备 promote 或 discard 却没有针对准确对象与最终快照的明确 Human 授权；promote 夹带任何正文/关系修改；discard 删除或改写完整正文/关系、缺少具体处置，或 active 废弃未说明不再适用依据；
 9. 准备写入 archived、archive_reason、tags、repeatability、severity、source_objects、source_sparks、related_*、空占位或其它未登记内容；
 10. 高影响取舍没有实际授权，或获准写入后没有回读与范围匹配验证；
-11. 把 WC execution approval 扩大为 active 初态、promote/discard/retire、其它事实对象创建或项目级全局锁，或者把独立 subagent 误写成 draft 成立条件；
+11. 把 WC execution approval 扩大为 active 初态、promote/discard、其它事实对象创建或项目级全局锁，或者把独立 subagent 误写成 draft 成立条件；
 12. 按数量、正文长度或时间自动删除、过期、promote 或 discard draft。
 
 暂停范围与允许继续的行动按 00 §11 执行；对 Pitfall，只有失败、根因判断、解决、验证说明、复用价值与边界成立，冲突和 Schema 得到处置并完成写后回读后，才能恢复相应范围。

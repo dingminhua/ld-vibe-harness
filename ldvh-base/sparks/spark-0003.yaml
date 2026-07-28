@@ -1,79 +1,39 @@
 title: 环境安装、配置拓扑与 doctor/bootstrap
 intent: 保留目标环境中安装、配置、验证与停用如何形成可诊断责任链的问题，避免把某项能力资产存在、一次有限安装、doctor 通过或触发成功误作跨环境安装闭环。后续需判断每个目标环境的配置位置、前置条件、验证边界、故障定位和 Human 决定分别由谁承接。
 status: routed
-summary: |-
-  **当前判断**
-
-  - 环境落地不是单次安装命令：需要把可用资产、目标环境、配置位置、安装前条件、安装动作、安装后验证、停用/卸载和故障定位连成可回读的责任链。
-  - 规范或能力资产变化可以提示需要复核的同步影响，但不能由此证明环境已部署，也不授权自动改写用户配置、Rules、Skill 或其它环境资产。
-  - README 已提供新环境 AI 的最小接入指引，指向当前接入面、09 与 33，并补充了安装后操作指引。
-  - 当前环境的有限安装、触发或 doctor 证据只能支持其实际覆盖范围；不能外推为其它环境、其它配置拓扑或完整生命周期已经成立。
-
-  **ZCode 实际验证：五层状态**
-
-  1. 资产完整性：初始失败。运行时实际选用的 data 目录曾缺少 `ldvh.json`；现已补入。文件存在只证明该资产完整，不能证明运行时会执行 Hook。
-  2. 可执行性：通过。手动执行 hook 脚本可以返回 work-context；这不等于环境事件已调用该脚本。
-  3. 实时触发验证：已通过。2026-07-26 ZCode 重装后在设置中启用/信任 Hook，新一轮 cold startup 出现 hook_run_started/hook_run_completed 记录。根因已形成 pitfall-0004。
-  4. 功能验证：降级为历史有限观察。补入 data 后曾有一次会话交付 work-context；新证据不能确认那次或当前会话由实时 Hook 产生，因此不能再写成当前功能已通过。
-  5. 边界验证：未完成。已部署缓存缺少源码中定义的 SubagentStart；compact/resume、升级/重装、两个注册来源同时启用时的数据目录选择，以及 data 完整时仍不实时执行的原因，均未验证。
-
-  上述案例已形成 `pitfall-0001`，只证明该已观察的 ZCode 安装场景；它不构成其它环境或配置拓扑的安装闭环。
-
-  **需要形成的诊断闭环**
-
-  - 选定环境的最低依赖、可接受配置位置、信任/启用前置条件，以及与已有用户配置的冲突或共存边界。
-  - 安装前检查、安装后功能验证、停用或卸载后的残留检查分别证明什么；doctor/bootstrap 需要如实暴露未安装、部分安装、不可验证和故障定位，而不是制造成功结论。
-  - 固定受管资产与现场配置/临时脚本分层：前者可作为受管资产核验，后者只能保留其实际安装或观察范围。
-
-  **Human 操作引导缺口**
-
-  - 接入完成后缺少对 Human 的明确提示：需要去目标 AI 环境设置中手动开启或信任已安装的 Hook（例如 ZCode 的 enabledPlugins、Hook 信任开关等），仅完成文件安装和注册并不等于 Hook 已生效。
-  - 缺少一个面向 Human 的 Hook 生效验证方法：安装后应提供可执行的步骤（如启动新会话后检查 hook_run_started/hook_run_completed 日志、执行目录产物等），使 Human 能自行确认 Hook 是否实时触发，而非依赖 AI 单方面声称"已安装完成"。
-  - 上述两项缺口属于安装闭环中 Human 侧的落地确认环节，当前 README、09 和 33 均未覆盖。
-
-  **已落实的补充**
-
-  - `code/plugins/ldvh/README.md` 已新增"安装后操作"章节，说明开启 Hook 的步骤和 hydrate 风险。
-  - `specs/33` 已新增 §5.3.D2 "安装后 Human 操作引导"，要求执行者提示 Human 开启/信任 Hook、提供验证方法并说明 hydrate 风险。
-  - 上述补充覆盖了接入后的操作引导，不替代真实事件触发验证。
-
-  **未决事项**
-
-  - 不预设通用 CLI、Skill 或单一配置拓扑；先按目标环境形成最小闭环，再判断是否需要把稳定安装流程转为 WorkCase 或行动模板。
-  - 哪些配置位置、风险接受和跨环境支持范围必须由 Human 决定，仍需在实际目标环境中明确。
-  - 安装验证流程本身是否需要通过 Hook 自动化，由 `spark-0029` 承接。此议题已在 spark-0003 中独立记录，不再由本入口跟踪。
-disposition_summary: "原始信息需求已由以下对象完整承接：\n\n1. pitfall-0001（retired）：首次 ZCode 安装的五层验证方法，作为经验记录保留。\n2. pitfall-0004（active）：ZCode 实时触发失败的根因——Hook 注册后未在环境设置中启用/信任，及两轮验证对比。\n3. specs/33 §5.3.D2：Human 操作引导缺口（提示开启 Hook、验证方法、hydrate 风险）已落实到规范。\n4. spark-0029：安装验证流程自动化独立承接，不再由本入口跟踪。\n\nZCode 目标环境的实时触发验证已通过，剩余边界验证（SubagentStart、compact/resume、升级/重装等）和跨环境通用诊断闭环不属于本 Spark 跟踪范围，应由后续独立议题承接。"
+summary: "**当前判断**\n\n- 环境落地不是单次安装命令：需要把可用资产、目标环境、配置位置、安装前条件、安装动作、安装后验证、停用/卸载和故障定位连成可回读的责任链。\n- 规范或能力资产变化可以提示需要复核的同步影响，但不能由此证明环境已部署，也不授权自动改写用户配置、Rules、Skill 或其它环境资产。\n- README 已提供新环境 AI 的最小接入指引，指向当前接入面、09 与 33，并补充了安装后操作指引。\n- 当前环境的有限安装、触发或 doctor 证据只能支持其实际覆盖范围；不能外推为其它环境、其它配置拓扑或完整生命周期已经成立。\n\n**ZCode 实际验证：五层状态**\n\n1. 资产完整性：初始失败。运行时实际选用的 data 目录曾缺少 `ldvh.json`；现已补入。文件存在只证明该资产完整，不能证明运行时会执行 Hook。\n2. 可执行性：通过。手动执行 hook 脚本可以返回 work-context；这不等于环境事件已调用该脚本。\n3. 实时触发验证：已通过。2026-07-26 ZCode 重装后在设置中启用/信任 Hook，新一轮 cold startup 出现 hook_run_started/hook_run_completed 记录。根因已形成 pitfall-0004。\n4. 功能验证：降级为历史有限观察。补入 data 后曾有一次会话交付 work-context；新证据不能确认那次或当前会话由实时 Hook 产生，因此不能再写成当前功能已通过。\n5. 边界验证：未完成。已部署缓存缺少源码中定义的 SubagentStart；compact/resume、升级/重装、两个注册来源同时启用时的数据目录选择，以及 data 完整时仍不实时执行的原因，均未验证。\n\n上述案例已形成 `pitfall-0001`，只证明该已观察的 ZCode 安装场景；它不构成其它环境或配置拓扑的安装闭环。\n\n**需要形成的诊断闭环**\n\n- 选定环境的最低依赖、可接受配置位置、信任/启用前置条件，以及与已有用户配置的冲突或共存边界。\n- 安装前检查、安装后功能验证、停用或卸载后的残留检查分别证明什么；doctor/bootstrap 需要如实暴露未安装、部分安装、不可验证和故障定位，而不是制造成功结论。\n- 固定受管资产与现场配置/临时脚本分层：前者可作为受管资产核验，后者只能保留其实际安装或观察范围。\n\n**Human 操作引导缺口**\n\n- 接入完成后缺少对 Human 的明确提示：需要去目标 AI 环境设置中手动开启或信任已安装的 Hook（例如 ZCode 的 enabledPlugins、Hook 信任开关等），仅完成文件安装和注册并不等于 Hook 已生效。\n- 缺少一个面向 Human 的 Hook 生效验证方法：安装后应提供可执行的步骤（如启动新会话后检查 hook_run_started/hook_run_completed 日志、执行目录产物等），使 Human 能自行确认 Hook 是否实时触发，而非依赖 AI 单方面声称\"已安装完成\"。\n- 上述两项缺口属于安装闭环中 Human 侧的落地确认环节，当前 README、09 和 33 均未覆盖。\n\n**已落实的补充**\n\n- `code/plugins/ldvh/README.md` 已新增\"安装后操作\"章节，说明开启 Hook 的步骤和 hydrate 风险。\n- `specs/33` 已新增 §5.3.D2 \"安装后 Human 操作引导\"，要求执行者提示 Human 开启/信任 Hook、提供验证方法并说明 hydrate 风险。\n- 上述补充覆盖了接入后的操作引导，不替代真实事件触发验证。\n\n**未决事项**\n\n- 不预设通用 CLI、Skill 或单一配置拓扑；先按目标环境形成最小闭环，再判断是否需要把稳定安装流程转为 WorkCase 或行动模板。\n- 哪些配置位置、风险接受和跨环境支持范围必须由 Human 决定，仍需在实际目标环境中明确。\n- 安装验证流程本身是否需要通过 Hook 自动化，由 `spark-0029` 承接。此议题已在 spark-0003 中独立记录，不再由本入口跟踪。"
+disposition_summary: "原始信息需求已由以下对象完整承接：\n\n1. pitfall-0001（discarded）：首次 ZCode 安装的五层验证方法，作为经验记录保留。\n2. pitfall-0004（active）：ZCode 实时触发失败的根因——Hook 注册后未在环境设置中启用/信任，及两轮验证对比。\n3. specs/33 §5.3.D2：Human 操作引导缺口（提示开启 Hook、验证方法、hydrate 风险）已落实到规范。\n4. spark-0029：安装验证流程自动化独立承接，不再由本入口跟踪。\n\nZCode 目标环境的实时触发验证已通过，剩余边界验证（SubagentStart、compact/resume、升级/重装等）和跨环境通用诊断闭环不属于本 Spark 跟踪范围，应由后续独立议题承接。"
 relations:
-  - relation_key: routed-to
-    target:
-      governed_project_id: ldvh
-      fact_type_key: pitfall
-      object_id: pitfall-0001
-  - relation_key: routed-to
-    target:
-      governed_project_id: ldvh
-      fact_type_key: pitfall
-      object_id: pitfall-0004
+- relation_key: routed-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: pitfall
+    object_id: pitfall-0001
+- relation_key: routed-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: pitfall
+    object_id: pitfall-0004
 evolution:
-  - at: '2026-07-22T13:47:42+08:00'
-    summary: 迁移对照将 V3 的“规范变化到能力资产再到环境”责任链收窄为当前安装议题，保留安装与验证不能互相替代、资产与现场状态必须分层的判断，移除旧命令和旧环境已落地断言。
-  - at: '2026-07-22T17:47:26+08:00'
-    summary: README 新增面向新环境 AI 的最小接入指引；其影响是新环境能够定位既有接入面，但仍须经授权安装并取得目标环境的真实触发证据。
-  - at: '2026-07-23T00:30:00+08:00'
-    summary: ZCode 实际安装暴露 data 目录缺失：手动脚本可执行而 Hook 静默不触发。修复运行时 data 后，SessionStart 与 work-context 返回获得一次实际验证，边界验证仍未完成。
-  - at: '2026-07-24T21:42:45+08:00'
-    summary: 将实际案例的五层成功、失败与未验证范围收敛为当前摘要，并建立到 pitfall-0001 的主题关联；安装验证自动化仍由 spark-0029 独立承接。
-  - at: '2026-07-24T21:55:46+08:00'
-    summary: ZCode 只读 cold-start 验证发现已注册 Hook 没有实时执行记录，且 work-context 可能来自 hydrate；因此撤回"补入 data 后当前实时触发和功能已通过"的结论，转为待诊断的运行时边界。
-  - at: '2026-07-26T09:00:00+08:00'
-    summary: Human 确认接入后缺少两个关键环节——提示用户去 AI 环境设置开启 Hook，以及提供面向 Human 的 Hook 生效验证方法；当前 README、09 和 33 均未覆盖。摘要新增 Human 操作引导缺口章节。
-  - at: '2026-07-26T09:30:00+08:00'
-    summary: README 新增"安装后操作"章节，specs/33 新增 §5.3.D2 安装后 Human 操作引导；Human 操作引导缺口已落实，摘要新增"已落实的补充"章节。
-  - at: '2026-07-26T10:00:00+08:00'
-    summary: ZCode 重装后实时触发验证通过，根因（Hook 注册后未在环境设置中启用/信任）已形成 pitfall-0004；spark-0003 的 ZCode 闭环基本完成。
-  - at: '2026-07-26T10:30:00+08:00'
-    summary: spark-0003 进入 routed 终态。原始信息需求已由 pitfall-0001、pitfall-0004、specs/33 §5.3.D2 及 spark-0029 完整承接，无残留。
+- at: '2026-07-22T13:47:42+08:00'
+  summary: 迁移对照将 V3 的“规范变化到能力资产再到环境”责任链收窄为当前安装议题，保留安装与验证不能互相替代、资产与现场状态必须分层的判断，移除旧命令和旧环境已落地断言。
+- at: '2026-07-22T17:47:26+08:00'
+  summary: README 新增面向新环境 AI 的最小接入指引；其影响是新环境能够定位既有接入面，但仍须经授权安装并取得目标环境的真实触发证据。
+- at: '2026-07-23T00:30:00+08:00'
+  summary: ZCode 实际安装暴露 data 目录缺失：手动脚本可执行而 Hook 静默不触发。修复运行时 data 后，SessionStart 与 work-context 返回获得一次实际验证，边界验证仍未完成。
+- at: '2026-07-24T21:42:45+08:00'
+  summary: 将实际案例的五层成功、失败与未验证范围收敛为当前摘要，并建立到 pitfall-0001 的主题关联；安装验证自动化仍由 spark-0029 独立承接。
+- at: '2026-07-24T21:55:46+08:00'
+  summary: ZCode 只读 cold-start 验证发现已注册 Hook 没有实时执行记录，且 work-context 可能来自 hydrate；因此撤回"补入 data 后当前实时触发和功能已通过"的结论，转为待诊断的运行时边界。
+- at: '2026-07-26T09:00:00+08:00'
+  summary: Human 确认接入后缺少两个关键环节——提示用户去 AI 环境设置开启 Hook，以及提供面向 Human 的 Hook 生效验证方法；当前 README、09 和 33 均未覆盖。摘要新增 Human 操作引导缺口章节。
+- at: '2026-07-26T09:30:00+08:00'
+  summary: README 新增"安装后操作"章节，specs/33 新增 §5.3.D2 安装后 Human 操作引导；Human 操作引导缺口已落实，摘要新增"已落实的补充"章节。
+- at: '2026-07-26T10:00:00+08:00'
+  summary: ZCode 重装后实时触发验证通过，根因（Hook 注册后未在环境设置中启用/信任）已形成 pitfall-0004；spark-0003 的 ZCode 闭环基本完成。
+- at: '2026-07-26T10:30:00+08:00'
+  summary: spark-0003 进入 routed 终态。原始信息需求已由 pitfall-0001、pitfall-0004、specs/33 §5.3.D2 及 spark-0029 完整承接，无残留。
 object_id: spark-0003
 fact_type_key: spark
 created_at: '2026-07-19T08:33:50.911048+08:00'
-updated_at: '2026-07-24T21:55:46+08:00'
+updated_at: '2026-07-28T18:45:30.295473+08:00'

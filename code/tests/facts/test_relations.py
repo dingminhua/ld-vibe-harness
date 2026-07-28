@@ -659,7 +659,7 @@ def test_spark_routed_to_current_rules_remain_independent_from_workcase_rules() 
     assert not _source_condition("spark", "routed-to", {"status": "discarded"})
 
 
-@pytest.mark.parametrize("target_status", ["draft", "active", "discarded", "retired"])
+@pytest.mark.parametrize("target_status", ["draft", "active", "discarded"])
 def test_workcase_contributed_to_accepts_pitfall_across_target_lifecycle(target_status: str) -> None:
     source = _read(
         "workcase-0001",
@@ -683,18 +683,18 @@ def test_workcase_contributed_to_source_condition_allows_active_and_closed_sourc
     )
     assert not _target_condition("workcase", "contributed-to", "spark", "discarded")
     assert not _target_condition("workcase", "contributed-to", "adr", "retired")
-    assert _target_condition("workcase", "contributed-to", "pitfall", "retired")
+    assert not _target_condition("workcase", "contributed-to", "pitfall", "retired")
     assert not _target_condition("workcase", "contributed-to", "workcase", "open")
     assert not _target_condition("workcase", "contributed-to", "study", "active")
 
 
-def test_closed_workcase_contributed_to_remains_valid_when_pitfall_later_retired() -> None:
+def test_closed_workcase_contributed_to_remains_valid_when_pitfall_later_discarded() -> None:
     source = _read(
         "workcase-0001",
         "closed",
         relations=[_relation("contributed-to", "pitfall-0002", fact_type_key="pitfall")],
     )
-    issues, unavailable = _validate(source, _read("pitfall-0002", "retired", fact_type_key="pitfall"))
+    issues, unavailable = _validate(source, _read("pitfall-0002", "discarded", fact_type_key="pitfall"))
 
     assert issues == ()
     assert unavailable is False

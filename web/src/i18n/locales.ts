@@ -60,9 +60,8 @@ const OBJECT_STATUS_LOCALES: Record<string, Record<string, { zh: string; en: str
   },
   pitfall: {
     draft: { zh: '待确认', en: 'Pending confirmation' },
-    active: { zh: '已确认', en: 'Confirmed' },
+    active: { zh: '活跃', en: 'Active' },
     discarded: { zh: '已废弃', en: 'Discarded' },
-    retired: { zh: '已退出', en: 'Retired' },
   },
   study: {
     retired: { zh: '已废弃', en: 'Retired' },

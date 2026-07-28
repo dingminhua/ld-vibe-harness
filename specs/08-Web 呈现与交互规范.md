@@ -179,7 +179,7 @@ Web 检测到派生内容与当前来源不一致时，应优先呈现差异和�
 
 事实对象的对象自有语义字段只能按具体类型来源规定的来源身份呈现；Web 不得因 locator 含有 Human 输入、问题描述或形成背景，就把它重命名、推导或投影为对象不存在的 `intent`、正文、判断或其它事实字段。需要呈现来源内容时仍须保留其来源身份，并与对象当前正文分开。
 
-同一状态码在不同事实类型中出现时，Web 必须按该类型来源的语义和面向 Human 的状态词呈现，不得用通用词表抹平类型差异；例如 20 定义的 Spark `open` 必须显示为“待处理”，不得显示为“未关闭”；Pitfall 的 `draft`、`active`、`discarded`、`retired` 必须分别显示为“待确认”、“已确认”、“已废弃”、“已退出”。Web 只负责显示，不由此改变状态码、状态机或转换。
+同一状态码在不同事实类型中出现时，Web 必须按该类型来源的语义和面向 Human 的状态词呈现，不得用通用词表抹平类型差异；例如 20 定义的 Spark `open` 必须显示为“待处理”，不得显示为“未关闭”；Pitfall 的 `draft`、`active`、`discarded` 必须分别显示为“待确认”、“活跃”、“已废弃”。Web 只负责显示，不由此改变状态码、状态机或转换。
 
 具体事实类型已经定义面向 Human 的详情阅读投影时，Web 必须按该来源规定的区段顺序、字段身份和中文标题分别呈现实际存在的字段；这些标题只是阅读词，不是新事实字段、派生摘要或字段别名。Web 不得用全局字段词表、历史文案或实现方便替代类型来源的标题，不得将多个字段并入一段、补造缺失区段，或从标题、关系、Git 历史和其它材料推断字段内容。按 §5.3 字段级解析呈现时，上述区段顺序、字段身份和标题同样适用；类型来源定义为必填但来源缺失或类型不符的字段，按 §5.3 第 2 项在对应区段如实呈现为空并标明缺失，这不视为补造缺失区段；类型来源定义为条件或可选的字段不存在时，仍按类型投影如实省略，不生成空态。视觉样式与交互仍由 Web 实现负责，但不得改变该投影的语义分工。
 
@@ -300,7 +300,7 @@ Web 不得为这两项重新生成 AI 摘要，不得从 `scope`、work items、
 
 Web 不得为上述输入重新摘要，不得从 `result_summary`、`validation_summary`、复核记录、工作项或其它字段拼凑替代文本。`closure_proposal` 缺失、结构不符或其必要成员不可读时，关闭判断输入区必须明确显示相应信息缺失，不得按 phase、状态或对象内容推断关闭结论；Web 也不得为 `closure_proposal` 补写生成的占位提案。`closure_proposal` 只在 Controller 已形成完整关闭报告与分流建议后出现，其出现本身即表示关闭材料已提交 Human 判断，Card 不另行显示“材料已齐备”之类的完整性结论。
 
-**后续贡献**区：该区逐项列出当前 WorkCase 实际声明的 `contributed-to` Pitfall 目标，每项显示由目标当前对象 `title` 派生的完整名称与当前状态：`draft`“待确认”、`active`“已确认”、`discarded`“已废弃”、`retired`“已退出”，并提供到同源详情的导航。目标尚未读到、不可读或缺失时如实呈现读取状态，不以 object_id 冒充名称，不从文字、时间邻近或主题相似推断关联，也不把该区表达为剩余责任去向。当前对象没有任何 `contributed-to` 时该区整体省略，不生成空态文案。Card 只显示标题、状态与导航，不提供 promote、discard、批量审核或自动过期控件；draft 审核是与 WC 关闭独立的逐对象 Human 行动。
+**后续贡献**区：该区逐项列出当前 WorkCase 实际声明的 `contributed-to` Pitfall 目标，每项显示由目标当前对象 `title` 派生的完整名称与当前状态：`draft`“待确认”、`active`“活跃”、`discarded`“已废弃”，并提供到同源详情的导航。目标尚未读到、不可读或缺失时如实呈现读取状态，不以 object_id 冒充名称，不从文字、时间邻近或主题相似推断关联，也不把该区表达为剩余责任去向。当前对象没有任何 `contributed-to` 时该区整体省略，不生成空态文案。Card 只显示标题、状态与导航，不提供 promote、discard、批量审核或自动过期控件；draft 审核是与 WC 关闭独立的逐对象 Human 行动。
 
 `closure_confirmation` Card 不显示关闭完整性诊断，不从已退出的请求、审核、批准或时间字段推断缺失，也不把活动期过程字段当作 closed 必须保留的内容；除上述两区外，不展开成功标准结果、结果与验证、主控自检、独立结果复核或执行统计，这些内容仍从同源详情读取。即使实际 `status=blocked` 也不在 Card 额外展示阻塞。`human_closure_confirming` 本身足以确定“关闭待确认”分组；`status=closed` 且不具有 phase 本身足以确定“已关闭”分组，关闭决定由专属事务消费，不持久化 approval 或关闭时间收据。
 
@@ -374,7 +374,7 @@ Web API 或前端不得作为事实类型、字段、ID、初始状态和状态�
 | 来源与判断边界呈现 | 新增页面、字段、复制或导航时 | 事实、派生、诊断、Human 输入和未知范围可区分，关键内容能回到来源 | 页面、复制结果、导航目标和来源文件 | 页面、键盘和代表性辅助技术测试 | 当次页面及声明支持方式 | 修正呈现或缩小支持声明 |
 | Spark 状态、演变、终态处置与关联呈现 | 呈现 Spark 状态、演变、终态处置或“关联”区时 | `open` 按 20 显示为“待处理”，不套用“未关闭”；创建缘由仍影响理解时，首条演变直接说明其来源语境；`routed` 的分流区只显示 `updated_at` 的日期/时间与处置说明，以演变同层级的时间/正文卡片组织，不重复状态、“分流目标”或“分流时间”标签；`discarded` 必须显示为“废弃”而不是“分流”，并且只显示 `updated_at` 的日期/时间与废弃理由，不显示承接目标或分流标签；`routed-to` 只在关联区出现，并从当前目标 `title` 显示完整名称，绝不以 object_id 作名称回退；关联区只含正式关系及项目内可阅读文档，没有“来源”“证据”或重复扩展阅读投影 | 20、当前对象、页面 DOM 与来源投影 | component/API contract tests 与代表性浏览器页面对照 | 当次 Spark 页面与已检查来源类别 | 修正映射或投影；不得用通用状态词、来源原文原话、object_id 名称或代码路径补足页面内容 |
 | Spark 详情语义区段呈现 | 呈现 Spark 详情，或改动 `intent`、`summary`、`evolution` 的读取/组件时 | 实际存在的 `intent`、当前 `summary` 和 `evolution` 分别可识别；每项演变直接显示对象 `at` 与 `summary`，没有被隐藏、并入摘要或由 Git、更新时间、来源推导；字段缺失只按对象实际缺失呈现，不补造“无演变”判断 | 20、当前对象、页面 DOM 与来源字段 | component/API contract tests 与代表性浏览器页面对照 | 当次 Spark 页面、字段和已检查视口 | 修正投影或样式；不由 Web 重建、补写或省略对象已有演变 |
-| Pitfall 状态与 WorkCase 关闭 Card | 呈现 Pitfall，或呈现 closure-confirmation/closed WorkCase Card 时 | Pitfall 四状态使用待确认/已确认/已废弃/已退出；Card 显示 goal、outcome、disposition、route_existing/suggest_spark/accept_stop 三类处置和 contributed Pitfall 标题/状态；suggestions 完整且无未来 ID；没有 promote/discard 控件；related-to 只在详情呈现 | 21、23、当前对象、API payload 与页面 DOM | component/API contract tests 与代表性页面对照 | 当次四状态和两种 WorkCase Card | 修正状态词、字段映射或交互；不推断建议对象、不在 Card 执行 draft 审核 |
+| Pitfall 状态与 WorkCase 关闭 Card | 呈现 Pitfall，或呈现 closure-confirmation/closed WorkCase Card 时 | Pitfall 三状态使用待确认/活跃/已废弃；Card 显示 goal、outcome、disposition、route_existing/suggest_spark/accept_stop 三类处置和 contributed Pitfall 标题/状态；suggestions 完整且无未来 ID；没有 promote/discard 控件；related-to 只在详情呈现 | 21、23、当前对象、API payload 与页面 DOM | component/API contract tests 与代表性页面对照 | 当次三状态和两种 WorkCase Card | 修正状态词、字段映射或交互；不推断建议对象、不在 Card 执行 draft 审核 |
 | Markdown 结构忠实呈现 | 呈现包含 Markdown 结构的事实对象文本字段时 | 源文通过 Markdown 明确表达的段落、强调式分组标签、小标题、编号、列表及嵌套关系被原样解释并可扫描；无标记普通文本保持普通段落；Web 没有猜测、补写、重排或重写内容结构 | 当前事实对象 Markdown 源文、渲染 DOM、实际页面字号与间距 | component/API contract tests 与代表性浏览器页面对照 | 当次已检查字段、结构种类和视口 | 修正渲染或样式；在源文结构不足时交还内容形成责任，不由 Web 自动重写 |
 | 事实源元数据、载体与身份呈现 | 新增或修改事实详情、对象预览、复制或正文阅读入口时 | 正文/源路径/对象预览先取得精确读取；`canonical_path`、`carrier` 与 `check_status` 从读取结果到消费面保持可追溯；有 canonical path 时不会回退复制 object ID 或 route target；正文只在可消费读取时按声明 carrier 渲染；有效详情和预览均能识别类型、状态词和稳定 ID，无效读取只显示实际读取状态与范围 | 05 §§11.2–11.7 的读取/写入结果、类型来源、API payload、页面与预览 DOM | API/contract tests、组件测试和代表性浏览器页面对照，至少覆盖候选卡到精确读取、canonical path 存在/缺失、Markdown carrier 与非路径式对象 target、invalid/not_found/unavailable | 当次事实类型、读取投影、复制、正文入口和已检查视口 | 修正投影、传递或渲染；无法确定载体或来源路径时如实呈现不可用范围，不得回退为 ID 路径、推测状态或原始 Markdown 标记 |
 | 受控操作 | 新增或修改可能改变状态的交互时 | Human 当前指令已经授权，且适用于该行动的全部来源规则许可条件已经成立；实际 Code 能力可用；操作前信息完整；操作后回读并呈现失败和未完成范围 | 来源规则、Human 当前指令、Code 调用、目标前后内容和回读 | API/E2E tests 与实际目标回读 | 当次操作、对象和环境 | 维持只读、禁用操作或按实际结果呈现失败 |
@@ -415,7 +415,7 @@ Web API 或前端不得作为事实类型、字段、ID、初始状态和状态�
 12. `routed` Spark 在分流区重复状态或“分流时间”标签，或不使用 `updated_at` 而以另一时间字段、与演变不一致的属性表替代终态日期/时间与处置说明。
 13. `discarded` Spark 被呈现为“分流”，显示分流目标、分流时间或虚构承接内容，或者复用 routed 的分流文案来解释废弃理由。
 14. 页面正在静默丢弃来源中实际存在的字段或嵌套结构，把字段级缺失或类型不符升级为整个对象的读取失败，或者在文件本身可解析时伪造读取失败或内容。
-15. Pitfall draft/active/discarded 使用了非“待确认/已确认/已废弃”的通用状态词，或 WorkCase 关闭 Card 漏掉三类处置、Spark suggestions、contributed Pitfall 标题/状态，显示未来对象 ID，增加 Pitfall promote/discard 控件，或将 `related-to` 放入 Card 正文。
+15. Pitfall draft/active/discarded 使用了非“待确认/活跃/已废弃”的通用状态词，或 WorkCase 关闭 Card 漏掉三类处置、Spark suggestions、contributed Pitfall 标题/状态，显示未来对象 ID，增加 Pitfall promote/discard 控件，或将 `related-to` 放入 Card 正文。
 
 暂停范围及不受影响工作的处理按 00 §11 执行。
 

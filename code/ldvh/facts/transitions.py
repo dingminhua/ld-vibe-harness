@@ -27,7 +27,7 @@ WorkCaseOperation = Literal["update", "close", "correct"]
 _STATUS_EDGES = {
     "spark": {("open", "routed"), ("open", "implemented"), ("open", "discarded")},
     "adr": {("active", "retired")},
-    "pitfall": {("draft", "active"), ("draft", "discarded"), ("active", "retired")},
+    "pitfall": {("draft", "active"), ("draft", "discarded"), ("active", "discarded")},
     "study": {("active", "retired")},
 }
 
@@ -1169,6 +1169,22 @@ def validate_fact_transition(
 
     before_status = before.get("status")
     after_status = after.get("status")
+    if fact_type_key == "pitfall" and repairing_invalid_before and before_status == "retired":
+        if after_status != "discarded":
+            issues.append(
+                _issue(
+                    "legacy retired Pitfall 只能修复为 discarded",
+                    "status",
+                )
+            )
+        legacy_changed = _changed_fields(before, after) - {"updated_at", "status"}
+        if legacy_changed:
+            issues.append(
+                _issue(
+                    "legacy retired Pitfall 修复必须保留正文、关系与处置不变",
+                    sorted(legacy_changed)[0],
+                )
+            )
     if (
         not repairing_invalid_before
         and before_status != after_status
@@ -1178,7 +1194,7 @@ def validate_fact_transition(
     if fact_type_key == "pitfall" and before_status != after_status:
         changed = _changed_fields(before, after) - {"updated_at"}
         allowed = {"status"}
-        if (before_status, after_status) in {("draft", "discarded"), ("active", "retired")}:
+        if (before_status, after_status) in {("draft", "discarded"), ("active", "discarded")}:
             allowed.add("disposition_summary")
         if changed - allowed:
             issues.append(_issue("Pitfall 生命周期转换不得夹带正文或引用更正", sorted(changed - allowed)[0]))

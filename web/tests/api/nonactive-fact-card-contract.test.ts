@@ -20,7 +20,7 @@ test('non-active Spark, ADR, Pitfall, and Study cards share the terminal card gr
   assert.match(source, /function StudyTerminalCardContent/);
   assert.doesNotMatch(source, /<TerminalFactPanel[^>]*title=/);
   assert.match(source, /showStatusBadge={obj\.status !== 'retired'}/);
-  assert.match(source, /showStatusBadge={obj\.status !== 'retired' && obj\.status !== 'discarded'}/);
+  assert.match(source, /showStatusBadge={obj\.status !== 'discarded'}/);
   assert.match(source, /showStatusBadge={!hasSparkDiscardFact\(obj\) && !hasSparkImplementedFact\(obj\) && !hasSparkResolvedFact\(obj\)}/);
   assert.match(source, /currentType === 'study'[\s\S]*showNonActiveReason={false}[\s\S]*StudyCardContent/);
 });

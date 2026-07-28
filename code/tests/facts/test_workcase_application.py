@@ -1959,7 +1959,7 @@ def _write_pitfall(project: _Project, object_id: str, *, status: str = "draft") 
         "applicability": "只适用于当前项目边界。",
         "validation_summary": "已按实际现场完成验证。",
     }
-    if status in {"discarded", "retired"}:
+    if status == "discarded":
         fields["disposition_summary"] = "Human 已作出当前生命周期处置。"
     path = project.boundary.worktree_root / LAYOUTS["pitfall"].canonical_path(object_id)
     path.parent.mkdir(parents=True, exist_ok=True)

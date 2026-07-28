@@ -190,6 +190,36 @@ def test_all_fact_types_validate_the_shared_url_member_contract(current_specs_re
     assert any(issue.field_path == "urls[0].summary" for issue in issues)
 
 
+def test_spark_evolution_accepts_twenty_entries_and_rejects_twenty_one(
+    current_specs_repository: Path,
+) -> None:
+    schema = _schemas(current_specs_repository)["spark"]
+    fields = {
+        **_common("spark", "spark-0001", "open"),
+        "summary": "A current bounded question.",
+        "priority": "P2",
+        "evolution": [
+            {
+                "at": "2026-07-14T09:30:00+08:00",
+                "summary": f"Key semantic transition {index + 1}.",
+            }
+            for index in range(20)
+        ],
+    }
+
+    assert validate_fact_object("spark", fields, schema) == ()
+
+    fields["evolution"].append(
+        {
+            "at": "2026-07-14T09:30:00+08:00",
+            "summary": "Key semantic transition 21.",
+        }
+    )
+    issues = validate_fact_object("spark", fields, schema)
+
+    assert any(issue.field_path == "evolution" and "最多保留 20 项" in issue.summary for issue in issues)
+
+
 def test_unregistered_reference_fields_are_rejected(current_specs_repository: Path) -> None:
     schema = _schemas(current_specs_repository)["spark"]
     fields = {
@@ -225,6 +255,25 @@ def test_pitfall_uses_natural_language_boundaries_without_reference_fields(curre
     issues = validate_fact_object("pitfall", fields, schema)
 
     assert {issue.field_path for issue in issues} >= {"source_ref", "evidence_ref"}
+
+
+def test_pitfall_status_contract_has_only_draft_active_and_discarded(current_specs_repository: Path) -> None:
+    schema = _schemas(current_specs_repository)["pitfall"]
+    fields = {
+        **_common("pitfall", "pitfall-0001", "retired"),
+        "applicability": "Only the observed environment.",
+        "validation_summary": "The bounded handling was verified.",
+        "symptoms": "The declared operation did not run.",
+        "trigger_conditions": "The required runtime input was absent.",
+        "root_cause": "The runtime could not locate its required input.",
+        "resolution": "Restore the required input and rerun the operation.",
+        "avoidance": "Check the required input before relying on the operation.",
+        "disposition_summary": "The experience no longer applies.",
+    }
+
+    issues = validate_fact_object("pitfall", fields, schema)
+
+    assert any(issue.field_path == "status" and "discarded" in issue.summary for issue in issues)
 
 
 def test_adr_uses_natural_language_boundaries_without_reference_fields(current_specs_repository: Path) -> None:

@@ -230,8 +230,8 @@ def _validate_times(fact_type_key: str, fields: dict[str, Any], issues: list[Fac
         issues.append(FactIssue("schema", "created_at 不得晚于 updated_at", "created_at"))
     if fact_type_key == "spark" and isinstance(fields.get("evolution"), list):
         evolution = fields["evolution"]
-        if len(evolution) > 8:
-            issues.append(FactIssue("schema", "evolution 最多保留 8 项", "evolution"))
+        if len(evolution) > 20:
+            issues.append(FactIssue("schema", "evolution 最多保留 20 项", "evolution"))
         for index, entry in enumerate(evolution):
             if not isinstance(entry, dict) or "at" not in entry:
                 continue

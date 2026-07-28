@@ -309,7 +309,7 @@ def test_f1_returns_complete_active_adr_and_open_workcase_baseline_with_paginati
     assert first["result"]["coverage"]["status"] == "complete"
     assert first["result"]["coverage"]["total_matching"] == 2
     assert first["result"]["coverage"]["returned"] == 1
-    assert len(first["result"]["recovery_manifest"]["counts"]) == 15
+    assert len(first["result"]["recovery_manifest"]["counts"]) == 14
     assert first["result"]["recovery_manifest"]["current_workcase_ref"] == current_workcase_ref
     assert first["result"]["recovery_manifest"]["selected_fact_refs"] == selected_fact_refs
     assert first["result"]["cards"][0]["fact_ref"]["fact_type_key"] == "adr"
@@ -693,13 +693,14 @@ def test_cursor_is_rejected_after_any_canonical_fact_object_changes(tmp_path: Pa
     assert stale["result"] is None
 
 
-def test_exact_ref_can_recall_terminal_object_without_bypassing_explicit_status_filter(tmp_path: Path) -> None:
+def test_exact_ref_can_recall_discarded_object_without_bypassing_explicit_status_filter(tmp_path: Path) -> None:
     workspace, project = _fixture(tmp_path)
     object_id = _create(workspace, project, "pitfall", _pitfall())
     path = project / "ldvh-base" / "pitfalls" / f"{object_id}.yaml"
     text = path.read_text(encoding="utf-8")
     path.write_text(
-        text.replace("status: active", "status: retired") + "disposition_summary: Experience no longer applies.\n",
+        text.replace("status: active", "status: discarded")
+        + "disposition_summary: Experience no longer applies.\n",
         encoding="utf-8",
     )
     exact_ref = {
@@ -728,7 +729,7 @@ def test_exact_ref_can_recall_terminal_object_without_bypassing_explicit_status_
 
     assert exact["outcome"] == "ok"
     assert exact["result"]["coverage"]["total_matching"] == 1
-    assert exact["result"]["cards"][0]["fields"]["status"] == "retired"
+    assert exact["result"]["cards"][0]["fields"]["status"] == "discarded"
     assert filtered["result"]["coverage"]["total_matching"] == 0
 
 
@@ -1516,7 +1517,7 @@ def test_f2_relation_source_keeps_terminal_direct_target_without_default_status_
     pitfall_path = project / "ldvh-base" / "pitfalls" / f"{pitfall_id}.yaml"
     pitfall_text = pitfall_path.read_text(encoding="utf-8")
     pitfall_path.write_text(
-        pitfall_text.replace("status: active", "status: retired")
+        pitfall_text.replace("status: active", "status: discarded")
         + "disposition_summary: This experience is now historical.\n",
         encoding="utf-8",
     )
@@ -1535,7 +1536,7 @@ def test_f2_relation_source_keeps_terminal_direct_target_without_default_status_
 
     assert response["outcome"] == "ok"
     assert response["result"]["coverage"]["status"] == "complete"
-    assert response["result"]["cards"][0]["fields"]["status"] == "retired"
+    assert response["result"]["cards"][0]["fields"]["status"] == "discarded"
     assert response["result"]["cards"][0]["match_reasons"] == [
         {"kind": "relation-source", "field_path": "relations[0].target"}
     ]

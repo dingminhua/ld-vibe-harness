@@ -113,7 +113,7 @@ export const FACT_LIST_FIELD_NAMES: Record<Exclude<FactType, 'workcase'>, readon
 export const FACT_TERMINAL_STATUSES: Record<FactType, readonly string[]> = {
   workcase: ['closed'],
   adr: ['retired'],
-  pitfall: ['discarded', 'retired'],
+  pitfall: ['discarded'],
   spark: ['routed', 'implemented', 'discarded'],
   study: ['retired'],
 }

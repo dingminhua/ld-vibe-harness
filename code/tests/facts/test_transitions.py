@@ -1201,3 +1201,37 @@ def test_pitfall_promote_is_status_only_and_discard_preserves_body_with_disposit
         "disposition_summary": "Human 不接受该最终快照。",
     }
     assert validate_fact_transition("pitfall", before, discarded) == ()
+
+    active_discarded = {
+        **promoted,
+        "status": "discarded",
+        "updated_at": "2026-07-26T10:02:00+08:00",
+        "disposition_summary": "该经验的适用条件已消失。",
+    }
+    assert validate_fact_transition("pitfall", promoted, active_discarded) == ()
+
+
+def test_legacy_retired_pitfall_invalid_before_repair_is_exact_and_discarded_only() -> None:
+    before = {
+        "status": "retired",
+        "updated_at": "2026-07-26T10:00:00+08:00",
+        "title": "历史完整现场",
+        "symptoms": "实际症状",
+        "relations": [{"relation_key": "related-to", "target": {"object_id": "spark-0001"}}],
+        "disposition_summary": "适用条件已消失。",
+    }
+    repaired = {
+        **before,
+        "status": "discarded",
+        "updated_at": "2026-07-26T10:01:00+08:00",
+    }
+
+    assert validate_fact_transition("pitfall", before, repaired, repairing_invalid_before=True) == ()
+
+    wrong_target = {**repaired, "status": "active"}
+    issues = validate_fact_transition("pitfall", before, wrong_target, repairing_invalid_before=True)
+    assert any(issue.field_path == "status" and "只能修复为 discarded" in issue.summary for issue in issues)
+
+    rewritten = {**repaired, "symptoms": "迁移中改写的症状"}
+    issues = validate_fact_transition("pitfall", before, rewritten, repairing_invalid_before=True)
+    assert any(issue.field_path == "symptoms" and "必须保留" in issue.summary for issue in issues)

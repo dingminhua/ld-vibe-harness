@@ -77,7 +77,7 @@ LAYOUTS = {
         "pitfall",
         "pitfalls",
         initial_statuses=("draft",),
-        statuses=("draft", "active", "discarded", "retired"),
+        statuses=("draft", "active", "discarded"),
         relation_keys=(),
     ),
     "study": _layout(
