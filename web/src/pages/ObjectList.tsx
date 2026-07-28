@@ -1,6 +1,6 @@
 import { useEffect, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { ArrowRight, CircleAlert, PauseCircle } from 'lucide-react';
+import { ArrowRight, Circle, CircleAlert, CircleCheck, CircleMinus, CirclePlay, PauseCircle } from 'lucide-react';
 import StatusBadge from '@/components/StatusBadge';
 import ObjectStatusFilter from '@/components/ObjectStatusFilter';
 import WorkCaseProgressFilter from '@/components/WorkCaseProgressFilter';
@@ -10,7 +10,7 @@ import ObjectSignalBadges from '@/components/ObjectSignalBadges';
 import PriorityIcon from '@/components/PriorityIcon';
 import SummaryText from '@/components/SummaryText';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
-import { fetchObjectDetail, fetchObjects, type FactCoverageStatus, type FactListProblem, type ObjectDetail, type ObjectItem, type ObjectStatusOption, type WorkCaseActiveItem, type WorkCaseContributionTarget, type WorkCaseProgressOption } from '@/utils/api';
+import { fetchObjectDetail, fetchObjects, type FactCoverageStatus, type FactListProblem, type ObjectDetail, type ObjectItem, type ObjectStatusOption, type WorkCaseClosureProposalCard, type WorkCaseClosureTerminalCard, type WorkCaseContributionTarget, type WorkCaseExecutionItem, type WorkCaseProgressOption, type WorkCaseSparkSuggestionCard } from '@/utils/api';
 import { formatDateTime } from '@/utils/dateFormat';
 import { useI18n } from '@/i18n/context';
 import { getFieldValueLabel, getLocalizedObjectTitle, getObjectStatusLocale, getTypeLabel } from '@/i18n/locales';
@@ -210,23 +210,25 @@ function WorkCaseBlockingNotice({
     <div
       role="status"
       aria-label={t('objectList.workcaseBlockingReason')}
-      className="flex min-w-0 items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-2.5 py-2 text-amber-400"
+      className="min-w-0 rounded-md border border-amber-400/25 border-l-2 border-l-amber-400 bg-amber-500/5 px-2.5 py-2"
     >
-      <CircleAlert size={14} className="mt-[3px] shrink-0" aria-hidden="true" />
-      <div className="min-w-0">
-        <div className="ldvh-caption-strong">{t('objectList.workcaseBlockingReason')}</div>
-        {blockingSummary?.trim() ? (
-          <div className="mt-0.5 break-words">
-            <SummaryText
-              value={blockingSummary}
-              collapseThreshold={Number.MAX_SAFE_INTEGER}
-              className="text-[13px] leading-5 text-amber-700 dark:text-amber-300"
-            />
-          </div>
-        ) : (
-          <p className="ldvh-card-decision-body mt-0.5 text-red-400">{t('objectList.workcaseFieldMissing')}</p>
-        )}
+      <div className="flex min-w-0 items-center gap-2">
+        <CircleAlert size={14} className="shrink-0 text-amber-500 dark:text-amber-400" aria-hidden="true" />
+        <div className="ldvh-meta-primary min-w-0 text-amber-700/70 dark:text-amber-300/70">
+          {t('objectList.workcaseBlockingReason')}
+        </div>
       </div>
+      {blockingSummary?.trim() ? (
+        <div className="mt-0.5 break-words">
+          <SummaryText
+            value={blockingSummary}
+            collapseThreshold={Number.MAX_SAFE_INTEGER}
+            className="[&_p]:my-0 text-[13px] leading-5 text-amber-800 dark:text-amber-200"
+          />
+        </div>
+      ) : (
+        <p className="ldvh-card-decision-body mt-0.5 text-red-400">{t('objectList.workcaseFieldMissing')}</p>
+      )}
     </div>
   );
 }
@@ -236,10 +238,7 @@ function WorkCaseProgressingContent({
   phase,
   progressStep,
   executionItemsProjectionValid,
-  executionItemTotal,
-  executionItemDone,
-  executionItemOpen,
-  executionItemsActive,
+  executionItems,
   isBlocked,
   waitingOn,
   blockingSummary,
@@ -249,10 +248,7 @@ function WorkCaseProgressingContent({
   phase?: string;
   progressStep: WorkCaseProgressStep | null;
   executionItemsProjectionValid: boolean;
-  executionItemTotal: number;
-  executionItemDone: number;
-  executionItemOpen: number;
-  executionItemsActive: WorkCaseActiveItem[];
+  executionItems: WorkCaseExecutionItem[];
   isBlocked: boolean;
   waitingOn?: string;
   blockingSummary?: string;
@@ -273,19 +269,22 @@ function WorkCaseProgressingContent({
       ? stepLabels[currentStep]
       : t('objectList.workcaseStageUnavailable');
   const itemExecution = progressStep === 'item_execution';
-  const currentExecutionItem = itemExecution && executionItemsActive.length === 1
-    ? executionItemsActive[0]
-    : undefined;
-  const currentExecutionPosition = currentExecutionItem
-    && executionItemsProjectionValid
-    && executionItemTotal > 0
-    ? `${Math.min(executionItemDone + 1, executionItemTotal)}/${executionItemTotal}`
-    : undefined;
+  const executionItemsActive = executionItems.filter((item) => item.status === 'in_progress' || item.status === 'blocked');
+  const executionItemOpen = executionItems.filter((item) => ['pending', 'in_progress', 'blocked'].includes(item.status)).length;
+  const displayedExecutionItems = itemExecution
+    ? executionItems
+      .map((item, index) => ({ item, index }))
+      .sort((a, b) => {
+        const rank = { completed: 0, in_progress: 1, blocked: 2, pending: 3, cancelled: 4 };
+        return rank[a.item.status] - rank[b.item.status] || a.index - b.index;
+      })
+      .map(({ item }) => item)
+    : executionItemsActive;
   const itemStageMismatch = executionItemsProjectionValid && currentStep >= 0 && (
     (itemExecution && executionItemsActive.length === 0 && executionItemOpen === 0)
     || (!itemExecution && executionItemOpen > 0)
   );
-  const showActiveItems = planRevising
+  const showWorkItems = planRevising
     || !executionItemsProjectionValid
     || itemExecution
     || executionItemsActive.length > 0
@@ -296,18 +295,6 @@ function WorkCaseProgressingContent({
       <WorkCaseGoalSection goal={goal} t={t} />
       <section className="min-w-0 rounded-md border border-ldvh-border/80 border-l-2 border-l-sky-400/55 bg-ldvh-bg/65 px-3.5 py-3">
         <h3 className="ldvh-card-title">{t('objectList.workcaseCurrentProgress')}</h3>
-
-        {currentExecutionItem && (
-          <div role="status" className="mt-2 flex min-w-0 items-center gap-2 text-sky-500 dark:text-sky-400">
-            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-current" aria-hidden="true" />
-            <span className="min-w-0 flex-1 break-words text-[13px] font-medium leading-5">
-              {currentExecutionItem.title}
-            </span>
-            {currentExecutionPosition && (
-              <span className="ldvh-meta-primary shrink-0 text-current">{currentExecutionPosition}</span>
-            )}
-          </div>
-        )}
 
         {planRevising && (
           <div className="ldvh-caption mt-2 flex min-w-0 items-center gap-2 text-sky-500 dark:text-sky-400">
@@ -334,14 +321,14 @@ function WorkCaseProgressingContent({
                   className="relative flex min-w-0 flex-col items-center px-1 text-center"
                 >
                   {index > 0 && (
-                    <span className="absolute left-0 right-1/2 top-2.5 h-px bg-ldvh-border" aria-hidden="true" />
+                    <span className="absolute left-0 right-1/2 top-2.5 z-0 h-px bg-ldvh-border" aria-hidden="true" />
                   )}
                   {index < WORKCASE_PROGRESS_STEP_ORDER.length - 1 && (
-                    <span className="absolute left-1/2 right-0 top-2.5 h-px bg-ldvh-border" aria-hidden="true" />
+                    <span className="absolute left-1/2 right-0 top-2.5 z-0 h-px bg-ldvh-border" aria-hidden="true" />
                   )}
                   <span className={`ldvh-meta relative z-10 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border bg-ldvh-bg ${
                     isCurrent
-                      ? 'border-sky-400/60 bg-sky-500/15 font-semibold text-sky-400 ring-2 ring-sky-500/10'
+                      ? 'border-sky-400/60 bg-sky-100 font-semibold text-sky-600 ring-2 ring-sky-500/10 dark:bg-sky-950 dark:text-sky-300'
                       : 'border-ldvh-border text-ldvh-text-secondary'
                   }`}>
                     {index + 1}
@@ -359,9 +346,11 @@ function WorkCaseProgressingContent({
           </ol>
         )}
 
-        {showActiveItems && (
+        {showWorkItems && (
           <div className="mt-2.5 border-t border-ldvh-border/70 pt-2.5">
-            <div className="ldvh-caption-strong text-ldvh-text-secondary">{t('objectList.workcaseCurrentItems')}</div>
+            <div className="ldvh-caption-strong text-ldvh-text-secondary">
+              {itemExecution ? t('objectList.workcaseItems') : t('objectList.workcaseCurrentItems')}
+            </div>
             {!executionItemsProjectionValid ? (
               <p className="ldvh-card-decision-body mt-1.5 text-red-400">
                 {t('objectList.workcaseItemsUnavailable')}
@@ -373,29 +362,70 @@ function WorkCaseProgressingContent({
                     {t('objectList.workcaseItemStageMismatch')}
                   </p>
                 )}
-                {executionItemsActive.length > 0 ? (
+                {displayedExecutionItems.length > 0 ? (
                   <ul className="mt-1.5 grid min-w-0 gap-2">
-                    {executionItemsActive.map((item) => {
+                    {displayedExecutionItems.map((item) => {
                       const blocked = item.status === 'blocked';
+                      const completed = item.status === 'completed';
+                      const inProgress = item.status === 'in_progress';
+                      const cancelled = item.status === 'cancelled';
+                      const itemTextTone = inProgress
+                        ? 'text-sky-700 dark:text-sky-200'
+                        : completed
+                          ? 'text-emerald-700 dark:text-emerald-200'
+                          : blocked
+                            ? 'text-amber-800 dark:text-amber-200'
+                            : cancelled
+                              ? 'text-slate-400 dark:text-slate-500 line-through'
+                              : 'text-slate-600 dark:text-slate-300';
+                      const itemIdTone = inProgress
+                        ? 'text-sky-600/70 dark:text-sky-300/70'
+                        : completed
+                          ? 'text-emerald-600/70 dark:text-emerald-300/70'
+                          : blocked
+                            ? 'text-amber-700/70 dark:text-amber-300/70'
+                            : cancelled
+                              ? 'text-slate-400/70 dark:text-slate-500/70 line-through'
+                              : 'text-slate-500/75 dark:text-slate-400/75';
                       return (
-                        <li key={item.id} className="flex min-w-0 items-start gap-2">
-                          <span
-                            aria-hidden="true"
-                            className={`mt-2 h-1.5 w-1.5 shrink-0 rounded-full ${blocked ? 'bg-amber-400/80' : 'bg-sky-400/75'}`}
-                          />
-                          <div className="min-w-0">
-                            <div className={`ldvh-meta-muted break-all ${blocked ? 'text-amber-400' : ''}`}>
+                        <li
+                          key={item.id}
+                          className={`min-w-0 border-l-2 ${
+                            inProgress
+                              ? 'rounded-md border border-sky-400/35 border-l-sky-400 bg-sky-500/10 px-2.5 py-2'
+                              : blocked
+                                ? 'rounded-md border border-amber-400/25 border-l-amber-400 bg-amber-500/5 px-2.5 py-2'
+                                : completed
+                                  ? 'rounded-md border border-emerald-400/25 border-l-emerald-400 bg-emerald-500/5 px-2.5 py-2'
+                                  : cancelled
+                                    ? 'rounded-md border border-ldvh-border/70 border-l-ldvh-text-secondary/30 bg-ldvh-bg/60 px-2.5 py-2'
+                                    : 'rounded-md border border-ldvh-border/70 border-l-ldvh-text-secondary/35 bg-ldvh-bg/60 px-2.5 py-2'
+                          }`}
+                        >
+                          <div className="flex min-w-0 items-center gap-2">
+                            <span className="flex h-4 w-4 shrink-0 items-center justify-center" aria-hidden="true">
+                              {completed ? (
+                                <CircleCheck size={14} className="text-emerald-500/85 dark:text-emerald-400" />
+                              ) : inProgress ? (
+                                <CirclePlay size={14} className="text-sky-500 dark:text-sky-400" />
+                              ) : blocked ? (
+                                <CircleAlert size={14} className="text-amber-500 dark:text-amber-400" />
+                              ) : cancelled ? (
+                                <CircleMinus size={14} className="text-ldvh-text-secondary/45" />
+                              ) : (
+                                <Circle size={14} className="text-ldvh-text-secondary/55" />
+                              )}
+                            </span>
+                            <div className={`ldvh-meta-primary min-w-0 break-all ${itemIdTone}`}>
                               {item.id}
-                              <span className="px-1 text-ldvh-text-secondary/60" aria-hidden="true">·</span>
-                              {blocked
-                                ? t('objectList.workcaseItemBlocked')
-                                : t('objectList.workcaseItemInProgress')}
                             </div>
-                            <div className="mt-0.5 min-w-0 break-words">
+                          </div>
+                          <div className="mt-0.5">
+                            <div className="min-w-0 break-words">
                               <SummaryText
                                 value={item.title}
                                 collapseThreshold={Number.MAX_SAFE_INTEGER}
-                                className="text-[13px] leading-5 text-ldvh-text-secondary"
+                                className={`[&_p]:my-0 text-[13px] leading-5 ${itemTextTone}`}
                               />
                             </div>
                             {blocked && (
@@ -404,7 +434,7 @@ function WorkCaseProgressingContent({
                                   <SummaryText
                                     value={item.blockingReason}
                                     collapseThreshold={Number.MAX_SAFE_INTEGER}
-                                    className="text-[13px] leading-5 text-amber-700 dark:text-amber-300"
+                                    className="[&_p]:my-0 text-[13px] leading-5 text-amber-700 dark:text-amber-300"
                                   />
                                 </div>
                               ) : (
@@ -429,17 +459,19 @@ function WorkCaseProgressingContent({
         )}
 
         {waitingOn?.trim() && (
-          <div className="mt-2.5 flex min-w-0 items-start gap-2 rounded-md border border-ldvh-border/80 bg-ldvh-panel/45 px-2.5 py-2 text-ldvh-text-secondary">
-            <PauseCircle size={14} className="mt-[3px] shrink-0" aria-hidden="true" />
-            <div className="min-w-0">
-              <div className="ldvh-caption-strong">{t('objectList.workcaseWaitingOn')}</div>
-              <div className="mt-0.5 break-words">
-                <SummaryText
-                  value={waitingOn}
-                  collapseThreshold={Number.MAX_SAFE_INTEGER}
-                  className="text-[13px] leading-5 text-ldvh-text-secondary"
-                />
+          <div className="mt-2.5 min-w-0 rounded-md border border-ldvh-border/70 border-l-2 border-l-ldvh-text-secondary/35 bg-ldvh-bg/60 px-2.5 py-2">
+            <div className="flex min-w-0 items-center gap-2">
+              <PauseCircle size={14} className="shrink-0 text-slate-500 dark:text-slate-400" aria-hidden="true" />
+              <div className="ldvh-meta-primary min-w-0 text-slate-500/75 dark:text-slate-400/75">
+                {t('objectList.workcaseWaitingOn')}
               </div>
+            </div>
+            <div className="mt-0.5 break-words">
+              <SummaryText
+                value={waitingOn}
+                collapseThreshold={Number.MAX_SAFE_INTEGER}
+                className="[&_p]:my-0 text-[13px] leading-5 text-slate-600 dark:text-slate-300"
+              />
             </div>
           </div>
         )}
@@ -450,6 +482,152 @@ function WorkCaseProgressingContent({
           </div>
         )}
       </section>
+    </div>
+  );
+}
+
+/** Weak signal colors for the proposed closure outcome; red is reserved for the failed outcome only. */
+const PROPOSED_OUTCOME_CHIP_CLASS: Record<string, string> = {
+  completed: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300',
+  partial: 'border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-300',
+  'not-achieved': 'border-red-500/30 bg-red-500/10 text-red-500 dark:text-red-300',
+  cancelled: 'border-zinc-500/30 bg-zinc-500/10 text-zinc-500 dark:text-zinc-300',
+};
+
+/** Left-bar + heading accent color per outcome (used for the section's colored edge). */
+const PROPOSED_OUTCOME_ACCENT: Record<string, string> = {
+  completed: 'border-l-emerald-500/70',
+  partial: 'border-l-amber-500/70',
+  'not-achieved': 'border-l-red-500/70',
+  cancelled: 'border-l-zinc-500/70',
+};
+
+/** Plain text color for residual disposition labels (no chip frame). */
+const PROPOSED_DISPOSITION_TEXT_CLASS: Record<string, string> = {
+  route_existing: 'text-emerald-600 dark:text-emerald-300',
+  suggest_spark: 'text-amber-600 dark:text-amber-300',
+  accept_stop: 'text-zinc-500 dark:text-zinc-300',
+};
+
+function WorkCaseSparkSuggestions({ suggestions }: { suggestions: WorkCaseSparkSuggestionCard[] }) {
+  const { t, locale } = useI18n();
+  if (suggestions.length === 0) return null;
+  return (
+    <div className="mt-3 border-t border-ldvh-border/45 pt-2.5">
+      <h4 className={`ldvh-caption-strong ${PROPOSED_DISPOSITION_TEXT_CLASS.suggest_spark}`}>
+        {getFieldValueLabel('proposed_disposition', 'suggest_spark', locale)}
+      </h4>
+      <p className="ldvh-caption mt-0.5">{t('objectList.workcaseSparkSuggestions')}</p>
+      <ul className="mt-1.5 grid min-w-0 gap-2">
+        {suggestions.map((suggestion) => (
+          <li key={suggestion.suggestionId} className="grid gap-0.5 rounded border border-ldvh-border/45 px-2.5 py-2">
+            <span className="ldvh-caption-strong">{suggestion.summary}</span>
+            {suggestion.restrictionReason && <span className="ldvh-caption">{t('objectList.workcaseRestrictionReason')}: {suggestion.restrictionReason}</span>}
+            {suggestion.impactSummary && <span className="ldvh-caption">{t('objectList.workcaseImpactSummary')}: {suggestion.impactSummary}</span>}
+            {suggestion.resumeCondition && <span className="ldvh-caption">{t('objectList.workcaseResumeCondition')}: {suggestion.resumeCondition}</span>}
+            <span className="ldvh-caption">{t('objectList.workcaseFollowUpSummary')}: {suggestion.followUpSummary}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function WorkCaseClosureConfirmationContent({
+  goal,
+  closureProposal,
+}: {
+  goal?: string;
+  closureProposal?: WorkCaseClosureProposalCard;
+}) {
+  const { t, locale } = useI18n();
+  const outcome = closureProposal?.proposedOutcome;
+  const accentClass = outcome
+    ? (PROPOSED_OUTCOME_ACCENT[outcome] ?? 'border-l-violet-400/55')
+    : 'border-l-red-500/70'; // missing-proposal state: red edge to signal the gap
+  return (
+    <div className="grid min-w-0 gap-2">
+      <WorkCaseGoalSection goal={goal} t={t} />
+      <section className={`min-w-0 rounded-md border border-ldvh-border/80 border-l-2 ${accentClass} bg-ldvh-bg/65 px-3.5 py-3`}>
+        {closureProposal ? (
+          <>
+            {/* Outcome: same size/weight as the "目标" label, wrapped in a colored frame */}
+            <div className="flex min-w-0 items-baseline">
+              <span
+                className={`ldvh-card-title inline-flex items-center rounded border px-1.5 py-0.5 ${PROPOSED_OUTCOME_CHIP_CLASS[closureProposal.proposedOutcome] ?? 'border-ldvh-border/70 text-ldvh-text-primary'}`}
+              >
+                {getFieldValueLabel('proposed_outcome', closureProposal.proposedOutcome, locale)}
+              </span>
+            </div>
+            {/* Disposition summary: matches the goal section's body (13px/secondary) */}
+            <div className="ldvh-caption mt-1.5 max-w-[82ch] break-words">
+              <SummaryText
+                value={closureProposal.dispositionSummary}
+                collapseThreshold={Number.MAX_SAFE_INTEGER}
+                className="text-[13px] leading-5 text-ldvh-text-secondary"
+              />
+            </div>
+            {closureProposal.residualDecisions.length > 0 && (
+              <div className="mt-3 border-t border-ldvh-border/45 pt-2.5">
+                <ul className="grid min-w-0 gap-1.5">
+                  {closureProposal.residualDecisions.map((decision) => (
+                    <li key={decision.residualId} className="grid min-w-0 gap-0.5 py-0.5">
+                      <span
+                        className={`ldvh-caption-strong ${PROPOSED_DISPOSITION_TEXT_CLASS[decision.proposedDisposition] ?? 'text-ldvh-text-secondary'}`}
+                      >
+                        {getFieldValueLabel('proposed_disposition', decision.proposedDisposition, locale)}
+                      </span>
+                      <span className="min-w-0 break-words">
+                        <SummaryText
+                          value={decision.summary}
+                          collapseThreshold={Number.MAX_SAFE_INTEGER}
+                          className="text-[13px] leading-5 text-ldvh-text-secondary"
+                        />
+                      </span>
+                      {decision.routeTarget && <WorkCaseContributionTargetRow target={decision.routeTarget} locale={locale} showStatus={false} />}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            <WorkCaseSparkSuggestions suggestions={closureProposal.sparkSuggestions} />
+          </>
+        ) : (
+          <p role="status" className="ldvh-card-decision-body text-red-400">{t('objectList.workcaseClosureProposalMissing')}</p>
+        )}
+      </section>
+    </div>
+  );
+}
+
+function WorkCaseClosedContent({ goal, terminal }: { goal?: string; terminal?: WorkCaseClosureTerminalCard }) {
+  const { t, locale } = useI18n();
+  return (
+    <div className="grid min-w-0 gap-2">
+      <WorkCaseGoalSection goal={goal} t={t} />
+      {terminal ? (
+        <section className={`min-w-0 rounded-md border border-ldvh-border/80 border-l-2 ${PROPOSED_OUTCOME_ACCENT[terminal.outcome] ?? 'border-l-zinc-500/70'} bg-ldvh-bg/65 px-3.5 py-3`}>
+          <span className={`ldvh-card-title inline-flex rounded border px-1.5 py-0.5 ${PROPOSED_OUTCOME_CHIP_CLASS[terminal.outcome] ?? ''}`}>
+            {getFieldValueLabel('proposed_outcome', terminal.outcome, locale)}
+          </span>
+          <SummaryText value={terminal.dispositionSummary} collapseThreshold={Number.MAX_SAFE_INTEGER} className="mt-1.5 text-[13px] leading-5 text-ldvh-text-secondary" />
+          {terminal.routedTo.length > 0 && (
+            <div className="mt-3 border-t border-ldvh-border/45 pt-2.5">
+              <span className={`ldvh-caption-strong ${PROPOSED_DISPOSITION_TEXT_CLASS.route_existing}`}>
+                {getFieldValueLabel('proposed_disposition', 'route_existing', locale)}
+              </span>
+              {terminal.routedTo.map((target) => <WorkCaseContributionTargetRow key={`route/${target.factTypeKey}/${target.objectId}`} target={target} locale={locale} showStatus={false} />)}
+            </div>
+          )}
+          {terminal.acceptedStop.map((residual) => (
+            <div key={residual.residualId} className="mt-2">
+              <span className={`ldvh-caption-strong ${PROPOSED_DISPOSITION_TEXT_CLASS.accept_stop}`}>{getFieldValueLabel('proposed_disposition', 'accept_stop', locale)}</span>
+              <p className="ldvh-caption">{residual.summary}</p>
+            </div>
+          ))}
+          <WorkCaseSparkSuggestions suggestions={terminal.sparkSuggestions} />
+        </section>
+      ) : <p role="status" className="ldvh-card-decision-body text-red-400">{t('objectList.workcaseClosureProposalMissing')}</p>}
     </div>
   );
 }
@@ -480,7 +658,7 @@ function WorkCaseContributionsContent({
 }
 
 /** Targets resolve on demand exactly like the detail relation rows; titles are never duplicated into the Card. */
-function WorkCaseContributionTargetRow({ target, locale }: { target: WorkCaseContributionTarget; locale: string }) {
+function WorkCaseContributionTargetRow({ target, locale, showStatus = true }: { target: WorkCaseContributionTarget; locale: string; showStatus?: boolean }) {
   const navigate = useNavigate();
   const [detail, setDetail] = useState<ObjectDetail | null>(null);
 
@@ -494,6 +672,9 @@ function WorkCaseContributionTargetRow({ target, locale }: { target: WorkCaseCon
   }, [target.factTypeKey, target.objectId]);
 
   const title = contributionTargetTitle(detail, getFactReadMeta(detail?.data), locale);
+  const targetStatus = showStatus && detail && isReadableFact(getFactReadMeta(detail.data)) && typeof detail.data.status === 'string'
+    ? getObjectStatusLocale(target.factTypeKey, detail.data.status, locale)
+    : null;
   const typeColor = CATEGORY_COLORS[target.factTypeKey] || CATEGORY_COLORS.other;
   const open = () => navigate(`/objects/${target.factTypeKey}/${target.objectId}`);
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -514,7 +695,7 @@ function WorkCaseContributionTargetRow({ target, locale }: { target: WorkCaseCon
       <ObjectTypeIcon type={target.factTypeKey} size={13} className="shrink-0" style={{ color: typeColor }} />
       <span className="ldvh-meta-muted shrink-0">{getTypeLabel(target.factTypeKey, locale)}</span>
       <span className="ldvh-meta-primary min-w-0 flex-1 truncate group-hover:text-ldvh-accent">{title}</span>
-      <span className="ldvh-meta-muted shrink-0">{target.objectId}</span>
+      {targetStatus && <span className="ldvh-meta-muted shrink-0">{targetStatus}</span>}
     </div>
   );
 }
@@ -859,10 +1040,7 @@ export default function ObjectList() {
               phase={obj.phase}
               progressStep={progressStep}
               executionItemsProjectionValid={obj.executionItemsProjectionValid ?? false}
-              executionItemTotal={obj.executionItemTotal ?? 0}
-              executionItemDone={obj.executionItemDone ?? 0}
-              executionItemOpen={obj.executionItemOpen ?? 0}
-              executionItemsActive={obj.executionItemsActive ?? []}
+              executionItems={obj.executionItems ?? []}
               isBlocked={obj.status === 'blocked'}
               waitingOn={obj.waiting_on}
               blockingSummary={obj.blocking_summary}
@@ -880,8 +1058,30 @@ export default function ObjectList() {
             onOpen={openObject}
             showNonActiveReason={false}
             displayStatus={progressGroup}
+            prominentTitle
           >
-            <WorkCaseContributionsContent contributions={obj.contributedTo} locale={locale} />
+            <>
+              <WorkCaseClosureConfirmationContent goal={obj.goal} closureProposal={obj.closureProposal} />
+              <WorkCaseContributionsContent contributions={obj.contributedTo} locale={locale} />
+            </>
+          </ObjectCardFrame>
+        );
+      }
+      if (progressGroup === 'closed') {
+        return (
+          <ObjectCardFrame
+            key={obj.id}
+            obj={obj}
+            locale={locale}
+            onOpen={openObject}
+            showNonActiveReason={false}
+            displayStatus={progressGroup}
+            prominentTitle
+          >
+            <>
+              <WorkCaseClosedContent goal={obj.goal} terminal={obj.closureTerminal} />
+              <WorkCaseContributionsContent contributions={obj.contributedTo} locale={locale} />
+            </>
           </ObjectCardFrame>
         );
       }

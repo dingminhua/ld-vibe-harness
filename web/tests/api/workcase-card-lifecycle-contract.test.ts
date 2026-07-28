@@ -10,6 +10,7 @@ import {
   getWorkCaseProgressProjection,
 } from '../../shared/workcaseStatus.ts';
 import { projectWorkCaseCard } from '../../api/services/facts.ts';
+import { getObjectStatusLocale } from '../../src/i18n/locales.ts';
 
 const webRoot = path.resolve(import.meta.dirname, '../..');
 
@@ -104,6 +105,13 @@ test('WorkCase cards use four progress groups over the single current phase set'
   });
 });
 
+test('Pitfall lifecycle labels remain type-specific across all four states', () => {
+  assert.equal(getObjectStatusLocale('pitfall', 'draft', 'zh'), '待确认');
+  assert.equal(getObjectStatusLocale('pitfall', 'active', 'zh'), '已确认');
+  assert.equal(getObjectStatusLocale('pitfall', 'discarded', 'zh'), '已废弃');
+  assert.equal(getObjectStatusLocale('pitfall', 'retired', 'zh'), '已退出');
+});
+
 test('plan revision is progressing but remains outside the four-step track', () => {
   const list = source('src/pages/ObjectList.tsx');
   const locales = source('src/i18n/locales.ts');
@@ -148,6 +156,8 @@ test('plan confirmation keeps goal and criteria as the only plan-decision inputs
   assert.doesNotMatch(content, /<ol|line-clamp|slice\(0,|scope|blockingSummary|BlockingNotice/);
   assert.match(notice, /role="status"/);
   assert.match(notice, /aria-label=\{t\('objectList\.workcaseBlockingReason'\)\}/);
+  assert.match(notice, /border-l-2 border-l-amber-400 bg-amber-500\/5/);
+  assert.match(notice, /flex min-w-0 items-center gap-2/);
 });
 
 test('progressing cards show only goal and current progress facts', () => {
@@ -161,17 +171,37 @@ test('progressing cards show only goal and current progress facts', () => {
   assert.match(branch, /<WorkCaseProgressingContent/);
   assert.match(branch, /goal=\{obj\.goal\}/);
   assert.match(branch, /phase=\{obj\.phase\}/);
-  assert.match(branch, /executionItemsActive=\{obj\.executionItemsActive \?\? \[\]\}/);
+  assert.match(branch, /executionItems=\{obj\.executionItems \?\? \[\]\}/);
   assert.match(branch, /waitingOn=\{obj\.waiting_on\}/);
   assert.match(branch, /blockingSummary=\{obj\.blocking_summary\}/);
   assert.doesNotMatch(branch, /successCriteria|closure|approval/);
   assert.match(content, /<h3 className="ldvh-card-title">\{t\('objectList\.workcaseCurrentProgress'\)\}<\/h3>/);
   assert.match(content, /className="text-\[13px\] leading-5 text-ldvh-text-secondary"/);
-  assert.match(content, /const currentExecutionItem = itemExecution && executionItemsActive\.length === 1/);
-  assert.match(content, /currentExecutionItem\.title/);
-  assert.doesNotMatch(content.slice(content.indexOf('<ol')), /workcaseItemProgress/);
-  assert.match(content, /executionItemsActive\.map/);
+  assert.doesNotMatch(content, /currentExecutionPosition|currentExecutionItem|workcaseItemProgress/);
+  assert.match(content, /const displayedExecutionItems = itemExecution/);
+  assert.match(content, /completed: 0, in_progress: 1, blocked: 2, pending: 3, cancelled: 4/);
+  assert.match(content, /displayedExecutionItems\.map/);
+  assert.match(content, /<CircleCheck size=\{14\}/);
+  assert.match(content, /<CirclePlay size=\{14\}/);
+  assert.match(content, /<CircleAlert size=\{14\}/);
+  assert.match(content, /<CircleMinus size=\{14\}/);
+  assert.match(content, /<Circle size=\{14\}/);
+  assert.match(content, /flex min-w-0 items-center gap-2/);
+  assert.match(content, /<div className="mt-0\.5">/);
+  assert.match(content, /\[&_p\]:my-0 text-\[13px\] leading-5/);
+  assert.match(content, /bg-emerald-500\/5/);
+  assert.match(content, /bg-ldvh-bg\/60/);
+  assert.match(content, /top-2\.5 z-0 h-px bg-ldvh-border/);
+  assert.match(content, /bg-sky-100 font-semibold text-sky-600/);
+  assert.match(content, /text-sky-700 dark:text-sky-200/);
+  assert.match(content, /text-sky-600\/70 dark:text-sky-300\/70/);
+  assert.match(content, /text-emerald-700 dark:text-emerald-200/);
+  assert.match(content, /text-slate-600 dark:text-slate-300/);
+  assert.doesNotMatch(content, /grid-cols-\[1rem_minmax\(0,1fr\)\]/);
+  assert.doesNotMatch(content, /workcaseItemCompleted|workcaseItemInProgress|workcaseItemBlocked|workcaseItemPending|workcaseItemCancelled/);
   assert.match(content, /objectList\.workcaseWaitingOn/);
+  assert.match(content, /border-l-2 border-l-ldvh-text-secondary\/35 bg-ldvh-bg\/60/);
+  assert.match(content, /\[&_p\]:my-0 text-\[13px\] leading-5 text-slate-600/);
   assert.match(content, /<WorkCaseBlockingNotice blockingSummary=\{blockingSummary\}/);
   assert.doesNotMatch(content, /progressHistory|roundLabel|workcaseRound/);
 });
@@ -188,26 +218,41 @@ test('list ordering follows updated time and never groups WorkCases by progress 
   assert.doesNotMatch(sorting, /progress_group|progress_step|PROGRESS_GROUP_INDEX|PROGRESS_STEP_INDEX/);
 });
 
-test('closure confirmation cards render only the declared contributed-to targets', () => {
+test('closure confirmation cards render the closure-decision input zone and declared contributed-to targets', () => {
   const list = source('src/pages/ObjectList.tsx');
   const branchStart = list.indexOf("if (progressGroup === 'closure_confirmation')");
   const terminalStatus = list.indexOf("displayStatus={progressGroup ?? 'unknown'}", branchStart);
   const branchEnd = list.lastIndexOf('      return (', terminalStatus);
   const branch = list.slice(branchStart, branchEnd);
-  const content = list.slice(list.indexOf('function WorkCaseContributionsContent'), list.indexOf('function sortObjectsForList'));
+  const content = list.slice(list.indexOf('function WorkCaseClosureConfirmationContent'), list.indexOf('function WorkCaseContributionsContent'));
+  const contributions = list.slice(list.indexOf('function WorkCaseContributionsContent'), list.indexOf('function sortObjectsForList'));
 
   assert.ok(branchStart >= 0 && branchEnd > branchStart);
   assert.match(branch, /displayStatus=\{progressGroup\}/);
+  assert.match(branch, /prominentTitle/);
+  assert.match(branch, /<WorkCaseClosureConfirmationContent goal=\{obj\.goal\} closureProposal=\{obj\.closureProposal\} \/>/);
   assert.match(branch, /<WorkCaseContributionsContent contributions=\{obj\.contributedTo\} locale=\{locale\} \/>/);
-  assert.doesNotMatch(branch, /executionItems|successCriteria|blocking_summary|goal=\{obj\.goal\}/);
-  assert.match(content, /if \(!contributions \|\| contributions\.length === 0\) return null;/);
-  assert.match(content, /objectList\.workcaseContributions/);
-  assert.match(content, /fetchObjectDetail\(target\.factTypeKey, target\.objectId\)/);
-  assert.match(content, /getTypeLabel\(target\.factTypeKey, locale\)/);
-  assert.match(content, /if \(!detail \|\| !isReadableFact\(readMeta\)\) return '—';/);
+  assert.ok(branch.indexOf('<WorkCaseClosureConfirmationContent') < branch.indexOf('<WorkCaseContributionsContent'));
+  assert.doesNotMatch(branch, /executionItems|successCriteria|blocking_summary/);
+
+  assert.match(content, /<WorkCaseGoalSection goal=\{goal\} t=\{t\} \/>/);
+  assert.match(content, /closureProposal \? \(/);
+  assert.match(content, /getFieldValueLabel\('proposed_outcome', closureProposal\.proposedOutcome, locale\)/);
+  assert.match(content, /closureProposal\.residualDecisions\.map/);
+  assert.match(content, /getFieldValueLabel\('proposed_disposition', decision\.proposedDisposition, locale\)/);
+  assert.match(content, /objectList\.workcaseClosureProposalMissing/);
+  assert.match(content, /WorkCaseSparkSuggestions suggestions=\{closureProposal\.sparkSuggestions\}/);
+  assert.match(content, /decision\.routeTarget/);
+  assert.doesNotMatch(content, /<ol|successCriterionResults|controller_check|validation_summary/);
+
+  assert.match(contributions, /if \(!contributions \|\| contributions\.length === 0\) return null;/);
+  assert.match(contributions, /objectList\.workcaseContributions/);
+  assert.match(contributions, /fetchObjectDetail\(target\.factTypeKey, target\.objectId\)/);
+  assert.match(contributions, /getTypeLabel\(target\.factTypeKey, locale\)/);
+  assert.match(contributions, /if \(!detail \|\| !isReadableFact\(readMeta\)\) return '—';/);
 });
 
-test('closed and unclassified cards keep only the common identity and progress group', () => {
+test('closed cards use terminal closure content while unclassified cards stay minimal', () => {
   const list = source('src/pages/ObjectList.tsx');
   const terminalStatus = list.indexOf("displayStatus={progressGroup ?? 'unknown'}");
   const progressingEnd = list.lastIndexOf('      return (', terminalStatus);
@@ -217,11 +262,15 @@ test('closed and unclassified cards keep only the common identity and progress g
   assert.match(terminalBranch, /<ObjectCardFrame/);
   assert.match(terminalBranch, /displayStatus=\{progressGroup \?\? 'unknown'\}/);
   assert.match(terminalBranch, /workcaseProgressGroupUnavailable/);
-  assert.doesNotMatch(terminalBranch, /executionItems|successCriteria|CloseDecision|RecordItem|Integrity|Evidence|BlockingNotice|blocking_summary|contributedTo|ContributionsContent/);
+  assert.match(list, /<WorkCaseClosedContent goal=\{obj\.goal\} terminal=\{obj\.closureTerminal\} \/>/);
+  assert.match(list, /<WorkCaseContributionsContent contributions=\{obj\.contributedTo\}/);
+  assert.match(list, /getFieldValueLabel\('proposed_disposition', 'route_existing', locale\)/);
+  assert.match(list, /getFieldValueLabel\('proposed_disposition', 'suggest_spark', locale\)/);
+  assert.doesNotMatch(terminalBranch, /executionItems|successCriteria|RecordItem|Integrity|Evidence|BlockingNotice|blocking_summary/);
   assert.doesNotMatch(list, /hasClosureRequestedAt|hasClosureEvidence|hasClosedIntegrityIssue|WorkCaseRecordItem/);
 });
 
-test('closure confirmation and closed public Card projections contain no blocked or detail body', () => {
+test('closure confirmation and closed public Card projections carry goal but no blocked notice or detail body', () => {
   const closure = projectWorkCaseCard({
     object_id: 'workcase-0100',
     fact_type_key: 'workcase',
@@ -230,7 +279,7 @@ test('closure confirmation and closed public Card projections contain no blocked
     phase: 'human_closure_confirming',
     priority: 'P0',
     updated_at: '2026-07-27T00:00:00+08:00',
-    goal: '不得进入关闭确认 Card 正文',
+    goal: '关闭 Card 正文可读的目标',
     blocking_summary: '详情仍应保留的阻塞事实',
     success_criterion_definitions: [{ criterion_id: 'criterion-hidden', statement: '不得透传' }],
     work_items: [{ item_id: 'item-hidden', goal: '不得透传', status: 'completed' }],
@@ -242,18 +291,78 @@ test('closure confirmation and closed public Card projections contain no blocked
     status: 'closed',
     priority: 'P0',
     updated_at: '2026-07-27T00:00:00+08:00',
-    goal: '不得进入已关闭 Card 正文',
-    disposition_summary: '仅详情可读',
+    goal: '进入已关闭 Card 正文的目标',
+    closure_outcome: 'completed',
+    disposition_summary: '当前责任已经完成。',
   });
 
   assert.deepEqual(Object.keys(closure).sort(), [
-    'fact_type_key', 'object_id', 'phase', 'status', 'title', 'updated_at',
+    'fact_type_key', 'goal', 'object_id', 'phase', 'status', 'title', 'updated_at',
   ]);
-  assert.deepEqual(Object.keys(closed).sort(), [
-    'fact_type_key', 'object_id', 'status', 'title', 'updated_at',
-  ]);
+  assert.equal(closure.goal, '关闭 Card 正文可读的目标');
+  assert.equal('blocking_summary' in closure, false);
+  assert.equal('closureProposal' in closure, false);
+  assert.equal('successCriteria' in closure, false);
+  assert.equal('executionItemsActive' in closure, false);
   assert.equal('contributedTo' in closure, false);
+  assert.deepEqual(Object.keys(closed).sort(), [
+    'closureTerminal', 'fact_type_key', 'goal', 'object_id', 'status', 'title', 'updated_at',
+  ]);
+  assert.equal(closed.goal, '进入已关闭 Card 正文的目标');
   assert.equal('contributedTo' in closed, false);
+});
+
+test('closure confirmation projects a stable closure-proposal subset only when well-formed', () => {
+  const valid = projectWorkCaseCard({
+    object_id: 'workcase-0110',
+    fact_type_key: 'workcase',
+    title: '等待关闭确认',
+    status: 'open',
+    phase: 'human_closure_confirming',
+    updated_at: '2026-07-27T00:00:00+08:00',
+    goal: '完成当前责任。',
+    closure_proposal: {
+      proposed_outcome: 'partial',
+      proposed_disposition_summary: '接受部分完成并分流剩余责任。',
+      residual_decisions: [
+        { residual_id: 'residual-a', summary: '后续验证', proposed_disposition: 'route_existing', route_target: { governed_project_id: 'sample', fact_type_key: 'workcase', object_id: 'workcase-0111' } },
+        { residual_id: 'residual-b', summary: '放弃试验分支', proposed_disposition: 'accept_stop' },
+        { summary: '缺少稳定 residual_id', proposed_disposition: 'route_existing' },
+      ],
+      spark_suggestions: [{ suggestion_id: 'suggestion-next', suggestion_kind: 'follow_up_opportunity', summary: '保留后续机会', follow_up_summary: '由 Human 日后判断是否建立 Spark。' }],
+    },
+  });
+
+  assert.equal(valid.goal, '完成当前责任。');
+  assert.deepEqual(valid.closureProposal, {
+    proposedOutcome: 'partial',
+    dispositionSummary: '接受部分完成并分流剩余责任。',
+    residualDecisions: [
+      { residualId: 'residual-a', summary: '后续验证', proposedDisposition: 'route_existing', routeTarget: { governedProjectId: 'sample', factTypeKey: 'workcase', objectId: 'workcase-0111' } },
+      { residualId: 'residual-b', summary: '放弃试验分支', proposedDisposition: 'accept_stop' },
+    ],
+    sparkSuggestions: [{ suggestionId: 'suggestion-next', suggestionKind: 'follow_up_opportunity', summary: '保留后续机会', followUpSummary: '由 Human 日后判断是否建立 Spark。' }],
+  });
+});
+
+test('closure confirmation drops the whole proposal when outcome or disposition summary is invalid', () => {
+  const base = {
+    object_id: 'workcase-0112',
+    fact_type_key: 'workcase',
+    title: '等待关闭确认',
+    status: 'open',
+    phase: 'human_closure_confirming',
+    updated_at: '2026-07-27T00:00:00+08:00',
+    goal: '目标仍应保留。',
+  };
+  const missingOutcome = projectWorkCaseCard({ ...base, closure_proposal: { proposed_disposition_summary: '只有摘要。' } });
+  const emptySummary = projectWorkCaseCard({ ...base, closure_proposal: { proposed_outcome: 'completed', proposed_disposition_summary: '   ' } });
+  const unknownOutcome = projectWorkCaseCard({ ...base, closure_proposal: { proposed_outcome: 'done', proposed_disposition_summary: '摘要。' } });
+
+  assert.equal('closureProposal' in missingOutcome, false);
+  assert.equal('closureProposal' in emptySummary, false);
+  assert.equal('closureProposal' in unknownOutcome, false);
+  assert.equal(missingOutcome.goal, '目标仍应保留。');
 });
 
 test('closure confirmation projection carries only stable contributed-to target triples', () => {
@@ -274,12 +383,11 @@ test('closure confirmation projection carries only stable contributed-to target 
   });
 
   assert.deepEqual(closure.contributedTo, [
-    { governedProjectId: 'sample', factTypeKey: 'adr', objectId: 'adr-0007' },
     { governedProjectId: 'sample', factTypeKey: 'pitfall', objectId: 'pitfall-0003' },
   ]);
 });
 
-test('closed projection never carries the contributions section', () => {
+test('closed projection carries only Pitfall contributions', () => {
   const closed = projectWorkCaseCard({
     object_id: 'workcase-0104',
     fact_type_key: 'workcase',
@@ -287,11 +395,11 @@ test('closed projection never carries the contributions section', () => {
     status: 'closed',
     updated_at: '2026-07-27T00:00:00+08:00',
     relations: [
-      { relation_key: 'contributed-to', target: { governed_project_id: 'sample', fact_type_key: 'spark', object_id: 'spark-0009' } },
+      { relation_key: 'contributed-to', target: { governed_project_id: 'sample', fact_type_key: 'pitfall', object_id: 'pitfall-0009' } },
     ],
   });
 
-  assert.equal('contributedTo' in closed, false);
+  assert.deepEqual(closed.contributedTo, [{ governedProjectId: 'sample', factTypeKey: 'pitfall', objectId: 'pitfall-0009' }]);
 });
 
 test('relation labels include contributed-to and the detail chip resolves it by key', () => {
@@ -304,17 +412,14 @@ test('relation labels include contributed-to and the detail chip resolves it by 
   assert.match(associations, /relation_\$\{relationKey\.replace\(\/-\/g, '_'\)\}/);
 });
 
-test('current list projection preserves real item identities, statuses, and active members', () => {
+test('current list projection preserves every real work-item identity and current status', () => {
   const summary = projectWorkCaseCard(currentWorkCase());
 
   assert.equal(summary.executionItemsProjectionValid, true);
-  assert.equal(summary.executionItemTotal, 4);
-  assert.equal(summary.executionItemDone, 1);
-  assert.equal(summary.executionItemCancelled, 1);
-  assert.equal(summary.executionItemOpen, 2);
-  const active = summary.executionItemsActive as Array<Record<string, unknown>>;
-  assert.deepEqual(active.map((item) => item.id), ['item-running', 'item-blocked']);
-  assert.equal(active[1]?.blockingReason, '等待 Human 提供输入。');
+  const items = summary.executionItems as Array<Record<string, unknown>>;
+  assert.deepEqual(items.map((item) => item.id), ['item-done', 'item-running', 'item-blocked', 'item-cancelled']);
+  assert.deepEqual(items.map((item) => item.status), ['completed', 'in_progress', 'blocked', 'cancelled']);
+  assert.equal(items[2]?.blockingReason, '等待 Human 提供输入。');
   assert.equal('successCriteria' in summary, false);
 });
 
@@ -326,15 +431,15 @@ test('public progressing projection keeps counts and active items without the co
 
   assert.ok(projectionStart >= 0 && projectionEnd > projectionStart);
   assert.match(publicProjection, /projectCardWorkItems\(fact\.work_items\)/);
-  assert.doesNotMatch(publicProjection, /projected\.work_items|projected\.executionItems/);
+  assert.doesNotMatch(publicProjection, /projected\.work_items/);
 });
 
-test('public active-item projection exposes only fields consumed by the Card', () => {
+test('public work-item projection exposes only fields consumed by the Card', () => {
   const projected = projectWorkCaseCard(currentWorkCase());
-  const active = projected.executionItemsActive as Array<Record<string, unknown>>;
+  const items = projected.executionItems as Array<Record<string, unknown>>;
 
-  assert.deepEqual(Object.keys(active[0] ?? {}).sort(), ['id', 'status', 'title']);
-  assert.deepEqual(Object.keys(active[1] ?? {}).sort(), ['blockingReason', 'id', 'status', 'title']);
+  assert.deepEqual(Object.keys(items[0] ?? {}).sort(), ['id', 'status', 'title']);
+  assert.deepEqual(Object.keys(items[2] ?? {}).sort(), ['blockingReason', 'id', 'status', 'title']);
 });
 
 test('malformed current items and criteria become unavailable without generated replacements', () => {
@@ -353,8 +458,7 @@ test('malformed current items and criteria become unavailable without generated 
   }));
 
   assert.equal(summary.executionItemsProjectionValid, false);
-  assert.equal(summary.executionItemTotal, 0);
-  assert.deepEqual(summary.executionItemsActive, []);
+  assert.deepEqual(summary.executionItems, []);
   assert.equal('successCriteria' in summary, false);
 });
 
