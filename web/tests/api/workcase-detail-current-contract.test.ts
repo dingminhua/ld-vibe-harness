@@ -213,3 +213,119 @@ test('closed detail naturally contracts to the current closed whitelist', () => 
   assert.equal(detail.resultReviews.length, 0);
   assert.equal(detail.closureProposal, null);
 });
+
+
+test('field-level issues surface in place inside each WorkCase reading node', () => {
+  const layout = fs.readFileSync(
+    path.join(repositoryRoot, 'web/src/pages/object-detail/WorkCaseReadingLayout.tsx'),
+    'utf8',
+  );
+  const factReadingLayouts = fs.readFileSync(
+    path.join(repositoryRoot, 'web/src/pages/object-detail/FactReadingLayouts.tsx'),
+    'utf8',
+  );
+  const fieldIssues = fs.readFileSync(
+    path.join(repositoryRoot, 'web/src/pages/object-detail/fieldIssues.ts'),
+    'utf8',
+  );
+
+  // WC 复用其它事实类型同一套字段问题组件，不另起一套问题呈现。
+  assert.match(fieldIssues, /export function fieldIssue\(/);
+  assert.match(factReadingLayouts, /export function FieldProblem\(/);
+  assert.match(layout, /from "@\/pages\/object-detail\/fieldIssues"/);
+  assert.match(layout, /from "@\/pages\/object-detail\/FactReadingLayouts"/);
+  assert.match(layout, /\bfieldIssue\b/);
+  assert.match(layout, /function FieldIssueRow\(/);
+  assert.match(layout, /<FieldProblem issue=\{issue\} \/>/);
+
+  // 每个页面消费字段都能在自己的阅读节点内就地标明缺失或类型不符。
+  const consumedFields = [
+    'goal', 'scope',
+    'phase', 'summary', 'resume_from', 'waiting_on', 'blocking_summary',
+    'success_criterion_definitions', 'success_criterion_results',
+    'plan_version', 'work_items',
+    'creation_reviews', 'execution_approval',
+    'result_version', 'result_summary', 'validation_summary',
+    'controller_check_summary', 'result_reviews',
+    'closure_proposal',
+    'closure_outcome', 'disposition_summary', 'residual_responsibilities', 'spark_suggestions',
+    'relations', 'urls',
+  ];
+  for (const field of consumedFields) {
+    assert.ok(
+      layout.includes(`issueFor("${field}")`),
+      `layout must surface the in-node field issue for ${field}`,
+    );
+  }
+
+  // 节点只按字段实际内容省略；整组字段缺席但存在字段问题时节点仍然保留。
+  assert.match(layout, /detail\.responsibility \|\| Boolean\(issueFor\("goal"\)/);
+  assert.match(layout, /detail\.currentSnapshot \|\|/);
+  assert.match(layout, /detail\.planAndItems \|\|/);
+  assert.match(layout, /detail\.terminalDisposition \|\|/);
+
+  // 字段问题就地呈现不引入状态或阶段分支。
+  assert.doesNotMatch(layout, /obj\.(?:status|phase)\s*===|switch\s*\([^)]*(?:status|phase)/);
+});
+
+test('narrative fields read as prose while structured records keep label rows', () => {
+  const layout = fs.readFileSync(
+    path.join(repositoryRoot, 'web/src/pages/object-detail/WorkCaseReadingLayout.tsx'),
+    'utf8',
+  );
+
+  // 叙述字段与其它事实对象一致：小字题注 + 下方 Markdown 正文，不用标签列。
+  assert.match(layout, /function ProseField\(/);
+  const narrativeFields = [
+    'goal', 'scope', 'summary', 'resume_from', 'waiting_on', 'blocking_summary',
+    'result_summary', 'validation_summary', 'controller_check_summary',
+    'disposition_summary', 'proposed_disposition_summary',
+  ];
+  for (const field of narrativeFields) {
+    assert.match(
+      layout,
+      new RegExp(`<ProseField[\\s\\S]{0,160}fieldKey="${field}"`),
+      `narrative field ${field} must read as prose`,
+    );
+  }
+
+  // 单字段节点省略与节点标题重复的题注（与其它对象的单字段散文节点一致）。
+  assert.match(layout, /fieldKey="controller_check_summary"[\s\S]{0,120}showLabel=\{false\}/);
+
+  // 散文正文仍完整渲染 Markdown，不截断、不折叠。
+  assert.match(layout, /collapseThreshold=\{Number\.MAX_SAFE_INTEGER\}/);
+
+  // 结构化记录（工作项、复核、成功标准、处置条目）保留标签行。
+  assert.match(layout, /<TextField/);
+  assert.match(layout, /<DetailInlineField/);
+});
+
+test('closure route target resolves the current target like formal relations', () => {
+  const layout = fs.readFileSync(
+    path.join(repositoryRoot, 'web/src/pages/object-detail/WorkCaseReadingLayout.tsx'),
+    'utf8',
+  );
+  const model = fs.readFileSync(
+    path.join(repositoryRoot, 'web/src/pages/object-detail/model.ts'),
+    'utf8',
+  );
+
+  // 与关联区同一规则：项目身份来自共享实现，不做第二份项目解析。
+  assert.match(model, /export function getCurrentProjectId\(/);
+  assert.match(layout, /getCurrentProjectId/);
+
+  // 同项目目标按需解析当前标题并进入右侧扩展阅读；不以 object_id 冒充名称。
+  assert.match(layout, /function ResolvedRouteTargetRow\(/);
+  assert.match(layout, /fetchObjectDetail\(factTypeKey, objectId\)/);
+  assert.match(layout, /openPanel\(\{ type: "object", title, objectType: factTypeKey, objectId \}\)/);
+  assert.match(layout, /CopyPathButton/);
+  assert.match(layout, /projectId === currentProjectId/);
+
+  // 跨项目或身份不完整的目标只如实显示已知稳定身份，不猜测标题。
+  assert.match(layout, /function UnresolvedRouteTargetRow\(/);
+  assert.match(layout, /\{objectId \|\| "—"\}/);
+
+  // 项目身份与内容 fingerprint 作为次级定位事实保留，不冒充当前标题。
+  assert.match(layout, /fieldKey="governed_project_id"/);
+  assert.match(layout, /fieldKey="content_fingerprint"/);
+});

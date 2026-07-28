@@ -61,6 +61,14 @@ const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
 
 export type RelatedContentEntry = [string, unknown[]];
 
+/** Current governed project identity from the read metadata, shared by association readers. */
+export function getCurrentProjectId(obj: Record<string, unknown>): string | undefined {
+  const ref = obj.object_ref;
+  if (!ref || typeof ref !== 'object' || Array.isArray(ref)) return undefined;
+  const projectId = (ref as Record<string, unknown>).governed_project_id;
+  return typeof projectId === 'string' ? projectId : undefined;
+}
+
 function isRelatedContentField(fieldKey: string) {
   return fieldKey === 'urls';
 }

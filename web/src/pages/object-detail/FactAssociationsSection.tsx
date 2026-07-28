@@ -15,6 +15,7 @@ import {
   type ReadingRelation,
   type UnresolvedAssociation,
 } from '@/pages/object-detail/factReadingProjection';
+import { getCurrentProjectId } from '@/pages/object-detail/model';
 import { CATEGORY_COLORS } from '@/utils/categoryColors';
 import { fetchObjectDetail, type ObjectDetail } from '@/utils/api';
 import { getFactReadMeta, isReadableFact } from '@/utils/factReadMeta';
@@ -204,13 +205,6 @@ function UnresolvedGroup({ items, locale }: { items: UnresolvedAssociation[]; lo
 
 function AssociationGroup({ title, children }: { title: string; children: ReactNode }) {
   return <div className="py-3 first:pt-0 last:pb-0"><div className="ldvh-caption-strong mb-2">{title}</div>{children}</div>;
-}
-
-function getCurrentProjectId(obj: Record<string, unknown>): string | undefined {
-  const ref = obj.object_ref;
-  if (!ref || typeof ref !== 'object' || Array.isArray(ref)) return undefined;
-  const projectId = (ref as Record<string, unknown>).governed_project_id;
-  return typeof projectId === 'string' ? projectId : undefined;
 }
 
 function safeStringify(value: unknown): string {

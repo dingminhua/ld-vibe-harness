@@ -6,29 +6,19 @@ import { useI18n } from '@/i18n/context';
 import { FactAssociationsSection } from '@/pages/object-detail/FactAssociationsSection';
 import { sortRelatedContentEntries, type RelatedContentEntry } from '@/pages/object-detail/model';
 import {
+  fieldIssue,
+  type FieldPresentationIssue,
+} from '@/pages/object-detail/fieldIssues';
+import {
   ReadingNodeSection,
   RelatedContentSection,
   StudyTextNodeContent,
-  getFieldLabel,
   getReadingNodeNextState,
   hasDetailContent,
   type ReadingNodeState,
 } from '@/pages/ObjectDetail';
 
-type FieldPresentationIssue = { path: string; reason: 'missing' | 'type_mismatch' | 'identity_mismatch'; expected: string; raw_value?: unknown };
-
-function fieldIssue(obj: Record<string, unknown>, field: string): FieldPresentationIssue | undefined {
-  const issues = obj.field_issues;
-  if (!Array.isArray(issues)) return undefined;
-  return issues.find((issue): issue is FieldPresentationIssue => Boolean(
-    issue && typeof issue === 'object' && !Array.isArray(issue)
-      && (issue as Record<string, unknown>).path === field
-      && typeof (issue as Record<string, unknown>).reason === 'string'
-      && typeof (issue as Record<string, unknown>).expected === 'string',
-  ));
-}
-
-function FieldProblem({ issue }: { issue?: FieldPresentationIssue }) {
+export function FieldProblem({ issue }: { issue?: FieldPresentationIssue }) {
   const { t } = useI18n();
   if (!issue) return null;
   const text = issue.reason === 'missing'
