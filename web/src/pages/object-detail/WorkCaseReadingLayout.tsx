@@ -225,6 +225,7 @@ export function WorkCaseReadingLayout({
           title={t("objectDetail.workcaseCreationReviews")}
           note={t("objectDetail.workcaseCreationReviewsBoundary")}
           locale={locale}
+          contentVariant="semantic"
         >
           {creationReviews.length > 0 && (
             <ReviewList reviews={creationReviews} locale={locale} />
@@ -238,6 +239,7 @@ export function WorkCaseReadingLayout({
           title={t("objectDetail.workcaseExecutionApproval")}
           note={t("objectDetail.workcaseExecutionApprovalBoundary")}
           locale={locale}
+          contentVariant="semantic"
         >
           {executionApproval && (
             <ExecutionApproval approval={executionApproval} locale={locale} />
@@ -250,23 +252,22 @@ export function WorkCaseReadingLayout({
         <WorkCaseReadingNode
           title={t("objectDetail.workcaseResultAndValidation")}
           locale={locale}
+          headerMeta={<ResultVersionMeta value={obj.result_version} locale={locale} />}
+          contentVariant="semantic"
         >
-          <NumberField
-            fieldKey="result_version"
-            value={obj.result_version}
-            locale={locale}
-          />
           <FieldIssueRow fieldKey="result_version" issue={issueFor("result_version")} locale={locale} />
           <ProseField
             fieldKey="result_summary"
             value={obj.result_summary}
             locale={locale}
+            variant="result"
           />
           <FieldIssueRow fieldKey="result_summary" issue={issueFor("result_summary")} locale={locale} />
           <ProseField
             fieldKey="validation_summary"
             value={obj.validation_summary}
             locale={locale}
+            variant="validation"
           />
           <FieldIssueRow fieldKey="validation_summary" issue={issueFor("validation_summary")} locale={locale} />
         </WorkCaseReadingNode>
@@ -277,12 +278,14 @@ export function WorkCaseReadingLayout({
           title={t("objectDetail.workcaseControllerCheck")}
           note={t("objectDetail.workcaseControllerCheckBoundary")}
           locale={locale}
+          contentVariant="semantic"
         >
           <ProseField
             fieldKey="controller_check_summary"
             value={obj.controller_check_summary}
             locale={locale}
             showLabel={false}
+            variant="controller"
           />
           <FieldIssueRow fieldKey="controller_check_summary" issue={issueFor("controller_check_summary")} locale={locale} />
         </WorkCaseReadingNode>
@@ -293,6 +296,7 @@ export function WorkCaseReadingLayout({
           title={t("objectDetail.workcaseResultReviews")}
           note={t("objectDetail.workcaseResultReviewsBoundary")}
           locale={locale}
+          contentVariant="semantic"
         >
           {resultReviews.length > 0 && (
             <ReviewList reviews={resultReviews} locale={locale} />
@@ -306,6 +310,7 @@ export function WorkCaseReadingLayout({
           title={t("objectDetail.workcaseClosureProposal")}
           note={t("objectDetail.workcaseClosureProposalBoundary")}
           locale={locale}
+          contentVariant="semantic"
         >
           {closureProposal && (
             <ClosureProposal
@@ -323,18 +328,16 @@ export function WorkCaseReadingLayout({
           title={t("objectDetail.workcaseTerminalDisposition")}
           note={t("objectDetail.workcaseTerminalDispositionBoundary")}
           locale={locale}
+          contentVariant="semantic"
         >
-          <EnumField
-            fieldKey="closure_outcome"
-            value={obj.closure_outcome}
+          <ClosureOutcomeSummary
+            outcomeFieldKey="closure_outcome"
+            outcome={obj.closure_outcome}
+            summaryFieldKey="disposition_summary"
+            summary={obj.disposition_summary}
             locale={locale}
           />
           <FieldIssueRow fieldKey="closure_outcome" issue={issueFor("closure_outcome")} locale={locale} />
-          <ProseField
-            fieldKey="disposition_summary"
-            value={obj.disposition_summary}
-            locale={locale}
-          />
           <FieldIssueRow fieldKey="disposition_summary" issue={issueFor("disposition_summary")} locale={locale} />
           {terminalResiduals.length > 0 && (
             <TerminalResidualList items={terminalResiduals} locale={locale} />
@@ -406,11 +409,7 @@ function WorkCaseReadingNode({
       onToggle={() => setState((current) => getReadingNodeNextState(current))}
     >
       <div className={contentVariant === "semantic" ? "grid gap-3" : "ldvh-study-node-content"}>
-        {note && (
-          <p className="ldvh-caption mb-2 border-b border-ldvh-border/60 pb-2 text-ldvh-text-secondary">
-            {note}
-          </p>
-        )}
+        {note && <ReadingBoundaryNote value={note} />}
         <div className={contentVariant === "semantic" ? "grid gap-3" : "divide-y divide-ldvh-border/60"}>
           {children}
         </div>
@@ -419,11 +418,30 @@ function WorkCaseReadingNode({
   );
 }
 
+function ReadingBoundaryNote({ value }: { value: string }) {
+  return (
+    <div className="flex min-w-0 items-start gap-2 rounded-md bg-ldvh-border/20 px-3 py-2.5 text-ldvh-text-secondary/80">
+      <CircleHelp size={14} strokeWidth={2} className="mt-[0.1rem] shrink-0" aria-hidden="true" />
+      <p className="ldvh-caption min-w-0 flex-1">{value}</p>
+    </div>
+  );
+}
+
 function PlanVersionMeta({ value, locale }: { value: unknown; locale: string }) {
   if (typeof value !== "number" || !Number.isFinite(value)) return null;
   return (
     <span className="ldvh-meta-muted inline-flex shrink-0 items-center gap-1.5 font-normal">
       <span>{getFieldLabel("plan_version", locale)}</span>
+      <span className="font-mono tabular-nums text-ldvh-text-secondary">{value}</span>
+    </span>
+  );
+}
+
+function ResultVersionMeta({ value, locale }: { value: unknown; locale: string }) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return null;
+  return (
+    <span className="ldvh-meta-muted inline-flex shrink-0 items-center gap-1.5 font-normal">
+      <span>{getFieldLabel("result_version", locale)}</span>
       <span className="font-mono tabular-nums text-ldvh-text-secondary">{value}</span>
     </span>
   );
@@ -586,6 +604,7 @@ function ProseField({
   tone = "default",
   label,
   showLabel = true,
+  variant = "plain",
 }: {
   fieldKey: string;
   value: unknown;
@@ -593,8 +612,51 @@ function ProseField({
   tone?: "default" | "warning";
   label?: string;
   showLabel?: boolean;
+  variant?: "plain" | "result" | "validation" | "controller";
 }) {
   if (typeof value !== "string" || !value.trim()) return null;
+  if (variant !== "plain") {
+    const styles = {
+      result: {
+        Icon: CircleCheck,
+        surface: "border-emerald-400/30 bg-emerald-500/[0.055]",
+        heading: "text-emerald-700 dark:text-emerald-300",
+        body: "text-emerald-950/82 dark:text-emerald-100/85",
+      },
+      validation: {
+        Icon: ScanLine,
+        surface: "border-sky-400/30 bg-sky-500/[0.05]",
+        heading: "text-sky-700 dark:text-sky-300",
+        body: "text-sky-950/82 dark:text-sky-100/85",
+      },
+      controller: {
+        Icon: Activity,
+        surface: "border-cyan-400/30 bg-cyan-500/[0.045]",
+        heading: "text-cyan-700 dark:text-cyan-300",
+        body: "text-cyan-950/82 dark:text-cyan-100/85",
+      },
+    }[variant];
+    const { Icon } = styles;
+    return (
+      <section className={`min-w-0 rounded-lg border px-3.5 py-3 ${styles.surface}`}>
+        {showLabel && (
+          <div className={`flex min-w-0 items-center gap-2 ${styles.heading}`}>
+            <Icon size={16} strokeWidth={2} className="shrink-0" aria-hidden="true" />
+            <span className="ldvh-card-title-prominent min-w-0 text-current">
+              {label ?? getFieldLabel(fieldKey, locale)}
+            </span>
+          </div>
+        )}
+        <div className={showLabel ? "mt-2 min-w-0" : "min-w-0"}>
+          <SummaryText
+            value={value}
+            collapseThreshold={Number.MAX_SAFE_INTEGER}
+            className={`ldvh-body ${styles.body}`}
+          />
+        </div>
+      </section>
+    );
+  }
   const body = (
     <div
       className={
@@ -657,82 +719,6 @@ function TextField({
         </div>
       }
     />
-  );
-}
-
-function NumberField({
-  fieldKey,
-  value,
-  locale,
-}: {
-  fieldKey: string;
-  value: unknown;
-  locale: string;
-}) {
-  if (typeof value !== "number" || !Number.isFinite(value)) return null;
-  return (
-    <DetailInlineField
-      label={getFieldLabel(fieldKey, locale)}
-      value={
-        <span className="ldvh-meta-primary inline-flex h-6 items-center font-mono tabular-nums">
-          {value}
-        </span>
-      }
-    />
-  );
-}
-
-function MonoField({
-  fieldKey,
-  value,
-  locale,
-}: {
-  fieldKey: string;
-  value: unknown;
-  locale: string;
-}) {
-  if (typeof value !== "string" || !value.trim()) return null;
-  return (
-    <DetailInlineField
-      label={getFieldLabel(fieldKey, locale)}
-      value={
-        <span className="ldvh-meta-primary break-all font-mono">{value}</span>
-      }
-    />
-  );
-}
-
-function EnumField({
-  fieldKey,
-  value,
-  locale,
-  statusValue = false,
-}: {
-  fieldKey: string;
-  value: unknown;
-  locale: string;
-  statusValue?: boolean;
-}) {
-  if (typeof value !== "string" || !value.trim()) return null;
-  const label = statusValue
-    ? getStatusLocale(value, locale)
-    : getFieldValueLabel(fieldKey, value, locale);
-  return (
-    <DetailInlineField
-      label={getFieldLabel(fieldKey, locale)}
-      value={<ValueChip value={value} label={label} />}
-    />
-  );
-}
-
-function ValueChip({ value, label }: { value: string; label: string }) {
-  return (
-    <span
-      title={value}
-      className="ldvh-chip inline-flex rounded-md border border-ldvh-border bg-ldvh-bg px-2 py-0.5 text-ldvh-text-primary"
-    >
-      {label}
-    </span>
   );
 }
 
@@ -1144,43 +1130,41 @@ function ReviewList({
         return (
           <li
             key={`${reviewer}-${reviewedAt}-${subjectVersion ?? "version"}-${index}`}
-            className="min-w-0 rounded-md border border-ldvh-border bg-ldvh-bg/55 px-3 py-3"
+            className="min-w-0 overflow-hidden rounded-lg border border-sky-400/25 bg-sky-500/[0.025]"
           >
-            <div className="divide-y divide-ldvh-border/45">
-              <TextValueField
-                label={getFieldLabel("reviewer", locale)}
-                value={reviewer}
-              />
-              <DateField
-                fieldKey="reviewed_at"
-                value={reviewedAt}
-                locale={locale}
-              />
-              <NumberField
-                fieldKey="subject_version"
-                value={subjectVersion}
-                locale={locale}
-              />
-              <TextValueField
+            <div className="flex min-w-0 flex-wrap items-center gap-2 border-b border-sky-400/20 px-3.5 py-2.5">
+              <Activity size={16} strokeWidth={2} className="shrink-0 text-sky-600 dark:text-sky-300" aria-hidden="true" />
+              <span className="ldvh-meta min-w-0 flex-1 break-all text-sky-800/75 dark:text-sky-100/75">
+                {reviewer}
+              </span>
+              <ReviewConclusionChip value={conclusion} locale={locale} />
+            </div>
+            <div className="grid min-w-0 gap-3 px-3.5 py-3">
+              <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1 text-ldvh-text-secondary/75">
+                {subjectVersion !== undefined && (
+                  <span className="ldvh-meta-muted inline-flex items-center gap-1.5">
+                    <span>{getFieldLabel("subject_version", locale)}</span>
+                    <span className="font-mono tabular-nums">{subjectVersion}</span>
+                  </span>
+                )}
+                {reviewedAt && (
+                  <time dateTime={reviewedAt} className="ldvh-meta-muted font-mono tabular-nums">
+                    {formatDateTime(reviewedAt)}
+                  </time>
+                )}
+              </div>
+              <ReviewProseBlock
                 label={t("objectDetail.workcaseReviewScope")}
                 value={review.scope}
-              />
-              <EnumField
-                fieldKey="conclusion"
-                value={conclusion}
-                locale={locale}
+                variant="scope"
               />
               {feedback.length > 0 && (
-                <InlineStringArrayField
-                  fieldKey="feedback"
-                  value={feedback}
-                  locale={locale}
-                />
+                <ReviewFeedbackBlock items={feedback} locale={locale} />
               )}
-              <TextField
-                fieldKey="controller_resolution"
+              <ReviewProseBlock
+                label={getFieldLabel("controller_resolution", locale)}
                 value={review.controller_resolution}
-                locale={locale}
+                variant="resolution"
               />
             </div>
           </li>
@@ -1190,18 +1174,92 @@ function ReviewList({
   );
 }
 
-function TextValueField({ label, value }: { label: string; value: unknown }) {
-  if (typeof value !== "string" || !value.trim()) return null;
+function reviewConclusionStyle(value: string) {
+  if (value === "pass") {
+    return {
+      Icon: CircleCheck,
+      className: "border-emerald-400/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-200",
+    };
+  }
+  if (value === "pass_with_followups") {
+    return {
+      Icon: CircleAlert,
+      className: "border-amber-400/30 bg-amber-500/10 text-amber-700 dark:text-amber-200",
+    };
+  }
+  if (value === "changes_required") {
+    return {
+      Icon: CircleX,
+      className: "border-rose-400/30 bg-rose-500/10 text-rose-700 dark:text-rose-200",
+    };
+  }
+  return {
+    Icon: CircleMinus,
+    className: "border-orange-400/30 bg-orange-500/10 text-orange-700 dark:text-orange-200",
+  };
+}
+
+function ReviewConclusionChip({ value, locale }: { value: string; locale: string }) {
+  if (!value) return null;
+  const styles = reviewConclusionStyle(value);
+  const { Icon } = styles;
   return (
-    <DetailInlineField
-      label={label}
-      value={
-        <SummaryText
-          value={value}
-          collapseThreshold={Number.MAX_SAFE_INTEGER}
-        />
+    <span
+      title={value}
+      className={`ldvh-chip inline-flex shrink-0 items-center gap-1.5 rounded-md border px-2 py-0.5 ${styles.className}`}
+    >
+      <Icon size={13} strokeWidth={2} aria-hidden="true" />
+      {getFieldValueLabel("conclusion", value, locale)}
+    </span>
+  );
+}
+
+function ReviewProseBlock({
+  label,
+  value,
+  variant,
+}: {
+  label: string;
+  value: unknown;
+  variant: "scope" | "resolution";
+}) {
+  if (typeof value !== "string" || !value.trim()) return null;
+  const resolution = variant === "resolution";
+  return (
+    <div
+      className={
+        resolution
+          ? "rounded-md border border-cyan-400/25 bg-cyan-500/[0.05] px-3 py-2.5"
+          : "min-w-0"
       }
-    />
+    >
+      <div className={`ldvh-caption-strong mb-1.5 ${resolution ? "text-cyan-700 dark:text-cyan-300" : "text-ldvh-text-secondary/75"}`}>
+        {label}
+      </div>
+      <SummaryText
+        value={value}
+        collapseThreshold={Number.MAX_SAFE_INTEGER}
+        className={`ldvh-body ${resolution ? "text-cyan-950/82 dark:text-cyan-100/85" : "text-ldvh-text-primary/90"}`}
+      />
+    </div>
+  );
+}
+
+function ReviewFeedbackBlock({ items, locale }: { items: string[]; locale: string }) {
+  return (
+    <div className="rounded-md border border-amber-400/25 bg-amber-500/[0.045] px-3 py-2.5">
+      <div className="ldvh-caption-strong mb-1.5 text-amber-700 dark:text-amber-300">
+        {getFieldLabel("feedback", locale)}
+      </div>
+      <ul className="grid min-w-0 gap-1.5">
+        {items.map((item, index) => (
+          <li key={`${index}-${item}`} className="flex min-w-0 items-start gap-2 text-amber-950/82 dark:text-amber-100/85">
+            <span className="mt-[0.55rem] h-1 w-1 shrink-0 rounded-full bg-amber-500/70" aria-hidden="true" />
+            <SummaryText value={item} collapseThreshold={Number.MAX_SAFE_INTEGER} className="ldvh-body min-w-0 flex-1" />
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
@@ -1213,55 +1271,44 @@ function ExecutionApproval({
   locale: string;
 }) {
   const { t } = useI18n();
+  const subjectVersion = detailNumber(approval.subject_version);
+  const approvedAt = detailString(approval.approved_at);
+  const summary = detailString(approval.summary);
+  const sourceRefs = detailStrings(approval.source_refs);
   return (
-    <>
-      <NumberField
-        fieldKey="subject_version"
-        value={approval.subject_version}
-        locale={locale}
-      />
-      <DateField
-        fieldKey="approved_at"
-        value={approval.approved_at}
-        locale={locale}
-      />
-      <TextField
-        fieldKey="summary"
-        value={approval.summary}
-        locale={locale}
-        label={t("objectDetail.workcaseApprovalSummary")}
-      />
-      <InlineStringArrayField
-        fieldKey="source_refs"
-        value={approval.source_refs}
-        locale={locale}
-      />
-    </>
-  );
-}
-
-function DateField({
-  fieldKey,
-  value,
-  locale,
-}: {
-  fieldKey: string;
-  value: unknown;
-  locale: string;
-}) {
-  if (typeof value !== "string" || !value.trim()) return null;
-  return (
-    <DetailInlineField
-      label={getFieldLabel(fieldKey, locale)}
-      value={
-        <time
-          dateTime={value}
-          className="ldvh-meta-primary inline-flex h-6 items-center font-mono tabular-nums"
-        >
-          {formatDateTime(value)}
-        </time>
-      }
-    />
+    <section className="min-w-0 rounded-lg border border-violet-400/30 bg-violet-500/[0.05] px-3.5 py-3">
+      <div className="flex min-w-0 items-center gap-2 text-violet-700 dark:text-violet-300">
+        <CircleCheck size={16} strokeWidth={2} className="shrink-0" aria-hidden="true" />
+        <span className="ldvh-card-title-prominent min-w-0 text-current">
+          {t("objectDetail.workcaseApprovalSummary")}
+        </span>
+      </div>
+      {summary && (
+        <div className="mt-2 min-w-0">
+          <SummaryText
+            value={summary}
+            collapseThreshold={Number.MAX_SAFE_INTEGER}
+            className="ldvh-body text-violet-950/84 dark:text-violet-100/85"
+          />
+        </div>
+      )}
+      {(subjectVersion !== undefined || approvedAt || sourceRefs.length > 0) && (
+        <div className="mt-3 flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2 border-t border-violet-400/20 pt-2.5 text-violet-900/60 dark:text-violet-100/60">
+          {subjectVersion !== undefined && (
+            <span className="ldvh-meta-muted inline-flex items-center gap-1.5 text-current">
+              <span>{getFieldLabel("subject_version", locale)}</span>
+              <span className="font-mono tabular-nums">{subjectVersion}</span>
+            </span>
+          )}
+          {approvedAt && (
+            <time dateTime={approvedAt} className="ldvh-meta-muted font-mono tabular-nums text-current">
+              {formatDateTime(approvedAt)}
+            </time>
+          )}
+          {sourceRefs.length > 0 && <StringChips items={sourceRefs} />}
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -1297,14 +1344,11 @@ function ClosureProposal({
   const suggestions = detailRecords(proposal.spark_suggestions);
   return (
     <>
-      <EnumField
-        fieldKey="proposed_outcome"
-        value={proposal.proposed_outcome}
-        locale={locale}
-      />
-      <ProseField
-        fieldKey="proposed_disposition_summary"
-        value={proposal.proposed_disposition_summary}
+      <ClosureOutcomeSummary
+        outcomeFieldKey="proposed_outcome"
+        outcome={proposal.proposed_outcome}
+        summaryFieldKey="proposed_disposition_summary"
+        summary={proposal.proposed_disposition_summary}
         locale={locale}
       />
       {decisions.length > 0 && (
@@ -1318,6 +1362,92 @@ function ClosureProposal({
         <SparkSuggestionList items={suggestions} locale={locale} />
       )}
     </>
+  );
+}
+
+function closureOutcomeStyle(value: string) {
+  if (value === "completed") {
+    return {
+      Icon: CircleCheck,
+      surface: "border-emerald-400/30 bg-emerald-500/[0.055]",
+      heading: "text-emerald-700 dark:text-emerald-300",
+      body: "text-emerald-950/82 dark:text-emerald-100/85",
+      chip: "border-emerald-400/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-200",
+    };
+  }
+  if (value === "partial") {
+    return {
+      Icon: CircleDot,
+      surface: "border-amber-400/30 bg-amber-500/[0.055]",
+      heading: "text-amber-700 dark:text-amber-300",
+      body: "text-amber-950/82 dark:text-amber-100/85",
+      chip: "border-amber-400/30 bg-amber-500/10 text-amber-700 dark:text-amber-200",
+    };
+  }
+  if (value === "not-achieved") {
+    return {
+      Icon: CircleX,
+      surface: "border-rose-400/30 bg-rose-500/[0.055]",
+      heading: "text-rose-700 dark:text-rose-300",
+      body: "text-rose-950/82 dark:text-rose-100/85",
+      chip: "border-rose-400/30 bg-rose-500/10 text-rose-700 dark:text-rose-200",
+    };
+  }
+  return {
+    Icon: CircleMinus,
+    surface: "border-slate-400/30 bg-slate-500/[0.05]",
+    heading: "text-slate-700 dark:text-slate-300",
+    body: "text-slate-900/78 dark:text-slate-100/82",
+    chip: "border-slate-400/30 bg-slate-500/10 text-slate-700 dark:text-slate-200",
+  };
+}
+
+function ClosureOutcomeSummary({
+  outcomeFieldKey,
+  outcome,
+  summaryFieldKey,
+  summary,
+  locale,
+}: {
+  outcomeFieldKey: "proposed_outcome" | "closure_outcome";
+  outcome: unknown;
+  summaryFieldKey: "proposed_disposition_summary" | "disposition_summary";
+  summary: unknown;
+  locale: string;
+}) {
+  const outcomeValue = detailString(outcome);
+  const summaryValue = detailString(summary);
+  if (!outcomeValue && !summaryValue) return null;
+  const styles = closureOutcomeStyle(outcomeValue);
+  const { Icon } = styles;
+  return (
+    <section className={`min-w-0 rounded-lg border px-3.5 py-3 ${styles.surface}`}>
+      <div className="flex min-w-0 flex-wrap items-center gap-2">
+        <div className={`flex min-w-0 flex-1 items-center gap-2 ${styles.heading}`}>
+          <Icon size={16} strokeWidth={2} className="shrink-0" aria-hidden="true" />
+          <span className="ldvh-card-title-prominent min-w-0 text-current">
+            {getFieldLabel(summaryFieldKey, locale)}
+          </span>
+        </div>
+        {outcomeValue && (
+          <span
+            title={outcomeValue}
+            className={`ldvh-chip inline-flex shrink-0 items-center gap-1.5 rounded-md border px-2 py-0.5 ${styles.chip}`}
+          >
+            {getFieldValueLabel(outcomeFieldKey, outcomeValue, locale)}
+          </span>
+        )}
+      </div>
+      {summaryValue && (
+        <div className="mt-2 min-w-0">
+          <SummaryText
+            value={summaryValue}
+            collapseThreshold={Number.MAX_SAFE_INTEGER}
+            className={`ldvh-body ${styles.body}`}
+          />
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -1339,46 +1469,62 @@ function ResidualDecisionList({
         {decisions.map((decision) => (
           <li
             key={detailString(decision.residual_id)}
-            className="min-w-0 rounded-md border border-ldvh-border bg-ldvh-bg/55 px-3 py-3"
+            className="min-w-0 overflow-hidden rounded-lg border border-ldvh-border bg-ldvh-bg/45"
           >
-            <div className="divide-y divide-ldvh-border/45">
-              <MonoField
-                fieldKey="residual_id"
-                value={decision.residual_id}
-                locale={locale}
-              />
-              <EnumField
-                fieldKey="proposed_disposition"
-                value={decision.proposed_disposition}
-                locale={locale}
-              />
-              <TextField
-                fieldKey="summary"
-                value={decision.summary}
-                locale={locale}
-              />
+            <div className="flex min-w-0 flex-wrap items-center gap-2 border-b border-ldvh-border/60 px-3.5 py-2.5">
+              <span className="ldvh-meta min-w-0 flex-1 break-all text-ldvh-text-secondary/80">
+                {detailString(decision.residual_id)}
+              </span>
+              <ResidualDispositionChip value={decision.proposed_disposition} locale={locale} />
+            </div>
+            <div className="grid min-w-0 gap-3 px-3.5 py-3">
+              {typeof decision.summary === "string" && decision.summary.trim() && (
+                <SummaryText
+                  value={decision.summary}
+                  collapseThreshold={Number.MAX_SAFE_INTEGER}
+                  className="ldvh-body text-ldvh-text-primary/90"
+                />
+              )}
               {detailRecord(decision.route_target) && (
-                <DetailInlineField
-                  label={getFieldLabel("route_target", locale)}
-                  value={
+                <div className="min-w-0">
+                  <div className="ldvh-caption-strong mb-1.5 text-ldvh-text-secondary/75">
+                    {getFieldLabel("route_target", locale)}
+                  </div>
                     <RouteTarget
                       target={detailRecord(decision.route_target)!}
                       currentProjectId={currentProjectId}
                       locale={locale}
                     />
-                  }
-                />
+                </div>
               )}
-              <MonoField
-                fieldKey="spark_suggestion_id"
-                value={decision.spark_suggestion_id}
-                locale={locale}
-              />
+              {detailString(decision.spark_suggestion_id) && (
+                <span className="ldvh-meta-muted inline-flex min-w-0 items-center gap-2">
+                  <ObjectTypeIcon type="spark" size={13} className="shrink-0" style={{ color: CATEGORY_COLORS.spark }} />
+                  <span>{detailString(decision.spark_suggestion_id)}</span>
+                </span>
+              )}
             </div>
           </li>
         ))}
       </ul>
     </div>
+  );
+}
+
+function ResidualDispositionChip({ value, locale }: { value: unknown; locale: string }) {
+  const disposition = detailString(value);
+  if (!disposition) return null;
+  const styles = disposition === "route_existing"
+    ? { Icon: ArrowRight, className: "border-emerald-400/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-200" }
+    : disposition === "suggest_spark"
+      ? { Icon: CircleDot, className: "border-amber-400/30 bg-amber-500/10 text-amber-700 dark:text-amber-200" }
+      : { Icon: CircleMinus, className: "border-cyan-400/30 bg-cyan-500/10 text-cyan-700 dark:text-cyan-200" };
+  const { Icon } = styles;
+  return (
+    <span title={disposition} className={`ldvh-chip inline-flex shrink-0 items-center gap-1.5 rounded-md border px-2 py-0.5 ${styles.className}`}>
+      <Icon size={13} strokeWidth={2} aria-hidden="true" />
+      {getFieldValueLabel("proposed_disposition", disposition, locale)}
+    </span>
   );
 }
 
@@ -1589,19 +1735,22 @@ function TerminalResidualList({
         {items.map((item) => (
           <li
             key={detailString(item.residual_id)}
-            className="min-w-0 rounded-md border border-ldvh-border bg-ldvh-bg/55 px-3 py-3"
+            className="min-w-0 overflow-hidden rounded-lg border border-cyan-400/25 bg-cyan-500/[0.035]"
           >
-            <div className="divide-y divide-ldvh-border/45">
-              <MonoField
-                fieldKey="residual_id"
-                value={item.residual_id}
-                locale={locale}
-              />
-              <TextField
-                fieldKey="summary"
-                value={item.summary}
-                locale={locale}
-              />
+            <div className="flex min-w-0 items-center gap-2 border-b border-cyan-400/20 px-3.5 py-2.5 text-cyan-700 dark:text-cyan-300">
+              <CircleMinus size={16} strokeWidth={2} className="shrink-0" aria-hidden="true" />
+              <span className="ldvh-meta min-w-0 flex-1 break-all text-current/75">
+                {detailString(item.residual_id)}
+              </span>
+            </div>
+            <div className="min-w-0 px-3.5 py-3">
+              {typeof item.summary === "string" && item.summary.trim() && (
+                <SummaryText
+                  value={item.summary}
+                  collapseThreshold={Number.MAX_SAFE_INTEGER}
+                  className="ldvh-body text-cyan-950/82 dark:text-cyan-100/85"
+                />
+              )}
             </div>
           </li>
         ))}
@@ -1626,48 +1775,72 @@ function SparkSuggestionList({
         {items.map((item) => (
           <li
             key={detailString(item.suggestion_id)}
-            className="rounded-md border border-ldvh-border bg-ldvh-bg/55 px-3 py-2.5"
+            className="min-w-0 overflow-hidden rounded-lg border border-amber-400/25 bg-amber-500/[0.03]"
           >
-            <div className="divide-y divide-ldvh-border/45">
-              <MonoField
-                fieldKey="spark_suggestion_id"
-                value={item.suggestion_id}
-                locale={locale}
-              />
-              <EnumField
-                fieldKey="suggestion_kind"
-                value={item.suggestion_kind}
-                locale={locale}
-              />
-              <TextField
-                fieldKey="summary"
-                value={item.summary}
-                locale={locale}
-              />
-              <TextField
-                fieldKey="restriction_reason"
-                value={item.restriction_reason}
-                locale={locale}
-              />
-              <TextField
-                fieldKey="impact_summary"
-                value={item.impact_summary}
-                locale={locale}
-              />
-              <TextField
-                fieldKey="resume_condition"
-                value={item.resume_condition}
-                locale={locale}
-              />
-              <TextField
-                fieldKey="follow_up_summary"
-                value={item.follow_up_summary}
-                locale={locale}
-              />
+            <div className="flex min-w-0 flex-wrap items-center gap-2 border-b border-amber-400/20 px-3.5 py-2.5">
+              <ObjectTypeIcon type="spark" size={16} className="shrink-0" style={{ color: CATEGORY_COLORS.spark }} />
+              <span className="ldvh-meta min-w-0 flex-1 break-all text-amber-800/75 dark:text-amber-100/75">
+                {detailString(item.suggestion_id)}
+              </span>
+              {detailString(item.suggestion_kind) && (
+                <span className="ldvh-chip shrink-0 rounded-md border border-amber-400/30 bg-amber-500/10 px-2 py-0.5 text-amber-700 dark:text-amber-200">
+                  {getFieldValueLabel("suggestion_kind", detailString(item.suggestion_kind), locale)}
+                </span>
+              )}
+            </div>
+            <div className="grid min-w-0 gap-3 px-3.5 py-3">
+              {typeof item.summary === "string" && item.summary.trim() && (
+                <SummaryText
+                  value={item.summary}
+                  collapseThreshold={Number.MAX_SAFE_INTEGER}
+                  className="ldvh-body font-medium text-amber-950/82 dark:text-amber-100/85"
+                />
+              )}
+              <SuggestionDetail fieldKey="restriction_reason" value={item.restriction_reason} locale={locale} variant="restriction" />
+              <SuggestionDetail fieldKey="impact_summary" value={item.impact_summary} locale={locale} variant="plain" />
+              <SuggestionDetail fieldKey="resume_condition" value={item.resume_condition} locale={locale} variant="resume" />
+              <SuggestionDetail fieldKey="follow_up_summary" value={item.follow_up_summary} locale={locale} variant="plain" />
             </div>
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+function SuggestionDetail({
+  fieldKey,
+  value,
+  locale,
+  variant,
+}: {
+  fieldKey: string;
+  value: unknown;
+  locale: string;
+  variant: "plain" | "restriction" | "resume";
+}) {
+  if (typeof value !== "string" || !value.trim()) return null;
+  const className = variant === "restriction"
+    ? "rounded-md border border-rose-400/25 bg-rose-500/[0.04] px-3 py-2.5"
+    : variant === "resume"
+      ? "rounded-md border border-emerald-400/25 bg-emerald-500/[0.04] px-3 py-2.5"
+      : "min-w-0";
+  const headingClass = variant === "restriction"
+    ? "text-rose-700 dark:text-rose-300"
+    : variant === "resume"
+      ? "text-emerald-700 dark:text-emerald-300"
+      : "text-ldvh-text-secondary/75";
+  const bodyClass = variant === "restriction"
+    ? "text-rose-950/82 dark:text-rose-100/85"
+    : variant === "resume"
+      ? "text-emerald-950/82 dark:text-emerald-100/85"
+      : "text-ldvh-text-secondary/85";
+  return (
+    <div className={className}>
+      <div className={`ldvh-caption-strong mb-1.5 ${headingClass}`}>
+        {getFieldLabel(fieldKey, locale)}
+      </div>
+      <SummaryText value={value} collapseThreshold={Number.MAX_SAFE_INTEGER} className={`ldvh-body ${bodyClass}`} />
     </div>
   );
 }

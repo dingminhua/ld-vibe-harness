@@ -279,7 +279,6 @@ test('narrative fields read as prose while structured records keep label rows', 
   assert.match(layout, /function ProseField\(/);
   const narrativeFields = [
     'result_summary', 'validation_summary', 'controller_check_summary',
-    'disposition_summary', 'proposed_disposition_summary',
   ];
   for (const field of narrativeFields) {
     assert.match(
@@ -288,6 +287,9 @@ test('narrative fields read as prose while structured records keep label rows', 
       `narrative field ${field} must read as prose`,
     );
   }
+  assert.match(layout, /function ClosureOutcomeSummary\(/);
+  assert.match(layout, /outcomeFieldKey="proposed_outcome"[\s\S]{0,180}summaryFieldKey="proposed_disposition_summary"/);
+  assert.match(layout, /outcomeFieldKey="closure_outcome"[\s\S]{0,180}summaryFieldKey="disposition_summary"/);
 
   // 目标与范围仍按完整散文读取，但使用职责节点专属的语义色块建立首屏层级。
   assert.match(layout, /function ResponsibilityField\(/);
@@ -317,11 +319,17 @@ test('narrative fields read as prose while structured records keep label rows', 
   assert.doesNotMatch(layout, /<NumberField[\s\S]{0,100}fieldKey="plan_version"/);
   assert.match(layout, /FieldIssueRow fieldKey="plan_version"/);
 
+  // 结果版本与计划版本一样进入节点标题栏，结果、验证和主控自检使用不同的语义正文层级。
+  assert.match(layout, /title=\{t\("objectDetail\.workcaseResultAndValidation"\)\}[\s\S]{0,160}headerMeta=\{<ResultVersionMeta value=\{obj\.result_version\}/);
+  assert.match(layout, /function ResultVersionMeta\(/);
+  assert.match(layout, /fieldKey="result_summary"[\s\S]{0,160}variant="result"/);
+  assert.match(layout, /fieldKey="validation_summary"[\s\S]{0,160}variant="validation"/);
+  assert.match(layout, /fieldKey="controller_check_summary"[\s\S]{0,180}variant="controller"/);
+
   // 散文正文仍完整渲染 Markdown，不截断、不折叠。
   assert.match(layout, /collapseThreshold=\{Number\.MAX_SAFE_INTEGER\}/);
 
-  // 结构化记录（工作项、复核和处置条目）保留标签行；成功标准使用
-  // ID + 标准正文 + 三值结果 + 结果摘要的专属阅读结构。
+  // 仍需字段定位的辅助字段保留标签行；核心结构化记录使用稳定身份、结论和正文的专属阅读结构。
   assert.match(layout, /<TextField/);
   assert.match(layout, /<DetailInlineField/);
   assert.match(layout, /function CriterionOutcomeChip\(/);
@@ -345,6 +353,16 @@ test('narrative fields read as prose while structured records keep label rows', 
   assert.match(layout, /function WorkItemTextBlock\(/);
   assert.doesNotMatch(layout, /WorkItemArrayBlock/);
   assert.match(layout, /function WorkItemStatusChip\(/);
+
+  // 复核、批准与关闭处置不再是同权值对表：身份和结论进入标题栏，反馈、主控处置和责任去向分层呈现。
+  assert.match(layout, /function ReviewConclusionChip\(/);
+  assert.match(layout, /function ReviewFeedbackBlock\(/);
+  assert.match(layout, /function ReviewProseBlock\(/);
+  assert.match(layout, /function ExecutionApproval\([\s\S]*?border-violet-400\/30/);
+  assert.match(layout, /function ReadingBoundaryNote\(/);
+  assert.match(layout, /function ResidualDispositionChip\(/);
+  assert.match(layout, /function SuggestionDetail\(/);
+  assert.doesNotMatch(layout, /function (?:NumberField|MonoField|EnumField|DateField|TextValueField)\(/);
 });
 
 test('WorkCase identity uses the active phase as its single Human-facing header status', () => {

@@ -147,7 +147,7 @@ function WorkCasePlanConfirmationContent({
         <div className="flex min-w-0 items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
             <ListChecks size={WORKCASE_SECTION_ICON_SIZE} className="shrink-0 text-blue-500 dark:text-blue-400" aria-hidden="true" />
-            <h3 className="ldvh-card-title text-blue-700 dark:text-blue-200">{t('objectList.successCriteria')}</h3>
+            <h3 className="ldvh-card-title text-blue-700/85 dark:text-blue-200/85">{t('objectList.successCriteria')}</h3>
           </div>
           {criteria.length > 0 && (
             <span className="ldvh-meta-muted shrink-0">{t('objectList.workcaseCriteriaCount', { count: String(criteria.length) })}</span>
@@ -165,7 +165,7 @@ function WorkCasePlanConfirmationContent({
                   <SummaryText
                     value={criterion}
                     collapseThreshold={Number.MAX_SAFE_INTEGER}
-                    className="text-[13px] leading-5 text-ldvh-text-secondary/85"
+                    className="text-[13px] leading-5 text-blue-950/65 dark:text-blue-100/75"
                   />
                 </div>
               </li>
@@ -184,14 +184,14 @@ function WorkCaseGoalSection({ goal, t }: { goal?: string; t: Translate }) {
     <section className="min-w-0 rounded-md border border-violet-400/45 border-l-2 border-l-violet-400 bg-violet-100/70 px-3.5 py-3 dark:bg-violet-950/50">
       <div className="flex min-w-0 items-center gap-2">
         <Target size={WORKCASE_SECTION_ICON_SIZE} className="shrink-0 text-violet-500 dark:text-violet-400" aria-hidden="true" />
-        <h3 className="ldvh-card-title text-violet-700 dark:text-violet-200">{t('objectList.workcaseGoal')}</h3>
+        <h3 className="ldvh-card-title text-violet-700/85 dark:text-violet-200/85">{t('objectList.workcaseGoal')}</h3>
       </div>
       {goal?.trim() ? (
         <div className={`ldvh-caption ${WORKCASE_CARD_TITLE_BODY_GAP_CLASS} w-full break-words`}>
           <SummaryText
             value={goal}
             collapseThreshold={Number.MAX_SAFE_INTEGER}
-            className="text-[13px] leading-5 text-violet-700/80 dark:text-violet-200/80"
+            className="text-[13px] leading-5 text-violet-950/65 dark:text-violet-100/75"
           />
         </div>
       ) : (
@@ -216,7 +216,7 @@ function WorkCaseBlockingNotice({
     >
       <div className="flex min-w-0 items-center gap-2">
         <CircleAlert size={14} className="shrink-0 text-amber-500 dark:text-amber-400" aria-hidden="true" />
-        <div className="ldvh-meta-primary min-w-0 text-amber-700/70 dark:text-amber-300/70">
+        <div className="ldvh-meta-primary min-w-0 text-amber-700/75 dark:text-amber-300/75">
           {t('objectList.workcaseBlockingReason')}
         </div>
       </div>
@@ -225,7 +225,7 @@ function WorkCaseBlockingNotice({
           <SummaryText
             value={blockingSummary}
             collapseThreshold={Number.MAX_SAFE_INTEGER}
-            className="[&_p]:my-0 text-[13px] leading-5 text-amber-800 dark:text-amber-200"
+            className="[&_p]:my-0 text-[13px] leading-5 text-amber-950/70 dark:text-amber-100/75"
           />
         </div>
       ) : (
@@ -298,7 +298,7 @@ function WorkCaseProgressingContent({
       <section className="min-w-0 rounded-md border border-sky-400/25 border-l-2 border-l-sky-400 bg-sky-500/[0.035] px-3.5 py-3">
         <div className="flex min-w-0 items-center gap-2">
           <CirclePlay size={WORKCASE_SECTION_ICON_SIZE} className="shrink-0 text-sky-500 dark:text-sky-400" aria-hidden="true" />
-          <h3 className="ldvh-card-title text-sky-700 dark:text-sky-200">{t('objectList.workcaseCurrentProgress')}</h3>
+          <h3 className="ldvh-card-title text-sky-700/85 dark:text-sky-200/85">{t('objectList.workcaseCurrentProgress')}</h3>
         </div>
 
         {planRevising && (
@@ -375,14 +375,14 @@ function WorkCaseProgressingContent({
                       const inProgress = item.status === 'in_progress';
                       const cancelled = item.status === 'cancelled';
                       const itemTextTone = inProgress
-                        ? 'text-sky-700 dark:text-sky-200'
+                        ? 'text-sky-950/70 dark:text-sky-100/75'
                         : completed
-                          ? 'text-emerald-700 dark:text-emerald-200'
+                          ? 'text-emerald-950/70 dark:text-emerald-100/75'
                           : blocked
-                            ? 'text-amber-800 dark:text-amber-200'
+                            ? 'text-amber-950/70 dark:text-amber-100/75'
                             : cancelled
                               ? 'text-slate-400 dark:text-slate-500 line-through'
-                              : 'text-slate-600 dark:text-slate-300';
+                              : 'text-slate-700/70 dark:text-slate-200/70';
                       const itemIdTone = inProgress
                         ? 'text-sky-600/70 dark:text-sky-300/70'
                         : completed
@@ -439,7 +439,7 @@ function WorkCaseProgressingContent({
                                   <SummaryText
                                     value={item.blockingReason}
                                     collapseThreshold={Number.MAX_SAFE_INTEGER}
-                                    className="[&_p]:my-0 text-[13px] leading-5 text-amber-700 dark:text-amber-300"
+                                    className="[&_p]:my-0 text-[13px] leading-5 text-amber-950/70 dark:text-amber-100/75"
                                   />
                                 </div>
                               ) : (
@@ -475,7 +475,7 @@ function WorkCaseProgressingContent({
               <SummaryText
                 value={waitingOn}
                 collapseThreshold={Number.MAX_SAFE_INTEGER}
-                className="[&_p]:my-0 text-[13px] leading-5 text-slate-600 dark:text-slate-300"
+                className="[&_p]:my-0 text-[13px] leading-5 text-slate-700/70 dark:text-slate-200/70"
               />
             </div>
           </div>
@@ -500,17 +500,17 @@ const PROPOSED_OUTCOME_NOTICE_CLASS: Record<string, string> = {
 };
 
 const PROPOSED_OUTCOME_TEXT_CLASS: Record<string, string> = {
-  completed: 'text-emerald-700 dark:text-emerald-200',
-  partial: 'text-amber-800 dark:text-amber-200',
-  'not-achieved': 'text-red-700 dark:text-red-200',
-  cancelled: 'text-zinc-600 dark:text-zinc-300',
+  completed: 'text-emerald-700/85 dark:text-emerald-200/85',
+  partial: 'text-amber-700/85 dark:text-amber-200/85',
+  'not-achieved': 'text-red-700/85 dark:text-red-200/85',
+  cancelled: 'text-zinc-600/85 dark:text-zinc-300/85',
 };
 
 const PROPOSED_OUTCOME_BODY_CLASS: Record<string, string> = {
-  completed: 'text-emerald-700/75 dark:text-emerald-200/75',
-  partial: 'text-amber-800/75 dark:text-amber-200/75',
-  'not-achieved': 'text-red-700/75 dark:text-red-200/75',
-  cancelled: 'text-zinc-600/75 dark:text-zinc-300/75',
+  completed: 'text-emerald-950/70 dark:text-emerald-100/75',
+  partial: 'text-amber-950/70 dark:text-amber-100/75',
+  'not-achieved': 'text-red-950/70 dark:text-red-100/75',
+  cancelled: 'text-zinc-700/70 dark:text-zinc-200/70',
 };
 
 const PROPOSED_DISPOSITION_NOTICE_CLASS: Record<string, string> = {
@@ -556,15 +556,15 @@ function WorkCaseOutcomeNotice({
 
 /** Plain text color for residual disposition labels (no chip frame). */
 const PROPOSED_DISPOSITION_TEXT_CLASS: Record<string, string> = {
-  route_existing: 'text-emerald-600 dark:text-emerald-300',
-  suggest_spark: 'text-amber-600 dark:text-amber-300',
-  accept_stop: 'text-cyan-700 dark:text-cyan-200',
+  route_existing: 'text-emerald-700/85 dark:text-emerald-300/85',
+  suggest_spark: 'text-amber-700/85 dark:text-amber-300/85',
+  accept_stop: 'text-cyan-700/85 dark:text-cyan-200/85',
 };
 
 const PROPOSED_DISPOSITION_BODY_CLASS: Record<string, string> = {
-  route_existing: 'text-emerald-700/75 dark:text-emerald-200/75',
-  suggest_spark: 'text-amber-800/75 dark:text-amber-200/75',
-  accept_stop: 'text-cyan-700/75 dark:text-cyan-200/75',
+  route_existing: 'text-emerald-950/70 dark:text-emerald-100/75',
+  suggest_spark: 'text-amber-950/70 dark:text-amber-100/75',
+  accept_stop: 'text-cyan-950/70 dark:text-cyan-100/75',
 };
 
 function WorkCaseSparkSuggestions({ suggestions }: { suggestions: WorkCaseSparkSuggestionCard[] }) {
@@ -576,17 +576,17 @@ function WorkCaseSparkSuggestions({ suggestions }: { suggestions: WorkCaseSparkS
         <li key={suggestion.suggestionId} className="min-w-0 rounded-md border border-amber-400/25 border-l-2 border-l-amber-400 bg-amber-500/5 px-3.5 py-3">
           <div className="flex min-w-0 items-center gap-2">
             <Lightbulb size={WORKCASE_SECTION_ICON_SIZE} className="shrink-0 text-amber-500 dark:text-amber-400" aria-hidden="true" />
-            <span className="ldvh-card-title min-w-0 text-amber-800 dark:text-amber-100">
+            <span className="ldvh-card-title min-w-0 text-amber-700/85 dark:text-amber-200/85">
               {getFieldValueLabel('proposed_disposition', 'suggest_spark', locale)}
             </span>
           </div>
           <div className={`${WORKCASE_CARD_TITLE_BODY_GAP_CLASS} min-w-0 break-words`}>
-            <SummaryText value={suggestion.summary} collapseThreshold={Number.MAX_SAFE_INTEGER} className="[&_p]:my-0 text-[13px] leading-5 text-amber-800/75 dark:text-amber-200/75" />
+            <SummaryText value={suggestion.summary} collapseThreshold={Number.MAX_SAFE_INTEGER} className="[&_p]:my-0 text-[13px] leading-5 text-amber-950/70 dark:text-amber-100/75" />
           </div>
-          {suggestion.restrictionReason && <div className="ldvh-caption mt-1 text-amber-800/80 dark:text-amber-200/80">{t('objectList.workcaseRestrictionReason')}: {suggestion.restrictionReason}</div>}
-          {suggestion.impactSummary && <div className="ldvh-caption mt-0.5 text-amber-800/80 dark:text-amber-200/80">{t('objectList.workcaseImpactSummary')}: {suggestion.impactSummary}</div>}
-          {suggestion.resumeCondition && <div className="ldvh-caption mt-0.5 text-amber-800/80 dark:text-amber-200/80">{t('objectList.workcaseResumeCondition')}: {suggestion.resumeCondition}</div>}
-          <div className="ldvh-caption mt-0.5 text-amber-800/80 dark:text-amber-200/80">{t('objectList.workcaseFollowUpSummary')}: {suggestion.followUpSummary}</div>
+          {suggestion.restrictionReason && <div className="ldvh-caption mt-1 text-amber-950/65 dark:text-amber-100/70">{t('objectList.workcaseRestrictionReason')}: {suggestion.restrictionReason}</div>}
+          {suggestion.impactSummary && <div className="ldvh-caption mt-0.5 text-amber-950/65 dark:text-amber-100/70">{t('objectList.workcaseImpactSummary')}: {suggestion.impactSummary}</div>}
+          {suggestion.resumeCondition && <div className="ldvh-caption mt-0.5 text-amber-950/65 dark:text-amber-100/70">{t('objectList.workcaseResumeCondition')}: {suggestion.resumeCondition}</div>}
+          <div className="ldvh-caption mt-0.5 text-amber-950/65 dark:text-amber-100/70">{t('objectList.workcaseFollowUpSummary')}: {suggestion.followUpSummary}</div>
         </li>
       ))}
     </ul>
@@ -676,7 +676,7 @@ function WorkCaseClosedContent({ goal, terminal }: { goal?: string; terminal?: W
                     </span>
                   </div>
                   <div className={`${WORKCASE_CARD_TITLE_BODY_GAP_CLASS} min-w-0 break-words`}>
-                    <SummaryText value={residual.summary} collapseThreshold={Number.MAX_SAFE_INTEGER} className="[&_p]:my-0 text-[13px] leading-5 text-cyan-700/75 dark:text-cyan-200/75" />
+                    <SummaryText value={residual.summary} collapseThreshold={Number.MAX_SAFE_INTEGER} className="[&_p]:my-0 text-[13px] leading-5 text-cyan-950/70 dark:text-cyan-100/75" />
                   </div>
                 </li>
               ))}

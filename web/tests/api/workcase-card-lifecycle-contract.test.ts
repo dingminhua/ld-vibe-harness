@@ -152,7 +152,7 @@ test('plan confirmation keeps goal and criteria as the only plan-decision inputs
   assert.match(content, /ldvh-card-title/);
   assert.match(content, /ldvh-caption/);
   assert.match(content, /bg-blue-500\/\[0\.025\]/);
-  assert.match(content, /className="text-\[13px\] leading-5 text-ldvh-text-secondary\/85"/);
+  assert.match(content, /className="text-\[13px\] leading-5 text-blue-950\/65 dark:text-blue-100\/75"/);
   assert.match(content, /mt-\[0\.5rem\] h-1 w-1 shrink-0 rounded-full bg-blue-400\/65 dark:bg-blue-400\/75/);
   assert.doesNotMatch(content, /list-disc/);
   assert.doesNotMatch(content, /<ol|line-clamp|slice\(0,|scope|blockingSummary|BlockingNotice/);
@@ -176,6 +176,12 @@ test('semantic WorkCase cards share one title-to-body spacing token', () => {
   }
   assert.match(closure, /showStatus=\{false\} compact/);
   assert.match(closed, /showStatus=\{false\} compact/);
+
+  // 彩色 Card 正文使用与背景同色相的低饱和深色，避免高饱和标题色贯穿长正文。
+  assert.match(goal, /text-violet-950\/65 dark:text-violet-100\/75/);
+  assert.match(list, /completed: 'text-emerald-950\/70 dark:text-emerald-100\/75'/);
+  assert.match(list, /partial: 'text-amber-950\/70 dark:text-amber-100\/75'/);
+  assert.match(list, /accept_stop: 'text-cyan-950\/70 dark:text-cyan-100\/75'/);
 });
 
 test('Only Card titles navigate; routed targets remain plain relationship facts', () => {
@@ -209,7 +215,7 @@ test('progressing cards show only goal and current progress facts', () => {
   assert.match(branch, /waitingOn=\{obj\.waiting_on\}/);
   assert.match(branch, /blockingSummary=\{obj\.blocking_summary\}/);
   assert.doesNotMatch(branch, /successCriteria|closure|approval/);
-  assert.match(content, /<h3 className="ldvh-card-title text-sky-700 dark:text-sky-200">\{t\('objectList\.workcaseCurrentProgress'\)\}<\/h3>/);
+  assert.match(content, /<h3 className="ldvh-card-title text-sky-700\/85 dark:text-sky-200\/85">\{t\('objectList\.workcaseCurrentProgress'\)\}<\/h3>/);
   assert.doesNotMatch(content, /currentExecutionPosition|currentExecutionItem|workcaseItemProgress/);
   assert.match(content, /const displayedExecutionItems = itemExecution/);
   assert.match(content, /completed: 0, in_progress: 1, blocked: 2, pending: 3, cancelled: 4/);
@@ -226,15 +232,15 @@ test('progressing cards show only goal and current progress facts', () => {
   assert.match(content, /bg-ldvh-bg\/60/);
   assert.match(content, /top-2\.5 z-0 h-px bg-ldvh-border/);
   assert.match(content, /bg-sky-100 font-semibold text-sky-600/);
-  assert.match(content, /text-sky-700 dark:text-sky-200/);
+  assert.match(content, /text-sky-950\/70 dark:text-sky-100\/75/);
   assert.match(content, /text-sky-600\/70 dark:text-sky-300\/70/);
-  assert.match(content, /text-emerald-700 dark:text-emerald-200/);
-  assert.match(content, /text-slate-600 dark:text-slate-300/);
+  assert.match(content, /text-emerald-950\/70 dark:text-emerald-100\/75/);
+  assert.match(content, /text-slate-700\/70 dark:text-slate-200\/70/);
   assert.doesNotMatch(content, /grid-cols-\[1rem_minmax\(0,1fr\)\]/);
   assert.doesNotMatch(content, /workcaseItemCompleted|workcaseItemInProgress|workcaseItemBlocked|workcaseItemPending|workcaseItemCancelled/);
   assert.match(content, /objectList\.workcaseWaitingOn/);
   assert.match(content, /border-l-2 border-l-ldvh-text-secondary\/35 bg-ldvh-bg\/60/);
-  assert.match(content, /\[&_p\]:my-0 text-\[13px\] leading-5 text-slate-600/);
+  assert.match(content, /\[&_p\]:my-0 text-\[13px\] leading-5 text-slate-700\/70/);
   assert.match(content, /<WorkCaseBlockingNotice blockingSummary=\{blockingSummary\}/);
   assert.doesNotMatch(content, /progressHistory|roundLabel|workcaseRound/);
 });
