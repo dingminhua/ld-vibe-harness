@@ -185,7 +185,7 @@ function WorkCaseGoalSection({ goal, t }: { goal?: string; t: Translate }) {
     <section className="min-w-0 rounded-md border border-ldvh-border/80 border-l-2 border-l-ldvh-accent/45 bg-ldvh-bg/65 px-3.5 py-3">
       <h3 className="ldvh-card-title">{t('objectList.workcaseGoal')}</h3>
       {goal?.trim() ? (
-        <div className="ldvh-caption mt-1.5 max-w-[82ch] break-words">
+        <div className="ldvh-caption mt-1.5 w-full break-words">
           <SummaryText
             value={goal}
             collapseThreshold={Number.MAX_SAFE_INTEGER}
@@ -502,6 +502,37 @@ const PROPOSED_OUTCOME_ACCENT: Record<string, string> = {
   cancelled: 'border-l-zinc-500/70',
 };
 
+/** Closure inputs reuse the same subdued status-card grammar as progressing work items. */
+const PROPOSED_OUTCOME_NOTICE_CLASS: Record<string, string> = {
+  completed: 'border-emerald-400/25 border-l-emerald-400 bg-emerald-500/5',
+  partial: 'border-amber-400/25 border-l-amber-400 bg-amber-500/5',
+  'not-achieved': 'border-red-400/25 border-l-red-400 bg-red-500/5',
+  cancelled: 'border-zinc-400/25 border-l-zinc-400 bg-zinc-500/5',
+};
+
+const PROPOSED_OUTCOME_TEXT_CLASS: Record<string, string> = {
+  completed: 'text-emerald-700 dark:text-emerald-200',
+  partial: 'text-amber-800 dark:text-amber-200',
+  'not-achieved': 'text-red-700 dark:text-red-200',
+  cancelled: 'text-zinc-600 dark:text-zinc-300',
+};
+
+const PROPOSED_DISPOSITION_NOTICE_CLASS: Record<string, string> = {
+  route_existing: 'border-emerald-400/25 border-l-emerald-400 bg-emerald-500/5',
+  suggest_spark: 'border-amber-400/25 border-l-amber-400 bg-amber-500/5',
+  accept_stop: 'border-ldvh-border/70 border-l-ldvh-text-secondary/35 bg-ldvh-bg/60',
+};
+
+/** A literal quarter-filled circle keeps the "partial" outcome legible at card-icon size. */
+function QuarterCircle({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 16 16" width="14" height="14" className={className} aria-hidden="true">
+      <circle cx="8" cy="8" r="6.25" fill="none" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M8 8V1.75A6.25 6.25 0 0 1 14.25 8Z" fill="currentColor" />
+    </svg>
+  );
+}
+
 /** Plain text color for residual disposition labels (no chip frame). */
 const PROPOSED_DISPOSITION_TEXT_CLASS: Record<string, string> = {
   route_existing: 'text-emerald-600 dark:text-emerald-300',
@@ -513,23 +544,25 @@ function WorkCaseSparkSuggestions({ suggestions }: { suggestions: WorkCaseSparkS
   const { t, locale } = useI18n();
   if (suggestions.length === 0) return null;
   return (
-    <div className="mt-3 border-t border-ldvh-border/45 pt-2.5">
-      <h4 className={`ldvh-caption-strong ${PROPOSED_DISPOSITION_TEXT_CLASS.suggest_spark}`}>
-        {getFieldValueLabel('proposed_disposition', 'suggest_spark', locale)}
-      </h4>
-      <p className="ldvh-caption mt-0.5">{t('objectList.workcaseSparkSuggestions')}</p>
-      <ul className="mt-1.5 grid min-w-0 gap-2">
+    <ul className="grid min-w-0 gap-2">
         {suggestions.map((suggestion) => (
-          <li key={suggestion.suggestionId} className="grid gap-0.5 rounded border border-ldvh-border/45 px-2.5 py-2">
-            <span className="ldvh-caption-strong">{suggestion.summary}</span>
-            {suggestion.restrictionReason && <span className="ldvh-caption">{t('objectList.workcaseRestrictionReason')}: {suggestion.restrictionReason}</span>}
-            {suggestion.impactSummary && <span className="ldvh-caption">{t('objectList.workcaseImpactSummary')}: {suggestion.impactSummary}</span>}
-            {suggestion.resumeCondition && <span className="ldvh-caption">{t('objectList.workcaseResumeCondition')}: {suggestion.resumeCondition}</span>}
-            <span className="ldvh-caption">{t('objectList.workcaseFollowUpSummary')}: {suggestion.followUpSummary}</span>
+          <li key={suggestion.suggestionId} className="min-w-0 rounded-md border border-amber-400/25 border-l-2 border-l-amber-400 bg-amber-500/5 px-2.5 py-2">
+            <div className="flex min-w-0 items-center gap-2">
+              <Circle size={8} className="shrink-0 fill-amber-500 text-amber-500 dark:fill-amber-400 dark:text-amber-400" aria-hidden="true" />
+              <span className="ldvh-card-title min-w-0 text-amber-700 dark:text-amber-200">
+                {getFieldValueLabel('proposed_disposition', 'suggest_spark', locale)}
+              </span>
+            </div>
+            <div className="mt-0.5 min-w-0 break-words">
+              <SummaryText value={suggestion.summary} collapseThreshold={Number.MAX_SAFE_INTEGER} className="[&_p]:my-0 text-[13px] leading-5 text-amber-800 dark:text-amber-200" />
+            </div>
+            {suggestion.restrictionReason && <div className="ldvh-caption mt-1 text-amber-800/80 dark:text-amber-200/80">{t('objectList.workcaseRestrictionReason')}: {suggestion.restrictionReason}</div>}
+            {suggestion.impactSummary && <div className="ldvh-caption mt-0.5 text-amber-800/80 dark:text-amber-200/80">{t('objectList.workcaseImpactSummary')}: {suggestion.impactSummary}</div>}
+            {suggestion.resumeCondition && <div className="ldvh-caption mt-0.5 text-amber-800/80 dark:text-amber-200/80">{t('objectList.workcaseResumeCondition')}: {suggestion.resumeCondition}</div>}
+            <div className="ldvh-caption mt-0.5 text-amber-800/80 dark:text-amber-200/80">{t('objectList.workcaseFollowUpSummary')}: {suggestion.followUpSummary}</div>
           </li>
         ))}
-      </ul>
-    </div>
+    </ul>
   );
 }
 
@@ -548,54 +581,48 @@ function WorkCaseClosureConfirmationContent({
   return (
     <div className="grid min-w-0 gap-2">
       <WorkCaseGoalSection goal={goal} t={t} />
-      <section className={`min-w-0 rounded-md border border-ldvh-border/80 border-l-2 ${accentClass} bg-ldvh-bg/65 px-3.5 py-3`}>
-        {closureProposal ? (
-          <>
-            {/* Outcome: same size/weight as the "目标" label, wrapped in a colored frame */}
-            <div className="flex min-w-0 items-baseline">
-              <span
-                className={`ldvh-card-title inline-flex items-center rounded border px-1.5 py-0.5 ${PROPOSED_OUTCOME_CHIP_CLASS[closureProposal.proposedOutcome] ?? 'border-ldvh-border/70 text-ldvh-text-primary'}`}
-              >
+      {closureProposal ? (
+        <>
+          <section className={`min-w-0 rounded-md border border-l-2 px-2.5 py-2 ${PROPOSED_OUTCOME_NOTICE_CLASS[closureProposal.proposedOutcome] ?? `border-ldvh-border/70 ${accentClass} bg-ldvh-bg/60`}`}>
+            <div className="flex min-w-0 items-center gap-2">
+              {closureProposal.proposedOutcome === 'completed' ? <CircleCheck size={14} className="shrink-0 text-emerald-500 dark:text-emerald-400" aria-hidden="true" /> : closureProposal.proposedOutcome === 'partial' ? <QuarterCircle className="shrink-0 text-amber-500 dark:text-amber-400" /> : closureProposal.proposedOutcome === 'not-achieved' ? <CircleAlert size={14} className="shrink-0 text-red-500 dark:text-red-400" aria-hidden="true" /> : <CircleMinus size={14} className="shrink-0 text-zinc-500 dark:text-zinc-400" aria-hidden="true" />}
+              <span className={`ldvh-card-title min-w-0 ${PROPOSED_OUTCOME_TEXT_CLASS[closureProposal.proposedOutcome] ?? 'text-ldvh-text-secondary'}`}>
                 {getFieldValueLabel('proposed_outcome', closureProposal.proposedOutcome, locale)}
               </span>
             </div>
-            {/* Disposition summary: matches the goal section's body (13px/secondary) */}
-            <div className="ldvh-caption mt-1.5 max-w-[82ch] break-words">
-              <SummaryText
-                value={closureProposal.dispositionSummary}
-                collapseThreshold={Number.MAX_SAFE_INTEGER}
-                className="text-[13px] leading-5 text-ldvh-text-secondary"
-              />
+            <div className="mt-0.5 min-w-0 break-words">
+              <SummaryText value={closureProposal.dispositionSummary} collapseThreshold={Number.MAX_SAFE_INTEGER} className={`[&_p]:my-0 text-[13px] leading-5 ${PROPOSED_OUTCOME_TEXT_CLASS[closureProposal.proposedOutcome] ?? 'text-ldvh-text-secondary'}`} />
             </div>
-            {closureProposal.residualDecisions.length > 0 && (
-              <div className="mt-3 border-t border-ldvh-border/45 pt-2.5">
-                <ul className="grid min-w-0 gap-1.5">
-                  {closureProposal.residualDecisions.map((decision) => (
-                    <li key={decision.residualId} className="grid min-w-0 gap-0.5 py-0.5">
-                      <span
-                        className={`ldvh-caption-strong ${PROPOSED_DISPOSITION_TEXT_CLASS[decision.proposedDisposition] ?? 'text-ldvh-text-secondary'}`}
-                      >
-                        {getFieldValueLabel('proposed_disposition', decision.proposedDisposition, locale)}
-                      </span>
-                      <span className="min-w-0 break-words">
-                        <SummaryText
-                          value={decision.summary}
-                          collapseThreshold={Number.MAX_SAFE_INTEGER}
-                          className="text-[13px] leading-5 text-ldvh-text-secondary"
-                        />
-                      </span>
-                      {decision.routeTarget && <WorkCaseContributionTargetRow target={decision.routeTarget} locale={locale} showStatus={false} />}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            <WorkCaseSparkSuggestions suggestions={closureProposal.sparkSuggestions} />
-          </>
-        ) : (
-          <p role="status" className="ldvh-card-decision-body text-red-400">{t('objectList.workcaseClosureProposalMissing')}</p>
-        )}
-      </section>
+          </section>
+          {closureProposal.residualDecisions.length > 0 && (
+            <ul className="grid min-w-0 gap-2">
+              {closureProposal.residualDecisions.map((decision) => (
+                <li key={decision.residualId} className={`min-w-0 rounded-md border border-l-2 px-2.5 py-2 ${PROPOSED_DISPOSITION_NOTICE_CLASS[decision.proposedDisposition] ?? 'border-ldvh-border/70 border-l-ldvh-text-secondary/35 bg-ldvh-bg/60'}`}>
+                  <div className="flex min-w-0 items-center gap-2">
+                    {decision.proposedDisposition === 'accept_stop' ? (
+                      <CircleMinus size={14} className="shrink-0 text-zinc-500 dark:text-zinc-400" aria-hidden="true" />
+                    ) : (
+                      <Circle size={8} className={`shrink-0 ${PROPOSED_DISPOSITION_TEXT_CLASS[decision.proposedDisposition] ?? 'text-ldvh-text-secondary'}`} aria-hidden="true" />
+                    )}
+                    <span className={`ldvh-card-title min-w-0 ${PROPOSED_DISPOSITION_TEXT_CLASS[decision.proposedDisposition] ?? 'text-ldvh-text-secondary'}`}>
+                      {getFieldValueLabel('proposed_disposition', decision.proposedDisposition, locale)}
+                    </span>
+                  </div>
+                  <div className="mt-0.5 min-w-0 break-words">
+                    <SummaryText value={decision.summary} collapseThreshold={Number.MAX_SAFE_INTEGER} className="[&_p]:my-0 text-[13px] leading-5 text-ldvh-text-secondary" />
+                  </div>
+                  {decision.routeTarget && <WorkCaseContributionTargetRow target={decision.routeTarget} locale={locale} showStatus={false} />}
+                </li>
+              ))}
+            </ul>
+          )}
+          <WorkCaseSparkSuggestions suggestions={closureProposal.sparkSuggestions} />
+        </>
+      ) : (
+        <section role="status" className="min-w-0 rounded-md border border-red-400/25 border-l-2 border-l-red-400 bg-red-500/5 px-2.5 py-2">
+          <p className="ldvh-card-decision-body text-red-500 dark:text-red-300">{t('objectList.workcaseClosureProposalMissing')}</p>
+        </section>
+      )}
     </div>
   );
 }
@@ -659,22 +686,42 @@ function WorkCaseContributionsContent({
 
 /** Targets resolve on demand exactly like the detail relation rows; titles are never duplicated into the Card. */
 function WorkCaseContributionTargetRow({ target, locale, showStatus = true }: { target: WorkCaseContributionTarget; locale: string; showStatus?: boolean }) {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [detail, setDetail] = useState<ObjectDetail | null>(null);
+  const [readState, setReadState] = useState<'loading' | 'resolved' | 'unavailable'>('loading');
 
   useEffect(() => {
     let cancelled = false;
     setDetail(null);
+    setReadState('loading');
     fetchObjectDetail(target.factTypeKey, target.objectId)
-      .then((value) => { if (!cancelled) setDetail(value); })
-      .catch(() => { if (!cancelled) setDetail(null); });
+      .then((value) => {
+        if (!cancelled) {
+          setDetail(value);
+          setReadState('resolved');
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setDetail(null);
+          setReadState('unavailable');
+        }
+      });
     return () => { cancelled = true; };
   }, [target.factTypeKey, target.objectId]);
 
-  const title = contributionTargetTitle(detail, getFactReadMeta(detail?.data), locale);
-  const targetStatus = showStatus && detail && isReadableFact(getFactReadMeta(detail.data)) && typeof detail.data.status === 'string'
+  const readMeta = getFactReadMeta(detail?.data);
+  const readable = Boolean(detail && isReadableFact(readMeta));
+  const title = contributionTargetTitle(detail, readMeta, locale);
+  const targetStatus = showStatus && readable && typeof detail?.data.status === 'string'
     ? getObjectStatusLocale(target.factTypeKey, detail.data.status, locale)
     : null;
+  const readStatus = readable
+    ? null
+    : readState === 'loading'
+      ? t('objectList.workcaseTargetReading')
+      : getFieldValueLabel('read_status', readMeta.readStatus ?? 'unreadable', locale);
   const typeColor = CATEGORY_COLORS[target.factTypeKey] || CATEGORY_COLORS.other;
   const open = () => navigate(`/objects/${target.factTypeKey}/${target.objectId}`);
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -690,12 +737,13 @@ function WorkCaseContributionTargetRow({ target, locale, showStatus = true }: { 
       tabIndex={0}
       onClick={(event) => { event.stopPropagation(); open(); }}
       onKeyDown={onKeyDown}
-      className="group flex min-w-0 cursor-pointer items-center gap-2 rounded-md px-1.5 py-2 text-left transition-colors hover:bg-ldvh-border/25 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ldvh-accent/50"
+      className="group flex min-w-0 cursor-pointer items-start gap-2 rounded-md px-1.5 py-2 text-left transition-colors hover:bg-ldvh-border/25 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ldvh-accent/50"
     >
-      <ObjectTypeIcon type={target.factTypeKey} size={13} className="shrink-0" style={{ color: typeColor }} />
+      <ObjectTypeIcon type={target.factTypeKey} size={13} className="mt-0.5 shrink-0" style={{ color: typeColor }} />
       <span className="ldvh-meta-muted shrink-0">{getTypeLabel(target.factTypeKey, locale)}</span>
-      <span className="ldvh-meta-primary min-w-0 flex-1 truncate group-hover:text-ldvh-accent">{title}</span>
+      <span className="ldvh-meta-primary min-w-0 flex-1 whitespace-normal break-words group-hover:text-ldvh-accent">{title}</span>
       {targetStatus && <span className="ldvh-meta-muted shrink-0">{targetStatus}</span>}
+      {readStatus && <span className="ldvh-meta-muted shrink-0">{readStatus}</span>}
     </div>
   );
 }

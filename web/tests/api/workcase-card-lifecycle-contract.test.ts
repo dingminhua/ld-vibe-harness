@@ -242,6 +242,15 @@ test('closure confirmation cards render the closure-decision input zone and decl
   assert.match(content, /getFieldValueLabel\('proposed_disposition', decision\.proposedDisposition, locale\)/);
   assert.match(content, /objectList\.workcaseClosureProposalMissing/);
   assert.match(content, /WorkCaseSparkSuggestions suggestions=\{closureProposal\.sparkSuggestions\}/);
+  assert.match(content, /PROPOSED_OUTCOME_NOTICE_CLASS\[closureProposal\.proposedOutcome\]/);
+  assert.match(content, /PROPOSED_DISPOSITION_NOTICE_CLASS\[decision\.proposedDisposition\]/);
+  assert.match(content, /rounded-md border border-l-2 px-2\.5 py-2/);
+  assert.match(content, /Circle size=\{8\}/);
+  assert.match(list, /function QuarterCircle/);
+  assert.match(content, /<QuarterCircle className="shrink-0 text-amber-500/);
+  assert.match(content, /decision\.proposedDisposition === 'accept_stop'/);
+  assert.match(content, /ldvh-card-title min-w-0 \$\{PROPOSED_OUTCOME_TEXT_CLASS/);
+  assert.match(content, /ldvh-card-title min-w-0 \$\{PROPOSED_DISPOSITION_TEXT_CLASS/);
   assert.match(content, /decision\.routeTarget/);
   assert.doesNotMatch(content, /<ol|successCriterionResults|controller_check|validation_summary/);
 
@@ -250,6 +259,10 @@ test('closure confirmation cards render the closure-decision input zone and decl
   assert.match(contributions, /fetchObjectDetail\(target\.factTypeKey, target\.objectId\)/);
   assert.match(contributions, /getTypeLabel\(target\.factTypeKey, locale\)/);
   assert.match(contributions, /if \(!detail \|\| !isReadableFact\(readMeta\)\) return '—';/);
+  assert.match(contributions, /objectList\.workcaseTargetReading/);
+  assert.match(contributions, /getFieldValueLabel\('read_status', readMeta\.readStatus \?\? 'unreadable', locale\)/);
+  assert.match(contributions, /whitespace-normal break-words/);
+  assert.doesNotMatch(contributions, /flex-1 truncate/);
 });
 
 test('closed cards use terminal closure content while unclassified cards stay minimal', () => {
@@ -325,9 +338,8 @@ test('closure confirmation projects a stable closure-proposal subset only when w
       proposed_outcome: 'partial',
       proposed_disposition_summary: '接受部分完成并分流剩余责任。',
       residual_decisions: [
-        { residual_id: 'residual-a', summary: '后续验证', proposed_disposition: 'route_existing', route_target: { governed_project_id: 'sample', fact_type_key: 'workcase', object_id: 'workcase-0111' } },
+        { residual_id: 'residual-a', summary: '后续验证', proposed_disposition: 'route_existing', route_target: { governed_project_id: 'sample', fact_type_key: 'workcase', object_id: 'workcase-0111', content_fingerprint: 'a'.repeat(64) } },
         { residual_id: 'residual-b', summary: '放弃试验分支', proposed_disposition: 'accept_stop' },
-        { summary: '缺少稳定 residual_id', proposed_disposition: 'route_existing' },
       ],
       spark_suggestions: [{ suggestion_id: 'suggestion-next', suggestion_kind: 'follow_up_opportunity', summary: '保留后续机会', follow_up_summary: '由 Human 日后判断是否建立 Spark。' }],
     },
@@ -343,6 +355,143 @@ test('closure confirmation projects a stable closure-proposal subset only when w
     ],
     sparkSuggestions: [{ suggestionId: 'suggestion-next', suggestionKind: 'follow_up_opportunity', summary: '保留后续机会', followUpSummary: '由 Human 日后判断是否建立 Spark。' }],
   });
+});
+
+test('closure confirmation rejects route targets without an exact fingerprint and proposals with unknown members', () => {
+  const base = {
+    object_id: 'workcase-0115',
+    fact_type_key: 'workcase',
+    title: '等待关闭确认',
+    status: 'open',
+    phase: 'human_closure_confirming',
+    updated_at: '2026-07-27T00:00:00+08:00',
+    goal: '目标仍应保留。',
+  };
+  const proposal = {
+    proposed_outcome: 'partial',
+    proposed_disposition_summary: '将责任路由至已有对象。',
+    residual_decisions: [{
+      residual_id: 'residual-route',
+      summary: '路由责任',
+      proposed_disposition: 'route_existing',
+      route_target: {
+        governed_project_id: 'sample',
+        fact_type_key: 'workcase',
+        object_id: 'workcase-0111',
+        content_fingerprint: 'b'.repeat(64),
+      },
+    }],
+  };
+
+  const missingFingerprint = structuredClone(proposal);
+  delete (missingFingerprint.residual_decisions[0].route_target as { content_fingerprint?: string }).content_fingerprint;
+  const badFingerprint = structuredClone(proposal);
+  badFingerprint.residual_decisions[0].route_target.content_fingerprint = 'not-a-sha256';
+  const unknownProposalMember = { ...proposal, generated_hint: 'must not be ignored' };
+  const unknownTargetMember = structuredClone(proposal);
+  Object.assign(unknownTargetMember.residual_decisions[0].route_target, { title: 'must be reread, not trusted' });
+
+  for (const closureProposal of [missingFingerprint, badFingerprint, unknownProposalMember, unknownTargetMember]) {
+    const projected = projectWorkCaseCard({ ...base, closure_proposal: closureProposal });
+    assert.equal('closureProposal' in projected, false);
+    assert.equal(projected.goal, '目标仍应保留。');
+  }
+});
+
+test('closure confirmation rejects malformed proposal-local IDs and type-mismatched route object IDs', () => {
+  const base = {
+    object_id: 'workcase-0116',
+    fact_type_key: 'workcase',
+    title: '等待关闭确认',
+    status: 'open',
+    phase: 'human_closure_confirming',
+    updated_at: '2026-07-27T00:00:00+08:00',
+    goal: '目标仍应保留。',
+  };
+  const validRoute = {
+    proposed_outcome: 'partial',
+    proposed_disposition_summary: '将责任路由至已有对象。',
+    residual_decisions: [{
+      residual_id: 'residual-route',
+      summary: '路由责任',
+      proposed_disposition: 'route_existing',
+      route_target: {
+        governed_project_id: 'sample',
+        fact_type_key: 'spark',
+        object_id: 'spark-0111',
+        content_fingerprint: 'c'.repeat(64),
+      },
+    }],
+  };
+  const malformedResidual = structuredClone(validRoute);
+  malformedResidual.residual_decisions[0].residual_id = 'residual_bad';
+  const mismatchedTarget = structuredClone(validRoute);
+  mismatchedTarget.residual_decisions[0].route_target.object_id = 'workcase-0111';
+  const malformedSuggestion = {
+    proposed_outcome: 'completed',
+    proposed_disposition_summary: '没有剩余责任。',
+    spark_suggestions: [{
+      suggestion_id: 'suggestion_bad',
+      suggestion_kind: 'follow_up_opportunity',
+      summary: '后续机会',
+      follow_up_summary: '由 Human 日后判断。',
+    }],
+  };
+
+  for (const closureProposal of [malformedResidual, mismatchedTarget, malformedSuggestion]) {
+    const projected = projectWorkCaseCard({ ...base, closure_proposal: closureProposal });
+    assert.equal('closureProposal' in projected, false);
+  }
+});
+
+test('closure confirmation drops the whole proposal when any residual member is malformed', () => {
+  const projected = projectWorkCaseCard({
+    object_id: 'workcase-0113',
+    fact_type_key: 'workcase',
+    title: '等待关闭确认',
+    status: 'open',
+    phase: 'human_closure_confirming',
+    updated_at: '2026-07-27T00:00:00+08:00',
+    goal: '目标仍应保留。',
+    closure_proposal: {
+      proposed_outcome: 'partial',
+      proposed_disposition_summary: '不能静默忽略坏成员。',
+      residual_decisions: [
+        { residual_id: 'residual-a', summary: '有效责任', proposed_disposition: 'accept_stop' },
+        { summary: '缺少稳定 residual_id', proposed_disposition: 'accept_stop' },
+      ],
+    },
+  });
+
+  assert.equal('closureProposal' in projected, false);
+  assert.equal(projected.goal, '目标仍应保留。');
+});
+
+test('completed closure proposal rejects constrained-responsibility Spark suggestions', () => {
+  const projected = projectWorkCaseCard({
+    object_id: 'workcase-0114',
+    fact_type_key: 'workcase',
+    title: '等待关闭确认',
+    status: 'open',
+    phase: 'human_closure_confirming',
+    updated_at: '2026-07-27T00:00:00+08:00',
+    goal: '目标仍应保留。',
+    closure_proposal: {
+      proposed_outcome: 'completed',
+      proposed_disposition_summary: '错误地遗留了受限责任。',
+      spark_suggestions: [{
+        suggestion_id: 'suggestion-blocked',
+        suggestion_kind: 'constrained_responsibility',
+        summary: '受限责任',
+        restriction_reason: '缺少外部条件。',
+        impact_summary: '责任尚未完成。',
+        resume_condition: '条件恢复。',
+        follow_up_summary: '由 Human 判断是否建立 Spark。',
+      }],
+    },
+  });
+
+  assert.equal('closureProposal' in projected, false);
 });
 
 test('closure confirmation drops the whole proposal when outcome or disposition summary is invalid', () => {
