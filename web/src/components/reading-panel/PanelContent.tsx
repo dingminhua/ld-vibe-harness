@@ -9,6 +9,7 @@ import {
   RelatedContentSection,
   StudyReadingLayout,
   getAuxiliaryMetaEntries,
+  getObjectHeaderStatus,
 } from '@/pages/ObjectDetail';
 import { AdrReadingLayout, PitfallReadingLayout, SparkReadingLayout } from '@/pages/object-detail/FactReadingLayouts';
 import { WorkCaseReadingLayout } from '@/pages/object-detail/WorkCaseReadingLayout';
@@ -91,6 +92,7 @@ function ObjectPreview({ content }: { content: PanelContent }) {
   const readMeta = getFactReadMeta(obj);
   const readable = Boolean(obj && isReadableFact(readMeta));
   const status = readable ? detail?.summary.status ?? (obj?.status as string | undefined) : undefined;
+  const headerStatus = getObjectHeaderStatus(objectType || '', status, obj || {});
   const title = getObjectTitle(obj, objectId, locale);
   const targetPath = readable ? readMeta.canonicalPath : undefined;
   const loading = !obj && !error && Boolean(objectType && objectId);
@@ -149,8 +151,8 @@ function ObjectPreview({ content }: { content: PanelContent }) {
         target={targetPath}
         typeColor={typeColor}
         typeLabel={getObjectTypeLabel(objectType, locale)}
-        status={status}
-        statusLabel={status ? getObjectStatusLocale(objectType || '', status, locale) : undefined}
+        status={headerStatus}
+        statusLabel={headerStatus ? getObjectStatusLocale(objectType || '', headerStatus, locale) : undefined}
         source={obj || {}}
         locale={locale}
         created={formatDateTime((obj?.created_at ?? obj?.created) as string | undefined)}

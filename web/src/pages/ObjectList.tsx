@@ -143,7 +143,7 @@ function WorkCasePlanConfirmationContent({
   return (
     <div className="grid min-w-0 gap-2">
       <WorkCaseGoalSection goal={goal} t={t} />
-      <section className="min-w-0 rounded-md border border-blue-400/35 border-l-2 border-l-blue-400 bg-blue-500/[0.08] px-3.5 py-3 dark:bg-blue-950/35">
+      <section className="min-w-0 rounded-md border border-blue-400/20 border-l-2 border-l-blue-400/80 bg-blue-500/[0.025] px-3 py-2.5 dark:bg-blue-950/20">
         <div className="flex min-w-0 items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
             <ListChecks size={WORKCASE_SECTION_ICON_SIZE} className="shrink-0 text-blue-500 dark:text-blue-400" aria-hidden="true" />
@@ -154,18 +154,18 @@ function WorkCasePlanConfirmationContent({
           )}
         </div>
         {criteria.length > 0 ? (
-          <ul className={`${WORKCASE_CARD_TITLE_BODY_GAP_CLASS} grid min-w-0 gap-1`}>
+          <ul className={`${WORKCASE_CARD_TITLE_BODY_GAP_CLASS} grid min-w-0 gap-1.5`}>
             {criteria.map((criterion, index) => (
-              <li key={`${index}-${criterion}`} className="flex min-w-0 items-start gap-2">
+              <li key={`${index}-${criterion}`} className="flex min-w-0 items-start gap-2.5">
                 <span
                   aria-hidden="true"
-                  className="mt-2 h-1 w-1 shrink-0 rounded-full bg-blue-400/70 dark:bg-blue-400/80"
+                  className="mt-[0.5rem] h-1 w-1 shrink-0 rounded-full bg-blue-400/65 dark:bg-blue-400/75"
                 />
                 <div className="ldvh-caption min-w-0 flex-1 break-words [&_p]:my-0">
                   <SummaryText
                     value={criterion}
                     collapseThreshold={Number.MAX_SAFE_INTEGER}
-                    className="text-[13px] leading-5 text-blue-700/80 dark:text-blue-200/80"
+                    className="text-[13px] leading-5 text-ldvh-text-secondary/85"
                   />
                 </div>
               </li>

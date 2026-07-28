@@ -151,8 +151,9 @@ test('plan confirmation keeps goal and criteria as the only plan-decision inputs
   assert.ok(branch.indexOf("obj.status === 'blocked'") < branch.indexOf('<WorkCaseBlockingNotice'));
   assert.match(content, /ldvh-card-title/);
   assert.match(content, /ldvh-caption/);
-  assert.match(content, /className="text-\[13px\] leading-5 text-blue-700\/80 dark:text-blue-200\/80"/);
-  assert.match(content, /mt-2 h-1 w-1 shrink-0 rounded-full bg-blue-400\/70 dark:bg-blue-400\/80/);
+  assert.match(content, /bg-blue-500\/\[0\.025\]/);
+  assert.match(content, /className="text-\[13px\] leading-5 text-ldvh-text-secondary\/85"/);
+  assert.match(content, /mt-\[0\.5rem\] h-1 w-1 shrink-0 rounded-full bg-blue-400\/65 dark:bg-blue-400\/75/);
   assert.doesNotMatch(content, /list-disc/);
   assert.doesNotMatch(content, /<ol|line-clamp|slice\(0,|scope|blockingSummary|BlockingNotice/);
   assert.match(notice, /role="status"/);

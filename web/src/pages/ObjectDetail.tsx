@@ -146,6 +146,7 @@ export default function ObjectDetail() {
   const objStatus = typeof displayDetail.summary.status === 'string'
     ? displayDetail.summary.status
     : undefined;
+  const headerStatus = getObjectHeaderStatus(objType, objStatus, obj);
   const typeColor = CATEGORY_COLORS[objType] || CATEGORY_COLORS.other;
   const listSearch = searchParams.toString();
   const listPath = `/objects/${objType}${listSearch ? `?${listSearch}` : ''}`;
@@ -192,8 +193,8 @@ export default function ObjectDetail() {
                 objectType={objType}
                 typeColor={typeColor}
                 typeLabel={getTypeLabel(objType, locale)}
-                status={objStatus}
-                statusLabel={objStatus ? getObjectStatusLocale(objType, objStatus, locale) : undefined}
+                status={headerStatus}
+                statusLabel={headerStatus ? getObjectStatusLocale(objType, headerStatus, locale) : undefined}
                 source={obj}
                 locale={locale}
                 created={formatDateTime((obj.created_at ?? obj.created) as string | undefined)}
@@ -440,6 +441,18 @@ type LocalizedTitleItem = {
 
 export function getLocalizedTitle(item: LocalizedTitleItem, locale: string): string {
   return getLocalizedObjectTitle(item, locale, item.id);
+}
+
+export function getObjectHeaderStatus(
+  objectType: string,
+  status: string | undefined,
+  source: Record<string, unknown>,
+): string | undefined {
+  if (objectType !== 'workcase' || status === 'closed') return status;
+  const phase = typeof source.phase === 'string' && source.phase.trim()
+    ? source.phase
+    : undefined;
+  return phase ?? status;
 }
 
 export function ObjectIdentityHeader({
@@ -1018,12 +1031,14 @@ export function ReadingNodeSection({
   title,
   state,
   locale,
+  headerMeta,
   children,
   onToggle,
 }: {
   title: string;
   state: ReadingNodeState;
   locale: string;
+  headerMeta?: ReactNode;
   children: ReactNode;
   onToggle: () => void;
 }) {
@@ -1039,6 +1054,7 @@ export function ReadingNodeSection({
       >
         <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-ldvh-accent" />
         <span className="min-w-0 flex-1 truncate">{title}</span>
+        {headerMeta}
         <StateIcon size={14} className="shrink-0 text-ldvh-text-secondary/80" aria-hidden="true" />
       </button>
       {state !== 'collapsed' && children}

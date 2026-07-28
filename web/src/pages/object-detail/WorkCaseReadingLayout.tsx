@@ -1,5 +1,22 @@
 import { useEffect, useState, type KeyboardEvent, type ReactNode } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Activity,
+  ArrowRight,
+  ChevronLeft,
+  ChevronRight,
+  CircleAlert,
+  Circle,
+  CircleCheck,
+  CircleDot,
+  CircleHelp,
+  CircleMinus,
+  CirclePlay,
+  CircleX,
+  Clock3,
+  ListChecks,
+  ScanLine,
+  Target,
+} from "lucide-react";
 import SummaryText from "@/components/SummaryText";
 import CopyPathButton from "@/components/CopyPathButton";
 import { ObjectTypeIcon } from "@/components/SemanticIcon";
@@ -17,6 +34,7 @@ import {
 import { getFactReadMeta, isReadableFact } from "@/utils/factReadMeta";
 import { usePanel } from "@/utils/panelContext";
 import { CATEGORY_COLORS } from "@/utils/categoryColors";
+import { formatDateTime } from "@/utils/dateFormat";
 import { projectCurrentWorkCaseDetail } from "@/shared/workcaseDetailProjection";
 import {
   FactAssociationsSection,
@@ -115,51 +133,57 @@ export function WorkCaseReadingLayout({
 
   return (
     <div className="mb-6 flex flex-col gap-5">
-      {responsibilityVisible && (
-        <WorkCaseReadingNode
-          title={t("objectDetail.workcaseResponsibility")}
-          locale={locale}
-        >
-          <ProseField fieldKey="goal" value={obj.goal} locale={locale} />
-          <FieldIssueRow fieldKey="goal" issue={issueFor("goal")} locale={locale} />
-          <ProseField fieldKey="scope" value={obj.scope} locale={locale} />
-          <FieldIssueRow fieldKey="scope" issue={issueFor("scope")} locale={locale} />
-        </WorkCaseReadingNode>
-      )}
-
       {snapshotVisible && (
         <WorkCaseReadingNode
           title={t("objectDetail.workcaseCurrentSnapshot")}
           locale={locale}
+          contentVariant="semantic"
         >
-          <EnumField
-            fieldKey="phase"
-            value={obj.phase}
-            locale={locale}
-            statusValue
-          />
+          <SnapshotPhaseField value={obj.phase} locale={locale} />
           <FieldIssueRow fieldKey="phase" issue={issueFor("phase")} locale={locale} />
-          <ProseField fieldKey="summary" value={obj.summary} locale={locale} />
+          <SnapshotProseField fieldKey="summary" value={obj.summary} locale={locale} />
           <FieldIssueRow fieldKey="summary" issue={issueFor("summary")} locale={locale} />
-          <ProseField
+          <SnapshotProseField
             fieldKey="resume_from"
             value={obj.resume_from}
             locale={locale}
           />
           <FieldIssueRow fieldKey="resume_from" issue={issueFor("resume_from")} locale={locale} />
-          <ProseField
+          <SnapshotProseField
             fieldKey="waiting_on"
             value={obj.waiting_on}
             locale={locale}
           />
           <FieldIssueRow fieldKey="waiting_on" issue={issueFor("waiting_on")} locale={locale} />
-          <ProseField
+          <SnapshotProseField
             fieldKey="blocking_summary"
             value={obj.blocking_summary}
             locale={locale}
-            tone="warning"
           />
           <FieldIssueRow fieldKey="blocking_summary" issue={issueFor("blocking_summary")} locale={locale} />
+        </WorkCaseReadingNode>
+      )}
+
+      {responsibilityVisible && (
+        <WorkCaseReadingNode
+          title={t("objectDetail.workcaseResponsibility")}
+          locale={locale}
+          contentVariant="semantic"
+        >
+          <ResponsibilityField
+            fieldKey="goal"
+            value={obj.goal}
+            locale={locale}
+            tone="goal"
+          />
+          <FieldIssueRow fieldKey="goal" issue={issueFor("goal")} locale={locale} />
+          <ResponsibilityField
+            fieldKey="scope"
+            value={obj.scope}
+            locale={locale}
+            tone="scope"
+          />
+          <FieldIssueRow fieldKey="scope" issue={issueFor("scope")} locale={locale} />
         </WorkCaseReadingNode>
       )}
 
@@ -167,6 +191,7 @@ export function WorkCaseReadingLayout({
         <WorkCaseReadingNode
           title={t("objectDetail.workcaseSuccessCriteria")}
           locale={locale}
+          contentVariant="semantic"
         >
           {criteria.length > 0 && (
             <SuccessCriteria
@@ -184,12 +209,9 @@ export function WorkCaseReadingLayout({
         <WorkCaseReadingNode
           title={t("objectDetail.workcasePlanAndItems")}
           locale={locale}
+          headerMeta={<PlanVersionMeta value={obj.plan_version} locale={locale} />}
+          contentVariant="semantic"
         >
-          <NumberField
-            fieldKey="plan_version"
-            value={obj.plan_version}
-            locale={locale}
-          />
           <FieldIssueRow fieldKey="plan_version" issue={issueFor("plan_version")} locale={locale} />
           {workItems.length > 0 && (
             <WorkItemList items={workItems} locale={locale} />
@@ -363,11 +385,15 @@ function WorkCaseReadingNode({
   title,
   note,
   locale,
+  headerMeta,
+  contentVariant = "rows",
   children,
 }: {
   title: string;
   note?: string;
   locale: string;
+  headerMeta?: ReactNode;
+  contentVariant?: "rows" | "semantic";
   children: ReactNode;
 }) {
   const [state, setState] = useState<ReadingNodeState>("expanded");
@@ -376,17 +402,155 @@ function WorkCaseReadingNode({
       title={title}
       state={state}
       locale={locale}
+      headerMeta={headerMeta}
       onToggle={() => setState((current) => getReadingNodeNextState(current))}
     >
-      <div className="ldvh-study-node-content">
+      <div className={contentVariant === "semantic" ? "grid gap-3" : "ldvh-study-node-content"}>
         {note && (
           <p className="ldvh-caption mb-2 border-b border-ldvh-border/60 pb-2 text-ldvh-text-secondary">
             {note}
           </p>
         )}
-        <div className="divide-y divide-ldvh-border/60">{children}</div>
+        <div className={contentVariant === "semantic" ? "grid gap-3" : "divide-y divide-ldvh-border/60"}>
+          {children}
+        </div>
       </div>
     </ReadingNodeSection>
+  );
+}
+
+function PlanVersionMeta({ value, locale }: { value: unknown; locale: string }) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return null;
+  return (
+    <span className="ldvh-meta-muted inline-flex shrink-0 items-center gap-1.5 font-normal">
+      <span>{getFieldLabel("plan_version", locale)}</span>
+      <span className="font-mono tabular-nums text-ldvh-text-secondary">{value}</span>
+    </span>
+  );
+}
+
+function ResponsibilityField({
+  fieldKey,
+  value,
+  locale,
+  tone,
+}: {
+  fieldKey: "goal" | "scope";
+  value: unknown;
+  locale: string;
+  tone: "goal" | "scope";
+}) {
+  if (typeof value !== "string" || !value.trim()) return null;
+  const Icon = tone === "goal" ? Target : ScanLine;
+  const surfaceClass = tone === "goal"
+    ? "border-violet-400/35 bg-violet-500/[0.055]"
+    : "border-cyan-500/30 bg-cyan-500/[0.045]";
+  const headingClass = tone === "goal"
+    ? "text-violet-700 dark:text-violet-300"
+    : "text-cyan-700 dark:text-cyan-300";
+  const bodyClass = tone === "goal"
+    ? "text-violet-950/85 dark:text-violet-100/85"
+    : "text-cyan-950/85 dark:text-cyan-100/85";
+
+  return (
+    <section className={`min-w-0 rounded-lg border px-3.5 py-3 ${surfaceClass}`}>
+      <div className={`flex min-w-0 items-center gap-2 ${headingClass}`}>
+        <Icon size={16} strokeWidth={2} className="shrink-0" aria-hidden="true" />
+        <span className="ldvh-card-title-prominent min-w-0 text-current">
+          {getFieldLabel(fieldKey, locale)}
+        </span>
+      </div>
+      <div className="mt-2 min-w-0">
+        <SummaryText
+          value={value}
+          collapseThreshold={Number.MAX_SAFE_INTEGER}
+          className={`ldvh-body ${bodyClass}`}
+        />
+      </div>
+    </section>
+  );
+}
+
+function SnapshotPhaseField({
+  value,
+  locale,
+}: {
+  value: unknown;
+  locale: string;
+}) {
+  if (typeof value !== "string" || !value.trim()) return null;
+  return (
+    <section className="flex min-w-0 flex-wrap items-center justify-between gap-2 rounded-lg border border-violet-400/35 bg-violet-500/[0.055] px-3.5 py-2.5">
+      <div className="flex min-w-0 items-center gap-2 text-violet-700 dark:text-violet-300">
+        <CircleDot size={16} strokeWidth={2} className="shrink-0" aria-hidden="true" />
+        <span className="ldvh-card-title-prominent min-w-0 text-current">
+          {getFieldLabel("phase", locale)}
+        </span>
+      </div>
+      <span
+        title={value}
+        className="ldvh-chip inline-flex shrink-0 rounded-md border border-violet-400/30 bg-violet-500/10 px-2 py-0.5 text-violet-700 dark:text-violet-200"
+      >
+        {getStatusLocale(value, locale)}
+      </span>
+    </section>
+  );
+}
+
+function SnapshotProseField({
+  fieldKey,
+  value,
+  locale,
+}: {
+  fieldKey: "summary" | "resume_from" | "waiting_on" | "blocking_summary";
+  value: unknown;
+  locale: string;
+}) {
+  if (typeof value !== "string" || !value.trim()) return null;
+  const styles = {
+    summary: {
+      Icon: Activity,
+      surface: "border-sky-400/30 bg-sky-500/[0.045]",
+      heading: "text-sky-700 dark:text-sky-300",
+      body: "text-sky-950/85 dark:text-sky-100/85",
+    },
+    resume_from: {
+      Icon: ArrowRight,
+      surface: "border-emerald-400/30 bg-emerald-500/[0.045]",
+      heading: "text-emerald-700 dark:text-emerald-300",
+      body: "text-emerald-950/85 dark:text-emerald-100/85",
+    },
+    waiting_on: {
+      Icon: Clock3,
+      surface: "border-amber-400/35 bg-amber-500/[0.055]",
+      heading: "text-amber-700 dark:text-amber-300",
+      body: "text-amber-950/85 dark:text-amber-100/85",
+    },
+    blocking_summary: {
+      Icon: CircleAlert,
+      surface: "border-rose-400/35 bg-rose-500/[0.055]",
+      heading: "text-rose-700 dark:text-rose-300",
+      body: "text-rose-950/85 dark:text-rose-100/85",
+    },
+  }[fieldKey];
+  const { Icon } = styles;
+
+  return (
+    <section className={`min-w-0 rounded-lg border px-3.5 py-3 ${styles.surface}`}>
+      <div className={`flex min-w-0 items-center gap-2 ${styles.heading}`}>
+        <Icon size={16} strokeWidth={2} className="shrink-0" aria-hidden="true" />
+        <span className="ldvh-card-title-prominent min-w-0 text-current">
+          {getFieldLabel(fieldKey, locale)}
+        </span>
+      </div>
+      <div className="mt-2 min-w-0">
+        <SummaryText
+          value={value}
+          collapseThreshold={Number.MAX_SAFE_INTEGER}
+          className={`ldvh-body ${styles.body}`}
+        />
+      </div>
+    </section>
   );
 }
 
@@ -509,7 +673,11 @@ function NumberField({
   return (
     <DetailInlineField
       label={getFieldLabel(fieldKey, locale)}
-      value={<span className="ldvh-meta-primary font-mono">{value}</span>}
+      value={
+        <span className="ldvh-meta-primary inline-flex h-6 items-center font-mono tabular-nums">
+          {value}
+        </span>
+      }
     />
   );
 }
@@ -577,6 +745,7 @@ function SuccessCriteria({
   results: Array<Record<string, unknown>>;
   locale: string;
 }) {
+  const { t } = useI18n();
   const resultById = new Map(
     results.map((result) => [detailString(result.criterion_id), result]),
   );
@@ -589,31 +758,28 @@ function SuccessCriteria({
         return (
           <li
             key={criterionId}
-            className="min-w-0 rounded-md border border-ldvh-border bg-ldvh-bg/55 px-3 py-3"
+            className="min-w-0 overflow-hidden rounded-lg border border-blue-400/30 bg-blue-500/[0.035]"
           >
-            <div className="divide-y divide-ldvh-border/45">
-              <MonoField
-                fieldKey="criterion_id"
-                value={criterionId}
-                locale={locale}
-              />
-              <TextField
-                fieldKey="statement"
-                value={definition.statement}
-                locale={locale}
-              />
-              {result && (
-                <EnumField
-                  fieldKey="outcome"
-                  value={result.outcome}
-                  locale={locale}
+            <div className="flex min-w-0 flex-wrap items-center gap-2 border-b border-blue-400/20 px-3.5 py-2.5">
+              <ListChecks size={16} strokeWidth={2} className="shrink-0 text-blue-600 dark:text-blue-300" aria-hidden="true" />
+              <span className="ldvh-meta min-w-0 flex-1 break-all text-blue-700/75 dark:text-blue-200/75">
+                {criterionId}
+              </span>
+              {result && <CriterionOutcomeChip value={result.outcome} locale={locale} />}
+            </div>
+            <div className="min-w-0 px-3.5 py-3">
+              {typeof definition.statement === "string" && definition.statement.trim() && (
+                <SummaryText
+                  value={definition.statement}
+                  collapseThreshold={Number.MAX_SAFE_INTEGER}
+                  className="ldvh-body text-blue-950/90 dark:text-blue-100/90"
                 />
               )}
-              {result && (
-                <TextField
-                  fieldKey="summary"
+              {result && typeof result.summary === "string" && result.summary.trim() && (
+                <CriterionResultSummary
+                  outcome={result.outcome}
                   value={result.summary}
-                  locale={locale}
+                  label={t("objectDetail.workcaseCriterionResultSummary")}
                 />
               )}
             </div>
@@ -621,6 +787,80 @@ function SuccessCriteria({
         );
       })}
     </ul>
+  );
+}
+
+function criterionOutcomeStyle(value: unknown) {
+  if (value === "satisfied") {
+    return {
+      Icon: CircleCheck,
+      chip: "border-emerald-400/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-200",
+      summary: "border-emerald-400/25 bg-emerald-500/[0.055] text-emerald-950/85 dark:text-emerald-100/85",
+      heading: "text-emerald-700 dark:text-emerald-300",
+    };
+  }
+  if (value === "not_satisfied") {
+    return {
+      Icon: CircleX,
+      chip: "border-rose-400/30 bg-rose-500/10 text-rose-700 dark:text-rose-200",
+      summary: "border-rose-400/25 bg-rose-500/[0.055] text-rose-950/85 dark:text-rose-100/85",
+      heading: "text-rose-700 dark:text-rose-300",
+    };
+  }
+  if (value === "not_verified") {
+    return {
+      Icon: CircleHelp,
+      chip: "border-amber-400/30 bg-amber-500/10 text-amber-700 dark:text-amber-200",
+      summary: "border-amber-400/25 bg-amber-500/[0.055] text-amber-950/85 dark:text-amber-100/85",
+      heading: "text-amber-700 dark:text-amber-300",
+    };
+  }
+  return {
+    Icon: CircleDot,
+    chip: "border-ldvh-border bg-ldvh-bg text-ldvh-text-secondary",
+    summary: "border-ldvh-border bg-ldvh-bg/60 text-ldvh-text-secondary",
+    heading: "text-ldvh-text-secondary",
+  };
+}
+
+function CriterionOutcomeChip({ value, locale }: { value: unknown; locale: string }) {
+  if (typeof value !== "string" || !value.trim()) return null;
+  const styles = criterionOutcomeStyle(value);
+  const { Icon } = styles;
+  return (
+    <span
+      title={value}
+      className={`ldvh-chip inline-flex shrink-0 items-center gap-1.5 rounded-md border px-2 py-0.5 ${styles.chip}`}
+    >
+      <Icon size={13} strokeWidth={2} aria-hidden="true" />
+      {getFieldValueLabel("outcome", value, locale)}
+    </span>
+  );
+}
+
+function CriterionResultSummary({
+  outcome,
+  value,
+  label,
+}: {
+  outcome: unknown;
+  value: string;
+  label: string;
+}) {
+  const styles = criterionOutcomeStyle(outcome);
+  const { Icon } = styles;
+  return (
+    <div className={`mt-3 rounded-md border px-3 py-2.5 ${styles.summary}`}>
+      <div className={`ldvh-caption-strong mb-1.5 flex items-center gap-1.5 ${styles.heading}`}>
+        <Icon size={13} strokeWidth={2} className="shrink-0" aria-hidden="true" />
+        <span>{label}</span>
+      </div>
+      <SummaryText
+        value={value}
+        collapseThreshold={Number.MAX_SAFE_INTEGER}
+        className="ldvh-body text-current"
+      />
+    </div>
   );
 }
 
@@ -633,9 +873,6 @@ function WorkItemList({
 }) {
   return (
     <div className="py-3 first:pt-0 last:pb-0">
-      <div className="ldvh-caption-strong mb-3 text-ldvh-text-secondary">
-        {getFieldLabel("work_items", locale)}
-      </div>
       <ul className="grid min-w-0 gap-3">
         {items.map((item) => (
           <WorkItem
@@ -656,65 +893,235 @@ function WorkItem({
   item: Record<string, unknown>;
   locale: string;
 }) {
+  const itemId = detailString(item.item_id);
+  const hasAuxiliaryFields =
+    detailStrings(item.template_keys).length > 0 ||
+    [
+      item.template_deviation_summary,
+      item.current_summary,
+      item.resume_from,
+      item.blocking_summary,
+    ].some((value) => typeof value === "string" && Boolean(value.trim()));
   return (
-    <li className="min-w-0 rounded-md border border-ldvh-border bg-ldvh-bg/55 px-3 py-3">
-      <div className="divide-y divide-ldvh-border/45">
-        <MonoField fieldKey="item_id" value={item.item_id} locale={locale} />
-        <EnumField
-          fieldKey="status"
-          value={item.status}
-          locale={locale}
-          statusValue
+    <li className="min-w-0 overflow-hidden rounded-lg border border-cyan-400/30 bg-cyan-500/[0.03]">
+      <div className="flex min-w-0 flex-wrap items-center gap-2 border-b border-cyan-400/20 px-3.5 py-2.5">
+        <ObjectTypeIcon
+          type="workcase"
+          size={16}
+          className="shrink-0"
+          style={{ color: CATEGORY_COLORS.workcase }}
         />
-        <TextField fieldKey="goal" value={item.goal} locale={locale} />
-        <TextField
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1.5">
+          <span className="ldvh-meta min-w-0 break-all text-cyan-700/75 dark:text-cyan-200/75">
+            {itemId}
+          </span>
+          <WorkItemDependencyMeta value={item.depends_on} locale={locale} />
+        </div>
+        <WorkItemStatusChip value={item.status} locale={locale} />
+      </div>
+      <div className="min-w-0 px-3.5 py-3">
+        {typeof item.goal === "string" && item.goal.trim() && (
+          <SummaryText
+            value={item.goal}
+            collapseThreshold={Number.MAX_SAFE_INTEGER}
+            className="ldvh-body font-medium text-cyan-950/80 dark:text-cyan-100/85"
+          />
+        )}
+        <WorkItemTextBlock
           fieldKey="expected_result"
           value={item.expected_result}
           locale={locale}
+          variant="expectation"
         />
-        <InlineStringArrayField
-          fieldKey="depends_on"
-          value={item.depends_on}
-          locale={locale}
-        />
-        <TextField
+        <WorkItemTextBlock
           fieldKey="approach_summary"
           value={item.approach_summary}
           locale={locale}
+          variant="boundary"
         />
-        <InlineStringArrayField
-          fieldKey="template_keys"
-          value={item.template_keys}
-          locale={locale}
-        />
-        <TextField
-          fieldKey="template_deviation_summary"
-          value={item.template_deviation_summary}
-          locale={locale}
-        />
-        <TextField
-          fieldKey="current_summary"
-          value={item.current_summary}
-          locale={locale}
-        />
-        <TextField
-          fieldKey="resume_from"
-          value={item.resume_from}
-          locale={locale}
-        />
-        <TextField
-          fieldKey="work_item_blocking_summary"
-          value={item.blocking_summary}
-          locale={locale}
-          tone="warning"
-        />
-        <TextField
+        <WorkItemTextBlock
           fieldKey="work_item_result_summary"
           value={item.result_summary}
           locale={locale}
+          variant="result"
         />
+        {hasAuxiliaryFields && (
+          <div className="mt-3 divide-y divide-ldvh-border/45 border-t border-cyan-400/15 pt-1">
+          <InlineStringArrayField
+            fieldKey="template_keys"
+            value={item.template_keys}
+            locale={locale}
+          />
+          <TextField
+            fieldKey="template_deviation_summary"
+            value={item.template_deviation_summary}
+            locale={locale}
+          />
+          <TextField
+            fieldKey="current_summary"
+            value={item.current_summary}
+            locale={locale}
+          />
+          <TextField
+            fieldKey="resume_from"
+            value={item.resume_from}
+            locale={locale}
+          />
+          <TextField
+            fieldKey="work_item_blocking_summary"
+            value={item.blocking_summary}
+            locale={locale}
+            tone="warning"
+          />
+          </div>
+        )}
       </div>
     </li>
+  );
+}
+
+function workItemStatusStyle(value: unknown) {
+  if (value === "completed") {
+    return {
+      Icon: CircleCheck,
+      className: "border-emerald-400/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-200",
+    };
+  }
+  if (value === "in_progress") {
+    return {
+      Icon: CirclePlay,
+      className: "border-sky-400/30 bg-sky-500/10 text-sky-700 dark:text-sky-200",
+    };
+  }
+  if (value === "blocked") {
+    return {
+      Icon: CircleAlert,
+      className: "border-rose-400/30 bg-rose-500/10 text-rose-700 dark:text-rose-200",
+    };
+  }
+  if (value === "cancelled") {
+    return {
+      Icon: CircleMinus,
+      className: "border-zinc-400/30 bg-zinc-500/10 text-zinc-600 dark:text-zinc-300",
+    };
+  }
+  return {
+    Icon: Circle,
+    className: "border-ldvh-border bg-ldvh-bg text-ldvh-text-secondary",
+  };
+}
+
+function WorkItemStatusChip({ value, locale }: { value: unknown; locale: string }) {
+  if (typeof value !== "string" || !value.trim()) return null;
+  const styles = workItemStatusStyle(value);
+  const { Icon } = styles;
+  return (
+    <span
+      title={value}
+      className={`ldvh-chip inline-flex shrink-0 items-center gap-1.5 rounded-md border px-2 py-0.5 ${styles.className}`}
+    >
+      <Icon size={13} strokeWidth={2} aria-hidden="true" />
+      {getStatusLocale(value, locale)}
+    </span>
+  );
+}
+
+function WorkItemDetailBlock({
+  fieldKey,
+  locale,
+  variant,
+  children,
+}: {
+  fieldKey: string;
+  locale: string;
+  variant: "expectation" | "boundary" | "result";
+  children: ReactNode;
+}) {
+  if (variant === "boundary") {
+    return (
+      <div className="mt-3 px-0.5 pt-0.5">
+        <div className="ldvh-caption-strong mb-1.5 text-ldvh-text-secondary/75">
+          {getFieldLabel(fieldKey, locale)}
+        </div>
+        {children}
+      </div>
+    );
+  }
+
+  const result = variant === "result";
+  return (
+    <div
+      className={`mt-3 rounded-md border px-3 py-2.5 ${
+        result
+          ? "border-emerald-400/30 bg-emerald-500/[0.06]"
+          : "border-cyan-400/25 bg-cyan-500/[0.075]"
+      }`}
+    >
+      <div
+        className={`ldvh-caption-strong mb-1.5 flex items-center gap-1.5 ${
+          result
+            ? "text-emerald-700 dark:text-emerald-300"
+            : "text-cyan-700 dark:text-cyan-300"
+        }`}
+      >
+        {result && <CircleCheck size={13} strokeWidth={2} aria-hidden="true" />}
+        {getFieldLabel(fieldKey, locale)}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function WorkItemTextBlock({
+  fieldKey,
+  value,
+  locale,
+  variant,
+}: {
+  fieldKey: string;
+  value: unknown;
+  locale: string;
+  variant: "expectation" | "boundary" | "result";
+}) {
+  if (typeof value !== "string" || !value.trim()) return null;
+  return (
+    <WorkItemDetailBlock fieldKey={fieldKey} locale={locale} variant={variant}>
+      <SummaryText
+        value={value}
+        collapseThreshold={Number.MAX_SAFE_INTEGER}
+        className={`ldvh-body ${
+          variant === "result"
+            ? "text-emerald-950/80 dark:text-emerald-100/85"
+            : variant === "boundary"
+              ? "text-ldvh-text-secondary/85"
+              : "text-cyan-950/85 dark:text-cyan-100/85"
+        }`}
+      />
+    </WorkItemDetailBlock>
+  );
+}
+
+function WorkItemDependencyMeta({
+  value,
+  locale,
+}: {
+  value: unknown;
+  locale: string;
+}) {
+  const items = detailStrings(value);
+  if (items.length === 0) return null;
+  return (
+    <span className="inline-flex min-w-0 flex-wrap items-center gap-1.5 text-ldvh-text-secondary/70">
+      <span className="ldvh-meta-muted shrink-0">{getFieldLabel("depends_on", locale)}</span>
+      {items.map((item) => (
+        <span
+          key={item}
+          className="ldvh-chip rounded-md border border-cyan-400/20 bg-ldvh-bg/65 px-1.5 py-0.5 font-mono text-cyan-700/70 dark:text-cyan-200/70"
+        >
+          {item}
+        </span>
+      ))}
+    </span>
   );
 }
 
@@ -847,8 +1254,11 @@ function DateField({
     <DetailInlineField
       label={getFieldLabel(fieldKey, locale)}
       value={
-        <time dateTime={value} className="ldvh-meta-primary">
-          {value}
+        <time
+          dateTime={value}
+          className="ldvh-meta-primary inline-flex h-6 items-center font-mono tabular-nums"
+        >
+          {formatDateTime(value)}
         </time>
       }
     />

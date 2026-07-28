@@ -25,7 +25,8 @@ test('WorkCase detail source consumes only the single current shape in one fixed
   );
   const objectDetail = fs.readFileSync(path.join(repositoryRoot, 'web/src/pages/ObjectDetail.tsx'), 'utf8');
 
-  assert.match(layout, /<div className="ldvh-study-node-content">[\s\S]*divide-y divide-ldvh-border\/60/);
+  assert.match(layout, /contentVariant === "semantic" \? "grid gap-3" : "ldvh-study-node-content"/);
+  assert.match(layout, /contentVariant === "semantic" \? "grid gap-3" : "divide-y divide-ldvh-border\/60"/);
   const panel = fs.readFileSync(
     path.join(repositoryRoot, 'web/src/components/reading-panel/PanelContent.tsx'),
     'utf8',
@@ -46,8 +47,8 @@ test('WorkCase detail source consumes only the single current shape in one fixed
   assert.doesNotMatch(objectDetail, /function objectToYaml|objectToYaml\(obj\)/);
 
   const orderedMarkers = [
-    'workcaseResponsibility',
     'workcaseCurrentSnapshot',
+    'workcaseResponsibility',
     'workcaseSuccessCriteria',
     'workcasePlanAndItems',
     'workcaseCreationReviews',
@@ -277,7 +278,6 @@ test('narrative fields read as prose while structured records keep label rows', 
   // 叙述字段与其它事实对象一致：小字题注 + 下方 Markdown 正文，不用标签列。
   assert.match(layout, /function ProseField\(/);
   const narrativeFields = [
-    'goal', 'scope', 'summary', 'resume_from', 'waiting_on', 'blocking_summary',
     'result_summary', 'validation_summary', 'controller_check_summary',
     'disposition_summary', 'proposed_disposition_summary',
   ];
@@ -289,15 +289,83 @@ test('narrative fields read as prose while structured records keep label rows', 
     );
   }
 
+  // 目标与范围仍按完整散文读取，但使用职责节点专属的语义色块建立首屏层级。
+  assert.match(layout, /function ResponsibilityField\(/);
+  assert.match(layout, /fieldKey="goal"[\s\S]{0,160}tone="goal"/);
+  assert.match(layout, /fieldKey="scope"[\s\S]{0,160}tone="scope"/);
+  assert.match(layout, /contentVariant="semantic"/);
+
+  // 当前情况前置于目标与边界，并按阶段、摘要、恢复、等待和阻塞的职责建立语义层级。
+  assert.ok(layout.indexOf('workcaseCurrentSnapshot') < layout.indexOf('workcaseResponsibility'));
+  assert.match(layout, /function SnapshotPhaseField\(/);
+  assert.match(layout, /function SnapshotProseField\(/);
+  for (const field of ['summary', 'resume_from', 'waiting_on', 'blocking_summary']) {
+    assert.match(
+      layout,
+      new RegExp(`<SnapshotProseField[\\s\\S]{0,160}fieldKey="${field}"`),
+      `snapshot field ${field} must use the semantic current-state reader`,
+    );
+  }
+
   // 单字段节点省略与节点标题重复的题注（与其它对象的单字段散文节点一致）。
   assert.match(layout, /fieldKey="controller_check_summary"[\s\S]{0,120}showLabel=\{false\}/);
+
+  // 当前计划版本进入节点标题栏，正文从工作项开始；字段问题仍在节点内就地显示。
+  assert.match(layout, /title=\{t\("objectDetail\.workcasePlanAndItems"\)\}[\s\S]{0,160}headerMeta=\{<PlanVersionMeta value=\{obj\.plan_version\}/);
+  assert.match(layout, /headerMeta=\{<PlanVersionMeta[\s\S]{0,140}contentVariant="semantic"/);
+  assert.match(layout, /function PlanVersionMeta\(/);
+  assert.doesNotMatch(layout, /<NumberField[\s\S]{0,100}fieldKey="plan_version"/);
+  assert.match(layout, /FieldIssueRow fieldKey="plan_version"/);
 
   // 散文正文仍完整渲染 Markdown，不截断、不折叠。
   assert.match(layout, /collapseThreshold=\{Number\.MAX_SAFE_INTEGER\}/);
 
-  // 结构化记录（工作项、复核、成功标准、处置条目）保留标签行。
+  // 结构化记录（工作项、复核和处置条目）保留标签行；成功标准使用
+  // ID + 标准正文 + 三值结果 + 结果摘要的专属阅读结构。
   assert.match(layout, /<TextField/);
   assert.match(layout, /<DetailInlineField/);
+  assert.match(layout, /function CriterionOutcomeChip\(/);
+  assert.match(layout, /function CriterionResultSummary\(/);
+  assert.match(layout, /workcaseCriterionResultSummary/);
+
+  // 工作项复用成功标准的卡片语法：标题栏承载稳定 ID 与状态，目标为主正文，预期结果为次级语义块。
+  assert.match(layout, /function WorkItem\(/);
+  assert.match(layout, /overflow-hidden rounded-lg border border-cyan-400\/30/);
+  assert.match(
+    layout,
+    /<ObjectTypeIcon[\s\S]*?<WorkItemDependencyMeta value=\{item\.depends_on\}[\s\S]*?<WorkItemStatusChip value=\{item\.status\}/,
+  );
+  assert.match(layout, /<ObjectTypeIcon[\s\S]{0,160}type="workcase"/);
+  assert.match(layout, /value=\{item\.goal\}[\s\S]{0,320}<WorkItemTextBlock[\s\S]{0,120}fieldKey="expected_result"[\s\S]{0,160}variant="expectation"/);
+  assert.match(layout, /<WorkItemDependencyMeta value=\{item\.depends_on\} locale=\{locale\}/);
+  assert.match(layout, /function WorkItemDependencyMeta\(/);
+  assert.match(layout, /fieldKey="approach_summary"[\s\S]{0,160}variant="boundary"/);
+  assert.match(layout, /fieldKey="work_item_result_summary"[\s\S]{0,160}variant="result"/);
+  assert.match(layout, /function WorkItemDetailBlock\(/);
+  assert.match(layout, /function WorkItemTextBlock\(/);
+  assert.doesNotMatch(layout, /WorkItemArrayBlock/);
+  assert.match(layout, /function WorkItemStatusChip\(/);
+});
+
+test('WorkCase identity uses the active phase as its single Human-facing header status', () => {
+  const objectDetail = fs.readFileSync(
+    path.join(repositoryRoot, 'web/src/pages/ObjectDetail.tsx'),
+    'utf8',
+  );
+  const panel = fs.readFileSync(
+    path.join(repositoryRoot, 'web/src/components/reading-panel/PanelContent.tsx'),
+    'utf8',
+  );
+
+  // Active WorkCases use their precise phase as the only header badge; closed
+  // WorkCases retain the terminal source status. Main detail and panel agree.
+  assert.match(objectDetail, /function getObjectHeaderStatus\(/);
+  assert.match(objectDetail, /objectType !== 'workcase' \|\| status === 'closed'/);
+  assert.match(objectDetail, /return phase \?\? status/);
+  assert.match(objectDetail, /status=\{headerStatus\}/);
+  assert.match(objectDetail, /statusLabel=\{headerStatus \? getObjectStatusLocale\(objType, headerStatus, locale\) : undefined\}/);
+  assert.match(panel, /const headerStatus = getObjectHeaderStatus\(objectType \|\| '', status, obj \|\| \{\}\)/);
+  assert.doesNotMatch(objectDetail, /secondaryStatus/);
 });
 
 test('closure route target resolves the current target like formal relations', () => {
