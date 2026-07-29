@@ -269,6 +269,40 @@ test('field-level issues surface in place inside each WorkCase reading node', ()
   assert.doesNotMatch(layout, /obj\.(?:status|phase)\s*===|switch\s*\([^)]*(?:status|phase)/);
 });
 
+test('WorkCase detail defaults Human reading open and technical diagnostics folded', () => {
+  const layout = fs.readFileSync(
+    path.join(repositoryRoot, 'web/src/pages/object-detail/WorkCaseReadingLayout.tsx'),
+    'utf8',
+  );
+  const objectDetail = fs.readFileSync(
+    path.join(repositoryRoot, 'web/src/pages/ObjectDetail.tsx'),
+    'utf8',
+  );
+  const workCaseNode = layout.slice(
+    layout.indexOf('function WorkCaseReadingNode'),
+    layout.indexOf('function ReadingBoundaryNote'),
+  );
+  const fieldIssues = objectDetail.slice(
+    objectDetail.indexOf('function FieldIssuesSection'),
+    objectDetail.indexOf('function UnparsedStructuresSection'),
+  );
+  const unparsed = objectDetail.slice(
+    objectDetail.indexOf('function UnparsedStructuresSection'),
+    objectDetail.indexOf('function safeJson'),
+  );
+
+  assert.match(workCaseNode, /useState<ReadingNodeState>\("expanded"\)/);
+  assert.match(objectDetail, /const \[showYaml, setShowYaml\] = useState\(false\)/);
+  assert.match(fieldIssues, /const \[open, setOpen\] = useState\(false\)/);
+  assert.match(fieldIssues, /aria-expanded=\{open\}/);
+  assert.match(unparsed, /const \[open, setOpen\] = useState\(false\)/);
+  assert.match(unparsed, /aria-expanded=\{open\}/);
+
+  // Folding only affects the duplicated technical aggregation. Required and
+  // malformed consumed fields remain visible in their Human reading node.
+  assert.match(layout, /<FieldProblem issue=\{issue\} \/>/);
+});
+
 test('narrative fields read as prose while structured records keep label rows', () => {
   const layout = fs.readFileSync(
     path.join(repositoryRoot, 'web/src/pages/object-detail/WorkCaseReadingLayout.tsx'),
@@ -296,11 +330,35 @@ test('narrative fields read as prose while structured records keep label rows', 
   assert.match(layout, /fieldKey="goal"[\s\S]{0,160}tone="goal"/);
   assert.match(layout, /fieldKey="scope"[\s\S]{0,160}tone="scope"/);
   assert.match(layout, /contentVariant="semantic"/);
+  const responsibility = layout.slice(
+    layout.indexOf('function ResponsibilityField'),
+    layout.indexOf('function SnapshotProseField'),
+  );
+  assert.match(responsibility, /ldvh-detail-semantic-title min-w-0 text-current/);
+  assert.match(responsibility, /className=\{`ldvh-detail-semantic-body \$\{bodyClass\}`\}/);
+  assert.match(responsibility, /Icon size=\{WORKCASE_DETAIL_SEMANTIC_ICON_SIZE\}/);
+  assert.match(responsibility, /useState\(tone !== "scope"\)/);
+  assert.match(responsibility, /tone === "scope" \? \(/);
+  assert.match(responsibility, /aria-expanded=\{expanded\}/);
+  assert.match(responsibility, /onClick=\{\(\) => setExpanded\(\(current\) => !current\)\}/);
+  assert.match(responsibility, /<ChevronUp size=\{WORKCASE_DETAIL_SEMANTIC_ICON_SIZE\}/);
+  assert.match(responsibility, /<ChevronDown size=\{WORKCASE_DETAIL_SEMANTIC_ICON_SIZE\}/);
+  assert.match(responsibility, /\{expanded && \(/);
+  assert.match(responsibility, /text-violet-950\/65 dark:text-violet-100\/75/);
+  assert.match(responsibility, /text-cyan-950\/65 dark:text-cyan-100\/75/);
 
-  // 当前情况前置于目标与边界，并按阶段、摘要、恢复、等待和阻塞的职责建立语义层级。
+  // 当前情况前置于目标与边界；精确 phase 只形成头部进展分组，不重复生成当前阶段色块。
   assert.ok(layout.indexOf('workcaseCurrentSnapshot') < layout.indexOf('workcaseResponsibility'));
-  assert.match(layout, /function SnapshotPhaseField\(/);
+  assert.doesNotMatch(layout, /function SnapshotPhaseField\(|<SnapshotPhaseField/);
   assert.match(layout, /function SnapshotProseField\(/);
+  assert.match(layout, /const WORKCASE_DETAIL_SEMANTIC_ICON_SIZE = 14/);
+  const snapshot = layout.slice(
+    layout.indexOf('function SnapshotProseField'),
+    layout.indexOf('function FieldIssueRow'),
+  );
+  assert.match(snapshot, /Icon size=\{WORKCASE_DETAIL_SEMANTIC_ICON_SIZE\}/);
+  assert.match(snapshot, /ldvh-detail-semantic-title min-w-0 text-current/);
+  assert.match(snapshot, /className=\{`ldvh-detail-semantic-body \$\{styles\.body\}`\}/);
   for (const field of ['summary', 'resume_from', 'waiting_on', 'blocking_summary']) {
     assert.match(
       layout,
@@ -345,12 +403,34 @@ test('narrative fields read as prose while structured records keep label rows', 
   );
   assert.match(layout, /<ObjectTypeIcon[\s\S]{0,160}type="workcase"/);
   assert.match(layout, /value=\{item\.goal\}[\s\S]{0,320}<WorkItemTextBlock[\s\S]{0,120}fieldKey="expected_result"[\s\S]{0,160}variant="expectation"/);
+  assert.match(layout, /value=\{item\.goal\}[\s\S]{0,180}!text-cyan-900\/80 dark:!text-cyan-100\/80/);
   assert.match(layout, /<WorkItemDependencyMeta value=\{item\.depends_on\} locale=\{locale\}/);
   assert.match(layout, /function WorkItemDependencyMeta\(/);
   assert.match(layout, /fieldKey="approach_summary"[\s\S]{0,160}variant="boundary"/);
   assert.match(layout, /fieldKey="work_item_result_summary"[\s\S]{0,160}variant="result"/);
   assert.match(layout, /function WorkItemDetailBlock\(/);
   assert.match(layout, /function WorkItemTextBlock\(/);
+  const workItemDetail = layout.slice(
+    layout.indexOf('function WorkItemDetailBlock'),
+    layout.indexOf('function WorkItemTextBlock'),
+  );
+  assert.match(workItemDetail, /useState\(variant === "result"\)/);
+  assert.match(workItemDetail, /expectation:[\s\S]{0,180}border-sky-400\/30 bg-sky-500\/\[0\.055\]/);
+  assert.match(
+    workItemDetail,
+    /boundary:[\s\S]{0,220}border-slate-300\/70 bg-slate-100\/60[\s\S]{0,100}dark:border-slate-700\/70 dark:bg-slate-800\/25/,
+  );
+  assert.match(workItemDetail, /result:[\s\S]{0,180}border-emerald-400\/30 bg-emerald-500\/\[0\.06\]/);
+  assert.match(workItemDetail, /aria-expanded=\{expanded\}/);
+  assert.match(workItemDetail, /variant === "result"[\s\S]{0,140}h-1 w-1 shrink-0 rounded-full \$\{styles\.dot\}/);
+  assert.doesNotMatch(workItemDetail, /Icon:|<Icon/);
+  assert.match(workItemDetail, /ldvh-card-decision-title min-w-0 text-current/);
+  assert.match(workItemDetail, /text-slate-500\/85 dark:text-slate-300\/80/);
+  assert.match(workItemDetail, /<ChevronUp size=\{WORKCASE_DETAIL_SEMANTIC_ICON_SIZE\}/);
+  assert.match(workItemDetail, /<ChevronDown size=\{WORKCASE_DETAIL_SEMANTIC_ICON_SIZE\}/);
+  assert.match(workItemDetail, /\{expanded && <div className="mt-2 min-w-0">\{children\}<\/div>\}/);
+  assert.match(layout, /className=\{`ldvh-card-decision-body/);
+  assert.match(layout, /text-slate-600\/80 dark:text-slate-300\/75/);
   assert.doesNotMatch(layout, /WorkItemArrayBlock/);
   assert.match(layout, /function WorkItemStatusChip\(/);
 
@@ -358,8 +438,29 @@ test('narrative fields read as prose while structured records keep label rows', 
   assert.match(layout, /function ReviewConclusionChip\(/);
   assert.match(layout, /function ReviewFeedbackBlock\(/);
   assert.match(layout, /function ReviewProseBlock\(/);
+  const reviewProseBlock = layout.slice(
+    layout.indexOf('function ReviewProseBlock'),
+    layout.indexOf('function ReviewFeedbackBlock'),
+  );
+  const reviewFeedbackBlock = layout.slice(
+    layout.indexOf('function ReviewFeedbackBlock'),
+    layout.indexOf('function ExecutionApproval'),
+  );
+  assert.match(reviewProseBlock, /useState\(variant === "resolution"\)/);
+  assert.match(reviewProseBlock, /aria-expanded=\{expanded\}/);
+  assert.match(reviewProseBlock, /border-slate-300\/70 bg-slate-100\/55/);
+  assert.match(reviewProseBlock, /border-cyan-400\/25 bg-cyan-500\/\[0\.05\]/);
+  assert.doesNotMatch(reviewProseBlock, /styles\.dot|rounded-full \$\{styles\.dot\}/);
+  assert.match(reviewFeedbackBlock, /useState\(true\)/);
+  assert.match(reviewFeedbackBlock, /aria-expanded=\{expanded\}/);
+  assert.match(reviewFeedbackBlock, /border-amber-400\/25 bg-amber-500\/\[0\.045\]/);
+  assert.match(reviewFeedbackBlock, /mt-2 h-1 w-1 shrink-0 rounded-full bg-amber-500\/70/);
+  assert.match(reviewFeedbackBlock, /ldvh-card-decision-body[\s\S]{0,120}\[&_p\]:my-0/);
+  assert.doesNotMatch(reviewFeedbackBlock, /font-mono text-\[12px\][\s\S]{0,120}>\s*-\s*<\/span>/);
+  assert.doesNotMatch(reviewFeedbackBlock, /gap-2\.5[\s\S]{0,120}getFieldLabel\("feedback"/);
   assert.match(layout, /function ExecutionApproval\([\s\S]*?border-violet-400\/30/);
   assert.match(layout, /function ReadingBoundaryNote\(/);
+  assert.doesNotMatch(layout, /ldvh-card-title-prominent/);
   assert.match(layout, /<Info size=\{14\}/);
   assert.match(layout, /items-center gap-2 rounded-md bg-ldvh-border/);
   assert.doesNotMatch(layout.slice(layout.indexOf('function ReadingBoundaryNote'), layout.indexOf('function PlanVersionMeta')), /CircleHelp/);
@@ -371,7 +472,42 @@ test('narrative fields read as prose while structured records keep label rows', 
   assert.doesNotMatch(layout, /function (?:NumberField|MonoField|EnumField|DateField|TextValueField)\(/);
 });
 
-test('WorkCase identity uses the active phase as its single Human-facing header status', () => {
+test('WorkCase detail criteria reuse the Card bullet-list grammar', () => {
+  const layout = fs.readFileSync(
+    path.join(repositoryRoot, 'web/src/pages/object-detail/WorkCaseReadingLayout.tsx'),
+    'utf8',
+  );
+  const objectList = fs.readFileSync(
+    path.join(repositoryRoot, 'web/src/pages/ObjectList.tsx'),
+    'utf8',
+  );
+  const sharedCriteria = fs.readFileSync(
+    path.join(repositoryRoot, 'web/src/components/WorkCaseCriteriaList.tsx'),
+    'utf8',
+  );
+  const criteria = layout.slice(
+    layout.indexOf('function SuccessCriteria'),
+    layout.indexOf('function criterionOutcomeStyle'),
+  );
+
+  assert.match(layout, /objectDetail\.workcaseCriteriaCount/);
+  assert.match(objectList, /WorkCaseCriteriaList, WORKCASE_CRITERIA_SURFACE_CLASS/);
+  assert.match(layout, /WorkCaseCriteriaList,[\s\S]{0,100}WORKCASE_CRITERIA_SURFACE_CLASS/);
+  assert.match(objectList, /<section className=\{WORKCASE_CRITERIA_SURFACE_CLASS\}>/);
+  assert.match(criteria, /<div className=\{WORKCASE_CRITERIA_SURFACE_CLASS\}>[\s\S]{0,100}<WorkCaseCriteriaList items=\{items\} textSize="detail"/);
+  assert.match(sharedCriteria, /rounded-md border border-blue-400\/20 border-l-2 border-l-blue-400\/80 bg-blue-500\/\[0\.025\] px-3 py-2\.5/);
+  assert.match(sharedCriteria, /grid min-w-0 gap-1\.5/);
+  assert.match(sharedCriteria, /flex min-w-0 items-start gap-2\.5/);
+  assert.match(sharedCriteria, /detailText \? 'mt-\[0\.5625rem\]' : 'mt-\[0\.5rem\]'/);
+  assert.match(sharedCriteria, /detailText \? 'ldvh-detail-semantic-body' : 'ldvh-card-decision-body'/);
+  assert.match(sharedCriteria, /text-blue-950\/65 dark:text-blue-100\/75/);
+  assert.match(criteria, /CriterionOutcomeChip/);
+  assert.match(criteria, /CriterionResultSummary/);
+  assert.match(criteria, /key: criterionId \|\| String\(index\)/);
+  assert.doesNotMatch(criteria, /overflow-hidden rounded-lg|border-b border-blue|<ListChecks|ldvh-body text-blue|mt-\[0\.65rem\]|>\s*\{criterionId\}\s*</);
+});
+
+test('WorkCase identity uses the same progress group as its list Card', () => {
   const objectDetail = fs.readFileSync(
     path.join(repositoryRoot, 'web/src/pages/ObjectDetail.tsx'),
     'utf8',
@@ -381,11 +517,12 @@ test('WorkCase identity uses the active phase as its single Human-facing header 
     'utf8',
   );
 
-  // Active WorkCases use their precise phase as the only header badge; closed
-  // WorkCases retain the terminal source status. Main detail and panel agree.
+  // The identity header follows the same deterministic progress projection as
+  // the list Card. Precise phase remains inside the current-situation node.
   assert.match(objectDetail, /function getObjectHeaderStatus\(/);
-  assert.match(objectDetail, /objectType !== 'workcase' \|\| status === 'closed'/);
-  assert.match(objectDetail, /return phase \?\? status/);
+  assert.match(objectDetail, /deriveWorkCaseProgressProjection/);
+  assert.match(objectDetail, /if \(objectType !== 'workcase'\) return status/);
+  assert.match(objectDetail, /return deriveWorkCaseProgressProjection\(status \?\? '', phase\)\?\.progressGroup \?\? 'unknown'/);
   assert.match(objectDetail, /status=\{headerStatus\}/);
   assert.match(objectDetail, /statusLabel=\{headerStatus \? getObjectStatusLocale\(objType, headerStatus, locale\) : undefined\}/);
   assert.match(panel, /const headerStatus = getObjectHeaderStatus\(objectType \|\| '', status, obj \|\| \{\}\)/);

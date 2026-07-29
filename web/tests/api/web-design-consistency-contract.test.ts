@@ -41,4 +41,12 @@ test('fact reading labels use the central locale registry', () => {
 test('prominent card title follows the documented 16px by 24px hierarchy', () => {
   const styles = read('src/index.css');
   assert.match(styles, /\.ldvh-card-title-prominent[\s\S]*text-base font-semibold leading-6/);
+  assert.match(styles, /\.ldvh-inline-markdown\.ldvh-card-decision-body[\s\S]*text-xs leading-5/);
+});
+
+test('WorkCase responsibility blocks keep the compact 14/13px by 22px hierarchy', () => {
+  const styles = read('src/index.css');
+  assert.match(styles, /\.ldvh-detail-semantic-title[\s\S]*text-sm font-semibold[\s\S]*line-height: 1\.375rem/);
+  assert.match(styles, /\.ldvh-detail-semantic-body[\s\S]*font-size: 0\.8125rem[\s\S]*line-height: 1\.375rem/);
+  assert.match(styles, /\.ldvh-inline-markdown\.ldvh-detail-semantic-body[\s\S]*font-size: 0\.8125rem[\s\S]*line-height: 1\.375rem/);
 });

@@ -29,6 +29,7 @@ import { getStatusColor } from '@/utils/statusColors';
 import { getSignalClassName, getSignalText, isSignalField } from '@/utils/objectSignals';
 import { usePanel } from '@/utils/panelContext';
 import { getFactReadMeta, isReadableFact, reconstructFactYaml, type FactCarrier, type FactReadMeta } from '@/utils/factReadMeta';
+import { deriveWorkCaseProgressProjection } from '@/shared/workcaseStatus';
 import { WorkCaseReadingLayout } from '@/pages/object-detail/WorkCaseReadingLayout';
 import { AdrReadingLayout, PitfallReadingLayout, PitfallTextNodeContent, SparkReadingLayout } from '@/pages/object-detail/FactReadingLayouts';
 import { FactAssociationsSection } from '@/pages/object-detail/FactAssociationsSection';
@@ -261,6 +262,8 @@ export default function ObjectDetail() {
           {showYamlSource && (
             <div className="overflow-hidden rounded-xl border border-ldvh-border bg-ldvh-panel">
               <button
+                type="button"
+                aria-expanded={showYaml}
                 onClick={() => setShowYaml(!showYaml)}
                 className="ldvh-body-muted flex w-full items-center gap-2 p-3 transition-colors hover:bg-ldvh-border/30 hover:text-ldvh-text-primary"
               >
@@ -295,6 +298,7 @@ type FieldIssue = { path: string; reason: 'missing' | 'type_mismatch' | 'identit
 
 function FieldIssuesSection({ value }: { value: unknown }) {
   const { t } = useI18n();
+  const [open, setOpen] = useState(false);
   const entries = Array.isArray(value)
     ? value.filter((entry): entry is FieldIssue => Boolean(
       entry && typeof entry === 'object' && !Array.isArray(entry)
@@ -310,17 +314,28 @@ function FieldIssuesSection({ value }: { value: unknown }) {
     return t('objectDetail.fieldIdentityMismatch');
   };
   return (
-    <section className="mb-6 rounded-xl border border-amber-500/25 bg-amber-500/5 p-4">
-      <h2 className="ldvh-body text-amber-800 dark:text-amber-200">{t('objectDetail.fieldIssues')}</h2>
-      <div className="mt-3 space-y-2">
-        {entries.map((entry) => (
-          <div key={`${entry.path}-${entry.reason}`} className="ldvh-meta rounded-md border border-amber-500/15 bg-ldvh-bg/50 px-3 py-2">
-            <span className="font-mono text-ldvh-text-primary">{entry.path}</span>
-            <span className="mx-2 text-amber-700 dark:text-amber-300">{reasonLabel(entry)}</span>
-            <span>{t('objectDetail.fieldExpected', { expected: entry.expected })}</span>
-          </div>
-        ))}
-      </div>
+    <section className="mb-6 overflow-hidden rounded-xl border border-amber-500/25 bg-amber-500/5">
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen((current) => !current)}
+        className="ldvh-body-muted flex w-full items-center gap-2 px-4 py-3 text-left hover:bg-amber-500/5"
+      >
+        <span>{t('objectDetail.fieldIssues')}</span>
+        <span className="ldvh-meta-muted">{entries.length}</span>
+        <span className="ml-auto">{open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}</span>
+      </button>
+      {open && (
+        <div className="space-y-2 border-t border-amber-500/20 px-4 py-3">
+          {entries.map((entry) => (
+            <div key={`${entry.path}-${entry.reason}`} className="ldvh-meta rounded-md border border-amber-500/15 bg-ldvh-bg/50 px-3 py-2">
+              <span className="font-mono text-ldvh-text-primary">{entry.path}</span>
+              <span className="mx-2 text-amber-700 dark:text-amber-300">{reasonLabel(entry)}</span>
+              <span>{t('objectDetail.fieldExpected', { expected: entry.expected })}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
@@ -340,6 +355,7 @@ function UnparsedStructuresSection({ value }: { value: unknown }) {
     <section className="mb-6 overflow-hidden rounded-xl border border-amber-500/25 bg-amber-500/5">
       <button
         type="button"
+        aria-expanded={open}
         onClick={() => setOpen((current) => !current)}
         className="ldvh-body-muted flex w-full items-center gap-2 px-4 py-3 text-left hover:bg-amber-500/5"
       >
@@ -448,11 +464,11 @@ export function getObjectHeaderStatus(
   status: string | undefined,
   source: Record<string, unknown>,
 ): string | undefined {
-  if (objectType !== 'workcase' || status === 'closed') return status;
+  if (objectType !== 'workcase') return status;
   const phase = typeof source.phase === 'string' && source.phase.trim()
     ? source.phase
     : undefined;
-  return phase ?? status;
+  return deriveWorkCaseProgressProjection(status ?? '', phase)?.progressGroup ?? 'unknown';
 }
 
 export function ObjectIdentityHeader({

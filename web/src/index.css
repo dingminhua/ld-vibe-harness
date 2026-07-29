@@ -38,6 +38,17 @@
     @apply text-sm leading-6 text-ldvh-text-primary;
   }
 
+  .ldvh-detail-semantic-title {
+    @apply text-sm font-semibold text-ldvh-text-primary;
+    line-height: 1.375rem;
+  }
+
+  .ldvh-detail-semantic-body {
+    @apply font-normal text-ldvh-text-primary;
+    font-size: 0.8125rem;
+    line-height: 1.375rem;
+  }
+
   .ldvh-body-muted {
     @apply text-sm leading-6 text-ldvh-text-secondary;
   }
@@ -98,6 +109,15 @@
   .ldvh-inline-markdown {
     @apply text-sm leading-6 text-ldvh-text-primary;
     overflow-wrap: anywhere;
+  }
+
+  .ldvh-inline-markdown.ldvh-card-decision-body {
+    @apply text-xs leading-5;
+  }
+
+  .ldvh-inline-markdown.ldvh-detail-semantic-body {
+    font-size: 0.8125rem;
+    line-height: 1.375rem;
   }
 
   .ldvh-study-node-content-compact .ldvh-inline-markdown {
@@ -524,20 +544,6 @@ input::-moz-focus-inner {
   background: rgb(var(--ldvh-accent) / 0.06);
   padding: 0.5rem 0.75rem;
   color: rgb(var(--ldvh-text-secondary));
-}
-
-/* Plan-confirmation cards: violet-tinted surface to distinguish the
-   "方案待确认" group, reusing the LDVH plan_confirmation token (#8b5cf6)
-   without changing any card content. */
-@layer utilities {
-  .ldvh-card-plan-confirmation {
-    border-color: rgb(196 181 253);
-    background-color: rgb(245 243 255 / 0.55);
-  }
-  .dark .ldvh-card-plan-confirmation {
-    border-color: rgb(139 92 246 / 0.45);
-    background-color: rgb(139 92 246 / 0.08);
-  }
 }
 
 .ldvh-inline-markdown :where(table) {

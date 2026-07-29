@@ -2,8 +2,10 @@ import { useEffect, useState, type KeyboardEvent, type ReactNode } from "react";
 import {
   Activity,
   ArrowRight,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
   CircleAlert,
   Circle,
   CircleCheck,
@@ -14,13 +16,16 @@ import {
   CirclePlay,
   CircleX,
   Clock3,
-  ListChecks,
   ScanLine,
   Target,
 } from "lucide-react";
 import SummaryText from "@/components/SummaryText";
 import CopyPathButton from "@/components/CopyPathButton";
 import { ObjectTypeIcon } from "@/components/SemanticIcon";
+import {
+  WorkCaseCriteriaList,
+  WORKCASE_CRITERIA_SURFACE_CLASS,
+} from "@/components/WorkCaseCriteriaList";
 import { useI18n } from "@/i18n/context";
 import {
   getFieldLabel,
@@ -53,6 +58,8 @@ import {
   getReadingNodeNextState,
   type ReadingNodeState,
 } from "@/pages/ObjectDetail";
+
+const WORKCASE_DETAIL_SEMANTIC_ICON_SIZE = 14;
 
 /**
  * WorkCase detail has one current reading structure.  Field presence decides
@@ -140,7 +147,6 @@ export function WorkCaseReadingLayout({
           locale={locale}
           contentVariant="semantic"
         >
-          <SnapshotPhaseField value={obj.phase} locale={locale} />
           <FieldIssueRow fieldKey="phase" issue={issueFor("phase")} locale={locale} />
           <SnapshotProseField fieldKey="summary" value={obj.summary} locale={locale} />
           <FieldIssueRow fieldKey="summary" issue={issueFor("summary")} locale={locale} />
@@ -192,6 +198,11 @@ export function WorkCaseReadingLayout({
         <WorkCaseReadingNode
           title={t("objectDetail.workcaseSuccessCriteria")}
           locale={locale}
+          headerMeta={criteria.length > 0 ? (
+            <span className="ldvh-meta-muted shrink-0">
+              {t("objectDetail.workcaseCriteriaCount", { count: String(criteria.length) })}
+            </span>
+          ) : undefined}
           contentVariant="semantic"
         >
           {criteria.length > 0 && (
@@ -459,59 +470,57 @@ function ResponsibilityField({
   locale: string;
   tone: "goal" | "scope";
 }) {
+  const [expanded, setExpanded] = useState(tone !== "scope");
   if (typeof value !== "string" || !value.trim()) return null;
   const Icon = tone === "goal" ? Target : ScanLine;
   const surfaceClass = tone === "goal"
     ? "border-violet-400/35 bg-violet-500/[0.055]"
     : "border-cyan-500/30 bg-cyan-500/[0.045]";
   const headingClass = tone === "goal"
-    ? "text-violet-700 dark:text-violet-300"
-    : "text-cyan-700 dark:text-cyan-300";
+    ? "text-violet-700/85 dark:text-violet-200/85"
+    : "text-cyan-700/85 dark:text-cyan-200/85";
   const bodyClass = tone === "goal"
-    ? "text-violet-950/85 dark:text-violet-100/85"
-    : "text-cyan-950/85 dark:text-cyan-100/85";
+    ? "text-violet-950/65 dark:text-violet-100/75"
+    : "text-cyan-950/65 dark:text-cyan-100/75";
 
   return (
     <section className={`min-w-0 rounded-lg border px-3.5 py-3 ${surfaceClass}`}>
-      <div className={`flex min-w-0 items-center gap-2 ${headingClass}`}>
-        <Icon size={16} strokeWidth={2} className="shrink-0" aria-hidden="true" />
-        <span className="ldvh-card-title-prominent min-w-0 text-current">
-          {getFieldLabel(fieldKey, locale)}
-        </span>
-      </div>
-      <div className="mt-2 min-w-0">
-        <SummaryText
-          value={value}
-          collapseThreshold={Number.MAX_SAFE_INTEGER}
-          className={`ldvh-body ${bodyClass}`}
-        />
-      </div>
-    </section>
-  );
-}
-
-function SnapshotPhaseField({
-  value,
-  locale,
-}: {
-  value: unknown;
-  locale: string;
-}) {
-  if (typeof value !== "string" || !value.trim()) return null;
-  return (
-    <section className="flex min-w-0 flex-wrap items-center justify-between gap-2 rounded-lg border border-violet-400/35 bg-violet-500/[0.055] px-3.5 py-2.5">
-      <div className="flex min-w-0 items-center gap-2 text-violet-700 dark:text-violet-300">
-        <CircleDot size={16} strokeWidth={2} className="shrink-0" aria-hidden="true" />
-        <span className="ldvh-card-title-prominent min-w-0 text-current">
-          {getFieldLabel("phase", locale)}
-        </span>
-      </div>
-      <span
-        title={value}
-        className="ldvh-chip inline-flex shrink-0 rounded-md border border-violet-400/30 bg-violet-500/10 px-2 py-0.5 text-violet-700 dark:text-violet-200"
-      >
-        {getStatusLocale(value, locale)}
-      </span>
+      {tone === "scope" ? (
+        <button
+          type="button"
+          aria-expanded={expanded}
+          onClick={() => setExpanded((current) => !current)}
+          className={`flex w-full min-w-0 items-center justify-between gap-3 text-left ${headingClass}`}
+        >
+          <span className="flex min-w-0 items-center gap-2">
+            <Icon size={WORKCASE_DETAIL_SEMANTIC_ICON_SIZE} strokeWidth={2} className="shrink-0" aria-hidden="true" />
+            <span className="ldvh-detail-semantic-title min-w-0 text-current">
+              {getFieldLabel(fieldKey, locale)}
+            </span>
+          </span>
+          {expanded ? (
+            <ChevronUp size={WORKCASE_DETAIL_SEMANTIC_ICON_SIZE} className="shrink-0 text-current/70" aria-hidden="true" />
+          ) : (
+            <ChevronDown size={WORKCASE_DETAIL_SEMANTIC_ICON_SIZE} className="shrink-0 text-current/70" aria-hidden="true" />
+          )}
+        </button>
+      ) : (
+        <div className={`flex min-w-0 items-center gap-2 ${headingClass}`}>
+          <Icon size={WORKCASE_DETAIL_SEMANTIC_ICON_SIZE} strokeWidth={2} className="shrink-0" aria-hidden="true" />
+          <span className="ldvh-detail-semantic-title min-w-0 text-current">
+            {getFieldLabel(fieldKey, locale)}
+          </span>
+        </div>
+      )}
+      {expanded && (
+        <div className="mt-2 min-w-0">
+          <SummaryText
+            value={value}
+            collapseThreshold={Number.MAX_SAFE_INTEGER}
+            className={`ldvh-detail-semantic-body ${bodyClass}`}
+          />
+        </div>
+      )}
     </section>
   );
 }
@@ -530,26 +539,26 @@ function SnapshotProseField({
     summary: {
       Icon: Activity,
       surface: "border-sky-400/30 bg-sky-500/[0.045]",
-      heading: "text-sky-700 dark:text-sky-300",
-      body: "text-sky-950/85 dark:text-sky-100/85",
+      heading: "text-sky-700/85 dark:text-sky-200/85",
+      body: "text-sky-950/65 dark:text-sky-100/75",
     },
     resume_from: {
       Icon: ArrowRight,
       surface: "border-emerald-400/30 bg-emerald-500/[0.045]",
-      heading: "text-emerald-700 dark:text-emerald-300",
-      body: "text-emerald-950/85 dark:text-emerald-100/85",
+      heading: "text-emerald-700/85 dark:text-emerald-200/85",
+      body: "text-emerald-950/65 dark:text-emerald-100/75",
     },
     waiting_on: {
       Icon: Clock3,
       surface: "border-amber-400/35 bg-amber-500/[0.055]",
-      heading: "text-amber-700 dark:text-amber-300",
-      body: "text-amber-950/85 dark:text-amber-100/85",
+      heading: "text-amber-700/85 dark:text-amber-200/85",
+      body: "text-amber-950/65 dark:text-amber-100/75",
     },
     blocking_summary: {
       Icon: CircleAlert,
       surface: "border-rose-400/35 bg-rose-500/[0.055]",
-      heading: "text-rose-700 dark:text-rose-300",
-      body: "text-rose-950/85 dark:text-rose-100/85",
+      heading: "text-rose-700/85 dark:text-rose-200/85",
+      body: "text-rose-950/65 dark:text-rose-100/75",
     },
   }[fieldKey];
   const { Icon } = styles;
@@ -557,8 +566,8 @@ function SnapshotProseField({
   return (
     <section className={`min-w-0 rounded-lg border px-3.5 py-3 ${styles.surface}`}>
       <div className={`flex min-w-0 items-center gap-2 ${styles.heading}`}>
-        <Icon size={16} strokeWidth={2} className="shrink-0" aria-hidden="true" />
-        <span className="ldvh-card-title-prominent min-w-0 text-current">
+        <Icon size={WORKCASE_DETAIL_SEMANTIC_ICON_SIZE} strokeWidth={2} className="shrink-0" aria-hidden="true" />
+        <span className="ldvh-detail-semantic-title min-w-0 text-current">
           {getFieldLabel(fieldKey, locale)}
         </span>
       </div>
@@ -566,7 +575,7 @@ function SnapshotProseField({
         <SummaryText
           value={value}
           collapseThreshold={Number.MAX_SAFE_INTEGER}
-          className={`ldvh-body ${styles.body}`}
+          className={`ldvh-detail-semantic-body ${styles.body}`}
         />
       </div>
     </section>
@@ -621,20 +630,20 @@ function ProseField({
       result: {
         Icon: CircleCheck,
         surface: "border-emerald-400/30 bg-emerald-500/[0.055]",
-        heading: "text-emerald-700 dark:text-emerald-300",
-        body: "text-emerald-950/82 dark:text-emerald-100/85",
+        heading: "text-emerald-700/85 dark:text-emerald-200/85",
+        body: "text-emerald-950/72 dark:text-emerald-100/78",
       },
       validation: {
         Icon: ScanLine,
         surface: "border-sky-400/30 bg-sky-500/[0.05]",
-        heading: "text-sky-700 dark:text-sky-300",
-        body: "text-sky-950/82 dark:text-sky-100/85",
+        heading: "text-sky-700/85 dark:text-sky-200/85",
+        body: "text-sky-950/72 dark:text-sky-100/78",
       },
       controller: {
         Icon: Activity,
         surface: "border-cyan-400/30 bg-cyan-500/[0.045]",
-        heading: "text-cyan-700 dark:text-cyan-300",
-        body: "text-cyan-950/82 dark:text-cyan-100/85",
+        heading: "text-cyan-700/85 dark:text-cyan-200/85",
+        body: "text-cyan-950/72 dark:text-cyan-100/78",
       },
     }[variant];
     const { Icon } = styles;
@@ -643,7 +652,7 @@ function ProseField({
         {showLabel && (
           <div className={`flex min-w-0 items-center gap-2 ${styles.heading}`}>
             <Icon size={16} strokeWidth={2} className="shrink-0" aria-hidden="true" />
-            <span className="ldvh-card-title-prominent min-w-0 text-current">
+            <span className="ldvh-card-title min-w-0 text-current">
               {label ?? getFieldLabel(fieldKey, locale)}
             </span>
           </div>
@@ -737,43 +746,33 @@ function SuccessCriteria({
     results.map((result) => [detailString(result.criterion_id), result]),
   );
 
+  const items = definitions.map((definition, index) => {
+    const criterionId = detailString(definition.criterion_id);
+    const result = resultById.get(criterionId);
+    return {
+      key: criterionId || String(index),
+      statement: detailString(definition.statement),
+      details: result ? (
+        <>
+          <div className="mt-1.5 flex min-w-0 items-center">
+            <CriterionOutcomeChip value={result.outcome} locale={locale} />
+          </div>
+          {typeof result.summary === "string" && result.summary.trim() && (
+            <CriterionResultSummary
+              outcome={result.outcome}
+              value={result.summary}
+              label={t("objectDetail.workcaseCriterionResultSummary")}
+            />
+          )}
+        </>
+      ) : undefined,
+    };
+  });
+
   return (
-    <ul className="grid min-w-0 gap-3">
-      {definitions.map((definition) => {
-        const criterionId = detailString(definition.criterion_id);
-        const result = resultById.get(criterionId);
-        return (
-          <li
-            key={criterionId}
-            className="min-w-0 overflow-hidden rounded-lg border border-blue-400/30 bg-blue-500/[0.035]"
-          >
-            <div className="flex min-w-0 flex-wrap items-center gap-2 border-b border-blue-400/20 px-3.5 py-2.5">
-              <ListChecks size={16} strokeWidth={2} className="shrink-0 text-blue-600 dark:text-blue-300" aria-hidden="true" />
-              <span className="ldvh-meta min-w-0 flex-1 break-all text-blue-700/75 dark:text-blue-200/75">
-                {criterionId}
-              </span>
-              {result && <CriterionOutcomeChip value={result.outcome} locale={locale} />}
-            </div>
-            <div className="min-w-0 px-3.5 py-3">
-              {typeof definition.statement === "string" && definition.statement.trim() && (
-                <SummaryText
-                  value={definition.statement}
-                  collapseThreshold={Number.MAX_SAFE_INTEGER}
-                  className="ldvh-body text-blue-950/90 dark:text-blue-100/90"
-                />
-              )}
-              {result && typeof result.summary === "string" && result.summary.trim() && (
-                <CriterionResultSummary
-                  outcome={result.outcome}
-                  value={result.summary}
-                  label={t("objectDetail.workcaseCriterionResultSummary")}
-                />
-              )}
-            </div>
-          </li>
-        );
-      })}
-    </ul>
+    <div className={WORKCASE_CRITERIA_SURFACE_CLASS}>
+      <WorkCaseCriteriaList items={items} textSize="detail" />
+    </div>
   );
 }
 
@@ -782,24 +781,24 @@ function criterionOutcomeStyle(value: unknown) {
     return {
       Icon: CircleCheck,
       chip: "border-emerald-400/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-200",
-      summary: "border-emerald-400/25 bg-emerald-500/[0.055] text-emerald-950/85 dark:text-emerald-100/85",
-      heading: "text-emerald-700 dark:text-emerald-300",
+      summary: "border-emerald-400/25 bg-emerald-500/[0.055] text-emerald-950/72 dark:text-emerald-100/78",
+      heading: "text-emerald-700/85 dark:text-emerald-200/85",
     };
   }
   if (value === "not_satisfied") {
     return {
       Icon: CircleX,
       chip: "border-rose-400/30 bg-rose-500/10 text-rose-700 dark:text-rose-200",
-      summary: "border-rose-400/25 bg-rose-500/[0.055] text-rose-950/85 dark:text-rose-100/85",
-      heading: "text-rose-700 dark:text-rose-300",
+      summary: "border-rose-400/25 bg-rose-500/[0.055] text-rose-950/72 dark:text-rose-100/78",
+      heading: "text-rose-700/85 dark:text-rose-200/85",
     };
   }
   if (value === "not_verified") {
     return {
       Icon: CircleHelp,
       chip: "border-amber-400/30 bg-amber-500/10 text-amber-700 dark:text-amber-200",
-      summary: "border-amber-400/25 bg-amber-500/[0.055] text-amber-950/85 dark:text-amber-100/85",
-      heading: "text-amber-700 dark:text-amber-300",
+      summary: "border-amber-400/25 bg-amber-500/[0.055] text-amber-950/72 dark:text-amber-100/78",
+      heading: "text-amber-700/85 dark:text-amber-200/85",
     };
   }
   return {
@@ -837,7 +836,7 @@ function CriterionResultSummary({
   const styles = criterionOutcomeStyle(outcome);
   const { Icon } = styles;
   return (
-    <div className={`mt-3 rounded-md border px-3 py-2.5 ${styles.summary}`}>
+    <div className={`mt-1.5 rounded-md border px-3 py-2.5 ${styles.summary}`}>
       <div className={`ldvh-caption-strong mb-1.5 flex items-center gap-1.5 ${styles.heading}`}>
         <Icon size={13} strokeWidth={2} className="shrink-0" aria-hidden="true" />
         <span>{label}</span>
@@ -845,7 +844,7 @@ function CriterionResultSummary({
       <SummaryText
         value={value}
         collapseThreshold={Number.MAX_SAFE_INTEGER}
-        className="ldvh-body text-current"
+        className="ldvh-card-decision-body text-current"
       />
     </div>
   );
@@ -911,7 +910,7 @@ function WorkItem({
           <SummaryText
             value={item.goal}
             collapseThreshold={Number.MAX_SAFE_INTEGER}
-            className="ldvh-body font-medium text-cyan-950/80 dark:text-cyan-100/85"
+            className="ldvh-body font-medium !text-cyan-900/80 dark:!text-cyan-100/80"
           />
         )}
         <WorkItemTextBlock
@@ -1024,37 +1023,48 @@ function WorkItemDetailBlock({
   variant: "expectation" | "boundary" | "result";
   children: ReactNode;
 }) {
-  if (variant === "boundary") {
-    return (
-      <div className="mt-3 px-0.5 pt-0.5">
-        <div className="ldvh-caption-strong mb-1.5 text-ldvh-text-secondary/75">
-          {getFieldLabel(fieldKey, locale)}
-        </div>
-        {children}
-      </div>
-    );
-  }
-
-  const result = variant === "result";
+  const [expanded, setExpanded] = useState(variant === "result");
+  const styles = {
+    expectation: {
+      surface: "border-sky-400/30 bg-sky-500/[0.055]",
+      heading: "text-sky-700/85 dark:text-sky-200/85",
+      dot: "bg-sky-500/75 dark:bg-sky-400/75",
+    },
+    boundary: {
+      surface:
+        "border-slate-300/70 bg-slate-100/60 dark:border-slate-700/70 dark:bg-slate-800/25",
+      heading: "text-slate-500/85 dark:text-slate-300/80",
+      dot: "bg-slate-400/80 dark:bg-slate-400/75",
+    },
+    result: {
+      surface: "border-emerald-400/30 bg-emerald-500/[0.06]",
+      heading: "text-emerald-700/85 dark:text-emerald-200/85",
+      dot: "bg-emerald-500/75 dark:bg-emerald-400/75",
+    },
+  }[variant];
   return (
-    <div
-      className={`mt-3 rounded-md border px-3 py-2.5 ${
-        result
-          ? "border-emerald-400/30 bg-emerald-500/[0.06]"
-          : "border-cyan-400/25 bg-cyan-500/[0.075]"
-      }`}
-    >
-      <div
-        className={`ldvh-caption-strong mb-1.5 flex items-center gap-1.5 ${
-          result
-            ? "text-emerald-700 dark:text-emerald-300"
-            : "text-cyan-700 dark:text-cyan-300"
-        }`}
+    <div className={`mt-3 rounded-md border px-3 py-2.5 ${styles.surface}`}>
+      <button
+        type="button"
+        aria-expanded={expanded}
+        onClick={() => setExpanded((current) => !current)}
+        className={`flex w-full min-w-0 items-center justify-between gap-3 text-left ${styles.heading}`}
       >
-        {result && <CircleCheck size={13} strokeWidth={2} aria-hidden="true" />}
-        {getFieldLabel(fieldKey, locale)}
-      </div>
-      {children}
+        <span className="flex min-w-0 items-center gap-2.5">
+          {variant === "result" && (
+            <span aria-hidden="true" className={`h-1 w-1 shrink-0 rounded-full ${styles.dot}`} />
+          )}
+          <span className="ldvh-card-decision-title min-w-0 text-current">
+            {getFieldLabel(fieldKey, locale)}
+          </span>
+        </span>
+        {expanded ? (
+          <ChevronUp size={WORKCASE_DETAIL_SEMANTIC_ICON_SIZE} className="shrink-0 text-current/70" aria-hidden="true" />
+        ) : (
+          <ChevronDown size={WORKCASE_DETAIL_SEMANTIC_ICON_SIZE} className="shrink-0 text-current/70" aria-hidden="true" />
+        )}
+      </button>
+      {expanded && <div className="mt-2 min-w-0">{children}</div>}
     </div>
   );
 }
@@ -1076,12 +1086,12 @@ function WorkItemTextBlock({
       <SummaryText
         value={value}
         collapseThreshold={Number.MAX_SAFE_INTEGER}
-        className={`ldvh-body ${
+        className={`ldvh-card-decision-body ${
           variant === "result"
-            ? "text-emerald-950/80 dark:text-emerald-100/85"
+            ? "text-emerald-950/65 dark:text-emerald-100/75"
             : variant === "boundary"
-              ? "text-ldvh-text-secondary/85"
-              : "text-cyan-950/85 dark:text-cyan-100/85"
+              ? "text-slate-600/80 dark:text-slate-300/75"
+              : "text-sky-950/65 dark:text-sky-100/75"
         }`}
       />
     </WorkItemDetailBlock>
@@ -1230,43 +1240,85 @@ function ReviewProseBlock({
   value: unknown;
   variant: "scope" | "resolution";
 }) {
+  const [expanded, setExpanded] = useState(variant === "resolution");
   if (typeof value !== "string" || !value.trim()) return null;
   const resolution = variant === "resolution";
-  return (
-    <div
-      className={
-        resolution
-          ? "rounded-md border border-cyan-400/25 bg-cyan-500/[0.05] px-3 py-2.5"
-          : "min-w-0"
+  const styles = resolution
+    ? {
+        surface: "border-cyan-400/25 bg-cyan-500/[0.05]",
+        heading: "text-cyan-700/85 dark:text-cyan-200/85",
+        body: "!text-cyan-900/75 dark:!text-cyan-100/80",
       }
-    >
-      <div className={`ldvh-caption-strong mb-1.5 ${resolution ? "text-cyan-700 dark:text-cyan-300" : "text-ldvh-text-secondary/75"}`}>
-        {label}
-      </div>
-      <SummaryText
-        value={value}
-        collapseThreshold={Number.MAX_SAFE_INTEGER}
-        className={`ldvh-body ${resolution ? "text-cyan-950/82 dark:text-cyan-100/85" : "text-ldvh-text-primary/90"}`}
-      />
-    </div>
+    : {
+        surface: "border-slate-300/70 bg-slate-100/55 dark:border-slate-700/70 dark:bg-slate-800/25",
+        heading: "text-slate-500/85 dark:text-slate-300/80",
+        body: "!text-slate-600/80 dark:!text-slate-300/75",
+      };
+  return (
+    <section className={`min-w-0 rounded-md border px-3 py-2.5 ${styles.surface}`}>
+      <button
+        type="button"
+        aria-expanded={expanded}
+        onClick={() => setExpanded((current) => !current)}
+        className={`flex w-full min-w-0 items-center justify-between gap-3 text-left ${styles.heading}`}
+      >
+        <span className="ldvh-card-decision-title min-w-0 text-current">{label}</span>
+        {expanded ? (
+          <ChevronUp size={WORKCASE_DETAIL_SEMANTIC_ICON_SIZE} strokeWidth={2} className="shrink-0" aria-hidden="true" />
+        ) : (
+          <ChevronDown size={WORKCASE_DETAIL_SEMANTIC_ICON_SIZE} strokeWidth={2} className="shrink-0" aria-hidden="true" />
+        )}
+      </button>
+      {expanded && (
+        <div className="mt-2 min-w-0">
+          <SummaryText
+            value={value}
+            collapseThreshold={Number.MAX_SAFE_INTEGER}
+            className={`ldvh-card-decision-body ${styles.body}`}
+          />
+        </div>
+      )}
+    </section>
   );
 }
 
 function ReviewFeedbackBlock({ items, locale }: { items: string[]; locale: string }) {
+  const [expanded, setExpanded] = useState(true);
   return (
-    <div className="rounded-md border border-amber-400/25 bg-amber-500/[0.045] px-3 py-2.5">
-      <div className="ldvh-caption-strong mb-1.5 text-amber-700 dark:text-amber-300">
-        {getFieldLabel("feedback", locale)}
-      </div>
-      <ul className="grid min-w-0 gap-1.5">
-        {items.map((item, index) => (
-          <li key={`${index}-${item}`} className="flex min-w-0 items-start gap-2 text-amber-950/82 dark:text-amber-100/85">
-            <span className="mt-[0.55rem] h-1 w-1 shrink-0 rounded-full bg-amber-500/70" aria-hidden="true" />
-            <SummaryText value={item} collapseThreshold={Number.MAX_SAFE_INTEGER} className="ldvh-body min-w-0 flex-1" />
-          </li>
-        ))}
-      </ul>
-    </div>
+    <section className="min-w-0 rounded-md border border-amber-400/25 bg-amber-500/[0.045] px-3 py-2.5">
+      <button
+        type="button"
+        aria-expanded={expanded}
+        onClick={() => setExpanded((current) => !current)}
+        className="flex w-full min-w-0 items-center justify-between gap-3 text-left text-amber-700/85 dark:text-amber-200/85"
+      >
+        <span className="ldvh-card-decision-title min-w-0 text-current">
+          {getFieldLabel("feedback", locale)}
+        </span>
+        {expanded ? (
+          <ChevronUp size={WORKCASE_DETAIL_SEMANTIC_ICON_SIZE} strokeWidth={2} className="shrink-0" aria-hidden="true" />
+        ) : (
+          <ChevronDown size={WORKCASE_DETAIL_SEMANTIC_ICON_SIZE} strokeWidth={2} className="shrink-0" aria-hidden="true" />
+        )}
+      </button>
+      {expanded && (
+        <ul className="mt-2 grid min-w-0 gap-1.5">
+          {items.map((item, index) => (
+            <li key={`${index}-${item}`} className="flex min-w-0 items-start gap-2">
+              <span
+                aria-hidden="true"
+                className="mt-2 h-1 w-1 shrink-0 rounded-full bg-amber-500/70 dark:bg-amber-400/70"
+              />
+              <SummaryText
+                value={item}
+                collapseThreshold={Number.MAX_SAFE_INTEGER}
+                className="ldvh-card-decision-body min-w-0 flex-1 !text-amber-900/75 [&_p]:my-0 dark:!text-amber-100/80"
+              />
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
 
@@ -1284,9 +1336,9 @@ function ExecutionApproval({
   const sourceRefs = detailStrings(approval.source_refs);
   return (
     <section className="min-w-0 rounded-lg border border-violet-400/30 bg-violet-500/[0.05] px-3.5 py-3">
-      <div className="flex min-w-0 items-center gap-2 text-violet-700 dark:text-violet-300">
+      <div className="flex min-w-0 items-center gap-2 text-violet-700/85 dark:text-violet-200/85">
         <CircleCheck size={16} strokeWidth={2} className="shrink-0" aria-hidden="true" />
-        <span className="ldvh-card-title-prominent min-w-0 text-current">
+        <span className="ldvh-card-title min-w-0 text-current">
           {t("objectDetail.workcaseApprovalSummary")}
         </span>
       </div>
@@ -1295,7 +1347,7 @@ function ExecutionApproval({
           <SummaryText
             value={summary}
             collapseThreshold={Number.MAX_SAFE_INTEGER}
-            className="ldvh-body text-violet-950/84 dark:text-violet-100/85"
+            className="ldvh-body text-violet-950/72 dark:text-violet-100/78"
           />
         </div>
       )}
@@ -1377,8 +1429,8 @@ function closureOutcomeStyle(value: string) {
     return {
       Icon: CircleCheck,
       surface: "border-emerald-400/30 bg-emerald-500/[0.055]",
-      heading: "text-emerald-700 dark:text-emerald-300",
-      body: "text-emerald-950/82 dark:text-emerald-100/85",
+      heading: "text-emerald-700/85 dark:text-emerald-200/85",
+      body: "text-emerald-950/72 dark:text-emerald-100/78",
       chip: "border-emerald-400/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-200",
     };
   }
@@ -1386,8 +1438,8 @@ function closureOutcomeStyle(value: string) {
     return {
       Icon: CircleDot,
       surface: "border-amber-400/30 bg-amber-500/[0.055]",
-      heading: "text-amber-700 dark:text-amber-300",
-      body: "text-amber-950/82 dark:text-amber-100/85",
+      heading: "text-amber-700/85 dark:text-amber-200/85",
+      body: "text-amber-950/72 dark:text-amber-100/78",
       chip: "border-amber-400/30 bg-amber-500/10 text-amber-700 dark:text-amber-200",
     };
   }
@@ -1395,16 +1447,16 @@ function closureOutcomeStyle(value: string) {
     return {
       Icon: CircleX,
       surface: "border-rose-400/30 bg-rose-500/[0.055]",
-      heading: "text-rose-700 dark:text-rose-300",
-      body: "text-rose-950/82 dark:text-rose-100/85",
+      heading: "text-rose-700/85 dark:text-rose-200/85",
+      body: "text-rose-950/72 dark:text-rose-100/78",
       chip: "border-rose-400/30 bg-rose-500/10 text-rose-700 dark:text-rose-200",
     };
   }
   return {
     Icon: CircleMinus,
     surface: "border-slate-400/30 bg-slate-500/[0.05]",
-    heading: "text-slate-700 dark:text-slate-300",
-    body: "text-slate-900/78 dark:text-slate-100/82",
+    heading: "text-slate-700/85 dark:text-slate-200/85",
+    body: "text-slate-900/72 dark:text-slate-100/78",
     chip: "border-slate-400/30 bg-slate-500/10 text-slate-700 dark:text-slate-200",
   };
 }
@@ -1432,7 +1484,7 @@ function ClosureOutcomeSummary({
       <div className="flex min-w-0 flex-wrap items-center gap-2">
         <div className={`flex min-w-0 flex-1 items-center gap-2 ${styles.heading}`}>
           <Icon size={16} strokeWidth={2} className="shrink-0" aria-hidden="true" />
-          <span className="ldvh-card-title-prominent min-w-0 text-current">
+          <span className="ldvh-card-title min-w-0 text-current">
             {getFieldLabel(summaryFieldKey, locale)}
           </span>
         </div>
@@ -1744,7 +1796,7 @@ function TerminalResidualList({
             key={detailString(item.residual_id)}
             className="min-w-0 overflow-hidden rounded-lg border border-cyan-400/25 bg-cyan-500/[0.035]"
           >
-            <div className="flex min-w-0 items-center gap-2 border-b border-cyan-400/20 px-3.5 py-2.5 text-cyan-700 dark:text-cyan-300">
+            <div className="flex min-w-0 items-center gap-2 border-b border-cyan-400/20 px-3.5 py-2.5 text-cyan-700/85 dark:text-cyan-200/85">
               <CircleMinus size={16} strokeWidth={2} className="shrink-0" aria-hidden="true" />
               <span className="ldvh-meta min-w-0 flex-1 break-all text-current/75">
                 {detailString(item.residual_id)}
@@ -1755,7 +1807,7 @@ function TerminalResidualList({
                 <SummaryText
                   value={item.summary}
                   collapseThreshold={Number.MAX_SAFE_INTEGER}
-                  className="ldvh-body text-cyan-950/82 dark:text-cyan-100/85"
+                  className="ldvh-body text-cyan-950/72 dark:text-cyan-100/78"
                 />
               )}
             </div>
@@ -1800,7 +1852,7 @@ function SparkSuggestionList({
                 <SummaryText
                   value={item.summary}
                   collapseThreshold={Number.MAX_SAFE_INTEGER}
-                  className="ldvh-body font-medium text-amber-950/82 dark:text-amber-100/85"
+                  className="ldvh-body font-medium text-amber-950/72 dark:text-amber-100/78"
                 />
               )}
               <SuggestionDetail fieldKey="restriction_reason" value={item.restriction_reason} locale={locale} variant="restriction" />
@@ -1833,14 +1885,14 @@ function SuggestionDetail({
       ? "rounded-md border border-emerald-400/25 bg-emerald-500/[0.04] px-3 py-2.5"
       : "min-w-0";
   const headingClass = variant === "restriction"
-    ? "text-rose-700 dark:text-rose-300"
+    ? "text-rose-700/85 dark:text-rose-200/85"
     : variant === "resume"
-      ? "text-emerald-700 dark:text-emerald-300"
+      ? "text-emerald-700/85 dark:text-emerald-200/85"
       : "text-ldvh-text-secondary/75";
   const bodyClass = variant === "restriction"
-    ? "text-rose-950/82 dark:text-rose-100/85"
+    ? "text-rose-950/72 dark:text-rose-100/78"
     : variant === "resume"
-      ? "text-emerald-950/82 dark:text-emerald-100/85"
+      ? "text-emerald-950/72 dark:text-emerald-100/78"
       : "text-ldvh-text-secondary/85";
   return (
     <div className={className}>

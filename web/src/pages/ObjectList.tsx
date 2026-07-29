@@ -8,6 +8,7 @@ import ObjectPriorityFilter from '@/components/ObjectPriorityFilter';
 import PriorityIcon from '@/components/PriorityIcon';
 import SummaryText from '@/components/SummaryText';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
+import { WorkCaseCriteriaList, WORKCASE_CRITERIA_SURFACE_CLASS } from '@/components/WorkCaseCriteriaList';
 import { fetchObjectDetail, fetchObjects, type FactCoverageStatus, type FactListProblem, type ObjectDetail, type ObjectItem, type ObjectStatusOption, type WorkCaseClosureProposalCard, type WorkCaseClosureTerminalCard, type WorkCaseContributionTarget, type WorkCaseExecutionItem, type WorkCaseProgressOption, type WorkCaseSparkSuggestionCard } from '@/utils/api';
 import { formatDateTime } from '@/utils/dateFormat';
 import { useI18n } from '@/i18n/context';
@@ -25,7 +26,7 @@ import {
 type Translate = ReturnType<typeof useI18n>['t'];
 type StatusReason = { label: string; text: string; missing?: boolean };
 
-const WORKCASE_SECTION_ICON_SIZE = 16;
+const WORKCASE_SECTION_ICON_SIZE = 14;
 /** Shared vertical rhythm between a semantic card title and its first body block. */
 const WORKCASE_CARD_TITLE_BODY_GAP_CLASS = 'mt-1.5';
 
@@ -117,7 +118,7 @@ function StatusReasonNote({ reason }: { reason: StatusReason }) {
         <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${isMissing ? 'bg-red-400' : 'bg-ldvh-text-secondary/75'}`} aria-hidden="true" />
         <span className="min-w-0 truncate">{reason.label}</span>
       </div>
-      <p className={`whitespace-pre-wrap break-words text-[12px] leading-5 ${
+      <p className={`ldvh-card-decision-body whitespace-pre-wrap break-words ${
         isMissing ? 'text-red-400' : 'text-ldvh-text-secondary/75'
       }`}
       >
@@ -141,34 +142,24 @@ function WorkCasePlanConfirmationContent({
   return (
     <div className="grid min-w-0 gap-2">
       <WorkCaseGoalSection goal={goal} t={t} />
-      <section className="min-w-0 rounded-md border border-blue-400/20 border-l-2 border-l-blue-400/80 bg-blue-500/[0.025] px-3 py-2.5 dark:bg-blue-950/20">
+      <section className={WORKCASE_CRITERIA_SURFACE_CLASS}>
         <div className="flex min-w-0 items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
             <ListChecks size={WORKCASE_SECTION_ICON_SIZE} className="shrink-0 text-blue-500 dark:text-blue-400" aria-hidden="true" />
-            <h3 className="ldvh-card-title text-blue-700/85 dark:text-blue-200/85">{t('objectList.successCriteria')}</h3>
+            <h3 className="ldvh-card-decision-title text-blue-700/85 dark:text-blue-200/85">{t('objectList.successCriteria')}</h3>
           </div>
           {criteria.length > 0 && (
             <span className="ldvh-meta-muted shrink-0">{t('objectList.workcaseCriteriaCount', { count: String(criteria.length) })}</span>
           )}
         </div>
         {criteria.length > 0 ? (
-          <ul className={`${WORKCASE_CARD_TITLE_BODY_GAP_CLASS} grid min-w-0 gap-1.5`}>
-            {criteria.map((criterion, index) => (
-              <li key={`${index}-${criterion}`} className="flex min-w-0 items-start gap-2.5">
-                <span
-                  aria-hidden="true"
-                  className="mt-[0.5rem] h-1 w-1 shrink-0 rounded-full bg-blue-400/65 dark:bg-blue-400/75"
-                />
-                <div className="ldvh-caption min-w-0 flex-1 break-words [&_p]:my-0">
-                  <SummaryText
-                    value={criterion}
-                    collapseThreshold={Number.MAX_SAFE_INTEGER}
-                    className="ldvh-card-decision-body text-blue-950/65 dark:text-blue-100/75"
-                  />
-                </div>
-              </li>
-            ))}
-          </ul>
+          <WorkCaseCriteriaList
+            className={WORKCASE_CARD_TITLE_BODY_GAP_CLASS}
+            items={criteria.map((criterion, index) => ({
+              key: `${index}-${criterion}`,
+              statement: criterion,
+            }))}
+          />
         ) : (
           <p className="ldvh-caption mt-1.5 text-red-400">{t('objectList.workcaseFieldMissing')}</p>
         )}
@@ -177,12 +168,24 @@ function WorkCasePlanConfirmationContent({
   );
 }
 
-function WorkCaseGoalSection({ goal, t }: { goal?: string; t: Translate }) {
+function WorkCaseGoalSection({
+  goal,
+  t,
+  emphasis = 'primary',
+}: {
+  goal?: string;
+  t: Translate;
+  emphasis?: 'primary' | 'supporting';
+}) {
+  const surfaceClass = emphasis === 'primary'
+    ? 'border-violet-400/45 border-l-violet-400 bg-violet-100/70 dark:bg-violet-950/50'
+    : 'border-violet-400/20 border-l-violet-400/70 bg-violet-500/[0.025] dark:bg-violet-950/20';
+
   return (
-    <section className="min-w-0 rounded-md border border-violet-400/45 border-l-2 border-l-violet-400 bg-violet-100/70 px-3.5 py-3 dark:bg-violet-950/50">
+    <section className={`min-w-0 rounded-md border border-l-2 px-3.5 py-3 ${surfaceClass}`}>
       <div className="flex min-w-0 items-center gap-2">
         <Target size={WORKCASE_SECTION_ICON_SIZE} className="shrink-0 text-violet-500 dark:text-violet-400" aria-hidden="true" />
-        <h3 className="ldvh-card-title text-violet-700/85 dark:text-violet-200/85">{t('objectList.workcaseGoal')}</h3>
+        <h3 className="ldvh-card-decision-title text-violet-700/85 dark:text-violet-200/85">{t('objectList.workcaseGoal')}</h3>
       </div>
       {goal?.trim() ? (
         <div className={`ldvh-caption ${WORKCASE_CARD_TITLE_BODY_GAP_CLASS} w-full break-words`}>
@@ -214,7 +217,7 @@ function WorkCaseBlockingNotice({
     >
       <div className="flex min-w-0 items-center gap-2">
         <CircleAlert size={14} className="shrink-0 text-amber-500 dark:text-amber-400" aria-hidden="true" />
-        <div className="ldvh-meta-primary min-w-0 text-amber-700/75 dark:text-amber-300/75">
+        <div className="ldvh-caption-strong min-w-0 text-amber-700/75 dark:text-amber-200/75">
           {t('objectList.workcaseBlockingReason')}
         </div>
       </div>
@@ -292,11 +295,11 @@ function WorkCaseProgressingContent({
 
   return (
     <div className="grid min-w-0 gap-2">
-      <WorkCaseGoalSection goal={goal} t={t} />
+      <WorkCaseGoalSection goal={goal} t={t} emphasis="supporting" />
       <section className="min-w-0 rounded-md border border-sky-400/25 border-l-2 border-l-sky-400 bg-sky-500/[0.035] px-3.5 py-3">
         <div className="flex min-w-0 items-center gap-2">
           <CirclePlay size={WORKCASE_SECTION_ICON_SIZE} className="shrink-0 text-sky-500 dark:text-sky-400" aria-hidden="true" />
-          <h3 className="ldvh-card-title text-sky-700/85 dark:text-sky-200/85">{t('objectList.workcaseCurrentProgress')}</h3>
+          <h3 className="ldvh-card-decision-title text-sky-700/85 dark:text-sky-200/85">{t('objectList.workcaseCurrentProgress')}</h3>
         </div>
 
         {planRevising && (
@@ -465,7 +468,7 @@ function WorkCaseProgressingContent({
           <div className="mt-2.5 min-w-0 rounded-md border border-ldvh-border/70 border-l-2 border-l-ldvh-text-secondary/35 bg-ldvh-bg/60 px-2.5 py-2">
             <div className="flex min-w-0 items-center gap-2">
               <PauseCircle size={14} className="shrink-0 text-slate-500 dark:text-slate-400" aria-hidden="true" />
-              <div className="ldvh-meta-primary min-w-0 text-slate-500/75 dark:text-slate-400/75">
+              <div className="ldvh-caption-strong min-w-0 text-slate-500/75 dark:text-slate-300/75">
                 {t('objectList.workcaseWaitingOn')}
               </div>
             </div>
@@ -541,7 +544,7 @@ function WorkCaseOutcomeNotice({
     <section className={`min-w-0 rounded-md border border-l-2 px-3.5 py-3 ${PROPOSED_OUTCOME_NOTICE_CLASS[outcome] ?? 'border-ldvh-border/70 border-l-ldvh-text-secondary/35 bg-ldvh-bg/60'}`}>
       <div className="flex min-w-0 items-center gap-2">
         {outcome === 'completed' ? <CircleCheck size={WORKCASE_SECTION_ICON_SIZE} className="shrink-0 text-emerald-500 dark:text-emerald-400" aria-hidden="true" /> : outcome === 'partial' ? <QuarterCircle className="shrink-0 text-amber-500 dark:text-amber-400" /> : outcome === 'not-achieved' ? <CircleAlert size={WORKCASE_SECTION_ICON_SIZE} className="shrink-0 text-red-500 dark:text-red-400" aria-hidden="true" /> : <CircleMinus size={WORKCASE_SECTION_ICON_SIZE} className="shrink-0 text-zinc-500 dark:text-zinc-400" aria-hidden="true" />}
-        <span className={`ldvh-card-title min-w-0 ${tone}`}>
+        <span className={`ldvh-card-decision-title min-w-0 ${tone}`}>
           {getFieldValueLabel('proposed_outcome', outcome, locale)}
         </span>
       </div>
@@ -554,8 +557,8 @@ function WorkCaseOutcomeNotice({
 
 /** Plain text color for residual disposition labels (no chip frame). */
 const PROPOSED_DISPOSITION_TEXT_CLASS: Record<string, string> = {
-  route_existing: 'text-emerald-700/85 dark:text-emerald-300/85',
-  suggest_spark: 'text-amber-700/85 dark:text-amber-300/85',
+  route_existing: 'text-emerald-700/85 dark:text-emerald-200/85',
+  suggest_spark: 'text-amber-700/85 dark:text-amber-200/85',
   accept_stop: 'text-cyan-700/85 dark:text-cyan-200/85',
 };
 
@@ -574,7 +577,7 @@ function WorkCaseSparkSuggestions({ suggestions }: { suggestions: WorkCaseSparkS
         <li key={suggestion.suggestionId} className="min-w-0 rounded-md border border-amber-400/25 border-l-2 border-l-amber-400 bg-amber-500/5 px-3.5 py-3">
           <div className="flex min-w-0 items-center gap-2">
             <Lightbulb size={WORKCASE_SECTION_ICON_SIZE} className="shrink-0 text-amber-500 dark:text-amber-400" aria-hidden="true" />
-            <span className="ldvh-card-title min-w-0 text-amber-700/85 dark:text-amber-200/85">
+            <span className="ldvh-card-decision-title min-w-0 text-amber-700/85 dark:text-amber-200/85">
               {getFieldValueLabel('proposed_disposition', 'suggest_spark', locale)}
             </span>
           </div>
@@ -601,7 +604,7 @@ function WorkCaseClosureConfirmationContent({
   const { t, locale } = useI18n();
   return (
     <div className="grid min-w-0 gap-2">
-      <WorkCaseGoalSection goal={goal} t={t} />
+      <WorkCaseGoalSection goal={goal} t={t} emphasis="supporting" />
       {closureProposal ? (
         <>
           <WorkCaseOutcomeNotice outcome={closureProposal.proposedOutcome} dispositionSummary={closureProposal.dispositionSummary} />
@@ -615,9 +618,9 @@ function WorkCaseClosureConfirmationContent({
                     ) : decision.proposedDisposition === 'suggest_spark' ? (
                       <Lightbulb size={WORKCASE_SECTION_ICON_SIZE} className="shrink-0 text-amber-500 dark:text-amber-400" aria-hidden="true" />
                     ) : (
-                      <ArrowRight size={WORKCASE_SECTION_ICON_SIZE} className="shrink-0 text-emerald-600 dark:text-emerald-300" aria-hidden="true" />
+                      <ArrowRight size={WORKCASE_SECTION_ICON_SIZE} className="shrink-0 text-emerald-600 dark:text-emerald-200" aria-hidden="true" />
                     )}
-                    <span className={`ldvh-card-title min-w-0 ${PROPOSED_DISPOSITION_TEXT_CLASS[decision.proposedDisposition] ?? 'text-ldvh-text-secondary'}`}>
+                    <span className={`ldvh-card-decision-title min-w-0 ${PROPOSED_DISPOSITION_TEXT_CLASS[decision.proposedDisposition] ?? 'text-ldvh-text-secondary'}`}>
                       {getFieldValueLabel('proposed_disposition', decision.proposedDisposition, locale)}
                     </span>
                   </div>
@@ -644,7 +647,7 @@ function WorkCaseClosedContent({ goal, terminal }: { goal?: string; terminal?: W
   const { t, locale } = useI18n();
   return (
     <div className="grid min-w-0 gap-2">
-      <WorkCaseGoalSection goal={goal} t={t} />
+      <WorkCaseGoalSection goal={goal} t={t} emphasis="supporting" />
       {terminal ? (
         <>
           <WorkCaseOutcomeNotice outcome={terminal.outcome} dispositionSummary={terminal.dispositionSummary} />
@@ -653,8 +656,8 @@ function WorkCaseClosedContent({ goal, terminal }: { goal?: string; terminal?: W
               {terminal.routedTo.map((target) => (
                 <li key={`route/${target.factTypeKey}/${target.objectId}`} className={`min-w-0 rounded-md border border-l-2 px-3.5 py-3 ${PROPOSED_DISPOSITION_NOTICE_CLASS.route_existing}`}>
                   <div className="flex min-w-0 items-center gap-2">
-                    <ArrowRight size={WORKCASE_SECTION_ICON_SIZE} className="shrink-0 text-emerald-600 dark:text-emerald-300" aria-hidden="true" />
-                    <span className={`ldvh-card-title min-w-0 ${PROPOSED_DISPOSITION_TEXT_CLASS.route_existing}`}>
+                    <ArrowRight size={WORKCASE_SECTION_ICON_SIZE} className="shrink-0 text-emerald-600 dark:text-emerald-200" aria-hidden="true" />
+                    <span className={`ldvh-card-decision-title min-w-0 ${PROPOSED_DISPOSITION_TEXT_CLASS.route_existing}`}>
                       {getFieldValueLabel('proposed_disposition', 'route_existing', locale)}
                     </span>
                   </div>
@@ -669,7 +672,7 @@ function WorkCaseClosedContent({ goal, terminal }: { goal?: string; terminal?: W
                 <li key={residual.residualId} className={`min-w-0 rounded-md border border-l-2 px-3.5 py-3 ${PROPOSED_DISPOSITION_NOTICE_CLASS.accept_stop}`}>
                   <div className="flex min-w-0 items-center gap-2">
                     <CircleMinus size={WORKCASE_SECTION_ICON_SIZE} className="shrink-0 text-cyan-500 dark:text-cyan-400" aria-hidden="true" />
-                    <span className={`ldvh-card-title min-w-0 ${PROPOSED_DISPOSITION_TEXT_CLASS.accept_stop}`}>
+                    <span className={`ldvh-card-decision-title min-w-0 ${PROPOSED_DISPOSITION_TEXT_CLASS.accept_stop}`}>
                       {getFieldValueLabel('proposed_disposition', 'accept_stop', locale)}
                     </span>
                   </div>
@@ -702,7 +705,7 @@ function WorkCaseContributionsContent({
   if (!contributions || contributions.length === 0) return null;
   return (
     <section className="min-w-0 rounded-md border border-ldvh-border/80 border-l-2 border-l-ldvh-accent/45 bg-ldvh-bg/65 px-3.5 py-3">
-      <h3 className="ldvh-card-title">{t('objectList.workcaseContributions')}</h3>
+      <h3 className="ldvh-card-decision-title">{t('objectList.workcaseContributions')}</h3>
       <div className="mt-1.5 divide-y divide-ldvh-border/45">
         {contributions.map((target) => (
           <WorkCaseContributionTargetRow
@@ -804,7 +807,6 @@ function ObjectCardFrame({
   children,
   showNonActiveReason = true,
   displayStatus,
-  prominentTitle = false,
 }: {
   obj: ObjectItem;
   locale: string;
@@ -812,17 +814,15 @@ function ObjectCardFrame({
   children?: ReactNode;
   showNonActiveReason?: boolean;
   displayStatus?: string;
-  prominentTitle?: boolean;
 }) {
   const { t } = useI18n();
   const presentedStatus = displayStatus ?? obj.status;
   const titleAccentClass = getTitleAccentClass(presentedStatus);
-  const isPlanConfirmation = presentedStatus === 'plan_confirmation';
   const typeColor = CATEGORY_COLORS[obj.type] || CATEGORY_COLORS.other;
   const nonActiveReason = getNonActiveReason(obj, t);
   return (
     <div
-      className={`flex min-w-0 flex-col gap-3 rounded-lg border border-ldvh-border bg-ldvh-panel p-4 text-left ${isPlanConfirmation ? 'ldvh-card-plan-confirmation' : ''}`}
+      className="flex min-w-0 flex-col gap-3 rounded-lg border border-ldvh-border bg-ldvh-panel p-4 text-left"
     >
       <div className="flex min-w-0 items-center justify-between gap-2">
         <span className="ldvh-meta-muted min-w-0 truncate">{obj.id}</span>
@@ -835,7 +835,7 @@ function ObjectCardFrame({
       >
         <PriorityIcon source={obj} type={obj.type} locale={locale} size="sm" />
         <ObjectTypeIcon type={obj.type} size={14} className="shrink-0" style={{ color: typeColor }} />
-        <h2 className={`${prominentTitle ? 'ldvh-card-title-prominent' : 'ldvh-card-title'} min-w-0 flex-1 whitespace-normal break-words`}>
+        <h2 className="ldvh-card-title min-w-0 flex-1 whitespace-normal break-words">
           <button
             type="button"
             onClick={() => onOpen(obj.id)}
@@ -1091,7 +1091,6 @@ export default function ObjectList() {
             onOpen={openObject}
             showNonActiveReason={false}
             displayStatus={progressGroup}
-            prominentTitle
           >
             <>
               <WorkCasePlanConfirmationContent goal={obj.goal} successCriteria={obj.successCriteria} t={t} />
@@ -1111,7 +1110,6 @@ export default function ObjectList() {
             onOpen={openObject}
             showNonActiveReason={false}
             displayStatus={progressGroup}
-            prominentTitle
           >
             <WorkCaseProgressingContent
               goal={obj.goal}
@@ -1136,7 +1134,6 @@ export default function ObjectList() {
             onOpen={openObject}
             showNonActiveReason={false}
             displayStatus={progressGroup}
-            prominentTitle
           >
             <>
               <WorkCaseClosureConfirmationContent goal={obj.goal} closureProposal={obj.closureProposal} />
@@ -1154,7 +1151,6 @@ export default function ObjectList() {
             onOpen={openObject}
             showNonActiveReason={false}
             displayStatus={progressGroup}
-            prominentTitle
           >
             <>
               <WorkCaseClosedContent goal={obj.goal} terminal={obj.closureTerminal} />
