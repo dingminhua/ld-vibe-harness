@@ -1,9 +1,10 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { ArrowRight, Circle, CircleAlert, CircleCheck, CircleMinus, CirclePlay, Lightbulb, ListChecks, PauseCircle, Target } from 'lucide-react';
+import { ArrowRight, Circle, CircleAlert, CircleCheck, CircleMinus, CirclePlay, Clock3, Lightbulb, ListChecks, Target } from 'lucide-react';
 import StatusBadge from '@/components/StatusBadge';
 import ObjectStatusFilter from '@/components/ObjectStatusFilter';
 import WorkCaseProgressFilter from '@/components/WorkCaseProgressFilter';
+import WorkCaseProgressTrack from '@/components/WorkCaseProgressTrack';
 import ObjectPriorityFilter from '@/components/ObjectPriorityFilter';
 import PriorityIcon from '@/components/PriorityIcon';
 import SummaryText from '@/components/SummaryText';
@@ -12,7 +13,7 @@ import { WorkCaseCriteriaList, WORKCASE_CRITERIA_SURFACE_CLASS } from '@/compone
 import { fetchObjectDetail, fetchObjects, type FactCoverageStatus, type FactListProblem, type ObjectDetail, type ObjectItem, type ObjectStatusOption, type WorkCaseClosureProposalCard, type WorkCaseClosureTerminalCard, type WorkCaseContributionTarget, type WorkCaseExecutionItem, type WorkCaseProgressOption, type WorkCaseSparkSuggestionCard } from '@/utils/api';
 import { formatDateTime } from '@/utils/dateFormat';
 import { useI18n } from '@/i18n/context';
-import { getFieldValueLabel, getLocalizedObjectTitle, getObjectStatusLocale } from '@/i18n/locales';
+import { getFieldLabel, getFieldValueLabel, getLocalizedObjectTitle, getObjectStatusLocale } from '@/i18n/locales';
 import { CATEGORY_COLORS } from '@/utils/categoryColors';
 import { getFactReadMeta, isReadableFact } from '@/utils/factReadMeta';
 import { getEffectiveListStatus, writeListStatusParam } from '@/utils/listStatus';
@@ -209,16 +210,18 @@ function WorkCaseBlockingNotice({
   blockingSummary?: string;
   t: Translate;
 }) {
+  const { locale } = useI18n();
+  const label = getFieldLabel('blocking_summary', locale);
   return (
     <div
       role="status"
-      aria-label={t('objectList.workcaseBlockingReason')}
-      className="min-w-0 rounded-md border border-amber-400/25 border-l-2 border-l-amber-400 bg-amber-500/5 px-2.5 py-2"
+      aria-label={label}
+      className="min-w-0 rounded-md border border-rose-400/30 border-l-2 border-l-rose-400 bg-rose-500/[0.045] px-2.5 py-2"
     >
       <div className="flex min-w-0 items-center gap-2">
-        <CircleAlert size={14} className="shrink-0 text-amber-500 dark:text-amber-400" aria-hidden="true" />
-        <div className="ldvh-caption-strong min-w-0 text-amber-700/75 dark:text-amber-200/75">
-          {t('objectList.workcaseBlockingReason')}
+        <CircleAlert size={14} className="shrink-0 text-rose-500 dark:text-rose-400" aria-hidden="true" />
+        <div className="ldvh-card-decision-title min-w-0 text-rose-700/80 dark:text-rose-200/80">
+          {label}
         </div>
       </div>
       {blockingSummary?.trim() ? (
@@ -226,7 +229,7 @@ function WorkCaseBlockingNotice({
           <SummaryText
             value={blockingSummary}
             collapseThreshold={Number.MAX_SAFE_INTEGER}
-            className="ldvh-card-decision-body [&_p]:my-0 text-amber-950/70 dark:text-amber-100/75"
+            className="ldvh-card-decision-body [&_p]:my-0 text-rose-950/70 dark:text-rose-100/75"
           />
         </div>
       ) : (
@@ -257,20 +260,9 @@ function WorkCaseProgressingContent({
   blockingSummary?: string;
   t: Translate;
 }) {
-  const stepLabels = [
-    t('objectList.workcaseStageExecute'),
-    t('objectList.workcaseStageSelfCheck'),
-    t('objectList.workcaseStageResultReview'),
-    t('objectList.workcaseStageSynthesis'),
-  ];
+  const { locale } = useI18n();
   const currentStep = progressStep ? WORKCASE_PROGRESS_STEP_ORDER.indexOf(progressStep) : -1;
   const planRevising = phase === 'plan_revising';
-  const currentPositionKnown = planRevising || currentStep >= 0;
-  const currentStepLabel = planRevising
-    ? t('objectList.workcasePlanRevising')
-    : currentStep >= 0
-      ? stepLabels[currentStep]
-      : t('objectList.workcaseStageUnavailable');
   const itemExecution = progressStep === 'item_execution';
   const executionItemsActive = executionItems.filter((item) => item.status === 'in_progress' || item.status === 'blocked');
   const executionItemOpen = executionItems.filter((item) => ['pending', 'in_progress', 'blocked'].includes(item.status)).length;
@@ -299,58 +291,14 @@ function WorkCaseProgressingContent({
       <section className="min-w-0 rounded-md border border-sky-400/25 border-l-2 border-l-sky-400 bg-sky-500/[0.035] px-3.5 py-3">
         <div className="flex min-w-0 items-center gap-2">
           <CirclePlay size={WORKCASE_SECTION_ICON_SIZE} className="shrink-0 text-sky-500 dark:text-sky-400" aria-hidden="true" />
-          <h3 className="ldvh-card-decision-title text-sky-700/85 dark:text-sky-200/85">{t('objectList.workcaseCurrentProgress')}</h3>
+          <h3 className="ldvh-card-decision-title text-sky-700/85 dark:text-sky-200/85">{t('objectDetail.workcaseCurrentSnapshot')}</h3>
         </div>
 
-        {planRevising && (
-          <div className="ldvh-caption mt-2 flex min-w-0 items-center gap-2 text-sky-500 dark:text-sky-400">
-            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-current" aria-hidden="true" />
-            <span className="min-w-0 break-words">{currentStepLabel}</span>
-            <span className="ldvh-meta-muted">{t('objectList.workcaseOutsideProgressTrack')}</span>
-          </div>
-        )}
-        {!currentPositionKnown && (
-          <p role="status" className="ldvh-caption mt-2 text-red-400">{currentStepLabel}</p>
-        )}
-
-        {!planRevising && (
-          <ol
-            className="mt-2.5 grid min-w-0 grid-cols-4"
-            aria-label={`${t('objectList.workcaseDynamicStages')}：${currentStepLabel}`}
-          >
-            {WORKCASE_PROGRESS_STEP_ORDER.map((step, index) => {
-              const isCurrent = index === currentStep;
-              return (
-                <li
-                  key={step}
-                  aria-current={isCurrent ? 'step' : undefined}
-                  className="relative flex min-w-0 flex-col items-center px-1 text-center"
-                >
-                  {index > 0 && (
-                    <span className="absolute left-0 right-1/2 top-2.5 z-0 h-px bg-ldvh-border" aria-hidden="true" />
-                  )}
-                  {index < WORKCASE_PROGRESS_STEP_ORDER.length - 1 && (
-                    <span className="absolute left-1/2 right-0 top-2.5 z-0 h-px bg-ldvh-border" aria-hidden="true" />
-                  )}
-                  <span className={`ldvh-meta relative z-10 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border bg-ldvh-bg ${
-                    isCurrent
-                      ? 'border-sky-400/60 bg-sky-100 font-semibold text-sky-600 ring-2 ring-sky-500/10 dark:bg-sky-950 dark:text-sky-300'
-                      : 'border-ldvh-border text-ldvh-text-secondary'
-                  }`}>
-                    {index + 1}
-                  </span>
-                  <div className="mt-1.5 min-w-0">
-                    <div className={`ldvh-card-decision-body break-words leading-4 ${
-                      isCurrent ? 'font-medium text-sky-400' : 'text-ldvh-text-secondary/80'
-                    }`}>
-                      {stepLabels[index]}
-                    </div>
-                  </div>
-                </li>
-              );
-            })}
-          </ol>
-        )}
+        <WorkCaseProgressTrack
+          phase={phase}
+          step={progressStep}
+          showUnavailable
+        />
 
         {showWorkItems && (
           <div className="mt-2.5 border-t border-ldvh-border/70 pt-2.5">
@@ -465,18 +413,18 @@ function WorkCaseProgressingContent({
         )}
 
         {waitingOn?.trim() && (
-          <div className="mt-2.5 min-w-0 rounded-md border border-ldvh-border/70 border-l-2 border-l-ldvh-text-secondary/35 bg-ldvh-bg/60 px-2.5 py-2">
+          <div className="mt-2.5 min-w-0 rounded-md border border-amber-400/30 border-l-2 border-l-amber-400 bg-amber-500/[0.045] px-2.5 py-2">
             <div className="flex min-w-0 items-center gap-2">
-              <PauseCircle size={14} className="shrink-0 text-slate-500 dark:text-slate-400" aria-hidden="true" />
-              <div className="ldvh-caption-strong min-w-0 text-slate-500/75 dark:text-slate-300/75">
-                {t('objectList.workcaseWaitingOn')}
+              <Clock3 size={14} className="shrink-0 text-amber-500 dark:text-amber-400" aria-hidden="true" />
+              <div className="ldvh-card-decision-title min-w-0 text-amber-700/80 dark:text-amber-200/80">
+                {getFieldLabel('waiting_on', locale)}
               </div>
             </div>
             <div className={`${WORKCASE_CARD_TITLE_BODY_GAP_CLASS} break-words`}>
               <SummaryText
                 value={waitingOn}
                 collapseThreshold={Number.MAX_SAFE_INTEGER}
-                className="ldvh-card-decision-body [&_p]:my-0 text-slate-700/70 dark:text-slate-200/70"
+                className="ldvh-card-decision-body [&_p]:my-0 text-amber-950/70 dark:text-amber-100/75"
               />
             </div>
           </div>

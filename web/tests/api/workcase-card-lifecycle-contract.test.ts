@@ -114,15 +114,15 @@ test('terminal status labels remain type-specific across fact types', () => {
 });
 
 test('plan revision is progressing but remains outside the four-step track', () => {
-  const list = source('src/pages/ObjectList.tsx');
+  const track = source('src/components/WorkCaseProgressTrack.tsx');
   const locales = source('src/i18n/locales.ts');
 
   assert.deepEqual(getWorkCaseProgressProjection('plan_revising'), { progressGroup: 'progressing' });
   assert.equal(getWorkCaseProgressProjection('plan_revising')?.progressStep, undefined);
-  assert.match(list, /const planRevising = phase === 'plan_revising'/);
-  assert.match(list, /objectList\.workcasePlanRevising/);
-  assert.match(list, /objectList\.workcaseOutsideProgressTrack/);
-  assert.match(list, /\{!planRevising && \(/);
+  assert.match(track, /const planRevising = phase === 'plan_revising'/);
+  assert.match(track, /objectList\.workcasePlanRevising/);
+  assert.match(track, /objectList\.workcaseOutsideProgressTrack/);
+  assert.match(track, /if \(planRevising\)/);
   assert.match(locales, /plan_revising: \{ zh: '方案修订中'/);
   assert.match(locales, /'objectList\.workcaseOutsideProgressTrack': '四步轨迹之外'/);
 });
@@ -156,15 +156,16 @@ test('plan confirmation keeps goal and criteria as the only plan-decision inputs
   assert.match(content, /<WorkCaseCriteriaList/);
   assert.match(content, /<WorkCaseGoalSection goal=\{goal\} t=\{t\} \/>/);
   assert.match(sharedCriteria, /bg-blue-500\/\[0\.025\]/);
-  assert.match(sharedCriteria, /detailText \? 'ldvh-detail-semantic-body' : 'ldvh-card-decision-body'/);
-  assert.match(sharedCriteria, /detailText \? 'mt-\[0\.5625rem\]' : 'mt-\[0\.5rem\]'/);
+  assert.match(sharedCriteria, /className="ldvh-card-decision-body text-blue-950\/65 dark:text-blue-100\/75"/);
+  assert.match(sharedCriteria, /className="mt-\[0\.5rem\] h-1 w-1/);
   assert.doesNotMatch(content, /list-disc/);
   assert.doesNotMatch(content, /<ol|line-clamp|slice\(0,|scope|blockingSummary|BlockingNotice/);
   assert.match(notice, /role="status"/);
-  assert.match(notice, /aria-label=\{t\('objectList\.workcaseBlockingReason'\)\}/);
-  assert.match(notice, /border-l-2 border-l-amber-400 bg-amber-500\/5/);
+  assert.match(notice, /getFieldLabel\('blocking_summary', locale\)/);
+  assert.match(notice, /aria-label=\{label\}/);
+  assert.match(notice, /border-rose-400\/30 border-l-2 border-l-rose-400 bg-rose-500\/\[0\.045\]/);
   assert.match(notice, /flex min-w-0 items-center gap-2/);
-  assert.match(notice, /ldvh-caption-strong min-w-0 text-amber-700\/75 dark:text-amber-200\/75/);
+  assert.match(notice, /ldvh-card-decision-title min-w-0 text-rose-700\/80 dark:text-rose-200\/80/);
 });
 
 test('WorkCase cards keep a neutral outer surface and move emphasis with the current decision', () => {
@@ -182,7 +183,7 @@ test('WorkCase cards keep a neutral outer surface and move emphasis with the cur
   assert.match(progressing, /<WorkCaseGoalSection goal=\{goal\} t=\{t\} emphasis="supporting" \/>/);
   assert.match(closure, /<WorkCaseGoalSection goal=\{goal\} t=\{t\} emphasis="supporting" \/>/);
   assert.match(closed, /<WorkCaseGoalSection goal=\{goal\} t=\{t\} emphasis="supporting" \/>/);
-  assert.match(progressing, /ldvh-caption-strong min-w-0 text-slate-500\/75 dark:text-slate-300\/75/);
+  assert.match(progressing, /ldvh-card-decision-title min-w-0 text-amber-700\/80 dark:text-amber-200\/80/);
 });
 
 test('semantic WorkCase cards share one title-to-body spacing token', () => {
@@ -223,12 +224,14 @@ test('Only Card titles navigate; routed targets remain plain relationship facts'
   assert.doesNotMatch(frame, /<ArrowRight size=\{14\}/);
 });
 
-test('progressing cards show only goal and current progress facts', () => {
+test('progressing cards show only goal and current situation facts', () => {
   const list = source('src/pages/ObjectList.tsx');
+  const track = source('src/components/WorkCaseProgressTrack.tsx');
   const branchStart = list.indexOf("if (progressGroup === 'progressing')");
   const branchEnd = list.indexOf("if (progressGroup === 'closure_confirmation')", branchStart);
   const branch = list.slice(branchStart, branchEnd);
   const content = list.slice(list.indexOf('function WorkCaseProgressingContent'), list.indexOf('function sortObjectsForList'));
+  const notice = list.slice(list.indexOf('function WorkCaseBlockingNotice'), list.indexOf('function WorkCaseProgressingContent'));
 
   assert.ok(branchStart >= 0 && branchEnd > branchStart);
   assert.match(branch, /<WorkCaseProgressingContent/);
@@ -238,7 +241,7 @@ test('progressing cards show only goal and current progress facts', () => {
   assert.match(branch, /waitingOn=\{obj\.waiting_on\}/);
   assert.match(branch, /blockingSummary=\{obj\.blocking_summary\}/);
   assert.doesNotMatch(branch, /successCriteria|closure|approval/);
-  assert.match(content, /<h3 className="ldvh-card-decision-title text-sky-700\/85 dark:text-sky-200\/85">\{t\('objectList\.workcaseCurrentProgress'\)\}<\/h3>/);
+  assert.match(content, /<h3 className="ldvh-card-decision-title text-sky-700\/85 dark:text-sky-200\/85">\{t\('objectDetail\.workcaseCurrentSnapshot'\)\}<\/h3>/);
   assert.doesNotMatch(content, /currentExecutionPosition|currentExecutionItem|workcaseItemProgress/);
   assert.match(content, /const displayedExecutionItems = itemExecution/);
   assert.match(content, /completed: 0, in_progress: 1, blocked: 2, pending: 3, cancelled: 4/);
@@ -253,18 +256,21 @@ test('progressing cards show only goal and current progress facts', () => {
   assert.match(content, /ldvh-card-decision-body \[&_p\]:my-0/);
   assert.match(content, /bg-emerald-500\/5/);
   assert.match(content, /bg-ldvh-bg\/60/);
-  assert.match(content, /top-2\.5 z-0 h-px bg-ldvh-border/);
-  assert.match(content, /bg-sky-100 font-semibold text-sky-600/);
+  assert.match(content, /<WorkCaseProgressTrack[\s\S]{0,160}phase=\{phase\}[\s\S]{0,160}step=\{progressStep\}/);
+  assert.match(track, /top-2\.5 z-0 h-px bg-ldvh-border/);
+  assert.match(track, /bg-sky-100 font-semibold text-sky-600/);
   assert.match(content, /text-sky-950\/70 dark:text-sky-100\/75/);
   assert.match(content, /text-sky-600\/70 dark:text-sky-300\/70/);
   assert.match(content, /text-emerald-950\/70 dark:text-emerald-100\/75/);
   assert.match(content, /text-slate-700\/70 dark:text-slate-200\/70/);
   assert.doesNotMatch(content, /grid-cols-\[1rem_minmax\(0,1fr\)\]/);
   assert.doesNotMatch(content, /workcaseItemCompleted|workcaseItemInProgress|workcaseItemBlocked|workcaseItemPending|workcaseItemCancelled/);
-  assert.match(content, /objectList\.workcaseWaitingOn/);
-  assert.match(content, /border-l-2 border-l-ldvh-text-secondary\/35 bg-ldvh-bg\/60/);
-  assert.match(content, /ldvh-card-decision-body \[&_p\]:my-0 text-slate-700\/70/);
+  assert.match(content, /getFieldLabel\('waiting_on', locale\)/);
+  assert.match(content, /border-amber-400\/30 border-l-2 border-l-amber-400 bg-amber-500\/\[0\.045\]/);
+  assert.match(content, /ldvh-card-decision-body \[&_p\]:my-0 text-amber-950\/70/);
   assert.match(content, /<WorkCaseBlockingNotice blockingSummary=\{blockingSummary\}/);
+  assert.match(notice, /getFieldLabel\('blocking_summary', locale\)/);
+  assert.match(notice, /border-rose-400\/30 border-l-2 border-l-rose-400 bg-rose-500\/\[0\.045\]/);
   assert.doesNotMatch(content, /progressHistory|roundLabel|workcaseRound/);
 });
 

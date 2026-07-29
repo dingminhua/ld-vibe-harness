@@ -269,12 +269,12 @@ WorkCase 列表筛选、Dashboard 聚合或其它以外部 Card 为成员的 Hum
 
 Web 不得为这两项重新生成 AI 摘要，不得从 `scope`、work items、审核记录或其它字段拼凑替代文本。目标与全部成功标准必须完整显示，不得截断、折叠、限制标准条数或用“其余若干项”代替；字段缺失或不可读时必须明确显示相应信息缺失。成功标准是没有先后关系的并列集合，在 Card 中必须统一使用圆点，不得按数组位置、criterion ID 或显示次序添加数字序号。当实际 `status=blocked` 时，Card 必须在计划判断输入区之外另设独立的当前状态提示区，完整显示顶层 `blocking_summary`；该提示不构成第三项计划判断输入，未记录阻塞原因时明确显示相应信息缺失。除这一阻塞提示外，该 Card 不显示 `scope` 中的覆盖、排除或限制，也不显示 work items、依赖、执行步骤、方法、模板、验证安排、创建审核详情、执行统计或关闭材料；这些技术边界和完整计划批准材料仍从同源详情读取。Card 只帮助 Human 识别当前待确认计划，不单独构成 21 §10 要求的完整计划批准材料。
 
-`progressing` Card 在相同通用对象身份、标题和进展分组之外，正文只显示“目标”和“当前进展”两个区域：
+`progressing` Card 在相同通用对象身份、标题和进展分组之外，正文只显示“目标”和“当前情况”两个区域：
 
 - **目标**：与 `plan_confirmation` Card 一样直接、完整读取当前 WorkCase 的 `goal`，不得重新摘要、截断、折叠或从其它字段拼凑替代文本；
-- **当前进展**：同时显示四个推进环节中的当前位置、按当前环节适用范围投影的工作项，以及实际存在的等待或阻塞；这些内容只能派生自 phase 投影、`work_items[].item_id`、`work_items[].goal`、`work_items[].status`、实际存在的 `work_items[].blocking_summary`、顶层 `waiting_on` 和顶层 `blocking_summary`，不得由 Web 自行补写事实。
+- **当前情况**：同时显示四个推进环节中的当前位置、按当前环节适用范围投影的工作项，以及实际存在的等待或阻塞；这些内容只能派生自 phase 投影、`work_items[].item_id`、`work_items[].goal`、`work_items[].status`、实际存在的 `work_items[].blocking_summary`、顶层 `waiting_on` 和顶层 `blocking_summary`，不得由 Web 自行补写事实。
 
-“当前进展”的首要 Human 扫读判断是“现在处在哪个内部位置、哪些工作项已经完成、正在推进或尚未执行”。结果推进主链中的 Card 必须把当前环节作为主进展信息；不得引入全局轮次、返回次数、审核次数、完成比例或其它过程计数。四个环节应保持为一条连续的 1–4 结构轨迹，只有当前位置可以使用强调色和轻微动态信号；轨迹线和其它位置必须保持中性，不得借颜色、连线、勾选或图标暗示已完成、已经过或不会返回。窄屏可以让当前环节与工作项区换行，但不得改变阅读顺序或把四环节拆成会弱化连续关系的 2×2 宫格。
+“当前情况”的首要 Human 扫读判断是“现在处在哪个内部位置、哪些工作项已经完成、正在推进或尚未执行”。结果推进主链中的 Card 必须把当前环节作为主进展信息；不得引入全局轮次、返回次数、审核次数、完成比例或其它过程计数。四个环节应保持为一条连续的 1–4 结构轨迹，只有当前位置可以使用强调色和轻微动态信号；轨迹线和其它位置必须保持中性，不得借颜色、连线、勾选或图标暗示已完成、已经过或不会返回。窄屏可以让当前环节与工作项区换行，但不得改变阅读顺序或把四环节拆成会弱化连续关系的 2×2 宫格。
 
 `phase=plan_revising` 时，Card 必须在“推进中”下明确显示“方案修订中”，并说明它位于四步结果推进轨迹之外；不得高亮四步中的任一项，不得显示“当前环节不可判定”，也不得新增第五个稳定 `progress_step`。真实 active item、`waiting_on` 与 `blocking_summary` 仍按当前事实显示；计划返修期间被冻结的 item 状态不得被 Web 改写为返修进度或完成历史。
 
@@ -286,7 +286,7 @@ Web 不得为这两项重新生成 AI 摘要，不得从 `scope`、work items、
 
 当前环节为 `item_execution` 时所有 work item 均为 `completed` 或 `cancelled`，则必须明确显示工作项状态与当前环节不一致。`controller_self_check`、`independent_review` 和 `controller_synthesis` 不为预期为空的 active 项生成“无执行项”噪声；如这三个环节仍有 `pending`、`in_progress` 或 `blocked` 项，则显示状态与环节不一致。任何 work item 缺少合法稳定 `item_id`、完整 `goal` 或当前状态，或出现重复 ID 时，完整工作项清单或 active 项整组显示“工作项进展不可判定”，但不得因此隐藏仍可由 phase 确定的当前内部位置。Web 不得只丢弃错误成员后继续计算部分总数，也不得用数组位置、title、ID、已退出字段或生成值补造身份/目标。数组位置与 item_id 数字尾缀都不是执行序号，Web 不得把 `item-03` 改写成“第三项”或声称已经完成到线性第几项。
 
-当 `waiting_on` 实际存在时，`progressing` Card 必须完整显示正在等待的对象或条件；不存在时不从当前环节自动推断“等待独立复核”等文案。当 `status=blocked` 时，Card 必须在保留上述四环节及当前位置的同时，附加完整显示顶层 `blocking_summary`；未记录阻塞原因时明确显示缺失。等待回答“正在等什么”，阻塞回答“为什么不能继续”；两者实际同时存在时均保留，不由 Web 进行语义去重。它们都是覆盖在推进位置上的当前信息，不替代“推进中”或当前推进环节。`progressing` Card 不显示成功标准、scope、依赖、方法、完整工作项计划中的预期结果或执行细节、执行态势条、验证安排、审核记录或关闭材料；除 `item_execution` 时上述全部工作项的身份/目标/状态/阻塞、其它环节 active 项的身份/目标/状态/阻塞，以及顶层等待与阻塞外，其余工作项内容仍从同源详情读取。
+当 `waiting_on` 实际存在时，`progressing` Card 必须以与详情一致的“等待对象”标题完整显示正在等待的对象或条件；不存在时不从当前环节自动推断“等待独立复核”等文案。当 `status=blocked` 时，Card 必须在保留上述四环节及当前位置的同时，以与详情一致的“阻塞说明”标题附加完整显示顶层 `blocking_summary`；未记录阻塞原因时明确显示缺失。Card 中两类标题与详情保持同一语义色和层级关系，但使用适合 Card 的紧凑字号。等待回答“正在等什么”，阻塞回答“为什么不能继续”；两者实际同时存在时均保留，不由 Web 进行语义去重。它们都是覆盖在推进位置上的当前信息，不替代“推进中”或当前推进环节。`progressing` Card 不显示成功标准、scope、依赖、方法、完整工作项计划中的预期结果或执行细节、执行态势条、验证安排、审核记录或关闭材料；除 `item_execution` 时上述全部工作项的身份/目标/状态/阻塞、其它环节 active 项的身份/目标/状态/阻塞，以及顶层等待与阻塞外，其余工作项内容仍从同源详情读取。
 
 `closure_confirmation` Card 在通用对象身份、标题、进展分组和更新时间之外，正文定义以下两区：
 
@@ -306,7 +306,7 @@ Web 不得为上述输入重新摘要，不得从 `result_summary`、`validation
 
 `closed` Card 使用与上述关闭 Card 相同的扫读结构，但从终态字段读取：目标来自 `goal`，关闭结论来自 `closure_outcome`，处置摘要来自 `disposition_summary`；route_existing 从 `routed-to` 与当前 target title 呈现，suggest_spark 从顶层 `spark_suggestions` 呈现，accept_stop 从 `residual_responsibilities` 呈现，三者均不反推原 proposal ID。后续贡献仍只显示 `contributed-to` Pitfall 的标题与当前状态，不提供审核控件。`related-to` 只在详情关系区呈现，不进入任一 WorkCase Card 正文。
 
-本节确定 `plan_confirmation`、`progressing`、`closure_confirmation` 与 `closed` Card 的上述正文。颜色、图标和操作继续由 `web/docs/` 与实现承接，但关闭 Card 不得增加 Pitfall promote/discard 控件。WorkCase 详情页不使用进展分组或推进环节切换、隐藏、重排或另建阅读结构；所有状态复用同一详情阅读结构，`contributed-to`、`related-to` 与其它关系一样在详情关系区呈现，具体字段是否实际存在只由当前事实内容及其类型来源决定。
+本节确定 `plan_confirmation`、`progressing`、`closure_confirmation` 与 `closed` Card 的上述正文。颜色、图标和操作继续由 `web/docs/` 与实现承接，但关闭 Card 不得增加 Pitfall promote/discard 控件。WorkCase 详情页不使用进展分组或推进环节切换、隐藏、重排或另建阅读结构；所有状态复用同一详情阅读结构。处于 `progressing` 时，详情“当前情况”可以直接从精确读取的 `phase` 使用本节同一确定性映射呈现与 Card 共用的四步轨道或轨迹外“方案修订中”，但不得读取列表 DTO 的 `progress_group`、`progress_step` 或工作项计数作为详情事实，也不得把轨道位置表达为完成历史。详情中的每条成功标准必须按与工作项一致的对象语法形成独立轻量对象：标题栏显示弱化的稳定 `criterion_id` 和实际存在的三值结果状态，标准陈述作为主正文，结果摘要作为默认收起的次级内容；该结构不得引入工作项依赖、执行状态或顺序含义。尚未形成当前结果时只省略状态和结果摘要，不省略标准对象或生成空结果。呈现差异只由当前 `success_criterion_results` 是否实际存在决定，不得按 `phase` 推断、补写或隐藏结果。外部 Card 仍使用本节定义的紧凑圆点清单，不因详情对象化而增加标准 ID、结果或独立对象边界。`contributed-to`、`related-to` 与其它关系一样在详情关系区呈现，具体字段是否实际存在只由当前事实内容及其类型来源决定。
 
 ## 8. Web 交互边界
 

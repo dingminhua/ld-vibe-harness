@@ -60,7 +60,7 @@ test('Specs fix plan-confirmation and progressing Card inputs to the latest fiel
   assert.match(cardSection, /成功标准是没有先后关系的并列集合，在 Card 中必须统一使用圆点/);
   assert.match(cardSection, /在计划判断输入区之外另设独立的当前状态提示区，完整显示顶层 `blocking_summary`/);
   assert.match(cardSection, /该提示不构成第三项计划判断输入/);
-  assert.match(cardSection, /`progressing` Card 在相同通用对象身份、标题和进展分组之外，正文只显示“目标”和“当前进展”两个区域/);
+  assert.match(cardSection, /`progressing` Card 在相同通用对象身份、标题和进展分组之外，正文只显示“目标”和“当前情况”两个区域/);
   assert.match(cardSection, /不得引入全局轮次、返回次数、审核次数、完成比例或其它过程计数/);
   assert.match(cardSection, /当前环节为 `item_execution` 时，Card 必须完整列出全部当前 work item/);
   assert.match(cardSection, /不显示“已完成 N\/T”或其它进度比例/);
@@ -71,8 +71,13 @@ test('Specs fix plan-confirmation and progressing Card inputs to the latest fiel
   assert.match(cardSection, /其它推进环节不展开完整工作项清单/);
   assert.match(cardSection, /渲染顺序不表示推进顺序/);
   assert.match(cardSection, /不得把 `item-03` 改写成“第三项”/);
-  assert.match(cardSection, /当 `waiting_on` 实际存在时.*完整显示正在等待的对象或条件/);
+  assert.match(cardSection, /当 `waiting_on` 实际存在时.*“等待对象”标题完整显示正在等待的对象或条件/);
+  assert.match(cardSection, /“阻塞说明”标题附加完整显示顶层 `blocking_summary`/);
   assert.match(cardSection, /附加完整显示顶层 `blocking_summary`/);
+  assert.match(cardSection, /每条成功标准必须按与工作项一致的对象语法形成独立轻量对象/);
+  assert.match(cardSection, /结果摘要作为默认收起的次级内容/);
+  assert.match(cardSection, /只由当前 `success_criterion_results` 是否实际存在决定，不得按 `phase` 推断/);
+  assert.match(cardSection, /外部 Card 仍使用本节定义的紧凑圆点清单/);
   assert.match(cardSection, /`progressing` Card 不显示成功标准、scope、依赖、方法、完整工作项计划中的预期结果或执行细节、执行态势条/);
   assert.doesNotMatch(cardSection, /progress_history|第 N 轮|轮次未记录/);
 });
@@ -128,6 +133,9 @@ test('Current Web docs describe the same latest-only Card and detail boundaries'
   assert.match(listSection, /不是第三项计划判断输入/);
   assert.match(listSection, /轨迹外内部位置“方案修订中”/);
   assert.match(listSection, /“已关闭”Card 使用相同扫读结构/);
+  assert.match(detailSection, /标题栏显示弱化的稳定 ID 和实际存在的结果状态/);
+  assert.match(detailSection, /结果摘要作为对象内次级色块默认收起/);
+  assert.match(detailSection, /不按 `phase` 猜测或补写结果/);
   assert.match(listDoc, /progress_group\?: 'plan_confirmation' \| 'progressing' \| 'closure_confirmation' \| 'closed'/);
   assert.match(listDoc, /progress_step\?: 'item_execution' \| 'controller_self_check' \| 'independent_review' \| 'controller_synthesis'/);
   assert.match(listDoc, /executionItems\?: Array<\{/);

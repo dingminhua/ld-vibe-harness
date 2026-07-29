@@ -311,6 +311,15 @@ test('narrative fields read as prose while structured records keep label rows', 
 
   // 叙述字段与其它事实对象一致：小字题注 + 下方 Markdown 正文，不用标签列。
   assert.match(layout, /function ProseField\(/);
+  const proseField = layout.slice(
+    layout.indexOf('function ProseField'),
+    layout.indexOf('function TextField'),
+  );
+  assert.match(proseField, /useState\(variant !== "validation"\)/);
+  assert.match(proseField, /const collapsible = variant === "validation" && showLabel/);
+  assert.match(proseField, /aria-expanded=\{semanticExpanded\}/);
+  assert.match(proseField, /semanticExpanded \? WORKCASE_DETAIL_SEMANTIC_SURFACE_PADDING : "px-3\.5 py-3"/);
+  assert.match(proseField, /\{semanticExpanded && \(/);
   const narrativeFields = [
     'result_summary', 'validation_summary', 'controller_check_summary',
   ];
@@ -337,6 +346,8 @@ test('narrative fields read as prose while structured records keep label rows', 
   assert.match(responsibility, /ldvh-detail-semantic-title min-w-0 text-current/);
   assert.match(responsibility, /className=\{`ldvh-detail-semantic-body \$\{bodyClass\}`\}/);
   assert.match(responsibility, /Icon size=\{WORKCASE_DETAIL_SEMANTIC_ICON_SIZE\}/);
+  assert.match(layout, /const WORKCASE_DETAIL_SEMANTIC_SURFACE_PADDING = "px-3\.5 pb-2 pt-3"/);
+  assert.match(responsibility, /WORKCASE_DETAIL_SEMANTIC_SURFACE_PADDING/);
   assert.match(responsibility, /useState\(tone !== "scope"\)/);
   assert.match(responsibility, /tone === "scope" \? \(/);
   assert.match(responsibility, /aria-expanded=\{expanded\}/);
@@ -344,12 +355,18 @@ test('narrative fields read as prose while structured records keep label rows', 
   assert.match(responsibility, /<ChevronUp size=\{WORKCASE_DETAIL_SEMANTIC_ICON_SIZE\}/);
   assert.match(responsibility, /<ChevronDown size=\{WORKCASE_DETAIL_SEMANTIC_ICON_SIZE\}/);
   assert.match(responsibility, /\{expanded && \(/);
-  assert.match(responsibility, /text-violet-950\/65 dark:text-violet-100\/75/);
-  assert.match(responsibility, /text-cyan-950\/65 dark:text-cyan-100\/75/);
+  assert.match(responsibility, /!text-violet-950\/65 dark:!text-violet-100\/75/);
+  assert.match(responsibility, /!text-cyan-950\/65 dark:!text-cyan-100\/75/);
+  assert.doesNotMatch(layout, /body: "text-(?:violet|cyan|sky|emerald|amber|rose|slate)-/);
+  assert.match(layout, /body: "!text-emerald-950\/72 dark:!text-emerald-100\/78"/);
+  assert.match(layout, /className="ldvh-detail-semantic-body !text-violet-950\/72 dark:!text-violet-100\/78"/);
+  assert.match(layout, /className="ldvh-detail-semantic-body font-medium !text-amber-950\/72 dark:!text-amber-100\/78"/);
+  assert.doesNotMatch(layout, /className=\{`ldvh-body \$\{styles\.body\}`\}/);
 
-  // 当前情况前置于目标与边界；精确 phase 只形成头部进展分组，不重复生成当前阶段色块。
+  // 当前情况前置于目标与边界；内外页复用同一轨道组件，详情只传递精确 phase。
   assert.ok(layout.indexOf('workcaseCurrentSnapshot') < layout.indexOf('workcaseResponsibility'));
   assert.doesNotMatch(layout, /function SnapshotPhaseField\(|<SnapshotPhaseField/);
+  assert.match(layout, /<WorkCaseProgressTrack phase=\{obj\.phase\} className="mt-0" \/>/);
   assert.match(layout, /function SnapshotProseField\(/);
   assert.match(layout, /const WORKCASE_DETAIL_SEMANTIC_ICON_SIZE = 14/);
   const snapshot = layout.slice(
@@ -357,6 +374,7 @@ test('narrative fields read as prose while structured records keep label rows', 
     layout.indexOf('function FieldIssueRow'),
   );
   assert.match(snapshot, /Icon size=\{WORKCASE_DETAIL_SEMANTIC_ICON_SIZE\}/);
+  assert.match(snapshot, /WORKCASE_DETAIL_SEMANTIC_SURFACE_PADDING/);
   assert.match(snapshot, /ldvh-detail-semantic-title min-w-0 text-current/);
   assert.match(snapshot, /className=\{`ldvh-detail-semantic-body \$\{styles\.body\}`\}/);
   for (const field of ['summary', 'resume_from', 'waiting_on', 'blocking_summary']) {
@@ -383,6 +401,13 @@ test('narrative fields read as prose while structured records keep label rows', 
   assert.match(layout, /fieldKey="result_summary"[\s\S]{0,160}variant="result"/);
   assert.match(layout, /fieldKey="validation_summary"[\s\S]{0,160}variant="validation"/);
   assert.match(layout, /fieldKey="controller_check_summary"[\s\S]{0,180}variant="controller"/);
+  const semanticProse = layout.slice(
+    layout.indexOf('function ProseField'),
+    layout.indexOf('function TextField'),
+  );
+  assert.match(semanticProse, /Icon size=\{WORKCASE_DETAIL_SEMANTIC_ICON_SIZE\}/);
+  assert.match(semanticProse, /ldvh-detail-semantic-title min-w-0 text-current/);
+  assert.match(semanticProse, /className=\{`ldvh-detail-semantic-body \$\{styles\.body\}`\}/);
 
   // 散文正文仍完整渲染 Markdown，不截断、不折叠。
   assert.match(layout, /collapseThreshold=\{Number\.MAX_SAFE_INTEGER\}/);
@@ -393,6 +418,10 @@ test('narrative fields read as prose while structured records keep label rows', 
   assert.match(layout, /function CriterionOutcomeChip\(/);
   assert.match(layout, /function CriterionResultSummary\(/);
   assert.match(layout, /workcaseCriterionResultSummary/);
+  assert.match(layout, /function CriterionObject\(/);
+  assert.match(layout, /function CriterionResultSummary[\s\S]{0,260}useState\(false\)/);
+  assert.match(layout, /aria-expanded=\{expanded\}/);
+  assert.match(layout, /\{expanded && \([\s\S]{0,140}<SummaryText/);
 
   // 工作项复用成功标准的卡片语法：标题栏承载稳定 ID 与状态，目标为主正文，预期结果为次级语义块。
   assert.match(layout, /function WorkItem\(/);
@@ -404,6 +433,7 @@ test('narrative fields read as prose while structured records keep label rows', 
   assert.match(layout, /<ObjectTypeIcon[\s\S]{0,160}type="workcase"/);
   assert.match(layout, /value=\{item\.goal\}[\s\S]{0,320}<WorkItemTextBlock[\s\S]{0,120}fieldKey="expected_result"[\s\S]{0,160}variant="expectation"/);
   assert.match(layout, /value=\{item\.goal\}[\s\S]{0,180}!text-cyan-900\/80 dark:!text-cyan-100\/80/);
+  assert.match(layout, /className="ldvh-detail-semantic-body font-medium !text-cyan-900\/80/);
   assert.match(layout, /<WorkItemDependencyMeta value=\{item\.depends_on\} locale=\{locale\}/);
   assert.match(layout, /function WorkItemDependencyMeta\(/);
   assert.match(layout, /fieldKey="approach_summary"[\s\S]{0,160}variant="boundary"/);
@@ -422,15 +452,29 @@ test('narrative fields read as prose while structured records keep label rows', 
   );
   assert.match(workItemDetail, /result:[\s\S]{0,180}border-emerald-400\/30 bg-emerald-500\/\[0\.06\]/);
   assert.match(workItemDetail, /aria-expanded=\{expanded\}/);
-  assert.match(workItemDetail, /variant === "result"[\s\S]{0,140}h-1 w-1 shrink-0 rounded-full \$\{styles\.dot\}/);
-  assert.doesNotMatch(workItemDetail, /Icon:|<Icon/);
+  assert.match(workItemDetail, /expanded \? "pb-1\.5 pt-2\.5" : "py-2\.5"/);
+  assert.doesNotMatch(workItemDetail, /styles\.dot|h-1 w-1 shrink-0 rounded-full|Icon:|<Icon/);
   assert.match(workItemDetail, /ldvh-card-decision-title min-w-0 text-current/);
   assert.match(workItemDetail, /text-slate-500\/85 dark:text-slate-300\/80/);
   assert.match(workItemDetail, /<ChevronUp size=\{WORKCASE_DETAIL_SEMANTIC_ICON_SIZE\}/);
   assert.match(workItemDetail, /<ChevronDown size=\{WORKCASE_DETAIL_SEMANTIC_ICON_SIZE\}/);
   assert.match(workItemDetail, /\{expanded && <div className="mt-2 min-w-0">\{children\}<\/div>\}/);
   assert.match(layout, /className=\{`ldvh-card-decision-body/);
-  assert.match(layout, /text-slate-600\/80 dark:text-slate-300\/75/);
+  assert.match(layout, /!text-slate-600\/80 dark:!text-slate-300\/75/);
+  const executionApproval = layout.slice(
+    layout.indexOf('function ExecutionApproval'),
+    layout.indexOf('function InlineStringArrayField'),
+  );
+  assert.match(executionApproval, /CircleCheck size=\{WORKCASE_DETAIL_SEMANTIC_ICON_SIZE\}/);
+  assert.match(executionApproval, /ldvh-detail-semantic-title min-w-0 text-current/);
+  assert.match(executionApproval, /ldvh-detail-semantic-body !text-violet-950\/72/);
+  const closureOutcome = layout.slice(
+    layout.indexOf('function ClosureOutcomeSummary'),
+    layout.indexOf('function ResidualDecisionList'),
+  );
+  assert.match(closureOutcome, /Icon size=\{WORKCASE_DETAIL_SEMANTIC_ICON_SIZE\}/);
+  assert.match(closureOutcome, /ldvh-detail-semantic-title min-w-0 text-current/);
+  assert.match(closureOutcome, /className=\{`ldvh-detail-semantic-body \$\{styles\.body\}`\}/);
   assert.doesNotMatch(layout, /WorkItemArrayBlock/);
   assert.match(layout, /function WorkItemStatusChip\(/);
 
@@ -446,6 +490,8 @@ test('narrative fields read as prose while structured records keep label rows', 
     layout.indexOf('function ReviewFeedbackBlock'),
     layout.indexOf('function ExecutionApproval'),
   );
+  assert.match(reviewProseBlock, /expanded \? "pb-1\.5 pt-2\.5" : "py-2\.5"/);
+  assert.match(reviewFeedbackBlock, /expanded \? "pb-1\.5 pt-2\.5" : "py-2\.5"/);
   assert.match(reviewProseBlock, /useState\(variant === "resolution"\)/);
   assert.match(reviewProseBlock, /aria-expanded=\{expanded\}/);
   assert.match(reviewProseBlock, /border-slate-300\/70 bg-slate-100\/55/);
@@ -472,7 +518,7 @@ test('narrative fields read as prose while structured records keep label rows', 
   assert.doesNotMatch(layout, /function (?:NumberField|MonoField|EnumField|DateField|TextValueField)\(/);
 });
 
-test('WorkCase detail criteria reuse the Card bullet-list grammar', () => {
+test('WorkCase detail criteria use light objects while the Card retains its compact bullet list', () => {
   const layout = fs.readFileSync(
     path.join(repositoryRoot, 'web/src/pages/object-detail/WorkCaseReadingLayout.tsx'),
     'utf8',
@@ -492,19 +538,31 @@ test('WorkCase detail criteria reuse the Card bullet-list grammar', () => {
 
   assert.match(layout, /objectDetail\.workcaseCriteriaCount/);
   assert.match(objectList, /WorkCaseCriteriaList, WORKCASE_CRITERIA_SURFACE_CLASS/);
-  assert.match(layout, /WorkCaseCriteriaList,[\s\S]{0,100}WORKCASE_CRITERIA_SURFACE_CLASS/);
   assert.match(objectList, /<section className=\{WORKCASE_CRITERIA_SURFACE_CLASS\}>/);
-  assert.match(criteria, /<div className=\{WORKCASE_CRITERIA_SURFACE_CLASS\}>[\s\S]{0,100}<WorkCaseCriteriaList items=\{items\} textSize="detail"/);
   assert.match(sharedCriteria, /rounded-md border border-blue-400\/20 border-l-2 border-l-blue-400\/80 bg-blue-500\/\[0\.025\] px-3 py-2\.5/);
   assert.match(sharedCriteria, /grid min-w-0 gap-1\.5/);
   assert.match(sharedCriteria, /flex min-w-0 items-start gap-2\.5/);
-  assert.match(sharedCriteria, /detailText \? 'mt-\[0\.5625rem\]' : 'mt-\[0\.5rem\]'/);
-  assert.match(sharedCriteria, /detailText \? 'ldvh-detail-semantic-body' : 'ldvh-card-decision-body'/);
+  assert.match(sharedCriteria, /mt-\[0\.5rem\] h-1 w-1/);
+  assert.match(sharedCriteria, /ldvh-card-decision-body/);
   assert.match(sharedCriteria, /text-blue-950\/65 dark:text-blue-100\/75/);
+  assert.doesNotMatch(sharedCriteria, /meta\?:|details\?:|textSize/);
+  assert.match(criteria, /<ul className="grid min-w-0 gap-3">/);
+  assert.match(criteria, /<CriterionObject/);
+  assert.match(criteria, /key=\{criterionId \|\| String\(index\)\}/);
+  assert.match(criteria, /overflow-hidden rounded-lg border border-blue-400\/30 bg-blue-500\/\[0\.03\]/);
+  assert.match(criteria, /border-b border-blue-400\/20 px-3\.5 py-2\.5/);
+  assert.match(criteria, /<CircleDot[\s\S]{0,100}size=\{16\}/);
+  assert.match(criteria, />\s*\{criterionId\}\s*</);
   assert.match(criteria, /CriterionOutcomeChip/);
   assert.match(criteria, /CriterionResultSummary/);
-  assert.match(criteria, /key: criterionId \|\| String\(index\)/);
-  assert.doesNotMatch(criteria, /overflow-hidden rounded-lg|border-b border-blue|<ListChecks|ldvh-body text-blue|mt-\[0\.65rem\]|>\s*\{criterionId\}\s*</);
+  assert.match(criteria, /ldvh-detail-semantic-body font-medium !text-blue-950\/72/);
+  const criterionSummary = layout.slice(
+    layout.indexOf('function CriterionResultSummary'),
+    layout.indexOf('function WorkItemList'),
+  );
+  assert.doesNotMatch(criterionSummary, /<Icon/);
+  assert.match(criterionSummary, /<span className="min-w-0 flex-1">\{label\}<\/span>/);
+  assert.doesNotMatch(criteria, /WorkCaseCriteriaList|WORKCASE_CRITERIA_SURFACE_CLASS|depends_on|approach_summary/);
 });
 
 test('WorkCase identity uses the same progress group as its list Card', () => {
