@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { ArrowRight, Circle, CircleAlert, CircleCheck, CircleMinus, CirclePlay, Clock3, Lightbulb, ListChecks, Target } from 'lucide-react';
+import { ArrowRight, Circle, CircleAlert, CircleCheck, CircleMinus, CirclePlay, ClipboardList, Clock3, Lightbulb, ListChecks, Target } from 'lucide-react';
 import StatusBadge from '@/components/StatusBadge';
 import ObjectStatusFilter from '@/components/ObjectStatusFilter';
 import WorkCaseProgressFilter from '@/components/WorkCaseProgressFilter';
@@ -150,7 +150,9 @@ function WorkCasePlanConfirmationContent({
             <h3 className="ldvh-card-decision-title text-blue-700/85 dark:text-blue-200/85">{t('objectList.successCriteria')}</h3>
           </div>
           {criteria.length > 0 && (
-            <span className="ldvh-meta-muted shrink-0">{t('objectList.workcaseCriteriaCount', { count: String(criteria.length) })}</span>
+            <span className="ldvh-meta shrink-0 text-blue-700/60 dark:text-blue-200/65">
+              {t('objectList.workcaseCriteriaCount', { count: String(criteria.length) })}
+            </span>
           )}
         </div>
         {criteria.length > 0 ? (
@@ -462,6 +464,10 @@ const PROPOSED_OUTCOME_BODY_CLASS: Record<string, string> = {
   cancelled: 'text-zinc-700/70 dark:text-zinc-200/70',
 };
 
+const CLOSURE_PROPOSAL_NOTICE_CLASS = 'border-amber-400/25 border-l-amber-400 bg-amber-500/5';
+const CLOSURE_PROPOSAL_TEXT_CLASS = 'text-amber-700/80 dark:text-amber-200/80';
+const CLOSURE_PROPOSAL_BODY_CLASS = 'text-amber-900/75 dark:text-amber-100/80';
+
 const PROPOSED_DISPOSITION_NOTICE_CLASS: Record<string, string> = {
   route_existing: 'border-emerald-400/25 border-l-emerald-400 bg-emerald-500/5',
   suggest_spark: 'border-amber-400/25 border-l-amber-400 bg-amber-500/5',
@@ -481,20 +487,45 @@ function QuarterCircle({ className }: { className?: string }) {
 function WorkCaseOutcomeNotice({
   outcome,
   dispositionSummary,
+  mode,
 }: {
   outcome: WorkCaseClosureProposalCard['proposedOutcome'];
   dispositionSummary: string;
+  mode: 'proposal' | 'terminal';
 }) {
-  const { locale } = useI18n();
-  const tone = PROPOSED_OUTCOME_TEXT_CLASS[outcome] ?? 'text-ldvh-text-secondary';
-  const bodyTone = PROPOSED_OUTCOME_BODY_CLASS[outcome] ?? 'text-ldvh-text-secondary/80';
+  const { t, locale } = useI18n();
+  const tone = mode === 'proposal'
+    ? CLOSURE_PROPOSAL_TEXT_CLASS
+    : PROPOSED_OUTCOME_TEXT_CLASS[outcome] ?? 'text-ldvh-text-secondary';
+  const bodyTone = mode === 'proposal'
+    ? CLOSURE_PROPOSAL_BODY_CLASS
+    : PROPOSED_OUTCOME_BODY_CLASS[outcome] ?? 'text-ldvh-text-secondary/80';
+  const surface = mode === 'proposal'
+    ? CLOSURE_PROPOSAL_NOTICE_CLASS
+    : PROPOSED_OUTCOME_NOTICE_CLASS[outcome] ?? 'border-ldvh-border/70 border-l-ldvh-text-secondary/35 bg-ldvh-bg/60';
+  const outcomeLabel = mode === 'proposal'
+    ? getFieldValueLabel('proposed_outcome', outcome, locale)
+    : null;
+  const heading = mode === 'proposal'
+    ? t('objectList.workcaseClosureProposal')
+    : t('objectList.workcaseTerminalDisposition');
+  const outcomeIcon = mode === 'proposal'
+    ? <ClipboardList size={WORKCASE_SECTION_ICON_SIZE} className={`shrink-0 ${CLOSURE_PROPOSAL_TEXT_CLASS}`} aria-hidden="true" />
+    : outcome === 'completed'
+      ? <CircleCheck size={WORKCASE_SECTION_ICON_SIZE} className="shrink-0 text-emerald-500 dark:text-emerald-400" aria-hidden="true" />
+      : outcome === 'partial'
+        ? <QuarterCircle className="shrink-0 text-amber-500 dark:text-amber-400" />
+        : outcome === 'not-achieved'
+          ? <CircleAlert size={WORKCASE_SECTION_ICON_SIZE} className="shrink-0 text-red-500 dark:text-red-400" aria-hidden="true" />
+          : <CircleMinus size={WORKCASE_SECTION_ICON_SIZE} className="shrink-0 text-zinc-500 dark:text-zinc-400" aria-hidden="true" />;
   return (
-    <section className={`min-w-0 rounded-md border border-l-2 px-3.5 py-3 ${PROPOSED_OUTCOME_NOTICE_CLASS[outcome] ?? 'border-ldvh-border/70 border-l-ldvh-text-secondary/35 bg-ldvh-bg/60'}`}>
+    <section className={`min-w-0 rounded-md border border-l-2 px-3.5 py-3 ${surface}`}>
       <div className="flex min-w-0 items-center gap-2">
-        {outcome === 'completed' ? <CircleCheck size={WORKCASE_SECTION_ICON_SIZE} className="shrink-0 text-emerald-500 dark:text-emerald-400" aria-hidden="true" /> : outcome === 'partial' ? <QuarterCircle className="shrink-0 text-amber-500 dark:text-amber-400" /> : outcome === 'not-achieved' ? <CircleAlert size={WORKCASE_SECTION_ICON_SIZE} className="shrink-0 text-red-500 dark:text-red-400" aria-hidden="true" /> : <CircleMinus size={WORKCASE_SECTION_ICON_SIZE} className="shrink-0 text-zinc-500 dark:text-zinc-400" aria-hidden="true" />}
+        {outcomeIcon}
         <span className={`ldvh-card-decision-title min-w-0 ${tone}`}>
-          {getFieldValueLabel('proposed_outcome', outcome, locale)}
+          {heading}
         </span>
+        {outcomeLabel && <span className={`ldvh-meta ml-auto shrink-0 ${tone}`}>{outcomeLabel}</span>}
       </div>
       <div className={`${WORKCASE_CARD_TITLE_BODY_GAP_CLASS} min-w-0 break-words`}>
         <SummaryText value={dispositionSummary} collapseThreshold={Number.MAX_SAFE_INTEGER} className={`ldvh-card-decision-body [&_p]:my-0 ${bodyTone}`} />
@@ -555,7 +586,7 @@ function WorkCaseClosureConfirmationContent({
       <WorkCaseGoalSection goal={goal} t={t} emphasis="supporting" />
       {closureProposal ? (
         <>
-          <WorkCaseOutcomeNotice outcome={closureProposal.proposedOutcome} dispositionSummary={closureProposal.dispositionSummary} />
+          <WorkCaseOutcomeNotice outcome={closureProposal.proposedOutcome} dispositionSummary={closureProposal.dispositionSummary} mode="proposal" />
           {closureProposal.residualDecisions.length > 0 && (
             <ul className="grid min-w-0 gap-2">
               {closureProposal.residualDecisions.map((decision) => (
@@ -598,7 +629,7 @@ function WorkCaseClosedContent({ goal, terminal }: { goal?: string; terminal?: W
       <WorkCaseGoalSection goal={goal} t={t} emphasis="supporting" />
       {terminal ? (
         <>
-          <WorkCaseOutcomeNotice outcome={terminal.outcome} dispositionSummary={terminal.dispositionSummary} />
+          <WorkCaseOutcomeNotice outcome={terminal.outcome} dispositionSummary={terminal.dispositionSummary} mode="terminal" />
           {terminal.routedTo.length > 0 && (
             <ul className="grid min-w-0 gap-2">
               {terminal.routedTo.map((target) => (

@@ -32,7 +32,7 @@ export function WorkCaseCriteriaList({
               <SummaryText
                 value={item.statement}
                 collapseThreshold={Number.MAX_SAFE_INTEGER}
-                className="ldvh-card-decision-body text-blue-950/65 dark:text-blue-100/75"
+                className="ldvh-card-decision-body text-blue-900/70 dark:text-blue-100/75"
               />
             )}
           </div>

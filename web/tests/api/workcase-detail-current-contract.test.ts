@@ -177,6 +177,8 @@ test('closure-confirming detail preserves tri-state results and separates every 
   assert.match(locales, /workcaseExecutionApprovalBoundary[^\n]+不表示技术结果、验证或关闭已经成立/);
   assert.match(locales, /workcaseControllerCheckBoundary[^\n]+不等于独立复核或 Human 验收/);
   assert.match(locales, /workcaseClosureProposalBoundary[^\n]+不是既成终态或关闭批准/);
+  assert.match(locales, /proposed_outcome:[\s\S]{0,180}completed: \{ zh: '目标达成', en: 'Achieved'/);
+  assert.match(locales, /closure_outcome:[\s\S]{0,120}completed: \{ zh: '完成'/);
 });
 
 test('closed detail naturally contracts to the current closed whitelist', () => {
@@ -333,6 +335,8 @@ test('narrative fields read as prose while structured records keep label rows', 
   assert.match(layout, /function ClosureOutcomeSummary\(/);
   assert.match(layout, /outcomeFieldKey="proposed_outcome"[\s\S]{0,180}summaryFieldKey="proposed_disposition_summary"/);
   assert.match(layout, /outcomeFieldKey="closure_outcome"[\s\S]{0,180}summaryFieldKey="disposition_summary"/);
+  assert.match(layout, /const terminalSummaryOnly =[\s\S]{0,360}issueFor\("spark_suggestions"\)/);
+  assert.match(layout, /summary=\{obj\.disposition_summary\}[\s\S]{0,100}compact=\{terminalSummaryOnly\}/);
 
   // 目标与范围仍按完整散文读取，但使用职责节点专属的语义色块建立首屏层级。
   assert.match(layout, /function ResponsibilityField\(/);
@@ -428,14 +432,14 @@ test('narrative fields read as prose while structured records keep label rows', 
   assert.match(layout, /overflow-hidden rounded-lg border border-cyan-400\/30/);
   assert.match(
     layout,
-    /<ObjectTypeIcon[\s\S]*?<WorkItemDependencyMeta value=\{item\.depends_on\}[\s\S]*?<WorkItemStatusChip value=\{item\.status\}/,
+    /<ObjectTypeIcon[\s\S]*?\{itemId\}[\s\S]*?<WorkItemStatusChip value=\{item\.status\}/,
   );
   assert.match(layout, /<ObjectTypeIcon[\s\S]{0,160}type="workcase"/);
   assert.match(layout, /value=\{item\.goal\}[\s\S]{0,320}<WorkItemTextBlock[\s\S]{0,120}fieldKey="expected_result"[\s\S]{0,160}variant="expectation"/);
-  assert.match(layout, /value=\{item\.goal\}[\s\S]{0,180}!text-cyan-900\/80 dark:!text-cyan-100\/80/);
-  assert.match(layout, /className="ldvh-detail-semantic-body font-medium !text-cyan-900\/80/);
-  assert.match(layout, /<WorkItemDependencyMeta value=\{item\.depends_on\} locale=\{locale\}/);
-  assert.match(layout, /function WorkItemDependencyMeta\(/);
+  assert.match(layout, /rounded-md border border-cyan-400\/15 bg-cyan-500\/\[0\.025\] px-3 py-2/);
+  assert.match(layout, /value=\{item\.goal\}[\s\S]{0,180}!text-cyan-800\/95 dark:!text-cyan-100\/85/);
+  assert.match(layout, /className="ldvh-detail-semantic-body font-medium !text-cyan-800\/95/);
+  assert.doesNotMatch(layout, /WorkItemDependencyMeta|item\.depends_on/);
   assert.match(layout, /fieldKey="approach_summary"[\s\S]{0,160}variant="boundary"/);
   assert.match(layout, /fieldKey="work_item_result_summary"[\s\S]{0,160}variant="result"/);
   assert.match(layout, /function WorkItemDetailBlock\(/);
@@ -444,21 +448,24 @@ test('narrative fields read as prose while structured records keep label rows', 
     layout.indexOf('function WorkItemDetailBlock'),
     layout.indexOf('function WorkItemTextBlock'),
   );
-  assert.match(workItemDetail, /useState\(variant === "result"\)/);
-  assert.match(workItemDetail, /expectation:[\s\S]{0,180}border-sky-400\/30 bg-sky-500\/\[0\.055\]/);
+  assert.match(workItemDetail, /useState\(false\)/);
+  assert.doesNotMatch(workItemDetail, /useState\(variant === "result"\)/);
+  assert.match(workItemDetail, /expectation:[\s\S]{0,220}hover:bg-sky-500\/\[0\.07\][\s\S]{0,120}bg-sky-500\/\[0\.045\]/);
   assert.match(
     workItemDetail,
-    /boundary:[\s\S]{0,220}border-slate-300\/70 bg-slate-100\/60[\s\S]{0,100}dark:border-slate-700\/70 dark:bg-slate-800\/25/,
+    /boundary:[\s\S]{0,220}hover:bg-slate-500\/\[0\.07\][\s\S]{0,120}bg-slate-500\/\[0\.045\]/,
   );
-  assert.match(workItemDetail, /result:[\s\S]{0,180}border-emerald-400\/30 bg-emerald-500\/\[0\.06\]/);
+  assert.match(workItemDetail, /result:[\s\S]{0,220}hover:bg-emerald-500\/\[0\.07\][\s\S]{0,120}bg-emerald-500\/\[0\.045\]/);
   assert.match(workItemDetail, /aria-expanded=\{expanded\}/);
-  assert.match(workItemDetail, /expanded \? "pb-1\.5 pt-2\.5" : "py-2\.5"/);
+  assert.match(workItemDetail, /<div className="mt-2">/);
+  assert.match(workItemDetail, /group -ml-1\.5 inline-flex min-w-0 items-center gap-1\.5 rounded px-1\.5 py-1/);
+  assert.doesNotMatch(workItemDetail, /flex w-full|min-w-0 rounded-md border|justify-between/);
   assert.doesNotMatch(workItemDetail, /styles\.dot|h-1 w-1 shrink-0 rounded-full|Icon:|<Icon/);
-  assert.match(workItemDetail, /ldvh-card-decision-title min-w-0 text-current/);
+  assert.match(workItemDetail, /ldvh-caption-strong min-w-0 !text-current/);
   assert.match(workItemDetail, /text-slate-500\/85 dark:text-slate-300\/80/);
-  assert.match(workItemDetail, /<ChevronUp size=\{WORKCASE_DETAIL_SEMANTIC_ICON_SIZE\}/);
-  assert.match(workItemDetail, /<ChevronDown size=\{WORKCASE_DETAIL_SEMANTIC_ICON_SIZE\}/);
-  assert.match(workItemDetail, /\{expanded && <div className="mt-2 min-w-0">\{children\}<\/div>\}/);
+  assert.match(workItemDetail, /<ChevronUp size=\{12\}/);
+  assert.match(workItemDetail, /<ChevronDown size=\{12\}/);
+  assert.match(workItemDetail, /mt-1 min-w-0 rounded-md px-3 py-2/);
   assert.match(layout, /className=\{`ldvh-card-decision-body/);
   assert.match(layout, /!text-slate-600\/80 dark:!text-slate-300\/75/);
   const executionApproval = layout.slice(
@@ -472,9 +479,18 @@ test('narrative fields read as prose while structured records keep label rows', 
     layout.indexOf('function ClosureOutcomeSummary'),
     layout.indexOf('function ResidualDecisionList'),
   );
+  assert.match(layout, /const summaryOnly = decisions\.length === 0 && suggestions\.length === 0/);
+  assert.match(layout, /compact=\{summaryOnly\}/);
+  assert.match(closureOutcome, /if \(compact\)/);
+  assert.match(closureOutcome, /min-w-0 rounded-lg border/);
+  assert.match(closureOutcome, /const proposal = outcomeFieldKey === "proposed_outcome"/);
+  assert.match(closureOutcome, /border-amber-400\/30 bg-amber-500\/\[0\.055\]/);
+  assert.doesNotMatch(closureOutcome, /outcomeChip/);
   assert.match(closureOutcome, /Icon size=\{WORKCASE_DETAIL_SEMANTIC_ICON_SIZE\}/);
   assert.match(closureOutcome, /ldvh-detail-semantic-title min-w-0 text-current/);
   assert.match(closureOutcome, /className=\{`ldvh-detail-semantic-body \$\{styles\.body\}`\}/);
+  assert.match(layout, /headerMeta=\{closureProposal \? \([\s\S]{0,180}<ProposalOutcomeMeta/);
+  assert.match(layout, /function ProposalOutcomeMeta[\s\S]{0,320}getFieldValueLabel\("proposed_outcome", outcome, locale\)/);
   assert.doesNotMatch(layout, /WorkItemArrayBlock/);
   assert.match(layout, /function WorkItemStatusChip\(/);
 
@@ -544,7 +560,7 @@ test('WorkCase detail criteria use light objects while the Card retains its comp
   assert.match(sharedCriteria, /flex min-w-0 items-start gap-2\.5/);
   assert.match(sharedCriteria, /mt-\[0\.5rem\] h-1 w-1/);
   assert.match(sharedCriteria, /ldvh-card-decision-body/);
-  assert.match(sharedCriteria, /text-blue-950\/65 dark:text-blue-100\/75/);
+  assert.match(sharedCriteria, /text-blue-900\/70 dark:text-blue-100\/75/);
   assert.doesNotMatch(sharedCriteria, /meta\?:|details\?:|textSize/);
   assert.match(criteria, /<ul className="grid min-w-0 gap-3">/);
   assert.match(criteria, /<CriterionObject/);
@@ -555,13 +571,21 @@ test('WorkCase detail criteria use light objects while the Card retains its comp
   assert.match(criteria, />\s*\{criterionId\}\s*</);
   assert.match(criteria, /CriterionOutcomeChip/);
   assert.match(criteria, /CriterionResultSummary/);
-  assert.match(criteria, /ldvh-detail-semantic-body font-medium !text-blue-950\/72/);
+  assert.match(criteria, /rounded-md border border-blue-400\/15 bg-blue-500\/\[0\.025\] px-3 py-2/);
+  assert.match(criteria, /ldvh-detail-semantic-body font-medium !text-blue-900\/75/);
+  assert.match(layout, /text-emerald-900\/75[\s\S]{0,80}dark:text-emerald-100\/80/);
+  assert.match(layout, /text-rose-900\/75[\s\S]{0,80}dark:text-rose-100\/80/);
+  assert.match(layout, /text-amber-900\/75[\s\S]{0,80}dark:text-amber-100\/80/);
   const criterionSummary = layout.slice(
     layout.indexOf('function CriterionResultSummary'),
     layout.indexOf('function WorkItemList'),
   );
   assert.doesNotMatch(criterionSummary, /<Icon/);
-  assert.match(criterionSummary, /<span className="min-w-0 flex-1">\{label\}<\/span>/);
+  assert.match(criterionSummary, /group -ml-1\.5 inline-flex min-w-0 items-center gap-1\.5 rounded px-1\.5 py-1/);
+  assert.match(criterionSummary, /ldvh-caption-strong min-w-0 !text-current/);
+  assert.match(criterionSummary, /<ChevronDown size=\{12\}/);
+  assert.match(criterionSummary, /mt-1 min-w-0 rounded-md px-3 py-2/);
+  assert.doesNotMatch(criterionSummary, /flex w-full|rounded-md border|justify-between/);
   assert.doesNotMatch(criteria, /WorkCaseCriteriaList|WORKCASE_CRITERIA_SURFACE_CLASS|depends_on|approach_summary/);
 });
 

@@ -15,6 +15,7 @@ import {
   CircleMinus,
   CirclePlay,
   CircleX,
+  ClipboardList,
   Clock3,
   ScanLine,
   Target,
@@ -128,6 +129,15 @@ export function WorkCaseReadingLayout({
   const terminalVisible =
     detail.terminalDisposition ||
     Boolean(
+      issueFor("closure_outcome") ||
+        issueFor("disposition_summary") ||
+        issueFor("residual_responsibilities") ||
+        issueFor("spark_suggestions"),
+    );
+  const terminalSummaryOnly =
+    terminalResiduals.length === 0 &&
+    terminalSuggestions.length === 0 &&
+    !Boolean(
       issueFor("closure_outcome") ||
         issueFor("disposition_summary") ||
         issueFor("residual_responsibilities") ||
@@ -321,6 +331,9 @@ export function WorkCaseReadingLayout({
           title={t("objectDetail.workcaseClosureProposal")}
           note={t("objectDetail.workcaseClosureProposalBoundary")}
           locale={locale}
+          headerMeta={closureProposal ? (
+            <ProposalOutcomeMeta value={closureProposal.proposed_outcome} locale={locale} />
+          ) : undefined}
           contentVariant="semantic"
         >
           {closureProposal && (
@@ -347,6 +360,7 @@ export function WorkCaseReadingLayout({
             summaryFieldKey="disposition_summary"
             summary={obj.disposition_summary}
             locale={locale}
+            compact={terminalSummaryOnly}
           />
           <FieldIssueRow fieldKey="closure_outcome" issue={issueFor("closure_outcome")} locale={locale} />
           <FieldIssueRow fieldKey="disposition_summary" issue={issueFor("disposition_summary")} locale={locale} />
@@ -454,6 +468,16 @@ function ResultVersionMeta({ value, locale }: { value: unknown; locale: string }
     <span className="ldvh-meta-muted inline-flex shrink-0 items-center gap-1.5 font-normal">
       <span>{getFieldLabel("result_version", locale)}</span>
       <span className="font-mono tabular-nums text-ldvh-text-secondary">{value}</span>
+    </span>
+  );
+}
+
+function ProposalOutcomeMeta({ value, locale }: { value: unknown; locale: string }) {
+  const outcome = detailString(value);
+  if (!outcome) return null;
+  return (
+    <span className="ldvh-meta shrink-0 font-normal text-amber-700/75 dark:text-amber-200/75">
+      {getFieldValueLabel("proposed_outcome", outcome, locale)}
     </span>
   );
 }
@@ -817,11 +841,13 @@ function CriterionObject({
       </div>
       <div className="min-w-0 px-3.5 py-3">
         {statement.trim() && (
-          <SummaryText
-            value={statement}
-            collapseThreshold={Number.MAX_SAFE_INTEGER}
-            className="ldvh-detail-semantic-body font-medium !text-blue-950/72 dark:!text-blue-100/80"
-          />
+          <div className="rounded-md border border-blue-400/15 bg-blue-500/[0.025] px-3 py-2 dark:bg-blue-400/[0.035]">
+            <SummaryText
+              value={statement}
+              collapseThreshold={Number.MAX_SAFE_INTEGER}
+              className="ldvh-detail-semantic-body font-medium !text-blue-900/75 dark:!text-blue-100/80"
+            />
+          </div>
         )}
         {result && typeof result.summary === "string" && result.summary.trim() && (
           <CriterionResultSummary
@@ -840,31 +866,35 @@ function criterionOutcomeStyle(value: unknown) {
     return {
       Icon: CircleCheck,
       chip: "border-emerald-400/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-200",
-      summary: "border-emerald-400/25 bg-emerald-500/[0.055] text-emerald-950/72 dark:text-emerald-100/78",
-      heading: "text-emerald-700/85 dark:text-emerald-200/85",
+      heading: "text-emerald-700/80 dark:text-emerald-200/80",
+      hover: "hover:bg-emerald-500/[0.07]",
+      summary: "bg-emerald-500/[0.045] text-emerald-900/75 dark:bg-emerald-400/[0.06] dark:text-emerald-100/80",
     };
   }
   if (value === "not_satisfied") {
     return {
       Icon: CircleX,
       chip: "border-rose-400/30 bg-rose-500/10 text-rose-700 dark:text-rose-200",
-      summary: "border-rose-400/25 bg-rose-500/[0.055] text-rose-950/72 dark:text-rose-100/78",
-      heading: "text-rose-700/85 dark:text-rose-200/85",
+      heading: "text-rose-700/80 dark:text-rose-200/80",
+      hover: "hover:bg-rose-500/[0.07]",
+      summary: "bg-rose-500/[0.045] text-rose-900/75 dark:bg-rose-400/[0.06] dark:text-rose-100/80",
     };
   }
   if (value === "not_verified") {
     return {
       Icon: CircleHelp,
       chip: "border-amber-400/30 bg-amber-500/10 text-amber-700 dark:text-amber-200",
-      summary: "border-amber-400/25 bg-amber-500/[0.055] text-amber-950/72 dark:text-amber-100/78",
-      heading: "text-amber-700/85 dark:text-amber-200/85",
+      heading: "text-amber-700/80 dark:text-amber-200/80",
+      hover: "hover:bg-amber-500/[0.07]",
+      summary: "bg-amber-500/[0.045] text-amber-900/75 dark:bg-amber-400/[0.06] dark:text-amber-100/80",
     };
   }
   return {
     Icon: CircleDot,
     chip: "border-ldvh-border bg-ldvh-bg text-ldvh-text-secondary",
-    summary: "border-ldvh-border bg-ldvh-bg/60 text-ldvh-text-secondary",
     heading: "text-ldvh-text-secondary",
+    hover: "hover:bg-ldvh-bg/70",
+    summary: "bg-ldvh-bg/45 text-ldvh-text-secondary",
   };
 }
 
@@ -895,28 +925,28 @@ function CriterionResultSummary({
   const [expanded, setExpanded] = useState(false);
   const styles = criterionOutcomeStyle(outcome);
   return (
-    <div
-      className={`mt-3 rounded-md border ${expanded ? "px-3 pb-1.5 pt-2.5" : "px-3 py-2.5"} ${styles.summary}`}
-    >
+    <div className="mt-2">
       <button
         type="button"
         aria-expanded={expanded}
         onClick={() => setExpanded((current) => !current)}
-        className={`ldvh-card-decision-title flex w-full min-w-0 items-center gap-2 text-left ${expanded ? "mb-1.5" : ""} ${styles.heading}`}
+        className={`group -ml-1.5 inline-flex min-w-0 items-center gap-1.5 rounded px-1.5 py-1 text-left transition-colors ${styles.heading} ${styles.hover}`}
       >
-        <span className="min-w-0 flex-1">{label}</span>
+        <span className="ldvh-caption-strong min-w-0 !text-current">{label}</span>
         {expanded ? (
-          <ChevronUp size={13} strokeWidth={1.8} className="shrink-0" aria-hidden="true" />
+          <ChevronUp size={12} strokeWidth={1.8} className="shrink-0 opacity-65 transition-opacity group-hover:opacity-90" aria-hidden="true" />
         ) : (
-          <ChevronDown size={13} strokeWidth={1.8} className="shrink-0" aria-hidden="true" />
+          <ChevronDown size={12} strokeWidth={1.8} className="shrink-0 opacity-65 transition-opacity group-hover:opacity-90" aria-hidden="true" />
         )}
       </button>
       {expanded && (
-        <SummaryText
-          value={value}
-          collapseThreshold={Number.MAX_SAFE_INTEGER}
-          className="ldvh-card-decision-body !text-current"
-        />
+        <div className={`mt-1 min-w-0 rounded-md px-3 py-2 ${styles.summary}`}>
+          <SummaryText
+            value={value}
+            collapseThreshold={Number.MAX_SAFE_INTEGER}
+            className="ldvh-card-decision-body !text-current"
+          />
+        </div>
       )}
     </div>
   );
@@ -973,17 +1003,18 @@ function WorkItem({
           <span className="ldvh-meta min-w-0 break-all text-cyan-700/75 dark:text-cyan-200/75">
             {itemId}
           </span>
-          <WorkItemDependencyMeta value={item.depends_on} locale={locale} />
         </div>
         <WorkItemStatusChip value={item.status} locale={locale} />
       </div>
       <div className="min-w-0 px-3.5 py-3">
         {typeof item.goal === "string" && item.goal.trim() && (
-          <SummaryText
-            value={item.goal}
-            collapseThreshold={Number.MAX_SAFE_INTEGER}
-            className="ldvh-detail-semantic-body font-medium !text-cyan-900/80 dark:!text-cyan-100/80"
-          />
+          <div className="rounded-md border border-cyan-400/15 bg-cyan-500/[0.025] px-3 py-2 dark:bg-cyan-400/[0.035]">
+            <SummaryText
+              value={item.goal}
+              collapseThreshold={Number.MAX_SAFE_INTEGER}
+              className="ldvh-detail-semantic-body font-medium !text-cyan-800/95 dark:!text-cyan-100/85"
+            />
+          </div>
         )}
         <WorkItemTextBlock
           fieldKey="expected_result"
@@ -1095,42 +1126,46 @@ function WorkItemDetailBlock({
   variant: "expectation" | "boundary" | "result";
   children: ReactNode;
 }) {
-  const [expanded, setExpanded] = useState(variant === "result");
+  const [expanded, setExpanded] = useState(false);
   const styles = {
     expectation: {
-      surface: "border-sky-400/30 bg-sky-500/[0.055]",
       heading: "text-sky-700/85 dark:text-sky-200/85",
+      hover: "hover:bg-sky-500/[0.07]",
+      surface: "bg-sky-500/[0.045] dark:bg-sky-400/[0.06]",
     },
     boundary: {
-      surface:
-        "border-slate-300/70 bg-slate-100/60 dark:border-slate-700/70 dark:bg-slate-800/25",
       heading: "text-slate-500/85 dark:text-slate-300/80",
+      hover: "hover:bg-slate-500/[0.07]",
+      surface: "bg-slate-500/[0.045] dark:bg-slate-400/[0.06]",
     },
     result: {
-      surface: "border-emerald-400/30 bg-emerald-500/[0.06]",
       heading: "text-emerald-700/85 dark:text-emerald-200/85",
+      hover: "hover:bg-emerald-500/[0.07]",
+      surface: "bg-emerald-500/[0.045] dark:bg-emerald-400/[0.06]",
     },
   }[variant];
   return (
-    <div className={`mt-3 rounded-md border px-3 ${expanded ? "pb-1.5 pt-2.5" : "py-2.5"} ${styles.surface}`}>
+    <div className="mt-2">
       <button
         type="button"
         aria-expanded={expanded}
         onClick={() => setExpanded((current) => !current)}
-        className={`flex w-full min-w-0 items-center justify-between gap-3 text-left ${styles.heading}`}
+        className={`group -ml-1.5 inline-flex min-w-0 items-center gap-1.5 rounded px-1.5 py-1 text-left transition-colors ${styles.heading} ${styles.hover}`}
       >
-        <span className="flex min-w-0 items-center gap-2.5">
-          <span className="ldvh-card-decision-title min-w-0 text-current">
-            {getFieldLabel(fieldKey, locale)}
-          </span>
+        <span className="ldvh-caption-strong min-w-0 !text-current">
+          {getFieldLabel(fieldKey, locale)}
         </span>
         {expanded ? (
-          <ChevronUp size={WORKCASE_DETAIL_SEMANTIC_ICON_SIZE} className="shrink-0 text-current/70" aria-hidden="true" />
+          <ChevronUp size={12} strokeWidth={1.8} className="shrink-0 opacity-65 transition-opacity group-hover:opacity-90" aria-hidden="true" />
         ) : (
-          <ChevronDown size={WORKCASE_DETAIL_SEMANTIC_ICON_SIZE} className="shrink-0 text-current/70" aria-hidden="true" />
+          <ChevronDown size={12} strokeWidth={1.8} className="shrink-0 opacity-65 transition-opacity group-hover:opacity-90" aria-hidden="true" />
         )}
       </button>
-      {expanded && <div className="mt-2 min-w-0">{children}</div>}
+      {expanded && (
+        <div className={`mt-1 min-w-0 rounded-md px-3 py-2 ${styles.surface}`}>
+          {children}
+        </div>
+      )}
     </div>
   );
 }
@@ -1161,30 +1196,6 @@ function WorkItemTextBlock({
         }`}
       />
     </WorkItemDetailBlock>
-  );
-}
-
-function WorkItemDependencyMeta({
-  value,
-  locale,
-}: {
-  value: unknown;
-  locale: string;
-}) {
-  const items = detailStrings(value);
-  if (items.length === 0) return null;
-  return (
-    <span className="inline-flex min-w-0 flex-wrap items-center gap-1.5 text-ldvh-text-secondary/70">
-      <span className="ldvh-meta-muted shrink-0">{getFieldLabel("depends_on", locale)}</span>
-      {items.map((item) => (
-        <span
-          key={item}
-          className="ldvh-chip rounded-md border border-cyan-400/20 bg-ldvh-bg/65 px-1.5 py-0.5 font-mono text-cyan-700/70 dark:text-cyan-200/70"
-        >
-          {item}
-        </span>
-      ))}
-    </span>
   );
 }
 
@@ -1467,6 +1478,7 @@ function ClosureProposal({
 }) {
   const decisions = detailRecords(proposal.residual_decisions);
   const suggestions = detailRecords(proposal.spark_suggestions);
+  const summaryOnly = decisions.length === 0 && suggestions.length === 0;
   return (
     <>
       <ClosureOutcomeSummary
@@ -1475,6 +1487,7 @@ function ClosureProposal({
         summaryFieldKey="proposed_disposition_summary"
         summary={proposal.proposed_disposition_summary}
         locale={locale}
+        compact={summaryOnly}
       />
       {decisions.length > 0 && (
         <ResidualDecisionList
@@ -1497,7 +1510,6 @@ function closureOutcomeStyle(value: string) {
       surface: "border-emerald-400/30 bg-emerald-500/[0.055]",
       heading: "text-emerald-700/85 dark:text-emerald-200/85",
       body: "!text-emerald-950/72 dark:!text-emerald-100/78",
-      chip: "border-emerald-400/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-200",
     };
   }
   if (value === "partial") {
@@ -1506,7 +1518,6 @@ function closureOutcomeStyle(value: string) {
       surface: "border-amber-400/30 bg-amber-500/[0.055]",
       heading: "text-amber-700/85 dark:text-amber-200/85",
       body: "!text-amber-950/72 dark:!text-amber-100/78",
-      chip: "border-amber-400/30 bg-amber-500/10 text-amber-700 dark:text-amber-200",
     };
   }
   if (value === "not-achieved") {
@@ -1515,7 +1526,6 @@ function closureOutcomeStyle(value: string) {
       surface: "border-rose-400/30 bg-rose-500/[0.055]",
       heading: "text-rose-700/85 dark:text-rose-200/85",
       body: "!text-rose-950/72 dark:!text-rose-100/78",
-      chip: "border-rose-400/30 bg-rose-500/10 text-rose-700 dark:text-rose-200",
     };
   }
   return {
@@ -1523,7 +1533,6 @@ function closureOutcomeStyle(value: string) {
     surface: "border-slate-400/30 bg-slate-500/[0.05]",
     heading: "text-slate-700/85 dark:text-slate-200/85",
     body: "!text-slate-900/72 dark:!text-slate-100/78",
-    chip: "border-slate-400/30 bg-slate-500/10 text-slate-700 dark:text-slate-200",
   };
 }
 
@@ -1533,18 +1542,46 @@ function ClosureOutcomeSummary({
   summaryFieldKey,
   summary,
   locale,
+  compact = false,
 }: {
   outcomeFieldKey: "proposed_outcome" | "closure_outcome";
   outcome: unknown;
   summaryFieldKey: "proposed_disposition_summary" | "disposition_summary";
   summary: unknown;
   locale: string;
+  compact?: boolean;
 }) {
   const outcomeValue = detailString(outcome);
   const summaryValue = detailString(summary);
   if (!outcomeValue && !summaryValue) return null;
-  const styles = closureOutcomeStyle(outcomeValue);
+  const terminalStyles = closureOutcomeStyle(outcomeValue);
+  const proposal = outcomeFieldKey === "proposed_outcome";
+  const styles = proposal
+    ? {
+        Icon: ClipboardList,
+        surface: "border-amber-400/30 bg-amber-500/[0.055]",
+        heading: "text-amber-700/80 dark:text-amber-200/80",
+        body: "!text-amber-900/75 dark:!text-amber-100/80",
+      }
+    : terminalStyles;
   const { Icon } = styles;
+
+  if (compact) {
+    return (
+      <section className={`min-w-0 rounded-lg border ${WORKCASE_DETAIL_SEMANTIC_SURFACE_PADDING} ${styles.surface}`}>
+        {summaryValue && (
+          <div className="min-w-0">
+            <SummaryText
+              value={summaryValue}
+              collapseThreshold={Number.MAX_SAFE_INTEGER}
+              className={`ldvh-detail-semantic-body ${styles.body}`}
+            />
+          </div>
+        )}
+      </section>
+    );
+  }
+
   return (
     <section className={`min-w-0 rounded-lg border ${WORKCASE_DETAIL_SEMANTIC_SURFACE_PADDING} ${styles.surface}`}>
       <div className="flex min-w-0 flex-wrap items-center gap-2">
@@ -1554,14 +1591,6 @@ function ClosureOutcomeSummary({
             {getFieldLabel(summaryFieldKey, locale)}
           </span>
         </div>
-        {outcomeValue && (
-          <span
-            title={outcomeValue}
-            className={`ldvh-chip inline-flex shrink-0 items-center gap-1.5 rounded-md border px-2 py-0.5 ${styles.chip}`}
-          >
-            {getFieldValueLabel(outcomeFieldKey, outcomeValue, locale)}
-          </span>
-        )}
       </div>
       {summaryValue && (
         <div className="mt-2 min-w-0">

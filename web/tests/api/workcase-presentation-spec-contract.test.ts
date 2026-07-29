@@ -33,6 +33,14 @@ test('Specs define four progress groups and a four-step result track', () => {
   assert.match(cardSection, /\| `closure_confirmation` \| 关闭待确认 \|/);
   assert.match(cardSection, /\| `closed` \| 已关闭 \|/);
   assert.match(cardSection, /Human 已依据完整关闭提案决定停止推进并接受相应责任处置/);
+  assert.match(cardSection, /固定以“关闭提案”为标题/);
+  assert.match(cardSection, /不得取代“关闭提案”标题/);
+  assert.match(cardSection, /“目标达成 \/ 部分达成 \/ 未达成 \/ 取消”/);
+  assert.match(cardSection, /英文为“Achieved \/ Partial \/ Not achieved \/ Cancel”/);
+  assert.match(cardSection, /标签不得再重复“提议结论 \/ Proposed conclusion”前缀/);
+  assert.match(cardSection, /不得显示裸“完成 \/ Completed”/);
+  assert.match(cardSection, /提案使用稳定的中性提案图标和独立的琥珀色提案色调/);
+  assert.match(cardSection, /Card 与详情均不得在“终态处置”旁重复显示“完成”/);
   assert.doesNotMatch(cardSection, /Human 已批准当前结果与报告/);
   assert.match(cardSection, /\| `item_execution` \| 工作项执行 \| `executing` \|/);
   assert.match(cardSection, /\| `controller_self_check` \| 主控自检 \| `controller_checking` \|/);
@@ -76,6 +84,8 @@ test('Specs fix plan-confirmation and progressing Card inputs to the latest fiel
   assert.match(cardSection, /附加完整显示顶层 `blocking_summary`/);
   assert.match(cardSection, /每条成功标准必须按与工作项一致的对象语法形成独立轻量对象/);
   assert.match(cardSection, /结果摘要作为默认收起的次级内容/);
+  assert.match(cardSection, /只保留小号文字与相邻箭头，不使用整行色块或完整边框/);
+  assert.match(cardSection, /工作项的预期结果、方法边界和工作项结果遵守同一轻量披露层级/);
   assert.match(cardSection, /只由当前 `success_criterion_results` 是否实际存在决定，不得按 `phase` 推断/);
   assert.match(cardSection, /外部 Card 仍使用本节定义的紧凑圆点清单/);
   assert.match(cardSection, /`progressing` Card 不显示成功标准、scope、依赖、方法、完整工作项计划中的预期结果或执行细节、执行态势条/);
@@ -88,9 +98,12 @@ test('Specs define the closure-decision input zone and contributed-to section fo
   assert.match(cardSection, /`closure_confirmation` Card 在通用对象身份、标题、进展分组和更新时间之外，正文定义以下两区/);
   assert.match(cardSection, /\*\*关闭判断输入区\*\*：回答“当前请求确认的是哪一种关闭结论与责任处置”/);
   assert.match(cardSection, /\*\*目标\*\*：直接读取当前 WorkCase 的 `goal`/);
-  assert.match(cardSection, /\*\*关闭结论（提议）\*\*：直接读取 `closure_proposal\.proposed_outcome`/);
-  assert.match(cardSection, /`completed \/ partial \/ not-achieved \/ cancelled` 四值闭集的本地化标签/);
-  assert.match(cardSection, /使用弱信号标签表达，不渲染为大面积实心色块或强告警色/);
+  assert.match(cardSection, /\*\*关闭结论（提议）\*\*：该语义块固定以“关闭提案”为标题/);
+  assert.match(cardSection, /直接读取 `closure_proposal\.proposed_outcome`/);
+  assert.match(cardSection, /`completed \/ partial \/ not-achieved \/ cancelled` 四值闭集的紧凑本地化标签/);
+  assert.match(cardSection, /“关闭提案”标题已经提供提议身份/);
+  assert.match(cardSection, /必须在标题旁使用弱信号标签表达/);
+  assert.match(cardSection, /不渲染为大面积实心色块或强告警色/);
   assert.match(cardSection, /\*\*处置摘要\*\*：直接读取 `closure_proposal\.proposed_disposition_summary`，完整显示/);
   assert.match(cardSection, /\*\*遗留事项处置建议\*\*：直接读取 `closure_proposal\.residual_decisions\[\]`/);
   assert.match(cardSection, /`route_existing`“路由到已有对象”、`suggest_spark`“建议后续建立 Spark”、`accept_stop`“接受停止”/);
@@ -109,6 +122,7 @@ test('Specs define the closure-decision input zone and contributed-to section fo
   assert.match(cardSection, /除上述两区外，不展开成功标准结果、结果与验证、主控自检、独立结果复核或执行统计/);
   assert.match(cardSection, /即使实际 `status=blocked` 也不在 Card 额外展示阻塞/);
   assert.match(cardSection, /关闭决定由专属事务消费，不持久化 approval 或关闭时间收据/);
+  assert.match(cardSection, /详情“关闭提案”节点把 `proposed_outcome` 的紧凑分类放在“关闭提案”标题行/);
   assert.match(cardSection, /`closed` Card 使用与上述关闭 Card 相同的扫读结构/);
   assert.match(cardSection, /route_existing 从 `routed-to` 与当前 target title 呈现/);
   assert.match(cardSection, /`related-to` 只在详情关系区呈现/);
@@ -134,7 +148,9 @@ test('Current Web docs describe the same latest-only Card and detail boundaries'
   assert.match(listSection, /轨迹外内部位置“方案修订中”/);
   assert.match(listSection, /“已关闭”Card 使用相同扫读结构/);
   assert.match(detailSection, /标题栏显示弱化的稳定 ID 和实际存在的结果状态/);
-  assert.match(detailSection, /结果摘要作为对象内次级色块默认收起/);
+  assert.match(detailSection, /结果摘要默认收起/);
+  assert.match(detailSection, /不使用整行色块、完整边框或右端对齐的远距离箭头/);
+  assert.match(detailSection, /收起态只显示紧凑的小号标题文字与相邻箭头/);
   assert.match(detailSection, /不按 `phase` 猜测或补写结果/);
   assert.match(listDoc, /progress_group\?: 'plan_confirmation' \| 'progressing' \| 'closure_confirmation' \| 'closed'/);
   assert.match(listDoc, /progress_step\?: 'item_execution' \| 'controller_self_check' \| 'independent_review' \| 'controller_synthesis'/);

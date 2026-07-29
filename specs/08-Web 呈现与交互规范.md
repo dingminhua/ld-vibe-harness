@@ -293,7 +293,7 @@ Web 不得为这两项重新生成 AI 摘要，不得从 `scope`、work items、
 **关闭判断输入区**：回答“当前请求确认的是哪一种关闭结论与责任处置”，只显示以下 Human 关闭判断输入，全部直接读取当前 WorkCase 的 `goal` 与 `closure_proposal`：
 
 1. **目标**：直接读取当前 WorkCase 的 `goal`，读取与展示要求与 `plan_confirmation`、`progressing` Card 一致，不重新摘要、不截断、不折叠，也不从其它字段拼凑替代文本；
-2. **关闭结论（提议）**：直接读取 `closure_proposal.proposed_outcome`，显示 `completed / partial / not-achieved / cancelled` 四值闭集的本地化标签；该结论是本 Card 的首要扫读信息，使用弱信号标签表达，不渲染为大面积实心色块或强告警色；
+2. **关闭结论（提议）**：该语义块固定以“关闭提案”为标题，避免把提议中的 `completed` 误读为 WorkCase 已经完成；直接读取 `closure_proposal.proposed_outcome`，显示 `completed / partial / not-achieved / cancelled` 四值闭集的紧凑本地化标签：“目标达成 / 部分达成 / 未达成 / 取消”，英文为“Achieved / Partial / Not achieved / Cancel”。“关闭提案”标题已经提供提议身份，标签不得再重复“提议结论 / Proposed conclusion”前缀，也不得显示裸“完成 / Completed”而形成既成状态错觉。提案使用稳定的中性提案图标和独立的琥珀色提案色调，不使用完成勾选或绿色综合结果色；该结果是本 Card 的首要扫读信息，必须在标题旁使用弱信号标签表达，不得取代“关闭提案”标题，不渲染为大面积实心色块或强告警色；
 3. **处置摘要**：直接读取 `closure_proposal.proposed_disposition_summary`，完整显示，不重新生成 AI 摘要；
 4. **遗留事项处置建议**：直接读取 `closure_proposal.residual_decisions[]`，逐项完整显示 `summary` 与 `proposed_disposition` 的本地化标签：`route_existing`“路由到已有对象”、`suggest_spark`“建议后续建立 Spark”、`accept_stop`“接受停止”。各项是没有先后关系的并列集合，使用与处置语义相称的状态图标，不按数组位置、`residual_id` 或 `spark_suggestion_id` 改写为序号；route_existing 显示已回读目标的当前标题与类型，不以 object ID 冒充名称；
 5. **Spark 建议**：直接读取 `closure_proposal.spark_suggestions[]`。`constrained_responsibility` 完整显示建议摘要、受限原因、影响、恢复条件与后续定位；`follow_up_opportunity` 显示建议摘要与后续定位，不生成“受限原因”空态。建议不显示、不猜测未来 Spark ID，也不表达为已创建、已承接或必须推进。
@@ -304,9 +304,11 @@ Web 不得为上述输入重新摘要，不得从 `result_summary`、`validation
 
 `closure_confirmation` Card 不显示关闭完整性诊断，不从已退出的请求、审核、批准或时间字段推断缺失，也不把活动期过程字段当作 closed 必须保留的内容；除上述两区外，不展开成功标准结果、结果与验证、主控自检、独立结果复核或执行统计，这些内容仍从同源详情读取。即使实际 `status=blocked` 也不在 Card 额外展示阻塞。`human_closure_confirming` 本身足以确定“关闭待确认”分组；`status=closed` 且不具有 phase 本身足以确定“已关闭”分组，关闭决定由专属事务消费，不持久化 approval 或关闭时间收据。
 
-`closed` Card 使用与上述关闭 Card 相同的扫读结构，但从终态字段读取：目标来自 `goal`，关闭结论来自 `closure_outcome`，处置摘要来自 `disposition_summary`；route_existing 从 `routed-to` 与当前 target title 呈现，suggest_spark 从顶层 `spark_suggestions` 呈现，accept_stop 从 `residual_responsibilities` 呈现，三者均不反推原 proposal ID。后续贡献仍只显示 `contributed-to` Pitfall 的标题与当前状态，不提供审核控件。`related-to` 只在详情关系区呈现，不进入任一 WorkCase Card 正文。
+`closed` Card 使用与上述关闭 Card 相同的扫读结构，但从终态字段读取：总体语义块固定以“终态处置”为标题，目标来自 `goal`，处置摘要来自 `disposition_summary`。`closure_outcome` 仍按来源读取并可决定终态处置的语义色与图标，但 Card 与详情均不得在“终态处置”旁重复显示“完成”“部分完成”“未达成”或“已取消”等第二状态标签。route_existing 从 `routed-to` 与当前 target title 呈现，suggest_spark 从顶层 `spark_suggestions` 呈现，accept_stop 从 `residual_responsibilities` 呈现，三者均不反推原 proposal ID。后续贡献仍只显示 `contributed-to` Pitfall 的标题与当前状态，不提供审核控件。`related-to` 只在详情关系区呈现，不进入任一 WorkCase Card 正文。
 
-本节确定 `plan_confirmation`、`progressing`、`closure_confirmation` 与 `closed` Card 的上述正文。颜色、图标和操作继续由 `web/docs/` 与实现承接，但关闭 Card 不得增加 Pitfall promote/discard 控件。WorkCase 详情页不使用进展分组或推进环节切换、隐藏、重排或另建阅读结构；所有状态复用同一详情阅读结构。处于 `progressing` 时，详情“当前情况”可以直接从精确读取的 `phase` 使用本节同一确定性映射呈现与 Card 共用的四步轨道或轨迹外“方案修订中”，但不得读取列表 DTO 的 `progress_group`、`progress_step` 或工作项计数作为详情事实，也不得把轨道位置表达为完成历史。详情中的每条成功标准必须按与工作项一致的对象语法形成独立轻量对象：标题栏显示弱化的稳定 `criterion_id` 和实际存在的三值结果状态，标准陈述作为主正文，结果摘要作为默认收起的次级内容；该结构不得引入工作项依赖、执行状态或顺序含义。尚未形成当前结果时只省略状态和结果摘要，不省略标准对象或生成空结果。呈现差异只由当前 `success_criterion_results` 是否实际存在决定，不得按 `phase` 推断、补写或隐藏结果。外部 Card 仍使用本节定义的紧凑圆点清单，不因详情对象化而增加标准 ID、结果或独立对象边界。`contributed-to`、`related-to` 与其它关系一样在详情关系区呈现，具体字段是否实际存在只由当前事实内容及其类型来源决定。
+本节确定 `plan_confirmation`、`progressing`、`closure_confirmation` 与 `closed` Card 的上述正文。颜色、图标和操作继续由 `web/docs/` 与实现承接，但关闭 Card 不得增加 Pitfall promote/discard 控件。WorkCase 详情页不使用进展分组或推进环节切换、隐藏、重排或另建阅读结构；所有状态复用同一详情阅读结构。详情“关闭提案”节点把 `proposed_outcome` 的紧凑分类放在“关闭提案”标题行，不在处置正文面重复显示。处于 `progressing` 时，详情“当前情况”可以直接从精确读取的 `phase` 使用本节同一确定性映射呈现与 Card 共用的四步轨道或轨迹外“方案修订中”，但不得读取列表 DTO 的 `progress_group`、`progress_step` 或工作项计数作为详情事实，也不得把轨道位置表达为完成历史。详情中的每条成功标准必须按与工作项一致的对象语法形成独立轻量对象：标题栏显示弱化的稳定 `criterion_id` 和实际存在的三值结果状态，标准陈述作为主正文，结果摘要作为默认收起的次级内容；收起触发器必须弱于标准陈述，只保留小号文字与相邻箭头，不使用整行色块或完整边框，展开后才显示浅色内容面。工作项的预期结果、方法边界和工作项结果遵守同一轻量披露层级，不得以三个次级框压过工作项主目标。该结构不得引入工作项依赖、执行状态或顺序含义。尚未形成当前结果时只省略状态和结果摘要，不省略标准对象或生成空结果。呈现差异只由当前 `success_criterion_results` 是否实际存在决定，不得按 `phase` 推断、补写或隐藏结果。外部 Card 仍使用本节定义的紧凑圆点清单，不因详情对象化而增加标准 ID、结果或独立对象边界。`contributed-to`、`related-to` 与其它关系一样在详情关系区呈现，具体字段是否实际存在只由当前事实内容及其类型来源决定。
+
+WorkCase 详情 Human 阅读区不显示 `work_items[].depends_on`。该字段属于机器执行约束，必须继续保留在来源事实、详情数据与 YAML 数据中；Web 不得因 Human 页面隐藏该字段而删除、改写或推断依赖，也不得把工作项渲染顺序表达为依赖顺序。
 
 ## 8. Web 交互边界
 

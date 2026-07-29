@@ -10,7 +10,7 @@ import {
   getWorkCaseProgressProjection,
 } from '../../shared/workcaseStatus.ts';
 import { projectWorkCaseCard } from '../../api/services/facts.ts';
-import { getObjectStatusLocale } from '../../src/i18n/locales.ts';
+import { getFieldValueLabel, getObjectStatusLocale } from '../../src/i18n/locales.ts';
 
 const webRoot = path.resolve(import.meta.dirname, '../..');
 
@@ -113,6 +113,18 @@ test('terminal status labels remain type-specific across fact types', () => {
   assert.equal(getObjectStatusLocale('study', 'retired', 'zh'), '已废弃');
 });
 
+test('closure proposals are labelled as proposals instead of established terminal outcomes', () => {
+  const locales = source('src/i18n/locales.ts');
+  const list = source('src/pages/ObjectList.tsx');
+
+  assert.equal(getFieldValueLabel('proposed_outcome', 'completed', 'zh'), '目标达成');
+  assert.equal(getFieldValueLabel('proposed_outcome', 'completed', 'en'), 'Achieved');
+  assert.equal(getFieldValueLabel('closure_outcome', 'completed', 'zh'), '完成');
+  assert.match(locales, /proposed_outcome:[\s\S]{0,180}completed: \{ zh: '目标达成', en: 'Achieved' \}/);
+  assert.match(list, /mode === 'proposal'[\s\S]{0,120}<ClipboardList/);
+  assert.match(list, /<ClipboardList[^>]+className=\{`shrink-0 \$\{CLOSURE_PROPOSAL_TEXT_CLASS\}`\}/);
+});
+
 test('plan revision is progressing but remains outside the four-step track', () => {
   const track = source('src/components/WorkCaseProgressTrack.tsx');
   const locales = source('src/i18n/locales.ts');
@@ -156,7 +168,7 @@ test('plan confirmation keeps goal and criteria as the only plan-decision inputs
   assert.match(content, /<WorkCaseCriteriaList/);
   assert.match(content, /<WorkCaseGoalSection goal=\{goal\} t=\{t\} \/>/);
   assert.match(sharedCriteria, /bg-blue-500\/\[0\.025\]/);
-  assert.match(sharedCriteria, /className="ldvh-card-decision-body text-blue-950\/65 dark:text-blue-100\/75"/);
+  assert.match(sharedCriteria, /className="ldvh-card-decision-body text-blue-900\/70 dark:text-blue-100\/75"/);
   assert.match(sharedCriteria, /className="mt-\[0\.5rem\] h-1 w-1/);
   assert.doesNotMatch(content, /list-disc/);
   assert.doesNotMatch(content, /<ol|line-clamp|slice\(0,|scope|blockingSummary|BlockingNotice/);
@@ -203,6 +215,7 @@ test('semantic WorkCase cards share one title-to-body spacing token', () => {
 
   // 彩色 Card 正文使用与背景同色相的低饱和深色，避免高饱和标题色贯穿长正文。
   assert.match(goal, /text-violet-950\/65 dark:text-violet-100\/75/);
+  assert.match(list, /ldvh-meta shrink-0 text-blue-700\/60 dark:text-blue-200\/65/);
   assert.match(list, /completed: 'text-emerald-950\/70 dark:text-emerald-100\/75'/);
   assert.match(list, /partial: 'text-amber-950\/70 dark:text-amber-100\/75'/);
   assert.match(list, /accept_stop: 'text-cyan-950\/70 dark:text-cyan-100\/75'/);
@@ -305,12 +318,19 @@ test('closure confirmation cards render the closure-decision input zone and decl
 
   assert.match(content, /<WorkCaseGoalSection goal=\{goal\} t=\{t\} emphasis="supporting" \/>/);
   assert.match(content, /closureProposal \? \(/);
-  assert.match(content, /<WorkCaseOutcomeNotice outcome=\{closureProposal\.proposedOutcome\} dispositionSummary=\{closureProposal\.dispositionSummary\} \/>/);
+  assert.match(content, /<WorkCaseOutcomeNotice outcome=\{closureProposal\.proposedOutcome\} dispositionSummary=\{closureProposal\.dispositionSummary\} mode="proposal" \/>/);
   assert.match(content, /closureProposal\.residualDecisions\.map/);
   assert.match(content, /getFieldValueLabel\('proposed_disposition', decision\.proposedDisposition, locale\)/);
   assert.match(content, /objectList\.workcaseClosureProposalMissing/);
   assert.match(content, /WorkCaseSparkSuggestions suggestions=\{closureProposal\.sparkSuggestions\}/);
-  assert.match(list, /PROPOSED_OUTCOME_NOTICE_CLASS\[outcome\]/);
+  assert.match(list, /CLOSURE_PROPOSAL_NOTICE_CLASS/);
+  assert.match(list, /border-amber-400\/25 border-l-amber-400 bg-amber-500\/5/);
+  assert.match(list, /mode === 'proposal'[\s\S]{0,100}CLOSURE_PROPOSAL_TEXT_CLASS/);
+  assert.match(list, /mode === 'proposal'[\s\S]{0,100}CLOSURE_PROPOSAL_BODY_CLASS/);
+  assert.match(list, /mode === 'proposal'[\s\S]{0,120}objectList\.workcaseClosureProposal/);
+  assert.match(list, /objectList\.workcaseTerminalDisposition/);
+  assert.match(list, /const outcomeLabel = mode === 'proposal'[\s\S]{0,100}: null/);
+  assert.match(list, /\{outcomeLabel && <span className=\{`ldvh-meta ml-auto shrink-0 \$\{tone\}`\}>\{outcomeLabel\}<\/span>\}/);
   assert.match(content, /PROPOSED_DISPOSITION_NOTICE_CLASS\[decision\.proposedDisposition\]/);
   assert.match(content, /rounded-md border border-l-2 px-3\.5 py-3/);
   assert.match(list, /function WorkCaseSparkSuggestions/);
@@ -353,7 +373,7 @@ test('closed cards use terminal closure content while unclassified cards stay mi
   assert.match(list, /<WorkCaseContributionsContent contributions=\{obj\.contributedTo\}/);
   assert.match(list, /getFieldValueLabel\('proposed_disposition', 'route_existing', locale\)/);
   assert.match(list, /getFieldValueLabel\('proposed_disposition', 'suggest_spark', locale\)/);
-  assert.match(closedContent, /<WorkCaseOutcomeNotice outcome=\{terminal\.outcome\} dispositionSummary=\{terminal\.dispositionSummary\} \/>/);
+  assert.match(closedContent, /<WorkCaseOutcomeNotice outcome=\{terminal\.outcome\} dispositionSummary=\{terminal\.dispositionSummary\} mode="terminal" \/>/);
   assert.match(closedContent, /terminal\.routedTo\.map/);
   assert.match(closedContent, /terminal\.acceptedStop\.map/);
   assert.match(closedContent, /<WorkCaseSparkSuggestions suggestions=\{terminal\.sparkSuggestions\} \/>/);
