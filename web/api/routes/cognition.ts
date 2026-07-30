@@ -2,11 +2,11 @@
  * Cognition API 路由：聚合项目认知中心第一期的待决定事项收件箱。
  *
  * 第一期只交付模块一（待决定事项）+ §5 全局信任标记所需的派生字段：
- * generatedAt（观察时间）、scope、inbox（两类 Human Gate 派生收录与排序）、issues（模块级降级）。
+ * generatedAt（观察时间）、scope、inbox（WorkCase Human Gate 与 Pitfall draft 审核的派生收录与排序）、issues（模块级降级）。
  * 数据经 Web 字段级直读（localFactReader / facts.ts 的 listObjects），不复用 /api/dashboard 聚合逻辑。
  *
  * 命名纪律（02 §7 第 3 条）：WorkCase 条目只携带 progress_group；待决类型 inboxKind
- * 仅表示 Human 的计划批准或关闭确认。blocked 仍由对象列表/详情如实呈现，不进入待决定收件箱。
+ * 表示 Human 的计划批准、关闭确认或 Pitfall draft 审核。blocked 仍由对象列表/详情如实呈现，不进入待决定收件箱。
  */
 
 import { Router, type Request, type Response } from 'express'
@@ -18,7 +18,8 @@ import { getTypeColor } from '../services/typeColors.js'
 
 const router = Router()
 
-type InboxKind = 'plan_confirmation' | 'closure_confirmation'
+type InboxKind = 'plan_confirmation' | 'closure_confirmation' | 'pitfall_confirmation'
+type InboxObjectType = 'workcase' | 'pitfall'
 
 type CognitionIssue = { section: string; code: string; message: string; object_ref?: string }
 
@@ -40,12 +41,15 @@ const IDENTITY_PROJECTION_KEYS = new Set([
 ])
 
 interface InboxBuildItem {
+  type: InboxObjectType
+  inboxKind: InboxKind
   object_id: string
   title: string
   title_en?: string
   title_zh?: string
   status: string
   phase: string | undefined
+  progress_group?: WorkCaseProgressGroup
   priority?: string
   updated_at?: string
   read_status: string
@@ -63,9 +67,9 @@ function priorityRank(priority: unknown): number {
   return Number(match[1])
 }
 
-/** 与 localFactReader.metadataFor 的 workcase 公式一致：ldvh-base/workcases/{object_id}.yaml */
-function workcaseCanonicalPath(objectId: string): string {
-  return `ldvh-base/workcases/${objectId}.yaml`
+/** 与 localFactReader.metadataFor 一致：按事实类型返回当前 canonical path。 */
+function canonicalPath(type: InboxObjectType, objectId: string): string {
+  return `ldvh-base/${type === 'workcase' ? 'workcases' : 'pitfalls'}/${objectId}.yaml`
 }
 
 function deriveInboxKind(_status: string, _phase: string | undefined, progressGroup: WorkCaseProgressGroup | null): InboxKind | null {
@@ -106,91 +110,93 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     const project = await requestProject(req)
     const factScope = { worktreeLocator: project.path, governedProjectId: project.id }
 
-    const result = await listObjects('workcase', undefined, undefined, factScope)
+    const [workCaseResult, pitfallResult] = await Promise.all([
+      listObjects('workcase', undefined, undefined, factScope),
+      listObjects('pitfall', undefined, undefined, factScope),
+    ])
     const issues: CognitionIssue[] = []
-
-    if (!result.ok || !('data' in result)) {
-      const message = result.ok ? 'WorkCase 列表读取失败' : (result as { error: string }).error
-      issues.push({ section: 'inbox', code: 'workcase_list_unavailable', message })
-      res.json({
-        generatedAt,
-        scope: { governedProjectId: project.id },
-        inbox: { items: [], total: 0 },
-        issues,
-      })
-      return
-    }
-
-    const data = result.data as {
-      items: Array<Record<string, unknown>>
-      collection_issues?: Array<Record<string, unknown>>
-    }
-    const collectionIssues = Array.isArray(data.collection_issues) ? data.collection_issues : []
-    for (const issue of collectionIssues) issues.push(toIssue(issue))
-
     const builds: InboxBuildItem[] = []
-    for (const raw of data.items) {
-      const object_id = String(raw.object_id ?? '')
-      const status = String(raw.status ?? 'unknown')
-      const phase = typeof raw.phase === 'string' ? raw.phase : undefined
-      const progressGroup = deriveWorkCaseProgressProjection(status, phase)?.progressGroup ?? null
-      // progress_group 不可派生不收入收件箱，经 issues 与未解析结构呈现（Q8）。
-      if (progressGroup === null) {
-        issues.push({
-          section: 'inbox',
-          code: 'progress_group_unresolved',
-          message: `WorkCase ${object_id} 的进展分组无法由当前 status=${status} 派生，未收入收件箱`,
-          object_ref: object_id,
+    if (!workCaseResult.ok || !('data' in workCaseResult)) {
+      const message = workCaseResult.ok ? 'WorkCase 列表读取失败' : (workCaseResult as { error: string }).error
+      issues.push({ section: 'inbox', code: 'workcase_list_unavailable', message })
+    } else {
+      const data = workCaseResult.data as { items: Array<Record<string, unknown>>; collection_issues?: Array<Record<string, unknown>> }
+      for (const issue of Array.isArray(data.collection_issues) ? data.collection_issues : []) issues.push(toIssue(issue))
+      for (const raw of data.items) {
+        const object_id = String(raw.object_id ?? '')
+        const status = String(raw.status ?? 'unknown')
+        const phase = typeof raw.phase === 'string' ? raw.phase : undefined
+        const progressGroup = deriveWorkCaseProgressProjection(status, phase)?.progressGroup ?? null
+        if (progressGroup === null) {
+          issues.push({ section: 'inbox', code: 'progress_group_unresolved', message: `WorkCase ${object_id} 的进展分组无法由当前 status=${status} 派生，未收入收件箱`, object_ref: object_id })
+          continue
+        }
+        const inboxKind = deriveInboxKind(status, phase, progressGroup)
+        if (inboxKind === null) continue
+        builds.push({
+          type: 'workcase', inboxKind, progress_group: progressGroup,
+          object_id, title: String(raw.title ?? object_id),
+          ...(typeof raw.title_en === 'string' ? { title_en: raw.title_en } : {}),
+          ...(typeof raw.title_zh === 'string' ? { title_zh: raw.title_zh } : {}),
+          status, phase, priority: typeof raw.priority === 'string' ? raw.priority : undefined,
+          updated_at: typeof raw.updated_at === 'string' ? raw.updated_at : undefined,
+          read_status: String(raw.read_status ?? 'unknown'), projection: raw,
+          field_issues: Array.isArray(raw.field_issues) ? (raw.field_issues as Array<Record<string, unknown>>) : [],
+          unparsed_structures: Array.isArray(raw.unparsed_structures) ? (raw.unparsed_structures as Array<Record<string, unknown>>) : [],
+          read_issues: Array.isArray(raw.read_issues) ? (raw.read_issues as Array<Record<string, unknown>>) : [],
         })
-        continue
       }
-      const inboxKind = deriveInboxKind(status, phase, progressGroup)
-      if (inboxKind === null) continue
+    }
 
-      builds.push({
-        object_id,
-        title: String(raw.title ?? object_id),
-        ...(typeof raw.title_en === 'string' ? { title_en: raw.title_en } : {}),
-        ...(typeof raw.title_zh === 'string' ? { title_zh: raw.title_zh } : {}),
-        status,
-        phase,
-        priority: typeof raw.priority === 'string' ? raw.priority : undefined,
-        updated_at: typeof raw.updated_at === 'string' ? raw.updated_at : undefined,
-        read_status: String(raw.read_status ?? 'unknown'),
-        projection: raw,
-        field_issues: Array.isArray(raw.field_issues) ? (raw.field_issues as Array<Record<string, unknown>>) : [],
-        unparsed_structures: Array.isArray(raw.unparsed_structures) ? (raw.unparsed_structures as Array<Record<string, unknown>>) : [],
-        read_issues: Array.isArray(raw.read_issues) ? (raw.read_issues as Array<Record<string, unknown>>) : [],
-      })
+    if (!pitfallResult.ok || !('data' in pitfallResult)) {
+      const message = pitfallResult.ok ? 'Pitfall 列表读取失败' : (pitfallResult as { error: string }).error
+      issues.push({ section: 'inbox', code: 'pitfall_list_unavailable', message })
+    } else {
+      const data = pitfallResult.data as { items: Array<Record<string, unknown>>; collection_issues?: Array<Record<string, unknown>> }
+      for (const issue of Array.isArray(data.collection_issues) ? data.collection_issues : []) issues.push(toIssue(issue))
+      for (const raw of data.items) {
+        if (raw.status !== 'draft') continue
+        const object_id = String(raw.object_id ?? '')
+        builds.push({
+          type: 'pitfall', inboxKind: 'pitfall_confirmation', object_id, title: String(raw.title ?? object_id),
+          ...(typeof raw.title_en === 'string' ? { title_en: raw.title_en } : {}),
+          ...(typeof raw.title_zh === 'string' ? { title_zh: raw.title_zh } : {}),
+          status: 'draft', phase: undefined,
+          updated_at: typeof raw.updated_at === 'string' ? raw.updated_at : undefined,
+          read_status: String(raw.read_status ?? 'unknown'), projection: raw,
+          field_issues: Array.isArray(raw.field_issues) ? (raw.field_issues as Array<Record<string, unknown>>) : [],
+          unparsed_structures: Array.isArray(raw.unparsed_structures) ? (raw.unparsed_structures as Array<Record<string, unknown>>) : [],
+          read_issues: Array.isArray(raw.read_issues) ? (raw.read_issues as Array<Record<string, unknown>>) : [],
+        })
+      }
     }
 
     builds.sort(compareInbox)
 
     const items = builds.map((build) => {
-      const progressGroup = deriveWorkCaseProgressProjection(build.status, build.phase)?.progressGroup ?? null
-      const inboxKind = deriveInboxKind(build.status, build.phase, progressGroup) as InboxKind
       const card = Object.fromEntries(
         Object.entries(build.projection).filter(([key]) => !IDENTITY_PROJECTION_KEYS.has(key)),
       )
       const entry: Record<string, unknown> = {
-        type: 'workcase',
+        type: build.type,
         id: build.object_id,
         title: build.title,
         ...(build.title_en !== undefined ? { title_en: build.title_en } : {}),
         ...(build.title_zh !== undefined ? { title_zh: build.title_zh } : {}),
         relativeTime: getRelativeTime(build.updated_at ?? '', locale),
-        typeColor: getTypeColor('workcase'),
-        progress_group: progressGroup,
-        inboxKind,
+        typeColor: getTypeColor(build.type),
+        inboxKind: build.inboxKind,
         read_status: build.read_status,
         card,
       }
+      if (build.type === 'workcase') entry.progress_group = build.progress_group
+      else entry.status = 'draft'
       // priority 缺失/非法落 P3 之后并省略优先级信号（Q8）。
       if (priorityRank(build.priority) < 4 && typeof build.priority === 'string') entry.priority = build.priority
       // updated_at 缺失排最后并省略时间显示（Q8）。
       if (build.updated_at) entry.updatedAt = build.updated_at
       // 字段级直读 readable 时携带 canonical_path，供条件显示"复制对象路径"（Q4）。
-      if (build.read_status === 'readable') entry.canonical_path = workcaseCanonicalPath(build.object_id)
+      if (build.read_status === 'readable') entry.canonical_path = canonicalPath(build.type, build.object_id)
       if (build.field_issues.length > 0) entry.field_issues = build.field_issues
       if (build.unparsed_structures.length > 0) entry.unparsed_structures = build.unparsed_structures
       if (build.read_issues.length > 0) entry.read_issues = build.read_issues

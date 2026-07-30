@@ -393,8 +393,8 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
 }
 
 
-/** 认知中心待决类型（UI 枚举，仅收录两个 Human Gate，见 02 §4.1）。 */
-export type CognitionInboxKind = 'plan_confirmation' | 'closure_confirmation';
+/** 认知中心待决类型：两个 WorkCase Human Gate 与 Pitfall draft 审核。 */
+export type CognitionInboxKind = 'plan_confirmation' | 'closure_confirmation' | 'pitfall_confirmation';
 
 /**
  * 决定依据区内联投影（Q3）：与 WorkCase 列表 Card 同源的 projectWorkCaseCard 字段子集，
@@ -410,18 +410,16 @@ export interface CognitionInboxCard extends Record<string, unknown> {
   execution_authorization?: WorkCaseExecutionAuthorization | unknown;
   execution_approval?: WorkCaseExecutionApproval | unknown;
   closureProposal?: WorkCaseClosureProposalCard;
+  contributedTo?: WorkCaseContributionTarget[];
 }
 
-export interface CognitionInboxItem {
-  type: 'workcase';
+interface CognitionInboxItemBase {
   id: string;
   title: string;
   title_en?: string;
   title_zh?: string;
   relativeTime: string;
   typeColor: string;
-  /** WorkCase 条目只携带 progress_group，不复用 status 语义（02 §7.3）。 */
-  progress_group: WorkCaseProgressGroup;
   inboxKind: CognitionInboxKind;
   read_status: string;
   card: CognitionInboxCard;
@@ -433,6 +431,22 @@ export interface CognitionInboxItem {
   unparsed_structures?: UnparsedStructure[];
   read_issues?: Array<Record<string, unknown>>;
 }
+
+/** WorkCase 条目只携带 progress_group，不复用来源 status 语义。 */
+export interface CognitionWorkCaseInboxItem extends CognitionInboxItemBase {
+  type: 'workcase';
+  progress_group: WorkCaseProgressGroup;
+  inboxKind: 'plan_confirmation' | 'closure_confirmation';
+}
+
+/** Pitfall draft 的待确认是类型专属状态，按来源状态直接呈现。 */
+export interface CognitionPitfallInboxItem extends CognitionInboxItemBase {
+  type: 'pitfall';
+  status: 'draft';
+  inboxKind: 'pitfall_confirmation';
+}
+
+export type CognitionInboxItem = CognitionWorkCaseInboxItem | CognitionPitfallInboxItem;
 
 export interface CognitionIssue {
   section: string;

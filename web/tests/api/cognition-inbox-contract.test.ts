@@ -3,7 +3,8 @@
  *
  * 以当前治理范围解析出的受管辖工作树（事实源）运行，断言 02 §8 第一期的四个字段
  * （generatedAt / scope / inbox / issues）、待决收录与排序、命名纪律
- * （仅两个 Human Gate progress_group）、内联决定依据、条件 canonical_path 与模块二~五省略。
+ * （WorkCase 的两个 Human Gate progress_group，加上 Pitfall 的 draft 待确认）、
+ * 内联对象卡片依据、条件 canonical_path 与模块二~五省略。
  *
  * 断言以“不依赖具体对象身份的不变式”为主：无论事实源是本仓库还是预览工作树，
  * 收录 / 排序 / 命名 / 投影规则都必须确定性成立。
@@ -63,7 +64,7 @@ function compareSort(a: Record<string, unknown>, b: Record<string, unknown>): nu
   return String(a.id).localeCompare(String(b.id))
 }
 
-/** 仅由两个 Human Gate progress_group 推导期望的 inboxKind。 */
+/** WorkCase 条目仅由两个 Human Gate progress_group 推导期望的 inboxKind。 */
 function expectedInboxKind(item: Record<string, unknown>): string | null {
   const pg = item.progress_group
   if (pg === 'plan_confirmation') return 'plan_confirmation'
@@ -119,26 +120,39 @@ test('inbox collects only decision-baseline items with a deterministic sort orde
   })
 })
 
-test('inboxKind is derived only from the two Human Gate progress groups without reusing raw status', async () => {
+test('inbox keeps WorkCase Human Gates separate from Pitfall draft confirmation', async () => {
   const body = await cognition('zh')
   const items = (body.inbox as Record<string, unknown>).items as Array<Record<string, unknown>>
 
   const kinds = new Set<string>()
+  let workCaseCount = 0
+  let pitfallCount = 0
   for (const item of items) {
-    assert.equal(item.type, 'workcase')
-    assert.ok(['plan_confirmation', 'closure_confirmation'].includes(String(item.progress_group)))
-    assert.ok(['plan_confirmation', 'closure_confirmation'].includes(String(item.inboxKind)))
-    // WorkCase 条目只携带 progress_group；不得把来源 status 放在名为 status 的字段（02 §7.3）。
-    assert.equal('status' in item, false)
+    if (item.type === 'workcase') {
+      workCaseCount += 1
+      assert.ok(['plan_confirmation', 'closure_confirmation'].includes(String(item.progress_group)))
+      assert.ok(['plan_confirmation', 'closure_confirmation'].includes(String(item.inboxKind)))
+      // WorkCase 条目只携带 progress_group；不得把来源 status 放在名为 status 的字段（02 §7.3）。
+      assert.equal('status' in item, false)
+      assert.equal(item.inboxKind, expectedInboxKind(item))
+    } else if (item.type === 'pitfall') {
+      pitfallCount += 1
+      assert.equal(item.status, 'draft')
+      assert.equal(item.inboxKind, 'pitfall_confirmation')
+      assert.equal('progress_group' in item, false)
+    } else {
+      assert.fail(`unexpected inbox object type: ${String(item.type)}`)
+    }
     assert.equal(typeof item.relativeTime, 'string')
     assert.equal(typeof item.typeColor, 'string')
-    // inboxKind 由 Human Gate progress_group 确定性映射。
-    assert.equal(item.inboxKind, expectedInboxKind(item))
     assert.equal('source_status' in item, false)
     kinds.add(String(item.inboxKind))
   }
+  assert.ok(workCaseCount > 0)
+  assert.ok(pitfallCount > 0)
   assert.ok(kinds.has('plan_confirmation'))
   assert.ok(kinds.has('closure_confirmation'))
+  assert.ok(kinds.has('pitfall_confirmation'))
 })
 
 test('priority signal is shown only for valid P0-P3 and omitted for missing/invalid', async () => {
@@ -160,17 +174,24 @@ test('priority signal is shown only for valid P0-P3 and omitted for missing/inva
   }
 })
 
-test('decision basis is inlined via the WorkCase card projection (Q3)', async () => {
+test('decision basis is inlined via each source object card projection (Q3)', async () => {
   const body = await cognition('zh')
   const items = (body.inbox as Record<string, unknown>).items as Array<Record<string, unknown>>
 
   for (const item of items) {
     assert.ok('card' in item)
     const card = item.card as Record<string, unknown>
-    assert.equal(typeof card.goal, 'string')
-    if (item.inboxKind === 'plan_confirmation') {
-      assert.ok(Array.isArray(card.successCriteria), 'plan item carries successCriteria array')
-      for (const field of ['scope', 'success_criterion_definitions', 'work_items', 'creation_reviews', 'execution_authorization']) {
+    if (item.type === 'workcase') {
+      assert.equal(typeof card.goal, 'string')
+      if (item.inboxKind === 'plan_confirmation') {
+        assert.ok(Array.isArray(card.successCriteria), 'plan item carries successCriteria array')
+        for (const field of ['scope', 'success_criterion_definitions', 'work_items', 'creation_reviews', 'execution_authorization']) {
+          if (field in card) assert.notEqual(card[field], undefined, `${field} preserves its source value`)
+        }
+      }
+    } else {
+      assert.equal(item.type, 'pitfall')
+      for (const field of ['symptoms', 'trigger_conditions', 'applicability', 'root_cause', 'resolution', 'avoidance', 'validation_summary']) {
         if (field in card) assert.notEqual(card[field], undefined, `${field} preserves its source value`)
       }
     }
@@ -188,7 +209,8 @@ test('readable items carry canonical_path for conditional copy (Q4); time omissi
   assert.ok(items.length > 0)
   for (const item of items) {
     // 字段级直读 readable 时携带 canonical_path，供条件显示“复制对象路径”。
-    assert.equal(item.canonical_path, `ldvh-base/workcases/${String(item.id)}.yaml`)
+    const collection = item.type === 'workcase' ? 'workcases' : 'pitfalls'
+    assert.equal(item.canonical_path, `ldvh-base/${collection}/${String(item.id)}.yaml`)
     // updated_at 缺失排最后并省略时间显示（Q8）：有则带 updatedAt 字符串。
     if (item.read_status === 'readable' && typeof item.updatedAt !== 'string') {
       // 缺失时该条目应处于排序末尾（上方排序测试已覆盖），此处仅记录形状。

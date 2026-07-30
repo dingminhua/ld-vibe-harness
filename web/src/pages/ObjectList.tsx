@@ -1022,7 +1022,8 @@ function WorkCaseClosedContent({ goal, terminal }: { goal?: string; terminal?: W
   );
 }
 
-function WorkCaseContributionsContent({
+// eslint-disable-next-line react-refresh/only-export-components
+export function WorkCaseContributionsContent({
   contributions,
   locale,
 }: {
@@ -1128,7 +1129,8 @@ function sparkViewItem(value: ObjectItem): ObjectItem {
 }
 
 
-function ObjectCardFrame({
+// eslint-disable-next-line react-refresh/only-export-components
+export function ObjectCardFrame({
   obj,
   locale,
   onOpen,

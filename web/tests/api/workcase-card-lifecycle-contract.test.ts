@@ -165,7 +165,7 @@ test('plan revision is progressing but remains outside the four-step track', () 
   assert.match(locales, /'objectList\.workcaseOutsideProgressTrack': '四步轨迹之外'/);
 });
 
-test('plan confirmation keeps a compact Gate 1 entry while the cognition view retains complete material', () => {
+test('plan confirmation keeps its compact Gate 1 entry for the list and cognition cards', () => {
   const list = source('src/pages/ObjectList.tsx');
   const sharedCriteria = source('src/components/WorkCaseCriteriaList.tsx');
   const branchStart = list.indexOf("if (progressGroup === 'plan_confirmation')");

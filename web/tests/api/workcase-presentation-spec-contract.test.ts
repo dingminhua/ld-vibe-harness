@@ -202,23 +202,31 @@ test('Current Web docs describe the same latest-only Card and detail boundaries'
   assert.doesNotMatch(baselineSection, /control-contract|workcase_profile|closure_requested_at|review_requested_at|closure_approval/);
 });
 
-test('Cognition Center consumes only the two Human Gate progress groups without relabeling them as status', () => {
+test('Cognition Center reuses pending WorkCase and Pitfall Cards with secondary reading', () => {
   const cognitionCenter = source('web/src/pages/CognitionCenter.tsx');
   const apiTypes = source('web/src/utils/api.ts');
 
-  // 页面消费收件箱时只经 inboxKind（由两个 Human Gate progress_group 派生），不重标为 status
+  // 收件箱卡片沿用对象 Card，标题只打开次级阅读面板，不发生路由跳转。
   assert.match(cognitionCenter, /CognitionInboxItem/);
   assert.match(cognitionCenter, /inboxKind/);
-  assert.doesNotMatch(cognitionCenter, /item\.status\b/);
+  assert.match(cognitionCenter, /<ObjectCardFrame/);
+  assert.match(cognitionCenter, /mode="card"/);
+  assert.match(cognitionCenter, /objectType: item\.type/);
+  assert.match(cognitionCenter, /ldvh-section-grid/);
+  assert.match(cognitionCenter, /aria-controls="cognition-inbox-content"/);
+  assert.match(cognitionCenter, /inboxExpanded/);
+  assert.doesNotMatch(cognitionCenter, /navigate\(/);
   assert.doesNotMatch(cognitionCenter, /\.byStatus\b/);
 
-  // 类型层：WorkCase 收件箱条目只携带 progress_group；blocked 与 source_status 均不进入收件箱。
-  assert.match(apiTypes, /interface CognitionInboxItem[\s\S]*?progress_group: WorkCaseProgressGroup;/);
-  assert.match(apiTypes, /CognitionInboxKind = 'plan_confirmation' \| 'closure_confirmation'/);
-  const inboxItemBlock = apiTypes.match(/export interface CognitionInboxItem \{[\s\S]*?\n\}/);
-  assert.ok(inboxItemBlock);
-  assert.doesNotMatch(inboxItemBlock[0], /\bstatus\??:\s/);
-  assert.doesNotMatch(inboxItemBlock[0], /source_status/);
+  // 类型层：WorkCase 仍只携带 progress_group；Pitfall 明确用 draft 状态进入确认收件箱。
+  assert.match(apiTypes, /export interface CognitionWorkCaseInboxItem[\s\S]*?progress_group: WorkCaseProgressGroup;/);
+  assert.match(apiTypes, /export interface CognitionPitfallInboxItem[\s\S]*?type: 'pitfall';[\s\S]*?status: 'draft';[\s\S]*?inboxKind: 'pitfall_confirmation';/);
+  assert.match(apiTypes, /CognitionInboxKind =[\s\S]*?'plan_confirmation'[\s\S]*?'closure_confirmation'[\s\S]*?'pitfall_confirmation'/);
+  assert.match(apiTypes, /export type CognitionInboxItem = CognitionWorkCaseInboxItem \| CognitionPitfallInboxItem;/);
+  const workCaseInboxBlock = apiTypes.match(/export interface CognitionWorkCaseInboxItem extends CognitionInboxItemBase \{[\s\S]*?\n\}/);
+  assert.ok(workCaseInboxBlock);
+  assert.doesNotMatch(workCaseInboxBlock[0], /\bstatus\??:\s/);
+  assert.doesNotMatch(workCaseInboxBlock[0], /source_status/);
 });
 
 test('Current Web WorkCase docs reject retired fields and states', () => {

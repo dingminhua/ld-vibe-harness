@@ -35,9 +35,11 @@
 | 验收依据 | 切换 zh/en 后导航第一项与页面标题显示「聚焦 / Focus」，图标为 `LayoutDashboard`；其余页面与文档引用「认知中心」不变 |
 | 明确不变范围 | 内部概念名、文档与代码文件名、API、页面模块、09 规范中「项目认知中心」的对象类型命名不变 |
 
-### 0.2 2026-07-30 收件箱列表改为响应式多列（落实 02 §3）
+### 0.2 2026-07-30 收件箱复用事实 Card 与次级阅读
 
-收件箱（模块一 待决定事项）原实现为单列 `grid`，未落实 02 §3「布局使用 `ldvh-section-grid` 容器宽度驱动列数」的要求，也未与其他事实对象（ObjectList 卡片网格）保持一致。本次修正为 `ldvh-section-grid`（auto-fit / min 20rem 列），使宽容器下一行自适应排多个、窄容器自动塌为单列，与 ObjectList、Changelog 等一致。属对既有设计决定（§3）的落实，非新增行为变更。
+待决定事项不是第二套对象摘要。收件箱使用 `ldvh-section-grid` 与其它事实对象一致地按容器宽度排成多列；每项直接复用其对象列表 Card 的身份、状态、标题和正文，不把完整事实字段改写为聚焦页专属材料，也不叠加聚焦页专属条目操作。聚焦页只在模块层新增待确认集合、观察信息和复制模块摘要；点击标题不跳转路由，而是在右侧（Compact 时底部）展开同源次级阅读。属对既有设计原则的收敛，不改变来源或只读边界。
+
+模块默认展开；Human 可通过标题带右侧的折叠按钮收起整个待决定事项正文。收起态仍保留模块名、总数、观察时间与复制模块摘要，使后续模块可继续阅读而不丢失当前待决规模。
 
 ## 1. 页面目标
 
@@ -75,7 +77,7 @@ H1–H6 当前记录于事实源 `ldvh-base/sparks/spark-0037.yaml`（mechanical
 
 - 模块顺序固定，不按数据有无重排；未建设模块不显示占位（§11 分期）。
 - Compact（≤599px）全部单列堆叠，待决定事项永远第一屏。
-- 布局使用 `ldvh-section-grid` 容器宽度驱动列数，不以 `lg:` 视口断点作为唯一依据；右侧扩展阅读打开时列数随容器收缩。
+- 模块与待决定事项 Card 使用 `ldvh-section-grid` 容器宽度驱动列数，不以 `lg:` 视口断点作为唯一依据；右侧次级阅读打开时列数随容器收缩。
 - 页面不设置"重新读取"控件；进入路由或切换语言触发新的直读请求，不复用旧 payload、对象 `updated_at` 或浏览器渲染时刻冒充新观察。
 
 ## 4. 模块规格
@@ -88,13 +90,14 @@ H1–H6 当前记录于事实源 `ldvh-base/sparks/spark-0037.yaml`（mechanical
 
 | 待决类型 | 派生条件 | 决定依据区直读字段 |
 |---|---|---|
-| 待批准计划 | WorkCase `progress_group = plan_confirmation` | 完整 Gate 1 基线：`goal`、`scope`、`success_criterion_definitions`、`work_items`（含方法）、`creation_reviews`（含主控处置）、`execution_authorization`；已存在时同时显示 `execution_approval` 的批准基线指纹与来源引用 |
-| 待确认关闭 | WorkCase `progress_group = closure_confirmation` | `goal` + 完整 `closure_proposal`（与"关闭待确认"Card 同一关闭判断输入区） |
+| 待批准计划 | WorkCase `progress_group = plan_confirmation` | 与对象列表相同的紧凑 Gate 1 Card：`goal`、成功标准、执行授权边界 |
+| 待确认关闭 | WorkCase `progress_group = closure_confirmation` | 与对象列表相同的关闭确认 Card：`goal`、`closure_proposal` 与实际 contributed Pitfall |
+| 待确认经验 | Pitfall `status = draft` | 与对象列表相同的 Pitfall Card；完整经验字段在同源次级阅读中展开 |
 
-- 排序：`priority`（P1→P3，仅 WorkCase 适用）→ `updated_at` 正序（等待最久在前）。排序是派生展示规则，不表达语义重要性结论。
-- 待决类型是 UI 枚举，仅由两个 Human Gate 的 `progress_group` 确定性映射；`status=blocked` 仍在对象列表和详情如实显示，但不是 Human Gate，不进入待决定收件箱。
-- 条目形态：对象类型 chip、标题、待决类型徽章、决定依据区、优先级弱信号、`formatDateTime()` 更新时间。点击标题打开右侧扩展阅读（复用 `WorkCaseReadingLayout`，与详情页同源）；标题以外区域不触发路由。
-- 复制入口：精确读取取得可消费 `canonical_path` 的条目提供"复制对象路径"；每条目提供"复制决定摘要"——面向 AI 对话的多行文本，含对象稳定 ID、待决类型、决定依据要点，已精确读取时含 `canonical_path`。复制按钮 icon + tooltip，`stopPropagation()`。
+- 排序：有合法 `priority` 的 WorkCase（P0→P3）→ 无优先级条目（含 Pitfall draft）→ `updated_at` 正序（等待最久在前）。排序是派生展示规则，不表达语义重要性结论。
+- 待决类型是 UI 枚举：WorkCase 只由两个 Human Gate 的 `progress_group` 映射；Pitfall 只由类型专属 `draft` 映射为待确认。`status=blocked` 仍在对象列表和详情如实显示，但不是 Human Gate，不进入收件箱。
+- 条目形态直接复用对象列表 Card；聚焦页不新增对象正文。点击标题打开右侧扩展阅读（复用同源对象阅读布局）；标题以外区域不触发路由。
+- 复制入口只位于模块标题带：“复制模块摘要”面向 AI 对话，含观察时间、各待确认类型计数与条目稳定 ID。条目本身保持与对象列表 Card 相同的复制与交互，不因进入聚焦页增加按钮。
 - 决定在 AI 对话中作出，经 Helper 受控写入回写事实源；本模块不承载决定动作。
 - 负担有界（H3）：默认完整展示全部待决条目；条目超出首屏时按上述排序截断，并在面板底部如实提示总数与未显示数量，不用分页掩盖待决规模。
 - 空态：当前没有待你决定的事项（双语）。
@@ -152,7 +155,7 @@ H1–H6 当前记录于事实源 `ldvh-base/sparks/spark-0037.yaml`（mechanical
 
 H4 的工作机制：Web 给 Human 看的派生视图，与 AI 经 Helper 精确读取的事实源，必须可互相核查。本页通过以下统一标记实现：
 
-1. 每个模块标题带右侧标注：`派生视图` 弱标签 + 本次观察时间。观察时间统一取 API 响应的 `generatedAt`（服务端响应生成时刻的 RFC3339），按 `formatDateTime()` 显示；不用对象 `updated_at` 或浏览器时刻冒充观察时间。
+1. 每个模块标题带右侧标注本次观察时间。观察时间统一取 API 响应的 `generatedAt`（服务端响应生成时刻的 RFC3339），按 `formatDateTime()` 显示；不用对象 `updated_at` 或浏览器时刻冒充观察时间。
 2. 模块级降级：某一数据来源不可用（git 失败、某类型列表读取失败、字段问题）时，对应模块或分区如实显示实际不可用范围与原因，其它模块正常呈现；只有管辖范围解析失败才整页失败。
 3. 每个模块标题带提供"复制模块摘要"：面向 AI 对话的多行文本，含模块名、观察时间、关键计数与条目稳定 ID 列表（不含未精确读取的路径）。Human 粘贴到 AI 对话后，AI 经 Helper 精确读取复核同一对象——页面与 AI 各走 00 §8.3 定义的读取路径，互查而非互替。
 4. 事实、派生、诊断、未知范围可区分：直读字段按来源呈现；派生指标带转换说明；本地窗口起点、静默阈值等 Web 展示参数如实标注；读取问题与未解析结构在对应消费位置就地显示。
@@ -170,8 +173,7 @@ Helper 成功写入并回读后，浏览器没有可被 Helper 直接调用的�
 | 点击待决条目标题 | 打开右侧扩展阅读预览对象（再次点击当前条目关闭） |
 | 点击对象标记 / 静默 Spark 行 / 锚点引用行 | 打开右侧扩展阅读 |
 | 点击提交条目 | 跳转 `/changelog` |
-| 点击复制对象路径 | 复制精确读取返回的 `canonical_path`（仅已精确读取条目显示） |
-| 点击复制决定摘要 / 复制模块摘要 | 复制面向 AI 对话的多行摘要文本 |
+| 点击复制模块摘要 | 复制面向 AI 对话的模块观察摘要 |
 | 切换语言 | 页面框架、模块标题、待决类型、状态、相对时间与观察时间同步切换 |
 
 ## 7. 实现约束
@@ -180,9 +182,9 @@ Helper 成功写入并回读后，浏览器没有可被 Helper 直接调用的�
 2. 不提供批准、关闭、分流、处置、优先级编辑或任何写入口；占位按钮、禁用按钮也不出现。
 3. WorkCase 统计只使用 `byProgressGroup`，WorkCase 条目只使用 `progress_group`；不得把派生进展分组放入名为 `status` 或 `byStatus` 的字段。blocked 不进入待决定收件箱，也不得借 `source_status` 重新引入。
 4. 不新增事实字段、状态、对象类型、第五进展分组或第二状态模型；待决类型、静默阈值、窗口起点均为 UI 层派生，如实标注。
-5. 计划决定依据区直读完整 Gate 1 基线，关闭决定依据区直读 `goal` 与 `closure_proposal`；与 WorkCase 列表 Card 和详情页同源消费，不在本页另写摘要逻辑。缺失或类型不符必须在对应区块如实降级，不能过滤坏成员后拼成看似完整的批准材料。
+5. 收件箱正文直接复用对象列表 Card：计划确认显示 Gate 1 紧凑入口，关闭确认显示关闭判断输入区与后续贡献，Pitfall `draft` 使用其普通 Card。完整同源事实在标题打开的次级阅读中展开；模块摘要只提供当前收件箱的观察信息与对象索引。缺失或类型不符必须在对应消费位置如实降级，不能过滤坏成员后拼成看似完整的批准材料。
 6. Git 提交必须复用 `web/api/services/git.ts` 的 commit message 拆分与 parser。
-7. 复制语义按 01 §5；候选条目不用 `path`、`target` 或对象 ID 伪造 `canonical_path`；新增"复制决定摘要""复制模块摘要"两个语义，tooltip 按内容语义命名。
+7. 复制语义按 01 §5；候选条目不用 `path`、`target` 或对象 ID 伪造 `canonical_path`；本模块只增加“复制模块摘要”，tooltip 按内容语义命名。
 8. i18n 全量双语；事实正文（goal、提案、commit message 等）不翻译；英文长文案允许换行，不以截断替代阅读。
 9. 扩展阅读与详情页复用同一身份头部与 `WorkCaseReadingLayout`，不维护第二套对象摘要。
 10. 颜色遵守 01 §1.10：Human 待确认紫色系、阻塞/风险警示色、类型色只用于识别；不以单一色相支配页面。
@@ -249,9 +251,9 @@ interface CognitionData {
 ```
 
 - WorkCase 聚合遵守 §7 第 3 条命名纪律；其它类型不使用 `progress_group` / `byProgressGroup`。
-- 决定依据区首屏内联并复用列表 Card 的 `projectWorkCaseCard` 投影；计划批准显示完整 Gate 1 基线，关闭确认显示 `goal` 与 `closure_proposal`。复制决定摘要使用同一字段集合，不另造压缩摘要。
+- 待决定条目首屏内联复用各自对象列表 Card 的投影；完整事实在点击标题后的同源次级阅读中展开。模块摘要只保留当前收件箱的观察信息与对象索引，不另造事实或写回摘要。
 - 本端点是派生视图服务，不成为事实权威；读取限定在当前唯一管辖项目与实际 worktree。
-- 第一期实现注记（2026-07-30，workcase-0020）：本端点仅交付模块一「待决定事项」收件箱与 §5 全局信任标记；`GET /api/cognition` 返回 `{ generatedAt, scope, inbox, issues }`，inbox 只收录 plan_confirmation / closure_confirmation 两个 Human Gate，按 `priority → updated_at` 正序排序；决定依据区首屏内联，复用 `projectWorkCaseCard` 投影；blocked 保留在对象列表/详情，不进入 inbox；模块二~五字段整体省略。
+- 第一期实现注记（2026-07-30，workcase-0020）：本端点仅交付模块一「待决定事项」收件箱与 §5 全局信任标记；`GET /api/cognition` 返回 `{ generatedAt, scope, inbox, issues }`，inbox 收录 plan_confirmation / closure_confirmation WorkCase 与 draft Pitfall，按 `priority → updated_at` 正序排序；首屏复用对象 Card，完整事实由同源次级阅读展开；blocked 保留在对象列表/详情，不进入 inbox；模块二~五字段整体省略。
 
 ## 9. 响应式与移动端
 
@@ -265,8 +267,8 @@ interface CognitionData {
 
 ## 10. 验收标准
 
-1. Human 打开 `/` 后第一屏看到全部当前两个 Human Gate 的待决定事项；blocked 对象不混入该收件箱。每项能看到决定类型与完整决定依据入口。
-2. 完成一次真实闭环：收件箱"复制决定摘要"→ 粘贴到 AI 对话 → AI 经 Helper 精确读取同一对象 → Human 作出决定 → 受控写入回写事实源 → 重新进入本页后收件箱反映新状态。
+1. Human 打开 `/` 后第一屏看到全部当前两个 WorkCase Human Gate 与 draft Pitfall 的待决定事项；blocked 对象不混入该收件箱。每项复用自身 Card，标题可直接打开同源次级阅读。
+2. 完成一次真实闭环：收件箱模块摘要或对象稳定 ID → 粘贴到 AI 对话 → AI 经 Helper 精确读取同一对象 → Human 作出决定 → 受控写入回写事实源 → 重新进入本页后收件箱反映新状态。
 3. 每个模块可见派生身份与观察时间；git 不可用、某类型读取失败时模块级降级并如实标注，不整页失败、不沿用旧数据。
 4. 双语切换：无 raw status / raw enum / raw 字段名；事实正文不翻译；英文布局不溢出。
 5. 测试按 08 §10 对应行执行：派生内容（来源、观察时间、转换、过期可复核）、来源与判断边界呈现、Web 行为保持与变更（本表 §0 决定 + 范围匹配的 API/组件/代表性浏览器测试）。
