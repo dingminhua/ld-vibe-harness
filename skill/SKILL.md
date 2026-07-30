@@ -1,6 +1,6 @@
 ---
 name: ldvh
-description: 当工作涉及 LDVH（LD Vibe Harness）管辖项目时使用——包括创建、更新或读取事实对象（Spark、WorkCase、ADR、Pitfall、Study），修订规范，执行受控提交，环境接入与验证，或需要取得 LDVH 规则引导与行动模板时。本技能只负责把会话路由到 LDVH CLI；全部规则、模板与事实权威由 CLI 从当前规则源现取。
+description: 当工作涉及 LDVH（LD Vibe Harness）管辖项目时使用——包括创建、更新或读取事实对象（Spark、WorkCase、ADR、Pitfall、Study），修订规范，执行受控提交，环境接入与验证，或需要取得 LDVH 规则引导与行动模板时。在这类项目中，用户以大白话提出的下列事项同样落入本技能路由范围：查询或登记技术决策/决策记录（即 ADR）、待办/工作项/工作进展（即 WorkCase 与 Spark）、项目火花/议题、踩坑经验（即 Pitfall）、研究/调研报告（即 Study）、项目规范与规则修订。本技能只负责把会话路由到 LDVH CLI；全部规则、模板与事实权威由 CLI 从当前规则源现取。
 ---
 
 # LDVH 接入（薄路由）
@@ -37,6 +37,13 @@ LDVH 让长期项目"判断有据、行动可续、结果可验"。本文件不�
 入口不在 PATH 时，使用发行环境（如项目 `.venv/bin/`）下的同名入口；仍不可得
 时如实交还"CLI 不可定位"，不猜路径。调用信封与参数以 `ldvh capabilities`
 及 Helper 服务规范（04）的当次内容为准。
+
+需要 `governed_project_id` 时，从当前目录向其父目录逐级向上查找
+`LDVH-GOVERNED-PROJECTS.yaml`（管辖配置）读取项目 `id`；不得用目录名或仓库名
+猜测。操作参数不确定时，先以
+最小请求试调一次并读响应 `gaps`/`diagnostics` 中的契约问题，或经
+`ldvh call read-specification-content` 精确读取 04 及其授权附件的字段表；
+不得反复盲猜参数。
 
 ## 如实报告
 
