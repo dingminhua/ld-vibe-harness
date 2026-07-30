@@ -129,6 +129,24 @@ def _workcase() -> dict[str, object]:
             "conclusion": "pass",
         }
     ]
+    fact_object["execution_authorization"] = {
+        "authorized_actions": [
+            {
+                "action_id": "authorization-candidate-fixture",
+                "summary": "Execute the approved candidate fixture plan.",
+                "target_scope": "Candidate fixture project only.",
+                "effect_scope": "Deterministic helper test workspace.",
+                "risk_summary": "No production effect; fixture data only.",
+                "rollback_summary": "Remove the fixture objects.",
+                "rule_refs": ["specs/21-WorkCase-工作项.md"],
+            }
+        ],
+        "action_ceiling": "Bounded to candidate fixture actions.",
+        "allowed_adjustments": "No adjustments beyond the recorded fixture summaries.",
+        "verification_and_rollback": "Run the candidate operation test suite.",
+        "out_of_bounds_handling": "Stop and return to Human.",
+        "prohibited_actions": ["Writing outside the fixture workspace."],
+    }
     return fact_object
 
 

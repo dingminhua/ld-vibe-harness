@@ -96,12 +96,12 @@ def test_prepare_projects_constraint_source_for_conditional_workcase_fields(tmp_
         "creation_reviews[].controller_resolution",
         "result_reviews[].feedback",
         "result_reviews[].controller_resolution",
-        "execution_approval.source_refs",
         "closure_proposal.residual_decisions",
         "closure_proposal.residual_decisions[].route_target",
         "residual_responsibilities",
     ):
         assert contracts[field_path]["presence"] == "conditional"
+    assert contracts["execution_approval.source_refs"]["presence"] == "required"
     assert all("constraint_ref" in item for item in prepared["field_contracts"])
 
 
@@ -148,6 +148,24 @@ def _workcase() -> dict[str, object]:
                 "conclusion": "pass",
             }
         ],
+        "execution_authorization": {
+            "authorized_actions": [
+                {
+                    "action_id": "authorization-creation-fixture",
+                    "summary": "Execute the approved creation fixture plan.",
+                    "target_scope": "Creation fixture project only.",
+                    "effect_scope": "Deterministic helper test workspace.",
+                    "risk_summary": "No production effect; fixture data only.",
+                    "rollback_summary": "Remove the fixture objects.",
+                    "rule_refs": ["specs/21-WorkCase-工作项.md"],
+                }
+            ],
+            "action_ceiling": "Bounded to creation fixture actions.",
+            "allowed_adjustments": "No adjustments beyond the recorded fixture summaries.",
+            "verification_and_rollback": "Run the creation operation test suite.",
+            "out_of_bounds_handling": "Stop and return to Human.",
+            "prohibited_actions": ["Writing outside the fixture workspace."],
+        },
     }
 
 
@@ -1122,6 +1140,22 @@ def test_create_revalidates_cross_type_relation_with_complete_schema_set(tmp_pat
                 "    feedback:",
                 "      - The plan is bounded and testable",
                 "    controller_resolution: '1. Accepted; no change required.'",
+                "execution_authorization:",
+                "  authorized_actions:",
+                "    - action_id: authorization-target-fixture",
+                "      summary: Execute the approved target fixture plan.",
+                "      target_scope: Creation fixture project only.",
+                "      effect_scope: Deterministic helper test workspace.",
+                "      risk_summary: No production effect; fixture data only.",
+                "      rollback_summary: Remove the fixture objects.",
+                "      rule_refs:",
+                "        - specs/21-WorkCase-工作项.md",
+                "  action_ceiling: Bounded to target fixture actions.",
+                "  allowed_adjustments: No adjustments beyond the recorded fixture summaries.",
+                "  verification_and_rollback: Run the creation operation test suite.",
+                "  out_of_bounds_handling: Stop and return to Human.",
+                "  prohibited_actions:",
+                "    - Writing outside the fixture workspace.",
                 "",
             ]
         ),
