@@ -460,7 +460,7 @@ def _application_failure(
             sources=sources,
             gaps=(
                 {
-                    "summary": issue_summary or "完整 after、转换、Gate 或目标检查未成立",
+                    "summary": issue_summary or "完整 after、转换、关口或目标检查未成立",
                     "scope": list(requested),
                     "source_refs": [_CONTRACTS[mode]],
                 },

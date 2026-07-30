@@ -1,4 +1,4 @@
-"""Shared Git commit precheck for Helper and native mechanical Gate entrypoints."""
+"""Shared Git commit precheck for Helper and native Git Gate entrypoints."""
 
 from __future__ import annotations
 

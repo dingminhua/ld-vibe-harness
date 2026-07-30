@@ -47,7 +47,7 @@ _SURFACES = (
     (
         "git-commit-msg-gate",
         "ldvh-git-commit-msg",
-        "原生 Git commit-msg 机械 Gate 核心",
+        "原生 Git Gate（commit-msg）机械检查核心",
         "specs/03-事实源与信息溯源规范.md",
     ),
     (

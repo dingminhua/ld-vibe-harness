@@ -1,4 +1,4 @@
-"""Shared mechanical gate for a native Git ``commit-msg`` Hook."""
+"""Shared Git Gate for a native Git ``commit-msg`` Hook."""
 
 from __future__ import annotations
 
@@ -101,7 +101,7 @@ def run_commit_msg_gate(
 
 
 def _parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Run the LDVH native Git commit-msg mechanical gate")
+    parser = argparse.ArgumentParser(description="Run the LDVH Git Gate for the native commit-msg Hook")
     parser.add_argument("--workspace-root", required=True)
     parser.add_argument("--worktree", required=True)
     parser.add_argument("--message-file", required=True)
@@ -110,7 +110,7 @@ def _parser() -> argparse.ArgumentParser:
 
 
 def _write_failure(result: CommitMsgGateResult) -> None:
-    sys.stderr.write(f"LDVH commit-msg gate {result.outcome}:\n")
+    sys.stderr.write(f"LDVH Git Gate (commit-msg) {result.outcome}:\n")
     for issue in result.issues:
         sys.stderr.write(f"- {issue}\n")
 
@@ -125,7 +125,7 @@ def main(arguments: list[str] | None = None) -> int:
             index_file=parsed.index_file,
         )
     except Exception as error:  # native lifecycle failures must never become an allow decision
-        sys.stderr.write(f"LDVH commit-msg gate unavailable: {error}\n")
+        sys.stderr.write(f"LDVH Git Gate (commit-msg) unavailable: {error}\n")
         return 1
     if result.allowed:
         return 0

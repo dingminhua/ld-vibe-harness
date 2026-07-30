@@ -1,12 +1,10 @@
 title: Hook 术语消歧与关联 Gate 限定收敛
 status: open
 priority: P1
-summary: 已完成创建方案独立审核并处理全部反馈。当前等待 Human 对 plan_version 1 的执行批准；未经批准不得开始清点外的修改、改写任何 Hook 或 Gate 表述。
-resume_from: 取得 Human 对 plan_version 1 的明确执行批准后，从 item-01 的术语定义提案和全量命中清点开始。
-waiting_on: 等待 Human 审议并批准当前目标、范围、4 项成功标准、3 个工作项、验证方式和重要风险后执行。
+summary: 完整关闭提案已形成：建议以 completed 关闭，且没有剩余责任、路由或 Spark 建议。
+resume_from: 等待 Human 对完整关闭提案作出关闭或退回决定。
 goal: 使 LDVH 规范、用户文档及当前可编辑的面向 Human 帮助、诊断和注释文本中的概念性 Hook 用语，能够无歧义地区分 Git Hook、环境 Hook 与 Hook Gate；在同一受影响文本单元中出现的 Gate 依其对象明确为 Human Gate、Git Gate 或 Hook Gate，且不改变既有运行行为或技术标识符。
 scope: "覆盖：\n- specs/01-规范模型基础规范.md 与 specs/attachments/01.Att.01-LDVH双语术语表.md 中承接 00 的术语定义和引用边界；\n- 全部 specs、README/用户文档，以及当前可编辑的面向 Human 帮助、诊断和注释文本；\n- 对范围内 Hook/Gate 命中逐项分类为 Git Hook、环境 Hook、Hook Gate、Human Gate、Git Gate、技术标识符、第三方专名、外部原文引用或待 Human 裁决；\n- 每个拟改文本单元（段落、标题、帮助字符串、诊断文字）均先展示修改前与修改后，经 Human 确认后才写入。\n\n排除：\n- 不改 Git Hook、环境 Hook、adapter、Git Gate 或 Hook Gate 的运行行为、事件链和实现；\n- 不更名代码技术标识符、第三方专名、外部 URL 或外部来源原文；\n- 不为术语收敛而改写历史 WorkCase、Spark、审核记录或既有结果；这些对象仅可被清点、分类并交还其自身责任；\n- 不纳入当前工作区无关的 Web 改动。"
-workcase_profile: control-contract-v1
 success_criterion_definitions:
 - criterion_id: criterion-01
   statement: 01、术语表与 00 已建立的 Git Hook、环境 Hook、Hook Gate、Human Gate、Git Gate 边界一致，不产生相互冲突或重复的定义。
@@ -16,82 +14,57 @@ success_criterion_definitions:
   statement: 每一项实际文本修改均已先向 Human 展示相应文本单元的修改前后并取得确认，且不改动本案排除的运行行为、技术标识符、外部原文或历史事实记录。
 - criterion_id: criterion-04
   statement: 完成范围内检索、受影响测试与独立结果审核；报告实际验证范围、无法由机械检查裁决的例外及未覆盖范围。
-phase: human_plan_confirming
-plan_version: 1
+phase: human_closure_confirming
+plan_version: 2
 work_items:
 - item_id: item-01
   goal: 形成 01 与术语表的术语定义提案，并建立范围内 Hook/Gate 命中的全量分类清单。
   expected_result: 得到可回指的术语基线、命中清单和每项分类/例外依据；待 Human 裁决项被明确标出，不修改文件。
   approach_summary: 只读检索与来源回读，区分概念文本、技术标识符、第三方专名、外部原文和历史事实记录；不以字符串命中本身裁决语义。
-  status: pending
+  status: completed
+  result_summary: 已形成范围内 Hook/Gate 命中的分类闭集：概念文本均已明确为 Git Hook、环境 Hook、Git Gate、Hook Gate 或 Human Gate；其余命中已分类为技术标识符、第三方专名、外部原文、历史事实记录或一般技术语境，并按排除边界保留。
 - item_id: item-02
   goal: 按 Human 确认的批次逐文本单元送审并收敛范围内术语表述。
   expected_result: 每个实际修改的段落、标题、帮助字符串或诊断文字均有 Human 确认的修改前后对照，且只修改已批准单元。
   depends_on:
   - item-01
   approach_summary: 每批先给出精确前后文本；收到确认后才使用受控编辑写入。遇到无法按既有分类判断的表述，暂停该单元并交还 Human 裁决。
-  status: pending
-- item_id: item-03
-  goal: 验证术语收敛结果并完成独立结果审核与交还。
-  expected_result: 形成分类闭集、检索与受影响测试结果、独立审核结论、例外和未覆盖范围说明。
-  depends_on:
-  - item-02
-  approach_summary: 执行范围内检索、相关文档/规范测试和 git diff --check；独立审核实际结果，不用零字符串命中替代语义分类或 Human 验收。
-  status: pending
-audit_summary:
-- audit_id: audit-01
-  subject_kind: pre_creation_plan
-  subject_version: 1
-  review_count: 1
-  summary: 独立创建审核结论为 changes_required。主控接受并落实全部五项边界修订，形成当前 plan_version 1；不需要再次独立审核。
-  findings:
-  - finding_id: finding-01
-    topic: 标题与 Gate 收敛承诺不一致
-    controller_disposition: corrected
-    resolution_summary: 标题调整为“Hook 术语消歧与关联 Gate 限定收敛”，目标明确限定受影响文本中的 Gate。
-    rereview_outcome: not_required
-    final_route: current_plan
-  - finding_id: finding-02
-    topic: 历史事实对象不应追溯改写
-    controller_disposition: corrected
-    resolution_summary: 范围明确排除历史 WorkCase、Spark、审核记录和既有结果；它们仅可清点和交还。
-    rereview_outcome: not_required
-    final_route: current_plan
-  - finding_id: finding-03
-    topic: 零裸用结论缺少可证明边界
-    controller_disposition: corrected
-    resolution_summary: 成功标准改为范围内全量命中逐项分类闭集，并要求例外记录依据。
-    rereview_outcome: not_required
-    final_route: current_plan
-  - finding_id: finding-04
-    topic: 送审单元范围不足
-    controller_disposition: corrected
-    resolution_summary: 送审单位扩展为段落、标题、帮助字符串和诊断文字等每个拟改文本单元。
-    rereview_outcome: not_required
-    final_route: current_plan
-  - finding_id: finding-05
-    topic: 工作项需要具体化
-    controller_disposition: corrected
-    resolution_summary: 工作项明确为术语与清点、按确认批次修改、验证和独立结果审核三个阶段。
-    rereview_outcome: not_required
-    final_route: current_plan
-creation_reviews:
-- reviewer: workcase_creation_review
-  reviewed_at: '2026-07-25T13:26:56.725706+08:00'
-  subject_version: 1
-  scope: WorkCase 准入与查重、单一关闭责任、目标/范围/成功标准、工作项拆分、术语边界、验证方式和主要风险；独立回读 workcase-0013 与 spark-0030。
-  conclusion: changes_required
-  feedback:
-  - 标题需与关联 Gate 限定收敛承诺一致。
-  - 必须明确历史 WorkCase/Spark、审核记录和既有结果不为术语整理追溯改写。
-  - 成功标准应以范围内全量命中逐项分类闭集表达，不以 grep 零命中替代语义判断。
-  - 逐段送审应覆盖每个拟改文本单元，包括标题、帮助字符串和诊断文字。
-  - 工作项应具体分为术语与清点、按 Human 确认批次修改、验证和独立结果审核。
-  review_basis:
-    projection_key: plan_current
-    subject_fingerprint: 8b645b193550854f947464064cde4308c1e7d8a5b9f8de3b27ef4da3be6bd404
-  controller_resolution: 全部接受并已写入当前计划：标题补足关联 Gate 限定；范围排除历史事实记录及运行实现；成功标准改为分类闭集；送审单位覆盖全部拟改文本单元；三个工作项按清点、送审修改、验证审核具体化。审核还确认 workcase-0013 与 spark-0030 均不能无损承接本责任，因此新建对象成立。修订未改变单一目标或新增责任，不需要再次独立审核。
+  status: completed
+  result_summary: 已按 Human 对每批精确前后文本的确认，收敛已批准的规范、用户文档、帮助/诊断和注释文本；未改运行行为、事件链、技术标识符、外部原文、历史事实记录或无关 Web 改动。
+execution_approval:
+  subject_version: 2
+  approved_at: '2026-07-30T10:00:37+08:00'
+  summary: Human 已明确指示“0015已经修改，可以继续推进”，批准当前 plan_version=2：仅保留已完成的 item-01 与 item-02；结果验证、自检、独立复核和关闭继续由 WorkCase phase 链承接。该批准不构成结果背书或关闭决定。
+  source_refs:
+  - 'human_instruction: 当前对话 Human 消息 0015已经修改，可以继续推进 (observed_at 2026-07-30T10:00:00+08:00)'
+result_version: 2
+success_criterion_results:
+- criterion_id: criterion-01
+  outcome: satisfied
+  summary: 01、术语表与 00 所定义的 Git Hook、环境 Hook、Git Gate、Hook Gate 与 Human Gate 边界在本次范围内一致；本次未修改 00 或建立冲突定义。
+- criterion_id: criterion-02
+  outcome: satisfied
+  summary: 范围扫描完成；概念性命中均已限定，剩余命中已分类为技术标识符、第三方专名、外部原文、历史事实记录或一般技术语境，没有未分类且概念性未限定项。
+- criterion_id: criterion-03
+  outcome: satisfied
+  summary: 每个实际文本修改均先展示精确前后文本并获得 Human 确认；本次未改 Hook/Gate/adapter 运行行为、技术标识符、外部原文、历史事实记录或无关 Web 改动。
+- criterion_id: criterion-04
+  outcome: satisfied
+  summary: 范围扫描、受影响测试与差异格式检查已完成；对 result_version=1 的实际独立审核已形成并由 Controller 处置。扫描结论只覆盖 README.md、docs、code/ldvh、code/plugins、specs、web/docs；未执行的全仓库测试和排除的 web/src 不在本项结论范围内。
+result_summary: 本次在经 Human 确认的文本单元内完成 Hook/Gate 术语消歧与限定收敛：概念文本已明确对应 Git Hook、环境 Hook、Git Gate、Hook Gate 或 Human Gate；例外按技术标识符、第三方专名、外部原文、历史事实记录或一般技术语境保留。未改变运行行为或排除范围内内容。
+controller_check_summary: v1 独立 Reviewer 的两项反馈均已处置：独立审核在 v1 形成后才发生，故通过 ResultΔ 形成 v2 将其据实纳入 criterion-04；术语扫描范围严格限定为 README.md、docs、code/ldvh、code/plugins、specs、web/docs，排除的 web/src 未被纳入结论。v1 review 已按版本冻结规则清除，v2 需 fresh independent review。
+validation_summary: 当前执行选定 pytest 套件：doctor、Git Gate/commit precheck、WorkCase 写入、WorkCase 应用、文档与规范仓库测试，均成功完成；git diff --check 通过。Hook/Gate 扫描根目录严格为 README.md、docs、code/ldvh、code/plugins、specs、web/docs，未报告新的概念性未限定项。测试与扫描不覆盖未执行的全仓库测试或当前 scope 排除的 web/src，且不替代 v2 的独立审核。
+result_reviews:
+- reviewer: /root/workcase0015_result_review
+  reviewed_at: '2026-07-30T10:10:06+08:00'
+  subject_version: 2
+  scope: 对 workcase-0015 result_version=2 的完整结果投影、当前相关差异、术语扫描根目录和验证边界执行 fresh 只读审核；未修改文件、事实或状态，未将审核视为关闭批准。
+  conclusion: pass
+closure_proposal:
+  proposed_outcome: completed
+  proposed_disposition_summary: 在声明范围内，全部成功标准均满足，且没有需要转交、接受停止或另建 Spark 的剩余责任。
+waiting_on: Human 对 workcase-0015 完整关闭提案的最终关闭决定
 object_id: workcase-0015
 fact_type_key: workcase
 created_at: '2026-07-25T13:26:56.828180+08:00'
-updated_at: '2026-07-25T13:26:56.828180+08:00'
+updated_at: '2026-07-30T10:11:33.211067+08:00'

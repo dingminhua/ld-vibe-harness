@@ -103,11 +103,13 @@ Human 明确选择“由项目承担这项工作并建立 WorkCase”是进入�
 
 一个 WorkCase 只承担一个关闭责任。共同服务同一关闭判断、具有明确局部目标和预期结果的内容形成 work item；需要独立准入、授权、长期阻塞、责任转交或关闭判断的目标形成另一个 WorkCase。
 
+work item 只承载获批计划内能够实施并形成局部结果的工作，不承载 WorkCase 自身的生命周期关口。`controller_checking`、`independent_reviewing`、`closure_preparing`、`human_closure_confirming` 及其对应的 Controller 自检、独立结果复核、关闭提案和 Human Gate，均由 §6 的 phase 链在全部 item terminal 后承接，不得被写成 item 的 goal、expected result、依赖或“最后一步”。执行中形成测试、扫描或其它验证材料可以是 item 局部交付；使用这些材料形成 canonical result projection、完成独立结果复核或取得 Human 关闭决定不是 item。典型非法反例是新增 goal 为“全部实现完成后安排独立结果复核”的 item：该 item 会等待结果复核，而结果复核又要求全部 item terminal，形成循环。
+
 尚无可执行目标、scope 或成功标准的内容属于 Spark 候选；当前行动即可完成且没有稳定回读价值的内容留在当前行动；长期规则进入规范；可复用方法进入行动模板。不得把命令、review checklist、纯结果报告或周期运行入口伪装成 WorkCase。
 
 ### 4.4 受控创建
 
-受控创建必须一次形成完整目标、scope、成功标准定义、`plan_version=1`、非空 work items、至少一项实际独立方案复核、priority、`status=open`、`phase=human_plan_confirming` 和 Human waiting，并完成 Schema 校验、写入与回读。创建时全部 work item 必须为 `pending`。创建前 Reviewer feedback 必须由 Controller 处置；新对象不得带 execution approval 或结果字段。
+受控创建必须一次形成完整目标、scope、成功标准定义、`plan_version=1`、非空 work items、至少一项实际独立方案复核、priority、`status=open`、`phase=human_plan_confirming` 和 Human waiting，并完成 Schema 校验、写入与回读。创建时全部 work item 必须为 `pending`。创建前的 Controller 与独立 Reviewer 必须逐项检查 work item 是否错误吸收 §4.3 的生命周期关口或 Human Gate；命中时当前候选计划不得提交 Human 批准或受控创建，必须先返修计划。创建前 Reviewer feedback 必须由 Controller 处置；新对象不得带 execution approval 或结果字段。
 
 ## 5. WorkCase 类型定义
 
@@ -186,7 +188,7 @@ WorkCase 只有本文与 05.Att.01 共同定义的当前字段和结构。任何
 
 | structure_key | meaning | not_meaning | constraints |
 |---|---|---|---|
-| `workcase-item` | 共同服务同一 WorkCase 关闭判断、具有稳定局部身份、目标、预期结果与当前状态的工作单元 | 不表示命令步骤、临时 todo、执行百分比、工具调用、AI 推理或独立 WorkCase | 直接成员闭集由本节字段定义；状态条件字段按 §6.4；依赖只指向同一对象内 item |
+| `workcase-item` | 共同服务同一 WorkCase 关闭判断、具有稳定局部身份、目标、预期结果与当前状态的工作单元 | 不表示命令步骤、临时 todo、执行百分比、工具调用、AI 推理、独立 WorkCase、WorkCase 生命周期关口或 Human Gate | 直接成员闭集由本节字段定义；状态条件字段按 §6.4；依赖只指向同一对象内 item；§4.3 的 phase 关口只能由 WorkCase 生命周期承接 |
 | `workcase-review` | 独立 Reviewer 对当前计划版本或结果版本提供的实际第二视角，以及 Controller 对反馈的当前处置 | 不表示 Reviewer 拥有流程决定权，也不保存旧版本、审核次数、主体指纹或证明材料 | container 决定审核对象；creation review 绑定 `plan_version`，result review 绑定当前 `result_version`；Reviewer 字段与 Controller resolution 分属不同所有者 |
 | `workcase-human-approval` | Human 对一个准确 `plan_version` 作出的当前执行批准 | 不表示关闭批准、技术验证、后续版本获批、风险自动消失或字段存在即可继续执行 | 只供 `execution_approval` 使用；批准范围、时间和实际来源按成员字段记录；关闭决定不持久化 approval 收据 |
 | `workcase-success-criterion` | 一项具有稳定局部身份、可独立检查的成功标准定义 | 不表示执行步骤、结果、验证方法或数组序号 | `criterion_id` 在对象内唯一稳定；statement 与 goal、scope 共同构成验收基线 |
@@ -222,7 +224,7 @@ WorkCase 只有本文与 05.Att.01 共同定义的当前字段和结构。任何
 | `workcase-spark-suggestions` | `spark_suggestions` | array | 关闭时保留、供 Human 以后判断是否独立建立 Spark 的建议闭集 | 不表示当前 WC 已创建 Spark、未来 ID 或责任已转交 | 只在 closed 出现，必须与关闭前 proposal 的同名数组解析值精确相同；按 `suggestion_id` 唯一；不含任何未来对象引用 |
 | `workcase-closure-outcome` | `closure_outcome` | string | WorkCase 停止时基于实际结果形成的互斥分类 | 不表示 status、停止理由全文、批准或下游完成 | 闭集 `completed`、`partial`、`not-achieved`、`cancelled`；必须满足 §6.7 的结果一致性，不得由 Human 直接改写技术事实 |
 | `workcase-item-id` | `item_id` | string | work item 在本对象内稳定唯一的局部身份 | 不表示数组位置、执行顺序或对象身份 | 匹配 `item-[a-z0-9][a-z0-9-]*`；创建后稳定 |
-| `workcase-item-goal` | `goal` | string | 该 item 要形成的局部目标状态 | 不表示命令步骤、当前进展或总体目标 | 必填非空；必须共同服务 WorkCase 关闭判断 |
+| `workcase-item-goal` | `goal` | string | 该 item 要形成的局部目标状态 | 不表示命令步骤、当前进展、总体目标、Controller 自检、独立结果复核、关闭准备或 Human Gate | 必填非空；必须共同服务 WorkCase 关闭判断，且不得吸收 §4.3 的生命周期关口 |
 | `workcase-item-expected-result` | `expected_result` | string | 判断该 item 局部交付是否形成的预期结果 | 不表示成功标准全集、验证命令或实际结果 | 必填非空且可据实判断 |
 | `workcase-item-status` | `status` | string | item 当前状态 | 不表示完成百分比、phase 或历史状态 | 闭集 `pending`、`in_progress`、`blocked`、`completed`、`cancelled`；字段组合见 §6.4 |
 | `workcase-item-depends-on` | `depends_on` | array | 同一 WorkCase 内该 item 的直接前置 item 身份 | 不表示跨 WorkCase 关系、数组顺序或全部传递依赖 | 出现时非空、成员唯一；禁止缺失目标、自指和有向环 |
@@ -565,6 +567,10 @@ draft 的形成顺序固定为两个各自独立合法的操作：先按 31 创�
 
 ## 7. AI 写回与受控操作
 
+### 行动入口
+
+新建 WorkCase 使用 `fact-object-controlled-creation`（31）；活动期更新、关闭与 closed 更正使用 `fact-object-lifecycle-change`（32）并路由到本节三个专属操作。当前 `plan_version` 已获 Human 执行批准后的实际计划推进，可使用 `workcase-approved-plan-execution`（34）组织检查点与恢复；该模板不复制本文状态机或成为调度器。
+
 ### 7.1 字段所有权
 
 - Reviewer 只形成 `reviewer`、`reviewed_at`、`subject_version`、`scope`、`conclusion` 和 `feedback`；
@@ -781,10 +787,10 @@ status=blocked 仍保留其 phase 所属分组，且在具体 Card 正文契约�
 | 验证对象 | 验证时机 | 成立条件 | 可接受依据 | 验证入口 | 可证明范围 | 未满足时的处理 |
 |---|---|---|---|---|---|---|
 | 类型定义与登记 | 新建或实质修改本文、05.Att.01 或派生 Schema 时 | 结构、字段、绑定、H2 引用与统一登记唯一一致，无悬空、遗漏或第二定义 | 00、01、05、05.Att.01 与本文当前 Working Tree | 规范仓库检查、字段登记检查和当前来源回读 | 当前来源的机械结构一致性；不证明自然语言设计正确 | 本文或附件不得进入当前规则源；先修正唯一来源 |
-| 准入与创建 | 建议建立、形成正式计划和受控创建前 | Human 工作意图、单一责任、scope、criteria、查重、净价值、完整计划与实际独立方案复核成立 | Human 当前指令、当前来源、相邻事实回读、候选计划与 Reviewer 实际反馈 | AI 语义审核、事实召回、受控创建校验与创建后回读 | 当次候选的已读范围和创建结果；不证明未来执行成功 | 不创建；更新现有对象、留在当前行动、拆分或转 Spark |
+| 准入与创建 | 建议建立、形成正式计划和受控创建前 | Human 工作意图、单一责任、scope、criteria、查重、净价值、完整计划与实际独立方案复核成立；Controller 与 Reviewer 已逐项确认没有 work item 吸收生命周期关口或 Human Gate | Human 当前指令、当前来源、相邻事实回读、候选计划与 Reviewer 实际反馈 | AI 语义审核、逐 item 生命周期关口检查、事实召回、受控创建校验与创建后回读 | 当次候选的已读范围、语义审核和创建结果；Code 不判断自然语言是否属于生命周期关口，也不证明未来执行成功 | 不创建；先返修误建模 item，或更新现有对象、留在当前行动、拆分或转 Spark |
 | 活动形状与转换 | 每次读取、写回、phase/status 改变、计划返修或授权变化时 | status/phase/presence、item 组合、plan version、review/approval 绑定和允许转换成立 | 当前对象 before/after、Human 决定、Reviewer feedback 与本文 | Schema、CAS、projection 比较、转换校验和 after 回读 | 可机械检查的形状、版本与转换；不证明当前摘要真实 | 不消费为有效 WorkCase或拒绝转换；修正最小相关范围 |
 | 结果与复核 | 形成结果、发起独立复核、处置反馈或改变 projection 时 | projection 完整、criterion 全覆盖、版本冻结、实际独立 review 与 Controller resolution 成立 | item 终值、当前结果与 validation、Reviewer 实际输出 | AI 结果审核、规范化 projection 比较、CAS、review/版本检查 | 当次结果包结构、已读观察和 review 绑定；不证明技术结论天然正确 | 不进入关闭准备；补事实、升版、清旧 review 或重新复核 |
-| 关闭提案与终态 | 形成 proposal、进入 Human 关闭 Gate、执行关闭或终态更正时 | proposal 完整、outcome 一致、target 重读、Human 决定、原子 close 与 closed 白名单成立 | 完整 source before、Human 当次决定、目标当前快照与 fingerprints | AI 责任处置审核、target 回读、CAS、专属关闭和 closed after 回读 | 当次停止边界、机械原子性和实际写入结果；不证明 target 已接受或技术事实无误 | source 保持活动期，不声明关闭；重建提案或重新取得 Human 决定 |
+| 关闭提案与终态 | 形成 proposal、进入 Human Gate（关闭决定）、执行关闭或终态更正时 | proposal 完整、outcome 一致、target 重读、Human 决定、原子 close 与 closed 白名单成立 | 完整 source before、Human 当次决定、目标当前快照与 fingerprints | AI 责任处置审核、target 回读、CAS、专属关闭和 closed after 回读 | 当次停止边界、机械原子性和实际写入结果；不证明 target 已接受或技术事实无误 | source 保持活动期，不声明关闭；重建提案或重新取得 Human 决定 |
 | 关系 | 新增、移除、读取依赖、target 变更或任一对象终态前 | source/target 状态、同项目、唯一性、无自指、强边环、related-to 重叠、入向约束与责任边界成立 | source/target 当前对象、项目对象全集和本文关系语义 | 引用回读、强边图检查、AI 责任边界审核 | 稳定引用、状态与已检查图范围；不证明语义责任充分或目标接受 | 移除或修正关系；无法完成检查时交还 unavailable，暂停受影响关闭 |
 | 现场保留与后续建议 | WC 执行中出现经验、剩余责任或范围外机会时 | 除完整 draft Pitfall 外不创建新事实；draft 与写边分步回读；受限责任有明确原因、影响和恢复条件；范围外机会不伪造受限 | 当前工作事实、完整 Pitfall 候选、结果/验证与关闭 proposal | AI 语义审核、31 受控创建与回读、关系和 suggestion 机械检查 | 当次保存和结构映射；不证明未来 Spark 会建立 | 继续完成范围内责任，或据实阻塞/形成建议；不创建未获独立授权的其它对象 |
 | 写回与消费 | 每个稳定检查点、上下文接续和信息交付时 | 当前事实源、CAS、原子写入、回读、coverage 与未读边界明确 | Working Tree、实际写入结果、读取结果与稳定引用 | 05 共用写回/读取入口和对象回读 | 已写入、已回读和已交付范围；不证明未读信息不存在 | 只报告实际结果，不声称推进或上下文完整；保留最近有效检查点 |
@@ -814,7 +820,7 @@ Code 不能判断：
 
 1. open/blocked 与七个 active phase 的全部合法/非法 presence 组合、status 转换闭集、`open → blocked` / `blocked → open` 可附带的唯一 item 边及夹带其它推进的拒绝、before/after 均 blocked 时不得推进的边界、全部列明及未列明 phase 边，以及 closed 必填/条件/禁止集；
 2. 受控创建、Human 计划批准、前置执行终止、`PreExecutionStopShape` 的唯一例外、approval 撤回四分流、Controller 发起返修和同计划重新授权；
-3. 五种 item 状态的列明边与未列明边、条件字段、依赖只能由 `completed` 满足、缺失/自指/成环、Controller 返工重开、terminal 分类更正、`executing + AllTerminal` 拒绝、无序 item 与模板 key 成员类型/唯一性；
+3. 五种 item 状态的列明边与未列明边、条件字段、依赖只能由 `completed` 满足、缺失/自指/成环、Controller 返工重开、terminal 分类更正、`executing + AllTerminal` 拒绝、无序 item 与模板 key 成员类型/唯一性；并以“全部实现完成后安排独立结果复核”作为非法 item 反例，检查当前规则和获批计划执行模板持续把该责任留在 phase 链，同时不得把该契约测试表述为 Code 已能理解任意自然语言计划；
 4. `PlanΔ` 的规范化比较、精确 +1、相同计划不升版、新 item 只以 pending 建立、既有执行事实不得重置/静默删除，以及全部四种结果冻结形状的返修退出；
 5. criterion results 数组全覆盖或整体缺失、`controller_checking` 稳定逐成员形成、数组禁止半覆盖、进入独立复核前 projection 完整、首条 review 冻结、`ResultΔ` 确定性升版、同版本不重置和返回 executing；
 6. Reviewer/Controller 字段所有权、同一数组 review 复合身份重复拒绝、新实际复核使用新 `reviewed_at`、同事件事实更正保持复合身份且与生命周期转换不可混用、返修期 review 冻结不可通过删除绕过版本失效；
@@ -837,7 +843,7 @@ Human 对“是否由项目承担并建立 WorkCase”的决定发生在对象�
 
 WorkCase 创建后，必须向 Human 展示当前目标、scope、成功标准、work items、重要依赖、具有判断价值的方法边界、验证安排、重要风险和 creation review 的实质反馈处置。Human 明确批准后，才能写 execution approval 并进入 executing。
 
-批准只绑定当前 `plan_version`，不自动授权其它规则保留给 Human 的高影响行动，也不使技术验证或来源适用自动成立。它明确不授权当前 WC 执行者创建 Spark、ADR、Study 或新 WorkCase；只有 §6.8 与 23 定义的完整 draft Pitfall 现场保留例外已包含在该 execution approval 中。计划 projection 改变必须升版、fresh 独立复核并重新进入本 Gate；同一未变化计划在授权撤回后恢复，按 §6.5 写新的同版本 approval，不制造计划版本。
+批准只绑定当前 `plan_version`，不自动授权其它规则保留给 Human 的高影响行动，也不使技术验证或来源适用自动成立。它明确不授权当前 WC 执行者创建 Spark、ADR、Study 或新 WorkCase；只有 §6.8 与 23 定义的完整 draft Pitfall 现场保留例外已包含在该 execution approval 中。计划 projection 改变必须升版、fresh 独立复核并重新进入本 Human Gate；同一未变化计划在授权撤回后恢复，按 §6.5 写新的同版本 approval，不制造计划版本。
 
 ### 11.3 最终关闭决定
 
@@ -887,6 +893,7 @@ Human 决定、review 和 Code 校验彼此不能替代。
 - 通过删除 approval、手改 phase 或假升版掩盖撤回或计划变化；
 - 同一计划重新授权时重置 plan/result version；
 - item 写成命令、日志、推理、百分比或过期快照；
+- item 吸收 Controller 自检、独立结果复核、关闭准备、Human Gate 或其它 WorkCase 生命周期关口，造成关口等待 item terminal、item 又等待关口的循环；
 - in-progress 缺 current/resume，blocked 缺具体事实和解除条件；
 - 借当前 execution approval 创建 Spark、ADR、Study 或新 WorkCase，或以不完整/active 初态 Pitfall 冒充现场保留；
 - 当前 scope 内责任没有实际受限原因却停止继续完成，或以空泛“后续建 Spark”代替结果、影响和恢复条件；

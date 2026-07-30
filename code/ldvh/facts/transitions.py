@@ -833,8 +833,8 @@ def _validate_phase_edge(
     if edge not in _WORKCASE_PHASE_EDGES:
         return [_issue("WorkCase phase 转换不在当前允许边中", "phase")]
 
-    # Only these source phases give waiting_on one unambiguous gate owner.  Exact
-    # equality rejects a definitely stale gate snapshot.  A changed string is only
+    # Only these source phases give waiting_on one unambiguous Human Gate owner.  Exact
+    # equality rejects a definitely stale Human Gate snapshot.  A changed string is only
     # structurally admissible; it does not prove the new waiting is semantically true.
     if (
         edge in _GATE_WAITING_EXIT_EDGES
