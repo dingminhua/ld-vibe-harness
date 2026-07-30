@@ -1,0 +1,50 @@
+title: 建立 WorkCase 获批计划执行编排与 Web 进展同步
+status: closed
+goal: 建立来源定义的 WorkCase 获批计划执行行动模板，并完成既有 20–24 行动入口与 Helper 模板交付。Web 侧只在既有路由、query、语言、项目切换读取或 Human 使用浏览器重新加载时读取当前权威 API 快照；不得提供应用内刷新、定时/可见性自动读取、Helper 写入通知或乐观迁移。
+scope: "覆盖：\n1. 保留已形成的 workcase-approved-plan-execution 模板、20–24 行动入口引用和 Helper 模板候选/内容交付；不复制 21、31、32 的类型语义或把模板做成调度器。\n2. Web 事实呈现仅消费权威 API 快照并由 status/phase 派生 progress_group，不写回 YAML、不做乐观迁移。\n3. 移除并持续禁止所有应用内刷新入口、定时刷新、visibility 自动补读与 Helper 写入通知；允许既有路由进入、筛选 query 变化、语言切换、项目切换和 Human 使用浏览器重新加载触发的正常读取。\n4. 覆盖对象列表、详情、认知中心、阅读面板、工作区变更、项目文件和项目切换器；补足 ProjectSwitcher 的无刷新入口自动契约，并将 ObjectList 文档的“随后刷新列表”改为按 query 重新读取列表。\n5. 完成相关类型检查、Web 契约测试、文档/i18n 同步和浏览器走查；不把点击或浏览器重载表达为 Helper 写入成功。\n\n排除：新增事实字段、生命周期状态、phase 或第五进展分组；恢复 Dashboard；修复 workcase-0017 / workcase-0015；执行其它 WorkCase；Git commit、push 或 PR。\n\n约束：保留 dirty Working Tree 无关改动；模板与 Helper 已形成的历史事实不得为整洁而删除；旧 plan_version=1 的自动刷新实施和验证只作为历史事实保留，不作为当前验收结论。"
+success_criterion_definitions:
+- criterion_id: criterion-execution-template
+  statement: 当前规则源存在唯一 WorkCase 获批计划执行模板；准确区分跨检查点推进时先写回 in_progress/current_summary/resume_from 与同一稳定检查点 pending→completed 窄例外，不复制 21，也不成为调度器。
+- criterion_id: criterion-template-composition
+  statement: 31/32 继续是五类事实对象通用创建与生命周期变更的唯一入口；20–24 只建立引用，新模板只承接 WorkCase 获批计划执行，未形成第二规则源。
+- criterion_id: criterion-helper-delivery
+  statement: Helper 可从当前声明来源交付新模板候选与完整内容并保留来源和范围边界；测试覆盖声明、候选、内容和 20–24 引用一致性。
+- criterion_id: criterion-web-progress-sync
+  statement: 对象列表、详情、认知中心与阅读面板只在既有正常读取时机或浏览器重新加载后消费同一当前 API 快照并派生四个进展分组；不存在应用内刷新控件、定时/可见性自动读取、Helper 写入通知或乐观迁移；筛选迁移、内部 phase 与 blocked 呈现保持来源语义。
+- criterion_id: criterion-verification
+  statement: 自动化与浏览器验证覆盖获批计划执行模板、Helper 交付、无应用内刷新边界、正常读取时机与四组投影；相关回归通过，历史自动刷新结论与未验证范围如实区分。
+- criterion_id: criterion-docs-and-boundaries
+  statement: 规则、Web 文档、i18n、实现与测试同步；ObjectList、ProjectSwitcher 与全部已覆盖页面不遗留应用内刷新入口；未恢复 Dashboard、未改事实闭集或增加第五分组，并保留 dirty Working Tree 无关改动。
+success_criterion_results:
+- criterion_id: criterion-docs-and-boundaries
+  outcome: satisfied
+  summary: ObjectList 交互文档已将“随后刷新列表”更正为按 query 重新读取列表；ProjectSwitcher 自动契约已覆盖无刷新入口。当前 v2 未恢复 Dashboard、未增事实字段、状态、phase 或第五进展分组，且未进行 Git commit、push 或 PR。
+- criterion_id: criterion-execution-template
+  outcome: satisfied
+  summary: 当前规则源中既有唯一 WorkCase 获批计划执行模板继续有效；其跨检查点与同一稳定检查点的推进边界保持为已形成事实，未新增调度器或复制 21 的类型语义。
+- criterion_id: criterion-helper-delivery
+  outcome: satisfied
+  summary: 既有 Helper 模板候选和完整内容交付仍由当前规则源支撑，相关历史交付与回归事实保留，v2 未改写或移除该链路。
+- criterion_id: criterion-template-composition
+  outcome: satisfied
+  summary: 31/32 的通用创建与生命周期入口、20–24 的引用边界和新模板的 WorkCase 专属职责均保持既有组合关系，v2 未建立第二规则源。
+- criterion_id: criterion-verification
+  outcome: satisfied
+  summary: 在 web/ 目录完成 TypeScript 检查及 130 项 Web API 契约测试；浏览器走查确认 WorkCase、项目切换器、工作区变更和项目文件页面无应用内刷新控件。历史 v1 自动刷新观察仅作为历史事实，未用于 v2 验收。
+- criterion_id: criterion-web-progress-sync
+  outcome: satisfied
+  summary: 对象列表、详情、认知中心、阅读面板、工作区变更、项目文件和项目切换器均无应用内刷新、定时/可见性自动读取、Helper 写入通知或乐观迁移；正常路由、query、语言、项目切换及浏览器重新加载读取保留。
+result_summary: WorkCase-0018 v2 已完成无应用内刷新边界：移除了事实呈现和工作区页面的刷新控件及相关自动读取路径，保留正常路由、筛选、语言、项目切换和浏览器重新加载读取；对象列表文档与项目切换器契约同步。既有模板与 Helper 交付事实保留，v1 自动刷新实施/验证仅作为历史记录，不构成 v2 当前结论。
+validation_summary: 实际验证覆盖 web/ 的 npm run check 和 npm run test:web:api，后者 130 项全部通过；浏览器在本地应用中确认 workcase-0018 为推进中，项目切换器展开后仅显示项目选项，/changes 与 /project-files 均无“刷新”控件。未验证远端部署、生产浏览器矩阵或 Git 提交/推送；这些均不在批准 scope 内。
+closure_outcome: completed
+disposition_summary: plan_version=2 批准范围内的六项成功标准均已满足：WorkCase 获批计划执行模板与 Helper 既有交付保持，所有覆盖页面不再提供应用内刷新或自动读取，正常读取时机保留，ObjectList 文档与 ProjectSwitcher 契约同步，类型检查、130 项契约测试、浏览器走查和独立复核均已完成。原 scope 内没有需要路由、建立 Spark 建议或接受停止的剩余责任；修改仍在当前 Working Tree，未 commit、push 或创建 PR。
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0038
+object_id: workcase-0018
+fact_type_key: workcase
+created_at: '2026-07-29T22:46:43.439626+08:00'
+updated_at: '2026-07-30T01:27:46.469408+08:00'
