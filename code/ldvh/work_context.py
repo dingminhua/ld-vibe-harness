@@ -1,4 +1,4 @@
-"""Source-defined work-context delivery core for environment thin adapters."""
+"""Source-defined work-context rule-orientation delivery core (09 §5.4 preferred entry)."""
 
 from __future__ import annotations
 
