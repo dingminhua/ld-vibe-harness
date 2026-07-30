@@ -6,8 +6,8 @@ symptoms: "1. LDVH 核心已通过 pip install -e 安装，但 AI 会话启动�
 trigger_conditions: "1. 目标环境是 Trae CN（非 Trae Solo），通过本地 filesystem 部署插件\n2. LDVH 核心已通过 .venv/bin/pip install -e 安装\n3. 尝试复用 code/plugins/ldvh/hooks/hooks.json（Codex 格式）失败\n4. 目标环境存在 ~/.trae-cn/hooks.json 机制，但需要正确的 wrapper 脚本路径和 JSON 格式\n5. 插件数据目录和 wrapper 脚本默认放在 /tmp/ 下，重启后丢失"
 root_cause: "失败机制是把不同环境的接入方式混为一谈：\n\n1. Codex 使用 hooks.json 格式为 {events:{...}}，而 Trae CN 的 hooks.json 格式为 {hooks:{SessionStart:[{...}]}}\n2. Codex adapter 脚本 (codex_context.py) 需要适配器接收 stdin JSON，但 wrapper 脚本的 PATH 和环境变量需要正确设置\n3. 插件数据（ldvh.json 配置）放在 /tmp/ 下会在系统重启后丢失，导致 wrapper 无法找到核心入口路径\n4. hooks.json 引用 /tmp/ldvh_hook_wrapper.sh 不是持久化路径\n5. 只配置 SessionStart 而忽略 SubagentStart，子代理启动时不会收到规则引导\n\n根本原因是在设计接入方案时没有区分：静态文件存在、Hook 注册、手动可执行性和真实事件触发四个层级。"
 resolution: "1. 创建持久化插件部署目录：~/.trae-cn/plugins/ldvh/1.0.0/\n2. 包含完整结构：.trae-plugin/plugin.json（manifest）、bin/ldvh_hook.sh（wrapper 脚本）、data/ldvh.json（配置）、.success（安装标记）\n3. wrapper 脚本使用绝对路径引用 adapter（codex_context.py）和配置数据，不依赖临时目录\n4. hooks.json 同时配置 SessionStart 和 SubagentStart 两个事件\n5. 注册插件到 installed-plugins.json 和 plugin-config.json，确保 UI 可见\n6. 验证方法：模拟 Hook 事件 -> 检查核心是否返回规则引导 -> 检查 JSON 响应格式\n\n该方案已在 2026-07-26 实施并验证通过。"
-avoidance: "后续在 Trae CN 或其他 AI 环境中接入 LDVH 时：\n\n1. 先确认目标环境的插件机制（Trae CN = hooks.json，Codex = hooks.json 不同格式，其他环境各有差异）\n2. 不要复用其他环境的插件配置格式，必须查阅目标环境的实际 hooks/plugins 文档\n3. 插件数据必须放在持久化路径（不要用 /tmp/）\n4. 必须同时考虑 SessionStart 和 SubagentStart 两个生命周期事件\n5. 验证时区分四个层级：静态文件存在 -> Hook 注册 -> 手动可执行 -> 真实事件触发\n6. 首次接入时按 33 行动模板完成逐事件验证矩阵\n7. 可参考本仓库 code/plugins/ldvh/ 的 Codex 参考实现，但必须适配目标环境的格式"
+avoidance: "后续在 Trae CN 或其他 AI 环境中接入 LDVH 时：\n\n1. 先确认目标环境的插件机制（Trae CN = hooks.json，Codex = hooks.json 不同格式，其他环境各有差异）\n2. 不要复用其他环境的插件配置格式，必须查阅目标环境的实际 hooks/plugins 文档\n3. 插件数据必须放在持久化路径（不要用 /tmp/）\n4. 必须同时考虑 SessionStart 和 SubagentStart 两个生命周期事件\n5. 验证时区分四个层级：静态文件存在 -> Hook 注册 -> 手动可执行 -> 真实事件触发\n6. 首次接入时按 33 行动模板完成逐事件验证矩阵"
 object_id: pitfall-0003
 fact_type_key: pitfall
 created_at: '2026-07-26T08:49:58.522575+08:00'
-updated_at: '2026-07-26T08:49:58.522575+08:00'
+updated_at: '2026-07-31T00:49:05+08:00'

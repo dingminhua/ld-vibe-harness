@@ -55,7 +55,7 @@ class sdist(_sdist):
 
     def make_distribution(self) -> None:
         self.filelist.files = [
-            path for path in self.filelist.files if not path.startswith(("code/plugins/", "code/scripts/"))
+            path for path in self.filelist.files if not path.startswith("code/scripts/")
         ]
         for item in self._snapshot_plan().files:
             self.filelist.append(item.path)
