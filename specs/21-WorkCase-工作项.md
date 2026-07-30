@@ -68,7 +68,7 @@ closed WorkCase 是终态责任与结果记录，不是质量链合规档案。�
 
 ### 3.2 本文不负责
 
-本文不复制 05 已定义的通用请求包装、锁、错误档位、CAS、原子文件写入、回读、更正、删除和类型退出机制；只规定这些机制用于 WorkCase 时必须额外满足的条件。本文也不定义具体 CLI、Helper 命令、Web 组件、环境 Hook、Agent API 或模板实现。
+本文不复制 05 已定义的通用请求包装、锁、错误档位、CAS、原子文件写入、回读、更正、删除和类型退出机制；只规定这些机制用于 WorkCase 时必须额外满足的条件。本文也不定义具体 CLI、Helper 命令、Web 组件、Agent API 或模板实现。
 
 角色边界如下：
 
@@ -699,7 +699,7 @@ WorkCase 的防幻觉机制是相互约束、独立第二视角和明确未知�
 5. route_existing target 必须实际回读并在关闭时再次精确比较 fingerprint；fingerprint 只防陈旧，不判断语义责任是否充分；
 6. 路径、命令成功、日志、测试进程退出码、review、approval 或 Human Gate 都不能单独代替自然语言结果与验证边界；
 7. 写入或回读失败时只报告实际结果，不能声称状态已经推进；
-8. 环境 Hook、adapter、Helper、Web 与 Code 只传递、读取或机械校验来源定义的内容，不生成 WorkCase 自然语言事实。
+8. Helper、Web 与 Code 只传递、读取或机械校验来源定义的内容，不生成 WorkCase 自然语言事实。
 
 ## 8. 来源、外部资料与关系
 
