@@ -16,8 +16,8 @@ def test_current_registry_is_complete_and_resolves_all_current_types(current_spe
     inspection = _inspection(current_specs_repository)
 
     assert inspection.complete is True
-    assert len(inspection.structures) == 15
-    assert len(inspection.registrations) == 108
+    assert len(inspection.structures) == 17
+    assert len(inspection.registrations) == 124
     assert {item.fact_type_key for item in inspection.fact_types} == {
         "spark",
         "workcase",
@@ -72,6 +72,8 @@ def test_workcase_current_structures_have_admission_records(
 
     assert workcase_structures == {
         "workcase-item",
+        "workcase-execution-authorization",
+        "workcase-authorized-action",
         "workcase-review",
         "workcase-human-approval",
         "workcase-success-criterion",
@@ -89,6 +91,8 @@ def test_workcase_current_structures_have_admission_records(
         "workcase-proposed-route-target",
         "workcase-residual-responsibility",
         "workcase-spark-suggestion",
+        "workcase-execution-authorization",
+        "workcase-authorized-action",
         "workcase-review",
         "workcase-human-approval",
     ):
@@ -105,10 +109,14 @@ def test_workcase_current_optional_members_are_conditionally_projected(
 
     assert registrations["workcase-item-approach-summary"].base_presence == "conditional"
     assert registrations["workcase-review-feedback"].base_presence == "conditional"
+    assert registrations["workcase-authorization-human-prerequisites"].base_presence == "conditional"
+    assert registrations["workcase-approval-baseline-fingerprint"].base_presence == "required"
+    assert registrations["workcase-approval-source-refs"].base_presence == "required"
     assert registrations["workcase-proposal-residual-decisions"].base_presence == "conditional"
     assert registrations["workcase-residual-decision-route-target"].base_presence == "conditional"
     for field_path in (
         "work_items[].approach_summary",
+        "execution_authorization.human_prerequisites",
         "creation_reviews[].feedback",
         "result_reviews[].feedback",
         "closure_proposal.residual_decisions",

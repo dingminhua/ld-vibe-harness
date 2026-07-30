@@ -17,68 +17,7 @@ function withProjectId(url: string): string {
   return `${url}${separator}projectId=${encodeURIComponent(currentProjectId)}`;
 }
 
-export interface DashboardData {
-  stats: DashboardStat[];
-  recentItems: DashboardFactItem[];
-  actionItems: DashboardFactItem[];
-  recentChanges: Array<{
-    hash: string;
-    shortHash: string;
-    author: string;
-    date: string;
-    message: string;
-    body: string;
-    category: string;
-    scope: string;
-    description: string;
-    isBreaking: boolean;
-    relativeTime: string;
-  }>;
-  recentChangesIssue?: { code: 'git_log_unavailable'; message: string };
-}
-
-export type DashboardObjectType = 'workcase' | 'adr' | 'pitfall' | 'spark' | 'study';
-export type DashboardWorkCaseProgressGroup = 'plan_confirmation' | 'progressing' | 'closure_confirmation' | 'closed';
-
-interface DashboardStatBase {
-  total: number;
-  coverageStatus?: FactCoverageStatus;
-}
-
-export type DashboardStat =
-  | DashboardStatBase & {
-    type: 'workcase';
-    byProgressGroup: Partial<Record<DashboardWorkCaseProgressGroup, number>>;
-    /** Included in total but deliberately outside the four stable groups. */
-    unclassifiedCount?: number;
-    byStatus?: never;
-  }
-  | DashboardStatBase & {
-    type: Exclude<DashboardObjectType, 'workcase'>;
-    byStatus: Record<string, number>;
-    byProgressGroup?: never;
-  };
-
-interface DashboardFactItemBase {
-  id: string;
-  title: string;
-  title_en?: string;
-  title_zh?: string;
-  relativeTime: string;
-  typeColor: string;
-}
-
-export type DashboardFactItem =
-  | DashboardFactItemBase & {
-    type: 'workcase';
-    progress_group: DashboardWorkCaseProgressGroup;
-    status?: never;
-  }
-  | DashboardFactItemBase & {
-    type: Exclude<DashboardObjectType, 'workcase'>;
-    status: string;
-    progress_group?: never;
-  };
+export type WorkCaseProgressGroup = 'plan_confirmation' | 'progressing' | 'closure_confirmation' | 'closed';
 
 export interface ObjectItem {
   id: string;
@@ -101,6 +40,11 @@ export interface ObjectItem {
   executionItemsProjectionValid?: boolean;
   executionItems?: WorkCaseExecutionItem[];
   successCriteria?: string[];
+  success_criterion_definitions?: WorkCaseCriterionDefinition[] | unknown;
+  work_items?: WorkCaseItem[] | unknown;
+  creation_reviews?: WorkCaseReview[] | unknown;
+  execution_authorization?: WorkCaseExecutionAuthorization | unknown;
+  execution_approval?: WorkCaseExecutionApproval | unknown;
   /** closure_confirmation Card 的“后续贡献”区；仅实际声明 contributed-to 时出现 */
   contributedTo?: WorkCaseContributionTarget[];
   /** closure_confirmation Card 的关闭判断输入区；仅 closure_proposal 结构合法时出现 */
@@ -250,7 +194,28 @@ export interface WorkCaseExecutionApproval {
   subject_version: number;
   approved_at: string;
   summary: string;
-  source_refs?: string[];
+  baseline_fingerprint: string;
+  source_refs: string[];
+}
+
+export interface WorkCaseAuthorizedAction {
+  action_id: string;
+  summary: string;
+  target_scope: string;
+  effect_scope: string;
+  risk_summary: string;
+  rollback_summary: string;
+  rule_refs: string[];
+}
+
+export interface WorkCaseExecutionAuthorization {
+  authorized_actions: WorkCaseAuthorizedAction[];
+  action_ceiling: string;
+  prohibited_actions: string[];
+  allowed_adjustments: string;
+  verification_and_rollback: string;
+  out_of_bounds_handling: string;
+  human_prerequisites?: string[];
 }
 
 export interface WorkCaseRouteTarget {
@@ -364,6 +329,7 @@ export interface WorkCaseDetailData extends Record<string, unknown> {
   plan_version?: number;
   work_items?: WorkCaseItem[];
   creation_reviews?: WorkCaseReview[];
+  execution_authorization?: WorkCaseExecutionAuthorization;
   execution_approval?: WorkCaseExecutionApproval;
   result_version?: number;
   success_criterion_results?: WorkCaseCriterionResult[];
@@ -426,9 +392,66 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
   return promise;
 }
 
-export async function fetchDashboard(locale?: string): Promise<DashboardData> {
+
+/** 认知中心待决类型（UI 枚举，仅收录两个 Human Gate，见 02 §4.1）。 */
+export type CognitionInboxKind = 'plan_confirmation' | 'closure_confirmation';
+
+/**
+ * 决定依据区内联投影（Q3）：与 WorkCase 列表 Card 同源的 projectWorkCaseCard 字段子集，
+ * 不含对象身份字段（id/title/status 等在条目层）。
+ */
+export interface CognitionInboxCard extends Record<string, unknown> {
+  goal?: string;
+  scope?: string;
+  successCriteria?: string[];
+  success_criterion_definitions?: WorkCaseCriterionDefinition[] | unknown;
+  work_items?: WorkCaseItem[] | unknown;
+  creation_reviews?: WorkCaseReview[] | unknown;
+  execution_authorization?: WorkCaseExecutionAuthorization | unknown;
+  execution_approval?: WorkCaseExecutionApproval | unknown;
+  closureProposal?: WorkCaseClosureProposalCard;
+}
+
+export interface CognitionInboxItem {
+  type: 'workcase';
+  id: string;
+  title: string;
+  title_en?: string;
+  title_zh?: string;
+  relativeTime: string;
+  typeColor: string;
+  /** WorkCase 条目只携带 progress_group，不复用 status 语义（02 §7.3）。 */
+  progress_group: WorkCaseProgressGroup;
+  inboxKind: CognitionInboxKind;
+  read_status: string;
+  card: CognitionInboxCard;
+  priority?: string;
+  updatedAt?: string;
+  /** 仅字段级直读 read_status=readable 时出现（Q4），供条件显示"复制对象路径"。 */
+  canonical_path?: string;
+  field_issues?: FieldIssue[];
+  unparsed_structures?: UnparsedStructure[];
+  read_issues?: Array<Record<string, unknown>>;
+}
+
+export interface CognitionIssue {
+  section: string;
+  code: string;
+  message: string;
+  object_ref?: string;
+}
+
+/** 第一期只交付模块一；模块二~五字段整体省略（Q8）。 */
+export interface CognitionData {
+  generatedAt: string;
+  scope: { governedProjectId: string };
+  inbox: { items: CognitionInboxItem[]; total: number };
+  issues?: CognitionIssue[];
+}
+
+export async function fetchCognition(locale?: string): Promise<CognitionData> {
   const params = locale ? `?locale=${locale}` : '';
-  return request<DashboardData>(`/dashboard${params}`);
+  return request<CognitionData>(`/cognition${params}`);
 }
 
 export async function fetchObjects(

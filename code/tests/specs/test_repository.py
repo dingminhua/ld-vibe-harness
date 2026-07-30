@@ -23,11 +23,11 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
     assert inspection.issues == ()
     assert inspection.implemented_checks_complete is True
     checked_documents = inspection.active_documents_passing_implemented_checks
-    assert len(checked_documents) == 27
-    assert sum(document.kind != "attachment" for document in checked_documents) == 19
+    assert len(checked_documents) == 28
+    assert sum(document.kind != "attachment" for document in checked_documents) == 20
 
     assert sum(document.kind == "attachment" for document in checked_documents) == 8
-    assert len(inspection.projections) == 81
+    assert len(inspection.projections) == 84
     assert {projection.layer for projection in inspection.projections} == {"L0", "L1", "L2"}
     field_registry = inspection.document_passing_implemented_checks_by_key("fact-object-field-registry")
     assert field_registry is not None
@@ -113,6 +113,7 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
         "fact-object-controlled-creation",
         "fact-object-lifecycle-change",
         "git-commit",
+        "workcase-approved-plan-execution",
     ]
     assert {
         declaration.template_key: (
@@ -134,12 +135,16 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
             "5. 事实对象生命周期变更与承接处置行动模板定义",
         ),
         "git-commit": ("git-commit-action-template", "5. Git 提交行动模板定义"),
+        "workcase-approved-plan-execution": (
+            "workcase-approved-plan-execution-action-template",
+            "5. WorkCase 获批计划执行行动模板定义",
+        ),
     }
     assert action_templates.issues == ()
     assert action_templates.incomplete_sources == ()
     assert fields.complete is True
-    assert len(fields.structures) == 15
-    assert len(fields.registrations) == 108
+    assert len(fields.structures) == 17
+    assert len(fields.registrations) == 124
 
 
 def test_mechanically_distinct_spec_does_not_create_a_semantic_duplicate_diagnosis(
@@ -185,8 +190,8 @@ def test_invalid_working_tree_source_is_not_replaced_with_committed_content(
     assert any("YAML title 与 H1" in issue.summary for issue in inspection.issues)
     assert inspection.implemented_checks_complete is False
     assert inspection.document_passing_implemented_checks_by_key("web-presentation-interaction") is None
-    assert len(inspection.active_documents_passing_implemented_checks) == 18
-    assert len(inspection.projections) == 54
+    assert len(inspection.active_documents_passing_implemented_checks) == 19
+    assert len(inspection.projections) == 57
 
 
 def test_invalid_foundation_stops_dependent_current_projection(current_specs_repository: Path) -> None:
@@ -358,3 +363,23 @@ def test_file_replaced_by_external_symlink_after_discovery_is_not_read(
     assert any(
         issue.summary == "Markdown source could not be read safely from its current path" for issue in inspection.issues
     )
+
+
+def test_current_fact_type_action_entries_reference_the_shared_templates(
+    current_specs_repository: Path,
+) -> None:
+    source_texts = {
+        key: (current_specs_repository / path).read_text(encoding="utf-8")
+        for key, path in {
+            "spark": "specs/20-Spark-火花.md",
+            "workcase": "specs/21-WorkCase-工作项.md",
+            "adr": "specs/22-ADR-决策.md",
+            "pitfall": "specs/23-Pitfall-踩坑经验.md",
+            "study": "specs/24-Study-研究报告.md",
+        }.items()
+    }
+
+    for source in source_texts.values():
+        assert "fact-object-controlled-creation" in source
+        assert "fact-object-lifecycle-change" in source
+    assert "workcase-approved-plan-execution" in source_texts["workcase"]

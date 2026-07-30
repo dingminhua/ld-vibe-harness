@@ -10,9 +10,10 @@ from ldvh.facts.contracts import ACTIVE_STATUSES, LAYOUTS
 from ldvh.facts.models import FactIssue
 from ldvh.facts.workcase_projection import (
     all_terminal,
+    approval_baseline_fingerprint,
     no_execution_facts,
-    pre_execution_stop_shape,
     result_projection_complete,
+    safe_convergence_shape,
 )
 
 ACTIVE_PHASES = frozenset(
@@ -36,6 +37,7 @@ _CRITERION_ID = re.compile(r"criterion-[a-z0-9][a-z0-9-]*\Z")
 _RESIDUAL_ID = re.compile(r"residual-[a-z0-9][a-z0-9-]*\Z")
 _SUGGESTION_ID = re.compile(r"suggestion-[a-z0-9][a-z0-9-]*\Z")
 _WORKCASE_ID = re.compile(r"workcase-[0-9]{4,}\Z")
+_AUTHORIZATION_ID = re.compile(r"authorization-[a-z0-9][a-z0-9-]*\Z")
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 
 _RESULT_PROJECTION_FIELDS = frozenset(
@@ -337,11 +339,67 @@ def _validate_execution_approval(fields: Mapping[str, object], issues: list[Fact
         _issue(issues, "execution approval approved_at 必须是非空 RFC 3339 string", "execution_approval.approved_at")
     if not _nonempty_string(approval.get("summary")):
         _issue(issues, "execution approval summary 必须是非空 string", "execution_approval.summary")
-    if _positive_integer(fields.get("plan_version")) and approval.get("subject_version") != fields.get("plan_version"):
-        _issue(issues, "execution_approval 必须绑定当前 plan_version", "execution_approval.subject_version")
+    if (
+        _positive_integer(fields.get("plan_version"))
+        and _positive_integer(approval.get("subject_version"))
+        and approval.get("subject_version") > fields.get("plan_version")
+    ):
+        _issue(issues, "execution approval subject_version 不得晚于当前 plan_version", "execution_approval.subject_version")
+    baseline = approval.get("baseline_fingerprint")
+    if not isinstance(baseline, str) or _SHA256.fullmatch(baseline) is None:
+        _issue(issues, "execution approval baseline_fingerprint 必须是 64 位小写 SHA-256", "execution_approval.baseline_fingerprint")
+    elif baseline != approval_baseline_fingerprint(fields):
+        _issue(issues, "execution approval baseline_fingerprint 与当前批准基线不一致", "execution_approval.baseline_fingerprint")
     source_refs = approval.get("source_refs")
-    if source_refs is not None:
-        _validate_unique_strings(source_refs, "execution_approval.source_refs", issues)
+    _validate_unique_strings(source_refs, "execution_approval.source_refs", issues)
+
+
+def _validate_execution_authorization(fields: Mapping[str, object], issues: list[FactIssue]) -> None:
+    value = fields.get("execution_authorization")
+    if not isinstance(value, Mapping):
+        return
+    actions = value.get("authorized_actions")
+    action_ids: list[str] = []
+    if not isinstance(actions, list) or not actions:
+        _issue(issues, "authorized_actions 必须是非空 array", "execution_authorization.authorized_actions")
+    else:
+        required = {
+            "action_id",
+            "summary",
+            "target_scope",
+            "effect_scope",
+            "risk_summary",
+            "rollback_summary",
+            "rule_refs",
+        }
+        for index, action in enumerate(actions):
+            path = f"execution_authorization.authorized_actions[{index}]"
+            if not isinstance(action, Mapping):
+                continue
+            _require(action, required, issues, context="authorized action ")
+            action_id = action.get("action_id")
+            if _nonempty_string(action_id):
+                action_ids.append(str(action_id))
+                if _AUTHORIZATION_ID.fullmatch(str(action_id)) is None:
+                    _issue(issues, "action_id 格式不符合当前闭集", f"{path}.action_id")
+            for name in required - {"action_id", "rule_refs"}:
+                if not _nonempty_string(action.get(name)):
+                    _issue(issues, "authorized action 文本成员必须是非空 string", f"{path}.{name}")
+            rule_refs = action.get("rule_refs")
+            _validate_unique_strings(rule_refs, f"{path}.rule_refs", issues)
+        if len(action_ids) != len(set(action_ids)):
+            _issue(issues, "authorized action_id 不得重复", "execution_authorization.authorized_actions")
+    for name in (
+        "action_ceiling",
+        "allowed_adjustments",
+        "verification_and_rollback",
+        "out_of_bounds_handling",
+    ):
+        if not _nonempty_string(value.get(name)):
+            _issue(issues, "execution authorization 文本成员必须是非空 string", f"execution_authorization.{name}")
+    for name in ("prohibited_actions", "human_prerequisites"):
+        if name in value:
+            _validate_unique_strings(value.get(name), f"execution_authorization.{name}", issues)
 
 
 def _result_outcomes(fields: Mapping[str, object]) -> list[str]:
@@ -632,7 +690,15 @@ def _require_complete_result(fields: Mapping[str, object], issues: list[FactIssu
 def _validate_active_presence(fields: Mapping[str, object], issues: list[FactIssue]) -> None:
     _require(
         fields,
-        {"priority", "phase", "plan_version", "work_items", "goal", "scope", "success_criterion_definitions"},
+        {
+            "priority",
+            "phase",
+            "plan_version",
+            "work_items",
+            "goal",
+            "scope",
+            "success_criterion_definitions",
+        },
         issues,
         context="活动期 WorkCase ",
     )
@@ -653,7 +719,12 @@ def _validate_active_presence(fields: Mapping[str, object], issues: list[FactIss
         _issue(issues, "result_version 必须是正整数", "result_version")
 
     if phase == "human_plan_confirming":
-        _require(fields, {"creation_reviews", "waiting_on"}, issues, context="human_plan_confirming ")
+        _require(
+            fields,
+            {"execution_authorization", "creation_reviews", "waiting_on"},
+            issues,
+            context="human_plan_confirming ",
+        )
         _forbid(
             fields,
             {"execution_approval", *_RESULT_CHAIN_FIELDS},
@@ -662,8 +733,13 @@ def _validate_active_presence(fields: Mapping[str, object], issues: list[FactIss
         )
         return
 
-    _forbid(fields, {"creation_reviews"}, issues, context=f"{phase} ")
     if phase == "plan_revising":
+        _require(
+            fields,
+            {"execution_authorization", "creation_reviews"},
+            issues,
+            context="plan_revising ",
+        )
         _forbid(fields, {"closure_proposal"}, issues, context="plan_revising ")
         has_version = "result_version" in fields
         projection_members = _RESULT_PROJECTION_FIELDS & set(fields)
@@ -675,24 +751,29 @@ def _validate_active_presence(fields: Mapping[str, object], issues: list[FactIss
                 context="plan_revising 无结果版本时 ",
             )
             if "execution_approval" not in fields and not no_execution_facts(fields):
-                _issue(issues, "approval 只可在 NoExec 撤回分支缺失", "execution_approval")
+                _issue(issues, "Gate1 前 plan_revising 必须保持 NoExec", "execution_approval")
         elif not projection_members:
             _forbid(fields, {"result_reviews"}, issues, context="plan_revising version-only 形状 ")
             if "execution_approval" in fields and all_terminal(fields):
                 _issue(issues, "正常 version-only 返工快照必须仍有非 terminal item", "work_items")
-            if "execution_approval" not in fields and not pre_execution_stop_shape(fields):
-                _issue(issues, "approval 缺失只允许 PreExecutionStopShape", "execution_approval")
+            if "execution_approval" not in fields:
+                _issue(issues, "Gate1 前 plan_revising 禁止结果版本与结果形状", "execution_approval")
         else:
             if not all_terminal(fields):
                 _issue(issues, "冻结的部分或完整结果投影要求 AllTerminal", "work_items")
-            if "execution_approval" not in fields and not pre_execution_stop_shape(fields):
-                _issue(issues, "approval 缺失只允许 PreExecutionStopShape", "execution_approval")
+            if "execution_approval" not in fields:
+                _issue(issues, "Gate1 前 plan_revising 禁止结果版本与结果形状", "execution_approval")
             if "result_reviews" in fields and not result_projection_complete(fields):
                 _issue(issues, "result_reviews 只能与完整结果投影同时存在", "result_reviews")
         return
 
     if phase == "executing":
-        _require(fields, {"execution_approval"}, issues, context="executing ")
+        _require(
+            fields,
+            {"execution_authorization", "execution_approval", "creation_reviews"},
+            issues,
+            context="executing ",
+        )
         _forbid(
             fields,
             {*_RESULT_PROJECTION_FIELDS, "result_reviews", "closure_proposal"},
@@ -706,8 +787,22 @@ def _validate_active_presence(fields: Mapping[str, object], issues: list[FactIss
     _require(fields, {"result_version"}, issues, context=f"{phase} ")
     if not all_terminal(fields):
         _issue(issues, "进入结果链前全部 work item 必须 terminal", "work_items")
-    if "execution_approval" not in fields and not pre_execution_stop_shape(fields):
-        _issue(issues, "结果链 approval 缺失只允许 PreExecutionStopShape", "execution_approval")
+    if "execution_approval" in fields:
+        _require(
+            fields,
+            {"execution_authorization", "creation_reviews"},
+            issues,
+            context=f"{phase} 已批准结果链 ",
+        )
+    else:
+        _forbid(
+            fields,
+            {"execution_authorization", "creation_reviews"},
+            issues,
+            context=f"{phase} SafeConvergenceShape ",
+        )
+        if not safe_convergence_shape(fields):
+            _issue(issues, "结果链 approval 缺失只允许 SafeConvergenceShape", "execution_approval")
 
     if phase == "controller_checking":
         _forbid(fields, {"closure_proposal"}, issues, context="controller_checking ")
@@ -779,6 +874,8 @@ def validate_workcase_snapshot(fields: Mapping[str, object]) -> tuple[FactIssue,
     _validate_items(fields, issues)
     _validate_reviews(fields, "creation_reviews", "plan_version", issues)
     _validate_reviews(fields, "result_reviews", "result_version", issues)
+    if status in ACTIVE_STATUSES:
+        _validate_execution_authorization(fields, issues)
     _validate_execution_approval(fields, issues)
     _validate_proposal(fields, issues)
     _validate_terminal_residuals(fields, issues)

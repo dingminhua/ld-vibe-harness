@@ -11,7 +11,7 @@ export const WORKCASE_CURRENT_PHASES = [
 export const WORKCASE_DEFAULT_LIST_STATUS = null;
 
 /**
- * WorkCase 列表和 Dashboard 面向 Human 使用的进展分组。它们由当前 phase
+ * WorkCase 列表和项目认知中心面向 Human 使用的进展分组。它们由当前 phase
  * 确定性派生，不是 WorkCase 的 status、phase 或生命周期分类。
  */
 export const WORKCASE_PROGRESS_GROUP_ORDER = [

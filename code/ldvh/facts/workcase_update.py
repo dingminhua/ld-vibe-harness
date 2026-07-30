@@ -153,6 +153,14 @@ def _operation_boundary_issues(
     if command.mode == "update":
         if before_status not in ACTIVE_STATUSES or after_status not in ACTIVE_STATUSES:
             issues.append(FactIssue("schema", "update-workcase 只接受活动期 before 与活动期完整 after", "status"))
+        if before.get("phase") == "human_closure_confirming":
+            issues.append(
+                FactIssue(
+                    "schema",
+                    "human_closure_confirming 只能由 close-workcase 消费，禁止 update-workcase",
+                    "phase",
+                )
+            )
     elif command.mode == "close":
         if before_status != "open" or before.get("phase") != "human_closure_confirming":
             issues.append(
@@ -230,6 +238,36 @@ def _gate_issues(
 ) -> tuple[FactIssue, ...]:
     changed = _changed_roots(before, after)
     issues: list[FactIssue] = []
+    before_approval = before.get("execution_approval")
+    after_approval = after.get("execution_approval")
+    if command.mode == "update" and before_approval is None and isinstance(after_approval, Mapping):
+        if not command.authorization_reference:
+            issues.append(
+                FactIssue(
+                    "schema",
+                    "形成 execution_approval 必须取得 Human Gate1 authorization_reference",
+                    "authorization_reference",
+                )
+            )
+        expected_locators = sorted(
+            {
+                str(reference.get("locator"))
+                for reference in command.authorization_reference
+                if isinstance(reference.get("locator"), str) and str(reference.get("locator")).strip()
+            }
+        )
+        actual_refs = after_approval.get("source_refs")
+        actual_locators = sorted(actual_refs) if isinstance(actual_refs, list) and all(
+            isinstance(member, str) for member in actual_refs
+        ) else []
+        if not actual_locators or actual_locators != expected_locators:
+            issues.append(
+                FactIssue(
+                    "schema",
+                    "execution_approval.source_refs 必须与本次 Human authorization_reference locators 精确一致",
+                    "execution_approval.source_refs",
+                )
+            )
     if command.mode == "correct":
         title_only = changed == {"title"}
         urls_only = changed == {"urls"}

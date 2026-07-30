@@ -79,6 +79,7 @@ export function WorkCaseReadingLayout({
     criterionResults,
     workItems,
     creationReviews,
+    executionAuthorization,
     executionApproval,
     resultReviews,
     closureProposal,
@@ -111,6 +112,8 @@ export function WorkCaseReadingLayout({
     Boolean(issueFor("plan_version") || issueFor("work_items"));
   const creationReviewsVisible =
     creationReviews.length > 0 || Boolean(issueFor("creation_reviews"));
+  const authorizationVisible =
+    Boolean(executionAuthorization) || Boolean(issueFor("execution_authorization"));
   const approvalVisible =
     Boolean(executionApproval) || Boolean(issueFor("execution_approval"));
   const resultVisible =
@@ -255,6 +258,20 @@ export function WorkCaseReadingLayout({
         </WorkCaseReadingNode>
       )}
 
+      {authorizationVisible && (
+        <WorkCaseReadingNode
+          title={t("objectDetail.workcaseExecutionAuthorization")}
+          note={t("objectDetail.workcaseExecutionAuthorizationBoundary")}
+          locale={locale}
+          contentVariant="semantic"
+        >
+          {executionAuthorization && (
+            <ExecutionAuthorization authorization={executionAuthorization} locale={locale} />
+          )}
+          <FieldIssueRow fieldKey="execution_authorization" issue={issueFor("execution_authorization")} locale={locale} />
+        </WorkCaseReadingNode>
+      )}
+
       {approvalVisible && (
         <WorkCaseReadingNode
           title={t("objectDetail.workcaseExecutionApproval")}
@@ -377,7 +394,7 @@ export function WorkCaseReadingLayout({
 
       {relationsIssue ? (
         <WorkCaseReadingNode
-          title={t("objectDetail.workcaseRelations")}
+          title={getFieldLabel("fact_associations", locale)}
           locale={locale}
         >
           <FieldIssueRow fieldKey="relations" issue={relationsIssue} locale={locale} />
@@ -386,8 +403,6 @@ export function WorkCaseReadingLayout({
         <FactAssociationsSection
           obj={obj}
           locale={locale}
-          title={t("objectDetail.workcaseRelations")}
-          showRelationKey
         />
       )}
 
@@ -1410,6 +1425,7 @@ function ExecutionApproval({
   const subjectVersion = detailNumber(approval.subject_version);
   const approvedAt = detailString(approval.approved_at);
   const summary = detailString(approval.summary);
+  const baselineFingerprint = detailString(approval.baseline_fingerprint);
   const sourceRefs = detailStrings(approval.source_refs);
   return (
     <section className="min-w-0 rounded-lg border border-violet-400/30 bg-violet-500/[0.05] px-3.5 py-3">
@@ -1428,7 +1444,7 @@ function ExecutionApproval({
           />
         </div>
       )}
-      {(subjectVersion !== undefined || approvedAt || sourceRefs.length > 0) && (
+      {(subjectVersion !== undefined || approvedAt || baselineFingerprint || sourceRefs.length > 0) && (
         <div className="mt-3 flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2 border-t border-violet-400/20 pt-2.5 text-violet-900/60 dark:text-violet-100/60">
           {subjectVersion !== undefined && (
             <span className="ldvh-meta-muted inline-flex items-center gap-1.5 text-current">
@@ -1441,10 +1457,101 @@ function ExecutionApproval({
               {formatDateTime(approvedAt)}
             </time>
           )}
+          {baselineFingerprint && (
+            <span className="ldvh-meta-muted inline-flex min-w-0 items-center gap-1.5 text-current">
+              <span>{getFieldLabel("baseline_fingerprint", locale)}</span>
+              <span className="min-w-0 break-all font-mono">{baselineFingerprint}</span>
+            </span>
+          )}
           {sourceRefs.length > 0 && <StringChips items={sourceRefs} />}
         </div>
       )}
     </section>
+  );
+}
+
+function ExecutionAuthorization({
+  authorization,
+  locale,
+}: {
+  authorization: Record<string, unknown>;
+  locale: string;
+}) {
+  const { t } = useI18n();
+  const actions = Array.isArray(authorization.authorized_actions)
+    ? authorization.authorized_actions.filter((value): value is Record<string, unknown> => Boolean(value) && typeof value === "object" && !Array.isArray(value))
+    : [];
+  const fields = [
+    "action_ceiling",
+    "allowed_adjustments",
+    "verification_and_rollback",
+    "out_of_bounds_handling",
+  ] as const;
+  return (
+    <div className="grid min-w-0 gap-3">
+      <section className="min-w-0 rounded-lg border border-amber-400/25 bg-amber-500/[0.025] px-3.5 py-3">
+        <h3 className="ldvh-detail-semantic-title text-amber-800/85 dark:text-amber-100/85">
+          {getFieldLabel("authorized_actions", locale)}
+        </h3>
+        {actions.length > 0 ? (
+          <ul className="mt-2 grid min-w-0 gap-2">
+            {actions.map((action, index) => (
+              <li key={`${detailString(action.action_id)}-${index}`} className="min-w-0 rounded-md border border-amber-400/20 bg-amber-500/[0.025] px-3 py-2.5">
+                {[
+                  "action_id",
+                  "summary",
+                  "target_scope",
+                  "effect_scope",
+                  "risk_summary",
+                  "rollback_summary",
+                ].map((key) => (
+                  <AuthorizationValue key={key} fieldKey={key} value={action[key]} locale={locale} />
+                ))}
+                <AuthorizationList fieldKey="rule_refs" value={action.rule_refs} locale={locale} />
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="ldvh-caption mt-1.5 text-red-400">{t("objectDetail.workcaseGateFieldMissingOrMalformed")}</p>
+        )}
+      </section>
+      <section className="grid min-w-0 gap-2 rounded-lg border border-slate-300/50 bg-slate-500/[0.025] px-3.5 py-3 dark:border-slate-600/50">
+        {fields.map((key) => (
+          <AuthorizationValue key={key} fieldKey={key} value={authorization[key]} locale={locale} />
+        ))}
+        <AuthorizationList fieldKey="prohibited_actions" value={authorization.prohibited_actions} locale={locale} />
+        <AuthorizationList fieldKey="human_prerequisites" value={authorization.human_prerequisites} locale={locale} optional />
+      </section>
+    </div>
+  );
+}
+
+function AuthorizationValue({ fieldKey, value, locale }: { fieldKey: string; value: unknown; locale: string }) {
+  const { t } = useI18n();
+  const text = detailString(value);
+  return (
+    <div className="min-w-0 py-1">
+      <p className="ldvh-meta text-ldvh-text-secondary/70">{getFieldLabel(fieldKey, locale)}</p>
+      {text ? (
+        <SummaryText value={text} collapseThreshold={Number.MAX_SAFE_INTEGER} className="ldvh-detail-semantic-body mt-1 !text-ldvh-text-secondary" />
+      ) : (
+        <p className="ldvh-caption mt-1 text-red-400">{t("objectDetail.workcaseGateFieldMissingOrMalformed")}</p>
+      )}
+    </div>
+  );
+}
+
+function AuthorizationList({ fieldKey, value, locale, optional = false }: { fieldKey: string; value: unknown; locale: string; optional?: boolean }) {
+  const { t } = useI18n();
+  const items = detailStrings(value);
+  if (optional && value === undefined) return null;
+  return (
+    <div className="min-w-0 py-1">
+      <p className="ldvh-meta text-ldvh-text-secondary/70">{getFieldLabel(fieldKey, locale)}</p>
+      {items.length > 0 ? <div className="mt-1"><StringChips items={items} /></div> : (
+        <p className="ldvh-caption mt-1 text-red-400">{t("objectDetail.workcaseGateFieldMissingOrMalformed")}</p>
+      )}
+    </div>
   );
 }
 

@@ -25,9 +25,9 @@ ldvh_spec:
 
 ### 1.1 根职责
 
-WorkCase 保存一项已经由 Human 选择交给项目承担、能够独立判断关闭的工作责任。未关闭时，它使 Human 与 AI 能够稳定回答：要达成什么、边界在哪里、以什么标准判断、当前计划是什么、哪些工作项已经形成什么事实、现在从哪里继续、什么阻止继续、当前处于哪个质量或 Human 关口。关闭后，它继续回答：原责任与验收基线是什么、实际结果和验证边界是什么、为什么停止，以及剩余责任转交到哪里或为何接受停止。
+WorkCase 保存一项已经由 Human 选择交给项目承担、能够独立判断关闭的工作责任。未关闭时，它使 Human 与 AI 能够稳定回答：要达成什么、边界在哪里、以什么标准判断、当前计划是什么、哪些动作与风险已经在执行授权基线中由 Human 决定、哪些工作项已经形成什么事实、现在从哪里继续、什么阻止继续、当前处于哪个质量或 Human 关口。关闭后，它继续回答：原责任与验收基线是什么、实际结果和验证边界是什么、为什么停止，以及剩余责任转交到哪里或为何接受停止。
 
-WorkCase 是当前事实对象，不是实时监控、聊天计划副本、命令清单、AI 推理记录、运行日志或正确性证明包。正常推进路径中，创建前独立方案复核、Human 计划决定、执行、主控自检、独立结果复核、主控收敛和 Human 关闭决定都必须实际发生。受控前置执行终止链不补造执行事实；它以 Human 明确停止决定和据实的 `cancelled` item 终值取代执行，后续主控自检、独立结果复核、主控收敛和 Human 关闭决定仍必须实际发生。某个关口必须发生，不表示其过程记录必须在关闭后永久保留。
+WorkCase 是当前事实对象，不是实时监控、聊天计划副本、命令清单、AI 推理记录、运行日志或正确性证明包。单次运行只有两个主动 Human 确认：Gate1 对当前计划与完整执行授权基线作出一次执行决定，Gate2 对已复核的结果与完整关闭提案作出一次关闭决定。正常推进路径中，创建前独立方案复核、Gate1、执行、主控自检、独立结果复核、主控收敛和 Gate2 都必须实际发生；Gate1 与 Gate2 之间不得再新增 Human Gate。受控前置执行终止链不补造执行事实；它以 Gate1 未批准时 Human 明确停止决定和据实的 `cancelled` item 终值取代执行，后续主控自检、独立结果复核、主控收敛和 Gate2 仍必须实际发生。某个质量关口必须发生，不表示其过程记录必须在关闭后永久保留。
 
 ### 1.2 活动期与终态价值
 
@@ -82,7 +82,7 @@ closed WorkCase 是终态责任与结果记录，不是质量链合规档案。�
 
 ### 4.1 对象建立前的工作意图
 
-Human 明确选择“由项目承担这项工作并建立 WorkCase”是进入正式计划、独立方案复核和受控创建的前提。该选择发生在对象外，不是 WorkCase phase，也不批准尚未形成的计划。
+Human 明确选择“由项目承担这项工作并建立 WorkCase”是进入正式计划、独立方案复核和受控创建的前提。该选择发生在对象外，不是 WorkCase phase，也不批准尚未形成的计划。Human 初始要求已明确命名 WorkCase、批准为项目责任推进，或以其它作用范围清楚的表达要求建立该记录时，直接消费该工作意图，不为“是否建立 WorkCase”新增一次主动 Human 确认。
 
 ### 4.2 准入条件
 
@@ -109,7 +109,7 @@ work item 只承载获批计划内能够实施并形成局部结果的工作，�
 
 ### 4.4 受控创建
 
-受控创建必须一次形成完整目标、scope、成功标准定义、`plan_version=1`、非空 work items、至少一项实际独立方案复核、priority、`status=open`、`phase=human_plan_confirming` 和 Human waiting，并完成 Schema 校验、写入与回读。创建时全部 work item 必须为 `pending`。创建前的 Controller 与独立 Reviewer 必须逐项检查 work item 是否错误吸收 §4.3 的生命周期关口或 Human Gate；命中时当前候选计划不得提交 Human 批准或受控创建，必须先返修计划。创建前 Reviewer feedback 必须由 Controller 处置；新对象不得带 execution approval 或结果字段。
+受控创建必须一次形成完整目标、scope、成功标准定义、`plan_version=1`、非空 work items、完整 `execution_authorization`、至少一项实际独立方案复核、priority、`status=open`、`phase=human_plan_confirming` 和 Human waiting，并完成 Schema 校验、写入与回读。创建时全部 work item 必须为 `pending`。`execution_authorization` 必须把全部已知 Human Gate、目标与影响范围、风险、动作上限、禁止项、允许的调整与重试、验证/回滚和超界安全收敛一次呈现给 Human；只能由 Human 完成的前置动作必须在 Gate1 决定前完成或从本次运行范围明确排除。创建前的 Controller 与独立 Reviewer 必须逐项检查 work item 是否错误吸收 §4.3 的生命周期关口或 Human Gate，并检查已知授权需求是否已进入基线；命中时当前候选计划不得提交 Human 批准或受控创建，必须先返修。创建前 Reviewer feedback 必须由 Controller 处置；新对象不得带 execution approval 或结果字段。
 
 ## 5. WorkCase 类型定义
 
@@ -160,6 +160,7 @@ WorkCase 只有本文与 05.Att.01 共同定义的当前字段和结构。任何
 | `workcase-phase` | conditional | `workcase-fact-type::6. 状态、阶段与生命周期` |
 | `workcase-plan-version` | conditional | `workcase-fact-type::6. 状态、阶段与生命周期` |
 | `workcase-items` | conditional | `workcase-fact-type::6. 状态、阶段与生命周期` |
+| `workcase-execution-authorization` | conditional | `workcase-fact-type::6. 状态、阶段与生命周期` |
 | `workcase-creation-reviews` | conditional | `workcase-fact-type::6. 状态、阶段与生命周期` |
 | `workcase-execution-approval` | conditional | `workcase-fact-type::6. 状态、阶段与生命周期` |
 | `workcase-result-version` | conditional | `workcase-fact-type::6. 状态、阶段与生命周期` |
@@ -176,13 +177,15 @@ WorkCase 只有本文与 05.Att.01 共同定义的当前字段和结构。任何
 
 | information_need | compared_structure_keys | decision | resulting_structure_key | rationale |
 |---|---|---|---|---|
-| 在 Human 关闭决定前稳定保存一份完整、可退回修改且不冒充终态的关闭方案 | `workcase-human-approval,workcase-residual-responsibility,workcase-success-result` | `new` | `workcase-closure-proposal` | approval 只记录执行批准，success result 只回答单项标准结果，terminal residual 只保存已经接受停止的责任；三者都不能承载拟定 outcome、整体停止边界和逐项责任建议，也不能提供 proposal 与 terminal 的生命周期隔离 |
+| 在 Human 关闭决定前稳定保存一份完整、Gate2 前可修改且不冒充终态的关闭方案 | `workcase-human-approval,workcase-residual-responsibility,workcase-success-result` | `new` | `workcase-closure-proposal` | approval 只记录执行批准，success result 只回答单项标准结果，terminal residual 只保存已经接受停止的责任；三者都不能承载拟定 outcome、整体停止边界和逐项责任建议，也不能提供 proposal 与 terminal 的生命周期隔离 |
 | 在关闭方案中逐项表达一项剩余责任、Controller 建议的处置方向和条件 route target 或 Spark suggestion | `relation-target,workcase-residual-responsibility,workcase-success-result,workcase-spark-suggestion` | `differentiate` | `workcase-residual-decision` | relation target 只有稳定目标，terminal residual 已表示 Human 接受停止，success result 只回答标准结果；提案项必须区分 `route_existing`、`suggest_spark` 与 `accept_stop`，并在 Human 决定前保持建议态 |
 | 绑定拟路由目标的稳定身份和当次完整内容快照，发现 Human 等待期间的目标漂移 | `relation-target,workcase-residual-decision` | `differentiate` | `workcase-proposed-route-target` | terminal relation target 不保存内容指纹，residual decision 还包含责任与建议；proposal target 只在关闭等待期服务 CAS 与防陈旧，关闭后必须消失 |
 | 在 closed 中保存没有符合转交条件目标、且 Human 已接受停止的一项具体责任 | `workcase-residual-decision,workcase-success-result` | `differentiate` | `workcase-residual-responsibility` | proposal decision 尚未成立且可以 route，success result 只说明验收结果；terminal residual 只含稳定身份与具体责任正文，不再重复 disposition 或目标引用 |
 | 在关闭方案和 closed 中结构化保留尚未建立 Spark 的后续建议，并区分受限责任与范围外机会 | `workcase-residual-decision,workcase-residual-responsibility` | `new` | `workcase-spark-suggestion` | residual decision 表达当前 scope 责任的处置方向，terminal residual 表达 Human 接受停止；Spark 建议还需在无未来对象 ID 时保留受限原因、影响、恢复条件或范围外机会的准确类型 |
 | 保留独立 Reviewer 对当前计划或结果版本的第二视角，并由 Controller 记录当前处置 | `workcase-review` | `reuse` | `workcase-review` | 当前需求仍是同一 review 结构；删除 `review_basis` 后，review 内容只来自当次实际 Reviewer 输出，并通过 `subject_version` 绑定当前被审对象，不再把证明材料或历史依据纳入成员闭集；字段所有权、失效与出现条件由本章当前契约唯一定义 |
 | 保留 Human 对准确计划版本的执行批准，而不持久化关闭决定收据 | `workcase-human-approval` | `reuse` | `workcase-human-approval` | 结构仍只需承载 Human 批准范围、时间与绑定 plan version；关闭决定由专属事务消费，不与 execution approval 共用持久化结构，也不保留为关闭批准服务的旧成员、字段或使用方式 |
+| 在 Gate1 前一次呈现本次运行的已知授权动作、上限、禁止项、调整、风险、验证/回滚与超界收敛 | `workcase-human-approval,workcase-item` | `new` | `workcase-execution-authorization` | approval 只记录 Human 已作出的决定，item 只承载局部交付；两者都不能在 Gate1 前作为完整、可审阅且事后冻结的执行授权基线 |
+| 在授权基线内逐项界定一类动作的目标、影响、风险、回滚与来源规则 | `workcase-execution-authorization` | `new` | `workcase-authorized-action` | 顶层基线需要完整动作集，但不应以连续散文隐藏不同目标与副作用；结构化条目便于 Human 分别批准并便于 Code 检查形状与指纹，不让 Code 判断自然语言授权 |
 
 ### 类型专属结构定义
 
@@ -190,7 +193,9 @@ WorkCase 只有本文与 05.Att.01 共同定义的当前字段和结构。任何
 |---|---|---|---|
 | `workcase-item` | 共同服务同一 WorkCase 关闭判断、具有稳定局部身份、目标、预期结果与当前状态的工作单元 | 不表示命令步骤、临时 todo、执行百分比、工具调用、AI 推理、独立 WorkCase、WorkCase 生命周期关口或 Human Gate | 直接成员闭集由本节字段定义；状态条件字段按 §6.4；依赖只指向同一对象内 item；§4.3 的 phase 关口只能由 WorkCase 生命周期承接 |
 | `workcase-review` | 独立 Reviewer 对当前计划版本或结果版本提供的实际第二视角，以及 Controller 对反馈的当前处置 | 不表示 Reviewer 拥有流程决定权，也不保存旧版本、审核次数、主体指纹或证明材料 | container 决定审核对象；creation review 绑定 `plan_version`，result review 绑定当前 `result_version`；Reviewer 字段与 Controller resolution 分属不同所有者 |
-| `workcase-human-approval` | Human 对一个准确 `plan_version` 作出的当前执行批准 | 不表示关闭批准、技术验证、后续版本获批、风险自动消失或字段存在即可继续执行 | 只供 `execution_approval` 使用；批准范围、时间和实际来源按成员字段记录；关闭决定不持久化 approval 收据 |
+| `workcase-human-approval` | Human 对 Gate1 当时计划及完整 execution authorization baseline 作出的执行批准 | 不表示关闭批准、技术验证、基线外动作获批、风险自动消失或字段存在即可继续执行 | 只供 `execution_approval` 使用；subject version、baseline fingerprint、批准范围、时间和真实 Human 来源按成员字段记录；关闭决定不持久化 approval 收据 |
+| `workcase-execution-authorization` | Gate1 前形成、Gate1 后冻结的单次 WorkCase 执行授权基线 | 不表示工具白名单、通用授权 token、技术验证已成立、未知风险或范围外动作获准 | 只用于当前 WorkCase 单次运行；必须整体形成；Gate1 后与 goal/scope/criteria 共同经 baseline fingerprint 绑定并保持不变；closed 时移除 |
+| `workcase-authorized-action` | Gate1 基线中一项对象、效果、风险与回滚边界可分别审阅的授权动作 | 不表示命令步骤、工具名白名单、动作已执行或来源规则已满足 | 同一基线内 `action_id` 唯一；目标、效果、风险、回滚和规则回指全部非空；Human 对完整基线一次决定不使各条目丢失自身边界 |
 | `workcase-success-criterion` | 一项具有稳定局部身份、可独立检查的成功标准定义 | 不表示执行步骤、结果、验证方法或数组序号 | `criterion_id` 在对象内唯一稳定；statement 与 goal、scope 共同构成验收基线 |
 | `workcase-success-result` | 对一项当前成功标准的实际结果判断与范围说明 | 不表示 Code 已证明正文、Human 已验收或命令成功 | 必须按 `criterion_id` 精确覆盖全部当前定义；unknown 通过 `not_verified` 表达，不补猜 |
 | `workcase-closure-proposal` | Controller 提交 Human 判断的一份完整关闭方案 | 不表示 Human 已同意、终态已成立、结果主体或证明收据 | 只在关闭准备与关闭待确认期间出现；始终整体形成，不持久化半成品 |
@@ -213,8 +218,9 @@ WorkCase 只有本文与 05.Att.01 共同定义的当前字段和结构。任何
 | `workcase-phase` | `phase` | string | 未关闭 WorkCase 当前精确推进位置 | 不表示责任能否继续、Web 进展分组或历史阶段 | 闭集 `human_plan_confirming`、`plan_revising`、`executing`、`controller_checking`、`independent_reviewing`、`closure_preparing`、`human_closure_confirming` |
 | `workcase-plan-version` | `plan_version` | integer | 当前规范化计划投影的版本身份 | 不表示历史次数、Git revision、phase 轮次或结果版本 | 正整数；初值为 1；只有规范化计划投影发生结构差异时精确 +1，禁止跳号和空升版 |
 | `workcase-items` | `work_items` | array | 当前计划及执行、恢复和结果判断所需的工作项闭集 | 不表示内部命令、完整过程历史或独立责任集合 | 非空且 `item_id` 唯一；数组位置不表示顺序；成员组合见 §6.4 |
-| `workcase-creation-reviews` | `creation_reviews` | array | 当前计划提交 Human 决定前的实际独立方案复核 | 不表示执行批准、历史审核或 Reviewer 拥有否决权 | 非空；全部绑定当前 `plan_version`；不保存旧计划 review |
-| `workcase-execution-approval` | `execution_approval` | object | Human 对当前 `plan_version` 的执行批准及其边界 | 不表示当前一定仍可执行、关闭批准、结果真实或新版本获批 | 精确绑定当前 `plan_version`；授权撤回后若依 §6 暂存，只表示此前行动边界，不授权未来行动 |
+| `workcase-execution-authorization` | `execution_authorization` | object | Gate1 一次呈现并经批准后冻结的执行授权基线 | 不表示 Human 已批准、每项技术前提已满足、未知风险获准或任意工具可用 | `human_plan_confirming`、`plan_revising`、`executing` 以及正常批准形状的结果链必填；`SafeConvergenceShape` 禁止；Gate1 后与 goal/scope/criteria 共同冻结；完整成员组合见 §6.5；字段存在不替代 `execution_approval` |
+| `workcase-creation-reviews` | `creation_reviews` | array | 对当前 `plan_version` 的实际独立方案复核 | 不表示执行批准、历史审核或 Reviewer 拥有否决权 | 正常活动形状非空；`SafeConvergenceShape` 禁止；全部绑定当前 `plan_version`；计划版本变化时以 fresh review 整体替换，不保存旧计划 review |
+| `workcase-execution-approval` | `execution_approval` | object | Human 在 Gate1 对当时计划与冻结执行授权基线作出的一次执行批准 | 不表示关闭批准、结果真实、超出基线的新动作获准或当前计划仍是 Gate1 时版本 | `subject_version` 记录 Gate1 当时计划版本；`baseline_fingerprint` 精确绑定冻结基线；`source_refs` 回指真实 Human 输入；基线内 PlanΔ 不改写 approval |
 | `workcase-result-version` | `result_version` | integer | 当前 `plan_version` 下 canonical result projection 的版本身份 | 不表示自检轮次、review 数量或跨计划全局版本 | 正整数；当前计划首次结果为 1；首条 result review 后 projection 变化精确 +1；计划实际升版时失效 |
 | `workcase-overall-result-summary` | `result_summary` | string | 当前结果版本的总体实际产物、重要变化和已观察影响 | 不表示计划、验证方法、逐标准判断、过程流水或责任处置 | 非空；属于 canonical result projection；只保留从 item 终值与实际观察可支持的总体结果 |
 | `workcase-controller-check-summary` | `controller_check_summary` | string | Controller 自检的覆盖、发现和当前处置 | 不表示独立复核、总体结果、验证全文或 Human 验收 | 非空；属于 canonical result projection；移除前必须将仍有消费价值的内容吸收到终态结果与验证 |
@@ -235,6 +241,20 @@ WorkCase 只有本文与 05.Att.01 共同定义的当前字段和结构。任何
 | `workcase-item-resume-from` | `resume_from` | string | item 在责任可继续时的首个无需猜测的有界恢复动作 | 不表示命令清单、普通下一步、未来计划全文或当前行动授权 | 非空且无需猜测；具体 item 状态中的出现条件唯一见 §6.4 |
 | `workcase-item-blocking-summary` | `blocking_summary` | string | item 的具体阻塞事实、影响与解除条件 | 不表示普通困难、waiting 标签或整体责任必然 blocked | 仅 `blocked` 必填非空 |
 | `workcase-item-result-summary` | `result_summary` | string | item 的实际终值、影响和未确认边界 | 不表示 expected result、总体结果、验证全文或证明材料 | `completed`、`cancelled` 必填非空；其它状态禁止 |
+| `workcase-authorization-authorized-actions` | `authorized_actions` | array | Gate1 中逐项呈现的已知授权动作闭集 | 不表示工具或命令白名单、动作已执行或未列动作默认允许 | 至少一项；按 `action_id` 唯一；每项使用 `workcase-authorized-action` |
+| `workcase-authorization-action-ceiling` | `action_ceiling` | string | 当前 WorkCase 单次运行不得超过的总体对象、权限、副作用与外部影响上限 | 不表示已列动作的技术前提已成立 | 必填非空；必须能与 scope 及各 action 条目共同判断超界 |
+| `workcase-authorization-prohibited-actions` | `prohibited_actions` | array | Gate1 明确不授权的动作、目标或副作用 | 不表示只有列出项才受禁止；未进入 authorized actions 的动作同样未获准 | 非空唯一 string 数组 |
+| `workcase-authorization-allowed-adjustments` | `allowed_adjustments` | string | Gate1 后 Controller 可在不改变基线时自动调整计划、重试、重新委派或替换实现方法的范围 | 不表示可改变 goal/scope/criteria、动作上限、风险接受或禁止项 | 必填非空；PlanΔ 仍需 fresh independent review 并按 §6.5 更新 |
+| `workcase-authorization-verification-and-rollback` | `verification_and_rollback` | string | 与授权动作相匹配的验证范围、失败恢复和不可回滚边界 | 不表示验证已运行、回滚一定可用或风险已消失 | 必填非空；必须据实包含已知不可回滚部分 |
+| `workcase-authorization-out-of-bounds-handling` | `out_of_bounds_handling` | string | 发现未授权动作、新风险或基线改变时的禁止执行、取消受影响 item 与自动结果收敛边界 | 不表示可在执行期索取新授权或把超界风险默认接受 | 必填非空；必须与 §6.5 的安全收敛一致 |
+| `workcase-authorization-human-prerequisites` | `human_prerequisites` | array | 只能由 Human 完成、且必须在 Gate1 最终决定前满足或排除的前置条件 | 不表示 Gate1 后可再要求 Human 中断执行 | 存在时为非空唯一 string 数组；Gate1 批准前必须已取得完成依据或从 authorized actions 排除 |
+| `workcase-authorized-action-id` | `action_id` | string | 授权动作在当前基线内的稳定局部身份 | 不表示执行顺序、工具名或 work item ID | 匹配 `authorization-[a-z0-9][a-z0-9-]*`；基线内唯一；Gate1 后不变 |
+| `workcase-authorized-action-summary` | `summary` | string | Human 能直接判断的动作及其目的 | 不表示命令清单、临时步骤或完成声明 | 必填非空 |
+| `workcase-authorized-action-target-scope` | `target_scope` | string | 该动作获准影响的对象、路径、环境、事实引用或外部目标范围 | 不表示目标当前存在、可写或来源适用 | 必填非空；不得使用“必要时其它对象”等无界表达 |
+| `workcase-authorized-action-effect-scope` | `effect_scope` | string | 该动作允许的写入、删除、委派、提交、发布、安装、外部消息或其它副作用边界 | 不表示未写明的附带影响已获准 | 必填非空；只在本成员明确范围内消费 |
+| `workcase-authorized-action-risk-summary` | `risk_summary` | string | Human 在 Gate1 判断的已知风险、未验证范围和残留风险 | 不表示风险已消失、技术验证已通过或未知风险被接受 | 必填非空；没有已识别高影响风险时仍须据实说明当前已检查范围 |
+| `workcase-authorized-action-rollback-summary` | `rollback_summary` | string | 该动作的安全退出、可回滚范围和已知不可逆部分 | 不表示回滚已验证或可以覆盖用户既有资产 | 必填非空 |
+| `workcase-authorized-action-rule-refs` | `rule_refs` | array | 该动作实际召回的 Human Gate、风险、验证或副作用规则回指 | 不表示规则已自动适用、技术条件已满足或 Human 决定来源 | 非空唯一 string 数组；Human 决定来源只记录在 `execution_approval.source_refs` |
 | `workcase-review-reviewer` | `reviewer` | string | 实际执行该次独立复核的稳定可识别执行者 | 不表示 Controller、Human 或自动独立性证明 | 必填非空；独立性由实际职责判断，Code 只检查形状 |
 | `workcase-review-reviewed-at` | `reviewed_at` | string | Reviewer 完成当前复核内容的时间 | 不表示对象更新时间、批准时间或排序身份 | 带时区 RFC 3339 date-time；同一 review 内容变化按获授权更正边界处理 |
 | `workcase-review-subject-version` | `subject_version` | integer | 当前 review 所绑定计划或结果的版本 | 不表示 review 次数、phase 轮次或 Git revision | 正整数；由 container 精确绑定 `plan_version` 或 `result_version` |
@@ -247,7 +267,7 @@ WorkCase 只有本文与 05.Att.01 共同定义的当前字段和结构。任何
 | `workcase-result-criterion-id` | `criterion_id` | string | 当前结果所对应成功标准的稳定身份 | 不表示新标准或数组位置 | 必须精确引用当前定义且覆盖一次 |
 | `workcase-result-outcome` | `outcome` | string | 该成功标准的当前结果分类 | 不表示 WorkCase closure outcome 或 Human 风险接受 | 闭集 `satisfied`、`not_satisfied`、`not_verified` |
 | `workcase-result-summary` | `summary` | string | 该标准为何得到当前 outcome、实际范围和限制 | 不表示总体结果、验证全文或处置决定 | 必填非空；只写实际已知，不把未验证写成未满足或满足 |
-| `workcase-proposal-outcome` | `proposed_outcome` | string | Controller 依据当前结果与验证形成、随关闭方案提交 Human 判断是否在该分类下停止的技术分类 | 不表示终态已成立，也不表示 Human 选择或改写技术分类 | 使用与 `closure_outcome` 相同闭集，并按当前 criterion results 与 validation 形成；Human 认为依据不成立时退回修改 |
+| `workcase-proposal-outcome` | `proposed_outcome` | string | Controller 依据当前结果与验证形成、随关闭方案提交 Human 判断是否在该分类下停止的技术分类 | 不表示终态已成立，也不表示 Human 选择或改写技术分类 | 使用与 `closure_outcome` 相同闭集，并按当前 criterion results 与 validation 形成；必须在 Gate2 前修正完整，Gate2 不接受时本次操作零写入且不回退 |
 | `workcase-proposal-disposition-summary` | `proposed_disposition_summary` | string | 拟定的整体停止边界、逐目标转交范围和 accepted-stop 存在提示 | 不表示结果正文、逐项 residual 依据或既成终态 | 必填非空；正文可在 Human 同意后直接成为 terminal disposition，不写“拟”“建议”占位语 |
 | `workcase-proposal-residual-decisions` | `residual_decisions` | array | 当前关闭提案识别出的全部剩余责任与处置建议 | 不表示历史 feedback、普通风险或已经成立的终态 | 有剩余责任时必填且按 `residual_id` 唯一；确实没有时省略并由 disposition summary 直接说明 |
 | `workcase-proposal-spark-suggestions` | `spark_suggestions` | array | 当前关闭方案中的完整 Spark 建议集合 | 不表示已建立对象、route target 或普通无结构待办 | 出现时非空且按 `suggestion_id` 唯一；可同时含受限责任与范围外机会；关闭时整体映射到顶层 `spark_suggestions` |
@@ -269,10 +289,11 @@ WorkCase 只有本文与 05.Att.01 共同定义的当前字段和结构。任何
 | `workcase-spark-suggestion-impact-summary` | `impact_summary` | string | 受限事项对当前结果、验收或风险的实际影响 | 不表示未来 Spark 的成功标准 | constrained 时必填，follow-up 时禁止 |
 | `workcase-spark-suggestion-resume-condition` | `resume_condition` | string | 使受限责任将来可以重新判断或推进的可识别条件 | 不表示日期承诺、自动触发或已有承接者 | constrained 时必填，follow-up 时禁止 |
 | `workcase-spark-suggestion-follow-up-summary` | `follow_up_summary` | string | 日后独立建立 Spark 时应继续判断的问题、目标或入口 | 不表示新 Spark 正文、强制步骤或未来 ID | 两种 suggestion kind 均必填非空 |
-| `workcase-approval-subject-version` | `subject_version` | integer | Human 执行批准所绑定的准确 plan version | 不表示结果版本、review 次数或后续计划 | 正整数且等于当前 `plan_version` |
+| `workcase-approval-subject-version` | `subject_version` | integer | Human 在 Gate1 实际阅读并批准的当时 plan version | 不表示结果版本、review 次数或基线内自动调整后的当前 plan version | 正整数；形成时等于当时 `plan_version`；Gate1 后不变 |
 | `workcase-approval-approved-at` | `approved_at` | string | Human 实际作出该次执行批准的时间 | 不表示对象更新时间、执行开始或关闭时间 | 带时区 RFC 3339 date-time；不得补造 |
 | `workcase-approval-summary` | `summary` | string | Human 实际批准的执行范围、限制或条件 | 不表示技术真实性、无限授权或关闭同意 | 必填非空；不得把 Controller 建议改写成 Human 原因 |
-| `workcase-approval-source-refs` | `source_refs` | array | 能够稳定回指 Human 实际批准输入的引用 | 不表示证据包、Human 身份证明或批准正文替代物 | 实际存在稳定引用时出现；成员非空唯一；没有可靠引用时省略，不补造 |
+| `workcase-approval-baseline-fingerprint` | `baseline_fingerprint` | string | Gate1 实际批准的 canonical execution authorization baseline SHA-256 | 不表示完整 WorkCase 内容指纹、plan version、Human 身份或技术验证摘要 | 必填；精确匹配 `[0-9a-f]{64}` 且等于 §6.5 定义的当前 baseline fingerprint |
+| `workcase-approval-source-refs` | `source_refs` | array | 稳定回指 Human 在 Gate1 实际作出批准的输入引用 | 不表示 AI 转述、证据包、Human 身份证明或批准正文替代物 | 必填非空且成员唯一；只能使用当次环境实际提供的 Human 输入稳定引用；无法取得时不得补造 approval，只能进入无有效 approval 安全收敛 |
 
 同一 `creation_reviews` 或 `result_reviews` 数组内，`reviewer + reviewed_at + subject_version` 三元组必须唯一，并只作为 Code 识别同一 review 事件、执行字段所有权与获授权事实更正的机械复合身份；它不表示数组顺序、审核先后、review 次数或 Reviewer 独立性。Reviewer 自有内容被获授权更正时该三元组保持不变；新的实际复核必须形成新的 `reviewed_at`，不得覆盖既有事件冒充同一次 review。
 
@@ -301,25 +322,25 @@ WorkCase 只有本文与 05.Att.01 共同定义的当前字段和结构。任何
 - `blocked`：当前 phase 没有任何可继续活动，必须有顶层 `blocking_summary`；block 不自动改变 phase；
 - `closed`：Human 已依据完整关闭提案决定当前 WorkCase 不再推进，是终态，不正常重开。
 
-全部活动期对象必须具有身份与时间、`status=open|blocked`、`goal`、`scope`、非空成功标准定义、priority、phase、正整数 plan version 和非空 work items。顶层 `summary` 只在具有独立当前快照价值时出现。终态字段 `closure_outcome`、`disposition_summary`、`residual_responsibilities`、顶层 `spark_suggestions` 和 `routed-to` 在活动期禁止；proposal 内的同名 suggestions 不属于终态字段。
+全部活动期对象必须具有身份与时间、`status=open|blocked`、`goal`、`scope`、非空成功标准定义、priority、phase、正整数 plan version 和非空 work items。正常活动形状还必须有全部绑定当前计划版本的非空 `creation_reviews` 与 `execution_authorization`；Gate1 完成后必须同时有与其 baseline fingerprint 匹配的 `execution_approval`。唯一例外是 §6.3 的 `SafeConvergenceShape`：它为了不补造历史 Human 授权或独立方案复核证明，必须同时缺失 `creation_reviews`、`execution_authorization` 与 `execution_approval`，且只能沿结果链向 Gate2 收敛。顶层 `summary` 只在具有独立当前快照价值时出现。终态字段 `closure_outcome`、`disposition_summary`、`residual_responsibilities`、顶层 `spark_suggestions` 和 `routed-to` 在活动期禁止；proposal 内的同名 suggestions 不属于终态字段。
 
 closed 对象的必填集是：`object_id`、`fact_type_key`、`title`、`created_at`、`updated_at`、`status=closed`、`goal`、`scope`、`success_criterion_definitions`、`success_criterion_results`、顶层 `result_summary`、`validation_summary`、`closure_outcome` 和 `disposition_summary`。
 
 closed 的条件集只有：实际存在的 `residual_responsibilities`、从关闭 proposal 原样映射的非空 `spark_suggestions`、实际成立的 `routed-to`、`contributed-to` 与 `related-to` relations，以及关闭后仍有独立消费价值的 `urls`。必填集不得缺失，条件集不适用时必须省略，两者之外的字段全部禁止。
 
-closed 禁止 `phase`、顶层 `summary`、priority、resume、waiting、blocking、plan version、work items、creation/result reviews、execution approval、result version、controller check 和 closure proposal。closed 没有 `phase=closed`，也没有 `closed_at`。
+closed 禁止 `phase`、顶层 `summary`、priority、resume、waiting、blocking、plan version、work items、execution authorization、creation/result reviews、execution approval、result version、controller check 和 closure proposal。closed 没有 `phase=closed`，也没有 `closed_at`。
 
 ### 6.2 phase 闭集与含义
 
 | phase | 当前唯一含义 |
 |---|---|
-| `human_plan_confirming` | 完整计划已经独立复核，正在等待 Human 对当前计划作执行决定 |
-| `plan_revising` | WorkCase 建立后的计划正在返修；旧计划、work items 和既有结果事实冻结，不写半成品新计划 |
-| `executing` | 按当前批准边界推进 work items，或在撤回后等待 Human 明确下一方向 |
+| `human_plan_confirming` | 完整计划、全部已知授权需求与风险基线已经独立复核，正在等待 Gate1 唯一执行决定 |
+| `plan_revising` | Gate1 前计划正在完善，或 Gate1 后 Controller 在冻结授权基线内自动返修当前计划；旧计划、work items 和既有结果事实冻结，不写半成品新计划 |
+| `executing` | 按 Gate1 冻结授权基线与当前已独立复核计划推进 work items；不等待新 Human 授权 |
 | `controller_checking` | 全部 work items 已 terminal，Controller 正在形成或修正当前完整结果投影 |
 | `independent_reviewing` | 当前完整结果投影正在接受实际独立第二视角，或 Controller 正在处置该版本反馈 |
 | `closure_preparing` | 当前结果已完成独立复核，全部 feedback 已由 Controller 处置；Controller 正基于已处置内容形成完整关闭提案 |
-| `human_closure_confirming` | 完整关闭提案已经形成，正在等待 Human 决定是否关闭及如何处置剩余责任 |
+| `human_closure_confirming` | 完整关闭提案已经形成且其它工作全部冻结，正在等待 Gate2 唯一关闭决定 |
 
 phase 是当前精确位置，不记录阶段历史、轮次或完成百分比。Reviewer conclusion 本身不自动改变 phase。
 
@@ -327,23 +348,23 @@ phase 是当前精确位置，不记录阶段历史、轮次或完成百分比�
 
 表中 R 为 required，C 为条件出现，F 为 forbidden：
 
-`PreExecutionStopShape` 是 approval 在前置终止结果快照中可缺失的唯一当前结构谓词：phase 必须为 `plan_revising`、`controller_checking`、`independent_reviewing`、`closure_preparing` 或 `human_closure_confirming`；全部 item 必须为带非空 `result_summary` 的 `cancelled`；不得有 `completed`、`in_progress`、`blocked` 或 `pending` item；`result_version` 必须存在，其它结果字段按当前 phase 成立。只有对象满足该当前形状时，Code 才允许结果快照缺失 approval；AI/Human 仍必须核对确无执行事实、Human 曾明确要求不执行并按当前事实收敛。其它结果链形状的 approval 一律必填并绑定当前 `plan_version`。
+`SafeConvergenceShape` 是正常 Gate1 证明无法取得且不得补造时，无当前方案复核、`execution_authorization` / `execution_approval` 对象可以继续保存已发生结果并向 Gate2 安全收敛的唯一当前结构谓词：phase 只能为 `controller_checking`、`independent_reviewing`、`closure_preparing` 或 `human_closure_confirming`；`creation_reviews`、`execution_authorization` 与 `execution_approval` 必须同时缺失；全部 item 必须为带非空 `result_summary` 的 `completed` 或 `cancelled`，不得有 `pending`、`in_progress` 或 `blocked`；`result_version` 必须存在，其它结果字段按当前 phase 成立；对象不得回到 `executing`、`plan_revising` 或 `human_plan_confirming`。该形状同时承接 Gate1 前明确不执行的全 cancelled 前置终止，以及旧对象已有执行事实但无法回指当前 Gate1 完整授权证明或当前 creation review 的结果收敛。它不得被用于恢复执行、添加新动作或伪造历史授权、复核事件。
 
-| phase | creation reviews | execution approval | 当前结果投影 | result reviews | closure proposal | waiting |
-|---|---:|---:|---:|---:|---:|---|
-| `human_plan_confirming` | R | F | F | F | F | R：Human 判断当前完整计划 |
-| `plan_revising` | F | C：既有 approval 通常暂存；只有 `NoExec` 撤回分支或 `PreExecutionStopShape` 可缺失 | 四种冻结形状：全部 F；只有 `result_version` R；`result_version` 与在 `controller_checking` 已合法形成的部分成员原样保留；或 `result_version` 与完整 projection 全部 R | C：进入前存在则原样冻结，不存在则 F；部分 projection 不得存在 review | F | C：实际等待输入、复核或能力 |
-| `executing` | F | R | 首次执行 F；同计划从结果阶段返回时只保留 R 的 `result_version`，projection 其余成员 F | F | F | C：实际外部等待；普通 pending item 不算 waiting |
-| `controller_checking` | F | R；仅 `PreExecutionStopShape` F | `result_version` R；projection 成员可在当前检查点分别 C，但每个数组一旦存在必须完整覆盖；离开到独立复核前全部 R | C：返回自检且仍绑定当前版本时可保留 | F | C |
-| `independent_reviewing` | F | R；仅 `PreExecutionStopShape` F | R | C：形成中；离开到 closure 前至少一项 | F | 实际等待 Reviewer 时 R |
-| `closure_preparing` | F | R；仅 `PreExecutionStopShape` F | R | R | C：只在完整时整体出现 | C |
-| `human_closure_confirming` | F | R；仅 `PreExecutionStopShape` F | R | R | R | R：Human 判断完整关闭提案 |
+| phase | execution authorization | creation reviews | execution approval | 当前结果投影 | result reviews | closure proposal | waiting |
+|---|---:|---:|---:|---:|---:|---:|---|
+| `human_plan_confirming` | R | R | F | F | F | F | R：Gate1 判断当前完整计划与授权基线 |
+| `plan_revising` | R | R | C：Gate1 前为 F；Gate1 后必须原样 R | 四种冻结形状：全部 F；只有 `result_version` R；`result_version` 与在 `controller_checking` 已合法形成的部分成员原样保留；或 `result_version` 与完整 projection 全部 R | C：进入前存在则原样冻结，不存在则 F；部分 projection 不得存在 review | F | C：只可等待非 Human 输入、Reviewer 或能力 |
+| `executing` | R | R | R | 首次执行 F；同计划从结果阶段返回时只保留 R 的 `result_version`，projection 其余成员 F | F | F | C：只可为实际非 Human 外部等待；普通 pending item 不算 waiting |
+| `controller_checking` | R；`SafeConvergenceShape` F | R；`SafeConvergenceShape` F | R；`SafeConvergenceShape` F | `result_version` R；projection 成员可在当前检查点分别 C，但每个数组一旦存在必须完整覆盖；离开到独立复核前全部 R | C：返回自检且仍绑定当前版本时可保留 | F | C：不得等待 Human |
+| `independent_reviewing` | R；`SafeConvergenceShape` F | R；`SafeConvergenceShape` F | R；`SafeConvergenceShape` F | R | C：形成中；离开到 closure 前至少一项 | F | 实际等待 Reviewer 时 R |
+| `closure_preparing` | R；`SafeConvergenceShape` F | R；`SafeConvergenceShape` F | R；`SafeConvergenceShape` F | R | R | C：只在完整时整体出现 | C：不得等待 Human |
+| `human_closure_confirming` | R；`SafeConvergenceShape` F | R；`SafeConvergenceShape` F | R；`SafeConvergenceShape` F | R | R | R | R：Gate2 判断完整关闭提案 |
 
-前置执行终止链只指：链开始时 execution approval 已缺失、全部 item 仍为 `pending` 且没有执行事实，Human 明确要求不进入执行并按当前事实收敛，由专属转换把全部 item 据实写为 `cancelled` 后进入结果链。它可以从 `human_plan_confirming` 发起，也可以从无执行事实且 approval 已被 Human 撤回的 `plan_revising` 发起。普通 approval 缺失不是该例外。
+前置执行终止链只指：Gate1 未批准、全部 item 仍为 `pending` 且没有执行事实，Human 明确要求不进入执行并按当前事实收敛，由专属转换把全部 item 据实写为 `cancelled`、移除未获批的 `creation_reviews` 与 `execution_authorization` 后进入 `SafeConvergenceShape`。旧对象已有 completed/cancelled 执行事实但无可回指的当前 Gate1 证明或当前 creation review 时，也只能以精确事实迁移进入同一 `SafeConvergenceShape`，不补造 review、authorization、approval 或 source refs。
 
 `result_reviews` 只能与完整 canonical result projection 同时存在。`plan_revising` 或 `controller_checking` 中的 version-only / 部分 projection 形状必须缺失 reviews；不得用孤立 review 冒充完整被审主体。
 
-`plan_revising` 的四种结果形状还必须满足以下交叉约束：全部结果字段缺失时 approval 为 C；只有 `result_version` 时，正常返工快照必须保留当前 approval 且至少一项 item 非 terminal，只有 `PreExecutionStopShape` 可以 approval 缺失且全部 item cancelled；部分或完整 projection 必须 `AllTerminal`，只有 `PreExecutionStopShape` 可缺失 approval；只有完整 projection 可同时冻结 reviews。
+`plan_revising` 的四种结果形状还必须满足以下交叉约束：Gate1 前 approval 必须缺失，Gate1 后 approval 必须原样保留；只有 `result_version` 时，Gate1 后正常返工快照至少一项 item 非 terminal；部分或完整 projection 必须 `AllTerminal`；只有完整 projection 可同时冻结 result reviews。`SafeConvergenceShape` 不允许 `phase=plan_revising`。
 
 ### 6.3.1 status 转换闭集
 
@@ -368,48 +389,45 @@ phase 变化只允许以 before/after 均为 `status=open` 执行；`blocked` �
 
 | from phase | to phase | 成立条件 | 同事务必须发生 |
 |---|---|---|---|
-| `human_plan_confirming` | `executing` | Human 批准当前 plan，且至少一项 item 非 terminal | 写入绑定当前 `plan_version` 的新 approval；移除 creation reviews 与 Human waiting；计划/items 不变，结果字段禁止 |
-| `human_plan_confirming` | `plan_revising` | Human 要求改方案，或 Controller 依当前来源判断计划覆盖必须变化 | 移除 creation reviews；原 plan/items 冻结；可行动 feedback 先收敛为明确返修要求，并只按 §6.5 写入语义实际匹配的顶层 `summary`、`resume_from`、`waiting_on` 或 `blocking_summary`；不得补造“返修说明”字段 |
-| `human_plan_confirming` | `controller_checking` | 两种且仅两种：`NoExec` 且 Human 明确要求不执行、按当前事实收敛；或 `AllTerminal` 且 Human 批准当前 plan | 前置终止时移除 creation reviews/Human waiting、全部 item 写 `cancelled` 与实际 result summary、approval 缺失；正常批准时写当前版本 approval 并保留 terminal items；两者都写当前计划首个 `result_version=1` |
-| `plan_revising` | `human_plan_confirming` | 完整候选计划与 fresh review 成立；发生 `PlanΔ`，或尚无 `result_version` 且同计划需重新请求批准 | `PlanΔ` 时精确 `plan_version+1`、原子替换 plan/items/reviews 并清 approval、result 及 proposal；无 `PlanΔ` 时版本不变、result 必须全部缺失，写 fresh reviews 与 Human waiting |
-| `plan_revising` | `executing` | 无 `PlanΔ`，结果形状为全部缺失或只有已分配 `result_version`，至少一项非 terminal，且当前计划执行授权已重新成立 | plan/items/version 不变；保留有效 approval 或写新的同版 approval；清返修 waiting/blocking；已分配 `result_version` 不得删除或重置 |
-| `plan_revising` | `controller_checking` | 无 `PlanΔ` 且二选一：`AllTerminal` 且当前 plan approval 已成立；或符合前置执行终止链 | 已有结果时原样保留 result version/projection/reviews；首次结果写 `result_version=1`；前置终止时 approval 缺失且全部 item 写为 `cancelled`；其它 approval 缺失的 terminal 计划必须回 `human_plan_confirming` 取得决定 |
-| `executing` | `plan_revising` | Human 或 Controller 判断计划必须改变 | 立即停止未来执行；冻结 plan/items 及已分配结果形状；既有 approval 只表示此前行动边界 |
+| `human_plan_confirming` | `executing` | Gate1 批准当前 plan 与完整 execution authorization，全部 Human prerequisites 已满足或排除，且至少一项 item 非 terminal | 写入 `subject_version=当前 plan_version`、当前 baseline fingerprint 与真实 Human `source_refs` 的新 approval；保留 authorization、plan/items/reviews；移除 Human waiting；结果字段禁止 |
+| `human_plan_confirming` | `plan_revising` | Gate1 尚未完成，Human 在同一 Gate1 中要求改方案/授权基线，或 Controller 判断呈现材料必须改变 | approval 仍缺失；原 authorization/plan/items/reviews 冻结；可行动 feedback 收敛为明确返修要求；不补造新授权 |
+| `human_plan_confirming` | `controller_checking` | `NoExec` 且 Gate1 明确不批准执行、要求按当前事实收敛；或 `AllTerminal` 且 Gate1 已批准 | 不批准时全部 item 写 `cancelled` 与实际 result summary，移除 creation reviews 与未获批 authorization，approval 缺失，形成 `SafeConvergenceShape`；正常批准时写 approval 并保留 authorization/reviews/terminal items；两者都写 `result_version=1` |
+| `plan_revising` | `human_plan_confirming` | Gate1 尚未完成，approval 缺失，完整候选 authorization/plan 与 fresh review 成立 | `PlanΔ` 时精确 `plan_version+1`，原子替换 authorization/plan/items/reviews；无 `PlanΔ` 时版本不变；写 Gate1 waiting；结果字段全部缺失 |
+| `plan_revising` | `executing` | Gate1 已完成，authorization 与 approval 原样有效，完整候选 plan 在 baseline 内且 fresh review 成立，至少一项非 terminal | `PlanΔ` 时精确 `plan_version+1`、原子替换 plan/items/reviews；无 `PlanΔ` 时版本不变；authorization/approval 逐值不变；已分配 `result_version` 不删除或重置 |
+| `plan_revising` | `controller_checking` | Gate1 已完成且 `AllTerminal`，或 Gate1 前不批准分支正在形成 `SafeConvergenceShape` | 已有结果时原样保留 result version/projection/result reviews；首次结果写 `result_version=1`；无 approval 时必须同时无 creation reviews/authorization 且全部 item terminal |
+| `executing` | `plan_revising` | Controller 判断计划可以在当前 baseline 内调整 | 立即停止旧计划的未来行动；冻结 authorization/approval/plan/items 及已分配结果形状；不写 Human waiting |
 | `executing` | `controller_checking` | `AllTerminal` | 首次结果写 `result_version=1`；同计划返工后保留已分配版本；projection 成员按当前实际检查点形成 |
-| `controller_checking` | `executing` | Controller 决定实际返工，且当前计划执行授权仍成立；或 `PreExecutionStopShape` 后 Human 明确决定执行同一未变 plan | 重开受影响 item；移除 projection/proposal；`Reviewed` 时精确 `result_version+1` 并清 reviews，否则保持版本；前置终止反悔分支必须同事务写入绑定同一 `plan_version` 的新 approval，不补造旧执行事实 |
-| `controller_checking` | `plan_revising` | 发现 plan 覆盖必须变化 | 冻结 plan/items/result version/projection/reviews；移除 proposal；approval 仅按 §6.5 暂存 |
+| `controller_checking` | `executing` | Controller 决定在当前 baseline 内实际返工，且 authorization/approval 仍成立；`SafeConvergenceShape` 禁止此边 | 重开受影响 item；移除 projection/proposal；`Reviewed` 时精确 `result_version+1` 并清 result reviews，否则保持版本；保留 authorization/approval/creation reviews |
+| `controller_checking` | `plan_revising` | 发现 plan 可在 baseline 内调整；`SafeConvergenceShape` 禁止此边 | 冻结 authorization/approval/plan/items/result version/projection/reviews；移除 proposal；不写 Human waiting |
 | `controller_checking` | `independent_reviewing` | 完整 projection 已形成、校验并回读 | projection/version 不变；实际等待 Reviewer 时写 waiting；可保留当前版本既有 reviews |
 | `controller_checking` | `closure_preparing` | `Reviewed`，全部 feedback 已有 Controller resolution，projection 未变 | 保留 result/version/reviews；移除 Reviewer waiting；proposal 可缺失或整体形成 |
 | `independent_reviewing` | `controller_checking` | Controller 需修正结果或判断返工 | 首先原样保留 projection/version/reviews；后续实际改 projection 时按 §6.6 升版失效；feedback resolution 在离开 `independent_reviewing` 前完成 |
-| `independent_reviewing` | `plan_revising` | feedback 或新事实要求改变 plan | 冻结 plan/items/result version/projection/reviews；proposal 缺失 |
+| `independent_reviewing` | `plan_revising` | feedback 或新事实要求在 baseline 内改变 plan；`SafeConvergenceShape` 禁止此边 | 冻结 authorization/approval/plan/items/result version/projection/reviews；proposal 缺失 |
 | `independent_reviewing` | `closure_preparing` | 至少一项 review，全部 feedback 已处置，projection 未变 | 保留 result/version/reviews；开始形成 proposal |
 | `closure_preparing` | `controller_checking` | 需修改结果、补验证、追加复核或重新执行，但 plan 不变 | 移除 proposal；先原样保留 result/version/reviews，再由 `controller_checking` 的唯一转换处理实际影响 |
-| `closure_preparing` | `plan_revising` | 需改变 plan | 移除 proposal；冻结 plan/items/result version/projection/reviews |
+| `closure_preparing` | `plan_revising` | 需在 baseline 内改变 plan；`SafeConvergenceShape` 禁止此边 | 移除 proposal；冻结 authorization/approval/plan/items/result version/projection/reviews |
 | `closure_preparing` | `human_closure_confirming` | 完整 proposal、全部 route_existing target 及 fingerprint 成立，source 已无 `depends-on`，终态保留审查已按 §6.7 完成，现场保留与建议核对已按 §6.8 完成 | 保留完整质量链与 proposal；写 Human waiting；任何即将移除字段和旧依赖中仍有终态消费价值的事实已吸收到保留字段；完整 draft Pitfall 及其 `contributed-to` 已回读，其它后续事项只保留为结果/处置或 Spark suggestions |
-| `human_closure_confirming` | `closure_preparing` | Human 要求修改分类、停止边界或责任处置；或 Controller / Code 依目标重读、指纹比较或关系检查确认当前 proposal 已陈旧，但 plan 与 result 仍成立 | 移除旧 proposal 后重建；plan/result/reviews 不变；原 Human 决定不得沿用到改变后的判断对象 |
-| `human_closure_confirming` | `controller_checking` | Human 要求修改结果、补验证、追加复核或重新执行，但 plan 不变；或 Controller 依新事实或失败校验确认当前 result / validation / review 已不可用 | 移除 proposal；先原样保留 result/version/reviews，再由结果链唯一转换处理；原 Human 决定不得沿用 |
-| `human_closure_confirming` | `plan_revising` | Human 要求改变 plan projection；或 Controller 依新事实确认当前计划边界已失效 | 移除 proposal；冻结 plan/items/result version/projection/reviews；原 Human 决定不得沿用 |
 
-`human_closure_confirming → closed` 不是普通 phase 边，只由 §6.7 的专属关闭事务完成。Human 从关闭待确认要求重新执行或复核时，必须先回 `controller_checking`，不直跳 `executing` 或 `independent_reviewing`。未在上表出现的 phase 边全部禁止。
+`human_closure_confirming → closed` 不是普通 phase 边，只由 §6.7 的专属关闭事务完成。Gate2 开始前所有可修正结果、验证、review、proposal 或 target 的工作必须已完成；进入 `human_closure_confirming` 后不得返回任何早期 phase，也不得以技术失败索取第三次 Human 确认。专属 close 发生 CAS/target drift 时保持原对象与失败诊断，不自动改写 proposal 或重新请求 Human。未在上表出现的 phase 边全部禁止。
 
 ### 6.3.3 同 phase 更新闭集
 
 | phase | 允许的实质变化 |
 |---|---|
-| `human_plan_confirming` | 当前 plan version 的实际 creation review、Controller resolution 与 waiting；plan 变化必须转 `plan_revising` |
-| `plan_revising` | Human 撤回且 `NoExec` 时可移除 approval；plan/items/result version/projection/reviews 冻结 |
-| `executing` | 合法 item 推进、当前快照与实际外部 waiting；同计划重新授权必须实际替换 approval，不改 plan/result version |
+| `human_plan_confirming` | 当前 plan version 的实际 creation review、Controller resolution 与 Gate1 waiting；authorization 或 plan 变化必须转 `plan_revising` |
+| `plan_revising` | authorization/approval/plan/items/result version/projection/reviews 冻结；只写非 Human 返修位置、Reviewer/能力 waiting 与实际 blocking；完整候选只在离开该 phase 的原子更新中形成 |
+| `executing` | 基线内合法 item 推进、当前快照与实际非 Human 外部 waiting；authorization 与 approval 冻结，不存在重新授权分支 |
 | `controller_checking` | 按稳定检查点形成 projection 成员；尚无 review 时可在同版本修改；`Reviewed` 后发生 `ResultΔ` 必须同事务 `result_version+1`、清 reviews/proposal |
 | `independent_reviewing` | projection/version 冻结；新增实际 review 或更新 Controller resolution |
 | `closure_preparing` | projection/version/reviews 冻结；proposal 只能整体移除或整体写入 |
-| `human_closure_confirming` | plan/result/reviews/proposal 全部冻结；改变 Human 判断对象的任何事实必须返回相应 phase |
+| `human_closure_confirming` | authorization/approval/plan/result/reviews/proposal 与所有 target 全部冻结；只允许不改变关闭判断对象的当次读取与专属 close |
 
 下列活动期快照更新是上表的公共 overlay，不改变 phase 专属字段所有权：
 
-- 顶层 `summary`、`resume_from` 和 `waiting_on` 可按其当前实际语义在稳定检查点写入、更新或移除；§6.3 要求 waiting 必填时不得省略；
+- 顶层 `summary`、`resume_from` 和 `waiting_on` 可按其当前实际语义在稳定检查点写入、更新或移除；§6.3 要求 waiting 必填时不得省略；`waiting_on` 只在 `human_plan_confirming` 或 `human_closure_confirming` 可以 Human 为等待对象，其它 phase 只能记录 Reviewer、外部输入或能力；
 - `title`、priority 和仍有消费价值的 `urls` 可按当前事实更正；不得借这类更正改写 goal、scope、criteria、计划或结果；
-- 除 `human_closure_confirming` 始终禁止 outgoing `depends-on` 外，其它活动 phase 只可按 §8 形成、更正或解除 `depends-on`；变更前必须吸收仍有当前价值的依赖边界并完成引用/图检查，`routed-to` 仍禁止；Human 等待期发现新依赖时必须先退回 `closure_preparing` 或更早 phase；
-- `contributed-to` 只可在 `human_closure_confirming` 以外的活动 phase、且完整 `status=draft` Pitfall target 已依当前 execution approval 的窄例外创建并回读之后按 §8 形成；该边不指向 Spark、ADR 或 Study。关系记错时按事实更正解除或更正，不承载生命周期推进；`blocked` 期间 relations 冻结，不创建 draft 或补边；`human_closure_confirming` 中该边冻结，等待期发现尚未保存的完整 Pitfall 时必须先退回 `closure_preparing`；
+- 除 `human_closure_confirming` 始终禁止 outgoing `depends-on` 外，其它活动 phase 只可按 §8 形成、更正或解除 `depends-on`；变更前必须吸收仍有当前价值的依赖边界并完成引用/图检查，`routed-to` 仍禁止；Gate2 发现新依赖时不退回，由当前关闭操作拒绝并交由后续新 WorkCase/Gate1 承接；
+- `contributed-to` 只可在 `human_closure_confirming` 以外的活动 phase、且完整 `status=draft` Pitfall target 已由当前 execution authorization 逐项覆盖并创建回读之后按 §8 形成；该边不指向 Spark、ADR 或 Study。关系记错时按事实更正解除或更正，不承载生命周期推进；`blocked` 期间 relations 冻结，不创建 draft 或补边；`human_closure_confirming` 中该边冻结，等待期发现尚未保存的完整 Pitfall 时不得退回；
 - `related-to` 只可在活动期对已存在、同项目、mechanically valid 的当前事实形成或依事实更正；不影响 phase、责任或关闭处置，`blocked` 和 `human_closure_confirming` 期间冻结；
 - status 变换、`blocked` 内阻塞原因更新以及对应 `blocking_summary` / 实际 `waiting_on` 的写入和移除只按 §6.3.1，是不受上表限制的 status overlay；`open` 始终禁止顶层 `blocking_summary`。
 
@@ -435,16 +453,16 @@ phase 变化只允许以 before/after 均为 `status=open` 执行；`blocked` �
 | `in_progress` | `blocked` | 当前 item 实际无法继续 | 更新 current summary，写 blocking summary；resume point 只在解阻后入口已清楚时保留 |
 | `blocked` | `in_progress` | 实际阻塞已解除，且全部 `depends_on` 目标为 `completed` | 移除 blocking summary，更新 current summary 和可继续 resume point |
 | `in_progress` 或 `blocked` | `completed` | 实际局部结果已稳定形成 | 移除 current/resume/blocking，写非空 actual result summary |
-| `pending`、`in_progress` 或 `blocked` | `cancelled` | 取消是原批准承诺下的实际终值，或 Human 明确要求按现状停止并进入结果收敛 | 移除 current/resume/blocking，写据实说明未继续范围与已有结果的 result summary；若取消代表改变计划承诺，不走本边，必须先 `executing → plan_revising` 冻结现状，再由 `PlanΔ` 原子替换处理 |
+| `pending`、`in_progress` 或 `blocked` | `cancelled` | 取消是基线内允许的实际终值，或发现继续必须超出 action ceiling、命中 prohibited action、接受新风险或取得 Gate1 后的新 Human 决定 | 移除 current/resume/blocking，写据实说明未继续范围、超界原因与已有结果的 result summary；不改 authorization/approval，不进入 Human waiting；全部 item terminal 后同事务进入 `controller_checking` |
 
-`depends_on` 目标为 `cancelled` 不等于前置已满足；依赖改变时必须进入计划返修，或把受影响 item 据实取消，不得直接开始下游 item。
+`depends_on` 目标为 `cancelled` 不等于前置已满足；依赖变化可在 baseline 内收敛时进入计划返修，否则把受影响 item 据实取消并进入结果链，不得直接开始下游 item。
 
 下列是普通 executing 之外的唯一 item 状态边界：
 
 - 前置执行终止链可在 `human_plan_confirming → controller_checking` 或 `plan_revising → controller_checking` 的同一事务把全部 `pending` 精确写为 `cancelled`；
 - `controller_checking → executing` 只可把本次实际返工范围内的 `completed` / `cancelled` 重开为 `in_progress` 或 `blocked`，移除旧 result summary 并写新 current/resume/blocking 合法组合；不得重置为 `pending`，未返工的 terminal item 保持不变；
 - `controller_checking` 内可在新事实表明原 terminal 分类记错时把 `completed` 与 `cancelled` 互相更正，必须同时更新 actual result summary；已 `Reviewed` 时仍按 §6.6 升版与重审；
-- `PlanΔ` 的原子替换不是旧 item 逐项跳转：新 `item_id` 只能以 `pending` 出现；保留 ID 的已有执行事实原样保留，或在 Human 明确的边界变化下据实收敛为 `blocked` / `cancelled`；不得把已有事实重置为 `pending` 或无声删除。移除已有 ID 前，其独有执行事实必须无损吸收到保留 item 或顶层当前摘要。
+- 基线内 `PlanΔ` 的原子替换不是旧 item 逐项跳转：新 `item_id` 只能以 `pending` 出现；保留 ID 的已有执行事实原样保留，或在 `allowed_adjustments` 已列范围内据实收敛为 `blocked` / `cancelled`；不得把已有事实重置为 `pending` 或无声删除。移除已有 ID 前，其独有执行事实必须无损吸收到保留 item 或顶层当前摘要。
 
 同一 item status 内只可按上表形状更新当前快照。`executing` 中已 terminal item 的 actual result summary 发现笔误或事实错误时可及时据实更正而不改 status；terminal `completed` / `cancelled` 分类互换仍只在 `controller_checking` 按结果版本规则执行。未列出的 item status 边全部禁止。`phase=executing` 始终必须至少有一项非 terminal item；最后一项转为 terminal 时必须同事务执行 `executing → controller_checking`，不得留下 `executing + AllTerminal`。
 
@@ -460,28 +478,29 @@ canonical plan projection 由以下解析后结构组成：
 
 原 YAML 数组位置不进入比较；字符串按解析后的精确值比较，Code 不判断自然语言等义或“实质相同”。
 
+canonical execution authorization baseline projection 由以下解析后结构组成：
+
+- `goal`、`scope`；
+- 按 `criterion_id` 排序的 `criterion_id + statement`；
+- 完整 `execution_authorization`：`authorized_actions` 按 `action_id` 排序，每项包含 `action_id`、`summary`、`target_scope`、`effect_scope`、`risk_summary`、`rollback_summary` 与排序去重后的 `rule_refs`；并包含 `action_ceiling`、排序去重后的 `prohibited_actions`、`allowed_adjustments`、`verification_and_rollback`、`out_of_bounds_handling`，以及实际存在时排序去重后的 `human_prerequisites`。
+
+Code 必须把该结构编码为 UTF-8 canonical JSON：object keys 按 Unicode code point 升序，array 使用上文规定的稳定排序，string 使用 JSON 标准转义，不写无意义空白；对所得 bytes 计算 SHA-256，保存为 64 位小写十六进制 `baseline_fingerprint`。Code 只判断结构、规范化 bytes、fingerprint 与精确相等；授权条目是否语义覆盖实际动作、风险、目标、影响和回滚，仍由 Controller 与 Reviewer 判断。
+
 规则如下：
 
-1. 创建时 `plan_version=1`；creation reviews 全部绑定该版本；
-2. `human_plan_confirming → executing` 必须在同一事务写入绑定当前版本的新 execution approval，移除 creation reviews 与 Human waiting，不建立结果字段；
-3. Human 拒绝执行并要求改方案，或 Controller 根据当前来源、新事实或已处置 feedback 判断计划覆盖必须改变时，未来执行立即停止并进入 `plan_revising`；
-4. Controller 发起返修时，既有 approval 只作为旧计划此前获批的事实暂存到原子计划替换，不表示仍可执行；只有 Human 明确撤回且没有执行事实时才可提前移除；
-5. `plan_revising` 冻结原 plan projection、work items、当前结果形状和已存在的 result reviews；只允许更新顶层 summary、resume、waiting 和 blocking 来表达返修位置，进入时移除 closure proposal。Controller 必须在进入前把仍可行动的 feedback 收敛为明确返修要求；review 的内容和顺序不得在本 phase 改写或删除；
-6. 只有完整候选计划、work items 和 fresh 独立方案复核都已形成，才可原子离开 `plan_revising`。projection 有任一结构差异时只能精确 `plan_version + 1`，同一事务写完整新计划与 creation reviews，并移除旧 approval、旧 `result_version`、旧结果投影、result reviews 和 proposal；
-7. projection 完全相同时禁止升版和结果版本重置。尚未分配 `result_version` 时，可在 fresh review 后按同一计划版本回到 `human_plan_confirming`，或在当前批准重新成立后返回 `executing`；只有已分配 `result_version` 而没有 projection 时，只能按同计划返工规则返回 `executing`；已有部分或完整 projection 时，必须返回 `controller_checking` 并原样保留当前成员，完整 projection 已有 reviews 时还必须保留同版本冻结语义；
-8. 计划替换前，仍有当前价值的实际执行事实必须进入替换后继续存在的 item current/result summary；不能归入单项但仍影响返修判断的跨 item 事实进入顶层 summary，不得为整洁而丢失；
+1. 创建时 `plan_version=1`；`creation_reviews` 全部绑定该版本，并在正常活动形状的整个生命周期保存当前计划的实际方案复核；`SafeConvergenceShape` 不补造或保留无法成立的历史复核；
+2. Gate1 必须一次向 Human 呈现完整 plan projection、work items、creation reviews 与 execution authorization baseline。`human_plan_confirming → executing` 在同一事务写 `execution_approval`：`subject_version` 是 Gate1 当时呈现的 plan version，`baseline_fingerprint` 精确绑定 Human 所见基线，`source_refs` 必须回指真实 Human 输入；移除 Human waiting，不移除 creation reviews；
+3. authorization 字段、fingerprint 或 AI 摘要都不等于 Human approval。没有真实可回指的 Gate1 决定时不得补造 approval/source refs，只能按 `SafeConvergenceShape` 收敛已有事实；
+4. Gate1 前可按 feedback 完整修改计划或授权基线、完成 fresh 独立复核并继续在 `human_plan_confirming` 取得一次最终决定；Gate1 完成后 goal、scope、criteria 与 execution authorization baseline 在本次运行中冻结，不再回到 `human_plan_confirming`；
+5. Gate1 后的 `PlanΔ` 只有同时满足以下条件才可自动推进：baseline projection 精确不变；新旧动作都处于 `authorized_actions`、`action_ceiling`、`allowed_adjustments` 范围且不命中 `prohibited_actions`；全部已有执行事实被无损保留；完整候选计划与 fresh 独立方案复核已经形成。AI 负责语义判断，Code 负责结构与 fingerprint 检查；
+6. 合法 `PlanΔ` 在 `plan_revising → executing` 的单一事务精确 `plan_version + 1`，完整替换 plan/work items，以 fresh `creation_reviews` 替换旧 reviews；`execution_approval` 的全部成员保持精确不变，不因当前 plan version 高于其 `subject_version` 而失效。projection 完全相同时禁止升版；
+7. `plan_revising` 不是 Human Gate：只能承载 Gate1 后的基线内自动调整，不能把 Human 写入 waiting；超过基线、命中禁止项、需要接受新风险或需要 Gate1 后新 Human 决定时，不改授权、不执行该动作、不请求第三次确认，而是据实取消受影响 item，全部 item terminal 后进入结果链；
+8. Gate1 后不得撤回、扩展或重建本次运行的 execution authorization/approval。Human 主动给出改变基线的新要求时，也先让当前运行按已有事实安全收敛；新要求只能在当前关闭后由新的 WorkCase/Gate1 承接；
+9. 计划替换前，仍有当前价值的实际执行事实必须进入替换后继续存在的 item current/result summary；不能归入单项但仍影响返修判断的跨 item 事实进入顶层 summary，不得为整洁而丢失；
 
 对 PlanΔ 删除一个已有执行事实的旧 `item_id`（包括 `in_progress`、`blocked`、`completed`、`cancelled` 或实际存在的 current/resume/blocking/result 字段），Code 除了检查结构合法性，还必须机械要求一个当次更新的、来源已定义的承接载体：替换后的顶层 `summary` 必须为非空 string，且与替换前的解析值不同。新 item、未改变的旧顶层 summary 以及保留 item 的字段改写都不是这一机械条件的承接载体；保留 `item_id` 的已有执行事实仍按本节要求原样保留，不得为满足这一条而改写。这个条件只确保发生了可回读的承接载体更新，不证明自然语言已无损吸收旧事实；后者仍由 Controller 按本条首段的责任判断，Code 不得以机械通过代替该判断。
 
-9. 涉及 `goal`、`scope` 或成功标准等责任与验收基线的变化，必须先取得 Human 对边界调整的明确决定；Controller 不能自行改写；
-10. 局部取消后继续其它工作，且取消代表改变原承诺时，必须形成实际计划结构差异、升版、重审与再批准；取消只是原承诺下的实际结果，或 Human 明确停止整项责任时，走结果与关闭链，不制造假升版。
-
-Human 撤回未来执行授权时，未来行动立即停止，但不抹除既有事实：
-
-- 要求改方案时进入 `plan_revising`；
-- 要求按现状停止并提交关闭判断时，把不再继续的 item 据实置为 `cancelled`，全部 terminal 后进入结果链；该指令不替代最终关闭决定；
-- 方向不清时保持当前 phase，写 `status=blocked`、`waiting_on` 与 `blocking_summary`，不得替 Human 选择；
-- Human 后续明确恢复同一未变化计划时，不升 plan version：以绑定同一版本的新 execution approval 替换或重建旧记录，清除撤回造成的 waiting / blocking。若回到 executing，仍须遵守 §6.6 的同计划结果返回规则。当前来源或未处置 feedback 已要求改计划时，不得用重新授权绕过返修。
+10. `SafeConvergenceShape` 不得通过计划更新、Human 新决定或重新授权返回执行；它只保存已有事实并沿 `controller_checking → independent_reviewing → closure_preparing → human_closure_confirming` 前进。
 
 ### 6.6 canonical result projection 与结果版本
 
@@ -520,7 +539,7 @@ canonical result projection 由以下完整结构组成：
 - 进入 `human_closure_confirming` 前，每个 route_existing target 都已实际回读，责任边界经 AI 判断覆盖待转交事项，并保存完整内容 fingerprint；target 可为 open/blocked WorkCase 或 open Spark，Spark 只表示稳定承载了待判断问题，不表示正在执行；
 - Human 决定前禁止写 terminal outcome、disposition、residual 或 `routed-to`。
 
-剩余责任与 decision 不必机械一一对应；一项 decision 可以完整覆盖多个相关标准，一项标准也可以拆成多个不同去向。Reviewer 在结果复核中检查 result / validation 是否如实暴露失败、未知、影响和潜在剩余责任，但不审核尚未形成的 proposal。Controller 在 `closure_preparing` 负责依已复核结果形成完整处置覆盖，Human 在 `human_closure_confirming` 判断是否接受该最终处置。Code 不判断自然语言覆盖是否充分，但任一结果为 `not_satisfied` 或 `not_verified` 时必须机械要求非空 `residual_decisions`；Controller 尚未能确认全覆盖时不得进入关闭待确认，Human 不接受时必须退回修改。
+剩余责任与 decision 不必机械一一对应；一项 decision 可以完整覆盖多个相关标准，一项标准也可以拆成多个不同去向。Reviewer 在结果复核中检查 result / validation 是否如实暴露失败、未知、影响和潜在剩余责任，但不审核尚未形成的 proposal。Controller 在 `closure_preparing` 负责依已复核结果形成完整处置覆盖，Human 在 `human_closure_confirming` 判断是否接受该最终处置。Code 不判断自然语言覆盖是否充分，但任一结果为 `not_satisfied` 或 `not_verified` 时必须机械要求非空 `residual_decisions`；Controller 尚未能确认全覆盖时不得进入关闭待确认。进入 Gate2 后对象冻结，Human 不接受时本次关闭操作零写入并保留原对象，不得自动退回、更改提案或发起第三次确认。
 
 进入 `human_closure_confirming` 前，Controller 必须对关闭时将移除的顶层 summary、item current/result、controller check、reviews、plan、approval、waiting/blocking 和依赖边做一次终态保留审查：仍用于理解实际结果、标准判断、验证边界、停止原因、责任去向或长期复核资料的内容，必须无损吸收到 `success_criterion_results`、顶层 `result_summary`、`validation_summary`、proposal 的 disposition / residual decisions 或仍有价值的 `urls`；无独立消费价值的过程内容不复制。独立 result review 只需审查它形成时已存在的 result / validation 是否完整暴露了这些事实；后续 proposal 的吸收与责任覆盖由 Controller 收敛、Human 判断，不伪造 Reviewer 对尚未存在内容的审核。WorkCase 不为此新增保留收据；Code 不判断自然语言是否已无损吸收，Controller 或 Human 尚不能确认时必须停止关闭。
 
@@ -537,27 +556,27 @@ canonical result projection 由以下完整结构组成：
 
 `human_closure_confirming → closed` 只能由专属原子关闭操作形成：
 
-1. before 仍完整保留当前计划、work item 终值、与当前 plan version 匹配的 execution approval、完整结果 projection、当前 result reviews、proposal 和版本绑定，且已无 `depends-on`；
-2. 前置执行终止链是 approval 唯一例外：链开始时 approval 已缺失、没有执行事实、全部 item 为 cancelled；关闭操作必须继续要求 approval 缺失，但 outcome 仍按统一分类；
+1. 正常批准形状的 before 仍完整保留当前计划、work item 终值、当前 execution authorization、baseline fingerprint 与当前 baseline 精确匹配的 execution approval、完整结果 projection、当前 result reviews、proposal 和版本绑定，且已无 `depends-on`；approval `subject_version` 可以早于当前 plan version，但只能来自同一冻结 baseline 下的合法 `PlanΔ`；
+2. `SafeConvergenceShape` 是 authorization/approval 唯一例外：关闭操作必须继续要求两者同时缺失，outcome 仍按统一分类；
 3. Human 作出决定前，已实际取得并可以阅读目标、scope、成功标准与逐项结果、总体结果、验证边界、独立复核处置和完整 proposal；Human 决定是否关闭、停止边界和责任处置，不为技术结果真实性背书；
 4. 操作绑定完整 source before fingerprint、Human 当次决定和 proposal 中全部 route_existing target fingerprint；
-5. 操作重新读取每个 target；任何变化、缺失、机械无效、不可读、状态不适合形成关系或 fingerprint 不匹配，都拒绝关闭，source 保持不变，Controller 重建 proposal 后重新取得 Human 决定；
+5. 操作重新读取每个 target；任何变化、缺失、机械无效、不可读、状态不适合形成关系或 fingerprint 不匹配，都拒绝关闭，source 保持不变；Gate2 决定已绑定旧 before，不得在同一运行自动重建 proposal 或重新索取 Human 决定；
 6. after 的 `closure_outcome` 必须精确等于 `proposed_outcome`，`disposition_summary` 必须精确等于 `proposed_disposition_summary`，`residual_responsibilities` 必须精确等于全部 `accept_stop` decision 的 `residual_id + summary`，`spark_suggestions` 必须精确等于 proposal 的同名数组，`routed-to` targets 必须精确等于全部 `route_existing` decision 的稳定三元组按目标去重集合；不得改写 proposal 自然语言、漏项或增加第二目标/建议清单；`suggest_spark` 不形成任何 relation，`contributed-to` 不属于本映射；
-7. after 中 `title`、`goal`、`scope`、`success_criterion_definitions`、`success_criterion_results`、`result_summary`、`validation_summary`、`urls` 与实际存在的 `contributed-to` / `related-to` relations 必须与 before 解析后精确相同；身份与 `created_at` 按 05 原样保留，`updated_at` 由 Code 托管；需要修正任一保留事实时必须先退回相应活动 phase，不在 close 事务中夹带更正；
+7. after 中 `title`、`goal`、`scope`、`success_criterion_definitions`、`success_criterion_results`、`result_summary`、`validation_summary`、`urls` 与实际存在的 `contributed-to` / `related-to` relations 必须与 before 解析后精确相同；身份与 `created_at` 按 05 原样保留，`updated_at` 由 Code 托管；任一保留事实必须在 Gate2 前修正，进入 Gate2 后发现缺口只拒绝关闭并保持冻结，不在 close 事务中夹带更正或回退；
 8. routed 项不再复制为 terminal residual；accepted-stop 项不形成 routed-to；suggest-spark 项只保留为 suggestion，Human 可在 Spark 尚未创建时先关闭 WC；
 9. 任一校验、CAS、写入或回读失败都不得声称关闭成功；
-10. Human 拒绝关闭或要求修改时不压缩对象，按实际影响返回合法 phase；
+10. Human 拒绝关闭或要求修改时不压缩对象、不改 phase；当前运行不恢复执行或关闭准备，新工作只能由新的 WorkCase/Gate1 承接；
 11. `close-workcase` 对已 closed before 一律拒绝；closed 不正常重开，也不通过重复 close 冒充幂等更正。
 
 closed 的任何更正都必须使用 §7 `correct-closed-workcase`。只要改动 goal、scope、成功标准定义/结果、result summary、validation、outcome、disposition、residual、spark suggestions、原关闭时的责任去向或 `contributed-to`，一律视为实质更正：必须取得与影响范围匹配的新 Human Gate，并绑定当前 closed fingerprint、完整目标 after 与全部 after route target fingerprints。仅更正 `title`，或只更正不改变已记支持范围、限制和关闭判断基础的 `urls`，才可不经新 Human Gate；无法确定时按实质更正处理。关闭后新出现的对象或关系不是原关闭事实的“更正”：新 Spark 应从自身写 `related-to → 原 WC`，不得追加到 closed WC；closed WC 上已有 `related-to` 只能在其确属原关闭记录错误时经 Human 实质更正，该更正不需独立 result review。
 
 ### 6.8 现场保留与后续建议责任
 
-WorkCase 的执行批准只授权完成当前 WC 的已批准计划。执行者在该 WC 推进期间不得借该 approval 创建 Spark、ADR、Study 或新 WorkCase；即使发现范围外机会、Human 已作出长期决定、完成了调研或出现后续问题，也先在当前结果/处置或结构化 `spark_suggestions` 中保留准确边界，由 Human 在 WC 之外独立判断是否发起新事实对象。这一禁止不拦截 Human 在同期独立发起、具有自身准入与授权的其它工作。
+WorkCase 的执行批准只授权 execution authorization baseline 中逐项列明、且仍处于 target/effect scope、action ceiling、allowed adjustments 与各事实类型规则内的动作。授权条目可以包含创建或更新其它事实对象、委派 subagent、执行外部动作等，但必须在 Gate1 前把目标范围、影响、风险、回滚与规则引用说清；未列明对象、未知目标、超出 ceiling 或命中 prohibited action 的动作均未获授权。发现范围外机会时先在当前结果/处置或结构化 `spark_suggestions` 中保留准确边界，不以第三次 Human Gate 扩展当前运行。
 
-唯一创建例外是完整 `status=draft` Pitfall：失败必须在当前 WC 执行中实际发生，已经解决、验证、查重并满足 23 的全部正文与单一机制准入。当前 execution approval 同时覆盖创建该 draft，无需为“保存现场”再逐项请求 Human Gate；它不覆盖 active 初态、半成品、promote 或 discard。独立 subagent 复核 draft 只是推荐机制，不是创建成立的机械前置。
+完整 `status=draft` Pitfall 现场保留只有在 execution authorization 已列出该动作时才获批：失败必须在当前 WC 执行中实际发生，已经解决、验证、查重并满足 23 的全部正文与单一机制准入；它不覆盖 active 初态、半成品、promote 或 discard。独立 subagent 复核 draft 只是推荐机制，不是创建成立的机械前置。
 
-draft 的形成顺序固定为两个各自独立合法的操作：先按 31 创建完整 Pitfall 并回读，再在 source WC 的下一个合法稳定检查点写 `contributed-to`。两步不是跨对象原子事务；第二步失败不删除已成立 draft，而是保留回读结果并在 WC 还处于允许写边的 phase 时重试。`blocked` 期间不借旧 approval 创建 draft；`human_closure_confirming` 发现应保存现场时先退回 `closure_preparing`。
+draft 的形成顺序固定为两个各自独立合法的操作：先按 31 创建完整 Pitfall 并回读，再在 source WC 的下一个合法稳定检查点写 `contributed-to`。两步不是跨对象原子事务；第二步失败不删除已成立 draft，而是保留回读结果并在 WC 还处于允许写边的 phase 时重试。`blocked` 期间不借旧 approval 创建 draft；进入 `human_closure_confirming` 后发现尚未保存的现场不退回，由当前结果据实说明，必要的新对象由后续新 WorkCase/Gate1 承接。
 
 当前验收范围内的真正未完成责任不能被“建议以后建 Spark”替代：没有实际条件限制时必须继续完成；确有受限条件时，结果必须如实将标准记为 `not_satisfied` 或 `not_verified`，并在 proposal 中形成 `suggest_spark` residual decision 与对应 `constrained_responsibility` suggestion。Human 可在 Spark 尚未实际创建时先关闭 WC；closed WC 保留建议正文而不保存未来 object ID。
 
@@ -575,7 +594,7 @@ draft 的形成顺序固定为两个各自独立合法的操作：先按 31 创�
 
 - Reviewer 只形成 `reviewer`、`reviewed_at`、`subject_version`、`scope`、`conclusion` 和 `feedback`；
 - Controller 形成 review `controller_resolution`、phase、当前计划、work item 快照、结果、验证与关闭提案；
-- Human 决定 execution approval、责任与验收边界变化和最终关闭；
+- Human 在 Gate1 决定 execution approval、责任/验收/风险与授权边界，在 Gate2 决定最终关闭；两者之间不承担运行中追加确认；
 - Code 不生成自然语言事实，也不从 Web、环境、日志或字段缺口推断语义。
 
 普通更新不得改写 Reviewer 自有字段、补造 Human approval、形成 closed 或绕过版本失效规则。事实更正必须使用 05 已授权的更正边界，不能与不相干的生命周期推进合并。
@@ -585,17 +604,17 @@ draft 的形成顺序固定为两个各自独立合法的操作：先按 31 创�
 | 检查点 | 必须写入的稳定事实 |
 |---|---|
 | 受控创建 | 完整责任、计划、work items、creation reviews、初始 phase/status 与 Human waiting |
-| Human 批准计划 | 新 execution approval、executing phase；同事务移除 creation reviews 与 Human waiting |
+| Human 批准计划与授权基线 | 新 execution approval、executing phase；同事务保留当前 creation reviews 并移除 Human waiting |
 | item 开始 | `in_progress`、current summary、resume point |
 | item 阻塞或解阻 | item status、blocking/current/resume 的合法组合；整体确实无法继续时同步 WorkCase status/blocking |
 | item 完成或取消 | terminal status 与实际 result summary |
 | 委派、交接、上下文压缩前或关键中间结果 | 最近稳定 item current/resume；确有跨 item 独立价值时更新顶层 summary |
 | 现场保留与建议检查点（§6.8） | 完整 draft Pitfall 的创建回读与 WC 侧 `contributed-to`，或结果/关闭方案中的结构化 Spark 建议；无对应内容时零写入 |
-| 进入计划返修 | 冻结原计划与结果事实，收敛 feedback，停止未来执行 |
-| 原子替换计划 | 完整新 plan projection、fresh creation reviews、版本与旧结果/批准失效 |
+| 进入计划返修 | 冻结 authorization baseline 与 approval，收敛基线内 feedback，不建立 Human waiting |
+| 原子替换计划 | 完整新 plan projection、fresh creation reviews、精确升版；authorization/approval 保持不变 |
 | 形成结果 | 当前 result version 与完整 canonical result projection |
 | 发起和取得独立结果复核 | 完整 projection 已回读；review 绑定准确版本；Controller 处置 feedback |
-| 形成关闭提案 | 完整 proposal、实际 target fingerprints 与 Human waiting |
+| 形成关闭提案并进入 Gate2 | 完整 proposal、实际 target fingerprints 与 Human waiting |
 | Human 关闭决定 | 专属原子关闭 after 与成功回读 |
 
 写回发生在稳定语义检查点，不要求记录每条命令或实时事件。意外中断只能恢复到最近一次已写入并成功回读的检查点；不得把聊天记忆或工具输出冒充已写事实。
@@ -641,7 +660,7 @@ WorkCase 的全部活动期写入必须使用 `update-workcase`；关闭必须�
 - after 必须完全满足 §6.1 closed 白名单，并由 before 当前 proposal 确定性形成 outcome、disposition、accepted-stop residuals、spark suggestions 与去重 `routed-to`；调用方不得提交 proposal target fingerprints 之外的第二 route 目标清单或第二 suggestion 清单；`contributed-to` / `related-to` 不属于 proposal 映射，必须与 before 精确相同；
 - after 中的终态映射和 before 事实保留必须逐值满足 §6.7 第 6–7 项；关闭事务不得同时修正标题、责任、标准、结果、验证或 URL；
 - 操作在同一事务内重新读取全部 proposal route_existing targets，逐个精确比较 fingerprint，并检查同项目、WorkCase open/blocked 或 Spark open 状态、引用、去重与关系图约束；另对 source 完整检查入向 `depends-on`。任一项不成立时 source 零写入；
-- 除且仅除 before 满足 §6.3 `PreExecutionStopShape` 时 approval 必须缺失外，其它 before 必须存在与当前 result 所依据 `plan_version` 匹配的 execution approval；
+- before 满足 §6.3 `SafeConvergenceShape` 时 `creation_reviews`、authorization 与 approval 必须同时缺失；其它 before 必须存在当前 creation reviews、authorization，以及 baseline fingerprint 与当前冻结 baseline 精确匹配的 execution approval；其 `subject_version` 可以早于当前 plan version；
 - `close-workcase` 不提供 `no_change`；before 已 closed 或 after 未形成新的合法 closed 目标时都拒绝。成功结果的共同形状复用 05 §11.7；不返回或保存 closure approval、Human 身份证明、review 正文或质量链 receipt。
 
 ### correct-closed-workcase 输入与结果
@@ -658,6 +677,16 @@ WorkCase 的全部活动期写入必须使用 `update-workcase`；关闭必须�
 - after 必须继续满足 §6.7 outcome 一致性与剩余责任完整处置；任一 criterion result 为 `not_satisfied` 或 `not_verified` 时，Code 必须要求 after 至少存在一项 `residual_responsibilities`、`routed-to` 或 `suggestion_kind=constrained_responsibility` 的 `spark_suggestions`；Controller、Reviewer 与 Human 必须确认 disposition 与结构化处置无损覆盖全部仍适用的未完成 scope，Code 不猜测自然语言对应；
 - 只更正 `title`，或只更正不改变已记支持范围、限制和关闭判断基础的 `urls` 时，array 型 `authorization_reference` 可以省略或使用空列表、不得为 `null`，且 `independent_review_reference` 必须为 `null`。仅更正原关闭时的 `related-to` 记录时，`authorization_reference` 必须非空并回指 Human 决定，`independent_review_reference` 必须为 `null`。无法确定影响时必须走上一条实质更正路径。活动期的 review/approval 过程字段在形成 closed 时已移除，Human 最终决定由 closed 终态内容表达而不另存收据；不得以笔误更正重建 review、approval 或过程历史；
 - 成功与 `no_change` 的结果复用 05 §11.7；必须回读实际 closed after，不返回或保存 Human 决定收据、target 指纹或更正历史。
+
+### 7.3.1 当前合同的一次性迁移边界
+
+本次新增 authorization baseline、approval fingerprint/source refs 和持续 current creation review 后，旧活动对象可能不再满足当前形状。迁移只能作为本次受控发布的一次性仓库迁移执行，不属于 `update-workcase`、正常生命周期、兼容 profile 或通用 invalid 修复能力：
+
+1. 每个目标必须显式给出当前管辖项目、精确 `object_id` 与迁移前完整载体 fingerprint；禁止目录扫描后按相似形状批量猜测；
+2. 仍在 Gate1 且保存了真实 current creation review 的对象，可以据当前计划形成完整 authorization baseline，但不得写 execution approval；只有可回指真实 Gate1 Human 输入且完整 baseline 可由当时材料无损重建时，才可迁移为正常批准形状；
+3. 已有执行/结果事实但没有真实 current creation review、完整 Gate1 授权证明或稳定 Human `source_refs` 的旧对象，不得补造这些字段，只能在全部 item 已据实 terminal 后迁移为 `SafeConvergenceShape`；未 terminal 时先依据现有事实安全终值化，不能以迁移继续新动作；
+4. 迁移必须先对完整目标 after 执行当前 Schema、presence、版本、关系和 result projection 校验，再以 old fingerprint CAS 原子替换并回读；任一目标不成立时零写入，或给出可审计的原子回滚失败事实，不得留下半迁移对象；
+5. 本次受控交付完成后移除迁移入口与清单，不保留 legacy profile、兼容读取、自动补字段或日常 invalid repair 正例。
 
 ### 7.4 防止 AI 幻觉
 
@@ -790,7 +819,7 @@ status=blocked 仍保留其 phase 所属分组，且在具体 Card 正文契约�
 | 准入与创建 | 建议建立、形成正式计划和受控创建前 | Human 工作意图、单一责任、scope、criteria、查重、净价值、完整计划与实际独立方案复核成立；Controller 与 Reviewer 已逐项确认没有 work item 吸收生命周期关口或 Human Gate | Human 当前指令、当前来源、相邻事实回读、候选计划与 Reviewer 实际反馈 | AI 语义审核、逐 item 生命周期关口检查、事实召回、受控创建校验与创建后回读 | 当次候选的已读范围、语义审核和创建结果；Code 不判断自然语言是否属于生命周期关口，也不证明未来执行成功 | 不创建；先返修误建模 item，或更新现有对象、留在当前行动、拆分或转 Spark |
 | 活动形状与转换 | 每次读取、写回、phase/status 改变、计划返修或授权变化时 | status/phase/presence、item 组合、plan version、review/approval 绑定和允许转换成立 | 当前对象 before/after、Human 决定、Reviewer feedback 与本文 | Schema、CAS、projection 比较、转换校验和 after 回读 | 可机械检查的形状、版本与转换；不证明当前摘要真实 | 不消费为有效 WorkCase或拒绝转换；修正最小相关范围 |
 | 结果与复核 | 形成结果、发起独立复核、处置反馈或改变 projection 时 | projection 完整、criterion 全覆盖、版本冻结、实际独立 review 与 Controller resolution 成立 | item 终值、当前结果与 validation、Reviewer 实际输出 | AI 结果审核、规范化 projection 比较、CAS、review/版本检查 | 当次结果包结构、已读观察和 review 绑定；不证明技术结论天然正确 | 不进入关闭准备；补事实、升版、清旧 review 或重新复核 |
-| 关闭提案与终态 | 形成 proposal、进入 Human Gate（关闭决定）、执行关闭或终态更正时 | proposal 完整、outcome 一致、target 重读、Human 决定、原子 close 与 closed 白名单成立 | 完整 source before、Human 当次决定、目标当前快照与 fingerprints | AI 责任处置审核、target 回读、CAS、专属关闭和 closed after 回读 | 当次停止边界、机械原子性和实际写入结果；不证明 target 已接受或技术事实无误 | source 保持活动期，不声明关闭；重建提案或重新取得 Human 决定 |
+| 关闭提案与终态 | 形成 proposal、进入 Gate2、执行关闭或终态更正时 | proposal 完整、outcome 一致、target 重读、Human 决定、原子 close 与 closed 白名单成立 | 完整 source before、Human 当次决定、目标当前快照与 fingerprints | AI 责任处置审核、target 回读、CAS、专属关闭和 closed after 回读 | 当次停止边界、机械原子性和实际写入结果；不证明 target 已接受或技术事实无误 | Gate2 前不进入确认；Gate2 后失败则 source 保持冻结、不声明关闭且不自动重新请求 Human |
 | 关系 | 新增、移除、读取依赖、target 变更或任一对象终态前 | source/target 状态、同项目、唯一性、无自指、强边环、related-to 重叠、入向约束与责任边界成立 | source/target 当前对象、项目对象全集和本文关系语义 | 引用回读、强边图检查、AI 责任边界审核 | 稳定引用、状态与已检查图范围；不证明语义责任充分或目标接受 | 移除或修正关系；无法完成检查时交还 unavailable，暂停受影响关闭 |
 | 现场保留与后续建议 | WC 执行中出现经验、剩余责任或范围外机会时 | 除完整 draft Pitfall 外不创建新事实；draft 与写边分步回读；受限责任有明确原因、影响和恢复条件；范围外机会不伪造受限 | 当前工作事实、完整 Pitfall 候选、结果/验证与关闭 proposal | AI 语义审核、31 受控创建与回读、关系和 suggestion 机械检查 | 当次保存和结构映射；不证明未来 Spark 会建立 | 继续完成范围内责任，或据实阻塞/形成建议；不创建未获独立授权的其它对象 |
 | 写回与消费 | 每个稳定检查点、上下文接续和信息交付时 | 当前事实源、CAS、原子写入、回读、coverage 与未读边界明确 | Working Tree、实际写入结果、读取结果与稳定引用 | 05 共用写回/读取入口和对象回读 | 已写入、已回读和已交付范围；不证明未读信息不存在 | 只报告实际结果，不声称推进或上下文完整；保留最近有效检查点 |
@@ -801,7 +830,7 @@ Code 可以检查：
 
 - Schema、字段闭集、presence、枚举、时间、ID 和 closed 白名单；
 - criterion 覆盖、item 条件组合、依赖和关系图；
-- plan/result version、review、approval 和 phase 绑定；
+- plan/result version、review、authorization/approval、baseline canonical JSON/fingerprint 和 phase 绑定；
 - 规范化 projection 的结构差异、确定性升版和失效字段；
 - proposal shape、fingerprint、source/target CAS、target 状态与引用；
 - 专属关闭操作是否原子写入一个满足终态契约的 after。
@@ -819,31 +848,31 @@ Code 不能判断：
 当前契约的最低测试必须覆盖：
 
 1. open/blocked 与七个 active phase 的全部合法/非法 presence 组合、status 转换闭集、`open → blocked` / `blocked → open` 可附带的唯一 item 边及夹带其它推进的拒绝、before/after 均 blocked 时不得推进的边界、全部列明及未列明 phase 边，以及 closed 必填/条件/禁止集；
-2. 受控创建、Human 计划批准、前置执行终止、`PreExecutionStopShape` 的唯一例外、approval 撤回四分流、Controller 发起返修和同计划重新授权；
+2. 受控创建、Gate1 完整授权基线、真实 source refs、fingerprint、`SafeConvergenceShape` 同时禁止 creation review/authorization/approval、Gate1 后不回确认、Gate2 只关闭，以及两 Gate 之间不产生 Human waiting；
 3. 五种 item 状态的列明边与未列明边、条件字段、依赖只能由 `completed` 满足、缺失/自指/成环、Controller 返工重开、terminal 分类更正、`executing + AllTerminal` 拒绝、无序 item 与模板 key 成员类型/唯一性；并以“全部实现完成后安排独立结果复核”作为非法 item 反例，检查当前规则和获批计划执行模板持续把该责任留在 phase 链，同时不得把该契约测试表述为 Code 已能理解任意自然语言计划；
-4. `PlanΔ` 的规范化比较、精确 +1、相同计划不升版、新 item 只以 pending 建立、既有执行事实不得重置/静默删除，以及全部四种结果冻结形状的返修退出；
+4. `PlanΔ` 的规范化比较、baseline 不变检查、精确 +1、fresh review 自动继续、相同计划不升版、新 item 只以 pending 建立、既有执行事实不得重置/静默删除，以及超界动作取消并进入结果链；
 5. criterion results 数组全覆盖或整体缺失、`controller_checking` 稳定逐成员形成、数组禁止半覆盖、进入独立复核前 projection 完整、首条 review 冻结、`ResultΔ` 确定性升版、同版本不重置和返回 executing；
 6. Reviewer/Controller 字段所有权、同一数组 review 复合身份重复拒绝、新实际复核使用新 `reviewed_at`、同事件事实更正保持复合身份且与生命周期转换不可混用、返修期 review 冻结不可通过删除绕过版本失效；
-7. proposal/terminal 分离、四种 outcome、三种 residual disposition、两种 suggestion kind 的字段组合、suggestion 局部引用完整性、`completed` 只允许 follow-up suggestions、其它 outcome 对未满足/未验证/未完成 scope 的责任处置、proposal 与 terminal 精确映射、route target 漂移后合法退回，以及专属原子关闭；
+7. proposal/terminal 分离、四种 outcome、三种 residual disposition、两种 suggestion kind 的字段组合、suggestion 局部引用完整性、`completed` 只允许 follow-up suggestions、其它 outcome 对未满足/未验证/未完成 scope 的责任处置、proposal 与 terminal 精确映射、Gate2 route target 漂移后零写入且不退回，以及专属原子关闭；
 8. `depends-on` / `routed-to` / `contributed-to` / `related-to` 的 source、target、入向约束、去重、自指、强边成环拒绝与 related-to 成环允许、跨项目拒绝、强边与 related-to 同 target 重叠拒绝；`routed-to` 允许 open Spark，`contributed-to` 首次只允许 draft Pitfall 且 target 后续状态不使边失效，`related-to` 为五类存量事实并在 close 原样保留，closed 不追加后来对象；反查与 F1/F2 投影排除；
 9. `correct-closed-workcase` 的 closed before/after、after 全部 route target 指纹精确集合与重读、新增与未变 target 的不同状态条件、实质更正的 Human Gate 与独立复核引用、非实质更正的引用空值、终态责任覆盖，以及因后来事实回溯改写原关闭历史被拒绝；
 10. 未登记字段、半成品结构、空占位、日志/命令/推理字段，以及通用 update 读写 WorkCase、活动期 update 形成 closed、close 更正 closed 均被拒绝；三个 WorkCase 专属操作对 invalid、unavailable、not-found 或只能解析部分字段的 before 必须正向覆盖零写入拒绝，不建立旧形状转换或 invalid 修复正例；
 11. 渐进式召回的触发语义、F1/F2 字段闭集与 coverage、active/closed 默认范围、F3 按场景展开、四个 Web 分组的确定性派生，以及派生信息不写回事实源。
 
-测试只针对这份当前契约，不建立历史形状、profile、兼容读取或迁移测试。
+测试只针对这份当前契约，不建立历史 profile 或兼容读取；§7.3.1 的一次性迁移必须另有精确 ID/fingerprint、正常形状与 SafeConvergenceShape 分流、零写入/回滚和入口移除测试，迁移交付完成后随入口一起删除。
 
 
 ## 11. Human Gate
 
 ### 11.1 对象外工作意图
 
-Human 对“是否由项目承担并建立 WorkCase”的决定发生在对象外，只授权形成正式计划、独立方案复核和受控创建。Human 已作出范围清楚的决定时，不重复请求同一决定；该决定不授权执行具体计划。
+Human 对“是否由项目承担并建立 WorkCase”的意图发生在对象外；Human 已在当前请求中表达范围清楚的工作意图时，Controller 可据此形成正式计划、完整授权基线、独立方案复核和受控创建，不新增一次确认。它不是活动 WorkCase 的第三个 Gate，也不等于 Gate1 执行批准。
 
 ### 11.2 当前计划执行批准
 
-WorkCase 创建后，必须向 Human 展示当前目标、scope、成功标准、work items、重要依赖、具有判断价值的方法边界、验证安排、重要风险和 creation review 的实质反馈处置。Human 明确批准后，才能写 execution approval 并进入 executing。
+WorkCase 创建后，必须向 Human 展示当前目标、scope、成功标准、work items、重要依赖、具有判断价值的方法边界、验证安排、creation review 的实质反馈处置，以及完整 execution authorization baseline。基线必须在这一次沟通中逐项说清全部可预见动作及目标/影响范围、风险、动作上限、禁止项、允许调整与重试、subagent 委派、验证/回滚、超界收敛和只能由 Human 预先完成的前置条件。Human 明确批准后，才能写带真实 `source_refs` 与 `baseline_fingerprint` 的 execution approval 并进入 executing。
 
-批准只绑定当前 `plan_version`，不自动授权其它规则保留给 Human 的高影响行动，也不使技术验证或来源适用自动成立。它明确不授权当前 WC 执行者创建 Spark、ADR、Study 或新 WorkCase；只有 §6.8 与 23 定义的完整 draft Pitfall 现场保留例外已包含在该 execution approval 中。计划 projection 改变必须升版、fresh 独立复核并重新进入本 Human Gate；同一未变化计划在授权撤回后恢复，按 §6.5 写新的同版本 approval，不制造计划版本。
+批准绑定 Gate1 当时的 plan version 和冻结 authorization baseline；它只授权 baseline 逐项列明且仍满足来源规则的动作，不使技术验证、能力或来源适用自动成立。Gate1 后 baseline 不变的 `PlanΔ` 精确升版并 fresh 独立复核后自动继续，不重新进入本 Gate；超过 baseline 的动作不获准且按 §6.5 安全收敛。
 
 ### 11.3 最终关闭决定
 
@@ -855,11 +884,11 @@ Human 在 `human_closure_confirming` 判断：
 - 哪些受限责任在尚无 Spark 对象时作为结构化建议保留，以及哪些责任接受停止；
 - 哪些范围外后续机会值得保留为非承诺建议。
 
-Human 不为技术结果真实性背书。若 Human 认为当前分类或依据不成立，应退回结果、验证或提案修改，不直接把另一分类写成终态事实。决定必须绑定完整 source before 与 route targets，由专属关闭操作消费；不持久化 closure approval。Human 要求修改时，Controller 按修改对象返回 `closure_preparing`、`controller_checking` 或 `plan_revising`；需要重新执行时，必须先返回 `controller_checking`，再按 §6.3.2 的合法边进入 `executing`，不得从关闭待确认直跳执行或先关闭再补写。
+Human 不为技术结果真实性背书，也不直接把另一分类写成终态事实。决定必须绑定完整 source before 与 route targets，由专属关闭操作消费；不持久化 closure approval。Gate2 只接受或拒绝当前关闭提案：接受则原子关闭；拒绝、要求修改或目标漂移则本次操作零写入并保持冻结，不返回结果、计划或执行 phase，不自动再向 Human 请求决定。新增或返工责任由新的 WorkCase/Gate1 承接。
 
 ### 11.4 其它保留给 Human 的变化
 
-以下变化仍须 Human 决定：
+以下变化必须在 Gate1 基线形成时取得 Human 决定并写入授权边界，或在 Gate2 作为关闭处置判断；不得在两 Gate 之间临时插入第三次确认：
 
 - 改变同一责任的 goal、scope 或成功标准；
 - 在当前结果与验证所支持的 `partial`、`not-achieved` 或 `cancelled` 分类下停止，并接受 accepted stop 或残余风险；
@@ -867,7 +896,7 @@ Human 不为技术结果真实性背书。若 Human 认为当前分类或依据�
 - 拆分、合并、删除或重组可能丢失身份、当前事实或责任去向；
 - closed 实质更正改变原关闭判断基础。
 
-Human 决定、review 和 Code 校验彼此不能替代。
+Gate1 后出现未覆盖的高影响/不可逆行动、新风险接受、范围扩大或身份重组时，当前 WorkCase 不取得追加授权，只停止受影响动作并按 §6.5 安全收敛。closed 实质更正是关闭后独立的新责任，不属于原 WorkCase 运行。Human 决定、review 和 Code 校验彼此不能替代。
 
 
 ## 12. Stop Conditions
@@ -888,16 +917,18 @@ Human 决定、review 和 Code 校验彼此不能替代。
 出现以下任一情况，暂停受影响推进：
 
 - 计划未实际独立复核或未获 Human 批准即执行；
-- plan projection 改变却未升版、fresh review 和再批准；
-- Controller 发起返修后仍继续使用旧 approval 行动；
-- 通过删除 approval、手改 phase 或假升版掩盖撤回或计划变化；
-- 同一计划重新授权时重置 plan/result version；
+- plan projection 改变却未升版、fresh review，或变化已超出冻结 baseline；
+- Controller 发起基线内返修后仍按旧计划行动，或把返修转成新的 Human waiting；
+- 通过删除/改写 approval、手改 phase、假升版或补造 source refs 掩盖基线变化；
+- Gate1 后试图重新授权、扩展 baseline 或重置 plan/result version；
 - item 写成命令、日志、推理、百分比或过期快照；
 - item 吸收 Controller 自检、独立结果复核、关闭准备、Human Gate 或其它 WorkCase 生命周期关口，造成关口等待 item terminal、item 又等待关口的循环；
 - in-progress 缺 current/resume，blocked 缺具体事实和解除条件；
-- 借当前 execution approval 创建 Spark、ADR、Study 或新 WorkCase，或以不完整/active 初态 Pitfall 冒充现场保留；
+- 借当前 execution approval 执行未进入 authorized actions、超出 target/effect scope 或 action ceiling、命中 prohibited actions 的事实创建/更新或其它副作用；
 - 当前 scope 内责任没有实际受限原因却停止继续完成，或以空泛“后续建 Spark”代替结果、影响和恢复条件；
 - 写回或回读失败却声称检查点成立。
+
+上述 Gate1 后超界条件只停止受影响动作，不向 Human 请求第三次确认；Controller 据实取消受影响 item，并在全部 item terminal 后继续结果复核与 Gate2。只有 Gate1 与 Gate2 可以把 Human 写为 waiting 对象。
 
 ### 12.3 结果与复核
 

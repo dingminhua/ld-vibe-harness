@@ -73,6 +73,32 @@ function currentWorkCase(overrides: Record<string, unknown> = {}) {
         result_summary: '该局部工作已经停止。',
       },
     ],
+    creation_reviews: [{
+      reviewer: 'independent-reviewer',
+      reviewed_at: '2026-07-26T11:00:00+08:00',
+      subject_version: 1,
+      scope: '检查当前计划与授权边界。',
+      conclusion: 'pass',
+      controller_resolution: '主控确认反馈已处理。',
+    }],
+    execution_authorization: {
+      authorized_actions: [{
+        action_id: 'action-01', summary: '实现 Web 投影', target_scope: 'web/**', effect_scope: '只读呈现',
+        risk_summary: '可能出现字段错配', rollback_summary: '回退 Web 变更', rule_refs: ['specs/21#gate-1'],
+      }],
+      action_ceiling: '仅 Web 范围',
+      prohibited_actions: ['不得改事实 YAML'],
+      allowed_adjustments: '允许修正只读呈现',
+      verification_and_rollback: '运行 Web check/tests；失败时回退',
+      out_of_bounds_handling: '停止并回到 Human',
+    },
+    execution_approval: {
+      subject_version: 1,
+      approved_at: '2026-07-26T11:30:00+08:00',
+      summary: '批准当前 Gate 1 基线。',
+      baseline_fingerprint: 'sha256:gate-one-baseline',
+      source_refs: ['human-input:approval'],
+    },
     ...overrides,
   };
 }
@@ -139,7 +165,7 @@ test('plan revision is progressing but remains outside the four-step track', () 
   assert.match(locales, /'objectList\.workcaseOutsideProgressTrack': '四步轨迹之外'/);
 });
 
-test('plan confirmation keeps goal and criteria as the only plan-decision inputs', () => {
+test('plan confirmation exposes the complete Gate 1 baseline while keeping a real blocker separate', () => {
   const list = source('src/pages/ObjectList.tsx');
   const sharedCriteria = source('src/components/WorkCaseCriteriaList.tsx');
   const branchStart = list.indexOf("if (progressGroup === 'plan_confirmation')");
@@ -155,13 +181,12 @@ test('plan confirmation keeps goal and criteria as the only plan-decision inputs
   assert.ok(branchStart >= 0 && branchEnd > branchStart);
   assert.ok(contentStart >= 0 && contentEnd > contentStart);
   assert.ok(noticeStart >= 0 && noticeEnd > noticeStart);
-  assert.match(branch, /<WorkCasePlanConfirmationContent goal=\{obj\.goal\} successCriteria=\{obj\.successCriteria\}/);
+  assert.match(branch, /<WorkCasePlanConfirmationContent[\s\S]*?goal=\{obj\.goal\}[\s\S]*?scope=\{obj\.scope\}[\s\S]*?successCriterionDefinitions=\{obj\.success_criterion_definitions\}[\s\S]*?workItems=\{obj\.work_items\}[\s\S]*?creationReviews=\{obj\.creation_reviews\}[\s\S]*?executionAuthorization=\{obj\.execution_authorization\}[\s\S]*?executionApproval=\{obj\.execution_approval\}/);
   assert.doesNotMatch(branch, /prominentTitle/);
-  assert.doesNotMatch(branch, /executionItem|waiting_on/);
+  assert.doesNotMatch(branch, /waiting_on/);
   assert.match(branch, /obj\.status === 'blocked'/);
-  assert.match(branch, /WorkCaseBlockingNotice blockingSummary=\{obj\.blocking_summary\}/);
-  assert.ok(branch.indexOf('<WorkCasePlanConfirmationContent') < branch.indexOf("obj.status === 'blocked'"));
-  assert.ok(branch.indexOf("obj.status === 'blocked'") < branch.indexOf('<WorkCaseBlockingNotice'));
+  assert.match(branch, /isBlocked=\{obj\.status === 'blocked'\}/);
+  assert.match(branch, /blockingSummary=\{obj\.blocking_summary\}/);
   assert.match(content, /ldvh-card-decision-title/);
   assert.match(content, /ldvh-caption/);
   assert.match(content, /<section className=\{WORKCASE_CRITERIA_SURFACE_CLASS\}>/);
@@ -171,7 +196,16 @@ test('plan confirmation keeps goal and criteria as the only plan-decision inputs
   assert.match(sharedCriteria, /className="ldvh-card-decision-body text-blue-900\/70 dark:text-blue-100\/75"/);
   assert.match(sharedCriteria, /className="mt-\[0\.5rem\] h-1 w-1/);
   assert.doesNotMatch(content, /list-disc/);
-  assert.doesNotMatch(content, /<ol|line-clamp|slice\(0,|scope|blockingSummary|BlockingNotice/);
+  assert.doesNotMatch(content, /<ol|line-clamp|slice\(0,/);
+  for (const field of ['scope', 'work_items', 'creation_reviews', 'execution_authorization', 'execution_approval']) {
+    assert.match(content, new RegExp(field));
+  }
+  for (const field of ['authorized_actions', 'action_ceiling', 'prohibited_actions', 'allowed_adjustments', 'verification_and_rollback', 'out_of_bounds_handling', 'human_prerequisites', 'baseline_fingerprint', 'source_refs']) {
+    assert.match(content, new RegExp(field));
+  }
+  assert.match(content, /workcaseGateFieldMalformed/);
+  assert.match(content, /\{isBlocked && <WorkCaseBlockingNotice blockingSummary=\{blockingSummary\} t=\{t\} \/>\}/);
+  assert.ok(content.indexOf('<WorkCaseBlockingNotice') < content.indexOf('<WorkCaseGoalSection'));
   assert.match(notice, /role="status"/);
   assert.match(notice, /getFieldLabel\('blocking_summary', locale\)/);
   assert.match(notice, /aria-label=\{label\}/);
@@ -195,7 +229,10 @@ test('WorkCase cards keep a neutral outer surface and move emphasis with the cur
   assert.match(progressing, /<WorkCaseGoalSection goal=\{goal\} t=\{t\} emphasis="supporting" \/>/);
   assert.match(closure, /<WorkCaseGoalSection goal=\{goal\} t=\{t\} emphasis="supporting" \/>/);
   assert.match(closed, /<WorkCaseGoalSection goal=\{goal\} t=\{t\} emphasis="supporting" \/>/);
-  assert.match(progressing, /ldvh-card-decision-title min-w-0 text-amber-700\/80 dark:text-amber-200\/80/);
+  // waiting_on 琥珀提示块抽取为共享组件（认知中心决定依据区同源消费，02 §7.5），语义不变。
+  const waitingNotice = list.slice(list.indexOf('function WorkCaseWaitingOnNotice'), list.indexOf('function WorkCaseBlockingNotice'));
+  assert.match(waitingNotice, /ldvh-card-decision-title min-w-0 text-amber-700\/80 dark:text-amber-200\/80/);
+  assert.match(progressing, /<WorkCaseWaitingOnNotice waitingOn=\{waitingOn\} \/>/);
 });
 
 test('semantic WorkCase cards share one title-to-body spacing token', () => {
@@ -278,10 +315,17 @@ test('progressing cards show only goal and current situation facts', () => {
   assert.match(content, /text-slate-700\/70 dark:text-slate-200\/70/);
   assert.doesNotMatch(content, /grid-cols-\[1rem_minmax\(0,1fr\)\]/);
   assert.doesNotMatch(content, /workcaseItemCompleted|workcaseItemInProgress|workcaseItemBlocked|workcaseItemPending|workcaseItemCancelled/);
-  assert.match(content, /getFieldLabel\('waiting_on', locale\)/);
-  assert.match(content, /border-amber-400\/30 border-l-2 border-l-amber-400 bg-amber-500\/\[0\.045\]/);
-  assert.match(content, /ldvh-card-decision-body \[&_p\]:my-0 text-amber-950\/70/);
+  // waiting_on 提示块为共享组件（与认知中心收件箱同源），断言组件本体保留原设计语言。
+  const waitingNotice = list.slice(list.indexOf('function WorkCaseWaitingOnNotice'), list.indexOf('function WorkCaseBlockingNotice'));
+  assert.match(waitingNotice, /getFieldLabel\('waiting_on', locale\)/);
+  assert.match(waitingNotice, /border-amber-400\/30 border-l-2 border-l-amber-400 bg-amber-500\/\[0\.045\]/);
+  assert.match(waitingNotice, /ldvh-card-decision-body \[&_p\]:my-0 text-amber-950\/70/);
+  assert.match(content, /<WorkCaseWaitingOnNotice waitingOn=\{waitingOn\} \/>/);
   assert.match(content, /<WorkCaseBlockingNotice blockingSummary=\{blockingSummary\}/);
+  assert.ok(content.indexOf('<WorkCaseBlockingNotice') < content.indexOf('<WorkCaseGoalSection'));
+  assert.ok(content.indexOf('<WorkCaseBlockingNotice') < content.indexOf('<WorkCaseWaitingOnNotice'));
+  assert.ok(content.indexOf('<WorkCaseWaitingOnNotice') < content.indexOf('<WorkCaseGoalSection'));
+  assert.match(content, /\{!isBlocked && waitingOn\?\.trim\(\) && \(/);
   assert.match(notice, /getFieldLabel\('blocking_summary', locale\)/);
   assert.match(notice, /border-rose-400\/30 border-l-2 border-l-rose-400 bg-rose-500\/\[0\.045\]/);
   assert.doesNotMatch(content, /progressHistory|roundLabel|workcaseRound/);
@@ -742,6 +786,12 @@ test('plan confirmation projection preserves every criterion statement without t
   }));
 
   assert.deepEqual(summary.successCriteria, ['完整显示当前成功标准。']);
+  assert.equal(summary.scope, '只测试当前 Card 投影。');
+  assert.deepEqual(summary.success_criterion_definitions, currentWorkCase().success_criterion_definitions);
+  assert.deepEqual(summary.work_items, currentWorkCase().work_items);
+  assert.deepEqual(summary.creation_reviews, currentWorkCase().creation_reviews);
+  assert.deepEqual(summary.execution_authorization, currentWorkCase().execution_authorization);
+  assert.deepEqual(summary.execution_approval, currentWorkCase().execution_approval);
   assert.equal('executionItems' in summary, false);
 });
 
@@ -780,10 +830,10 @@ test('detail copy actions never fall back from an exact canonical path to a list
   assert.doesNotMatch(detail, /function DetailObjectRow|function buildCurrentFlowItem/);
 });
 
-test('WorkCase list does not expose list-level observation or reread controls', () => {
+test('WorkCase list does not expose application-level reread controls', () => {
   const list = source('src/pages/ObjectList.tsx');
 
-  assert.doesNotMatch(list, /WorkCaseObservationControls|coverageObservedAt|reloadVersion|setReloadVersion|RefreshCw/);
+  assert.doesNotMatch(list, /WorkCaseObservationControls|coverageObservedAt|reloadVersion|setReloadVersion|useManualFactRefresh|refreshFacts|RefreshCw|setInterval|visibilitychange/);
   assert.match(list, /currentType === 'workcase' \? \(/);
 });
 

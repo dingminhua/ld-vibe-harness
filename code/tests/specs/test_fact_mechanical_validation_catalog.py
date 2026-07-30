@@ -28,6 +28,7 @@ _CURRENT_WORKCASE_RULE_KEYS = {
     "workcase-proposal-atomic-close",
     "workcase-closed-correction",
 }
+_INCOMPLETE_WORKCASE_RULE_KEYS: set[str] = set()
 
 
 def _table_rows(markdown: str, heading: str) -> list[list[str]]:
@@ -114,7 +115,9 @@ def test_mechanical_catalog_has_closed_status_aware_mappings_and_real_complete_e
 
     assert {"update-workcase", "close-workcase", "correct-closed-workcase"} <= covered_operations
     assert {"update-workcase", "close-workcase", "correct-closed-workcase"} <= workcase_rule_operations
-    assert all(catalog_by_key[key][6] == "complete" for key in _CURRENT_WORKCASE_RULE_KEYS)
+    assert {
+        key for key in _CURRENT_WORKCASE_RULE_KEYS if catalog_by_key[key][6] == "incomplete"
+    } == _INCOMPLETE_WORKCASE_RULE_KEYS
 
 
 def test_create_contract_closes_single_attempt_result_and_change_matrix() -> None:

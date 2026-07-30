@@ -153,7 +153,7 @@ Pitfall 只记录已解决、已验证且可复用的失败机制。问题尚未
 
 `draft → active` 的 promote 只改变 `status`：同一次完整 after 中，除 Code 托管的 `updated_at` 外，`title`、`urls`、`relations`、`applicability`、`validation_summary`、五个 Pitfall 专属字段、身份和 `created_at` 都必须与 before 解析值精确相同，且不得新增 `disposition_summary`。需要完善内容时必须先保持 draft 更正并回读，再由 Human 针对最终指纹确认；不得在 promote 中夹带“顺便完善”。`draft → discarded` 和 `active → discarded` 都必须保持全部正文与关系不变，只允许 `status` 变化并新增非空 `disposition_summary`；前者说明 Human 不接受的决定和边界，后者说明曾活跃经验不再适用的具体依据。三个转换都必须在写入前取得 Human 对准确对象、当前完整快照和目标动作的明确授权。Human 确认或废弃决定只决定经验对象状态，不替代实际症状、处理、技术验证和 applicability。
 
-WorkCase 的准确 `execution_approval` 是一个窄例外：只有失败确在该 WC 推进中实际发生、已经解决和验证、完整 draft 满足本文全部准入与查重条件时，它才同时授权执行者创建该一个 `status=draft` Pitfall，并在 draft 创建回读后由 source WC 写 `contributed-to`。该授权不允许 active 初态，不覆盖 promote、discard、规则化、其它事实对象创建或另一个 WC；独立 subagent 只作为推荐复核机制，不是 draft 成立条件。Human 在 WC 之外另行发起的独立行动不受“当前 WC 执行者不得借该 approval 创建其它对象”的限制。
+WorkCase Gate 1 可以在当前 `execution_authorization` 中逐项列明执行期 Pitfall 行动，并由准确 `execution_approval` 授权消费。只有失败确在该 WC 推进中实际发生、已经解决和验证、完整 draft 满足本文全部准入与查重条件时，授权包中相应的现场保留边界才允许执行者创建 `status=draft` Pitfall，并在 draft 创建回读后由 source WC 写 `contributed-to`；不因进入保存步骤或切换执行者重复请求 Human。active 初态仍不合法。promote、discard 或其它变化只有在 Gate 1 已针对当时可精确绑定的目标对象、动作、允许影响与风险逐项列明时才获授权；执行中才形成、Gate 1 无法绑定最终快照的 draft 不得反向推定 promote/discard 授权，也不得在执行期询问扩权。独立 subagent 只作为可由授权包覆盖的推荐复核机制，不是 draft 成立条件；模板和本文不证明环境具有 spawn 能力。
 
 每个 draft 独立审核。WC 可以在 draft 尚未 promote 或 discard 时关闭；WC 关闭不批量处理 draft，不要求“全部已审核”收据，也不改变 draft 状态。审核时只沿 WC 实际 `contributed-to` 关系定位并筛选当前 draft：准确则 Human 确认后 promote；需完善则保持 draft 更正、回读并重新提交最终快照；不接受则 discarded；延期则保持 draft。没有数量上限、时间阈值或自动过期转换。
 
@@ -194,8 +194,8 @@ Pitfall 类型停止新增、合并、替代或取消时，必须按 05 处置�
 | Pitfall 召回与消费 | 出现相似症状、进入触发条件、采用高风险方案、调查修复故障或压缩恢复已选经验时 | F2 卡片只投影现有权威字段并保留字面命中依据，不恢复 `tags`；`active` 候选的症状、触发、实际记录的环境或版本与 applicability 可能相容；终态只作追溯或替代链候选；召回未被冒充为根因证明或行动授权 | 当前症状与环境、候选卡与命中字段、对象全文和验证说明 | 候选范围走查、对象与当前环境回读、AI 因果与适用审核 | 当次症状、环境与已展开经验 | 不复用规避结论；继续调查、重新验证、缩小边界或建立 WorkCase |
 | 对象 Schema 与身份 | 创建、读取或更新对象时 | 路径、身份、字段闭集、类型、条件、时间和引用符合当前来源 | 当前文件、统一登记、本文与派生 Schema | 实际 parser/validator；未实现时逐项来源回读 | 当次对象当前 Working Tree 内容 | 不作为有效 Pitfall 消费；报告字段和未验证范围 |
 | 根因、解决与复用 | 创建或消费 active Pitfall 时 | 根因判断与症状、触发条件和验证说明相容；已观察事实、当前判断和未知机制未被混写；处理已实际采用并观察到结果，且能说明适用前提、处理、成功信号及不命中时的边界；applicability 匹配当前环境，验证边界未被扩大 |对象自有语义字段、自然语言验证说明、当前环境和相邻规则 | AI 语义审核与实际环境回读 | 当次经验及声明范围 | 不创建或暂停复用；缩小边界、继续调查、重新验证或建立 WorkCase |
-| draft 审核与处置 | 准备 promote、discard 或延后审核时 | 已精确读取最终 draft；Human 决定绑定该完整快照；promote 只改变状态，discard 保留正文并增加处置，延期保持 draft；不依赖 WC 是否已关闭 | 当前 draft、Human 明确决定与对象指纹 | AI 语义审核、CAS、转换校验和写后回读 | 当次一个 draft 的状态处置 | 保持 draft；先更正完善、重新回读或取得准确决定，不批量原子处理 |
-| active 废弃 | 准备 `active → discarded` 时 | 已取得针对该 active Pitfall 废弃的明确 Human 授权，且不再适用的依据、适用边界、验证说明和时间一致 | 当前 Pitfall 与 Human 明确授权 | AI 语义审核、CAS、转换校验和写后回读 | 当次终态声明 | 保持 active；补充具体处置说明并取得 Human 授权 |
+| draft 审核与处置 | 准备 promote、discard 或延后审核时 | 已精确读取最终 draft；Human 直接决定或 WorkCase Gate 1 授权包绑定该准确对象与动作；promote 只改变状态，discard 保留正文并增加处置，延期保持 draft；不依赖 WC 是否已关闭 | 当前 draft、Human 明确决定或 Gate 1 `execution_authorization` / `execution_approval` 与对象指纹 | AI 语义审核、CAS、转换校验和写后回读 | 当次一个 draft 的状态处置 | 保持 draft；普通行动先更正完善、重新回读或取得准确决定，获批 WorkCase 未授权处置按 21、34 收敛；不批量原子处理 |
+| active 废弃 | 准备 `active → discarded` 时 | 已取得针对该 active Pitfall 废弃的直接 Human 授权，或 WorkCase Gate 1 已逐项绑定准确 active 对象、目标动作和风险；不再适用的依据、适用边界、验证说明和时间一致 | 当前 Pitfall 与 Human 明确授权，或 Gate 1 授权包与批准 | AI 语义审核、CAS、转换校验和写后回读 | 当次终态声明 | 保持 active；普通行动补充具体处置说明并取得 Human 授权，获批 WorkCase 未授权处置按 21、34 收敛 |
 | 变更与回读 | 创建、更正、补强、替代、退出、拆分、合并或删除后 | 获准变更已写入、回读并验证；失败和部分结果如实保留 | Human 指令、文件差异、Working Tree 回读和验证结果 | 实际写入入口与当前文件回读 | 当次实际变更 | 不声明成功；修正、回滚或保留部分结果与残余风险 |
 
 AI 必须审核实际发生、对象粒度、根因判断与观察的相容性、解决与验证说明、现时适用、复用安全、规则边界、替代完整性和退出依据。外部样本不能证明经验当前有效、tags 必需或终态已被真实消费。
@@ -210,11 +210,11 @@ Code 的共同机械边界按 05 §§10–11 执行；对 Pitfall，只可额外
 
 1. 当前对象、规则或环境之间对根因判断、验证说明或 applicability 存在相互冲突的内容、权威或适用边界，且需要 Human 在可保留的解释、方向或风险取舍之间作选择；仅因当前说明不足、验证不足或需要补充观察时，不进入 Human Gate；
 2. 准备把经验提升为强制规则、接受重大风险，或决定超出 Human 已授权给 AI 的判断范围；
-3. 准备将 draft promote 为 active，或将 draft/active discard 为 discarded；每项始终需要 Human 对准确对象、最终快照和目标动作的明确授权，不因 AI 已判断依据充分、WC 已关闭或 draft 来自获批 WC 而豁免。准备合并或拆分经验且实际因果、复用安全或剩余适用范围需要 Human 判断时，也进入 Human Gate；
+3. 准备将 draft promote 为 active，或将 draft/active discard 为 discarded；每项始终需要 Human 对准确对象、目标动作和风险的明确授权。当前 WorkCase Gate 1 已在 `execution_authorization` 中逐项绑定当时准确对象与动作并形成有效 `execution_approval` 时，该授权已经存在，不因进入转换步骤重复确认；执行中才形成、Gate 1 无法绑定最终快照的 draft 不获 promote/discard 授权。准备合并或拆分经验且实际因果、复用安全或剩余适用范围需要 Human 判断时，也进入 Human Gate；
 4. 删除或迁移可能丢失对象身份、经验、验证说明或替代历史；
 5. 涉及安全、产品方向、责任归属或其它来源明确保留给 Human 的决定。
 
-Human 决定的复用按 00 §10 执行；Human 当前指令已经授权据实记录相应 Pitfall，且适用于该行动的全部来源规则许可条件已经成立时，不因对象类型本身重复进入 Human Gate。Human 确认不能替代实际观察、验证说明、Schema 和来源回读；技术结果也不能替代保留给 Human 的风险接受。
+Human 决定的复用按 00 §10 执行；Human 当前指令已经授权据实记录相应 Pitfall，或当前 WorkCase Gate 1 授权包已逐项覆盖准确对象、动作与风险，且适用于该行动的全部来源规则许可条件已经成立时，不因对象类型、模板步骤或执行者切换重复进入 Human Gate。获批 WorkCase 中出现未列明、范围扩大或新增风险的 Pitfall 行动时，不在执行期询问扩权；保持零写入并按 21、34 收敛受影响 item。Human 确认不能替代实际观察、验证说明、Schema 和来源回读；技术结果也不能替代保留给 Human 的风险接受。
 
 ## 11. Stop Conditions
 
@@ -230,7 +230,7 @@ Human 决定的复用按 00 §10 执行；Human 当前指令已经授权据实�
 8. 准备 promote 或 discard 却没有针对准确对象与最终快照的明确 Human 授权；promote 夹带任何正文/关系修改；discard 删除或改写完整正文/关系、缺少具体处置，或 active 废弃未说明不再适用依据；
 9. 准备写入 archived、archive_reason、tags、repeatability、severity、source_objects、source_sparks、related_*、空占位或其它未登记内容；
 10. 高影响取舍没有实际授权，或获准写入后没有回读与范围匹配验证；
-11. 把 WC execution approval 扩大为 active 初态、promote/discard、其它事实对象创建或项目级全局锁，或者把独立 subagent 误写成 draft 成立条件；
+11. 仅凭 WC `execution_approval` 存在而推定授权包未逐项列明的 active 初态、promote/discard、其它事实对象创建或项目级全局锁，或者把独立 subagent 误写成 draft 成立条件或环境 spawn 能力证明；
 12. 按数量、正文长度或时间自动删除、过期、promote 或 discard draft。
 
 暂停范围与允许继续的行动按 00 §11 执行；对 Pitfall，只有失败、根因判断、解决、验证说明、复用价值与边界成立，冲突和 Schema 得到处置并完成写后回读后，才能恢复相应范围。

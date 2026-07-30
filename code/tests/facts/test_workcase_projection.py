@@ -6,6 +6,9 @@ import pytest
 
 from ldvh.facts.workcase_projection import (
     all_terminal,
+    approval_baseline_fingerprint,
+    canonical_approval_baseline,
+    canonical_execution_authorization,
     canonical_plan_projection,
     canonical_result_projection,
     no_execution_facts,
@@ -13,13 +16,36 @@ from ldvh.facts.workcase_projection import (
     pre_execution_stop_shape,
     result_delta,
     result_projection_complete,
+    safe_convergence_shape,
 )
+
+
+def _authorization() -> dict[str, object]:
+    return {
+        "authorized_actions": [
+            {
+                "action_id": "authorization-write",
+                "summary": "Write the bounded result.",
+                "target_scope": "The selected files.",
+                "effect_scope": "Bounded workspace writes.",
+                "risk_summary": "Existing unrelated changes are preserved.",
+                "rollback_summary": "Revert only newly written bounded content.",
+                "rule_refs": ["specs/21", "specs/06"],
+            }
+        ],
+        "action_ceiling": "No external publication or unrelated object changes.",
+        "prohibited_actions": ["push", "publish"],
+        "allowed_adjustments": "The implementation method may change inside the same scope.",
+        "verification_and_rollback": "Run bounded tests and preserve a recoverable checkpoint.",
+        "out_of_bounds_handling": "Cancel affected items and converge to closure.",
+    }
 
 
 def _complete_result() -> dict[str, object]:
     return {
         "goal": "Ship the bounded result",
         "scope": "One implementation",
+        "execution_authorization": _authorization(),
         "success_criterion_definitions": [
             {"criterion_id": "criterion-second", "statement": "Second"},
             {"criterion_id": "criterion-first", "statement": "First"},
@@ -58,7 +84,12 @@ def test_plan_projection_normalizes_only_plan_members() -> None:
 
     projection = canonical_plan_projection(fields)
 
-    assert list(projection) == ["goal", "scope", "success_criterion_definitions", "work_items"]
+    assert list(projection) == [
+        "goal",
+        "scope",
+        "success_criterion_definitions",
+        "work_items",
+    ]
     assert [criterion["criterion_id"] for criterion in projection["success_criterion_definitions"]] == [
         "criterion-first",
         "criterion-second",
@@ -191,6 +222,39 @@ def test_pre_execution_stop_shape_rejects_a_whitespace_only_result_summary() -> 
     }
 
     assert not pre_execution_stop_shape(fields)
+
+
+def test_approval_baseline_is_order_stable_and_excludes_operational_plan_items() -> None:
+    before = _complete_result()
+    after = deepcopy(before)
+    after["work_items"][0]["goal"] = "Use another bounded implementation method"
+    after["execution_authorization"]["authorized_actions"] = list(
+        reversed(after["execution_authorization"]["authorized_actions"])
+    )
+    assert canonical_approval_baseline(before) == canonical_approval_baseline(after)
+    assert approval_baseline_fingerprint(before) == approval_baseline_fingerprint(after)
+
+    after["scope"] = "An expanded boundary"
+    assert approval_baseline_fingerprint(before) != approval_baseline_fingerprint(after)
+
+
+def test_authorization_projection_normalizes_set_like_members() -> None:
+    value = _authorization()
+    value["authorized_actions"][0]["rule_refs"] = ["specs/21", "specs/06", "specs/21"]
+    value["prohibited_actions"] = ["publish", "push", "publish"]
+    projected = canonical_execution_authorization(value)
+    assert projected["authorized_actions"][0]["rule_refs"] == ["specs/06", "specs/21"]
+    assert projected["prohibited_actions"] == ["publish", "push"]
+
+
+def test_safe_convergence_shape_never_includes_authorization_or_approval() -> None:
+    fields = _complete_result()
+    fields["phase"] = "controller_checking"
+    fields.pop("execution_authorization")
+    fields.pop("execution_approval", None)
+    assert safe_convergence_shape(fields)
+    assert not safe_convergence_shape({**fields, "phase": "executing"})
+    assert not safe_convergence_shape({**fields, "execution_approval": {"subject_version": 1}})
 
 
 @pytest.mark.parametrize(

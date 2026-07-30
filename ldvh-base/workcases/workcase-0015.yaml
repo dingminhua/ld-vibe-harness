@@ -31,12 +31,6 @@ work_items:
   approach_summary: 每批先给出精确前后文本；收到确认后才使用受控编辑写入。遇到无法按既有分类判断的表述，暂停该单元并交还 Human 裁决。
   status: completed
   result_summary: 已按 Human 对每批精确前后文本的确认，收敛已批准的规范、用户文档、帮助/诊断和注释文本；未改运行行为、事件链、技术标识符、外部原文、历史事实记录或无关 Web 改动。
-execution_approval:
-  subject_version: 2
-  approved_at: '2026-07-30T10:00:37+08:00'
-  summary: Human 已明确指示“0015已经修改，可以继续推进”，批准当前 plan_version=2：仅保留已完成的 item-01 与 item-02；结果验证、自检、独立复核和关闭继续由 WorkCase phase 链承接。该批准不构成结果背书或关闭决定。
-  source_refs:
-  - 'human_instruction: 当前对话 Human 消息 0015已经修改，可以继续推进 (observed_at 2026-07-30T10:00:00+08:00)'
 result_version: 2
 success_criterion_results:
 - criterion_id: criterion-01
@@ -67,4 +61,4 @@ waiting_on: Human 对 workcase-0015 完整关闭提案的最终关闭决定
 object_id: workcase-0015
 fact_type_key: workcase
 created_at: '2026-07-25T13:26:56.828180+08:00'
-updated_at: '2026-07-30T10:11:33.211067+08:00'
+updated_at: '2026-07-30T13:27:14.104085+08:00'

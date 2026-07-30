@@ -7,6 +7,7 @@ import pytest
 
 from ldvh.facts.schema import project_fact_schemas
 from ldvh.facts.validation import validate_fact_object
+from ldvh.facts.workcase_projection import approval_baseline_fingerprint
 from ldvh.facts.workcase_validation import validate_workcase_snapshot
 from ldvh.specs.repository import inspect_repository
 
@@ -30,11 +31,34 @@ def _review(version: int = 1, *, feedback: bool = False) -> dict[str, object]:
     return review
 
 
-def _approval() -> dict[str, object]:
+def _authorization() -> dict[str, object]:
+    return {
+        "authorized_actions": [
+            {
+                "action_id": "authorization-bounded-write",
+                "summary": "Write the bounded result.",
+                "target_scope": "The selected implementation files.",
+                "effect_scope": "Workspace writes and read-only independent review.",
+                "risk_summary": "Unrelated existing changes must be preserved.",
+                "rollback_summary": "Revert only the bounded newly written content.",
+                "rule_refs": ["specs/21", "specs/06"],
+            }
+        ],
+        "action_ceiling": "No external publication or unrelated object changes.",
+        "prohibited_actions": ["push", "publish"],
+        "allowed_adjustments": "The bounded implementation method may change.",
+        "verification_and_rollback": "Run bounded checks and preserve recoverable checkpoints.",
+        "out_of_bounds_handling": "Cancel affected items and converge to closure.",
+    }
+
+
+def _approval(fields: dict[str, object] | None = None) -> dict[str, object]:
+    baseline = fields if fields is not None else _base("executing")
     return {
         "subject_version": 1,
         "approved_at": "2026-07-26T10:20:00+08:00",
         "summary": "Human approved this exact plan.",
+        "baseline_fingerprint": approval_baseline_fingerprint(baseline),
         "source_refs": ["conversation:plan-approval"],
     }
 
@@ -77,9 +101,11 @@ def _base(phase: str) -> dict[str, object]:
         "success_criterion_definitions": [
             {"criterion_id": "criterion-result", "statement": "The result exists and is checked."}
         ],
+        "execution_authorization": _authorization(),
         "phase": phase,
         "plan_version": 1,
         "work_items": [_pending_item()],
+        "creation_reviews": [_review()],
     }
 
 
@@ -94,7 +120,7 @@ def _complete_result(phase: str) -> dict[str, object]:
     ]
     fields.update(
         {
-            "execution_approval": _approval(),
+            "execution_approval": _approval(fields),
             "result_version": 1,
             "success_criterion_results": [
                 {
@@ -176,6 +202,7 @@ def test_workcase_review_and_approval_times_accept_arbitrary_fractional_precisio
             "waiting_on": "Human plan decision.",
         },
         _base("plan_revising"),
+        {**_base("plan_revising"), "execution_approval": _approval()},
         {
             **_base("executing"),
             "work_items": [
@@ -257,6 +284,7 @@ def test_item_dependencies_require_existing_completed_targets_and_an_acyclic_gra
 
 def test_item_dag_accepts_a_large_valid_linear_dependency_chain_without_recursion() -> None:
     fields = _base("plan_revising")
+    fields["execution_approval"] = _approval(fields)
     fields["work_items"] = _pending_item_chain(1_500)
 
     assert validate_workcase_snapshot(fields) == ()
@@ -325,9 +353,36 @@ def test_approval_source_refs_are_nonempty_unique_stable_strings() -> None:
     assert any(issue.field_path == "execution_approval.source_refs" for issue in validate_workcase_snapshot(fields))
 
 
+def test_pre_gate_plan_revising_requires_noexec_and_forbids_result_shape() -> None:
+    valid = _base("plan_revising")
+    valid["waiting_on"] = "Independent reviewer input"
+    assert validate_workcase_snapshot(valid) == ()
+
+    started = deepcopy(valid)
+    started["work_items"][0].update(
+        {
+            "status": "in_progress",
+            "current_summary": "Execution must not have started before Gate1.",
+            "resume_from": "No authorized resume point exists.",
+        }
+    )
+    assert any(
+        issue.field_path == "execution_approval" and "NoExec" in issue.summary
+        for issue in validate_workcase_snapshot(started)
+    )
+
+    versioned = {**valid, "result_version": 1}
+    assert any(
+        issue.field_path == "execution_approval" and "禁止结果版本" in issue.summary
+        for issue in validate_workcase_snapshot(versioned)
+    )
+
+
 def test_pre_execution_stop_can_reach_result_chain_without_fabricated_approval() -> None:
     fields = _complete_result("human_closure_confirming")
     fields.pop("execution_approval")
+    fields.pop("execution_authorization")
+    fields.pop("creation_reviews")
     fields["work_items"][0]["status"] = "cancelled"
     fields["work_items"][0]["result_summary"] = "Human stopped the work before execution; no output was formed."
     fields["success_criterion_results"][0].update(
@@ -509,6 +564,7 @@ def test_snapshot_validation_preserves_meaningful_surrounding_whitespace(
     schema = project_fact_schemas(inspect_repository(current_specs_repository))["workcase"]
     fields = _human_closure_confirming()
     fields["goal"] = "  Keep this exact meaningful text.  "
+    fields["execution_approval"]["baseline_fingerprint"] = approval_baseline_fingerprint(fields)
     before = deepcopy(fields)
 
     assert validate_fact_object("workcase", fields, schema) == ()

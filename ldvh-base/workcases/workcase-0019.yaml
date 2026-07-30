@@ -1,0 +1,71 @@
+title: 防止 WorkCase 生命周期关口误入执行项
+status: open
+priority: P1
+goal: 在 WorkCase 唯一类型规范与获批计划执行模板中建立可执行的防误建模边界，使方案形成、方案复核和获批计划执行都能识别并拒绝把 controller_checking、independent_reviewing、closure_preparing、human_closure_confirming 等 WorkCase 生命周期关口或 Human Gate 写成 work item；同时以真实负例测试固定该边界，避免再次形成“item 等待 review，而 review 又要求全部 item terminal”的循环。
+scope: 覆盖 specs/21-WorkCase-工作项.md 的 workcase-item 语义、创建审核要求、Stop Conditions 与最小验证；覆盖 specs/34-WorkCase获批计划执行行动模板.md 的逐项消费前语义检查、命中后的停止和 plan_revising 交还；覆盖 code/tests 中与上述规则及模板交付直接相关的负例或契约测试。明确区分“执行中形成验证材料”与“全部 item terminal 后的 Controller 自检、独立结果复核和 Human 关闭决定”。排除：修改 WorkCase 字段、status 或 phase 闭集；新增自然语言 NLP/lint 或让 Code 代替 AI 判断语义；修改 specs/07、31、32；重新打开或改写 workcase-0018；修改、批准或执行 workcase-0015；Web 改动；Git commit、push 或 PR；以及当前 Working Tree 其它无关改动。
+success_criterion_definitions:
+- criterion_id: criterion-rule-source
+  statement: specs/21 唯一明确 work item 不得承载 WorkCase phase 或 Human Gate，方案复核必须逐项检查，命中即返修。
+- criterion_id: criterion-runtime-consumption
+  statement: specs/34 在执行每项前消费该语义边界，并以 Stop Condition 停止和交还 plan_revising，不复制 WorkCase 字段或状态机。
+- criterion_id: criterion-negative-verification
+  statement: 测试包含将独立结果复核误写为 item 的真实反例，持续检查规则与模板交付包含该边界；相关测试通过，且不宣称 Code 能理解自然语言。
+- criterion_id: criterion-responsibility-boundary
+  statement: 21、34 与测试的职责一致且未越过排除边界；Controller 自检、独立结果复核和 Human 关闭决定仍由 WorkCase phase 链承担。
+success_criterion_results:
+- criterion_id: criterion-rule-source
+  outcome: satisfied
+  summary: 21 §4.3、§4.4、workcase-item 定义、验证要求与 Stop Conditions 已共同明确生命周期关口/Human Gate 不得成为 item，创建前 Controller 与 Reviewer 必须逐项检查并在命中时返修。
+- criterion_id: criterion-runtime-consumption
+  outcome: satisfied
+  summary: 34 在输入、执行分支、验证表和 Stop Conditions 中消费 21 的语义边界；命中时停止未来执行并交还 plan_revising，未复制字段或 phase 状态机。
+- criterion_id: criterion-negative-verification
+  outcome: satisfied
+  summary: 已用“全部实现完成后安排独立结果复核”作为显式坏计划，契约测试同时检查 21 来源与 Helper 交付的 34 完整来源；行动模板测试 6 项、完整 Specs 测试 131 项和 git diff --check 均通过。
+- criterion_id: criterion-responsibility-boundary
+  outcome: satisfied
+  summary: 主控检查确认本案没有新增自检/复核 item，没有修改字段、status/phase 闭集、07/31/32、Web、0015 或 0018；Controller 自检、独立结果复核与 Human 关闭决定继续由 phase 链承接。
+phase: human_closure_confirming
+plan_version: 1
+work_items:
+- item_id: item-01
+  goal: 收敛 specs/21 与 specs/34 的防误建模规则。
+  expected_result: 两处形成唯一来源与运行时消费关系，明确禁止生命周期关口或 Human Gate 作为 work item，命中时停止并返修，且不复制字段或状态机。
+  approach_summary: 先对照 21 当前 workcase-item、creation review、Stop Conditions 与 34 的 preconditions、执行分支和 Stop Conditions，只做最小充分修改。
+  status: completed
+  result_summary: 已在 specs/21 明确 work item 只承载可实施局部结果、生命周期关口与 Human Gate 必须留在 phase 链，并补入逐项创建复核、验证与 Stop Condition；已在 specs/34 增加消费前语义检查、非法反例和命中后停止并交还 plan_revising 的分支，未新增字段、状态机或 Code 语义判断。
+- item_id: item-02
+  goal: 增加负例契约测试并完成相关验证。
+  expected_result: 将独立结果复核误写为 item 的计划负例被规则与模板契约持续覆盖，相关 docs、spec 与模板交付测试通过，机械检查边界被如实表达。
+  depends_on:
+  - item-01
+  approach_summary: 更新或新增直接读取当前来源的契约测试，运行受影响测试与 git diff --check；不实现自然语言 NLP 检测。
+  status: completed
+  result_summary: 已新增明确坏计划“全部实现完成后安排独立结果复核”的来源交付契约测试；行动模板测试 6 项、完整 Specs 测试 131 项及 git diff --check 均通过。测试只固定当前规则与模板交付，不声称 Code 能理解任意自然语言。
+result_version: 1
+result_summary: 已为 WorkCase 计划建立生命周期关口防误建模闭环：21 定义 item 语义、创建复核和停止边界，34 在消费获批计划前检查并于命中时回到 plan_revising，测试以 0015 类错误的明确反例固定两处来源交付。未增加自然语言检测器、字段、状态或第二状态机。
+controller_check_summary: Controller 已逐项对照批准 scope、两个 item 终值和四项成功标准，检查 21/34 的唯一来源与消费关系、显式非法反例、Code 非语义判断声明、plan_revising 停止分支、测试断言及 git diff --check。实际写入限于 21、既存未跟踪的 34、行动模板测试和 workcase-0019；当前 Working Tree 的其它既存 dirty 改动未纳入本案结果，也未被清理或改写。未发现失败、隐藏副作用或需要返工的本案事项。
+validation_summary: 实际运行 code/tests/helper/test_action_template_operation.py：6 passed；运行 code/tests/specs：131 passed；运行 git diff --check：通过；并用精确文本检索回读 21、34 与负例测试的非法 item、plan_revising 交还和 Code 语义边界。未验证任意自然语言计划的自动识别，因为本案明确不实现 NLP/lint，Code 仍不能据关键词判断语义；未执行 Web、全量 Code 测试、Git commit、push 或 PR。
+result_reviews:
+- reviewer: Codex independent reviewer (/root/workcase0018_v2_review)
+  reviewed_at: '2026-07-30T10:08:51+08:00'
+  subject_version: 1
+  scope: 精确读取 mechanically_valid workcase-0019、21、34 与行动模板负例测试，审查相关 diff/未跟踪边界；独立运行行动模板测试 6 项、Specs 测试 131 项、tracked git diff --check，并对未跟踪的 34 与 workcase-0019 运行 no-index 空白检查。未运行 Web、全量 Python、CLI E2E 或任意 NLP 自动识别测试。
+  conclusion: pass_with_followups
+  feedback:
+  - git diff --check 只覆盖已跟踪差异；关闭资料必须区分该范围并保留 Reviewer 对未跟踪 34/0019 的补充空白检查。当前树仍有 07、32、Web 等既存 dirty changes，本案定向来源未显示修改它们，但 Git 不能独立证明作者归属。
+  controller_resolution: 接受。结果投影保持不变；关闭资料将明确区分 tracked git diff --check 与 Reviewer 对未跟踪 34/0019 的 no-index 空白检查，并把排除范围结论限定为本案声明、工具调用和定向来源，不把既存 dirty 工作树表述为可由 Git 证明作者归属。
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0038
+closure_proposal:
+  proposed_outcome: completed
+  proposed_disposition_summary: plan_version=1 批准范围内的四项成功标准均已满足：21 已建立生命周期关口不进入 work item 的唯一语义、创建复核与停止边界，34 已建立消费前检查及命中后返回 plan_revising 的执行分支，显式坏计划的来源与 Helper 交付契约测试通过，未新增 NLP validator、字段或第二状态机。主控与独立复核分别确认行动模板测试 6 项、Specs 测试 131 项通过；主控的 git diff --check 结论只覆盖已跟踪差异，Reviewer 另对未跟踪 34/0019 完成 no-index 空白检查并通过。当前工作树其它既存 dirty 改动不纳入本案结果，Git 不能独立证明其作者归属。原 scope 内没有剩余责任，无需转交或建立后续建议。
+waiting_on: 等待 Human 审议 workcase-0019 的 completed 关闭提案并明确决定是否关闭。
+object_id: workcase-0019
+fact_type_key: workcase
+created_at: '2026-07-30T09:47:58.164892+08:00'
+updated_at: '2026-07-30T13:27:14.132180+08:00'

@@ -10,12 +10,12 @@ import express, {
 import cors from 'cors'
 import dotenv from 'dotenv'
 import authRoutes from './routes/auth.js'
-import dashboardRoutes from './routes/dashboard.js'
 import objectsRoutes from './routes/objects.js'
 import changelogRoutes from './routes/changelog.js'
 import docsRoutes from './routes/docs.js'
 import projectFilesRoutes from './routes/project-files.js'
 import settingsRoutes from './routes/settings.js'
+import cognitionRoutes from './routes/cognition.js'
 import { primeWebGovernanceScope } from './services/governanceScope.js'
 
 dotenv.config()
@@ -39,12 +39,12 @@ app.use('/api', (_req: Request, res: Response, next: NextFunction): void => {
  * API Routes
  */
 app.use('/api/auth', authRoutes)
-app.use('/api/dashboard', dashboardRoutes)
 app.use('/api/objects', objectsRoutes)
 app.use('/api/changelog', changelogRoutes)
 app.use('/api/docs', docsRoutes)
 app.use('/api/project-files', projectFilesRoutes)
 app.use('/api/settings', settingsRoutes)
+app.use('/api/cognition', cognitionRoutes)
 
 /**
  * health

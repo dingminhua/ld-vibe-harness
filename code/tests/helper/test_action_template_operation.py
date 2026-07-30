@@ -25,7 +25,7 @@ def _request(*keys: str, disclosure: str | None = None) -> CommonRequest:
     )
 
 
-def test_candidate_operation_discovers_four_real_templates_in_stable_order(
+def test_candidate_operation_discovers_five_real_templates_in_stable_order(
     current_specs_repository: Path,
 ) -> None:
     repository = inspect_repository(current_specs_repository)
@@ -45,6 +45,7 @@ def test_candidate_operation_discovers_four_real_templates_in_stable_order(
             "fact-object-controlled-creation",
             "fact-object-lifecycle-change",
             "git-commit",
+            "workcase-approved-plan-execution",
         )
     )
     assert execution.not_completed_scope == ()
@@ -99,6 +100,31 @@ def test_content_operation_returns_exact_definition_and_complete_source_from_sam
     assert "## 8. Stop Conditions" in item["source_content"]
     assert hashlib.sha256(item["content"].encode()).hexdigest() == item["content_sha256"]
     assert hashlib.sha256(item["source_content"].encode()).hexdigest() == item["source_content_sha256"]
+
+
+def test_workcase_execution_template_keeps_result_review_out_of_work_items(
+    current_specs_repository: Path,
+) -> None:
+    """Keep one explicit bad plan as a source-delivery contract, not an NLP validator."""
+
+    invalid_item_goal = "全部实现完成后安排独立结果复核"
+    workcase_source = (current_specs_repository / "specs/21-WorkCase-工作项.md").read_text(encoding="utf-8")
+    execution = ACTION_TEMPLATE_CONTENT_IMPLEMENTATION.call(
+        _request("workcase-approved-plan-execution"),
+        inspect_repository(current_specs_repository),
+        OperationExecutionContext(cwd=current_specs_repository),
+    )
+
+    assert execution.outcome == "ok"
+    assert execution.result is not None
+    delivered_template_source = execution.result["items"][0]["source_content"]
+    assert invalid_item_goal in workcase_source
+    assert invalid_item_goal in delivered_template_source
+    assert "不得被写成 item" in workcase_source
+    assert "保留当前批准的授权包并自动返回执行，不再次请求 Human" in delivered_template_source
+    assert "将受影响 item 据实取消并转入结果链" in delivered_template_source
+    assert "Code 不判断自然语言是否属于生命周期关口" in workcase_source
+    assert "Code 不从关键词或字段形状替 AI 作出结论" in delivered_template_source
 
 
 def test_content_operation_requires_nonempty_exact_keys_and_null_disclosure(

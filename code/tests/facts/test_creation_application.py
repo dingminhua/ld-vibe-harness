@@ -73,6 +73,24 @@ def _workcase_command(current_specs_repository: Path, tmp_path: Path) -> FactCre
         "priority": "P2",
         "goal": "Exercise the initial WorkCase creation boundary",
         "scope": "One controlled creation",
+        "execution_authorization": {
+            "authorized_actions": [
+                {
+                    "action_id": "authorization-create-boundary",
+                    "summary": "Exercise the bounded creation path.",
+                    "target_scope": "Only the requested test WorkCase.",
+                    "effect_scope": "One fact-object creation transaction.",
+                    "risk_summary": "Reject invalid plan or relation state.",
+                    "rollback_summary": "Remove only the uncommitted candidate.",
+                    "rule_refs": ["specs/21"],
+                }
+            ],
+            "action_ceiling": "No unrelated fact or external write.",
+            "prohibited_actions": ["publish", "push"],
+            "allowed_adjustments": "Only the declared test creation.",
+            "verification_and_rollback": "Validate the candidate and read back the exact carrier.",
+            "out_of_bounds_handling": "Reject the candidate without writing.",
+        },
         "success_criterion_definitions": [
             {"criterion_id": "criterion-01", "statement": "The initial boundary is enforced"}
         ],

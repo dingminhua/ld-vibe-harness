@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom';
 import { useState } from 'react';
 import type { ElementType } from 'react';
 import {
-  LayoutDashboard,
+  Compass,
   Globe,
   FolderTree,
   GitPullRequestArrow,
@@ -23,7 +23,7 @@ import ldvhPluginIcon from '@/assets/ldvh-plugin-icon.png';
 type NavIcon = ElementType<LucideProps>;
 
 const NAV_ITEMS: { to: string; labelKey: LocaleKey; icon: NavIcon }[] = [
-  { to: '/', labelKey: 'nav.dashboard', icon: LayoutDashboard },
+  { to: '/', labelKey: 'nav.cognition', icon: Compass },
   { to: '/objects/spark', labelKey: 'nav.sparks', icon: OBJECT_TYPE_ICONS.spark },
   { to: '/objects/workcase', labelKey: 'nav.workcases', icon: OBJECT_TYPE_ICONS.workcase },
   { to: '/objects/adr', labelKey: 'nav.adrs', icon: OBJECT_TYPE_ICONS.adr },

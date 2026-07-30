@@ -8,6 +8,7 @@ dedicated validation and transition modules.
 
 from __future__ import annotations
 
+import hashlib
 import json
 from collections.abc import Mapping, Sequence
 
@@ -19,6 +20,24 @@ _PLAN_ITEM_FIELDS = (
     "approach_summary",
     "template_keys",
     "template_deviation_summary",
+)
+_AUTHORIZATION_ACTION_FIELDS = (
+    "action_id",
+    "summary",
+    "target_scope",
+    "effect_scope",
+    "risk_summary",
+    "rollback_summary",
+    "rule_refs",
+)
+_AUTHORIZATION_FIELDS = (
+    "authorized_actions",
+    "action_ceiling",
+    "prohibited_actions",
+    "allowed_adjustments",
+    "verification_and_rollback",
+    "out_of_bounds_handling",
+    "human_prerequisites",
 )
 _RESULT_ITEM_FIELDS = ("item_id", "status", "result_summary")
 _RESULT_MEMBER_FIELDS = (
@@ -49,6 +68,9 @@ _PRE_EXECUTION_STOP_PHASES = frozenset(
         "closure_preparing",
         "human_closure_confirming",
     }
+)
+_SAFE_CONVERGENCE_PHASES = frozenset(
+    {"controller_checking", "independent_reviewing", "closure_preparing", "human_closure_confirming"}
 )
 
 
@@ -93,6 +115,62 @@ def _sorted_objects(value: object, identity_key: str, fields: Sequence[str]) -> 
         selected,
         key=lambda member: (str(member.get(identity_key, "")), _canonical_json(member)),
     )
+
+
+def canonical_execution_authorization(value: object) -> dict[str, object]:
+    """Return the deterministic execution-authorization projection.
+
+    This projection only normalizes source-declared set-like arrays.  It does
+    not decide whether any natural-language action or risk is sufficient.
+    """
+
+    if not isinstance(value, Mapping):
+        return {}
+    projected = _selected(value, _AUTHORIZATION_FIELDS)
+    actions = value.get("authorized_actions")
+    if isinstance(actions, Sequence) and not isinstance(actions, (str, bytes, bytearray)):
+        normalized_actions: list[dict[str, object]] = []
+        for member in actions:
+            if not isinstance(member, Mapping):
+                continue
+            action = _selected(member, _AUTHORIZATION_ACTION_FIELDS)
+            rule_refs = action.get("rule_refs")
+            if isinstance(rule_refs, Sequence) and not isinstance(rule_refs, (str, bytes, bytearray)):
+                action["rule_refs"] = _stable_unique(rule_refs)
+            normalized_actions.append(action)
+        projected["authorized_actions"] = sorted(
+            normalized_actions,
+            key=lambda member: (str(member.get("action_id", "")), _canonical_json(member)),
+        )
+    for key in ("prohibited_actions", "human_prerequisites"):
+        raw = projected.get(key)
+        if isinstance(raw, Sequence) and not isinstance(raw, (str, bytes, bytearray)):
+            projected[key] = _stable_unique(raw)
+    return projected
+
+
+def canonical_approval_baseline(fields: Mapping[str, object]) -> dict[str, object]:
+    """Return the immutable Human Gate 1 judgment subject."""
+
+    projected = _selected(fields, ("goal", "scope"))
+    if "success_criterion_definitions" in fields:
+        projected["success_criterion_definitions"] = _sorted_objects(
+            fields["success_criterion_definitions"],
+            "criterion_id",
+            ("criterion_id", "statement"),
+        )
+    if "execution_authorization" in fields:
+        projected["execution_authorization"] = canonical_execution_authorization(
+            fields["execution_authorization"]
+        )
+    return projected
+
+
+def approval_baseline_fingerprint(fields: Mapping[str, object]) -> str:
+    """Return the lowercase SHA-256 identity of the current Gate 1 baseline."""
+
+    raw = _canonical_json(canonical_approval_baseline(fields)).encode("utf-8")
+    return hashlib.sha256(raw).hexdigest()
 
 
 def canonical_plan_projection(fields: Mapping[str, object]) -> dict[str, object]:
@@ -190,6 +268,20 @@ def pre_execution_stop_shape(fields: Mapping[str, object]) -> bool:
     )
 
 
+def safe_convergence_shape(fields: Mapping[str, object]) -> bool:
+    """Return whether an approval-less active WorkCase may only converge.
+
+    This is a current safety shape, not a historical compatibility profile.
+    It cannot authorize execution or plan revision.
+    """
+
+    return (
+        fields.get("phase") in _SAFE_CONVERGENCE_PHASES
+        and "execution_approval" not in fields
+        and all_terminal(fields)
+    )
+
+
 def result_projection_complete(fields: Mapping[str, object]) -> bool:
     """Return whether every canonical result member is present and structurally complete."""
 
@@ -235,6 +327,9 @@ def result_projection_complete(fields: Mapping[str, object]) -> bool:
 
 __all__ = [
     "all_terminal",
+    "approval_baseline_fingerprint",
+    "canonical_approval_baseline",
+    "canonical_execution_authorization",
     "canonical_plan_projection",
     "canonical_result_projection",
     "no_execution_facts",
@@ -242,4 +337,5 @@ __all__ = [
     "pre_execution_stop_shape",
     "result_delta",
     "result_projection_complete",
+    "safe_convergence_shape",
 ]

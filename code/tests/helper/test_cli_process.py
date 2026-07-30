@@ -176,14 +176,14 @@ def test_defined_operation_check_and_call_return_actual_l0_results(tmp_path: Pat
     assert check_response["outcome"] == "ok"
     checked_operation = check_response["result"]["operations"][0]
     assert checked_operation["availability"] == "available_for_request"
-    assert len(checked_operation["available_scope"]) == 27
+    assert len(checked_operation["available_scope"]) == 28
     assert "working-tree-test-evidence-fields" in checked_operation["available_scope"]
     assert "web-api-reading-contract" in checked_operation["available_scope"]
     assert checked_operation["unavailable_scope"] == []
 
     assert called.returncode == 0
     assert call_response["outcome"] == "ok"
-    assert len(call_response["result"]["items"]) == 27
+    assert len(call_response["result"]["items"]) == 28
     assert "working-tree-test-evidence-fields" in {
         item["key"] for item in call_response["result"]["items"]
     }
@@ -216,7 +216,7 @@ def test_defined_operation_check_and_call_return_actual_l0_results(tmp_path: Pat
     )
 
 
-def test_action_template_operations_discover_and_read_four_current_sources(tmp_path: Path) -> None:
+def test_action_template_operations_discover_and_read_five_current_sources(tmp_path: Path) -> None:
     discovered, candidate_response = _run(tmp_path, "call", "read-action-template-candidates")
     read, content_response = _run(
         tmp_path,
@@ -230,6 +230,7 @@ def test_action_template_operations_discover_and_read_four_current_sources(tmp_p
                         "fact-object-controlled-creation",
                         "fact-object-lifecycle-change",
                         "environment-integration-installation-verification",
+                        "workcase-approved-plan-execution",
                     ]
                 }
             }
@@ -243,6 +244,7 @@ def test_action_template_operations_discover_and_read_four_current_sources(tmp_p
         "fact-object-controlled-creation",
         "fact-object-lifecycle-change",
         "git-commit",
+        "workcase-approved-plan-execution",
     ]
     assert candidate_response["result"]["unchecked_conditions"]
     assert content_response["outcome"] == "ok"
@@ -253,6 +255,7 @@ def test_action_template_operations_discover_and_read_four_current_sources(tmp_p
         "fact-object-controlled-creation",
         "fact-object-lifecycle-change",
         "environment-integration-installation-verification",
+        "workcase-approved-plan-execution",
     ]
     assert all("## 8. Stop Conditions" in item["source_content"] for item in content_response["result"]["items"])
     assert all(

@@ -52,6 +52,7 @@ test('WorkCase detail source consumes only the single current shape in one fixed
     'workcaseSuccessCriteria',
     'workcasePlanAndItems',
     'workcaseCreationReviews',
+    'workcaseExecutionAuthorization',
     'workcaseExecutionApproval',
     'workcaseResultAndValidation',
     'workcaseControllerCheck',
@@ -69,6 +70,10 @@ test('WorkCase detail source consumes only the single current shape in one fixed
   const urls = layout.indexOf('<RelatedContentSection', relations);
   assert.ok(relations > previous, 'formal relations must follow the terminal node');
   assert.ok(urls > relations, 'external URLs must follow formal relations');
+  const relationBlock = layout.slice(relations, urls);
+  assert.doesNotMatch(relationBlock, /workcaseRelations/);
+  assert.doesNotMatch(relationBlock, /showRelationKey/);
+  assert.match(layout, /title=\{getFieldLabel\("fact_associations", locale\)\}/);
 });
 
 test('blocked detail shows actual waiting and blocking facts without record-completeness noise', () => {
@@ -93,6 +98,8 @@ test('blocked detail shows actual waiting and blocking facts without record-comp
       subject_version: 1,
       approved_at: '2026-07-20T08:10:00+08:00',
       summary: 'Human 批准在既定边界内执行。',
+      baseline_fingerprint: 'sha256:blocked-baseline',
+      source_refs: ['human-input:blocked-plan-approval'],
     },
     waiting_on: '等待 Human 提供实际输入。',
     blocking_summary: '全部可继续活动都依赖该输入；提供后可恢复。',
@@ -134,7 +141,25 @@ test('closure-confirming detail preserves tri-state results and separates every 
       subject_version: 1,
       approved_at: '2026-07-20T08:10:00+08:00',
       summary: 'Human 批准执行当前计划版本。',
+      baseline_fingerprint: 'sha256:closure-baseline',
       source_refs: ['human-input:plan-approval'],
+    },
+    execution_authorization: {
+      authorized_actions: [{
+        action_id: 'action-01',
+        summary: '在 Web 范围实现当前批准内容。',
+        target_scope: 'web/**',
+        effect_scope: '只读展示与契约测试。',
+        risk_summary: '可能造成投影与事实字段不一致。',
+        rollback_summary: '回退 Web 变更。',
+        rule_refs: ['specs/21#gate-1'],
+      }],
+      action_ceiling: '不得写事实 YAML。',
+      prohibited_actions: ['不得扩大批准范围。'],
+      allowed_adjustments: '允许修正文案与只读投影。',
+      verification_and_rollback: '运行 Web check 与 tests，失败时回退对应 Web 变更。',
+      out_of_bounds_handling: '停止并回到 Human。',
+      human_prerequisites: ['Gate 1 已批准。'],
     },
     result_version: 1,
     result_summary: '形成了主要产物，仍有一项未满足和一项未验证。',
@@ -168,6 +193,8 @@ test('closure-confirming detail preserves tri-state results and separates every 
   );
   assert.equal(detail.criterionResults[2]?.summary, '外部环境未执行，不能判断。');
   assert.equal(detail.executionApproval?.summary, 'Human 批准执行当前计划版本。');
+  assert.equal(detail.executionApproval?.baseline_fingerprint, 'sha256:closure-baseline');
+  assert.equal(detail.executionAuthorization?.action_ceiling, '不得写事实 YAML。');
   assert.equal(detail.controllerCheck, true);
   assert.equal(detail.resultReviews.length, 1);
   assert.equal(detail.closureProposal?.proposed_outcome, 'partial');
@@ -247,7 +274,7 @@ test('field-level issues surface in place inside each WorkCase reading node', ()
     'phase', 'summary', 'resume_from', 'waiting_on', 'blocking_summary',
     'success_criterion_definitions', 'success_criterion_results',
     'plan_version', 'work_items',
-    'creation_reviews', 'execution_approval',
+    'creation_reviews', 'execution_authorization', 'execution_approval',
     'result_version', 'result_summary', 'validation_summary',
     'controller_check_summary', 'result_reviews',
     'closure_proposal',

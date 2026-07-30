@@ -20,6 +20,7 @@ from ldvh.facts.workcase_projection import (
     pre_execution_stop_shape,
     result_delta,
     result_projection_complete,
+    safe_convergence_shape,
 )
 
 WorkCaseOperation = Literal["update", "close", "correct"]
@@ -44,8 +45,8 @@ _ACTIVE_PHASES = frozenset(
 )
 _WORKCASE_PHASE_EDGES = frozenset(
     {
-        ("human_plan_confirming", "executing"),
         ("human_plan_confirming", "plan_revising"),
+        ("human_plan_confirming", "executing"),
         ("human_plan_confirming", "controller_checking"),
         ("plan_revising", "human_plan_confirming"),
         ("plan_revising", "executing"),
@@ -62,27 +63,20 @@ _WORKCASE_PHASE_EDGES = frozenset(
         ("closure_preparing", "controller_checking"),
         ("closure_preparing", "plan_revising"),
         ("closure_preparing", "human_closure_confirming"),
-        ("human_closure_confirming", "closure_preparing"),
-        ("human_closure_confirming", "controller_checking"),
-        ("human_closure_confirming", "plan_revising"),
     }
 )
 _GATE_WAITING_EXIT_EDGES = frozenset(
     {
-        ("human_plan_confirming", "executing"),
         ("human_plan_confirming", "plan_revising"),
+        ("human_plan_confirming", "executing"),
         ("human_plan_confirming", "controller_checking"),
         ("independent_reviewing", "controller_checking"),
         ("independent_reviewing", "plan_revising"),
         ("independent_reviewing", "closure_preparing"),
-        ("human_closure_confirming", "closure_preparing"),
-        ("human_closure_confirming", "controller_checking"),
-        ("human_closure_confirming", "plan_revising"),
     }
 )
 
 _PLAN_REPLACEMENT_RESET_FIELDS = (
-    "execution_approval",
     "result_version",
     "success_criterion_results",
     "result_summary",
@@ -350,22 +344,22 @@ def _validate_review_ownership(
             )
 
         if key == "creation_reviews":
-            plan_submission = (before_phase, after_phase) == (
-                "plan_revising",
-                "human_plan_confirming",
+            correction_position = same_position and after_phase in {"human_plan_confirming", "plan_revising"}
+            safe_convergence_removal = bool(removed) and not added and safe_convergence_shape(after)
+            pre_gate_candidate_exit = (
+                (before_phase, after_phase) == ("plan_revising", "human_plan_confirming")
+                and "execution_approval" not in before
+                and "execution_approval" not in after
             )
-            lifecycle_removal = before_phase == "human_plan_confirming" and after_phase in {
-                "executing",
-                "plan_revising",
-                "controller_checking",
-            }
-            formation = same_position and after_phase == "human_plan_confirming"
-            if added and not (plan_submission or formation):
-                issues.append(_issue("creation review 新事件只能在当前计划确认阶段形成或随 PlanΔ 替换", key))
-            if removed and not (plan_changed and plan_submission or lifecycle_removal):
-                issues.append(_issue("creation review 不得在当前计划仍有效时删除", key))
-            if correction and not (same_position and after_phase == "human_plan_confirming"):
-                issues.append(_issue("creation review 同事件更正只允许停留在方案待确认位置", key))
+            if (
+                (added or removed)
+                and not plan_changed
+                and not safe_convergence_removal
+                and not pre_gate_candidate_exit
+            ):
+                issues.append(_issue("current plan reviews 只能随 PlanΔ 或 Gate1 前完整候选整体替换", key))
+            if correction and not correction_position:
+                issues.append(_issue("current plan review 同事件更正只允许停留在计划判断或自动修订位置", key))
         else:
             formation = same_position and after_phase == "independent_reviewing"
             if added and not formation:
@@ -381,7 +375,7 @@ def _validate_review_ownership(
             if old_resolution == new_resolution:
                 continue
             if key == "creation_reviews":
-                allowed_resolution = same_position and after_phase == "human_plan_confirming"
+                allowed_resolution = same_position and after_phase in {"human_plan_confirming", "plan_revising"}
             else:
                 allowed_resolution = before_phase == "independent_reviewing" and after_phase in {
                     "independent_reviewing",
@@ -409,29 +403,19 @@ def _validate_approval_ownership(
     new = after.get("execution_approval")
     allowed = False
 
-    if plan_changed:
-        allowed = new is None
-    elif (before_phase, after_phase) in {
+    if (before_phase, after_phase) in {
         ("human_plan_confirming", "executing"),
         ("human_plan_confirming", "controller_checking"),
-        ("plan_revising", "executing"),
-        ("plan_revising", "controller_checking"),
     }:
-        allowed = isinstance(new, dict)
-    elif (before_phase, after_phase) == ("controller_checking", "executing"):
-        allowed = pre_execution_stop_shape(before) and isinstance(new, dict)
-    elif before_phase == after_phase == "executing":
-        allowed = isinstance(old, dict) and isinstance(new, dict)
-    elif before_phase == after_phase == "plan_revising":
-        allowed = isinstance(old, dict) and new is None and no_execution_facts(after)
+        allowed = old is None and isinstance(new, dict)
 
     issues: list[FactIssue] = []
     if not allowed:
         issues.append(
-            _issue("execution approval 只能由当前规范列明的 Human 授权、撤回或失效边形成", "execution_approval")
+            _issue("execution approval 只能由首次 Human 计划确认边形成，Gate1 后必须保持原样", "execution_approval")
         )
-    if isinstance(new, dict) and new.get("subject_version") != after.get("plan_version"):
-        issues.append(_issue("execution approval 必须绑定当前 plan_version", "execution_approval.subject_version"))
+    if isinstance(new, dict) and new.get("subject_version") != after.get("plan_version") and old is None:
+        issues.append(_issue("首次 execution approval 必须记录 Gate1 当时 plan_version", "execution_approval.subject_version"))
     return issues
 
 
@@ -708,16 +692,38 @@ def _validate_plan_versions(before: Mapping[str, object], after: Mapping[str, ob
     before_version = _version(before, "plan_version")
     after_version = _version(after, "plan_version")
     if changed:
-        if (before.get("phase"), after.get("phase")) != ("plan_revising", "human_plan_confirming"):
-            issues.append(_issue("PlanΔ 只能由 plan_revising 原子进入 human_plan_confirming", "phase"))
+        edge = before.get("phase"), after.get("phase")
+        approved = isinstance(before.get("execution_approval"), dict)
+        allowed_approved_edges = {
+            ("executing", "plan_revising"),
+            ("controller_checking", "plan_revising"),
+            ("independent_reviewing", "plan_revising"),
+            ("closure_preparing", "plan_revising"),
+            ("plan_revising", "executing"),
+            ("plan_revising", "controller_checking"),
+        }
+        pre_gate_candidate_exit = (
+            not approved
+            and "execution_approval" not in after
+            and edge == ("plan_revising", "human_plan_confirming")
+        )
+        if approved and edge not in allowed_approved_edges:
+            issues.append(_issue("Gate1 后 PlanΔ 只能经 Controller 自动修订边形成", "phase"))
+        elif not approved and not pre_gate_candidate_exit:
+            issues.append(_issue("Gate1 前 PlanΔ 只能在 plan_revising 返回 Human Gate1 时形成", "phase"))
         if before_version is None or after_version != before_version + 1:
             issues.append(_issue("PlanΔ 必须使 plan_version 精确加 1", "plan_version"))
         for key in _PLAN_REPLACEMENT_RESET_FIELDS:
             if key in after:
-                issues.append(_issue("PlanΔ 必须清除旧 approval、result、review 与 proposal", key))
+                issues.append(_issue("PlanΔ 必须清除旧 result、result review 与 proposal", key))
         reviews = after.get("creation_reviews")
         if not isinstance(reviews, list) or not reviews:
-            issues.append(_issue("PlanΔ 必须同事务形成 fresh creation reviews", "creation_reviews"))
+            issues.append(_issue("PlanΔ 必须同事务形成 fresh current plan reviews", "creation_reviews"))
+        if approved:
+            if not _same_presence_and_value(before, after, "execution_authorization"):
+                issues.append(_issue("Gate1 后 PlanΔ 必须保持 execution_authorization 原样", "execution_authorization"))
+            if not _same_presence_and_value(before, after, "execution_approval"):
+                issues.append(_issue("Gate1 后 PlanΔ 必须保持 execution_approval 原样", "execution_approval"))
         issues.extend(_validate_plan_replacement(before, after))
     else:
         if before_version != after_version:
@@ -738,7 +744,13 @@ def _validate_same_phase(
             _require_equal(
                 before,
                 after,
-                ("work_items", *_RESULT_STATE_FIELDS, "execution_approval", "closure_proposal"),
+                (
+                    "work_items",
+                    "execution_authorization",
+                    *_RESULT_STATE_FIELDS,
+                    "execution_approval",
+                    "closure_proposal",
+                ),
                 "方案待确认时该字段不属于同 phase 更新边界",
             )
         )
@@ -747,7 +759,14 @@ def _validate_same_phase(
             _require_equal(
                 before,
                 after,
-                ("work_items", *_RESULT_STATE_FIELDS, "closure_proposal"),
+                (
+                    "work_items",
+                    "execution_authorization",
+                    "execution_approval",
+                    "creation_reviews",
+                    *_RESULT_STATE_FIELDS,
+                    "closure_proposal",
+                ),
                 "plan_revising 必须冻结原计划、item、结果与 review",
             )
         )
@@ -826,6 +845,7 @@ def _validate_phase_edge(
     before: Mapping[str, object],
     after: Mapping[str, object],
     *,
+    plan_changed: bool,
     result_changed: bool,
 ) -> list[FactIssue]:
     issues: list[FactIssue] = []
@@ -848,21 +868,26 @@ def _validate_phase_edge(
             )
         )
 
-    if edge == ("human_plan_confirming", "executing"):
+    if edge == ("human_plan_confirming", "plan_revising"):
+        issues.extend(
+            _require_equal(
+                before,
+                after,
+                ("work_items", "execution_authorization", "creation_reviews", *_RESULT_STATE_FIELDS),
+                "Gate1 前进入 plan_revising 必须冻结原 authorization、plan、items 与 reviews",
+            )
+        )
+        if "execution_approval" in after:
+            issues.append(_issue("Gate1 前 plan_revising 禁止形成 execution approval", "execution_approval"))
+
+    elif edge == ("human_plan_confirming", "executing"):
         issues.extend(_require_equal(before, after, ("work_items",), "批准当前计划进入执行时 work items 必须保持不变"))
         if not isinstance(after.get("execution_approval"), dict):
             issues.append(_issue("进入 executing 必须同事务写当前计划 execution approval", "execution_approval"))
-        if "creation_reviews" in after:
-            issues.append(_issue("进入 executing 必须移除 creation reviews", "creation_reviews"))
         if any(key in after for key in _RESULT_STATE_FIELDS):
             issues.append(_issue("首次进入 executing 不得携带结果上下文", "result_version"))
         if all_terminal(after):
             issues.append(_issue("进入 executing 必须至少存在一个非 terminal item", "work_items"))
-
-    elif edge == ("human_plan_confirming", "plan_revising"):
-        issues.extend(_require_equal(before, after, ("work_items",), "进入计划返修时原 work items 必须冻结"))
-        if "creation_reviews" in after:
-            issues.append(_issue("进入 plan_revising 必须移除 creation reviews", "creation_reviews"))
 
     elif edge == ("human_plan_confirming", "controller_checking"):
         if no_execution_facts(before):
@@ -885,31 +910,49 @@ def _validate_phase_edge(
             issues.append(_issue("进入 controller_checking 必须全部 item terminal", "work_items"))
 
     elif edge == ("plan_revising", "human_plan_confirming"):
-        if not plan_delta(before, after):
+        if "execution_approval" in before or "execution_approval" in after:
+            issues.append(_issue("Gate1 后不得返回 human_plan_confirming", "execution_approval"))
+        if not plan_changed:
             issues.extend(
-                _require_equal(before, after, ("work_items",), "同计划重新请求批准时 work items 必须原样保留")
+                _require_equal(
+                    before,
+                    after,
+                    ("work_items", *_RESULT_STATE_FIELDS),
+                    "无 PlanΔ 返回 Gate1 时必须保持 plan、items 与结果形状",
+                )
             )
-            if "result_version" in before or "result_version" in after:
-                issues.append(_issue("已有 result_version 的同一计划不得返回 human_plan_confirming", "result_version"))
-            if "execution_approval" in after:
-                issues.append(_issue("重新请求 Human 批准前 execution approval 必须缺失", "execution_approval"))
+        old_review_times = {
+            review.get("reviewed_at")
+            for review in _reviews(before, "creation_reviews").values()
+            if isinstance(review.get("reviewed_at"), str)
+        }
+        new_review_times = {
+            review.get("reviewed_at")
+            for review in _reviews(after, "creation_reviews").values()
+            if isinstance(review.get("reviewed_at"), str)
+        }
+        if not (new_review_times - old_review_times):
+            issues.append(_issue("返回 Gate1 必须形成 fresh current plan review", "creation_reviews"))
+        if not isinstance(after.get("waiting_on"), str):
+            issues.append(_issue("返回 human_plan_confirming 必须写 Gate1 waiting", "waiting_on"))
 
     elif edge == ("plan_revising", "executing"):
-        issues.extend(
-            _require_equal(
-                before,
-                after,
-                ("work_items", *_RESULT_STATE_FIELDS),
-                "同计划返工返回 executing 必须保留 item 与已分配 result_version",
+        if not plan_changed:
+            issues.extend(
+                _require_equal(
+                    before,
+                    after,
+                    ("work_items", *_RESULT_STATE_FIELDS),
+                    "同计划自动调整返回 executing 必须保留 item 与已分配 result_version",
+                )
             )
-        )
         if not isinstance(after.get("execution_approval"), dict):
             issues.append(_issue("返回 executing 必须有当前计划授权", "execution_approval"))
         if all_terminal(after):
             issues.append(_issue("返回 executing 必须至少一项 item 非 terminal", "work_items"))
 
     elif edge == ("plan_revising", "controller_checking"):
-        if no_execution_facts(before):
+        if no_execution_facts(before) and "execution_approval" not in before:
             old_items = _items(before)
             new_items = _items(after)
             if old_items.keys() != new_items.keys() or any(
@@ -920,9 +963,7 @@ def _validate_phase_edge(
             if "execution_approval" in after:
                 issues.append(_issue("前置执行终止链必须保持 approval 缺失", "execution_approval"))
         else:
-            issues.extend(
-                _require_equal(before, after, ("work_items",), "同计划返回 controller_checking 时 item 必须原样保留")
-            )
+            issues.extend(_validate_executing_item_edges(before, after, entering_controller_check=True))
             if not isinstance(after.get("execution_approval"), dict):
                 issues.append(_issue("非前置终止结果链必须保留当前计划 approval", "execution_approval"))
             if "result_version" in before:
@@ -935,14 +976,15 @@ def _validate_phase_edge(
             issues.append(_issue("进入 controller_checking 必须全部 item terminal", "work_items"))
 
     elif edge == ("executing", "plan_revising"):
-        issues.extend(
-            _require_equal(
-                before,
-                after,
-                ("work_items", *_RESULT_STATE_FIELDS, "execution_approval"),
-                "进入计划返修时必须冻结 item、结果版本与既有 approval",
+        if not plan_changed:
+            issues.extend(
+                _require_equal(
+                    before,
+                    after,
+                    ("work_items", *_RESULT_STATE_FIELDS, "execution_approval"),
+                    "进入计划自动调整时无 PlanΔ 必须冻结 item、结果版本与既有 approval",
+                )
             )
-        )
 
     elif edge == ("executing", "controller_checking"):
         issues.extend(_validate_executing_item_edges(before, after, entering_controller_check=True))
@@ -951,14 +993,15 @@ def _validate_phase_edge(
         issues.extend(_validate_controller_return_to_execution(before, after))
 
     elif edge == ("controller_checking", "plan_revising"):
-        issues.extend(
-            _require_equal(
-                before,
-                after,
-                ("work_items", *_RESULT_STATE_FIELDS, "execution_approval"),
-                "进入计划返修时必须冻结当前计划和结果快照",
+        if not plan_changed:
+            issues.extend(
+                _require_equal(
+                    before,
+                    after,
+                    ("work_items", *_RESULT_STATE_FIELDS, "execution_approval"),
+                    "进入计划自动调整时无 PlanΔ 必须冻结当前计划和结果快照",
+                )
             )
-        )
         if "closure_proposal" in after:
             issues.append(_issue("进入 plan_revising 必须移除 closure proposal", "closure_proposal"))
 
@@ -986,14 +1029,15 @@ def _validate_phase_edge(
         ("independent_reviewing", "controller_checking"),
         ("independent_reviewing", "plan_revising"),
     }:
-        issues.extend(
-            _require_equal(
-                before,
-                after,
-                ("work_items", "result_version", *_RESULT_PROJECTION_FIELDS),
-                "离开独立复核时先原样冻结被审 projection",
+        if not (edge[1] == "plan_revising" and plan_changed):
+            issues.extend(
+                _require_equal(
+                    before,
+                    after,
+                    ("work_items", "result_version", *_RESULT_PROJECTION_FIELDS),
+                    "离开独立复核时先原样冻结被审 projection",
+                )
             )
-        )
         if edge[1] == "plan_revising" and "closure_proposal" in after:
             issues.append(_issue("进入 plan_revising 时 proposal 必须缺失", "closure_proposal"))
 
@@ -1013,11 +1057,12 @@ def _validate_phase_edge(
         ("closure_preparing", "controller_checking"),
         ("closure_preparing", "plan_revising"),
     }:
-        issues.extend(
-            _require_equal(
-                before, after, ("work_items", *_RESULT_STATE_FIELDS), "退出关闭准备时先冻结当前结果与 reviews"
+        if not (edge[1] == "plan_revising" and plan_changed):
+            issues.extend(
+                _require_equal(
+                    before, after, ("work_items", *_RESULT_STATE_FIELDS), "退出关闭准备时先冻结当前结果与 reviews"
+                )
             )
-        )
         if "closure_proposal" in after:
             issues.append(_issue("退出 closure_preparing 必须移除旧 proposal", "closure_proposal"))
 
@@ -1100,8 +1145,20 @@ def validate_workcase_transition(
     if before_status not in ACTIVE_STATUSES or after_status not in ACTIVE_STATUSES:
         issues.append(_issue("update-workcase 只接受活动期 WorkCase，不能形成或更正 closed", "status"))
         return tuple(issues)
+    if before_phase == "human_closure_confirming":
+        return (_issue("human_closure_confirming 只能由 close-workcase 消费，禁止 update-workcase", "phase"),)
     if before_phase not in _ACTIVE_PHASES or after_phase not in _ACTIVE_PHASES:
         issues.append(_issue("活动期 WorkCase phase 不在当前七项闭集中", "phase"))
+    if safe_convergence_shape(before) and after_phase in {"executing", "plan_revising"}:
+        issues.append(
+            _issue("SafeConvergenceShape 只能沿结果、复核与关闭链向后收敛", "phase")
+        )
+    if isinstance(before.get("execution_approval"), dict) and not _same_presence_and_value(
+        before, after, "execution_authorization"
+    ):
+        issues.append(
+            _issue("Gate1 后 execution_authorization 必须保持原样", "execution_authorization")
+        )
 
     status_changed = before_status != after_status
     if status_changed:
@@ -1136,7 +1193,14 @@ def validate_workcase_transition(
     if before_phase == after_phase:
         issues.extend(_validate_same_phase(before, after, result_changed=result_changed))
     else:
-        issues.extend(_validate_phase_edge(before, after, result_changed=result_changed))
+        issues.extend(
+            _validate_phase_edge(
+                before,
+                after,
+                plan_changed=plan_changed,
+                result_changed=result_changed,
+            )
+        )
     return tuple(issues)
 
 

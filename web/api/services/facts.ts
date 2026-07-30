@@ -309,7 +309,20 @@ export function projectWorkCaseCard(fact: Record<string, unknown>): Record<strin
   const phase = typeof fact.phase === 'string' ? fact.phase : ''
   const progress = deriveWorkCaseProgressProjection(typeof fact.status === 'string' ? fact.status : '', phase)
   if (progress?.progressGroup === 'plan_confirmation') {
-    Object.assign(projected, copyPresentFields(fact, ['priority', 'goal']), { successCriteria: projectCriterionStatements(fact.success_criterion_definitions) })
+    // Gate 1 必须让 Human 看到被批准的完整执行基线。这里保留结构原值，
+    // 让前端可以区分“缺失/类型错误”与“合法空值”，而不是静默过滤 malformed 成员。
+    Object.assign(projected, copyPresentFields(fact, [
+      'priority',
+      'goal',
+      'scope',
+      'success_criterion_definitions',
+      'work_items',
+      'creation_reviews',
+      'execution_authorization',
+      'execution_approval',
+    ]), {
+      successCriteria: projectCriterionStatements(fact.success_criterion_definitions),
+    })
   } else if (progress?.progressGroup === 'progressing') {
     Object.assign(projected, copyPresentFields(fact, ['priority', 'goal', 'waiting_on']), projectCardWorkItems(fact.work_items))
   } else if (progress?.progressGroup === 'closure_confirmation') {

@@ -18,6 +18,7 @@ from ldvh.facts.relations import ProjectFactIndex, WorkCaseRouteTargetSnapshot
 from ldvh.facts.repository import read_fact_object
 from ldvh.facts.schema import FactSchema, project_fact_schemas
 from ldvh.facts.update_application import MANAGED_FIELDS
+from ldvh.facts.workcase_projection import approval_baseline_fingerprint
 from ldvh.facts.workcase_update import WorkCaseWriteCommand, apply_workcase_write
 from ldvh.filesystem import AtomicWriteResult
 from ldvh.specs.repository import inspect_repository
@@ -80,6 +81,27 @@ def _review(version: int = 1) -> dict[str, Any]:
     }
 
 
+def _authorization() -> dict[str, Any]:
+    return {
+        "authorized_actions": [
+            {
+                "action_id": "authorization-bounded-write",
+                "summary": "写入当前测试责任的有界结果。",
+                "target_scope": "当前临时项目的目标 WorkCase 与测试文件。",
+                "effect_scope": "有界工作区写入和只读独立复核。",
+                "risk_summary": "保留无关既有变更。",
+                "rollback_summary": "只回退本次新增的有界内容。",
+                "rule_refs": ["specs/21", "specs/06"],
+            }
+        ],
+        "action_ceiling": "禁止外部发布和无关对象变化。",
+        "prohibited_actions": ["push", "publish"],
+        "allowed_adjustments": "允许在同一范围内调整实现方法。",
+        "verification_and_rollback": "运行有界检查并保留可恢复检查点。",
+        "out_of_bounds_handling": "取消受影响工作项并收敛到关闭。",
+    }
+
+
 def _active(
     object_id: str,
     *,
@@ -94,6 +116,7 @@ def _active(
         "status": "open",
         "goal": "形成一个可由 Human 判断的完整结果。",
         "scope": "只处理当前测试责任。",
+        "execution_authorization": _authorization(),
         "success_criterion_definitions": [{"criterion_id": "criterion-main", "statement": "当前责任形成稳定结果。"}],
         "priority": "P2",
         "phase": "human_plan_confirming",
@@ -145,6 +168,7 @@ def _closing(
         "status": "open",
         "goal": "形成一个可由 Human 判断的完整结果。",
         "scope": "只处理当前测试责任。",
+        "execution_authorization": _authorization(),
         "success_criterion_definitions": [{"criterion_id": "criterion-main", "statement": "当前责任形成稳定结果。"}],
         "success_criterion_results": [
             {
@@ -156,6 +180,7 @@ def _closing(
         "priority": "P2",
         "phase": "human_closure_confirming",
         "plan_version": 1,
+        "creation_reviews": [_review()],
         "work_items": [
             {
                 "item_id": "item-main",
@@ -165,11 +190,6 @@ def _closing(
                 "result_summary": "已形成当前局部结果。",
             }
         ],
-        "execution_approval": {
-            "subject_version": 1,
-            "approved_at": "2026-07-26T10:00:00+08:00",
-            "summary": "Human 批准当前计划。",
-        },
         "result_version": 1,
         "result_summary": "当前完整结果已经形成。",
         "controller_check_summary": "主控已检查结果与标准判断的一致性。",
@@ -177,6 +197,13 @@ def _closing(
         "validation_summary": "已检查当前测试边界，未覆盖外部系统。",
         "closure_proposal": proposal,
         "waiting_on": "等待 Human 判断关闭与责任处置。",
+    }
+    fields["execution_approval"] = {
+        "subject_version": 1,
+        "approved_at": "2026-07-26T10:00:00+08:00",
+        "summary": "Human 批准当前计划。",
+        "baseline_fingerprint": approval_baseline_fingerprint(fields),
+        "source_refs": ["turn:gate1"],
     }
     return fields
 
@@ -542,10 +569,9 @@ def test_plan_delta_item_execution_fact_removal_without_updated_summary_has_zero
     tmp_path: Path,
 ) -> None:
     project = _project(current_specs_repository, tmp_path)
-    before = _active("workcase-0001")
+    before = _gate1_after(_active("workcase-0001"))
     before.update(
         {
-            "phase": "plan_revising",
             "summary": "保留中的跨 item 稳定检查点。",
             "work_items": [
                 {
@@ -555,22 +581,15 @@ def test_plan_delta_item_execution_fact_removal_without_updated_summary_has_zero
                     "resume_from": "从旧 item 的当前边界继续。",
                 }
             ],
-            "execution_approval": {
-                "subject_version": 1,
-                "approved_at": "2026-07-26T10:00:00+08:00",
-                "summary": "Human 曾批准当前计划。",
-            },
         }
     )
-    before.pop("creation_reviews")
-    before.pop("waiting_on")
     path = _write(project, before)
     original_bytes = path.read_bytes()
 
     after = deepcopy(before)
     after.update(
         {
-            "phase": "human_plan_confirming",
+            "phase": "plan_revising",
             "plan_version": 2,
             "work_items": [
                 {
@@ -581,10 +600,8 @@ def test_plan_delta_item_execution_fact_removal_without_updated_summary_has_zero
                 }
             ],
             "creation_reviews": [_review(2)],
-            "waiting_on": "等待 Human 确认修订计划。",
         }
     )
-    after.pop("execution_approval")
 
     result = apply_workcase_write(_command(project, before, after, mode="update"))
 
@@ -1124,6 +1141,194 @@ def test_stale_source_fingerprint_has_zero_writes(
     result = apply_workcase_write(command)
 
     assert result.status == "fingerprint_stale"
+    assert path.read_bytes() == original
+
+
+def _gate1_after(before: dict[str, Any], *, source_refs: list[str] | None = None) -> dict[str, Any]:
+    after = deepcopy(before)
+    after["phase"] = "executing"
+    after.pop("waiting_on")
+    after["execution_approval"] = {
+        "subject_version": before["plan_version"],
+        "approved_at": "2026-07-26T10:45:00+08:00",
+        "summary": "Human approved the bounded Gate1 baseline.",
+        "baseline_fingerprint": approval_baseline_fingerprint(before),
+        "source_refs": source_refs or ["human-decision"],
+    }
+    return after
+
+
+def test_gate1_approval_requires_matching_request_authorization_and_readback(
+    current_specs_repository: Path,
+    tmp_path: Path,
+) -> None:
+    project = _project(current_specs_repository, tmp_path)
+    before = _active("workcase-0001")
+    _write(project, before)
+    after = _gate1_after(before)
+
+    result = apply_workcase_write(
+        _command(
+            project,
+            before,
+            after,
+            mode="update",
+            authorization_reference=_human_reference(),
+        )
+    )
+
+    assert result.status == "updated"
+    assert result.readback is not None and result.readback.fields is not None
+    assert result.readback.fields["execution_approval"] == after["execution_approval"]
+
+
+@pytest.mark.parametrize(
+    ("authorization_reference", "source_refs", "expected_path"),
+    [
+        ((), ["human-decision"], "authorization_reference"),
+        (_human_reference(), ["another-decision"], "execution_approval.source_refs"),
+    ],
+)
+def test_gate1_approval_missing_or_mismatched_proof_has_zero_writes(
+    current_specs_repository: Path,
+    tmp_path: Path,
+    authorization_reference: tuple[dict[str, Any], ...],
+    source_refs: list[str],
+    expected_path: str,
+) -> None:
+    project = _project(current_specs_repository, tmp_path)
+    before = _active("workcase-0001")
+    path = _write(project, before)
+    original = path.read_bytes()
+    after = _gate1_after(before, source_refs=source_refs)
+
+    result = apply_workcase_write(
+        _command(
+            project,
+            before,
+            after,
+            mode="update",
+            authorization_reference=authorization_reference,
+        )
+    )
+
+    assert result.status == "candidate_rejected"
+    assert any(issue.field_path == expected_path for issue in result.issues)
+    assert path.read_bytes() == original
+
+
+def test_gate1_baseline_fingerprint_mismatch_has_zero_writes(
+    current_specs_repository: Path,
+    tmp_path: Path,
+) -> None:
+    project = _project(current_specs_repository, tmp_path)
+    before = _active("workcase-0001")
+    path = _write(project, before)
+    original = path.read_bytes()
+    after = _gate1_after(before)
+    after["execution_approval"]["baseline_fingerprint"] = "0" * 64
+
+    result = apply_workcase_write(
+        _command(
+            project,
+            before,
+            after,
+            mode="update",
+            authorization_reference=_human_reference(),
+        )
+    )
+
+    assert result.status == "candidate_rejected"
+    assert any(issue.field_path == "execution_approval.baseline_fingerprint" for issue in result.issues)
+    assert path.read_bytes() == original
+
+
+def test_approved_plan_delta_keeps_gate1_baseline_and_can_resume_execution(
+    current_specs_repository: Path,
+    tmp_path: Path,
+) -> None:
+    project = _project(current_specs_repository, tmp_path)
+    gate1 = _gate1_after(_active("workcase-0001"))
+    _write(project, gate1)
+    revising = deepcopy(gate1)
+    revising.update(
+        {
+            "phase": "plan_revising",
+            "plan_version": 2,
+            "work_items": [
+                {
+                    **gate1["work_items"][0],
+                    "goal": "Complete the same bounded responsibility with an adjusted method.",
+                }
+            ],
+            "creation_reviews": [_review(2)],
+        }
+    )
+
+    revised = apply_workcase_write(_command(project, gate1, revising, mode="update"))
+    assert revised.status == "updated"
+    assert revising["execution_approval"]["subject_version"] == 1
+
+    executing = {**deepcopy(revising), "phase": "executing"}
+    resumed = apply_workcase_write(_command(project, revising, executing, mode="update", event_at="2026-07-26T14:00:00+08:00"))
+    assert resumed.status == "updated"
+
+
+def test_pre_gate_plan_revision_roundtrip_does_not_require_or_fabricate_approval(
+    current_specs_repository: Path,
+    tmp_path: Path,
+) -> None:
+    project = _project(current_specs_repository, tmp_path)
+    confirming = _active("workcase-0001")
+    _write(project, confirming)
+    revising = deepcopy(confirming)
+    revising["phase"] = "plan_revising"
+    revising.pop("waiting_on")
+
+    entered = apply_workcase_write(_command(project, confirming, revising, mode="update"))
+    assert entered.status == "updated"
+    assert "execution_approval" not in revising
+
+    candidate = deepcopy(revising)
+    candidate.update(
+        {
+            "phase": "human_plan_confirming",
+            "plan_version": 2,
+            "creation_reviews": [
+                {
+                    **_review(2),
+                    "reviewed_at": "2026-07-26T13:30:00+08:00",
+                }
+            ],
+            "waiting_on": "等待 Human 对修订后的完整计划与授权基线作 Gate1 决定。",
+        }
+    )
+    candidate["work_items"][0]["goal"] = "完成修订后的有界责任。"
+    candidate["execution_authorization"]["authorized_actions"][0]["summary"] = "写入修订后的有界结果。"
+
+    returned = apply_workcase_write(
+        _command(project, revising, candidate, mode="update", event_at="2026-07-26T14:00:00+08:00")
+    )
+    assert returned.status == "updated"
+    assert returned.readback is not None and returned.readback.fields is not None
+    assert "execution_approval" not in returned.readback.fields
+
+
+def test_gate2_rejects_every_update_and_requires_close_operation(
+    current_specs_repository: Path,
+    tmp_path: Path,
+) -> None:
+    project = _project(current_specs_repository, tmp_path)
+    before = _closing("workcase-0001")
+    path = _write(project, before)
+    original = path.read_bytes()
+    after = deepcopy(before)
+    after["title"] = "Gate2 cannot be updated"
+
+    result = apply_workcase_write(_command(project, before, after, mode="update"))
+
+    assert result.status == "candidate_rejected"
+    assert any(issue.field_path == "phase" and "close-workcase" in issue.summary for issue in result.issues)
     assert path.read_bytes() == original
 
 
@@ -2115,7 +2320,7 @@ def test_update_workcase_blocked_freeze_rejects_contributed_to_change(
     assert path.read_bytes() == original
 
 
-def test_update_workcase_human_closure_confirming_freezes_contributed_to_but_allows_legal_existence(
+def test_update_workcase_human_closure_confirming_allows_legal_relation_but_rejects_every_update(
     current_specs_repository: Path,
     tmp_path: Path,
 ) -> None:
@@ -2124,24 +2329,15 @@ def test_update_workcase_human_closure_confirming_freezes_contributed_to_but_all
     before = _closing("workcase-0001")
     before["relations"] = [_contributed("pitfall", "pitfall-0001")]
     path = _write(project, before)
+    current = _read(project, "workcase-0001")
+    assert current.check_status == "mechanically_valid"
     unchanged_after = {**before, "waiting_on": "等待 Human 对同一关闭提案作出新的判断。"}
-
-    accepted = apply_workcase_write(_command(project, before, unchanged_after, mode="update"))
-
-    assert accepted.status == "updated"
-
-    frozen_before = _read(project, "workcase-0001").fields
-    assert frozen_before is not None
     original = path.read_bytes()
-    changed_after = dict(frozen_before)
-    changed_after.pop("relations")
 
-    rejected = apply_workcase_write(
-        _command(project, frozen_before, changed_after, mode="update", event_at="2026-07-26T14:00:00+08:00")
-    )
+    rejected = apply_workcase_write(_command(project, before, unchanged_after, mode="update"))
 
     assert rejected.status == "candidate_rejected"
-    assert any(issue.field_path == "relations" for issue in rejected.issues)
+    assert any(issue.field_path == "phase" and "close-workcase" in issue.summary for issue in rejected.issues)
     assert path.read_bytes() == original
 
 

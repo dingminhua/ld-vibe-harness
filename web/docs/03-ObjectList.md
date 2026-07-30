@@ -44,14 +44,14 @@
 - 所有对象卡片一律按 `updated` 时间倒序排列，最近发生变化的对象在最前；状态只用于筛选、徽章和卡片内容表达，不参与排序。
 - 通用卡片结构：
   - 左上：对象 ID，`ldvh-meta-muted`；
-  - 右上：`StatusBadge`；列表只是候选发现，不显示或复制精确来源路径；
+  - 右上：`StatusBadge` 后紧邻“复制对象 ID”图标；列表只是候选发现，不显示或复制精确来源路径，复制值仅为稳定 `object_id`；
   - 中部：本地化标题，`ldvh-card-title`，放入轻量标题带，左侧使用状态语义短线突出，不通过放大字号突出；标题必须允许换行完整显示，不得用截断省略代替阅读；
   - 优先级字符徽标：WorkCase 和 Spark 如存在 `priority`，在标题行最前面展示 `P0` / `P1` / `P2` / `P3` 字符徽标，随后才是 `ObjectTypeIcon(obj.type)` 和标题；徽标使用颜色、轻量边框和 tooltip 表达优先级，不作为错误或阻塞状态；
   - 可选信号：仅当对应对象的字段契约定义该字段时展示；`priority` 只适用于 WorkCase 和 Spark，不得为 ADR、Pitfall 或 Study 杜撰 priority，也不得为任何对象杜撰 importance、category 或 tags；Spark 不维护 category；Pitfall 不维护 repeatability；importance 字段已由 priority 统一承载，不作为独立字段使用
   - 终态处置：ADR、Pitfall 与 Spark 不复用泛化的“非活跃原因”字段。它们在各自终态卡片中只读取 `disposition_summary`，用弱圆点与小号正文承载，不另造“退出理由”“关闭时间”“分流时间”标签；缺失时如实显示处置缺失提示，仍不得压过标题、状态和更新时间。
   - Pitfall 状态筛选使用 `draft / active / discarded`，分别显示“待确认 / 活跃 / 已废弃”；Pitfall 卡片不提供 promote、discard 或批量审核控件，也不展示 `tags` 或冗余解决态。
   - 底部：只展示更新时间，使用 `formatDateTime()`，格式为 `YYYY-MM-DD HH:mm`，样式为弱化元信息 `ldvh-meta-muted`；更新时间行使用 `mt-auto` 贴近卡片下边距，避免不同标题行数或中部内容高度导致时间上浮；对象列表以更新时间排序，创建时间留在详情页身份区展示。
-- 点击卡片外层空白、标题带、ID、状态徽章或更新时间进入对象详情页。只有详情或引用行完成精确读取并取得可消费 `canonical_path` 后，才可另行显示复制对象路径入口。
+- 复制对象 ID 只复制，不触发导航。只有详情或引用行完成精确读取并取得可消费 `canonical_path` 后，才可另行显示复制对象路径入口。
 - hover 时边框变为 `border-ldvh-accent/40`，标题变 accent 色。
 - 卡片标题不得超过全局 `ldvh-card-title` 字号；标题强调优先使用轻量背景、位置、留白、状态语义短线和 hover 反馈。
 
@@ -73,8 +73,8 @@ WorkCase 卡片帮助 Human 识别当前工作责任所处的进展分组，并�
 - 不显示虚构的“所属工作责任”归属行；Card 标题识别 WorkCase 自身，内部 work item 只在“推进中”按本节规则呈现当前 active 项。
 - WorkCase Card 和列表筛选只使用四个进展分组：`plan_confirmation`（方案待确认）、`progressing`（推进中）、`closure_confirmation`（关闭待确认）、`closed`（已关闭）。界面分类轴命名为“进展分组”，不得显示为“生命周期”。创建前计划复核时尚无正式 WorkCase，不提供 Card 或筛选项。
 - 每张 Card 必须直接显示自己的进展分组，不能要求 Human 只靠顶部筛选位置推断；来源 phase 不再作为与四个分组同级的 Card 主状态。
-- “方案待确认”Card 的计划判断输入区只包含“目标”和“成功标准”：目标直接读取 `goal`，成功标准直接读取 `success_criterion_definitions[].statement`。两项必须完整显示，不截断、不折叠、不限制标准条数，也不生成摘要。“覆盖”和“排除”属于 `scope` 中的技术边界，留在同源详情读取；Card 不展示内部工作项、执行步骤、创建前计划复核详情、执行统计或关闭报告与分流建议，完整计划批准仍进入详情完成。
-- “方案待确认”同时出现 `status=blocked` 时，必须在计划判断输入区之外完整显示独立的阻塞状态提示，直接读取 `blocking_summary`，缺失时明确提示。该提示不是第三项计划判断输入，也不把进展分组改成“推进中”或其它分组。
+- “方案待确认”Card 是 Gate 1 的完整批准面：必须完整直读 `goal`、`scope`、`success_criterion_definitions`、`work_items`（目标、预期结果、依赖、方法和模板约束）、当前 `creation_reviews`（含 `controller_resolution`）与 `execution_authorization`。若已经存在 `execution_approval`，同时显示其 `baseline_fingerprint` 与非空 `source_refs`。Card 与认知中心的决定依据及“复制决定摘要”消费同一投影，不截断、不重新摘要；任一结构缺失或 malformed 时在原位置明确标注，不能丢弃坏成员后形成伪完整基线。
+- “方案待确认”同时出现 `status=blocked` 时，必须在 Gate 1 材料之外完整显示独立的阻塞状态提示，直接读取 `blocking_summary`，缺失时明确提示。阻塞状态提示必须成为 Card 身份头部之后的首个内容块，位于“目标”之前。该提示不是 Gate 1 授权内容，也不把进展分组改成“推进中”或其它分组。
 - “方案待确认”Card 使用四级排版层级：对象标题与其它事实对象统一使用 14px 卡片标题，两个判断区标题使用 13px 卡片判断项标题，事实原文使用 12px 卡片判断项正文，ID、数量和时间使用元信息。判断项正文仍是事实正文，不得使用弱色或 mono 把它降成辅助信息；不得在业务组件内用临时字号制造层级。
 - 四种进展分组共享同一中性外层 Card，不用整卡底色重复表达头部已有的进展分组。语义色只进入当前判断所需的内部信息块：方案待确认时“目标”与“成功标准”共同承担主要判断；推进中以“当前情况”为主，关闭待确认与已关闭以关闭结论和责任处置为主，此时“目标”保留同色相但降为支持层。等待与阻塞等次级语义标题使用普通阅读字体，不使用稳定 ID、版本和时间专用的等宽元信息字体。
 - 成功标准没有先后关系，统一使用圆点无序列表；不得因数组位置、criterion ID 或当前显示顺序使用数字序号。只有来源明确规定步骤、优先级、排名或依赖顺序的内容才使用编号。
@@ -83,7 +83,7 @@ WorkCase 卡片帮助 Human 识别当前工作责任所处的进展分组，并�
 - `item_execution` 时完整列出全部工作项的稳定 item_id、完整 goal 和当前状态：`completed` 在前并显示完成勾选，`in_progress` 随后并突出显示，`blocked` 保留阻塞说明，`pending` 以弱化样式在后，`cancelled` 也明确保留。状态分组只帮助扫描，不表示执行顺序、依赖顺序或完成历史；同组内也不从数组位置导出顺序。其它环节只列出 `in_progress` 和 `blocked` 项；active 项使用无序圆点。work item 投影必须先确认当前完整结构、唯一稳定 ID、目标、状态条件和依赖图均有效；任一成员不成立时，完整清单或 active 项整组显示“工作项进展不可判定”，但不隐藏仍可由 phase 确定的当前内部位置。不得丢弃错误成员后计算部分总数，也不得用数组位置、title、ID 或已退出字段生成替代身份/目标。
 - `item_execution` 的全部项都已完成或取消时显示环节与状态不一致。主控自检、独立复核和主控收敛不为预期为空的 active 项生成噪声；如仍有 pending 或 active 项，则显示环节与状态不一致。
 - 四个推进环节存在确定顺序，可以使用 1–4 编号；编号只表达环节次序，不能根据当前位置把前序环节标成已完成或生成经过历史。结果推进主链的当前位置缺失时明确显示“当前环节不可判定”。`plan_revising` 不高亮四步中的任何一项，也不新增第五个稳定 `progress_step`。
-- `waiting_on` 实际存在时完整显示，并与详情统一称为“等待对象”、使用琥珀色语义块，不根据当前环节自动补造等待文案。`status=blocked` 是推进位置上的独立异常信号；Card 保留当前推进环节，并在“当前情况”区域以玫红色“阻塞说明”完整显示 `blocking_summary`，缺失时明确提示。Card 中两者的标题使用 `13px / 20px`，与详情对应的 `14px / 22px` 保持同一层级语言但小一级。等待与阻塞同时存在时均保留，Web 不作语义去重。
+- `waiting_on` 实际存在时完整显示，并与详情统一称为“等待对象”、使用琥珀色语义块，不根据当前环节自动补造等待文案。`status=blocked` 是推进位置上的独立异常信号；Card 保留当前推进环节，并以玫红色“阻塞说明”完整显示 `blocking_summary`，缺失时明确提示。阻塞说明必须成为 Card 身份头部之后的首个内容块，位于目标和当前情况之前；此时实际存在的等待对象紧跟阻塞说明，也位于目标之前。未阻塞时，等待对象仍属于当前情况。Card 中两者的标题使用 `13px / 20px`，与详情对应的 `14px / 22px` 保持同一层级语言但小一级。等待与阻塞同时存在时均保留，Web 不作语义去重。
 - “推进中”可用轻微、遵守减弱动态偏好的动效提示当前位置；方案待确认、关闭待确认和已关闭不显示脉冲或推进轨迹。两个 Human 确认关口必须保持为不同进展分组。
 - 进展分组直接显示在通用卡片头部；正文中的推进环节只表达当前浏览语义。status、phase 与授权的事实含义仍以事实源和详情阅读为准。
 - 内部 `closure_preparing` 投影为“推进中 / 主控收敛”：此时 Controller 正在吸收当前结果复核并形成关闭报告与分流建议，尚未向 Human 提交关闭请求。只有事实 phase 实际进入 `human_closure_confirming` 后才显示“关闭待确认”，不得提前制造 Human 待办。
@@ -128,7 +128,7 @@ Spark 列表页保持只读；Web 不提供 Spark 创建、直接捕获、写入
 | 操作 | 行为 |
 |---|---|
 | 点击左侧导航类型 | 切换到对应 `/objects/:type` |
-| 点击浏览筛选 | WorkCase 更新 `progress` query；其它对象更新 `status` query；随后刷新列表 |
+| 点击浏览筛选 | WorkCase 更新 `progress` query；其它对象更新 `status` query；按 query 重新读取列表 |
 | 点击对象卡片外层空白、标题带、ID、状态徽章或更新时间 | 跳转到当前对象详情页，保留当前 query，并把当前列表 URL 记录为详情页返回来源 |
 | 点击 WorkCase 关联行 | 跳转到对应 WorkCase 详情页，保留当前列表 URL 作为返回来源 |
 | 点击卡片内部信息框、区块标题、态势条或普通信息区域 | 不触发路由跳转，不表现为独立可点控件 |
@@ -163,6 +163,12 @@ interface WorkCaseCardItem {
   progress_step?: 'item_execution' | 'controller_self_check' | 'independent_review' | 'controller_synthesis';
   goal?: string;                       // 所有四个进展分组
   successCriteria?: string[];          // 仅 plan_confirmation；全部 statement 原文
+  success_criterion_definitions?: unknown; // 仅 plan_confirmation；稳定 criterion_id 与 statement
+  scope?: string;                      // 仅 plan_confirmation；批准边界
+  work_items?: unknown;                // 仅 plan_confirmation；完整工作项与方法
+  creation_reviews?: unknown;          // 仅 plan_confirmation；当前方案复核与主控处置
+  execution_authorization?: unknown;   // 仅 plan_confirmation；完整执行授权边界
+  execution_approval?: unknown;        // plan_confirmation 已存在时；含 baseline_fingerprint/source_refs
   waiting_on?: string;                 // 仅 progressing 且实际存在
   blocking_summary?: string;           // plan_confirmation / progressing 的独立阻塞状态提示
   executionItems?: Array<{              // 仅 progressing；最小展示投影，不是完整 work_items
@@ -197,6 +203,6 @@ interface WorkCaseCardItem {
 }
 ```
 
-`status` 始终保留事实责任状态，`phase` 独立保留当前阶段；不得把 phase 填进 `status`，也不得新增 `responsibilityStatus` 兼容别名。`progress_group`、`progress_step` 和 `executionItems` 是只读投影；`goal`、成功标准陈述、`waiting_on` 和允许显示的 `blocking_summary` 仍是事实原文。`executionItems` 只包含 Card 展示需要的 ID、目标、状态和阻塞说明：在 `item_execution` 时页面按状态显示全部成员，在其它推进环节只显示 active 成员。`closure_confirmation` 携带 `goal`、Pitfall `contributedTo` 和 `closureProposal`；`closed` 携带 `goal`、Pitfall `contributedTo` 和 `closureTerminal`。关联目标标题和状态由 Card 按需同源读取，不复制到列表响应；`related-to` 不进入 Card 投影。Card 响应不得出现完整 `work_items`、完整 `closure_proposal` 或其它详情字段。
+`status` 始终保留事实责任状态，`phase` 独立保留当前阶段；不得把 phase 填进 `status`，也不得新增 `responsibilityStatus` 兼容别名。`progress_group`、`progress_step` 和 `executionItems` 是只读投影。plan_confirmation 是唯一允许携带完整 `work_items`、`creation_reviews` 与授权基线的 Card 分组；progressing 仍只携带最小 `executionItems`。`closure_confirmation` 携带 `goal`、Pitfall `contributedTo` 和 `closureProposal`；`closed` 携带 `goal`、Pitfall `contributedTo` 和 `closureTerminal`。关联目标标题和状态由 Card 按需同源读取，不复制到列表响应；`related-to` 不进入 Card 投影。
 
 列表顶层返回字段级直读的范围与集合问题：`coverage_status` 与 `collection_issues`。对象卡携带自己的 `read_status`、`read_issues`、`field_issues` 与 `unparsed_structures`；集合问题保留准确路径、原因和消息，不以旧 machine 的 `invalid / not_found` 分类替代。页面必须保留已形成的可消费 Card，独立展示集合问题与未完成范围；不设置列表级“观察时间”或“重新读取”控件。筛选或导航发生时照常发起新的列表请求，不能复用旧 payload。读取失败时页面必须保留实际失败原因，不得回退其它读取路径或显示伪零值。

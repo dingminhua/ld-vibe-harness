@@ -1,0 +1,181 @@
+title: 建立 WorkCase 两次 Human 确认与执行授权包闭环
+status: open
+summary: 完整 completed 关闭提案已形成，正在等待 Gate2。
+priority: P1
+goal: 建立 WorkCase 单次运行最多两次由系统主动请求的 Human 确认契约：第一次统一确认需求、计划与完整执行授权包，之后自动推进执行、Controller 自检、独立 subagent 结果复核与关闭准备；第二次只确认关闭分类及剩余责任处置。超出授权包的行动不执行，也不触发第三次确认，而是自动安全收敛到关闭确认。
+scope: 覆盖 Specs 06、08、21 及事实字段/机械校验附件，行动模板 30、31、32、34 与必要的领域授权消费衔接，WorkCase 批准基线、真实 Human 来源证明、状态机、Helper/Code 校验，Web 完整 Gate1 材料与只含 plan/closure 的待决定入口，以及活动 WorkCase 0008、0013、0015、0017、0019 的一次性精确迁移和相关回归测试。明确替换 0019 在 21/34 中遗留的执行期 plan_revising 后再次批准分支，但不回写或重开 0017、0018 的历史结果。排除再次修改 00、全局权限 token、动作白名单或统一授权枚举，排除宣称存在自动调度/spawn 运行时，排除自动授权未知或超界高风险行动，排除改写 closed WorkCase、保留旧形状运行时兼容层、无关脏工作区变化及未经当前 Gate1 逐项列明的 push、PR、发布或外部副作用。
+success_criterion_definitions:
+- criterion_id: criterion-two-human-gates
+  statement: WorkCase 单次运行只有 human_plan_confirming 与 human_closure_confirming 两个系统主动请求 Human 决定的关口；Gate1 后禁止再次进入计划确认或因 PlanDelta 再批准，Gate2 只可原子关闭，Gate1 未批准或发生实质超界时也能无第三次确认地安全收敛。
+- criterion_id: criterion-approval-baseline
+  statement: Gate1 材料完整呈现 goal、scope、成功标准、工作项、方法、验证、委派与独立性、高影响动作、已知风险、保护措施、明确排除及超界处置；批准事实绑定冻结基线 fingerprint 与真实 Human 来源，不补造授权证明。
+- criterion_id: criterion-safe-convergence
+  statement: 授权包内的实施调整、重试和修复经 fresh 独立复核后可自动继续；超出授权包或出现未知高风险时不执行相应动作，将受影响工作项据实取消并保留已形成事实，自动进入 Controller 自检、独立结果复核与关闭链。
+- criterion_id: criterion-template-consumption
+  statement: 行动模板 30、31、32、34 及实际需要的领域衔接可以直接消费当前 WorkCase Gate1 中逐项列明的授权与委派边界，不因进入模板步骤或切换 subagent 再次请求 Human，也不推定未列明行动获准。
+- criterion_id: criterion-mechanical-enforcement
+  statement: Code 与 Helper 对批准基线 fingerprint、真实来源、字段结构和合法状态转换执行零写入机械校验，并能机械阻止第三次 Human 等待；实现不宣称 Code 可以判断任意自然语言行动是否在授权包内。
+- criterion_id: criterion-web-two-decisions
+  statement: Web 详情、Gate1 Card、复制决定摘要与 Cognition 收件箱共同呈现完整批准材料和当前授权依据；收件箱只包含 plan 与 closure 两类待决定事项，blocked 仍在对象详情如实呈现但不成为第三类 Human 决定。
+- criterion_id: criterion-migration-and-tests
+  statement: 活动 WorkCase 0008、0013、0015、0017、0019 按所处阶段一次性分类迁移：未获 Gate1 者形成新材料，已执行但缺授权证明者不补造也不继续越权执行，结果/关闭链对象只完成收敛，closed 对象零改写；Specs、Code、Helper、模板、Web 与端到端回归测试全部通过。
+phase: human_closure_confirming
+plan_version: 1
+work_items:
+- item_id: item-01
+  goal: 收敛两次 Human 确认、冻结执行授权包与安全收敛的规范和事实契约。
+  expected_result: 06、08、21 及字段登记/机械校验附件形成无冲突的当前契约，明确替换 0019 的再次批准分支，并定义 Gate1、Gate2、授权基线、PlanDelta 和超界收敛边界。
+  status: completed
+  approach_summary: 先以单个 WorkCase 单次运行的授权基线为对象定义状态机硬约束，再向下分配字段和机械检查；不建立跨任务 token、动作白名单或旧形状兼容 profile。
+  result_summary: 06、08、21、字段登记与机械校验目录已形成双 Gate、execution authorization、baseline fingerprint、SafeConvergenceShape 和一次性迁移当前契约；code/tests/specs 131 passed，Helper capabilities outcome=ok。
+- item_id: item-02
+  goal: 同步行动模板和领域规则的授权消费与委派边界。
+  expected_result: 30、31、32、34 及必要领域衔接能消费 Gate1 逐项批准的写入、Git、事实操作和 subagent 复核授权，删除执行期重复确认分支，同时保留未列明行动的禁止边界。
+  status: completed
+  depends_on:
+  - item-01
+  approach_summary: 逐一对照各模板原有 Human Gate，只允许当前 WorkCase 授权包中对象、范围和副作用清楚的条目复用；能力是否实际可用仍按环境如实判断。
+  result_summary: 30、31、32、34 与 Pitfall 衔接已改为直接消费有效 Gate1 授权，包内调整 fresh review 后自动恢复，超界取消受影响 item 并进入结果链；模板结构与交付测试 35 passed。
+- item_id: item-03
+  goal: 实现批准基线、真实授权证明、状态转换和 Helper 的机械校验。
+  expected_result: 事实 projection、validator、transition、受控写入与 Helper 请求校验共同固定 fingerprint/source proof、Gate1 后不可回退、Gate2 只可关闭、包内自动调整和超界自动结果收敛，并为非法变化保持零写入。
+  status: completed
+  depends_on:
+  - item-01
+  approach_summary: Code 只验证结构、指纹、来源与确定性转换，不解析自然语言授权充分性；以正反状态迁移矩阵固定机械边界。
+  result_summary: 已实现 current-shape projection、execution authorization/approval baseline、真实 Human source proof、Gate1 前返修、Gate1 后 PlanΔ 自动恢复、SafeConvergence、Gate2-only 与 Helper 零写入校验；聚焦回归初跑 394 passed，覆盖目录旧状态 1 项失败已修正并单测 2 passed。临时迁移入口与 migration-only tests 已移除。
+- item_id: item-04
+  goal: 交付 Web 完整 Gate1 批准材料与双待决定入口。
+  expected_result: 08、Web 文档、API 投影和页面同步展示完整授权包及来源，Cognition 仅投影 plan/closure，blocked 作为进展或异常信息保留而不进入决定收件箱。
+  status: completed
+  depends_on:
+  - item-01
+  - item-03
+  approach_summary: 详情、Card 与复制摘要消费同一事实投影；覆盖移动端与桌面端，不引入轮询或额外刷新按钮。
+  result_summary: Web 详情、Gate1 Card、复制摘要与 Cognition 共用当前事实投影，完整呈现授权包与来源；收件箱仅包含 plan/closure，blocked 保留在详情；未引入轮询、自动刷新或额外刷新按钮。npm run check 通过，Web API 131/131 passed。
+- item_id: item-05
+  goal: 完成活动 WorkCase 一次性迁移、回归测试与跨层一致性验证。
+  expected_result: 0008、0013、0015、0017、0019 均按实际阶段获得明确且可回读的处置，closed 零改写，不存在伪造授权或运行时旧 profile；双 Gate、模板、Helper、Web 和端到端测试通过并形成可复核验证摘要。
+  status: completed
+  depends_on:
+  - item-02
+  - item-03
+  - item-04
+  approach_summary: 在新契约和 Helper 可用后精确枚举活动对象并一次性迁移；先跑聚焦正反测试，再跑相关全量回归和事实回读。
+  result_summary: 0008、0013、0015、0017、0019、0020 已按精确 ID/CAS 迁移并由 Helper 回读为 mechanically_valid；0008 PlanΔ v2 自动回到 Gate1，0013 安全收敛到 Gate2，其余结果链对象保留真实历史且未补造授权。临时迁移入口与 migration-only tests 已删除。Controller 实测 facts 423 passed、Specs 目录专项 2 passed、Web check 通过、Web API 131/131 passed、git diff --check 通过。
+resume_from: 等待 Human 对 workcase-0020 result_version 1 的 completed 关闭提案作最终决定。
+execution_approval:
+  subject_version: 1
+  approved_at: '2026-07-30T12:56:12+08:00'
+  summary: Human 批准 workcase-0020 v1 当前完整计划，并同时授权在本 WorkCase 范围内修改 Specs、Code、Helper、Web、测试与所列活动 WorkCase 事实，使用受控 Helper 写入，委派有界 subagent 完成实现或独立复核，运行必要测试，以及为本 WorkCase 交付形成范围精确的本地 Git commit。授权不包含 push、PR、发布、安装、外部消息、无关脏工作区或未列明的范围外高风险行动；遇到超界行动不得执行或新增第三次 Human 确认，应取消受影响执行并自动收敛到最终关闭确认。
+  source_refs:
+  - codex-current-task:user-message:sha256:7faf34943814fd36934284f4316d8fe0ac00bf792ccfa9c2ec76a814dff833d5
+  baseline_fingerprint: afc10b8818f399df3d1ef526378b6cdc9885e6296f1782640f10902d747eb858
+execution_authorization:
+  authorized_actions:
+  - action_id: authorization-repository-implementation
+    summary: 完成 item-01 至 item-04 的双 Gate 契约、机械实现、模板和 Web 交付。
+    target_scope: 仅 specs/06、08、21、23、30、31、32、34，specs/attachments/05.Att.01、05.Att.02；code/ldvh/facts 的 WorkCase projection/validation/transitions/update、临时迁移所需 Helper request/operation 及其直接 specs/facts/helper tests；Web cognition/WorkCase Gate1 投影、详情、i18n、web/docs/02-CognitionCenter.md、03-ObjectList.md、04-ObjectDetail.md 与直接契约测试。
+    effect_scope: 仅新增或修改新双 Gate 契约所需内容；删除仅限被新契约明确退出的同源逻辑、旧断言，以及迁移完成后的临时入口、清单和 migration-only tests。
+    risk_summary: 并行脏工作区可能被误纳，且跨层字段、状态机和呈现可能短暂不一致。
+    rollback_summary: 只按可归属 hunk 或文件回退本 WorkCase 变化；保留 Human 与其它工作既有改动。
+    rule_refs:
+    - specs/21-WorkCase-工作项.md
+    - specs/06-行动模板基础规范.md
+    - specs/08-Web 呈现与交互规范.md
+  - action_id: authorization-active-fact-migration
+    summary: 完成 item-05 所列六个活动 WorkCase 的一次性 current-shape 迁移。
+    target_scope: 仅 ldvh 项目的 workcase-0008、workcase-0013、workcase-0015、workcase-0017、workcase-0019、workcase-0020；每次请求以执行时精确 old full-content fingerprint 绑定。
+    effect_scope: 使用临时 Helper 边界逐对象校验完整 after、CAS 替换并回读；单对象失败零写入。不得扫描猜测、改 closed 或补造旧 Human approval。
+    risk_summary: 旧形状迁移可能丢失历史证明或发生部分成功；六对象不存在原子事务。
+    rollback_summary: 写后回读失败时按 candidate bytes CAS 回旧 bytes；此前已成功对象保留并以 before/after 和新指纹诊断恢复。
+    rule_refs:
+    - specs/21-WorkCase-工作项.md#7.3.1
+    - specs/32-事实对象生命周期变更与承接处置行动模板.md
+  - action_id: authorization-bounded-delegation
+    summary: 委派本次运行内有界 subagent 实现、测试、fresh plan review 或独立 result review。
+    target_scope: 仅当前 WorkCase 五个 item 及六对象迁移/复核所需的本会话子任务。
+    effect_scope: 允许有界委派、重试和重新委派；独立 result reviewer 不得是对应结果实施者或 Controller，不替 Human 决定；fresh plan review 不冒充 result review。
+    risk_summary: 职责不独立、并行冲突或未核实结果可能污染主控判断。
+    rollback_summary: 主控只采纳可回指且复核后的结果；冲突输出不写入事实或交付。
+    rule_refs:
+    - specs/06-行动模板基础规范.md
+    - specs/21-WorkCase-工作项.md
+    - specs/34-WorkCase获批计划执行行动模板.md
+  - action_id: authorization-local-verification
+    summary: 运行当前仓库已有环境中的聚焦与相关全量验证。
+    target_scope: 仅当前仓库 Specs、Core、Helper、Web 测试、静态检查、diff/index 检查与六对象 Helper readback。
+    effect_scope: 允许测试进程和工具在既有测试临时目录形成临时产物；不安装、不访问未列外部系统。
+    risk_summary: 测试可能消耗本地资源或暴露并行中暂态失败。
+    rollback_summary: 停止失败进程并保留诊断；不清理或改写 Human 资产。
+    rule_refs:
+    - specs/07-Code 工程实践规范.md
+    - specs/21-WorkCase-工作项.md
+  - action_id: authorization-local-git-commit
+    summary: 对本 WorkCase 可归属交付形成一个范围精确的本地 Git commit。
+    target_scope: 仅当时逐路径复核后可归属于 workcase-0020 的文件或 hunk。
+    effect_scope: 允许精确暂存、Helper commit precheck 与一个本地 commit；禁止 push、PR 或 release。
+    risk_summary: 可能误纳无关脏改或形成不符合契约的提交信息。
+    rollback_summary: 提交前失败只撤销本 WorkCase 暂存，不改 Working Tree；提交成功后不做破坏性历史重写。
+    rule_refs:
+    - specs/30-Git提交行动模板.md
+    - specs/03-事实源与信息溯源规范.md
+  action_ceiling: 仅当前仓库上述资产、六个明确活动 WorkCase 和本会话有界 subagent；副作用上限为 scoped 文件/事实写入、已有环境测试、逐对象迁移、临时迁移入口与一个本地 commit。
+  prohibited_actions:
+  - push、PR、发布、安装或外部消息
+  - 改写 closed WorkCase 或按目录扫描猜测迁移目标
+  - 补造 Human 授权证明或宣称六对象原子事务
+  - 覆盖、清理或提交无关脏工作区变化
+  - 执行未知、未列或超出当前风险上限的高影响动作
+  allowed_adjustments: 仅在上述明确资产和动作内调整实现分支、测试夹具、重试、重新委派与 fresh review；包内 PlanDelta 还必须不改变 goal、scope、criteria、execution authorization、高影响副作用或既有执行事实，并经 fresh current-plan review；不得无界改写 item goal、expected_result、dependency 或 approach。
+  verification_and_rollback: 先聚焦再运行相关全量测试，六对象逐一 Helper 回读，并检查 git diff、index 与 commit precheck；代码只回退本 WorkCase 可归属变化，事实迁移遵守单对象 CAS/回读/条件回滚并如实报告部分成功。
+  out_of_bounds_handling: 未知风险不解释为可执行修复；不执行未授权部分，不请求第三次扩权，保留已形成事实，取消受影响 item 的未授权部分并进入 Controller 自检、独立 result review、关闭提案与 Gate2。
+creation_reviews:
+- reviewer: Codex independent reviewer (/root/workcase0018_v2_review)
+  reviewed_at: '2026-07-30T13:22:19+08:00'
+  subject_version: 1
+  scope: 对修订后的 Gate1 execution_authorization、补充的 Web 文档目标范围、逐对象 CAS 迁移、独立 subagent、验证、单个本地 commit 与超界收敛进行最终只读复核。未修改文件。
+  conclusion: pass
+result_version: 1
+success_criterion_results:
+- criterion_id: criterion-two-human-gates
+  outcome: satisfied
+  summary: 当前状态机只把 human_plan_confirming 与 human_closure_confirming 作为 Human Gate；Gate1 后禁止回到计划确认，Gate2 更新被机械拒绝且只能由 close-workcase 消费。
+- criterion_id: criterion-approval-baseline
+  outcome: satisfied
+  summary: Gate1 当前材料、execution_authorization、execution_approval.baseline_fingerprint 与真实 Human source_refs 已形成冻结投影；Helper 对缺失或不匹配证明保持零写入。
+- criterion_id: criterion-safe-convergence
+  outcome: satisfied
+  summary: Gate1 后包内 PlanΔ 保留 authorization/approval 并经 fresh review 自动恢复；无 Gate1 历史证明的旧对象使用 SafeConvergenceShape，不补造授权且只进入结果/关闭链。
+- criterion_id: criterion-template-consumption
+  outcome: satisfied
+  summary: 30、31、32、34 与 Pitfall 衔接直接消费当前 WorkCase Gate1 授权和委派边界；包内调整不再次请求 Human，超界部分取消并收敛。
+- criterion_id: criterion-mechanical-enforcement
+  outcome: satisfied
+  summary: projection、validator、transition、受控写入和 Helper 请求共同校验 current shape、baseline、source proof、PlanΔ 与 Gate2-only；不解析自然语言授权充分性。
+- criterion_id: criterion-web-two-decisions
+  outcome: satisfied
+  summary: Web 详情、Gate1 Card、复制摘要与 Cognition 使用同一当前投影；收件箱仅 plan/closure，blocked 仅作为详情或进展信息；无自动轮询和额外刷新按钮。
+- criterion_id: criterion-migration-and-tests
+  outcome: satisfied
+  summary: 六个活动 WorkCase 均由 Helper 回读为 mechanically_valid，closed 对象未改写且迁移入口已删除。Controller 最终实测 facts 423 passed、目录专项 2 passed、Web API 131 passed、Web check 与 diff check 通过。
+result_summary: 已建立 WorkCase 严格两 Gate、完整 Gate1 执行授权包与真实批准基线、Gate1 后自动 PlanΔ、SafeConvergence、Gate2-only、模板授权复用和 Web 双决定入口；六个活动对象完成一次性 current-shape 迁移且未保留 legacy runtime。
+controller_check_summary: Controller 逐项核对 Specs、Core、Helper、Web、测试和六对象实际阶段：0008 的真实 pre-Gate 往返已验证修复；覆盖目录 stale 标记已纠正；facts 全量 423 passed，Web check 与 131 项 API 契约通过，六对象 Helper readback 全部 mechanically_valid，临时迁移入口和 migration-only tests 均不存在。未把 Reviewer 未运行的测试表述为 Reviewer 证据。
+validation_summary: Controller 实测：code/tests/facts 423 passed；此前聚焦组合 394 passed 后唯一失败为已修正的 05.Att.02 stale 状态，目录专项复跑 2 passed；npm run check 通过；npm run test:web:api 131/131 passed；六对象 Helper readback outcome=ok 且 mechanically_valid；git diff --check 通过。Reviewer 独立完成规则/实现核对、六对象 Helper readback 与 diff check，未独立取得 pytest 或 Web 测试最终输出。
+result_reviews:
+- reviewer: Codex independent reviewer (/root/workcase0018_v2_review)
+  reviewed_at: '2026-07-30T13:56:03+08:00'
+  subject_version: 1
+  scope: 读取 0020 候选结果及 06/08/21/23/30-32/34、05.Att.01/02、Core 状态机/校验实现和 Web 相关来源；以 Helper 精确读取 0008/0013/0015/0017/0019/0020，六者均 mechanically_valid；git diff --check 通过。未写入或关闭对象。
+  conclusion: pass_with_followups
+  feedback:
+  - 准确区分 Controller 已运行的 facts/Specs/Web 测试与 Reviewer 实际完成的六对象 Helper readback、规则核对和 git diff --check；不得把 Reviewer 未取得最终输出的 pytest/Web 检查写成 Reviewer 已复验。
+  controller_resolution: 已接受并落实：validation_summary 明确区分 Controller 实测与 Reviewer 实测；随后 Controller 完成 facts 全量 423 passed，未归入 Reviewer 证据。
+closure_proposal:
+  proposed_outcome: completed
+  proposed_disposition_summary: 七项成功标准均满足：严格双 Gate、完整 Gate1 授权基线、包内自动 PlanDelta、SafeConvergence、模板授权消费、Web 双决定入口和六对象一次性迁移均已交付并验证；临时迁移入口已删除，当前范围没有需要转交、接受停止或另建 Spark 的剩余责任。
+waiting_on: Human 对 workcase-0020 result_version 1 的 completed 关闭提案作 Gate2 最终决定。
+object_id: workcase-0020
+fact_type_key: workcase
+created_at: '2026-07-30T12:21:28.204075+08:00'
+updated_at: '2026-07-30T14:23:33.256335+08:00'

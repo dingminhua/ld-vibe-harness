@@ -12,6 +12,7 @@ export const WORKCASE_DETAIL_SECTION_ORDER = [
   'success_criteria',
   'plan_and_items',
   'creation_reviews',
+  'execution_authorization',
   'execution_approval',
   'result_and_validation',
   'controller_check',
@@ -30,6 +31,7 @@ export interface CurrentWorkCaseDetailProjection {
   planAndItems: boolean;
   workItems: Array<Record<string, unknown>>;
   creationReviews: Array<Record<string, unknown>>;
+  executionAuthorization: Record<string, unknown> | null;
   executionApproval: Record<string, unknown> | null;
   resultAndValidation: boolean;
   controllerCheck: boolean;
@@ -59,6 +61,7 @@ export function projectCurrentWorkCaseDetail(
     planAndItems: hasAny(obj.plan_version, obj.work_items),
     workItems: records(obj.work_items),
     creationReviews: records(obj.creation_reviews),
+    executionAuthorization: record(obj.execution_authorization),
     executionApproval: record(obj.execution_approval),
     resultAndValidation: hasAny(obj.result_version, obj.result_summary, obj.validation_summary),
     controllerCheck: hasContent(obj.controller_check_summary),

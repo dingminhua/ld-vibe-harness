@@ -11,6 +11,7 @@ from ldvh.facts.transitions import (
     validate_fact_transition,
     validate_workcase_transition,
 )
+from ldvh.facts.workcase_projection import approval_baseline_fingerprint
 from ldvh.facts.workcase_validation import validate_workcase_snapshot
 
 
@@ -38,11 +39,35 @@ def _result_review(version: int = 1, *, resolved: bool = True) -> dict[str, obje
     return review
 
 
-def _approval(version: int = 1, *, suffix: str = "") -> dict[str, object]:
+def _authorization() -> dict[str, object]:
+    return {
+        "authorized_actions": [
+            {
+                "action_id": "authorization-bounded-write",
+                "summary": "Write the bounded result.",
+                "target_scope": "The selected implementation files.",
+                "effect_scope": "Workspace writes and read-only independent review.",
+                "risk_summary": "Unrelated changes are preserved.",
+                "rollback_summary": "Revert only bounded newly written content.",
+                "rule_refs": ["specs/21", "specs/06"],
+            }
+        ],
+        "action_ceiling": "No external publication or unrelated object changes.",
+        "prohibited_actions": ["push", "publish"],
+        "allowed_adjustments": "The bounded implementation method may change.",
+        "verification_and_rollback": "Run bounded checks and preserve recoverable checkpoints.",
+        "out_of_bounds_handling": "Cancel affected items and converge to closure.",
+    }
+
+
+def _approval(version: int = 1, *, suffix: str = "", fields: dict[str, object] | None = None) -> dict[str, object]:
+    baseline = fields if fields is not None else _base()
     return {
         "subject_version": version,
         "approved_at": f"2026-07-26T09:30:0{suffix or '0'}+08:00",
         "summary": "Human approved this exact plan and its stated boundary.",
+        "baseline_fingerprint": approval_baseline_fingerprint(baseline),
+        "source_refs": ["turn:gate1"],
     }
 
 
@@ -78,6 +103,7 @@ def _base() -> dict[str, object]:
         "phase": "human_plan_confirming",
         "goal": "Deliver one bounded current-contract result",
         "scope": "Cover the selected object and exclude unrelated changes",
+        "execution_authorization": _authorization(),
         "success_criterion_definitions": [
             {"criterion_id": "criterion-main", "statement": "The selected result is verified"}
         ],
@@ -94,7 +120,7 @@ def _executing() -> dict[str, object]:
     fields.update(
         {
             "phase": "executing",
-            "execution_approval": _approval(),
+            "execution_approval": _approval(fields=fields),
             "work_items": [
                 {
                     **_pending_item(),
@@ -105,7 +131,6 @@ def _executing() -> dict[str, object]:
             ],
         }
     )
-    fields.pop("creation_reviews")
     fields.pop("waiting_on")
     return fields
 
@@ -191,7 +216,14 @@ def _closed() -> dict[str, object]:
 def _plan_revising() -> dict[str, object]:
     fields = _base()
     fields["phase"] = "plan_revising"
-    fields.pop("creation_reviews")
+    fields["execution_approval"] = _approval(fields=fields)
+    fields.pop("waiting_on")
+    return fields
+
+
+def _pre_gate_revising() -> dict[str, object]:
+    fields = _base()
+    fields["phase"] = "plan_revising"
     fields.pop("waiting_on")
     return fields
 
@@ -217,8 +249,10 @@ def _pre_execution_controller(before: dict[str, object]) -> dict[str, object]:
             "validation_summary": "No implementation validation was possible because execution did not start.",
         }
     )
-    fields.pop("creation_reviews", None)
     fields.pop("waiting_on", None)
+    if "execution_approval" not in before:
+        fields.pop("execution_authorization", None)
+        fields.pop("creation_reviews", None)
     return fields
 
 
@@ -246,8 +280,8 @@ def test_representative_current_snapshots_are_valid(label: str, fields: dict[str
 
 def test_current_phase_edge_set_is_exactly_the_specified_closed_set() -> None:
     assert _WORKCASE_PHASE_EDGES == {
-        ("human_plan_confirming", "executing"),
         ("human_plan_confirming", "plan_revising"),
+        ("human_plan_confirming", "executing"),
         ("human_plan_confirming", "controller_checking"),
         ("plan_revising", "human_plan_confirming"),
         ("plan_revising", "executing"),
@@ -264,31 +298,35 @@ def test_current_phase_edge_set_is_exactly_the_specified_closed_set() -> None:
         ("closure_preparing", "controller_checking"),
         ("closure_preparing", "plan_revising"),
         ("closure_preparing", "human_closure_confirming"),
-        ("human_closure_confirming", "closure_preparing"),
-        ("human_closure_confirming", "controller_checking"),
-        ("human_closure_confirming", "plan_revising"),
     }
 
 
 def test_gate_waiting_exit_edge_set_is_limited_to_fixed_human_and_reviewer_gates() -> None:
     assert _GATE_WAITING_EXIT_EDGES == {
-        ("human_plan_confirming", "executing"),
         ("human_plan_confirming", "plan_revising"),
+        ("human_plan_confirming", "executing"),
         ("human_plan_confirming", "controller_checking"),
         ("independent_reviewing", "controller_checking"),
         ("independent_reviewing", "plan_revising"),
         ("independent_reviewing", "closure_preparing"),
-        ("human_closure_confirming", "closure_preparing"),
-        ("human_closure_confirming", "controller_checking"),
-        ("human_closure_confirming", "plan_revising"),
     }
 
 
 def test_every_listed_phase_edge_has_a_current_contract_example() -> None:
     confirming = _base()
+    pre_gate_revising = _pre_gate_revising()
+    revised_for_gate1 = deepcopy(pre_gate_revising)
+    revised_for_gate1.update(
+        {
+            "phase": "human_plan_confirming",
+            "creation_reviews": [
+                {**_plan_review(), "reviewed_at": "2026-07-26T09:15:00+08:00"}
+            ],
+            "waiting_on": "Human decision on the revised plan and authorization baseline",
+        }
+    )
     execution_approved = deepcopy(confirming)
-    execution_approved.update({"phase": "executing", "execution_approval": _approval()})
-    execution_approved.pop("creation_reviews")
+    execution_approved.update({"phase": "executing", "execution_approval": _approval(fields=confirming)})
     execution_approved.pop("waiting_on")
 
     revising = _plan_revising()
@@ -310,10 +348,10 @@ def test_every_listed_phase_edge_has_a_current_contract_example() -> None:
     checking_return["result_version"] = 1
 
     pairs: list[tuple[str, dict[str, object], dict[str, object]]] = [
+        ("human plan confirming -> plan revising", confirming, pre_gate_revising),
         ("human plan confirming -> executing", confirming, execution_approved),
-        ("human plan confirming -> plan revising", confirming, revising),
         ("human plan confirming -> controller checking", confirming, _pre_execution_controller(confirming)),
-        ("plan revising -> human plan confirming", revising, confirming),
+        ("plan revising -> human plan confirming", pre_gate_revising, revised_for_gate1),
         ("plan revising -> executing", revising, revising_to_execution),
         ("plan revising -> controller checking", revising, _pre_execution_controller(revising)),
         ("executing -> plan revising", executing, {**executing, "phase": "plan_revising"}),
@@ -344,33 +382,6 @@ def test_every_listed_phase_edge_has_a_current_contract_example() -> None:
             {key: value for key, value in {**preparing, "phase": "plan_revising"}.items() if key != "closure_proposal"},
         ),
         ("closure preparing -> human closure confirming", preparing, human),
-        (
-            "human closure confirming -> closure preparing",
-            human,
-            {
-                key: value
-                for key, value in {**human, "phase": "closure_preparing"}.items()
-                if key not in {"closure_proposal", "waiting_on"}
-            },
-        ),
-        (
-            "human closure confirming -> controller checking",
-            human,
-            {
-                key: value
-                for key, value in {**human, "phase": "controller_checking"}.items()
-                if key not in {"closure_proposal", "waiting_on"}
-            },
-        ),
-        (
-            "human closure confirming -> plan revising",
-            human,
-            {
-                key: value
-                for key, value in {**human, "phase": "plan_revising"}.items()
-                if key not in {"closure_proposal", "waiting_on"}
-            },
-        ),
     ]
 
     for label, before, after in pairs:
@@ -396,7 +407,11 @@ def test_unlisted_phase_edges_are_rejected(before_phase: str, after_phase: str) 
 
     issues = validate_workcase_transition(before, after)
 
-    assert any(issue.field_path == "phase" and "不在当前允许边" in issue.summary for issue in issues)
+    assert any(
+        issue.field_path == "phase"
+        and ("不在当前允许边" in issue.summary or "close-workcase" in issue.summary)
+        for issue in issues
+    )
 
 
 def test_status_block_and_unblock_keep_phase_and_only_change_block_snapshot() -> None:
@@ -581,9 +596,8 @@ def test_phase_freeze_does_not_assign_meaning_to_work_item_array_order() -> None
     before = _base()
     before["work_items"] = [_pending_item("item-a"), _pending_item("item-b")]
     after = deepcopy(before)
-    after.update({"phase": "executing", "execution_approval": _approval()})
+    after.update({"phase": "executing", "execution_approval": _approval(fields=before)})
     after["work_items"].reverse()
-    after.pop("creation_reviews")
     after.pop("waiting_on")
 
     assert validate_workcase_transition(before, after) == ()
@@ -591,8 +605,9 @@ def test_phase_freeze_does_not_assign_meaning_to_work_item_array_order() -> None
 
 def test_plan_delta_requires_exact_increment_fresh_review_and_full_reset() -> None:
     before = _executing()
-    before["phase"] = "plan_revising"
-    changed_without_bump = {**before, "goal": "Deliver the revised bounded result"}
+    changed_without_bump = deepcopy(before)
+    changed_without_bump.update({"phase": "plan_revising"})
+    changed_without_bump["work_items"][0]["approach_summary"] = "Use an adjusted bounded method."
 
     issues = validate_workcase_transition(before, changed_without_bump)
     assert any(issue.field_path == "plan_version" and "精确加 1" in issue.summary for issue in issues)
@@ -600,13 +615,10 @@ def test_plan_delta_requires_exact_increment_fresh_review_and_full_reset() -> No
     valid = deepcopy(changed_without_bump)
     valid.update(
         {
-            "phase": "human_plan_confirming",
             "plan_version": 2,
             "creation_reviews": [_plan_review(2)],
-            "waiting_on": "Human decision on revised plan version 2",
         }
     )
-    valid.pop("execution_approval")
     assert validate_workcase_transition(before, valid) == ()
 
     retained_result = {**valid, "result_version": 1}
@@ -614,23 +626,76 @@ def test_plan_delta_requires_exact_increment_fresh_review_and_full_reset() -> No
     assert any(issue.field_path == "result_version" and "必须清除" in issue.summary for issue in issues)
 
 
+def test_pre_gate_revision_roundtrip_allows_only_frozen_entry_and_fresh_candidate_exit() -> None:
+    confirming = _base()
+    revising = _pre_gate_revising()
+    assert validate_workcase_transition(confirming, revising) == ()
+
+    changed_on_entry = deepcopy(revising)
+    changed_on_entry["work_items"][0]["goal"] = "Changed before entering the frozen revision position"
+    issues = validate_workcase_transition(confirming, changed_on_entry)
+    assert any(issue.field_path == "phase" and "Gate1 前 PlanΔ" in issue.summary for issue in issues)
+
+    candidate = deepcopy(revising)
+    candidate.update(
+        {
+            "phase": "human_plan_confirming",
+            "plan_version": 2,
+            "creation_reviews": [
+                {
+                    **_plan_review(2),
+                    "reviewed_at": "2026-07-26T09:15:00+08:00",
+                }
+            ],
+            "waiting_on": "Human decision on the revised plan and authorization baseline",
+        }
+    )
+    candidate["work_items"][0]["goal"] = "Complete the revised bounded responsibility"
+    candidate["execution_authorization"]["authorized_actions"][0]["summary"] = (
+        "Write the revised bounded result."
+    )
+    assert validate_workcase_transition(revising, candidate) == ()
+
+    stale_review = deepcopy(candidate)
+    stale_review["creation_reviews"] = deepcopy(revising["creation_reviews"])
+    stale_review["creation_reviews"][0]["subject_version"] = 2
+    issues = validate_workcase_transition(revising, stale_review)
+    assert any(issue.field_path == "creation_reviews" and "fresh" in issue.summary for issue in issues)
+
+
+def test_post_gate_plan_revising_cannot_return_to_human_or_drop_approval() -> None:
+    revising = _plan_revising()
+    returned = deepcopy(revising)
+    returned.update(
+        {
+            "phase": "human_plan_confirming",
+            "waiting_on": "A forbidden third Human decision",
+        }
+    )
+    returned.pop("execution_approval")
+
+    issues = validate_workcase_transition(revising, returned)
+
+    assert any(issue.field_path == "execution_approval" and "Gate1 后" in issue.summary for issue in issues)
+
+
 def test_plan_delta_new_items_start_pending_and_retained_execution_facts_are_not_reset() -> None:
     before = _executing()
-    before["phase"] = "plan_revising"
     revised = deepcopy(before)
     revised.update(
         {
-            "goal": "Deliver the revised plan",
-            "phase": "human_plan_confirming",
+            "phase": "plan_revising",
             "plan_version": 2,
             "creation_reviews": [_plan_review(2)],
-            "waiting_on": "Human decision on plan 2",
         }
     )
-    revised.pop("execution_approval")
+    revised["work_items"][0]["approach_summary"] = "Use a revised bounded method."
 
     reset = deepcopy(revised)
-    reset["work_items"][0] = _pending_item()
+    reset["work_items"][0] = {
+        **_pending_item(),
+        "approach_summary": "Use a revised bounded method.",
+    }
     issues = validate_workcase_transition(before, reset)
     assert any(issue.field_path.endswith(".status") and "重置为 pending" in issue.summary for issue in issues)
 
@@ -644,18 +709,16 @@ def test_plan_delta_new_items_start_pending_and_retained_execution_facts_are_not
 
 def test_plan_delta_rejects_silent_removal_of_an_item_with_execution_facts() -> None:
     before = _executing()
-    before.update({"phase": "plan_revising", "summary": "The existing cross-item checkpoint."})
+    before.update({"summary": "The existing cross-item checkpoint."})
     after = deepcopy(before)
     after.update(
         {
-            "phase": "human_plan_confirming",
+            "phase": "plan_revising",
             "plan_version": 2,
             "work_items": [_pending_item("item-new")],
             "creation_reviews": [_plan_review(2)],
-            "waiting_on": "Human decision on plan 2",
         }
     )
-    after.pop("execution_approval")
 
     _assert_current_snapshot(before, "PlanDelta removal before")
     _assert_current_snapshot(after, "PlanDelta removal after")
@@ -671,19 +734,17 @@ def test_plan_delta_rejects_silent_removal_of_an_item_with_execution_facts() -> 
 
 def test_plan_delta_accepts_execution_item_removal_when_top_summary_is_updated() -> None:
     before = _executing()
-    before.update({"phase": "plan_revising", "summary": "The existing cross-item checkpoint."})
+    before.update({"summary": "The existing cross-item checkpoint."})
     after = deepcopy(before)
     after.update(
         {
             "summary": "The removed item facts now constrain the revised plan boundary.",
-            "phase": "human_plan_confirming",
+            "phase": "plan_revising",
             "plan_version": 2,
             "work_items": [_pending_item("item-new")],
             "creation_reviews": [_plan_review(2)],
-            "waiting_on": "Human decision on plan 2",
         }
     )
-    after.pop("execution_approval")
 
     _assert_current_snapshot(before, "PlanDelta carrier before")
     _assert_current_snapshot(after, "PlanDelta carrier after")
@@ -691,16 +752,15 @@ def test_plan_delta_accepts_execution_item_removal_when_top_summary_is_updated()
 
 
 def test_plan_delta_can_remove_a_pending_item_without_an_execution_fact_carrier() -> None:
-    before = _plan_revising()
+    before = _executing()
     before["work_items"] = [_pending_item("item-keep"), _pending_item("item-remove")]
     after = deepcopy(before)
     after.update(
         {
-            "phase": "human_plan_confirming",
+            "phase": "plan_revising",
             "plan_version": 2,
             "work_items": [_pending_item("item-keep")],
             "creation_reviews": [_plan_review(2)],
-            "waiting_on": "Human decision on plan 2",
         }
     )
 
@@ -864,7 +924,7 @@ def test_last_terminal_item_must_atomically_enter_controller_checking() -> None:
     assert validate_workcase_transition(before, transitioned) == ()
 
 
-def test_pre_execution_stop_is_the_only_approval_free_result_entry() -> None:
+def test_pre_execution_stop_enters_safe_convergence_without_fabricated_gate1() -> None:
     before = _base()
     after = deepcopy(before)
     after.update(
@@ -887,12 +947,18 @@ def test_pre_execution_stop_is_the_only_approval_free_result_entry() -> None:
         }
     )
     after.pop("creation_reviews")
+    after.pop("execution_authorization")
     after.pop("waiting_on")
     assert validate_workcase_transition(before, after) == ()
 
-    fabricated_approval = {**after, "execution_approval": _approval()}
-    issues = validate_workcase_transition(before, fabricated_approval)
-    assert any(issue.field_path == "execution_approval" and "禁止补造" in issue.summary for issue in issues)
+    fabricated_approval = {
+        **after,
+        "phase": "independent_reviewing",
+        "execution_authorization": _authorization(),
+        "execution_approval": _approval(),
+    }
+    issues = validate_workcase_transition(after, fabricated_approval)
+    assert any(issue.field_path == "execution_approval" and "首次 Human" in issue.summary for issue in issues)
 
     stale_waiting = {**after, "waiting_on": before["waiting_on"]}
     issues = validate_workcase_transition(before, stale_waiting)
@@ -1013,7 +1079,7 @@ def test_creation_review_and_execution_approval_have_separate_formation_boundari
     executing = _executing()
     forged = {**executing, "execution_approval": {**_approval(), "subject_version": 2}}
     issues = validate_workcase_transition(executing, forged)
-    assert any(issue.field_path == "execution_approval.subject_version" for issue in issues)
+    assert any(issue.field_path == "execution_approval" and "Gate1 后" in issue.summary for issue in issues)
 
     closure = _closure_preparing()
     forged_at_closure = {**closure, "execution_approval": _approval(suffix="1")}
@@ -1021,22 +1087,23 @@ def test_creation_review_and_execution_approval_have_separate_formation_boundari
     assert any(issue.field_path == "execution_approval" and "Human" in issue.summary for issue in issues)
 
 
-def test_no_execution_plan_revision_can_record_approval_withdrawal_without_fake_version_change() -> None:
+def test_gate1_approval_cannot_be_withdrawn_or_replaced_during_plan_revision() -> None:
     before = _plan_revising()
     before["execution_approval"] = _approval()
     after = deepcopy(before)
     after.pop("execution_approval")
-    assert validate_workcase_transition(before, after) == ()
+    issues = validate_workcase_transition(before, after)
+    assert any(issue.field_path == "execution_approval" and "Gate1 后" in issue.summary for issue in issues)
 
     executed_before = _executing()
     executed_before["phase"] = "plan_revising"
     executed_after = deepcopy(executed_before)
     executed_after.pop("execution_approval")
     issues = validate_workcase_transition(executed_before, executed_after)
-    assert any(issue.field_path == "execution_approval" and "撤回或失效边" in issue.summary for issue in issues)
+    assert any(issue.field_path == "execution_approval" and "Gate1 后" in issue.summary for issue in issues)
 
 
-def test_result_quality_chain_and_human_return_edges_preserve_the_judgment_subject() -> None:
+def test_result_quality_chain_reaches_gate2_and_gate2_rejects_update_return() -> None:
     controller = _controller_checking()
     reviewing = deepcopy(controller)
     reviewing["phase"] = "independent_reviewing"
@@ -1056,32 +1123,27 @@ def test_result_quality_chain_and_human_return_edges_preserve_the_judgment_subje
     returned["phase"] = "controller_checking"
     returned.pop("closure_proposal")
     returned.pop("waiting_on")
-    assert validate_workcase_transition(human, returned) == ()
+    issues = validate_workcase_transition(human, returned)
+    assert any(issue.field_path == "phase" and "close-workcase" in issue.summary for issue in issues)
 
     changed_during_return = {**returned, "result_summary": "Changed while returning"}
     issues = validate_workcase_transition(human, changed_during_return)
-    assert any(issue.field_path == "result_summary" and "冻结" in issue.summary for issue in issues)
+    assert any(issue.field_path == "phase" and "close-workcase" in issue.summary for issue in issues)
 
 
 def test_fixed_human_and_reviewer_gate_waiting_cannot_be_carried_unchanged() -> None:
     confirming = _base()
-    revising = _plan_revising()
-    revising["waiting_on"] = confirming["waiting_on"]
+    executing = _executing()
+    executing["waiting_on"] = confirming["waiting_on"]
 
     reviewing = _independent_reviewing()
     reviewing["waiting_on"] = "Independent Reviewer response"
     review_return = deepcopy(reviewing)
-    review_return.update({"phase": "plan_revising", "waiting_on": "Independent Reviewer response"})
-
-    human = _human_closure_confirming()
-    human_return = deepcopy(human)
-    human_return.update({"phase": "plan_revising", "waiting_on": human["waiting_on"]})
-    human_return.pop("closure_proposal")
+    review_return.update({"phase": "controller_checking", "waiting_on": "Independent Reviewer response"})
 
     pairs = [
-        ("plan confirmation return", confirming, revising),
+        ("plan confirmation exit", confirming, executing),
         ("independent review return", reviewing, review_return),
-        ("human closure return", human, human_return),
     ]
     for label, before, after in pairs:
         _assert_current_snapshot(before, f"{label} before")
@@ -1092,23 +1154,18 @@ def test_fixed_human_and_reviewer_gate_waiting_cannot_be_carried_unchanged() -> 
 
 def test_fixed_gate_exit_accepts_a_distinct_new_actual_waiting_without_proving_its_semantics() -> None:
     confirming = _base()
-    revising = _plan_revising()
-    revising["waiting_on"] = "Revised plan boundary decision"
+    executing = deepcopy(confirming)
+    executing.update({"phase": "executing", "execution_approval": _approval(fields=confirming)})
+    executing["waiting_on"] = "External service availability"
 
     reviewing = _independent_reviewing()
     reviewing["waiting_on"] = "Independent Reviewer response"
     review_return = deepcopy(reviewing)
-    review_return.update({"phase": "plan_revising", "waiting_on": "Human boundary decision"})
-
-    human = _human_closure_confirming()
-    human_return = deepcopy(human)
-    human_return.update({"phase": "plan_revising", "waiting_on": "Revised plan decision"})
-    human_return.pop("closure_proposal")
+    review_return.update({"phase": "controller_checking", "waiting_on": "Route target availability"})
 
     pairs = [
-        ("plan confirmation return", confirming, revising),
+        ("plan confirmation exit", confirming, executing),
         ("independent review return", reviewing, review_return),
-        ("human closure return", human, human_return),
     ]
     for label, before, after in pairs:
         _assert_current_snapshot(before, f"{label} before")
@@ -1117,16 +1174,6 @@ def test_fixed_gate_exit_accepts_a_distinct_new_actual_waiting_without_proving_i
 
 
 def test_non_gate_waiting_may_remain_unchanged_across_phase_edges() -> None:
-    executing = _executing()
-    executing["waiting_on"] = "External service availability"
-    execution_revising = deepcopy(executing)
-    execution_revising["phase"] = "plan_revising"
-
-    revising = _plan_revising()
-    revising["waiting_on"] = "External service availability"
-    revising_executing = deepcopy(revising)
-    revising_executing.update({"phase": "executing", "execution_approval": _approval()})
-
     checking = _controller_checking(reviewed=True)
     checking["waiting_on"] = "Route target availability"
     checking_preparing = deepcopy(checking)
@@ -1139,8 +1186,6 @@ def test_non_gate_waiting_may_remain_unchanged_across_phase_edges() -> None:
     preparing_checking.pop("closure_proposal")
 
     pairs = [
-        ("executing to plan revising", executing, execution_revising),
-        ("plan revising to executing", revising, revising_executing),
         ("controller checking to closure preparing", checking, checking_preparing),
         ("closure preparing to controller checking", preparing, preparing_checking),
     ]
