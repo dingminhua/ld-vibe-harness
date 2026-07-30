@@ -165,7 +165,7 @@ test('plan revision is progressing but remains outside the four-step track', () 
   assert.match(locales, /'objectList\.workcaseOutsideProgressTrack': '四步轨迹之外'/);
 });
 
-test('plan confirmation exposes the complete Gate 1 baseline while keeping a real blocker separate', () => {
+test('plan confirmation keeps a compact Gate 1 entry while the cognition view retains complete material', () => {
   const list = source('src/pages/ObjectList.tsx');
   const sharedCriteria = source('src/components/WorkCaseCriteriaList.tsx');
   const branchStart = list.indexOf("if (progressGroup === 'plan_confirmation')");
@@ -181,7 +181,8 @@ test('plan confirmation exposes the complete Gate 1 baseline while keeping a rea
   assert.ok(branchStart >= 0 && branchEnd > branchStart);
   assert.ok(contentStart >= 0 && contentEnd > contentStart);
   assert.ok(noticeStart >= 0 && noticeEnd > noticeStart);
-  assert.match(branch, /<WorkCasePlanConfirmationContent[\s\S]*?goal=\{obj\.goal\}[\s\S]*?scope=\{obj\.scope\}[\s\S]*?successCriterionDefinitions=\{obj\.success_criterion_definitions\}[\s\S]*?workItems=\{obj\.work_items\}[\s\S]*?creationReviews=\{obj\.creation_reviews\}[\s\S]*?executionAuthorization=\{obj\.execution_authorization\}[\s\S]*?executionApproval=\{obj\.execution_approval\}/);
+  assert.match(branch, /<WorkCasePlanConfirmationContent[\s\S]*?mode="card"[\s\S]*?goal=\{obj\.goal\}[\s\S]*?successCriterionDefinitions=\{obj\.success_criterion_definitions\}[\s\S]*?executionAuthorization=\{obj\.execution_authorization\}/);
+  assert.doesNotMatch(branch, /scope=\{obj\.scope\}|workItems=\{obj\.work_items\}|creationReviews=\{obj\.creation_reviews\}|executionApproval=\{obj\.execution_approval\}/);
   assert.doesNotMatch(branch, /prominentTitle/);
   assert.doesNotMatch(branch, /waiting_on/);
   assert.match(branch, /obj\.status === 'blocked'/);
@@ -192,14 +193,24 @@ test('plan confirmation exposes the complete Gate 1 baseline while keeping a rea
   assert.match(content, /<section className=\{WORKCASE_CRITERIA_SURFACE_CLASS\}>/);
   assert.match(content, /<WorkCaseCriteriaList/);
   assert.match(content, /<WorkCaseGoalSection goal=\{goal\} t=\{t\} \/>/);
+  assert.match(content, /const showsCompleteGateMaterial = mode === 'decision';/);
+  assert.match(content, /<ExecutionAuthorizationCard[\s\S]*?compact=\{mode === 'card'\}/);
+  assert.match(content, /t\('objectDetail\.workcaseSuccessCriteria'\)/);
   assert.match(sharedCriteria, /bg-blue-500\/\[0\.025\]/);
   assert.match(sharedCriteria, /className="ldvh-card-decision-body text-blue-900\/70 dark:text-blue-100\/75"/);
   assert.match(sharedCriteria, /className="mt-\[0\.5rem\] h-1 w-1/);
   assert.doesNotMatch(content, /list-disc/);
   assert.doesNotMatch(content, /<ol|line-clamp|slice\(0,/);
-  for (const field of ['scope', 'work_items', 'creation_reviews', 'execution_authorization', 'execution_approval']) {
-    assert.match(content, new RegExp(field));
-  }
+  assert.match(content, /\{showsCompleteGateMaterial && \(/);
+  assert.match(content, /fieldKey="scope"/);
+  assert.match(content, /fieldKey="work_items"/);
+  assert.match(content, /fieldKey="creation_reviews"/);
+  assert.match(content, /showsCompleteGateMaterial && executionApproval !== undefined/);
+  assert.match(content, /fieldKey="execution_authorization"/);
+  assert.match(content, /workcaseAuthorizedActionCount/);
+  assert.match(content, /workcaseProhibitedActionCount/);
+  assert.match(content, /workcasePrerequisiteCount/);
+  assert.doesNotMatch(content, /workcaseAuthorizationExpand|<details/);
   for (const field of ['authorized_actions', 'action_ceiling', 'prohibited_actions', 'allowed_adjustments', 'verification_and_rollback', 'out_of_bounds_handling', 'human_prerequisites', 'baseline_fingerprint', 'source_refs']) {
     assert.match(content, new RegExp(field));
   }

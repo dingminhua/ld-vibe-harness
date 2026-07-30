@@ -46,6 +46,7 @@ export const FACT_FIELD_CONTRACT: Record<FactType, FactFieldContract> = {
     plan_version: field('workcase-plan-version', 'number', false),
     work_items: field('workcase-items', 'array', false),
     creation_reviews: field('workcase-creation-reviews', 'array', false),
+    execution_authorization: field('workcase-execution-authorization', 'object', false),
     execution_approval: field('workcase-execution-approval', 'object', false),
     result_version: field('workcase-result-version', 'number', false),
     result_summary: field('workcase-overall-result-summary', 'string', false),

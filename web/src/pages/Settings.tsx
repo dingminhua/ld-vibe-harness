@@ -63,9 +63,19 @@ export default function Settings() {
 
   return (
     <div className="mx-auto max-w-5xl px-5 py-7 sm:px-8">
-      <PageHeader title={t('settings.title')} subtitle={t('settings.subtitle')} />
-      <p className="ldvh-body-muted mt-2">{t('settings.configOnly')}</p>
-      <p className="ldvh-body-muted mt-1">{t('settings.gitNotice')}</p>
+      <div className="border-b border-ldvh-border pb-5">
+        <PageHeader title={t('settings.title')} subtitle={t('settings.subtitle')} compact />
+        <div className="mt-4 grid gap-4 sm:grid-cols-2 sm:gap-6">
+          <section className="border-l-2 border-ldvh-accent pl-3">
+            <p className="ldvh-caption-strong text-ldvh-accent">{t('settings.managementScope')}</p>
+            <p className="ldvh-body-muted mt-1">{t('settings.configOnly')}</p>
+          </section>
+          <section className="border-l border-ldvh-border pl-3">
+            <p className="ldvh-caption-strong">{t('settings.verificationBoundary')}</p>
+            <p className="ldvh-body-muted mt-1">{t('settings.gitNotice')}</p>
+          </section>
+        </div>
+      </div>
       {loading ? <div className="flex justify-center py-16"><Loader2 className="animate-spin" /></div> : error ? (
         <div className="mt-6 rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-red-700 dark:text-red-300">{error}</div>
       ) : settings && <>

@@ -61,17 +61,17 @@ test('Specs place plan revision outside the four-step track without losing curre
 test('Specs fix plan-confirmation and progressing Card inputs to the latest fields', () => {
   const cardSection = workCaseCardSection();
 
-  assert.match(cardSection, /`plan_confirmation` Card 是 Gate1 唯一执行确认入口。在通用对象身份、标题和进展分组之外，\*\*计划与授权判断输入区\*\*显示以下三项 Human 判断输入/);
+  assert.match(cardSection, /`plan_confirmation` Card 是 Gate1 的对象入口。在通用对象身份、标题和进展分组之外，\*\*计划与授权概览区\*\*显示以下三项 Human 阅读入口/);
   assert.match(cardSection, /\*\*目标\*\*：直接读取当前 WorkCase 的 `goal`/);
   assert.match(cardSection, /\*\*成功标准\*\*：直接读取 `success_criterion_definitions\[\]\.statement`/);
-  assert.match(cardSection, /\*\*执行授权基线\*\*：直接读取完整 `execution_authorization`/);
-  assert.match(cardSection, /authorized action 的动作、目标范围、影响范围、风险和回滚/);
-  assert.match(cardSection, /action ceiling、prohibited actions、allowed adjustments、verification and rollback、out-of-bounds handling 与实际存在的 Human prerequisites/);
-  assert.match(cardSection, /目标、全部成功标准和完整授权基线不得截断、限制条数或用“其余若干项”代替/);
+  assert.match(cardSection, /\*\*执行授权边界\*\*：直接读取 `execution_authorization`，确定性显示允许动作、禁止项和实际存在的 Human 前置条件数量/);
+  assert.match(cardSection, /Card 不提供执行授权的展开、折叠或条目正文/);
+  assert.match(cardSection, /完整授权基线仅在同源详情页呈现/);
+  assert.match(cardSection, /Human 在 Gate1 操作前必须进入详情阅读完整 authorized action、目标范围、影响范围、风险、回滚/);
   assert.match(cardSection, /字段缺失或不可读时必须明确显示相应信息缺失并禁用批准/);
   assert.match(cardSection, /成功标准是没有先后关系的并列集合，在 Card 中必须统一使用圆点/);
   assert.match(cardSection, /在判断输入区之外另设独立的当前状态提示区，完整显示顶层 `blocking_summary`/);
-  assert.match(cardSection, /该提示不构成第四项判断输入/);
+  assert.match(cardSection, /该提示不构成第四项阅读入口/);
   assert.match(cardSection, /`progressing` Card 在相同通用对象身份、标题和进展分组之外，正文只显示“目标”和“当前情况”两个区域/);
   assert.match(cardSection, /不得引入全局轮次、返回次数、审核次数、完成比例或其它过程计数/);
   assert.match(cardSection, /当前环节为 `item_execution` 时，Card 必须完整列出全部当前 work item/);
@@ -146,9 +146,9 @@ test('Current Web docs describe the same latest-only Card and detail boundaries'
   assert.match(dashboardDoc, /不得把派生进展分组放入名为 `status` 或 `byStatus` 的字段/);
   assert.match(dashboardDoc, /blocked 不进入待决定收件箱，也不得借 `source_status` 重新引入/);
   assert.match(listDoc, /WorkCase 使用 `\?progress=<progress_group>`/);
-  assert.match(listSection, /Gate 1 的完整批准面/);
+  assert.match(listSection, /Gate 1 的紧凑入口/);
   assert.match(listSection, /`execution_authorization`/);
-  assert.match(listSection, /`baseline_fingerprint` 与非空 `source_refs`/);
+  assert.match(listSection, /Card 不显示 `scope`、`work_items`、`creation_reviews` 或 `execution_approval`/);
   assert.match(listSection, /Gate 1 材料之外完整显示独立的阻塞状态提示/);
   assert.match(listSection, /不是 Gate 1 授权内容/);
   assert.match(listSection, /轨迹外内部位置“方案修订中”/);
@@ -193,7 +193,7 @@ test('Current Web docs describe the same latest-only Card and detail boundaries'
 
   assert.match(baselineDoc, /WorkCase 不根据对象年代、缺失字段或实现版本切换结构/);
   assert.match(baselineSection, /`plan_revising` 同样归入“推进中”/);
-  assert.match(baselineSection, /Card 在 Gate 1 材料之外完整显示独立的 `blocking_summary` 状态提示/);
+  assert.match(baselineSection, /Card 在紧凑入口之外完整显示独立的 `blocking_summary` 状态提示/);
   assert.match(baselineSection, /closed 不保存关闭 approval 或关闭时间/);
   assert.match(baselineSection, /所有状态和 phase 下使用同一信息结构/);
   assert.match(baselineSection, /`pending \/ in_progress \/ blocked \/ completed \/ cancelled`/);

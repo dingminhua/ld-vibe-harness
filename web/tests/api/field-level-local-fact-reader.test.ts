@@ -76,6 +76,7 @@ test('WorkCase object fields and malformed consumed array members remain visible
     await writeFile(path.join(directory, 'workcase-0001.yaml'), [
       'object_id: workcase-0001', 'fact_type_key: workcase', 'title: Object fields',
       'status: open', 'created_at: "2026-01-01"', 'updated_at: "2026-01-02"',
+      'execution_authorization:', '  action_ceiling: Stay in scope',
       'execution_approval:', '  subject_version: 1', 'closure_proposal:', '  proposed_outcome: partial',
       'work_items:', '  - item_id: item-valid', '    goal: Keep this item', '  - malformed member',
     ].join('\n'), 'utf8');
@@ -83,6 +84,7 @@ test('WorkCase object fields and malformed consumed array members remain visible
     const detail = await readLocalFact('workcase', 'workcase-0001', scope);
     assert.equal(detail.status, 'ok');
     if (detail.status === 'ok') {
+      assert.equal(detail.item.fact_object?.execution_authorization && typeof detail.item.fact_object.execution_authorization, 'object');
       assert.equal(detail.item.fact_object?.execution_approval && typeof detail.item.fact_object.execution_approval, 'object');
       assert.equal(detail.item.fact_object?.closure_proposal && typeof detail.item.fact_object.closure_proposal, 'object');
       assert.deepEqual(detail.item.unparsed_structures, [{

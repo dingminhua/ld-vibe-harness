@@ -151,6 +151,7 @@ function InboxDecisionBasis({ item, t }: { item: CognitionInboxItem; t: Translat
   if (item.inboxKind === 'plan_confirmation') {
     return (
       <WorkCasePlanConfirmationContent
+        mode="decision"
         goal={item.card.goal}
         scope={item.card.scope}
         successCriteria={item.card.successCriteria}

@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { ArrowRight, Circle, CircleAlert, CircleCheck, CircleMinus, CirclePlay, ClipboardList, Clock3, Lightbulb, ListChecks, Target } from 'lucide-react';
+import { ArrowRight, Circle, CircleAlert, CircleCheck, CircleMinus, CirclePlay, ClipboardList, Clock3, Lightbulb, ListChecks, ShieldCheck, Target } from 'lucide-react';
 import StatusBadge from '@/components/StatusBadge';
 import ObjectStatusFilter from '@/components/ObjectStatusFilter';
 import WorkCaseProgressFilter from '@/components/WorkCaseProgressFilter';
@@ -133,6 +133,7 @@ function StatusReasonNote({ reason }: { reason: StatusReason }) {
 /** 计划判断输入区：与认知中心收件箱"待批准计划"决定依据区同源消费（02 §7.5）。 */
 // eslint-disable-next-line react-refresh/only-export-components
 export function WorkCasePlanConfirmationContent({
+  mode = 'card',
   goal,
   scope,
   successCriteria,
@@ -145,6 +146,7 @@ export function WorkCasePlanConfirmationContent({
   blockingSummary,
   t,
 }: {
+  mode?: 'card' | 'decision';
   goal?: string;
   scope?: string;
   successCriteria?: string[];
@@ -159,17 +161,20 @@ export function WorkCasePlanConfirmationContent({
 }) {
   const { locale } = useI18n();
   const criteria = successCriteria?.filter((criterion) => criterion.trim()) ?? [];
+  const showsCompleteGateMaterial = mode === 'decision';
 
   return (
     <div className="grid min-w-0 gap-2">
       {isBlocked && <WorkCaseBlockingNotice blockingSummary={blockingSummary} t={t} />}
       <WorkCaseGoalSection goal={goal} t={t} />
-      <GateOneFieldSection fieldKey="scope" value={scope} valid={isNonEmptyString(scope)} locale={locale} />
+      {showsCompleteGateMaterial && (
+        <GateOneFieldSection fieldKey="scope" value={scope} valid={isNonEmptyString(scope)} locale={locale} />
+      )}
       <section className={WORKCASE_CRITERIA_SURFACE_CLASS}>
         <div className="flex min-w-0 items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
             <ListChecks size={WORKCASE_SECTION_ICON_SIZE} className="shrink-0 text-blue-500 dark:text-blue-400" aria-hidden="true" />
-            <h3 className="ldvh-card-decision-title text-blue-700/85 dark:text-blue-200/85">{t('objectList.successCriteria')}</h3>
+            <h3 className="ldvh-card-decision-title text-blue-700/85 dark:text-blue-200/85">{t('objectDetail.workcaseSuccessCriteria')}</h3>
           </div>
           {criteria.length > 0 && (
             <span className="ldvh-meta shrink-0 text-blue-700/60 dark:text-blue-200/65">
@@ -178,7 +183,17 @@ export function WorkCasePlanConfirmationContent({
           )}
         </div>
         {isValidCriterionDefinitions(successCriterionDefinitions) ? (
-          <GateOneValue value={successCriterionDefinitions} locale={locale} depth={0} />
+          showsCompleteGateMaterial ? (
+            <GateOneValue value={successCriterionDefinitions} locale={locale} depth={0} />
+          ) : (
+            <WorkCaseCriteriaList
+              className={WORKCASE_CARD_TITLE_BODY_GAP_CLASS}
+              items={successCriterionDefinitions.map((criterion) => ({
+                key: String(criterion.criterion_id),
+                statement: String(criterion.statement),
+              }))}
+            />
+          )
         ) : successCriterionDefinitions !== undefined ? (
           <div className="min-w-0">
             <p className="ldvh-caption mt-1.5 text-red-400">{t('objectList.workcaseGateFieldMalformed')}</p>
@@ -199,25 +214,28 @@ export function WorkCasePlanConfirmationContent({
           <p className="ldvh-caption mt-1.5 text-red-400">{t('objectList.workcaseFieldMissing')}</p>
         )}
       </section>
-      <GateOneFieldSection
-        fieldKey="work_items"
-        value={workItems}
-        valid={isValidGateWorkItems(workItems)}
+      {showsCompleteGateMaterial && (
+        <>
+          <GateOneFieldSection
+            fieldKey="work_items"
+            value={workItems}
+            valid={isValidGateWorkItems(workItems)}
+            locale={locale}
+          />
+          <GateOneFieldSection
+            fieldKey="creation_reviews"
+            value={creationReviews}
+            valid={isValidGateReviews(creationReviews)}
+            locale={locale}
+          />
+        </>
+      )}
+      <ExecutionAuthorizationCard
+        authorization={executionAuthorization}
         locale={locale}
+        compact={mode === 'card'}
       />
-      <GateOneFieldSection
-        fieldKey="creation_reviews"
-        value={creationReviews}
-        valid={isValidGateReviews(creationReviews)}
-        locale={locale}
-      />
-      <GateOneFieldSection
-        fieldKey="execution_authorization"
-        value={executionAuthorization}
-        valid={isValidExecutionAuthorization(executionAuthorization)}
-        locale={locale}
-      />
-      {executionApproval !== undefined && (
+      {showsCompleteGateMaterial && executionApproval !== undefined && (
         <GateOneFieldSection
           fieldKey="execution_approval"
           value={executionApproval}
@@ -277,7 +295,7 @@ function isValidGateReviews(value: unknown): boolean {
   });
 }
 
-function isValidExecutionAuthorization(value: unknown): boolean {
+function isValidExecutionAuthorization(value: unknown): value is Record<string, unknown> {
   if (!isRecord(value)) return false;
   const actions = value.authorized_actions;
   return Array.isArray(actions) && actions.length > 0 && actions.every((candidate) => {
@@ -308,11 +326,13 @@ function GateOneFieldSection({
   value,
   valid,
   locale,
+  title,
 }: {
   fieldKey: string;
   value: unknown;
   valid: boolean;
   locale: string;
+  title?: string;
 }) {
   const { t } = useI18n();
   const missing = value === undefined || value === null || value === '';
@@ -320,7 +340,7 @@ function GateOneFieldSection({
     <section className={`min-w-0 rounded-lg border px-3 py-2.5 ${valid ? 'border-slate-300/55 bg-slate-500/[0.025] dark:border-slate-600/55' : 'border-red-400/30 bg-red-500/[0.035]'}`}>
       <div className="flex min-w-0 items-center justify-between gap-2">
         <h3 className={`ldvh-card-decision-title min-w-0 ${valid ? 'text-slate-700/85 dark:text-slate-200/85' : 'text-red-500 dark:text-red-300'}`}>
-          {getFieldLabel(fieldKey, locale)}
+          {title ?? getFieldLabel(fieldKey, locale)}
         </h3>
         {!valid && (
           <span className="ldvh-meta shrink-0 text-red-400">
@@ -330,6 +350,125 @@ function GateOneFieldSection({
       </div>
       {!missing && <GateOneValue value={value} locale={locale} depth={0} />}
     </section>
+  );
+}
+
+function ExecutionAuthorizationCard({
+  authorization,
+  locale,
+  compact,
+}: {
+  authorization: unknown;
+  locale: string;
+  compact: boolean;
+}) {
+  const { t } = useI18n();
+  if (!isValidExecutionAuthorization(authorization)) {
+    return (
+      <GateOneFieldSection
+        fieldKey="execution_authorization"
+        value={authorization}
+        valid={false}
+        locale={locale}
+        title={t('objectDetail.workcaseExecutionAuthorization')}
+      />
+    );
+  }
+
+  const actions = authorization.authorized_actions as Record<string, unknown>[];
+  const prohibitedActions = authorization.prohibited_actions as string[];
+  const prerequisites = (authorization.human_prerequisites ?? []) as string[];
+
+  return (
+    <section className="min-w-0 rounded-lg border border-amber-400/35 bg-amber-500/[0.035] px-3 py-2.5 dark:border-amber-300/30">
+      <div className="flex min-w-0 items-center gap-2">
+        <ShieldCheck size={WORKCASE_SECTION_ICON_SIZE} className="shrink-0 text-amber-600 dark:text-amber-300" aria-hidden="true" />
+        <h3 className="ldvh-card-decision-title min-w-0 text-amber-800/90 dark:text-amber-100/90">
+          {t('objectDetail.workcaseExecutionAuthorization')}
+        </h3>
+      </div>
+      <p className="ldvh-caption mt-1.5 text-amber-900/65 dark:text-amber-100/65">
+        {t('objectDetail.workcaseExecutionAuthorizationBoundary')}
+      </p>
+      <div className="mt-2 flex flex-wrap gap-1.5" aria-label={t('objectDetail.workcaseExecutionAuthorization')}>
+        <span className="ldvh-meta rounded-full border border-emerald-400/30 bg-emerald-500/[0.06] px-2 py-0.5 text-emerald-700 dark:text-emerald-200">
+          {t('objectList.workcaseAuthorizedActionCount', { count: String(actions.length) })}
+        </span>
+        <span className="ldvh-meta rounded-full border border-rose-400/30 bg-rose-500/[0.06] px-2 py-0.5 text-rose-700 dark:text-rose-200">
+          {t('objectList.workcaseProhibitedActionCount', { count: String(prohibitedActions.length) })}
+        </span>
+        {prerequisites.length > 0 && (
+          <span className="ldvh-meta rounded-full border border-violet-400/30 bg-violet-500/[0.06] px-2 py-0.5 text-violet-700 dark:text-violet-200">
+            {t('objectList.workcasePrerequisiteCount', { count: String(prerequisites.length) })}
+          </span>
+        )}
+      </div>
+      {!compact && (
+        <div className="mt-2.5 grid min-w-0 gap-2.5">
+          <section className="min-w-0 rounded-md border border-amber-400/20 bg-amber-500/[0.025] px-2.5 py-2">
+            <p className="ldvh-meta text-amber-800/70 dark:text-amber-100/70">{getFieldLabel('authorized_actions', locale)}</p>
+            <ul className="mt-1.5 grid min-w-0 gap-2">
+              {actions.map((action) => (
+                <li key={String(action.action_id)} className="min-w-0 rounded-md border border-amber-400/20 bg-ldvh-surface/45 px-2.5 py-2 dark:bg-ldvh-surface/20">
+                  <p className="ldvh-card-decision-title text-ldvh-text-primary">{String(action.summary)}</p>
+                  <AuthorizationCardText fieldKey="target_scope" value={String(action.target_scope)} locale={locale} />
+                  <AuthorizationCardText fieldKey="effect_scope" value={String(action.effect_scope)} locale={locale} />
+                  <div className="mt-1.5 grid min-w-0 gap-1.5 border-t border-ldvh-border/60 pt-1.5 sm:grid-cols-2">
+                    <AuthorizationCardText fieldKey="risk_summary" value={String(action.risk_summary)} locale={locale} />
+                    <AuthorizationCardText fieldKey="rollback_summary" value={String(action.rollback_summary)} locale={locale} />
+                  </div>
+                  <AuthorizationCardList fieldKey="rule_refs" items={action.rule_refs as string[]} locale={locale} />
+                </li>
+              ))}
+            </ul>
+          </section>
+          <section className="grid min-w-0 gap-2 rounded-md border border-ldvh-border/65 bg-ldvh-surface/35 px-2.5 py-2">
+            <AuthorizationCardText fieldKey="action_ceiling" value={String(authorization.action_ceiling)} locale={locale} />
+            <AuthorizationCardList fieldKey="prohibited_actions" items={prohibitedActions} locale={locale} emphasis="warning" />
+            <AuthorizationCardText fieldKey="allowed_adjustments" value={String(authorization.allowed_adjustments)} locale={locale} />
+            <AuthorizationCardText fieldKey="verification_and_rollback" value={String(authorization.verification_and_rollback)} locale={locale} />
+            <AuthorizationCardText fieldKey="out_of_bounds_handling" value={String(authorization.out_of_bounds_handling)} locale={locale} />
+            {prerequisites.length > 0 && <AuthorizationCardList fieldKey="human_prerequisites" items={prerequisites} locale={locale} />}
+          </section>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function AuthorizationCardText({ fieldKey, value, locale }: { fieldKey: string; value: string; locale: string }) {
+  return (
+    <div className="min-w-0">
+      <p className="ldvh-meta text-ldvh-text-secondary/70">{getFieldLabel(fieldKey, locale)}</p>
+      <SummaryText value={value} collapseThreshold={Number.MAX_SAFE_INTEGER} className="ldvh-card-decision-body mt-1 text-ldvh-text-secondary" />
+    </div>
+  );
+}
+
+function AuthorizationCardList({
+  fieldKey,
+  items,
+  locale,
+  emphasis = 'default',
+}: {
+  fieldKey: string;
+  items: string[];
+  locale: string;
+  emphasis?: 'default' | 'warning';
+}) {
+  const bulletClass = emphasis === 'warning' ? 'bg-rose-500/75' : 'bg-ldvh-text-secondary/55';
+  return (
+    <div className="min-w-0">
+      <p className="ldvh-meta text-ldvh-text-secondary/70">{getFieldLabel(fieldKey, locale)}</p>
+      <ul className="mt-1 grid min-w-0 gap-1">
+        {items.map((item) => (
+          <li key={item} className="flex min-w-0 items-start gap-1.5">
+            <span className={`mt-[0.5rem] h-1 w-1 shrink-0 rounded-full ${bulletClass}`} aria-hidden="true" />
+            <SummaryText value={item} collapseThreshold={Number.MAX_SAFE_INTEGER} className="ldvh-card-decision-body min-w-0 text-ldvh-text-secondary" />
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
@@ -385,7 +524,7 @@ function WorkCaseGoalSection({
     <section className={`min-w-0 rounded-md border border-l-2 px-3.5 py-3 ${surfaceClass}`}>
       <div className="flex min-w-0 items-center gap-2">
         <Target size={WORKCASE_SECTION_ICON_SIZE} className="shrink-0 text-violet-500 dark:text-violet-400" aria-hidden="true" />
-        <h3 className="ldvh-card-decision-title text-violet-700/85 dark:text-violet-200/85">{t('objectList.workcaseGoal')}</h3>
+        <h3 className="ldvh-card-decision-title text-violet-700/85 dark:text-violet-200/85">{t('objectDetail.workcaseResponsibility')}</h3>
       </div>
       {goal?.trim() ? (
         <div className={`ldvh-caption ${WORKCASE_CARD_TITLE_BODY_GAP_CLASS} w-full break-words`}>
@@ -1289,14 +1428,11 @@ export default function ObjectList() {
           >
             <>
               <WorkCasePlanConfirmationContent
+                mode="card"
                 goal={obj.goal}
-                scope={obj.scope}
                 successCriteria={obj.successCriteria}
                 successCriterionDefinitions={obj.success_criterion_definitions}
-                workItems={obj.work_items}
-                creationReviews={obj.creation_reviews}
                 executionAuthorization={obj.execution_authorization}
-                executionApproval={obj.execution_approval}
                 isBlocked={obj.status === 'blocked'}
                 blockingSummary={obj.blocking_summary}
                 t={t}

@@ -332,6 +332,36 @@ test('WorkCase detail defaults Human reading open and technical diagnostics fold
   assert.match(layout, /<FieldProblem issue=\{issue\} \/>/);
 });
 
+test('WorkCase authorization detail follows the shared overview, object, and secondary-disclosure hierarchy', () => {
+  const layout = fs.readFileSync(
+    path.join(repositoryRoot, 'web/src/pages/object-detail/WorkCaseReadingLayout.tsx'),
+    'utf8',
+  );
+  const authorization = layout.slice(
+    layout.indexOf('function ExecutionAuthorization'),
+    layout.indexOf('function InlineStringArrayField'),
+  );
+
+  assert.match(authorization, /workcaseAuthorizationCount/);
+  assert.match(authorization, /<AuthorizationStringListDisclosure fieldKey="prohibited_actions"/);
+  assert.match(authorization, /<AuthorizationStringListDisclosure fieldKey="human_prerequisites"/);
+  assert.match(authorization, /workcaseAuthorizationConstraints/);
+  assert.match(authorization, /function AuthorizationActionList[\s\S]*?useState\(false\)/);
+  assert.match(authorization, /<AuthorizationConstraints[\s\S]*?authorization=\{authorization\}/);
+  assert.match(authorization, /function AuthorizationConstraints[\s\S]*?workcaseAuthorizationConstraints/);
+  assert.match(authorization, /<AuthorizationActionObject/);
+  assert.match(authorization, /function AuthorizationActionObject[\s\S]*?useState\(false\)/);
+  assert.match(authorization, /fieldKey="target_scope"/);
+  assert.match(authorization, /fieldKey="effect_scope"/);
+  assert.match(authorization, /fieldKey="risk_summary"/);
+  assert.match(authorization, /fieldKey="rollback_summary"/);
+  assert.match(authorization, /function AuthorizationDisclosure/);
+  assert.match(authorization, /function AuthorizationListDisclosure[\s\S]*?<StringChips items=\{items\} \/>/);
+  assert.match(authorization, /function AuthorizationStringListDisclosure[\s\S]*?useState\(false\)/);
+  assert.match(authorization, /aria-expanded=\{expanded\}/);
+  assert.doesNotMatch(authorization, /\[\s*"action_id",\s*"summary"/);
+});
+
 test('narrative fields read as prose while structured records keep label rows', () => {
   const layout = fs.readFileSync(
     path.join(repositoryRoot, 'web/src/pages/object-detail/WorkCaseReadingLayout.tsx'),
