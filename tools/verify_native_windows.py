@@ -102,7 +102,7 @@ def verification_plan() -> dict[str, Any]:
             "Python/Pip/Git overrides",
             "Pip runs isolated, non-interactive and without user cache or configuration",
             "no command commits, pushes, changes a remote, or touches a governed user project",
-            "adapter integration remains a separate Human Gate",
+            "environment thin-Skill integration remains a separate Human Gate",
         ],
     }
 
@@ -394,7 +394,7 @@ def _adapter_handoff(evidence_dir: Path, source: dict[str, Any], work_dir: Path)
         "automated_changes": [],
         "required_checks": [
             "record existing marketplace, source, cache, configuration and trust state without mutation",
-            "obtain Human authorization for replacement, cachebuster install, Hook trust and restart",
+            "obtain Human authorization for replacement, cachebuster install, Skill registration and restart",
             "verify source-to-cache hashes and configure the ordinary-install Scripts/ldvh.exe",
             "run startup and resume success plus missing-config, disabled and restored probes",
             "restore the previous source, cache, configuration and enablement on failure",
@@ -574,7 +574,7 @@ def _run(arguments: argparse.Namespace) -> int:
             ),
             "work_dir": work_state,
             "residual_risk": [
-                "Codex adapter integration is a separate Human Gate",
+                "Environment thin-Skill integration is a separate Human Gate",
                 "a passing preflight or core-readonly phase does not authorize create/update",
             ],
         }
