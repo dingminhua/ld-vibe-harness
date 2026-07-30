@@ -5,7 +5,6 @@ import {
   Diff,
   GitPullRequestArrow,
   Loader2,
-  RefreshCcw,
   Rows3,
 } from 'lucide-react';
 import CopyPathButton from '@/components/CopyPathButton';
@@ -62,7 +61,6 @@ export default function Changes() {
     diff,
     splitDiffRows,
     openDiff,
-    reload,
   } = useWorkspaceChanges(projectId);
   const [diffViewMode, setDiffViewMode] = useState<DiffViewMode>(getDefaultDiffViewMode);
   const diffViewModeWasSelected = useRef(false);
@@ -129,15 +127,6 @@ export default function Changes() {
         <PageHeader title={t('changes.title')} subtitle={t('changes.subtitle')} compact />
         <div className="flex min-w-0 flex-wrap items-center gap-2">
           <span className="ldvh-page-toolbar-badge">{t('changes.readOnly')}</span>
-          <button
-            type="button"
-            onClick={reload}
-            disabled={!projectId || entriesLoading}
-            className="ldvh-page-toolbar-action"
-          >
-            <RefreshCcw size={14} className={entriesLoading ? 'animate-spin' : ''} />
-            {t('changes.reload')}
-          </button>
         </div>
       </div>
 

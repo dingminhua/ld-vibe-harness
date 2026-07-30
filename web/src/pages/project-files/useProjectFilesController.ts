@@ -86,12 +86,6 @@ export function useProjectFilesController() {
       });
   };
 
-  const handleRefresh = () => {
-    fileRequestId.current += 1;
-    setFilePanel({ data: null, loading: false, error: null });
-    loadEntries(currentDir, showHiddenFiles);
-  };
-
   const handleShowHiddenChange = (nextShowHidden: boolean) => {
     setShowHiddenFiles(nextShowHidden);
     fileRequestId.current += 1;
@@ -113,7 +107,6 @@ export function useProjectFilesController() {
     showHiddenFiles,
     handleNavigateDir,
     handleOpenEntry,
-    handleRefresh,
     handleShowHiddenChange,
   };
 }

@@ -136,7 +136,7 @@
 
 ## 11. API 数据结构
 
-Changelog、Dashboard 的 `recentChanges` 和 ProjectFiles 的提交历史必须复用同一套 commit message 拆分与 Conventional Commits 解析函数，统一输出 `message`、`body`、`category`、`scope`、`description` 和 `isBreaking`。三者可以按页面职责追加字段；不得各自维护一套 commit header 解析规则。
+Changelog 与 ProjectFiles 的提交历史必须复用同一套 commit message 拆分与 Conventional Commits 解析函数，统一输出 `message`、`body`、`category`、`scope`、`description` 和 `isBreaking`。两者可以按页面职责追加字段；不得各自维护一套 commit header 解析规则。
 
 ```typescript
 interface ChangelogEntry {

@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { Check, ChevronDown, FolderGit2, Loader2, RefreshCcw } from 'lucide-react';
+import { Check, ChevronDown, FolderGit2, Loader2 } from 'lucide-react';
 import { useI18n } from '@/i18n/context';
 import { useProjectScope } from '@/utils/projectContext';
 
 export default function ProjectSwitcher({ collapsed }: { collapsed: boolean }) {
   const { t } = useI18n();
-  const { projects, selectedProject, selectedProjectId, loading, error, selectProject, reloadProjects, refreshData } = useProjectScope();
+  const { projects, selectedProject, selectedProjectId, loading, error, selectProject } = useProjectScope();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const triggerLabel = selectedProject?.name || t('projectSwitcher.choose');
@@ -59,21 +59,11 @@ export default function ProjectSwitcher({ collapsed }: { collapsed: boolean }) {
             collapsed ? 'left-full top-0 ml-2' : 'left-0 top-full mt-2'
           }`}
         >
-          <div className="flex items-center justify-between gap-2 border-b border-ldvh-border px-3 py-2.5">
+          <div className="border-b border-ldvh-border px-3 py-2.5">
             <div className="min-w-0">
               <p className="ldvh-caption-strong">{t('projectSwitcher.label')}</p>
               <p className="ldvh-meta mt-0.5">{t('projectSwitcher.scopeHint')}</p>
             </div>
-            <button
-              type="button"
-              onClick={() => { reloadProjects(); refreshData(); }}
-              disabled={loading}
-              aria-label={t('projectSwitcher.reload')}
-              title={t('projectSwitcher.reload')}
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-ldvh-text-secondary transition-colors hover:bg-ldvh-border/40 hover:text-ldvh-text-primary disabled:opacity-50"
-            >
-              <RefreshCcw size={13} className={loading ? 'animate-spin' : ''} />
-            </button>
           </div>
 
           <div className="max-h-80 overflow-y-auto p-2">

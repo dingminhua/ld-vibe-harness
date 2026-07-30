@@ -10,11 +10,8 @@ type ProjectScopeContextValue = {
   loading: boolean;
   error: string | null;
   selectProject: (projectId: string) => void;
+  /** Internal post-save synchronization; not exposed as a UI refresh action. */
   reloadProjects: () => void;
-  /** Bumps whenever workspace data should be re-read; pages/panels key off it to refetch. */
-  dataVersion: number;
-  /** Signal every data view (current page + open reading panel) to refetch from the server. */
-  refreshData: () => void;
 };
 
 const ProjectScopeContext = createContext<ProjectScopeContextValue | null>(null);
@@ -33,7 +30,6 @@ export function ProjectScopeProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
-  const [dataVersion, setDataVersion] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -76,7 +72,7 @@ export function ProjectScopeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const reloadProjects = useCallback(() => setReloadKey((current) => current + 1), []);
-  const refreshData = useCallback(() => setDataVersion((current) => current + 1), []);
+
   const selectedProject = useMemo(
     () => projects.find((project) => project.id === selectedProjectId) ?? null,
     [projects, selectedProjectId],
@@ -96,8 +92,6 @@ export function ProjectScopeProvider({ children }: { children: ReactNode }) {
       error,
       selectProject,
       reloadProjects,
-      dataVersion,
-      refreshData,
     }}>
       {children}
     </ProjectScopeContext.Provider>

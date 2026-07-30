@@ -7,14 +7,12 @@ function source(relativePath: string): string {
   return readFileSync(path.resolve(relativePath), 'utf8')
 }
 
-test('Dashboard reports a Git log failure without suppressing field-level facts', () => {
-  const dashboard = source('api/routes/dashboard.ts')
-  const page = source('src/pages/Dashboard.tsx')
+test('Changelog reports a Git log failure without suppressing field-level facts', () => {
+  const changelog = source('api/routes/changelog.ts')
 
-  assert.match(dashboard, /git_log_unavailable/)
-  assert.match(dashboard, /recentChangesIssue/)
-  assert.doesNotMatch(dashboard, /getGitLog\(10, locale\)\.catch\(\(\) => \[\]\)/)
-  assert.match(page, /data\.recentChangesIssue/)
+  // git 日志失败必须如实上抛，不得静默吞掉为成功空结果
+  assert.match(changelog, /ok: false, error/)
+  assert.doesNotMatch(changelog, /getGitLog\([\s\S]*?\)\.catch\(\(\) => \[\]\)/)
 })
 
 test('Git status and historical file diffs do not turn command failures into successful emptiness', () => {

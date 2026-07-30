@@ -193,6 +193,10 @@ Spark 的关系类型为 `routed-to`（承接分流）和 `related-to`（主题�
 
 Web 不创建 Spark。Spark 只可依 31 的受控创建行动形成，并由类型自有字段表达创建理由与当前内容。
 
+### 行动入口
+
+新建 Spark 使用 `fact-object-controlled-creation`（31）；既有 Spark 的内容更正、状态变化或承接处置使用 `fact-object-lifecycle-change`（32）。模板只帮助定位和组织行动，不替代本文的类型条件、Human Gate 或事实回读。
+
 ### 主动召回与消费时机
 
 Spark 在当前行动进入新主题、准备结束或交还、准备创建新事实对象，或当前输入命中已知关系或未处置议题时产生召回机会。F2 Spark 候选卡只直接投影 `object_id`、`title`、`status`、`priority` 和 `updated_at`，并按 05 的统一候选契约携带从命中的 `intent` 或完整 `summary` 形成的有界确定性摘录、原字段路径及其完整/截断标记；摘录不是事实字段、AI 摘要或第二权威。旧对象缺失 `intent` 时只能从实际存在的 `summary` 召回，不得为了候选卡补造创建原因。默认候选只包含与当前主题可能相关的 `open` Spark，`priority` 只影响这些候选的比较顺序，不能单独证明相关或要求当次处置。上下文压缩后只恢复当次已判断相关且仍未承接的 `open` Spark 卡片，不全量注入全部 `open` Spark；任何需要判断对象语义、边界或剩余问题的消费都必须按稳定引用展开 F3 完整对象。

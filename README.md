@@ -42,10 +42,10 @@ npm run dev
 
 AI 完成安装后应提示你执行以下操作：
 
-1. **开启 Hook** — 在 AI 环境设置中启用并信任已部署的 LDVH 插件 Hook（如 `SessionStart`）
-2. **验证实时触发** — 启动一次新的 cold startup 会话，确认 Hook 是否实时触发，而非来自历史上下文恢复（hydrate）
+1. **开启 环境 Hook** — 在 AI 环境设置中启用并信任已部署的 LDVH 插件 环境 Hook（如 `SessionStart`）
+2. **验证实时触发** — 启动一次新的 cold startup 会话，确认 环境 Hook 是否实时触发，而非来自历史上下文恢复（hydrate）
 
-仅完成文件安装和注册不等于 Hook 已生效。
+仅完成文件安装和注册不等于 环境 Hook 已生效。
 
 ### 诊断已有工作区
 
@@ -84,7 +84,7 @@ LDVH 通过以下方式解决：
 ## 项目结构
 
 ```
-├── code/               # 确定性执行层：Helper CLI、Hook、Git Gate
+├── code/               # 确定性执行层：Helper CLI、环境 Hook、Git Gate
 ├── web/                # 面向 Human 的 Web 交互层
 ├── ldvh-base/          # 事实对象载体（ADR、Pitfall、Spark、Study、WorkCase）
 ├── specs/              # 规则、事实类型定义和行动模板

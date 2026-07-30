@@ -58,6 +58,13 @@ test('global project selection uses the configured default when no valid Human s
   assert.match(context, /nextProjects\.some\(\(project\) => project\.id === current\)/);
 });
 
+test('project switcher changes scope without an application-level refresh path', () => {
+  const switcher = fs.readFileSync(path.resolve('src/components/ProjectSwitcher.tsx'), 'utf8');
+
+  assert.match(switcher, /selectProject\(project\.id\);/);
+  assert.doesNotMatch(switcher, /RefreshCcw|RefreshCw|reloadProjects|useManualFactRefresh|refreshFacts|setInterval|visibilitychange/);
+});
+
 test('workspace changes reads status and diffs for the globally selected project', () => {
   const changes = fs.readFileSync(path.resolve('src/pages/Changes.tsx'), 'utf8');
   const controller = fs.readFileSync(path.resolve('src/pages/changes/useWorkspaceChanges.ts'), 'utf8');
@@ -86,7 +93,7 @@ test('project files is a focused browser without nested Git views or eager Git r
   assert.doesNotMatch(controller, /fetchProjectGit(Status|Diff|Commits|CommitDetail|CommitFileDiff)/);
 });
 
-test('files and changes share a compact divided page toolbar', () => {
+test('files and changes share a compact divided page toolbar without application refresh controls', () => {
   const filesPage = fs.readFileSync(path.resolve('src/pages/ProjectFiles.tsx'), 'utf8');
   const changesPage = fs.readFileSync(path.resolve('src/pages/Changes.tsx'), 'utf8');
   const styles = fs.readFileSync(path.resolve('src/index.css'), 'utf8');
@@ -95,7 +102,7 @@ test('files and changes share a compact divided page toolbar', () => {
     assert.match(page, /ldvh-page-toolbar mb-4/);
     assert.match(page, /<PageHeader[^>]* compact \/>/);
     assert.match(page, /ldvh-page-toolbar-badge/);
-    assert.match(page, /ldvh-page-toolbar-action/);
+    assert.doesNotMatch(page, /ldvh-page-toolbar-action|RefreshCcw|changes\.reload|projectFiles\.reload/);
   }
   assert.match(styles, /\.ldvh-page-toolbar \{\s*@apply[^;]*border-b[^;]*pb-4;/s);
   assert.match(styles, /\.ldvh-page-toolbar-(?:badge|action) \{\s*@apply[^;]*h-8/s);

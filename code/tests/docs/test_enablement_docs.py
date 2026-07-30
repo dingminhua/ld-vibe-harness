@@ -53,7 +53,7 @@ def test_ai_enablement_guide_keeps_capability_and_evidence_boundaries() -> None:
     assert "肯定依据证明不存在" in template
     assert "fixture" in template
     assert "逐事件验证矩阵" in template
-    assert "AI 环境生命周期 Hook 的插件交付边界" in template
+    assert "AI 环境生命周期 环境 Hook 的插件交付边界" in template
     assert "用户级范围" in template
     assert "Human 受限操作请求" in template
     assert "不得从其它环境、历史记录或名称猜测开关、菜单、manifest、目录或权限模型" in template

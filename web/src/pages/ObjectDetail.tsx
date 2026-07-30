@@ -541,22 +541,24 @@ export function ObjectIdentityHeader({
             >
               {typeLabel}
             </span>
-            {status && statusColor && (
-              <span
-                className="ldvh-chip shrink-0 rounded px-2 py-0.5 font-mono"
-                style={{
-                  color: statusColor,
-                  backgroundColor: `${statusColor}18`,
-                }}
-              >
-                {statusLabel || status}
-              </span>
-            )}
             {extraBadges}
             <span className="ldvh-meta-muted min-w-0 truncate">{id}</span>
-            {!compact && showCopyAction && (
+            {!compact && ((status && statusColor) || showCopyAction) && (
               <div className="ml-auto flex shrink-0 items-center gap-2">
-                <CopyPathButton path={target} label={copyLabel} copiedLabel={copiedLabel} />
+                {status && statusColor && (
+                  <span
+                    className="ldvh-chip shrink-0 rounded px-2 py-0.5 font-mono"
+                    style={{
+                      color: statusColor,
+                      backgroundColor: `${statusColor}18`,
+                    }}
+                  >
+                    {statusLabel || status}
+                  </span>
+                )}
+                {showCopyAction && (
+                  <CopyPathButton path={target} label={copyLabel} copiedLabel={copiedLabel} />
+                )}
               </div>
             )}
           </div>
@@ -575,9 +577,22 @@ export function ObjectIdentityHeader({
             )}
           </div>
         </div>
-        {showCopyAction && compact && (
+        {(showCopyAction || (status && statusColor)) && compact && (
           <div className="flex shrink-0 flex-col items-end justify-center gap-2">
-            <CopyPathButton path={target} label={copyLabel} copiedLabel={copiedLabel} />
+            <div className="flex items-center gap-2">
+              {status && statusColor && (
+                <span
+                  className="ldvh-chip shrink-0 rounded px-2 py-0.5 font-mono"
+                  style={{
+                    color: statusColor,
+                    backgroundColor: `${statusColor}18`,
+                  }}
+                >
+                  {statusLabel || status}
+                </span>
+              )}
+              {showCopyAction && <CopyPathButton path={target} label={copyLabel} copiedLabel={copiedLabel} />}
+            </div>
             {actionAlignedTitleMeta.length > 0 && (
               <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-1 text-right">
                 {actionAlignedTitleMeta.map((entry) => (

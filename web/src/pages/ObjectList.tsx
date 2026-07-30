@@ -7,6 +7,7 @@ import WorkCaseProgressFilter from '@/components/WorkCaseProgressFilter';
 import WorkCaseProgressTrack from '@/components/WorkCaseProgressTrack';
 import ObjectPriorityFilter from '@/components/ObjectPriorityFilter';
 import PriorityIcon from '@/components/PriorityIcon';
+import CopyPathButton from '@/components/CopyPathButton';
 import SummaryText from '@/components/SummaryText';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
 import { WorkCaseCriteriaList, WORKCASE_CRITERIA_SURFACE_CLASS } from '@/components/WorkCaseCriteriaList';
@@ -129,20 +130,41 @@ function StatusReasonNote({ reason }: { reason: StatusReason }) {
   );
 }
 
-function WorkCasePlanConfirmationContent({
+/** 计划判断输入区：与认知中心收件箱"待批准计划"决定依据区同源消费（02 §7.5）。 */
+// eslint-disable-next-line react-refresh/only-export-components
+export function WorkCasePlanConfirmationContent({
   goal,
+  scope,
   successCriteria,
+  successCriterionDefinitions,
+  workItems,
+  creationReviews,
+  executionAuthorization,
+  executionApproval,
+  isBlocked = false,
+  blockingSummary,
   t,
 }: {
   goal?: string;
+  scope?: string;
   successCriteria?: string[];
+  successCriterionDefinitions?: unknown;
+  workItems?: unknown;
+  creationReviews?: unknown;
+  executionAuthorization?: unknown;
+  executionApproval?: unknown;
+  isBlocked?: boolean;
+  blockingSummary?: string;
   t: Translate;
 }) {
+  const { locale } = useI18n();
   const criteria = successCriteria?.filter((criterion) => criterion.trim()) ?? [];
 
   return (
     <div className="grid min-w-0 gap-2">
+      {isBlocked && <WorkCaseBlockingNotice blockingSummary={blockingSummary} t={t} />}
       <WorkCaseGoalSection goal={goal} t={t} />
+      <GateOneFieldSection fieldKey="scope" value={scope} valid={isNonEmptyString(scope)} locale={locale} />
       <section className={WORKCASE_CRITERIA_SURFACE_CLASS}>
         <div className="flex min-w-0 items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
@@ -155,20 +177,195 @@ function WorkCasePlanConfirmationContent({
             </span>
           )}
         </div>
-        {criteria.length > 0 ? (
-          <WorkCaseCriteriaList
-            className={WORKCASE_CARD_TITLE_BODY_GAP_CLASS}
-            items={criteria.map((criterion, index) => ({
-              key: `${index}-${criterion}`,
-              statement: criterion,
-            }))}
-          />
+        {isValidCriterionDefinitions(successCriterionDefinitions) ? (
+          <GateOneValue value={successCriterionDefinitions} locale={locale} depth={0} />
+        ) : successCriterionDefinitions !== undefined ? (
+          <div className="min-w-0">
+            <p className="ldvh-caption mt-1.5 text-red-400">{t('objectList.workcaseGateFieldMalformed')}</p>
+            <GateOneValue value={successCriterionDefinitions} locale={locale} depth={0} />
+          </div>
+        ) : criteria.length > 0 ? (
+          <div className="min-w-0">
+            <p className="ldvh-caption mt-1.5 text-red-400">{t('objectList.workcaseGateFieldMalformed')}</p>
+            <WorkCaseCriteriaList
+              className={WORKCASE_CARD_TITLE_BODY_GAP_CLASS}
+              items={criteria.map((criterion, index) => ({
+                key: `${index}-${criterion}`,
+                statement: criterion,
+              }))}
+            />
+          </div>
         ) : (
           <p className="ldvh-caption mt-1.5 text-red-400">{t('objectList.workcaseFieldMissing')}</p>
         )}
       </section>
+      <GateOneFieldSection
+        fieldKey="work_items"
+        value={workItems}
+        valid={isValidGateWorkItems(workItems)}
+        locale={locale}
+      />
+      <GateOneFieldSection
+        fieldKey="creation_reviews"
+        value={creationReviews}
+        valid={isValidGateReviews(creationReviews)}
+        locale={locale}
+      />
+      <GateOneFieldSection
+        fieldKey="execution_authorization"
+        value={executionAuthorization}
+        valid={isValidExecutionAuthorization(executionAuthorization)}
+        locale={locale}
+      />
+      {executionApproval !== undefined && (
+        <GateOneFieldSection
+          fieldKey="execution_approval"
+          value={executionApproval}
+          valid={isValidExecutionApproval(executionApproval)}
+          locale={locale}
+        />
+      )}
     </div>
   );
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === 'string' && Boolean(value.trim());
+}
+
+function isStringArray(value: unknown, allowEmpty = true): value is string[] {
+  return Array.isArray(value)
+    && (allowEmpty || value.length > 0)
+    && value.every(isNonEmptyString);
+}
+
+function isValidGateWorkItems(value: unknown): boolean {
+  return Array.isArray(value) && value.length > 0 && value.every((candidate) => {
+    if (!isRecord(candidate)) return false;
+    return isNonEmptyString(candidate.item_id)
+      && isNonEmptyString(candidate.goal)
+      && isNonEmptyString(candidate.expected_result)
+      && isNonEmptyString(candidate.status)
+      && (candidate.depends_on === undefined || isStringArray(candidate.depends_on))
+      && (candidate.approach_summary === undefined || isNonEmptyString(candidate.approach_summary))
+      && (candidate.template_keys === undefined || isStringArray(candidate.template_keys));
+  });
+}
+
+function isValidCriterionDefinitions(value: unknown): value is Array<Record<string, unknown>> {
+  return Array.isArray(value) && value.length > 0 && value.every((candidate) => (
+    isRecord(candidate)
+    && isNonEmptyString(candidate.criterion_id)
+    && isNonEmptyString(candidate.statement)
+  ));
+}
+
+function isValidGateReviews(value: unknown): boolean {
+  return Array.isArray(value) && value.length > 0 && value.every((candidate) => {
+    if (!isRecord(candidate)) return false;
+    return isNonEmptyString(candidate.reviewer)
+      && isNonEmptyString(candidate.reviewed_at)
+      && typeof candidate.subject_version === 'number'
+      && isNonEmptyString(candidate.scope)
+      && isNonEmptyString(candidate.conclusion)
+      && (candidate.feedback === undefined || isStringArray(candidate.feedback))
+      && (candidate.controller_resolution === undefined || isNonEmptyString(candidate.controller_resolution));
+  });
+}
+
+function isValidExecutionAuthorization(value: unknown): boolean {
+  if (!isRecord(value)) return false;
+  const actions = value.authorized_actions;
+  return Array.isArray(actions) && actions.length > 0 && actions.every((candidate) => {
+    if (!isRecord(candidate)) return false;
+    return ['action_id', 'summary', 'target_scope', 'effect_scope', 'risk_summary', 'rollback_summary']
+      .every((key) => isNonEmptyString(candidate[key]))
+      && isStringArray(candidate.rule_refs, false);
+  })
+    && isNonEmptyString(value.action_ceiling)
+    && isStringArray(value.prohibited_actions, false)
+    && isNonEmptyString(value.allowed_adjustments)
+    && isNonEmptyString(value.verification_and_rollback)
+    && isNonEmptyString(value.out_of_bounds_handling)
+    && (value.human_prerequisites === undefined || isStringArray(value.human_prerequisites, false));
+}
+
+function isValidExecutionApproval(value: unknown): boolean {
+  return isRecord(value)
+    && typeof value.subject_version === 'number'
+    && isNonEmptyString(value.approved_at)
+    && isNonEmptyString(value.summary)
+    && isNonEmptyString(value.baseline_fingerprint)
+    && isStringArray(value.source_refs, false);
+}
+
+function GateOneFieldSection({
+  fieldKey,
+  value,
+  valid,
+  locale,
+}: {
+  fieldKey: string;
+  value: unknown;
+  valid: boolean;
+  locale: string;
+}) {
+  const { t } = useI18n();
+  const missing = value === undefined || value === null || value === '';
+  return (
+    <section className={`min-w-0 rounded-lg border px-3 py-2.5 ${valid ? 'border-slate-300/55 bg-slate-500/[0.025] dark:border-slate-600/55' : 'border-red-400/30 bg-red-500/[0.035]'}`}>
+      <div className="flex min-w-0 items-center justify-between gap-2">
+        <h3 className={`ldvh-card-decision-title min-w-0 ${valid ? 'text-slate-700/85 dark:text-slate-200/85' : 'text-red-500 dark:text-red-300'}`}>
+          {getFieldLabel(fieldKey, locale)}
+        </h3>
+        {!valid && (
+          <span className="ldvh-meta shrink-0 text-red-400">
+            {missing ? t('objectList.workcaseFieldMissing') : t('objectList.workcaseGateFieldMalformed')}
+          </span>
+        )}
+      </div>
+      {!missing && <GateOneValue value={value} locale={locale} depth={0} />}
+    </section>
+  );
+}
+
+function GateOneValue({ value, locale, depth }: { value: unknown; locale: string; depth: number }) {
+  if (typeof value === 'string') {
+    return <SummaryText value={value} collapseThreshold={Number.MAX_SAFE_INTEGER} className="ldvh-card-decision-body mt-1.5 !text-ldvh-text-secondary" />;
+  }
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return <p className="ldvh-card-decision-body mt-1.5 font-mono text-ldvh-text-secondary">{String(value)}</p>;
+  }
+  if (Array.isArray(value)) {
+    if (value.length === 0) return <p className="ldvh-caption mt-1.5 text-red-400">[]</p>;
+    return (
+      <ul className="mt-1.5 grid min-w-0 gap-1.5">
+        {value.map((entry, index) => (
+          <li key={index} className={`min-w-0 ${isRecord(entry) ? 'rounded-md border border-ldvh-border/60 px-2.5 py-2' : 'flex items-start gap-2'}`}>
+            {!isRecord(entry) && <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-ldvh-text-secondary/55" aria-hidden="true" />}
+            <GateOneValue value={entry} locale={locale} depth={depth + 1} />
+          </li>
+        ))}
+      </ul>
+    );
+  }
+  if (isRecord(value)) {
+    return (
+      <dl className={`mt-1.5 grid min-w-0 gap-2 ${depth === 0 ? 'sm:grid-cols-2' : ''}`}>
+        {Object.entries(value).map(([key, entry]) => (
+          <div key={key} className="min-w-0">
+            <dt className="ldvh-meta break-words text-ldvh-text-secondary/70">{getFieldLabel(key, locale)}</dt>
+            <dd className="min-w-0"><GateOneValue value={entry} locale={locale} depth={depth + 1} /></dd>
+          </div>
+        ))}
+      </dl>
+    );
+  }
+  return <p className="ldvh-caption mt-1.5 break-all font-mono text-red-400">{String(value)}</p>;
 }
 
 function WorkCaseGoalSection({
@@ -205,7 +402,33 @@ function WorkCaseGoalSection({
   );
 }
 
-function WorkCaseBlockingNotice({
+/** waiting_on 提示块：与认知中心收件箱"已阻塞待处置"决定依据区同源消费（02 §7.5）。 */
+// eslint-disable-next-line react-refresh/only-export-components
+export function WorkCaseWaitingOnNotice({ waitingOn }: { waitingOn?: string }) {
+  const { locale } = useI18n();
+  if (!waitingOn?.trim()) return null;
+  return (
+    <div className="min-w-0 rounded-md border border-amber-400/30 border-l-2 border-l-amber-400 bg-amber-500/[0.045] px-2.5 py-2">
+      <div className="flex min-w-0 items-center gap-2">
+        <Clock3 size={14} className="shrink-0 text-amber-500 dark:text-amber-400" aria-hidden="true" />
+        <div className="ldvh-card-decision-title min-w-0 text-amber-700/80 dark:text-amber-200/80">
+          {getFieldLabel('waiting_on', locale)}
+        </div>
+      </div>
+      <div className={`${WORKCASE_CARD_TITLE_BODY_GAP_CLASS} break-words`}>
+        <SummaryText
+          value={waitingOn}
+          collapseThreshold={Number.MAX_SAFE_INTEGER}
+          className="ldvh-card-decision-body [&_p]:my-0 text-amber-950/70 dark:text-amber-100/75"
+        />
+      </div>
+    </div>
+  );
+}
+
+/** 阻塞说明提示块：与认知中心收件箱"已阻塞待处置"决定依据区同源消费（02 §7.5）。 */
+// eslint-disable-next-line react-refresh/only-export-components
+export function WorkCaseBlockingNotice({
   blockingSummary,
   t,
 }: {
@@ -289,6 +512,8 @@ function WorkCaseProgressingContent({
 
   return (
     <div className="grid min-w-0 gap-2">
+      {isBlocked && <WorkCaseBlockingNotice blockingSummary={blockingSummary} t={t} />}
+      {isBlocked && <WorkCaseWaitingOnNotice waitingOn={waitingOn} />}
       <WorkCaseGoalSection goal={goal} t={t} emphasis="supporting" />
       <section className="min-w-0 rounded-md border border-sky-400/25 border-l-2 border-l-sky-400 bg-sky-500/[0.035] px-3.5 py-3">
         <div className="flex min-w-0 items-center gap-2">
@@ -414,29 +639,12 @@ function WorkCaseProgressingContent({
           </div>
         )}
 
-        {waitingOn?.trim() && (
-          <div className="mt-2.5 min-w-0 rounded-md border border-amber-400/30 border-l-2 border-l-amber-400 bg-amber-500/[0.045] px-2.5 py-2">
-            <div className="flex min-w-0 items-center gap-2">
-              <Clock3 size={14} className="shrink-0 text-amber-500 dark:text-amber-400" aria-hidden="true" />
-              <div className="ldvh-card-decision-title min-w-0 text-amber-700/80 dark:text-amber-200/80">
-                {getFieldLabel('waiting_on', locale)}
-              </div>
-            </div>
-            <div className={`${WORKCASE_CARD_TITLE_BODY_GAP_CLASS} break-words`}>
-              <SummaryText
-                value={waitingOn}
-                collapseThreshold={Number.MAX_SAFE_INTEGER}
-                className="ldvh-card-decision-body [&_p]:my-0 text-amber-950/70 dark:text-amber-100/75"
-              />
-            </div>
+        {!isBlocked && waitingOn?.trim() && (
+          <div className="mt-2.5">
+            <WorkCaseWaitingOnNotice waitingOn={waitingOn} />
           </div>
         )}
 
-        {isBlocked && (
-          <div className="mt-2.5">
-            <WorkCaseBlockingNotice blockingSummary={blockingSummary} t={t} />
-          </div>
-        )}
       </section>
     </div>
   );
@@ -573,7 +781,9 @@ function WorkCaseSparkSuggestions({ suggestions }: { suggestions: WorkCaseSparkS
   );
 }
 
-function WorkCaseClosureConfirmationContent({
+/** 关闭判断输入区：与认知中心收件箱"待确认关闭"决定依据区同源消费（02 §7.5）。 */
+// eslint-disable-next-line react-refresh/only-export-components
+export function WorkCaseClosureConfirmationContent({
   goal,
   closureProposal,
 }: {
@@ -807,6 +1017,12 @@ function ObjectCardFrame({
         <span className="ldvh-meta-muted min-w-0 truncate">{obj.id}</span>
         <div className="flex shrink-0 items-center gap-2">
           <StatusBadge status={presentedStatus} statusLabel={getObjectStatusLocale(obj.type, presentedStatus, locale)} objectType={obj.type} />
+          {/* List Cards only have a stable object identity, not an exact-read source path. */}
+          <CopyPathButton
+            path={obj.id}
+            label={t('common.copyObjectId')}
+            copiedLabel={t('common.copiedObjectId')}
+          />
         </div>
       </div>
       <div
@@ -818,7 +1034,7 @@ function ObjectCardFrame({
           <button
             type="button"
             onClick={() => onOpen(obj.id)}
-            className="min-h-11 text-left transition-colors hover:text-ldvh-accent focus-visible:outline-none focus-visible:text-ldvh-accent focus-visible:underline sm:min-h-0"
+            className="text-left transition-colors hover:text-ldvh-accent focus-visible:outline-none focus-visible:text-ldvh-accent focus-visible:underline"
           >
             {getLocalizedObjectTitle(obj, locale)}
           </button>
@@ -1072,10 +1288,19 @@ export default function ObjectList() {
             displayStatus={progressGroup}
           >
             <>
-              <WorkCasePlanConfirmationContent goal={obj.goal} successCriteria={obj.successCriteria} t={t} />
-              {obj.status === 'blocked' && (
-                <WorkCaseBlockingNotice blockingSummary={obj.blocking_summary} t={t} />
-              )}
+              <WorkCasePlanConfirmationContent
+                goal={obj.goal}
+                scope={obj.scope}
+                successCriteria={obj.successCriteria}
+                successCriterionDefinitions={obj.success_criterion_definitions}
+                workItems={obj.work_items}
+                creationReviews={obj.creation_reviews}
+                executionAuthorization={obj.execution_authorization}
+                executionApproval={obj.execution_approval}
+                isBlocked={obj.status === 'blocked'}
+                blockingSummary={obj.blocking_summary}
+                t={t}
+              />
             </>
           </ObjectCardFrame>
         );

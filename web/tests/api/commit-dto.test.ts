@@ -195,62 +195,6 @@ test('preserves the shared commit DTO across current API consumers', async () =>
   assert.equal(changelog.length, 1)
   assertCommitDto(changelog[0])
 
-  const dashboard = await getJson('/api/dashboard?locale=zh') as {
-    actionItems: Array<Record<string, unknown>>
-    recentChanges: Array<Record<string, unknown>>
-    recentItems: Array<Record<string, unknown>>
-    stats: Array<{
-      type: string
-      total: number
-      byStatus?: Record<string, number>
-      byProgressGroup?: Record<string, number>
-      coverageStatus?: string
-    }>
-  }
-  assert.equal(dashboard.recentChanges.length, 1)
-  assertCommitDto(dashboard.recentChanges[0])
-  assert.equal(dashboard.actionItems[0].id, 'spark-0001')
-  assert.equal('object_id' in dashboard.actionItems[0], false)
-  assert.equal('path' in dashboard.actionItems[0], false)
-  assert.equal('canonical_path' in dashboard.actionItems[0], false)
-  assert.equal('carrier' in dashboard.actionItems[0], false)
-  assert.equal('updated' in dashboard.actionItems[0], false)
-  assert.doesNotMatch(String(dashboard.actionItems[0].relativeTime), /NaN/)
-  assert.equal(dashboard.recentItems[0].id, 'spark-0001')
-  const dashboardWorkcase = dashboard.actionItems.find((item) => item.id === 'workcase-0001')
-  assert.ok(dashboardWorkcase)
-  assert.equal(dashboardWorkcase.progress_group, 'progressing')
-  assert.equal('status' in dashboardWorkcase, false)
-  assert.equal('source_status' in dashboardWorkcase, false)
-  for (const item of [...dashboard.actionItems, ...dashboard.recentItems]) {
-    const unexpected = Object.keys(item).filter((key) => ![
-      'id', 'type', 'title', 'title_en', 'title_zh', 'status', 'progress_group', 'relativeTime', 'typeColor',
-    ].includes(key))
-    assert.deepEqual(unexpected, [], `dashboard item leaked fields: ${unexpected.join(', ')}`)
-    assert.equal('source_status' in item, false)
-    if (item.type === 'workcase') {
-      assert.equal(typeof item.progress_group, 'string')
-      assert.equal('status' in item, false)
-    } else {
-      assert.equal(typeof item.status, 'string')
-      assert.equal('progress_group' in item, false)
-    }
-  }
-  const workcaseStats = dashboard.stats.find((stat) => stat.type === 'workcase')
-  assert.ok(workcaseStats)
-  assert.deepEqual(workcaseStats.byProgressGroup, { progressing: 1, closed: 1 })
-  assert.equal('byStatus' in workcaseStats, false)
-  const sparkStats = dashboard.stats.find((stat) => stat.type === 'spark')
-  assert.ok(sparkStats)
-  assert.deepEqual(sparkStats.byStatus, { open: 2 })
-  assert.equal('byProgressGroup' in sparkStats, false)
-  const workcaseProgressGroups = new Set(['plan_confirmation', 'progressing', 'closure_confirmation', 'closed'])
-  for (const item of [...dashboard.actionItems, ...dashboard.recentItems]) {
-    if (item.type === 'workcase') {
-      assert.equal(workcaseProgressGroups.has(String(item.progress_group)), true)
-    }
-  }
-
   const workcases = await getJson('/api/objects/workcase') as {
     data: {
       items: Array<Record<string, unknown>>

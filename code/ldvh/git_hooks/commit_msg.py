@@ -47,7 +47,7 @@ class _GitConfigEntry:
 
 
 class CommitMsgHookError(ValueError):
-    """A requested install or removal cannot safely touch the target Hook."""
+    """A requested install or removal cannot safely touch the target Git Hook."""
 
 
 def _status(
@@ -205,7 +205,7 @@ def _effective_hooks_directory(worktree: Path, *, require_within_worktree: bool)
     if candidate != directory:
         return None, "effective hooks directory must not traverse a symbolic link"
     if require_within_worktree and not _within(directory, worktree):
-        return None, "effective hooks directory is outside this worktree; no shared or external Hook is changed"
+        return None, "effective hooks directory is outside this worktree; no shared or external Git Hook is changed"
     if directory.exists() and not directory.is_dir():
         return None, "effective hooks directory exists but is not a directory"
     return directory, None
@@ -213,7 +213,7 @@ def _effective_hooks_directory(worktree: Path, *, require_within_worktree: bool)
 
 def _hook_directory(worktree: Path) -> tuple[Path | None, str | None]:
     if _has_runtime_config_injection():
-        return None, "runtime Git config injection is not accepted for Hook installation"
+        return None, "runtime Git config injection is not accepted for Git Hook installation"
     configured, failure = _configured_hooks_path(worktree)
     if failure is not None:
         return None, failure
@@ -222,19 +222,19 @@ def _hook_directory(worktree: Path) -> tuple[Path | None, str | None]:
 
 def _existing_hook_state(path: Path) -> tuple[HookState, str]:
     if path.is_symlink():
-        return "conflict", "existing commit-msg Hook is a symbolic link and is not managed by LDVH"
+        return "conflict", "existing Git commit-msg Hook is a symbolic link and is not managed by LDVH"
     try:
         info = path.stat()
     except FileNotFoundError:
-        return "absent", "no commit-msg Hook is installed at the effective Git Hook path"
+        return "absent", "no Git commit-msg Hook is installed at the effective Git Hook path"
     except OSError as error:
-        return "unavailable", f"existing commit-msg Hook could not be inspected: {error}"
+        return "unavailable", f"existing Git commit-msg Hook could not be inspected: {error}"
     if not stat.S_ISREG(info.st_mode):
-        return "conflict", "existing commit-msg Hook is not a regular file"
+        return "conflict", "existing Git commit-msg Hook is not a regular file"
     try:
         contents = path.read_bytes()
     except OSError as error:
-        return "conflict", f"existing commit-msg Hook cannot be identified safely: {error}"
+        return "conflict", f"existing Git commit-msg Hook cannot be identified safely: {error}"
     prefix = b"#!/bin/sh\n"
     marker, delimiter, body = contents.removeprefix(prefix).partition(b"\n")
     expected_prefix = _MANAGED_MARKER_PREFIX.encode("ascii")
@@ -242,13 +242,13 @@ def _existing_hook_state(path: Path) -> tuple[HookState, str]:
         observed = marker.removeprefix(expected_prefix)
         expected = hashlib.sha256(body).hexdigest().encode("ascii")
         if hmac.compare_digest(observed, expected):
-            return "managed", "LDVH owns the current commit-msg Hook"
-        return "conflict", "existing commit-msg Hook carries an invalid LDVH ownership digest"
-    return "conflict", "an existing commit-msg Hook is not owned by LDVH"
+            return "managed", "LDVH owns the current Git commit-msg Hook"
+        return "conflict", "existing Git commit-msg Hook carries an invalid LDVH ownership digest"
+    return "conflict", "an existing Git commit-msg Hook is not owned by LDVH"
 
 
 def inspect_commit_msg_hook(*, worktree: str) -> CommitMsgHookStatus:
-    """Read one effective Hook location without changing Git or the filesystem."""
+    """Read one effective Git Hook location without changing Git or the filesystem."""
 
     current_worktree, failure = _worktree(worktree)
     if failure is not None or current_worktree is None:
@@ -303,11 +303,11 @@ def render_commit_msg_hook(*, commit_msg_runner: Path, workspace_root: Path) -> 
         (
             "set -eu",
             'if [ "$#" -ne 1 ]; then',
-            '  printf "%s\\n" "LDVH commit-msg Hook expected one message-file argument" >&2',
+            '  printf "%s\\n" "LDVH Git commit-msg Hook expected one message-file argument" >&2',
             "  exit 1",
             "fi",
             "worktree=$(git rev-parse --show-toplevel) || {",
-            '  printf "%s\\n" "LDVH commit-msg Hook could not determine the current worktree" >&2',
+            '  printf "%s\\n" "LDVH Git commit-msg Hook could not determine the current worktree" >&2',
             "  exit 1",
             "}",
             'case "$1" in',
@@ -341,7 +341,7 @@ def _atomic_write(path: Path, content: str) -> None:
         temporary.chmod(0o755)
         state, detail = _existing_hook_state(path)
         if state not in {"absent", "managed"}:
-            raise CommitMsgHookError(f"commit-msg Hook changed before installation: {detail}")
+            raise CommitMsgHookError(f"Git commit-msg Hook changed before installation: {detail}")
         os.replace(temporary, path)
     except Exception:
         try:
@@ -353,11 +353,11 @@ def _atomic_write(path: Path, content: str) -> None:
 
 def _rendered_hook_matches(path: Path, rendered: str) -> tuple[bool | None, str | None]:
     if path.is_symlink():
-        return None, "existing commit-msg Hook became a symbolic link"
+        return None, "existing Git commit-msg Hook became a symbolic link"
     try:
         contents = path.read_bytes()
     except OSError as error:
-        return None, f"existing commit-msg Hook could not be read: {error}"
+        return None, f"existing Git commit-msg Hook could not be read: {error}"
     return hmac.compare_digest(contents, rendered.encode("utf-8")), None
 
 
@@ -366,11 +366,11 @@ def _remove_rendered_hook(path: Path, rendered: str) -> str | None:
     if failure is not None:
         return failure
     if not matches:
-        return "prepared commit-msg Hook changed before cleanup"
+        return "prepared Git commit-msg Hook changed before cleanup"
     try:
         path.unlink()
     except OSError as error:
-        return f"prepared commit-msg Hook could not be removed: {error}"
+        return f"prepared Git commit-msg Hook could not be removed: {error}"
     return None
 
 
@@ -398,7 +398,7 @@ def _governance_failure(worktree: Path, workspace: Path) -> str | None:
 
 
 def _active_hook_assets(directory: Path, *, ignore: frozenset[str] = frozenset()) -> tuple[str, ...] | None:
-    """Find active Hook assets that a new hooksPath would hide or begin running."""
+    """Find active Git Hook assets that a new hooksPath would hide or begin running."""
 
     if not directory.exists():
         return ()
@@ -422,22 +422,22 @@ def _bootstrap_directory(worktree: Path) -> tuple[Path | None, str | None]:
     try:
         directory = candidate.resolve(strict=False)
     except (OSError, RuntimeError) as error:
-        return None, f"worktree-local bootstrap Hook directory could not be resolved: {error}"
+        return None, f"worktree-local bootstrap Git Hook directory could not be resolved: {error}"
     if candidate != directory or not _within(directory, worktree):
         return (
             None,
-            "worktree-local bootstrap Hook directory must remain inside the actual worktree without symbolic links",
+            "worktree-local bootstrap Git Hook directory must remain inside the actual worktree without symbolic links",
         )
     if directory.exists() and not directory.is_dir():
-        return None, "worktree-local bootstrap Hook directory exists but is not a directory"
+        return None, "worktree-local bootstrap Git Hook directory exists but is not a directory"
     state, detail = _existing_hook_state(directory / "commit-msg")
     if state not in {"absent", "managed"}:
-        return None, f"worktree-local bootstrap Hook directory cannot be activated safely: {detail}"
+        return None, f"worktree-local bootstrap Git Hook directory cannot be activated safely: {detail}"
     active = _active_hook_assets(directory, ignore=frozenset({"commit-msg"}))
     if active is None:
-        return None, "worktree-local bootstrap Hook directory cannot be inspected safely"
+        return None, "worktree-local bootstrap Git Hook directory cannot be inspected safely"
     if active:
-        return None, "worktree-local bootstrap Hook directory contains active Hook assets: " + ", ".join(active)
+        return None, "worktree-local bootstrap Git Hook directory contains active Git Hook assets: " + ", ".join(active)
     return directory, None
 
 
@@ -453,7 +453,7 @@ def _configure_worktree_hooks_path(worktree: Path) -> str | None:
     if failure is not None:
         return failure
     if not enabled:
-        return "extensions.worktreeConfig must already be true before a worktree-local Hook path can be configured"
+        return "extensions.worktreeConfig must already be true before a worktree-local Git Hook path can be configured"
     _, failure = _run_git(worktree, "config", "--worktree", "core.hooksPath", _BOOTSTRAP_HOOKS_PATH)
     return failure
 
@@ -470,14 +470,14 @@ def _rollback_bootstrap_attempt(
     failures: list[str] = []
     configured, failure = _configured_hooks_path(worktree)
     if failure is not None:
-        failures.append(f"worktree Hook configuration could not be re-read: {failure}")
+        failures.append(f"worktree Git Hook configuration could not be re-read: {failure}")
     elif configured is not None:
         if configured.value != _BOOTSTRAP_HOOKS_PATH:
-            failures.append("worktree Hook configuration changed before bootstrap cleanup")
+            failures.append("worktree Git Hook configuration changed before bootstrap cleanup")
         else:
             _, failure = _run_git(worktree, "config", "--worktree", "--unset-all", "core.hooksPath")
             if failure is not None:
-                failures.append(f"worktree Hook configuration could not be removed: {failure}")
+                failures.append(f"worktree Git Hook configuration could not be removed: {failure}")
     if remove_prepared_hook:
         failure = _remove_rendered_hook(hook_path, rendered)
         if failure is not None:
@@ -524,7 +524,7 @@ def install_commit_msg_hook(
             if failure is not None:
                 return CommitMsgHookStatus(
                     "unavailable",
-                    f"LDVH commit-msg Hook binding could not be verified: {failure}",
+                    f"LDVH Git commit-msg Hook binding could not be verified: {failure}",
                     status.worktree_root,
                     status.hook_directory,
                     status.hook_path,
@@ -533,7 +533,7 @@ def install_commit_msg_hook(
                 return status
             return CommitMsgHookStatus(
                 "conflict",
-                "existing LDVH commit-msg Hook has a different runner or workspace binding and will not be replaced",
+                "existing LDVH Git commit-msg Hook has a different runner or workspace binding and will not be replaced",
                 status.worktree_root,
                 status.hook_directory,
                 status.hook_path,
@@ -545,7 +545,7 @@ def install_commit_msg_hook(
     except (CommitMsgHookError, OSError) as error:
         return CommitMsgHookStatus(
             "unavailable",
-            f"LDVH commit-msg Hook was not installed: {error}",
+            f"LDVH Git commit-msg Hook was not installed: {error}",
             status.worktree_root,
             status.hook_directory,
             status.hook_path,
@@ -560,7 +560,7 @@ def bootstrap_commit_msg_hook(
     commit_msg_runner: str,
     human_gate_confirmed: bool,
 ) -> CommitMsgHookStatus:
-    """Create one safe worktree-local Hook path, then install the shared thin adapter."""
+    """Create one safe worktree-local Git Hook path, then install the shared thin adapter."""
 
     status = inspect_commit_msg_hook(worktree=worktree)
     if not human_gate_confirmed:
@@ -585,7 +585,7 @@ def bootstrap_commit_msg_hook(
     if _has_runtime_config_injection():
         return _status(
             "conflict",
-            "runtime Git config injection is not accepted for Hook installation",
+            "runtime Git config injection is not accepted for Git Hook installation",
             worktree=current_worktree,
         )
     configured, failure = _effective_git_config(current_worktree, "core.hooksPath")
@@ -605,18 +605,18 @@ def bootstrap_commit_msg_hook(
     if active is None:
         return _status(
             "conflict",
-            "default hooks directory cannot be inspected safely before configuring a worktree-local Hook path",
+            "default hooks directory cannot be inspected safely before configuring a worktree-local Git Hook path",
             worktree=current_worktree,
         )
     if active:
         return _status(
             "conflict",
-            "default hooks directory contains active Hook assets and would be shadowed: " + ", ".join(active),
+            "default hooks directory contains active Git Hook assets and would be shadowed: " + ", ".join(active),
             worktree=current_worktree,
         )
     directory, failure = _bootstrap_directory(current_worktree)
     if failure is not None or directory is None:
-        return _status("conflict", failure or "worktree-local Hook directory is unavailable", worktree=current_worktree)
+        return _status("conflict", failure or "worktree-local Git Hook directory is unavailable", worktree=current_worktree)
     hook_path = directory / "commit-msg"
     rendered = render_commit_msg_hook(commit_msg_runner=runner, workspace_root=workspace)
     state, detail = _existing_hook_state(hook_path)
@@ -626,14 +626,14 @@ def bootstrap_commit_msg_hook(
         if failure is not None:
             return _status(
                 "unavailable",
-                f"worktree-local bootstrap Hook binding could not be verified: {failure}",
+                f"worktree-local bootstrap Git Hook binding could not be verified: {failure}",
                 worktree=current_worktree,
                 hook_directory=directory,
             )
         if not matches:
             return _status(
                 "conflict",
-                "worktree-local bootstrap Hook has a different runner or workspace binding and will not be activated",
+                "worktree-local bootstrap Git Hook has a different runner or workspace binding and will not be activated",
                 worktree=current_worktree,
                 hook_directory=directory,
             )
@@ -643,7 +643,7 @@ def bootstrap_commit_msg_hook(
         except (CommitMsgHookError, OSError) as error:
             return _status(
                 "unavailable",
-                f"worktree-local bootstrap Hook was not prepared: {error}",
+                f"worktree-local bootstrap Git Hook was not prepared: {error}",
                 worktree=current_worktree,
                 hook_directory=directory,
             )
@@ -651,7 +651,7 @@ def bootstrap_commit_msg_hook(
     else:
         return _status(
             state,
-            f"worktree-local bootstrap Hook cannot be activated safely: {detail}",
+            f"worktree-local bootstrap Git Hook cannot be activated safely: {detail}",
             worktree=current_worktree,
             hook_directory=directory,
         )
@@ -663,7 +663,7 @@ def bootstrap_commit_msg_hook(
             rendered=rendered,
             remove_prepared_hook=prepared_by_attempt,
         )
-        detail = f"worktree-local Hook configuration was not activated: {failure}"
+        detail = f"worktree-local Git Hook configuration was not activated: {failure}"
         if cleanup is not None:
             detail += f"; cleanup incomplete: {cleanup}"
         return _status("unavailable", detail, worktree=current_worktree, hook_directory=directory)
@@ -693,7 +693,7 @@ def bootstrap_commit_msg_hook(
         rendered=rendered,
         remove_prepared_hook=prepared_by_attempt,
     )
-    detail = f"worktree-local Hook configuration did not verify after activation: {installed.detail}"
+    detail = f"worktree-local Git Hook configuration did not verify after activation: {installed.detail}"
     if cleanup is not None:
         detail += f"; cleanup incomplete: {cleanup}"
     return _status("unavailable", detail, worktree=current_worktree, hook_directory=directory)
@@ -739,7 +739,7 @@ def uninstall_commit_msg_hook(
         if failure is not None:
             return CommitMsgHookStatus(
                 "unavailable",
-                f"LDVH commit-msg Hook binding could not be verified: {failure}",
+                f"LDVH Git commit-msg Hook binding could not be verified: {failure}",
                 status.worktree_root,
                 status.hook_directory,
                 status.hook_path,
@@ -747,7 +747,7 @@ def uninstall_commit_msg_hook(
         if not matches:
             return CommitMsgHookStatus(
                 "conflict",
-                "existing LDVH commit-msg Hook has a different runner or workspace binding and will not be removed",
+                "existing LDVH Git commit-msg Hook has a different runner or workspace binding and will not be removed",
                 status.worktree_root,
                 status.hook_directory,
                 status.hook_path,
@@ -756,7 +756,7 @@ def uninstall_commit_msg_hook(
     except (CommitMsgHookError, OSError) as error:
         return CommitMsgHookStatus(
             "unavailable",
-            f"LDVH commit-msg Hook was not removed: {error}",
+            f"LDVH Git commit-msg Hook was not removed: {error}",
             status.worktree_root,
             status.hook_directory,
             status.hook_path,
@@ -768,7 +768,7 @@ def uninstall_commit_msg_hook(
     if failure is not None:
         return CommitMsgHookStatus(
             "unavailable",
-            f"LDVH commit-msg Hook was removed, but retained Hook configuration could not be observed: {failure}",
+            f"LDVH Git commit-msg Hook was removed, but retained Git Hook configuration could not be observed: {failure}",
             removed.worktree_root,
             removed.hook_directory,
             removed.hook_path,
@@ -787,22 +787,22 @@ def uninstall_commit_msg_hook(
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Inspect or manage one LDVH native Git commit-msg Hook")
     commands = parser.add_subparsers(dest="command", required=True)
-    status = commands.add_parser("status", help="read the effective commit-msg Hook without changing it")
+    status = commands.add_parser("status", help="read the effective Git commit-msg Hook without changing it")
     status.add_argument("--worktree", required=True)
-    install = commands.add_parser("install", help="install an LDVH-owned commit-msg Hook")
+    install = commands.add_parser("install", help="install an LDVH-owned Git commit-msg Hook")
     install.add_argument("--worktree", required=True)
     install.add_argument("--workspace-root", required=True)
     install.add_argument("--commit-msg-runner", required=True)
     install.add_argument("--confirm-human-gate", action="store_true")
     bootstrap = commands.add_parser(
         "bootstrap",
-        help="configure one safe worktree-local Hook path, then install an LDVH-owned commit-msg Hook",
+        help="configure one safe worktree-local Git Hook path, then install an LDVH-owned Git commit-msg Hook",
     )
     bootstrap.add_argument("--worktree", required=True)
     bootstrap.add_argument("--workspace-root", required=True)
     bootstrap.add_argument("--commit-msg-runner", required=True)
     bootstrap.add_argument("--confirm-human-gate", action="store_true")
-    uninstall = commands.add_parser("uninstall", help="remove only the exact LDVH-owned commit-msg Hook binding")
+    uninstall = commands.add_parser("uninstall", help="remove only the exact LDVH-owned Git commit-msg Hook binding")
     uninstall.add_argument("--worktree", required=True)
     uninstall.add_argument("--workspace-root", required=True)
     uninstall.add_argument("--commit-msg-runner", required=True)
@@ -811,7 +811,7 @@ def _parser() -> argparse.ArgumentParser:
 
 
 def _write_status(status: CommitMsgHookStatus) -> None:
-    sys.stdout.write(f"LDVH commit-msg Hook {status.state}: {status.detail}\n")
+    sys.stdout.write(f"LDVH Git commit-msg Hook {status.state}: {status.detail}\n")
     if status.worktree_root is not None:
         sys.stdout.write(f"worktree: {status.worktree_root}\n")
     if status.hook_path is not None:

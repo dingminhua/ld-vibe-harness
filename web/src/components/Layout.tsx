@@ -16,7 +16,7 @@ interface LayoutProps {
 /** Inner layout that consumes panel context */
 function LayoutInner({ children }: LayoutProps) {
   const { isOpen: panelOpen, closePanel, openPanel } = usePanel();
-  const { dataVersion, selectedProjectId } = useProjectScope();
+  const { selectedProjectId } = useProjectScope();
   const location = useLocation();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     try {
@@ -96,12 +96,12 @@ function LayoutInner({ children }: LayoutProps) {
 
       {/* 中间主内容 */}
       <main className="flex-1 overflow-y-auto">
-        {/* 项目切换(selectedProjectId)或手动刷新(dataVersion)时重建当前路由页，触发数据重取；contents 保证不引入额外布局盒 */}
-        <div key={`page-${selectedProjectId}:${dataVersion}`} className="contents">{children}</div>
+        {/* 项目切换时重建当前路由页，触发数据重取；contents 保证不引入额外布局盒 */}
+        <div key={`page-${selectedProjectId}`} className="contents">{children}</div>
       </main>
 
-      {/* 右侧扩展阅读区：随项目/刷新重建，使已打开的预览同步刷新 */}
-      <ReadingPanel key={`panel-${selectedProjectId}:${dataVersion}`} />
+      {/* 右侧扩展阅读区随项目切换重建。 */}
+      <ReadingPanel key={`panel-${selectedProjectId}`} />
     </div>
   );
 }

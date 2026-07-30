@@ -7,7 +7,6 @@ import {
   Folder,
   FolderOpen,
   Loader2,
-  RefreshCcw,
 } from 'lucide-react';
 import CopyPathButton from '@/components/CopyPathButton';
 import MarkdownPreview from '@/components/MarkdownPreview';
@@ -105,7 +104,6 @@ export default function ProjectFiles() {
     showHiddenFiles,
     handleNavigateDir,
     handleOpenEntry,
-    handleRefresh,
     handleShowHiddenChange,
   } = useProjectFilesController();
   const copy = {
@@ -114,7 +112,6 @@ export default function ProjectFiles() {
     showHiddenFiles: t('projectFiles.showHiddenFiles'),
     fileBrowser: t('projectFiles.fileBrowser'),
     preview: t('projectFiles.preview'),
-    reload: t('projectFiles.reload'),
     loading: t('projectFiles.loading'),
     noProjects: t('projectFiles.noProjects'),
     noEntries: t('projectFiles.noEntries'),
@@ -167,15 +164,6 @@ export default function ProjectFiles() {
         <PageHeader title={copy.title} subtitle={copy.subtitle} compact />
         <div className="flex min-w-0 flex-wrap items-center gap-2">
           <span className="ldvh-page-toolbar-badge">{copy.readOnly}</span>
-          <button
-            type="button"
-            onClick={handleRefresh}
-            disabled={entriesLoading}
-            className="ldvh-page-toolbar-action"
-          >
-            <RefreshCcw size={14} className={entriesLoading ? 'animate-spin' : ''} />
-            {copy.reload}
-          </button>
         </div>
       </div>
 
