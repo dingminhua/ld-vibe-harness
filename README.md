@@ -1,6 +1,6 @@
 # LDVH — LD Vibe Harness
 
-LDVH 帮助 AI 在长期项目中保持**判断有据、行动可续、结果可验**。它由规范（Specs）、事实对象（Fact Objects）与行动模板（Action Templates）构成，通过 Helper CLI、环境 Hook 和 Web 界面交付。
+LDVH 帮助 AI 在长期项目中保持**判断有据、行动可续、结果可验**。它由规范（Specs）、事实对象（Fact Objects）与行动模板（Action Templates）构成，通过薄 Skill、Helper CLI、Git Gate 和 Web 界面交付。
 
 适用于需要 AI 跨会话维护上下文一致性、记录决策和失败经验、以及在不同 AI 开发环境中复用规则的项目。
 
@@ -42,10 +42,10 @@ npm run dev
 
 AI 完成安装后应提示你执行以下操作：
 
-1. **开启 环境 Hook** — 在 AI 环境设置中启用并信任已部署的 LDVH 插件 环境 Hook（如 `SessionStart`）
-2. **验证实时触发** — 启动一次新的 cold startup 会话，确认 环境 Hook 是否实时触发，而非来自历史上下文恢复（hydrate）
+1. **确认技能已加载** — 在 AI 环境设置中确认已部署的 LDVH Skill 已启用，且其可见会话范围覆盖目标会话
+2. **验证真实递达** — 启动一次新会话，确认 AI 实际经路由取得 LDVH 规则引导与行动模板，而非来自历史上下文恢复（hydrate）
 
-仅完成文件安装和注册不等于 环境 Hook 已生效。
+仅完成文件安装和部署不等于 Skill 已被环境加载。
 
 ### 诊断已有工作区
 
@@ -75,7 +75,7 @@ LDVH 通过以下方式解决：
 |---|---|
 | **规范（Specs）** | 定义项目规则、事实类型和行动模板，作为 AI 行为的权威依据 |
 | **事实对象（Fact Objects）** | 结构化记录决策（ADR）、失败经验（Pitfall）、待处理问题（Spark）、研究报告（Study）和工作项（WorkCase） |
-| **环境 Hook** | 在 AI 会话启动时自动注入项目上下文和规则引导 |
+| **薄 Skill** | 把落入 LDVH 领域的工作路由至 Helper CLI，AI 按需取得规则引导与行动模板 |
 | **Helper CLI** | 提供可审计的只读查询和受控写入操作 |
 | **Git Gate** | 在 commit 时自动校验提交信息是否符合项目规范 |
 
@@ -84,7 +84,7 @@ LDVH 通过以下方式解决：
 ## 项目结构
 
 ```
-├── code/               # 确定性执行层：Helper CLI、环境 Hook、Git Gate
+├── code/               # 确定性执行层：Helper CLI、Git Gate
 ├── web/                # 面向 Human 的 Web 交互层
 ├── ldvh-base/          # 事实对象载体（ADR、Pitfall、Spark、Study、WorkCase）
 ├── specs/              # 规则、事实类型定义和行动模板
@@ -111,7 +111,7 @@ LDVH 通过以下方式解决：
 
 ### 环境无关设计
 
-LDVH 核心是环境无关的——它不绑定任何特定 AI 开发环境。每个环境的接入通过薄 adapter 实现，参考实现见 `code/plugins/ldvh/`。
+LDVH 核心是环境无关的——它不绑定任何特定 AI 开发环境。每个环境的接入通过薄 Skill 实现：一个只含路由信息的轻量技能文件（canonical 来源为 `skill/SKILL.md`），把落入 LDVH 领域的工作引导至 Helper CLI；提交把关由 Git Gate 在受管辖 worktree 中承接。
 
 ---
 
