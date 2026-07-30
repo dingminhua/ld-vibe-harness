@@ -24,7 +24,7 @@ RULE_ORIENTATION_SELECTIONS = (
     },
     {
         "responsibility_key": "ldvh-root",
-        "heading_path": ["8. 系统级运行架构", "8.2 环境 Hook 的薄引用与核心职责边界"],
+        "heading_path": ["8. 系统级运行架构", "8.2 薄 Skill 环境接入与核心职责边界"],
     },
 )
 
