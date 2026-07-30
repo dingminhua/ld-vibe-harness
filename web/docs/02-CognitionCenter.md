@@ -21,6 +21,24 @@
 | 验收依据 | 本文 §10 验收标准 + 范围匹配的 API、组件与代表性浏览器测试（08 §10 对应行） |
 | 明确不变范围 | 五个基准模块（提交、研究、决策、火花、经验）与 WorkCase 阅读形态不因本变更改动；本变更不新增事实源、状态机、对象类型、写入白名单或 Human Gate 结论 |
 
+### 0.1 2026-07-30 导航可见名与图标微调（Human 决定）
+
+本次为有意的可见标签与图标变更，不改变路由、API、页面模块或内部概念名（仍为「项目认知中心」）。按 08 §9 记录：
+
+| 要素 | 内容 |
+|---|---|
+| 变更对象 | 左侧导航第一项可见名（nav.cognition）、页面标题（cognition.title）、导航图标 |
+| 变更前 | 可见名「项目认知中心 / Cognition Center / Project Cognition Center」，图标 `Compass` |
+| 变更后 | 可见名「聚焦 / Focus」，图标 `LayoutDashboard`（换回 Dashboard 时期的图标） |
+| 作用范围 | 仅 i18n 显示文案与 `Sidebar.tsx` 图标；路由 `/`、GET /api/cognition、页面模块、文档名 `02-CognitionCenter.md`、代码文件名 `CognitionCenter.tsx` 与内部概念名不变 |
+| Human 决定 | 2026-07-30 Human 在 AI 对话中明确决定：导航可见名改为「聚焦」，图标换回 `LayoutDashboard` |
+| 验收依据 | 切换 zh/en 后导航第一项与页面标题显示「聚焦 / Focus」，图标为 `LayoutDashboard`；其余页面与文档引用「认知中心」不变 |
+| 明确不变范围 | 内部概念名、文档与代码文件名、API、页面模块、09 规范中「项目认知中心」的对象类型命名不变 |
+
+### 0.2 2026-07-30 收件箱列表改为响应式多列（落实 02 §3）
+
+收件箱（模块一 待决定事项）原实现为单列 `grid`，未落实 02 §3「布局使用 `ldvh-section-grid` 容器宽度驱动列数」的要求，也未与其他事实对象（ObjectList 卡片网格）保持一致。本次修正为 `ldvh-section-grid`（auto-fit / min 20rem 列），使宽容器下一行自适应排多个、窄容器自动塌为单列，与 ObjectList、Changelog 等一致。属对既有设计决定（§3）的落实，非新增行为变更。
+
 ## 1. 页面目标
 
 项目认知中心是 LDVH 面向 Human 的项目认知入口，服务六项 Human 价值标准（下称 H1–H6）：

@@ -317,7 +317,7 @@ export default function CognitionCenter() {
         {items.length === 0 ? (
           inboxIssues.length === 0 && <p className="ldvh-body-muted">{t('cognition.inbox.empty')}</p>
         ) : (
-          <ul className="grid min-w-0 gap-2.5">
+          <ul className="ldvh-section-grid min-w-0">
             {visibleItems.map((item) => (
               <InboxItemRow key={item.id} item={item} generatedAt={data.generatedAt} />
             ))}

@@ -524,7 +524,7 @@ export const UI_LOCALES = {
   zh: {
     'logo.tagline': '让 Vibe Coding 更高效、更稳定、更可控',
 
-    'nav.cognition': '项目认知中心',
+    'nav.cognition': '聚焦',
     'nav.projectFiles': '文件',
     'nav.workcases': '工作',
     'nav.adrs': '决策',
@@ -574,7 +574,7 @@ export const UI_LOCALES = {
     'language.chinese': '中文',
 
 
-    'cognition.title': '项目认知中心',
+    'cognition.title': '聚焦',
     'cognition.subtitle': '现在有哪些事在等你决定，每个决定需要看什么。本页只读，决定在 AI 对话中作出，经 Helper 受控写入回写事实源。',
     'cognition.observedAt': '观察时间 {time}',
     'cognition.derivedView': '派生视图',
@@ -920,7 +920,7 @@ export const UI_LOCALES = {
   en: {
     'logo.tagline': 'Making Vibe Coding more efficient, stable, and controllable',
 
-    'nav.cognition': 'Cognition Center',
+    'nav.cognition': 'Focus',
     'nav.projectFiles': 'Files',
     'nav.workcases': 'Work Cases',
     'nav.adrs': 'ADRs',
@@ -970,7 +970,7 @@ export const UI_LOCALES = {
     'language.chinese': '中文',
 
 
-    'cognition.title': 'Project Cognition Center',
+    'cognition.title': 'Focus',
     'cognition.subtitle': 'What is waiting for your decision right now, and what each decision needs. This page is read-only; decisions are made in the AI conversation and written back to the fact source via controlled Helper writes.',
     'cognition.observedAt': 'Observed at {time}',
     'cognition.derivedView': 'Derived view',
