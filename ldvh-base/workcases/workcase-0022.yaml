@@ -1,7 +1,7 @@
 title: git Gate 事实机械校验与完整性校验一等化
 status: open
 priority: P1
-phase: human_plan_confirming
+phase: executing
 plan_version: 1
 goal: 让 git commit-msg Gate 在 Index 候选包含事实布局内、object_id 合法且有暂存内容的 ldvh-base/ 路径时，对候选事实文件执行与事实读取同核（carriers、validate_fact_object、object_id 与文件名身份核对、内容指纹、大小预算）的机械校验，使 adr-0006 第三条既定的「事实完整性终闸」成立；同时将事实完整性机械校验一等化为 Helper 公开操作并合同化输出，供行动模板与 Skill 引用；在同一边界内完成 spark-0022 多人未同步 ID 冲突 Gate 的合并评估并给出归属结论。
 scope: 覆盖 specs/03 §9 扩展（触发条件、校验层、结果并入 mechanical_outcome/issues、删除与改名状态语义）、specs/05（及必要时 04）公开操作登记、05 校验向 commits 链路投影复用、code/ldvh 的 commits/git_hooks/hooks/helper 与 facts 复用面、双入口同步、相应测试、spark-0022 与 spark-0039 受控写回。分寸约束（2026-07-31 Human 指令，机械承接）：校验严格限于当次 Index 候选中的事实文件；提交链路不做全库或全量验证；不引入全量测试默认要求；AI 侧验证声明按候选范围适度。排除：远端刷新型 ID 冲突 Gate 的实现（只评估归属）；语义审核进 Gate；全库扫描进提交链路；历史 commit 追溯；新增 console 入口与 pyproject 改动；spark-0039 其余待办项；specs/08、web/*、docs/ 并行会话文件；adr-0006 本文。
@@ -145,7 +145,6 @@ creation_reviews:
   - F7（minor）depends_on 缺失：应显式编码 02→01；03→01,02；04→02；05→02；06→03,04,05
   - F8（minor）item-06 应锚定 spark-0039 写回并补 routed-to 关系
   controller_resolution: F1 接受：item-04 形态预先收窄为 Helper 公开操作（不新增 console 入口、不改 pyproject），specs/05（及必要时 04）与 code/ldvh/helper 补入授权包，item-02 写明 05 正文除操作登记外不修订。F2 接受：criterion-measured-scope 改写为提交链路不引入全库扫描、import 边界测试机械判定、全库扫描只存于独立一等化入口。F3 接受：authorization-fact-writeback 入包。F4 接受：暂存 blob 按 Index oid（事件自身 GIT_INDEX_FILE）读取、validator 保持纯函数、复用边界钉住 carriers+validate_fact_object+身份核对+指纹+预算，不整体复用 read_fact_object。F5 接受：触发收窄为有暂存内容，删除/改名/非法 object_id 测试向量入 item-03。F6 接受：惰性投影入 criterion-candidate-fact-validation。F7 接受：depends_on 显式编码。F8 接受：item-06 锚定 spark-0039 写回并补 routed-to 关系。全部发现已处置完毕，计划相应修订后提交受控创建。
-waiting_on: Human Gate1 执行批准：确认需求、计划与完整执行授权包（execution_authorization 六项动作、动作上限、禁止项与超界处置）
 relations:
 - relation_key: related-to
   target:
@@ -162,7 +161,14 @@ relations:
     governed_project_id: ldvh
     fact_type_key: adr
     object_id: adr-0006
+execution_approval:
+  subject_version: 1
+  approved_at: '2026-07-31T20:54:50+08:00'
+  summary: Human 在 Gate1 批准当时计划（plan_version=1）与完整 execution authorization 基线：六项授权动作、动作上限、八项禁止项与超界处置，无附加限制或条件
+  baseline_fingerprint: da72bfc5b520e536a9a579589f6555dea441bfdad6d319938d80af6d5aaed65e
+  source_refs:
+  - kimi-work conversation conv-282dc6a4fd4f3f9495341f33 user message『同意』(Gate1 执行批准)
 object_id: workcase-0022
 fact_type_key: workcase
 created_at: '2026-07-31T20:45:29.773167+08:00'
-updated_at: '2026-07-31T20:45:29.773167+08:00'
+updated_at: '2026-07-31T20:54:50.715761+08:00'
