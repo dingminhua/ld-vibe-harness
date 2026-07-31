@@ -117,7 +117,10 @@ def parse_draft_request(
     if not isinstance(project_id, str) or not project_id:
         problems.append("arguments.governed_project_id 必须是非空 string")
     if not isinstance(fact_type_key, str) or fact_type_key not in WRITABLE_FACT_TYPE_KEYS:
-        problems.append("arguments.fact_type_key 必须匹配当前支持受控创建的五类单文件事实类型；FileAsset 创建尚不可用")
+        problems.append(
+            "arguments.fact_type_key 必须匹配当前通用入口支持的五类单文件事实类型；"
+            "FileAsset 必须使用 prepare-file-asset-intake 与 create-file-asset"
+        )
     if request.authorization_reference:
         problems.append("authorization_reference 对无副作用草案操作必须为空 array")
     if problems:
@@ -153,7 +156,10 @@ def parse_create_request(
             fact_type_key = values["fact_type_key"]
             layout = LAYOUTS.get(fact_type_key)
             if layout is None or fact_type_key not in WRITABLE_FACT_TYPE_KEYS:
-                problems.append("arguments.draft_basis.fact_type_key 未匹配当前支持受控创建的五类单文件事实类型；FileAsset 创建尚不可用")
+                problems.append(
+                    "arguments.draft_basis.fact_type_key 未匹配当前通用入口支持的五类单文件事实类型；"
+                    "FileAsset 必须使用类型专属创建入口"
+                )
             elif layout.object_id_pattern.fullmatch(values["candidate_object_id"]) is None:
                 problems.append("arguments.draft_basis.candidate_object_id 与事实类型格式不一致")
             else:

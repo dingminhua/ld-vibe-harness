@@ -71,7 +71,7 @@ def _prepare(workspace: Path, project: Path, fact_type_key: str = "spark") -> di
     return response["result"]
 
 
-def test_file_asset_controlled_creation_is_explicitly_unavailable_without_writes(tmp_path: Path) -> None:
+def test_generic_draft_rejects_file_asset_without_writes(tmp_path: Path) -> None:
     workspace, project = _fixture(tmp_path)
     response = handle_request(
         "call",
@@ -89,7 +89,7 @@ def test_file_asset_controlled_creation_is_explicitly_unavailable_without_writes
     ).response
 
     assert response["outcome"] == "invalid_request"
-    assert "FileAsset 创建尚不可用" in response["gaps"][0]["summary"]
+    assert "FileAsset 必须使用 prepare-file-asset-intake 与 create-file-asset" in response["gaps"][0]["summary"]
     assert not (project / "ldvh-base/file-assets").exists()
     assert response["changes"] == []
 

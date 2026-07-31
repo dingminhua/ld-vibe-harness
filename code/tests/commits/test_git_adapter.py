@@ -319,7 +319,7 @@ _SPARK_BYTES = (
     "priority: P1\n"
     "created_at: 2026-07-01T00:00:00+08:00\n"
     "updated_at: 2026-07-01T00:00:00+08:00\n"
-).encode("utf-8")
+).encode()
 
 
 def _stage_file(repository: Path, path: str, content: bytes = _SPARK_BYTES) -> None:
@@ -416,7 +416,7 @@ def test_no_fact_candidate_means_no_blob_read_and_no_index_map(
     assert observed.fact_candidates == ()
 
 
-def test_staged_file_asset_members_are_retained_as_unverifiable_directory_candidates(tmp_path: Path) -> None:
+def test_staged_file_asset_members_form_one_complete_directory_after_image(tmp_path: Path) -> None:
     repository = _repository(tmp_path / "repository")
     _stage_file(
         repository,
@@ -432,15 +432,15 @@ def test_staged_file_asset_members_are_retained_as_unverifiable_directory_candid
     observed = _observe(repository, "feat: 暂存文件资产\n\n关键变更:\n- 新增目录载体")
 
     assert observed.outcome == "observed"
-    assert len(observed.fact_candidates) == 2
-    assert {candidate.fact_type_key for candidate in observed.fact_candidates} == {"file-asset"}
-    assert {candidate.object_id for candidate in observed.fact_candidates} == {"file-asset-0001"}
-    assert all(candidate.data is None for candidate in observed.fact_candidates)
-    assert all("after-image" in (candidate.observation_issue or "") for candidate in observed.fact_candidates)
-    assert observed.validation_input is not None
-    result = validate_commit(_contract(), observed.validation_input)
-    assert result.outcome == "unverifiable"
-    assert {issue.code for issue in result.issues} == {"fact_candidate_unverifiable"}
+    assert observed.fact_candidates == ()
+    assert len(observed.file_asset_candidates) == 1
+    candidate = observed.file_asset_candidates[0]
+    assert candidate.object_id == "file-asset-0001"
+    assert candidate.member_names == ("file-asset.yaml", "payload")
+    assert candidate.manifest_data == b"object_id: file-asset-0001\n"
+    assert candidate.payload_data == b"binary payload"
+    assert candidate.head_exists is False
+    assert candidate.observation_issue is None
 
 
 def test_deleted_or_unknown_file_asset_member_cannot_evade_fail_closed_gate(tmp_path: Path) -> None:
@@ -456,12 +456,20 @@ def test_deleted_or_unknown_file_asset_member_cannot_evade_fail_closed_gate(tmp_
     observed = _observe(repository, "fix: 阻断文件资产绕过\n\n关键变更:\n- 删除并新增未知成员")
 
     assert observed.outcome == "observed"
-    assert len(observed.fact_candidates) == 3
-    assert {candidate.path for candidate in observed.fact_candidates} == {
-        manifest,
-        payload,
-        "ldvh-base/file-assets/not-an-id/unknown",
-    }
-    assert any(candidate.object_id is None for candidate in observed.fact_candidates)
+    assert observed.fact_candidates == ()
+    assert len(observed.file_asset_candidates) == 2
+    malformed = next(candidate for candidate in observed.file_asset_candidates if candidate.object_id is None)
+    existing = next(
+        candidate for candidate in observed.file_asset_candidates if candidate.object_id == "file-asset-0001"
+    )
+    assert malformed.paths == ("ldvh-base/file-assets/not-an-id/unknown",)
+    assert existing.paths == (manifest, payload)
+    assert existing.member_names == ()
+    assert existing.head_exists is True
     assert observed.validation_input is not None
-    assert validate_commit(_contract(), observed.validation_input).outcome == "unverifiable"
+    result = validate_commit(_contract(), observed.validation_input)
+    assert result.outcome == "failed"
+    assert {issue.code for issue in result.issues} == {
+        "fact_object_id_invalid",
+        "file_asset_lifecycle_write_unavailable",
+    }

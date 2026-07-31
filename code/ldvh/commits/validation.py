@@ -9,6 +9,7 @@ from typing import Literal
 from ldvh.commits.contract_source import CommitContractProjection
 from ldvh.facts.content import validate_fact_content
 from ldvh.facts.contracts import LAYOUTS
+from ldvh.facts.file_asset import validate_file_asset_snapshot
 from ldvh.facts.schema import FactSchema
 
 _HEADER = re.compile(
@@ -44,6 +45,20 @@ class StagedFactCandidate:
 
 
 @dataclass(frozen=True, slots=True)
+class StagedFileAssetCandidate:
+    """One complete staged FileAsset directory after-image."""
+
+    object_id: str | None
+    paths: tuple[str, ...]
+    member_names: tuple[str, ...]
+    manifest_data: bytes | None
+    payload_data: bytes | None
+    head_exists: bool | None
+    observation_issue: str | None = None
+    validation_issue: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class CommitValidationInput:
     message: str | None
     candidate_paths: tuple[str, ...] | None
@@ -54,6 +69,7 @@ class CommitValidationInput:
     source_path: str | None
     source_fingerprint: str | None
     fact_candidates: tuple[StagedFactCandidate, ...] = ()
+    file_asset_candidates: tuple[StagedFileAssetCandidate, ...] = ()
     fact_schemas: tuple[FactSchema, ...] = ()
 
 
@@ -127,15 +143,6 @@ def _fact_layer(
     failures: list[CommitValidationIssue] = []
     schemas = {schema.fact_type_key: schema for schema in value.fact_schemas}
     for candidate in value.fact_candidates:
-        if candidate.fact_type_key == "file-asset":
-            detail = candidate.observation_issue or "缺少 FileAsset 多成员 Index after-image 校验能力"
-            unavailable.append(
-                _issue(
-                    "fact_candidate_unverifiable",
-                    f"FileAsset 暂存路径必须保守阻断: {candidate.path}: {detail}",
-                )
-            )
-            continue
         if candidate.object_id is None:
             failures.append(
                 _issue("fact_object_id_invalid", f"事实候选文件名不能解析为合法 object_id: {candidate.path}")
@@ -169,6 +176,72 @@ def _fact_layer(
                     + (f"（{item.field_path}）" if item.field_path else ""),
                 )
                 for item in result.issues
+            )
+    file_asset_schema = schemas.get("file-asset")
+    for candidate in value.file_asset_candidates:
+        rendered_paths = ", ".join(candidate.paths) or "ldvh-base/file-assets"
+        if candidate.object_id is None:
+            failures.append(
+                _issue("fact_object_id_invalid", f"FileAsset 暂存路径不能解析为合法对象目录: {rendered_paths}")
+            )
+            continue
+        if candidate.observation_issue is not None or candidate.head_exists is None:
+            detail = candidate.observation_issue or "不能确认 HEAD 中是否已有该 FileAsset"
+            unavailable.append(
+                _issue(
+                    "fact_candidate_unverifiable",
+                    f"FileAsset Index after-image 无法可信观察: {candidate.object_id}: {detail}",
+                )
+            )
+            continue
+        if candidate.validation_issue is not None:
+            failures.append(
+                _issue(
+                    "fact_candidate_invalid",
+                    f"FileAsset Index after-image 机械无效: {candidate.object_id}: {candidate.validation_issue}",
+                )
+            )
+            continue
+        if candidate.head_exists:
+            failures.append(
+                _issue(
+                    "file_asset_lifecycle_write_unavailable",
+                    f"既有 FileAsset 的修改、删除、移动或成员变化尚无受控生命周期写入能力: {candidate.object_id}",
+                )
+            )
+            continue
+        if file_asset_schema is None:
+            unavailable.append(
+                _issue("fact_schema_unavailable", f"FileAsset Schema 投影未形成: {candidate.object_id}")
+            )
+            continue
+        snapshot = validate_file_asset_snapshot(
+            file_asset_schema,
+            candidate.object_id,
+            candidate.manifest_data,
+            candidate.payload_data,
+            member_names=candidate.member_names,
+        )
+        if snapshot.check_status == "unavailable":
+            unavailable.extend(
+                _issue(
+                    "fact_candidate_unverifiable",
+                    f"FileAsset 新建 after-image 无法完成机械校验: {candidate.object_id}: {item.summary}",
+                )
+                for item in snapshot.issues
+            )
+        elif snapshot.check_status == "invalid":
+            failures.extend(
+                _issue(
+                    "fact_candidate_invalid",
+                    f"FileAsset 新建 after-image 机械无效: {candidate.object_id}: [{item.category}] {item.summary}"
+                    + (f"（{item.field_path}）" if item.field_path else ""),
+                )
+                for item in snapshot.issues
+            )
+        elif snapshot.fields is None or snapshot.fields.get("status") != "active":
+            failures.append(
+                _issue("fact_candidate_invalid", f"新建 FileAsset 初始 status 必须是 active: {candidate.object_id}")
             )
     return unavailable, failures
 
@@ -268,5 +341,6 @@ __all__ = [
     "CommitValidationResult",
     "SEMANTIC_CHECKS_REQUIRED",
     "StagedFactCandidate",
+    "StagedFileAssetCandidate",
     "validate_commit",
 ]

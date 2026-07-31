@@ -84,9 +84,7 @@ def worktree_fingerprint(boundary: CreationBoundary) -> str:
 
 
 def _numeric_suffix(layout: FactTypeLayout, path: Path) -> int | None:
-    if layout.suffix is None:
-        return None
-    object_id = path.name.removesuffix(layout.suffix)
+    object_id = path.name if layout.carrier == "file-asset-directory" else path.name.removesuffix(layout.suffix or "")
     if layout.object_id_pattern.fullmatch(object_id) is None:
         return None
     return int(object_id.rsplit("-", 1)[1])

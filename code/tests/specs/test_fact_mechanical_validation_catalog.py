@@ -11,6 +11,8 @@ _OPERATIONS_BY_COVERAGE = {
     "read": "read-fact-objects",
     "draft": "prepare-fact-object-draft",
     "create": "create-fact-object",
+    "file-asset-intake": "prepare-file-asset-intake",
+    "file-asset-create": "create-file-asset",
     "update": "update-fact-object",
     "workcase-update": "update-workcase",
     "workcase-close": "close-workcase",

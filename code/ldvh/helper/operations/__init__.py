@@ -19,18 +19,28 @@ from ldvh.helper.operations.commit_precheck_operation import COMMIT_PRECHECK_IMP
 from ldvh.helper.operations.commit_precheck_operation import OPERATION_KEY as COMMIT_PRECHECK_OPERATION_KEY
 from ldvh.helper.operations.fact_candidate_operation import FACT_CANDIDATE_IMPLEMENTATION
 from ldvh.helper.operations.fact_candidate_operation import OPERATION_KEY as FACT_CANDIDATE_OPERATION_KEY
-from ldvh.helper.operations.fact_integrity_operation import FACT_INTEGRITY_IMPLEMENTATION
-from ldvh.helper.operations.fact_integrity_operation import OPERATION_KEY as FACT_INTEGRITY_OPERATION_KEY
 from ldvh.helper.operations.fact_creation_operation import (
     CREATE_FACT_OBJECT_IMPLEMENTATION,
     CREATE_OPERATION_KEY,
     PREPARE_FACT_DRAFT_IMPLEMENTATION,
     PREPARE_OPERATION_KEY,
 )
+from ldvh.helper.operations.fact_integrity_operation import FACT_INTEGRITY_IMPLEMENTATION
+from ldvh.helper.operations.fact_integrity_operation import OPERATION_KEY as FACT_INTEGRITY_OPERATION_KEY
 from ldvh.helper.operations.fact_object_operation import FACT_OBJECT_IMPLEMENTATION
 from ldvh.helper.operations.fact_object_operation import OPERATION_KEY as FACT_OBJECT_OPERATION_KEY
 from ldvh.helper.operations.fact_update_operation import FACT_UPDATE_IMPLEMENTATION
 from ldvh.helper.operations.fact_update_operation import OPERATION_KEY as FACT_UPDATE_OPERATION_KEY
+from ldvh.helper.operations.file_asset_creation_operation import (
+    CREATE_FILE_ASSET_IMPLEMENTATION,
+    PREPARE_FILE_ASSET_INTAKE_IMPLEMENTATION,
+)
+from ldvh.helper.operations.file_asset_creation_operation import (
+    CREATE_OPERATION_KEY as CREATE_FILE_ASSET_OPERATION_KEY,
+)
+from ldvh.helper.operations.file_asset_creation_operation import (
+    PREPARE_OPERATION_KEY as PREPARE_FILE_ASSET_INTAKE_OPERATION_KEY,
+)
 from ldvh.helper.operations.governance_scope_operation import (
     GOVERNANCE_SCOPE_IMPLEMENTATION,
 )
@@ -70,12 +80,14 @@ IMPLEMENTATIONS = MappingProxyType[str, OperationImplementation](
         ACTION_TEMPLATE_CONTENT_OPERATION_KEY: ACTION_TEMPLATE_CONTENT_IMPLEMENTATION,
         COMMIT_PRECHECK_OPERATION_KEY: COMMIT_PRECHECK_IMPLEMENTATION,
         CREATE_OPERATION_KEY: CREATE_FACT_OBJECT_IMPLEMENTATION,
+        CREATE_FILE_ASSET_OPERATION_KEY: CREATE_FILE_ASSET_IMPLEMENTATION,
         FACT_CANDIDATE_OPERATION_KEY: FACT_CANDIDATE_IMPLEMENTATION,
         FACT_INTEGRITY_OPERATION_KEY: FACT_INTEGRITY_IMPLEMENTATION,
         FACT_OBJECT_OPERATION_KEY: FACT_OBJECT_IMPLEMENTATION,
         FACT_UPDATE_OPERATION_KEY: FACT_UPDATE_IMPLEMENTATION,
         GOVERNANCE_SCOPE_OPERATION_KEY: GOVERNANCE_SCOPE_IMPLEMENTATION,
         PREPARE_OPERATION_KEY: PREPARE_FACT_DRAFT_IMPLEMENTATION,
+        PREPARE_FILE_ASSET_INTAKE_OPERATION_KEY: PREPARE_FILE_ASSET_INTAKE_IMPLEMENTATION,
         SPECIFICATION_CANDIDATE_OPERATION_KEY: SPECIFICATION_CANDIDATE_IMPLEMENTATION,
         SPECIFICATION_CONTENT_OPERATION_KEY: SPECIFICATION_CONTENT_IMPLEMENTATION,
         SPECIFICATION_CONTEXT_OPERATION_KEY: SPECIFICATION_CONTEXT_IMPLEMENTATION,

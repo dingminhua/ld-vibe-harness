@@ -10,9 +10,14 @@ from pathlib import Path
 from typing import Literal
 
 from ldvh.commits.contract_source import CommitContractProjection
-from ldvh.commits.validation import CommitValidationInput, StagedFactCandidate
+from ldvh.commits.validation import (
+    CommitValidationInput,
+    StagedFactCandidate,
+    StagedFileAssetCandidate,
+)
 from ldvh.facts.content import MAX_FACT_BYTES
 from ldvh.facts.contracts import LAYOUTS
+from ldvh.facts.file_asset import DEFAULT_MANIFEST_BUDGET, DEFAULT_PAYLOAD_BUDGET
 from ldvh.governance.git import isolated_git_environment, resolve_git_identity, windows_path_problem
 from ldvh.governance.models import GovernanceScopeResult, ObjectStatus, ScopeStatus
 
@@ -35,6 +40,7 @@ class CommitCandidateObservation:
     candidate_paths: tuple[str, ...]
     snapshot_identity: str | None
     fact_candidates: tuple[StagedFactCandidate, ...] = ()
+    file_asset_candidates: tuple[StagedFileAssetCandidate, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -42,6 +48,13 @@ class _GitResult:
     returncode: int
     stdout: bytes
     stderr: bytes
+
+
+@dataclass(frozen=True, slots=True)
+class _IndexEntry:
+    mode: str
+    oid: str
+    stage: str
 
 
 def _issue(stage: ObservationStage, message: str) -> CommitCandidateObservationIssue:
@@ -116,14 +129,16 @@ def _snapshot(
     return f"sha256:{hashlib.sha256(head + index).hexdigest()}", index, None
 
 
-def _index_blob_map(index: bytes) -> tuple[dict[str, str], CommitCandidateObservationIssue | None]:
-    """Parse ``ls-files --stage -z`` bytes into a path → blob oid map."""
+def _index_blob_map(
+    index: bytes,
+) -> tuple[dict[str, tuple[_IndexEntry, ...]], CommitCandidateObservationIssue | None]:
+    """Parse ``ls-files --stage -z`` bytes without discarding mode or conflict stages."""
 
     try:
         entries = index.decode("utf-8").split("\0")
     except UnicodeDecodeError:
         return {}, _issue("git_output", "Git Index listing is not valid UTF-8")
-    mapping: dict[str, str] = {}
+    mutable: dict[str, list[_IndexEntry]] = {}
     for entry in entries:
         if not entry:
             continue
@@ -131,10 +146,10 @@ def _index_blob_map(index: bytes) -> tuple[dict[str, str], CommitCandidateObserv
         if not separator or not path:
             return {}, _issue("git_output", "Git returned malformed Index stage listing")
         parts = meta.split(" ")
-        if len(parts) != 3 or not parts[1]:
+        if len(parts) != 3 or not all(parts):
             return {}, _issue("git_output", "Git returned malformed Index stage metadata")
-        mapping[path] = parts[1]
-    return mapping, None
+        mutable.setdefault(path, []).append(_IndexEntry(parts[0], parts[1], parts[2]))
+    return {path: tuple(entries) for path, entries in mutable.items()}, None
 
 
 def _classify_fact_path(path: str) -> tuple[str, str | None] | None:
@@ -180,6 +195,7 @@ def _read_staged_blob(
     oid: str,
     *,
     index_file: Path | None = None,
+    max_bytes: int = MAX_FACT_BYTES,
 ) -> tuple[bytes | None, str | None]:
     """Read one content-addressed blob from the bound Index observation."""
 
@@ -193,8 +209,8 @@ def _read_staged_blob(
         byte_count = int(size.strip())
     except ValueError:
         return None, "Git returned a non-numeric staged blob size"
-    if byte_count > MAX_FACT_BYTES:
-        return None, f"暂存内容超过 {MAX_FACT_BYTES} bytes 读取预算"
+    if byte_count > max_bytes:
+        return None, f"暂存内容超过 {max_bytes} bytes 读取预算"
     content = _successful(
         _run_git(worktree, ("cat-file", "blob", oid), index_file=index_file),
         "staged blob",
@@ -204,53 +220,147 @@ def _read_staged_blob(
     return content, None
 
 
+def _head_file_asset_paths(
+    worktree: Path,
+    *,
+    index_file: Path | None = None,
+) -> tuple[tuple[str, ...], CommitCandidateObservationIssue | None]:
+    head = _run_git(worktree, ("rev-parse", "--verify", "-q", "HEAD^{tree}"), index_file=index_file)
+    if isinstance(head, CommitCandidateObservationIssue):
+        return (), head
+    if head.returncode == 1 and not head.stdout and not head.stderr:
+        return (), None
+    if head.returncode != 0:
+        details = (head.stderr or head.stdout).decode("utf-8", errors="replace").strip()
+        return (), _issue("git_process", f"Git HEAD tree read failed: {details or head.returncode}")
+    observed = _successful(
+        _run_git(
+            worktree,
+            ("ls-tree", "-r", "--name-only", "-z", "HEAD", "--", LAYOUTS["file-asset"].directory),
+            index_file=index_file,
+        ),
+        "HEAD FileAsset tree",
+    )
+    if isinstance(observed, CommitCandidateObservationIssue):
+        return (), observed
+    try:
+        return tuple(path for path in observed.decode("utf-8").split("\0") if path), None
+    except UnicodeDecodeError:
+        return (), _issue("git_output", "Git HEAD FileAsset listing is not valid UTF-8")
+
+
 def _fact_candidates(
     worktree: Path,
     paths: tuple[str, ...],
     index: bytes,
     *,
     index_file: Path | None = None,
-) -> tuple[tuple[StagedFactCandidate, ...], CommitCandidateObservationIssue | None]:
-    """Observe staged content for in-layout fact candidates only.
-
-    Deletions (no staged content for the path) and out-of-layout paths are
-    skipped silently for single-file carriers; rename-into-layout is validated
-    through its new path. Every staged FileAsset member is retained as an
-    explicit unverifiable candidate because the current adapter cannot form a
-    complete multi-member directory after-image from one staged blob.
-    """
+) -> tuple[
+    tuple[StagedFactCandidate, ...],
+    tuple[StagedFileAssetCandidate, ...],
+    CommitCandidateObservationIssue | None,
+]:
+    """Observe single-file blobs and aggregate complete FileAsset after-images."""
 
     classified = [(path, _classify_fact_path(path)) for path in paths]
     if not any(target is not None for _, target in classified):
-        return (), None
+        return (), (), None
     mapping, failure = _index_blob_map(index)
     if failure is not None:
-        return (), failure
+        return (), (), failure
     candidates: list[StagedFactCandidate] = []
+    file_asset_paths: dict[str, list[str]] = {}
+    malformed_file_asset_paths: list[str] = []
     for path, target in classified:
         if target is None:
             continue
         fact_type_key, object_id = target
         if fact_type_key == "file-asset":
-            candidates.append(
-                StagedFactCandidate(
-                    path,
-                    fact_type_key,
-                    object_id,
-                    None,
-                    "当前 Git Gate 尚不能从单一路径观察形成 FileAsset 对象目录的完整 Index after-image",
-                )
-            )
+            if object_id is None:
+                malformed_file_asset_paths.append(path)
+            else:
+                file_asset_paths.setdefault(object_id, []).append(path)
             continue
-        oid = mapping.get(path)
-        if oid is None:
+        entries = mapping.get(path)
+        if entries is None:
             continue
         if object_id is None:
             candidates.append(StagedFactCandidate(path, fact_type_key, None, None, None))
             continue
-        data, problem = _read_staged_blob(worktree, oid, index_file=index_file)
+        if len(entries) != 1 or entries[0].stage != "0":
+            candidates.append(
+                StagedFactCandidate(path, fact_type_key, object_id, None, "暂存路径包含未解决的 Index stage")
+            )
+            continue
+        data, problem = _read_staged_blob(worktree, entries[0].oid, index_file=index_file)
         candidates.append(StagedFactCandidate(path, fact_type_key, object_id, data, problem))
-    return tuple(candidates), None
+
+    file_assets: list[StagedFileAssetCandidate] = []
+    if malformed_file_asset_paths:
+        file_assets.append(
+            StagedFileAssetCandidate(
+                None,
+                tuple(sorted(malformed_file_asset_paths)),
+                (),
+                None,
+                None,
+                False,
+                validation_issue="路径未形成合法 FileAsset 对象目录和固定成员",
+            )
+        )
+    if file_asset_paths:
+        head_paths, failure = _head_file_asset_paths(worktree, index_file=index_file)
+        if failure is not None:
+            return (), (), failure
+        layout = LAYOUTS["file-asset"]
+        for object_id, changed_paths in sorted(file_asset_paths.items()):
+            object_prefix = f"{layout.canonical_path(object_id)}/"
+            after_paths = sorted(path for path in mapping if path.startswith(object_prefix))
+            member_names = tuple(path[len(object_prefix) :] for path in after_paths)
+            observation_problems: list[str] = []
+            validation_problems: list[str] = []
+            manifest_data: bytes | None = None
+            payload_data: bytes | None = None
+            for path, member_name in zip(after_paths, member_names, strict=True):
+                entries = mapping[path]
+                if len(entries) != 1 or entries[0].stage != "0":
+                    observation_problems.append(f"{member_name} 包含未解决的 Index stage")
+                    continue
+                entry = entries[0]
+                if entry.mode not in {"100644", "100755"}:
+                    validation_problems.append(f"{member_name} 不是 Git regular-file mode")
+                    continue
+                if member_name == "file-asset.yaml":
+                    manifest_data, problem = _read_staged_blob(
+                        worktree,
+                        entry.oid,
+                        index_file=index_file,
+                        max_bytes=DEFAULT_MANIFEST_BUDGET,
+                    )
+                    if problem is not None:
+                        observation_problems.append(f"file-asset.yaml: {problem}")
+                elif member_name == "payload":
+                    payload_data, problem = _read_staged_blob(
+                        worktree,
+                        entry.oid,
+                        index_file=index_file,
+                        max_bytes=DEFAULT_PAYLOAD_BUDGET,
+                    )
+                    if problem is not None:
+                        observation_problems.append(f"payload: {problem}")
+            file_assets.append(
+                StagedFileAssetCandidate(
+                    object_id,
+                    tuple(sorted(changed_paths)),
+                    member_names,
+                    manifest_data,
+                    payload_data,
+                    any(path.startswith(object_prefix) for path in head_paths),
+                    "; ".join(observation_problems) or None,
+                    "; ".join(validation_problems) or None,
+                )
+            )
+    return tuple(candidates), tuple(file_assets), None
 
 
 def _candidate_paths(
@@ -319,7 +429,12 @@ def _observe_index(
     )
     if failure is not None:
         return CommitCandidateObservation("unverifiable", None, (failure,), (), snapshot_before)
-    fact_candidates, failure = _fact_candidates(worktree, paths, index_before, index_file=index_file)
+    fact_candidates, file_asset_candidates, failure = _fact_candidates(
+        worktree,
+        paths,
+        index_before,
+        index_file=index_file,
+    )
     if failure is not None:
         return CommitCandidateObservation("unverifiable", None, (failure,), paths, snapshot_before)
     snapshot_after, _, failure = _snapshot(worktree, index_file=index_file)
@@ -339,8 +454,17 @@ def _observe_index(
         source_path=contract.source_path,
         source_fingerprint=contract.content_fingerprint,
         fact_candidates=fact_candidates,
+        file_asset_candidates=file_asset_candidates,
     )
-    return CommitCandidateObservation("observed", value, (), paths, snapshot_after, fact_candidates)
+    return CommitCandidateObservation(
+        "observed",
+        value,
+        (),
+        paths,
+        snapshot_after,
+        fact_candidates,
+        file_asset_candidates,
+    )
 
 
 def observe_commit_candidate(

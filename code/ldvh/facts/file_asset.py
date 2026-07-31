@@ -50,6 +50,21 @@ class FileAssetRead:
     manifest_byte_count: int | None
 
 
+@dataclass(frozen=True, slots=True)
+class FileAssetSnapshotValidation:
+    """Pure validation of one complete manifest/payload directory after-image."""
+
+    check_status: Literal["mechanically_valid", "invalid", "unavailable"]
+    fields: dict[str, Any] | None
+    issues: tuple[FactIssue, ...]
+    observed_size_bytes: int | None
+    observed_content_sha256: str | None
+    payload_matches_manifest: bool | None
+    current_bytes_confirmed: bool
+    content_fingerprint: str | None
+    manifest_raw_text: str | None
+
+
 def _issue(
     category: IssueCategory,
     summary: str,
@@ -180,6 +195,110 @@ def _bounded_member_names(directory_descriptor: int) -> tuple[set[str], bool]:
             if len(names) > len(_EXPECTED_MEMBERS):
                 return names, False
     return names, True
+
+
+def validate_file_asset_snapshot(
+    schema: FactSchema,
+    object_id: str,
+    manifest_bytes: bytes | None,
+    payload_bytes: bytes | None,
+    *,
+    member_names: tuple[str, ...] = ("file-asset.yaml", "payload"),
+    manifest_budget: int = DEFAULT_MANIFEST_BUDGET,
+    payload_budget: int = DEFAULT_PAYLOAD_BUDGET,
+) -> FileAssetSnapshotValidation:
+    """Validate supplied bytes without reading Git or the filesystem."""
+
+    issues: list[FactIssue] = []
+    unavailable = False
+    names = tuple(sorted(member_names))
+    if len(set(names)) != len(names):
+        issues.append(_issue("location", "FileAsset after-image 成员名不得重复"))
+    for name in sorted(_EXPECTED_MEMBERS - set(names)):
+        issues.append(_issue("location", "FileAsset 目录缺少固定成员", name))
+    for name in sorted(set(names) - _EXPECTED_MEMBERS):
+        issues.append(_issue("location", "FileAsset 目录包含未知成员", name))
+    if manifest_bytes is None and "file-asset.yaml" in names:
+        issues.append(_issue("location", "FileAsset after-image 缺少可观察 manifest", "file-asset.yaml"))
+        unavailable = True
+    elif manifest_bytes is not None and len(manifest_bytes) > manifest_budget:
+        issues.append(_issue("resource", f"manifest 超过 {manifest_budget} bytes 读取预算"))
+        unavailable = True
+    if payload_bytes is None and "payload" in names:
+        issues.append(_issue("location", "FileAsset after-image 缺少可观察 payload", "payload"))
+        unavailable = True
+    elif payload_bytes is not None and len(payload_bytes) > payload_budget:
+        issues.append(_issue("resource", f"payload 超过 {payload_budget} bytes 读取预算"))
+        unavailable = True
+
+    fields: dict[str, Any] | None = None
+    manifest_text: str | None = None
+    if manifest_bytes is not None and len(manifest_bytes) <= manifest_budget:
+        try:
+            manifest_text = manifest_bytes.decode("utf-8")
+        except UnicodeDecodeError:
+            issues.append(_issue("parse", "manifest 必须是 UTF-8 YAML"))
+        else:
+            parsed = parse_yaml_object(manifest_text)
+            if parsed.fields is None or parsed.issues:
+                issues.extend(parsed.issues or (_issue("parse", "manifest 无法按 YAML 1.2 唯一解析为 mapping"),))
+            else:
+                fields = parsed.fields
+                issues.extend(validate_fact_object("file-asset", fields, schema))
+                if fields.get("object_id") != object_id:
+                    issues.append(_issue("identity", "object_id 与对象目录名不一致", "object_id"))
+
+    observed_size = None if payload_bytes is None else len(payload_bytes)
+    observed_digest = None if payload_bytes is None else hashlib.sha256(payload_bytes).hexdigest()
+    payload_matches: bool | None = None
+    if fields is not None and observed_size is not None and observed_digest is not None:
+        declared_size = fields.get("size_bytes")
+        declared_digest = fields.get("content_sha256")
+        if (
+            isinstance(declared_size, int)
+            and not isinstance(declared_size, bool)
+            and declared_size >= 0
+            and isinstance(declared_digest, str)
+            and len(declared_digest) == 64
+            and all(character in "0123456789abcdef" for character in declared_digest)
+        ):
+            size_matches = observed_size == declared_size
+            digest_matches = observed_digest == declared_digest
+            payload_matches = size_matches and digest_matches
+            if not size_matches:
+                issues.append(_issue("integrity", "payload 实际字节数与 manifest 不一致", "size_bytes"))
+            if not digest_matches:
+                issues.append(_issue("integrity", "payload 实际 SHA-256 与 manifest 不一致", "content_sha256"))
+
+    if unavailable:
+        status: Literal["mechanically_valid", "invalid", "unavailable"] = "unavailable"
+    elif issues:
+        status = "invalid"
+    else:
+        status = "mechanically_valid"
+    current_bytes_confirmed = (
+        status == "mechanically_valid" and set(names) == _EXPECTED_MEMBERS and payload_matches is True
+    )
+    content_fingerprint: str | None = None
+    if not unavailable and manifest_bytes is not None and observed_size is not None and observed_digest is not None:
+        fingerprint = hashlib.sha256()
+        fingerprint.update(b"ldvh:file-asset:v1\0")
+        fingerprint.update(len(manifest_bytes).to_bytes(8, "big"))
+        fingerprint.update(manifest_bytes)
+        fingerprint.update(observed_size.to_bytes(8, "big"))
+        fingerprint.update(bytes.fromhex(observed_digest))
+        content_fingerprint = fingerprint.hexdigest()
+    return FileAssetSnapshotValidation(
+        status,
+        fields,
+        tuple(issues),
+        observed_size,
+        observed_digest,
+        payload_matches,
+        current_bytes_confirmed,
+        content_fingerprint,
+        manifest_text,
+    )
 
 
 def read_file_asset(
@@ -324,7 +443,9 @@ def read_file_asset(
                 else:
                     parsed = parse_yaml_object(manifest_text)
                     if parsed.fields is None or parsed.issues:
-                        issues.extend(parsed.issues or (_issue("parse", "manifest 无法按 YAML 1.2 唯一解析为 mapping"),))
+                        issues.extend(
+                            parsed.issues or (_issue("parse", "manifest 无法按 YAML 1.2 唯一解析为 mapping"),)
+                        )
                     else:
                         fields = parsed.fields
                         issues.extend(validate_fact_object("file-asset", fields, schema))
@@ -488,5 +609,7 @@ __all__ = [
     "DEFAULT_MANIFEST_BUDGET",
     "DEFAULT_PAYLOAD_BUDGET",
     "FileAssetRead",
+    "FileAssetSnapshotValidation",
     "read_file_asset",
+    "validate_file_asset_snapshot",
 ]

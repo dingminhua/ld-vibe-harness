@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import secrets
 import stat
+import sys
 from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -679,6 +680,171 @@ def atomic_create_relative(
     return AtomicWriteResult("unavailable", "not_committed", "unknown", "clean")
 
 
+def _rename_directory_no_replace_posix(
+    source_directory_fd: int,
+    source_name: str,
+    target_directory_fd: int,
+    target_name: str,
+) -> None:
+    """Atomically rename one directory without replacing an existing target."""
+
+    import ctypes
+
+    library = ctypes.CDLL(None, use_errno=True)
+    encoded_source = os.fsencode(source_name)
+    encoded_target = os.fsencode(target_name)
+    if sys.platform == "darwin":
+        rename = getattr(library, "renameatx_np", None)
+        flag = 0x00000004  # RENAME_EXCL
+    elif sys.platform.startswith("linux"):
+        rename = getattr(library, "renameat2", None)
+        flag = 0x00000001  # RENAME_NOREPLACE
+    else:
+        rename = None
+        flag = 0
+    if rename is None:
+        raise OSError(getattr(os, "ENOSYS", 38), "atomic no-replace directory rename is unavailable")
+    rename.argtypes = (
+        ctypes.c_int,
+        ctypes.c_char_p,
+        ctypes.c_int,
+        ctypes.c_char_p,
+        ctypes.c_uint,
+    )
+    rename.restype = ctypes.c_int
+    if rename(source_directory_fd, encoded_source, target_directory_fd, encoded_target, flag) != 0:
+        error_number = ctypes.get_errno()
+        raise OSError(error_number, os.strerror(error_number), target_name)
+
+
+def atomic_create_directory_relative(
+    root: Path,
+    relative_path: str | Path,
+    members: dict[str, bytes],
+    *,
+    staging_directory: str | Path = "ldvh-base/.file-asset-staging",
+    mode: int = 0o600,
+    platform_name: str | None = None,
+) -> AtomicWriteResult:
+    """Publish one closed directory after-image without replacing an existing name.
+
+    Member files are durably staged outside the target namespace on the same
+    filesystem.  Public callers only receive a committed result after an
+    atomic platform-native no-replace directory rename.
+    """
+
+    relative = _normal_relative_path(relative_path)
+    staging = _normal_relative_path(staging_directory)
+    selected_platform = os.name if platform_name is None else platform_name
+    if (
+        selected_platform != "posix"
+        or not members
+        or any(
+            not isinstance(name, str)
+            or not name
+            or Path(name).name != name
+            or name in {".", ".."}
+            or not isinstance(payload, bytes)
+            for name, payload in members.items()
+        )
+    ):
+        return AtomicWriteResult("unavailable", "not_committed", "unknown", "clean")
+
+    staging_parent_fd: int | None = None
+    target_parent_fd: int | None = None
+    staged_fd: int | None = None
+    member_fd: int | None = None
+    staged_name = f".ldvh-directory-{secrets.token_hex(12)}.tmp"
+    cleanup: CleanupState = "clean"
+    outcome: WriteOutcome = "unavailable"
+    namespace: NamespaceState = "not_committed"
+    durability: Durability = "unknown"
+    published = False
+    try:
+        staging_parent_fd = _open_relative_directory_posix(root, staging, create=True, directory_mode=0o700)
+        target_parent_fd = _open_relative_directory_posix(
+            root,
+            relative.parent,
+            create=True,
+            directory_mode=0o755,
+        )
+        os.mkdir(staged_name, mode=0o700, dir_fd=staging_parent_fd)
+        os.fsync(staging_parent_fd)
+        staged_fd = os.open(
+            staged_name,
+            os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
+            dir_fd=staging_parent_fd,
+        )
+        for name in sorted(members):
+            member_fd = os.open(
+                name,
+                os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
+                mode,
+                dir_fd=staged_fd,
+            )
+            _write_all(member_fd, members[name])
+            os.fsync(member_fd)
+            os.close(member_fd)
+            member_fd = None
+        os.fsync(staged_fd)
+        try:
+            _rename_directory_no_replace_posix(
+                staging_parent_fd,
+                staged_name,
+                target_parent_fd,
+                relative.name,
+            )
+        except OSError as error:
+            if error.errno in {getattr(os, "EEXIST", 17), getattr(os, "ENOTEMPTY", 39)}:
+                outcome = "conflict"
+        else:
+            published = True
+            outcome = "created"
+            namespace = "committed"
+            try:
+                os.fsync(target_parent_fd)
+            except OSError:
+                pass
+            else:
+                durability = "file_and_directory"
+    except OSError:
+        pass
+    finally:
+        if member_fd is not None:
+            os.close(member_fd)
+        if staged_fd is not None:
+            os.close(staged_fd)
+        if staging_parent_fd is not None and not published:
+            cleanup_fd: int | None = None
+            try:
+                cleanup_fd = os.open(
+                    staged_name,
+                    os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
+                    dir_fd=staging_parent_fd,
+                )
+                for name in sorted(members):
+                    try:
+                        os.unlink(name, dir_fd=cleanup_fd)
+                    except FileNotFoundError:
+                        pass
+                os.close(cleanup_fd)
+                cleanup_fd = None
+                os.rmdir(staged_name, dir_fd=staging_parent_fd)
+                os.fsync(staging_parent_fd)
+            except FileNotFoundError:
+                pass
+            except OSError:
+                cleanup = "residue"
+            finally:
+                if cleanup_fd is not None:
+                    os.close(cleanup_fd)
+        if target_parent_fd is not None:
+            os.close(target_parent_fd)
+        if staging_parent_fd is not None:
+            os.close(staging_parent_fd)
+    return AtomicWriteResult(outcome, namespace, durability, cleanup)
+
+
 def _atomic_store_posix(root: Path, relative: Path, payload: bytes, mode: int) -> AtomicWriteResult:
     directory_fd: int | None = None
     temporary_fd: int | None = None
@@ -1075,6 +1241,81 @@ def remove_relative_if_equal(
     if selected_platform == "posix":
         return _remove_posix(root, relative, expected)
     return AtomicWriteResult("unavailable", "not_committed", "unknown", "clean")
+
+
+def remove_directory_relative_if_members_equal(
+    root: Path,
+    relative_path: str | Path,
+    expected_members: dict[str, bytes],
+    *,
+    platform_name: str | None = None,
+) -> AtomicWriteResult:
+    """Best-effort rollback for one closed directory created by this transaction."""
+
+    relative = _normal_relative_path(relative_path)
+    selected_platform = os.name if platform_name is None else platform_name
+    if selected_platform != "posix" or not expected_members:
+        return AtomicWriteResult("unavailable", "not_committed", "unknown", "clean")
+    parent_fd: int | None = None
+    directory_fd: int | None = None
+    removed_any = False
+    try:
+        parent_fd = _open_relative_directory_posix(root, relative.parent, create=False)
+        directory_fd = os.open(
+            relative.name,
+            os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
+            dir_fd=parent_fd,
+        )
+        observed_names = set(os.listdir(directory_fd))
+        if observed_names != set(expected_members):
+            return AtomicWriteResult("conflict", "not_committed", "unknown", "clean")
+        signatures: dict[str, tuple[int, ...]] = {}
+        for name in sorted(expected_members):
+            descriptor = os.open(name, os.O_RDONLY | os.O_NOFOLLOW, dir_fd=directory_fd)
+            try:
+                before = os.fstat(descriptor)
+                observed = _read_descriptor(descriptor, max_bytes=len(expected_members[name]))
+                after = os.fstat(descriptor)
+                if observed != expected_members[name] or _portable_signature(before) != _portable_signature(after):
+                    return AtomicWriteResult("conflict", "not_committed", "unknown", "clean")
+                signatures[name] = _portable_signature(after)
+            finally:
+                os.close(descriptor)
+        for name in sorted(expected_members):
+            current = os.stat(name, dir_fd=directory_fd, follow_symlinks=False)
+            if _portable_signature(current) != signatures[name]:
+                return AtomicWriteResult("conflict", "not_committed", "unknown", "clean")
+        for name in sorted(expected_members):
+            os.unlink(name, dir_fd=directory_fd)
+            removed_any = True
+        os.fsync(directory_fd)
+        os.close(directory_fd)
+        directory_fd = None
+        os.rmdir(relative.name, dir_fd=parent_fd)
+        try:
+            os.fsync(parent_fd)
+        except OSError:
+            return AtomicWriteResult("removed", "committed", "unknown", "clean")
+        return AtomicWriteResult("removed", "committed", "file_and_directory", "clean")
+    except FileNotFoundError:
+        return AtomicWriteResult(
+            "removed" if removed_any else "unavailable",
+            "committed" if removed_any else "not_committed",
+            "unknown",
+            "clean",
+        )
+    except OSError:
+        return AtomicWriteResult(
+            "unavailable",
+            "uncertain" if removed_any else "not_committed",
+            "unknown",
+            "clean",
+        )
+    finally:
+        if directory_fd is not None:
+            os.close(directory_fd)
+        if parent_fd is not None:
+            os.close(parent_fd)
 
 
 def walk_regular_files(root: Path) -> tuple[Path, ...]:

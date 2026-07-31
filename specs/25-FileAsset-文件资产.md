@@ -18,9 +18,9 @@ ldvh_spec:
   authorized_attachments: []
 ```
 
-> 文件状态：`active`。本文是 `file-asset` 事实类型的唯一定义来源；它与 03、05、05.Att.01、05.Att.02、20、21、31、32 和术语表的同批变更共同使类型语义、派生 Schema、正式读取、候选发现、完整性检查及 WorkCase `has-file-asset` 消费边界进入当前规则源。本文不自动创建任何 FileAsset 实例，也不使目录创建、manifest 更新、归档写入、物理删除、Git Index 多成员 after-image 校验、Web 下载或安全预览能力成立；这些未实现能力必须如实保持不可用。现有 Git Gate 对 staged FileAsset 路径只能失败关闭并报告不可验证，不能把阻断误写为已完成多成员完整性保护。
+> 文件状态：`active`。本文是 `file-asset` 事实类型的唯一定义来源；它与 03、05、05.Att.01、05.Att.02、20、21、31、32 和术语表共同使类型语义、派生 Schema、正式读取、候选发现、完整性检查、受控新建、Git Index 新建 after-image 校验及 WorkCase `has-file-asset` 消费边界进入当前规则源。本文不自动创建任何 FileAsset 实例；manifest 更新、归档写入、物理删除、既有目录移动/改名、Web 下载或安全预览仍未开放，必须如实保持不可用。Git Gate 只放行 HEAD 中不存在、Index 两成员完整且机械有效的新建对象；既有对象任何 staged 生命周期写仍失败关闭。
 
-> 准入结论：Human 于 2026-07-31 明确 FileAsset 记录的是“一份确定内容以稳定身份客观存在”，不是证据或内容正确性声明。05 §7.2.1 也明确事实对象不是用来证明自身正确的材料包。A/B 隔离读取产生相同领域结论是同一 payload 被正确消费的预期结果，不能作为拒绝 FileAsset 的依据；相反，A 为满足同一需求已经复制身份、状态、签名、引用、发现和生命周期，说明另建平行资产对象体系会混淆责任。经两轮独立复核，本类型以第一阶段只读 activation 边界完成准入；未实现写入和呈现能力不由类型声明推定成立。
+> 准入结论：Human 于 2026-07-31 明确 FileAsset 记录的是“一份确定内容以稳定身份客观存在”，不是证据或内容正确性声明。05 §7.2.1 也明确事实对象不是用来证明自身正确的材料包。A/B 隔离读取产生相同领域结论是同一 payload 被正确消费的预期结果，不能作为拒绝 FileAsset 的依据；相反，A 为满足同一需求已经复制身份、状态、签名、引用、发现和生命周期，说明另建平行资产对象体系会混淆责任。经两轮独立复核，本类型先以只读 activation 完成准入，随后以本次 Write Activation 只增加受控新建和对应 Git Gate 放行；未实现的生命周期写与 Web 呈现不由此推定成立。
 
 ## 1. 价值判断
 
@@ -111,7 +111,7 @@ AI 负责判断文件是否具有独立持续消费价值、本次纳入签名�
 | V1–V8 与 HV1–HV5 净价值 | 通过 | Human 目标和试点支持 V1、V2、V3、V5、V6、V7 与 HV3；统一事实模型避免第二套身份/引用/发现负担。V4、V8、HV1、HV4、HV5 只在后续实际机制与复用范围声明 |
 | 术语和机器治理 | 通过 | `FileAsset / 文件资产` 已与“授权附件”消歧；字段登记、机械目录和首个消费类型关系已同批生效 |
 
-因此，本文声明 `file-asset` **完成准入**并进入当前事实类型集合。该结论只使当前来源明确列出的规则与已实现只读能力成立，不扩大未实现的创建、更新、Git Gate 或 Web 能力。
+因此，本文声明 `file-asset` **完成准入**并进入当前事实类型集合。当前能力以本文逐项声明和实现验证为准：读取、发现、完整性、受控新建、全新对象 Git Gate after-image 校验与 WorkCase 消费已经开放；更新、归档、删除、移动、Web 下载/预览等未实现能力不被扩大。
 
 ### 术语准入审计
 
@@ -204,7 +204,7 @@ manifest 只包含本节绑定允许的字段。`title` 是面向 Human 与 AI �
 
 完整 Schema 必须从 `fact-object-field-registry` 的 `fact-object`、本节绑定、当前结构及类型专属字段定义单向派生。目录成员、payload 完整性、manifest 与目录身份一致性以及资源边界必须进入机械规则目录；Code 不得根据目录长相、扩展名或已有实现反向发明 carrier 语义。
 
-`fact-model-foundation` §7.4 已把上述目录登记为第六类 canonical 拓扑。当前 Helper 只对该目录提供安全精确读取、候选发现和全库完整性检查；`prepare-fact-object-draft`、`create-fact-object` 与 `update-fact-object` 仍只支持既有单文件载体，收到 `file-asset` 必须以 `invalid_request` 零写入拒绝，不得因正式读取已成立而推断目录写入也成立。
+`fact-model-foundation` §7.4 已把上述目录登记为第六类 canonical 拓扑。Helper 对该目录提供安全精确读取、候选发现、全库完整性检查和本文 §7.1–7.2 的类型专属受控新建；通用 `prepare-fact-object-draft`、`create-fact-object` 与 `update-fact-object` 仍只支持既有单文件载体，收到 `file-asset` 必须以 `invalid_request` 零写入拒绝。调用方不得绕过类型专属摄取边界，也不得因新建成立推断 manifest 更新或归档写入成立。
 
 ## 6. 对象语义与生命周期
 
@@ -230,9 +230,32 @@ FileAsset 只表达一份已经确定并被复制进 canonical 位置的原生 p
 
 ## 7. 来源、完整性、引用与消费
 
+### Helper 公开操作
+
+| `operation_key` | `summary` | `effect` | `arguments_contract` | `result_contract` |
+|---|---|---|---|---|
+| `prepare-file-asset-intake` | 安全完整读取一个已经选定的来源文件，绑定来源 size/hash、当前 FileAsset Schema、worktree 与无预留候选身份 | `read` | `file-asset-fact-type::7.1 FileAsset 摄取准备输入与结果` | `file-asset-fact-type::7.1 FileAsset 摄取准备输入与结果` |
+| `create-file-asset` | 重新核对摄取依据，由 Code 分配身份、在候选命名空间外 staging 并原子创建一个 FileAsset 目录 | `may_change_state` | `file-asset-fact-type::7.2 FileAsset 受控创建输入与结果` | `file-asset-fact-type::7.2 FileAsset 受控创建输入与结果` |
+
+### 7.1 FileAsset 摄取准备输入与结果
+
+`prepare-file-asset-intake` 是无事实源副作用的读取操作。`work_object_locators` 必须恰含一个项目目标；领域 `arguments` 字段闭集为必填非空 `governed_project_id`、必填非空绝对路径 `source_path` 和可选绝对路径 `workspace_root`。`observed_context`、`authorization_reference` 必须为空，`requested_disclosure` 必须为 `null`。Code 必须在唯一实际 worktree/common-dir 边界形成后，以不跟随最终 symlink 的稳定普通文件读取方式一次完整读取来源，4 MiB（4194304 bytes）为含端点上限；超限、读取期漂移、非普通文件、symlink 或身份不可稳定观察均为 `unavailable`，不得截断、写 counter 或形成 canonical 目录。
+
+成功 `result` 字段闭集为 `intake_basis`、`candidate_canonical_path`、`carrier`、`payload_limit_bytes` 和 `fact_object_contract`。`intake_basis` 精确包含 `governed_project_id`、`candidate_object_id`、`schema_fingerprint`、`worktree_fingerprint`、`source_path`、`source_size_bytes`、`source_content_sha256` 和 `source_fingerprint`；候选 ID 不预留，来源路径只用于当次重读绑定，禁止进入 manifest。`fact_object_contract` 只投影 AI 必填的 `title`、`filename`、`media_type`、`signature`，Code 托管 `object_id`、`fact_type_key`、`created_at`、`updated_at`、`status`、`size_bytes` 和 `content_sha256`，并回显 Human / AI agent 两个签名 shape。成功只证明本次完整 bytes 和确定性绑定已观察，不证明应创建、签名陈述真实、内容正确或来源路径以后不变。
+
+### 7.2 FileAsset 受控创建输入与结果
+
+`create-file-asset` 是一次只创建一个新 FileAsset 的状态变更操作。`work_object_locators` 必须恰含一个项目目标；领域 `arguments` 字段闭集为必填 `intake_basis`、必填 `fact_object` 和可选 `workspace_root`。`intake_basis` 必须原样满足 §7.1 闭集；`fact_object` 字段闭集且全部必填为 `title`、`filename`、`media_type`、`signature`，其中 `filename` 必须等于本次实际来源文件 basename。`authorization_reference` 可以承载上层已确认的授权定位，但 Code 不据此代替 AI/Human 判断创建价值或签名责任；`observed_context` 必须为空，`requested_disclosure` 必须为 `null`。
+
+写入前 Code 必须重新形成唯一管辖边界，核对项目、worktree 与 Schema 指纹，再次安全完整读取同一绝对来源路径，并与依据中的 size、SHA-256 和来源指纹精确比较；任何变化都零目标写入拒绝并要求重新准备。随后按 05 §11.8 进入“项目 + file-asset”共享锁，重新扫描全部 linked worktree 可见目录身份并单调消费至多一个实际编号；依据中的候选编号不构成预留。Code 只写 `status=active` 的合法初态，用同一事件时点写 `created_at` 与 `updated_at`，从实际来源 bytes 写 size/hash，且不得持久化 `source_path`。
+
+目标目录必须先在同一文件系统、canonical 候选命名空间外的受控 staging 中形成固定两个普通成员并分别 fsync，完成 manifest Schema、签名闭集、成员闭集和 payload size/hash 校验后，使用平台原生原子 no-replace 目录 rename 发布到 `ldvh-base/file-assets/<actual_id>/`，再 fsync 目标父目录。平台不能提供该原语时能力为 `unavailable`，不得退回可覆盖 rename、逐成员 canonical 写入或 file-only 成功。写后必须经 `read-fact-objects` 的同一目录读取边界回读 manifest 与 payload；回读未通过时，只能在目标仍精确等于本次两个成员时条件回滚，否则保留实际残留与未完成范围。counter 不因目标冲突、回读失败或回滚倒退；一个公开调用不静默分配第二个编号重试。
+
+成功 `result` 至少包含原请求候选、实际分配结果、canonical 目标状态、`actual_ref`、`carrier=file-asset-directory`、回读 `fact_object`，以及只含 canonical payload 路径、size、SHA-256 和 `current_bytes_confirmed` 的 payload 结果；不得返回或内联 payload bytes、持久化来源路径或把成功扩大为 Git 已提交、WorkCase 已关联、内容已证明或工作已完成。失败结果必须区分来源过期/不可读、候选机械拒绝、编号状态、目标冲突/不可用、回读、回滚和残留；只有目录发布与完整回读均成功时可返回 `outcome: ok` 与稳定 `actual_ref`。
+
 FileAsset 的可接受形成依据是当次实际选择的完整源文件 bytes、Human 当前指令或已准确覆盖的行动授权、签名分支判断、受控复制结果、canonical manifest/payload 回读和实际机械检查。源文件路径、会话位置、下载目录或临时 staging 只服务当次受控操作，不进入事实对象字段，也不在 canonical 对象之外形成长期权威。
 
-`fact-model-foundation` §7.2.1 已建立唯一窄例外：完整原始 bytes 只可作为 FileAsset 专属 canonical `payload` carrier 成员存在；命令、路径、日志文字、会话定位仍不得进入 FileAsset manifest 或其它类型字段，也不得因 payload 例外放宽普通事实对象。截图、日志、诊断、导出或其它 raw payload 只有在本文对象化条件成立并通过未来受控创建边界时才能形成 FileAsset；当前 activation 不开放该写入能力。
+`fact-model-foundation` §7.2.1 已建立唯一窄例外：完整原始 bytes 只可作为 FileAsset 专属 canonical `payload` carrier 成员存在；命令、路径、日志文字、会话定位仍不得进入 FileAsset manifest 或其它类型字段，也不得因 payload 例外放宽普通事实对象。截图、日志、诊断、导出或其它 raw payload 只有在本文对象化条件成立并通过 §7.1–7.2 受控创建边界时才能形成 FileAsset；存在入口不替代对象化、敏感、许可和签名判断。
 
 受控创建必须安全读取完整源文件，记录当次源身份和初始指纹，在 canonical 候选命名空间之外的同一文件系统 staging 中复制并同时计算 size/hash，复制后重新确认源身份与 bytes 未漂移，生成 manifest，验证成员闭集与签名 shape，再以不覆盖既有目标的原子目录操作形成对象。写后必须从实际 Working Tree 重读 manifest 和 payload。任何步骤无法完成时不得留下可被发现为正式对象的半成品；残留只有在能证明属于该未完成事务时才可安全清理，归属不明时必须报告并停止。
 
@@ -258,7 +281,7 @@ payload bytes、`filename`、`media_type`、`size_bytes`、`content_sha256`、`s
 
 `title` 可以在不改变 payload 身份、用途和来源边界时原地更正；`status`、`disposition_summary` 和 Code 托管的 `updated_at` 只按 §6 的转换变化。任何成功变更必须使用当前完整对象指纹作 CAS，在 FileAsset 类型锁内验证 before/after、原子写 manifest 并回读整个目录；普通通用更新入口不得因只能写单文件而绕过 payload 一致性检查。
 
-初版正常生命周期不提供物理删除、移动或目录重命名能力。Working Tree 中手工删除或修改必须在后续完整性检查中成为缺失或无效。当前单文件 Git Gate 不能构造 FileAsset 目录 after-image，因此任何 staged FileAsset 路径都必须报告不可验证并失败关闭；这只阻止当前提交，不证明单边成员、payload 原地变化或完整删除已经由多成员规则精确分类，也不阻止本地命令先改变 Working Tree。
+初版正常生命周期不提供物理删除、移动或目录重命名能力。Working Tree 中手工删除或修改必须在后续完整性检查中成为缺失或无效。Git Gate 已能从绑定 Index 聚合 FileAsset 目录 after-image：只放行 HEAD 中不存在且完整机械有效的新建对象；既有对象的单边成员、payload/manifest 原地变化、完整删除、移动和改名都以生命周期写不可用失败关闭。这只阻止提交，不阻止本地命令先改变 Working Tree，也不构成更新、归档或删除能力。
 
 敏感信息、许可、法律义务或类型退出确实要求物理移除时，必须停止普通生命周期操作，取得 Human 对准确对象、入向引用、Git 历史影响、保留与删除范围的决定，并先形成来源规则允许的一次性移除或迁移方案。不能仅凭 `archived`、无人引用、Human 曾批准创建或“Git 中还能找回”推断允许删除。
 
@@ -266,24 +289,24 @@ FileAsset 类型停止新增、合并、替代或取消时，必须先枚举全�
 
 ## 9. Activation 能力边界与受影响来源
 
-本次 activation 以一个闭合、只读优先的变更包使 FileAsset 成为第六个当前事实类型，并以 WorkCase 作为第一个消费者。变更包必须同时保持以下来源和实现一致：
+FileAsset activation 先以闭合只读包成为第六个当前事实类型并以 WorkCase 作为第一个消费者；本次 Write Activation 在不扩大既有对象生命周期写的前提下增加类型专属受控新建与全新对象 Git Gate 校验。变更包必须同时保持以下来源和实现一致：
 
-1. `fact-model-foundation` 登记第六类型、目录 carrier、读取/发现/完整性结果，以及既有单文件创建和更新入口对 FileAsset 的零写入拒绝；
+1. `fact-model-foundation` 登记第六类型、目录 carrier、读取/发现/完整性结果、类型专属公开操作，以及既有单文件创建和更新入口对 FileAsset 的零写入拒绝；
 2. `fact-object-field-registry` 登记 `file-asset-signature`、全部 manifest 字段和结构成员，并把 `disposition-summary` 扩展至 `file-asset`；
 3. `fact-object-mechanical-validation-catalog` 登记目录成员、manifest/payload 一致性、size/hash、签名条件、资源上限和当前不可用边界；
 4. `WorkCase` 唯一定义来源新增同项目 `has-file-asset`，并明确形成、保留、关闭冻结和 archived 目标边界；其它类型不因 FileAsset 准入自动获得该关系；
 5. `Spark` 明确从既有宽目标集合排除 FileAsset，避免 `routed-to` 或 `related-to` 意外使其成为消费者；WorkCase 的 `related-to` 同样排除 FileAsset，使引用只有一个 relation key；
-6. `source-of-truth-traceability` 规定现有单文件 Git Index 校验遇到 staged FileAsset 路径时只能失败关闭并报告不可验证；多成员 after-image 校验未因此成立；
-7. 事实对象行动模板对 FileAsset 创建、更新、归档和删除统一交还 capability gap，不复用既有单文件事务；
+6. `source-of-truth-traceability` 规定 FileAsset 按对象聚合绑定 Index after-image，只放行完整有效的新建对象，并对既有对象任何 staged 生命周期写失败关闭；
+7. 事实对象创建模板把 FileAsset 分流到 §7.1–7.2 类型专属入口；生命周期模板对更新、归档和删除继续交还 capability gap，二者都不得复用既有单文件事务；
 8. 术语表登记 `FileAsset / 文件资产`，并保持 `Attachment / 附件` 只指授权附件；
 9. 正式 Helper 读取、候选发现、对象集指纹、全库完整性与 WorkCase 关系检查直接消费当前 Schema，不保留 provisional Schema 或第二 validator；
 10. 独立复核覆盖类型必要性、更小普通目录方案、字段/结构、目录 carrier、签名、关系、生命周期、安全、迁移、Git Gate 和跨来源同步成本。
 
-本次实际开放的能力只有：安全精确读取 manifest 与完整 payload、完整性 coverage、F0/F2 发现、全库完整性检查，以及 WorkCase 对 mechanically valid FileAsset 的同项目稳定引用。没有 canonical FileAsset 实例随 activation 自动形成，现有 `docs/` 文件不迁移也不删除。受控创建、manifest 更新、归档写入、物理删除、多成员 Git Index after-image 校验、普通文档引用闭包、Web 下载/预览和跨项目引用继续不可用；调用方必须看到明确的 `invalid_request`、`unavailable` 或未完成 coverage，不能由类型 active 推断这些能力成立。
+当前实际开放的能力为：安全精确读取 manifest 与完整 payload、完整性 coverage、F0/F2 发现、全库完整性检查、§7.1–7.2 受控新建、全新对象多成员 Git Index after-image 校验，以及 WorkCase 对 mechanically valid FileAsset 的同项目稳定引用。activation 不自动迁移或删除现有 `docs/` 文件；来源文件在创建成功后仍保留，后续移动/删除另行处理。manifest 更新、归档写入、物理删除、既有对象移动/改名、普通文档引用闭包、Web 下载/预览和跨项目引用继续不可用；调用方必须看到明确拒绝、不可用或未完成 coverage，不能由类型 active 或新建成功推断这些能力成立。
 
 2026-07-31 A/B 试点已经完成“现有事实模型 vs 平行资产对象模型”的承载位置比较：A 能取得相同 payload 和消费结论，但要满足完整需求就必须复制身份、状态、签名、引用、发现、读取和生命周期，因此不能作为不混淆责任的普通文件位置。WorkCase 正式消费者验证用于确认统一关系、F0–F4、状态与内容边界按当前来源工作，不要求 FileAsset 改变消费者对同一 payload 得出的领域结论；相同 bytes 被正确读取后形成相同结论是预期结果。对象数量、关系 shape 或能力存在仍不能单独证明 V4、V8、HV4 或项目演进价值。
 
-当前规则源优先读取 Working Tree，active 来源的未提交变化会立即参与规则判断。整包未闭合时，不得只凭本文 `active` 声称 FileAsset 可用；验证必须同时回读上述共同来源、Schema、Helper 结果、关系检查和 Git Gate 失败关闭结果。正式对象创建仍须另行完成安全源读取、目录原子提交、失败残留、编号分配、受控内容交付及真实并发/故障验证。
+当前规则源优先读取 Working Tree，active 来源的未提交变化会立即参与规则判断。整包未闭合时，不得只凭本文 `active` 声称 FileAsset Write Activation 可用；验证必须同时回读上述共同来源、Schema、Helper 结果、关系检查，以及 Git Gate 对有效新建的放行和对既有变更/非法新建的失败关闭结果。受控创建声明只覆盖已验证 POSIX 平台、4 MiB 内普通来源文件、共享编号、目录原子提交、条件回滚和回读范围；未验证故障不得由 happy-path 推定。
 
 ### 9.1 2026-07-31 A/B 试点的重新解释
 
@@ -299,7 +322,7 @@ FileAsset 类型停止新增、合并、替代或取消时，必须先枚举全�
 
 据此，当前处置为：
 
-- FileAsset 已完成类型准入，并以只读 activation 边界进入统一字段、共同来源、Helper 和 WorkCase 关系；
+- FileAsset 已完成类型准入，先以只读 activation 进入统一字段、共同来源、Helper 和 WorkCase 关系，再以 Write Activation 增加类型专属受控新建与全新对象 Git Gate 校验；
 - activation 本身不建立 canonical 对象；当前发现只扫描实际存在的正式目录，不把试点 fixture 或普通 `docs/` 文件提升为 FileAsset；
 - 不建立 A 所代表的平行 `asset_id`、`asset_refs`、资产状态或第二套发现/生命周期体系；
 - 正式消费者验证关注统一关系、F0/F2/F3/F4、状态、payload 完整性和内容语义边界是否按来源成立，不要求同一 payload 在两种载体中产生不同领域结论；
@@ -325,7 +348,7 @@ FileAsset 类型停止新增、合并、替代或取消时，必须先枚举全�
 | 安全消费 | 新增下载、预览、渲染或执行入口时 | 不只依赖 `media_type`；主动内容、超限、未知和无效对象按安全策略处理；不无界传输 | 08、实际内容策略、payload 和页面/API | contract tests、代表性文件与实际页面检查 | 当次内容类别、入口和视口 | 禁止执行/渲染；退回下载、文本或不可用状态 |
 | 非 canonical 试点 | 使用当前两个审计文件说明可行性时 | 两份源/副本 bytes、size/hash、签名 shape、候选身份和关系 shape 的实际检查范围被准确保留；没有冒充正式对象 | 2026-07-31 试点记录、两个样本 hash 与本文 | 试点记录回读；需要时重新执行隔离试验 | 候选 shape 的有限可行性 | 不扩大为正式 Schema、原子性、Git Gate 或长期净价值结论 |
 
-当前非 canonical 试点样本为：Human 指定的 `docs/跨环境接入分析汇总报告-2026-07-30.md`，9271 bytes，SHA-256 `58b4a1a5b84ff7470c974b2a16b7beea28b916253762401664ed67b2a1a171b0`，候选签名为 `human`；Human 要求当前 AI 编写的 `docs/ldvh-environment-hook-claim-audit-2026-07-31.md`，11124 bytes，SHA-256 `57ca7ee0c5f006a0736b618fdc526a55e21d0f3ff068de10e7043b6090b6f8ac`，候选签名为 `ai-agent / codex / Codex Desktop`。隔离试验中两份复制的 size/hash 与源一致，候选 manifest、身份、签名结构和两条 `has-file-asset` 关系 shape 通过所执行的确定性检查。首轮 `/tmp/ldvh-file-asset-pilot.tzC5DO` 已删除；A/B 原 `/tmp/ldvh-file-asset-ab.MI32yS` 路径已移除，其废纸篓副本不构成长期依据。该结果不证明正式 carrier、Helper、负例、并发、资源上限、Git Gate、Web 或迁移成立。
+当前非 canonical 试点样本为：Human 指定的 `docs/跨环境接入分析汇总报告-2026-07-30.md`，9271 bytes，SHA-256 `58b4a1a5b84ff7470c974b2a16b7beea28b916253762401664ed67b2a1a171b0`，候选签名为 `human`；Human 要求当前 AI 编写的 `docs/ldvh-environment-hook-claim-audit-2026-07-31.md`，11124 bytes，SHA-256 `57ca7ee0c5f006a0736b618fdc526a55e21d0f3ff068de10e7043b6090b6f8ac`，候选签名为 `ai-agent / codex / Codex Desktop`。隔离试验中两份复制的 size/hash 与源一致，候选 manifest、身份、签名结构和两条 `has-file-asset` 关系 shape 通过所执行的确定性检查。首轮 `/tmp/ldvh-file-asset-pilot.tzC5DO` 已删除；A/B 原 `/tmp/ldvh-file-asset-ab.MI32yS` 路径已移除，其废纸篓副本不构成长期依据。该历史结果本身仍不证明正式能力；Write Activation 的正式能力只能由当前 §7.1–7.2 实现、CLI/事务 tests 和真实 Git Gate 事件另行证明，Web 与迁移仍未覆盖。
 
 ## 11. Human Gate
 

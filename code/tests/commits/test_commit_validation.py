@@ -5,7 +5,12 @@ from pathlib import Path
 import pytest
 
 from ldvh.commits.contract_source import CommitContractProjection
-from ldvh.commits.validation import CommitValidationInput, StagedFactCandidate, validate_commit
+from ldvh.commits.validation import (
+    CommitValidationInput,
+    StagedFactCandidate,
+    StagedFileAssetCandidate,
+    validate_commit,
+)
 from ldvh.facts.schema import FactSchema, ProjectedField
 
 
@@ -181,6 +186,72 @@ def _spark_schema() -> FactSchema:
     )
 
 
+def _file_asset_schema() -> FactSchema:
+    def field(
+        path: str,
+        json_type: str = "string",
+        presence: str = "required",
+        structure: str | None = None,
+    ) -> ProjectedField:
+        return ProjectedField(path, json_type, presence, structure, "test-registry")
+
+    return FactSchema(
+        "file-asset",
+        (
+            field("object_id"),
+            field("fact_type_key"),
+            field("title"),
+            field("created_at"),
+            field("updated_at"),
+            field("status"),
+            field("filename"),
+            field("media_type"),
+            field("size_bytes", "integer"),
+            field("content_sha256"),
+            field("signature", "object", structure="file-asset-signature"),
+            field("signature.signer_type"),
+            field("signature.agent_id", presence="conditional"),
+            field("signature.host_environment", presence="conditional"),
+            field("disposition_summary", presence="conditional"),
+        ),
+    )
+
+
+def _file_asset_candidate(
+    *,
+    object_id: str = "file-asset-0001",
+    payload: bytes = b"objective bytes\n",
+    head_exists: bool | None = False,
+    member_names: tuple[str, ...] = ("file-asset.yaml", "payload"),
+    observation_issue: str | None = None,
+) -> StagedFileAssetCandidate:
+    import hashlib
+
+    manifest = (
+        f"object_id: {object_id}\n"
+        "fact_type_key: file-asset\n"
+        "title: 审计文件\n"
+        'created_at: "2026-07-31T10:00:00+08:00"\n'
+        'updated_at: "2026-07-31T10:00:00+08:00"\n'
+        "status: active\n"
+        "filename: audit.bin\n"
+        "media_type: application/octet-stream\n"
+        f"size_bytes: {len(payload)}\n"
+        f"content_sha256: {hashlib.sha256(payload).hexdigest()}\n"
+        "signature:\n"
+        "  signer_type: human\n"
+    ).encode()
+    return StagedFileAssetCandidate(
+        object_id,
+        tuple(f"ldvh-base/file-assets/{object_id}/{name}" for name in member_names),
+        member_names,
+        manifest if "file-asset.yaml" in member_names else None,
+        payload if "payload" in member_names else None,
+        head_exists,
+        observation_issue,
+    )
+
+
 _VALID_SPARK = (
     "object_id: spark-0001\n"
     "fact_type_key: spark\n"
@@ -189,7 +260,7 @@ _VALID_SPARK = (
     "priority: P1\n"
     "created_at: 2026-07-01T00:00:00+08:00\n"
     "updated_at: 2026-07-01T00:00:00+08:00\n"
-).encode("utf-8")
+).encode()
 
 
 def _fact_candidate(**changes: object) -> StagedFactCandidate:
@@ -207,7 +278,7 @@ def _fact_candidate(**changes: object) -> StagedFactCandidate:
 def test_invalid_staged_fact_candidate_fails_with_path_precise_diagnostics(
     contract: CommitContractProjection,
 ) -> None:
-    candidate = _fact_candidate(data="title: 只有标题\n".encode("utf-8"))
+    candidate = _fact_candidate(data="title: 只有标题\n".encode())
 
     result = validate_commit(
         contract,
@@ -257,32 +328,59 @@ def test_fact_candidate_observation_gap_is_unverifiable(contract: CommitContract
     assert "fact_candidate_unverifiable" in _codes(result)
 
 
-@pytest.mark.parametrize(
-    "path",
-    [
-        "ldvh-base/file-assets",
-        "ldvh-base/file-assets/file-asset-0001/file-asset.yaml",
-        "ldvh-base/file-assets/file-asset-0001/payload",
-        "ldvh-base/file-assets/not-an-id/unknown",
-    ],
-)
-def test_staged_file_asset_path_is_always_fail_closed_unverifiable(
-    contract: CommitContractProjection,
-    path: str,
-) -> None:
-    candidate = _fact_candidate(
-        path=path,
-        fact_type_key="file-asset",
-        object_id="file-asset-0001" if "file-asset-0001" in path else None,
-        data=b"single staged member",
-        observation_issue=None,
+def test_complete_valid_new_file_asset_after_image_passes(contract: CommitContractProjection) -> None:
+    result = validate_commit(
+        contract,
+        _input(
+            contract,
+            file_asset_candidates=(_file_asset_candidate(),),
+            fact_schemas=(_file_asset_schema(),),
+        ),
     )
 
-    result = validate_commit(contract, _input(contract, fact_candidates=(candidate,), fact_schemas=()))
+    assert result.outcome == "passed"
+
+
+def test_incomplete_new_file_asset_after_image_fails(contract: CommitContractProjection) -> None:
+    result = validate_commit(
+        contract,
+        _input(
+            contract,
+            file_asset_candidates=(_file_asset_candidate(member_names=("payload",)),),
+            fact_schemas=(_file_asset_schema(),),
+        ),
+    )
+
+    assert result.outcome == "failed"
+    assert _codes(result) == {"fact_candidate_invalid"}
+
+
+def test_existing_file_asset_lifecycle_write_fails(contract: CommitContractProjection) -> None:
+    result = validate_commit(
+        contract,
+        _input(
+            contract,
+            file_asset_candidates=(_file_asset_candidate(head_exists=True),),
+            fact_schemas=(_file_asset_schema(),),
+        ),
+    )
+
+    assert result.outcome == "failed"
+    assert _codes(result) == {"file_asset_lifecycle_write_unavailable"}
+
+
+def test_file_asset_after_image_observation_gap_is_unverifiable(contract: CommitContractProjection) -> None:
+    result = validate_commit(
+        contract,
+        _input(
+            contract,
+            file_asset_candidates=(_file_asset_candidate(observation_issue="blob read failed"),),
+            fact_schemas=(_file_asset_schema(),),
+        ),
+    )
 
     assert result.outcome == "unverifiable"
     assert _codes(result) == {"fact_candidate_unverifiable"}
-    assert "FileAsset" in result.issues[0].message
 
 
 def test_missing_fact_schema_projection_is_unverifiable(contract: CommitContractProjection) -> None:

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import subprocess
 from pathlib import Path
@@ -405,3 +406,107 @@ def test_no_fact_candidate_means_no_schema_projection(
     assert helper.exit_code == 0
     assert helper.response["result"]["mechanical_outcome"] == gate.outcome == "passed"
     assert helper.response["result"]["issues"] == []
+
+
+def _stage_file_asset(
+    project: Path,
+    *,
+    object_id: str = "file-asset-0001",
+    payload: bytes = b"objective audit bytes\n",
+    declared_payload: bytes | None = None,
+) -> tuple[str, str]:
+    directory = project / "ldvh-base/file-assets" / object_id
+    directory.mkdir(parents=True, exist_ok=True)
+    declared = payload if declared_payload is None else declared_payload
+    manifest = (
+        f"object_id: {object_id}\n"
+        "fact_type_key: file-asset\n"
+        "title: 审计文件\n"
+        'created_at: "2026-07-31T10:00:00+08:00"\n'
+        'updated_at: "2026-07-31T10:00:00+08:00"\n'
+        "status: active\n"
+        "filename: audit.bin\n"
+        "media_type: application/octet-stream\n"
+        f"size_bytes: {len(declared)}\n"
+        f"content_sha256: {hashlib.sha256(declared).hexdigest()}\n"
+        "signature:\n"
+        "  signer_type: human\n"
+    )
+    (directory / "file-asset.yaml").write_text(manifest, encoding="utf-8")
+    (directory / "payload").write_bytes(payload)
+    manifest_path = f"ldvh-base/file-assets/{object_id}/file-asset.yaml"
+    payload_path = f"ldvh-base/file-assets/{object_id}/payload"
+    _git(project, "add", manifest_path, payload_path)
+    return manifest_path, payload_path
+
+
+def test_complete_valid_new_file_asset_passes_helper_and_native_gate(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    manifest, payload = _stage_file_asset(project)
+    _git(project, "reset", "-q", "change.txt")
+    message = "test(file-asset): 验证新建文件资产\n\n关键变更:\n- 新增完整目录载体"
+
+    helper = handle_request("call", "precheck-git-commit", _payload(workspace, project, message))
+    gate = _gate(workspace, project, message)
+
+    assert helper.response["result"]["mechanical_outcome"] == gate.outcome == "passed"
+    assert helper.response["result"]["issues"] == []
+    assert helper.response["result"]["candidate"]["paths"] == [manifest, payload]
+
+
+def test_tampered_new_file_asset_fails_helper_and_native_gate(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    _stage_file_asset(project, payload=b"tampered\n", declared_payload=b"declared\n")
+    _git(project, "reset", "-q", "change.txt")
+    message = "test(file-asset): 验证篡改拦截\n\n关键变更:\n- 暂存不一致目录"
+
+    helper = handle_request("call", "precheck-git-commit", _payload(workspace, project, message))
+    gate = _gate(workspace, project, message)
+
+    assert helper.response["result"]["mechanical_outcome"] == gate.outcome == "failed"
+    assert {item["code"] for item in helper.response["result"]["issues"]} == {"fact_candidate_invalid"}
+    assert _helper_issues_as_gate_diagnostics(helper.response) == gate.issues
+
+
+def test_existing_file_asset_payload_change_and_deletion_are_blocked(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    manifest, payload = _stage_file_asset(project)
+    _git(project, "reset", "-q", "change.txt")
+    _git(
+        project,
+        "-c",
+        "user.name=LDVH Test",
+        "-c",
+        "user.email=ldvh@example.invalid",
+        "commit",
+        "-qm",
+        "test: 建立 FileAsset 基线",
+    )
+    (project / payload).write_bytes(b"changed\n")
+    _git(project, "add", payload)
+    changed = handle_request(
+        "call",
+        "precheck-git-commit",
+        _payload(workspace, project, "test(file-asset): 验证既有变更拦截"),
+    ).response
+    assert changed["result"]["mechanical_outcome"] == "failed"
+    assert {item["code"] for item in changed["result"]["issues"]} == {
+        "file_asset_lifecycle_write_unavailable"
+    }
+
+    (project / payload).write_bytes(b"objective audit bytes\n")
+    _git(project, "add", payload)
+    _git(project, "rm", "-q", manifest, payload)
+    deleted = handle_request(
+        "call",
+        "precheck-git-commit",
+        _payload(
+            workspace,
+            project,
+            "test(file-asset): 验证既有删除拦截\n\n关键变更:\n- 删除完整目录载体",
+        ),
+    ).response
+    assert deleted["result"]["mechanical_outcome"] == "failed"
+    assert {item["code"] for item in deleted["result"]["issues"]} == {
+        "file_asset_lifecycle_write_unavailable"
+    }

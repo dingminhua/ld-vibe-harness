@@ -8,9 +8,11 @@ import pytest
 
 from ldvh import filesystem
 from ldvh.filesystem import (
+    atomic_create_directory_relative,
     atomic_create_relative,
     atomic_replace_relative_if_equal,
     atomic_store_relative,
+    remove_directory_relative_if_members_equal,
     remove_relative_if_equal,
 )
 
@@ -410,3 +412,50 @@ def test_remove_missing_path_does_not_create_parent_directories(tmp_path: Path) 
     assert result.outcome == "conflict"
     assert result.namespace_state == "not_committed"
     assert not (tmp_path / "facts").exists()
+
+
+@pytest.mark.skipif(os.name != "posix", reason="directory publication requires POSIX primitives")
+def test_atomic_directory_create_is_no_replace_and_cleans_staging(tmp_path: Path) -> None:
+    relative = "ldvh-base/file-assets/file-asset-0001"
+    members = {"file-asset.yaml": b"object_id: file-asset-0001\n", "payload": b"payload\n"}
+
+    created = atomic_create_directory_relative(tmp_path, relative, members)
+    conflict = atomic_create_directory_relative(
+        tmp_path,
+        relative,
+        {"file-asset.yaml": b"other\n", "payload": b"other\n"},
+    )
+
+    assert (created.outcome, created.namespace_state, created.durability) == (
+        "created",
+        "committed",
+        "file_and_directory",
+    )
+    assert (conflict.outcome, conflict.namespace_state) == ("conflict", "not_committed")
+    directory = tmp_path / relative
+    assert (directory / "file-asset.yaml").read_bytes() == members["file-asset.yaml"]
+    assert (directory / "payload").read_bytes() == members["payload"]
+    staging = tmp_path / "ldvh-base/.file-asset-staging"
+    assert not tuple(staging.iterdir())
+
+
+@pytest.mark.skipif(os.name != "posix", reason="directory rollback requires POSIX primitives")
+def test_directory_rollback_requires_exact_closed_members(tmp_path: Path) -> None:
+    relative = "ldvh-base/file-assets/file-asset-0001"
+    members = {"file-asset.yaml": b"manifest\n", "payload": b"payload\n"}
+    assert atomic_create_directory_relative(tmp_path, relative, members).outcome == "created"
+
+    conflict = remove_directory_relative_if_members_equal(
+        tmp_path,
+        relative,
+        {**members, "payload": b"different\n"},
+    )
+    removed = remove_directory_relative_if_members_equal(tmp_path, relative, members)
+
+    assert (conflict.outcome, conflict.namespace_state) == ("conflict", "not_committed")
+    assert (removed.outcome, removed.namespace_state, removed.durability) == (
+        "removed",
+        "committed",
+        "file_and_directory",
+    )
+    assert not (tmp_path / relative).exists()
