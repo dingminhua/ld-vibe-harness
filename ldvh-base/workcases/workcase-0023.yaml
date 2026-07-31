@@ -16,7 +16,7 @@ success_criterion_definitions:
   statement: 只有 items 3–6 提交与验证均成立时 spark-0039 才收口正文、未决、evolution、adr-0006 关系并 implemented；否则保持 open。
 - criterion_id: criterion-evidence
   statement: item 3–6 各有独立本地提交，每次 precheck 外层 ok 且 mechanical_outcome passed；每次事实写后回读与 integrity；最终验证锚定干净 HEAD，并形成完整 Gate2 材料与未验证范围。
-phase: independent_reviewing
+phase: closure_preparing
 plan_version: 1
 work_items:
 - item_id: item-03
@@ -233,7 +233,10 @@ result_reviews:
   subject_version: 2
   scope: 通过 Helper 精确读取修正后的 workcase-0023 result_version 2，并与 result_version 1 的仓库差异逐项对照。确认原 feedback 已同时进入 criterion-evidence、result_summary、controller_check_summary 与 validation_summary；四处均将用户 Skill 卸载及从已知 canonical bytes 恢复的回滚路径标为 Gate1 已接受但未执行、未验证的边界，并明确其不是 spark-0018 或本 WorkCase 的剩余实现责任。除 result_version、上述四个 projection 字段、waiting_on 与 updated_at 外，goal、scope、六条标准定义、五个 work item 结果及其它 criterion 内容未被改变；六条 outcome 仍有依据保持 satisfied。当前对象 mechanically valid，事实完整性检查为 outcome ok、status complete、94 个对象、0 problems，隔离树干净；未重复运行未受本次纯 projection 修正影响的测试或真实环境事件。
   conclusion: pass
+closure_proposal:
+  proposed_outcome: completed
+  proposed_disposition_summary: WorkCase 按 completed 停止：五个 work item 全部 completed，六条成功标准全部 satisfied，result_version 2 的独立结果复核为 pass；spark-0039 已 implemented，adr-0006 无需改写，spark-0029 保持既有 discarded，spark-0018 按评估保持 open/P2。原 scope 内没有未满足、未验证或未处置的实现责任，因此没有 residual decision、route_existing、suggest_spark 或 accepted-stop 项。未运行全量测试、当前规则源七项资格条件未由 Code 机械证明、真实原生 Git Gate、Skill 独立冷启动与隐式递达、真实负面写入、用户 Skill 卸载与 canonical bytes 回滚以及语义真实性均只作为已披露且 Gate1 已接受的验证边界保留，不被写成已验证能力，也不改变 completed 分类；本次停止只结束 workcase-0023 的冻结责任，不表示项目或独立 open 议题整体完成。
 object_id: workcase-0023
 fact_type_key: workcase
 created_at: '2026-08-01T01:49:52.669999+08:00'
-updated_at: '2026-08-01T03:34:22.168494+08:00'
+updated_at: '2026-08-01T03:35:09.673503+08:00'
