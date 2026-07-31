@@ -28,6 +28,7 @@ import { CommitHotspotCluster, CommitHotspotLegend } from '@/pages/cognition/Com
 import {
   fetchCognition,
   type CognitionActiveWorkCaseItem,
+  type CognitionCommitHotspotNode,
   type CognitionData,
   type CognitionInboxItem,
   type CognitionInboxKind,
@@ -49,6 +50,28 @@ const SPARK_HEALTH_FIRST_SCREEN_LIMIT = 3;
 const SPARK_PRIORITIES = ['P0', 'P1', 'P2', 'P3'];
 
 const RECENT_ACTIVITY_WINDOWS: CognitionRecentActivityWindow[] = ['1d', '3d', '7d', '14d'];
+
+type CommitHotspotStatusFilter = 'all' | 'progressing' | 'decision' | 'settled';
+
+const COMMIT_HOTSPOT_STATUS_FILTERS: CommitHotspotStatusFilter[] = ['all', 'progressing', 'decision', 'settled'];
+const COMMIT_HOTSPOT_TERMINAL_STATUSES: Record<string, Set<string>> = {
+  workcase: new Set(['closed']),
+  adr: new Set(['retired']),
+  pitfall: new Set(['discarded']),
+  spark: new Set(['routed', 'implemented', 'discarded']),
+  study: new Set(['retired']),
+};
+
+function getCommitHotspotStatusGroup(node: CognitionCommitHotspotNode): Exclude<CommitHotspotStatusFilter, 'all'> {
+  if (node.type === 'workcase') {
+    if (node.progress_group === 'plan_confirmation' || node.progress_group === 'closure_confirmation') return 'decision';
+    if (node.progress_group === 'closed') return 'settled';
+    return 'progressing';
+  }
+  if (node.type === 'pitfall' && node.status === 'draft') return 'decision';
+  if (node.status && COMMIT_HOTSPOT_TERMINAL_STATUSES[node.type]?.has(node.status)) return 'settled';
+  return 'progressing';
+}
 
 const INBOX_KIND_LABEL_KEYS: Record<CognitionInboxKind, LocaleKey> = {
   plan_confirmation: 'cognition.kind.plan_confirmation',
@@ -124,9 +147,8 @@ function buildCommitHotspotSummary(data: CognitionData, locale: string, t: Trans
     t('cognition.commitHotspots.summary', { hotspots: String(hotspots.hotspotTotal), relations: String(hotspots.relationTotal) }),
   ];
   for (const cluster of hotspots.clusters) {
-    for (const item of cluster.nodes.filter((node) => node.commitRefs.length > 0)) {
-      lines.push(`- ${item.id} · ${item.commitRefs.length} · ${getLocalizedObjectTitle(item, locale, item.id)}`);
-    }
+    const item = cluster.primary;
+    lines.push(`- ${item.id} · ${item.commitRefs.length} · ${getLocalizedObjectTitle(item, locale, item.id)}`);
   }
   return lines.join('\n');
 }
@@ -415,6 +437,8 @@ export default function CognitionCenter() {
   const [sparkHealthExpanded, setSparkHealthExpanded] = useState(true);
   const [showAllSilentSpark, setShowAllSilentSpark] = useState(false);
   const [commitHotspotsExpanded, setCommitHotspotsExpanded] = useState(true);
+  const [expandedHotspotKey, setExpandedHotspotKey] = useState<string | null>(null);
+  const [commitHotspotStatusFilter, setCommitHotspotStatusFilter] = useState<CommitHotspotStatusFilter>('progressing');
   const { t, locale } = useI18n();
 
   // 首次进入才阻塞整页；切换近期窗口保留当前内容，只在本模块内更新快照。
@@ -497,6 +521,15 @@ export default function CognitionCenter() {
     : '';
   const commitHotspots = data.commitHotspots;
   const commitHotspotIssues = (data.issues ?? []).filter((issue) => issue.section === 'commitHotspots');
+  const filteredCommitHotspotClusters = !commitHotspots
+    ? []
+    : commitHotspotStatusFilter === 'all'
+      ? commitHotspots.clusters
+      : commitHotspots.clusters.filter((cluster) => getCommitHotspotStatusGroup(cluster.primary) === commitHotspotStatusFilter);
+  const filteredCommitHotspotRelationTotal = filteredCommitHotspotClusters.reduce(
+    (total, cluster) => total + cluster.relations.length,
+    0,
+  );
 
   return (
     <div className="flex min-h-full flex-col p-6">
@@ -904,17 +937,59 @@ export default function CognitionCenter() {
                 commitHotspotIssues.length === 0 && <p className="ldvh-body-muted">{t('cognition.commitHotspots.empty')}</p>
               ) : (
                 <div className="flex min-w-0 flex-col gap-3">
-                  <CommitHotspotLegend
-                    clusters={commitHotspots.clusters}
-                    totalCommits={commitHotspots.totalCommits}
-                    hotspotTotal={commitHotspots.hotspotTotal}
-                    relationTotal={commitHotspots.relationTotal}
-                  />
-                  <div className="ldvh-section-grid min-w-0 items-start">
-                    {commitHotspots.clusters.map((cluster, index) => (
-                      <CommitHotspotCluster key={cluster.nodes.map((node) => `${node.type}:${node.id}`).join('|')} cluster={cluster} index={index} />
+                  <div
+                    className="flex min-w-0 flex-wrap items-center gap-1.5"
+                    role="group"
+                    aria-label={t('cognition.commitHotspots.statusFilterLabel')}
+                  >
+                    <span className="ldvh-caption mr-0.5 text-ldvh-text-secondary/75">
+                      {t('cognition.commitHotspots.statusFilterLabel')}
+                    </span>
+                    {COMMIT_HOTSPOT_STATUS_FILTERS.map((filter) => (
+                      <button
+                        key={filter}
+                        type="button"
+                        aria-pressed={commitHotspotStatusFilter === filter}
+                        onClick={() => {
+                          setCommitHotspotStatusFilter(filter);
+                          setExpandedHotspotKey(null);
+                        }}
+                        className={`ldvh-caption inline-flex h-8 items-center rounded-md border px-2.5 transition-colors ${
+                          commitHotspotStatusFilter === filter
+                            ? 'border-ldvh-accent/45 bg-ldvh-accent/10 text-ldvh-accent'
+                            : 'border-ldvh-border text-ldvh-text-secondary hover:border-ldvh-accent/40 hover:text-ldvh-accent'
+                        }`}
+                      >
+                        {t(`cognition.commitHotspots.statusFilter.${filter}` as LocaleKey)}
+                      </button>
                     ))}
                   </div>
+                  <CommitHotspotLegend
+                    totalCommits={commitHotspots.totalCommits}
+                    hotspotTotal={filteredCommitHotspotClusters.length}
+                    relationTotal={filteredCommitHotspotRelationTotal}
+                    relationKeys={[...new Set(filteredCommitHotspotClusters.flatMap((cluster) => (
+                      cluster.relations.map((relation) => relation.relationKey)
+                    )))]}
+                  />
+                  {filteredCommitHotspotClusters.length === 0 ? (
+                    <p className="ldvh-body-muted">{t('cognition.commitHotspots.filterEmpty')}</p>
+                  ) : (
+                    <div className="ldvh-hotspot-grid min-w-0 items-start">
+                      {filteredCommitHotspotClusters.map((cluster, index) => (
+                        <CommitHotspotCluster
+                          key={`${cluster.primary.type}:${cluster.primary.id}`}
+                          cluster={cluster}
+                          index={index}
+                          canExpand={cluster.relations.length > 0}
+                          expanded={expandedHotspotKey === `${cluster.primary.type}:${cluster.primary.id}`}
+                          onExpandedChange={(expanded) => setExpandedHotspotKey(
+                            expanded ? `${cluster.primary.type}:${cluster.primary.id}` : null,
+                          )}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
               )
             )}

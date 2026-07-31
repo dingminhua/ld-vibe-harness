@@ -541,15 +541,17 @@ export interface CognitionCommitHotspotNode {
   commitRefs: CognitionCommitHotspotRef[];
 }
 
-export interface CognitionCommitHotspotEdge {
-  source: string;
-  target: string;
+export interface CognitionCommitHotspotRelation {
+  direction: 'outgoing' | 'incoming';
   relationKey: string;
+  node: CognitionCommitHotspotNode;
 }
 
 export interface CognitionCommitHotspotCluster {
-  nodes: CognitionCommitHotspotNode[];
-  edges: CognitionCommitHotspotEdge[];
+  /** 当前窗口内有可回指提交的唯一中心。 */
+  primary: CognitionCommitHotspotNode;
+  /** 只含与中心直接相连的一跳正式关系；不会递归展开邻居。 */
+  relations: CognitionCommitHotspotRelation[];
 }
 
 /**

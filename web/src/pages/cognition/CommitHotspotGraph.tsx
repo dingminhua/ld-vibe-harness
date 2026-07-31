@@ -1,115 +1,139 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { GitCommitHorizontal } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { GitCommitHorizontal, Maximize2, Minimize2 } from 'lucide-react';
 import PriorityIcon from '@/components/PriorityIcon';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
 import { useI18n } from '@/i18n/context';
-import { getFieldLabel, getLocalizedObjectTitle, getObjectStatusLocale, getTypeLabel, type LocaleKey } from '@/i18n/locales';
+import { getFieldLabel, getLocalizedObjectTitle, getObjectStatusLocale, type LocaleKey } from '@/i18n/locales';
 import { usePanel } from '@/utils/panelContext';
 import type {
   CognitionCommitHotspotCluster,
   CognitionCommitHotspotNode,
+  CognitionCommitHotspotRelation,
 } from '@/utils/api';
 
+type NodeRole = 'primary' | 'secondary-hotspot' | 'related-work';
+type DiagramMode = 'compact' | 'expanded';
 type Position = { x: number; y: number };
 type NodeSize = { width: number; height: number };
-type NodeRole = 'primary' | 'secondary-hotspot' | 'related-work';
 
-const PRIMARY_NODE_MIN_WIDTH = 244;
-const PRIMARY_NODE_MAX_WIDTH = 340;
-const PRIMARY_NODE_HEIGHT = 96;
-const RELATED_NODE_MIN_WIDTH = 172;
-const RELATED_NODE_WIDE_WIDTH = 220;
-const RELATED_NODE_NARROW_MAX_WIDTH = 300;
-const RELATED_NODE_HEIGHT = 82;
-const GRAPH_MIN_WIDTH = 280;
-const GRAPH_MAX_WIDTH = 760;
-const SINGLE_COLUMN_WIDTH = 520;
+type RelatedWork = {
+  node: CognitionCommitHotspotNode;
+  relations: CognitionCommitHotspotRelation[];
+};
 
-/**
- * Small clusters use one deterministic anchor-and-grid layout. It is not a
- * force graph and never infers relation strength: order only affects reading.
- */
-function createLayout(nodes: CognitionCommitHotspotNode[], availableWidth?: number): {
+type PositionedWork = {
+  item: RelatedWork;
+  position: Position;
+  size: NodeSize;
+};
+
+type DiagramLayout = {
   width: number;
   height: number;
-  positions: Map<string, Position>;
-  sizes: Map<string, NodeSize>;
-} {
-  const fallbackWidth = Math.max(GRAPH_MIN_WIDTH, Math.min(GRAPH_MAX_WIDTH, Math.max(2, Math.ceil(Math.sqrt(nodes.length))) * 220));
-  const width = availableWidth && availableWidth > 0
-    ? Math.max(GRAPH_MIN_WIDTH, Math.min(GRAPH_MAX_WIDTH, Math.floor(availableWidth)))
-    : fallbackWidth;
-  const remaining = nodes.slice(1);
-  const narrowRelatedWidth = Math.min(
-    RELATED_NODE_NARROW_MAX_WIDTH,
-    Math.max(RELATED_NODE_MIN_WIDTH, width - 32),
-  );
-  const candidateRelatedWidth = width < SINGLE_COLUMN_WIDTH ? narrowRelatedWidth : RELATED_NODE_WIDE_WIDTH;
-  const supportedColumns = Math.max(1, Math.floor((width - 20) / (candidateRelatedWidth + 28)));
-  const columns = Math.max(1, Math.min(4, supportedColumns, Math.ceil(Math.sqrt(Math.max(remaining.length, 1)))));
-  const relatedWidth = columns === 1 ? narrowRelatedWidth : RELATED_NODE_WIDE_WIDTH;
-  const rows = remaining.length > 0 ? Math.ceil(remaining.length / columns) : 0;
-  const primaryWidth = Math.min(PRIMARY_NODE_MAX_WIDTH, Math.max(PRIMARY_NODE_MIN_WIDTH, width - 32));
-  const primaryY = 50;
-  const firstRelatedY = primaryY + PRIMARY_NODE_HEIGHT / 2 + 14 + RELATED_NODE_HEIGHT / 2;
-  const rowStep = RELATED_NODE_HEIGHT + 16;
-  const height = rows === 0
-    ? PRIMARY_NODE_HEIGHT + 20
-    : firstRelatedY + (rows - 1) * rowStep + RELATED_NODE_HEIGHT / 2 + 12;
-  const positions = new Map<string, Position>();
-  const sizes = new Map<string, NodeSize>();
-  if (nodes[0]) {
-    positions.set(nodeKey(nodes[0]), { x: width / 2, y: primaryY });
-    sizes.set(nodeKey(nodes[0]), { width: primaryWidth, height: PRIMARY_NODE_HEIGHT });
-  }
-  const horizontalPadding = Math.min(relatedWidth / 2 + 10, Math.max(relatedWidth / 2, width / 2));
-  const gridWidth = Math.max(0, width - horizontalPadding * 2);
-  remaining.forEach((node, index) => {
-    const column = index % columns;
-    const row = Math.floor(index / columns);
-    const nodesInRow = Math.min(columns, remaining.length - row * columns);
-    const rowGap = nodesInRow > 1 ? Math.min(300, gridWidth / (nodesInRow - 1)) : 0;
-    const rowStart = (width - rowGap * (nodesInRow - 1)) / 2;
-    positions.set(nodeKey(node), {
-      x: rowStart + column * rowGap,
-      y: firstRelatedY + row * rowStep,
-    });
-    sizes.set(nodeKey(node), { width: relatedWidth, height: RELATED_NODE_HEIGHT });
-  });
-  return { width, height, positions, sizes };
-}
+  edgeOrientation: 'horizontal' | 'vertical';
+  primaryPosition: Position;
+  primarySize: NodeSize;
+  work: PositionedWork[];
+};
+
+const COMPACT_WORK_LIMIT = 5;
+
+const RELATION_COLORS: Record<string, string> = {
+  'related-to': '#2563eb',
+  'routed-to': '#c2410c',
+  informs: '#7c3aed',
+  'inspired-by': '#a16207',
+  'depends-on': '#0f766e',
+  'contributed-to': '#be123c',
+};
+
+const RELATION_PHRASE_KEYS: Record<string, LocaleKey> = {
+  'outgoing:related-to': 'cognition.commitHotspots.workRelation.related',
+  'incoming:related-to': 'cognition.commitHotspots.workRelation.related',
+  'outgoing:routed-to': 'cognition.commitHotspots.workRelation.hotspotRoutesHere',
+  'incoming:routed-to': 'cognition.commitHotspots.workRelation.routesToHotspot',
+  'outgoing:informs': 'cognition.commitHotspots.workRelation.hotspotInformsHere',
+  'incoming:informs': 'cognition.commitHotspots.workRelation.informsHotspot',
+  'outgoing:inspired-by': 'cognition.commitHotspots.workRelation.inspiresHotspot',
+  'incoming:inspired-by': 'cognition.commitHotspots.workRelation.inspiredByHotspot',
+  'outgoing:depends-on': 'cognition.commitHotspots.workRelation.hotspotDependsHere',
+  'incoming:depends-on': 'cognition.commitHotspots.workRelation.dependsOnHotspot',
+  'outgoing:contributed-to': 'cognition.commitHotspots.workRelation.hotspotContributesHere',
+  'incoming:contributed-to': 'cognition.commitHotspots.workRelation.contributesToHotspot',
+};
 
 function nodeKey(node: CognitionCommitHotspotNode): string {
   return `${node.type}:${node.id}`;
 }
 
-function relationColor(relationKey: string): string {
-  const colors = ['#64748b', '#0f766e', '#2563eb', '#7c3aed', '#b45309'];
-  let hash = 0;
-  for (const character of relationKey) hash = (hash * 31 + character.charCodeAt(0)) >>> 0;
-  return colors[hash % colors.length];
+function safeId(value: string): string {
+  return value.replace(/[^a-z0-9_-]/gi, '-');
 }
 
-function relationDashArray(relationKey: string): string | undefined {
-  if (relationKey === 'related-to') return undefined;
-  if (relationKey === 'routed-to') return '7 4';
-  if (relationKey === 'informs') return '2 4';
-  if (relationKey === 'inspired-by') return '10 3 2 3';
-  return '5 4';
+function relatedWorkItems(relations: CognitionCommitHotspotRelation[]): RelatedWork[] {
+  const items = new Map<string, RelatedWork>();
+  for (const relation of relations) {
+    const key = nodeKey(relation.node);
+    const item = items.get(key) ?? { node: relation.node, relations: [] };
+    if (!item.relations.some((candidate) => candidate.direction === relation.direction && candidate.relationKey === relation.relationKey)) {
+      item.relations.push(relation);
+    }
+    items.set(key, item);
+  }
+  return [...items.values()];
 }
 
-function getNodeRole(node: CognitionCommitHotspotNode, primaryKey: string): NodeRole {
-  if (nodeKey(node) === primaryKey) return 'primary';
+function getNodeRole(node: CognitionCommitHotspotNode, primary = false): NodeRole {
+  if (primary) return 'primary';
   return node.commitRefs.length > 0 ? 'secondary-hotspot' : 'related-work';
 }
 
-function getNodeSize(role: NodeRole): NodeSize {
-  return role === 'primary'
-    ? { width: PRIMARY_NODE_MIN_WIDTH, height: PRIMARY_NODE_HEIGHT }
-    : { width: RELATED_NODE_MIN_WIDTH, height: RELATED_NODE_HEIGHT };
+function relationColor(item: RelatedWork): string {
+  const keys = [...new Set(item.relations.map((relation) => relation.relationKey))];
+  if (keys.length !== 1) return '#64748b';
+  return RELATION_COLORS[keys[0]] ?? '#64748b';
 }
 
-function rectangleEdgePoint(from: Position, to: Position, size: { width: number; height: number }): Position {
+function relationDashArray(item: RelatedWork): string | undefined {
+  const keys = [...new Set(item.relations.map((relation) => relation.relationKey))];
+  if (keys.length !== 1) return undefined;
+  return relationKeyDashArray(keys[0]);
+}
+
+function relationKeyDashArray(relationKey: string): string | undefined {
+  if (relationKey === 'related-to') return undefined;
+  if (relationKey === 'routed-to') return '8 5';
+  if (relationKey === 'informs') return '3 4';
+  if (relationKey === 'inspired-by') return '10 4 2 4';
+  return '6 4';
+}
+
+function relationDirection(item: RelatedWork): { incoming: boolean; outgoing: boolean } {
+  return {
+    incoming: item.relations.some((relation) => relation.direction === 'incoming'),
+    outgoing: item.relations.some((relation) => relation.direction === 'outgoing'),
+  };
+}
+
+function relationLabels(
+  item: RelatedWork,
+  locale: string,
+  t: (key: LocaleKey, params?: Record<string, string>) => string,
+): string[] {
+  return [...new Set(item.relations.map((relation) => {
+    const phraseKey = RELATION_PHRASE_KEYS[`${relation.direction}:${relation.relationKey}`];
+    if (phraseKey) return t(phraseKey);
+    const relationLabel = getFieldLabel(`relation_${relation.relationKey.replace(/-/g, '_')}`, locale);
+    return t(
+      relation.direction === 'outgoing'
+        ? 'cognition.commitHotspots.outgoingGroup'
+        : 'cognition.commitHotspots.incomingGroup',
+      { relation: relationLabel },
+    );
+  }))];
+}
+
+function rectangleEdgePoint(from: Position, to: Position, size: NodeSize): Position {
   const dx = to.x - from.x;
   const dy = to.y - from.y;
   if (dx === 0 && dy === 0) return from;
@@ -119,9 +143,8 @@ function rectangleEdgePoint(from: Position, to: Position, size: { width: number;
   return { x: from.x + dx * scale, y: from.y + dy * scale };
 }
 
-function curvedEdgePath(start: Position, end: Position): string {
-  const dy = end.y - start.y;
-  if (Math.abs(dy) < 10) {
+function curvedPath(start: Position, end: Position, horizontal: boolean): string {
+  if (horizontal) {
     const middleX = (start.x + end.x) / 2;
     return `M ${start.x} ${start.y} C ${middleX} ${start.y}, ${middleX} ${end.y}, ${end.x} ${end.y}`;
   }
@@ -129,213 +152,539 @@ function curvedEdgePath(start: Position, end: Position): string {
   return `M ${start.x} ${start.y} C ${start.x} ${middleY}, ${end.x} ${middleY}, ${end.x} ${end.y}`;
 }
 
-function relationMarkerId(index: number, relationKey: string): string {
-  return `commit-hotspot-arrow-${index}-${relationKey.replace(/[^a-z0-9_-]/gi, '-')}`;
+function expandedMindMapAnchors(
+  primaryPosition: Position,
+  primarySize: NodeSize,
+  relatedPosition: Position,
+  relatedSize: NodeSize,
+): { start: Position; end: Position } {
+  const relatedOnLeft = relatedPosition.x < primaryPosition.x;
+  return {
+    start: {
+      x: primaryPosition.x + (relatedOnLeft ? -primarySize.width / 2 : primarySize.width / 2),
+      y: primaryPosition.y,
+    },
+    end: {
+      x: relatedPosition.x + (relatedOnLeft ? relatedSize.width / 2 : -relatedSize.width / 2),
+      y: relatedPosition.y,
+    },
+  };
 }
 
-function RelationSwatch({ relationKey }: { relationKey: string }) {
-  const color = relationColor(relationKey);
-  return (
-    <svg width="28" height="10" viewBox="0 0 28 10" aria-hidden="true" className="shrink-0 overflow-visible">
-      <line x1="1" y1="5" x2="23" y2="5" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeDasharray={relationDashArray(relationKey)} />
-      <path d="M 21.5 2 L 26 5 L 21.5 8" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
+function compactMultiRoutePath(start: Position, end: Position, index: number, width: number): string {
+  const direction = index % 2 === 0 ? -1 : 1;
+  const rank = Math.floor(index / 2);
+  const availableGutter = Math.max(18, width * 0.115);
+  const offset = direction * Math.min(availableGutter, 26 + rank * 12);
+  const upperTurn = start.y + Math.min(34, Math.max(18, (end.y - start.y) * 0.22));
+  const lowerTurn = end.y - Math.min(34, Math.max(18, (end.y - start.y) * 0.18));
+  return `M ${start.x} ${start.y} C ${start.x + offset} ${upperTurn}, ${end.x + offset} ${lowerTurn}, ${end.x} ${end.y}`;
+}
+
+function useMeasuredWidth(ref: React.RefObject<HTMLDivElement | null>): number | undefined {
+  const [width, setWidth] = useState<number>();
+  useEffect(() => {
+    const host = ref.current;
+    if (!host) return undefined;
+    const sync = () => setWidth(Math.floor(host.getBoundingClientRect().width));
+    sync();
+    const observer = new ResizeObserver(sync);
+    observer.observe(host);
+    return () => observer.disconnect();
+  }, [ref]);
+  return width;
+}
+
+function compactLayout(items: RelatedWork[], availableWidth?: number): DiagramLayout {
+  const width = Math.max(120, availableWidth ?? 460);
+  const horizontalPadding = 8;
+  const primarySize = { width: Math.max(96, width - horizontalPadding * 2), height: 120 };
+  const relatedSize = { width: primarySize.width * 0.75, height: 120 };
+  const primaryPosition = { x: width / 2, y: primarySize.height / 2 + 8 };
+  const firstRelatedY = primaryPosition.y + primarySize.height / 2 + 26 + relatedSize.height / 2;
+  const rowGap = relatedSize.height + 14;
+  const rows = items.length;
+  const height = rows === 0
+    ? primarySize.height + 16
+    : firstRelatedY + (rows - 1) * rowGap + relatedSize.height / 2 + 10;
+  const work = items.map((item, index) => {
+    return {
+      item,
+      position: { x: width / 2, y: firstRelatedY + index * rowGap },
+      size: relatedSize,
+    };
+  });
+  return { width, height, edgeOrientation: 'vertical', primaryPosition, primarySize, work };
+}
+
+function splitMindMapSides(items: RelatedWork[]): { left: RelatedWork[]; right: RelatedWork[] } {
+  const left: RelatedWork[] = [];
+  const right: RelatedWork[] = [];
+  for (const item of items) {
+    const { incoming, outgoing } = relationDirection(item);
+    const onlySymmetricRelations = item.relations.every((relation) => relation.relationKey === 'related-to');
+    if (onlySymmetricRelations || incoming === outgoing) {
+      (left.length <= right.length ? left : right).push(item);
+    } else if (incoming) {
+      left.push(item);
+    } else {
+      right.push(item);
+    }
+  }
+  return { left, right };
+}
+
+function expandedLayout(items: RelatedWork[], availableWidth?: number): DiagramLayout {
+  const width = Math.max(120, availableWidth ?? 1000);
+  if (width < 900) {
+    const horizontalPadding = Math.min(20, width * 0.04);
+    const primarySize = { width: Math.max(96, width - horizontalPadding * 2), height: 156 };
+    const relatedSize = { width: primarySize.width * 0.75, height: 152 };
+    const primaryPosition = { x: width / 2, y: primarySize.height / 2 + 12 };
+    const firstRelatedY = primaryPosition.y + primarySize.height / 2 + 30 + relatedSize.height / 2;
+    const rowGap = relatedSize.height + 18;
+    const height = items.length === 0
+      ? primarySize.height + 24
+      : firstRelatedY + (items.length - 1) * rowGap + relatedSize.height / 2 + 14;
+    return {
+      width,
+      height,
+      edgeOrientation: 'vertical',
+      primaryPosition,
+      primarySize,
+      work: items.map((item, index) => ({
+        item,
+        position: { x: width / 2, y: firstRelatedY + index * rowGap },
+        size: relatedSize,
+      })),
+    };
+  }
+  const primarySize = { width: Math.max(320, width * 0.36), height: 166 };
+  const relatedSize = { width: primarySize.width * 0.75, height: 152 };
+  const { left, right } = splitMindMapSides(items);
+  const maxSideCount = Math.max(left.length, right.length, 1);
+  const rowGap = 172;
+  const height = Math.max(420, (maxSideCount - 1) * rowGap + 250);
+  const primaryPosition = { x: width / 2, y: height / 2 };
+  const sideInset = relatedSize.width / 2 + 22;
+  const yPositions = (count: number) => {
+    if (count === 0) return [];
+    const total = (count - 1) * rowGap;
+    const start = (height - total) / 2;
+    return Array.from({ length: count }, (_, index) => start + index * rowGap);
+  };
+  const leftY = yPositions(left.length);
+  const rightY = yPositions(right.length);
+  return {
+    width,
+    height,
+    edgeOrientation: 'horizontal',
+    primaryPosition,
+    primarySize,
+    work: [
+      ...left.map((item, index) => ({ item, position: { x: sideInset, y: leftY[index] }, size: relatedSize })),
+      ...right.map((item, index) => ({ item, position: { x: width - sideInset, y: rightY[index] }, size: relatedSize })),
+    ],
+  };
 }
 
 export function CommitHotspotLegend({
-  clusters,
   totalCommits,
   hotspotTotal,
   relationTotal,
+  relationKeys,
 }: {
-  clusters: CognitionCommitHotspotCluster[];
   totalCommits: number;
   hotspotTotal: number;
   relationTotal: number;
+  relationKeys: string[];
 }) {
   const { locale, t } = useI18n();
-  const relationKeys = [...new Set(clusters.flatMap((cluster) => cluster.edges.map((edge) => edge.relationKey)))].sort();
-  const nodeTypes = [...new Map(
-    clusters.flatMap((cluster) => cluster.nodes).map((node) => [node.type, node.typeColor] as const),
-  ).entries()].sort(([a], [b]) => a.localeCompare(b));
   return (
     <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5 border-y border-ldvh-border/70 py-2.5">
-      <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5">
-        <span className="ldvh-caption text-ldvh-text-secondary">{t('cognition.commitHotspots.totalCommits', { count: String(totalCommits) })}</span>
-        <span className="ldvh-caption text-ldvh-text-secondary">{t('cognition.commitHotspots.summary', { hotspots: String(hotspotTotal), relations: String(relationTotal) })}</span>
-      </div>
-      <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-x-3 gap-y-1.5">
-        <span className="inline-flex items-center gap-1 ldvh-caption text-ldvh-text-secondary/75">
-          <GitCommitHorizontal size={14} className="text-ldvh-accent" aria-hidden="true" />
-          {t('cognition.commitHotspots.legend.hotspot')}
+      <span className="ldvh-caption text-ldvh-text-secondary">
+        {t('cognition.commitHotspots.totalCommits', { count: String(totalCommits) })}
+      </span>
+      <span className="ldvh-caption text-ldvh-text-secondary">
+        {t('cognition.commitHotspots.summary', { hotspots: String(hotspotTotal), relations: String(relationTotal) })}
+      </span>
+      <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-x-3 gap-y-1">
+        <span className="inline-flex items-center gap-1.5 ldvh-caption text-ldvh-text-secondary">
+          <span
+            className="inline-flex items-center justify-center gap-1 rounded-full border border-ldvh-accent/25 bg-ldvh-accent/5 px-1.5 py-0.5 text-[11px] font-medium text-ldvh-accent"
+            aria-hidden="true"
+          >
+            <GitCommitHorizontal size={12} />
+            1
+          </span>
+          <span>{t('cognition.commitHotspots.commitRefs')}</span>
         </span>
-        {nodeTypes.map(([type, color]) => (
-          <span key={type} className="inline-flex items-center gap-1 ldvh-caption text-ldvh-text-secondary/75">
-            <ObjectTypeIcon type={type} size={14} style={{ color }} aria-hidden="true" />
-            {getTypeLabel(type, locale)}
-          </span>
-        ))}
-        {relationKeys.map((relationKey) => (
-          <span key={relationKey} className="inline-flex items-center gap-1 ldvh-caption text-ldvh-text-secondary/75">
-            <RelationSwatch relationKey={relationKey} />
-            <span title={relationKey}>{getFieldLabel(`relation_${relationKey.replace(/-/g, '_')}`, locale)}</span>
-          </span>
-        ))}
+        {relationKeys.map((relationKey) => {
+          const color = RELATION_COLORS[relationKey] ?? '#64748b';
+          const label = getFieldLabel(`relation_${relationKey.replace(/-/g, '_')}`, locale);
+          return (
+            <span key={relationKey} className="inline-flex items-center gap-1 ldvh-caption text-ldvh-text-secondary" title={relationKey}>
+              <svg width="29" height="10" viewBox="0 0 29 10" aria-hidden="true">
+                <path
+                  d="M 1 5 H 23"
+                  fill="none"
+                  stroke={color}
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeDasharray={relationKeyDashArray(relationKey)}
+                />
+                <path d="M 22 1.7 L 28 5 L 22 8.3 z" fill={color} />
+              </svg>
+              <span>{label}</span>
+            </span>
+          );
+        })}
       </div>
     </div>
   );
 }
 
-function GraphNode({ node, position, role, size }: {
+function AccessibleRelationList({
+  cluster,
+  workItems,
+}: {
+  cluster: CognitionCommitHotspotCluster;
+  workItems: RelatedWork[];
+}) {
+  const { locale } = useI18n();
+  const primaryTitle = getLocalizedObjectTitle(cluster.primary, locale, cluster.primary.id);
+
+  return (
+    <ul className="sr-only">
+      {workItems.flatMap((item) => item.relations.map((relation) => {
+        const relatedTitle = getLocalizedObjectTitle(item.node, locale, item.node.id);
+        const relationLabel = getFieldLabel(`relation_${relation.relationKey.replace(/-/g, '_')}`, locale);
+        const source = relation.direction === 'outgoing' ? primaryTitle : relatedTitle;
+        const target = relation.direction === 'outgoing' ? relatedTitle : primaryTitle;
+        return <li key={`${nodeKey(item.node)}:${relation.direction}:${relation.relationKey}`}>{source} — {relationLabel} → {target}</li>;
+      }))}
+    </ul>
+  );
+}
+
+function HotspotNodeCard({
+  node,
+  role,
+  mode,
+  relationLabels: labels = [],
+  style,
+  dimmed = false,
+  highlighted = false,
+  onHighlight,
+}: {
   node: CognitionCommitHotspotNode;
-  position: Position;
   role: NodeRole;
-  size: NodeSize;
+  mode: DiagramMode;
+  relationLabels?: string[];
+  style: CSSProperties;
+  dimmed?: boolean;
+  highlighted?: boolean;
+  onHighlight?: (active: boolean) => void;
 }) {
   const { locale, t } = useI18n();
   const { openPanel } = usePanel();
   const title = getLocalizedObjectTitle(node, locale, node.id);
   const status = node.type === 'workcase' ? node.progress_group : node.status;
   const roleLabel = t(`cognition.commitHotspots.nodeRole.${role}` as LocaleKey);
+  const primary = role === 'primary';
+  const expanded = mode === 'expanded';
+
   return (
     <button
       type="button"
       onClick={() => openPanel({ type: 'object', title, objectType: node.type, objectId: node.id })}
-      aria-label={`${roleLabel}: ${title}`}
-      className={`absolute min-w-0 rounded-lg border bg-ldvh-panel px-2.5 py-2 text-left shadow-sm transition-[border-color,box-shadow] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ldvh-accent/50 ${
-        role === 'primary' ? 'border-ldvh-accent/50 shadow-md' : 'border-ldvh-border'
-      } hover:border-ldvh-accent/40 hover:shadow-md`}
+      onMouseEnter={() => onHighlight?.(true)}
+      onMouseLeave={() => onHighlight?.(false)}
+      onFocus={() => onHighlight?.(true)}
+      onBlur={() => onHighlight?.(false)}
+      aria-label={`${roleLabel}: ${title}${node.commitRefs.length > 0 ? ` · ${t('cognition.commitHotspots.commitRefs')} ${node.commitRefs.length}` : ''}${labels.length > 0 ? ` · ${labels.join(' · ')}` : ''}`}
+      className={`absolute min-w-0 rounded-xl border bg-ldvh-panel text-left transition-[opacity,border-color,box-shadow,transform] duration-200 hover:border-ldvh-accent/50 hover:shadow-lg focus-visible:z-20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ldvh-accent/60 ${
+        primary
+          ? `border-ldvh-accent/55 shadow-lg ${expanded ? 'ring-4 ring-ldvh-accent/10' : ''}`
+          : 'border-ldvh-border shadow-sm'
+      } ${dimmed ? 'opacity-40' : 'opacity-100'} ${highlighted ? 'z-10 -translate-y-0.5 shadow-xl' : ''}`}
       style={{
-        left: `${position.x}px`,
-        top: `${position.y}px`,
-        width: `${size.width}px`,
-        height: `${size.height}px`,
-        transform: 'translate(-50%, -50%)',
+        ...style,
+        transform: `${style.transform ?? ''}${highlighted ? ' translateY(-2px)' : ''}`.trim(),
         borderTopColor: node.typeColor,
-        borderTopWidth: role === 'primary' ? 3 : 2,
+        borderTopWidth: primary ? 3 : 2,
       }}
     >
-      <div className={role === 'primary'
-        ? 'grid h-full min-w-0 grid-cols-[40px_minmax(0,1fr)_40px] items-center gap-1'
-        : 'grid h-full min-w-0 grid-cols-[32px_minmax(0,1fr)_32px] items-center gap-1'}>
-        <span className={role === 'primary'
-          ? 'inline-flex h-8 w-10 items-center justify-center'
-          : 'inline-flex h-8 w-8 items-center justify-center'}>
-          <ObjectTypeIcon
-            type={node.type}
-            size={role === 'primary' ? 22 : 16}
-            style={{ color: node.typeColor }}
-          />
-        </span>
-        <div className="min-w-0 flex-1">
-          <span
-            title={title}
-            className={`block overflow-hidden text-center text-ldvh-text-primary ${role === 'primary' ? 'text-[15px] font-semibold leading-5' : 'text-sm font-medium leading-5'}`}
-            style={{ display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 2 }}
-          >
-            {title}
+      <div className={`flex h-full min-w-0 flex-col items-center justify-center px-3 py-2.5 ${expanded ? 'gap-2' : 'gap-1'}`}>
+        <div data-hotspot-node-header className="flex min-w-0 shrink-0 items-center justify-center gap-1.5">
+          <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center">
+            <ObjectTypeIcon type={node.type} size={primary ? 18 : (expanded ? 18 : 16)} style={{ color: node.typeColor }} />
           </span>
-          <div className="mt-1 flex min-w-0 flex-wrap items-center justify-center gap-x-1.5 gap-y-0.5">
-            <code className="ldvh-meta-muted shrink-0">{node.id}</code>
-            <PriorityIcon source={node} type={node.type} locale={locale} size="sm" />
-            {status && <span className="ldvh-caption shrink-0 text-ldvh-text-secondary/70">{getObjectStatusLocale(node.type, status, locale)}</span>}
-          </div>
+          <PriorityIcon source={node} type={node.type} locale={locale} size="sm" />
+          <code className="ldvh-meta-muted shrink-0">{node.id}</code>
         </div>
-        {node.commitRefs.length > 0 && (
-          <span className={`inline-flex shrink-0 items-center gap-1 rounded-full border border-ldvh-accent/25 bg-ldvh-accent/5 px-1.5 py-0.5 text-[11px] font-medium text-ldvh-accent ${role === 'primary' ? 'justify-self-center' : ''}`} title={t('cognition.commitHotspots.commitRefs')}>
-            <GitCommitHorizontal size={12} aria-hidden="true" />
-            {node.commitRefs.length}
-          </span>
-        )}
+        <span
+          data-hotspot-node-title
+          title={title}
+          className={`block w-full overflow-hidden break-words text-center text-ldvh-text-primary ${primary ? (expanded ? 'text-lg font-semibold leading-6' : 'text-base font-semibold leading-[22px]') : 'text-sm font-medium leading-5'}`}
+          style={{ display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: expanded ? 3 : 2 }}
+        >
+          {title}
+        </span>
+        <div data-hotspot-node-meta className="mt-0.5 flex min-w-0 flex-wrap items-center justify-center gap-x-1.5 gap-y-0.5">
+          {node.commitRefs.length > 0 && (
+            <span
+              className="inline-flex shrink-0 items-center justify-center gap-1 rounded-full border border-ldvh-accent/25 bg-ldvh-accent/5 px-1.5 py-0.5 text-[11px] font-medium text-ldvh-accent"
+              title={t('cognition.commitHotspots.commitRefs')}
+            >
+              <GitCommitHorizontal size={12} aria-hidden="true" />
+              {node.commitRefs.length}
+            </span>
+          )}
+          {status && <span className="ldvh-caption shrink-0 text-ldvh-text-secondary/70">{getObjectStatusLocale(node.type, status, locale)}</span>}
+        </div>
       </div>
     </button>
   );
 }
 
-export function CommitHotspotCluster({ cluster, index }: { cluster: CognitionCommitHotspotCluster; index: number }) {
-  const { t } = useI18n();
-  const diagramHostRef = useRef<HTMLDivElement>(null);
-  const [diagramWidth, setDiagramWidth] = useState<number>();
-  useEffect(() => {
-    const host = diagramHostRef.current;
-    if (!host) return undefined;
-    const syncWidth = () => setDiagramWidth(Math.floor(host.getBoundingClientRect().width));
-    syncWidth();
-    const observer = new ResizeObserver(syncWidth);
-    observer.observe(host);
-    return () => observer.disconnect();
-  }, []);
-  const primary = cluster.nodes[0];
-  const primaryKey = primary ? nodeKey(primary) : '';
-  const layout = useMemo(() => createLayout(cluster.nodes, diagramWidth), [cluster.nodes, diagramWidth]);
-  const relatedWorkCount = Math.max(0, cluster.nodes.length - 1);
+function DiagramEdges({
+  index,
+  mode,
+  layout,
+  highlightedKey,
+}: {
+  index: number;
+  mode: DiagramMode;
+  layout: DiagramLayout;
+  highlightedKey: string | null;
+}) {
+  return (
+    <svg className="pointer-events-none absolute inset-0 h-full w-full overflow-visible" viewBox={`0 0 ${layout.width} ${layout.height}`} aria-hidden="true">
+      <defs>
+        {layout.work.map(({ item }) => {
+          const color = relationColor(item);
+          const markerId = `hotspot-edge-${index}-${mode}-${safeId(nodeKey(item.node))}`;
+          return (
+            <marker key={markerId} id={markerId} markerWidth="8" markerHeight="8" refX="6.5" refY="4" orient="auto-start-reverse">
+              <path d="M 0.5 0.7 L 7 4 L 0.5 7.3 z" fill={color} />
+            </marker>
+          );
+        })}
+      </defs>
+      {layout.work.map(({ item, position, size }, edgeIndex) => {
+        const key = nodeKey(item.node);
+        const color = relationColor(item);
+        const directions = relationDirection(item);
+        const markerId = `hotspot-edge-${index}-${mode}-${safeId(key)}`;
+        const anchors = mode === 'expanded' && layout.edgeOrientation === 'horizontal'
+          ? expandedMindMapAnchors(layout.primaryPosition, layout.primarySize, position, size)
+          : {
+              start: rectangleEdgePoint(layout.primaryPosition, position, layout.primarySize),
+              end: rectangleEdgePoint(position, layout.primaryPosition, size),
+            };
+        const { start, end } = anchors;
+        const active = highlightedKey === null || highlightedKey === key;
+        return (
+          <path
+            key={key}
+            d={mode === 'compact' && layout.edgeOrientation === 'vertical'
+              ? compactMultiRoutePath(start, end, edgeIndex, layout.width)
+              : curvedPath(start, end, layout.edgeOrientation === 'horizontal')}
+            fill="none"
+            stroke={color}
+            strokeOpacity={active ? (mode === 'expanded' ? 0.82 : 0.58) : 0.14}
+            strokeWidth={mode === 'expanded' ? (highlightedKey === key ? 2.8 : 2.1) : 1.6}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeDasharray={relationDashArray(item)}
+            markerStart={directions.incoming ? `url(#${markerId})` : undefined}
+            markerEnd={directions.outgoing ? `url(#${markerId})` : undefined}
+            vectorEffect="non-scaling-stroke"
+            className="transition-[stroke-opacity,stroke-width] duration-200"
+          />
+        );
+      })}
+    </svg>
+  );
+}
 
-  if (!primary) return null;
+function CompactHotspotDiagram({
+  cluster,
+  index,
+  workItems,
+}: {
+  cluster: CognitionCommitHotspotCluster;
+  index: number;
+  workItems: RelatedWork[];
+}) {
+  const { t } = useI18n();
+  const hostRef = useRef<HTMLDivElement>(null);
+  const width = useMeasuredWidth(hostRef);
+  const [highlightedKey, setHighlightedKey] = useState<string | null>(null);
+  const displayed = workItems.slice(0, COMPACT_WORK_LIMIT);
+  const layout = useMemo(() => compactLayout(displayed, width), [displayed, width]);
 
   return (
-    <section className="flex min-w-0 flex-col overflow-hidden rounded-lg border border-ldvh-border/75 bg-ldvh-bg/35 p-3">
+    <div ref={hostRef} className="mt-2 min-w-0">
+      <AccessibleRelationList cluster={cluster} workItems={workItems} />
+      <div className="relative mx-auto" style={{ width: `${layout.width}px`, maxWidth: '100%', height: `${layout.height}px` }}>
+        <DiagramEdges index={index} mode="compact" layout={layout} highlightedKey={highlightedKey} />
+        <HotspotNodeCard
+          node={cluster.primary}
+          role="primary"
+          mode="compact"
+          highlighted={highlightedKey !== null}
+          style={{
+            left: layout.primaryPosition.x,
+            top: layout.primaryPosition.y,
+            width: layout.primarySize.width,
+            height: layout.primarySize.height,
+            transform: 'translate(-50%, -50%)',
+          }}
+        />
+        {layout.work.map(({ item, position, size }) => {
+          const key = nodeKey(item.node);
+          return (
+            <HotspotNodeCard
+              key={key}
+              node={item.node}
+              role={getNodeRole(item.node)}
+              mode="compact"
+              dimmed={highlightedKey !== null && highlightedKey !== key}
+              highlighted={highlightedKey === key}
+              onHighlight={(active) => setHighlightedKey(active ? key : null)}
+              style={{ left: position.x, top: position.y, width: size.width, height: size.height, transform: 'translate(-50%, -50%)' }}
+            />
+          );
+        })}
+      </div>
+      {workItems.length > displayed.length && (
+        <p className="mt-1 text-center ldvh-caption text-ldvh-text-secondary/70">
+          {t('cognition.commitHotspots.moreWorkInExpanded', { count: String(workItems.length - displayed.length) })}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function ExpandedHotspotMindMap({
+  cluster,
+  index,
+  workItems,
+}: {
+  cluster: CognitionCommitHotspotCluster;
+  index: number;
+  workItems: RelatedWork[];
+}) {
+  const { locale, t } = useI18n();
+  const hostRef = useRef<HTMLDivElement>(null);
+  const width = useMeasuredWidth(hostRef);
+  const [highlightedKey, setHighlightedKey] = useState<string | null>(null);
+  const layout = useMemo(() => expandedLayout(workItems, width), [workItems, width]);
+
+  return (
+    <div ref={hostRef} className="mt-3 min-w-0 overflow-hidden rounded-xl border border-ldvh-border/70 bg-ldvh-panel/75">
+      <AccessibleRelationList cluster={cluster} workItems={workItems} />
+      <div
+        role="group"
+        aria-label={t('cognition.commitHotspots.mindMapLabel', { count: String(index + 1) })}
+        className="relative mx-auto transition-[height,width] duration-300"
+        style={{
+          width: `${layout.width}px`,
+          maxWidth: '100%',
+          height: `${layout.height}px`,
+          backgroundImage: 'radial-gradient(circle at center, rgba(16, 185, 129, 0.08) 0, transparent 42%), radial-gradient(circle, rgba(100, 116, 139, 0.22) 0.7px, transparent 0.8px)',
+          backgroundSize: 'auto, 18px 18px',
+        }}
+      >
+        <DiagramEdges index={index} mode="expanded" layout={layout} highlightedKey={highlightedKey} />
+        <HotspotNodeCard
+          node={cluster.primary}
+          role="primary"
+          mode="expanded"
+          highlighted={highlightedKey !== null}
+          style={{
+            left: layout.primaryPosition.x,
+            top: layout.primaryPosition.y,
+            width: layout.primarySize.width,
+            height: layout.primarySize.height,
+            transform: 'translate(-50%, -50%)',
+          }}
+        />
+        {layout.work.map(({ item, position, size }) => {
+          const key = nodeKey(item.node);
+          return (
+            <HotspotNodeCard
+              key={key}
+              node={item.node}
+              role={getNodeRole(item.node)}
+              mode="expanded"
+              relationLabels={relationLabels(item, locale, t)}
+              dimmed={highlightedKey !== null && highlightedKey !== key}
+              highlighted={highlightedKey === key}
+              onHighlight={(active) => setHighlightedKey(active ? key : null)}
+              style={{ left: position.x, top: position.y, width: size.width, height: size.height, transform: 'translate(-50%, -50%)' }}
+            />
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+export function CommitHotspotCluster({
+  cluster,
+  index,
+  canExpand,
+  expanded,
+  onExpandedChange,
+}: {
+  cluster: CognitionCommitHotspotCluster;
+  index: number;
+  canExpand: boolean;
+  expanded: boolean;
+  onExpandedChange: (expanded: boolean) => void;
+}) {
+  const { t } = useI18n();
+  const workItems = useMemo(() => relatedWorkItems(cluster.relations), [cluster.relations]);
+  const contentId = `cognition-hotspot-cluster-${index}`;
+
+  return (
+    <section
+      data-hotspot-mode={expanded ? 'expanded' : 'compact'}
+      className={`flex min-w-0 flex-col overflow-hidden rounded-lg border bg-ldvh-bg/35 p-3 transition-[border-color,box-shadow] duration-300 ${expanded ? 'border-ldvh-accent/30 shadow-lg' : 'border-ldvh-border/75'}`}
+      style={expanded ? { gridColumn: '1 / -1' } : undefined}
+    >
       <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
         <p className="ldvh-caption-strong text-ldvh-text-secondary">{t('cognition.commitHotspots.cluster', { count: String(index + 1) })}</p>
         <span className="ldvh-caption text-ldvh-text-secondary/65">
           {t('cognition.commitHotspots.clusterSummary', {
-            commits: String(primary.commitRefs.length),
-            work: String(relatedWorkCount),
+            commits: String(cluster.primary.commitRefs.length),
+            work: String(workItems.length),
           })}
         </span>
+        {canExpand && (
+          <button
+            type="button"
+            aria-expanded={expanded}
+            aria-controls={contentId}
+            onClick={() => onExpandedChange(!expanded)}
+            className="ml-auto inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-transparent text-ldvh-text-secondary transition-colors hover:border-ldvh-border hover:bg-ldvh-panel hover:text-ldvh-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ldvh-accent/50"
+            title={t(expanded ? 'cognition.commitHotspots.restoreClusterWidth' : 'cognition.commitHotspots.expandClusterWidth')}
+          >
+            {expanded ? <Minimize2 size={15} aria-hidden="true" /> : <Maximize2 size={15} aria-hidden="true" />}
+            <span className="sr-only">{t(expanded ? 'cognition.commitHotspots.restoreClusterWidth' : 'cognition.commitHotspots.expandClusterWidth')}</span>
+          </button>
+        )}
       </div>
-      <div ref={diagramHostRef} className="mt-2 flex min-w-0 justify-center">
-        <div className="relative mx-auto" style={{ width: `${layout.width}px`, maxWidth: '100%', height: `${layout.height}px` }}>
-          <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox={`0 0 ${layout.width} ${layout.height}`} aria-hidden="true">
-            <defs>
-              {[...new Set(cluster.edges.map((edge) => edge.relationKey))].map((relationKey) => (
-                <marker key={relationKey} id={relationMarkerId(index, relationKey)} markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
-                  <path d="M 0.5 0.5 L 6 3.5 L 0.5 6.5 z" fill={relationColor(relationKey)} />
-                </marker>
-              ))}
-            </defs>
-            {cluster.edges.map((edge) => {
-              const source = layout.positions.get(edge.source);
-              const target = layout.positions.get(edge.target);
-              if (!source || !target) return null;
-              const color = relationColor(edge.relationKey);
-              const sourceNode = cluster.nodes.find((node) => nodeKey(node) === edge.source);
-              const targetNode = cluster.nodes.find((node) => nodeKey(node) === edge.target);
-              if (!sourceNode || !targetNode) return null;
-              const start = rectangleEdgePoint(source, target, layout.sizes.get(edge.source) ?? getNodeSize(getNodeRole(sourceNode, primaryKey)));
-              const end = rectangleEdgePoint(target, source, layout.sizes.get(edge.target) ?? getNodeSize(getNodeRole(targetNode, primaryKey)));
-              return (
-                <path
-                    key={`${edge.source}-${edge.target}-${edge.relationKey}`}
-                    d={curvedEdgePath(start, end)}
-                    fill="none"
-                    stroke={color}
-                    strokeOpacity="0.68"
-                    strokeWidth="1.7"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeDasharray={relationDashArray(edge.relationKey)}
-                    markerEnd={`url(#${relationMarkerId(index, edge.relationKey)})`}
-                    vectorEffect="non-scaling-stroke"
-                  />
-              );
-            })}
-          </svg>
-          {cluster.nodes.map((node) => {
-            const position = layout.positions.get(nodeKey(node));
-            const key = nodeKey(node);
-            const size = layout.sizes.get(key);
-            return position && size ? (
-              <GraphNode
-                key={key}
-                node={node}
-                position={position}
-                role={getNodeRole(node, primaryKey)}
-                size={size}
-              />
-            ) : null;
-          })}
-        </div>
+
+      <div id={contentId}>
+        {expanded ? (
+          <ExpandedHotspotMindMap cluster={cluster} index={index} workItems={workItems} />
+        ) : (
+          <CompactHotspotDiagram cluster={cluster} index={index} workItems={workItems} />
+        )}
       </div>
     </section>
   );

@@ -14,7 +14,7 @@
 
 import { Router, type Request, type Response } from 'express'
 import { listObjects, type ObjectType } from '../services/facts.js'
-import { FACT_TYPE_CARRIERS, FACT_TYPE_DIRS, listLocalFacts, type LocalFactItem } from '../services/localFactReader.js'
+import { listLocalFacts, type LocalFactItem } from '../services/localFactReader.js'
 import { getGitLogWithFiles, type GitLogEntryWithFiles } from '../services/git.js'
 import { deriveWorkCaseProgressProjection, type WorkCaseProgressGroup, type WorkCaseProgressStep } from '../../shared/workcaseStatus.js'
 import { ProjectScopeError, requestProject } from '../services/requestScope.js'
@@ -125,7 +125,7 @@ interface SparkHealthBuildItem {
   unparsed_structures: Array<Record<string, unknown>>
 }
 
-interface CommitHotspotBuildItem {
+export interface CommitHotspotBuildItem {
   type: ObjectType
   object_id: string
   title: string
@@ -135,6 +135,7 @@ interface CommitHotspotBuildItem {
   progress_group?: WorkCaseProgressGroup
   priority?: string
   read_status: string
+  phase?: string
   canonical_path: string
   relations: unknown
 }
@@ -147,7 +148,7 @@ interface CommitHotspotRef {
   mapping: CommitMappingKind
 }
 
-interface CommitHotspotNode extends Omit<CommitHotspotBuildItem, 'object_id' | 'canonical_path' | 'relations'> {
+interface CommitHotspotNode extends Omit<CommitHotspotBuildItem, 'object_id' | 'canonical_path' | 'relations' | 'phase'> {
   id: string
   typeColor: string
   commitRefs: CommitHotspotRef[]
@@ -157,6 +158,12 @@ interface CommitHotspotEdge {
   source: string
   target: string
   relationKey: string
+}
+
+interface CommitHotspotRelation {
+  direction: 'outgoing' | 'incoming'
+  relationKey: string
+  node: CommitHotspotNode
 }
 
 /** P0=0 … P3=3；缺失或非法落 4（排最后，并省略优先级信号）。 */
@@ -170,10 +177,6 @@ function priorityRank(priority: unknown): number {
 /** 与 localFactReader.metadataFor 一致：按事实类型返回当前 canonical path。 */
 function canonicalPath(type: InboxObjectType, objectId: string): string {
   return `ldvh-base/${type === 'workcase' ? 'workcases' : 'pitfalls'}/${objectId}.yaml`
-}
-
-function factCanonicalPath(type: ObjectType, objectId: string): string {
-  return `ldvh-base/${FACT_TYPE_DIRS[type]}/${objectId}${FACT_TYPE_CARRIERS[type]}`
 }
 
 function factKey(type: string, objectId: string): string {
@@ -328,14 +331,11 @@ function buildSparkHealth(rawItems: Array<Record<string, unknown>>, observedAt: 
   }
 }
 
-function buildCommitHotspotFact(
-  raw: Record<string, unknown>,
-  type: ObjectType,
-  relations: unknown = raw.relations,
-): CommitHotspotBuildItem | null {
-  const objectId = typeof raw.object_id === 'string' ? raw.object_id : ''
-  const factType = typeof raw.fact_type_key === 'string' ? raw.fact_type_key : ''
-  if (!objectId || factType !== type) return null
+function projectCommitHotspotFact(item: LocalFactItem, type: ObjectType): CommitHotspotBuildItem | null {
+  const raw = item.fact_object
+  if (item.read_status !== 'readable' || raw === null || item.field_issues.length > 0) return null
+  if (item.object_ref.fact_type_key !== type || !item.object_ref.object_id) return null
+  const objectId = item.object_ref.object_id
   const status = typeof raw.status === 'string' ? raw.status : undefined
   const phase = typeof raw.phase === 'string' ? raw.phase : undefined
   const progressGroup = type === 'workcase' && status
@@ -348,20 +348,50 @@ function buildCommitHotspotFact(
     title: typeof raw.title === 'string' && raw.title ? raw.title : objectId,
     ...(typeof raw.title_en === 'string' ? { title_en: raw.title_en } : {}),
     ...(typeof raw.title_zh === 'string' ? { title_zh: raw.title_zh } : {}),
-    ...(type === 'workcase' ? { progress_group: progressGroup } : { status }),
+    ...(status ? { status } : {}),
+    ...(phase ? { phase } : {}),
+    ...(type === 'workcase' && progressGroup ? { progress_group: progressGroup } : {}),
     ...(priority ? { priority } : {}),
-    read_status: typeof raw.read_status === 'string' ? raw.read_status : 'unknown',
-    canonical_path: factCanonicalPath(type, objectId),
-    relations,
+    read_status: item.read_status,
+    canonical_path: item.canonical_path,
+    relations: raw.relations,
   }
 }
 
-function projectWorkCaseHotspotFact(item: LocalFactItem): CommitHotspotBuildItem | null {
-  if (item.fact_object === null) return null
-  return buildCommitHotspotFact({
-    ...item.fact_object,
-    read_status: item.read_status,
-  }, 'workcase', item.fact_object.relations)
+function isDisplayableFormalRelation(
+  source: CommitHotspotBuildItem,
+  target: CommitHotspotBuildItem,
+  relationKey: string,
+): boolean {
+  if (source.type === 'spark') {
+    if (relationKey === 'related-to') return true
+    if (relationKey !== 'routed-to' || source.status !== 'routed') return false
+    return target.type === 'workcase' || target.type === 'adr' || target.type === 'pitfall'
+  }
+  if (source.type === 'workcase') {
+    if (!source.status || !['open', 'blocked', 'closed'].includes(source.status)) return false
+    if (relationKey === 'related-to') return true
+    if (relationKey === 'depends-on') {
+      return source.status !== 'closed'
+        && source.phase !== 'human_closure_confirming'
+        && target.type === 'workcase'
+        && (target.status === 'open' || target.status === 'blocked')
+    }
+    if (relationKey === 'routed-to') {
+      return source.status === 'closed'
+        && ((target.type === 'workcase' && ['open', 'blocked', 'closed'].includes(target.status ?? ''))
+          || (target.type === 'spark' && ['open', 'routed', 'implemented', 'discarded'].includes(target.status ?? '')))
+    }
+    if (relationKey === 'contributed-to') {
+      return target.type === 'pitfall' && ['draft', 'active', 'discarded'].includes(target.status ?? '')
+    }
+    return false
+  }
+  if (source.type === 'study') {
+    return (relationKey === 'inspired-by' || relationKey === 'informs')
+      && (target.type === 'spark' || target.type === 'workcase' || target.type === 'adr')
+  }
+  return false
 }
 
 function extractExplicitObjectIds(message: string): string[] {
@@ -414,7 +444,7 @@ function compareHotspotNode(a: CommitHotspotNode, b: CommitHotspotNode): number 
   return factKey(a.type, a.id).localeCompare(factKey(b.type, b.id))
 }
 
-function buildCommitHotspots(
+export function buildCommitHotspots(
   commits: GitLogEntryWithFiles[],
   facts: CommitHotspotBuildItem[],
   governedProjectId: string,
@@ -452,14 +482,15 @@ function buildCommitHotspots(
         || typeof targetRecord.fact_type_key !== 'string'
         || typeof targetRecord.object_id !== 'string') continue
       const targetKey = factKey(targetRecord.fact_type_key, targetRecord.object_id)
-      if (!byKey.has(targetKey) || (!hotspots.has(sourceKey) && !hotspots.has(targetKey))) continue
+      const targetFact = byKey.get(targetKey)
+      if (!targetFact || targetKey === sourceKey || (!hotspots.has(sourceKey) && !hotspots.has(targetKey))) continue
+      if (!isDisplayableFormalRelation(source, targetFact, record.relation_key)) continue
       const edge: CommitHotspotEdge = { source: sourceKey, target: targetKey, relationKey: record.relation_key }
       edges.set(`${edge.source}\u0000${edge.target}\u0000${edge.relationKey}`, edge)
     }
   }
 
   const edgeValues = [...edges.values()]
-  const connected = new Set(edgeValues.flatMap((edge) => [edge.source, edge.target]))
   const makeNode = (key: string): CommitHotspotNode => {
     const item = byKey.get(key)
     if (!item) throw new Error(`Commit hotspot fact not found: ${key}`)
@@ -470,7 +501,7 @@ function buildCommitHotspots(
       title: item.title,
       ...(item.title_en !== undefined ? { title_en: item.title_en } : {}),
       ...(item.title_zh !== undefined ? { title_zh: item.title_zh } : {}),
-      ...(item.status !== undefined ? { status: item.status } : {}),
+      ...(item.type !== 'workcase' && item.status !== undefined ? { status: item.status } : {}),
       ...(item.progress_group !== undefined ? { progress_group: item.progress_group } : {}),
       ...(item.priority !== undefined ? { priority: item.priority } : {}),
       read_status: item.read_status,
@@ -479,49 +510,26 @@ function buildCommitHotspots(
     }
   }
 
-  const adjacency = new Map<string, Set<string>>()
-  for (const key of connected) adjacency.set(key, new Set())
-  for (const edge of edgeValues) {
-    adjacency.get(edge.source)?.add(edge.target)
-    adjacency.get(edge.target)?.add(edge.source)
-  }
-
-  const visited = new Set<string>()
-  const clusters: Array<{ nodes: CommitHotspotNode[]; edges: CommitHotspotEdge[] }> = []
-  for (const start of [...connected].sort()) {
-    if (visited.has(start)) continue
-    const keys: string[] = []
-    const queue = [start]
-    visited.add(start)
-    for (let index = 0; index < queue.length; index += 1) {
-      const current = queue[index]
-      keys.push(current)
-      for (const neighbor of adjacency.get(current) ?? []) {
-        if (visited.has(neighbor)) continue
-        visited.add(neighbor)
-        queue.push(neighbor)
-      }
-    }
-    const members = new Set(keys)
-    clusters.push({
-      nodes: keys.map(makeNode).sort(compareHotspotNode),
-      edges: edgeValues.filter((edge) => members.has(edge.source) && members.has(edge.target)),
+  const clusters: Array<{ primary: CommitHotspotNode; relations: CommitHotspotRelation[] }> = []
+  for (const hotspotKey of [...hotspots].sort()) {
+    const incident = edgeValues.filter((edge) => edge.source === hotspotKey || edge.target === hotspotKey)
+    if (incident.length === 0) continue
+    const relations = incident.map((edge): CommitHotspotRelation => ({
+      direction: edge.source === hotspotKey ? 'outgoing' : 'incoming',
+      relationKey: edge.relationKey,
+      node: makeNode(edge.source === hotspotKey ? edge.target : edge.source),
+    })).sort((a, b) => {
+      if (a.direction !== b.direction) return a.direction === 'outgoing' ? -1 : 1
+      if (a.relationKey !== b.relationKey) return a.relationKey.localeCompare(b.relationKey)
+      return factKey(a.node.type, a.node.id).localeCompare(factKey(b.node.type, b.node.id))
     })
+    clusters.push({ primary: makeNode(hotspotKey), relations })
   }
-  clusters.sort((a, b) => {
-    const aCommits = a.nodes.reduce((total, node) => total + node.commitRefs.length, 0)
-    const bCommits = b.nodes.reduce((total, node) => total + node.commitRefs.length, 0)
-    if (aCommits !== bCommits) return bCommits - aCommits
-    const aHotspots = a.nodes.filter((node) => node.commitRefs.length > 0).length
-    const bHotspots = b.nodes.filter((node) => node.commitRefs.length > 0).length
-    if (aHotspots !== bHotspots) return bHotspots - aHotspots
-    if (a.nodes.length !== b.nodes.length) return b.nodes.length - a.nodes.length
-    return a.nodes[0]?.id.localeCompare(b.nodes[0]?.id ?? '') ?? 0
-  })
+  clusters.sort((a, b) => compareHotspotNode(a.primary, b.primary))
 
   return {
     totalCommits: commits.length,
-    hotspotTotal: [...hotspots].filter((key) => connected.has(key)).length,
+    hotspotTotal: clusters.length,
     relationTotal: edgeValues.length,
     clusters,
   }
@@ -676,29 +684,19 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     let commitHotspots: ReturnType<typeof buildCommitHotspots> | undefined
     try {
       const graphFacts: CommitHotspotBuildItem[] = []
-      const workCaseFacts = await listLocalFacts('workcase', factScope)
-      if (workCaseFacts.status !== 'complete') {
-        issues.push({ section: 'commitHotspots', code: 'workcase_relation_list_unavailable', message: workCaseFacts.issues[0]?.message ?? 'WorkCase 正式关系读取失败' })
-      } else {
-        for (const item of workCaseFacts.items) {
-          const projected = projectWorkCaseHotspotFact(item)
-          if (projected) graphFacts.push(projected)
-        }
-        for (const issue of workCaseFacts.issues) {
-          issues.push({ section: 'commitHotspots', code: issue.code, message: issue.message })
-        }
-      }
-
-      for (const [type, source] of recentSources.filter(([type]) => type !== 'workcase')) {
-        if (!source.ok || !('data' in source)) {
-          const message = source.ok ? `${type} 列表读取失败` : (source as { error: string }).error
-          issues.push({ section: 'commitHotspots', code: `${type}_list_unavailable`, message })
+      const graphTypes: ObjectType[] = ['workcase', 'adr', 'pitfall', 'spark', 'study']
+      const graphResults = await Promise.all(graphTypes.map(async (type) => [type, await listLocalFacts(type, factScope)] as const))
+      for (const [type, result] of graphResults) {
+        if (result.status !== 'complete') {
+          issues.push({ section: 'commitHotspots', code: `${type}_relation_list_unavailable`, message: result.issues[0]?.message ?? `${type} 正式关系读取失败` })
           continue
         }
-        const sourceData = source.data as { items: Array<Record<string, unknown>> }
-        for (const raw of sourceData.items) {
-          const projected = buildCommitHotspotFact(raw, type)
+        for (const item of result.items) {
+          const projected = projectCommitHotspotFact(item, type)
           if (projected) graphFacts.push(projected)
+        }
+        for (const issue of result.issues) {
+          issues.push({ section: 'commitHotspots', code: issue.code, message: issue.message })
         }
       }
 
