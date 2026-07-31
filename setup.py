@@ -15,6 +15,13 @@ sys.path.insert(0, str(ROOT / "code"))
 
 USER_DOCUMENTS = ("specs/attachments/09.Att.01-环境接入面.md",)
 USER_DOCUMENT_DIRECTORY = "_user_docs"
+INTEGRATION_ASSET_DIRECTORY = "_integration_assets"
+INTEGRATION_ASSET_FILES = ("skill/SKILL.md",)
+
+
+def _integration_asset_paths() -> tuple[str, ...]:
+    icons = tuple(sorted(path.name for path in (ROOT / "icons").glob("*.png")))
+    return (*INTEGRATION_ASSET_FILES, *(f"icons/{name}" for name in icons))
 
 from ldvh.rule_snapshot import SNAPSHOT_DIRECTORY, snapshot_plan_for_source, write_snapshot  # noqa: E402
 
@@ -36,12 +43,21 @@ class build_py(_build_py):
         self._ldvh_user_document_outputs = [
             str(user_document_destination / Path(relative).name) for relative in USER_DOCUMENTS
         ]
+        integration_destination = Path(self.build_lib) / "ldvh" / INTEGRATION_ASSET_DIRECTORY
+        for relative in _integration_asset_paths():
+            target = integration_destination / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(ROOT / relative, target)
+        self._ldvh_integration_asset_outputs = [
+            str(integration_destination / relative) for relative in _integration_asset_paths()
+        ]
 
     def get_outputs(self, include_bytecode: bool = True) -> list[str]:
         return [
             *super().get_outputs(include_bytecode=include_bytecode),
             *getattr(self, "_ldvh_snapshot_outputs", ()),
             *getattr(self, "_ldvh_user_document_outputs", ()),
+            *getattr(self, "_ldvh_integration_asset_outputs", ()),
         ]
 
 
@@ -60,6 +76,8 @@ class sdist(_sdist):
         for item in self._snapshot_plan().files:
             self.filelist.append(item.path)
         for relative in USER_DOCUMENTS:
+            self.filelist.append(relative)
+        for relative in _integration_asset_paths():
             self.filelist.append(relative)
         self.filelist.sort()
         self.filelist.remove_duplicates()

@@ -78,6 +78,8 @@ def _copy_release_source(destination: Path) -> None:
         shutil.copy2(PROJECT_ROOT / name, destination / name)
     shutil.copytree(PROJECT_ROOT / "code" / "ldvh", destination / "code" / "ldvh")
     shutil.copytree(PROJECT_ROOT / "specs", destination / "specs")
+    shutil.copytree(PROJECT_ROOT / "skill", destination / "skill")
+    shutil.copytree(PROJECT_ROOT / "icons", destination / "icons")
     _run_checked(["git", "init", "-q", str(destination)], cwd=destination.parent)
 
 
@@ -157,6 +159,21 @@ def release_artifacts(tmp_path_factory: pytest.TempPathFactory) -> ReleaseArtifa
         current_snapshot_sha256=current_manifest["snapshot_sha256"],
         old_snapshot_sha256=old_manifest["snapshot_sha256"],
     )
+
+
+def test_release_artifacts_ship_integration_assets(release_artifacts: ReleaseArtifacts) -> None:
+    expected_skill = (PROJECT_ROOT / "skill" / "SKILL.md").read_bytes()
+    expected_icons = {path.name: path.read_bytes() for path in (PROJECT_ROOT / "icons").glob("*.png")}
+    assert expected_icons, "icons/ must not be empty"
+    for wheel in (release_artifacts.current_wheel, release_artifacts.sdist_wheel):
+        with zipfile.ZipFile(wheel) as archive:
+            names = set(archive.namelist())
+            assert "ldvh/_integration_assets/skill/SKILL.md" in names
+            assert archive.read("ldvh/_integration_assets/skill/SKILL.md") == expected_skill
+            for name, payload in expected_icons.items():
+                member = f"ldvh/_integration_assets/icons/{name}"
+                assert member in names
+                assert archive.read(member) == payload
 
 
 def _copy_runtime_dependencies(destination: Path) -> None:
