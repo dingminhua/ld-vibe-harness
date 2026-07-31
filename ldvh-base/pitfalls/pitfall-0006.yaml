@@ -1,0 +1,13 @@
+title: 独立入口契约真空致首选规则引导入口被放弃
+status: draft
+symptoms: 调用方按技能指引调用 ldvh-work-context 首选规则引导入口时，先撞参数错误、再撞 stdin 契约缺失提示；随后在 capabilities 与 Helper 服务规范（04）中反复查找事件形状无果（十几次 find/grep/试调），自行构造调用时 shell 引号失败，最终放弃首选入口、退回降级路径；全过程耗时约为修复后正常路径的三倍。识别信号：会话记录中出现对同一入口的多次试错调用，且最终回答声明“首选 unavailable、改用降级路径”。
+trigger_conditions: 前置条件组合：（1）需要经 ldvh-work-context、ldvh-doctor 等独立入口完成调用（它们不是 Helper 操作）；（2）调用方持有的指引把“调用信封与参数”的权威统一指向 capabilities 与 04；（3）该入口的调用契约实际只登记在环境接入面附件（09.Att.01）对应入口行；（4）指引未把调用方指向该附件。已观察条件：薄 Skill 会话中按指引现取参数时必然命中。未知条件：其它 AI 环境 adapter 手工接入同一入口时是否同样命中，未逐一验证。
+root_cause: 指引把调用信封的权威统一指向 capabilities 与 04，而这两者的覆盖范围只有 Helper 操作；独立入口（规则引导核心、doctor 等）不是 Helper 操作，其契约只登记在 09.Att.01 接入面附件。指引的指针范围与被调用对象的真实契约位置不匹配，形成契约真空；调用方在真空中只能试错猜测事件形状，试错成本高于降级路径即放弃。已观察事实：修复前探针会话 31 次 Bash 调用未走通首选入口。当前判断：不是入口实现故障、也不是调用方能力不足，而是指引指针缺失。仍未知环节：全部独立入口是否都存在同类指引缺失（本次仅核对 ldvh-work-context 与 ldvh-doctor 同在附件登记）。
+resolution: 已实际采用的处理：（1）薄 Skill 规则引导段补指针——明示 ldvh-work-context 不是 Helper 操作、capabilities 不含其信封，调用前必须经 read-specification-content 现取接入面附件（environment-integration-surface）的 work-context-core 行当次内容；（2）CLI 定位段把“信封以 capabilities/04 为准”限定于 Helper 操作，独立入口改指接入面附件对应入口行；（3）09.Att.01 work-context-core 行的输入契约与核心实现对齐（hook_event_name、cwd、SessionStart 的 source 的闭集与必需性，原文“推荐”与实现“必需”口径不一）；（4）入口对空或无效 stdin 的缺口说明归一为明确文本，替代原始解析错误。处理对象：skill/SKILL.md、specs/attachments/09.Att.01-环境接入面.md、code/ldvh/work_context.py（提交 a38f1af0b、1d7e9757c）。可观察成功信号：新会话按相同自然指令，先读接入面契约再构造调用，首选入口一次成功返回 ok（修复后探针，5.5 分钟）。适用前提：目标环境部署件与 canonical 模板逐字节一致；前提不成立（部署件过期）时，不得把本处理宣称为已在该环境生效。
+avoidance: 复用前应核对的关键条件：（1）为任何独立（非 Helper）入口编写或修订调用指引时，先核对该入口契约的登记位置——不在 capabilities/04 覆盖范围内的，必须在指引中给出指向实际契约来源（如接入面附件对应入口行）的指针；（2）调用方遇到“按指引查不到信封”时，先怀疑指引指针范围，不反复盲猜参数；（3）文档措辞与实现必需性不一致（如“推荐”对“必需”）会放大同类试错，修订指引时一并核对接入面登记行。处理后的确认信号：调用方不经试错即可给出符合契约的首次成功调用。不相容边界：本经验只覆盖“契约位置指引缺失”这一机制，不覆盖入口实现故障、权限或环境缺失；那些情形应继续调查、重新验证或转入相应对象，不套用本规避。
+applicability: 适用边界：LDVH 薄 Skill 接入的各 AI 环境中，凡需调用 ldvh-work-context、ldvh-doctor、ldvh-context-recovery、ldvh-git-commit-msg 等独立（非 Helper）入口的场景，以及为任何新独立入口编写或修订调用指引的场景。观察环境：macOS 桌面 Kimi 环境、0.1.0 本地发行物、修复后模板。不适用：Helper 操作本身的参数发现（capabilities/04 已覆盖）；入口实现内部的逻辑问题。
+validation_summary: 已观察结果：修复前探针（17.7 分钟、31 次 Bash 调用、首选入口零成功、降级路径兜底、一次越界临时文件自建自删）；修复后探针（5.5 分钟、19 次调用、首选入口一次 ok、最终回答如实声明经首选入口交付）；相关测试 222 项（docs/specs/commits/environment/packaging）与相邻回归 816 项全绿；三次相关提交的 Git Gate 机械预检均通过后落库。覆盖：同一环境、同一发行物、同一自然指令的修复前后对照。未覆盖范围：其它 AI 环境的行为复测；SubagentStart 事件形状的实测；部署件被应用更新覆盖后的长期稳定性。
+object_id: pitfall-0006
+fact_type_key: pitfall
+created_at: '2026-07-31T16:34:00.794175+08:00'
+updated_at: '2026-07-31T16:34:00.794175+08:00'
