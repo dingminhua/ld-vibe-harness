@@ -109,6 +109,15 @@ test('Web development docs describe the current Focus modules, shell scrolling, 
 
   assert.match(cognitionDoc, /三期均已完成/);
   assert.match(cognitionDoc, /待决定事项.*推进中事项.*近期动态.*Spark 健康度.*近期提交热点关系/);
+  assert.match(cognitionDoc, /HV1-HV5/);
+  assert.match(cognitionDoc, /HV1 \| 决策提请清晰可决/);
+  assert.match(cognitionDoc, /HV2 \| 授权执行受控可续/);
+  assert.match(cognitionDoc, /HV3 \| 入档闭环节点可验/);
+  assert.match(cognitionDoc, /HV4 \| 积累效用直观可见.*尚未完整承接/);
+  assert.match(cognitionDoc, /HV5 \| 项目演进脉络可循/);
+  assert.match(cognitionDoc, /不再是当前价值标准来源/);
+  assert.doesNotMatch(cognitionDoc, /服务六项 Human 价值标准/);
+  assert.doesNotMatch(cognitionDoc, /H1[–-]H6 当前由 open Spark/);
   assert.match(cognitionDoc, /SPARK_SILENT_THRESHOLD_DAYS = 5/);
   assert.match(cognitionDoc, /pitfall_confirmation/);
   assert.doesNotMatch(cognitionDoc, /点击可回指提交短哈希/);

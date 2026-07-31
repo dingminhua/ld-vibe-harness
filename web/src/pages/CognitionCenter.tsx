@@ -7,7 +7,7 @@
  *   projectWorkCaseCard 投影，Q3），不在本页另写摘要逻辑（02 §7.5）。
  * - 复制语义：模块级"复制模块摘要"为面向 AI 对话的多行文本；条目本身不叠加聚焦页专属操作，
  *   保持与对象列表 Card 相同的可读形态（02 §4.1 / §5.3）。
- * - 负担有界（H3）：超出首屏按服务端排序截断，底部如实提示总数与未显示数量，不分页。
+ * - 待决规模如实可见：超出首屏按服务端排序截断，底部如实提示总数与未显示数量，不分页。
  * - 模块级降级：issues 就地显示实际不可用范围与原因，其它内容正常呈现（02 §5.2）。
  */
 import { useEffect, useState, type KeyboardEvent } from 'react';
@@ -555,7 +555,7 @@ export default function CognitionCenter() {
               </ul>
             )}
 
-            {/* 负担有界（H3）：截断时如实提示总数与未显示数量，不用分页掩盖待决规模 */}
+            {/* 截断时如实提示总数与未显示数量，不用分页掩盖待决规模 */}
             {items.length > INBOX_FIRST_SCREEN_LIMIT && (
               <div className="mt-3 flex min-w-0 flex-wrap items-center justify-between gap-2">
                 <p className="ldvh-caption min-w-0">

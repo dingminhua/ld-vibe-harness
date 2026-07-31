@@ -1,8 +1,8 @@
 # LDVH — LD Vibe Harness
 
-LDVH 帮助 AI 在长期项目中保持**判断有据、行动可续、结果可验**。它由规范（Specs）、事实对象（Fact Objects）与行动模板（Action Templates）构成，通过薄 Skill、Helper CLI、Git Gate 和 Web 界面交付。
+LDVH 以 AI 执行者为第一服务对象，帮助 AI 在长期项目中保持**判断有据、行动可续、结果可验**；同时直接服务 Human，使决策提请清晰可决、授权执行受控可续、入档闭环节点可验，并让项目演进脉络可循。积累效用如何直观可见仍是当前明确待加强的能力，不因事实对象、提交或页面存在就宣称已经实现。
 
-适用于需要 AI 跨会话维护上下文一致性、记录决策和失败经验、以及在不同 AI 开发环境中复用规则的项目。
+它由规范（Specs）、事实对象（Fact Objects）与行动模板（Action Templates）构成，通过薄 Skill、Helper CLI、Git Gate 和 Web 界面交付，适用于需要 AI 跨会话保持一致、Human 返回后能够核查并接续，以及在不同 AI 开发环境中复用规则的长期项目。
 
 ---
 
@@ -84,6 +84,7 @@ LDVH 通过以下方式解决：
 | **薄 Skill** | 把落入 LDVH 领域的工作路由至 Helper CLI，AI 按需取得规则引导与行动模板 |
 | **Helper CLI** | 提供可审计的只读查询和受控写入操作 |
 | **Git Gate** | 在 commit 时自动校验提交信息是否符合项目规范 |
+| **Web** | 面向 Human 如实呈现当前来源、状态、待决定事项和可核查节点，不建立第二事实源 |
 
 ---
 
