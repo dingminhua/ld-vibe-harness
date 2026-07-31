@@ -101,7 +101,8 @@ ldvh_spec:
 4. 当次实际检查过的项目提交政策、领域规则、验证要求和能力入口，以及各自作用范围、未检查、不可读取或身份不清的缺口；
 5. 已经执行的验证及其对象、版本、范围、结果和未验证部分；
 6. 可能属于用户、其它事项、其它执行者或其它提交的既有变化；
-7. 对受管辖目标，03 定义的 `precheck-git-commit` 当次是否可用，以及准备直接传入该操作的完整 message。
+7. 对受管辖目标，03 定义的 `precheck-git-commit` 当次是否可用，以及准备直接传入该操作的完整 message；
+8. 候选包含 `ldvh-base/` 中的事实载体时，各次实际事实写入所使用的来源定义 Helper 受控操作、精确写后回读，以及对当前事实集合、规则源和同一 worktree 仍有效的当次 `check-fact-integrity` 完整结果。
 
 静态文件名、过期模板、工具安装、缓存结果、旧 status/diff、另一 worktree 的结果或 AI 记忆不得替代当前输入。只在实际检查范围内未发现项目特定 message、拆分、branch 或 Git Hook 规则时，只能报告该有限结果及未检查或不可读取范围；不得扩大为项目不存在规则，也不得用过期契约、行业惯例或自身偏好补造全局要求。
 
@@ -109,7 +110,7 @@ ldvh_spec:
 
 1. AI 执行者负责模板召回、适用判断、来源选择、范围和差异语义审核、验证覆盖判断、message 语义、失败分流和最终交还；
 2. Human 只承担当前来源保留的提交授权、目标取舍、破坏性历史操作、无法安全隔离的混合变化取舍或风险接受；清楚的直接授权已经存在，或当前 WorkCase Gate 1 已通过准确 `execution_approval` 批准逐项列明的本地 commit 时，不重复请求；
-3. `precheck-git-commit` 只对受管辖目标的当前真实 Index 与完整 message 提供机械预检；其 `passed` 不承担 AI 语义审核、Human 授权、项目验证、commit 创建或原生 Git Gate 结果；
+3. `precheck-git-commit` 只对受管辖目标的当前真实 Index 与完整 message 提供机械预检；只有 Helper 外层 `outcome=ok` 且 `result.mechanical_outcome=passed` 才表示该次机械预检通过，但仍不承担 AI 语义审核、Human 授权、项目验证、commit 创建或原生 Git Gate 结果；
 4. Git、Code、tests 和环境工具只提供实际支持的状态读取、差异、暂存、验证、commit 创建和回读能力；静态存在不证明当次可用；目标仓库中已经生效的 Git Hook 可能由 Git 自动执行，属于实际环境条件；
 5. 本模板不安装、修改、禁用、绕过或定义 Git Hook，也不要求特定 Skill、Agent、validator、Git 子命令或平台接口。未来薄接入只能调用同一当前模板和相应能力，不得复制正文或项目规则；
 6. 模板命中、Helper 预检或测试通过、文件已经修改或存在待提交变化都不授予 commit、push 或其它行动权限。WorkCase approval 只有在 `execution_authorization` 已逐项列明本地 commit 及其范围时才授权该 commit，不得从一般“执行计划”措辞推定，更不得扩张为 push、PR、发布、外部消息或其它远端副作用。
@@ -122,7 +123,8 @@ ldvh_spec:
 2. 读取当前 Git 状态和必要差异，分别识别 Working Tree、Index、未跟踪内容和当前历史锚点；
 3. 将准备提交的目标变化与无关、来源不明、属于其它事项或尚未获准的变化分开；
 4. 定位并读取实际适用的共同提交契约、项目提交政策、领域规则和验证要求，记录实际检查来源、作用范围及未检查、不可读取或身份不清的缺口；`governed_single` 目标必须消费 `source-of-truth-traceability` §§9.1–9.6，明确 `non_governed` 时不因该契约不适用而阻断普通求解；
-5. 如果目标、授权、worktree 或变化归属无法确认，暂停状态变更，只交还已观察范围和需要补充的决定。
+5. 候选包含 `ldvh-base/` 中的事实载体时，核对每次实际事实写入都来自相应来源定义的 Helper 受控操作，并已精确回读受影响对象；随后调用的 `check-fact-integrity` 必须对同一实际 worktree 返回外层 `outcome=ok` 且 `result.status=complete`。普通文件工具绕过 Helper 直写、缺少任一写后检查，或完整性检查为 `result.status=partial`、外层 `outcome=unavailable` 或其它非 `ok`、调用失败、已因事实集合、规则源、worktree 变化而失效时，停止形成或创建 commit，不得用提交预检或 Git Gate 把该候选追认为合规写入；
+6. 如果目标、授权、worktree 或变化归属无法确认，暂停状态变更，只交还已观察范围和需要补充的决定。
 
 #### B. 形成可提交候选
 
@@ -130,7 +132,7 @@ ldvh_spec:
 2. 受管辖目标按 `source-of-truth-traceability` §9.2 判断一个可共同说明、验证和回退的主要目的；普通拆分由 AI 依据该来源判断，需要 Human 决定时只按 `source-of-truth-traceability` §12(6) 进入 Human Gate；项目来源要求更细拆分、目标范围无法共同说明、验证不能共同覆盖或候选无法安全隔离时，按实际来源拆分或缩小范围；模板不自行建立拆分政策；
 3. 执行来源要求且与候选快照匹配的验证。验证失败、未运行、过期、对应其它 worktree 或不能覆盖目标时，按来源规则修正、缩小声明或暂停；只有来源明确把风险接受保留给 Human 时，Human 才能决定是否在相应范围继续；不可绕过的门禁不能由确认替代；
 4. 根据候选快照、Human 目标、受管辖目标适用的 `source-of-truth-traceability` §§9.3–9.4、项目附加 message 规则和实际验证形成提交说明。明确非受管辖且没有项目格式规则时，提交说明仍必须据实描述实际变化，不得声称未发生的验证、Git Gate 结果、完成、push 或发布；
-5. 目标为 `governed_single` 且 `precheck-git-commit` 当次可用时，必须把完整 message 直接作为 `arguments.message` 调用该公开操作；只有 Helper 外层 `outcome` 为 `ok` 且提交机械预检结果为 `passed`，才继续机械合规路径。`failed`、`unverifiable`、`unavailable` 或调用错误按 03 分流并保留诊断；Helper 不可用时如实记录能力缺口，并按实际来源判断能否继续，不得把未调用改写为通过；
+5. 目标为 `governed_single` 且 `precheck-git-commit` 当次可用时，必须把完整 message 直接作为 `arguments.message` 调用该公开操作；只有 Helper 外层 `outcome=ok` 且 `result.mechanical_outcome=passed`，才继续机械合规路径。`result.mechanical_outcome=failed|unverifiable`、外层 `unavailable` 或调用错误按 03 分流并保留诊断；Helper 不可用时如实记录能力缺口，并按实际来源判断能否继续，不得把未调用改写为通过；
 6. AI 必须独立审核主要目的、拆分、简体中文语义、description 真实性、body 充分性以及验证与风险是否据实，不得把 Helper 机械结果、测试通过或 Human 授权当作语义审核；
 7. 完整 message 默认只保留在当前进程内并直接交给 Helper 和 Git，不得在 Git Working Tree 内创建 `.codex-commit-msg.tmp`、`COMMIT_EDITMSG` 副本或其它临时提交消息文件。确有外部工具只接受文件路径时，只能使用 Working Tree 外的系统临时文件并在调用后清理；
 8. 按 `source-of-truth-traceability` §9.5 在创建 commit 前重新核对实际候选快照、目标路径、完整 message、管辖结果、03 来源身份和验证范围；任何变化都使先前 Helper 结果和 AI 结论失效，必须回到本阶段重新预检和审核，不得以最初计划替代当前快照。
@@ -152,7 +154,7 @@ ldvh_spec:
 1. 实际目标 repo/worktree 和提交范围；
 2. commit 是否实际创建；创建时的新 commit 身份和实际内容范围；
 3. 实际执行的验证、对应对象和范围、通过、失败、未运行与不可观察部分；
-4. 受管辖目标实际调用 Helper 时的原始请求与结果、AI 语义审核结论，以及原生 Git Gate 的实际结果或当次未安装/未触发范围；
+4. 受管辖目标中事实候选的 Helper 受控写入、精确回读与写后完整性审计依据，实际调用提交预检 Helper 时的原始请求与结果、AI 语义审核结论，以及原生 Git Gate 的实际结果或当次未安装/未触发范围；
 5. 提交说明所依据的项目规则、实际检查过的来源与作用范围，以及未检查、不可读取或身份不清的缺口；只在该有限范围内报告未发现额外格式规则；
 6. commit 前后 Working Tree 内临时提交消息文件的检查结果，以及外部系统临时文件的清理结果（如有）；
 7. commit 后剩余的 staged、unstaged、untracked 和无关变化；
@@ -177,7 +179,7 @@ ldvh_spec:
 | 规则与模板边界 | 修改步骤、Git Gate、验证或交还时 | 本文只组织来源读取、行动关系和失败分流，没有定义 message、branch、拆分、测试、Git Hook 或实现政策 | 本文、02、03、06、07、项目规则和差异审核 | 来源逐项对照和正反场景走查 | 当次修改及直接相邻责任 | 移除复制内容，回到正确来源定义；保持 `draft` 或暂停受影响模板 |
 | 适用与授权 | 准备使用模板或创建 commit 时 | Human 当前指令已直接授权本地新 commit，或当前 WorkCase 的 `execution_authorization` 已逐项列明且有效 `execution_approval` 覆盖该 commit；实际来源未禁止且相应限制已经满足，repo/worktree 和目标范围唯一，排除行为未被隐含纳入 | Human 当前指令，或当前 WorkCase 授权包与批准；管辖/工作对象结果、Git 状态和适用来源 | AI 适用判断与来源回读 | 当次 repo、目标范围和本地 commit | 不执行状态变更；普通行动补充输入或缩小范围，获批 WorkCase 中未授权或超界的 commit 按本文 Human Gate 收敛 |
 | 提交候选范围 | 形成候选及创建 commit 前 | 候选快照只包含已授权目标；用户既有 Index 及无关或来源不明变化未被丢弃、覆盖、隐藏或静默纳入；临时 Index 变化仅属本次且可回读撤销 | 改变前后 status、必要 diff、候选快照、Human 目标和来源 | Git 只读观察及 AI 差异审核 | 当次候选快照与可归属临时变化 | 取消创建；只撤销本次可归属且可验证的临时变化并回读；不能安全撤销时保持实际状态并交还，不重置用户既有 Index |
-| 验证与 message 声明 | 准备创建及交还时 | 实际来源要求的验证已按当前候选执行；受管辖且 Helper 可用时，完整 message 已直接通过 `precheck-git-commit` 取得 `passed`；AI 语义审核独立完成；message 与完成声明没有超出实际变化、验证和 Git Gate 结果 | 项目/领域规则、实际测试结果、候选快照、Helper 原始请求/结果、AI 审核和 message | 来源规定的验证入口、Helper 直接调用及 AI 对照审核 | 当次已执行机械预检、语义审核、验证和声明 | 修正、缩小声明、标记未验证或暂停；不得绕过来源门禁或用 Helper 替代 AI 审核 |
+| 验证与 message 声明 | 准备创建及交还时 | 实际来源要求的验证已按当前候选执行；事实候选具有 Helper-only 写入、精确回读与外层 `outcome=ok`、`result.status=complete` 的写后完整性审计依据；受管辖且 Helper 可用时，完整 message 已直接通过 `precheck-git-commit` 取得外层 `outcome=ok`、`result.mechanical_outcome=passed`；AI 语义审核独立完成；message 与完成声明没有超出实际变化、验证和 Git Gate 结果 | 项目/领域规则、实际测试结果、候选快照、事实写入与审计结果、Helper 预检原始请求/结果、AI 审核和 message | 来源规定的验证入口、Helper 直接调用及 AI 对照审核 | 当次已执行事实写后检查、机械预检、语义审核、验证和声明 | 修正、缩小声明、标记未验证或暂停；不得绕过 Helper 受控写入或来源门禁，不得用任一机械结果替代 AI 审核 |
 | 提交消息交付边界 | 形成 message 至 commit 返回后 | 完整 message 直接传给 Helper 与 Git；Working Tree 内没有临时提交消息文件；外部工具确需文件时只使用系统临时目录且调用后已清理 | 提交前后状态、临时文件检查、Helper 请求和实际 commit message | Working Tree 回读、系统临时文件回读及 Git message 回读 | 当次 worktree、message 交付和确有使用的外部临时文件 | 不创建 commit 或不声明闭环；删除本次可归属的外部临时文件并回读，Working Tree 内出现消息文件时先停止并按实际归属处置 |
 | commit 创建与回读 | Git 返回后准备声明成功时 | 新 commit 实际存在，身份、实际 message 与内容范围已回读，和已授权目标一致；既有原生 Git Gate 只在真实 Git 事件中复检，其拒绝、修改或其它可观察结果及剩余 Working Tree/Index 已纳入判断 | 实际 Git 结果、`HEAD`、commit 内容、Git Gate/Git Hook 可观察诊断和提交后状态 | 当次 Git/Code 入口及只读回读 | 当次本地新 commit、环境结果与已观察剩余变化 | 不声明成功或完整完成；报告拒绝、修改、部分结果、实际残留和可安全继续入口 |
 
@@ -213,6 +215,7 @@ Human 决定的复用按 00 §10 执行；Human 当前指令已经授权相应�
 10. 模板正文、Skill、Agent、Git Hook、Code 或项目说明正在复制另一来源的 message、branch、拆分、验证或授权规则，形成第二权威；
 11. 本文仍为 `draft`、声明无效、定义来源冲突或具体模板不适用，却准备以其当前规则源效力约束行动；AI 的普通求解不因此停止。
 12. 目标为受管辖项目且 `precheck-git-commit` 当次可用，却准备跳过 Helper 预检，或者候选、完整 message、worktree、管辖、来源、验证变化后仍复用旧结果；
-13. 准备在 Git Working Tree 内创建临时提交消息文件，或者外部工具使用的系统临时文件没有清理与回读计划。
+13. 准备在 Git Working Tree 内创建临时提交消息文件，或者外部工具使用的系统临时文件没有清理与回读计划；
+14. 候选包含绕过 Helper 直接写入的 `ldvh-base/` 事实载体，或者任一次实际事实写入缺少精确回读和外层 `outcome=ok`、`result.status=complete` 的 `check-fact-integrity` 结果，却准备以 Schema 合法、提交预检或 Git Gate 通过继续创建 commit。
 
 暂停范围与允许继续的行动按 00 §11 执行；对本模板，只有授权、目标身份、候选范围、来源要求、验证、commit 实际结果和回读达到对应成立条件，或声明缩小到现有依据实际支持的范围后，才能恢复受影响的路径、快照或声明。

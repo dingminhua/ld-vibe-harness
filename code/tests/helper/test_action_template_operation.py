@@ -127,6 +127,42 @@ def test_workcase_execution_template_keeps_result_review_out_of_work_items(
     assert "Code 不从关键词或字段形状替 AI 作出结论" in delivered_template_source
 
 
+def test_fact_write_templates_deliver_process_checks_and_direct_write_rejection(
+    current_specs_repository: Path,
+) -> None:
+    execution = ACTION_TEMPLATE_CONTENT_IMPLEMENTATION.call(
+        _request("git-commit", "fact-object-controlled-creation", "fact-object-lifecycle-change"),
+        inspect_repository(current_specs_repository),
+        OperationExecutionContext(cwd=current_specs_repository),
+    )
+
+    assert execution.outcome == "ok"
+    assert execution.result is not None
+    content_by_key = {
+        item["template_key"]: item["content"] for item in execution.result["items"]
+    }
+    for content in content_by_key.values():
+        assert "绕过 Helper" in content
+        assert "`ldvh-base/`" in content
+        assert "`check-fact-integrity`" in content
+        assert "result.status=complete" in content
+        assert "`precheck-git-commit`" in content
+        assert "result.mechanical_outcome=passed" in content
+
+    assert "不得用提交预检或 Git Gate 把该候选追认为合规写入" in content_by_key["git-commit"]
+    for key in ("fact-object-controlled-creation", "fact-object-lifecycle-change"):
+        assert "精确回读与整库机械审计互不替代" in content_by_key[key]
+        assert "无论 Helper 外层 `outcome` 为何" in content_by_key[key]
+        assert "共同 `changes`" in content_by_key[key]
+
+    assert "无法排除任何事实源写入" in content_by_key[
+        "fact-object-controlled-creation"
+    ]
+    assert "不得等待或假定其它目标回读全部完成" in content_by_key[
+        "fact-object-lifecycle-change"
+    ]
+
+
 def test_content_operation_requires_nonempty_exact_keys_and_null_disclosure(
     current_specs_repository: Path,
 ) -> None:
