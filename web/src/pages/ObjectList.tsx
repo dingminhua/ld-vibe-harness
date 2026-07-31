@@ -603,7 +603,7 @@ export function WorkCaseBlockingNotice({
   );
 }
 
-function WorkCaseProgressingContent({
+export function WorkCaseProgressingContent({
   goal,
   phase,
   progressStep,

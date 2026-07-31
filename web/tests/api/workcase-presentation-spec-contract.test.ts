@@ -202,7 +202,7 @@ test('Current Web docs describe the same latest-only Card and detail boundaries'
   assert.doesNotMatch(baselineSection, /control-contract|workcase_profile|closure_requested_at|review_requested_at|closure_approval/);
 });
 
-test('Cognition Center reuses pending WorkCase and Pitfall Cards with secondary reading', () => {
+test('Cognition Center reuses pending and progressing WorkCase Cards with secondary reading', () => {
   const cognitionCenter = source('web/src/pages/CognitionCenter.tsx');
   const apiTypes = source('web/src/utils/api.ts');
 
@@ -215,6 +215,10 @@ test('Cognition Center reuses pending WorkCase and Pitfall Cards with secondary 
   assert.match(cognitionCenter, /ldvh-section-grid/);
   assert.match(cognitionCenter, /aria-controls="cognition-inbox-content"/);
   assert.match(cognitionCenter, /inboxExpanded/);
+  assert.match(cognitionCenter, /CognitionActiveWorkCaseItem/);
+  assert.match(cognitionCenter, /<WorkCaseProgressingContent/);
+  assert.match(cognitionCenter, /aria-controls="cognition-active-workcases-content"/);
+  assert.match(cognitionCenter, /activeExpanded/);
   assert.doesNotMatch(cognitionCenter, /navigate\(/);
   assert.doesNotMatch(cognitionCenter, /\.byStatus\b/);
 
@@ -223,6 +227,7 @@ test('Cognition Center reuses pending WorkCase and Pitfall Cards with secondary 
   assert.match(apiTypes, /export interface CognitionPitfallInboxItem[\s\S]*?type: 'pitfall';[\s\S]*?status: 'draft';[\s\S]*?inboxKind: 'pitfall_confirmation';/);
   assert.match(apiTypes, /CognitionInboxKind =[\s\S]*?'plan_confirmation'[\s\S]*?'closure_confirmation'[\s\S]*?'pitfall_confirmation'/);
   assert.match(apiTypes, /export type CognitionInboxItem = CognitionWorkCaseInboxItem \| CognitionPitfallInboxItem;/);
+  assert.match(apiTypes, /export interface CognitionActiveWorkCaseItem[\s\S]*?progress_group: 'progressing';[\s\S]*?isBlocked: boolean;/);
   const workCaseInboxBlock = apiTypes.match(/export interface CognitionWorkCaseInboxItem extends CognitionInboxItemBase \{[\s\S]*?\n\}/);
   assert.ok(workCaseInboxBlock);
   assert.doesNotMatch(workCaseInboxBlock[0], /\bstatus\??:\s/);

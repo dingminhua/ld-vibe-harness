@@ -1,5 +1,5 @@
 /**
- * Cognition API 路由：聚合项目认知中心的待决定事项与近期动态。
+ * Cognition API 路由：聚合项目认知中心的待决定事项、推进中事项与近期动态。
  *
  * 已交付模块一（待决定事项）、模块二（近期动态）与模块四（Spark 池健康）
  * + §5 全局信任标记所需的派生字段：
@@ -8,14 +8,15 @@
  * 数据经 Web 字段级直读（localFactReader / facts.ts 的 listObjects），不复用 /api/dashboard 聚合逻辑。
  *
  * 命名纪律（02 §7 第 3 条）：WorkCase 条目只携带 progress_group；待决类型 inboxKind
- * 表示 Human 的计划批准、关闭确认或 Pitfall draft 审核。blocked 仍由对象列表/详情如实呈现，不进入待决定收件箱。
+ * 表示 Human 的计划批准、关闭确认或 Pitfall draft 审核。blocked 不进入待决定收件箱；
+ * 若其当前 phase 仍属于 progressing，则在推进中事项中如实保留。
  */
 
 import { Router, type Request, type Response } from 'express'
 import { listObjects, type ObjectType } from '../services/facts.js'
 import { FACT_TYPE_CARRIERS, FACT_TYPE_DIRS, listLocalFacts, type LocalFactItem } from '../services/localFactReader.js'
 import { getGitLogWithFiles, type GitLogEntryWithFiles } from '../services/git.js'
-import { deriveWorkCaseProgressProjection, type WorkCaseProgressGroup } from '../../shared/workcaseStatus.js'
+import { deriveWorkCaseProgressProjection, type WorkCaseProgressGroup, type WorkCaseProgressStep } from '../../shared/workcaseStatus.js'
 import { ProjectScopeError, requestProject } from '../services/requestScope.js'
 import { getRelativeTime } from '../services/time.js'
 import { getTypeColor } from '../services/typeColors.js'
@@ -67,6 +68,25 @@ interface InboxBuildItem {
   status: string
   phase: string | undefined
   progress_group?: WorkCaseProgressGroup
+  priority?: string
+  updated_at?: string
+  read_status: string
+  projection: Record<string, unknown>
+  field_issues: Array<Record<string, unknown>>
+  unparsed_structures: Array<Record<string, unknown>>
+  read_issues: Array<Record<string, unknown>>
+}
+
+interface ActiveWorkCaseBuildItem {
+  type: 'workcase'
+  progress_group: 'progressing'
+  progress_step?: WorkCaseProgressStep
+  object_id: string
+  title: string
+  title_en?: string
+  title_zh?: string
+  status: string
+  phase: string
   priority?: string
   updated_at?: string
   read_status: string
@@ -166,7 +186,10 @@ function deriveInboxKind(_status: string, _phase: string | undefined, progressGr
   return null
 }
 
-function compareInbox(a: InboxBuildItem, b: InboxBuildItem): number {
+function compareCardBuild(
+  a: Pick<InboxBuildItem, 'priority' | 'updated_at' | 'object_id'>,
+  b: Pick<InboxBuildItem, 'priority' | 'updated_at' | 'object_id'>,
+): number {
   const ra = priorityRank(a.priority)
   const rb = priorityRank(b.priority)
   if (ra !== rb) return ra - rb
@@ -536,19 +559,42 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       sparkHealth = buildSparkHealth(data.items, Date.parse(generatedAt))
     }
     const builds: InboxBuildItem[] = []
+    const activeWorkCaseBuilds: ActiveWorkCaseBuildItem[] = []
     if (!workCaseResult.ok || !('data' in workCaseResult)) {
       const message = workCaseResult.ok ? 'WorkCase 列表读取失败' : (workCaseResult as { error: string }).error
       issues.push({ section: 'inbox', code: 'workcase_list_unavailable', message })
+      issues.push({ section: 'activeWorkCases', code: 'workcase_list_unavailable', message })
     } else {
       const data = workCaseResult.data as { items: Array<Record<string, unknown>>; collection_issues?: Array<Record<string, unknown>> }
-      for (const issue of Array.isArray(data.collection_issues) ? data.collection_issues : []) issues.push(toIssue(issue))
+      for (const issue of Array.isArray(data.collection_issues) ? data.collection_issues : []) {
+        const projected = toIssue(issue)
+        issues.push(projected, { ...projected, section: 'activeWorkCases' })
+      }
       for (const raw of data.items) {
         const object_id = String(raw.object_id ?? '')
         const status = String(raw.status ?? 'unknown')
         const phase = typeof raw.phase === 'string' ? raw.phase : undefined
-        const progressGroup = deriveWorkCaseProgressProjection(status, phase)?.progressGroup ?? null
+        const progress = deriveWorkCaseProgressProjection(status, phase)
+        const progressGroup = progress?.progressGroup ?? null
         if (progressGroup === null) {
           issues.push({ section: 'inbox', code: 'progress_group_unresolved', message: `WorkCase ${object_id} 的进展分组无法由当前 status=${status} 派生，未收入收件箱`, object_ref: object_id })
+          issues.push({ section: 'activeWorkCases', code: 'progress_group_unresolved', message: `WorkCase ${object_id} 的进展分组无法由当前 status=${status} 派生，未收入推进中事项`, object_ref: object_id })
+          continue
+        }
+        if (progress?.progressGroup === 'progressing' && typeof phase === 'string') {
+          activeWorkCaseBuilds.push({
+            type: 'workcase', progress_group: 'progressing',
+            ...(progress.progressStep ? { progress_step: progress.progressStep } : {}),
+            object_id, title: String(raw.title ?? object_id),
+            ...(typeof raw.title_en === 'string' ? { title_en: raw.title_en } : {}),
+            ...(typeof raw.title_zh === 'string' ? { title_zh: raw.title_zh } : {}),
+            status, phase, priority: typeof raw.priority === 'string' ? raw.priority : undefined,
+            updated_at: typeof raw.updated_at === 'string' ? raw.updated_at : undefined,
+            read_status: String(raw.read_status ?? 'unknown'), projection: raw,
+            field_issues: Array.isArray(raw.field_issues) ? (raw.field_issues as Array<Record<string, unknown>>) : [],
+            unparsed_structures: Array.isArray(raw.unparsed_structures) ? (raw.unparsed_structures as Array<Record<string, unknown>>) : [],
+            read_issues: Array.isArray(raw.read_issues) ? (raw.read_issues as Array<Record<string, unknown>>) : [],
+          })
           continue
         }
         const inboxKind = deriveInboxKind(status, phase, progressGroup)
@@ -591,7 +637,8 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       }
     }
 
-    builds.sort(compareInbox)
+    builds.sort(compareCardBuild)
+    activeWorkCaseBuilds.sort(compareCardBuild)
 
     const recentStart = new Date(generatedAt).getTime() - RECENT_ACTIVITY_WINDOWS[recentWindow] * 24 * 60 * 60 * 1000
     const recentBuilds: RecentActivityBuildItem[] = []
@@ -695,6 +742,34 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       return entry
     })
 
+    const activeWorkCaseItems = activeWorkCaseBuilds.map((build) => {
+      const card = Object.fromEntries(
+        Object.entries(build.projection).filter(([key]) => !IDENTITY_PROJECTION_KEYS.has(key)),
+      )
+      const entry: Record<string, unknown> = {
+        type: 'workcase',
+        id: build.object_id,
+        title: build.title,
+        ...(build.title_en !== undefined ? { title_en: build.title_en } : {}),
+        ...(build.title_zh !== undefined ? { title_zh: build.title_zh } : {}),
+        relativeTime: getRelativeTime(build.updated_at ?? '', locale),
+        typeColor: getTypeColor('workcase'),
+        progress_group: 'progressing',
+        ...(build.progress_step ? { progress_step: build.progress_step } : {}),
+        phase: build.phase,
+        isBlocked: build.status === 'blocked',
+        read_status: build.read_status,
+        card,
+      }
+      if (priorityRank(build.priority) < 4 && typeof build.priority === 'string') entry.priority = build.priority
+      if (build.updated_at) entry.updatedAt = build.updated_at
+      if (build.read_status === 'readable') entry.canonical_path = canonicalPath('workcase', build.object_id)
+      if (build.field_issues.length > 0) entry.field_issues = build.field_issues
+      if (build.unparsed_structures.length > 0) entry.unparsed_structures = build.unparsed_structures
+      if (build.read_issues.length > 0) entry.read_issues = build.read_issues
+      return entry
+    })
+
     const recentItems = recentBuilds.map((build) => ({
       type: build.type,
       id: build.object_id,
@@ -718,6 +793,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       generatedAt,
       scope: { governedProjectId: project.id },
       inbox: { items, total: items.length },
+      activeWorkCases: { items: activeWorkCaseItems, total: activeWorkCaseItems.length },
       recentActivity: {
         window: recentWindow,
         windowStart: new Date(recentStart).toISOString(),

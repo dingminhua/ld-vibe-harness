@@ -18,6 +18,7 @@ function withProjectId(url: string): string {
 }
 
 export type WorkCaseProgressGroup = 'plan_confirmation' | 'progressing' | 'closure_confirmation' | 'closed';
+export type WorkCaseProgressStep = 'item_execution' | 'controller_self_check' | 'independent_review' | 'controller_synthesis';
 
 export interface ObjectItem {
   id: string;
@@ -403,6 +404,10 @@ export type CognitionInboxKind = 'plan_confirmation' | 'closure_confirmation' | 
 export interface CognitionInboxCard extends Record<string, unknown> {
   goal?: string;
   scope?: string;
+  waiting_on?: string;
+  blocking_summary?: string;
+  executionItemsProjectionValid?: boolean;
+  executionItems?: WorkCaseExecutionItem[];
   successCriteria?: string[];
   success_criterion_definitions?: WorkCaseCriterionDefinition[] | unknown;
   work_items?: WorkCaseItem[] | unknown;
@@ -447,6 +452,15 @@ export interface CognitionPitfallInboxItem extends CognitionInboxItemBase {
 }
 
 export type CognitionInboxItem = CognitionWorkCaseInboxItem | CognitionPitfallInboxItem;
+
+/** 处于结果推进主链的 WorkCase；与两个 Human Gate 的待决定事项互斥。 */
+export interface CognitionActiveWorkCaseItem extends Omit<CognitionInboxItemBase, 'inboxKind'> {
+  type: 'workcase';
+  progress_group: 'progressing';
+  progress_step?: WorkCaseProgressStep;
+  phase: string;
+  isBlocked: boolean;
+}
 
 /** 近期动态是对当前事实身份与时间字段的派生标记，不承载提交记录或字段级 diff。 */
 export type CognitionRecentActivityWindow = '1d' | '3d' | '7d' | '14d';
@@ -561,6 +575,7 @@ export interface CognitionData {
   generatedAt: string;
   scope: { governedProjectId: string };
   inbox: { items: CognitionInboxItem[]; total: number };
+  activeWorkCases: { items: CognitionActiveWorkCaseItem[]; total: number };
   recentActivity: {
     window: CognitionRecentActivityWindow;
     windowStart: string;

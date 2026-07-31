@@ -2,7 +2,7 @@
  * 项目认知中心：GET /api/cognition 收件箱与近期动态契约测试。
  *
  * 以当前治理范围解析出的受管辖工作树（事实源）运行，断言 02 §8 当前已交付字段
- * （generatedAt / scope / inbox / recentActivity / sparkHealth / commitHotspots / issues）、待决收录与排序、命名纪律
+ * （generatedAt / scope / inbox / activeWorkCases / recentActivity / sparkHealth / commitHotspots / issues）、待决与推进中收录及排序、命名纪律
  * （WorkCase 的两个 Human Gate progress_group，加上 Pitfall 的 draft 待确认）、
  * 内联对象卡片依据、条件 canonical_path，以及近期动态的窗口与时间标记。
  *
@@ -83,6 +83,10 @@ test('cognition endpoint returns inbox, recent activity, Spark health, and commi
   const inbox = body.inbox as Record<string, unknown>
   assert.ok(Array.isArray(inbox.items))
   assert.equal(typeof inbox.total, 'number')
+  assert.ok(body.activeWorkCases && typeof body.activeWorkCases === 'object')
+  const activeWorkCases = body.activeWorkCases as Record<string, unknown>
+  assert.ok(Array.isArray(activeWorkCases.items))
+  assert.equal(activeWorkCases.total, (activeWorkCases.items as unknown[]).length)
   assert.ok(body.recentActivity && typeof body.recentActivity === 'object')
   const recent = body.recentActivity as Record<string, unknown>
   assert.equal(recent.window, '1d')
@@ -278,6 +282,37 @@ test('inbox collects only decision-baseline items with a deterministic sort orde
       assert.ok(idx > lastValidIndex, 'missing-priority item must come after all valid P0-P3 items')
     }
   })
+})
+
+test('active WorkCases contain only the progressing group and reuse the list Card projection', async () => {
+  const body = await cognition('zh')
+  const active = body.activeWorkCases as Record<string, unknown>
+  const items = active.items as Array<Record<string, unknown>>
+  const inboxIds = new Set(
+    ((body.inbox as Record<string, unknown>).items as Array<Record<string, unknown>>)
+      .map((item) => String(item.id)),
+  )
+
+  assert.equal(active.total, items.length)
+  assert.deepEqual(items.map((item) => String(item.id)), items.slice().sort(compareSort).map((item) => String(item.id)))
+  for (const item of items) {
+    assert.equal(item.type, 'workcase')
+    assert.equal(item.progress_group, 'progressing')
+    assert.equal(typeof item.phase, 'string')
+    assert.equal(typeof item.isBlocked, 'boolean')
+    assert.equal('status' in item, false)
+    assert.equal('inboxKind' in item, false)
+    assert.equal(inboxIds.has(String(item.id)), false, 'progressing item must not duplicate a Human Gate item')
+    assert.ok(item.card && typeof item.card === 'object')
+    const card = item.card as Record<string, unknown>
+    assert.equal(typeof card.goal, 'string')
+    assert.equal('object_id' in card, false)
+    assert.equal('status' in card, false)
+    assert.equal('phase' in card, false)
+    if ('progress_step' in item) {
+      assert.ok(['item_execution', 'controller_self_check', 'independent_review', 'controller_synthesis'].includes(String(item.progress_step)))
+    }
+  }
 })
 
 test('inbox keeps WorkCase Human Gates separate from Pitfall draft confirmation', async () => {

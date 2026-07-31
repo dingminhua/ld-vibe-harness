@@ -11,7 +11,7 @@
  * - 模块级降级：issues 就地显示实际不可用范围与原因，其它内容正常呈现（02 §5.2）。
  */
 import { useEffect, useState, type KeyboardEvent } from 'react';
-import { AlertCircle, ChevronDown, ChevronUp, GitFork, HeartPulse, History, Inbox } from 'lucide-react';
+import { AlertCircle, ChevronDown, ChevronUp, CirclePlay, GitFork, HeartPulse, History, Inbox } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import CopyPathButton from '@/components/CopyPathButton';
 import {
@@ -19,6 +19,7 @@ import {
   WorkCaseContributionsContent,
   WorkCaseClosureConfirmationContent,
   WorkCasePlanConfirmationContent,
+  WorkCaseProgressingContent,
 } from '@/pages/ObjectList';
 import StatusBadge from '@/components/StatusBadge';
 import PriorityIcon from '@/components/PriorityIcon';
@@ -26,6 +27,7 @@ import { ObjectTypeIcon } from '@/components/SemanticIcon';
 import { CommitHotspotCluster, CommitHotspotLegend } from '@/pages/cognition/CommitHotspotGraph';
 import {
   fetchCognition,
+  type CognitionActiveWorkCaseItem,
   type CognitionData,
   type CognitionInboxItem,
   type CognitionInboxKind,
@@ -41,6 +43,7 @@ import { getFieldLabel, getFieldValueLabel, getLocalizedObjectTitle, getObjectSt
 
 /** 首屏截断阈值：Web 展示参数，不是事实；截断时底部如实提示总数与未显示数量。 */
 const INBOX_FIRST_SCREEN_LIMIT = 8;
+const ACTIVE_WORKCASE_FIRST_SCREEN_LIMIT = 8;
 const RECENT_ACTIVITY_FIRST_SCREEN_LIMIT = 12;
 const SPARK_HEALTH_FIRST_SCREEN_LIMIT = 3;
 const SPARK_PRIORITIES = ['P0', 'P1', 'P2', 'P3'];
@@ -84,6 +87,14 @@ function buildRecentActivitySummary(data: CognitionData, locale: string, t: Tran
   return lines.join('\n');
 }
 
+function buildActiveWorkCaseSummary(data: CognitionData, locale: string, t: Translate): string {
+  const lines = [t('cognition.active.title'), `total: ${data.activeWorkCases.total}`];
+  for (const item of data.activeWorkCases.items) {
+    lines.push(`- ${item.id} · ${getLocalizedObjectTitle(item, locale, item.id)}`);
+  }
+  return lines.join('\n');
+}
+
 function buildSparkHealthSummary(data: CognitionData, locale: string, t: Translate): string {
   const health = data.sparkHealth;
   if (!health) return t('cognition.sparkHealth.title');
@@ -121,7 +132,9 @@ function buildCommitHotspotSummary(data: CognitionData, locale: string, t: Trans
 }
 
 /** 读取问题与未解析结构在消费位置就地显示（02 §5.4）。 */
-function InboxItemReadNotes({ item, locale }: { item: CognitionInboxItem; locale: string }) {
+type CognitionCardItem = CognitionInboxItem | CognitionActiveWorkCaseItem;
+
+function InboxItemReadNotes({ item, locale }: { item: CognitionCardItem; locale: string }) {
   const fieldIssues = item.field_issues ?? [];
   const unparsed = item.unparsed_structures ?? [];
   const showReadStatus = item.read_status !== 'readable';
@@ -171,7 +184,8 @@ function InboxCardContent({ item, t, locale }: { item: CognitionInboxItem; t: Tr
   return null;
 }
 
-function toObjectCard(item: CognitionInboxItem): ObjectItem {
+function toObjectCard(item: CognitionCardItem): ObjectItem {
+  const activeWorkCase = item.type === 'workcase' && 'isBlocked' in item ? item : null;
   return {
     ...(item.card as unknown as ObjectItem),
     id: item.id,
@@ -179,8 +193,14 @@ function toObjectCard(item: CognitionInboxItem): ObjectItem {
     title: item.title,
     ...(item.title_en ? { title_en: item.title_en } : {}),
     ...(item.title_zh ? { title_zh: item.title_zh } : {}),
-    status: item.type === 'workcase' ? item.progress_group : item.status,
+    status: item.type === 'workcase'
+      ? activeWorkCase?.isBlocked ? 'blocked' : item.progress_group
+      : item.status,
     ...(item.type === 'workcase' ? { progress_group: item.progress_group } : {}),
+    ...(activeWorkCase ? {
+      phase: activeWorkCase.phase,
+      ...(activeWorkCase.progress_step ? { progress_step: activeWorkCase.progress_step } : {}),
+    } : {}),
     path: item.canonical_path ?? '',
     updated: item.updatedAt ?? '',
     ...(item.priority ? { priority: item.priority } : {}),
@@ -189,6 +209,38 @@ function toObjectCard(item: CognitionInboxItem): ObjectItem {
     ...(item.canonical_path ? { canonical_path: item.canonical_path } : {}),
     read_status: item.read_status as ObjectItem['read_status'],
   };
+}
+
+function ActiveWorkCaseItemRow({ item }: { item: CognitionActiveWorkCaseItem }) {
+  const { t, locale } = useI18n();
+  const { openPanel } = usePanel();
+  const title = getLocalizedObjectTitle(item, locale, item.id);
+  const objectCard = toObjectCard(item);
+
+  return (
+    <li className="min-w-0">
+      <ObjectCardFrame
+        obj={objectCard}
+        locale={locale}
+        onOpen={() => openPanel({ type: 'object', title, objectType: 'workcase', objectId: item.id })}
+        showNonActiveReason={false}
+        displayStatus="progressing"
+      >
+        <WorkCaseProgressingContent
+          goal={item.card.goal}
+          phase={item.phase}
+          progressStep={item.progress_step ?? null}
+          executionItemsProjectionValid={item.card.executionItemsProjectionValid ?? false}
+          executionItems={item.card.executionItems ?? []}
+          isBlocked={item.isBlocked}
+          waitingOn={item.card.waiting_on}
+          blockingSummary={item.card.blocking_summary}
+          t={t}
+        />
+        <InboxItemReadNotes item={item} locale={locale} />
+      </ObjectCardFrame>
+    </li>
+  );
 }
 
 function InboxItemRow({ item }: { item: CognitionInboxItem }) {
@@ -353,6 +405,8 @@ export default function CognitionCenter() {
   const [error, setError] = useState<string | null>(null);
   const [inboxExpanded, setInboxExpanded] = useState(true);
   const [showAll, setShowAll] = useState(false);
+  const [activeExpanded, setActiveExpanded] = useState(true);
+  const [showAllActive, setShowAllActive] = useState(false);
   const [recentWindow, setRecentWindow] = useState<CognitionRecentActivityWindow>('1d');
   const [recentExpanded, setRecentExpanded] = useState(true);
   const [showAllRecent, setShowAllRecent] = useState(false);
@@ -413,6 +467,12 @@ export default function CognitionCenter() {
   const items = data.inbox.items;
   const truncated = !showAll && items.length > INBOX_FIRST_SCREEN_LIMIT;
   const visibleItems = truncated ? items.slice(0, INBOX_FIRST_SCREEN_LIMIT) : items;
+  const activeWorkCaseIssues = (data.issues ?? []).filter((issue) => issue.section === 'activeWorkCases');
+  const activeWorkCaseItems = data.activeWorkCases.items;
+  const activeWorkCasesTruncated = !showAllActive && activeWorkCaseItems.length > ACTIVE_WORKCASE_FIRST_SCREEN_LIMIT;
+  const visibleActiveWorkCases = activeWorkCasesTruncated
+    ? activeWorkCaseItems.slice(0, ACTIVE_WORKCASE_FIRST_SCREEN_LIMIT)
+    : activeWorkCaseItems;
   const recentIssues = (data.issues ?? []).filter((issue) => issue.section === 'recentActivity');
   const recentItems = data.recentActivity.items;
   const recentTruncated = !showAllRecent && recentItems.length > RECENT_ACTIVITY_FIRST_SCREEN_LIMIT;
@@ -513,6 +573,81 @@ export default function CognitionCenter() {
                   className="ldvh-caption inline-flex h-8 shrink-0 items-center rounded-md border border-ldvh-border px-3 text-ldvh-text-secondary transition-colors hover:border-ldvh-accent/50 hover:text-ldvh-accent"
                 >
                   {truncated ? t('cognition.inbox.showAll') : t('cognition.inbox.collapse')}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </section>
+
+      {/* 推进中事项：只收纳 progress_group=progressing 的 WorkCase，并复用对象列表进行中 Card。 */}
+      <section className="mt-4 rounded-xl border border-ldvh-border bg-ldvh-panel p-4">
+        <div
+          role="button"
+          tabIndex={0}
+          aria-expanded={activeExpanded}
+          aria-controls="cognition-active-workcases-content"
+          onClick={() => setActiveExpanded((expanded) => !expanded)}
+          onKeyDown={(event) => toggleOnKeyboard(event, () => setActiveExpanded((expanded) => !expanded))}
+          className={`-mx-1 flex min-w-0 cursor-pointer flex-wrap items-center gap-2 rounded-md px-1 transition-colors hover:bg-ldvh-bg/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ldvh-accent/50 ${activeExpanded ? 'mb-4' : ''}`}
+        >
+          <CirclePlay size={16} className="shrink-0 text-sky-500 dark:text-sky-400" aria-hidden="true" />
+          <h3 className="ldvh-section-title min-w-0">{t('cognition.active.title')}</h3>
+          {data.activeWorkCases.total > 0 && (
+            <span className="ldvh-meta shrink-0 text-ldvh-text-secondary/70">{data.activeWorkCases.total}</span>
+          )}
+          <span className="ml-auto flex min-w-0 shrink-0 items-center gap-2">
+            <CopyPathButton
+              path={buildActiveWorkCaseSummary(data, locale, t)}
+              label={t('cognition.active.copyModuleSummary')}
+              copiedLabel={t('cognition.active.copiedModuleSummary')}
+            />
+            <button
+              type="button"
+              aria-expanded={activeExpanded}
+              aria-controls="cognition-active-workcases-content"
+              onClick={(event) => {
+                event.stopPropagation();
+                setActiveExpanded((expanded) => !expanded);
+              }}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-ldvh-text-secondary transition-colors hover:bg-ldvh-bg hover:text-ldvh-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ldvh-accent/50"
+              title={t(activeExpanded ? 'cognition.active.collapseSection' : 'cognition.active.expandSection')}
+            >
+              {activeExpanded ? <ChevronUp size={16} aria-hidden="true" /> : <ChevronDown size={16} aria-hidden="true" />}
+              <span className="sr-only">{t(activeExpanded ? 'cognition.active.collapseSection' : 'cognition.active.expandSection')}</span>
+            </button>
+          </span>
+        </div>
+
+        {activeExpanded && (
+          <div id="cognition-active-workcases-content">
+            <ModuleIssuesNotice issues={activeWorkCaseIssues} t={t} unavailableKey="cognition.active.unavailable" />
+            {activeWorkCaseItems.length === 0 ? (
+              activeWorkCaseIssues.length === 0 && <p className="ldvh-body-muted">{t('cognition.active.empty')}</p>
+            ) : (
+              <ul className="ldvh-section-grid min-w-0">
+                {visibleActiveWorkCases.map((item) => (
+                  <ActiveWorkCaseItemRow key={item.id} item={item} />
+                ))}
+              </ul>
+            )}
+            {activeWorkCaseItems.length > ACTIVE_WORKCASE_FIRST_SCREEN_LIMIT && (
+              <div className="mt-3 flex min-w-0 flex-wrap items-center justify-between gap-2">
+                <p className="ldvh-caption min-w-0">
+                  {activeWorkCasesTruncated
+                    ? t('cognition.active.truncated', {
+                      total: String(data.activeWorkCases.total),
+                      shown: String(visibleActiveWorkCases.length),
+                      hidden: String(activeWorkCaseItems.length - visibleActiveWorkCases.length),
+                    })
+                    : null}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowAllActive((previous) => !previous)}
+                  className="ldvh-caption inline-flex h-8 shrink-0 items-center rounded-md border border-ldvh-border px-3 text-ldvh-text-secondary transition-colors hover:border-ldvh-accent/50 hover:text-ldvh-accent"
+                >
+                  {activeWorkCasesTruncated ? t('cognition.active.showAll') : t('cognition.active.collapse')}
                 </button>
               </div>
             )}
