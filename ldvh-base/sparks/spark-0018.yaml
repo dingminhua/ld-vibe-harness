@@ -1,20 +1,20 @@
 title: 无环境 Hook 下的 LDVH 自约束运行
-intent: 保留无环境 Hook 时 Agent 能否稳定发现、遵守、验证并交还 LDVH 约束的问题，避免把 Agent.md
-  等规则文档存在、一次自觉执行或 Helper 可用误作自动注入、阻断与审计已经成立。后续需判断主动约束的最低可靠链路、失效面和可接受边界。
+intent: 保留无环境 Hook 时 Agent 能否稳定发现、遵守、验证并交还 LDVH 约束的问题，避免把 Agent.md 等规则文档存在、一次自觉执行或 Helper 可用误作自动注入、阻断与审计已经成立。后续需判断主动约束的最低可靠链路、失效面和可接受边界。
 status: open
 priority: P2
-summary: "**当前问题**\n\n- 没有环境 Hook 的自动注入或阻断时，Agent 是否能仅凭 Agent.md 等规则、可发现的事实入口与 Helper，稳定完成项目识别、事实源读取、STOP/Human
-  Gate 遵守、验证和交还。\n- 文档规则、Agent 主动执行责任与 Hook 提供的自动注入、阻断、审计是不同能力；规则存在、一次自觉执行或 Helper
-  可用都不能证明自动约束成立。\n\n**应验证的最小主动链路**\n\n- 新会话、子 Agent、上下文压缩恢复、工作树切换与 Skill 调用时，规则和当前事实入口是否能被实际发现并继续消费，而非依赖主线程记忆。\n\
-  - Agent 主动读取后，是否能在写入、提交或需要 Human 决定时保持真实的 STOP/Human Gate 边界，并可回收实际验证范围与未证明内容。\n\
-  - Helper/规则失效、上下文不足或工作对象不明确时，系统是否明确交还缺口，而不是静默宣称已读取、已受约束或已完成。\n\n**边界与未决事项**\n\n\
-  - 本 Spark 不把“由 Rules 模拟 Hook”预设为等价或正式替代；它只研究在缺少 Hook 强制力时可达到的主动行为约束及其局限。\n- 需要以实际运行场景建立最小证据矩阵，再判断是否形成
-  WorkCase、补充能力资产，或明确某些场景必须依赖环境 Hook。"
+summary: "**当前架构与问题边界**\n\n- `adr-0006` 已把环境接入排他地确定为单一薄 Skill：只作身份、规则引导和行动模板路由；过程机械检查保持必须，Git Gate 只在实际触发它的 worktree Git 事件中承担最后把关。环境 Hook、插件与 adapter 已退出接入面且没有可选 guardrail，MCP 当前不做；只有已列重估触发条件出现时才另行评估并新建 ADR。\n- 因此，本 Spark 不再研究“由 Rules 模拟 Hook”或哪些场景必须恢复环境 Hook；当前问题收敛为：在唯一薄 Skill、过程检查与 worktree 级 Git Gate 的既定架构内，模型内主动路由、规则消费、停止边界和缺口交还能否在代表性场景中稳定成立。与 `adr-0006` 的关系只表示主题和判断依据相关，不表示该证据问题已经承接或关闭。\n\n**已形成的有限证据**\n\n- 2026-07-30 的 Kimi Work 已按真实新对话和行为事件回查形成环境特定证据：首轮显式提及时薄路由全链路成立，大白话自动选中为 0/2、仓库信号兜底为 2/2；修正中文别名与项目 ID 发现指引后，同法复测大白话自动选中为 2/2，三组答案正确且零写入。该结果只覆盖当时环境、版本、部署件和测试方法，不能外推到其它环境。\n- 当前 Codex 任务实际观察到 `SessionStart/compact` 规则交付 `outcome=ok`、`facts=not_requested`；在 Human 已显式提出 LDVH 任务、人工定位隔离 worktree 后，Helper 精确读取与受控链路可以运行。这只证明本次显式上下文中的有限路径，不证明新部署 Skill 已由独立 cold start 加载、被大白话隐式选中、自动随 worktree 切换或具有模型外阻断力。\n- 当前环境仍保留 legacy 插件状态与既有会话上下文，本 WorkCase 又明确不清理该实例；因此现有递达观察存在归因混淆，不能把它写成新部署薄 Skill 独立生效或长期稳定的证据。\n\n**未完成证据矩阵与保持 open 的理由**\n\n- 尚未在可清楚归因的新 Codex 会话验证新部署 Skill 的 cold start 收录与大白话隐式选中，也未验证无显式 LDVH 指令的 delegation/SubagentStart、自动 worktree 或 clone 切换、以及无历史上下文时的恢复与 compact 行为。\n- 尚未形成 Skill 或 Helper 不可用时的诚实失败、真实直接写入、写后审计停止、Human Gate/Stop 遵守，以及该 worktree 原生 Git Gate allow/block 与绕过边界的完整负面矩阵；机械检查也不能判断 Schema 合法内容的语义真实性。\n- 上述范围仍直接决定本 Spark 的核心问题，现有证据不足以支持终态，故保持 `open`、`P2`。只有代表性目标环境形成可归因的冷启动、隐式路由、委派/恢复/worktree、写入负面路径和真实 Gate 矩阵后，才能重新评估关闭；未验证项不恢复 Hook、插件或 adapter 为候选形态。"
 evolution:
 - at: '2026-07-22T13:48:08+08:00'
-  summary: 迁移对照保留 V3 对“持续消费同一运行链路”的关注，但移除旧双入口和部署结论；当前问题收窄为无 Hook
-    时主动约束究竟能证明什么、在哪些恢复和委派场景失效。
+  summary: 迁移对照保留 V3 对“持续消费同一运行链路”的关注，但移除旧双入口和部署结论；当前问题收窄为无 Hook 时主动约束究竟能证明什么、在哪些恢复和委派场景失效。
+- at: '2026-08-01T03:12:13+08:00'
+  summary: adr-0006 将原先可能依赖环境 Hook 的问题边界改为唯一薄 Skill 架构内的主动约束证据评估；本次吸收 Kimi 特定环境复测与当前 Codex 显式上下文的有限观察，并因 legacy 归因混淆及冷启动、委派、worktree、负面写入和真实 Gate 矩阵仍缺失而保持 open。
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: adr
+    object_id: adr-0006
 object_id: spark-0018
 fact_type_key: spark
 created_at: '2026-07-19T18:45:09.421410+08:00'
-updated_at: '2026-07-23T14:21:35.783731+08:00'
+updated_at: '2026-08-01T03:12:44.311192+08:00'
