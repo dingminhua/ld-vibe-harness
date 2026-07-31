@@ -931,7 +931,7 @@ export function WorkCaseClosureConfirmationContent({
   const { t, locale } = useI18n();
   return (
     <div className="grid min-w-0 gap-2">
-      <WorkCaseGoalSection goal={goal} t={t} emphasis="supporting" />
+      <WorkCaseGoalSection goal={goal} t={t} />
       {closureProposal ? (
         <>
           <WorkCaseOutcomeNotice outcome={closureProposal.proposedOutcome} dispositionSummary={closureProposal.dispositionSummary} mode="proposal" />

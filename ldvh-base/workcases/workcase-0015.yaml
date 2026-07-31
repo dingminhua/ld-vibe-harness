@@ -1,10 +1,30 @@
+object_id: workcase-0015
+fact_type_key: workcase
 title: Hook 术语消歧与关联 Gate 限定收敛
-status: open
-priority: P1
-summary: 完整关闭提案已形成：建议以 completed 关闭，且没有剩余责任、路由或 Spark 建议。
-resume_from: 等待 Human 对完整关闭提案作出关闭或退回决定。
+created_at: '2026-07-25T13:26:56.828180+08:00'
+updated_at: '2026-07-30T13:27:14.104085+08:00'
+status: closed
 goal: 使 LDVH 规范、用户文档及当前可编辑的面向 Human 帮助、诊断和注释文本中的概念性 Hook 用语，能够无歧义地区分 Git Hook、环境 Hook 与 Hook Gate；在同一受影响文本单元中出现的 Gate 依其对象明确为 Human Gate、Git Gate 或 Hook Gate，且不改变既有运行行为或技术标识符。
-scope: "覆盖：\n- specs/01-规范模型基础规范.md 与 specs/attachments/01.Att.01-LDVH双语术语表.md 中承接 00 的术语定义和引用边界；\n- 全部 specs、README/用户文档，以及当前可编辑的面向 Human 帮助、诊断和注释文本；\n- 对范围内 Hook/Gate 命中逐项分类为 Git Hook、环境 Hook、Hook Gate、Human Gate、Git Gate、技术标识符、第三方专名、外部原文引用或待 Human 裁决；\n- 每个拟改文本单元（段落、标题、帮助字符串、诊断文字）均先展示修改前与修改后，经 Human 确认后才写入。\n\n排除：\n- 不改 Git Hook、环境 Hook、adapter、Git Gate 或 Hook Gate 的运行行为、事件链和实现；\n- 不更名代码技术标识符、第三方专名、外部 URL 或外部来源原文；\n- 不为术语收敛而改写历史 WorkCase、Spark、审核记录或既有结果；这些对象仅可被清点、分类并交还其自身责任；\n- 不纳入当前工作区无关的 Web 改动。"
+scope: '覆盖：
+
+  - specs/01-规范模型基础规范.md 与 specs/attachments/01.Att.01-LDVH双语术语表.md 中承接 00 的术语定义和引用边界；
+
+  - 全部 specs、README/用户文档，以及当前可编辑的面向 Human 帮助、诊断和注释文本；
+
+  - 对范围内 Hook/Gate 命中逐项分类为 Git Hook、环境 Hook、Hook Gate、Human Gate、Git Gate、技术标识符、第三方专名、外部原文引用或待 Human 裁决；
+
+  - 每个拟改文本单元（段落、标题、帮助字符串、诊断文字）均先展示修改前与修改后，经 Human 确认后才写入。
+
+
+  排除：
+
+  - 不改 Git Hook、环境 Hook、adapter、Git Gate 或 Hook Gate 的运行行为、事件链和实现；
+
+  - 不更名代码技术标识符、第三方专名、外部 URL 或外部来源原文；
+
+  - 不为术语收敛而改写历史 WorkCase、Spark、审核记录或既有结果；这些对象仅可被清点、分类并交还其自身责任；
+
+  - 不纳入当前工作区无关的 Web 改动。'
 success_criterion_definitions:
 - criterion_id: criterion-01
   statement: 01、术语表与 00 已建立的 Git Hook、环境 Hook、Hook Gate、Human Gate、Git Gate 边界一致，不产生相互冲突或重复的定义。
@@ -14,24 +34,6 @@ success_criterion_definitions:
   statement: 每一项实际文本修改均已先向 Human 展示相应文本单元的修改前后并取得确认，且不改动本案排除的运行行为、技术标识符、外部原文或历史事实记录。
 - criterion_id: criterion-04
   statement: 完成范围内检索、受影响测试与独立结果审核；报告实际验证范围、无法由机械检查裁决的例外及未覆盖范围。
-phase: human_closure_confirming
-plan_version: 2
-work_items:
-- item_id: item-01
-  goal: 形成 01 与术语表的术语定义提案，并建立范围内 Hook/Gate 命中的全量分类清单。
-  expected_result: 得到可回指的术语基线、命中清单和每项分类/例外依据；待 Human 裁决项被明确标出，不修改文件。
-  approach_summary: 只读检索与来源回读，区分概念文本、技术标识符、第三方专名、外部原文和历史事实记录；不以字符串命中本身裁决语义。
-  status: completed
-  result_summary: 已形成范围内 Hook/Gate 命中的分类闭集：概念文本均已明确为 Git Hook、环境 Hook、Git Gate、Hook Gate 或 Human Gate；其余命中已分类为技术标识符、第三方专名、外部原文、历史事实记录或一般技术语境，并按排除边界保留。
-- item_id: item-02
-  goal: 按 Human 确认的批次逐文本单元送审并收敛范围内术语表述。
-  expected_result: 每个实际修改的段落、标题、帮助字符串或诊断文字均有 Human 确认的修改前后对照，且只修改已批准单元。
-  depends_on:
-  - item-01
-  approach_summary: 每批先给出精确前后文本；收到确认后才使用受控编辑写入。遇到无法按既有分类判断的表述，暂停该单元并交还 Human 裁决。
-  status: completed
-  result_summary: 已按 Human 对每批精确前后文本的确认，收敛已批准的规范、用户文档、帮助/诊断和注释文本；未改运行行为、事件链、技术标识符、外部原文、历史事实记录或无关 Web 改动。
-result_version: 2
 success_criterion_results:
 - criterion_id: criterion-01
   outcome: satisfied
@@ -46,19 +48,6 @@ success_criterion_results:
   outcome: satisfied
   summary: 范围扫描、受影响测试与差异格式检查已完成；对 result_version=1 的实际独立审核已形成并由 Controller 处置。扫描结论只覆盖 README.md、docs、code/ldvh、code/plugins、specs、web/docs；未执行的全仓库测试和排除的 web/src 不在本项结论范围内。
 result_summary: 本次在经 Human 确认的文本单元内完成 Hook/Gate 术语消歧与限定收敛：概念文本已明确对应 Git Hook、环境 Hook、Git Gate、Hook Gate 或 Human Gate；例外按技术标识符、第三方专名、外部原文、历史事实记录或一般技术语境保留。未改变运行行为或排除范围内内容。
-controller_check_summary: v1 独立 Reviewer 的两项反馈均已处置：独立审核在 v1 形成后才发生，故通过 ResultΔ 形成 v2 将其据实纳入 criterion-04；术语扫描范围严格限定为 README.md、docs、code/ldvh、code/plugins、specs、web/docs，排除的 web/src 未被纳入结论。v1 review 已按版本冻结规则清除，v2 需 fresh independent review。
 validation_summary: 当前执行选定 pytest 套件：doctor、Git Gate/commit precheck、WorkCase 写入、WorkCase 应用、文档与规范仓库测试，均成功完成；git diff --check 通过。Hook/Gate 扫描根目录严格为 README.md、docs、code/ldvh、code/plugins、specs、web/docs，未报告新的概念性未限定项。测试与扫描不覆盖未执行的全仓库测试或当前 scope 排除的 web/src，且不替代 v2 的独立审核。
-result_reviews:
-- reviewer: /root/workcase0015_result_review
-  reviewed_at: '2026-07-30T10:10:06+08:00'
-  subject_version: 2
-  scope: 对 workcase-0015 result_version=2 的完整结果投影、当前相关差异、术语扫描根目录和验证边界执行 fresh 只读审核；未修改文件、事实或状态，未将审核视为关闭批准。
-  conclusion: pass
-closure_proposal:
-  proposed_outcome: completed
-  proposed_disposition_summary: 在声明范围内，全部成功标准均满足，且没有需要转交、接受停止或另建 Spark 的剩余责任。
-waiting_on: Human 对 workcase-0015 完整关闭提案的最终关闭决定
-object_id: workcase-0015
-fact_type_key: workcase
-created_at: '2026-07-25T13:26:56.828180+08:00'
-updated_at: '2026-07-30T13:27:14.104085+08:00'
+closure_outcome: completed
+disposition_summary: 在声明范围内，全部成功标准均满足，且没有需要转交、接受停止或另建 Spark 的剩余责任。

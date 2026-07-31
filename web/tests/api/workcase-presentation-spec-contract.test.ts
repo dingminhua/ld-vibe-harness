@@ -204,6 +204,7 @@ test('Current Web docs describe the same latest-only Card and detail boundaries'
 
 test('Cognition Center reuses pending and progressing WorkCase Cards with secondary reading', () => {
   const cognitionCenter = source('web/src/pages/CognitionCenter.tsx');
+  const objectList = source('web/src/pages/ObjectList.tsx');
   const apiTypes = source('web/src/utils/api.ts');
 
   // 收件箱卡片沿用对象 Card，标题只打开次级阅读面板，不发生路由跳转。
@@ -221,6 +222,12 @@ test('Cognition Center reuses pending and progressing WorkCase Cards with second
   assert.match(cognitionCenter, /activeExpanded/);
   assert.doesNotMatch(cognitionCenter, /navigate\(/);
   assert.doesNotMatch(cognitionCenter, /\.byStatus\b/);
+
+  // 两个 Human Gate 的“目标”语义相同，应使用同一主目标色阶；关闭确认不降为若有若无的 supporting 色阶。
+  const closureConfirmationBlock = objectList.match(/export function WorkCaseClosureConfirmationContent[\s\S]*?\n}\n\nfunction WorkCaseClosedContent/);
+  assert.ok(closureConfirmationBlock);
+  assert.match(closureConfirmationBlock[0], /<WorkCaseGoalSection goal=\{goal\} t=\{t\} \/>/);
+  assert.doesNotMatch(closureConfirmationBlock[0], /emphasis="supporting"/);
 
   // 类型层：WorkCase 仍只携带 progress_group；Pitfall 明确用 draft 状态进入确认收件箱。
   assert.match(apiTypes, /export interface CognitionWorkCaseInboxItem[\s\S]*?progress_group: WorkCaseProgressGroup;/);
