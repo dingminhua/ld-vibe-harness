@@ -56,7 +56,9 @@ def test_ai_enablement_guide_keeps_capability_and_evidence_boundaries() -> None:
     assert "薄 Skill 的部署边界" in template
     assert "用户级范围" in template
     assert "Human 受限操作请求" in template
-    assert "不得从其它环境、历史记录或名称猜测开关、菜单、manifest、目录或权限模型" in template
+    assert "不得从其它环境、历史记录或名称猜测开关、菜单、manifest、目录、字段或权限模型" in template
+    assert "登记一项技能时环境要求提供的字段与输入" in template
+    assert "登记或安装一项技能时该环境要求提供的字段与输入" in environment_spec
     assert "该请求不是对 Human 的默认指令，也不构成授权" in template
     assert "Human 完成该操作本身不等于部署成功或真实事件已触发" in template
     assert "执行环境的产品/运行器、版本、平台、实际运行位置和识别依据" in template
