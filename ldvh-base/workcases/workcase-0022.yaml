@@ -1,7 +1,7 @@
 title: git Gate 事实机械校验与完整性校验一等化
 status: open
 priority: P1
-phase: executing
+phase: controller_checking
 plan_version: 1
 goal: 让 git commit-msg Gate 在 Index 候选包含事实布局内、object_id 合法且有暂存内容的 ldvh-base/ 路径时，对候选事实文件执行与事实读取同核（carriers、validate_fact_object、object_id 与文件名身份核对、内容指纹、大小预算）的机械校验，使 adr-0006 第三条既定的「事实完整性终闸」成立；同时将事实完整性机械校验一等化为 Helper 公开操作并合同化输出，供行动模板与 Skill 引用；在同一边界内完成 spark-0022 多人未同步 ID 冲突 Gate 的合并评估并给出归属结论。
 scope: 覆盖 specs/03 §9 扩展（触发条件、校验层、结果并入 mechanical_outcome/issues、删除与改名状态语义）、specs/05（及必要时 04）公开操作登记、05 校验向 commits 链路投影复用、code/ldvh 的 commits/git_hooks/hooks/helper 与 facts 复用面、双入口同步、相应测试、spark-0022 与 spark-0039 受控写回。分寸约束（2026-07-31 Human 指令，机械承接）：校验严格限于当次 Index 候选中的事实文件；提交链路不做全库或全量验证；不引入全量测试默认要求；AI 侧验证声明按候选范围适度。排除：远端刷新型 ID 冲突 Gate 的实现（只评估归属）；语义审核进 Gate；全库扫描进提交链路；历史 commit 追溯；新增 console 入口与 pyproject 改动；spark-0039 其余待办项；specs/08、web/*、docs/ 并行会话文件；adr-0006 本文。
@@ -57,7 +57,7 @@ work_items:
   approach_summary: 只评估归属，不实现远端刷新型 Gate；结论经 Helper 受控写回 spark-0022
   result_summary: spark-0022 归属评估已完成并提交（0d6d4834c）：结论为保持 open 另立、本 WorkCase 不吸收。已追加 evolution 记录评估过程与三条理由（问题性质不同——本 WorkCase 交付本地机械完整性而 spark-0022 属跨副本时序问题；远端交互依赖未就位且在禁止项内；§9.9 与 check-fact-integrity 为其未来实现应复用的本地部件），并建立 related-to → workcase-0022 关系。
 - item_id: item-06
-  status: in_progress
+  status: completed
   goal: 写回与收尾：spark-0039 状态更新与关系补记
   expected_result: spark-0039 第 1、2 项状态与 routed-to 本 WorkCase 关系受控写回；验证声明按候选范围在结果链自然形成
   approach_summary: 仅 evolution/待办状态/关系字段，经 Helper 受控通道，写后回读
@@ -65,8 +65,7 @@ work_items:
   - item-03
   - item-04
   - item-05
-  current_summary: item-06 实际开始：spark-0022 已写回并提交（0d6d4834c），下一步读取 spark-0039 确认待办项字段形状后受控写回状态与 routed-to 关系
-  resume_from: 先 read-fact-objects 读取 spark-0039 确认其待办项是结构化字段还是正文内嵌，再按实际形状构造 update-fact-object 写回
+  result_summary: spark-0039 写回收尾已完成并提交（5051eebcc）：待做工作第 1、2 项按既有划线体例标记已完成并注明交付提交号（4ccad7397/8160630fc/e2898304d 与 57a7bf897），未决事项中合并与边界子项标记已决，evolution 补记一条，relations 补 related-to → workcase-0022。首次 routed-to 写回被写前机械检查依规拒绝（20 §关系契约：routed-to 仅 routed 终态可声明），改用 related-to 后通过。
 execution_authorization:
   authorized_actions:
   - action_id: authorization-code-implementation
@@ -175,7 +174,30 @@ execution_approval:
   baseline_fingerprint: da72bfc5b520e536a9a579589f6555dea441bfdad6d319938d80af6d5aaed65e
   source_refs:
   - kimi-work conversation conv-282dc6a4fd4f3f9495341f33 user message『同意』(Gate1 执行批准)
+result_version: 1
+success_criterion_results:
+- criterion_id: criterion-candidate-fact-validation
+  outcome: satisfied
+  summary: 03 §9.9 契约建立（4ccad7397）并由提交链路实现（8160630fc）：暂存合法事实路径触发与读取同核校验；端到端烟测非法候选 failed 且诊断精确到路径与字段、删除/改名出布局不误报、非法 object_id 拦 fact_object_id_invalid；零候选惰性由 spy 测试钉住（不投影不读 blob）。
+- criterion_id: criterion-first-class-integrity
+  outcome: satisfied
+  summary: check-fact-integrity 已在 specs/05 §11 公开操作表登记并合同化输出（§11.9/§11.10，57a7bf897）；capabilities 可发现、真实库直调 outcome ok、status=complete、object_count=92；行动模板与 Skill 可正式引用。
+- criterion_id: criterion-id-conflict-boundary
+  outcome: satisfied
+  summary: spark-0022 归属结论明确：保持 open 另立、本 WorkCase 不吸收；评估过程与三条理由已补记 evolution 并建立 related-to 关系（0d6d4834c）。
+- criterion_id: criterion-measured-scope
+  outcome: satisfied
+  summary: 提交链路（ldvh.commits/hooks/git_hooks）不引入全库扫描，由 test_import_boundary.py import 边界测试机械判定；全库扫描只存在于独立一等化入口 check-fact-integrity。
+- criterion_id: criterion-same-validator
+  outcome: satisfied
+  summary: facts/content.py 为单一同核校验实现，repository.py（读取）与 commits/validation.py（Gate）共同消费，无第二份 schema 解析；validator 保持纯函数；暂存 blob 由观察层按 Index oid（GIT_INDEX_FILE）提供；双入口一致性与投影同步测试通过。
+- criterion_id: criterion-tests-docs
+  outcome: satisfied
+  summary: specs/03 §9 与 specs/05 登记同钉住测试一致；受影响测试集全过：facts 423、commits+hooks+git_hooks 111、helper 411+、specs+testing 221、validator 26、integrity 操作 5 例。
+result_summary: 交付六项：①specs/03 §9.9 事实候选机械校验契约（4ccad7397）；②提交链路同核消费：新建 code/ldvh/facts/content.py 纯同核、repository.py 重构消费、commits/validation.py 增加事实层与 StagedFactCandidate、commits/git_adapter.py 按 Index oid 读 blob、commits/precheck.py 惰性投影（8160630fc）；③八类测试向量钉住行为（e2898304d）；④check-fact-integrity 一等化为 Helper 公开操作，specs/05 §11 登记与 §11.9/§11.10 合同化（57a7bf897）；⑤spark-0022 归属评估写回，结论保持 open 另立（0d6d4834c）；⑥spark-0039 待办 1、2 项标记完成并 related-to 关联（5051eebcc）。已观察影响：提交终闸对暂存事实候选的机械完整性成立，schema-invalid 事实对象不再能随合规 message 原样放行；事实完整性检查从测试层内部能力升为一等公开入口。
+validation_summary: 验证方法与覆盖：受影响测试集按分寸约束运行（未做全量测试）——facts 423、commits+hooks+git_hooks 111、helper 全目录 411+、specs+testing 221、validator 26、integrity 操作 5 例全部通过；真实库直调 check-fact-integrity：outcome ok、status=complete、object_count=92；端到端烟测：非法暂存事实候选 failed（诊断精确到路径+字段）、合法候选 passed、非法 object_id 拦 fact_object_id_invalid；每次提交均经 precheck-git-commit 机械校验 passed 后落账。未验证范围：全量测试套件未运行（分寸约束）；多环境 git hook 安装后实测未做；远端交互场景属本 WorkCase 禁止项未覆盖。
+controller_check_summary: 自检覆盖：六个工作项 result_summary 与交付提交逐一核对，六条成功标准逐项对照交付证据判断，phase 链形状（executing → controller_checking，AllTerminal 同事务，result_version=1）对照 21 §6 转换表。发现与处置：①item-06 首次对 spark-0039 写 routed-to 被写前机械检查依规拒绝，改 related-to 后通过——Gate 按设计工作，已如实记入 item-06 result_summary；②续命笔记曾失真声称 spark-0022 evolution 已写回并提交，经 git 历史核实实际未发生，据实补做（0d6d4834c），未采信笔记断言；③全部 item 终值与六条标准判断均有可回指提交或测试证据，无未验证写成满足项。
 object_id: workcase-0022
 fact_type_key: workcase
 created_at: '2026-07-31T20:45:29.773167+08:00'
-updated_at: '2026-07-31T22:18:00.599613+08:00'
+updated_at: '2026-08-01T00:25:56.013805+08:00'
