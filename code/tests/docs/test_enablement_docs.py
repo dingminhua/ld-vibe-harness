@@ -3,6 +3,11 @@ from __future__ import annotations
 from pathlib import Path
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
+CAPABILITY_BOUNDARY_STATEMENTS = (
+    "薄 Skill 对事实写入的保护仅为劝告级：它只能将 AI 路由到 Helper 与行动模板，不能在模型之外机械阻断对 `ldvh-base/` 的直写。",
+    "Git Gate 的每一安装实例只覆盖一个实际 Git worktree 中真正触发该 Gate 的 Git 事件；其它 worktree、clone，以及未触发或绕过该 Gate 的行动不在其覆盖范围。",
+    "机械检查能够发现来源已定义的机械不合格，不能据此判断事实内容的语义真实性；即使 Schema 合法，语义污染风险仍然存在，未提交污染窗口只能压缩、不能消除。",
+)
 
 
 def test_readme_exposes_environment_neutral_install_deploy_integrate_verify_flow() -> None:
@@ -55,6 +60,28 @@ def test_thin_skill_uses_static_distribution_and_both_repository_routes() -> Non
     assert "canonical 模板 `skill/SKILL.md` 逐字节一致" in readme
     assert "├── ldvh-base/" in readme
     assert "├── specs/" in readme
+
+
+def test_capability_boundaries_are_verbatim_without_expanding_skill_duties() -> None:
+    root_spec = (REPOSITORY_ROOT / "specs/00-理念与构成.md").read_text(encoding="utf-8")
+    environment_spec = (REPOSITORY_ROOT / "specs/09-环境接入规范.md").read_text(
+        encoding="utf-8"
+    )
+    skill = (REPOSITORY_ROOT / "skill/SKILL.md").read_text(encoding="utf-8")
+
+    for source in (root_spec, environment_spec, skill):
+        positions = []
+        for statement in CAPABILITY_BOUNDARY_STATEMENTS:
+            assert source.count(statement) == 1
+            positions.append(source.index(statement))
+        assert positions == sorted(positions)
+
+    assert "不增加第四项职责" in environment_spec
+    assert "不把 SKILL.md 变成第二规则源" in environment_spec
+    assert "本文件不承载规则正文" in skill
+    assert "## 能力边界（非职责）" in skill
+    assert skill.index("## 职责（只有三件）") < skill.index("## 能力边界（非职责）")
+    assert skill.index("## 能力边界（非职责）") < skill.index("## 禁止")
 
 
 def test_integration_surface_attachment_matches_current_distribution_entry_points() -> None:
