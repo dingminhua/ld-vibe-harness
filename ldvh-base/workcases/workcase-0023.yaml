@@ -29,17 +29,16 @@ work_items:
   - git-commit
   result_summary: 提交 426fc5c98 已形成 Helper-only 事实写入、逐写精确回读与完整性审计、提交预检双层通过和非成功响应残留停止边界，并由 00 §8.2 与 01 orientation profile 交付入口。独立规范复核通过；干净 HEAD 受影响选择集 13 passed，Helper 模板及 work-context 黑盒回读通过。当前 worktree 未安装原生 commit-msg Gate，真实 Gate allow/block 未验证。
 - item_id: item-04
-  status: in_progress
+  status: completed
   goal: 把已成立的静态 Skill 分发、work-context 首步和 README 第二路由固定为回归证据。
   expected_result: 现有 09 §5.3、09.Att.01、发行链、Skill 与 README 正文不改；只在 code/tests/docs/test_enablement_docs.py 及必要的既有 packaging assertion 增加 targeted 断言并形成独立提交。
   approach_summary: 执行前重读来源；若漂移或不再覆盖则取消本 item 并结果收敛，不自动扩展到附件、README、发行配置或实现正文。
   template_keys:
   - workcase-approved-plan-execution
   - git-commit
-  current_summary: 已重读 09 §5.3、09.Att.01、canonical Skill、README 与发行断言：静态逐字节分发、work-context 首步定位和 README 第二路由当前均有来源覆盖，未发现需扩写正文的漂移；正在形成仅固定既有合同的最小回归断言。
-  resume_from: 只修改 code/tests/docs/test_enablement_docs.py 增加静态分发与双路由跨来源断言，运行受影响 docs/packaging 测试后按真实 Index 预检并独立提交。
+  result_summary: 提交 279e8c5f5 以单一跨来源回归测试固定 09 §5.3 静态逐字节分发、Skill 的 work-context 首步与 README 的 Helper 双调用及 specs/、ldvh-base/ 第二路由；规范、附件、Skill、README 与发行实现正文未改。干净 HEAD 的 docs 与发行资产选择集 5 passed；当前规则源仍有 7 项资格条件未由 Code 机械证明，真实环境加载与递达不在本 item 验证范围。
 - item_id: item-05
-  status: pending
+  status: in_progress
   depends_on:
   - item-03
   goal: 将三条固定能力边界完全同文写入根规范、环境规范与 canonical Skill，并重新部署用户 Skill。
@@ -49,6 +48,8 @@ work_items:
   - workcase-approved-plan-execution
   - environment-integration-installation-verification
   - git-commit
+  current_summary: item-03 前置已完成，Gate1 批准的三条固定文本保持原文；正在按正式规范修订流程重读 00 §8.2、09 §5.2/§5.3 与 canonical Skill，确定三处完全同文且不形成第四职责或第二规则源的最小承载。
+  resume_from: 将三条固定文本逐字写入 specs/00、specs/09 与 skill/SKILL.md，先规则后消费者同步 targeted assertions 与 work-context 交付，再完成独立规范复核、干净 HEAD 验证、独立提交和用户 Skill 静态重部署。
 - item_id: item-06
   status: pending
   depends_on:
@@ -205,4 +206,4 @@ execution_approval:
 object_id: workcase-0023
 fact_type_key: workcase
 created_at: '2026-08-01T01:49:52.669999+08:00'
-updated_at: '2026-08-01T02:59:39.603399+08:00'
+updated_at: '2026-08-01T03:01:41.244487+08:00'
