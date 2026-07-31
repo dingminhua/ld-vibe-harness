@@ -227,8 +227,15 @@ success_criterion_results:
 result_summary: WorkCase 已按 Gate1 基线完成 spark-0039 余项 3–6 及 Spark 自身收口。规则层补齐了 Helper-only 事实写入、逐写回读与完整性审计、双层提交预检和残留停止边界；既有静态逐字节 Skill 分发、work-context 首步与 README 第二路由由回归固定；三条能力边界已完全同文并重部署用户 Skill。形态层确认 adr-0006 已完整决定唯一薄 Skill、插件/Hook/adapter 退出与 MCP 不做，spark-0029 保持既有 discarded，spark-0018 更新证据后保持 open/P2。spark-0039 已 implemented，只结束其六项限定入口；没有把环境行为、原生 Gate 或语义真实性写成已验证。
 controller_check_summary: Controller 已逐项对照冻结的 goal、scope、六条成功标准、五个 work item 终值、实际提交候选、Helper 回读、关系扫描、定向测试、部署字节与 Doctor 结果。全部 item 为 completed，六条标准均有当前证据支持 satisfied；授权范围外的插件清理、配置修改、MCP、Hook 恢复、全量测试、远端和主工作树并行改动均未执行。已复核无入向 routed-to 责任丢失，spark-0018 的独立 open 证据矩阵不属于本 Spark 收口的残余；当前原 scope 无未满足或未验证责任，下一步只进行独立结果复核与 Gate2 提案。
 validation_summary: 最终验证锚定隔离分支的干净目标 HEAD 8e27abf23：受影响的行动模板、work-context 与接入文档测试合计 16 passed；item 阶段的干净 HEAD 选择集分别为 13、5、12 passed。canonical Skill、用户级物理部署件与 symlink 视图字节完全相同，SHA-256 为 965691514d8c1eccc3d328b784796c63b3e8b134893b5532cfc78f389503ab31；只读 Doctor 为 ready，Helper 18 个操作可用、配置 valid、管辖 governed_single、接入面 5/5 present。spark-0018、spark-0039 与 WorkCase 每次写后精确回读 mechanically valid，最终 check-fact-integrity 为 outcome ok、status complete、94 个对象、0 problems；spark-0039 六类型全状态入向扫描完整且无 routed-to。未运行全量测试；隔离 worktree 的 core.hooksPath 指向 .githooks-v4 但 commit-msg 文件不存在，因此真实原生 Gate allow/block/bypass 未验证。新部署 Skill 的独立 cold start、隐式选中、无显式指令委派、自动 worktree/clone 切换、恢复/compact 归因、不可用失败与真实负面写入矩阵均未验证；当前规则源仍有 7 项资格条件未由 Code 机械证明；机械通过不证明自然语言事实的语义真实性。
-waiting_on: 独立结果 Reviewer 对 result_version 1 的实际复核。
+result_reviews:
+- reviewer: /root/workcase0023_result_review
+  reviewed_at: '2026-08-01T03:28:52+08:00'
+  subject_version: 1
+  scope: 通过 Helper 精确读取 result_version 1、spark-0039、spark-0018、spark-0029 与 adr-0006；核对五个交付提交的实际差异和文件独立性；在干净隔离树独立复跑三个直接测试模块，结果 16 passed；复核 canonical、用户物理 Skill 与 symlink 视图字节一致且 SHA-256 为 965691514d8c1eccc3d328b784796c63b3e8b134893b5532cfc78f389503ab31；Doctor 为 ready，事实完整性检查为 outcome ok、status complete、94 个对象、0 problems；完成六类型全状态入向扫描和来源关系精确回读，并确认 spark-0039、spark-0018、spark-0029 无入向 routed-to。历史逐提交 precheck 与逐次事实写后审计只依据 WorkCase 已记录证据及当前可复核仓库事实，未冒充重新执行；未运行全量测试、真实原生 Git Gate、冷启动或其它真实环境事件。
+  conclusion: changes_required
+  feedback:
+  - result_version 1 的 validation_summary 与 criterion-evidence 目前遗漏了 Gate1 human_prerequisites 已明确接受的“用户 Skill 卸载仍未验证”和“从已知 canonical bytes 回滚仍未验证”，却声称已经保留全部未验证边界。请补入这两项，并明确它们是已接受的验证边界，不是 spark-0018 或本 WorkCase 的未完成实现责任；补齐后六条 criterion outcome 可继续保持 satisfied。
 object_id: workcase-0023
 fact_type_key: workcase
 created_at: '2026-08-01T01:49:52.669999+08:00'
-updated_at: '2026-08-01T03:24:57.754718+08:00'
+updated_at: '2026-08-01T03:30:56.144526+08:00'
