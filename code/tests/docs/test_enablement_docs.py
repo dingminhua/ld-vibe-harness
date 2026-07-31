@@ -25,6 +25,38 @@ def test_readme_exposes_environment_neutral_install_deploy_integrate_verify_flow
     assert "## 给 AI：接入新的开发环境" not in readme
 
 
+def test_thin_skill_uses_static_distribution_and_both_repository_routes() -> None:
+    environment_spec = (REPOSITORY_ROOT / "specs/09-环境接入规范.md").read_text(
+        encoding="utf-8"
+    )
+    integration_surface = (
+        REPOSITORY_ROOT / "specs/attachments/09.Att.01-环境接入面.md"
+    ).read_text(encoding="utf-8")
+    skill = (REPOSITORY_ROOT / "skill/SKILL.md").read_text(encoding="utf-8")
+    readme = (REPOSITORY_ROOT / "README.md").read_text(encoding="utf-8")
+
+    assert "canonical 模板 `skill/SKILL.md`" in environment_spec
+    assert "任何环境的部署件必须与当前发行模板逐字节一致" in environment_spec
+    assert "模板不含任何逐环境值，分发即复制文件" in environment_spec
+
+    assert "| `skill-template` | `skill/SKILL.md`（canonical 文件）" in integration_surface
+    assert "| 只读复制；模板不含逐环境值" in integration_surface
+    assert "安装后包内 `ldvh/_integration_assets/`" in integration_surface
+    assert "内容与仓库版逐字节一致" in integration_surface
+
+    work_context_position = skill.index("`ldvh-work-context`")
+    action_template_position = skill.index("`ldvh call read-action-template-candidates`")
+    assert work_context_position < action_template_position
+    assert "`environment-integration-surface`）的 `work-context-core` 行当次内容" in skill
+
+    candidates_position = readme.index("`ldvh call read-action-template-candidates`")
+    content_position = readme.index("`ldvh call read-action-template-content`")
+    assert candidates_position < content_position
+    assert "canonical 模板 `skill/SKILL.md` 逐字节一致" in readme
+    assert "├── ldvh-base/" in readme
+    assert "├── specs/" in readme
+
+
 def test_integration_surface_attachment_matches_current_distribution_entry_points() -> None:
     project = (REPOSITORY_ROOT / "pyproject.toml").read_text(encoding="utf-8")
     surfaces = (REPOSITORY_ROOT / "specs/attachments/09.Att.01-环境接入面.md").read_text(encoding="utf-8")
