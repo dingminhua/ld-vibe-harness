@@ -71,7 +71,7 @@ export default function CopyPathButton({ path, className = '', toneClassName, to
         onFocus={() => setShowTooltip(true)}
         onBlur={() => setShowTooltip(false)}
         onClick={handleClick}
-        className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-transparent transition-colors focus-visible:border-ldvh-accent/50 focus-visible:outline-none sm:h-7 sm:w-7 ${buttonClassName}`}
+        className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-transparent transition-colors focus-visible:border-ldvh-accent/50 focus-visible:outline-none ${buttonClassName}`}
         style={copied ? undefined : toneStyle}
         aria-label={label}
       >

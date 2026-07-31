@@ -136,16 +136,16 @@ export function WorkCaseReadingLayout({
       issueFor("closure_outcome") ||
         issueFor("disposition_summary") ||
         issueFor("residual_responsibilities") ||
-        issueFor("spark_suggestions"),
+        issueFor("spark_suggestions")
     );
   const terminalSummaryOnly =
     terminalResiduals.length === 0 &&
     terminalSuggestions.length === 0 &&
-    !Boolean(
+    !(
       issueFor("closure_outcome") ||
         issueFor("disposition_summary") ||
         issueFor("residual_responsibilities") ||
-        issueFor("spark_suggestions"),
+        issueFor("spark_suggestions")
     );
   const relationsIssue = issueFor("relations");
   const urlsIssue = issueFor("urls");
@@ -1602,7 +1602,7 @@ function AuthorizationActionObject({ action, locale }: { action: Record<string, 
       </button>
       {expanded && (
         <div className="grid min-w-0 gap-3 border-t border-amber-400/20 px-3.5 py-3">
-          <div className="grid min-w-0 gap-3 sm:grid-cols-2">
+          <div className="grid min-w-0 grid-cols-2 gap-3">
             <AuthorizationPrimaryField fieldKey="target_scope" value={action.target_scope} locale={locale} />
             <AuthorizationPrimaryField fieldKey="effect_scope" value={action.effect_scope} locale={locale} />
           </div>
@@ -2009,7 +2009,7 @@ function RouteTarget({
         <UnresolvedRouteTargetRow factTypeKey={factTypeKey} objectId={objectId} />
       )}
       {(projectId || fingerprint) && (
-        <dl className="mx-1.5 grid min-w-0 gap-x-3 gap-y-1 border-t border-ldvh-border/45 px-1.5 pt-1.5 sm:grid-cols-[9rem_1fr]">
+        <dl className="mx-1.5 grid min-w-0 grid-cols-[9rem_minmax(0,1fr)] gap-x-3 gap-y-1 border-t border-ldvh-border/45 px-1.5 pt-1.5">
           <RouteTargetField
             fieldKey="governed_project_id"
             value={projectId}

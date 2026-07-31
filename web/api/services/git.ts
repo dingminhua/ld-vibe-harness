@@ -27,6 +27,11 @@ export interface GitLogEntry {
   relativeTime: string
 }
 
+/** A commit record together with its changed repository-relative paths. */
+export interface GitLogEntryWithFiles extends GitLogEntry {
+  files: string[]
+}
+
 export type ParsedCommitMessage = {
   category: string
   scope: string
@@ -119,6 +124,76 @@ export async function getGitLog(count: number = 50, locale: string = 'zh', cwd: 
             relativeTime: sharedGetRelativeTime(date, locale),
           }
         })
+
+        resolve(entries)
+      },
+    )
+  })
+}
+
+/**
+ * Read a bounded commit slice with changed paths in one Git invocation.
+ *
+ * The record and message/file separators are control characters emitted by
+ * Git's format string.  We only consume paths later by exact equality against
+ * current canonical fact paths; arbitrary changed source paths never leave
+ * the cognition aggregation.
+ */
+export async function getGitLogWithFiles(
+  since: Date,
+  until: Date,
+  locale: string = 'zh',
+  cwd: string = LDVH_ROOT,
+): Promise<GitLogEntryWithFiles[]> {
+  return new Promise((resolve, reject) => {
+    execFile(
+      'git',
+      [
+        'log',
+        `--since=${since.toISOString()}`,
+        `--until=${until.toISOString()}`,
+        '--name-only',
+        '--format=%x1e%H%x1f%h%x1f%an%x1f%aI%x1f%B%x1d',
+      ],
+      { cwd, maxBuffer: 10 * 1024 * 1024 },
+      (error, stdout) => {
+        if (error) {
+          reject(new Error(`git log with files failed: ${error.message}`))
+          return
+        }
+
+        const entries = stdout
+          .split('\x1e')
+          .map((block) => block.trim())
+          .filter(Boolean)
+          .flatMap((block) => {
+            const separator = block.indexOf('\x1d')
+            if (separator < 0) return []
+            const header = block.slice(0, separator)
+            const filesBlock = block.slice(separator + 1)
+            const [hash, shortHash, author, date, fullMessage = ''] = header.split('\x1f')
+            if (!hash || !shortHash || !date) return []
+            const { subject: message, body } = splitCommitMessage(fullMessage)
+            const { category, scope, description, isBreaking } = parseCommitMessage(message)
+            const files = filesBlock
+              .split(/\r?\n/)
+              .map((entry) => entry.trim())
+              .filter(Boolean)
+            return [{
+              hash,
+              shortHash,
+              author,
+              date,
+              message,
+              body,
+              category,
+              scope,
+              description,
+              isBreaking,
+              relativeTime: sharedGetRelativeTime(date, locale),
+              files,
+            }]
+          })
 
         resolve(entries)
       },

@@ -109,7 +109,7 @@ function StructuredEvidence({ sections }: { sections: EvidenceSection[] }) {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[32rem] table-fixed border-collapse text-left">
               <colgroup>
-                <col className="w-28 sm:w-36" />
+                <col className="w-36" />
                 <col />
               </colgroup>
               <tbody>

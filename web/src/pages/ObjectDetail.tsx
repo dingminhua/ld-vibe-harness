@@ -176,13 +176,13 @@ export default function ObjectDetail() {
             <div className="h-full w-1/3 animate-pulse bg-ldvh-accent" />
           </div>
         )}
-        <div className={`mx-auto max-w-4xl p-4 sm:p-6 transition-opacity duration-150 ${isStale ? 'opacity-60' : 'opacity-100'}`}>
-          <div className="sticky top-0 z-20 -mx-4 -mt-4 mb-6 border-b border-ldvh-border bg-ldvh-bg/95 px-4 pb-4 pt-4 backdrop-blur sm:-mx-6 sm:-mt-6 sm:px-6">
+        <div className={`mx-auto max-w-4xl p-6 transition-opacity duration-150 ${isStale ? 'opacity-60' : 'opacity-100'}`}>
+          <div className="sticky top-0 z-20 -mx-6 -mt-6 mb-6 border-b border-ldvh-border bg-ldvh-bg/95 px-6 pb-4 pt-4 backdrop-blur">
           {/* Header */}
           <div>
             <button
               onClick={() => navigate(returnPath)}
-              className="ldvh-body-muted mb-3 flex min-h-11 items-center gap-1.5 rounded-md px-2 py-1 transition-colors hover:bg-ldvh-border/50 hover:text-ldvh-text-primary sm:min-h-0"
+              className="ldvh-body-muted mb-3 flex items-center gap-1.5 rounded-md px-2 py-1 transition-colors hover:bg-ldvh-border/50 hover:text-ldvh-text-primary"
             >
               <ArrowLeft size={14} />
               {t('objectDetail.back')}
@@ -410,17 +410,17 @@ function FactReadFailurePage({
   return (
     <div className="flex h-full">
       <div className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-4xl p-4 sm:p-6">
+        <div className="mx-auto max-w-4xl p-6">
           <button
             onClick={() => navigate(returnPath)}
-            className="ldvh-body-muted mb-4 flex min-h-11 items-center gap-1.5 rounded-md px-2 py-1 transition-colors hover:bg-ldvh-border/50 hover:text-ldvh-text-primary sm:min-h-0"
+            className="ldvh-body-muted mb-4 flex items-center gap-1.5 rounded-md px-2 py-1 transition-colors hover:bg-ldvh-border/50 hover:text-ldvh-text-primary"
           >
             <ArrowLeft size={14} />
             {t('objectDetail.back')}
           </button>
           <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-4">
             <p className="ldvh-body text-red-700 dark:text-red-300">{t('objectDetail.readUnavailable')}</p>
-            <dl className="mt-3 grid gap-x-4 gap-y-2 sm:grid-cols-[7rem_1fr]">
+            <dl className="mt-3 grid grid-cols-[7rem_minmax(0,1fr)] gap-x-4 gap-y-2">
               <dt className="ldvh-meta-muted">{t('objectDetail.readType')}</dt>
               <dd className="ldvh-meta-primary">{getTypeLabel(type, locale)} · {id}</dd>
               <dt className="ldvh-meta-muted">{t('objectDetail.readStatus')}</dt>
@@ -656,7 +656,7 @@ export function MaterialRow({
 }) {
   if (!Array.isArray(value) || value.length === 0) return null;
   return (
-    <div className="grid gap-2 py-3 first:pt-0 last:pb-0 sm:grid-cols-[5.625rem_1fr]">
+    <div className="grid grid-cols-[5.625rem_minmax(0,1fr)] gap-2 py-3 first:pt-0 last:pb-0">
       <div className="ldvh-caption-strong text-ldvh-text-secondary">{getMaterialLabel(fieldKey, locale)}</div>
       <MaterialValue fieldKey={fieldKey} value={value} locale={locale} referenceVariant={referenceVariant} />
     </div>
@@ -1033,7 +1033,7 @@ export function DetailSection({
         type="button"
         onClick={() => setState((current) => getReadingNodeNextState(current))}
         aria-label={getReadingNodeAriaLabel(title, state, locale)}
-        className={`ldvh-section-title flex min-h-11 w-full min-w-0 items-center gap-2 text-left transition-colors hover:text-ldvh-accent sm:min-h-0 ${state === 'collapsed' ? '' : 'mb-3'}`}
+        className={`ldvh-section-title flex w-full min-w-0 items-center gap-2 text-left transition-colors hover:text-ldvh-accent ${state === 'collapsed' ? '' : 'mb-3'}`}
       >
         {icon ?? <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-ldvh-accent" />}
         <span className="min-w-0 flex-1 truncate">{title}</span>
@@ -1081,7 +1081,7 @@ export function ReadingNodeSection({
         type="button"
         onClick={onToggle}
         aria-label={getReadingNodeAriaLabel(title, state, locale)}
-        className={`ldvh-section-title flex min-h-11 w-full min-w-0 items-center gap-2 text-left transition-colors hover:text-ldvh-accent sm:min-h-0 ${state === 'collapsed' ? '' : 'mb-3'}`}
+        className={`ldvh-section-title flex w-full min-w-0 items-center gap-2 text-left transition-colors hover:text-ldvh-accent ${state === 'collapsed' ? '' : 'mb-3'}`}
       >
         <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-ldvh-accent" />
         <span className="min-w-0 flex-1 truncate">{title}</span>
@@ -1095,7 +1095,7 @@ export function ReadingNodeSection({
 
 export function DetailInlineField({ label, value }: { label: string; value: ReactNode }) {
   return (
-    <div className="grid gap-2 py-3 first:pt-0 last:pb-0 sm:grid-cols-[5.625rem_1fr]">
+    <div className="grid grid-cols-[5.625rem_minmax(0,1fr)] gap-2 py-3 first:pt-0 last:pb-0">
       <div className="ldvh-caption-strong text-ldvh-text-secondary">{label}</div>
       <div className="min-w-0">{value}</div>
     </div>

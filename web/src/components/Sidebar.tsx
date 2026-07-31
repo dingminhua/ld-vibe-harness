@@ -84,7 +84,7 @@ export default function Sidebar({ collapsed, compact = false, onToggle }: Sideba
 
   return (
     <aside
-      className={`flex h-screen flex-shrink-0 flex-col border-r border-ldvh-border bg-ldvh-panel transition-[width] duration-200 ease-in-out ${
+      className={`flex h-full min-h-0 flex-shrink-0 flex-col border-r border-ldvh-border bg-ldvh-panel transition-[width] duration-200 ease-in-out ${
         isCollapsed ? 'w-14' : 'w-[186px]'
       }`}
     >
@@ -103,7 +103,11 @@ export default function Sidebar({ collapsed, compact = false, onToggle }: Sideba
           <ProjectSwitcher collapsed={isCollapsed} />
         </div>
       </div>
-      <nav className={`flex-1 px-2 py-3 ${isCollapsed && !compact ? 'overflow-visible' : 'overflow-y-auto'}`}>
+      <nav
+        className={`min-h-0 flex-1 px-2 py-3 ${
+          isCollapsed && !compact ? 'overflow-visible' : 'overscroll-contain overflow-x-hidden overflow-y-auto'
+        }`}
+      >
         <ul className="flex flex-col gap-0.5">
           {NAV_ITEMS.map((item) => (
             <li key={item.to}>

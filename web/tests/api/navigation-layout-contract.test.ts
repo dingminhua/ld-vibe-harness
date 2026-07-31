@@ -11,7 +11,19 @@ test('compact viewport keeps the primary navigation as an icon rail', () => {
   assert.match(layout, /className="hidden flex-shrink-0 sm:block"\s*>\s*<Sidebar collapsed=\{sidebarCollapsed\}/);
   assert.match(sidebar, /const isCollapsed = compact \|\| collapsed;/);
   assert.match(sidebar, /isCollapsed \? 'w-14' : 'w-\[186px\]'/);
+  assert.match(sidebar, /flex h-full min-h-0 flex-shrink-0/);
+  assert.match(sidebar, /isCollapsed && !compact \? 'overflow-visible' : 'overscroll-contain overflow-x-hidden overflow-y-auto'/);
   assert.match(sidebar, /!compact && onToggle && \(/);
+});
+
+test('the application shell owns scrolling without letting sidebar wheel input move the document', () => {
+  const layout = fs.readFileSync(path.resolve('src/components/Layout.tsx'), 'utf8');
+  const styles = fs.readFileSync(path.resolve('src/index.css'), 'utf8');
+
+  assert.match(layout, /className="flex h-screen min-w-\[375px\] overflow-hidden bg-ldvh-bg"/);
+  assert.match(layout, /ldvh-main-scroll min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-y-contain/);
+  assert.match(styles, /html,\s*body,\s*#root\s*\{\s*height: 100%;\s*overflow: clip;/s);
+  assert.match(styles, /#root\s*\{\s*position: fixed;\s*inset: 0;/s);
 });
 
 test('files, workspace changes, and commit records form one ordered navigation group', () => {

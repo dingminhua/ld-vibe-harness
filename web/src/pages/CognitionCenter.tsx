@@ -11,7 +11,7 @@
  * - 模块级降级：issues 就地显示实际不可用范围与原因，其它内容正常呈现（02 §5.2）。
  */
 import { useEffect, useState, type KeyboardEvent } from 'react';
-import { AlertCircle, ChevronDown, ChevronUp, HeartPulse, History, Inbox } from 'lucide-react';
+import { AlertCircle, ChevronDown, ChevronUp, GitFork, HeartPulse, History, Inbox } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import CopyPathButton from '@/components/CopyPathButton';
 import {
@@ -23,6 +23,7 @@ import {
 import StatusBadge from '@/components/StatusBadge';
 import PriorityIcon from '@/components/PriorityIcon';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
+import { CommitHotspotCluster, CommitHotspotLegend } from '@/pages/cognition/CommitHotspotGraph';
 import {
   fetchCognition,
   type CognitionData,
@@ -98,6 +99,23 @@ function buildSparkHealthSummary(data: CognitionData, locale: string, t: Transla
   ];
   for (const item of health.silentItems) {
     lines.push(`- ${item.id} · ${t('cognition.sparkHealth.silentDays', { days: String(item.silentDays) })} · ${getLocalizedObjectTitle(item, locale, item.id)}`);
+  }
+  return lines.join('\n');
+}
+
+function buildCommitHotspotSummary(data: CognitionData, locale: string, t: Translate): string {
+  const hotspots = data.commitHotspots;
+  if (!hotspots) return t('cognition.commitHotspots.title');
+  const lines = [
+    t('cognition.commitHotspots.title'),
+    t(`cognition.recent.window.${hotspots.window}` as LocaleKey),
+    t('cognition.commitHotspots.totalCommits', { count: String(hotspots.totalCommits) }),
+    t('cognition.commitHotspots.summary', { hotspots: String(hotspots.hotspotTotal), relations: String(hotspots.relationTotal) }),
+  ];
+  for (const cluster of hotspots.clusters) {
+    for (const item of cluster.nodes.filter((node) => node.commitRefs.length > 0)) {
+      lines.push(`- ${item.id} · ${item.commitRefs.length} · ${getLocalizedObjectTitle(item, locale, item.id)}`);
+    }
   }
   return lines.join('\n');
 }
@@ -342,6 +360,7 @@ export default function CognitionCenter() {
   const [recentError, setRecentError] = useState<string | null>(null);
   const [sparkHealthExpanded, setSparkHealthExpanded] = useState(true);
   const [showAllSilentSpark, setShowAllSilentSpark] = useState(false);
+  const [commitHotspotsExpanded, setCommitHotspotsExpanded] = useState(true);
   const { t, locale } = useI18n();
 
   // 首次进入才阻塞整页；切换近期窗口保留当前内容，只在本模块内更新快照。
@@ -416,9 +435,11 @@ export default function CognitionCenter() {
       .map((priority) => `${priority} × ${sparkHealth.openByPriority[priority]}`)
       .join(' / ')
     : '';
+  const commitHotspots = data.commitHotspots;
+  const commitHotspotIssues = (data.issues ?? []).filter((issue) => issue.section === 'commitHotspots');
 
   return (
-    <div className="p-4 sm:p-6">
+    <div className="flex min-h-full flex-col p-6">
       <PageHeader title={t('cognition.title')} subtitle={t('cognition.subtitle')} />
 
       {/* 模块一 待决定事项：全宽主面板，置顶（02 §3） */}
@@ -701,6 +722,70 @@ export default function CognitionCenter() {
         )}
         </section>
       </div>
+
+      {/* 模块三：以精确 Git 回指为热点中心，仅展开一跳正式关系；不推断语义关联或重要性。 */}
+      <section className="mt-4 rounded-xl border border-ldvh-border bg-ldvh-panel p-4">
+        <div
+          role="button"
+          tabIndex={0}
+          aria-expanded={commitHotspotsExpanded}
+          aria-controls="cognition-commit-hotspots-content"
+          onClick={() => setCommitHotspotsExpanded((expanded) => !expanded)}
+          onKeyDown={(event) => toggleOnKeyboard(event, () => setCommitHotspotsExpanded((expanded) => !expanded))}
+          className={`-mx-1 flex min-w-0 cursor-pointer flex-wrap items-center gap-2 rounded-md px-1 transition-colors hover:bg-ldvh-bg/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ldvh-accent/50 ${commitHotspotsExpanded ? 'mb-4' : ''}`}
+        >
+          <GitFork size={16} className="shrink-0 text-ldvh-accent" aria-hidden="true" />
+          <h3 className="ldvh-section-title min-w-0">{t('cognition.commitHotspots.title')}</h3>
+          <span className="ml-auto flex min-w-0 shrink-0 items-center gap-2">
+            {commitHotspots && (
+              <CopyPathButton
+                path={buildCommitHotspotSummary(data, locale, t)}
+                label={t('cognition.commitHotspots.copyModuleSummary')}
+                copiedLabel={t('cognition.commitHotspots.copiedModuleSummary')}
+              />
+            )}
+            <button
+              type="button"
+              aria-expanded={commitHotspotsExpanded}
+              aria-controls="cognition-commit-hotspots-content"
+              onClick={(event) => {
+                event.stopPropagation();
+                setCommitHotspotsExpanded((expanded) => !expanded);
+              }}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-ldvh-text-secondary transition-colors hover:bg-ldvh-bg hover:text-ldvh-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ldvh-accent/50"
+              title={t(commitHotspotsExpanded ? 'cognition.commitHotspots.collapseSection' : 'cognition.commitHotspots.expandSection')}
+            >
+              {commitHotspotsExpanded ? <ChevronUp size={16} aria-hidden="true" /> : <ChevronDown size={16} aria-hidden="true" />}
+              <span className="sr-only">{t(commitHotspotsExpanded ? 'cognition.commitHotspots.collapseSection' : 'cognition.commitHotspots.expandSection')}</span>
+            </button>
+          </span>
+        </div>
+
+        {commitHotspotsExpanded && (
+          <div id="cognition-commit-hotspots-content">
+            <ModuleIssuesNotice issues={commitHotspotIssues} t={t} unavailableKey="cognition.commitHotspots.unavailable" />
+            {commitHotspots && (
+              commitHotspots.hotspotTotal === 0 ? (
+                commitHotspotIssues.length === 0 && <p className="ldvh-body-muted">{t('cognition.commitHotspots.empty')}</p>
+              ) : (
+                <div className="flex min-w-0 flex-col gap-3">
+                  <CommitHotspotLegend
+                    clusters={commitHotspots.clusters}
+                    totalCommits={commitHotspots.totalCommits}
+                    hotspotTotal={commitHotspots.hotspotTotal}
+                    relationTotal={commitHotspots.relationTotal}
+                  />
+                  <div className="ldvh-section-grid min-w-0 items-start">
+                    {commitHotspots.clusters.map((cluster, index) => (
+                      <CommitHotspotCluster key={cluster.nodes.map((node) => `${node.type}:${node.id}`).join('|')} cluster={cluster} index={index} />
+                    ))}
+                  </div>
+                </div>
+              )
+            )}
+          </div>
+        )}
+      </section>
     </div>
   );
 }

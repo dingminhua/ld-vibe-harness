@@ -197,7 +197,7 @@ function FactReadFailureNotice({
   return (
     <div className="space-y-3 rounded-md border border-red-500/20 bg-red-500/10 p-3">
       <p className="ldvh-body text-red-700 dark:text-red-300">{t('objectDetail.readUnavailable')}</p>
-      <dl className="grid gap-x-3 gap-y-1 text-sm sm:grid-cols-[5rem_1fr]">
+      <dl className="grid grid-cols-[5rem_minmax(0,1fr)] gap-x-3 gap-y-1 text-sm">
         <dt className="ldvh-meta-muted">{t('objectDetail.readType')}</dt>
         <dd className="ldvh-meta-primary">{typeLabel} · {objectId || '—'}</dd>
         <dt className="ldvh-meta-muted">{t('objectDetail.readStatus')}</dt>

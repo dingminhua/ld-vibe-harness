@@ -253,7 +253,7 @@ export default function Changes() {
             ) : (
               <div className="h-full min-w-0 overflow-y-auto overflow-x-hidden rounded-md bg-ldvh-bg">
                 <div className="min-w-0">
-                  <div className="ldvh-meta sticky top-0 z-10 grid grid-cols-[3rem_minmax(0,1fr)_3rem_minmax(0,1fr)] border-b border-ldvh-border bg-ldvh-panel/95 sm:grid-cols-[4rem_minmax(0,1fr)_4rem_minmax(0,1fr)]">
+                  <div className="ldvh-meta sticky top-0 z-10 grid grid-cols-[4rem_minmax(0,1fr)_4rem_minmax(0,1fr)] border-b border-ldvh-border bg-ldvh-panel/95">
                     <div className="border-r border-ldvh-border px-2 py-2 text-right">-</div>
                     <div className="border-r border-ldvh-border px-3 py-2">{t('changes.before')}</div>
                     <div className="border-r border-ldvh-border px-2 py-2 text-right">+</div>
@@ -277,7 +277,7 @@ export default function Changes() {
                       return (
                         <div
                           key={`line-${index}-${row.oldCell.lineNumber ?? 'x'}-${row.newCell.lineNumber ?? 'x'}`}
-                          className="grid grid-cols-[3rem_minmax(0,1fr)_3rem_minmax(0,1fr)] border-b border-ldvh-border/20 sm:grid-cols-[4rem_minmax(0,1fr)_4rem_minmax(0,1fr)]"
+                          className="grid grid-cols-[4rem_minmax(0,1fr)_4rem_minmax(0,1fr)] border-b border-ldvh-border/20"
                         >
                           <div className="border-r border-ldvh-border/40 px-2 py-1 text-right text-ldvh-text-secondary">
                             {row.oldCell.lineNumber ?? ''}

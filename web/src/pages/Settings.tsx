@@ -62,10 +62,10 @@ export default function Settings() {
   };
 
   return (
-    <div className="mx-auto max-w-5xl px-5 py-7 sm:px-8">
+    <div className="mx-auto max-w-5xl px-8 py-7">
       <div className="border-b border-ldvh-border pb-5">
         <PageHeader title={t('settings.title')} subtitle={t('settings.subtitle')} compact />
-        <div className="mt-4 grid gap-4 sm:grid-cols-2 sm:gap-6">
+        <div className="mt-4 grid grid-cols-2 gap-6">
           <section className="border-l-2 border-ldvh-accent pl-3">
             <p className="ldvh-caption-strong text-ldvh-accent">{t('settings.managementScope')}</p>
             <p className="ldvh-body-muted mt-1">{t('settings.configOnly')}</p>

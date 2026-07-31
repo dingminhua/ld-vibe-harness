@@ -95,7 +95,7 @@ function LayoutInner({ children }: LayoutProps) {
       </div>
 
       {/* 中间主内容 */}
-      <main className="ldvh-main-scroll flex-1 overflow-y-auto">
+      <main className="ldvh-main-scroll min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-y-contain">
         {/* 项目切换时重建当前路由页，触发数据重取；contents 保证不引入额外布局盒 */}
         <div key={`page-${selectedProjectId}`} className="contents">{children}</div>
       </main>

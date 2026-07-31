@@ -262,13 +262,13 @@ WorkCase 列表中的外部 Card 直接服务 Human 对当前工作责任的定�
 
 WorkCase 列表筛选、Dashboard 聚合或其它以外部 Card 为成员的 Human-facing 分组如果表达工作当前进展，必须使用四个 `progress_group`，并明确它是“进展分组”而非生命周期分类；需要说明推进内部位置时再使用四个 `progress_step`。Dashboard 的 WorkCase 聚合键必须命名为 `byProgressGroup`，其条目必须以 `progress_group` 承载这四个值，不得把派生分组写入名为 `status` 的字段，也不得再输出原始 phase、历史显示状态或另一套 Dashboard 分组。如 Dashboard 确有消费实际事实责任状态的需要，必须另以 `source_status` 原样承载，不能用它替代 `progress_group`；两者仍须保留到来源对象和原始 phase 的读取入口，不得把聚合数量表达为事实源自有计数。
 
-`plan_confirmation` Card 是 Gate1 唯一执行确认入口。在通用对象身份、标题和进展分组之外，**计划与授权判断输入区**显示以下三项 Human 判断输入：
+`plan_confirmation` Card 是 Gate1 的对象入口。在通用对象身份、标题和进展分组之外，**计划与授权概览区**显示以下三项 Human 阅读入口：
 
 1. **目标**：直接读取当前 WorkCase 的 `goal`，回答准备实现什么结果；
 2. **成功标准**：直接读取 `success_criterion_definitions[].statement`，回答完成后按哪些可观察条件判断结果；
-3. **执行授权基线**：直接读取完整 `execution_authorization`，逐项显示 authorized action 的动作、目标范围、影响范围、风险和回滚，并完整显示 action ceiling、prohibited actions、allowed adjustments、verification and rollback、out-of-bounds handling 与实际存在的 Human prerequisites。
+3. **执行授权边界**：直接读取 `execution_authorization`，确定性显示允许动作、禁止项和实际存在的 Human 前置条件数量；它们是对象入口摘要，不重新生成或解释授权内容。
 
-Web 不得为这三项重新生成 AI 摘要，不得从 `scope`、work items、审核记录或其它字段拼凑替代文本。目标、全部成功标准和完整授权基线不得截断、限制条数或用“其余若干项”代替；授权基线可按成员分组折叠以控制 Card 高度，但 Gate1 操作前必须全部可展开阅读，字段缺失或不可读时必须明确显示相应信息缺失并禁用批准。成功标准是没有先后关系的并列集合，在 Card 中必须统一使用圆点，不得按数组位置、criterion ID 或显示次序添加数字序号。当实际 `status=blocked` 时，Card 必须在判断输入区之外另设独立的当前状态提示区，完整显示顶层 `blocking_summary`；该提示不构成第四项判断输入，未记录阻塞原因时明确显示相应信息缺失。除这一阻塞提示外，该 Card 不显示 work item 执行统计或关闭材料；scope、work items、依赖、方法、验证安排与 creation review 的完整内容继续从同源详情读取，并与本 Card 的授权基线共同构成 Gate1 材料。Gate1 后所有 `progressing` 页面只读显示冻结 authorization/approval，不提供追加授权、重新批准或第三个 Human Gate 控件。
+Web 不得为这三项重新生成 AI 摘要，不得从 `scope`、work items、审核记录或其它字段拼凑替代文本。目标与全部成功标准不得截断、限制条数或用“其余若干项”代替；Card 不提供执行授权的展开、折叠或条目正文，完整授权基线仅在同源详情页呈现，Human 在 Gate1 操作前必须进入详情阅读完整 authorized action、目标范围、影响范围、风险、回滚、action ceiling、prohibited actions、allowed adjustments、verification and rollback、out-of-bounds handling 与实际存在的 Human prerequisites。字段缺失或不可读时必须明确显示相应信息缺失并禁用批准。成功标准是没有先后关系的并列集合，在 Card 中必须统一使用圆点，不得按数组位置、criterion ID 或显示次序添加数字序号。当实际 `status=blocked` 时，Card 必须在判断输入区之外另设独立的当前状态提示区，完整显示顶层 `blocking_summary`；该提示不构成第四项阅读入口，未记录阻塞原因时明确显示相应信息缺失。除这一阻塞提示外，该 Card 不显示 work item 执行统计或关闭材料；scope、work items、依赖、方法、验证安排、creation review 与完整授权基线继续从同源详情读取，并共同构成 Gate1 材料。Gate1 后所有 `progressing` 页面只读显示冻结 authorization/approval，不提供追加授权、重新批准或第三个 Human Gate 控件。
 
 `progressing` Card 在相同通用对象身份、标题和进展分组之外，正文只显示“目标”和“当前情况”两个区域：
 

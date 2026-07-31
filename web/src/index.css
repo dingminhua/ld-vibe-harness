@@ -125,7 +125,7 @@
   }
 
   .ldvh-page-frame {
-    @apply p-4 sm:p-6;
+    @apply p-6;
   }
 
   /* 折叠内容不应因主区滚动条出现/消失而改变可用宽度。 */
@@ -204,6 +204,19 @@
   --ldvh-text-secondary: 161 161 170;
   --ldvh-accent: 0 212 170;
   color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  overflow: clip;
+}
+
+/* The application shell owns the viewport; only its explicit panels scroll. */
+#root {
+  position: fixed;
+  inset: 0;
 }
 
 body {

@@ -2,7 +2,7 @@
  * 项目认知中心：GET /api/cognition 收件箱与近期动态契约测试。
  *
  * 以当前治理范围解析出的受管辖工作树（事实源）运行，断言 02 §8 当前已交付字段
- * （generatedAt / scope / inbox / recentActivity / sparkHealth / issues）、待决收录与排序、命名纪律
+ * （generatedAt / scope / inbox / recentActivity / sparkHealth / commitHotspots / issues）、待决收录与排序、命名纪律
  * （WorkCase 的两个 Human Gate progress_group，加上 Pitfall 的 draft 待确认）、
  * 内联对象卡片依据、条件 canonical_path，以及近期动态的窗口与时间标记。
  *
@@ -72,7 +72,7 @@ function expectedInboxKind(item: Record<string, unknown>): string | null {
   return null
 }
 
-test('cognition endpoint returns inbox, recent activity, and Spark health contract shapes with observation time', async () => {
+test('cognition endpoint returns inbox, recent activity, Spark health, and commit hotspot contract shapes with observation time', async () => {
   const body = await cognition('zh')
 
   assert.match(String(body.generatedAt), RFC3339)
@@ -97,10 +97,102 @@ test('cognition endpoint returns inbox, recent activity, and Spark health contra
   assert.ok(sparkHealth.terminalByStatus && typeof sparkHealth.terminalByStatus === 'object')
   assert.ok(sparkHealth.openByPriority && typeof sparkHealth.openByPriority === 'object')
   assert.ok(Array.isArray(sparkHealth.silentItems))
+  assert.ok(body.commitHotspots && typeof body.commitHotspots === 'object')
+  const hotspots = body.commitHotspots as Record<string, unknown>
+  assert.equal(hotspots.window, '1d')
+  for (const key of ['totalCommits', 'hotspotTotal', 'relationTotal']) {
+    assert.equal(typeof hotspots[key], 'number')
+  }
+  assert.ok(Array.isArray(hotspots.clusters))
+  assert.equal('independentHotspots' in hotspots, false)
   // 其余尚未建设的模块仍整体省略。
   for (const moduleKey of ['whileAway', 'timeline', 'direction']) {
     assert.equal(moduleKey in body, false, `not-yet-built module must omit ${moduleKey}`)
   }
+})
+
+test('commit hotspots preserve only deterministic commit mappings and one-hop formal relation shape', async () => {
+  const body = await cognition('zh', '1d')
+  const hotspots = body.commitHotspots as Record<string, unknown>
+  assert.equal(hotspots.window, '1d')
+  const clusters = hotspots.clusters as Array<Record<string, unknown>>
+  const allNodes = clusters.flatMap((cluster) => cluster.nodes as Array<Record<string, unknown>>)
+  const nodeKeys = new Set<string>()
+  const scope = body.scope as Record<string, unknown>
+  const projectId = String(scope.governedProjectId)
+  const commitEvidence = new Map<string, Promise<{ message: string; files: Set<string> }>>()
+  const getCommitEvidence = (hash: string) => {
+    const cached = commitEvidence.get(hash)
+    if (cached) return cached
+    const pending = fetch(`${baseUrl}/api/project-files/git/commit/${hash}?projectId=${encodeURIComponent(projectId)}`)
+      .then(async (response) => {
+        assert.equal(response.status, 200)
+        const payload = (await response.json()) as { commit: { message: string; body: string; files: Array<{ path: string }> } }
+        return {
+          message: `${payload.commit.message}\n${payload.commit.body}`,
+          files: new Set(payload.commit.files.map((file) => file.path)),
+        }
+      })
+    commitEvidence.set(hash, pending)
+    return pending
+  }
+  let hotspotNodes = 0
+  for (const node of allNodes) {
+    assert.ok(['workcase', 'adr', 'pitfall', 'spark', 'study'].includes(String(node.type)))
+    assert.match(String(node.id), /^(workcase|adr|pitfall|spark|study)-\d{4,}$/)
+    const key = `${node.type}:${node.id}`
+    assert.equal(nodeKeys.has(key), false, `duplicate graph node: ${key}`)
+    nodeKeys.add(key)
+    assert.equal(typeof node.title, 'string')
+    assert.equal(typeof node.typeColor, 'string')
+    assert.ok(Array.isArray(node.commitRefs))
+    const refs = node.commitRefs as Array<Record<string, unknown>>
+    if (refs.length > 0) hotspotNodes += 1
+    for (const ref of refs) {
+      assert.match(String(ref.hash), /^[0-9a-f]{40}$/)
+      assert.match(String(ref.shortHash), /^[0-9a-f]{7,}$/)
+      assert.match(String(ref.date), RFC3339)
+      assert.equal(typeof ref.relativeTime, 'string')
+      assert.ok(['canonical_path', 'explicit_id', 'both'].includes(String(ref.mapping)))
+      const evidence = await getCommitEvidence(String(ref.hash))
+      const canonicalPath = `ldvh-base/${node.type === 'workcase' ? 'workcases' : `${node.type}s`}/${node.id}${node.type === 'study' ? '.md' : '.yaml'}`
+      const mappedByPath = evidence.files.has(canonicalPath)
+      const mappedById = new RegExp(`\\b${String(node.id).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`).test(evidence.message)
+      if (ref.mapping === 'canonical_path') assert.equal(mappedByPath, true)
+      if (ref.mapping === 'explicit_id') assert.equal(mappedById, true)
+      if (ref.mapping === 'both') {
+        assert.equal(mappedByPath, true)
+        assert.equal(mappedById, true)
+      }
+    }
+  }
+  assert.equal(hotspotNodes, hotspots.hotspotTotal)
+
+  let edgeTotal = 0
+  let previousClusterCommitTotal = Number.POSITIVE_INFINITY
+  for (const cluster of clusters) {
+    const clusterNodes = cluster.nodes as Array<Record<string, unknown>>
+    const commitCounts = clusterNodes.map((node) => (node.commitRefs as unknown[]).length)
+    const clusterCommitTotal = commitCounts.reduce((total, count) => total + count, 0)
+    assert.ok(clusterCommitTotal <= previousClusterCommitTotal, 'clusters must be ordered by traceable commit activity')
+    previousClusterCommitTotal = clusterCommitTotal
+    assert.equal(commitCounts[0], Math.max(...commitCounts), 'the visual center must be the most active hotspot in its cluster')
+    assert.ok(commitCounts[0] > 0, 'each connected cluster must begin with a traceable hotspot')
+    const keys = new Set(clusterNodes.map((node) => `${node.type}:${node.id}`))
+    const edges = cluster.edges as Array<Record<string, unknown>>
+    edgeTotal += edges.length
+    for (const edge of edges) {
+      assert.ok(keys.has(String(edge.source)))
+      assert.ok(keys.has(String(edge.target)))
+      assert.notEqual(edge.source, edge.target)
+      assert.equal(typeof edge.relationKey, 'string')
+      assert.ok(String(edge.relationKey).length > 0)
+      const source = clusterNodes.find((node) => `${node.type}:${node.id}` === edge.source)
+      const target = clusterNodes.find((node) => `${node.type}:${node.id}` === edge.target)
+      assert.ok((source?.commitRefs as unknown[]).length > 0 || (target?.commitRefs as unknown[]).length > 0, 'edge must touch a hotspot')
+    }
+  }
+  assert.equal(edgeTotal, hotspots.relationTotal)
 })
 
 test('Spark health splits the current pool into terminal and open items, then lists only silent open Sparks', async () => {

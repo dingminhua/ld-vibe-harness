@@ -413,7 +413,7 @@ function ExecutionAuthorizationCard({
                   <p className="ldvh-card-decision-title text-ldvh-text-primary">{String(action.summary)}</p>
                   <AuthorizationCardText fieldKey="target_scope" value={String(action.target_scope)} locale={locale} />
                   <AuthorizationCardText fieldKey="effect_scope" value={String(action.effect_scope)} locale={locale} />
-                  <div className="mt-1.5 grid min-w-0 gap-1.5 border-t border-ldvh-border/60 pt-1.5 sm:grid-cols-2">
+                  <div className="mt-1.5 grid min-w-0 grid-cols-2 gap-1.5 border-t border-ldvh-border/60 pt-1.5">
                     <AuthorizationCardText fieldKey="risk_summary" value={String(action.risk_summary)} locale={locale} />
                     <AuthorizationCardText fieldKey="rollback_summary" value={String(action.rollback_summary)} locale={locale} />
                   </div>
@@ -494,7 +494,7 @@ function GateOneValue({ value, locale, depth }: { value: unknown; locale: string
   }
   if (isRecord(value)) {
     return (
-      <dl className={`mt-1.5 grid min-w-0 gap-2 ${depth === 0 ? 'sm:grid-cols-2' : ''}`}>
+      <dl className={`mt-1.5 grid min-w-0 gap-2 ${depth === 0 ? 'grid-cols-2' : ''}`}>
         {Object.entries(value).map(([key, entry]) => (
           <div key={key} className="min-w-0">
             <dt className="ldvh-meta break-words text-ldvh-text-secondary/70">{getFieldLabel(key, locale)}</dt>
@@ -624,7 +624,6 @@ function WorkCaseProgressingContent({
   blockingSummary?: string;
   t: Translate;
 }) {
-  const { locale } = useI18n();
   const currentStep = progressStep ? WORKCASE_PROGRESS_STEP_ORDER.indexOf(progressStep) : -1;
   const planRevising = phase === 'plan_revising';
   const itemExecution = progressStep === 'item_execution';
@@ -1561,7 +1560,7 @@ export default function ObjectList() {
 
   return (
     <div className="ldvh-page-frame">
-      <div className="sticky top-0 z-20 -mx-4 -mt-4 mb-4 flex min-h-8 flex-wrap items-center justify-between gap-3 border-b border-ldvh-border bg-ldvh-bg/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:-mt-6 sm:px-6">
+      <div className="sticky top-0 z-20 -mx-6 -mt-6 mb-4 flex min-h-8 flex-wrap items-center justify-between gap-3 border-b border-ldvh-border bg-ldvh-bg/95 px-6 py-3 backdrop-blur">
         <div className="min-w-0 flex-1">
           {supportsPriorityNavigation && (
             <div className="mb-2 flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-2">

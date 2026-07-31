@@ -500,6 +500,56 @@ export interface CognitionSparkHealth {
   silentItems: CognitionSparkHealthItem[];
 }
 
+/** 近期提交与当前事实对象的确定映射；不包含标题或关键词推断。 */
+export type CognitionCommitMapping = 'canonical_path' | 'explicit_id' | 'both';
+
+export interface CognitionCommitHotspotRef {
+  hash: string;
+  shortHash: string;
+  date: string;
+  relativeTime: string;
+  mapping: CognitionCommitMapping;
+}
+
+export interface CognitionCommitHotspotNode {
+  type: string;
+  id: string;
+  title: string;
+  title_en?: string;
+  title_zh?: string;
+  /** WorkCase 仅携带派生 progress_group；其它对象携带自身状态。 */
+  progress_group?: WorkCaseProgressGroup;
+  status?: string;
+  priority?: string;
+  read_status: string;
+  typeColor: string;
+  /** 仅热点中心有非空数组；一跳关系节点为 []。 */
+  commitRefs: CognitionCommitHotspotRef[];
+}
+
+export interface CognitionCommitHotspotEdge {
+  source: string;
+  target: string;
+  relationKey: string;
+}
+
+export interface CognitionCommitHotspotCluster {
+  nodes: CognitionCommitHotspotNode[];
+  edges: CognitionCommitHotspotEdge[];
+}
+
+/**
+ * 当前窗口内可由 canonical fact path 或 commit 中稳定对象 ID 回指的提交热点。
+ * 只返回至少有一条正式关系、能展开一跳工作的热点关系簇。
+ */
+export interface CognitionCommitHotspots {
+  window: CognitionRecentActivityWindow;
+  totalCommits: number;
+  hotspotTotal: number;
+  relationTotal: number;
+  clusters: CognitionCommitHotspotCluster[];
+}
+
 export interface CognitionIssue {
   section: string;
   code: string;
@@ -519,6 +569,8 @@ export interface CognitionData {
   };
   /** Spark 列表不可读取时整体省略，并通过 issues 就地说明。 */
   sparkHealth?: CognitionSparkHealth;
+  /** Git 或关系读取不可用时整体省略，并通过 issues 就地说明。 */
+  commitHotspots?: CognitionCommitHotspots;
   issues?: CognitionIssue[];
 }
 

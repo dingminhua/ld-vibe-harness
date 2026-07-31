@@ -58,12 +58,12 @@ export default function ChangelogDetail() {
   return (
     <div className="flex h-full">
       <div className="flex-1 overflow-y-auto rounded-none transition-[margin] duration-300">
-        <div className="mx-auto max-w-4xl p-4 sm:p-6">
-          <div className="sticky top-0 z-20 -mx-4 -mt-4 mb-6 border-b border-ldvh-border bg-ldvh-bg/95 px-4 pb-4 pt-4 backdrop-blur sm:-mx-6 sm:-mt-6 sm:px-6">
+        <div className="mx-auto max-w-4xl p-6">
+          <div className="sticky top-0 z-20 -mx-6 -mt-6 mb-6 border-b border-ldvh-border bg-ldvh-bg/95 px-6 pb-4 pt-4 backdrop-blur">
             <button
               type="button"
               onClick={() => navigate('/changelog')}
-              className="ldvh-body-muted mb-3 flex min-h-11 items-center gap-1.5 rounded-md px-2 py-1 transition-colors hover:bg-ldvh-border/50 hover:text-ldvh-text-primary sm:min-h-0"
+              className="ldvh-body-muted mb-3 flex items-center gap-1.5 rounded-md px-2 py-1 transition-colors hover:bg-ldvh-border/50 hover:text-ldvh-text-primary"
             >
               <ArrowLeft size={14} />
               {t('objectDetail.back')}

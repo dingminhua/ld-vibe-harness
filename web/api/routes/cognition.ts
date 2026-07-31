@@ -13,6 +13,8 @@
 
 import { Router, type Request, type Response } from 'express'
 import { listObjects, type ObjectType } from '../services/facts.js'
+import { FACT_TYPE_CARRIERS, FACT_TYPE_DIRS, listLocalFacts, type LocalFactItem } from '../services/localFactReader.js'
+import { getGitLogWithFiles, type GitLogEntryWithFiles } from '../services/git.js'
 import { deriveWorkCaseProgressProjection, type WorkCaseProgressGroup } from '../../shared/workcaseStatus.js'
 import { ProjectScopeError, requestProject } from '../services/requestScope.js'
 import { getRelativeTime } from '../services/time.js'
@@ -24,6 +26,7 @@ type InboxKind = 'plan_confirmation' | 'closure_confirmation' | 'pitfall_confirm
 type InboxObjectType = 'workcase' | 'pitfall'
 type RecentActivityKind = 'created' | 'updated'
 type RecentActivityWindow = '1d' | '3d' | '7d' | '14d'
+type CommitMappingKind = 'canonical_path' | 'explicit_id' | 'both'
 
 const RECENT_ACTIVITY_WINDOWS: Record<RecentActivityWindow, number> = {
   '1d': 1,
@@ -102,6 +105,40 @@ interface SparkHealthBuildItem {
   unparsed_structures: Array<Record<string, unknown>>
 }
 
+interface CommitHotspotBuildItem {
+  type: ObjectType
+  object_id: string
+  title: string
+  title_en?: string
+  title_zh?: string
+  status?: string
+  progress_group?: WorkCaseProgressGroup
+  priority?: string
+  read_status: string
+  canonical_path: string
+  relations: unknown
+}
+
+interface CommitHotspotRef {
+  hash: string
+  shortHash: string
+  date: string
+  relativeTime: string
+  mapping: CommitMappingKind
+}
+
+interface CommitHotspotNode extends Omit<CommitHotspotBuildItem, 'object_id' | 'canonical_path' | 'relations'> {
+  id: string
+  typeColor: string
+  commitRefs: CommitHotspotRef[]
+}
+
+interface CommitHotspotEdge {
+  source: string
+  target: string
+  relationKey: string
+}
+
 /** P0=0 … P3=3；缺失或非法落 4（排最后，并省略优先级信号）。 */
 function priorityRank(priority: unknown): number {
   if (typeof priority !== 'string') return 4
@@ -113,6 +150,14 @@ function priorityRank(priority: unknown): number {
 /** 与 localFactReader.metadataFor 一致：按事实类型返回当前 canonical path。 */
 function canonicalPath(type: InboxObjectType, objectId: string): string {
   return `ldvh-base/${type === 'workcase' ? 'workcases' : 'pitfalls'}/${objectId}.yaml`
+}
+
+function factCanonicalPath(type: ObjectType, objectId: string): string {
+  return `ldvh-base/${FACT_TYPE_DIRS[type]}/${objectId}${FACT_TYPE_CARRIERS[type]}`
+}
+
+function factKey(type: string, objectId: string): string {
+  return `${type}:${objectId}`
 }
 
 function deriveInboxKind(_status: string, _phase: string | undefined, progressGroup: WorkCaseProgressGroup | null): InboxKind | null {
@@ -260,6 +305,205 @@ function buildSparkHealth(rawItems: Array<Record<string, unknown>>, observedAt: 
   }
 }
 
+function buildCommitHotspotFact(
+  raw: Record<string, unknown>,
+  type: ObjectType,
+  relations: unknown = raw.relations,
+): CommitHotspotBuildItem | null {
+  const objectId = typeof raw.object_id === 'string' ? raw.object_id : ''
+  const factType = typeof raw.fact_type_key === 'string' ? raw.fact_type_key : ''
+  if (!objectId || factType !== type) return null
+  const status = typeof raw.status === 'string' ? raw.status : undefined
+  const phase = typeof raw.phase === 'string' ? raw.phase : undefined
+  const progressGroup = type === 'workcase' && status
+    ? deriveWorkCaseProgressProjection(status, phase)?.progressGroup
+    : undefined
+  const priority = priorityRank(raw.priority) < 4 && typeof raw.priority === 'string' ? raw.priority : undefined
+  return {
+    type,
+    object_id: objectId,
+    title: typeof raw.title === 'string' && raw.title ? raw.title : objectId,
+    ...(typeof raw.title_en === 'string' ? { title_en: raw.title_en } : {}),
+    ...(typeof raw.title_zh === 'string' ? { title_zh: raw.title_zh } : {}),
+    ...(type === 'workcase' ? { progress_group: progressGroup } : { status }),
+    ...(priority ? { priority } : {}),
+    read_status: typeof raw.read_status === 'string' ? raw.read_status : 'unknown',
+    canonical_path: factCanonicalPath(type, objectId),
+    relations,
+  }
+}
+
+function projectWorkCaseHotspotFact(item: LocalFactItem): CommitHotspotBuildItem | null {
+  if (item.fact_object === null) return null
+  return buildCommitHotspotFact({
+    ...item.fact_object,
+    read_status: item.read_status,
+  }, 'workcase', item.fact_object.relations)
+}
+
+function extractExplicitObjectIds(message: string): string[] {
+  const ids = new Set<string>()
+  for (const match of message.matchAll(/\b(workcase|adr|pitfall|spark|study)-\d{4,}\b/g)) {
+    ids.add(factKey(match[1], match[0]))
+  }
+  return [...ids]
+}
+
+function mergeCommitMapping(
+  target: Map<string, CommitHotspotRef>,
+  nodeKey: string,
+  commit: GitLogEntryWithFiles,
+  mappedByPath: boolean,
+  mappedById: boolean,
+): void {
+  if (!mappedByPath && !mappedById) return
+  const mapping: CommitMappingKind = mappedByPath && mappedById
+    ? 'both'
+    : mappedByPath ? 'canonical_path' : 'explicit_id'
+  const previous = target.get(nodeKey)
+  if (!previous) {
+    target.set(nodeKey, {
+      hash: commit.hash,
+      shortHash: commit.shortHash,
+      date: commit.date,
+      relativeTime: commit.relativeTime,
+      mapping,
+    })
+    return
+  }
+  if (previous.mapping !== mapping) previous.mapping = 'both'
+}
+
+function compareCommitRef(a: CommitHotspotRef, b: CommitHotspotRef): number {
+  if (a.date !== b.date) return a.date > b.date ? -1 : 1
+  return a.hash.localeCompare(b.hash)
+}
+
+function compareHotspotNode(a: CommitHotspotNode, b: CommitHotspotNode): number {
+  if (a.commitRefs.length !== b.commitRefs.length) return b.commitRefs.length - a.commitRefs.length
+  const aLatest = a.commitRefs[0]?.date ?? ''
+  const bLatest = b.commitRefs[0]?.date ?? ''
+  if (aLatest !== bLatest) return aLatest > bLatest ? -1 : 1
+  // 活跃度相同时，非终态 WorkCase 只作为稳定的阅读顺序兜底，不覆盖提交热点本身。
+  const aWorkCase = a.type === 'workcase' && a.progress_group !== 'closed'
+  const bWorkCase = b.type === 'workcase' && b.progress_group !== 'closed'
+  if (aWorkCase !== bWorkCase) return aWorkCase ? -1 : 1
+  return factKey(a.type, a.id).localeCompare(factKey(b.type, b.id))
+}
+
+function buildCommitHotspots(
+  commits: GitLogEntryWithFiles[],
+  facts: CommitHotspotBuildItem[],
+  governedProjectId: string,
+) {
+  const byKey = new Map(facts.map((item) => [factKey(item.type, item.object_id), item]))
+  const byPath = new Map(facts.map((item) => [item.canonical_path, item]))
+  const mappings = new Map<string, Map<string, CommitHotspotRef>>()
+
+  for (const commit of commits) {
+    const pathMatches = new Set<string>()
+    for (const filePath of commit.files) {
+      const item = byPath.get(filePath)
+      if (item) pathMatches.add(factKey(item.type, item.object_id))
+    }
+    const idMatches = new Set(extractExplicitObjectIds(`${commit.message}\n${commit.body}`).filter((key) => byKey.has(key)))
+    for (const key of new Set([...pathMatches, ...idMatches])) {
+      const refs = mappings.get(key) ?? new Map<string, CommitHotspotRef>()
+      mergeCommitMapping(refs, key, commit, pathMatches.has(key), idMatches.has(key))
+      mappings.set(key, refs)
+    }
+  }
+
+  const hotspots = new Set(mappings.keys())
+  const edges = new Map<string, CommitHotspotEdge>()
+  for (const source of facts) {
+    const sourceKey = factKey(source.type, source.object_id)
+    if (!Array.isArray(source.relations)) continue
+    for (const relation of source.relations) {
+      if (!relation || typeof relation !== 'object' || Array.isArray(relation)) continue
+      const record = relation as Record<string, unknown>
+      const target = record.target
+      if (typeof record.relation_key !== 'string' || !target || typeof target !== 'object' || Array.isArray(target)) continue
+      const targetRecord = target as Record<string, unknown>
+      if (targetRecord.governed_project_id !== governedProjectId
+        || typeof targetRecord.fact_type_key !== 'string'
+        || typeof targetRecord.object_id !== 'string') continue
+      const targetKey = factKey(targetRecord.fact_type_key, targetRecord.object_id)
+      if (!byKey.has(targetKey) || (!hotspots.has(sourceKey) && !hotspots.has(targetKey))) continue
+      const edge: CommitHotspotEdge = { source: sourceKey, target: targetKey, relationKey: record.relation_key }
+      edges.set(`${edge.source}\u0000${edge.target}\u0000${edge.relationKey}`, edge)
+    }
+  }
+
+  const edgeValues = [...edges.values()]
+  const connected = new Set(edgeValues.flatMap((edge) => [edge.source, edge.target]))
+  const makeNode = (key: string): CommitHotspotNode => {
+    const item = byKey.get(key)
+    if (!item) throw new Error(`Commit hotspot fact not found: ${key}`)
+    const refs = [...(mappings.get(key)?.values() ?? [])].sort(compareCommitRef)
+    return {
+      type: item.type,
+      id: item.object_id,
+      title: item.title,
+      ...(item.title_en !== undefined ? { title_en: item.title_en } : {}),
+      ...(item.title_zh !== undefined ? { title_zh: item.title_zh } : {}),
+      ...(item.status !== undefined ? { status: item.status } : {}),
+      ...(item.progress_group !== undefined ? { progress_group: item.progress_group } : {}),
+      ...(item.priority !== undefined ? { priority: item.priority } : {}),
+      read_status: item.read_status,
+      typeColor: getTypeColor(item.type),
+      commitRefs: refs,
+    }
+  }
+
+  const adjacency = new Map<string, Set<string>>()
+  for (const key of connected) adjacency.set(key, new Set())
+  for (const edge of edgeValues) {
+    adjacency.get(edge.source)?.add(edge.target)
+    adjacency.get(edge.target)?.add(edge.source)
+  }
+
+  const visited = new Set<string>()
+  const clusters: Array<{ nodes: CommitHotspotNode[]; edges: CommitHotspotEdge[] }> = []
+  for (const start of [...connected].sort()) {
+    if (visited.has(start)) continue
+    const keys: string[] = []
+    const queue = [start]
+    visited.add(start)
+    for (let index = 0; index < queue.length; index += 1) {
+      const current = queue[index]
+      keys.push(current)
+      for (const neighbor of adjacency.get(current) ?? []) {
+        if (visited.has(neighbor)) continue
+        visited.add(neighbor)
+        queue.push(neighbor)
+      }
+    }
+    const members = new Set(keys)
+    clusters.push({
+      nodes: keys.map(makeNode).sort(compareHotspotNode),
+      edges: edgeValues.filter((edge) => members.has(edge.source) && members.has(edge.target)),
+    })
+  }
+  clusters.sort((a, b) => {
+    const aCommits = a.nodes.reduce((total, node) => total + node.commitRefs.length, 0)
+    const bCommits = b.nodes.reduce((total, node) => total + node.commitRefs.length, 0)
+    if (aCommits !== bCommits) return bCommits - aCommits
+    const aHotspots = a.nodes.filter((node) => node.commitRefs.length > 0).length
+    const bHotspots = b.nodes.filter((node) => node.commitRefs.length > 0).length
+    if (aHotspots !== bHotspots) return bHotspots - aHotspots
+    if (a.nodes.length !== b.nodes.length) return b.nodes.length - a.nodes.length
+    return a.nodes[0]?.id.localeCompare(b.nodes[0]?.id ?? '') ?? 0
+  })
+
+  return {
+    totalCommits: commits.length,
+    hotspotTotal: [...hotspots].filter((key) => connected.has(key)).length,
+    relationTotal: edgeValues.length,
+    clusters,
+  }
+}
+
 router.get('/', async (req: Request, res: Response): Promise<void> => {
   const generatedAt = new Date().toISOString()
   try {
@@ -381,6 +625,46 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     }
     recentBuilds.sort(compareRecentActivity)
 
+    // 模块三只读取当前正式关系与 Git 的可回指证据：不从标题、关键词或相邻文件推断关联。
+    let commitHotspots: ReturnType<typeof buildCommitHotspots> | undefined
+    try {
+      const graphFacts: CommitHotspotBuildItem[] = []
+      const workCaseFacts = await listLocalFacts('workcase', factScope)
+      if (workCaseFacts.status !== 'complete') {
+        issues.push({ section: 'commitHotspots', code: 'workcase_relation_list_unavailable', message: workCaseFacts.issues[0]?.message ?? 'WorkCase 正式关系读取失败' })
+      } else {
+        for (const item of workCaseFacts.items) {
+          const projected = projectWorkCaseHotspotFact(item)
+          if (projected) graphFacts.push(projected)
+        }
+        for (const issue of workCaseFacts.issues) {
+          issues.push({ section: 'commitHotspots', code: issue.code, message: issue.message })
+        }
+      }
+
+      for (const [type, source] of recentSources.filter(([type]) => type !== 'workcase')) {
+        if (!source.ok || !('data' in source)) {
+          const message = source.ok ? `${type} 列表读取失败` : (source as { error: string }).error
+          issues.push({ section: 'commitHotspots', code: `${type}_list_unavailable`, message })
+          continue
+        }
+        const sourceData = source.data as { items: Array<Record<string, unknown>> }
+        for (const raw of sourceData.items) {
+          const projected = buildCommitHotspotFact(raw, type)
+          if (projected) graphFacts.push(projected)
+        }
+      }
+
+      const commits = await getGitLogWithFiles(new Date(recentStart), new Date(generatedAt), locale, project.path)
+      commitHotspots = buildCommitHotspots(commits, graphFacts, project.id)
+    } catch (caught) {
+      issues.push({
+        section: 'commitHotspots',
+        code: 'commit_hotspot_data_unavailable',
+        message: caught instanceof Error ? caught.message : '近期提交热点数据不可用',
+      })
+    }
+
     const items = builds.map((build) => {
       const card = Object.fromEntries(
         Object.entries(build.projection).filter(([key]) => !IDENTITY_PROJECTION_KEYS.has(key)),
@@ -440,6 +724,15 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
         items: recentItems,
         total: recentItems.length,
       },
+      ...(commitHotspots ? {
+        commitHotspots: {
+          window: recentWindow,
+          totalCommits: commitHotspots.totalCommits,
+          hotspotTotal: commitHotspots.hotspotTotal,
+          relationTotal: commitHotspots.relationTotal,
+          clusters: commitHotspots.clusters,
+        },
+      } : {}),
       ...(sparkHealth ? {
         sparkHealth: {
           total: sparkHealth.total,
