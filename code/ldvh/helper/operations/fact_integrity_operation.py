@@ -115,10 +115,10 @@ def _execute(
     schemas = project_fact_schemas(repository)
     if set(schemas) != set(LAYOUTS):
         return _unavailable(
-            "当前规则源不能形成五类型完整派生 Schema",
+            "当前规则源不能形成六类型完整派生 Schema",
             scope,
             run,
-            ({"summary": "五类型派生 Schema 不完整，不能形成可信全量检查"},),
+            ({"summary": "六类型派生 Schema 不完整，不能形成可信全量检查"},),
         )
 
     snapshot = discover_fact_candidates(root, project_id, common_dir, schemas)

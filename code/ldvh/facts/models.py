@@ -13,6 +13,8 @@ IssueCategory = Literal[
     "identity",
     "reference",
     "relation",
+    "integrity",
+    "resource",
 ]
 
 

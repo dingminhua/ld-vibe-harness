@@ -176,7 +176,7 @@ def test_defined_operation_check_and_call_return_actual_l0_results(tmp_path: Pat
     assert check_response["outcome"] == "ok"
     checked_operation = check_response["result"]["operations"][0]
     assert checked_operation["availability"] == "available_for_request"
-    assert len(checked_operation["available_scope"]) == 28
+    assert len(checked_operation["available_scope"]) == 29
     assert "working-tree-test-evidence-fields" in checked_operation["available_scope"]
     assert "web-api-reading-contract" in checked_operation["available_scope"]
     assert checked_operation["unavailable_scope"] == []

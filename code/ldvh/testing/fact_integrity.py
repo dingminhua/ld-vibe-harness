@@ -117,7 +117,7 @@ def check_fact_integrity(workspace: Path) -> FactIntegrityReport:
             (
                 {
                     "stage": "rule-source",
-                    "summary": "当前规则源无法完整投影五类事实对象 Schema",
+                    "summary": "当前规则源无法完整投影六类事实对象 Schema",
                     "implemented_checks_complete": repository.implemented_checks_complete,
                     "schema_fact_type_keys": sorted(schemas),
                 },

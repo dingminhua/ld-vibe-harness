@@ -25,7 +25,7 @@ def test_candidate_discovery_marks_reparse_directories_incomplete(
 
     assert snapshot.complete is False
     assert snapshot.keys == ()
-    assert len(snapshot.structural_problems) == 5
+    assert len(snapshot.structural_problems) == 6
     assert all(
         "符号链接或重解析点" in item["issues"][0]["summary"] and "安全、完整地枚举" in item["issues"][0]["summary"]
         for item in snapshot.structural_problems

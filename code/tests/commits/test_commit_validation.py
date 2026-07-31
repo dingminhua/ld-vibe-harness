@@ -13,7 +13,7 @@ from ldvh.facts.schema import FactSchema, ProjectedField
 def contract() -> CommitContractProjection:
     return CommitContractProjection(
         type_tokens=("feat", "fix", "docs", "style", "refactor", "perf", "test", "build", "ci", "chore", "revert"),
-        scope_tokens=("specs", "docs", "rules", "runtime", "code", "web", "tests", "config"),
+        scope_tokens=("specs", "docs", "rules", "runtime", "code", "web", "tests", "config", "file-asset"),
         mechanical_triggers=("multiple-paths", "breaking-marker", "revert-type"),
         source_key="source-of-truth-traceability",
         source_path="specs/03-事实源与信息溯源规范.md",
@@ -46,6 +46,16 @@ def test_single_path_valid_header_passes_mechanical_layer(contract: CommitContra
 
     assert result.outcome == "passed"
     assert "主要目的与拆分" in result.semantic_checks_required
+
+
+def test_hyphenated_registered_scope_passes_mechanical_layer(contract: CommitContractProjection) -> None:
+    result = validate_commit(
+        contract,
+        _input(contract, message="feat(file-asset): 激活文件资产事实对象"),
+    )
+
+    assert result.outcome == "passed"
+    assert result.header == "feat(file-asset): 激活文件资产事实对象"
 
 
 def test_crlf_and_leading_comments_are_normalized(contract: CommitContractProjection) -> None:
@@ -245,6 +255,34 @@ def test_fact_candidate_observation_gap_is_unverifiable(contract: CommitContract
 
     assert result.outcome == "unverifiable"
     assert "fact_candidate_unverifiable" in _codes(result)
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "ldvh-base/file-assets",
+        "ldvh-base/file-assets/file-asset-0001/file-asset.yaml",
+        "ldvh-base/file-assets/file-asset-0001/payload",
+        "ldvh-base/file-assets/not-an-id/unknown",
+    ],
+)
+def test_staged_file_asset_path_is_always_fail_closed_unverifiable(
+    contract: CommitContractProjection,
+    path: str,
+) -> None:
+    candidate = _fact_candidate(
+        path=path,
+        fact_type_key="file-asset",
+        object_id="file-asset-0001" if "file-asset-0001" in path else None,
+        data=b"single staged member",
+        observation_issue=None,
+    )
+
+    result = validate_commit(contract, _input(contract, fact_candidates=(candidate,), fact_schemas=()))
+
+    assert result.outcome == "unverifiable"
+    assert _codes(result) == {"fact_candidate_unverifiable"}
+    assert "FileAsset" in result.issues[0].message
 
 
 def test_missing_fact_schema_projection_is_unverifiable(contract: CommitContractProjection) -> None:

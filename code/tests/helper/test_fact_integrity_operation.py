@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import subprocess
 from pathlib import Path
@@ -120,6 +121,44 @@ def test_invalid_object_reports_partial_with_precise_problem(tmp_path: Path) -> 
     for issue in problem["issues"]:
         assert set(issue) == {"category", "field_path", "summary"}
     assert any("缺少必填字段" in issue["summary"] for issue in problem["issues"])
+
+
+def test_file_asset_payload_drift_is_part_of_whole_library_integrity(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    payload = b"registered audit bytes"
+    directory = project / "ldvh-base/file-assets/file-asset-0001"
+    directory.mkdir(parents=True)
+    (directory / "file-asset.yaml").write_text(
+        "\n".join(
+            [
+                "object_id: file-asset-0001",
+                "fact_type_key: file-asset",
+                "title: Registered audit",
+                "created_at: 2026-07-31T10:00:00+08:00",
+                "updated_at: 2026-07-31T10:00:00+08:00",
+                "status: active",
+                "filename: audit.bin",
+                "media_type: application/octet-stream",
+                f"size_bytes: {len(payload)}",
+                f"content_sha256: {hashlib.sha256(payload).hexdigest()}",
+                "signature:",
+                "  signer_type: human",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    (directory / "payload").write_bytes(b"tampered")
+
+    response = handle_request("call", "check-fact-integrity", _payload(workspace, project)).response
+
+    assert response["outcome"] == "ok"
+    assert response["result"]["status"] == "partial"
+    assert response["result"]["object_count"] == 1
+    problem = response["result"]["problems"][0]
+    assert problem["fact_type_key"] == "file-asset"
+    assert problem["canonical_path"] == "ldvh-base/file-assets/file-asset-0001"
+    assert {issue["category"] for issue in problem["issues"]} == {"integrity"}
 
 
 def test_ungoverned_locator_is_unavailable_with_gaps(tmp_path: Path) -> None:

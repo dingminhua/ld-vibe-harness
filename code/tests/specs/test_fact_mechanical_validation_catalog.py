@@ -17,6 +17,8 @@ _OPERATIONS_BY_COVERAGE = {
     "workcase-closed-correction": "correct-closed-workcase",
     "readback": "readback",
     "candidates": "find-fact-object-candidates",
+    "integrity": "check-fact-integrity",
+    "git-gate": "precheck-git-commit",
 }
 _COVERAGE_STATUSES = {"complete", "incomplete"}
 _UNAVAILABLE = "unavailable"

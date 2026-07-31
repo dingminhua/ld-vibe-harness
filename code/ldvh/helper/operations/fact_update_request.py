@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from ldvh.facts.contracts import LAYOUTS
+from ldvh.facts.contracts import LAYOUTS, WRITABLE_FACT_TYPE_KEYS
 from ldvh.facts.models import FactReference
 from ldvh.governance.models import ScopeDescriptor, cwd_scope, explicit_scope
 from ldvh.helper.operation_runtime import OperationExecutionContext
@@ -89,8 +89,8 @@ def parse_fact_update_request(
                 values[name] = value
         if len(values) == len(_FACT_REF_FIELDS):
             layout = LAYOUTS.get(values["fact_type_key"])
-            if layout is None:
-                problems.append("arguments.fact_ref.fact_type_key 未精确匹配当前五类事实类型")
+            if layout is None or values["fact_type_key"] not in WRITABLE_FACT_TYPE_KEYS:
+                problems.append("arguments.fact_ref.fact_type_key 未匹配当前支持通用更新的五类单文件事实类型；FileAsset 更新尚不可用")
             elif layout.object_id_pattern.fullmatch(values["object_id"]) is None:
                 problems.append("arguments.fact_ref.object_id 与事实类型格式不一致")
             else:

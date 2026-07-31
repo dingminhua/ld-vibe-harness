@@ -11,7 +11,9 @@ from ldvh.facts.content import validate_fact_content
 from ldvh.facts.contracts import LAYOUTS
 from ldvh.facts.schema import FactSchema
 
-_HEADER = re.compile(r"^(?P<type>[a-z]+)(?:\((?P<scope>[a-z]+)\))?(?P<breaking>!)?: (?P<description>.+)$")
+_HEADER = re.compile(
+    r"^(?P<type>[a-z]+)(?:\((?P<scope>[a-z]+(?:-[a-z]+)*)\))?(?P<breaking>!)?: (?P<description>.+)$"
+)
 _CJK = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff]")
 _FIXED_HEADINGS = ("动机:", "关键变更:", "影响边界:", "验证结论:", "风险与后续:")
 SEMANTIC_CHECKS_REQUIRED = (
@@ -125,6 +127,15 @@ def _fact_layer(
     failures: list[CommitValidationIssue] = []
     schemas = {schema.fact_type_key: schema for schema in value.fact_schemas}
     for candidate in value.fact_candidates:
+        if candidate.fact_type_key == "file-asset":
+            detail = candidate.observation_issue or "缺少 FileAsset 多成员 Index after-image 校验能力"
+            unavailable.append(
+                _issue(
+                    "fact_candidate_unverifiable",
+                    f"FileAsset 暂存路径必须保守阻断: {candidate.path}: {detail}",
+                )
+            )
+            continue
         if candidate.object_id is None:
             failures.append(
                 _issue("fact_object_id_invalid", f"事实候选文件名不能解析为合法 object_id: {candidate.path}")

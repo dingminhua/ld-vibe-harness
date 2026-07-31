@@ -108,6 +108,10 @@ _RFC3339 = re.compile(
     r"(?P<offset_minute>[0-5][0-9]))\Z"
 )
 _EPOCH_ORDINAL = date(1970, 1, 1).toordinal()
+_FILE_ASSET_SHA256 = re.compile(r"[0-9a-f]{64}\Z")
+_FILE_ASSET_MEDIA_TYPE = re.compile(
+    r"[a-z0-9][a-z0-9!#$&^_.+-]*/[a-z0-9][a-z0-9!#$&^_.+-]*\Z"
+)
 
 
 @dataclass(frozen=True, order=True, slots=True)
@@ -186,7 +190,7 @@ def _forbid(fields: dict[str, Any], names: set[str] | frozenset[str], issues: li
 def _validate_status(fact_type_key: str, fields: dict[str, Any], issues: list[FactIssue]) -> None:
     status = fields.get("status")
     layout = LAYOUTS[fact_type_key]
-    if status not in layout.statuses:
+    if not isinstance(status, str) or status not in layout.statuses:
         issues.append(FactIssue("schema", f"status 必须属于 {sorted(layout.statuses)}", "status"))
         return
     if "priority" in fields and fields["priority"] not in {"P0", "P1", "P2", "P3"}:
@@ -299,6 +303,55 @@ def _validate_relations(fact_type_key: str, fields: dict[str, Any], issues: list
             issues.append(FactIssue("relation", "relation_key 不在当前类型闭集中", f"{path}.relation_key"))
 
 
+def _validate_file_asset(fields: dict[str, Any], issues: list[FactIssue]) -> None:
+    filename = fields.get("filename")
+    if isinstance(filename, str) and (
+        filename in {".", ".."} or any(mark in filename for mark in ("/", "\\", "\0"))
+    ):
+        issues.append(
+            FactIssue("schema", "filename 必须是不含路径分隔符或 NUL 的 basename", "filename")
+        )
+    media_type = fields.get("media_type")
+    if isinstance(media_type, str) and _FILE_ASSET_MEDIA_TYPE.fullmatch(media_type) is None:
+        issues.append(
+            FactIssue("schema", "media_type 必须是小写且不带参数的 type/subtype", "media_type")
+        )
+    size_bytes = fields.get("size_bytes")
+    if isinstance(size_bytes, int) and not isinstance(size_bytes, bool) and size_bytes < 0:
+        issues.append(FactIssue("schema", "size_bytes 必须是不小于 0 的 integer", "size_bytes"))
+    content_sha256 = fields.get("content_sha256")
+    if isinstance(content_sha256, str) and _FILE_ASSET_SHA256.fullmatch(content_sha256) is None:
+        issues.append(
+            FactIssue(
+                "schema",
+                "content_sha256 必须是 64 位小写十六进制 SHA-256",
+                "content_sha256",
+            )
+        )
+
+    signature = fields.get("signature")
+    if not isinstance(signature, dict):
+        return
+    signer_type = signature.get("signer_type")
+    if signer_type == "human":
+        expected = {"signer_type"}
+    elif signer_type == "ai-agent":
+        expected = {"signer_type", "agent_id", "host_environment"}
+    else:
+        issues.append(
+            FactIssue(
+                "schema",
+                "signature.signer_type 必须是 human 或 ai-agent",
+                "signature.signer_type",
+            )
+        )
+        return
+    for name in sorted(set(signature) - expected):
+        issues.append(FactIssue("schema", "当前签名分支禁止该字段", f"signature.{name}"))
+    for name in sorted(expected - set(signature)):
+        issues.append(FactIssue("schema", "当前签名分支缺少必填字段", f"signature.{name}"))
+
+
 def validate_fact_object(fact_type_key: str, fields: dict[str, Any], schema: FactSchema) -> tuple[FactIssue, ...]:
     issues: list[FactIssue] = []
     _validate_mapping(fields, _tree(schema), "", issues)
@@ -307,6 +360,8 @@ def validate_fact_object(fact_type_key: str, fields: dict[str, Any], schema: Fac
     _validate_status(fact_type_key, fields, issues)
     if fact_type_key == "workcase":
         issues.extend(validate_workcase_snapshot(fields))
+    elif fact_type_key == "file-asset":
+        _validate_file_asset(fields, issues)
     _validate_times(fact_type_key, fields, issues)
     _validate_references(fact_type_key, fields, issues)
     _validate_relations(fact_type_key, fields, issues)

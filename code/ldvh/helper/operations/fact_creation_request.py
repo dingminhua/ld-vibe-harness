@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from ldvh.facts.contracts import LAYOUTS
+from ldvh.facts.contracts import LAYOUTS, WRITABLE_FACT_TYPE_KEYS
 from ldvh.governance.models import ScopeDescriptor, cwd_scope, explicit_scope
 from ldvh.helper.operation_runtime import OperationExecutionContext
 from ldvh.helper.requests import CommonRequest
@@ -116,8 +116,8 @@ def parse_draft_request(
     fact_type_key = request.arguments.get("fact_type_key")
     if not isinstance(project_id, str) or not project_id:
         problems.append("arguments.governed_project_id 必须是非空 string")
-    if not isinstance(fact_type_key, str) or fact_type_key not in LAYOUTS:
-        problems.append("arguments.fact_type_key 必须精确匹配当前五类事实类型")
+    if not isinstance(fact_type_key, str) or fact_type_key not in WRITABLE_FACT_TYPE_KEYS:
+        problems.append("arguments.fact_type_key 必须匹配当前支持受控创建的五类单文件事实类型；FileAsset 创建尚不可用")
     if request.authorization_reference:
         problems.append("authorization_reference 对无副作用草案操作必须为空 array")
     if problems:
@@ -152,8 +152,8 @@ def parse_create_request(
         if len(values) == len(_DRAFT_BASIS_FIELDS):
             fact_type_key = values["fact_type_key"]
             layout = LAYOUTS.get(fact_type_key)
-            if layout is None:
-                problems.append("arguments.draft_basis.fact_type_key 未匹配当前五类事实类型")
+            if layout is None or fact_type_key not in WRITABLE_FACT_TYPE_KEYS:
+                problems.append("arguments.draft_basis.fact_type_key 未匹配当前支持受控创建的五类单文件事实类型；FileAsset 创建尚不可用")
             elif layout.object_id_pattern.fullmatch(values["candidate_object_id"]) is None:
                 problems.append("arguments.draft_basis.candidate_object_id 与事实类型格式不一致")
             else:

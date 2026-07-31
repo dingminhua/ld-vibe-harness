@@ -144,8 +144,26 @@ def _classify_fact_path(path: str) -> tuple[str, str | None] | None:
     legal object_id shape; paths outside every fact layout return ``None``.
     """
 
+    file_asset_layout = LAYOUTS["file-asset"]
+    file_asset_prefix = f"{file_asset_layout.directory}/"
+    if path == file_asset_layout.directory:
+        return "file-asset", None
+    if path.startswith(file_asset_prefix):
+        remainder = path[len(file_asset_prefix) :]
+        object_id, separator, _member_path = remainder.partition("/")
+        if (
+            not separator
+            or not object_id
+            or file_asset_layout.object_id_pattern.fullmatch(object_id) is None
+        ):
+            return "file-asset", None
+        return "file-asset", object_id
+
     for layout in LAYOUTS.values():
+        if layout.carrier == "file-asset-directory":
+            continue
         prefix = f"{layout.directory}/"
+        assert layout.suffix is not None
         if not path.startswith(prefix) or not path.endswith(layout.suffix):
             continue
         object_id = path[len(prefix) : -len(layout.suffix)]
@@ -196,7 +214,10 @@ def _fact_candidates(
     """Observe staged content for in-layout fact candidates only.
 
     Deletions (no staged content for the path) and out-of-layout paths are
-    skipped silently; rename-into-layout is validated through its new path.
+    skipped silently for single-file carriers; rename-into-layout is validated
+    through its new path. Every staged FileAsset member is retained as an
+    explicit unverifiable candidate because the current adapter cannot form a
+    complete multi-member directory after-image from one staged blob.
     """
 
     classified = [(path, _classify_fact_path(path)) for path in paths]
@@ -210,6 +231,17 @@ def _fact_candidates(
         if target is None:
             continue
         fact_type_key, object_id = target
+        if fact_type_key == "file-asset":
+            candidates.append(
+                StagedFactCandidate(
+                    path,
+                    fact_type_key,
+                    object_id,
+                    None,
+                    "当前 Git Gate 尚不能从单一路径观察形成 FileAsset 对象目录的完整 Index after-image",
+                )
+            )
+            continue
         oid = mapping.get(path)
         if oid is None:
             continue

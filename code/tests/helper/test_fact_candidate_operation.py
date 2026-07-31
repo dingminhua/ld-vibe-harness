@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import subprocess
 from pathlib import Path
@@ -298,6 +299,53 @@ def _payload(
     )
 
 
+def test_f2_discovers_active_file_asset_with_integrity_coverage(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    payload = b"candidate audit bytes"
+    directory = project / "ldvh-base/file-assets/file-asset-0001"
+    directory.mkdir(parents=True)
+    (directory / "file-asset.yaml").write_text(
+        "\n".join(
+            [
+                "object_id: file-asset-0001",
+                "fact_type_key: file-asset",
+                "title: Candidate audit",
+                "created_at: 2026-07-31T10:00:00+08:00",
+                "updated_at: 2026-07-31T10:00:00+08:00",
+                "status: active",
+                "filename: audit.bin",
+                "media_type: application/octet-stream",
+                f"size_bytes: {len(payload)}",
+                f"content_sha256: {hashlib.sha256(payload).hexdigest()}",
+                "signature:",
+                "  signer_type: human",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    (directory / "payload").write_bytes(payload)
+
+    response = handle_request(
+        "call",
+        "find-fact-object-candidates",
+        _payload(workspace, project, "F2", fact_type_keys=["file-asset"]),
+    ).response
+
+    assert response["outcome"] == "ok"
+    assert response["result"]["coverage"]["status"] == "complete"
+    assert len(response["result"]["cards"]) == 1
+    card = response["result"]["cards"][0]
+    assert card["fact_ref"]["object_id"] == "file-asset-0001"
+    assert card["fields"]["signature"] == {"signer_type": "human"}
+    assert card["integrity_coverage"] == [
+        "manifest-read",
+        "members-closed",
+        "payload-size-read",
+        "payload-sha256-computed",
+    ]
+
+
 def test_f1_returns_complete_active_adr_and_open_workcase_baseline_with_pagination(tmp_path: Path) -> None:
     workspace, project = _fixture(tmp_path)
     workcase_id = _create(workspace, project, "workcase", _workcase())
@@ -327,7 +375,7 @@ def test_f1_returns_complete_active_adr_and_open_workcase_baseline_with_paginati
     assert first["result"]["coverage"]["status"] == "complete"
     assert first["result"]["coverage"]["total_matching"] == 2
     assert first["result"]["coverage"]["returned"] == 1
-    assert len(first["result"]["recovery_manifest"]["counts"]) == 14
+    assert len(first["result"]["recovery_manifest"]["counts"]) == 16
     assert first["result"]["recovery_manifest"]["current_workcase_ref"] == current_workcase_ref
     assert first["result"]["recovery_manifest"]["selected_fact_refs"] == selected_fact_refs
     assert first["result"]["cards"][0]["fact_ref"]["fact_type_key"] == "adr"
@@ -765,7 +813,7 @@ def test_invalid_object_makes_coverage_partial_and_remains_observable(tmp_path: 
     invalid = response["result"]["recovery_manifest"]["invalid_objects"]
     assert invalid[0]["fact_ref"]["object_id"] == "spark-9999"
     assert [item["fact_type_key"] for item in response["scope"]["not_completed"]] == ["spark"]
-    assert len(response["scope"]["completed"]) == 4
+    assert len(response["scope"]["completed"]) == 5
 
 
 def test_noncanonical_carrier_makes_candidate_coverage_partial_without_silent_exclusion(tmp_path: Path) -> None:

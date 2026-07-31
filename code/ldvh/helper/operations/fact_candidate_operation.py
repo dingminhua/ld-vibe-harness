@@ -46,6 +46,7 @@ _TYPE_SOURCES = {
     "adr": "specs/22-ADR-决策.md",
     "pitfall": "specs/23-Pitfall-踩坑经验.md",
     "study": "specs/24-Study-研究报告.md",
+    "file-asset": "specs/25-FileAsset-文件资产.md",
 }
 _RELATION_DEFINITION_LOCATORS = {
     "spark": "spark-fact-type::7. 外部资料、关系与处置",
@@ -53,6 +54,7 @@ _RELATION_DEFINITION_LOCATORS = {
     "adr": "adr-fact-type::7. 形成边界、取舍说明与替代关系",
     "pitfall": "pitfall-fact-type::7. 形成边界、验证说明与替代关系",
     "study": "study-fact-type::7. 外部网址、研究边界、关系与时效",
+    "file-asset": "file-asset-fact-type::7. 来源、完整性、引用与消费",
 }
 _DEFAULT_STATUSES = {
     "spark": frozenset({"open"}),
@@ -60,6 +62,7 @@ _DEFAULT_STATUSES = {
     "adr": frozenset({"active"}),
     "pitfall": frozenset({"active"}),
     "study": frozenset({"active"}),
+    "file-asset": frozenset({"active"}),
 }
 _F1_FIELDS = {
     "adr": ("object_id", "title", "decision_question", "decision", "applicability", "updated_at"),
@@ -110,6 +113,17 @@ _F2_FIELDS = {
         "research_intent",
         "recommendation_summary",
         "relations",
+        "updated_at",
+    ),
+    "file-asset": (
+        "object_id",
+        "title",
+        "status",
+        "filename",
+        "media_type",
+        "size_bytes",
+        "content_sha256",
+        "signature",
         "updated_at",
     ),
 }
@@ -528,6 +542,7 @@ def _card(
         "fact_ref": FactReference(project_id, fact_type_key, object_id).to_json(),
         "card_layer": domain.card_layer,
         "fields": fields,
+        "integrity_coverage": list(read.integrity_coverage) if fact_type_key == "file-asset" else [],
         "excerpts": excerpts,
         "match_reasons": reasons,
         "source_refs": sources,
@@ -651,14 +666,14 @@ def _execute(
     if set(schemas) != set(LAYOUTS):
         return OperationExecution(
             outcome="unavailable",
-            summary="当前规则源不能形成五类型完整派生 Schema",
+            summary="当前规则源不能形成六类型完整派生 Schema",
             requested_scope=requested,
             not_completed_scope=requested,
             governance_resolution=governance_json,
             sources=tuple(plain(source) for source in run.sources) + (_RESULT_CONTRACT,),
             gaps=(
                 {
-                    "summary": "五类型派生 Schema 不完整，不能形成可信 F0",
+                    "summary": "六类型派生 Schema 不完整，不能形成可信 F0",
                     "scope": list(requested),
                     "source_refs": [_RESULT_CONTRACT],
                 },

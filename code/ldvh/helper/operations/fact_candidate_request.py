@@ -90,6 +90,19 @@ _F2_SEARCH_FIELDS = {
             "updated_at",
         }
     ),
+    "file-asset": frozenset(
+        {
+            "object_id",
+            "title",
+            "status",
+            "filename",
+            "media_type",
+            "size_bytes",
+            "content_sha256",
+            "signature",
+            "updated_at",
+        }
+    ),
 }
 _F2_ONLY_FIELDS = frozenset(
     {
@@ -231,7 +244,7 @@ def parse_fact_candidate_request(
     fact_type_keys: tuple[str, ...] = ()
     if layer == "F2":
         fact_type_keys, type_problems = _unique_strings(
-            request.arguments.get("fact_type_keys"), "arguments.fact_type_keys", minimum=1, maximum=5
+            request.arguments.get("fact_type_keys"), "arguments.fact_type_keys", minimum=1, maximum=6
         )
         problems.extend(type_problems)
         unknown_types = sorted(set(fact_type_keys) - set(LAYOUTS))

@@ -11,6 +11,7 @@ from typing import Any, Literal
 
 from ldvh.facts.content import MAX_FACT_BYTES, validate_fact_content
 from ldvh.facts.contracts import FactTypeLayout
+from ldvh.facts.file_asset import DEFAULT_PAYLOAD_BUDGET, read_file_asset
 from ldvh.facts.models import FactIssue
 from ldvh.facts.schema import FactSchema
 from ldvh.facts.validation import parse_rfc3339
@@ -35,6 +36,12 @@ class FactReadResult:
     content_fingerprint: str | None = None
     raw_text: str | None = None
     raw_byte_count: int | None = None
+    integrity_coverage: tuple[str, ...] = ()
+    payload_canonical_path: str | None = None
+    observed_size_bytes: int | None = None
+    observed_content_sha256: str | None = None
+    payload_matches_manifest: bool | None = None
+    current_bytes_confirmed: bool | None = None
 
 
 def _safe_regular_file(root: Path, relative_path: str) -> tuple[Path, FactIssue | None, CheckStatus | None]:
@@ -121,6 +128,41 @@ def read_fact_object(
             None,
             None,
             (identity_issue,),
+        )
+    if layout.carrier == "file-asset-directory":
+        file_asset = read_file_asset(
+            root,
+            layout,
+            schema,
+            object_id,
+            payload_budget=min(DEFAULT_PAYLOAD_BUDGET, max_bytes),
+        )
+        identity_issue, identity_status = _identity_issue(root, expected_common_dir, git_identity_cache)
+        if identity_issue is not None:
+            return FactReadResult(
+                relative_path,
+                layout.carrier,
+                identity_status or "unavailable",
+                None,
+                None,
+                (identity_issue,),
+            )
+        return FactReadResult(
+            relative_path,
+            layout.carrier,
+            file_asset.check_status,
+            file_asset.fields,
+            None,
+            file_asset.issues,
+            file_asset.content_fingerprint,
+            file_asset.manifest_raw_text,
+            file_asset.manifest_byte_count,
+            file_asset.coverage,
+            file_asset.payload_canonical_path,
+            file_asset.observed_size_bytes,
+            file_asset.observed_content_sha256,
+            file_asset.payload_matches_manifest,
+            file_asset.current_bytes_confirmed,
         )
     _, location_issue, location_status = _safe_regular_file(root, relative_path)
     if location_issue is not None:

@@ -35,8 +35,17 @@ class _CurrentProjectIndex:
 def test_spark_routed_to_rejects_study_but_accepts_other_stable_fact_types_across_target_lifecycle_states() -> None:
     assert not _target_condition("spark", "routed-to", "study", "active")
     assert not _target_condition("spark", "routed-to", "spark", "open")
+    assert not _target_condition("spark", "routed-to", "file-asset", "active")
     assert _target_condition("spark", "routed-to", "workcase", "open")
     assert _target_condition("spark", "routed-to", "workcase", "closed")
+
+
+def test_file_asset_is_excluded_from_spark_and_workcase_generic_relations() -> None:
+    assert not _target_condition("spark", "related-to", "file-asset", "active")
+    assert not _target_condition("workcase", "related-to", "file-asset", "active")
+    assert _target_condition("workcase", "has-file-asset", "file-asset", "active")
+    assert _target_condition("workcase", "has-file-asset", "file-asset", "archived")
+    assert not _target_condition("workcase", "has-file-asset", "file-asset", "retired")
 
 
 def test_spark_routed_to_requires_a_nonempty_current_target_title() -> None:
@@ -773,3 +782,39 @@ def test_workcase_contributed_to_rejects_cross_project_duplicate_and_self_refere
     )
     issues, _ = _validate(self_ref)
     assert any("禁止自指" in issue.summary for issue in issues)
+
+
+@pytest.mark.parametrize("target_status", ["active", "archived"])
+def test_existing_workcase_file_asset_edge_accepts_valid_lifecycle_states(target_status: str) -> None:
+    source = _read(
+        "workcase-0001",
+        "closed",
+        relations=[_relation("has-file-asset", "file-asset-0002", fact_type_key="file-asset")],
+    )
+    target = _read("file-asset-0002", target_status, fact_type_key="file-asset")
+
+    issues, unavailable = _validate(source, target)
+
+    assert issues == ()
+    assert unavailable is False
+    assert _source_condition("workcase", "has-file-asset", {"status": "closed"})
+
+
+def test_workcase_file_asset_edge_rejects_missing_invalid_and_wrong_type_targets() -> None:
+    source = _read(
+        "workcase-0001",
+        "open",
+        phase="executing",
+        relations=[_relation("has-file-asset", "file-asset-0002", fact_type_key="file-asset")],
+    )
+    missing_issues, missing_unavailable = _validate(source)
+    invalid_issues, invalid_unavailable = _validate(
+        source,
+        _read("file-asset-0002", "active", fact_type_key="file-asset", check_status="invalid"),
+    )
+
+    assert missing_unavailable is False
+    assert invalid_unavailable is False
+    assert any("不存在" in issue.summary for issue in missing_issues)
+    assert any("mechanically valid" in issue.summary for issue in invalid_issues)
+    assert not _target_condition("workcase", "has-file-asset", "study", "active")

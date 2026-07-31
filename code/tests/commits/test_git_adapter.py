@@ -414,3 +414,54 @@ def test_no_fact_candidate_means_no_blob_read_and_no_index_map(
 
     assert observed.outcome == "observed"
     assert observed.fact_candidates == ()
+
+
+def test_staged_file_asset_members_are_retained_as_unverifiable_directory_candidates(tmp_path: Path) -> None:
+    repository = _repository(tmp_path / "repository")
+    _stage_file(
+        repository,
+        "ldvh-base/file-assets/file-asset-0001/file-asset.yaml",
+        b"object_id: file-asset-0001\n",
+    )
+    _stage_file(
+        repository,
+        "ldvh-base/file-assets/file-asset-0001/payload",
+        b"binary payload",
+    )
+
+    observed = _observe(repository, "feat: 暂存文件资产\n\n关键变更:\n- 新增目录载体")
+
+    assert observed.outcome == "observed"
+    assert len(observed.fact_candidates) == 2
+    assert {candidate.fact_type_key for candidate in observed.fact_candidates} == {"file-asset"}
+    assert {candidate.object_id for candidate in observed.fact_candidates} == {"file-asset-0001"}
+    assert all(candidate.data is None for candidate in observed.fact_candidates)
+    assert all("after-image" in (candidate.observation_issue or "") for candidate in observed.fact_candidates)
+    assert observed.validation_input is not None
+    result = validate_commit(_contract(), observed.validation_input)
+    assert result.outcome == "unverifiable"
+    assert {issue.code for issue in result.issues} == {"fact_candidate_unverifiable"}
+
+
+def test_deleted_or_unknown_file_asset_member_cannot_evade_fail_closed_gate(tmp_path: Path) -> None:
+    repository = _repository(tmp_path / "repository")
+    manifest = "ldvh-base/file-assets/file-asset-0001/file-asset.yaml"
+    payload = "ldvh-base/file-assets/file-asset-0001/payload"
+    _stage_file(repository, manifest, b"object_id: file-asset-0001\n")
+    _stage_file(repository, payload, b"payload")
+    _git(repository, "commit", "-qm", "test: 建立 FileAsset 基线")
+    _git(repository, "rm", "-q", manifest, payload)
+    _stage_file(repository, "ldvh-base/file-assets/not-an-id/unknown", b"unexpected")
+
+    observed = _observe(repository, "fix: 阻断文件资产绕过\n\n关键变更:\n- 删除并新增未知成员")
+
+    assert observed.outcome == "observed"
+    assert len(observed.fact_candidates) == 3
+    assert {candidate.path for candidate in observed.fact_candidates} == {
+        manifest,
+        payload,
+        "ldvh-base/file-assets/not-an-id/unknown",
+    }
+    assert any(candidate.object_id is None for candidate in observed.fact_candidates)
+    assert observed.validation_input is not None
+    assert validate_commit(_contract(), observed.validation_input).outcome == "unverifiable"

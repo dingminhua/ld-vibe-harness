@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ast
+import hashlib
 import subprocess
 from contextlib import contextmanager
 from copy import deepcopy
@@ -65,6 +66,36 @@ def _read(project: _Project, object_id: str):
         object_id,
         expected_common_dir=project.boundary.git_common_dir,
     )
+
+
+def _write_file_asset(
+    project: _Project,
+    *,
+    status: str = "active",
+    payload: bytes = b"audit bytes\n",
+) -> Path:
+    object_id = "file-asset-0001"
+    directory = project.boundary.worktree_root / LAYOUTS["file-asset"].canonical_path(object_id)
+    directory.mkdir(parents=True)
+    lines = [
+        f"object_id: {object_id}",
+        "fact_type_key: file-asset",
+        "title: 审计文件",
+        "created_at: 2026-07-26T09:00:00+08:00",
+        "updated_at: 2026-07-26T09:00:00+08:00",
+        f"status: {status}",
+        "filename: audit.txt",
+        "media_type: text/plain",
+        f"size_bytes: {len(payload)}",
+        f"content_sha256: {hashlib.sha256(payload).hexdigest()}",
+        "signature:",
+        "  signer_type: human",
+    ]
+    if status == "archived":
+        lines.append("disposition_summary: Human 决定保留该历史文件供精确回读。")
+    (directory / "file-asset.yaml").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    (directory / "payload").write_bytes(payload)
+    return directory
 
 
 def _supplied(fields: dict[str, Any]) -> dict[str, Any]:
@@ -1483,6 +1514,67 @@ def test_close_mapping_preserves_spark_suggestions_without_creating_a_relation()
         issue.field_path == "spark_suggestions"
         for issue in workcase_update._close_mapping_issues(before, after)
     )
+
+
+def test_close_mapping_requires_exact_file_asset_edge_preservation() -> None:
+    relation = {
+        "relation_key": "has-file-asset",
+        "target": {
+            "governed_project_id": "sample",
+            "fact_type_key": "file-asset",
+            "object_id": "file-asset-0001",
+        },
+    }
+    before = _closing("workcase-0001")
+    before["relations"] = [relation]
+    after = _closed_from(before)
+    after["relations"] = deepcopy(before["relations"])
+
+    assert workcase_update._close_mapping_issues(before, after) == ()
+
+    after.pop("relations")
+    assert any(
+        issue.field_path == "relations" and "has-file-asset" in issue.summary
+        for issue in workcase_update._close_mapping_issues(before, after)
+    )
+
+
+@pytest.mark.parametrize(
+    ("status", "tamper", "accepted"),
+    [("active", False, True), ("archived", False, False), ("active", True, False)],
+)
+def test_new_file_asset_edge_requires_full_current_active_target(
+    current_specs_repository: Path,
+    tmp_path: Path,
+    status: str,
+    tamper: bool,
+    accepted: bool,
+) -> None:
+    project = _project(current_specs_repository, tmp_path)
+    directory = _write_file_asset(project, status=status)
+    if tamper:
+        (directory / "payload").write_bytes(b"changed bytes")
+    before = _active("workcase-0001")
+    _write(project, before)
+    after = deepcopy(before)
+    after["relations"] = [
+        {
+            "relation_key": "has-file-asset",
+            "target": {
+                "governed_project_id": "sample",
+                "fact_type_key": "file-asset",
+                "object_id": "file-asset-0001",
+            },
+        }
+    ]
+    command = _command(project, before, after, mode="update")
+
+    issues, unavailable = workcase_update._new_file_asset_issues(command, before, after)
+
+    assert unavailable is False
+    assert (issues == ()) is accepted
+    if not accepted:
+        assert any(issue.field_path == "relations" for issue in issues)
 
 
 def test_close_rejects_an_incoming_depends_on_before_writing(

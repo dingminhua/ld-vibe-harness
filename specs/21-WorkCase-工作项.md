@@ -330,7 +330,7 @@ WorkCase 只有本文与 05.Att.01 共同定义的当前字段和结构。任何
 
 closed 对象的必填集是：`object_id`、`fact_type_key`、`title`、`created_at`、`updated_at`、`status=closed`、`goal`、`scope`、`success_criterion_definitions`、`success_criterion_results`、顶层 `result_summary`、`validation_summary`、`closure_outcome` 和 `disposition_summary`。
 
-closed 的条件集只有：实际存在的 `residual_responsibilities`、从关闭 proposal 原样映射的非空 `spark_suggestions`、实际成立的 `routed-to`、`contributed-to` 与 `related-to` relations，以及关闭后仍有独立消费价值的 `urls`。必填集不得缺失，条件集不适用时必须省略，两者之外的字段全部禁止。
+closed 的条件集只有：实际存在的 `residual_responsibilities`、从关闭 proposal 原样映射的非空 `spark_suggestions`、实际成立的 `routed-to`、`contributed-to`、`has-file-asset` 与 `related-to` relations，以及关闭后仍有独立消费价值的 `urls`。必填集不得缺失，条件集不适用时必须省略，两者之外的字段全部禁止。
 
 closed 禁止 `phase`、顶层 `summary`、priority、resume、waiting、blocking、plan version、work items、execution authorization、creation/result reviews、execution approval、result version、controller check 和 closure proposal。closed 没有 `phase=closed`，也没有 `closed_at`。
 
@@ -566,13 +566,13 @@ canonical result projection 由以下完整结构组成：
 4. 操作绑定完整 source before fingerprint、Human 当次决定和 proposal 中全部 route_existing target fingerprint；
 5. 操作重新读取每个 target；任何变化、缺失、机械无效、不可读、状态不适合形成关系或 fingerprint 不匹配，都拒绝关闭，source 保持不变；Gate2 决定已绑定旧 before，不得在同一运行自动重建 proposal 或重新索取 Human 决定；
 6. after 的 `closure_outcome` 必须精确等于 `proposed_outcome`，`disposition_summary` 必须精确等于 `proposed_disposition_summary`，`residual_responsibilities` 必须精确等于全部 `accept_stop` decision 的 `residual_id + summary`，`spark_suggestions` 必须精确等于 proposal 的同名数组，`routed-to` targets 必须精确等于全部 `route_existing` decision 的稳定三元组按目标去重集合；不得改写 proposal 自然语言、漏项或增加第二目标/建议清单；`suggest_spark` 不形成任何 relation，`contributed-to` 不属于本映射；
-7. after 中 `title`、`goal`、`scope`、`success_criterion_definitions`、`success_criterion_results`、`result_summary`、`validation_summary`、`urls` 与实际存在的 `contributed-to` / `related-to` relations 必须与 before 解析后精确相同；身份与 `created_at` 按 05 原样保留，`updated_at` 由 Code 托管；任一保留事实必须在 Gate2 前修正，进入 Gate2 后发现缺口只拒绝关闭并保持冻结，不在 close 事务中夹带更正或回退；
+7. after 中 `title`、`goal`、`scope`、`success_criterion_definitions`、`success_criterion_results`、`result_summary`、`validation_summary`、`urls` 与实际存在的 `contributed-to` / `has-file-asset` / `related-to` relations 必须与 before 解析后精确相同；身份与 `created_at` 按 05 原样保留，`updated_at` 由 Code 托管；任一保留事实必须在 Gate2 前修正，进入 Gate2 后发现缺口只拒绝关闭并保持冻结，不在 close 事务中夹带更正或回退；
 8. routed 项不再复制为 terminal residual；accepted-stop 项不形成 routed-to；suggest-spark 项只保留为 suggestion，Human 可在 Spark 尚未创建时先关闭 WC；
 9. 任一校验、CAS、写入或回读失败都不得声称关闭成功；
 10. Human 拒绝关闭或要求修改时不压缩对象、不改 phase；当前运行不恢复执行或关闭准备，新工作只能由新的 WorkCase/Gate1 承接；
 11. `close-workcase` 对已 closed before 一律拒绝；closed 不正常重开，也不通过重复 close 冒充幂等更正。
 
-closed 的任何更正都必须使用 §7 `correct-closed-workcase`。只要改动 goal、scope、成功标准定义/结果、result summary、validation、outcome、disposition、residual、spark suggestions、原关闭时的责任去向或 `contributed-to`，一律视为实质更正：必须取得与影响范围匹配的新 Human Gate，并绑定当前 closed fingerprint、完整目标 after 与全部 after route target fingerprints。仅更正 `title`，或只更正不改变已记支持范围、限制和关闭判断基础的 `urls`，才可不经新 Human Gate；无法确定时按实质更正处理。关闭后新出现的对象或关系不是原关闭事实的“更正”：新 Spark 应从自身写 `related-to → 原 WC`，不得追加到 closed WC；closed WC 上已有 `related-to` 只能在其确属原关闭记录错误时经 Human 实质更正，该更正不需独立 result review。
+closed 的任何更正都必须使用 §7 `correct-closed-workcase`。只要改动 goal、scope、成功标准定义/结果、result summary、validation、outcome、disposition、residual、spark suggestions、原关闭时的责任去向、`contributed-to` 或 `has-file-asset`，一律视为实质更正：必须取得与影响范围匹配的新 Human Gate、实际独立复核，并绑定当前 closed fingerprint、完整目标 after 与全部适用 target 当前读取结果；新增 FileAsset target 还必须在事务中重读为 mechanically valid active。仅更正 `title`，或只更正不改变已记支持范围、限制和关闭判断基础的 `urls`，才可不经新 Human Gate；无法确定时按实质更正处理。关闭后新出现的对象、文件或关系不是原关闭事实的“更正”：新 Spark 应从自身写 `related-to → 原 WC`，后来文件应由当前活动消费者引用，不得追加到 closed WC；closed WC 上已有 `related-to` 只能在其确属原关闭记录错误时经 Human 实质更正，该更正不需独立 result review。
 
 ### 6.8 现场保留与后续建议责任
 
@@ -661,7 +661,7 @@ WorkCase 的全部活动期写入必须使用 `update-workcase`；关闭必须�
 
 - before 必须为 `phase=human_closure_confirming` 的 mechanically valid WorkCase，`expected_content_fingerprint` 精确绑定 Human 实际判断的完整 source before；
 - 共同 `authorization_reference` 必须回指 Human 当次实际关闭决定；它只用于授权回指，不持久化到 WorkCase，也不证明技术结果真实；
-- after 必须完全满足 §6.1 closed 白名单，并由 before 当前 proposal 确定性形成 outcome、disposition、accepted-stop residuals、spark suggestions 与去重 `routed-to`；调用方不得提交 proposal target fingerprints 之外的第二 route 目标清单或第二 suggestion 清单；`contributed-to` / `related-to` 不属于 proposal 映射，必须与 before 精确相同；
+- after 必须完全满足 §6.1 closed 白名单，并由 before 当前 proposal 确定性形成 outcome、disposition、accepted-stop residuals、spark suggestions 与去重 `routed-to`；调用方不得提交 proposal target fingerprints 之外的第二 route 目标清单或第二 suggestion 清单；`contributed-to` / `has-file-asset` / `related-to` 不属于 proposal 映射，必须与 before 精确相同；
 - after 中的终态映射和 before 事实保留必须逐值满足 §6.7 第 6–7 项；关闭事务不得同时修正标题、责任、标准、结果、验证或 URL；
 - 操作在同一事务内重新读取全部 proposal route_existing targets，逐个精确比较 fingerprint，并检查同项目、WorkCase open/blocked 或 Spark open 状态、引用、去重与关系图约束；另对 source 完整检查入向 `depends-on`。任一项不成立时 source 零写入；
 - before 满足 §6.3 `SafeConvergenceShape` 时 `creation_reviews`、authorization 与 approval 必须同时缺失；其它 before 必须存在当前 creation reviews、authorization，以及 baseline fingerprint 与当前冻结 baseline 精确匹配的 execution approval；其 `subject_version` 可以早于当前 plan version；
@@ -676,8 +676,8 @@ WorkCase 的全部活动期写入必须使用 `update-workcase`；关闭必须�
 - `route_target_fingerprints[]` 成员字段闭集为 `target` 和 `content_fingerprint`；`target` 使用 05 稳定三元组，`content_fingerprint` 原样复用该 target 当次 `read-fact-objects` 的完整载体 bytes 指纹；数组必须按目标去重，并与 after 全部 `routed-to` targets 精确相等，没有 target 时为空数组；
 - `independent_review_reference` 非空时精确复用 04.Att.01 的单个“来源回指字段” object，不新建裸 string 引用形状；它只定位当次实际独立复核输入，不因存在就证明 Reviewer 独立或结论正确；
 - 操作在同一事务重新读取全部 after route targets 并比较指纹。before 已有且 after 未变的 target 可以继续自身生命周期；after 新增的 target 在形成时必须为同项目 mechanically valid `open` / `blocked` WorkCase 或 open Spark，并完成引用、去重、自指、强边环、入向责任与关系图检查；任一 target 缺失、不可读、指纹变化或检查未完成时 source 零写入；
-- `contributed-to` / `related-to` 不进入 `route_target_fingerprints`，不携带 fingerprint；after 中 `contributed-to` 的增删按 §6.7 更正分级视为实质更正，其 targets 必须在同一事务重新读取并确认为同项目 mechanically valid Pitfall；`related-to` 只能更正原关闭时的记录，不得新增后来创建的 target；
-- 改变 goal、scope、criteria definitions/results、result summary、validation、outcome、disposition、residual、spark suggestions、`routed-to` 或 `contributed-to` 时，必须先完成一次实际独立复核及 Controller 处置，`independent_review_reference` 必须为指向该当次输入的非空稳定引用；仅更正原关闭时的 `related-to` 记录不要求独立 result review，但必须有 Human 实质更正决定。上述实质更正的共同 `authorization_reference` 必须回指与完整 before/after、应需的复核结果和全部 target fingerprints 匹配的 Human 新决定；
+- `contributed-to` / `has-file-asset` / `related-to` 不进入 `route_target_fingerprints`，不携带 fingerprint；after 中 `contributed-to` 的增删按 §6.7 更正分级视为实质更正，其 targets 必须在同一事务重新读取并确认为同项目 mechanically valid Pitfall；`has-file-asset` 的增删同样属于实质更正，新增 target 必须重读为同项目 mechanically valid active FileAsset，且只能修正原关闭时已存在的引用；`related-to` 只能更正原关闭时的记录，不得新增后来创建的 target；
+- 改变 goal、scope、criteria definitions/results、result summary、validation、outcome、disposition、residual、spark suggestions、`routed-to`、`contributed-to` 或 `has-file-asset` 时，必须先完成一次实际独立复核及 Controller 处置，`independent_review_reference` 必须为指向该当次输入的非空稳定引用；仅更正原关闭时的 `related-to` 记录不要求独立 result review，但必须有 Human 实质更正决定。上述实质更正的共同 `authorization_reference` 必须回指与完整 before/after、应需的复核结果和全部 target fingerprints 匹配的 Human 新决定；
 - after 必须继续满足 §6.7 outcome 一致性与剩余责任完整处置；任一 criterion result 为 `not_satisfied` 或 `not_verified` 时，Code 必须要求 after 至少存在一项 `residual_responsibilities`、`routed-to` 或 `suggestion_kind=constrained_responsibility` 的 `spark_suggestions`；Controller、Reviewer 与 Human 必须确认 disposition 与结构化处置无损覆盖全部仍适用的未完成 scope，Code 不猜测自然语言对应；
 - 只更正 `title`，或只更正不改变已记支持范围、限制和关闭判断基础的 `urls` 时，array 型 `authorization_reference` 可以省略或使用空列表、不得为 `null`，且 `independent_review_reference` 必须为 `null`。仅更正原关闭时的 `related-to` 记录时，`authorization_reference` 必须非空并回指 Human 决定，`independent_review_reference` 必须为 `null`。无法确定影响时必须走上一条实质更正路径。活动期的 review/approval 过程字段在形成 closed 时已移除，Human 最终决定由 closed 终态内容表达而不另存收据；不得以笔误更正重建 review、approval 或过程历史；
 - 成功与 `no_change` 的结果复用 05 §11.7；必须回读实际 closed after，不返回或保存 Human 决定收据、target 指纹或更正历史。
@@ -715,27 +715,28 @@ WorkCase 不要求通用证据结构，也不建立证明包。AI 必须根据�
 
 ### 8.2 关系闭集
 
-WorkCase 只允许四种正向关系；反向导航由 Code 派生，不写第二份权威：
+WorkCase 只允许五种正向关系；反向导航由 Code 派生，不写第二份权威：
 
 | relation_key | source | target | 唯一语义 |
 |---|---|---|---|
 | `depends-on` | 同项目 `open` / `blocked` WorkCase | 形成和保留期间均为同项目 `open` / `blocked` WorkCase | source 当前某项行动或关闭判断确实依赖 target 仍在承担的责任 |
 | `routed-to` | `closed` WorkCase，只由 `close-workcase` 形成，或由 `correct-closed-workcase` 在相应 Human Gate 下更正原关闭记录错误/遗漏 | 首次形成或更正新增时，target 为同项目 mechanically valid 的 `open` / `blocked` WorkCase，或 `status=open` Spark；形成后 target 按自身规则继续生命周期 | source 经 Human 关闭决定，将不再由自身承担的剩余责任转交给已稳定承载同一问题的 target；Spark 目标不被表达为执行中，target 后续进展不构成回溯换路理由 |
 | `contributed-to` | 活动期或 `closed` WorkCase；活动期按 §6.8 在 target 实际创建回读后形成，closed 上增删只由 `correct-closed-workcase` 按原关闭记录的实质更正执行 | 形成时只能为同项目 mechanically valid 的 `status=draft` Pitfall；形成后 target 可为 draft/active/discarded | source 执行中实际发生、解决并验证的完整现场经验已保存为 target；仅作形成来源追溯，不表示 Human 已确认、经验仍适用或 target 承接责任 |
-| `related-to` | 活动期或 `closed` WorkCase；活动期可形成，close 原样保留，closed 只能更正原关闭时的记录错误 | 形成时为同项目已存在且 mechanically valid 的任一五类当前事实对象 | source 与 target 存在对当次理解有价值、但不表示依赖、责任转交、贡献来源或证明的主题联系 |
+| `has-file-asset` | 活动期或 `closed` WorkCase；活动期可形成，close 原样保留；closed 只能由 `correct-closed-workcase` 在 Human Gate 和独立复核下更正原关闭时的记录错误或遗漏 | 新形成或更正新增时为同项目 mechanically valid 的 `status=active` FileAsset；形成后 target 可为 active/archived | source 持有一个需要跨行动稳定读取或引用的文件资产；只表示资源引用，不表示 payload 是证据、证明、决定、授权、验收或完成依据 |
+| `related-to` | 活动期或 `closed` WorkCase；活动期可形成，close 原样保留，closed 只能更正原关闭时的记录错误 | 形成时为同项目已存在且 mechanically valid 的 Spark、WorkCase、ADR、Pitfall 或 Study，明确不含 FileAsset | source 与 target 存在对当次理解有价值、但不表示依赖、责任转交、贡献来源或证明的主题联系 |
 
 共同约束：
 
 - target 暂只允许当前选定的同一 `governed_project_id`；跨项目不进入当前契约；
 - 同一 `relation_key + target` 最多一项；数组顺序无语义；没有关系时省略；
-- 禁止自指、缺失、无效和不可读目标；`depends-on`、`routed-to` 与 `contributed-to` 禁止同 key 有向环，`related-to` 允许有向环；无法完成强关系所需的项目全集或环检查时交还 unavailable，不得假定无环；
+- 禁止自指、缺失、无效和不可读目标；`depends-on`、`routed-to` 与 `contributed-to` 禁止同 key 有向环，`related-to` 允许有向环；`has-file-asset` 是资源引用，不参与事实责任图的成环判断；无法完成强关系所需的项目全集或环检查时交还 unavailable，不得假定无环；
 - `depends-on` 与 item `depends_on` 不同，不能相互替代；
 - `routed-to` 指向 Spark 只表示问题已由存量 open Spark 稳定承载，不表示已开始执行或完成责任；
 - `contributed-to` 的 target 闭集缩减为 `pitfall`，并且首次形成时必须为 draft；不指向 Spark、ADR、Study 或 WorkCase；
-- 同一 source/target 已有 `depends-on`、`routed-to` 或 `contributed-to` 之一时禁止再建 `related-to`，反向亦然；应使用语义更强的单一关系，不得叠加“也相关”；
+- 同一 source/target 已有 `depends-on`、`routed-to`、`contributed-to` 或 `has-file-asset` 之一时禁止再建 `related-to`，反向亦然；FileAsset 只能使用 `has-file-asset`，不得叠加或改用“也相关”；
 - `contributed-to` 不构成 §6.7 剩余责任处置：验收基线内的未完成责任只能由 `residual_decisions` 覆盖，创建贡献对象与写入本边均不免除该义务（§6.8 划界判据）；
 - 入向 `contributed-to` 不构成 22 §7、23 §7 所排除的来源关系、证明材料或准入依据，不影响 ADR / Pitfall 各自的准入条件与对象语义；
-- proposal `route_target` 不是 relation；Human 决定前不写 `routed-to`，terminal relation 不保存 fingerprint 或 residual ID；`contributed-to` 与 `related-to` 同样不保存 fingerprint；
+- proposal `route_target` 不是 relation；Human 决定前不写 `routed-to`，terminal relation 不保存 fingerprint 或 residual ID；`contributed-to`、`has-file-asset` 与 `related-to` 同样不保存 fingerprint；
 - 多项责任可去往同一 target，终态只保留一条去重关系；`disposition_summary` 按目标说明转交范围。
 
 ### 8.3 关系失效与入向约束
@@ -745,6 +746,8 @@ WorkCase 只允许四种正向关系；反向导航由 Code 派生，不写第�
 `routed-to` 形成时，WorkCase target 的当前 goal/scope 或 Spark target 的当前问题正文必须语义覆盖被转交事项，AI 负责判断，Code 只检查引用、状态、指纹和图约束。形成后 target 按自身生命周期继续，upstream relation 仍保留；消费者沿 target 当前内容理解去向。WorkCase target 关闭/改 scope 或 Spark target 转为 routed/discarded 前必须检查入向 `routed-to`，不得静默丢失已转入责任；必要时由 target 自身当前或终态正文、下一跳关系或 accepted-stop residual 继续说明。
 
 `contributed-to` 形成时，target 必须实际存在、可读、mechanically valid 且为 draft Pitfall；形成后 target 变为 active 或 discarded 不影响边，也不回写 WC。target 后来被删除或不可读时，该边失效但不自动改变 source 的状态与终态；机械读取如实报告。该边不承载未完成责任，不建立 target 状态变化前的入向检查义务；删除方仍必须按 05 §9.3 先处置全部入向引用。
+
+`has-file-asset` 形成前必须精确读取整个 FileAsset 目录并确认 manifest、payload、size/hash、签名、状态和完整性 coverage 全部成立，且 target 当时为 active。既有边在 FileAsset 后来 archived 时继续保留并可精确历史读取，不要求改写 WorkCase；target 缺失、无效或完整性检查不可用时，source 关系据实 invalid/unavailable，不回退到 `docs/` 副本。close 必须原样冻结 before 的全部 `has-file-asset`；closed 更正只有在 Human 明确确认、独立复核绑定且新增 target 当前仍为 active 时才能补记原关闭时已经存在的引用，不得借更正附加后来形成的文件。FileAsset 归档或未来物理删除必须先检查这些入向边，但边存在不自动裁决是否允许归档。
 
 `related-to` 只记录形成时的存量主题联系，不做有向环检查，其它共同引用检查仍成立。close 必须原样保留 before 中已有边。closed WC 不追加未来出现的新关系；后续对象应从自身一侧指向该 WC。一项更正只能修正原关闭时已存在但记错/遗漏的当时事实，不得将后来新建对象冒充“当时遗漏”。
 
@@ -776,12 +779,12 @@ AI 选中候选后使用稳定引用进入 F3，并按当次语义展开：
 - 创建查重展开能够承接同一责任的 WorkCase/Spark 全文，不以卡片标题直接新建；
 - 继续执行或交接展开精确当前 WorkCase 的 goal、scope、criteria、plan approval、items、current/resume/waiting/blocking 和当前 phase，并只在当次行动受其约束时继续展开直接 `open` / `blocked` dependencies；
 - 方案决定展开完整责任、成功标准、work items 与 creation reviews；结果复核展开完整 result projection、当前 reviews 及未验证边界；
-- 关闭待确认展开 Human 需要看到的完整 before、proposal、全部 Spark suggestions、每个 route_existing target 当前 F3 与引用/入向关系；closed 或其更正则展开全部终态结果、处置、residual、suggestions、`routed-to`、`contributed-to`、`related-to` 与仍有效 urls；
+- 关闭待确认展开 Human 需要看到的完整 before、proposal、全部 Spark suggestions、每个 route_existing target 当前 F3 与引用/入向关系；closed 或其更正则展开全部终态结果、处置、residual、suggestions、`routed-to`、`contributed-to`、`has-file-asset`、`related-to` 与仍有效 urls；
 - 解阻只展开阻塞/等待、受影响 items、直接依赖和能够判断解除条件的当前事实，不恢复无关历史正文。
 
 每次召回与交付必须说明来源、已读范围、未读、无效、不可读与继续入口。卡片、索引、计数和关系候选不成为第二事实源，也不自动表示相关、适用、当前结论、获准行动或已完成。
 
-`contributed-to` 和 `related-to` 不进入 F1/F2 投影闭集；沿边发现只通过 05 §11.5 的 `relation_source_refs` / `relation_targets` 关系导航完成。前者只支持 Pitfall 现场保留追溯，后者只支持主题导航；两者都不构成行动依赖或责任处置，也不证明目标现时适用或结论正确。
+`contributed-to`、`has-file-asset` 和 `related-to` 不进入 F1/F2 直接字段投影闭集；沿边发现只通过 05 §11.5 的 `relation_source_refs` / `relation_targets` 关系导航完成。三者分别只支持 Pitfall 现场保留追溯、FileAsset 资源引用和主题导航；都不构成行动依赖或责任处置，也不证明目标现时适用或结论正确。
 
 ### 9.2 活动期与 closed 消费
 
@@ -794,7 +797,7 @@ closed 消费只依赖：
 - validation；
 - closure outcome 与 disposition；
 - accepted-stop residual 与 Spark suggestions；
-- routed-to、contributed-to、related-to 与仍有效 urls。
+- routed-to、contributed-to、has-file-asset、related-to 与仍有效 urls。
 
 不得要求 closed 重新提供 plan、items、reviews、approvals、controller check、phase 或版本。
 
@@ -858,7 +861,7 @@ Code 不能判断：
 5. criterion results 数组全覆盖或整体缺失、`controller_checking` 稳定逐成员形成、数组禁止半覆盖、进入独立复核前 projection 完整、首条 review 冻结、`ResultΔ` 确定性升版、同版本不重置和返回 executing；
 6. Reviewer/Controller 字段所有权、同一数组 review 复合身份重复拒绝、新实际复核使用新 `reviewed_at`、同事件事实更正保持复合身份且与生命周期转换不可混用、返修期 review 冻结不可通过删除绕过版本失效；
 7. proposal/terminal 分离、四种 outcome、三种 residual disposition、两种 suggestion kind 的字段组合、suggestion 局部引用完整性、`completed` 只允许 follow-up suggestions、其它 outcome 对未满足/未验证/未完成 scope 的责任处置、proposal 与 terminal 精确映射、Gate2 route target 漂移后零写入且不退回，以及专属原子关闭；
-8. `depends-on` / `routed-to` / `contributed-to` / `related-to` 的 source、target、入向约束、去重、自指、强边成环拒绝与 related-to 成环允许、跨项目拒绝、强边与 related-to 同 target 重叠拒绝；`routed-to` 允许 open Spark，`contributed-to` 首次只允许 draft Pitfall 且 target 后续状态不使边失效，`related-to` 为五类存量事实并在 close 原样保留，closed 不追加后来对象；反查与 F1/F2 投影排除；
+8. `depends-on` / `routed-to` / `contributed-to` / `has-file-asset` / `related-to` 的 source、target、入向约束、去重、自指、强边成环拒绝与 related-to 成环允许、跨项目拒绝、语义更强关系与 related-to 同 target 重叠拒绝；`routed-to` 允许 open Spark，`contributed-to` 首次只允许 draft Pitfall 且 target 后续状态不使边失效，`has-file-asset` 新增只允许完整可读的 active FileAsset、close 精确冻结、archived target 保留、closed 更正需 Human/独立复核且不能追加后来文件，`related-to` 明确排除 FileAsset；反查与 F1/F2 直接投影排除；
 9. `correct-closed-workcase` 的 closed before/after、after 全部 route target 指纹精确集合与重读、新增与未变 target 的不同状态条件、实质更正的 Human Gate 与独立复核引用、非实质更正的引用空值、终态责任覆盖，以及因后来事实回溯改写原关闭历史被拒绝；
 10. 未登记字段、半成品结构、空占位、日志/命令/推理字段，以及通用 update 读写 WorkCase、活动期 update 形成 closed、close 更正 closed 均被拒绝；三个 WorkCase 专属操作对 invalid、unavailable、not-found 或只能解析部分字段的 before 必须正向覆盖零写入拒绝，不建立旧形状转换或 invalid 修复正例；
 11. 渐进式召回的触发语义、F1/F2 字段闭集与 coverage、active/closed 默认范围、F3 按场景展开、四个 Web 分组的确定性派生，以及派生信息不写回事实源。
@@ -965,6 +968,7 @@ Gate1 后出现未覆盖的高影响/不可逆行动、新风险接受、范围�
 - 把验收基线内的未完成责任包装成 Pitfall 贡献，以 `contributed-to` 规避 `residual_decisions` 的完整处置；
 - `contributed-to` 指向未实际创建回读的对象、非 draft 初始 target 或非 Pitfall 目标，或在 `blocked` / `human_closure_confirming` 中形成/变更该边；
 - 把 `contributed-to` 表达成 Human 已确认、target 已完成或责任已被承接；
+- `has-file-asset` target 不是同项目完整可读的 active FileAsset、用 `related-to` 代替文件资源引用、close 改变既有文件边，或在 closed 更正中追加后来形成的文件；
 - 向 closed WC 追加后来新建对象的 `related-to`，或要求后续 Spark 引用 residual/suggestion ID。
 
 ### 12.5 能力与失败交还

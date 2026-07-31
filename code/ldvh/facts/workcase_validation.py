@@ -614,9 +614,9 @@ def _validate_relations(fields: Mapping[str, object], issues: list[FactIssue]) -
     phase = fields.get("phase")
     source_id = fields.get("object_id")
     allowed = (
-        {"routed-to", "contributed-to", "related-to"}
+        {"routed-to", "contributed-to", "has-file-asset", "related-to"}
         if status == "closed"
-        else {"depends-on", "contributed-to", "related-to"}
+        else {"depends-on", "contributed-to", "has-file-asset", "related-to"}
     )
     observed: list[tuple[object, object, object, object]] = []
     for index, relation in enumerate(relations):
@@ -651,11 +651,39 @@ def _validate_relations(fields: Mapping[str, object], issues: list[FactIssue]) -
                     "contributed-to relation target.object_id 必须是目标类型稳定身份",
                     f"{path}.target.object_id",
                 )
+        elif relation_key == "has-file-asset":
+            target_type = target.get("fact_type_key")
+            if target_type != "file-asset":
+                _issue(
+                    issues,
+                    "has-file-asset relation target 必须为 file-asset",
+                    f"{path}.target.fact_type_key",
+                )
+            layout = LAYOUTS.get(target_type) if isinstance(target_type, str) else None
+            if (
+                not isinstance(target_id, str)
+                or layout is None
+                or layout.object_id_pattern.fullmatch(target_id) is None
+            ):
+                _issue(
+                    issues,
+                    "has-file-asset target.object_id 必须是 FileAsset 稳定身份",
+                    f"{path}.target.object_id",
+                )
         elif relation_key == "related-to":
             target_type = target.get("fact_type_key")
             layout = LAYOUTS.get(target_type) if isinstance(target_type, str) else None
-            if not isinstance(target_id, str) or layout is None or layout.object_id_pattern.fullmatch(target_id) is None:
-                _issue(issues, "related-to target 必须是当前事实类型的稳定身份", f"{path}.target.object_id")
+            if (
+                target_type == "file-asset"
+                or not isinstance(target_id, str)
+                or layout is None
+                or layout.object_id_pattern.fullmatch(target_id) is None
+            ):
+                _issue(
+                    issues,
+                    "related-to target 必须是除 FileAsset 外的当前事实类型稳定身份",
+                    f"{path}.target.object_id",
+                )
         else:
             target_type = target.get("fact_type_key")
             if relation_key == "routed-to" and target_type not in {"workcase", "spark"}:

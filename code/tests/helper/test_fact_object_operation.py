@@ -75,6 +75,115 @@ def _payload(workspace: Path, project: Path, *object_ids: str) -> str:
     )
 
 
+def _file_asset_payload(workspace: Path, project: Path, object_id: str = "file-asset-0001") -> str:
+    return json.dumps(
+        {
+            "work_object_locators": [str(project)],
+            "arguments": {
+                "workspace_root": str(workspace),
+                "fact_refs": [
+                    {
+                        "governed_project_id": "sample",
+                        "fact_type_key": "file-asset",
+                        "object_id": object_id,
+                    }
+                ],
+            },
+        }
+    )
+
+
+def _write_file_asset(project: Path, payload: bytes = b"external audit bytes\n") -> Path:
+    directory = project / "ldvh-base/file-assets/file-asset-0001"
+    directory.mkdir(parents=True)
+    (directory / "file-asset.yaml").write_text(
+        "\n".join(
+            [
+                "object_id: file-asset-0001",
+                "fact_type_key: file-asset",
+                "title: External audit",
+                "created_at: 2026-07-31T10:00:00+08:00",
+                "updated_at: 2026-07-31T10:00:00+08:00",
+                "status: active",
+                "filename: audit.bin",
+                "media_type: application/octet-stream",
+                f"size_bytes: {len(payload)}",
+                f"content_sha256: {hashlib.sha256(payload).hexdigest()}",
+                "signature:",
+                "  signer_type: human",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    (directory / "payload").write_bytes(payload)
+    return directory
+
+
+def test_exact_file_asset_read_returns_integrity_metadata_without_payload_bytes(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    payload = b"\x00\xffexternal audit bytes\n"
+    _write_file_asset(project, payload)
+
+    response = handle_request(
+        "call",
+        "read-fact-objects",
+        _file_asset_payload(workspace, project),
+    ).response
+    item = response["result"]["items"][0]
+
+    assert response["outcome"] == "ok"
+    assert item["carrier"] == "file-asset-directory"
+    assert item["check_status"] == "mechanically_valid"
+    assert item["fact_object"]["signature"] == {"signer_type": "human"}
+    assert item["file_asset_payload"] == {
+        "canonical_path": "ldvh-base/file-assets/file-asset-0001/payload",
+        "observed_size_bytes": len(payload),
+        "observed_content_sha256": hashlib.sha256(payload).hexdigest(),
+        "integrity_coverage": [
+            "manifest-read",
+            "members-closed",
+            "payload-size-read",
+            "payload-sha256-computed",
+        ],
+        "matches_manifest": True,
+    }
+    serialized = json.dumps(response, ensure_ascii=False)
+    assert "external audit bytes" not in serialized
+
+
+def test_exact_file_asset_read_uses_null_payload_metadata_when_read_is_incomplete(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    directory = _write_file_asset(project)
+    (directory / "payload").unlink()
+
+    response = handle_request(
+        "call",
+        "read-fact-objects",
+        _file_asset_payload(workspace, project),
+    ).response
+    item = response["result"]["items"][0]
+
+    assert response["outcome"] == "ok"
+    assert item["check_status"] == "invalid"
+    assert item["file_asset_payload"] is None
+
+
+def test_exact_missing_file_asset_uses_null_payload_metadata(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+
+    response = handle_request(
+        "call",
+        "read-fact-objects",
+        _file_asset_payload(workspace, project),
+    ).response
+    item = response["result"]["items"][0]
+
+    assert response["outcome"] == "ok"
+    assert item["check_status"] == "not_found"
+    assert item["file_asset_payload"] is None
+
+
 def test_exact_fact_read_preserves_valid_and_not_found_local_results(tmp_path: Path) -> None:
     workspace, project = _fixture(tmp_path)
 
@@ -92,9 +201,11 @@ def test_exact_fact_read_preserves_valid_and_not_found_local_results(tmp_path: P
         "not_found",
     ]
     assert response["result"]["items"][0]["fact_object"]["summary"] == "Read one object"
+    assert response["result"]["items"][0]["file_asset_payload"] is None
     raw = (project / "ldvh-base" / "sparks" / "spark-0001.yaml").read_bytes()
     assert response["result"]["items"][0]["content_fingerprint"] == hashlib.sha256(raw).hexdigest()
     assert response["result"]["items"][1]["fact_object"] is None
+    assert response["result"]["items"][1]["file_asset_payload"] is None
     assert response["result"]["items"][1]["content_fingerprint"] is None
     assert response["changes"] == []
 

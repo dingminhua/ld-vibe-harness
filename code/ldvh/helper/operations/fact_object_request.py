@@ -83,7 +83,7 @@ def parse_fact_object_request(
             fact_type_key = values["fact_type_key"]
             layout = LAYOUTS.get(fact_type_key)
             if layout is None:
-                problems.append(f"{prefix}.fact_type_key 未精确匹配当前五类事实类型")
+                problems.append(f"{prefix}.fact_type_key 未精确匹配当前六类可读事实类型")
                 continue
             if layout.object_id_pattern.fullmatch(values["object_id"]) is None:
                 problems.append(f"{prefix}.object_id 不符合 {fact_type_key} 当前格式")

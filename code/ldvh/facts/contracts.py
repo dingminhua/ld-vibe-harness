@@ -1,4 +1,4 @@
-"""Implementation adapters derived from the five current fact-type sources.
+"""Implementation adapters derived from the current fact-type sources.
 
 Field membership is never listed here: it is projected from 05.Att.01 and the
 type binding tables.  These adapters only connect source-defined carriers and
@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from typing import Literal
 
 # Specs 21 §5: "活跃" 语义下的 open / blocked 工作态集合。
 # 单一事实真源在 specs/21；此处仅镜像闭集供实现引用。
@@ -19,15 +20,30 @@ ACTIVE_STATUSES = frozenset({"open", "blocked"})
 class FactTypeLayout:
     fact_type_key: str
     directory: str
-    suffix: str
-    carrier: str
+    carrier: Literal["yaml", "markdown", "file-asset-directory"]
+    suffix: str | None
+    manifest_name: str | None
+    payload_name: str | None
     object_id_pattern: re.Pattern[str]
     initial_statuses: frozenset[str]
     statuses: frozenset[str]
     relation_keys: frozenset[str]
 
     def canonical_path(self, object_id: str) -> str:
+        if self.carrier == "file-asset-directory":
+            return f"{self.directory}/{object_id}"
+        assert self.suffix is not None
         return f"{self.directory}/{object_id}{self.suffix}"
+
+    def canonical_manifest_path(self, object_id: str) -> str:
+        if self.carrier != "file-asset-directory" or self.manifest_name is None:
+            return self.canonical_path(object_id)
+        return f"{self.canonical_path(object_id)}/{self.manifest_name}"
+
+    def canonical_payload_path(self, object_id: str) -> str | None:
+        if self.carrier != "file-asset-directory" or self.payload_name is None:
+            return None
+        return f"{self.canonical_path(object_id)}/{self.payload_name}"
 
 
 def _layout(
@@ -42,8 +58,10 @@ def _layout(
     return FactTypeLayout(
         fact_type_key=fact_type_key,
         directory=f"ldvh-base/{plural}",
-        suffix=suffix,
         carrier="markdown" if suffix == ".md" else "yaml",
+        suffix=suffix,
+        manifest_name=None,
+        payload_name=None,
         object_id_pattern=re.compile(rf"{re.escape(fact_type_key)}-[0-9]{{4,}}\Z"),
         initial_statuses=frozenset(initial_statuses),
         statuses=frozenset(statuses),
@@ -64,7 +82,7 @@ LAYOUTS = {
         "workcases",
         initial_statuses=("open",),
         statuses=("open", "blocked", "closed"),
-        relation_keys=("depends-on", "routed-to", "contributed-to", "related-to"),
+        relation_keys=("depends-on", "routed-to", "contributed-to", "has-file-asset", "related-to"),
     ),
     "adr": _layout(
         "adr",
@@ -88,9 +106,30 @@ LAYOUTS = {
         statuses=("active", "retired"),
         relation_keys=("inspired-by", "informs"),
     ),
+    "file-asset": FactTypeLayout(
+        fact_type_key="file-asset",
+        directory="ldvh-base/file-assets",
+        carrier="file-asset-directory",
+        suffix=None,
+        manifest_name="file-asset.yaml",
+        payload_name="payload",
+        object_id_pattern=re.compile(r"file-asset-[0-9]{4,}\Z"),
+        initial_statuses=frozenset({"active"}),
+        statuses=frozenset({"active", "archived"}),
+        relation_keys=frozenset(),
+    ),
 }
+
+
+WRITABLE_FACT_TYPE_KEYS = frozenset({"spark", "workcase", "adr", "pitfall", "study"})
 
 
 TERMINAL_COMMON = frozenset({"disposition_summary"})
 
-__all__ = ["ACTIVE_STATUSES", "LAYOUTS", "TERMINAL_COMMON", "FactTypeLayout"]
+__all__ = [
+    "ACTIVE_STATUSES",
+    "LAYOUTS",
+    "TERMINAL_COMMON",
+    "WRITABLE_FACT_TYPE_KEYS",
+    "FactTypeLayout",
+]
