@@ -227,8 +227,13 @@ success_criterion_results:
 result_summary: WorkCase 已按 Gate1 基线完成 spark-0039 余项 3–6 及 Spark 自身收口。规则层补齐了 Helper-only 事实写入、逐写回读与完整性审计、双层提交预检和残留停止边界；既有静态逐字节 Skill 分发、work-context 首步与 README 第二路由由回归固定；三条能力边界已完全同文并重部署用户 Skill。形态层确认 adr-0006 已完整决定唯一薄 Skill、插件/Hook/adapter 退出与 MCP 不做，spark-0029 保持既有 discarded，spark-0018 更新证据后保持 open/P2。spark-0039 已 implemented，只结束其六项限定入口；没有把环境行为、原生 Gate 或语义真实性写成已验证。 用户级 Skill 的卸载和从已知 canonical bytes 恢复的回滚路径同样未执行、未验证，并按 Gate1 作为验证边界接受；它们不改变本 WorkCase 原 scope 的完成判断。
 controller_check_summary: Controller 已逐项对照冻结的 goal、scope、六条成功标准、五个 work item 终值、实际提交候选、Helper 回读、关系扫描、定向测试、部署字节与 Doctor 结果。全部 item 为 completed，六条标准均有当前证据支持 satisfied；授权范围外的插件清理、配置修改、MCP、Hook 恢复、全量测试、远端和主工作树并行改动均未执行。已复核无入向 routed-to 责任丢失，spark-0018 的独立 open 证据矩阵不属于本 Spark 收口的残余；当前原 scope 无未满足或未验证责任，下一步只进行独立结果复核与 Gate2 提案。 Controller 已采纳 result_version 1 的独立复核反馈，在 result_version 2 明确加入用户 Skill 卸载与 canonical bytes 回滚未验证边界；两项不属于 spark-0018 的证据矩阵，也不是本 WorkCase 原 scope 的剩余实现责任。
 validation_summary: 最终验证锚定隔离分支的干净目标 HEAD 8e27abf23：受影响的行动模板、work-context 与接入文档测试合计 16 passed；item 阶段的干净 HEAD 选择集分别为 13、5、12 passed。canonical Skill、用户级物理部署件与 symlink 视图字节完全相同，SHA-256 为 965691514d8c1eccc3d328b784796c63b3e8b134893b5532cfc78f389503ab31；只读 Doctor 为 ready，Helper 18 个操作可用、配置 valid、管辖 governed_single、接入面 5/5 present。spark-0018、spark-0039 与 WorkCase 每次写后精确回读 mechanically valid，最终 check-fact-integrity 为 outcome ok、status complete、94 个对象、0 problems；spark-0039 六类型全状态入向扫描完整且无 routed-to。未运行全量测试；隔离 worktree 的 core.hooksPath 指向 .githooks-v4 但 commit-msg 文件不存在，因此真实原生 Gate allow/block/bypass 未验证。新部署 Skill 的独立 cold start、隐式选中、无显式指令委派、自动 worktree/clone 切换、恢复/compact 归因、不可用失败与真实负面写入矩阵均未验证；当前规则源仍有 7 项资格条件未由 Code 机械证明；机械通过不证明自然语言事实的语义真实性。 用户级 Skill 卸载未执行、未验证；从已知 canonical bytes 恢复用户部署件的回滚路径也未执行、未验证。两项都是 Human 在 Gate1 已接受的验证边界，不是已验证能力，也不构成本 WorkCase 或 spark-0018 的未完成实现责任。
-waiting_on: 独立结果 Reviewer 对修正后的 result_version 2 重新复核。
+result_reviews:
+- reviewer: /root/workcase0023_result_review
+  reviewed_at: '2026-08-01T03:33:52+08:00'
+  subject_version: 2
+  scope: 通过 Helper 精确读取修正后的 workcase-0023 result_version 2，并与 result_version 1 的仓库差异逐项对照。确认原 feedback 已同时进入 criterion-evidence、result_summary、controller_check_summary 与 validation_summary；四处均将用户 Skill 卸载及从已知 canonical bytes 恢复的回滚路径标为 Gate1 已接受但未执行、未验证的边界，并明确其不是 spark-0018 或本 WorkCase 的剩余实现责任。除 result_version、上述四个 projection 字段、waiting_on 与 updated_at 外，goal、scope、六条标准定义、五个 work item 结果及其它 criterion 内容未被改变；六条 outcome 仍有依据保持 satisfied。当前对象 mechanically valid，事实完整性检查为 outcome ok、status complete、94 个对象、0 problems，隔离树干净；未重复运行未受本次纯 projection 修正影响的测试或真实环境事件。
+  conclusion: pass
 object_id: workcase-0023
 fact_type_key: workcase
 created_at: '2026-08-01T01:49:52.669999+08:00'
-updated_at: '2026-08-01T03:32:43.689855+08:00'
+updated_at: '2026-08-01T03:34:22.168494+08:00'
