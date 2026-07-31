@@ -40,6 +40,12 @@ npm run dev
 
 > 请阅读 README，完成 LDVH 的安装、部署、接入与验证，并如实报告已验证与未验证的范围。
 
+执行该提示的 AI 请注意：权威流程不在本文件。安装核心后，先经
+`ldvh call read-action-template-candidates` 定位，再经
+`ldvh call read-action-template-content` 读取当次环境接入行动模板，照模板执行；
+全部入口的调用契约以 `specs/attachments/09.Att.01-环境接入面.md` 当次内容为准；
+薄 Skill 部署件必须与 canonical 模板 `skill/SKILL.md` 逐字节一致。
+
 AI 完成安装后应提示你执行以下操作：
 
 1. **确认技能已加载** — 在 AI 环境设置中确认已部署的 LDVH Skill 已启用，且其可见会话范围覆盖目标会话
