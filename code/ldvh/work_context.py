@@ -226,7 +226,12 @@ def main() -> int:
     arguments = _parser().parse_args()
     event_name: str | None = None
     try:
-        native_event = json.load(sys.stdin)
+        try:
+            native_event = json.load(sys.stdin)
+        except json.JSONDecodeError as error:
+            raise WorkContextError(
+                "native event must be provided on stdin as a single UTF-8 JSON object"
+            ) from error
         if isinstance(native_event, dict):
             raw_name = native_event.get("hook_event_name")
             if isinstance(raw_name, str) and raw_name:
