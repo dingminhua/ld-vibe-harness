@@ -20,23 +20,24 @@ phase: executing
 plan_version: 1
 work_items:
 - item_id: item-03
-  status: in_progress
+  status: completed
   goal: 按正式规范修订流程补齐行动模板及 orientation 的过程检查、Helper-only 直写禁令和审计入口。
   expected_result: 00、01、30、31、32 及消费者断言一致；30 固定 mandatory precheck 双层判定，31/32 固定每次事实写后回读与审计，work-context 实际交付高层禁令与审计路由，并形成独立提交。
   approach_summary: 每次触碰前重查 specs/31、32，变脏即暂停对应子项。先修权威 specs，独立规范复核和最小责任审查，再同步消费者与代表性正反验证；全库 integrity 不进入普通提交链且不替代 precheck。
   template_keys:
   - workcase-approved-plan-execution
   - git-commit
-  current_summary: 并行 FileAsset 交付已在提交 68fb5d9e9 形成；主 Index 为空且 specs/31、32 clean。已从该提交建立 codex/spark-0039-closeout 隔离 worktree，并通过 Helper 重读行动模板、spark-0039 与当前 WorkCase；item-03 正式恢复实施。
-  resume_from: 继续正式规范修订：精确读取 00、01、06、09 与 30/31/32 的适用来源，先修权威规则，再做独立规范复核、最小责任审查、消费者同步、代表性正反验证与独立提交。
+  result_summary: 提交 426fc5c98 已形成 Helper-only 事实写入、逐写精确回读与完整性审计、提交预检双层通过和非成功响应残留停止边界，并由 00 §8.2 与 01 orientation profile 交付入口。独立规范复核通过；干净 HEAD 受影响选择集 13 passed，Helper 模板及 work-context 黑盒回读通过。当前 worktree 未安装原生 commit-msg Gate，真实 Gate allow/block 未验证。
 - item_id: item-04
-  status: pending
+  status: in_progress
   goal: 把已成立的静态 Skill 分发、work-context 首步和 README 第二路由固定为回归证据。
   expected_result: 现有 09 §5.3、09.Att.01、发行链、Skill 与 README 正文不改；只在 code/tests/docs/test_enablement_docs.py 及必要的既有 packaging assertion 增加 targeted 断言并形成独立提交。
   approach_summary: 执行前重读来源；若漂移或不再覆盖则取消本 item 并结果收敛，不自动扩展到附件、README、发行配置或实现正文。
   template_keys:
   - workcase-approved-plan-execution
   - git-commit
+  current_summary: 已重读 09 §5.3、09.Att.01、canonical Skill、README 与发行断言：静态逐字节分发、work-context 首步定位和 README 第二路由当前均有来源覆盖，未发现需扩写正文的漂移；正在形成仅固定既有合同的最小回归断言。
+  resume_from: 只修改 code/tests/docs/test_enablement_docs.py 增加静态分发与双路由跨来源断言，运行受影响 docs/packaging 测试后按真实 Index 预检并独立提交。
 - item_id: item-05
   status: pending
   depends_on:
@@ -204,4 +205,4 @@ execution_approval:
 object_id: workcase-0023
 fact_type_key: workcase
 created_at: '2026-08-01T01:49:52.669999+08:00'
-updated_at: '2026-08-01T02:41:56.054268+08:00'
+updated_at: '2026-08-01T02:59:39.603399+08:00'
