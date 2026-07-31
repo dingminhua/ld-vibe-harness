@@ -1,16 +1,18 @@
 title: 多人未同步时的事实对象 ID 冲突提交 Gate
-intent: 保留多人、多 clone 或多分支未同步时，提交包含事实对象的变更如何发现远端同 ID 冲突并交由 Human 处置的问题，避免仅等待
-  merge/push 冲突、静默改号、自动覆盖或在远端新鲜度未证明时宣称无冲突。后续需判断范围匹配 Gate 与改号/合并处置的可靠边界。
+intent: 保留多人、多 clone 或多分支未同步时，提交包含事实对象的变更如何发现远端同 ID 冲突并交由 Human 处置的问题，避免仅等待 merge/push 冲突、静默改号、自动覆盖或在远端新鲜度未证明时宣称无冲突。后续需判断范围匹配 Gate 与改号/合并处置的可靠边界。
 status: open
 priority: P1
-summary: "**适用范围**\n\n- 仅当 Git Index 候选快照包含 `ldvh-base/**` 事实对象路径时，提交边界才进入远端刷新与事实对象身份冲突流程。\n\
-  - 普通 Code、Web、规范、文档或其它不包含 `ldvh-base` 内容的提交必须跳过该流程，不增加网络访问或 Human Gate。\n\n**冲突判断与交还**\n\
-  \n- 多人、多 clone 或多分支协作时，各方可能在未获取目标远端分支最新状态的情况下合法分配相同 `object_id`。\n- Gate 应先刷新或明确验证目标远端
-  ref 的新鲜度，再将 Index 中的事实对象身份与目标树全局扫描比较。\n- 若同一 ID 已存在且不是同一对象，必须停止受影响提交，报告远端 ref/commit、双方
-  canonical path、内容指纹与引用差异，交由 Human 决定改号并迁移引用、更新既有对象、拆分/合并或取消。\n\n**边界**\n\n- 不得自动覆盖、静默改号或只等待
-  merge/push 冲突；无法刷新或证明远端 ref 新鲜时也不得宣称无冲突。\n- 改号必须同步文件名、对象内 `object_id`、`对象自有语义字段`、`自然语言验证说明`
-  与 `relations` 的相关引用，并完成回读验证。"
+summary: "**适用范围**\n\n- 仅当 Git Index 候选快照包含 `ldvh-base/**` 事实对象路径时，提交边界才进入远端刷新与事实对象身份冲突流程。\n- 普通 Code、Web、规范、文档或其它不包含 `ldvh-base` 内容的提交必须跳过该流程，不增加网络访问或 Human Gate。\n\n**冲突判断与交还**\n\n- 多人、多 clone 或多分支协作时，各方可能在未获取目标远端分支最新状态的情况下合法分配相同 `object_id`。\n- Gate 应先刷新或明确验证目标远端 ref 的新鲜度，再将 Index 中的事实对象身份与目标树全局扫描比较。\n- 若同一 ID 已存在且不是同一对象，必须停止受影响提交，报告远端 ref/commit、双方 canonical path、内容指纹与引用差异，交由 Human 决定改号并迁移引用、更新既有对象、拆分/合并或取消。\n\n**边界**\n\n- 不得自动覆盖、静默改号或只等待 merge/push 冲突；无法刷新或证明远端 ref 新鲜时也不得宣称无冲突。\n- 改号必须同步文件名、对象内 `object_id`、`对象自有语义字段`、`自然语言验证说明` 与 `relations` 的相关引用，并完成回读验证。"
+evolution:
+- at: '2026-07-31T22:15:33.620796+08:00'
+  summary: workcase-0022 item-05 归属评估结论：本 Spark 保持 open 另立，workcase-0022 不吸收。评估过程与理由：①问题性质不同——workcase-0022 交付的是本地机械完整性（03 §9.9 暂存事实候选同核校验与 check-fact-integrity 全库扫描），本 Spark 要的是远端 ref 新鲜度证明与 Index 事实对象身份同远端树全局比对，属多人多副本下的跨副本时序问题；②依赖未就位——远端交互在 workcase-0022 禁止项内（03 §12 Human Gate 第 5 项），远端树观察边界尚不存在，纳入会越出该 WorkCase 授权范围；③互补关系——§9.9 的触发分类与 object_id 解析、check-fact-integrity 的全库扫描面，是本 Spark 未来实现应复用而非重建的本地部件。后续在远端观察边界就绪后另行立项推进。
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: workcase
+    object_id: workcase-0022
 object_id: spark-0022
 fact_type_key: spark
 created_at: '2026-07-21T04:10:57.798570+08:00'
-updated_at: '2026-07-23T14:21:35.783731+08:00'
+updated_at: '2026-07-31T22:15:33.814013+08:00'
