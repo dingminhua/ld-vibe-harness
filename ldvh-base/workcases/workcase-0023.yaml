@@ -1,0 +1,199 @@
+title: spark-0039 余项规范收口与形态事实处置
+status: open
+waiting_on: Human 对 plan_version=1 的完整计划、逐项执行授权、插件降级解释、不可逆事实处置与已知未验证边界作 Gate1 决定。
+priority: P1
+goal: 以 spark-0039 正文、evolution 与关系为权威上下文，据实完成余项 3–6，形成每项独立提交和锚定干净 HEAD 的受影响验证证据，走完 WorkCase 结果链并呈交 Gate2；不为收尾关闭证据不足的 spark-0018。
+scope: 只覆盖 specs/00、01、09、30、31、32，canonical skill/SKILL.md，item 4 路由与静态分发回归断言，受影响测试，当前用户级单一物理 Skill 部署件，以及 spark-0039、spark-0029、spark-0018 与本 WorkCase 的 Helper 受控生命周期。确认现行 adr-0006，不新建或改写 ADR。排除遗留插件清理、Codex 配置、MCP、Hook 学说恢复、全量测试、远端、无关并行改动与历史重写；Gate1 只授权推进到完整 Gate2 提案，close-workcase 另候 Gate2 决定。
+success_criterion_definitions:
+- criterion_id: criterion-process
+  statement: 30/31/32 与 01 orientation 一致规定 Helper-only 事实写入、每次事实写后精确回读与完整性审计、mandatory precheck 双层通过，并经 work-context、Helper 回读和正反代表场景验证。
+- criterion_id: criterion-routing
+  statement: 09 §5.3 静态逐字节分发、Skill work-context 首步和 README 第二路由被复核并由 item 4 独立回归测试提交固定；来源漂移时取消而不自动扩写正文。
+- criterion_id: criterion-statements
+  statement: 三条 Gate1 固定能力边界在 specs/00、specs/09、skill/SKILL.md 完全同文，canonical、发行资产和用户部署件的字节关系在声明范围内验证。
+- criterion_id: criterion-shape
+  statement: 确认 adr-0006 为唯一现行形态 ADR；重读仍支持时 spark-0029 discarded、spark-0018 更新证据矩阵且保持 open，遗留插件不物理清理。
+- criterion_id: criterion-spark
+  statement: 只有 items 3–6 提交与验证均成立时 spark-0039 才收口正文、未决、evolution、adr-0006 关系并 implemented；否则保持 open。
+- criterion_id: criterion-evidence
+  statement: item 3–6 各有独立本地提交，每次 precheck 外层 ok 且 mechanical_outcome passed；每次事实写后回读与 integrity；最终验证锚定干净 HEAD，并形成完整 Gate2 材料与未验证范围。
+phase: human_plan_confirming
+plan_version: 1
+work_items:
+- item_id: item-03
+  status: pending
+  goal: 按正式规范修订流程补齐行动模板及 orientation 的过程检查、Helper-only 直写禁令和审计入口。
+  expected_result: 00、01、30、31、32 及消费者断言一致；30 固定 mandatory precheck 双层判定，31/32 固定每次事实写后回读与审计，work-context 实际交付高层禁令与审计路由，并形成独立提交。
+  approach_summary: 每次触碰前重查 specs/31、32，变脏即暂停对应子项。先修权威 specs，独立规范复核和最小责任审查，再同步消费者与代表性正反验证；全库 integrity 不进入普通提交链且不替代 precheck。
+  template_keys:
+  - workcase-approved-plan-execution
+  - git-commit
+- item_id: item-04
+  status: pending
+  goal: 把已成立的静态 Skill 分发、work-context 首步和 README 第二路由固定为回归证据。
+  expected_result: 现有 09 §5.3、09.Att.01、发行链、Skill 与 README 正文不改；只在 code/tests/docs/test_enablement_docs.py 及必要的既有 packaging assertion 增加 targeted 断言并形成独立提交。
+  approach_summary: 执行前重读来源；若漂移或不再覆盖则取消本 item 并结果收敛，不自动扩展到附件、README、发行配置或实现正文。
+  template_keys:
+  - workcase-approved-plan-execution
+  - git-commit
+- item_id: item-05
+  status: pending
+  depends_on:
+  - item-03
+  goal: 将三条固定能力边界完全同文写入根规范、环境规范与 canonical Skill，并重新部署用户 Skill。
+  expected_result: 00 §8.2、09 §5.2、skill/SKILL.md 完全同文；09 明确不是第四职责或规则副本；targeted tests、发行字节和用户部署字节验证后形成独立提交。
+  approach_summary: "固定文本不得改写：\n1. 薄 Skill 对事实写入的保护仅为劝告级：它只能将 AI 路由到 Helper 与行动模板，不能在模型之外机械阻断对 `ldvh-base/` 的直写。\n2. Git Gate 的每一安装实例只覆盖一个实际 Git worktree 中真正触发该 Gate 的 Git 事件；其它 worktree、clone，以及未触发或绕过该 Gate 的行动不在其覆盖范围。\n3. 机械检查能够发现来源已定义的机械不合格，不能据此判断事实内容的语义真实性；即使 Schema 合法，语义污染风险仍然存在，未提交污染窗口只能压缩、不能消除。\n本 item 同样走正式规范修订、独立规范复核、最小责任审查、消费者同步与代表性正反验证。"
+  template_keys:
+  - workcase-approved-plan-execution
+  - environment-integration-installation-verification
+  - git-commit
+- item_id: item-06
+  status: pending
+  depends_on:
+  - item-05
+  goal: 按现行形态决定处置 Hook/插件残留方向并据实评估 spark-0018 终态条件。
+  expected_result: 重读确认 adr-0006 已覆盖薄 Skill 唯一接入、插件/Hook 降出接入面、MCP 暂不做；不重复 ADR；条件仍成立时 spark-0029 discarded，spark-0018 更新证据矩阵且保持 open，写后审计并独立提交。
+  approach_summary: 插件降级仅指 adr-0006 的降出接入面且非可选 guardrail；若 Human 意指 adr-0005 方向则停止。每次 CAS 前重读 fingerprint、直接关系和入向 routed-to；漂移即停。不关闭 spark-0018，不清理遗留插件。
+  template_keys:
+  - workcase-approved-plan-execution
+  - fact-object-lifecycle-change
+  - git-commit
+- item_id: item-spark-0039
+  status: pending
+  depends_on:
+  - item-03
+  - item-04
+  - item-05
+  - item-06
+  goal: 在前四项证据成立后收口 spark-0039 待办 3–6、未决事项与形态关系。
+  expected_result: Helper 精确重读和 CAS 写回 spark-0039；全部证据成立才 implemented，否则 open；写后审计并独立提交。
+  approach_summary: 终态前重查直接与入向关系；implemented 只结束本 Spark，不冒充 spark-0018 的环境行为矩阵已完成。
+  template_keys:
+  - workcase-approved-plan-execution
+  - fact-object-lifecycle-change
+  - git-commit
+creation_reviews:
+- reviewer: /root/creation_reviewer
+  reviewed_at: '2026-08-01T01:45:15+08:00'
+  subject_version: 1
+  scope: 五项 work items、七类授权、三句文本、规范流程、并行隔离、写后审计、提交顺序及 Gate1/Gate2 分界。
+  conclusion: pass
+execution_authorization:
+  authorized_actions:
+  - action_id: authorization-isolation
+    summary: Gate1 后先形成仅含 WorkCase 创建对象的基线提交，再由该锚点建立隔离分支与 linked worktree。
+    target_scope: ldvh-base/workcases/workcase-0023.yaml；codex/spark-0039-closeout；/Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4-spark-0039。
+    effect_scope: 重查主 Index、Working Tree、specs/31、32 后，只暂存/预检/提交本 WorkCase，再新增一个本地分支、worktree 与 Git 元数据；该提交与 item 交付提交分开。
+    risk_summary: 并行变化可能夹带他人改动；新 worktree 的 Git Gate 按 worktree 计，不假定自动继承。
+    rollback_summary: 不能证明候选精确时不提交、不建 worktree并取消受影响 items；已提交内容仅以反向提交恢复，不重写历史。
+    rule_refs:
+    - specs/21-WorkCase-工作项.md
+    - specs/30-Git提交行动模板.md
+    - specs/34-WorkCase获批计划执行行动模板.md
+  - action_id: authorization-rules
+    summary: 按正式规范修订流程修改 item 3/5 的权威 specs、canonical Skill 与直接测试。
+    target_scope: specs/00-理念与构成.md、specs/01-规范模型基础规范.md、specs/09-环境接入规范.md、specs/30-Git提交行动模板.md、specs/31-事实对象判定与受控创建行动模板.md、specs/32-事实对象生命周期变更与承接处置行动模板.md、skill/SKILL.md、code/tests/helper/test_action_template_operation.py、code/tests/work_context/test_work_context.py、code/tests/specs/test_repository.py、code/tests/packaging/test_rule_snapshot.py、code/tests/docs/test_enablement_docs.py。
+    effect_scope: 只写列明规则、Skill 与断言；先规则后消费者，独立规范复核、最小责任审查和正反验证；README 只读。
+    risk_summary: 00 §8.2 命中 Human Gate；措辞可能过细或新增职责；31/32 可能被并行占用。
+    rollback_summary: 按独立提交反向恢复；31/32 变脏即暂停且不覆盖。
+    rule_refs:
+    - specs/00-理念与构成.md
+    - specs/01-规范模型基础规范.md
+    - specs/06-行动模板基础规范.md
+    - specs/09-环境接入规范.md
+  - action_id: authorization-routing-tests
+    summary: 只用回归断言固定 item 4 已成立的静态分发和双路由。
+    target_scope: code/tests/docs/test_enablement_docs.py；仅断言归属确需时 code/tests/packaging/test_distribution_lifecycle.py；README、09、09.Att.01、setup.py、Skill 在本 item 只读。
+    effect_scope: 增加最小 targeted assertions 并形成独立提交，不改规范、附件、README、发行配置或实现正文。
+    risk_summary: 断言可能绑定版式；来源可能漂移。
+    rollback_summary: 测试可反向提交恢复；来源漂移时取消 item，不扩写。
+    rule_refs:
+    - specs/09-环境接入规范.md
+    - specs/attachments/09.Att.01-环境接入面.md
+    - specs/34-WorkCase获批计划执行行动模板.md
+  - action_id: authorization-facts
+    summary: 只经 Helper 更新三个 Spark 与本 WorkCase，并推进本 WorkCase 到完整 Gate2 提案。
+    target_scope: ldvh:spark-0029、spark-0018、spark-0039、workcase-0023；只读 adr-0006、直接关系与入向 routed-to。
+    effect_scope: CAS、状态/正文/evolution/relations、WorkCase item/phase/result/review/proposal 写回；每写后回读和 integrity。Gate1 不授权 close-workcase。
+    risk_summary: spark-0029 discarded 与 spark-0039 implemented 为终态；并行漂移使旧判断失效；机械通过不证明语义真实。
+    rollback_summary: partial/unavailable 保留既成写入并停后续事实写/提交；终态不声明普通可逆。
+    rule_refs:
+    - specs/05-事实模型基础规范.md
+    - specs/20-Spark-灵感.md
+    - specs/21-WorkCase-工作项.md
+    - specs/32-事实对象生命周期变更与承接处置行动模板.md
+  - action_id: authorization-deployment
+    summary: canonical Skill 提交后静态复制到当前用户级单一物理部署件并比较字节。
+    target_scope: /Users/dmh2002/.claude/skills/ldvh/SKILL.md；只读 /Users/dmh2002/.agents/skills/ldvh/SKILL.md symlink；来源 skill/SKILL.md。
+    effect_scope: 仅覆盖该物理 SKILL.md，记录 hash/cmp；不动 ~/.codex/config.toml、ldvh@personal 或其它 Skill。
+    risk_summary: legacy plugin hook 混淆真实递达；当前任务不能证明新 Skill cold-start 加载或隐式选中。
+    rollback_summary: 失败则停并从最后已知提交的 canonical bytes 恢复；不宣称未验证回滚成功。
+    rule_refs:
+    - specs/09-环境接入规范.md
+    - specs/33-环境接入安装部署与验证行动模板.md
+  - action_id: authorization-verification
+    summary: 运行受影响测试、Helper 烟测、integrity 与临时发行物字节比较，并在干净目标 HEAD 复核。
+    target_scope: items 3–6 直接受影响 docs/specs/work-context/Helper/packaging tests、Helper read/check、临时构建目录、目标 HEAD 干净验证 worktree。
+    effect_scope: 只产生测试缓存/临时构建，执行只读检查；不全量测试、不发布、不改远端。
+    risk_summary: 活树结果不能作为最终验证；规则源仍有 7 项 qualification_unproven，cold-start 未验证。
+    rollback_summary: 失败不扩 scope；临时产物明确定位后清理；只引用干净 HEAD 结果。
+    rule_refs:
+    - specs/07-测试策略与验收规范.md
+    - specs/30-Git提交行动模板.md
+    - specs/33-环境接入安装部署与验证行动模板.md
+  - action_id: authorization-reviews-commits
+    summary: 委派只读研究、独立规范/结果复核，并按 item 只提交本任务文件。
+    target_scope: 本 WorkCase items 3–6 的只读 sub-agents、Reviewer 输入、codex/spark-0039-closeout 本地 commits。
+    effect_scope: 按 item 精确 Index；完整 message 强制 precheck，只有 outcome ok 且 mechanical_outcome passed 才 commit；不 push/PR。
+    risk_summary: Index 漂移可夹带他人改动；precheck 后候选变化使结果失效；Reviewer 不替代 Human。
+    rollback_summary: 漂移即停并重做候选；已提交只反向恢复，不 reset/rebase/rewrite。
+    rule_refs:
+    - specs/21-WorkCase-工作项.md
+    - specs/30-Git提交行动模板.md
+    - specs/34-WorkCase获批计划执行行动模板.md
+  action_ceiling: 仅限列明仓库文件、四个事实对象、用户级单一物理 Skill、一个本地分支/worktree、本任务 commits、targeted tests/临时构建和只读委派；无远端、发布、外部消息或其它配置副作用。
+  prohibited_actions:
+  - 覆盖、暂存或提交他人/并行改动。
+  - specs/31 或 specs/32 变脏仍触碰对应子项。
+  - 用通用工具直接写 ldvh-base/。
+  - 新建、修改或退休 ADR，或恢复 adr-0005 可选插件 guardrail。
+  - 关闭、路由或丢弃 spark-0018。
+  - 删除/禁用/修改 ldvh@personal、Codex 配置或其它环境入口。
+  - 实现 MCP、恢复 Hook 学说或扩展环境形态。
+  - 全量测试或用脏树结果作最终验证。
+  - push、PR、发布、外部消息或远端改变。
+  - reset、rebase、force、历史重写或 unstaging 他人变化。
+  - Gate1 后直接 close-workcase；须等待 Gate2。
+  allowed_adjustments: 可在列明目标和副作用上限内调整 targeted tests、item 内提交拆分、临时构建与 Reviewer 委派；验证失败可返修当前 item。不得改变目标、scope、criteria、三句文本、事实处置、写目标、禁止项或上限；PlanΔ 必须 fresh review。
+  verification_and_rollback: 每次事实写后回读并 integrity；partial/unavailable 停后续事实写和提交，但允许回读、报告与 Gate 呈现，不作通过证据。每次 commit 以真实 Index/完整 message precheck，候选变即重跑。最终仅干净 HEAD。仓库以反向提交恢复；Skill 用已知提交 canonical 恢复；终态事实、ID/counter、提交历史不声明完全可逆。
+  out_of_bounds_handling: 出现未授权动作、新风险、漂移、无法分离 Index、31/32 变脏或基线变化时停止受影响行动，保留既成事实，把 item 取消/收敛到结果链；执行期不扩授权。Gate2 只决定是否按完整提案停止。
+  human_prerequisites:
+  - 确认插件降级仅指 adr-0006 的插件/Hook 降出接入面且不是可选 guardrail；若意指 adr-0005 方向则不批准。
+  - 确认条件成立时 spark-0029 discarded、spark-0018 保持 open、spark-0039 才 implemented，并接受终态不声明普通可逆。
+  - 确认三句固定文本、用户 Skill 重部署、本地隔离 worktree 和逐项 commits。
+  - 接受新 Skill cold-start 加载/隐式选中、真实 Git Gate allow/block、卸载和回滚仍未验证，且不能用 legacy plugin hook 冒充。
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0039
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0018
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0029
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: adr
+    object_id: adr-0006
+object_id: workcase-0023
+fact_type_key: workcase
+created_at: '2026-08-01T01:49:52.669999+08:00'
+updated_at: '2026-08-01T01:49:52.669999+08:00'
