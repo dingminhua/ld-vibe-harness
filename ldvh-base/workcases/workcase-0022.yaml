@@ -1,0 +1,168 @@
+title: git Gate 事实机械校验与完整性校验一等化
+status: open
+priority: P1
+phase: human_plan_confirming
+plan_version: 1
+goal: 让 git commit-msg Gate 在 Index 候选包含事实布局内、object_id 合法且有暂存内容的 ldvh-base/ 路径时，对候选事实文件执行与事实读取同核（carriers、validate_fact_object、object_id 与文件名身份核对、内容指纹、大小预算）的机械校验，使 adr-0006 第三条既定的「事实完整性终闸」成立；同时将事实完整性机械校验一等化为 Helper 公开操作并合同化输出，供行动模板与 Skill 引用；在同一边界内完成 spark-0022 多人未同步 ID 冲突 Gate 的合并评估并给出归属结论。
+scope: 覆盖 specs/03 §9 扩展（触发条件、校验层、结果并入 mechanical_outcome/issues、删除与改名状态语义）、specs/05（及必要时 04）公开操作登记、05 校验向 commits 链路投影复用、code/ldvh 的 commits/git_hooks/hooks/helper 与 facts 复用面、双入口同步、相应测试、spark-0022 与 spark-0039 受控写回。分寸约束（2026-07-31 Human 指令，机械承接）：校验严格限于当次 Index 候选中的事实文件；提交链路不做全库或全量验证；不引入全量测试默认要求；AI 侧验证声明按候选范围适度。排除：远端刷新型 ID 冲突 Gate 的实现（只评估归属）；语义审核进 Gate；全库扫描进提交链路；历史 commit 追溯；新增 console 入口与 pyproject 改动；spark-0039 其余待办项；specs/08、web/*、docs/ 并行会话文件；adr-0006 本文。
+success_criterion_definitions:
+- criterion_id: criterion-candidate-fact-validation
+  statement: commit-msg Gate 对 Index 中有暂存内容的合法事实路径触发与事实读取同核校验：invalid 时 failed/block 且诊断精确到文件与失败项；删除、改名出布局不误报；无事实候选时零额外开销（惰性，不投影不读 blob，spy 可判定）。
+- criterion_id: criterion-first-class-integrity
+  statement: 事实完整性机械校验作为 Helper 公开操作在 specs/05 公开操作表登记，capabilities 可发现、可直调、输出合同化，行动模板与 Skill 可引用。
+- criterion_id: criterion-id-conflict-boundary
+  statement: spark-0022 多人未同步 ID 冲突 Gate 归属有明确结论（并入后续或保持 open 另立），其 evolution 补记评估过程。
+- criterion_id: criterion-measured-scope
+  statement: 提交链路（ldvh.commits/hooks/git_hooks）不引入全库扫描，由 import 边界测试机械判定；全库扫描只存在于独立的一等化入口。
+- criterion_id: criterion-same-validator
+  statement: Gate 与事实读取消费同一校验实现，无第二份 schema 解析逻辑；validator 保持纯函数；暂存 blob 由观察层按 Index oid（事件自身 GIT_INDEX_FILE）提供；双入口一致性与投影同步测试通过。
+- criterion_id: criterion-tests-docs
+  statement: specs/03 §9 与 specs/05 登记同钉住测试一致；specs/commits/git_hooks/hooks/helper/facts/docs 受影响测试集通过。
+work_items:
+- item_id: item-01
+  status: pending
+  goal: specs/03 §9 契约扩展：commit-msg Gate 对事实候选的触发条件、校验层、结果并入 mechanical_outcome/issues、删除与改名的状态语义
+  expected_result: §9 扩展文本与钉住测试一致描述新行为
+  approach_summary: 在 §9 增补候选事实校验小节，明确触发（布局内+object_id 合法+有暂存内容）、同核复用边界、删除/改名语义、诊断并入位置
+- item_id: item-02
+  status: pending
+  goal: 校验投影与双入口消费：commits/hooks 共享暂存候选观察，git_hooks 消费
+  expected_result: 同一校验实现被双入口消费；暂存 blob 按 Index oid 读取；validator 纯函数
+  approach_summary: 05 校验逻辑向 commits 链路投影复用（05 正文除操作登记外不修订）；观察层按事件自身 GIT_INDEX_FILE 取 Index oid 读 blob；复用边界钉住 carriers+validate_fact_object+身份核对+指纹+预算，不整体复用 read_fact_object
+  depends_on:
+  - item-01
+- item_id: item-03
+  status: pending
+  goal: 测试向量：八类行为钉住
+  expected_result: invalid block/合法通过/删除改名出布局不误报/改名入布局身份核对/非法 object_id block/无候选零开销 spy/双入口一致/import 边界 全部有测试
+  approach_summary: 在 commits/git_hooks/hooks 测试目录新增用例，import 边界测试钉住提交链路不 import 全库扫描模块
+  depends_on:
+  - item-01
+  - item-02
+- item_id: item-04
+  status: pending
+  goal: 事实完整性机械校验一等化为 Helper 公开操作
+  expected_result: specs/05（及必要时 04）登记；code/ldvh/helper 实现；capabilities 可发现、可直调、输出合同化
+  approach_summary: 形态预先收窄为 Helper 公开操作，不新增 console 入口、不改 pyproject；05 登记操作与字段契约，helper 实现并合同化输出
+  depends_on:
+  - item-02
+- item_id: item-05
+  status: pending
+  goal: spark-0022 多人未同步 ID 冲突 Gate 合并评估
+  expected_result: 归属明确结论（并入后续或保持 open 另立）+ spark-0022 evolution 补记
+  approach_summary: 只评估归属，不实现远端刷新型 Gate；结论经 Helper 受控写回 spark-0022
+- item_id: item-06
+  status: pending
+  goal: 写回与收尾：spark-0039 状态更新与关系补记
+  expected_result: spark-0039 第 1、2 项状态与 routed-to 本 WorkCase 关系受控写回；验证声明按候选范围在结果链自然形成
+  approach_summary: 仅 evolution/待办状态/关系字段，经 Helper 受控通道，写后回读
+  depends_on:
+  - item-03
+  - item-04
+  - item-05
+execution_authorization:
+  authorized_actions:
+  - action_id: authorization-code-implementation
+    summary: 实现校验投影与双入口消费及 Helper 公开操作
+    target_scope: code/ldvh 的 commits/git_hooks/hooks/helper 与 facts 复用面
+    effect_scope: Code 实现
+    risk_summary: staged 读取分层错误导致行为偏差
+    rollback_summary: git 回滚
+    rule_refs:
+    - specs/03 §9
+    - specs/05
+    - specs/07
+  - action_id: authorization-controlled-commit
+    summary: 按 03 契约受控 git 提交本 WorkCase 全部变更
+    target_scope: 本 WorkCase 涉及的 git 提交
+    effect_scope: git 历史
+    risk_summary: 不合规提交被 Gate 拦截
+    rollback_summary: 撤回暂存或新提交修正
+    rule_refs:
+    - specs/03 §9
+  - action_id: authorization-fact-writeback
+    summary: 经 Helper 受控写更新 spark-0022 与 spark-0039
+    target_scope: ldvh-base/sparks/spark-0022.yaml、ldvh-base/sparks/spark-0039.yaml 的 evolution/待办状态/关系字段
+    effect_scope: 事实对象
+    risk_summary: 误改既有摘要语义
+    rollback_summary: 事实更正操作
+    rule_refs:
+    - specs/05
+    - specs/20
+  - action_id: authorization-spec03-extension
+    summary: 修订 specs/03 §9 及相应钉住测试
+    target_scope: specs/03 §9 与 code/tests/specs 相关钉住测试
+    effect_scope: 规范文本与测试
+    risk_summary: 波及既有 message 钉住测试
+    rollback_summary: git 回滚
+    rule_refs:
+    - specs/03 §9
+    - specs/21 §6.5
+    - specs/07
+  - action_id: authorization-spec05-registration
+    summary: specs/05（及必要时 04）登记公开操作与字段契约
+    target_scope: specs/05 公开操作表、必要时 specs/04
+    effect_scope: 规范文本
+    risk_summary: 公开操作表约束严格，登记不合规被拒
+    rollback_summary: git 回滚
+    rule_refs:
+    - specs/05 §11
+    - specs/04
+  - action_id: authorization-tests-run
+    summary: 新增更新受影响测试并运行受影响测试目录
+    target_scope: code/tests 的 specs/commits/git_hooks/hooks/helper/facts/docs
+    effect_scope: 测试代码与本地测试结果
+    risk_summary: 测试组织不当漏钉行为
+    rollback_summary: git 回滚
+    rule_refs:
+    - specs/07
+  action_ceiling: 仅上述六类授权动作；测试限受影响目录，不做全量；不新增 console 入口、不改 pyproject；单次运行内 goal/scope/criteria 与授权基线冻结。
+  prohibited_actions:
+  - 全库扫描进入提交链路
+  - 把全量测试当作默认验证要求
+  - 远端交互（fetch/push/PR/发布）
+  - 修改 specs/08 及其附件、web/*、docs/ 并行会话文件
+  - 修改 adr-0006 本文
+  - 静默修复校验暴露的既有事实合规问题
+  - 实现远端刷新型 ID 冲突 Gate
+  - 承接 spark-0039 其余待办项
+  allowed_adjustments: 基线内可调整实现方法、测试组织、操作命名、字段措辞、item 内步骤顺序、重试与重新委派；PlanΔ 需 fresh 独立复核并按 §6.5 升版；不得改 goal/scope/criteria/动作上限/风险接受/禁止项。
+  verification_and_rollback: 验证声明按候选范围适度（分寸约束）：item 局部验证材料加受影响测试集通过为准；事实写回经受控通道写后回读；Code 与规范 git 回滚、事实以更正操作回退。
+  out_of_bounds_handling: 不执行超界动作、不请求第三次确认；据实取消受影响 item 并保留已形成事实；全部 terminal 后按结果链安全收敛。
+creation_reviews:
+- reviewer: 独立 Reviewer：explore subagent（agent-6，与本会话 Controller 相互独立）
+  reviewed_at: '2026-07-31T20:40:00+08:00'
+  subject_version: 1
+  scope: 计划全文对照 specs/21 §4.3/§4.4/§6.5、specs/03 §9.5-9.8、specs/05 §11、specs/04，并实读 code/ldvh 相关实现验证可行性
+  conclusion: changes_required
+  feedback:
+  - F1（blocker）item-04 形态越授权包：一等化操作若新增 console 入口或改 pyproject 超出当前授权，需预先收窄为 Helper 公开操作并将 specs/05（及必要时 04）与 code/ldvh/helper 补入授权包
+  - F2（blocker）criterion-measured-scope 与一等化冲突：提交链路禁全库扫描与一等化入口需全库扫描并存时边界不清，须改写为提交链路不引入全库扫描（import 边界测试机械判定）、全库扫描只存于独立一等化入口
+  - F3（major）事实写回未入授权包：spark-0022/0039 写回需显式 authorized_action
+  - F4（major）staged 读取分层：暂存 blob 应按 Index oid（事件自身 GIT_INDEX_FILE）读取，validator 保持纯函数，复用边界钉住 carriers+validate_fact_object+身份核对+指纹+预算，不整体复用 read_fact_object（其读工作树）
+  - F5（major）staged 状态分类缺失：触发应收窄为有暂存内容，删除/改名/非法 object_id 需测试向量
+  - F6（minor）Schema 投影需惰性：无事实候选时不得投影或读 blob，spy 可判定
+  - F7（minor）depends_on 缺失：应显式编码 02→01；03→01,02；04→02；05→02；06→03,04,05
+  - F8（minor）item-06 应锚定 spark-0039 写回并补 routed-to 关系
+  controller_resolution: F1 接受：item-04 形态预先收窄为 Helper 公开操作（不新增 console 入口、不改 pyproject），specs/05（及必要时 04）与 code/ldvh/helper 补入授权包，item-02 写明 05 正文除操作登记外不修订。F2 接受：criterion-measured-scope 改写为提交链路不引入全库扫描、import 边界测试机械判定、全库扫描只存于独立一等化入口。F3 接受：authorization-fact-writeback 入包。F4 接受：暂存 blob 按 Index oid（事件自身 GIT_INDEX_FILE）读取、validator 保持纯函数、复用边界钉住 carriers+validate_fact_object+身份核对+指纹+预算，不整体复用 read_fact_object。F5 接受：触发收窄为有暂存内容，删除/改名/非法 object_id 测试向量入 item-03。F6 接受：惰性投影入 criterion-candidate-fact-validation。F7 接受：depends_on 显式编码。F8 接受：item-06 锚定 spark-0039 写回并补 routed-to 关系。全部发现已处置完毕，计划相应修订后提交受控创建。
+waiting_on: Human Gate1 执行批准：确认需求、计划与完整执行授权包（execution_authorization 六项动作、动作上限、禁止项与超界处置）
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0039
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0022
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: adr
+    object_id: adr-0006
+object_id: workcase-0022
+fact_type_key: workcase
+created_at: '2026-07-31T20:45:29.773167+08:00'
+updated_at: '2026-07-31T20:45:29.773167+08:00'
