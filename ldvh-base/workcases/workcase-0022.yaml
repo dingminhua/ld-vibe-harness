@@ -43,19 +43,20 @@ work_items:
   - item-02
   result_summary: 八类测试向量已落地并提交（e2898304d）：validator 六例、观察层五例（含零候选 spy 与 Index oid 防篡改）、双入口端到端四例（诊断逐一相等）、import 边界机械判定两例；commits+hooks+git_hooks 111、helper 操作 15、validator 26 全过
 - item_id: item-04
-  status: in_progress
+  status: completed
   goal: 事实完整性机械校验一等化为 Helper 公开操作
   expected_result: specs/05（及必要时 04）登记；code/ldvh/helper 实现；capabilities 可发现、可直调、输出合同化
   approach_summary: 形态预先收窄为 Helper 公开操作，不新增 console 入口、不改 pyproject；05 登记操作与字段契约，helper 实现并合同化输出
   depends_on:
   - item-02
-  current_summary: item-04 实际开始：测试基线就绪，下一步把事实完整性机械校验一等化为 Helper 公开操作（05 登记 + helper 实现 + 合同化输出），形态不新增 console 入口、不改 pyproject
-  resume_from: 从 specs/05 §11 公开操作表与 code/ldvh/helper 操作注册机制出发，复用 facts/content.py 同核与既有 testing/fact_integrity 全库扫描面，登记并实现完整性校验公开操作
+  result_summary: 事实完整性机械检查已一等化为 Helper 公开操作并提交（57a7bf897）：05 §11 登记 check-fact-integrity + §11.9/§11.10 字段契约，helper 实现复用同核与既有全库扫描面，结果合同化；capabilities 可发现可直调，真实库 complete（92 对象）；操作测试 5 例与钉住同步全过
 - item_id: item-05
-  status: pending
+  status: in_progress
   goal: spark-0022 多人未同步 ID 冲突 Gate 合并评估
   expected_result: 归属明确结论（并入后续或保持 open 另立）+ spark-0022 evolution 补记
   approach_summary: 只评估归属，不实现远端刷新型 Gate；结论经 Helper 受控写回 spark-0022
+  current_summary: item-05 实际开始：Gate 与一等化入口均已就位，下一步评估 spark-0022（多人未同步 ID 冲突 Gate）归属——并入后续或保持 open 另立，并补记 evolution
+  resume_from: 对照 spark-0022 的适用范围/冲突判断/边界与 adr-0006、§9.9、check-fact-integrity 现状，形成归属结论并经 Helper 受控写回 spark-0022 evolution
 - item_id: item-06
   status: pending
   goal: 写回与收尾：spark-0039 状态更新与关系补记
@@ -176,4 +177,4 @@ execution_approval:
 object_id: workcase-0022
 fact_type_key: workcase
 created_at: '2026-07-31T20:45:29.773167+08:00'
-updated_at: '2026-07-31T21:42:41.455233+08:00'
+updated_at: '2026-07-31T22:07:29.375135+08:00'
