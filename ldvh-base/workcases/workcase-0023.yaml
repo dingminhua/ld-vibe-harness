@@ -20,16 +20,15 @@ phase: executing
 plan_version: 1
 work_items:
 - item_id: item-03
-  status: blocked
+  status: in_progress
   goal: 按正式规范修订流程补齐行动模板及 orientation 的过程检查、Helper-only 直写禁令和审计入口。
   expected_result: 00、01、30、31、32 及消费者断言一致；30 固定 mandatory precheck 双层判定，31/32 固定每次事实写后回读与审计，work-context 实际交付高层禁令与审计路由，并形成独立提交。
   approach_summary: 每次触碰前重查 specs/31、32，变脏即暂停对应子项。先修权威 specs，独立规范复核和最小责任审查，再同步消费者与代表性正反验证；全库 integrity 不进入普通提交链且不替代 precheck。
   template_keys:
   - workcase-approved-plan-execution
   - git-commit
-  current_summary: Gate1 批准与单文件提交已形成；item-03 尚未修改任何规则或测试。并行 FileAsset 工作流已完成实现与回归，但 specs/31、32 及其本包仍未暂存、未提交。
-  blocking_summary: Human 明确禁止在 specs/31、32 仍有并行未提交改动时触碰或提交对应子项；当前所有权冲突仍成立，无法建立包含该并行成果的干净隔离基线。
-  resume_from: 由并行 FileAsset 工作流自行形成可识别提交后，重新核对 HEAD、空 Index 与 specs/31、32 clean；再从该提交建立获批隔离 worktree，按正式规范修订流程继续 item-03。
+  current_summary: 并行 FileAsset 交付已在提交 68fb5d9e9 形成；主 Index 为空且 specs/31、32 clean。已从该提交建立 codex/spark-0039-closeout 隔离 worktree，并通过 Helper 重读行动模板、spark-0039 与当前 WorkCase；item-03 正式恢复实施。
+  resume_from: 继续正式规范修订：精确读取 00、01、06、09 与 30/31/32 的适用来源，先修权威规则，再做独立规范复核、最小责任审查、消费者同步、代表性正反验证与独立提交。
 - item_id: item-04
   status: pending
   goal: 把已成立的静态 Skill 分发、work-context 首步和 README 第二路由固定为回归证据。
@@ -205,4 +204,4 @@ execution_approval:
 object_id: workcase-0023
 fact_type_key: workcase
 created_at: '2026-08-01T01:49:52.669999+08:00'
-updated_at: '2026-08-01T02:29:32.152594+08:00'
+updated_at: '2026-08-01T02:41:56.054268+08:00'
