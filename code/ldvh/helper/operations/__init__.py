@@ -19,6 +19,8 @@ from ldvh.helper.operations.commit_precheck_operation import COMMIT_PRECHECK_IMP
 from ldvh.helper.operations.commit_precheck_operation import OPERATION_KEY as COMMIT_PRECHECK_OPERATION_KEY
 from ldvh.helper.operations.fact_candidate_operation import FACT_CANDIDATE_IMPLEMENTATION
 from ldvh.helper.operations.fact_candidate_operation import OPERATION_KEY as FACT_CANDIDATE_OPERATION_KEY
+from ldvh.helper.operations.fact_integrity_operation import FACT_INTEGRITY_IMPLEMENTATION
+from ldvh.helper.operations.fact_integrity_operation import OPERATION_KEY as FACT_INTEGRITY_OPERATION_KEY
 from ldvh.helper.operations.fact_creation_operation import (
     CREATE_FACT_OBJECT_IMPLEMENTATION,
     CREATE_OPERATION_KEY,
@@ -69,6 +71,7 @@ IMPLEMENTATIONS = MappingProxyType[str, OperationImplementation](
         COMMIT_PRECHECK_OPERATION_KEY: COMMIT_PRECHECK_IMPLEMENTATION,
         CREATE_OPERATION_KEY: CREATE_FACT_OBJECT_IMPLEMENTATION,
         FACT_CANDIDATE_OPERATION_KEY: FACT_CANDIDATE_IMPLEMENTATION,
+        FACT_INTEGRITY_OPERATION_KEY: FACT_INTEGRITY_IMPLEMENTATION,
         FACT_OBJECT_OPERATION_KEY: FACT_OBJECT_IMPLEMENTATION,
         FACT_UPDATE_OPERATION_KEY: FACT_UPDATE_IMPLEMENTATION,
         GOVERNANCE_SCOPE_OPERATION_KEY: GOVERNANCE_SCOPE_IMPLEMENTATION,

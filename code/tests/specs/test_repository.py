@@ -70,6 +70,7 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
     )
     assert inspection.unchecked_conditions == UNCHECKED_CONDITIONS
     assert [declaration.operation_key for declaration in operations.candidate_declarations] == [
+        "check-fact-integrity",
         "close-workcase",
         "correct-closed-workcase",
         "create-fact-object",
@@ -90,6 +91,7 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
         declaration.operation_key: declaration.source.path for declaration in operations.candidate_declarations
     }
     assert declaration_sources == {
+        "check-fact-integrity": "specs/05-事实模型基础规范.md",
         "close-workcase": "specs/21-WorkCase-工作项.md",
         "correct-closed-workcase": "specs/21-WorkCase-工作项.md",
         "create-fact-object": "specs/05-事实模型基础规范.md",
