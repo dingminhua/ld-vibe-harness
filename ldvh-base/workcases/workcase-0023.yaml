@@ -38,7 +38,7 @@ work_items:
   - git-commit
   result_summary: 提交 279e8c5f5 以单一跨来源回归测试固定 09 §5.3 静态逐字节分发、Skill 的 work-context 首步与 README 的 Helper 双调用及 specs/、ldvh-base/ 第二路由；规范、附件、Skill、README 与发行实现正文未改。干净 HEAD 的 docs 与发行资产选择集 5 passed；当前规则源仍有 7 项资格条件未由 Code 机械证明，真实环境加载与递达不在本 item 验证范围。
 - item_id: item-05
-  status: in_progress
+  status: completed
   depends_on:
   - item-03
   goal: 将三条固定能力边界完全同文写入根规范、环境规范与 canonical Skill，并重新部署用户 Skill。
@@ -48,10 +48,9 @@ work_items:
   - workcase-approved-plan-execution
   - environment-integration-installation-verification
   - git-commit
-  current_summary: item-03 前置已完成，Gate1 批准的三条固定文本保持原文；正在按正式规范修订流程重读 00 §8.2、09 §5.2/§5.3 与 canonical Skill，确定三处完全同文且不形成第四职责或第二规则源的最小承载。
-  resume_from: 将三条固定文本逐字写入 specs/00、specs/09 与 skill/SKILL.md，先规则后消费者同步 targeted assertions 与 work-context 交付，再完成独立规范复核、干净 HEAD 验证、独立提交和用户 Skill 静态重部署。
+  result_summary: 提交 88ce080a2 已将三条固定能力边界在 00、09 与 canonical Skill 完全同文，并保持三职责与非第二规则源边界；干净 HEAD 受影响选择集 12 passed，Helper 规则及 work-context 黑盒回读、独立规范复核均通过。用户级物理 Skill 已静态重部署，canonical、.claude 部署件与 .agents symlink 视图 SHA-256 均为 965691514d8c1eccc3d328b784796c63b3e8b134893b5532cfc78f389503ab31；Doctor 为 ready。新会话冷启动加载、隐式选中、真实 Git Gate allow/block 和 7 项当前规则源资格条件仍未验证。
 - item_id: item-06
-  status: pending
+  status: in_progress
   depends_on:
   - item-05
   goal: 按现行形态决定处置 Hook/插件残留方向并据实评估 spark-0018 终态条件。
@@ -61,6 +60,8 @@ work_items:
   - workcase-approved-plan-execution
   - fact-object-lifecycle-change
   - git-commit
+  current_summary: Human 已确认插件降级按 adr-0006 解释、不得新建或改写 ADR、spark-0018 保持 open 且不清理 legacy plugin；正在经 Helper 精确重读 adr-0006、spark-0029、spark-0018 及直接/入向关系，核实既有形态决定和状态前置。
+  resume_from: 完成 adr-0006 与两个 Spark 的精确回读、关系和入向 routed-to 检查；若现状仍支持，则保持 spark-0029 discarded 不重写，只经 Helper 更新 spark-0018 的现状证据矩阵并保持 open，写后审计、预检并独立提交。
 - item_id: item-spark-0039
   status: pending
   depends_on:
@@ -206,4 +207,4 @@ execution_approval:
 object_id: workcase-0023
 fact_type_key: workcase
 created_at: '2026-08-01T01:49:52.669999+08:00'
-updated_at: '2026-08-01T03:01:41.244487+08:00'
+updated_at: '2026-08-01T03:08:00.798152+08:00'
