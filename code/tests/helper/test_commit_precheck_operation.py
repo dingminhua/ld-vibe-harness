@@ -311,3 +311,97 @@ def test_non_governed_target_is_unavailable_not_a_false_mechanical_result(tmp_pa
     assert result.response["result"] is None
     assert result.response["scope"]["completed"] == []
     assert result.response["scope"]["not_completed"]
+
+
+# -- specs 03 §9.9 staged fact-candidate layer, both entrypoints ------------
+
+_FACT_PATH = "ldvh-base/sparks/spark-0001.yaml"
+_VALID_SPARK = (
+    "title: 测试火花\n"
+    "intent: 验证提交边界事实候选机械校验\n"
+    "status: open\n"
+    "priority: P1\n"
+    "summary: 测试摘要\n"
+    "object_id: spark-0001\n"
+    "fact_type_key: spark\n"
+    "created_at: '2026-07-01T00:00:00+08:00'\n"
+    "updated_at: '2026-07-01T00:00:00+08:00'\n"
+)
+
+
+def _stage_fact(project: Path, content: str, path: str = _FACT_PATH) -> None:
+    target = project / path
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(content, encoding="utf-8")
+    _git(project, "add", path)
+
+
+def test_invalid_staged_fact_candidate_blocks_both_entrypoints(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    _stage_fact(project, "title: 只有标题\n")
+    _git(project, "reset", "-q", "change.txt")
+    message = "test: 验证非法事实候选拦截"
+
+    helper = handle_request("call", "precheck-git-commit", _payload(workspace, project, message))
+    gate = _gate(workspace, project, message)
+
+    assert helper.exit_code == 0
+    assert helper.response["outcome"] == "ok"
+    assert helper.response["result"]["mechanical_outcome"] == gate.outcome == "failed"
+    codes = {item["code"] for item in helper.response["result"]["issues"]}
+    assert codes == {"fact_candidate_invalid"}
+    assert all(_FACT_PATH in item["message"] for item in helper.response["result"]["issues"])
+    assert _helper_issues_as_gate_diagnostics(helper.response) == gate.issues
+
+
+def test_valid_staged_fact_candidate_passes_both_entrypoints(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    _stage_fact(project, _VALID_SPARK)
+    _git(project, "reset", "-q", "change.txt")
+    message = "test: 验证合法事实候选通过"
+
+    helper = handle_request("call", "precheck-git-commit", _payload(workspace, project, message))
+    gate = _gate(workspace, project, message)
+
+    assert helper.exit_code == 0
+    assert helper.response["result"]["mechanical_outcome"] == gate.outcome == "passed"
+    assert helper.response["result"]["issues"] == []
+    assert helper.response["result"]["candidate"]["paths"] == [_FACT_PATH]
+
+
+def test_illegal_object_id_filename_blocks_both_entrypoints(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    _stage_fact(project, _VALID_SPARK, path="ldvh-base/sparks/not-a-spark.yaml")
+    _git(project, "reset", "-q", "change.txt")
+    message = "test: 验证非法 object_id 拦截"
+
+    helper = handle_request("call", "precheck-git-commit", _payload(workspace, project, message))
+    gate = _gate(workspace, project, message)
+
+    assert helper.exit_code == 0
+    assert helper.response["result"]["mechanical_outcome"] == gate.outcome == "failed"
+    codes = {item["code"] for item in helper.response["result"]["issues"]}
+    assert codes == {"fact_object_id_invalid"}
+    assert _helper_issues_as_gate_diagnostics(helper.response) == gate.issues
+
+
+def test_no_fact_candidate_means_no_schema_projection(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from ldvh.commits import precheck as commit_precheck
+
+    workspace, project = _fixture(tmp_path)
+    monkeypatch.setattr(
+        commit_precheck,
+        "project_fact_schemas",
+        lambda *args, **kwargs: pytest.fail("无事实候选不得形成事实 Schema 投影"),
+    )
+    message = "test: 验证零事实候选惰性"
+
+    helper = handle_request("call", "precheck-git-commit", _payload(workspace, project, message))
+    gate = _gate(workspace, project, message)
+
+    assert helper.exit_code == 0
+    assert helper.response["result"]["mechanical_outcome"] == gate.outcome == "passed"
+    assert helper.response["result"]["issues"] == []

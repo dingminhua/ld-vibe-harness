@@ -306,3 +306,111 @@ def test_git_read_failure_is_unverifiable(tmp_path: Path, monkeypatch: pytest.Mo
     assert observed.outcome == "unverifiable"
     assert observed.validation_input is None
     assert observed.issues[0].stage == "git_process"
+
+
+# -- specs 03 §9.9 staged fact-candidate observation ------------------------
+
+_SPARK_PATH = "ldvh-base/sparks/spark-0001.yaml"
+_SPARK_BYTES = (
+    "object_id: spark-0001\n"
+    "fact_type_key: spark\n"
+    "title: 测试火花\n"
+    "status: open\n"
+    "priority: P1\n"
+    "created_at: 2026-07-01T00:00:00+08:00\n"
+    "updated_at: 2026-07-01T00:00:00+08:00\n"
+).encode("utf-8")
+
+
+def _stage_file(repository: Path, path: str, content: bytes = _SPARK_BYTES) -> None:
+    target = repository / path
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_bytes(content)
+    _git(repository, "add", path)
+
+
+def _observe(repository: Path, message: str = "feat: 观察事实候选") -> git_adapter.CommitCandidateObservation:
+    return git_adapter.observe_commit_candidate(
+        locator=".", base=repository, message=message, contract=_contract(), governance=_governance(repository)
+    )
+
+
+def test_staged_fact_candidate_blob_is_read_by_index_oid(tmp_path: Path) -> None:
+    repository = _repository(tmp_path / "repository")
+    _stage_file(repository, _SPARK_PATH)
+    (repository / _SPARK_PATH).write_bytes(b"tampered working tree content\n")
+
+    observed = _observe(repository)
+
+    assert observed.outcome == "observed"
+    assert len(observed.fact_candidates) == 1
+    candidate = observed.fact_candidates[0]
+    assert candidate.path == _SPARK_PATH
+    assert candidate.fact_type_key == "spark"
+    assert candidate.object_id == "spark-0001"
+    assert candidate.data == _SPARK_BYTES
+    assert candidate.observation_issue is None
+    assert observed.validation_input is not None
+    assert observed.validation_input.fact_candidates == observed.fact_candidates
+
+
+def test_deleted_fact_path_is_skipped_without_false_positive(tmp_path: Path) -> None:
+    repository = _repository(tmp_path / "repository")
+    _stage_file(repository, _SPARK_PATH)
+    _git(repository, "commit", "-qm", "test: 建立事实基线")
+    _git(repository, "rm", "-q", _SPARK_PATH)
+
+    observed = _observe(repository)
+
+    assert observed.outcome == "observed"
+    assert observed.candidate_paths == (_SPARK_PATH,)
+    assert observed.fact_candidates == ()
+
+
+def test_rename_out_of_layout_is_not_a_fact_candidate(tmp_path: Path) -> None:
+    repository = _repository(tmp_path / "repository")
+    _stage_file(repository, _SPARK_PATH)
+    _git(repository, "commit", "-qm", "test: 建立事实基线")
+    _git(repository, "mv", _SPARK_PATH, "spark-0001.yaml")
+
+    observed = _observe(repository)
+
+    assert observed.outcome == "observed"
+    assert set(observed.candidate_paths) == {_SPARK_PATH, "spark-0001.yaml"}
+    assert observed.fact_candidates == ()
+
+
+def test_rename_into_layout_is_observed_through_new_path(tmp_path: Path) -> None:
+    repository = _repository(tmp_path / "repository")
+    _stage_file(repository, "drafts/spark-0001.yaml")
+    _git(repository, "commit", "-qm", "test: 建立布局外基线")
+    (repository / "ldvh-base/sparks").mkdir(parents=True)
+    _git(repository, "mv", "drafts/spark-0001.yaml", _SPARK_PATH)
+
+    observed = _observe(repository)
+
+    assert observed.outcome == "observed"
+    assert len(observed.fact_candidates) == 1
+    candidate = observed.fact_candidates[0]
+    assert candidate.path == _SPARK_PATH
+    assert candidate.object_id == "spark-0001"
+    assert candidate.data == _SPARK_BYTES
+
+
+def test_no_fact_candidate_means_no_blob_read_and_no_index_map(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repository = _repository(tmp_path / "repository")
+    _stage_file(repository, "plain.txt", b"plain\n")
+    monkeypatch.setattr(
+        git_adapter, "_index_blob_map", lambda *args, **kwargs: pytest.fail("无事实候选不得解析 Index blob 映射")
+    )
+    monkeypatch.setattr(
+        git_adapter, "_read_staged_blob", lambda *args, **kwargs: pytest.fail("无事实候选不得读取暂存 blob")
+    )
+
+    observed = _observe(repository)
+
+    assert observed.outcome == "observed"
+    assert observed.fact_candidates == ()

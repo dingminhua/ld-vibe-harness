@@ -5,7 +5,8 @@ from pathlib import Path
 import pytest
 
 from ldvh.commits.contract_source import CommitContractProjection
-from ldvh.commits.validation import CommitValidationInput, validate_commit
+from ldvh.commits.validation import CommitValidationInput, StagedFactCandidate, validate_commit
+from ldvh.facts.schema import FactSchema, ProjectedField
 
 
 @pytest.fixture
@@ -146,3 +147,125 @@ def test_validator_does_not_read_git_or_filesystem(contract: CommitContractProje
     result = validate_commit(contract, _input(contract, git_worktree_root=str(missing_worktree)))
 
     assert result.outcome == "passed"
+
+
+# -- specs 03 §9.9 staged fact-candidate layer -----------------------------
+
+
+def _spark_schema() -> FactSchema:
+    def field(path: str, presence: str = "required") -> ProjectedField:
+        return ProjectedField(path, "string", presence, None, "test-registry")
+
+    return FactSchema(
+        "spark",
+        (
+            field("object_id"),
+            field("fact_type_key"),
+            field("title"),
+            field("status"),
+            field("priority"),
+            field("created_at"),
+            field("updated_at"),
+            field("summary", "conditional"),
+        ),
+    )
+
+
+_VALID_SPARK = (
+    "object_id: spark-0001\n"
+    "fact_type_key: spark\n"
+    "title: 测试火花\n"
+    "status: open\n"
+    "priority: P1\n"
+    "created_at: 2026-07-01T00:00:00+08:00\n"
+    "updated_at: 2026-07-01T00:00:00+08:00\n"
+).encode("utf-8")
+
+
+def _fact_candidate(**changes: object) -> StagedFactCandidate:
+    values: dict[str, object] = {
+        "path": "ldvh-base/sparks/spark-0001.yaml",
+        "fact_type_key": "spark",
+        "object_id": "spark-0001",
+        "data": _VALID_SPARK,
+        "observation_issue": None,
+    }
+    values.update(changes)
+    return StagedFactCandidate(**values)  # type: ignore[arg-type]
+
+
+def test_invalid_staged_fact_candidate_fails_with_path_precise_diagnostics(
+    contract: CommitContractProjection,
+) -> None:
+    candidate = _fact_candidate(data="title: 只有标题\n".encode("utf-8"))
+
+    result = validate_commit(
+        contract,
+        _input(contract, fact_candidates=(candidate,), fact_schemas=(_spark_schema(),)),
+    )
+
+    assert result.outcome == "failed"
+    assert "fact_candidate_invalid" in _codes(result)
+    assert all(candidate.path in issue.message for issue in result.issues)
+    assert any("缺少必填字段" in issue.message for issue in result.issues)
+
+
+def test_valid_staged_fact_candidate_passes(contract: CommitContractProjection) -> None:
+    result = validate_commit(
+        contract,
+        _input(contract, fact_candidates=(_fact_candidate(),), fact_schemas=(_spark_schema(),)),
+    )
+
+    assert result.outcome == "passed"
+    assert result.issues == ()
+
+
+def test_illegal_object_id_filename_fails_without_reading_blob(
+    contract: CommitContractProjection,
+) -> None:
+    candidate = _fact_candidate(path="ldvh-base/sparks/not-a-spark.yaml", object_id=None, data=None)
+
+    result = validate_commit(
+        contract,
+        _input(contract, fact_candidates=(candidate,), fact_schemas=(_spark_schema(),)),
+    )
+
+    assert result.outcome == "failed"
+    assert _codes(result) == {"fact_object_id_invalid"}
+    assert candidate.path in result.issues[0].message
+
+
+def test_fact_candidate_observation_gap_is_unverifiable(contract: CommitContractProjection) -> None:
+    candidate = _fact_candidate(data=None, observation_issue="Git staged blob read failed")
+
+    result = validate_commit(
+        contract,
+        _input(contract, fact_candidates=(candidate,), fact_schemas=(_spark_schema(),)),
+    )
+
+    assert result.outcome == "unverifiable"
+    assert "fact_candidate_unverifiable" in _codes(result)
+
+
+def test_missing_fact_schema_projection_is_unverifiable(contract: CommitContractProjection) -> None:
+    result = validate_commit(
+        contract,
+        _input(contract, fact_candidates=(_fact_candidate(),), fact_schemas=()),
+    )
+
+    assert result.outcome == "unverifiable"
+    assert _codes(result) == {"fact_schema_unavailable"}
+
+
+def test_object_id_identity_mismatch_fails(contract: CommitContractProjection) -> None:
+    mismatched = _VALID_SPARK.replace(b"spark-0001", b"spark-0002")
+    candidate = _fact_candidate(data=mismatched)
+
+    result = validate_commit(
+        contract,
+        _input(contract, fact_candidates=(candidate,), fact_schemas=(_spark_schema(),)),
+    )
+
+    assert result.outcome == "failed"
+    assert "fact_candidate_invalid" in _codes(result)
+    assert any("object_id" in issue.message and "不一致" in issue.message for issue in result.issues)
