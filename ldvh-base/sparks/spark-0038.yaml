@@ -1,15 +1,28 @@
 title: 补齐 WorkCase 执行编排与事实类型行动入口
 intent: 需要稳定保留 WorkCase 获批计划的执行编排：存在跨检查点推进或恢复价值时，先据实写回工作项状态再继续实施；局部结果在同一稳定检查点形成时，保留直接完成例外。并判断五类事实对象如何更清楚地复用统一创建与生命周期模板而不复制规则。若不跨行动保留，执行者仍可能绕过 21 已定义的检查点直接实施，或为改善可发现性拆出重复模板，增加状态失真、规则漂移和接续复核负担。
-status: open
-priority: P1
+status: routed
 relations:
 - relation_key: related-to
   target:
     governed_project_id: ldvh
     fact_type_key: spark
     object_id: spark-0008
-summary: "**已确认的偏差与职责边界**\n\n- `workcase-0017` 已出现实现与测试先行、对应工作项仍保持 `pending` 的偏差；这不是 Web 投影问题。21 已定义 `pending → in_progress` 的开始条件和检查点写回，也允许局部结果在无需持久化中间状态的同一稳定检查点直接 `pending → completed`；执行编排必须同时保留两条边界。\n- 现有 `fact-object-controlled-creation` 与 `fact-object-lifecycle-change` 已分别承接五类事实对象的通用创建和生命周期变更，不应为五种类型复制成十份模板。\n- `spark-0008` 继续判断 WorkCase 稳定状态是否足以作为控制面且不变成调度器；本议题只聚焦“获批计划如何被执行者可靠落实”以及行动模板如何被清楚选中，两者相关但不重复。\n\n**WorkCase 专用执行编排候选**\n\n- 评估新增一个专用行动模板（候选 key：`workcase-approved-plan-execution`），组织：精确读取当前 WorkCase 与执行批准、识别依赖已满足的工作项、当工作存在跨检查点推进或恢复价值时，在实质实施开始即先据实写入并回读 `in_progress / current_summary / resume_from`，随后执行有界工作并按检查点写回；局部结果可在同一稳定检查点形成时，保留 21 的 `pending → completed` 窄例外。\n- 模板还应覆盖 `in_progress → blocked/completed`、阶段切换、主控自检、独立结果复核、主控收敛、Human Gate、压缩或换会话后的恢复与交还；它只组织顺序和分支，不复制 21 的字段、状态机或事实语义。\n- 每次事实变更继续复用 `fact-object-lifecycle-change` 与已有 Helper/CAS 能力；模板不得成为调度器，也不得把代码存在、测试通过或子 Agent 返回自动解释为工作项已开始、完成或 WorkCase 可关闭。\n\n**平行优化**\n\n- 在 20–24 各类型规范加入简短一致的“行动入口”指引：创建指向 31，既有对象更新和生命周期变更指向 32，类型专属 Gate 与条件仍回到本类型规范；只建立引用，不复制步骤。\n- 收敛 31/32 的声明摘要、场景选择说明和 Helper 候选呈现，使执行者能按“对象是否已存在、是否单对象、是否涉及 WorkCase 获批计划执行”选择入口；候选只帮助定位，不替 AI 判断适用性。\n- 增加五类事实对象的模板候选与引用一致性测试，以及 WorkCase 执行回归样例：工作项仍为 `pending` 时不得把后续实现宣称为该项执行；开始写回、阻塞恢复、完成写回、阶段推进和跨会话恢复均须覆盖。\n- `work_items[].template_keys` 只在计划实际选择相应模板时登记稳定 key；它不表示模板已适用、已执行或工作已完成，也不新增模板运行记录。\n- 复核 Skill、环境工作上下文和文档入口是否经 Helper 交付当前模板引用，避免复制提示词形成第二规则源；Pitfall 的专属分支先保留在通用生命周期模板内，只有重复事实证明独立编排价值时再考虑拆分。\n\n**进展分组呈现同步**\n\n- `progress_group` 不是 WorkCase 生命周期、`status`、`phase` 或 YAML 字段；行动编排只按 21 受控推进并回读真实 `status / phase`，Web 随后从该新快照确定性派生 `plan_confirmation / progressing / closure_confirmation / closed`，不得回写分组或在前端乐观猜测。\n- 需要评估并建立已打开页面的变化交付机制：事实文件经 Helper 成功写入后，列表 Card 必须从旧分组移出并进入新分组；分组计数、详情头部、Dashboard 与认知中心应从同一新快照同步更新，不应要求 Human 手动刷新才看见进展变化。实现可以比较文件监听加 SSE、受控轮询与显式刷新信号，但必须如实呈现延迟、断连和降级边界。\n- 同属 `progressing` 的内部 phase 变化只更新当前环节，不制造新分组；`status=blocked` 继续保留所属 phase 分组并另行表达阻塞。测试须覆盖四组迁移、推进中内部环节变化、blocked 保组、旧筛选移除/新筛选出现、聚合计数同步及页面保持打开时的更新。\n\n**仍待判断**\n\n- 专用模板应由 21 直接授权还是由新的行动模板规范承载，以及与 30–32 的组合和退出边界。\n- 仅靠规范入口与候选摘要能否解决可发现性，还是需要新增不越过 AI 适用性判断的类型化筛选。\n- 如何用 `workcase-0017` 偏差构造可重复验收，同时不把当前未获批准的修正动作写成既定方案或自动更新该 WorkCase。"
+- relation_key: routed-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: workcase
+    object_id: workcase-0018
+- relation_key: routed-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: workcase
+    object_id: workcase-0019
+summary: "**承接结果**\n\n- `workcase-0018` 完整承接获批计划执行编排与行动入口：建立唯一的 WorkCase 获批计划执行模板，保留跨检查点先写回和同一稳定检查点窄例外，维持 31/32 的通用创建与生命周期入口，并验证 Helper 能交付模板及 Web 从当前权威快照派生进展。\n- `workcase-0019` 完整承接生命周期关口防误建模：明确 Controller 自检、独立结果复核、关闭准备与 Human 关闭决定不得成为 work item；执行模板在消费计划前检查，命中后停止未来执行并回到计划修订，同时以真实坏计划固定负例。\n- 两个目标共同覆盖原 Spark 的执行编排、类型行动入口、检查点恢复、复核/关闭关口和呈现同步边界；没有未分流内容。与 `spark-0008` 的普通 `related-to` 只保留控制面主题相关性，不承担本次承接。\n\n**处置边界**\n\n本分流不表示任一未来 WorkCase 自动执行或关闭；两个目标后续生命周期也不反向改变本次已经成立的承接。"
+disposition_summary: '`workcase-0018` 承接获批计划执行模板、20–24 行动入口、Helper 模板交付与当前快照进展呈现；`workcase-0019` 承接生命周期关口不进入 work item、命中后计划修订和负例验证。两者共同完整覆盖原 Spark，现有 `related-to → spark-0008` 仅为主题关系；没有残余内容。'
+evolution:
+- at: '2026-08-01T01:58:26+08:00'
+  summary: 两个已验证 WorkCase 已分别收敛执行编排/行动入口和生命周期关口防误建模，原先合并的候选方案现已由稳定事实对象共同完整承接。
 object_id: spark-0038
 fact_type_key: spark
 created_at: '2026-07-29T20:18:25.325818+08:00'
-updated_at: '2026-07-29T22:57:17.948047+08:00'
+updated_at: '2026-08-01T02:02:01.556246+08:00'
