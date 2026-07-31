@@ -20,17 +20,20 @@ success_criterion_definitions:
   statement: specs/03 §9 与 specs/05 登记同钉住测试一致；specs/commits/git_hooks/hooks/helper/facts/docs 受影响测试集通过。
 work_items:
 - item_id: item-01
-  status: pending
+  status: completed
   goal: specs/03 §9 契约扩展：commit-msg Gate 对事实候选的触发条件、校验层、结果并入 mechanical_outcome/issues、删除与改名的状态语义
   expected_result: §9 扩展文本与钉住测试一致描述新行为
   approach_summary: 在 §9 增补候选事实校验小节，明确触发（布局内+object_id 合法+有暂存内容）、同核复用边界、删除/改名语义、诊断并入位置
+  result_summary: specs/03 §9.9 事实候选机械校验契约已建立并提交（4ccad7397）：触发/跳过判定、Index blob 观察边界、validator 纯函数与惰性投影、同核复用边界、结果并入与删除/改名语义全部入账；§9.5/9.8/§10/§11 同步接入；受影响测试 201 项通过
 - item_id: item-02
-  status: pending
+  status: in_progress
   goal: 校验投影与双入口消费：commits/hooks 共享暂存候选观察，git_hooks 消费
   expected_result: 同一校验实现被双入口消费；暂存 blob 按 Index oid 读取；validator 纯函数
   approach_summary: 05 校验逻辑向 commits 链路投影复用（05 正文除操作登记外不修订）；观察层按事件自身 GIT_INDEX_FILE 取 Index oid 读 blob；复用边界钉住 carriers+validate_fact_object+身份核对+指纹+预算，不整体复用 read_fact_object
   depends_on:
   - item-01
+  current_summary: item-02 实际开始：§9.9 契约已就位，下一步实读 commits/candidate_index、git_hooks/commit_msg、hooks/commit_msg 与 facts 校验同核，设计暂存候选观察与同核校验投影
+  resume_from: 从 §9.9 契约文本出发，对照 code/ldvh/commits（validation/precheck/candidate_index）、git_hooks/commit_msg、hooks/commit_msg 双入口与 code/ldvh/facts（carriers、validation、repository）确定复用边界与投影点
 - item_id: item-03
   status: pending
   goal: 测试向量：八类行为钉住
@@ -171,4 +174,4 @@ execution_approval:
 object_id: workcase-0022
 fact_type_key: workcase
 created_at: '2026-07-31T20:45:29.773167+08:00'
-updated_at: '2026-07-31T20:54:50.715761+08:00'
+updated_at: '2026-07-31T21:01:56.292115+08:00'
