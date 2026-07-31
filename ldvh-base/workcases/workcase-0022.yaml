@@ -51,14 +51,13 @@ work_items:
   - item-02
   result_summary: 事实完整性机械检查已一等化为 Helper 公开操作并提交（57a7bf897）：05 §11 登记 check-fact-integrity + §11.9/§11.10 字段契约，helper 实现复用同核与既有全库扫描面，结果合同化；capabilities 可发现可直调，真实库 complete（92 对象）；操作测试 5 例与钉住同步全过
 - item_id: item-05
-  status: in_progress
+  status: completed
   goal: spark-0022 多人未同步 ID 冲突 Gate 合并评估
   expected_result: 归属明确结论（并入后续或保持 open 另立）+ spark-0022 evolution 补记
   approach_summary: 只评估归属，不实现远端刷新型 Gate；结论经 Helper 受控写回 spark-0022
-  current_summary: item-05 实际开始：Gate 与一等化入口均已就位，下一步评估 spark-0022（多人未同步 ID 冲突 Gate）归属——并入后续或保持 open 另立，并补记 evolution
-  resume_from: 对照 spark-0022 的适用范围/冲突判断/边界与 adr-0006、§9.9、check-fact-integrity 现状，形成归属结论并经 Helper 受控写回 spark-0022 evolution
+  result_summary: spark-0022 归属评估已完成并提交（0d6d4834c）：结论为保持 open 另立、本 WorkCase 不吸收。已追加 evolution 记录评估过程与三条理由（问题性质不同——本 WorkCase 交付本地机械完整性而 spark-0022 属跨副本时序问题；远端交互依赖未就位且在禁止项内；§9.9 与 check-fact-integrity 为其未来实现应复用的本地部件），并建立 related-to → workcase-0022 关系。
 - item_id: item-06
-  status: pending
+  status: in_progress
   goal: 写回与收尾：spark-0039 状态更新与关系补记
   expected_result: spark-0039 第 1、2 项状态与 routed-to 本 WorkCase 关系受控写回；验证声明按候选范围在结果链自然形成
   approach_summary: 仅 evolution/待办状态/关系字段，经 Helper 受控通道，写后回读
@@ -66,6 +65,8 @@ work_items:
   - item-03
   - item-04
   - item-05
+  current_summary: item-06 实际开始：spark-0022 已写回并提交（0d6d4834c），下一步读取 spark-0039 确认待办项字段形状后受控写回状态与 routed-to 关系
+  resume_from: 先 read-fact-objects 读取 spark-0039 确认其待办项是结构化字段还是正文内嵌，再按实际形状构造 update-fact-object 写回
 execution_authorization:
   authorized_actions:
   - action_id: authorization-code-implementation
@@ -177,4 +178,4 @@ execution_approval:
 object_id: workcase-0022
 fact_type_key: workcase
 created_at: '2026-07-31T20:45:29.773167+08:00'
-updated_at: '2026-07-31T22:07:29.375135+08:00'
+updated_at: '2026-07-31T22:18:00.599613+08:00'
