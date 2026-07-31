@@ -448,6 +448,29 @@ export interface CognitionPitfallInboxItem extends CognitionInboxItemBase {
 
 export type CognitionInboxItem = CognitionWorkCaseInboxItem | CognitionPitfallInboxItem;
 
+/** 近期动态是对当前事实身份与时间字段的派生标记，不承载提交记录或字段级 diff。 */
+export type CognitionRecentActivityWindow = '1d' | '3d' | '7d' | '14d';
+export type CognitionRecentActivityKind = 'created' | 'updated';
+
+export interface CognitionRecentActivityItem {
+  id: string;
+  type: string;
+  title: string;
+  title_en?: string;
+  title_zh?: string;
+  activity: CognitionRecentActivityKind;
+  occurredAt: string;
+  relativeTime: string;
+  typeColor: string;
+  priority?: string;
+  /** WorkCase 只携带派生 progress_group；其它对象携带自身当前状态。 */
+  progress_group?: WorkCaseProgressGroup;
+  status?: string;
+  read_status: string;
+  field_issues?: FieldIssue[];
+  unparsed_structures?: UnparsedStructure[];
+}
+
 export interface CognitionIssue {
   section: string;
   code: string;
@@ -455,16 +478,23 @@ export interface CognitionIssue {
   object_ref?: string;
 }
 
-/** 第一期只交付模块一；模块二~五字段整体省略（Q8）。 */
 export interface CognitionData {
   generatedAt: string;
   scope: { governedProjectId: string };
   inbox: { items: CognitionInboxItem[]; total: number };
+  recentActivity: {
+    window: CognitionRecentActivityWindow;
+    windowStart: string;
+    items: CognitionRecentActivityItem[];
+    total: number;
+  };
   issues?: CognitionIssue[];
 }
 
-export async function fetchCognition(locale?: string): Promise<CognitionData> {
-  const params = locale ? `?locale=${locale}` : '';
+export async function fetchCognition(locale?: string, window: CognitionRecentActivityWindow = '1d'): Promise<CognitionData> {
+  const search = new URLSearchParams({ window });
+  if (locale) search.set('locale', locale);
+  const params = `?${search.toString()}`;
   return request<CognitionData>(`/cognition${params}`);
 }
 

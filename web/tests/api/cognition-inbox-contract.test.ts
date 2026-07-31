@@ -1,10 +1,10 @@
 /**
- * 项目认知中心第一期：GET /api/cognition 收件箱契约测试。
+ * 项目认知中心：GET /api/cognition 收件箱与近期动态契约测试。
  *
- * 以当前治理范围解析出的受管辖工作树（事实源）运行，断言 02 §8 第一期的四个字段
- * （generatedAt / scope / inbox / issues）、待决收录与排序、命名纪律
+ * 以当前治理范围解析出的受管辖工作树（事实源）运行，断言 02 §8 当前已交付字段
+ * （generatedAt / scope / inbox / recentActivity / issues）、待决收录与排序、命名纪律
  * （WorkCase 的两个 Human Gate progress_group，加上 Pitfall 的 draft 待确认）、
- * 内联对象卡片依据、条件 canonical_path 与模块二~五省略。
+ * 内联对象卡片依据、条件 canonical_path，以及近期动态的窗口与时间标记。
  *
  * 断言以“不依赖具体对象身份的不变式”为主：无论事实源是本仓库还是预览工作树，
  * 收录 / 排序 / 命名 / 投影规则都必须确定性成立。
@@ -31,8 +31,8 @@ after(async () => {
   })
 })
 
-async function cognition(locale = 'zh') {
-  const response = await fetch(`${baseUrl}/api/cognition?locale=${locale}`)
+async function cognition(locale = 'zh', window = '1d') {
+  const response = await fetch(`${baseUrl}/api/cognition?locale=${locale}&window=${window}`)
   assert.equal(response.status, 200)
   assert.match(response.headers.get('cache-control') ?? '', /no-store/)
   return (await response.json()) as Record<string, unknown>
@@ -72,7 +72,7 @@ function expectedInboxKind(item: Record<string, unknown>): string | null {
   return null
 }
 
-test('cognition endpoint returns the Phase-1 contract shape with observation time', async () => {
+test('cognition endpoint returns inbox and recent-activity contract shapes with observation time', async () => {
   const body = await cognition('zh')
 
   assert.match(String(body.generatedAt), RFC3339)
@@ -83,10 +83,49 @@ test('cognition endpoint returns the Phase-1 contract shape with observation tim
   const inbox = body.inbox as Record<string, unknown>
   assert.ok(Array.isArray(inbox.items))
   assert.equal(typeof inbox.total, 'number')
-  // 模块二~五字段按 Q8 整体省略（第一期只交付模块一 + §5 信任标记）。
+  assert.ok(body.recentActivity && typeof body.recentActivity === 'object')
+  const recent = body.recentActivity as Record<string, unknown>
+  assert.equal(recent.window, '1d')
+  assert.match(String(recent.windowStart), RFC3339)
+  assert.ok(Array.isArray(recent.items))
+  assert.equal(recent.total, (recent.items as unknown[]).length)
+  // 当前只新增“近期动态”；其余尚未建设的模块仍整体省略。
   for (const moduleKey of ['whileAway', 'timeline', 'sparkHealth', 'direction']) {
-    assert.equal(moduleKey in body, false, `Phase 1 must omit ${moduleKey}`)
+    assert.equal(moduleKey in body, false, `not-yet-built module must omit ${moduleKey}`)
   }
+})
+
+test('recent activity accepts only explicit windows and marks current fact objects by created_at or updated_at', async () => {
+  for (const window of ['1d', '3d', '7d', '14d']) {
+    const body = await cognition('zh', window)
+    const recent = body.recentActivity as Record<string, unknown>
+    assert.equal(recent.window, window)
+    const items = recent.items as Array<Record<string, unknown>>
+    const expected = items.slice().sort((a, b) => {
+      const at = String(a.occurredAt)
+      const bt = String(b.occurredAt)
+      if (at !== bt) return at > bt ? -1 : 1
+      if (a.activity !== b.activity) return a.activity === 'updated' ? -1 : 1
+      return `${a.type}:${a.id}`.localeCompare(`${b.type}:${b.id}`)
+    })
+    assert.deepEqual(items.map((item) => `${item.activity}:${item.type}:${item.id}:${item.occurredAt}`), expected.map((item) => `${item.activity}:${item.type}:${item.id}:${item.occurredAt}`))
+    for (const item of items) {
+      assert.ok(['workcase', 'adr', 'pitfall', 'spark', 'study'].includes(String(item.type)))
+      assert.ok(['created', 'updated'].includes(String(item.activity)))
+      assert.match(String(item.occurredAt), RFC3339)
+      assert.equal(typeof item.relativeTime, 'string')
+      assert.equal(typeof item.typeColor, 'string')
+      if (item.type === 'workcase') {
+        assert.equal('status' in item, false)
+      } else {
+        assert.equal(typeof item.status, 'string')
+        assert.equal('progress_group' in item, false)
+      }
+    }
+  }
+
+  const response = await fetch(`${baseUrl}/api/cognition?locale=zh&window=30d`)
+  assert.equal(response.status, 400)
 })
 
 test('inbox collects only decision-baseline items with a deterministic sort order', async () => {

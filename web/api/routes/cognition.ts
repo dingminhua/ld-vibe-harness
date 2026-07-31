@@ -1,8 +1,9 @@
 /**
- * Cognition API 路由：聚合项目认知中心第一期的待决定事项收件箱。
+ * Cognition API 路由：聚合项目认知中心的待决定事项与近期动态。
  *
- * 第一期只交付模块一（待决定事项）+ §5 全局信任标记所需的派生字段：
- * generatedAt（观察时间）、scope、inbox（WorkCase Human Gate 与 Pitfall draft 审核的派生收录与排序）、issues（模块级降级）。
+ * 已交付模块一（待决定事项）与模块二（近期动态）+ §5 全局信任标记所需的派生字段：
+ * generatedAt（观察时间）、scope、inbox（WorkCase Human Gate 与 Pitfall draft 审核的派生收录与排序）、
+ * recentActivity（指定窗口内事实对象的创建 / 更新标记）与 issues（模块级降级）。
  * 数据经 Web 字段级直读（localFactReader / facts.ts 的 listObjects），不复用 /api/dashboard 聚合逻辑。
  *
  * 命名纪律（02 §7 第 3 条）：WorkCase 条目只携带 progress_group；待决类型 inboxKind
@@ -10,7 +11,7 @@
  */
 
 import { Router, type Request, type Response } from 'express'
-import { listObjects } from '../services/facts.js'
+import { listObjects, type ObjectType } from '../services/facts.js'
 import { deriveWorkCaseProgressProjection, type WorkCaseProgressGroup } from '../../shared/workcaseStatus.js'
 import { ProjectScopeError, requestProject } from '../services/requestScope.js'
 import { getRelativeTime } from '../services/time.js'
@@ -20,6 +21,15 @@ const router = Router()
 
 type InboxKind = 'plan_confirmation' | 'closure_confirmation' | 'pitfall_confirmation'
 type InboxObjectType = 'workcase' | 'pitfall'
+type RecentActivityKind = 'created' | 'updated'
+type RecentActivityWindow = '1d' | '3d' | '7d' | '14d'
+
+const RECENT_ACTIVITY_WINDOWS: Record<RecentActivityWindow, number> = {
+  '1d': 1,
+  '3d': 3,
+  '7d': 7,
+  '14d': 14,
+}
 
 type CognitionIssue = { section: string; code: string; message: string; object_ref?: string }
 
@@ -57,6 +67,22 @@ interface InboxBuildItem {
   field_issues: Array<Record<string, unknown>>
   unparsed_structures: Array<Record<string, unknown>>
   read_issues: Array<Record<string, unknown>>
+}
+
+interface RecentActivityBuildItem {
+  type: ObjectType
+  object_id: string
+  title: string
+  title_en?: string
+  title_zh?: string
+  activity: RecentActivityKind
+  occurred_at: string
+  status?: string
+  progress_group?: WorkCaseProgressGroup
+  priority?: string
+  read_status: string
+  field_issues: Array<Record<string, unknown>>
+  unparsed_structures: Array<Record<string, unknown>>
 }
 
 /** P0=0 … P3=3；缺失或非法落 4（排最后，并省略优先级信号）。 */
@@ -103,16 +129,72 @@ function toIssue(record: Record<string, unknown>): CognitionIssue {
   }
 }
 
+function parseRecentActivityWindow(value: unknown): RecentActivityWindow | null {
+  if (value === undefined || value === '') return '1d'
+  return typeof value === 'string' && value in RECENT_ACTIVITY_WINDOWS
+    ? value as RecentActivityWindow
+    : null
+}
+
+function timestampInWindow(value: unknown, start: number, end: number): value is string {
+  if (typeof value !== 'string') return false
+  const timestamp = Date.parse(value)
+  return Number.isFinite(timestamp) && timestamp >= start && timestamp <= end
+}
+
+function compareRecentActivity(a: RecentActivityBuildItem, b: RecentActivityBuildItem): number {
+  if (a.occurred_at !== b.occurred_at) return a.occurred_at > b.occurred_at ? -1 : 1
+  if (a.activity !== b.activity) return a.activity === 'updated' ? -1 : 1
+  if (a.type !== b.type) return a.type.localeCompare(b.type)
+  return a.object_id.localeCompare(b.object_id)
+}
+
+function buildRecentActivityItem(
+  raw: Record<string, unknown>,
+  type: ObjectType,
+  activity: RecentActivityKind,
+  occurredAt: string,
+): RecentActivityBuildItem {
+  const object_id = String(raw.object_id ?? '')
+  const status = String(raw.status ?? 'unknown')
+  const phase = typeof raw.phase === 'string' ? raw.phase : undefined
+  const progressGroup = type === 'workcase'
+    ? deriveWorkCaseProgressProjection(status, phase)?.progressGroup ?? undefined
+    : undefined
+  return {
+    type,
+    object_id,
+    title: String(raw.title ?? object_id),
+    ...(typeof raw.title_en === 'string' ? { title_en: raw.title_en } : {}),
+    ...(typeof raw.title_zh === 'string' ? { title_zh: raw.title_zh } : {}),
+    activity,
+    occurred_at: occurredAt,
+    ...(type === 'workcase' ? { progress_group: progressGroup } : { status }),
+    ...(priorityRank(raw.priority) < 4 && typeof raw.priority === 'string' ? { priority: raw.priority } : {}),
+    read_status: String(raw.read_status ?? 'unknown'),
+    field_issues: Array.isArray(raw.field_issues) ? raw.field_issues as Array<Record<string, unknown>> : [],
+    unparsed_structures: Array.isArray(raw.unparsed_structures) ? raw.unparsed_structures as Array<Record<string, unknown>> : [],
+  }
+}
+
 router.get('/', async (req: Request, res: Response): Promise<void> => {
   const generatedAt = new Date().toISOString()
   try {
     const locale = String(req.query.locale || 'zh')
+    const recentWindow = parseRecentActivityWindow(req.query.window)
+    if (recentWindow === null) {
+      res.status(400).json({ ok: false, error: 'Unsupported recent activity window' })
+      return
+    }
     const project = await requestProject(req)
     const factScope = { worktreeLocator: project.path, governedProjectId: project.id }
 
-    const [workCaseResult, pitfallResult] = await Promise.all([
+    const [workCaseResult, pitfallResult, adrResult, sparkResult, studyResult] = await Promise.all([
       listObjects('workcase', undefined, undefined, factScope),
       listObjects('pitfall', undefined, undefined, factScope),
+      listObjects('adr', undefined, undefined, factScope),
+      listObjects('spark', undefined, undefined, factScope),
+      listObjects('study', undefined, undefined, factScope),
     ])
     const issues: CognitionIssue[] = []
     const builds: InboxBuildItem[] = []
@@ -173,6 +255,38 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
 
     builds.sort(compareInbox)
 
+    const recentStart = new Date(generatedAt).getTime() - RECENT_ACTIVITY_WINDOWS[recentWindow] * 24 * 60 * 60 * 1000
+    const recentBuilds: RecentActivityBuildItem[] = []
+    const recentSources: Array<[ObjectType, typeof workCaseResult]> = [
+      ['workcase', workCaseResult],
+      ['pitfall', pitfallResult],
+      ['adr', adrResult],
+      ['spark', sparkResult],
+      ['study', studyResult],
+    ]
+    for (const [type, source] of recentSources) {
+      if (!source.ok || !('data' in source)) {
+        const message = source.ok ? `${type} 列表读取失败` : (source as { error: string }).error
+        issues.push({ section: 'recentActivity', code: `${type}_list_unavailable`, message })
+        continue
+      }
+      const sourceData = source.data as { items: Array<Record<string, unknown>>; collection_issues?: Array<Record<string, unknown>> }
+      for (const issue of Array.isArray(sourceData.collection_issues) ? sourceData.collection_issues : []) {
+        issues.push({ ...toIssue(issue), section: 'recentActivity' })
+      }
+      for (const raw of sourceData.items) {
+        const createdAt = raw.created_at
+        const updatedAt = raw.updated_at
+        if (timestampInWindow(createdAt, recentStart, Date.parse(generatedAt))) {
+          recentBuilds.push(buildRecentActivityItem(raw, type, 'created', createdAt))
+        }
+        if (timestampInWindow(updatedAt, recentStart, Date.parse(generatedAt)) && updatedAt !== createdAt) {
+          recentBuilds.push(buildRecentActivityItem(raw, type, 'updated', updatedAt))
+        }
+      }
+    }
+    recentBuilds.sort(compareRecentActivity)
+
     const items = builds.map((build) => {
       const card = Object.fromEntries(
         Object.entries(build.projection).filter(([key]) => !IDENTITY_PROJECTION_KEYS.has(key)),
@@ -203,10 +317,35 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       return entry
     })
 
+    const recentItems = recentBuilds.map((build) => ({
+      type: build.type,
+      id: build.object_id,
+      title: build.title,
+      ...(build.title_en !== undefined ? { title_en: build.title_en } : {}),
+      ...(build.title_zh !== undefined ? { title_zh: build.title_zh } : {}),
+      activity: build.activity,
+      occurredAt: build.occurred_at,
+      relativeTime: getRelativeTime(build.occurred_at, locale),
+      typeColor: getTypeColor(build.type),
+      ...(build.priority !== undefined ? { priority: build.priority } : {}),
+      ...(build.type === 'workcase' && build.progress_group !== undefined
+        ? { progress_group: build.progress_group }
+        : build.type !== 'workcase' && build.status !== undefined ? { status: build.status } : {}),
+      read_status: build.read_status,
+      ...(build.field_issues.length > 0 ? { field_issues: build.field_issues } : {}),
+      ...(build.unparsed_structures.length > 0 ? { unparsed_structures: build.unparsed_structures } : {}),
+    }))
+
     res.json({
       generatedAt,
       scope: { governedProjectId: project.id },
       inbox: { items, total: items.length },
+      recentActivity: {
+        window: recentWindow,
+        windowStart: new Date(recentStart).toISOString(),
+        items: recentItems,
+        total: recentItems.length,
+      },
       ...(issues.length > 0 ? { issues } : {}),
     })
   } catch (err) {
