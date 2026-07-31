@@ -7,6 +7,9 @@ from dataclasses import dataclass
 from typing import Literal
 
 from ldvh.commits.contract_source import CommitContractProjection
+from ldvh.facts.content import validate_fact_content
+from ldvh.facts.contracts import LAYOUTS
+from ldvh.facts.schema import FactSchema
 
 _HEADER = re.compile(r"^(?P<type>[a-z]+)(?:\((?P<scope>[a-z]+)\))?(?P<breaking>!)?: (?P<description>.+)$")
 _CJK = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff]")
@@ -22,6 +25,23 @@ SEMANTIC_CHECKS_REQUIRED = (
 
 
 @dataclass(frozen=True, slots=True)
+class StagedFactCandidate:
+    """One staged candidate inside a fact layout, observed per specs 03 §9.9.
+
+    ``object_id`` is ``None`` when the file name cannot parse into a legal
+    object_id; ``data`` carries the staged blob bytes read by the observation
+    layer from the bound Index; ``observation_issue`` records why the staged
+    content could not be observed.
+    """
+
+    path: str
+    fact_type_key: str
+    object_id: str | None
+    data: bytes | None
+    observation_issue: str | None
+
+
+@dataclass(frozen=True, slots=True)
 class CommitValidationInput:
     message: str | None
     candidate_paths: tuple[str, ...] | None
@@ -31,6 +51,8 @@ class CommitValidationInput:
     snapshot_identity: str | None
     source_path: str | None
     source_fingerprint: str | None
+    fact_candidates: tuple[StagedFactCandidate, ...] = ()
+    fact_schemas: tuple[FactSchema, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -89,6 +111,57 @@ def _heading_has_list(body_lines: list[str], heading: str) -> bool:
     return False
 
 
+def _fact_layer(
+    value: CommitValidationInput,
+) -> tuple[list[CommitValidationIssue], list[CommitValidationIssue]]:
+    """Validate staged fact candidates through the single shared content core.
+
+    Returns ``(unavailable, failures)``: observation or schema-projection gaps
+    make the layer unverifiable, mechanically invalid content fails it.  The
+    function performs no I/O; schemas and blob bytes are caller-supplied.
+    """
+
+    unavailable: list[CommitValidationIssue] = []
+    failures: list[CommitValidationIssue] = []
+    schemas = {schema.fact_type_key: schema for schema in value.fact_schemas}
+    for candidate in value.fact_candidates:
+        if candidate.object_id is None:
+            failures.append(
+                _issue("fact_object_id_invalid", f"事实候选文件名不能解析为合法 object_id: {candidate.path}")
+            )
+            continue
+        if candidate.observation_issue is not None or candidate.data is None:
+            detail = candidate.observation_issue or "暂存内容缺失"
+            unavailable.append(
+                _issue("fact_candidate_unverifiable", f"事实候选暂存内容无法可信观察: {candidate.path}: {detail}")
+            )
+            continue
+        schema = schemas.get(candidate.fact_type_key)
+        layout = LAYOUTS.get(candidate.fact_type_key)
+        if schema is None or layout is None:
+            unavailable.append(
+                _issue("fact_schema_unavailable", f"事实 Schema 投影未形成，无法校验候选: {candidate.path}")
+            )
+            continue
+        result = validate_fact_content(layout, schema, candidate.object_id, candidate.data)
+        if result.check_status == "unavailable":
+            unavailable.extend(
+                _issue("fact_candidate_unverifiable", f"事实候选无法完成机械校验: {candidate.path}: {item.summary}")
+                for item in result.issues
+            )
+            continue
+        if result.check_status == "invalid":
+            failures.extend(
+                _issue(
+                    "fact_candidate_invalid",
+                    f"事实候选机械无效: {candidate.path}: [{item.category}] {item.summary}"
+                    + (f"（{item.field_path}）" if item.field_path else ""),
+                )
+                for item in result.issues
+            )
+    return unavailable, failures
+
+
 def validate_commit(contract: CommitContractProjection, value: CommitValidationInput) -> CommitValidationResult:
     """Validate only the deterministic subset; never reads Git or the filesystem."""
 
@@ -114,6 +187,8 @@ def validate_commit(contract: CommitContractProjection, value: CommitValidationI
         unavailable.append(_issue("source_fingerprint_mismatch", "输入来源指纹与契约投影不一致"))
     if value.candidate_paths is not None:
         unavailable.extend(_path_issues(value.candidate_paths))
+    fact_unavailable, fact_failures = _fact_layer(value)
+    unavailable.extend(fact_unavailable)
     if unavailable:
         return CommitValidationResult(
             "unverifiable",
@@ -163,10 +238,10 @@ def validate_commit(contract: CommitContractProjection, value: CommitValidationI
                     failures.append(_issue("key_changes_required", "body 必须含关键变更列表"))
                 if breaking and not _heading_has_list(body_lines, "影响边界:"):
                     failures.append(_issue("impact_boundary_required", "使用 ! 时必须含影响边界列表"))
-    outcome: Literal["passed", "failed", "unverifiable"] = "failed" if failures else "passed"
+    outcome: Literal["passed", "failed", "unverifiable"] = "failed" if failures or fact_failures else "passed"
     return CommitValidationResult(
         outcome,
-        tuple(failures),
+        tuple(failures + fact_failures),
         normalized,
         header,
         body,
@@ -181,5 +256,6 @@ __all__ = [
     "CommitValidationIssue",
     "CommitValidationResult",
     "SEMANTIC_CHECKS_REQUIRED",
+    "StagedFactCandidate",
     "validate_commit",
 ]

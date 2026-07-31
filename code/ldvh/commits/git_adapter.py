@@ -10,7 +10,9 @@ from pathlib import Path
 from typing import Literal
 
 from ldvh.commits.contract_source import CommitContractProjection
-from ldvh.commits.validation import CommitValidationInput
+from ldvh.commits.validation import CommitValidationInput, StagedFactCandidate
+from ldvh.facts.content import MAX_FACT_BYTES
+from ldvh.facts.contracts import LAYOUTS
 from ldvh.governance.git import isolated_git_environment, resolve_git_identity, windows_path_problem
 from ldvh.governance.models import GovernanceScopeResult, ObjectStatus, ScopeStatus
 
@@ -32,6 +34,7 @@ class CommitCandidateObservation:
     issues: tuple[CommitCandidateObservationIssue, ...]
     candidate_paths: tuple[str, ...]
     snapshot_identity: str | None
+    fact_candidates: tuple[StagedFactCandidate, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -93,24 +96,129 @@ def _snapshot(
     worktree: Path,
     *,
     index_file: Path | None = None,
-) -> tuple[str, CommitCandidateObservationIssue | None]:
+) -> tuple[str, bytes, CommitCandidateObservationIssue | None]:
     head_result = _run_git(worktree, ("rev-parse", "--verify", "-q", "HEAD^{tree}"))
     if isinstance(head_result, CommitCandidateObservationIssue):
-        return "", head_result
+        return "", b"", head_result
     if head_result.returncode == 0:
         head = head_result.stdout.strip() + b"\0"
     elif head_result.returncode == 1 and not head_result.stdout and not head_result.stderr:
         head = _UNBORN_HEAD
     else:
         details = (head_result.stderr or head_result.stdout).decode("utf-8", errors="replace").strip()
-        return "", _issue("git_process", f"Git HEAD tree read failed: {details or head_result.returncode}")
+        return "", b"", _issue("git_process", f"Git HEAD tree read failed: {details or head_result.returncode}")
     index = _successful(
         _run_git(worktree, ("ls-files", "--stage", "-z"), index_file=index_file),
         "Index",
     )
     if isinstance(index, CommitCandidateObservationIssue):
-        return "", index
-    return f"sha256:{hashlib.sha256(head + index).hexdigest()}", None
+        return "", b"", index
+    return f"sha256:{hashlib.sha256(head + index).hexdigest()}", index, None
+
+
+def _index_blob_map(index: bytes) -> tuple[dict[str, str], CommitCandidateObservationIssue | None]:
+    """Parse ``ls-files --stage -z`` bytes into a path → blob oid map."""
+
+    try:
+        entries = index.decode("utf-8").split("\0")
+    except UnicodeDecodeError:
+        return {}, _issue("git_output", "Git Index listing is not valid UTF-8")
+    mapping: dict[str, str] = {}
+    for entry in entries:
+        if not entry:
+            continue
+        meta, separator, path = entry.partition("\t")
+        if not separator or not path:
+            return {}, _issue("git_output", "Git returned malformed Index stage listing")
+        parts = meta.split(" ")
+        if len(parts) != 3 or not parts[1]:
+            return {}, _issue("git_output", "Git returned malformed Index stage metadata")
+        mapping[path] = parts[1]
+    return mapping, None
+
+
+def _classify_fact_path(path: str) -> tuple[str, str | None] | None:
+    """Return ``(fact_type_key, object_id|None)`` for an in-layout path.
+
+    ``object_id`` is ``None`` when the file name cannot parse into the layout's
+    legal object_id shape; paths outside every fact layout return ``None``.
+    """
+
+    for layout in LAYOUTS.values():
+        prefix = f"{layout.directory}/"
+        if not path.startswith(prefix) or not path.endswith(layout.suffix):
+            continue
+        object_id = path[len(prefix) : -len(layout.suffix)]
+        if not object_id or "/" in object_id:
+            return None
+        if layout.object_id_pattern.fullmatch(object_id) is None:
+            return layout.fact_type_key, None
+        return layout.fact_type_key, object_id
+    return None
+
+
+def _read_staged_blob(
+    worktree: Path,
+    oid: str,
+    *,
+    index_file: Path | None = None,
+) -> tuple[bytes | None, str | None]:
+    """Read one content-addressed blob from the bound Index observation."""
+
+    size = _successful(
+        _run_git(worktree, ("cat-file", "-s", oid), index_file=index_file),
+        "staged blob size",
+    )
+    if isinstance(size, CommitCandidateObservationIssue):
+        return None, size.message
+    try:
+        byte_count = int(size.strip())
+    except ValueError:
+        return None, "Git returned a non-numeric staged blob size"
+    if byte_count > MAX_FACT_BYTES:
+        return None, f"暂存内容超过 {MAX_FACT_BYTES} bytes 读取预算"
+    content = _successful(
+        _run_git(worktree, ("cat-file", "blob", oid), index_file=index_file),
+        "staged blob",
+    )
+    if isinstance(content, CommitCandidateObservationIssue):
+        return None, content.message
+    return content, None
+
+
+def _fact_candidates(
+    worktree: Path,
+    paths: tuple[str, ...],
+    index: bytes,
+    *,
+    index_file: Path | None = None,
+) -> tuple[tuple[StagedFactCandidate, ...], CommitCandidateObservationIssue | None]:
+    """Observe staged content for in-layout fact candidates only.
+
+    Deletions (no staged content for the path) and out-of-layout paths are
+    skipped silently; rename-into-layout is validated through its new path.
+    """
+
+    classified = [(path, _classify_fact_path(path)) for path in paths]
+    if not any(target is not None for _, target in classified):
+        return (), None
+    mapping, failure = _index_blob_map(index)
+    if failure is not None:
+        return (), failure
+    candidates: list[StagedFactCandidate] = []
+    for path, target in classified:
+        if target is None:
+            continue
+        fact_type_key, object_id = target
+        oid = mapping.get(path)
+        if oid is None:
+            continue
+        if object_id is None:
+            candidates.append(StagedFactCandidate(path, fact_type_key, None, None, None))
+            continue
+        data, problem = _read_staged_blob(worktree, oid, index_file=index_file)
+        candidates.append(StagedFactCandidate(path, fact_type_key, object_id, data, problem))
+    return tuple(candidates), None
 
 
 def _candidate_paths(
@@ -171,7 +279,7 @@ def _observe_index(
     governance: GovernanceScopeResult,
     index_file: Path | None = None,
 ) -> CommitCandidateObservation:
-    snapshot_before, failure = _snapshot(worktree) if index_file is None else _snapshot(worktree, index_file=index_file)
+    snapshot_before, index_before, failure = _snapshot(worktree, index_file=index_file)
     if failure is not None:
         return CommitCandidateObservation("unverifiable", None, (failure,), (), None)
     paths, failure = (
@@ -179,7 +287,10 @@ def _observe_index(
     )
     if failure is not None:
         return CommitCandidateObservation("unverifiable", None, (failure,), (), snapshot_before)
-    snapshot_after, failure = _snapshot(worktree) if index_file is None else _snapshot(worktree, index_file=index_file)
+    fact_candidates, failure = _fact_candidates(worktree, paths, index_before, index_file=index_file)
+    if failure is not None:
+        return CommitCandidateObservation("unverifiable", None, (failure,), paths, snapshot_before)
+    snapshot_after, _, failure = _snapshot(worktree, index_file=index_file)
     if failure is not None:
         return CommitCandidateObservation("unverifiable", None, (failure,), paths, snapshot_before)
     if snapshot_before != snapshot_after:
@@ -195,8 +306,9 @@ def _observe_index(
         snapshot_identity=snapshot_after,
         source_path=contract.source_path,
         source_fingerprint=contract.content_fingerprint,
+        fact_candidates=fact_candidates,
     )
-    return CommitCandidateObservation("observed", value, (), paths, snapshot_after)
+    return CommitCandidateObservation("observed", value, (), paths, snapshot_after, fact_candidates)
 
 
 def observe_commit_candidate(

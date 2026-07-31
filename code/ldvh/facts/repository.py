@@ -9,17 +9,15 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
 
-from ldvh.facts.carriers.study_markdown import parse_study_markdown
-from ldvh.facts.carriers.yaml_object import parse_yaml_object
+from ldvh.facts.content import MAX_FACT_BYTES, validate_fact_content
 from ldvh.facts.contracts import FactTypeLayout
 from ldvh.facts.models import FactIssue
 from ldvh.facts.schema import FactSchema
-from ldvh.facts.validation import parse_rfc3339, validate_fact_object
+from ldvh.facts.validation import parse_rfc3339
 from ldvh.filesystem import ReadBudgetExceeded, UnsafePathError, safe_read_relative, validate_relative_regular_file
 from ldvh.governance.git import isolated_git_environment, windows_path_problem
 
 CheckStatus = Literal["mechanically_valid", "invalid", "not_found", "unavailable"]
-MAX_FACT_BYTES = 4 * 1024 * 1024
 
 # One scan's memo of Git worktree identity per root; the identity cannot change
 # within a single scan, so repeat rev-parse subprocesses are redundant.
@@ -101,25 +99,6 @@ def _identity_issue(
     return None, None
 
 
-def _read_utf8_without_symlinks(
-    root: Path,
-    relative_path: str,
-    *,
-    max_bytes: int,
-) -> tuple[str | None, int | None, FactIssue | None, CheckStatus | None]:
-    try:
-        raw_bytes = safe_read_relative(root, relative_path, max_bytes=max_bytes)
-        return raw_bytes.decode("utf-8"), len(raw_bytes), None, None
-    except UnicodeDecodeError:
-        return None, None, FactIssue("parse", "事实对象无法作为 UTF-8 普通文件读取"), "invalid"
-    except ReadBudgetExceeded:
-        return None, max_bytes, FactIssue("parse", f"事实对象载体超过 {max_bytes} bytes 读取预算"), "unavailable"
-    except UnsafePathError:
-        return None, None, FactIssue("location", "事实对象 canonical path 必须是非 link/reparse 普通文件"), "invalid"
-    except OSError:
-        return None, None, FactIssue("location", "事实对象文件在安全读取时发生变化或不可访问"), "unavailable"
-
-
 def read_fact_object(
     root: Path,
     layout: FactTypeLayout,
@@ -154,14 +133,23 @@ def read_fact_object(
             relative_path, layout.carrier, "unavailable", None, None,
             (FactIssue("reference", "事实对象聚合读取预算已耗尽"),),
         )
-    text, raw_byte_count, read_issue, read_status = _read_utf8_without_symlinks(
-        root, relative_path, max_bytes=effective_max_bytes,
-    )
-    if read_issue is not None or text is None:
-        issue = read_issue or FactIssue("location", "事实对象文件无法安全读取")
+    try:
+        raw_bytes = safe_read_relative(root, relative_path, max_bytes=effective_max_bytes)
+    except ReadBudgetExceeded:
         return FactReadResult(
-            relative_path, layout.carrier, read_status or "unavailable", None, None, (issue,),
-            raw_byte_count=raw_byte_count,
+            relative_path, layout.carrier, "unavailable", None, None,
+            (FactIssue("parse", f"事实对象载体超过 {effective_max_bytes} bytes 读取预算"),),
+            raw_byte_count=effective_max_bytes,
+        )
+    except UnsafePathError:
+        return FactReadResult(
+            relative_path, layout.carrier, "invalid", None, None,
+            (FactIssue("location", "事实对象 canonical path 必须是非 link/reparse 普通文件"),),
+        )
+    except OSError:
+        return FactReadResult(
+            relative_path, layout.carrier, "unavailable", None, None,
+            (FactIssue("location", "事实对象文件在安全读取时发生变化或不可访问"),),
         )
     identity_issue, identity_status = _identity_issue(root, expected_common_dir, git_identity_cache)
     if identity_issue is not None:
@@ -174,31 +162,20 @@ def read_fact_object(
             (identity_issue,),
         )
 
-    parsed = parse_study_markdown(text) if layout.carrier == "markdown" else parse_yaml_object(text)
-    if parsed.fields is None or parsed.issues:
-        fingerprint = _repair_fingerprint(parsed.fields, layout, object_id, text)
-        return FactReadResult(
-            relative_path, layout.carrier, "invalid", parsed.fields, parsed.body, parsed.issues,
-            content_fingerprint=fingerprint,
-            raw_text=text,
-            raw_byte_count=raw_byte_count,
-        )
-
-    issues = list(validate_fact_object(layout.fact_type_key, parsed.fields, schema))
-    if parsed.fields.get("object_id") != object_id:
-        issues.append(FactIssue("identity", "object_id 与请求引用及文件名不一致", "object_id"))
-    status: CheckStatus = "invalid" if issues else "mechanically_valid"
-    fingerprint = hashlib.sha256(text.encode("utf-8")).hexdigest()
+    validation = validate_fact_content(layout, schema, object_id, raw_bytes, max_bytes=effective_max_bytes)
+    fingerprint = validation.content_fingerprint
+    if validation.check_status == "invalid":
+        fingerprint = _repair_fingerprint(validation.fields, layout, object_id, validation.raw_text or "")
     return FactReadResult(
         relative_path,
         layout.carrier,
-        status,
-        parsed.fields,
-        parsed.body,
-        tuple(issues),
-        fingerprint if status == "mechanically_valid" else _repair_fingerprint(parsed.fields, layout, object_id, text),
-        text,
-        raw_byte_count,
+        validation.check_status,
+        validation.fields,
+        validation.body,
+        validation.issues,
+        fingerprint,
+        validation.raw_text,
+        validation.raw_byte_count,
     )
 
 

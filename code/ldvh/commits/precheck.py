@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Literal
 
 from ldvh.commits.contract_source import CommitContractProjection, project_commit_contract
 from ldvh.commits.git_adapter import CommitCandidateObservation, observe_commit_candidate
 from ldvh.commits.validation import CommitValidationResult, validate_commit
+from ldvh.facts.schema import project_fact_schemas
 from ldvh.governance.models import LocatorSource, ScopeDescriptor
 from ldvh.governance.resolver import GovernanceResolutionRun, resolve_governance_scope
 from ldvh.specs.repository import RepositoryInspection
@@ -103,7 +104,13 @@ def precheck_git_commit(
         )
         return CommitPrecheckResult(contract, governance_run, observation, None, issues)
 
-    validation = validate_commit(contract, observation.validation_input)
+    validation_input = observation.validation_input
+    if validation_input.fact_candidates:
+        # Lazy per specs 03 §9.9: the fact Schema projection is derived from
+        # the same current rule source only when staged fact candidates exist.
+        schemas = project_fact_schemas(repository)
+        validation_input = replace(validation_input, fact_schemas=tuple(schemas.values()))
+    validation = validate_commit(contract, validation_input)
     issues = tuple(_issue("validation", item.code, item.message) for item in validation.issues)
     return CommitPrecheckResult(contract, governance_run, observation, validation, issues)
 
