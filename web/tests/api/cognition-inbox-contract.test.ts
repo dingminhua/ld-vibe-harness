@@ -2,7 +2,7 @@
  * 项目认知中心：GET /api/cognition 收件箱与近期动态契约测试。
  *
  * 以当前治理范围解析出的受管辖工作树（事实源）运行，断言 02 §8 当前已交付字段
- * （generatedAt / scope / inbox / recentActivity / issues）、待决收录与排序、命名纪律
+ * （generatedAt / scope / inbox / recentActivity / sparkHealth / issues）、待决收录与排序、命名纪律
  * （WorkCase 的两个 Human Gate progress_group，加上 Pitfall 的 draft 待确认）、
  * 内联对象卡片依据、条件 canonical_path，以及近期动态的窗口与时间标记。
  *
@@ -72,7 +72,7 @@ function expectedInboxKind(item: Record<string, unknown>): string | null {
   return null
 }
 
-test('cognition endpoint returns inbox and recent-activity contract shapes with observation time', async () => {
+test('cognition endpoint returns inbox, recent activity, and Spark health contract shapes with observation time', async () => {
   const body = await cognition('zh')
 
   assert.match(String(body.generatedAt), RFC3339)
@@ -89,9 +89,38 @@ test('cognition endpoint returns inbox and recent-activity contract shapes with 
   assert.match(String(recent.windowStart), RFC3339)
   assert.ok(Array.isArray(recent.items))
   assert.equal(recent.total, (recent.items as unknown[]).length)
-  // 当前只新增“近期动态”；其余尚未建设的模块仍整体省略。
-  for (const moduleKey of ['whileAway', 'timeline', 'sparkHealth', 'direction']) {
+  assert.ok(body.sparkHealth && typeof body.sparkHealth === 'object')
+  const sparkHealth = body.sparkHealth as Record<string, unknown>
+  for (const key of ['total', 'openTotal', 'terminalTotal', 'silentThresholdDays', 'silentCount']) {
+    assert.equal(typeof sparkHealth[key], 'number')
+  }
+  assert.ok(sparkHealth.terminalByStatus && typeof sparkHealth.terminalByStatus === 'object')
+  assert.ok(sparkHealth.openByPriority && typeof sparkHealth.openByPriority === 'object')
+  assert.ok(Array.isArray(sparkHealth.silentItems))
+  // 其余尚未建设的模块仍整体省略。
+  for (const moduleKey of ['whileAway', 'timeline', 'direction']) {
     assert.equal(moduleKey in body, false, `not-yet-built module must omit ${moduleKey}`)
+  }
+})
+
+test('Spark health splits the current pool into terminal and open items, then lists only silent open Sparks', async () => {
+  const body = await cognition('zh')
+  const health = body.sparkHealth as Record<string, unknown>
+  const terminalByStatus = health.terminalByStatus as Record<string, unknown>
+  const terminalTotal = Number(terminalByStatus.routed) + Number(terminalByStatus.implemented) + Number(terminalByStatus.discarded)
+
+  assert.equal(Number(health.total), Number(health.openTotal) + terminalTotal)
+  assert.equal(Number(health.terminalTotal), terminalTotal)
+  assert.ok(Number(health.silentThresholdDays) > 0)
+  const silentItems = health.silentItems as Array<Record<string, unknown>>
+  assert.equal(Number(health.silentCount), silentItems.length)
+  for (let index = 0; index < silentItems.length; index += 1) {
+    const item = silentItems[index]
+    assert.equal(item.type, 'spark')
+    assert.equal(typeof item.id, 'string')
+    assert.ok(Number(item.silentDays) >= Number(health.silentThresholdDays))
+    assert.equal(typeof item.updatedAt, 'string')
+    if (index > 0) assert.ok(Number(silentItems[index - 1].silentDays) >= Number(item.silentDays))
   }
 })
 

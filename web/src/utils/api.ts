@@ -471,6 +471,35 @@ export interface CognitionRecentActivityItem {
   unparsed_structures?: UnparsedStructure[];
 }
 
+/** Spark 池健康是从当前状态与更新时间派生的只读快照，不承载分流建议。 */
+export interface CognitionSparkHealthItem {
+  type: 'spark';
+  id: string;
+  title: string;
+  title_en?: string;
+  title_zh?: string;
+  priority?: string;
+  updatedAt: string;
+  /** 距 API 本次 generatedAt 的完整静默天数。 */
+  silentDays: number;
+  typeColor: string;
+  read_status: string;
+  field_issues?: FieldIssue[];
+  unparsed_structures?: UnparsedStructure[];
+}
+
+export interface CognitionSparkHealth {
+  total: number;
+  openTotal: number;
+  terminalTotal: number;
+  terminalByStatus: { routed: number; implemented: number; discarded: number };
+  openByPriority: Record<string, number>;
+  /** Web 展示参数；不写回事实源。 */
+  silentThresholdDays: number;
+  silentCount: number;
+  silentItems: CognitionSparkHealthItem[];
+}
+
 export interface CognitionIssue {
   section: string;
   code: string;
@@ -488,6 +517,8 @@ export interface CognitionData {
     items: CognitionRecentActivityItem[];
     total: number;
   };
+  /** Spark 列表不可读取时整体省略，并通过 issues 就地说明。 */
+  sparkHealth?: CognitionSparkHealth;
   issues?: CognitionIssue[];
 }
 

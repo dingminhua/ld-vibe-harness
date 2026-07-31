@@ -1,7 +1,8 @@
 /**
  * Cognition API 路由：聚合项目认知中心的待决定事项与近期动态。
  *
- * 已交付模块一（待决定事项）与模块二（近期动态）+ §5 全局信任标记所需的派生字段：
+ * 已交付模块一（待决定事项）、模块二（近期动态）与模块四（Spark 池健康）
+ * + §5 全局信任标记所需的派生字段：
  * generatedAt（观察时间）、scope、inbox（WorkCase Human Gate 与 Pitfall draft 审核的派生收录与排序）、
  * recentActivity（指定窗口内事实对象的创建 / 更新标记）与 issues（模块级降级）。
  * 数据经 Web 字段级直读（localFactReader / facts.ts 的 listObjects），不复用 /api/dashboard 聚合逻辑。
@@ -30,6 +31,9 @@ const RECENT_ACTIVITY_WINDOWS: Record<RecentActivityWindow, number> = {
   '7d': 7,
   '14d': 14,
 }
+const SPARK_SILENT_THRESHOLD_DAYS = 5
+const SPARK_TERMINAL_STATUSES = new Set(['routed', 'implemented', 'discarded'])
+const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000
 
 type CognitionIssue = { section: string; code: string; message: string; object_ref?: string }
 
@@ -80,6 +84,19 @@ interface RecentActivityBuildItem {
   status?: string
   progress_group?: WorkCaseProgressGroup
   priority?: string
+  read_status: string
+  field_issues: Array<Record<string, unknown>>
+  unparsed_structures: Array<Record<string, unknown>>
+}
+
+interface SparkHealthBuildItem {
+  object_id: string
+  title: string
+  title_en?: string
+  title_zh?: string
+  priority?: string
+  updated_at: string
+  silent_days: number
   read_status: string
   field_issues: Array<Record<string, unknown>>
   unparsed_structures: Array<Record<string, unknown>>
@@ -177,6 +194,72 @@ function buildRecentActivityItem(
   }
 }
 
+function silentDays(updatedAt: unknown, observedAt: number): number | null {
+  if (typeof updatedAt !== 'string') return null
+  const updatedAtMs = Date.parse(updatedAt)
+  if (!Number.isFinite(updatedAtMs) || updatedAtMs > observedAt) return null
+  return Math.floor((observedAt - updatedAtMs) / MILLISECONDS_PER_DAY)
+}
+
+function compareSilentSpark(a: SparkHealthBuildItem, b: SparkHealthBuildItem): number {
+  if (a.silent_days !== b.silent_days) return b.silent_days - a.silent_days
+  const priorityDifference = priorityRank(a.priority) - priorityRank(b.priority)
+  if (priorityDifference !== 0) return priorityDifference
+  if (a.updated_at !== b.updated_at) return a.updated_at < b.updated_at ? -1 : 1
+  return a.object_id.localeCompare(b.object_id)
+}
+
+/** Spark 健康度只聚合当前状态与更新时间；不从更新时间推断实际分流发生时刻。 */
+function buildSparkHealth(rawItems: Array<Record<string, unknown>>, observedAt: number) {
+  const terminalByStatus = { routed: 0, implemented: 0, discarded: 0 }
+  const openByPriority: Record<string, number> = {}
+  const silentItems: SparkHealthBuildItem[] = []
+  let total = 0
+  let openTotal = 0
+
+  for (const raw of rawItems) {
+    const status = typeof raw.status === 'string' ? raw.status : ''
+    if (status !== 'open' && !SPARK_TERMINAL_STATUSES.has(status)) continue
+    total += 1
+    if (status !== 'open') {
+      terminalByStatus[status as keyof typeof terminalByStatus] += 1
+      continue
+    }
+
+    openTotal += 1
+    const priority = priorityRank(raw.priority) < 4 && typeof raw.priority === 'string' ? raw.priority : undefined
+    if (priority) openByPriority[priority] = (openByPriority[priority] ?? 0) + 1
+    const updatedAt = typeof raw.updated_at === 'string' ? raw.updated_at : ''
+    const days = silentDays(updatedAt, observedAt)
+    if (days === null || days < SPARK_SILENT_THRESHOLD_DAYS) continue
+    silentItems.push({
+      object_id: String(raw.object_id ?? ''),
+      title: String(raw.title ?? raw.object_id ?? ''),
+      ...(typeof raw.title_en === 'string' ? { title_en: raw.title_en } : {}),
+      ...(typeof raw.title_zh === 'string' ? { title_zh: raw.title_zh } : {}),
+      ...(priority ? { priority } : {}),
+      updated_at: updatedAt,
+      silent_days: days,
+      read_status: String(raw.read_status ?? 'unknown'),
+      field_issues: Array.isArray(raw.field_issues) ? raw.field_issues as Array<Record<string, unknown>> : [],
+      unparsed_structures: Array.isArray(raw.unparsed_structures) ? raw.unparsed_structures as Array<Record<string, unknown>> : [],
+    })
+  }
+
+  silentItems.sort(compareSilentSpark)
+  const terminalTotal = terminalByStatus.routed + terminalByStatus.implemented + terminalByStatus.discarded
+  return {
+    total,
+    openTotal,
+    terminalTotal,
+    terminalByStatus,
+    openByPriority,
+    silentThresholdDays: SPARK_SILENT_THRESHOLD_DAYS,
+    silentCount: silentItems.length,
+    silentItems,
+  }
+}
+
 router.get('/', async (req: Request, res: Response): Promise<void> => {
   const generatedAt = new Date().toISOString()
   try {
@@ -197,6 +280,17 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       listObjects('study', undefined, undefined, factScope),
     ])
     const issues: CognitionIssue[] = []
+    let sparkHealth: ReturnType<typeof buildSparkHealth> | undefined
+    if (!sparkResult.ok || !('data' in sparkResult)) {
+      const message = sparkResult.ok ? 'Spark 列表读取失败' : (sparkResult as { error: string }).error
+      issues.push({ section: 'sparkHealth', code: 'spark_list_unavailable', message })
+    } else {
+      const data = sparkResult.data as { items: Array<Record<string, unknown>>; collection_issues?: Array<Record<string, unknown>> }
+      for (const issue of Array.isArray(data.collection_issues) ? data.collection_issues : []) {
+        issues.push({ ...toIssue(issue), section: 'sparkHealth' })
+      }
+      sparkHealth = buildSparkHealth(data.items, Date.parse(generatedAt))
+    }
     const builds: InboxBuildItem[] = []
     if (!workCaseResult.ok || !('data' in workCaseResult)) {
       const message = workCaseResult.ok ? 'WorkCase 列表读取失败' : (workCaseResult as { error: string }).error
@@ -346,6 +440,31 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
         items: recentItems,
         total: recentItems.length,
       },
+      ...(sparkHealth ? {
+        sparkHealth: {
+          total: sparkHealth.total,
+          openTotal: sparkHealth.openTotal,
+          terminalTotal: sparkHealth.terminalTotal,
+          terminalByStatus: sparkHealth.terminalByStatus,
+          openByPriority: sparkHealth.openByPriority,
+          silentThresholdDays: sparkHealth.silentThresholdDays,
+          silentCount: sparkHealth.silentCount,
+          silentItems: sparkHealth.silentItems.map((item) => ({
+            type: 'spark',
+            id: item.object_id,
+            title: item.title,
+            ...(item.title_en !== undefined ? { title_en: item.title_en } : {}),
+            ...(item.title_zh !== undefined ? { title_zh: item.title_zh } : {}),
+            ...(item.priority !== undefined ? { priority: item.priority } : {}),
+            updatedAt: item.updated_at,
+            silentDays: item.silent_days,
+            typeColor: getTypeColor('spark'),
+            read_status: item.read_status,
+            ...(item.field_issues.length > 0 ? { field_issues: item.field_issues } : {}),
+            ...(item.unparsed_structures.length > 0 ? { unparsed_structures: item.unparsed_structures } : {}),
+          })),
+        },
+      } : {}),
       ...(issues.length > 0 ? { issues } : {}),
     })
   } catch (err) {

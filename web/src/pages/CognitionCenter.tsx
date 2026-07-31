@@ -10,8 +10,8 @@
  * - 负担有界（H3）：超出首屏按服务端排序截断，底部如实提示总数与未显示数量，不分页。
  * - 模块级降级：issues 就地显示实际不可用范围与原因，其它内容正常呈现（02 §5.2）。
  */
-import { useEffect, useState } from 'react';
-import { AlertCircle, ChevronDown, ChevronUp, History, Inbox } from 'lucide-react';
+import { useEffect, useState, type KeyboardEvent } from 'react';
+import { AlertCircle, ChevronDown, ChevronUp, HeartPulse, History, Inbox } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import CopyPathButton from '@/components/CopyPathButton';
 import {
@@ -31,6 +31,7 @@ import {
   type CognitionIssue,
   type CognitionRecentActivityItem,
   type CognitionRecentActivityWindow,
+  type CognitionSparkHealthItem,
   type ObjectItem,
 } from '@/utils/api';
 import { usePanel } from '@/utils/panelContext';
@@ -40,6 +41,8 @@ import { getFieldLabel, getFieldValueLabel, getLocalizedObjectTitle, getObjectSt
 /** 首屏截断阈值：Web 展示参数，不是事实；截断时底部如实提示总数与未显示数量。 */
 const INBOX_FIRST_SCREEN_LIMIT = 8;
 const RECENT_ACTIVITY_FIRST_SCREEN_LIMIT = 12;
+const SPARK_HEALTH_FIRST_SCREEN_LIMIT = 3;
+const SPARK_PRIORITIES = ['P0', 'P1', 'P2', 'P3'];
 
 const RECENT_ACTIVITY_WINDOWS: CognitionRecentActivityWindow[] = ['1d', '3d', '7d', '14d'];
 
@@ -76,6 +79,25 @@ function buildRecentActivitySummary(data: CognitionData, locale: string, t: Tran
   ];
   for (const item of recent.items) {
     lines.push(`- ${item.id} · ${t(`cognition.recent.${item.activity}` as LocaleKey)} · ${getLocalizedObjectTitle(item, locale, item.id)}`);
+  }
+  return lines.join('\n');
+}
+
+function buildSparkHealthSummary(data: CognitionData, locale: string, t: Translate): string {
+  const health = data.sparkHealth;
+  if (!health) return t('cognition.sparkHealth.title');
+  const terminal = (['routed', 'implemented', 'discarded'] as const)
+    .filter((status) => health.terminalByStatus[status] > 0)
+    .map((status) => `${getObjectStatusLocale('spark', status, locale)} ${health.terminalByStatus[status]}`)
+    .join(', ');
+  const lines = [
+    t('cognition.sparkHealth.title'),
+    `${t('cognition.sparkHealth.settled', { count: String(health.terminalTotal) })}${terminal ? ` (${terminal})` : ''}`,
+    t('cognition.sparkHealth.pending', { count: String(health.openTotal) }),
+    t('cognition.sparkHealth.silentSummary', { count: String(health.silentCount), days: String(health.silentThresholdDays) }),
+  ];
+  for (const item of health.silentItems) {
+    lines.push(`- ${item.id} · ${t('cognition.sparkHealth.silentDays', { days: String(item.silentDays) })} · ${getLocalizedObjectTitle(item, locale, item.id)}`);
   }
   return lines.join('\n');
 }
@@ -171,11 +193,11 @@ function InboxItemRow({ item }: { item: CognitionInboxItem }) {
   );
 }
 
-function ModuleIssuesNotice({ issues, t }: { issues: CognitionIssue[]; t: Translate }) {
+function ModuleIssuesNotice({ issues, t, unavailableKey = 'cognition.inbox.unavailable' }: { issues: CognitionIssue[]; t: Translate; unavailableKey?: LocaleKey }) {
   if (issues.length === 0) return null;
   return (
     <div role="status" className="mb-3 min-w-0 rounded-md border border-red-400/25 border-l-2 border-l-red-400 bg-red-500/5 px-2.5 py-2">
-      <p className="ldvh-caption text-red-500 dark:text-red-300">{t('cognition.inbox.unavailable')}</p>
+      <p className="ldvh-caption text-red-500 dark:text-red-300">{t(unavailableKey)}</p>
       <ul className="mt-1 grid min-w-0 gap-0.5">
         {issues.map((issue, index) => (
           <li key={`${issue.code}-${index}`} className="ldvh-caption break-words text-red-400">
@@ -227,14 +249,14 @@ function RecentActivityRow({ item }: { item: CognitionRecentActivityItem }) {
         <span className="ldvh-caption shrink-0 text-ldvh-text-secondary">{item.relativeTime}</span>
         <span className={`ldvh-caption shrink-0 ${activityTone}`}>{t(`cognition.recent.${item.activity}` as LocaleKey)}</span>
         <code className="ldvh-caption min-w-0 break-all text-ldvh-text-secondary/55">{item.id}</code>
+        <PriorityIcon source={item} type={item.type} locale={locale} size="sm" />
         <span className="ml-auto flex shrink-0 items-center gap-1.5">
           {status && <StatusBadge status={status} statusLabel={getObjectStatusLocale(item.type, status, locale)} objectType={item.type} />}
           <CopyPathButton path={item.id} label={t('common.copyObjectId')} copiedLabel={t('common.copiedObjectId')} />
         </span>
       </div>
-      <div className="mt-2 flex min-w-0 items-start gap-1.5">
-        <ObjectTypeIcon type={item.type} size={15} className="mt-1 shrink-0" style={{ color: item.typeColor }} />
-        <PriorityIcon source={item} type={item.type} locale={locale} size="sm" className="mt-0.5" />
+      <div className="mt-2 flex min-w-0 items-center gap-1.5">
+        <ObjectTypeIcon type={item.type} size={15} className="shrink-0" style={{ color: item.typeColor }} />
         <h4 className="ldvh-card-title min-w-0 flex-1 whitespace-normal break-words">
           <button
             type="button"
@@ -250,6 +272,64 @@ function RecentActivityRow({ item }: { item: CognitionRecentActivityItem }) {
   );
 }
 
+function SparkHealthRow({ item }: { item: CognitionSparkHealthItem }) {
+  const { t, locale } = useI18n();
+  const { openPanel } = usePanel();
+  const title = getLocalizedObjectTitle(item, locale, item.id);
+  const fieldIssues = item.field_issues ?? [];
+  const unparsed = item.unparsed_structures ?? [];
+  const showReadNotes = item.read_status !== 'readable' || fieldIssues.length > 0 || unparsed.length > 0;
+  return (
+    <li className="min-w-0 py-3">
+      <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+        <span className="ldvh-caption shrink-0 text-amber-700/85 dark:text-amber-300/85">
+          {t('cognition.sparkHealth.silentDays', { days: String(item.silentDays) })}
+        </span>
+        <code className="ldvh-caption min-w-0 break-all text-ldvh-text-secondary/55">{item.id}</code>
+        <PriorityIcon source={item} type="spark" locale={locale} size="sm" />
+        <span className="ml-auto shrink-0">
+          <CopyPathButton path={item.id} label={t('common.copyObjectId')} copiedLabel={t('common.copiedObjectId')} />
+        </span>
+      </div>
+      <div className="mt-2 flex min-w-0 items-center gap-1.5">
+        <ObjectTypeIcon type="spark" size={15} className="shrink-0" style={{ color: item.typeColor }} />
+        <h4 className="ldvh-card-title min-w-0 flex-1 whitespace-normal break-words">
+          <button
+            type="button"
+            onClick={() => openPanel({ type: 'object', title, objectType: 'spark', objectId: item.id })}
+            className="text-left transition-colors hover:text-ldvh-accent focus-visible:outline-none focus-visible:text-ldvh-accent focus-visible:underline"
+          >
+            {title}
+          </button>
+        </h4>
+      </div>
+      {showReadNotes && <div className="mt-1.5 grid min-w-0 gap-1">
+        {item.read_status !== 'readable' && (
+          <p className="ldvh-caption text-red-400">
+            {getFieldLabel('read_status', locale)}: {getFieldValueLabel('read_status', item.read_status, locale)}
+          </p>
+        )}
+        {fieldIssues.map((issue, index) => (
+          <p key={`field-${index}`} className="ldvh-caption break-words text-red-400">
+            {issue.path}: {getFieldValueLabel('field_issue_reason', issue.reason, locale)}
+          </p>
+        ))}
+        {unparsed.map((structure, index) => (
+          <p key={`unparsed-${index}`} className="ldvh-caption break-words text-amber-600 dark:text-amber-300">
+            {structure.path}: {structure.reason}
+          </p>
+        ))}
+      </div>}
+    </li>
+  );
+}
+
+function toggleOnKeyboard(event: KeyboardEvent<HTMLDivElement>, toggle: () => void) {
+  if (event.key !== 'Enter' && event.key !== ' ') return;
+  event.preventDefault();
+  toggle();
+}
+
 export default function CognitionCenter() {
   const [data, setData] = useState<CognitionData | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -260,6 +340,8 @@ export default function CognitionCenter() {
   const [showAllRecent, setShowAllRecent] = useState(false);
   const [recentLoading, setRecentLoading] = useState(false);
   const [recentError, setRecentError] = useState<string | null>(null);
+  const [sparkHealthExpanded, setSparkHealthExpanded] = useState(true);
+  const [showAllSilentSpark, setShowAllSilentSpark] = useState(false);
   const { t, locale } = useI18n();
 
   // 首次进入才阻塞整页；切换近期窗口保留当前内容，只在本模块内更新快照。
@@ -316,6 +398,24 @@ export default function CognitionCenter() {
   const recentItems = data.recentActivity.items;
   const recentTruncated = !showAllRecent && recentItems.length > RECENT_ACTIVITY_FIRST_SCREEN_LIMIT;
   const visibleRecentItems = recentTruncated ? recentItems.slice(0, RECENT_ACTIVITY_FIRST_SCREEN_LIMIT) : recentItems;
+  const sparkHealth = data.sparkHealth;
+  const sparkHealthIssues = (data.issues ?? []).filter((issue) => issue.section === 'sparkHealth');
+  const silentSparkItems = sparkHealth?.silentItems ?? [];
+  const silentSparkTruncated = !showAllSilentSpark && silentSparkItems.length > SPARK_HEALTH_FIRST_SCREEN_LIMIT;
+  const visibleSilentSparkItems = silentSparkTruncated ? silentSparkItems.slice(0, SPARK_HEALTH_FIRST_SCREEN_LIMIT) : silentSparkItems;
+  const settledRatio = sparkHealth && sparkHealth.total > 0 ? (sparkHealth.terminalTotal / sparkHealth.total) * 100 : 0;
+  const terminalDetail = sparkHealth
+    ? (['routed', 'implemented', 'discarded'] as const)
+      .filter((status) => sparkHealth.terminalByStatus[status] > 0)
+      .map((status) => `${getObjectStatusLocale('spark', status, locale)} ${sparkHealth.terminalByStatus[status]}`)
+      .join(' · ')
+    : '';
+  const openPriorityDetail = sparkHealth
+    ? SPARK_PRIORITIES
+      .filter((priority) => (sparkHealth.openByPriority[priority] ?? 0) > 0)
+      .map((priority) => `${priority} × ${sparkHealth.openByPriority[priority]}`)
+      .join(' / ')
+    : '';
 
   return (
     <div className="p-4 sm:p-6">
@@ -323,7 +423,15 @@ export default function CognitionCenter() {
 
       {/* 模块一 待决定事项：全宽主面板，置顶（02 §3） */}
       <section className="rounded-xl border border-ldvh-border bg-ldvh-panel p-4">
-        <div className={`flex min-w-0 flex-wrap items-center gap-2 ${inboxExpanded ? 'mb-4' : ''}`}>
+        <div
+          role="button"
+          tabIndex={0}
+          aria-expanded={inboxExpanded}
+          aria-controls="cognition-inbox-content"
+          onClick={() => setInboxExpanded((expanded) => !expanded)}
+          onKeyDown={(event) => toggleOnKeyboard(event, () => setInboxExpanded((expanded) => !expanded))}
+          className={`-mx-1 flex min-w-0 cursor-pointer flex-wrap items-center gap-2 rounded-md px-1 transition-colors hover:bg-ldvh-bg/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ldvh-accent/50 ${inboxExpanded ? 'mb-4' : ''}`}
+        >
           <Inbox size={16} className="shrink-0 text-ldvh-accent" aria-hidden="true" />
           <h3 className="ldvh-section-title min-w-0">{t('cognition.inbox.title')}</h3>
           {data.inbox.total > 0 && (
@@ -339,7 +447,10 @@ export default function CognitionCenter() {
               type="button"
               aria-expanded={inboxExpanded}
               aria-controls="cognition-inbox-content"
-              onClick={() => setInboxExpanded((expanded) => !expanded)}
+              onClick={(event) => {
+                event.stopPropagation();
+                setInboxExpanded((expanded) => !expanded);
+              }}
               className="inline-flex h-8 w-8 items-center justify-center rounded-md text-ldvh-text-secondary transition-colors hover:bg-ldvh-bg hover:text-ldvh-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ldvh-accent/50"
               title={t(inboxExpanded ? 'cognition.inbox.collapseSection' : 'cognition.inbox.expandSection')}
             >
@@ -388,9 +499,18 @@ export default function CognitionCenter() {
         )}
       </section>
 
-      {/* 模块二 近期动态：以当前对象的 created_at / updated_at 为明确事件，不把提交列表搬到聚焦页。 */}
-      <section className="mt-4 rounded-xl border border-ldvh-border bg-ldvh-panel p-4">
-        <div className={`flex min-w-0 flex-wrap items-center gap-2 ${recentExpanded ? 'mb-4' : ''}`}>
+      <div className="mt-4 ldvh-panel-grid items-start">
+        {/* 模块二 近期动态：以当前对象的 created_at / updated_at 为明确事件，不把提交列表搬到聚焦页。 */}
+        <section className="rounded-xl border border-ldvh-border bg-ldvh-panel p-4">
+        <div
+          role="button"
+          tabIndex={0}
+          aria-expanded={recentExpanded}
+          aria-controls="cognition-recent-activity-content"
+          onClick={() => setRecentExpanded((expanded) => !expanded)}
+          onKeyDown={(event) => toggleOnKeyboard(event, () => setRecentExpanded((expanded) => !expanded))}
+          className={`-mx-1 flex min-w-0 cursor-pointer flex-wrap items-center gap-2 rounded-md px-1 transition-colors hover:bg-ldvh-bg/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ldvh-accent/50 ${recentExpanded ? 'mb-4' : ''}`}
+        >
           <History size={16} className="shrink-0 text-ldvh-accent" aria-hidden="true" />
           <h3 className="ldvh-section-title min-w-0">{t('cognition.recent.title')}</h3>
           {data.recentActivity.total > 0 && (
@@ -406,7 +526,10 @@ export default function CognitionCenter() {
               type="button"
               aria-expanded={recentExpanded}
               aria-controls="cognition-recent-activity-content"
-              onClick={() => setRecentExpanded((expanded) => !expanded)}
+              onClick={(event) => {
+                event.stopPropagation();
+                setRecentExpanded((expanded) => !expanded);
+              }}
               className="inline-flex h-8 w-8 items-center justify-center rounded-md text-ldvh-text-secondary transition-colors hover:bg-ldvh-bg hover:text-ldvh-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ldvh-accent/50"
               title={t(recentExpanded ? 'cognition.recent.collapseSection' : 'cognition.recent.expandSection')}
             >
@@ -472,7 +595,112 @@ export default function CognitionCenter() {
             )}
           </div>
         )}
-      </section>
+        </section>
+
+        {/* 模块四 Spark 池健康：只读呈现当前 open / terminal 与静默派生，不生成分流建议。 */}
+        <section className="rounded-xl border border-ldvh-border bg-ldvh-panel p-4">
+        <div
+          role="button"
+          tabIndex={0}
+          aria-expanded={sparkHealthExpanded}
+          aria-controls="cognition-spark-health-content"
+          onClick={() => setSparkHealthExpanded((expanded) => !expanded)}
+          onKeyDown={(event) => toggleOnKeyboard(event, () => setSparkHealthExpanded((expanded) => !expanded))}
+          className={`-mx-1 flex min-w-0 cursor-pointer flex-wrap items-center gap-2 rounded-md px-1 transition-colors hover:bg-ldvh-bg/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ldvh-accent/50 ${sparkHealthExpanded ? 'mb-4' : ''}`}
+        >
+          <HeartPulse size={16} className="shrink-0 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
+          <h3 className="ldvh-section-title min-w-0">{t('cognition.sparkHealth.title')}</h3>
+          {sparkHealth && sparkHealth.silentCount > 0 && (
+            <span className="ldvh-caption shrink-0 text-ldvh-text-secondary/55">
+              {t('cognition.sparkHealth.silentSummary', {
+                count: String(sparkHealth.silentCount),
+                days: String(sparkHealth.silentThresholdDays),
+              })}
+            </span>
+          )}
+          <span className="ml-auto flex min-w-0 shrink-0 items-center gap-2">
+            {sparkHealth && (
+              <CopyPathButton
+                path={buildSparkHealthSummary(data, locale, t)}
+                label={t('cognition.sparkHealth.copyModuleSummary')}
+                copiedLabel={t('cognition.sparkHealth.copiedModuleSummary')}
+              />
+            )}
+            <button
+              type="button"
+              aria-expanded={sparkHealthExpanded}
+              aria-controls="cognition-spark-health-content"
+              onClick={(event) => {
+                event.stopPropagation();
+                setSparkHealthExpanded((expanded) => !expanded);
+              }}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-ldvh-text-secondary transition-colors hover:bg-ldvh-bg hover:text-ldvh-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ldvh-accent/50"
+              title={t(sparkHealthExpanded ? 'cognition.sparkHealth.collapseSection' : 'cognition.sparkHealth.expandSection')}
+            >
+              {sparkHealthExpanded ? <ChevronUp size={16} aria-hidden="true" /> : <ChevronDown size={16} aria-hidden="true" />}
+              <span className="sr-only">{t(sparkHealthExpanded ? 'cognition.sparkHealth.collapseSection' : 'cognition.sparkHealth.expandSection')}</span>
+            </button>
+          </span>
+        </div>
+
+        {sparkHealthExpanded && (
+          <div id="cognition-spark-health-content">
+            <ModuleIssuesNotice issues={sparkHealthIssues} t={t} unavailableKey="cognition.sparkHealth.unavailable" />
+            {sparkHealth && sparkHealth.total > 0 && (
+              <div className="border-y border-ldvh-border/70 py-4">
+                <div className="flex h-7 w-full overflow-hidden rounded-md bg-rose-500/80">
+                  {sparkHealth.terminalTotal > 0 && (
+                    <div
+                      className="flex shrink-0 items-center justify-center bg-emerald-500/85 text-sm font-semibold text-white"
+                      style={{ width: `${settledRatio}%` }}
+                    >
+                      {sparkHealth.terminalTotal}
+                    </div>
+                  )}
+                  <div className="flex min-w-0 flex-1 items-center justify-center text-sm font-semibold text-white">
+                    {sparkHealth.openTotal}
+                  </div>
+                </div>
+                <div className="mt-2 grid grid-cols-2 gap-2 text-center">
+                  <p className="ldvh-caption min-w-0 break-words text-ldvh-text-secondary">
+                    {t('cognition.sparkHealth.settled', { count: String(sparkHealth.terminalTotal) })}
+                    {terminalDetail ? `（${terminalDetail}）` : ''}
+                  </p>
+                  <p className="ldvh-caption min-w-0 break-words text-ldvh-text-secondary">
+                    {t('cognition.sparkHealth.pending', { count: String(sparkHealth.openTotal) })}
+                    {openPriorityDetail ? `（${openPriorityDetail}）` : ''}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {sparkHealth && silentSparkItems.length === 0 ? (
+              sparkHealthIssues.length === 0 && <p className="ldvh-body-muted">{t('cognition.sparkHealth.empty')}</p>
+            ) : (
+              <ul className="divide-y divide-ldvh-border/70">
+                {visibleSilentSparkItems.map((item) => <SparkHealthRow key={item.id} item={item} />)}
+              </ul>
+            )}
+
+            {sparkHealth && silentSparkItems.length > 0 && (
+              <>
+                {silentSparkItems.length > SPARK_HEALTH_FIRST_SCREEN_LIMIT && (
+                  <button
+                    type="button"
+                    onClick={() => setShowAllSilentSpark((previous) => !previous)}
+                    className="mt-3 ldvh-caption inline-flex h-8 items-center rounded-md text-ldvh-text-secondary transition-colors hover:text-ldvh-accent focus-visible:outline-none focus-visible:underline"
+                  >
+                    {silentSparkTruncated
+                      ? t('cognition.sparkHealth.showRemaining', { count: String(silentSparkItems.length - visibleSilentSparkItems.length) })
+                      : t('cognition.sparkHealth.collapseList')}
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+        )}
+        </section>
+      </div>
     </div>
   );
 }

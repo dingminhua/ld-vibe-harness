@@ -543,6 +543,7 @@ export function ObjectIdentityHeader({
             </span>
             {extraBadges}
             <span className="ldvh-meta-muted min-w-0 truncate">{id}</span>
+            <PriorityIcon source={source} type={objectType} locale={locale} size={compact ? 'sm' : 'md'} />
             {!compact && ((status && statusColor) || showCopyAction) && (
               <div className="ml-auto flex shrink-0 items-center gap-2">
                 {status && statusColor && (
@@ -564,7 +565,6 @@ export function ObjectIdentityHeader({
           </div>
           <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
             <TitleTag className={`${titleClassName} flex min-w-0 flex-1 basis-full items-center gap-2 break-words`}>
-              <PriorityIcon source={source} type={objectType} locale={locale} size={compact ? 'sm' : 'lg'} />
               <ObjectTypeIcon type={objectType} size={iconSize} className="shrink-0" style={{ color: typeColor }} />
               <span className="min-w-0">{title}</span>
             </TitleTag>

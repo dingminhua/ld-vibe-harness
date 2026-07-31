@@ -1155,7 +1155,10 @@ export function ObjectCardFrame({
       className="flex min-w-0 flex-col gap-3 rounded-lg border border-ldvh-border bg-ldvh-panel p-4 text-left"
     >
       <div className="flex min-w-0 items-center justify-between gap-2">
-        <span className="ldvh-meta-muted min-w-0 truncate">{obj.id}</span>
+        <div className="flex min-w-0 items-center gap-1.5">
+          <span className="ldvh-meta-muted min-w-0 truncate">{obj.id}</span>
+          <PriorityIcon source={obj} type={obj.type} locale={locale} size="sm" />
+        </div>
         <div className="flex shrink-0 items-center gap-2">
           <StatusBadge status={presentedStatus} statusLabel={getObjectStatusLocale(obj.type, presentedStatus, locale)} objectType={obj.type} />
           {/* List Cards only have a stable object identity, not an exact-read source path. */}
@@ -1169,7 +1172,6 @@ export function ObjectCardFrame({
       <div
         className={`-mx-1 flex min-w-0 items-center gap-1.5 rounded-md border-l-2 bg-ldvh-bg/65 px-2.5 py-2 text-left ring-1 ring-inset ring-ldvh-border/50 ${titleAccentClass}`}
       >
-        <PriorityIcon source={obj} type={obj.type} locale={locale} size="sm" />
         <ObjectTypeIcon type={obj.type} size={14} className="shrink-0" style={{ color: typeColor }} />
         <h2 className="ldvh-card-title min-w-0 flex-1 whitespace-normal break-words">
           <button

@@ -1,7 +1,7 @@
 # 项目认知中心（取代 Dashboard）
 
 > 路由：`/`（已实现，由 CognitionCenter 服务，取代原 Dashboard）
-> 状态：第一期「待决定事项」已完成；第二期的「近期动态」已完成（2026-07-31），Spark 池健康待后续建设
+> 状态：第一期「待决定事项」与第二期「近期动态」已完成；Spark 池健康已完成（2026-07-31）
 > 目标源码：`web/src/pages/CognitionCenter.tsx`（取代 `web/src/pages/Dashboard.tsx`，原文件已移除）
 > 目标 API：`GET /api/cognition`（新建，取代 `GET /api/dashboard`）
 > 文件名说明：本文取代原 Dashboard 设计文档；文件名、`web/docs` 引用与相关测试契约的更名已在第一期实现中完成。
@@ -70,7 +70,7 @@ H1–H6 当前记录于事实源 `ldvh-base/sparks/spark-0037.yaml`（mechanical
 ```text
 页面标题：项目认知中心 + 页面说明
 模块一 待决定事项（全宽主面板，置顶）
-模块二 近期动态 + 模块四 Spark 池健康（双列主面板）
+模块二 近期动态 + 模块四 Spark 池健康（宽容器并列；窄容器单列）
 模块三 演进时间线（全宽主面板）
 模块五 方向对照（全宽主面板）
 ```
@@ -107,7 +107,7 @@ H1–H6 当前记录于事实源 `ldvh-base/sparks/spark-0037.yaml`（mechanical
 回答：**这个明确时间范围内，哪些事实对象有可观察到的新建或更新？**
 
 - 时间窗口只由 Human 显式选择：最近 1 天、最近 3 天、最近 1 周、最近 2 周；默认最近 1 天。窗口以本次 API `generatedAt` 向前计算，不维护 Web 上次访问时间，也不使用“我离开期间”这一抽象概念。
-- 内容只包含当前受管项目内五类事实对象的可确定时间标记：`created_at` 落在窗口内标为“新建”，`updated_at` 落在窗口内且不同于 `created_at` 标为“更新”。事实源没有字段级或状态流转事件历史，因此不从更新时间伪造更多动作类型。每行第一行依次呈现相对时间、以低强调颜色区分的行为、弱化的对象 ID、当前状态与复制对象 ID；第二行呈现类型图标、存在时的合法优先级与完整标题。点击标题打开同源次级阅读。
+- 内容只包含当前受管项目内五类事实对象的可确定时间标记：`created_at` 落在窗口内标为“新建”，`updated_at` 落在窗口内且不同于 `created_at` 标为“更新”。事实源没有字段级或状态流转事件历史，因此不从更新时间伪造更多动作类型。每行第一行依次呈现相对时间、以低强调颜色区分的行为、弱化的对象 ID、存在时的合法优先级、当前状态与复制对象 ID；第二行呈现类型图标与完整标题。点击标题打开同源次级阅读。
 - 本模块不是提交列表，也不把提交消息改写成对象动态。提交及其文件级证据仍只在 `/changes` 与 `/changelog` 阅读；字段级 diff 仍在对象详情与提交记录中核对。
 - 如实声明遗漏范围：当前事实源不保存字段变化或状态流转事件历史，因此“更新”只表示 `updated_at` 落入窗口，不推断更新了哪个字段、也不推断状态在何时变化。无有效时间戳的对象不收入该时间标记。
 - 切换时间窗口时保留原有页面与动态列表，在近期动态模块内显示更新状态；新快照成功返回后替换该模块数据。单一类型读取失败时就地显示模块级降级，不影响其它类型的动态。
@@ -133,10 +133,10 @@ H1–H6 当前记录于事实源 `ldvh-base/sparks/spark-0037.yaml`（mechanical
 | open 总数与优先级分布 | `status = open`，按 `priority` 分组计数（priority 仅 Spark 适用） |
 | 静默数 | `open` 且 `updated_at` 距今 ≥ 静默阈值（默认 5 天，前端常量，UI 如实标注） |
 | 收敛情况 | 终态（`routed` / `implemented` / `discarded`）数 / 总数 |
-| 近 30 天流动 | `created_at` 落在近 30 天的新增数 vs 同期 `updated_at` 更新且当前为终态的对象数（后者如实标注为"当前终态且近期有更新"，不冒充分流时刻） |
+| 池的当前拆分 | 当前全部有效 Spark = 终态（`routed` / `implemented` / `discarded`）+ `open`；以一条满宽比例条显示两个数量 |
 
-- 指标使用 `StatsCard` 数字档位（`text-xl` / `text-2xl`），不使用告警色块；`open` 按 20 显示为"待处理"。
-- 静默 P1 列表：逐条列出对象行（标题、优先级弱信号、`updated_at`），点击打开右侧扩展阅读。
+- 标题带以弱辅助文字显示静默数量与阈值；比例条内仅居中显示终态与待处理数量，条下按两侧居中展示各自的终态/优先级构成。它表达当前结构，不表示告警、成功或处置建议。
+- 静默列表按完整静默天数倒序、优先级、更新时间、ID 排序；默认显示前三项，其余由局部展开入口显示。每条列出标题、优先级弱信号、静默天数与复制 ID，点击标题打开右侧扩展阅读。
 - 本模块不生成"应当分流到何处"的建议；H6 的承接判断由 Human 在 AI 对话中显式委托（Spark 承接语义见 spark-0037），页面只保证"被提及、未被接住"的事项如实可见。
 - 空态：Spark 池当前没有静默积压。
 
@@ -237,13 +237,13 @@ interface CognitionData {
   timeline: { days: { date: string; commits: CommitEntry[]; objectMarks: (CognitionFactItem & { mark: 'created' | 'updated' })[] }[]; earliestReachable?: string };
   sparkHealth: {
     openTotal: number;
-    byPriority: Record<string, number>;
+    terminalTotal: number;
+    terminalByStatus: { routed: number; implemented: number; discarded: number };
+    openByPriority: Record<string, number>;
     silentThresholdDays: number;           // 展示参数
     silentCount: number;
-    silentP1: CognitionFactItem[];
-    terminalTotal: number;
     total: number;
-    recent30d: { created: number; terminalRecentlyUpdated: number };
+    silentItems: (CognitionFactItem & { silentDays: number; updatedAt: string })[];
   };
   direction: {
     anchors: { workcaseGoals: CognitionFactItem[]; activeAdrs: CognitionFactItem[] };
@@ -256,15 +256,15 @@ interface CognitionData {
 - WorkCase 聚合遵守 §7 第 3 条命名纪律；其它类型不使用 `progress_group` / `byProgressGroup`。
 - 待决定条目首屏内联复用各自对象列表 Card 的投影；完整事实在点击标题后的同源次级阅读中展开。模块摘要只保留当前收件箱的观察信息与对象索引，不另造事实或写回摘要。
 - 本端点是派生视图服务，不成为事实权威；读取限定在当前唯一管辖项目与实际 worktree。
-- 已实现注记（2026-07-31）：`GET /api/cognition` 返回 `{ generatedAt, scope, inbox, recentActivity, issues }`。inbox 收录 plan_confirmation / closure_confirmation WorkCase 与 draft Pitfall，按 `priority → updated_at` 正序排序；近期动态读取五类对象，按 `occurredAt` 倒序返回窗口内的创建或更新标记；首屏复用对象 Card，完整事实由同源次级阅读展开；blocked 保留在对象列表/详情，不进入 inbox；演进时间线、Spark 池健康与方向对照字段整体省略。
+- 已实现注记（2026-07-31）：`GET /api/cognition` 返回 `{ generatedAt, scope, inbox, recentActivity, sparkHealth, issues }`。inbox 收录 plan_confirmation / closure_confirmation WorkCase 与 draft Pitfall，按 `priority → updated_at` 正序排序；近期动态读取五类对象，按 `occurredAt` 倒序返回窗口内的创建或更新标记；Spark 健康从当前 Spark 的 `status`、`priority` 和 `updated_at` 派生终态/待处理比例、静默计数与静默列表；首屏复用对象 Card 或同源条目，完整事实由标题打开的次级阅读展开；blocked 保留在对象列表/详情，不进入 inbox；演进时间线与方向对照字段整体省略。
 
 ## 9. 响应式与移动端
 
 | 级别 | 行为 |
 |---|---|
-| Compact（375–599px） | 全部模块单列堆叠，待决定事项第一屏；指标卡 2 列；触摸目标 ≥44×44px |
-| Medium（600–839px） | 收件箱全宽；模块二/四双列；时间线、方向对照全宽 |
-| Expanded（≥840px） | 同 Medium；容器加宽时指标卡可 4 列，由容器宽度驱动 |
+| Compact（375–599px） | 全部模块单列堆叠，待决定事项第一屏；Spark 比例条与构成说明保持满宽；触摸目标 ≥44×44px |
+| Medium（600–839px） | 收件箱全宽；近期动态与 Spark 健康仅在容器能同时容纳两个 `22rem` 面板时并列，否则保持单列 |
+| Expanded（≥840px） | 近期动态与 Spark 健康按同一容器驱动网格并列、各自按内容高度结束；Spark 比例条随自身面板加宽，不维护第二套断点布局 |
 
 移动端遵守 01 §1.6 与 §1.6.1 全部已确认规则；扩展阅读切换为底部抽屉。
 

@@ -18,7 +18,7 @@
 ```text
 浏览筛选（WorkCase 使用 WorkCaseProgressFilter；其它对象使用 ObjectStatusFilter）
 对象卡片自适应网格（ldvh-section-grid）
-  通用卡片：ID + 状态徽章 + 优先级字符徽标 + 标题 + 信号标签 + 更新时间
+  通用卡片：ID + 优先级字符徽标 + 状态徽章 + 标题 + 信号标签 + 更新时间
   WorkCase 卡片：对象身份 + 进展分组 + 已确认分组的专属正文
 加载态 / 错误态 / 空态
 ```
@@ -46,7 +46,7 @@
   - 左上：对象 ID，`ldvh-meta-muted`；
   - 右上：`StatusBadge` 后紧邻“复制对象 ID”图标；列表只是候选发现，不显示或复制精确来源路径，复制值仅为稳定 `object_id`；
   - 中部：本地化标题，`ldvh-card-title`，放入轻量标题带，左侧使用状态语义短线突出，不通过放大字号突出；标题必须允许换行完整显示，不得用截断省略代替阅读；
-  - 优先级字符徽标：WorkCase 和 Spark 如存在 `priority`，在标题行最前面展示 `P0` / `P1` / `P2` / `P3` 字符徽标，随后才是 `ObjectTypeIcon(obj.type)` 和标题；徽标使用颜色、轻量边框和 tooltip 表达优先级，不作为错误或阻塞状态；
+  - 优先级字符徽标：WorkCase 和 Spark 如存在 `priority`，在 ID 后面展示 `P0` / `P1` / `P2` / `P3` 字符徽标；标题行只保留 `ObjectTypeIcon(obj.type)` 和标题。徽标使用颜色、轻量边框和 tooltip 表达优先级，不作为错误或阻塞状态；
   - 可选信号：仅当对应对象的字段契约定义该字段时展示；`priority` 只适用于 WorkCase 和 Spark，不得为 ADR、Pitfall 或 Study 杜撰 priority，也不得为任何对象杜撰 importance、category 或 tags；Spark 不维护 category；Pitfall 不维护 repeatability；importance 字段已由 priority 统一承载，不作为独立字段使用
   - 终态处置：ADR、Pitfall 与 Spark 不复用泛化的“非活跃原因”字段。它们在各自终态卡片中只读取 `disposition_summary`，用弱圆点与小号正文承载，不另造“退出理由”“关闭时间”“分流时间”标签；缺失时如实显示处置缺失提示，仍不得压过标题、状态和更新时间。
   - Pitfall 状态筛选使用 `draft / active / discarded`，分别显示“待确认 / 活跃 / 已废弃”；Pitfall 卡片不提供 promote、discard 或批量审核控件，也不展示 `tags` 或冗余解决态。
