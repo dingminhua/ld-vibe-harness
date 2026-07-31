@@ -23,7 +23,7 @@ ProjectFiles 可以读取项目文件和 Git 信息，但不得新增、修改�
 加载态 / 错误态 / 空态
 ```
 
-最前面三个产品入口 / tab 的最终信息架构未定，不影响 ProjectFiles 内部三个工具 tab 的只读边界。ProjectFiles 内部 tab 只表达本页面内的工具视图切换，不替代左侧主导航，也不定义全站前三个入口。
+最前面第一入口已确认可见名为“聚焦 / Focus”；其余前置入口 / tab 的最终信息架构未定，不影响 ProjectFiles 内部三个工具 tab 的只读边界。ProjectFiles 内部 tab 只表达本页面内的工具视图切换，不替代左侧主导航，也不定义其余全站入口。
 
 ## 3. 信息边界
 
@@ -102,4 +102,4 @@ ProjectFiles 属于 Web 高风险 API 覆盖对象。修改 ProjectFiles 的 API
 3. 不把 ProjectFiles 的文件列表当作工作对象目录事实源。
 4. 不维护第二套 commit parser。
 5. 不把 Markdown 预览改成手写 Markdown 样式。
-6. 不用 ProjectFiles 的内部 tab 替代全站主导航或最前面三个待确认入口。
+6. 不用 ProjectFiles 的内部 tab 替代全站主导航或其余待确认入口。

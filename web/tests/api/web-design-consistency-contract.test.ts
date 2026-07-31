@@ -102,6 +102,27 @@ test('commit hotspot nodes consume narrow-cluster width before truncating facts'
   assert.doesNotMatch(graph, /<section className="flex h-full/);
 });
 
+test('Web development docs describe the current Focus modules, shell scrolling, and reading panel', () => {
+  const globalDoc = read('docs/01-全局设计约束.md');
+  const cognitionDoc = read('docs/02-CognitionCenter.md');
+  const baselineDoc = read('docs/10-Web开发现状与设计语言基线.md');
+
+  assert.match(cognitionDoc, /三期均已完成/);
+  assert.match(cognitionDoc, /待决定事项.*推进中事项.*近期动态.*Spark 健康度.*近期提交热点关系/);
+  assert.match(cognitionDoc, /SPARK_SILENT_THRESHOLD_DAYS = 5/);
+  assert.match(cognitionDoc, /pitfall_confirmation/);
+  assert.doesNotMatch(cognitionDoc, /点击可回指提交短哈希/);
+  assert.doesNotMatch(cognitionDoc, /默认 5 天，前端常量/);
+
+  assert.match(globalDoc, /App Shell 根节点唯一拥有视口高度并使用 `overflow-hidden`/);
+  assert.match(globalDoc, /左侧导航只在自身条目溢出时纵向滚动/);
+  assert.match(globalDoc, /底部阅读抽屉为拖动和触摸保留的头部与按钮命中区/);
+
+  assert.match(baselineDoc, /聚焦 \/ Focus/);
+  assert.match(baselineDoc, /桌面右侧面板保留拖动宽度、前后导航和关闭控件/);
+  assert.match(baselineDoc, /不显示或复制页面“观察时间”/);
+});
+
 test('WorkCase semantic blocks keep the compact 14/13px by 22px hierarchy', () => {
   const styles = read('src/index.css');
   const layout = read('src/pages/object-detail/WorkCaseReadingLayout.tsx');
