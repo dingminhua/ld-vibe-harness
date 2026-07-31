@@ -1,0 +1,193 @@
+title: HV1-HV5 下位承接与现状对齐
+status: open
+summary: 基础规范、事实类型、公开入口、Web 当前设计与 spark-0037 的 HV1-HV5 承接均已完成，进入完整验证与隔离提交。
+priority: P1
+goal: 以 commit f7188e00e 已生效的 specs/00 为唯一上位基线，使当前仍重述价值边界、直接承载 Human 价值或仍使用旧 H1-H6 的下位规范、术语、公开入口、Web 设计文档和 spark-0037 当前状态获得最小充分、一致、可验证的承接；明确保留 HV4「积累效用直观可见」尚未充分实现的能力缺口，不把文案对齐冒充产品能力完成。
+scope: 纳入 specs/01、specs/attachments/01.Att.01、specs/05、specs/08 的直接矛盾或缺口；审计 specs/03、06、07、20–24、30–34，并只对被证明确需承接 HV1-HV5 的段落作最小修改；纳入 README、web/docs/02-CognitionCenter.md 及经直接依赖审计确认必要的相邻 Web 文档、i18n 或契约测试，但 README 可正常隔离执行，当前 dirty 的 web/docs/01、02、05、10 与 web/tests/api/web-design-consistency-contract.test.ts 必须先由原工作线独立提交且相对新 HEAD clean 后才能编辑；通过 Helper 更新 spark-0037 的当前摘要与 evolution，记录 2026-07-29 旧策略已被 Human 本次决定取代、HV1-HV5 已在 f7188e00e 生效、HV4 仍待加强，并保持 status=open；包含必要测试、回读、diff 检查和只含本案改动的本地 Git commit。排除再次修改 specs/00、新增或实现 Web 模块/指标/仪表盘/HV4 产品机制、修改事实 schema/lifecycle/Helper 行为、重写历史 study-0017、修改 specs/25/FileAsset 提案/环境接入报告等并行工作线、覆盖或夹带现有无关 dirty 改动，以及 push、PR、发布或其它外部动作。
+success_criterion_definitions:
+- criterion_id: criterion-value-boundary
+  statement: 当前下位规范不再以“只允许 V1-V8”否定直接 Human 价值；统一按实际服务对象选择 V1-V8、HV1-HV5 或分别成立，同时主要服务 AI 的规则未被机械追加无依据的 HV 声明。
+- criterion_id: criterion-terminology
+  statement: 双语术语表登记 HV1-HV5 / Human Value Criteria，引用 specs/00 当前标题与编号；不存在由本次变更造成的旧标题、旧编号或当前术语悬空。
+- criterion_id: criterion-carrier-boundary
+  statement: 直接价值载体的规范映射与能力边界准确，HV4 被明确写为待加强能力而非现有完成项，且事实类型 schema、生命周期与 Helper 行为没有因本案改变。
+- criterion_id: criterion-public-web
+  statement: 在既有 Web dirty 改动先由原工作线独立提交并形成 clean 新基线后，README 与 Web 设计层使用 HV1-HV5 和 specs/00 当前来源，现行旧 H1-H6 声明得到清理；派生只读、来源边界与“文档对齐不等于能力实现”保持清楚，历史 study-0017 与 spark-0037 既有 evolution 不作为清理目标。
+- criterion_id: criterion-fact-history
+  statement: spark-0037 经 Helper 回读为 mechanically_valid，当前结论、决定取代关系、commit f7188e00e 与 HV4 缺口可查；既有历史内容保留、status 保持 open，study-0017 相对执行前 HEAD 无差异。
+- criterion_id: criterion-validation-isolation
+  statement: 相关 specs tests、触及 Web 时的契约测试、git diff --check 与 Helper 回读通过；specs/00 不产生本案差异，提交只包含可归属于本案的 hunks，现有无关 dirty 或 staged 内容不进入提交。
+phase: human_closure_confirming
+plan_version: 1
+work_items:
+- item_id: item-foundation
+  goal: 完成基础规则与术语对 HV1-HV5 上位定义的最小承接。
+  expected_result: specs/01、01.Att.01 与 05 的实际矛盾得到修正；03、06、07、30–34 完成按实际服务对象的审计，只有经证明确需修改的段落发生变化，criterion-value-boundary 与 criterion-terminology 具备可核查材料。
+  status: completed
+  approach_summary: 逐处对照 f7188e00e 后的 specs/00 与当前文本，区分上位价值准入、主要服务对象和纯 AI 实践；先形成命中清单，再以最小差异修改并复查交叉引用，不做全局机械替换。
+  result_summary: 已最小修改 specs/01、specs/attachments/01.Att.01、specs/05，使规范与事实类型准入、记录、模板和验证按实际服务对象选择 V1-V8、HV1-HV5 或分别判断；术语表登记 Human Value Criteria 并修正 00 §6 引用。审计 specs/03、06、07、30–34 后，31/32 分别只声明 HV3 的受控创建/变化节点，34 只声明 HV2 的冻结授权与接续边界；03、06、07、30、33 主要服务 AI，保持原 V/AI 定位。相关残留引用扫描无旧标题或 V-only 准入命中，code/tests/specs 131/131 通过，diff check 通过。
+- item_id: item-carriers
+  goal: 完成事实类型与 Web 上位规范的 Human 价值承接和能力边界校准。
+  expected_result: specs/20–24 的价值段与 specs/08 经审计后，只补入实际承担的 HV 映射或边界；HV4 未被写成已充分实现，事实 schema、生命周期和 Helper 行为不变，criterion-carrier-boundary 具备可核查材料。
+  status: completed
+  depends_on:
+  - item-foundation
+  approach_summary: 按 Spark、WorkCase、ADR、Pitfall、Study 和 Web 各自的实际服务对象逐项判断直接价值、支撑价值与未实现缺口；对无直接责任者保留原有 V 表述，对有责任者补最小限定。
+  result_summary: 已将 specs/08 从以 V1-V8 表达 Human 价值修正为直接承接 HV1-HV3、为 HV5 提供材料并明确不声明 HV4；已在 specs/20–24 的既有 AI 价值段后补入按各类型实际责任限定的 Human 价值边界：Spark 条件性 HV3/支撑 HV5，WorkCase HV1-HV3，ADR 条件性 HV3/HV5 关键决定片段，Pitfall 条件性 HV3，Study 条件性 HV3/支撑 HV1 与 HV5。ADR、Pitfall、closed WorkCase、Study 均只被说明为 HV4 积累内容输入，不把存在、数量、引用或吸收冒充实际复用效用；未改 schema、生命周期或 Helper。规范测试 129 passed、2 deselected；完整 131 项中的 2 个失败仅来自并行未跟踪 specs/25 固定尾部，且本案开始后的上一稳定快照曾 131/131 通过。
+- item_id: item-public-web
+  goal: 使公开入口与 Web 当前设计文档使用 HV1-HV5 的现行定位。
+  expected_result: README 与经依赖审计确认必要的 Web 文档、i18n 或契约测试完成现行 H1-H6 到 HV1-HV5 的准确迁移，使用 specs/00 作为当前来源且不新增功能；criterion-public-web 可验证。
+  status: completed
+  depends_on:
+  - item-foundation
+  - item-carriers
+  approach_summary: README 先按独立 hunk 处理；五个当前 dirty Web 路径只有在原工作线变更已独立进入新 HEAD、且这些路径同时无 staged/unstaged 差异后才能读取新基线并编辑。记录所消费的新 HEAD、原工作线 commit 与 clean 检查；条件未满足时本 item 保持 pending 或据实 blocked，WorkCase 不进入结果链或 Gate2。
+  result_summary: 已在原 Web 工作线 commits 52fd3a358、4d97cdb3e 独立提交且五个保护路径 clean 后，以 HEAD 4d97cdb3e 为新基线完成迁移。README 已明确 AI 第一服务对象、直接 Human 价值和 HV4 缺口；web/docs/02 改以 specs/00 §6 的 HV1-HV5 为当前来源，将待决定事项映射 HV1、推进与接续映射 HV2、入档节点映射 HV3、近期动态/提交关系限定为 HV5 材料，并明确 HV4 尚未完整承接；spark-0037 只保留旧框架历史，不再作为当前标准来源。同源核查改为支撑方法，不再冒充旧 H4。相邻 01/05/10 与 i18n 无旧标准命中，保持新基线不改；CognitionCenter 两处旧 H3 注释已清理，直接契约测试补入现行标准与旧当前声明反例。Web API tests 139/139、TypeScript 0 错误、diff check 与旧当前术语扫描通过。
+- item_id: item-current-fact
+  goal: 把已成立的 Human 决定和当前能力缺口收敛到 spark-0037 的当前快照。
+  expected_result: spark-0037 保留全部既有字段、历史 summary 内容与 evolution，新增当前结论和决定取代记录，保持 status=open，并经 Helper CAS 写入与 mechanically_valid 回读；study-0017 不变，criterion-fact-history 可验证。
+  status: completed
+  depends_on:
+  - item-foundation
+  - item-carriers
+  approach_summary: 执行前经 Helper 重读最新完整对象和 content fingerprint；只通过 update-fact-object 提交完整 after 对象，保留历史并在当前摘要顶部和 evolution 末尾增加新状态；写后以 Helper 回读，任何 stale、invalid 或 unavailable 均停止而不绕过。
+  result_summary: 已通过 Helper update-fact-object 在最新 CAS fingerprint 上更新 spark-0037：intent、relations、status=open 和全部既有历史内容保持；summary 顶部新增 2026-07-31 当前结论，明确旧“先 Web 实践、2–3 个阶段后复评”已被取代、HV1-HV5 已由 f7188e00e 入库且 HV4 尚未完整具备；evolution 由 8 条增至 9 条。Helper 写后回读 mechanically_valid，Git 差异只显示该摘要前缀、新演变与托管 updated_at，study-0017 无差异，diff check 通过。
+- item_id: item-validation-commit
+  goal: 形成完整验证证据并以本地隔离提交保存本案结果。
+  expected_result: 六项成功标准均获得 satisfied、not_satisfied 或 not_verified 的实际材料；相关测试与回读执行，提交满足中文 Conventional Commits 和 Git Gate，且没有无关 dirty/staged 内容被夹带。
+  status: completed
+  depends_on:
+  - item-foundation
+  - item-carriers
+  - item-public-web
+  - item-current-fact
+  approach_summary: 逐文件检查 diff 与归属；执行相关 specs tests、触及 Web 时的 API/设计契约测试、git diff --check 和 Helper 回读；确认 specs/00 与 study-0017 无本案差异，提交前 index 无既有 staged 内容，禁止 git add -A 或按整条已 dirty 路径 stage，再形成一个或多个仅含本案改动的本地提交。
+  result_summary: 已逐文件核对本案归属并将实现、规范、README、Web 设计契约与 spark-0037 隔离提交为 128e00662；提交包含 17 个本案文件，Git Gate 通过，未纳入并行 Code/FileAsset/环境报告或 workcase-0022 改动。验证结果：code/tests/specs 131/131、Web API tests 139/139、TypeScript 0 错误、git diff --check 通过；Helper 回读 spark-0037 与 workcase-0021 均 mechanically_valid，specs/00 与 study-0017 无差异。
+creation_reviews:
+- reviewer: Codex independent reviewer (/root/human_value_review)
+  reviewed_at: '2026-07-31T20:36:32+08:00'
+  subject_version: 1
+  scope: 独立复核目标、单一关闭责任、范围、六项成功标准、五个执行 item、方法、验证、HV4 未实现边界、specs/00 与 study-0017 排除、spark-0037 Helper CAS、大对象历史保留、Git 与 Web dirty 隔离，以及首轮发现的同线 dirty 冲突已被当前计划以强制 clean 新基线前置完整关闭；未修改文件。
+  conclusion: pass
+execution_authorization:
+  authorized_actions:
+  - action_id: authorization-spec-alignment
+    summary: 编辑经实际命中审计证明必要的下位规范与术语附件，使其承接 HV1-HV5 上位定义。
+    target_scope: 仅 specs/01、specs/attachments/01.Att.01、specs/05、specs/08，以及审计后存在直接矛盾或明确 Human 价值责任的 specs/03、06、07、20–24、30–34 段落和其直接规范测试。
+    effect_scope: 允许最小文本、交叉引用与直接契约测试修改；不得修改 specs/00，不得改变事实 schema、生命周期、Helper 行为或运行机制。
+    risk_summary: 主要风险是把全部规则机械改成双价值、扩大下位规范责任或误写 HV4 已完成；实际服务对象判断仍需 AI 据实完成，Code 测试不能替代语义审核。
+    rollback_summary: 未提交时只反向恢复本案可识别 hunks；提交后仅在另有明确指令时以新提交反转，不使用 checkout/reset 覆盖用户资产。
+    rule_refs:
+    - specs/00-理念与构成.md
+    - specs/01-规范模型基础规范.md
+    - specs/05-事实模型基础规范.md
+    - specs/30-Git 提交与版本同步行动模板.md
+  - action_id: authorization-public-web-alignment
+    summary: 对齐 README 与当前 Web 设计层的 HV1-HV5 定位、映射和现状声明。
+    target_scope: README、web/docs/02-CognitionCenter.md，以及经直接依赖审计确认必要的相邻 Web 文档、i18n 和 web/tests 契约；其中当前 dirty 的 web/docs/01、02、05、10 与 web/tests/api/web-design-consistency-contract.test.ts 仅在其原工作线已独立提交且路径相对新 HEAD clean 后进入可写范围。
+    effect_scope: 只允许定位、术语、映射、来源和现状边界修改及其直接测试；不允许新增页面、模块、指标、数据派生、API 或 HV4 产品机制，不允许 stage 五条路径当前已有 delta。
+    risk_summary: 同一行并行改动无法按 hunk 安全拆分；若未先形成 clean 新基线，会夹带他人工作。文档存在也可能被误读为 HV4 能力已经交付。
+    rollback_summary: clean 新基线未成立则不启动相关写入；开始后只撤销本案基于该新 HEAD 形成的可识别 hunks，不覆盖原工作线提交或用户改动。
+    rule_refs:
+    - specs/08-Web 呈现与交互规范.md
+    - specs/21-WorkCase-工作项.md
+    - specs/30-Git 提交与版本同步行动模板.md
+  - action_id: authorization-spark-update
+    summary: 经 Helper 更新 spark-0037 的当前结论与 evolution，保留历史并保持 open。
+    target_scope: 仅 ldvh 项目 spark-0037 当前完整对象；study-0017 只读且禁止写入。
+    effect_scope: 允许在最新 fingerprint 上通过 update-fact-object 完整更新一次或在 stale 后重新读取并重新判断；不得直改 YAML、删除历史、改变为终态或创建替代 Spark。
+    risk_summary: spark-0037 是大型完整对象，错误 after 可能覆盖历史；Helper 只验证机械形状，不判断自然语言保留是否充分。
+    rollback_summary: 写入前保存最新 Helper readback 作为语义对照；stale/invalid/unavailable 时零绕过并停止。成功写入后的进一步更正仍须走受控更新，不直接覆盖文件。
+    rule_refs:
+    - specs/20-Spark-火花.md
+    - specs/32-事实对象生命周期变化行动模板.md
+  - action_id: authorization-validation
+    summary: 运行本案必要的只读扫描、测试、diff 检查和 Helper 回读。
+    target_scope: 仅本仓库与本案修改直接相关的 specs tests、Web tests、Git diff/status/log 和 ldvh facts readback。
+    effect_scope: 允许产生测试缓存或工具正常临时产物；不得把测试通过扩大成语义正确或 HV4 已实现，不得修改外部系统。
+    risk_summary: 测试覆盖存在边界，文本语义和并行所有权不能由 Code 全自动证明；必须结合逐项 diff 与独立复核。
+    rollback_summary: 测试失败时停止结论形成并保留诊断；仅清理由本案工具明确生成且可安全识别的临时产物。
+    rule_refs:
+    - specs/07-Code 工程实践规范.md
+    - specs/21-WorkCase-工作项.md
+    - specs/30-Git 提交与版本同步行动模板.md
+  - action_id: authorization-local-commits
+    summary: 暂存并创建一个或多个只含本案结果的本地 Git commit。
+    target_scope: 仅通过逐文件和逐 hunk 归属检查的本案修改；WorkCase 与 spark-0037 事实变更也必须经 Helper 回读后才可纳入。
+    effect_scope: 允许 git add 指定文件或指定可归属 hunks、运行 Git Gate 并在 dev-v4 创建本地提交；禁止 git add -A、禁止整条 stage 当前已有 dirty Web 路径、禁止 push/PR/release。
+    risk_summary: 多 AI 共用工作树，提交前后 HEAD 与 dirty 集可能变化；误暂存会污染他人工作，提交本身会改变共享分支历史。
+    rollback_summary: 提交前发现归属不清则取消暂存相应 hunk 并停止；不使用 reset --hard 或 checkout；提交后若需反转必须另获明确指令。
+    rule_refs:
+    - specs/30-Git 提交与版本同步行动模板.md
+  - action_id: authorization-bounded-review-delegation
+    summary: 委派只读 subagent 对当前计划内语义变更或完整结果投影作独立复核。
+    target_scope: 仅本 WorkCase 的计划、实际 diff、测试与 Helper 回读证据。
+    effect_scope: 允许本次运行内有界只读委派；Reviewer 不得编辑文件、替代 Controller 或替 Human 作 Gate1/Gate2 决定。
+    risk_summary: 若 Reviewer 参与实施或未检查实际对象，独立性和结论范围会失真；Code 不能自动证明职责独立。
+    rollback_summary: 拒绝不可回指、职责不独立或超范围的审核输出，不写入结果事实。
+    rule_refs:
+    - specs/06-行动模板基础规范.md
+    - specs/21-WorkCase-工作项.md
+  action_ceiling: 仅完成 f7188e00e 后 specs/00 的下位语义承接、公开/Web 当前映射对齐和 spark-0037 当前状态说明；不修改 specs/00，不新建 Human 价值或 HV4 产品机制，不改变运行行为、事实 schema/lifecycle、Helper 或外部状态。
+  prohibited_actions:
+  - 修改 specs/00-理念与构成.md
+  - 直改任何事实对象 YAML 或重写 ldvh-base/studies/study-0017.md
+  - 修改 specs/25、FileAsset 提案、环境接入报告或其它并行工作线
+  - 消费、覆盖、重排或暂存当前五个 dirty Web 路径的既有 delta
+  - 在缺少 clean 独立新基线时启动 item-public-web
+  - 新增 Web 功能、HV4 指标或统计机制，或改变事实 schema、生命周期、Helper 与运行行为
+  - 使用 git add -A、git reset --hard、git checkout -- 或其它破坏性/无界 Git 动作
+  - push、创建 PR、发布、安装或修改任何远端/外部系统
+  allowed_adjustments: 允许在命中审计中增减为实现六项成功标准而直接必要的下位规范段落、Web 相邻文档、i18n 与直接测试，但不得扩大到新功能或新机制。五个当前 dirty Web 路径无法确认原工作线已独立提交且相对新 HEAD clean 时，item-public-web 必须保持未完成，不自动缩小 criterion-public-web；基线内小幅文本或测试路径调整仍需保持同一目标、风险上限与文件所有权。
+  verification_and_rollback: 逐文件检查 diff、来源与实际服务对象；执行相关 specs tests、触及 Web 时的 API/设计契约测试、git diff --check 和 Helper readback；确认 specs/00 不产生本案差异、study-0017 相对执行前 HEAD 无差异、提交前 index 无既有 staged 内容，禁止 git add -A 或整条 stage 既有 dirty 路径。旧 H1-H6 扫描排除历史 study-0017 与 spark-0037 既有 evolution。失败时只反向恢复本案未提交可识别 hunks或停止，不覆盖他人改动。
+  out_of_bounds_handling: 发现需修改 specs/00、实现新机制、改变 schema/lifecycle/Helper、接受新风险或触及其它工作线时，取消对应未授权部分并据实进入结果链，不请求第三次扩权。Web clean 新基线前置不成立时不得启动相关动作；执行期间再次出现所有权不明的同线 dirty 时，停止 item-public-web 并将 WorkCase 据实标为 blocked，等待可归属基线恢复，不进入 Gate2。
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0037
+execution_approval:
+  subject_version: 1
+  approved_at: '2026-07-31T20:44:48+08:00'
+  summary: Human 明确批准 workcase-0021 plan_version 1 及其执行授权基线；批准精确消费已呈现的目标、范围、成功标准、授权动作、风险、禁止动作与 Web clean 新基线前置。
+  baseline_fingerprint: e82b180696f4188a378a6b59e8c5f96275f267d98bf0bb2316b3bf5684a84f69
+  source_refs:
+  - codex-thread:019fb601-1073-73e2-b89b-e6ac5bef6763/human-gate1-approval@2026-07-31T20:44:48+08:00
+result_version: 1
+success_criterion_results:
+- criterion_id: criterion-value-boundary
+  outcome: satisfied
+  summary: specs/01 与 05 已按实际服务对象选择 V1-V8、HV1-HV5 或分别判断；31、32、34 只声明其实际直接支持的 HV3/HV2 边界，审计确认 specs/03、06、07、30、33 主要服务 AI 而未机械追加 HV 声明。
+- criterion_id: criterion-terminology
+  outcome: satisfied
+  summary: 双语术语表已登记 HV1-HV5 价值评判标准 / Human Value Criteria，并将 V1-V8 与 HV1-HV5 都回指 specs/00 当前 §6 标题；当前下位文本未发现由本案造成的旧标题或当前术语悬空。
+- criterion_id: criterion-carrier-boundary
+  outcome: satisfied
+  summary: specs/08、20-24 已按 Web 与各事实类型的实际责任区分直接价值、支撑材料和不承接范围；HV4 均限定为积累输入或明确缺口，commit 128e00662 未修改事实 Schema、生命周期或 Helper/Code 运行行为。
+- criterion_id: criterion-public-web
+  outcome: satisfied
+  summary: 在 Web 原工作线 52fd3a358、4d97cdb3e 独立提交并形成 clean 新基线后，README 与 web/docs/02 已使用 specs/00 §6 的 HV1-HV5 当前来源；旧 H1-H6 只作为 spark-0037 历史被明确取代，页面仍保持只读、同源派生、降级范围和 HV4 未实现边界，未新增 Web 功能。
+- criterion_id: criterion-fact-history
+  outcome: satisfied
+  summary: spark-0037 已经 Helper CAS 更新并回读 mechanically_valid，status 保持 open、intent 与 relations 不变、原 summary 全文保留为历史、原 8 条 evolution 保留并追加 1 条当前决定取代记录；study-0017 相对 HEAD 无差异。
+- criterion_id: criterion-validation-isolation
+  outcome: satisfied
+  summary: code/tests/specs 131/131、Web API tests 139/139、TypeScript 0 错误与 git diff --check 通过；Helper 回读 spark-0037 和 workcase-0021 均 mechanically_valid，specs/00 与 study-0017 无差异。commit 128e00662 只含 17 个本案文件，未夹带并行 Code、FileAsset、环境报告或 workcase-0022 改动。
+result_summary: LDVH 下位体系已承接 specs/00 生效的 HV1-HV5：基础规范与事实准入按实际服务对象判断两组价值，Web 与五类事实对象获得有边界的 Human 价值责任，README 和认知中心改用当前上位来源，spark-0037 保存决定取代关系与 HV4 缺口。实现结果已由 commit 128e00662 隔离保存；本案没有修改 specs/00、事实 Schema、生命周期或运行机制，也没有把 HV4 表达为已经实现。
+controller_check_summary: Controller 已逐项核对六项成功标准、17 个提交文件、未修改的主要 AI 规范、Web clean 新基线、事实历史保留和并行 dirty 隔离。检查中特别校正了 Spark intent 不随普通进展变化、Web 同源核查不再冒充旧独立价值、近期动态/提交热点只为 HV5 提供材料、对象或提交数量不能证明 HV4。未发现需要基线内返工或 PlanΔ 的剩余问题；并行 Code/FileAsset 工作不属于本案结果。
+validation_summary: 在实现提交 128e00662 对应结果上，code/tests/specs 全量 131/131 通过；web 下 npm run test:web:api 全量 139/139 通过；npx tsc --noEmit 0 错误；git diff --check 通过。Helper 精确回读 spark-0037 与 workcase-0021 为 mechanically_valid，并核对 spark 的 open 状态、稳定 intent、9 条 evolution 与当前摘要。Git 检查确认 specs/00、study-0017 无本案差异，提交只含列明的 17 个文件。未执行浏览器视觉走查，因为本案没有改变 Web 可观察行为，只修改设计文档、注释与直接契约测试；未验证也不声明 HV4 的实际使用、复用或可观察效用。
+result_reviews:
+- reviewer: Codex independent result reviewer (/root/human_value_review)
+  reviewed_at: '2026-07-31T21:22:13+08:00'
+  subject_version: 1
+  scope: 独立复核 workcase-0021 result_version 1：Helper 精确回读 workcase-0021 与 spark-0037；检查 commit 128e00662 的完整差异、17 文件闭集及 52fd3a358/4d97cdb3e Web 基线祖先关系；对照 specs/00 当前 HV1-HV5，核查六项成功标准结果、结果摘要、Controller 检查与验证摘要；复核 HV1-HV3 直接/支撑边界、HV4 未完整实现、HV5 仅材料边界及旧 H1-H6 历史定位；确认 specs/00、study-0017 无本案差异且并行 dirty 未进入提交。
+  conclusion: pass
+closure_proposal:
+  proposed_outcome: completed
+  proposed_disposition_summary: workcase-0021 原 scope 内的下位 HV1-HV5 承接、公开/Web 当前来源迁移、spark-0037 状态收敛、验证与隔离提交均已完成，六项成功标准全部 satisfied，没有未满足、未验证或需要转交的 scope 内剩余责任。HV4 产品能力仍是 specs/00 与 spark-0037 已明确记录的范围外长期缺口，不由本 WorkCase 实现，也不在本次关闭中新增处置或重复建档。
+waiting_on: Human 对 workcase-0021 result_version 1、独立复核 pass 与 completed 关闭提案作 Gate2 决定
+object_id: workcase-0021
+fact_type_key: workcase
+created_at: '2026-07-31T20:38:49.368319+08:00'
+updated_at: '2026-07-31T21:23:29.805462+08:00'
