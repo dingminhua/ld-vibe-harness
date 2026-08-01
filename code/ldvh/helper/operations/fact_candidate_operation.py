@@ -449,6 +449,9 @@ def _reasons(domain: FactCandidateRequest, fields: dict[str, Any]) -> list[dict[
         return [{"kind": "recovery-baseline", "field_path": "status"}] if expected else None
     if fact_type_key not in domain.fact_type_keys:
         return None
+    identity = (domain.governed_project_id, fact_type_key, object_id)
+    if fact_type_key == "file-asset" and status == "deleted" and identity not in _references(domain.exact_refs):
+        return None
     reasons: list[dict[str, object]] = []
     if domain.statuses is not None:
         if status not in set(domain.statuses):
@@ -458,7 +461,6 @@ def _reasons(domain: FactCandidateRequest, fields: dict[str, Any]) -> list[dict[
         if status not in _DEFAULT_STATUSES[fact_type_key]:
             return None
         reasons.append({"kind": "default-status", "field_path": "status"})
-    identity = (domain.governed_project_id, fact_type_key, object_id)
     if domain.exact_refs:
         if identity not in _references(domain.exact_refs):
             return None

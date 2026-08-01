@@ -109,6 +109,7 @@ _RFC3339 = re.compile(
 )
 _EPOCH_ORDINAL = date(1970, 1, 1).toordinal()
 _FILE_ASSET_SHA256 = re.compile(r"[0-9a-f]{64}\Z")
+_GIT_OBJECT_ID = re.compile(r"[0-9a-f]{40}(?:[0-9a-f]{24})?\Z")
 _FILE_ASSET_MEDIA_TYPE = re.compile(
     r"[a-z0-9][a-z0-9!#$&^_.+-]*/[a-z0-9][a-z0-9!#$&^_.+-]*\Z"
 )
@@ -328,6 +329,42 @@ def _validate_file_asset(fields: dict[str, Any], issues: list[FactIssue]) -> Non
                 "content_sha256",
             )
         )
+
+    status = fields.get("status")
+    deleted_fields = {"deleted_at", "recovery"}
+    if status == "active":
+        _forbid(fields, deleted_fields, issues)
+    elif status == "deleted":
+        _require(fields, deleted_fields, issues)
+        if fields.get("deleted_at") != fields.get("updated_at"):
+            issues.append(
+                FactIssue(
+                    "schema",
+                    "deleted_at 必须与本次安全删除托管的 updated_at 完全一致",
+                    "deleted_at",
+                )
+            )
+        recovery = fields.get("recovery")
+        if isinstance(recovery, dict):
+            expected_path = f"ldvh-base/file-assets/{fields.get('object_id')}/payload"
+            if recovery.get("path") != expected_path:
+                issues.append(
+                    FactIssue(
+                        "schema",
+                        "recovery.path 必须精确指向该对象原 canonical payload 路径",
+                        "recovery.path",
+                    )
+                )
+            for name in ("commit", "blob_oid"):
+                value = recovery.get(name)
+                if isinstance(value, str) and _GIT_OBJECT_ID.fullmatch(value) is None:
+                    issues.append(
+                        FactIssue(
+                            "schema",
+                            f"recovery.{name} 必须是 40 或 64 位小写十六进制 Git object id",
+                            f"recovery.{name}",
+                        )
+                    )
 
     signature = fields.get("signature")
     if not isinstance(signature, dict):

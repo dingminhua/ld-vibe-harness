@@ -440,6 +440,71 @@ def _stage_file_asset(
     return manifest_path, payload_path
 
 
+def _stage_deleted_tombstone(project: Path, manifest_path: str, payload_path: str) -> None:
+    commit = _git(project, "rev-parse", "HEAD").decode().strip()
+    blob_oid = _git(project, "rev-parse", f"HEAD:{payload_path}").decode().strip()
+    tombstone = (
+        "object_id: file-asset-0001\n"
+        "fact_type_key: file-asset\n"
+        "title: 审计文件\n"
+        'created_at: "2026-07-31T10:00:00+08:00"\n'
+        'updated_at: "2026-08-01T10:00:00+08:00"\n'
+        "status: deleted\n"
+        "filename: audit.bin\n"
+        "media_type: application/octet-stream\n"
+        "size_bytes: 22\n"
+        f"content_sha256: {hashlib.sha256(b'objective audit bytes\n').hexdigest()}\n"
+        "signature:\n"
+        "  signer_type: human\n"
+        "disposition_summary: Human 确认不再保留当前 payload。\n"
+        'deleted_at: "2026-08-01T10:00:00+08:00"\n'
+        "recovery:\n"
+        f"  commit: {commit}\n"
+        f"  path: {payload_path}\n"
+        f"  blob_oid: {blob_oid}\n"
+    )
+    (project / manifest_path).write_text(tombstone, encoding="utf-8")
+    (project / payload_path).unlink()
+    _git(project, "add", "-A", manifest_path, payload_path)
+
+
+def _stage_referring_closed_workcase(project: Path) -> str:
+    path = "ldvh-base/workcases/workcase-0001.yaml"
+    target = project / path
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(
+        """object_id: workcase-0001
+fact_type_key: workcase
+title: Closed audit consumer
+created_at: 2026-07-31T09:00:00+08:00
+updated_at: 2026-07-31T11:00:00+08:00
+status: closed
+goal: Consume one audit FileAsset
+scope: One bounded audit
+success_criterion_definitions:
+  - criterion_id: criterion-01
+    statement: The audit was reviewed
+success_criterion_results:
+  - criterion_id: criterion-01
+    outcome: satisfied
+    summary: The audit was reviewed
+result_summary: The audit was reviewed
+validation_summary: The closed record was read back
+closure_outcome: completed
+disposition_summary: The bounded audit is complete
+relations:
+  - relation_key: has-file-asset
+    target:
+      governed_project_id: sample
+      fact_type_key: file-asset
+      object_id: file-asset-0001
+""",
+        encoding="utf-8",
+    )
+    _git(project, "add", path)
+    return path
+
+
 def test_complete_valid_new_file_asset_passes_helper_and_native_gate(tmp_path: Path) -> None:
     workspace, project = _fixture(tmp_path)
     manifest, payload = _stage_file_asset(project)
@@ -490,9 +555,7 @@ def test_existing_file_asset_payload_change_and_deletion_are_blocked(tmp_path: P
         _payload(workspace, project, "test(file-asset): 验证既有变更拦截"),
     ).response
     assert changed["result"]["mechanical_outcome"] == "failed"
-    assert {item["code"] for item in changed["result"]["issues"]} == {
-        "file_asset_lifecycle_write_unavailable"
-    }
+    assert {item["code"] for item in changed["result"]["issues"]} == {"fact_candidate_invalid"}
 
     (project / payload).write_bytes(b"objective audit bytes\n")
     _git(project, "add", payload)
@@ -507,6 +570,133 @@ def test_existing_file_asset_payload_change_and_deletion_are_blocked(tmp_path: P
         ),
     ).response
     assert deleted["result"]["mechanical_outcome"] == "failed"
-    assert {item["code"] for item in deleted["result"]["issues"]} == {
-        "file_asset_lifecycle_write_unavailable"
+    assert {item["code"] for item in deleted["result"]["issues"]} == {"fact_candidate_invalid"}
+
+
+def test_existing_active_file_asset_can_stage_exact_deleted_tombstone(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    manifest_path, payload_path = _stage_file_asset(project)
+    _git(project, "reset", "-q", "change.txt")
+    _git(
+        project,
+        "-c",
+        "user.name=LDVH Test",
+        "-c",
+        "user.email=ldvh@example.invalid",
+        "commit",
+        "-qm",
+        "test: establish FileAsset safe-delete baseline",
+    )
+    _stage_deleted_tombstone(project, manifest_path, payload_path)
+    message = "test(file-asset): 验证安全删除\n\n关键变更:\n- 形成 deleted tombstone"
+
+    helper = handle_request("call", "precheck-git-commit", _payload(workspace, project, message))
+    gate = _gate(workspace, project, message)
+
+    assert helper.response["result"]["mechanical_outcome"] == gate.outcome == "passed"
+    assert helper.response["result"]["issues"] == []
+    assert helper.response["result"]["candidate"]["paths"] == [manifest_path, payload_path]
+
+
+def test_safe_delete_gate_blocks_an_indexed_workcase_incoming_reference(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    manifest_path, payload_path = _stage_file_asset(project)
+    _git(project, "reset", "-q", "change.txt")
+    _git(
+        project,
+        "-c",
+        "user.name=LDVH Test",
+        "-c",
+        "user.email=ldvh@example.invalid",
+        "commit",
+        "-qm",
+        "test: establish referenced FileAsset baseline",
+    )
+    workcase_path = _stage_referring_closed_workcase(project)
+    _stage_deleted_tombstone(project, manifest_path, payload_path)
+
+    response = handle_request(
+        "call",
+        "precheck-git-commit",
+        _payload(workspace, project, "test(file-asset): 拦截仍被引用的删除"),
+    ).response
+
+    assert response["result"]["mechanical_outcome"] == "failed"
+    assert "file_asset_incoming_reference" in {
+        item["code"] for item in response["result"]["issues"]
+    }
+    assert workcase_path in response["result"]["candidate"]["paths"]
+
+
+def test_safe_delete_gate_rejects_a_forged_recovery_blob_oid(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    manifest_path, payload_path = _stage_file_asset(project)
+    _git(project, "reset", "-q", "change.txt")
+    _git(
+        project,
+        "-c",
+        "user.name=LDVH Test",
+        "-c",
+        "user.email=ldvh@example.invalid",
+        "commit",
+        "-qm",
+        "test: establish recovery anchor baseline",
+    )
+    _stage_deleted_tombstone(project, manifest_path, payload_path)
+    manifest = project / manifest_path
+    current_oid = _git(project, "rev-parse", f"HEAD:{payload_path}").decode().strip()
+    manifest.write_text(
+        manifest.read_text(encoding="utf-8").replace(current_oid, "f" * len(current_oid)),
+        encoding="utf-8",
+    )
+    _git(project, "add", manifest_path)
+
+    response = handle_request(
+        "call",
+        "precheck-git-commit",
+        _payload(workspace, project, "test(file-asset): 拦截伪造恢复锚点"),
+    ).response
+
+    assert response["result"]["mechanical_outcome"] == "failed"
+    assert "file_asset_delete_recovery_mismatch" in {
+        item["code"] for item in response["result"]["issues"]
+    }
+
+
+def test_gate_rejects_a_later_workcase_reference_to_deleted_file_asset(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    manifest_path, payload_path = _stage_file_asset(project)
+    _git(project, "reset", "-q", "change.txt")
+    _git(
+        project,
+        "-c",
+        "user.name=LDVH Test",
+        "-c",
+        "user.email=ldvh@example.invalid",
+        "commit",
+        "-qm",
+        "test: establish active target",
+    )
+    _stage_deleted_tombstone(project, manifest_path, payload_path)
+    _git(
+        project,
+        "-c",
+        "user.name=LDVH Test",
+        "-c",
+        "user.email=ldvh@example.invalid",
+        "commit",
+        "-qm",
+        "test: establish deleted tombstone",
+    )
+    _stage_referring_closed_workcase(project)
+
+    response = handle_request(
+        "call",
+        "precheck-git-commit",
+        _payload(workspace, project, "test(workcase): 拦截 deleted FileAsset 引用"),
+    ).response
+
+    assert response["result"]["mechanical_outcome"] == "failed"
+    assert "file_asset_target_not_active" in {
+        item["code"] for item in response["result"]["issues"]
     }

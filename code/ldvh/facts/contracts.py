@@ -8,12 +8,26 @@ machine-checkable type constraints to filesystem and validator behavior.
 from __future__ import annotations
 
 import re
+import stat
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Literal
+
+from ldvh.filesystem import is_link_or_reparse
 
 # Specs 21 §5: "活跃" 语义下的 open / blocked 工作态集合。
 # 单一事实真源在 specs/21；此处仅镜像闭集供实现引用。
 ACTIVE_STATUSES = frozenset({"open", "blocked"})
+IGNORED_FACT_TYPE_ROOT_BASENAMES = frozenset({".DS_Store"})
+
+
+def is_ignored_fact_type_root_entry(path: Path) -> bool:
+    """Return whether a direct type-root entry is source-defined platform metadata."""
+
+    if path.name not in IGNORED_FACT_TYPE_ROOT_BASENAMES:
+        return False
+    observed = path.lstat()
+    return stat.S_ISREG(observed.st_mode) and not is_link_or_reparse(observed)
 
 
 @dataclass(frozen=True, slots=True)
@@ -115,7 +129,7 @@ LAYOUTS = {
         payload_name="payload",
         object_id_pattern=re.compile(r"file-asset-[0-9]{4,}\Z"),
         initial_statuses=frozenset({"active"}),
-        statuses=frozenset({"active", "archived"}),
+        statuses=frozenset({"active", "deleted"}),
         relation_keys=frozenset(),
     ),
 }
@@ -128,8 +142,10 @@ TERMINAL_COMMON = frozenset({"disposition_summary"})
 
 __all__ = [
     "ACTIVE_STATUSES",
+    "IGNORED_FACT_TYPE_ROOT_BASENAMES",
     "LAYOUTS",
     "TERMINAL_COMMON",
     "WRITABLE_FACT_TYPE_KEYS",
     "FactTypeLayout",
+    "is_ignored_fact_type_root_entry",
 ]

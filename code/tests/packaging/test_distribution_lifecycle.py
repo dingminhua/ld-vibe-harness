@@ -30,6 +30,7 @@ OPERATIONS = (
     "create-fact-object",
     "prepare-file-asset-intake",
     "create-file-asset",
+    "delete-file-asset",
     "update-fact-object",
     "update-workcase",
     "close-workcase",

@@ -14,7 +14,7 @@ from typing import Any, Literal
 
 from ldvh.facts.carriers.yaml_object import parse_yaml_object
 from ldvh.facts.contracts import ACTIVE_STATUSES, LAYOUTS
-from ldvh.facts.creation import CreationBoundary, allocation_lock, serialize_fact_object
+from ldvh.facts.creation import CreationBoundary, allocation_lock, relation_write_lock, serialize_fact_object
 from ldvh.facts.models import FactIssue
 from ldvh.facts.project_validation import stabilize_project_index
 from ldvh.facts.relations import (
@@ -711,7 +711,13 @@ def _new_contributed_to_issues(
             issues.append(FactIssue("reference", "新 contributed-to target 当前不可用", "relations"))
             continue
         if target_read is None or target_read.check_status in {"not_found", "invalid"} or target_read.fields is None:
-            issues.append(FactIssue("relation", "新 contributed-to target 必须是可读的 mechanically valid draft Pitfall", "relations"))
+            issues.append(
+                FactIssue(
+                    "relation",
+                    "新 contributed-to target 必须是可读的 mechanically valid draft Pitfall",
+                    "relations",
+                )
+            )
             continue
         if target_read.fields.get("status") != "draft":
             issues.append(FactIssue("relation", "新 contributed-to 只能指向 status=draft Pitfall", "relations"))
@@ -1001,8 +1007,9 @@ def apply_workcase_write(command: WorkCaseWriteCommand) -> WorkCaseWriteResult:
         return _result(command, "durability_unavailable")
     completed: WorkCaseWriteResult | None = None
     try:
-        with allocation_lock(command.boundary, LAYOUTS["workcase"]):
-            completed = apply_workcase_write_locked(command)
+        with relation_write_lock(command.boundary):
+            with allocation_lock(command.boundary, LAYOUTS["workcase"]):
+                completed = apply_workcase_write_locked(command)
     except OSError:
         if completed is None:
             raise

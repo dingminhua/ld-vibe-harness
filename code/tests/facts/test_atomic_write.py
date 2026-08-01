@@ -10,6 +10,7 @@ from ldvh import filesystem
 from ldvh.filesystem import (
     atomic_create_directory_relative,
     atomic_create_relative,
+    atomic_replace_directory_relative_if_members_equal,
     atomic_replace_relative_if_equal,
     atomic_store_relative,
     remove_directory_relative_if_members_equal,
@@ -459,3 +460,138 @@ def test_directory_rollback_requires_exact_closed_members(tmp_path: Path) -> Non
         "file_and_directory",
     )
     assert not (tmp_path / relative).exists()
+
+
+@pytest.mark.skipif(os.name != "posix", reason="directory exchange requires POSIX primitives")
+def test_atomic_directory_replace_removes_payload_and_keeps_only_tombstone(tmp_path: Path) -> None:
+    relative = "ldvh-base/file-assets/file-asset-0001"
+    before = {"file-asset.yaml": b"status: active\n", "payload": b"payload\n"}
+    after = {"file-asset.yaml": b"status: deleted\n"}
+    assert atomic_create_directory_relative(tmp_path, relative, before).outcome == "created"
+
+    replaced = atomic_replace_directory_relative_if_members_equal(tmp_path, relative, before, after)
+
+    assert (replaced.outcome, replaced.namespace_state, replaced.durability, replaced.cleanup) == (
+        "replaced",
+        "committed",
+        "file_and_directory",
+        "clean",
+    )
+    directory = tmp_path / relative
+    assert {path.name for path in directory.iterdir()} == {"file-asset.yaml"}
+    assert (directory / "file-asset.yaml").read_bytes() == after["file-asset.yaml"]
+    assert not tuple((tmp_path / "ldvh-base/file-assets").glob(".ldvh-directory-replace-*.tmp"))
+
+
+@pytest.mark.skipif(os.name != "posix", reason="directory exchange requires POSIX primitives")
+def test_atomic_directory_replace_rolls_back_if_exchanged_before_cannot_be_confirmed(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    relative = "ldvh-base/file-assets/file-asset-0001"
+    before = {"file-asset.yaml": b"status: active\n", "payload": b"payload\n"}
+    after = {"file-asset.yaml": b"status: deleted\n"}
+    assert atomic_create_directory_relative(tmp_path, relative, before).outcome == "created"
+    original = filesystem._directory_members_equal
+    calls = 0
+
+    def fail_second_confirmation(directory_fd: int, expected: dict[str, bytes]) -> bool:
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            raise OSError("injected pre-destruction failure")
+        return original(directory_fd, expected)
+
+    monkeypatch.setattr(filesystem, "_directory_members_equal", fail_second_confirmation)
+
+    replaced = atomic_replace_directory_relative_if_members_equal(tmp_path, relative, before, after)
+
+    assert (replaced.outcome, replaced.namespace_state, replaced.cleanup) == (
+        "unavailable",
+        "not_committed",
+        "clean",
+    )
+    directory = tmp_path / relative
+    assert (directory / "file-asset.yaml").read_bytes() == before["file-asset.yaml"]
+    assert (directory / "payload").read_bytes() == before["payload"]
+    assert not tuple((tmp_path / "ldvh-base/file-assets").glob(".ldvh-directory-replace-*.tmp"))
+
+
+@pytest.mark.skipif(os.name != "posix", reason="directory exchange requires POSIX primitives")
+def test_atomic_directory_rollback_preserves_concurrent_after_image_as_residue(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    relative = "ldvh-base/file-assets/file-asset-0001"
+    before = {"file-asset.yaml": b"status: active\n", "payload": b"payload\n"}
+    after = {"file-asset.yaml": b"status: deleted\n"}
+    concurrent_after = b"status: deleted\ndisposition_summary: concurrent\n"
+    assert atomic_create_directory_relative(tmp_path, relative, before).outcome == "created"
+    original_equal = filesystem._directory_members_equal
+    original_exchange = filesystem._exchange_directories_posix
+    equal_calls = 0
+    exchange_calls = 0
+
+    def fail_first_after_confirmation(directory_fd: int, expected: dict[str, bytes]) -> bool:
+        nonlocal equal_calls
+        equal_calls += 1
+        if equal_calls == 2:
+            raise OSError("injected pre-destruction failure")
+        return original_equal(directory_fd, expected)
+
+    def mutate_before_rollback(*args: object, **kwargs: object) -> None:
+        nonlocal exchange_calls
+        exchange_calls += 1
+        if exchange_calls == 2:
+            (tmp_path / relative / "file-asset.yaml").write_bytes(concurrent_after)
+        original_exchange(*args, **kwargs)
+
+    monkeypatch.setattr(filesystem, "_directory_members_equal", fail_first_after_confirmation)
+    monkeypatch.setattr(filesystem, "_exchange_directories_posix", mutate_before_rollback)
+
+    replaced = atomic_replace_directory_relative_if_members_equal(tmp_path, relative, before, after)
+
+    assert (replaced.outcome, replaced.namespace_state, replaced.cleanup) == (
+        "unavailable",
+        "uncertain",
+        "residue",
+    )
+    directory = tmp_path / relative
+    assert (directory / "file-asset.yaml").read_bytes() == before["file-asset.yaml"]
+    assert (directory / "payload").read_bytes() == before["payload"]
+    residue = tuple((tmp_path / "ldvh-base/file-assets").glob(".ldvh-directory-replace-*.tmp"))
+    assert len(residue) == 1
+    assert (residue[0] / "file-asset.yaml").read_bytes() == concurrent_after
+
+
+@pytest.mark.skipif(os.name != "posix", reason="directory exchange requires POSIX primitives")
+def test_atomic_directory_replace_never_downgrades_post_payload_residue_to_clean(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    relative = "ldvh-base/file-assets/file-asset-0001"
+    before = {"file-asset.yaml": b"status: active\n", "payload": b"payload\n"}
+    after = {"file-asset.yaml": b"status: deleted\n"}
+    assert atomic_create_directory_relative(tmp_path, relative, before).outcome == "created"
+    original_unlink = filesystem.os.unlink
+
+    def fail_old_manifest_cleanup(path: str, *args: object, **kwargs: object) -> None:
+        if path == "file-asset.yaml":
+            raise OSError("injected post-payload cleanup failure")
+        original_unlink(path, *args, **kwargs)
+
+    monkeypatch.setattr(filesystem.os, "unlink", fail_old_manifest_cleanup)
+
+    replaced = atomic_replace_directory_relative_if_members_equal(tmp_path, relative, before, after)
+
+    assert (replaced.outcome, replaced.namespace_state, replaced.durability, replaced.cleanup) == (
+        "replaced",
+        "committed",
+        "unknown",
+        "residue",
+    )
+    directory = tmp_path / relative
+    assert (directory / "file-asset.yaml").read_bytes() == after["file-asset.yaml"]
+    residue = tuple((tmp_path / "ldvh-base/file-assets").glob(".ldvh-directory-replace-*.tmp"))
+    assert len(residue) == 1
+    assert {path.name for path in residue[0].iterdir()} == {"file-asset.yaml"}

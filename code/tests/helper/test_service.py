@@ -307,6 +307,7 @@ def test_unrelated_candidate_problem_does_not_block_defined_operation(
         "correct-closed-workcase",
         "create-fact-object",
         "create-file-asset",
+        "delete-file-asset",
         "find-fact-object-candidates",
         "precheck-git-commit",
         "prepare-fact-object-draft",

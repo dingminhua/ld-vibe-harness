@@ -326,6 +326,39 @@ def test_prepared_creation_can_run_under_one_external_allocation_lock(
     assert (command.boundary.worktree_root / "ldvh-base/sparks/spark-0001.yaml").is_file()
 
 
+def test_workcase_creation_takes_relation_lock_before_type_lock(
+    current_specs_repository: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    command = _workcase_command(current_specs_repository, tmp_path)
+    actual_relation_lock = creation_application.relation_write_lock
+    actual_allocation_lock = creation_application.allocation_lock
+    events: list[str] = []
+
+    @contextmanager
+    def observed_relation_lock(boundary: CreationBoundary):
+        events.append("relation-enter")
+        with actual_relation_lock(boundary):
+            yield
+        events.append("relation-exit")
+
+    @contextmanager
+    def observed_allocation_lock(boundary: CreationBoundary, layout):
+        events.append("type-enter")
+        with actual_allocation_lock(boundary, layout) as counter_path:
+            yield counter_path
+        events.append("type-exit")
+
+    monkeypatch.setattr(creation_application, "relation_write_lock", observed_relation_lock)
+    monkeypatch.setattr(creation_application, "allocation_lock", observed_allocation_lock)
+
+    result = create_fact_object(command, observed_at="2026-07-26T13:00:00+08:00")
+
+    assert result.status == "created"
+    assert events == ["relation-enter", "type-enter", "type-exit", "relation-exit"]
+
+
 def test_public_create_rechecks_final_preflight_after_counter_commit(
     current_specs_repository: Path,
     tmp_path: Path,

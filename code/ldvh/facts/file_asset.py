@@ -27,7 +27,13 @@ CoverageCheck = Literal[
 DEFAULT_MANIFEST_BUDGET = 256 * 1024
 DEFAULT_PAYLOAD_BUDGET = 4 * 1024 * 1024
 
-_EXPECTED_MEMBERS = frozenset({"file-asset.yaml", "payload"})
+_KNOWN_MEMBERS = frozenset({"file-asset.yaml", "payload"})
+
+
+def _expected_members(fields: dict[str, Any] | None) -> frozenset[str]:
+    if fields is not None and fields.get("status") == "deleted":
+        return frozenset({"file-asset.yaml"})
+    return _KNOWN_MEMBERS
 
 
 @dataclass(frozen=True, slots=True)
@@ -44,7 +50,7 @@ class FileAssetRead:
     payload_matches_manifest: bool | None
     current_bytes_confirmed: bool
     default_candidate: bool
-    payload_canonical_path: str
+    payload_canonical_path: str | None
     content_fingerprint: str | None
     manifest_raw_text: str | None
     manifest_byte_count: int | None
@@ -192,7 +198,7 @@ def _bounded_member_names(directory_descriptor: int) -> tuple[set[str], bool]:
     with os.scandir(directory_descriptor) as entries:
         for entry in entries:
             names.add(entry.name)
-            if len(names) > len(_EXPECTED_MEMBERS):
+            if len(names) > len(_KNOWN_MEMBERS):
                 return names, False
     return names, True
 
@@ -214,9 +220,7 @@ def validate_file_asset_snapshot(
     names = tuple(sorted(member_names))
     if len(set(names)) != len(names):
         issues.append(_issue("location", "FileAsset after-image 成员名不得重复"))
-    for name in sorted(_EXPECTED_MEMBERS - set(names)):
-        issues.append(_issue("location", "FileAsset 目录缺少固定成员", name))
-    for name in sorted(set(names) - _EXPECTED_MEMBERS):
+    for name in sorted(set(names) - _KNOWN_MEMBERS):
         issues.append(_issue("location", "FileAsset 目录包含未知成员", name))
     if manifest_bytes is None and "file-asset.yaml" in names:
         issues.append(_issue("location", "FileAsset after-image 缺少可观察 manifest", "file-asset.yaml"))
@@ -248,6 +252,13 @@ def validate_file_asset_snapshot(
                 if fields.get("object_id") != object_id:
                     issues.append(_issue("identity", "object_id 与对象目录名不一致", "object_id"))
 
+    expected_members = _expected_members(fields)
+    for name in sorted(expected_members - set(names)):
+        issues.append(_issue("location", "FileAsset 目录缺少当前状态固定成员", name))
+    for name in sorted(set(names) - expected_members):
+        if name in _KNOWN_MEMBERS:
+            issues.append(_issue("location", "FileAsset 目录包含当前状态禁止成员", name))
+
     observed_size = None if payload_bytes is None else len(payload_bytes)
     observed_digest = None if payload_bytes is None else hashlib.sha256(payload_bytes).hexdigest()
     payload_matches: bool | None = None
@@ -277,16 +288,31 @@ def validate_file_asset_snapshot(
     else:
         status = "mechanically_valid"
     current_bytes_confirmed = (
-        status == "mechanically_valid" and set(names) == _EXPECTED_MEMBERS and payload_matches is True
+        status == "mechanically_valid"
+        and fields is not None
+        and fields.get("status") == "active"
+        and set(names) == _KNOWN_MEMBERS
+        and payload_matches is True
     )
     content_fingerprint: str | None = None
-    if not unavailable and manifest_bytes is not None and observed_size is not None and observed_digest is not None:
+    if (
+        not unavailable
+        and manifest_bytes is not None
+        and observed_size is not None
+        and observed_digest is not None
+    ):
         fingerprint = hashlib.sha256()
         fingerprint.update(b"ldvh:file-asset:v1\0")
         fingerprint.update(len(manifest_bytes).to_bytes(8, "big"))
         fingerprint.update(manifest_bytes)
         fingerprint.update(observed_size.to_bytes(8, "big"))
         fingerprint.update(bytes.fromhex(observed_digest))
+        content_fingerprint = fingerprint.hexdigest()
+    elif not unavailable and manifest_bytes is not None and fields is not None and fields.get("status") == "deleted":
+        fingerprint = hashlib.sha256()
+        fingerprint.update(b"ldvh:file-asset-deleted:v1\0")
+        fingerprint.update(len(manifest_bytes).to_bytes(8, "big"))
+        fingerprint.update(manifest_bytes)
         content_fingerprint = fingerprint.hexdigest()
     return FileAssetSnapshotValidation(
         status,
@@ -398,16 +424,13 @@ def read_file_asset(
             initial_enumeration_complete = False
             member_names = set()
             issues.append(_issue("location", "FileAsset 目录无法从同一 descriptor 稳定枚举"))
-        missing = sorted(_EXPECTED_MEMBERS - member_names)
-        unknown = sorted(member_names - _EXPECTED_MEMBERS)
-        for name in missing:
-            issues.append(_issue("location", "FileAsset 目录缺少固定成员", name))
+        unknown = sorted(member_names - _KNOWN_MEMBERS)
         for name in unknown:
             issues.append(_issue("location", "FileAsset 目录包含未知成员", name))
         if not initial_enumeration_complete:
             issues.append(_issue("resource", "FileAsset 目录至少出现第三个成员，枚举已按闭集上限停止"))
 
-        for name in sorted(_EXPECTED_MEMBERS & member_names):
+        for name in sorted(_KNOWN_MEMBERS & member_names):
             try:
                 observed = os.stat(name, dir_fd=directory_descriptor, follow_symlinks=False)
                 initial_signatures[name] = _stat_signature(observed)
@@ -454,6 +477,13 @@ def read_file_asset(
                                 _issue("identity", "object_id 与请求引用及对象目录名不一致", "object_id")
                             )
 
+        expected_members = _expected_members(fields)
+        for name in sorted(expected_members - member_names):
+            issues.append(_issue("location", "FileAsset 目录缺少当前状态固定成员", name))
+        for name in sorted(member_names - expected_members):
+            if name in _KNOWN_MEMBERS:
+                issues.append(_issue("location", "FileAsset 目录包含当前状态禁止成员", name))
+
         payload_bytes: bytes | None = None
         observed_size: int | None = None
         observed_digest: str | None = None
@@ -477,7 +507,7 @@ def read_file_asset(
                 observed_digest = hashlib.sha256(payload_bytes).hexdigest()
                 digest_computed = True
 
-        members_closed = closure_stable and initial_enumeration_complete and member_names == _EXPECTED_MEMBERS
+        members_closed = closure_stable and initial_enumeration_complete and member_names == expected_members
         try:
             before_final_list = _stat_signature(os.fstat(directory_descriptor), directory=True)
             final_names, final_enumeration_complete = _bounded_member_names(directory_descriptor)
@@ -500,7 +530,7 @@ def read_file_asset(
                 closure_stable = False
                 members_closed = False
                 issues.append(_issue("location", "FileAsset 目录元数据在本次读取期间发生变化"))
-            for name in sorted(_EXPECTED_MEMBERS & member_names):
+            for name in sorted(_KNOWN_MEMBERS & member_names):
                 if name not in initial_signatures:
                     continue
                 after = _stat_signature(os.stat(name, dir_fd=directory_descriptor, follow_symlinks=False))
@@ -576,16 +606,33 @@ def read_file_asset(
         status = "invalid"
     else:
         status = "mechanically_valid"
-    current_bytes_confirmed = status == "mechanically_valid" and members_closed and payload_matches is True
+    current_bytes_confirmed = (
+        status == "mechanically_valid"
+        and fields is not None
+        and fields.get("status") == "active"
+        and members_closed
+        and payload_matches is True
+    )
     default_candidate = current_bytes_confirmed and fields is not None and fields.get("status") == "active"
     content_fingerprint: str | None = None
-    if not unavailable and manifest_bytes is not None and observed_size is not None and observed_digest is not None:
+    if (
+        not unavailable
+        and manifest_bytes is not None
+        and observed_size is not None
+        and observed_digest is not None
+    ):
         fingerprint = hashlib.sha256()
         fingerprint.update(b"ldvh:file-asset:v1\0")
         fingerprint.update(len(manifest_bytes).to_bytes(8, "big"))
         fingerprint.update(manifest_bytes)
         fingerprint.update(observed_size.to_bytes(8, "big"))
         fingerprint.update(bytes.fromhex(observed_digest))
+        content_fingerprint = fingerprint.hexdigest()
+    elif not unavailable and manifest_bytes is not None and fields is not None and fields.get("status") == "deleted":
+        fingerprint = hashlib.sha256()
+        fingerprint.update(b"ldvh:file-asset-deleted:v1\0")
+        fingerprint.update(len(manifest_bytes).to_bytes(8, "big"))
+        fingerprint.update(manifest_bytes)
         content_fingerprint = fingerprint.hexdigest()
     return FileAssetRead(
         directory_text,
@@ -598,7 +645,7 @@ def read_file_asset(
         payload_matches,
         current_bytes_confirmed,
         default_candidate,
-        payload_path,
+        payload_path if fields is None or fields.get("status") != "deleted" else None,
         content_fingerprint,
         manifest_text,
         len(manifest_bytes) if manifest_bytes is not None else None,

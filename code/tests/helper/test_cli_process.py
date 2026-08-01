@@ -49,7 +49,7 @@ def test_general_discovery_reports_source_bound_implementation(tmp_path: Path) -
     assert response["outcome"] == "ok"
     assert response["operation_key"] is None
     assert response["result"]["mode"] == "discovery"
-    assert len(response["result"]["operations"]) == 18
+    assert len(response["result"]["operations"]) == 19
     operations = {item["operation_key"]: item for item in response["result"]["operations"]}
     candidates = operations["find-fact-object-candidates"]
     assert candidates["implementation"]["present"] is True
@@ -75,8 +75,16 @@ def test_general_discovery_reports_source_bound_implementation(tmp_path: Path) -
         "arguments.intake_basis",
         "arguments.fact_object",
     ]
+    assert operations["delete-file-asset"]["required_inputs"] == [
+        "work_object_locators",
+        "arguments.fact_ref",
+        "arguments.expected_content_fingerprint",
+        "arguments.deletion_summary",
+        "authorization_reference",
+    ]
     assert operations["prepare-file-asset-intake"]["implementation"]["present"] is True
     assert operations["create-file-asset"]["implementation"]["present"] is True
+    assert operations["delete-file-asset"]["implementation"]["present"] is True
     facts = operations["read-fact-objects"]
     assert facts["implementation"]["present"] is True
     assert facts["required_inputs"] == ["arguments.fact_refs"]
@@ -163,7 +171,7 @@ def test_general_discovery_reports_source_bound_implementation(tmp_path: Path) -
     assert commit_precheck["required_inputs"] == ["work_object_locators", "arguments.message"]
     assert commit_precheck["optional_inputs"] == ["arguments.workspace_root"]
     assert len(response["gaps"]) == 2
-    assert sum(item["member_count"] for item in response["gaps"]) == 144
+    assert sum(item["member_count"] for item in response["gaps"]) == 152
 
 
 def test_diagnostic_profile_expands_qualification_details(tmp_path: Path) -> None:
@@ -175,7 +183,7 @@ def test_diagnostic_profile_expands_qualification_details(tmp_path: Path) -> Non
 
     assert completed.returncode == 0
     assert response["response_profile"] == "diagnostic"
-    assert len(response["gaps"]) == 144
+    assert len(response["gaps"]) == 152
     assert all(item["summary"].startswith("当前 Code 尚未自动证明：") for item in response["gaps"])
     assert all("member_count" not in item for item in response["gaps"])
 
@@ -188,14 +196,14 @@ def test_defined_operation_check_and_call_return_actual_l0_results(tmp_path: Pat
     assert check_response["outcome"] == "ok"
     checked_operation = check_response["result"]["operations"][0]
     assert checked_operation["availability"] == "available_for_request"
-    assert len(checked_operation["available_scope"]) == 29
+    assert len(checked_operation["available_scope"]) == 30
     assert "working-tree-test-evidence-fields" in checked_operation["available_scope"]
     assert "web-api-reading-contract" in checked_operation["available_scope"]
     assert checked_operation["unavailable_scope"] == []
 
     assert called.returncode == 0
     assert call_response["outcome"] == "ok"
-    assert len(call_response["result"]["items"]) == 29
+    assert len(call_response["result"]["items"]) == 30
     assert "working-tree-test-evidence-fields" in {
         item["key"] for item in call_response["result"]["items"]
     }

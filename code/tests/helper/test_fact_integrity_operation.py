@@ -100,6 +100,20 @@ def test_complete_library_reports_complete_with_contract_shape(tmp_path: Path) -
     assert result.response["changes"] == []
 
 
+def test_regular_ds_store_at_file_asset_type_root_does_not_reduce_integrity_coverage(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    _write_fact(project, _VALID_SPARK)
+    metadata = project / "ldvh-base/file-assets/.DS_Store"
+    metadata.parent.mkdir(parents=True)
+    metadata.write_bytes(b"finder metadata")
+
+    result = handle_request("call", "check-fact-integrity", _payload(workspace, project))
+
+    assert result.exit_code == 0
+    assert result.response["outcome"] == "ok"
+    assert result.response["result"] == {"status": "complete", "object_count": 1, "problems": []}
+
+
 def test_invalid_object_reports_partial_with_precise_problem(tmp_path: Path) -> None:
     workspace, project = _fixture(tmp_path)
     _write_fact(project, "title: 只有标题\n")

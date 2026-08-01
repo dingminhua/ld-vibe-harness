@@ -8,7 +8,7 @@ import stat
 from dataclasses import dataclass
 from pathlib import Path
 
-from ldvh.facts.contracts import LAYOUTS
+from ldvh.facts.contracts import LAYOUTS, is_ignored_fact_type_root_entry
 from ldvh.facts.creation import schema_fingerprint
 from ldvh.facts.project_validation import stabilize_project_index
 from ldvh.facts.relations import MAX_GRAPH_OBJECTS, ProjectFactIndex
@@ -120,6 +120,19 @@ def discover_fact_candidates(
             complete = False
             continue
         for path in paths:
+            try:
+                if is_ignored_fact_type_root_entry(path):
+                    continue
+            except OSError:
+                structural.append(
+                    _structural_problem(
+                        fact_type_key,
+                        f"{layout.directory}/{path.name}",
+                        "平台元数据候选无法安全观察，不能证明当前事实类型目录完整",
+                    )
+                )
+                complete = False
+                continue
             if layout.carrier == "file-asset-directory":
                 object_id = path.name
                 canonical_shape = layout.object_id_pattern.fullmatch(object_id) is not None

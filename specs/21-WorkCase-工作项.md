@@ -722,7 +722,7 @@ WorkCase 只允许五种正向关系；反向导航由 Code 派生，不写第�
 | `depends-on` | 同项目 `open` / `blocked` WorkCase | 形成和保留期间均为同项目 `open` / `blocked` WorkCase | source 当前某项行动或关闭判断确实依赖 target 仍在承担的责任 |
 | `routed-to` | `closed` WorkCase，只由 `close-workcase` 形成，或由 `correct-closed-workcase` 在相应 Human Gate 下更正原关闭记录错误/遗漏 | 首次形成或更正新增时，target 为同项目 mechanically valid 的 `open` / `blocked` WorkCase，或 `status=open` Spark；形成后 target 按自身规则继续生命周期 | source 经 Human 关闭决定，将不再由自身承担的剩余责任转交给已稳定承载同一问题的 target；Spark 目标不被表达为执行中，target 后续进展不构成回溯换路理由 |
 | `contributed-to` | 活动期或 `closed` WorkCase；活动期按 §6.8 在 target 实际创建回读后形成，closed 上增删只由 `correct-closed-workcase` 按原关闭记录的实质更正执行 | 形成时只能为同项目 mechanically valid 的 `status=draft` Pitfall；形成后 target 可为 draft/active/discarded | source 执行中实际发生、解决并验证的完整现场经验已保存为 target；仅作形成来源追溯，不表示 Human 已确认、经验仍适用或 target 承接责任 |
-| `has-file-asset` | 活动期或 `closed` WorkCase；活动期可形成，close 原样保留；closed 只能由 `correct-closed-workcase` 在 Human Gate 和独立复核下更正原关闭时的记录错误或遗漏 | 新形成或更正新增时为同项目 mechanically valid 的 `status=active` FileAsset；形成后 target 可为 active/archived | source 持有一个需要跨行动稳定读取或引用的文件资产；只表示资源引用，不表示 payload 是证据、证明、决定、授权、验收或完成依据 |
+| `has-file-asset` | 活动期或 `closed` WorkCase；活动期可形成，close 原样保留；closed 只能由 `correct-closed-workcase` 在 Human Gate 和独立复核下更正原关闭时的记录错误或遗漏 | 新形成、既有和更正新增都必须指向同项目 mechanically valid 的 `status=active` FileAsset；deleted 不得成为合法 target，FileAsset 安全删除必须先证明全部此类入向边为零 | source 持有一个需要跨行动稳定读取或引用的文件资产；只表示资源引用，不表示 payload 是证据、证明、决定、授权、验收或完成依据 |
 | `related-to` | 活动期或 `closed` WorkCase；活动期可形成，close 原样保留，closed 只能更正原关闭时的记录错误 | 形成时为同项目已存在且 mechanically valid 的 Spark、WorkCase、ADR、Pitfall 或 Study，明确不含 FileAsset | source 与 target 存在对当次理解有价值、但不表示依赖、责任转交、贡献来源或证明的主题联系 |
 
 共同约束：
@@ -747,7 +747,7 @@ WorkCase 只允许五种正向关系；反向导航由 Code 派生，不写第�
 
 `contributed-to` 形成时，target 必须实际存在、可读、mechanically valid 且为 draft Pitfall；形成后 target 变为 active 或 discarded 不影响边，也不回写 WC。target 后来被删除或不可读时，该边失效但不自动改变 source 的状态与终态；机械读取如实报告。该边不承载未完成责任，不建立 target 状态变化前的入向检查义务；删除方仍必须按 05 §9.3 先处置全部入向引用。
 
-`has-file-asset` 形成前必须精确读取整个 FileAsset 目录并确认 manifest、payload、size/hash、签名、状态和完整性 coverage 全部成立，且 target 当时为 active。既有边在 FileAsset 后来 archived 时继续保留并可精确历史读取，不要求改写 WorkCase；target 缺失、无效或完整性检查不可用时，source 关系据实 invalid/unavailable，不回退到 `docs/` 副本。close 必须原样冻结 before 的全部 `has-file-asset`；closed 更正只有在 Human 明确确认、独立复核绑定且新增 target 当前仍为 active 时才能补记原关闭时已经存在的引用，不得借更正附加后来形成的文件。FileAsset 归档或未来物理删除必须先检查这些入向边，但边存在不自动裁决是否允许归档。
+`has-file-asset` 形成和每次消费前必须精确读取整个 FileAsset active 目录并确认 manifest、payload、size/hash、签名、状态和完整性 coverage 全部成立。target 缺失、deleted、无效或完整性检查不可用时，source 关系据实 invalid/unavailable，不回退到 `docs/` 副本或 Git 历史。close 必须原样冻结 before 的全部 `has-file-asset`；closed 更正只有在 Human 明确确认、独立复核绑定且新增 target 当前仍为 active 时才能补记原关闭时已经存在的引用，不得借更正附加后来形成的文件。`delete-file-asset` 必须与 WorkCase 写入共享关系锁，并在同一锁内完整扫描全部 canonical WorkCase、证明不存在任何此类入向边；因此合法 deleted tombstone 不会被有效 WorkCase 继续引用。
 
 `related-to` 只记录形成时的存量主题联系，不做有向环检查，其它共同引用检查仍成立。close 必须原样保留 before 中已有边。closed WC 不追加未来出现的新关系；后续对象应从自身一侧指向该 WC。一项更正只能修正原关闭时已存在但记错/遗漏的当时事实，不得将后来新建对象冒充“当时遗漏”。
 
@@ -861,7 +861,7 @@ Code 不能判断：
 5. criterion results 数组全覆盖或整体缺失、`controller_checking` 稳定逐成员形成、数组禁止半覆盖、进入独立复核前 projection 完整、首条 review 冻结、`ResultΔ` 确定性升版、同版本不重置和返回 executing；
 6. Reviewer/Controller 字段所有权、同一数组 review 复合身份重复拒绝、新实际复核使用新 `reviewed_at`、同事件事实更正保持复合身份且与生命周期转换不可混用、返修期 review 冻结不可通过删除绕过版本失效；
 7. proposal/terminal 分离、四种 outcome、三种 residual disposition、两种 suggestion kind 的字段组合、suggestion 局部引用完整性、`completed` 只允许 follow-up suggestions、其它 outcome 对未满足/未验证/未完成 scope 的责任处置、proposal 与 terminal 精确映射、Gate2 route target 漂移后零写入且不退回，以及专属原子关闭；
-8. `depends-on` / `routed-to` / `contributed-to` / `has-file-asset` / `related-to` 的 source、target、入向约束、去重、自指、强边成环拒绝与 related-to 成环允许、跨项目拒绝、语义更强关系与 related-to 同 target 重叠拒绝；`routed-to` 允许 open Spark，`contributed-to` 首次只允许 draft Pitfall 且 target 后续状态不使边失效，`has-file-asset` 新增只允许完整可读的 active FileAsset、close 精确冻结、archived target 保留、closed 更正需 Human/独立复核且不能追加后来文件，`related-to` 明确排除 FileAsset；反查与 F1/F2 直接投影排除；
+8. `depends-on` / `routed-to` / `contributed-to` / `has-file-asset` / `related-to` 的 source、target、入向约束、去重、自指、强边成环拒绝与 related-to 成环允许、跨项目拒绝、语义更强关系与 related-to 同 target 重叠拒绝；`routed-to` 允许 open Spark，`contributed-to` 首次只允许 draft Pitfall 且 target 后续状态不使边失效，`has-file-asset` 只允许完整可读的 active FileAsset、close 精确冻结、deleted target 拒绝、安全删除与 WorkCase 写入共享关系锁且须零入向证明、closed 更正需 Human/独立复核且不能追加后来文件，`related-to` 明确排除 FileAsset；反查与 F1/F2 直接投影排除；
 9. `correct-closed-workcase` 的 closed before/after、after 全部 route target 指纹精确集合与重读、新增与未变 target 的不同状态条件、实质更正的 Human Gate 与独立复核引用、非实质更正的引用空值、终态责任覆盖，以及因后来事实回溯改写原关闭历史被拒绝；
 10. 未登记字段、半成品结构、空占位、日志/命令/推理字段，以及通用 update 读写 WorkCase、活动期 update 形成 closed、close 更正 closed 均被拒绝；三个 WorkCase 专属操作对 invalid、unavailable、not-found 或只能解析部分字段的 before 必须正向覆盖零写入拒绝，不建立旧形状转换或 invalid 修复正例；
 11. 渐进式召回的触发语义、F1/F2 字段闭集与 coverage、active/closed 默认范围、F3 按场景展开、四个 Web 分组的确定性派生，以及派生信息不写回事实源。

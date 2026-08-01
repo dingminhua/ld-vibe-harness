@@ -335,6 +335,16 @@ def _observe(repository: Path, message: str = "feat: 观察事实候选") -> git
     )
 
 
+def test_snapshot_identity_changes_when_head_commit_changes_with_the_same_tree(tmp_path: Path) -> None:
+    repository = _repository(tmp_path / "repository")
+    before, _, before_issue = git_adapter._snapshot(repository)
+    _git(repository, "commit", "--allow-empty", "-qm", "test: same tree new commit")
+    after, _, after_issue = git_adapter._snapshot(repository)
+
+    assert before_issue is None and after_issue is None
+    assert before != after
+
+
 def test_staged_fact_candidate_blob_is_read_by_index_oid(tmp_path: Path) -> None:
     repository = _repository(tmp_path / "repository")
     _stage_file(repository, _SPARK_PATH)
@@ -468,8 +478,5 @@ def test_deleted_or_unknown_file_asset_member_cannot_evade_fail_closed_gate(tmp_
     assert existing.head_exists is True
     assert observed.validation_input is not None
     result = validate_commit(_contract(), observed.validation_input)
-    assert result.outcome == "failed"
-    assert {issue.code for issue in result.issues} == {
-        "fact_object_id_invalid",
-        "file_asset_lifecycle_write_unavailable",
-    }
+    assert result.outcome == "unverifiable"
+    assert {issue.code for issue in result.issues} == {"fact_schema_unavailable"}

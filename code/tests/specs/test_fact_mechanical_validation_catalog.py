@@ -13,6 +13,7 @@ _OPERATIONS_BY_COVERAGE = {
     "create": "create-fact-object",
     "file-asset-intake": "prepare-file-asset-intake",
     "file-asset-create": "create-file-asset",
+    "file-asset-delete": "delete-file-asset",
     "update": "update-fact-object",
     "workcase-update": "update-workcase",
     "workcase-close": "close-workcase",

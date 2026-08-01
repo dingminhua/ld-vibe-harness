@@ -41,6 +41,8 @@ from ldvh.helper.operations.file_asset_creation_operation import (
 from ldvh.helper.operations.file_asset_creation_operation import (
     PREPARE_OPERATION_KEY as PREPARE_FILE_ASSET_INTAKE_OPERATION_KEY,
 )
+from ldvh.helper.operations.file_asset_deletion_operation import DELETE_FILE_ASSET_IMPLEMENTATION
+from ldvh.helper.operations.file_asset_deletion_operation import OPERATION_KEY as DELETE_FILE_ASSET_OPERATION_KEY
 from ldvh.helper.operations.governance_scope_operation import (
     GOVERNANCE_SCOPE_IMPLEMENTATION,
 )
@@ -81,6 +83,7 @@ IMPLEMENTATIONS = MappingProxyType[str, OperationImplementation](
         COMMIT_PRECHECK_OPERATION_KEY: COMMIT_PRECHECK_IMPLEMENTATION,
         CREATE_OPERATION_KEY: CREATE_FACT_OBJECT_IMPLEMENTATION,
         CREATE_FILE_ASSET_OPERATION_KEY: CREATE_FILE_ASSET_IMPLEMENTATION,
+        DELETE_FILE_ASSET_OPERATION_KEY: DELETE_FILE_ASSET_IMPLEMENTATION,
         FACT_CANDIDATE_OPERATION_KEY: FACT_CANDIDATE_IMPLEMENTATION,
         FACT_INTEGRITY_OPERATION_KEY: FACT_INTEGRITY_IMPLEMENTATION,
         FACT_OBJECT_OPERATION_KEY: FACT_OBJECT_IMPLEMENTATION,

@@ -91,10 +91,21 @@ def _write_file_asset(
         "signature:",
         "  signer_type: human",
     ]
-    if status == "archived":
-        lines.append("disposition_summary: Human 决定保留该历史文件供精确回读。")
+    if status == "deleted":
+        lines.extend(
+            [
+                "disposition_summary: Human 决定安全删除该文件。",
+                "deleted_at: 2026-07-26T10:00:00+08:00",
+                "recovery:",
+                f"  commit: {'a' * 40}",
+                "  path: ldvh-base/file-assets/file-asset-0001/payload",
+                f"  blob_oid: {'b' * 40}",
+            ]
+        )
+        lines[4] = "updated_at: 2026-07-26T10:00:00+08:00"
     (directory / "file-asset.yaml").write_text("\n".join(lines) + "\n", encoding="utf-8")
-    (directory / "payload").write_bytes(payload)
+    if status != "deleted":
+        (directory / "payload").write_bytes(payload)
     return directory
 
 
@@ -1301,7 +1312,15 @@ def test_approved_plan_delta_keeps_gate1_baseline_and_can_resume_execution(
     assert revising["execution_approval"]["subject_version"] == 1
 
     executing = {**deepcopy(revising), "phase": "executing"}
-    resumed = apply_workcase_write(_command(project, revising, executing, mode="update", event_at="2026-07-26T14:00:00+08:00"))
+    resumed = apply_workcase_write(
+        _command(
+            project,
+            revising,
+            executing,
+            mode="update",
+            event_at="2026-07-26T14:00:00+08:00",
+        )
+    )
     assert resumed.status == "updated"
 
 
@@ -1541,7 +1560,7 @@ def test_close_mapping_requires_exact_file_asset_edge_preservation() -> None:
 
 @pytest.mark.parametrize(
     ("status", "tamper", "accepted"),
-    [("active", False, True), ("archived", False, False), ("active", True, False)],
+    [("active", False, True), ("deleted", False, False), ("active", True, False)],
 )
 def test_new_file_asset_edge_requires_full_current_active_target(
     current_specs_repository: Path,

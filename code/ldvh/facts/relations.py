@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal
 
-from ldvh.facts.contracts import ACTIVE_STATUSES, LAYOUTS
+from ldvh.facts.contracts import ACTIVE_STATUSES, LAYOUTS, is_ignored_fact_type_root_entry
 from ldvh.facts.models import FactIssue, FactReference
 from ldvh.facts.repository import (
     MAX_FACT_BYTES,
@@ -126,6 +126,10 @@ class ProjectFactIndex:
             return (), False
         except OSError:
             return (), False
+        try:
+            paths = tuple(path for path in paths if not is_ignored_fact_type_root_entry(path))
+        except OSError:
+            return (), False
         if len(paths) > MAX_GRAPH_OBJECTS:
             return (), False
         results: list[FactReadResult] = []
@@ -218,8 +222,9 @@ def _target_condition(source_type: str, relation_key: str, target_type: str, tar
         return target_type == "pitfall" and target_status in {"draft", "active", "discarded"}
     if source_type == "workcase" and relation_key == "has-file-asset":
         # Formation requires active and is enforced by the WorkCase write
-        # transition.  An already formed edge survives archival.
-        return target_type == "file-asset" and target_status in {"active", "archived"}
+        # transition.  Safe deletion requires the complete incoming edge set
+        # to be empty, so no valid edge can survive status=deleted.
+        return target_type == "file-asset" and target_status == "active"
     if source_type == "workcase" and relation_key == "related-to":
         return target_type in LAYOUTS and target_type != "file-asset"
     if source_type == "study" and relation_key == "inspired-by":
@@ -484,9 +489,17 @@ def validate_workcase_route_target_snapshots(
             continue
         target_status = target_read.fields.get("status")
         if snapshot.target.fact_type_key == "workcase":
-            allowed_statuses = {"open", "blocked", "closed"} if identity in existing_routed_targets else {"open", "blocked"}
+            allowed_statuses = (
+                {"open", "blocked", "closed"}
+                if identity in existing_routed_targets
+                else {"open", "blocked"}
+            )
         else:
-            allowed_statuses = {"open", "routed", "implemented", "discarded"} if identity in existing_routed_targets else {"open"}
+            allowed_statuses = (
+                {"open", "routed", "implemented", "discarded"}
+                if identity in existing_routed_targets
+                else {"open"}
+            )
         if target_status not in allowed_statuses:
             summary = (
                 "未改变的既有 routed-to target 必须保持目标类型的合法后续状态"
@@ -628,14 +641,28 @@ def validate_project_relations(
             continue
         target_read = index.read(target_type, target_id)
         if target_read is None or target_read.check_status in {"not_found", "invalid"}:
-            issues.append(FactIssue("relation", "关系目标不存在或不是 mechanically valid 当前对象", code="TARGET_NOT_EXIST", field_path=path))
+            issues.append(
+                FactIssue(
+                    "relation",
+                    "关系目标不存在或不是 mechanically valid 当前对象",
+                    code="TARGET_NOT_EXIST",
+                    field_path=path,
+                )
+            )
             continue
         if target_read.check_status == "unavailable":
             unavailable = True
             continue
         assert target_read.fields is not None
         if not _target_condition(fact_type_key, relation_key, target_type, target_read.fields.get("status")):
-            issues.append(FactIssue("relation", "关系目标类型或状态不满足当前类型机械条件", code="TARGET_NOT_VALID", field_path=path))
+            issues.append(
+                FactIssue(
+                    "relation",
+                    "关系目标类型或状态不满足当前类型机械条件",
+                    code="TARGET_NOT_VALID",
+                    field_path=path,
+                )
+            )
         if not _target_has_readable_title(fact_type_key, relation_key, target_read.fields):
             issues.append(FactIssue("relation", "Spark routed-to 目标必须具有可呈现的非空 title", path))
 

@@ -18,9 +18,9 @@ ldvh_spec:
   authorized_attachments: []
 ```
 
-> 文件状态：`active`。本文是 `file-asset` 事实类型的唯一定义来源；它与 03、05、05.Att.01、05.Att.02、20、21、31、32 和术语表共同使类型语义、派生 Schema、正式读取、候选发现、完整性检查、受控新建、Git Index 新建 after-image 校验及 WorkCase `has-file-asset` 消费边界进入当前规则源。本文不自动创建任何 FileAsset 实例；manifest 更新、归档写入、物理删除、既有目录移动/改名、Web 下载或安全预览仍未开放，必须如实保持不可用。Git Gate 只放行 HEAD 中不存在、Index 两成员完整且机械有效的新建对象；既有对象任何 staged 生命周期写仍失败关闭。
+> 文件状态：`active`。本文是 `file-asset` 事实类型的唯一定义来源；它与 03、05、05.Att.01、05.Att.02、20、21、31、32 和术语表共同使类型语义、派生 Schema、正式读取、候选发现、完整性检查、受控新建、安全删除、Git Index after-image 校验及 WorkCase `has-file-asset` 消费边界进入当前规则源。本文不自动创建或删除任何 FileAsset 实例；普通 manifest 更新、payload 原地修改、既有目录移动/改名、Web 下载或安全预览仍未开放。Git Gate 只放行完整有效的新建 after-image，或与 HEAD 中同一 active 对象精确绑定、payload 已移除且恢复锚点成立的 `active → deleted` tombstone；其它既有对象 staged 变化继续失败关闭。
 
-> 准入结论：Human 于 2026-07-31 明确 FileAsset 记录的是“一份确定内容以稳定身份客观存在”，不是证据或内容正确性声明。05 §7.2.1 也明确事实对象不是用来证明自身正确的材料包。A/B 隔离读取产生相同领域结论是同一 payload 被正确消费的预期结果，不能作为拒绝 FileAsset 的依据；相反，A 为满足同一需求已经复制身份、状态、签名、引用、发现和生命周期，说明另建平行资产对象体系会混淆责任。经两轮独立复核，本类型先以只读 activation 完成准入，随后以本次 Write Activation 只增加受控新建和对应 Git Gate 放行；未实现的生命周期写与 Web 呈现不由此推定成立。
+> 准入结论：Human 于 2026-07-31 明确 FileAsset 记录的是“一份确定内容以稳定身份客观存在”，不是证据或内容正确性声明。05 §7.2.1 也明确事实对象不是用来证明自身正确的材料包。A/B 隔离读取产生相同领域结论是同一 payload 被正确消费的预期结果，不能作为拒绝 FileAsset 的依据；相反，A 为满足同一需求已经复制身份、状态、签名、引用、发现和生命周期，说明另建平行资产对象体系会混淆责任。类型先以只读 activation 完成准入，再以 Write Activation 增加受控新建；本次 Safe Delete Activation 只增加 `active → deleted`、Git 恢复 tombstone、完整入向引用零证明和对应 Git Gate 放行，Web 呈现不由此推定成立。
 
 ## 1. 价值判断
 
@@ -56,7 +56,7 @@ FileAsset 只稳定记录“这些 canonical bytes 以这个对象身份被保�
 1. `file-asset` 的类型语义、准入、对象粒度、稳定身份和排除边界；
 2. FileAsset manifest 与 payload 组成的唯一目录 carrier、成员闭集、内容完整性和不可变边界；
 3. 摄取文件名、媒体类型、字节数、内容 SHA-256 与 Human / AI agent 二分纳入签名；
-4. FileAsset 的状态、发现、读取、引用、归档、物理删除和类型退出边界；
+4. FileAsset 的状态、发现、读取、引用、安全删除和类型退出边界；
 5. FileAsset 的验证、Human Gate、Stop Conditions 及当前 activation 能力边界。
 
 本文不负责定义：
@@ -68,7 +68,7 @@ FileAsset 只稳定记录“这些 canonical bytes 以这个对象身份被保�
 5. Helper API、CLI 参数、Git Gate 事件、Web 下载或预览协议及其实现细节；
 6. 密码学签名、Human 身份认证、审批 receipt、作者身份或触发者身份。
 
-AI 负责判断文件是否具有独立持续消费价值、本次纳入签名应属于 Human 还是当前可观察 AI agent、是否应复用现有对象、内容和来源边界能否安全消费，以及归档是否符合 Human 意图。Code 只可检查来源已经定义的路径、普通文件、成员闭集、字段 shape、字节数、哈希、状态、关系、CAS、原子写入和已实现资源边界，不得裁决内容价值、签名陈述真实性、证明力或授权。
+AI 负责判断文件是否具有独立持续消费价值、本次纳入签名应属于 Human 还是当前可观察 AI agent、是否应复用现有对象、内容和来源边界能否安全消费，以及删除摘要是否准确覆盖 Human 意图。Code 只可检查来源已经定义的路径、普通文件、成员闭集、字段 shape、字节数、哈希、状态、关系闭包、Git 锚点、CAS、原子写入和已实现资源边界，不得裁决内容价值、签名陈述真实性、证明力或授权。
 
 ## 4. 适用范围
 
@@ -111,7 +111,7 @@ AI 负责判断文件是否具有独立持续消费价值、本次纳入签名�
 | V1–V8 与 HV1–HV5 净价值 | 通过 | Human 目标和试点支持 V1、V2、V3、V5、V6、V7 与 HV3；统一事实模型避免第二套身份/引用/发现负担。V4、V8、HV1、HV4、HV5 只在后续实际机制与复用范围声明 |
 | 术语和机器治理 | 通过 | `FileAsset / 文件资产` 已与“授权附件”消歧；字段登记、机械目录和首个消费类型关系已同批生效 |
 
-因此，本文声明 `file-asset` **完成准入**并进入当前事实类型集合。当前能力以本文逐项声明和实现验证为准：读取、发现、完整性、受控新建、全新对象 Git Gate after-image 校验与 WorkCase 消费已经开放；更新、归档、删除、移动、Web 下载/预览等未实现能力不被扩大。
+因此，本文声明 `file-asset` **完成准入**并进入当前事实类型集合。当前能力以本文逐项声明和实现验证为准：读取、发现、完整性、受控新建、安全删除、新建/删除 Git Gate after-image 校验与 WorkCase 消费已经开放；其它 manifest 更新、payload 原地修改、移动及 Web 下载/预览等未实现能力不被扩大。
 
 ### 术语准入审计
 
@@ -132,12 +132,14 @@ AI 负责判断文件是否具有独立持续消费价值、本次纳入签名�
 | information_need | compared_structure_keys | decision | resulting_structure_key | rationale |
 |---|---|---|---|---|
 | 记录本次把最终 payload bytes 交给摄取边界的是 Human 还是一个可观察 AI agent，并在 AI 分支保留 agent 与宿主环境 | `fact-object,relation,relation-target,spark-evolution-entry,url-ref,workcase-authorized-action,workcase-closure-proposal,workcase-execution-authorization,workcase-human-approval,workcase-item,workcase-proposed-route-target,workcase-residual-decision,workcase-residual-responsibility,workcase-review,workcase-spark-suggestion,workcase-success-criterion,workcase-success-result` | new | `file-asset-signature` | 现有结构没有回答纳入责任主体；该结构只承载 Human/AI 二分与 AI 自报身份，不承担审批、来源证据、作者或密码学签名，成员闭集、出现条件和不可变边界均不同 |
+| 删除后定位原 payload 的已提交 Git blob | `fact-object,file-asset-signature,relation,relation-target,url-ref` | new | `file-asset-recovery` | 现有结构没有同时绑定 commit、canonical path 与 blob OID；该结构只为删除后人工或后续受控恢复提供历史定位，不承担当前内容、外部 URL、授权或自动恢复语义 |
 
 ### 类型专属结构定义
 
 | structure_key | meaning | not_meaning | constraints |
 |---|---|---|---|
 | `file-asset-signature` | 记录本次把最终 canonical payload bytes 直接交给受控摄取边界的是 Human，还是哪个 AI agent 代表自身提交 | 不表示密码学签名、历史作者、原始生成者、最初触发者、审批者、授权、验收、证明力或签名陈述真实性已经由 Code 证明 | 成员闭集为 `signer_type`、`agent_id`、`host_environment`；Human 分支只含 `signer_type=human`；AI 分支必须同时含三个成员且 `signer_type=ai-agent` |
+| `file-asset-recovery` | 定位 `active → deleted` 前最后一份与当前 payload 精确一致的已提交 Git blob | 不表示 payload 仍在 Working Tree、Git 历史永久可达、恢复已授权、恢复会重开原对象或内容仍应使用 | 成员闭集为 `commit`、`path`、`blob_oid`；三者由 Code 从删除前当前 HEAD 形成并交叉核对，创建时禁止，删除后不可改写 |
 
 ### 字段与结构准入审计
 
@@ -150,7 +152,9 @@ AI 负责判断文件是否具有独立持续消费价值、本次纳入签名�
 | payload 字节数 | Working Tree 测试证据的 `size_bytes` 不是事实对象登记字段 | 新增；用于当前 payload 完整性和资源消费，不把测试证据 DTO 提升为事实字段 |
 | payload SHA-256 | WorkCase `content_fingerprint`、`baseline_fingerprint` 和测试证据 `sha256` | 区分并新增；这些值分别指向事实载体、授权基线或测试输入，不表示 FileAsset payload bytes |
 | 纳入签名 | 无当前或 retired 事实字段或结构 | 新增结构；只记录本次把最终 bytes 直接提交给受控摄取边界的 Human / AI agent 二分责任主体 |
-| 终态处置 | 公共 `disposition-summary` | 复用；激活变更包应把 `file-asset` 加入其适用类型，并在 archived 时绑定为必填 |
+| 终态处置 | 公共 `disposition-summary` | 复用；`deleted` 时必填，摘要说明删除原因、引用零证明边界和恢复限制 |
+| 删除时点 | 公共 `updated-at` | 区分并新增；`updated_at` 是任意允许变更的托管时间，`deleted_at` 明确该对象进入安全删除终态且必须与本次 `updated_at` 相同 |
+| Git 恢复定位 | Git history、普通路径文字和 payload SHA-256 | 新增 `file-asset-recovery`；只保存删除前已提交 payload 的 commit/path/blob OID，不把 Git 历史冒充当前 payload 或自动恢复能力 |
 | 外部网址 | 公共 `urls` | 禁止；URL 是重新访问外部资料的入口，不是已捕获的 canonical payload |
 | 事实关系 | 公共 `relations` | FileAsset 自身初版禁止；消费方按各自类型来源定义 `has-file-asset`，反向引用只由 Code 派生 |
 
@@ -164,7 +168,7 @@ AI 负责判断文件是否具有独立持续消费价值、本次纳入签名�
 | `fact-type-key` | required | `inherit` |
 | `title` | required | `file-asset-fact-type::5. FileAsset 类型定义` |
 | `created-at` | required | `file-asset-fact-type::5. FileAsset 类型定义` |
-| `updated-at` | required | `file-asset-fact-type::8. 变更、更正、归档、删除与类型退出` |
+| `updated-at` | required | `file-asset-fact-type::8. 变更、更正、安全删除与类型退出` |
 | `status` | required | `file-asset-fact-type::6. 对象语义与生命周期` |
 | `urls` | forbidden | `file-asset-fact-type::7. 来源、完整性、引用与消费` |
 | `relations` | forbidden | `file-asset-fact-type::7. 来源、完整性、引用与消费` |
@@ -174,6 +178,8 @@ AI 负责判断文件是否具有独立持续消费价值、本次纳入签名�
 | `file-asset-size-bytes` | required | `inherit` |
 | `file-asset-content-sha256` | required | `inherit` |
 | `file-asset-signature` | required | `inherit` |
+| `file-asset-deleted-at` | conditional | `file-asset-fact-type::6. 对象语义与生命周期` |
+| `file-asset-recovery` | conditional | `file-asset-fact-type::6. 对象语义与生命周期` |
 
 ### 类型专属字段定义
 
@@ -187,10 +193,15 @@ AI 负责判断文件是否具有独立持续消费价值、本次纳入签名�
 | `file-asset-signature-signer-type` | `signer_type` | string | 本次纳入由 Human 直接提供 bytes，还是由 AI agent 代表自身提交 bytes | 不表示个人身份、历史形成方式、agent 能力、审批或签名陈述真实性已被机械证明 | 必填；闭集 `human`、`ai-agent` |
 | `file-asset-signature-agent-id` | `agent_id` | string | AI 分支中对本次提交承担签名责任的可观察 AI agent 自报标签 | 不表示全局稳定 agent 身份、Human 指令者、历史作者、原始生成工具、模型能力或账号身份 | `signer_type=ai-agent` 时必填非空；Human 分支禁止；必须由该 agent 据实写自身当次可观察标签，不能代签不可观察 agent |
 | `file-asset-signature-host-environment` | `host_environment` | string | AI 分支中该 agent 提交最终 bytes 时所在的可观察宿主环境 | 不表示环境已安装 LDVH、自动触发、受信任或已经通过集成验证 | `signer_type=ai-agent` 时必填非空；Human 分支禁止；使用当次实际环境名称，不从目标文件或历史猜测 |
+| `file-asset-deleted-at` | `deleted_at` | string | FileAsset 受控安全删除实际形成 `deleted` tombstone 的时点 | 不表示 payload 原始文件时间、Git commit 时间、Human 决定时间或历史清理时间 | 只在 `status=deleted` 时必填；带偏移 RFC 3339，必须与同一受控事务托管的 `updated_at` 完全一致；创建时禁止 |
+| `file-asset-recovery` | `recovery` | object | 删除后定位原 canonical payload 的已提交 Git blob | 不表示当前 payload、第二份资产、自动恢复 receipt 或内容仍适用 | 只在 `status=deleted` 时必填；值使用 `file-asset-recovery`；由 Code 托管并在删除后不可改写 |
+| `file-asset-recovery-commit` | `commit` | string | 删除前当前 HEAD 中精确承载原 payload 的 commit object id | 不表示删除提交、分支、tag、远端可达性或永久保留承诺 | 40 或 64 位小写十六进制；必须解析为删除前当前 `HEAD^{commit}`，且该 commit 下 `path` 的 blob OID 等于 `blob_oid` |
+| `file-asset-recovery-path` | `path` | string | 原 payload 在 `commit` tree 中的 canonical worktree 相对路径 | 不表示当前路径、任意来源路径或允许调用方选择的恢复目标 | 必须精确等于 `ldvh-base/file-assets/<object_id>/payload`，使用 `/`，不得由调用方提交 |
+| `file-asset-recovery-blob-oid` | `blob_oid` | string | `commit:path` 下原 payload 的 Git blob object id | 不表示 payload SHA-256、manifest 指纹、commit id 或当前文件存在 | 40 或 64 位小写十六进制；必须由 Git tree 读取并与删除前当前 payload bytes 的 blob OID 精确一致 |
 
 ### Schema 与对象载体
 
-一个 FileAsset 对象对应一个目录，canonical 位置为：
+一个 FileAsset 对象对应一个稳定目录。`active` 的 canonical 形状为：
 
 ```text
 ldvh-base/file-assets/<object_id>/
@@ -198,28 +209,28 @@ ldvh-base/file-assets/<object_id>/
 └── payload
 ```
 
-`object_id` 必须匹配 `file-asset-[0-9]{4,}`，对象目录名必须与 `object_id` 完全一致。目录直接成员闭集只有 UTF-8 YAML manifest `file-asset.yaml` 和保存完整原始 bytes 的 `payload`；二者都必须是当前 Working Tree 中不经过 symlink 的普通文件。payload 固定不使用摄取文件名作为路径，摄取时的实际文件名只由 manifest `filename` 保存。对象当前权威位置是这一个两成员目录；manifest、payload、副本、索引、下载文件或 Web 投影均不得单独成为第二事实权威。
+`deleted` tombstone 保留同一目录身份，但直接成员闭集只有 `file-asset.yaml`，不得继续存在 `payload` 或其它成员。`object_id` 必须匹配 `file-asset-[0-9]{4,}`，对象目录名必须与 `object_id` 完全一致。所有实际成员都必须是当前 Working Tree 中不经过 symlink 的普通文件。active payload 固定不使用摄取文件名作为路径，摄取时的实际文件名只由 manifest `filename` 保存。对象当前权威位置始终是这个目录；manifest、payload、Git 历史、副本、索引、下载文件或 Web 投影均不得单独成为第二事实权威。
 
 manifest 只包含本节绑定允许的字段。`title` 是面向 Human 与 AI 的简短资产名称，不替代 `filename`；`created_at` 是对象首次成功形成的时间，不冒充源文件创建时间、mtime、Git 时间或文件内容时间；`updated_at` 只在允许的 manifest 变更完成并回读时更新。未知或不适用字段必须省略，不使用 `null`、空字符串、空数组、占位 hash、占位媒体类型或默认签名。
 
 完整 Schema 必须从 `fact-object-field-registry` 的 `fact-object`、本节绑定、当前结构及类型专属字段定义单向派生。目录成员、payload 完整性、manifest 与目录身份一致性以及资源边界必须进入机械规则目录；Code 不得根据目录长相、扩展名或已有实现反向发明 carrier 语义。
 
-`fact-model-foundation` §7.4 已把上述目录登记为第六类 canonical 拓扑。Helper 对该目录提供安全精确读取、候选发现、全库完整性检查和本文 §7.1–7.2 的类型专属受控新建；通用 `prepare-fact-object-draft`、`create-fact-object` 与 `update-fact-object` 仍只支持既有单文件载体，收到 `file-asset` 必须以 `invalid_request` 零写入拒绝。调用方不得绕过类型专属摄取边界，也不得因新建成立推断 manifest 更新或归档写入成立。
+`fact-model-foundation` §7.4 已把上述目录登记为第六类 canonical 拓扑。Helper 对该目录提供安全精确读取、候选发现、全库完整性检查、本文 §7.1–7.2 的类型专属受控新建和 §7.3 的安全删除；通用 `prepare-fact-object-draft`、`create-fact-object` 与 `update-fact-object` 仍只支持既有单文件载体，收到 `file-asset` 必须以 `invalid_request` 零写入拒绝。调用方不得绕过类型专属边界，也不得因安全删除成立推断普通 manifest 更新、payload 修改、移动或恢复能力成立。
 
 ## 6. 对象语义与生命周期
 
-FileAsset 只表达一份已经确定并被复制进 canonical 位置的原生 payload。manifest 和 payload 必须同时存在且互相一致；只存在 manifest、只存在 payload、未知目录成员、身份不一致、大小或哈希不符时，对象不能作为 mechanically valid FileAsset 消费。
+FileAsset 在 `active` 时表达一份已经确定并被复制进 canonical 位置的原生 payload；manifest 和 payload 必须同时存在且互相一致。`deleted` 时表达“该稳定对象身份曾承载 manifest 所登记的精确 bytes，当前 Working Tree payload 已经由受控安全删除移除，并保存了删除摘要和 Git 恢复定位”；此时只有 manifest 合法，payload 存在反而使对象机械无效。未知目录成员、身份不一致、active 大小或哈希不符，以及 deleted 缺少恢复锚点时，对象都不能作为 mechanically valid FileAsset 消费。
 
-重复 bytes 不自动表示同一对象。相同 `content_sha256`、相同纳入签名和相同独立用途时，AI 应优先建议复用既有 FileAsset；不同纳入责任或不同独立保留边界可以形成不同对象。Code 可以返回精确 hash 命中，但不得仅凭 hash 自动合并、复用、拒绝或归档。
+重复 bytes 不自动表示同一对象。相同 `content_sha256`、相同纳入签名和相同独立用途时，AI 应优先建议复用既有 FileAsset；不同纳入责任或不同独立保留边界可以形成不同对象。Code 可以返回精确 hash 命中，但不得仅凭 hash 自动合并、复用、拒绝或删除。
 
 状态闭集为：
 
 | status | 语义 | 必须成立 |
 |---|---|---|
-| `active` | 对象在每次消费时通过实际完整性检查后，可以进入默认 FileAsset 候选 | 只能作为新建初态；`disposition_summary` 禁止；状态不代替 payload 存在、哈希、安全或内容适用检查 |
-| `archived` | 对象不进入默认候选，但继续保留 canonical payload，供精确引用、历史回读和入向引用处置 | 只能由 `active → archived` 形成；`disposition_summary` 必填并说明归档原因、仍有效引用、未处置范围和后续边界；payload 与不可变 manifest 字段继续完整 |
+| `active` | 对象在每次消费时通过实际完整性检查后，可以进入默认 FileAsset 候选 | 只能作为新建初态；`disposition_summary`、`deleted_at`、`recovery` 禁止；状态不代替 payload 存在、哈希、安全或内容适用检查 |
+| `deleted` | 稳定身份和原登记 metadata 继续存在，但 Working Tree payload 已移除，只能通过 tombstone 精确了解删除与历史恢复边界 | 只能由受控 `active → deleted` 形成；`disposition_summary`、`deleted_at`、`recovery` 必填；原 filename/media type/size/hash/signature 等 metadata 全部保留；payload 禁止；不进入默认候选且不得被 `has-file-asset` 引用 |
 
-初始状态只能是 `active`，正常转换只有 `active → archived`；`archived` 为终态，不直接重开。归档不等于删除、无效或内容不可信，也不证明没有对象继续引用它。状态只影响默认发现；每次读取仍须独立检查目录、manifest、payload、size 和 hash。
+初始状态只能是 `active`，唯一生命周期转换是 `active → deleted`；`deleted` 为终态，不重开、不归档。需要再次使用 bytes 时，从 Git 锚点恢复到一个普通文件并按当前条件创建新的 FileAsset，不改写原 tombstone。`deleted` 不表示内容虚假或 Git 历史永久可达；精确读取只证明 tombstone 当前机械成立，不证明 payload 当前存在、已恢复或仍适用。
 
 纳入签名只回答同一个问题：**本次是谁把最终 bytes 直接交给 FileAsset 受控摄取边界，并对这次提交承担签名责任？**它不追溯历史作者、原始生成工具或此前流转。只使用两个分支：
 
@@ -236,6 +247,7 @@ FileAsset 只表达一份已经确定并被复制进 canonical 位置的原生 p
 |---|---|---|---|---|
 | `prepare-file-asset-intake` | 安全完整读取一个已经选定的来源文件，绑定来源 size/hash、当前 FileAsset Schema、worktree 与无预留候选身份 | `read` | `file-asset-fact-type::7.1 FileAsset 摄取准备输入与结果` | `file-asset-fact-type::7.1 FileAsset 摄取准备输入与结果` |
 | `create-file-asset` | 重新核对摄取依据，由 Code 分配身份、在候选命名空间外 staging 并原子创建一个 FileAsset 目录 | `may_change_state` | `file-asset-fact-type::7.2 FileAsset 受控创建输入与结果` | `file-asset-fact-type::7.2 FileAsset 受控创建输入与结果` |
+| `delete-file-asset` | 绑定 active 当前快照、完整入向引用零证明和 HEAD payload blob，原子形成 deleted tombstone 并移除 Working Tree payload | `may_change_state` | `file-asset-fact-type::7.3 FileAsset 受控安全删除输入与结果` | `file-asset-fact-type::7.3 FileAsset 受控安全删除输入与结果` |
 
 ### 7.1 FileAsset 摄取准备输入与结果
 
@@ -253,60 +265,74 @@ FileAsset 只表达一份已经确定并被复制进 canonical 位置的原生 p
 
 成功 `result` 至少包含原请求候选、实际分配结果、canonical 目标状态、`actual_ref`、`carrier=file-asset-directory`、回读 `fact_object`，以及只含 canonical payload 路径、size、SHA-256 和 `current_bytes_confirmed` 的 payload 结果；不得返回或内联 payload bytes、持久化来源路径或把成功扩大为 Git 已提交、WorkCase 已关联、内容已证明或工作已完成。失败结果必须区分来源过期/不可读、候选机械拒绝、编号状态、目标冲突/不可用、回读、回滚和残留；只有目录发布与完整回读均成功时可返回 `outcome: ok` 与稳定 `actual_ref`。
 
+### 7.3 FileAsset 受控安全删除输入与结果
+
+`delete-file-asset` 一次只处理一个 mechanically valid active FileAsset。`work_object_locators` 必须恰含一个项目目标；领域 `arguments` 字段闭集为必填 `fact_ref`、必填 64 位小写十六进制 `expected_content_fingerprint`、必填非空 `deletion_summary` 和可选绝对路径 `workspace_root`。`fact_ref` 必须是当前项目的完整稳定三元组且 `fact_type_key=file-asset`；`authorization_reference` 必须非空并回指 Human 对准确对象和删除影响作出的当前决定或已准确覆盖该动作的授权，Code 只校验引用 shape，不裁决自然语言授权覆盖。`observed_context` 必须为空，`requested_disclosure` 必须为 `null`。调用方不得提交 after、删除时点、Git commit/path/blob OID 或成员列表。
+
+Code 必须先形成唯一项目/worktree/common-dir 边界，再按固定顺序进入同项目关系写保护锁和“项目 + file-asset”类型锁；WorkCase 新建、形成或移除 `has-file-asset` 的受控写入必须进入同一关系锁，避免“零引用扫描后新增引用”的竞态。锁内重新精确读取目标，要求 status=active、完整 payload 当次 size/hash 已确认且内容指纹等于请求基线；`deleted`、invalid、unavailable、not-found 或指纹变化都零写入拒绝。随后必须扫描同项目全部 canonical WorkCase，要求对象集合、每个 canonical 载体、项目关系和入向 `has-file-asset` 检查完整；任一 invalid、unavailable、预算或身份缺口都不能形成零引用证明，任一实际入向引用都拒绝删除。关系扫描后还必须第二次完整读取 manifest/payload，重新计算并精确匹配请求 CAS 与第一次 fields；两次之间发生任何载体变化都不得转为删除。
+
+安全删除只允许已完整进入当前 HEAD 的 active carrier。Code 必须解析删除前当前 `HEAD^{commit}`，从该 commit tree 精确读取同一对象的 `file-asset.yaml` 与 `payload` blob OID，并证明两个 HEAD blob bytes 分别等于锁内当前 manifest 和 payload；unborn HEAD、路径缺失、mode 非 Git regular file、当前未提交差异、Git 读取缺口或对象格式无法确认都零写入拒绝。Code 以 HEAD commit、原 canonical payload path 和 payload blob OID 托管 `recovery`；这三个值不接受调用方输入。该要求只建立可核对的历史恢复锚点，不保证 commit 永久可达，且不处理已经进入历史的敏感内容清除。
+
+after 必须原样保留 `object_id`、`fact_type_key`、`title`、`created_at`、`filename`、`media_type`、`size_bytes`、`content_sha256` 与 `signature`，由 Code 写 `status=deleted`，将同一事件时点写入 `updated_at` 与 `deleted_at`，把 `deletion_summary` 写入 `disposition_summary`，并写入托管 `recovery`。Code 必须先验证只有 `file-asset.yaml` 的完整 tombstone after-image；再在同一 `ldvh-base/file-assets/` 类型根下的非 canonical 临时目录中形成并 fsync after，使用平台原生原子目录交换替换 active 目录，立即 fsync 该共同父目录后才移除交换出的旧 payload。因此异常进程中断若发生在 payload 移除前，至少保留完整 active 或已耐久交换的 tombstone+旧 payload 临时目录；发生在 payload 移除后，则保留 tombstone、Git recovery 与可被完整性扫描发现的无 payload 残留。若 payload 尚未移除便失败，必须只在两端仍精确等于本次 before/after 时交换回滚；payload 已移除后不得假装可回滚，后续耐久性或清理失败必须保留 committed tombstone 和实际 staging 残留，返回非 `ok` 并停止其它事实写入。平台缺少原子目录交换或耐久目录写入时能力为 `unavailable`，不得退回逐文件 manifest 替换加 unlink。
+
+写后必须从实际 Working Tree 精确回读同一稳定引用，要求 status=deleted、只有 manifest、after 字段和新内容指纹精确一致、payload 路径不再作为当前可读成员；随后按生命周期模板调用独立 `check-fact-integrity`。公开操作本身成功 `result` 字段闭集至少为 `actual_ref`、`canonical_path`、`carrier`、`previous_content_fingerprint`、`content_fingerprint`、`fact_object`、`payload_removed=true`、`incoming_reference_scan` 和 `recovery`；共同 `changes.status=target-deleted`。操作成功只证明 Working Tree tombstone、payload 移除、受保护入向关系零证明和 Git 锚点在当次事务成立，不证明删除已提交、Git 历史永久保留或清除、普通文档无人引用、内容应被遗忘、恢复已授权或上层工作完成。
+
 FileAsset 的可接受形成依据是当次实际选择的完整源文件 bytes、Human 当前指令或已准确覆盖的行动授权、签名分支判断、受控复制结果、canonical manifest/payload 回读和实际机械检查。源文件路径、会话位置、下载目录或临时 staging 只服务当次受控操作，不进入事实对象字段，也不在 canonical 对象之外形成长期权威。
 
 `fact-model-foundation` §7.2.1 已建立唯一窄例外：完整原始 bytes 只可作为 FileAsset 专属 canonical `payload` carrier 成员存在；命令、路径、日志文字、会话定位仍不得进入 FileAsset manifest 或其它类型字段，也不得因 payload 例外放宽普通事实对象。截图、日志、诊断、导出或其它 raw payload 只有在本文对象化条件成立并通过 §7.1–7.2 受控创建边界时才能形成 FileAsset；存在入口不替代对象化、敏感、许可和签名判断。
 
 受控创建必须安全读取完整源文件，记录当次源身份和初始指纹，在 canonical 候选命名空间之外的同一文件系统 staging 中复制并同时计算 size/hash，复制后重新确认源身份与 bytes 未漂移，生成 manifest，验证成员闭集与签名 shape，再以不覆盖既有目标的原子目录操作形成对象。写后必须从实际 Working Tree 重读 manifest 和 payload。任何步骤无法完成时不得留下可被发现为正式对象的半成品；残留只有在能证明属于该未完成事务时才可安全清理，归属不明时必须报告并停止。
 
-每次精确读取至少检查：对象目录与两个固定成员精确存在；没有未知成员；所有成员为不经过 symlink 的普通文件；目录名、`object_id` 和 `fact_type_key` 一致；manifest 通过派生 Schema；payload 实际长度等于 `size_bytes`；完整原始 bytes SHA-256 等于 `content_sha256`；签名结构与状态条件成立。媒体类型只按字段规则检查 shape，不证明真实格式、无恶意或可安全呈现。
+每次精确读取至少检查：对象目录存在；active 恰有 manifest/payload 两成员，deleted 恰有 manifest 单成员；没有未知或状态禁止成员；所有实际成员为不经过 symlink 的普通文件；目录名、`object_id` 和 `fact_type_key` 一致；manifest 通过派生 Schema。active 还必须完整读取 payload，核对实际长度与 `size_bytes`、原始 bytes SHA-256 与 `content_sha256`；deleted 必须核对处置字段和 recovery shape，但不得用 Git blob 代替当前成员闭集。媒体类型只按字段规则检查 shape，不证明真实格式、无恶意或可安全呈现。
 
 FileAsset 自身初版禁止 `urls` 和 `relations`。事实对象消费 FileAsset 时，复用公共 `relations` 并由消费类型的唯一定义来源显式定义 `has-file-asset`：方向为消费对象 → FileAsset；来源与目标必须属于同一当前管辖项目；目标类型固定为 `file-asset`；同一来源对象不得重复指向同一目标；关系只表示该对象持有一个文件资产资源引用，不自动表示证据、证明、依赖、采纳、授权或完成。文件在消费对象中的具体用途和能支持的范围，写入该消费对象已有的适当自然语言字段或 Study 正文，不向 relation 临时添加成员。
 
-建立或消费 `has-file-asset` 前必须精确读取目标并确认其 mechanically valid。目标为 `archived` 时只允许精确历史引用或消费类型明确允许的现有引用继续读取，不作为新增关系的默认候选；目标缺失或无效时，来源对象的关系检查必须据实报告，不得静默删除关系、回退路径副本或假定 Git 历史足以替代当前 payload。
+建立或消费 `has-file-asset` 前必须精确读取目标并确认其 mechanically valid active 且当前 payload bytes 已确认。`deleted` 不得成为新增或既有合法关系目标；安全删除因此必须先形成完整零入向引用证明。目标缺失、deleted 或无效时，来源对象的关系检查必须据实报告，不得静默删除关系、回退路径副本或假定 Git 历史足以替代当前 payload。
 
-“哪些对象引用这个 FileAsset”只能由 Code 从目标所在同一管辖项目的实际扫描范围内，各消费对象正向 `has-file-asset` 派生。反向结果必须说明已扫描项目、类型、状态、无效对象、未完成范围和对象集指纹；不写入 `referenced_by`，不成为第二事实源，也不因结果为空自动证明无人使用或允许归档、删除。初版禁止跨项目 `has-file-asset`，避免把入向完整性扩大到无法闭合的 workspace 配置和其它仓库。
+“哪些对象引用这个 FileAsset”只能由 Code 从目标所在同一管辖项目的实际扫描范围内，各消费对象正向 `has-file-asset` 派生。反向结果必须说明已扫描项目、类型、状态、无效对象、未完成范围和对象集指纹；不写入 `referenced_by`，不成为第二事实源，也不因结果为空自动证明无人使用或允许删除。初版禁止跨项目 `has-file-asset`，避免把入向完整性扩大到无法闭合的 workspace 配置和其它仓库。
 
 普通稳定文档可以在自然语言中同时写出项目 `id`、`fact_type_key=file-asset` 与 `object_id`，帮助 Human 或 AI 精确定位对象，也可以附上当次派生的可点击 canonical 路径。但在当前没有唯一机器可解析语法时，这种文字只属于导航提示，不进入受保护引用闭包，不提供 referential-integrity 或完整入向枚举保证。只有事实对象中同项目、正式定义的 `has-file-asset` 属于初版可机械闭合引用域；未来若需要普通文档引用取得删除保护，必须先在正确共同来源定义唯一语法、示例转义、扫描范围与迁移规则，不能由关键词共现猜测引用。
 
-FileAsset 不进入无条件 F1 基线；它通过 F0 类型统计、F2 `active` 候选、精确引用或 WorkCase `has-file-asset` 关系进入按需读取。F2 卡片投影 `object_id`、`title`、`status`、`filename`、`media_type`、`size_bytes`、`content_sha256`、纳入签名摘要、`updated_at` 与当次完整性 coverage，不内联 payload。F3 精确读取返回 manifest、完整性结果与 canonical payload 路径；Helper JSON 只返回实际 size/hash 和 coverage，不内联二进制 payload。F4 只在消费结论需要时由调用方通过该路径读取内容；机械有效不表示内容语义相关、当前适用或安全。F0 恢复清单中的 FileAsset 范围只报告对象数量、状态、对象集指纹、完整性 coverage 与未完成范围，不把 manifest 声明或历史检查结果当作当前 bytes 完整性。
+FileAsset 不进入无条件 F1 基线；active 通过 F0 类型统计、F2 默认候选、精确引用或 WorkCase `has-file-asset` 关系进入按需读取。deleted 只通过 F0 状态统计、`read-fact-objects` 精确读取，或同时精确命中该对象的 F2 `exact_refs` 进入 tombstone 读取；它不进入默认 F2 候选，也不得仅由 `statuses: [deleted]` 扩大召回。F2 卡片投影 `object_id`、`title`、`status`、`filename`、`media_type`、`size_bytes`、`content_sha256`、纳入签名摘要、`updated_at` 与当次完整性 coverage，不内联 payload。F3 精确读取 active 返回 manifest、完整性结果与 canonical payload 路径；读取 deleted 返回 manifest、删除摘要和 recovery，不返回当前 payload 路径。Helper JSON 不内联二进制 payload。F4 只在 active 消费结论需要时由调用方通过该路径读取内容；机械有效不表示内容语义相关、当前适用或安全。F0 恢复清单中的 FileAsset 范围只报告对象数量、状态、对象集指纹、完整性 coverage 与未完成范围，不把 manifest 声明或历史检查结果当作当前 bytes 完整性。
 
 `active`、manifest 存在、F1 身份或 F2 卡片都不能单独支持“canonical bytes 当前客观存在且完整”的声明；F2 中的 `size_bytes` 与 `content_sha256` 在未完整读取 payload 时只是 manifest 声明值。F1/F2 必须携带当次实际完整性 coverage，区分只检查 manifest/成员存在、已经读取长度和已经完整计算 SHA-256 的范围；只有当次安全完整读取 payload、实际 size/hash 匹配且其它适用检查通过的 F3 结果，或 F1/F2 明确完成同等完整读取时，才能在该次读取范围声明当前 bytes 存在且与登记一致。大文件预算使完整检查未完成时必须返回未完成 coverage，不得用 `active`、历史 hash 或上次检查结果补成当前有效。
 
 可执行文件、压缩包、HTML、SVG 或其它主动内容即使 mechanically valid，也只表示 bytes 被保存。Web、AI 环境或其它消费者必须依据内容类别与安全策略选择下载、文本显示、沙箱预览或拒绝，不能只信任 `media_type` 后直接执行或渲染。
 
-## 8. 变更、更正、归档、删除与类型退出
+## 8. 变更、更正、安全删除与类型退出
 
-payload bytes、`filename`、`media_type`、`size_bytes`、`content_sha256`、`signature`、`object_id`、`fact_type_key` 和 `created_at` 在对象创建成功后不可原地改变。内容变化、纳入签名错误、需要改变摄取文件名或媒体类型时，创建新的 FileAsset；旧对象保持原始载体，按实际情况继续 active 或经 Human 明确决定归档。不得覆盖 payload、复用 ID、静默重签或把内容变化伪装成 manifest 更正。
+payload bytes、`filename`、`media_type`、`size_bytes`、`content_sha256`、`signature`、`object_id`、`fact_type_key` 和 `created_at` 在对象创建成功后不可原地改变。内容变化、纳入签名错误、需要改变标题、摄取文件名或媒体类型时创建新的 FileAsset；旧对象继续 active，或在不再有受保护引用且 Human 明确决定后安全删除。FileAsset 不提供“归档”状态，也不提供普通 title/manifest 更正入口；不得覆盖 payload、复用 ID、静默重签或把内容变化伪装成更正。
 
-`title` 可以在不改变 payload 身份、用途和来源边界时原地更正；`status`、`disposition_summary` 和 Code 托管的 `updated_at` 只按 §6 的转换变化。任何成功变更必须使用当前完整对象指纹作 CAS，在 FileAsset 类型锁内验证 before/after、原子写 manifest 并回读整个目录；普通通用更新入口不得因只能写单文件而绕过 payload 一致性检查。
+唯一生命周期边是类型专属 `delete-file-asset` 执行的 `active → deleted`。它保留原登记 metadata 和稳定目录身份，新增处置摘要、删除时点及 Git 恢复锚点，并物理移除 Working Tree payload。删除不是从事实源抹掉对象：deleted YAML tombstone 继续参与精确读取、F0 状态统计、完整性检查和 Git Gate；它不进入默认候选，不允许 `has-file-asset`，也不把历史 bytes 当作当前 payload。恢复时创建新 FileAsset，不重开或改写 tombstone。
 
-初版正常生命周期不提供物理删除、移动或目录重命名能力。Working Tree 中手工删除或修改必须在后续完整性检查中成为缺失或无效。Git Gate 已能从绑定 Index 聚合 FileAsset 目录 after-image：只放行 HEAD 中不存在且完整机械有效的新建对象；既有对象的单边成员、payload/manifest 原地变化、完整删除、移动和改名都以生命周期写不可用失败关闭。这只阻止提交，不阻止本地命令先改变 Working Tree，也不构成更新、归档或删除能力。
+安全删除必须同时满足：Human 对准确对象与影响的决定；当前 active 完整读取和 CAS 指纹；同一关系锁内对全部 canonical WorkCase 形成完整零入向 `has-file-asset` 证明；当前 manifest/payload 与删除前 HEAD 两个 blob 精确相等；删除 after 只含合法 tombstone manifest；平台原子目录交换、payload 移除和写后回读成立。普通文档中的自然语言引用不在机器闭包内，AI 在删除前仍须按实际工作范围补充搜索并把未检查范围告知 Human，但它不能被伪装成 Code 已证明的零引用条件。
 
-敏感信息、许可、法律义务或类型退出确实要求物理移除时，必须停止普通生命周期操作，取得 Human 对准确对象、入向引用、Git 历史影响、保留与删除范围的决定，并先形成来源规则允许的一次性移除或迁移方案。不能仅凭 `archived`、无人引用、Human 曾批准创建或“Git 中还能找回”推断允许删除。
+Git Gate 从绑定 Index 聚合 FileAsset after-image：HEAD 不存在时只放行完整 active 新建；HEAD 已有 active 对象时只放行完整 deleted tombstone，要求 payload 删除、原 metadata 保留、时间/处置/recovery 合法，且 recovery 精确回指 HEAD commit 中原 payload path/blob。其它既有 manifest/payload 变化、完整目录删除、移动、改名、deleted 改写或重开都失败关闭。Git Gate 只保护真实提交事件，不阻止本地命令先改变 Working Tree，也不替代 Helper 的关系锁、当前读取、Human 决定或写后完整性审计。
 
-FileAsset 类型停止新增、合并、替代或取消时，必须先枚举全部对象、canonical payload、同项目正式 `has-file-asset` 正向和入向引用以及仍适用内容；普通文档文字提示只能作为补充扫描线索，不能被表达为已完整枚举。为每个对象确定继续保留或迁移到另一唯一事实位置，并完成受保护消费者改写和 Working Tree 回读。只要仍可能存在未纳入机器闭包的普通文档使用，初版就不能以“引用已清空”为由物理删除；不得只删除本文、目录、Schema、Helper 或 Web 入口后留下无主 payload 或悬空引用。
+若敏感信息、许可或法律义务要求连 Git 历史中的 bytes 一并清除，普通 safe delete 不足：必须停止该操作，取得 Human 对准确历史范围、远端、clone、备份、引用与不可逆影响的决定，并使用另行定义的一次性历史重写/清理方案。不能仅凭 deleted、无人引用、Human 曾批准创建或 recovery 存在推断历史处理已经完成。
+
+FileAsset 类型停止新增、合并、替代或取消时，必须先枚举全部 active/deleted 对象、active canonical payload、同项目正式 `has-file-asset` 正向和入向引用以及仍适用内容；普通文档文字提示只能作为补充扫描线索，不能被表达为已完整枚举。为每个 active 对象确定继续保留或安全删除，为 tombstone 明确保留期限和历史可达性边界，并完成受保护消费者改写和 Working Tree 回读；不得只删除本文、目录、Schema、Helper 或 Web 入口后留下无主 payload、悬空引用或失去解释的 tombstone。
 
 ## 9. Activation 能力边界与受影响来源
 
-FileAsset activation 先以闭合只读包成为第六个当前事实类型并以 WorkCase 作为第一个消费者；本次 Write Activation 在不扩大既有对象生命周期写的前提下增加类型专属受控新建与全新对象 Git Gate 校验。变更包必须同时保持以下来源和实现一致：
+FileAsset activation 先以闭合只读包成为第六个当前事实类型并以 WorkCase 作为第一个消费者，Write Activation 增加类型专属受控新建与全新对象 Git Gate 校验；本次 Safe Delete Activation 只增加 `active → deleted` 受控安全删除及对应 Git Gate。变更包必须同时保持以下来源和实现一致：
 
 1. `fact-model-foundation` 登记第六类型、目录 carrier、读取/发现/完整性结果、类型专属公开操作，以及既有单文件创建和更新入口对 FileAsset 的零写入拒绝；
 2. `fact-object-field-registry` 登记 `file-asset-signature`、全部 manifest 字段和结构成员，并把 `disposition-summary` 扩展至 `file-asset`；
 3. `fact-object-mechanical-validation-catalog` 登记目录成员、manifest/payload 一致性、size/hash、签名条件、资源上限和当前不可用边界；
-4. `WorkCase` 唯一定义来源新增同项目 `has-file-asset`，并明确形成、保留、关闭冻结和 archived 目标边界；其它类型不因 FileAsset 准入自动获得该关系；
+4. `WorkCase` 唯一定义来源新增同项目 `has-file-asset`，并明确形成、保留、关闭冻结和 deleted 目标禁止边界；其它类型不因 FileAsset 准入自动获得该关系；
 5. `Spark` 明确从既有宽目标集合排除 FileAsset，避免 `routed-to` 或 `related-to` 意外使其成为消费者；WorkCase 的 `related-to` 同样排除 FileAsset，使引用只有一个 relation key；
-6. `source-of-truth-traceability` 规定 FileAsset 按对象聚合绑定 Index after-image，只放行完整有效的新建对象，并对既有对象任何 staged 生命周期写失败关闭；
-7. 事实对象创建模板把 FileAsset 分流到 §7.1–7.2 类型专属入口；生命周期模板对更新、归档和删除继续交还 capability gap，二者都不得复用既有单文件事务；
+6. `source-of-truth-traceability` 规定 FileAsset 按对象聚合绑定 Index after-image：HEAD 无对象时只放行完整 active 新建，HEAD 已有 active 时只放行精确 deleted tombstone，其它 staged 写全部失败关闭；
+7. 事实对象创建模板把 FileAsset 分流到 §7.1–7.2 类型专属入口；生命周期模板只将安全删除分流到 §7.3 `delete-file-asset`，对普通更新、归档、移动、重开和恢复仍交还 capability gap；两者都不得复用既有单文件事务；
 8. 术语表登记 `FileAsset / 文件资产`，并保持 `Attachment / 附件` 只指授权附件；
 9. 正式 Helper 读取、候选发现、对象集指纹、全库完整性与 WorkCase 关系检查直接消费当前 Schema，不保留 provisional Schema 或第二 validator；
 10. 独立复核覆盖类型必要性、更小普通目录方案、字段/结构、目录 carrier、签名、关系、生命周期、安全、迁移、Git Gate 和跨来源同步成本。
 
-当前实际开放的能力为：安全精确读取 manifest 与完整 payload、完整性 coverage、F0/F2 发现、全库完整性检查、§7.1–7.2 受控新建、全新对象多成员 Git Index after-image 校验，以及 WorkCase 对 mechanically valid FileAsset 的同项目稳定引用。activation 不自动迁移或删除现有 `docs/` 文件；来源文件在创建成功后仍保留，后续移动/删除另行处理。manifest 更新、归档写入、物理删除、既有对象移动/改名、普通文档引用闭包、Web 下载/预览和跨项目引用继续不可用；调用方必须看到明确拒绝、不可用或未完成 coverage，不能由类型 active 或新建成功推断这些能力成立。
+当前实际开放的能力为：安全精确读取 active manifest/完整 payload 或 deleted tombstone、完整性 coverage、F0/F2 发现、全库完整性检查、§7.1–7.2 受控新建、§7.3 受控安全删除、新建与安全删除的 Git Index after-image 校验，以及 WorkCase 对 mechanically valid active FileAsset 的同项目稳定引用。activation 不自动迁移或删除现有 `docs/` 文件；来源文件在创建成功后仍保留，后续移动/删除另行处理。普通 manifest 更新、归档、既有对象移动/改名、普通文档引用闭包、Web 下载/预览和跨项目引用继续不可用；调用方必须看到明确拒绝、不可用或未完成 coverage，不能由类型 active、新建成功或 tombstone 存在推断其它能力成立。
 
 2026-07-31 A/B 试点已经完成“现有事实模型 vs 平行资产对象模型”的承载位置比较：A 能取得相同 payload 和消费结论，但要满足完整需求就必须复制身份、状态、签名、引用、发现、读取和生命周期，因此不能作为不混淆责任的普通文件位置。WorkCase 正式消费者验证用于确认统一关系、F0–F4、状态与内容边界按当前来源工作，不要求 FileAsset 改变消费者对同一 payload 得出的领域结论；相同 bytes 被正确读取后形成相同结论是预期结果。对象数量、关系 shape 或能力存在仍不能单独证明 V4、V8、HV4 或项目演进价值。
 
-当前规则源优先读取 Working Tree，active 来源的未提交变化会立即参与规则判断。整包未闭合时，不得只凭本文 `active` 声称 FileAsset Write Activation 可用；验证必须同时回读上述共同来源、Schema、Helper 结果、关系检查，以及 Git Gate 对有效新建的放行和对既有变更/非法新建的失败关闭结果。受控创建声明只覆盖已验证 POSIX 平台、4 MiB 内普通来源文件、共享编号、目录原子提交、条件回滚和回读范围；未验证故障不得由 happy-path 推定。
+当前规则源优先读取 Working Tree，active 来源的未提交变化会立即参与规则判断。整包未闭合时，不得只凭本文 `active` 声称 FileAsset Write 或 Safe Delete Activation 可用；验证必须同时回读上述共同来源、Schema、Helper 结果、关系检查，以及 Git Gate 对有效新建/安全删除的放行和对其它既有变更、非法新建、删除锚点或入向引用不成立的失败关闭结果。受控创建声明只覆盖已验证 POSIX 平台、4 MiB 内普通来源文件、共享编号、目录原子提交、条件回滚和回读范围；安全删除声明只覆盖已验证的 POSIX 目录交换、删除前回滚、删除后残留披露、关系锁、二次 CAS、Git 锚点与 tombstone 回读范围；未验证故障不得由 happy-path 推定。
 
 ### 9.1 2026-07-31 A/B 试点的重新解释
 
@@ -318,7 +344,7 @@ FileAsset activation 先以闭合只读包成为第六个当前事实类型并�
 
 这是一轮真实文件加 synthetic consumer envelope 的隔离语义读取，不是当前有效 WorkCase、ADR、Study 或其它事实对象的关系集成。两边取得相同 bytes、相同完整性结论、相同残留处置和相同未知范围；B 的公共关系提供统一、类型化定位，而具体用途仍由消费对象正文承担。这正符合 FileAsset 的边界：它稳定保存和标识客观存在的内容，不负责改变 payload 的含义、当前适用性或证明力。
 
-第一次独立复核曾以“B 是否产生 A 无法取得的领域结论”为标准选择“当前退回普通资产库”，同时指出 A 已经是一套平行结构化资产模型，不能把其规则、Schema、ID、读写、引用、Git Gate、资源和安全成本当作零。Human 随后明确 FileAsset 记录的是内容客观存在，不是证据；结合 05 §7.2.1“事实对象不是用来证明自身正确的材料包”，原拒绝标准不适用。A 的平行对象成本反而支持把同一责任纳入统一事实模型。本轮仍没有验证现有事实对象集成、多项目稳定引用、归档、删除保护、正式 Helper、Web 或长期成本，这些转为 activation 和实现验证缺口，不再被误写成事实语义不成立。
+第一次独立复核曾以“B 是否产生 A 无法取得的领域结论”为标准选择“当前退回普通资产库”，同时指出 A 已经是一套平行结构化资产模型，不能把其规则、Schema、ID、读写、引用、Git Gate、资源和安全成本当作零。Human 随后明确 FileAsset 记录的是内容客观存在，不是证据；结合 05 §7.2.1“事实对象不是用来证明自身正确的材料包”，原拒绝标准不适用。A 的平行对象成本反而支持把同一责任纳入统一事实模型。当时尚未验证现有事实对象集成、多项目稳定引用、安全删除保护、正式 Helper、Web 或长期成本，这些在当时转为 activation 和实现验证缺口，不再被误写成事实语义不成立。
 
 据此，当前处置为：
 
@@ -328,7 +354,7 @@ FileAsset activation 先以闭合只读包成为第六个当前事实类型并�
 - 正式消费者验证关注统一关系、F0/F2/F3/F4、状态、payload 完整性和内容语义边界是否按来源成立，不要求同一 payload 在两种载体中产生不同领域结论；
 - 详细输入、机械边界、消费结果、reviewer finding 与未验证范围以 `docs/file-asset-ab-consumer-hook-residual-disposition-2026-07-31.md` 和 `docs/file-asset-fact-object-proposal.md` §22 为试点记录，不把这些普通文档提升为当前规则源。
 
-2026-07-31 的测试域纵切只接受隔离 fixture 命名空间，用于验证 POSIX no-follow descriptor、成员闭集、ABA 检查、二进制 payload、size/hash 和 archived 精确读取。正式实现继承这些安全性质，但改为读取 `ldvh-base/file-assets/<object_id>/`，直接消费 `fact-object-field-registry` 派生的 `FactSchema` 与共同 validator；试点的 provisional Schema 和独立 validator 不再构成可调用实现。不能提供同等目录句柄保证的平台据实返回 `unavailable`，不得按多次路径遍历拼接 manifest/payload 后确认 current bytes。
+2026-07-31 的测试域纵切只接受隔离 fixture 命名空间，用于验证 POSIX no-follow descriptor、成员闭集、ABA 检查、二进制 payload 与 size/hash；其 provisional `archived` 分支已被当前 `active → deleted` tombstone 契约取代，不再是现行语义或实现依据。正式实现继承这些安全性质，但改为读取 `ldvh-base/file-assets/<object_id>/`，直接消费 `fact-object-field-registry` 派生的 `FactSchema` 与共同 validator；试点的 provisional Schema 和独立 validator 不再构成可调用实现。不能提供同等目录句柄保证的平台据实返回 `unavailable`，不得按多次路径遍历拼接 manifest/payload 后确认 current bytes。
 
 ## 10. 验证要求
 
@@ -342,13 +368,13 @@ FileAsset activation 先以闭合只读包成为第六个当前事实类型并�
 | payload 完整性 | 创建、读取、引用或 Git Gate 检查时 | 完整 bytes 可读，实际 size/hash 与 manifest 精确一致，没有截断或读取期漂移 | 当前 payload、manifest 和实际算法结果 | 完整读取、size/SHA-256 对比、漂移 tests | 当次实际读取 bytes | 不消费或关联；报告缺失、不一致和未读范围 |
 | 纳入签名 | 创建或迁移时 | 本次直接提交最终 bytes 的责任明确属于 Human 或一个可观察 AI agent；条件成员闭合；陈述没有扩大为历史作者、原始生成者、授权或证明力 | Human 输入、当次 AI 提交过程、manifest 和本文 | AI 语义判断、结构 validator 与回读 | 当次提交分支和签名 shape；不证明陈述真实性或全局 agent 身份 | 停止创建或迁移；取得明确最终 bytes 与直接提交主体 |
 | 引用与反向导航 | 建立、读取或移除引用时 | 消费类型已定义同项目 `has-file-asset`；目标完整可读；三元组、基数、状态和缺失边界成立；反向结果报告 coverage；普通文档文字未冒充受保护引用 | 消费类型来源、来源对象、目标对象和对象集 | 正向关系检查、精确目标读取、范围化同项目反向扫描 | 当次来源、目标和实际扫描范围 | 不建立或消费关系；保留悬空与未完成范围 |
-| 生命周期与不可变性 | 更正、归档、修改或删除时 | 转换合法；不可变字段和 payload 未改变；归档有 Human 决定和 disposition；物理删除未通过普通入口发生 | before/after、Human 决定、CAS、回读与本文 | transition tests、payload/hash 对比、真实 Working Tree 回读 | 当次对象和转换 | 拒绝、回滚或停止；不把 archived 当作删除许可 |
+| 生命周期与不可变性 | 修改或删除时 | 只存在 `active → deleted`；不可变 metadata 保留；删除有 Human 决定、CAS、完整零入向引用证明、HEAD blob recovery、payload 移除和 tombstone 回读；普通更新/归档/重开失败关闭 | before/after、Human 决定、CAS、入向扫描、Git 锚点、回读与本文 | transition tests、目录事务故障 tests、真实 Working Tree 回读与 Git Gate 事件 | 当次对象、已完整扫描 WorkCase 集和当前 HEAD | 拒绝、回滚或停止；不把 Git 历史当作当前 payload |
 | 受控创建 | 声称可以摄取文件时 | 源漂移检查、staging、编号分配、无覆盖原子目录提交、写后回读、故障残留和资源上限全部实现并验证 | Helper 契约、实际实现、两个来源分支样本和故障 tests | 真实 CLI、并发、symlink、超限、partial-write 和 rollback tests | 已验证平台、文件类型、大小和故障范围 | 不开放创建；只保留只读调查与明确缺口 |
 | Git Gate 保护 | 声称删除或篡改在提交边界被阻断时 | 新增、单边成员、payload 修改、hash 错误、目录删除/移动和悬空引用具有真实 allow/block 事件证据；未检查范围不静默放行 | 当前规则、Git Gate 核心、真实 staged diff 与事件结果 | 真实 Git 事件测试，不以 unit test 代替接入 | 实际事件、平台和已覆盖 diff 类别 | 不声明受保护；修正 Gate 或报告未覆盖 |
 | 安全消费 | 新增下载、预览、渲染或执行入口时 | 不只依赖 `media_type`；主动内容、超限、未知和无效对象按安全策略处理；不无界传输 | 08、实际内容策略、payload 和页面/API | contract tests、代表性文件与实际页面检查 | 当次内容类别、入口和视口 | 禁止执行/渲染；退回下载、文本或不可用状态 |
 | 非 canonical 试点 | 使用当前两个审计文件说明可行性时 | 两份源/副本 bytes、size/hash、签名 shape、候选身份和关系 shape 的实际检查范围被准确保留；没有冒充正式对象 | 2026-07-31 试点记录、两个样本 hash 与本文 | 试点记录回读；需要时重新执行隔离试验 | 候选 shape 的有限可行性 | 不扩大为正式 Schema、原子性、Git Gate 或长期净价值结论 |
 
-当前非 canonical 试点样本为：Human 指定的 `docs/跨环境接入分析汇总报告-2026-07-30.md`，9271 bytes，SHA-256 `58b4a1a5b84ff7470c974b2a16b7beea28b916253762401664ed67b2a1a171b0`，候选签名为 `human`；Human 要求当前 AI 编写的 `docs/ldvh-environment-hook-claim-audit-2026-07-31.md`，11124 bytes，SHA-256 `57ca7ee0c5f006a0736b618fdc526a55e21d0f3ff068de10e7043b6090b6f8ac`，候选签名为 `ai-agent / codex / Codex Desktop`。隔离试验中两份复制的 size/hash 与源一致，候选 manifest、身份、签名结构和两条 `has-file-asset` 关系 shape 通过所执行的确定性检查。首轮 `/tmp/ldvh-file-asset-pilot.tzC5DO` 已删除；A/B 原 `/tmp/ldvh-file-asset-ab.MI32yS` 路径已移除，其废纸篓副本不构成长期依据。该历史结果本身仍不证明正式能力；Write Activation 的正式能力只能由当前 §7.1–7.2 实现、CLI/事务 tests 和真实 Git Gate 事件另行证明，Web 与迁移仍未覆盖。
+当前非 canonical 试点样本为：Human 指定的 `docs/跨环境接入分析汇总报告-2026-07-30.md`，9271 bytes，SHA-256 `58b4a1a5b84ff7470c974b2a16b7beea28b916253762401664ed67b2a1a171b0`，候选签名为 `human`；Human 要求当前 AI 编写的 `docs/ldvh-environment-hook-claim-audit-2026-07-31.md`，11124 bytes，SHA-256 `57ca7ee0c5f006a0736b618fdc526a55e21d0f3ff068de10e7043b6090b6f8ac`，候选签名为 `ai-agent / codex / Codex Desktop`。隔离试验中两份复制的 size/hash 与源一致，候选 manifest、身份、签名结构和两条 `has-file-asset` 关系 shape 通过所执行的确定性检查。首轮 `/tmp/ldvh-file-asset-pilot.tzC5DO` 已删除；A/B 原 `/tmp/ldvh-file-asset-ab.MI32yS` 路径已移除，其废纸篓副本不构成长期依据。该历史结果本身仍不证明正式能力；Write Activation 只能由当前 §7.1–7.2 实现、CLI/事务 tests 和真实 Git Gate 事件证明，Safe Delete Activation 另须由 §7.3 实现、删除前后故障/竞态 tests、精确恢复锚点与 Git Gate allow/block 事件证明；Web 与迁移仍未覆盖。
 
 ## 11. Human Gate
 
@@ -359,7 +385,7 @@ Human 决定的复用按 00 §10 执行。Human 当前指令或准确覆盖的 W
 1. 新增类型的 V1–V8 与 HV1–HV5 净价值仍无法在普通目录更小方案与完整事实类型之间收敛，两组价值发生实际冲突，或需要接受显著长期迁移、存储、跨类型同步和安全成本；
 2. 文件疑似含密码、token、私钥、个人敏感信息、受限制资料、许可不明内容或不应进入 Git 的数据；
 3. 本次直接提交签名无法归入 Human 或一个可观察 AI agent，且需要 Human 重新提供最终 bytes、改变工作方向或接受不能保存的结果；
-4. 将 active FileAsset 归档，或改变仍被对象和普通文档引用的发现与消费边界；
+4. 安全删除 active FileAsset，或改变仍被对象和普通文档引用的发现与消费边界；
 5. 物理删除、移动、批量迁移、类型退出或 Git 历史处理可能造成 bytes、来源、入向引用或仍适用内容实质损失；
 6. 字段、结构、媒体类型、资源限制或引用模型的语义复核仍有歧义，或拟引入破坏性跨类型迁移。
 
@@ -367,7 +393,7 @@ Human 决定不能替代类型准入、字段登记、文件安全、纳入签�
 
 ## 12. Stop Conditions
 
-出现以下任一情况时，暂停受影响的创建、迁移、读取、引用、归档、删除或能力声明：
+出现以下任一情况时，暂停受影响的创建、迁移、读取、引用、安全删除或能力声明：
 
 1. 本文、05、05.Att.01、05.Att.02、消费类型或实现彼此不一致，却准备创建、消费或声明正式 FileAsset 能力；
 2. 当前需求只能证明“防止随手删除”，不能证明稳定身份、发现、引用、完整性或生命周期的组合价值，却继续扩张事实类型；
@@ -375,10 +401,10 @@ Human 决定不能替代类型准入、字段登记、文件安全、纳入签�
 4. 本次直接提交责任不能无歧义归入 Human 或一个实际可观察 AI agent，或者签名被用来表示历史作者、原始生成者、最初触发者、批准、授权、验收、密码学证明或内容证明力；
 5. 目录、成员闭集、普通文件、symlink、身份、size、hash、Schema、状态或唯一当前位置任一检查不成立；
 6. 文件包含或疑似包含敏感、许可不明、危险主动内容，或体积、读取、存储、传输和渲染边界无法安全完成；
-7. 消费类型没有正式定义同项目 `has-file-asset`，目标缺失、无效、跨项目或 archived 边界不成立，却准备新增或消费关系；
+7. 消费类型没有正式定义同项目 `has-file-asset`，目标缺失、无效、跨项目或已 deleted，却准备新增或消费关系；
 8. 正在通过 `urls`、自定义路径字段、`referenced_by`、目标标题副本、自由 metadata 或专用引用数组绕过当前统一字段与关系模型；
 9. payload、签名、摄取文件名、媒体类型、size 或 hash 正在原地改变，或者普通更新入口无法同时验证完整目录；
-10. 归档、物理删除、移动、迁移或类型退出没有处理入向引用和仍适用内容，或把 Git 历史当作当前 payload 的替代；
+10. 安全删除、移动、迁移或类型退出没有处理入向引用和仍适用内容，或把 Git 历史当作当前 payload 的替代；
 11. Helper、Code、Git Gate、tests、Web 或环境入口正在宣称本文尚未进入当前来源、尚未实现、尚未接入或尚未按真实事件验证的能力；
 12. 无法确认失败影响哪些对象、payload、引用、项目或消费者，继续推进可能扩大不一致或数据损失。
 

@@ -23,11 +23,11 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
     assert inspection.issues == ()
     assert inspection.implemented_checks_complete is True
     checked_documents = inspection.active_documents_passing_implemented_checks
-    assert len(checked_documents) == 29
+    assert len(checked_documents) == 30
     assert sum(document.kind != "attachment" for document in checked_documents) == 21
 
-    assert sum(document.kind == "attachment" for document in checked_documents) == 8
-    assert len(inspection.projections) == 87
+    assert sum(document.kind == "attachment" for document in checked_documents) == 9
+    assert len(inspection.projections) == 90
     assert {projection.layer for projection in inspection.projections} == {"L0", "L1", "L2"}
     field_registry = inspection.document_passing_implemented_checks_by_key("fact-object-field-registry")
     assert field_registry is not None
@@ -75,6 +75,7 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
         "correct-closed-workcase",
         "create-fact-object",
         "create-file-asset",
+        "delete-file-asset",
         "find-fact-object-candidates",
         "precheck-git-commit",
         "prepare-fact-object-draft",
@@ -98,6 +99,7 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
         "correct-closed-workcase": "specs/21-WorkCase-工作项.md",
         "create-fact-object": "specs/05-事实模型基础规范.md",
         "create-file-asset": "specs/25-FileAsset-文件资产.md",
+        "delete-file-asset": "specs/25-FileAsset-文件资产.md",
         "find-fact-object-candidates": "specs/05-事实模型基础规范.md",
         "precheck-git-commit": "specs/03-事实源与信息溯源规范.md",
         "prepare-fact-object-draft": "specs/05-事实模型基础规范.md",
@@ -149,8 +151,8 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
     assert action_templates.issues == ()
     assert action_templates.incomplete_sources == ()
     assert fields.complete is True
-    assert len(fields.structures) == 18
-    assert len(fields.registrations) == 132
+    assert len(fields.structures) == 19
+    assert len(fields.registrations) == 137
 
 
 def test_mechanically_distinct_spec_does_not_create_a_semantic_duplicate_diagnosis(

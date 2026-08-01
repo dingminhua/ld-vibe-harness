@@ -346,6 +346,71 @@ def test_f2_discovers_active_file_asset_with_integrity_coverage(tmp_path: Path) 
     ]
 
 
+def test_deleted_file_asset_requires_exact_ref_for_f2_recall(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    directory = project / "ldvh-base/file-assets/file-asset-0001"
+    directory.mkdir(parents=True)
+    (directory / "file-asset.yaml").write_text(
+        "\n".join(
+            [
+                "object_id: file-asset-0001",
+                "fact_type_key: file-asset",
+                "title: Deleted audit",
+                "created_at: 2026-07-31T10:00:00+08:00",
+                "updated_at: 2026-07-31T11:00:00+08:00",
+                "status: deleted",
+                "filename: audit.bin",
+                "media_type: application/octet-stream",
+                "size_bytes: 5",
+                f"content_sha256: {hashlib.sha256(b'audit').hexdigest()}",
+                "signature:",
+                "  signer_type: human",
+                "disposition_summary: Human confirmed safe deletion.",
+                "deleted_at: 2026-07-31T11:00:00+08:00",
+                "recovery:",
+                f"  commit: {'a' * 40}",
+                "  path: ldvh-base/file-assets/file-asset-0001/payload",
+                f"  blob_oid: {'b' * 40}",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    exact_ref = {
+        "governed_project_id": "sample",
+        "fact_type_key": "file-asset",
+        "object_id": "file-asset-0001",
+    }
+
+    status_only = handle_request(
+        "call",
+        "find-fact-object-candidates",
+        _payload(
+            workspace,
+            project,
+            "F2",
+            fact_type_keys=["file-asset"],
+            statuses=["deleted"],
+        ),
+    ).response
+    exact = handle_request(
+        "call",
+        "find-fact-object-candidates",
+        _payload(
+            workspace,
+            project,
+            "F2",
+            fact_type_keys=["file-asset"],
+            statuses=["deleted"],
+            exact_refs=[exact_ref],
+        ),
+    ).response
+
+    assert status_only["outcome"] == exact["outcome"] == "ok"
+    assert status_only["result"]["cards"] == []
+    assert [card["fact_ref"] for card in exact["result"]["cards"]] == [exact_ref]
+
+
 def test_f1_returns_complete_active_adr_and_open_workcase_baseline_with_pagination(tmp_path: Path) -> None:
     workspace, project = _fixture(tmp_path)
     workcase_id = _create(workspace, project, "workcase", _workcase())

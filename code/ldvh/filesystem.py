@@ -6,7 +6,7 @@ import os
 import secrets
 import stat
 import sys
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
@@ -717,6 +717,43 @@ def _rename_directory_no_replace_posix(
         raise OSError(error_number, os.strerror(error_number), target_name)
 
 
+def _exchange_directories_posix(
+    source_directory_fd: int,
+    source_name: str,
+    target_directory_fd: int,
+    target_name: str,
+) -> None:
+    """Atomically exchange two directory names on supported POSIX hosts."""
+
+    import ctypes
+
+    library = ctypes.CDLL(None, use_errno=True)
+    encoded_source = os.fsencode(source_name)
+    encoded_target = os.fsencode(target_name)
+    if sys.platform == "darwin":
+        exchange = getattr(library, "renameatx_np", None)
+        flag = 0x00000002  # RENAME_SWAP
+    elif sys.platform.startswith("linux"):
+        exchange = getattr(library, "renameat2", None)
+        flag = 0x00000002  # RENAME_EXCHANGE
+    else:
+        exchange = None
+        flag = 0
+    if exchange is None:
+        raise OSError(getattr(os, "ENOSYS", 38), "atomic directory exchange is unavailable")
+    exchange.argtypes = (
+        ctypes.c_int,
+        ctypes.c_char_p,
+        ctypes.c_int,
+        ctypes.c_char_p,
+        ctypes.c_uint,
+    )
+    exchange.restype = ctypes.c_int
+    if exchange(source_directory_fd, encoded_source, target_directory_fd, encoded_target, flag) != 0:
+        error_number = ctypes.get_errno()
+        raise OSError(error_number, os.strerror(error_number), target_name)
+
+
 def atomic_create_directory_relative(
     root: Path,
     relative_path: str | Path,
@@ -843,6 +880,247 @@ def atomic_create_directory_relative(
         if staging_parent_fd is not None:
             os.close(staging_parent_fd)
     return AtomicWriteResult(outcome, namespace, durability, cleanup)
+
+
+def _directory_members_equal(directory_fd: int, expected: dict[str, bytes]) -> bool:
+    try:
+        if set(os.listdir(directory_fd)) != set(expected):
+            return False
+        signatures: dict[str, tuple[int, ...]] = {}
+        for name in sorted(expected):
+            descriptor = os.open(name, os.O_RDONLY | os.O_NOFOLLOW, dir_fd=directory_fd)
+            try:
+                before = os.fstat(descriptor)
+                if not stat.S_ISREG(before.st_mode):
+                    return False
+                observed = _read_descriptor(descriptor, max_bytes=len(expected[name]))
+                after = os.fstat(descriptor)
+                if observed != expected[name] or _portable_signature(before) != _portable_signature(after):
+                    return False
+                signatures[name] = _portable_signature(after)
+            finally:
+                os.close(descriptor)
+        return all(
+            _portable_signature(os.stat(name, dir_fd=directory_fd, follow_symlinks=False))
+            == signatures[name]
+            for name in expected
+        )
+    except OSError:
+        return False
+
+
+def atomic_replace_directory_relative_if_members_equal(
+    root: Path,
+    relative_path: str | Path,
+    expected_members: dict[str, bytes],
+    replacement_members: dict[str, bytes],
+    *,
+    staging_directory: str | Path | None = None,
+    mode: int = 0o600,
+    platform_name: str | None = None,
+) -> AtomicWriteResult:
+    """Atomically exchange one closed directory after-image, then destroy its payload.
+
+    The helper is intentionally narrow for FileAsset safe deletion: the
+    expected image must contain ``payload`` and the replacement must not.
+    Before payload removal, failures exchange the original directory back.
+    """
+
+    relative = _normal_relative_path(relative_path)
+    staging = relative.parent if staging_directory is None else _normal_relative_path(staging_directory)
+    selected_platform = os.name if platform_name is None else platform_name
+    def valid_members(members: Mapping[str, bytes]) -> bool:
+        return bool(members) and all(
+            isinstance(name, str)
+            and name not in {"", ".", ".."}
+            and Path(name).name == name
+            and isinstance(payload, bytes)
+            for name, payload in members.items()
+        )
+    if (
+        selected_platform != "posix"
+        or not valid_members(expected_members)
+        or not valid_members(replacement_members)
+        or "payload" not in expected_members
+        or "payload" in replacement_members
+    ):
+        return AtomicWriteResult("unavailable", "not_committed", "unknown", "clean")
+
+    staging_parent_fd: int | None = None
+    target_parent_fd: int | None = None
+    staged_fd: int | None = None
+    target_fd: int | None = None
+    member_fd: int | None = None
+    staged_name = f".ldvh-directory-replace-{secrets.token_hex(12)}.tmp"
+    exchanged = False
+    payload_removed = False
+    cleanup_allowed = True
+    cleanup: CleanupState = "clean"
+    result = AtomicWriteResult("unavailable", "not_committed", "unknown", cleanup)
+    try:
+        staging_parent_fd = _open_relative_directory_posix(root, staging, create=True, directory_mode=0o700)
+        target_parent_fd = _open_relative_directory_posix(root, relative.parent, create=False)
+        os.mkdir(staged_name, mode=0o700, dir_fd=staging_parent_fd)
+        staged_fd = os.open(staged_name, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=staging_parent_fd)
+        for name in sorted(replacement_members):
+            member_fd = os.open(
+                name,
+                os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
+                mode,
+                dir_fd=staged_fd,
+            )
+            _write_all(member_fd, replacement_members[name])
+            os.fsync(member_fd)
+            os.close(member_fd)
+            member_fd = None
+        os.fsync(staged_fd)
+        os.fsync(staging_parent_fd)
+        target_fd = os.open(relative.name, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=target_parent_fd)
+        if not _directory_members_equal(target_fd, expected_members):
+            result = AtomicWriteResult("conflict", "not_committed", "unknown", cleanup)
+        else:
+            os.close(target_fd)
+            target_fd = None
+            _exchange_directories_posix(staging_parent_fd, staged_name, target_parent_fd, relative.name)
+            exchanged = True
+            cleanup_allowed = False
+            os.fsync(staging_parent_fd)
+            if staging != relative.parent:
+                os.fsync(target_parent_fd)
+            target_fd = os.open(
+                relative.name,
+                os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
+                dir_fd=target_parent_fd,
+            )
+            if not _directory_members_equal(target_fd, replacement_members):
+                raise OSError("canonical FileAsset after-image could not be confirmed")
+            os.close(target_fd)
+            target_fd = None
+            old_fd = os.open(staged_name, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=staging_parent_fd)
+            try:
+                if not _directory_members_equal(old_fd, expected_members):
+                    raise OSError("exchanged FileAsset before-image could not be confirmed")
+                os.unlink("payload", dir_fd=old_fd)
+                payload_removed = True
+                os.fsync(old_fd)
+                for name in sorted(set(expected_members) - {"payload"}):
+                    os.unlink(name, dir_fd=old_fd)
+                os.fsync(old_fd)
+            finally:
+                os.close(old_fd)
+            os.rmdir(staged_name, dir_fd=staging_parent_fd)
+            os.fsync(staging_parent_fd)
+            os.fsync(target_parent_fd)
+            result = AtomicWriteResult("replaced", "committed", "file_and_directory", cleanup)
+    except OSError:
+        if exchanged and not payload_removed and staging_parent_fd is not None and target_parent_fd is not None:
+            rollback_old_fd: int | None = None
+            rollback_after_fd: int | None = None
+            try:
+                rollback_old_fd = os.open(
+                    staged_name,
+                    os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
+                    dir_fd=staging_parent_fd,
+                )
+                rollback_after_fd = os.open(
+                    relative.name,
+                    os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
+                    dir_fd=target_parent_fd,
+                )
+                if not _directory_members_equal(
+                    rollback_old_fd,
+                    expected_members,
+                ) or not _directory_members_equal(rollback_after_fd, replacement_members):
+                    raise OSError("directory exchange images changed before rollback")
+                os.close(rollback_old_fd)
+                rollback_old_fd = None
+                os.close(rollback_after_fd)
+                rollback_after_fd = None
+                _exchange_directories_posix(staging_parent_fd, staged_name, target_parent_fd, relative.name)
+                os.fsync(staging_parent_fd)
+                if staging != relative.parent:
+                    os.fsync(target_parent_fd)
+                rollback_before_fd = os.open(
+                    relative.name,
+                    os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
+                    dir_fd=target_parent_fd,
+                )
+                try:
+                    rollback_staged_fd = os.open(
+                        staged_name,
+                        os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
+                        dir_fd=staging_parent_fd,
+                    )
+                    try:
+                        if not _directory_members_equal(
+                            rollback_before_fd,
+                            expected_members,
+                        ) or not _directory_members_equal(rollback_staged_fd, replacement_members):
+                            raise OSError("directory exchange images changed during rollback")
+                    finally:
+                        os.close(rollback_staged_fd)
+                finally:
+                    os.close(rollback_before_fd)
+                exchanged = False
+                cleanup_allowed = True
+                result = AtomicWriteResult("unavailable", "not_committed", "unknown", cleanup)
+            except OSError:
+                result = AtomicWriteResult("unavailable", "uncertain", "unknown", "residue")
+            finally:
+                if rollback_old_fd is not None:
+                    os.close(rollback_old_fd)
+                if rollback_after_fd is not None:
+                    os.close(rollback_after_fd)
+        elif exchanged:
+            result = AtomicWriteResult("replaced", "committed", "unknown", "residue")
+    finally:
+        if member_fd is not None:
+            os.close(member_fd)
+        if target_fd is not None:
+            os.close(target_fd)
+        if staged_fd is not None:
+            os.close(staged_fd)
+        if staging_parent_fd is not None and not exchanged and cleanup_allowed:
+            cleanup_fd: int | None = None
+            try:
+                cleanup_fd = os.open(
+                    staged_name,
+                    os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
+                    dir_fd=staging_parent_fd,
+                )
+                if not _directory_members_equal(cleanup_fd, replacement_members):
+                    raise OSError("staging directory changed before cleanup")
+                for name in sorted(replacement_members):
+                    try:
+                        os.unlink(name, dir_fd=cleanup_fd)
+                    except FileNotFoundError:
+                        pass
+                os.close(cleanup_fd)
+                cleanup_fd = None
+                os.rmdir(staged_name, dir_fd=staging_parent_fd)
+                os.fsync(staging_parent_fd)
+            except FileNotFoundError:
+                pass
+            except OSError:
+                cleanup = "residue"
+            finally:
+                if cleanup_fd is not None:
+                    os.close(cleanup_fd)
+        if target_parent_fd is not None:
+            os.close(target_parent_fd)
+        if staging_parent_fd is not None:
+            os.close(staging_parent_fd)
+    final_cleanup: CleanupState = (
+        "residue" if cleanup == "residue" or result.cleanup == "residue" else "clean"
+    )
+    if final_cleanup != result.cleanup:
+        result = AtomicWriteResult(
+            result.outcome,
+            result.namespace_state,
+            result.durability,
+            final_cleanup,
+        )
+    return result
 
 
 def _atomic_store_posix(root: Path, relative: Path, payload: bytes, mode: int) -> AtomicWriteResult:

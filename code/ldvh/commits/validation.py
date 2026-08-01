@@ -11,6 +11,7 @@ from ldvh.facts.content import validate_fact_content
 from ldvh.facts.contracts import LAYOUTS
 from ldvh.facts.file_asset import validate_file_asset_snapshot
 from ldvh.facts.schema import FactSchema
+from ldvh.facts.validation import parse_rfc3339
 
 _HEADER = re.compile(
     r"^(?P<type>[a-z]+)(?:\((?P<scope>[a-z]+(?:-[a-z]+)*)\))?(?P<breaking>!)?: (?P<description>.+)$"
@@ -42,6 +43,19 @@ class StagedFactCandidate:
     object_id: str | None
     data: bytes | None
     observation_issue: str | None
+    file_asset_targets: tuple[StagedFileAssetTarget, ...] = ()
+    file_asset_target_scan_issue: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class StagedFileAssetTarget:
+    """One FileAsset after-image read from the same bound Index as a WorkCase."""
+
+    object_id: str
+    member_names: tuple[str, ...]
+    manifest_data: bytes | None
+    payload_data: bytes | None
+    observation_issue: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -56,6 +70,13 @@ class StagedFileAssetCandidate:
     head_exists: bool | None
     observation_issue: str | None = None
     validation_issue: str | None = None
+    head_commit: str | None = None
+    head_member_names: tuple[str, ...] = ()
+    head_manifest_data: bytes | None = None
+    head_payload_data: bytes | None = None
+    head_payload_oid: str | None = None
+    incoming_workcases: tuple[StagedFactCandidate, ...] = ()
+    incoming_scan_issue: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -129,6 +150,93 @@ def _heading_has_list(body_lines: list[str], heading: str) -> bool:
     return False
 
 
+def _workcase_file_asset_target_issues(
+    candidate: StagedFactCandidate,
+    fields: dict[str, object],
+    schema: FactSchema | None,
+) -> tuple[list[CommitValidationIssue], list[CommitValidationIssue]]:
+    unavailable: list[CommitValidationIssue] = []
+    failures: list[CommitValidationIssue] = []
+    relations = fields.get("relations")
+    target_ids: list[str] = []
+    for relation in relations if isinstance(relations, list) else []:
+        if not isinstance(relation, dict) or relation.get("relation_key") != "has-file-asset":
+            continue
+        target = relation.get("target")
+        if (
+            isinstance(target, dict)
+            and target.get("fact_type_key") == "file-asset"
+            and isinstance(target.get("object_id"), str)
+        ):
+            target_ids.append(target["object_id"])
+    if not target_ids:
+        return unavailable, failures
+    if candidate.file_asset_target_scan_issue is not None:
+        unavailable.append(
+            _issue(
+                "file_asset_target_scan_unverifiable",
+                f"WorkCase FileAsset target Index 扫描未完成: {candidate.path}: "
+                f"{candidate.file_asset_target_scan_issue}",
+            )
+        )
+        return unavailable, failures
+    if schema is None:
+        unavailable.append(
+            _issue(
+                "fact_schema_unavailable",
+                f"FileAsset Schema 投影未形成，无法校验 WorkCase target: {candidate.path}",
+            )
+        )
+        return unavailable, failures
+    targets = {target.object_id: target for target in candidate.file_asset_targets}
+    for object_id in sorted(set(target_ids)):
+        target = targets.get(object_id)
+        if target is None:
+            failures.append(
+                _issue(
+                    "file_asset_target_not_active",
+                    f"WorkCase has-file-asset target 在 Index after-image 中不存在: {object_id}",
+                )
+            )
+            continue
+        if target.observation_issue is not None:
+            unavailable.append(
+                _issue(
+                    "file_asset_target_unverifiable",
+                    f"WorkCase has-file-asset target 无法可信观察: {object_id}: "
+                    f"{target.observation_issue}",
+                )
+            )
+            continue
+        snapshot = validate_file_asset_snapshot(
+            schema,
+            object_id,
+            target.manifest_data,
+            target.payload_data,
+            member_names=target.member_names,
+        )
+        if snapshot.check_status == "unavailable":
+            unavailable.append(
+                _issue(
+                    "file_asset_target_unverifiable",
+                    f"WorkCase has-file-asset target 无法完成机械校验: {object_id}",
+                )
+            )
+        elif (
+            snapshot.check_status != "mechanically_valid"
+            or snapshot.fields is None
+            or snapshot.fields.get("status") != "active"
+            or snapshot.current_bytes_confirmed is not True
+        ):
+            failures.append(
+                _issue(
+                    "file_asset_target_not_active",
+                    f"WorkCase has-file-asset target 必须是 Index 中完整有效的 active FileAsset: {object_id}",
+                )
+            )
+    return unavailable, failures
+
+
 def _fact_layer(
     value: CommitValidationInput,
 ) -> tuple[list[CommitValidationIssue], list[CommitValidationIssue]]:
@@ -177,6 +285,15 @@ def _fact_layer(
                 )
                 for item in result.issues
             )
+            continue
+        if candidate.fact_type_key == "workcase" and result.fields is not None:
+            target_unavailable, target_failures = _workcase_file_asset_target_issues(
+                candidate,
+                result.fields,
+                schemas.get("file-asset"),
+            )
+            unavailable.extend(target_unavailable)
+            failures.extend(target_failures)
     file_asset_schema = schemas.get("file-asset")
     for candidate in value.file_asset_candidates:
         rendered_paths = ", ".join(candidate.paths) or "ldvh-base/file-assets"
@@ -199,14 +316,6 @@ def _fact_layer(
                 _issue(
                     "fact_candidate_invalid",
                     f"FileAsset Index after-image 机械无效: {candidate.object_id}: {candidate.validation_issue}",
-                )
-            )
-            continue
-        if candidate.head_exists:
-            failures.append(
-                _issue(
-                    "file_asset_lifecycle_write_unavailable",
-                    f"既有 FileAsset 的修改、删除、移动或成员变化尚无受控生命周期写入能力: {candidate.object_id}",
                 )
             )
             continue
@@ -239,10 +348,147 @@ def _fact_layer(
                 )
                 for item in snapshot.issues
             )
-        elif snapshot.fields is None or snapshot.fields.get("status") != "active":
+        elif not candidate.head_exists and (
+            snapshot.fields is None or snapshot.fields.get("status") != "active"
+        ):
             failures.append(
                 _issue("fact_candidate_invalid", f"新建 FileAsset 初始 status 必须是 active: {candidate.object_id}")
             )
+        elif candidate.head_exists:
+            if snapshot.fields is None or snapshot.fields.get("status") != "deleted":
+                failures.append(
+                    _issue(
+                        "file_asset_lifecycle_write_unavailable",
+                        f"既有 FileAsset 只允许形成完整 active→deleted tombstone: {candidate.object_id}",
+                    )
+                )
+                continue
+            if (
+                candidate.head_commit is None
+                or candidate.head_manifest_data is None
+                or candidate.head_payload_data is None
+                or candidate.head_payload_oid is None
+            ):
+                unavailable.append(
+                    _issue(
+                        "fact_candidate_unverifiable",
+                        f"FileAsset HEAD active before-image 无法完整观察: {candidate.object_id}",
+                    )
+                )
+                continue
+            head_snapshot = validate_file_asset_snapshot(
+                file_asset_schema,
+                candidate.object_id,
+                candidate.head_manifest_data,
+                candidate.head_payload_data,
+                member_names=candidate.head_member_names,
+            )
+            if (
+                head_snapshot.check_status != "mechanically_valid"
+                or head_snapshot.fields is None
+                or head_snapshot.fields.get("status") != "active"
+                or head_snapshot.current_bytes_confirmed is not True
+            ):
+                failures.append(
+                    _issue(
+                        "file_asset_delete_before_invalid",
+                        f"FileAsset 删除 before 必须是 HEAD 中完整有效的 active carrier: {candidate.object_id}",
+                    )
+                )
+                continue
+            before = head_snapshot.fields
+            after = snapshot.fields
+            preserved = {
+                "object_id",
+                "fact_type_key",
+                "title",
+                "created_at",
+                "filename",
+                "media_type",
+                "size_bytes",
+                "content_sha256",
+                "signature",
+            }
+            changed = sorted(name for name in preserved if before.get(name) != after.get(name))
+            if changed:
+                failures.append(
+                    _issue(
+                        "file_asset_delete_metadata_changed",
+                        f"FileAsset 删除必须保留原 metadata: {candidate.object_id}: {', '.join(changed)}",
+                    )
+                )
+            before_updated = parse_rfc3339(before.get("updated_at"))
+            after_updated = parse_rfc3339(after.get("updated_at"))
+            if before_updated is None or after_updated is None or after_updated <= before_updated:
+                failures.append(
+                    _issue(
+                        "file_asset_delete_time_invalid",
+                        f"FileAsset deleted_at/updated_at 必须晚于 active before: {candidate.object_id}",
+                    )
+                )
+            expected_path = f"ldvh-base/file-assets/{candidate.object_id}/payload"
+            recovery = after.get("recovery")
+            if not isinstance(recovery, dict) or recovery != {
+                "commit": candidate.head_commit,
+                "path": expected_path,
+                "blob_oid": candidate.head_payload_oid,
+            }:
+                failures.append(
+                    _issue(
+                        "file_asset_delete_recovery_mismatch",
+                        f"FileAsset deleted recovery 必须精确回指 HEAD payload blob: {candidate.object_id}",
+                    )
+                )
+            if candidate.incoming_scan_issue is not None:
+                unavailable.append(
+                    _issue(
+                        "file_asset_incoming_scan_unverifiable",
+                        f"FileAsset 删除无法完成 Index WorkCase 入向扫描: {candidate.incoming_scan_issue}",
+                    )
+                )
+                continue
+            workcase_schema = schemas.get("workcase")
+            if workcase_schema is None:
+                unavailable.append(
+                    _issue(
+                        "fact_schema_unavailable",
+                        f"WorkCase Schema 投影未形成，无法证明 FileAsset 零入向引用: {candidate.object_id}",
+                    )
+                )
+                continue
+            for workcase in candidate.incoming_workcases:
+                assert workcase.object_id is not None and workcase.data is not None
+                checked = validate_fact_content(
+                    LAYOUTS["workcase"],
+                    workcase_schema,
+                    workcase.object_id,
+                    workcase.data,
+                )
+                if checked.check_status != "mechanically_valid" or checked.fields is None:
+                    unavailable.append(
+                        _issue(
+                            "file_asset_incoming_scan_unverifiable",
+                            f"Index WorkCase 无法作为零引用证明读取: {workcase.path}",
+                        )
+                    )
+                    continue
+                relations = checked.fields.get("relations")
+                for relation in relations if isinstance(relations, list) else []:
+                    if not isinstance(relation, dict) or relation.get("relation_key") != "has-file-asset":
+                        continue
+                    target = relation.get("target")
+                    if not isinstance(target, dict):
+                        continue
+                    if (
+                        target.get("fact_type_key") == "file-asset"
+                        and target.get("object_id") == candidate.object_id
+                    ):
+                        failures.append(
+                            _issue(
+                                "file_asset_incoming_reference",
+                                f"FileAsset 仍被 Index WorkCase 引用: {candidate.object_id} <- {workcase.object_id}",
+                            )
+                        )
     return unavailable, failures
 
 

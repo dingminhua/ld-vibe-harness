@@ -43,6 +43,11 @@ def _schema() -> FactSchema:
             field("signature.agent_id", presence="conditional"),
             field("signature.host_environment", presence="conditional"),
             field("disposition_summary", presence="conditional"),
+            field("deleted_at", presence="conditional"),
+            field("recovery", "object", presence="conditional", structure="file-asset-recovery"),
+            field("recovery.commit", presence="conditional"),
+            field("recovery.path", presence="conditional"),
+            field("recovery.blob_oid", presence="conditional"),
         ),
     )
 
@@ -54,6 +59,8 @@ def _manifest(
     status: str = "active",
     signature: str = "  signer_type: human",
     disposition: str | None = None,
+    deleted_at: str | None = None,
+    recovery: tuple[str, str, str] | None = None,
 ) -> str:
     lines = [
         f'object_id: "{object_id}"',
@@ -71,6 +78,11 @@ def _manifest(
     ]
     if disposition is not None:
         lines.append(f'disposition_summary: "{disposition}"')
+    if deleted_at is not None:
+        lines.append(f'deleted_at: "{deleted_at}"')
+    if recovery is not None:
+        commit, path, blob_oid = recovery
+        lines.extend(("recovery:", f'  commit: "{commit}"', f'  path: "{path}"', f'  blob_oid: "{blob_oid}"'))
     return "\n".join(lines) + "\n"
 
 
@@ -80,6 +92,7 @@ def _asset(
     *,
     object_id: str = "file-asset-0001",
     manifest: str | None = None,
+    include_payload: bool = True,
 ) -> Path:
     directory = root / "ldvh-base/file-assets" / object_id
     directory.mkdir(parents=True)
@@ -87,7 +100,8 @@ def _asset(
         _manifest(payload, object_id=object_id) if manifest is None else manifest,
         encoding="utf-8",
     )
-    (directory / "payload").write_bytes(payload)
+    if include_payload:
+        (directory / "payload").write_bytes(payload)
     return directory
 
 
@@ -141,23 +155,42 @@ def test_ai_agent_signature_accepts_binary_payload_without_decoding_it(tmp_path:
     assert result.current_bytes_confirmed is True
 
 
-def test_archived_file_asset_is_exactly_readable_but_not_default_candidate(tmp_path: Path) -> None:
+def test_deleted_tombstone_is_valid_without_payload(tmp_path: Path) -> None:
     payload = b"historical snapshot"
+    deleted_at = "2026-07-31T11:00:00+08:00"
     _asset(
         tmp_path,
         payload,
         manifest=_manifest(
             payload,
-            status="archived",
-            disposition="已由后续版本取代，保留历史回读",
+            status="deleted",
+            disposition="已确认无受保护引用，删除 Working Tree payload",
+            deleted_at=deleted_at,
+            recovery=(
+                "a" * 40,
+                "ldvh-base/file-assets/file-asset-0001/payload",
+                "b" * 40,
+            ),
         ),
+        include_payload=False,
+    )
+    manifest_path = tmp_path / "ldvh-base/file-assets/file-asset-0001/file-asset.yaml"
+    manifest_path.write_text(
+        manifest_path.read_text(encoding="utf-8").replace(
+            'updated_at: "2026-07-31T10:00:00+08:00"',
+            f'updated_at: "{deleted_at}"',
+        ),
+        encoding="utf-8",
     )
 
     result = _read(tmp_path)
 
     assert result.check_status == "mechanically_valid"
-    assert result.current_bytes_confirmed is True
+    assert result.coverage == ("manifest-read", "members-closed")
+    assert result.current_bytes_confirmed is False
     assert result.default_candidate is False
+    assert result.payload_canonical_path is None
+    assert result.content_fingerprint is not None
 
 
 def test_missing_payload_is_invalid_and_never_confirms_current_bytes(tmp_path: Path) -> None:
@@ -199,6 +232,17 @@ def test_unknown_member_breaks_closed_carrier(tmp_path: Path) -> None:
     assert "members-closed" not in result.coverage
     assert result.payload_matches_manifest is True
     assert any(issue.field_path == "notes.txt" and "未知成员" in issue.summary for issue in result.issues)
+
+
+def test_ds_store_inside_file_asset_remains_an_unknown_member(tmp_path: Path) -> None:
+    directory = _asset(tmp_path)
+    (directory / ".DS_Store").write_bytes(b"finder metadata")
+
+    result = _read(tmp_path)
+
+    assert result.check_status == "invalid"
+    assert "members-closed" not in result.coverage
+    assert any(issue.field_path == ".DS_Store" and "未知成员" in issue.summary for issue in result.issues)
 
 
 @pytest.mark.parametrize("member", ["payload", "file-asset.yaml"])
@@ -246,7 +290,7 @@ def test_symlink_object_directory_is_rejected_without_following_it(tmp_path: Pat
             ),
             "signature.agent_id",
         ),
-        (lambda payload: _manifest(payload, status="archived"), "disposition_summary"),
+        (lambda payload: _manifest(payload, status="deleted"), "deleted_at"),
         (lambda payload: _manifest(payload).replace('status: "active"', "status:\n  - active"), "status"),
     ],
 )
