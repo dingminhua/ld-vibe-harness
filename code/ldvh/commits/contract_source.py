@@ -9,6 +9,8 @@ from ldvh.diagnostics import Issue, SourceLocation
 from ldvh.specs.identity import FormalDocument
 
 SOURCE_KEY = "source-of-truth-traceability"
+ATTACHMENT_KEY = "source-reference-enumerations"
+ATTACHMENT_ID = "03.Att.01"
 TYPE_HEADERS = ("type", "语义")
 SCOPE_HEADERS = ("scope", "语义")
 TRIGGER_HEADERS = ("trigger_key", "mechanical", "成立条件", "必需结构")
@@ -71,26 +73,45 @@ def _tables(
     return tuple(found)
 
 
-def project_commit_contract(document: FormalDocument) -> CommitContractSourceResult:
-    """Project exact mechanical tables from one already-qualified active 03 document."""
+def project_commit_contract(
+    document: FormalDocument,
+    attachment: FormalDocument | None,
+) -> CommitContractSourceResult:
+    """Project commit tables from active 03 and its explicitly authorized 03.Att.01."""
 
     issues: list[Issue] = []
     if document.key != SOURCE_KEY or document.status != "active":
         return CommitContractSourceResult(None, (_issue(document, "提交契约只能从 active 的 03 来源派生"),))
+    if attachment is None:
+        return CommitContractSourceResult(
+            None,
+            (_issue(document, f"03 授权附件 {ATTACHMENT_KEY} 不可用"),),
+        )
+    if ATTACHMENT_KEY not in document.authorized_attachments:
+        return CommitContractSourceResult(
+            None,
+            (_issue(document, f"03 未授权提交契约附件 {ATTACHMENT_KEY}"),),
+        )
+    if (
+        attachment.kind != "attachment"
+        or attachment.key != ATTACHMENT_KEY
+        or attachment.current_id != ATTACHMENT_ID
+        or attachment.status != "active"
+    ):
+        return CommitContractSourceResult(
+            None,
+            (_issue(attachment, f"提交契约附件必须是 active 的 {ATTACHMENT_ID}/{ATTACHMENT_KEY}"),),
+        )
     section = document.markdown.find_headings("9. Git 溯源边界", level=2)
     if len(section) != 1:
         return CommitContractSourceResult(None, (_issue(document, "03 必须唯一包含 Git 溯源边界 H2"),))
-    following_h2 = [
-        heading.line for heading in document.markdown.headings if heading.level == 2 and heading.line > section[0].line
-    ]
-    section_end = min(following_h2, default=len(document.markdown.raw_lines) + 1)
     grouped: dict[tuple[str, ...], list[tuple[tuple[tuple[str, ...], ...], int]]] = {}
-    for headers, rows, line in _tables(document, section[0].line, section_end):
+    for headers, rows, line in _tables(attachment, 1, len(attachment.markdown.raw_lines) + 1):
         grouped.setdefault(headers, []).append((rows, line))
     required = (TYPE_HEADERS, SCOPE_HEADERS, TRIGGER_HEADERS)
     for headers in required:
         if len(grouped.get(headers, ())) != 1:
-            issues.append(_issue(document, f"提交契约表 {headers!r} 必须唯一存在"))
+            issues.append(_issue(attachment, f"提交契约表 {headers!r} 必须唯一存在"))
     if issues:
         return CommitContractSourceResult(None, tuple(issues))
 
@@ -101,14 +122,23 @@ def project_commit_contract(document: FormalDocument) -> CommitContractSourceRes
     scope_tokens = tuple(row[0] for row in scope_rows if len(row) == 2 and row[0] and row[1])
     mechanical = tuple(row[0] for row in trigger_rows if len(row) == 4 and row[1] == "true")
     if len(type_tokens) != len(type_rows) or len(type_tokens) != len(set(type_tokens)):
-        issues.append(_issue(document, "type 表必须包含非空且唯一的 token 与语义"))
+        issues.append(_issue(attachment, "type 表必须包含非空且唯一的 token 与语义"))
     if len(scope_tokens) != len(scope_rows) or len(scope_tokens) != len(set(scope_tokens)):
-        issues.append(_issue(document, "scope 表必须包含非空且唯一的 token 与语义"))
+        issues.append(_issue(attachment, "scope 表必须包含非空且唯一的 token 与语义"))
     if mechanical != REQUIRED_MECHANICAL_TRIGGERS:
-        issues.append(_issue(document, "机械 body trigger 必须按来源固定顺序完整声明"))
+        issues.append(_issue(attachment, "机械 body trigger 必须按来源固定顺序完整声明"))
     if issues:
         return CommitContractSourceResult(None, tuple(issues))
-    fingerprint = hashlib.sha256(document.markdown.raw_text.encode("utf-8")).hexdigest()
+    fingerprint = hashlib.sha256(
+        "\x00".join(
+            (
+                document.canonical_path,
+                document.markdown.raw_text,
+                attachment.canonical_path,
+                attachment.markdown.raw_text,
+            )
+        ).encode("utf-8")
+    ).hexdigest()
     return CommitContractSourceResult(
         CommitContractProjection(
             type_tokens=type_tokens,
@@ -123,4 +153,9 @@ def project_commit_contract(document: FormalDocument) -> CommitContractSourceRes
     )
 
 
-__all__ = ["CommitContractProjection", "CommitContractSourceResult", "project_commit_contract"]
+__all__ = [
+    "ATTACHMENT_KEY",
+    "CommitContractProjection",
+    "CommitContractSourceResult",
+    "project_commit_contract",
+]

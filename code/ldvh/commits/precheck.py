@@ -6,7 +6,7 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Literal
 
-from ldvh.commits.contract_source import CommitContractProjection, project_commit_contract
+from ldvh.commits.contract_source import ATTACHMENT_KEY, CommitContractProjection, project_commit_contract
 from ldvh.commits.git_adapter import CommitCandidateObservation, observe_commit_candidate
 from ldvh.commits.validation import CommitValidationResult, validate_commit
 from ldvh.facts.schema import project_fact_schemas
@@ -70,7 +70,8 @@ def precheck_git_commit(
         issue = _issue("source", "source_unavailable", "当前规则源没有通过检查的 active 03 提交契约")
         return CommitPrecheckResult(None, None, None, None, (issue,))
 
-    projected = project_commit_contract(document)
+    attachment = repository.document_passing_implemented_checks_by_key(ATTACHMENT_KEY)
+    projected = project_commit_contract(document, attachment)
     if projected.projection is None:
         issues = tuple(
             _issue("source", "contract_projection_unavailable", item.summary) for item in projected.issues

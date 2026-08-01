@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 
 from ldvh.commits.candidate_index import prepare_commit_candidate
-from ldvh.commits.contract_source import CommitContractProjection, project_commit_contract
+from ldvh.commits.contract_source import ATTACHMENT_KEY, CommitContractProjection, project_commit_contract
 from ldvh.commits.execution import CallerCommitApproval, execute_prepared_commit
 from ldvh.git_hooks import commit_msg
 from ldvh.git_hooks.commit_msg import (
@@ -225,7 +225,9 @@ def _contract() -> CommitContractProjection:
     inspected = inspect_repository(REPOSITORY_ROOT)
     document = inspected.document_passing_implemented_checks_by_key("source-of-truth-traceability")
     assert document is not None
-    projected = project_commit_contract(document)
+    attachment = inspected.document_passing_implemented_checks_by_key(ATTACHMENT_KEY)
+    assert attachment is not None
+    projected = project_commit_contract(document, attachment)
     assert projected.projection is not None, projected.issues
     return projected.projection
 
