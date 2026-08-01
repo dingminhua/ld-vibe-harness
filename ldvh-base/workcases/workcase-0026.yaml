@@ -1,0 +1,132 @@
+title: 验证 WorkBuddy 写入路由
+status: open
+phase: human_plan_confirming
+plan_version: 1
+summary: 完整计划与执行授权边界已形成并完成独立审核，等待 Human Gate 1。
+waiting_on: Human 审阅并决定是否批准 plan_version=1 及完整 execution_authorization；批准前不执行任何写入验证动作。
+priority: P2
+goal: 验证 WorkBuddy 在 LDVH 管辖项目内执行写操作时，能正确经由受控创建路径（Helper CLI / create-fact-object）将事实对象写入预期 canonical 载体与正确管辖项目（governed_project_id=ldvh）的实际 Git worktree，且不存在绕过 Helper 的直写；同时覆盖省略 governed_project_id 时的默认解析负例，确认路由器依赖显式 id 而非静默误写。
+scope: 仅覆盖写路由的验证，目标 worktree 唯一钉死为绝对路径 /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4，并明确排除 ~/.codex/** 等其它共享 common-dir 的 worktree。包括：(1) 管辖项目识别——依据 LDVH-GOVERNED-PROJECTS.yaml 中 id=ldvh 的登记项与 resolve-governance-scope 解析；(2) 事实对象受控创建入口——经 Helper 创建/更新测试样本并核对落点；(3) 写入边界核对——确认写入落在 ldvh-base/ 正确子目录，且未误写其它登记项目（poker-train-card、poker-train-video、ldvh-closure-preview）。排除：读取路径、Web 渲染、Git 提交/push、用户个人目录与 .workbuddy 配置目录的写入、WorkBuddy 非写入能力、任何规范编辑，以及创建额外的“测试用”事实对象或删除任何事实对象。
+success_criterion_definitions:
+- criterion_id: criterion-routing-positive
+  statement: 显式 governed_project_id=ldvh 时，受控创建的 canonical 载体落于钉死 worktree 的 ldvh-base/ 下正确子目录，且 worktree 指纹匹配 /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4；创建仅经 Helper 受控路径，无直写痕迹。
+- criterion_id: criterion-routing-negative
+  statement: 省略 governed_project_id（仅依赖 default_project_id）时解析落到 ldvh-closure-preview（/Users/dmh2002/poker_hud_projects/ldvh-closure-preview，不同 worktree），不静默误写 ld-vibe-harness-v4，证明路由器依赖显式 id 且边界分离正确。
+- criterion_id: criterion-no-bypass
+  statement: 写入前后 git status --porcelain -- ldvh-base/ 基线比对，仅预期 canonical 载体变化，无直写 ldvh-base/ 的人工/脚本/重定向痕迹；另外 3 个登记项目路径确认未被触碰。
+- criterion_id: criterion-integrity
+  statement: 受控写入前后各运行一次 check-fact-integrity，外层 outcome=ok 且 result.status=complete；写入后精确回读成立。
+work_items:
+- item_id: item-resolve-scope
+  goal: 读取管辖配置并解析治理范围，把目标 worktree 钉死为绝对路径。
+  expected_result: 记录 config basis 与解析出的 git_worktree_root/git_common_dir，确认目标 = /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4，并排除 ~/.codex/** 等其它共享 common-dir 的 worktree。
+  approach_summary: 只读读取 /Users/dmh2002/poker_hud_projects/LDVH-GOVERNED-PROJECTS.yaml 并运行 resolve-governance-scope；核对 worktree 指纹。
+  status: pending
+- item_id: item-verify-routing-positive
+  goal: 确认受控创建落点与 worktree 正确，且样本仅经 Helper 路径。
+  expected_result: 本 WorkCase（workcase-0026）canonical 载体位于钉死 worktree 的 ldvh-base/workcases/workcase-0026.yaml；对另一类型（如 spark）prepare-fact-object-draft 的候选 canonical 路径仍落于同一 worktree 的 ldvh-base/，worktree 指纹一致。
+  approach_summary: 经 read-fact-objects 只读回读本 WorkCase；对第二类型运行 prepare-fact-object-draft（无副作用）确认路径解析。
+  status: pending
+  depends_on:
+  - item-resolve-scope
+- item_id: item-verify-routing-negative
+  goal: 确认省略 governed_project_id 时默认解析落到不同 worktree，不误写本 worktree。
+  expected_result: 解析结果指向 ldvh-closure-preview（/Users/dmh2002/poker_hud_projects/ldvh-closure-preview），与 ld-vibe-harness-v4 不同，证明路由不静默误写。
+  approach_summary: 以空/默认 governed_project_id 运行 resolve-governance-scope，对比解析出的 worktree 根与钉死路径。
+  status: pending
+  depends_on:
+  - item-resolve-scope
+- item_id: item-verify-no-bypass
+  goal: 用 git status 基线前后比对确认无直写，并核对其它项目未被误写。
+  expected_result: 仅预期 canonical 载体变化；无直写痕迹；另外 3 个登记项目路径确认未被触碰。
+  approach_summary: 受控写入前抓取 git status --porcelain -- ldvh-base/ 基线；写入后比对；只读核对另外 3 个登记项目路径。
+  status: pending
+  depends_on:
+  - item-verify-routing-positive
+- item_id: item-verify-integrity
+  goal: 受控写入前后各跑一次 check-fact-integrity。
+  expected_result: 两次均外层 outcome=ok 且 result.status=complete；任何状态变更后复跑通过。
+  approach_summary: 运行 check-fact-integrity 只读检查；区分本次写入与既有 dirty 状态。
+  status: pending
+  depends_on:
+  - item-verify-routing-positive
+execution_authorization:
+  authorized_actions:
+  - action_id: authorization-read-config
+    summary: 只读读取管辖配置与治理解析结果，并只读核对另外 3 个登记项目路径以确认未误写。
+    target_scope: LDVH-GOVERNED-PROJECTS.yaml（父目录 /Users/dmh2002/poker_hud_projects/）与 resolve-governance-scope 输出；另外 3 个登记项目路径的只读核对。
+    effect_scope: 只读读取，不修改配置或事实。
+    risk_summary: 无（只读）。
+    rollback_summary: 无需。
+    rule_refs:
+    - LDVH-GOVERNED-PROJECTS.yaml
+    - specs/02-工作对象与管辖范围规范.md
+  - action_id: authorization-run-integrity
+    summary: 执行 check-fact-integrity 只读机械完整性检查（写入前后各一次）。
+    target_scope: id=ldvh 管辖 worktree 的当前全部事实对象。
+    effect_scope: 只读检查，不修改任何事实。
+    risk_summary: 既有 dirty 状态可能影响结果归因。
+    rollback_summary: 只读检查无需回滚。
+    rule_refs:
+    - specs/05-事实模型基础规范.md
+  - action_id: authorization-inspect-create
+    summary: 运行 prepare-fact-object-draft（无副作用）确认路径解析，并经 read-fact-objects 只读回读本 WorkCase 载体。
+    target_scope: 仅本 WorkCase 与草案准备输出。
+    effect_scope: 无副作用的草案准备与只读回读。
+    risk_summary: 无（无副作用/只读）。
+    rollback_summary: 无需。
+    rule_refs:
+    - specs/05-事实模型基础规范.md
+    - specs/21-WorkCase-工作项.md
+  - action_id: authorization-git-status
+    summary: 运行 git status --porcelain -- ldvh-base/ 抓取写入前后基线并比对。
+    target_scope: 仅钉死 worktree 内 ldvh-base/ 的 git 状态。
+    effect_scope: 只读 git 查询，不修改工作树。
+    risk_summary: 无（只读）。
+    rollback_summary: 无需。
+    rule_refs:
+    - specs/05-事实模型基础规范.md
+  - action_id: authorization-update-workcase
+    summary: 经 Helper 受控更新本 WorkCase 的验证结果与状态（计划批准后，仅执行期使用）。
+    target_scope: 仅 workcase-0026 自身。
+    effect_scope: 事实写入仅经 Helper 受控操作。
+    risk_summary: 越界更新会破坏事实可信度。
+    rollback_summary: 事实更新失败立即停止后续写入。
+    rule_refs:
+    - specs/21-WorkCase-工作项.md
+  action_ceiling: 仅可在绝对路径 /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4 内经 Helper 受控更新本 WorkCase，并运行只读检查（git status、check-fact-integrity、prepare 草案、read-fact-objects、读取管辖配置与另外 3 个登记项目的只读核对）；目标 worktree 唯一钉死为该绝对路径，明确排除 ~/.codex/** 等其它共享 common-dir 的 worktree；禁止直写 ldvh-base/、禁止批改规范、禁止 commit/push/外部消息、禁止跨项目写入、禁止触碰用户个人目录与 .workbuddy 配置目录、禁止删除任何事实对象（Helper 无删除操作，故不授权任何删除）。
+  prohibited_actions:
+  - 直写 ldvh-base/ canonical 载体（普通文件工具/脚本/重定向）
+  - 修改非测试规范、Code、Web、Helper、Schema
+  - 执行 Git commit、push、PR、release、部署或外部消息
+  - 写入或误写其它登记项目（poker-train-card、poker-train-video、ldvh-closure-preview）
+  - 触碰用户个人目录或 .workbuddy 配置目录
+  - 删除任何事实对象（Helper 无删除操作）
+  - 对 ~/.codex/** 等其它共享 common-dir 的 worktree 的任何写入或解析依赖
+  allowed_adjustments: 允许在不改变 goal、scope、criteria 与 action ceiling 的前提下，调整只读检查顺序与重试、补充无关变更归因而非清理；任何新文件外写入、跨项目动作或语义扩张都必须停止并返回 Human。
+  verification_and_rollback: 写入前后核对落点与 worktree 指纹；本 WorkCase 自身经 Helper 更新（非删除，无需回滚）；git status 基线前后比对；check-fact-integrity 前后各一次；不清理用户无关变更。
+  out_of_bounds_handling: 发现直写、跨项目写入、解析落到非钉死 worktree 或测试对象无法安全区分时立即停止，取消未执行部分并保留已取得的可核查结果，返回 Human 决定。
+  human_prerequisites:
+  - Human 在 Gate 1 明确批准 plan_version=1 和完整 execution_authorization。
+  - Human 接受本验证不创建任何额外的“测试用”事实对象、不删除任何对象，验证样本即本 WorkCase 自身的受控创建与执行期更新。
+creation_reviews:
+- reviewer: independent-read-only-review /agent-1413a0c5
+  reviewed_at: '2026-08-01T15:20:00+08:00'
+  subject_version: 1
+  scope: 独立复核本 WorkCase 的目标、范围、成功标准、工作项、依赖、执行授权包与已知风险；只读检查 LDVH-GOVERNED-PROJECTS.yaml、specs/21、specs/05、Helper 操作目录与当前 worktree 状态，不修改文件。
+  conclusion: changes_required
+  feedback:
+  - 原 cleanup 项不可执行且与 ceiling 自相矛盾：Helper 无删除操作，删除测试对象只能直写 ldvh-base/，而 ceiling 禁止直写；且 specs/05 要求删除须由类型来源明确允许。
+  - 原方案创建“测试用”事实对象即伪造事实，占用真实 object_id 并进入 integrity 计数与 Web 呈现。
+  - 写入目标未锁定到具体 worktree：git worktree list 显示 7 个共享 common-dir 的 worktree（含 ~/.codex/**），全部解析为 id=ldvh；‘定位到 id=ldvh’不足，且 ~/.codex 同时命中‘禁止触碰用户个人目录’，ceiling 与授权互斥。
+  - 未覆盖真正的路由决策：4 条标准只验末端落点，未验解析过程；关键负例 default_project_id=ldvh-closure-preview 省略 id 时会路由到非 ldvh 项目。
+  - no-bypass 为自证式否定命题；当前工作树已有 dirty 文件，须先取 git status 基线再前后比对，否则无法归因。
+  - read-config 配置位于 worktree 之外，ceiling‘限制为 worktree 内’无例外路径；核对其它 3 个项目未被误写同样需要越界只读许可——当前为授权缺口。
+  - integrity 仅在 cleanup 前跑；处置动作后必须复跑并纳入标准。
+  - 依赖不完整：boundary 未依赖 routing；cleanup 应同时依赖 boundary。
+  - 缺创建期字段：creation_reviews（含 controller_resolution）、summary、waiting_on 等。
+  controller_resolution: 已逐条处置：(1) 删除 item-cleanup 与任何删除授权——Helper 无删除操作且直写被禁止，验证样本改用本 WorkCase 自身受控创建/更新，不制造假事实残留；(2) 目标 worktree 已钉死绝对路径 /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4，明确排除 ~/.codex/** 等其它共享 common-dir 的 worktree，消除与‘禁止触碰用户个人目录’的冲突；(3) 新增负向默认解析项（item-verify-routing-negative / criterion-routing-negative），覆盖 default_project_id=ldvh-closure-preview 的误路由负例，验证路由器依赖显式 id；(4) no-bypass 改为 git status 基线前后比对；(5) read-config 授权扩展到父目录配置与另外 3 个登记项目的只读核对，填补授权缺口；(6) integrity 改为写入前后各跑一次；(7) 依赖补全：routing-negative 与 no-bypass、integrity 均依赖 resolve-scope / routing-positive；(8) 补齐创建期字段 status=open、summary、waiting_on 与本条 creation_reviews（含 controller_resolution）。
+object_id: workcase-0026
+fact_type_key: workcase
+created_at: '2026-08-01T15:22:52.156302+08:00'
+updated_at: '2026-08-01T15:22:52.156302+08:00'
