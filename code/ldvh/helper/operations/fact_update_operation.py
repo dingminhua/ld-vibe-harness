@@ -22,7 +22,7 @@ from ldvh.helper.operation_runtime import (
     OperationImplementation,
     OperationRequestError,
 )
-from ldvh.helper.operations.fact_operation_support import plain, reading_boundary
+from ldvh.helper.operations.fact_operation_support import plain, post_write_integrity_audit, reading_boundary
 from ldvh.helper.operations.fact_update_request import (
     OPTIONAL_INPUTS,
     REQUIRED_INPUTS,
@@ -39,6 +39,7 @@ _CONTRACT = source_reference(
     "fact-model-foundation::11.7 事实对象单对象 CAS 更新输入与结果",
 )
 _SHARED_WRITE_CONTRACT = source_reference("rule", "fact-model-foundation::11.8 共享单对象受控写事务")
+_INTEGRITY_CONTRACT = source_reference("rule", "fact-model-foundation::11.9-11.10 事实写后独立完整性审计")
 _IMPLEMENTATION_SOURCE = source_reference(
     "implementation",
     "code/ldvh/helper/operations/fact_update_operation.py",
@@ -748,7 +749,8 @@ def _execute(
         *((_SHARED_WRITE_CONTRACT,) if coordination_release_uncertain else ()),
         _IMPLEMENTATION_SOURCE,
     )
-    return OperationExecution(
+    return post_write_integrity_audit(
+        OperationExecution(
         outcome="ok",
         summary="事实对象已完成单对象 CAS 替换和写后回读",
         result=_result(
@@ -789,6 +791,10 @@ def _execute(
         if coordination_release_uncertain and request.response_profile == "diagnostic"
         else (),
         follow_up=(_coordination_release_follow_up(requested) if coordination_release_uncertain else None),
+    ),
+        boundary=boundary,
+        schemas=schemas,
+        audit_contract=_INTEGRITY_CONTRACT,
     )
 
 

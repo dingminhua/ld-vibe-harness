@@ -29,7 +29,7 @@ from ldvh.helper.operation_runtime import (
     OperationImplementation,
     OperationRequestError,
 )
-from ldvh.helper.operations.fact_operation_support import plain, reading_boundary
+from ldvh.helper.operations.fact_operation_support import plain, post_write_integrity_audit, reading_boundary
 from ldvh.helper.operations.file_asset_creation_request import (
     CREATE_OPTIONAL_INPUTS,
     CREATE_REQUIRED_INPUTS,
@@ -49,6 +49,7 @@ CREATE_OPERATION_KEY = "create-file-asset"
 _PREPARE_CONTRACT = source_reference("rule", "file-asset-fact-type::7.1 FileAsset 摄取准备输入与结果")
 _CREATE_CONTRACT = source_reference("rule", "file-asset-fact-type::7.2 FileAsset 受控创建输入与结果")
 _TYPE_CONTRACT = source_reference("rule", "specs/25-FileAsset-文件资产.md")
+_INTEGRITY_CONTRACT = source_reference("rule", "fact-model-foundation::11.9-11.10 事实写后独立完整性审计")
 _IMPLEMENTATION_EVIDENCE = (
     source_reference("implementation", "code/ldvh/helper/operations/file_asset_creation_operation.py"),
     source_reference("implementation", "code/ldvh/facts/file_asset_creation.py"),
@@ -384,7 +385,8 @@ def _create_execute(
                     "source_refs": [_CREATE_CONTRACT],
                 },
             )
-        return OperationExecution(
+        return post_write_integrity_audit(
+            OperationExecution(
             outcome="ok",
             summary="FileAsset 已原子创建并从实际 Working Tree 完整回读",
             result=result,
@@ -409,6 +411,10 @@ def _create_execute(
                     "evidence": list(sources),
                 },
             ),
+        ),
+            boundary=boundary,
+            schemas=project_fact_schemas(repository),
+            audit_contract=_INTEGRITY_CONTRACT,
         )
 
     outcome = (

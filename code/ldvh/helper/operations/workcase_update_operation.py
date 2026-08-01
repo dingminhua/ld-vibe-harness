@@ -21,7 +21,7 @@ from ldvh.helper.operation_runtime import (
     OperationImplementation,
     OperationRequestError,
 )
-from ldvh.helper.operations.fact_operation_support import plain, reading_boundary
+from ldvh.helper.operations.fact_operation_support import plain, post_write_integrity_audit, reading_boundary
 from ldvh.helper.operations.workcase_update_request import (
     CLOSE_OPTIONAL_INPUTS,
     CLOSE_REQUIRED_INPUTS,
@@ -51,6 +51,7 @@ _CONTRACTS = {
     "correct": source_reference("rule", "workcase-fact-type::correct-closed-workcase 输入与结果"),
 }
 _SHARED_WRITE_CONTRACT = source_reference("rule", "fact-model-foundation::11.8 共享单对象受控写事务")
+_INTEGRITY_CONTRACT = source_reference("rule", "fact-model-foundation::11.9-11.10 事实写后独立完整性审计")
 _IMPLEMENTATION_SOURCE = source_reference(
     "implementation",
     "code/ldvh/helper/operations/workcase_update_operation.py",
@@ -777,7 +778,8 @@ def _execute(
             follow_up=(_coordination_release_follow_up(requested) if coordination_release_uncertain else None),
         )
     replacement = getattr(application, "replacement_result", None)
-    return OperationExecution(
+    return post_write_integrity_audit(
+        OperationExecution(
         outcome="ok",
         summary="WorkCase 已完成专属完整 after 校验、CAS 替换和写后回读",
         result=result,
@@ -819,6 +821,10 @@ def _execute(
         if coordination_release_uncertain and request.response_profile == "diagnostic"
         else (),
         follow_up=(_coordination_release_follow_up(requested) if coordination_release_uncertain else None),
+    ),
+        boundary=boundary,
+        schemas=schemas,
+        audit_contract=_INTEGRITY_CONTRACT,
     )
 
 

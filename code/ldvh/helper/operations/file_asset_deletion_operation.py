@@ -16,7 +16,7 @@ from ldvh.helper.operation_runtime import (
     OperationImplementation,
     OperationRequestError,
 )
-from ldvh.helper.operations.fact_operation_support import plain, reading_boundary
+from ldvh.helper.operations.fact_operation_support import plain, post_write_integrity_audit, reading_boundary
 from ldvh.helper.operations.file_asset_deletion_request import (
     OPTIONAL_INPUTS,
     REQUIRED_INPUTS,
@@ -30,6 +30,7 @@ from ldvh.specs.repository import RepositoryInspection
 OPERATION_KEY = "delete-file-asset"
 _CONTRACT = source_reference("rule", "file-asset-fact-type::7.3 FileAsset 受控安全删除输入与结果")
 _TYPE_CONTRACT = source_reference("rule", "specs/25-FileAsset-文件资产.md")
+_INTEGRITY_CONTRACT = source_reference("rule", "fact-model-foundation::11.9-11.10 事实写后独立完整性审计")
 _IMPLEMENTATION_EVIDENCE = (
     source_reference("implementation", "code/ldvh/helper/operations/file_asset_deletion_operation.py"),
     source_reference("implementation", "code/ldvh/facts/file_asset_deletion.py"),
@@ -203,7 +204,8 @@ def _execute(
                     "source_refs": [_CONTRACT],
                 },
             )
-        return OperationExecution(
+        return post_write_integrity_audit(
+            OperationExecution(
             outcome="ok",
             summary="FileAsset 已安全删除 payload 并从实际 Working Tree 回读 tombstone",
             result=result,
@@ -221,6 +223,10 @@ def _execute(
                     "evidence": list(sources),
                 },
             ),
+        ),
+            boundary=boundary,
+            schemas=schemas,
+            audit_contract=_INTEGRITY_CONTRACT,
         )
 
     rejected = {

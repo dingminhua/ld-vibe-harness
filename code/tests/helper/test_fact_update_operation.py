@@ -264,6 +264,23 @@ def test_update_replaces_full_target_and_preserves_managed_identity(tmp_path: Pa
     assert response["changes"][0]["status"] == "updated"
 
 
+def test_update_reports_the_independent_post_write_integrity_audit(tmp_path: Path) -> None:
+    workspace, project, _ = _fixture(tmp_path)
+    before = _read(workspace, project)
+    target = _mutable(before)
+    target["summary"] = "After update"
+
+    response = handle_request(
+        "call",
+        "update-fact-object",
+        _update_payload(workspace, project, before["content_fingerprint"], target),
+    ).response
+
+    audit = next(item for item in response["verification"] if item["check"] == "事实写入后的独立全库机械完整性审计")
+    assert audit["status"] == "unavailable"
+    assert any(item.get("code") == "post_write_integrity_incomplete" for item in response["gaps"])
+
+
 def test_generic_helper_preserves_committed_result_when_coordination_release_is_uncertain(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

@@ -29,6 +29,7 @@ from ldvh.helper.operation_runtime import (
     OperationImplementation,
     OperationRequestError,
 )
+from ldvh.helper.operations.fact_operation_support import post_write_integrity_audit
 from ldvh.helper.operations.fact_creation_request import (
     CREATE_OPTIONAL_INPUTS,
     CREATE_REQUIRED_INPUTS,
@@ -48,6 +49,7 @@ CREATE_OPERATION_KEY = "create-fact-object"
 _PREPARE_CONTRACT = source_reference("rule", "fact-model-foundation::11.3 事实对象草案准备输入与结果")
 _CREATE_CONTRACT = source_reference("rule", "fact-model-foundation::11.4 事实对象受控创建输入与结果")
 _SHARED_WRITE_CONTRACT = source_reference("rule", "fact-model-foundation::11.8 共享单对象受控写事务")
+_INTEGRITY_CONTRACT = source_reference("rule", "fact-model-foundation::11.9-11.10 事实写后独立完整性审计")
 _IMPLEMENTATION_SOURCE = source_reference(
     "implementation",
     "code/ldvh/helper/operations/fact_creation_operation.py",
@@ -1123,7 +1125,8 @@ def _create_execute(
         _IMPLEMENTATION_SOURCE,
     )
     return finalized(
-        OperationExecution(
+        post_write_integrity_audit(
+            OperationExecution(
             outcome="ok",
             summary="事实对象已由 Code 最终分配身份、原子创建并完成写后回读",
             result=domain_result,
@@ -1160,6 +1163,10 @@ def _create_execute(
                     "evidence": [working_tree_source, _CREATE_CONTRACT],
                 },
             ),
+            ),
+            boundary=boundary,
+            schemas=schemas,
+            audit_contract=_INTEGRITY_CONTRACT,
         )
     )
 
