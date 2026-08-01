@@ -1,0 +1,48 @@
+title: 实现全局事实快照事务以原子分流 Spark
+status: closed
+goal: 为 Spark→新 WorkCase 分流建立真正的多对象原子能力：在全部受控写、跨对象读取、全库审计和写后审计之间形成同一稳定快照，使操作只能以“Spark 已 routed 且新 WorkCase 已创建”或“两者均未生效”交还，任何未知状态均停止后续事实写入。
+scope: 覆盖 specs/05、20、31、32 的最小契约修订；code/ldvh/filesystem.py 的根事实目录安全快照交换；code/ldvh/facts/{creation.py,creation_application.py,update_application.py,workcase_update.py,file_asset_creation.py,file_asset_deletion.py,repository.py} 的全局锁/事务接入；code/ldvh/helper/operations/{fact_object_operation.py,fact_integrity_operation.py,fact_operation_support.py,__init__.py} 与 code/ldvh/testing/fact_integrity.py 的读审计隔离；新增专属事务、请求、操作模块和独立测试。当前 dirty 文件只允许在本案直接锁/快照接入处做最小修改并保留既有改动。排除 04/04.Att.01、任何既有事实对象、Web、Git 提交/push/PR、外部操作、环境配置和历史迁移。
+success_criterion_definitions:
+- criterion_id: criterion-contract
+  statement: 05 定义范围匹配的 create-workcase-from-spark 多对象操作、完整请求/结果/共同不变量、根快照与恢复边界；20、31、32 正确路由且 04/04.Att.01 不改。
+- criterion_id: criterion-global-lock
+  statement: 全局事务锁先于 relation/type allocator 锁，覆盖全部受控写、所有多对象/全库读取、完整性检查和写后审计；单对象读取不得形成事务完成声明。
+- criterion_id: criterion-snapshot
+  statement: 根事实目录只在完整 before image CAS、全量安全 descriptor 复制、全部前置校验完成后交换；未知或活跃 staging 子项不能安全描述/复制/验证时返回 unavailable 且零写入。
+- criterion_id: criterion-recovery
+  statement: journal 记录 old/new tree digest 与阶段；崩溃恢复仅在完整 old 或完整 new 可证明时继续，其它状态一律 uncertain/partial 并停止事实写入。
+- criterion_id: criterion-verification
+  statement: 覆盖每个 journal/staging/fsync/exchange/cleanup/counter 故障点、普通各类型写与 FileAsset 并发、读/审计窗口、死锁、恢复、关系闭包以及 Spark routed 与新 WorkCase 同代回读；保留 dirty 基线和未验证范围。
+success_criterion_results:
+- criterion_id: criterion-contract
+  outcome: not_satisfied
+  summary: 原多对象事务契约及专属操作已完整撤回，未保留该成功标准要求的能力。
+- criterion_id: criterion-global-lock
+  outcome: not_satisfied
+  summary: 全局锁设计已撤回，未保留该成功标准要求的覆盖能力。
+- criterion_id: criterion-snapshot
+  outcome: not_satisfied
+  summary: 根目录快照交换设计已撤回，未保留该成功标准要求的能力。
+- criterion_id: criterion-recovery
+  outcome: not_satisfied
+  summary: journal 与恢复设计已撤回，未保留该成功标准要求的能力。
+- criterion_id: criterion-verification
+  outcome: not_satisfied
+  summary: 原事务故障、并发与恢复验收不再适用且未完成；仅完成撤回后的最小回归验证。
+result_summary: 全局文件系统原子事务方案已撤回，未形成任何原计划要求的稳定能力；未修改真实 Spark。
+validation_summary: 已执行撤回后的定向回归：code/tests/helper/test_operation_sources.py 与 code/tests/helper/test_service.py 共 26 passed；同时检索确认已撤回事务标识不再出现在 code/ 或 specs/。未运行也未宣称原全局事务的故障、并发或恢复验证，因为该能力已被移除。
+closure_outcome: not-achieved
+disposition_summary: 严格文件系统多对象原子事务方案已按 Human 决定撤回，未保留任何原计划能力。其复杂度与运行成本被接受为不再投入的过度设计；不修改任何真实 Spark。较小的“既有单对象 Spark CAS 完整分流流程”验证责任由 workcase-0035 承接，并需单独通过其 Gate 1 后才可实施。
+residual_responsibilities:
+- residual_id: residual-accept-stop-atomic-transaction
+  summary: 实现全局锁、整库/根目录快照、journal 与 Spark/WC 严格文件系统多对象原子事务的原责任。
+relations:
+- relation_key: routed-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: workcase
+    object_id: workcase-0035
+object_id: workcase-0033
+fact_type_key: workcase
+created_at: '2026-08-02T01:23:16.728115+08:00'
+updated_at: '2026-08-02T03:21:32.734553+08:00'

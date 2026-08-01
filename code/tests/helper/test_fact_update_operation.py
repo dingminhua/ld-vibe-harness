@@ -66,6 +66,37 @@ priority: P2
     return workspace, project, fact
 
 
+def _write_routing_target(project: Path, object_id: str) -> Path:
+    """Create a mechanically valid fixture target without touching real facts."""
+
+    target = project / "ldvh-base" / "workcases" / f"{object_id}.yaml"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(
+        f"""object_id: {object_id}
+fact_type_key: workcase
+title: Stable routing target {object_id}
+created_at: 2026-07-14T09:00:00+08:00
+updated_at: 2026-07-14T10:00:00+08:00
+status: closed
+goal: Preserve the fully covered Spark responsibility.
+scope: Isolated update-operation fixture only.
+success_criterion_definitions:
+  - criterion_id: criterion-01
+    statement: The fixture is available as a stable routing target.
+success_criterion_results:
+  - criterion_id: criterion-01
+    outcome: satisfied
+    summary: The fixture target is mechanically valid.
+result_summary: The fixture target is available for a complete Spark routing after.
+validation_summary: The fixture target is read through the same project relation checks.
+closure_outcome: completed
+disposition_summary: The bounded fixture responsibility is complete.
+""",
+        encoding="utf-8",
+    )
+    return target
+
+
 def _ref() -> dict[str, str]:
     return {
         "governed_project_id": "sample",
@@ -537,6 +568,84 @@ def test_no_change_does_not_rewrite_or_change_timestamp(tmp_path: Path) -> None:
     assert fact.read_bytes() == raw
     assert fact.stat().st_ino == stat_before.st_ino
     assert response["result"]["fact_object"]["updated_at"] == "2026-07-14T10:00:00+08:00"
+
+
+def test_complete_spark_routing_after_is_atomic_and_idempotent(tmp_path: Path) -> None:
+    workspace, project, fact = _fixture(tmp_path)
+    routing_targets = {
+        "workcase-0001": _write_routing_target(project, "workcase-0001"),
+        "workcase-0002": _write_routing_target(project, "workcase-0002"),
+    }
+    target_bytes = {object_id: path.read_bytes() for object_id, path in routing_targets.items()}
+    before = _read(workspace, project)
+    original = fact.read_bytes()
+    target = _mutable(before)
+    target.update(
+        {
+            "status": "routed",
+            "disposition_summary": (
+                "The entire isolated fixture Spark is covered by the stable WorkCase target; "
+                "the target lifecycle is not tracked by this routed Spark."
+            ),
+            "relations": [
+                {
+                    "relation_key": "routed-to",
+                    "target": {
+                        "governed_project_id": "sample",
+                        "fact_type_key": "workcase",
+                        "object_id": "workcase-0001",
+                    },
+                },
+                {
+                    "relation_key": "routed-to",
+                    "target": {
+                        "governed_project_id": "sample",
+                        "fact_type_key": "workcase",
+                        "object_id": "workcase-0002",
+                    },
+                },
+            ],
+        }
+    )
+    target.pop("priority")
+
+    stale = handle_request(
+        "call",
+        "update-fact-object",
+        _update_payload(workspace, project, "0" * 64, target),
+    ).response
+
+    assert stale["outcome"] == "rejected"
+    assert stale["changes"] == []
+    assert fact.read_bytes() == original
+
+    routed = handle_request(
+        "call",
+        "update-fact-object",
+        _update_payload(workspace, project, before["content_fingerprint"], target),
+    ).response
+
+    assert routed["outcome"] == "ok", json.dumps(routed, ensure_ascii=False, indent=2)
+    after = routed["result"]["fact_object"]
+    assert after["status"] == "routed"
+    assert after["disposition_summary"] == target["disposition_summary"]
+    assert after["relations"] == target["relations"]
+    assert "priority" not in after
+    assert {object_id: path.read_bytes() for object_id, path in routing_targets.items()} == target_bytes
+
+    routed_bytes = fact.read_bytes()
+    replay_target = dict(after)
+    for field in ("object_id", "fact_type_key", "created_at", "updated_at"):
+        replay_target.pop(field)
+    replay = handle_request(
+        "call",
+        "update-fact-object",
+        _update_payload(workspace, project, routed["result"]["content_fingerprint"], replay_target),
+    ).response
+
+    assert replay["outcome"] == "no_change"
+    assert replay["changes"] == []
+    assert fact.read_bytes() == routed_bytes
 
 
 def test_stale_fingerprint_rejects_without_writing(tmp_path: Path) -> None:
