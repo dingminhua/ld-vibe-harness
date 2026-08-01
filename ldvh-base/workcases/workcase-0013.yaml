@@ -1,6 +1,4 @@
 title: 环境安装、部署、接入与验证契约收束
-status: open
-priority: P1
 goal: 将环境安装、部署、接入与验证的职责边界，以及逐事件验证交还契约收束到当前规则源和入口文档， 使接入行动不能把静态、直调或 hydrate 等有限观察写成真实环境接入通过。
 scope: 覆盖 specs/09、33 及 09.Att.01、README 和直接文档测试引用：将 33 迁移为 specs/33-环境安装、部署、接入与验证行动模板.md，保持 spec_key/template_key；在 09 定义安装/部署/接入/验证四层与环境专属事件表责任， 在 33 定义每次行动的逐事件矩阵和最终交还；更新全部直接路径/标题断言。矩阵是一次行动交还，不是永久环境状态、事实对象或跨厂商注册表。 排除生产 Code/CLI/Doctor/Helper/Git Gate、ZCode 或其他 adapter/manifest/cache/data、实际环境配置、运行时诊断/启动、 升级/重装/信任/重启、填写具体事件表和更新 Spark/Pitfall。
 success_criterion_definitions:
@@ -14,32 +12,6 @@ success_criterion_definitions:
   statement: 33 的标题和路径、规范内 canonical path、所有直接引用及文档测试一致，稳定 spec_key/template_key 保持不变。
 - criterion_id: criterion-05
   statement: 只运行规则和文档范围测试；不把测试通过表述为环境接入通过，并保留既有无关 Working Tree 差异。
-phase: human_closure_confirming
-plan_version: 1
-work_items:
-- item_id: item-01
-  goal: 核对当前 09、33、09.Att.01、README、文档测试及全部旧路径引用，并记录现有脏工作树不可覆盖基线。
-  expected_result: 形成可回指的当前职责、直接迁移集合、最终标题/路径、全部直接引用和测试范围；不修改文件。
-  status: completed
-  approach_summary: 只读核对来源和引用，区分通用规则与目标环境实现；不改生产 Code，不把任何当前脏差异视为本 WorkCase 成果。
-  result_summary: 已核对：09 已区分静态、直调与真实触发，但未将安装/部署/接入/验证四层和环境专属事件表责任收束为同一契约； 33 缺少逐事件验证矩阵。直接迁移范围为 README 两处、09.Att.01 一处、33 自身标题/元数据/定义三处及 docs/specs 测试两处。 既有并行脏差异已记录，未修改。
-- item_id: item-02
-  goal: 收束环境四层、环境专属事件表与逐事件验证矩阵，并迁移 33 标题/路径和入口引用。
-  expected_result: 09、33、README 与 09.Att.01 形成一致契约；事件矩阵仅是本次行动交还，缺少真实事件证据即明确未验证；不新增 adapter。
-  status: completed
-  depends_on:
-  - item-01
-  approach_summary: 仅修改规则和文档；环境专属事件由对应环境来源维护，新增 manifest、script 或 adapter 转入独立 Code 计划； 不改变稳定 spec_key/template_key。
-  result_summary: 09 已收束四层、环境专属事件责任以及 AI 生命周期所用环境 Hook 的用户级原生插件交付边界； 33 已迁移新路径、要求逐事件矩阵，并删除 Codex/ZCode、具体 manifest、图标和构建规则。 具体目录、插件结构、缓存和构建验证下沉到目标环境来源。未新增 adapter、命令、环境状态或事实对象。
-- item_id: item-03
-  goal: 验证规则和文档迁移，回读差异并形成当前计划结果。
-  expected_result: 规则解析和文档测试、标题/路径直接引用核对通过；实际验证范围、未运行和非环境结论清晰可追溯。
-  status: completed
-  depends_on:
-  - item-02
-  approach_summary: 运行范围内真实测试并核对差异；不以字符串零命中、静态部署或 Helper 直调代替真实环境事件验证。
-  result_summary: 33 已补入环境 Hook 或等价机制的启用、信任、权限和用户级配置限制调查，以及 Human-only 操作所需的最小受限操作请求； README 已收束为面向 Human 的快速上手入口。直接文档测试 3 项通过，git diff --check 通过； 全量 docs/specs 为 127 passed、2 failed，失败为字段登记实际数量 122 与测试预期 121 不一致，未由本 WorkCase 修复或掩盖。
-result_version: 13
 success_criterion_results:
 - criterion_id: criterion-01
   outcome: satisfied
@@ -57,21 +29,11 @@ success_criterion_results:
   outcome: satisfied
   summary: 直接文档测试与差异检查的既有结果保持；字段登记数量漂移已由 workcase-0020 的当前字段登记与测试基线收敛，最新 code/tests/specs 为 131 passed，未将其表述为真实环境接入通过。
 result_summary: 09 已形成安装、部署、接入、验证四层与环境专属事件责任边界；33 已迁移到新标题和路径，并要求逐事件验证矩阵、 环境 Hook 限制调查及 Human 受限操作请求；README 与 09.Att.01 已同步入口。未新增 adapter、命令、环境状态或事实对象。
-controller_check_summary: Controller 复核旧阻塞后确认字段登记数量漂移已由 workcase-0020 收敛，当前 code/tests/specs 131 passed；三个 work item 仍全部 terminal，既有交付不需重新执行。因旧对象缺少可重建的完整 Gate1 authorization/source proof，本对象按 SafeConvergenceShape 保留实际结果，只继续 fresh 独立结果复核与关闭链。
 validation_summary: 既有直接文档测试 3 passed 与 git diff --check 结果保留；2026-07-30 复跑当前 code/tests/specs 为 131 passed，原字段登记数量阻塞已解除。没有执行或声称任何真实环境事件验证，也没有以迁移继续实施新动作。
-resume_from: 等待 Human 对当前完整 before 与关闭提案作最终关闭决定。
-summary: 完整 completed 关闭提案已形成，正在等待 Gate2。
-result_reviews:
-- reviewer: Codex independent reviewer (/root/workcase0018_v2_review)
-  reviewed_at: '2026-07-30T13:30:58+08:00'
-  subject_version: 13
-  scope: 精确读取迁移后的 workcase-0013，核对 SafeConvergenceShape、3 个 terminal item、5 项 criterion results、controller/validation 表述；独立运行 ./.venv/bin/python -m pytest -q code/tests/specs，结果 131 passed。未执行环境接入或写入。
-  conclusion: pass
-closure_proposal:
-  proposed_outcome: completed
-  proposed_disposition_summary: 五项成功标准均满足；字段登记数量阻塞已解除并由 result_version 13 的 fresh 独立复核确认。原 WorkCase 未执行或声称真实环境接入，当前范围没有需要转交、接受停止或建议另建 Spark 的剩余责任。
-waiting_on: Human 对 workcase-0013 result_version 13 的 completed 关闭提案作 Gate2 最终决定。
+status: closed
+closure_outcome: completed
+disposition_summary: 五项成功标准均满足；字段登记数量阻塞已解除并由 result_version 13 的 fresh 独立复核确认。原 WorkCase 未执行或声称真实环境接入，当前范围没有需要转交、接受停止或建议另建 Spark 的剩余责任。
 object_id: workcase-0013
 fact_type_key: workcase
 created_at: '2026-07-24T22:13:34.001208+08:00'
-updated_at: '2026-07-30T13:32:09.049016+08:00'
+updated_at: '2026-08-02T02:25:01.032550+08:00'
