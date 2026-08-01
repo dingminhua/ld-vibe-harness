@@ -83,6 +83,32 @@ def _workcase_command(current_specs_repository: Path, tmp_path: Path) -> FactCre
                     "risk_summary": "Reject invalid plan or relation state.",
                     "rollback_summary": "Remove only the uncommitted candidate.",
                     "rule_refs": ["specs/21"],
+                },
+                {
+                    "action_id": "authorization-delegate-independent-review",
+                    "summary": "Delegate the required independent result review.",
+                    "target_scope": "Only the current test WorkCase result.",
+                    "effect_scope": "Read-only Reviewer delegation.",
+                    "risk_summary": "The declaration does not prove real-world independence.",
+                    "rollback_summary": "Do not persist a delegation receipt.",
+                    "rule_refs": ["specs/21"],
+                },
+                {
+                    "action_id": "authorization-independent-result-review",
+                    "summary": "Perform the required independent result review.",
+                    "target_scope": "Only the current test WorkCase result.",
+                    "effect_scope": "Read-only result review.",
+                    "risk_summary": "The review remains advisory.",
+                    "rollback_summary": "Record only the current review result.",
+                    "rule_refs": ["specs/21"],
+                },
+            ],
+            "quality_gates": [
+                {
+                    "gate_id": "independent-result-review",
+                    "reviewer_mode": "independent-read-only",
+                    "delegation_action_id": "authorization-delegate-independent-review",
+                    "result_review_action_id": "authorization-independent-result-review",
                 }
             ],
             "action_ceiling": "No unrelated fact or external write.",
@@ -112,6 +138,7 @@ def _workcase_command(current_specs_repository: Path, tmp_path: Path) -> FactCre
                 "subject_version": 1,
                 "scope": "Current initial plan",
                 "conclusion": "pass",
+                "covered_quality_gate_ids": ["independent-result-review"],
             }
         ],
     }
@@ -251,6 +278,41 @@ def test_workcase_creation_rejects_whitespace_only_text_without_writing(
     assert result.status == "candidate_rejected"
     assert any(issue.field_path == "goal" and "空白" in issue.summary for issue in result.issues)
     assert not candidate.exists()
+
+
+@pytest.mark.parametrize(
+    ("mutate", "expected_path"),
+    [
+        (
+            lambda fields: fields["execution_authorization"].pop("quality_gates"),
+            "execution_authorization.quality_gates",
+        ),
+        (
+            lambda fields: fields["execution_authorization"]["quality_gates"][0].update(
+                {"reviewer_mode": "unknown"}
+            ),
+            "execution_authorization.quality_gates[0].reviewer_mode",
+        ),
+        (
+            lambda fields: fields["creation_reviews"][0].update({"covered_quality_gate_ids": []}),
+            "creation_reviews[0].covered_quality_gate_ids",
+        ),
+    ],
+)
+def test_workcase_creation_requires_current_quality_gate_authorization(
+    current_specs_repository: Path,
+    tmp_path: Path,
+    mutate: object,
+    expected_path: str,
+) -> None:
+    command = _workcase_command(current_specs_repository, tmp_path)
+    mutate(command.supplied)  # type: ignore[operator]
+
+    rejected = prepare_fact_creation(command, observed_at="2026-07-26T13:00:00+08:00")
+
+    assert isinstance(rejected, FactCreationResult)
+    assert rejected.status == "candidate_rejected"
+    assert any(issue.field_path == expected_path for issue in rejected.issues)
     assert not (command.boundary.git_common_dir / "ldvh").exists()
 
 

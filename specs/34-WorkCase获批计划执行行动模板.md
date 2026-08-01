@@ -49,7 +49,7 @@ ldvh_spec:
 
 ### 5.1 输入与前置条件
 
-执行者取得 Human 当前目标、当前 WorkCase 的完整回读与内容指纹、冻结 `execution_authorization`、`baseline_fingerprint` 和 Human `source_refs` 均准确的 `execution_approval`、当前 plan version 及 fresh current plan review、未完成 item 与依赖、适用规则和所需能力。执行前逐项核对授权包是否覆盖计划所需的文件/事实写入、对象变化、本地 commit、subagent/委派、独立结果复核、已知风险、允许副作用、禁止动作和超界收敛方式；Code 只校验 21 已定义的结构和绑定，不判断自然语言授权充分性。缓存、列表卡片、聊天记忆、旧摘要或已存在的模板候选都不能替代当前对象、授权包和批准读取。消费任何 item 前，AI 必须按 21 §4.3 复核其 goal、expected result、依赖与方法边界是否错误吸收 Controller 自检、独立结果复核、关闭准备、Human Gate 或其它 WorkCase 生命周期关口；这是一项语义检查，Code 不从关键词或字段形状替 AI 作出结论。需要跨对象共同生效时，仍按 32 的多对象能力边界停止，不把本模板当成调度、spawn 或原子能力。
+执行者取得 Human 当前目标、当前 WorkCase 的完整回读与内容指纹、冻结 `execution_authorization`、`baseline_fingerprint` 和 Human `source_refs` 均准确的 `execution_approval`、当前 plan version 及 fresh current plan review、未完成 item 与依赖、适用规则和所需能力。执行前逐项核对授权包是否覆盖计划所需的文件/事实写入、对象变化、本地 commit、subagent/委派、独立结果复核、已知风险、允许副作用、禁止动作和超界收敛方式；其中必经独立结果复核必须由 21 当前固定 `quality_gates` 声明的 Reviewer mode、委派 action 和结果复核 action 消费，不能以授权散文、普通 item 或 Controller 自检替代。Code 只校验 21 已定义的结构和绑定，不判断自然语言授权充分性或 Reviewer 真实独立性。缓存、列表卡片、聊天记忆、旧摘要或已存在的模板候选都不能替代当前对象、授权包和批准读取。消费任何 item 前，AI 必须按 21 §4.3 复核其 goal、expected result、依赖与方法边界是否错误吸收 Controller 自检、独立结果复核、关闭准备、Human Gate 或其它 WorkCase 生命周期关口；这是一项语义检查，Code 不从关键词或字段形状替 AI 作出结论。需要跨对象共同生效时，仍按 32 的多对象能力边界停止，不把本模板当成调度、spawn 或原子能力。
 
 ### 5.2 执行与检查点
 

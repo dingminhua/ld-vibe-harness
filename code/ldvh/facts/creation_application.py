@@ -30,6 +30,7 @@ from ldvh.facts.relations import ProjectFactIndex, validate_project_relations
 from ldvh.facts.repository import FactReadResult, read_fact_object
 from ldvh.facts.schema import FactSchema
 from ldvh.facts.validation import validate_fact_object
+from ldvh.facts.workcase_validation import required_quality_gate_issues
 from ldvh.filesystem import AtomicWriteResult, durable_writes_enabled
 
 CreationStatus = Literal[
@@ -120,6 +121,7 @@ def _creation_context_issues(fact_type_key: str, fields: Mapping[str, Any]) -> t
         issues.append(FactIssue("schema", "新建 WorkCase 的全部 work item 必须是 pending", "work_items"))
     if "execution_approval" in fields:
         issues.append(FactIssue("schema", "新建 WorkCase 禁止预置 execution_approval", "execution_approval"))
+    issues.extend(required_quality_gate_issues(fields))
     return tuple(issues)
 
 

@@ -123,6 +123,13 @@ def _review(version: int = 1) -> dict[str, Any]:
     }
 
 
+def _creation_review(version: int = 1) -> dict[str, Any]:
+    return {
+        **_review(version),
+        "covered_quality_gate_ids": ["independent-result-review"],
+    }
+
+
 def _authorization() -> dict[str, Any]:
     return {
         "authorized_actions": [
@@ -134,6 +141,32 @@ def _authorization() -> dict[str, Any]:
                 "risk_summary": "保留无关既有变更。",
                 "rollback_summary": "只回退本次新增的有界内容。",
                 "rule_refs": ["specs/21", "specs/06"],
+            },
+            {
+                "action_id": "authorization-delegate-independent-review",
+                "summary": "委派独立结果复核。",
+                "target_scope": "当前测试 WorkCase 的结果。",
+                "effect_scope": "只读 Reviewer 委派。",
+                "risk_summary": "声明不证明真实独立性。",
+                "rollback_summary": "不持久化委派收据。",
+                "rule_refs": ["specs/21"],
+            },
+            {
+                "action_id": "authorization-independent-result-review",
+                "summary": "执行独立结果复核。",
+                "target_scope": "当前测试 WorkCase 的结果。",
+                "effect_scope": "只读结果复核。",
+                "risk_summary": "复核是咨询性结论。",
+                "rollback_summary": "不自动接受任何结果。",
+                "rule_refs": ["specs/21"],
+            },
+        ],
+        "quality_gates": [
+            {
+                "gate_id": "independent-result-review",
+                "reviewer_mode": "independent-read-only",
+                "delegation_action_id": "authorization-delegate-independent-review",
+                "result_review_action_id": "authorization-independent-result-review",
             }
         ],
         "action_ceiling": "禁止外部发布和无关对象变化。",
@@ -171,7 +204,7 @@ def _active(
                 "status": "pending",
             }
         ],
-        "creation_reviews": [_review()],
+        "creation_reviews": [_creation_review()],
         "waiting_on": "等待 Human 确认当前计划。",
     }
 
@@ -222,7 +255,7 @@ def _closing(
         "priority": "P2",
         "phase": "human_closure_confirming",
         "plan_version": 1,
-        "creation_reviews": [_review()],
+        "creation_reviews": [_creation_review()],
         "work_items": [
             {
                 "item_id": "item-main",
@@ -641,7 +674,7 @@ def test_plan_delta_item_execution_fact_removal_without_updated_summary_has_zero
                     "status": "pending",
                 }
             ],
-            "creation_reviews": [_review(2)],
+            "creation_reviews": [_creation_review(2)],
         }
     )
 
@@ -763,6 +796,24 @@ def test_invalid_after_review_identity_is_rejected_without_writing(
     assert result.status == "candidate_rejected"
     assert any(issue.field_path == "creation_reviews[0].reviewer" for issue in result.issues)
     assert path.read_bytes() == original
+
+
+def test_result_review_rejects_creation_only_quality_gate_coverage(
+    current_specs_repository: Path,
+    tmp_path: Path,
+) -> None:
+    project = _project(current_specs_repository, tmp_path)
+    fields = _closing("workcase-0001")
+    fields["result_reviews"][0]["covered_quality_gate_ids"] = ["independent-result-review"]
+    _write(project, fields)
+
+    readback = _read(project, "workcase-0001")
+
+    assert readback.check_status == "invalid"
+    assert any(
+        issue.field_path == "result_reviews[0].covered_quality_gate_ids"
+        for issue in readback.issues
+    )
 
 
 def test_update_rejects_whitespace_only_text_without_writing(
@@ -1224,6 +1275,33 @@ def test_gate1_approval_requires_matching_request_authorization_and_readback(
     assert result.readback.fields["execution_approval"] == after["execution_approval"]
 
 
+def test_gate1_freezes_quality_gate_declaration_even_if_baseline_is_recomputed(
+    current_specs_repository: Path,
+    tmp_path: Path,
+) -> None:
+    project = _project(current_specs_repository, tmp_path)
+    before = _active("workcase-0001")
+    _write(project, before)
+    approved = _gate1_after(before)
+    first = apply_workcase_write(
+        _command(project, before, approved, mode="update", authorization_reference=_human_reference())
+    )
+    assert first.status == "updated" and first.readback is not None and first.readback.fields is not None
+
+    candidate = deepcopy(first.readback.fields)
+    candidate["execution_authorization"]["quality_gates"][0]["reviewer_mode"] = "unknown"
+    candidate["execution_approval"]["baseline_fingerprint"] = approval_baseline_fingerprint(candidate)
+    original = _write(project, first.readback.fields).read_bytes()
+
+    rejected = apply_workcase_write(
+        _command(project, first.readback.fields, candidate, mode="update", event_at="2026-07-26T14:00:00+08:00")
+    )
+
+    assert rejected.status == "candidate_rejected"
+    assert any(issue.field_path == "execution_authorization" for issue in rejected.issues)
+    assert _write(project, first.readback.fields).read_bytes() == original
+
+
 @pytest.mark.parametrize(
     ("authorization_reference", "source_refs", "expected_path"),
     [
@@ -1256,6 +1334,97 @@ def test_gate1_approval_missing_or_mismatched_proof_has_zero_writes(
 
     assert result.status == "candidate_rejected"
     assert any(issue.field_path == expected_path for issue in result.issues)
+    assert path.read_bytes() == original
+
+
+@pytest.mark.parametrize(
+    ("mutate", "expected_path"),
+    [
+        (
+            lambda fields: fields["execution_authorization"].pop("quality_gates"),
+            "execution_authorization.quality_gates",
+        ),
+        (
+            lambda fields: fields["execution_authorization"]["quality_gates"][0].update(
+                {"delegation_action_id": "authorization-missing"}
+            ),
+            "execution_authorization.quality_gates[0].delegation_action_id",
+        ),
+        (
+            lambda fields: fields["execution_authorization"]["quality_gates"][0].update(
+                {"result_review_action_id": "authorization-delegate-independent-review"}
+            ),
+            "execution_authorization.quality_gates[0]",
+        ),
+        (
+            lambda fields: fields["creation_reviews"][0].update({"covered_quality_gate_ids": []}),
+            "creation_reviews[0].covered_quality_gate_ids",
+        ),
+    ],
+)
+def test_gate1_rejects_incomplete_or_reused_quality_gate_authorization_with_zero_writes(
+    current_specs_repository: Path,
+    tmp_path: Path,
+    mutate: object,
+    expected_path: str,
+) -> None:
+    project = _project(current_specs_repository, tmp_path)
+    before = _active("workcase-0001")
+    path = _write(project, before)
+    original = path.read_bytes()
+    mutate(before)  # type: ignore[operator]
+    after = _gate1_after(before)
+
+    result = apply_workcase_write(
+        _command(project, before, after, mode="update", authorization_reference=_human_reference())
+    )
+
+    assert result.status == "candidate_rejected"
+    assert any(issue.field_path == expected_path for issue in result.issues)
+    assert path.read_bytes() == original
+
+
+def test_terminal_legacy_workcase_cannot_bypass_quality_gate_by_entering_result_chain(
+    current_specs_repository: Path,
+    tmp_path: Path,
+) -> None:
+    project = _project(current_specs_repository, tmp_path)
+    before = _active("workcase-0001")
+    before["execution_authorization"].pop("quality_gates")
+    before["creation_reviews"][0].pop("covered_quality_gate_ids")
+    before["work_items"][0].update(
+        {"status": "completed", "result_summary": "Legacy implementation result already exists."}
+    )
+    path = _write(project, before)
+    original = path.read_bytes()
+    after = deepcopy(before)
+    after.update(
+        {
+            "phase": "controller_checking",
+            "result_version": 1,
+            "success_criterion_results": [
+                {"criterion_id": "criterion-main", "outcome": "satisfied", "summary": "Legacy result is recorded."}
+            ],
+            "result_summary": "Legacy terminal result is ready for controller checking.",
+            "controller_check_summary": "Controller recorded the legacy terminal result.",
+            "validation_summary": "No new implementation is performed by this transition.",
+        }
+    )
+    after.pop("waiting_on")
+    after["execution_approval"] = {
+        "subject_version": 1,
+        "approved_at": "2026-07-26T10:45:00+08:00",
+        "summary": "Attempted Gate1 approval for a legacy terminal result.",
+        "baseline_fingerprint": approval_baseline_fingerprint(before),
+        "source_refs": ["human-decision"],
+    }
+
+    result = apply_workcase_write(
+        _command(project, before, after, mode="update", authorization_reference=_human_reference())
+    )
+
+    assert result.status == "candidate_rejected"
+    assert any(issue.field_path == "execution_authorization.quality_gates" for issue in result.issues)
     assert path.read_bytes() == original
 
 
@@ -1303,7 +1472,7 @@ def test_approved_plan_delta_keeps_gate1_baseline_and_can_resume_execution(
                     "goal": "Complete the same bounded responsibility with an adjusted method.",
                 }
             ],
-            "creation_reviews": [_review(2)],
+            "creation_reviews": [_creation_review(2)],
         }
     )
 
@@ -1346,7 +1515,7 @@ def test_pre_gate_plan_revision_roundtrip_does_not_require_or_fabricate_approval
             "plan_version": 2,
             "creation_reviews": [
                 {
-                    **_review(2),
+                    **_creation_review(2),
                     "reviewed_at": "2026-07-26T13:30:00+08:00",
                 }
             ],

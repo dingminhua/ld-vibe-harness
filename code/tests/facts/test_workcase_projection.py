@@ -247,6 +247,37 @@ def test_authorization_projection_normalizes_set_like_members() -> None:
     assert projected["prohibited_actions"] == ["publish", "push"]
 
 
+def test_authorization_projection_includes_sorted_quality_gate_declaration() -> None:
+    value = _authorization()
+    value["quality_gates"] = [
+        {
+            "gate_id": "independent-result-review",
+            "reviewer_mode": "independent-read-only",
+            "delegation_action_id": "authorization-delegate-independent-review",
+            "result_review_action_id": "authorization-independent-result-review",
+        }
+    ]
+
+    projected = canonical_execution_authorization(value)
+
+    assert projected["quality_gates"] == value["quality_gates"]
+
+
+def test_quality_gate_declaration_changes_the_approval_baseline_fingerprint() -> None:
+    before = _complete_result()
+    after = deepcopy(before)
+    after["execution_authorization"]["quality_gates"] = [
+        {
+            "gate_id": "independent-result-review",
+            "reviewer_mode": "independent-read-only",
+            "delegation_action_id": "authorization-delegate-independent-review",
+            "result_review_action_id": "authorization-independent-result-review",
+        }
+    ]
+
+    assert approval_baseline_fingerprint(before) != approval_baseline_fingerprint(after)
+
+
 def test_safe_convergence_shape_never_includes_authorization_or_approval() -> None:
     fields = _complete_result()
     fields["phase"] = "controller_checking"

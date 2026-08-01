@@ -22,6 +22,7 @@ def _plan_review(version: int = 1) -> dict[str, object]:
         "subject_version": version,
         "scope": "Current plan and verification boundary",
         "conclusion": "pass",
+        "covered_quality_gate_ids": ["independent-result-review"],
     }
 
 
@@ -50,6 +51,32 @@ def _authorization() -> dict[str, object]:
                 "risk_summary": "Unrelated changes are preserved.",
                 "rollback_summary": "Revert only bounded newly written content.",
                 "rule_refs": ["specs/21", "specs/06"],
+            },
+            {
+                "action_id": "authorization-delegate-independent-review",
+                "summary": "Delegate the independent result review.",
+                "target_scope": "The current WorkCase result.",
+                "effect_scope": "Read-only Reviewer delegation.",
+                "risk_summary": "The declaration does not prove independence.",
+                "rollback_summary": "No delegation state is persisted.",
+                "rule_refs": ["specs/21"],
+            },
+            {
+                "action_id": "authorization-independent-result-review",
+                "summary": "Perform the independent result review.",
+                "target_scope": "The current WorkCase result.",
+                "effect_scope": "Read-only result review.",
+                "risk_summary": "The review is advisory.",
+                "rollback_summary": "No result is accepted automatically.",
+                "rule_refs": ["specs/21"],
+            },
+        ],
+        "quality_gates": [
+            {
+                "gate_id": "independent-result-review",
+                "reviewer_mode": "independent-read-only",
+                "delegation_action_id": "authorization-delegate-independent-review",
+                "result_review_action_id": "authorization-independent-result-review",
             }
         ],
         "action_ceiling": "No external publication or unrelated object changes.",
@@ -276,6 +303,21 @@ def _assert_current_snapshot(fields: dict[str, object], label: str) -> None:
 )
 def test_representative_current_snapshots_are_valid(label: str, fields: dict[str, object]) -> None:
     _assert_current_snapshot(fields, label)
+
+
+def test_legacy_pre_gate_snapshot_remains_readable_but_cannot_cross_gate1() -> None:
+    before = _base()
+    before["execution_authorization"].pop("quality_gates")
+    before["creation_reviews"][0].pop("covered_quality_gate_ids")
+    _assert_current_snapshot(before, "legacy pre-Gate1 snapshot")
+
+    after = deepcopy(before)
+    after.update({"phase": "executing", "execution_approval": _approval(fields=before)})
+    after.pop("waiting_on")
+
+    issues = validate_workcase_transition(before, after)
+
+    assert any(issue.field_path == "execution_authorization.quality_gates" for issue in issues)
 
 
 def test_current_phase_edge_set_is_exactly_the_specified_closed_set() -> None:

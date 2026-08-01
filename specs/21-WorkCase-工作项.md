@@ -190,6 +190,7 @@ WorkCase 只有本文与 05.Att.01 共同定义的当前字段和结构。任何
 | 保留 Human 对准确计划版本的执行批准，而不持久化关闭决定收据 | `workcase-human-approval` | `reuse` | `workcase-human-approval` | 结构仍只需承载 Human 批准范围、时间与绑定 plan version；关闭决定由专属事务消费，不与 execution approval 共用持久化结构，也不保留为关闭批准服务的旧成员、字段或使用方式 |
 | 在 Gate1 前一次呈现本次运行的已知授权动作、上限、禁止项、调整、风险、验证/回滚与超界收敛 | `workcase-human-approval,workcase-item` | `new` | `workcase-execution-authorization` | approval 只记录 Human 已作出的决定，item 只承载局部交付；两者都不能在 Gate1 前作为完整、可审阅且事后冻结的执行授权基线 |
 | 在授权基线内逐项界定一类动作的目标、影响、风险、回滚与来源规则 | `workcase-execution-authorization` | `new` | `workcase-authorized-action` | 顶层基线需要完整动作集，但不应以连续散文隐藏不同目标与副作用；结构化条目便于 Human 分别批准并便于 Code 检查形状与指纹，不让 Code 判断自然语言授权 |
+| 在 Gate1 前声明唯一必经的独立结果复核、其固定 Reviewer 模式和两项已授权 action 引用 | `workcase-execution-authorization,workcase-authorized-action,workcase-review` | `new` | `workcase-quality-gate` | action 条目本身不说明哪项是必经质量关口，review 也不说明计划复核覆盖了完整授权闭环；该有限声明只供 Code 校验枚举、引用、覆盖与冻结，不解释授权散文或证明真实独立性 |
 
 ### 类型专属结构定义
 
@@ -200,6 +201,7 @@ WorkCase 只有本文与 05.Att.01 共同定义的当前字段和结构。任何
 | `workcase-human-approval` | Human 对 Gate1 当时计划及完整 execution authorization baseline 作出的执行批准 | 不表示关闭批准、技术验证、基线外动作获批、风险自动消失或字段存在即可继续执行 | 只供 `execution_approval` 使用；subject version、baseline fingerprint、批准范围、时间和真实 Human 来源按成员字段记录；关闭决定不持久化 approval 收据 |
 | `workcase-execution-authorization` | Gate1 前形成、Gate1 后冻结的单次 WorkCase 执行授权基线 | 不表示工具白名单、通用授权 token、技术验证已成立、未知风险或范围外动作获准 | 只用于当前 WorkCase 单次运行；必须整体形成；Gate1 后与 goal/scope/criteria 共同经 baseline fingerprint 绑定并保持不变；closed 时移除 |
 | `workcase-authorized-action` | Gate1 基线中一项对象、效果、风险与回滚边界可分别审阅的授权动作 | 不表示命令步骤、工具名白名单、动作已执行或来源规则已满足 | 同一基线内 `action_id` 唯一；目标、效果、风险、回滚和规则回指全部非空；Human 对完整基线一次决定不使各条目丢失自身边界 |
+| `workcase-quality-gate` | Gate1 前固定声明的必经独立结果复核关口、Reviewer 模式与授权 action 引用 | 不表示 Reviewer 已被实际委派、复核已完成、自然语言授权充分或 Reviewer 真实独立 | 当前闭集精确为一个 `gate_id=independent-result-review`、`reviewer_mode=independent-read-only`；`delegation_action_id` 与 `result_review_action_id` 必须分别精确引用同一 authorization 内不同的 action_id |
 | `workcase-success-criterion` | 一项具有稳定局部身份、可独立检查的成功标准定义 | 不表示执行步骤、结果、验证方法或数组序号 | `criterion_id` 在对象内唯一稳定；statement 与 goal、scope 共同构成验收基线 |
 | `workcase-success-result` | 对一项当前成功标准的实际结果判断与范围说明 | 不表示 Code 已证明正文、Human 已验收或命令成功 | 必须按 `criterion_id` 精确覆盖全部当前定义；unknown 通过 `not_verified` 表达，不补猜 |
 | `workcase-closure-proposal` | Controller 提交 Human 判断的一份完整关闭方案 | 不表示 Human 已同意、终态已成立、结果主体或证明收据 | 只在关闭准备与关闭待确认期间出现；始终整体形成，不持久化半成品 |
@@ -246,6 +248,7 @@ WorkCase 只有本文与 05.Att.01 共同定义的当前字段和结构。任何
 | `workcase-item-blocking-summary` | `blocking_summary` | string | item 的具体阻塞事实、影响与解除条件 | 不表示普通困难、waiting 标签或整体责任必然 blocked | 仅 `blocked` 必填非空 |
 | `workcase-item-result-summary` | `result_summary` | string | item 的实际终值、影响和未确认边界 | 不表示 expected result、总体结果、验证全文或证明材料 | `completed`、`cancelled` 必填非空；其它状态禁止 |
 | `workcase-authorization-authorized-actions` | `authorized_actions` | array | Gate1 中逐项呈现的已知授权动作闭集 | 不表示工具或命令白名单、动作已执行或未列动作默认允许 | 至少一项；按 `action_id` 唯一；每项使用 `workcase-authorized-action` |
+| `workcase-authorization-quality-gates` | `quality_gates` | array | Gate1 前完整授权基线中的必经质量关口声明 | 不表示 Reviewer 身份证明、实际委派记录或结果复核结论 | 新建与 Gate1 批准候选必须精确含当前一个 `workcase-quality-gate`；其进入 canonical execution authorization 与 baseline fingerprint，Gate1 后冻结；存量 Gate1 前对象可缺失但不得借缺失进入 executing |
 | `workcase-authorization-action-ceiling` | `action_ceiling` | string | 当前 WorkCase 单次运行不得超过的总体对象、权限、副作用与外部影响上限 | 不表示已列动作的技术前提已成立 | 必填非空；必须能与 scope 及各 action 条目共同判断超界 |
 | `workcase-authorization-prohibited-actions` | `prohibited_actions` | array | Gate1 明确不授权的动作、目标或副作用 | 不表示只有列出项才受禁止；未进入 authorized actions 的动作同样未获准 | 非空唯一 string 数组 |
 | `workcase-authorization-allowed-adjustments` | `allowed_adjustments` | string | Gate1 后 Controller 可在不改变基线时自动调整计划、重试、重新委派或替换实现方法的范围 | 不表示可改变 goal/scope/criteria、动作上限、风险接受或禁止项 | 必填非空；PlanΔ 仍需 fresh independent review 并按 §6.5 更新 |
@@ -259,6 +262,10 @@ WorkCase 只有本文与 05.Att.01 共同定义的当前字段和结构。任何
 | `workcase-authorized-action-risk-summary` | `risk_summary` | string | Human 在 Gate1 判断的已知风险、未验证范围和残留风险 | 不表示风险已消失、技术验证已通过或未知风险被接受 | 必填非空；没有已识别高影响风险时仍须据实说明当前已检查范围 |
 | `workcase-authorized-action-rollback-summary` | `rollback_summary` | string | 该动作的安全退出、可回滚范围和已知不可逆部分 | 不表示回滚已验证或可以覆盖用户既有资产 | 必填非空 |
 | `workcase-authorized-action-rule-refs` | `rule_refs` | array | 该动作实际召回的 Human Gate、风险、验证或副作用规则回指 | 不表示规则已自动适用、技术条件已满足或 Human 决定来源 | 非空唯一 string 数组；Human 决定来源只记录在 `execution_approval.source_refs` |
+| `workcase-quality-gate-id` | `gate_id` | string | 必经质量关口的稳定身份 | 不表示 work item、phase、Review 事件或自由扩展类型 | 当前闭集精确为 `independent-result-review` |
+| `workcase-quality-gate-reviewer-mode` | `reviewer_mode` | string | 该关口所需 Reviewer 的有限执行模式声明 | 不表示 Code 能证明实际独立性或任何具体执行者身份 | 当前闭集精确为 `independent-read-only` |
+| `workcase-quality-gate-delegation-action-id` | `delegation_action_id` | string | 授权基线中委派该独立结果复核的 action 引用 | 不表示已发生委派或 action 顺序 | 必填，精确引用 `authorized_actions.action_id`，且不得与结果复核引用复用 |
+| `workcase-quality-gate-result-review-action-id` | `result_review_action_id` | string | 授权基线中执行该独立结果复核的 action 引用 | 不表示复核结论、结果接受或 Human Gate | 必填，精确引用 `authorized_actions.action_id`，且不得与委派引用复用 |
 | `workcase-review-reviewer` | `reviewer` | string | 实际执行该次独立复核的稳定可识别执行者 | 不表示 Controller、Human 或自动独立性证明 | 必填非空；独立性由实际职责判断，Code 只检查形状 |
 | `workcase-review-reviewed-at` | `reviewed_at` | string | Reviewer 完成当前复核内容的时间 | 不表示对象更新时间、批准时间或排序身份 | 带时区 RFC 3339 date-time；同一 review 内容变化按获授权更正边界处理 |
 | `workcase-review-subject-version` | `subject_version` | integer | 当前 review 所绑定计划或结果的版本 | 不表示 review 次数、phase 轮次或 Git revision | 正整数；由 container 精确绑定 `plan_version` 或 `result_version` |
@@ -266,6 +273,7 @@ WorkCase 只有本文与 05.Att.01 共同定义的当前字段和结构。任何
 | `workcase-review-conclusion` | `conclusion` | string | Reviewer 对当前对象的咨询性判断 | 不表示自动推进、自动否决或 Human 决定 | 闭集 `pass`、`pass_with_followups`、`changes_required`、`blocked` |
 | `workcase-review-feedback` | `feedback` | array | Reviewer 实际发现的可行动问题或限制 | 不表示 Controller 处置、结果正文或历史发现 | `pass_with_followups`、`changes_required`、`blocked` 时必填非空；`pass` 时可省略；成员为非空唯一字符串 |
 | `workcase-review-controller-resolution` | `controller_resolution` | string | Controller 对该 review 全部 feedback 的当前处置 | 不表示 Reviewer 修改结论、结果正文或 Human 批准 | 只有实际 feedback 时出现；creation review 在创建前必须完成处置，result review 在进入关闭准备前必须完成处置 |
+| `workcase-creation-review-covered-quality-gate-ids` | `covered_quality_gate_ids` | array | creation review 对当前授权基线必经质量关口的结构化覆盖声明 | 不表示实际结果复核已经发生、Reviewer 独立性证明或 Controller 处置 | 当 authorization 声明 quality_gates 时，当前每项 creation review 必须精确覆盖该固定 gate_id 集合；存量缺失声明的 Gate1 前对象不要求补写，但不能通过新 Gate1 |
 | `workcase-criterion-id` | `criterion_id` | string | 成功标准在本对象内稳定唯一的身份 | 不表示数组位置、优先级或 work item | 匹配 `criterion-[a-z0-9][a-z0-9-]*`；创建后稳定 |
 | `workcase-criterion-statement` | `statement` | string | 可独立检查的一项成功条件 | 不表示步骤、证据、测试命令或结果 | 必填非空；应能区分满足、未满足和未验证 |
 | `workcase-result-criterion-id` | `criterion_id` | string | 当前结果所对应成功标准的稳定身份 | 不表示新标准或数组位置 | 必须精确引用当前定义且覆盖一次 |
@@ -368,6 +376,8 @@ phase 是当前精确位置，不记录阶段历史、轮次或完成百分比�
 
 `result_reviews` 只能与完整 canonical result projection 同时存在。`plan_revising` 或 `controller_checking` 中的 version-only / 部分 projection 形状必须缺失 reviews；不得用孤立 review 冒充完整被审主体。
 
+新建候选与 `human_plan_confirming → executing` 的 Gate1 边还必须通过同一最小质量关口检查：`execution_authorization.quality_gates` 精确声明唯一 `independent-result-review / independent-read-only`，分别引用当前 `authorized_actions` 中不同的委派与结果复核 action；每项当前 `creation_reviews` 精确覆盖该 gate_id。Code 只检查枚举、成员闭集、引用存在性/非复用、覆盖与后续 fingerprint 冻结，不解释 action/authorization 散文，也不证明 Reviewer 的真实独立性。缺失、未知模式、未知 action、重复复用或覆盖不足时，创建和 Gate1 都零写入拒绝。既有 Gate1 前 active 对象可以原样读取，但必须先经 `plan_revising`、fresh current creation review 和完整当前材料，才可能通过新 Gate1；不得自动迁移或补写历史字段，尤其不得改写 `workcase-0028`。既有 `SafeConvergenceShape` 与 Gate2/关闭链不要求历史声明或补写。
+
 `plan_revising` 的四种结果形状还必须满足以下交叉约束：Gate1 前 approval 必须缺失，Gate1 后 approval 必须原样保留；只有 `result_version` 时，Gate1 后正常返工快照至少一项 item 非 terminal；部分或完整 projection 必须 `AllTerminal`；只有完整 projection 可同时冻结 result reviews。`SafeConvergenceShape` 不允许 `phase=plan_revising`。
 
 ### 6.3.1 status 转换闭集
@@ -393,7 +403,7 @@ phase 变化只允许以 before/after 均为 `status=open` 执行；`blocked` �
 
 | from phase | to phase | 成立条件 | 同事务必须发生 |
 |---|---|---|---|
-| `human_plan_confirming` | `executing` | Gate1 批准当前 plan 与完整 execution authorization，全部 Human prerequisites 已满足或排除，且至少一项 item 非 terminal | 写入 `subject_version=当前 plan_version`、当前 baseline fingerprint 与真实 Human `source_refs` 的新 approval；保留 authorization、plan/items/reviews；移除 Human waiting；结果字段禁止 |
+| `human_plan_confirming` | `executing` | Gate1 批准当前 plan、完整 execution authorization 和必经质量关口声明，全部 Human prerequisites 已满足或排除，且至少一项 item 非 terminal | 写入 `subject_version=当前 plan_version`、包含质量关口投影的当前 baseline fingerprint 与真实 Human `source_refs` 的新 approval；保留 authorization、plan/items/reviews；移除 Human waiting；结果字段禁止 |
 | `human_plan_confirming` | `plan_revising` | Gate1 尚未完成，Human 在同一 Gate1 中要求改方案/授权基线，或 Controller 判断呈现材料必须改变 | approval 仍缺失；原 authorization/plan/items/reviews 冻结；可行动 feedback 收敛为明确返修要求；不补造新授权 |
 | `human_plan_confirming` | `controller_checking` | `NoExec` 且 Gate1 明确不批准执行、要求按当前事实收敛；或 `AllTerminal` 且 Gate1 已批准 | 不批准时全部 item 写 `cancelled` 与实际 result summary，移除 creation reviews 与未获批 authorization，approval 缺失，形成 `SafeConvergenceShape`；正常批准时写 approval 并保留 authorization/reviews/terminal items；两者都写 `result_version=1` |
 | `plan_revising` | `human_plan_confirming` | Gate1 尚未完成，approval 缺失，完整候选 authorization/plan 与 fresh review 成立 | `PlanΔ` 时精确 `plan_version+1`，原子替换 authorization/plan/items/reviews；无 `PlanΔ` 时版本不变；写 Gate1 waiting；结果字段全部缺失 |
@@ -486,7 +496,7 @@ canonical execution authorization baseline projection 由以下解析后结构�
 
 - `goal`、`scope`；
 - 按 `criterion_id` 排序的 `criterion_id + statement`；
-- 完整 `execution_authorization`：`authorized_actions` 按 `action_id` 排序，每项包含 `action_id`、`summary`、`target_scope`、`effect_scope`、`risk_summary`、`rollback_summary` 与排序去重后的 `rule_refs`；并包含 `action_ceiling`、排序去重后的 `prohibited_actions`、`allowed_adjustments`、`verification_and_rollback`、`out_of_bounds_handling`，以及实际存在时排序去重后的 `human_prerequisites`。
+- 完整 `execution_authorization`：`authorized_actions` 按 `action_id` 排序，每项包含 `action_id`、`summary`、`target_scope`、`effect_scope`、`risk_summary`、`rollback_summary` 与排序去重后的 `rule_refs`；`quality_gates` 按 `gate_id` 排序，每项包含 `gate_id`、`reviewer_mode`、`delegation_action_id` 与 `result_review_action_id`；并包含 `action_ceiling`、排序去重后的 `prohibited_actions`、`allowed_adjustments`、`verification_and_rollback`、`out_of_bounds_handling`，以及实际存在时排序去重后的 `human_prerequisites`。
 
 Code 必须把该结构编码为 UTF-8 canonical JSON：object keys 按 Unicode code point 升序，array 使用上文规定的稳定排序，string 使用 JSON 标准转义，不写无意义空白；对所得 bytes 计算 SHA-256，保存为 64 位小写十六进制 `baseline_fingerprint`。Code 只判断结构、规范化 bytes、fingerprint 与精确相等；授权条目是否语义覆盖实际动作、风险、目标、影响和回滚，仍由 Controller 与 Reviewer 判断。
 
@@ -629,6 +639,7 @@ WorkCase 的创建、读取、更新和更正都复用 05 的当前事实源选�
 
 - status/phase/presence 与允许转换；
 - plan/result 版本、review 和 approval 绑定；
+- 新建与 Gate1 的必经质量关口枚举、Reviewer mode、action 引用/非复用和 creation review 覆盖；
 - plan/result projection 的规范化结构差异；
 - item 状态组合与依赖图；
 - proposal/terminal 分离，suggestion 局部引用与精确映射；

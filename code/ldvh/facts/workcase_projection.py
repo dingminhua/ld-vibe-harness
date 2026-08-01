@@ -32,12 +32,19 @@ _AUTHORIZATION_ACTION_FIELDS = (
 )
 _AUTHORIZATION_FIELDS = (
     "authorized_actions",
+    "quality_gates",
     "action_ceiling",
     "prohibited_actions",
     "allowed_adjustments",
     "verification_and_rollback",
     "out_of_bounds_handling",
     "human_prerequisites",
+)
+_QUALITY_GATE_FIELDS = (
+    "gate_id",
+    "reviewer_mode",
+    "delegation_action_id",
+    "result_review_action_id",
 )
 _RESULT_ITEM_FIELDS = ("item_id", "status", "result_summary")
 _RESULT_MEMBER_FIELDS = (
@@ -142,6 +149,9 @@ def canonical_execution_authorization(value: object) -> dict[str, object]:
             normalized_actions,
             key=lambda member: (str(member.get("action_id", "")), _canonical_json(member)),
         )
+    quality_gates = value.get("quality_gates")
+    if isinstance(quality_gates, Sequence) and not isinstance(quality_gates, (str, bytes, bytearray)):
+        projected["quality_gates"] = _sorted_objects(quality_gates, "gate_id", _QUALITY_GATE_FIELDS)
     for key in ("prohibited_actions", "human_prerequisites"):
         raw = projected.get(key)
         if isinstance(raw, Sequence) and not isinstance(raw, (str, bytes, bytearray)):

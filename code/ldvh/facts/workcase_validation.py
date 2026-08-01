@@ -29,6 +29,8 @@ ACTIVE_PHASES = frozenset(
 )
 ITEM_STATUSES = frozenset({"pending", "in_progress", "blocked", "completed", "cancelled"})
 REVIEW_CONCLUSIONS = frozenset({"pass", "pass_with_followups", "changes_required", "blocked"})
+REQUIRED_QUALITY_GATE_ID = "independent-result-review"
+REQUIRED_REVIEWER_MODE = "independent-read-only"
 CRITERION_OUTCOMES = frozenset({"satisfied", "not_satisfied", "not_verified"})
 CLOSURE_OUTCOMES = frozenset({"completed", "partial", "not-achieved", "cancelled"})
 
@@ -323,6 +325,8 @@ def _validate_reviews(
         needs_resolution = array_name == "creation_reviews" or phase != "independent_reviewing"
         if feedback_values and needs_resolution and not _nonempty_string(resolution):
             _issue(issues, "离开独立复核前必须处置全部 feedback", f"{path}.controller_resolution")
+        if array_name != "creation_reviews" and "covered_quality_gate_ids" in review:
+            _issue(issues, "covered_quality_gate_ids 只允许出现在 creation_reviews", f"{path}.covered_quality_gate_ids")
     if len(event_keys) != len(set(event_keys)):
         _issue(issues, "同一 review 事件三元组不得重复", array_name)
 
@@ -400,6 +404,75 @@ def _validate_execution_authorization(fields: Mapping[str, object], issues: list
     for name in ("prohibited_actions", "human_prerequisites"):
         if name in value:
             _validate_unique_strings(value.get(name), f"execution_authorization.{name}", issues)
+
+
+def required_quality_gate_issues(fields: Mapping[str, object]) -> tuple[FactIssue, ...]:
+    """Check the current minimal, mechanical result-review authorization set.
+
+    This deliberately validates only a fixed declaration, action references and
+    creation-review coverage.  It neither interprets authorization prose nor
+    attempts to establish a Reviewer's real-world independence.
+    """
+
+    issues: list[FactIssue] = []
+    authorization = fields.get("execution_authorization")
+    if not isinstance(authorization, Mapping):
+        return (FactIssue("schema", "Gate1 候选必须声明 execution_authorization", "execution_authorization"),)
+    actions = authorization.get("authorized_actions")
+    action_ids = (
+        {
+            action.get("action_id")
+            for action in actions
+            if isinstance(action, Mapping) and isinstance(action.get("action_id"), str)
+        }
+        if isinstance(actions, list)
+        else set()
+    )
+    gates = authorization.get("quality_gates")
+    if not isinstance(gates, list) or len(gates) != 1:
+        return (
+            FactIssue(
+                "schema",
+                "Gate1 候选必须精确声明一个必经独立结果复核质量关口",
+                "execution_authorization.quality_gates",
+            ),
+        )
+    gate = gates[0]
+    path = "execution_authorization.quality_gates[0]"
+    if not isinstance(gate, Mapping):
+        return (FactIssue("schema", "质量关口必须是 object", path),)
+    required = {"gate_id", "reviewer_mode", "delegation_action_id", "result_review_action_id"}
+    for name in sorted(required - set(gate)):
+        issues.append(FactIssue("schema", "质量关口缺少必填成员", f"{path}.{name}"))
+    unknown = sorted(set(gate) - required)
+    if unknown:
+        issues.append(FactIssue("schema", "质量关口包含未知成员", path))
+    if gate.get("gate_id") != REQUIRED_QUALITY_GATE_ID:
+        issues.append(FactIssue("schema", "质量关口 gate_id 不在当前必经闭集中", f"{path}.gate_id"))
+    if gate.get("reviewer_mode") != REQUIRED_REVIEWER_MODE:
+        issues.append(FactIssue("schema", "Reviewer mode 不在当前必经闭集中", f"{path}.reviewer_mode"))
+    references = [gate.get("delegation_action_id"), gate.get("result_review_action_id")]
+    if any(not _nonempty_string(value) for value in references):
+        issues.append(FactIssue("schema", "质量关口 action 引用必须是非空 string", path))
+    elif len(set(references)) != len(references):
+        issues.append(FactIssue("schema", "质量关口不得复用 delegation 与 result review action 引用", path))
+    else:
+        for name, action_id in zip(("delegation_action_id", "result_review_action_id"), references, strict=True):
+            if action_id not in action_ids:
+                issues.append(
+                    FactIssue("schema", "质量关口 action 引用必须精确指向 authorized_actions", f"{path}.{name}")
+                )
+
+    reviews = fields.get("creation_reviews")
+    if not isinstance(reviews, list) or not reviews:
+        issues.append(FactIssue("schema", "质量关口必须由当前 creation reviews 覆盖", "creation_reviews"))
+    else:
+        for index, review in enumerate(reviews):
+            review_path = f"creation_reviews[{index}].covered_quality_gate_ids"
+            covered = review.get("covered_quality_gate_ids") if isinstance(review, Mapping) else None
+            if covered != [REQUIRED_QUALITY_GATE_ID]:
+                issues.append(FactIssue("schema", "creation review 必须精确覆盖全部必经质量关口", review_path))
+    return tuple(issues)
 
 
 def _result_outcomes(fields: Mapping[str, object]) -> list[str]:
@@ -916,6 +989,9 @@ __all__ = [
     "CLOSURE_OUTCOMES",
     "CRITERION_OUTCOMES",
     "ITEM_STATUSES",
+    "REQUIRED_QUALITY_GATE_ID",
+    "REQUIRED_REVIEWER_MODE",
     "REVIEW_CONCLUSIONS",
+    "required_quality_gate_issues",
     "validate_workcase_snapshot",
 ]

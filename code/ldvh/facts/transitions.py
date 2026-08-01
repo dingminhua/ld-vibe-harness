@@ -22,6 +22,7 @@ from ldvh.facts.workcase_projection import (
     result_projection_complete,
     safe_convergence_shape,
 )
+from ldvh.facts.workcase_validation import required_quality_gate_issues
 
 WorkCaseOperation = Literal["update", "close", "correct"]
 
@@ -884,6 +885,7 @@ def _validate_phase_edge(
         issues.extend(_require_equal(before, after, ("work_items",), "批准当前计划进入执行时 work items 必须保持不变"))
         if not isinstance(after.get("execution_approval"), dict):
             issues.append(_issue("进入 executing 必须同事务写当前计划 execution approval", "execution_approval"))
+        issues.extend(required_quality_gate_issues(after))
         if any(key in after for key in _RESULT_STATE_FIELDS):
             issues.append(_issue("首次进入 executing 不得携带结果上下文", "result_version"))
         if all_terminal(after):
@@ -906,6 +908,8 @@ def _validate_phase_edge(
             )
             if not isinstance(after.get("execution_approval"), dict):
                 issues.append(_issue("正常进入结果链必须写当前计划 execution approval", "execution_approval"))
+            else:
+                issues.extend(required_quality_gate_issues(after))
         if not all_terminal(after):
             issues.append(_issue("进入 controller_checking 必须全部 item terminal", "work_items"))
 

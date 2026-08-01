@@ -169,6 +169,7 @@ def _workcase() -> dict[str, object]:
                 "subject_version": 1,
                 "scope": "Goal, scope, criteria, work items, method, validation and risks.",
                 "conclusion": "pass",
+                "covered_quality_gate_ids": ["independent-result-review"],
             }
         ],
         "execution_authorization": {
@@ -181,6 +182,32 @@ def _workcase() -> dict[str, object]:
                     "risk_summary": "No production effect; fixture data only.",
                     "rollback_summary": "Remove the fixture objects.",
                     "rule_refs": ["specs/21-WorkCase-工作项.md"],
+                },
+                {
+                    "action_id": "authorization-delegate-independent-review",
+                    "summary": "Delegate the required independent result review.",
+                    "target_scope": "Creation fixture WorkCase result only.",
+                    "effect_scope": "Read-only Reviewer delegation.",
+                    "risk_summary": "The declaration does not prove independence.",
+                    "rollback_summary": "Do not persist a delegation receipt.",
+                    "rule_refs": ["specs/21-WorkCase-工作项.md"],
+                },
+                {
+                    "action_id": "authorization-independent-result-review",
+                    "summary": "Perform the required independent result review.",
+                    "target_scope": "Creation fixture WorkCase result only.",
+                    "effect_scope": "Read-only result review.",
+                    "risk_summary": "The result review remains advisory.",
+                    "rollback_summary": "Do not accept a result automatically.",
+                    "rule_refs": ["specs/21-WorkCase-工作项.md"],
+                },
+            ],
+            "quality_gates": [
+                {
+                    "gate_id": "independent-result-review",
+                    "reviewer_mode": "independent-read-only",
+                    "delegation_action_id": "authorization-delegate-independent-review",
+                    "result_review_action_id": "authorization-independent-result-review",
                 }
             ],
             "action_ceiling": "Bounded to creation fixture actions.",
@@ -299,6 +326,32 @@ def test_create_rejects_non_open_workcase_initial_state(tmp_path: Path) -> None:
     assert response["outcome"] == "rejected"
     assert "初始状态" in response["gaps"][0]["summary"]
     assert "open" in response["gaps"][0]["summary"]
+    assert not (project / "ldvh-base/workcases").exists()
+
+
+@pytest.mark.parametrize("missing_member", ("quality_gates", "covered_quality_gate_ids"))
+def test_helper_create_rejects_workcase_missing_required_quality_gate_without_writing(
+    tmp_path: Path,
+    missing_member: str,
+) -> None:
+    workspace, project = _fixture(tmp_path)
+    basis = _prepare(workspace, project, "workcase")
+    fact_object = _workcase()
+
+    if missing_member == "quality_gates":
+        fact_object["execution_authorization"].pop("quality_gates")
+    else:
+        fact_object["creation_reviews"][0].pop("covered_quality_gate_ids")
+
+    response = handle_request(
+        "call",
+        "create-fact-object",
+        _create_payload(workspace, project, basis, fact_object),
+    ).response
+
+    assert_common_response(response)
+    assert response["outcome"] == "rejected"
+    assert response["changes"] == []
     assert not (project / "ldvh-base/workcases").exists()
 
 
