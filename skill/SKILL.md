@@ -1,6 +1,6 @@
 ---
 name: ldvh
-description: 当工作涉及 LDVH（LD Vibe Harness）管辖项目时使用——包括创建、更新或读取事实对象（Spark、WorkCase、ADR、Pitfall、Study），修订规范，执行受控提交，环境接入与验证，或需要取得 LDVH 规则引导与行动模板时。在这类项目中，用户以大白话提出的下列事项同样落入本技能路由范围：查询或登记技术决策/决策记录（即 ADR）、待办/工作项/工作进展（即 WorkCase 与 Spark）、项目火花/议题、踩坑经验（即 Pitfall）、研究/调研报告（即 Study）、项目规范与规则修订。本技能只负责把会话路由到 LDVH CLI；全部规则、模板与事实权威由 CLI 从当前规则源现取。
+description: 项目待办/工作项/进展、技术决策/决策记录、踩坑经验、调研/研究报告、项目议题/火花、规范修订、受控提交、环境接入时使用——这些是 LDVH（LD Vibe Harness）管辖事项，对应事实对象 WorkCase、ADR、Pitfall、Study、Spark 的创建、更新与读取，或需要取得 LDVH 规则引导与行动模板时。本技能只负责把会话路由到 LDVH CLI；全部规则、模板与事实权威由 CLI 从当前规则源现取。
 ---
 
 # LDVH 接入（薄路由）
