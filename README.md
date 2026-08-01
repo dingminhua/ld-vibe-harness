@@ -10,6 +10,14 @@ LDVH 以 AI 执行者为第一服务对象，帮助 AI 在长期项目中保持*
 
 ### 安装
 
+核心只安装在仓库根的 `.venv`，一台机器一份，所有 AI 环境共用。先检查是否已安装：
+
+```bash
+.venv/bin/ldvh capabilities
+```
+
+能返回公开操作清单且确认 editable 指向本仓库、git pull 后 pyproject 未变，即安装有效，直接进入验证；否则执行：
+
 ```bash
 python3.12 -m venv .venv
 .venv/bin/pip install -e '.[dev]'
@@ -17,6 +25,16 @@ python3.12 -m venv .venv
 ```
 
 `ldvh capabilities` 用于发现当前公开能力。安装核心不等于已经将 LDVH 接入目标开发环境。
+
+当前已验证平台为 macOS；Windows 下 venv 入口位于 `.venv\Scripts\`，相关路径尚未实测，按未验证范围处理。
+
+### 更新
+
+`git pull` 后：规范与规则源更新不需要任何环境侧动作（薄 Skill 现取现用）。以下三类变化需要处理：
+
+- `pyproject.toml` 变化（依赖或入口）：重跑 `.venv/bin/pip install -e '.[dev]'`；
+- `skill/SKILL.md`、CLI 入口或 Git Gate 安装器变化：将各环境部署件与新模板逐字节比对，过期者重新部署；
+- 上述处理后按 specs/09 §6.5 与 specs/attachments/09.Att.02 重验受影响范围，不沿用旧验证结论。
 
 ## 启动 Web（本地开发）
 
