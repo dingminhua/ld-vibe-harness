@@ -13,7 +13,7 @@ LDVH 以 AI 执行者为第一服务对象，帮助 AI 在长期项目中保持*
 核心只安装在仓库根的 `.venv`，一台机器一份，所有 AI 环境共用。先检查是否已安装：
 
 ```bash
-.venv/bin/ldvh capabilities
+.venv/bin/ldvh capabilities < /dev/null
 ```
 
 能返回公开操作清单且确认 editable 指向本仓库、git pull 后 pyproject 未变，即安装有效，直接进入验证；否则执行：
@@ -21,10 +21,10 @@ LDVH 以 AI 执行者为第一服务对象，帮助 AI 在长期项目中保持*
 ```bash
 python3.12 -m venv .venv
 .venv/bin/pip install -e '.[dev]'
-.venv/bin/ldvh capabilities
+.venv/bin/ldvh capabilities < /dev/null
 ```
 
-`ldvh capabilities` 用于发现当前公开能力。安装核心不等于已经将 LDVH 接入目标开发环境。
+`ldvh capabilities` 用于发现当前公开能力。安装核心不等于已经将 LDVH 接入目标开发环境。所有 `ldvh` 入口无条件读取 stdin 至 EOF；在 AI 环境或无 tty 的自动化中调用时必须闭合 stdin（即示例中的 `< /dev/null`），否则调用挂起。
 
 当前已验证平台为 macOS；Windows 下 venv 入口位于 `.venv\Scripts\`，相关路径尚未实测，按未验证范围处理。
 
