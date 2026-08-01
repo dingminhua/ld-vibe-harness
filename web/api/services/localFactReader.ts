@@ -16,6 +16,7 @@ export const FACT_TYPE_DIRS = {
   pitfall: 'pitfalls',
   spark: 'sparks',
   study: 'studies',
+  'file-asset': 'file-assets',
 } as const
 
 export const FACT_TYPE_CARRIERS = {
@@ -24,10 +25,11 @@ export const FACT_TYPE_CARRIERS = {
   pitfall: '.yaml',
   spark: '.yaml',
   study: '.md',
+  'file-asset': '',
 } as const
 
 export type LocalFactType = FactType
-export type LocalFactCarrier = 'yaml' | 'markdown'
+export type LocalFactCarrier = 'yaml' | 'markdown' | 'directory'
 export type LocalFactReadStatus = 'readable' | 'unreadable'
 
 export type LocalFactIssue = {
@@ -92,6 +94,7 @@ function expectedFileName(type: LocalFactType, objectId: string): string {
 }
 
 function carrierFor(type: LocalFactType): LocalFactCarrier {
+  if (type === 'file-asset') return 'directory'
   return type === 'study' ? 'markdown' : 'yaml'
 }
 
@@ -106,8 +109,15 @@ function metadataFor(scope: LocalFactScope, type: LocalFactType, objectId: strin
 }
 
 function isExpectedCarrierName(type: LocalFactType, fileName: string): boolean {
+  if (type === 'file-asset') return /^file-asset-\d{4,}$/.test(fileName)
   const extension = FACT_TYPE_CARRIERS[type].replace('.', '\\.')
   return new RegExp(`^${type}-\\d{4,}${extension}$`).test(fileName)
+}
+
+function expectedManifestPath(metadata: LocalFactMetadata): string {
+  return metadata.carrier === 'directory'
+    ? path.join(metadata.absolute_path, 'file-asset.yaml')
+    : metadata.absolute_path
 }
 
 function looksLikeFactCarrier(fileName: string): boolean {
@@ -201,7 +211,7 @@ async function readItemFile(scope: LocalFactScope, type: LocalFactType, fileName
   const metadata = metadataFor(scope, type, objectId)
   let content: string
   try {
-    content = await readFile(metadata.absolute_path, 'utf-8')
+    content = await readFile(expectedManifestPath(metadata), 'utf-8')
   } catch (error) {
     return unreadable(metadata, [{ code: 'read_failed', message: `文件读取失败：${error instanceof Error ? error.message : String(error)}` }])
   }
@@ -210,15 +220,30 @@ async function readItemFile(scope: LocalFactScope, type: LocalFactType, fileName
     if (parsed.metadata === null) return unreadable(metadata, parsed.issues)
     return { ...metadata, read_status: 'readable', ...projectFields(type, objectId, parsed.metadata, { report_body: parsed.body }), issues: [] }
   }
+  let parsed: unknown
   try {
-    const parsed = yaml.load(content)
-    if (!isRecord(parsed)) {
-      return unreadable(metadata, [{ code: 'yaml_parse_failed', message: 'YAML 顶层不是键值映射' }])
-    }
-    return { ...metadata, read_status: 'readable', ...projectFields(type, objectId, parsed, {}), issues: [] }
+    parsed = yaml.load(content)
   } catch (error) {
     return unreadable(metadata, [{ code: 'yaml_parse_failed', message: `YAML 解析失败：${error instanceof Error ? error.message : String(error)}` }])
   }
+  if (!isRecord(parsed)) {
+    return unreadable(metadata, [{ code: 'yaml_parse_failed', message: 'YAML 顶层不是键值映射' }])
+  }
+  if (metadata.carrier === 'directory') {
+    try {
+      const members = await readdir(metadata.absolute_path, { withFileTypes: true })
+      const expectedMembers = parsed.status === 'deleted'
+        ? new Set(['file-asset.yaml'])
+        : new Set(['file-asset.yaml', 'payload'])
+      if (members.some((member) => !member.isFile() || !expectedMembers.has(member.name))
+        || members.length !== expectedMembers.size) {
+        return unreadable(metadata, [{ code: 'read_failed', message: 'FileAsset 目录成员不符合当前状态的正式 carrier 结构' }])
+      }
+    } catch (error) {
+      return unreadable(metadata, [{ code: 'read_failed', message: `FileAsset 目录读取失败：${error instanceof Error ? error.message : String(error)}` }])
+    }
+  }
+  return { ...metadata, read_status: 'readable', ...projectFields(type, objectId, parsed, {}), issues: [] }
 }
 
 function directoryStatus(scope: LocalFactScope, type: LocalFactType): LocalFactList | null {
@@ -230,11 +255,13 @@ export async function listLocalFacts(type: LocalFactType, scope: LocalFactScope)
   const missing = directoryStatus(scope, type)
   if (missing) return missing
   const entries = await readdir(baseDirOf(scope, type), { withFileTypes: true })
-  const carriers = entries.filter((entry) => entry.isFile() && looksLikeFactCarrier(entry.name))
+  const carriers = type === 'file-asset'
+    ? entries.filter((entry) => entry.isDirectory())
+    : entries.filter((entry) => entry.isFile() && looksLikeFactCarrier(entry.name))
   const fileNames = carriers.filter((entry) => isExpectedCarrierName(type, entry.name)).map((entry) => entry.name).sort((left, right) => left.localeCompare(right))
   const issues = carriers.filter((entry) => !isExpectedCarrierName(type, entry.name)).map((entry) => ({
     code: 'unexpected_fact_carrier' as const,
-    message: `${type} 正式载体必须是 ${type}-NNNN${FACT_TYPE_CARRIERS[type]}，已忽略错载体 ${entry.name}`,
+    message: `${type} 正式载体必须是 ${type}-NNNN${type === 'file-asset' ? ' 目录' : FACT_TYPE_CARRIERS[type]}，已忽略错载体 ${entry.name}`,
     path: path.posix.join('ldvh-base', FACT_TYPE_DIRS[type], entry.name),
   }))
   return { status: 'complete', items: await Promise.all(fileNames.map((fileName) => readItemFile(scope, type, fileName))), issues }
@@ -248,7 +275,7 @@ export async function readLocalFact(type: LocalFactType, objectId: string, scope
   const filePath = path.join(baseDirOf(scope, type), expectedName)
   try {
     const statResult = await stat(filePath)
-    if (!statResult.isFile()) {
+    if (type === 'file-asset' ? !statResult.isDirectory() : !statResult.isFile()) {
       return { status: 'not_found', metadata, issues: [{ code: 'read_failed', message: `未找到预期事实对象 ${expectedName}`, path: metadata.canonical_path }] }
     }
   } catch {

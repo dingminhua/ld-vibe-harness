@@ -23,11 +23,11 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
     assert inspection.issues == ()
     assert inspection.implemented_checks_complete is True
     checked_documents = inspection.active_documents_passing_implemented_checks
-    assert len(checked_documents) == 30
+    assert len(checked_documents) == 31
     assert sum(document.kind != "attachment" for document in checked_documents) == 21
 
-    assert sum(document.kind == "attachment" for document in checked_documents) == 9
-    assert len(inspection.projections) == 90
+    assert sum(document.kind == "attachment" for document in checked_documents) == 10
+    assert len(inspection.projections) == 93
     assert {projection.layer for projection in inspection.projections} == {"L0", "L1", "L2"}
     field_registry = inspection.document_passing_implemented_checks_by_key("fact-object-field-registry")
     assert field_registry is not None
@@ -46,9 +46,16 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
     assert web_reading_contract is not None
     assert web_reading_contract.current_id == "08.Att.01"
     assert web_reading_contract.canonical_path == "specs/attachments/08.Att.01-Web API 阅读契约字段表.md"
+    web_preview_contract = inspection.document_passing_implemented_checks_by_key("web-content-preview-contract")
+    assert web_preview_contract is not None
+    assert web_preview_contract.current_id == "08.Att.02"
+    assert web_preview_contract.canonical_path == "specs/attachments/08.Att.02-Web 内容预览安全契约.md"
     web_presentation = inspection.document_passing_implemented_checks_by_key("web-presentation-interaction")
     assert web_presentation is not None
-    assert web_presentation.authorized_attachments == ("web-api-reading-contract",)
+    assert web_presentation.authorized_attachments == (
+        "web-api-reading-contract",
+        "web-content-preview-contract",
+    )
     helper_contract = inspection.document_passing_implemented_checks_by_key("helper-cli-service-contract")
     assert helper_contract is not None
     assert helper_contract.basis == (

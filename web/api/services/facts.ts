@@ -10,7 +10,7 @@ import { resolveCurrentWebProject, WebGovernanceError } from './governanceScope.
 import { deriveWorkCaseProgressProjection } from '../../shared/workcaseStatus.js'
 import { FACT_LIST_FIELD_NAMES } from './factFieldContract.js'
 
-export const ACTIVE_OBJECT_TYPES = ['workcase', 'adr', 'pitfall', 'spark', 'study'] as const
+export const ACTIVE_OBJECT_TYPES = ['workcase', 'adr', 'pitfall', 'spark', 'study', 'file-asset'] as const
 export const OBJECT_TYPES = ACTIVE_OBJECT_TYPES
 export type ObjectType = (typeof OBJECT_TYPES)[number]
 
@@ -364,7 +364,7 @@ export async function listObjects(type: ObjectType, _baseDir?: string, status?: 
   }
 }
 
-const OBJECT_ID_PATTERN = /^(workcase|adr|pitfall|spark|study)-\d+$/
+const OBJECT_ID_PATTERN = /^(workcase|adr|pitfall|spark|study|file-asset)-\d+$/
 
 export async function showObject(id: string, scope?: LocalFactScope): Promise<WebFactResult | WebFactError> {
   const match = OBJECT_ID_PATTERN.exec(id)

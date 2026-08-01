@@ -1,6 +1,6 @@
 # Web 开发现状与设计语言基线
 
-> 更新：2026-07-31
+> 更新：2026-08-01
 > 范围：`web/` 当前参考实现、页面开发文档和后续 Web 修改入口
 > 上位文档：[`01-全局设计约束.md`](./01-全局设计约束.md)
 
@@ -21,7 +21,7 @@
 1. App Shell 采用左侧主导航、中间主内容和右侧扩展阅读区；移动端右侧扩展阅读切换为底部阅读抽屉。
 2. 对象列表使用卡片网格和统一状态筛选 tab，不回退到表格或顶部对象类型 tab。
 3. 对象详情是语义阅读器，不是载体文件查看器；YAML 数据由精确读取后的事实对象字段重建，不显示源码兜底，Markdown Study 的完整阅读只进入同一份正文的扩展阅读。
-4. 提交、研究、决策、火花、经验五个基准模块已经形成稳定阅读语言。
+4. 提交、研究、文件、决策、火花、经验模块已经形成稳定阅读语言；“文件”对应 FileAsset，对象列表与详情 API 只呈现 manifest 元数据，active 对象可通过独立安全入口在次级阅读中预览闭集内的 Markdown、SVG 与常见图片 payload。
 5. ObjectDetail 和 ReadingPanel 必须复用同一套身份头部、节点顺序、折叠行为、关联行和复制语义。
 6. 所有用户可见 UI 文案必须走 i18n；事实正文、Git message、Markdown 正文、路径、命令、ID 和 hash 不翻译。
 7. 复制入口必须按对象路径、文档路径、链接、引用、提交上下文和提交 hash 区分，不使用泛化“复制完整路径”覆盖所有场景。
@@ -42,6 +42,7 @@
 |---|---|---|---|
 | 提交 | `/changelog`、`/changelog/:hash` | Git commit records 证据追溯 | 筛选 tab、提交卡片、提交详情、复制提交上下文、右侧快速阅读 |
 | 外部调研 | `/objects/study`、`/objects/study/:id` | 外部调研报告阅读界面 | 研究意图、摘要、建议、唯一 Markdown 正文入口和关联资料；终态只在事实存在时显示处置 |
+| 文件（FileAsset） | `/objects/file-asset`、`/objects/file-asset/:id` | FileAsset manifest 与受限内容阅读界面 | 对象 API 读取目录 carrier 的 `file-asset.yaml` 并呈现元数据；active 对象的 payload 仅经独立端点核对项目范围、固定成员、no-follow、大小、SHA-256、媒体签名和主动内容后，在次级阅读中预览 Markdown、SVG、PNG、JPEG、GIF、WebP 或 AVIF，不开放下载与执行 |
 | 决策 | `/objects/adr`、`/objects/adr/:id` | 决策阅读页 | 对象卡片、标准身份头部、问题/决策/范围/理由/影响节点；retired 以处置收束 |
 | 火花 | `/objects/spark`、`/objects/spark/:id` | 待分流信息阅读页 | 对象卡片、标准身份头部、意图/摘要/演变节点；routed、implemented、discarded 才显示对应终态处置 |
 | 经验 | `/objects/pitfall`、`/objects/pitfall/:id` | 可复用经验阅读页 | 对象卡片、标准身份头部、现象/触发/范围/验证/根因/方案/规避节点；discarded 以处置收束 |
@@ -57,7 +58,7 @@
 | ObjectList | [`03-ObjectList.md`](./03-ObjectList.md) | 研究、决策、火花、经验列表已作为基线；WorkCase 是工作主线专用形态 | 非工作主线对象列表不得偏离四类对象卡片基线 |
 | ObjectDetail | [`04-ObjectDetail.md`](./04-ObjectDetail.md) | 研究、决策、火花、经验详情已作为基线；WorkCase 是工作主线专用形态 | 专用阅读布局必须同时服务详情页和右侧扩展阅读 |
 | Changelog | [`06-Changelog.md`](./06-Changelog.md) | 已进入五个基准模块 | 提交页是证据流工具页，但卡片和详情语言与对象模块同源 |
-| ProjectFiles | [`05-ProjectFiles.md`](./05-ProjectFiles.md) | 工具页，提交历史已复用 Changelog 的 commit parser 和 DTO 字段 | 不以五个模块卡片语言强行改造，但复制、Markdown、路径、提交记录字段和工具密度应遵守全局规则 |
+| ProjectFiles（导航显示“目录”） | [`05-ProjectFiles.md`](./05-ProjectFiles.md) | 目录浏览工具页，提交历史已复用 Changelog 的 commit parser 和 DTO 字段 | 不以事实对象卡片语言强行改造，但复制、Markdown、路径、提交记录字段和工具密度应遵守全局规则 |
 | 图标语义 | [`09-图标语义规范.md`](./09-图标语义规范.md) | 基线文档 | 新增图标或操作先检查语义归属 |
 
 ## 3.1 页面确认矩阵

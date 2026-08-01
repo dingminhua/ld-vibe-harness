@@ -5,7 +5,7 @@
  * entry retains its 05.Att.01 field_key and is mechanically reconciled with
  * 05.Att.01, the type bindings, and 08.Att.01 by fact-field-contract.test.ts.
  */
-export const FACT_TYPES = ['workcase', 'adr', 'pitfall', 'spark', 'study'] as const
+export const FACT_TYPES = ['workcase', 'adr', 'pitfall', 'spark', 'study', 'file-asset'] as const
 
 export type FactType = (typeof FACT_TYPES)[number]
 export type FieldExpectation = 'string' | 'number' | 'array' | 'object'
@@ -27,6 +27,15 @@ const common = {
   updated_at: field('updated-at', 'string', true),
   urls: field('urls', 'array', false),
   relations: field('relations', 'array', false),
+} as const
+
+const directoryCommon = {
+  object_id: field('object-id', 'string', true),
+  fact_type_key: field('fact-type-key', 'string', true),
+  title: field('title', 'string', true),
+  status: field('status', 'string', true),
+  created_at: field('created-at', 'string', true),
+  updated_at: field('updated-at', 'string', true),
 } as const
 
 export const FACT_FIELD_CONTRACT: Record<FactType, FactFieldContract> = {
@@ -96,6 +105,17 @@ export const FACT_FIELD_CONTRACT: Record<FactType, FactFieldContract> = {
     recommendation_summary: field('study-recommendation-summary', 'string', false),
     report_body: field('study-report-body', 'string', false),
   },
+  'file-asset': {
+    ...directoryCommon,
+    disposition_summary: field('disposition-summary', 'string', false),
+    filename: field('file-asset-filename', 'string', true),
+    media_type: field('file-asset-media-type', 'string', true),
+    size_bytes: field('file-asset-size-bytes', 'number', true),
+    content_sha256: field('file-asset-content-sha256', 'string', true),
+    signature: field('file-asset-signature', 'object', true),
+    deleted_at: field('file-asset-deleted-at', 'string', false),
+    recovery: field('file-asset-recovery', 'object', false),
+  },
 }
 
 /** List candidates never carry a Study Markdown body. */
@@ -104,6 +124,7 @@ export const FACT_LIST_FIELD_NAMES: Record<Exclude<FactType, 'workcase'>, readon
   pitfall: Object.keys(FACT_FIELD_CONTRACT.pitfall),
   spark: Object.keys(FACT_FIELD_CONTRACT.spark),
   study: Object.keys(FACT_FIELD_CONTRACT.study).filter((name) => name !== 'report_body'),
+  'file-asset': Object.keys(FACT_FIELD_CONTRACT['file-asset']),
 }
 
 /**
@@ -117,4 +138,5 @@ export const FACT_TERMINAL_STATUSES: Record<FactType, readonly string[]> = {
   pitfall: ['discarded'],
   spark: ['routed', 'implemented', 'discarded'],
   study: ['retired'],
+  'file-asset': ['deleted'],
 }

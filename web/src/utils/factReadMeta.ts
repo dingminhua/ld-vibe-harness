@@ -1,6 +1,6 @@
 import { dump as dumpYaml } from 'js-yaml';
 
-export type FactCarrier = 'yaml' | 'markdown';
+export type FactCarrier = 'yaml' | 'markdown' | 'directory';
 export type FactReadStatus = 'readable' | 'unreadable';
 
 export type FactReadIssue = {
@@ -37,7 +37,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function asCarrier(value: unknown): FactCarrier | undefined {
-  return value === 'yaml' || value === 'markdown' ? value : undefined;
+  return value === 'yaml' || value === 'markdown' || value === 'directory' ? value : undefined;
 }
 
 function asReadStatus(value: unknown): FactReadStatus | undefined {

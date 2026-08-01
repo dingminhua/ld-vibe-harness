@@ -29,6 +29,7 @@ const NAV_ITEMS: { to: string; labelKey: LocaleKey; icon: NavIcon }[] = [
   { to: '/objects/adr', labelKey: 'nav.adrs', icon: OBJECT_TYPE_ICONS.adr },
   { to: '/objects/pitfall', labelKey: 'nav.pitfalls', icon: OBJECT_TYPE_ICONS.pitfall },
   { to: '/objects/study', labelKey: 'nav.studies', icon: OBJECT_TYPE_ICONS.study },
+  { to: '/objects/file-asset', labelKey: 'nav.fileAssets', icon: OBJECT_TYPE_ICONS['file-asset'] },
   { to: '/project-files', labelKey: 'nav.projectFiles', icon: FolderTree },
   { to: '/changes', labelKey: 'nav.changes', icon: GitPullRequestArrow },
   { to: '/changelog', labelKey: 'nav.changelog', icon: OBJECT_TYPE_ICONS.changelog },
@@ -51,12 +52,16 @@ function BrandMark() {
   );
 }
 
-function IconTooltip({ label, visible }: { label: string; visible: boolean }) {
+type TooltipPosition = { top: number; left: number };
+
+function IconTooltip({ label, visible, position }: { label: string; visible: boolean; position?: TooltipPosition }) {
+  if (!visible) return null;
   return (
     <span
       aria-hidden="true"
-      className={`ldvh-chip pointer-events-none absolute left-full top-1/2 z-50 ml-2 -translate-y-1/2 whitespace-nowrap rounded-md border border-ldvh-border bg-ldvh-bg px-2 py-1 text-ldvh-text-primary shadow-lg shadow-black/10 transition-opacity ${
-        visible ? 'opacity-100' : 'opacity-0'
+      style={position}
+      className={`ldvh-chip pointer-events-none z-[100] -translate-y-1/2 whitespace-nowrap rounded-md border border-ldvh-border bg-ldvh-bg px-2 py-1 text-ldvh-text-primary shadow-lg shadow-black/10 ${
+        position ? 'fixed' : 'absolute left-full top-1/2 ml-2'
       }`}
     >
       {label}
@@ -73,7 +78,7 @@ interface SidebarProps {
 export default function Sidebar({ collapsed, compact = false, onToggle }: SidebarProps) {
   const { locale, setLocale, t } = useI18n();
   const { mode, cycleTheme } = useTheme();
-  const [visibleTooltip, setVisibleTooltip] = useState<string | null>(null);
+  const [visibleTooltip, setVisibleTooltip] = useState<{ key: string; position: TooltipPosition } | null>(null);
   const isCollapsed = compact || collapsed;
   const languageLabel = t(getLanguageSwitchKey(locale));
   const sidebarToggleLabel = isCollapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar');
@@ -81,6 +86,10 @@ export default function Sidebar({ collapsed, compact = false, onToggle }: Sideba
     mode === 'system' ? t('theme.system') :
     mode === 'light' ? t('theme.light') :
     t('theme.dark');
+  const showTooltip = (key: string, element: HTMLElement) => {
+    const rect = element.getBoundingClientRect();
+    setVisibleTooltip({ key, position: { top: rect.top + rect.height / 2, left: rect.right + 8 } });
+  };
 
   return (
     <aside
@@ -92,12 +101,12 @@ export default function Sidebar({ collapsed, compact = false, onToggle }: Sideba
         <div className={isCollapsed ? 'flex flex-col items-center gap-2' : 'flex min-w-0 items-center gap-2'}>
           <div className={`flex min-w-0 items-center ${isCollapsed ? 'justify-center' : ''}`}>
             <div
-              onMouseEnter={() => setVisibleTooltip('brand')}
+              onMouseEnter={(event) => showTooltip('brand', event.currentTarget)}
               onMouseLeave={() => setVisibleTooltip(null)}
               className="relative flex h-10 w-10 flex-shrink-0 items-center justify-center"
             >
               <BrandMark />
-              {isCollapsed && <IconTooltip label="LDVH" visible={visibleTooltip === 'brand'} />}
+              {isCollapsed && <IconTooltip label="LDVH" visible={visibleTooltip?.key === 'brand'} position={visibleTooltip?.position} />}
             </div>
           </div>
           <ProjectSwitcher collapsed={isCollapsed} />
@@ -115,9 +124,10 @@ export default function Sidebar({ collapsed, compact = false, onToggle }: Sideba
                 to={item.to}
                 end={item.to === '/'}
                 aria-label={isCollapsed ? getNavItemLabel(item, t) : undefined}
-                onMouseEnter={() => setVisibleTooltip(`nav-${item.to}`)}
+                title={isCollapsed ? getNavItemLabel(item, t) : undefined}
+                onMouseEnter={(event) => showTooltip(`nav-${item.to}`, event.currentTarget)}
                 onMouseLeave={() => setVisibleTooltip(null)}
-                onFocus={() => setVisibleTooltip(`nav-${item.to}`)}
+                onFocus={(event) => showTooltip(`nav-${item.to}`, event.currentTarget)}
                 onBlur={() => setVisibleTooltip(null)}
                 onClick={() => setVisibleTooltip(null)}
                 className={({ isActive }) =>
@@ -132,7 +142,13 @@ export default function Sidebar({ collapsed, compact = false, onToggle }: Sideba
               >
                 <item.icon size={16} className="flex-shrink-0" />
                 {!isCollapsed && <span className="truncate">{getNavItemLabel(item, t)}</span>}
-                {isCollapsed && <IconTooltip label={getNavItemLabel(item, t)} visible={visibleTooltip === `nav-${item.to}`} />}
+                {isCollapsed && (
+                  <IconTooltip
+                    label={getNavItemLabel(item, t)}
+                    visible={visibleTooltip?.key === `nav-${item.to}`}
+                    position={visibleTooltip?.position}
+                  />
+                )}
               </NavLink>
             </li>
           ))}
@@ -145,9 +161,9 @@ export default function Sidebar({ collapsed, compact = false, onToggle }: Sideba
               setVisibleTooltip(null);
               setLocale(getOppositeLocale(locale));
             }}
-            onMouseEnter={() => setVisibleTooltip('language')}
+            onMouseEnter={(event) => showTooltip('language', event.currentTarget)}
             onMouseLeave={() => setVisibleTooltip(null)}
-            onFocus={() => setVisibleTooltip('language')}
+            onFocus={(event) => showTooltip('language', event.currentTarget)}
             onBlur={() => setVisibleTooltip(null)}
             aria-label={languageLabel}
             className={`ldvh-card-title relative flex items-center rounded-md text-ldvh-text-secondary transition-colors hover:bg-ldvh-border/50 hover:text-ldvh-text-primary ${
@@ -156,22 +172,22 @@ export default function Sidebar({ collapsed, compact = false, onToggle }: Sideba
           >
             <Globe size={16} />
             {!isCollapsed && t(getOppositeLanguageNameKey(locale))}
-            {isCollapsed && <IconTooltip label={languageLabel} visible={visibleTooltip === 'language'} />}
+            {isCollapsed && <IconTooltip label={languageLabel} visible={visibleTooltip?.key === 'language'} position={visibleTooltip?.position} />}
           </button>
           <button
             onClick={() => {
               setVisibleTooltip(null);
               cycleTheme();
             }}
-            onMouseEnter={() => setVisibleTooltip('theme')}
+            onMouseEnter={(event) => showTooltip('theme', event.currentTarget)}
             onMouseLeave={() => setVisibleTooltip(null)}
-            onFocus={() => setVisibleTooltip('theme')}
+            onFocus={(event) => showTooltip('theme', event.currentTarget)}
             onBlur={() => setVisibleTooltip(null)}
             aria-label={themeLabel}
             className="relative flex h-9 w-9 items-center justify-center rounded-md text-ldvh-text-secondary transition-colors hover:bg-ldvh-border/50 hover:text-ldvh-text-primary"
           >
             <ThemeIcon mode={mode} />
-            <IconTooltip label={themeLabel} visible={visibleTooltip === 'theme'} />
+            <IconTooltip label={themeLabel} visible={visibleTooltip?.key === 'theme'} position={isCollapsed ? visibleTooltip?.position : undefined} />
           </button>
           {!compact && onToggle && (
             <button
@@ -179,15 +195,15 @@ export default function Sidebar({ collapsed, compact = false, onToggle }: Sideba
                 setVisibleTooltip(null);
                 onToggle();
               }}
-              onMouseEnter={() => setVisibleTooltip('sidebar-toggle')}
+              onMouseEnter={(event) => showTooltip('sidebar-toggle', event.currentTarget)}
               onMouseLeave={() => setVisibleTooltip(null)}
-              onFocus={() => setVisibleTooltip('sidebar-toggle')}
+              onFocus={(event) => showTooltip('sidebar-toggle', event.currentTarget)}
               onBlur={() => setVisibleTooltip(null)}
               aria-label={sidebarToggleLabel}
               className="relative flex h-9 w-9 items-center justify-center rounded-md text-ldvh-text-secondary transition-colors hover:bg-ldvh-border/50 hover:text-ldvh-text-primary"
             >
               <PanelLeft size={16} className={isCollapsed ? 'rotate-180' : ''} />
-              <IconTooltip label={sidebarToggleLabel} visible={visibleTooltip === 'sidebar-toggle'} />
+              <IconTooltip label={sidebarToggleLabel} visible={visibleTooltip?.key === 'sidebar-toggle'} position={isCollapsed ? visibleTooltip?.position : undefined} />
             </button>
           )}
         </div>

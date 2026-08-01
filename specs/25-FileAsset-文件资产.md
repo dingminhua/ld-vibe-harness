@@ -18,7 +18,7 @@ ldvh_spec:
   authorized_attachments: []
 ```
 
-> 文件状态：`active`。本文是 `file-asset` 事实类型的唯一定义来源；它与 03、05、05.Att.01、05.Att.02、20、21、31、32 和术语表共同使类型语义、派生 Schema、正式读取、候选发现、完整性检查、受控新建、安全删除、Git Index after-image 校验及 WorkCase `has-file-asset` 消费边界进入当前规则源。本文不自动创建或删除任何 FileAsset 实例；普通 manifest 更新、payload 原地修改、既有目录移动/改名、Web 下载或安全预览仍未开放。Git Gate 只放行完整有效的新建 after-image，或与 HEAD 中同一 active 对象精确绑定、payload 已移除且恢复锚点成立的 `active → deleted` tombstone；其它既有对象 staged 变化继续失败关闭。
+> 文件状态：`active`。本文是 `file-asset` 事实类型的唯一定义来源；它与 03、05、05.Att.01、05.Att.02、08、08.Att.01、08.Att.02、20、21、31、32 和术语表共同使类型语义、派生 Schema、正式读取、候选发现、完整性检查、受控新建、安全删除、Git Index after-image 校验、Web manifest 元数据阅读、Web 受限内容预览及 WorkCase `has-file-asset` 消费边界进入当前规则源。本文不自动创建或删除任何 FileAsset 实例；普通 manifest 更新、payload 原地修改、既有目录移动/改名、Web 下载仍未开放。Git Gate 只放行完整有效的新建 after-image，或与 HEAD 中同一 active 对象精确绑定、payload 已移除且恢复锚点成立的 `active → deleted` tombstone；其它既有对象 staged 变化继续失败关闭。
 
 > 准入结论：Human 于 2026-07-31 明确 FileAsset 记录的是“一份确定内容以稳定身份客观存在”，不是证据或内容正确性声明。05 §7.2.1 也明确事实对象不是用来证明自身正确的材料包。A/B 隔离读取产生相同领域结论是同一 payload 被正确消费的预期结果，不能作为拒绝 FileAsset 的依据；相反，A 为满足同一需求已经复制身份、状态、签名、引用、发现和生命周期，说明另建平行资产对象体系会混淆责任。类型先以只读 activation 完成准入，再以 Write Activation 增加受控新建；本次 Safe Delete Activation 只增加 `active → deleted`、Git 恢复 tombstone、完整入向引用零证明和对应 Git Gate 放行，Web 呈现不由此推定成立。
 
@@ -111,7 +111,7 @@ AI 负责判断文件是否具有独立持续消费价值、本次纳入签名�
 | V1–V8 与 HV1–HV5 净价值 | 通过 | Human 目标和试点支持 V1、V2、V3、V5、V6、V7 与 HV3；统一事实模型避免第二套身份/引用/发现负担。V4、V8、HV1、HV4、HV5 只在后续实际机制与复用范围声明 |
 | 术语和机器治理 | 通过 | `FileAsset / 文件资产` 已与“授权附件”消歧；字段登记、机械目录和首个消费类型关系已同批生效 |
 
-因此，本文声明 `file-asset` **完成准入**并进入当前事实类型集合。当前能力以本文逐项声明和实现验证为准：读取、发现、完整性、受控新建、安全删除、新建/删除 Git Gate after-image 校验与 WorkCase 消费已经开放；其它 manifest 更新、payload 原地修改、移动及 Web 下载/预览等未实现能力不被扩大。
+因此，本文声明 `file-asset` **完成准入**并进入当前事实类型集合。当前能力以本文逐项声明和实现验证为准：读取、发现、完整性、受控新建、安全删除、新建/删除 Git Gate after-image 校验、WorkCase 消费，以及 08.Att.02 闭集内的 Web 受限内容预览已经开放；其它 manifest 更新、payload 原地修改、移动、Web 下载和未登记媒体类型预览等未实现能力不被扩大。
 
 ### 术语准入审计
 
@@ -328,7 +328,7 @@ FileAsset activation 先以闭合只读包成为第六个当前事实类型并�
 9. 正式 Helper 读取、候选发现、对象集指纹、全库完整性与 WorkCase 关系检查直接消费当前 Schema，不保留 provisional Schema 或第二 validator；
 10. 独立复核覆盖类型必要性、更小普通目录方案、字段/结构、目录 carrier、签名、关系、生命周期、安全、迁移、Git Gate 和跨来源同步成本。
 
-当前实际开放的能力为：安全精确读取 active manifest/完整 payload 或 deleted tombstone、完整性 coverage、F0/F2 发现、全库完整性检查、§7.1–7.2 受控新建、§7.3 受控安全删除、新建与安全删除的 Git Index after-image 校验，以及 WorkCase 对 mechanically valid active FileAsset 的同项目稳定引用。activation 不自动迁移或删除现有 `docs/` 文件；来源文件在创建成功后仍保留，后续移动/删除另行处理。普通 manifest 更新、归档、既有对象移动/改名、普通文档引用闭包、Web 下载/预览和跨项目引用继续不可用；调用方必须看到明确拒绝、不可用或未完成 coverage，不能由类型 active、新建成功或 tombstone 存在推断其它能力成立。
+当前实际开放的能力为：安全精确读取 active manifest/完整 payload 或 deleted tombstone、完整性 coverage、F0/F2 发现、全库完整性检查、§7.1–7.2 受控新建、§7.3 受控安全删除、新建与安全删除的 Git Index after-image 校验、Web 对 manifest 元数据的只读列表/详情呈现、08.Att.02 闭集内的 Web 受限内容预览，以及 WorkCase 对 mechanically valid active FileAsset 的同项目稳定引用。Web 对象列表/详情只把对象目录作为来源回指并读取 `file-asset.yaml`，不内联 payload；次级阅读预览通过独立入口按当次项目和对象重新核对 active 状态、固定成员、完整 size/hash、内容类别与安全边界后返回。activation 不自动迁移或删除现有 `docs/` 文件；来源文件在创建成功后仍保留，后续移动/删除另行处理。普通 manifest 更新、归档、既有对象移动/改名、普通文档引用闭包、Web 下载、未登记媒体类型预览和跨项目引用继续不可用；调用方必须看到明确拒绝、不可用或未完成 coverage，不能由类型 active、新建成功、manifest 元数据或 tombstone 存在推断其它能力成立。
 
 2026-07-31 A/B 试点已经完成“现有事实模型 vs 平行资产对象模型”的承载位置比较：A 能取得相同 payload 和消费结论，但要满足完整需求就必须复制身份、状态、签名、引用、发现、读取和生命周期，因此不能作为不混淆责任的普通文件位置。WorkCase 正式消费者验证用于确认统一关系、F0–F4、状态与内容边界按当前来源工作，不要求 FileAsset 改变消费者对同一 payload 得出的领域结论；相同 bytes 被正确读取后形成相同结论是预期结果。对象数量、关系 shape 或能力存在仍不能单独证明 V4、V8、HV4 或项目演进价值。
 
@@ -371,10 +371,10 @@ FileAsset activation 先以闭合只读包成为第六个当前事实类型并�
 | 生命周期与不可变性 | 修改或删除时 | 只存在 `active → deleted`；不可变 metadata 保留；删除有 Human 决定、CAS、完整零入向引用证明、HEAD blob recovery、payload 移除和 tombstone 回读；普通更新/归档/重开失败关闭 | before/after、Human 决定、CAS、入向扫描、Git 锚点、回读与本文 | transition tests、目录事务故障 tests、真实 Working Tree 回读与 Git Gate 事件 | 当次对象、已完整扫描 WorkCase 集和当前 HEAD | 拒绝、回滚或停止；不把 Git 历史当作当前 payload |
 | 受控创建 | 声称可以摄取文件时 | 源漂移检查、staging、编号分配、无覆盖原子目录提交、写后回读、故障残留和资源上限全部实现并验证 | Helper 契约、实际实现、两个来源分支样本和故障 tests | 真实 CLI、并发、symlink、超限、partial-write 和 rollback tests | 已验证平台、文件类型、大小和故障范围 | 不开放创建；只保留只读调查与明确缺口 |
 | Git Gate 保护 | 声称删除或篡改在提交边界被阻断时 | 新增、单边成员、payload 修改、hash 错误、目录删除/移动和悬空引用具有真实 allow/block 事件证据；未检查范围不静默放行 | 当前规则、Git Gate 核心、真实 staged diff 与事件结果 | 真实 Git 事件测试，不以 unit test 代替接入 | 实际事件、平台和已覆盖 diff 类别 | 不声明受保护；修正 Gate 或报告未覆盖 |
-| 安全消费 | 新增下载、预览、渲染或执行入口时 | 不只依赖 `media_type`；主动内容、超限、未知和无效对象按安全策略处理；不无界传输 | 08、实际内容策略、payload 和页面/API | contract tests、代表性文件与实际页面检查 | 当次内容类别、入口和视口 | 禁止执行/渲染；退回下载、文本或不可用状态 |
+| 安全消费 | 新增下载、预览、渲染或执行入口时 | 不只依赖 `media_type`；对象 active、固定成员、no-follow 普通文件、完整 size/hash、4 MiB 上限和读取期稳定性成立；Markdown、SVG 与 raster image 按 08.Att.02 的内容识别和主动内容策略处理；对象 API 不内联 payload，失败不返回部分 bytes | 08、08.Att.02、实际 payload 和页面/API | contract tests、代表性文件与实际页面检查 | 当次内容类别、入口、项目与视口 | 禁止执行/渲染；保持独立不可用状态，不退化为下载、任意文本或浏览器导航 |
 | 非 canonical 试点 | 使用当前两个审计文件说明可行性时 | 两份源/副本 bytes、size/hash、签名 shape、候选身份和关系 shape 的实际检查范围被准确保留；没有冒充正式对象 | 2026-07-31 试点记录、两个样本 hash 与本文 | 试点记录回读；需要时重新执行隔离试验 | 候选 shape 的有限可行性 | 不扩大为正式 Schema、原子性、Git Gate 或长期净价值结论 |
 
-当前非 canonical 试点样本为：Human 指定的 `docs/跨环境接入分析汇总报告-2026-07-30.md`，9271 bytes，SHA-256 `58b4a1a5b84ff7470c974b2a16b7beea28b916253762401664ed67b2a1a171b0`，候选签名为 `human`；Human 要求当前 AI 编写的 `docs/ldvh-environment-hook-claim-audit-2026-07-31.md`，11124 bytes，SHA-256 `57ca7ee0c5f006a0736b618fdc526a55e21d0f3ff068de10e7043b6090b6f8ac`，候选签名为 `ai-agent / codex / Codex Desktop`。隔离试验中两份复制的 size/hash 与源一致，候选 manifest、身份、签名结构和两条 `has-file-asset` 关系 shape 通过所执行的确定性检查。首轮 `/tmp/ldvh-file-asset-pilot.tzC5DO` 已删除；A/B 原 `/tmp/ldvh-file-asset-ab.MI32yS` 路径已移除，其废纸篓副本不构成长期依据。该历史结果本身仍不证明正式能力；Write Activation 只能由当前 §7.1–7.2 实现、CLI/事务 tests 和真实 Git Gate 事件证明，Safe Delete Activation 另须由 §7.3 实现、删除前后故障/竞态 tests、精确恢复锚点与 Git Gate allow/block 事件证明；Web 与迁移仍未覆盖。
+当前非 canonical 试点样本为：Human 指定的 `docs/跨环境接入分析汇总报告-2026-07-30.md`，9271 bytes，SHA-256 `58b4a1a5b84ff7470c974b2a16b7beea28b916253762401664ed67b2a1a171b0`，候选签名为 `human`；Human 要求当前 AI 编写的 `docs/ldvh-environment-hook-claim-audit-2026-07-31.md`，11124 bytes，SHA-256 `57ca7ee0c5f006a0736b618fdc526a55e21d0f3ff068de10e7043b6090b6f8ac`，候选签名为 `ai-agent / codex / Codex Desktop`。隔离试验中两份复制的 size/hash 与源一致，候选 manifest、身份、签名结构和两条 `has-file-asset` 关系 shape 通过所执行的确定性检查。首轮 `/tmp/ldvh-file-asset-pilot.tzC5DO` 已删除；A/B 原 `/tmp/ldvh-file-asset-ab.MI32yS` 路径已移除，其废纸篓副本不构成长期依据。该历史结果本身仍不证明正式能力；Write Activation 只能由当前 §7.1–7.2 实现、CLI/事务 tests 和真实 Git Gate 事件证明，Safe Delete Activation 另须由 §7.3 实现、删除前后故障/竞态 tests、精确恢复锚点与 Git Gate allow/block 事件证明；Web 预览只由 08.Att.02、当前实现、代表性文件 tests 与实际页面检查证明其闭集范围，迁移仍未覆盖。
 
 ## 11. Human Gate
 

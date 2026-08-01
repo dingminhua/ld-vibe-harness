@@ -6,6 +6,7 @@ interface MarkdownPreviewProps {
   content: string;
   className?: string;
   renderSvgBlocks?: boolean;
+  blockRemoteImages?: boolean;
 }
 
 type MarkdownSegment =
@@ -44,11 +45,29 @@ function splitSvgBlocks(content: string): MarkdownSegment[] {
   return segments.length > 0 ? segments : [{ type: 'markdown', content }];
 }
 
-export default function MarkdownPreview({ content, className, renderSvgBlocks = false }: MarkdownPreviewProps) {
+function isInlinePreviewImage(src: string | undefined): boolean {
+  return Boolean(src && /^data:image\/(?:png|jpeg|gif|webp|avif|svg\+xml);base64,/i.test(src));
+}
+
+export default function MarkdownPreview({
+  content,
+  className,
+  renderSvgBlocks = false,
+  blockRemoteImages = false,
+}: MarkdownPreviewProps) {
   if (!renderSvgBlocks) {
     return (
       <div className={cn('markdown-body ldvh-markdown-preview', className)}>
-        <Markdown remarkPlugins={[remarkGfm]}>{content}</Markdown>
+        <Markdown
+          remarkPlugins={[remarkGfm]}
+          components={blockRemoteImages ? {
+            img: ({ src, alt }) => isInlinePreviewImage(src)
+              ? <img src={src} alt={alt || ''} />
+              : <span className="ldvh-caption">[{alt || 'image'}]</span>,
+          } : undefined}
+        >
+          {content}
+        </Markdown>
       </div>
     );
   }

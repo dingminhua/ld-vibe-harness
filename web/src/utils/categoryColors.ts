@@ -7,6 +7,7 @@ export const CATEGORY_COLORS: Record<string, string> = {
   pitfall: '#ef4444',
   spark: '#eab308',
   study: '#06b6d4',
+  'file-asset': '#14b8a6',
   feat: '#3b82f6',      // blue
   fix: '#ef4444',       // red
   docs: '#6b7280',      // gray

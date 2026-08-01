@@ -41,6 +41,7 @@ export const STATUS_LOCALES: Record<string, { zh: string; en: string }> = {
   // Spark
   resolved: { zh: '已分流', en: 'Routed' },
   discarded: { zh: '已废弃', en: 'Discarded' },
+  deleted: { zh: '已删除', en: 'Deleted' },
 };
 
 export function getStatusLocale(status: string, locale: string): string {
@@ -66,6 +67,10 @@ const OBJECT_STATUS_LOCALES: Record<string, Record<string, { zh: string; en: str
   study: {
     retired: { zh: '已废弃', en: 'Retired' },
   },
+  'file-asset': {
+    active: { zh: '可用', en: 'Available' },
+    deleted: { zh: '已删除', en: 'Deleted' },
+  },
 };
 
 export function getObjectStatusLocale(type: string, status: string, locale: string): string {
@@ -80,6 +85,7 @@ export const TYPE_DESCRIPTION_LOCALES: Record<string, { zh: string; en: string }
   pitfall: { zh: '可复用经验', en: 'Reusable pitfalls' },
   spark: { zh: '待分流的火花', en: 'Spark pending routing' },
   study: { zh: '研究', en: 'Study' },
+  'file-asset': { zh: '作为稳定身份纳入项目的确定文件内容', en: 'Definite file content governed as a stable project object' },
   change: { zh: '提交', en: 'Commit' },
 };
 
@@ -103,6 +109,7 @@ export const TYPE_LOCALES: Record<string, { zh: string; en: string }> = {
   pitfall: { zh: '经验', en: 'Pitfall' },
   spark: { zh: '火花', en: 'Spark' },
   study: { zh: '研究', en: 'Study' },
+  'file-asset': { zh: '文件', en: 'File' },
   change: { zh: '提交', en: 'Commit' },
 };
 
@@ -170,6 +177,18 @@ unresolved_materials: { zh: '未解析材料', en: 'Unresolved Materials' },
   evolution: { zh: '演变记录', en: 'Evolution' },
   routing: { zh: '分流', en: 'Routing' },
   disposition_summary: { zh: '处置说明', en: 'Disposition' },
+  filename: { zh: '文件名', en: 'Filename' },
+  media_type: { zh: '媒体类型', en: 'Media Type' },
+  size_bytes: { zh: '文件大小', en: 'Size' },
+  content_sha256: { zh: '内容 SHA-256', en: 'Content SHA-256' },
+  signature: { zh: '纳入签名', en: 'Ingestion Signature' },
+  signer_type: { zh: '签名主体', en: 'Signer Type' },
+  agent_id: { zh: 'Agent 标识', en: 'Agent ID' },
+  host_environment: { zh: '宿主环境', en: 'Host Environment' },
+  deleted_at: { zh: '删除时间', en: 'Deleted At' },
+  recovery: { zh: '恢复定位', en: 'Recovery Locator' },
+  commit: { zh: '提交', en: 'Commit' },
+  blob_oid: { zh: 'Blob OID', en: 'Blob OID' },
   research_question: { zh: '研究问题', en: 'Research Question' },
   research_intent: { zh: '意图', en: 'Intent' },
   abstract: { zh: '摘要', en: 'Abstract' },
@@ -358,6 +377,10 @@ export const FIELD_VALUE_LOCALES: Record<string, Record<string, { zh: string; en
     P2: { zh: 'P2', en: 'P2' },
     P3: { zh: 'P3', en: 'P3' },
   },
+  signer_type: {
+    human: { zh: 'Human', en: 'Human' },
+    'ai-agent': { zh: 'AI Agent', en: 'AI Agent' },
+  },
 };
 
 export function getFieldValueLabel(fieldKey: string, value: string, locale: string): string {
@@ -466,6 +489,7 @@ const COMMIT_SCOPE_LOCALES: Record<string, { zh: string; en: string }> = {
   tests: { zh: 'Tests', en: 'Tests' }, config: { zh: '配置', en: 'Config' },
   workcase: { zh: '工作', en: 'WorkCase' }, adr: { zh: '决策', en: 'ADR' },
   spark: { zh: '火花', en: 'Spark' }, study: { zh: '研究', en: 'Study' },
+  'file-asset': { zh: '文件', en: 'File' },
   pitfall: { zh: '经验', en: 'Pitfall' },
 };
 
@@ -527,12 +551,13 @@ export const UI_LOCALES = {
     'logo.tagline': '让 Vibe Coding 更高效、更稳定、更可控',
 
     'nav.cognition': '聚焦',
-    'nav.projectFiles': '文件',
+    'nav.projectFiles': '目录',
     'nav.workcases': '工作',
     'nav.adrs': '决策',
     'nav.pitfalls': '经验',
     'nav.sparks': '火花',
     'nav.studies': '研究',
+    'nav.fileAssets': '文件',
     'nav.changes': '变更',
     'nav.changelog': '提交',
     'nav.settings': '设置',
@@ -814,6 +839,11 @@ export const UI_LOCALES = {
     'objectDetail.fieldIdentityMismatch': '身份不符',
     'objectDetail.fieldExpected': '预期 {expected}',
     'objectDetail.content': '内容',
+    'objectDetail.fileContent': '文件内容',
+    'objectDetail.previewFile': '预览文件',
+    'objectDetail.fileInformation': '文件信息',
+    'objectDetail.contentIdentity': '内容标识',
+    'objectDetail.deletionRecord': '删除记录',
     'objectDetail.yamlSource': 'YAML 数据',
     'objectDetail.id': 'ID',
     'objectDetail.type': '类型',
@@ -972,6 +1002,7 @@ export const UI_LOCALES = {
     'readingPanel.empty': '选择一个对象或文档以在此预览',
     'readingPanel.loadFailed': '加载失败',
     'readingPanel.docLoadFailed': '文档加载失败',
+    'readingPanel.filePreviewUnavailable': '文件预览不可用',
     'readingPanel.noEvidence': '暂无证据信息',
     'readingPanel.changeDetail': '提交详情',
     'readingPanel.openNewTab': '新标签',
@@ -1023,12 +1054,13 @@ export const UI_LOCALES = {
     'logo.tagline': 'Making Vibe Coding more efficient, stable, and controllable',
 
     'nav.cognition': 'Focus',
-    'nav.projectFiles': 'Files',
+    'nav.projectFiles': 'Directory',
     'nav.workcases': 'Work Cases',
     'nav.adrs': 'ADRs',
     'nav.pitfalls': 'Pitfalls',
     'nav.sparks': 'Sparks',
     'nav.studies': 'External studies',
+    'nav.fileAssets': 'Files',
     'nav.changes': 'Changes',
     'nav.changelog': 'Commit Records',
     'nav.settings': 'Settings',
@@ -1310,6 +1342,11 @@ export const UI_LOCALES = {
     'objectDetail.fieldIdentityMismatch': 'Identity mismatch',
     'objectDetail.fieldExpected': 'Expected {expected}',
     'objectDetail.content': 'Content',
+    'objectDetail.fileContent': 'File Content',
+    'objectDetail.previewFile': 'Preview File',
+    'objectDetail.fileInformation': 'File Information',
+    'objectDetail.contentIdentity': 'Content Identity',
+    'objectDetail.deletionRecord': 'Deletion Record',
     'objectDetail.yamlSource': 'YAML Data',
     'objectDetail.id': 'ID',
     'objectDetail.type': 'Type',
@@ -1468,6 +1505,7 @@ export const UI_LOCALES = {
     'readingPanel.empty': 'Select an object or document to preview here',
     'readingPanel.loadFailed': 'Failed to load',
     'readingPanel.docLoadFailed': 'Failed to load document',
+    'readingPanel.filePreviewUnavailable': 'File preview is unavailable',
     'readingPanel.noEvidence': 'No evidence available',
     'readingPanel.changeDetail': 'Commit Detail',
     'readingPanel.openNewTab': 'New Tab',

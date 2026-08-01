@@ -5,6 +5,7 @@ import {
   GitCommit,
   Github,
   FileSignature,
+  FileBox,
   Lightbulb,
   Link2,
   Shovel,
@@ -50,6 +51,7 @@ export const OBJECT_TYPE_ICONS: Record<string, SemanticIconComponent> = {
   pitfall: Lightbulb,
   spark: Sparkles,
   study: FileSearchCornerIcon,
+  'file-asset': FileBox,
   change: GitCommit,
   changelog: GitHubSilhouetteIcon,
 };

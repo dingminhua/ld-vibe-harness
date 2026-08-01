@@ -31,6 +31,7 @@ const registryByKey = new Map(rowsAfter(registry, '## 统一字段登记表').ma
 const typeSpecs: Record<string, string> = {
   spark: '20-Spark-火花.md', workcase: '21-WorkCase-工作项.md', adr: '22-ADR-决策.md',
   pitfall: '23-Pitfall-踩坑经验.md', study: '24-Study-研究报告.md',
+  'file-asset': '25-FileAsset-文件资产.md',
 };
 
 function boundPresence(type: string): Map<string, string> {
@@ -40,14 +41,20 @@ function boundPresence(type: string): Map<string, string> {
 
 test('Web field contract is exactly the 05 registry and type bindings projected through 08', () => {
   const projectionRows = new Map(rowsAfter(attachment, '## 页面消费字段投影').map((row) => [row[0], row]));
-  const common = ['object_id', 'fact_type_key', 'title', 'status', 'created_at', 'updated_at', 'urls', 'relations'];
+  const identityCommon = ['object_id', 'fact_type_key', 'title', 'status', 'created_at', 'updated_at'];
 
   for (const type of FACT_TYPES) {
     const bindings = boundPresence(type);
     const contract = FACT_FIELD_CONTRACT[type];
-    const row = projectionRows.get(type === 'workcase' ? 'WorkCase' : type === 'adr' ? 'ADR' : `${type[0].toUpperCase()}${type.slice(1)}`);
+    const row = projectionRows.get(
+      type === 'workcase' ? 'WorkCase'
+        : type === 'adr' ? 'ADR'
+          : type === 'file-asset' ? 'FileAsset'
+            : `${type[0].toUpperCase()}${type.slice(1)}`,
+    );
     assert.ok(row, `08 is missing ${type} projection`);
-    const projected = new Set([...common, ...codeValues(row[1]), ...codeValues(row[2])]);
+    const allowedCommon = type === 'file-asset' ? identityCommon : [...identityCommon, 'urls', 'relations'];
+    const projected = new Set([...allowedCommon, ...codeValues(row[1]), ...codeValues(row[2])]);
     assert.deepEqual(new Set(Object.keys(contract)), projected, `${type} must not add or lose a consumed field`);
     for (const [path, entry] of Object.entries(contract)) {
       if (path === 'report_body') {
@@ -63,10 +70,11 @@ test('Web field contract is exactly the 05 registry and type bindings projected 
   }
 });
 
-test('non-WorkCase list candidates are a declared subset and never include Study Markdown body', () => {
-  for (const type of ['adr', 'pitfall', 'spark', 'study'] as const) {
+test('non-WorkCase list candidates are a declared subset and never include carrier payload bodies', () => {
+  for (const type of ['adr', 'pitfall', 'spark', 'study', 'file-asset'] as const) {
     const names = FACT_LIST_FIELD_NAMES[type];
     assert.ok(names.every((name) => name in FACT_FIELD_CONTRACT[type]));
   }
   assert.equal(FACT_LIST_FIELD_NAMES.study.includes('report_body'), false);
+  assert.equal('payload' in FACT_FIELD_CONTRACT['file-asset'], false);
 });

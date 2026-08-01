@@ -29,6 +29,7 @@ const FALLBACK_STATUSES_BY_TYPE: Record<string, string[]> = {
   pitfall: ['draft', 'active', 'discarded'],
   spark: ['open', 'routed', 'implemented', 'discarded'],
   study: ['active', 'retired'],
+  'file-asset': ['active', 'deleted'],
 };
 
 interface ObjectStatusFilterProps {

@@ -26,15 +26,24 @@ test('the application shell owns scrolling without letting sidebar wheel input m
   assert.match(styles, /#root\s*\{\s*position: fixed;\s*inset: 0;/s);
 });
 
-test('files, workspace changes, and commit records form one ordered navigation group', () => {
+test('file assets follow studies, while directory, workspace changes, and commit records form one ordered navigation group', () => {
   const app = fs.readFileSync(path.resolve('src/App.tsx'), 'utf8');
   const sidebar = fs.readFileSync(path.resolve('src/components/Sidebar.tsx'), 'utf8');
 
   assert.match(app, /<Route path="\/changes" element=\{<Changes \/>\} \/>/);
   assert.match(
     sidebar,
+    /\{ to: '\/objects\/study'.*\},\s*\{ to: '\/objects\/file-asset', labelKey: 'nav\.fileAssets'.*\},\s*\{ to: '\/project-files'/s,
+  );
+  assert.match(sidebar, /title=\{isCollapsed \? getNavItemLabel\(item, t\) : undefined\}/);
+  assert.match(sidebar, /position \? 'fixed' : 'absolute left-full top-1\/2 ml-2'/);
+  assert.match(
+    sidebar,
     /\{ to: '\/project-files', labelKey: 'nav\.projectFiles'.*\},\s*\{ to: '\/changes', labelKey: 'nav\.changes'.*\},\s*\{ to: '\/changelog', labelKey: 'nav\.changelog'/s,
   );
+  const locales = fs.readFileSync(path.resolve('src/i18n/locales.ts'), 'utf8');
+  assert.match(locales, /'nav\.projectFiles': '目录'/);
+  assert.match(locales, /'nav\.fileAssets': '文件'/);
 });
 
 test('settings is the final navigation entry and only exposes governed-project configuration', () => {

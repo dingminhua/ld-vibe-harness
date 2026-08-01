@@ -57,6 +57,10 @@ const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
     'research_intent', 'research_question', 'abstract', 'recommendation_summary', 'report_body',
     'urls', 'disposition_summary',
   ],
+  'file-asset': [
+    'filename', 'media_type', 'size_bytes', 'content_sha256', 'signature',
+    'deleted_at', 'disposition_summary', 'recovery',
+  ],
 };
 
 export type RelatedContentEntry = [string, unknown[]];

@@ -8,6 +8,7 @@ export const TYPE_COLORS: Record<string, string> = {
   pitfall: '#ef4444',   // red
   spark: '#eab308',      // yellow
   study: '#06b6d4',      // cyan
+  'file-asset': '#14b8a6', // teal
   default: '#6b7280',   // gray
 }
 
