@@ -1,0 +1,32 @@
+title: 受控提交 Gate 授权递达修复的本地变更
+status: closed
+goal: 将已完成并验证的 Gate 授权递达修复以一个范围精确的本地 Git commit 固化，同时不纳入未归属本任务的 Web 改动或尚未关闭的 WorkCase 事实文件。
+scope: 仅允许提交 specs/attachments/09.Att.02-接入验收行为清单.md、code/tests/docs/test_enablement_docs.py、code/tests/work_context/test_work_context.py 的当前相关改动。明确排除 web/src/pages/object-detail/WorkCaseReadingLayout.tsx、web/tests/api/workcase-detail-current-contract.test.ts、ldvh-base/workcases/workcase-0036.yaml、workcase-0037.yaml、workcase-0038.yaml，以及任何其他文件；不含 push、PR、发布、amend、rebase、reset、合并、标签、环境配置或外部操作。
+success_criterion_definitions:
+- criterion_id: criterion-exact-candidate
+  statement: 暂存候选只包含 scope 列明的三处文件，且暂存前后的差异检查和测试支持其与 Gate 授权递达修复的直接关联。
+- criterion_id: criterion-checked-local-commit
+  statement: 对精确 staged 候选与完整提交消息完成当次 precheck-git-commit，随后创建一个本地 commit，并回读 HEAD、提交消息、提交文件范围及剩余状态。
+- criterion_id: criterion-exclusions-and-review
+  statement: Web 改动与 0036–0038 事实文件保持不暂存；独立只读结果复核确认实际提交范围、验证和残留边界。
+success_criterion_results:
+- criterion_id: criterion-exact-candidate
+  outcome: not_satisfied
+  summary: Gate 1 前取消，未形成或暂存提交候选。
+- criterion_id: criterion-checked-local-commit
+  outcome: not_satisfied
+  summary: 未执行 precheck 或本地 Git commit，HEAD、Index 和远端均未因本 WorkCase 改变。
+- criterion_id: criterion-exclusions-and-review
+  outcome: not_verified
+  summary: 未执行提交，因此尚未形成提交后的独立复核对象；已知排除项未被本 WorkCase 操作。
+result_summary: workcase-0039 因误把直接 Human 本地提交指令理解为必须新建 WorkCase 而建立；Gate 1 未获批准，全部计划项在执行前取消，未发生暂存、预检、提交或外部写入。
+validation_summary: 仅完成当前事实读取与规则核对；未运行测试、未执行 git add、precheck-git-commit、git commit、push 或任何 Git 状态写入。
+closure_outcome: cancelled
+disposition_summary: workcase-0039 系 Controller 对直接 Human 本地提交指令的错误流程解释而误建；Gate 1 未获批准，全部 item 在执行前取消，未运行测试、未暂存、未预检、未提交、未 push 或外部写入。独立只读复核确认无执行事实、Index 为空。唯一未完成的本地提交目标不再由本误建 WorkCase 承担，按 Human 指令接受停止；无路由目标或 Spark 建议。
+residual_responsibilities:
+- residual_id: residual-unneeded-commit
+  summary: 0039 原计划的本地提交未执行，因为该 WorkCase 误建且不应作为直接 Human 提交指令的前置条件；该提交目标不再由 0039 承担。
+object_id: workcase-0039
+fact_type_key: workcase
+created_at: '2026-08-02T12:45:03.735371+08:00'
+updated_at: '2026-08-02T13:25:47.063254+08:00'
