@@ -1,5 +1,4 @@
 title: 收敛 WorkCase 执行模板与 Controller 续跑纪律
-status: open
 goal: 将 34 收敛为只组织前置精确读取、执行循环、稳定检查点、合法退出和恢复交还的薄行动模板；要求 Controller 仅依据刚回读且来源指纹 current 的 current_snapshot_projection，在每轮重新判断语义、授权与能力后持续消费已获批责任，使普通活动期检查点不被当成完成交还，Reviewer 结果经完整 after、受控写回、精确回读和完整性审计连续收敛到真实 gate2_waiting；同时不持久化 continuation_required 或 execution_stalled，不让 Code 判断授权、能力、行动允许、优先级、工作完成或自动推进 phase。
 scope: 覆盖 specs/06 的行动模板使用期最小临时工件卫生共同边界、specs/34 的五段执行内核与 21 current_snapshot_projection 消费纪律、编码前 Code Implementation Plan，以及直接相关的 clean action-template/source-contract、现有 WorkCase projection key 与 transition validator 回归测试。21 继续是 status、phase、字段、转换和 quality gate 语义唯一权威；34 只回指 21/32，不复制状态机。Reviewer pass 后的连续链按 independent_reviewing → controller_checking → closure_preparing → human_closure_confirming 逐步形成完整 after，每次使用 Helper CAS、精确回读和 check-fact-integrity 后的新指纹作为下一步输入。排除 production Code、新 Helper 操作、AI 自由文本机械拦截、Web 页面与 Web tests、specs/00/03/07/21/30/31/32、派生字段写入 WorkCase YAML、调度器/Hook/MCP/环境 adapter、其它事实对象、push、PR、发布、外部消息和破坏性 Git。specs/00 不在修改、暂存或提交范围；workcase-0036 至 0039 的创建前未跟踪 bytes/hash 严格隔离。
 success_criterion_definitions:
@@ -13,193 +12,6 @@ success_criterion_definitions:
   statement: 不新增或持久化 continuation_required、execution_stalled、下一动作或其它派生状态，不新增 production Code、公开 Helper 操作、调度器或 AI 自由文本检查器；测试只验证行动模板 source contract、现有投影 key 负矩阵和 transition validator，不声称机械保证 AI 跨回合遵从、授权充分或工作完成。
 - criterion_id: criterion-common-hygiene-and-dirty-isolation
   statement: 06 只承接最小通用临时工件卫生：优先 Working Tree 外，只有现有授权覆盖、本次可确认归属且无继续或恢复价值的工件可清理，既有、他项、归属不明或仍有价值者保留交还，Working Tree 非空不等于未闭环。实施前后 Index 均为空，specs/00 的 Working Tree bytes 与 HEAD blob 保持固定 hash，workcase-0036 至 0039 的创建前 bytes/hash 与未跟踪状态不变，普通文件 diff 只落入批准白名单。
-priority: P1
-phase: human_closure_confirming
-plan_version: 1
-work_items:
-- item_id: item-audit-template-ownership
-  goal: 审计当前 06、21、34、投影/转换实现与测试、最近相关提交和创建前工作区基线，确认重复语义、通用卫生承载点和可复用的现有确定性能力。
-  expected_result: 形成可回指的责任矩阵和精确路径白名单，确认 21 为唯一领域权威、06 只承接最小共同卫生、34 只组织流程，并记录现有 projection/transition tests 已覆盖与真正缺口。
-  status: completed
-  approach_summary: 只读核对当前 Working Tree 和历史；不把 34 现状、Spark 提案或实现反向提升为权威，不修改受保护路径。
-  result_summary: 审计确认：21 已唯一承担 status/phase、字段、转换、quality gate 与 current_snapshot_projection 语义；现有 workcase_presentation.py、Helper 读取投影和 presentation/transition tests 已提供确定性投影与 Gate 2 负矩阵。34 当前仍在输入、七步执行和恢复交还中重复部分状态/转换细节，并独自承载临时工件卫生；06 尚无该最小共同边界。最近提交 992e8e602、dc566d5cf、25ab2f507 分别以补丁方式增加卫生、Reviewer 关口和投影，真实缺口是 34 的流程收敛及 source-contract 回归，不需要 production Code 或 Web 修改。批准白名单足以完成本案。
-- item_id: item-form-code-implementation-plan
-  goal: 在修改任何 Code tests 前形成并登记本增量的 Code Implementation Plan。
-  expected_result: code/plans/workcase-controller-continuation.md 与 README 入口说明无 production Code、新公开操作或自动语义判断，列明 Specs 责任、测试范围、依赖方向、工作区白名单、风险和验证映射。
-  status: completed
-  depends_on:
-  - item-audit-template-ownership
-  approach_summary: 规划只约束 source-contract 与现有投影/转换测试，不取得 WorkCase 语义权威。
-  result_summary: 已新增 code/plans/workcase-controller-continuation.md 并登记 README 入口；计划明确 21/32/06/34 责任、零 production Code/Web、允许依赖方向、source-contract 可证明范围、失败分流、受保护路径与验证映射，且 git diff --check 通过。
-- item_id: item-establish-common-artifact-hygiene
-  goal: 把 34 中跨模板重复的临时工件卫生收敛到 06 的最小共同行动边界。
-  expected_result: 06 明确 Working Tree 外优先、归属/授权/继续价值判断、保留交还与非 clean-WT 判据；34 只回指该共同边界，不复制逐检查点清理流程。
-  status: completed
-  depends_on:
-  - item-audit-template-ownership
-  approach_summary: 只移动具有跨模板净价值的共同语义，不把 34 细节整体上移，不修改 07 或扩大删除授权。
-  result_summary: 已在 06 §8.7 建立跨模板最小临时工件边界：Working Tree 外优先，仅本次可确认归属、授权覆盖且无继续/恢复/交接价值者可清理；既有、他项、归属不明或仍有价值者保留交还，且非 clean Working Tree 不等于未闭环。34 已只回指该共同边界，不再复制逐检查点卫生细节。
-- item_id: item-converge-controller-execution-template
-  goal: 将 34 的执行内核收敛为五段流程，并固定 Controller 的 fresh projection 消费、合法交还分流和连续受控写回纪律。
-  expected_result: 34 对 open Human Gate、closed、blocked、unresolved/stale 与其它活动 phase 的处理边界清楚；Reviewer pass 后未写回到真实 gate2_waiting 前不能以聊天总结代替转换，同时不复制 21 字段、phase 表、quality gate 或 transition 条件。
-  status: completed
-  depends_on:
-  - item-audit-template-ownership
-  - item-establish-common-artifact-hygiene
-  approach_summary: 21/32 保持领域和受控操作权威；next_required_control_step 只作结构提示，Controller 每轮重新作语义、授权和能力判断。
-  result_summary: 已在同一规范编辑检查点把 34 内核收敛为前置精确读取、执行循环、稳定检查点、合法退出和恢复交还五段；固定 fresh projection 指纹匹配、AI 重新语义判断、普通 executing 检查点非完成出口、blocked/unresolved 分流、Reviewer 后连续完整 after/CAS/回读/审计，以及只有 resolved gate2_waiting 使用 Gate 2 话术。字段、phase、转换和质量关口继续回指 21/32；Helper 精确模板回读和 repository specs tests 已通过。
-- item_id: item-add-continuation-regressions
-  goal: 补强 34 source contract 与现有 WorkCase projection/transition 的续跑负向回归约束。
-  expected_result: 测试覆盖 executing 检查点非完成出口、independent_reviewing/closure_preparing 禁止 Gate 2 结论、blocked 不被视为自动续跑、stale/unresolved 要求重读或缺口交还、Reviewer pass 需要逐步完整 after 与回读；测试不声称控制 AI 自由文本。
-  status: completed
-  depends_on:
-  - item-form-code-implementation-plan
-  - item-converge-controller-execution-template
-  approach_summary: 优先新增独立 clean source-contract test 并复用现有 projection/transition validator；只在审计证明必要时修改白名单内现有 tests，不修改 production Code。
-  result_summary: 已新增独立 clean source-contract test，覆盖 34 五段内核、21/32 权威回指、fresh projection/指纹、executing 检查点非完成出口、blocked 不自动续跑、stale/unresolved 重读、Reviewer 后连续受控写回、Gate 2 禁语及 06/34 临时工件归口。复用既有 projection/transition Code，未修改 production Code、Web 或生成契约；目标组合 132 tests passed。
-- item_id: item-verify-template-convergence
-  goal: 验证规范责任、行动模板发现、现有投影与转换矩阵、工作区隔离和事实完整性。
-  expected_result: 直接相关 Python/spec/Helper tests、git diff --check、模板精确读取、workcase-0042 精确回读与 check-fact-integrity 在实际范围内通过；失败和未验证范围如实记录，受保护路径 bytes/hash、未跟踪状态与 Index 隔离成立。
-  status: completed
-  depends_on:
-  - item-add-continuation-regressions
-  approach_summary: 不把 source-contract tests 扩大为 AI 行为保障，不运行 Web 迁移或外部副作用。
-  result_summary: 已执行最终目标验证：新增 source-contract、既有 WorkCase presentation/transition、repository specs 与 Helper action-template tests 共 139 passed；行动模板经 Helper 精确回读，definition content SHA-256 为 d95eb6a879da8fb9596bf735171c2525e09cf6ca6db6576d77181940f3fbf932；git diff --check 通过，Index 为空，普通变化仅在批准白名单，specs/00 与 workcase-0036 至 0039 的受保护 hash/状态保持不变；全库 118 个事实对象完整性检查 complete。独立结果复核与本地语义提交继续由 phase 质量链承接，不作为本 item。
-execution_authorization:
-  quality_gates:
-  - gate_id: independent-result-review
-    reviewer_mode: independent-read-only
-    delegation_action_id: authorization-delegate-independent-review
-    result_review_action_id: authorization-independent-result-review
-  authorized_actions:
-  - action_id: authorization-local-audit
-    summary: 只读审计 06、21、34、现有 WorkCase 投影与转换实现/测试、最近相关提交和当前工作区基线。
-    target_scope: 当前 worktree 中 specs/06、specs/21、specs/34；Code 内 WorkCase presentation/validation/transition 的只读实现与 tests；Git 元数据；workcase-0042 与已关闭 workcase-0041 的只读事实。
-    effect_scope: 只读形成责任矩阵、路径白名单、缺口和验证依据，不修改任何文件或事实。
-    risk_summary: 不得把实现、现状或 Spark 提案反向提升为规则，也不得把只读观察写成已验证行为保障。
-    rollback_summary: 无写入；若读取基线漂移则重新读取并缩小结论。
-    rule_refs:
-    - specs/00-理念与构成.md
-    - specs/06-行动模板基础规范.md
-    - specs/07-Code与执行边界规范.md
-    - specs/21-WorkCase-工作项.md
-    - specs/34-WorkCase获批计划执行行动模板.md
-  - action_id: authorization-code-implementation-plan-write
-    summary: 在任何 Code tests 修改前形成并登记本增量的 Code Implementation Plan。
-    target_scope: 仅 code/plans/workcase-controller-continuation.md 与 code/plans/README.md。
-    effect_scope: 新增计划并更新入口；不修改 production Code，不定义领域语义。
-    risk_summary: 计划若暗示新增自动语义判断或扩大路径，会造成授权漂移。
-    rollback_summary: 恢复这两个白名单文件在本案前的内容；不得触碰其它路径。
-    rule_refs:
-    - specs/07-Code与执行边界规范.md
-  - action_id: authorization-specification-convergence
-    summary: 把最小通用临时工件卫生收敛到 06，并把 34 收敛为五段 Controller 执行流程。
-    target_scope: 仅 specs/06-行动模板基础规范.md 与 specs/34-WorkCase获批计划执行行动模板.md。
-    effect_scope: 06 承载跨模板最小共同边界；34 回指 21/32 并组织前置精确读取、执行循环、稳定检查点、合法退出和恢复交还。
-    risk_summary: 风险是把 34 细节整体上移、误删外层模板契约、复制 21 状态机或扩大临时工件删除授权。
-    rollback_summary: 按文件恢复本案变更；若无法在两份规范内保持责任单一则停止受影响 item。
-    rule_refs:
-    - specs/00-理念与构成.md
-    - specs/01-规范模型基础规范.md
-    - specs/06-行动模板基础规范.md
-    - specs/21-WorkCase-工作项.md
-    - specs/32-WorkCase受控写回行动模板.md
-    - specs/34-WorkCase获批计划执行行动模板.md
-  - action_id: authorization-regression-test-write
-    summary: 补强行动模板 source contract 与现有 WorkCase 投影/转换的续跑负向回归。
-    target_scope: 优先新增 code/tests/specs/test_workcase_controller_continuation_contract.py；只有审计证明必要时才修改 code/tests/specs/test_repository.py、code/tests/facts/test_workcase_presentation.py、code/tests/facts/test_transitions.py。
-    effect_scope: 只验证 34 source contract、现有 projection key 负矩阵和 transition validator；不修改 production Code、Web、Helper API 或生成契约。
-    risk_summary: 测试不能机械证明 AI 自由文本受控、跨回合一定续跑、授权充分或工作完成。
-    rollback_summary: 删除本案新增测试并恢复实际修改的列名测试文件；保留失败证据交还。
-    rule_refs:
-    - specs/06-行动模板基础规范.md
-    - specs/07-Code与执行边界规范.md
-    - specs/21-WorkCase-工作项.md
-    - specs/34-WorkCase获批计划执行行动模板.md
-  - action_id: authorization-workcase-0042-updates
-    summary: 仅通过适用 Helper CAS 写回 workcase-0042 的执行检查点、结果链和关闭提案。
-    target_scope: 仅 ldvh/workcase/workcase-0042；不修改 spark-0043、workcase-0041 或 workcase-0036 至 0039。
-    effect_scope: 按 21/32 形成完整 after、精确回读、完整性审计并使用新指纹继续。
-    risk_summary: 不得持久化派生状态、跳过 phase、以聊天总结代替写回或把 Reviewer pass 当成 Gate 2。
-    rollback_summary: 使用后续合法完整 after 修正；若 CAS 或完整性失败则零写入受影响转换并按真实 phase 交还。
-    rule_refs:
-    - specs/21-WorkCase-工作项.md
-    - specs/32-WorkCase受控写回行动模板.md
-    - specs/34-WorkCase获批计划执行行动模板.md
-  - action_id: authorization-targeted-validation
-    summary: 执行白名单内的模板、测试、Git 隔离和事实完整性验证。
-    target_scope: 行动模板精确读取、目标 specs/projection/transition tests、git diff --check、目标路径 name-status、受保护文件 hash、workcase-0042 精确读取与全量事实完整性检查。
-    effect_scope: 只读验证；测试缓存或临时工件按 06 最小共同边界处理。
-    risk_summary: 不得把未运行、partial 或 source-contract 结果表述为系统级行为保障。
-    rollback_summary: 验证无源文件副作用；仅清理本案可确认归属且无恢复价值的临时工件。
-    rule_refs:
-    - specs/06-行动模板基础规范.md
-    - specs/07-Code与执行边界规范.md
-    - specs/21-WorkCase-工作项.md
-    - specs/34-WorkCase获批计划执行行动模板.md
-  - action_id: authorization-delegate-independent-review
-    summary: 把实际结果交给独立只读 Reviewer，覆盖唯一质量门。
-    target_scope: 仅本 WorkCase 的批准基线、实际 diff、测试证据、事实回读和受保护路径隔离证据。
-    effect_scope: 只读审查，不修改文件、事实、Git 或外部系统。
-    risk_summary: Reviewer 不得扩大目标、授权或把测试证据提升为 AI 行为机械保障。
-    rollback_summary: 无写入；若无法独立复核则如实记录 gate 未满足。
-    rule_refs:
-    - specs/21-WorkCase-工作项.md
-    - specs/34-WorkCase获批计划执行行动模板.md
-  - action_id: authorization-independent-result-review
-    summary: 消费独立 Reviewer 结论并由 Controller 按真实 phase 连续形成结果检查与关闭准备。
-    target_scope: Reviewer 只读结论；仅 workcase-0042 的合法完整 after。
-    effect_scope: Reviewer pass 不等于 Gate 2；Controller 仍须逐步 CAS、回读与完整性审计至真实 gate2_waiting。
-    risk_summary: 不得跳过 controller_checking 或 closure_preparing，不得只输出聊天总结。
-    rollback_summary: 若 Reviewer 要求修改则回到授权范围内修正；若超界则按 out_of_bounds_handling 收敛。
-    rule_refs:
-    - specs/21-WorkCase-工作项.md
-    - specs/34-WorkCase获批计划执行行动模板.md
-  - action_id: authorization-local-semantic-commits
-    summary: 按语义交付单位形成仅本地 Git commits，并允许纳入创建交还时已依法形成的 Spark routed 快照。
-    target_scope: 仅 workcase-0042、specs/06、specs/34、Code plan/README、实际使用的白名单 tests，以及在 Gate 1 前已由本次 Human 指令形成、已精确回读且提交前 content_fingerprint 与创建交还快照一致的 spark-0043 routed 快照；对 Spark 仅提交、不修改。
-    effect_scope: 仅本地 Git commit；不包含 Spark 更新、任何其它事实更新、push、PR、发布或外部消息。
-    risk_summary: 不得夹带 specs/00、workcase-0036 至 0039、其它路径或指纹已漂移的 Spark；检查点写回不要求逐次独立 commit。
-    rollback_summary: 提交前取消非白名单暂存；提交后如需更正只能新增受控提交，不 amend、reset、rebase 或改写历史。
-    rule_refs:
-    - specs/03-事实源与信息溯源规范.md
-    - specs/30-版本提交与追溯行动模板.md
-    - specs/34-WorkCase获批计划执行行动模板.md
-  action_ceiling: 限于当前 LDVH worktree 内为 workcase-0042 审计并收敛 06/34 Controller 执行流程、形成 Code plan、补强白名单 tests、仅更新 0042、执行只读独立结果复核、目标验证和严格隔离的本地语义 commits；只可提交 Gate 1 前已形成且指纹匹配的 spark-0043 routed 快照，不得进一步修改 Spark。
-  prohibited_actions:
-  - 修改、暂存或提交 specs/00；修改、暂存、提交或删除创建前未跟踪的 workcase-0036 至 0039。
-  - 修改 specs/03、specs/07、specs/21、specs/30、specs/31、specs/32、Web、Web tests、production Code、Helper API、生成契约或其它普通文件。
-  - Gate 1 后修改 spark-0043、workcase-0041 或其它事实对象；除 local semantic commit 前核对 spark-0043 当前 fingerprint 外，不再读取 Spark。
-  - 在 WorkCase YAML 持久化 continuation_required、execution_stalled、下一动作、投影指纹、Web 分组或其它派生判断。
-  - 新增 AI 文本检查器、公开 Helper 操作、调度器、Hook、MCP、环境 adapter，或让 Code/模板替 AI 判断授权、能力、行动允许、优先级和工作完成。
-  - 声称 tests 已机械阻断 AI 自由聊天、保证跨回合续跑或证明整体执行完成。
-  - 创建 ADR、Study、Pitfall、其它 WorkCase，进行无关重构或扩大规范修订。
-  - push、PR、发布、部署、外部消息、破坏性删除、reset、rebase、amend 或历史改写。
-  allowed_adjustments: 可在不改变 goal、scope、成功标准、五段内核、21 权威、零 production Code、受保护路径、风险上限和禁止项的前提下，调整 06/34 小节标题、Code plan 结构和白名单 tests 的具体分配；只有审计证明必要时才修改已列名的三个现有 test 文件，不得增加其它路径或把测试升级为 AI 行为保障。
-  verification_and_rollback: 编码测试前完成并复核 Code Implementation Plan；每次 0042 写回前后使用 Helper 精确读取、CAS 与 check-fact-integrity。创建基线 HEAD 为 cc63ff06d77b88fda7ed83661174ddffe8dbe46c，Index 与 tracked Working Tree 为空；specs/00 的 Working Tree bytes 与 HEAD blob SHA-256 均为 22863c549e1ac7b6a7f296e3856c66408f13fee26b67302c19c23a14b3a100cf，实施期间不修改、暂存或提交；若 HEAD 因外部变化而改变，先重新读取并缩小或重建验证。workcase-0036 至 0039 分别保持未跟踪，bytes SHA-256 固定为 97c1fcb4d5542e83b615d48d4c008e57c4be28b2e1a3ee2b6be5dcb694523b8e、889c2af9ab2442eadaff5abb3cd9c3144e189ebb08d5f9e5134f165bc925285b、63e7522d8af96db1e31185a9a7dfc6aedcf6a5217e2301e417cb208432dcb726、2bb28756cb6b5077dc66514b5c9740b9943d7bc4aacc108421730ffaffb96f25。运行行动模板精确读取、目标 specs/projection/transition tests、git diff --check、目标路径 name-status、事实完整性检查和独立结果复核；普通文件变化只允许白名单。失败时只恢复本案白名单变更，不触碰受保护路径或用户工作。
-  out_of_bounds_handling: 发现需要修改 production Code、Web、21 或其它禁止路径，需要新增 Helper/调度能力，受保护基线漂移，或测试无法在白名单内真实证明相应 source contract 时，零执行受影响部分，取消或收敛相应 item 并按 21 进入结果链；其余已授权责任继续，不在执行期请求扩权或新增 Human Gate。
-creation_reviews:
-- reviewer: reviewer-wc0042-creation-02
-  reviewed_at: '2026-08-02T08:01:35.099Z'
-  subject_version: 1
-  scope: 审查 workcase-0042 plan_version=1 及完整 execution_authorization；覆盖 06 最小临时工件边界、34 五段流程/投影消费/连续受控写回、Code 与 Web 排除、测试可证明范围、spark-0043 路由提交边界和工作区白名单隔离；不审查未来实际执行结果、AI 自由文本的机械拦截能力、Web 迁移、21 的领域语义或被排除路径。
-  conclusion: pass
-  covered_quality_gate_ids:
-  - independent-result-review
-relations:
-- relation_key: related-to
-  target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0041
-execution_approval:
-  subject_version: 1
-  approved_at: '2026-08-02T16:19:00+08:00'
-  summary: Human 已明确批准 workcase-0042 plan version 1 及其完整 execution_authorization；本批准仅覆盖该冻结基线，不包含 Gate 2、超界动作、push、PR、发布或其它禁止副作用。
-  baseline_fingerprint: 889de9a63fddee83520f6a7a3b629f13647a33be304b1b01cb94e0b2bcac0e4e
-  source_refs:
-  - turn:human-approve-workcase-0042-plan-v1
-result_version: 1
 success_criterion_results:
 - criterion_id: criterion-five-part-template-convergence
   outcome: satisfied
@@ -217,19 +29,17 @@ success_criterion_results:
   outcome: satisfied
   summary: 06 §8.7 已承接最小临时工件共同边界，34 只回指；specs/00 与 workcase-0036 至 0039 的 bytes/hash 和状态保持创建基线，Index 为空，目标普通变化仅落入批准白名单。
 result_summary: 已形成 WorkCase Controller 续跑与模板收敛增量：06 承接最小临时工件共同边界，34 收敛为五段流程并绑定刚回读投影、合法退出和 Reviewer 后连续受控写回；新增 Code plan 与独立 source-contract tests，未修改 production Code、Web、21 或受保护用户工作。
-controller_check_summary: Controller 已对照五项成功标准、冻结 execution_authorization、实际 diff、测试、模板回读、路径白名单和事实完整性逐项检查；全部 work item 已形成稳定局部结果，没有把独立结果复核或 Gate 2 写成 item。当前完整 result projection 可进入固定 independent-result-review 质量关口；本检查不替代 Reviewer。
 validation_summary: 139 个目标 Python/spec/Helper tests passed；git diff --check passed；WorkCase 执行模板经 Helper 精确回读；当前事实库完整性 complete（118 个对象）；Index 为空；specs/00 Working Tree/HEAD hash 与 workcase-0036 至 0039 未跟踪 hash 均保持批准基线。未运行 Web tests，因为 Web 明确排除；未验证 AI 在未来会话中的自然语言遵从。
-result_reviews:
-- reviewer: reviewer-wc0042-result-01
-  reviewed_at: '2026-08-02T08:37:26Z'
-  subject_version: 1
-  scope: 独立只读审查 result_version=1、commit c09105cb8a368d66daa5dc10c35f33cad252f4c5、批准基线、实际 diff、139 项目标测试、模板回读、事实完整性及 specs/00 与 workcase-0036 至 0039 隔离；不覆盖 Web 迁移、未来 AI 会话自然语言遵从、授权充分性或整体系统行为保障。
-  conclusion: pass
-closure_proposal:
-  proposed_outcome: completed
-  proposed_disposition_summary: workcase-0042 的原 scope 已完整交付：06 已承接最小临时工件共同边界，34 已收敛为五段 Controller 执行流程并固定 fresh projection、合法退出、Gate 2 禁语和 Reviewer 后连续受控写回纪律，Code plan 与回归测试已形成；五项成功标准均为 satisfied，139 项目标测试、模板精确回读、Git 隔离和全库事实完整性检查通过，独立只读 Reviewer 结论为 pass。本案没有未满足、未验证或需要转交的剩余责任；Web 页面迁移及其它后续结构简化仍为本案 scope 外事项，不由本关闭处置承载。
-waiting_on: 等待 Human 阅读当前完整关闭提案，并决定是否批准 workcase-0042 的 completed 分类与无剩余责任处置，执行 Human Gate 2 关闭。
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: workcase
+    object_id: workcase-0041
+status: closed
+closure_outcome: completed
+disposition_summary: workcase-0042 的原 scope 已完整交付：06 已承接最小临时工件共同边界，34 已收敛为五段 Controller 执行流程并固定 fresh projection、合法退出、Gate 2 禁语和 Reviewer 后连续受控写回纪律，Code plan 与回归测试已形成；五项成功标准均为 satisfied，139 项目标测试、模板精确回读、Git 隔离和全库事实完整性检查通过，独立只读 Reviewer 结论为 pass。本案没有未满足、未验证或需要转交的剩余责任；Web 页面迁移及其它后续结构简化仍为本案 scope 外事项，不由本关闭处置承载。
 object_id: workcase-0042
 fact_type_key: workcase
 created_at: '2026-08-02T16:01:35.354461+08:00'
-updated_at: '2026-08-02T16:39:09.022014+08:00'
+updated_at: '2026-08-02T16:54:44.720288+08:00'
