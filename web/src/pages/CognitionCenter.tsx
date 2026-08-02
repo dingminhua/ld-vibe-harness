@@ -716,7 +716,7 @@ export default function CognitionCenter() {
 
       <div className="mt-4 ldvh-panel-grid items-start">
         {/* 模块二 近期动态：以当前对象的 created_at / updated_at 为明确事件，不把提交列表搬到聚焦页。 */}
-        <section className="rounded-xl border border-ldvh-border bg-ldvh-panel p-4">
+        <section className="order-2 rounded-xl border border-ldvh-border bg-ldvh-panel p-4">
         <div
           role="button"
           tabIndex={0}
@@ -813,7 +813,7 @@ export default function CognitionCenter() {
         </section>
 
         {/* 模块四 Spark 池健康：只读呈现当前 open / terminal 与静默派生，不生成分流建议。 */}
-        <section className="rounded-xl border border-ldvh-border bg-ldvh-panel p-4">
+        <section className="order-1 rounded-xl border border-ldvh-border bg-ldvh-panel p-4">
         <div
           role="button"
           tabIndex={0}

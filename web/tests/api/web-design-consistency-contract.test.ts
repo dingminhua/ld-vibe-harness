@@ -218,9 +218,12 @@ test('Web development docs describe the current Focus modules, shell scrolling, 
   const globalDoc = read('docs/01-全局设计约束.md');
   const cognitionDoc = read('docs/02-CognitionCenter.md');
   const baselineDoc = read('docs/10-Web开发现状与设计语言基线.md');
+  const cognitionCenter = read('src/pages/CognitionCenter.tsx');
 
   assert.match(cognitionDoc, /三期均已完成/);
-  assert.match(cognitionDoc, /待决定事项.*推进中事项.*近期动态.*Spark 健康度.*近期提交热点关系/);
+  assert.match(cognitionDoc, /待决定事项.*推进中事项.*Spark 健康度.*近期动态.*近期提交热点关系/);
+  assert.match(cognitionCenter, /模块二 近期动态[\s\S]*?<section className="order-2 rounded-xl/);
+  assert.match(cognitionCenter, /模块四 Spark 池健康[\s\S]*?<section className="order-1 rounded-xl/);
   assert.match(cognitionDoc, /HV1-HV5/);
   assert.match(cognitionDoc, /HV1 \| 决策提请清晰可决/);
   assert.match(cognitionDoc, /HV2 \| 授权执行受控可续/);
