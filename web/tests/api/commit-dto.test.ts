@@ -128,6 +128,11 @@ git([
   'commit', '--quiet', '-m', 'feat(web)!: 调整提交接口', '-m',
   ['动机:', '- 统一提交记录结构。', '', '验证结论:', '- 由特征测试固定当前 DTO。'].join('\n'),
 ])
+const remoteRoot = path.join(workspaceRoot, 'remote.git')
+execFileSync('git', ['init', '--bare', '--quiet', remoteRoot])
+git(['branch', '-M', 'main'])
+git(['remote', 'add', 'origin', remoteRoot])
+git(['push', '--quiet', '--set-upstream', 'origin', 'main'])
 
 fs.writeFileSync(
   path.join(workspaceRoot, 'LDVH-GOVERNED-PROJECTS.yaml'),
@@ -179,6 +184,7 @@ function assertCommitDto(entry: Record<string, unknown>) {
   assert.equal(entry.scope, 'web')
   assert.equal(entry.description, '调整提交接口')
   assert.equal(entry.isBreaking, true)
+  assert.equal(entry.pushStatus, 'pushed')
   assert.match(String(entry.body), /动机:/)
   assert.match(String(entry.body), /验证结论:/)
 }

@@ -722,7 +722,10 @@ export interface ChangelogEntry {
   description: string;
   isBreaking: boolean;
   relativeTime: string;
+  pushStatus: GitPushStatus;
 }
+
+export type GitPushStatus = 'pushed' | 'unpushed' | 'unknown';
 
 export interface CommitDetailPanelData {
   entry: ChangelogEntry;
@@ -837,6 +840,7 @@ export interface ProjectGitCommitEntry {
   scope: string;
   description: string;
   isBreaking: boolean;
+  pushStatus: GitPushStatus;
   isMerge: boolean;
 }
 

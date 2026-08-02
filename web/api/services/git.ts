@@ -13,6 +13,14 @@ const __dirname = path.dirname(__filename)
 /** LDVH 项目根目录 */
 const LDVH_ROOT = process.env.LDVH_ROOT || path.resolve(__dirname, '../../..')
 
+/**
+ * Whether the local upstream-tracking ref contains this commit.
+ *
+ * This is deliberately a local Git reachability check, not a network probe:
+ * the web can state only what the currently fetched upstream ref proves.
+ */
+export type GitPushStatus = 'pushed' | 'unpushed' | 'unknown'
+
 export interface GitLogEntry {
   hash: string
   shortHash: string
@@ -25,6 +33,7 @@ export interface GitLogEntry {
   description: string
   isBreaking: boolean
   relativeTime: string
+  pushStatus: GitPushStatus
 }
 
 /** A commit record together with its changed repository-relative paths. */
@@ -91,6 +100,44 @@ export function splitCommitMessage(fullMessage: string): SplitCommitMessage {
 }
 
 /**
+ * Classify commits against the current branch's configured upstream.
+ *
+ * A commit reachable from the locally known upstream ref is shown as pushed;
+ * one absent from it is shown as unpushed.  Repositories without an upstream
+ * (or whose upstream cannot be read) stay unknown so the UI never invents a
+ * push state.
+ */
+export async function getGitPushStatuses(hashes: string[], cwd: string = LDVH_ROOT): Promise<Map<string, GitPushStatus>> {
+  const statuses = new Map(hashes.map((hash) => [hash, 'unknown' as GitPushStatus]))
+  if (hashes.length === 0) return statuses
+
+  const upstream = await new Promise<string | null>((resolve) => {
+    execFile(
+      'git',
+      ['rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{upstream}'],
+      { cwd, maxBuffer: 1024 * 1024 },
+      (error, stdout) => resolve(error ? null : stdout.trim() || null),
+    )
+  })
+  if (!upstream) return statuses
+
+  const unpushed = await new Promise<Set<string> | null>((resolve) => {
+    execFile(
+      'git',
+      ['rev-list', ...hashes, '--not', upstream],
+      { cwd, maxBuffer: 5 * 1024 * 1024 },
+      (error, stdout) => resolve(error ? null : new Set(stdout.split(/\r?\n/).filter(Boolean))),
+    )
+  })
+  if (!unpushed) return statuses
+
+  for (const hash of hashes) {
+    statuses.set(hash, unpushed.has(hash) ? 'unpushed' : 'pushed')
+  }
+  return statuses
+}
+
+/**
  * 获取 git log 列表
  */
 export async function getGitLog(count: number = 50, locale: string = 'zh', cwd: string = LDVH_ROOT): Promise<GitLogEntry[]> {
@@ -122,10 +169,16 @@ export async function getGitLog(count: number = 50, locale: string = 'zh', cwd: 
             description,
             isBreaking,
             relativeTime: sharedGetRelativeTime(date, locale),
+            pushStatus: 'unknown',
           }
         })
 
-        resolve(entries)
+        void getGitPushStatuses(entries.map((entry) => entry.hash), cwd).then((pushStatuses) => {
+          resolve(entries.map((entry) => ({
+            ...entry,
+            pushStatus: pushStatuses.get(entry.hash) || 'unknown',
+          })))
+        })
       },
     )
   })
@@ -191,11 +244,17 @@ export async function getGitLogWithFiles(
               description,
               isBreaking,
               relativeTime: sharedGetRelativeTime(date, locale),
+              pushStatus: 'unknown',
               files,
             }]
           })
 
-        resolve(entries)
+        void getGitPushStatuses(entries.map((entry) => entry.hash), cwd).then((pushStatuses) => {
+          resolve(entries.map((entry) => ({
+            ...entry,
+            pushStatus: pushStatuses.get(entry.hash) || 'unknown',
+          })))
+        })
       },
     )
   })
@@ -219,7 +278,7 @@ export async function getGitCommit(hash: string, locale: string = 'zh', cwd: str
         const [fullHash, shortHash, author, date, fullMessage = ''] = stdout.trimEnd().split('\x1f')
         const { subject: message, body } = splitCommitMessage(fullMessage)
         const { category, scope, description, isBreaking } = parseCommitMessage(message)
-        resolve({
+        void getGitPushStatuses([fullHash], cwd).then((pushStatuses) => resolve({
           hash: fullHash,
           shortHash,
           author,
@@ -231,7 +290,8 @@ export async function getGitCommit(hash: string, locale: string = 'zh', cwd: str
           description,
           isBreaking,
           relativeTime: sharedGetRelativeTime(date, locale),
-        })
+          pushStatus: pushStatuses.get(fullHash) || 'unknown',
+        }))
       },
     )
   })

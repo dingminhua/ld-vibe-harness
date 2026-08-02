@@ -18,7 +18,7 @@
 顶部控制区：随页面滚动固定在顶部
 提交卡片列表
   容器：与对象卡片一致使用 ldvh-section-grid，宽度足够时一行多个
-  默认态：左上 type · scope + 右侧复制/阅读入口 + 标题块（GitHub 剪影图标 + description）+ 右下角更新时间
+  默认态：左上 type · scope + 右侧推送状态（可得时）/复制入口 + 标题块（GitHub 剪影图标 + description）+ 右下角更新时间
   点击卡片主体：进入 /changelog/:hash 独立详情页
   点击右侧阅读入口：打开或收起右侧扩展阅读
 右侧扩展阅读
@@ -33,7 +33,7 @@
 - 列表容器使用与研究等对象列表一致的 `ldvh-section-grid`，宽度足够时一行多个卡片，窄屏自动回到单列。
 - 默认态：
   - 顶部左侧展示 `category` 和 `scope`，使用与研究卡片顶栏一致的 `ldvh-meta-muted` 弱元信息样式，并以文字中点分隔，不使用背景 chip；`category` 和 `scope` 按当前语言展示本地化标签，`scope` 为空时不展示；
-  - 顶部右侧只固定放置复制提交上下文；不得在右上角放置扩展阅读入口；
+  - 顶部右侧在可从本地上游确定时先展示“已推送”或“未推送”短标签，随后固定放置复制提交上下文；不得在右上角放置扩展阅读入口；无上游或无法验证时不展示推送标签；
   - 下方标题块参考研究等对象卡片：使用弱背景、内圈边框和左侧色条，右侧固定放置扩展阅读入口；色条按 commit type 取色；
   - 标题块内使用与侧栏提交入口一致的 GitHub 剪影作为提交记录识别图标；
   - 标题行展示完整 `description`，作为主阅读文本；无法解析时回退到完整 `message`；标题不截断，宽度不足时换行；
@@ -67,7 +67,7 @@
   - 对象类型固定显示“提交 / Commit”，不得用 Conventional Commit `category` 替代对象类型；
   - Conventional Commit `category` 不作为对象类型展示；破坏性标记可作为同层短标签保留；
   - 绝对时间在标题区域下一行右对齐展示，供审计读取；
-  - 右侧复制操作保留在标准文件头操作位，tooltip 表达为复制提交 hash，复制内容为完整 commit hash；卡片上的复制操作继续复制面向 AI 定位的提交上下文；
+  - 推送状态可得时，短标签紧邻右侧复制操作；复制操作保留在标准文件头操作位，tooltip 表达为复制提交 hash，复制内容为完整 commit hash；卡片上的复制操作继续复制面向 AI 定位的提交上下文；
 - 文件数、新增数、删除数汇总保留提交详情专用的三项指标卡设计；指标值和标签都居中显示；
 - 主视图后续格式化呈现：
   - `提交说明` 节点；
@@ -127,7 +127,7 @@
 4. 不展示 raw ISO 时间；列表卡片更新时间和详情页绝对时间都使用 `formatDateTime()`。
 5. 不把 commit message 强行翻译；它是 Git 事实内容。
 6. 不把原始 `git show --stat` 文本作为详情主界面；主界面必须先格式化统计和文件列表，文件列表与原始信息都应位于默认收起的正文节点中。
-7. 提交卡片操作区应与对象列表保持方向一致：右上角只放复制，标题带右侧放扩展阅读入口；提交没有对象状态，不展示状态徽标。
+7. 提交卡片操作区应与对象列表保持方向一致：右上角只放推送状态（可得时）与复制，标题带右侧放扩展阅读入口；提交没有对象状态，不展示对象状态徽标。
 8. 复制内容必须服务 AI 定位沟通，不得退化为只复制短哈希或完整 hash。
 9. 提交记录页不是全量搜索页；所有快速筛选均以当前加载的最近 50 / 100 / 200 条为边界。
 10. 加载范围、type 和 scope 控制区必须使用 sticky 顶部固定表现，保持与对象列表页筛选区一致。
@@ -137,6 +137,8 @@
 ## 11. API 数据结构
 
 Changelog 与 ProjectFiles 的提交历史必须复用同一套 commit message 拆分与 Conventional Commits 解析函数，统一输出 `message`、`body`、`category`、`scope`、`description` 和 `isBreaking`。两者可以按页面职责追加字段；不得各自维护一套 commit header 解析规则。
+
+Changelog 卡片和详情身份头还可展示 `pushStatus`：它只按当前分支的**本地已知上游跟踪引用**做 Git 可达性判断。上游包含该提交时为 `pushed`，否则为 `unpushed`；未配置或无法读取上游时为 `unknown`，前端不显示标签。该状态不发起网络请求，也不宣称远端的实时状态。
 
 ```typescript
 interface ChangelogEntry {
@@ -148,6 +150,7 @@ interface ChangelogEntry {
   scope: string;
   description: string;
   isBreaking: boolean;
+  pushStatus: 'pushed' | 'unpushed' | 'unknown';
   author: string;
   date: string;
   relativeTime: string;

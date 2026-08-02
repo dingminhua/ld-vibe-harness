@@ -1050,6 +1050,8 @@ export const UI_LOCALES = {
     'changelog.openDetails': '展开详情',
     'changelog.commitAt': '提交 {time}',
     'changelog.breakingChange': '不兼容变更',
+    'changelog.pushed': '已推送',
+    'changelog.unpushed': '未推送',
 
     'common.loading': '加载中...',
     'common.loadFailed': '加载失败',
@@ -1566,6 +1568,8 @@ export const UI_LOCALES = {
     'changelog.openDetails': 'Open details',
     'changelog.commitAt': 'Commit {time}',
     'changelog.breakingChange': 'Breaking change',
+    'changelog.pushed': 'Pushed',
+    'changelog.unpushed': 'Not pushed',
 
     'common.loading': 'Loading...',
     'common.loadFailed': 'Failed to load',

@@ -3,6 +3,7 @@ import { ChevronDown, ChevronUp, FileText, ExternalLink } from 'lucide-react';
 import type { PanelContent } from '@/utils/panelContext';
 import MarkdownPreview from '@/components/MarkdownPreview';
 import CommitBreakingBadge from '@/components/CommitBreakingBadge';
+import CommitPushStatusBadge from '@/components/CommitPushStatusBadge';
 import { useI18n } from '@/i18n/context';
 import {
   ContentField,
@@ -585,11 +586,12 @@ function CommitIdentitySection({
       copiedLabel={labels.copiedHash}
       extraBadges={(
         <>
-        {entry?.isBreaking && (
-          <CommitBreakingBadge />
-        )}
+          {entry?.isBreaking && (
+            <CommitBreakingBadge />
+          )}
         </>
       )}
+      actionBadges={entry?.pushStatus ? <CommitPushStatusBadge status={entry.pushStatus} /> : undefined}
     />
   );
 }

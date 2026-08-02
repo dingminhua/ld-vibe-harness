@@ -6,7 +6,7 @@
 import { Router, type Request, type Response } from 'express'
 import { lstat, readdir, readFile, stat } from 'fs/promises'
 import path from 'path'
-import { parseCommitMessage, splitCommitMessage } from '../services/git.js'
+import { getGitPushStatuses, parseCommitMessage, splitCommitMessage } from '../services/git.js'
 import { LDVH_WORKSPACE_ROOT } from '../services/pytools.js'
 import { readGovernedProjectsSettings } from '../services/governedProjectsSettings.js'
 import {
@@ -307,7 +307,15 @@ router.get('/git/commits', async (req: Request, res: Response): Promise<void> =>
         }
       })
 
-    res.json({ ok: true, project, entries })
+    const pushStatuses = await getGitPushStatuses(entries.map((entry) => entry.hash), project.path)
+    res.json({
+      ok: true,
+      project,
+      entries: entries.map((entry) => ({
+        ...entry,
+        pushStatus: pushStatuses.get(entry.hash) || 'unknown',
+      })),
+    })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Failed to read git commits'
     res.status(500).json({ ok: false, error: message })
@@ -334,7 +342,10 @@ router.get('/git/commit/:hash', async (req: Request, res: Response): Promise<voi
     const fullMessage = messageLines.join('\n').trim()
     const { subject: message, body } = splitCommitMessage(fullMessage)
     const { category, scope, description, isBreaking } = parseCommitMessage(message)
-    const filesStdout = await runCommand('git', ['show', '--name-status', '--format=', '--find-renames', '--root', hash], project.path)
+    const [filesStdout, pushStatuses] = await Promise.all([
+      runCommand('git', ['show', '--name-status', '--format=', '--find-renames', '--root', hash], project.path),
+      getGitPushStatuses([fullHash], project.path),
+    ])
     const files = filesStdout
       .split('\n')
       .map((line) => line.trim())
@@ -358,6 +369,7 @@ router.get('/git/commit/:hash', async (req: Request, res: Response): Promise<voi
         scope,
         description,
         isBreaking,
+        pushStatus: pushStatuses.get(fullHash) || 'unknown',
         isMerge: parents.length > 1,
         files,
       },

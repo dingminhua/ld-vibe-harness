@@ -489,6 +489,7 @@ export function ObjectIdentityHeader({
   updated,
   auxiliaryMetaEntries = [],
   extraBadges,
+  actionBadges,
   titleMetaEntries = [],
   customMetaEntries = [],
   copyLabel,
@@ -512,6 +513,7 @@ export function ObjectIdentityHeader({
   updated: string;
   auxiliaryMetaEntries?: Array<[string, unknown]>;
   extraBadges?: ReactNode;
+  actionBadges?: ReactNode;
   titleMetaEntries?: Array<{ label: string; value: ReactNode }>;
   customMetaEntries?: Array<{ label: string; value: ReactNode }>;
   copyLabel?: string;
@@ -547,7 +549,7 @@ export function ObjectIdentityHeader({
             {extraBadges}
             <span className="ldvh-meta-muted min-w-0 truncate">{id}</span>
             <PriorityIcon source={source} type={objectType} locale={locale} size={compact ? 'sm' : 'md'} />
-            {!compact && ((status && statusColor) || showCopyAction) && (
+            {!compact && ((status && statusColor) || actionBadges || showCopyAction) && (
               <div className="ml-auto flex shrink-0 items-center gap-2">
                 {status && statusColor && (
                   <span
@@ -560,6 +562,7 @@ export function ObjectIdentityHeader({
                     {statusLabel || status}
                   </span>
                 )}
+                {actionBadges}
                 {showCopyAction && (
                   <CopyPathButton path={target} label={copyLabel} copiedLabel={copiedLabel} />
                 )}
@@ -580,7 +583,7 @@ export function ObjectIdentityHeader({
             )}
           </div>
         </div>
-        {(showCopyAction || (status && statusColor)) && compact && (
+        {(showCopyAction || actionBadges || (status && statusColor)) && compact && (
           <div className="flex shrink-0 flex-col items-end justify-center gap-2">
             <div className="flex items-center gap-2">
               {status && statusColor && (
@@ -594,6 +597,7 @@ export function ObjectIdentityHeader({
                   {statusLabel || status}
                 </span>
               )}
+              {actionBadges}
               {showCopyAction && <CopyPathButton path={target} label={copyLabel} copiedLabel={copiedLabel} />}
             </div>
             {actionAlignedTitleMeta.length > 0 && (

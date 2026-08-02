@@ -248,6 +248,7 @@ test('commit hotspot builder does not absorb transitive peers and rejects invali
     description: 'update spark hotspot',
     isBreaking: false,
     relativeTime: '1小时前',
+    pushStatus: 'unknown',
     files: ['ldvh-base/sparks/spark-0001.yaml'],
   }]
 

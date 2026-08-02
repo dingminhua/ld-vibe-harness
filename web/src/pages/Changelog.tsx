@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { AlertCircle, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import CopyPathButton from '@/components/CopyPathButton';
 import CommitBreakingBadge from '@/components/CommitBreakingBadge';
+import CommitPushStatusBadge from '@/components/CommitPushStatusBadge';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
 import { fetchChangelog, fetchCommitDetail, type ChangelogEntry } from '@/utils/api';
 import { getCommitScopeLabel, getCommitTypeLabel } from '@/utils/commitLabels';
@@ -280,6 +281,7 @@ export default function Changelog() {
                   )}
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
+                  <CommitPushStatusBadge status={entry.pushStatus} />
                   <CopyPathButton
                     path={getCommitCopyContext(entry)}
                     label={t('changelog.copyContext')}
