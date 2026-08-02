@@ -8,8 +8,8 @@
  * 数据经 Web 字段级直读（localFactReader / facts.ts 的 listObjects），不复用 /api/dashboard 聚合逻辑。
  *
  * 命名纪律（02 §7 第 3 条）：WorkCase 条目只携带 progress_group；待决类型 inboxKind
- * 表示 Human 的计划批准、关闭确认或 Pitfall draft 审核。blocked 不进入待决定收件箱；
- * 若其当前 phase 仍属于 progressing，则在推进中事项中如实保留。
+ * 表示 Human 的计划批准、关闭确认、阻塞待处置或 Pitfall draft 审核。progress_group
+ * 决定两个既有行动模块的唯一归属；blocking_overlay 只改变 Human-position 的呈现类型。
  */
 
 import { Router, type Request, type Response } from 'express'
@@ -29,7 +29,7 @@ import { getTypeColor } from '../services/typeColors.js'
 
 const router = Router()
 
-type InboxKind = 'plan_confirmation' | 'closure_confirmation' | 'pitfall_confirmation'
+type InboxKind = 'plan_confirmation' | 'closure_confirmation' | 'blocked_resolution' | 'pitfall_confirmation'
 type InboxObjectType = 'workcase' | 'pitfall'
 type RecentActivityKind = 'created' | 'updated'
 type RecentActivityWindow = '1d' | '3d' | '7d' | '14d'
@@ -75,6 +75,8 @@ interface InboxBuildItem {
   title_en?: string
   title_zh?: string
   progress_group?: WorkCaseProgressGroup
+  lifecycle_position?: ResolvedWorkCasePresentationProjection['lifecycle_position']
+  blocking_overlay?: boolean
   priority?: string
   updated_at?: string
   read_status: string
@@ -191,9 +193,16 @@ function factKey(type: string, objectId: string): string {
 }
 
 function deriveInboxKind(projection: ResolvedWorkCasePresentationProjection): InboxKind | null {
-  if (projection.blocking_overlay) return null
-  if (projection.handoff_narrative_key === 'gate1_waiting') return 'plan_confirmation'
-  if (projection.handoff_narrative_key === 'gate2_waiting') return 'closure_confirmation'
+  if (projection.progress_group !== 'plan_confirmation' && projection.progress_group !== 'closure_confirmation') {
+    return null
+  }
+  if (projection.blocking_overlay) return 'blocked_resolution'
+  if (projection.progress_group === 'plan_confirmation' && projection.handoff_narrative_key === 'gate1_waiting') {
+    return 'plan_confirmation'
+  }
+  if (projection.progress_group === 'closure_confirmation' && projection.handoff_narrative_key === 'gate2_waiting') {
+    return 'closure_confirmation'
+  }
   return null
 }
 
@@ -627,6 +636,8 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
         if (inboxKind === null) continue
         builds.push({
           type: 'workcase', inboxKind, progress_group: progressGroup,
+          lifecycle_position: progress.lifecycle_position,
+          blocking_overlay: progress.blocking_overlay,
           object_id, title: String(raw.title ?? object_id),
           ...(typeof raw.title_en === 'string' ? { title_en: raw.title_en } : {}),
           ...(typeof raw.title_zh === 'string' ? { title_zh: raw.title_zh } : {}),
@@ -743,7 +754,11 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
         read_status: build.read_status,
         card,
       }
-      if (build.type === 'workcase') entry.progress_group = build.progress_group
+      if (build.type === 'workcase') {
+        entry.progress_group = build.progress_group
+        entry.lifecycle_position = build.lifecycle_position
+        entry.isBlocked = build.blocking_overlay === true
+      }
       else entry.status = 'draft'
       // priority 缺失/非法落 P3 之后并省略优先级信号（Q8）。
       if (priorityRank(build.priority) < 4 && typeof build.priority === 'string') entry.priority = build.priority

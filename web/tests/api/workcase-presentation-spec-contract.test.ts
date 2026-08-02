@@ -147,7 +147,9 @@ test('Current Web docs describe the same latest-only Card and detail boundaries'
 
   assert.match(dashboardDoc, /WorkCase 统计只使用 `byProgressGroup`，WorkCase 条目只使用 `progress_group`/);
   assert.match(dashboardDoc, /不得把派生进展分组放入名为 `status` 或 `byStatus` 的字段/);
-  assert.match(dashboardDoc, /blocked 不进入待决定收件箱，也不得借 `source_status` 重新引入/);
+  assert.match(dashboardDoc, /resolved open\/blocked WorkCase 在两个既有行动模块中唯一归属/);
+  assert.match(dashboardDoc, /plan\/closure group 进入待决定事项，progressing 进入推进中/);
+  assert.match(dashboardDoc, /`blocked_resolution`/);
   assert.match(listDoc, /WorkCase 使用 `\?progress=<progress_group>`/);
   assert.match(listSection, /Gate 1 的紧凑入口/);
   assert.match(listSection, /`execution_authorization`/);
@@ -210,6 +212,7 @@ test('Cognition Center reuses pending and progressing WorkCase Cards with second
   const cognitionCenter = source('web/src/pages/CognitionCenter.tsx');
   const objectList = source('web/src/pages/ObjectList.tsx');
   const apiTypes = source('web/src/utils/api.ts');
+  const cognitionRoute = source('web/api/routes/cognition.ts');
 
   // 收件箱卡片沿用对象 Card，标题只打开次级阅读面板，不发生路由跳转。
   assert.match(cognitionCenter, /CognitionInboxItem/);
@@ -222,6 +225,9 @@ test('Cognition Center reuses pending and progressing WorkCase Cards with second
   assert.match(cognitionCenter, /inboxExpanded/);
   assert.match(cognitionCenter, /CognitionActiveWorkCaseItem/);
   assert.match(cognitionCenter, /<WorkCaseProgressingContent/);
+  assert.match(cognitionCenter, /<PitfallCardContent obj=\{toObjectCard\(item\)\} \/>/);
+  assert.match(cognitionCenter, /item\.inboxKind === 'blocked_resolution'/);
+  assert.match(cognitionCenter, /<WorkCaseBlockingNotice/);
   assert.match(cognitionCenter, /aria-controls="cognition-active-workcases-content"/);
   assert.match(cognitionCenter, /activeExpanded/);
   assert.doesNotMatch(cognitionCenter, /navigate\(/);
@@ -234,15 +240,24 @@ test('Cognition Center reuses pending and progressing WorkCase Cards with second
   assert.doesNotMatch(closureConfirmationBlock[0], /emphasis="supporting"/);
 
   // 类型层：WorkCase 仍只携带 progress_group；Pitfall 明确用 draft 状态进入确认收件箱。
-  assert.match(apiTypes, /export interface CognitionWorkCaseInboxItem[\s\S]*?progress_group: WorkCaseProgressGroup;/);
+  assert.match(apiTypes, /export interface CognitionWorkCaseInboxItem[\s\S]*?progress_group: 'plan_confirmation' \| 'closure_confirmation';/);
   assert.match(apiTypes, /export interface CognitionPitfallInboxItem[\s\S]*?type: 'pitfall';[\s\S]*?status: 'draft';[\s\S]*?inboxKind: 'pitfall_confirmation';/);
-  assert.match(apiTypes, /CognitionInboxKind =[\s\S]*?'plan_confirmation'[\s\S]*?'closure_confirmation'[\s\S]*?'pitfall_confirmation'/);
+  assert.match(apiTypes, /CognitionInboxKind =[\s\S]*?'plan_confirmation'[\s\S]*?'closure_confirmation'[\s\S]*?'blocked_resolution'[\s\S]*?'pitfall_confirmation'/);
   assert.match(apiTypes, /export type CognitionInboxItem = CognitionWorkCaseInboxItem \| CognitionPitfallInboxItem;/);
   assert.match(apiTypes, /export interface CognitionActiveWorkCaseItem[\s\S]*?progress_group: 'progressing';[\s\S]*?isBlocked: boolean;/);
   const workCaseInboxBlock = apiTypes.match(/export interface CognitionWorkCaseInboxItem extends CognitionInboxItemBase \{[\s\S]*?\n\}/);
   assert.ok(workCaseInboxBlock);
   assert.doesNotMatch(workCaseInboxBlock[0], /\bstatus\??:\s/);
   assert.doesNotMatch(workCaseInboxBlock[0], /source_status/);
+  const pitfallCard = objectList.match(/export function PitfallCardContent[\s\S]*?\n}\n\nfunction AdrTerminalCardContent/);
+  assert.ok(pitfallCard);
+  for (const field of ['symptoms', 'trigger_conditions', 'resolution', 'avoidance', 'validation_summary', 'applicability']) {
+    assert.match(objectList, new RegExp(`'${field}'`));
+  }
+  const blockedResolutionBlock = cognitionCenter.match(/if \(item\.inboxKind === 'blocked_resolution'\)[\s\S]*?\n  }\n  if \(item\.inboxKind === 'plan_confirmation'\)/);
+  assert.ok(blockedResolutionBlock);
+  assert.doesNotMatch(blockedResolutionBlock[0], /WorkCasePlanConfirmationContent|WorkCaseClosureConfirmationContent|gate1_waiting|gate2_waiting/);
+  assert.match(cognitionRoute, /if \(raw\.status !== 'draft'\) continue/);
 });
 
 test('Current Web WorkCase docs reject retired fields and states', () => {

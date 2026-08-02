@@ -92,10 +92,11 @@
 |---|---|---|
 | 待批准计划 | WorkCase resolved `current_snapshot_projection.handoff_narrative_key = gate1_waiting` 且 `blocking_overlay = false` | 与对象列表相同的紧凑 Gate 1 Card：`goal`、成功标准、执行授权边界 |
 | 待确认关闭 | WorkCase resolved `current_snapshot_projection.handoff_narrative_key = gate2_waiting` 且 `blocking_overlay = false` | 与对象列表相同的关闭确认 Card：`goal`、`closure_proposal` 与实际 contributed Pitfall |
-| 待确认经验 | Pitfall `status = draft` | 与对象列表相同的 Pitfall Card；完整经验字段在同源次级阅读中展开 |
+| 阻塞待处置 | WorkCase resolved `progress_group = plan_confirmation / closure_confirmation` 且 `blocking_overlay = true` | 显示完整 `blocking_summary` 与当前确认位置；不显示 Gate waiting、批准计划或确认关闭入口 |
+| 待确认经验 | Pitfall `status = draft` | 与对象列表共享普通 Pitfall Card；正文显示可读的 `symptoms`、`trigger_conditions`、`resolution`、`avoidance`、`validation_summary`、`applicability` |
 
 - 排序：有合法 `priority` 的 WorkCase（P0→P3）→ 无优先级条目（含 Pitfall draft）→ `updated_at` 正序（等待最久在前）。排序是派生展示规则，不表达语义重要性结论。
-- 待决类型是 UI 枚举：WorkCase 只由 resolved 投影的两个 Gate handoff key 映射，`progress_group` 只决定复用哪类 Card，不足以单独形成 Human Gate；Pitfall 只由类型专属 `draft` 映射为待确认。`blocking_overlay=true` 不是 Human Gate，即使生命周期位置仍在 Human phase 也不进入收件箱。
+- 待决类型是 UI 枚举：resolved WorkCase 先由 `progress_group` 确定性归入既有两个行动模块；plan/closure group 进入待决定事项，progressing 进入推进中事项。未阻塞的实际 Gate 类型继续只由两个 handoff key 证明；`blocking_overlay=true` 的 Human-position 改用 `blocked_resolution`，保留在待决定事项但不是 Human Gate。Pitfall 只由类型专属 `draft` 映射为待确认。
 - 条目形态直接复用对象列表 Card；聚焦页不新增对象正文。点击标题打开右侧扩展阅读（复用同源对象阅读布局）；标题以外区域不触发路由。
 - 复制入口只位于模块标题带：“复制模块摘要”面向 AI 对话，含各待确认类型计数与条目稳定 ID。条目本身保持与对象列表 Card 相同的复制与交互，不因进入聚焦页增加按钮；近期动态的当前时间范围由高亮的快捷按钮表达，不重复显示范围说明。
 - 决定在 AI 对话中作出，经 Helper 受控写入回写事实源；本模块不承载决定动作。
@@ -188,9 +189,9 @@ Helper 成功写入并回读后，浏览器没有可被 Helper 直接调用的�
 
 1. 不把本页做成营销首页、 hero 区或卡片堆叠的装饰页；面向重复阅读与判断，优先信息密度与扫描效率。
 2. 不提供批准、关闭、分流、处置、优先级编辑或任何写入口；占位按钮、禁用按钮也不出现。
-3. WorkCase 统计只使用 `byProgressGroup`，WorkCase 条目只使用 `progress_group`；不得把派生进展分组放入名为 `status` 或 `byStatus` 的字段。blocked 不进入待决定收件箱，也不得借 `source_status` 重新引入。
+3. WorkCase 统计只使用 `byProgressGroup`，WorkCase 条目只使用 `progress_group`；不得把派生进展分组放入名为 `status` 或 `byStatus` 的字段。resolved open/blocked WorkCase 在两个既有行动模块中唯一归属：plan/closure group 进入待决定事项，progressing 进入推进中；unresolved 不从 `source_status`、raw status/phase 或文案回退。
 4. 不新增事实字段、状态、对象类型、第五进展分组或第二状态模型；待决类型、近期动态时间窗口、静默阈值均为 UI 层派生，如实标注。
-5. 收件箱正文直接复用对象列表 Card：计划确认显示 Gate 1 紧凑入口，关闭确认显示关闭判断输入区与后续贡献，Pitfall `draft` 使用其普通 Card。完整同源事实在标题打开的次级阅读中展开；模块摘要只提供当前收件箱的观察信息与对象索引。缺失或类型不符必须在对应消费位置如实降级，不能过滤坏成员后拼成看似完整的批准材料。
+5. 收件箱正文直接复用对象列表 Card：计划确认显示 Gate 1 紧凑入口，关闭确认显示关闭判断输入区与后续贡献，blocked Human-position 显示阻塞待处置与当前位置，Pitfall `draft` 使用共享普通 Card 显示当前可读的六类判断字段。完整同源事实在标题打开的次级阅读中展开；模块摘要只提供当前收件箱的观察信息与对象索引。缺失或类型不符必须在对应消费位置如实降级，不能过滤坏成员后拼成看似完整的批准材料。
 6. 近期动态不读取或展示 Git 提交；模块三仅为“近期提交热点关系”读取提交，并且只能由提交修改对象自身的 canonical fact 文件、或提交正文显式出现稳定对象 ID 回指。不得由标题、关键词、相近文件或语义推断映射；完整提交阅读仍进入现有提交页面。
 7. 复制语义按 01 §5；候选条目不用 `path`、`target` 或对象 ID 伪造 `canonical_path`；本模块只增加“复制模块摘要”，tooltip 按内容语义命名。
 8. i18n 全量双语；事实正文（goal、提案、commit message 等）不翻译；英文长文案允许换行，不以截断替代阅读。
@@ -205,7 +206,7 @@ Helper 成功写入并回读后，浏览器没有可被 Helper 直接调用的�
 ```typescript
 type CognitionObjectType = 'workcase' | 'adr' | 'pitfall' | 'spark' | 'study';
 type WorkCaseProgressGroup = 'plan_confirmation' | 'progressing' | 'closure_confirmation' | 'closed';
-type InboxKind = 'plan_confirmation' | 'closure_confirmation' | 'pitfall_confirmation';
+type InboxKind = 'plan_confirmation' | 'closure_confirmation' | 'blocked_resolution' | 'pitfall_confirmation';
 
 interface CognitionInboxItemBase {
   id: string;
@@ -229,7 +230,9 @@ type CognitionInboxItem =
   | (CognitionInboxItemBase & {
       type: 'workcase';
       progress_group: 'plan_confirmation' | 'closure_confirmation';
-      inboxKind: 'plan_confirmation' | 'closure_confirmation';
+      lifecycle_position: WorkCaseLifecyclePosition;
+      isBlocked: boolean;
+      inboxKind: 'plan_confirmation' | 'closure_confirmation' | 'blocked_resolution';
     })
   | (CognitionInboxItemBase & {
       type: 'pitfall';

@@ -127,7 +127,12 @@ export interface ObjectItem {
   deleted_at?: string;
   recovery?: Record<string, unknown>;
   /** Pitfall-specific */
+  symptoms?: string;
+  trigger_conditions?: string;
   resolution?: string;
+  avoidance?: string;
+  validation_summary?: string;
+  applicability?: string;
 }
 
 export interface WorkCaseExecutionItem {
@@ -441,8 +446,8 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
 }
 
 
-/** 认知中心待决类型：两个 WorkCase Human Gate 与 Pitfall draft 审核。 */
-export type CognitionInboxKind = 'plan_confirmation' | 'closure_confirmation' | 'pitfall_confirmation';
+/** 认知中心待决类型：两个 WorkCase Human Gate、阻塞处置与 Pitfall draft 审核。 */
+export type CognitionInboxKind = 'plan_confirmation' | 'closure_confirmation' | 'blocked_resolution' | 'pitfall_confirmation';
 
 /**
  * 决定依据区内联投影（Q3）：与 WorkCase 列表 Card 同源的 source-bound 字段子集，
@@ -487,8 +492,10 @@ interface CognitionInboxItemBase {
 /** WorkCase 条目只携带 progress_group，不复用来源 status 语义。 */
 export interface CognitionWorkCaseInboxItem extends CognitionInboxItemBase {
   type: 'workcase';
-  progress_group: WorkCaseProgressGroup;
-  inboxKind: 'plan_confirmation' | 'closure_confirmation';
+  progress_group: 'plan_confirmation' | 'closure_confirmation';
+  lifecycle_position: WorkCaseLifecyclePosition;
+  isBlocked: boolean;
+  inboxKind: 'plan_confirmation' | 'closure_confirmation' | 'blocked_resolution';
 }
 
 /** Pitfall draft 的待确认是类型专属状态，按来源状态直接呈现。 */

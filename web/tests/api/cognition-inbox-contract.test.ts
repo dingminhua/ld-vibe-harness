@@ -3,7 +3,7 @@
  *
  * 以当前治理范围解析出的受管辖工作树（事实源）运行，断言 02 §8 当前已交付字段
  * （generatedAt / scope / inbox / activeWorkCases / recentActivity / sparkHealth / commitHotspots / issues）、待决与推进中收录及排序、命名纪律
- * （WorkCase 的两个 Human Gate progress_group，加上 Pitfall 的 draft 待确认）、
+ * （WorkCase 的两个 Human-position progress_group、blocked_resolution，加上 Pitfall 的 draft 待确认）、
  * 内联对象卡片依据、条件 canonical_path，以及近期动态的窗口与时间标记。
  *
  * 断言以“不依赖具体对象身份的不变式”为主：无论事实源是本仓库还是预览工作树，
@@ -33,8 +33,9 @@ after(async () => {
   })
 })
 
-async function cognition(locale = 'zh', window = '1d') {
-  const response = await fetch(`${baseUrl}/api/cognition?locale=${locale}&window=${window}`)
+async function cognition(locale = 'zh', window = '1d', projectId?: string) {
+  const projectQuery = projectId ? `&projectId=${encodeURIComponent(projectId)}` : ''
+  const response = await fetch(`${baseUrl}/api/cognition?locale=${locale}&window=${window}${projectQuery}`)
   assert.equal(response.status, 200)
   assert.match(response.headers.get('cache-control') ?? '', /no-store/)
   return (await response.json()) as Record<string, unknown>
@@ -66,8 +67,9 @@ function compareSort(a: Record<string, unknown>, b: Record<string, unknown>): nu
   return String(a.id).localeCompare(String(b.id))
 }
 
-/** WorkCase 条目仅由两个 Human Gate progress_group 推导期望的 inboxKind。 */
+/** WorkCase 模块归属来自 progress_group；blocked Human-position 改用非 Gate 呈现。 */
 function expectedInboxKind(item: Record<string, unknown>): string | null {
+  if (item.isBlocked === true) return 'blocked_resolution'
   const pg = item.progress_group
   if (pg === 'plan_confirmation') return 'plan_confirmation'
   if (pg === 'closure_confirmation') return 'closure_confirmation'
@@ -379,7 +381,7 @@ test('active WorkCases contain only the progressing group and reuse the list Car
   }
 })
 
-test('inbox keeps WorkCase Human Gates separate from Pitfall draft confirmation', async () => {
+test('inbox keeps WorkCase Human positions separate from Pitfall draft confirmation', async () => {
   const body = await cognition('zh')
   const items = (body.inbox as Record<string, unknown>).items as Array<Record<string, unknown>>
 
@@ -390,7 +392,9 @@ test('inbox keeps WorkCase Human Gates separate from Pitfall draft confirmation'
     if (item.type === 'workcase') {
       workCaseCount += 1
       assert.ok(['plan_confirmation', 'closure_confirmation'].includes(String(item.progress_group)))
-      assert.ok(['plan_confirmation', 'closure_confirmation'].includes(String(item.inboxKind)))
+      assert.ok(['plan_confirmation', 'closure_confirmation', 'blocked_resolution'].includes(String(item.inboxKind)))
+      assert.equal(typeof item.lifecycle_position, 'string')
+      assert.equal(typeof item.isBlocked, 'boolean')
       // WorkCase 条目只携带 progress_group；不得把来源 status 放在名为 status 的字段（02 §7.3）。
       assert.equal('status' in item, false)
       assert.equal(item.inboxKind, expectedInboxKind(item))
@@ -411,7 +415,45 @@ test('inbox keeps WorkCase Human Gates separate from Pitfall draft confirmation'
   assert.ok(pitfallCount > 0)
   assert.ok(kinds.has('plan_confirmation'))
   assert.ok(kinds.has('closure_confirmation'))
+  assert.ok(kinds.has('blocked_resolution'))
   assert.ok(kinds.has('pitfall_confirmation'))
+})
+
+test('controlled preview fixture keeps blocked Human-position actionable without calling it a Gate', async () => {
+  const body = await cognition('zh', '1d', 'ldvh-closure-preview')
+  const inbox = (body.inbox as Record<string, unknown>).items as Array<Record<string, unknown>>
+  const active = (body.activeWorkCases as Record<string, unknown>).items as Array<Record<string, unknown>>
+  const blockedPlan = inbox.find((item) => item.id === 'workcase-0102')
+  assert.ok(blockedPlan, 'blocked plan-position fixture remains in pending decisions')
+  assert.equal(blockedPlan.progress_group, 'plan_confirmation')
+  assert.equal(blockedPlan.inboxKind, 'blocked_resolution')
+  assert.equal(blockedPlan.isBlocked, true)
+  assert.equal(blockedPlan.lifecycle_position, 'human_plan_confirming')
+  assert.equal(inbox.filter((item) => item.id === 'workcase-0102').length, 1)
+  assert.equal(active.some((item) => item.id === 'workcase-0102'), false)
+
+  for (const objectId of ['workcase-0103', 'workcase-0104']) {
+    const progressing = active.find((item) => item.id === objectId)
+    assert.ok(progressing, `${objectId} remains in work in progress`)
+    assert.equal(progressing.progress_group, 'progressing')
+    assert.equal(progressing.isBlocked, true)
+    assert.equal(inbox.some((item) => item.id === objectId), false)
+  }
+})
+
+test('controlled Pitfall draft fixture carries the full shared Card decision fields', async () => {
+  const body = await cognition('zh', '1d', 'ldvh-closure-preview')
+  const items = (body.inbox as Record<string, unknown>).items as Array<Record<string, unknown>>
+  const pitfall = items.find((item) => item.id === 'pitfall-0101')
+  assert.ok(pitfall)
+  assert.equal(pitfall.type, 'pitfall')
+  assert.equal(pitfall.status, 'draft')
+  assert.equal(pitfall.inboxKind, 'pitfall_confirmation')
+  const card = pitfall.card as Record<string, unknown>
+  for (const field of ['symptoms', 'trigger_conditions', 'resolution', 'avoidance', 'validation_summary', 'applicability']) {
+    assert.equal(typeof card[field], 'string', `${field} remains readable in the ordinary Pitfall Card projection`)
+    assert.ok(String(card[field]).trim().length > 0)
+  }
 })
 
 test('priority signal is shown only for valid P0-P3 and omitted for missing/invalid', async () => {

@@ -16,6 +16,8 @@ import PageHeader from '@/components/PageHeader';
 import CopyPathButton from '@/components/CopyPathButton';
 import {
   ObjectCardFrame,
+  PitfallCardContent,
+  WorkCaseBlockingNotice,
   WorkCaseContributionsContent,
   WorkCaseClosureConfirmationContent,
   WorkCasePlanConfirmationContent,
@@ -76,6 +78,7 @@ function getCommitHotspotStatusGroup(node: CognitionCommitHotspotNode): Exclude<
 const INBOX_KIND_LABEL_KEYS: Record<CognitionInboxKind, LocaleKey> = {
   plan_confirmation: 'cognition.kind.plan_confirmation',
   closure_confirmation: 'cognition.kind.closure_confirmation',
+  blocked_resolution: 'cognition.kind.blocked_resolution',
   pitfall_confirmation: 'cognition.kind.pitfall_confirmation',
 };
 
@@ -85,7 +88,12 @@ type Translate = ReturnType<typeof useI18n>['t'];
 function buildModuleSummary(data: CognitionData, locale: string, t: Translate): string {
   const lines: string[] = [];
   lines.push(t('cognition.inbox.title'));
-  const counts: Record<CognitionInboxKind, number> = { plan_confirmation: 0, closure_confirmation: 0, pitfall_confirmation: 0 };
+  const counts: Record<CognitionInboxKind, number> = {
+    plan_confirmation: 0,
+    closure_confirmation: 0,
+    blocked_resolution: 0,
+    pitfall_confirmation: 0,
+  };
   for (const item of data.inbox.items) counts[item.inboxKind] += 1;
   const countParts = (Object.keys(counts) as CognitionInboxKind[])
     .filter((kind) => counts[kind] > 0)
@@ -183,7 +191,25 @@ function InboxItemReadNotes({ item, locale }: { item: CognitionCardItem; locale:
 }
 
 function InboxCardContent({ item, t, locale }: { item: CognitionInboxItem; t: Translate; locale: string }) {
-  if (item.type === 'workcase' && item.inboxKind === 'plan_confirmation') {
+  if (item.type === 'pitfall') return <PitfallCardContent obj={toObjectCard(item)} />;
+  if (item.inboxKind === 'blocked_resolution') {
+    return (
+      <div className="grid min-w-0 gap-2">
+        <WorkCaseBlockingNotice blockingSummary={item.card.blocking_summary} t={t} />
+        <section className="min-w-0 rounded-md border border-amber-400/25 border-l-2 border-l-amber-400 bg-amber-500/[0.035] px-3.5 py-3">
+          <h3 className="ldvh-card-decision-title text-amber-700/85 dark:text-amber-200/85">
+            {t('cognition.kind.blocked_resolution')}
+          </h3>
+          <p className="ldvh-card-decision-body mt-1.5 text-amber-950/70 dark:text-amber-100/75">
+            {t('cognition.blocked.position', {
+              position: getObjectStatusLocale('workcase', item.progress_group, locale),
+            })}
+          </p>
+        </section>
+      </div>
+    );
+  }
+  if (item.inboxKind === 'plan_confirmation') {
     return (
       <WorkCasePlanConfirmationContent
         mode="card"
@@ -195,7 +221,7 @@ function InboxCardContent({ item, t, locale }: { item: CognitionInboxItem; t: Tr
       />
     );
   }
-  if (item.type === 'workcase' && item.inboxKind === 'closure_confirmation') {
+  if (item.inboxKind === 'closure_confirmation') {
     return (
       <>
         <WorkCaseClosureConfirmationContent goal={item.card.goal} closureProposal={item.card.closureProposal} />
@@ -207,7 +233,6 @@ function InboxCardContent({ item, t, locale }: { item: CognitionInboxItem; t: Tr
 }
 
 function toObjectCard(item: CognitionCardItem): ObjectItem {
-  const activeWorkCase = item.type === 'workcase' && 'isBlocked' in item ? item : null;
   return {
     ...(item.card as unknown as ObjectItem),
     id: item.id,
@@ -216,12 +241,12 @@ function toObjectCard(item: CognitionCardItem): ObjectItem {
     ...(item.title_en ? { title_en: item.title_en } : {}),
     ...(item.title_zh ? { title_zh: item.title_zh } : {}),
     status: item.type === 'workcase'
-      ? activeWorkCase?.isBlocked ? 'blocked' : item.progress_group
+      ? item.isBlocked ? 'blocked' : item.progress_group
       : item.status,
     ...(item.type === 'workcase' ? { progress_group: item.progress_group } : {}),
-    ...(activeWorkCase ? {
-      lifecycle_position: activeWorkCase.lifecycle_position,
-      ...(activeWorkCase.progress_step ? { progress_step: activeWorkCase.progress_step } : {}),
+    ...(item.type === 'workcase' ? {
+      lifecycle_position: item.lifecycle_position,
+      ...('progress_step' in item && item.progress_step ? { progress_step: item.progress_step } : {}),
     } : {}),
     path: item.canonical_path ?? '',
     updated: item.updatedAt ?? '',
@@ -277,6 +302,7 @@ function InboxItemRow({ item }: { item: CognitionInboxItem }) {
         obj={objectCard}
         locale={locale}
         onOpen={() => openPanel({ type: 'object', title, objectType: item.type, objectId: item.id })}
+        displayStatus={item.type === 'workcase' && item.inboxKind === 'blocked_resolution' ? 'blocked' : undefined}
       >
         <InboxCardContent item={item} t={t} locale={locale} />
         <InboxItemReadNotes item={item} locale={locale} />

@@ -1271,9 +1271,44 @@ function PitfallTerminalCardContent({ obj }: { obj: ObjectItem }) {
   );
 }
 
-function PitfallCardContent({ obj }: { obj: ObjectItem }) {
+const PITFALL_DECISION_FIELDS = [
+  'symptoms',
+  'trigger_conditions',
+  'resolution',
+  'avoidance',
+  'validation_summary',
+  'applicability',
+] as const;
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function PitfallCardContent({ obj }: { obj: ObjectItem }) {
+  const { locale } = useI18n();
   if (obj.status === 'discarded') return <PitfallTerminalCardContent obj={obj} />;
-  return null;
+  const fields = PITFALL_DECISION_FIELDS
+    .map((field) => ({ field, value: obj[field] }))
+    .filter((entry): entry is { field: typeof PITFALL_DECISION_FIELDS[number]; value: string } => (
+      typeof entry.value === 'string' && entry.value.trim().length > 0
+    ));
+  if (fields.length === 0) return null;
+
+  return (
+    <div className="grid min-w-0 gap-2">
+      {fields.map(({ field, value }) => (
+        <section key={field} className="min-w-0 rounded-md border border-amber-400/20 border-l-2 border-l-amber-400/70 bg-amber-500/[0.025] px-3.5 py-3">
+          <h3 className="ldvh-card-decision-title text-amber-700/85 dark:text-amber-200/85">
+            {getFieldLabel(field, locale)}
+          </h3>
+          <div className={`${WORKCASE_CARD_TITLE_BODY_GAP_CLASS} min-w-0 break-words`}>
+            <SummaryText
+              value={value}
+              collapseThreshold={420}
+              className="ldvh-card-decision-body [&_p]:my-0 text-amber-950/70 dark:text-amber-100/75"
+            />
+          </div>
+        </section>
+      ))}
+    </div>
+  );
 }
 
 function AdrTerminalCardContent({ obj }: { obj: ObjectItem }) {
