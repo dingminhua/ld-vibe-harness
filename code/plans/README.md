@@ -19,6 +19,7 @@
 - [事实对象完整性与质量 Gate](fact-integrity-quality-gate.md)：覆盖 full-v4 对当前事实库完整机械消费的只读检查，以及恢复既有 Ruff 质量 Gate。
 - [Spark `implemented` 终态纵切](spark-implemented-terminal.md)：覆盖 Spark 内容直接落实的专属终态、F4 处置核对、无效历史终态的受控更正以及相应 Code、Helper、Web 与验证边界。
 - [WorkCase 专属受控变更 Helper 操作](workcase-controlled-update.md)：覆盖共享单对象更新事务、统一事件时点、`update-workcase`、锁失败诊断、响应档位与 YAML 序列化。
+- [WorkCase 关闭候选只读投影](workcase-closed-candidate-projection.md)：覆盖 proposal 到非托管 closed `fact_object` 的唯一纯投影、`close-workcase` 同源校验与只读候选 Helper 操作。
 - [环境无关启用、只读 doctor 与用户文档打包](environment-neutral-enablement.md)：覆盖 `ldvh.doctor`、`ldvh-doctor/1`、既有接入面投影、用户文档随包、发行物生命周期和环境无关验证边界。
 
 新增、替代或移动规划时，必须同步更新本入口；不在列表中的临时会话计划不承担当前 Code 实现规划责任。

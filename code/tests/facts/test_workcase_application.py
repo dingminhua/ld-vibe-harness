@@ -361,6 +361,68 @@ def _closed_from(before: dict[str, Any]) -> dict[str, Any]:
     return fields
 
 
+def test_closed_candidate_projection_is_complete_nonmanaged_and_matches_close_after() -> None:
+    before = _closing("workcase-0006", outcome="completed")
+    before["urls"] = _url()
+    before["relations"] = [
+        {
+            "relation_key": "related-to",
+            "target": {
+                "governed_project_id": "sample",
+                "fact_type_key": "spark",
+                "object_id": "spark-0001",
+            },
+        }
+    ]
+
+    candidate = workcase_update.project_closed_workcase_candidate(before)
+    expected = _closed_from(before)
+    for managed in ("object_id", "fact_type_key", "created_at", "updated_at"):
+        expected.pop(managed)
+    expected["urls"] = before["urls"]
+    expected["relations"] = before["relations"]
+
+    assert candidate == expected
+    closed_after = _closed_from(before) | {"urls": before["urls"], "relations": before["relations"]}
+    assert workcase_update._close_mapping_issues(before, closed_after) == ()
+
+
+def test_closed_candidate_projection_deduplicates_routes_and_separates_fingerprint_basis() -> None:
+    before = _closing(
+        "workcase-0006",
+        outcome="partial",
+        target=WorkCaseRouteTargetSnapshot(
+            FactReference("sample", "workcase", "workcase-0008"),
+            "a" * 64,
+            "proposal",
+        ),
+    )
+    before["closure_proposal"]["residual_decisions"].append(
+        dict(before["closure_proposal"]["residual_decisions"][0], residual_id="residual-second")
+    )
+
+    candidate = workcase_update.project_closed_workcase_candidate(before)
+    basis, issues = workcase_update.proposal_route_target_basis(before)
+
+    assert candidate["relations"] == [
+        {
+            "relation_key": "routed-to",
+            "target": {
+                "governed_project_id": "sample",
+                "fact_type_key": "workcase",
+                "object_id": "workcase-0008",
+            },
+        }
+    ]
+    assert basis == [
+        {
+            "target": candidate["relations"][0]["target"],
+            "content_fingerprint": "a" * 64,
+        }
+    ]
+    assert issues == ()
+
+
 def _command(
     project: _Project,
     before: dict[str, Any],
@@ -810,10 +872,7 @@ def test_result_review_rejects_creation_only_quality_gate_coverage(
     readback = _read(project, "workcase-0001")
 
     assert readback.check_status == "invalid"
-    assert any(
-        issue.field_path == "result_reviews[0].covered_quality_gate_ids"
-        for issue in readback.issues
-    )
+    assert any(issue.field_path == "result_reviews[0].covered_quality_gate_ids" for issue in readback.issues)
 
 
 def test_update_rejects_whitespace_only_text_without_writing(
@@ -974,7 +1033,7 @@ def test_update_proposal_target_failures_have_zero_source_writes(
         )
     elif case == "cross_type":
         target = WorkCaseRouteTargetSnapshot(
-                FactReference("sample", "adr", "adr-0002"),
+            FactReference("sample", "adr", "adr-0002"),
             "0" * 64,
             "closure_proposal.residual_decisions[0].route_target",
         )
@@ -1699,8 +1758,7 @@ def test_close_mapping_preserves_spark_suggestions_without_creating_a_relation()
 
     after["spark_suggestions"][0]["summary"] = "关闭时被改写。"
     assert any(
-        issue.field_path == "spark_suggestions"
-        for issue in workcase_update._close_mapping_issues(before, after)
+        issue.field_path == "spark_suggestions" for issue in workcase_update._close_mapping_issues(before, after)
     )
 
 

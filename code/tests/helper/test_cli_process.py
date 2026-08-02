@@ -49,7 +49,7 @@ def test_general_discovery_reports_source_bound_implementation(tmp_path: Path) -
     assert response["outcome"] == "ok"
     assert response["operation_key"] is None
     assert response["result"]["mode"] == "discovery"
-    assert len(response["result"]["operations"]) == 19
+    assert len(response["result"]["operations"]) == 20
     operations = {item["operation_key"]: item for item in response["result"]["operations"]}
     candidates = operations["find-fact-object-candidates"]
     assert candidates["implementation"]["present"] is True
@@ -171,7 +171,7 @@ def test_general_discovery_reports_source_bound_implementation(tmp_path: Path) -
     assert commit_precheck["required_inputs"] == ["work_object_locators", "arguments.message"]
     assert commit_precheck["optional_inputs"] == ["arguments.workspace_root"]
     assert len(response["gaps"]) == 2
-    assert sum(item["member_count"] for item in response["gaps"]) == 152
+    assert sum(item["member_count"] for item in response["gaps"]) == 160
 
 
 def test_diagnostic_profile_expands_qualification_details(tmp_path: Path) -> None:
@@ -183,7 +183,7 @@ def test_diagnostic_profile_expands_qualification_details(tmp_path: Path) -> Non
 
     assert completed.returncode == 0
     assert response["response_profile"] == "diagnostic"
-    assert len(response["gaps"]) == 152
+    assert len(response["gaps"]) == 160
     assert all(item["summary"].startswith("当前 Code 尚未自动证明：") for item in response["gaps"])
     assert all("member_count" not in item for item in response["gaps"])
 
@@ -196,17 +196,15 @@ def test_defined_operation_check_and_call_return_actual_l0_results(tmp_path: Pat
     assert check_response["outcome"] == "ok"
     checked_operation = check_response["result"]["operations"][0]
     assert checked_operation["availability"] == "available_for_request"
-    assert len(checked_operation["available_scope"]) == 30
+    assert len(checked_operation["available_scope"]) == 34
     assert "working-tree-test-evidence-fields" in checked_operation["available_scope"]
     assert "web-api-reading-contract" in checked_operation["available_scope"]
     assert checked_operation["unavailable_scope"] == []
 
     assert called.returncode == 0
     assert call_response["outcome"] == "ok"
-    assert len(call_response["result"]["items"]) == 30
-    assert "working-tree-test-evidence-fields" in {
-        item["key"] for item in call_response["result"]["items"]
-    }
+    assert len(call_response["result"]["items"]) == 34
+    assert "working-tree-test-evidence-fields" in {item["key"] for item in call_response["result"]["items"]}
     assert "web-api-reading-contract" in {item["key"] for item in call_response["result"]["items"]}
     assert call_response["scope"]["requested"] == call_response["scope"]["completed"]
     assert call_response["scope"]["not_completed"] == []
@@ -583,9 +581,7 @@ def test_specification_context_invalid_heading_is_whole_request_invalid(tmp_path
         stdin=json.dumps(
             {
                 "arguments": {
-                    "contexts": [
-                        {"responsibility_key": "ldvh-root", "primary_heading_paths": [["Unknown H2"]]}
-                    ]
+                    "contexts": [{"responsibility_key": "ldvh-root", "primary_heading_paths": [["Unknown H2"]]}]
                 },
                 "requested_disclosure": "L3",
             }

@@ -67,6 +67,12 @@ from ldvh.helper.operations.specification_context_operation import (
 from ldvh.helper.operations.specification_context_operation import (
     SPECIFICATION_CONTEXT_IMPLEMENTATION,
 )
+from ldvh.helper.operations.workcase_close_candidate_operation import (
+    OPERATION_KEY as WORKCASE_CLOSE_CANDIDATE_OPERATION_KEY,
+)
+from ldvh.helper.operations.workcase_close_candidate_operation import (
+    WORKCASE_CLOSE_CANDIDATE_IMPLEMENTATION,
+)
 from ldvh.helper.operations.workcase_update_operation import (
     CLOSE_OPERATION_KEY,
     CLOSE_WORKCASE_IMPLEMENTATION,
@@ -97,6 +103,7 @@ IMPLEMENTATIONS = MappingProxyType[str, OperationImplementation](
         CLOSE_OPERATION_KEY: CLOSE_WORKCASE_IMPLEMENTATION,
         CORRECT_CLOSED_OPERATION_KEY: CORRECT_CLOSED_WORKCASE_IMPLEMENTATION,
         UPDATE_OPERATION_KEY: UPDATE_WORKCASE_IMPLEMENTATION,
+        WORKCASE_CLOSE_CANDIDATE_OPERATION_KEY: WORKCASE_CLOSE_CANDIDATE_IMPLEMENTATION,
     }
 )
 

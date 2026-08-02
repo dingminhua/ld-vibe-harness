@@ -651,9 +651,22 @@ WorkCase 的全部活动期写入必须使用 `update-workcase`；关闭必须�
 
 | operation_key | summary | effect | arguments_contract | result_contract |
 |---|---|---|---|---|
+| `prepare-closed-workcase-candidate` | 从刚读取的 Gate2 source 快照确定性投影完整非托管 closed 候选与 proposal 已保存的目标映射基础，不检查关闭授权或目标当前状态 | `read` | `workcase-fact-type::prepare-closed-workcase-candidate 输入与结果` | `workcase-fact-type::prepare-closed-workcase-candidate 输入与结果` |
 | `update-workcase` | 对一个已精确读取的活动期 WorkCase 提交完整目标 after，并按本文机械执行字段所有权、版本、失效、phase 与 CAS 检查 | `may_change_state` | `workcase-fact-type::update-workcase 输入与结果` | `workcase-fact-type::update-workcase 输入与结果` |
 | `close-workcase` | 消费完整活动期 before、Human 当次关闭决定和目标指纹，原子形成 closed 白名单并回读 | `may_change_state` | `workcase-fact-type::close-workcase 输入与结果` | `workcase-fact-type::close-workcase 输入与结果` |
 | `correct-closed-workcase` | 对一个 closed WorkCase 提交完整更正 after，并在需要时消费新 Human 决定与全部 after route target 指纹 | `may_change_state` | `workcase-fact-type::correct-closed-workcase 输入与结果` | `workcase-fact-type::correct-closed-workcase 输入与结果` |
+
+### prepare-closed-workcase-candidate 输入与结果
+
+本操作是 `read`，只为调用方减少手工重写 §6.7 第 6–8 项的机械错误，不是关闭事务、授权检查、Human Gate 或完成判断：
+
+- 共同请求中 `arguments.fact_ref` 必填，成员闭集为 `governed_project_id`、固定值 `fact_type_key=workcase` 与 `object_id`；`arguments.workspace_root` 和顶层 `work_object_locators` 可选并复用 05 §11.1 的当前 Working Tree 管辖定位语义。其它领域参数禁止，`observed_context`、`authorization_reference` 必须为空，`requested_disclosure` 必须为 `null` 或省略；
+- source 必须是当前 Working Tree 中完整、mechanically valid、`status=open` 且 `phase=human_closure_confirming` 的 WorkCase，并有完整当前 `closure_proposal`。invalid、unavailable、not-found、blocked、closed 或其它 phase 不产生候选；
+- 成功 `result` 字段闭集为 `actual_ref`、`canonical_path`、`carrier`、`source_content_fingerprint`、`fact_object` 与 `mapping_basis`。`fact_object` 是 §6.1 closed 必填集和适用条件集排除 Code 托管 `object_id`、`fact_type_key`、`created_at`、`updated_at` 后的完整目标 after：逐值保留 title、goal、scope、成功标准定义/结果、result summary、validation summary、条件 urls 和 before 已有的 `contributed-to` / `has-file-asset` / `related-to`，并按 §6.7 唯一映射 status、outcome、disposition、accepted-stop residuals、spark suggestions 与去重 `routed-to`；
+- `mapping_basis` 字段闭集只有 `proposal_route_targets`。其数组按 target 稳定三元组排序去重，每项字段闭集为 `target` 和 `content_fingerprint`，只原样复制当前 proposal 的 `route_existing` 决策已经保存的目标观察；没有 route target 时为空数组。它不表示 target 当前仍存在、有效、处于允许状态或指纹未变；本操作不得读取任何 target、入向依赖或关系图来补强该结论；
+- `source_content_fingerprint` 精确绑定形成候选的 source bytes。source 后续变化即使自然语言相似，旧候选也不得作为真实关闭的 `expected_content_fingerprint`；必须重新读取并重新投影。操作不接收 expected fingerprint、Human 决定、route target 第二清单或授权回指；
+- 成功只说明对当次完整 source 完成确定性只读投影。响应和 Code 均不得据此声称 Human 已批准、Gate2 已完成、关闭前提齐备、目标可用、“已准备好关闭”或工作完成；真正关闭仍必须调用 `close-workcase`，在事务内重新读取 source 与全部 target、执行 CAS、指纹、状态、入向依赖和关系图检查并成功回读；
+- source 资格不成立返回 `rejected`，管辖、Schema 或读取技术边界无法完成返回 `unavailable`，均为零写入；操作不生成或改写任何 WorkCase 自然语言事实。
 
 ### update-workcase 输入与结果
 

@@ -9,6 +9,7 @@ or compatibility shape is constructed here.
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
+from copy import deepcopy
 from dataclasses import dataclass, replace
 from typing import Any, Literal
 
@@ -257,9 +258,11 @@ def _gate_issues(
             }
         )
         actual_refs = after_approval.get("source_refs")
-        actual_locators = sorted(actual_refs) if isinstance(actual_refs, list) and all(
-            isinstance(member, str) for member in actual_refs
-        ) else []
+        actual_locators = (
+            sorted(actual_refs)
+            if isinstance(actual_refs, list) and all(isinstance(member, str) for member in actual_refs)
+            else []
+        )
         if not actual_locators or actual_locators != expected_locators:
             issues.append(
                 FactIssue(
@@ -358,6 +361,93 @@ def _contributed_to_identities(fields: Mapping[str, Any]) -> list[tuple[object, 
     return sorted(identities, key=repr)
 
 
+_CLOSED_PRESERVED_FIELDS = (
+    "title",
+    "goal",
+    "scope",
+    "success_criterion_definitions",
+    "success_criterion_results",
+    "result_summary",
+    "validation_summary",
+    "urls",
+)
+_CLOSED_PRESERVED_RELATION_KEYS = frozenset({"contributed-to", "has-file-asset", "related-to"})
+
+
+def proposal_route_target_basis(
+    before: Mapping[str, Any],
+) -> tuple[list[dict[str, Any]], tuple[FactIssue, ...]]:
+    """Return validated proposal-stored target observations without reading targets."""
+
+    snapshots, issues = proposal_route_target_snapshots(before)
+    basis = [
+        {
+            "target": snapshot.target.to_json(),
+            "content_fingerprint": snapshot.content_fingerprint,
+        }
+        for snapshot in sorted(
+            snapshots,
+            key=lambda value: (
+                value.target.governed_project_id,
+                value.target.fact_type_key,
+                value.target.object_id,
+            ),
+        )
+    ]
+    return basis, issues
+
+
+def project_closed_workcase_candidate(before: Mapping[str, Any]) -> dict[str, Any]:
+    """Project one Gate 2 snapshot to the complete non-managed closed after."""
+
+    proposal = before.get("closure_proposal")
+    if not isinstance(proposal, Mapping):
+        raise ValueError("closure_proposal is required for the closed candidate projection")
+    route_target_basis, route_target_issues = proposal_route_target_basis(before)
+    if route_target_issues:
+        raise ValueError("closure_proposal route_target observations are inconsistent")
+
+    candidate: dict[str, Any] = {"status": "closed"}
+    for field_name in _CLOSED_PRESERVED_FIELDS:
+        if field_name in before:
+            candidate[field_name] = deepcopy(before[field_name])
+    candidate["closure_outcome"] = deepcopy(proposal.get("proposed_outcome"))
+    candidate["disposition_summary"] = deepcopy(proposal.get("proposed_disposition_summary"))
+
+    residuals: list[dict[str, Any]] = []
+    decisions = proposal.get("residual_decisions")
+    for decision in decisions if isinstance(decisions, list) else []:
+        if not isinstance(decision, Mapping) or decision.get("proposed_disposition") != "accept_stop":
+            continue
+        residuals.append(
+            {
+                "residual_id": deepcopy(decision.get("residual_id")),
+                "summary": deepcopy(decision.get("summary")),
+            }
+        )
+    if residuals:
+        candidate["residual_responsibilities"] = residuals
+    suggestions = proposal.get("spark_suggestions")
+    if isinstance(suggestions, list) and suggestions:
+        candidate["spark_suggestions"] = deepcopy(suggestions)
+
+    relations: list[dict[str, Any]] = []
+    before_relations = before.get("relations")
+    for relation in before_relations if isinstance(before_relations, list) else []:
+        if isinstance(relation, Mapping) and relation.get("relation_key") in _CLOSED_PRESERVED_RELATION_KEYS:
+            relations.append(deepcopy(dict(relation)))
+    relations.extend(
+        {
+            "relation_key": "routed-to",
+            "target": deepcopy(item["target"]),
+        }
+        for item in route_target_basis
+    )
+    if relations:
+        candidate["relations"] = relations
+    return candidate
+
+
 def _close_mapping_issues(
     before: Mapping[str, Any],
     after: Mapping[str, Any],
@@ -365,17 +455,21 @@ def _close_mapping_issues(
     """Require the closed after to be the exact projection of the current proposal."""
 
     issues: list[FactIssue] = []
-    for field_name in (
-        "title",
-        "goal",
-        "scope",
-        "success_criterion_definitions",
-        "success_criterion_results",
-        "result_summary",
-        "validation_summary",
-        "urls",
-    ):
-        if before.get(field_name, _MISSING) != after.get(field_name, _MISSING):
+    proposal = before.get("closure_proposal")
+    if not isinstance(proposal, Mapping):
+        return (
+            FactIssue(
+                "schema",
+                "close-workcase before 必须包含完整 closure_proposal",
+                "closure_proposal",
+            ),
+        )
+    _, route_target_issues = proposal_route_target_basis(before)
+    if route_target_issues:
+        return route_target_issues
+    expected = project_closed_workcase_candidate(before)
+    for field_name in _CLOSED_PRESERVED_FIELDS:
+        if expected.get(field_name, _MISSING) != after.get(field_name, _MISSING):
             issues.append(
                 FactIssue(
                     "schema",
@@ -383,22 +477,11 @@ def _close_mapping_issues(
                     field_name,
                 )
             )
-
-    proposal = before.get("closure_proposal")
-    if not isinstance(proposal, Mapping):
-        return (
-            *issues,
-            FactIssue(
-                "schema",
-                "close-workcase before 必须包含完整 closure_proposal",
-                "closure_proposal",
-            ),
-        )
     for proposal_name, terminal_name in (
         ("proposed_outcome", "closure_outcome"),
         ("proposed_disposition_summary", "disposition_summary"),
     ):
-        if proposal.get(proposal_name, _MISSING) != after.get(terminal_name, _MISSING):
+        if expected.get(terminal_name, _MISSING) != after.get(terminal_name, _MISSING):
             issues.append(
                 FactIssue(
                     "schema",
@@ -407,7 +490,7 @@ def _close_mapping_issues(
                 )
             )
 
-    expected_suggestions = proposal.get("spark_suggestions", _MISSING)
+    expected_suggestions = expected.get("spark_suggestions", _MISSING)
     if expected_suggestions != after.get("spark_suggestions", _MISSING):
         issues.append(
             FactIssue(
@@ -417,29 +500,8 @@ def _close_mapping_issues(
             )
         )
 
-    expected_residuals: list[dict[str, object]] = []
-    expected_route_targets: set[tuple[object, object, object]] = set()
-    decisions = proposal.get("residual_decisions")
-    for decision in decisions if isinstance(decisions, list) else []:
-        if not isinstance(decision, Mapping):
-            continue
-        if decision.get("proposed_disposition") == "accept_stop":
-            expected_residuals.append(
-                {
-                    "residual_id": decision.get("residual_id"),
-                    "summary": decision.get("summary"),
-                }
-            )
-        elif decision.get("proposed_disposition") == "route_existing":
-            target = decision.get("route_target")
-            if isinstance(target, Mapping):
-                expected_route_targets.add(
-                    (
-                        target.get("governed_project_id"),
-                        target.get("fact_type_key"),
-                        target.get("object_id"),
-                    )
-                )
+    projected_residuals = expected.get("residual_responsibilities")
+    expected_residuals = projected_residuals if isinstance(projected_residuals, list) else []
 
     actual_residuals = after.get("residual_responsibilities")
     actual_residual_values = actual_residuals if isinstance(actual_residuals, list) else []
@@ -464,6 +526,7 @@ def _close_mapping_issues(
                 "residual_responsibilities",
             )
         )
+    expected_route_targets = set(workcase_routed_target_identities(expected))
     actual_route_targets = set(workcase_routed_target_identities(after))
     if actual_route_targets != expected_route_targets:
         issues.append(
@@ -474,7 +537,7 @@ def _close_mapping_issues(
             )
         )
     for relation_key in ("contributed-to", "has-file-asset", "related-to"):
-        before_relations = {identity for identity in _relation_identities(before) if identity[0] == relation_key}
+        before_relations = {identity for identity in _relation_identities(expected) if identity[0] == relation_key}
         after_relations = {identity for identity in _relation_identities(after) if identity[0] == relation_key}
         if before_relations == after_relations:
             continue
@@ -732,11 +795,7 @@ def _new_file_asset_issues(
     """Require each newly formed file edge to target a current active FileAsset."""
 
     before_edges = {identity for identity in _relation_identities(before) if identity[0] == "has-file-asset"}
-    new_edges = [
-        identity
-        for identity in _relation_identities(after) - before_edges
-        if identity[0] == "has-file-asset"
-    ]
+    new_edges = [identity for identity in _relation_identities(after) - before_edges if identity[0] == "has-file-asset"]
     if not new_edges:
         return (), False
     issues: list[FactIssue] = []

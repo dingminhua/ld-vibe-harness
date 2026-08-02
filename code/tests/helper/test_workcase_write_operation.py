@@ -64,10 +64,14 @@ def _boundary() -> CreationBoundary:
     return CreationBoundary("sample", Path("/project"), Path("/project/.git"))
 
 
-def test_three_current_workcase_operations_are_registered_with_exact_inputs() -> None:
+def test_current_workcase_operations_are_registered_with_exact_inputs() -> None:
+    candidate = IMPLEMENTATIONS["prepare-closed-workcase-candidate"]
     update = IMPLEMENTATIONS["update-workcase"]
     close = IMPLEMENTATIONS["close-workcase"]
     correct = IMPLEMENTATIONS["correct-closed-workcase"]
+
+    assert candidate.required_inputs == ("arguments.fact_ref",)
+    assert candidate.optional_inputs == ("work_object_locators", "arguments.workspace_root")
 
     assert update.required_inputs == (
         "arguments.fact_ref",
@@ -89,7 +93,7 @@ def test_three_current_workcase_operations_are_registered_with_exact_inputs() ->
     assert correct.optional_inputs == update.optional_inputs
 
 
-def test_capability_discovery_exposes_all_three_current_implementations() -> None:
+def test_capability_discovery_exposes_all_current_implementations() -> None:
     response = handle_request("capabilities", None, "{}").response
 
     assert response["outcome"] in {"ok", "partial"}
@@ -98,17 +102,21 @@ def test_capability_discovery_exposes_all_three_current_implementations() -> Non
         for item in response["result"]["operations"]
         if item["operation_key"]
         in {
+            "prepare-closed-workcase-candidate",
             "update-workcase",
             "close-workcase",
             "correct-closed-workcase",
         }
     }
     assert set(operations) == {
+        "prepare-closed-workcase-candidate",
         "update-workcase",
         "close-workcase",
         "correct-closed-workcase",
     }
     assert all(item["implementation"]["present"] for item in operations.values())
+    assert operations["prepare-closed-workcase-candidate"]["effect"] == "read"
+    assert operations["prepare-closed-workcase-candidate"]["required_inputs"] == ["arguments.fact_ref"]
     assert operations["update-workcase"]["required_inputs"] == [
         "arguments.fact_ref",
         "arguments.expected_content_fingerprint",

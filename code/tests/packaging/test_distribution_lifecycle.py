@@ -26,6 +26,7 @@ OPERATIONS = (
     "find-fact-object-candidates",
     "check-fact-integrity",
     "read-fact-objects",
+    "prepare-closed-workcase-candidate",
     "prepare-fact-object-draft",
     "create-fact-object",
     "prepare-file-asset-intake",

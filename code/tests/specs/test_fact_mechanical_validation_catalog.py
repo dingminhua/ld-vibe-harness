@@ -17,6 +17,7 @@ _OPERATIONS_BY_COVERAGE = {
     "update": "update-fact-object",
     "workcase-update": "update-workcase",
     "workcase-close": "close-workcase",
+    "workcase-close-candidate": "prepare-closed-workcase-candidate",
     "workcase-closed-correction": "correct-closed-workcase",
     "readback": "readback",
     "candidates": "find-fact-object-candidates",
@@ -118,8 +119,18 @@ def test_mechanical_catalog_has_closed_status_aware_mappings_and_real_complete_e
             _assert_real_or_unavailable(rule_key, positive, tests_only=True)
             _assert_real_or_unavailable(rule_key, negative, tests_only=True)
 
-    assert {"update-workcase", "close-workcase", "correct-closed-workcase"} <= covered_operations
-    assert {"update-workcase", "close-workcase", "correct-closed-workcase"} <= workcase_rule_operations
+    assert {
+        "prepare-closed-workcase-candidate",
+        "update-workcase",
+        "close-workcase",
+        "correct-closed-workcase",
+    } <= covered_operations
+    assert {
+        "prepare-closed-workcase-candidate",
+        "update-workcase",
+        "close-workcase",
+        "correct-closed-workcase",
+    } <= workcase_rule_operations
     assert {
         key for key in _CURRENT_WORKCASE_RULE_KEYS if catalog_by_key[key][6] == "incomplete"
     } == _INCOMPLETE_WORKCASE_RULE_KEYS
