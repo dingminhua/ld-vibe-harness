@@ -14,7 +14,7 @@ success_criterion_definitions:
 - criterion_id: criterion-validation-review-and-isolation
   statement: Code Implementation Plan、目标和全量 Web API tests、npm check/build、git diff --check、路径白名单、当前 WorkCase 浏览器代表性核验、Pitfall draft fixture 契约、WorkCase 精确回读、全库事实完整性、dirty 哈希隔离和独立只读结果复核在实际范围完成；浏览器与 fixture 结果、既有失败和未运行范围分开记录，不声称 live draft Pitfall 浏览器验证。
 priority: P1
-phase: executing
+phase: human_closure_confirming
 plan_version: 1
 work_items:
 - item_id: item-audit-cognition-action-contract
@@ -46,18 +46,18 @@ work_items:
 - item_id: item-update-contracts-and-verify-ui
   goal: 同步 Web 文档和契约测试，并完成类型、构建、API、fixture 与当前事实浏览器核验。
   expected_result: 目标与全量验证在实际范围完成；当前四个 WorkCase 浏览器行为、Pitfall draft fixture Card、禁语、唯一归属、其它模块不变和 dirty 隔离均有可复核依据。
-  status: in_progress
+  status: completed
   depends_on:
   - item-fix-workcase-action-membership
   - item-complete-pitfall-draft-card
-  current_summary: WorkCase 与 Pitfall 实现、docs/types/i18n/tests 已同步；目标测试、check、build 与实际 API 快照通过，正在收敛全量测试既有失败、浏览器工具缺口、diff/dirty 和提交验证。
-  resume_from: 重跑最终 build/目标测试，记录全量 API 唯一既有失败与浏览器专用入口不可用，完成路径白名单、dirty 哈希、事实完整性和本地语义提交。
+  result_summary: 已同步 API/types/UI/i18n/docs/tests；目标契约 25/25、npm check、npm build、git diff --check 通过。全量 Web API 157/158，唯一失败为既有范围外 commit-label-contract。实际 ldvh API 返回 0008/0026 方案待确认、0027 blocked_resolution、0043 关闭待确认，0044 仅在推进中；preview API 覆盖 blocked plan 唯一归属、blocked progressing 仅推进中和 Pitfall 六字段 draft。浏览器技能要求的专用 Node REPL 控制入口当前不可用，因此未完成真实 UI 点击/截图，未用 API 冒充浏览器验证。实现提交为 f4e687506；受保护 dirty 未夹带。
 - item_id: item-independent-review-and-closure-preparation
   goal: 完成独立只读结果复核、Controller 反馈处置、结果检查和关闭准备。
   expected_result: 独立 Reviewer 核对批准基线、实际 diff、两个行动模块、Pitfall fixture、浏览器与验证边界；Controller 按真实 phase 连续形成完整结果与关闭提案，不以聊天总结替代写回。
-  status: pending
+  status: cancelled
   depends_on:
   - item-update-contracts-and-verify-ui
+  result_summary: 当前 21 明确规定独立结果复核、Controller 结果检查、关闭准备与 Gate 2 属于全部 item terminal 后的 phase 链，不能作为 work item；因此取消该错误建模的执行项，其实际责任由 controller_checking → independent_reviewing → closure_preparing → human_closure_confirming 生命周期继续承接，不视为已完成 review 或关闭。
 execution_authorization:
   quality_gates:
   - gate_id: independent-result-review
@@ -208,7 +208,43 @@ execution_approval:
   baseline_fingerprint: af404090632a5f89b7befaf525cf28a38976c5d82941435dba4bdaa45b9da221
   source_refs:
   - turn:human-approve-workcase-0044-plan-v1
+result_version: 1
+success_criterion_results:
+- criterion_id: criterion-workcase-unique-action-module
+  outcome: satisfied
+  summary: resolved 的 plan_confirmation/closure_confirmation 只进入待决定事项，progressing 只进入推进中；blocked Human-position 形成 blocked_resolution 且不渲染正常 Gate，unresolved 只保留 issues，不使用 raw status/phase fallback。
+- criterion_id: criterion-current-four-workcases-visible
+  outcome: satisfied
+  summary: 实际 ldvh Cognition API 当前精确返回 0008/0026 为 plan_confirmation、0027 为 blocked_resolution 且 lifecycle_position=human_plan_confirming、0043 为 closure_confirmation；0027 不携带 Gate waiting kind，0044 仅在推进中。
+- criterion_id: criterion-pitfall-draft-full-card
+  outcome: satisfied
+  summary: PitfallCardContent 已由对象列表与 Cognition draft 共用，六个判断字段按可读值呈现；API 仍只收录 draft。受控 preview fixture/API/source contract 验证六字段与 active/discarded 排除，未创建或修改 Pitfall 事实。
+- criterion_id: criterion-existing-module-and-source-boundary
+  outcome: satisfied
+  summary: 只复用既有待决定事项与推进中事项，未新增第三行动模块；其它 Cognition 模块未改。未新增 YAML 派生字段、AI 文案解析、raw fallback 或第二张 phase 表；Code Plan、types、i18n、docs 与测试已同步。
+- criterion_id: criterion-validation-review-and-isolation
+  outcome: not_verified
+  summary: Code Plan、目标 25/25、npm check/build、git diff --check、实际与 preview API、WorkCase 精确回读、122 对象完整性、路径白名单、提交和 dirty 隔离已完成；全量 Web API 157/158 的唯一失败为既有范围外 contract。浏览器技能所需专用控制入口不可用，真实 UI 点击/截图未完成；独立结果复核尚待本结果投影回读后执行。
+result_summary: 已完成聚焦行动项修复并以本地提交 f4e687506 保存：blocked Human-position WorkCase 不再从待决定事项消失，progressing 包括 blocked 仍只进入推进中；Pitfall draft 复用完整普通 Card；全程只使用既有两个行动模块和 0041 current_snapshot_projection 边界。产品行为已由目标测试、类型构建和实际/preview API 验证；真实浏览器代表性核验因专用控制入口不可用而保持未验证。
+controller_check_summary: Controller 已核对批准基线、f4e687506 的 11 文件实际提交、progress_group 唯一归属、blocking_overlay 非 Gate 分支、Pitfall 共享 Card、unresolved 零猜测、文档/类型/本地化/测试一致性和不相关 dirty 隔离。未发现需要代码返工的本案缺口；浏览器缺口不被降格为通过，独立 Reviewer 将审查完整结果投影和该边界。
+validation_summary: 目标契约测试 25/25、npm run check、npm run build、git diff --check 通过；build 仅有既有大 chunk 警告。npm run test:web:api 为 157/158，唯一失败是未改动且已知的 commit-label-contract 找不到 Specs 03 类型表。实际 ldvh API 显示 0008/0026 方案待确认、0027 blocked_resolution、0043 关闭待确认、0044 仅推进中；受控 preview API 验证 blocked plan/progressing 唯一归属与 Pitfall draft 六字段。Helper 精确回读 mechanically_valid，全库完整性 complete（122 对象）。提交 f4e687506 仅含 11 个白名单文件；spark-0040 与 workcase-0036 至 0039 保持未提交且未夹带。浏览器技能要求的 mcp__node_repl__js 当前未暴露，故未运行真实浏览器 UI 点击/截图，也不声称 live draft Pitfall 浏览器验证。
+result_reviews:
+- reviewer: reviewer-wc0044-result-01
+  reviewed_at: '2026-08-02T10:46:29Z'
+  subject_version: 1
+  scope: 独立只读审查 workcase-0044 result_version=1、commit f4e687506a7b80c08a9472469a359709e26de741 相对 parent fc3fabc81fbd34cec88a47ab61d47291e71666b3 的 11 文件 diff、Cognition API/UI/types/docs/tests、当前 ldvh 与 preview API、事实完整性、dirty 隔离、浏览器验证边界和 work item 生命周期建模。
+  conclusion: pass
+closure_proposal:
+  proposed_outcome: partial
+  proposed_disposition_summary: 本 WorkCase 已形成稳定产品结果：四项核心成功标准 satisfied，blocked WorkCase 与 Pitfall draft 在既有两个行动模块中的收录、文案和共享 Card 已由目标测试、构建、实际/preview API 与独立 Reviewer 验证。唯一 not_verified 责任是真实浏览器 UI 点击/截图；专用浏览器控制入口当前不可用，未发现需代码返工的证据。建议 Human 接受该验证范围停止，不路由既有对象、不建议新增 Spark；以后若环境恢复，可作为独立只读验证执行，不反向改写本次技术结果。
+  residual_decisions:
+  - residual_id: residual-browser-ui-verification
+    summary: 当前事实 WorkCase 在聚焦页的真实浏览器 UI 点击与截图未执行；原因是浏览器技能规定的专用 mcp__node_repl__js 控制入口当前未暴露。API、fixture、source contract 与 build 均不能替代该浏览器证据，本 WorkCase 不再为等待该环境能力继续占用执行链。
+    proposed_disposition: accept_stop
+summary: partial 关闭提案、result version 1、独立结果复核和浏览器验证 accepted-stop 建议均已形成并冻结；核心产品结果稳定，未将未验证范围伪装为通过。
+resume_from: 仅在 Human 明确批准当前 partial 关闭提案及 residual-browser-ui-verification 的 accept_stop 处置后，使用 close-workcase 对本快照执行 Gate 2 原子关闭；未批准则保持冻结且零写入。
+waiting_on: Human 对 workcase-0044 当前 partial 关闭提案和真实浏览器 UI 验证的 accept_stop 处置作出 Gate 2 决定。
 object_id: workcase-0044
 fact_type_key: workcase
 created_at: '2026-08-02T18:19:44.085540+08:00'
-updated_at: '2026-08-02T18:38:16.736527+08:00'
+updated_at: '2026-08-02T18:48:35.608133+08:00'
