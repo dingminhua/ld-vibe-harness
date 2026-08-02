@@ -1,8 +1,5 @@
 title: 固定 WorkCase 投影规范与 Code 的漂移检测
-status: open
-summary: 完整 partial 关闭提案、结果复核处置与后续受限责任已冻结，等待 Human Gate 2。
-resume_from: Human 审阅当前完整 before 与 closure_proposal 后，决定是否按 partial 关闭 workcase-0045。
-priority: P2
+status: closed
 goal: 在保持 specs/21 为 WorkCase 当前快照投影语义唯一权威、Python 为唯一运行时投影实现点、TypeScript 继续只由 Python 生成的前提下，为 21 §9.3 非 blocked phase/closed 基表与 Python PHASE_PRESENTATION/CLOSED_PRESENTATION 建立精确 source-contract 一致性测试，使规范表与 Code 映射任一漂移都不能静默通过；不新增运行时 Markdown 解析、事实字段、phase 语义或 Web 状态模型。
 scope: 覆盖 specs/21 §9.3 投影基表、code/ldvh/facts/workcase_presentation.py、既有 TypeScript 生成器与 generated contract、直接相关 Python/spec tests 的只读基线核对；新增编码前 code/plans/workcase-presentation-source-contract.md 并更新 code/plans/README.md；优先只新增 code/tests/specs/test_workcase_presentation_source_contract.py，只有测试确实无法通过当前公开常量完成时才允许对 workcase_presentation.py 作无行为的可测试性暴露调整；执行既有 Python 投影、Controller 负矩阵与 Python→generated TypeScript 字节一致性测试；受控更新 workcase-0045 并按语义交付单位形成隔离本地 commit。测试解析器只用于断言且禁止被 production Code 导入或复用。排除 specs 修改、Web/API/i18n/docs 修改、generated TypeScript 手工修改、运行时读取 Markdown、新事实字段或持久派生判断、blocked overlay/Gate 2 规则重建、Helper/Schema/phase 转换修改、resume_from/summary/quality-gate 结构迁移、其它事实对象、push、PR、发布、外部消息和破坏性 Git。现有 spark-0040、workcase-0036 至 0039 和截图保持隔离。
 success_criterion_definitions:
@@ -16,166 +13,6 @@ success_criterion_definitions:
   statement: 既有 test_generated_web_contract_matches_python_renderer 继续证明 generated TypeScript 与 Python renderer 字节一致；不新增或修改 Web test，不手改 generated contract，不让 TypeScript 或 Web 成为另一投影权威。
 - criterion_id: criterion-validation-review-and-isolation
   statement: Code Implementation Plan、目标 source-contract test、既有 WorkCase presentation/Controller/generated-contract tests、git diff --check、路径白名单、WorkCase 精确回读、全库事实完整性、受保护 dirty 哈希隔离和独立只读结果复核全部完成；若发现规范表无法机械唯一定位或需生产行为/Specs 变更，则停止并返回 Human。
-phase: human_closure_confirming
-plan_version: 1
-work_items:
-- item_id: item-audit-projection-authority-chain
-  goal: 核对 21 §9.3、Python 投影常量、TypeScript 生成链与既有测试的当前权威边界。
-  expected_result: 形成精确的表边界、8 行映射、公开 Python 常量和既有覆盖清单，确认新增测试不重复 0041/0042 的行为合同。
-  status: completed
-  approach_summary: 只读核对规范表、workcase_presentation.py、生成器、generated contract 和现有 tests；记录精确定位条件及禁止重复建模的边界。
-  template_keys:
-  - workcase-approved-plan-execution
-  result_summary: 确认 21 §9.3 的唯一六列表可精确定位且包含 7 个 open phase 与 1 个 closed 行；Python PHASE_PRESENTATION/CLOSED_PRESENTATION 是运行时唯一实现点，既有测试已覆盖 blocked、Gate 2、unresolved 与 Python→TypeScript 字节同步。
-- item_id: item-form-projection-drift-code-plan
-  goal: 形成编码前 Code Implementation Plan 并登记到计划索引。
-  expected_result: code/plans/workcase-presentation-source-contract.md 明确测试侧解析、生产禁用、文件白名单、验证矩阵和停止条件，README 已登记。
-  status: completed
-  depends_on:
-  - item-audit-projection-authority-chain
-  approach_summary: 按 07 形成最小实施计划；测试解析器不得被 production 导入，workcase_presentation.py 默认不修改。
-  template_keys:
-  - workcase-approved-plan-execution
-  result_summary: 已形成 code/plans/workcase-presentation-source-contract.md 并登记 README；固定测试侧解析器 production 禁用、三文件普通白名单、严格六列八行合同、既有行为测试复用和超界停止条件。
-- item_id: item-add-spec-python-drift-contract
-  goal: 新增 21 §9.3 基表与 Python 映射的精确漂移检测。
-  expected_result: 新增单个 specs test，严格解析六列表头与 8 行并与 PHASE_PRESENTATION/CLOSED_PRESENTATION 完全相等；不新增运行时解析或重复行为表。
-  status: cancelled
-  depends_on:
-  - item-form-projection-drift-code-plan
-  approach_summary: 在测试侧实现最小 Markdown 表解析与严格 token/null 校验；优先直接消费现有公开 Python 常量。
-  template_keys:
-  - workcase-approved-plan-execution
-  result_summary: 零测试写入；v1 要求的裸 null 与 21 当前 inline-code `null` 输入语法冲突，且成功标准属于 Gate 1 baseline，不能在本运行内修改或由实现解释覆盖。
-- item_id: item-validate-drift-contract
-  goal: 完成目标与相关回归、事实审计、独立结果复核和隔离提交。
-  expected_result: 目标测试和既有投影/Controller/generated-contract tests 通过，diff 与路径白名单干净，事实完整性 complete，独立 Reviewer pass 或反馈已受控处置，提交不夹带既有 dirty。
-  status: cancelled
-  depends_on:
-  - item-add-spec-python-drift-contract
-  approach_summary: 运行目标与相关 pytest、git diff --check、Helper 精确回读和全库完整性；核对受保护 dirty 哈希并委派独立只读结果审查，再按语义单位提交。
-  template_keys:
-  - workcase-approved-plan-execution
-  - git-commit
-  result_summary: 没有产品实现可按原验证矩阵验收；后续只执行回滚确认、事实完整性、dirty 隔离和独立结果复核。
-creation_reviews:
-- reviewer: Codex independent reviewer (/root/review_wc0045_plan)
-  reviewed_at: '2026-08-02T21:18:52+08:00'
-  subject_version: 1
-  scope: 独立只读复核 workcase-0045 plan_version 1 的目标、范围、五项成功标准、四个 work items、完整 execution_authorization、与 workcase-0041/0042 的非重复性、21 唯一语义权威边界、测试侧解析风险、Web 生成链和 dirty 隔离。
-  conclusion: pass
-  covered_quality_gate_ids:
-  - independent-result-review
-execution_authorization:
-  authorized_actions:
-  - action_id: authorization-audit-projection-chain
-    summary: 只读核对 WorkCase 投影从规范到 Python、generated TypeScript 与既有测试的当前链路。
-    target_scope: 仅 specs/21 §9.3、code/ldvh/facts/workcase_presentation.py、code/tools/generate_workcase_presentation_contract.py、对应 generated TypeScript 和直接相关 tests。
-    effect_scope: 只读形成精确表边界、映射与既有覆盖清单；不得修改来源。
-    risk_summary: 误认表边界或忽略既有覆盖可能建立重复合同。
-    rollback_summary: 停止实施并回到当前快照重新核对，不写任何产品文件。
-    rule_refs:
-    - specs/21-WorkCase-工作项.md
-    - specs/07-Code 工程实践规范.md
-  - action_id: authorization-code-plan-write
-    summary: 形成并登记本 WorkCase 的编码前 Code Implementation Plan。
-    target_scope: 仅 code/plans/workcase-presentation-source-contract.md 与 code/plans/README.md。
-    effect_scope: 允许新增计划文件和更新索引，明确测试侧解析、production 禁用、白名单、验证和停止条件。
-    risk_summary: 计划若扩张范围或表述运行时解析会错误改变权威边界。
-    rollback_summary: 撤回本 WorkCase 新增的计划增量并保留事实记录。
-    rule_refs:
-    - specs/07-Code 工程实践规范.md
-    - specs/21-WorkCase-工作项.md
-  - action_id: authorization-consume-independent-review
-    summary: 读取并处置本 WorkCase 的独立结果审查。
-    target_scope: 仅 workcase-0045 当前完整结果投影、目标 diff、测试与事实验证证据。
-    effect_scope: 允许接受 pass 或将明确反馈在授权白名单内修正；Reviewer 不替 Human 决定关闭。
-    risk_summary: 将建议误作授权或忽略反馈会污染结果结论。
-    rollback_summary: 不接受不可回指或不独立的结论，回到 controller_checking 重新形成结果。
-    rule_refs:
-    - specs/06-行动模板基础规范.md
-    - specs/21-WorkCase-工作项.md
-  - action_id: authorization-delegate-independent-review
-    summary: 委派独立只读 Reviewer 复核实施结果。
-    target_scope: 仅 workcase-0045 当前结果、批准范围内 diff、测试输出与 dirty 隔离证据。
-    effect_scope: 允许本次运行内只读委派；Reviewer 不得修改文件、执行外部动作或作 Human Gate 决定。
-    risk_summary: Reviewer 与实施职责不独立或审查范围不完整会降低质量门可信度。
-    rollback_summary: 拒绝不合格 review 并重新委派独立只读 Reviewer。
-    rule_refs:
-    - specs/06-行动模板基础规范.md
-    - specs/21-WorkCase-工作项.md
-  - action_id: authorization-local-semantic-commits
-    summary: 按语义交付单位形成隔离本地 Git commit。
-    target_scope: 仅本 WorkCase 授权白名单文件与 workcase-0045 受控写回；既有 dirty 和截图不得进入 Index。
-    effect_scope: 允许精确暂存、Helper commit precheck 和非交互本地 commit；检查点事实写回不要求逐次单独提交。
-    risk_summary: 错误暂存可能夹带用户或其它 WorkCase 的未提交内容。
-    rollback_summary: 提交前清空本次误暂存并重新按白名单暂存；提交后不做破坏性重写，返回 Human 决定。
-    rule_refs:
-    - specs/03-事实源与信息溯源规范.md
-    - specs/21-WorkCase-工作项.md
-  - action_id: authorization-source-contract-test-write
-    summary: 新增规范基表与 Python 映射的测试侧精确漂移检测。
-    target_scope: 优先且默认仅 code/tests/specs/test_workcase_presentation_source_contract.py；只有测试无法消费当前公开常量时才允许对 code/ldvh/facts/workcase_presentation.py 作无行为可测试性暴露调整。
-    effect_scope: 允许严格定位 §9.3 基表、解析六列八行、校验 token/null 并与 PHASE_PRESENTATION/CLOSED_PRESENTATION 完全比较；测试解析器禁止被 production Code 导入或复用。
-    risk_summary: 宽松解析会漏报漂移，过度解析或 production 复用会形成第二运行时语义源。
-    rollback_summary: 删除或修正本次测试增量；若需 Specs 或生产行为修改则停止并返回 Human。
-    rule_refs:
-    - specs/07-Code 工程实践规范.md
-    - specs/21-WorkCase-工作项.md
-  - action_id: authorization-validation
-    summary: 执行本 WorkCase 的目标、回归、diff、事实完整性与隔离验证。
-    target_scope: 仅目标 source-contract test、既有 WorkCase presentation/Controller/generated-contract tests、git diff --check、Helper 事实读取与完整性、路径和受保护 dirty 哈希。
-    effect_scope: 允许运行只读或产生可清理缓存的本地验证；不得把未运行或既有失败写成通过。
-    risk_summary: 验证范围不足或缓存污染可能形成虚假完成结论。
-    rollback_summary: 清理本次可确认归属且无恢复价值的测试缓存，保留诊断并如实记录未验证范围。
-    rule_refs:
-    - specs/07-Code 工程实践规范.md
-    - specs/21-WorkCase-工作项.md
-  - action_id: authorization-workcase-0045-updates
-    summary: 按已获批执行链受控更新 workcase-0045 当前事实。
-    target_scope: 仅 ldvh-base/workcases/workcase-0045.yaml。
-    effect_scope: 允许按 21/34 形成完整 after，经 Helper CAS、精确回读和全库完整性检查推进检查点、结果复核与关闭提案；不得改写其它事实对象。
-    risk_summary: 跳 phase、不完整 after 或使用 stale fingerprint 会破坏恢复与 Human Gate 边界。
-    rollback_summary: 停止后续转换，保留最近 mechanically valid 快照并返回 Human；不直接编辑受管事实。
-    rule_refs:
-    - specs/21-WorkCase-工作项.md
-    - specs/34-WorkCase获批计划执行行动模板.md
-  quality_gates:
-  - gate_id: independent-result-review
-    reviewer_mode: independent-read-only
-    delegation_action_id: authorization-delegate-independent-review
-    result_review_action_id: authorization-consume-independent-review
-  action_ceiling: 仅新增测试侧 21 §9.3→Python 精确漂移合同、两份 Code Plan 文件、必要但默认不发生的 Python 无行为可测试性暴露、相关本地验证、workcase-0045 受控写回和隔离本地语义 commit。
-  prohibited_actions:
-  - 修改 specs、Web、API、i18n、Web docs、generated TypeScript 或生成器行为
-  - 在 production Code 中读取或解析 Markdown，或复用测试解析器
-  - 重建 blocked overlay、Gate 2 禁语、unresolved 或 phase 转换的第二份表
-  - 新增 WorkCase YAML 派生字段、phase 语义、Helper 操作或 Schema 迁移
-  - 清理或迁移 resume_from、summary、quality_gates 或 covered_quality_gate_ids
-  - 修改其它事实对象，或夹带 spark-0040、workcase-0036 至 0039 和截图
-  - push、PR、发布、外部消息或破坏性 Git 操作
-  allowed_adjustments: 允许在批准白名单内调整测试解析实现、断言组织、测试命名、Code Plan 文字和验证命令；允许在确有必要且无行为变化时暴露现有 Python 常量。任何 Specs、production runtime 行为、Web/generated contract、事实结构、phase 语义、范围或风险上限变化均需返回 Human。
-  verification_and_rollback: 先形成 Code Plan，再新增严格 source-contract test；运行目标测试、code/tests/facts/test_workcase_presentation.py、code/tests/specs/test_workcase_controller_continuation_contract.py 及其中 test_generated_web_contract_matches_python_renderer，随后 git diff --check、路径白名单、Helper 精确回读与全库完整性、受保护 dirty 哈希和独立只读结果 review。失败时只撤回本 WorkCase 可确认归属的未提交增量，保留诊断，不触碰既有 dirty。
-  out_of_bounds_handling: 发现规范表不能机械唯一定位、需要修改 Specs/生产行为/Web/generated contract/事实结构、独立 review 不通过且修正超出白名单，或 dirty 隔离无法证明时立即停止，不猜测、不扩权，保留最近可回读快照并返回 Human。
-relations:
-- relation_key: related-to
-  target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0041
-- relation_key: related-to
-  target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0042
-execution_approval:
-  subject_version: 1
-  approved_at: '2026-08-02T21:31:43.627315+08:00'
-  summary: Human 已批准 workcase-0045 plan version 1 及其完整 execution_authorization。
-  baseline_fingerprint: 6fb1ea5476065b772dbeffa4d97bac61badfcb0e7f85702168cca989596ea68d
-  source_refs:
-  - turn:human-approve-workcase-0045-plan-v1
-result_version: 1
 success_criterion_results:
 - criterion_id: criterion-exact-spec-table-contract
   outcome: not_satisfied
@@ -193,35 +30,29 @@ success_criterion_results:
   outcome: not_satisfied
   summary: 目标 source-contract 与 Code Plan 最终产物未形成，因此该完整标准不满足；但候选普通文件已撤回，git diff --check、相关回归、dirty 哈希隔离、Helper 回读与全库事实完整性已完成。
 result_summary: workcase-0045 未形成产品实现。执行前精确核对发现获批 v1 成功标准要求裸 null，而 21 §9.3 权威表使用 inline-code `null`；该成功标准属于 Gate 1 baseline，不能在执行期改写、升版或由 Code Plan/实现解释覆盖。Controller 已撤回候选 Code Plan 普通文件，零写入 production/test/Specs/Web，并取消剩余实现与原验证项。
-controller_check_summary: Controller 已拒绝三条不合法路径：不修改 Specs 迎合错误基线，不改 success criteria 后伪称原 approval 有效，也不把 Markdown 输入语法差异解释成归一化细节。当前安全结果是保留已完成的权威链核对事实、撤回候选普通文件、取消尚未完成工作并把正确后续留给新的 WorkCase/Gate 1。
 validation_summary: 相关既有投影与 Controller tests 30/30 passed，包含 Python→generated TypeScript 字节一致性；git diff --check passed；本案候选 Code Plan 文件与 README 变化已撤回，未生成目标 test，Index 为空。spark-0040、workcase-0036 至 0039、聚焦页及四张详情截图的 SHA-256 与执行前基线逐值相同；Helper 每次事实写回均已精确回读且全库事实完整性 complete。未运行不存在的目标 source-contract test，也不把零实现写成目标满足。
-result_reviews:
-- reviewer: Codex independent result reviewer (/root/review_wc0045_plan)
-  reviewed_at: '2026-08-02T13:40:10Z'
-  subject_version: 1
-  scope: 独立只读复核 workcase-0045 当前 mechanically-valid result_version 1：21 §9.3 的 inline-code `null` 载体、approval baseline 构成、当前 Working Tree/Index、相关回归、候选文件撤回、事实完整性与 dirty 隔离；不把当前快照扩大为未保存历史状态的证明。
-  conclusion: pass
-  feedback:
-  - 当前可独立验证的是候选 Code Plan、README、目标测试及 production 均不存在，Index 为空、唯一 tracked diff 为既有 spark-0040，相关 pytest 30/30 passed、git diff --check 通过、事实完整性 123 个对象 complete；执行前哈希相等与每次历史写回回读只能确认为 Controller 记录，不能由当前快照独立重放。
-  controller_resolution: 接受证据层级反馈：当前状态、30/30 tests、diff、Index、123 对象完整性和现时 hashes 由 Reviewer 独立重算；执行前后哈希比较与逐次写回回读明确只作为 Controller 当次连续记录，不扩大为 Reviewer 可重放的历史证明。该限定不改变 result projection 的结构值、零产品写入或安全收敛结论。
-closure_proposal:
-  proposed_outcome: partial
-  proposed_disposition_summary: 本 WorkCase 形成了两项稳定边界价值：确认未建立重复行为模型并保持 Python→generated TypeScript 链；但核心规范→Python 漂移检测、对应 Code Plan 最终产物与完整验证未交付，三项标准为 not_satisfied。执行中发现原因是 Gate 1 baseline 将空值输入错误冻结为裸 null，而 21 权威表使用 inline-code `null`；候选普通文件已撤回、产品实现零写入、独立结果复核 pass。建议接受本案 partial 停止，并把正确 inline-code 合同作为受限后续，由新的 WorkCase/Gate 1 重新授权，不在本案内改 Specs、改 baseline 或补造实现。
-  residual_decisions:
-  - residual_id: residual-correct-projection-source-contract
-    summary: 以当前 21 §9.3 的真实 Markdown 语法建立非 blocked 六列表到 Python PHASE_PRESENTATION/CLOSED_PRESENTATION 的精确漂移检测，并完成 Code Plan、目标/既有回归、dirty 隔离和独立结果复核。
-    proposed_disposition: suggest_spark
-    spark_suggestion_id: suggestion-correct-projection-source-contract
-  spark_suggestions:
-  - suggestion_id: suggestion-correct-projection-source-contract
-    suggestion_kind: constrained_responsibility
-    summary: 用正确的 inline-code `null` 输入合同重新建立 21 §9.3→Python 投影漂移检测。
-    restriction_reason: workcase-0045 的 Gate 1 baseline 明确要求裸 null，但 21 §9.3 当前权威表使用 inline-code `null`；success_criterion_definitions 参与 approval baseline fingerprint，执行期不能改写后继续复用原批准。
-    impact_summary: criterion-exact-spec-table-contract、criterion-spec-python-exact-equality 与 criterion-validation-review-and-isolation 为 not_satisfied；当前仍缺规范表到 Python 映射的机械漂移检测。
-    resume_condition: Human 在 workcase-0045 Gate 2 后决定继续，并以新的 WorkCase/Gate 1 明确采用当前 21 表真实语法：值单元格为 inline-code token，`progress_step` 的 `null` token 映射 Python None。
-    follow_up_summary: 新 WorkCase 应重新精确读取 21 §9.3 与 Python 常量，形成不改 Specs/production/Web 的测试侧 Code Plan；严格锁定六列表、7 个 open 行与 1 个 closed 行、inline-code token 格式和逐值相等，再运行既有生成链回归、事实审计与独立复核。
-waiting_on: Human 对 workcase-0045 当前完整 partial 关闭提案作出 Gate 2 关闭决定。
+closure_outcome: partial
+disposition_summary: 本 WorkCase 形成了两项稳定边界价值：确认未建立重复行为模型并保持 Python→generated TypeScript 链；但核心规范→Python 漂移检测、对应 Code Plan 最终产物与完整验证未交付，三项标准为 not_satisfied。执行中发现原因是 Gate 1 baseline 将空值输入错误冻结为裸 null，而 21 权威表使用 inline-code `null`；候选普通文件已撤回、产品实现零写入、独立结果复核 pass。建议接受本案 partial 停止，并把正确 inline-code 合同作为受限后续，由新的 WorkCase/Gate 1 重新授权，不在本案内改 Specs、改 baseline 或补造实现。
+spark_suggestions:
+- suggestion_id: suggestion-correct-projection-source-contract
+  suggestion_kind: constrained_responsibility
+  summary: 用正确的 inline-code `null` 输入合同重新建立 21 §9.3→Python 投影漂移检测。
+  restriction_reason: workcase-0045 的 Gate 1 baseline 明确要求裸 null，但 21 §9.3 当前权威表使用 inline-code `null`；success_criterion_definitions 参与 approval baseline fingerprint，执行期不能改写后继续复用原批准。
+  impact_summary: criterion-exact-spec-table-contract、criterion-spec-python-exact-equality 与 criterion-validation-review-and-isolation 为 not_satisfied；当前仍缺规范表到 Python 映射的机械漂移检测。
+  resume_condition: Human 在 workcase-0045 Gate 2 后决定继续，并以新的 WorkCase/Gate 1 明确采用当前 21 表真实语法：值单元格为 inline-code token，`progress_step` 的 `null` token 映射 Python None。
+  follow_up_summary: 新 WorkCase 应重新精确读取 21 §9.3 与 Python 常量，形成不改 Specs/production/Web 的测试侧 Code Plan；严格锁定六列表、7 个 open 行与 1 个 closed 行、inline-code token 格式和逐值相等，再运行既有生成链回归、事实审计与独立复核。
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: workcase
+    object_id: workcase-0041
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: workcase
+    object_id: workcase-0042
 object_id: workcase-0045
 fact_type_key: workcase
 created_at: '2026-08-02T21:26:01.030457+08:00'
-updated_at: '2026-08-02T21:42:33.055839+08:00'
+updated_at: '2026-08-03T01:13:10.125915+08:00'
