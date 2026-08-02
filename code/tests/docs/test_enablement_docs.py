@@ -139,3 +139,17 @@ def test_ai_enablement_guide_keeps_capability_and_evidence_boundaries() -> None:
     assert "Codex" not in environment_spec
     assert "Claude" not in environment_spec
     assert ".codex-plugin" not in template
+
+
+def test_b4_covers_pre_gate_creation_reviewer_and_post_gate_consumption() -> None:
+    checklist = (
+        REPOSITORY_ROOT / "specs/attachments/09.Att.02-接入验收行为清单.md"
+    ).read_text(encoding="utf-8")
+    b4 = checklist[checklist.index("### B4 委派递达") : checklist.index("### B5 恢复与压缩")]
+
+    assert "Human 范围清楚地要求由项目承担并建立/推进 WorkCase" in b4
+    assert "自动委派只读 creation Reviewer" in b4
+    assert "不为计划准备、只读 creation Reviewer 或 subagent 委派提出专门的 Human 许可请求" in b4
+    assert "Gate 1 后，已列明的有界本地动作与只读 Reviewer 委派直接消费同一批准" in b4
+    assert "上位环境能力/权限边界、不是 LDVH 的第三个 Human Gate" in b4
+    assert "当次无法观察时记 `unverified`" in b4

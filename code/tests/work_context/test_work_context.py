@@ -86,3 +86,22 @@ def test_rule_orientation_delivers_helper_only_write_and_integrity_route() -> No
     assert "提交前预检互不替代" in context
     for statement in CAPABILITY_BOUNDARY_STATEMENTS:
         assert statement in context
+
+
+def test_subagent_start_delivers_rule_orientation_without_facts_or_authorization() -> None:
+    result = work_context.run(
+        {
+            "hook_event_name": "SubagentStart",
+            "cwd": str(REPOSITORY_ROOT),
+        },
+        helper_executable=str(HELPER_EXECUTABLE),
+    )
+
+    assert result["event_name"] == "SubagentStart"
+    assert result["outcome"] == "ok"
+    assert result["facts"] == "not_requested"
+    context = result["additional_context"]
+    assert "ran for SubagentStart" in context
+    assert "Facts: not_requested." in context
+    assert "did not perform governance resolution, fact discovery, fact reading, " in context
+    assert "authorization, or completion judgment." in context
