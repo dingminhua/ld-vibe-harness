@@ -1,0 +1,232 @@
+# LDVH 当前架构过度设计与冗余设计审计
+
+- 审计日期：2026-08-02
+- 审计对象：`ld-vibe-harness-v4` 当前 Working Tree
+- 当前分支：`dev-v4`
+- 审计性质：只读架构、实现、事实对象与验证状态审计
+- 结论范围：针对当前工作树，不等同于纯净 `HEAD` 基线
+
+## 1. 执行摘要
+
+当前 LDVH 存在过度设计与冗余设计，但主要不在核心理念，而在实现层、流程层和证据维护层。
+
+总体判断：
+
+- 核心架构边界基本合理，不宜简单合并；
+- 规范、Helper、事实对象、Web、Git Gate 的分层大部分有明确治理目的；
+- WorkCase 呈现投影、Helper 事务诊断、Web 类型登记已经出现明确的重复维护点；
+- WorkCase 与 Spark 的议题拆分偏细，长期开放对象较多，规划成本正在接近治理收益；
+- Windows/portable 能力的维护规模明显领先于当前真实平台验证；
+- 验证体系本身复杂，但当前完整测试仍未达到绿色基线。
+
+因此，LDVH 当前更准确的描述是：
+
+> 核心治理边界有价值，但围绕这些边界形成了过多平行维护点、流程中间层和尚未完全验证的外围能力。
+
+## 2. 审计范围与方法
+
+本次检查包括：
+
+1. 通过 `ldvh-work-context` 获取当前规则引导；结果为 `outcome=ok`，事实状态为 `not_requested`；
+2. 通过 Helper 读取当前规范、FileAsset 创建规则和事实对象创建行动模板；
+3. 通过 Helper 读取当前 WorkCase、Spark 候选及近期 WorkCase 0036–0043、Spark 0040；
+4. 扫描 `specs/`、`code/`、`code/tests/`、`web/`、`docs/`、入口配置和近期 Git 变化；
+5. 运行当前工作树完整 Python 测试套件。
+
+当前规模指标：
+
+- `specs/`：34 个文件，约 9,608 行；
+- `code/ldvh/`：约 35,886 行 Python；
+- `code/tests/`：约 34,251 行 Python 测试；
+- `web/src`：60 个 TypeScript/TSX 文件，约 16,015 行；
+- Helper 当前公开操作：19 个；
+- 事实对象：43 个 WorkCase、45 个 Spark；
+- `docs/`：15 个文件，约 8,314 行，其中不少是历史环境接入记录。
+
+## 3. 不应简单判为过度设计的部分
+
+### 3.1 Helper、Code、事实对象、Web 的职责分层
+
+`specs/00-理念与构成.md:205-239` 明确区分 Helper、Code、Web、Git Gate 与薄 Skill：
+
+- Helper 面向 AI 提供规则、事实和能力发现；
+- Code 执行确定性机械操作；
+- Web 面向 Human 如实呈现；
+- Git Gate 只承接真实 Git 提交事件；
+- Skill 只负责路由，不复制规则正文。
+
+因此，同一事实在不同层被读取，不自动等于重复。Helper 的完整机械校验和 Web 的字段级可读性也有不同职责，不能为了减少代码而强行合并。
+
+### 3.2 规范候选读取与规范上下文读取
+
+`read-specification-context` 复用 `read-specification-content` 的同一规则源、标题解析和切片实现，见 `code/ldvh/helper/operations/specification_context.py:10-27` 和 `specs/01-规范模型基础规范.md:312-314`。它解决的是上下文组合问题，而不是建立第二套规则解析器，暂不判为无价值冗余。
+
+### 3.3 CAS、内容指纹、写后回读与两阶段 Gate
+
+近期 WorkCase 0036、0037、0038、0042 反复处理 Reviewer 被误读为第三 Gate、Gate 1 后重复索权、过期快照继续执行和关闭前结果复核等真实问题。CAS、source fingerprint、精确回读和完整性审计有实际风险控制价值。应简化其重复承载，而不是直接删除这些边界。
+
+### 3.4 full-v4 测试运行器
+
+`code/ldvh/testing/test_runs.py` 约 923 行，虽然规模较大，但 `specs/07-Code 实践与测试规范.md:363-367` 明确要求持久记录、脱离终端的 worker、原始输出完整性和 Working Tree 前后证据。因此当前不能仅凭代码量判定其为过度设计；后续只需确认历史 v1 兼容路径是否仍有实际消费者。
+
+## 4. 已确认的冗余设计
+
+### H1. WorkCase 呈现投影存在两套运行时语义实现
+
+Python 在 `code/ldvh/facts/workcase_presentation.py:18-149` 实现了完整的 status、phase、closed、blocked、fingerprint 和 unresolved 投影逻辑。
+
+Web 在 `web/shared/workcaseStatus.ts:64-157` 又实现了等价的 fingerprint、status、phase、closed、blocked 和 unresolved 控制流。
+
+而当前规划明确规定 Python 是唯一 Code 维护点，Web 不重新维护 phase 语义：
+
+- `code/plans/workcase-current-snapshot-presentation.md:35-67`
+
+当前生成器只同步了静态表，没有同步行为算法。因此未来修改 blocked 语义、unresolved reason、phase 闭集或 closed 判定时，Python 和 Web 可能漂移。
+
+建议三选一：
+
+1. 生成完整可执行合同；
+2. 保留两套运行时但建立全输入矩阵差分测试；
+3. 明确承认双运行时并把同步责任写入规范。
+
+在此问题收敛前，不应继续扩展 WorkCase projection 字段。
+
+### H2. Helper 操作层重复实现协调锁诊断
+
+以下三个模块分别实现相同的锁释放 gap、diagnostic、follow-up 和 result overlay：
+
+- `code/ldvh/helper/operations/fact_creation_operation.py:465-575`；
+- `code/ldvh/helper/operations/fact_update_operation.py:161-275`；
+- `code/ldvh/helper/operations/workcase_update_operation.py:146-275`。
+
+重复函数包括 `_coordination_release_gap`、`_coordination_release_diagnostic`、`_coordination_release_follow_up`、`_merge_follow_up`、`_coordination_preserved_result_overlay` 和 `_coordination_unavailable`。
+
+它们表达的是同一个底层事务事实：目标写入可能已成功，但共同锁释放状态未知。当前分散维护容易造成字段、文案、source reference 和 follow-up 结构漂移。
+
+建议抽出只负责协调锁结果构造的共享模块，不把业务事实类型语义混入其中。
+
+### H3. Web 事实类型、目录和 ID 规则多处登记
+
+同一组事实类型至少重复出现在：
+
+- `web/api/services/pytools.ts:7-15`；
+- `web/api/services/facts.ts:16-18`、`396-400`；
+- `web/api/services/factFieldContract.ts:8-10`；
+- `web/src/utils/fieldFormats.ts:58-63`；
+- `web/api/routes/cognition.ts:417`。
+
+同时还存在多份对象类型数组、目录映射、载体后缀、Cognition 识别规则和 ID 正则。新增或调整 FileAsset 等事实类型时，可能出现 API、Cognition、列表和前端引用识别不一致。
+
+建议建立一个 canonical Web 类型合同，生成类型列表、ID pattern、目录名、载体类型和 Cognition 参与范围，其他消费者只导入该合同。
+
+### H4. 正式入口存在手工登记遗漏
+
+`pyproject.toml:15-21` 声明了 6 个 console entry point，其中包括正式的 `ldvh-work-context`；环境接入面也将其列为正式入口（`specs/attachments/09.Att.01-环境接入面.md:22`）。
+
+但发行生命周期测试的 `InstalledEnvironment` 只维护 `ldvh`、`ldvh-doctor`、`ldvh-context-recovery`、两个 Git 入口，见 `code/tests/packaging/test_distribution_lifecycle.py:54-64`、`204-231`；卸载断言也没有检查 `ldvh-work-context`，见 `:799-805`。文档入口测试同样遗漏它，见 `code/tests/docs/test_enablement_docs.py:87-100`。
+
+这说明入口、环境接入面、doctor 和测试之间存在多份手工登记，而不是单一来源。
+
+## 5. 流程层的过度设计倾向
+
+### 5.1 Spark 长期开放议题过多且主题相邻
+
+Helper 当前恢复清单显示：
+
+- Spark 共 45 个：open 21、implemented 11、routed 10、discarded 3；
+- WorkCase 共 43 个：closed 39、open 3、blocked 1。
+
+相邻议题包括：
+
+- 多项目：`spark-0007`、`spark-0021`、`spark-0025`；
+- Agent、环境和能力资产：`spark-0009`、`spark-0011`、`spark-0018`、`spark-0019`、`spark-0045`；
+- 事实字段、ADR/Pitfall、WorkCase 机制：`spark-0033`、`spark-0040`、`spark-0042`、`spark-0044`；
+- 发布和版本：`spark-0006`、`spark-0023`。
+
+这些议题不一定都错误，但已形成研究对象本身的积压。应按主题合并、降低优先级或尽快 routed/discarded，而不是继续平行保留。
+
+### 5.2 近期 WorkCase 拆分偏细
+
+`workcase-0036` 至 `workcase-0039` 连续处理 Reviewer、Gate 1、二次索权和受控提交问题，属于一组高度相邻的授权递达修复；而 `workcase-0041`、`0042`、`0043` 又连续处理投影、Controller 和 Web 消费迁移。
+
+阶段拆分本身可以合理，但当前 0036–0039 在 Helper 返回中没有形成清晰的 `related-to` 关系链，后续理解依赖标题、时间和会话上下文。0042、0043 才开始显式关联 0041/0042，关系纪律不一致。
+
+建议：相邻 WorkCase 必须建立显式父子或 `related-to` 关系；如果只是同一修复的验证、固化和提交阶段，应考虑合并为一个父 WorkCase 下的受控子步骤，而不是持续增加独立事实对象。
+
+## 6. 疑似超前建设
+
+### Windows / portable 文件系统
+
+`code/ldvh/filesystem.py` 约 1,634 行，同时维护 POSIX、portable/Windows 路径、锁、原子创建、替换和删除；相关平台测试分布在多个文件。但 `specs/09-环境接入规范.md:207-211` 明确当前已验证平台为 macOS，Windows 仍属未验证范围。
+
+如果 Windows 是明确产品承诺，继续建设是合理的；如果近期交付范围仍是 macOS，则这部分维护规模可能明显领先于当前收益。建议先做平台承诺决策，再决定是否继续扩展 portable 抽象。
+
+## 7. 历史文档与当前规划边界
+
+`docs/` 当前约 8,314 行，其中有多份不同环境接入历史报告。它们不应被无差别删除，因为部分文件是时间切片证据；但 `code/plans/README.md:12-16` 仍将已退役的 Codex context recovery 规划列入可见规划入口，而该规划自身已明确 adapter 形态退役，见 `code/plans/codex-context-recovery.md:1-3`。
+
+建议保留历史 bytes，但将 current、historical、retired 规划分开，避免历史材料看起来像当前实现依据。
+
+## 8. 当前验证状态
+
+本次对当前工作树运行完整 Python 测试：
+
+```text
+1444 passed
+21 failed
+10 skipped
+耗时 11 分 21 秒
+```
+
+失败主要集中在：
+
+- `code/tests/helper/test_fact_candidate_operation.py`；
+- `code/tests/helper/test_fact_creation_operation.py`；
+- `code/tests/testing/test_working_tree_capture.py`。
+
+这些失败不等同于全部由过度设计造成，但说明当前状态不是完全绿色基线。当前 `ldvh capabilities` 还报告规则源资格条件未完全机械证明，存在 `qualification_unproven` 缺口，聚合影响范围达到 133 项。
+
+## 9. 收敛建议
+
+### P0：冻结新增抽象
+
+在当前投影重复、入口登记分散、Helper 诊断重复和完整测试未绿色前，暂缓新增 Helper operation、环境入口、WorkCase projection 和长期开放 Spark。
+
+### P1：消除重复维护点
+
+1. 统一 WorkCase Python/TypeScript 投影行为；
+2. 抽取 Helper 协调锁诊断公共模块；
+3. 集中或生成 Web 事实类型、目录和 ID 合同；
+4. 补齐 `ldvh-work-context` 的发行、卸载和文档覆盖。
+
+### P2：治理事实对象组合
+
+1. 对 21 个 open Spark 做主题合并和优先级清理；
+2. 对相邻 WorkCase 建立显式关系；
+3. 将验证、固化、提交等阶段尽量纳入父 WorkCase 的可追踪执行链；
+4. 关闭已被后续对象完全吸收的议题。
+
+### P3：重新判断 Windows 范围
+
+先确定 Windows 是否属于当前版本承诺，再决定继续投入跨平台文件系统抽象。
+
+### P4：保留有价值的治理边界
+
+不建议为了简化而删除 CAS、source fingerprint、事实写后回读、独立完整性审计、Human Gate、Git Gate 或 Web/Helper 职责边界。应删除或合并的是重复实现、重复登记、重复投影、过细对象拆分和历史/当前规划混杂。
+
+## 10. 最终判断
+
+LDVH 的核心治理理念并非全面过度设计，但当前已经出现中高程度的系统性复杂化。最需要控制的不是单个大文件，而是以下组合：
+
+```text
+多个规范层
++ 多个 Helper operation
++ 多个状态投影
++ 多个 Web 登记表
++ 多个环境入口
++ 多个 WorkCase/Spark
++ 多套历史报告
++ 尚未完全绿色的验证体系
+```
+
+当前最合理的阶段不是继续增加能力，而是进入“去重、合并维护点、减少开放议题、补齐验证、冻结新抽象”的收敛阶段。
