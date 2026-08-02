@@ -1284,6 +1284,7 @@ const PITFALL_DECISION_FIELDS = [
 export function PitfallCardContent({ obj }: { obj: ObjectItem }) {
   const { locale } = useI18n();
   if (obj.status === 'discarded') return <PitfallTerminalCardContent obj={obj} />;
+  if (obj.status === 'active') return null;
   const fields = PITFALL_DECISION_FIELDS
     .map((field) => ({ field, value: obj[field] }))
     .filter((entry): entry is { field: typeof PITFALL_DECISION_FIELDS[number]; value: string } => (

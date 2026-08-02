@@ -12,3 +12,9 @@ test('discarded Pitfall cards use the terminal disposition presentation', () => 
   assert.match(source, /obj\.disposition_summary\?\.trim\(\) \|\| t\('objectList\.dispositionMissing'\)/);
   assert.match(source, /currentType === 'pitfall'[\s\S]*showNonActiveReason=\{false\}[\s\S]*PitfallCardContent/);
 });
+
+test('active Pitfall cards retain only the shared identity and title frame', () => {
+  const source = fs.readFileSync(path.resolve('src/pages/ObjectList.tsx'), 'utf8');
+
+  assert.match(source, /function PitfallCardContent[\s\S]*?obj\.status === 'active'\) return null/);
+});
