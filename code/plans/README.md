@@ -4,6 +4,7 @@
 
 当前适用规划：
 
+- [WorkCase Controller 续跑与行动模板收敛](workcase-controller-continuation.md)：覆盖 06 最小临时工件共同边界、34 五段执行内核、fresh snapshot projection 消费、Reviewer 后连续受控写回与对应 source-contract 回归。
 - [WorkCase 当前快照确定性呈现投影](workcase-current-snapshot-presentation.md)：覆盖 21 权威语义的唯一 Code 维护点、Helper 精确读取投影、Web 字段级读取投影、Python 到 TypeScript 的单向生成、诊断与全状态矩阵验证。
 - [Web 字段级事实读取迁移](web-field-level-reading.md)：覆盖经 Helper 管辖解析约束的 Web 当前事实直读、字段级问题与未解析结构呈现、WorkCase 统一读取、旧 V4 Python machine 退役及对应验证。
 
