@@ -152,7 +152,7 @@ WorkCase 列表在 Helper 已确认的管辖 worktree 内由 Web 直接读取当
 
 WorkCase 详情页用于完整理解同一项当前责任。它在所有状态和 phase 下使用同一信息结构，不根据 Card 进展分组或推进环节切换、隐藏或重排内容。稳定阅读顺序为：
 
-WorkCase 身份头部、列表 Card 与详情“当前情况”消费各自当前载体形成的同一 `current_snapshot_projection`；raw phase 仍作为来源字段可读，但不再由页面自行映射。投影分别回答浏览分组与内部位置，不得写回来源状态。
+WorkCase 身份头部、列表 Card、聚焦页、阅读面板、共享轨道与详情“当前情况”消费各自当前载体形成的同一 `current_snapshot_projection`；raw `status / phase` 仍作为来源字段可读，但不再由 downstream 自行映射。投影分别回答浏览分组、内部位置、Gate handoff、阻塞覆盖与结构上的下一必经控制步骤；unresolved 统一不可判定，不得回退或写回来源状态。详情对 `next_required_control_step` 只显示闭集本地化文字，未知值不泄漏原始 key，也不提供按钮、自动动作或授权/完成判断。
 
 ```text
 身份头部

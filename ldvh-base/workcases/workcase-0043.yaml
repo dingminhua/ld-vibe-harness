@@ -14,49 +14,56 @@ success_criterion_definitions:
 - criterion_id: criterion-web-validation-and-isolation
   statement: Code Implementation Plan、直接相关 Web API 契约测试、npm check、npm build、git diff --check、WorkCase 精确回读和事实完整性检查在实际范围通过；负测覆盖 blocked 只消费 blocking_overlay 且不进 Gate、missing/wrong fingerprint 或 unresolved 时 detail/list/cognition 不生成 group/step/next action，以及 next step 闭集本地化与 unknown 禁泄漏。spark-0040、workcase-0036 至 0039 和 specs/00 的创建基线保持隔离，未运行或既有失败据实记录。
 priority: P1
-phase: human_plan_confirming
+phase: executing
 plan_version: 1
 work_items:
 - item_id: item-audit-web-projection-consumers
   goal: 审计当前 source-bound 投影形成点、legacy projector/facade、页面与 DTO downstream 消费、Web docs/tests 和 dirty 基线。
   expected_result: 形成精确消费矩阵与路径白名单，区分允许的 source-bound formation、raw 事实原值显示和必须退出的 downstream raw fallback，并确认不存在重复 WorkCase。
-  status: pending
+  status: completed
   approach_summary: 回读 0041/0042、25ab2f507、08/21 当前边界和实际 Web 调用图；不把实现现状反向提升为规则。
+  result_summary: 审计确认：允许的 source-bound formation 仅位于 API 读取边界并绑定实际 source_content_fingerprint；raw status/phase 仅保留事实原值显示。必须退出 workcaseStatus.ts 的 get/derive progress facade、facts.ts 的 projectWorkCaseCard，以及 ObjectDetail/WorkCaseProgressTrack/Cognition 中从 raw phase/status 重建分组、轨道、Gate 或 blocked 的 downstream 逻辑。四类 progress_group 保留；未发现重复 open WorkCase；dirty 基线与批准时一致。
 - item_id: item-form-web-code-plan
   goal: 在修改 Web Code 前形成并登记本增量的 Code Implementation Plan。
   expected_result: code/plans/workcase-web-current-snapshot-consumption.md 与 README 入口列明责任、依赖、接口、诊断、路径白名单、回滚和测试映射，不定义领域语义。
-  status: pending
+  status: completed
   depends_on:
   - item-audit-web-projection-consumers
   approach_summary: 计划只分配 Web 消费迁移，不修改 generated contract、Python 或 Specs。
+  result_summary: 已创建并回读 code/plans/workcase-web-current-snapshot-consumption.md，并在 code/plans/README.md 登记稳定入口；计划明确 source-bound formation、downstream projection-only、四类 progress_group、next step 只读边界、白名单、诊断、回滚与测试映射，未定义或修改领域语义。
 - item_id: item-retire-shared-api-legacy-projector
   goal: 退出无指纹 legacy Card projector 和 raw phase progress convenience facade，并使 API DTO/聚合只传递 source-bound projection。
   expected_result: facts.ts、workcaseStatus.ts、objects/cognition routes 不再暴露或消费 projectWorkCaseCard、derive/get WorkCaseProgress facade；Gate、blocked、统计和活动聚合从 resolved projection 取得对应字段，unresolved 不补造。
-  status: pending
+  status: completed
   depends_on:
   - item-form-web-code-plan
   approach_summary: 保留 deriveWorkCasePresentationProjection 作为 generated-contract 驱动的 source-bound formation；不改映射表或合同身份。
+  result_summary: 已退出 workcaseStatus.ts 的 derive/get progress convenience facade 与 facts.ts 的无指纹 projectWorkCaseCard；API 只在读取边界用实际 source_content_fingerprint 形成 current_snapshot_projection，Cognition 的 Gate、active 与 blocked 判断改从 resolved projection 的 handoff_narrative_key、lifecycle_position 和 blocking_overlay 取得，unresolved 不补造。
 - item_id: item-migrate-pages-and-next-action
   goal: 迁移列表、详情、聚焦页、阅读面板和共享进度轨道的 downstream 消费，并在详情显示只读下一必经动作。
   expected_result: 页面 header、轨道、分组、Gate、blocked 与 next action 全部来自 resolved projection；四类 progress_group 行为保留，unresolved 统一不可判定，next action 无按钮与授权含义。
-  status: pending
+  status: completed
   depends_on:
   - item-retire-shared-api-legacy-projector
   approach_summary: 组件接收 lifecycle_position/progress_group/progress_step 等投影值，不再接收 phase 以重建进度；raw status/phase 仍可在事实阅读区原样显示。
+  result_summary: ObjectList、CognitionCenter、ObjectDetail、WorkCaseReadingLayout、阅读面板同源路径和 WorkCaseProgressTrack 已改为消费 resolved current_snapshot_projection；header、四类浏览分组、四步轨道、Gate 与 blocking overlay 不再从 raw status/phase 推导。详情显示全部稳定 next_required_control_step 的本地化只读文字，unknown/unresolved 统一不可判定，无按钮、写入或授权/完成含义。
 - item_id: item-update-web-contract-tests-and-docs
   goal: 同步 i18n、Web docs 与直接相关契约测试，删除 legacy 正向断言并补齐负向矩阵。
   expected_result: docs 02/03/04/10 准确说明同源投影消费；测试覆盖 blocked、Gate、unresolved/fingerprint、四分组保持、legacy 出口消失和 next step 本地化闭集。
-  status: pending
+  status: completed
   depends_on:
   - item-migrate-pages-and-next-action
   approach_summary: 只更新实际受本增量影响的文档与列名测试，不为通过测试放宽 unresolved 或重新引入 raw fallback。
+  result_summary: 已同步 i18n 与 Web docs 02/03/04/10，删除 legacy 正向约定并补齐 blocked 非 Gate、missing/unresolved、unknown next key 禁泄漏、页面无 raw fallback、四分组与稳定 next step 闭集本地化测试；5 个目标测试文件共 74 项全部通过。
 - item_id: item-verify-web-projection-migration
   goal: 验证 Web 页面迁移、类型与构建、合同测试、事实完整性和 dirty 隔离。
   expected_result: 目标 tests、npm check/build、git diff --check、路径白名单、workcase-0043 精确回读与全库事实完整性检查在实际范围完成，失败与未验证边界据实进入结果链。
-  status: pending
+  status: in_progress
   depends_on:
   - item-update-web-contract-tests-and-docs
   approach_summary: 全量 Web test 可在资源允许时运行；其结果与目标测试分开记录，不把 source-contract 或 build 扩大为未来 UI 行为保障。
+  current_summary: 目标契约 74/74、npm check、npm build、git diff --check 和 legacy symbol 搜索已通过；完整 Web API 集 155/156，唯一失败为范围外 commit-label-contract 找不到 Specs 03 表，正在完成事实完整性、路径白名单、dirty 隔离与独立结果复核。
+  resume_from: 精确回读 0043 并运行全库事实完整性与 dirty hash 检查；随后形成隔离的本地语义提交，委派独立只读 Reviewer，并按 phase 连续完成结果链与关闭准备。
 execution_authorization:
   quality_gates:
   - gate_id: independent-result-review
@@ -199,8 +206,14 @@ relations:
     governed_project_id: ldvh
     fact_type_key: workcase
     object_id: workcase-0042
-waiting_on: 等待 Human 阅读 workcase-0043 plan_version=1 及完整 execution_authorization，并决定是否批准 Human Gate 1 执行。
+execution_approval:
+  subject_version: 1
+  approved_at: '2026-08-02T17:13:33.465196+08:00'
+  summary: Human 已批准 workcase-0043 plan version 1 及其完整 execution_authorization。
+  baseline_fingerprint: 7aa00def0defe6deab14bff26667e493dc2a92b1ba75fa7c9fcb53252bf9b875
+  source_refs:
+  - turn:human-approve-workcase-0043-plan-v1
 object_id: workcase-0043
 fact_type_key: workcase
 created_at: '2026-08-02T17:06:58.827929+08:00'
-updated_at: '2026-08-02T17:06:58.827929+08:00'
+updated_at: '2026-08-02T17:33:11.772934+08:00'

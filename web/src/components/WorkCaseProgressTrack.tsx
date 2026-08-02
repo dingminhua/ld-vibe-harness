@@ -1,40 +1,37 @@
 import { useI18n } from '@/i18n/context';
 import {
   WORKCASE_PROGRESS_STEP_ORDER,
-  getWorkCaseProgressProjection,
+  type WorkCaseLifecyclePosition,
+  type WorkCaseProgressGroup,
   type WorkCaseProgressStep,
 } from '@/shared/workcaseStatus';
 
 interface WorkCaseProgressTrackProps {
-  phase?: unknown;
-  step?: WorkCaseProgressStep | null;
+  lifecyclePosition?: WorkCaseLifecyclePosition | null;
+  progressGroup?: WorkCaseProgressGroup | null;
+  progressStep?: WorkCaseProgressStep | null;
   showUnavailable?: boolean;
   className?: string;
 }
 
 /**
- * Shared Human-facing WorkCase progress track. Card may pass its projected step;
- * detail derives the same deterministic position from the exact phase.
+ * Shared Human-facing WorkCase progress track. Every position comes from the
+ * source-bound current snapshot projection; this component never reads phase.
  */
 export default function WorkCaseProgressTrack({
-  phase,
-  step,
+  lifecyclePosition,
+  progressGroup,
+  progressStep,
   showUnavailable = false,
   className = 'mt-2.5',
 }: WorkCaseProgressTrackProps) {
   const { t } = useI18n();
-  const projection = typeof phase === 'string'
-    ? getWorkCaseProgressProjection(phase)
-    : null;
-  const planRevising = phase === 'plan_revising';
-  const resolvedStep = step === undefined
-    ? projection?.progressStep ?? null
-    : step;
-  const currentStep = resolvedStep
-    ? WORKCASE_PROGRESS_STEP_ORDER.indexOf(resolvedStep)
+  const planRevising = lifecyclePosition === 'plan_revising';
+  const currentStep = progressStep
+    ? WORKCASE_PROGRESS_STEP_ORDER.indexOf(progressStep)
     : -1;
   const applies = planRevising
-    || projection?.progressGroup === 'progressing'
+    || progressGroup === 'progressing'
     || currentStep >= 0
     || showUnavailable;
 

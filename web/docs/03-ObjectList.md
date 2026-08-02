@@ -157,6 +157,7 @@ interface WorkCaseCardItem {
   title: string;
   status: 'open' | 'blocked' | 'closed'; // 责任状态原值；不得改写成 phase
   phase?: string;
+  current_snapshot_projection: WorkCaseCurrentSnapshotProjection; // source-bound；downstream 唯一投影合同
   priority?: 'P0' | 'P1' | 'P2' | 'P3'; // 仅 plan_confirmation / progressing
   updated_at: string;
   progress_group?: 'plan_confirmation' | 'progressing' | 'closure_confirmation' | 'closed';
@@ -203,6 +204,6 @@ interface WorkCaseCardItem {
 }
 ```
 
-`status` 始终保留事实责任状态，`phase` 独立保留当前阶段；不得把 phase 填进 `status`，也不得新增 `responsibilityStatus` 兼容别名。`current_snapshot_projection` 绑定原始载体 SHA-256 与合同身份；`progress_group`、`progress_step` 是它的兼容只读字段，`executionItems` 是另一个 Card 派生。plan_confirmation 是唯一允许携带完整 `work_items`、`creation_reviews` 与授权基线的 Card 分组；progressing 仍只携带最小 `executionItems`。`closure_confirmation` 携带 `goal`、Pitfall `contributedTo` 和 `closureProposal`；`closed` 携带 `goal`、Pitfall `contributedTo` 和 `closureTerminal`。关联目标标题和状态由 Card 按需同源读取，不复制到列表响应；`related-to` 不进入 Card 投影。
+`status` 始终保留事实责任状态，`phase` 独立保留当前阶段；不得把 phase 填进 `status`，也不得新增 `responsibilityStatus` 兼容别名。`current_snapshot_projection` 在 API 读取边界用实际原始载体 SHA-256 形成并绑定合同身份；形成后，列表筛选、Card 分支、共享轨道和阻塞提示只消费其中的 resolved 字段，不得用 raw `status / phase` fallback。unresolved 时对象仍留在“全部”范围并显示不可判定，不猜入任何分组。`progress_group`、`progress_step` 是该投影的兼容只读字段，`executionItems` 是另一个 Card 派生。plan_confirmation 是唯一允许携带完整 `work_items`、`creation_reviews` 与授权基线的 Card 分组；progressing 仍只携带最小 `executionItems`。`closure_confirmation` 携带 `goal`、Pitfall `contributedTo` 和 `closureProposal`；`closed` 携带 `goal`、Pitfall `contributedTo` 和 `closureTerminal`。关联目标标题和状态由 Card 按需同源读取，不复制到列表响应；`related-to` 不进入 Card 投影。
 
 列表顶层返回字段级直读的范围与集合问题：`coverage_status` 与 `collection_issues`。对象卡携带自己的 `read_status`、`read_issues`、`field_issues` 与 `unparsed_structures`；集合问题保留准确路径、原因和消息，不以旧 machine 的 `invalid / not_found` 分类替代。页面必须保留已形成的可消费 Card，独立展示集合问题与未完成范围；不设置列表级“观察时间”或“重新读取”控件。筛选或导航发生时照常发起新的列表请求，不能复用旧 payload。读取失败时页面必须保留实际失败原因，不得回退其它读取路径或显示伪零值。

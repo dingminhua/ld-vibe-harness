@@ -29,7 +29,7 @@ import { getStatusColor } from '@/utils/statusColors';
 import { getSignalClassName, getSignalText, isSignalField } from '@/utils/objectSignals';
 import { usePanel } from '@/utils/panelContext';
 import { getFactReadMeta, isReadableFact, reconstructFactYaml, type FactCarrier, type FactReadMeta } from '@/utils/factReadMeta';
-import { deriveWorkCaseProgressProjection } from '@/shared/workcaseStatus';
+import { isResolvedWorkCasePresentationProjection } from '@/shared/workcaseStatus';
 import { WorkCaseReadingLayout } from '@/pages/object-detail/WorkCaseReadingLayout';
 import { AdrReadingLayout, PitfallReadingLayout, PitfallTextNodeContent, SparkReadingLayout } from '@/pages/object-detail/FactReadingLayouts';
 import { FactAssociationsSection } from '@/pages/object-detail/FactAssociationsSection';
@@ -469,10 +469,9 @@ export function getObjectHeaderStatus(
   source: Record<string, unknown>,
 ): string | undefined {
   if (objectType !== 'workcase') return status;
-  const phase = typeof source.phase === 'string' && source.phase.trim()
-    ? source.phase
-    : undefined;
-  return deriveWorkCaseProgressProjection(status ?? '', phase)?.progressGroup ?? 'unknown';
+  return isResolvedWorkCasePresentationProjection(source.current_snapshot_projection)
+    ? source.current_snapshot_projection.progress_group
+    : 'unknown';
 }
 
 export function ObjectIdentityHeader({

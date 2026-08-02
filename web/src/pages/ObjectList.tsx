@@ -20,7 +20,9 @@ import { getFactReadMeta, isReadableFact } from '@/utils/factReadMeta';
 import { getEffectiveListStatus, writeListStatusParam } from '@/utils/listStatus';
 import {
   WORKCASE_PROGRESS_STEP_ORDER,
+  isResolvedWorkCasePresentationProjection,
   isWorkCaseProgressGroup,
+  type WorkCaseLifecyclePosition,
   type WorkCaseProgressGroup,
   type WorkCaseProgressStep,
 } from '@/shared/workcaseStatus';
@@ -606,7 +608,7 @@ export function WorkCaseBlockingNotice({
 
 export function WorkCaseProgressingContent({
   goal,
-  phase,
+  lifecyclePosition,
   progressStep,
   executionItemsProjectionValid,
   executionItems,
@@ -616,7 +618,7 @@ export function WorkCaseProgressingContent({
   t,
 }: {
   goal?: string;
-  phase?: string;
+  lifecyclePosition: WorkCaseLifecyclePosition | null;
   progressStep: WorkCaseProgressStep | null;
   executionItemsProjectionValid: boolean;
   executionItems: WorkCaseExecutionItem[];
@@ -626,7 +628,7 @@ export function WorkCaseProgressingContent({
   t: Translate;
 }) {
   const currentStep = progressStep ? WORKCASE_PROGRESS_STEP_ORDER.indexOf(progressStep) : -1;
-  const planRevising = phase === 'plan_revising';
+  const planRevising = lifecyclePosition === 'plan_revising';
   const itemExecution = progressStep === 'item_execution';
   const executionItemsActive = executionItems.filter((item) => item.status === 'in_progress' || item.status === 'blocked');
   const executionItemOpen = executionItems.filter((item) => ['pending', 'in_progress', 'blocked'].includes(item.status)).length;
@@ -661,8 +663,9 @@ export function WorkCaseProgressingContent({
         </div>
 
         <WorkCaseProgressTrack
-          phase={phase}
-          step={progressStep}
+          lifecyclePosition={lifecyclePosition}
+          progressGroup="progressing"
+          progressStep={progressStep}
           showUnavailable
         />
 
@@ -1428,10 +1431,11 @@ export default function ObjectList() {
   const renderObjectCard = (obj: ObjectItem) => {
 
     if (currentType === 'workcase') {
-      const progressGroup = isWorkCaseProgressGroup(obj.progress_group) ? obj.progress_group : null;
-      const progressStep = WORKCASE_PROGRESS_STEP_ORDER.includes(obj.progress_step as WorkCaseProgressStep)
-        ? obj.progress_step as WorkCaseProgressStep
+      const currentProjection = isResolvedWorkCasePresentationProjection(obj.current_snapshot_projection)
+        ? obj.current_snapshot_projection
         : null;
+      const progressGroup = currentProjection?.progress_group ?? null;
+      const progressStep = currentProjection?.progress_step ?? null;
       if (progressGroup === 'plan_confirmation') {
         return (
           <ObjectCardFrame
@@ -1449,7 +1453,7 @@ export default function ObjectList() {
                 successCriteria={obj.successCriteria}
                 successCriterionDefinitions={obj.success_criterion_definitions}
                 executionAuthorization={obj.execution_authorization}
-                isBlocked={obj.status === 'blocked'}
+                isBlocked={currentProjection?.blocking_overlay ?? false}
                 blockingSummary={obj.blocking_summary}
                 t={t}
               />
@@ -1469,11 +1473,11 @@ export default function ObjectList() {
           >
             <WorkCaseProgressingContent
               goal={obj.goal}
-              phase={obj.phase}
+              lifecyclePosition={currentProjection?.lifecycle_position ?? null}
               progressStep={progressStep}
               executionItemsProjectionValid={obj.executionItemsProjectionValid ?? false}
               executionItems={obj.executionItems ?? []}
-              isBlocked={obj.status === 'blocked'}
+              isBlocked={currentProjection?.blocking_overlay ?? false}
               waitingOn={obj.waiting_on}
               blockingSummary={obj.blocking_summary}
               t={t}

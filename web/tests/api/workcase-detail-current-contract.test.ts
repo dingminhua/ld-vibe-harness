@@ -34,7 +34,7 @@ test('WorkCase detail source consumes only the single current shape in one fixed
 
   assert.doesNotMatch(
     layout,
-    /\borchestration\b|execution_items|\bplan_review\b|\bresult_review\b|revision_history|\bsuccess_criteria\b|verification_evidence|closure_evidence|\bdraft\b|review_needed|execution-item-|slice\(0,\s*4\)|sortWorkCaseExecutionItems|progress_group|progress_step/,
+    /\borchestration\b|execution_items|\bplan_review\b|\bresult_review\b|revision_history|\bsuccess_criteria\b|verification_evidence|closure_evidence|\bdraft\b|review_needed|execution-item-|slice\(0,\s*4\)|sortWorkCaseExecutionItems/,
   );
   assert.doesNotMatch(layout, /obj\.(?:status|phase)\s*===|switch\s*\([^)]*(?:status|phase)/);
   assert.doesNotMatch(objectDetail, /fetchObjects\(['"]workcase['"]\)/);
@@ -431,10 +431,13 @@ test('narrative fields read as prose while structured records keep label rows', 
   assert.match(layout, /className="ldvh-detail-semantic-body font-medium !text-amber-950\/72 dark:!text-amber-100\/78"/);
   assert.doesNotMatch(layout, /className=\{`ldvh-body \$\{styles\.body\}`\}/);
 
-  // 当前情况前置于目标与边界；内外页复用同一轨道组件，详情只传递精确 phase。
+  // 当前情况前置于目标与边界；内外页复用同一轨道组件并消费同一快照投影。
   assert.ok(layout.indexOf('workcaseCurrentSnapshot') < layout.indexOf('workcaseResponsibility'));
   assert.doesNotMatch(layout, /function SnapshotPhaseField\(|<SnapshotPhaseField/);
-  assert.match(layout, /<WorkCaseProgressTrack phase=\{obj\.phase\} className="mt-0" \/>/);
+  assert.match(layout, /<WorkCaseProgressTrack[\s\S]{0,260}lifecyclePosition=\{currentProjection\?\.lifecycle_position \?\? null\}[\s\S]{0,260}progressGroup=\{currentProjection\?\.progress_group \?\? null\}[\s\S]{0,260}progressStep=\{currentProjection\?\.progress_step \?\? null\}/);
+  assert.match(layout, /objectDetail\.workcaseNextRequiredControlStep/);
+  assert.match(layout, /currentProjection\.next_required_control_step/);
+  assert.doesNotMatch(layout, /\{currentProjection\?\.next_required_control_step\}/);
   assert.match(layout, /function SnapshotProseField\(/);
   assert.match(layout, /const WORKCASE_DETAIL_SEMANTIC_ICON_SIZE = 14/);
   const snapshot = layout.slice(
@@ -663,12 +666,13 @@ test('WorkCase identity uses the same progress group as its list Card', () => {
     'utf8',
   );
 
-  // The identity header follows the same deterministic progress projection as
-  // the list Card. Precise phase remains inside the current-situation node.
+  // The identity header consumes the same source-bound current snapshot projection as the list Card.
   assert.match(objectDetail, /function getObjectHeaderStatus\(/);
-  assert.match(objectDetail, /deriveWorkCaseProgressProjection/);
+  assert.match(objectDetail, /isResolvedWorkCasePresentationProjection/);
   assert.match(objectDetail, /if \(objectType !== 'workcase'\) return status/);
-  assert.match(objectDetail, /return deriveWorkCaseProgressProjection\(status \?\? '', phase\)\?\.progressGroup \?\? 'unknown'/);
+  assert.match(objectDetail, /source\.current_snapshot_projection/);
+  assert.match(objectDetail, /source\.current_snapshot_projection\.progress_group/);
+  assert.doesNotMatch(objectDetail, /deriveWorkCaseProgressProjection|getWorkCaseProgressProjection/);
   assert.match(objectDetail, /status=\{headerStatus\}/);
   assert.match(objectDetail, /statusLabel=\{headerStatus \? getObjectStatusLocale\(objType, headerStatus, locale\) : undefined\}/);
   assert.match(panel, /const headerStatus = getObjectHeaderStatus\(objectType \|\| '', status, obj \|\| \{\}\)/);

@@ -9,6 +9,7 @@ import type { LocalFactScope } from '../../api/services/localFactReader.ts'
 import {
   WORKCASE_CURRENT_PHASES,
   deriveWorkCasePresentationProjection,
+  isResolvedWorkCasePresentationProjection,
 } from '../../shared/workcaseStatus.ts'
 
 const fingerprint = 'a'.repeat(64)
@@ -54,6 +55,32 @@ test('unresolved projections do not guess progress, handoff, or the next control
   }
 })
 
+test('resolved projection guards reject unknown display keys and every current next step is localized', async () => {
+  const resolved = deriveWorkCasePresentationProjection('open', 'executing', fingerprint)
+  assert.equal(resolved.resolution, 'resolved')
+  if (resolved.resolution !== 'resolved') return
+
+  assert.equal(isResolvedWorkCasePresentationProjection(resolved), true)
+  assert.equal(isResolvedWorkCasePresentationProjection({
+    ...resolved,
+    next_required_control_step: 'unknown_raw_key',
+  }), false)
+
+  const projections = [
+    ...WORKCASE_CURRENT_PHASES.map((phase) => deriveWorkCasePresentationProjection('open', phase, fingerprint)),
+    deriveWorkCasePresentationProjection('closed', undefined, fingerprint),
+  ]
+  const stableNextSteps = new Set(projections.flatMap((projection) => (
+    projection.resolution === 'resolved' ? [projection.next_required_control_step] : []
+  )))
+  const repositoryRoot = path.resolve(import.meta.dirname, '../../..')
+  const locales = await readFile(path.join(repositoryRoot, 'web/src/i18n/locales.ts'), 'utf8')
+  for (const nextStep of stableNextSteps) {
+    assert.match(locales, new RegExp(`objectDetail\\.workcaseNextControlStep\\.${nextStep}`))
+  }
+  assert.match(locales, /objectDetail\.workcaseNextControlStepUnavailable/)
+})
+
 test('current Card and Cognition consumers never manufacture a source fingerprint', async () => {
   const fact = {
     object_id: 'workcase-0001',
@@ -82,8 +109,29 @@ test('current Card and Cognition consumers never manufacture a source fingerprin
   const cognitionSource = await readFile(path.join(repositoryRoot, 'web/api/routes/cognition.ts'), 'utf8')
   assert.doesNotMatch(sharedSource, /repeat\(64\)/)
   assert.match(factsSource, /projectCurrentWorkCaseCard\(source, item\.source_content_fingerprint\)/)
+  assert.doesNotMatch(factsSource, /export function projectWorkCaseCard\b/)
   assert.doesNotMatch(cognitionSource, /deriveWorkCaseProgressProjection/)
   assert.match(cognitionSource, /currentWorkCaseProjection\(raw\)/)
+})
+
+test('page consumers accept the source-bound projection and expose no raw phase progress facade', async () => {
+  const repositoryRoot = path.resolve(import.meta.dirname, '../../..')
+  const sources = await Promise.all([
+    'web/src/components/WorkCaseProgressTrack.tsx',
+    'web/src/pages/ObjectList.tsx',
+    'web/src/pages/CognitionCenter.tsx',
+    'web/src/pages/ObjectDetail.tsx',
+    'web/src/pages/object-detail/WorkCaseReadingLayout.tsx',
+    'web/src/components/reading-panel/PanelContent.tsx',
+  ].map(async (relativePath) => [relativePath, await readFile(path.join(repositoryRoot, relativePath), 'utf8')] as const))
+  const combined = sources.map(([, value]) => value).join('\n')
+
+  assert.doesNotMatch(combined, /deriveWorkCaseProgressProjection|getWorkCaseProgressProjection/)
+  assert.doesNotMatch(sources[0]?.[1] ?? '', /phase\?:|phase=\{/)
+  assert.doesNotMatch(sources[1]?.[1] ?? '', /obj\.status === 'blocked'/)
+  assert.match(sources[1]?.[1] ?? '', /isResolvedWorkCasePresentationProjection\(obj\.current_snapshot_projection\)/)
+  assert.match(sources[3]?.[1] ?? '', /isResolvedWorkCasePresentationProjection\(source\.current_snapshot_projection\)/)
+  assert.match(sources[4]?.[1] ?? '', /objectDetail\.workcaseNextRequiredControlStepBoundary/)
 })
 
 test('Web list and detail bind projection to raw carrier bytes while preserving field issues', async () => {

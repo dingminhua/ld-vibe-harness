@@ -74,8 +74,6 @@ interface InboxBuildItem {
   title: string
   title_en?: string
   title_zh?: string
-  status: string
-  phase: string | undefined
   progress_group?: WorkCaseProgressGroup
   priority?: string
   updated_at?: string
@@ -90,12 +88,12 @@ interface ActiveWorkCaseBuildItem {
   type: 'workcase'
   progress_group: 'progressing'
   progress_step?: WorkCaseProgressStep
+  lifecycle_position: ResolvedWorkCasePresentationProjection['lifecycle_position']
+  blocking_overlay: boolean
   object_id: string
   title: string
   title_en?: string
   title_zh?: string
-  status: string
-  phase: string
   priority?: string
   updated_at?: string
   read_status: string
@@ -144,7 +142,7 @@ export interface CommitHotspotBuildItem {
   progress_group?: WorkCaseProgressGroup
   priority?: string
   read_status: string
-  phase?: string
+  lifecycle_position?: ResolvedWorkCasePresentationProjection['lifecycle_position']
   canonical_path: string
   relations: unknown
 }
@@ -192,9 +190,10 @@ function factKey(type: string, objectId: string): string {
   return `${type}:${objectId}`
 }
 
-function deriveInboxKind(_status: string, _phase: string | undefined, progressGroup: WorkCaseProgressGroup | null): InboxKind | null {
-  if (progressGroup === 'plan_confirmation') return 'plan_confirmation'
-  if (progressGroup === 'closure_confirmation') return 'closure_confirmation'
+function deriveInboxKind(projection: ResolvedWorkCasePresentationProjection): InboxKind | null {
+  if (projection.blocking_overlay) return null
+  if (projection.handoff_narrative_key === 'gate1_waiting') return 'plan_confirmation'
+  if (projection.handoff_narrative_key === 'gate2_waiting') return 'closure_confirmation'
   return null
 }
 
@@ -351,7 +350,6 @@ function projectCommitHotspotFact(item: LocalFactItem, type: ObjectType): Commit
   if (item.object_ref.fact_type_key !== type || !item.object_ref.object_id) return null
   const objectId = item.object_ref.object_id
   const status = typeof raw.status === 'string' ? raw.status : undefined
-  const phase = typeof raw.phase === 'string' ? raw.phase : undefined
   const currentProjection = type === 'workcase'
     ? deriveWorkCasePresentationProjection(raw.status, raw.phase, item.source_content_fingerprint)
     : null
@@ -366,7 +364,9 @@ function projectCommitHotspotFact(item: LocalFactItem, type: ObjectType): Commit
     ...(typeof raw.title_en === 'string' ? { title_en: raw.title_en } : {}),
     ...(typeof raw.title_zh === 'string' ? { title_zh: raw.title_zh } : {}),
     ...(status ? { status } : {}),
-    ...(phase ? { phase } : {}),
+    ...(currentProjection?.resolution === 'resolved'
+      ? { lifecycle_position: currentProjection.lifecycle_position }
+      : {}),
     ...(type === 'workcase' && progressGroup ? { progress_group: progressGroup } : {}),
     ...(priority ? { priority } : {}),
     read_status: item.read_status,
@@ -390,7 +390,8 @@ function isDisplayableFormalRelation(
     if (relationKey === 'related-to') return true
     if (relationKey === 'depends-on') {
       return source.status !== 'closed'
-        && source.phase !== 'human_closure_confirming'
+        && source.lifecycle_position !== undefined
+        && source.lifecycle_position !== 'human_closure_confirming'
         && target.type === 'workcase'
         && (target.status === 'open' || target.status === 'blocked')
     }
@@ -597,8 +598,6 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       }
       for (const raw of data.items) {
         const object_id = String(raw.object_id ?? '')
-        const status = String(raw.status ?? 'unknown')
-        const phase = typeof raw.phase === 'string' ? raw.phase : undefined
         const progress = currentWorkCaseProjection(raw)
         if (progress === null) {
           issues.push({ section: 'inbox', code: 'progress_group_unresolved', message: `WorkCase ${object_id} 的当次 current_snapshot_projection 未 resolved，未收入收件箱`, object_ref: object_id })
@@ -606,14 +605,16 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
           continue
         }
         const progressGroup = progress.progress_group
-        if (progress.progress_group === 'progressing' && typeof phase === 'string') {
+        if (progress.progress_group === 'progressing') {
           activeWorkCaseBuilds.push({
             type: 'workcase', progress_group: 'progressing',
             ...(progress.progress_step ? { progress_step: progress.progress_step } : {}),
+            lifecycle_position: progress.lifecycle_position,
+            blocking_overlay: progress.blocking_overlay,
             object_id, title: String(raw.title ?? object_id),
             ...(typeof raw.title_en === 'string' ? { title_en: raw.title_en } : {}),
             ...(typeof raw.title_zh === 'string' ? { title_zh: raw.title_zh } : {}),
-            status, phase, priority: typeof raw.priority === 'string' ? raw.priority : undefined,
+            priority: typeof raw.priority === 'string' ? raw.priority : undefined,
             updated_at: typeof raw.updated_at === 'string' ? raw.updated_at : undefined,
             read_status: String(raw.read_status ?? 'unknown'), projection: raw,
             field_issues: Array.isArray(raw.field_issues) ? (raw.field_issues as Array<Record<string, unknown>>) : [],
@@ -622,14 +623,14 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
           })
           continue
         }
-        const inboxKind = deriveInboxKind(status, phase, progressGroup)
+        const inboxKind = deriveInboxKind(progress)
         if (inboxKind === null) continue
         builds.push({
           type: 'workcase', inboxKind, progress_group: progressGroup,
           object_id, title: String(raw.title ?? object_id),
           ...(typeof raw.title_en === 'string' ? { title_en: raw.title_en } : {}),
           ...(typeof raw.title_zh === 'string' ? { title_zh: raw.title_zh } : {}),
-          status, phase, priority: typeof raw.priority === 'string' ? raw.priority : undefined,
+          priority: typeof raw.priority === 'string' ? raw.priority : undefined,
           updated_at: typeof raw.updated_at === 'string' ? raw.updated_at : undefined,
           read_status: String(raw.read_status ?? 'unknown'), projection: raw,
           field_issues: Array.isArray(raw.field_issues) ? (raw.field_issues as Array<Record<string, unknown>>) : [],
@@ -652,7 +653,6 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
           type: 'pitfall', inboxKind: 'pitfall_confirmation', object_id, title: String(raw.title ?? object_id),
           ...(typeof raw.title_en === 'string' ? { title_en: raw.title_en } : {}),
           ...(typeof raw.title_zh === 'string' ? { title_zh: raw.title_zh } : {}),
-          status: 'draft', phase: undefined,
           updated_at: typeof raw.updated_at === 'string' ? raw.updated_at : undefined,
           read_status: String(raw.read_status ?? 'unknown'), projection: raw,
           field_issues: Array.isArray(raw.field_issues) ? (raw.field_issues as Array<Record<string, unknown>>) : [],
@@ -771,8 +771,8 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
         typeColor: getTypeColor('workcase'),
         progress_group: 'progressing',
         ...(build.progress_step ? { progress_step: build.progress_step } : {}),
-        phase: build.phase,
-        isBlocked: build.status === 'blocked',
+        lifecycle_position: build.lifecycle_position,
+        isBlocked: build.blocking_overlay,
         read_status: build.read_status,
         card,
       }

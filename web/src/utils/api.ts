@@ -1,4 +1,8 @@
 import type { FactCarrier, FactReadStatus } from '@/utils/factReadMeta';
+import type {
+  WorkCaseLifecyclePosition,
+  WorkCaseNextRequiredControlStep,
+} from '@/shared/workcaseStatus';
 
 const API_BASE = '/api';
 const inFlightRequests = new Map<string, Promise<unknown>>();
@@ -33,9 +37,9 @@ export interface ResolvedWorkCaseCurrentSnapshotProjection {
   contract_identity: 'workcase-current-snapshot-presentation/1';
   resolution: 'resolved';
   source_content_fingerprint: string;
-  lifecycle_position: string;
+  lifecycle_position: WorkCaseLifecyclePosition;
   handoff_narrative_key: string;
-  next_required_control_step: string;
+  next_required_control_step: WorkCaseNextRequiredControlStep;
   progress_group: WorkCaseProgressGroup;
   progress_step: WorkCaseProgressStep | null;
   blocking_overlay: boolean;
@@ -62,6 +66,7 @@ export interface ObjectItem {
   progress_group?: string;
   progress_step?: string;
   current_snapshot_projection?: WorkCaseCurrentSnapshotProjection;
+  lifecycle_position?: WorkCaseLifecyclePosition;
   phase?: string;
   goal?: string;
   scope?: string;
@@ -362,6 +367,7 @@ export interface WorkCaseDetailData extends Record<string, unknown> {
   goal: string;
   scope: string;
   success_criterion_definitions: WorkCaseCriterionDefinition[];
+  current_snapshot_projection?: WorkCaseCurrentSnapshotProjection;
   phase?: 'human_plan_confirming' | 'plan_revising' | 'executing' | 'controller_checking' | 'independent_reviewing' | 'closure_preparing' | 'human_closure_confirming';
   priority?: 'P0' | 'P1' | 'P2' | 'P3';
   summary?: string;
@@ -439,7 +445,7 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
 export type CognitionInboxKind = 'plan_confirmation' | 'closure_confirmation' | 'pitfall_confirmation';
 
 /**
- * 决定依据区内联投影（Q3）：与 WorkCase 列表 Card 同源的 projectWorkCaseCard 字段子集，
+ * 决定依据区内联投影（Q3）：与 WorkCase 列表 Card 同源的 source-bound 字段子集，
  * 不含对象身份字段（id/title/status 等在条目层）。
  */
 export interface CognitionInboxCard extends Record<string, unknown> {
@@ -499,7 +505,7 @@ export interface CognitionActiveWorkCaseItem extends Omit<CognitionInboxItemBase
   type: 'workcase';
   progress_group: 'progressing';
   progress_step?: WorkCaseProgressStep;
-  phase: string;
+  lifecycle_position: WorkCaseLifecyclePosition;
   isBlocked: boolean;
 }
 

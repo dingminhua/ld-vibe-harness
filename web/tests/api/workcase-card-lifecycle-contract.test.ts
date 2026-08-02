@@ -6,16 +6,20 @@ import {
   WORKCASE_CURRENT_PHASES,
   WORKCASE_PROGRESS_GROUP_ORDER,
   WORKCASE_PROGRESS_STEP_ORDER,
-  deriveWorkCaseProgressProjection,
-  getWorkCaseProgressProjection,
+  deriveWorkCasePresentationProjection,
 } from '../../shared/workcaseStatus.ts';
-import { projectWorkCaseCard } from '../../api/services/facts.ts';
+import { projectCurrentWorkCaseCard } from '../../api/services/facts.ts';
 import { getFieldValueLabel, getObjectStatusLocale } from '../../src/i18n/locales.ts';
 
 const webRoot = path.resolve(import.meta.dirname, '../..');
+const sourceContentFingerprint = 'a'.repeat(64);
 
 function source(relativePath: string): string {
   return fs.readFileSync(path.join(webRoot, relativePath), 'utf8');
+}
+
+function projectCurrentCard(fact: Record<string, unknown>) {
+  return projectCurrentWorkCaseCard(fact, sourceContentFingerprint);
 }
 
 function currentWorkCase(overrides: Record<string, unknown> = {}) {
@@ -115,20 +119,21 @@ test('WorkCase cards use four progress groups over the single current phase set'
     'closure_preparing',
     'human_closure_confirming',
   ]);
-  assert.deepEqual(getWorkCaseProgressProjection('closure_preparing'), {
-    progressGroup: 'progressing',
-    progressStep: 'controller_synthesis',
-  });
-  assert.equal(getWorkCaseProgressProjection('human_closure_confirming')?.progressGroup, 'closure_confirmation');
-  assert.equal(getWorkCaseProgressProjection('closed'), null);
-  assert.deepEqual(deriveWorkCaseProgressProjection('closed', undefined), { progressGroup: 'closed' });
-  assert.equal(deriveWorkCaseProgressProjection('closed', 'executing'), null);
-  assert.equal(deriveWorkCaseProgressProjection('open', undefined), null);
-  assert.equal(deriveWorkCaseProgressProjection('blocked', 'not-a-current-phase'), null);
-  assert.deepEqual(deriveWorkCaseProgressProjection('open', 'executing'), {
-    progressGroup: 'progressing',
-    progressStep: 'item_execution',
-  });
+  const closurePreparing = deriveWorkCasePresentationProjection('open', 'closure_preparing', sourceContentFingerprint);
+  assert.equal(closurePreparing.resolution, 'resolved');
+  if (closurePreparing.resolution === 'resolved') {
+    assert.equal(closurePreparing.progress_group, 'progressing');
+    assert.equal(closurePreparing.progress_step, 'controller_synthesis');
+  }
+  const gate2 = deriveWorkCasePresentationProjection('open', 'human_closure_confirming', sourceContentFingerprint);
+  assert.equal(gate2.resolution === 'resolved' ? gate2.progress_group : null, 'closure_confirmation');
+  assert.equal(deriveWorkCasePresentationProjection('closed', undefined, sourceContentFingerprint).resolution, 'resolved');
+  assert.equal(deriveWorkCasePresentationProjection('closed', 'executing', sourceContentFingerprint).resolution, 'unresolved');
+  assert.equal(deriveWorkCasePresentationProjection('open', undefined, sourceContentFingerprint).resolution, 'unresolved');
+  assert.equal(deriveWorkCasePresentationProjection('blocked', 'not-a-current-phase', sourceContentFingerprint).resolution, 'unresolved');
+  const executing = deriveWorkCasePresentationProjection('open', 'executing', sourceContentFingerprint);
+  assert.equal(executing.resolution === 'resolved' ? executing.progress_group : null, 'progressing');
+  assert.equal(executing.resolution === 'resolved' ? executing.progress_step : null, 'item_execution');
 });
 
 test('terminal status labels remain type-specific across fact types', () => {
@@ -155,9 +160,11 @@ test('plan revision is progressing but remains outside the four-step track', () 
   const track = source('src/components/WorkCaseProgressTrack.tsx');
   const locales = source('src/i18n/locales.ts');
 
-  assert.deepEqual(getWorkCaseProgressProjection('plan_revising'), { progressGroup: 'progressing' });
-  assert.equal(getWorkCaseProgressProjection('plan_revising')?.progressStep, undefined);
-  assert.match(track, /const planRevising = phase === 'plan_revising'/);
+  const projection = deriveWorkCasePresentationProjection('open', 'plan_revising', sourceContentFingerprint);
+  assert.equal(projection.resolution === 'resolved' ? projection.progress_group : null, 'progressing');
+  assert.equal(projection.resolution === 'resolved' ? projection.progress_step : 'unexpected', null);
+  assert.match(track, /const planRevising = lifecyclePosition === 'plan_revising'/);
+  assert.doesNotMatch(track, /phase\?:|phase=\{|getWorkCaseProgressProjection/);
   assert.match(track, /objectList\.workcasePlanRevising/);
   assert.match(track, /objectList\.workcaseOutsideProgressTrack/);
   assert.match(track, /if \(planRevising\)/);
@@ -185,8 +192,8 @@ test('plan confirmation keeps its compact Gate 1 entry for the list and cognitio
   assert.doesNotMatch(branch, /scope=\{obj\.scope\}|workItems=\{obj\.work_items\}|creationReviews=\{obj\.creation_reviews\}|executionApproval=\{obj\.execution_approval\}/);
   assert.doesNotMatch(branch, /prominentTitle/);
   assert.doesNotMatch(branch, /waiting_on/);
-  assert.match(branch, /obj\.status === 'blocked'/);
-  assert.match(branch, /isBlocked=\{obj\.status === 'blocked'\}/);
+  assert.match(branch, /isBlocked=\{currentProjection\?\.blocking_overlay \?\? false\}/);
+  assert.doesNotMatch(branch, /obj\.status === 'blocked'/);
   assert.match(branch, /blockingSummary=\{obj\.blocking_summary\}/);
   assert.match(content, /ldvh-card-decision-title/);
   assert.match(content, /ldvh-caption/);
@@ -322,7 +329,7 @@ test('progressing cards show only goal and current situation facts', () => {
   assert.ok(branchStart >= 0 && branchEnd > branchStart);
   assert.match(branch, /<WorkCaseProgressingContent/);
   assert.match(branch, /goal=\{obj\.goal\}/);
-  assert.match(branch, /phase=\{obj\.phase\}/);
+  assert.match(branch, /lifecyclePosition=\{currentProjection\?\.lifecycle_position \?\? null\}/);
   assert.match(branch, /executionItems=\{obj\.executionItems \?\? \[\]\}/);
   assert.match(branch, /waitingOn=\{obj\.waiting_on\}/);
   assert.match(branch, /blockingSummary=\{obj\.blocking_summary\}/);
@@ -342,7 +349,7 @@ test('progressing cards show only goal and current situation facts', () => {
   assert.match(content, /ldvh-card-decision-body \[&_p\]:my-0/);
   assert.match(content, /bg-emerald-500\/5/);
   assert.match(content, /bg-ldvh-bg\/60/);
-  assert.match(content, /<WorkCaseProgressTrack[\s\S]{0,160}phase=\{phase\}[\s\S]{0,160}step=\{progressStep\}/);
+  assert.match(content, /<WorkCaseProgressTrack[\s\S]{0,240}lifecyclePosition=\{lifecyclePosition\}[\s\S]{0,240}progressGroup="progressing"[\s\S]{0,240}progressStep=\{progressStep\}/);
   assert.match(track, /top-2\.5 z-0 h-px bg-ldvh-border/);
   assert.match(track, /bg-sky-100 font-semibold text-sky-600/);
   assert.match(content, /text-sky-950\/70 dark:text-sky-100\/75/);
@@ -465,7 +472,7 @@ test('closed cards use terminal closure content while unclassified cards stay mi
 });
 
 test('closure confirmation and closed public Card projections carry goal but no blocked notice or detail body', () => {
-  const closure = projectWorkCaseCard({
+  const closure = projectCurrentCard({
     object_id: 'workcase-0100',
     fact_type_key: 'workcase',
     title: '等待关闭确认',
@@ -478,7 +485,7 @@ test('closure confirmation and closed public Card projections carry goal but no 
     success_criterion_definitions: [{ criterion_id: 'criterion-hidden', statement: '不得透传' }],
     work_items: [{ item_id: 'item-hidden', goal: '不得透传', status: 'completed' }],
   });
-  const closed = projectWorkCaseCard({
+  const closed = projectCurrentCard({
     object_id: 'workcase-0101',
     fact_type_key: 'workcase',
     title: '已经关闭',
@@ -491,23 +498,25 @@ test('closure confirmation and closed public Card projections carry goal but no 
   });
 
   assert.deepEqual(Object.keys(closure).sort(), [
-    'fact_type_key', 'goal', 'object_id', 'phase', 'status', 'title', 'updated_at',
+    'blocking_summary', 'current_snapshot_projection', 'fact_type_key', 'goal', 'object_id', 'phase',
+    'progress_group', 'status', 'title', 'updated_at',
   ]);
   assert.equal(closure.goal, '关闭 Card 正文可读的目标');
-  assert.equal('blocking_summary' in closure, false);
+  assert.equal(closure.blocking_summary, '详情仍应保留的阻塞事实');
   assert.equal('closureProposal' in closure, false);
   assert.equal('successCriteria' in closure, false);
   assert.equal('executionItemsActive' in closure, false);
   assert.equal('contributedTo' in closure, false);
   assert.deepEqual(Object.keys(closed).sort(), [
-    'closureTerminal', 'fact_type_key', 'goal', 'object_id', 'status', 'title', 'updated_at',
+    'closureTerminal', 'current_snapshot_projection', 'fact_type_key', 'goal', 'object_id',
+    'progress_group', 'status', 'title', 'updated_at',
   ]);
   assert.equal(closed.goal, '进入已关闭 Card 正文的目标');
   assert.equal('contributedTo' in closed, false);
 });
 
 test('closure confirmation projects a stable closure-proposal subset only when well-formed', () => {
-  const valid = projectWorkCaseCard({
+  const valid = projectCurrentCard({
     object_id: 'workcase-0110',
     fact_type_key: 'workcase',
     title: '等待关闭确认',
@@ -573,7 +582,7 @@ test('closure confirmation rejects route targets without an exact fingerprint an
   Object.assign(unknownTargetMember.residual_decisions[0].route_target, { title: 'must be reread, not trusted' });
 
   for (const closureProposal of [missingFingerprint, badFingerprint, unknownProposalMember, unknownTargetMember]) {
-    const projected = projectWorkCaseCard({ ...base, closure_proposal: closureProposal });
+    const projected = projectCurrentCard({ ...base, closure_proposal: closureProposal });
     assert.equal('closureProposal' in projected, false);
     assert.equal(projected.goal, '目标仍应保留。');
   }
@@ -620,13 +629,13 @@ test('closure confirmation rejects malformed proposal-local IDs and type-mismatc
   };
 
   for (const closureProposal of [malformedResidual, mismatchedTarget, malformedSuggestion]) {
-    const projected = projectWorkCaseCard({ ...base, closure_proposal: closureProposal });
+    const projected = projectCurrentCard({ ...base, closure_proposal: closureProposal });
     assert.equal('closureProposal' in projected, false);
   }
 });
 
 test('closure confirmation drops the whole proposal when any residual member is malformed', () => {
-  const projected = projectWorkCaseCard({
+  const projected = projectCurrentCard({
     object_id: 'workcase-0113',
     fact_type_key: 'workcase',
     title: '等待关闭确认',
@@ -649,7 +658,7 @@ test('closure confirmation drops the whole proposal when any residual member is 
 });
 
 test('completed closure proposal rejects constrained-responsibility Spark suggestions', () => {
-  const projected = projectWorkCaseCard({
+  const projected = projectCurrentCard({
     object_id: 'workcase-0114',
     fact_type_key: 'workcase',
     title: '等待关闭确认',
@@ -685,9 +694,9 @@ test('closure confirmation drops the whole proposal when outcome or disposition 
     updated_at: '2026-07-27T00:00:00+08:00',
     goal: '目标仍应保留。',
   };
-  const missingOutcome = projectWorkCaseCard({ ...base, closure_proposal: { proposed_disposition_summary: '只有摘要。' } });
-  const emptySummary = projectWorkCaseCard({ ...base, closure_proposal: { proposed_outcome: 'completed', proposed_disposition_summary: '   ' } });
-  const unknownOutcome = projectWorkCaseCard({ ...base, closure_proposal: { proposed_outcome: 'done', proposed_disposition_summary: '摘要。' } });
+  const missingOutcome = projectCurrentCard({ ...base, closure_proposal: { proposed_disposition_summary: '只有摘要。' } });
+  const emptySummary = projectCurrentCard({ ...base, closure_proposal: { proposed_outcome: 'completed', proposed_disposition_summary: '   ' } });
+  const unknownOutcome = projectCurrentCard({ ...base, closure_proposal: { proposed_outcome: 'done', proposed_disposition_summary: '摘要。' } });
 
   assert.equal('closureProposal' in missingOutcome, false);
   assert.equal('closureProposal' in emptySummary, false);
@@ -696,7 +705,7 @@ test('closure confirmation drops the whole proposal when outcome or disposition 
 });
 
 test('closure confirmation projection carries only stable contributed-to target triples', () => {
-  const closure = projectWorkCaseCard({
+  const closure = projectCurrentCard({
     object_id: 'workcase-0102',
     fact_type_key: 'workcase',
     title: '等待关闭确认',
@@ -718,7 +727,7 @@ test('closure confirmation projection carries only stable contributed-to target 
 });
 
 test('closed projection carries only Pitfall contributions', () => {
-  const closed = projectWorkCaseCard({
+  const closed = projectCurrentCard({
     object_id: 'workcase-0104',
     fact_type_key: 'workcase',
     title: '已经关闭',
@@ -743,7 +752,7 @@ test('relation labels include contributed-to and the detail chip resolves it by 
 });
 
 test('current list projection preserves every real work-item identity and current status', () => {
-  const summary = projectWorkCaseCard(currentWorkCase());
+  const summary = projectCurrentCard(currentWorkCase());
 
   assert.equal(summary.executionItemsProjectionValid, true);
   const items = summary.executionItems as Array<Record<string, unknown>>;
@@ -755,17 +764,18 @@ test('current list projection preserves every real work-item identity and curren
 
 test('public progressing projection keeps counts and active items without the complete item plan', () => {
   const facts = source('api/services/facts.ts');
-  const projectionStart = facts.indexOf('export function projectWorkCaseCard');
+  const projectionStart = facts.indexOf('function projectCurrentWorkCaseCardShape');
   const projectionEnd = facts.indexOf('export async function listObjects', projectionStart);
   const publicProjection = facts.slice(projectionStart, projectionEnd);
 
   assert.ok(projectionStart >= 0 && projectionEnd > projectionStart);
   assert.match(publicProjection, /projectCardWorkItems\(fact\.work_items\)/);
   assert.doesNotMatch(publicProjection, /projected\.work_items/);
+  assert.doesNotMatch(facts, /export function projectWorkCaseCard\b/);
 });
 
 test('public work-item projection exposes only fields consumed by the Card', () => {
-  const projected = projectWorkCaseCard(currentWorkCase());
+  const projected = projectCurrentCard(currentWorkCase());
   const items = projected.executionItems as Array<Record<string, unknown>>;
 
   assert.deepEqual(Object.keys(items[0] ?? {}).sort(), ['id', 'status', 'title']);
@@ -773,7 +783,7 @@ test('public work-item projection exposes only fields consumed by the Card', () 
 });
 
 test('malformed current items and criteria become unavailable without generated replacements', () => {
-  const summary = projectWorkCaseCard(currentWorkCase({
+  const summary = projectCurrentCard(currentWorkCase({
     success_criterion_definitions: [{ criterion_id: 'criterion-visible-result' }],
     success_criteria: ['不得读取的已退出标准'],
     work_items: [
@@ -793,7 +803,7 @@ test('malformed current items and criteria become unavailable without generated 
 });
 
 test('closed summaries do not reconstruct removed process fields or completeness diagnostics', () => {
-  const summary = projectWorkCaseCard(currentWorkCase({
+  const summary = projectCurrentCard(currentWorkCase({
     status: 'closed',
     phase: undefined,
     progress_group: 'closed',
@@ -815,7 +825,7 @@ test('closed summaries do not reconstruct removed process fields or completeness
 });
 
 test('plan confirmation projection preserves every criterion statement without truncation', () => {
-  const summary = projectWorkCaseCard(currentWorkCase({
+  const summary = projectCurrentCard(currentWorkCase({
     phase: 'human_plan_confirming',
     progress_group: 'plan_confirmation',
     progress_step: undefined,
@@ -832,7 +842,7 @@ test('plan confirmation projection preserves every criterion statement without t
 });
 
 test('blocked plan confirmation projects a separate complete state-alert fact', () => {
-  const summary = projectWorkCaseCard(currentWorkCase({
+  const summary = projectCurrentCard(currentWorkCase({
     status: 'blocked',
     phase: 'human_plan_confirming',
     progress_group: 'plan_confirmation',

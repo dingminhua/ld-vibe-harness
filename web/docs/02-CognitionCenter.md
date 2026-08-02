@@ -90,12 +90,12 @@
 
 | 待决类型 | 派生条件 | 决定依据区直读字段 |
 |---|---|---|
-| 待批准计划 | WorkCase `progress_group = plan_confirmation` | 与对象列表相同的紧凑 Gate 1 Card：`goal`、成功标准、执行授权边界 |
-| 待确认关闭 | WorkCase `progress_group = closure_confirmation` | 与对象列表相同的关闭确认 Card：`goal`、`closure_proposal` 与实际 contributed Pitfall |
+| 待批准计划 | WorkCase resolved `current_snapshot_projection.handoff_narrative_key = gate1_waiting` 且 `blocking_overlay = false` | 与对象列表相同的紧凑 Gate 1 Card：`goal`、成功标准、执行授权边界 |
+| 待确认关闭 | WorkCase resolved `current_snapshot_projection.handoff_narrative_key = gate2_waiting` 且 `blocking_overlay = false` | 与对象列表相同的关闭确认 Card：`goal`、`closure_proposal` 与实际 contributed Pitfall |
 | 待确认经验 | Pitfall `status = draft` | 与对象列表相同的 Pitfall Card；完整经验字段在同源次级阅读中展开 |
 
 - 排序：有合法 `priority` 的 WorkCase（P0→P3）→ 无优先级条目（含 Pitfall draft）→ `updated_at` 正序（等待最久在前）。排序是派生展示规则，不表达语义重要性结论。
-- 待决类型是 UI 枚举：WorkCase 只由两个 Human Gate 的 `progress_group` 映射；Pitfall 只由类型专属 `draft` 映射为待确认。`status=blocked` 仍在对象列表和详情如实显示，但不是 Human Gate，不进入收件箱。
+- 待决类型是 UI 枚举：WorkCase 只由 resolved 投影的两个 Gate handoff key 映射，`progress_group` 只决定复用哪类 Card，不足以单独形成 Human Gate；Pitfall 只由类型专属 `draft` 映射为待确认。`blocking_overlay=true` 不是 Human Gate，即使生命周期位置仍在 Human phase 也不进入收件箱。
 - 条目形态直接复用对象列表 Card；聚焦页不新增对象正文。点击标题打开右侧扩展阅读（复用同源对象阅读布局）；标题以外区域不触发路由。
 - 复制入口只位于模块标题带：“复制模块摘要”面向 AI 对话，含各待确认类型计数与条目稳定 ID。条目本身保持与对象列表 Card 相同的复制与交互，不因进入聚焦页增加按钮；近期动态的当前时间范围由高亮的快捷按钮表达，不重复显示范围说明。
 - 决定在 AI 对话中作出，经 Helper 受控写入回写事实源；本模块不承载决定动作。
@@ -106,9 +106,9 @@
 
 回答 Human 的问题：**哪些 WorkCase 正在行动，它们当前推进到哪里？**
 
-- 只收纳当前 `current_snapshot_projection` resolved 且 `progress_group = progressing` 的 WorkCase；它与 `plan_confirmation`、`closure_confirmation` 两个 Human Gate 互斥，不和待决定事项重复。
+- 只收纳当前 `current_snapshot_projection` resolved 且 `progress_group = progressing` 的 WorkCase；它与两个实际 Gate handoff 互斥，不和待决定事项重复。
 - `progressing` 包含计划修订、执行项执行、控制器自检、独立复核和控制器综合/关闭准备。`status = blocked` 但仍处于上述推进链的 WorkCase继续保留，并在同源 Card 内显示阻塞说明与等待对象。
-- 条目直接复用对象列表的进行中 WorkCase Card：目标、当前推进轨迹和当期执行项均来自 `projectWorkCaseCard` 投影；聚焦页不另写行动摘要，也不新增状态推断。
+- 条目直接复用对象列表的进行中 WorkCase Card：目标和当期执行项来自同一次 source-bound Card 形成，进展分组、生命周期位置、轨道步骤与阻塞覆盖只来自其 `current_snapshot_projection`；聚焦页不另写行动摘要，也不从 raw `status / phase` 新增状态推断。
 - 模块使用 `ldvh-section-grid` 随容器宽度自动排成多列，默认展开并支持整块折叠；标题带保留总数和复制模块摘要。
 - 点击标题不跳转聚焦页路由，而是在右侧（窄容器时底部）打开同源次级阅读。模块只读，不提供推进、阻塞解除或关闭操作。
 - Card 只表达当前推进和接续位置；Human 核查批准对象、范围、边界及其与当前执行的关系时，继续进入同源 WorkCase 阅读。模块不得把 `progressing`、item 状态或复制摘要解释为执行正确、范围内行动已获新增授权或 Human 已验收。

@@ -4,7 +4,7 @@
  * - 默认只读：不提供批准、关闭、分流、处置或任何写入口（02 §2.2 / §7.2）。
  * - 一切从既有字段派生：近期动态只标记 created_at / updated_at（02 §5.1）。
  * - 决定依据区与 WorkCase 列表 Card 同源消费（复用 ObjectList 导出的内容组件与
- *   projectWorkCaseCard 投影，Q3），不在本页另写摘要逻辑（02 §7.5）。
+ *   source-bound WorkCase Card 投影，Q3），不在本页另写摘要逻辑（02 §7.5）。
  * - 复制语义：模块级"复制模块摘要"为面向 AI 对话的多行文本；条目本身不叠加聚焦页专属操作，
  *   保持与对象列表 Card 相同的可读形态（02 §4.1 / §5.3）。
  * - 待决规模如实可见：超出首屏按服务端排序截断，底部如实提示总数与未显示数量，不分页。
@@ -220,7 +220,7 @@ function toObjectCard(item: CognitionCardItem): ObjectItem {
       : item.status,
     ...(item.type === 'workcase' ? { progress_group: item.progress_group } : {}),
     ...(activeWorkCase ? {
-      phase: activeWorkCase.phase,
+      lifecycle_position: activeWorkCase.lifecycle_position,
       ...(activeWorkCase.progress_step ? { progress_step: activeWorkCase.progress_step } : {}),
     } : {}),
     path: item.canonical_path ?? '',
@@ -250,7 +250,7 @@ function ActiveWorkCaseItemRow({ item }: { item: CognitionActiveWorkCaseItem }) 
       >
         <WorkCaseProgressingContent
           goal={item.card.goal}
-          phase={item.phase}
+          lifecyclePosition={item.lifecycle_position}
           progressStep={item.progress_step ?? null}
           executionItemsProjectionValid={item.card.executionItemsProjectionValid ?? false}
           executionItems={item.card.executionItems ?? []}

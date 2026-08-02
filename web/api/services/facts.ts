@@ -9,7 +9,6 @@ import {
 import { resolveCurrentWebProject, WebGovernanceError } from './governanceScope.js'
 import {
   deriveWorkCasePresentationProjection,
-  deriveWorkCaseProgressProjection,
   type WorkCaseCurrentSnapshotProjection,
 } from '../../shared/workcaseStatus.js'
 import { FACT_LIST_FIELD_NAMES } from './factFieldContract.js'
@@ -310,16 +309,16 @@ function projectClosedDisposition(fact: Record<string, unknown>): Record<string,
   }
 }
 
-function projectWorkCaseCardShape(
+function projectCurrentWorkCaseCardShape(
   fact: Record<string, unknown>,
-  progress: ReturnType<typeof deriveWorkCaseProgressProjection>,
-  currentSnapshotProjection: WorkCaseCurrentSnapshotProjection | null,
-  currentSnapshotBound: boolean,
-  projectProgressingItems: boolean,
+  currentSnapshotProjection: WorkCaseCurrentSnapshotProjection,
 ): Record<string, unknown> {
   const projected = copyPresentFields(fact, ['object_id', 'fact_type_key', 'title', 'status', 'phase', 'updated_at'])
-  if (currentSnapshotProjection !== null) projected.current_snapshot_projection = currentSnapshotProjection
-  if (progress?.progressGroup === 'plan_confirmation') {
+  projected.current_snapshot_projection = currentSnapshotProjection
+  const progress = currentSnapshotProjection.resolution === 'resolved'
+    ? currentSnapshotProjection
+    : null
+  if (progress?.progress_group === 'plan_confirmation') {
     // Gate 1 必须让 Human 看到被批准的完整执行基线。这里保留结构原值，
     // 让前端可以区分“缺失/类型错误”与“合法空值”，而不是静默过滤 malformed 成员。
     Object.assign(projected, copyPresentFields(fact, [
@@ -334,32 +333,28 @@ function projectWorkCaseCardShape(
     ]), {
       successCriteria: projectCriterionStatements(fact.success_criterion_definitions),
     })
-  } else if (progress?.progressGroup === 'progressing') {
+  } else if (progress?.progress_group === 'progressing') {
     Object.assign(projected, copyPresentFields(fact, ['priority', 'goal', 'waiting_on']))
-    if (projectProgressingItems) Object.assign(projected, projectCardWorkItems(fact.work_items))
-  } else if (progress?.progressGroup === 'closure_confirmation') {
+    Object.assign(projected, projectCardWorkItems(fact.work_items))
+  } else if (progress?.progress_group === 'closure_confirmation') {
     Object.assign(projected, copyPresentFields(fact, ['goal']))
     const closureProposal = projectClosureProposal(fact.closure_proposal)
     if (closureProposal) projected.closureProposal = closureProposal
     const contributedTo = projectContributedToTargets(fact.relations)
     if (contributedTo.length > 0) projected.contributedTo = contributedTo
-  } else if (progress?.progressGroup === 'closed') {
+  } else if (progress?.progress_group === 'closed') {
     Object.assign(projected, copyPresentFields(fact, ['goal']))
     const closureTerminal = projectClosedDisposition(fact)
     if (closureTerminal) projected.closureTerminal = closureTerminal
     const contributedTo = projectContributedToTargets(fact.relations)
     if (contributedTo.length > 0) projected.contributedTo = contributedTo
   }
-  if (currentSnapshotBound && fact.status === 'blocked') {
-    Object.assign(projected, copyPresentFields(fact, ['blocking_summary']))
-  } else if (!currentSnapshotBound
-    && fact.status === 'blocked'
-    && (progress?.progressGroup === 'plan_confirmation' || progress?.progressGroup === 'progressing')) {
+  if (progress?.blocking_overlay) {
     Object.assign(projected, copyPresentFields(fact, ['blocking_summary']))
   }
-  if (currentSnapshotBound && progress) {
-    projected.progress_group = progress.progressGroup
-    if (progress.progressStep) projected.progress_step = progress.progressStep
+  if (progress) {
+    projected.progress_group = progress.progress_group
+    if (progress.progress_step) projected.progress_step = progress.progress_step
   }
   return projected
 }
@@ -373,25 +368,7 @@ export function projectCurrentWorkCaseCard(
     fact.phase,
     sourceContentFingerprint,
   )
-  const progress = currentSnapshotProjection.resolution === 'resolved'
-    ? {
-        progressGroup: currentSnapshotProjection.progress_group,
-        ...(currentSnapshotProjection.progress_step ? { progressStep: currentSnapshotProjection.progress_step } : {}),
-      }
-    : null
-  return projectWorkCaseCardShape(fact, progress, currentSnapshotProjection, true, true)
-}
-
-/**
- * Compatibility-only direct projector for the Gate1-prohibited legacy Card contract tests.
- * Current list/API reads must use projectCurrentWorkCaseCard with the raw-carrier fingerprint.
- */
-export function projectWorkCaseCard(fact: Record<string, unknown>): Record<string, unknown> {
-  const phase = typeof fact.phase === 'string' ? fact.phase : ''
-  const progress = deriveWorkCaseProgressProjection(typeof fact.status === 'string' ? fact.status : '', phase)
-  const projected = projectWorkCaseCardShape(fact, progress, null, false, false)
-  if (progress?.progressGroup === 'progressing') Object.assign(projected, projectCardWorkItems(fact.work_items))
-  return projected
+  return projectCurrentWorkCaseCardShape(fact, currentSnapshotProjection)
 }
 
 export async function listObjects(type: ObjectType, _baseDir?: string, status?: string, scope?: LocalFactScope): Promise<WebFactResult | WebFactError> {

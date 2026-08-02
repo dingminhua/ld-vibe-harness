@@ -361,7 +361,8 @@ test('active WorkCases contain only the progressing group and reuse the list Car
   for (const item of items) {
     assert.equal(item.type, 'workcase')
     assert.equal(item.progress_group, 'progressing')
-    assert.equal(typeof item.phase, 'string')
+    assert.equal(typeof item.lifecycle_position, 'string')
+    assert.equal('phase' in item, false)
     assert.equal(typeof item.isBlocked, 'boolean')
     assert.equal('status' in item, false)
     assert.equal('inboxKind' in item, false)

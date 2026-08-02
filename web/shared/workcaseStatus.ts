@@ -29,6 +29,9 @@ export const WORKCASE_PROGRESS_STEP_ORDER = [
 export type WorkCaseProgressStep = typeof WORKCASE_PROGRESS_STEP_ORDER[number]
 export type WorkCaseLifecyclePosition = typeof WORKCASE_CURRENT_PHASES[number] | 'closed'
 export type WorkCaseUnresolvedReason = typeof WORKCASE_PRESENTATION_UNRESOLVED_REASONS[number]
+export type WorkCaseNextRequiredControlStep =
+  | typeof WORKCASE_PHASE_PRESENTATION[keyof typeof WORKCASE_PHASE_PRESENTATION]['next_required_control_step']
+  | typeof WORKCASE_CLOSED_PRESENTATION['next_required_control_step']
 export type WorkCaseHandoffNarrativeKey =
   | typeof WORKCASE_PHASE_PRESENTATION[keyof typeof WORKCASE_PHASE_PRESENTATION]['handoff_narrative_key']
   | 'blocked_at_current_position'
@@ -41,7 +44,7 @@ export interface ResolvedWorkCasePresentationProjection {
   source_content_fingerprint: string
   lifecycle_position: WorkCaseLifecyclePosition
   handoff_narrative_key: WorkCaseHandoffNarrativeKey
-  next_required_control_step: string
+  next_required_control_step: WorkCaseNextRequiredControlStep
   progress_group: WorkCaseProgressGroup
   progress_step: WorkCaseProgressStep | null
   blocking_overlay: boolean
@@ -58,16 +61,22 @@ export type WorkCaseCurrentSnapshotProjection =
   | ResolvedWorkCasePresentationProjection
   | UnresolvedWorkCasePresentationProjection
 
-export interface WorkCaseProgressProjection {
-  progressGroup: WorkCaseProgressGroup
-  progressStep?: WorkCaseProgressStep
-}
-
 const FINGERPRINT_PATTERN = /^[0-9a-f]{64}$/
+const LIFECYCLE_POSITION_SET = new Set<string>([...WORKCASE_CURRENT_PHASES, 'closed'])
+const NEXT_REQUIRED_CONTROL_STEP_SET = new Set<string>([
+  ...Object.values(WORKCASE_PHASE_PRESENTATION).map((value) => value.next_required_control_step),
+  WORKCASE_CLOSED_PRESENTATION.next_required_control_step,
+])
+const HANDOFF_NARRATIVE_KEY_SET = new Set<string>([
+  ...Object.values(WORKCASE_PHASE_PRESENTATION).map((value) => value.handoff_narrative_key),
+  WORKCASE_CLOSED_PRESENTATION.handoff_narrative_key,
+  'blocked_at_current_position',
+  'gate2_position_blocked',
+])
 const PHASE_TABLE = WORKCASE_PHASE_PRESENTATION as Record<string, {
   lifecycle_position: WorkCaseLifecyclePosition
   handoff_narrative_key: WorkCaseHandoffNarrativeKey
-  next_required_control_step: string
+  next_required_control_step: WorkCaseNextRequiredControlStep
   progress_group: WorkCaseProgressGroup
   progress_step: WorkCaseProgressStep | null
 }>
@@ -134,43 +143,17 @@ export function isResolvedWorkCasePresentationProjection(
     && typeof projection.source_content_fingerprint === 'string'
     && FINGERPRINT_PATTERN.test(projection.source_content_fingerprint)
     && typeof projection.lifecycle_position === 'string'
+    && LIFECYCLE_POSITION_SET.has(projection.lifecycle_position)
     && typeof projection.handoff_narrative_key === 'string'
+    && HANDOFF_NARRATIVE_KEY_SET.has(projection.handoff_narrative_key)
     && typeof projection.next_required_control_step === 'string'
+    && NEXT_REQUIRED_CONTROL_STEP_SET.has(projection.next_required_control_step)
     && typeof projection.progress_group === 'string'
-    && (projection.progress_step === null || typeof projection.progress_step === 'string')
+    && WORKCASE_PROGRESS_GROUP_ORDER.includes(projection.progress_group as WorkCaseProgressGroup)
+    && (projection.progress_step === null
+      || (typeof projection.progress_step === 'string'
+        && WORKCASE_PROGRESS_STEP_ORDER.includes(projection.progress_step as WorkCaseProgressStep)))
     && typeof projection.blocking_overlay === 'boolean'
-}
-
-export function getWorkCaseProgressProjection(phase: string): WorkCaseProgressProjection | null {
-  const projection = PHASE_TABLE[phase]
-  return projection
-    ? {
-        progressGroup: projection.progress_group,
-        ...(projection.progress_step ? { progressStep: projection.progress_step } : {}),
-      }
-    : null
-}
-
-export function getWorkCaseProgressGroup(phase: string): WorkCaseProgressGroup | null {
-  return getWorkCaseProgressProjection(phase)?.progressGroup ?? null
-}
-
-export function getWorkCaseProgressStep(phase: string): WorkCaseProgressStep | null {
-  return getWorkCaseProgressProjection(phase)?.progressStep ?? null
-}
-
-/** Compatibility facade for existing consumers; mapping still comes only from the generated contract. */
-export function deriveWorkCaseProgressProjection(
-  status: string,
-  phase: string | null | undefined,
-): WorkCaseProgressProjection | null {
-  if (status === 'closed') {
-    return phase === undefined || phase === null || phase === ''
-      ? { progressGroup: 'closed' }
-      : null
-  }
-  if (status !== 'open' && status !== 'blocked') return null
-  return typeof phase === 'string' ? getWorkCaseProgressProjection(phase) : null
 }
 
 export function isWorkCaseProgressGroup(value: string | null | undefined): value is WorkCaseProgressGroup {

@@ -29,6 +29,7 @@ import {
   getFieldLabel,
   getFieldValueLabel,
   getStatusLocale,
+  type LocaleKey,
 } from "@/i18n/locales";
 import {
   fetchObjectDetail,
@@ -40,6 +41,7 @@ import { usePanel } from "@/utils/panelContext";
 import { CATEGORY_COLORS } from "@/utils/categoryColors";
 import { formatDateTime } from "@/utils/dateFormat";
 import { projectCurrentWorkCaseDetail } from "@/shared/workcaseDetailProjection";
+import { isResolvedWorkCasePresentationProjection } from "@/shared/workcaseStatus";
 import {
   FactAssociationsSection,
 } from "@/pages/object-detail/FactAssociationsSection";
@@ -149,6 +151,12 @@ export function WorkCaseReadingLayout({
   const relationsIssue = issueFor("relations");
   const urlsIssue = issueFor("urls");
   const currentProjectId = getCurrentProjectId(obj);
+  const currentProjection = isResolvedWorkCasePresentationProjection(obj.current_snapshot_projection)
+    ? obj.current_snapshot_projection
+    : null;
+  const nextControlStepLabel = currentProjection
+    ? t(`objectDetail.workcaseNextControlStep.${currentProjection.next_required_control_step}` as LocaleKey)
+    : t("objectDetail.workcaseNextControlStepUnavailable");
 
   return (
     <div className="mb-6 flex flex-col gap-5">
@@ -159,7 +167,24 @@ export function WorkCaseReadingLayout({
           contentVariant="semantic"
         >
           <FieldIssueRow fieldKey="phase" issue={issueFor("phase")} locale={locale} />
-          <WorkCaseProgressTrack phase={obj.phase} className="mt-0" />
+          <WorkCaseProgressTrack
+            lifecyclePosition={currentProjection?.lifecycle_position ?? null}
+            progressGroup={currentProjection?.progress_group ?? null}
+            progressStep={currentProjection?.progress_step ?? null}
+            showUnavailable
+            className="mt-0"
+          />
+          <DetailInlineField
+            label={t("objectDetail.workcaseNextRequiredControlStep")}
+            value={(
+              <div className="min-w-0">
+                <span className="ldvh-body-primary break-words">{nextControlStepLabel}</span>
+                <p className="ldvh-caption mt-1 text-ldvh-text-secondary">
+                  {t("objectDetail.workcaseNextRequiredControlStepBoundary")}
+                </p>
+              </div>
+            )}
+          />
           <SnapshotProseField fieldKey="summary" value={obj.summary} locale={locale} />
           <FieldIssueRow fieldKey="summary" issue={issueFor("summary")} locale={locale} />
           <SnapshotProseField
