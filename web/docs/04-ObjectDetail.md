@@ -47,20 +47,20 @@ YAML 数据折叠区：由精确读取后的事实对象字段重建（Markdown 
 
 ## 4. WorkCase 状态无关阅读契约
 
-WorkCase 详情页用于完整理解同一项当前工作责任，不复制外部 Card 的信息裁剪。身份头部沿用列表 Card 由 `status / phase` 确定性派生的 `plan_confirmation / progressing / closure_confirmation / closed` 进展分组，使进入详情前后保持同一浏览分类；处于 `progressing` 时，“当前情况”再从精确 `phase` 确定性呈现与 Card 共用的四步轨道或轨迹外“方案修订中”，不另设重复的“当前阶段”字段色块。详情页不得根据这些进展分组或推进环节切换、隐藏、重排字段，也不得为不同状态维护四套阅读结构。`human_plan_confirming`、`plan_revising`、`executing`、`controller_checking`、`independent_reviewing`、`closure_preparing`、`human_closure_confirming` 与 `closed` 全部复用同一阅读顺序。条件或可选字段不存在时不渲染相应节点；类型来源必填字段缺失或类型不符时，API 保留字段问题，详情在对应区段显示空态，不升级为 `invalid` 或整个对象读取失败。
+WorkCase 详情页用于完整理解同一项当前工作责任，不复制外部 Card 的信息裁剪。身份头部与“当前情况”只消费该详情载体当次形成的 `current_snapshot_projection`，分别呈现 `plan_confirmation / progressing / closure_confirmation / closed` 分组及四步轨道或轨迹外“方案修订中”；不得从 raw `status / phase` 自行重建映射。详情页不得根据这些进展分组或推进环节切换、隐藏、重排字段，也不得为不同状态维护四套阅读结构。各 lifecycle position 与 closed 全部复用同一阅读顺序。条件或可选字段不存在时不渲染相应节点；类型来源必填字段缺失或类型不符时，API 保留字段问题，详情在对应区段显示空态，不升级为 `invalid` 或整个对象读取失败。
 
 详情页只以 21 当前 WorkCase 字段为事实契约。读取顺序围绕以下八个问题组织；分区名称、折叠粒度和具体组件仍可在后续 Human 讨论后细化，但任何视觉方案都不得丢失这些内容：
 
-1. **这项工作是什么**：身份头部读取 `object_id`、`fact_type_key`、`title`、`status`、`phase`、`priority`（活动期存在时）、`created_at` 与 `updated_at`；`status / phase` 只用于确定性形成与列表一致的进展分组标签，不改变来源字段。
+1. **这项工作是什么**：身份头部读取 `object_id`、`fact_type_key`、`title`、`status`、`phase`、`priority`（活动期存在时）、`created_at` 与 `updated_at`；`status / phase` 保持为来源事实字段，与列表一致的进展分组标签只消费同一载体当次形成的 `current_snapshot_projection`。
 2. **目标和边界是什么**：完整读取 `goal` 与 `scope`，不把 Card 摘要或标题改写成目标，不把范围压成覆盖/排除标签后丢失原文。
-3. **现在实际处在哪里**：读取精确 `phase` 形成头部进展分组；处于“推进中”时，在“当前情况”中呈现与 Card 共用的四步轨道或轨迹外“方案修订中”，并继续呈现当前 `summary`，以及实际存在的 `waiting_on`、顶层 `blocking_summary` 和 `resume_from`。页面不得从 phase 自动补写等待、阻塞或下一步。
+3. **现在实际处在哪里**：读取同源 `current_snapshot_projection` 形成头部进展分组；处于“推进中”时，在“当前情况”中呈现与 Card 共用的四步轨道或轨迹外“方案修订中”，并继续呈现当前 `summary`，以及实际存在的 `waiting_on`、顶层 `blocking_summary` 和 `resume_from`。页面不得从 raw phase 自动补写等待、阻塞或下一步。
 4. **按什么判断结果**：读取 `success_criterion_definitions`；结果已经形成时，同屏读取与当前定义逐项对应的 `success_criterion_results`。定义和结果必须能按 `criterion_id` 对照，不能用完成比例替代陈述与当前结论。
 5. **当前计划和阶段结果是什么**：完整读取 `work_items`。每项至少保留 `item_id`、`goal`、`expected_result`、`status`，并按实际存在呈现方法边界、模板偏离、`current_summary`、item `resume_from`、item `blocking_summary` 与 `result_summary`。`depends_on` 继续保留在来源、详情 API 与折叠 YAML 中，供机器读取和核对，但不进入 Human 工作项标题或正文；工作项作为并列集合显示，渲染顺序和 `item_id` 都不表示线性执行顺序。
 6. **当前复核、授权边界与批准是什么**：活动期读取 `plan_version`、当前 `creation_reviews`、`execution_authorization`、`execution_approval`，以及已经形成时的 `result_version`、`controller_check_summary` 和当前 `result_reviews`。详情必须分别呈现 Reviewer 复核、Controller 处置、执行授权边界与 Human 执行批准；授权边界固定形成“已授权行动”“禁止行动”和实际存在时的“Human 前置条件”三个并列、默认收起的数量区块。“已授权行动”展开后每项动作也默认收起，仅以“动作摘要＋稳定 ID”作为入口；打开单项后才显示目标/影响范围，风险、回滚与规则引用仍是次级展开内容，规则引用使用标签而非项目符号。行动上限、允许调整、验证回滚和越界处置作为“授权约束”置于同一个“已授权行动”展开区的底部。批准必须显示绑定版本、`baseline_fingerprint` 与非空 `source_refs`。
 7. **验证和关闭如何判断**：活动期读取实际存在的 `validation_summary` 与 `closure_proposal`；终态读取 `validation_summary`、`closure_outcome`、`disposition_summary` 与 `residual_responsibilities`。关闭内容说明当前工作在自身身份下如何停止推进以及仍适用责任的去向，不等于成功、已提交或下游已经完成；closed 不具有 phase、关闭 approval 或关闭时间字段。
 8. **还应回到哪些来源或承接对象**：读取 `urls` 与 `relations`。关系按其正式 kind 和目标身份展示；导航标题、路径解析或 Git 提交可以帮助继续阅读，但不得被写成新的 WorkCase 关系事实。
 
-上述顺序是状态无关的信息架构，不要求所有阶段都出现同样多的内容。条件字段不存在时，Web 不制造空复核、空处置、空批准、空结果或空关闭模块；字段存在时，又不能因为当前 Card 分组“不需要”就把它隐藏。详情不读取列表的工作项计数、active 项、`progress_group` 或 `progress_step`，只从精确 `phase` 使用同一确定性映射呈现共享轨道，也不生成标准完成比例；这些派生位置不能替代原始目标、标准、工作项、复核、处置、批准或验证说明。
+上述顺序是状态无关的信息架构，不要求所有阶段都出现同样多的内容。条件字段不存在时，Web 不制造空复核、空处置、空批准、空结果或空关闭模块；字段存在时，又不能因为当前 Card 分组“不需要”就把它隐藏。详情不读取列表的工作项计数或 active 项，只消费详情自身绑定来源指纹的 `current_snapshot_projection` 呈现共享轨道，也不生成标准完成比例；这些派生位置不能替代原始目标、标准、工作项、复核、处置、批准或验证说明。
 
 当前 `WorkCaseReadingLayout` 已直接按 21 单一当前字段族实现以下固定节点顺序：当前情况 → 目标 → 成功标准 → 当前计划与工作项 → 独立方案复核 → 执行授权边界 → 执行批准 → 结果与验证 → 主控自检 → 独立结果复核 → 关闭提案 → 终态处置 → 关联 → 外部网址。“目标”节点内依次呈现 `goal` 与作为次级字段的 `scope`。节点只按对应字段实际存在显示；类型来源必填字段缺失或字段类型不符时，对应节点仍然保留，并在该字段位置就地标明字段问题（与其它事实类型共用同一套 `fieldIssue` / `FieldProblem` 组件），不升级为整对象读取失败，也不只依赖页底汇总。正文完整渲染、不截断：目标、当前情况、标准、工作内容、结果和处置说明是主阅读信息；预期结果、方法边界、验证说明、复核反馈、主控处置、剩余责任和恢复条件按职责形成次级语义块。计划版本与结果版本进入节点标题栏；Reviewer 身份、事件时间和结论进入记录标题或弱元信息，不再与正文排成同权值对。工作项依赖属于机器执行约束，不进入 Human 阅读节点，但仍保留在来源字段、API 和 YAML 数据中。Human 执行批准、Reviewer 复核、Controller 处置、关闭提案和终态处置仍保持独立节点，职责提示只解释边界，不替代事实。关闭提案中的拟路由目标按关联区同一规则处理：同项目目标按需解析当前目标标题并可进入右侧扩展阅读，精确读取后提供对象路径复制；项目身份与内容 fingerprint 降权保留为次级定位信息；跨项目或身份不完整的目标只如实显示已知稳定身份，不以 object_id 冒充名称。成功标准定义与三值结果按 `criterion_id` 对照；`relations` 的正式 kind 继续保留在来源、详情 API 与折叠 YAML 中，Human 关联区则与其它事实对象统一为“类型分组＋目标标题＋ID＋状态”，不另加 WorkCase 专属关系芯片。详情与右侧扩展阅读复用同一组件和同一投影，不存在历史字段、列表回退或状态分支。
 
@@ -203,7 +203,7 @@ interface ObjectDetail {
 }
 ```
 
-字段级可读详情的 `data` 同时带回 `canonical_path`、`carrier`、`read_status`、`read_issues`、`field_issues` 与 `unparsed_structures`；这些结果不构成机械校验结论。读取失败返回 `fact_read_failure: true`、预期路径、声明载体、读取状态和问题，但不返回可消费正文或领域状态。WorkCase 的 `summary.status` 只返回 `open / blocked / closed` 责任状态；列表/仪表盘是候选发现，不能以其 `path`、ID 或 `target` 作为源路径。
+字段级可读详情的 `data` 同时带回 `canonical_path`、`carrier`、`read_status`、`read_issues`、`field_issues`、`unparsed_structures` 与 WorkCase 专属 `current_snapshot_projection`；这些结果不构成机械校验结论。读取失败返回 `fact_read_failure: true`、预期路径、声明载体、读取状态和问题，但不返回可消费正文、领域状态或投影。WorkCase 的 `summary.status` 只返回 `open / blocked / closed` 责任状态；列表/仪表盘是候选发现，不能以其 `path`、ID 或 `target` 作为源路径。
 
 WorkCase 详情契约直接读取精确返回的 `data` 中由 21 定义的当前字段；列表 API 的 `progress_group`、`progress_step`、计数和 active 项不驱动详情结构。缺失或类型不符的页面消费字段按字段问题呈现为空；旧字段、额外字段和无法归类嵌套结构进入未解析结构，既不构成 `invalid`，也不阻断其它字段。Web 不在 Node 复制 21、Schema 或 phase presence 形成第二机械契约。
 

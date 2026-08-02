@@ -71,7 +71,7 @@ WorkCase 卡片帮助 Human 识别当前工作责任所处的进展分组，并�
 
 - 保留通用卡片头部：ID、进展分组、标题。
 - 不显示虚构的“所属工作责任”归属行；Card 标题识别 WorkCase 自身，内部 work item 只在“推进中”按本节规则呈现当前 active 项。
-- WorkCase Card 和列表筛选只使用四个进展分组：`plan_confirmation`（方案待确认）、`progressing`（推进中）、`closure_confirmation`（关闭待确认）、`closed`（已关闭）。界面分类轴命名为“进展分组”，不得显示为“生命周期”。创建前计划复核时尚无正式 WorkCase，不提供 Card 或筛选项。
+- WorkCase Card 和列表筛选只消费 21 §9.3 当前快照投影中的四个进展分组：`plan_confirmation`（方案待确认）、`progressing`（推进中）、`closure_confirmation`（关闭位置）、`closed`（已关闭）。仅 `handoff_narrative_key=gate2_waiting` 把 `closure_confirmation` 显示为“关闭待确认”；`gate2_position_blocked` 必须显示“关闭位置受阻”。界面分类轴命名为“进展分组”，不得显示为“生命周期”。创建前计划复核时尚无正式 WorkCase，不提供 Card 或筛选项。
 - 每张 Card 必须直接显示自己的进展分组，不能要求 Human 只靠顶部筛选位置推断；来源 phase 不再作为与四个分组同级的 Card 主状态。
 - “方案待确认”Card 是 Gate 1 的紧凑入口：完整直读 `goal`、`success_criterion_definitions` 与 `execution_authorization`；三者分别固定使用“目标”“成功标准”“执行授权边界”标题。授权区只以允许动作、禁止项和实际存在的 Human 前置条件数量形成可扫读摘要，不提供展开控件；完整授权动作与边界统一留在同源详情页阅读。摘要不替代或截断来源内容。Card 不显示 `scope`、`work_items`、`creation_reviews` 或 `execution_approval`，这些完整材料留在同源详情页。项目认知中心复用同一紧凑 Card；其标题在本页打开同源次级阅读，不增设聚焦页专属正文或条目操作。任一结构缺失或 malformed 时在原位置明确标注，不能丢弃坏成员后形成伪完整基线。
 - “方案待确认”同时出现 `status=blocked` 时，必须在 Gate 1 材料之外完整显示独立的阻塞状态提示，直接读取 `blocking_summary`，缺失时明确提示。阻塞状态提示必须成为 Card 身份头部之后的首个内容块，位于“目标”之前。该提示不是 Gate 1 授权内容，也不把进展分组改成“推进中”或其它分组。
@@ -86,8 +86,8 @@ WorkCase 卡片帮助 Human 识别当前工作责任所处的进展分组，并�
 - `waiting_on` 实际存在时完整显示，并与详情统一称为“等待对象”、使用琥珀色语义块，不根据当前环节自动补造等待文案。`status=blocked` 是推进位置上的独立异常信号；Card 保留当前推进环节，并以玫红色“阻塞说明”完整显示 `blocking_summary`，缺失时明确提示。阻塞说明必须成为 Card 身份头部之后的首个内容块，位于目标和当前情况之前；此时实际存在的等待对象紧跟阻塞说明，也位于目标之前。未阻塞时，等待对象仍属于当前情况。Card 中两者的标题使用 `13px / 20px`，与详情对应的 `14px / 22px` 保持同一层级语言但小一级。等待与阻塞同时存在时均保留，Web 不作语义去重。
 - “推进中”可用轻微、遵守减弱动态偏好的动效提示当前位置；方案待确认、关闭待确认和已关闭不显示脉冲或推进轨迹。两个 Human 确认关口必须保持为不同进展分组。
 - 进展分组直接显示在通用卡片头部；正文中的推进环节只表达当前浏览语义。status、phase 与授权的事实含义仍以事实源和详情阅读为准。
-- 内部 `closure_preparing` 投影为“推进中 / 主控收敛”：此时 Controller 正在吸收当前结果复核并形成关闭报告与分流建议，尚未向 Human 提交关闭请求。只有事实 phase 实际进入 `human_closure_confirming` 后才显示“关闭待确认”，不得提前制造 Human 待办。
-- “关闭待确认”Card 正文由“关闭判断输入区”和“后续贡献”区构成。关闭判断输入区直读 `goal` 与 `closure_proposal`，完整显示目标、拟议关闭结论、处置摘要、三类 `residual_decisions[]` 和完整 `spark_suggestions[]`。三类处置显示为 `route_existing`“路由到已有对象”、`suggest_spark`“建议后续建立 Spark”、`accept_stop`“接受停止”；route_existing 按保存的稳定目标读取当前标题和类型，不以 object ID 冒充名称。受限责任建议显示摘要、受限原因、影响、恢复条件和后续定位；后续机会显示摘要和后续定位，不生成受限字段空态，也不显示或猜测未来 Spark ID。后续贡献区只列实际 `contributed-to` Pitfall 的当前标题和状态：draft“待确认”、active“活跃”、discarded“已废弃”，并导航到同源详情；不提供 promote、discard、批量审核或自动过期控件。`closure_proposal` 缺失或结构不符时明确显示信息缺失，不拼凑替代文本。该 Card 不显示关闭完整性诊断、结果复核或执行统计，即使 `status=blocked` 也不额外展示阻塞。
+- 投影的 `lifecycle_position=closure_preparing` 表示“推进中 / 主控收敛”：此时 Controller 正在吸收当前结果复核并形成关闭报告与分流建议，尚未向 Human 提交关闭请求。只有同一投影的 `handoff_narrative_key=gate2_waiting` 才显示“关闭待确认”，不得提前制造 Human 待办。
+- `gate2_waiting` Card 正文由“关闭判断输入区”和“后续贡献”区构成。关闭判断输入区直读 `goal` 与 `closure_proposal`，完整显示目标、拟议关闭结论、处置摘要、三类 `residual_decisions[]` 和完整 `spark_suggestions[]`。三类处置显示为 `route_existing`“路由到已有对象”、`suggest_spark`“建议后续建立 Spark”、`accept_stop`“接受停止”；route_existing 按保存的稳定目标读取当前标题和类型，不以 object ID 冒充名称。受限责任建议显示摘要、受限原因、影响、恢复条件和后续定位；后续机会显示摘要和后续定位，不生成受限字段空态，也不显示或猜测未来 Spark ID。后续贡献区只列实际 `contributed-to` Pitfall 的当前标题和状态：draft“待确认”、active“活跃”、discarded“已废弃”，并导航到同源详情；不提供 promote、discard、批量审核或自动过期控件。`closure_proposal` 缺失或结构不符时明确显示信息缺失，不拼凑替代文本。`gate2_position_blocked` 改用“关闭位置受阻”Card，首先显示完整 `blocking_summary`，可以保留来源材料但不得显示 Gate 2 判断入口、关闭待确认或仅剩关闭确认。
 - “已关闭”Card 使用相同扫读结构，从 `goal`、`closure_outcome` 和 `disposition_summary` 读取终态内容；route_existing 从 `routed-to` 呈现，suggest_spark 从顶层 `spark_suggestions` 呈现，accept_stop 从 `residual_responsibilities` 呈现，不反推原 proposal ID。后续贡献仍只显示 Pitfall 标题与当前状态。`related-to` 只在详情关系区呈现，不进入 Card。closed 不保存关闭 approval 或关闭时间，Web 不得据此报缺。
 
 ### 3.5 Spark 卡片
@@ -203,6 +203,6 @@ interface WorkCaseCardItem {
 }
 ```
 
-`status` 始终保留事实责任状态，`phase` 独立保留当前阶段；不得把 phase 填进 `status`，也不得新增 `responsibilityStatus` 兼容别名。`progress_group`、`progress_step` 和 `executionItems` 是只读投影。plan_confirmation 是唯一允许携带完整 `work_items`、`creation_reviews` 与授权基线的 Card 分组；progressing 仍只携带最小 `executionItems`。`closure_confirmation` 携带 `goal`、Pitfall `contributedTo` 和 `closureProposal`；`closed` 携带 `goal`、Pitfall `contributedTo` 和 `closureTerminal`。关联目标标题和状态由 Card 按需同源读取，不复制到列表响应；`related-to` 不进入 Card 投影。
+`status` 始终保留事实责任状态，`phase` 独立保留当前阶段；不得把 phase 填进 `status`，也不得新增 `responsibilityStatus` 兼容别名。`current_snapshot_projection` 绑定原始载体 SHA-256 与合同身份；`progress_group`、`progress_step` 是它的兼容只读字段，`executionItems` 是另一个 Card 派生。plan_confirmation 是唯一允许携带完整 `work_items`、`creation_reviews` 与授权基线的 Card 分组；progressing 仍只携带最小 `executionItems`。`closure_confirmation` 携带 `goal`、Pitfall `contributedTo` 和 `closureProposal`；`closed` 携带 `goal`、Pitfall `contributedTo` 和 `closureTerminal`。关联目标标题和状态由 Card 按需同源读取，不复制到列表响应；`related-to` 不进入 Card 投影。
 
 列表顶层返回字段级直读的范围与集合问题：`coverage_status` 与 `collection_issues`。对象卡携带自己的 `read_status`、`read_issues`、`field_issues` 与 `unparsed_structures`；集合问题保留准确路径、原因和消息，不以旧 machine 的 `invalid / not_found` 分类替代。页面必须保留已形成的可消费 Card，独立展示集合问题与未完成范围；不设置列表级“观察时间”或“重新读取”控件。筛选或导航发生时照常发起新的列表请求，不能复用旧 payload。读取失败时页面必须保留实际失败原因，不得回退其它读取路径或显示伪零值。

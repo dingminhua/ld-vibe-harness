@@ -1,72 +1,165 @@
-export const WORKCASE_CURRENT_PHASES = [
-  'human_plan_confirming',
-  'plan_revising',
-  'executing',
-  'controller_checking',
-  'independent_reviewing',
-  'closure_preparing',
-  'human_closure_confirming',
-] as const;
+import {
+  WORKCASE_CLOSED_PRESENTATION,
+  WORKCASE_CURRENT_PHASES,
+  WORKCASE_PHASE_PRESENTATION,
+  WORKCASE_PRESENTATION_CONTRACT_IDENTITY,
+  WORKCASE_PRESENTATION_UNRESOLVED_REASONS,
+} from './workcasePresentationContract.generated.js'
 
-export const WORKCASE_DEFAULT_LIST_STATUS = null;
+export { WORKCASE_CURRENT_PHASES, WORKCASE_PRESENTATION_CONTRACT_IDENTITY }
 
-/**
- * WorkCase 列表和项目认知中心面向 Human 使用的进展分组。它们由当前 phase
- * 确定性派生，不是 WorkCase 的 status、phase 或生命周期分类。
- */
+export const WORKCASE_DEFAULT_LIST_STATUS = null
+
 export const WORKCASE_PROGRESS_GROUP_ORDER = [
   'plan_confirmation',
   'progressing',
   'closure_confirmation',
   'closed',
-] as const;
+] as const
 
-export type WorkCaseProgressGroup = typeof WORKCASE_PROGRESS_GROUP_ORDER[number];
+export type WorkCaseProgressGroup = typeof WORKCASE_PROGRESS_GROUP_ORDER[number]
 
-/**
- * 只有结果推进主链使用这四个稳定环节。plan_revising 属于 progressing，
- * 但它是轨迹外的当前内部位置，不新增第五个 progress_step。
- */
 export const WORKCASE_PROGRESS_STEP_ORDER = [
   'item_execution',
   'controller_self_check',
   'independent_review',
   'controller_synthesis',
-] as const;
+] as const
 
-export type WorkCaseProgressStep = typeof WORKCASE_PROGRESS_STEP_ORDER[number];
+export type WorkCaseProgressStep = typeof WORKCASE_PROGRESS_STEP_ORDER[number]
+export type WorkCaseLifecyclePosition = typeof WORKCASE_CURRENT_PHASES[number] | 'closed'
+export type WorkCaseUnresolvedReason = typeof WORKCASE_PRESENTATION_UNRESOLVED_REASONS[number]
+export type WorkCaseHandoffNarrativeKey =
+  | typeof WORKCASE_PHASE_PRESENTATION[keyof typeof WORKCASE_PHASE_PRESENTATION]['handoff_narrative_key']
+  | 'blocked_at_current_position'
+  | 'gate2_position_blocked'
+  | 'closed'
 
-export interface WorkCaseProgressProjection {
-  progressGroup: WorkCaseProgressGroup;
-  progressStep?: WorkCaseProgressStep;
+export interface ResolvedWorkCasePresentationProjection {
+  contract_identity: typeof WORKCASE_PRESENTATION_CONTRACT_IDENTITY
+  resolution: 'resolved'
+  source_content_fingerprint: string
+  lifecycle_position: WorkCaseLifecyclePosition
+  handoff_narrative_key: WorkCaseHandoffNarrativeKey
+  next_required_control_step: string
+  progress_group: WorkCaseProgressGroup
+  progress_step: WorkCaseProgressStep | null
+  blocking_overlay: boolean
 }
 
-const WORKCASE_PHASE_PROGRESS: Record<string, WorkCaseProgressProjection> = {
-  human_plan_confirming: { progressGroup: 'plan_confirmation' },
-  plan_revising: { progressGroup: 'progressing' },
-  executing: { progressGroup: 'progressing', progressStep: 'item_execution' },
-  controller_checking: { progressGroup: 'progressing', progressStep: 'controller_self_check' },
-  independent_reviewing: { progressGroup: 'progressing', progressStep: 'independent_review' },
-  closure_preparing: { progressGroup: 'progressing', progressStep: 'controller_synthesis' },
-  human_closure_confirming: { progressGroup: 'closure_confirmation' },
-};
+export interface UnresolvedWorkCasePresentationProjection {
+  contract_identity: typeof WORKCASE_PRESENTATION_CONTRACT_IDENTITY
+  resolution: 'unresolved'
+  source_content_fingerprint: string | null
+  unresolved_reason: WorkCaseUnresolvedReason
+}
+
+export type WorkCaseCurrentSnapshotProjection =
+  | ResolvedWorkCasePresentationProjection
+  | UnresolvedWorkCasePresentationProjection
+
+export interface WorkCaseProgressProjection {
+  progressGroup: WorkCaseProgressGroup
+  progressStep?: WorkCaseProgressStep
+}
+
+const FINGERPRINT_PATTERN = /^[0-9a-f]{64}$/
+const PHASE_TABLE = WORKCASE_PHASE_PRESENTATION as Record<string, {
+  lifecycle_position: WorkCaseLifecyclePosition
+  handoff_narrative_key: WorkCaseHandoffNarrativeKey
+  next_required_control_step: string
+  progress_group: WorkCaseProgressGroup
+  progress_step: WorkCaseProgressStep | null
+}>
+
+function unresolved(
+  reason: WorkCaseUnresolvedReason,
+  sourceContentFingerprint: string | null,
+): UnresolvedWorkCasePresentationProjection {
+  return {
+    contract_identity: WORKCASE_PRESENTATION_CONTRACT_IDENTITY,
+    resolution: 'unresolved',
+    source_content_fingerprint: sourceContentFingerprint,
+    unresolved_reason: reason,
+  }
+}
+
+export function deriveWorkCasePresentationProjection(
+  status: unknown,
+  phase: unknown,
+  sourceContentFingerprint: unknown,
+): WorkCaseCurrentSnapshotProjection {
+  const fingerprint = typeof sourceContentFingerprint === 'string' && FINGERPRINT_PATTERN.test(sourceContentFingerprint)
+    ? sourceContentFingerprint
+    : null
+  if (fingerprint === null) return unresolved('missing_source_content_fingerprint', null)
+  if (status === null || status === undefined || status === '') return unresolved('missing_status', fingerprint)
+  if (typeof status !== 'string' || !['open', 'blocked', 'closed'].includes(status)) {
+    return unresolved('unsupported_status', fingerprint)
+  }
+  if (status === 'closed') {
+    if (phase !== null && phase !== undefined && phase !== '') return unresolved('closed_with_phase', fingerprint)
+    return {
+      ...WORKCASE_CLOSED_PRESENTATION,
+      contract_identity: WORKCASE_PRESENTATION_CONTRACT_IDENTITY,
+      resolution: 'resolved',
+      source_content_fingerprint: fingerprint,
+      blocking_overlay: false,
+    }
+  }
+  if (phase === null || phase === undefined || phase === '') return unresolved('missing_phase', fingerprint)
+  if (typeof phase !== 'string') return unresolved('invalid_status_phase_combination', fingerprint)
+  const phaseProjection = PHASE_TABLE[phase]
+  if (!phaseProjection) return unresolved('unexpected_phase', fingerprint)
+  const blocked = status === 'blocked'
+  return {
+    ...phaseProjection,
+    handoff_narrative_key: blocked
+      ? phase === 'human_closure_confirming' ? 'gate2_position_blocked' : 'blocked_at_current_position'
+      : phaseProjection.handoff_narrative_key,
+    contract_identity: WORKCASE_PRESENTATION_CONTRACT_IDENTITY,
+    resolution: 'resolved',
+    source_content_fingerprint: fingerprint,
+    blocking_overlay: blocked,
+  }
+}
+
+export function isResolvedWorkCasePresentationProjection(
+  value: unknown,
+): value is ResolvedWorkCasePresentationProjection {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false
+  const projection = value as Record<string, unknown>
+  return projection.contract_identity === WORKCASE_PRESENTATION_CONTRACT_IDENTITY
+    && projection.resolution === 'resolved'
+    && typeof projection.source_content_fingerprint === 'string'
+    && FINGERPRINT_PATTERN.test(projection.source_content_fingerprint)
+    && typeof projection.lifecycle_position === 'string'
+    && typeof projection.handoff_narrative_key === 'string'
+    && typeof projection.next_required_control_step === 'string'
+    && typeof projection.progress_group === 'string'
+    && (projection.progress_step === null || typeof projection.progress_step === 'string')
+    && typeof projection.blocking_overlay === 'boolean'
+}
 
 export function getWorkCaseProgressProjection(phase: string): WorkCaseProgressProjection | null {
-  return WORKCASE_PHASE_PROGRESS[phase] ?? null;
+  const projection = PHASE_TABLE[phase]
+  return projection
+    ? {
+        progressGroup: projection.progress_group,
+        ...(projection.progress_step ? { progressStep: projection.progress_step } : {}),
+      }
+    : null
 }
 
 export function getWorkCaseProgressGroup(phase: string): WorkCaseProgressGroup | null {
-  return getWorkCaseProgressProjection(phase)?.progressGroup ?? null;
+  return getWorkCaseProgressProjection(phase)?.progressGroup ?? null
 }
 
 export function getWorkCaseProgressStep(phase: string): WorkCaseProgressStep | null {
-  return getWorkCaseProgressProjection(phase)?.progressStep ?? null;
+  return getWorkCaseProgressProjection(phase)?.progressStep ?? null
 }
 
-/**
- * Terminality comes only from status; non-terminal progress comes only from
- * a current phase. Missing or invalid phase is deliberately not guessed.
- */
+/** Compatibility facade for existing consumers; mapping still comes only from the generated contract. */
 export function deriveWorkCaseProgressProjection(
   status: string,
   phase: string | null | undefined,
@@ -74,12 +167,12 @@ export function deriveWorkCaseProgressProjection(
   if (status === 'closed') {
     return phase === undefined || phase === null || phase === ''
       ? { progressGroup: 'closed' }
-      : null;
+      : null
   }
-  if (status !== 'open' && status !== 'blocked') return null;
-  return typeof phase === 'string' ? getWorkCaseProgressProjection(phase) : null;
+  if (status !== 'open' && status !== 'blocked') return null
+  return typeof phase === 'string' ? getWorkCaseProgressProjection(phase) : null
 }
 
 export function isWorkCaseProgressGroup(value: string | null | undefined): value is WorkCaseProgressGroup {
-  return WORKCASE_PROGRESS_GROUP_ORDER.includes(value as WorkCaseProgressGroup);
+  return WORKCASE_PROGRESS_GROUP_ORDER.includes(value as WorkCaseProgressGroup)
 }

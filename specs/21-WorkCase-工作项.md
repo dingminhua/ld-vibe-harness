@@ -812,20 +812,39 @@ closed 消费只依赖：
 
 不得要求 closed 重新提供 plan、items、reviews、approvals、controller check、phase 或版本。
 
-### 9.3 Web 派生投影
+### 9.3 当前快照确定性呈现投影
 
-WorkCase 的 Web 列表与详情按 08 §5.3 的页面字段级解析读取来源文件，与其它事实类型一致，不以完整机械校验通过为呈现前提；字段缺失或类型不符时按 08 §5.3 呈现为空或进入未解析结构，未解析结构不得静默丢弃或阻断其它内容呈现。
+WorkCase 的 AI 交还、Helper 读取结果和 Web Human-facing 呈现共用一份非持久、可失效的 `current_snapshot_projection`。本文是 `status`、`phase` 及其呈现语义的唯一权威；Code 只把本文的确定性映射实现为 `workcase-current-snapshot-presentation/1` 合同，Helper、Web、AI、测试、i18n 和文档均不得另建 phase 表、话术成立条件或第二事实源。投影不进入 WorkCase YAML，不替代当前对象，不反向定义生命周期或授权。
 
-Web 只显示四个“进展分组”，不是生命周期或 YAML 字段：
+投影有两个输入边界：
 
-| Web 进展分组 | 确定性来源 |
-|---|---|
-| 方案待确认 | `phase=human_plan_confirming` |
-| 推进中 | `plan_revising`、`executing`、`controller_checking`、`independent_reviewing`、`closure_preparing` |
-| 关闭待确认 | `phase=human_closure_confirming` |
-| 已关闭 | `status=closed` |
+1. Helper 只对刚完成精确读取、`check_status=mechanically_valid` 且带有当次 `content_fingerprint` 的 WorkCase 形成投影；该指纹原样进入 `source_content_fingerprint`；
+2. Web 按 08 §5.3 成功读取当前载体后，以当次原始载体 bytes 的 SHA-256 作为 `source_content_fingerprint`，并只使用字段级可读的 `status` 与 `phase` 形成投影；Web 不以完整机械校验通过为前提，组合缺失、类型不符或不在本节闭集时形成 `unresolved`，同时继续呈现其它可读字段、字段问题和未解析结构。
 
-status=blocked 仍保留其 phase 所属分组，且在具体 Card 正文契约允许时额外如实表达阻塞。当前 `closure_confirmation` Card 正文由 08 §7.4 定义，它即使处于 `status=blocked` 也不在 Card 中增加阻塞信息；详情页、精确读取诊断和其它已定义的支持范围仍须如实保留 `blocking_summary`。Card 可以派生 item 五状态计数、当前活动 item 和精确环节，但不得把派生结果写回 YAML，不得猜测“第几轮”“第几项”或完成百分比。详情页使用同一信息结构，不按 status 建立不同事实模型；具体 Card 内容与视觉设计由 Web 规范承接，不能反向要求新增事实字段。Card 的“后续贡献”只列实际 `contributed-to` Pitfall 的标题与当前状态，并以待确认/活跃/已废弃呈现；关闭处置另显示三类 decision 与 Spark suggestions。`related-to` 只在详情中作关系导航，不进入关闭 Card 正文。
+投影共同字段闭集为：`contract_identity`、`resolution` 和 `source_content_fingerprint`。`contract_identity` 固定为 `workcase-current-snapshot-presentation/1`；`resolution` 只允许 `resolved` 或 `unresolved`；来源指纹通常为 64 位小写十六进制 string，只在 `unresolved_reason=missing_source_content_fingerprint` 时为 `null`。它只绑定当次载体快照，不表示机械有效、语义正确、Git 版本或授权成立。
+
+`resolved` 另有字段 `lifecycle_position`、`handoff_narrative_key`、`next_required_control_step`、`progress_group`、`progress_step` 和 `blocking_overlay`。`progress_step` 无适用值时为 `null`；其余字段必填。非 blocked 的确定性基表如下：
+
+| 当前 `status` / `phase` | `lifecycle_position` | `handoff_narrative_key` | `next_required_control_step` | `progress_group` | `progress_step` |
+|---|---|---|---|---|---|
+| `open` / `human_plan_confirming` | `human_plan_confirming` | `gate1_waiting` | `human_gate_1` | `plan_confirmation` | `null` |
+| `open` / `plan_revising` | `plan_revising` | `plan_revision_in_progress` | `form_current_plan` | `progressing` | `null` |
+| `open` / `executing` | `executing` | `item_execution_in_progress` | `advance_current_work_item` | `progressing` | `item_execution` |
+| `open` / `controller_checking` | `controller_checking` | `result_projection_preparing` | `form_complete_result_projection` | `progressing` | `controller_self_check` |
+| `open` / `independent_reviewing` | `independent_reviewing` | `independent_result_review_in_progress` | `complete_independent_result_review` | `progressing` | `independent_review` |
+| `open` / `closure_preparing` | `closure_preparing` | `closure_proposal_preparing` | `form_closure_proposal` | `progressing` | `controller_synthesis` |
+| `open` / `human_closure_confirming` | `human_closure_confirming` | `gate2_waiting` | `human_gate_2` | `closure_confirmation` | `null` |
+| `closed` / phase 省略 | `closed` | `closed` | `none` | `closed` | `null` |
+
+`status=blocked` 是活动期 phase 之上的阻塞覆盖层，不改变基表中的 `lifecycle_position`、`next_required_control_step`、`progress_group` 或 `progress_step`，但 `blocking_overlay` 必须为 `true`，并必须同时呈现实际 `blocking_summary`。除 `human_closure_confirming` 外，其 `handoff_narrative_key` 固定为 `blocked_at_current_position`；`blocked` / `human_closure_confirming` 固定为 `gate2_position_blocked`，只能说明所处位置及仍有阻塞，不能表达关闭材料已可立即确认、仅剩 Gate 2 或等待 Gate 2。基表中非 blocked 行的 `blocking_overlay` 为 `false`。
+
+只有 `open` / `human_closure_confirming` 的 `gate2_waiting` 可以产生“等待 Gate 2”“仅剩关闭确认”“关闭待确认”或等义的 AI/Web 结论。`independent_reviewing`、`closure_preparing` 以及任何 blocked、unresolved 投影必须负向禁止这些结论；`closed` 只表达已经关闭。AI 交还必须依据刚回读快照所形成的投影 key 描述当前状态，不能凭聊天历史、计划预期、Reviewer pass 或 Web 文案提前生成相邻 phase 的叙述。
+
+`unresolved` 另有 `unresolved_reason`，只允许 `missing_source_content_fingerprint`、`missing_status`、`unsupported_status`、`missing_phase`、`unexpected_phase`、`closed_with_phase` 或 `invalid_status_phase_combination`；不得同时输出生命周期位置、叙述 key、下一控制步骤或进展值，也不得按相似词和相邻 phase 猜测。Web 载体本身不可读或不可解析时沿用 08 `unreadable`，不伪造投影。
+
+`next_required_control_step` 只说明结构上下一必经控制步骤，不断言该步骤已获授权、能力可用、行动允许、优先级更高、工作完成或 phase 应自动推进。Code 可以形成投影、校验转换和检查禁止话术 key，不能替 AI 作上述语义判断或自动选择工作项。任何缓存若将来出现，必须同时绑定 `contract_identity` 与 `source_content_fingerprint`；来源或合同身份变化即失效，当前增量不建立持久缓存。
+
+Card 可以另外派生 item 五状态计数和当前活动 item，但不得把任何派生结果写回 YAML，不得猜测“第几轮”“第几项”或完成百分比。具体 Card 内容与视觉设计由 08 承接，不能反向要求新增事实字段；Card 的“后续贡献”只列实际 `contributed-to` Pitfall 的标题与当前状态，并以待确认/活跃/已废弃呈现；关闭处置另显示三类 decision 与 Spark suggestions。`related-to` 只在详情中作关系导航，不进入关闭 Card 正文。
 
 ## 10. 验证要求
 

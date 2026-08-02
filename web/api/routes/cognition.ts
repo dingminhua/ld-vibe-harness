@@ -16,7 +16,13 @@ import { Router, type Request, type Response } from 'express'
 import { listObjects, type ObjectType } from '../services/facts.js'
 import { listLocalFacts, type LocalFactItem } from '../services/localFactReader.js'
 import { getGitLogWithFiles, type GitLogEntryWithFiles } from '../services/git.js'
-import { deriveWorkCaseProgressProjection, type WorkCaseProgressGroup, type WorkCaseProgressStep } from '../../shared/workcaseStatus.js'
+import {
+  deriveWorkCasePresentationProjection,
+  isResolvedWorkCasePresentationProjection,
+  type ResolvedWorkCasePresentationProjection,
+  type WorkCaseProgressGroup,
+  type WorkCaseProgressStep,
+} from '../../shared/workcaseStatus.js'
 import { ProjectScopeError, requestProject } from '../services/requestScope.js'
 import { getRelativeTime } from '../services/time.js'
 import { getTypeColor } from '../services/typeColors.js'
@@ -56,6 +62,9 @@ const IDENTITY_PROJECTION_KEYS = new Set([
   'read_issues',
   'field_issues',
   'unparsed_structures',
+  'current_snapshot_projection',
+  'progress_group',
+  'progress_step',
 ])
 
 interface InboxBuildItem {
@@ -230,6 +239,12 @@ function timestampInWindow(value: unknown, start: number, end: number): value is
   return Number.isFinite(timestamp) && timestamp >= start && timestamp <= end
 }
 
+function currentWorkCaseProjection(raw: Record<string, unknown>): ResolvedWorkCasePresentationProjection | null {
+  return isResolvedWorkCasePresentationProjection(raw.current_snapshot_projection)
+    ? raw.current_snapshot_projection
+    : null
+}
+
 function compareRecentActivity(a: RecentActivityBuildItem, b: RecentActivityBuildItem): number {
   if (a.occurred_at !== b.occurred_at) return a.occurred_at > b.occurred_at ? -1 : 1
   if (a.activity !== b.activity) return a.activity === 'updated' ? -1 : 1
@@ -245,9 +260,8 @@ function buildRecentActivityItem(
 ): RecentActivityBuildItem {
   const object_id = String(raw.object_id ?? '')
   const status = String(raw.status ?? 'unknown')
-  const phase = typeof raw.phase === 'string' ? raw.phase : undefined
   const progressGroup = type === 'workcase'
-    ? deriveWorkCaseProgressProjection(status, phase)?.progressGroup ?? undefined
+    ? currentWorkCaseProjection(raw)?.progress_group
     : undefined
   return {
     type,
@@ -338,8 +352,11 @@ function projectCommitHotspotFact(item: LocalFactItem, type: ObjectType): Commit
   const objectId = item.object_ref.object_id
   const status = typeof raw.status === 'string' ? raw.status : undefined
   const phase = typeof raw.phase === 'string' ? raw.phase : undefined
-  const progressGroup = type === 'workcase' && status
-    ? deriveWorkCaseProgressProjection(status, phase)?.progressGroup
+  const currentProjection = type === 'workcase'
+    ? deriveWorkCasePresentationProjection(raw.status, raw.phase, item.source_content_fingerprint)
+    : null
+  const progressGroup = currentProjection?.resolution === 'resolved'
+    ? currentProjection.progress_group
     : undefined
   const priority = priorityRank(raw.priority) < 4 && typeof raw.priority === 'string' ? raw.priority : undefined
   return {
@@ -582,17 +599,17 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
         const object_id = String(raw.object_id ?? '')
         const status = String(raw.status ?? 'unknown')
         const phase = typeof raw.phase === 'string' ? raw.phase : undefined
-        const progress = deriveWorkCaseProgressProjection(status, phase)
-        const progressGroup = progress?.progressGroup ?? null
-        if (progressGroup === null) {
-          issues.push({ section: 'inbox', code: 'progress_group_unresolved', message: `WorkCase ${object_id} 的进展分组无法由当前 status=${status} 派生，未收入收件箱`, object_ref: object_id })
-          issues.push({ section: 'activeWorkCases', code: 'progress_group_unresolved', message: `WorkCase ${object_id} 的进展分组无法由当前 status=${status} 派生，未收入推进中事项`, object_ref: object_id })
+        const progress = currentWorkCaseProjection(raw)
+        if (progress === null) {
+          issues.push({ section: 'inbox', code: 'progress_group_unresolved', message: `WorkCase ${object_id} 的当次 current_snapshot_projection 未 resolved，未收入收件箱`, object_ref: object_id })
+          issues.push({ section: 'activeWorkCases', code: 'progress_group_unresolved', message: `WorkCase ${object_id} 的当次 current_snapshot_projection 未 resolved，未收入推进中事项`, object_ref: object_id })
           continue
         }
-        if (progress?.progressGroup === 'progressing' && typeof phase === 'string') {
+        const progressGroup = progress.progress_group
+        if (progress.progress_group === 'progressing' && typeof phase === 'string') {
           activeWorkCaseBuilds.push({
             type: 'workcase', progress_group: 'progressing',
-            ...(progress.progressStep ? { progress_step: progress.progressStep } : {}),
+            ...(progress.progress_step ? { progress_step: progress.progress_step } : {}),
             object_id, title: String(raw.title ?? object_id),
             ...(typeof raw.title_en === 'string' ? { title_en: raw.title_en } : {}),
             ...(typeof raw.title_zh === 'string' ? { title_zh: raw.title_zh } : {}),

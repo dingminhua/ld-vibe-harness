@@ -584,6 +584,81 @@ unknown_field: rejected
     assert any(issue["field_path"] == "unknown_field" for issue in item["issues"])
 
 
+def test_mechanically_valid_workcase_read_includes_snapshot_presentation_projection(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    directory = project / "ldvh-base" / "workcases"
+    directory.mkdir()
+    (directory / "workcase-0001.yaml").write_text(
+        """object_id: workcase-0001
+fact_type_key: workcase
+title: Projection delivery
+created_at: 2026-07-14T09:00:00+08:00
+updated_at: 2026-07-14T10:00:00+08:00
+status: open
+summary: Waiting for Human execution approval
+waiting_on: Human execution approval
+priority: P2
+goal: Finish
+scope: One object
+success_criterion_definitions:
+  - criterion_id: criterion-01
+    statement: The bounded object is complete
+phase: human_plan_confirming
+plan_version: 1
+work_items:
+  - item_id: item-01
+    goal: Finish the object
+    expected_result: Done
+    status: pending
+    approach_summary: Complete the bounded target and validate it
+creation_reviews:
+  - reviewer: independent-projection-reviewer
+    reviewed_at: 2026-07-14T09:30:00+08:00
+    subject_version: 1
+    scope: Goal, scope, criteria, work items, method, validation and risks
+    conclusion: pass
+execution_authorization:
+  authorized_actions:
+    - action_id: authorization-projection-fixture
+      summary: Execute the approved fixture plan.
+      target_scope: Read fixture project only.
+      effect_scope: Deterministic helper test workspace.
+      risk_summary: No production effect; fixture data only.
+      rollback_summary: Remove the fixture object.
+      rule_refs:
+        - specs/21-WorkCase-工作项.md
+  action_ceiling: Bounded to fixture actions.
+  allowed_adjustments: No adjustments beyond the recorded fixture summaries.
+  verification_and_rollback: Run the read operation test suite.
+  out_of_bounds_handling: Stop and return to Human.
+  prohibited_actions:
+    - Writing outside the fixture workspace.
+""",
+        encoding="utf-8",
+    )
+    payload = json.loads(_payload(workspace, project, "spark-0001"))
+    payload["arguments"]["fact_refs"][0].update({"fact_type_key": "workcase", "object_id": "workcase-0001"})
+
+    item = handle_request("call", "read-fact-objects", json.dumps(payload)).response["result"]["items"][0]
+
+    assert item["check_status"] == "mechanically_valid"
+    assert item["current_snapshot_projection"] == {
+        "contract_identity": "workcase-current-snapshot-presentation/1",
+        "resolution": "resolved",
+        "source_content_fingerprint": item["content_fingerprint"],
+        "lifecycle_position": "human_plan_confirming",
+        "handoff_narrative_key": "gate1_waiting",
+        "next_required_control_step": "human_gate_1",
+        "progress_group": "plan_confirmation",
+        "progress_step": None,
+        "blocking_overlay": False,
+    }
+    spark_item = handle_request(
+        "call", "read-fact-objects", _payload(workspace, project, "spark-0001")
+    ).response["result"]["items"][0]
+    assert spark_item["current_snapshot_projection"] is None
+
+
 def test_legacy_superseded_adr_status_and_relation_are_rejected(tmp_path: Path) -> None:
     workspace, project = _fixture(tmp_path)
     directory = project / "ldvh-base" / "adrs"

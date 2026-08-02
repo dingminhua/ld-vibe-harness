@@ -4,6 +4,7 @@
 
 当前适用规划：
 
+- [WorkCase 当前快照确定性呈现投影](workcase-current-snapshot-presentation.md)：覆盖 21 权威语义的唯一 Code 维护点、Helper 精确读取投影、Web 字段级读取投影、Python 到 TypeScript 的单向生成、诊断与全状态矩阵验证。
 - [Web 字段级事实读取迁移](web-field-level-reading.md)：覆盖经 Helper 管辖解析约束的 Web 当前事实直读、字段级问题与未解析结构呈现、WorkCase 统一读取、旧 V4 Python machine 退役及对应验证。
 
 - [Study 重建事实契约](study-rebuild-fact-contract.md)：覆盖 v3 基线下的 Study 五段正文、`active / retired` 生命周期、共用 URLs 字段、Code/Web 派生面、历史对象退出与验证边界。

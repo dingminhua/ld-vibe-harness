@@ -20,6 +20,38 @@ function withProjectId(url: string): string {
 export type WorkCaseProgressGroup = 'plan_confirmation' | 'progressing' | 'closure_confirmation' | 'closed';
 export type WorkCaseProgressStep = 'item_execution' | 'controller_self_check' | 'independent_review' | 'controller_synthesis';
 
+export type WorkCasePresentationUnresolvedReason =
+  | 'missing_source_content_fingerprint'
+  | 'missing_status'
+  | 'unsupported_status'
+  | 'missing_phase'
+  | 'unexpected_phase'
+  | 'closed_with_phase'
+  | 'invalid_status_phase_combination';
+
+export interface ResolvedWorkCaseCurrentSnapshotProjection {
+  contract_identity: 'workcase-current-snapshot-presentation/1';
+  resolution: 'resolved';
+  source_content_fingerprint: string;
+  lifecycle_position: string;
+  handoff_narrative_key: string;
+  next_required_control_step: string;
+  progress_group: WorkCaseProgressGroup;
+  progress_step: WorkCaseProgressStep | null;
+  blocking_overlay: boolean;
+}
+
+export interface UnresolvedWorkCaseCurrentSnapshotProjection {
+  contract_identity: 'workcase-current-snapshot-presentation/1';
+  resolution: 'unresolved';
+  source_content_fingerprint: string | null;
+  unresolved_reason: WorkCasePresentationUnresolvedReason;
+}
+
+export type WorkCaseCurrentSnapshotProjection =
+  | ResolvedWorkCaseCurrentSnapshotProjection
+  | UnresolvedWorkCaseCurrentSnapshotProjection;
+
 export interface ObjectItem {
   id: string;
   type: string;
@@ -29,6 +61,7 @@ export interface ObjectItem {
   status: string;
   progress_group?: string;
   progress_step?: string;
+  current_snapshot_projection?: WorkCaseCurrentSnapshotProjection;
   phase?: string;
   goal?: string;
   scope?: string;

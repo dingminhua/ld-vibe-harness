@@ -5,6 +5,7 @@
  * field problems, and unconsumed source structure must remain distinguishable.
  */
 import { existsSync } from 'node:fs'
+import { createHash } from 'node:crypto'
 import { readdir, readFile, stat } from 'node:fs/promises'
 import path from 'node:path'
 import yaml from 'js-yaml'
@@ -64,6 +65,7 @@ export type LocalFactMetadata = {
 
 export type LocalFactItem = LocalFactMetadata & {
   read_status: LocalFactReadStatus
+  source_content_fingerprint: string | null
   fact_object: Record<string, unknown> | null
   field_issues: FieldIssue[]
   unparsed_structures: UnparsedStructure[]
@@ -203,22 +205,25 @@ function projectFields(type: LocalFactType, objectId: string, parsed: Record<str
 }
 
 function unreadable(metadata: LocalFactMetadata, issues: LocalFactIssue[]): LocalFactItem {
-  return { ...metadata, read_status: 'unreadable', fact_object: null, field_issues: [], unparsed_structures: [], issues: issues.map((issue) => ({ ...issue, path: issue.path ?? metadata.canonical_path })) }
+  return { ...metadata, read_status: 'unreadable', source_content_fingerprint: null, fact_object: null, field_issues: [], unparsed_structures: [], issues: issues.map((issue) => ({ ...issue, path: issue.path ?? metadata.canonical_path })) }
 }
 
 async function readItemFile(scope: LocalFactScope, type: LocalFactType, fileName: string): Promise<LocalFactItem> {
   const objectId = fileName.replace(/\.(yaml|yml|md)$/i, '')
   const metadata = metadataFor(scope, type, objectId)
   let content: string
+  let sourceContentFingerprint: string
   try {
-    content = await readFile(expectedManifestPath(metadata), 'utf-8')
+    const carrierBytes = await readFile(expectedManifestPath(metadata))
+    content = carrierBytes.toString('utf-8')
+    sourceContentFingerprint = createHash('sha256').update(carrierBytes).digest('hex')
   } catch (error) {
     return unreadable(metadata, [{ code: 'read_failed', message: `文件读取失败：${error instanceof Error ? error.message : String(error)}` }])
   }
   if (metadata.carrier === 'markdown') {
     const parsed = parseMarkdownWithFrontmatter(content)
     if (parsed.metadata === null) return unreadable(metadata, parsed.issues)
-    return { ...metadata, read_status: 'readable', ...projectFields(type, objectId, parsed.metadata, { report_body: parsed.body }), issues: [] }
+    return { ...metadata, read_status: 'readable', source_content_fingerprint: sourceContentFingerprint, ...projectFields(type, objectId, parsed.metadata, { report_body: parsed.body }), issues: [] }
   }
   let parsed: unknown
   try {
@@ -243,7 +248,7 @@ async function readItemFile(scope: LocalFactScope, type: LocalFactType, fileName
       return unreadable(metadata, [{ code: 'read_failed', message: `FileAsset 目录读取失败：${error instanceof Error ? error.message : String(error)}` }])
     }
   }
-  return { ...metadata, read_status: 'readable', ...projectFields(type, objectId, parsed, {}), issues: [] }
+  return { ...metadata, read_status: 'readable', source_content_fingerprint: sourceContentFingerprint, ...projectFields(type, objectId, parsed, {}), issues: [] }
 }
 
 function directoryStatus(scope: LocalFactScope, type: LocalFactType): LocalFactList | null {

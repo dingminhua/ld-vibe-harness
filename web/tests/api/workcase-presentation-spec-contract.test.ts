@@ -42,17 +42,18 @@ test('Specs define four progress groups and a four-step result track', () => {
   assert.match(cardSection, /提案使用稳定的中性提案图标和独立的琥珀色提案色调/);
   assert.match(cardSection, /Card 与详情均不得在“终态处置”旁重复显示“完成”/);
   assert.doesNotMatch(cardSection, /Human 已批准当前结果与报告/);
-  assert.match(cardSection, /\| `item_execution` \| 工作项执行 \| `executing` \|/);
-  assert.match(cardSection, /\| `controller_self_check` \| 主控自检 \| `controller_checking` \|/);
-  assert.match(cardSection, /\| `independent_review` \| 独立复核 \| `independent_reviewing` \|/);
-  assert.match(cardSection, /\| `controller_synthesis` \| 主控收敛 \| `closure_preparing` \|/);
+  assert.match(cardSection, /\| `item_execution` \| 工作项执行 \| 当前工作项推进 \|/);
+  assert.match(cardSection, /\| `controller_self_check` \| 主控自检 \| 完整结果投影形成 \|/);
+  assert.match(cardSection, /\| `independent_review` \| 独立复核 \| 结果独立复核 \|/);
+  assert.match(cardSection, /\| `controller_synthesis` \| 主控收敛 \| 关闭提案形成 \|/);
+  assert.match(cardSection, /确定性 `status \+ phase` 映射.*闭集只见 21 §9\.3，本节不重复/);
 });
 
 test('Specs place plan revision outside the four-step track without losing current facts', () => {
   const cardSection = workCaseCardSection();
 
-  assert.match(cardSection, /`plan_revising` 属于“推进中”/);
-  assert.match(cardSection, /\| 活动期；`phase=plan_revising` \| `progressing` \| 省略；Card 显示轨迹外内部位置“方案修订中” \|/);
+  assert.match(cardSection, /`lifecycle_position=plan_revising` 投影为“推进中”但省略 `progress_step`/);
+  assert.match(cardSection, /`lifecycle_position=plan_revising` 时，Card 必须在“推进中”下明确显示“方案修订中”/);
   assert.match(cardSection, /不得高亮四步中的任一项/);
   assert.match(cardSection, /不得新增第五个稳定 `progress_step`/);
   assert.match(cardSection, /真实 active item、`waiting_on` 与 `blocking_summary` 仍按当前事实显示/);
@@ -124,7 +125,9 @@ test('Specs define the closure-decision input zone and contributed-to section fo
   assert.match(cardSection, /不提供 promote、discard、批量审核或自动过期控件/);
   assert.match(cardSection, /`closure_confirmation` Card 不显示关闭完整性诊断/);
   assert.match(cardSection, /除上述两区外，不展开成功标准结果、结果与验证、主控自检、独立结果复核或执行统计/);
-  assert.match(cardSection, /即使实际 `status=blocked` 也不在 Card 额外展示阻塞/);
+  assert.match(cardSection, /`gate2_position_blocked` 必须改用 blocker-qualified closure-position Card/);
+  assert.match(cardSection, /首先显示“关闭位置受阻”及完整 `blocking_summary`/);
+  assert.match(cardSection, /不得显示 Gate 2 判断入口、readiness 话术或关闭操作/);
   assert.match(cardSection, /关闭决定由专属事务消费，不持久化 approval 或关闭时间收据/);
   assert.match(cardSection, /详情“关闭提案”节点把 `proposed_outcome` 的紧凑分类放在“关闭提案”标题行/);
   assert.match(cardSection, /`closed` Card 使用与上述关闭 Card 相同的扫读结构/);
@@ -183,7 +186,8 @@ test('Current Web docs describe the same latest-only Card and detail boundaries'
   assert.match(listDoc, /不设置列表级“观察时间”或“重新读取”控件/);
   assert.doesNotMatch(listSection, /control-contract|workcase_profile|closure_requested_at|review_requested_at|closure_approval/);
 
-  assert.match(detailSection, /`human_plan_confirming`、`plan_revising`、`executing`/);
+  assert.match(detailSection, /只消费该详情载体当次形成的 `current_snapshot_projection`/);
+  assert.match(detailSection, /不得从 raw `status \/ phase` 自行重建映射/);
   assert.match(detailSection, /不得根据这些进展分组或推进环节切换、隐藏、重排字段/);
   assert.match(detailSection, /`goal` 与 `scope`/);
   assert.match(detailSection, /`creation_reviews`、`execution_authorization`、`execution_approval`/);

@@ -7,7 +7,11 @@ import {
   type LocalFactScope,
 } from './localFactReader.js'
 import { resolveCurrentWebProject, WebGovernanceError } from './governanceScope.js'
-import { deriveWorkCaseProgressProjection } from '../../shared/workcaseStatus.js'
+import {
+  deriveWorkCasePresentationProjection,
+  deriveWorkCaseProgressProjection,
+  type WorkCaseCurrentSnapshotProjection,
+} from '../../shared/workcaseStatus.js'
 import { FACT_LIST_FIELD_NAMES } from './factFieldContract.js'
 
 export const ACTIVE_OBJECT_TYPES = ['workcase', 'adr', 'pitfall', 'spark', 'study', 'file-asset'] as const
@@ -73,7 +77,9 @@ function readFailure(id: string, type: ObjectType, metadata: LocalFactMetadata, 
 
 function projectListItem(type: ObjectType, item: LocalFactItem): Record<string, unknown> {
   const source = item.fact_object ?? {}
-  const base = type === 'workcase' ? projectWorkCaseCard(source) : copyPresentFields(source, FACT_LIST_FIELD_NAMES[type])
+  const base = type === 'workcase'
+    ? projectCurrentWorkCaseCard(source, item.source_content_fingerprint)
+    : copyPresentFields(source, FACT_LIST_FIELD_NAMES[type])
   return {
     ...base,
     read_status: item.read_status,
@@ -304,10 +310,15 @@ function projectClosedDisposition(fact: Record<string, unknown>): Record<string,
   }
 }
 
-export function projectWorkCaseCard(fact: Record<string, unknown>): Record<string, unknown> {
+function projectWorkCaseCardShape(
+  fact: Record<string, unknown>,
+  progress: ReturnType<typeof deriveWorkCaseProgressProjection>,
+  currentSnapshotProjection: WorkCaseCurrentSnapshotProjection | null,
+  currentSnapshotBound: boolean,
+  projectProgressingItems: boolean,
+): Record<string, unknown> {
   const projected = copyPresentFields(fact, ['object_id', 'fact_type_key', 'title', 'status', 'phase', 'updated_at'])
-  const phase = typeof fact.phase === 'string' ? fact.phase : ''
-  const progress = deriveWorkCaseProgressProjection(typeof fact.status === 'string' ? fact.status : '', phase)
+  if (currentSnapshotProjection !== null) projected.current_snapshot_projection = currentSnapshotProjection
   if (progress?.progressGroup === 'plan_confirmation') {
     // Gate 1 必须让 Human 看到被批准的完整执行基线。这里保留结构原值，
     // 让前端可以区分“缺失/类型错误”与“合法空值”，而不是静默过滤 malformed 成员。
@@ -324,7 +335,8 @@ export function projectWorkCaseCard(fact: Record<string, unknown>): Record<strin
       successCriteria: projectCriterionStatements(fact.success_criterion_definitions),
     })
   } else if (progress?.progressGroup === 'progressing') {
-    Object.assign(projected, copyPresentFields(fact, ['priority', 'goal', 'waiting_on']), projectCardWorkItems(fact.work_items))
+    Object.assign(projected, copyPresentFields(fact, ['priority', 'goal', 'waiting_on']))
+    if (projectProgressingItems) Object.assign(projected, projectCardWorkItems(fact.work_items))
   } else if (progress?.progressGroup === 'closure_confirmation') {
     Object.assign(projected, copyPresentFields(fact, ['goal']))
     const closureProposal = projectClosureProposal(fact.closure_proposal)
@@ -338,7 +350,47 @@ export function projectWorkCaseCard(fact: Record<string, unknown>): Record<strin
     const contributedTo = projectContributedToTargets(fact.relations)
     if (contributedTo.length > 0) projected.contributedTo = contributedTo
   }
-  if (fact.status === 'blocked' && (progress?.progressGroup === 'plan_confirmation' || progress?.progressGroup === 'progressing')) Object.assign(projected, copyPresentFields(fact, ['blocking_summary']))
+  if (currentSnapshotBound && fact.status === 'blocked') {
+    Object.assign(projected, copyPresentFields(fact, ['blocking_summary']))
+  } else if (!currentSnapshotBound
+    && fact.status === 'blocked'
+    && (progress?.progressGroup === 'plan_confirmation' || progress?.progressGroup === 'progressing')) {
+    Object.assign(projected, copyPresentFields(fact, ['blocking_summary']))
+  }
+  if (currentSnapshotBound && progress) {
+    projected.progress_group = progress.progressGroup
+    if (progress.progressStep) projected.progress_step = progress.progressStep
+  }
+  return projected
+}
+
+export function projectCurrentWorkCaseCard(
+  fact: Record<string, unknown>,
+  sourceContentFingerprint: string | null,
+): Record<string, unknown> {
+  const currentSnapshotProjection = deriveWorkCasePresentationProjection(
+    fact.status,
+    fact.phase,
+    sourceContentFingerprint,
+  )
+  const progress = currentSnapshotProjection.resolution === 'resolved'
+    ? {
+        progressGroup: currentSnapshotProjection.progress_group,
+        ...(currentSnapshotProjection.progress_step ? { progressStep: currentSnapshotProjection.progress_step } : {}),
+      }
+    : null
+  return projectWorkCaseCardShape(fact, progress, currentSnapshotProjection, true, true)
+}
+
+/**
+ * Compatibility-only direct projector for the Gate1-prohibited legacy Card contract tests.
+ * Current list/API reads must use projectCurrentWorkCaseCard with the raw-carrier fingerprint.
+ */
+export function projectWorkCaseCard(fact: Record<string, unknown>): Record<string, unknown> {
+  const phase = typeof fact.phase === 'string' ? fact.phase : ''
+  const progress = deriveWorkCaseProgressProjection(typeof fact.status === 'string' ? fact.status : '', phase)
+  const projected = projectWorkCaseCardShape(fact, progress, null, false, false)
+  if (progress?.progressGroup === 'progressing') Object.assign(projected, projectCardWorkItems(fact.work_items))
   return projected
 }
 
@@ -384,6 +436,18 @@ export async function showObject(id: string, scope?: LocalFactScope): Promise<We
       field_issues: item.field_issues,
       unparsed_structures: item.unparsed_structures,
       read_issues: item.issues,
+    }
+    if (type === 'workcase') {
+      const projection = deriveWorkCasePresentationProjection(
+        item.fact_object.status,
+        item.fact_object.phase,
+        item.source_content_fingerprint,
+      )
+      data.current_snapshot_projection = projection
+      if (projection.resolution === 'resolved') {
+        data.progress_group = projection.progress_group
+        if (projection.progress_step) data.progress_step = projection.progress_step
+      }
     }
     const response = { ...result('show', id, data), summary: { id, type, ...(typeof data.status === 'string' ? { status: data.status } : {}) } }
     response.issues = [...item.issues, ...item.field_issues]

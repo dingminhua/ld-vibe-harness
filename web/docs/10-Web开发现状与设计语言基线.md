@@ -128,7 +128,7 @@ WorkCase 的四种进展分组保持同一中性外层 Card；状态徽章、标
 
 成功标准是并列集合，统一使用圆点；只有来源已明确表达步骤、优先级、排名或依赖顺序时才使用数字序号。不得把数组位置、criterion ID 或显示排序视觉化为先后关系。
 
-内部 `closure_preparing` 投影为“推进中 / 主控收敛”；直到 Controller 形成完整的关闭报告与分流建议并实际进入 `human_closure_confirming`，进展分组才切换为“关闭待确认”。不得在 Human Gate 尚未成立时提前提示 Human 处理。
+`current_snapshot_projection.lifecycle_position=closure_preparing` 表示“推进中 / 主控收敛”；只有同一投影的 `handoff_narrative_key=gate2_waiting` 才显示“关闭待确认”。`gate2_position_blocked` 必须显示“关闭位置受阻”并突出阻塞，不得在 Human Gate 尚未成立或仍有阻塞时提前提示 Human 处理。
 
 因此 WorkCase 列表卡片的信息层级应为：
 
@@ -152,7 +152,7 @@ WorkCase 列表在 Helper 已确认的管辖 worktree 内由 Web 直接读取当
 
 WorkCase 详情页用于完整理解同一项当前责任。它在所有状态和 phase 下使用同一信息结构，不根据 Card 进展分组或推进环节切换、隐藏或重排内容。稳定阅读顺序为：
 
-WorkCase 身份头部与列表 Card 显示同一进展分组；详情“当前情况”再显示精确 phase。两者分别回答“从哪个浏览分组进入”和“内部实际处在哪个阶段”，不得让精确 phase 取代头部进展分组，也不得把进展分组写回来源状态。
+WorkCase 身份头部、列表 Card 与详情“当前情况”消费各自当前载体形成的同一 `current_snapshot_projection`；raw phase 仍作为来源字段可读，但不再由页面自行映射。投影分别回答浏览分组与内部位置，不得写回来源状态。
 
 ```text
 身份头部

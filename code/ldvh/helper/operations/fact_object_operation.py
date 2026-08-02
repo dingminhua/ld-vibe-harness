@@ -12,6 +12,7 @@ from ldvh.facts.project_validation import stabilize_project_index
 from ldvh.facts.relations import ProjectFactIndex
 from ldvh.facts.repository import FactReadResult, read_fact_object
 from ldvh.facts.schema import project_fact_schemas
+from ldvh.facts.workcase_presentation import derive_workcase_presentation
 from ldvh.governance.resolver import GovernanceResolutionRun, resolve_governance_scope
 from ldvh.helper.operation_runtime import (
     AvailabilityEvaluation,
@@ -94,6 +95,7 @@ def _item(scope: FactReferenceScope, root: Path, read: FactReadResult) -> dict[s
         "fact_object": fact_object,
         "file_asset_payload": None,
         "content_fingerprint": read.content_fingerprint,
+        "current_snapshot_projection": None,
         "issues": [
             {
                 "category": issue.category,
@@ -126,6 +128,17 @@ def _item(scope: FactReferenceScope, root: Path, read: FactReadResult) -> dict[s
             "integrity_coverage": list(read.integrity_coverage),
             "matches_manifest": read.payload_matches_manifest,
         }
+    if (
+        scope.requested_ref.fact_type_key == "workcase"
+        and read.check_status == "mechanically_valid"
+        and fact_object is not None
+        and read.content_fingerprint is not None
+    ):
+        item["current_snapshot_projection"] = derive_workcase_presentation(
+            fact_object.get("status"),
+            fact_object.get("phase"),
+            read.content_fingerprint,
+        )
     return item
 
 

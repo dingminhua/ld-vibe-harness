@@ -9,7 +9,7 @@ import type { LocalFactScope } from '../services/localFactReader.js'
 import { readFileAssetPreview, type FileAssetPreviewFailureCode } from '../services/fileAssetPreview.js'
 import {
   WORKCASE_PROGRESS_GROUP_ORDER,
-  deriveWorkCaseProgressProjection,
+  isResolvedWorkCasePresentationProjection,
   isWorkCaseProgressGroup,
 } from '../../shared/workcaseStatus.ts'
 
@@ -78,9 +78,8 @@ function normalizeItem(value: unknown): ListedObject | null {
   if (!id) return null
   const type = toStringValue(value.fact_type_key) || toStringValue(value.type)
   const status = toStringValue(value.status)
-  const phase = toStringValue(value.phase)
-  const progressProjection = type === 'workcase'
-    ? deriveWorkCaseProgressProjection(status, phase || undefined)
+  const progressProjection = type === 'workcase' && isResolvedWorkCasePresentationProjection(value.current_snapshot_projection)
+    ? value.current_snapshot_projection
     : null
 
   return {
@@ -88,8 +87,8 @@ function normalizeItem(value: unknown): ListedObject | null {
     id,
     type,
     status,
-    progress_group: progressProjection?.progressGroup,
-    progress_step: progressProjection?.progressStep,
+    progress_group: progressProjection?.progress_group,
+    progress_step: progressProjection?.progress_step ?? undefined,
     title: toStringValue(value.title),
     title_en: toStringValue(value.title_en) || undefined,
     title_zh: toStringValue(value.title_zh) || undefined,

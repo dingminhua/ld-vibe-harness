@@ -106,7 +106,7 @@
 
 回答 Human 的问题：**哪些 WorkCase 正在行动，它们当前推进到哪里？**
 
-- 只收纳由当前 `status + phase` 确定派生为 `progress_group = progressing` 的 WorkCase；它与 `plan_confirmation`、`closure_confirmation` 两个 Human Gate 互斥，不和待决定事项重复。
+- 只收纳当前 `current_snapshot_projection` resolved 且 `progress_group = progressing` 的 WorkCase；它与 `plan_confirmation`、`closure_confirmation` 两个 Human Gate 互斥，不和待决定事项重复。
 - `progressing` 包含计划修订、执行项执行、控制器自检、独立复核和控制器综合/关闭准备。`status = blocked` 但仍处于上述推进链的 WorkCase继续保留，并在同源 Card 内显示阻塞说明与等待对象。
 - 条目直接复用对象列表的进行中 WorkCase Card：目标、当前推进轨迹和当期执行项均来自 `projectWorkCaseCard` 投影；聚焦页不另写行动摘要，也不新增状态推断。
 - 模块使用 `ldvh-section-grid` 随容器宽度自动排成多列，默认展开并支持整块折叠；标题带保留总数和复制模块摘要。
@@ -171,7 +171,7 @@ Web 给 Human 看的派生视图与 AI 经 Helper 精确读取的事实源应可
 
 ### 5.1 事实变化交付与延迟边界
 
-Helper 成功写入并回读后，浏览器没有可被 Helper 直接调用的写入通知通道；列表、详情、右侧扩展阅读与认知中心不提供应用内重新读取或刷新入口。Human 需要取得新快照时使用浏览器自身的重新加载；页面在路由进入、语言切换等既有读取时机读取各自 API 当前快照，并由 `status` / `phase` 派生 `progress_group`，不写回 YAML、不做乐观迁移。
+Helper 成功写入并回读后，浏览器没有可被 Helper 直接调用的写入通知通道；列表、详情、右侧扩展阅读与认知中心不提供应用内重新读取或刷新入口。Human 需要取得新快照时使用浏览器自身的重新加载；页面在路由进入、语言切换等既有读取时机读取各自 API 当前快照，并消费绑定 `source_content_fingerprint + contract_identity` 的 `current_snapshot_projection`，不从 raw phase 重建映射、不写回 YAML、不做乐观迁移。
 
 浏览器重新加载最多表示“下一次成功读取后展示最新可观察快照”，不把文件变化或页面重载表达为 Helper 写入成功。网络、服务、管辖解析或字段读取失败时，保留已存在的成功内容只作视觉占位并在对应页面显示加载失败/模块 issue；不把旧快照标作新观察，也不伪造断连期间的进展变化。页面不在后台或重新可见时自行读取，因此不承诺实时性、自动交付或固定延迟。
 
