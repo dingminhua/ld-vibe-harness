@@ -84,10 +84,7 @@ def test_discovers_external_configuration_from_upper_workspace_cwd(tmp_path: Pat
         "registered_project_git_identity",
     }
     config_source = next(source for source in run.sources if source["kind"] == "governed_projects_configuration")
-    assert {basis["kind"] for basis in config_source["details"]["discovery_bases"]} == {
-        "path",
-        "git.common_dir_parent",
-    }
+    assert {basis["kind"] for basis in config_source["details"]["discovery_bases"]} == {"path"}
 
 
 def test_unsupported_windows_explicit_workspace_fails_before_locator_or_configuration_access(
@@ -131,17 +128,12 @@ def test_upper_workspace_cwd_is_an_object_not_a_guessed_child_project(tmp_path: 
     assert [candidate.governed_project_id for candidate in run.result.registered_project_candidates] == ["project"]
 
 
-def test_external_linked_worktree_uses_common_dir_and_skips_main_repo_local_config(tmp_path: Path) -> None:
+def test_linked_worktree_uses_nearest_parent_configuration_then_common_dir_match(tmp_path: Path) -> None:
     workspace = tmp_path / "workspace"
     main = _repository(workspace / "main")
-    linked = tmp_path / "external" / "linked"
-    linked.parent.mkdir()
+    linked = workspace / "linked"
     _git(main, "worktree", "add", "-qb", "linked-test", str(linked))
     outer = _configuration(workspace, [("ldvh", main)])
-    # This current file is project content, not an automatically selectable
-    # workspace configuration.  It must be skipped even though common_dir.parent
-    # is the main worktree root.
-    _configuration(main, [], body="not: a governed projects configuration\n")
 
     run = resolve_governance_scope(_scope(str(linked / "tracked.txt")), base=tmp_path)
 
@@ -154,12 +146,104 @@ def test_external_linked_worktree_uses_common_dir_and_skips_main_repo_local_conf
     assert item.git_worktree_root == str(linked.resolve())
     config_sources = [source for source in run.sources if source["kind"] == "governed_projects_configuration"]
     assert len(config_sources) == 1
-    assert {basis["kind"] for basis in config_sources[0]["details"]["discovery_bases"]} == {"git.common_dir_parent"}
+    assert {basis["kind"] for basis in config_sources[0]["details"]["discovery_bases"]} == {"path"}
     registered_sources = [source for source in run.sources if source["kind"] == "registered_project_git_identity"]
     assert len(registered_sources) == 1
     assert registered_sources[0]["locator"] == str(main.resolve())
     assert registered_sources[0]["details"]["git_common_dir"] == item.git_common_dir
     assert any(source["kind"] == "registered_project_git_identity" for source in item.identity_evidence)
+
+
+def test_nearest_valid_unregistered_configuration_fails_closed_without_climbing(tmp_path: Path) -> None:
+    outer = tmp_path / "outer"
+    inner = outer / "inner"
+    repository = _repository(inner / "repository")
+    outer_source = _configuration(outer, [("repository", repository)])
+    inner_source = _configuration(
+        inner,
+        [],
+        body="product_name: Test\nproduct_description: Test workspace\nprojects: []\n",
+    )
+
+    run = resolve_governance_scope(_scope(str(repository / "tracked.txt")), base=tmp_path)
+
+    assert run.result is not None
+    assert run.result.config_status is ConfigStatus.VALID
+    assert run.result.config_path == str(inner_source.resolve())
+    assert run.result.scope_status is ScopeStatus.NON_GOVERNED
+    assert run.result.object_resolutions[0].status is ObjectStatus.NOT_GOVERNED
+    assert str(outer_source.resolve()) not in [source["locator"] for source in run.sources]
+
+
+def test_nearest_invalid_configuration_stops_before_outer_configuration(tmp_path: Path) -> None:
+    outer = tmp_path / "outer"
+    inner = outer / "inner"
+    repository = _repository(inner / "repository")
+    _configuration(outer, [("repository", repository)])
+    inner_source = _configuration(inner, [], body="product_name: [\n")
+
+    run = resolve_governance_scope(_scope(str(repository / "tracked.txt")), base=tmp_path)
+
+    assert run.result is not None
+    assert run.result.config_status is ConfigStatus.INVALID
+    assert run.result.config_path == str(inner_source.resolve())
+    assert run.result.scope_status is ScopeStatus.SCOPE_UNKNOWN
+
+
+def test_single_worktree_automatic_discovery_reports_missing_without_common_dir_fallback(tmp_path: Path) -> None:
+    main = _repository(tmp_path / "main")
+    linked = tmp_path / "external" / "linked"
+    linked.parent.mkdir()
+    _git(main, "worktree", "add", "-qb", "linked-test", str(linked))
+
+    run = resolve_governance_scope(_scope(str(linked / "tracked.txt")), base=tmp_path)
+
+    assert run.result is not None
+    assert run.result.config_status is ConfigStatus.MISSING
+    assert run.result.scope_status is ScopeStatus.SCOPE_UNKNOWN
+
+
+def test_single_worktree_skips_its_root_configuration_before_selecting_parent(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"
+    repository = _repository(workspace / "repository")
+    outer = _configuration(workspace, [("repository", repository)])
+    _configuration(repository, [], body="not: a governed projects configuration\n")
+
+    run = resolve_governance_scope(_scope(str(repository / "tracked.txt")), base=tmp_path)
+
+    assert run.result is not None
+    assert run.result.config_path == str(outer.resolve())
+    assert run.result.object_resolutions[0].status is ObjectStatus.GOVERNED
+
+
+def test_single_worktree_skips_an_independently_nested_ancestor_repository_root(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"
+    outer = _repository(workspace / "outer")
+    child = _repository(outer / "child")
+    source = _configuration(workspace, [("child", child)])
+    _configuration(outer, [], body="not: a governed projects configuration\n")
+
+    run = resolve_governance_scope(_scope(str(child / "tracked.txt")), base=tmp_path)
+
+    assert run.result is not None
+    assert run.result.config_path == str(source.resolve())
+    assert run.result.object_resolutions[0].status is ObjectStatus.GOVERNED
+
+
+def test_single_worktree_starts_at_the_actual_root_not_a_locator_child(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"
+    repository = _repository(workspace / "repository")
+    source = _configuration(workspace, [("repository", repository)])
+    nested = repository / "nested"
+    nested.mkdir()
+    _configuration(nested, [], body="product_name: [\n")
+    target = nested / "new-file.txt"
+
+    run = resolve_governance_scope(_scope(str(target)), base=tmp_path)
+
+    assert run.result is not None
+    assert run.result.config_path == str(source.resolve())
+    assert run.result.object_resolutions[0].status is ObjectStatus.GOVERNED
 
 
 def test_main_and_linked_inputs_are_preserved_and_aggregate_to_one_project(tmp_path: Path) -> None:

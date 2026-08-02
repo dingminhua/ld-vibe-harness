@@ -116,6 +116,7 @@ def _discover(
     path_search_starts: Sequence[Path],
     common_dir_parent_search_starts: Sequence[Path],
     excluded_worktree_roots: Sequence[Path],
+    nearest_ancestor_only: bool,
 ) -> tuple[
     tuple[ConfigurationSearchBasis, ...],
     tuple[DiscoveredConfiguration, ...],
@@ -129,6 +130,19 @@ def _discover(
             return (basis,), (), root
         discovered = DiscoveredConfiguration(_real_absolute(candidate), (basis,))
         return (basis,), (discovered,), root
+
+    if nearest_ancestor_only:
+        if len(path_search_starts) != 1 or common_dir_parent_search_starts:
+            raise ValueError("nearest ancestor discovery requires exactly one path start and no common-dir start")
+        basis = ConfigurationSearchBasis("path", _search_boundary(path_search_starts[0]))
+        excluded = {_real_absolute(root) for root in excluded_worktree_roots}
+        for directory in _ancestors(basis.start):
+            candidate = directory / CONFIGURATION_FILENAME
+            if not candidate.is_file() or _real_absolute(directory) in excluded:
+                continue
+            discovered = DiscoveredConfiguration(_real_absolute(candidate), (basis,))
+            return (basis,), (discovered,), None
+        return (basis,), (), None
 
     bases = tuple(ConfigurationSearchBasis("path", _search_boundary(start)) for start in path_search_starts) + tuple(
         ConfigurationSearchBasis("git.common_dir_parent", _search_boundary(start))
@@ -340,14 +354,17 @@ def read_governed_projects_configuration(
     path_search_starts: Sequence[Path] = (),
     common_dir_parent_search_starts: Sequence[Path] = (),
     excluded_worktree_roots: Sequence[Path] = (),
+    nearest_ancestor_only: bool = False,
     platform_name: str | None = None,
 ) -> ConfigurationReadResult:
     """Discover and parse the current configuration without running Git.
 
-    Automatic discovery treats the supplied starts as directory boundaries.
-    The caller is responsible for deriving common-dir parent starts and the
-    set of Git worktree roots whose repository-local configuration files must
-    not participate in automatic discovery.
+    Automatic discovery normally treats the supplied starts as directory
+    boundaries.  ``nearest_ancestor_only`` instead accepts one path start and
+    stops at the first eligible configuration on that one ancestor chain.
+    The caller is responsible for deriving the search boundary and the set of
+    Git worktree roots whose repository-local configuration files must not
+    participate in automatic discovery.
     """
 
     inputs: list[tuple[str, Path]] = []
@@ -389,6 +406,7 @@ def read_governed_projects_configuration(
         path_search_starts=path_search_starts,
         common_dir_parent_search_starts=common_dir_parent_search_starts,
         excluded_worktree_roots=excluded_worktree_roots,
+        nearest_ancestor_only=nearest_ancestor_only,
     )
     if not discovered:
         return ConfigurationReadResult(

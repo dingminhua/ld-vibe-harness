@@ -151,16 +151,33 @@ def resolve_governance_scope(
         source for item, observation in observations for source in _observation_sources(item, observation, observed_at)
     )
 
-    path_starts = tuple(
-        observation.path.probe_path for _, observation in observations if observation.path.probe_path is not None
-    )
     identities = tuple(
         observation.identity
         for _, observation in observations
         if observation.status == "git_worktree" and observation.identity is not None
     )
-    common_parent_starts = tuple(identity.common_dir.parent for identity in identities)
-    excluded_roots, exclusion_failures = _discovery_exclusions(observations)
+    single_worktree_auto_discovery = (
+        explicit_workspace_root is None
+        and len(requested) == 1
+        and len(identities) == 1
+        and observations[0][1].status == "git_worktree"
+    )
+    if single_worktree_auto_discovery:
+        # A single actual worktree has one configuration route: its own root
+        # and ancestors.  Do not search from a child locator, cwd, or the
+        # shared Git metadata path, and stop at the first eligible file.
+        path_starts = (identities[0].worktree_root,)
+        common_parent_starts: tuple[Path, ...] = ()
+        # Keep repository-local files out of the route, including roots of
+        # independently nested ancestor repositories.  These observations only
+        # define exclusions; they never add a search path.
+        excluded_roots, exclusion_failures = _single_worktree_discovery_exclusions(requested[0], identities[0])
+    else:
+        path_starts = tuple(
+            observation.path.probe_path for _, observation in observations if observation.path.probe_path is not None
+        )
+        common_parent_starts = tuple(identity.common_dir.parent for identity in identities)
+        excluded_roots, exclusion_failures = _discovery_exclusions(observations)
 
     try:
         configuration = read_governed_projects_configuration(
@@ -168,6 +185,7 @@ def resolve_governance_scope(
             path_search_starts=path_starts,
             common_dir_parent_search_starts=common_parent_starts,
             excluded_worktree_roots=excluded_roots,
+            nearest_ancestor_only=single_worktree_auto_discovery,
         )
     except ConfigurationAccessError:
         return _global_technical_run(
@@ -384,6 +402,31 @@ def _discovery_exclusions(
             and observed_parent.identity.worktree_root == candidate_root
         ):
             roots.add(candidate_root)
+    return tuple(sorted(roots, key=str)), tuple(failures)
+
+
+def _single_worktree_discovery_exclusions(
+    item: ScopeDescriptor,
+    identity: GitWorktreeIdentity,
+) -> tuple[tuple[Path, ...], tuple[tuple[ScopeDescriptor, TechnicalFailure], ...]]:
+    """Return worktree-root exclusions on the one permitted ancestor chain.
+
+    This is an exclusion-only observation: it must not add a common-dir or
+    sibling search route.  A nested independent repository is not visible in
+    the current worktree's Git metadata, so each ancestor itself is checked.
+    """
+
+    roots = {identity.worktree_root}
+    failures: list[tuple[ScopeDescriptor, TechnicalFailure]] = []
+    for directory in identity.worktree_root.parents:
+        observed = resolve_git_identity(".", base=directory)
+        if observed.status == "technical_failure":
+            assert observed.failure is not None
+            failures.append((item, observed.failure))
+            continue
+        if observed.status == "git_worktree" and observed.identity is not None:
+            if observed.identity.worktree_root == directory:
+                roots.add(directory)
     return tuple(sorted(roots, key=str)), tuple(failures)
 
 

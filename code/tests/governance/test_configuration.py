@@ -293,6 +293,25 @@ def test_different_real_configuration_paths_report_conflict_even_if_content_matc
     assert {candidate.path for candidate in result.discovered} == {first.resolve(), second.resolve()}
 
 
+def test_nearest_ancestor_discovery_stops_at_the_first_candidate(tmp_path: Path) -> None:
+    outer = tmp_path / "outer"
+    inner = outer / "inner"
+    worktree = inner / "project"
+    outer_source = _write_configuration(outer)
+    inner_source = _write_configuration(inner, "product_name: [\n")
+    worktree.mkdir(parents=True)
+
+    result = read_governed_projects_configuration(
+        path_search_starts=(worktree,),
+        nearest_ancestor_only=True,
+    )
+
+    assert result.status is ConfigurationStatus.INVALID
+    assert result.config_path == inner_source.resolve()
+    assert {candidate.path for candidate in result.discovered} == {inner_source.resolve()}
+    assert outer_source.resolve() not in {candidate.path for candidate in result.discovered}
+
+
 def test_symlinked_configuration_is_deduplicated_by_real_absolute_path(tmp_path: Path) -> None:
     source_workspace = tmp_path / "source"
     linked_workspace = tmp_path / "linked"
@@ -320,8 +339,9 @@ def test_automatic_discovery_skips_worktree_root_file_and_continues_upward(tmp_p
     nested.mkdir(parents=True)
 
     result = read_governed_projects_configuration(
-        path_search_starts=(nested,),
+        path_search_starts=(worktree,),
         excluded_worktree_roots=(worktree,),
+        nearest_ancestor_only=True,
     )
 
     assert result.status is ConfigurationStatus.VALID
