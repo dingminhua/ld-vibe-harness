@@ -14,7 +14,7 @@ success_criterion_definitions:
 - criterion_id: criterion-validation-review-and-isolation
   statement: Code Implementation Plan、目标 source-contract test、既有 presentation/controller/generated-contract 回归、git diff --check、路径白名单、workcase-0046 精确回读、全库事实完整性、受保护 dirty 哈希隔离和独立只读结果复核全部完成；若唯一表无法机械定位，或实现需要其它路径、production 行为或 Specs 变化，则取消受影响 item 并按结果链安全收敛。
 priority: P1
-phase: controller_checking
+phase: human_closure_confirming
 plan_version: 1
 work_items:
 - item_id: item-audit-source-contract
@@ -169,7 +169,38 @@ execution_approval:
   source_refs:
   - turn:human-approve-workcase-0046-plan-v1
 result_version: 1
+success_criterion_results:
+- criterion_id: criterion-exact-inline-code-table-contract
+  outcome: satisfied
+  summary: 唯一 source-contract test 精确定位 21 §9.3 的唯一 H3 和六列表，要求 7 个 open phase 行与 1 个 closed 行、精确表头/分隔行/顺序/首列载体及五个 inline-code token；裸 null 失败，只有 progress_step 的 inline-code `null` 转为 None。
+- criterion_id: criterion-spec-python-exact-equality
+  outcome: satisfied
+  summary: 表格解析产物直接与 PHASE_PRESENTATION 和 CLOSED_PRESENTATION 全等比较；测试没有维护第二张 phase 值映射，期望 phase 顺序来自当前 Python 常量而非手写清单。
+- criterion_id: criterion-mutation-negative-matrix
+  outcome: satisfied
+  summary: 九类 mutation 均通过 _replace_table 变换实际抽取的规范表文本或行，并复用同一 _assert_contract 严格解析/全等入口，覆盖缺、增、重复、乱序、列序、status/phase 格式、裸 null、未知 token 和错误映射值。
+- criterion_id: criterion-no-duplicate-runtime-model
+  outcome: satisfied
+  summary: 增量只含两份 Code Plan 路径、唯一测试文件和 0046；未重建 blocked、Gate 2、unresolved 或 phase transition 运行时模型，既有未修改的 generated-contract test 继续证明 Python renderer 到 generated TypeScript 的字节一致性。
+- criterion_id: criterion-validation-review-and-isolation
+  outcome: satisfied
+  summary: 合并回归 40 passed，目标 Ruff/format、diff check、精确事实回读与全库 125 对象完整性通过；独立只读 Reviewer 对提交 fc05d278e 结论 pass。提交精确只含 4 个授权路径，Index 为空，列名受保护 dirty 哈希保持批准基线，工作区其它 Web/FileAsset/既有 dirty 均被排除。
+result_summary: 已交付 WorkCase 投影规范到 Python 的测试侧精确漂移合同：21 §9.3 保持唯一语义权威，测试严格解析当前六列表并与唯一 Python 运行时映射全等比较，九类基于实际表文本的 mutation 确定性拦截结构与值漂移。未修改 Specs、production Python、Web、生成器或 generated TypeScript，也未引入运行时 Markdown 解析或第二行为模型。
+validation_summary: 提交 fc05d278e 的目标 source-contract、既有 Python presentation、Controller continuation 与 Python→generated TypeScript 合同回归 40 passed；新测试 Ruff check 和 format check、git diff --check、0046 精确回读和全库完整性通过（审查时 125 个对象）。独立 Reviewer 复跑并确认 pass；提交只含 4 个授权路径，受保护 dirty 哈希不变，其它未暂存 Web/FileAsset/既有 dirty 未纳入。本验证证明当前规范载体与 Code 映射一致，不证明 21 的领域语义天然正确。
+controller_check_summary: Controller 已核对全部 work item terminal、result version 1 的五项成功标准、实际提交 fc05d278e、回归与 dirty 隔离证据，并消费独立只读 Reviewer 的 pass 结论；没有 Reviewer feedback 需要返工，结果边界未超出批准授权。
+result_reviews:
+- reviewer: reviewer-wc0046-result-01
+  reviewed_at: '2026-08-03T01:45:38+08:00'
+  subject_version: 1
+  scope: 只读审查实现提交 fc05d278e（parent 2d5a38c54）、当前工作区、0046 plan/result version 1 与五项成功标准、21 §9.3、Python renderer/既有生成链测试、Code Plan、验证和 dirty 隔离证据。
+  conclusion: pass
+closure_proposal:
+  proposed_outcome: completed
+  proposed_disposition_summary: 已建立 21 §9.3 规范载体到唯一 Python 呈现映射的测试侧精确漂移合同，五项成功标准全部满足，独立只读 Reviewer 结论 pass；没有未完成的本案责任、残余责任或受限后续需要从 0046 路由。
+summary: result version 1 已完成：规范到 Python 的精确漂移合同、40 项回归、独立 Reviewer pass 与 completed 关闭提案均已冻结。
+resume_from: 精确回读当前快照并仅消费 Human 对 completed 关闭提案的 Gate 2 决定；未获批准不得关闭。
+waiting_on: Human 对 workcase-0046 当前 completed 关闭提案作 Gate 2 决定。
 object_id: workcase-0046
 fact_type_key: workcase
 created_at: '2026-08-03T01:24:55.038486+08:00'
-updated_at: '2026-08-03T01:41:09.781077+08:00'
+updated_at: '2026-08-03T01:48:53.658670+08:00'
