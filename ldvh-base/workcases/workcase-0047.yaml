@@ -1,6 +1,5 @@
+status: closed
 title: 建立 WorkCase 关闭候选的只读确定性投影
-status: open
-priority: P2
 goal: 以 specs/21 继续作为 WorkCase 关闭语义唯一权威，抽出 proposal 到完整非托管 closed after 的唯一纯映射，供 close-workcase 的期望 after 校验与新的 prepare-closed-workcase-candidate 只读 Helper 操作共同消费；候选操作只从当前 mechanically valid 的 open/human_closure_confirming 快照返回 source fingerprint、可直接提交给 close-workcase 的完整非托管 fact_object candidate 及既有 proposal route target 指纹映射依据，不写入、不生成或改写自然语言、不推断 Human Gate 2 决定、授权或“可关闭”结论，真实关闭继续由 close-workcase 在决定时点重新读取并执行 CAS、target、关系与入向依赖检查。
 scope: 覆盖 specs/21-WorkCase-工作项.md 对 prepare-closed-workcase-candidate 的权威只读合同与 close-workcase 共享映射边界；覆盖 specs/attachments/05.Att.02-事实对象机械校验目录.md 的覆盖登记；覆盖 code/plans/workcase-closed-candidate-projection.md 与 code/plans/README.md；覆盖 code/ldvh/facts/workcase_update.py 的共享纯映射、code/ldvh/helper/operations/workcase_close_candidate_request.py、workcase_close_candidate_operation.py 与 operations/__init__.py；覆盖新 candidate request/operation tests、code/tests/facts/test_workcase_application.py、code/tests/helper/test_workcase_write_operation.py、test_workcase_update_request.py、test_cli_process.py、test_service.py、code/tests/specs/test_repository.py、test_fact_mechanical_validation_catalog.py 与 code/tests/packaging/test_distribution_lifecycle.py 的直接合同和回归。排除 00/04/05 规范改写、04.Att.01、Schema/事实字段、Web/API/i18n/docs、行动模板、运行时 Markdown 解析、持久 candidate、自动关闭、其它事实对象（除 workcase-0047 自身生命周期写回）、其它项目、push、PR、发布、外部消息与破坏性 Git。
 success_criterion_definitions:
@@ -14,174 +13,6 @@ success_criterion_definitions:
   statement: 测试覆盖 completed、partial/accept_stop、route_existing 去重、suggest_spark 不形成 relation、urls 与 contributed-to/has-file-asset/related-to 保留；覆盖共享映射与 close validator parity、proposal/保留字段 mutation、请求闭集、无写副作用，以及 source 改变后旧 candidate 的 source fingerprint 不能作为真实 close CAS 依据。05.Att.02 只登记该操作对既有 workcase-proposal-atomic-close 规则族的覆盖，不复制 21 的映射或输入输出语义。
 - criterion_id: criterion-validation-review-commit-isolation
   statement: 完成 Code Implementation Plan、目标与既有 close/helper/specs/packaging 回归、Ruff check/format、git diff --check、路径白名单、workcase-0047 精确回读、全库事实完整性、既有 dirty 哈希隔离、独立只读结果复核和本地语义提交；若实现需要超出白名单、形成第二语义实现、读取 target 预判可关闭或改变写入口，则取消受影响 item 并按结果链安全收敛。
-phase: human_closure_confirming
-plan_version: 1
-work_items:
-- item_id: item-01
-  goal: 固定关闭候选的权威只读合同并形成当前 Code Implementation Plan。
-  expected_result: 21 只新增与既有关闭语义一致的只读 operation/结果边界，05.Att.02 仅登记覆盖；code/plans/workcase-closed-candidate-projection.md 及 README 明确接口、共享映射、无副作用、诊断、测试与退出边界。
-  status: completed
-  approach_summary: 先以 spark-0044、21 §6.7/§7.3/§11.3 和现有 close-workcase 实现为依据形成 Code Plan，再修改最小权威规范；不触及 00/04/05、Web、Schema 或行动模板。
-  result_summary: 已形成并登记当前 Code Implementation Plan；specs/21 已定义只读候选操作、完整非托管 closed 候选、proposal-stored mapping basis、source fingerprint 失效和真实 close 事务边界。05.Att.02 的覆盖登记留待测试实现完成时同步。
-- item_id: item-02
-  goal: 抽出 proposal 到 closed 非托管 after 的唯一纯映射并让 close validator 消费。
-  expected_result: workcase_update.py 中只有一份字段映射；纯函数生成完整非托管 candidate，_close_mapping_issues 直接以该结果校验调用方 after，既有关闭行为保持等价。
-  status: completed
-  depends_on:
-  - item-01
-  approach_summary: 从当前 _close_mapping_issues 内部计算抽出确定性 projector；用稳定 ID/目标身份处理 residual 与 routed-to，并保留三类非 proposal relations，禁止引入第二状态机或语义判断。
-  result_summary: 已在 workcase_update.py 建立完整非托管 closed candidate 的唯一纯 projector 与 proposal-stored route basis；close mapping validator 直接消费同一投影，同时保留 residual 按 ID、relations 按身份集合比较的既有无序语义，完整 close application 回归通过。
-- item_id: item-03
-  goal: 实现并登记 prepare-closed-workcase-candidate 只读 Helper 操作。
-  expected_result: 新 request/operation 只接受 fact_ref 与共同定位，读取当前合法 before 后返回 source fingerprint、完整非托管 candidate 与 proposal-stored mapping basis；capabilities 和安装发行快照可发现，全部失败路径零写。
-  status: completed
-  depends_on:
-  - item-02
-  approach_summary: 复用现有 governance/read boundary 和共享 projector，不调用耐久写、协调锁或 target validation；invalid/unavailable/rejected 分层沿用 Helper 共同响应。
-  result_summary: 已实现并登记 prepare-closed-workcase-candidate 只读 Helper；请求只接受 fact_ref 与共同定位，操作只读 source、不读 target、不取锁、不写入。相同 route target 的 proposal 指纹冲突会复用纯 snapshot parser 拒绝；capabilities、service/CLI、规范目录和发行快照均纳入授权矩阵。
-- item_id: item-04
-  goal: 建立共享映射、只读边界和公开操作的完整回归证据。
-  expected_result: 白名单测试覆盖正向映射、parity、mutation、输入闭集、phase/status/invalid/unavailable、无 target read/无锁/无写、旧 fingerprint 与真实 close CAS 边界；目标回归、Ruff、diff、事实完整性与 dirty 隔离通过。
-  status: cancelled
-  depends_on:
-  - item-03
-  approach_summary: 新增 candidate request/operation 直接测试并扩充现有 close/application、Helper registry、spec source-contract 与 packaging tests；不创建 Web 或第二模型测试。
-  result_summary: 授权白名单矩阵 171 passed，目标 Ruff、format 与 git diff --check 通过，独立 Reviewer 复审 pass；但全量 code/tests 因新增公开 operation 使白名单外 code/tests/doctor/test_doctor.py 固定 operation_count 19→20 而失败，另有既有基线失败。该文件不在 execution_authorization 内，故取消全量通过部分并保留明确残余，不声称 criterion-validation-review-commit-isolation 已满足。
-creation_reviews:
-- reviewer: Codex independent reviewer (/root/review_wc0045_plan)
-  reviewed_at: '2026-08-03T02:18:14+08:00'
-  subject_version: 1
-  scope: 独立只读复核 plan_version=1 的目标、scope、五项成功标准、四个局部 work items 与完整 execution_authorization；重点检查共享纯映射、只读候选边界、测试白名单、stale source fingerprint 语义、Code 托管字段排除、质量 Gate action 引用和超界收敛。未修改文件。
-  conclusion: pass
-  feedback:
-  - 05.Att.02 只登记既有 workcase-proposal-atomic-close 规则族的读取/候选覆盖，不复制 21 的映射或输入输出语义。
-  - 授权与 Code Plan 必须列出实际测试文件白名单，不能使用宽泛的 tests 范围。
-  - stale candidate 只证明 source fingerprint 绑定当前读取且旧值不能作为真实 close CAS 依据；candidate 不接受 expected fingerprint，也不负责 target 当前有效性。
-  - candidate 必须是可提交给 close-workcase 的完整非托管 fact_object，不含 object_id、fact_type_key、created_at、updated_at 或关闭 event time。
-  controller_resolution: 已全部采纳：criterion 与 scope 明确 05.Att.02 仅登记覆盖；授权 target_scope 列出实际测试白名单；stale 测试限定为旧 source fingerprint 无法通过真实 close CAS；输入明确不含 expected fingerprint；candidate 精确排除全部 Code 托管身份/时间与 event time，并禁止 target 当前有效性判断。
-  covered_quality_gate_ids:
-  - independent-result-review
-execution_authorization:
-  authorized_actions:
-  - action_id: authorization-spec-code-plan
-    summary: 形成并修改关闭候选只读合同与 Code Implementation Plan。
-    target_scope: 仅 specs/21-WorkCase-工作项.md、code/plans/workcase-closed-candidate-projection.md、code/plans/README.md。
-    effect_scope: 允许在 21 增加 prepare-closed-workcase-candidate 的 effect=read 声明、输入结果与 close 共享映射边界，并形成/登记 Code Plan；不得改写 00/04/05、字段 Schema、Web 或行动模板。
-    risk_summary: 规范表述若越界可能形成第二关闭语义源或把候选误写成关闭授权。
-    rollback_summary: 在本地提交前撤销本 action 的候选 diff；若无法保持 21 唯一权威则停止并取消受影响 item。
-    rule_refs:
-    - specs/07-Code 工程实践规范.md
-    - specs/21-WorkCase-工作项.md
-    - specs/31-事实对象判定与受控创建行动模板.md
-  - action_id: authorization-shared-projector
-    summary: 在现有 WorkCase 写核心中抽取唯一关闭纯映射。
-    target_scope: 仅 code/ldvh/facts/workcase_update.py。
-    effect_scope: 允许抽出纯 projector 并让 _close_mapping_issues 与候选入口共同消费；保持 close-workcase 写事务、CAS、target、关系、依赖和写后审计边界不变。
-    risk_summary: 映射遗漏或双实现会导致候选与真实关闭漂移。
-    rollback_summary: 恢复到原 validator 实现并保留测试诊断；未通过 parity 与既有 close 回归时不得提交或声明完成。
-    rule_refs:
-    - specs/07-Code 工程实践规范.md
-    - specs/21-WorkCase-工作项.md
-  - action_id: authorization-readonly-helper
-    summary: 实现和登记只读关闭候选 Helper 操作。
-    target_scope: 仅新增 code/ldvh/helper/operations/workcase_close_candidate_request.py、code/ldvh/helper/operations/workcase_close_candidate_operation.py，以及 code/ldvh/helper/operations/__init__.py。
-    effect_scope: 允许解析仅 fact_ref/共同定位的请求、复用现有读取边界和共享 projector、形成只读响应并登记 implementation；禁止耐久写、协调锁、target 当前读取或关闭调用。
-    risk_summary: 错误 effect 或响应措辞可能把 stale candidate 误解为关闭预检、授权或当前 target 证明。
-    rollback_summary: 移除新 operation 登记与新增文件，保留 close-workcase 原能力；任何写副作用或语义越界即停止。
-    rule_refs:
-    - specs/04-Helper CLI 服务规范.md
-    - specs/21-WorkCase-工作项.md
-  - action_id: authorization-tests-catalog
-    summary: 建立候选操作、共享映射与公开能力的直接测试和机械覆盖登记。
-    target_scope: 仅 specs/attachments/05.Att.02-事实对象机械校验目录.md；新增 code/tests/helper/test_workcase_close_candidate_request.py、code/tests/helper/test_workcase_close_candidate_operation.py；现有 code/tests/facts/test_workcase_application.py、code/tests/helper/test_workcase_write_operation.py、code/tests/helper/test_workcase_update_request.py、code/tests/helper/test_cli_process.py、code/tests/helper/test_service.py、code/tests/specs/test_repository.py、code/tests/specs/test_fact_mechanical_validation_catalog.py、code/tests/packaging/test_distribution_lifecycle.py。
-    effect_scope: 允许新增/调整直接正负、parity、registry、source-contract 与 packaging tests；05.Att.02 只登记覆盖，不复制 21 语义。
-    risk_summary: 测试若维护第二张映射或范围过宽，会把重复实现固定下来或误报只读能力。
-    rollback_summary: 删除越界测试和重复期望，回到共享 projector 的单一路径；目标矩阵不完整则不声明通过。
-    rule_refs:
-    - specs/05-事实模型基础规范.md
-    - specs/07-Code 工程实践规范.md
-    - specs/21-WorkCase-工作项.md
-  - action_id: authorization-validation
-    summary: 执行本案白名单内的只读机械验证与工作区隔离核对。
-    target_scope: 仅授权路径、相关 pytest 节点、Ruff、git diff --check/status/diff、受保护 dirty 哈希、Helper 精确读取与 check-fact-integrity。
-    effect_scope: 允许运行目标与既有 close/helper/specs/packaging 回归、Ruff check/format check、diff 和哈希核对；工具缓存等普通测试副作用仅限既有忽略范围。
-    risk_summary: 长测试或并发工作区变化可能使结果过期，dirty 文件可能被误纳入。
-    rollback_summary: 停止测试、清理仅由本 action 产生且可安全识别的忽略缓存；重新核对 HEAD、Index、路径白名单与 protected dirty 后再继续。
-    rule_refs:
-    - specs/03-事实源与信息溯源规范.md
-    - specs/07-Code 工程实践规范.md
-    - specs/21-WorkCase-工作项.md
-  - action_id: authorization-workcase-writeback
-    summary: 通过 Helper 写回 workcase-0047 的批准后检查点与结果链。
-    target_scope: 仅 governed project ldvh 的 workcase-0047 当前事实对象。
-    effect_scope: 允许按 21 和获批基线使用 update-workcase/close-workcase 写 plan approval、执行检查点、结果、独立 review、关闭提案和 Human Gate 2 决定；每次写后精确回读并全库完整性审计。
-    risk_summary: 错误 phase、版本或摘要会污染当前事实，事实写入不可用普通补丁修复。
-    rollback_summary: 写入失败或审计不完整即停止后续事实写入与提交，保留实际残留并按 Helper 回读结果恢复。
-    rule_refs:
-    - specs/05-事实模型基础规范.md
-    - specs/21-WorkCase-工作项.md
-    - specs/32-事实对象生命周期变更与承接处置行动模板.md
-    - specs/34-WorkCase获批计划执行行动模板.md
-  - action_id: authorization-delegate-independent-review
-    summary: 委派本案所需的独立只读结果复核。
-    target_scope: 仅 workcase-0047 当前批准基线、授权路径 diff、测试与验证证据。
-    effect_scope: 允许向未实施本案的 Reviewer 提供只读审查输入；不得写文件、改变事实、替 Human 决定或扩展范围。
-    risk_summary: Reviewer 不独立、输入不完整或结果不可回指会使质量 Gate 不成立。
-    rollback_summary: 拒绝不独立或不可回指的输出，重新形成完整只读输入并委派；不保存伪造 receipt。
-    rule_refs:
-    - specs/06-行动模板基础规范.md
-    - specs/21-WorkCase-工作项.md
-  - action_id: authorization-independent-result-review
-    summary: 执行并消费 mandatory independent read-only result review。
-    target_scope: 仅本案实际交付 diff、成功标准、验证输出、提交候选与残余范围。
-    effect_scope: 允许独立 Reviewer 给出 pass/revise/block 与 criterion 逐项反馈，Controller 只在当前授权内处置并通过 Helper 写回 result review。
-    risk_summary: 把 review 当作 Human 验收或机械证明会扩大结论。
-    rollback_summary: 不接受越界或证据不足的结论；有实质 feedback 时在授权内返工并重新复核，无法处置则安全收敛。
-    rule_refs:
-    - specs/06-行动模板基础规范.md
-    - specs/21-WorkCase-工作项.md
-  - action_id: authorization-local-commits
-    summary: 按本案语义交付单位形成受控本地 Git 提交。
-    target_scope: 仅上述授权规范、Code Plan、production/test 文件与 workcase-0047 受控写回；逐次显式暂存，不包含既有 dirty。
-    effect_scope: 允许在 precheck-git-commit 通过后创建本地语义提交；检查点写回可归组，不要求每次事实转换单独提交。
-    risk_summary: 共享 worktree 中既有或并发变更可能被误暂存，提交边界可能混入无关内容。
-    rollback_summary: 提交前清空错误 Index 并重新显式暂存授权路径；提交后若发现范围错误，不使用破坏性 reset，停止并交还 Human 决定。
-    rule_refs:
-    - specs/03-事实源与信息溯源规范.md
-    - specs/30-Git受控提交行动模板.md
-    - specs/34-WorkCase获批计划执行行动模板.md
-  quality_gates:
-  - gate_id: independent-result-review
-    reviewer_mode: independent-read-only
-    delegation_action_id: authorization-delegate-independent-review
-    result_review_action_id: authorization-independent-result-review
-  action_ceiling: 仅当前 ldvh worktree、上述逐项白名单路径、workcase-0047 受控事实写回、本地验证/独立只读复核与本地语义提交；不触碰其它项目、其它事实对象、Web、Schema、行动模板、远端或发布面。
-  prohibited_actions:
-  - 绕过 Helper 直接创建或修改 ldvh-base 中任何事实载体
-  - 修改 workcase-0047 以外的事实对象或创建新的 Spark/ADR/Pitfall/Study/FileAsset/WorkCase
-  - 修改 specs/00、04、05、04.Att.01、事实字段 Schema、Web/API/i18n/docs、行动模板或其它未列路径
-  - 让 candidate 读取或验证 route target 当前状态、取得写锁、写入事实、调用 close-workcase、自动关闭或推断 Human Gate 2/授权/工作完成
-  - 在测试或 production 中维护第二份 proposal 到 terminal 字段映射
-  - git push、PR、merge、rebase、发布、外部消息、环境配置或破坏性 Git 操作
-  - 暂存或提交 spark-0040、workcase-0036 至 0039、file-asset-0003、focus-page、screenshots 或其它既有/并发 dirty
-  allowed_adjustments: 只允许在授权路径内进行不改变 21 语义的函数/模块拆分、诊断与测试组织调整、安全重试和路径内格式修正；新增路径必须是已列 candidate request/operation/test/Code Plan 文件。不得改变公开 operation 的只读性质、输入最小闭集、候选输出边界、close-workcase 写事务或 action ceiling；任何 PlanDelta 仍需 fresh 独立方案复核。
-  verification_and_rollback: 编码前形成 Code Plan；逐项运行新 candidate request/operation、共享 mapping/close application、Helper registry/service/CLI、spec source-contract、mechanical catalog 与 packaging tests，再运行相关既有 close 回归、Ruff check/format check、git diff --check。每次事实写回后精确回读 workcase-0047 并运行 check-fact-integrity；每次提交前核对 HEAD、Index、显式路径白名单与 protected dirty 哈希并运行 precheck-git-commit。失败时停止受影响动作，只撤销本案可明确识别且尚未提交的候选变化，不修改或删除既有 dirty。
-  out_of_bounds_handling: 不执行超界动作，不在执行期请求第三次扩权；据实取消受影响 item 的未授权部分，保留已形成结果，全部 item terminal 后按 controller_checking、independent_reviewing、closure_preparing、human_closure_confirming 结果链安全收敛并向 Human 交还实际残余。
-relations:
-- relation_key: related-to
-  target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0044
-execution_approval:
-  subject_version: 1
-  approved_at: '2026-08-03T02:25:47+08:00'
-  summary: Human 已批准 workcase-0047 plan version 1 及其完整 execution_authorization。
-  baseline_fingerprint: dd3b4006ccfec93e9bfc1fa4d38ddd4c16b3f6f7599626a66508d71cd8b30a74
-  source_refs:
-  - user-gate1-approval-workcase-0047-plan-version-1
-summary: 终态保留审查已完成：实际产物、五项 criterion 判断、授权与全量验证边界、Doctor 剩余责任及后续新 WorkCase/Gate1 要求均已吸收到 terminal 保留字段或关闭提案；等待 Human Gate 2。
-result_version: 1
 success_criterion_results:
 - criterion_id: criterion-authoritative-readonly-contract
   outcome: satisfied
@@ -200,27 +31,18 @@ success_criterion_results:
   summary: Code Plan、授权矩阵 171 passed、目标 Ruff/format/diff check、事实完整性、dirty 哈希隔离、独立实现复核和本地语义提交均已完成；但全量 code/tests 仍有 21 failures，其中新增公开操作直接暴露白名单外 Doctor operation_count 19→20 固定计数，另 20 项为既有基线失败。未获准修改 Doctor 测试，因此不能宣称该标准完整满足。
 result_summary: 已建立 proposal 到 closed 非托管 fact_object 的唯一确定性 projector，并让 close-workcase 校验与新增只读候选 Helper 共同消费；候选绑定刚读取的 source fingerprint 与 proposal-stored mapping basis，不读取 target、不写入、不推断 Gate 2。冲突 route target fingerprint 已改为确定性拒绝。实现与 workcase-0047 已形成隔离的本地语义提交；全量 Doctor 固定计数问题保留为范围外残余。
 validation_summary: 授权白名单回归 171 passed；其中共享 projector 与候选 operation 定向复测 102 passed。目标 Ruff check、format check、git diff --check 通过；全库事实完整性 complete（126 对象），既有 dirty 哈希保持不变，提交仅含 18 个授权路径。独立只读实现复核结论 pass。全量 code/tests 为 1465 passed、10 skipped、21 failed：1 项为新增公开 operation 使白名单外 Doctor 固定计数 19→20，另 20 项为既有 WorkCase fixture、diagnostic member_count 与 linked-worktree capture 基线失败；full-v4 首个 code-lint 亦被既有白名单外 Ruff 问题阻断。因此未宣称全量测试或第五项标准通过。
-controller_check_summary: Controller 已按当前批准基线逐项核对交付、负向边界、验证与提交隔离：前四项 criterion 有直接实现和授权矩阵支撑；第五项因 Doctor 固定计数残余明确记为 not_satisfied。未把 Reviewer pass、局部矩阵或语义提交解释为 Human 验收，也未把白名单外失败隐藏为通过。
-result_reviews:
-- reviewer: Codex independent reviewer (/root/review_wc0045_plan)
-  reviewed_at: '2026-08-03T03:20:42+08:00'
-  subject_version: 1
-  scope: 独立只读复核 workcase-0047 result_version=1、当前 mechanically-valid source snapshot、本地语义提交的 18 个授权路径、共享关闭投影、候选 Helper 边界、授权测试与全量 code/tests 失败分类；未修改文件。
-  conclusion: pass_with_followups
-  feedback:
-  - 结果完整且诚实：前四项标准有共享纯映射、只读入口、102 项定向回归、171 项授权矩阵与提交范围支撑；第五项不得标记为 satisfied。
-  - Doctor operation_count 19→20 是本案新增公开 operation 直接触发的已知失败，不是既有基线；它不在当前授权白名单内，不能擅改但必须作为明确剩余责任。
-  - 其余 20 项全量失败属于既有基线，必须与上述新增失败分开，不得声称全量通过。
-  controller_resolution: 已全部采纳：保持 criterion-validation-review-commit-isolation=not_satisfied；将新增 Doctor expectation 更新与其余 20 项既有失败分开；关闭提案使用 partial，并把 Doctor 更新写成结构化 accept_stop residual，明确若 Human 接受当前停止，需由新的 WorkCase 与 Gate1 承接，当前运行不越过白名单修复。
-closure_proposal:
-  proposed_outcome: partial
-  proposed_disposition_summary: 当前 WorkCase 以 partial 停止：关闭候选的共享纯映射、只读 Helper 边界与授权回归已完成；criterion-validation-review-commit-isolation 仍未满足。新增公开 operation 直接触发的 Doctor operation_count 19→20 expectation 更新未在本案授权内完成，作为一项 accept_stop 剩余责任保留；若 Human 接受当前停止，后续必须由新的 WorkCase 与 Gate1 明确授权承接。其余 20 项全量测试失败按既有基线保留在 validation_summary，不作为本案已完成或本案新增责任。
-  residual_decisions:
-  - residual_id: residual-doctor-operation-count
-    summary: 更新 code/tests/doctor/test_doctor.py 对公开 Helper operation_count 的兼容 expectation，并在新的 WorkCase/Gate1 中验证该测试与公开能力发现矩阵；当前 WorkCase 因路径不在 execution_authorization 白名单内未执行。
-    proposed_disposition: accept_stop
-waiting_on: Human Gate 2 对 workcase-0047 当前 partial 关闭提案的明确决定
+closure_outcome: partial
+disposition_summary: 当前 WorkCase 以 partial 停止：关闭候选的共享纯映射、只读 Helper 边界与授权回归已完成；criterion-validation-review-commit-isolation 仍未满足。新增公开 operation 直接触发的 Doctor operation_count 19→20 expectation 更新未在本案授权内完成，作为一项 accept_stop 剩余责任保留；若 Human 接受当前停止，后续必须由新的 WorkCase 与 Gate1 明确授权承接。其余 20 项全量测试失败按既有基线保留在 validation_summary，不作为本案已完成或本案新增责任。
+residual_responsibilities:
+- residual_id: residual-doctor-operation-count
+  summary: 更新 code/tests/doctor/test_doctor.py 对公开 Helper operation_count 的兼容 expectation，并在新的 WorkCase/Gate1 中验证该测试与公开能力发现矩阵；当前 WorkCase 因路径不在 execution_authorization 白名单内未执行。
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0044
 object_id: workcase-0047
 fact_type_key: workcase
 created_at: '2026-08-03T02:20:50.040540+08:00'
-updated_at: '2026-08-03T03:23:05.871098+08:00'
+updated_at: '2026-08-03T03:33:13.779466+08:00'
