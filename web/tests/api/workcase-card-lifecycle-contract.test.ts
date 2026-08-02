@@ -225,6 +225,31 @@ test('plan confirmation keeps its compact Gate 1 entry for the list and cognitio
   assert.match(notice, /ldvh-card-decision-title min-w-0 text-rose-700\/80 dark:text-rose-200\/80/);
 });
 
+test('WorkCase cards use compact authorization tabs and limit allowed actions to their titles', () => {
+  const list = source('src/pages/ObjectList.tsx');
+  const authorizationStart = list.indexOf('function ExecutionAuthorizationCard');
+  const authorizationEnd = list.indexOf('function GateOneValue', authorizationStart);
+  const authorization = list.slice(authorizationStart, authorizationEnd);
+
+  assert.ok(authorizationStart >= 0 && authorizationEnd > authorizationStart);
+  assert.match(authorization, /useState<"actions" \| "prohibited" \| "prerequisites" \| null>\(null\)/);
+  assert.match(authorization, /grid w-full min-w-0 grid-cols-3/);
+  for (const tab of ['actions', 'prohibited', 'prerequisites']) {
+    assert.match(authorization, new RegExp(`aria-controls="workcase-card-authorization-${tab}"`));
+  }
+  assert.match(authorization, /const tabTypography = compact \? 'ldvh-meta' : 'ldvh-caption-strong';/);
+  assert.match(authorization, /key=\{String\(action\.action_id\)\}[\s\S]{0,320}\{String\(action\.summary\)\}/);
+  assert.doesNotMatch(authorization, /action\.(scope|effect|risk|rollback|rule_refs)/);
+  assert.match(authorization, /rounded-lg border border-ldvh-border bg-ldvh-panel px-3 py-2\.5/);
+  assert.match(authorization, /text-sky-600 dark:text-sky-300/);
+  assert.match(authorization, /bg-emerald-500 dark:bg-emerald-300/);
+  assert.match(authorization, /text-rose-700 dark:text-rose-200/);
+  assert.match(authorization, /text-violet-700 dark:text-violet-200/);
+  assert.match(authorization, /mt-2 size-1 shrink-0 rounded-full/);
+  assert.match(authorization, /function AuthorizationCardItems/);
+  assert.match(authorization, /<p className=\{`ldvh-caption-strong min-w-0 \$\{textClass\}`\}>\{item\}<\/p>/);
+});
+
 test('WorkCase cards keep a neutral outer surface and move emphasis with the current decision', () => {
   const list = source('src/pages/ObjectList.tsx');
   const goal = list.slice(list.indexOf('function WorkCaseGoalSection'), list.indexOf('function WorkCaseBlockingNotice'));

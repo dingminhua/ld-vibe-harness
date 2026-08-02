@@ -364,6 +364,7 @@ function ExecutionAuthorizationCard({
   compact: boolean;
 }) {
   const { t } = useI18n();
+  const [activeTab, setActiveTab] = useState<"actions" | "prohibited" | "prerequisites" | null>(null);
   if (!isValidExecutionAuthorization(authorization)) {
     return (
       <GateOneFieldSection
@@ -379,97 +380,96 @@ function ExecutionAuthorizationCard({
   const actions = authorization.authorized_actions as Record<string, unknown>[];
   const prohibitedActions = authorization.prohibited_actions as string[];
   const prerequisites = (authorization.human_prerequisites ?? []) as string[];
+  const tabTypography = compact ? 'ldvh-meta' : 'ldvh-caption-strong';
+  const toggleTab = (tab: "actions" | "prohibited" | "prerequisites") => {
+    setActiveTab((current) => current === tab ? null : tab);
+  };
+  const tabStyles = {
+    actions: {
+      button: 'border-emerald-400/35 text-emerald-800/85 hover:bg-emerald-500/[0.06] dark:text-emerald-100/85',
+      selected: 'border-emerald-400/50 border-b-transparent bg-emerald-500/[0.08]',
+      panel: 'border-emerald-400/35 bg-emerald-500/[0.035]',
+    },
+    prohibited: {
+      button: 'border-rose-400/35 text-rose-700/85 hover:bg-rose-500/[0.06] dark:text-rose-200/85',
+      selected: 'border-rose-400/50 border-b-transparent bg-rose-500/[0.08]',
+      panel: 'border-rose-400/35 bg-rose-500/[0.035]',
+    },
+    prerequisites: {
+      button: 'border-violet-400/35 text-violet-700/85 hover:bg-violet-500/[0.06] dark:text-violet-200/85',
+      selected: 'border-violet-400/50 border-b-transparent bg-violet-500/[0.08]',
+      panel: 'border-violet-400/35 bg-violet-500/[0.035]',
+    },
+  };
 
   return (
-    <section className="min-w-0 rounded-lg border border-amber-400/35 bg-amber-500/[0.035] px-3 py-2.5 dark:border-amber-300/30">
+    <section className="min-w-0 rounded-lg border border-ldvh-border bg-ldvh-panel px-3 py-2.5">
       <div className="flex min-w-0 items-center gap-2">
-        <ShieldCheck size={WORKCASE_SECTION_ICON_SIZE} className="shrink-0 text-amber-600 dark:text-amber-300" aria-hidden="true" />
-        <h3 className="ldvh-card-decision-title min-w-0 text-amber-800/90 dark:text-amber-100/90">
+        <ShieldCheck size={WORKCASE_SECTION_ICON_SIZE} className="shrink-0 text-sky-600 dark:text-sky-300" aria-hidden="true" />
+        <h3 className="ldvh-card-decision-title min-w-0 text-ldvh-text">
           {t('objectDetail.workcaseExecutionAuthorization')}
         </h3>
       </div>
-      <p className="ldvh-caption mt-1.5 text-amber-900/65 dark:text-amber-100/65">
+      <p className="ldvh-caption mt-1.5 text-ldvh-text-secondary">
         {t('objectDetail.workcaseExecutionAuthorizationBoundary')}
       </p>
-      <div className="mt-2 flex flex-wrap gap-1.5" aria-label={t('objectDetail.workcaseExecutionAuthorization')}>
-        <span className="ldvh-meta rounded-full border border-emerald-400/30 bg-emerald-500/[0.06] px-2 py-0.5 text-emerald-700 dark:text-emerald-200">
-          {t('objectList.workcaseAuthorizedActionCount', { count: String(actions.length) })}
-        </span>
-        <span className="ldvh-meta rounded-full border border-rose-400/30 bg-rose-500/[0.06] px-2 py-0.5 text-rose-700 dark:text-rose-200">
-          {t('objectList.workcaseProhibitedActionCount', { count: String(prohibitedActions.length) })}
-        </span>
-        {prerequisites.length > 0 && (
-          <span className="ldvh-meta rounded-full border border-violet-400/30 bg-violet-500/[0.06] px-2 py-0.5 text-violet-700 dark:text-violet-200">
+      <div className="mt-2.5 min-w-0">
+        <div className="grid w-full min-w-0 grid-cols-3">
+          <button type="button" aria-controls="workcase-card-authorization-actions" aria-expanded={activeTab === 'actions'} onClick={() => toggleTab('actions')} className={`${tabTypography} w-full min-w-0 border px-1.5 py-1.5 text-center transition-colors first:rounded-tl-md ${tabStyles.actions.button} ${activeTab === 'actions' ? `relative z-10 ${tabStyles.actions.selected}` : ''}`}>
+            {t('objectList.workcaseAuthorizedActionCount', { count: String(actions.length) })}
+          </button>
+          <button type="button" aria-controls="workcase-card-authorization-prohibited" aria-expanded={activeTab === 'prohibited'} onClick={() => toggleTab('prohibited')} className={`${tabTypography} w-full min-w-0 border border-l-0 px-1.5 py-1.5 text-center transition-colors ${tabStyles.prohibited.button} ${activeTab === 'prohibited' ? `relative z-10 ${tabStyles.prohibited.selected}` : ''}`}>
+            {t('objectList.workcaseProhibitedActionCount', { count: String(prohibitedActions.length) })}
+          </button>
+          <button type="button" aria-controls="workcase-card-authorization-prerequisites" aria-expanded={activeTab === 'prerequisites'} onClick={() => toggleTab('prerequisites')} className={`${tabTypography} w-full min-w-0 rounded-tr-md border border-l-0 px-1.5 py-1.5 text-center transition-colors ${tabStyles.prerequisites.button} ${activeTab === 'prerequisites' ? `relative z-10 ${tabStyles.prerequisites.selected}` : ''}`}>
             {t('objectList.workcasePrerequisiteCount', { count: String(prerequisites.length) })}
-          </span>
-        )}
-      </div>
-      {!compact && (
-        <div className="mt-2.5 grid min-w-0 gap-2.5">
-          <section className="min-w-0 rounded-md border border-amber-400/20 bg-amber-500/[0.025] px-2.5 py-2">
-            <p className="ldvh-meta text-amber-800/70 dark:text-amber-100/70">{getFieldLabel('authorized_actions', locale)}</p>
-            <ul className="mt-1.5 grid min-w-0 gap-2">
+          </button>
+        </div>
+        {activeTab === 'actions' && (
+          <div id="workcase-card-authorization-actions" className={`-mt-px min-w-0 rounded-b-md border px-2.5 py-1.5 ${tabStyles.actions.panel}`}>
+            <ul className="grid min-w-0 divide-y divide-emerald-500/15">
               {actions.map((action) => (
-                <li key={String(action.action_id)} className="min-w-0 rounded-md border border-amber-400/20 bg-ldvh-surface/45 px-2.5 py-2 dark:bg-ldvh-surface/20">
-                  <p className="ldvh-card-decision-title text-ldvh-text-primary">{String(action.summary)}</p>
-                  <AuthorizationCardText fieldKey="target_scope" value={String(action.target_scope)} locale={locale} />
-                  <AuthorizationCardText fieldKey="effect_scope" value={String(action.effect_scope)} locale={locale} />
-                  <div className="mt-1.5 grid min-w-0 grid-cols-2 gap-1.5 border-t border-ldvh-border/60 pt-1.5">
-                    <AuthorizationCardText fieldKey="risk_summary" value={String(action.risk_summary)} locale={locale} />
-                    <AuthorizationCardText fieldKey="rollback_summary" value={String(action.rollback_summary)} locale={locale} />
-                  </div>
-                  <AuthorizationCardList fieldKey="rule_refs" items={action.rule_refs as string[]} locale={locale} />
+                <li key={String(action.action_id)} className="flex min-w-0 gap-1.5 py-1.5 first:pt-0.5 last:pb-0.5">
+                  <span className="mt-2 size-1 shrink-0 rounded-full bg-emerald-500 dark:bg-emerald-300" aria-hidden="true" />
+                  <p className="ldvh-caption-strong min-w-0 text-emerald-800 dark:text-emerald-100">{String(action.summary)}</p>
                 </li>
               ))}
             </ul>
-          </section>
-          <section className="grid min-w-0 gap-2 rounded-md border border-ldvh-border/65 bg-ldvh-surface/35 px-2.5 py-2">
-            <AuthorizationCardText fieldKey="action_ceiling" value={String(authorization.action_ceiling)} locale={locale} />
-            <AuthorizationCardList fieldKey="prohibited_actions" items={prohibitedActions} locale={locale} emphasis="warning" />
-            <AuthorizationCardText fieldKey="allowed_adjustments" value={String(authorization.allowed_adjustments)} locale={locale} />
-            <AuthorizationCardText fieldKey="verification_and_rollback" value={String(authorization.verification_and_rollback)} locale={locale} />
-            <AuthorizationCardText fieldKey="out_of_bounds_handling" value={String(authorization.out_of_bounds_handling)} locale={locale} />
-            {prerequisites.length > 0 && <AuthorizationCardList fieldKey="human_prerequisites" items={prerequisites} locale={locale} />}
-          </section>
-        </div>
-      )}
+          </div>
+        )}
+        {activeTab === 'prohibited' && (
+          <div id="workcase-card-authorization-prohibited" className={`-mt-px min-w-0 rounded-b-md border px-2.5 py-1.5 ${tabStyles.prohibited.panel}`}>
+            <AuthorizationCardItems items={prohibitedActions} tone="warning" />
+          </div>
+        )}
+        {activeTab === 'prerequisites' && (
+          <div id="workcase-card-authorization-prerequisites" className={`-mt-px min-w-0 rounded-b-md border px-2.5 py-1.5 ${tabStyles.prerequisites.panel}`}>
+            <AuthorizationCardItems items={prerequisites} tone="prerequisite" />
+          </div>
+        )}
+      </div>
     </section>
   );
 }
 
-function AuthorizationCardText({ fieldKey, value, locale }: { fieldKey: string; value: string; locale: string }) {
-  return (
-    <div className="min-w-0">
-      <p className="ldvh-meta text-ldvh-text-secondary/70">{getFieldLabel(fieldKey, locale)}</p>
-      <SummaryText value={value} collapseThreshold={Number.MAX_SAFE_INTEGER} className="ldvh-card-decision-body mt-1 text-ldvh-text-secondary" />
-    </div>
-  );
-}
-
-function AuthorizationCardList({
-  fieldKey,
+function AuthorizationCardItems({
   items,
-  locale,
-  emphasis = 'default',
+  tone,
 }: {
-  fieldKey: string;
   items: string[];
-  locale: string;
-  emphasis?: 'default' | 'warning';
+  tone: 'warning' | 'prerequisite';
 }) {
-  const bulletClass = emphasis === 'warning' ? 'bg-rose-500/75' : 'bg-ldvh-text-secondary/55';
+  const bulletClass = tone === 'warning' ? 'bg-rose-500 dark:bg-rose-300' : 'bg-violet-500 dark:bg-violet-300';
+  const textClass = tone === 'warning' ? 'text-rose-700 dark:text-rose-200' : 'text-violet-700 dark:text-violet-200';
   return (
-    <div className="min-w-0">
-      <p className="ldvh-meta text-ldvh-text-secondary/70">{getFieldLabel(fieldKey, locale)}</p>
-      <ul className="mt-1 grid min-w-0 gap-1">
-        {items.map((item) => (
-          <li key={item} className="flex min-w-0 items-start gap-1.5">
-            <span className={`mt-[0.5rem] h-1 w-1 shrink-0 rounded-full ${bulletClass}`} aria-hidden="true" />
-            <SummaryText value={item} collapseThreshold={Number.MAX_SAFE_INTEGER} className="ldvh-card-decision-body min-w-0 text-ldvh-text-secondary" />
-          </li>
-        ))}
-      </ul>
-    </div>
+    <ul className="grid min-w-0 divide-y divide-current/15">
+      {items.map((item) => (
+        <li key={item} className="flex min-w-0 gap-1.5 py-1.5 first:pt-0.5 last:pb-0.5">
+          <span className={`mt-2 size-1 shrink-0 rounded-full ${bulletClass}`} aria-hidden="true" />
+          <p className={`ldvh-caption-strong min-w-0 ${textClass}`}>{item}</p>
+        </li>
+      ))}
+    </ul>
   );
 }
 

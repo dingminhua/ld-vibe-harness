@@ -342,11 +342,19 @@ test('WorkCase authorization detail follows the shared overview, object, and sec
     layout.indexOf('function InlineStringArrayField'),
   );
 
-  assert.match(authorization, /workcaseAuthorizationCount/);
-  assert.match(authorization, /<AuthorizationStringListDisclosure fieldKey="prohibited_actions"/);
-  assert.match(authorization, /<AuthorizationStringListDisclosure fieldKey="human_prerequisites"/);
+  assert.match(authorization, /useState<"actions" \| "prohibited" \| "prerequisites" \| null>\(null\)/);
+  assert.match(authorization, /workcaseAuthorizedActionCount/);
+  assert.match(authorization, /workcaseProhibitedActionCount/);
+  assert.match(authorization, /workcasePrerequisiteCount/);
+  assert.match(authorization, /aria-controls="workcase-authorization-actions"/);
+  assert.match(authorization, /aria-controls="workcase-authorization-prohibited"/);
+  assert.match(authorization, /aria-controls="workcase-authorization-prerequisites"/);
+  assert.match(authorization, /aria-expanded=\{activeTab === "actions"\}/);
+  assert.match(authorization, /aria-expanded=\{activeTab === "prohibited"\}/);
+  assert.match(authorization, /aria-expanded=\{activeTab === "prerequisites"\}/);
   assert.match(authorization, /workcaseAuthorizationConstraints/);
-  assert.match(authorization, /function AuthorizationActionList[\s\S]*?useState\(false\)/);
+  assert.match(authorization, /function AuthorizationActionsContent/);
+  assert.match(authorization, /<AuthorizationActionsContent[\s\S]*?authorization=\{authorization\}/);
   assert.match(authorization, /<AuthorizationConstraints[\s\S]*?authorization=\{authorization\}/);
   assert.match(authorization, /function AuthorizationConstraints[\s\S]*?workcaseAuthorizationConstraints/);
   assert.match(authorization, /<AuthorizationActionObject/);
@@ -357,8 +365,7 @@ test('WorkCase authorization detail follows the shared overview, object, and sec
   assert.match(authorization, /fieldKey="rollback_summary"/);
   assert.match(authorization, /function AuthorizationDisclosure/);
   assert.match(authorization, /function AuthorizationListDisclosure[\s\S]*?<StringChips items=\{items\} \/>/);
-  assert.match(authorization, /function AuthorizationStringListDisclosure[\s\S]*?useState\(false\)/);
-  assert.match(authorization, /aria-expanded=\{expanded\}/);
+  assert.match(authorization, /function AuthorizationStringList[\s\S]*?divide-y divide-current\/15/);
   assert.doesNotMatch(authorization, /\[\s*"action_id",\s*"summary"/);
 });
 
