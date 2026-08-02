@@ -1,7 +1,5 @@
 title: 建立 WorkCase 当前快照确定性呈现投影合同
-status: open
-summary: result_version 2 已通过独立复核；完整关闭提案已形成，正在完成进入 Human 关闭确认前的终态保留审查。
-priority: P1
+status: closed
 goal: 建立由 WorkCase 规范唯一赋义、从当前实际输入确定性派生且不持久化的 current snapshot presentation projection；让 Helper 精确读取为 AI 提供绑定来源 content_fingerprint 的投影，让 Web 在字段级读取边界内消费同一合同，先消除生命周期位置、结构上下一必经控制步骤、进展分组和 Gate 2 话术漂移，同时不让 Code 判断授权、能力、行动允许、优先级或工作完成。
 scope: 覆盖 specs/21 的 WorkCase 当前快照呈现投影权威语义、specs/08 的 Web 字段级消费边界、Helper read-fact-objects 输出所需的 specs/04、specs/05 与 04.Att.01 字段合同、编码前 Code Implementation Plan、Python/Helper 投影实现、clean Web shared/API/field-reader/i18n/docs 消费层及跨语言一致性和负向测试。AI/Helper 仅对刚完成的 mechanically-valid 精确读取形成带 source content fingerprint 的非持久投影；Web 继续字段级读取，输入不足或组合非法时 unresolved。排除 specs/34 的 Controller 连续回读与关闭写回、specs/03/30 的提交粒度与行政放大、派生字段写入 WC YAML、ADR/Study、既有事实对象修改、创建前 dirty 文件、push、PR、发布、外部消息和破坏性 Git。0041 不声称 Code 能机械控制 AI 自然语言；后续 34 修订再固定 AI Controller 消费流程。
 success_criterion_definitions:
@@ -15,195 +13,6 @@ success_criterion_definitions:
   statement: clean Web shared/API/field-reader/i18n/docs 消费同一投影合同或受生成/一致性检查约束，并保持字段级读取原则。status=blocked 保留 phase 结构位置但突出阻塞；Web 不依赖 AI 文案形成 progress group、progress step 或结构上下一必经控制步骤。
 - criterion_id: criterion-gate2-negative-matrix
   statement: 全 status/phase 表驱动测试和禁语负测通过：仅 open/human_closure_confirming 可直接表达等待 Gate 2 或关闭待确认；blocked/human_closure_confirming 必须同时突出阻塞且禁止仅剩或可立即关闭；independent_reviewing、closure_preparing 及其它活动 phase 禁止 Human Gate 2 waiting 叙述；closed 无 phase且只能表达已关闭。创建前 dirty 文件未被修改、暂存或提交。
-phase: closure_preparing
-plan_version: 1
-work_items:
-- item_id: item-audit-projection-ownership
-  goal: 盘点 21、Python、Helper、Web shared/API/field reader、i18n 和 Web docs 中当前重复的 phase 与交还叙述投影，并冻结创建前 dirty 边界。
-  expected_result: 形成可回指的语义所有权、消费者、输入成立条件、重复点和 dirty 排除清单，区分已有 canonical plan/result projection 与本次 presentation projection。
-  status: completed
-  approach_summary: 只读核对当前规则、实现、测试、HEAD 与 Working Tree；不把现状实现反向提升为规范语义。
-  result_summary: Audit confirmed 21 and 08 both encode phase-to-progress semantics, web/shared/workcaseStatus.ts is a separate runtime mapping, and Python workcase_projection.py only canonicalizes plan/result/authorization. Helper exact reads already expose content_fingerprint but no presentation projection; Web localFactReader preserves field-level reads and lacks a source fingerprint. Direct consumers span Helper fact reads, Web shared/API/services/routes, i18n and Web docs. Creation-time dirty baseline remains the four recorded Web paths plus workcase-0036 through workcase-0039; none was modified.
-- item_id: item-form-code-implementation-plan
-  goal: 在编码前形成并登记本增量的 Code Implementation Plan。
-  expected_result: code/plans 中的当前规划覆盖模块责任、依赖与调用方向、唯一维护位置、跨语言同步、Helper/Web 双输入、接口、Schema、诊断、风险、测试和已知缺口，并由稳定 README 入口定位。
-  status: completed
-  depends_on:
-  - item-audit-projection-ownership
-  approach_summary: 以 21/08/04/05 的当前来源和实际实现盘点为依据；规划只分配 Code 责任，不定义领域语义。
-  result_summary: Created code/plans/workcase-current-snapshot-presentation.md and registered it in code/plans/README.md before implementation. The plan fixes the 77519b3d5 start point, dirty exclusions, 21/05/08 ownership, Python single maintenance point, one-way TypeScript generation, Helper/Web dual input, interfaces, diagnostics, risk tests and deferred 34/page work. git diff --check passed for both plan files.
-- item_id: item-revise-projection-contract
-  goal: 把完整当前快照呈现投影、Helper 与 Web 双输入、Gate 2 谓词及 Code 禁区写硬在关联 Specs。
-  expected_result: 21 成为唯一语义权威；08 只保留字段级读取和呈现消费；04/05/字段附件只在 Helper 公开读取输出确有需要时承接投影载体；07 未被重复改写。
-  status: completed
-  depends_on:
-  - item-audit-projection-ownership
-  approach_summary: 先修正来源并完成相应只读复核，再让实现消费；不把 ADR 或 Code contract 变成第二规则源。
-  result_summary: Revised 21 as the sole status+phase presentation semantic authority, 05 as the Helper result carrier, 08 as the field-level Web consumer, and 08.Att.01 as the Web API transport registry. Resolved blocked closure wording, unresolved behavior, raw-carrier fingerprint, no-persistence and Code non-judgment boundaries. Independent read-only source review passed after two correction rounds. The plan was also narrowed to keep the four Gate1-prohibited Web paths excluded despite their later fd2c91bbc commit.
-- item_id: item-implement-helper-projection
-  goal: 实现唯一确定性呈现投影维护位置、Python 投影和 Helper read-fact-objects 的 AI 交付面。
-  expected_result: mechanically-valid WorkCase 精确读取返回绑定 source content fingerprint 和合同 currentness 的非持久投影；错误、非 WorkCase、缺失或非法输入产生明确不可判定结果而非猜测。
-  status: completed
-  depends_on:
-  - item-form-code-implementation-plan
-  - item-revise-projection-contract
-  approach_summary: 避免与现有 canonical plan/result projection 混名；投影不输出 readiness、授权、能力、行动允许、优先级或工作完成判断。
-  result_summary: Implemented the unique Python presentation table, deterministic TypeScript generator and Helper read-fact-objects delivery. A live exact read of workcase-0041 returned a resolved executing projection whose source fingerprint exactly matched the carrier content fingerprint; Python projection/helper tests passed 45/45.
-- item_id: item-align-clean-web-consumers
-  goal: 让 clean Web shared/API/field-reader/i18n/docs 消费同一合同并保持字段级读取降级。
-  expected_result: Web 从可读 status、phase 与合同明确字段确定性派生；输入不足 unresolved；progress、标签与结构上下一必经控制步骤不再由多处独立语义表或 AI 文案生成。
-  status: completed
-  depends_on:
-  - item-form-code-implementation-plan
-  - item-revise-projection-contract
-  - item-implement-helper-projection
-  approach_summary: 使用单向生成、共享维护位置或跨语言一致性测试中由 Code Implementation Plan 选定的方式；若直接依赖落入创建前 dirty 文件，延期该消费者而不覆盖用户变更。
-  result_summary: Aligned the clean Web field reader, generated/shared contract, API services/routes/types, i18n and current docs on one source-bound projection. Production list cards require the raw-carrier fingerprint; Cognition consumes the resolved current_snapshot_projection and direct local hotspot reads derive only with the actual carrier fingerprint. Unresolved inputs preserve field issues and expose no compatibility progress. Gate1-prohibited page and test paths were not modified.
-- item_id: item-verify-projection-contract
-  goal: 以新建 clean 测试完成全矩阵、禁语、Helper/Web 和跨语言一致性验证。
-  expected_result: 目标 Python 与 Web 测试、规范合同检查、diff 边界检查和事实完整性检查通过；失败与未验证范围如实记录，创建前 dirty 文件保持隔离。
-  status: completed
-  depends_on:
-  - item-implement-helper-projection
-  - item-align-clean-web-consumers
-  approach_summary: 新建独立 clean 测试承接 Gate 2 负向矩阵，不修改创建前已 dirty 的 lifecycle/detail tests；独立结果复核和关闭链只由 phase 生命周期承接。
-  result_summary: 'Verified the full open/blocked phase matrix, Gate2 negative wording, missing-fingerprint current Card behavior and Cognition consumption. Target Python passed 45/45; the expanded target Web set passed 72/72; TypeScript, target Ruff and git diff --check passed; live Helper exact read matched its source fingerprint; full fact integrity passed for 117 objects; prohibited Web paths have no diff. Wider suites retain unrelated baseline failures: Python 1437 passed/21 failed/10 skipped in stale fixture/count, coordination and linked-worktree tests; Web 153 passed/1 failed in the existing 03-to-03.Att.01 commit-label lookup.'
-execution_authorization:
-  authorized_actions:
-  - action_id: authorization-local-audit
-    summary: 读取并盘点当前投影规则、实现、消费者、测试、Git 基线和 dirty 边界。
-    target_scope: 当前 LDVH worktree 中与 WorkCase 当前快照呈现投影直接相关的 specs、code、web、tests、Git metadata 及只读 Helper 事实读取。
-    effect_scope: 只读本地检查、差异分析和证据整理。
-    risk_summary: 现有实现可能不完整或漂移；不得把代码现状反向认定为权威规则，也不得把机械通过扩大为语义真实。
-    rollback_summary: 无受管文件写入；盘点结论可由当前来源重新读取。
-    rule_refs:
-    - specs/00-理念与构成.md
-    - specs/07-Code 实践与测试规范.md
-    - specs/08-Web 呈现与交互规范.md
-    - specs/21-WorkCase-工作项.md
-  - action_id: authorization-code-implementation-plan-write
-    summary: 创建或更新本增量所需的 Code Implementation Plan 及其稳定入口。
-    target_scope: code/plans 中本增量的新规划文件与 code/plans/README.md；不修改其它当前规划的责任正文。
-    effect_scope: 本地版本化工程规划文档写入，不定义新的领域规则或事实。
-    risk_summary: 规划若复制领域语义或与真实实现偏移，会形成第二维护点；必须回指当前 Specs 并与实现同步。
-    rollback_summary: 保留可审阅 diff；实现前发现责任或依赖不成立时先修订规划，不以实现迁就错误规划。
-    rule_refs:
-    - specs/07-Code 实践与测试规范.md
-  - action_id: authorization-specification-revision
-    summary: 修订 WorkCase 投影权威、Web 字段级消费边界及 Helper 读取输出载体。
-    target_scope: specs/21-WorkCase-工作项.md、specs/08-Web 呈现与交互规范.md，以及 Helper 输出确需的 specs/04-Helper CLI 服务规范.md、specs/05-事实模型基础规范.md、specs/attachments/04.Att.01-Helper CLI 请求与响应字段表.md 和直接规范合同测试。
-    effect_scope: 当前 Working Tree 中的本地规范与规范测试写入；21 保持 WorkCase 语义唯一权威。
-    risk_summary: 重复定义或错误归属会制造第二状态语义；04/05/附件只能承接公开输出形状，08 只能承接 Web 读取与呈现。
-    rollback_summary: 逐文件审查 diff 与来源责任；若发现需要改变 07 或扩大其它规范，停止该部分并按超界规则收敛。
-    rule_refs:
-    - specs/00-理念与构成.md
-    - specs/01-规范模型基础规范.md
-    - specs/04-Helper CLI 服务规范.md
-    - specs/05-事实模型基础规范.md
-    - specs/08-Web 呈现与交互规范.md
-    - specs/21-WorkCase-工作项.md
-  - action_id: authorization-helper-projection-implementation
-    summary: 实现当前快照呈现投影的唯一 Code 维护位置、Python 投影和 Helper 精确读取交付。
-    target_scope: code/ldvh/facts、code/ldvh/helper 的直接相关 clean 模块，以及对应 code/tests；确切模块与依赖由先形成的 Code Implementation Plan 限定。
-    effect_scope: 本地 Code、公开 Helper 读取响应和测试变化；不写入 WorkCase YAML 派生字段，不调用模型。
-    risk_summary: 接口变化可能影响现有 Helper 消费者、打包或诊断；错误投影可能越权生成授权或完成判断，或把对象指纹误作永久投影身份。
-    rollback_summary: 以新回归测试和 Helper 契约测试先暴露偏差；保留小范围 diff，失败时撤销仅属本案的新实现或延期受影响消费者。
-    rule_refs:
-    - specs/04-Helper CLI 服务规范.md
-    - specs/05-事实模型基础规范.md
-    - specs/07-Code 实践与测试规范.md
-    - specs/21-WorkCase-工作项.md
-  - action_id: authorization-clean-web-consumer-write
-    summary: 对 clean Web shared/API/field-reader/i18n/docs 消费层实施合同对齐。
-    target_scope: web/shared、web/api、web/src/i18n、web/src/utils、web/docs 中经基线确认 clean 且直接相关的文件，以及新建的 clean Web tests；明确排除创建前 dirty 的页面和两个既有测试文件。
-    effect_scope: 本地 Web 投影、API DTO、字段级读取降级、标签、文档和测试变化；不改变 AI 文案或事实源。
-    risk_summary: 跨语言映射可能漂移，字段级无效对象可能被错误隐藏，或 clean 消费者可能间接依赖 dirty 页面。
-    rollback_summary: 通过生成/一致性检查、字段缺失回归和精确 diff 隔离；若直接依赖必须修改 dirty 文件，延期该消费者而不覆盖用户变更。
-    rule_refs:
-    - specs/07-Code 实践与测试规范.md
-    - specs/08-Web 呈现与交互规范.md
-    - specs/21-WorkCase-工作项.md
-  - action_id: authorization-workcase-0041-updates
-    summary: 在执行和收敛期间仅通过 Helper CAS 写回 workcase-0041 的真实稳定检查点。
-    target_scope: 仅 workcase-0041 当前对象；不修改 workcase-0036 至 workcase-0039、spark-0043 或其它事实对象。
-    effect_scope: 受控 WorkCase 事实更新与写后回读；检查点写回不要求逐次形成 Git commit。
-    risk_summary: 过时指纹、错误 phase 或不完整 after 会被拒绝；不得补造执行历史或把派生投影写入 YAML。
-    rollback_summary: 每次更新前精确回读并使用当前 content fingerprint；CAS 失败保持原对象并重新判断，不直接编辑 ldvh-base。
-    rule_refs:
-    - specs/21-WorkCase-工作项.md
-    - specs/32-事实对象受控变更行动模板.md
-    - specs/34-WorkCase获批计划执行行动模板.md
-  - action_id: authorization-targeted-validation
-    summary: 运行与本增量直接相关的 Python、Helper、Web、规范合同、差异和事实完整性验证。
-    target_scope: 当前 worktree 的目标 pytest、Web test/typecheck/lint 入口、git diff/status/check 和 Helper 事实完整性检查；不运行外部发布或部署。
-    effect_scope: 本地测试进程、只读检查及可恢复临时输出。
-    risk_summary: 测试通过不能证明 AI 自然语言受机械控制、Human 授权已成立或真实运行环境能力可用；宽测试可能暴露用户 dirty 变更造成的无关失败。
-    rollback_summary: 记录目标与宽验证边界；只清理可确认归属且无恢复价值的本案临时工件，不删除用户文件。
-    rule_refs:
-    - specs/07-Code 实践与测试规范.md
-    - specs/08-Web 呈现与交互规范.md
-    - specs/21-WorkCase-工作项.md
-  - action_id: authorization-delegate-independent-review
-    summary: 委派独立只读 Reviewer 对 workcase-0041 的当前完整结果进行复核。
-    target_scope: workcase-0041 的完整结果投影、成功标准、相关 clean diff、测试证据、dirty 隔离和未验证边界。
-    effect_scope: 只读 subagent 委派；不授予实现、事实写入、外部消息、phase 推进或关闭权限。
-    risk_summary: 环境可能暂时没有独立委派能力，且 Code 不证明 Reviewer 真实独立性；Reviewer 结论不自动推进生命周期。
-    rollback_summary: 能力不可用时据实形成能力阻塞或按既有授权收敛，不由 Controller 冒充 Reviewer。
-    rule_refs:
-    - specs/21-WorkCase-工作项.md
-    - specs/34-WorkCase获批计划执行行动模板.md
-  - action_id: authorization-independent-result-review
-    summary: 执行并记录 workcase-0041 当前完整结果的独立只读复核。
-    target_scope: 当前 result_version 的完整 canonical result projection、成功标准、验证证据、风险和残留边界。
-    effect_scope: 只读结果复核及由 Controller 受控记录 review/feedback resolution；不替代 Human Gate 2。
-    risk_summary: 复核可能发现合同漂移、dirty 混入或未验证范围；结论是质量输入，不是完成或关闭决定。
-    rollback_summary: Controller 按当前 phase 链处置反馈；改变结果时升版并使旧 review 失效，不自动接受或关闭。
-    rule_refs:
-    - specs/21-WorkCase-工作项.md
-    - specs/34-WorkCase获批计划执行行动模板.md
-  - action_id: authorization-local-semantic-commits
-    summary: 将本 WorkCase 经验证的归属文件按语义交付单位形成严格限定的本地 Git commit。
-    target_scope: 仅 workcase-0041、由本 WorkCase 新建或修改且创建前 clean 的明确归属文件；检查点事实写回可在语义单位完成时归组，不为每次事实转换单独提交。
-    effect_scope: 一个或多个按语义交付单位分组的本地 Git commit；不创建提交专用 WorkCase，不 push、不建 PR、不发布。
-    risk_summary: 错误暂存可能混入创建前 dirty 文件或其它 WorkCase；提交会持久化本地历史，必须逐路径核对。
-    rollback_summary: 每次提交前只暂存精确归属路径、检查 staged diff 并运行 Helper Git 预检；范围不清时不提交并保留工作区。
-    rule_refs:
-    - specs/03-事实源与信息溯源规范.md
-    - specs/30-Git提交行动模板.md
-    - specs/34-WorkCase获批计划执行行动模板.md
-  quality_gates:
-  - gate_id: independent-result-review
-    reviewer_mode: independent-read-only
-    delegation_action_id: authorization-delegate-independent-review
-    result_review_action_id: authorization-independent-result-review
-  action_ceiling: 限于当前 LDVH worktree 内为 workcase-0041 建立并验证当前快照确定性呈现投影合同所需的只读盘点、Code Implementation Plan、明确 Specs、Python/Helper、clean Web 消费层、新建 clean tests、仅 0041 的 Helper CAS、只读独立复核、目标验证和严格隔离的本地语义 commits。
-  prohibited_actions:
-  - 直接编辑 ldvh-base 或修改 workcase-0036、workcase-0037、workcase-0038、workcase-0039、spark-0043 及其它既有事实对象
-  - 修改、暂存或提交 0041 创建前已 dirty 的 web/src/pages/ObjectList.tsx、web/src/pages/object-detail/WorkCaseReadingLayout.tsx、web/tests/api/workcase-card-lifecycle-contract.test.ts、web/tests/api/workcase-detail-current-contract.test.ts 或创建前其它 dirty 路径
-  - 把 current snapshot projection、continuation_required、execution_stalled、下一动作、Web 分组、projection fingerprint 或其它派生判断持久化进 WorkCase YAML
-  - 由 Code 判断自然语言授权是否充分、能力是否可用、行动是否允许、任务优先级、工作是否完成或是否应推进 phase
-  - 修改 specs/34 的 Controller 执行循环、specs/03 或 specs/30 的提交规则、顶层 resume_from/summary 或 quality gate 结构
-  - 建立 ADR、Study、提交专用 WorkCase 或与本合同无直接依赖的重构
-  - push、PR、发布、部署、外部消息、破坏性删除、reset、rebase、amend 或历史改写
-  allowed_adjustments: 可在不改变 goal、scope、成功标准、双输入边界、Gate 2 谓词、授权动作种类、风险上限和禁止项的前提下，由 Code Implementation Plan 选择共享维护位置、单向生成或跨语言一致性测试，并调整 clean 模块或新测试文件名。若某个 Web 消费者的直接依赖落入创建前 dirty 文件，取消或延期该消费者而继续完成核心合同和其它 clean 消费者；不得为此覆盖用户变更或扩大范围。
-  verification_and_rollback: 每次事实写回前后通过 Helper 精确读取与 content fingerprint/CAS 校验；编码前完成并复核 Code Implementation Plan；先用负向和一致性测试暴露漂移，再运行目标 Python/Helper/Web/规范测试、typecheck、diff/status/check 与事实完整性检查。所有普通文件保持可审阅小范围 diff；不得使用 destructive Git 回滚。提交前只暂存精确归属路径并运行 Helper Git 预检。
-  out_of_bounds_handling: 发现需要修改创建前 dirty 文件、07/34/03/30、本 WorkCase 外事实或授权未列明的对象、风险或外部副作用时，零执行该超界部分，取消或延期受影响 item/消费者并据实保留结果；其余已授权责任继续按 21 phase 链收敛，不在执行期新增 Human Gate 或创建提交专用 WorkCase。
-creation_reviews:
-- reviewer: independent-readonly-reviewer
-  reviewed_at: '2026-08-02T13:37:33+08:00'
-  subject_version: 1
-  scope: 完整目标、Helper 与 Web 双输入边界、排除范围、五项成功标准、A-F 六个普通 work items、Specs/Code/Helper/Web/i18n/docs/tests 写入范围、仅 0041 的 Helper 更新、独立结果质量门、本地语义 commit、dirty 隔离、延期与超界收敛，以及后续独立 WorkCase 边界；不证明当前规则源七项资格条件、Reviewer 真实独立性或运行环境能力。
-  conclusion: pass
-  covered_quality_gate_ids:
-  - independent-result-review
-execution_approval:
-  subject_version: 1
-  approved_at: '2026-08-02T13:53:07+08:00'
-  summary: Human approved workcase-0041 plan version 1 and its complete execution_authorization.
-  baseline_fingerprint: 9761dd3956c1b6abd82775a2d5b33b72a0408f3532413c19cbf8e581f836ab71
-  source_refs:
-  - turn:human-gate1-workcase-0041
-result_version: 2
 success_criterion_results:
 - criterion_id: criterion-authoritative-dual-input-contract
   outcome: satisfied
@@ -221,34 +30,23 @@ success_criterion_results:
   outcome: satisfied
   summary: Python and Web table-driven tests cover every active phase for open and blocked status, closed/no-phase, malformed and missing-fingerprint inputs and the unique Gate2 predicate. Only open/human_closure_confirming yields gate2_waiting; blocked closure yields gate2_position_blocked, and independent_reviewing/closure_preparing are negative. All four Gate1-prohibited Web paths remain unchanged.
 result_summary: 'Delivered WorkCase current-snapshot presentation contract version 1 with 21 as semantic authority, a single Python mapping, deterministic TypeScript generation, Helper exact-read delivery and source-bound clean Web field/API/Cognition consumers. The first independent result review found and caused removal of two fake-fingerprint compatibility paths: production current Cards now require the actual raw-carrier fingerprint, and Cognition consumes or derives only source-bound projections. AI and Web can consume lifecycle position, handoff key, structural next control step, progress group/step and blocking overlay without persisting derived state or letting Code decide authorization, capability, permission, priority, completion or phase advancement. Specs 34 and the explicitly deferred page/test paths remain outside this result.'
-controller_check_summary: Controller accepted both changes_required findings from result review v1, recorded the review and resolution, returned to controller_checking, split production current Card projection from the deferred legacy contract-test projector, removed the dummy fingerprint from the shared compatibility helper, changed Cognition to validate transported projections or derive with the actual local carrier fingerprint, and added missing-fingerprint/no-manufacture tests. Re-run validation passed for the approved scope. Because the reviewed result projection changed, result_version was incremented exactly to 2 and the v1 review was invalidated for a fresh independent result review.
 validation_summary: 'Passed after review corrections: target Python projection/Helper tests 45/45; expanded target Web projection/Cognition/spec/lifecycle/detail tests 72/72; TypeScript check; target Ruff; generated-contract byte sync; git diff --check; live Helper source/content fingerprint equality; full fact integrity 117/117; prohibited-path diff empty. Full Web API is 153 passed/1 failed, with only commit-label-contract still reading tables from 03 rather than 03.Att.01. Earlier full Python remains 1437 passed/21 failed/10 skipped, with failures confined to unmodified stale scope-count/WorkCase fixtures, coordination-response and linked-worktree tests; broad Ruff reports 26 existing unrelated errors. Seven current rule-source qualification conditions remain mechanically unproved and are not claimed as resolved.'
-result_reviews:
-- reviewer: reviewer-wc0041-independent-result-02
-  reviewed_at: '2026-08-02T14:59:30+08:00'
-  subject_version: 2
-  scope: WorkCase 0041 result v2 修正差异、当前事实快照与投影、生产 Card/Cognition 消费路径、负向测试、禁止路径差异及事实完整性；严格只读，未独立重跑测试套件。
-  conclusion: pass_with_followups
-  feedback:
-  - Gate1-prohibited 的 ObjectDetail、WorkCaseProgressTrack 等旧页面仍使用延期的 phase 读取/展示路径；后续独立工作应迁移页面到 current_snapshot_projection，并在没有生产消费者后删除 legacy projectWorkCaseCard/phase-only compatibility projector。
-  controller_resolution: 接受为不阻塞当前完成分类的范围外 follow-up opportunity。本 WorkCase 严格未修改 Gate1-prohibited 页面，也不把该机会写成当前 scope 未完成责任；在 closure proposal 中结构化保留页面消费迁移建议，交由 Human Gate2 判断是否随终态保存。
-closure_proposal:
-  proposed_outcome: completed
-  proposed_disposition_summary: 本 WorkCase 承诺的当前快照呈现投影合同、Helper 交付和 clean Web 消费范围已全部满足，独立结果复核通过且反馈已处置；当前 scope 内没有未完成、未验证、需转交或接受停止的责任。页面最终消费、34 模板收敛及更广泛结构清理仅作为范围外后续机会保留，不影响本次完成分类。
-  spark_suggestions:
-  - suggestion_id: suggestion-page-projection-consumption
-    suggestion_kind: follow_up_opportunity
-    summary: 迁移延期的 WorkCase 页面到 current_snapshot_projection 并退出 legacy projector。
-    follow_up_summary: 在新的获批 WorkCase 中修改本案 Gate1 禁止的 ObjectDetail、WorkCaseProgressTrack、ObjectList/reading layout 及相应契约测试，使可见标签和下一必经动作直接消费 source-bound projection；确认没有生产消费者后删除 projectWorkCaseCard 和 phase-only compatibility facade。
-  - suggestion_id: suggestion-controller-template-convergence
-    suggestion_kind: follow_up_opportunity
-    summary: 瘦身 34 并固定 Controller 回读投影后的连续受控写回流程。
-    follow_up_summary: 以 21 为状态与 phase 权威，缩减 34 为前置读取、执行循环、稳定检查点、合法退出和恢复交还；要求 Controller 每次刚回读后消费 current_snapshot_projection，Reviewer pass 后连续完成关闭准备写回，但不让 Code 替 AI 判断授权、完成或 phase 推进。
-  - suggestion_id: suggestion-workcase-redundancy-cleanup
-    suggestion_kind: follow_up_opportunity
-    summary: 继续清理 WorkCase 派生字段、提交粒度和恢复字段冗余。
-    follow_up_summary: 另案评估 continuation_required、execution_stalled、下一动作和 Web 分组不入 YAML，检查点写回与 Git commit 按语义单位解耦，并进一步验证顶层 resume_from/summary、item 级恢复入口和固定 quality gate 绑定能否在不误删不同职责结构的前提下简化。
+closure_outcome: completed
+disposition_summary: 本 WorkCase 承诺的当前快照呈现投影合同、Helper 交付和 clean Web 消费范围已全部满足，独立结果复核通过且反馈已处置；当前 scope 内没有未完成、未验证、需转交或接受停止的责任。页面最终消费、34 模板收敛及更广泛结构清理仅作为范围外后续机会保留，不影响本次完成分类。
+spark_suggestions:
+- suggestion_id: suggestion-page-projection-consumption
+  suggestion_kind: follow_up_opportunity
+  summary: 迁移延期的 WorkCase 页面到 current_snapshot_projection 并退出 legacy projector。
+  follow_up_summary: 在新的获批 WorkCase 中修改本案 Gate1 禁止的 ObjectDetail、WorkCaseProgressTrack、ObjectList/reading layout 及相应契约测试，使可见标签和下一必经动作直接消费 source-bound projection；确认没有生产消费者后删除 projectWorkCaseCard 和 phase-only compatibility facade。
+- suggestion_id: suggestion-controller-template-convergence
+  suggestion_kind: follow_up_opportunity
+  summary: 瘦身 34 并固定 Controller 回读投影后的连续受控写回流程。
+  follow_up_summary: 以 21 为状态与 phase 权威，缩减 34 为前置读取、执行循环、稳定检查点、合法退出和恢复交还；要求 Controller 每次刚回读后消费 current_snapshot_projection，Reviewer pass 后连续完成关闭准备写回，但不让 Code 替 AI 判断授权、完成或 phase 推进。
+- suggestion_id: suggestion-workcase-redundancy-cleanup
+  suggestion_kind: follow_up_opportunity
+  summary: 继续清理 WorkCase 派生字段、提交粒度和恢复字段冗余。
+  follow_up_summary: 另案评估 continuation_required、execution_stalled、下一动作和 Web 分组不入 YAML，检查点写回与 Git commit 按语义单位解耦，并进一步验证顶层 resume_from/summary、item 级恢复入口和固定 quality gate 绑定能否在不误删不同职责结构的前提下简化。
 object_id: workcase-0041
 fact_type_key: workcase
 created_at: '2026-08-02T13:39:37.000653+08:00'
-updated_at: '2026-08-02T15:02:30.748279+08:00'
+updated_at: '2026-08-02T15:11:09.509131+08:00'
