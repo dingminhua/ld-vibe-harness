@@ -14,7 +14,7 @@ success_criterion_definitions:
 - criterion_id: criterion-common-hygiene-and-dirty-isolation
   statement: 06 只承接最小通用临时工件卫生：优先 Working Tree 外，只有现有授权覆盖、本次可确认归属且无继续或恢复价值的工件可清理，既有、他项、归属不明或仍有价值者保留交还，Working Tree 非空不等于未闭环。实施前后 Index 均为空，specs/00 的 Working Tree bytes 与 HEAD blob 保持固定 hash，workcase-0036 至 0039 的创建前 bytes/hash 与未跟踪状态不变，普通文件 diff 只落入批准白名单。
 priority: P1
-phase: controller_checking
+phase: human_closure_confirming
 plan_version: 1
 work_items:
 - item_id: item-audit-template-ownership
@@ -219,7 +219,17 @@ success_criterion_results:
 result_summary: 已形成 WorkCase Controller 续跑与模板收敛增量：06 承接最小临时工件共同边界，34 收敛为五段流程并绑定刚回读投影、合法退出和 Reviewer 后连续受控写回；新增 Code plan 与独立 source-contract tests，未修改 production Code、Web、21 或受保护用户工作。
 controller_check_summary: Controller 已对照五项成功标准、冻结 execution_authorization、实际 diff、测试、模板回读、路径白名单和事实完整性逐项检查；全部 work item 已形成稳定局部结果，没有把独立结果复核或 Gate 2 写成 item。当前完整 result projection 可进入固定 independent-result-review 质量关口；本检查不替代 Reviewer。
 validation_summary: 139 个目标 Python/spec/Helper tests passed；git diff --check passed；WorkCase 执行模板经 Helper 精确回读；当前事实库完整性 complete（118 个对象）；Index 为空；specs/00 Working Tree/HEAD hash 与 workcase-0036 至 0039 未跟踪 hash 均保持批准基线。未运行 Web tests，因为 Web 明确排除；未验证 AI 在未来会话中的自然语言遵从。
+result_reviews:
+- reviewer: reviewer-wc0042-result-01
+  reviewed_at: '2026-08-02T08:37:26Z'
+  subject_version: 1
+  scope: 独立只读审查 result_version=1、commit c09105cb8a368d66daa5dc10c35f33cad252f4c5、批准基线、实际 diff、139 项目标测试、模板回读、事实完整性及 specs/00 与 workcase-0036 至 0039 隔离；不覆盖 Web 迁移、未来 AI 会话自然语言遵从、授权充分性或整体系统行为保障。
+  conclusion: pass
+closure_proposal:
+  proposed_outcome: completed
+  proposed_disposition_summary: workcase-0042 的原 scope 已完整交付：06 已承接最小临时工件共同边界，34 已收敛为五段 Controller 执行流程并固定 fresh projection、合法退出、Gate 2 禁语和 Reviewer 后连续受控写回纪律，Code plan 与回归测试已形成；五项成功标准均为 satisfied，139 项目标测试、模板精确回读、Git 隔离和全库事实完整性检查通过，独立只读 Reviewer 结论为 pass。本案没有未满足、未验证或需要转交的剩余责任；Web 页面迁移及其它后续结构简化仍为本案 scope 外事项，不由本关闭处置承载。
+waiting_on: 等待 Human 阅读当前完整关闭提案，并决定是否批准 workcase-0042 的 completed 分类与无剩余责任处置，执行 Human Gate 2 关闭。
 object_id: workcase-0042
 fact_type_key: workcase
 created_at: '2026-08-02T16:01:35.354461+08:00'
-updated_at: '2026-08-02T16:31:00.325121+08:00'
+updated_at: '2026-08-02T16:39:09.022014+08:00'
