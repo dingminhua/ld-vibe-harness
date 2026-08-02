@@ -1,5 +1,5 @@
 title: 修复聚焦页待决定事项收录与完整呈现
-status: open
+status: closed
 goal: 让聚焦页中 WorkCase 与 Pitfall 的行动性收录继续只使用既有‘待决定事项’和‘推进中事项’两个模块，不因 blocked 新增第三个行动性模块；其它既有非行动模块保持不变。所有 current_snapshot_projection resolved 且 status 为 open 或 blocked 的 WorkCase 按 progress_group 确定性进入两个行动模块之一：plan_confirmation 或 closure_confirmation 即使 blocking_overlay=true 也保留在待决定事项并显示阻塞待处置、禁止正常 Gate 等待话术；progressing 包括 blocked 继续进入推进中事项。Pitfall draft 继续进入待决定事项并呈现有判断价值的完整普通 Card；不解析 AI 或自由文本，不新增持久派生字段或第二状态模型。
 scope: 覆盖编码前 Code Implementation Plan；web/api/routes/cognition.ts 的行动性收录分类与 DTO；web/src/utils/api.ts 的 inbox 类型；web/src/pages/CognitionCenter.tsx 既有待决定事项与推进中事项、计数/摘要、blocked Human-position 和 Pitfall draft Card；web/src/pages/ObjectList.tsx 及必要的新共享 Pitfall Card 内容组件；web/src/i18n/locales.ts；web/docs/02-CognitionCenter.md；直接相关 cognition、WorkCase presentation 和 Card contract tests；当前事实的本地浏览器代表性核验；workcase-0044 受控写回和隔离本地语义 commit。保留 specs/21 与 workcase-0041 的投影合同，不修改 Python、Helper、generated contract 或 Specs，不新增行动性模块，不修改近期动态、Spark 健康、近期提交热点关系等其它既有模块，不创建或修改 Pitfall 事实，不修改其它事实对象。
 success_criterion_definitions:
@@ -13,202 +13,6 @@ success_criterion_definitions:
   statement: WorkCase/Pitfall 行动性收录只使用既有待决定事项和推进中事项，不新增第三个行动性模块；近期动态、Spark 健康、近期提交热点关系等其它既有模块不修改。没有 YAML 派生字段、waiting_on/AI 文案解析、raw status/phase downstream fallback 或第二张 phase 表；API types、i18n、docs、计数与复制摘要一致。
 - criterion_id: criterion-validation-review-and-isolation
   statement: Code Implementation Plan、目标和全量 Web API tests、npm check/build、git diff --check、路径白名单、当前 WorkCase 浏览器代表性核验、Pitfall draft fixture 契约、WorkCase 精确回读、全库事实完整性、dirty 哈希隔离和独立只读结果复核在实际范围完成；浏览器与 fixture 结果、既有失败和未运行范围分开记录，不声称 live draft Pitfall 浏览器验证。
-priority: P1
-phase: human_closure_confirming
-plan_version: 1
-work_items:
-- item_id: item-audit-cognition-action-contract
-  goal: 审计聚焦行动性模块当前收录、投影消费、Pitfall Card、测试和 dirty 基线。
-  expected_result: 形成 resolved/unresolved、progress_group、blocking_overlay、handoff key、Pitfall draft 与两个既有行动模块的精确消费矩阵和路径白名单。
-  status: completed
-  result_summary: 审计确认：Cognition 现有 API 在 blocking_overlay 时提前排除 WorkCase，导致 blocked Human-position 从待决定事项消失；Pitfall draft 已被 API 收录但页面正文返回 null。既有两个行动模块足以承接：plan/closure group 进入待决定事项，progressing 进入推进中；unresolved 不猜测。实际 Pitfall 字段已由共同事实读取合同传递，无需修改该合同或创建测试事实。
-- item_id: item-form-cognition-code-plan
-  goal: 在修改 Web Code 前形成并登记本增量 Code Implementation Plan。
-  expected_result: code/plans/cognition-actionable-items.md 与 code/plans/README.md 记录责任、依赖、接口、诊断、回滚、验证和路径边界，不取得事实或投影语义权威。
-  status: completed
-  depends_on:
-  - item-audit-cognition-action-contract
-  result_summary: 已创建并回读 code/plans/cognition-actionable-items.md，并在 code/plans/README.md 登记稳定入口；计划固定两个既有行动模块、resolved 唯一归属、blocked 非 Gate、Pitfall 共享 Card、unresolved 零猜测、诊断/回滚/验证和 dirty 隔离，不定义领域语义。
-- item_id: item-fix-workcase-action-membership
-  goal: 修正 WorkCase 在待决定事项与推进中事项之间的唯一归属和 blocked Human-position 呈现。
-  expected_result: resolved plan/closure group 的 blocked WorkCase 进入待决定事项并显示 blocked_resolution，实际 Gate 仍只由 handoff key 表达；progressing 包括 blocked 继续只进入推进中；unresolved 如实降级。
-  status: completed
-  depends_on:
-  - item-form-cognition-code-plan
-  result_summary: Cognition API 现由 resolved progress_group 决定两个既有行动模块的唯一归属：plan/closure group 进入待决定事项，progressing 进入推进中。blocking_overlay=true 的 Human-position 形成 blocked_resolution 并携带 lifecycle_position/isBlocked，不生成正常 Gate 类型；unresolved 继续排除并保留 issues，无 raw status/phase 或文案回退。
-- item_id: item-complete-pitfall-draft-card
-  goal: 补齐 Pitfall draft 在待决定事项中的共享普通 Card 内容、类型、计数和本地化。
-  expected_result: Pitfall draft 使用与对象列表共享的字段级 Card 内容，API/types/UI/i18n/摘要一致；active/discarded 与坏字段负例成立，不创建测试事实。
-  status: completed
-  depends_on:
-  - item-form-cognition-code-plan
-  result_summary: ObjectList 现导出共享 PitfallCardContent，Cognition draft Card 直接复用；六个判断字段按共同字段标签与原文呈现，字段问题仍由既有读取诊断就地显示。API 仍只收录 status=draft，active/discarded 不进入；受控 preview 的 pitfall-0101 六字段 fixture 与 source contract 均通过，未创建或修改 Pitfall 事实。
-- item_id: item-update-contracts-and-verify-ui
-  goal: 同步 Web 文档和契约测试，并完成类型、构建、API、fixture 与当前事实浏览器核验。
-  expected_result: 目标与全量验证在实际范围完成；当前四个 WorkCase 浏览器行为、Pitfall draft fixture Card、禁语、唯一归属、其它模块不变和 dirty 隔离均有可复核依据。
-  status: completed
-  depends_on:
-  - item-fix-workcase-action-membership
-  - item-complete-pitfall-draft-card
-  result_summary: 已同步 API/types/UI/i18n/docs/tests；目标契约 25/25、npm check、npm build、git diff --check 通过。全量 Web API 157/158，唯一失败为既有范围外 commit-label-contract。实际 ldvh API 返回 0008/0026 方案待确认、0027 blocked_resolution、0043 关闭待确认，0044 仅在推进中；preview API 覆盖 blocked plan 唯一归属、blocked progressing 仅推进中和 Pitfall 六字段 draft。浏览器技能要求的专用 Node REPL 控制入口当前不可用，因此未完成真实 UI 点击/截图，未用 API 冒充浏览器验证。实现提交为 f4e687506；受保护 dirty 未夹带。
-- item_id: item-independent-review-and-closure-preparation
-  goal: 完成独立只读结果复核、Controller 反馈处置、结果检查和关闭准备。
-  expected_result: 独立 Reviewer 核对批准基线、实际 diff、两个行动模块、Pitfall fixture、浏览器与验证边界；Controller 按真实 phase 连续形成完整结果与关闭提案，不以聊天总结替代写回。
-  status: cancelled
-  depends_on:
-  - item-update-contracts-and-verify-ui
-  result_summary: 当前 21 明确规定独立结果复核、Controller 结果检查、关闭准备与 Gate 2 属于全部 item terminal 后的 phase 链，不能作为 work item；因此取消该错误建模的执行项，其实际责任由 controller_checking → independent_reviewing → closure_preparing → human_closure_confirming 生命周期继续承接，不视为已完成 review 或关闭。
-execution_authorization:
-  quality_gates:
-  - gate_id: independent-result-review
-    reviewer_mode: independent-read-only
-    delegation_action_id: authorization-delegate-independent-review
-    result_review_action_id: authorization-consume-independent-result-review
-  authorized_actions:
-  - action_id: authorization-local-audit
-    summary: 只读审计 0041/0043、current_snapshot_projection、聚焦代码/文档/测试、Git 历史和工作区基线。
-    target_scope: workcase-0041、workcase-0043、specs/21 只读内容、列名 Web/Code plan/docs/tests 与 Git 元数据。
-    effect_scope: 只读形成收录矩阵、重复对象判断、路径白名单、风险和验证依据。
-    risk_summary: 不得把 Web 旧行为或自由文本反向提升为投影语义，也不得把实现缺口写成规则缺口。
-    rollback_summary: 无写入；观察漂移时重新读取并缩小结论。
-    rule_refs:
-    - specs/07-Code与执行边界规范.md
-    - specs/08-Web呈现与交互规范.md
-    - specs/21-WorkCase-工作项.md
-  - action_id: authorization-code-plan-write
-    summary: 形成并登记聚焦行动性收录增量的 Code Implementation Plan。
-    target_scope: 仅 code/plans/cognition-actionable-items.md 与 code/plans/README.md。
-    effect_scope: 新增计划并更新稳定入口，不定义 status/phase/projection/Pitfall 事实语义。
-    risk_summary: 计划不得暗示新增第三个行动模块或扩大到其它聚焦模块。
-    rollback_summary: 恢复两个计划文件的本案变化，不触碰其它计划。
-    rule_refs:
-    - specs/07-Code与执行边界规范.md
-  - action_id: authorization-cognition-api-membership
-    summary: 修正聚焦 API 对 resolved WorkCase 的行动模块归属和 blocked Human-position inbox 类型。
-    target_scope: 仅 web/api/routes/cognition.ts。
-    effect_scope: 按 progress_group 分配既有两个行动模块，增加 blocked_resolution 呈现类型；实际 Gate 仍只由 handoff_narrative_key 表达，unresolved 不回退。
-    risk_summary: 错误优先级可能造成重复、遗漏或 blocked 被误称为 Gate；不得修改投影合同。
-    rollback_summary: 恢复本案路由变化；不以 legacy projector 或 raw fallback 兜底。
-    rule_refs:
-    - specs/08-Web呈现与交互规范.md
-    - specs/21-WorkCase-工作项.md
-  - action_id: authorization-cognition-ui-pitfall-card
-    summary: 更新聚焦 types/UI/i18n 并共享完整 Pitfall 普通 Card 内容。
-    target_scope: web/src/utils/api.ts、web/src/pages/CognitionCenter.tsx、web/src/pages/ObjectList.tsx、web/src/i18n/locales.ts；必要时新增且仅新增一个 web/src/components/PitfallCardContent.tsx 或同职责精确共享组件。
-    effect_scope: 增加 blocked_resolution 类型、计数和本地化；复用字段级 Pitfall draft Card；保持既有两个行动模块和其它非行动模块。
-    risk_summary: 共享组件不得引入第二份字段投影或视觉重构；坏字段不得被过滤后伪装完整。
-    rollback_summary: 恢复列名 UI/types/i18n 变化并删除本案新共享组件，不触碰其它页面。
-    rule_refs:
-    - specs/07-Code与执行边界规范.md
-    - specs/08-Web呈现与交互规范.md
-  - action_id: authorization-docs-tests-write
-    summary: 同步聚焦 Web 文档和直接相关 API/UI 契约测试。
-    target_scope: web/docs/02-CognitionCenter.md、web/tests/api/cognition-inbox-contract.test.ts、web/tests/api/workcase-presentation-spec-contract.test.ts；仅在直接需要时修改 workcase-card-lifecycle-contract.test.ts 或新增一个聚焦呈现 contract test。
-    effect_scope: 固定 resolved 唯一归属、blocked 非 Gate、Pitfall draft 完整 Card、unresolved 降级、其它模块不变和 live/fixture 验证边界。
-    risk_summary: source-text 测试不得冒充浏览器行为，也不得复制第二张 phase 表。
-    rollback_summary: 恢复列名 docs/tests；需要其它测试路径时停止受影响 item。
-    rule_refs:
-    - specs/07-Code与执行边界规范.md
-    - specs/08-Web呈现与交互规范.md
-  - action_id: authorization-validation-and-browser
-    summary: 执行目标/全量测试、类型构建、差异、当前 API/浏览器、fixture、事实和 dirty 隔离验证。
-    target_scope: 列名 Web tests、web npm check/build/test:web:api、本地 Web server 与只读浏览器、git diff/status/hash、workcase-0044 精确读取、check-fact-integrity。
-    effect_scope: 只读验证；浏览器只覆盖当前事实 WorkCase，Pitfall draft 只用受控 fixture/API/UI contract。
-    risk_summary: 不得创建/修改 Pitfall 事实补演示；build、source contract 或 fixture 不得扩大为 live 全场景保证。
-    rollback_summary: 停止本地服务并只清理本案可确认归属且无恢复价值的临时工件。
-    rule_refs:
-    - specs/06-行动模板基础规范.md
-    - specs/07-Code与执行边界规范.md
-    - specs/08-Web呈现与交互规范.md
-  - action_id: authorization-workcase-0044-updates
-    summary: 仅通过 WorkCase 专属 Helper CAS 写回 0044 的检查点、结果链和关闭提案。
-    target_scope: 仅 ldvh/workcase/workcase-0044。
-    effect_scope: 按真实 phase 提交完整 after、精确回读、完整性审计并用新指纹继续。
-    risk_summary: 不得持久化投影、progress_group、inbox kind 或其它派生字段，不得跳过 phase。
-    rollback_summary: CAS/审计失败时停止后续事实写入；仅用后续合法完整 after 修正。
-    rule_refs:
-    - specs/21-WorkCase-工作项.md
-    - specs/32-事实对象生命周期变更与承接处置行动模板.md
-    - specs/34-WorkCase获批计划执行行动模板.md
-  - action_id: authorization-delegate-independent-review
-    summary: 委派独立只读 Reviewer 审查实际聚焦收录和 Pitfall Card 结果。
-    target_scope: 批准基线、实际 diff、目标/全量验证、当前浏览器与 fixture 边界、dirty 隔离。
-    effect_scope: 只读审查，不修改文件、事实、Git 或外部系统。
-    risk_summary: Reviewer 不得扩大产品范围、要求创建测试事实或把 fixture 提升为 live 证明。
-    rollback_summary: 无写入；无法独立复核时如实记录质量门未满足。
-    rule_refs:
-    - specs/21-WorkCase-工作项.md
-    - specs/34-WorkCase获批计划执行行动模板.md
-  - action_id: authorization-consume-independent-result-review
-    summary: 消费独立结果复核并由 Controller 完成反馈处置、结果检查和关闭准备。
-    target_scope: Reviewer 只读结论；仅 workcase-0044 的合法完整 after。
-    effect_scope: Reviewer pass 不等于 Gate 2；按完整 after、CAS、回读和审计连续收敛。
-    risk_summary: 不得只输出聊天总结、跳过结果链或提前表达 Gate 2。
-    rollback_summary: 要求修改时仅在授权白名单内返工；超界则收敛受影响 item。
-    rule_refs:
-    - specs/21-WorkCase-工作项.md
-    - specs/34-WorkCase获批计划执行行动模板.md
-  - action_id: authorization-local-semantic-commits
-    summary: 按语义交付单位形成仅本地 Git commits。
-    target_scope: 仅 workcase-0044、Code plan/README、上述 Web API/UI/i18n/docs/tests 白名单和必要的新共享 Pitfall Card 组件。
-    effect_scope: 仅本地 commit；不包含用户 dirty、其它事实、push、PR、发布或外部消息。
-    risk_summary: 不得夹带 spark-0040、workcase-0036 至 0039 或其它事项变化。
-    rollback_summary: 提交前取消非白名单暂存；提交后只用新增受控提交更正，不改写历史。
-    rule_refs:
-    - specs/03-事实源与信息溯源规范.md
-    - specs/30-Git提交行动模板.md
-  action_ceiling: 仅限当前 LDVH worktree 内修复聚焦既有待决定事项/推进中事项的 WorkCase 唯一归属与 blocked 呈现，补齐 Pitfall draft 共享普通 Card，形成 Code plan、同步精确 docs/tests、执行 fixture 与当前事实浏览器验证、独立只读结果复核、仅更新 0044 并形成隔离本地语义 commits；其它聚焦模块保持不变。
-  prohibited_actions:
-  - 修改任何 Specs、Python、Helper、生成器或 web/shared/workcasePresentationContract.generated.ts。
-  - 新增第三个 WorkCase/Pitfall 行动性模块，或修改近期动态、Spark 健康、近期提交热点关系等其它既有模块。
-  - 解析 waiting_on、blocking_summary 或 AI 文案决定收录，或在 unresolved 时从 raw status/phase 回退。
-  - 把 blocked WorkCase 称为正常 Gate 1/Gate 2 waiting，或修改 21 投影语义/身份。
-  - 在任何事实 YAML 持久化 current_snapshot_projection、progress_group、inbox kind、attention kind 或其它派生判断。
-  - 创建、修改或删除任何 Pitfall 事实以制造测试或浏览器演示数据。
-  - 修改、暂存、提交或删除 spark-0040、workcase-0036 至 0039、workcase-0041/0043 或其它事实对象。
-  - 视觉重构、无关重构、依赖升级、新增公开 API/Helper 操作、push、PR、发布、部署、外部消息、破坏性删除、reset、rebase、amend、Hook 绕过或历史改写。
-  allowed_adjustments: 可在不改变 goal、五项成功标准、既有两个行动模块、resolved 唯一归属、unresolved 零猜测、blocked 非 Gate、Pitfall draft fixture 边界、零 Specs/Python/generated-contract/其它模块/事实修改和路径白名单的前提下，调整白名单文件内部函数拆分、共享 Pitfall Card 组件精确路径、测试组织与 i18n 文案；需要其它生产路径、其它测试路径或规则变更时停止受影响 item。
-  verification_and_rollback: 创建基线 HEAD 为 a6de69c49884ed10a5e654aca0c864c7cde64c2b；Index 为空。保护 dirty：spark-0040 当前 bytes SHA-256 b2a93d16bc5a1d6f3bd9a0cc548e0d542fe86221857ffedc503c27a972bbc92e；workcase-0036 至 0039 bytes SHA-256 依次为 97c1fcb4d5542e83b615d48d4c008e57c4be28b2e1a3ee2b6be5dcb694523b8e、889c2af9ab2442eadaff5abb3cd9c3144e189ebb08d5f9e5134f165bc925285b、63e7522d8af96db1e31185a9a7dfc6aedcf6a5217e2301e417cb208432dcb726、2bb28756cb6b5077dc66514b5c9740b9943d7bc4aacc108421730ffaffb96f25。修改前形成 Code plan；运行目标/全量 tests、npm check/build、当前 WorkCase API/浏览器、Pitfall draft fixture、git diff/check/status/hash、路径白名单、0044 精确读取、全库事实完整性与独立结果复核。失败时只恢复本案白名单变化，不触碰用户 dirty；live 与 fixture 结果分开记录。
-  out_of_bounds_handling: 发现需要修改规则源、Python/Helper/generated contract、其它聚焦模块、未列生产或测试路径、创建/修改 Pitfall 事实，或 dirty 漂移无法隔离时，零执行受影响部分并收敛相应 item；其它已授权责任继续，不在执行期请求扩权或先写后补授权。
-creation_reviews:
-- reviewer: reviewer-wc0044-creation-01
-  reviewed_at: '2026-08-02T10:15:00Z'
-  subject_version: 1
-  scope: 独立只读审查初版目标、scope、成功标准、工作项、两个行动模块边界、WorkCase resolved/unresolved 唯一归属、Pitfall draft Card、路径白名单、验证和 dirty 隔离。
-  conclusion: changes_required
-  feedback:
-  - 初版笼统写成聚焦只有两个模块，与当前近期动态、Spark 健康、近期提交热点关系等其它模块冲突；应限定为 WorkCase/Pitfall 的行动性收录只使用既有两个行动模块，且其它模块不修改。
-  - 初版要求每个 open/blocked WorkCase 恰好一次与 unresolved 零猜测冲突；应仅约束 current_snapshot_projection resolved 对象，unresolved 进入 neither 并如实降级。
-  - 当前 ldvh 没有 draft Pitfall；应以受控 fixture 验证 Pitfall Card，并把当前事实浏览器验证与 fixture 结果分开，禁止创建测试事实。
-  controller_resolution: 已将目标、scope、成功标准和授权收窄为只处理既有两个行动性模块并明确其它模块不变；唯一归属只约束 resolved open/blocked WorkCase，unresolved 零猜测且如实降级；Pitfall draft 仅用 fixture/API/UI contract 验证，当前浏览器只核验实际 WorkCase，不创建或修改 Pitfall 事实。
-  covered_quality_gate_ids:
-  - independent-result-review
-- reviewer: reviewer-wc0044-creation-02
-  reviewed_at: '2026-08-02T10:17:16Z'
-  subject_version: 1
-  scope: 第二次独立只读复核修订后的完整 plan_version=1 与 execution_authorization，核对行动模块边界、resolved/unresolved、blocked 非 Gate、Pitfall fixture、白名单、验证和 dirty 隔离。
-  conclusion: pass
-  covered_quality_gate_ids:
-  - independent-result-review
-relations:
-- relation_key: related-to
-  target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0041
-- relation_key: related-to
-  target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0043
-execution_approval:
-  subject_version: 1
-  approved_at: '2026-08-02T18:26:21.510420+08:00'
-  summary: Human 已批准 workcase-0044 plan version 1 及其完整 execution_authorization。
-  baseline_fingerprint: af404090632a5f89b7befaf525cf28a38976c5d82941435dba4bdaa45b9da221
-  source_refs:
-  - turn:human-approve-workcase-0044-plan-v1
-result_version: 1
 success_criterion_results:
 - criterion_id: criterion-workcase-unique-action-module
   outcome: satisfied
@@ -226,25 +30,24 @@ success_criterion_results:
   outcome: not_verified
   summary: Code Plan、目标 25/25、npm check/build、git diff --check、实际与 preview API、WorkCase 精确回读、122 对象完整性、路径白名单、提交和 dirty 隔离已完成；全量 Web API 157/158 的唯一失败为既有范围外 contract。浏览器技能所需专用控制入口不可用，真实 UI 点击/截图未完成；独立结果复核尚待本结果投影回读后执行。
 result_summary: 已完成聚焦行动项修复并以本地提交 f4e687506 保存：blocked Human-position WorkCase 不再从待决定事项消失，progressing 包括 blocked 仍只进入推进中；Pitfall draft 复用完整普通 Card；全程只使用既有两个行动模块和 0041 current_snapshot_projection 边界。产品行为已由目标测试、类型构建和实际/preview API 验证；真实浏览器代表性核验因专用控制入口不可用而保持未验证。
-controller_check_summary: Controller 已核对批准基线、f4e687506 的 11 文件实际提交、progress_group 唯一归属、blocking_overlay 非 Gate 分支、Pitfall 共享 Card、unresolved 零猜测、文档/类型/本地化/测试一致性和不相关 dirty 隔离。未发现需要代码返工的本案缺口；浏览器缺口不被降格为通过，独立 Reviewer 将审查完整结果投影和该边界。
 validation_summary: 目标契约测试 25/25、npm run check、npm run build、git diff --check 通过；build 仅有既有大 chunk 警告。npm run test:web:api 为 157/158，唯一失败是未改动且已知的 commit-label-contract 找不到 Specs 03 类型表。实际 ldvh API 显示 0008/0026 方案待确认、0027 blocked_resolution、0043 关闭待确认、0044 仅推进中；受控 preview API 验证 blocked plan/progressing 唯一归属与 Pitfall draft 六字段。Helper 精确回读 mechanically_valid，全库完整性 complete（122 对象）。提交 f4e687506 仅含 11 个白名单文件；spark-0040 与 workcase-0036 至 0039 保持未提交且未夹带。浏览器技能要求的 mcp__node_repl__js 当前未暴露，故未运行真实浏览器 UI 点击/截图，也不声称 live draft Pitfall 浏览器验证。
-result_reviews:
-- reviewer: reviewer-wc0044-result-01
-  reviewed_at: '2026-08-02T10:46:29Z'
-  subject_version: 1
-  scope: 独立只读审查 workcase-0044 result_version=1、commit f4e687506a7b80c08a9472469a359709e26de741 相对 parent fc3fabc81fbd34cec88a47ab61d47291e71666b3 的 11 文件 diff、Cognition API/UI/types/docs/tests、当前 ldvh 与 preview API、事实完整性、dirty 隔离、浏览器验证边界和 work item 生命周期建模。
-  conclusion: pass
-closure_proposal:
-  proposed_outcome: partial
-  proposed_disposition_summary: 本 WorkCase 已形成稳定产品结果：四项核心成功标准 satisfied，blocked WorkCase 与 Pitfall draft 在既有两个行动模块中的收录、文案和共享 Card 已由目标测试、构建、实际/preview API 与独立 Reviewer 验证。唯一 not_verified 责任是真实浏览器 UI 点击/截图；专用浏览器控制入口当前不可用，未发现需代码返工的证据。建议 Human 接受该验证范围停止，不路由既有对象、不建议新增 Spark；以后若环境恢复，可作为独立只读验证执行，不反向改写本次技术结果。
-  residual_decisions:
-  - residual_id: residual-browser-ui-verification
-    summary: 当前事实 WorkCase 在聚焦页的真实浏览器 UI 点击与截图未执行；原因是浏览器技能规定的专用 mcp__node_repl__js 控制入口当前未暴露。API、fixture、source contract 与 build 均不能替代该浏览器证据，本 WorkCase 不再为等待该环境能力继续占用执行链。
-    proposed_disposition: accept_stop
-summary: partial 关闭提案、result version 1、独立结果复核和浏览器验证 accepted-stop 建议均已形成并冻结；核心产品结果稳定，未将未验证范围伪装为通过。
-resume_from: 仅在 Human 明确批准当前 partial 关闭提案及 residual-browser-ui-verification 的 accept_stop 处置后，使用 close-workcase 对本快照执行 Gate 2 原子关闭；未批准则保持冻结且零写入。
-waiting_on: Human 对 workcase-0044 当前 partial 关闭提案和真实浏览器 UI 验证的 accept_stop 处置作出 Gate 2 决定。
+closure_outcome: partial
+disposition_summary: 本 WorkCase 已形成稳定产品结果：四项核心成功标准 satisfied，blocked WorkCase 与 Pitfall draft 在既有两个行动模块中的收录、文案和共享 Card 已由目标测试、构建、实际/preview API 与独立 Reviewer 验证。唯一 not_verified 责任是真实浏览器 UI 点击/截图；专用浏览器控制入口当前不可用，未发现需代码返工的证据。建议 Human 接受该验证范围停止，不路由既有对象、不建议新增 Spark；以后若环境恢复，可作为独立只读验证执行，不反向改写本次技术结果。
+residual_responsibilities:
+- residual_id: residual-browser-ui-verification
+  summary: 当前事实 WorkCase 在聚焦页的真实浏览器 UI 点击与截图未执行；原因是浏览器技能规定的专用 mcp__node_repl__js 控制入口当前未暴露。API、fixture、source contract 与 build 均不能替代该浏览器证据，本 WorkCase 不再为等待该环境能力继续占用执行链。
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: workcase
+    object_id: workcase-0041
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: workcase
+    object_id: workcase-0043
 object_id: workcase-0044
 fact_type_key: workcase
 created_at: '2026-08-02T18:19:44.085540+08:00'
-updated_at: '2026-08-02T18:48:35.608133+08:00'
+updated_at: '2026-08-02T21:11:20.416549+08:00'
