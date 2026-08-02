@@ -4,6 +4,7 @@
 
 当前适用规划：
 
+- [WorkCase 投影规范到 Python 的精确漂移合同](workcase-presentation-source-contract.md)：覆盖 21 §9.3 非 blocked 六列表的严格 inline-code 语法、测试侧抽取、Python 常量全等比较与 mutation 负向漂移检测。
 - [Cognition 行动事项收录与完整 Card](cognition-actionable-items.md)：覆盖 WorkCase 在既有待决定/推进中模块的唯一归属、blocked 非 Gate 呈现，以及 Pitfall draft 共享普通 Card。
 - [WorkCase Web 当前快照投影最终消费](workcase-web-current-snapshot-consumption.md)：覆盖 Web API downstream、列表、详情、认知中心、阅读面板与共享轨道退出 raw phase/status fallback，保留四类浏览分组并呈现只读下一必经动作。
 - [WorkCase Controller 续跑与行动模板收敛](workcase-controller-continuation.md)：覆盖 06 最小临时工件共同边界、34 五段执行内核、fresh snapshot projection 消费、Reviewer 后连续受控写回与对应 source-contract 回归。
