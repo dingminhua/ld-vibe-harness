@@ -1,0 +1,15 @@
+title: LDVH 行为可观测性与健康投影
+intent: 验证是否能用稳定的行为事件、不变量和外部状态快照，形成对 Agent 与 Controller 执行健康度的可回放判断；后续需要确定事件契约、健康状态、误触发与漏报检测，以及它们和事实源、验证、恢复、清理之间的边界。若不跨行动保留这个议题，后续会反复依赖对话回放和手工判断，增加定位、复核与中断恢复负担。
+status: open
+priority: P1
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0009
+summary: "**当前判断**\n\n- spark-0009 需要端到端 Harness 成熟度证据，但仅靠最终自然语言结果或组件存在性难以稳定判断行为是否发生、失败在哪里以及能否恢复。\n- 可将关键行为定义为稳定 checkpoint，并记录 started、completed、failed、blocked、timeout、recovery 和 cleanup 等事件，再由事件顺序、不变量和外部状态快照形成健康投影。\n- 埋点触发只证明行为被观察到，不自动证明行为正确、事实已写入、任务已完成或 Human 已验收。\n\n**待验证边界**\n\n- 需要区分 observed、failed、not_observed 和 inconclusive，处理事件丢失、重复、乱序、错误放置、重试和 Agent 未启动等情况。\n- 健康判断必须绑定 run、Agent、WorkCase、实际 worktree、输入快照和验证证据，不能让事件流成为第二事实源。\n- 第一轮宜选择规则/来源核对、实现验证、评审/交付三类代表性流程，覆盖正向、负向、超时/权限压力、中断恢复和清理，并统计 false trigger、漏报、重复、延迟与成本。\n\n**尚待判断**\n\n- 是否需要统一事件契约、持久化运行记录、健康状态投影和告警入口；哪些 checkpoint 属于 LDVH 核心边界；以及达到什么证据门槛后才允许扩大持续编排实验。"
+object_id: spark-0045
+fact_type_key: spark
+created_at: '2026-08-02T17:20:55.139466+08:00'
+updated_at: '2026-08-02T17:20:55.139466+08:00'
