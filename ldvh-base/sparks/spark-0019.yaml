@@ -1,21 +1,16 @@
 title: Agent 友好的 LDVH Helper 创建工作流
-intent: 保留 Helper 创建流程中 Agent
-  发现、候选召回、请求形成、诊断修正与受控交还的交互摩擦，避免为了表面上的一步创建而降低来源、授权、语义判断、机械校验或写后回读边界。后续需判断哪些公开操作、示例与诊断能减少负担且不扩大自动化结论。
+intent: 保留 Helper 创建流程中 Agent 发现、候选召回、请求形成、诊断修正与受控交还的交互摩擦，避免为了表面上的一步创建而降低来源、授权、语义判断、机械校验或写后回读边界。后续需判断哪些公开操作、示例与诊断能减少负担且不扩大自动化结论。
 status: open
 priority: P2
-summary: 研究如何让 LDVH Helper CLI 对 Agent 更易发现、更少负担且保持治理可靠：重点包括创建前通过 Helper
-  完成候选事实召回与重复辅助、提供公开操作说明和最小 JSON 请求示例、降低两阶段草案依据传递负担、聚合诊断反馈，并清晰分层机械校验、语义判断、Human
-  Gate、验证结论与提交交接；不以降低校验、来源和授权边界换取表面上的一步创建。
+summary: "研究如何让 LDVH Helper CLI 对 Agent 更易发现、更少负担且保持治理可靠：重点包括创建前通过 Helper 完成候选事实召回与重复辅助、提供公开操作说明和最小 JSON 请求示例、降低两阶段草案依据传递负担、聚合诊断反馈，并清晰分层机械校验、语义判断、Human Gate、验证结论与提交交接；不以降低校验、来源和授权边界换取表面上的一步创建。\n\n## 当前观察：一次提交的闭环负担\n\n- 一次受管辖提交至少涉及目标范围确认、工作树与 Index 检查、管辖解析、事实对象写后审计（仅事实候选）、精确暂存、commit message 契约检查、同一候选快照上的 `precheck-git-commit`，以及 commit 后的 hash、路径、message 和剩余变化回读。\n- 这些步骤中，提交范围授权、Index 隔离、受管辖事实的写后验证、同一快照机械预检和提交后回读不能省略；它们分别防止误提交、事实损坏、过期检查结果和提交范围漂移。\n- 可以减负的主要是机械交互：把治理解析、Index 快照、条件性事实审计、message 检查和 precheck 聚合为一次 preflight；提供包含 `关键变更:` 的 message 模板；按候选类型触发事实或 Web 检查；缓存未变化规则的 fingerprint；默认压缩 Helper 输出，按需展开诊断。\n- 目标不是把提交变成无确认的一键动作，而是收敛为“候选准备 → 一次性 preflight → Human 确认后 commit 与自动回读”；语义拆分、范围授权、验证真实性和高影响判断仍由 AI/Human 负责。\n\n## 待验证方向\n\n- 需要判断上述聚合 preflight 是否能在不形成第二套事实源、不跨越 Human Gate、且保持同一观察快照的前提下落地。\n- 需要用普通代码提交、事实对象提交和混合提交三类候选验证条件性检查、误报/漏报、诊断修正次数和端到端耗时。"
 evolution:
 - at: '2026-07-19T18:50:24+08:00'
-  summary: 本次创建、预检和提交复盘显示，流程安全闭环已经成立，但 Agent 仍需承担候选召回、协议发现、内部 fingerprint
-    搬运和多轮诊断修正；后续应优先改善这些交互摩擦，同时保留严格校验、范围隔离和写后回读。
+  summary: 本次创建、预检和提交复盘显示，流程安全闭环已经成立，但 Agent 仍需承担候选召回、协议发现、内部 fingerprint 搬运和多轮诊断修正；后续应优先改善这些交互摩擦，同时保留严格校验、范围隔离和写后回读。
 - at: '2026-07-20T17:42:31+08:00'
-  summary: 本次真实 Helper 使用暴露出共同请求校验不一致：authorization_reference 与 text_match
-    类型错误能稳定返回 invalid_request 和定位诊断，但 read-specification-candidates 的
-    requested_disclosure 误传对象时触发 TypeError 并降级为 outcome=error。后续应统一公共字段的入口验证与
-    invalid_request 封装，提供最小合法请求示例，使 Agent 能据诊断修正请求而不是遭遇实现异常。
+  summary: 本次真实 Helper 使用暴露出共同请求校验不一致：authorization_reference 与 text_match 类型错误能稳定返回 invalid_request 和定位诊断，但 read-specification-candidates 的 requested_disclosure 误传对象时触发 TypeError 并降级为 outcome=error。后续应统一公共字段的入口验证与 invalid_request 封装，提供最小合法请求示例，使 Agent 能据诊断修正请求而不是遭遇实现异常。
+- at: '2026-08-02T18:27:00+08:00'
+  summary: 本次受管辖 Spark 提交复盘进一步区分了不可省略的范围授权、Index 隔离、事实审计、同快照预检和提交后回读，以及可以由聚合 preflight、message 模板、条件性检查、规则 fingerprint 缓存和压缩诊断减负的机械交互；后续应验证这一分层能否在不跨越 Human Gate 或形成第二事实源的前提下降低端到端提交负担。
 object_id: spark-0019
 fact_type_key: spark
 created_at: '2026-07-19T18:47:20.417174+08:00'
-updated_at: '2026-07-23T14:21:35.783731+08:00'
+updated_at: '2026-08-02T18:28:33.867382+08:00'
