@@ -254,6 +254,7 @@ test('WorkCase cards use compact authorization tabs and limit allowed actions to
   assert.match(authorization, /text-violet-700 dark:text-violet-200/);
   assert.match(authorization, /mt-2 size-1 shrink-0 rounded-full/);
   assert.match(authorization, /function AuthorizationCardItems/);
+  assert.match(authorization, /function AuthorizationCardItems[\s\S]*?divide-y divide-emerald-500\/15/);
   assert.match(authorization, /<p className=\{`ldvh-caption-strong min-w-0 \$\{textClass\}`\}>\{item\}<\/p>/);
 });
 

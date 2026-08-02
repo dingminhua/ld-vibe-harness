@@ -1570,12 +1570,12 @@ function ExecutionAuthorization({
         </div>
       )}
       {activeTab === "prohibited" && (
-        <div id="workcase-authorization-prohibited" className={`-mt-px min-w-0 rounded-b-lg border px-3 py-2 ${tabStyles.prohibited.panel}`}>
+        <div id="workcase-authorization-prohibited" className={`-mt-px min-w-0 rounded-b-lg border px-3 py-1 ${tabStyles.prohibited.panel}`}>
           <AuthorizationStringList items={prohibitedActions} tone="warning" />
         </div>
       )}
       {activeTab === "prerequisites" && (
-        <div id="workcase-authorization-prerequisites" className={`-mt-px min-w-0 rounded-b-lg border px-3 py-2 ${tabStyles.prerequisites.panel}`}>
+        <div id="workcase-authorization-prerequisites" className={`-mt-px min-w-0 rounded-b-lg border px-3 py-1 ${tabStyles.prerequisites.panel}`}>
           <AuthorizationStringList items={prerequisites} tone="prerequisite" />
         </div>
       )}
@@ -1721,9 +1721,9 @@ function AuthorizationStringList({ items, tone }: { items: string[]; tone: "warn
   const markerClass = tone === "warning" ? "bg-rose-500/75 dark:bg-rose-300/80" : "bg-violet-500/75 dark:bg-violet-300/80";
   return (
     <div className="min-w-0">
-      <ul className="grid min-w-0 divide-y divide-current/15">
+      <ul className="grid min-w-0 divide-y divide-emerald-500/15">
         {items.map((item) => (
-          <li key={item} className="flex min-w-0 gap-2 py-2.5 first:pt-1 last:pb-1">
+          <li key={item} className="flex min-w-0 gap-2 py-1 first:pt-0 last:pb-0">
             <span className={`mt-3.5 size-1.5 shrink-0 rounded-full ${markerClass}`} aria-hidden="true" />
             <SummaryText value={item} collapseThreshold={Number.MAX_SAFE_INTEGER} className={`ldvh-detail-semantic-body min-w-0 ${bodyClass}`} />
           </li>

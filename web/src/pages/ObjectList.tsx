@@ -464,7 +464,7 @@ function AuthorizationCardItems({
   const bulletClass = tone === 'warning' ? 'bg-rose-500 dark:bg-rose-300' : 'bg-violet-500 dark:bg-violet-300';
   const textClass = tone === 'warning' ? 'text-rose-700 dark:text-rose-200' : 'text-violet-700 dark:text-violet-200';
   return (
-    <ul className="grid min-w-0 divide-y divide-current/15">
+    <ul className="grid min-w-0 divide-y divide-emerald-500/15">
       {items.map((item) => (
         <li key={item} className="flex min-w-0 gap-1.5 py-1.5 first:pt-0.5 last:pb-0.5">
           <span className={`mt-2 size-1 shrink-0 rounded-full ${bulletClass}`} aria-hidden="true" />

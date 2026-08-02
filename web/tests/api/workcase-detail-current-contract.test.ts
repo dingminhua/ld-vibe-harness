@@ -365,7 +365,8 @@ test('WorkCase authorization detail follows the shared overview, object, and sec
   assert.match(authorization, /fieldKey="rollback_summary"/);
   assert.match(authorization, /function AuthorizationDisclosure/);
   assert.match(authorization, /function AuthorizationListDisclosure[\s\S]*?<StringChips items=\{items\} \/>/);
-  assert.match(authorization, /function AuthorizationStringList[\s\S]*?divide-y divide-current\/15/);
+  assert.match(authorization, /function AuthorizationStringList[\s\S]*?divide-y divide-emerald-500\/15/);
+  assert.match(authorization, /AuthorizationStringList[\s\S]*?gap-2 py-1 first:pt-0 last:pb-0/);
   assert.doesNotMatch(authorization, /\[\s*"action_id",\s*"summary"/);
 });
 
