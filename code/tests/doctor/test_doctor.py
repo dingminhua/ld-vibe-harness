@@ -50,7 +50,7 @@ def test_doctor_reports_ready_for_explicit_governed_project(tmp_path: Path) -> N
     assert result["status"] == "ready"
     assert result["distribution"] == {"name": "ld-vibe-harness", "version": "0.1.0"}
     assert result["helper"]["contract"] == "ldvh-helper-cli/2"
-    assert result["helper"]["operation_count"] == 19
+    assert result["helper"]["operation_count"] == 20
     assert result["configuration"]["config_status"] == "valid"
     assert result["configuration"]["scope_status"] == "governed_single"
     assert result["configuration"]["governed_project_id"] == "sample"
@@ -77,12 +77,12 @@ def test_doctor_ready_does_not_claim_environment_installation_or_triggering(tmp_
     )
 
     assert result["status"] == "ready"
-    assert next(
-        item for item in result["integration_surfaces"] if item["surface_key"] == "work-context-core"
-    )["state"] == "available"
     assert (
-        "static entry points do not prove installation into, automatic triggering by, "
-        "or verification of an environment"
+        next(item for item in result["integration_surfaces"] if item["surface_key"] == "work-context-core")["state"]
+        == "available"
+    )
+    assert (
+        "static entry points do not prove installation into, automatic triggering by, or verification of an environment"
     ) in result["limitations"]
     assert not any("environment_trigger" in item["check"] for item in result["checks"])
 
@@ -103,8 +103,7 @@ def test_doctor_reports_attention_without_guessing_project_binding(tmp_path: Pat
     assert result["configuration"]["governed_project_id"] is None
     assert next(item for item in result["checks"] if item["check"] == "governance")["status"] == "attention"
     assert all(
-        "target AI development environment" in item or "automatic triggering" in item
-        for item in result["limitations"]
+        "target AI development environment" in item or "automatic triggering" in item for item in result["limitations"]
     )
 
 
