@@ -34,7 +34,7 @@ export const AUXILIARY_META_KEYS_BY_TYPE: Record<string, string[]> = {
 
 const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
   workcase: [
-    'goal', 'scope', 'phase', 'summary', 'resume_from', 'waiting_on', 'blocking_summary',
+    'goal', 'scope', 'phase', 'summary', 'resume_from', 'waiting_on', 'blocking_summary', 'change_log',
     'success_criterion_definitions', 'success_criterion_results', 'plan_version', 'work_items',
     'creation_reviews', 'execution_approval', 'result_version', 'result_summary',
     'controller_check_summary', 'result_reviews', 'validation_summary', 'closure_proposal',
@@ -42,23 +42,23 @@ const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
   ],
   adr: [
     'decision_question', 'decision', 'applicability', 'rationale', 'consequences',
-    'urls', 'relations', 'disposition_summary',
+    'change_log', 'urls', 'relations', 'disposition_summary',
   ],
   pitfall: [
     'symptoms', 'trigger_conditions', 'applicability', 'validation_summary', 'root_cause',
-    'resolution', 'avoidance', 'urls', 'relations',
+    'resolution', 'avoidance', 'change_log', 'urls', 'relations',
     'disposition_summary',
   ],
   spark: [
-    'summary', 'evolution', 'urls', 'relations',
+    'summary', 'evolution', 'change_log', 'urls', 'relations',
     'disposition_summary',
   ],
   study: [
     'research_intent', 'research_question', 'abstract', 'recommendation_summary', 'report_body',
-    'urls', 'disposition_summary',
+    'change_log', 'urls', 'disposition_summary',
   ],
   'file-asset': [
-    'filename', 'media_type', 'size_bytes', 'content_sha256', 'signature',
+    'filename', 'media_type', 'size_bytes', 'content_sha256', 'signature', 'change_log',
     'deleted_at', 'disposition_summary', 'recovery',
   ],
 };

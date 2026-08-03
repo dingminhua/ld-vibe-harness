@@ -80,6 +80,7 @@ def test_general_discovery_reports_source_bound_implementation(tmp_path: Path) -
         "arguments.fact_ref",
         "arguments.expected_content_fingerprint",
         "arguments.deletion_summary",
+        "arguments.change_log_entry",
         "authorization_reference",
     ]
     assert operations["prepare-file-asset-intake"]["implementation"]["present"] is True

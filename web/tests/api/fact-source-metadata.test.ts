@@ -112,7 +112,7 @@ test('identity and required-field problems remain readable field-level results',
       ['abstract', 'missing'],
       ['created_at', 'missing'],
       ['object_id', 'identity_mismatch'], ['research_question', 'missing'], ['title', 'missing'],
-      ['updated_at', 'missing'], ['urls', 'missing'],
+      ['updated_at', 'missing'],
     ]);
 
     const missing = await showObject('study-9999', scope);

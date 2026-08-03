@@ -4,6 +4,7 @@ import json
 import os
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -74,6 +75,18 @@ def _create(
         "filename": Path(str(basis["source_path"])).name,
         "media_type": "text/markdown",
         "signature": signature or {"signer_type": "human"},
+        "change_log": [
+            {
+                "signature": {
+                    "signer_type": "ai-agent",
+                    "agent_id": "test-agent",
+                    "host_environment": "pytest",
+                },
+                "session_id": "file-asset-creation-test-session",
+                "at": (datetime.now().astimezone() - timedelta(minutes=1)).isoformat(),
+                "summary": "Created by the controlled FileAsset test fixture.",
+            }
+        ],
     }
     if extra:
         fact_object.update(extra)

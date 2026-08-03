@@ -7,6 +7,7 @@ import subprocess
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from copy import deepcopy
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -446,6 +447,22 @@ def _create_payload(
     basis: dict[str, object],
     fact_object: dict[str, object],
 ) -> str:
+    supplied = deepcopy(fact_object)
+    supplied.setdefault(
+        "change_log",
+        [
+            {
+                "signature": {
+                    "signer_type": "ai-agent",
+                    "agent_id": "test-agent",
+                    "host_environment": "pytest",
+                },
+                "session_id": "creation-test-session",
+                "at": (datetime.now().astimezone() - timedelta(minutes=1)).isoformat(),
+                "summary": "Created by the controlled test fixture.",
+            }
+        ],
+    )
     return json.dumps(
         {
             "work_object_locators": [str(project)],
@@ -461,7 +478,7 @@ def _create_payload(
                         "worktree_fingerprint",
                     )
                 },
-                "fact_object": fact_object,
+                "fact_object": supplied,
             },
         }
     )
@@ -667,6 +684,18 @@ def test_helper_create_read_and_update_accept_ignored_current_fact(tmp_path: Pat
     for key in ("object_id", "fact_type_key", "created_at", "updated_at"):
         target.pop(key)
     target["summary"] = "Ignored current fact updated through the Helper."
+    target["change_log"].append(
+        {
+            "signature": {
+                "signer_type": "ai-agent",
+                "agent_id": "test-agent",
+                "host_environment": "pytest",
+            },
+            "session_id": "creation-test-update-session",
+            "at": datetime.now().astimezone().isoformat(),
+            "summary": "Updated by the controlled test fixture.",
+        }
+    )
     updated = handle_request(
         "call",
         "update-fact-object",
@@ -1631,6 +1660,7 @@ def test_create_study_validates_markdown_carrier_and_external_urls(tmp_path: Pat
         "frontmatter": {
             "title": "Controlled Study creation",
             "status": "active",
+            "report_kind": "external_research",
             "urls": [
                 {
                     "ref": "https://example.invalid/controlled-study-evidence",

@@ -185,7 +185,7 @@ def _intake_execute(
         "carrier": "file-asset-directory",
         "payload_limit_bytes": DEFAULT_PAYLOAD_BUDGET,
         "fact_object_contract": {
-            "required_fields": ["title", "filename", "media_type", "signature"],
+            "required_fields": ["title", "filename", "media_type", "signature", "change_log"],
             "managed_fields": [
                 "object_id",
                 "fact_type_key",

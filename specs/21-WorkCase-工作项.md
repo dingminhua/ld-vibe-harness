@@ -148,6 +148,7 @@ WorkCase 只有本文与 05.Att.01 共同定义的当前字段和结构。任何
 | `title` | required | `workcase-fact-type::5. WorkCase 类型定义` |
 | `created-at` | required | `inherit` |
 | `updated-at` | required | `workcase-fact-type::7. AI 写回与受控操作` |
+| `change-log` | conditional | `workcase-fact-type::7. AI 写回与受控操作` |
 | `status` | required | `workcase-fact-type::6. 状态、阶段与生命周期` |
 | `urls` | conditional | `workcase-fact-type::8. 来源、外部资料与关系` |
 | `relations` | conditional | `workcase-fact-type::8. 来源、外部资料与关系` |

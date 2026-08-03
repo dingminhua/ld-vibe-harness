@@ -38,7 +38,7 @@ _BASIS_FIELDS = frozenset(
         "source_fingerprint",
     }
 )
-_FACT_OBJECT_FIELDS = frozenset({"title", "filename", "media_type", "signature"})
+_FACT_OBJECT_FIELDS = frozenset({"title", "filename", "media_type", "signature", "change_log"})
 _FINGERPRINT_FIELDS = frozenset(
     {"schema_fingerprint", "worktree_fingerprint", "source_content_sha256", "source_fingerprint"}
 )

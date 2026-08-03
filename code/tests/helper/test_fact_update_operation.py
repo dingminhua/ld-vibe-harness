@@ -1071,6 +1071,7 @@ def test_study_update_preserves_submitted_body_boundary(tmp_path: Path) -> None:
         "frontmatter": {
             "title": "Study update",
             "status": "active",
+            "report_kind": "external_research",
             "urls": [
                 {
                     "ref": "https://example.invalid/study-update",

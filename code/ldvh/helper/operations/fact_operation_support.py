@@ -91,7 +91,6 @@ def post_write_integrity_audit(
         "scope": list(execution.requested_scope),
         "source_refs": [audit_contract],
         "code": "post_write_integrity_incomplete",
-        "member_count": max(1, len(problems)),
     }
     # The atomic write and its exact target readback remain true observations.
     # The incomplete independent audit is recorded separately, so callers can

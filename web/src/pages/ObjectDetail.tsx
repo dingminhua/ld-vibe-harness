@@ -67,6 +67,7 @@ export { AdrReadingLayout, PitfallReadingLayout, SparkReadingLayout } from '@/pa
 
 const STUDY_READING_NODE_FIELDS = new Set([
   'research_intent', 'research_question', 'abstract', 'recommendation_summary', 'report_body',
+  'report_kind', 'input_refs',
 ]);
 const FORMAL_ASSOCIATION_FIELDS = new Set(['relations']);
 export type ReadingNodeState = 'collapsed' | 'expanded';
@@ -1166,6 +1167,49 @@ const STUDY_READING_NODES: Array<{ field: string; kind: 'text' | 'report' }> = [
   { field: 'report_body', kind: 'report' },
 ];
 
+function StudyReportMetadata({ obj, locale }: { obj: Record<string, unknown>; locale: string }) {
+  const reportKind = typeof obj.report_kind === 'string' ? obj.report_kind : null;
+  const inputRefs = Array.isArray(obj.input_refs)
+    ? obj.input_refs.filter((value): value is Record<string, unknown> => Boolean(value && typeof value === 'object'))
+    : [];
+  if (!reportKind && inputRefs.length === 0) return null;
+
+  const metadata = (label: string, value: unknown) => (
+    <div className="min-w-0">
+      <dt className="ldvh-caption text-ldvh-text-secondary">{label}</dt>
+      <dd className="mt-0.5 break-words text-sm text-ldvh-text">{String(value)}</dd>
+    </div>
+  );
+
+  return (
+    <section className="rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
+      <h3 className="ldvh-caption-strong mb-3">{getFieldLabel('report_metadata', locale)}</h3>
+      {reportKind && (
+        <dl className="grid min-w-0 gap-4 grid-cols-3">
+          {metadata(getFieldLabel('report_kind', locale), getFieldValueLabel('report_kind', reportKind, locale))}
+        </dl>
+      )}
+      {inputRefs.length > 0 && (
+        <div className="mt-4 border-t border-ldvh-border/70 pt-3">
+          <h4 className="ldvh-caption-strong mb-2">{getFieldLabel('input_refs', locale)}</h4>
+          <ul className="grid min-w-0 gap-2">
+            {inputRefs.map((ref, index) => (
+              <li key={`${String(ref.kind)}-${String(ref.locator)}-${index}`} className="rounded-md border border-ldvh-border/70 px-3 py-2">
+                <dl className="grid min-w-0 gap-2 grid-cols-2">
+                  {typeof ref.kind === 'string' && metadata(getFieldLabel('kind', locale), ref.kind)}
+                  {typeof ref.locator === 'string' && metadata(getFieldLabel('locator', locale), ref.locator)}
+                  {typeof ref.version === 'string' && metadata(getFieldLabel('version', locale), ref.version)}
+                  {typeof ref.observed_at === 'string' && metadata(getFieldLabel('observed_at', locale), ref.observed_at)}
+                </dl>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </section>
+  );
+}
+
 export function StudyReadingLayout({
   obj,
   extraEntries,
@@ -1198,6 +1242,7 @@ export function StudyReadingLayout({
           carrier={carrier}
         />
       ))}
+      <StudyReportMetadata obj={obj} locale={locale} />
       {extraPrimaryEntries.map(([fieldKey, value]) => (
         <ContentField
           key={fieldKey}

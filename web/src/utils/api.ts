@@ -110,6 +110,8 @@ export interface ObjectItem {
   disposition_summary?: string;
   relations?: Array<Record<string, unknown>>;
   /** Study-specific */
+  report_kind?: 'external_research' | 'internal_audit' | 'technical_assessment' | 'comparison';
+  input_refs?: Array<Record<string, unknown>>;
   research_intent?: string;
   research_question?: string;
   abstract?: string;

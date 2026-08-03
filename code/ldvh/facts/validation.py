@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import date
 from typing import Any
@@ -176,6 +177,82 @@ def _time(value: object, path: str, issues: list[FactIssue]) -> RFC3339Instant |
     return parsed
 
 
+def _validate_change_log_signature(value: object, path: str, issues: list[FactIssue]) -> None:
+    if not isinstance(value, dict):
+        return
+    signer_type = value.get("signer_type")
+    if signer_type not in {"human", "ai-agent"}:
+        issues.append(FactIssue("schema", "change_log.signature.signer_type 不在 human、ai-agent 闭集中", f"{path}.signer_type"))
+        return
+    allowed = {"signer_type"} if signer_type == "human" else {"signer_type", "agent_id", "host_environment"}
+    for name in sorted(set(value) - allowed):
+        issues.append(FactIssue("schema", "change_log.signature 当前分支禁止该字段", f"{path}.{name}"))
+    if signer_type == "ai-agent":
+        for name in ("agent_id", "host_environment"):
+            if not isinstance(value.get(name), str) or not value[name].strip():
+                issues.append(FactIssue("schema", "change_log.signature AI 分支字段必须是非空 string", f"{path}.{name}"))
+
+
+def _validate_change_log(fields: dict[str, Any], issues: list[FactIssue]) -> None:
+    change_log = fields.get("change_log")
+    if not isinstance(change_log, list):
+        return
+    created = parse_rfc3339(fields.get("created_at"))
+    updated = parse_rfc3339(fields.get("updated_at"))
+    previous: RFC3339Instant | None = None
+    for index, entry in enumerate(change_log):
+        if not isinstance(entry, dict):
+            continue
+        path = f"change_log[{index}]"
+        _validate_change_log_signature(entry.get("signature"), f"{path}.signature", issues)
+        event_at = _time(entry.get("at"), f"{path}.at", issues)
+        if event_at is not None:
+            if created is not None and event_at < created:
+                issues.append(FactIssue("schema", "change_log.at 不得早于 created_at", f"{path}.at"))
+            if updated is not None and event_at > updated:
+                issues.append(FactIssue("schema", "change_log.at 不得晚于 updated_at", f"{path}.at"))
+            if previous is not None and event_at <= previous:
+                issues.append(FactIssue("schema", "change_log.at 必须严格递增", f"{path}.at"))
+            previous = event_at
+
+
+def change_log_creation_issues(fields: Mapping[str, Any]) -> tuple[FactIssue, ...]:
+    """Require every newly created fact to begin an attributable change log."""
+
+    if isinstance(fields.get("change_log"), list) and fields["change_log"]:
+        return ()
+    return (FactIssue("schema", "新建事实对象必须包含首条 change_log 流水", "change_log"),)
+
+
+def timestamp_initial_change_log(fields: dict[str, Any], event_at: str) -> None:
+    """Bind a newly created object's sole initial log entry to Code's event time."""
+
+    change_log = fields.get("change_log")
+    if isinstance(change_log, list) and len(change_log) == 1 and isinstance(change_log[0], dict):
+        change_log[0]["at"] = event_at
+
+
+def validate_change_log_transition(
+    before: Mapping[str, Any],
+    after: Mapping[str, Any],
+    *,
+    require_append: bool = True,
+) -> tuple[FactIssue, ...]:
+    """Keep known change-log history immutable and require one appended event."""
+
+    previous = before.get("change_log")
+    current = after.get("change_log")
+    if not isinstance(previous, list):
+        # Legacy objects may not have trustworthy actor or session history.
+        # Their first update must not fabricate one retroactively.
+        return ()
+    if not isinstance(current, list) or len(current) != len(previous) + (1 if require_append else 0):
+        return (FactIssue("schema", "受控更新必须保留既有 change_log 并追加一条流水", "change_log"),)
+    if current[: len(previous)] != previous:
+        return (FactIssue("schema", "change_log 历史条目不可改写或删除", "change_log"),)
+    return ()
+
+
 def _require(fields: dict[str, Any], names: set[str] | frozenset[str], issues: list[FactIssue]) -> None:
     for name in sorted(names):
         if name not in fields:
@@ -273,8 +350,6 @@ def _validate_times(fact_type_key: str, fields: dict[str, Any], issues: list[Fac
 def _validate_references(fact_type_key: str, fields: dict[str, Any], issues: list[FactIssue]) -> None:
     urls = fields.get("urls")
     if urls is None:
-        if fact_type_key == "study":
-            issues.append(FactIssue("reference", "Study 必须至少包含一项 urls", "urls"))
         return
     if not isinstance(urls, list):
         return
@@ -302,6 +377,59 @@ def _validate_relations(fact_type_key: str, fields: dict[str, Any], issues: list
         path = f"relations[{index}]"
         if relation.get("relation_key") not in allowed:
             issues.append(FactIssue("relation", "relation_key 不在当前类型闭集中", f"{path}.relation_key"))
+
+
+STUDY_REPORT_KINDS = frozenset({
+    "external_research",
+    "internal_audit",
+    "technical_assessment",
+    "comparison",
+})
+
+
+def _nonempty_string(value: object) -> bool:
+    return isinstance(value, str) and bool(value.strip())
+
+
+def _validate_study(fields: dict[str, Any], issues: list[FactIssue]) -> None:
+    report_kind = fields.get("report_kind")
+    if report_kind is not None and report_kind not in STUDY_REPORT_KINDS:
+        issues.append(FactIssue("schema", "Study report_kind 不在当前闭集中", "report_kind"))
+
+    input_refs = fields.get("input_refs")
+    if input_refs is not None:
+        if not isinstance(input_refs, list):
+            return
+        for index, value in enumerate(input_refs):
+            path = f"input_refs[{index}]"
+            if not isinstance(value, dict):
+                continue
+            if not _nonempty_string(value.get("kind")):
+                issues.append(FactIssue("reference", "Study input_refs.kind 必须是非空 string", f"{path}.kind"))
+            if not _nonempty_string(value.get("locator")):
+                issues.append(FactIssue("reference", "Study input_refs.locator 必须是非空 string", f"{path}.locator"))
+            for name in ("version", "observed_at"):
+                if name in value and not _nonempty_string(value[name]):
+                    issues.append(FactIssue("reference", f"Study input_refs.{name} 必须是非空 string", f"{path}.{name}"))
+            if "observed_at" in value and _nonempty_string(value.get("observed_at")) and parse_rfc3339(value["observed_at"]) is None:
+                issues.append(FactIssue("schema", "Study input_refs.observed_at 必须是有效 RFC 3339 时间", f"{path}.observed_at"))
+
+
+def study_report_creation_issues(fields: dict[str, Any]) -> tuple[FactIssue, ...]:
+    """Require new Study report metadata without invalidating legacy reads."""
+    issues: list[FactIssue] = []
+    report_kind = fields.get("report_kind")
+    if report_kind not in STUDY_REPORT_KINDS:
+        issues.append(FactIssue("schema", "新建 Study 必须提供合法 report_kind", "report_kind"))
+    input_refs = fields.get("input_refs")
+    urls = fields.get("urls")
+    if report_kind == "external_research":
+        if not isinstance(urls, list) or not urls:
+            issues.append(FactIssue("reference", "external_research Study 必须至少包含一项 urls", "urls"))
+    elif report_kind in {"internal_audit", "technical_assessment", "comparison"}:
+        if not isinstance(input_refs, list) or not input_refs:
+            issues.append(FactIssue("reference", f"{report_kind} Study 必须至少包含一项 input_refs", "input_refs"))
+    return tuple(issues)
 
 
 def _validate_file_asset(fields: dict[str, Any], issues: list[FactIssue]) -> None:
@@ -397,12 +525,23 @@ def validate_fact_object(fact_type_key: str, fields: dict[str, Any], schema: Fac
     _validate_status(fact_type_key, fields, issues)
     if fact_type_key == "workcase":
         issues.extend(validate_workcase_snapshot(fields))
+    elif fact_type_key == "study":
+        _validate_study(fields, issues)
     elif fact_type_key == "file-asset":
         _validate_file_asset(fields, issues)
     _validate_times(fact_type_key, fields, issues)
+    _validate_change_log(fields, issues)
     _validate_references(fact_type_key, fields, issues)
     _validate_relations(fact_type_key, fields, issues)
     return tuple(issues)
 
 
-__all__ = ["parse_rfc3339", "validate_fact_object"]
+__all__ = [
+    "STUDY_REPORT_KINDS",
+    "change_log_creation_issues",
+    "parse_rfc3339",
+    "study_report_creation_issues",
+    "timestamp_initial_change_log",
+    "validate_change_log_transition",
+    "validate_fact_object",
+]

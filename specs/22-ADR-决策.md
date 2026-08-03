@@ -99,6 +99,7 @@ AI 负责判断决定是否已实际成立、是否值得对象化、是否重�
 | `title` | required | `adr-fact-type::5. ADR 类型定义` |
 | `created-at` | required | `adr-fact-type::8. 变更、删除与类型退出` |
 | `updated-at` | required | `adr-fact-type::8. 变更、删除与类型退出` |
+| `change-log` | conditional | `adr-fact-type::8. 变更、删除与类型退出` |
 | `status` | required | `adr-fact-type::6. 对象语义与生命周期` |
 | `urls` | conditional | `adr-fact-type::7. 形成边界、取舍说明与替代关系` |
 | `relations` | conditional | `adr-fact-type::7. 形成边界、取舍说明与替代关系` |

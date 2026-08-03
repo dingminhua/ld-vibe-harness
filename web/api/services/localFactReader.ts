@@ -155,12 +155,22 @@ function matchesExpectation(value: unknown, expected: FieldExpectation): boolean
 const RECORD_ARRAY_FIELDS: Partial<Record<LocalFactType, ReadonlySet<string>>> = {
   workcase: new Set([
     'success_criterion_definitions', 'success_criterion_results', 'work_items',
-    'creation_reviews', 'result_reviews', 'residual_responsibilities', 'relations',
+    'creation_reviews', 'result_reviews', 'residual_responsibilities', 'relations', 'change_log',
   ]),
-  spark: new Set(['evolution', 'relations']),
+  spark: new Set(['evolution', 'relations', 'change_log']),
+  adr: new Set(['change_log']),
+  pitfall: new Set(['change_log']),
+  study: new Set(['change_log']),
+  'file-asset': new Set(['change_log']),
 }
 
 function isConsumableRecordMember(type: LocalFactType, field: string, member: Record<string, unknown>): boolean {
+  if (field === 'change_log') {
+    const signature = member.signature
+    return typeof member.at === 'string' && member.at.trim().length > 0
+      && typeof member.summary === 'string' && member.summary.trim().length > 0
+      && isRecord(signature) && typeof signature.signer_type === 'string'
+  }
   if (type !== 'spark' || field !== 'evolution') return true
   return typeof member.at === 'string' && member.at.trim().length > 0
     && typeof member.summary === 'string' && member.summary.trim().length > 0

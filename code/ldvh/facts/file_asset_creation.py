@@ -22,6 +22,7 @@ from ldvh.facts.file_asset import DEFAULT_PAYLOAD_BUDGET, validate_file_asset_sn
 from ldvh.facts.models import FactIssue, IssueCategory
 from ldvh.facts.repository import FactReadResult, read_fact_object
 from ldvh.facts.schema import FactSchema
+from ldvh.facts.validation import change_log_creation_issues, timestamp_initial_change_log
 from ldvh.filesystem import (
     AtomicWriteResult,
     PathChangedError,
@@ -159,9 +160,10 @@ def _manifest(
         "size_bytes": source.source_size_bytes,
         "content_sha256": source.source_content_sha256,
     }
-    filename_issues: tuple[FactIssue, ...] = ()
+    timestamp_initial_change_log(fields, observed_at)
+    filename_issues: list[FactIssue] = []
     if fields.get("filename") != Path(source.source_path).name:
-        filename_issues = (
+        filename_issues.append(
             _issue("schema", "filename 必须等于本次实际摄取来源文件的 basename", "filename"),
         )
     manifest_text = serialize_fact_object(layout, fields, None)
@@ -171,7 +173,7 @@ def _manifest(
         manifest_text.encode("utf-8"),
         source.payload,
     )
-    return fields, manifest_text, (*filename_issues, *validation.issues)
+    return fields, manifest_text, (*filename_issues, *validation.issues, *change_log_creation_issues(fields))
 
 
 def _source_matches(command: FileAssetCreationCommand, source: FileAssetSourceObservation) -> bool:

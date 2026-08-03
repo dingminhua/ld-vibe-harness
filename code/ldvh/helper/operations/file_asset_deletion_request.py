@@ -17,11 +17,12 @@ REQUIRED_INPUTS = (
     "arguments.fact_ref",
     "arguments.expected_content_fingerprint",
     "arguments.deletion_summary",
+    "arguments.change_log_entry",
     "authorization_reference",
 )
 OPTIONAL_INPUTS = ("arguments.workspace_root",)
 _ARGUMENT_FIELDS = frozenset(
-    {"workspace_root", "fact_ref", "expected_content_fingerprint", "deletion_summary"}
+    {"workspace_root", "fact_ref", "expected_content_fingerprint", "deletion_summary", "change_log_entry"}
 )
 _FACT_REF_FIELDS = frozenset({"governed_project_id", "fact_type_key", "object_id"})
 _FINGERPRINT = re.compile(r"[0-9a-f]{64}\Z")
@@ -35,6 +36,7 @@ class FileAssetDeletionRequest:
     fact_ref: FactReference
     expected_content_fingerprint: str
     deletion_summary: str
+    change_log_entry: dict[str, object]
     authorization_reference: tuple[dict[str, object], ...]
     base: Path
 
@@ -107,6 +109,9 @@ def parse_file_asset_deletion_request(
     summary = request.arguments.get("deletion_summary")
     if not isinstance(summary, str) or not summary.strip():
         problems.append("arguments.deletion_summary 必须是非空 string")
+    change_log_entry = request.arguments.get("change_log_entry")
+    if not isinstance(change_log_entry, dict):
+        problems.append("arguments.change_log_entry 必须是 object")
     if not request.authorization_reference:
         problems.append("authorization_reference 必须非空并回指当前 Human 删除决定或准确授权")
     if request.observed_context:
@@ -117,6 +122,7 @@ def parse_file_asset_deletion_request(
         return FileAssetDeletionParseResult(None, tuple(problems))
 
     assert fact_ref is not None and isinstance(fingerprint, str) and isinstance(summary, str)
+    assert isinstance(change_log_entry, dict)
     return FileAssetDeletionParseResult(
         FileAssetDeletionRequest(
             locator,
@@ -125,6 +131,7 @@ def parse_file_asset_deletion_request(
             fact_ref,
             fingerprint,
             summary,
+            change_log_entry,
             request.authorization_reference,
             context.cwd,
         ),

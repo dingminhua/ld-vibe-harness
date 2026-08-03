@@ -19,6 +19,10 @@ test('Study keeps the V3-style three-field overview and one Markdown reading ent
   assert.doesNotMatch(detail, /parseStudyReportSections/);
   assert.match(detail, /openPanel\(\{ type: 'doc', title, docPath, data: String\(value\), carrier \}\)/);
   assert.match(detail, /const showYamlSource = readMeta\.carrier === 'yaml'/);
+  assert.match(detail, /StudyReportMetadata/);
+  assert.match(detail, /report_kind/);
+  assert.match(detail, /input_refs/);
+  assert.doesNotMatch(detail, /report_signature/);
   const model = source('src/pages/object-detail/model.ts');
   assert.match(model, /'carrier'/);
   assert.match(model, /'fact_read_failure'/);

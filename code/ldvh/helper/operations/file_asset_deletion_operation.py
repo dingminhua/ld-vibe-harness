@@ -134,6 +134,7 @@ def _execute(
                 domain.fact_ref.object_id,
                 domain.expected_content_fingerprint,
                 domain.deletion_summary,
+                domain.change_log_entry,
             ),
             observed_at=context.event_at,
         )

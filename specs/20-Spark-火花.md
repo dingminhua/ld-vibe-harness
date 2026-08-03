@@ -108,6 +108,7 @@ AI 创建在写入前满足上述全部条件；既有对象的确定性候选�
 | `title` | required | `spark-fact-type::5. Spark 类型定义` |
 | `created-at` | required | `inherit` |
 | `updated-at` | required | `spark-fact-type::8. 创建、更新与停止使用边界` |
+| `change-log` | conditional | `spark-fact-type::8. 创建、更新与停止使用边界` |
 | `status` | required | `spark-fact-type::6. 对象语义与生命周期` |
 | `urls` | conditional | `spark-fact-type::7. 外部资料、关系与处置` |
 | `relations` | conditional | `spark-fact-type::7. 外部资料、关系与处置` |

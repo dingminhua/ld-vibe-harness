@@ -25,6 +25,7 @@ const common = {
   status: field('status', 'string', true),
   created_at: field('created-at', 'string', true),
   updated_at: field('updated-at', 'string', true),
+  change_log: field('change-log', 'array', false),
   urls: field('urls', 'array', false),
   relations: field('relations', 'array', false),
 } as const
@@ -36,6 +37,7 @@ const directoryCommon = {
   status: field('status', 'string', true),
   created_at: field('created-at', 'string', true),
   updated_at: field('updated-at', 'string', true),
+  change_log: field('change-log', 'array', false),
 } as const
 
 export const FACT_FIELD_CONTRACT: Record<FactType, FactFieldContract> = {
@@ -97,7 +99,9 @@ export const FACT_FIELD_CONTRACT: Record<FactType, FactFieldContract> = {
   },
   study: {
     ...common,
-    urls: field('urls', 'array', true),
+    report_kind: field('study-report-kind', 'string', false),
+    urls: field('urls', 'array', false),
+    input_refs: field('study-input-refs', 'array', false),
     disposition_summary: field('disposition-summary', 'string', false),
     research_question: field('study-research-question', 'string', true),
     abstract: field('study-abstract', 'string', true),
@@ -123,7 +127,7 @@ export const FACT_LIST_FIELD_NAMES: Record<Exclude<FactType, 'workcase'>, readon
   adr: Object.keys(FACT_FIELD_CONTRACT.adr),
   pitfall: Object.keys(FACT_FIELD_CONTRACT.pitfall),
   spark: Object.keys(FACT_FIELD_CONTRACT.spark),
-  study: Object.keys(FACT_FIELD_CONTRACT.study).filter((name) => name !== 'report_body'),
+  study: Object.keys(FACT_FIELD_CONTRACT.study).filter((name) => !['report_body', 'input_refs'].includes(name)),
   'file-asset': Object.keys(FACT_FIELD_CONTRACT['file-asset']),
 }
 

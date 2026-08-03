@@ -103,6 +103,7 @@ AI 负责判断失败是否实际发生、根因判断与解决说明是否同�
 | `title` | required | `pitfall-fact-type::5. Pitfall 类型定义` |
 | `created-at` | required | `inherit` |
 | `updated-at` | required | `pitfall-fact-type::8. 变更、删除与类型退出` |
+| `change-log` | conditional | `pitfall-fact-type::8. 变更、删除与类型退出` |
 | `status` | required | `pitfall-fact-type::6. 对象语义与生命周期` |
 | `urls` | conditional | `pitfall-fact-type::7. 形成边界、验证说明与替代关系` |
 | `relations` | conditional | `pitfall-fact-type::7. 形成边界、验证说明与替代关系` |

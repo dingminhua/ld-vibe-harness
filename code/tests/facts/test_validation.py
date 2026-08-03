@@ -5,7 +5,14 @@ from pathlib import Path
 import pytest
 
 from ldvh.facts.schema import project_fact_schemas
-from ldvh.facts.validation import parse_rfc3339, validate_fact_object
+from ldvh.facts.validation import (
+    change_log_creation_issues,
+    parse_rfc3339,
+    study_report_creation_issues,
+    timestamp_initial_change_log,
+    validate_change_log_transition,
+    validate_fact_object,
+)
 from ldvh.specs.repository import inspect_repository
 
 
@@ -163,17 +170,40 @@ def test_urls_are_validated(current_specs_repository: Path) -> None:
     assert any(issue.field_path == "urls[0].ref" for issue in issues)
 
 
-def test_study_requires_urls(current_specs_repository: Path) -> None:
-    schema = _schemas(current_specs_repository)["study"]
+def test_study_creation_requires_report_metadata_but_legacy_read_does_not() -> None:
     fields = {
-        **_common("study", "study-0001", "active"),
+        "report_kind": "external_research",
         "research_question": "What is the external contract?",
         "abstract": "A bounded answer.",
         "research_intent": "Determine whether the external contract changes the current project judgment.",
         "recommendation_summary": "Use the bounded finding as an input to a later project decision.",
     }
-    issues = validate_fact_object("study", fields, schema)
+    issues = study_report_creation_issues(fields)
     assert any(issue.field_path == "urls" for issue in issues)
+
+    assert study_report_creation_issues({})
+
+
+def test_internal_study_uses_input_refs_and_valid_report_kind(current_specs_repository: Path) -> None:
+    schema = _schemas(current_specs_repository)["study"]
+    fields = {
+        **_common("study", "study-0001", "active"),
+        "report_kind": "internal_audit",
+        "input_refs": [
+            {
+                "kind": "working-tree",
+                "locator": "code/ldvh/facts/validation.py",
+                "version": "HEAD",
+                "observed_at": "2026-08-03T10:00:00+08:00",
+            }
+        ],
+        "research_question": "Does the current validation path enforce the report boundary?",
+        "abstract": "A bounded internal audit report.",
+        "research_intent": "Check the current project implementation.",
+        "recommendation_summary": "Use the findings as input to a later WorkCase decision.",
+    }
+    assert validate_fact_object("study", fields, schema) == ()
+    assert study_report_creation_issues(fields) == ()
 
 
 def test_all_fact_types_validate_the_shared_url_member_contract(current_specs_repository: Path) -> None:
@@ -316,3 +346,48 @@ def test_relations_accept_only_key_and_target(current_specs_repository: Path) ->
     assert any(
         issue.field_path == "relations[0].source_refs" for issue in validate_fact_object("spark", fields, schema)
     )
+
+
+def test_change_log_accepts_signed_entries_and_rejects_bad_order_or_branch(current_specs_repository: Path) -> None:
+    schema = _schemas(current_specs_repository)["spark"]
+    fields = {
+        **_common("spark", "spark-0001", "open"),
+        "summary": "A current question.",
+        "priority": "P2",
+        "change_log": [
+            {
+                "signature": {
+                    "signer_type": "ai-agent",
+                    "agent_id": "codex",
+                    "host_environment": "Claude Code",
+                },
+                "session_id": "48bbb4c6-f2ff-4510-b63f-cebcaaa35d2e",
+                "at": "2026-07-14T09:30:00+08:00",
+                "summary": "The Spark was first recorded.",
+            },
+            {
+                "signature": {"signer_type": "human"},
+                "session_id": "human-review-2026-07-14",
+                "at": "2026-07-14T09:45:00+08:00",
+                "summary": "The current scope was clarified.",
+            },
+        ],
+    }
+    assert validate_fact_object("spark", fields, schema) == ()
+
+    fields["change_log"][1]["at"] = "2026-07-14T09:15:00+08:00"
+    fields["change_log"][1]["signature"]["agent_id"] = "forbidden"
+    issues = validate_fact_object("spark", fields, schema)
+    assert any(issue.field_path == "change_log[1].at" for issue in issues)
+    assert any(issue.field_path == "change_log[1].signature.agent_id" for issue in issues)
+
+
+def test_change_log_is_required_on_creation_and_legacy_history_is_not_fabricated() -> None:
+    assert any(issue.field_path == "change_log" for issue in change_log_creation_issues({}))
+    assert validate_change_log_transition({}, {"change_log": []}) == ()
+
+
+def test_creation_binds_the_initial_log_to_its_code_event_time() -> None:
+    fields = {"change_log": [{"at": "2000-01-01T00:00:00Z"}]}
+    timestamp_initial_change_log(fields, "2026-08-03T11:00:00+08:00")
+    assert fields["change_log"][0]["at"] == "2026-08-03T11:00:00+08:00"

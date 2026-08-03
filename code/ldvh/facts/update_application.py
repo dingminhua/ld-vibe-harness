@@ -22,7 +22,12 @@ from ldvh.facts.repository import FactReadResult, read_fact_object
 from ldvh.facts.schema import FactSchema
 from ldvh.facts.transitions import validate_fact_transition
 from ldvh.facts.update import atomic_replace_text_if_unchanged
-from ldvh.facts.validation import parse_rfc3339, validate_fact_object
+from ldvh.facts.validation import (
+    parse_rfc3339,
+    study_report_creation_issues,
+    validate_change_log_transition,
+    validate_fact_object,
+)
 from ldvh.filesystem import AtomicWriteResult, durable_writes_enabled
 
 UpdateStatus = Literal[
@@ -42,6 +47,16 @@ UpdateStatus = Literal[
 ]
 
 MANAGED_FIELDS = frozenset({"object_id", "fact_type_key", "created_at", "updated_at"})
+STUDY_REPORT_CONTENT_FIELDS = frozenset({
+    "report_kind",
+    "input_refs",
+    "urls",
+    "relations",
+    "research_question",
+    "research_intent",
+    "abstract",
+    "recommendation_summary",
+})
 
 
 @dataclass(frozen=True, slots=True)
@@ -119,6 +134,7 @@ def _candidate(
     before: dict[str, Any],
     *,
     repairing_invalid_before: bool,
+    require_study_report_metadata: bool = False,
 ) -> tuple[FactReadResult, str]:
     layout = LAYOUTS[command.fact_type_key]
     fields = {
@@ -133,6 +149,8 @@ def _candidate(
     issues = list(parsed.issues)
     if parsed.fields is not None:
         issues.extend(validate_fact_object(command.fact_type_key, parsed.fields, command.schema))
+        if command.fact_type_key == "study" and require_study_report_metadata:
+            issues.extend(study_report_creation_issues(parsed.fields))
         issues.extend(
             validate_fact_transition(
                 command.fact_type_key,
@@ -209,10 +227,39 @@ def apply_fact_update_locked(command: FactUpdateCommand) -> FactUpdateResult:
             current=current,
         )
 
+    proposed = {
+        **dict(command.supplied),
+        "object_id": current.fields["object_id"],
+        "fact_type_key": current.fields["fact_type_key"],
+        "created_at": current.fields["created_at"],
+        "updated_at": command.event_at,
+    }
+    change_log_issues = validate_change_log_transition(current.fields, proposed)
+    if change_log_issues:
+        return FactUpdateResult(
+            "candidate_rejected",
+            command.event_at,
+            issues=change_log_issues,
+            current=current,
+        )
+
+    require_study_report_metadata = False
+    if command.fact_type_key == "study":
+        changed_report_fields = {
+            field
+            for field in STUDY_REPORT_CONTENT_FIELDS
+            if current.fields.get(field) != command.supplied.get(field)
+        }
+        content_changed = bool(changed_report_fields) or (
+            (current.body or "") != (command.body or "")
+        )
+        require_study_report_metadata = repairing_invalid_before or content_changed
+
     candidate, candidate_text = _candidate(
         command,
         current.fields,
         repairing_invalid_before=repairing_invalid_before,
+        require_study_report_metadata=require_study_report_metadata,
     )
     if candidate.check_status != "mechanically_valid":
         status = "candidate_unavailable" if candidate.check_status == "unavailable" else "candidate_rejected"

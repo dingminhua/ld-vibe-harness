@@ -29,7 +29,12 @@ from ldvh.facts.project_validation import stabilize_project_index
 from ldvh.facts.relations import ProjectFactIndex, validate_project_relations
 from ldvh.facts.repository import FactReadResult, read_fact_object
 from ldvh.facts.schema import FactSchema
-from ldvh.facts.validation import validate_fact_object
+from ldvh.facts.validation import (
+    change_log_creation_issues,
+    study_report_creation_issues,
+    timestamp_initial_change_log,
+    validate_fact_object,
+)
 from ldvh.facts.workcase_validation import required_quality_gate_issues
 from ldvh.filesystem import AtomicWriteResult, durable_writes_enabled
 
@@ -105,9 +110,12 @@ def _thaw_json(value: Any) -> Any:
 
 
 def _creation_context_issues(fact_type_key: str, fields: Mapping[str, Any]) -> tuple[FactIssue, ...]:
+    change_log_issues = change_log_creation_issues(fields)
+    if fact_type_key == "study":
+        return (*change_log_issues, *study_report_creation_issues(fields))
     if fact_type_key != "workcase":
-        return ()
-    issues: list[FactIssue] = []
+        return change_log_issues
+    issues: list[FactIssue] = [*change_log_issues]
     if fields.get("status") != "open":
         issues.append(FactIssue("schema", "新建 WorkCase 的初始 status 必须是 open", "status"))
     if fields.get("phase") != "human_plan_confirming":
@@ -209,6 +217,7 @@ def _preflight(
         "created_at": now,
         "updated_at": now,
     }
+    timestamp_initial_change_log(fields, now)
     text = serialize_fact_object(layout, fields, command.body)
     parsed = parse_study_markdown(text) if layout.carrier == "markdown" else parse_yaml_object(text)
     issues = list(parsed.issues)

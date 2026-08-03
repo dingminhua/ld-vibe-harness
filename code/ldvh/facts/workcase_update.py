@@ -32,7 +32,7 @@ from ldvh.facts.schema import FactSchema
 from ldvh.facts.transitions import validate_workcase_transition
 from ldvh.facts.update import atomic_replace_text_if_unchanged
 from ldvh.facts.update_application import MANAGED_FIELDS, UpdateStatus
-from ldvh.facts.validation import parse_rfc3339, validate_fact_object
+from ldvh.facts.validation import parse_rfc3339, validate_change_log_transition, validate_fact_object
 from ldvh.filesystem import AtomicWriteResult, durable_writes_enabled
 from ldvh.source_references import validate_source_reference
 
@@ -945,6 +945,11 @@ def apply_workcase_write_locked(command: WorkCaseWriteCommand) -> WorkCaseWriteR
             issues=(time_issue,),
             current=current,
         )
+
+    proposed = _complete_after(command, current.fields, updated_at=command.event_at)
+    change_log_issues = validate_change_log_transition(current.fields, proposed)
+    if change_log_issues:
+        return _result(command, "candidate_rejected", issues=change_log_issues, current=current)
 
     candidate, candidate_text = _candidate(command, current.fields)
     if candidate.check_status != "mechanically_valid":

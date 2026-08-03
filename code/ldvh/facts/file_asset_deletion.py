@@ -22,7 +22,7 @@ from ldvh.facts.models import FactIssue, IssueCategory
 from ldvh.facts.relations import ProjectFactIndex
 from ldvh.facts.repository import FactReadResult, read_fact_object
 from ldvh.facts.schema import FactSchema
-from ldvh.facts.validation import parse_rfc3339
+from ldvh.facts.validation import parse_rfc3339, validate_change_log_transition
 from ldvh.filesystem import (
     AtomicWriteResult,
     ReadBudgetExceeded,
@@ -67,6 +67,7 @@ class FileAssetDeletionCommand:
     object_id: str
     expected_content_fingerprint: str
     deletion_summary: str
+    change_log_entry: dict[str, object]
 
 
 @dataclass(frozen=True, slots=True)
@@ -303,12 +304,27 @@ def _locked_delete(command: FileAssetDeletionCommand, *, observed_at: str) -> Fi
 
     fields = {
         **rebound.fields,
+        "change_log": [
+            *rebound.fields.get("change_log", []),
+            {**command.change_log_entry, "at": observed_at},
+        ],
         "updated_at": observed_at,
         "status": "deleted",
         "disposition_summary": command.deletion_summary,
         "deleted_at": observed_at,
         "recovery": anchor.to_json(),
     }
+    change_log_issues = validate_change_log_transition(rebound.fields, fields)
+    if change_log_issues:
+        return FileAssetDeletionResult(
+            "candidate_rejected",
+            issues=change_log_issues,
+            current=current,
+            previous_content_fingerprint=current.content_fingerprint,
+            fields=fields,
+            recovery=anchor,
+            incoming_scan_complete=True,
+        )
     manifest_text = serialize_fact_object(layout, fields, None)
     snapshot = validate_file_asset_snapshot(
         command.schemas["file-asset"],
