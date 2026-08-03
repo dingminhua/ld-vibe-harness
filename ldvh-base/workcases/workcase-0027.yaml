@@ -1,4 +1,11 @@
 title: 记录 LDVH 对 AI 工作实践的影响并反馈改进
+change_log:
+- signature:
+    agent_id: Human
+    host_environment: Human
+  session_id: human-authorized-legacy-compat-0027
+  at: '2026-08-01T22:26:44.939343+08:00'
+  summary: Human授权兼容旧数据：为 change_log 机制落地前形成的遗留对象建立首条可信流水起点
 status: blocked
 phase: human_plan_confirming
 plan_version: 1

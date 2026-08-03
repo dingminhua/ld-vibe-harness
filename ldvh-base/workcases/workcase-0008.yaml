@@ -1,4 +1,11 @@
 title: 真 Windows 上 spark-0004 的 preflight 与 core-readonly 真实验收
+change_log:
+- signature:
+    agent_id: Human
+    host_environment: Human
+  session_id: human-authorized-legacy-compat-0008
+  at: '2026-07-30T13:35:03.915242+08:00'
+  summary: Human授权兼容旧数据：为 change_log 机制落地前形成的遗留对象建立首条可信流水起点
 status: open
 priority: P2
 goal: 在 Human 指定并授权的原生 Windows（win32/nt，NTFS 固定卷）runner 上，通过 tools/verify_native_windows.py 的 preflight 与 core-readonly 两阶段，为 spark-0004 「原生 Windows 支持范围与真实验收」形成可读、可复核的真实验收证据；明确记录未验证范围， 不把只读/策略阶段结果扩大为写能力通过。
