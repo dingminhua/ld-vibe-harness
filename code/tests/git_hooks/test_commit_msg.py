@@ -80,6 +80,10 @@ def _checked_git(path: Path, *arguments: str) -> str:
     return completed.stdout
 
 
+def _signed(message: str) -> str:
+    return message + "\n\nSession-ID: test-session\nSigner-Type: ai-agent\nAgent-ID: test-agent\nHost-Environment: test-environment"
+
+
 def _managed_project(tmp_path: Path, *, governed: bool = True) -> tuple[Path, Path]:
     workspace = tmp_path / "workspace"
     project = workspace / "project"
@@ -256,11 +260,11 @@ def test_native_commit_msg_hook_blocks_invalid_message_and_allows_valid_message(
     assert _checked_git(project, "rev-parse", "HEAD").strip() == before
     assert _checked_git(project, "diff", "--cached", "--name-only") == "change.txt\n"
 
-    accepted = _git(project, "commit", "-m", "docs: 增加提交校验")
+    accepted = _git(project, "commit", "-m", _signed("docs: 增加提交校验"))
 
     assert accepted.returncode == 0, accepted.stderr
     assert _checked_git(project, "rev-parse", "HEAD").strip() != before
-    assert _checked_git(project, "log", "-1", "--format=%B") == "docs: 增加提交校验\n\n"
+    assert _checked_git(project, "log", "-1", "--format=%B") == _signed("docs: 增加提交校验") + "\n\n"
 
 
 def test_native_commit_msg_hook_blocks_forged_safe_delete_then_allows_exact_tombstone(
@@ -273,7 +277,7 @@ def test_native_commit_msg_hook_blocks_forged_safe_delete_then_allows_exact_tomb
         project,
         "commit",
         "-m",
-        "test(file-asset): 建立安全删除基线\n\n关键变更:\n- 提交完整 active 载体",
+        _signed("test(file-asset): 建立安全删除基线\n\n关键变更:\n- 提交完整 active 载体"),
     )
     assert active_commit.returncode == 0, active_commit.stderr
     expected_blob = _checked_git(project, "rev-parse", f"HEAD:{payload_path}").strip()
@@ -284,7 +288,7 @@ def test_native_commit_msg_hook_blocks_forged_safe_delete_then_allows_exact_tomb
         project,
         "commit",
         "-m",
-        "test(file-asset): 拦截伪造恢复锚点\n\n关键变更:\n- 暂存伪造 deleted tombstone",
+        _signed("test(file-asset): 拦截伪造恢复锚点\n\n关键变更:\n- 暂存伪造 deleted tombstone"),
     )
 
     assert blocked.returncode != 0
@@ -296,7 +300,7 @@ def test_native_commit_msg_hook_blocks_forged_safe_delete_then_allows_exact_tomb
         project,
         "commit",
         "-m",
-        "test(file-asset): 提交安全删除墓碑\n\n关键变更:\n- 提交精确 deleted tombstone",
+        _signed("test(file-asset): 提交安全删除墓碑\n\n关键变更:\n- 提交精确 deleted tombstone"),
     )
 
     assert allowed.returncode == 0, allowed.stderr
@@ -318,7 +322,7 @@ def test_native_hook_observes_the_temporary_index_used_by_internal_commit_execut
     candidate = prepare_commit_candidate(
         locator=str(project),
         base=project,
-        message="feat: 增加临时候选提交",
+        message=_signed("feat: 增加临时候选提交"),
         selected_paths=("candidate.txt",),
         contract=_contract(),
         governance=governance_run.result,

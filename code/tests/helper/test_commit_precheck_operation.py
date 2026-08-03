@@ -49,12 +49,13 @@ def _fixture(tmp_path: Path, *, staged: bool = True) -> tuple[Path, Path]:
 
 
 def _payload(workspace: Path, project: Path, message: str) -> str:
+    signed = _signed(message) if message else message
     return json.dumps(
         {
             "work_object_locators": [str(project)],
             "arguments": {
                 "workspace_root": str(workspace),
-                "message": message,
+                "message": signed,
             },
         }
     )
@@ -69,12 +70,16 @@ def _state(project: Path) -> tuple[bytes, bytes]:
 
 def _gate(workspace: Path, project: Path, message: str) -> CommitMsgGateResult:
     message_file = workspace / "COMMIT_EDITMSG"
-    message_file.write_text(message, encoding="utf-8")
+    message_file.write_text(_signed(message) if message else message, encoding="utf-8")
     return run_commit_msg_gate(
         workspace_root=str(workspace),
         worktree=str(project),
         message_file=str(message_file),
     )
+
+
+def _signed(message: str) -> str:
+    return message + "\n\nSession-ID: test-session\nSigner-Type: ai-agent\nAgent-ID: test-agent\nHost-Environment: test-environment"
 
 
 def _helper_issues_as_gate_diagnostics(response: dict[str, object]) -> tuple[str, ...]:

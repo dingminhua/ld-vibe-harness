@@ -18,6 +18,8 @@ _HEADER = re.compile(
 )
 _CJK = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff]")
 _FIXED_HEADINGS = ("动机:", "关键变更:", "影响边界:", "验证结论:", "风险与后续:")
+_TRAILER = re.compile(r"(?P<name>[A-Za-z][A-Za-z-]*): (?P<value>.*)\Z")
+_REQUIRED_TRAILERS = ("Session-ID", "Signer-Type", "Agent-ID", "Host-Environment")
 SEMANTIC_CHECKS_REQUIRED = (
     "主要目的与拆分",
     "简体中文语义与 description 真实性",
@@ -148,6 +150,55 @@ def _heading_has_list(body_lines: list[str], heading: str) -> bool:
         if line.startswith("- ") and line[2:].strip():
             return True
     return False
+
+
+def _footer_trailer_start(lines: list[str]) -> int | None:
+    end = len(lines)
+    while end > 0 and not lines[end - 1].strip():
+        end -= 1
+    start = end
+    while start > 0 and _TRAILER.fullmatch(lines[start - 1]) is not None:
+        start -= 1
+    if start == end or (start > 0 and lines[start - 1].strip()):
+        return None
+    return start
+
+
+def _footer_trailers(lines: list[str]) -> dict[str, list[str]]:
+    """Read the final contiguous Git-trailer block, without treating body text as a footer."""
+
+    start = _footer_trailer_start(lines)
+    if start is None:
+        return {}
+    end = len(lines)
+    while end > 0 and not lines[end - 1].strip():
+        end -= 1
+    trailers: dict[str, list[str]] = {}
+    for line in lines[start:end]:
+        match = _TRAILER.fullmatch(line)
+        assert match is not None
+        trailers.setdefault(match.group("name"), []).append(match.group("value"))
+    return trailers
+
+
+def _signature_trailer_issues(lines: list[str]) -> list[CommitValidationIssue]:
+    trailers = _footer_trailers(lines)
+    issues: list[CommitValidationIssue] = []
+    for name in _REQUIRED_TRAILERS:
+        values = trailers.get(name, [])
+        if len(values) != 1 or not values[0].strip():
+            issues.append(_issue("signature_trailer_missing", f"footer 必须恰含一个非空 {name}: trailer"))
+    signer_type = trailers.get("Signer-Type", [None])[0]
+    if signer_type is None:
+        return issues
+    if signer_type not in {"human", "ai-agent"}:
+        issues.append(_issue("signer_type_invalid", "Signer-Type 只能是 human 或 ai-agent"))
+        return issues
+    for name in ("Agent-ID", "Host-Environment"):
+        values = trailers.get(name, [])
+        if signer_type == "human" and values:
+            issues.append(_issue("human_signature_extra_field", f"Signer-Type=human 时禁止 {name}: trailer"))
+    return issues
 
 
 def _workcase_file_asset_target_issues(
@@ -541,9 +592,13 @@ def validate_commit(contract: CommitContractProjection, value: CommitValidationI
     else:
         header = lines[0]
         body_lines = lines[1:]
-        while body_lines and not body_lines[0].strip():
-            body_lines.pop(0)
-        body = "\n".join(body_lines).rstrip() or None
+        footer_start = _footer_trailer_start(body_lines)
+        content_body_lines = body_lines if footer_start is None else body_lines[:footer_start]
+        while content_body_lines and not content_body_lines[-1].strip():
+            content_body_lines.pop()
+        while content_body_lines and not content_body_lines[0].strip():
+            content_body_lines.pop(0)
+        body = "\n".join(content_body_lines).rstrip() or None
         match = _HEADER.fullmatch(header)
         if match is None:
             failures.append(_issue("header_invalid", "header 不符合 type[(scope)][!]: 简体中文描述"))
@@ -564,10 +619,11 @@ def validate_commit(contract: CommitContractProjection, value: CommitValidationI
             if body_required and body is None:
                 failures.append(_issue("body_required", "当前机械 trigger 要求 body"))
             if body is not None:
-                if not _heading_has_list(body_lines, "关键变更:"):
+                if not _heading_has_list(content_body_lines, "关键变更:"):
                     failures.append(_issue("key_changes_required", "body 必须含关键变更列表"))
-                if breaking and not _heading_has_list(body_lines, "影响边界:"):
+                if breaking and not _heading_has_list(content_body_lines, "影响边界:"):
                     failures.append(_issue("impact_boundary_required", "使用 ! 时必须含影响边界列表"))
+            failures.extend(_signature_trailer_issues(lines[1:]))
     outcome: Literal["passed", "failed", "unverifiable"] = "failed" if failures or fact_failures else "passed"
     return CommitValidationResult(
         outcome,

@@ -95,11 +95,15 @@ def _governance(repository: Path) -> GovernanceScopeResult:
     )
 
 
+def _signed(message: str) -> str:
+    return message + "\n\nSession-ID: test-session\nSigner-Type: ai-agent\nAgent-ID: test-agent\nHost-Environment: test-environment"
+
+
 def _prepare(repository: Path, paths: tuple[str, ...], *, message: str = "feat: 增加候选文件"):
     return prepare_commit_candidate(
         locator=".",
         base=repository,
-        message=message,
+        message=_signed(message),
         selected_paths=paths,
         contract=_contract(),
         governance=_governance(repository),

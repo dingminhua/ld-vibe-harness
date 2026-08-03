@@ -150,7 +150,7 @@ def test_observes_staged_add_without_mutating_repository(tmp_path: Path) -> None
     before_index = _git(repository, "ls-files", "--stage", "-z")
 
     observed = git_adapter.observe_commit_candidate(
-        locator=".", base=repository, message="feat: 增加文件", contract=_contract(), governance=_governance(repository)
+        locator=".", base=repository, message=_signed("feat: 增加文件"), contract=_contract(), governance=_governance(repository)
     )
 
     assert observed.outcome == "observed"
@@ -329,9 +329,13 @@ def _stage_file(repository: Path, path: str, content: bytes = _SPARK_BYTES) -> N
     _git(repository, "add", path)
 
 
+def _signed(message: str) -> str:
+    return message + "\n\nSession-ID: test-session\nSigner-Type: ai-agent\nAgent-ID: test-agent\nHost-Environment: test-environment"
+
+
 def _observe(repository: Path, message: str = "feat: 观察事实候选") -> git_adapter.CommitCandidateObservation:
     return git_adapter.observe_commit_candidate(
-        locator=".", base=repository, message=message, contract=_contract(), governance=_governance(repository)
+        locator=".", base=repository, message=_signed(message), contract=_contract(), governance=_governance(repository)
     )
 
 
