@@ -154,7 +154,10 @@ def _footer_trailers(lines: list[str]) -> dict[str, list[str]]:
 def _signature_trailer_issues(lines: list[str]) -> list[CommitValidationIssue]:
     trailers = _footer_trailers(lines)
     issues: list[CommitValidationIssue] = []
-    for name in _REQUIRED_TRAILERS:
+    session_values = trailers.get("Session-ID", [])
+    if not session_values or any(not value.strip() for value in session_values):
+        issues.append(_issue("signature_trailer_missing", "footer 必须至少含一个非空 Session-ID: trailer"))
+    for name in ("Agent-ID", "Host-Environment"):
         values = trailers.get(name, [])
         if len(values) != 1 or not values[0].strip():
             issues.append(_issue("signature_trailer_missing", f"footer 必须恰含一个非空 {name}: trailer"))
@@ -235,6 +238,7 @@ def _fact_trace_issues(
         "agent_id": trailers.get("Agent-ID", [""])[0],
         "host_environment": trailers.get("Host-Environment", [""])[0],
     }
+    expected_session_ids = {value for value in trailers.get("Session-ID", [""]) if value.strip()}
     for candidate in value.fact_candidates:
         if candidate.object_id is None or candidate.data is None or candidate.observation_issue is not None:
             continue  # The fact layer already records the primary observation failure.
@@ -279,6 +283,12 @@ def _fact_trace_issues(
             appended = after_log
         elif isinstance(before_log, list) and after_log[: len(before_log)] == before_log:
             appended = after_log[len(before_log) :]
+        elif before_log is None:
+            # Legacy migration: the HEAD snapshot predates the change-log
+            # mechanism and has no history.  The first trusted entry was
+            # established by the controlled migration operation, so the whole
+            # current log is the event introduced by this candidate.
+            appended = after_log
         else:
             failures.append(
                 _issue("fact_trace_transition_invalid", f"事实流水前后像不能确定唯一新增事件: {candidate.path}")
@@ -300,6 +310,19 @@ def _fact_trace_issues(
             }
             != expected
             for entry in appended
+            if not (
+                isinstance(entry.get("session_id"), str)
+                and entry.get("session_id") in expected_session_ids
+                and {
+                    "agent_id": entry.get("signature", {}).get("agent_id")
+                    if isinstance(entry.get("signature"), dict)
+                    else None,
+                    "host_environment": entry.get("signature", {}).get("host_environment")
+                    if isinstance(entry.get("signature"), dict)
+                    else None,
+                }
+                == {key: expected[key] for key in ("agent_id", "host_environment")}
+            )
         ):
             failures.append(
                 _issue(

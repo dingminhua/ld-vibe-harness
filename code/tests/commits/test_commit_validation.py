@@ -192,7 +192,7 @@ def _spark_schema() -> FactSchema:
             field("created_at"),
             field("updated_at"),
             field("summary", presence="conditional"),
-            field("change_log", "array"),
+            field("change_log", "array", presence="conditional"),
             field("change_log.signature", "object"),
             field("change_log.signature.agent_id"),
             field("change_log.signature.host_environment"),
@@ -400,3 +400,109 @@ def test_object_id_identity_mismatch_fails(contract: CommitContractProjection) -
     assert result.outcome == "failed"
     assert "fact_candidate_invalid" in _codes(result)
     assert any("object_id" in issue.message and "不一致" in issue.message for issue in result.issues)
+
+
+def test_legacy_migration_change_log_passes_when_head_has_no_history(
+    contract: CommitContractProjection,
+) -> None:
+    """HEAD 存在但无 change_log 的 legacy 迁移对象：首条迁移流水视为本次提交事件。"""
+
+    # HEAD 快照：机制落地前的对象，无 change_log（保留全部必填字段）
+    head_data = _VALID_SPARK.split(b"change_log:\n")[0]
+    data = (
+        "object_id: spark-0001\n"
+        "fact_type_key: spark\n"
+        "title: 测试火花\n"
+        "status: open\n"
+        "priority: P1\n"
+        "created_at: 2026-07-01T00:00:00+08:00\n"
+        "updated_at: 2026-07-01T01:00:00+08:00\n"
+        "change_log:\n"
+        "  - signature:\n"
+        "      agent_id: test-agent\n"
+        "      host_environment: test-environment\n"
+        "    session_id: test-session\n"
+        "    at: 2026-07-01T01:00:00+08:00\n"
+        "    summary: Human授权兼容旧数据：建立可信流水起点\n"
+    ).encode()
+
+    result = validate_commit(
+        contract,
+        _input(
+            contract,
+            fact_candidates=(
+                _fact_candidate(data=data, head_exists=True, head_data=head_data),
+            ),
+            fact_schemas=(_spark_schema(),),
+        ),
+    )
+
+    print("L3:", [(i.code, i.message) for i in result.issues])
+    assert result.outcome == "passed"
+
+
+def test_new_fact_multiple_sessions_match_multiple_footer_session_ids(
+    contract: CommitContractProjection,
+) -> None:
+    """新对象多条 change_log 分属多个 session：footer 声明全部 Session-ID 即通过。"""
+
+    data = _VALID_SPARK.replace(
+        b"updated_at: 2026-07-01T00:00:00+08:00",
+        b"updated_at: 2026-07-01T01:00:00+08:00",
+    ) + (
+        "  - signature:\n"
+        "      agent_id: test-agent\n"
+        "      host_environment: test-environment\n"
+        "    session_id: test-session-2\n"
+        "    at: 2026-07-01T01:00:00+08:00\n"
+        "    summary: 第二个受控写会话\n"
+    ).encode()
+    message = (
+        "docs(specs): 多会话提交\n\n"
+        "Session-ID: test-session\n"
+        "Session-ID: test-session-2\n"
+        "Agent-ID: test-agent\n"
+        "Host-Environment: test-environment"
+    )
+
+    result = validate_commit(
+        contract,
+        _input(
+            contract,
+            message=message,
+            fact_candidates=(_fact_candidate(data=data, head_exists=False),),
+            fact_schemas=(_spark_schema(),),
+        ),
+    )
+
+    assert result.outcome == "passed"
+
+
+def test_new_fact_multiple_sessions_reject_unlisted_session(
+    contract: CommitContractProjection,
+) -> None:
+    """新对象 change_log 的 session 未在 footer 声明：拒绝。"""
+
+    data = _VALID_SPARK.replace(
+        b"updated_at: 2026-07-01T00:00:00+08:00",
+        b"updated_at: 2026-07-01T01:00:00+08:00",
+    ) + (
+        "  - signature:\n"
+        "      agent_id: test-agent\n"
+        "      host_environment: test-environment\n"
+        "    session_id: ghost-session\n"
+        "    at: 2026-07-01T01:00:00+08:00\n"
+        "    summary: 未声明会话\n"
+    ).encode()
+
+    result = validate_commit(
+        contract,
+        _input(
+            contract,
+            fact_candidates=(_fact_candidate(data=data, head_exists=False),),
+            fact_schemas=(_spark_schema(),),
+        ),
+    )
+
+    assert result.outcome == "failed"
+    assert "fact_trace_signature_mismatch" in _codes(result)
