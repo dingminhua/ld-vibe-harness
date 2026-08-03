@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
-import { GitCommitHorizontal, Maximize2, Minimize2 } from 'lucide-react';
+import { History, Maximize2, Minimize2 } from 'lucide-react';
 import PriorityIcon from '@/components/PriorityIcon';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
 import { useI18n } from '@/i18n/context';
 import { getFieldLabel, getLocalizedObjectTitle, getObjectStatusLocale, type LocaleKey } from '@/i18n/locales';
 import { usePanel } from '@/utils/panelContext';
 import type {
-  CognitionCommitHotspotCluster,
-  CognitionCommitHotspotNode,
-  CognitionCommitHotspotRelation,
+  CognitionRecentHotspotCluster,
+  CognitionRecentHotspotNode,
+  CognitionRecentHotspotRelation,
 } from '@/utils/api';
 
 type NodeRole = 'primary' | 'secondary-hotspot' | 'related-work';
@@ -17,8 +17,8 @@ type Position = { x: number; y: number };
 type NodeSize = { width: number; height: number };
 
 type RelatedWork = {
-  node: CognitionCommitHotspotNode;
-  relations: CognitionCommitHotspotRelation[];
+  node: CognitionRecentHotspotNode;
+  relations: CognitionRecentHotspotRelation[];
 };
 
 type PositionedWork = {
@@ -62,7 +62,7 @@ const RELATION_PHRASE_KEYS: Record<string, LocaleKey> = {
   'incoming:contributed-to': 'cognition.commitHotspots.workRelation.contributesToHotspot',
 };
 
-function nodeKey(node: CognitionCommitHotspotNode): string {
+function nodeKey(node: CognitionRecentHotspotNode): string {
   return `${node.type}:${node.id}`;
 }
 
@@ -70,7 +70,7 @@ function safeId(value: string): string {
   return value.replace(/[^a-z0-9_-]/gi, '-');
 }
 
-function relatedWorkItems(relations: CognitionCommitHotspotRelation[]): RelatedWork[] {
+function relatedWorkItems(relations: CognitionRecentHotspotRelation[]): RelatedWork[] {
   const items = new Map<string, RelatedWork>();
   for (const relation of relations) {
     const key = nodeKey(relation.node);
@@ -83,9 +83,9 @@ function relatedWorkItems(relations: CognitionCommitHotspotRelation[]): RelatedW
   return [...items.values()];
 }
 
-function getNodeRole(node: CognitionCommitHotspotNode, primary = false): NodeRole {
+function getNodeRole(node: CognitionRecentHotspotNode, primary = false): NodeRole {
   if (primary) return 'primary';
-  return node.commitRefs.length > 0 ? 'secondary-hotspot' : 'related-work';
+  return node.activityRefs.length > 0 ? 'secondary-hotspot' : 'related-work';
 }
 
 function relationColor(item: RelatedWork): string {
@@ -289,12 +289,12 @@ function expandedLayout(items: RelatedWork[], availableWidth?: number): DiagramL
 }
 
 export function CommitHotspotLegend({
-  totalCommits,
+  totalEvents,
   hotspotTotal,
   relationTotal,
   relationKeys,
 }: {
-  totalCommits: number;
+  totalEvents: number;
   hotspotTotal: number;
   relationTotal: number;
   relationKeys: string[];
@@ -303,7 +303,7 @@ export function CommitHotspotLegend({
   return (
     <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5 border-y border-ldvh-border/70 py-2.5">
       <span className="ldvh-caption text-ldvh-text-secondary">
-        {t('cognition.commitHotspots.totalCommits', { count: String(totalCommits) })}
+        {t('cognition.commitHotspots.totalCommits', { count: String(totalEvents) })}
       </span>
       <span className="ldvh-caption text-ldvh-text-secondary">
         {t('cognition.commitHotspots.summary', { hotspots: String(hotspotTotal), relations: String(relationTotal) })}
@@ -314,7 +314,7 @@ export function CommitHotspotLegend({
             className="inline-flex items-center justify-center gap-1 rounded-full border border-ldvh-accent/25 bg-ldvh-accent/5 px-1.5 py-0.5 text-[11px] font-medium text-ldvh-accent"
             aria-hidden="true"
           >
-            <GitCommitHorizontal size={12} />
+            <History size={12} />
             1
           </span>
           <span>{t('cognition.commitHotspots.commitRefs')}</span>
@@ -348,7 +348,7 @@ function AccessibleRelationList({
   cluster,
   workItems,
 }: {
-  cluster: CognitionCommitHotspotCluster;
+  cluster: CognitionRecentHotspotCluster;
   workItems: RelatedWork[];
 }) {
   const { locale } = useI18n();
@@ -377,7 +377,7 @@ function HotspotNodeCard({
   highlighted = false,
   onHighlight,
 }: {
-  node: CognitionCommitHotspotNode;
+  node: CognitionRecentHotspotNode;
   role: NodeRole;
   mode: DiagramMode;
   relationLabels?: string[];
@@ -402,7 +402,7 @@ function HotspotNodeCard({
       onMouseLeave={() => onHighlight?.(false)}
       onFocus={() => onHighlight?.(true)}
       onBlur={() => onHighlight?.(false)}
-      aria-label={`${roleLabel}: ${title}${node.commitRefs.length > 0 ? ` · ${t('cognition.commitHotspots.commitRefs')} ${node.commitRefs.length}` : ''}${labels.length > 0 ? ` · ${labels.join(' · ')}` : ''}`}
+      aria-label={`${roleLabel}: ${title}${node.activityRefs.length > 0 ? ` · ${t('cognition.commitHotspots.commitRefs')} ${node.activityRefs.length}` : ''}${labels.length > 0 ? ` · ${labels.join(' · ')}` : ''}`}
       className={`absolute min-w-0 rounded-xl border bg-ldvh-panel text-left transition-[opacity,border-color,box-shadow,transform] duration-200 hover:border-ldvh-accent/50 hover:shadow-lg focus-visible:z-20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ldvh-accent/60 ${
         primary
           ? `border-ldvh-accent/55 shadow-lg ${expanded ? 'ring-4 ring-ldvh-accent/10' : ''}`
@@ -432,13 +432,13 @@ function HotspotNodeCard({
           {title}
         </span>
         <div data-hotspot-node-meta className="mt-0.5 flex min-w-0 flex-wrap items-center justify-center gap-x-1.5 gap-y-0.5">
-          {node.commitRefs.length > 0 && (
+          {node.activityRefs.length > 0 && (
             <span
               className="inline-flex shrink-0 items-center justify-center gap-1 rounded-full border border-ldvh-accent/25 bg-ldvh-accent/5 px-1.5 py-0.5 text-[11px] font-medium text-ldvh-accent"
               title={t('cognition.commitHotspots.commitRefs')}
             >
-              <GitCommitHorizontal size={12} aria-hidden="true" />
-              {node.commitRefs.length}
+              <History size={12} aria-hidden="true" />
+              {node.activityRefs.length}
             </span>
           )}
           {status && <span className="ldvh-caption shrink-0 text-ldvh-text-secondary/70">{getObjectStatusLocale(node.type, status, locale)}</span>}
@@ -514,7 +514,7 @@ function CompactHotspotDiagram({
   index,
   workItems,
 }: {
-  cluster: CognitionCommitHotspotCluster;
+  cluster: CognitionRecentHotspotCluster;
   index: number;
   workItems: RelatedWork[];
 }) {
@@ -573,7 +573,7 @@ function ExpandedHotspotMindMap({
   index,
   workItems,
 }: {
-  cluster: CognitionCommitHotspotCluster;
+  cluster: CognitionRecentHotspotCluster;
   index: number;
   workItems: RelatedWork[];
 }) {
@@ -640,7 +640,7 @@ export function CommitHotspotCluster({
   expanded,
   onExpandedChange,
 }: {
-  cluster: CognitionCommitHotspotCluster;
+  cluster: CognitionRecentHotspotCluster;
   index: number;
   canExpand: boolean;
   expanded: boolean;
@@ -660,7 +660,7 @@ export function CommitHotspotCluster({
         <p className="ldvh-caption-strong text-ldvh-text-secondary">{t('cognition.commitHotspots.cluster', { count: String(index + 1) })}</p>
         <span className="ldvh-caption text-ldvh-text-secondary/65">
           {t('cognition.commitHotspots.clusterSummary', {
-            commits: String(cluster.primary.commitRefs.length),
+            commits: String(cluster.primary.activityRefs.length),
             work: String(workItems.length),
           })}
         </span>

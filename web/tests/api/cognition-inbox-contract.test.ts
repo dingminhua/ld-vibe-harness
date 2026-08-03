@@ -2,7 +2,7 @@
  * 项目认知中心：GET /api/cognition 收件箱与近期动态契约测试。
  *
  * 以当前治理范围解析出的受管辖工作树（事实源）运行，断言 02 §8 当前已交付字段
- * （generatedAt / scope / inbox / activeWorkCases / recentActivity / sparkHealth / commitHotspots / issues）、待决与推进中收录及排序、命名纪律
+ * （generatedAt / scope / inbox / activeWorkCases / recentActivity / sparkHealth / recentHotspots / issues）、待决与推进中收录及排序、命名纪律
  * （WorkCase 的两个 Human-position progress_group、blocked_resolution，加上 Pitfall 的 draft 待确认）、
  * 内联对象卡片依据、条件 canonical_path，以及近期动态的窗口与时间标记。
  *
@@ -14,8 +14,7 @@ import assert from 'node:assert/strict'
 import type { Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import { after, before, test } from 'node:test'
-import type { CommitHotspotBuildItem } from '../../api/routes/cognition.ts'
-import type { GitLogEntryWithFiles } from '../../api/services/git.ts'
+import type { RecentHotspotBuildItem } from '../../api/routes/cognition.ts'
 
 let server: Server
 let baseUrl = ''
@@ -76,7 +75,7 @@ function expectedInboxKind(item: Record<string, unknown>): string | null {
   return null
 }
 
-test('cognition endpoint returns inbox, recent activity, Spark health, and commit hotspot contract shapes with observation time', async () => {
+test('cognition endpoint returns inbox, fact activity, Spark health, and fact hotspot contract shapes with observation time', async () => {
   const body = await cognition('zh')
 
   assert.match(String(body.generatedAt), RFC3339)
@@ -105,10 +104,10 @@ test('cognition endpoint returns inbox, recent activity, Spark health, and commi
   assert.ok(sparkHealth.terminalByStatus && typeof sparkHealth.terminalByStatus === 'object')
   assert.ok(sparkHealth.openByPriority && typeof sparkHealth.openByPriority === 'object')
   assert.ok(Array.isArray(sparkHealth.silentItems))
-  assert.ok(body.commitHotspots && typeof body.commitHotspots === 'object')
-  const hotspots = body.commitHotspots as Record<string, unknown>
+  assert.ok(body.recentHotspots && typeof body.recentHotspots === 'object')
+  const hotspots = body.recentHotspots as Record<string, unknown>
   assert.equal(hotspots.window, '1d')
-  for (const key of ['totalCommits', 'hotspotTotal', 'relationTotal']) {
+  for (const key of ['totalEvents', 'hotspotTotal', 'relationTotal']) {
     assert.equal(typeof hotspots[key], 'number')
   }
   assert.ok(Array.isArray(hotspots.clusters))
@@ -119,69 +118,38 @@ test('cognition endpoint returns inbox, recent activity, Spark health, and commi
   }
 })
 
-test('commit hotspots preserve only deterministic commit mappings and one-hop formal relation shape', async () => {
+test('recent hotspots preserve only fact activity and one-hop formal relation shape', async () => {
   const body = await cognition('zh', '1d')
-  const hotspots = body.commitHotspots as Record<string, unknown>
+  const hotspots = body.recentHotspots as Record<string, unknown>
   assert.equal(hotspots.window, '1d')
   const clusters = hotspots.clusters as Array<Record<string, unknown>>
   const primaryKeys = new Set<string>()
-  const scope = body.scope as Record<string, unknown>
-  const projectId = String(scope.governedProjectId)
-  const commitEvidence = new Map<string, Promise<{ message: string; files: Set<string> }>>()
-  const getCommitEvidence = (hash: string) => {
-    const cached = commitEvidence.get(hash)
-    if (cached) return cached
-    const pending = fetch(`${baseUrl}/api/project-files/git/commit/${hash}?projectId=${encodeURIComponent(projectId)}`)
-      .then(async (response) => {
-        assert.equal(response.status, 200)
-        const payload = (await response.json()) as { commit: { message: string; body: string; files: Array<{ path: string }> } }
-        return {
-          message: `${payload.commit.message}\n${payload.commit.body}`,
-          files: new Set(payload.commit.files.map((file) => file.path)),
-        }
-      })
-    commitEvidence.set(hash, pending)
-    return pending
-  }
-  const assertNode = async (node: Record<string, unknown>) => {
+  const assertNode = (node: Record<string, unknown>) => {
     assert.ok(['workcase', 'adr', 'pitfall', 'spark', 'study'].includes(String(node.type)))
     assert.match(String(node.id), /^(workcase|adr|pitfall|spark|study)-\d{4,}$/)
     assert.equal(typeof node.title, 'string')
     assert.equal(typeof node.typeColor, 'string')
-    assert.ok(Array.isArray(node.commitRefs))
-    const refs = node.commitRefs as Array<Record<string, unknown>>
+    assert.ok(Array.isArray(node.activityRefs))
+    const refs = node.activityRefs as Array<Record<string, unknown>>
     for (const ref of refs) {
-      assert.match(String(ref.hash), /^[0-9a-f]{40}$/)
-      assert.match(String(ref.shortHash), /^[0-9a-f]{7,}$/)
-      assert.match(String(ref.date), RFC3339)
-      assert.equal(typeof ref.relativeTime, 'string')
-      assert.ok(['canonical_path', 'explicit_id', 'both'].includes(String(ref.mapping)))
-      const evidence = await getCommitEvidence(String(ref.hash))
-      const canonicalPath = `ldvh-base/${node.type === 'workcase' ? 'workcases' : `${node.type}s`}/${node.id}${node.type === 'study' ? '.md' : '.yaml'}`
-      const mappedByPath = evidence.files.has(canonicalPath)
-      const mappedById = new RegExp(`\\b${String(node.id).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`).test(evidence.message)
-      if (ref.mapping === 'canonical_path') assert.equal(mappedByPath, true)
-      if (ref.mapping === 'explicit_id') assert.equal(mappedById, true)
-      if (ref.mapping === 'both') {
-        assert.equal(mappedByPath, true)
-        assert.equal(mappedById, true)
-      }
+      assert.match(String(ref.occurred_at), RFC3339)
+      assert.ok(['created', 'updated'].includes(String(ref.activity)))
     }
   }
 
   const uniqueRelations = new Set<string>()
-  let previousPrimaryCommitTotal = Number.POSITIVE_INFINITY
+  let previousPrimaryActivityTotal = Number.POSITIVE_INFINITY
   for (const cluster of clusters) {
     assert.ok(cluster.primary && typeof cluster.primary === 'object')
     const primary = cluster.primary as Record<string, unknown>
-    await assertNode(primary)
+    assertNode(primary)
     const primaryKey = `${primary.type}:${primary.id}`
     assert.equal(primaryKeys.has(primaryKey), false, `duplicate primary hotspot: ${primaryKey}`)
     primaryKeys.add(primaryKey)
-    const primaryCommitTotal = (primary.commitRefs as unknown[]).length
-    assert.ok(primaryCommitTotal > 0, 'each cluster must have exactly one traceable primary hotspot')
-    assert.ok(primaryCommitTotal <= previousPrimaryCommitTotal, 'clusters must be ordered by primary traceable commit activity')
-    previousPrimaryCommitTotal = primaryCommitTotal
+    const primaryActivityTotal = (primary.activityRefs as unknown[]).length
+    assert.ok(primaryActivityTotal > 0, 'each cluster must have exactly one fact-activity primary hotspot')
+    assert.ok(primaryActivityTotal <= previousPrimaryActivityTotal, 'clusters must be ordered by fact activity')
+    previousPrimaryActivityTotal = primaryActivityTotal
     assert.ok(Array.isArray(cluster.relations))
     assert.ok((cluster.relations as unknown[]).length > 0)
     for (const relation of cluster.relations as Array<Record<string, unknown>>) {
@@ -190,7 +158,7 @@ test('commit hotspots preserve only deterministic commit mappings and one-hop fo
       assert.ok(String(relation.relationKey).length > 0)
       assert.ok(relation.node && typeof relation.node === 'object')
       const node = relation.node as Record<string, unknown>
-      await assertNode(node)
+      assertNode(node)
       const nodeKey = `${node.type}:${node.id}`
       assert.notEqual(primaryKey, nodeKey)
       const source = relation.direction === 'outgoing' ? primaryKey : nodeKey
@@ -202,25 +170,24 @@ test('commit hotspots preserve only deterministic commit mappings and one-hop fo
   assert.equal(uniqueRelations.size, hotspots.relationTotal)
 })
 
-test('commit hotspot builder does not absorb transitive peers and rejects invalid relation semantics', async () => {
-  const { buildCommitHotspots } = await import('../../api/routes/cognition.ts')
+test('recent hotspot builder does not absorb transitive peers and rejects invalid relation semantics', async () => {
+  const { buildRecentHotspots } = await import('../../api/routes/cognition.ts')
   const target = (fact_type_key: string, object_id: string) => ({ governed_project_id: 'demo', fact_type_key, object_id })
   const fact = (
-    type: CommitHotspotBuildItem['type'],
+    type: RecentHotspotBuildItem['type'],
     object_id: string,
     status: string,
     relations: unknown = undefined,
-  ): CommitHotspotBuildItem => ({
+  ): RecentHotspotBuildItem => ({
     type,
     object_id,
     title: object_id,
     status,
     ...(type === 'workcase' ? { progress_group: status === 'closed' ? 'closed' : 'progressing' } : {}),
     read_status: 'readable',
-    canonical_path: `ldvh-base/${type === 'study' ? 'studies' : `${type}s`}/${object_id}${type === 'study' ? '.md' : '.yaml'}`,
     relations,
   })
-  const facts: CommitHotspotBuildItem[] = [
+  const facts: RecentHotspotBuildItem[] = [
     fact('spark', 'spark-0001', 'open', [
       { relation_key: 'related-to', target: target('spark', 'spark-0002') },
     ]),
@@ -236,23 +203,10 @@ test('commit hotspot builder does not absorb transitive peers and rejects invali
     ]),
     fact('workcase', 'workcase-0002', 'open'),
   ]
-  const commits: GitLogEntryWithFiles[] = [{
-    hash: 'a'.repeat(40),
-    shortHash: 'a'.repeat(7),
-    author: 'Tester',
-    date: '2026-08-01T00:00:00Z',
-    message: 'feat: update spark hotspot',
-    body: '',
-    category: 'feat',
-    scope: '',
-    description: 'update spark hotspot',
-    isBreaking: false,
-    relativeTime: '1小时前',
-    pushStatus: 'unknown',
-    files: ['ldvh-base/sparks/spark-0001.yaml'],
-  }]
-
-  const result = buildCommitHotspots(commits, facts, 'demo')
+  const activityByFact = new Map([
+    ['spark:spark-0001', [{ occurred_at: '2026-08-01T00:00:00Z', activity: 'updated' as const }]],
+  ])
+  const result = buildRecentHotspots(facts, activityByFact, 'demo')
   assert.equal(result.hotspotTotal, 1)
   assert.equal(result.relationTotal, 2)
   assert.equal(result.clusters.length, 1)
@@ -286,7 +240,7 @@ test('Spark health splits the current pool into terminal and open items, then li
   }
 })
 
-test('recent activity accepts only explicit windows and marks current fact objects by created_at or updated_at', async () => {
+test('recent activity accepts only explicit windows and exposes fact change-log events', async () => {
   for (const window of ['1d', '3d', '7d', '14d']) {
     const body = await cognition('zh', window)
     const recent = body.recentActivity as Record<string, unknown>
@@ -317,6 +271,37 @@ test('recent activity accepts only explicit windows and marks current fact objec
 
   const response = await fetch(`${baseUrl}/api/cognition?locale=zh&window=30d`)
   assert.equal(response.status, 400)
+})
+
+test('fact activity builder reads change_log first and only falls back for legacy facts without usable entries', async () => {
+  const { buildFactActivityItems } = await import('../../api/routes/cognition.ts')
+  const raw = {
+    object_id: 'spark-0999',
+    title: '流水驱动的热点',
+    status: 'open',
+    created_at: '2026-08-01T00:00:00Z',
+    updated_at: '2026-08-01T04:00:00Z',
+    change_log: [
+      { at: '2026-08-01T01:00:00Z', summary: '创建' },
+      { at: '2026-08-01T03:00:00Z', summary: '更新' },
+    ],
+  }
+  const activities = buildFactActivityItems(raw, 'spark', Date.parse('2026-08-01T00:00:00Z'), Date.parse('2026-08-01T03:30:00Z'))
+  assert.deepEqual(activities.map((item) => `${item.activity}:${item.occurred_at}`), [
+    'created:2026-08-01T01:00:00Z',
+    'updated:2026-08-01T03:00:00Z',
+  ])
+
+  const legacy = buildFactActivityItems(
+    { ...raw, change_log: [{ at: 'invalid' }] },
+    'spark',
+    Date.parse('2026-08-01T00:00:00Z'),
+    Date.parse('2026-08-01T04:30:00Z'),
+  )
+  assert.deepEqual(legacy.map((item) => `${item.activity}:${item.occurred_at}`), [
+    'created:2026-08-01T00:00:00Z',
+    'updated:2026-08-01T04:00:00Z',
+  ])
 })
 
 test('inbox collects only decision-baseline items with a deterministic sort order', async () => {

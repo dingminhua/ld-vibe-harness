@@ -2,7 +2,7 @@
  * 项目认知中心（02 §3 / §4.1 / §4.2 / §5）。
  *
  * - 默认只读：不提供批准、关闭、分流、处置或任何写入口（02 §2.2 / §7.2）。
- * - 一切从既有字段派生：近期动态只标记 created_at / updated_at（02 §5.1）。
+ * - 一切从既有字段派生：近期动态与热点均只读取事实 change_log（旧事实无流水时才回退时间字段）。
  * - 决定依据区与 WorkCase 列表 Card 同源消费（复用 ObjectList 导出的内容组件与
  *   source-bound WorkCase Card 投影，Q3），不在本页另写摘要逻辑（02 §7.5）。
  * - 复制语义：模块级"复制模块摘要"为面向 AI 对话的多行文本；条目本身不叠加聚焦页专属操作，
@@ -30,7 +30,7 @@ import { CommitHotspotCluster, CommitHotspotLegend } from '@/pages/cognition/Com
 import {
   fetchCognition,
   type CognitionActiveWorkCaseItem,
-  type CognitionCommitHotspotNode,
+  type CognitionRecentHotspotNode,
   type CognitionData,
   type CognitionInboxItem,
   type CognitionInboxKind,
@@ -54,10 +54,10 @@ const SPARK_PRIORITIES = ['P0', 'P1', 'P2', 'P3'];
 
 const RECENT_ACTIVITY_WINDOWS: CognitionRecentActivityWindow[] = ['1d', '3d', '7d', '14d'];
 
-type CommitHotspotStatusFilter = 'all' | 'progressing' | 'decision' | 'settled';
+type RecentHotspotStatusFilter = 'all' | 'progressing' | 'decision' | 'settled';
 
-const COMMIT_HOTSPOT_STATUS_FILTERS: CommitHotspotStatusFilter[] = ['all', 'progressing', 'decision', 'settled'];
-const COMMIT_HOTSPOT_TERMINAL_STATUSES: Record<string, Set<string>> = {
+const RECENT_HOTSPOT_STATUS_FILTERS: RecentHotspotStatusFilter[] = ['all', 'progressing', 'decision', 'settled'];
+const RECENT_HOTSPOT_TERMINAL_STATUSES: Record<string, Set<string>> = {
   workcase: new Set(['closed']),
   adr: new Set(['retired']),
   pitfall: new Set(['discarded']),
@@ -65,14 +65,14 @@ const COMMIT_HOTSPOT_TERMINAL_STATUSES: Record<string, Set<string>> = {
   study: new Set(['retired']),
 };
 
-function getCommitHotspotStatusGroup(node: CognitionCommitHotspotNode): Exclude<CommitHotspotStatusFilter, 'all'> {
+function getRecentHotspotStatusGroup(node: CognitionRecentHotspotNode): Exclude<RecentHotspotStatusFilter, 'all'> {
   if (node.type === 'workcase') {
     if (node.progress_group === 'plan_confirmation' || node.progress_group === 'closure_confirmation') return 'decision';
     if (node.progress_group === 'closed') return 'settled';
     return 'progressing';
   }
   if (node.type === 'pitfall' && node.status === 'draft') return 'decision';
-  if (node.status && COMMIT_HOTSPOT_TERMINAL_STATUSES[node.type]?.has(node.status)) return 'settled';
+  if (node.status && RECENT_HOTSPOT_TERMINAL_STATUSES[node.type]?.has(node.status)) return 'settled';
   return 'progressing';
 }
 
@@ -146,18 +146,18 @@ function buildSparkHealthSummary(data: CognitionData, locale: string, t: Transla
   return lines.join('\n');
 }
 
-function buildCommitHotspotSummary(data: CognitionData, locale: string, t: Translate): string {
-  const hotspots = data.commitHotspots;
+function buildRecentHotspotSummary(data: CognitionData, locale: string, t: Translate): string {
+  const hotspots = data.recentHotspots;
   if (!hotspots) return t('cognition.commitHotspots.title');
   const lines = [
     t('cognition.commitHotspots.title'),
     t(`cognition.recent.window.${hotspots.window}` as LocaleKey),
-    t('cognition.commitHotspots.totalCommits', { count: String(hotspots.totalCommits) }),
+    t('cognition.commitHotspots.totalCommits', { count: String(hotspots.totalEvents) }),
     t('cognition.commitHotspots.summary', { hotspots: String(hotspots.hotspotTotal), relations: String(hotspots.relationTotal) }),
   ];
   for (const cluster of hotspots.clusters) {
     const item = cluster.primary;
-    lines.push(`- ${item.id} · ${item.commitRefs.length} · ${getLocalizedObjectTitle(item, locale, item.id)}`);
+    lines.push(`- ${item.id} · ${item.activityRefs.length} · ${getLocalizedObjectTitle(item, locale, item.id)}`);
   }
   return lines.join('\n');
 }
@@ -477,9 +477,9 @@ export default function CognitionCenter() {
   const [recentError, setRecentError] = useState<string | null>(null);
   const [sparkHealthExpanded, setSparkHealthExpanded] = useState(true);
   const [showAllSilentSpark, setShowAllSilentSpark] = useState(false);
-  const [commitHotspotsExpanded, setCommitHotspotsExpanded] = useState(true);
+  const [recentHotspotsExpanded, setRecentHotspotsExpanded] = useState(true);
   const [expandedHotspotKey, setExpandedHotspotKey] = useState<string | null>(null);
-  const [commitHotspotStatusFilter, setCommitHotspotStatusFilter] = useState<CommitHotspotStatusFilter>('progressing');
+  const [recentHotspotStatusFilter, setRecentHotspotStatusFilter] = useState<RecentHotspotStatusFilter>('progressing');
   const { t, locale } = useI18n();
 
   // 首次进入才阻塞整页；切换近期窗口保留当前内容，只在本模块内更新快照。
@@ -560,14 +560,14 @@ export default function CognitionCenter() {
       .map((priority) => `${priority} × ${sparkHealth.openByPriority[priority]}`)
       .join(' / ')
     : '';
-  const commitHotspots = data.commitHotspots;
-  const commitHotspotIssues = (data.issues ?? []).filter((issue) => issue.section === 'commitHotspots');
-  const filteredCommitHotspotClusters = !commitHotspots
+  const recentHotspots = data.recentHotspots;
+  const recentHotspotIssues = (data.issues ?? []).filter((issue) => issue.section === 'recentHotspots');
+  const filteredRecentHotspotClusters = !recentHotspots
     ? []
-    : commitHotspotStatusFilter === 'all'
-      ? commitHotspots.clusters
-      : commitHotspots.clusters.filter((cluster) => getCommitHotspotStatusGroup(cluster.primary) === commitHotspotStatusFilter);
-  const filteredCommitHotspotRelationTotal = filteredCommitHotspotClusters.reduce(
+    : recentHotspotStatusFilter === 'all'
+      ? recentHotspots.clusters
+      : recentHotspots.clusters.filter((cluster) => getRecentHotspotStatusGroup(cluster.primary) === recentHotspotStatusFilter);
+  const filteredRecentHotspotRelationTotal = filteredRecentHotspotClusters.reduce(
     (total, cluster) => total + cluster.relations.length,
     0,
   );
@@ -932,50 +932,50 @@ export default function CognitionCenter() {
         </section>
       </div>
 
-      {/* 模块三：以精确 Git 回指为热点中心，仅展开一跳正式关系；不推断语义关联或重要性。 */}
+      {/* 模块三：以事实流水为热点中心，仅展开一跳正式关系；不推断语义关联或重要性。 */}
       <section className="mt-4 rounded-xl border border-ldvh-border bg-ldvh-panel p-4">
         <div
           role="button"
           tabIndex={0}
-          aria-expanded={commitHotspotsExpanded}
-          aria-controls="cognition-commit-hotspots-content"
-          onClick={() => setCommitHotspotsExpanded((expanded) => !expanded)}
-          onKeyDown={(event) => toggleOnKeyboard(event, () => setCommitHotspotsExpanded((expanded) => !expanded))}
-          className={`-mx-1 flex min-w-0 cursor-pointer flex-wrap items-center gap-2 rounded-md px-1 transition-colors hover:bg-ldvh-bg/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ldvh-accent/50 ${commitHotspotsExpanded ? 'mb-4' : ''}`}
+          aria-expanded={recentHotspotsExpanded}
+          aria-controls="cognition-recent-hotspots-content"
+          onClick={() => setRecentHotspotsExpanded((expanded) => !expanded)}
+          onKeyDown={(event) => toggleOnKeyboard(event, () => setRecentHotspotsExpanded((expanded) => !expanded))}
+          className={`-mx-1 flex min-w-0 cursor-pointer flex-wrap items-center gap-2 rounded-md px-1 transition-colors hover:bg-ldvh-bg/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ldvh-accent/50 ${recentHotspotsExpanded ? 'mb-4' : ''}`}
         >
           <GitFork size={16} className="shrink-0 text-ldvh-accent" aria-hidden="true" />
           <h3 className="ldvh-section-title min-w-0">{t('cognition.commitHotspots.title')}</h3>
           <span className="ml-auto flex min-w-0 shrink-0 items-center gap-2">
-            {commitHotspots && (
+            {recentHotspots && (
               <CopyPathButton
-                path={buildCommitHotspotSummary(data, locale, t)}
+                path={buildRecentHotspotSummary(data, locale, t)}
                 label={t('cognition.commitHotspots.copyModuleSummary')}
                 copiedLabel={t('cognition.commitHotspots.copiedModuleSummary')}
               />
             )}
             <button
               type="button"
-              aria-expanded={commitHotspotsExpanded}
-              aria-controls="cognition-commit-hotspots-content"
+              aria-expanded={recentHotspotsExpanded}
+              aria-controls="cognition-recent-hotspots-content"
               onClick={(event) => {
                 event.stopPropagation();
-                setCommitHotspotsExpanded((expanded) => !expanded);
+                setRecentHotspotsExpanded((expanded) => !expanded);
               }}
               className="inline-flex h-8 w-8 items-center justify-center rounded-md text-ldvh-text-secondary transition-colors hover:bg-ldvh-bg hover:text-ldvh-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ldvh-accent/50"
-              title={t(commitHotspotsExpanded ? 'cognition.commitHotspots.collapseSection' : 'cognition.commitHotspots.expandSection')}
+              title={t(recentHotspotsExpanded ? 'cognition.commitHotspots.collapseSection' : 'cognition.commitHotspots.expandSection')}
             >
-              {commitHotspotsExpanded ? <ChevronUp size={16} aria-hidden="true" /> : <ChevronDown size={16} aria-hidden="true" />}
-              <span className="sr-only">{t(commitHotspotsExpanded ? 'cognition.commitHotspots.collapseSection' : 'cognition.commitHotspots.expandSection')}</span>
+              {recentHotspotsExpanded ? <ChevronUp size={16} aria-hidden="true" /> : <ChevronDown size={16} aria-hidden="true" />}
+              <span className="sr-only">{t(recentHotspotsExpanded ? 'cognition.commitHotspots.collapseSection' : 'cognition.commitHotspots.expandSection')}</span>
             </button>
           </span>
         </div>
 
-        {commitHotspotsExpanded && (
-          <div id="cognition-commit-hotspots-content">
-            <ModuleIssuesNotice issues={commitHotspotIssues} t={t} unavailableKey="cognition.commitHotspots.unavailable" />
-            {commitHotspots && (
-              commitHotspots.hotspotTotal === 0 ? (
-                commitHotspotIssues.length === 0 && <p className="ldvh-body-muted">{t('cognition.commitHotspots.empty')}</p>
+        {recentHotspotsExpanded && (
+          <div id="cognition-recent-hotspots-content">
+            <ModuleIssuesNotice issues={recentHotspotIssues} t={t} unavailableKey="cognition.commitHotspots.unavailable" />
+            {recentHotspots && (
+              recentHotspots.hotspotTotal === 0 ? (
+                recentHotspotIssues.length === 0 && <p className="ldvh-body-muted">{t('cognition.commitHotspots.empty')}</p>
               ) : (
                 <div className="flex min-w-0 flex-col gap-3">
                   <div
@@ -986,17 +986,17 @@ export default function CognitionCenter() {
                     <span className="ldvh-caption mr-0.5 text-ldvh-text-secondary/75">
                       {t('cognition.commitHotspots.statusFilterLabel')}
                     </span>
-                    {COMMIT_HOTSPOT_STATUS_FILTERS.map((filter) => (
+                    {RECENT_HOTSPOT_STATUS_FILTERS.map((filter) => (
                       <button
                         key={filter}
                         type="button"
-                        aria-pressed={commitHotspotStatusFilter === filter}
+                        aria-pressed={recentHotspotStatusFilter === filter}
                         onClick={() => {
-                          setCommitHotspotStatusFilter(filter);
+                          setRecentHotspotStatusFilter(filter);
                           setExpandedHotspotKey(null);
                         }}
                         className={`ldvh-caption inline-flex h-8 items-center rounded-md border px-2.5 transition-colors ${
-                          commitHotspotStatusFilter === filter
+                          recentHotspotStatusFilter === filter
                             ? 'border-ldvh-accent/45 bg-ldvh-accent/10 text-ldvh-accent'
                             : 'border-ldvh-border text-ldvh-text-secondary hover:border-ldvh-accent/40 hover:text-ldvh-accent'
                         }`}
@@ -1006,18 +1006,18 @@ export default function CognitionCenter() {
                     ))}
                   </div>
                   <CommitHotspotLegend
-                    totalCommits={commitHotspots.totalCommits}
-                    hotspotTotal={filteredCommitHotspotClusters.length}
-                    relationTotal={filteredCommitHotspotRelationTotal}
-                    relationKeys={[...new Set(filteredCommitHotspotClusters.flatMap((cluster) => (
+                    totalEvents={recentHotspots.totalEvents}
+                    hotspotTotal={filteredRecentHotspotClusters.length}
+                    relationTotal={filteredRecentHotspotRelationTotal}
+                    relationKeys={[...new Set(filteredRecentHotspotClusters.flatMap((cluster) => (
                       cluster.relations.map((relation) => relation.relationKey)
                     )))]}
                   />
-                  {filteredCommitHotspotClusters.length === 0 ? (
+                  {filteredRecentHotspotClusters.length === 0 ? (
                     <p className="ldvh-body-muted">{t('cognition.commitHotspots.filterEmpty')}</p>
                   ) : (
                     <div className="ldvh-hotspot-grid min-w-0 items-start">
-                      {filteredCommitHotspotClusters.map((cluster, index) => (
+                      {filteredRecentHotspotClusters.map((cluster, index) => (
                         <CommitHotspotCluster
                           key={`${cluster.primary.type}:${cluster.primary.id}`}
                           cluster={cluster}

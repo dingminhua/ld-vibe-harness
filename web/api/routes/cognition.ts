@@ -1,10 +1,11 @@
 /**
  * Cognition API 路由：聚合项目认知中心的待决定事项、推进中事项与近期动态。
  *
- * 已交付模块一（待决定事项）、模块二（近期动态）与模块四（Spark 池健康）
+ * 已交付模块一（待决定事项）、模块二（近期动态）、模块三（近期热点关系）与模块四（Spark 池健康）
  * + §5 全局信任标记所需的派生字段：
  * generatedAt（观察时间）、scope、inbox（WorkCase Human Gate 与 Pitfall draft 审核的派生收录与排序）、
- * recentActivity（指定窗口内事实对象的创建 / 更新标记）与 issues（模块级降级）。
+ * recentActivity（指定窗口内事实对象 change_log 的创建 / 更新事件）、recentHotspots（同一事件窗口内
+ * 的事实热点及一跳正式关系）与 issues（模块级降级）。
  * 数据经 Web 字段级直读（localFactReader / facts.ts 的 listObjects），不复用 /api/dashboard 聚合逻辑。
  *
  * 命名纪律（02 §7 第 3 条）：WorkCase 条目只携带 progress_group；待决类型 inboxKind
@@ -15,7 +16,6 @@
 import { Router, type Request, type Response } from 'express'
 import { listObjects, type ObjectType } from '../services/facts.js'
 import { listLocalFacts, type LocalFactItem } from '../services/localFactReader.js'
-import { getGitLogWithFiles, type GitLogEntryWithFiles } from '../services/git.js'
 import {
   deriveWorkCasePresentationProjection,
   isResolvedWorkCasePresentationProjection,
@@ -33,7 +33,6 @@ type InboxKind = 'plan_confirmation' | 'closure_confirmation' | 'blocked_resolut
 type InboxObjectType = 'workcase' | 'pitfall'
 type RecentActivityKind = 'created' | 'updated'
 type RecentActivityWindow = '1d' | '3d' | '7d' | '14d'
-type CommitMappingKind = 'canonical_path' | 'explicit_id' | 'both'
 
 const RECENT_ACTIVITY_WINDOWS: Record<RecentActivityWindow, number> = {
   '1d': 1,
@@ -134,7 +133,7 @@ interface SparkHealthBuildItem {
   unparsed_structures: Array<Record<string, unknown>>
 }
 
-export interface CommitHotspotBuildItem {
+export interface RecentHotspotBuildItem {
   type: ObjectType
   object_id: string
   title: string
@@ -145,34 +144,30 @@ export interface CommitHotspotBuildItem {
   priority?: string
   read_status: string
   lifecycle_position?: ResolvedWorkCasePresentationProjection['lifecycle_position']
-  canonical_path: string
   relations: unknown
 }
 
-interface CommitHotspotRef {
-  hash: string
-  shortHash: string
-  date: string
-  relativeTime: string
-  mapping: CommitMappingKind
+interface RecentHotspotRef {
+  occurred_at: string
+  activity: RecentActivityKind
 }
 
-interface CommitHotspotNode extends Omit<CommitHotspotBuildItem, 'object_id' | 'canonical_path' | 'relations' | 'phase'> {
+interface RecentHotspotNode extends Omit<RecentHotspotBuildItem, 'object_id' | 'relations' | 'phase'> {
   id: string
   typeColor: string
-  commitRefs: CommitHotspotRef[]
+  activityRefs: RecentHotspotRef[]
 }
 
-interface CommitHotspotEdge {
+interface RecentHotspotEdge {
   source: string
   target: string
   relationKey: string
 }
 
-interface CommitHotspotRelation {
+interface RecentHotspotRelation {
   direction: 'outgoing' | 'incoming'
   relationKey: string
-  node: CommitHotspotNode
+  node: RecentHotspotNode
 }
 
 /** P0=0 … P3=3；缺失或非法落 4（排最后，并省略优先级信号）。 */
@@ -287,6 +282,46 @@ function buildRecentActivityItem(
   }
 }
 
+/**
+ * 将事实对象自身的流水转为近期动态。流水只约定 `at`，没有独立动作字段；
+ * 因此第一条有效记录表示受控创建，之后的记录表示受控更新。没有可读流水的
+ * 旧事实才使用 created_at / updated_at 作为兼容回退，绝不从 Git 提交反推事件。
+ */
+export function buildFactActivityItems(
+  raw: Record<string, unknown>,
+  type: ObjectType,
+  start: number,
+  end: number,
+): RecentActivityBuildItem[] {
+  const changeLog = Array.isArray(raw.change_log) ? raw.change_log : []
+  const logged: Array<{ occurredAt: string; index: number }> = []
+  for (let index = 0; index < changeLog.length; index += 1) {
+    const entry = changeLog[index]
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) continue
+    const at = (entry as Record<string, unknown>).at
+    if (timestampInWindow(at, start, end)) logged.push({ occurredAt: at, index })
+  }
+  if (logged.length > 0) {
+    return logged.map(({ occurredAt, index }) => buildRecentActivityItem(
+      raw,
+      type,
+      index === 0 ? 'created' : 'updated',
+      occurredAt,
+    ))
+  }
+
+  const createdAt = raw.created_at
+  const updatedAt = raw.updated_at
+  const fallback: RecentActivityBuildItem[] = []
+  if (timestampInWindow(createdAt, start, end)) {
+    fallback.push(buildRecentActivityItem(raw, type, 'created', createdAt))
+  }
+  if (timestampInWindow(updatedAt, start, end) && updatedAt !== createdAt) {
+    fallback.push(buildRecentActivityItem(raw, type, 'updated', updatedAt))
+  }
+  return fallback
+}
+
 function silentDays(updatedAt: unknown, observedAt: number): number | null {
   if (typeof updatedAt !== 'string') return null
   const updatedAtMs = Date.parse(updatedAt)
@@ -353,7 +388,7 @@ function buildSparkHealth(rawItems: Array<Record<string, unknown>>, observedAt: 
   }
 }
 
-function projectCommitHotspotFact(item: LocalFactItem, type: ObjectType): CommitHotspotBuildItem | null {
+function projectRecentHotspotFact(item: LocalFactItem, type: ObjectType): RecentHotspotBuildItem | null {
   const raw = item.fact_object
   if (item.read_status !== 'readable' || raw === null || item.field_issues.length > 0) return null
   if (item.object_ref.fact_type_key !== type || !item.object_ref.object_id) return null
@@ -379,14 +414,13 @@ function projectCommitHotspotFact(item: LocalFactItem, type: ObjectType): Commit
     ...(type === 'workcase' && progressGroup ? { progress_group: progressGroup } : {}),
     ...(priority ? { priority } : {}),
     read_status: item.read_status,
-    canonical_path: item.canonical_path,
     relations: raw.relations,
   }
 }
 
 function isDisplayableFormalRelation(
-  source: CommitHotspotBuildItem,
-  target: CommitHotspotBuildItem,
+  source: RecentHotspotBuildItem,
+  target: RecentHotspotBuildItem,
   relationKey: string,
 ): boolean {
   if (source.type === 'spark') {
@@ -421,81 +455,35 @@ function isDisplayableFormalRelation(
   return false
 }
 
-function extractExplicitObjectIds(message: string): string[] {
-  const ids = new Set<string>()
-  for (const match of message.matchAll(/\b(workcase|adr|pitfall|spark|study)-\d{4,}\b/g)) {
-    ids.add(factKey(match[1], match[0]))
-  }
-  return [...ids]
+function compareRecentHotspotRef(a: RecentHotspotRef, b: RecentHotspotRef): number {
+  if (a.occurred_at !== b.occurred_at) return a.occurred_at > b.occurred_at ? -1 : 1
+  if (a.activity !== b.activity) return a.activity === 'updated' ? -1 : 1
+  return 0
 }
 
-function mergeCommitMapping(
-  target: Map<string, CommitHotspotRef>,
-  nodeKey: string,
-  commit: GitLogEntryWithFiles,
-  mappedByPath: boolean,
-  mappedById: boolean,
-): void {
-  if (!mappedByPath && !mappedById) return
-  const mapping: CommitMappingKind = mappedByPath && mappedById
-    ? 'both'
-    : mappedByPath ? 'canonical_path' : 'explicit_id'
-  const previous = target.get(nodeKey)
-  if (!previous) {
-    target.set(nodeKey, {
-      hash: commit.hash,
-      shortHash: commit.shortHash,
-      date: commit.date,
-      relativeTime: commit.relativeTime,
-      mapping,
-    })
-    return
-  }
-  if (previous.mapping !== mapping) previous.mapping = 'both'
-}
-
-function compareCommitRef(a: CommitHotspotRef, b: CommitHotspotRef): number {
-  if (a.date !== b.date) return a.date > b.date ? -1 : 1
-  return a.hash.localeCompare(b.hash)
-}
-
-function compareHotspotNode(a: CommitHotspotNode, b: CommitHotspotNode): number {
-  if (a.commitRefs.length !== b.commitRefs.length) return b.commitRefs.length - a.commitRefs.length
-  const aLatest = a.commitRefs[0]?.date ?? ''
-  const bLatest = b.commitRefs[0]?.date ?? ''
+function compareHotspotNode(a: RecentHotspotNode, b: RecentHotspotNode): number {
+  if (a.activityRefs.length !== b.activityRefs.length) return b.activityRefs.length - a.activityRefs.length
+  const aLatest = a.activityRefs[0]?.occurred_at ?? ''
+  const bLatest = b.activityRefs[0]?.occurred_at ?? ''
   if (aLatest !== bLatest) return aLatest > bLatest ? -1 : 1
-  // 活跃度相同时，非终态 WorkCase 只作为稳定的阅读顺序兜底，不覆盖提交热点本身。
+  // 活跃度相同时，非终态 WorkCase 只作为稳定的阅读顺序兜底，不覆盖事实热点本身。
   const aWorkCase = a.type === 'workcase' && a.progress_group !== 'closed'
   const bWorkCase = b.type === 'workcase' && b.progress_group !== 'closed'
   if (aWorkCase !== bWorkCase) return aWorkCase ? -1 : 1
   return factKey(a.type, a.id).localeCompare(factKey(b.type, b.id))
 }
 
-export function buildCommitHotspots(
-  commits: GitLogEntryWithFiles[],
-  facts: CommitHotspotBuildItem[],
+export function buildRecentHotspots(
+  facts: RecentHotspotBuildItem[],
+  activityByFact: Map<string, RecentHotspotRef[]>,
   governedProjectId: string,
 ) {
   const byKey = new Map(facts.map((item) => [factKey(item.type, item.object_id), item]))
-  const byPath = new Map(facts.map((item) => [item.canonical_path, item]))
-  const mappings = new Map<string, Map<string, CommitHotspotRef>>()
-
-  for (const commit of commits) {
-    const pathMatches = new Set<string>()
-    for (const filePath of commit.files) {
-      const item = byPath.get(filePath)
-      if (item) pathMatches.add(factKey(item.type, item.object_id))
-    }
-    const idMatches = new Set(extractExplicitObjectIds(`${commit.message}\n${commit.body}`).filter((key) => byKey.has(key)))
-    for (const key of new Set([...pathMatches, ...idMatches])) {
-      const refs = mappings.get(key) ?? new Map<string, CommitHotspotRef>()
-      mergeCommitMapping(refs, key, commit, pathMatches.has(key), idMatches.has(key))
-      mappings.set(key, refs)
-    }
-  }
-
-  const hotspots = new Set(mappings.keys())
-  const edges = new Map<string, CommitHotspotEdge>()
+  const hotspots = new Set([...activityByFact.entries()]
+    .filter(([, refs]) => refs.length > 0)
+    .map(([key]) => key)
+    .filter((key) => byKey.has(key)))
+  const edges = new Map<string, RecentHotspotEdge>()
   for (const source of facts) {
     const sourceKey = factKey(source.type, source.object_id)
     if (!Array.isArray(source.relations)) continue
@@ -512,16 +500,16 @@ export function buildCommitHotspots(
       const targetFact = byKey.get(targetKey)
       if (!targetFact || targetKey === sourceKey || (!hotspots.has(sourceKey) && !hotspots.has(targetKey))) continue
       if (!isDisplayableFormalRelation(source, targetFact, record.relation_key)) continue
-      const edge: CommitHotspotEdge = { source: sourceKey, target: targetKey, relationKey: record.relation_key }
+      const edge: RecentHotspotEdge = { source: sourceKey, target: targetKey, relationKey: record.relation_key }
       edges.set(`${edge.source}\u0000${edge.target}\u0000${edge.relationKey}`, edge)
     }
   }
 
   const edgeValues = [...edges.values()]
-  const makeNode = (key: string): CommitHotspotNode => {
+  const makeNode = (key: string): RecentHotspotNode => {
     const item = byKey.get(key)
-    if (!item) throw new Error(`Commit hotspot fact not found: ${key}`)
-    const refs = [...(mappings.get(key)?.values() ?? [])].sort(compareCommitRef)
+    if (!item) throw new Error(`Recent hotspot fact not found: ${key}`)
+    const refs = [...(activityByFact.get(key) ?? [])].sort(compareRecentHotspotRef)
     return {
       type: item.type,
       id: item.object_id,
@@ -533,15 +521,15 @@ export function buildCommitHotspots(
       ...(item.priority !== undefined ? { priority: item.priority } : {}),
       read_status: item.read_status,
       typeColor: getTypeColor(item.type),
-      commitRefs: refs,
+      activityRefs: refs,
     }
   }
 
-  const clusters: Array<{ primary: CommitHotspotNode; relations: CommitHotspotRelation[] }> = []
+  const clusters: Array<{ primary: RecentHotspotNode; relations: RecentHotspotRelation[] }> = []
   for (const hotspotKey of [...hotspots].sort()) {
     const incident = edgeValues.filter((edge) => edge.source === hotspotKey || edge.target === hotspotKey)
     if (incident.length === 0) continue
-    const relations = incident.map((edge): CommitHotspotRelation => ({
+    const relations = incident.map((edge): RecentHotspotRelation => ({
       direction: edge.source === hotspotKey ? 'outgoing' : 'incoming',
       relationKey: edge.relationKey,
       node: makeNode(edge.source === hotspotKey ? edge.target : edge.source),
@@ -555,7 +543,7 @@ export function buildCommitHotspots(
   clusters.sort((a, b) => compareHotspotNode(a.primary, b.primary))
 
   return {
-    totalCommits: commits.length,
+    totalEvents: [...activityByFact.values()].reduce((total, refs) => total + refs.length, 0),
     hotspotTotal: clusters.length,
     relationTotal: edgeValues.length,
     clusters,
@@ -696,45 +684,45 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
         issues.push({ ...toIssue(issue), section: 'recentActivity' })
       }
       for (const raw of sourceData.items) {
-        const createdAt = raw.created_at
-        const updatedAt = raw.updated_at
-        if (timestampInWindow(createdAt, recentStart, Date.parse(generatedAt))) {
-          recentBuilds.push(buildRecentActivityItem(raw, type, 'created', createdAt))
-        }
-        if (timestampInWindow(updatedAt, recentStart, Date.parse(generatedAt)) && updatedAt !== createdAt) {
-          recentBuilds.push(buildRecentActivityItem(raw, type, 'updated', updatedAt))
-        }
+        recentBuilds.push(...buildFactActivityItems(raw, type, recentStart, Date.parse(generatedAt)))
       }
     }
     recentBuilds.sort(compareRecentActivity)
 
-    // 模块三只读取当前正式关系与 Git 的可回指证据：不从标题、关键词或相邻文件推断关联。
-    let commitHotspots: ReturnType<typeof buildCommitHotspots> | undefined
+    // 模块三与近期动态共用事实 change_log；只读取当前正式关系，不从 Git、标题或关键词推断关联。
+    let recentHotspots: ReturnType<typeof buildRecentHotspots> | undefined
     try {
-      const graphFacts: CommitHotspotBuildItem[] = []
+      const graphFacts: RecentHotspotBuildItem[] = []
+      const activityByFact = new Map<string, RecentHotspotRef[]>()
       const graphTypes: ObjectType[] = ['workcase', 'adr', 'pitfall', 'spark', 'study']
       const graphResults = await Promise.all(graphTypes.map(async (type) => [type, await listLocalFacts(type, factScope)] as const))
       for (const [type, result] of graphResults) {
         if (result.status !== 'complete') {
-          issues.push({ section: 'commitHotspots', code: `${type}_relation_list_unavailable`, message: result.issues[0]?.message ?? `${type} 正式关系读取失败` })
+          issues.push({ section: 'recentHotspots', code: `${type}_relation_list_unavailable`, message: result.issues[0]?.message ?? `${type} 正式关系读取失败` })
           continue
         }
         for (const item of result.items) {
-          const projected = projectCommitHotspotFact(item, type)
-          if (projected) graphFacts.push(projected)
+          const projected = projectRecentHotspotFact(item, type)
+          if (!projected) continue
+          graphFacts.push(projected)
+          activityByFact.set(
+            factKey(projected.type, projected.object_id),
+            buildFactActivityItems(item.fact_object ?? {}, type, recentStart, Date.parse(generatedAt)).map((activity) => ({
+              occurred_at: activity.occurred_at,
+              activity: activity.activity,
+            })),
+          )
         }
         for (const issue of result.issues) {
-          issues.push({ section: 'commitHotspots', code: issue.code, message: issue.message })
+          issues.push({ section: 'recentHotspots', code: issue.code, message: issue.message })
         }
       }
-
-      const commits = await getGitLogWithFiles(new Date(recentStart), new Date(generatedAt), locale, project.path)
-      commitHotspots = buildCommitHotspots(commits, graphFacts, project.id)
+      recentHotspots = buildRecentHotspots(graphFacts, activityByFact, project.id)
     } catch (caught) {
       issues.push({
-        section: 'commitHotspots',
-        code: 'commit_hotspot_data_unavailable',
-        message: caught instanceof Error ? caught.message : '近期提交热点数据不可用',
+        section: 'recentHotspots',
+        code: 'recent_hotspot_data_unavailable',
+        message: caught instanceof Error ? caught.message : '近期事实热点数据不可用',
       })
     }
 
@@ -830,13 +818,13 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
         items: recentItems,
         total: recentItems.length,
       },
-      ...(commitHotspots ? {
-        commitHotspots: {
+      ...(recentHotspots ? {
+        recentHotspots: {
           window: recentWindow,
-          totalCommits: commitHotspots.totalCommits,
-          hotspotTotal: commitHotspots.hotspotTotal,
-          relationTotal: commitHotspots.relationTotal,
-          clusters: commitHotspots.clusters,
+          totalEvents: recentHotspots.totalEvents,
+          hotspotTotal: recentHotspots.hotspotTotal,
+          relationTotal: recentHotspots.relationTotal,
+          clusters: recentHotspots.clusters,
         },
       } : {}),
       ...(sparkHealth ? {

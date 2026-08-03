@@ -512,7 +512,7 @@ export interface CognitionActiveWorkCaseItem extends Omit<CognitionInboxItemBase
   isBlocked: boolean;
 }
 
-/** 近期动态是对当前事实身份与时间字段的派生标记，不承载提交记录或字段级 diff。 */
+/** 近期动态由事实对象自身的 change_log 派生；不承载 Git 提交记录或字段级 diff。 */
 export type CognitionRecentActivityWindow = '1d' | '3d' | '7d' | '14d';
 export type CognitionRecentActivityKind = 'created' | 'updated';
 
@@ -564,18 +564,13 @@ export interface CognitionSparkHealth {
   silentItems: CognitionSparkHealthItem[];
 }
 
-/** 近期提交与当前事实对象的确定映射；不包含标题或关键词推断。 */
-export type CognitionCommitMapping = 'canonical_path' | 'explicit_id' | 'both';
-
-export interface CognitionCommitHotspotRef {
-  hash: string;
-  shortHash: string;
-  date: string;
-  relativeTime: string;
-  mapping: CognitionCommitMapping;
+/** 近期热点中心对应的事实修改流水；只表示本窗口内的事实活动。 */
+export interface CognitionRecentHotspotRef {
+  occurred_at: string;
+  activity: CognitionRecentActivityKind;
 }
 
-export interface CognitionCommitHotspotNode {
+export interface CognitionRecentHotspotNode {
   type: string;
   id: string;
   title: string;
@@ -588,32 +583,32 @@ export interface CognitionCommitHotspotNode {
   read_status: string;
   typeColor: string;
   /** 仅热点中心有非空数组；一跳关系节点为 []。 */
-  commitRefs: CognitionCommitHotspotRef[];
+  activityRefs: CognitionRecentHotspotRef[];
 }
 
-export interface CognitionCommitHotspotRelation {
+export interface CognitionRecentHotspotRelation {
   direction: 'outgoing' | 'incoming';
   relationKey: string;
-  node: CognitionCommitHotspotNode;
+  node: CognitionRecentHotspotNode;
 }
 
-export interface CognitionCommitHotspotCluster {
-  /** 当前窗口内有可回指提交的唯一中心。 */
-  primary: CognitionCommitHotspotNode;
+export interface CognitionRecentHotspotCluster {
+  /** 当前窗口内有事实修改流水的唯一中心。 */
+  primary: CognitionRecentHotspotNode;
   /** 只含与中心直接相连的一跳正式关系；不会递归展开邻居。 */
-  relations: CognitionCommitHotspotRelation[];
+  relations: CognitionRecentHotspotRelation[];
 }
 
 /**
- * 当前窗口内可由 canonical fact path 或 commit 中稳定对象 ID 回指的提交热点。
+ * 当前窗口内由事实 change_log 直接产生的热点。
  * 只返回至少有一条正式关系、能展开一跳工作的热点关系簇。
  */
-export interface CognitionCommitHotspots {
+export interface CognitionRecentHotspots {
   window: CognitionRecentActivityWindow;
-  totalCommits: number;
+  totalEvents: number;
   hotspotTotal: number;
   relationTotal: number;
-  clusters: CognitionCommitHotspotCluster[];
+  clusters: CognitionRecentHotspotCluster[];
 }
 
 export interface CognitionIssue {
@@ -636,8 +631,8 @@ export interface CognitionData {
   };
   /** Spark 列表不可读取时整体省略，并通过 issues 就地说明。 */
   sparkHealth?: CognitionSparkHealth;
-  /** Git 或关系读取不可用时整体省略，并通过 issues 就地说明。 */
-  commitHotspots?: CognitionCommitHotspots;
+  /** 事实流水或关系读取不可用时整体省略，并通过 issues 就地说明。 */
+  recentHotspots?: CognitionRecentHotspots;
   issues?: CognitionIssue[];
 }
 
