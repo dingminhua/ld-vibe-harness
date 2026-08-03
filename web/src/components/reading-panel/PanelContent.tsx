@@ -4,6 +4,7 @@ import type { PanelContent } from '@/utils/panelContext';
 import MarkdownPreview from '@/components/MarkdownPreview';
 import CommitBreakingBadge from '@/components/CommitBreakingBadge';
 import CommitPushStatusBadge from '@/components/CommitPushStatusBadge';
+import CommitSignatureMeta from '@/components/CommitSignatureMeta';
 import { useI18n } from '@/i18n/context';
 import {
   ContentField,
@@ -18,7 +19,7 @@ import { WorkCaseReadingLayout } from '@/pages/object-detail/WorkCaseReadingLayo
 import { FileAssetReadingLayout } from '@/pages/object-detail/FileAssetReadingLayout';
 import { getObjectDetailContentEntries, splitRelatedContentEntries } from '@/pages/object-detail/model';
 import { getCommitDetailLabels, getFieldValueLabel, getLocalizedObjectTitle, getObjectStatusLocale, getToggleLabel, getTypeLabel, type CommitDetailLabels } from '@/i18n/locales';
-import { fetchDocContent, fetchFileAssetPreview, fetchObjectDetail, type CommitDetailPanelData, type DocContent, type ObjectDetail as ApiObjectDetail, type WorkCaseDetailData } from '@/utils/api';
+import { fetchDocContent, fetchFileAssetPreview, fetchObjectDetail, type CommitDetailPanelData, type CommitSignature, type DocContent, type ObjectDetail as ApiObjectDetail, type WorkCaseDetailData } from '@/utils/api';
 import { CATEGORY_COLORS } from '@/utils/categoryColors';
 import { getCommitScopeLabel, getCommitTypeLabel } from '@/utils/commitLabels';
 import { formatDateTime } from '@/utils/dateFormat';
@@ -28,6 +29,7 @@ import {
   getCommitNodeNextState,
   isCommitDetailPanelData,
   parseCommitStat,
+  stripCommitSignatureTrailers,
   type ParsedCommitStat,
 } from '@/components/reading-panel/commitModel';
 
@@ -544,6 +546,44 @@ function CommitReadingNodeSection({
   );
 }
 
+function CommitSignatureSection({
+  signature,
+  labels,
+}: {
+  signature: CommitSignature;
+  labels: CommitDetailLabels;
+}) {
+  const identityEntries = [
+    { label: labels.agentId, value: signature.agentId },
+    { label: labels.hostEnvironment, value: signature.hostEnvironment },
+  ].filter((entry): entry is { label: string; value: string } => Boolean(entry.value?.trim()));
+  const sessionId = signature.sessionId?.trim();
+  if (identityEntries.length === 0 && !sessionId) return null;
+
+  return (
+    <section className="rounded-xl border border-ldvh-border bg-ldvh-panel p-4">
+      <div className="ldvh-section-title mb-3 flex w-full min-w-0 items-center gap-2 text-left">
+        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-ldvh-accent" />
+        <span className="min-w-0 flex-1 truncate">{labels.signature}</span>
+      </div>
+      <dl className="grid grid-cols-1 gap-y-3">
+        {identityEntries.map((entry) => (
+          <div key={entry.label} className="min-w-0">
+            <dt className="ldvh-caption-strong">{entry.label}</dt>
+            <dd className="ldvh-detail-semantic-body mt-1 break-words font-mono">{entry.value}</dd>
+          </div>
+        ))}
+        {sessionId && (
+          <div className="min-w-0">
+            <dt className="ldvh-caption-strong">{labels.sessionId}</dt>
+            <dd className="ldvh-detail-semantic-body mt-1 break-all font-mono">{sessionId}</dd>
+          </div>
+        )}
+      </dl>
+    </section>
+  );
+}
+
 function CommitIdentitySection({
   entry,
   parsed,
@@ -560,7 +600,12 @@ function CommitIdentitySection({
   const commitColor = CATEGORY_COLORS.other;
   const commitValue = entry?.shortHash || parsed.commit || '—';
   const copyValue = entry?.hash || commitValue;
-  const timeValue = entry?.date ? formatDateTime(entry.date) : parsed.date || '—';
+  const timeText = entry?.date ? formatDateTime(entry.date) : parsed.date || '—';
+  const timeValue = entry?.signature ? (
+    <span className="ldvh-meta-muted min-w-0 truncate text-ldvh-text-secondary">
+      {timeText}<CommitSignatureMeta signature={entry.signature} />
+    </span>
+  ) : timeText;
   const typeLabel = labels.commit;
   const headerMetaItems = [
     entry?.category ? getCommitTypeLabel(entry.category, locale) : '',
@@ -638,6 +683,7 @@ export function CommitDetailContent({
   const [rawState, setRawState] = useState<'collapsed' | 'expanded'>('collapsed');
   const diffText = stat;
   const commitBody = entry?.body?.trim() ?? '';
+  const readableCommitBody = stripCommitSignatureTrailers(commitBody);
   const parsed = parseCommitStat(diffText);
   const displayTitle = entry?.description || entry?.message || title || t('readingPanel.changeDetail');
   const labels = getCommitDetailLabels(locale);
@@ -646,7 +692,7 @@ export function CommitDetailContent({
   const insertions = summary?.insertions ?? parsed.files.reduce((total, file) => total + file.additions, 0);
   const deletions = summary?.deletions ?? parsed.files.reduce((total, file) => total + file.deletions, 0);
   const lines = diffText.split('\n');
-  const commitBodySections = commitBody ? getCommitBodySectionsForReading(commitBody, labels.commitBody) : [];
+  const commitBodySections = readableCommitBody ? getCommitBodySectionsForReading(readableCommitBody, labels.commitBody) : [];
 
   useEffect(() => {
     setBodySectionStates({});
@@ -700,6 +746,8 @@ export function CommitDetailContent({
           </CommitReadingNodeSection>
         );
       })}
+
+      {entry?.signature && <CommitSignatureSection signature={entry.signature} labels={labels} />}
 
       <CommitReadingNodeSection
         title={labels.changedFiles}

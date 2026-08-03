@@ -4,6 +4,7 @@ import { AlertCircle, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import CopyPathButton from '@/components/CopyPathButton';
 import CommitBreakingBadge from '@/components/CommitBreakingBadge';
 import CommitPushStatusBadge from '@/components/CommitPushStatusBadge';
+import CommitSignatureMeta from '@/components/CommitSignatureMeta';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
 import { fetchChangelog, fetchCommitDetail, type ChangelogEntry } from '@/utils/api';
 import { getCommitScopeLabel, getCommitTypeLabel } from '@/utils/commitLabels';
@@ -318,6 +319,7 @@ export default function Changelog() {
               </div>
               <div className="ldvh-meta-muted self-end">
                 {t('changelog.commitAt', { time: formatDateTime(entry.date) })}
+                <CommitSignatureMeta signature={entry.signature} />
               </div>
             </div>
           );

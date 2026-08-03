@@ -37,7 +37,7 @@
   - 下方标题块参考研究等对象卡片：使用弱背景、内圈边框和左侧色条，右侧固定放置扩展阅读入口；色条按 commit type 取色；
   - 标题块内使用与侧栏提交入口一致的 GitHub 剪影作为提交记录识别图标；
   - 标题行展示完整 `description`，作为主阅读文本；无法解析时回退到完整 `message`；标题不截断，宽度不足时换行；
-  - 时间不放入标题块；卡片底部右侧使用 `ldvh-meta-muted` 展示“更新 + formatDateTime(entry.date)”，与研究、决策、火花和经验卡片的更新时间位置和绝对时间格式保持一致；
+  - 时间不放入标题块；卡片底部右侧使用 `ldvh-meta-muted` 展示“提交 + formatDateTime(entry.date)”。若 Git commit footer 有非空 `Agent-ID`、`Host-Environment`，紧跟时间以中点追加两项值；不展示 Session-ID、Signer-Type；
   - 列表卡片不展示 `shortHash`；hash 信息只进入复制上下文和详情审计信息；
 - 选中态：
   - 卡片边框和背景轻微高亮；
@@ -76,7 +76,7 @@
 - 有 commit body 时展示 `提交说明` 节点并默认展开；没有 body 时不显示该节点。
 - `提交说明` 按 Git message body Markdown 渲染，适合展示结构化语义清单；行内可保留 Markdown 强调、代码和链接。Web 只识别 Git 提交规范已规定的固定小标题，例如“动机、关键变更、影响边界、验证结论、风险与后续”，将独立标题行提升为阅读区小标题，不根据自然语言猜测语义。
 - 固定小标题下的正文应来自 07 强制的 `- ` Markdown 无序列表项，因此每条正文都会显示为同一种圆点列表表现；Web 不在显示层把非列表正文伪装成列表。
-- 合法 footer 如随 Git message 一并返回，可以保留在原文中，但 Web 不把它解析成 LDVH 工作对象字段。
+- 合法 footer 如随 Git message 一并返回，可以保留在原文中；提交签名 trailer 的 `Session-ID`、`Agent-ID`、`Host-Environment` 不混入“验证结论”等正文段落，而是在详情页单独呈现为“署名信息”三字段；`Signer-Type` 不在页面呈现。非空 `Agent-ID`、`Host-Environment` 仍可作为提交身份元信息复用在卡片和详情页的时间之后。Web 不把它解析成 LDVH 工作对象字段。
 - `提交说明`、`改动文件` 和 `原始信息` 使用与对象正文一致的圆点标题、右侧折叠箭头和节点卡片样式；`改动文件` 和 `原始信息` 默认收起；原始 `git diff --stat` 或 `git show --stat` 文本只作为折叠审计信息保留，不作为主阅读界面。
 
 ## 6. 复制上下文
@@ -136,7 +136,7 @@
 
 ## 11. API 数据结构
 
-Changelog 与 ProjectFiles 的提交历史必须复用同一套 commit message 拆分与 Conventional Commits 解析函数，统一输出 `message`、`body`、`category`、`scope`、`description` 和 `isBreaking`。两者可以按页面职责追加字段；不得各自维护一套 commit header 解析规则。
+Changelog 与 ProjectFiles 的提交历史必须复用同一套 commit message 拆分、Conventional Commits 解析和可选署名 trailer 解析函数，统一输出 `message`、`body`、`category`、`scope`、`description`、`isBreaking` 与可选 `signature`。两者可以按页面职责追加字段；不得各自维护一套 commit header 解析规则。
 
 Changelog 卡片和详情身份头还可展示 `pushStatus`：它只按当前分支的**本地已知上游跟踪引用**做 Git 可达性判断。上游包含该提交时为 `pushed`，否则为 `unpushed`；未配置或无法读取上游时为 `unknown`，前端不显示标签。该状态不发起网络请求，也不宣称远端的实时状态。
 
@@ -151,6 +151,7 @@ interface ChangelogEntry {
   description: string;
   isBreaking: boolean;
   pushStatus: 'pushed' | 'unpushed' | 'unknown';
+  signature?: { sessionId?: string; agentId?: string; hostEnvironment?: string };
   author: string;
   date: string;
   relativeTime: string;

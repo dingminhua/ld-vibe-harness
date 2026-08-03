@@ -126,7 +126,13 @@ fs.writeFileSync(path.join(projectRoot, 'README.md'), '# Demo\n')
 git(['add', 'README.md'])
 git([
   'commit', '--quiet', '-m', 'feat(web)!: 调整提交接口', '-m',
-  ['动机:', '- 统一提交记录结构。', '', '验证结论:', '- 由特征测试固定当前 DTO。'].join('\n'),
+  [
+    '动机:', '- 统一提交记录结构。', '', '验证结论:', '- 由特征测试固定当前 DTO。', '',
+    'Session-ID: 48bbb4c6-f2ff-4510-b63f-cebcaaa35d2e',
+    'Signer-Type: ai-agent',
+    'Agent-ID: codex',
+    'Host-Environment: Cindy',
+  ].join('\n'),
 ])
 const remoteRoot = path.join(workspaceRoot, 'remote.git')
 execFileSync('git', ['init', '--bare', '--quiet', remoteRoot])
@@ -185,6 +191,11 @@ function assertCommitDto(entry: Record<string, unknown>) {
   assert.equal(entry.description, '调整提交接口')
   assert.equal(entry.isBreaking, true)
   assert.equal(entry.pushStatus, 'pushed')
+  assert.deepEqual(entry.signature, {
+    sessionId: '48bbb4c6-f2ff-4510-b63f-cebcaaa35d2e',
+    agentId: 'codex',
+    hostEnvironment: 'Cindy',
+  })
   assert.match(String(entry.body), /动机:/)
   assert.match(String(entry.body), /验证结论:/)
 }

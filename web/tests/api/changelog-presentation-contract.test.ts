@@ -8,9 +8,10 @@ const testDir = path.dirname(fileURLToPath(import.meta.url));
 const webRoot = path.resolve(testDir, '../..');
 
 test('breaking and push-state badges use one presentation in list and detail identities', async () => {
-  const [badge, pushBadge, list, panel, locales] = await Promise.all([
+  const [badge, pushBadge, signatureMeta, list, panel, locales] = await Promise.all([
     readFile(path.join(webRoot, 'src/components/CommitBreakingBadge.tsx'), 'utf8'),
     readFile(path.join(webRoot, 'src/components/CommitPushStatusBadge.tsx'), 'utf8'),
+    readFile(path.join(webRoot, 'src/components/CommitSignatureMeta.tsx'), 'utf8'),
     readFile(path.join(webRoot, 'src/pages/Changelog.tsx'), 'utf8'),
     readFile(path.join(webRoot, 'src/components/reading-panel/PanelContent.tsx'), 'utf8'),
     readFile(path.join(webRoot, 'src/i18n/locales.ts'), 'utf8'),
@@ -30,6 +31,12 @@ test('breaking and push-state badges use one presentation in list and detail ide
   assert.match(pushBadge, /t\(isPushed \? 'changelog\.pushed' : 'changelog\.unpushed'\)/);
   assert.match(list, /<CommitPushStatusBadge status=\{entry\.pushStatus\} \/>/);
   assert.match(panel, /actionBadges=\{entry\?\.pushStatus \? <CommitPushStatusBadge status=\{entry\.pushStatus\} \/> : undefined\}/);
+  assert.match(signatureMeta, /signature\?\.agentId/);
+  assert.match(signatureMeta, /signature\?\.hostEnvironment/);
+  assert.match(list, /<CommitSignatureMeta signature=\{entry\.signature\} \/>/);
+  assert.match(panel, /<CommitSignatureMeta signature=\{entry\.signature\} \/>/);
+  assert.match(panel, /stripCommitSignatureTrailers\(commitBody\)/);
+  assert.match(panel, /<CommitSignatureSection signature=\{entry\.signature\} labels=\{labels\} \/>/);
   assert.match(locales, /'changelog\.pushed': '已推送'/);
   assert.match(locales, /'changelog\.unpushed': 'Not pushed'/);
 });

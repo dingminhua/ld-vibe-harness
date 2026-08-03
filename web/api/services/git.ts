@@ -21,6 +21,13 @@ const LDVH_ROOT = process.env.LDVH_ROOT || path.resolve(__dirname, '../../..')
  */
 export type GitPushStatus = 'pushed' | 'unpushed' | 'unknown'
 
+/** Optional provenance markers carried in Git commit trailers. */
+export type GitCommitSignature = {
+  sessionId?: string
+  agentId?: string
+  hostEnvironment?: string
+}
+
 export interface GitLogEntry {
   hash: string
   shortHash: string
@@ -34,6 +41,7 @@ export interface GitLogEntry {
   isBreaking: boolean
   relativeTime: string
   pushStatus: GitPushStatus
+  signature?: GitCommitSignature
 }
 
 /** A commit record together with its changed repository-relative paths. */
@@ -97,6 +105,27 @@ export function splitCommitMessage(fullMessage: string): SplitCommitMessage {
     subject,
     body: rest.join('\n').replace(/^\n+/, '').trim(),
   }
+}
+
+function getCommitTrailerValue(body: string, key: string): string | undefined {
+  const matcher = new RegExp(`^\\s*${key}:\\s*(.+?)\\s*$`, 'gmi')
+  const values = [...body.matchAll(matcher)]
+    .map((match) => match[1]?.trim())
+    .filter((value): value is string => Boolean(value))
+  return values.at(-1)
+}
+
+/**
+ * Read the display-safe part of an optional commit signature.
+ *
+ * Session identifiers and signer classification remain in the raw commit body;
+ * the compact commit identity only exposes the agent and host when present.
+ */
+export function parseCommitSignature(body: string): GitCommitSignature | undefined {
+  const sessionId = getCommitTrailerValue(body, 'Session-ID')
+  const agentId = getCommitTrailerValue(body, 'Agent-ID')
+  const hostEnvironment = getCommitTrailerValue(body, 'Host-Environment')
+  return sessionId || agentId || hostEnvironment ? { sessionId, agentId, hostEnvironment } : undefined
 }
 
 /**
@@ -170,6 +199,7 @@ export async function getGitLog(count: number = 50, locale: string = 'zh', cwd: 
             isBreaking,
             relativeTime: sharedGetRelativeTime(date, locale),
             pushStatus: 'unknown',
+            signature: parseCommitSignature(body),
           }
         })
 
@@ -245,6 +275,7 @@ export async function getGitLogWithFiles(
               isBreaking,
               relativeTime: sharedGetRelativeTime(date, locale),
               pushStatus: 'unknown',
+              signature: parseCommitSignature(body),
               files,
             }]
           })
@@ -291,6 +322,7 @@ export async function getGitCommit(hash: string, locale: string = 'zh', cwd: str
           isBreaking,
           relativeTime: sharedGetRelativeTime(date, locale),
           pushStatus: pushStatuses.get(fullHash) || 'unknown',
+          signature: parseCommitSignature(body),
         }))
       },
     )

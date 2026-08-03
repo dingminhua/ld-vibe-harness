@@ -725,9 +725,16 @@ export interface ChangelogEntry {
   isBreaking: boolean;
   relativeTime: string;
   pushStatus: GitPushStatus;
+  signature?: CommitSignature;
 }
 
 export type GitPushStatus = 'pushed' | 'unpushed' | 'unknown';
+
+export interface CommitSignature {
+  sessionId?: string;
+  agentId?: string;
+  hostEnvironment?: string;
+}
 
 export interface CommitDetailPanelData {
   entry: ChangelogEntry;
