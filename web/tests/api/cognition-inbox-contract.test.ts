@@ -96,6 +96,10 @@ test('cognition endpoint returns inbox, fact activity, Spark health, and fact ho
   assert.match(String(recent.windowStart), RFC3339)
   assert.ok(Array.isArray(recent.items))
   assert.equal(recent.total, (recent.items as unknown[]).length)
+  assert.equal(typeof recent.eventTotal, 'number')
+  assert.ok(Number(recent.eventTotal) >= Number(recent.total))
+  assert.ok(Array.isArray(recent.agentUsage))
+  assert.ok(Array.isArray(recent.environmentUsage))
   assert.ok(body.sparkHealth && typeof body.sparkHealth === 'object')
   const sparkHealth = body.sparkHealth as Record<string, unknown>
   for (const key of ['total', 'openTotal', 'terminalTotal', 'silentThresholdDays', 'silentCount']) {
@@ -240,7 +244,7 @@ test('Spark health splits the current pool into terminal and open items, then li
   }
 })
 
-test('recent activity accepts only explicit windows and exposes fact change-log events', async () => {
+test('recent activity accepts only explicit windows and groups fact change-log events by stable object', async () => {
   for (const window of ['1d', '3d', '7d', '14d']) {
     const body = await cognition('zh', window)
     const recent = body.recentActivity as Record<string, unknown>
@@ -254,10 +258,14 @@ test('recent activity accepts only explicit windows and exposes fact change-log 
       return `${a.type}:${a.id}`.localeCompare(`${b.type}:${b.id}`)
     })
     assert.deepEqual(items.map((item) => `${item.activity}:${item.type}:${item.id}:${item.occurredAt}`), expected.map((item) => `${item.activity}:${item.type}:${item.id}:${item.occurredAt}`))
+    assert.equal(new Set(items.map((item) => `${item.type}:${item.id}`)).size, items.length)
+    assert.equal(Number(recent.total), items.length)
+    assert.ok(Number(recent.eventTotal) >= items.length)
     for (const item of items) {
       assert.ok(['workcase', 'adr', 'pitfall', 'spark', 'study'].includes(String(item.type)))
       assert.ok(['created', 'updated'].includes(String(item.activity)))
       assert.match(String(item.occurredAt), RFC3339)
+      assert.ok(Number(item.activityCount) >= 1)
       assert.equal(typeof item.relativeTime, 'string')
       assert.equal(typeof item.typeColor, 'string')
       if (item.type === 'workcase') {
@@ -271,6 +279,33 @@ test('recent activity accepts only explicit windows and exposes fact change-log 
 
   const response = await fetch(`${baseUrl}/api/cognition?locale=zh&window=30d`)
   assert.equal(response.status, 400)
+})
+
+test('recent activity aggregation retains the newest fact event and counts complete signature usage', async () => {
+  const { buildRecentActivityView } = await import('../../api/routes/cognition.ts')
+  const view = buildRecentActivityView([
+    {
+      type: 'spark', object_id: 'spark-0001', title: 'A', activity: 'created', occurred_at: '2026-08-01T00:00:00Z',
+      status: 'open', read_status: 'readable', field_issues: [], unparsed_structures: [],
+      signature: { agent_id: 'codex', host_environment: 'Cindy' },
+    },
+    {
+      type: 'spark', object_id: 'spark-0001', title: 'A', activity: 'updated', occurred_at: '2026-08-01T02:00:00Z',
+      status: 'open', read_status: 'readable', field_issues: [], unparsed_structures: [],
+      signature: { agent_id: 'codex', host_environment: 'Cindy' },
+    },
+    {
+      type: 'adr', object_id: 'adr-0001', title: 'B', activity: 'updated', occurred_at: '2026-08-01T01:00:00Z',
+      status: 'active', read_status: 'readable', field_issues: [], unparsed_structures: [],
+      signature: { agent_id: 'reviewer', host_environment: 'CI' },
+    },
+  ])
+  assert.deepEqual(view.items.map((item) => `${item.object_id}:${item.activity_count}:${item.occurred_at}`), [
+    'spark-0001:2:2026-08-01T02:00:00Z',
+    'adr-0001:1:2026-08-01T01:00:00Z',
+  ])
+  assert.deepEqual(view.agentUsage, [{ value: 'codex', count: 2 }, { value: 'reviewer', count: 1 }])
+  assert.deepEqual(view.environmentUsage, [{ value: 'Cindy', count: 2 }, { value: 'CI', count: 1 }])
 })
 
 test('fact activity builder reads change_log first and only falls back for legacy facts without usable entries', async () => {

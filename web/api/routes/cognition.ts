@@ -112,12 +112,24 @@ interface RecentActivityBuildItem {
   title_zh?: string
   activity: RecentActivityKind
   occurred_at: string
+  /** 只读取对应事实流水的完整署名；兼容时间标记不伪造署名。 */
+  signature?: { agent_id: string; host_environment: string }
   status?: string
   progress_group?: WorkCaseProgressGroup
   priority?: string
   read_status: string
   field_issues: Array<Record<string, unknown>>
   unparsed_structures: Array<Record<string, unknown>>
+}
+
+interface RecentActivityObjectItem extends RecentActivityBuildItem {
+  /** 当前窗口内该稳定事实对象的可读流水数。 */
+  activity_count: number
+}
+
+interface RecentActivityAttributionUsage {
+  value: string
+  count: number
 }
 
 interface SparkHealthBuildItem {
@@ -260,6 +272,7 @@ function buildRecentActivityItem(
   type: ObjectType,
   activity: RecentActivityKind,
   occurredAt: string,
+  signature?: { agent_id: string; host_environment: string },
 ): RecentActivityBuildItem {
   const object_id = String(raw.object_id ?? '')
   const status = String(raw.status ?? 'unknown')
@@ -274,12 +287,21 @@ function buildRecentActivityItem(
     ...(typeof raw.title_zh === 'string' ? { title_zh: raw.title_zh } : {}),
     activity,
     occurred_at: occurredAt,
+    ...(signature ? { signature } : {}),
     ...(type === 'workcase' ? { progress_group: progressGroup } : { status }),
     ...(priorityRank(raw.priority) < 4 && typeof raw.priority === 'string' ? { priority: raw.priority } : {}),
     read_status: String(raw.read_status ?? 'unknown'),
     field_issues: Array.isArray(raw.field_issues) ? raw.field_issues as Array<Record<string, unknown>> : [],
     unparsed_structures: Array.isArray(raw.unparsed_structures) ? raw.unparsed_structures as Array<Record<string, unknown>> : [],
   }
+}
+
+function readFactChangeSignature(value: unknown): { agent_id: string; host_environment: string } | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined
+  const record = value as Record<string, unknown>
+  const agentId = typeof record.agent_id === 'string' ? record.agent_id.trim() : ''
+  const hostEnvironment = typeof record.host_environment === 'string' ? record.host_environment.trim() : ''
+  return agentId && hostEnvironment ? { agent_id: agentId, host_environment: hostEnvironment } : undefined
 }
 
 /**
@@ -294,19 +316,22 @@ export function buildFactActivityItems(
   end: number,
 ): RecentActivityBuildItem[] {
   const changeLog = Array.isArray(raw.change_log) ? raw.change_log : []
-  const logged: Array<{ occurredAt: string; index: number }> = []
+  const logged: Array<{ occurredAt: string; index: number; signature?: { agent_id: string; host_environment: string } }> = []
   for (let index = 0; index < changeLog.length; index += 1) {
     const entry = changeLog[index]
     if (!entry || typeof entry !== 'object' || Array.isArray(entry)) continue
     const at = (entry as Record<string, unknown>).at
-    if (timestampInWindow(at, start, end)) logged.push({ occurredAt: at, index })
+    if (timestampInWindow(at, start, end)) {
+      logged.push({ occurredAt: at, index, signature: readFactChangeSignature((entry as Record<string, unknown>).signature) })
+    }
   }
   if (logged.length > 0) {
-    return logged.map(({ occurredAt, index }) => buildRecentActivityItem(
+    return logged.map(({ occurredAt, index, signature }) => buildRecentActivityItem(
       raw,
       type,
       index === 0 ? 'created' : 'updated',
       occurredAt,
+      signature,
     ))
   }
 
@@ -320,6 +345,47 @@ export function buildFactActivityItems(
     fallback.push(buildRecentActivityItem(raw, type, 'updated', updatedAt))
   }
   return fallback
+}
+
+/**
+ * 近期动态按稳定事实对象合并：相同对象只保留最近一条作为阅读锚点，
+ * 并如实保留窗口内流水数。署名用量仍按每一条事实流水计数，不从对象头推断。
+ */
+export function buildRecentActivityView(builds: RecentActivityBuildItem[]): {
+  items: RecentActivityObjectItem[]
+  agentUsage: RecentActivityAttributionUsage[]
+  environmentUsage: RecentActivityAttributionUsage[]
+} {
+  const byObject = new Map<string, RecentActivityObjectItem>()
+  const agents = new Map<string, number>()
+  const environments = new Map<string, number>()
+
+  for (const build of builds) {
+    const key = `${build.type}:${build.object_id}`
+    const existing = byObject.get(key)
+    if (!existing) {
+      byObject.set(key, { ...build, activity_count: 1 })
+    } else {
+      existing.activity_count += 1
+      if (compareRecentActivity(build, existing) < 0) {
+        const activityCount = existing.activity_count
+        byObject.set(key, { ...build, activity_count: activityCount })
+      }
+    }
+    if (build.signature) {
+      agents.set(build.signature.agent_id, (agents.get(build.signature.agent_id) ?? 0) + 1)
+      environments.set(build.signature.host_environment, (environments.get(build.signature.host_environment) ?? 0) + 1)
+    }
+  }
+
+  const compareUsage = (a: RecentActivityAttributionUsage, b: RecentActivityAttributionUsage) => (
+    b.count - a.count || a.value.localeCompare(b.value)
+  )
+  return {
+    items: [...byObject.values()].sort(compareRecentActivity),
+    agentUsage: [...agents.entries()].map(([value, count]) => ({ value, count })).sort(compareUsage),
+    environmentUsage: [...environments.entries()].map(([value, count]) => ({ value, count })).sort(compareUsage),
+  }
 }
 
 function silentDays(updatedAt: unknown, observedAt: number): number | null {
@@ -788,7 +854,8 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       return entry
     })
 
-    const recentItems = recentBuilds.map((build) => ({
+    const recentActivityView = buildRecentActivityView(recentBuilds)
+    const recentItems = recentActivityView.items.map((build) => ({
       type: build.type,
       id: build.object_id,
       title: build.title,
@@ -796,6 +863,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       ...(build.title_zh !== undefined ? { title_zh: build.title_zh } : {}),
       activity: build.activity,
       occurredAt: build.occurred_at,
+      activityCount: build.activity_count,
       relativeTime: getRelativeTime(build.occurred_at, locale),
       typeColor: getTypeColor(build.type),
       ...(build.priority !== undefined ? { priority: build.priority } : {}),
@@ -817,6 +885,9 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
         windowStart: new Date(recentStart).toISOString(),
         items: recentItems,
         total: recentItems.length,
+        eventTotal: recentBuilds.length,
+        agentUsage: recentActivityView.agentUsage,
+        environmentUsage: recentActivityView.environmentUsage,
       },
       ...(recentHotspots ? {
         recentHotspots: {

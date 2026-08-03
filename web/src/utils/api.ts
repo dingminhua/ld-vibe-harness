@@ -524,6 +524,8 @@ export interface CognitionRecentActivityItem {
   title_zh?: string;
   activity: CognitionRecentActivityKind;
   occurredAt: string;
+  /** 当前窗口内同一稳定事实对象的可读 change_log 条数。 */
+  activityCount: number;
   relativeTime: string;
   typeColor: string;
   priority?: string;
@@ -533,6 +535,12 @@ export interface CognitionRecentActivityItem {
   read_status: string;
   field_issues?: FieldIssue[];
   unparsed_structures?: UnparsedStructure[];
+}
+
+/** 近期事实流水的完整署名维度用量；只按 change_log[].signature 计数。 */
+export interface CognitionRecentActivityAttributionUsage {
+  value: string;
+  count: number;
 }
 
 /** Spark 池健康是从当前状态与更新时间派生的只读快照，不承载分流建议。 */
@@ -627,7 +635,12 @@ export interface CognitionData {
     window: CognitionRecentActivityWindow;
     windowStart: string;
     items: CognitionRecentActivityItem[];
+    /** 当前窗口内唯一事实对象数。 */
     total: number;
+    /** 当前窗口内可读事实流水总数；用于模块标题的“动态数”。 */
+    eventTotal: number;
+    agentUsage: CognitionRecentActivityAttributionUsage[];
+    environmentUsage: CognitionRecentActivityAttributionUsage[];
   };
   /** Spark 列表不可读取时整体省略，并通过 issues 就地说明。 */
   sparkHealth?: CognitionSparkHealth;

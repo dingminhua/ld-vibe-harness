@@ -36,6 +36,7 @@ import {
   type CognitionInboxKind,
   type CognitionIssue,
   type CognitionRecentActivityItem,
+  type CognitionRecentActivityAttributionUsage,
   type CognitionRecentActivityWindow,
   type CognitionSparkHealthItem,
   type ObjectItem,
@@ -48,7 +49,8 @@ import { getFieldLabel, getFieldValueLabel, getLocalizedObjectTitle, getObjectSt
 /** 首屏截断阈值：Web 展示参数，不是事实；截断时底部如实提示总数与未显示数量。 */
 const INBOX_FIRST_SCREEN_LIMIT = 8;
 const ACTIVE_WORKCASE_FIRST_SCREEN_LIMIT = 8;
-const RECENT_ACTIVITY_FIRST_SCREEN_LIMIT = 12;
+const RECENT_ACTIVITY_FIRST_SCREEN_LIMIT = 5;
+const RECENT_ACTIVITY_MAX_VISIBLE = 20;
 const SPARK_HEALTH_FIRST_SCREEN_LIMIT = 3;
 const SPARK_PRIORITIES = ['P0', 'P1', 'P2', 'P3'];
 
@@ -111,10 +113,11 @@ function buildRecentActivitySummary(data: CognitionData, locale: string, t: Tran
   const lines = [
     t('cognition.recent.title'),
     t(`cognition.recent.window.${recent.window}` as LocaleKey),
-    `total: ${recent.total}`,
+    `facts: ${recent.total}`,
+    `events: ${recent.eventTotal}`,
   ];
   for (const item of recent.items) {
-    lines.push(`- ${item.id} · ${t(`cognition.recent.${item.activity}` as LocaleKey)} · ${getLocalizedObjectTitle(item, locale, item.id)}`);
+    lines.push(`- ${item.id} · ${item.activityCount} · ${getLocalizedObjectTitle(item, locale, item.id)}`);
   }
   return lines.join('\n');
 }
@@ -372,17 +375,19 @@ function RecentActivityRow({ item }: { item: CognitionRecentActivityItem }) {
   const { openPanel } = usePanel();
   const title = getLocalizedObjectTitle(item, locale, item.id);
   const status = item.type === 'workcase' ? item.progress_group : item.status;
-  const activityTone = item.activity === 'created'
-    ? 'text-emerald-700/80 dark:text-emerald-300/80'
-    : 'text-sky-700/80 dark:text-sky-300/80';
-
   return (
     <li className="min-w-0 py-3">
       <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
         <span className="ldvh-caption shrink-0 text-ldvh-text-secondary">{item.relativeTime}</span>
-        <span className={`ldvh-caption shrink-0 ${activityTone}`}>{t(`cognition.recent.${item.activity}` as LocaleKey)}</span>
         <code className="ldvh-caption min-w-0 break-all text-ldvh-text-secondary/55">{item.id}</code>
         <PriorityIcon source={item} type={item.type} locale={locale} size="sm" />
+        <span
+          className="inline-flex shrink-0 items-center justify-center gap-1 rounded-full border border-ldvh-accent/25 bg-ldvh-accent/5 px-1.5 py-0.5 text-[11px] font-medium leading-none text-ldvh-accent"
+          title={t('cognition.recent.activityCount', { count: String(item.activityCount) })}
+        >
+          <History size={12} aria-hidden="true" />
+          <span>{item.activityCount}</span>
+        </span>
         <span className="ml-auto flex shrink-0 items-center gap-1.5">
           {status && <StatusBadge status={status} statusLabel={getObjectStatusLocale(item.type, status, locale)} objectType={item.type} />}
           <CopyPathButton path={item.id} label={t('common.copyObjectId')} copiedLabel={t('common.copiedObjectId')} />
@@ -402,6 +407,41 @@ function RecentActivityRow({ item }: { item: CognitionRecentActivityItem }) {
       </div>
       <RecentActivityReadNotes item={item} locale={locale} />
     </li>
+  );
+}
+
+function RecentActivityUsageBars({
+  title,
+  items,
+  expanded,
+}: {
+  title: string;
+  items: CognitionRecentActivityAttributionUsage[];
+  expanded: boolean;
+}) {
+  const visibleItems = items.slice(0, expanded ? RECENT_ACTIVITY_MAX_VISIBLE : RECENT_ACTIVITY_FIRST_SCREEN_LIMIT);
+  const max = Math.max(...visibleItems.map((item) => item.count), 1);
+  return (
+    <section className="min-w-0" aria-label={title}>
+      <h4 className="ldvh-caption-strong text-ldvh-text-secondary">{title}</h4>
+      {visibleItems.length === 0 ? (
+        <p className="mt-2 ldvh-caption text-ldvh-text-secondary/70">—</p>
+      ) : (
+        <ul className="mt-2 grid min-w-0 gap-2">
+          {visibleItems.map((item) => (
+            <li key={item.value} className="grid min-w-0 gap-1">
+              <div className="flex min-w-0 items-center justify-between gap-2">
+                <span className="ldvh-caption min-w-0 truncate text-ldvh-text-primary" title={item.value}>{item.value}</span>
+                <span className="ldvh-caption shrink-0 tabular-nums text-ldvh-text-secondary">{item.count}</span>
+              </div>
+              <div className="h-1.5 overflow-hidden rounded-full bg-ldvh-border/70" role="progressbar" aria-valuemin={0} aria-valuemax={max} aria-valuenow={item.count}>
+                <div className="h-full rounded-full bg-ldvh-accent/75" style={{ width: `${(item.count / max) * 100}%` }} />
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
 
@@ -473,6 +513,7 @@ export default function CognitionCenter() {
   const [recentWindow, setRecentWindow] = useState<CognitionRecentActivityWindow>('1d');
   const [recentExpanded, setRecentExpanded] = useState(true);
   const [showAllRecent, setShowAllRecent] = useState(false);
+  const [showAllRecentUsage, setShowAllRecentUsage] = useState(false);
   const [recentLoading, setRecentLoading] = useState(false);
   const [recentError, setRecentError] = useState<string | null>(null);
   const [sparkHealthExpanded, setSparkHealthExpanded] = useState(true);
@@ -540,8 +581,11 @@ export default function CognitionCenter() {
     : activeWorkCaseItems;
   const recentIssues = (data.issues ?? []).filter((issue) => issue.section === 'recentActivity');
   const recentItems = data.recentActivity.items;
-  const recentTruncated = !showAllRecent && recentItems.length > RECENT_ACTIVITY_FIRST_SCREEN_LIMIT;
-  const visibleRecentItems = recentTruncated ? recentItems.slice(0, RECENT_ACTIVITY_FIRST_SCREEN_LIMIT) : recentItems;
+  const recentVisibleLimit = showAllRecent ? RECENT_ACTIVITY_MAX_VISIBLE : RECENT_ACTIVITY_FIRST_SCREEN_LIMIT;
+  const visibleRecentItems = recentItems.slice(0, recentVisibleLimit);
+  const recentTruncated = visibleRecentItems.length < recentItems.length;
+  const recentUsageTotal = Math.max(data.recentActivity.agentUsage.length, data.recentActivity.environmentUsage.length);
+  const recentUsageTruncated = recentUsageTotal > RECENT_ACTIVITY_FIRST_SCREEN_LIMIT;
   const sparkHealth = data.sparkHealth;
   const sparkHealthIssues = (data.issues ?? []).filter((issue) => issue.section === 'sparkHealth');
   const silentSparkItems = sparkHealth?.silentItems ?? [];
@@ -632,7 +676,7 @@ export default function CognitionCenter() {
             {/* 截断时如实提示总数与未显示数量，不用分页掩盖待决规模 */}
             {items.length > INBOX_FIRST_SCREEN_LIMIT && (
               <div className="mt-3 flex min-w-0 flex-wrap items-center justify-between gap-2">
-                <p className="ldvh-caption min-w-0">
+                <p className="ldvh-caption min-w-0 text-ldvh-text-secondary/55">
                   {truncated
                     ? t('cognition.inbox.truncated', {
                       total: String(data.inbox.total),
@@ -730,22 +774,39 @@ export default function CognitionCenter() {
       </section>
 
       <div className="mt-4 ldvh-panel-grid items-start">
-        {/* 模块二 近期动态：以当前对象的 created_at / updated_at 为明确事件，不把提交列表搬到聚焦页。 */}
+        {/* 模块二 近期动态：以事实 change_log 聚合稳定对象与署名使用量，不把提交列表搬到聚焦页。 */}
         <section className="order-2 rounded-xl border border-ldvh-border bg-ldvh-panel p-4">
-        <div
-          role="button"
-          tabIndex={0}
-          aria-expanded={recentExpanded}
-          aria-controls="cognition-recent-activity-content"
-          onClick={() => setRecentExpanded((expanded) => !expanded)}
-          onKeyDown={(event) => toggleOnKeyboard(event, () => setRecentExpanded((expanded) => !expanded))}
-          className={`-mx-1 flex min-w-0 cursor-pointer flex-wrap items-center gap-2 rounded-md px-1 transition-colors hover:bg-ldvh-bg/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ldvh-accent/50 ${recentExpanded ? 'mb-4' : ''}`}
-        >
-          <History size={16} className="shrink-0 text-ldvh-accent" aria-hidden="true" />
-          <h3 className="ldvh-section-title min-w-0">{t('cognition.recent.title')}</h3>
-          {data.recentActivity.total > 0 && (
-            <span className="ldvh-meta shrink-0 text-ldvh-text-secondary/70">{data.recentActivity.total}</span>
-          )}
+        <div className={`-mx-1 flex min-w-0 flex-wrap items-center gap-2 rounded-md px-1 ${recentExpanded ? 'mb-4' : ''}`}>
+          <button
+            type="button"
+            aria-expanded={recentExpanded}
+            aria-controls="cognition-recent-activity-content"
+            onClick={() => setRecentExpanded((expanded) => !expanded)}
+            className="inline-flex min-w-0 items-center gap-2 rounded-md py-1 text-left transition-colors hover:text-ldvh-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ldvh-accent/50"
+          >
+            <History size={16} className="shrink-0 text-ldvh-accent" aria-hidden="true" />
+            <h3 className="ldvh-section-title min-w-0">{t('cognition.recent.title')}</h3>
+            {data.recentActivity.eventTotal > 0 && (
+              <span className="ldvh-meta shrink-0 text-ldvh-text-secondary/70">{data.recentActivity.eventTotal}</span>
+            )}
+          </button>
+          <div className="ldvh-tab-list ml-1 flex min-w-0 flex-wrap" aria-label={t('cognition.recent.windowLabel')}>
+            {RECENT_ACTIVITY_WINDOWS.map((window) => (
+              <button
+                key={window}
+                type="button"
+                aria-pressed={recentWindow === window}
+                onClick={() => {
+                  setRecentWindow(window);
+                  setShowAllRecent(false);
+                  setShowAllRecentUsage(false);
+                }}
+                className={`ldvh-tab-button ${recentWindow === window ? 'ldvh-tab-button-active' : 'ldvh-tab-button-idle'}`}
+              >
+                {t(`cognition.recent.window.${window}` as LocaleKey)}
+              </button>
+            ))}
+          </div>
           <span className="ml-auto flex min-w-0 shrink-0 items-center gap-2">
             <CopyPathButton
               path={buildRecentActivitySummary(data, locale, t)}
@@ -756,10 +817,7 @@ export default function CognitionCenter() {
               type="button"
               aria-expanded={recentExpanded}
               aria-controls="cognition-recent-activity-content"
-              onClick={(event) => {
-                event.stopPropagation();
-                setRecentExpanded((expanded) => !expanded);
-              }}
+              onClick={() => setRecentExpanded((expanded) => !expanded)}
               className="inline-flex h-8 w-8 items-center justify-center rounded-md text-ldvh-text-secondary transition-colors hover:bg-ldvh-bg hover:text-ldvh-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ldvh-accent/50"
               title={t(recentExpanded ? 'cognition.recent.collapseSection' : 'cognition.recent.expandSection')}
             >
@@ -771,27 +829,7 @@ export default function CognitionCenter() {
 
         {recentExpanded && (
           <div id="cognition-recent-activity-content">
-            <div className="mb-3 flex min-w-0 flex-wrap items-center gap-1.5" aria-label={t('cognition.recent.windowLabel')}>
-              {RECENT_ACTIVITY_WINDOWS.map((window) => (
-                <button
-                  key={window}
-                  type="button"
-                  aria-pressed={recentWindow === window}
-                  onClick={() => {
-                    setRecentWindow(window);
-                    setShowAllRecent(false);
-                  }}
-                  className={`ldvh-caption inline-flex h-8 items-center rounded-md border px-2.5 transition-colors ${
-                    recentWindow === window
-                      ? 'border-ldvh-accent/45 bg-ldvh-accent/10 text-ldvh-accent'
-                      : 'border-ldvh-border text-ldvh-text-secondary hover:border-ldvh-accent/40 hover:text-ldvh-accent'
-                  }`}
-                >
-                  {t(`cognition.recent.window.${window}` as LocaleKey)}
-                </button>
-              ))}
-              {recentLoading && <span role="status" className="ldvh-caption text-ldvh-text-secondary/70">{t('cognition.recent.loading')}</span>}
-            </div>
+            {recentLoading && <p role="status" className="mb-3 ldvh-caption text-ldvh-text-secondary/70">{t('cognition.recent.loading')}</p>}
             {recentError && <p role="status" className="mb-3 ldvh-caption text-red-400">{recentError}</p>}
             <ModuleIssuesNotice issues={recentIssues} t={t} />
             {recentItems.length === 0 ? (
@@ -799,7 +837,7 @@ export default function CognitionCenter() {
             ) : (
               <ul className="divide-y divide-ldvh-border/70">
                 {visibleRecentItems.map((item) => (
-                  <RecentActivityRow key={`${item.activity}-${item.id}-${item.occurredAt}`} item={item} />
+                  <RecentActivityRow key={`${item.type}-${item.id}`} item={item} />
                 ))}
               </ul>
             )}
@@ -819,10 +857,35 @@ export default function CognitionCenter() {
                   onClick={() => setShowAllRecent((previous) => !previous)}
                   className="ldvh-caption inline-flex h-8 shrink-0 items-center rounded-md border border-ldvh-border px-3 text-ldvh-text-secondary transition-colors hover:border-ldvh-accent/50 hover:text-ldvh-accent"
                 >
-                  {recentTruncated ? t('cognition.recent.showAll') : t('cognition.recent.collapse')}
+                  {recentTruncated ? t('cognition.recent.showMore') : t('cognition.recent.collapse')}
                 </button>
               </div>
             )}
+            <div className="mt-4 border-t border-ldvh-border/70 pt-4">
+              <div className="grid min-w-0 gap-4 sm:grid-cols-2">
+                <RecentActivityUsageBars
+                  title={t('cognition.recent.agentUsage')}
+                  items={data.recentActivity.agentUsage}
+                  expanded={showAllRecentUsage}
+                />
+                <RecentActivityUsageBars
+                  title={t('cognition.recent.environmentUsage')}
+                  items={data.recentActivity.environmentUsage}
+                  expanded={showAllRecentUsage}
+                />
+              </div>
+              {recentUsageTruncated && (
+                <div className="mt-3 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setShowAllRecentUsage((previous) => !previous)}
+                    className="ldvh-caption inline-flex h-8 items-center rounded-md border border-ldvh-border px-3 text-ldvh-text-secondary transition-colors hover:border-ldvh-accent/50 hover:text-ldvh-accent"
+                  >
+                    {showAllRecentUsage ? t('cognition.recent.collapse') : t('cognition.recent.showMore')}
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         )}
         </section>
