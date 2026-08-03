@@ -180,17 +180,17 @@ def _time(value: object, path: str, issues: list[FactIssue]) -> RFC3339Instant |
 def _validate_change_log_signature(value: object, path: str, issues: list[FactIssue]) -> None:
     if not isinstance(value, dict):
         return
-    signer_type = value.get("signer_type")
-    if signer_type not in {"human", "ai-agent"}:
-        issues.append(FactIssue("schema", "change_log.signature.signer_type 不在 human、ai-agent 闭集中", f"{path}.signer_type"))
+    allowed = {"agent_id", "host_environment"}
+    legacy_allowed = {"signer_type", *allowed}
+    if set(value) == legacy_allowed and value.get("signer_type") in {"human", "ai-agent"}:
+        # Existing facts must remain readable long enough for the narrowly
+        # controlled transition validator to remove this retired member.
         return
-    allowed = {"signer_type"} if signer_type == "human" else {"signer_type", "agent_id", "host_environment"}
     for name in sorted(set(value) - allowed):
-        issues.append(FactIssue("schema", "change_log.signature 当前分支禁止该字段", f"{path}.{name}"))
-    if signer_type == "ai-agent":
-        for name in ("agent_id", "host_environment"):
-            if not isinstance(value.get(name), str) or not value[name].strip():
-                issues.append(FactIssue("schema", "change_log.signature AI 分支字段必须是非空 string", f"{path}.{name}"))
+        issues.append(FactIssue("schema", "change_log.signature 只允许 agent_id、host_environment", f"{path}.{name}"))
+    for name in sorted(allowed):
+        if not isinstance(value.get(name), str) or not value[name].strip():
+            issues.append(FactIssue("schema", "change_log.signature 字段必须是非空 string", f"{path}.{name}"))
 
 
 def _validate_change_log(fields: dict[str, Any], issues: list[FactIssue]) -> None:
@@ -219,9 +219,16 @@ def _validate_change_log(fields: dict[str, Any], issues: list[FactIssue]) -> Non
 def change_log_creation_issues(fields: Mapping[str, Any]) -> tuple[FactIssue, ...]:
     """Require every newly created fact to begin an attributable change log."""
 
-    if isinstance(fields.get("change_log"), list) and fields["change_log"]:
-        return ()
-    return (FactIssue("schema", "新建事实对象必须包含首条 change_log 流水", "change_log"),)
+    change_log = fields.get("change_log")
+    if not isinstance(change_log, list) or not change_log:
+        return (FactIssue("schema", "新建事实对象必须包含首条 change_log 流水", "change_log"),)
+    return tuple(
+        FactIssue("schema", "新建 change_log 不得使用已退役 signer_type", f"change_log[{index}].signature.signer_type")
+        for index, entry in enumerate(change_log)
+        if isinstance(entry, dict)
+        and isinstance(entry.get("signature"), dict)
+        and "signer_type" in entry["signature"]
+    )
 
 
 def timestamp_initial_change_log(fields: dict[str, Any], event_at: str) -> None:
@@ -238,7 +245,7 @@ def validate_change_log_transition(
     *,
     require_append: bool = True,
 ) -> tuple[FactIssue, ...]:
-    """Keep known change-log history immutable and require one appended event."""
+    """Require one appended event while allowing the one-time signer-type removal."""
 
     previous = before.get("change_log")
     current = after.get("change_log")
@@ -248,9 +255,31 @@ def validate_change_log_transition(
         return ()
     if not isinstance(current, list) or len(current) != len(previous) + (1 if require_append else 0):
         return (FactIssue("schema", "受控更新必须保留既有 change_log 并追加一条流水", "change_log"),)
-    if current[: len(previous)] != previous:
+    normalized_history = [_without_legacy_change_log_signer_type(entry) for entry in previous]
+    if current[: len(previous)] != normalized_history:
         return (FactIssue("schema", "change_log 历史条目不可改写或删除", "change_log"),)
-    return ()
+    issues: list[FactIssue] = []
+    for index, entry in enumerate(current[len(previous) :], start=len(previous)):
+        if isinstance(entry, dict) and isinstance(entry.get("signature"), dict) and "signer_type" in entry["signature"]:
+            issues.append(
+                FactIssue("schema", "新增 change_log 不得使用已退役 signer_type", f"change_log[{index}].signature.signer_type")
+            )
+    return tuple(issues)
+
+
+def _without_legacy_change_log_signer_type(entry: object) -> object:
+    """Project the narrowly authorized legacy signature-field migration.
+
+    The migration removes only ``signature.signer_type``; all other historical
+    content remains byte-for-value identical under the parsed object model.
+    """
+
+    if not isinstance(entry, dict) or not isinstance(entry.get("signature"), dict):
+        return entry
+    signature = entry["signature"]
+    if "signer_type" not in signature:
+        return entry
+    return {**entry, "signature": {key: value for key, value in signature.items() if key != "signer_type"}}
 
 
 def _require(fields: dict[str, Any], names: set[str] | frozenset[str], issues: list[FactIssue]) -> None:
@@ -520,6 +549,7 @@ def _validate_file_asset(fields: dict[str, Any], issues: list[FactIssue]) -> Non
 def validate_fact_object(fact_type_key: str, fields: dict[str, Any], schema: FactSchema) -> tuple[FactIssue, ...]:
     issues: list[FactIssue] = []
     _validate_mapping(fields, _tree(schema), "", issues)
+    issues[:] = [issue for issue in issues if not _is_legacy_change_log_signer_type_issue(fields, issue)]
     if fields.get("fact_type_key") != fact_type_key:
         issues.append(FactIssue("identity", "fact_type_key 与请求类型不一致", "fact_type_key"))
     _validate_status(fact_type_key, fields, issues)
@@ -534,6 +564,25 @@ def validate_fact_object(fact_type_key: str, fields: dict[str, Any], schema: Fac
     _validate_references(fact_type_key, fields, issues)
     _validate_relations(fact_type_key, fields, issues)
     return tuple(issues)
+
+
+def _is_legacy_change_log_signer_type_issue(fields: Mapping[str, Any], issue: FactIssue) -> bool:
+    """Let old records be read solely to complete the signer-type migration."""
+
+    match = re.fullmatch(r"change_log\[(\d+)\]\.signature\.signer_type", issue.field_path or "")
+    if match is None or issue.summary != "字段未在当前 Schema 登记":
+        return False
+    change_log = fields.get("change_log")
+    index = int(match.group(1))
+    if not isinstance(change_log, list) or index >= len(change_log) or not isinstance(change_log[index], dict):
+        return False
+    signature = change_log[index].get("signature")
+    return (
+        isinstance(signature, dict)
+        and set(signature) == {"signer_type", "agent_id", "host_environment"}
+        and signature.get("signer_type") in {"human", "ai-agent"}
+        and all(isinstance(signature.get(name), str) and signature[name].strip() for name in ("agent_id", "host_environment"))
+    )
 
 
 __all__ = [

@@ -81,7 +81,7 @@ def _create_active(workspace: Path, project: Path, source: Path) -> dict[str, ob
                         "signature": {"signer_type": "human"},
                         "change_log": [
                             {
-                                "signature": {"signer_type": "human"},
+                                "signature": {"agent_id": "test-agent", "host_environment": "pytest"},
                                 "session_id": "file-asset-delete-creation-test",
                                 "at": "2026-08-03T00:00:00+08:00",
                                 "summary": "创建用于验证安全删除的资产。",
@@ -115,7 +115,7 @@ def _delete_payload(
             "expected_content_fingerprint": fingerprint,
             "deletion_summary": "Human 确认当前没有继续保留该 payload 的需要。",
             "change_log_entry": {
-                "signature": {"signer_type": "human"},
+                "signature": {"agent_id": "test-agent", "host_environment": "pytest"},
                 "session_id": "file-asset-delete-test",
                 "summary": "执行受控安全删除并保留 tombstone。",
             },

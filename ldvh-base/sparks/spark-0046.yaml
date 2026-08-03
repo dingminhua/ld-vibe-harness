@@ -1,24 +1,34 @@
 title: 事实对象修改流水的会话与提交署名追踪
 status: open
 intent: 应如何让每项事实对象的形成和受控修改可稳定定位到其实际对话会话，并让相应 Git 提交明确携带形成者署名，从而在后续排查、复核或跨会话接续时保留最小可追踪边界。
-summary: "## 当前判断\n\n所有六类事实对象共享 `change_log` 流水；每条记录应包含责任签名、会话 ID、形成时间与本次变更摘要。Git commit 也必须使用同一三字段署名：`signer_type`、`agent_id`、`host_environment`。\n\n## 待持续核对\n\n- 新对象由受控创建入口写入首条流水，并把时间绑定到 Code 的实际创建事件。\n- 既有对象缺少可靠历史时不伪造回填；已有流水的后续受控更新必须保留历史并追加。\n- 提交契约、预检与 Git Gate 应要求并回读提交 footer 中的署名三字段和来源会话 ID。"
+summary: "## 当前判断\n\n所有六类事实对象共享 `change_log` 流水；每条记录应包含责任签名（`agent_id`、`host_environment`）、会话 ID、形成时间与本次变更摘要。Git commit 也必须使用同一两字段署名：`agent_id`、`host_environment`；不再要求 `signer_type`。\n\n## 待持续核对\n\n- 新对象由受控创建入口写入首条流水，并把时间绑定到 Code 的实际创建事件。\n- 既有对象缺少可靠历史时不伪造回填；已有流水的后续受控更新必须保留历史并追加。\n- 提交契约、预检与 Git Gate 应要求并回读提交 footer 中的署名两字段和来源会话 ID。"
 priority: P2
 change_log:
 - signature:
-    signer_type: ai-agent
     agent_id: codex
     host_environment: Cindy
   session_id: 48bbb4c6-f2ff-4510-b63f-cebcaaa35d2e
   summary: 记录事实对象修改流水的会话追踪与本次提交署名要求。
   at: '2026-08-03T11:31:47.779807+08:00'
 - signature:
-    signer_type: ai-agent
     agent_id: codex
     host_environment: Cindy
   session_id: 48bbb4c6-f2ff-4510-b63f-cebcaaa35d2e
   summary: 补充 Git 提交必须携带署名三字段的需求。
   at: '2026-08-03T11:56:00+08:00'
+- signature:
+    agent_id: codex
+    host_environment: Cindy
+  session_id: 48bbb4c6-f2ff-4510-b63f-cebcaaa35d2e
+  summary: 更正需求：署名仅保留 agent_id 与 host_environment，不再要求 signer_type。
+  at: '2026-08-03T12:17:00+08:00'
+- signature:
+    agent_id: codex
+    host_environment: Cindy
+  session_id: 48bbb4c6-f2ff-4510-b63f-cebcaaa35d2e
+  at: '2026-08-03T12:35:00+08:00'
+  summary: 受控迁移所有既有流水，移除 signer_type。
 object_id: spark-0046
 fact_type_key: spark
 created_at: '2026-08-03T11:31:47.779807+08:00'
-updated_at: '2026-08-03T11:56:16.720565+08:00'
+updated_at: '2026-08-03T12:37:23.034883+08:00'

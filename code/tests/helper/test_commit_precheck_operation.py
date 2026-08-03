@@ -79,7 +79,7 @@ def _gate(workspace: Path, project: Path, message: str) -> CommitMsgGateResult:
 
 
 def _signed(message: str) -> str:
-    return message + "\n\nSession-ID: test-session\nSigner-Type: ai-agent\nAgent-ID: test-agent\nHost-Environment: test-environment"
+    return message + "\n\nSession-ID: test-session\nAgent-ID: test-agent\nHost-Environment: test-environment"
 
 
 def _helper_issues_as_gate_diagnostics(response: dict[str, object]) -> tuple[str, ...]:

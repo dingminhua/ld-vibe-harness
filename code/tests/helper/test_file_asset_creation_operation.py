@@ -78,7 +78,6 @@ def _create(
         "change_log": [
             {
                 "signature": {
-                    "signer_type": "ai-agent",
                     "agent_id": "test-agent",
                     "host_environment": "pytest",
                 },

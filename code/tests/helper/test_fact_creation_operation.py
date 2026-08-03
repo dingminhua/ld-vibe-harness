@@ -453,7 +453,6 @@ def _create_payload(
         [
             {
                 "signature": {
-                    "signer_type": "ai-agent",
                     "agent_id": "test-agent",
                     "host_environment": "pytest",
                 },
@@ -687,7 +686,6 @@ def test_helper_create_read_and_update_accept_ignored_current_fact(tmp_path: Pat
     target["change_log"].append(
         {
             "signature": {
-                "signer_type": "ai-agent",
                 "agent_id": "test-agent",
                 "host_environment": "pytest",
             },

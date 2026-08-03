@@ -19,7 +19,7 @@ _HEADER = re.compile(
 _CJK = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff]")
 _FIXED_HEADINGS = ("动机:", "关键变更:", "影响边界:", "验证结论:", "风险与后续:")
 _TRAILER = re.compile(r"(?P<name>[A-Za-z][A-Za-z-]*): (?P<value>.*)\Z")
-_REQUIRED_TRAILERS = ("Session-ID", "Signer-Type", "Agent-ID", "Host-Environment")
+_REQUIRED_TRAILERS = ("Session-ID", "Agent-ID", "Host-Environment")
 SEMANTIC_CHECKS_REQUIRED = (
     "主要目的与拆分",
     "简体中文语义与 description 真实性",
@@ -188,16 +188,6 @@ def _signature_trailer_issues(lines: list[str]) -> list[CommitValidationIssue]:
         values = trailers.get(name, [])
         if len(values) != 1 or not values[0].strip():
             issues.append(_issue("signature_trailer_missing", f"footer 必须恰含一个非空 {name}: trailer"))
-    signer_type = trailers.get("Signer-Type", [None])[0]
-    if signer_type is None:
-        return issues
-    if signer_type not in {"human", "ai-agent"}:
-        issues.append(_issue("signer_type_invalid", "Signer-Type 只能是 human 或 ai-agent"))
-        return issues
-    for name in ("Agent-ID", "Host-Environment"):
-        values = trailers.get(name, [])
-        if signer_type == "human" and values:
-            issues.append(_issue("human_signature_extra_field", f"Signer-Type=human 时禁止 {name}: trailer"))
     return issues
 
 

@@ -348,7 +348,7 @@ def test_relations_accept_only_key_and_target(current_specs_repository: Path) ->
     )
 
 
-def test_change_log_accepts_signed_entries_and_rejects_bad_order_or_branch(current_specs_repository: Path) -> None:
+def test_change_log_accepts_two_field_signatures_and_rejects_bad_order_or_shape(current_specs_repository: Path) -> None:
     schema = _schemas(current_specs_repository)["spark"]
     fields = {
         **_common("spark", "spark-0001", "open"),
@@ -357,7 +357,6 @@ def test_change_log_accepts_signed_entries_and_rejects_bad_order_or_branch(curre
         "change_log": [
             {
                 "signature": {
-                    "signer_type": "ai-agent",
                     "agent_id": "codex",
                     "host_environment": "Claude Code",
                 },
@@ -366,7 +365,7 @@ def test_change_log_accepts_signed_entries_and_rejects_bad_order_or_branch(curre
                 "summary": "The Spark was first recorded.",
             },
             {
-                "signature": {"signer_type": "human"},
+                "signature": {"agent_id": "human-review", "host_environment": "Human review"},
                 "session_id": "human-review-2026-07-14",
                 "at": "2026-07-14T09:45:00+08:00",
                 "summary": "The current scope was clarified.",
@@ -376,7 +375,7 @@ def test_change_log_accepts_signed_entries_and_rejects_bad_order_or_branch(curre
     assert validate_fact_object("spark", fields, schema) == ()
 
     fields["change_log"][1]["at"] = "2026-07-14T09:15:00+08:00"
-    fields["change_log"][1]["signature"]["agent_id"] = "forbidden"
+    fields["change_log"][1]["signature"].pop("agent_id")
     issues = validate_fact_object("spark", fields, schema)
     assert any(issue.field_path == "change_log[1].at" for issue in issues)
     assert any(issue.field_path == "change_log[1].signature.agent_id" for issue in issues)
@@ -385,6 +384,43 @@ def test_change_log_accepts_signed_entries_and_rejects_bad_order_or_branch(curre
 def test_change_log_is_required_on_creation_and_legacy_history_is_not_fabricated() -> None:
     assert any(issue.field_path == "change_log" for issue in change_log_creation_issues({}))
     assert validate_change_log_transition({}, {"change_log": []}) == ()
+
+
+def test_change_log_transition_allows_only_legacy_signer_type_removal() -> None:
+    before = {
+        "change_log": [
+            {
+                "signature": {
+                    "signer_type": "ai-agent",
+                    "agent_id": "codex",
+                    "host_environment": "Cindy",
+                },
+                "session_id": "session-one",
+                "at": "2026-08-03T10:00:00+08:00",
+                "summary": "Recorded the current requirement.",
+            }
+        ]
+    }
+    after = {
+        "change_log": [
+            {
+                "signature": {"agent_id": "codex", "host_environment": "Cindy"},
+                "session_id": "session-one",
+                "at": "2026-08-03T10:00:00+08:00",
+                "summary": "Recorded the current requirement.",
+            },
+            {
+                "signature": {"agent_id": "codex", "host_environment": "Cindy"},
+                "session_id": "session-two",
+                "at": "2026-08-03T11:00:00+08:00",
+                "summary": "Applied the signature-field migration.",
+            },
+        ]
+    }
+
+    assert validate_change_log_transition(before, after) == ()
+    after["change_log"][0]["summary"] = "Rewritten history."
+    assert any(issue.field_path == "change_log" for issue in validate_change_log_transition(before, after))
 
 
 def test_creation_binds_the_initial_log_to_its_code_event_time() -> None:

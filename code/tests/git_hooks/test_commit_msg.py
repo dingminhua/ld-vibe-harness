@@ -81,7 +81,7 @@ def _checked_git(path: Path, *arguments: str) -> str:
 
 
 def _signed(message: str) -> str:
-    return message + "\n\nSession-ID: test-session\nSigner-Type: ai-agent\nAgent-ID: test-agent\nHost-Environment: test-environment"
+    return message + "\n\nSession-ID: test-session\nAgent-ID: test-agent\nHost-Environment: test-environment"
 
 
 def _managed_project(tmp_path: Path, *, governed: bool = True) -> tuple[Path, Path]:

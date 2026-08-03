@@ -29,7 +29,7 @@ def contract() -> CommitContractProjection:
 
 def _input(contract: CommitContractProjection, **changes: object) -> CommitValidationInput:
     values: dict[str, object] = {
-        "message": "docs(specs): 明确提交契约\n\nSession-ID: test-session\nSigner-Type: ai-agent\nAgent-ID: test-agent\nHost-Environment: test-environment",
+        "message": "docs(specs): 明确提交契约\n\nSession-ID: test-session\nAgent-ID: test-agent\nHost-Environment: test-environment",
         "candidate_paths": ("specs/03.md",),
         "git_worktree_root": "/workspace/project",
         "governance_status": "governed_single",
@@ -47,7 +47,7 @@ def _codes(result: object) -> set[str]:
 
 
 def _signed(message: str) -> str:
-    return message + "\n\nSession-ID: test-session\nSigner-Type: ai-agent\nAgent-ID: test-agent\nHost-Environment: test-environment"
+    return message + "\n\nSession-ID: test-session\nAgent-ID: test-agent\nHost-Environment: test-environment"
 
 
 def test_single_path_valid_header_passes_mechanical_layer(contract: CommitContractProjection) -> None:
@@ -68,7 +68,7 @@ def test_hyphenated_registered_scope_passes_mechanical_layer(contract: CommitCon
 
 
 def test_crlf_and_leading_comments_are_normalized(contract: CommitContractProjection) -> None:
-    message = "# template\r\n\r\ndocs(specs): 明确提交契约\r\n\r\nSession-ID: test\r\nSigner-Type: ai-agent\r\nAgent-ID: test\r\nHost-Environment: test\r\n"
+    message = "# template\r\n\r\ndocs(specs): 明确提交契约\r\n\r\nSession-ID: test\r\nAgent-ID: test\r\nHost-Environment: test\r\n"
 
     result = validate_commit(contract, _input(contract, message=message))
 
@@ -138,21 +138,20 @@ def test_revert_requires_body(contract: CommitContractProjection) -> None:
     assert "body_required" in _codes(result)
 
 
-def test_signature_footer_requires_session_and_ai_three_fields(contract: CommitContractProjection) -> None:
+def test_signature_footer_requires_session_and_two_signature_fields(contract: CommitContractProjection) -> None:
     result = validate_commit(contract, _input(contract, message="docs: 增加署名"))
 
     assert result.outcome == "failed"
     assert "signature_trailer_missing" in _codes(result)
 
-    invalid = validate_commit(
+    with_optional_legacy_trailer = validate_commit(
         contract,
         _input(
             contract,
             message="docs: 增加署名\n\nSession-ID: test\nSigner-Type: person\nAgent-ID: a\nHost-Environment: b",
         ),
     )
-    assert invalid.outcome == "failed"
-    assert "signer_type_invalid" in _codes(invalid)
+    assert with_optional_legacy_trailer.outcome == "passed"
 
 
 @pytest.mark.parametrize(
