@@ -24,6 +24,7 @@ OPERATIONS = (
     "resolve-governance-scope",
     "precheck-git-commit",
     "find-fact-object-candidates",
+    "migrate-legacy-change-log",
     "check-fact-integrity",
     "read-fact-objects",
     "prepare-closed-workcase-candidate",
@@ -468,7 +469,14 @@ def _exercise_operation_matrix(
     commit_precheck = _payload(
         workspace,
         project,
-        {"message": "test: 验证安装发行提交预检"},
+        {
+            "message": (
+                "test: 验证安装发行提交预检\n\n"
+                "Session-ID: distribution-test\n"
+                "Agent-ID: pytest\n"
+                "Host-Environment: pytest"
+            )
+        },
     )
     precheck_response = _valid_pair(
         environment,
@@ -623,6 +631,14 @@ def _exercise_operation_matrix(
                 "status": "open",
                 "summary": "Created only in the isolated governed project.",
                 "priority": "P2",
+                "change_log": [
+                    {
+                        "signature": {"agent_id": "pytest", "host_environment": "pytest"},
+                        "session_id": "distribution-test",
+                        "at": "2000-01-01T00:00:00Z",
+                        "summary": "Created by the installed distribution matrix.",
+                    }
+                ],
             },
         },
     )
@@ -669,6 +685,15 @@ def _exercise_operation_matrix(
     for key in ("object_id", "fact_type_key", "created_at", "updated_at"):
         target.pop(key)
     target["summary"] = "Updated only in the isolated governed project."
+    target["change_log"] = [
+        *target["change_log"],
+        {
+            "signature": {"agent_id": "pytest", "host_environment": "pytest"},
+            "session_id": "distribution-test",
+            "at": "2000-01-01T00:00:00Z",
+            "summary": "Updated by the installed distribution matrix.",
+        },
+    ]
     update_payload = _payload(
         workspace,
         project,
