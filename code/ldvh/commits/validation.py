@@ -159,8 +159,8 @@ def _signature_trailer_issues(lines: list[str]) -> list[CommitValidationIssue]:
         issues.append(_issue("signature_trailer_missing", "footer 必须至少含一个非空 Session-ID: trailer"))
     for name in ("Agent-ID", "Host-Environment"):
         values = trailers.get(name, [])
-        if len(values) != 1 or not values[0].strip():
-            issues.append(_issue("signature_trailer_missing", f"footer 必须恰含一个非空 {name}: trailer"))
+        if not values or any(not value.strip() for value in values):
+            issues.append(_issue("signature_trailer_missing", f"footer 必须至少含一个非空 {name}: trailer"))
     if trailers.get("Signer-Type"):
         issues.append(_issue("signer_type_retired", "footer 禁止已退役的 Signer-Type trailer"))
     return issues
@@ -233,12 +233,23 @@ def _fact_trace_issues(
     unavailable: list[CommitValidationIssue] = []
     failures: list[CommitValidationIssue] = []
     schemas = {schema.fact_type_key: schema for schema in value.fact_schemas}
-    expected = {
-        "session_id": trailers.get("Session-ID", [""])[0],
-        "agent_id": trailers.get("Agent-ID", [""])[0],
-        "host_environment": trailers.get("Host-Environment", [""])[0],
-    }
-    expected_session_ids = {value for value in trailers.get("Session-ID", [""]) if value.strip()}
+    session_values = [value for value in trailers.get("Session-ID", []) if value.strip()]
+    agent_values = [value for value in trailers.get("Agent-ID", []) if value.strip()]
+    host_values = [value for value in trailers.get("Host-Environment", []) if value.strip()]
+
+    def _declared(session: object, agent: object, host: object) -> bool:
+        """A log entry is declared by this commit iff every member belongs to
+        the footer's declared set for that member.  Declared sets must be
+        non-empty; a missing declared set therefore never matches."""
+        return (
+            bool(session_values)
+            and bool(agent_values)
+            and bool(host_values)
+            and session in session_values
+            and agent in agent_values
+            and host in host_values
+        )
+
     for candidate in value.fact_candidates:
         if candidate.object_id is None or candidate.data is None or candidate.observation_issue is not None:
             continue  # The fact layer already records the primary observation failure.
@@ -299,30 +310,14 @@ def _fact_trace_issues(
             failures.append(_issue("fact_trace_append_invalid", f"事实候选必须{requirement}: {candidate.path}"))
             continue
         if any(
-            {
-                "session_id": entry.get("session_id"),
-                "agent_id": entry.get("signature", {}).get("agent_id")
+            not _declared(
+                entry.get("session_id"),
+                entry.get("signature", {}).get("agent_id") if isinstance(entry.get("signature"), dict) else None,
+                entry.get("signature", {}).get("host_environment")
                 if isinstance(entry.get("signature"), dict)
                 else None,
-                "host_environment": entry.get("signature", {}).get("host_environment")
-                if isinstance(entry.get("signature"), dict)
-                else None,
-            }
-            != expected
-            for entry in appended
-            if not (
-                isinstance(entry.get("session_id"), str)
-                and entry.get("session_id") in expected_session_ids
-                and {
-                    "agent_id": entry.get("signature", {}).get("agent_id")
-                    if isinstance(entry.get("signature"), dict)
-                    else None,
-                    "host_environment": entry.get("signature", {}).get("host_environment")
-                    if isinstance(entry.get("signature"), dict)
-                    else None,
-                }
-                == {key: expected[key] for key in ("agent_id", "host_environment")}
             )
+            for entry in appended
         ):
             failures.append(
                 _issue(

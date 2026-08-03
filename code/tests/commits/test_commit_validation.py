@@ -506,3 +506,122 @@ def test_new_fact_multiple_sessions_reject_unlisted_session(
 
     assert result.outcome == "failed"
     assert "fact_trace_signature_mismatch" in _codes(result)
+
+
+def test_new_fact_multiple_agents_match_multiple_footer_agent_ids(
+    contract: CommitContractProjection,
+) -> None:
+    """新对象跨多 agent 流水：footer 声明全部 Agent-ID/Host-Environment 即通过。"""
+
+    data = _VALID_SPARK.replace(
+        b"updated_at: 2026-07-01T00:00:00+08:00",
+        b"updated_at: 2026-07-01T01:00:00+08:00",
+    ) + (
+        "  - signature:\n"
+        "      agent_id: another-agent\n"
+        "      host_environment: another-env\n"
+        "    session_id: test-session-2\n"
+        "    at: 2026-07-01T01:00:00+08:00\n"
+        "    summary: 第二个执行者\n"
+    ).encode()
+    message = (
+        "docs(specs): 多执行者提交\n\n"
+        "Session-ID: test-session\n"
+        "Session-ID: test-session-2\n"
+        "Agent-ID: test-agent\n"
+        "Agent-ID: another-agent\n"
+        "Host-Environment: test-environment\n"
+        "Host-Environment: another-env"
+    )
+
+    result = validate_commit(
+        contract,
+        _input(
+            contract,
+            message=message,
+            fact_candidates=(_fact_candidate(data=data, head_exists=False),),
+            fact_schemas=(_spark_schema(),),
+        ),
+    )
+
+    assert result.outcome == "passed"
+
+
+def test_new_fact_multiple_agents_reject_undeclared_agent(
+    contract: CommitContractProjection,
+) -> None:
+    """新对象流水 agent 未在 footer 声明：拒绝。"""
+
+    data = _VALID_SPARK.replace(
+        b"updated_at: 2026-07-01T00:00:00+08:00",
+        b"updated_at: 2026-07-01T01:00:00+08:00",
+    ) + (
+        "  - signature:\n"
+        "      agent_id: ghost-agent\n"
+        "      host_environment: ghost-env\n"
+        "    session_id: test-session-2\n"
+        "    at: 2026-07-01T01:00:00+08:00\n"
+        "    summary: 未声明执行者\n"
+    ).encode()
+    message = (
+        "docs(specs): 未声明执行者\n\n"
+        "Session-ID: test-session\n"
+        "Session-ID: test-session-2\n"
+        "Agent-ID: test-agent\n"
+        "Host-Environment: test-environment"
+    )
+
+    result = validate_commit(
+        contract,
+        _input(
+            contract,
+            message=message,
+            fact_candidates=(_fact_candidate(data=data, head_exists=False),),
+            fact_schemas=(_spark_schema(),),
+        ),
+    )
+
+    assert result.outcome == "failed"
+    assert "fact_trace_signature_mismatch" in _codes(result)
+
+
+def test_legacy_migration_multiple_agents_passes(
+    contract: CommitContractProjection,
+) -> None:
+    """legacy 迁移对象跨多 agent：HEAD 无 change_log，footer 声明全部签名即通过。"""
+
+    head_data = _VALID_SPARK.split(b"change_log:\n")[0]
+    data = _VALID_SPARK.replace(
+        b"updated_at: 2026-07-01T00:00:00+08:00",
+        b"updated_at: 2026-07-01T01:00:00+08:00",
+    ) + (
+        "  - signature:\n"
+        "      agent_id: another-agent\n"
+        "      host_environment: another-env\n"
+        "    session_id: test-session-2\n"
+        "    at: 2026-07-01T01:00:00+08:00\n"
+        "    summary: Human授权兼容旧数据：第二个执行者迁移\n"
+    ).encode()
+    message = (
+        "docs(specs): 多执行者迁移提交\n\n"
+        "Session-ID: test-session\n"
+        "Session-ID: test-session-2\n"
+        "Agent-ID: test-agent\n"
+        "Agent-ID: another-agent\n"
+        "Host-Environment: test-environment\n"
+        "Host-Environment: another-env"
+    )
+
+    result = validate_commit(
+        contract,
+        _input(
+            contract,
+            message=message,
+            fact_candidates=(
+                _fact_candidate(data=data, head_exists=True, head_data=head_data),
+            ),
+            fact_schemas=(_spark_schema(),),
+        ),
+    )
+
+    assert result.outcome == "passed"
