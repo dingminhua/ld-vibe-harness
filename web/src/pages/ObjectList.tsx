@@ -928,9 +928,12 @@ function WorkCaseSparkSuggestions({ suggestions }: { suggestions: WorkCaseSparkS
 export function WorkCaseClosureConfirmationContent({
   goal,
   closureProposal,
+  onOpenTarget,
 }: {
   goal?: string;
   closureProposal?: WorkCaseClosureProposalCard;
+  /** Focus may open an explicitly routed object in secondary reading; list Cards retain the plain fact row. */
+  onOpenTarget?: (target: WorkCaseContributionTarget, title: string) => void;
 }) {
   const { t, locale } = useI18n();
   return (
@@ -958,7 +961,7 @@ export function WorkCaseClosureConfirmationContent({
                   <div className={`${WORKCASE_CARD_TITLE_BODY_GAP_CLASS} min-w-0 break-words`}>
                     <SummaryText value={decision.summary} collapseThreshold={Number.MAX_SAFE_INTEGER} className={`ldvh-card-decision-body [&_p]:my-0 ${PROPOSED_DISPOSITION_BODY_CLASS[decision.proposedDisposition] ?? 'text-ldvh-text-secondary'}`} />
                   </div>
-                  {decision.routeTarget && <WorkCaseContributionTargetRow target={decision.routeTarget} locale={locale} showStatus={false} compact />}
+                  {decision.routeTarget && <WorkCaseContributionTargetRow target={decision.routeTarget} locale={locale} showStatus={false} compact onOpenTarget={onOpenTarget} />}
                 </li>
               ))}
             </ul>
@@ -1029,9 +1032,12 @@ function WorkCaseClosedContent({ goal, terminal }: { goal?: string; terminal?: W
 export function WorkCaseContributionsContent({
   contributions,
   locale,
+  onOpenTarget,
 }: {
   contributions?: WorkCaseContributionTarget[];
   locale: string;
+  /** Focus can open a contributed-to target in secondary reading; list Cards remain plain facts. */
+  onOpenTarget?: (target: WorkCaseContributionTarget, title: string) => void;
 }) {
   const { t } = useI18n();
   if (!contributions || contributions.length === 0) return null;
@@ -1044,6 +1050,7 @@ export function WorkCaseContributionsContent({
             key={`${target.governedProjectId}/${target.factTypeKey}/${target.objectId}`}
             target={target}
             locale={locale}
+            onOpenTarget={onOpenTarget}
           />
         ))}
       </div>
@@ -1052,7 +1059,7 @@ export function WorkCaseContributionsContent({
 }
 
 /** Targets resolve on demand exactly like the detail relation rows; titles are never duplicated into the Card. */
-function WorkCaseContributionTargetRow({ target, locale, showStatus = true, compact = false }: { target: WorkCaseContributionTarget; locale: string; showStatus?: boolean; compact?: boolean }) {
+function WorkCaseContributionTargetRow({ target, locale, showStatus = true, compact = false, onOpenTarget }: { target: WorkCaseContributionTarget; locale: string; showStatus?: boolean; compact?: boolean; onOpenTarget?: (target: WorkCaseContributionTarget, title: string) => void }) {
   const { t } = useI18n();
   const [detail, setDetail] = useState<ObjectDetail | null>(null);
   const [readState, setReadState] = useState<'loading' | 'resolved' | 'unavailable'>('loading');
@@ -1089,18 +1096,34 @@ function WorkCaseContributionTargetRow({ target, locale, showStatus = true, comp
       ? t('objectList.workcaseTargetReading')
       : getFieldValueLabel('read_status', readMeta.readStatus ?? 'unreadable', locale);
   const typeColor = CATEGORY_COLORS[target.factTypeKey] || CATEGORY_COLORS.other;
-  return (
-    <div
-      className={`flex min-w-0 items-center gap-2 rounded-md px-1.5 text-left ${compact ? 'pb-1 pt-1.5' : 'py-2'}`}
-    >
-      <ObjectTypeIcon type={target.factTypeKey} size={13} className="-translate-y-0.5 shrink-0" style={{ color: typeColor }} />
+  const rowClassName = `flex min-w-0 items-center gap-2 rounded-md px-1.5 text-left ${compact ? 'pb-1 pt-1.5' : 'py-2'}`;
+  const rowContent = (
+    <>
+      <ObjectTypeIcon type={target.factTypeKey} size={13} className="shrink-0" style={{ color: typeColor }} />
       <span className="ldvh-meta-primary min-w-0 flex-1 whitespace-normal break-words text-left">
         {title}
       </span>
       <span className="ldvh-meta-muted shrink-0">{target.objectId}</span>
+      {onOpenTarget && <ArrowRight size={13} className="shrink-0 text-ldvh-text-secondary/70" aria-hidden="true" />}
       {targetStatus && <span className="ldvh-meta-muted shrink-0">{targetStatus}</span>}
       {readStatus && <span className="ldvh-meta-muted shrink-0">{readStatus}</span>}
-    </div>
+    </>
+  );
+
+  if (onOpenTarget) {
+    return (
+      <button
+        type="button"
+        onClick={() => onOpenTarget(target, title)}
+        className={`${rowClassName} w-full cursor-pointer transition-colors hover:bg-ldvh-border/25 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ldvh-accent/50`}
+      >
+        {rowContent}
+      </button>
+    );
+  }
+
+  return (
+    <div className={rowClassName}>{rowContent}</div>
   );
 }
 

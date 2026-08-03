@@ -39,6 +39,7 @@ import {
   type CognitionRecentActivityWindow,
   type CognitionSparkHealthItem,
   type ObjectItem,
+  type WorkCaseContributionTarget,
 } from '@/utils/api';
 import { usePanel } from '@/utils/panelContext';
 import { useI18n } from '@/i18n/context';
@@ -190,7 +191,7 @@ function InboxItemReadNotes({ item, locale }: { item: CognitionCardItem; locale:
   );
 }
 
-function InboxCardContent({ item, t, locale }: { item: CognitionInboxItem; t: Translate; locale: string }) {
+function InboxCardContent({ item, t, locale, onOpenContribution }: { item: CognitionInboxItem; t: Translate; locale: string; onOpenContribution: (target: WorkCaseContributionTarget, title: string) => void }) {
   if (item.type === 'pitfall') return <PitfallCardContent obj={toObjectCard(item)} />;
   if (item.inboxKind === 'blocked_resolution') {
     return (
@@ -224,8 +225,12 @@ function InboxCardContent({ item, t, locale }: { item: CognitionInboxItem; t: Tr
   if (item.inboxKind === 'closure_confirmation') {
     return (
       <>
-        <WorkCaseClosureConfirmationContent goal={item.card.goal} closureProposal={item.card.closureProposal} />
-        <WorkCaseContributionsContent contributions={item.card.contributedTo} locale={locale} />
+        <WorkCaseClosureConfirmationContent
+          goal={item.card.goal}
+          closureProposal={item.card.closureProposal}
+          onOpenTarget={onOpenContribution}
+        />
+        <WorkCaseContributionsContent contributions={item.card.contributedTo} locale={locale} onOpenTarget={onOpenContribution} />
       </>
     );
   }
@@ -304,7 +309,17 @@ function InboxItemRow({ item }: { item: CognitionInboxItem }) {
         onOpen={() => openPanel({ type: 'object', title, objectType: item.type, objectId: item.id })}
         displayStatus={item.type === 'workcase' && item.inboxKind === 'blocked_resolution' ? 'blocked' : undefined}
       >
-        <InboxCardContent item={item} t={t} locale={locale} />
+        <InboxCardContent
+          item={item}
+          t={t}
+          locale={locale}
+          onOpenContribution={(target, targetTitle) => openPanel({
+            type: 'object',
+            title: targetTitle,
+            objectType: target.factTypeKey,
+            objectId: target.objectId,
+          })}
+        />
         <InboxItemReadNotes item={item} locale={locale} />
       </ObjectCardFrame>
     </li>

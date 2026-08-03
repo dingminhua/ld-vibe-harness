@@ -302,17 +302,20 @@ test('semantic WorkCase cards share one title-to-body spacing token', () => {
   assert.match(list, /accept_stop: 'text-cyan-950\/70 dark:text-cyan-100\/75'/);
 });
 
-test('Only Card titles navigate; routed targets remain plain relationship facts', () => {
+test('Card targets remain plain relationship facts while Focus may opt into secondary reading', () => {
   const list = source('src/pages/ObjectList.tsx');
   const target = list.slice(list.indexOf('function WorkCaseContributionTargetRow'), list.indexOf('function contributionTargetTitle'));
   const frame = list.slice(list.indexOf('function ObjectCardFrame'), list.indexOf('function hasSparkResolvedFact'));
 
   assert.match(target, /<ObjectTypeIcon type=\{target\.factTypeKey\}/);
   assert.match(target, /flex min-w-0 items-center gap-2/);
-  assert.match(target, /size=\{13\} className="-translate-y-0\.5 shrink-0"/);
+  assert.match(target, /size=\{13\} className="shrink-0"/);
   assert.match(target, /<span className="ldvh-meta-primary min-w-0 flex-1 whitespace-normal break-words text-left">[\s\S]*\{title\}/);
   assert.match(target, /\{target\.objectId\}/);
-  assert.doesNotMatch(target, /role="button"|tabIndex=\{0\}|onKeyDown|onClick=\{open\}|<button/);
+  assert.match(target, /onOpenTarget\?: \(target: WorkCaseContributionTarget, title: string\) => void/);
+  assert.match(target, /if \(onOpenTarget\) \{/);
+  assert.match(target, /<button[\s\S]*onClick=\{\(\) => onOpenTarget\(target, title\)\}/);
+  assert.match(target, /<div className=\{rowClassName\}>\{rowContent\}<\/div>/);
   assert.match(frame, /<button[\s\S]*onClick=\{\(\) => onOpen\(obj\.id\)\}[\s\S]*getLocalizedObjectTitle/);
   assert.doesNotMatch(frame, /role="button"|tabIndex=\{0\}|onClick=\{\(\) => onOpen\(obj\.id\)\}\n\s*onKeyDown/);
   assert.doesNotMatch(frame, /<ArrowRight size=\{14\}/);
@@ -431,10 +434,13 @@ test('closure confirmation cards render the closure-decision input zone and decl
   assert.match(list, /ldvh-card-decision-title min-w-0 \$\{tone\}/);
   assert.match(content, /ldvh-card-decision-title min-w-0 \$\{PROPOSED_DISPOSITION_TEXT_CLASS/);
   assert.match(content, /decision\.routeTarget/);
+  assert.match(content, /onOpenTarget\?: \(target: WorkCaseContributionTarget, title: string\) => void;/);
+  assert.match(content, /<WorkCaseContributionTargetRow target=\{decision\.routeTarget\} locale=\{locale\} showStatus=\{false\} compact onOpenTarget=\{onOpenTarget\} \/>/);
   assert.doesNotMatch(content, /<ol|successCriterionResults|controller_check|validation_summary/);
 
   assert.match(contributions, /if \(!contributions \|\| contributions\.length === 0\) return null;/);
   assert.match(contributions, /objectList\.workcaseContributions/);
+  assert.match(contributions, /onOpenTarget\?: \(target: WorkCaseContributionTarget, title: string\) => void;/);
   assert.match(contributions, /fetchObjectDetail\(target\.factTypeKey, target\.objectId\)/);
   assert.match(contributions, /<ObjectTypeIcon type=\{target\.factTypeKey\}/);
   assert.match(contributions, /\{target\.objectId\}/);
@@ -444,6 +450,14 @@ test('closure confirmation cards render the closure-decision input zone and decl
   assert.match(contributions, /getFieldValueLabel\('read_status', readMeta\.readStatus \?\? 'unreadable', locale\)/);
   assert.match(contributions, /whitespace-normal break-words/);
   assert.doesNotMatch(contributions, /flex-1 truncate/);
+  assert.match(contributions, /if \(onOpenTarget\) \{/);
+  assert.match(contributions, /onClick=\{\(\) => onOpenTarget\(target, title\)\}/);
+  assert.match(contributions, /<ArrowRight size=\{13\}/);
+
+  const cognition = source('src/pages/CognitionCenter.tsx');
+  assert.match(cognition, /<WorkCaseClosureConfirmationContent[\s\S]*onOpenTarget=\{onOpenContribution\}/);
+  assert.match(cognition, /<WorkCaseContributionsContent contributions=\{item\.card\.contributedTo\} locale=\{locale\} onOpenTarget=\{onOpenContribution\} \/>/);
+  assert.match(cognition, /onOpenContribution=\{\(target, targetTitle\) => openPanel\(\{/);
 });
 
 test('closed cards use terminal closure content while unclassified cards stay minimal', () => {
