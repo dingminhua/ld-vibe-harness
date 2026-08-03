@@ -95,7 +95,11 @@ _RESULT_PROJECTION_FIELDS = (
 _RESULT_STATE_FIELDS = ("result_version", *_RESULT_PROJECTION_FIELDS, "result_reviews")
 _ITEM_RUNTIME_FIELDS = ("status", "current_summary", "resume_from", "blocking_summary", "result_summary")
 _REVIEWER_FIELDS = ("reviewer", "reviewed_at", "subject_version", "scope", "conclusion", "feedback")
-_BLOCKED_OVERLAY_FIELDS = frozenset({"status", "blocking_summary", "waiting_on", "updated_at"})
+# ``change_log`` is not a second lifecycle mutation: the shared write core
+# appends its one Code-timestamped trace entry to every accepted transaction.
+# A blocked-status checkpoint must therefore permit that invariant-preserving
+# append while continuing to freeze every semantic domain field.
+_BLOCKED_OVERLAY_FIELDS = frozenset({"status", "blocking_summary", "waiting_on", "updated_at", "change_log"})
 _BLOCKED_FACT_CORRECTION_FIELDS = frozenset({"title", "priority", "urls"})
 
 

@@ -217,18 +217,26 @@ def _validate_change_log(fields: dict[str, Any], issues: list[FactIssue]) -> Non
 
 
 def change_log_creation_issues(fields: Mapping[str, Any]) -> tuple[FactIssue, ...]:
-    """Require every newly created fact to begin an attributable change log."""
+    """Require a new fact to begin with exactly one attributable event.
+
+    A creation is one event, not an opportunity to import multiple historical
+    events.  The creation application binds that event's time to its own
+    observed time before serializing the fact.
+    """
 
     change_log = fields.get("change_log")
-    if not isinstance(change_log, list) or not change_log:
+    if not isinstance(change_log, list) or len(change_log) != 1:
         return (FactIssue("schema", "新建事实对象必须包含首条 change_log 流水", "change_log"),)
-    return tuple(
+    issues = [
         FactIssue("schema", "新建 change_log 不得使用已退役 signer_type", f"change_log[{index}].signature.signer_type")
         for index, entry in enumerate(change_log)
         if isinstance(entry, dict)
         and isinstance(entry.get("signature"), dict)
         and "signer_type" in entry["signature"]
-    )
+    ]
+    if isinstance(change_log[0], dict) and change_log[0].get("at") != fields.get("created_at"):
+        issues.append(FactIssue("schema", "新建首条 change_log.at 必须等于 Code 绑定的 created_at", "change_log[0].at"))
+    return tuple(issues)
 
 
 def timestamp_initial_change_log(fields: dict[str, Any], event_at: str) -> None:
@@ -239,20 +247,37 @@ def timestamp_initial_change_log(fields: dict[str, Any], event_at: str) -> None:
         change_log[0]["at"] = event_at
 
 
+def timestamp_appended_change_log(fields: dict[str, Any], event_at: str) -> None:
+    """Bind the sole proposed update event to Code's observed time."""
+
+    change_log = fields.get("change_log")
+    if isinstance(change_log, list) and len(change_log) >= 2 and isinstance(change_log[-1], dict):
+        change_log[-1]["at"] = event_at
+
+
 def validate_change_log_transition(
     before: Mapping[str, Any],
     after: Mapping[str, Any],
     *,
     require_append: bool = True,
 ) -> tuple[FactIssue, ...]:
-    """Require one appended event while allowing the one-time signer-type removal."""
+    """Require one appended event while allowing the one-time signer-type removal.
+
+    A legacy object without history cannot acquire an invented history through
+    a normal update.  It must first use a dedicated migration operation whose
+    evidence and source are independently governed.
+    """
 
     previous = before.get("change_log")
     current = after.get("change_log")
     if not isinstance(previous, list):
-        # Legacy objects may not have trustworthy actor or session history.
-        # Their first update must not fabricate one retroactively.
-        return ()
+        return (
+            FactIssue(
+                "schema",
+                "缺少 change_log 历史的遗留对象不得经普通更新补写；必须使用受控迁移",
+                "change_log",
+            ),
+        )
     if not isinstance(current, list) or len(current) != len(previous) + (1 if require_append else 0):
         return (FactIssue("schema", "受控更新必须保留既有 change_log 并追加一条流水", "change_log"),)
     normalized_history = [_without_legacy_change_log_signer_type(entry) for entry in previous]
@@ -263,6 +288,14 @@ def validate_change_log_transition(
         if isinstance(entry, dict) and isinstance(entry.get("signature"), dict) and "signer_type" in entry["signature"]:
             issues.append(
                 FactIssue("schema", "新增 change_log 不得使用已退役 signer_type", f"change_log[{index}].signature.signer_type")
+            )
+        if "updated_at" in after and isinstance(entry, dict) and entry.get("at") != after.get("updated_at"):
+            issues.append(
+                FactIssue(
+                    "schema",
+                    "新增 change_log.at 必须等于本次 Code 绑定的 updated_at",
+                    f"change_log[{index}].at",
+                )
             )
     return tuple(issues)
 
@@ -591,6 +624,7 @@ __all__ = [
     "parse_rfc3339",
     "study_report_creation_issues",
     "timestamp_initial_change_log",
+    "timestamp_appended_change_log",
     "validate_change_log_transition",
     "validate_fact_object",
 ]

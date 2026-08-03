@@ -43,6 +43,13 @@ updated_at: 2026-07-20T10:00:00+08:00
 status: open
 summary: Before update
 priority: P2
+change_log:
+  - signature:
+      agent_id: test-agent
+      host_environment: test
+    session_id: test-session
+    at: 2026-07-20T09:00:00+08:00
+    summary: Create test fact
 """,
         encoding="utf-8",
     )
@@ -63,6 +70,15 @@ priority: P2
     assert current.fields is not None and current.content_fingerprint is not None
     supplied = {key: value for key, value in current.fields.items() if key not in update_application.MANAGED_FIELDS}
     supplied["summary"] = "After update"
+    supplied["change_log"] = [
+        *supplied["change_log"],
+        {
+            "signature": {"agent_id": "test-agent", "host_environment": "test"},
+            "session_id": "test-session",
+            "at": "2000-01-01T00:00:00Z",
+            "summary": "Update test fact",
+        },
+    ]
     return (
         FactUpdateCommand(
             boundary=CreationBoundary("sample", project, common_dir),
@@ -299,6 +315,13 @@ updated_at: 2026-07-20T10:00:00+08:00
 status: routed
 summary: Before update
 disposition_summary: Incorrectly recorded as routed without a fact target.
+change_log:
+  - signature:
+      agent_id: test-agent
+      host_environment: test
+    session_id: test-session
+    at: 2026-07-20T09:00:00+08:00
+    summary: Create test fact
 """,
         encoding="utf-8",
     )
@@ -314,6 +337,15 @@ disposition_summary: Incorrectly recorded as routed without a fact target.
             ),
         }
     )
+    supplied["change_log"] = [
+        *supplied["change_log"],
+        {
+            "signature": {"agent_id": "test-agent", "host_environment": "test"},
+            "session_id": "test-session",
+            "at": "2000-01-01T00:00:00Z",
+            "summary": "Repair test fact",
+        },
+    ]
 
     result = apply_fact_update(
         FactUpdateCommand(
@@ -408,6 +440,15 @@ def test_generic_update_compares_fractional_seconds_beyond_microseconds_without_
     assert current.fields is not None and current.content_fingerprint is not None
     supplied = {key: value for key, value in current.fields.items() if key not in update_application.MANAGED_FIELDS}
     supplied["summary"] = "After exact-precision update"
+    supplied["change_log"] = [
+        *supplied["change_log"],
+        {
+            "signature": {"agent_id": "test-agent", "host_environment": "test"},
+            "session_id": "test-session",
+            "at": "2000-01-01T00:00:00Z",
+            "summary": "Update test fact",
+        },
+    ]
     exact_command = FactUpdateCommand(
         boundary=command.boundary,
         fact_type_key=command.fact_type_key,

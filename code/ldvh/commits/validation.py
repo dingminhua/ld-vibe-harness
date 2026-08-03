@@ -45,6 +45,12 @@ class StagedFactCandidate:
     object_id: str | None
     data: bytes | None
     observation_issue: str | None
+    # The Git adapter supplies the corresponding HEAD after it binds the Index.
+    # Keeping both images lets the Gate prove that a fact's new trace entry is
+    # the one signed by this commit, rather than merely schema-valid YAML.
+    head_data: bytes | None = None
+    head_exists: bool | None = None
+    head_observation_issue: str | None = None
     file_asset_targets: tuple[StagedFileAssetTarget, ...] = ()
     file_asset_target_scan_issue: str | None = None
 
@@ -188,6 +194,8 @@ def _signature_trailer_issues(lines: list[str]) -> list[CommitValidationIssue]:
         values = trailers.get(name, [])
         if len(values) != 1 or not values[0].strip():
             issues.append(_issue("signature_trailer_missing", f"footer 必须恰含一个非空 {name}: trailer"))
+    if trailers.get("Signer-Type"):
+        issues.append(_issue("signer_type_retired", "footer 禁止已退役的 Signer-Type trailer"))
     return issues
 
 
@@ -533,6 +541,197 @@ def _fact_layer(
     return unavailable, failures
 
 
+def _fact_trace_issues(
+    value: CommitValidationInput,
+    trailers: dict[str, list[str]],
+) -> tuple[list[CommitValidationIssue], list[CommitValidationIssue]]:
+    """Bind every staged single-file fact event to this commit's footer.
+
+    The commit validator is deliberately fail-closed when the before image is
+    unavailable: an after image alone cannot establish which log entry is the
+    event introduced by this candidate.
+    """
+
+    unavailable: list[CommitValidationIssue] = []
+    failures: list[CommitValidationIssue] = []
+    schemas = {schema.fact_type_key: schema for schema in value.fact_schemas}
+    expected = {
+        "session_id": trailers.get("Session-ID", [""])[0],
+        "agent_id": trailers.get("Agent-ID", [""])[0],
+        "host_environment": trailers.get("Host-Environment", [""])[0],
+    }
+    for candidate in value.fact_candidates:
+        if candidate.object_id is None or candidate.data is None or candidate.observation_issue is not None:
+            continue  # The fact layer already records the primary observation failure.
+        schema = schemas.get(candidate.fact_type_key)
+        layout = LAYOUTS.get(candidate.fact_type_key)
+        if schema is None or layout is None:
+            continue
+        after_checked = validate_fact_content(layout, schema, candidate.object_id, candidate.data)
+        if after_checked.check_status != "mechanically_valid" or after_checked.fields is None:
+            continue
+        if candidate.head_exists is None:
+            unavailable.append(_issue("fact_trace_unverifiable", f"无法确认事实 HEAD before-image: {candidate.path}"))
+            continue
+        before_fields: dict[str, object] | None = None
+        if candidate.head_exists:
+            if candidate.head_observation_issue is not None or candidate.head_data is None:
+                unavailable.append(
+                    _issue(
+                        "fact_trace_unverifiable",
+                        f"事实 HEAD before-image 无法可信读取: {candidate.path}: "
+                        f"{candidate.head_observation_issue or 'missing blob'}",
+                    )
+                )
+                continue
+            before_checked = validate_fact_content(layout, schema, candidate.object_id, candidate.head_data)
+            if before_checked.check_status != "mechanically_valid" or before_checked.fields is None:
+                unavailable.append(
+                    _issue("fact_trace_unverifiable", f"事实 HEAD before-image 不可机械消费: {candidate.path}")
+                )
+                continue
+            before_fields = before_checked.fields
+        after_log = after_checked.fields.get("change_log")
+        before_log = None if before_fields is None else before_fields.get("change_log")
+        if not isinstance(after_log, list):
+            failures.append(_issue("fact_trace_missing", f"事实候选缺少可校验 change_log: {candidate.path}"))
+            continue
+        if before_fields is None:
+            # A fact may be created and then legitimately progressed several
+            # times before its first Git commit.  All of that uncommitted
+            # history belongs to this candidate, so bind every entry to the
+            # commit footer instead of incorrectly requiring one entry.
+            appended = after_log
+        elif isinstance(before_log, list) and after_log[: len(before_log)] == before_log:
+            appended = after_log[len(before_log) :]
+        else:
+            failures.append(
+                _issue("fact_trace_transition_invalid", f"事实流水前后像不能确定唯一新增事件: {candidate.path}")
+            )
+            continue
+        if not appended or not all(isinstance(entry, dict) for entry in appended):
+            requirement = "至少含一条初始流水" if before_fields is None else "恰新增一条流水"
+            failures.append(_issue("fact_trace_append_invalid", f"事实候选必须{requirement}: {candidate.path}"))
+            continue
+        if any(
+            {
+                "session_id": entry.get("session_id"),
+                "agent_id": entry.get("signature", {}).get("agent_id")
+                if isinstance(entry.get("signature"), dict)
+                else None,
+                "host_environment": entry.get("signature", {}).get("host_environment")
+                if isinstance(entry.get("signature"), dict)
+                else None,
+            }
+            != expected
+            for entry in appended
+        ):
+            failures.append(
+                _issue(
+                    "fact_trace_signature_mismatch",
+                    f"事实新增流水与提交 footer 的 Session-ID/Agent-ID/Host-Environment 不一致: {candidate.path}",
+                )
+            )
+    for candidate in value.file_asset_candidates:
+        if candidate.object_id is None or candidate.observation_issue is not None:
+            continue  # The fact layer already records the primary observation failure.
+        schema = schemas.get("file-asset")
+        if schema is None:
+            continue
+        after_checked = validate_file_asset_snapshot(
+            schema,
+            candidate.object_id,
+            candidate.manifest_data,
+            candidate.payload_data,
+            member_names=candidate.member_names,
+        )
+        if after_checked.check_status != "mechanically_valid" or after_checked.fields is None:
+            continue
+        if candidate.head_exists is None:
+            unavailable.append(
+                _issue("fact_trace_unverifiable", f"无法确认 FileAsset HEAD before-image: {candidate.object_id}")
+            )
+            continue
+        # The FileAsset lifecycle layer owns invalid state transitions.  Trace
+        # comparison applies only to the two lifecycle after-images it allows.
+        if (not candidate.head_exists and after_checked.fields.get("status") != "active") or (
+            candidate.head_exists and after_checked.fields.get("status") != "deleted"
+        ):
+            continue
+        before_fields: dict[str, object] | None = None
+        if candidate.head_exists:
+            if candidate.head_manifest_data is None or candidate.head_payload_data is None:
+                unavailable.append(
+                    _issue(
+                        "fact_trace_unverifiable",
+                        f"FileAsset HEAD before-image 无法可信读取: {candidate.object_id}",
+                    )
+                )
+                continue
+            before_checked = validate_file_asset_snapshot(
+                schema,
+                candidate.object_id,
+                candidate.head_manifest_data,
+                candidate.head_payload_data,
+                member_names=candidate.head_member_names,
+            )
+            if before_checked.check_status != "mechanically_valid" or before_checked.fields is None:
+                unavailable.append(
+                    _issue(
+                        "fact_trace_unverifiable",
+                        f"FileAsset HEAD before-image 不可机械消费: {candidate.object_id}",
+                    )
+                )
+                continue
+            before_fields = before_checked.fields
+        after_log = after_checked.fields.get("change_log")
+        before_log = None if before_fields is None else before_fields.get("change_log")
+        if not isinstance(after_log, list):
+            failures.append(_issue("fact_trace_missing", f"FileAsset 候选缺少可校验 change_log: {candidate.object_id}"))
+            continue
+        if before_fields is None:
+            # Like single-file facts, a FileAsset can accumulate lawful
+            # pre-commit history; its complete new history is bound here.
+            appended = after_log
+        elif isinstance(before_log, list) and after_log[: len(before_log)] == before_log:
+            appended = after_log[len(before_log) :]
+        else:
+            failures.append(
+                _issue(
+                    "fact_trace_transition_invalid",
+                    f"FileAsset 流水前后像不能确定唯一新增事件: {candidate.object_id}",
+                )
+            )
+            continue
+        if not appended or not all(isinstance(entry, dict) for entry in appended):
+            requirement = "至少含一条初始流水" if before_fields is None else "恰新增一条流水"
+            failures.append(
+                _issue("fact_trace_append_invalid", f"FileAsset 候选必须{requirement}: {candidate.object_id}")
+            )
+            continue
+        if any(
+            {
+                "session_id": entry.get("session_id"),
+                "agent_id": entry.get("signature", {}).get("agent_id")
+                if isinstance(entry.get("signature"), dict)
+                else None,
+                "host_environment": entry.get("signature", {}).get("host_environment")
+                if isinstance(entry.get("signature"), dict)
+                else None,
+            }
+            != expected
+            for entry in appended
+        ):
+            failures.append(
+                _issue(
+                    "fact_trace_signature_mismatch",
+                    "FileAsset 新增流水与提交 footer 的 Session-ID/Agent-ID/Host-Environment 不一致: "
+                    f"{candidate.object_id}",
+                )
+            )
+    return unavailable, failures
+
+
 def validate_commit(contract: CommitContractProjection, value: CommitValidationInput) -> CommitValidationResult:
     """Validate only the deterministic subset; never reads Git or the filesystem."""
 
@@ -613,11 +812,21 @@ def validate_commit(contract: CommitContractProjection, value: CommitValidationI
                     failures.append(_issue("key_changes_required", "body 必须含关键变更列表"))
                 if breaking and not _heading_has_list(content_body_lines, "影响边界:"):
                     failures.append(_issue("impact_boundary_required", "使用 ! 时必须含影响边界列表"))
-            failures.extend(_signature_trailer_issues(lines[1:]))
-    outcome: Literal["passed", "failed", "unverifiable"] = "failed" if failures or fact_failures else "passed"
+            signature_issues = _signature_trailer_issues(lines[1:])
+            failures.extend(signature_issues)
+            if not signature_issues:
+                trace_unavailable, trace_failures = _fact_trace_issues(value, _footer_trailers(lines[1:]))
+                unavailable.extend(trace_unavailable)
+                failures.extend(trace_failures)
+    # A mechanically invalid after-image remains a failure even when a separate
+    # candidate cannot be observed completely.  The Gate must preserve the
+    # decisive rejection rather than downgrade it to an observation gap.
+    outcome: Literal["passed", "failed", "unverifiable"] = (
+        "failed" if failures or fact_failures else "unverifiable" if unavailable else "passed"
+    )
     return CommitValidationResult(
         outcome,
-        tuple(failures + fact_failures),
+        tuple(unavailable + failures + fact_failures),
         normalized,
         header,
         body,

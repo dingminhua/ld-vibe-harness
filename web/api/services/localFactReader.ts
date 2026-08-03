@@ -168,8 +168,12 @@ function isConsumableRecordMember(type: LocalFactType, field: string, member: Re
   if (field === 'change_log') {
     const signature = member.signature
     return typeof member.at === 'string' && member.at.trim().length > 0
+      && typeof member.session_id === 'string' && member.session_id.trim().length > 0
       && typeof member.summary === 'string' && member.summary.trim().length > 0
-      && isRecord(signature) && typeof signature.signer_type === 'string'
+      && isRecord(signature)
+      && Object.keys(signature).length === 2
+      && typeof signature.agent_id === 'string' && signature.agent_id.trim().length > 0
+      && typeof signature.host_environment === 'string' && signature.host_environment.trim().length > 0
   }
   if (type !== 'spark' || field !== 'evolution') return true
   return typeof member.at === 'string' && member.at.trim().length > 0

@@ -25,6 +25,7 @@ from ldvh.facts.update import atomic_replace_text_if_unchanged
 from ldvh.facts.validation import (
     parse_rfc3339,
     study_report_creation_issues,
+    timestamp_appended_change_log,
     validate_change_log_transition,
     validate_fact_object,
 )
@@ -144,6 +145,7 @@ def _candidate(
         "created_at": before["created_at"],
         "updated_at": command.event_at,
     }
+    timestamp_appended_change_log(fields, command.event_at)
     text = serialize_fact_object(layout, fields, command.body)
     parsed = parse_study_markdown(text) if layout.carrier == "markdown" else parse_yaml_object(text)
     issues = list(parsed.issues)
@@ -234,6 +236,7 @@ def apply_fact_update_locked(command: FactUpdateCommand) -> FactUpdateResult:
         "created_at": current.fields["created_at"],
         "updated_at": command.event_at,
     }
+    timestamp_appended_change_log(proposed, command.event_at)
     change_log_issues = validate_change_log_transition(current.fields, proposed)
     if change_log_issues:
         return FactUpdateResult(

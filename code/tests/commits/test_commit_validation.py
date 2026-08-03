@@ -144,14 +144,15 @@ def test_signature_footer_requires_session_and_two_signature_fields(contract: Co
     assert result.outcome == "failed"
     assert "signature_trailer_missing" in _codes(result)
 
-    with_optional_legacy_trailer = validate_commit(
+    with_retired_legacy_trailer = validate_commit(
         contract,
         _input(
             contract,
             message="docs: 增加署名\n\nSession-ID: test\nSigner-Type: person\nAgent-ID: a\nHost-Environment: b",
         ),
     )
-    assert with_optional_legacy_trailer.outcome == "passed"
+    assert with_retired_legacy_trailer.outcome == "failed"
+    assert "signer_type_retired" in _codes(with_retired_legacy_trailer)
 
 
 @pytest.mark.parametrize(
@@ -188,8 +189,8 @@ def test_validator_does_not_read_git_or_filesystem(contract: CommitContractProje
 
 
 def _spark_schema() -> FactSchema:
-    def field(path: str, presence: str = "required") -> ProjectedField:
-        return ProjectedField(path, "string", presence, None, "test-registry")
+    def field(path: str, json_type: str = "string", presence: str = "required") -> ProjectedField:
+        return ProjectedField(path, json_type, presence, None, "test-registry")
 
     return FactSchema(
         "spark",
@@ -201,7 +202,14 @@ def _spark_schema() -> FactSchema:
             field("priority"),
             field("created_at"),
             field("updated_at"),
-            field("summary", "conditional"),
+            field("summary", presence="conditional"),
+            field("change_log", "array"),
+            field("change_log.signature", "object"),
+            field("change_log.signature.agent_id"),
+            field("change_log.signature.host_environment"),
+            field("change_log.session_id"),
+            field("change_log.at"),
+            field("change_log.summary"),
         ),
     )
 
@@ -233,6 +241,18 @@ def _file_asset_schema() -> FactSchema:
             field("signature.agent_id", presence="conditional"),
             field("signature.host_environment", presence="conditional"),
             field("disposition_summary", presence="conditional"),
+            field("deleted_at", presence="conditional"),
+            field("recovery", "object", presence="conditional"),
+            field("recovery.commit", presence="conditional"),
+            field("recovery.path", presence="conditional"),
+            field("recovery.blob_oid", presence="conditional"),
+            field("change_log", "array"),
+            field("change_log.signature", "object"),
+            field("change_log.signature.agent_id"),
+            field("change_log.signature.host_environment"),
+            field("change_log.session_id"),
+            field("change_log.at"),
+            field("change_log.summary"),
         ),
     )
 
@@ -260,6 +280,13 @@ def _file_asset_candidate(
         f"content_sha256: {hashlib.sha256(payload).hexdigest()}\n"
         "signature:\n"
         "  signer_type: human\n"
+        "change_log:\n"
+        "  - signature:\n"
+        "      agent_id: test-agent\n"
+        "      host_environment: test-environment\n"
+        "    session_id: test-session\n"
+        '    at: "2026-07-31T10:00:00+08:00"\n'
+        "    summary: 建立审计文件资产\n"
     ).encode()
     return StagedFileAssetCandidate(
         object_id,
@@ -272,6 +299,48 @@ def _file_asset_candidate(
     )
 
 
+def _deleted_file_asset_candidate(*, appended_session_id: str = "test-session") -> StagedFileAssetCandidate:
+    active = _file_asset_candidate()
+    assert active.manifest_data is not None and active.payload_data is not None
+    deleted = active.manifest_data.replace(
+        b'updated_at: "2026-07-31T10:00:00+08:00"\nstatus: active\n',
+        (
+            'updated_at: "2026-08-01T10:00:00+08:00"\n'
+            "status: deleted\n"
+            'deleted_at: "2026-08-01T10:00:00+08:00"\n'
+            "disposition_summary: 删除测试资产 payload\n"
+            "recovery:\n"
+            "  commit: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n"
+            "  path: ldvh-base/file-assets/file-asset-0001/payload\n"
+            "  blob_oid: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n"
+        ).encode(),
+    ).replace(
+        "    summary: 建立审计文件资产\n".encode(),
+        (
+            "    summary: 建立审计文件资产\n"
+            "  - signature:\n"
+            "      agent_id: test-agent\n"
+            "      host_environment: test-environment\n"
+            f"    session_id: {appended_session_id}\n"
+            '    at: "2026-08-01T10:00:00+08:00"\n'
+            "    summary: 删除审计文件资产 payload\n"
+        ).encode(),
+    )
+    return StagedFileAssetCandidate(
+        "file-asset-0001",
+        ("ldvh-base/file-assets/file-asset-0001/file-asset.yaml",),
+        ("file-asset.yaml",),
+        deleted,
+        None,
+        True,
+        head_commit="a" * 40,
+        head_member_names=("file-asset.yaml", "payload"),
+        head_manifest_data=active.manifest_data,
+        head_payload_data=active.payload_data,
+        head_payload_oid="b" * 40,
+    )
+
+
 _VALID_SPARK = (
     "object_id: spark-0001\n"
     "fact_type_key: spark\n"
@@ -280,6 +349,13 @@ _VALID_SPARK = (
     "priority: P1\n"
     "created_at: 2026-07-01T00:00:00+08:00\n"
     "updated_at: 2026-07-01T00:00:00+08:00\n"
+    "change_log:\n"
+    "  - signature:\n"
+    "      agent_id: test-agent\n"
+    "      host_environment: test-environment\n"
+    "    session_id: test-session\n"
+    "    at: 2026-07-01T00:00:00+08:00\n"
+    "    summary: 建立测试火花\n"
 ).encode()
 
 
@@ -312,13 +388,84 @@ def test_invalid_staged_fact_candidate_fails_with_path_precise_diagnostics(
 
 
 def test_valid_staged_fact_candidate_passes(contract: CommitContractProjection) -> None:
+    candidate = _fact_candidate(head_exists=False)
     result = validate_commit(
         contract,
-        _input(contract, fact_candidates=(_fact_candidate(),), fact_schemas=(_spark_schema(),)),
+        _input(contract, fact_candidates=(candidate,), fact_schemas=(_spark_schema(),)),
     )
 
     assert result.outcome == "passed"
     assert result.issues == ()
+
+
+def test_new_fact_change_log_must_match_commit_footer(contract: CommitContractProjection) -> None:
+    mismatched = _VALID_SPARK.replace(b"session_id: test-session", b"session_id: another-session")
+    result = validate_commit(
+        contract,
+        _input(
+            contract,
+            fact_candidates=(_fact_candidate(data=mismatched, head_exists=False),),
+            fact_schemas=(_spark_schema(),),
+        ),
+    )
+
+    assert result.outcome == "failed"
+    assert "fact_trace_signature_mismatch" in _codes(result)
+
+
+def test_new_fact_with_multiple_precommit_change_logs_matches_commit_footer(
+    contract: CommitContractProjection,
+) -> None:
+    data = _VALID_SPARK.replace(
+        b"updated_at: 2026-07-01T00:00:00+08:00",
+        b"updated_at: 2026-07-01T01:00:00+08:00",
+    ) + (
+        "  - signature:\n"
+        "      agent_id: test-agent\n"
+        "      host_environment: test-environment\n"
+        "    session_id: test-session\n"
+        "    at: 2026-07-01T01:00:00+08:00\n"
+        "    summary: 补充测试火花\n"
+    ).encode()
+
+    result = validate_commit(
+        contract,
+        _input(
+            contract,
+            fact_candidates=(_fact_candidate(data=data, head_exists=False),),
+            fact_schemas=(_spark_schema(),),
+        ),
+    )
+
+    assert result.outcome == "passed"
+
+
+def test_new_fact_rejects_any_precommit_change_log_not_matching_footer(
+    contract: CommitContractProjection,
+) -> None:
+    data = _VALID_SPARK.replace(
+        b"updated_at: 2026-07-01T00:00:00+08:00",
+        b"updated_at: 2026-07-01T01:00:00+08:00",
+    ) + (
+        "  - signature:\n"
+        "      agent_id: test-agent\n"
+        "      host_environment: test-environment\n"
+        "    session_id: another-session\n"
+        "    at: 2026-07-01T01:00:00+08:00\n"
+        "    summary: 补充测试火花\n"
+    ).encode()
+
+    result = validate_commit(
+        contract,
+        _input(
+            contract,
+            fact_candidates=(_fact_candidate(data=data, head_exists=False),),
+            fact_schemas=(_spark_schema(),),
+        ),
+    )
+
+    assert result.outcome == "failed"
+    assert "fact_trace_signature_mismatch" in _codes(result)
 
 
 def test_illegal_object_id_filename_fails_without_reading_blob(
@@ -348,6 +495,27 @@ def test_fact_candidate_observation_gap_is_unverifiable(contract: CommitContract
     assert "fact_candidate_unverifiable" in _codes(result)
 
 
+def test_invalid_fact_is_not_downgraded_by_another_candidate_trace_gap(
+    contract: CommitContractProjection,
+) -> None:
+    invalid = _fact_candidate(data=b"title: malformed\n")
+    trace_gap = _fact_candidate(
+        path="ldvh-base/sparks/spark-0002.yaml",
+        object_id="spark-0002",
+        data=_VALID_SPARK.replace(b"spark-0001", b"spark-0002"),
+        head_exists=True,
+    )
+
+    result = validate_commit(
+        contract,
+        _input(contract, fact_candidates=(invalid, trace_gap), fact_schemas=(_spark_schema(),)),
+    )
+
+    assert result.outcome == "failed"
+    assert "fact_candidate_invalid" in _codes(result)
+    assert "fact_trace_unverifiable" in _codes(result)
+
+
 def test_complete_valid_new_file_asset_after_image_passes(contract: CommitContractProjection) -> None:
     result = validate_commit(
         contract,
@@ -359,6 +527,46 @@ def test_complete_valid_new_file_asset_after_image_passes(contract: CommitContra
     )
 
     assert result.outcome == "passed"
+
+
+def test_new_file_asset_change_log_must_match_commit_footer(contract: CommitContractProjection) -> None:
+    candidate = _file_asset_candidate()
+    assert candidate.manifest_data is not None
+    mismatched = candidate.manifest_data.replace(b"session_id: test-session", b"session_id: another-session")
+    result = validate_commit(
+        contract,
+        _input(
+            contract,
+            file_asset_candidates=(
+                StagedFileAssetCandidate(
+                    candidate.object_id,
+                    candidate.paths,
+                    candidate.member_names,
+                    mismatched,
+                    candidate.payload_data,
+                    candidate.head_exists,
+                ),
+            ),
+            fact_schemas=(_file_asset_schema(),),
+        ),
+    )
+
+    assert result.outcome == "failed"
+    assert "fact_trace_signature_mismatch" in _codes(result)
+
+
+def test_deleted_file_asset_change_log_must_match_commit_footer(contract: CommitContractProjection) -> None:
+    result = validate_commit(
+        contract,
+        _input(
+            contract,
+            file_asset_candidates=(_deleted_file_asset_candidate(appended_session_id="another-session"),),
+            fact_schemas=(_file_asset_schema(), FactSchema("workcase", ())),
+        ),
+    )
+
+    assert result.outcome == "failed"
+    assert "fact_trace_signature_mismatch" in _codes(result)
 
 
 def test_incomplete_new_file_asset_after_image_fails(contract: CommitContractProjection) -> None:

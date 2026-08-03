@@ -281,6 +281,11 @@ def _head_blob(
     if isinstance(listing, CommitCandidateObservationIssue):
         return None, None, listing.message
     entries = tuple(item for item in listing.split(b"\0") if item)
+    if not entries:
+        # An unborn HEAD or a newly created fact has no before image.  This is
+        # observable, not an adapter failure; callers keep the explicit
+        # ``head_exists`` bit instead of guessing from a missing blob.
+        return None, None, None
     if len(entries) != 1:
         return None, None, "HEAD path did not resolve to exactly one entry"
     meta, separator, observed_path = entries[0].partition(b"\t")
@@ -439,6 +444,12 @@ def _fact_candidates(
             )
             continue
         data, problem = _read_staged_blob(worktree, entries[0].oid, index_file=index_file)
+        head_data, head_oid, head_problem = _head_blob(
+            worktree,
+            path,
+            index_file=index_file,
+            max_bytes=MAX_FACT_BYTES,
+        )
         candidates.append(
             StagedFactCandidate(
                 path,
@@ -446,6 +457,9 @@ def _fact_candidates(
                 object_id,
                 data,
                 problem,
+                head_data=head_data,
+                head_exists=head_oid is not None,
+                head_observation_issue=head_problem,
                 **target_kwargs,
             )
         )

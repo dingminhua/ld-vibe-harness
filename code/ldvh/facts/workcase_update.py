@@ -32,7 +32,12 @@ from ldvh.facts.schema import FactSchema
 from ldvh.facts.transitions import validate_workcase_transition
 from ldvh.facts.update import atomic_replace_text_if_unchanged
 from ldvh.facts.update_application import MANAGED_FIELDS, UpdateStatus
-from ldvh.facts.validation import parse_rfc3339, validate_change_log_transition, validate_fact_object
+from ldvh.facts.validation import (
+    parse_rfc3339,
+    timestamp_appended_change_log,
+    validate_change_log_transition,
+    validate_fact_object,
+)
 from ldvh.filesystem import AtomicWriteResult, durable_writes_enabled
 from ldvh.source_references import validate_source_reference
 
@@ -134,13 +139,16 @@ def _complete_after(
     *,
     updated_at: object,
 ) -> dict[str, Any]:
-    return {
+    fields = {
         **dict(command.supplied),
         "object_id": before["object_id"],
         "fact_type_key": before["fact_type_key"],
         "created_at": before["created_at"],
         "updated_at": updated_at,
     }
+    if isinstance(updated_at, str):
+        timestamp_appended_change_log(fields, updated_at)
+    return fields
 
 
 def _operation_boundary_issues(
@@ -411,6 +419,8 @@ def project_closed_workcase_candidate(before: Mapping[str, Any]) -> dict[str, An
     for field_name in _CLOSED_PRESERVED_FIELDS:
         if field_name in before:
             candidate[field_name] = deepcopy(before[field_name])
+    if "change_log" in before:
+        candidate["change_log"] = deepcopy(before["change_log"])
     candidate["closure_outcome"] = deepcopy(proposal.get("proposed_outcome"))
     candidate["disposition_summary"] = deepcopy(proposal.get("proposed_disposition_summary"))
 

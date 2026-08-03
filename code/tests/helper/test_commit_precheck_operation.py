@@ -332,6 +332,13 @@ _VALID_SPARK = (
     "fact_type_key: spark\n"
     "created_at: '2026-07-01T00:00:00+08:00'\n"
     "updated_at: '2026-07-01T00:00:00+08:00'\n"
+    "change_log:\n"
+    "  - signature:\n"
+    "      agent_id: test-agent\n"
+    "      host_environment: test-environment\n"
+    "    session_id: test-session\n"
+    "    at: '2026-07-01T00:00:00+08:00'\n"
+    "    summary: 建立测试火花\n"
 )
 
 
@@ -436,6 +443,13 @@ def _stage_file_asset(
         f"content_sha256: {hashlib.sha256(declared).hexdigest()}\n"
         "signature:\n"
         "  signer_type: human\n"
+        "change_log:\n"
+        "  - signature:\n"
+        "      agent_id: test-agent\n"
+        "      host_environment: test-environment\n"
+        "    session_id: test-session\n"
+        '    at: "2026-07-31T10:00:00+08:00"\n'
+        "    summary: 建立审计文件资产\n"
     )
     (directory / "file-asset.yaml").write_text(manifest, encoding="utf-8")
     (directory / "payload").write_bytes(payload)
@@ -461,6 +475,19 @@ def _stage_deleted_tombstone(project: Path, manifest_path: str, payload_path: st
         f"content_sha256: {hashlib.sha256(b'objective audit bytes\n').hexdigest()}\n"
         "signature:\n"
         "  signer_type: human\n"
+        "change_log:\n"
+        "  - signature:\n"
+        "      agent_id: test-agent\n"
+        "      host_environment: test-environment\n"
+        "    session_id: test-session\n"
+        '    at: "2026-07-31T10:00:00+08:00"\n'
+        "    summary: 建立审计文件资产\n"
+        "  - signature:\n"
+        "      agent_id: test-agent\n"
+        "      host_environment: test-environment\n"
+        "    session_id: test-session\n"
+        '    at: "2026-08-01T10:00:00+08:00"\n'
+        "    summary: 删除审计文件资产 payload\n"
         "disposition_summary: Human 确认不再保留当前 payload。\n"
         'deleted_at: "2026-08-01T10:00:00+08:00"\n'
         "recovery:\n"
@@ -522,6 +549,26 @@ def test_complete_valid_new_file_asset_passes_helper_and_native_gate(tmp_path: P
     assert helper.response["result"]["mechanical_outcome"] == gate.outcome == "passed"
     assert helper.response["result"]["issues"] == []
     assert helper.response["result"]["candidate"]["paths"] == [manifest, payload]
+
+
+def test_file_asset_change_log_footer_mismatch_fails_helper_and_native_gate(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    manifest, payload = _stage_file_asset(project)
+    _git(project, "reset", "-q", "change.txt")
+    path = project / manifest
+    path.write_text(
+        path.read_text(encoding="utf-8").replace("session_id: test-session", "session_id: another-session"),
+        encoding="utf-8",
+    )
+    _git(project, "add", manifest)
+    message = "test(file-asset): 验证流水署名不一致拦截\n\n关键变更:\n- 伪造 FileAsset 会话标识"
+
+    helper = handle_request("call", "precheck-git-commit", _payload(workspace, project, message))
+    gate = _gate(workspace, project, message)
+
+    assert helper.response["result"]["mechanical_outcome"] == gate.outcome == "failed"
+    assert {item["code"] for item in helper.response["result"]["issues"]} == {"fact_trace_signature_mismatch"}
+    assert _helper_issues_as_gate_diagnostics(helper.response) == gate.issues
 
 
 def test_tampered_new_file_asset_fails_helper_and_native_gate(tmp_path: Path) -> None:

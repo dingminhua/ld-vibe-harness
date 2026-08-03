@@ -45,6 +45,13 @@ updated_at: 2026-07-14T10:00:00+08:00
 status: open
 summary: Before update
 priority: P2
+change_log:
+  - signature:
+      agent_id: test-agent
+      host_environment: test
+    session_id: test-session
+    at: 2026-07-14T09:00:00+08:00
+    summary: Create test fact
 """,
         encoding="utf-8",
     )
@@ -186,6 +193,19 @@ def _mutable(item: dict[str, object]) -> dict[str, object]:
     return fields
 
 
+def _append_update_log(fields: dict[str, object]) -> None:
+    change_log = fields.get("change_log")
+    assert isinstance(change_log, list)
+    change_log.append(
+        {
+            "signature": {"agent_id": "test-agent", "host_environment": "test"},
+            "session_id": "test-session",
+            "at": "2000-01-01T00:00:00Z",
+            "summary": "Update test fact",
+        }
+    )
+
+
 def _update_payload(
     workspace: Path,
     project: Path,
@@ -269,6 +289,7 @@ def test_update_replaces_full_target_and_preserves_managed_identity(tmp_path: Pa
     before_fields = dict(before["fact_object"])
     target = _mutable(before)
     target["summary"] = "After update"
+    _append_update_log(target)
     fact.chmod(0o640)
 
     result = handle_request(

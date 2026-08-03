@@ -128,3 +128,33 @@ test('Spark evolution members without a timestamp and forbidden Pitfall tags rem
     await rm(root, { recursive: true, force: true });
   }
 });
+
+test('change_log consumes the two-field signature contract and exposes incomplete records', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'ldvh-field-reader-'));
+  const scope: LocalFactScope = { worktreeLocator: root, governedProjectId: 'fixture' };
+  const directory = path.join(root, 'ldvh-base', 'sparks');
+  await mkdir(directory, { recursive: true });
+  try {
+    await writeFile(path.join(directory, 'spark-0001.yaml'), [
+      'object_id: spark-0001', 'fact_type_key: spark', 'title: Trace contract', 'status: open', 'priority: P1',
+      'created_at: "2026-01-01"', 'updated_at: "2026-01-02"', 'summary: Read contract', 'change_log:',
+      '  - signature:', '      agent_id: codex', '      host_environment: Cindy',
+      '    session_id: session-one', '    at: "2026-01-01T00:00:00+08:00"', '    summary: Created',
+      '  - signature:', '      agent_id: codex', '      host_environment: Cindy', '      signer_type: ai-agent',
+      '    session_id: session-two', '    at: "2026-01-02T00:00:00+08:00"', '    summary: Retired shape',
+    ].join('\n'), 'utf8');
+    const detail = await readLocalFact('spark', 'spark-0001', scope);
+    assert.equal(detail.status, 'ok');
+    if (detail.status === 'ok') {
+      assert.equal((detail.item.fact_object?.change_log as unknown[])?.length, 2);
+      assert.deepEqual(detail.item.unparsed_structures, [{
+        path: 'change_log[1]', reason: 'unparseable_member', raw_value: {
+          signature: { agent_id: 'codex', host_environment: 'Cindy', signer_type: 'ai-agent' },
+          session_id: 'session-two', at: '2026-01-02T00:00:00+08:00', summary: 'Retired shape',
+        },
+      }]);
+    }
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});

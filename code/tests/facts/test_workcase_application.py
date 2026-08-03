@@ -188,6 +188,14 @@ def _active(
         "title": title,
         "created_at": "2026-07-26T09:00:00+08:00",
         "updated_at": "2026-07-26T11:00:00+08:00",
+        "change_log": [
+            {
+                "signature": {"agent_id": "test-agent", "host_environment": "test"},
+                "session_id": "test-session",
+                "at": "2026-07-26T09:00:00+08:00",
+                "summary": "建立测试 WorkCase。",
+            }
+        ],
         "status": "open",
         "goal": "形成一个可由 Human 判断的完整结果。",
         "scope": "只处理当前测试责任。",
@@ -240,6 +248,14 @@ def _closing(
         "title": "等待关闭的责任",
         "created_at": "2026-07-26T09:00:00+08:00",
         "updated_at": "2026-07-26T12:00:00+08:00",
+        "change_log": [
+            {
+                "signature": {"agent_id": "test-agent", "host_environment": "test"},
+                "session_id": "test-session",
+                "at": "2026-07-26T09:00:00+08:00",
+                "summary": "建立测试 WorkCase。",
+            }
+        ],
         "status": "open",
         "goal": "形成一个可由 Human 判断的完整结果。",
         "scope": "只处理当前测试责任。",
@@ -324,6 +340,7 @@ def _closed_from(before: dict[str, Any]) -> dict[str, Any]:
         "success_criterion_results": before["success_criterion_results"],
         "result_summary": before["result_summary"],
         "validation_summary": before["validation_summary"],
+        "change_log": before["change_log"],
         "closure_outcome": proposal["proposed_outcome"],
         "disposition_summary": proposal["proposed_disposition_summary"],
     }
@@ -437,13 +454,28 @@ def _command(
     current = _read(project, before["object_id"])
     assert current.check_status == "mechanically_valid", current.issues
     assert current.content_fingerprint is not None
+    candidate_after = deepcopy(after)
+    if (
+        _supplied(candidate_after) != _supplied(before)
+        and isinstance(candidate_after.get("change_log"), list)
+        and candidate_after.get("change_log") == before.get("change_log")
+    ):
+        candidate_after["change_log"] = [
+            *candidate_after["change_log"],
+            {
+                "signature": {"agent_id": "test-agent", "host_environment": "test"},
+                "session_id": "test-session",
+                "at": "2000-01-01T00:00:00Z",
+                "summary": "更新测试 WorkCase。",
+            },
+        ]
     return WorkCaseWriteCommand(
         boundary=project.boundary,
         schemas=project.schemas,
         schema=project.schemas["workcase"],
         object_id=before["object_id"],
         expected_content_fingerprint=current.content_fingerprint,
-        supplied=_supplied(after),
+        supplied=_supplied(candidate_after),
         event_at=event_at,
         mode=mode,
         authorization_reference=authorization_reference,
@@ -1664,6 +1696,106 @@ def test_close_workcase_projects_the_current_proposal_and_removes_active_state(
     assert "phase" not in result.readback.fields
     assert "closure_proposal" not in result.readback.fields
     assert "execution_approval" not in result.readback.fields
+    assert result.readback.fields["change_log"][:-1] == before["change_log"]
+    assert result.readback.fields["change_log"][-1]["at"] == result.readback.fields["updated_at"]
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        lambda after: after.pop("change_log"),
+        lambda after: after.__setitem__("change_log", []),
+        lambda after: after["change_log"].append(
+            {
+                "signature": {"agent_id": "test-agent", "host_environment": "test"},
+                "session_id": "test-session",
+                "at": "2000-01-01T00:00:00Z",
+                "summary": "伪造的额外关闭流水。",
+            }
+        ),
+    ],
+)
+def test_close_rejects_missing_or_extra_change_log_entries_without_writing(
+    current_specs_repository: Path,
+    tmp_path: Path,
+    mutation: Callable[[dict[str, Any]], None],
+) -> None:
+    project = _project(current_specs_repository, tmp_path)
+    before = _closing("workcase-0001")
+    path = _write(project, before)
+    after = _closed_from(before)
+    mutation(after)
+    original = path.read_bytes()
+
+    result = apply_workcase_write(
+        _command(
+            project,
+            before,
+            after,
+            mode="close",
+            authorization_reference=_human_reference(),
+        )
+    )
+
+    assert result.status == "candidate_rejected"
+    assert any(issue.field_path == "change_log" for issue in result.issues)
+    assert path.read_bytes() == original
+
+
+def test_correct_closed_workcase_appends_one_change_log_entry(
+    current_specs_repository: Path,
+    tmp_path: Path,
+) -> None:
+    project = _project(current_specs_repository, tmp_path)
+    before = _closed_from(_closing("workcase-0001"))
+    before["updated_at"] = "2026-07-26T12:00:00+08:00"
+    _write(project, before)
+    after = {**before, "title": "更正后的关闭标题"}
+
+    result = apply_workcase_write(
+        _command(
+            project,
+            before,
+            after,
+            mode="correct",
+            authorization_reference=_human_reference(),
+            independent_review_reference=_review_reference(),
+        )
+    )
+
+    assert result.status == "updated"
+    assert result.readback is not None and result.readback.fields is not None
+    assert result.readback.fields["change_log"][:-1] == before["change_log"]
+    assert result.readback.fields["change_log"][-1]["at"] == result.readback.fields["updated_at"]
+
+
+def test_correct_closed_legacy_without_change_log_cannot_invent_history(
+    current_specs_repository: Path,
+    tmp_path: Path,
+) -> None:
+    project = _project(current_specs_repository, tmp_path)
+    before = _closed_from(_closing("workcase-0001"))
+    before.pop("change_log")
+    before["updated_at"] = "2026-07-26T12:00:00+08:00"
+    path = _write(project, before)
+    assert _read(project, before["object_id"]).check_status == "mechanically_valid"
+    after = {**before, "title": "不应补造历史的更正标题"}
+    original = path.read_bytes()
+
+    result = apply_workcase_write(
+        _command(
+            project,
+            before,
+            after,
+            mode="correct",
+            authorization_reference=_human_reference(),
+            independent_review_reference=_review_reference(),
+        )
+    )
+
+    assert result.status == "candidate_rejected"
+    assert any(issue.field_path == "change_log" for issue in result.issues)
+    assert path.read_bytes() == original
 
 
 def test_close_rejects_any_change_to_a_retained_terminal_fact(
@@ -2656,6 +2788,37 @@ def test_update_workcase_blocked_freeze_rejects_contributed_to_change(
     assert result.status == "candidate_rejected"
     assert any(issue.field_path == "relations" for issue in result.issues)
     assert path.read_bytes() == original
+
+
+def test_update_workcase_can_enter_blocked_with_its_required_change_log_append(
+    current_specs_repository: Path,
+    tmp_path: Path,
+) -> None:
+    project = _project(current_specs_repository, tmp_path)
+    before = _gate1_after(_active("workcase-0001"))
+    _write(project, before)
+    after = deepcopy(before)
+    after.update(
+        {
+            "status": "blocked",
+            "blocking_summary": "可信签发根尚未可用，当前责任无法继续。",
+        }
+    )
+    after["work_items"][0].update(
+        {
+            "status": "blocked",
+            "current_summary": "已确认当前缺少可信签发根。",
+            "blocking_summary": "需要 Human 决定可信签发与验证通道。",
+        }
+    )
+
+    result = apply_workcase_write(_command(project, before, after, mode="update"))
+
+    assert result.status == "updated"
+    assert result.readback is not None and result.readback.fields is not None
+    assert result.readback.fields["status"] == "blocked"
+    assert result.readback.fields["change_log"][:-1] == before["change_log"]
+    assert result.readback.fields["change_log"][-1]["at"] == result.readback.fields["updated_at"]
 
 
 def test_update_workcase_human_closure_confirming_allows_legal_relation_but_rejects_every_update(

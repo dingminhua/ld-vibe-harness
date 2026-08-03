@@ -59,6 +59,14 @@ def _command(current_specs_repository: Path, tmp_path: Path) -> FactCreationComm
             "status": "open",
             "summary": "The application layer owns the complete creation transaction.",
             "priority": "P2",
+            "change_log": [
+                {
+                    "signature": {"agent_id": "test-agent", "host_environment": "test"},
+                    "session_id": "test-session",
+                    "at": "2000-01-01T00:00:00Z",
+                    "summary": "Create the test fact.",
+                }
+            ],
         },
         body=None,
     )
@@ -141,6 +149,14 @@ def _workcase_command(current_specs_repository: Path, tmp_path: Path) -> FactCre
                 "covered_quality_gate_ids": ["independent-result-review"],
             }
         ],
+        "change_log": [
+            {
+                "signature": {"agent_id": "test-agent", "host_environment": "test"},
+                "session_id": "test-session",
+                "at": "2000-01-01T00:00:00Z",
+                "summary": "Create the test WorkCase.",
+            }
+        ],
     }
     return FactCreationCommand(
         boundary=base.boundary,
@@ -180,6 +196,9 @@ def _write_existing_workcase(
             "relations": [_depends_on(depends_on)],
         }
     )
+    change_log = fields.get("change_log")
+    if isinstance(change_log, list) and change_log and isinstance(change_log[0], dict):
+        change_log[0]["at"] = fields["created_at"]
     path = command.boundary.worktree_root / LAYOUTS["workcase"].canonical_path(object_id)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
@@ -358,9 +377,17 @@ def test_unrelated_invalid_workcase_chain_does_not_block_spark_creation(
         supplied={
             "title": "Independent Spark creation",
             "status": "open",
-            "summary": "The unrelated WorkCase chain does not govern this Spark.",
-            "priority": "P2",
-        },
+                "summary": "The unrelated WorkCase chain does not govern this Spark.",
+                "priority": "P2",
+                "change_log": [
+                    {
+                        "signature": {"agent_id": "test-agent", "host_environment": "test"},
+                        "session_id": "test-session",
+                        "at": "2000-01-01T00:00:00Z",
+                        "summary": "Create the independent test Spark.",
+                    }
+                ],
+            },
         body=None,
     )
 

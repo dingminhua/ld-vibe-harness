@@ -339,7 +339,7 @@ WorkCase 只有本文与 05.Att.01 共同定义的当前字段和结构。任何
 
 closed 对象的必填集是：`object_id`、`fact_type_key`、`title`、`created_at`、`updated_at`、`status=closed`、`goal`、`scope`、`success_criterion_definitions`、`success_criterion_results`、顶层 `result_summary`、`validation_summary`、`closure_outcome` 和 `disposition_summary`。
 
-closed 的条件集只有：实际存在的 `residual_responsibilities`、从关闭 proposal 原样映射的非空 `spark_suggestions`、实际成立的 `routed-to`、`contributed-to`、`has-file-asset` 与 `related-to` relations，以及关闭后仍有独立消费价值的 `urls`。必填集不得缺失，条件集不适用时必须省略，两者之外的字段全部禁止。
+closed 的条件集只有：已有共享 `change_log` 的保留与本次受控关闭或终态更正所追加的一条流水、实际存在的 `residual_responsibilities`、从关闭 proposal 原样映射的非空 `spark_suggestions`、实际成立的 `routed-to`、`contributed-to`、`has-file-asset` 与 `related-to` relations，以及关闭后仍有独立消费价值的 `urls`。`change_log` 仍严格服从 05 与字段登记的共享事务约束：历史逐值保留（唯一例外是已定义的 `signer_type` 迁移）、每次受控写只追加一条、其 `at` 由 Code 绑定为本次 `updated_at`；缺失历史的 legacy closed WorkCase 不得借 `correct-closed-workcase` 凭空补写。必填集不得缺失，条件集不适用时必须省略，两者之外的字段全部禁止。
 
 closed 禁止 `phase`、顶层 `summary`、priority、resume、waiting、blocking、plan version、work items、execution authorization、creation/result reviews、execution approval、result version、controller check 和 closure proposal。closed 没有 `phase=closed`，也没有 `closed_at`。
 
@@ -444,7 +444,7 @@ phase 变化只允许以 before/after 均为 `status=open` 执行；`blocked` �
 - 除 `human_closure_confirming` 始终禁止 outgoing `depends-on` 外，其它活动 phase 只可按 §8 形成、更正或解除 `depends-on`；变更前必须吸收仍有当前价值的依赖边界并完成引用/图检查，`routed-to` 仍禁止；Gate2 发现新依赖时不退回，由当前关闭操作拒绝并交由后续新 WorkCase/Gate1 承接；
 - `contributed-to` 只可在 `human_closure_confirming` 以外的活动 phase、且完整 `status=draft` Pitfall target 已由当前 execution authorization 逐项覆盖并创建回读之后按 §8 形成；该边不指向 Spark、ADR 或 Study。关系记错时按事实更正解除或更正，不承载生命周期推进；`blocked` 期间 relations 冻结，不创建 draft 或补边；`human_closure_confirming` 中该边冻结，等待期发现尚未保存的完整 Pitfall 时不得退回；
 - `related-to` 只可在活动期对已存在、同项目、mechanically valid 的当前事实形成或依事实更正；不影响 phase、责任或关闭处置，`blocked` 和 `human_closure_confirming` 期间冻结；
-- status 变换、`blocked` 内阻塞原因更新以及对应 `blocking_summary` / 实际 `waiting_on` 的写入和移除只按 §6.3.1，是不受上表限制的 status overlay；`open` 始终禁止顶层 `blocking_summary`。
+- status 变换、`blocked` 内阻塞原因更新以及对应 `blocking_summary` / 实际 `waiting_on` 的写入和移除只按 §6.3.1，是不受上表限制的 status overlay；每个受控写事务按 05 追加的唯一 Code 托管 `change_log` 条目属于该事务的追踪记录，不构成夹带的领域变化；`open` 始终禁止顶层 `blocking_summary`。
 
 除上表与公共 overlay 明示授权的更新外，同 phase 其它字段改写必须拒绝。
 
@@ -686,7 +686,7 @@ WorkCase 的全部活动期写入必须使用 `update-workcase`；关闭必须�
 
 - before 必须为 `phase=human_closure_confirming` 的 mechanically valid WorkCase，`expected_content_fingerprint` 精确绑定 Human 实际判断的完整 source before；
 - 共同 `authorization_reference` 必须回指 Human 当次实际关闭决定；它只用于授权回指，不持久化到 WorkCase，也不证明技术结果真实；
-- after 必须完全满足 §6.1 closed 白名单，并由 before 当前 proposal 确定性形成 outcome、disposition、accepted-stop residuals、spark suggestions 与去重 `routed-to`；调用方不得提交 proposal target fingerprints 之外的第二 route 目标清单或第二 suggestion 清单；`contributed-to` / `has-file-asset` / `related-to` 不属于 proposal 映射，必须与 before 精确相同；
+- after 必须完全满足 §6.1 closed 白名单，并由 before 当前 proposal 确定性形成 outcome、disposition、accepted-stop residuals、spark suggestions 与去重 `routed-to`；调用方必须保留 before 的 `change_log` 并提交恰一条本次关闭流水，Code 将其 `at` 绑定为 `updated_at`；调用方不得提交 proposal target fingerprints 之外的第二 route 目标清单或第二 suggestion 清单；`contributed-to` / `has-file-asset` / `related-to` 不属于 proposal 映射，必须与 before 精确相同；
 - after 中的终态映射和 before 事实保留必须逐值满足 §6.7 第 6–7 项；关闭事务不得同时修正标题、责任、标准、结果、验证或 URL；
 - 操作在同一事务内重新读取全部 proposal route_existing targets，逐个精确比较 fingerprint，并检查同项目、WorkCase open/blocked 或 Spark open 状态、引用、去重与关系图约束；另对 source 完整检查入向 `depends-on`。任一项不成立时 source 零写入；
 - before 满足 §6.3 `SafeConvergenceShape` 时 `creation_reviews`、authorization 与 approval 必须同时缺失；其它 before 必须存在当前 creation reviews、authorization，以及 baseline fingerprint 与当前冻结 baseline 精确匹配的 execution approval；其 `subject_version` 可以早于当前 plan version；
@@ -696,7 +696,7 @@ WorkCase 的全部活动期写入必须使用 `update-workcase`；关闭必须�
 
 本操作复用 05 §11.7 的共同参数与结果形状、§11.8 的共享事务，并在领域 `arguments` 中追加必填 `route_target_fingerprints` array 与必填 `independent_review_reference` object-or-null：
 
-- before 必须是 mechanically valid 的 closed WorkCase，after 必须仍完全满足 §6.1 closed 必填集、条件集与禁止集；status 不变，不重开 phase 或补造活动期记录。invalid、unavailable、not-found 或只能解析部分字段的 before 一律拒绝且零写入；本操作不提供旧形状转换或 invalid 记录修复入口；
+- before 必须是 mechanically valid 的 closed WorkCase，after 必须仍完全满足 §6.1 closed 必填集、条件集与禁止集，并在已有 `change_log` 上严格追加本次终态更正流水；缺失历史的 legacy closed WorkCase 不得由本操作补写。status 不变，不重开 phase 或补造活动期记录。invalid、unavailable、not-found 或只能解析部分字段的 before 一律拒绝且零写入；本操作不提供旧形状转换或 invalid 记录修复入口；
 - 更正只能修复原关闭时已经成立但被记错或遗漏的事实；不得把关闭后才出现的新目标、新责任、新验收边界、target 后续进展或事后方向变化写成原关闭时的事实。新责任必须建立新 WorkCase，必要时由当前 disposition、`routed-to` 链或新对象承接；
 - `route_target_fingerprints[]` 成员字段闭集为 `target` 和 `content_fingerprint`；`target` 使用 05 稳定三元组，`content_fingerprint` 原样复用该 target 当次 `read-fact-objects` 的完整载体 bytes 指纹；数组必须按目标去重，并与 after 全部 `routed-to` targets 精确相等，没有 target 时为空数组；
 - `independent_review_reference` 非空时精确复用 04.Att.01 的单个“来源回指字段” object，不新建裸 string 引用形状；它只定位当次实际独立复核输入，不因存在就证明 Reviewer 独立或结论正确；

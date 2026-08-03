@@ -383,7 +383,15 @@ def test_change_log_accepts_two_field_signatures_and_rejects_bad_order_or_shape(
 
 def test_change_log_is_required_on_creation_and_legacy_history_is_not_fabricated() -> None:
     assert any(issue.field_path == "change_log" for issue in change_log_creation_issues({}))
-    assert validate_change_log_transition({}, {"change_log": []}) == ()
+    assert any(issue.field_path == "change_log" for issue in validate_change_log_transition({}, {"change_log": []}))
+
+
+def test_change_log_creation_rejects_multiple_initial_history_entries() -> None:
+    fields = {
+        "created_at": "2026-08-03T11:00:00+08:00",
+        "change_log": [{"at": "2026-08-03T11:00:00+08:00"}, {"at": "2026-08-03T11:01:00+08:00"}],
+    }
+    assert any(issue.field_path == "change_log" for issue in change_log_creation_issues(fields))
 
 
 def test_change_log_transition_allows_only_legacy_signer_type_removal() -> None:

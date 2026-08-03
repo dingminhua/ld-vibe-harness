@@ -70,7 +70,14 @@ _CLOSED_REQUIRED = frozenset(
     }
 )
 _CLOSED_ALLOWED = frozenset(
-    {*_CLOSED_REQUIRED, "residual_responsibilities", "spark_suggestions", "relations", "urls"}
+    {
+        *_CLOSED_REQUIRED,
+        "change_log",
+        "residual_responsibilities",
+        "spark_suggestions",
+        "relations",
+        "urls",
+    }
 )
 
 
