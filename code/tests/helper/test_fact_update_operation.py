@@ -4,6 +4,7 @@ import json
 import os
 import stat
 import subprocess
+from copy import deepcopy
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -98,6 +99,13 @@ result_summary: The fixture target is available for a complete Spark routing aft
 validation_summary: The fixture target is read through the same project relation checks.
 closure_outcome: completed
 disposition_summary: The bounded fixture responsibility is complete.
+change_log:
+  - signature:
+      agent_id: test-agent
+      host_environment: test
+    session_id: test-session
+    at: 2026-07-14T09:00:00+08:00
+    summary: Create routing target fixture.
 """,
         encoding="utf-8",
     )
@@ -187,7 +195,7 @@ def _read_unchecked(
 
 
 def _mutable(item: dict[str, object]) -> dict[str, object]:
-    fields = dict(item["fact_object"])
+    fields = deepcopy(item["fact_object"])
     for key in ("object_id", "fact_type_key", "created_at", "updated_at"):
         fields.pop(key)
     return fields
@@ -301,6 +309,7 @@ def test_update_reports_the_independent_post_write_integrity_audit(tmp_path: Pat
     before = _read(workspace, project)
     target = _mutable(before)
     target["summary"] = "After update"
+    _append_update_log(target)
 
     response = handle_request(
         "call",
@@ -443,6 +452,13 @@ updated_at: 2026-07-14T10:00:00+08:00
 status: routed
 summary: Before update
 disposition_summary: Incorrectly recorded as routed without a fact target.
+change_log:
+  - signature:
+      agent_id: test-agent
+      host_environment: test
+    session_id: test-session
+    at: 2026-07-14T09:00:00+08:00
+    summary: Create test fact.
 """,
         encoding="utf-8",
     )
@@ -477,6 +493,20 @@ disposition_summary: Incorrectly recorded as routed without a fact target.
                 "disposition_summary": (
                     "The bounded Spark content was directly implemented with no residual fact responsibility."
                 ),
+                "change_log": [
+                    {
+                        "signature": {"agent_id": "test-agent", "host_environment": "test"},
+                        "session_id": "test-session",
+                        "at": "2026-07-14T09:00:00+08:00",
+                        "summary": "Create test fact.",
+                    },
+                    {
+                        "signature": {"agent_id": "test-agent", "host_environment": "test"},
+                        "session_id": "test-session",
+                        "at": "2000-01-01T00:00:00Z",
+                        "summary": "Repair invalid test fact.",
+                    }
+                ],
             },
         ),
     ).response
@@ -504,6 +534,13 @@ root_cause: The runtime could not locate its required input.
 resolution: Restore the required input and rerun the operation.
 avoidance: Check the required input before relying on the operation.
 disposition_summary: The experience no longer applies under the current runtime conditions.
+change_log:
+  - signature:
+      agent_id: test-agent
+      host_environment: test
+    session_id: test-session
+    at: 2026-07-14T09:00:00+08:00
+    summary: Create legacy pitfall fixture.
 """,
         encoding="utf-8",
     )
@@ -517,6 +554,7 @@ disposition_summary: The experience no longer applies under the current runtime 
     assert before["content_fingerprint"] is not None
     target = _mutable(before)
     target["status"] = "discarded"
+    _append_update_log(target)
 
     rewritten = dict(target)
     rewritten["symptoms"] = "A migration-time rewrite that must be rejected."
@@ -609,6 +647,7 @@ def test_complete_spark_routing_after_is_atomic_and_idempotent(tmp_path: Path) -
         }
     )
     target.pop("priority")
+    _append_update_log(target)
 
     stale = handle_request(
         "call",
@@ -696,6 +735,7 @@ def test_failed_write_back_read_rolls_back_only_matching_replacement(
     original = fact.read_bytes()
     target = _mutable(before)
     target["summary"] = "This replacement will fail its simulated readback"
+    _append_update_log(target)
     actual_project_read = update_application._project_read
     calls = 0
 
@@ -860,6 +900,7 @@ def test_concurrent_updates_with_one_fingerprint_have_one_winner(tmp_path: Path)
     for summary in ("First contender", "Second contender"):
         target = _mutable(before)
         target["summary"] = summary
+        _append_update_log(target)
         targets.append(target)
     payloads = [_update_payload(workspace, project, before["content_fingerprint"], target) for target in targets]
 
@@ -884,6 +925,7 @@ def test_update_reports_committed_namespace_when_directory_sync_fails(
     before = _read(workspace, project)
     target = _mutable(before)
     target["summary"] = "Committed despite directory sync failure"
+    _append_update_log(target)
     real_fsync = os.fsync
     target_directory = fact.parent
 
@@ -985,6 +1027,7 @@ def test_independent_process_updates_with_one_fingerprint_have_one_winner(tmp_pa
     for summary in ("First process", "Second process"):
         target = _mutable(before)
         target["summary"] = summary
+        _append_update_log(target)
         payloads.append(_update_payload(workspace, project, before["content_fingerprint"], target))
 
     def run(payload: str) -> subprocess.CompletedProcess[str]:
@@ -1021,6 +1064,7 @@ def test_update_rejects_managed_fields_and_terminal_reopen(tmp_path: Path) -> No
 
     terminal = _mutable(before)
     terminal["status"] = "discarded"
+    _append_update_log(terminal)
     terminal["disposition_summary"] = "Human chose to stop tracking this Spark"
     terminal.pop("priority")
     response = handle_request(
@@ -1037,6 +1081,7 @@ def test_update_rejects_managed_fields_and_terminal_reopen(tmp_path: Path) -> No
     for key in ("disposition_summary",):
         reopen.pop(key)
     reopen["priority"] = "P2"
+    _append_update_log(reopen)
     rejected = handle_request(
         "call",
         "update-fact-object",
@@ -1072,6 +1117,14 @@ def test_study_update_preserves_submitted_body_boundary(tmp_path: Path) -> None:
         "frontmatter": {
             "title": "Study update",
             "status": "active",
+            "change_log": [
+                {
+                    "signature": {"agent_id": "test-agent", "host_environment": "test"},
+                    "session_id": "test-session",
+                    "at": "2000-01-01T00:00:00Z",
+                    "summary": "Create Study test fact.",
+                }
+            ],
             "report_kind": "external_research",
             "urls": [
                 {
@@ -1175,6 +1228,14 @@ def test_study_update_preserves_submitted_body_boundary(tmp_path: Path) -> None:
     }
     for key in ("object_id", "fact_type_key", "created_at", "updated_at"):
         target["frontmatter"].pop(key)
+    target["frontmatter"]["change_log"].append(
+        {
+            "signature": {"agent_id": "test-agent", "host_environment": "test"},
+            "session_id": "test-session",
+            "at": "2000-01-01T00:00:00Z",
+            "summary": "Update Study test fact.",
+        }
+    )
 
     updated = handle_request(
         "call",

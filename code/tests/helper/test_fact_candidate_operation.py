@@ -63,6 +63,23 @@ def _create(workspace: Path, project: Path, fact_type_key: str, fields: dict[str
     promote_after_create = fact_type_key == "pitfall" and creation_fields.get("status") == "active"
     if promote_after_create:
         creation_fields["status"] = "draft"
+    change_log_target = (
+        creation_fields.get("frontmatter")
+        if set(creation_fields) == {"frontmatter", "body"}
+        else creation_fields
+    )
+    assert isinstance(change_log_target, dict)
+    change_log_target.setdefault(
+        "change_log",
+        [
+            {
+                "signature": {"agent_id": "pytest", "host_environment": "pytest"},
+                "session_id": "candidate-test",
+                "at": "2000-01-01T00:00:00Z",
+                "summary": "Created by the candidate test fixture.",
+            }
+        ],
+    )
     response = handle_request(
         "call",
         "create-fact-object",
@@ -127,6 +144,7 @@ def _workcase() -> dict[str, object]:
             "subject_version": 1,
             "scope": "Goal, scope, criteria, work items, method, validation and risks.",
             "conclusion": "pass",
+            "covered_quality_gate_ids": ["independent-result-review"],
         }
     ]
     fact_object["execution_authorization"] = {
@@ -139,6 +157,32 @@ def _workcase() -> dict[str, object]:
                 "risk_summary": "No production effect; fixture data only.",
                 "rollback_summary": "Remove the fixture objects.",
                 "rule_refs": ["specs/21-WorkCase-工作项.md"],
+            },
+            {
+                "action_id": "authorization-delegate-independent-review",
+                "summary": "Delegate the required independent result review.",
+                "target_scope": "Candidate fixture WorkCase result only.",
+                "effect_scope": "Read-only review delegation.",
+                "risk_summary": "Delegation does not prove independence.",
+                "rollback_summary": "Do not persist an invalid review receipt.",
+                "rule_refs": ["specs/21-WorkCase-工作项.md"],
+            },
+            {
+                "action_id": "authorization-independent-result-review",
+                "summary": "Perform the required independent result review.",
+                "target_scope": "Candidate fixture WorkCase result only.",
+                "effect_scope": "Read-only result review.",
+                "risk_summary": "The review remains advisory.",
+                "rollback_summary": "Do not accept a result automatically.",
+                "rule_refs": ["specs/21-WorkCase-工作项.md"],
+            },
+        ],
+        "quality_gates": [
+            {
+                "gate_id": "independent-result-review",
+                "reviewer_mode": "independent-read-only",
+                "delegation_action_id": "authorization-delegate-independent-review",
+                "result_review_action_id": "authorization-independent-result-review",
             }
         ],
         "action_ceiling": "Bounded to candidate fixture actions.",
@@ -217,6 +261,7 @@ def _study() -> dict[str, object]:
         "frontmatter": {
             "title": "Candidate projection Study",
             "status": "active",
+            "report_kind": "external_research",
             "urls": [
                 {
                     "ref": "https://example.invalid/study-evidence",

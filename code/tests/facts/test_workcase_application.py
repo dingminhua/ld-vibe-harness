@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import ast
 import subprocess
+from collections.abc import Callable
 from contextlib import contextmanager
 from copy import deepcopy
 from dataclasses import dataclass, replace
@@ -298,7 +299,7 @@ def _closed_from(before: dict[str, Any]) -> dict[str, Any]:
         "success_criterion_results": before["success_criterion_results"],
         "result_summary": before["result_summary"],
         "validation_summary": before["validation_summary"],
-        "change_log": before["change_log"],
+        "change_log": deepcopy(before["change_log"]),
         "closure_outcome": proposal["proposed_outcome"],
         "disposition_summary": proposal["proposed_disposition_summary"],
     }
@@ -413,10 +414,25 @@ def _command(
     assert current.check_status == "mechanically_valid", current.issues
     assert current.content_fingerprint is not None
     candidate_after = deepcopy(after)
+    current_fields = current.fields
+    assert current_fields is not None
+    candidate_log = candidate_after.get("change_log")
+    before_log = before.get("change_log")
+    current_log = current_fields.get("change_log")
+    # A preceding write may have appended a Code-owned history entry while
+    # the test's logical ``before`` snapshot is intentionally stale.  Build
+    # the next complete after from the actual CAS snapshot, then append the
+    # one event required by the update contract.
     if (
-        _supplied(candidate_after) != _supplied(before)
+        isinstance(candidate_log, list)
+        and candidate_log == before_log
+        and isinstance(current_log, list)
+    ):
+        candidate_after["change_log"] = deepcopy(current_log)
+    if (
+        _supplied(candidate_after) != _supplied(current_fields)
         and isinstance(candidate_after.get("change_log"), list)
-        and candidate_after.get("change_log") == before.get("change_log")
+        and candidate_after.get("change_log") == current_log
     ):
         candidate_after["change_log"] = [
             *candidate_after["change_log"],
@@ -1663,13 +1679,21 @@ def test_close_workcase_projects_the_current_proposal_and_removes_active_state(
     [
         lambda after: after.pop("change_log"),
         lambda after: after.__setitem__("change_log", []),
-        lambda after: after["change_log"].append(
-            {
-                "signature": {"agent_id": "test-agent", "host_environment": "test"},
-                "session_id": "test-session",
-                "at": "2000-01-01T00:00:00Z",
-                "summary": "伪造的额外关闭流水。",
-            }
+        lambda after: after["change_log"].extend(
+            [
+                {
+                    "signature": {"agent_id": "test-agent", "host_environment": "test"},
+                    "session_id": "test-session",
+                    "at": "2000-01-01T00:00:00Z",
+                    "summary": "伪造的额外关闭流水。",
+                },
+                {
+                    "signature": {"agent_id": "test-agent", "host_environment": "test"},
+                    "session_id": "test-session",
+                    "at": "2000-01-01T00:01:00Z",
+                    "summary": "伪造的第二条额外关闭流水。",
+                },
+            ]
         ),
     ],
 )
@@ -1717,7 +1741,6 @@ def test_correct_closed_workcase_appends_one_change_log_entry(
             after,
             mode="correct",
             authorization_reference=_human_reference(),
-            independent_review_reference=_review_reference(),
         )
     )
 
@@ -1747,7 +1770,6 @@ def test_correct_closed_legacy_without_change_log_cannot_invent_history(
             after,
             mode="correct",
             authorization_reference=_human_reference(),
-            independent_review_reference=_review_reference(),
         )
     )
 

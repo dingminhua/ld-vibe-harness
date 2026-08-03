@@ -425,7 +425,9 @@ def _create_payload(
     fact_object: dict[str, object],
 ) -> str:
     supplied = deepcopy(fact_object)
-    supplied.setdefault(
+    change_log_target = supplied.get("frontmatter") if set(supplied) == {"frontmatter", "body"} else supplied
+    assert isinstance(change_log_target, dict)
+    change_log_target.setdefault(
         "change_log",
         [
             {

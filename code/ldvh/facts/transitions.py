@@ -1249,7 +1249,7 @@ def validate_fact_transition(
                     "status",
                 )
             )
-        legacy_changed = _changed_fields(before, after) - {"updated_at", "status"}
+        legacy_changed = _changed_fields(before, after) - {"updated_at", "status", "change_log"}
         if legacy_changed:
             issues.append(
                 _issue(
@@ -1264,7 +1264,7 @@ def validate_fact_transition(
     ):
         issues.append(_issue("status 转换不在当前单对象更新允许边中", "status"))
     if fact_type_key == "pitfall" and before_status != after_status:
-        changed = _changed_fields(before, after) - {"updated_at"}
+        changed = _changed_fields(before, after) - {"updated_at", "change_log"}
         allowed = {"status"}
         if (before_status, after_status) in {("draft", "discarded"), ("active", "discarded")}:
             allowed.add("disposition_summary")

@@ -218,7 +218,9 @@ def _changed_roots(before: Mapping[str, Any], after: Mapping[str, Any]) -> set[s
     return {
         key
         for key in set(before) | set(after)
-        if key not in MANAGED_FIELDS and before.get(key, _MISSING) != after.get(key, _MISSING)
+        if key not in MANAGED_FIELDS
+        and key != "change_log"
+        and before.get(key, _MISSING) != after.get(key, _MISSING)
     }
 
 

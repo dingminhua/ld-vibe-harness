@@ -29,7 +29,6 @@ from ldvh.helper.operation_runtime import (
     OperationImplementation,
     OperationRequestError,
 )
-from ldvh.helper.operations.fact_operation_support import post_write_integrity_audit
 from ldvh.helper.operations.fact_creation_request import (
     CREATE_OPTIONAL_INPUTS,
     CREATE_REQUIRED_INPUTS,
@@ -40,6 +39,7 @@ from ldvh.helper.operations.fact_creation_request import (
     parse_create_request,
     parse_draft_request,
 )
+from ldvh.helper.operations.fact_operation_support import post_write_integrity_audit
 from ldvh.helper.requests import CommonRequest
 from ldvh.helper.responses import source_reference
 from ldvh.specs.repository import RepositoryInspection
