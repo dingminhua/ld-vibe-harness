@@ -84,7 +84,6 @@ export default function ObjectDetail() {
   const [searchParams] = useSearchParams();
   const [detail, setDetail] = useState<ObjectDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [showYaml, setShowYaml] = useState(false);
   const { t, locale } = useI18n();
 
   // 保留上一次成功渲染的详情，仅当路由与缓存对象一致时复用（前进/后退/面板往返），
@@ -161,11 +160,7 @@ export default function ObjectDetail() {
   }
 
   const displayTitle = getLocalizedObjectTitle(obj as LocalizedTitleItem, locale, objId);
-  const contentEntries = getObjectDetailContentEntries(obj, objType);
-  const { primaryEntries, relatedEntries } = splitRelatedContentEntries(contentEntries);
   const auxiliaryMetaEntries = getAuxiliaryMetaEntries(obj, objType);
-  const showYamlSource = readMeta.carrier === 'yaml';
-  const yamlSource = showYamlSource ? reconstructFactYaml(obj) : '';
   const copyTarget = readMeta.canonicalPath;
 
   return (
@@ -209,87 +204,117 @@ export default function ObjectDetail() {
           </div>
           </div>
 
-          {/* Content fields */}
-          {objType === 'workcase' ? (
-            <WorkCaseReadingLayout
-              obj={obj as WorkCaseDetailData}
-              locale={locale}
-            />
-          ) : objType === 'study' ? (
-            <StudyReadingLayout
-              obj={obj}
-              extraEntries={primaryEntries}
-              relatedEntries={relatedEntries}
-              locale={locale}
-              objectPath={copyTarget}
-              carrier={readMeta.carrier}
-            />
-          ) : objType === 'adr' ? (
-            <AdrReadingLayout
-              obj={obj}
-              relatedEntries={relatedEntries}
-              locale={locale}
-            />
-          ) : objType === 'pitfall' ? (
-            <PitfallReadingLayout
-              obj={obj}
-              relatedEntries={relatedEntries}
-              locale={locale}
-            />
-          ) : objType === 'spark' ? (
-            <SparkReadingLayout
-              obj={obj}
-              locale={locale}
-            />
-          ) : (
-            <div className="mb-6 flex flex-col gap-5">
-              {primaryEntries.map(([key, value]) => (
-                <ContentField
-                  key={key}
-                  fieldKey={key}
-                  value={value}
-                  locale={locale}
-                  objType={objType}
-                  objectPath={copyTarget}
-                />
-              ))}
-              <RelatedContentSection entries={relatedEntries} locale={locale} />
-            </div>
-          )}
-
-          <FieldIssuesSection value={obj.field_issues} />
-          <UnparsedStructuresSection value={obj.unparsed_structures} />
-
-          {showYamlSource && (
-            <div className="overflow-hidden rounded-xl border border-ldvh-border bg-ldvh-panel">
-              <button
-                type="button"
-                aria-expanded={showYaml}
-                onClick={() => setShowYaml(!showYaml)}
-                className="ldvh-body-muted flex w-full items-center gap-2 p-3 transition-colors hover:bg-ldvh-border/30 hover:text-ldvh-text-primary"
-              >
-                <Code2 size={14} />
-                <span>{t('objectDetail.yamlSource')}</span>
-                <span className="ml-auto">{showYaml ? <ChevronUp size={14} /> : <ChevronDown size={14} />}</span>
-              </button>
-              {showYaml && (
-                <div className="border-t border-ldvh-border">
-                  <SyntaxHighlighter
-                    language="yaml"
-                    style={oneDark}
-                    customStyle={{ margin: 0, borderRadius: 0, fontSize: '12px', maxHeight: '400px' }}
-                    showLineNumbers
-                  >
-                    {yamlSource}
-                  </SyntaxHighlighter>
-                </div>
-              )}
-            </div>
-          )}
+          <FactReadingContent
+            obj={obj}
+            objType={objType}
+            locale={locale}
+            objectPath={copyTarget}
+            carrier={readMeta.carrier}
+          />
         </div>
       </div>
 
       {/* Right reading panel */}
+    </div>
+  );
+}
+
+/**
+ * The fact-reading body is intentionally shared by the full detail page and
+ * secondary reading.  Only navigation and surrounding reading chrome differ.
+ */
+export function FactReadingContent({
+  obj,
+  objType,
+  locale,
+  objectPath,
+  carrier,
+}: {
+  obj: Record<string, unknown>;
+  objType: string;
+  locale: string;
+  objectPath?: string;
+  carrier?: FactCarrier;
+}) {
+  const { t } = useI18n();
+  const contentEntries = getObjectDetailContentEntries(obj, objType);
+  const { primaryEntries, relatedEntries } = splitRelatedContentEntries(contentEntries);
+
+  return (
+    <>
+      {objType === 'workcase' ? (
+        <WorkCaseReadingLayout obj={obj as WorkCaseDetailData} locale={locale} />
+      ) : objType === 'study' ? (
+        <StudyReadingLayout
+          obj={obj}
+          extraEntries={primaryEntries}
+          relatedEntries={relatedEntries}
+          locale={locale}
+          objectPath={objectPath}
+          carrier={carrier}
+        />
+      ) : objType === 'adr' ? (
+        <AdrReadingLayout obj={obj} relatedEntries={relatedEntries} locale={locale} />
+      ) : objType === 'pitfall' ? (
+        <PitfallReadingLayout obj={obj} relatedEntries={relatedEntries} locale={locale} />
+      ) : objType === 'spark' ? (
+        <SparkReadingLayout obj={obj} locale={locale} />
+      ) : (
+        <div className="mb-6 flex flex-col gap-5">
+          {primaryEntries.map(([key, value]) => (
+            <ContentField
+              key={key}
+              fieldKey={key}
+              value={value}
+              locale={locale}
+              objType={objType}
+              objectPath={objectPath}
+            />
+          ))}
+          <RelatedContentSection entries={relatedEntries} locale={locale} />
+        </div>
+      )}
+
+      <FieldIssuesSection value={obj.field_issues} />
+      <UnparsedStructuresSection value={obj.unparsed_structures} />
+
+      {carrier === 'yaml' && (
+        <YamlDataNode
+          yamlSource={reconstructFactYaml(obj)}
+          title={t('objectDetail.yamlSource')}
+        />
+      )}
+    </>
+  );
+}
+
+/** Use the same collapsible source node in full detail and secondary reading. */
+export function YamlDataNode({ yamlSource, title }: { yamlSource: string; title: string }) {
+  const [showYaml, setShowYaml] = useState(false);
+  return (
+    <div className="overflow-hidden rounded-xl border border-ldvh-border bg-ldvh-panel">
+      <button
+        type="button"
+        aria-expanded={showYaml}
+        onClick={() => setShowYaml(!showYaml)}
+        className="ldvh-body-muted flex w-full items-center gap-2 p-3 transition-colors hover:bg-ldvh-border/30 hover:text-ldvh-text-primary"
+      >
+        <Code2 size={14} />
+        <span>{title}</span>
+        <span className="ml-auto">{showYaml ? <ChevronUp size={14} /> : <ChevronDown size={14} />}</span>
+      </button>
+      {showYaml && (
+        <div className="border-t border-ldvh-border">
+          <SyntaxHighlighter
+            language="yaml"
+            style={oneDark}
+            customStyle={{ margin: 0, borderRadius: 0, fontSize: '12px', maxHeight: '400px' }}
+            showLineNumbers
+          >
+            {yamlSource}
+          </SyntaxHighlighter>
+        </div>
+      )}
     </div>
   );
 }
@@ -406,8 +431,7 @@ function FactReadFailurePage({
   meta: FactReadMeta;
 }) {
   const navigate = useNavigate();
-  const { t, locale } = useI18n();
-  const status = meta.readStatus ?? 'unavailable';
+  const { t } = useI18n();
   return (
     <div className="flex h-full">
       <div className="flex-1 overflow-y-auto">
@@ -420,32 +444,51 @@ function FactReadFailurePage({
             {t('objectDetail.back')}
           </button>
           <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-4">
-            <p className="ldvh-body text-red-700 dark:text-red-300">{t('objectDetail.readUnavailable')}</p>
-            <dl className="mt-3 grid grid-cols-[7rem_minmax(0,1fr)] gap-x-4 gap-y-2">
-              <dt className="ldvh-meta-muted">{t('objectDetail.readType')}</dt>
-              <dd className="ldvh-meta-primary">{getTypeLabel(type, locale)} · {id}</dd>
-              <dt className="ldvh-meta-muted">{t('objectDetail.readStatus')}</dt>
-              <dd className="ldvh-meta-primary">{getFieldValueLabel('read_status', status, locale)}</dd>
-              {meta.canonicalPath && (
-                <>
-                  <dt className="ldvh-meta-muted">{t('objectDetail.expectedPath')}</dt>
-                  <dd className="ldvh-meta-primary break-all font-mono">{meta.canonicalPath}</dd>
-                </>
-              )}
-            </dl>
-            {meta.issues.length > 0 && (
-              <div className="mt-3 space-y-1">
-                {meta.issues.map((issue, index) => (
-                  <p key={`${issue.category}-${issue.fieldPath ?? 'root'}-${index}`} className="ldvh-meta text-red-700/80 dark:text-red-300/80">
-                    {issue.fieldPath ? `${issue.fieldPath}：${issue.summary}` : issue.summary}
-                  </p>
-                ))}
-              </div>
-            )}
+            <FactReadFailureContent type={type} id={id} meta={meta} />
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+/** Shared unavailable-fact body for full detail and secondary reading. */
+export function FactReadFailureContent({
+  type,
+  id,
+  meta,
+}: {
+  type?: string;
+  id?: string;
+  meta: FactReadMeta;
+}) {
+  const { t, locale } = useI18n();
+  const status = meta.readStatus ?? 'unavailable';
+  return (
+    <>
+      <p className="ldvh-body text-red-700 dark:text-red-300">{t('objectDetail.readUnavailable')}</p>
+      <dl className="mt-3 grid grid-cols-[7rem_minmax(0,1fr)] gap-x-4 gap-y-2">
+        <dt className="ldvh-meta-muted">{t('objectDetail.readType')}</dt>
+        <dd className="ldvh-meta-primary">{type ? getTypeLabel(type, locale) : '—'} · {id || '—'}</dd>
+        <dt className="ldvh-meta-muted">{t('objectDetail.readStatus')}</dt>
+        <dd className="ldvh-meta-primary">{getFieldValueLabel('read_status', status, locale)}</dd>
+        {meta.canonicalPath && (
+          <>
+            <dt className="ldvh-meta-muted">{t('objectDetail.expectedPath')}</dt>
+            <dd className="ldvh-meta-primary break-all font-mono">{meta.canonicalPath}</dd>
+          </>
+        )}
+      </dl>
+      {meta.issues.length > 0 && (
+        <div className="mt-3 space-y-1">
+          {meta.issues.map((issue, index) => (
+            <p key={`${issue.category}-${issue.fieldPath ?? 'root'}-${index}`} className="ldvh-meta text-red-700/80 dark:text-red-300/80">
+              {issue.fieldPath ? `${issue.fieldPath}：${issue.summary}` : issue.summary}
+            </p>
+          ))}
+        </div>
+      )}
+    </>
   );
 }
 

@@ -59,13 +59,20 @@ export default function WorkCaseProgressTrack({
     );
   }
 
+  if (currentStep < 0) {
+    return (
+      <div
+        role="status"
+        className={`${className} ldvh-card-decision-body flex min-w-0 items-center gap-2 text-ldvh-text-secondary`}
+      >
+        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-current/65" aria-hidden="true" />
+        <span className="min-w-0 break-words">{currentStepLabel}</span>
+      </div>
+    );
+  }
+
   return (
     <>
-      {currentStep < 0 && (
-        <p role="status" className={`${className} ldvh-card-decision-body text-red-400`}>
-          {currentStepLabel}
-        </p>
-      )}
       <ol
         className={`${className} grid min-w-0 grid-cols-4`}
         aria-label={`${t('objectList.workcaseDynamicStages')}：${currentStepLabel}`}

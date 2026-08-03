@@ -17,7 +17,7 @@
 
 ```text
 返回按钮
-统一对象身份头部：类型标签 + ID + 优先级字符徽标 + 状态标签 + 标题 + 创建/更新时间 + 复制对象路径图标
+统一对象身份头部：类型标签 + ID + 优先级字符徽标 + 状态标签 + 标题 + 更新时间（可带更新流水署名）+ 复制对象路径图标
 内容区：
   WorkCase：当前快照 + 目标（含范围）+ 成功标准 + 工作项 + 当前复核、处置与 Human 批准 + 验证与关闭 + 关系
   ADR：问题 / 决策 / 范围 / 理由 / 影响 / 处置（终态时）/ 关联（存在时）
@@ -40,10 +40,11 @@ YAML 数据折叠区：由精确读取后的事实对象字段重建（Markdown 
 - 标题优先使用 `title_zh/title_en`，回退 `title`，再回退 ID；工作对象和普通对象标题前均使用 `ObjectTypeIcon(obj.type)` 识别对象身份。
 - WorkCase 和 Spark 如存在 `priority`，在 ID 后面展示 `P0` / `P1` / `P2` / `P3` 字符徽标；标题行只保留 `ObjectTypeIcon(obj.type)` 和标题。徽标使用颜色和 tooltip 表达优先级，不在头部、元信息行、正文模块或其他字段区重复展示 priority 文字 chip / 字段。
 - ID 使用 `ldvh-meta`，不做大号标题；右上角只提供 `CopyPathButton`，tooltip 为“复制对象路径”。所有当前类型都须由字段级直读返回 `read_status: readable` 和 `canonical_path` 后才显示；复制值必须等于该路径。不得使用 `data.path`、对象 ID 或路由 `target` 猜测路径，也不得再放状态标签或其他对象身份信息。
-- 如对象存在 `tags`，标签应在标题下方独立成行，并位于创建/更新时间之上；标签不与时间或其他辅助属性挤在同一行。Pitfall `tags` 展示事实源英文原值，不做中文翻译。
-- 创建/更新时间在标签行下方以短标签展示，统一使用 `formatDateTime()`，格式为 `YYYY-MM-DD HH:mm`；必要辅助属性可在同一元信息行弱化展示，不另起 MetaChip 行。
+- 如对象存在 `tags`，标签应在标题下方独立成行，并位于更新时间之上；标签不与时间或其他辅助属性挤在同一行。Pitfall `tags` 展示事实源英文原值，不做中文翻译。
+- 身份头部只显示“更新”，不显示创建时间；更新时间统一使用 `formatDateTime()`，格式为 `YYYY-MM-DD HH:mm`。若 `change_log` 最新一条具有完整 `signature.agent_id` 与 `signature.host_environment`，则紧随更新时间以圆点显示二者；署名只可从更新流水读取，不得从对象字段推断。缺失或不完整时只显示更新时间。必要辅助属性可在同一元信息行弱化展示，不另起 MetaChip 行。
+- 对象列表 Card 的底部时间行与身份头部复用同一“更新 + 更新流水署名”组件和判定规则；列表读取可携带 `change_log` 仅为该可追溯展示服务，不得由标题、Git 作者或其他字段补造署名。
 - 对象字段必须以对应事实模型主规范为准；只有该对象字段契约内定义的辅助属性才可在元信息行降权展示，不进入主阅读流。`priority` 只适用于 WorkCase 和 Spark，且在详情头部以字符徽标展示；importance 已由 priority 统一承载，不再作为独立字段。
-- 右侧扩展阅读区中的对象头部应复用同一套身份头部的小号版本，字段顺序、类型/状态标签规则、复制入口和时间展示不得另起一套。
+- 右侧扩展阅读区中的对象头部应复用同一套身份头部的小号版本，字段顺序、类型/状态标签规则、复制入口、更新时间与更新流水署名展示不得另起一套。
 
 ## 4. WorkCase 状态无关阅读契约
 
@@ -51,9 +52,9 @@ WorkCase 详情页用于完整理解同一项当前工作责任，不复制外�
 
 详情页只以 21 当前 WorkCase 字段为事实契约。读取顺序围绕以下八个问题组织；分区名称、折叠粒度和具体组件仍可在后续 Human 讨论后细化，但任何视觉方案都不得丢失这些内容：
 
-1. **这项工作是什么**：身份头部读取 `object_id`、`fact_type_key`、`title`、`status`、`phase`、`priority`（活动期存在时）、`created_at` 与 `updated_at`；`status / phase` 保持为来源事实字段，与列表一致的进展分组标签只消费同一载体当次形成的 `current_snapshot_projection`。
+1. **这项工作是什么**：身份头部读取 `object_id`、`fact_type_key`、`title`、`status`、`phase`、`priority`（活动期存在时）与 `updated_at`；若更新流水含完整署名，追加其 `agent_id`、`host_environment`。`status / phase` 保持为来源事实字段，与列表一致的进展分组标签只消费同一载体当次形成的 `current_snapshot_projection`。
 2. **目标和边界是什么**：完整读取 `goal` 与 `scope`，不把 Card 摘要或标题改写成目标，不把范围压成覆盖/排除标签后丢失原文。
-3. **现在实际处在哪里**：读取同源 `current_snapshot_projection` 形成头部进展分组；处于“推进中”时，在“当前情况”中呈现与 Card 共用的四步轨道或轨迹外“方案修订中”，并继续呈现当前 `summary`，以及实际存在的 `waiting_on`、顶层 `blocking_summary` 和 `resume_from`。同一区域把 resolved `next_required_control_step` 显示为本地化、只读的“下一必经动作”；当前合同的稳定 key 均显式本地化，unresolved 或未知值只显示“当前不可判定”，不得泄漏原始 key。该提示没有按钮或写入能力，只表示结构上的下一控制步骤，不断言授权充分、行动允许、能力可用、优先级或工作完成。页面不得从 raw phase 自动补写等待、阻塞或下一步。
+3. **现在实际处在哪里**：读取同源 `current_snapshot_projection` 形成头部进展分组；处于“推进中”时，在“当前情况”中呈现与 Card 共用的四步轨道或轨迹外“方案修订中”，并继续呈现当前 `summary`，以及实际存在的 `waiting_on`、顶层 `blocking_summary` 和 `resume_from`。同一区域把 resolved 且不是 `none` 的 `next_required_control_step` 显示为本地化、只读的“下一必经动作”；计划或关闭确认位置不属于四步轨道，不显示“当前环节不可判定”替代轨道。投影 unresolved 或未知时，只显示一条中性的“当前环节不可判定”状态说明及读取缺口提示，不渲染 1–4 轨道、轨迹线或“下一必经动作”，也不得泄漏原始 key。closed 且没有实际 `phase`、摘要、恢复、等待或阻塞事实时，整个“当前情况”节点省略；不能以投影对象自身制造空节点，也不能把 `next_required_control_step = none` 重复显示成“无后续必经控制步骤”。该提示没有按钮或写入能力，只表示当前无法形成结构上的位置，不断言授权充分、行动允许、能力可用、优先级或工作完成。页面不得从 raw phase 自动补写等待、阻塞或下一步。
 4. **按什么判断结果**：读取 `success_criterion_definitions`；结果已经形成时，同屏读取与当前定义逐项对应的 `success_criterion_results`。定义和结果必须能按 `criterion_id` 对照，不能用完成比例替代陈述与当前结论。
 5. **当前计划和阶段结果是什么**：完整读取 `work_items`。每项至少保留 `item_id`、`goal`、`expected_result`、`status`，并按实际存在呈现方法边界、模板偏离、`current_summary`、item `resume_from`、item `blocking_summary` 与 `result_summary`。`depends_on` 继续保留在来源、详情 API 与折叠 YAML 中，供机器读取和核对，但不进入 Human 工作项标题或正文；工作项作为并列集合显示，渲染顺序和 `item_id` 都不表示线性执行顺序。
 6. **当前复核、授权边界与批准是什么**：活动期读取 `plan_version`、当前 `creation_reviews`、`execution_authorization`、`execution_approval`，以及已经形成时的 `result_version`、`controller_check_summary` 和当前 `result_reviews`。详情必须分别呈现 Reviewer 复核、Controller 处置、执行授权边界与 Human 执行批准；授权边界固定形成“已授权行动”“禁止行动”和实际存在时的“Human 前置条件”三个并列、默认收起的数量区块。“已授权行动”展开后每项动作也默认收起，仅以“动作摘要＋稳定 ID”作为入口；打开单项后才显示目标/影响范围，风险、回滚与规则引用仍是次级展开内容，规则引用使用标签而非项目符号。行动上限、允许调整、验证回滚和越界处置作为“授权约束”置于同一个“已授权行动”展开区的底部。批准必须显示绑定版本、`baseline_fingerprint` 与非空 `source_refs`。
@@ -162,7 +163,7 @@ Pitfall、ADR、Study 和 Spark 等非工作主线对象的长文本阅读组织
 - 同一对象或文档入口再次点击关闭扩展阅读区；点击不同入口才切换右侧预览内容。
 - 对象预览不是“摘要卡片”，而是对象详情页阅读内容的右侧视口；同一个对象在详情页和扩展阅读区必须使用同一套字段顺序、字段标签、字段过滤和字段渲染。
 - WorkCase、Pitfall、ADR、Study 和 Spark 必须复用详情页导出的专用阅读布局。
-- WorkCase、Pitfall、ADR、Study 和 Spark 的扩展阅读头部复用详情页身份区，清楚展示 `类型 + 类型状态词 + ID + 标题 + 创建/更新时间`；读取失败时不显示领域状态，而显示实际读取状态与未读取范围。
+- WorkCase、Pitfall、ADR、Study 和 Spark 的扩展阅读头部复用详情页身份区，清楚展示 `类型 + 类型状态词 + ID + 标题 + 更新时间 + 可用时的更新流水署名`；读取失败时不显示领域状态，而显示实际读取状态与未读取范围。
 - Spark 必须复用详情页专用 Spark 阅读布局，不得在 `ReadingPanel` 中维护另一套 `PREVIEW_FIELD_ORDER`、字段 label map、关联分组或独立字段渲染器。
 - 对象预览头部只在该类型的字段级直读返回 `read_status: readable` 与 `canonical_path` 时提供复制对象路径图标；所有当前类型使用同一可消费状态。`target` 仅用于导航，绝不作为路径回退。
 - Markdown 文档预览使用 `MarkdownPreview` + `github-markdown-css`，不是手写 Markdown 标签样式。

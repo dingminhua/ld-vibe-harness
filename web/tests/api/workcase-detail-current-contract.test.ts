@@ -44,6 +44,11 @@ test('WorkCase detail source consumes only the single current shape in one fixed
   assert.match(objectDetail, /customMetaEntries=\{\[\]\}/);
   assert.doesNotMatch(objectDetail, /readMeta\.observedAt|meta\.observedAt/);
   assert.match(objectDetail, /reconstructFactYaml\(obj\)/);
+  assert.match(objectDetail, /export function YamlDataNode/);
+  assert.match(objectDetail, /export function FactReadingContent/);
+  assert.match(objectDetail, /<FactReadingContent/);
+  assert.match(panel, /<FactReadingContent/);
+  assert.doesNotMatch(panel, /function ObjectSemanticPreview|function GenericObjectPreview/);
   assert.doesNotMatch(objectDetail, /function objectToYaml|objectToYaml\(obj\)/);
 
   const orderedMarkers = [
@@ -279,6 +284,7 @@ test('field-level issues surface in place inside each WorkCase reading node', ()
     'controller_check_summary', 'result_reviews',
     'closure_proposal',
     'closure_outcome', 'disposition_summary', 'residual_responsibilities', 'spark_suggestions',
+    'change_log',
     'relations', 'urls',
   ];
   for (const field of consumedFields) {
@@ -287,6 +293,9 @@ test('field-level issues surface in place inside each WorkCase reading node', ()
       `layout must surface the in-node field issue for ${field}`,
     );
   }
+
+  assert.match(layout, /ChangeLogReadingNode/);
+  assert.match(layout, /value=\{obj\.change_log\}/);
 
   // 节点只按字段实际内容省略；整组字段缺席但存在字段问题时节点仍然保留。
   assert.match(layout, /detail\.responsibility \|\| Boolean\(issueFor\("goal"\)/);
@@ -436,8 +445,12 @@ test('narrative fields read as prose while structured records keep label rows', 
   assert.ok(layout.indexOf('workcaseCurrentSnapshot') < layout.indexOf('workcaseResponsibility'));
   assert.doesNotMatch(layout, /function SnapshotPhaseField\(|<SnapshotPhaseField/);
   assert.match(layout, /<WorkCaseProgressTrack[\s\S]{0,260}lifecyclePosition=\{currentProjection\?\.lifecycle_position \?\? null\}[\s\S]{0,260}progressGroup=\{currentProjection\?\.progress_group \?\? null\}[\s\S]{0,260}progressStep=\{currentProjection\?\.progress_step \?\? null\}/);
+  assert.match(layout, /const progressTrackVisible = !currentProjection/);
+  assert.match(layout, /const nextControlStepVisible = currentProjection\?\.next_required_control_step !== "none"/);
   assert.match(layout, /objectDetail\.workcaseNextRequiredControlStep/);
   assert.match(layout, /currentProjection\.next_required_control_step/);
+  assert.match(layout, /currentProjection \? \(/);
+  assert.match(layout, /objectDetail\.workcaseCurrentSnapshotUnavailableHint/);
   assert.doesNotMatch(layout, /\{currentProjection\?\.next_required_control_step\}/);
   assert.match(layout, /function SnapshotProseField\(/);
   assert.match(layout, /const WORKCASE_DETAIL_SEMANTIC_ICON_SIZE = 14/);

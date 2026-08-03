@@ -8,22 +8,18 @@ import CommitSignatureMeta from '@/components/CommitSignatureMeta';
 import ObjectUpdatedMeta from '@/components/ObjectUpdatedMeta';
 import { useI18n } from '@/i18n/context';
 import {
-  ContentField,
+  FactReadFailureContent,
+  FactReadingContent,
   ObjectIdentityHeader,
-  RelatedContentSection,
-  StudyReadingLayout,
   getAuxiliaryMetaEntries,
   getObjectHeaderStatus,
 } from '@/pages/ObjectDetail';
-import { AdrReadingLayout, PitfallReadingLayout, SparkReadingLayout } from '@/pages/object-detail/FactReadingLayouts';
-import { WorkCaseReadingLayout } from '@/pages/object-detail/WorkCaseReadingLayout';
-import { getObjectDetailContentEntries, splitRelatedContentEntries } from '@/pages/object-detail/model';
-import { getCommitDetailLabels, getFieldValueLabel, getLocalizedObjectTitle, getObjectStatusLocale, getToggleLabel, getTypeLabel, type CommitDetailLabels } from '@/i18n/locales';
-import { fetchDocContent, fetchObjectDetail, type CommitDetailPanelData, type CommitSignature, type DocContent, type ObjectDetail as ApiObjectDetail, type WorkCaseDetailData } from '@/utils/api';
+import { getCommitDetailLabels, getLocalizedObjectTitle, getObjectStatusLocale, getToggleLabel, getTypeLabel, type CommitDetailLabels } from '@/i18n/locales';
+import { fetchDocContent, fetchObjectDetail, type CommitDetailPanelData, type CommitSignature, type DocContent, type ObjectDetail as ApiObjectDetail } from '@/utils/api';
 import { CATEGORY_COLORS } from '@/utils/categoryColors';
 import { getCommitScopeLabel, getCommitTypeLabel } from '@/utils/commitLabels';
 import { formatDateTime } from '@/utils/dateFormat';
-import { getFactReadMeta, isReadableFact, type FactCarrier, type FactReadMeta } from '@/utils/factReadMeta';
+import { getFactReadMeta, isReadableFact, type FactReadMeta } from '@/utils/factReadMeta';
 import {
   getCommitBodySectionsForReading,
   getCommitNodeNextState,
@@ -166,19 +162,13 @@ function ObjectPreview({ content }: { content: PanelContent }) {
         copiedLabel={t('common.copiedObjectPath')}
         compact
       />
-      {obj && isObjectDetailLayoutType(objectType) && (
-        <ObjectSemanticPreview
-          objectType={objectType}
+      {obj && readable && (
+        <FactReadingContent
           obj={obj}
+          objType={objectType || ''}
+          locale={locale}
           objectPath={targetPath}
           carrier={readMeta.carrier}
-        />
-      )}
-      {obj && !isObjectDetailLayoutType(objectType) && (
-        <GenericObjectPreview
-          objectType={objectType}
-          obj={obj}
-          objectPath={targetPath}
         />
       )}
     </div>
@@ -194,81 +184,11 @@ function FactReadFailureNotice({
   objectId?: string;
   meta: FactReadMeta;
 }) {
-  const { locale, t } = useI18n();
-  const typeLabel = getObjectTypeLabel(objectType, locale);
-  const status = meta.readStatus ?? 'unavailable';
   return (
     <div className="space-y-3 rounded-md border border-red-500/20 bg-red-500/10 p-3">
-      <p className="ldvh-body text-red-700 dark:text-red-300">{t('objectDetail.readUnavailable')}</p>
-      <dl className="grid grid-cols-[5rem_minmax(0,1fr)] gap-x-3 gap-y-1 text-sm">
-        <dt className="ldvh-meta-muted">{t('objectDetail.readType')}</dt>
-        <dd className="ldvh-meta-primary">{typeLabel} · {objectId || '—'}</dd>
-        <dt className="ldvh-meta-muted">{t('objectDetail.readStatus')}</dt>
-        <dd className="ldvh-meta-primary">{getFieldValueLabel('read_status', status, locale)}</dd>
-        {meta.canonicalPath && (
-          <>
-            <dt className="ldvh-meta-muted">{t('objectDetail.expectedPath')}</dt>
-            <dd className="ldvh-meta-primary break-all font-mono">{meta.canonicalPath}</dd>
-          </>
-        )}
-      </dl>
-      {meta.issues.map((issue, index) => (
-        <p key={`${issue.category}-${issue.fieldPath ?? 'root'}-${index}`} className="ldvh-meta text-red-700/80 dark:text-red-300/80">
-          {issue.fieldPath ? `${issue.fieldPath}：${issue.summary}` : issue.summary}
-        </p>
-      ))}
+      <FactReadFailureContent type={objectType} id={objectId} meta={meta} />
     </div>
   );
-}
-
-function ObjectSemanticPreview({
-  objectType,
-  obj,
-  objectPath,
-  carrier,
-}: {
-  objectType?: string;
-  obj: Record<string, unknown>;
-  objectPath?: string;
-  carrier?: FactCarrier;
-}) {
-  const { locale } = useI18n();
-
-  if (objectType === 'workcase') {
-    return <WorkCaseReadingLayout obj={obj as WorkCaseDetailData} locale={locale} />;
-  }
-  if (objectType === 'pitfall') {
-    const entries = getObjectDetailContentEntries(obj, objectType);
-    const { relatedEntries } = splitRelatedContentEntries(entries);
-    return <PitfallReadingLayout obj={obj} relatedEntries={relatedEntries} locale={locale} />;
-  }
-  if (objectType === 'adr') {
-    const entries = getObjectDetailContentEntries(obj, objectType);
-    const { relatedEntries } = splitRelatedContentEntries(entries);
-    return <AdrReadingLayout obj={obj} relatedEntries={relatedEntries} locale={locale} />;
-  }
-  if (objectType === 'spark') {
-    return <SparkReadingLayout obj={obj} locale={locale} />;
-  }
-  if (objectType === 'study') {
-    const entries = getObjectDetailContentEntries(obj, objectType);
-    const { primaryEntries, relatedEntries } = splitRelatedContentEntries(entries);
-    return (
-      <StudyReadingLayout
-        obj={obj}
-        extraEntries={primaryEntries}
-        relatedEntries={relatedEntries}
-        locale={locale}
-        objectPath={objectPath}
-        carrier={carrier}
-      />
-    );
-  }
-  return null;
-}
-
-function isObjectDetailLayoutType(objectType: string | undefined) {
-  return objectType === 'workcase' || objectType === 'pitfall' || objectType === 'adr' || objectType === 'spark' || objectType === 'study';
 }
 
 function getObjectTitle(obj: Record<string, unknown> | undefined, objectId: string | undefined, locale: string) {
@@ -279,22 +199,6 @@ function getObjectTitle(obj: Record<string, unknown> | undefined, objectId: stri
 function getObjectTypeLabel(objectType: string | undefined, locale: string) {
   if (!objectType) return '—';
   return getTypeLabel(objectType, locale);
-}
-
-function GenericObjectPreview({ objectType, obj, objectPath }: { objectType?: string; obj: Record<string, unknown>; objectPath?: string }) {
-  const { locale } = useI18n();
-  const entries = getObjectDetailContentEntries(obj, objectType || '');
-  const { primaryEntries, relatedEntries } = splitRelatedContentEntries(entries);
-  if (entries.length === 0) return null;
-
-  return (
-    <div className="mb-6 flex flex-col gap-5">
-      {primaryEntries.map(([fieldKey, value]) => (
-        <ContentField key={fieldKey} fieldKey={fieldKey} value={value} locale={locale} objType={objectType || ''} objectPath={objectPath} />
-      ))}
-      <RelatedContentSection entries={relatedEntries} locale={locale} />
-    </div>
-  );
 }
 
 function DocPreview({ content }: { content: PanelContent }) {

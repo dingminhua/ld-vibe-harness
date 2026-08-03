@@ -50,7 +50,6 @@ export function projectCurrentWorkCaseDetail(
   return {
     responsibility: hasAny(obj.goal, obj.scope),
     currentSnapshot: hasAny(
-      obj.current_snapshot_projection,
       obj.phase,
       obj.summary,
       obj.resume_from,

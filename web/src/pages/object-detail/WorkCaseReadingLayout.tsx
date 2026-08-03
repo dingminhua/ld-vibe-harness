@@ -50,7 +50,7 @@ import {
   fieldIssue,
   type FieldPresentationIssue,
 } from "@/pages/object-detail/fieldIssues";
-import { FieldProblem } from "@/pages/object-detail/FactReadingLayouts";
+import { ChangeLogReadingNode, FieldProblem } from "@/pages/object-detail/FactReadingLayouts";
 import {
   DetailInlineField,
   ReadingNodeSection,
@@ -146,17 +146,23 @@ export function WorkCaseReadingLayout({
       issueFor("closure_outcome") ||
         issueFor("disposition_summary") ||
         issueFor("residual_responsibilities") ||
-        issueFor("spark_suggestions")
+      issueFor("spark_suggestions")
     );
+  const changeLogVisible = (Array.isArray(obj.change_log) && obj.change_log.length > 0)
+    || Boolean(issueFor("change_log"));
   const relationsIssue = issueFor("relations");
   const urlsIssue = issueFor("urls");
   const currentProjectId = getCurrentProjectId(obj);
   const currentProjection = isResolvedWorkCasePresentationProjection(obj.current_snapshot_projection)
     ? obj.current_snapshot_projection
     : null;
+  const progressTrackVisible = !currentProjection
+    || currentProjection.lifecycle_position === "plan_revising"
+    || currentProjection.progress_group === "progressing";
+  const nextControlStepVisible = currentProjection?.next_required_control_step !== "none";
   const nextControlStepLabel = currentProjection
     ? t(`objectDetail.workcaseNextControlStep.${currentProjection.next_required_control_step}` as LocaleKey)
-    : t("objectDetail.workcaseNextControlStepUnavailable");
+    : null;
 
   return (
     <div className="mb-6 flex flex-col gap-5">
@@ -167,24 +173,32 @@ export function WorkCaseReadingLayout({
           contentVariant="semantic"
         >
           <FieldIssueRow fieldKey="phase" issue={issueFor("phase")} locale={locale} />
-          <WorkCaseProgressTrack
-            lifecyclePosition={currentProjection?.lifecycle_position ?? null}
-            progressGroup={currentProjection?.progress_group ?? null}
-            progressStep={currentProjection?.progress_step ?? null}
-            showUnavailable
-            className="mt-0"
-          />
-          <DetailInlineField
-            label={t("objectDetail.workcaseNextRequiredControlStep")}
-            value={(
-              <div className="min-w-0">
-                <span className="ldvh-body-primary break-words">{nextControlStepLabel}</span>
-                <p className="ldvh-caption mt-1 text-ldvh-text-secondary">
-                  {t("objectDetail.workcaseNextRequiredControlStepBoundary")}
-                </p>
-              </div>
-            )}
-          />
+          {progressTrackVisible && (
+            <WorkCaseProgressTrack
+              lifecyclePosition={currentProjection?.lifecycle_position ?? null}
+              progressGroup={currentProjection?.progress_group ?? null}
+              progressStep={currentProjection?.progress_step ?? null}
+              showUnavailable
+              className="mt-0"
+            />
+          )}
+          {nextControlStepVisible ? (
+            <DetailInlineField
+              label={t("objectDetail.workcaseNextRequiredControlStep")}
+              value={(
+                <div className="min-w-0">
+                  <span className="ldvh-body-primary break-words">{nextControlStepLabel}</span>
+                  <p className="ldvh-caption mt-1 text-ldvh-text-secondary">
+                    {t("objectDetail.workcaseNextRequiredControlStepBoundary")}
+                  </p>
+                </div>
+              )}
+            />
+          ) : !currentProjection ? (
+            <p className="ldvh-caption text-ldvh-text-secondary">
+              {t("objectDetail.workcaseCurrentSnapshotUnavailableHint")}
+            </p>
+          ) : null}
           <SnapshotProseField fieldKey="summary" value={obj.summary} locale={locale} />
           <FieldIssueRow fieldKey="summary" issue={issueFor("summary")} locale={locale} />
           <SnapshotProseField
@@ -445,6 +459,14 @@ export function WorkCaseReadingLayout({
           <FieldIssueRow fieldKey="urls" issue={urlsIssue} locale={locale} />
         </WorkCaseReadingNode>
       ) : null}
+
+      {changeLogVisible && (
+        <ChangeLogReadingNode
+          value={obj.change_log}
+          issue={issueFor("change_log")}
+          locale={locale}
+        />
+      )}
     </div>
   );
 }

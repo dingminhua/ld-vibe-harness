@@ -30,6 +30,83 @@ export function FieldProblem({ issue }: { issue?: FieldPresentationIssue }) {
   return <p className="ldvh-meta rounded-md border border-amber-500/25 bg-amber-500/5 px-3 py-2 text-amber-700 dark:text-amber-300">{text}</p>;
 }
 
+type ChangeLogEntry = {
+  key: string;
+  at: string;
+  summary: string;
+  agentId?: string;
+  hostEnvironment?: string;
+};
+
+/**
+ * `change_log` is a contracted field for every current fact type. Keep its
+ * reading node shared so a detail layout cannot consume it in the API and then
+ * accidentally omit it from the Human reading surface.
+ */
+export function ChangeLogReadingNode({
+  value,
+  issue,
+  locale,
+}: {
+  value: unknown;
+  issue?: FieldPresentationIssue;
+  locale: string;
+}) {
+  const [state, setState] = useState<ReadingNodeState>('collapsed');
+  const entries = parseChangeLogEntries(value);
+  if (entries.length === 0 && !issue) return null;
+
+  return (
+    <ReadingNodeSection
+      title={getFieldLabel('change_log', locale)}
+      state={state}
+      locale={locale}
+      headerMeta={entries.length > 0 ? <span className="ldvh-meta-muted">{entries.length}</span> : undefined}
+      onToggle={() => setState((current) => getReadingNodeNextState(current))}
+    >
+      {issue ? <FieldProblem issue={issue} /> : (
+        <div className="divide-y divide-ldvh-border/60">
+          {entries.map((entry) => (
+            <div key={entry.key} className="py-2.5 first:pt-0 last:pb-0">
+              <div className="ldvh-meta flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 font-medium text-ldvh-text-primary/80">
+                <span aria-hidden="true" className="h-1 w-1 shrink-0 self-center rounded-full bg-ldvh-text-primary/55" />
+                <span className="tabular-nums">
+                  {formatDateTime(entry.at)}
+                </span>
+                {entry.agentId && <><span aria-hidden="true">·</span><span>{entry.agentId}</span></>}
+                {entry.hostEnvironment && <><span aria-hidden="true">·</span><span>{entry.hostEnvironment}</span></>}
+              </div>
+              <p className="mt-1 ldvh-meta text-ldvh-text-secondary/80">{entry.summary}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </ReadingNodeSection>
+  );
+}
+
+function parseChangeLogEntries(value: unknown): ChangeLogEntry[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item, index) => {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) return [];
+    const record = item as Record<string, unknown>;
+    const at = typeof record.at === 'string' ? record.at.trim() : '';
+    const summary = typeof record.summary === 'string' ? record.summary.trim() : '';
+    if (!at || !summary) return [];
+    const signature = record.signature;
+    const signatureRecord = signature && typeof signature === 'object' && !Array.isArray(signature)
+      ? signature as Record<string, unknown>
+      : null;
+    return [{
+      key: `${index}-${at}`,
+      at,
+      summary,
+      agentId: typeof signatureRecord?.agent_id === 'string' ? signatureRecord.agent_id : undefined,
+      hostEnvironment: typeof signatureRecord?.host_environment === 'string' ? signatureRecord.host_environment : undefined,
+    }];
+  }).reverse();
+}
+
 const ADR_READING_NODES: Array<{ field: string; kind?: 'date' }> = [
   { field: 'decision_question' },
   { field: 'decision' },
@@ -62,6 +139,11 @@ export function AdrReadingLayout({
       ))}
       <FactAssociationsSection obj={obj} locale={locale} />
       <RelatedContentSection entries={relatedEntries} locale={locale} />
+      <ChangeLogReadingNode
+        value={obj.change_log}
+        issue={fieldIssue(obj, 'change_log')}
+        locale={locale}
+      />
     </div>
   );
 }
@@ -131,6 +213,11 @@ export function PitfallReadingLayout({
       ))}
       <FactAssociationsSection obj={obj} locale={locale} />
       <RelatedContentSection entries={sortRelatedContentEntries(relatedEntries)} locale={locale} />
+      <ChangeLogReadingNode
+        value={obj.change_log}
+        issue={fieldIssue(obj, 'change_log')}
+        locale={locale}
+      />
     </div>
   );
 }
@@ -207,6 +294,11 @@ export function SparkReadingLayout({
         locale={locale}
         title={getFieldLabel('fact_associations', locale)}
         variant="spark"
+      />
+      <ChangeLogReadingNode
+        value={obj.change_log}
+        issue={fieldIssue(obj, 'change_log')}
+        locale={locale}
       />
     </div>
   );
