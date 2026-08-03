@@ -29,7 +29,6 @@ const NAV_ITEMS: { to: string; labelKey: LocaleKey; icon: NavIcon }[] = [
   { to: '/objects/adr', labelKey: 'nav.adrs', icon: OBJECT_TYPE_ICONS.adr },
   { to: '/objects/pitfall', labelKey: 'nav.pitfalls', icon: OBJECT_TYPE_ICONS.pitfall },
   { to: '/objects/study', labelKey: 'nav.studies', icon: OBJECT_TYPE_ICONS.study },
-  { to: '/objects/file-asset', labelKey: 'nav.fileAssets', icon: OBJECT_TYPE_ICONS['file-asset'] },
   { to: '/project-files', labelKey: 'nav.projectFiles', icon: FolderTree },
   { to: '/changes', labelKey: 'nav.changes', icon: GitPullRequestArrow },
   { to: '/changelog', labelKey: 'nav.changelog', icon: OBJECT_TYPE_ICONS.changelog },

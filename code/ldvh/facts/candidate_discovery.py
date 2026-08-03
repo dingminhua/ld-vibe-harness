@@ -47,10 +47,6 @@ def _read_fingerprint(path: Path, read: FactReadResult) -> dict[str, object]:
         "metadata": metadata,
         "status": read.check_status,
         "content_fingerprint": read.content_fingerprint,
-        "integrity_coverage": read.integrity_coverage,
-        "observed_size_bytes": read.observed_size_bytes,
-        "observed_content_sha256": read.observed_content_sha256,
-        "payload_matches_manifest": read.payload_matches_manifest,
         "fields": read.fields,
         "body": read.body,
         "issues": [
@@ -89,17 +85,13 @@ def discover_fact_candidates(
                 _structural_problem(
                     fact_type_key,
                     layout.directory,
-                    "六类事实对象的扫描预算已耗尽，当前目录未被枚举",
+                    "五类事实对象的扫描预算已耗尽，当前目录未被枚举",
                 )
             )
             continue
         try:
             paths = sorted(safe_list_directory(root, layout.directory), key=lambda item: item.name)
         except FileNotFoundError:
-            if fact_type_key == "file-asset":
-                # 05 §7.4 explicitly defines an absent file-assets root as an
-                # empty complete set for the newly activated type.
-                continue
             structural.append(
                 _structural_problem(
                     fact_type_key,
@@ -133,16 +125,11 @@ def discover_fact_candidates(
                 )
                 complete = False
                 continue
-            if layout.carrier == "file-asset-directory":
-                object_id = path.name
-                canonical_shape = layout.object_id_pattern.fullmatch(object_id) is not None
-            else:
-                assert layout.suffix is not None
-                object_id = path.name.removesuffix(layout.suffix)
-                canonical_shape = (
-                    path.suffix == layout.suffix
-                    and layout.object_id_pattern.fullmatch(object_id) is not None
-                )
+            object_id = path.name.removesuffix(layout.suffix)
+            canonical_shape = (
+                path.suffix == layout.suffix
+                and layout.object_id_pattern.fullmatch(object_id) is not None
+            )
             if not canonical_shape:
                 structural.append(
                     _structural_problem(

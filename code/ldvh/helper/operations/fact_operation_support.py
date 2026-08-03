@@ -66,7 +66,7 @@ def post_write_integrity_audit(
     """
     if set(schemas) != set(LAYOUTS):
         status = "unavailable"
-        problems: list[dict[str, Any]] = [{"summary": "当前规则源不能形成六类型完整派生 Schema"}]
+        problems: list[dict[str, Any]] = [{"summary": "当前规则源不能形成五类型完整派生 Schema"}]
     else:
         snapshot = discover_fact_candidates(
             boundary.worktree_root,

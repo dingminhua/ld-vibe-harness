@@ -22,7 +22,6 @@ ldvh_spec:
     - "code-engineering-practices"
   authorized_attachments:
     - "web-api-reading-contract"
-    - "web-content-preview-contract"
 ```
 
 > 文件状态：`active`。本文生效本身不使任何既有 Web 自动符合当前规范、通过验证或取得写入权威。
@@ -156,13 +155,6 @@ Web 对成功读取的当前 WorkCase 载体，以当次原始载体 bytes 的 S
 
 面向页面字段级直读的对象列表和详情 API，使用本规范授权附件 `web-api-reading-contract` 登记共同响应、读取问题、字段问题、未解析结构、集合问题和各类型页面消费字段投影。实现、Web 前端和 tests 必须以该登记同步；未登记字段不得作为该直读契约的稳定字段输出。附件只登记传输结构、闭集和对既有字段身份的回指，不重新定义事实字段、必填性、状态语义、完整机械校验或 Helper CLI 契约。
 
-### 5.5 FileAsset 内容预览
-
-Web 可以为当前 `active` FileAsset 提供受限的内容预览，但对象列表与详情 API 继续只返回 `web-api-reading-contract` 登记的 manifest 元数据，不内联 payload bytes。实际预览必须通过本规范授权附件 `web-content-preview-contract` 定义的独立受限入口按需读取；该入口只服务 Human 当次次级阅读，不形成事实字段、下载能力、执行入口、内容证明或第二事实源。
-
-预览读取必须绑定当次已验证的管辖项目、稳定 FileAsset ID、canonical 对象目录和固定 `payload` 成员，完整核对对象状态、普通文件/no-follow 边界、登记 size、SHA-256 和读取期稳定性后，才可以按附件允许的内容类别返回。不得暴露本地绝对路径，不得只按文件扩展名或 manifest `media_type` 选择渲染，不得在校验失败、内容不安全、超限、对象 deleted、载体变化或范围不可确定时返回部分 bytes 或退化为可执行内容。
-
-首批预览类别、内容识别、主动内容限制、响应上限、错误状态、次级阅读呈现与验证矩阵统一登记于 `web-content-preview-contract`。不在附件闭集中的媒体类型保持“暂不支持预览”，不得自动作为纯文本、HTML、内嵌文档或浏览器可执行资源打开。
 
 ## 6. 派生内容与当前性
 

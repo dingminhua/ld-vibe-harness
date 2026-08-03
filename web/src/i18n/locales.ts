@@ -76,10 +76,6 @@ const OBJECT_STATUS_LOCALES: Record<string, Record<string, { zh: string; en: str
   study: {
     retired: { zh: '已废弃', en: 'Retired' },
   },
-  'file-asset': {
-    active: { zh: '可用', en: 'Available' },
-    deleted: { zh: '已删除', en: 'Deleted' },
-  },
 };
 
 export function getObjectStatusLocale(type: string, status: string, locale: string): string {
@@ -94,7 +90,6 @@ export const TYPE_DESCRIPTION_LOCALES: Record<string, { zh: string; en: string }
   pitfall: { zh: '可复用经验', en: 'Reusable pitfalls' },
   spark: { zh: '待分流的火花', en: 'Spark pending routing' },
   study: { zh: '研究', en: 'Study' },
-  'file-asset': { zh: '作为稳定身份纳入项目的确定文件内容', en: 'Definite file content governed as a stable project object' },
   change: { zh: '提交', en: 'Commit' },
 };
 
@@ -118,7 +113,6 @@ export const TYPE_LOCALES: Record<string, { zh: string; en: string }> = {
   pitfall: { zh: '经验', en: 'Pitfall' },
   spark: { zh: '火花', en: 'Spark' },
   study: { zh: '研究', en: 'Study' },
-  'file-asset': { zh: '文件', en: 'File' },
   change: { zh: '提交', en: 'Commit' },
 };
 
@@ -518,7 +512,6 @@ const COMMIT_SCOPE_LOCALES: Record<string, { zh: string; en: string }> = {
   tests: { zh: 'Tests', en: 'Tests' }, config: { zh: '配置', en: 'Config' },
   workcase: { zh: '工作', en: 'WorkCase' }, adr: { zh: '决策', en: 'ADR' },
   spark: { zh: '火花', en: 'Spark' }, study: { zh: '研究', en: 'Study' },
-  'file-asset': { zh: '文件', en: 'File' },
   pitfall: { zh: '经验', en: 'Pitfall' },
 };
 
@@ -586,7 +579,6 @@ export const UI_LOCALES = {
     'nav.pitfalls': '经验',
     'nav.sparks': '火花',
     'nav.studies': '研究',
-    'nav.fileAssets': '文件',
     'nav.changes': '变更',
     'nav.changelog': '提交',
     'nav.settings': '设置',
@@ -1104,7 +1096,6 @@ export const UI_LOCALES = {
     'nav.pitfalls': 'Pitfalls',
     'nav.sparks': 'Sparks',
     'nav.studies': 'External studies',
-    'nav.fileAssets': 'Files',
     'nav.changes': 'Changes',
     'nav.changelog': 'Commit Records',
     'nav.settings': 'Settings',

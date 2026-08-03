@@ -263,26 +263,6 @@ def test_generic_update_rejects_workcase_before_core_or_write(
     assert not (project / ".git/ldvh").exists()
 
 
-def test_generic_update_rejects_file_asset_before_read_or_write(tmp_path: Path) -> None:
-    workspace, project, _ = _fixture(tmp_path)
-    reference = {
-        "governed_project_id": "sample",
-        "fact_type_key": "file-asset",
-        "object_id": "file-asset-0001",
-    }
-
-    response = handle_request(
-        "call",
-        "update-fact-object",
-        _update_payload(workspace, project, "a" * 64, {"title": "Must not be written"}, reference),
-    ).response
-
-    assert response["outcome"] == "invalid_request"
-    assert "FileAsset 更新尚不可用" in response["gaps"][0]["summary"]
-    assert not (project / "ldvh-base/file-assets").exists()
-    assert response["changes"] == []
-
-
 def test_update_replaces_full_target_and_preserves_managed_identity(tmp_path: Path) -> None:
     workspace, project, fact = _fixture(tmp_path)
     before = _read(workspace, project)

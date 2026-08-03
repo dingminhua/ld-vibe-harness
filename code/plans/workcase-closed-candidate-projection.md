@@ -19,7 +19,6 @@
 
 ## 3. 投影合同
 
-纯投影输入是已经满足当前 WorkCase snapshot 合同、含完整 `closure_proposal` 的 `human_closure_confirming` before。输出排除 `object_id`、`fact_type_key`、`created_at`、`updated_at`，并完整包含：`status=closed`；逐值保留的 title、goal、scope、成功标准定义/结果、result summary、validation summary 与条件 urls；proposal 映射的 closure outcome、disposition、accepted-stop residuals、spark suggestions 和去重 routed-to；以及 before 原样保留的 contributed-to、has-file-asset、related-to。
 
 条件数组没有成员时省略。proposal route targets 按稳定三元组排序去重；before 的保留关系按解析值复制。投影不携带 proposal target fingerprint，因为 fingerprint 只是只读操作结果中的 mapping basis 和真实关闭事务的再校验输入，不属于 closed fact object。
 

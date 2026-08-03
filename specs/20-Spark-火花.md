@@ -182,9 +182,6 @@ Spark 的 `relation_key` 闭集为：
 
 | relation_key | 目标、基数与方向 | 跨项目、缺失、自指与循环 | 对状态的影响 |
 |---|---|---|---|
-| `routed-to` | `routed` Spark 指向在进入该状态时实际承接其部分或全部信息需求的同项目非 Spark、非 Study、非 FileAsset 事实对象；可以有一项或多项 | 建立或更正该关系时，目标必须可按稳定三元组读取为 mechanically valid 当前对象；禁止自指；全部 routed-to 边必须无环。目标后续 status、phase、关闭、完成、替代或继续分流不使既有关系或 routed 判断失效 | 单独存在不改变状态；只有进入 routed 时目标内容实际承接相应范围、全部原始内容被多个目标共同覆盖时才能 routed |
-| `related-to` | 当前 Spark 指向同项目除 FileAsset 外的任一 current 事实对象，表示主题相关但不声明承接；可以有零项或多项 | 目标缺失时该关系失效但不自动改变 Spark 状态；禁止自指；允许互相或成环，因为每条边只表达局部相关性，不派生承接或反向权威 | 不构成处置证据，也不因关系数量改变状态 |
-Spark 的关系类型为 `routed-to`（承接分流）和 `related-to`（主题相关）。新 Spark 与旧 Spark 之间的接替关系通过 `disposition_summary` 表达，不建立独立的关系边。`routed-to` 的目标类型必须是已经具有当前唯一定义来源、能够自然承载相应信息的非 Spark、非 Study、非 FileAsset 事实类型；不能指向 Spark、Study、FileAsset、缓存、派生索引或只因字段相似而选择的对象。FileAsset 只记录文件内容的客观存在，不能承接 Spark 的信息需求；本类型也没有 `has-file-asset`，因此 `related-to` 不得绕过消费者准入建立附件语义。Study 的报告正文不替代行动、决定、经验或其它正式承接位置。目标的后续状态只由目标类型的来源解释；Spark 不从中派生未完成、回退、重新打开或必须改写分流关系的义务。反向导航由 Code 派生，不得为了反向展示写入第二条含义不同的权威关系。
 
 `routed-to` 的唯一权威身份始终是目标的 `governed_project_id`、`fact_type_key` 与 `object_id` 三元组。当前不支持跨项目 Spark 关系：两个 relation key 的目标都必须属于当前管辖项目；实际跨项目需求出现时，必须先另行定义可验证的发现、读取与治理边界。关系中不得复制、人工维护或以 `object_id` 冒充目标名称；面向 Human 的完整名称只能从该目标当前对象的非空 `title` 派生读取。Helper 的项目级关系检查必须实际读取目标并确认该 `title` 可呈现：目标不存在、机械无效或缺少非空 `title` 时，source Spark 的关系无效；目标当前不可读取时，结果保持 `unavailable`。Web 不得把读取到的名称变成关系权威，也不得以编号作为名称回退。
 

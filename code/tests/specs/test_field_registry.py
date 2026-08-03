@@ -16,15 +16,14 @@ def test_current_registry_is_complete_and_resolves_all_current_types(current_spe
     inspection = _inspection(current_specs_repository)
 
     assert inspection.complete is True
-    assert len(inspection.structures) == 23
-    assert len(inspection.registrations) == 157
+    assert len(inspection.structures) == 21
+    assert len(inspection.registrations) == 143
     assert {item.fact_type_key for item in inspection.fact_types} == {
         "spark",
         "workcase",
         "adr",
         "pitfall",
         "study",
-        "file-asset",
     }
 
 

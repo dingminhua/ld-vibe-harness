@@ -25,29 +25,6 @@ test('local exact reads carry source metadata for each local carrier, while list
       await mkdir(dir, { recursive: true });
       await writeFile(path.join(dir, `${fixture.id}${extension}`), fixture.body, 'utf8');
     }
-    const assetDirectory = path.join(root, 'ldvh-base', 'file-assets', 'file-asset-0001');
-    await mkdir(assetDirectory, { recursive: true });
-    await writeFile(path.join(assetDirectory, 'payload'), 'fixture payload', 'utf8');
-    await writeFile(
-      path.join(assetDirectory, 'file-asset.yaml'),
-      [
-        'object_id: file-asset-0001',
-        'fact_type_key: file-asset',
-        'title: File asset fixture',
-        'created_at: 2026-08-01T00:00:00+08:00',
-        'updated_at: 2026-08-01T00:00:00+08:00',
-        'status: active',
-        'filename: fixture.txt',
-        'media_type: text/plain',
-        'size_bytes: 15',
-        `content_sha256: ${'a'.repeat(64)}`,
-        'signature:',
-        '  signer_type: human',
-        '',
-      ].join('\n'),
-      'utf8',
-    );
-
     for (const fixture of fixtures) {
       const result = await showObject(fixture.id, scope);
       if (!result.ok) throw new Error(result.error);
@@ -58,14 +35,6 @@ test('local exact reads carry source metadata for each local carrier, while list
       assert.equal(result.data.check_status, undefined);
       assert.equal(result.data.fact_read_failure, undefined);
     }
-
-    const asset = await showObject('file-asset-0001', scope);
-    if (!asset.ok) throw new Error(asset.error);
-    assert.equal(asset.data.canonical_path, 'ldvh-base/file-assets/file-asset-0001');
-    assert.equal(asset.data.carrier, 'directory');
-    assert.equal(asset.data.read_status, 'readable');
-    assert.equal(asset.data.filename, 'fixture.txt');
-    assert.equal('payload' in asset.data, false);
 
     const listed = await listObjects('study', undefined, undefined, scope);
     if (!listed.ok) throw new Error(listed.error);
@@ -78,12 +47,6 @@ test('local exact reads carry source metadata for each local carrier, while list
     assert.deepEqual(candidate?.read_issues, []);
     assert.equal(candidate?.report_body, undefined);
 
-    const assetList = await listObjects('file-asset', undefined, undefined, scope);
-    if (!assetList.ok) throw new Error(assetList.error);
-    const assetCandidate = (assetList.data.items as Array<Record<string, unknown>>)[0];
-    assert.equal(assetCandidate?.object_id, 'file-asset-0001');
-    assert.equal(assetCandidate?.filename, 'fixture.txt');
-    assert.equal('payload' in (assetCandidate ?? {}), false);
   } finally {
     await rm(root, { recursive: true, force: true });
   }

@@ -90,7 +90,7 @@ def parse_fact_update_request(
         if len(values) == len(_FACT_REF_FIELDS):
             layout = LAYOUTS.get(values["fact_type_key"])
             if layout is None or values["fact_type_key"] not in WRITABLE_FACT_TYPE_KEYS:
-                problems.append("arguments.fact_ref.fact_type_key 未匹配当前支持通用更新的五类单文件事实类型；FileAsset 更新尚不可用")
+                problems.append("arguments.fact_ref.fact_type_key 未匹配当前支持通用更新的五类事实类型")
             elif layout.object_id_pattern.fullmatch(values["object_id"]) is None:
                 problems.append("arguments.fact_ref.object_id 与事实类型格式不一致")
             else:

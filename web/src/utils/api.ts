@@ -120,14 +120,6 @@ export interface ObjectItem {
   conclusion?: string;
   urls?: Array<string | UrlItem>;
   report_body?: string;
-  /** FileAsset manifest fields; payload bytes are never included. */
-  filename?: string;
-  media_type?: string;
-  size_bytes?: number;
-  content_sha256?: string;
-  signature?: Record<string, unknown>;
-  deleted_at?: string;
-  recovery?: Record<string, unknown>;
   /** Pitfall-specific */
   symptoms?: string;
   trigger_conditions?: string;
@@ -688,29 +680,6 @@ export async function fetchObjectDetail<TData extends Record<string, unknown> = 
   return request<ObjectDetail<TData>>(`/objects/${type}/${encodeURIComponent(id)}`);
 }
 
-export interface FileAssetPreviewPayload {
-  blob: Blob;
-  kind: 'markdown' | 'image';
-  mediaType: string;
-}
-
-export async function fetchFileAssetPreview(objectId: string): Promise<FileAssetPreviewPayload> {
-  const url = `${API_BASE}${withProjectId(`/objects/file-asset/${encodeURIComponent(objectId)}/preview`)}`;
-  const response = await fetch(url);
-  if (!response.ok) {
-    const body = await response.json().catch(() => null) as Record<string, unknown> | null;
-    const message = typeof body?.error === 'string' && body.error.trim()
-      ? body.error
-      : `API error: ${response.status} ${response.statusText}`;
-    const code = typeof body?.code === 'string' ? body.code : undefined;
-    throw new ApiRequestError(response.status, message, code);
-  }
-  const kindHeader = response.headers.get('X-LDVH-Preview-Kind');
-  const kind = kindHeader === 'markdown' ? 'markdown' : kindHeader === 'image' ? 'image' : null;
-  if (!kind) throw new ApiRequestError(502, 'Preview response has no supported content kind');
-  const blob = await response.blob();
-  return { blob, kind, mediaType: response.headers.get('Content-Type') || blob.type };
-}
 
 export interface ChangelogEntry {
   hash: string;

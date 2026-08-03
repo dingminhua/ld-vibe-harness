@@ -23,11 +23,11 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
     assert inspection.issues == ()
     assert inspection.implemented_checks_complete is True
     checked_documents = inspection.active_documents_passing_implemented_checks
-    assert len(checked_documents) == 34
-    assert sum(document.kind != "attachment" for document in checked_documents) == 21
+    assert len(checked_documents) == 32
+    assert sum(document.kind != "attachment" for document in checked_documents) == 20
 
-    assert sum(document.kind == "attachment" for document in checked_documents) == 13
-    assert len(inspection.projections) == 102
+    assert sum(document.kind == "attachment" for document in checked_documents) == 12
+    assert len(inspection.projections) == 96
     assert {projection.layer for projection in inspection.projections} == {"L0", "L1", "L2"}
     field_registry = inspection.document_passing_implemented_checks_by_key("fact-object-field-registry")
     assert field_registry is not None
@@ -46,16 +46,9 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
     assert web_reading_contract is not None
     assert web_reading_contract.current_id == "08.Att.01"
     assert web_reading_contract.canonical_path == "specs/attachments/08.Att.01-Web API 阅读契约字段表.md"
-    web_preview_contract = inspection.document_passing_implemented_checks_by_key("web-content-preview-contract")
-    assert web_preview_contract is not None
-    assert web_preview_contract.current_id == "08.Att.02"
-    assert web_preview_contract.canonical_path == "specs/attachments/08.Att.02-Web 内容预览安全契约.md"
     web_presentation = inspection.document_passing_implemented_checks_by_key("web-presentation-interaction")
     assert web_presentation is not None
-    assert web_presentation.authorized_attachments == (
-        "web-api-reading-contract",
-        "web-content-preview-contract",
-    )
+    assert web_presentation.authorized_attachments == ("web-api-reading-contract",)
     helper_contract = inspection.document_passing_implemented_checks_by_key("helper-cli-service-contract")
     assert helper_contract is not None
     assert helper_contract.basis == (
@@ -81,13 +74,10 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
         "close-workcase",
         "correct-closed-workcase",
         "create-fact-object",
-        "create-file-asset",
-        "delete-file-asset",
         "find-fact-object-candidates",
         "precheck-git-commit",
         "prepare-closed-workcase-candidate",
         "prepare-fact-object-draft",
-        "prepare-file-asset-intake",
         "read-action-template-candidates",
         "read-action-template-content",
         "read-fact-objects",
@@ -106,13 +96,10 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
         "close-workcase": "specs/21-WorkCase-工作项.md",
         "correct-closed-workcase": "specs/21-WorkCase-工作项.md",
         "create-fact-object": "specs/05-事实模型基础规范.md",
-        "create-file-asset": "specs/25-FileAsset-文件资产.md",
-        "delete-file-asset": "specs/25-FileAsset-文件资产.md",
         "find-fact-object-candidates": "specs/05-事实模型基础规范.md",
         "precheck-git-commit": "specs/03-事实源与信息溯源规范.md",
         "prepare-closed-workcase-candidate": "specs/21-WorkCase-工作项.md",
         "prepare-fact-object-draft": "specs/05-事实模型基础规范.md",
-        "prepare-file-asset-intake": "specs/25-FileAsset-文件资产.md",
         "read-action-template-candidates": "specs/06-行动模板基础规范.md",
         "read-action-template-content": "specs/06-行动模板基础规范.md",
         "read-fact-objects": "specs/05-事实模型基础规范.md",
@@ -160,8 +147,8 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
     assert action_templates.issues == ()
     assert action_templates.incomplete_sources == ()
     assert fields.complete is True
-    assert len(fields.structures) == 23
-    assert len(fields.registrations) == 157
+    assert len(fields.structures) == 21
+    assert len(fields.registrations) == 143
 
 
 def test_mechanically_distinct_spec_does_not_create_a_semantic_duplicate_diagnosis(
@@ -207,8 +194,8 @@ def test_invalid_working_tree_source_is_not_replaced_with_committed_content(
     assert any("YAML title 与 H1" in issue.summary for issue in inspection.issues)
     assert inspection.implemented_checks_complete is False
     assert inspection.document_passing_implemented_checks_by_key("web-presentation-interaction") is None
-    assert len(inspection.active_documents_passing_implemented_checks) == 23
-    assert len(inspection.projections) == 69
+    assert len(inspection.active_documents_passing_implemented_checks) == 22
+    assert len(inspection.projections) == 66
 
 
 def test_invalid_foundation_stops_dependent_current_projection(current_specs_repository: Path) -> None:

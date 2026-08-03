@@ -109,11 +109,6 @@ _RFC3339 = re.compile(
     r"(?P<offset_minute>[0-5][0-9]))\Z"
 )
 _EPOCH_ORDINAL = date(1970, 1, 1).toordinal()
-_FILE_ASSET_SHA256 = re.compile(r"[0-9a-f]{64}\Z")
-_GIT_OBJECT_ID = re.compile(r"[0-9a-f]{40}(?:[0-9a-f]{24})?\Z")
-_FILE_ASSET_MEDIA_TYPE = re.compile(
-    r"[a-z0-9][a-z0-9!#$&^_.+-]*/[a-z0-9][a-z0-9!#$&^_.+-]*\Z"
-)
 
 
 @dataclass(frozen=True, order=True, slots=True)
@@ -494,91 +489,6 @@ def study_report_creation_issues(fields: dict[str, Any]) -> tuple[FactIssue, ...
     return tuple(issues)
 
 
-def _validate_file_asset(fields: dict[str, Any], issues: list[FactIssue]) -> None:
-    filename = fields.get("filename")
-    if isinstance(filename, str) and (
-        filename in {".", ".."} or any(mark in filename for mark in ("/", "\\", "\0"))
-    ):
-        issues.append(
-            FactIssue("schema", "filename 必须是不含路径分隔符或 NUL 的 basename", "filename")
-        )
-    media_type = fields.get("media_type")
-    if isinstance(media_type, str) and _FILE_ASSET_MEDIA_TYPE.fullmatch(media_type) is None:
-        issues.append(
-            FactIssue("schema", "media_type 必须是小写且不带参数的 type/subtype", "media_type")
-        )
-    size_bytes = fields.get("size_bytes")
-    if isinstance(size_bytes, int) and not isinstance(size_bytes, bool) and size_bytes < 0:
-        issues.append(FactIssue("schema", "size_bytes 必须是不小于 0 的 integer", "size_bytes"))
-    content_sha256 = fields.get("content_sha256")
-    if isinstance(content_sha256, str) and _FILE_ASSET_SHA256.fullmatch(content_sha256) is None:
-        issues.append(
-            FactIssue(
-                "schema",
-                "content_sha256 必须是 64 位小写十六进制 SHA-256",
-                "content_sha256",
-            )
-        )
-
-    status = fields.get("status")
-    deleted_fields = {"deleted_at", "recovery"}
-    if status == "active":
-        _forbid(fields, deleted_fields, issues)
-    elif status == "deleted":
-        _require(fields, deleted_fields, issues)
-        if fields.get("deleted_at") != fields.get("updated_at"):
-            issues.append(
-                FactIssue(
-                    "schema",
-                    "deleted_at 必须与本次安全删除托管的 updated_at 完全一致",
-                    "deleted_at",
-                )
-            )
-        recovery = fields.get("recovery")
-        if isinstance(recovery, dict):
-            expected_path = f"ldvh-base/file-assets/{fields.get('object_id')}/payload"
-            if recovery.get("path") != expected_path:
-                issues.append(
-                    FactIssue(
-                        "schema",
-                        "recovery.path 必须精确指向该对象原 canonical payload 路径",
-                        "recovery.path",
-                    )
-                )
-            for name in ("commit", "blob_oid"):
-                value = recovery.get(name)
-                if isinstance(value, str) and _GIT_OBJECT_ID.fullmatch(value) is None:
-                    issues.append(
-                        FactIssue(
-                            "schema",
-                            f"recovery.{name} 必须是 40 或 64 位小写十六进制 Git object id",
-                            f"recovery.{name}",
-                        )
-                    )
-
-    signature = fields.get("signature")
-    if not isinstance(signature, dict):
-        return
-    signer_type = signature.get("signer_type")
-    if signer_type == "human":
-        expected = {"signer_type"}
-    elif signer_type == "ai-agent":
-        expected = {"signer_type", "agent_id", "host_environment"}
-    else:
-        issues.append(
-            FactIssue(
-                "schema",
-                "signature.signer_type 必须是 human 或 ai-agent",
-                "signature.signer_type",
-            )
-        )
-        return
-    for name in sorted(set(signature) - expected):
-        issues.append(FactIssue("schema", "当前签名分支禁止该字段", f"signature.{name}"))
-    for name in sorted(expected - set(signature)):
-        issues.append(FactIssue("schema", "当前签名分支缺少必填字段", f"signature.{name}"))
-
-
 def validate_fact_object(fact_type_key: str, fields: dict[str, Any], schema: FactSchema) -> tuple[FactIssue, ...]:
     issues: list[FactIssue] = []
     _validate_mapping(fields, _tree(schema), "", issues)
@@ -590,8 +500,6 @@ def validate_fact_object(fact_type_key: str, fields: dict[str, Any], schema: Fac
         issues.extend(validate_workcase_snapshot(fields))
     elif fact_type_key == "study":
         _validate_study(fields, issues)
-    elif fact_type_key == "file-asset":
-        _validate_file_asset(fields, issues)
     _validate_times(fact_type_key, fields, issues)
     _validate_change_log(fields, issues)
     _validate_references(fact_type_key, fields, issues)

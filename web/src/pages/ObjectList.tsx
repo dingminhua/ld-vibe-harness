@@ -1363,18 +1363,6 @@ function StudyCardContent({ obj }: { obj: ObjectItem }) {
   return null;
 }
 
-function FileAssetCardContent({ obj }: { obj: ObjectItem }) {
-  const { t } = useI18n();
-  if (obj.status !== 'deleted') return null;
-
-  return (
-    <TerminalFactPanel
-      tone="retired"
-      content={formatReasonText(obj.disposition_summary?.trim() || t('objectList.dispositionMissing'))}
-    />
-  );
-}
-
 export default function ObjectList() {
   const { type } = useParams<{ type: string }>();
   const navigate = useNavigate();
@@ -1628,13 +1616,6 @@ export default function ObjectList() {
       );
     }
 
-    if (currentType === 'file-asset') {
-      return (
-        <ObjectCardFrame key={obj.id} obj={obj} locale={locale} onOpen={openObject} showNonActiveReason={false}>
-          <FileAssetCardContent obj={obj} />
-        </ObjectCardFrame>
-      );
-    }
 
     return (
       <ObjectCardFrame key={obj.id} obj={obj} locale={locale} onOpen={openObject}>

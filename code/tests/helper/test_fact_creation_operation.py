@@ -72,29 +72,6 @@ def _prepare(workspace: Path, project: Path, fact_type_key: str = "spark") -> di
     return response["result"]
 
 
-def test_generic_draft_rejects_file_asset_without_writes(tmp_path: Path) -> None:
-    workspace, project = _fixture(tmp_path)
-    response = handle_request(
-        "call",
-        "prepare-fact-object-draft",
-        json.dumps(
-            {
-                "work_object_locators": [str(project)],
-                "arguments": {
-                    "workspace_root": str(workspace),
-                    "governed_project_id": "sample",
-                    "fact_type_key": "file-asset",
-                },
-            }
-        ),
-    ).response
-
-    assert response["outcome"] == "invalid_request"
-    assert "FileAsset 必须使用 prepare-file-asset-intake 与 create-file-asset" in response["gaps"][0]["summary"]
-    assert not (project / "ldvh-base/file-assets").exists()
-    assert response["changes"] == []
-
-
 def test_prepare_projects_constraint_source_for_conditional_workcase_fields(tmp_path: Path) -> None:
     workspace, project = _fixture(tmp_path)
 

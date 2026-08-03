@@ -17,7 +17,6 @@ export const FACT_TYPE_DIRS = {
   pitfall: 'pitfalls',
   spark: 'sparks',
   study: 'studies',
-  'file-asset': 'file-assets',
 } as const
 
 export const FACT_TYPE_CARRIERS = {
@@ -26,11 +25,10 @@ export const FACT_TYPE_CARRIERS = {
   pitfall: '.yaml',
   spark: '.yaml',
   study: '.md',
-  'file-asset': '',
 } as const
 
 export type LocalFactType = FactType
-export type LocalFactCarrier = 'yaml' | 'markdown' | 'directory'
+export type LocalFactCarrier = 'yaml' | 'markdown'
 export type LocalFactReadStatus = 'readable' | 'unreadable'
 
 export type LocalFactIssue = {
@@ -96,7 +94,6 @@ function expectedFileName(type: LocalFactType, objectId: string): string {
 }
 
 function carrierFor(type: LocalFactType): LocalFactCarrier {
-  if (type === 'file-asset') return 'directory'
   return type === 'study' ? 'markdown' : 'yaml'
 }
 
@@ -111,15 +108,12 @@ function metadataFor(scope: LocalFactScope, type: LocalFactType, objectId: strin
 }
 
 function isExpectedCarrierName(type: LocalFactType, fileName: string): boolean {
-  if (type === 'file-asset') return /^file-asset-\d{4,}$/.test(fileName)
   const extension = FACT_TYPE_CARRIERS[type].replace('.', '\\.')
   return new RegExp(`^${type}-\\d{4,}${extension}$`).test(fileName)
 }
 
 function expectedManifestPath(metadata: LocalFactMetadata): string {
-  return metadata.carrier === 'directory'
-    ? path.join(metadata.absolute_path, 'file-asset.yaml')
-    : metadata.absolute_path
+  return metadata.absolute_path
 }
 
 function looksLikeFactCarrier(fileName: string): boolean {
@@ -161,7 +155,6 @@ const RECORD_ARRAY_FIELDS: Partial<Record<LocalFactType, ReadonlySet<string>>> =
   adr: new Set(['change_log']),
   pitfall: new Set(['change_log']),
   study: new Set(['change_log']),
-  'file-asset': new Set(['change_log']),
 }
 
 function isConsumableRecordMember(type: LocalFactType, field: string, member: Record<string, unknown>): boolean {
@@ -248,20 +241,6 @@ async function readItemFile(scope: LocalFactScope, type: LocalFactType, fileName
   if (!isRecord(parsed)) {
     return unreadable(metadata, [{ code: 'yaml_parse_failed', message: 'YAML 顶层不是键值映射' }])
   }
-  if (metadata.carrier === 'directory') {
-    try {
-      const members = await readdir(metadata.absolute_path, { withFileTypes: true })
-      const expectedMembers = parsed.status === 'deleted'
-        ? new Set(['file-asset.yaml'])
-        : new Set(['file-asset.yaml', 'payload'])
-      if (members.some((member) => !member.isFile() || !expectedMembers.has(member.name))
-        || members.length !== expectedMembers.size) {
-        return unreadable(metadata, [{ code: 'read_failed', message: 'FileAsset 目录成员不符合当前状态的正式 carrier 结构' }])
-      }
-    } catch (error) {
-      return unreadable(metadata, [{ code: 'read_failed', message: `FileAsset 目录读取失败：${error instanceof Error ? error.message : String(error)}` }])
-    }
-  }
   return { ...metadata, read_status: 'readable', source_content_fingerprint: sourceContentFingerprint, ...projectFields(type, objectId, parsed, {}), issues: [] }
 }
 
@@ -274,13 +253,11 @@ export async function listLocalFacts(type: LocalFactType, scope: LocalFactScope)
   const missing = directoryStatus(scope, type)
   if (missing) return missing
   const entries = await readdir(baseDirOf(scope, type), { withFileTypes: true })
-  const carriers = type === 'file-asset'
-    ? entries.filter((entry) => entry.isDirectory())
-    : entries.filter((entry) => entry.isFile() && looksLikeFactCarrier(entry.name))
+  const carriers = entries.filter((entry) => entry.isFile() && looksLikeFactCarrier(entry.name))
   const fileNames = carriers.filter((entry) => isExpectedCarrierName(type, entry.name)).map((entry) => entry.name).sort((left, right) => left.localeCompare(right))
   const issues = carriers.filter((entry) => !isExpectedCarrierName(type, entry.name)).map((entry) => ({
     code: 'unexpected_fact_carrier' as const,
-    message: `${type} 正式载体必须是 ${type}-NNNN${type === 'file-asset' ? ' 目录' : FACT_TYPE_CARRIERS[type]}，已忽略错载体 ${entry.name}`,
+    message: `${type} 正式载体必须是 ${type}-NNNN${FACT_TYPE_CARRIERS[type]}，已忽略错载体 ${entry.name}`,
     path: path.posix.join('ldvh-base', FACT_TYPE_DIRS[type], entry.name),
   }))
   return { status: 'complete', items: await Promise.all(fileNames.map((fileName) => readItemFile(scope, type, fileName))), issues }
@@ -294,7 +271,7 @@ export async function readLocalFact(type: LocalFactType, objectId: string, scope
   const filePath = path.join(baseDirOf(scope, type), expectedName)
   try {
     const statResult = await stat(filePath)
-    if (type === 'file-asset' ? !statResult.isDirectory() : !statResult.isFile()) {
+    if (!statResult.isFile()) {
       return { status: 'not_found', metadata, issues: [{ code: 'read_failed', message: `未找到预期事实对象 ${expectedName}`, path: metadata.canonical_path }] }
     }
   } catch {

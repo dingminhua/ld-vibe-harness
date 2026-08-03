@@ -42,7 +42,6 @@ _TYPE_SOURCES = {
     "adr": "specs/22-ADR-决策.md",
     "pitfall": "specs/23-Pitfall-踩坑经验.md",
     "study": "specs/24-Study-研究报告.md",
-    "file-asset": "specs/25-FileAsset-文件资产.md",
 }
 
 
@@ -93,7 +92,6 @@ def _item(scope: FactReferenceScope, root: Path, read: FactReadResult) -> dict[s
         "carrier": read.carrier,
         "check_status": read.check_status,
         "fact_object": fact_object,
-        "file_asset_payload": None,
         "content_fingerprint": read.content_fingerprint,
         "current_snapshot_projection": None,
         "issues": [
@@ -107,27 +105,6 @@ def _item(scope: FactReferenceScope, root: Path, read: FactReadResult) -> dict[s
         ],
         "source_refs": sources,
     }
-    complete_file_asset_coverage = {
-        "manifest-read",
-        "members-closed",
-        "payload-size-read",
-        "payload-sha256-computed",
-    }
-    if (
-        read.carrier == "file-asset-directory"
-        and read.check_status in {"mechanically_valid", "invalid"}
-        and set(read.integrity_coverage) == complete_file_asset_coverage
-        and read.payload_canonical_path is not None
-        and read.observed_size_bytes is not None
-        and read.observed_content_sha256 is not None
-    ):
-        item["file_asset_payload"] = {
-            "canonical_path": read.payload_canonical_path,
-            "observed_size_bytes": read.observed_size_bytes,
-            "observed_content_sha256": read.observed_content_sha256,
-            "integrity_coverage": list(read.integrity_coverage),
-            "matches_manifest": read.payload_matches_manifest,
-        }
     if (
         scope.requested_ref.fact_type_key == "workcase"
         and read.check_status == "mechanically_valid"

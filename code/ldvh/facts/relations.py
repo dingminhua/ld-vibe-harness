@@ -118,8 +118,6 @@ class ProjectFactIndex:
         try:
             paths = safe_list_directory(self.root, layout.directory)
         except FileNotFoundError:
-            if fact_type_key == "file-asset":
-                return (), True
             # A missing type directory does not prove that no peer of this
             # type exists.  In particular, callers using this scan for a
             # negative relation proof must treat the project set as partial.
@@ -135,13 +133,9 @@ class ProjectFactIndex:
         results: list[FactReadResult] = []
         complete = True
         for path in paths:
-            if layout.carrier == "file-asset-directory":
-                object_id = path.name
-            else:
-                assert layout.suffix is not None
-                if path.suffix != layout.suffix:
-                    continue
-                object_id = path.name.removesuffix(layout.suffix)
+            if path.suffix != layout.suffix:
+                continue
+            object_id = path.name.removesuffix(layout.suffix)
             if layout.object_id_pattern.fullmatch(object_id) is None:
                 continue
             result = self.read(fact_type_key, object_id)
@@ -201,9 +195,9 @@ def _target(relation: dict[str, object]) -> dict[str, object] | None:
 
 def _target_condition(source_type: str, relation_key: str, target_type: str, target_status: object) -> bool:
     if source_type == "spark" and relation_key == "routed-to":
-        return target_type not in {"spark", "study", "file-asset"}
+        return target_type not in {"spark", "study"}
     if source_type == "spark" and relation_key == "related-to":
-        return target_type in LAYOUTS and target_type != "file-asset"
+        return target_type in LAYOUTS
     if source_type == "workcase" and relation_key == "depends-on":
         return target_type == "workcase" and target_status in ACTIVE_STATUSES
     if source_type == "workcase" and relation_key == "routed-to":
@@ -220,13 +214,8 @@ def _target_condition(source_type: str, relation_key: str, target_type: str, tar
         # shared target read above; later Pitfall state changes do not affect
         # the edge.  Formation-at-draft is checked by the WorkCase write path.
         return target_type == "pitfall" and target_status in {"draft", "active", "discarded"}
-    if source_type == "workcase" and relation_key == "has-file-asset":
-        # Formation requires active and is enforced by the WorkCase write
-        # transition.  Safe deletion requires the complete incoming edge set
-        # to be empty, so no valid edge can survive status=deleted.
-        return target_type == "file-asset" and target_status == "active"
     if source_type == "workcase" and relation_key == "related-to":
-        return target_type in LAYOUTS and target_type != "file-asset"
+        return target_type in LAYOUTS
     if source_type == "study" and relation_key == "inspired-by":
         return target_type in {"spark", "workcase", "adr"}
     if source_type == "study" and relation_key == "informs":
@@ -260,8 +249,6 @@ def _source_condition(source_type: str, relation_key: str, source_fields: dict[s
     if source_type == "workcase" and relation_key == "contributed-to":
         # The edge must be able to exist legally in human_closure_confirming;
         # formation timing is enforced by the update-path transition checks.
-        return source_fields.get("status") in {"open", "blocked", "closed"}
-    if source_type == "workcase" and relation_key == "has-file-asset":
         return source_fields.get("status") in {"open", "blocked", "closed"}
     if source_type == "workcase" and relation_key == "related-to":
         return source_fields.get("status") in {"open", "blocked", "closed"}
@@ -682,10 +669,7 @@ def validate_project_relations(
         if not any(item.get("relation_key") == "routed-to" for item in _relations(read)):
             issues.append(FactIssue("relation", "routed Spark 至少需要一条 routed-to 关系", "relations"))
 
-    relation_keys = {str(item.get("relation_key")) for item in _relations(read)} - {
-        "related-to",
-        "has-file-asset",
-    }
+    relation_keys = {str(item.get("relation_key")) for item in _relations(read)} - {"related-to"}
     for relation_key in relation_keys:
         graph_status = (
             _graph_status(index, (fact_type_key, object_id), relation_key)

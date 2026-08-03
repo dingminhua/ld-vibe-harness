@@ -90,19 +90,6 @@ _F2_SEARCH_FIELDS = {
             "updated_at",
         }
     ),
-    "file-asset": frozenset(
-        {
-            "object_id",
-            "title",
-            "status",
-            "filename",
-            "media_type",
-            "size_bytes",
-            "content_sha256",
-            "signature",
-            "updated_at",
-        }
-    ),
 }
 _F2_ONLY_FIELDS = frozenset(
     {

@@ -15,7 +15,7 @@ from typing import Any, Literal
 
 from ldvh.facts.carriers.yaml_object import parse_yaml_object
 from ldvh.facts.contracts import ACTIVE_STATUSES, LAYOUTS
-from ldvh.facts.creation import CreationBoundary, allocation_lock, relation_write_lock, serialize_fact_object
+from ldvh.facts.creation import CreationBoundary, allocation_lock, serialize_fact_object
 from ldvh.facts.models import FactIssue
 from ldvh.facts.project_validation import stabilize_project_index
 from ldvh.facts.relations import (
@@ -379,7 +379,7 @@ _CLOSED_PRESERVED_FIELDS = (
     "validation_summary",
     "urls",
 )
-_CLOSED_PRESERVED_RELATION_KEYS = frozenset({"contributed-to", "has-file-asset", "related-to"})
+_CLOSED_PRESERVED_RELATION_KEYS = frozenset({"contributed-to", "related-to"})
 
 
 def proposal_route_target_basis(
@@ -546,7 +546,7 @@ def _close_mapping_issues(
                 "relations",
             )
         )
-    for relation_key in ("contributed-to", "has-file-asset", "related-to"):
+    for relation_key in ("contributed-to", "related-to"):
         before_relations = {identity for identity in _relation_identities(expected) if identity[0] == relation_key}
         after_relations = {identity for identity in _relation_identities(after) if identity[0] == relation_key}
         if before_relations == after_relations:
@@ -797,48 +797,6 @@ def _new_contributed_to_issues(
     return tuple(issues), unavailable
 
 
-def _new_file_asset_issues(
-    command: WorkCaseWriteCommand,
-    before: Mapping[str, Any],
-    after: Mapping[str, Any],
-) -> tuple[tuple[FactIssue, ...], bool]:
-    """Require each newly formed file edge to target a current active FileAsset."""
-
-    before_edges = {identity for identity in _relation_identities(before) if identity[0] == "has-file-asset"}
-    new_edges = [identity for identity in _relation_identities(after) - before_edges if identity[0] == "has-file-asset"]
-    if not new_edges:
-        return (), False
-    issues: list[FactIssue] = []
-    index = _project_index(command)
-    unavailable = False
-    for _, project_id, target_type, target_id in new_edges:
-        if project_id != index.governed_project_id or target_type != "file-asset" or not isinstance(target_id, str):
-            continue
-        target_read = index.read_fresh("file-asset", target_id)
-        if target_read is not None and target_read.check_status == "unavailable":
-            unavailable = True
-            issues.append(FactIssue("reference", "新 has-file-asset target 当前不可用", "relations"))
-            continue
-        if target_read is None or target_read.check_status in {"not_found", "invalid"} or target_read.fields is None:
-            issues.append(
-                FactIssue(
-                    "relation",
-                    "新 has-file-asset target 必须是完整可读的 mechanically valid active FileAsset",
-                    "relations",
-                )
-            )
-            continue
-        if target_read.fields.get("status") != "active" or target_read.current_bytes_confirmed is not True:
-            issues.append(
-                FactIssue(
-                    "relation",
-                    "新 has-file-asset 只能指向完整性已确认的 status=active FileAsset",
-                    "relations",
-                )
-            )
-    return tuple(issues), unavailable
-
-
 def _request_source_reference_issues(command: WorkCaseWriteCommand) -> tuple[FactIssue, ...]:
     problems = [
         problem
@@ -925,15 +883,6 @@ def apply_workcase_write_locked(command: WorkCaseWriteCommand) -> WorkCaseWriteR
         status = "candidate_unavailable" if contribution_unavailable else "candidate_rejected"
         return _result(command, status, issues=contribution_issues, current=current)
 
-    file_asset_issues, file_asset_unavailable = _new_file_asset_issues(
-        command,
-        current.fields,
-        preview,
-    )
-    if file_asset_issues or file_asset_unavailable:
-        status = "candidate_unavailable" if file_asset_unavailable else "candidate_rejected"
-        return _result(command, status, issues=file_asset_issues, current=current)
-
     if mutable_current == dict(command.supplied):
         return _result(command, "no_change", current=current, readback=current)
 
@@ -1006,11 +955,6 @@ def apply_workcase_write_locked(command: WorkCaseWriteCommand) -> WorkCaseWriteR
         readback.fields if readback.fields is not None else preview,
         post_write=True,
     )
-    post_file_asset_issues, post_file_asset_unavailable = _new_file_asset_issues(
-        command,
-        current.fields,
-        readback.fields if readback.fields is not None else preview,
-    )
     post_dependency_issues: tuple[FactIssue, ...] = ()
     post_dependency_unavailable = False
     if command.mode == "close":
@@ -1030,8 +974,6 @@ def apply_workcase_write_locked(command: WorkCaseWriteCommand) -> WorkCaseWriteR
         and readback.raw_text == candidate_text
         and not post_route_issues
         and not post_route_unavailable
-        and not post_file_asset_issues
-        and not post_file_asset_unavailable
         and not post_dependency_issues
         and not post_dependency_unavailable
     )
@@ -1051,7 +993,6 @@ def apply_workcase_write_locked(command: WorkCaseWriteCommand) -> WorkCaseWriteR
             issues=(
                 *readback_issues,
                 *post_route_issues,
-                *post_file_asset_issues,
                 *post_dependency_issues,
             ),
             current=current,
@@ -1081,9 +1022,8 @@ def apply_workcase_write(command: WorkCaseWriteCommand) -> WorkCaseWriteResult:
         return _result(command, "durability_unavailable")
     completed: WorkCaseWriteResult | None = None
     try:
-        with relation_write_lock(command.boundary):
-            with allocation_lock(command.boundary, LAYOUTS["workcase"]):
-                completed = apply_workcase_write_locked(command)
+        with allocation_lock(command.boundary, LAYOUTS["workcase"]):
+            completed = apply_workcase_write_locked(command)
     except OSError:
         if completed is None:
             raise

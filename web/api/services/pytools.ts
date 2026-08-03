@@ -11,5 +11,5 @@ export const LDVH_ROOT = process.env.LDVH_ROOT || path.resolve(__dirname, '../..
 export const LDVH_WORKSPACE_ROOT = process.env.LDVH_WORKSPACE_ROOT || path.dirname(LDVH_ROOT)
 
 /** 当前工作对象类型 */
-export const OBJECT_TYPES = ['workcase', 'adr', 'pitfall', 'spark', 'study', 'file-asset'] as const
+export const OBJECT_TYPES = ['workcase', 'adr', 'pitfall', 'spark', 'study'] as const
 export type ObjectType = (typeof OBJECT_TYPES)[number]

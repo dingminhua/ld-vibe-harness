@@ -6,7 +6,6 @@ import { Router, type Request, type Response } from 'express'
 import { listObjects, showObject, OBJECT_TYPES, type ObjectType } from '../services/facts.js'
 import { ProjectScopeError, requestFactScope } from '../services/requestScope.js'
 import type { LocalFactScope } from '../services/localFactReader.js'
-import { readFileAssetPreview, type FileAssetPreviewFailureCode } from '../services/fileAssetPreview.js'
 import {
   WORKCASE_PROGRESS_GROUP_ORDER,
   isResolvedWorkCasePresentationProjection,
@@ -171,46 +170,6 @@ async function listObjectSummaries(type: ObjectType, scope: LocalFactScope): Pro
   return getResultItems(result)
 }
 
-function previewFailureStatus(code: FileAssetPreviewFailureCode): number {
-  if (code === 'not_found') return 404
-  if (code === 'too_large') return 413
-  if (code === 'unsupported') return 415
-  if (code === 'integrity_failed' || code === 'unsafe') return 422
-  return 503
-}
-
-/**
- * GET /api/objects/file-asset/:id/preview - read a bounded, verified payload.
- * The manifest stays on the normal object-detail endpoint; payload bytes only
- * travel through this explicitly preview-oriented route.
- */
-router.get('/file-asset/:id/preview', async (req: Request, res: Response): Promise<void> => {
-  let factScope
-  try {
-    factScope = await requestFactScope(req)
-  } catch (scopeError) {
-    if (scopeError instanceof ProjectScopeError) {
-      res.status(400).json({ ok: false, code: 'unavailable', error: scopeError.message })
-      return
-    }
-    throw scopeError
-  }
-
-  const result = await readFileAssetPreview(factScope, req.params.id)
-  if (!result.ok) {
-    res.status(previewFailureStatus(result.code)).json({ ok: false, code: result.code, error: result.message })
-    return
-  }
-
-  res.setHeader('Content-Type', result.mediaType)
-  res.setHeader('Content-Disposition', `inline; filename*=UTF-8''${encodeURIComponent(result.filename)}`)
-  res.setHeader('X-LDVH-Preview-Kind', result.kind)
-  res.setHeader('X-Content-Type-Options', 'nosniff')
-  res.setHeader('Cross-Origin-Resource-Policy', 'same-origin')
-  res.setHeader('Content-Security-Policy', "sandbox; default-src 'none'")
-  res.setHeader('Cache-Control', 'no-store')
-  res.send(result.data)
-})
 
 /**
  * GET /api/objects/:type - 列出指定类型的对象

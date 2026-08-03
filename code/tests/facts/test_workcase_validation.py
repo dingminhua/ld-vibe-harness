@@ -582,52 +582,6 @@ def _contributed(fact_type_key: str, object_id: str) -> dict[str, object]:
     }
 
 
-def _file_asset_relation(
-    object_id: str = "file-asset-0007",
-    *,
-    relation_key: str = "has-file-asset",
-    fact_type_key: str = "file-asset",
-) -> dict[str, object]:
-    return {
-        "relation_key": relation_key,
-        "target": {
-            "governed_project_id": "current-project",
-            "fact_type_key": fact_type_key,
-            "object_id": object_id,
-        },
-    }
-
-
-def test_has_file_asset_is_valid_in_active_and_closed_workcase_snapshots() -> None:
-    active = _base("executing")
-    active["execution_approval"] = _approval()
-    active["relations"] = [_file_asset_relation()]
-    closed = _closed()
-    closed["relations"] = [_file_asset_relation()]
-
-    assert validate_workcase_snapshot(active) == ()
-    assert validate_workcase_snapshot(closed) == ()
-
-
-def test_file_asset_must_use_has_file_asset_and_exact_file_asset_identity() -> None:
-    related = _base("executing")
-    related["execution_approval"] = _approval()
-    related["relations"] = [_file_asset_relation(relation_key="related-to")]
-    wrong_type = _base("executing")
-    wrong_type["execution_approval"] = _approval()
-    wrong_type["relations"] = [_file_asset_relation(fact_type_key="study", object_id="study-0007")]
-    wrong_id = _base("executing")
-    wrong_id["execution_approval"] = _approval()
-    wrong_id["relations"] = [_file_asset_relation(object_id="study-0007")]
-
-    assert any(issue.field_path == "relations[0].target.object_id" for issue in validate_workcase_snapshot(related))
-    assert any(
-        issue.field_path == "relations[0].target.fact_type_key"
-        for issue in validate_workcase_snapshot(wrong_type)
-    )
-    assert any(issue.field_path == "relations[0].target.object_id" for issue in validate_workcase_snapshot(wrong_id))
-
-
 def test_contributed_to_targets_pitfall_in_active_and_closed_snapshots() -> None:
     fact_type_key = "pitfall"
     object_id = "pitfall-0007"

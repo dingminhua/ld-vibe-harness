@@ -26,7 +26,7 @@ def test_candidate_discovery_marks_reparse_directories_incomplete(
 
     assert snapshot.complete is False
     assert snapshot.keys == ()
-    assert len(snapshot.structural_problems) == 6
+    assert len(snapshot.structural_problems) == 5
     assert all(
         "符号链接或重解析点" in item["issues"][0]["summary"] and "安全、完整地枚举" in item["issues"][0]["summary"]
         for item in snapshot.structural_problems
@@ -73,26 +73,6 @@ def test_regular_ds_store_at_each_registered_type_root_is_ignored(tmp_path: Path
     assert snapshot.structural_problems == ()
 
 
-def test_file_asset_delete_staging_residue_is_exposed_as_noncanonical(tmp_path: Path) -> None:
-    for layout in LAYOUTS.values():
-        (tmp_path / layout.directory).mkdir(parents=True)
-    residue = (
-        tmp_path
-        / LAYOUTS["file-asset"].directory
-        / ".ldvh-directory-replace-interrupted.tmp"
-    )
-    residue.mkdir()
-    (residue / "file-asset.yaml").write_text("status: active\n", encoding="utf-8")
-
-    snapshot = discover_fact_candidates(tmp_path, "sample", tmp_path / ".git", {})
-
-    assert snapshot.complete is False
-    assert snapshot.keys == ()
-    assert snapshot.structural_problems[0]["canonical_path"].endswith(
-        ".ldvh-directory-replace-interrupted.tmp"
-    )
-
-
 def test_ds_store_is_removed_before_negative_relation_scan_budget(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -117,7 +97,7 @@ def test_nonregular_ds_store_at_type_root_remains_noncanonical(
 ) -> None:
     for layout in LAYOUTS.values():
         (tmp_path / layout.directory).mkdir(parents=True)
-    metadata = tmp_path / LAYOUTS["file-asset"].directory / ".DS_Store"
+    metadata = tmp_path / LAYOUTS["spark"].directory / ".DS_Store"
     if entry_kind == "directory":
         metadata.mkdir()
     else:
@@ -134,8 +114,8 @@ def test_nonregular_ds_store_at_type_root_remains_noncanonical(
     assert snapshot.keys == ()
     assert snapshot.structural_problems == (
         {
-            "fact_type_key": "file-asset",
-            "canonical_path": "ldvh-base/file-assets/.DS_Store",
+            "fact_type_key": "spark",
+            "canonical_path": "ldvh-base/sparks/.DS_Store",
             "check_status": "unavailable",
             "issues": [
                 {

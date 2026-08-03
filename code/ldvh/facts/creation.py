@@ -84,7 +84,7 @@ def worktree_fingerprint(boundary: CreationBoundary) -> str:
 
 
 def _numeric_suffix(layout: FactTypeLayout, path: Path) -> int | None:
-    object_id = path.name if layout.carrier == "file-asset-directory" else path.name.removesuffix(layout.suffix or "")
+    object_id = path.name.removesuffix(layout.suffix)
     if layout.object_id_pattern.fullmatch(object_id) is None:
         return None
     return int(object_id.rsplit("-", 1)[1])
@@ -130,11 +130,6 @@ def _allocator_relative_paths(boundary: CreationBoundary, layout: FactTypeLayout
     state = Path("ldvh") / "fact-id-allocators"
     key = _allocator_key(boundary, layout)
     return state / f"{key}.lock", state / f"{key}.counter"
-
-
-def _relation_lock_path(boundary: CreationBoundary) -> Path:
-    project_hash = hashlib.sha256(boundary.governed_project_id.encode()).hexdigest()[:24]
-    return Path("ldvh") / "fact-relations" / f"{project_hash}.lock"
 
 
 def _allocator_paths(boundary: CreationBoundary, layout: FactTypeLayout) -> tuple[Path, Path]:
@@ -184,25 +179,6 @@ def allocation_lock(boundary: CreationBoundary, layout: FactTypeLayout) -> Itera
         with exclusive_relative_file_lock(boundary.git_common_dir, lock_path):
             entered = True
             yield counter_path
-    except OSError as error:
-        if entered:
-            raise
-        if error.errno == errno.EROFS:
-            raise FactCoordinationUnavailable("read_only_filesystem") from error
-        if isinstance(error, PermissionError) or error.errno in {errno.EACCES, errno.EPERM}:
-            raise FactCoordinationUnavailable("permission_denied") from error
-        raise
-
-
-@contextmanager
-def relation_write_lock(boundary: CreationBoundary) -> Iterator[None]:
-    """Serialize writes that can create/remove FileAsset incoming edges."""
-
-    entered = False
-    try:
-        with exclusive_relative_file_lock(boundary.git_common_dir, _relation_lock_path(boundary)):
-            entered = True
-            yield
     except OSError as error:
         if entered:
             raise
@@ -329,7 +305,6 @@ __all__ = [
     "candidate_object_id",
     "commit_object_id_locked",
     "preview_object_id_locked",
-    "relation_write_lock",
     "rollback_created_text",
     "schema_fingerprint",
     "serialize_fact_object",

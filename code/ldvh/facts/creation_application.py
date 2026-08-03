@@ -20,7 +20,6 @@ from ldvh.facts.creation import (
     atomic_create_text,
     commit_object_id_locked,
     preview_object_id_locked,
-    relation_write_lock,
     rollback_created_text,
     serialize_fact_object,
 )
@@ -405,13 +404,8 @@ def create_fact_object(command: FactCreationCommand, *, observed_at: str | None 
     layout = LAYOUTS[command.fact_type_key]
     completed: FactCreationResult | None = None
     try:
-        if command.fact_type_key == "workcase":
-            with relation_write_lock(command.boundary):
-                with allocation_lock(command.boundary, layout) as counter_path:
-                    completed = create_fact_object_locked(prepared, counter_path)
-        else:
-            with allocation_lock(command.boundary, layout) as counter_path:
-                completed = create_fact_object_locked(prepared, counter_path)
+        with allocation_lock(command.boundary, layout) as counter_path:
+            completed = create_fact_object_locked(prepared, counter_path)
     except OSError:
         if completed is None:
             raise

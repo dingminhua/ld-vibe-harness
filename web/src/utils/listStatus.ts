@@ -1,6 +1,6 @@
 import { WORKCASE_DEFAULT_LIST_STATUS } from '@/shared/workcaseStatus';
 
-const DEFAULT_ACTIVE_TYPES = new Set(['adr', 'pitfall', 'study', 'file-asset']);
+const DEFAULT_ACTIVE_TYPES = new Set(['adr', 'pitfall', 'study']);
 
 export const ALL_STATUS_PARAM = 'all';
 

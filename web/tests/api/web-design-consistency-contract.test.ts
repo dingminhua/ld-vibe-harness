@@ -78,63 +78,6 @@ test('fact reading labels use the central locale registry', () => {
   assert.match(associations, /getLocalizedObjectTitle\(source, locale\)/);
 });
 
-test('FileAsset list cards defer carrier metadata to detail and show only the deletion reason when terminal', () => {
-  const objectList = read('src/pages/ObjectList.tsx');
-  const fileAssetDetail = read('src/pages/object-detail/FileAssetReadingLayout.tsx');
-  const fileAssetCard = objectList.slice(
-    objectList.indexOf('function FileAssetCardContent'),
-    objectList.indexOf('export default function ObjectList'),
-  );
-
-  assert.match(fileAssetCard, /obj\.status !== 'deleted'/);
-  assert.match(fileAssetCard, /<TerminalFactPanel[\s\S]*tone="retired"[\s\S]*disposition_summary/);
-  assert.doesNotMatch(fileAssetCard, /filename|media_type|size_bytes|formatFileSize/);
-  assert.match(fileAssetDetail, /getFieldLabel\('filename', locale\)/);
-  assert.match(fileAssetDetail, /getFieldLabel\('media_type', locale\)/);
-  assert.match(fileAssetDetail, /getFieldLabel\('size_bytes', locale\)/);
-  assert.match(fileAssetDetail, /ldvh-study-node-content grid min-w-0/);
-  assert.match(fileAssetDetail, /'ldvh-caption-strong text-ldvh-text-secondary\/80'/);
-  assert.match(fileAssetDetail, /hideLabel/);
-  assert.match(fileAssetDetail, /hideLabel \? 'sr-only'/);
-  assert.match(fileAssetDetail, /aria-label=\{hideLabel \? label : undefined\}/);
-  assert.match(fileAssetDetail, /ldvh-detail-semantic-body/);
-  assert.doesNotMatch(fileAssetDetail, /font-mono/);
-  assert.doesNotMatch(fileAssetDetail, /<DetailInlineField/);
-});
-
-test('FileAsset detail exposes its YAML manifest as the standard collapsed technical node', () => {
-  const objectDetail = read('src/pages/ObjectDetail.tsx');
-
-  assert.match(
-    objectDetail,
-    /objType === 'file-asset' && readMeta\.carrier === 'directory'/,
-  );
-  assert.match(objectDetail, /const yamlSource = showYamlSource \? reconstructFactYaml\(obj\) : ''/);
-  assert.match(objectDetail, /aria-expanded=\{showYaml\}/);
-  assert.match(objectDetail, /objectDetail\.yamlSource/);
-});
-
-test('FileAsset payload preview stays separate from object metadata and opens in secondary reading', () => {
-  const fileAssetDetail = read('src/pages/object-detail/FileAssetReadingLayout.tsx');
-  const panelContext = read('src/utils/panelContext.tsx');
-  const panelContent = read('src/components/reading-panel/PanelContent.tsx');
-  const api = read('src/utils/api.ts');
-  const objectRoutes = read('api/routes/objects.ts');
-  const previewService = read('api/services/fileAssetPreview.ts');
-
-  assert.match(fileAssetDetail, /type: 'file-preview'/);
-  assert.match(fileAssetDetail, /objectDetail\.openReadingPanel/);
-  assert.match(fileAssetDetail, /<ChevronRight size=\{14\}/);
-  assert.match(panelContext, /'file-preview'/);
-  assert.match(panelContent, /fetchFileAssetPreview/);
-  assert.match(panelContent, /blockRemoteImages/);
-  assert.match(api, /\/objects\/file-asset\/\$\{encodeURIComponent\(objectId\)\}\/preview/);
-  assert.match(objectRoutes, /router\.get\('\/file-asset\/:id\/preview'/);
-  assert.match(previewService, /FILE_ASSET_PREVIEW_LIMIT_BYTES = 4 \* 1024 \* 1024/);
-  assert.match(previewService, /O_NOFOLLOW/);
-  assert.match(previewService, /createHash\('sha256'\)/);
-});
-
 test('prominent card title follows the documented 16px by 24px hierarchy', () => {
   const styles = read('src/index.css');
   assert.match(styles, /\.ldvh-card-title-prominent[\s\S]*text-base font-semibold leading-6/);

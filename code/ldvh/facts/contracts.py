@@ -34,30 +34,15 @@ def is_ignored_fact_type_root_entry(path: Path) -> bool:
 class FactTypeLayout:
     fact_type_key: str
     directory: str
-    carrier: Literal["yaml", "markdown", "file-asset-directory"]
-    suffix: str | None
-    manifest_name: str | None
-    payload_name: str | None
+    carrier: Literal["yaml", "markdown"]
+    suffix: str
     object_id_pattern: re.Pattern[str]
     initial_statuses: frozenset[str]
     statuses: frozenset[str]
     relation_keys: frozenset[str]
 
     def canonical_path(self, object_id: str) -> str:
-        if self.carrier == "file-asset-directory":
-            return f"{self.directory}/{object_id}"
-        assert self.suffix is not None
         return f"{self.directory}/{object_id}{self.suffix}"
-
-    def canonical_manifest_path(self, object_id: str) -> str:
-        if self.carrier != "file-asset-directory" or self.manifest_name is None:
-            return self.canonical_path(object_id)
-        return f"{self.canonical_path(object_id)}/{self.manifest_name}"
-
-    def canonical_payload_path(self, object_id: str) -> str | None:
-        if self.carrier != "file-asset-directory" or self.payload_name is None:
-            return None
-        return f"{self.canonical_path(object_id)}/{self.payload_name}"
 
 
 def _layout(
@@ -74,8 +59,6 @@ def _layout(
         directory=f"ldvh-base/{plural}",
         carrier="markdown" if suffix == ".md" else "yaml",
         suffix=suffix,
-        manifest_name=None,
-        payload_name=None,
         object_id_pattern=re.compile(rf"{re.escape(fact_type_key)}-[0-9]{{4,}}\Z"),
         initial_statuses=frozenset(initial_statuses),
         statuses=frozenset(statuses),
@@ -96,7 +79,7 @@ LAYOUTS = {
         "workcases",
         initial_statuses=("open",),
         statuses=("open", "blocked", "closed"),
-        relation_keys=("depends-on", "routed-to", "contributed-to", "has-file-asset", "related-to"),
+        relation_keys=("depends-on", "routed-to", "contributed-to", "related-to"),
     ),
     "adr": _layout(
         "adr",
@@ -119,18 +102,6 @@ LAYOUTS = {
         initial_statuses=("active",),
         statuses=("active", "retired"),
         relation_keys=("inspired-by", "informs"),
-    ),
-    "file-asset": FactTypeLayout(
-        fact_type_key="file-asset",
-        directory="ldvh-base/file-assets",
-        carrier="file-asset-directory",
-        suffix=None,
-        manifest_name="file-asset.yaml",
-        payload_name="payload",
-        object_id_pattern=re.compile(r"file-asset-[0-9]{4,}\Z"),
-        initial_statuses=frozenset({"active"}),
-        statuses=frozenset({"active", "deleted"}),
-        relation_keys=frozenset(),
     ),
 }
 

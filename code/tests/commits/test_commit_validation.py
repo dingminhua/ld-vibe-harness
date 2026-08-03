@@ -8,7 +8,6 @@ from ldvh.commits.contract_source import CommitContractProjection
 from ldvh.commits.validation import (
     CommitValidationInput,
     StagedFactCandidate,
-    StagedFileAssetCandidate,
     validate_commit,
 )
 from ldvh.facts.schema import FactSchema, ProjectedField
@@ -18,7 +17,7 @@ from ldvh.facts.schema import FactSchema, ProjectedField
 def contract() -> CommitContractProjection:
     return CommitContractProjection(
         type_tokens=("feat", "fix", "docs", "style", "refactor", "perf", "test", "build", "ci", "chore", "revert"),
-        scope_tokens=("specs", "docs", "rules", "runtime", "code", "web", "tests", "config", "file-asset"),
+        scope_tokens=("specs", "docs", "rules", "runtime", "code", "web", "tests", "config"),
         mechanical_triggers=("multiple-paths", "breaking-marker", "revert-type"),
         source_key="source-of-truth-traceability",
         source_path="specs/03-事实源与信息溯源规范.md",
@@ -55,16 +54,6 @@ def test_single_path_valid_header_passes_mechanical_layer(contract: CommitContra
 
     assert result.outcome == "passed"
     assert "主要目的与拆分" in result.semantic_checks_required
-
-
-def test_hyphenated_registered_scope_passes_mechanical_layer(contract: CommitContractProjection) -> None:
-    result = validate_commit(
-        contract,
-            _input(contract, message=_signed("feat(file-asset): 激活文件资产事实对象")),
-    )
-
-    assert result.outcome == "passed"
-    assert result.header == "feat(file-asset): 激活文件资产事实对象"
 
 
 def test_crlf_and_leading_comments_are_normalized(contract: CommitContractProjection) -> None:
@@ -211,133 +200,6 @@ def _spark_schema() -> FactSchema:
             field("change_log.at"),
             field("change_log.summary"),
         ),
-    )
-
-
-def _file_asset_schema() -> FactSchema:
-    def field(
-        path: str,
-        json_type: str = "string",
-        presence: str = "required",
-        structure: str | None = None,
-    ) -> ProjectedField:
-        return ProjectedField(path, json_type, presence, structure, "test-registry")
-
-    return FactSchema(
-        "file-asset",
-        (
-            field("object_id"),
-            field("fact_type_key"),
-            field("title"),
-            field("created_at"),
-            field("updated_at"),
-            field("status"),
-            field("filename"),
-            field("media_type"),
-            field("size_bytes", "integer"),
-            field("content_sha256"),
-            field("signature", "object", structure="file-asset-signature"),
-            field("signature.signer_type"),
-            field("signature.agent_id", presence="conditional"),
-            field("signature.host_environment", presence="conditional"),
-            field("disposition_summary", presence="conditional"),
-            field("deleted_at", presence="conditional"),
-            field("recovery", "object", presence="conditional"),
-            field("recovery.commit", presence="conditional"),
-            field("recovery.path", presence="conditional"),
-            field("recovery.blob_oid", presence="conditional"),
-            field("change_log", "array"),
-            field("change_log.signature", "object"),
-            field("change_log.signature.agent_id"),
-            field("change_log.signature.host_environment"),
-            field("change_log.session_id"),
-            field("change_log.at"),
-            field("change_log.summary"),
-        ),
-    )
-
-
-def _file_asset_candidate(
-    *,
-    object_id: str = "file-asset-0001",
-    payload: bytes = b"objective bytes\n",
-    head_exists: bool | None = False,
-    member_names: tuple[str, ...] = ("file-asset.yaml", "payload"),
-    observation_issue: str | None = None,
-) -> StagedFileAssetCandidate:
-    import hashlib
-
-    manifest = (
-        f"object_id: {object_id}\n"
-        "fact_type_key: file-asset\n"
-        "title: 审计文件\n"
-        'created_at: "2026-07-31T10:00:00+08:00"\n'
-        'updated_at: "2026-07-31T10:00:00+08:00"\n'
-        "status: active\n"
-        "filename: audit.bin\n"
-        "media_type: application/octet-stream\n"
-        f"size_bytes: {len(payload)}\n"
-        f"content_sha256: {hashlib.sha256(payload).hexdigest()}\n"
-        "signature:\n"
-        "  signer_type: human\n"
-        "change_log:\n"
-        "  - signature:\n"
-        "      agent_id: test-agent\n"
-        "      host_environment: test-environment\n"
-        "    session_id: test-session\n"
-        '    at: "2026-07-31T10:00:00+08:00"\n'
-        "    summary: 建立审计文件资产\n"
-    ).encode()
-    return StagedFileAssetCandidate(
-        object_id,
-        tuple(f"ldvh-base/file-assets/{object_id}/{name}" for name in member_names),
-        member_names,
-        manifest if "file-asset.yaml" in member_names else None,
-        payload if "payload" in member_names else None,
-        head_exists,
-        observation_issue,
-    )
-
-
-def _deleted_file_asset_candidate(*, appended_session_id: str = "test-session") -> StagedFileAssetCandidate:
-    active = _file_asset_candidate()
-    assert active.manifest_data is not None and active.payload_data is not None
-    deleted = active.manifest_data.replace(
-        b'updated_at: "2026-07-31T10:00:00+08:00"\nstatus: active\n',
-        (
-            'updated_at: "2026-08-01T10:00:00+08:00"\n'
-            "status: deleted\n"
-            'deleted_at: "2026-08-01T10:00:00+08:00"\n'
-            "disposition_summary: 删除测试资产 payload\n"
-            "recovery:\n"
-            "  commit: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n"
-            "  path: ldvh-base/file-assets/file-asset-0001/payload\n"
-            "  blob_oid: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n"
-        ).encode(),
-    ).replace(
-        "    summary: 建立审计文件资产\n".encode(),
-        (
-            "    summary: 建立审计文件资产\n"
-            "  - signature:\n"
-            "      agent_id: test-agent\n"
-            "      host_environment: test-environment\n"
-            f"    session_id: {appended_session_id}\n"
-            '    at: "2026-08-01T10:00:00+08:00"\n'
-            "    summary: 删除审计文件资产 payload\n"
-        ).encode(),
-    )
-    return StagedFileAssetCandidate(
-        "file-asset-0001",
-        ("ldvh-base/file-assets/file-asset-0001/file-asset.yaml",),
-        ("file-asset.yaml",),
-        deleted,
-        None,
-        True,
-        head_commit="a" * 40,
-        head_member_names=("file-asset.yaml", "payload"),
-        head_manifest_data=active.manifest_data,
-        head_payload_data=active.payload_data,
-        head_payload_oid="b" * 40,
     )
 
 
@@ -514,101 +376,6 @@ def test_invalid_fact_is_not_downgraded_by_another_candidate_trace_gap(
     assert result.outcome == "failed"
     assert "fact_candidate_invalid" in _codes(result)
     assert "fact_trace_unverifiable" in _codes(result)
-
-
-def test_complete_valid_new_file_asset_after_image_passes(contract: CommitContractProjection) -> None:
-    result = validate_commit(
-        contract,
-        _input(
-            contract,
-            file_asset_candidates=(_file_asset_candidate(),),
-            fact_schemas=(_file_asset_schema(),),
-        ),
-    )
-
-    assert result.outcome == "passed"
-
-
-def test_new_file_asset_change_log_must_match_commit_footer(contract: CommitContractProjection) -> None:
-    candidate = _file_asset_candidate()
-    assert candidate.manifest_data is not None
-    mismatched = candidate.manifest_data.replace(b"session_id: test-session", b"session_id: another-session")
-    result = validate_commit(
-        contract,
-        _input(
-            contract,
-            file_asset_candidates=(
-                StagedFileAssetCandidate(
-                    candidate.object_id,
-                    candidate.paths,
-                    candidate.member_names,
-                    mismatched,
-                    candidate.payload_data,
-                    candidate.head_exists,
-                ),
-            ),
-            fact_schemas=(_file_asset_schema(),),
-        ),
-    )
-
-    assert result.outcome == "failed"
-    assert "fact_trace_signature_mismatch" in _codes(result)
-
-
-def test_deleted_file_asset_change_log_must_match_commit_footer(contract: CommitContractProjection) -> None:
-    result = validate_commit(
-        contract,
-        _input(
-            contract,
-            file_asset_candidates=(_deleted_file_asset_candidate(appended_session_id="another-session"),),
-            fact_schemas=(_file_asset_schema(), FactSchema("workcase", ())),
-        ),
-    )
-
-    assert result.outcome == "failed"
-    assert "fact_trace_signature_mismatch" in _codes(result)
-
-
-def test_incomplete_new_file_asset_after_image_fails(contract: CommitContractProjection) -> None:
-    result = validate_commit(
-        contract,
-        _input(
-            contract,
-            file_asset_candidates=(_file_asset_candidate(member_names=("payload",)),),
-            fact_schemas=(_file_asset_schema(),),
-        ),
-    )
-
-    assert result.outcome == "failed"
-    assert _codes(result) == {"fact_candidate_invalid"}
-
-
-def test_existing_file_asset_lifecycle_write_fails(contract: CommitContractProjection) -> None:
-    result = validate_commit(
-        contract,
-        _input(
-            contract,
-            file_asset_candidates=(_file_asset_candidate(head_exists=True),),
-            fact_schemas=(_file_asset_schema(),),
-        ),
-    )
-
-    assert result.outcome == "failed"
-    assert _codes(result) == {"file_asset_lifecycle_write_unavailable"}
-
-
-def test_file_asset_after_image_observation_gap_is_unverifiable(contract: CommitContractProjection) -> None:
-    result = validate_commit(
-        contract,
-        _input(
-            contract,
-            file_asset_candidates=(_file_asset_candidate(observation_issue="blob read failed"),),
-            fact_schemas=(_file_asset_schema(),),
-        ),
-    )
-
-    assert result.outcome == "unverifiable"
-    assert _codes(result) == {"fact_candidate_unverifiable"}
 
 
 def test_missing_fact_schema_projection_is_unverifiable(contract: CommitContractProjection) -> None:

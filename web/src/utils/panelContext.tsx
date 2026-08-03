@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from 'react';
 import type { FactCarrier } from '@/utils/factReadMeta';
 
-export type PanelContentType = 'object' | 'file-preview' | 'doc' | 'web' | 'yaml' | 'evidence' | 'diff' | 'empty';
+export type PanelContentType = 'object' | 'doc' | 'web' | 'yaml' | 'evidence' | 'diff' | 'empty';
 
 export interface PanelContent {
   type: PanelContentType;
@@ -142,7 +142,6 @@ export function usePanel() {
 
 function getPanelContentKey(content: PanelContent) {
   if (content.type === 'object') return `object:${content.objectType ?? ''}:${content.objectId ?? ''}`;
-  if (content.type === 'file-preview') return `file-preview:${content.objectId ?? ''}`;
   if (content.type === 'doc') return `doc:${content.docPath ?? ''}`;
   if (content.type === 'web') return `web:${content.url ?? ''}`;
   return `${content.type}:${content.title ?? ''}`;

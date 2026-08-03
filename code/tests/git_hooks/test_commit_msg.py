@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import hashlib
 import os
 import shlex
 import subprocess
@@ -153,68 +152,6 @@ def _install(tmp_path: Path, workspace: Path, project: Path) -> Path:
     return Path(installed.hook_path)
 
 
-def _stage_active_file_asset(project: Path) -> tuple[str, str]:
-    payload = b"objective audit bytes\n"
-    directory = project / "ldvh-base/file-assets/file-asset-0001"
-    directory.mkdir(parents=True)
-    manifest_path = "ldvh-base/file-assets/file-asset-0001/file-asset.yaml"
-    payload_path = "ldvh-base/file-assets/file-asset-0001/payload"
-    (project / manifest_path).write_text(
-        "".join(
-            (
-                "object_id: file-asset-0001\n",
-                "fact_type_key: file-asset\n",
-                "title: 审计文件\n",
-                'created_at: "2026-07-31T10:00:00+08:00"\n',
-                'updated_at: "2026-07-31T10:00:00+08:00"\n',
-                "status: active\n",
-                "filename: audit.bin\n",
-                "media_type: application/octet-stream\n",
-                f"size_bytes: {len(payload)}\n",
-                f"content_sha256: {hashlib.sha256(payload).hexdigest()}\n",
-                "signature:\n",
-                "  signer_type: human\n",
-            )
-        ),
-        encoding="utf-8",
-    )
-    (project / payload_path).write_bytes(payload)
-    _checked_git(project, "add", manifest_path, payload_path)
-    return manifest_path, payload_path
-
-
-def _stage_deleted_file_asset(project: Path, manifest_path: str, payload_path: str, blob_oid: str) -> None:
-    commit = _checked_git(project, "rev-parse", "HEAD").strip()
-    payload = b"objective audit bytes\n"
-    (project / manifest_path).write_text(
-        "".join(
-            (
-                "object_id: file-asset-0001\n",
-                "fact_type_key: file-asset\n",
-                "title: 审计文件\n",
-                'created_at: "2026-07-31T10:00:00+08:00"\n',
-                'updated_at: "2026-08-01T10:00:00+08:00"\n',
-                "status: deleted\n",
-                "filename: audit.bin\n",
-                "media_type: application/octet-stream\n",
-                f"size_bytes: {len(payload)}\n",
-                f"content_sha256: {hashlib.sha256(payload).hexdigest()}\n",
-                "signature:\n",
-                "  signer_type: human\n",
-                "disposition_summary: Human 确认不再保留当前 payload。\n",
-                'deleted_at: "2026-08-01T10:00:00+08:00"\n',
-                "recovery:\n",
-                f"  commit: {commit}\n",
-                f"  path: {payload_path}\n",
-                f"  blob_oid: {blob_oid}\n",
-            )
-        ),
-        encoding="utf-8",
-    )
-    (project / payload_path).unlink(missing_ok=True)
-    _checked_git(project, "add", "-A", str(Path(manifest_path).parent))
-
-
 def _write_native_hook(project: Path, workspace: Path, runner: Path) -> Path:
     hook = project / ".git" / "hooks" / "commit-msg"
     hook.write_text(
@@ -265,48 +202,6 @@ def test_native_commit_msg_hook_blocks_invalid_message_and_allows_valid_message(
     assert accepted.returncode == 0, accepted.stderr
     assert _checked_git(project, "rev-parse", "HEAD").strip() != before
     assert _checked_git(project, "log", "-1", "--format=%B") == _signed("docs: 增加提交校验") + "\n\n"
-
-
-def test_native_commit_msg_hook_blocks_forged_safe_delete_then_allows_exact_tombstone(
-    tmp_path: Path,
-) -> None:
-    workspace, project = _managed_project(tmp_path)
-    _install(tmp_path, workspace, project)
-    manifest_path, payload_path = _stage_active_file_asset(project)
-    active_commit = _git(
-        project,
-        "commit",
-        "-m",
-        _signed("test(file-asset): 建立安全删除基线\n\n关键变更:\n- 提交完整 active 载体"),
-    )
-    assert active_commit.returncode == 0, active_commit.stderr
-    expected_blob = _checked_git(project, "rev-parse", f"HEAD:{payload_path}").strip()
-
-    _stage_deleted_file_asset(project, manifest_path, payload_path, "f" * len(expected_blob))
-    before = _checked_git(project, "rev-parse", "HEAD").strip()
-    blocked = _git(
-        project,
-        "commit",
-        "-m",
-        _signed("test(file-asset): 拦截伪造恢复锚点\n\n关键变更:\n- 暂存伪造 deleted tombstone"),
-    )
-
-    assert blocked.returncode != 0
-    assert "file_asset_delete_recovery_mismatch" in blocked.stderr
-    assert _checked_git(project, "rev-parse", "HEAD").strip() == before
-
-    _stage_deleted_file_asset(project, manifest_path, payload_path, expected_blob)
-    allowed = _git(
-        project,
-        "commit",
-        "-m",
-        _signed("test(file-asset): 提交安全删除墓碑\n\n关键变更:\n- 提交精确 deleted tombstone"),
-    )
-
-    assert allowed.returncode == 0, allowed.stderr
-    assert _checked_git(project, "rev-parse", "HEAD").strip() != before
-    assert not (project / payload_path).exists()
-    assert "status: deleted" in (project / manifest_path).read_text(encoding="utf-8")
 
 
 def test_native_hook_observes_the_temporary_index_used_by_internal_commit_execution(tmp_path: Path) -> None:

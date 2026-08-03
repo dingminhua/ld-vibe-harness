@@ -31,7 +31,6 @@ const registryByKey = new Map(rowsAfter(registry, '## 统一字段登记表').ma
 const typeSpecs: Record<string, string> = {
   spark: '20-Spark-火花.md', workcase: '21-WorkCase-工作项.md', adr: '22-ADR-决策.md',
   pitfall: '23-Pitfall-踩坑经验.md', study: '24-Study-研究报告.md',
-  'file-asset': '25-FileAsset-文件资产.md',
 };
 
 function boundPresence(type: string): Map<string, string> {
@@ -49,11 +48,10 @@ test('Web field contract is exactly the 05 registry and type bindings projected 
     const row = projectionRows.get(
       type === 'workcase' ? 'WorkCase'
         : type === 'adr' ? 'ADR'
-          : type === 'file-asset' ? 'FileAsset'
-            : `${type[0].toUpperCase()}${type.slice(1)}`,
+          : `${type[0].toUpperCase()}${type.slice(1)}`,
     );
     assert.ok(row, `08 is missing ${type} projection`);
-    const allowedCommon = type === 'file-asset' ? identityCommon : [...identityCommon, 'urls', 'relations'];
+    const allowedCommon = [...identityCommon, 'urls', 'relations'];
     const projected = new Set([...allowedCommon, ...codeValues(row[1]), ...codeValues(row[2])]);
     assert.deepEqual(new Set(Object.keys(contract)), projected, `${type} must not add or lose a consumed field`);
     for (const [path, entry] of Object.entries(contract)) {
@@ -70,11 +68,10 @@ test('Web field contract is exactly the 05 registry and type bindings projected 
   }
 });
 
-test('non-WorkCase list candidates are a declared subset and never include carrier payload bodies', () => {
-  for (const type of ['adr', 'pitfall', 'spark', 'study', 'file-asset'] as const) {
+test('non-WorkCase list candidates are a declared subset and omit the Study report body', () => {
+  for (const type of ['adr', 'pitfall', 'spark', 'study'] as const) {
     const names = FACT_LIST_FIELD_NAMES[type];
     assert.ok(names.every((name) => name in FACT_FIELD_CONTRACT[type]));
   }
   assert.equal(FACT_LIST_FIELD_NAMES.study.includes('report_body'), false);
-  assert.equal('payload' in FACT_FIELD_CONTRACT['file-asset'], false);
 });

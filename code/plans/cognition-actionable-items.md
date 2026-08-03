@@ -4,7 +4,6 @@
 
 本规划承接 `workcase-0044` 已批准增量，只修复 Cognition Center 中 WorkCase / Pitfall 行动事项对既有“待决定事项”和“推进中事项”两个模块的收录与正文呈现。`specs/21-WorkCase-工作项.md` 和 `workcase-current-snapshot-presentation/1` 继续负责 WorkCase 状态与投影语义；本规划只分配 Web Code 责任，不定义 phase 映射、Gate、授权或完成判断。
 
-创建基线为 commit `a6de69c49884ed10a5e654aca0c864c7cde64c2b`。`spark-0040`、`workcase-0036` 至 `workcase-0039` 及 `file-asset-0002` 是范围外未提交内容，不得修改、暂存或提交；`workcase-0044` 只经 WorkCase 专属 Helper 更新。
 
 ## 目标与不变量
 

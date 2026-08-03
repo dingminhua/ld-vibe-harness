@@ -10,16 +10,9 @@ from pathlib import Path
 from typing import Literal
 
 from ldvh.commits.contract_source import CommitContractProjection
-from ldvh.commits.validation import (
-    CommitValidationInput,
-    StagedFactCandidate,
-    StagedFileAssetCandidate,
-    StagedFileAssetTarget,
-)
+from ldvh.commits.validation import CommitValidationInput, StagedFactCandidate
 from ldvh.facts.content import MAX_FACT_BYTES
 from ldvh.facts.contracts import LAYOUTS
-from ldvh.facts.file_asset import DEFAULT_MANIFEST_BUDGET, DEFAULT_PAYLOAD_BUDGET
-from ldvh.facts.relations import MAX_GRAPH_OBJECTS
 from ldvh.governance.git import isolated_git_environment, resolve_git_identity, windows_path_problem
 from ldvh.governance.models import GovernanceScopeResult, ObjectStatus, ScopeStatus
 
@@ -42,7 +35,6 @@ class CommitCandidateObservation:
     candidate_paths: tuple[str, ...]
     snapshot_identity: str | None
     fact_candidates: tuple[StagedFactCandidate, ...] = ()
-    file_asset_candidates: tuple[StagedFileAssetCandidate, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -161,26 +153,8 @@ def _classify_fact_path(path: str) -> tuple[str, str | None] | None:
     legal object_id shape; paths outside every fact layout return ``None``.
     """
 
-    file_asset_layout = LAYOUTS["file-asset"]
-    file_asset_prefix = f"{file_asset_layout.directory}/"
-    if path == file_asset_layout.directory:
-        return "file-asset", None
-    if path.startswith(file_asset_prefix):
-        remainder = path[len(file_asset_prefix) :]
-        object_id, separator, _member_path = remainder.partition("/")
-        if (
-            not separator
-            or not object_id
-            or file_asset_layout.object_id_pattern.fullmatch(object_id) is None
-        ):
-            return "file-asset", None
-        return "file-asset", object_id
-
     for layout in LAYOUTS.values():
-        if layout.carrier == "file-asset-directory":
-            continue
         prefix = f"{layout.directory}/"
-        assert layout.suffix is not None
         if not path.startswith(prefix) or not path.endswith(layout.suffix):
             continue
         object_id = path[len(prefix) : -len(layout.suffix)]
@@ -222,49 +196,6 @@ def _read_staged_blob(
     return content, None
 
 
-def _head_file_asset_paths(
-    worktree: Path,
-    *,
-    index_file: Path | None = None,
-) -> tuple[tuple[str, ...], CommitCandidateObservationIssue | None]:
-    head = _run_git(worktree, ("rev-parse", "--verify", "-q", "HEAD^{tree}"), index_file=index_file)
-    if isinstance(head, CommitCandidateObservationIssue):
-        return (), head
-    if head.returncode == 1 and not head.stdout and not head.stderr:
-        return (), None
-    if head.returncode != 0:
-        details = (head.stderr or head.stdout).decode("utf-8", errors="replace").strip()
-        return (), _issue("git_process", f"Git HEAD tree read failed: {details or head.returncode}")
-    observed = _successful(
-        _run_git(
-            worktree,
-            ("ls-tree", "-r", "--name-only", "-z", "HEAD", "--", LAYOUTS["file-asset"].directory),
-            index_file=index_file,
-        ),
-        "HEAD FileAsset tree",
-    )
-    if isinstance(observed, CommitCandidateObservationIssue):
-        return (), observed
-    try:
-        return tuple(path for path in observed.decode("utf-8").split("\0") if path), None
-    except UnicodeDecodeError:
-        return (), _issue("git_output", "Git HEAD FileAsset listing is not valid UTF-8")
-
-
-def _head_commit(worktree: Path, *, index_file: Path | None = None) -> tuple[str | None, str | None]:
-    observed = _successful(
-        _run_git(worktree, ("rev-parse", "--verify", "-q", "HEAD^{commit}"), index_file=index_file),
-        "HEAD commit",
-    )
-    if isinstance(observed, CommitCandidateObservationIssue):
-        return None, observed.message
-    try:
-        commit = observed.decode("ascii").strip()
-    except UnicodeDecodeError:
-        return None, "Git HEAD commit is not ASCII"
-    if not commit or any(character not in "0123456789abcdef" for character in commit):
-        return None, "Git HEAD commit object id is malformed"
-    return commit, None
 
 
 def _head_blob(
@@ -303,74 +234,6 @@ def _head_blob(
     return data, oid, problem
 
 
-def _indexed_file_asset_targets(
-    worktree: Path,
-    mapping: dict[str, tuple[_IndexEntry, ...]],
-    *,
-    index_file: Path | None = None,
-) -> tuple[tuple[StagedFileAssetTarget, ...], str | None]:
-    layout = LAYOUTS["file-asset"]
-    prefix = f"{layout.directory}/"
-    grouped: dict[str, list[tuple[str, str]]] = {}
-    for path in sorted(candidate for candidate in mapping if candidate.startswith(prefix)):
-        if path == f"{prefix}.DS_Store":
-            entries = mapping[path]
-            if len(entries) == 1 and entries[0].stage == "0" and entries[0].mode in {"100644", "100755"}:
-                continue
-            return (), "Index FileAsset .DS_Store 不是可忽略的 regular-file metadata"
-        remainder = path[len(prefix) :]
-        object_id, separator, member_name = remainder.partition("/")
-        if (
-            not separator
-            or layout.object_id_pattern.fullmatch(object_id) is None
-            or not member_name
-            or "/" in member_name
-        ):
-            return (), f"Index FileAsset 路径不是 canonical carrier: {path}"
-        grouped.setdefault(object_id, []).append((member_name, path))
-    if len(grouped) > MAX_GRAPH_OBJECTS:
-        return (), f"Index FileAsset 数量超过 {MAX_GRAPH_OBJECTS} 个 target 扫描预算"
-    targets: list[StagedFileAssetTarget] = []
-    for object_id, members in sorted(grouped.items()):
-        member_names = tuple(sorted(name for name, _ in members))
-        manifest_data: bytes | None = None
-        payload_data: bytes | None = None
-        problem: str | None = None
-        if len(set(member_names)) != len(member_names):
-            problem = "Index FileAsset 成员名重复"
-        for member_name, path in members:
-            entries = mapping[path]
-            if len(entries) != 1 or entries[0].stage != "0":
-                problem = f"Index FileAsset 成员包含未解决 stage: {path}"
-                break
-            if entries[0].mode not in {"100644", "100755"}:
-                problem = f"Index FileAsset 成员不是 Git regular-file mode: {path}"
-                break
-            budget = DEFAULT_MANIFEST_BUDGET if member_name == "file-asset.yaml" else DEFAULT_PAYLOAD_BUDGET
-            data, read_problem = _read_staged_blob(
-                worktree,
-                entries[0].oid,
-                index_file=index_file,
-                max_bytes=budget,
-            )
-            if read_problem is not None or data is None:
-                problem = f"Index FileAsset 成员无法读取: {path}: {read_problem or 'missing blob'}"
-                break
-            if member_name == "file-asset.yaml":
-                manifest_data = data
-            elif member_name == "payload":
-                payload_data = data
-        targets.append(
-            StagedFileAssetTarget(
-                object_id,
-                member_names,
-                manifest_data,
-                payload_data,
-                problem,
-            )
-        )
-    return tuple(targets), None
-
 
 def _fact_candidates(
     worktree: Path,
@@ -378,58 +241,25 @@ def _fact_candidates(
     index: bytes,
     *,
     index_file: Path | None = None,
-) -> tuple[
-    tuple[StagedFactCandidate, ...],
-    tuple[StagedFileAssetCandidate, ...],
-    CommitCandidateObservationIssue | None,
-]:
-    """Observe single-file blobs and aggregate complete FileAsset after-images."""
+) -> tuple[tuple[StagedFactCandidate, ...], CommitCandidateObservationIssue | None]:
+    """Observe all staged single-file fact candidates from the bound Index."""
 
     classified = [(path, _classify_fact_path(path)) for path in paths]
     if not any(target is not None for _, target in classified):
-        return (), (), None
+        return (), None
     mapping, failure = _index_blob_map(index)
     if failure is not None:
-        return (), (), failure
-    needs_file_asset_targets = any(
-        target is not None and target[0] == "workcase" for _, target in classified
-    )
-    indexed_file_asset_targets: tuple[StagedFileAssetTarget, ...] = ()
-    indexed_file_asset_target_problem: str | None = None
-    if needs_file_asset_targets:
-        indexed_file_asset_targets, indexed_file_asset_target_problem = _indexed_file_asset_targets(
-            worktree,
-            mapping,
-            index_file=index_file,
-        )
+        return (), failure
     candidates: list[StagedFactCandidate] = []
-    file_asset_paths: dict[str, list[str]] = {}
-    malformed_file_asset_paths: list[str] = []
     for path, target in classified:
         if target is None:
             continue
         fact_type_key, object_id = target
-        if fact_type_key == "file-asset":
-            if object_id is None:
-                malformed_file_asset_paths.append(path)
-            else:
-                file_asset_paths.setdefault(object_id, []).append(path)
-            continue
         entries = mapping.get(path)
         if entries is None:
             continue
-        target_kwargs = (
-            {
-                "file_asset_targets": indexed_file_asset_targets,
-                "file_asset_target_scan_issue": indexed_file_asset_target_problem,
-            }
-            if fact_type_key == "workcase"
-            else {}
-        )
         if object_id is None:
-            candidates.append(
-                StagedFactCandidate(path, fact_type_key, None, None, None, **target_kwargs)
-            )
+            candidates.append(StagedFactCandidate(path, fact_type_key, None, None, None))
             continue
         if len(entries) != 1 or entries[0].stage != "0":
             candidates.append(
@@ -439,7 +269,6 @@ def _fact_candidates(
                     object_id,
                     None,
                     "暂存路径包含未解决的 Index stage",
-                    **target_kwargs,
                 )
             )
             continue
@@ -460,138 +289,9 @@ def _fact_candidates(
                 head_data=head_data,
                 head_exists=head_oid is not None,
                 head_observation_issue=head_problem,
-                **target_kwargs,
             )
         )
-
-    file_assets: list[StagedFileAssetCandidate] = []
-    if malformed_file_asset_paths:
-        file_assets.append(
-            StagedFileAssetCandidate(
-                None,
-                tuple(sorted(malformed_file_asset_paths)),
-                (),
-                None,
-                None,
-                False,
-                validation_issue="路径未形成合法 FileAsset 对象目录和固定成员",
-            )
-        )
-    if file_asset_paths:
-        head_paths, failure = _head_file_asset_paths(worktree, index_file=index_file)
-        if failure is not None:
-            return (), (), failure
-        head_commit, head_commit_problem = _head_commit(worktree, index_file=index_file)
-        incoming_workcases: list[StagedFactCandidate] = []
-        incoming_scan_problem: str | None = None
-        workcase_layout = LAYOUTS["workcase"]
-        workcase_prefix = f"{workcase_layout.directory}/"
-        indexed_workcase_paths = sorted(path for path in mapping if path.startswith(workcase_prefix))
-        if len(indexed_workcase_paths) > MAX_GRAPH_OBJECTS:
-            incoming_scan_problem = f"Index WorkCase 数量超过 {MAX_GRAPH_OBJECTS} 个入向扫描预算"
-        else:
-            for path in indexed_workcase_paths:
-                classified_path = _classify_fact_path(path)
-                if classified_path is None or classified_path[0] != "workcase" or classified_path[1] is None:
-                    incoming_scan_problem = f"Index WorkCase 路径不是 canonical carrier: {path}"
-                    break
-                entries = mapping[path]
-                if len(entries) != 1 or entries[0].stage != "0":
-                    incoming_scan_problem = f"Index WorkCase 路径包含未解决 stage: {path}"
-                    break
-                if entries[0].mode not in {"100644", "100755"}:
-                    incoming_scan_problem = f"Index WorkCase 路径不是 Git regular-file mode: {path}"
-                    break
-                data, problem = _read_staged_blob(worktree, entries[0].oid, index_file=index_file)
-                if problem is not None or data is None:
-                    incoming_scan_problem = f"Index WorkCase 无法读取: {path}: {problem or 'missing blob'}"
-                    break
-                incoming_workcases.append(
-                    StagedFactCandidate(path, "workcase", classified_path[1], data, None)
-                )
-        layout = LAYOUTS["file-asset"]
-        for object_id, changed_paths in sorted(file_asset_paths.items()):
-            object_prefix = f"{layout.canonical_path(object_id)}/"
-            after_paths = sorted(path for path in mapping if path.startswith(object_prefix))
-            member_names = tuple(path[len(object_prefix) :] for path in after_paths)
-            observation_problems: list[str] = []
-            validation_problems: list[str] = []
-            manifest_data: bytes | None = None
-            payload_data: bytes | None = None
-            head_member_names = tuple(
-                path[len(object_prefix) :] for path in sorted(head_paths) if path.startswith(object_prefix)
-            )
-            head_manifest_data: bytes | None = None
-            head_payload_data: bytes | None = None
-            head_payload_oid: str | None = None
-            if head_member_names:
-                if head_commit_problem is not None:
-                    observation_problems.append(head_commit_problem)
-                if "file-asset.yaml" in head_member_names:
-                    head_manifest_data, _, problem = _head_blob(
-                        worktree,
-                        f"{object_prefix}file-asset.yaml",
-                        index_file=index_file,
-                        max_bytes=DEFAULT_MANIFEST_BUDGET,
-                    )
-                    if problem is not None:
-                        observation_problems.append(f"HEAD file-asset.yaml: {problem}")
-                if "payload" in head_member_names:
-                    head_payload_data, head_payload_oid, problem = _head_blob(
-                        worktree,
-                        f"{object_prefix}payload",
-                        index_file=index_file,
-                        max_bytes=DEFAULT_PAYLOAD_BUDGET,
-                    )
-                    if problem is not None:
-                        observation_problems.append(f"HEAD payload: {problem}")
-            for path, member_name in zip(after_paths, member_names, strict=True):
-                entries = mapping[path]
-                if len(entries) != 1 or entries[0].stage != "0":
-                    observation_problems.append(f"{member_name} 包含未解决的 Index stage")
-                    continue
-                entry = entries[0]
-                if entry.mode not in {"100644", "100755"}:
-                    validation_problems.append(f"{member_name} 不是 Git regular-file mode")
-                    continue
-                if member_name == "file-asset.yaml":
-                    manifest_data, problem = _read_staged_blob(
-                        worktree,
-                        entry.oid,
-                        index_file=index_file,
-                        max_bytes=DEFAULT_MANIFEST_BUDGET,
-                    )
-                    if problem is not None:
-                        observation_problems.append(f"file-asset.yaml: {problem}")
-                elif member_name == "payload":
-                    payload_data, problem = _read_staged_blob(
-                        worktree,
-                        entry.oid,
-                        index_file=index_file,
-                        max_bytes=DEFAULT_PAYLOAD_BUDGET,
-                    )
-                    if problem is not None:
-                        observation_problems.append(f"payload: {problem}")
-            file_assets.append(
-                StagedFileAssetCandidate(
-                    object_id,
-                    tuple(sorted(changed_paths)),
-                    member_names,
-                    manifest_data,
-                    payload_data,
-                    any(path.startswith(object_prefix) for path in head_paths),
-                    "; ".join(observation_problems) or None,
-                    "; ".join(validation_problems) or None,
-                    head_commit=head_commit,
-                    head_member_names=head_member_names,
-                    head_manifest_data=head_manifest_data,
-                    head_payload_data=head_payload_data,
-                    head_payload_oid=head_payload_oid,
-                    incoming_workcases=tuple(incoming_workcases),
-                    incoming_scan_issue=incoming_scan_problem,
-                )
-            )
-    return tuple(candidates), tuple(file_assets), None
+    return tuple(candidates), None
 
 
 def _candidate_paths(
@@ -660,7 +360,7 @@ def _observe_index(
     )
     if failure is not None:
         return CommitCandidateObservation("unverifiable", None, (failure,), (), snapshot_before)
-    fact_candidates, file_asset_candidates, failure = _fact_candidates(
+    fact_candidates, failure = _fact_candidates(
         worktree,
         paths,
         index_before,
@@ -685,7 +385,6 @@ def _observe_index(
         source_path=contract.source_path,
         source_fingerprint=contract.content_fingerprint,
         fact_candidates=fact_candidates,
-        file_asset_candidates=file_asset_candidates,
     )
     return CommitCandidateObservation(
         "observed",
@@ -694,7 +393,6 @@ def _observe_index(
         paths,
         snapshot_after,
         fact_candidates,
-        file_asset_candidates,
     )
 
 

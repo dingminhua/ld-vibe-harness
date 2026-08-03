@@ -33,7 +33,6 @@ import { isResolvedWorkCasePresentationProjection } from '@/shared/workcaseStatu
 import { WorkCaseReadingLayout } from '@/pages/object-detail/WorkCaseReadingLayout';
 import { AdrReadingLayout, PitfallReadingLayout, PitfallTextNodeContent, SparkReadingLayout } from '@/pages/object-detail/FactReadingLayouts';
 import { FactAssociationsSection } from '@/pages/object-detail/FactAssociationsSection';
-import { FileAssetReadingLayout } from '@/pages/object-detail/FileAssetReadingLayout';
 import {
   CHECKLIST_COMPAT_FIELDS,
   COLLAPSIBLE_FIELDS,
@@ -164,8 +163,7 @@ export default function ObjectDetail() {
   const contentEntries = getObjectDetailContentEntries(obj, objType);
   const { primaryEntries, relatedEntries } = splitRelatedContentEntries(contentEntries);
   const auxiliaryMetaEntries = getAuxiliaryMetaEntries(obj, objType);
-  const showYamlSource = readMeta.carrier === 'yaml'
-    || (objType === 'file-asset' && readMeta.carrier === 'directory');
+  const showYamlSource = readMeta.carrier === 'yaml';
   const yamlSource = showYamlSource ? reconstructFactYaml(obj) : '';
   const copyTarget = readMeta.canonicalPath;
 
@@ -243,8 +241,6 @@ export default function ObjectDetail() {
               obj={obj}
               locale={locale}
             />
-          ) : objType === 'file-asset' ? (
-            <FileAssetReadingLayout obj={obj} locale={locale} />
           ) : (
             <div className="mb-6 flex flex-col gap-5">
               {primaryEntries.map(([key, value]) => (

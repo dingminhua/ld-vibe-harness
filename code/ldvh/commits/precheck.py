@@ -106,7 +106,7 @@ def precheck_git_commit(
         return CommitPrecheckResult(contract, governance_run, observation, None, issues)
 
     validation_input = observation.validation_input
-    if validation_input.fact_candidates or validation_input.file_asset_candidates:
+    if validation_input.fact_candidates:
         # Lazy per specs 03 §9.9: the fact Schema projection is derived from
         # the same current rule source only when staged fact candidates exist.
         schemas = project_fact_schemas(repository)

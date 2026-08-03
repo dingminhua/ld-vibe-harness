@@ -16,10 +16,9 @@ import {
 } from '@/pages/ObjectDetail';
 import { AdrReadingLayout, PitfallReadingLayout, SparkReadingLayout } from '@/pages/object-detail/FactReadingLayouts';
 import { WorkCaseReadingLayout } from '@/pages/object-detail/WorkCaseReadingLayout';
-import { FileAssetReadingLayout } from '@/pages/object-detail/FileAssetReadingLayout';
 import { getObjectDetailContentEntries, splitRelatedContentEntries } from '@/pages/object-detail/model';
 import { getCommitDetailLabels, getFieldValueLabel, getLocalizedObjectTitle, getObjectStatusLocale, getToggleLabel, getTypeLabel, type CommitDetailLabels } from '@/i18n/locales';
-import { fetchDocContent, fetchFileAssetPreview, fetchObjectDetail, type CommitDetailPanelData, type CommitSignature, type DocContent, type ObjectDetail as ApiObjectDetail, type WorkCaseDetailData } from '@/utils/api';
+import { fetchDocContent, fetchObjectDetail, type CommitDetailPanelData, type CommitSignature, type DocContent, type ObjectDetail as ApiObjectDetail, type WorkCaseDetailData } from '@/utils/api';
 import { CATEGORY_COLORS } from '@/utils/categoryColors';
 import { getCommitScopeLabel, getCommitTypeLabel } from '@/utils/commitLabels';
 import { formatDateTime } from '@/utils/dateFormat';
@@ -45,7 +44,6 @@ export function EmptyPanelPreview() {
 export function PanelContentRenderer({ content }: { content: PanelContent }) {
   switch (content.type) {
     case 'object': return <ObjectPreview content={content} />;
-    case 'file-preview': return <FileAssetPayloadPreview content={content} />;
     case 'doc': return <DocPreview content={content} />;
     case 'web': return <WebPreview content={content} />;
     case 'yaml': return <YamlPreview content={content} />;
@@ -56,87 +54,6 @@ export function PanelContentRenderer({ content }: { content: PanelContent }) {
         <EmptyPanelPreview />
       );
   }
-}
-
-type FileAssetPayloadState =
-  | { kind: 'loading' }
-  | { kind: 'error'; message: string }
-  | { kind: 'markdown'; content: string }
-  | { kind: 'image'; url: string; mediaType: string };
-
-function FileAssetPayloadPreview({ content }: { content: PanelContent }) {
-  const { t } = useI18n();
-  const objectId = content.objectId;
-  const metadata = content.data && typeof content.data === 'object'
-    ? content.data as { filename?: string; mediaType?: string }
-    : undefined;
-  const [preview, setPreview] = useState<FileAssetPayloadState>({ kind: 'loading' });
-
-  useEffect(() => {
-    if (!objectId) {
-      setPreview({ kind: 'error', message: t('readingPanel.filePreviewUnavailable') });
-      return;
-    }
-
-    let cancelled = false;
-    let objectUrl: string | undefined;
-    setPreview({ kind: 'loading' });
-    fetchFileAssetPreview(objectId)
-      .then(async (result) => {
-        if (result.kind === 'markdown') {
-          const markdown = await result.blob.text();
-          if (!cancelled) setPreview({ kind: 'markdown', content: markdown });
-          return;
-        }
-        if (cancelled) return;
-        objectUrl = URL.createObjectURL(result.blob);
-        setPreview({ kind: 'image', url: objectUrl, mediaType: result.mediaType });
-      })
-      .catch((error) => {
-        if (!cancelled) {
-          setPreview({
-            kind: 'error',
-            message: error instanceof Error ? error.message : t('readingPanel.filePreviewUnavailable'),
-          });
-        }
-      });
-
-    return () => {
-      cancelled = true;
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
-    };
-  }, [objectId, t]);
-
-  if (preview.kind === 'loading') {
-    return (
-      <div className="flex items-center justify-center py-16">
-        <div className="h-5 w-5 animate-spin rounded-full border-2 border-ldvh-accent border-t-transparent" />
-      </div>
-    );
-  }
-
-  if (preview.kind === 'error') {
-    return (
-      <div className="rounded-md border border-red-500/20 bg-red-500/10 p-3">
-        <p className="ldvh-body text-red-700 dark:text-red-300">{t('readingPanel.filePreviewUnavailable')}</p>
-        <p className="ldvh-meta mt-1 text-red-700/80 dark:text-red-300/80">{preview.message}</p>
-      </div>
-    );
-  }
-
-  if (preview.kind === 'markdown') {
-    return <MarkdownPreview content={preview.content} blockRemoteImages className="min-w-0" />;
-  }
-
-  return (
-    <figure className="flex min-h-[20rem] min-w-0 items-center justify-center overflow-auto rounded-lg border border-ldvh-border bg-ldvh-bg/60 p-3">
-      <img
-        src={preview.url}
-        alt={metadata?.filename || content.title || objectId || ''}
-        className="max-h-[calc(100vh-10rem)] max-w-full object-contain"
-      />
-    </figure>
-  );
 }
 
 function WebPreview({ content }: { content: PanelContent }) {
@@ -347,14 +264,11 @@ function ObjectSemanticPreview({
       />
     );
   }
-  if (objectType === 'file-asset') {
-    return <FileAssetReadingLayout obj={obj} locale={locale} />;
-  }
   return null;
 }
 
 function isObjectDetailLayoutType(objectType: string | undefined) {
-  return objectType === 'workcase' || objectType === 'pitfall' || objectType === 'adr' || objectType === 'spark' || objectType === 'study' || objectType === 'file-asset';
+  return objectType === 'workcase' || objectType === 'pitfall' || objectType === 'adr' || objectType === 'spark' || objectType === 'study';
 }
 
 function getObjectTitle(obj: Record<string, unknown> | undefined, objectId: string | undefined, locale: string) {
