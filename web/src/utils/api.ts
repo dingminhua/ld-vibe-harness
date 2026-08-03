@@ -107,6 +107,8 @@ export interface ObjectItem {
   read_issues?: Array<Record<string, unknown>>;
   created_at?: string;
   updated_at?: string;
+  /** Present on list items so cards can attribute the latest update without an extra detail request. */
+  change_log?: unknown;
   disposition_summary?: string;
   relations?: Array<Record<string, unknown>>;
   /** Study-specific */

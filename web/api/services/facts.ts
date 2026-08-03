@@ -81,6 +81,9 @@ function projectListItem(type: ObjectType, item: LocalFactItem): Record<string, 
     : copyPresentFields(source, FACT_LIST_FIELD_NAMES[type])
   return {
     ...base,
+    // Cards use this only to render the latest update attribution.  Keep the
+    // raw carrier so its signature remains traceable to the fact's change log.
+    ...copyPresentFields(source, ['change_log']),
     read_status: item.read_status,
     read_issues: item.issues,
     field_issues: item.field_issues,
@@ -313,7 +316,7 @@ function projectCurrentWorkCaseCardShape(
   fact: Record<string, unknown>,
   currentSnapshotProjection: WorkCaseCurrentSnapshotProjection,
 ): Record<string, unknown> {
-  const projected = copyPresentFields(fact, ['object_id', 'fact_type_key', 'title', 'status', 'phase', 'updated_at'])
+  const projected = copyPresentFields(fact, ['object_id', 'fact_type_key', 'title', 'status', 'phase', 'updated_at', 'change_log'])
   projected.current_snapshot_projection = currentSnapshotProjection
   const progress = currentSnapshotProjection.resolution === 'resolved'
     ? currentSnapshotProjection

@@ -8,11 +8,11 @@ import WorkCaseProgressTrack from '@/components/WorkCaseProgressTrack';
 import ObjectPriorityFilter from '@/components/ObjectPriorityFilter';
 import PriorityIcon from '@/components/PriorityIcon';
 import CopyPathButton from '@/components/CopyPathButton';
+import ObjectUpdatedMeta from '@/components/ObjectUpdatedMeta';
 import SummaryText from '@/components/SummaryText';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
 import { WorkCaseCriteriaList, WORKCASE_CRITERIA_SURFACE_CLASS } from '@/components/WorkCaseCriteriaList';
 import { fetchObjectDetail, fetchObjects, type FactCoverageStatus, type FactListProblem, type ObjectDetail, type ObjectItem, type ObjectStatusOption, type WorkCaseClosureProposalCard, type WorkCaseClosureTerminalCard, type WorkCaseContributionTarget, type WorkCaseExecutionItem, type WorkCaseProgressOption, type WorkCaseSparkSuggestionCard } from '@/utils/api';
-import { formatDateTime } from '@/utils/dateFormat';
 import { useI18n } from '@/i18n/context';
 import { getFieldLabel, getFieldValueLabel, getLocalizedObjectTitle, getObjectStatusLocale } from '@/i18n/locales';
 import { CATEGORY_COLORS } from '@/utils/categoryColors';
@@ -1211,10 +1211,8 @@ export function ObjectCardFrame({
       </div>
       {showNonActiveReason && nonActiveReason && <StatusReasonNote reason={nonActiveReason} />}
       {children}
-      <div className="mt-auto flex min-w-0 justify-end pt-1 text-right">
-        <span className="ldvh-meta-muted">
-          {t('objectList.updated', { time: formatDateTime(obj.updated) })}
-        </span>
+      <div className="mt-auto flex min-w-0 items-center justify-end pt-1 text-right">
+        <ObjectUpdatedMeta source={obj} updatedAt={obj.updated} />
       </div>
     </div>
   );

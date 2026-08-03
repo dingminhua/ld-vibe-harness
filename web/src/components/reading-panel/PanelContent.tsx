@@ -5,6 +5,7 @@ import MarkdownPreview from '@/components/MarkdownPreview';
 import CommitBreakingBadge from '@/components/CommitBreakingBadge';
 import CommitPushStatusBadge from '@/components/CommitPushStatusBadge';
 import CommitSignatureMeta from '@/components/CommitSignatureMeta';
+import ObjectUpdatedMeta from '@/components/ObjectUpdatedMeta';
 import { useI18n } from '@/i18n/context';
 import {
   ContentField,
@@ -159,8 +160,7 @@ function ObjectPreview({ content }: { content: PanelContent }) {
         statusLabel={headerStatus ? getObjectStatusLocale(objectType || '', headerStatus, locale) : undefined}
         source={obj || {}}
         locale={locale}
-        created={formatDateTime((obj?.created_at ?? obj?.created) as string | undefined)}
-        updated={formatDateTime((obj?.updated_at ?? obj?.updated) as string | undefined)}
+        updated={<ObjectUpdatedMeta source={obj || {}} updatedAt={(obj?.updated_at ?? obj?.updated) as string | undefined} />}
         auxiliaryMetaEntries={obj ? getAuxiliaryMetaEntries(obj, objectType || '') : []}
         copyLabel={t('common.copyObjectPath')}
         copiedLabel={t('common.copiedObjectPath')}
@@ -536,7 +536,6 @@ function CommitIdentitySection({
       typeLabel={typeLabel}
       source={{}}
       locale={locale}
-      created=""
       updated=""
       showDefaultDates={false}
       titleMetaEntries={[{ label: labels.time, value: timeValue }]}

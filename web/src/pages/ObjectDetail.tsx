@@ -11,6 +11,7 @@ import SummaryText from '@/components/SummaryText';
 import DocPreviewLink from '@/components/DocPreviewLink';
 import EvidenceBlock from '@/components/EvidenceBlock';
 import CopyPathButton from '@/components/CopyPathButton';
+import ObjectUpdatedMeta from '@/components/ObjectUpdatedMeta';
 import PriorityIcon from '@/components/PriorityIcon';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
 import { fetchObjectDetail, type ObjectDetail, type WorkCaseDetailData } from '@/utils/api';
@@ -199,8 +200,7 @@ export default function ObjectDetail() {
                 statusLabel={headerStatus ? getObjectStatusLocale(objType, headerStatus, locale) : undefined}
                 source={obj}
                 locale={locale}
-                created={formatDateTime((obj.created_at ?? obj.created) as string | undefined)}
-                updated={formatDateTime((obj.updated_at ?? obj.updated) as string | undefined)}
+                updated={<ObjectUpdatedMeta source={obj} updatedAt={(obj.updated_at ?? obj.updated) as string | undefined} />}
                 auxiliaryMetaEntries={auxiliaryMetaEntries}
                 customMetaEntries={[]}
                 copyLabel={t('common.copyObjectPath')}
@@ -482,7 +482,6 @@ export function ObjectIdentityHeader({
   statusLabel,
   source,
   locale,
-  created,
   updated,
   auxiliaryMetaEntries = [],
   extraBadges,
@@ -506,8 +505,7 @@ export function ObjectIdentityHeader({
   statusLabel?: string;
   source: Record<string, unknown>;
   locale: string;
-  created: string;
-  updated: string;
+  updated: ReactNode;
   auxiliaryMetaEntries?: Array<[string, unknown]>;
   extraBadges?: ReactNode;
   actionBadges?: ReactNode;
@@ -609,8 +607,7 @@ export function ObjectIdentityHeader({
       </div>
       {hasFooterMeta && (
         <div className="mt-2 flex min-w-0 flex-wrap items-center justify-end gap-x-4 gap-y-1 text-right">
-          {showDefaultDates && <HeaderDateMeta label={t('objectDetail.createdShort')} value={created} />}
-          {showDefaultDates && <HeaderDateMeta label={t('objectDetail.updatedShort')} value={updated} />}
+          {showDefaultDates && <HeaderDateMeta value={updated} />}
           {remainingAuxiliaryMetaEntries.map(([key, value]) => (
             <HeaderDateMeta
               key={key}
@@ -634,14 +631,15 @@ export function ObjectIdentityHeader({
   );
 }
 
-function HeaderDateMeta({ label, value, align = 'end' }: { label: string; value: ReactNode; align?: 'start' | 'end' }) {
+/** Shared object-header update line for full details and secondary reading. */
+function HeaderDateMeta({ label, value, align = 'end' }: { label?: string; value: ReactNode; align?: 'start' | 'end' }) {
   const valueClassName = typeof value === 'string'
     ? 'ldvh-meta-muted min-w-0 truncate text-ldvh-text-secondary'
     : 'min-w-0';
   const alignClassName = align === 'start' ? 'justify-start text-left' : 'justify-end text-right';
   return (
     <span className={`inline-flex min-w-0 items-center gap-1.5 ${alignClassName}`}>
-      <span className="ldvh-caption shrink-0 leading-4">{label}</span>
+      {label && <span className="ldvh-caption shrink-0 leading-4">{label}</span>}
       <span className={`${valueClassName} leading-4`}>{value}</span>
     </span>
   );
