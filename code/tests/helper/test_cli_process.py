@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from conftest import HELPER_EXECUTABLE, assert_common_response, helper_executable_path
+from conftest import HELPER_EXECUTABLE, PROJECT_ROOT, assert_common_response
 
 
 def _run(cwd: Path, *arguments: str, stdin: str = "") -> tuple[subprocess.CompletedProcess[str], dict[str, Any]]:
@@ -37,9 +37,9 @@ def _assert_working_tree_implementation(
     assert evidence["details"]["git_worktree_root"].endswith("ld-vibe-harness-v4")
 
 
-def test_console_script_locator_uses_windows_executable_suffix() -> None:
-    assert helper_executable_path(r"C:\\venv\\Scripts\\python.exe", platform_name="win32").name == "ldvh.exe"
-    assert helper_executable_path("/venv/bin/python", platform_name="linux").name == "ldvh"
+def test_helper_uses_repository_source_launcher() -> None:
+    assert HELPER_EXECUTABLE == PROJECT_ROOT / "ldvh"
+    assert HELPER_EXECUTABLE.is_file()
 
 
 def test_general_discovery_reports_source_bound_implementation(tmp_path: Path) -> None:

@@ -1,0 +1,83 @@
+#!/usr/bin/env python3
+"""Stable source launcher for every LDVH runtime surface."""
+
+from __future__ import annotations
+
+import importlib.util
+import os
+import sys
+from pathlib import Path
+
+SOURCE_ROOT = Path(__file__).resolve().parent
+CODE_ROOT = SOURCE_ROOT / "code"
+
+
+def _ensure_dependency_runtime() -> None:
+    if importlib.util.find_spec("ruamel") is not None:
+        return
+    candidates = (
+        SOURCE_ROOT / ".venv/bin/python",
+        SOURCE_ROOT / ".venv/Scripts/python.exe",
+    )
+    for candidate in candidates:
+        if (
+            candidate.is_file()
+            and os.access(candidate, os.X_OK)
+            and Path(sys.executable).resolve() != candidate.resolve()
+        ):
+            os.execv(str(candidate), [str(candidate), str(Path(__file__).resolve()), *sys.argv[1:]])
+    sys.stderr.write(
+        "LDVH source runtime dependency ruamel.yaml is unavailable; prepare the declared third-party dependencies "
+        "without installing the LDVH package.\n"
+    )
+    raise SystemExit(1)
+
+
+_ensure_dependency_runtime()
+if str(CODE_ROOT) not in sys.path:
+    sys.path.insert(0, str(CODE_ROOT))
+
+
+def _usage() -> int:
+    sys.stderr.write(
+        "usage: ldvh capabilities [operation_key] | ldvh call <operation_key> | "
+        "ldvh {work-context,context-recovery,doctor,git-commit-msg,git-hook} ...\n"
+    )
+    return 2
+
+
+def main() -> int:
+    if len(sys.argv) < 2:
+        return _usage()
+    command = sys.argv[1]
+    if command in {"capabilities", "call"}:
+        from ldvh.cli import main as helper_main
+
+        sys.argv = [sys.argv[0], *sys.argv[1:]]
+        return helper_main()
+    arguments = sys.argv[2:]
+    if command == "work-context":
+        from ldvh.work_context import main as work_context_main
+
+        return work_context_main(arguments)
+    if command == "context-recovery":
+        from ldvh.hooks.context_recovery import main as context_recovery_main
+
+        return context_recovery_main(arguments)
+    if command == "doctor":
+        from ldvh.doctor import main as doctor_main
+
+        return doctor_main(arguments)
+    if command == "git-commit-msg":
+        from ldvh.hooks.commit_msg import main as commit_msg_main
+
+        return commit_msg_main(arguments)
+    if command == "git-hook":
+        from ldvh.git_hooks.commit_msg import main as git_hook_main
+
+        return git_hook_main(arguments)
+    return _usage()
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

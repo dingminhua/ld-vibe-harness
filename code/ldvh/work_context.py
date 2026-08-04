@@ -24,7 +24,7 @@ RULE_ORIENTATION_SELECTIONS = (
     },
     {
         "responsibility_key": "ldvh-root",
-        "heading_path": ["8. 系统级运行架构", "8.2 薄 Skill 环境接入与核心职责边界"],
+        "heading_path": ["8. 系统级运行架构", "8.2 薄 Skill、Git Hook 与核心职责边界"],
     },
 )
 
@@ -156,8 +156,7 @@ def _rule_parts(response: JsonObject) -> list[JsonObject]:
 def _context(response: JsonObject, *, helper_executable: Path, native_trigger: str) -> str:
     parts = _rule_parts(response)
     delivered = "\n\n".join(
-        f"Source: {part['locator']}\nHeading: {' / '.join(part['heading_path'])}\n{part['content']}"
-        for part in parts
+        f"Source: {part['locator']}\nHeading: {' / '.join(part['heading_path'])}\n{part['content']}" for part in parts
     )
     gaps = response.get("gaps")
     scope = response.get("scope")
@@ -222,16 +221,14 @@ def _parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main() -> int:
-    arguments = _parser().parse_args()
+def main(arguments: list[str] | None = None) -> int:
+    arguments = _parser().parse_args(arguments)
     event_name: str | None = None
     try:
         try:
             native_event = json.load(sys.stdin)
         except json.JSONDecodeError as error:
-            raise WorkContextError(
-                "native event must be provided on stdin as a single UTF-8 JSON object"
-            ) from error
+            raise WorkContextError("native event must be provided on stdin as a single UTF-8 JSON object") from error
         if isinstance(native_event, dict):
             raw_name = native_event.get("hook_event_name")
             if isinstance(raw_name, str) and raw_name:

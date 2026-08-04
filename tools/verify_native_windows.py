@@ -33,7 +33,7 @@ IDENTITY_TIMEOUT_SECONDS = 30
 FIXED_DRIVE = 3
 
 BASE_PROBES = {
-    "test_native_environment_is_windows_ntfs_with_installed_console_script": "native_environment_and_console",
+    "test_native_environment_is_windows_ntfs_with_source_launcher": "native_environment_and_source_launcher",
     "test_native_junction_is_rejected_before_read": "junction_rejection",
     "test_native_symlink_is_rejected_when_privilege_is_available": "symlink_rejection",
     "test_native_msvcrt_lock_serializes_and_recovers_after_kill": "lock_kill_recovery",
@@ -68,7 +68,9 @@ def verification_plan() -> dict[str, Any]:
         },
         "phases": {
             "preflight": {
-                "purpose": "prove the native host, isolated install and native read/platform probes",
+                "purpose": (
+                    "prove the native host, isolated dependencies, source launcher and native read/platform probes"
+                ),
                 "matrix": {
                     **dict.fromkeys(BASE_PROBES.values(), "scheduled"),
                     **dict.fromkeys(FUTURE_WRITE_PROBES, "blocked_by_file_only_human_gate"),
@@ -100,7 +102,7 @@ def verification_plan() -> dict[str, Any]:
             "source_root must be the exact top level of a clean Git worktree",
             "commands use argv, a bounded timeout and a minimal child environment without ambient "
             "Python/Pip/Git overrides",
-            "Pip runs isolated, non-interactive and without user cache or configuration",
+            "Pip prepares only declared third-party dependencies; it never installs LDVH itself",
             "no command commits, pushes, changes a remote, or touches a governed user project",
             "environment thin-Skill integration remains a separate Human Gate",
         ],
@@ -253,7 +255,7 @@ def _commands(phase: str, source_root: Path, work_dir: Path) -> list[tuple[str, 
     commands: list[tuple[str, list[str]]] = [
         ("create-venv", [sys.executable, "-m", "venv", str(work_dir / "venv")]),
         (
-            "install-dev",
+            "prepare-dependencies",
             [
                 str(python),
                 "-m",
@@ -263,7 +265,8 @@ def _commands(phase: str, source_root: Path, work_dir: Path) -> list[tuple[str, 
                 "--no-cache-dir",
                 "--disable-pip-version-check",
                 "--no-input",
-                f"{source_root}[dev]",
+                "-r",
+                str(source_root / "requirements-dev.txt"),
             ],
         ),
         (
@@ -394,10 +397,11 @@ def _adapter_handoff(evidence_dir: Path, source: dict[str, Any], work_dir: Path)
         "automated_changes": [],
         "required_checks": [
             "record existing marketplace, source, cache, configuration and trust state without mutation",
-            "obtain Human authorization for replacement, cachebuster install, Skill registration and restart",
-            "verify source-to-cache hashes and configure the ordinary-install Scripts/ldvh.exe",
-            "run startup and resume success plus missing-config, disabled and restored probes",
-            "restore the previous source, cache, configuration and enablement on failure",
+            "obtain Human authorization for canonical Skill deployment and any environment restart",
+            "verify canonical Skill bytes and bind every CLI route to the confirmed source launcher",
+            "deploy and verify the mandatory Git Hook as a separate common-dir action",
+            "run startup, route, governance, Hook allow/block and rollback probes",
+            "restore only environment assets changed by this authorized action on failure",
         ],
         "not_verified": ["installed", "enabled", "trusted", "startup", "resume", "rollback"],
     }

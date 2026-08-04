@@ -48,9 +48,11 @@ def test_doctor_reports_ready_for_explicit_governed_project(tmp_path: Path) -> N
 
     assert result["contract"] == "ldvh-doctor/1"
     assert result["status"] == "ready"
-    assert result["distribution"] == {"name": "ld-vibe-harness", "version": "0.1.0"}
+    assert result["source_repository"]["root"] == str(Path(__file__).resolve().parents[3])
+    assert len(result["source_repository"]["revision"]) == 40
+    assert result["source_repository"]["working_tree_status"] in {"clean", "dirty"}
     assert result["helper"]["contract"] == "ldvh-helper-cli/2"
-    assert result["helper"]["operation_count"] == 20
+    assert result["helper"]["operation_count"] == 18
     assert result["configuration"]["config_status"] == "valid"
     assert result["configuration"]["scope_status"] == "governed_single"
     assert result["configuration"]["governed_project_id"] == "sample"
@@ -60,6 +62,7 @@ def test_doctor_reports_ready_for_explicit_governed_project(tmp_path: Path) -> N
         "context-recovery",
         "git-commit-msg-gate",
         "git-hook-manager",
+        "doctor",
     }
     assert all(item["state"] == "available" for item in result["integration_surfaces"])
     assert "documentation" not in result
@@ -82,7 +85,8 @@ def test_doctor_ready_does_not_claim_environment_installation_or_triggering(tmp_
         == "available"
     )
     assert (
-        "static entry points do not prove installation into, automatic triggering by, or verification of an environment"
+        "static source surfaces do not prove deployment into, automatic triggering by, "
+        "or verification of an environment"
     ) in result["limitations"]
     assert not any("environment_trigger" in item["check"] for item in result["checks"])
 
@@ -162,9 +166,8 @@ def test_doctor_rejects_non_explicit_inputs(tmp_path: Path, field: str, value: s
 def test_doctor_cli_returns_contractual_unavailable_result(tmp_path: Path) -> None:
     completed = subprocess.run(
         [
-            str(HELPER_EXECUTABLE.parent / "python"),
-            "-m",
-            "ldvh.doctor",
+            str(HELPER_EXECUTABLE),
+            "doctor",
             "--workspace-root",
             str(tmp_path),
             "--work-object-locator",

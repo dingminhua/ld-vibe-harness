@@ -17,9 +17,9 @@ git clone https://github.com/dingminhua/ld-vibe-harness.git
 cd ld-vibe-harness
 ```
 
-若已经有源码仓库，记录其 remote（存在时）、当前 revision 与工作树状态。随后先读 `specs/attachments/09.Att.01-环境接入面.md` 的当前交付状态：只有稳定源码 Helper launcher、源码模式 doctor、common-dir 级 Git Hook 管理入口和 Git Gate 源码入口均标记为已交付时，才继续完整接入。不要用 PATH 中来源不明的同名命令或既有 distribution console entry point 替代，也不要构建或安装 wheel、sdist、editable distribution。
+若已经有源码仓库，记录其 remote（存在时）、当前 revision 与工作树状态。稳定源码入口是仓库根目录的 `ldvh`，不要用 PATH 中来源不明的同名命令或既有 distribution console entry point 替代，也不要构建或安装 wheel、sdist、editable distribution。
 
-按当前 09.Att.01 的交付状态，上述源码 launcher 和 common-dir 级 Git Hook 管理实现尚未交付，因此新的默认接入流程必须停在迁移缺口，不能声明可用或完整接入。源码 launcher 后续交付后，Helper capabilities 用于发现当前公开能力；所有 Helper 入口仍无条件读取 stdin 至 EOF，在 AI 环境或无 tty 的自动化中调用时必须闭合 stdin。若仓库入口依赖的运行时或第三方库未满足，应按仓库当次声明准备运行条件；这不等于打包或安装 LDVH 本体。
+先用 `./ldvh capabilities </dev/null` 验证入口并发现当前公开能力。所有 Helper 入口均无条件读取 stdin 至 EOF，在 AI 环境或无 tty 的自动化中调用时必须闭合 stdin。若入口报告第三方库缺失，按 `requirements.txt` 准备运行依赖；这不等于打包或安装 LDVH 本体。
 
 当前已验证平台为 macOS；其它平台的仓库入口、运行依赖、路径与 Git Hook 执行能力尚未实测，按未验证范围处理。
 
@@ -54,7 +54,7 @@ npm run dev
 
 > 请阅读 README，完成 LDVH 的环境接入、管辖配置、Git Hook 部署与验证，并如实报告已验证与未验证的范围。
 
-执行该提示的 AI 请注意：权威流程不在本文件。取得并确认源码仓库后，先读取环境接入面附件；若源码 Helper launcher 尚未交付，如实交还迁移缺口并停止完整接入。入口已交付时，先经该 launcher 的 `read-action-template-candidates` 定位，再经 `read-action-template-content` 读取当次环境接入行动模板，照模板执行；
+执行该提示的 AI 请注意：权威流程不在本文件。取得并确认源码仓库后，先读取环境接入面附件，再经源码 launcher 的 `read-action-template-candidates` 定位，并经 `read-action-template-content` 读取当次环境接入行动模板，照模板执行；
 全部入口的调用契约以 `specs/attachments/09.Att.01-环境接入面.md` 当次内容为准；
 薄 Skill 部署件必须与 canonical 模板 `skill/SKILL.md` 逐字节一致；目标项目必须按 02 建立或核验管辖配置并取得当次解析结果；承接 Git Gate 的 Git Hook 必须部署到目标 Git common-dir。环境接入、管辖配置、Git Hook 部署与验证都是完整接入的必需工作，不能二选一。
 
@@ -69,7 +69,7 @@ AI 完成部署后应提示你执行以下操作：
 
 ### 诊断已有工作区
 
-源码模式 doctor 尚未交付；不得用当前依赖 distribution metadata 的 doctor 冒充。后续交付后，其实际源码入口与调用合同以 09.Att.01 为准。Doctor 只诊断当前源码仓库、显式工作区和已交付入口的静态状态，不扫描目标 AI 环境，也不证明环境已经接入或完成真实验证。
+源码模式 doctor 由 `./ldvh doctor` 调用，参数合同以 09.Att.01 和 `./ldvh doctor --help` 为准。Doctor 只诊断当前源码仓库、显式工作区和已交付入口的静态状态，不扫描目标 AI 环境，也不证明环境已经接入或完成真实验证。
 
 ---
 

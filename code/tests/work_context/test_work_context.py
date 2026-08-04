@@ -8,15 +8,25 @@ import sys
 from pathlib import Path
 
 import pytest
-
 from conftest import HELPER_EXECUTABLE
+
 from ldvh import work_context
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 CAPABILITY_BOUNDARY_STATEMENTS = (
-    "薄 Skill 对事实写入的保护仅为劝告级：它只能将 AI 路由到 Helper 与行动模板，不能在模型之外机械阻断对 `ldvh-base/` 的直写。",
-    "Git Gate 的每一安装实例只覆盖一个实际 Git worktree 中真正触发该 Gate 的 Git 事件；其它 worktree、clone，以及未触发或绕过该 Gate 的行动不在其覆盖范围。",
-    "机械检查能够发现来源已定义的机械不合格，不能据此判断事实内容的语义真实性；即使 Schema 合法，语义污染风险仍然存在，未提交污染窗口只能压缩、不能消除。",
+    (
+        "薄 Skill 对事实写入的保护仅为劝告级：它只能将 AI 路由到 Helper 与行动模板，"
+        "不能在模型之外机械阻断对 `ldvh-base/` 的直写。"
+    ),
+    (
+        "每个部署实例以一个经当前管辖解析唯一识别的 Git common-dir 为覆盖边界，覆盖共享该 common-dir 的主 "
+        "worktree 与全部现有及后续 linked worktrees；具有不同 common-dir 的独立 clone 属于独立部署边界，"
+        "必须单独部署。"
+    ),
+    (
+        "机械检查能够发现来源已定义的机械不合格，不能据此判断事实内容的语义真实性；即使 Schema 合法，"
+        "语义污染风险仍然存在，未提交污染窗口只能压缩、不能消除。"
+    ),
 )
 
 

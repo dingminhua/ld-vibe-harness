@@ -155,9 +155,7 @@ fs.writeFileSync(
 )
 process.env.LDVH_ROOT = projectRoot
 process.env.LDVH_WORKSPACE_ROOT = workspaceRoot
-process.env.LDVH_HELPER_EXECUTABLE = process.platform === 'win32'
-  ? path.join(repositoryRoot, '.venv', 'Scripts', 'ldvh.exe')
-  : path.join(repositoryRoot, '.venv', 'bin', 'ldvh')
+process.env.LDVH_HELPER_EXECUTABLE = path.join(repositoryRoot, 'ldvh')
 process.env.LDVH_WEB_WORKTREE_LOCATOR = projectRoot
 process.env.LDVH_WEB_WORKSPACE_ROOT = workspaceRoot
 process.env.LDVH_WEB_GOVERNED_PROJECT_ID = 'demo'

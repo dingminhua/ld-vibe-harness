@@ -82,7 +82,7 @@ def _volume_filesystem(path: Path) -> str:
 def _cli(
     helper: Path, cwd: Path, command: str, operation: str | None, request: dict[str, Any] | None
 ) -> tuple[int, dict[str, Any]]:
-    argv = [str(helper), command]
+    argv = [sys.executable, str(helper), command]
     if operation:
         argv.append(operation)
     payload = b"" if request is None else json.dumps(request, ensure_ascii=False).encode("utf-8")
@@ -91,13 +91,13 @@ def _cli(
     return completed.returncode, json.loads(completed.stdout.decode("utf-8"))
 
 
-def test_native_environment_is_windows_ntfs_with_installed_console_script(tmp_path: Path) -> None:
+def test_native_environment_is_windows_ntfs_with_source_launcher(tmp_path: Path) -> None:
     assert sys.platform == "win32"
     assert os.name == "nt"
     assert _volume_filesystem(tmp_path).upper() == "NTFS"
     assert _volume_filesystem(Path(os.environ["TEMP"])).upper() == "NTFS"
     assert shutil.which("git")
-    helper = Path(sys.executable).with_name("ldvh.exe")
+    helper = Path.cwd() / "ldvh"
     assert helper.is_file()
 
     exit_code, response = _cli(helper, tmp_path, "capabilities", None, None)

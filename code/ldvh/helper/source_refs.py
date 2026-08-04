@@ -17,8 +17,6 @@ _IDENTITY_DETAIL_KEYS = frozenset(
         "rule_source_view",
         "implementation_source_view",
         "git_worktree_root",
-        "distribution",
-        "snapshot_sha256",
     }
 )
 
@@ -67,24 +65,10 @@ class RuleReferenceBinder:
         if kind == "rule":
             details = self._rule_details(str(reference["locator"]), details)
             details["rule_source_view"] = self.identity.view
-            if self.identity.view == "working_tree":
-                assert self.identity.git_worktree_root is not None
-                details["git_worktree_root"] = self.identity.git_worktree_root.as_posix()
-            else:
-                assert self.identity.distribution and self.identity.version and self.identity.snapshot_sha256
-                result["version"] = self.identity.version
-                details["distribution"] = self.identity.distribution
-                details["snapshot_sha256"] = self.identity.snapshot_sha256
+            details["git_worktree_root"] = self.identity.git_worktree_root.as_posix()
         else:
-            if self.identity.view == "working_tree":
-                assert self.identity.git_worktree_root is not None
-                details["implementation_source_view"] = "working_tree"
-                details["git_worktree_root"] = self.identity.git_worktree_root.as_posix()
-            else:
-                assert self.identity.distribution and self.identity.version
-                result["version"] = self.identity.version
-                details["implementation_source_view"] = "installed_distribution"
-                details["distribution"] = self.identity.distribution
+            details["implementation_source_view"] = "working_tree"
+            details["git_worktree_root"] = self.identity.git_worktree_root.as_posix()
         result["details"] = details
         return result
 

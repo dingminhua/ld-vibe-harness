@@ -46,8 +46,8 @@ LDVH 让长期项目"判断有据、行动可续、结果可验"。本文件不�
 
 先读取环境接入面附件（`environment-integration-surface`），只使用其中标记为
 已交付、且解析到当前已确认 LDVH 源码仓库的入口。默认不构建或安装 LDVH
-wheel、sdist、editable distribution，也不以 pip 安装 LDVH 本体。源码入口尚未
-交付、不可得或状态不符时如实交还"CLI 不可定位"或迁移缺口，不猜路径或改投
+wheel、sdist、editable distribution，也不以 pip 安装 LDVH 本体。源码入口
+不可得、未解析到已确认源码或状态不符时如实交还"CLI 不可定位"或迁移缺口，不猜路径或改投
 不明 PATH/安装副本。Helper 操作信封与参数以其 capabilities 及 Helper 服务规范
 （04）的当次内容为准；独立入口的信封以环境接入面附件对应入口行的当次内容为准。
 

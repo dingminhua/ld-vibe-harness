@@ -1,9 +1,8 @@
-"""Read-only diagnostics for the environment-neutral LDVH installation surface."""
+"""Read-only diagnostics for the source-native LDVH integration surface."""
 
 from __future__ import annotations
 
 import argparse
-import importlib.metadata
 import json
 import os
 import subprocess
@@ -16,8 +15,6 @@ from ldvh.helper.responses import EXIT_CODES
 
 CONTRACT = "ldvh-doctor/1"
 HELPER_TIMEOUT_SECONDS = 20.0
-_DISTRIBUTION_NAME = "ld-vibe-harness"
-
 type JsonObject = dict[str, Any]
 
 
@@ -28,33 +25,45 @@ class DoctorError(ValueError):
 _SURFACES = (
     (
         "helper-cli",
-        "ldvh",
+        None,
         "Helper 公开能力发现与调用",
         "specs/04-Helper CLI 服务规范.md",
+        "code/ldvh/cli.py",
     ),
     (
         "work-context-core",
-        "ldvh-work-context",
+        "work-context",
         "环境无关的工作上下文规则引导核心",
         "specs/09-环境接入规范.md",
+        "code/ldvh/work_context.py",
     ),
     (
         "context-recovery",
-        "ldvh-context-recovery",
+        "context-recovery",
         "环境无关的有界上下文恢复",
         "specs/09-环境接入规范.md",
+        "code/ldvh/hooks/context_recovery.py",
     ),
     (
         "git-commit-msg-gate",
-        "ldvh-git-commit-msg",
+        "git-commit-msg",
         "原生 Git Gate（commit-msg）机械检查核心",
         "specs/03-事实源与信息溯源规范.md",
+        "code/ldvh/hooks/commit_msg.py",
     ),
     (
         "git-hook-manager",
-        "ldvh-git-hook",
-        "单个实际 worktree 的 Git Hook 检查与受控安装管理",
+        "git-hook",
+        "Git common-dir 级 Hook 检查与受控部署管理",
         "specs/09-环境接入规范.md",
+        "code/ldvh/git_hooks/commit_msg.py",
+    ),
+    (
+        "doctor",
+        "doctor",
+        "源码仓库身份、管辖与交付面只读诊断",
+        "specs/09-环境接入规范.md",
+        "code/ldvh/doctor.py",
     ),
 )
 
@@ -132,31 +141,55 @@ def _invoke_helper(
     return response
 
 
-def _distribution() -> JsonObject:
-    try:
-        distribution = importlib.metadata.distribution(_DISTRIBUTION_NAME)
-    except importlib.metadata.PackageNotFoundError as error:
-        raise DoctorError(f"installed distribution {_DISTRIBUTION_NAME} is unavailable") from error
-    return {"name": _DISTRIBUTION_NAME, "version": distribution.version}
+def _git(source_root: Path, *arguments: str, allow_failure: bool = False) -> str | None:
+    completed = subprocess.run(
+        ["git", "-C", str(source_root), *arguments],
+        text=True,
+        encoding="utf-8",
+        errors="strict",
+        capture_output=True,
+        check=False,
+    )
+    if completed.returncode != 0:
+        if allow_failure:
+            return None
+        raise DoctorError(f"Git source identity failed: {completed.stderr.strip() or 'unknown error'}")
+    return completed.stdout.strip()
 
 
-def _entry_point_path(directory: Path, name: str) -> Path:
-    suffix = ".exe" if os.name == "nt" else ""
-    return directory / f"{name}{suffix}"
+def _source_repository(helper: Path) -> JsonObject:
+    source_root = helper.parent.resolve()
+    expected_launcher = source_root / "ldvh"
+    if helper != expected_launcher or not (source_root / "code/ldvh/__init__.py").is_file():
+        raise DoctorError("helper_executable must be the stable launcher in an LDVH source repository root")
+    git_root = _git(source_root, "rev-parse", "--show-toplevel")
+    if git_root is None or Path(git_root).resolve() != source_root:
+        raise DoctorError("helper_executable source root does not match the actual Git worktree")
+    revision = _git(source_root, "rev-parse", "HEAD")
+    status = _git(source_root, "status", "--porcelain=v1")
+    remote = _git(source_root, "config", "--get", "remote.origin.url", allow_failure=True)
+    return {
+        "root": str(source_root),
+        "revision": revision,
+        "working_tree_status": "clean" if not status else "dirty",
+        "remote": remote,
+    }
 
 
-def _integration_surfaces(helper: Path) -> list[JsonObject]:
+def _integration_surfaces(helper: Path, source_root: Path) -> list[JsonObject]:
     surfaces: list[JsonObject] = []
-    for surface_key, entry_point, role, source in _SURFACES:
-        path = helper if entry_point == "ldvh" else _entry_point_path(helper.parent, entry_point)
-        available = path.is_file() and os.access(path, os.X_OK)
+    launcher_available = helper == source_root / "ldvh" and helper.is_file() and os.access(helper, os.X_OK)
+    for surface_key, subcommand, role, source, implementation in _SURFACES:
+        implementation_path = source_root / implementation
+        available = launcher_available and implementation_path.is_file()
         surfaces.append(
             {
                 "surface_key": surface_key,
-                "entry_point": entry_point,
+                "entry_point": "ldvh" if subcommand is None else f"ldvh {subcommand}",
                 "role": role,
                 "state": "available" if available else "missing",
-                "executable": str(path),
+                "executable": str(helper),
+                "implementation": implementation,
                 "source_ref": source,
             }
         )
@@ -186,12 +219,12 @@ def _governance_summary(response: JsonObject, workspace: Path, locator: str) -> 
 
 
 def run_doctor(*, workspace_root: str, work_object_locator: str, helper_executable: str) -> JsonObject:
-    """Observe only explicit LDVH inputs and installed entry points."""
+    """Observe only explicit inputs and the confirmed LDVH source repository."""
 
     workspace = _absolute_directory(workspace_root, "workspace_root")
     locator = _work_object_locator(work_object_locator)
     helper = _absolute_executable(helper_executable, "helper_executable")
-    distribution = _distribution()
+    source_repository = _source_repository(helper)
     capabilities = _invoke_helper(
         helper,
         cwd=workspace,
@@ -211,10 +244,15 @@ def run_doctor(*, workspace_root: str, work_object_locator: str, helper_executab
         },
     )
     configuration = _governance_summary(governance, workspace, locator)
-    surfaces = _integration_surfaces(helper)
+    surfaces = _integration_surfaces(helper, Path(source_repository["root"]))
     operations = capabilities.get("result", {}).get("operations")
     operation_count = len(operations) if isinstance(operations, list) else 0
     checks: list[JsonObject] = [
+        {
+            "check": "source_repository",
+            "status": "passed",
+            "summary": f"LDVH source repository is {source_repository['root']} at {source_repository['revision']}",
+        },
         {
             "check": "helper_capabilities",
             "status": "passed",
@@ -254,7 +292,7 @@ def run_doctor(*, workspace_root: str, work_object_locator: str, helper_executab
     return {
         "contract": CONTRACT,
         "status": status,
-        "distribution": distribution,
+        "source_repository": source_repository,
         "helper": {
             "executable": str(helper),
             "contract": HELPER_CONTRACT,
@@ -267,7 +305,7 @@ def run_doctor(*, workspace_root: str, work_object_locator: str, helper_executab
         "limitations": [
             "doctor did not inspect or modify any target AI development environment",
             (
-                "static entry points do not prove installation into, automatic triggering by, "
+                "static source surfaces do not prove deployment into, automatic triggering by, "
                 "or verification of an environment"
             ),
         ],
@@ -279,7 +317,7 @@ def _unavailable(error: Exception) -> JsonObject:
     return {
         "contract": CONTRACT,
         "status": "unavailable",
-        "distribution": None,
+        "source_repository": None,
         "helper": None,
         "configuration": None,
         "integration_surfaces": [],
@@ -290,7 +328,7 @@ def _unavailable(error: Exception) -> JsonObject:
 
 
 def _parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Run read-only LDVH installation diagnostics")
+    parser = argparse.ArgumentParser(description="Run read-only LDVH source integration diagnostics")
     parser.add_argument("--workspace-root", required=True)
     parser.add_argument("--work-object-locator", required=True)
     parser.add_argument("--helper-executable", required=True)

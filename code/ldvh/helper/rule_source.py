@@ -6,7 +6,6 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from ldvh.helper.operation_sources import OperationSourceInspection, inspect_operation_sources
-from ldvh.rule_snapshot import SnapshotError, inspect_verified_snapshot, validate_installed_snapshot
 from ldvh.specs.discovery import validate_exact_worktree_root
 from ldvh.specs.repository import RepositoryInspection, inspect_repository
 
@@ -44,18 +43,13 @@ def inspect_colocated_repository(package_file: Path) -> RuleSourceResult:
     """Inspect only the current rule repository colocated with imported Code."""
 
     structural_root = _structural_worktree_root(package_file)
-    if structural_root is not None:
-        issue = validate_exact_worktree_root(structural_root)
-        if issue is not None:
-            problem = f"导入的 ldvh Code 具有 Working Tree 结构但无法确认其 Git 根：{issue.summary}"
-            return RuleSourceResult(None, None, problem)
-        repository = inspect_repository(structural_root)
-    else:
-        try:
-            snapshot = validate_installed_snapshot(package_file)
-            repository = inspect_verified_snapshot(snapshot)
-        except (OSError, SnapshotError, ValueError) as exc:
-            return RuleSourceResult(None, None, f"安装规则快照不可用：{exc}")
+    if structural_root is None:
+        return RuleSourceResult(None, None, "无法从导入的 ldvh Code 唯一确认源码 Git Working Tree")
+    issue = validate_exact_worktree_root(structural_root)
+    if issue is not None:
+        problem = f"导入的 ldvh Code 具有 Working Tree 结构但无法确认其 Git 根：{issue.summary}"
+        return RuleSourceResult(None, None, problem)
+    repository = inspect_repository(structural_root)
     return RuleSourceResult(repository, None, None)
 
 

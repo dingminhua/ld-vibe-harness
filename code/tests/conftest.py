@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import shutil
 import subprocess
-import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -12,18 +11,7 @@ import pytest
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
-def helper_executable_path(
-    python_executable: str | Path = sys.executable,
-    *,
-    platform_name: str = sys.platform,
-) -> Path:
-    """Locate the installed console script beside the active test interpreter."""
-
-    executable_name = "ldvh.exe" if platform_name == "win32" else "ldvh"
-    return Path(python_executable).with_name(executable_name)
-
-
-HELPER_EXECUTABLE = helper_executable_path()
+HELPER_EXECUTABLE = PROJECT_ROOT / "ldvh"
 
 
 def _assert_source_reference(reference: dict[str, Any]) -> None:
@@ -106,13 +94,17 @@ def assert_common_response(response: dict[str, Any]) -> None:
             assert isinstance(part["reason"], str) and part["reason"]
     assert isinstance(response["gaps"], list)
     for item in response["gaps"]:
-        assert {"summary", "scope", "source_refs"} <= set(item) <= {
-            "summary",
-            "scope",
-            "source_refs",
-            "code",
-            "member_count",
-        }
+        assert (
+            {"summary", "scope", "source_refs"}
+            <= set(item)
+            <= {
+                "summary",
+                "scope",
+                "source_refs",
+                "code",
+                "member_count",
+            }
+        )
         assert isinstance(item["summary"], str) and item["summary"]
         assert isinstance(item["scope"], list)
         assert isinstance(item["source_refs"], list)

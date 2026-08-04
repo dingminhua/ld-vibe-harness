@@ -106,6 +106,9 @@ def test_phase_commands_are_policy_separated_and_use_argv(tmp_path: Path) -> Non
     assert "approved-write-probes" not in names(readonly)
     assert "approved-write-probes" in names(full)
     assert "full-suite" not in names(full)
+    dependency_command = dict(preflight)["prepare-dependencies"]
+    assert str(source / "requirements-dev.txt") in dependency_command
+    assert str(source) not in dependency_command
     assert runner.verification_plan()["phases"]["adapter-handoff"]["automated"] is False
 
 

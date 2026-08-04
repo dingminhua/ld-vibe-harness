@@ -21,7 +21,7 @@ pytestmark = [
 def _cli(
     helper: Path, cwd: Path, command: str, operation: str | None, request: dict[str, Any] | None
 ) -> tuple[int, dict[str, Any]]:
-    argv = [str(helper), command]
+    argv = [sys.executable, str(helper), command]
     if operation:
         argv.append(operation)
     payload = b"" if request is None else json.dumps(request, ensure_ascii=False).encode("utf-8")
@@ -74,7 +74,7 @@ def _project_bytes(project: Path) -> dict[str, bytes]:
 
 def test_native_public_create_and_update_are_unavailable_without_side_effects(tmp_path: Path) -> None:
     assert durable_writes_enabled() is False
-    helper = Path(sys.executable).with_name("ldvh.exe")
+    helper = Path.cwd() / "ldvh"
     workspace, project = _managed_project(tmp_path)
     prepare_request = _request(
         workspace,

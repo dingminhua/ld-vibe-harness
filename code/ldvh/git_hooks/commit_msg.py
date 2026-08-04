@@ -1,4 +1,4 @@
-"""Install a thin native Git ``commit-msg`` adapter without taking over Git config."""
+"""Manage one LDVH ``commit-msg`` Hook at the Git common-dir boundary."""
 
 from __future__ import annotations
 
@@ -7,6 +7,7 @@ import hashlib
 import hmac
 import os
 import shlex
+import shutil
 import stat
 import subprocess
 import sys
@@ -15,39 +16,47 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
-from ldvh.governance.git import isolated_git_environment, resolve_git_identity
+from ldvh.governance.git import resolve_git_identity
 from ldvh.governance.models import LocatorSource, ScopeDescriptor, ScopeStatus
 from ldvh.governance.resolver import resolve_governance_scope
 
 _MANAGED_MARKER_PREFIX = "# ldvh-native-commit-msg-hook: v1 sha256:"
 _GIT_TIMEOUT_SECONDS = 10
-_BOOTSTRAP_HOOKS_PATH = ".githooks-v4"
-_TRUE_GIT_BOOLEAN_VALUES = frozenset(("1", "on", "true", "yes"))
+_HOOK_PREFLIGHT_TIMEOUT_SECONDS = 20
+_LEGACY_HOOKS_PATH = ".githooks-v4"
 HookState = Literal["absent", "managed", "conflict", "unavailable"]
 
 
 @dataclass(frozen=True, slots=True)
 class CommitMsgHookStatus:
-    """Current local ownership state of the one native Git Hook file."""
+    """Current ownership state of the common-dir Git Hook deployment."""
 
     state: HookState
     detail: str
     worktree_root: str | None
     hook_directory: str | None
     hook_path: str | None
+    git_common_dir: str | None = None
+    worktree_roots: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
 class _GitConfigEntry:
-    """The one effective Git configuration value, including its actual scope."""
-
     scope: str
     origin: str
     value: str
 
 
+@dataclass(frozen=True, slots=True)
+class _LegacyOverride:
+    worktree: Path
+    config_path: Path
+    hook_directory: Path
+    hook_path: Path
+
+
 class CommitMsgHookError(ValueError):
-    """A requested install or removal cannot safely touch the target Git Hook."""
+    """A requested deployment cannot safely touch the target Git Hook boundary."""
 
 
 def _status(
@@ -55,15 +64,19 @@ def _status(
     detail: str,
     *,
     worktree: Path | None = None,
+    common_dir: Path | None = None,
     hook_directory: Path | None = None,
+    worktrees: tuple[Path, ...] = (),
 ) -> CommitMsgHookStatus:
     hook_path = None if hook_directory is None else hook_directory / "commit-msg"
     return CommitMsgHookStatus(
-        state=state,
-        detail=detail,
-        worktree_root=None if worktree is None else str(worktree),
-        hook_directory=None if hook_directory is None else str(hook_directory),
-        hook_path=None if hook_path is None else str(hook_path),
+        state,
+        detail,
+        None if worktree is None else str(worktree),
+        None if hook_directory is None else str(hook_directory),
+        None if hook_path is None else str(hook_path),
+        None if common_dir is None else str(common_dir),
+        tuple(str(item) for item in worktrees),
     )
 
 
@@ -74,10 +87,26 @@ def _has_runtime_config_injection() -> bool:
 
 
 def _installation_environment() -> dict[str, str]:
-    return isolated_git_environment()
+    """Use the user's normal config scopes while rejecting process-level injection."""
+
+    environment = os.environ.copy()
+    for key in (
+        "GIT_COMMON_DIR",
+        "GIT_CONFIG_COUNT",
+        "GIT_DIR",
+        "GIT_INDEX_FILE",
+        "GIT_OBJECT_DIRECTORY",
+        "GIT_WORK_TREE",
+    ):
+        environment.pop(key, None)
+    for key in tuple(environment):
+        if key.startswith(("GIT_CONFIG_KEY_", "GIT_CONFIG_VALUE_")):
+            environment.pop(key, None)
+    environment["GIT_TERMINAL_PROMPT"] = "0"
+    return environment
 
 
-def _run_git(worktree: Path, *arguments: str) -> tuple[str | None, str | None]:
+def _run_git(worktree: Path, *arguments: str, allow_missing: bool = False) -> tuple[str | None, str | None]:
     try:
         completed = subprocess.run(
             ("git", "-C", str(worktree), *arguments),
@@ -95,18 +124,107 @@ def _run_git(worktree: Path, *arguments: str) -> tuple[str | None, str | None]:
         return None, f"Git inspection could not start: {error}"
     except subprocess.TimeoutExpired:
         return None, f"Git inspection exceeded {_GIT_TIMEOUT_SECONDS} seconds"
+    if allow_missing and completed.returncode == 1 and not completed.stdout and not completed.stderr:
+        return None, None
     if completed.returncode != 0:
         detail = (completed.stderr or completed.stdout).strip() or str(completed.returncode)
         return None, f"Git inspection failed: {detail}"
     return completed.stdout.strip(), None
 
 
-def _effective_git_config(worktree: Path, key: str) -> tuple[_GitConfigEntry | None, str | None]:
-    """Read one effective Git setting without guessing its scope or origin."""
+def _worktree(value: str) -> tuple[Path | None, str | None]:
+    if not isinstance(value, str) or not value.strip() or not Path(value).is_absolute():
+        return None, "worktree must be a non-empty absolute path"
+    requested = Path(value)
+    identity = resolve_git_identity(str(requested), base=requested)
+    if identity.status != "git_worktree" or identity.identity is None:
+        detail = identity.failure.summary if identity.failure is not None else identity.non_worktree_reason
+        return None, f"worktree is not an available non-bare Git worktree: {detail}"
+    return identity.identity.worktree_root, None
 
+
+def _absolute_directory(value: str, field: str) -> Path:
+    if not isinstance(value, str) or not value.strip() or not Path(value).is_absolute():
+        raise CommitMsgHookError(f"{field} must be a non-empty absolute directory path")
+    try:
+        path = Path(value).resolve(strict=True)
+    except OSError as error:
+        raise CommitMsgHookError(f"{field} could not be resolved: {error}") from error
+    if not path.is_dir() or "\n" in str(path) or "\r" in str(path):
+        raise CommitMsgHookError(f"{field} does not identify a representable current directory")
+    return path
+
+
+def _executable(value: str) -> Path:
+    if not isinstance(value, str) or not value.strip() or not Path(value).is_absolute():
+        raise CommitMsgHookError("commit_msg_runner must be a non-empty absolute file path")
+    try:
+        path = Path(value).resolve(strict=True)
+    except OSError as error:
+        raise CommitMsgHookError(f"commit_msg_runner could not be resolved: {error}") from error
+    if not path.is_file() or not os.access(path, os.X_OK) or "\n" in str(path) or "\r" in str(path):
+        raise CommitMsgHookError("commit_msg_runner must identify a representable executable file")
+    return path
+
+
+def _common_dir(worktree: Path) -> tuple[Path | None, str | None]:
+    output, failure = _run_git(worktree, "rev-parse", "--path-format=absolute", "--git-common-dir")
+    if failure is not None or output is None:
+        return None, failure
+    candidate = Path(output)
+    try:
+        resolved = candidate.resolve(strict=True)
+    except OSError as error:
+        return None, f"Git common-dir could not be resolved: {error}"
+    if candidate != resolved or not resolved.is_dir():
+        return None, "Git common-dir must be a current directory without symbolic-link traversal"
+    return resolved, None
+
+
+def _common_hooks_directory(common_dir: Path) -> tuple[Path | None, str | None]:
+    candidate = common_dir / "hooks"
+    try:
+        resolved = candidate.resolve(strict=False)
+    except (OSError, RuntimeError) as error:
+        return None, f"common-dir hooks directory could not be resolved: {error}"
+    if candidate != resolved or candidate.is_symlink():
+        return None, "common-dir hooks directory must not traverse a symbolic link"
+    if candidate.exists() and not candidate.is_dir():
+        return None, "common-dir hooks path exists but is not a directory"
+    return candidate, None
+
+
+def _enumerate_worktrees(worktree: Path) -> tuple[tuple[Path, ...] | None, str | None]:
+    output, failure = _run_git(worktree, "worktree", "list", "--porcelain")
+    if failure is not None or output is None:
+        return None, failure
+    discovered: list[Path] = []
+    for record in output.strip().split("\n\n"):
+        lines = record.splitlines()
+        if not lines or not lines[0].startswith("worktree "):
+            return None, "Git worktree inventory contains an invalid record"
+        candidate = Path(lines[0].removeprefix("worktree "))
+        prunable = any(line == "prunable" or line.startswith("prunable ") for line in lines[1:])
+        try:
+            resolved = candidate.resolve(strict=True)
+        except OSError as error:
+            if prunable and not candidate.exists():
+                continue
+            return None, f"registered worktree could not be resolved: {candidate}: {error}"
+        if prunable:
+            return None, f"registered worktree is marked prunable but still resolves: {resolved}"
+        if not resolved.is_dir():
+            return None, f"registered worktree is not a directory: {resolved}"
+        discovered.append(resolved)
+    if not discovered:
+        return None, "Git did not enumerate any worktree"
+    return tuple(dict.fromkeys(discovered)), None
+
+
+def _config_entries(worktree: Path, key: str) -> tuple[tuple[_GitConfigEntry, ...] | None, str | None]:
     try:
         completed = subprocess.run(
-            ("git", "-C", str(worktree), "config", "--null", "--show-origin", "--show-scope", "--get", key),
+            ("git", "-C", str(worktree), "config", "--null", "--show-origin", "--show-scope", "--get-all", key),
             check=False,
             capture_output=True,
             text=True,
@@ -115,109 +233,41 @@ def _effective_git_config(worktree: Path, key: str) -> tuple[_GitConfigEntry | N
             env=_installation_environment(),
             timeout=_GIT_TIMEOUT_SECONDS,
         )
-    except FileNotFoundError as error:
-        return None, f"Git executable is unavailable: {error}"
-    except (OSError, UnicodeError) as error:
-        return None, f"Git configuration inspection could not start: {error}"
-    except subprocess.TimeoutExpired:
-        return None, f"Git configuration inspection exceeded {_GIT_TIMEOUT_SECONDS} seconds"
+    except (OSError, UnicodeError, subprocess.TimeoutExpired) as error:
+        return None, f"Git configuration inspection failed: {error}"
     if completed.returncode == 1 and not completed.stdout and not completed.stderr:
-        return None, None
+        return (), None
     if completed.returncode != 0:
         detail = (completed.stderr or completed.stdout).strip() or str(completed.returncode)
         return None, f"Git configuration inspection failed: {detail}"
     fields = completed.stdout.split("\0")
     if fields and fields[-1] == "":
         fields.pop()
-    if len(fields) != 3 or not all(fields):
-        return None, f"Git configuration inspection returned an invalid effective {key} record"
-    return _GitConfigEntry(*fields), None
+    if len(fields) % 3 or not all(fields):
+        return None, f"Git configuration inspection returned invalid {key} records"
+    return tuple(_GitConfigEntry(*fields[index : index + 3]) for index in range(0, len(fields), 3)), None
 
 
-def _configuration_origin_path(worktree: Path, origin: str) -> Path | None:
+def _origin_path(worktree: Path, origin: str) -> Path | None:
     if not origin.startswith("file:"):
         return None
-    candidate = Path(origin.removeprefix("file:"))
-    if not candidate.is_absolute():
-        candidate = worktree / candidate
+    path = Path(origin.removeprefix("file:"))
+    if not path.is_absolute():
+        path = worktree / path
     try:
-        return candidate.resolve(strict=False)
+        return path.resolve(strict=False)
     except (OSError, RuntimeError):
         return None
 
 
-def _configured_hooks_path(worktree: Path) -> tuple[_GitConfigEntry | None, str | None]:
-    configured, failure = _effective_git_config(worktree, "core.hooksPath")
-    if failure is not None or configured is None:
-        return configured, failure
-    if configured.scope != "worktree":
-        return None, "effective core.hooksPath is not scoped to this actual worktree"
-    expected_origin, failure = _run_git(
-        worktree,
-        "rev-parse",
-        "--path-format=absolute",
-        "--git-path",
-        "config.worktree",
-    )
-    if failure is not None or expected_origin is None:
-        return None, failure
-    try:
-        expected = Path(expected_origin).resolve(strict=False)
-    except (OSError, RuntimeError) as error:
-        return None, f"worktree Git configuration path could not be resolved: {error}"
-    if _configuration_origin_path(worktree, configured.origin) != expected:
-        return None, "effective core.hooksPath does not originate from this worktree's config.worktree"
-    return configured, None
-
-
-def _within(path: Path, parent: Path) -> bool:
-    try:
-        path.relative_to(parent)
-    except ValueError:
-        return False
-    return True
-
-
-def _worktree(value: str) -> tuple[Path | None, str | None]:
-    if not isinstance(value, str) or not value.strip():
-        return None, "worktree must be a non-empty absolute path"
-    requested = Path(value)
-    if not requested.is_absolute():
-        return None, "worktree must be an absolute path"
-    identity = resolve_git_identity(str(requested), base=requested)
-    if identity.status != "git_worktree" or identity.identity is None:
-        detail = identity.failure.summary if identity.failure is not None else identity.non_worktree_reason
-        return None, f"worktree is not an available non-bare Git worktree: {detail}"
-    return identity.identity.worktree_root, None
-
-
-def _effective_hooks_directory(worktree: Path, *, require_within_worktree: bool) -> tuple[Path | None, str | None]:
-    output, failure = _run_git(worktree, "rev-parse", "--path-format=absolute", "--git-path", "hooks")
+def _worktree_config_path(worktree: Path) -> tuple[Path | None, str | None]:
+    output, failure = _run_git(worktree, "rev-parse", "--path-format=absolute", "--git-path", "config.worktree")
     if failure is not None or output is None:
         return None, failure
-    candidate = Path(output)
-    if not candidate.is_absolute():
-        return None, "Git did not return an absolute effective hooks directory"
     try:
-        directory = candidate.resolve(strict=False)
+        return Path(output).resolve(strict=False), None
     except (OSError, RuntimeError) as error:
-        return None, f"effective hooks directory could not be resolved: {error}"
-    if candidate != directory:
-        return None, "effective hooks directory must not traverse a symbolic link"
-    if require_within_worktree and not _within(directory, worktree):
-        return None, "effective hooks directory is outside this worktree; no shared or external Git Hook is changed"
-    if directory.exists() and not directory.is_dir():
-        return None, "effective hooks directory exists but is not a directory"
-    return directory, None
-
-
-def _hook_directory(worktree: Path) -> tuple[Path | None, str | None]:
-    if _has_runtime_config_injection():
-        return None, "runtime Git config injection is not accepted for Git Hook installation"
-    configured, failure = _configured_hooks_path(worktree)
-    if failure is not None:
-        return None, failure
-    return _effective_hooks_directory(worktree, require_within_worktree=True)
+        return None, f"worktree config path could not be resolved: {error}"
 
 
 def _existing_hook_state(path: Path) -> tuple[HookState, str]:
@@ -226,7 +276,7 @@ def _existing_hook_state(path: Path) -> tuple[HookState, str]:
     try:
         info = path.stat()
     except FileNotFoundError:
-        return "absent", "no Git commit-msg Hook is installed at the effective Git Hook path"
+        return "absent", "no Git commit-msg Hook is installed at the common-dir Hook path"
     except OSError as error:
         return "unavailable", f"existing Git commit-msg Hook could not be inspected: {error}"
     if not stat.S_ISREG(info.st_mode):
@@ -247,55 +297,89 @@ def _existing_hook_state(path: Path) -> tuple[HookState, str]:
     return "conflict", "an existing Git commit-msg Hook is not owned by LDVH"
 
 
-def inspect_commit_msg_hook(*, worktree: str) -> CommitMsgHookStatus:
-    """Read one effective Git Hook location without changing Git or the filesystem."""
+def _active_hook_assets(directory: Path, *, ignore: frozenset[str] = frozenset()) -> tuple[str, ...] | None:
+    if not directory.exists():
+        return ()
+    if directory.is_symlink() or not directory.is_dir():
+        return None
+    try:
+        entries = tuple(directory.iterdir())
+    except OSError:
+        return None
+    return tuple(
+        sorted(
+            entry.name
+            for entry in entries
+            if entry.name not in ignore
+            and not entry.name.endswith(".sample")
+            and (entry.is_symlink() or (entry.is_file() and os.access(entry, os.X_OK)))
+        )
+    )
 
-    current_worktree, failure = _worktree(worktree)
-    if failure is not None or current_worktree is None:
-        return _status("unavailable", failure or "worktree is unavailable")
-    directory, failure = _hook_directory(current_worktree)
-    if failure is not None or directory is None:
-        return _status("conflict", failure or "effective hooks directory is unavailable", worktree=current_worktree)
+
+def _legacy_override(worktree: Path, entry: _GitConfigEntry) -> tuple[_LegacyOverride | None, str | None]:
+    config_path, failure = _worktree_config_path(worktree)
+    if failure is not None or config_path is None:
+        return None, failure
+    if (
+        entry.scope != "worktree"
+        or entry.value != _LEGACY_HOOKS_PATH
+        or _origin_path(worktree, entry.origin) != config_path
+    ):
+        return None, "effective core.hooksPath is unknown or not an LDVH-owned legacy worktree override"
+    directory = worktree / _LEGACY_HOOKS_PATH
+    try:
+        resolved = directory.resolve(strict=False)
+    except (OSError, RuntimeError) as error:
+        return None, f"legacy Hook directory could not be resolved: {error}"
+    if resolved != directory or directory.is_symlink():
+        return None, "legacy Hook directory traverses a symbolic link"
     state, detail = _existing_hook_state(directory / "commit-msg")
-    return _status(state, detail, worktree=current_worktree, hook_directory=directory)
+    if state != "managed":
+        return None, f"legacy worktree override lacks an intact LDVH-owned commit-msg Hook: {detail}"
+    active = _active_hook_assets(directory, ignore=frozenset({"commit-msg"}))
+    if active is None or active:
+        return None, "legacy Hook directory contains unknown active assets"
+    return _LegacyOverride(worktree, config_path, directory, directory / "commit-msg"), None
 
 
-def _absolute_directory(value: str, field: str) -> Path:
-    if not isinstance(value, str) or not value.strip():
-        raise CommitMsgHookError(f"{field} must be a non-empty absolute directory path")
-    candidate = Path(value)
-    if not candidate.is_absolute():
-        raise CommitMsgHookError(f"{field} must be an absolute directory path")
-    try:
-        path = candidate.resolve(strict=True)
-    except OSError as error:
-        raise CommitMsgHookError(f"{field} could not be resolved: {error}") from error
-    if not path.is_dir():
-        raise CommitMsgHookError(f"{field} does not identify a current directory")
-    if "\n" in str(path) or "\r" in str(path):
-        raise CommitMsgHookError(f"{field} contains a newline and cannot be represented by the POSIX adapter")
-    return path
+def _override_inventory(worktrees: tuple[Path, ...]) -> tuple[tuple[_LegacyOverride, ...] | None, str | None]:
+    legacy: list[_LegacyOverride] = []
+    for worktree in worktrees:
+        entries, failure = _config_entries(worktree, "core.hooksPath")
+        if failure is not None or entries is None:
+            return None, f"{worktree}: {failure}"
+        if not entries:
+            continue
+        if len(entries) != 1:
+            return None, f"{worktree}: multiple core.hooksPath values are not safe to migrate"
+        override, failure = _legacy_override(worktree, entries[0])
+        if failure is not None or override is None:
+            return None, f"{worktree}: {failure}"
+        legacy.append(override)
+    return tuple(legacy), None
 
 
-def _executable(value: str) -> Path:
-    if not isinstance(value, str) or not value.strip():
-        raise CommitMsgHookError("commit_msg_runner must be a non-empty absolute file path")
-    candidate = Path(value)
-    if not candidate.is_absolute():
-        raise CommitMsgHookError("commit_msg_runner must be an absolute file path")
-    try:
-        path = candidate.resolve(strict=True)
-    except OSError as error:
-        raise CommitMsgHookError(f"commit_msg_runner could not be resolved: {error}") from error
-    if not path.is_file() or not os.access(path, os.X_OK):
-        raise CommitMsgHookError("commit_msg_runner must identify an executable file")
-    if "\n" in str(path) or "\r" in str(path):
-        raise CommitMsgHookError("commit_msg_runner contains a newline and cannot be represented by the POSIX adapter")
-    return path
+def _governance_failure(worktrees: tuple[Path, ...], workspace: Path, common_dir: Path) -> str | None:
+    for worktree in worktrees:
+        run = resolve_governance_scope(
+            (ScopeDescriptor(0, str(worktree), LocatorSource.EXPLICIT_LOCATOR),),
+            base=worktree,
+            explicit_workspace_root=workspace,
+        )
+        if run.result is None:
+            details = "; ".join(item.summary for item in run.diagnostics) or "governance resolution did not complete"
+            return f"{worktree}: actual worktree governance is unavailable: {details}"
+        if run.result.scope_status is not ScopeStatus.GOVERNED_SINGLE:
+            return f"{worktree}: actual worktree must resolve as governed_single, not {run.result.scope_status.value}"
+        resolution = run.result.object_resolutions[0]
+        if resolution.git_common_dir is None or Path(resolution.git_common_dir).resolve(strict=False) != common_dir:
+            return f"{worktree}: governance did not bind the requested Git common-dir"
+    return None
 
 
 def render_commit_msg_hook(*, commit_msg_runner: Path, workspace_root: Path) -> str:
-    """Render the complete POSIX adapter; it contains no LDVH rule data."""
+    """Render the common-dir POSIX adapter; it contains no LDVH rule data."""
 
     runner = shlex.quote(str(commit_msg_runner))
     workspace = shlex.quote(str(workspace_root))
@@ -319,10 +403,11 @@ def render_commit_msg_hook(*, commit_msg_runner: Path, workspace_root: Path) -> 
             "    /*) index_file=$GIT_INDEX_FILE ;;",
             '    *) index_file="$worktree/$GIT_INDEX_FILE" ;;',
             "  esac",
-            f'  exec {runner} --workspace-root {workspace} --worktree "$worktree" '
+            f'  exec {runner} git-commit-msg --workspace-root {workspace} --worktree "$worktree" '
             f'--message-file "$message_file" --index-file "$index_file"',
             "fi",
-            f'exec {runner} --workspace-root {workspace} --worktree "$worktree" --message-file "$message_file"',
+            f'exec {runner} git-commit-msg --workspace-root {workspace} --worktree "$worktree" '
+            '--message-file "$message_file"',
             "",
         )
     )
@@ -331,9 +416,8 @@ def render_commit_msg_hook(*, commit_msg_runner: Path, workspace_root: Path) -> 
 
 
 def _atomic_write(path: Path, content: str) -> None:
-    directory = path.parent
-    directory.mkdir(parents=True, exist_ok=True)
-    descriptor, temporary_name = tempfile.mkstemp(prefix=".ldvh-commit-msg-", dir=directory)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, temporary_name = tempfile.mkstemp(prefix=".ldvh-commit-msg-", dir=path.parent)
     temporary = Path(temporary_name)
     try:
         with os.fdopen(descriptor, "w", encoding="utf-8", newline="\n") as handle:
@@ -341,148 +425,207 @@ def _atomic_write(path: Path, content: str) -> None:
         temporary.chmod(0o755)
         state, detail = _existing_hook_state(path)
         if state not in {"absent", "managed"}:
-            raise CommitMsgHookError(f"Git commit-msg Hook changed before installation: {detail}")
+            raise CommitMsgHookError(f"Git commit-msg Hook changed before deployment: {detail}")
         os.replace(temporary, path)
     except Exception:
-        try:
-            temporary.unlink(missing_ok=True)
-        except OSError:
-            pass
+        temporary.unlink(missing_ok=True)
         raise
 
 
-def _rendered_hook_matches(path: Path, rendered: str) -> tuple[bool | None, str | None]:
-    if path.is_symlink():
-        return None, "existing Git commit-msg Hook became a symbolic link"
+def _matches(path: Path, rendered: str) -> bool:
     try:
-        contents = path.read_bytes()
-    except OSError as error:
-        return None, f"existing Git commit-msg Hook could not be read: {error}"
-    return hmac.compare_digest(contents, rendered.encode("utf-8")), None
+        return not path.is_symlink() and hmac.compare_digest(path.read_bytes(), rendered.encode("utf-8"))
+    except OSError:
+        return False
 
 
-def _remove_rendered_hook(path: Path, rendered: str) -> str | None:
-    matches, failure = _rendered_hook_matches(path, rendered)
-    if failure is not None:
-        return failure
-    if not matches:
-        return "prepared Git commit-msg Hook changed before cleanup"
+def _preflight_rendered_hook(rendered: str, worktree: Path) -> str | None:
+    """Run syntax plus real block/allow probes without touching the worktree or its real Index."""
+
+    shell = shutil.which("sh")
+    if shell is None:
+        return "a POSIX shell is unavailable for commit-msg Hook syntax verification"
+    with tempfile.TemporaryDirectory(prefix="ldvh-hook-preflight-") as temporary_name:
+        temporary = Path(temporary_name)
+        hook = temporary / "commit-msg"
+        index = temporary / "index"
+        invalid_message = temporary / "invalid-message"
+        valid_message = temporary / "valid-message"
+        try:
+            hook.write_text(rendered, encoding="utf-8", newline="\n")
+            hook.chmod(0o755)
+            invalid_message.write_text("test: invalid\n", encoding="utf-8")
+            valid_message.write_text(
+                "test: 验证 Git Hook 预检\n\n"
+                "关键变更:\n- 验证待部署 Hook 的真实 allow 与 block 路径\n\n"
+                "Session-ID: ldvh-hook-preflight\n"
+                "Agent-ID: ldvh-hook-manager\n"
+                "Host-Environment: local-verification\n",
+                encoding="utf-8",
+            )
+        except OSError as error:
+            return f"commit-msg Hook preflight assets could not be prepared: {error}"
+        syntax = subprocess.run(
+            (shell, "-n", str(hook)),
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="strict",
+            timeout=_GIT_TIMEOUT_SECONDS,
+        )
+        if syntax.returncode != 0:
+            return f"rendered commit-msg Hook failed shell syntax verification: {syntax.stderr.strip()}"
+
+        environment = _installation_environment()
+        environment["GIT_INDEX_FILE"] = str(index)
+        read_tree = subprocess.run(
+            ("git", "-C", str(worktree), "read-tree", "HEAD"),
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="strict",
+            env=environment,
+            timeout=_GIT_TIMEOUT_SECONDS,
+        )
+        if read_tree.returncode != 0:
+            return "commit-msg Hook preflight requires a readable HEAD with at least one tracked blob"
+        staged = subprocess.run(
+            ("git", "-C", str(worktree), "ls-files", "--stage", "-z"),
+            check=False,
+            capture_output=True,
+            env=environment,
+            timeout=_GIT_TIMEOUT_SECONDS,
+        )
+        if staged.returncode != 0:
+            return "commit-msg Hook preflight could not inspect the temporary Index"
+        entries = tuple(item for item in staged.stdout.split(b"\0") if item)
+        entry = next((item for item in entries if b" 0\t" in item), None)
+        if entry is None:
+            return "commit-msg Hook preflight requires at least one stage-zero tracked blob"
+        metadata = entry.split(b"\t", 1)[0].decode("ascii").split()
+        if len(metadata) != 3:
+            return "commit-msg Hook preflight observed an invalid temporary Index entry"
+        mode, object_id, _stage = metadata
+        existing_paths = {item.split(b"\t", 1)[1] for item in entries if b"\t" in item}
+        probe_path = next(
+            candidate
+            for number in range(1000)
+            if (candidate := f".ldvh-hook-preflight-probe-{number}").encode("utf-8") not in existing_paths
+        )
+        update = subprocess.run(
+            (
+                "git",
+                "-C",
+                str(worktree),
+                "update-index",
+                "--add",
+                "--cacheinfo",
+                f"{mode},{object_id},{probe_path}",
+            ),
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="strict",
+            env=environment,
+            timeout=_GIT_TIMEOUT_SECONDS,
+        )
+        if update.returncode != 0:
+            return f"commit-msg Hook preflight could not prepare its temporary candidate: {update.stderr.strip()}"
+
+        def invoke(message: Path) -> subprocess.CompletedProcess[str]:
+            return subprocess.run(
+                (str(hook), str(message)),
+                cwd=worktree,
+                check=False,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="strict",
+                env=environment,
+                timeout=_HOOK_PREFLIGHT_TIMEOUT_SECONDS,
+            )
+
+        blocked = invoke(invalid_message)
+        if blocked.returncode == 0:
+            return "rendered commit-msg Hook preflight did not block an invalid message"
+        allowed = invoke(valid_message)
+        if allowed.returncode != 0:
+            detail = allowed.stderr.strip() or allowed.stdout.strip() or str(allowed.returncode)
+            return f"rendered commit-msg Hook preflight did not allow a valid message: {detail}"
+    return None
+
+
+def _remove_exact(path: Path, rendered: str) -> str | None:
+    if not _matches(path, rendered):
+        return "managed Git commit-msg Hook changed before removal"
     try:
         path.unlink()
     except OSError as error:
-        return f"prepared Git commit-msg Hook could not be removed: {error}"
+        return f"managed Git commit-msg Hook could not be removed: {error}"
     return None
 
 
-def _governance_failure(worktree: Path, workspace: Path) -> str | None:
-    run = resolve_governance_scope(
-        (ScopeDescriptor(0, str(worktree), LocatorSource.EXPLICIT_LOCATOR),),
-        base=worktree,
-        explicit_workspace_root=workspace,
-    )
-    if run.result is None:
-        details = "; ".join(item.summary for item in run.diagnostics) or "governance resolution did not complete"
-        return f"actual worktree governance is unavailable: {details}"
-    if run.result.scope_status is not ScopeStatus.GOVERNED_SINGLE:
-        return f"actual worktree must resolve as governed_single, not {run.result.scope_status.value}"
-    resolution = run.result.object_resolutions[0]
-    if resolution.git_worktree_root is None:
-        return "governance did not bind the actual Git worktree"
+def _effective_hooks_directory(worktree: Path) -> tuple[Path | None, str | None]:
+    output, failure = _run_git(worktree, "rev-parse", "--path-format=absolute", "--git-path", "hooks")
+    if failure is not None or output is None:
+        return None, failure
     try:
-        governed_worktree = Path(resolution.git_worktree_root).resolve(strict=True)
-    except OSError as error:
-        return f"governance worktree identity could not be resolved: {error}"
-    if governed_worktree != worktree:
-        return "governance did not bind the requested actual Git worktree"
-    return None
-
-
-def _active_hook_assets(directory: Path, *, ignore: frozenset[str] = frozenset()) -> tuple[str, ...] | None:
-    """Find active Git Hook assets that a new hooksPath would hide or begin running."""
-
-    if not directory.exists():
-        return ()
-    if directory.is_symlink() or not directory.is_dir():
-        return None
-    try:
-        entries = tuple(directory.iterdir())
-    except OSError:
-        return None
-    active: list[str] = []
-    for entry in entries:
-        if entry.name in ignore or entry.name.endswith(".sample"):
-            continue
-        if entry.is_symlink() or (entry.is_file() and os.access(entry, os.X_OK)):
-            active.append(entry.name)
-    return tuple(sorted(active))
-
-
-def _bootstrap_directory(worktree: Path) -> tuple[Path | None, str | None]:
-    candidate = worktree / _BOOTSTRAP_HOOKS_PATH
-    try:
-        directory = candidate.resolve(strict=False)
+        return Path(output).resolve(strict=False), None
     except (OSError, RuntimeError) as error:
-        return None, f"worktree-local bootstrap Git Hook directory could not be resolved: {error}"
-    if candidate != directory or not _within(directory, worktree):
-        return (
-            None,
-            "worktree-local bootstrap Git Hook directory must remain inside the actual worktree without symbolic links",
+        return None, f"effective Hook directory could not be resolved: {error}"
+
+
+def inspect_commit_msg_hook(*, worktree: str) -> CommitMsgHookStatus:
+    current, failure = _worktree(worktree)
+    if failure is not None or current is None:
+        return _status("unavailable", failure or "worktree is unavailable")
+    if _has_runtime_config_injection():
+        return _status("conflict", "runtime Git config injection is not accepted", worktree=current)
+    common_dir, failure = _common_dir(current)
+    if failure is not None or common_dir is None:
+        return _status("unavailable", failure or "Git common-dir is unavailable", worktree=current)
+    worktrees, failure = _enumerate_worktrees(current)
+    if failure is not None or worktrees is None:
+        return _status(
+            "unavailable", failure or "worktree inventory is unavailable", worktree=current, common_dir=common_dir
         )
-    if directory.exists() and not directory.is_dir():
-        return None, "worktree-local bootstrap Git Hook directory exists but is not a directory"
-    state, detail = _existing_hook_state(directory / "commit-msg")
-    if state not in {"absent", "managed"}:
-        return None, f"worktree-local bootstrap Git Hook directory cannot be activated safely: {detail}"
-    active = _active_hook_assets(directory, ignore=frozenset({"commit-msg"}))
-    if active is None:
-        return None, "worktree-local bootstrap Git Hook directory cannot be inspected safely"
-    if active:
-        return None, "worktree-local bootstrap Git Hook directory contains active Git Hook assets: " + ", ".join(active)
-    return directory, None
-
-
-def _worktree_configuration_enabled(worktree: Path) -> tuple[bool, str | None]:
-    configured, failure = _effective_git_config(worktree, "extensions.worktreeConfig")
+    hooks, failure = _common_hooks_directory(common_dir)
+    if failure is not None or hooks is None:
+        return _status(
+            "conflict",
+            failure or "common-dir hooks path is unavailable",
+            worktree=current,
+            common_dir=common_dir,
+            worktrees=worktrees,
+        )
+    legacy, failure = _override_inventory(worktrees)
     if failure is not None:
-        return False, failure
-    return configured is not None and configured.value.lower() in _TRUE_GIT_BOOLEAN_VALUES, None
+        return _status(
+            "conflict", failure, worktree=current, common_dir=common_dir, hook_directory=hooks, worktrees=worktrees
+        )
+    if legacy:
+        return _status(
+            "conflict",
+            "LDVH-owned legacy worktree Hook overrides still require common-dir migration",
+            worktree=current,
+            common_dir=common_dir,
+            hook_directory=hooks,
+            worktrees=worktrees,
+        )
+    state, detail = _existing_hook_state(hooks / "commit-msg")
+    return _status(state, detail, worktree=current, common_dir=common_dir, hook_directory=hooks, worktrees=worktrees)
 
 
-def _configure_worktree_hooks_path(worktree: Path) -> str | None:
-    enabled, failure = _worktree_configuration_enabled(worktree)
-    if failure is not None:
-        return failure
-    if not enabled:
-        return "extensions.worktreeConfig must already be true before a worktree-local Git Hook path can be configured"
-    _, failure = _run_git(worktree, "config", "--worktree", "core.hooksPath", _BOOTSTRAP_HOOKS_PATH)
-    return failure
-
-
-def _rollback_bootstrap_attempt(
-    *,
-    worktree: Path,
-    hook_path: Path,
-    rendered: str,
-    remove_prepared_hook: bool,
-) -> str | None:
-    """Undo only this attempt's exact configuration and prepared wrapper after a failed activation."""
-
+def _restore_overrides(overrides: tuple[_LegacyOverride, ...]) -> list[str]:
     failures: list[str] = []
-    configured, failure = _configured_hooks_path(worktree)
-    if failure is not None:
-        failures.append(f"worktree Git Hook configuration could not be re-read: {failure}")
-    elif configured is not None:
-        if configured.value != _BOOTSTRAP_HOOKS_PATH:
-            failures.append("worktree Git Hook configuration changed before bootstrap cleanup")
-        else:
-            _, failure = _run_git(worktree, "config", "--worktree", "--unset-all", "core.hooksPath")
-            if failure is not None:
-                failures.append(f"worktree Git Hook configuration could not be removed: {failure}")
-    if remove_prepared_hook:
-        failure = _remove_rendered_hook(hook_path, rendered)
+    for override in overrides:
+        _, failure = _run_git(override.worktree, "config", "--worktree", "core.hooksPath", _LEGACY_HOOKS_PATH)
         if failure is not None:
-            failures.append(failure)
-    return None if not failures else "; ".join(failures)
+            failures.append(f"{override.worktree}: {failure}")
+    return failures
 
 
 def install_commit_msg_hook(
@@ -492,211 +635,179 @@ def install_commit_msg_hook(
     commit_msg_runner: str,
     human_gate_confirmed: bool,
 ) -> CommitMsgHookStatus:
-    """Install one exact LDVH-owned adapter after a Human Gate."""
+    """Deploy one common-dir Hook and migrate only proven LDVH legacy overrides."""
 
-    status = inspect_commit_msg_hook(worktree=worktree)
-    if not human_gate_confirmed:
-        return CommitMsgHookStatus(
-            "unavailable",
-            "Human authorization is required before installing a native Git Hook",
-            status.worktree_root,
-            status.hook_directory,
-            status.hook_path,
-        )
-    try:
-        workspace = _absolute_directory(workspace_root, "workspace_root")
-        if status.worktree_root is None:
-            raise CommitMsgHookError("actual worktree is unavailable")
-        scope_failure = _governance_failure(Path(status.worktree_root), workspace)
-        if scope_failure is not None:
-            return CommitMsgHookStatus(
-                "conflict",
-                scope_failure,
-                status.worktree_root,
-                status.hook_directory,
-                status.hook_path,
-            )
-        runner = _executable(commit_msg_runner)
-        rendered = render_commit_msg_hook(commit_msg_runner=runner, workspace_root=workspace)
-        if status.state == "managed":
-            assert status.hook_path is not None
-            matches, failure = _rendered_hook_matches(Path(status.hook_path), rendered)
-            if failure is not None:
-                return CommitMsgHookStatus(
-                    "unavailable",
-                    f"LDVH Git commit-msg Hook binding could not be verified: {failure}",
-                    status.worktree_root,
-                    status.hook_directory,
-                    status.hook_path,
-                )
-            if matches:
-                return status
-            return CommitMsgHookStatus(
-                "conflict",
-                "existing LDVH Git commit-msg Hook has a different runner or workspace binding and will not be replaced",
-                status.worktree_root,
-                status.hook_directory,
-                status.hook_path,
-            )
-        if status.state != "absent":
-            return status
-        assert status.hook_path is not None
-        _atomic_write(Path(status.hook_path), rendered)
-    except (CommitMsgHookError, OSError) as error:
-        return CommitMsgHookStatus(
-            "unavailable",
-            f"LDVH Git commit-msg Hook was not installed: {error}",
-            status.worktree_root,
-            status.hook_directory,
-            status.hook_path,
-        )
-    return inspect_commit_msg_hook(worktree=worktree)
-
-
-def bootstrap_commit_msg_hook(
-    *,
-    worktree: str,
-    workspace_root: str,
-    commit_msg_runner: str,
-    human_gate_confirmed: bool,
-) -> CommitMsgHookStatus:
-    """Create one safe worktree-local Git Hook path, then install the shared thin adapter."""
-
-    status = inspect_commit_msg_hook(worktree=worktree)
-    if not human_gate_confirmed:
-        return CommitMsgHookStatus(
-            "unavailable",
-            "Human authorization is required before bootstrapping a native Git Hook",
-            status.worktree_root,
-            status.hook_directory,
-            status.hook_path,
-        )
-    current_worktree, failure = _worktree(worktree)
-    if failure is not None or current_worktree is None:
+    current, failure = _worktree(worktree)
+    if failure is not None or current is None:
         return _status("unavailable", failure or "worktree is unavailable")
+    if not human_gate_confirmed:
+        return _status(
+            "unavailable", "Human Gate confirmation is required before Git Hook deployment", worktree=current
+        )
+    if _has_runtime_config_injection():
+        return _status("conflict", "runtime Git config injection is not accepted", worktree=current)
     try:
         workspace = _absolute_directory(workspace_root, "workspace_root")
         runner = _executable(commit_msg_runner)
     except CommitMsgHookError as error:
-        return _status("unavailable", str(error), worktree=current_worktree)
-    scope_failure = _governance_failure(current_worktree, workspace)
-    if scope_failure is not None:
-        return _status("conflict", scope_failure, worktree=current_worktree)
-    if _has_runtime_config_injection():
+        return _status("unavailable", str(error), worktree=current)
+    common_dir, failure = _common_dir(current)
+    if failure is not None or common_dir is None:
+        return _status("unavailable", failure or "Git common-dir is unavailable", worktree=current)
+    worktrees, failure = _enumerate_worktrees(current)
+    if failure is not None or worktrees is None:
+        return _status(
+            "unavailable", failure or "worktree inventory is unavailable", worktree=current, common_dir=common_dir
+        )
+    governance_failure = _governance_failure(worktrees, workspace, common_dir)
+    if governance_failure is not None:
+        return _status("conflict", governance_failure, worktree=current, common_dir=common_dir, worktrees=worktrees)
+    hooks, failure = _common_hooks_directory(common_dir)
+    if failure is not None or hooks is None:
         return _status(
             "conflict",
-            "runtime Git config injection is not accepted for Git Hook installation",
-            worktree=current_worktree,
+            failure or "common-dir hooks path is unavailable",
+            worktree=current,
+            common_dir=common_dir,
+            worktrees=worktrees,
         )
-    configured, failure = _effective_git_config(current_worktree, "core.hooksPath")
-    if failure is not None:
-        return _status("unavailable", failure, worktree=current_worktree)
-    if configured is not None:
-        return install_commit_msg_hook(
-            worktree=worktree,
-            workspace_root=str(workspace),
-            commit_msg_runner=str(runner),
-            human_gate_confirmed=True,
-        )
-    default_directory, failure = _effective_hooks_directory(current_worktree, require_within_worktree=False)
-    if failure is not None or default_directory is None:
-        return _status("unavailable", failure or "default hooks directory is unavailable", worktree=current_worktree)
-    active = _active_hook_assets(default_directory)
-    if active is None:
+    legacy, failure = _override_inventory(worktrees)
+    if failure is not None or legacy is None:
         return _status(
             "conflict",
-            "default hooks directory cannot be inspected safely before configuring a worktree-local Git Hook path",
-            worktree=current_worktree,
+            failure or "Hook override inventory is unavailable",
+            worktree=current,
+            common_dir=common_dir,
+            hook_directory=hooks,
+            worktrees=worktrees,
         )
-    if active:
-        return _status(
-            "conflict",
-            "default hooks directory contains active Git Hook assets and would be shadowed: " + ", ".join(active),
-            worktree=current_worktree,
-        )
-    directory, failure = _bootstrap_directory(current_worktree)
-    if failure is not None or directory is None:
-        return _status("conflict", failure or "worktree-local Git Hook directory is unavailable", worktree=current_worktree)
-    hook_path = directory / "commit-msg"
+    hook_path = hooks / "commit-msg"
     rendered = render_commit_msg_hook(commit_msg_runner=runner, workspace_root=workspace)
     state, detail = _existing_hook_state(hook_path)
-    prepared_by_attempt = False
-    if state == "managed":
-        matches, failure = _rendered_hook_matches(hook_path, rendered)
-        if failure is not None:
-            return _status(
-                "unavailable",
-                f"worktree-local bootstrap Git Hook binding could not be verified: {failure}",
-                worktree=current_worktree,
-                hook_directory=directory,
-            )
-        if not matches:
-            return _status(
-                "conflict",
-                "worktree-local bootstrap Git Hook has a different runner or workspace binding and will not be activated",
-                worktree=current_worktree,
-                hook_directory=directory,
-            )
-    elif state == "absent":
-        try:
-            _atomic_write(hook_path, rendered)
-        except (CommitMsgHookError, OSError) as error:
-            return _status(
-                "unavailable",
-                f"worktree-local bootstrap Git Hook was not prepared: {error}",
-                worktree=current_worktree,
-                hook_directory=directory,
-            )
-        prepared_by_attempt = True
-    else:
+    if state in {"conflict", "unavailable"}:
         return _status(
-            state,
-            f"worktree-local bootstrap Git Hook cannot be activated safely: {detail}",
-            worktree=current_worktree,
-            hook_directory=directory,
+            "conflict", detail, worktree=current, common_dir=common_dir, hook_directory=hooks, worktrees=worktrees
         )
-    failure = _configure_worktree_hooks_path(current_worktree)
-    if failure is not None:
-        cleanup = _rollback_bootstrap_attempt(
-            worktree=current_worktree,
-            hook_path=hook_path,
-            rendered=rendered,
-            remove_prepared_hook=prepared_by_attempt,
+    if state == "managed" and not _matches(hook_path, rendered):
+        return _status(
+            "conflict",
+            "existing LDVH Hook belongs to a different runner or workspace binding",
+            worktree=current,
+            common_dir=common_dir,
+            hook_directory=hooks,
+            worktrees=worktrees,
         )
-        detail = f"worktree-local Git Hook configuration was not activated: {failure}"
-        if cleanup is not None:
-            detail += f"; cleanup incomplete: {cleanup}"
-        return _status("unavailable", detail, worktree=current_worktree, hook_directory=directory)
-    configured, failure = _configured_hooks_path(current_worktree)
-    if failure is not None or configured is None or configured.value != _BOOTSTRAP_HOOKS_PATH:
-        detail = failure or "worktree-local core.hooksPath did not persist the expected value"
-        cleanup = _rollback_bootstrap_attempt(
-            worktree=current_worktree,
-            hook_path=hook_path,
-            rendered=rendered,
-            remove_prepared_hook=prepared_by_attempt,
+    try:
+        preflight_failure = _preflight_rendered_hook(rendered, current)
+    except (OSError, UnicodeError, subprocess.SubprocessError) as error:
+        preflight_failure = f"commit-msg Hook preflight could not complete: {error}"
+    if preflight_failure is not None:
+        return _status(
+            "unavailable",
+            preflight_failure,
+            worktree=current,
+            common_dir=common_dir,
+            hook_directory=hooks,
+            worktrees=worktrees,
         )
-        if cleanup is not None:
-            detail += f"; cleanup incomplete: {cleanup}"
-        return _status("unavailable", detail, worktree=current_worktree, hook_directory=directory)
-    installed = install_commit_msg_hook(
-        worktree=worktree,
-        workspace_root=str(workspace),
-        commit_msg_runner=str(runner),
-        human_gate_confirmed=True,
+    created = state == "absent"
+    try:
+        if created:
+            _atomic_write(hook_path, rendered)
+        if not _matches(hook_path, rendered):
+            raise CommitMsgHookError("prepared common-dir Hook did not pass exact ownership verification")
+    except (CommitMsgHookError, OSError) as error:
+        if created and _matches(hook_path, rendered):
+            hook_path.unlink(missing_ok=True)
+        return _status(
+            "unavailable",
+            str(error),
+            worktree=current,
+            common_dir=common_dir,
+            hook_directory=hooks,
+            worktrees=worktrees,
+        )
+
+    removed_overrides: list[_LegacyOverride] = []
+    for override in legacy:
+        _, failure = _run_git(override.worktree, "config", "--worktree", "--unset-all", "core.hooksPath")
+        if failure is not None:
+            rollback_failures = _restore_overrides(tuple(removed_overrides))
+            if created:
+                cleanup = _remove_exact(hook_path, rendered)
+                if cleanup is not None:
+                    rollback_failures.append(cleanup)
+            detail = f"legacy override migration failed for {override.worktree}: {failure}"
+            if rollback_failures:
+                detail += "; rollback failures: " + "; ".join(rollback_failures)
+            return _status(
+                "unavailable",
+                detail,
+                worktree=current,
+                common_dir=common_dir,
+                hook_directory=hooks,
+                worktrees=worktrees,
+            )
+        removed_overrides.append(override)
+
+    for item in worktrees:
+        effective, failure = _effective_hooks_directory(item)
+        if failure is not None or effective != hooks:
+            rollback_failures = _restore_overrides(tuple(removed_overrides))
+            if created:
+                cleanup = _remove_exact(hook_path, rendered)
+                if cleanup is not None:
+                    rollback_failures.append(cleanup)
+            detail = f"{item}: common-dir Hook did not become the effective Hook directory"
+            if failure is not None:
+                detail += f": {failure}"
+            if rollback_failures:
+                detail += "; rollback failures: " + "; ".join(rollback_failures)
+            return _status(
+                "unavailable",
+                detail,
+                worktree=current,
+                common_dir=common_dir,
+                hook_directory=hooks,
+                worktrees=worktrees,
+            )
+
+    cleanup_failures: list[str] = []
+    for override in legacy:
+        state, _ = _existing_hook_state(override.hook_path)
+        if state == "managed":
+            try:
+                override.hook_path.unlink()
+                override.hook_directory.rmdir()
+            except OSError as error:
+                cleanup_failures.append(f"{override.hook_directory}: {error}")
+    if cleanup_failures:
+        return _status(
+            "managed",
+            "common-dir Hook is active; inactive legacy asset cleanup remains: " + "; ".join(cleanup_failures),
+            worktree=current,
+            common_dir=common_dir,
+            hook_directory=hooks,
+            worktrees=worktrees,
+        )
+    migrated = len(legacy)
+    return _status(
+        "managed",
+        (
+            f"LDVH common-dir commit-msg Hook is active for {len(worktrees)} worktree(s); "
+            f"migrated {migrated} legacy override(s)"
+        ),
+        worktree=current,
+        common_dir=common_dir,
+        hook_directory=hooks,
+        worktrees=worktrees,
     )
-    if installed.state == "managed":
-        return installed
-    cleanup = _rollback_bootstrap_attempt(
-        worktree=current_worktree,
-        hook_path=hook_path,
-        rendered=rendered,
-        remove_prepared_hook=prepared_by_attempt,
-    )
-    detail = f"worktree-local Git Hook configuration did not verify after activation: {installed.detail}"
-    if cleanup is not None:
-        detail += f"; cleanup incomplete: {cleanup}"
-    return _status("unavailable", detail, worktree=current_worktree, hook_directory=directory)
+
+
+def bootstrap_commit_msg_hook(**arguments: object) -> CommitMsgHookStatus:
+    """Compatibility name for the common-dir deployment operation."""
+
+    return install_commit_msg_hook(**arguments)  # type: ignore[arg-type]
 
 
 def uninstall_commit_msg_hook(
@@ -706,150 +817,118 @@ def uninstall_commit_msg_hook(
     commit_msg_runner: str,
     human_gate_confirmed: bool,
 ) -> CommitMsgHookStatus:
-    """Remove only the exact current environment binding after a Human Gate."""
-
-    status = inspect_commit_msg_hook(worktree=worktree)
+    current, failure = _worktree(worktree)
+    if failure is not None or current is None:
+        return _status("unavailable", failure or "worktree is unavailable")
     if not human_gate_confirmed:
-        return CommitMsgHookStatus(
-            "unavailable",
-            "Human authorization is required before removing a native Git Hook",
-            status.worktree_root,
-            status.hook_directory,
-            status.hook_path,
-        )
+        return _status("unavailable", "Human Gate confirmation is required before Git Hook removal", worktree=current)
     try:
         workspace = _absolute_directory(workspace_root, "workspace_root")
-        if status.worktree_root is None:
-            raise CommitMsgHookError("actual worktree is unavailable")
-        scope_failure = _governance_failure(Path(status.worktree_root), workspace)
-        if scope_failure is not None:
-            return CommitMsgHookStatus(
-                "conflict",
-                scope_failure,
-                status.worktree_root,
-                status.hook_directory,
-                status.hook_path,
-            )
-        if status.state != "managed":
-            return status
         runner = _executable(commit_msg_runner)
-        assert status.hook_path is not None
-        rendered = render_commit_msg_hook(commit_msg_runner=runner, workspace_root=workspace)
-        matches, failure = _rendered_hook_matches(Path(status.hook_path), rendered)
-        if failure is not None:
-            return CommitMsgHookStatus(
-                "unavailable",
-                f"LDVH Git commit-msg Hook binding could not be verified: {failure}",
-                status.worktree_root,
-                status.hook_directory,
-                status.hook_path,
-            )
-        if not matches:
-            return CommitMsgHookStatus(
-                "conflict",
-                "existing LDVH Git commit-msg Hook has a different runner or workspace binding and will not be removed",
-                status.worktree_root,
-                status.hook_directory,
-                status.hook_path,
-            )
-        Path(status.hook_path).unlink()
-    except (CommitMsgHookError, OSError) as error:
-        return CommitMsgHookStatus(
-            "unavailable",
-            f"LDVH Git commit-msg Hook was not removed: {error}",
-            status.worktree_root,
-            status.hook_directory,
-            status.hook_path,
+    except CommitMsgHookError as error:
+        return _status("unavailable", str(error), worktree=current)
+    common_dir, failure = _common_dir(current)
+    if failure is not None or common_dir is None:
+        return _status("unavailable", failure or "Git common-dir is unavailable", worktree=current)
+    worktrees, failure = _enumerate_worktrees(current)
+    if failure is not None or worktrees is None:
+        return _status(
+            "unavailable", failure or "worktree inventory is unavailable", worktree=current, common_dir=common_dir
         )
-    removed = inspect_commit_msg_hook(worktree=worktree)
-    if removed.state != "absent" or status.worktree_root is None:
-        return removed
-    configured, failure = _configured_hooks_path(Path(status.worktree_root))
+    hooks, failure = _common_hooks_directory(common_dir)
+    if failure is not None or hooks is None:
+        return _status(
+            "conflict",
+            failure or "common-dir hooks path is unavailable",
+            worktree=current,
+            common_dir=common_dir,
+            worktrees=worktrees,
+        )
+    legacy, failure = _override_inventory(worktrees)
+    if failure is not None or legacy:
+        return _status(
+            "conflict",
+            failure or "legacy overrides remain; common-dir removal is unsafe",
+            worktree=current,
+            common_dir=common_dir,
+            hook_directory=hooks,
+            worktrees=worktrees,
+        )
+    rendered = render_commit_msg_hook(commit_msg_runner=runner, workspace_root=workspace)
+    hook_path = hooks / "commit-msg"
+    state, detail = _existing_hook_state(hook_path)
+    if state == "absent":
+        return _status(
+            "absent", detail, worktree=current, common_dir=common_dir, hook_directory=hooks, worktrees=worktrees
+        )
+    if state != "managed" or not _matches(hook_path, rendered):
+        return _status(
+            "conflict",
+            "common-dir Hook is not the exact LDVH deployment requested for removal",
+            worktree=current,
+            common_dir=common_dir,
+            hook_directory=hooks,
+            worktrees=worktrees,
+        )
+    failure = _remove_exact(hook_path, rendered)
     if failure is not None:
-        return CommitMsgHookStatus(
-            "unavailable",
-            f"LDVH Git commit-msg Hook was removed, but retained Git Hook configuration could not be observed: {failure}",
-            removed.worktree_root,
-            removed.hook_directory,
-            removed.hook_path,
+        return _status(
+            "unavailable", failure, worktree=current, common_dir=common_dir, hook_directory=hooks, worktrees=worktrees
         )
-    if configured is None:
-        return removed
-    return CommitMsgHookStatus(
+    return _status(
         "absent",
-        removed.detail + "; effective worktree-local core.hooksPath remains unchanged",
-        removed.worktree_root,
-        removed.hook_directory,
-        removed.hook_path,
+        "the exact LDVH common-dir commit-msg Hook was removed",
+        worktree=current,
+        common_dir=common_dir,
+        hook_directory=hooks,
+        worktrees=worktrees,
     )
-
-
-def _parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Inspect or manage one LDVH native Git commit-msg Hook")
-    commands = parser.add_subparsers(dest="command", required=True)
-    status = commands.add_parser("status", help="read the effective Git commit-msg Hook without changing it")
-    status.add_argument("--worktree", required=True)
-    install = commands.add_parser("install", help="install an LDVH-owned Git commit-msg Hook")
-    install.add_argument("--worktree", required=True)
-    install.add_argument("--workspace-root", required=True)
-    install.add_argument("--commit-msg-runner", required=True)
-    install.add_argument("--confirm-human-gate", action="store_true")
-    bootstrap = commands.add_parser(
-        "bootstrap",
-        help="configure one safe worktree-local Git Hook path, then install an LDVH-owned Git commit-msg Hook",
-    )
-    bootstrap.add_argument("--worktree", required=True)
-    bootstrap.add_argument("--workspace-root", required=True)
-    bootstrap.add_argument("--commit-msg-runner", required=True)
-    bootstrap.add_argument("--confirm-human-gate", action="store_true")
-    uninstall = commands.add_parser("uninstall", help="remove only the exact LDVH-owned Git commit-msg Hook binding")
-    uninstall.add_argument("--worktree", required=True)
-    uninstall.add_argument("--workspace-root", required=True)
-    uninstall.add_argument("--commit-msg-runner", required=True)
-    uninstall.add_argument("--confirm-human-gate", action="store_true")
-    return parser
 
 
 def _write_status(status: CommitMsgHookStatus) -> None:
-    sys.stdout.write(f"LDVH Git commit-msg Hook {status.state}: {status.detail}\n")
-    if status.worktree_root is not None:
-        sys.stdout.write(f"worktree: {status.worktree_root}\n")
-    if status.hook_path is not None:
-        sys.stdout.write(f"hook: {status.hook_path}\n")
+    values = (
+        ("state", status.state),
+        ("detail", status.detail),
+        ("worktree_root", status.worktree_root or ""),
+        ("git_common_dir", status.git_common_dir or ""),
+        ("hook_directory", status.hook_directory or ""),
+        ("hook_path", status.hook_path or ""),
+        ("worktree_roots", "\t".join(status.worktree_roots)),
+    )
+    for key, value in values:
+        sys.stdout.write(f"{key}={value}\n")
+
+
+def _parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Manage the LDVH common-dir native Git commit-msg Hook")
+    commands = parser.add_subparsers(dest="command", required=True)
+    inspect = commands.add_parser("inspect")
+    inspect.add_argument("--worktree", required=True)
+    for name in ("install", "bootstrap", "uninstall"):
+        command = commands.add_parser(name)
+        command.add_argument("--worktree", required=True)
+        command.add_argument("--workspace-root", required=True)
+        command.add_argument("--commit-msg-runner", required=True)
+        command.add_argument("--confirm-human-gate", action="store_true")
+    return parser
 
 
 def main(arguments: list[str] | None = None) -> int:
     parsed = _parser().parse_args(arguments)
-    if parsed.command == "status":
+    if parsed.command == "inspect":
         status = inspect_commit_msg_hook(worktree=parsed.worktree)
-        _write_status(status)
-        return 0 if status.state in {"absent", "managed"} else 1
-    if parsed.command == "install":
-        status = install_commit_msg_hook(
+    else:
+        function = uninstall_commit_msg_hook if parsed.command == "uninstall" else install_commit_msg_hook
+        status = function(
             worktree=parsed.worktree,
             workspace_root=parsed.workspace_root,
             commit_msg_runner=parsed.commit_msg_runner,
             human_gate_confirmed=parsed.confirm_human_gate,
         )
-        _write_status(status)
-        return 0 if status.state == "managed" else 1
-    if parsed.command == "bootstrap":
-        status = bootstrap_commit_msg_hook(
-            worktree=parsed.worktree,
-            workspace_root=parsed.workspace_root,
-            commit_msg_runner=parsed.commit_msg_runner,
-            human_gate_confirmed=parsed.confirm_human_gate,
-        )
-        _write_status(status)
-        return 0 if status.state == "managed" else 1
-    status = uninstall_commit_msg_hook(
-        worktree=parsed.worktree,
-        workspace_root=parsed.workspace_root,
-        commit_msg_runner=parsed.commit_msg_runner,
-        human_gate_confirmed=parsed.confirm_human_gate,
-    )
     _write_status(status)
-    return 0 if status.state == "absent" else 1
+    if parsed.command == "uninstall":
+        return 0 if status.state == "absent" else 1
+    return 0 if status.state == "managed" else 1
 
 
 if __name__ == "__main__":

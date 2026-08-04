@@ -1,5 +1,7 @@
 # 规范上下文组合读取实现规划
 
+> **部分历史边界已退役。** `read-specification-context` 的功能责任仍有效；本文涉及 installed source projection、`setup.py`、wheel/sdist 或发行包生命周期的内容已由唯一源码仓库模型取代，不再承担当前实现与测试责任。
+
 ## 1. 目标与规则边界
 
 本规划只实现 `specification-model-foundation` §§9.8–9.9 声明的

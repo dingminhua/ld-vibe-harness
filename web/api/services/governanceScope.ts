@@ -40,9 +40,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 export function helperExecutable(): string {
-  const defaultExecutable = process.platform === 'win32'
-    ? path.join(LDVH_ROOT, '.venv', 'Scripts', 'ldvh.exe')
-    : path.join(LDVH_ROOT, '.venv', 'bin', 'ldvh')
+  const defaultExecutable = path.join(LDVH_ROOT, 'ldvh')
   const configured = process.env.LDVH_HELPER_EXECUTABLE || defaultExecutable
   const candidate = path.resolve(configured)
   let resolved: string
@@ -57,6 +55,20 @@ export function helperExecutable(): string {
     throw new WebGovernanceError(`Configured Helper executable is unavailable: ${error instanceof Error ? error.message : String(error)}`)
   }
   return resolved
+}
+
+function helperInvocation(): { executable: string, prefix: string[] } {
+  const launcher = helperExecutable()
+  if (process.platform !== 'win32') return { executable: launcher, prefix: [] }
+  const configuredPython = process.env.LDVH_HELPER_PYTHON
+    || path.join(path.dirname(launcher), '.venv', 'Scripts', 'python.exe')
+  const python = path.resolve(configuredPython)
+  try {
+    if (!statSync(realpathSync.native(python)).isFile()) throw new Error('not a regular file')
+  } catch (error) {
+    throw new WebGovernanceError(`Configured source Python is unavailable: ${error instanceof Error ? error.message : String(error)}`)
+  }
+  return { executable: python, prefix: [launcher] }
 }
 
 function configuredLocator(): string {
@@ -92,9 +104,10 @@ function invokeGovernanceScope(locator: string, workspaceRoot: string): Promise<
     response_profile: 'compact',
   })
   return new Promise((resolve, reject) => {
+    const invocation = helperInvocation()
     const child = execFile(
-      helperExecutable(),
-      ['call', 'resolve-governance-scope'],
+      invocation.executable,
+      [...invocation.prefix, 'call', 'resolve-governance-scope'],
       { cwd: locator, maxBuffer: 10 * 1024 * 1024 },
       (error, stdout, stderr) => {
         if (error) {

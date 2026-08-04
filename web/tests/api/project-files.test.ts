@@ -36,9 +36,7 @@ fs.writeFileSync(
 
 process.env.LDVH_ROOT = projectRoot
 process.env.LDVH_WORKSPACE_ROOT = workspaceRoot
-process.env.LDVH_HELPER_EXECUTABLE = process.platform === 'win32'
-  ? path.join(repositoryRoot, '.venv', 'Scripts', 'ldvh.exe')
-  : path.join(repositoryRoot, '.venv', 'bin', 'ldvh')
+process.env.LDVH_HELPER_EXECUTABLE = path.join(repositoryRoot, 'ldvh')
 process.env.LDVH_WEB_WORKTREE_LOCATOR = projectRoot
 
 const svgContent = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12"><circle cx="6" cy="6" r="5"/></svg>\n'
