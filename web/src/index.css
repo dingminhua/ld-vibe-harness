@@ -21,6 +21,11 @@
     @apply text-sm font-medium leading-5 text-ldvh-text-primary;
   }
 
+  /* Shared neutral surface for an object title on cards and reading headers. */
+  .ldvh-object-title-tray {
+    @apply min-h-11 rounded-md border border-ldvh-border/45 bg-ldvh-bg/40;
+  }
+
   .ldvh-card-title-prominent {
     @apply text-base font-semibold leading-6 text-ldvh-text-primary;
   }
@@ -159,6 +164,9 @@
 
   .ldvh-section-grid {
     display: grid;
+    /* Cards retain their own content height; a taller neighbour must not turn
+       the short card's bottom padding into an oversized visual gap. */
+    align-items: start;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
     gap: 1.5rem;
   }

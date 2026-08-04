@@ -13,11 +13,11 @@ export default function CommitSignatureMeta({
   if (values.length === 0) return null;
 
   return (
-    <span className="inline-flex shrink-0 items-center leading-4 align-middle">
+    <span className="inline-flex h-4 shrink-0 items-center leading-4">
       {values.map((value) => (
         <Fragment key={value}>
-          <span className="px-1 leading-4 text-ldvh-text-secondary/70" aria-hidden="true">·</span>
-          <span>{value}</span>
+          <span className="inline-flex h-4 shrink-0 items-center px-1 leading-4 text-ldvh-text-secondary/70" aria-hidden="true">·</span>
+          <span className="inline-flex h-4 shrink-0 items-center leading-4">{value}</span>
         </Fragment>
       ))}
     </span>

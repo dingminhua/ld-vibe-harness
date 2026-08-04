@@ -33,7 +33,7 @@ test('breaking and push-state badges use one presentation in list and detail ide
   assert.match(panel, /actionBadges=\{entry\?\.pushStatus \? <CommitPushStatusBadge status=\{entry\.pushStatus\} \/> : undefined\}/);
   assert.match(signatureMeta, /signature\?\.agentId/);
   assert.match(signatureMeta, /signature\?\.hostEnvironment/);
-  assert.match(list, /<CommitSignatureMeta signature=\{entry\.signature\} \/>/);
+  assert.match(list, /<ObjectUpdatedMeta source=\{\{\}\} updatedAt=\{entry\.date\} signature=\{entry\.signature\} \/>/);
   assert.match(panel, /<CommitSignatureMeta signature=\{entry\.signature\} \/>/);
   assert.match(panel, /stripCommitSignatureTrailers\(commitBody\)/);
   assert.match(panel, /<CommitSignatureSection signature=\{entry\.signature\} labels=\{labels\} \/>/);

@@ -4,12 +4,11 @@ import { AlertCircle, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import CopyPathButton from '@/components/CopyPathButton';
 import CommitBreakingBadge from '@/components/CommitBreakingBadge';
 import CommitPushStatusBadge from '@/components/CommitPushStatusBadge';
-import CommitSignatureMeta from '@/components/CommitSignatureMeta';
+import ObjectUpdatedMeta from '@/components/ObjectUpdatedMeta';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
 import { fetchChangelog, fetchCommitDetail, type ChangelogEntry } from '@/utils/api';
 import { getCommitScopeLabel, getCommitTypeLabel } from '@/utils/commitLabels';
 import { useI18n } from '@/i18n/context';
-import { formatDateTime } from '@/utils/dateFormat';
 import { usePanel } from '@/utils/panelContext';
 import { CATEGORY_COLORS } from '@/utils/categoryColors';
 
@@ -260,7 +259,7 @@ export default function Changelog() {
               key={entry.hash}
               role="button"
               tabIndex={0}
-              className={`group/card flex w-full min-w-0 flex-col gap-3 rounded-lg border p-4 text-left transition-colors ${
+              className={`group/card flex w-full min-w-0 flex-col gap-2 rounded-lg border p-3 text-left transition-colors ${
                 isSelected
                   ? 'border-ldvh-accent/45 bg-ldvh-accent/5'
                   : 'border-ldvh-border bg-ldvh-panel hover:border-ldvh-accent/40 hover:bg-ldvh-panel/95'
@@ -281,7 +280,7 @@ export default function Changelog() {
                     <CommitBreakingBadge className="ml-1.5" />
                   )}
                 </div>
-                <div className="flex shrink-0 items-center gap-2">
+                <div className="flex shrink-0 items-center gap-1">
                   <CommitPushStatusBadge status={entry.pushStatus} />
                   <CopyPathButton
                     path={getCommitCopyContext(entry)}
@@ -290,15 +289,12 @@ export default function Changelog() {
                   />
                 </div>
               </div>
-              <div
-                className="-mx-1 flex min-w-0 items-center gap-2 rounded-md border-l-2 bg-ldvh-bg/65 px-2.5 py-2 text-left ring-1 ring-inset ring-ldvh-border/50 transition-colors group-hover/card:bg-ldvh-bg/85"
-                style={{ borderLeftColor: typeColor }}
-              >
-                <ObjectTypeIcon type="changelog" size={14} className="flex-shrink-0 transition-colors group-hover/card:text-ldvh-accent" style={{ color: typeColor }} />
+              <div className="ldvh-object-title-tray -mx-1 flex min-w-0 items-center gap-1.5 px-2.5 py-2 text-left transition-colors group-hover/card:bg-ldvh-bg/55">
+                <ObjectTypeIcon type="changelog" size={14} className="flex-shrink-0" style={{ color: typeColor }} />
                 <div className="min-w-0 flex-1">
-                  <div className="ldvh-card-title whitespace-normal break-words leading-snug transition-colors group-hover/card:text-ldvh-accent">
+                  <h2 className="ldvh-card-title whitespace-normal break-words">
                     {entry.description || entry.message}
-                  </div>
+                  </h2>
                 </div>
                 <button
                   type="button"
@@ -308,7 +304,7 @@ export default function Changelog() {
                   }}
                   title={panelLabel}
                   aria-label={panelLabel}
-                  className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-transparent bg-transparent transition-colors focus-visible:border-ldvh-accent/50 focus-visible:outline-none ${
+                  className={`inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-transparent bg-transparent transition-colors focus-visible:border-ldvh-accent/50 focus-visible:outline-none ${
                     isSelected
                       ? 'text-ldvh-accent'
                       : 'text-ldvh-text-secondary/70 hover:bg-ldvh-border/30 hover:text-ldvh-accent'
@@ -317,9 +313,8 @@ export default function Changelog() {
                   {isLoading ? <Loader2 size={16} className="animate-spin" /> : <PanelIcon size={16} aria-hidden="true" />}
                 </button>
               </div>
-              <div className="ldvh-meta-muted self-end">
-                {t('changelog.commitAt', { time: formatDateTime(entry.date) })}
-                <CommitSignatureMeta signature={entry.signature} />
+              <div className="flex min-w-0 items-center justify-end pt-0.5 text-right">
+                <ObjectUpdatedMeta source={{}} updatedAt={entry.date} signature={entry.signature} />
               </div>
             </div>
           );

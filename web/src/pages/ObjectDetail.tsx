@@ -11,6 +11,7 @@ import SummaryText from '@/components/SummaryText';
 import DocPreviewLink from '@/components/DocPreviewLink';
 import EvidenceBlock from '@/components/EvidenceBlock';
 import CopyPathButton from '@/components/CopyPathButton';
+import ObjectIdentityActions from '@/components/ObjectIdentityActions';
 import ObjectUpdatedMeta from '@/components/ObjectUpdatedMeta';
 import PriorityIcon from '@/components/PriorityIcon';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
@@ -26,7 +27,6 @@ import {
 } from '@/i18n/locales';
 import { CATEGORY_COLORS } from '@/utils/categoryColors';
 import { formatDateTime } from '@/utils/dateFormat';
-import { getStatusColor } from '@/utils/statusColors';
 import { getSignalClassName, getSignalText, isSignalField } from '@/utils/objectSignals';
 import { usePanel } from '@/utils/panelContext';
 import { getFactReadMeta, isReadableFact, reconstructFactYaml, type FactCarrier, type FactReadMeta } from '@/utils/factReadMeta';
@@ -565,7 +565,6 @@ export function ObjectIdentityHeader({
   const TitleTag = compact ? 'h3' : 'h1';
   const titleClassName = compact ? 'ldvh-reading-title' : 'ldvh-page-title';
   const iconSize = compact ? 16 : 18;
-  const statusColor = status ? getStatusColor(status) : null;
   const remainingAuxiliaryMetaEntries = auxiliaryMetaEntries.filter(([key]) => key !== 'priority');
   const hasFooterMeta = showDefaultDates
     || remainingAuxiliaryMetaEntries.length > 0
@@ -587,28 +586,23 @@ export function ObjectIdentityHeader({
             {extraBadges}
             <span className="ldvh-meta-muted min-w-0 truncate">{id}</span>
             <PriorityIcon source={source} type={objectType} locale={locale} size={compact ? 'sm' : 'md'} />
-            {!compact && ((status && statusColor) || actionBadges || showCopyAction) && (
-              <div className="ml-auto flex shrink-0 items-center gap-2">
-                {status && statusColor && (
-                  <span
-                    className="ldvh-chip shrink-0 rounded px-2 py-0.5 font-mono"
-                    style={{
-                      color: statusColor,
-                      backgroundColor: `${statusColor}18`,
-                    }}
-                  >
-                    {statusLabel || status}
-                  </span>
-                )}
-                {actionBadges}
-                {showCopyAction && (
-                  <CopyPathButton path={target} label={copyLabel} copiedLabel={copiedLabel} />
-                )}
+            {!compact && (status || actionBadges || showCopyAction) && (
+              <div className="ml-auto shrink-0">
+                <ObjectIdentityActions
+                  status={status}
+                  statusLabel={statusLabel}
+                  objectType={objectType}
+                  target={target}
+                  actionBadges={actionBadges}
+                  copyLabel={copyLabel}
+                  copiedLabel={copiedLabel}
+                  showCopyAction={showCopyAction}
+                />
               </div>
             )}
           </div>
           <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
-            <TitleTag className={`${titleClassName} flex min-w-0 flex-1 basis-full items-center gap-2 break-words`}>
+            <TitleTag className={`${titleClassName} ldvh-object-title-tray flex min-w-0 flex-1 basis-full items-center gap-2 break-words px-2.5 py-2`}>
               <ObjectTypeIcon type={objectType} size={iconSize} className="shrink-0" style={{ color: typeColor }} />
               <span className="min-w-0">{title}</span>
             </TitleTag>
@@ -621,23 +615,18 @@ export function ObjectIdentityHeader({
             )}
           </div>
         </div>
-        {(showCopyAction || actionBadges || (status && statusColor)) && compact && (
+        {(showCopyAction || actionBadges || status) && compact && (
           <div className="flex shrink-0 flex-col items-end justify-center gap-2">
-            <div className="flex items-center gap-2">
-              {status && statusColor && (
-                <span
-                  className="ldvh-chip shrink-0 rounded px-2 py-0.5 font-mono"
-                  style={{
-                    color: statusColor,
-                    backgroundColor: `${statusColor}18`,
-                  }}
-                >
-                  {statusLabel || status}
-                </span>
-              )}
-              {actionBadges}
-              {showCopyAction && <CopyPathButton path={target} label={copyLabel} copiedLabel={copiedLabel} />}
-            </div>
+            <ObjectIdentityActions
+              status={status}
+              statusLabel={statusLabel}
+              objectType={objectType}
+              target={target}
+              actionBadges={actionBadges}
+              copyLabel={copyLabel}
+              copiedLabel={copiedLabel}
+              showCopyAction={showCopyAction}
+            />
             {actionAlignedTitleMeta.length > 0 && (
               <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-1 text-right">
                 {actionAlignedTitleMeta.map((entry) => (

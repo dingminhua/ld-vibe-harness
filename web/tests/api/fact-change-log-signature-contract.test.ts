@@ -26,7 +26,7 @@ test('all fact Cards reuse the shared update and update-log attribution surface'
 
   assert.match(list, /import ObjectUpdatedMeta from '@\/components\/ObjectUpdatedMeta'/);
   assert.match(list, /<ObjectUpdatedMeta source=\{obj\} updatedAt=\{obj\.updated\} \/>/);
-  assert.match(list, /flex min-w-0 items-center justify-end pt-1 text-right/);
+  assert.match(list, /flex min-w-0 items-center justify-end pt-0\.5 text-right/);
   assert.doesNotMatch(list, /formatDateTime\(obj\.updated\)/);
   assert.match(facts, /copyPresentFields\(source, \['change_log'\]\)/);
 });

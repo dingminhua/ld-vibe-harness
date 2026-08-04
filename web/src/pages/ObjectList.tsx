@@ -1,20 +1,19 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { ArrowRight, Circle, CircleAlert, CircleCheck, CircleMinus, CirclePlay, ClipboardList, Clock3, Lightbulb, ListChecks, ShieldCheck, Target } from 'lucide-react';
-import StatusBadge from '@/components/StatusBadge';
+import ObjectIdentityActions from '@/components/ObjectIdentityActions';
 import ObjectStatusFilter from '@/components/ObjectStatusFilter';
 import WorkCaseProgressFilter from '@/components/WorkCaseProgressFilter';
 import WorkCaseProgressTrack from '@/components/WorkCaseProgressTrack';
 import ObjectPriorityFilter from '@/components/ObjectPriorityFilter';
 import PriorityIcon from '@/components/PriorityIcon';
-import CopyPathButton from '@/components/CopyPathButton';
 import ObjectUpdatedMeta from '@/components/ObjectUpdatedMeta';
 import SummaryText from '@/components/SummaryText';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
 import { WorkCaseCriteriaList, WORKCASE_CRITERIA_SURFACE_CLASS } from '@/components/WorkCaseCriteriaList';
 import { fetchObjectDetail, fetchObjects, type FactCoverageStatus, type FactListProblem, type ObjectDetail, type ObjectItem, type ObjectStatusOption, type WorkCaseClosureProposalCard, type WorkCaseClosureTerminalCard, type WorkCaseContributionTarget, type WorkCaseExecutionItem, type WorkCaseProgressOption, type WorkCaseSparkSuggestionCard } from '@/utils/api';
 import { useI18n } from '@/i18n/context';
-import { getFieldLabel, getFieldValueLabel, getLocalizedObjectTitle, getObjectStatusLocale } from '@/i18n/locales';
+import { getFieldLabel, getFieldValueLabel, getLocalizedObjectTitle, getObjectStatusLocale, getTypeLabel } from '@/i18n/locales';
 import { CATEGORY_COLORS } from '@/utils/categoryColors';
 import { getFactReadMeta, isReadableFact } from '@/utils/factReadMeta';
 import { getEffectiveListStatus, writeListStatusParam } from '@/utils/listStatus';
@@ -33,39 +32,6 @@ type StatusReason = { label: string; text: string; missing?: boolean };
 const WORKCASE_SECTION_ICON_SIZE = 14;
 /** Shared vertical rhythm between a semantic card title and its first body block. */
 const WORKCASE_CARD_TITLE_BODY_GAP_CLASS = 'mt-1.5';
-
-const TITLE_ACCENT_CLASS: Record<string, string> = {
-  active: 'border-emerald-400/80',
-  human_plan_confirming: 'border-violet-400/80',
-  plan_revising: 'border-sky-400/80',
-  executing: 'border-emerald-400/80',
-  controller_checking: 'border-blue-400/80',
-  independent_reviewing: 'border-indigo-400/80',
-  closure_preparing: 'border-sky-400/80',
-  human_closure_confirming: 'border-violet-400/80',
-  plan_confirmation: 'border-violet-400/80',
-  progressing: 'border-sky-400/80',
-  closure_confirmation: 'border-violet-400/80',
-  accepted: 'border-emerald-400/70',
-  draft: 'border-amber-400/75',
-  proposed: 'border-amber-400/75',
-  pending: 'border-amber-400/75',
-  open: 'border-amber-400/75',
-  closed: 'border-zinc-500/50',
-  retired: 'border-zinc-500/50',
-  resolved: 'border-zinc-500/50',
-  routed: 'border-zinc-500/50',
-  archived: 'border-zinc-500/50',
-  discarded: 'border-red-400/75',
-  rejected: 'border-red-400/75',
-  deprecated: 'border-red-400/75',
-  suspended: 'border-red-400/75',
-  deleted: 'border-zinc-500/50',
-};
-
-function getTitleAccentClass(status: string): string {
-  return TITLE_ACCENT_CLASS[status] ?? 'border-ldvh-accent/70';
-}
 
 function formatReasonText(value: string): string {
   return value
@@ -1173,31 +1139,35 @@ export function ObjectCardFrame({
 }) {
   const { t } = useI18n();
   const presentedStatus = displayStatus ?? obj.status;
-  const titleAccentClass = getTitleAccentClass(presentedStatus);
   const typeColor = CATEGORY_COLORS[obj.type] || CATEGORY_COLORS.other;
   const nonActiveReason = getNonActiveReason(obj, t);
   return (
     <div
-      className="flex min-w-0 flex-col gap-3 rounded-lg border border-ldvh-border bg-ldvh-panel p-4 text-left"
+      className="flex min-w-0 flex-col gap-2 rounded-lg border border-ldvh-border bg-ldvh-panel p-3 text-left"
     >
       <div className="flex min-w-0 items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-1.5">
+          <span
+            className="ldvh-chip shrink-0 rounded px-2 py-0.5"
+            style={{ backgroundColor: `${typeColor}18`, color: typeColor }}
+          >
+            {getTypeLabel(obj.type, locale)}
+          </span>
           <span className="ldvh-meta-muted min-w-0 truncate">{obj.id}</span>
           <PriorityIcon source={obj} type={obj.type} locale={locale} size="sm" />
         </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <StatusBadge status={presentedStatus} statusLabel={getObjectStatusLocale(obj.type, presentedStatus, locale)} objectType={obj.type} />
-          {/* List Cards only have a stable object identity, not an exact-read source path. */}
-          <CopyPathButton
-            path={obj.id}
-            label={t('common.copyObjectId')}
-            copiedLabel={t('common.copiedObjectId')}
-          />
-        </div>
+        {/* List cards expose a stable object identity, not an exact-read source path. */}
+        <ObjectIdentityActions
+          status={presentedStatus}
+          statusLabel={getObjectStatusLocale(obj.type, presentedStatus, locale)}
+          objectType={obj.type}
+          target={obj.id}
+          copyLabel={t('common.copyObjectId')}
+          copiedLabel={t('common.copiedObjectId')}
+        />
       </div>
-      <div
-        className={`-mx-1 flex min-w-0 items-center gap-1.5 rounded-md border-l-2 bg-ldvh-bg/65 px-2.5 py-2 text-left ring-1 ring-inset ring-ldvh-border/50 ${titleAccentClass}`}
-      >
+      {/* Keep a neutral title tray for card hierarchy; semantic colour belongs to the icon, never the tray border. */}
+      <div className="ldvh-object-title-tray -mx-1 flex min-w-0 items-center gap-1.5 px-2.5 py-2 text-left">
         <ObjectTypeIcon type={obj.type} size={14} className="shrink-0" style={{ color: typeColor }} />
         <h2 className="ldvh-card-title min-w-0 flex-1 whitespace-normal break-words">
           <button
@@ -1211,7 +1181,8 @@ export function ObjectCardFrame({
       </div>
       {showNonActiveReason && nonActiveReason && <StatusReasonNote reason={nonActiveReason} />}
       {children}
-      <div className="mt-auto flex min-w-0 items-center justify-end pt-1 text-right">
+      {/* Keep the identity → title → update rhythm stable; grid stretch leaves any spare space below. */}
+      <div className="flex min-w-0 items-center justify-end pt-0.5 text-right">
         <ObjectUpdatedMeta source={obj} updatedAt={obj.updated} />
       </div>
     </div>

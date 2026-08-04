@@ -267,7 +267,7 @@ test('WorkCase cards keep a neutral outer surface and move emphasis with the cur
   const frame = list.slice(list.indexOf('function ObjectCardFrame'), list.indexOf('function hasSparkResolvedFact'));
 
   assert.doesNotMatch(list, /ldvh-card-plan-confirmation|isPlanConfirmation/);
-  assert.match(frame, /className="flex min-w-0 flex-col gap-3 rounded-lg border border-ldvh-border bg-ldvh-panel p-4 text-left"/);
+  assert.match(frame, /className="flex min-w-0 flex-col gap-2 rounded-lg border border-ldvh-border bg-ldvh-panel p-3 text-left"/);
   assert.match(goal, /emphasis\?: 'primary' \| 'supporting'/);
   assert.match(goal, /border-violet-400\/20 border-l-violet-400\/70 bg-violet-500\/\[0\.025\] dark:bg-violet-950\/20/);
   assert.match(progressing, /<WorkCaseGoalSection goal=\{goal\} t=\{t\} emphasis="supporting" \/>/);
