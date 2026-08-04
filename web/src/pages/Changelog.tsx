@@ -1,15 +1,14 @@
 import { useEffect, useMemo, useState, type KeyboardEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertCircle, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import CopyPathButton from '@/components/CopyPathButton';
 import CommitBreakingBadge from '@/components/CommitBreakingBadge';
 import CommitPushStatusBadge from '@/components/CommitPushStatusBadge';
 import ObjectUpdatedMeta from '@/components/ObjectUpdatedMeta';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
-import { fetchChangelog, fetchCommitDetail, type ChangelogEntry } from '@/utils/api';
+import { fetchChangelog, type ChangelogEntry } from '@/utils/api';
 import { getCommitScopeLabel, getCommitTypeLabel } from '@/utils/commitLabels';
 import { useI18n } from '@/i18n/context';
-import { usePanel } from '@/utils/panelContext';
 import { CATEGORY_COLORS } from '@/utils/categoryColors';
 
 const CHANGELOG_COUNT_OPTIONS = [50, 100, 200] as const;
@@ -101,12 +100,9 @@ function getCommitCopyContext(entry: ChangelogEntry): string {
 
 export default function Changelog() {
   const { locale, t } = useI18n();
-  const { isOpen: panelOpen, content: panelContent, openPanel, closePanel } = usePanel();
   const navigate = useNavigate();
   const [entries, setEntries] = useState<ChangelogEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [selectedHash, setSelectedHash] = useState<string | null>(null);
-  const [loadingHash, setLoadingHash] = useState<string | null>(null);
   const [activeType, setActiveType] = useState<string | null>(null);
   const [activeScope, setActiveScope] = useState<string | null>(null);
   const [logCount, setLogCount] = useState<ChangelogCount>(50);
@@ -145,40 +141,7 @@ export default function Changelog() {
     };
   }, [locale, logCount]);
 
-  const handleSelectCommit = async (entry: ChangelogEntry) => {
-    const hash = entry.hash;
-    const panelTitle = `${entry.description || entry.message}`;
-    if (panelOpen && panelContent?.type === 'diff' && selectedHash === hash) {
-      closePanel();
-      setSelectedHash(null);
-      return;
-    }
-
-    setSelectedHash(hash);
-    setLoadingHash(hash);
-
-    try {
-      const detail = await fetchCommitDetail(hash, locale);
-      const detailEntry = detail.entry ?? { ...entry, body: detail.body || entry.body };
-      openPanel({
-        type: 'diff',
-        title: panelTitle,
-        data: { entry: detailEntry, stat: detail.stat },
-      });
-    } catch {
-      openPanel({
-        type: 'diff',
-        title: panelTitle,
-        data: t('changelog.detailFailed'),
-      });
-    } finally {
-      setLoadingHash(null);
-    }
-  };
-
   const openCommitPage = (entry: ChangelogEntry) => {
-    closePanel();
-    setSelectedHash(null);
     navigate(`/changelog/${entry.hash}`);
   };
 
@@ -215,7 +178,6 @@ export default function Changelog() {
           activeValue={logCount}
           onChange={(value) => {
             setLogCount(value);
-            setSelectedHash(null);
           }}
           labelForCount={(value) => t('changelog.recentCount', { count: String(value) })}
         />
@@ -225,7 +187,6 @@ export default function Changelog() {
           activeValue={activeType}
           onChange={(value) => {
             setActiveType(value);
-            setSelectedHash(null);
           }}
           getLabel={(value) => getCommitTypeLabel(value, locale)}
         />
@@ -235,7 +196,6 @@ export default function Changelog() {
           activeValue={activeScope}
           onChange={(value) => {
             setActiveScope(value);
-            setSelectedHash(null);
           }}
           getLabel={(value) => getCommitScopeLabel(value, locale)}
         />
@@ -247,23 +207,13 @@ export default function Changelog() {
             <p className="ldvh-body-muted">{t('changelog.noMatches')}</p>
           </div>
         ) : filteredEntries.map((entry) => {
-          const isSelected = panelOpen && selectedHash === entry.hash;
-          const isLoading = loadingHash === entry.hash;
-          const PanelIcon = isSelected ? ChevronLeft : ChevronRight;
-          const panelLabel = isSelected
-            ? t('changelog.closeDetails')
-            : t('changelog.openDetails');
           const typeColor = CATEGORY_COLORS[entry.category] || CATEGORY_COLORS.other;
           return (
             <div
               key={entry.hash}
               role="button"
               tabIndex={0}
-              className={`group/card flex w-full min-w-0 flex-col gap-2 rounded-lg border p-3 text-left transition-colors ${
-                isSelected
-                  ? 'border-ldvh-accent/45 bg-ldvh-accent/5'
-                  : 'border-ldvh-border bg-ldvh-panel hover:border-ldvh-accent/40 hover:bg-ldvh-panel/95'
-              }`}
+              className="group/card flex w-full min-w-0 flex-col gap-2 rounded-lg border border-ldvh-border bg-ldvh-panel p-3 text-left transition-colors hover:border-ldvh-accent/40 hover:bg-ldvh-panel/95"
               onClick={() => openCommitPage(entry)}
               onKeyDown={(event) => handleKeyboardOpen(event, () => openCommitPage(entry))}
             >
@@ -296,22 +246,6 @@ export default function Changelog() {
                     {entry.description || entry.message}
                   </h2>
                 </div>
-                <button
-                  type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    handleSelectCommit(entry);
-                  }}
-                  title={panelLabel}
-                  aria-label={panelLabel}
-                  className={`inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-transparent bg-transparent transition-colors focus-visible:border-ldvh-accent/50 focus-visible:outline-none ${
-                    isSelected
-                      ? 'text-ldvh-accent'
-                      : 'text-ldvh-text-secondary/70 hover:bg-ldvh-border/30 hover:text-ldvh-accent'
-                  }`}
-                >
-                  {isLoading ? <Loader2 size={16} className="animate-spin" /> : <PanelIcon size={16} aria-hidden="true" />}
-                </button>
               </div>
               <div className="flex min-w-0 items-center justify-end pt-0.5 text-right">
                 <ObjectUpdatedMeta source={{}} updatedAt={entry.date} signature={entry.signature} />
