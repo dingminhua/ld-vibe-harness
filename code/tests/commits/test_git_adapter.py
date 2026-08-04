@@ -106,7 +106,7 @@ def _contract() -> CommitContractProjection:
     return CommitContractProjection(
         type_tokens=("feat", "fix", "docs", "style", "refactor", "perf", "test", "build", "ci", "chore", "revert"),
         scope_tokens=("specs", "docs", "rules", "runtime", "code", "web", "tests", "config"),
-        mechanical_triggers=("multiple-paths", "breaking-marker", "revert-type"),
+        mechanical_triggers=("all-commits-minimum-body", "breaking-marker"),
         source_key="source-of-truth-traceability",
         source_path="specs/03-事实源与信息溯源规范.md",
         observed_at="2026-07-15T00:00:00+08:00",
@@ -150,7 +150,11 @@ def test_observes_staged_add_without_mutating_repository(tmp_path: Path) -> None
     before_index = _git(repository, "ls-files", "--stage", "-z")
 
     observed = git_adapter.observe_commit_candidate(
-        locator=".", base=repository, message=_signed("feat: 增加文件"), contract=_contract(), governance=_governance(repository)
+        locator=".",
+        base=repository,
+        message=_signed("feat: 增加文件"),
+        contract=_contract(),
+        governance=_governance(repository),
     )
 
     assert observed.outcome == "observed"
@@ -202,9 +206,7 @@ def test_rename_and_delete_preserve_actual_candidate_paths(tmp_path: Path) -> No
 
 
 def test_modified_copy_source_is_reported_once() -> None:
-    paths, issue = git_adapter._parse_name_status(
-        b"M\0source.txt\0C100\0source.txt\0extracted.txt\0"
-    )
+    paths, issue = git_adapter._parse_name_status(b"M\0source.txt\0C100\0source.txt\0extracted.txt\0")
 
     assert issue is None
     assert paths == ("source.txt", "extracted.txt")
@@ -330,7 +332,11 @@ def _stage_file(repository: Path, path: str, content: bytes = _SPARK_BYTES) -> N
 
 
 def _signed(message: str) -> str:
-    return message + "\n\nSession-ID: test-session\nAgent-ID: test-agent\nHost-Environment: test-environment"
+    return (
+        message
+        + "\n\n关键变更:\n- 覆盖当前 Git adapter 测试变化"
+        + "\n\nSession-ID: test-session\nAgent-ID: test-agent\nHost-Environment: test-environment"
+    )
 
 
 def _observe(repository: Path, message: str = "feat: 观察事实候选") -> git_adapter.CommitCandidateObservation:

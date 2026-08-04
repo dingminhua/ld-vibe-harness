@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import replace
 from pathlib import Path
 
+import pytest
+
 from ldvh.commits.contract_source import ATTACHMENT_KEY, project_commit_contract
 from ldvh.specs.identity import FormalDocument
 from ldvh.specs.markdown import parse_markdown
@@ -73,7 +75,7 @@ def test_projects_current_03_tables_and_fingerprint() -> None:
         "revert",
     )
     assert "runtime" in result.projection.scope_tokens
-    assert result.projection.mechanical_triggers == ("multiple-paths", "breaking-marker", "revert-type")
+    assert result.projection.mechanical_triggers == ("all-commits-minimum-body", "breaking-marker")
     assert len(result.projection.content_fingerprint) == 64
 
 
@@ -125,3 +127,38 @@ def test_rejects_missing_or_unauthorized_or_mismatched_attachment() -> None:
         "03 未授权提交契约附件 source-reference-enumerations"
     )
     assert project_commit_contract(document, replace(attachment, current_id="03.Att.99")).projection is None
+
+
+@pytest.mark.parametrize(
+    ("old", "new"),
+    [
+        ("| `all-commits-minimum-body` | `true`", "| `unknown-minimum-body` | `true`"),
+        ("| `project-required` | `false`", "| `high-impact` | `false`"),
+        ("| `project-required` | `false`", "| `project-required` | `maybe`"),
+    ],
+)
+def test_rejects_unknown_duplicate_or_invalid_trigger_rows(tmp_path: Path, old: str, new: str) -> None:
+    original = PROJECT_ROOT / "specs/attachments/03.Att.01-来源参考枚举闭集.md"
+    source = tmp_path / "specs/attachments/03.Att.01-来源参考枚举闭集.md"
+    source.parent.mkdir(parents=True)
+    source.write_text(original.read_text(encoding="utf-8").replace(old, new), encoding="utf-8")
+
+    result = project_commit_contract(_document(), _attachment(source))
+
+    assert result.projection is None
+    assert any("trigger" in issue.summary for issue in result.issues)
+
+
+def test_rejects_out_of_order_trigger_rows(tmp_path: Path) -> None:
+    original = PROJECT_ROOT / "specs/attachments/03.Att.01-来源参考枚举闭集.md"
+    source = tmp_path / "specs/attachments/03.Att.01-来源参考枚举闭集.md"
+    source.parent.mkdir(parents=True)
+    text = original.read_text(encoding="utf-8")
+    minimum = next(line for line in text.splitlines() if line.startswith("| `all-commits-minimum-body`"))
+    breaking = next(line for line in text.splitlines() if line.startswith("| `breaking-marker`"))
+    source.write_text(text.replace(minimum + "\n" + breaking, breaking + "\n" + minimum), encoding="utf-8")
+
+    result = project_commit_contract(_document(), _attachment(source))
+
+    assert result.projection is None
+    assert any("固定顺序" in issue.summary for issue in result.issues)

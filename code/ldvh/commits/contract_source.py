@@ -14,7 +14,14 @@ ATTACHMENT_ID = "03.Att.01"
 TYPE_HEADERS = ("type", "语义")
 SCOPE_HEADERS = ("scope", "语义")
 TRIGGER_HEADERS = ("trigger_key", "mechanical", "成立条件", "必需结构")
-REQUIRED_MECHANICAL_TRIGGERS = ("multiple-paths", "breaking-marker", "revert-type")
+REQUIRED_TRIGGER_KEYS = (
+    "all-commits-minimum-body",
+    "breaking-marker",
+    "high-impact",
+    "insufficient-header",
+    "project-required",
+)
+REQUIRED_MECHANICAL_TRIGGERS = ("all-commits-minimum-body", "breaking-marker")
 
 
 @dataclass(frozen=True, slots=True)
@@ -120,13 +127,18 @@ def project_commit_contract(
     trigger_rows = grouped[TRIGGER_HEADERS][0][0]
     type_tokens = tuple(row[0] for row in type_rows if len(row) == 2 and row[0] and row[1])
     scope_tokens = tuple(row[0] for row in scope_rows if len(row) == 2 and row[0] and row[1])
+    trigger_keys = tuple(row[0] for row in trigger_rows if len(row) == 4 and all(row))
     mechanical = tuple(row[0] for row in trigger_rows if len(row) == 4 and row[1] == "true")
     if len(type_tokens) != len(type_rows) or len(type_tokens) != len(set(type_tokens)):
         issues.append(_issue(attachment, "type 表必须包含非空且唯一的 token 与语义"))
     if len(scope_tokens) != len(scope_rows) or len(scope_tokens) != len(set(scope_tokens)):
         issues.append(_issue(attachment, "scope 表必须包含非空且唯一的 token 与语义"))
+    if trigger_keys != REQUIRED_TRIGGER_KEYS:
+        issues.append(_issue(attachment, "trigger 表必须按来源固定顺序完整声明且不得包含未知或重复成员"))
+    if any(len(row) != 4 or any(not cell for cell in row) or row[1] not in {"true", "false"} for row in trigger_rows):
+        issues.append(_issue(attachment, "trigger 表每行必须完整且 mechanical 只能是 true 或 false"))
     if mechanical != REQUIRED_MECHANICAL_TRIGGERS:
-        issues.append(_issue(attachment, "机械 body trigger 必须按来源固定顺序完整声明"))
+        issues.append(_issue(attachment, "机械 trigger 必须按来源固定顺序完整声明"))
     if issues:
         return CommitContractSourceResult(None, tuple(issues))
     fingerprint = hashlib.sha256(

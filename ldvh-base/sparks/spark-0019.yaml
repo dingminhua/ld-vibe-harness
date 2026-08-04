@@ -1,8 +1,8 @@
-title: Agent 友好的 LDVH Helper 创建工作流
-intent: 保留 Helper 创建流程中 Agent 发现、候选召回、请求形成、诊断修正与受控交还的交互摩擦，避免为了表面上的一步创建而降低来源、授权、语义判断、机械校验或写后回读边界。后续需判断哪些公开操作、示例与诊断能减少负担且不扩大自动化结论。
+title: Agent 友好的 LDVH Helper 与提交流程
+intent: 保留 AI 在 Helper 事实创建、更新与受管辖 Git 提交流程中的重复发现、请求拼装、机械检查、诊断和回读负担，避免为了表面上的一步操作而削弱候选与 diff 审核、真实 Index 预检、原生 commit-msg Hook 或提交后回读。后续需判断哪些执行编排、诊断与输出优化能降低端到端成本，同时不恢复两阶段提交、第二权威或新的持久事务状态。
 status: open
 priority: P2
-summary: "研究如何让 LDVH Helper CLI 对 Agent 更易发现、更少负担且保持治理可靠：重点包括创建前通过 Helper 完成候选事实召回与重复辅助、提供公开操作说明和最小 JSON 请求示例、降低两阶段草案依据传递负担、聚合诊断反馈，并清晰分层机械校验、语义判断、Human Gate、验证结论与提交交接；不以降低校验、来源和授权边界换取表面上的一步创建。\n\n## 当前观察：一次提交的闭环负担\n\n- 一次受管辖提交至少涉及目标范围确认、工作树与 Index 检查、管辖解析、事实对象写后审计（仅事实候选）、精确暂存、commit message 契约检查、同一候选快照上的 `precheck-git-commit`，以及 commit 后的 hash、路径、message 和剩余变化回读。\n- 这些步骤中，提交范围授权、Index 隔离、受管辖事实的写后验证、同一快照机械预检和提交后回读不能省略；它们分别防止误提交、事实损坏、过期检查结果和提交范围漂移。\n- 可以减负的主要是机械交互：把治理解析、Index 快照、条件性事实审计、message 检查和 precheck 聚合为一次 preflight；提供包含 `关键变更:` 的 message 模板；按候选类型触发事实或 Web 检查；缓存未变化规则的 fingerprint；默认压缩 Helper 输出，按需展开诊断。\n- 目标不是把提交变成无确认的一键动作，而是收敛为“候选准备 → 一次性 preflight → Human 确认后 commit 与自动回读”；语义拆分、范围授权、验证真实性和高影响判断仍由 AI/Human 负责。\n\n## 待验证方向\n\n- 需要判断上述聚合 preflight 是否能在不形成第二套事实源、不跨越 Human Gate、且保持同一观察快照的前提下落地。\n- 需要用普通代码提交、事实对象提交和混合提交三类候选验证条件性检查、误报/漏报、诊断修正次数和端到端耗时。"
+summary: "## 当前结论\n\n- 真实提交 `c7515314c9f3292e1e95784ccb7a6bf8038d3c10` 已验证：当前流程已经从旧两阶段、alternate Index 和 prepared 状态收敛为正常的 `git add + precheck + git commit + 回读`；真实 `commit-msg` Hook 在原生提交事件中执行并放行。\n- 当前主要成本已经不是 Git 提交模型，而是外围编排：模板发现与全文读取、多个只读检查串行、事实完整性重复扫描、冗长 message、用完整 Git trace 证明 Hook 执行，以及 Helper 成功响应和提交后回读输出过大。\n- 优化目标是减少往返、重复观察和无关输出，不降低机械检查，不把“审查”扩张为通用代码或文档语义评审。\n\n## 不可删除的核心闸门\n\n1. AI 明确当次候选文件，并逐文件审核对应 diff；真实 Index 必须精确等于候选，不能误带无关改动。\n2. 对同一真实 Index 和完整 message 执行必要机械预检；失败、不可验证或能力不可用均停止。\n3. 使用不带 `--no-verify` 的原生 `git commit`，让真实 `commit-msg` Hook 作为最终固定机械闸门重新检查事件输入。\n4. 提交后回读 HEAD、message、精确文件范围、Index 与剩余 Working Tree；不自动 push。\n5. 候选含事实载体时，受控写入、精确回读和事实完整性审计仍须成立。\n\n## 优化规划\n\n### 第一优先级：不改变规范语义的执行优化\n\n- 并行执行互不依赖的只读检查：Git 状态与候选 diff、事实完整性、Hook inspect、规则身份读取。\n- 正常成功路径只返回结论、候选路径、快照身份和问题；来源、管辖证据与完整诊断仅在失败或 diagnostic 模式展开。\n- 所有提交统一具备准确 header、唯一 `关键变更:`、至少一个据实的非空列表项和必要 trailers，不把单文件或非 breaking 当作省略 body 的捷径；`动机:`、`影响边界:`、`验证结论:`、`风险与后续:` 仅按规则触发或实际需要增加，避免固定五段负担；事实候选仍准确声明全部新增流水的 Session-ID。\n- 将最终 Index/Hook 核对、原生 commit 与提交后只读回读组织为因果连续但往返更少的执行批次，不建立新的持久状态。\n\n### 第二优先级：最小来源与 Code 调整\n\n- 明确定义何时可消费最近一次受控事实写入附带的完整性审计：只有事实集合、规则源、实际 worktree 和相关内容指纹均未变化时才复用；否则重新扫描。目标是消除同一稳定快照上的重复全库检查，而不是建立长期缓存或审计凭证。\n- 让真实 `commit-msg` Hook 通过时输出一行简洁、可回查的成功证据，失败时继续输出 `stage/code/path/field` 诊断，从而不再需要 `GIT_TRACE=1` 的整段日志来证明 Hook 实际触发。\n- 评估在不增加第二权威的前提下合并“行动模板定位 + 内容读取”，并为 Helper 成功响应提供更窄的摘要输出；完整来源仍可按需展开。\n- 合并提交后 HEAD、message、paths、Index 与剩余状态的只读回读输出，但不减少实际检查对象。\n\n## 明确排除\n\n- 不恢复或新建两阶段提交、提交服务、prepared token、handle、witness、challenge、journal、持久事务状态或 alternate Index。\n- 不把 precheck 与最终 Hook 合并为一次检查，也不删除真实 Hook、候选 diff 审核或提交后回读。\n- 不引入 pip、wheel、sdist、editable install、插件部署或 push 自动化。\n- 不以“流程优化”为由增加新的 Human Gate、固定 subagent 审核或通用语义内容审查。\n\n## 待验证\n\n- 分别用普通代码提交、事实对象提交和混合提交测量工具往返数、端到端耗时、输出量、诊断修正次数和误带防护结果。\n- 判断完整性审计复用所需的最小新鲜度绑定是否能保持简单；若绑定成本接近重新扫描，应保留扫描而不引入复杂缓存。\n- 判断 Hook 成功证据和窄响应能否在不污染正常 Git 输出、不过度暴露内部细节的前提下稳定支持 AI 回读。\n- 若执行层优化已经达到可接受速度，不再为了减少少量调用新增公开操作或提交包装器。"
 evolution:
 - at: '2026-07-19T18:50:24+08:00'
   summary: 本次创建、预检和提交复盘显示，流程安全闭环已经成立，但 Agent 仍需承担候选召回、协议发现、内部 fingerprint 搬运和多轮诊断修正；后续应优先改善这些交互摩擦，同时保留严格校验、范围隔离和写后回读。
@@ -10,7 +10,30 @@ evolution:
   summary: 本次真实 Helper 使用暴露出共同请求校验不一致：authorization_reference 与 text_match 类型错误能稳定返回 invalid_request 和定位诊断，但 read-specification-candidates 的 requested_disclosure 误传对象时触发 TypeError 并降级为 outcome=error。后续应统一公共字段的入口验证与 invalid_request 封装，提供最小合法请求示例，使 Agent 能据诊断修正请求而不是遭遇实现异常。
 - at: '2026-08-02T18:27:00+08:00'
   summary: 本次受管辖 Spark 提交复盘进一步区分了不可省略的范围授权、Index 隔离、事实审计、同快照预检和提交后回读，以及可以由聚合 preflight、message 模板、条件性检查、规则 fingerprint 缓存和压缩诊断减负的机械交互；后续应验证这一分层能否在不跨越 Human Gate 或形成第二事实源的前提下降低端到端提交负担。
+- at: '2026-08-05T02:29:41+08:00'
+  summary: 真实提交 c7515314c9f3292e1e95784ccb7a6bf8038d3c10 验证原生 Git 最小流程已经成立；优化方向由泛化的一次 preflight 收敛为外围编排减负、重复审计消除、Hook 简洁成功证据和窄输出，并明确不恢复提交服务、prepared 状态或 alternate Index。
+- at: '2026-08-05T03:04:01.816060+08:00'
+  summary: workcase-0058 将提交消息优化边界进一步固定为所有提交均有关键变更最低正文，单文件不得省略；其它固定段落仍按 breaking 等规则或实际需要添加，避免重新膨胀为固定五段。
+change_log:
+- signature:
+    agent_id: codex
+    host_environment: Cindy
+  session_id: codex-spark-0019-optimization-plan
+  at: '2026-08-05T02:28:45.572474+08:00'
+  summary: 受 Human 当前记录授权建立遗留对象的可信流水起点；此前修改历史不可恢复，不作伪造回填。
+- signature:
+    agent_id: codex
+    host_environment: Cindy
+  session_id: codex-spark-0019-optimization-plan
+  at: '2026-08-05T02:29:42.175557+08:00'
+  summary: 根据 Human 记录要求，补充经真实提交验证的 LDVH 提交流程优化规划与排除边界。
+- signature:
+    agent_id: codex
+    host_environment: Cindy
+  session_id: codex-workcase-0058-execution
+  at: '2026-08-05T03:04:01.820321+08:00'
+  summary: 按 workcase-0058 获批计划修正单文件最小 message 表述，明确普遍最低正文与按需附加段落。
 object_id: spark-0019
 fact_type_key: spark
 created_at: '2026-07-19T18:47:20.417174+08:00'
-updated_at: '2026-08-02T18:28:33.867382+08:00'
+updated_at: '2026-08-05T03:04:01.820321+08:00'

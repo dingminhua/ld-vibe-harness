@@ -78,7 +78,11 @@ def _gate(workspace: Path, project: Path, message: str) -> CommitMsgGateResult:
 
 
 def _signed(message: str) -> str:
-    return message + "\n\nSession-ID: test-session\nAgent-ID: test-agent\nHost-Environment: test-environment"
+    return (
+        message
+        + "\n\n关键变更:\n- 覆盖当前提交预检测试变化"
+        + "\n\nSession-ID: test-session\nAgent-ID: test-agent\nHost-Environment: test-environment"
+    )
 
 
 def _helper_issues_as_gate_diagnostics(response: dict[str, object]) -> tuple[str, ...]:
@@ -110,6 +114,38 @@ def test_helper_precheck_and_native_gate_share_one_bound_result(tmp_path: Path) 
     assert response["scope"]["governance_resolution"]["scope_status"] == "governed_single"
     assert response["changes"] == []
     assert _state(project) == before
+
+
+def test_single_path_without_minimum_body_fails_identically_in_helper_and_native_gate(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    message = (
+        "test: 验证单文件最低正文\n\nSession-ID: test-session\nAgent-ID: test-agent\nHost-Environment: test-environment"
+    )
+    payload = json.dumps(
+        {
+            "work_object_locators": [str(project)],
+            "arguments": {"workspace_root": str(workspace), "message": message},
+        }
+    )
+    message_file = workspace / "COMMIT_EDITMSG"
+    message_file.write_text(message, encoding="utf-8")
+
+    helper = handle_request("call", "precheck-git-commit", payload)
+    gate = run_commit_msg_gate(
+        workspace_root=str(workspace),
+        worktree=str(project),
+        message_file=str(message_file),
+    )
+
+    assert helper.exit_code == 0
+    assert helper.response["result"]["mechanical_outcome"] == gate.outcome == "failed"
+    assert {item["code"] for item in helper.response["result"]["issues"]} == {
+        "body_required",
+        "key_changes_required",
+    }
+    assert _helper_issues_as_gate_diagnostics(helper.response) == gate.issues
+    assert helper.response["result"]["candidate"]["snapshot_identity"] == gate.snapshot_identity
+    assert helper.response["result"]["contract"]["source_fingerprint"] == gate.source_fingerprint
 
 
 def test_mechanical_failure_is_a_completed_read_not_helper_rejection(tmp_path: Path) -> None:

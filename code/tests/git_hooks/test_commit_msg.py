@@ -162,9 +162,15 @@ def test_real_git_commit_is_blocked_and_allowed_by_installed_commit_msg_hook(tmp
     changed.write_text("real hook event\n", encoding="utf-8")
     _checked_git(project, "add", changed.name)
 
-    blocked = _git(project, "commit", "-m", "docs: invalid")
+    missing_body = (
+        "docs: 验证单文件正文闸门\n\nSession-ID: test-session\nAgent-ID: test-agent\nHost-Environment: test-environment"
+    )
+    blocked = _git(project, "commit", "-m", missing_body)
 
     assert blocked.returncode != 0
+    assert "validation/body_required" in blocked.stderr
+    assert "validation/key_changes_required" in blocked.stderr
+    assert "关键变更" in blocked.stderr
     assert _checked_git(project, "rev-parse", "HEAD").strip() == before
     assert _checked_git(project, "diff", "--cached", "--name-only").splitlines() == [changed.name]
 
