@@ -130,7 +130,7 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
     } == {
         "environment-integration-installation-verification": (
             "environment-integration-installation-verification-action-template",
-            "5. 环境安装、部署、接入与验证行动模板定义",
+            "5. 环境接入、管辖配置、Git Hook 部署与验证行动模板定义",
         ),
         "fact-object-controlled-creation": (
             "fact-object-controlled-creation-action-template",
