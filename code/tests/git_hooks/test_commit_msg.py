@@ -152,6 +152,33 @@ def test_install_uses_common_dir_and_covers_existing_and_future_linked_worktrees
     assert _invoke_hook(future, hook, _signed("docs: 验证后续工作树"), "future-valid").returncode == 0
 
 
+def test_real_git_commit_is_blocked_and_allowed_by_installed_commit_msg_hook(tmp_path: Path) -> None:
+    workspace, project = _managed_project(tmp_path)
+    installed = _install(workspace, project)
+    assert installed.state == "managed", installed
+
+    before = _checked_git(project, "rev-parse", "HEAD").strip()
+    changed = project / "change.txt"
+    changed.write_text("real hook event\n", encoding="utf-8")
+    _checked_git(project, "add", changed.name)
+
+    blocked = _git(project, "commit", "-m", "docs: invalid")
+
+    assert blocked.returncode != 0
+    assert _checked_git(project, "rev-parse", "HEAD").strip() == before
+    assert _checked_git(project, "diff", "--cached", "--name-only").splitlines() == [changed.name]
+
+    message = _signed("docs: 验证真实提交事件")
+    allowed = _git(project, "commit", "-m", message)
+
+    assert allowed.returncode == 0, (allowed.stdout, allowed.stderr)
+    after = _checked_git(project, "rev-parse", "HEAD").strip()
+    assert after != before
+    assert _checked_git(project, "show", "--format=", "--name-only", "HEAD").splitlines() == [changed.name]
+    assert _checked_git(project, "log", "-1", "--format=%B").strip() == message
+    assert _checked_git(project, "diff", "--cached", "--name-only") == ""
+
+
 def test_independent_clone_does_not_inherit_common_dir_hook(tmp_path: Path) -> None:
     workspace, main = _managed_project(tmp_path)
     installed = _install(workspace, main)
