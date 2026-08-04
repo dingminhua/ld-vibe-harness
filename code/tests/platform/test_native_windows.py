@@ -28,15 +28,21 @@ pytestmark = [
 ]
 
 OPERATIONS = {
+    "check-fact-integrity",
+    "close-workcase",
+    "correct-closed-workcase",
     "create-fact-object",
     "find-fact-object-candidates",
+    "migrate-legacy-change-log",
     "precheck-git-commit",
+    "prepare-closed-workcase-candidate",
     "prepare-fact-object-draft",
     "read-action-template-candidates",
     "read-action-template-content",
     "read-fact-objects",
     "read-specification-candidates",
     "read-specification-content",
+    "read-specification-context",
     "resolve-governance-scope",
     "update-fact-object",
     "update-workcase",

@@ -21,5 +21,6 @@
 - [WorkCase 专属受控变更 Helper 操作](workcase-controlled-update.md)：覆盖共享单对象更新事务、统一事件时点、`update-workcase`、锁失败诊断、响应档位与 YAML 序列化。
 - [WorkCase 关闭候选只读投影](workcase-closed-candidate-projection.md)：覆盖 proposal 到非托管 closed `fact_object` 的唯一纯投影、`close-workcase` 同源校验与只读候选 Helper 操作。
 - [环境无关启用、只读 doctor 与发行物快照](environment-neutral-enablement.md)（**已退役**：distribution/规则快照路径已由唯一源码仓库模型替代）：保留原实现规划作为历史证据。
+- [原生 Windows 能力断言集合对齐当前 18 项公开操作](native-windows-capabilities-assertion-fix.md)：覆盖 `test_native_windows.py` 的 `OPERATIONS` 集合由 12 扩至当前 `ldvh capabilities` 返回的 18 key，使真 Windows 下 preflight 首项探针的严格 `==` 断言与现状一致；仅修测试、不覆盖 0008 执行授权。
 
 新增、替代或移动规划时，必须同步更新本入口；不在列表中的临时会话计划不承担当前 Code 实现规划责任。
