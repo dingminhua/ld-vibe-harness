@@ -1,8 +1,5 @@
+status: closed
 title: 撞号处置程序规范增补（跨 clone/多机事实对象身份冲突）
-status: open
-phase: executing
-priority: P1
-plan_version: 1
 goal: 把跨 clone/多机场景下“同 ID 不同内容”事实对象的发现、判定、处置与验证程序增补进规范本体（05 为主），使 mac↔Windows 双机与多 worktree 协作有明确可执行规则，承接 spark-0022 的处置方向。
 scope: 含：01 §13 门槛判断与逐条核对记录；05 最小充分增量（合并前身份扫描操作化、A/B 判定、合并路径、改号路径、引用重定向、验证闭环，仅用当前机械边界表达）；spark-0022 承接范围据实记录；spark-0055 待判断项输入（三层必要性结论与全库审计实测基线）；spark-0004 方向记录（Windows 工作放到 Windows 上做）。不含：任何 Code/tests 变更、提交 Gate 前置拦截实现、Windows 实测与验收矩阵执行、Skill/Git Hook 部署、09 §6.3 平台声明修订。
 success_criterion_definitions:
@@ -14,147 +11,21 @@ success_criterion_definitions:
   statement: spark-0022 承接范围据实记录（预期保持 open 并写明残留：Gate 前置拦截实现与远端观察边界），spark-0055 吸收本次结论、spark-0004 记录方向，三者更新均经同一 worktree 回读确认。
 - criterion_id: criterion-04
   statement: 修订经 30 模板受控提交、Git Gate 通过，commit 路径闭集仅含本 WorkCase 实际变更，提交后 check-fact-integrity 外层 ok 且 result.status=complete。
-work_items:
-- item_id: item-01
-  goal: 完成 01 §13 门槛判断（确认属 05 既有责任边界内补充具体规则）并逐条核对候选规则与现有承担
-  expected_result: 门槛结论、依据（01 §13 定义与 05 §3/§4 既有责任）与逐条核对表，载体为本 item 的 result_summary 与后续 commit message
-  status: completed
-  result_summary: 门槛结论：本次属 01 §13 定义的"在已有责任边界内补充具体规则"，非实质责任改变——05 §3 第 7 项（事实对象在冲突、合并、替代或删除时的验证与边界）与 §4 第 6 项（事实对象间冲突）已承担本领域责任。逐条核对（候选规则 vs 现有承担）：R1 发现操作化——05 §11.4 仅有原则句（合并前全局身份扫描拒绝冲突），时点/入口/责任未操作化，缺口成立；R2 冲突分类（A/B 判定）——§7.4 仅有禁止静默，无分类判据，缺口成立；R3 合并路径——§9.3 有不得丢失原则，操作化细节可补；R4 改号路径——无条文，缺口成立；R5 引用重定向——§7.3 三元组与 relations 定义存在，但改号时入向引用必须枚举更新无条文，缺口成立；R6 验证闭环——00 §8.2 已承担写后回读+审计通用要求，只回指不重复；R7 能力缺口声明——§11.4 已声明跨 clone 未解决，补充明确边界；禁止静默——§7.4 已完整承担，不重复转述。结论：新增 R1/R2/R4/R5，操作化 R3/R7，回指 R6 与禁止项；落点为 05 §9 新增小节。
-- item_id: item-02
-  goal: 起草并落文 05 最小充分增补条文（六环节处置程序）
-  expected_result: 05 中可机械定位的增补条文；仅用当前机械边界（单 worktree check-fact-integrity、read-fact-objects、Git 合并机制与 AI/Human 步骤）表达；未实现能力据实标为缺口
-  status: completed
-  depends_on:
-  - item-01
-  result_summary: 05 新增 §9.4「跨 clone 与多机合并中的事实对象身份冲突处置」（行 329–341）：覆盖发现（合并后 check-fact-integrity 时点与冻结）、冲突分类（A/B 语义判定、Human 定向）、合并路径、改号路径（含引用重定向与 multi_object_disposition 分类）、验证闭环六环节；能力诚实（跨 clone 前置拦截无 Helper 操作，据实标缺口，回指 §11.4）；同步纪律仅作预防边界描述、不形成新机械入口。Helper L3 精确回读通过，结构机械校验 ok。
-- item_id: item-03
-  goal: 委派 01 §13.5 规范增量独立复核并由 Controller 处置反馈
-  expected_result: §13.5 复核记录（载体为本 item 的 result_summary）与 Controller 处置结论
-  status: completed
-  depends_on:
-  - item-02
-  result_summary: §13.5 独立复核（独立只读 subagent，未参与初始判断）结论 changes_required：归口正确、机械引用全部核实一致、能力声明属实、无更小方案被忽略；反馈 4 项——[major] 改号路径分类断言与 32 §D.5/E.4 存在分支张力；[minor] 行 333 几近逐字重引 §7.4；[nit] 合并路径分类枚举缺 content_update；[nit] 需澄清与 03 §9.9 提交链路边界。Controller 全部接受处置：改号路径补"各步独立形成完整有效对象、中间状态可保存恢复、按 32 合法多步序列逐对象 CAS"前提句；§7.4 触发条件压缩为纯引用并保留冻结后果；合并路径枚举改为 content_update/fact_correction/single_object_lifecycle；补"该检查是合并/拉取事件触发的独立入口，不改变 03 §9.9 提交候选校验边界"。修订后条文经 Helper L3 回读通过（行 329–341）。
-- item_id: item-04
-  goal: 按 30 模板执行受控提交并完成提交后验证
-  expected_result: Git Gate 通过的单个 commit（Index 路径闭集仅含本 WorkCase 实际变更），提交后 check-fact-integrity 外层 ok 且 result.status=complete
-  status: in_progress
-  depends_on:
-  - item-03
-  - item-05
-  current_summary: 规范增补与三火花更新均已完成并验证，准备按 30 模板执行受控提交
-  resume_from: 读取 30 模板当次内容，按选 b 将 spark-0055/0019 既有条目并入，git add 限定路径闭集后 precheck-git-commit 并提交
-- item_id: item-05
-  goal: 完成三个关联火花的承接处置
-  expected_result: spark-0022 承接范围据实记录（预期 open+残留）、spark-0055 吸收结论、spark-0004 记录方向，均经同一 worktree 精确回读确认
-  status: completed
-  depends_on:
-  - item-02
-  result_summary: 三火花承接处置完成并回读确认：spark-0022 保持 open，summary 记录承接现状（规则层已由 05 §9.4 承接；残留：Gate 前置拦截实现与远端观察边界）并 related-to workcase-0060；spark-0055 吸收三层必要性结论与审计实测基线（待判断项收窄），保持 open；spark-0004 记录方向决定（Windows 工作放到 Windows 执行、入口引导测试为验收起点），保持 open。spark-0022/0004 为缺 change_log 遗留对象，已先按 05 §11.7.1 受控迁移建立可信流水起点（历史据实标注不可得）再更新。全库审计 complete（151 对象、0 问题）。
-execution_authorization:
-  authorized_actions:
-  - action_id: authorization-01
-    summary: 修订 specs/05-事实模型基础规范.md 规则文本（最小充分增量）
-    target_scope: specs/05-事实模型基础规范.md 单文件
-    effect_scope: 规则文本新增/修订；无 Code、tests、Web 变化
-    risk_summary: 语义偏差、与现有条款重复转述、把未实现能力声明为可用
-    rollback_summary: git 还原该文件至变更前版本
-    rule_refs:
-    - specs/01-规范模型基础规范.md §13/§13.5
-    - specs/05-事实模型基础规范.md §7.4/§9.3/§11.4
-  - action_id: authorization-02
-    summary: 经 Helper 受控更新 spark-0022、spark-0055、spark-0004
-    target_scope: 三个 spark 事实对象
-    effect_scope: 对象语义字段与状态的承接范围记录、结论吸收与方向记录
-    risk_summary: 误改语义；spark-0055 既有未提交条目与本 WorkCase 更新叠加于同一文件
-    rollback_summary: 按 CAS 回滚至更新前精确版本
-    rule_refs:
-    - specs/20-Spark-火花.md §6
-    - specs/05-事实模型基础规范.md §11.8
-    - specs/32-事实对象生命周期变更与承接处置行动模板.md
-  - action_id: authorization-03
-    summary: 本地受控提交（30 模板，经 Git Gate）
-    target_scope: 当前 worktree Index，路径闭集仅含本 WorkCase 实际变更（05 与本 WorkCase 实际更新的事实对象）
-    effect_scope: 单个 git commit，不含 push
-    risk_summary: 既有未提交变化（web/*、study-0022/0023、spark-0019、spark-0055 既有条目）误入 commit
-    rollback_summary: 不形成提交或重做 Index
-    rule_refs:
-    - specs/03-事实源与信息溯源规范.md §9
-    - specs/30-Git提交行动模板.md
-  - action_id: authorization-04
-    summary: 委派两类独立只读复核：item-03 所需 01 §13.5 规范增量复核与本 WorkCase 结果复核
-    target_scope: 05 候选增量条文与本 WorkCase 结果材料
-    effect_scope: 只读复核委派，无写入
-    risk_summary: 复核不独立或两类复核范围混淆
-    rollback_summary: 重新委派
-    rule_refs:
-    - specs/01-规范模型基础规范.md §13.5
-    - specs/21-WorkCase-工作项.md §6.5
-  - action_id: authorization-05
-    summary: 执行独立结果复核并回写 result_reviews
-    target_scope: 本 WorkCase canonical 结果材料
-    effect_scope: result_reviews 受控记录
-    risk_summary: 复核结论失真
-    rollback_summary: 按字段所有权获授权更正
-    rule_refs:
-    - specs/21-WorkCase-工作项.md §6.5
-    - specs/32-事实对象生命周期变更与承接处置行动模板.md
-  quality_gates:
-  - gate_id: independent-result-review
-    reviewer_mode: independent-read-only
-    delegation_action_id: authorization-04
-    result_review_action_id: authorization-05
-  action_ceiling: 仅 act-01 至 act-05；规范修改仅限 specs/05，执行中发现必须触 02/03 时先收敛并向 Human 提请，不自行扩大
-  prohibited_actions:
-  - 修改 Code、tests 或 Web 实现
-  - 部署 Skill 或 Git Hook
-  - 对 Windows 环境的任何操作
-  - 绕过 Helper 直写 ldvh-base/
-  - 静默改号或自动覆盖冲突对象
-  - 将 web/*、study-0022/0023、spark-0019 等本 WorkCase 外变化纳入 commit
-  allowed_adjustments: 条文位置与措辞在同等语义内调整；item 顺序按依赖调整；§13 核对记录随核对进展补充
-  verification_and_rollback: 每次事实写入后精确回读并检查写入口附加审计；规范修改执行结构检查；提交前 precheck-git-commit 逐路径核对 Index 闭集；提交后 check-fact-integrity 须外层 ok 且 complete；任一步失败回滚至变更前状态并据实报告残留
-  out_of_bounds_handling: 超界即停止，收敛到已验证状态，向 Human 提请扩权或计划调整，不在执行期询问扩权或先执行后补授权
-  human_prerequisites:
-  - Gate 1 执行批准：Human 对完整计划与授权包作一次执行决定
-  - dirty 树处置决定：spark-0055 与 spark-0019 既有未提交条目归属（Human 选择先行单独提交，或明确并入本 WorkCase 提交并在 commit body 据实说明来源；web/* 与 study-0022/0023 默认排除）
-creation_reviews:
-- reviewer: 独立只读 Reviewer subagent（explore 类型，非 Controller）
-  reviewed_at: '2026-08-05T23:12:23+08:00'
-  subject_version: 1
-  scope: 对照 21 §4.3/§4.4/§6.5、01 §13/§13.5、05 §7.4/§9.3/§11.4、30 模板、05.Att.01 与 spark-0004/0022/0055 原文，复核计划粒度、缺口真实性、火花承接与授权基线覆盖
-  conclusion: changes_required
-  feedback:
-  - '[blocking] priority 取值 high 越出 05.Att.01 登记的 P0/P1/P2/P3 闭集；建议：改用闭集值，按语义建议 P1'
-  - '[major] act-04 委派范围未显式覆盖 item-03 所需 §13.5 规范增量复核，仅写结果复核将致执行越权；建议：act-04 target_scope 显式写明覆盖两类独立委派'
-  - '[major] 工作区既有未提交变化（spark-0055、spark-0019、web/*、study-0022/0023）处置未呈现，item-05 将叠加于 dirty bytes，item-04 存在扫入风险；建议：在风险与授权中呈现盘点与处置，commit 路径闭集逐项核对'
-  - '[minor] item-01 未显式记录 §13 门槛判断（本次属既有责任边界内补充）；建议：item-01 开头记录门槛结论及依据'
-  - '[minor] 增补条文的能力诚实性风险：全局身份扫描无对应 Helper 操作；建议：仅以当前机械边界表达，未实现能力据实标缺口'
-  - '[minor] §13.1/§13.5 记录载体未指明；建议：在 item expected_result 点明载体'
-  - '[nit] creation_reviews 须精确覆盖 gate_id；可选 related-to workcase-0022；建议：按提示处理'
-  controller_resolution: 全部接受并处置：priority 改为 P1；act-04 target_scope 显式覆盖两类独立复核委派；dirty 树盘点已核实（git status 确认），处置写入 human_prerequisites 与 act-03/prohibited_actions；item-01 增加门槛结论与记录载体；item-02 增加能力诚实约束；§13.5 记录载体定为 item-03 result_summary；relations 增加 related-to workcase-0022；creation_reviews 已覆盖 independent-result-review
-  covered_quality_gate_ids:
-  - independent-result-review
-relations:
-- relation_key: related-to
-  target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0022
-- relation_key: related-to
-  target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0055
-- relation_key: related-to
-  target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0004
-- relation_key: related-to
-  target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0022
+success_criterion_results:
+- criterion_id: criterion-01
+  outcome: satisfied
+  summary: 05 §9.4 新增条文经 Helper L3 精确回读定位（行 329–341），覆盖发现/判定/合并/改号/引用重定向/验证六环节；§13.5 独立复核（changes_required）与全部处置记录于 item-03 result_summary。
+- criterion_id: criterion-02
+  outcome: satisfied
+  summary: item-01 result_summary 含门槛结论（05 既有责任边界内补充）与 R1–R7 逐条核对表，证明无重复转述。
+- criterion_id: criterion-03
+  outcome: satisfied
+  summary: spark-0022 保持 open 并写明残留（Gate 前置拦截实现）、spark-0055 吸收结论、spark-0004 记录方向，三者均 related-to workcase-0060 并经同一 worktree 回读确认。
+- criterion_id: criterion-04
+  outcome: satisfied
+  summary: commit 44d00c93a 经 30 模板与真实 Git Gate 通过；Index 路径闭集仅含本 WorkCase 变更与 Human 批准并入项；提交后 check-fact-integrity complete（151 对象）。
+result_summary: 全部 5 个 item completed，4 项成功标准均 satisfied：05 §9.4 撞号处置程序落文并经独立复核处置；三火花据实承接；受控提交 44d00c93a 经 Git Gate 通过，提交范围精确、审计 complete。
+validation_summary: 验证覆盖：全部事实写入经 Helper 受控操作并逐次精确回读；05 §9.4 经 Helper L3 两次回读（落文后、复核处置修订后）；提交前 precheck-git-commit passed；真实 commit 44d00c93a 触发 Git Gate passed；提交后 check-fact-integrity complete（151 对象、0 问题）；三火花与 WC 回读均 ok。未验证范围：无。
 change_log:
 - signature:
     agent_id: kimi
@@ -192,14 +63,72 @@ change_log:
   session_id: conv-9b480e23916ebeb1765f4537
   at: '2026-08-05T23:47:05.594890+08:00'
   summary: item-05 完成：三火花承接处置（0022 承接现状、0055 吸收结论、0004 方向决定），两遗留对象先受控迁移 change_log；item-04 进入受控提交
-execution_approval:
-  subject_version: 1
-  approved_at: '2026-08-05T23:19:00+08:00'
-  summary: Human 在 Gate 1 批准按 plan_version=1 完整计划与冻结执行授权基线进入执行；并决定 dirty 树处置选 b：spark-0055 与 spark-0019 的既有未提交条目并入本 WorkCase 提交，commit body 据实注明来源；web/* 与 study-0022/0023 排除不纳入
-  baseline_fingerprint: 8b44f372aca343cbc399fb1b5e433072d2e97b9543c273baff5134bbea0a6ea7
-  source_refs:
-  - conv-9b480e23916ebeb1765f4537
+- signature:
+    agent_id: kimi
+    host_environment: Kimi Work
+  session_id: conv-9b480e23916ebeb1765f4537
+  at: '2026-08-06T00:05:23.520705+08:00'
+  summary: item-04 完成：受控提交 44d00c93a 经 Git Gate 通过；全部 item terminal，进入 controller_checking
+- signature:
+    agent_id: kimi
+    host_environment: Kimi Work
+  session_id: conv-9b480e23916ebeb1765f4537
+  at: '2026-08-06T00:07:55.045353+08:00'
+  summary: controller_checking：补全验证摘要，冻结 result projection
+- signature:
+    agent_id: kimi
+    host_environment: Kimi Work
+  session_id: conv-9b480e23916ebeb1765f4537
+  at: '2026-08-06T00:08:28.323296+08:00'
+  summary: 进入 independent_reviewing：按 quality_gates 委派独立结果复核（authorization-04）
+- signature:
+    agent_id: kimi
+    host_environment: Kimi Work
+  session_id: conv-9b480e23916ebeb1765f4537
+  at: '2026-08-06T00:26:51.540041+08:00'
+  summary: authorization-05：回写独立结果复核（pass，1 nit 已处置），四项成功标准证据逐项核对在案
+- signature:
+    agent_id: kimi
+    host_environment: Kimi Work
+  session_id: conv-9b480e23916ebeb1765f4537
+  at: '2026-08-06T00:27:37.412219+08:00'
+  summary: closure_preparing：终态保留审查完成（结果与验证事实已由 result_summary/criterion_results/validation_summary 无损承载），形成关闭提案（completed，原 scope 无剩余责任）
+- signature:
+    agent_id: kimi
+    host_environment: Kimi Work
+  session_id: conv-9b480e23916ebeb1765f4537
+  at: '2026-08-06T00:28:25.811995+08:00'
+  summary: 进入 human_closure_confirming：等待 Human Gate 2 关闭决定
+- signature:
+    agent_id: kimi
+    host_environment: Kimi Work
+  session_id: conv-9b480e23916ebeb1765f4537
+  at: '2026-08-06T00:37:04.937194+08:00'
+  summary: Gate 2：Human 决定关闭，原子形成 closed（outcome=completed，原 scope 无剩余责任）
+closure_outcome: completed
+disposition_summary: 全部成功标准 satisfied，原 scope 内无剩余责任；范围外后续由既有 open 火花分别承载：spark-0022（撞号提交 Gate 前置拦截实现与远端观察边界）、spark-0055（流程复杂度待判断项：模板激活层数、规范交叉引用层数、80/20 倒置处置）、spark-0004（Windows 实测验收矩阵执行）。本 WorkCase 交付（05 §9.4 条文、火花承接更新）已随 commit 44d00c93a 固化。
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0022
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0055
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0004
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: workcase
+    object_id: workcase-0022
 object_id: workcase-0060
 fact_type_key: workcase
 created_at: '2026-08-05T23:16:43.435078+08:00'
-updated_at: '2026-08-05T23:47:05.594890+08:00'
+updated_at: '2026-08-06T00:37:04.937194+08:00'

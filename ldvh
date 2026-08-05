@@ -13,7 +13,7 @@ CODE_ROOT = SOURCE_ROOT / "code"
 
 
 def _ensure_dependency_runtime() -> None:
-    if importlib.util.find_spec("ruamel") is not None:
+    if importlib.util.find_spec("ruamel.yaml") is not None:
         return
     candidates = (
         SOURCE_ROOT / ".venv/bin/python",
