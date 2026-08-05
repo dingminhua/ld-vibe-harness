@@ -1,0 +1,220 @@
+title: 降低 LDVH 本地提交的重复审计与 Hook 取证成本
+status: open
+priority: P1
+goal: 在完整保留 LDVH 提交八条底线和原生 commit-msg Hook 最终闸门的前提下，减少本地提交中两项已确认的非必要成本：用真实 Hook 自身的稳定单行 allow 证据替代完整 GIT_TRACE 取证；对受控事实写入已经完成的全量完整性审计，只在 Code 能即时证明提交候选仍处于严格同一快照时复用，否则无条件保留并执行公共全量扫描。以普通代码、纯事实和混合候选三类流程的可复现测量判断实际收益，不以新增包装层或状态换取表面提速。
+scope: 以 spark-0019 记录的八条提交底线为冻结边界，先测量普通代码、纯事实和混合候选的 Helper 调用数、Git 子进程、耗时、输出量和失败诊断轮次；测量仅只读当前 worktree，需要写入的样本全部位于可清理的隔离临时仓库或既有测试 fixture。Hook 优化只允许在 code/ldvh/hooks/commit_msg.py 及直接测试中输出一条由真实 Gate 当次计算的 passed、source_fingerprint、snapshot_identity 证据，失败诊断、退出码、fail-closed 和共享校验核心不变。事实审计复用仅允许在 specs/05、30、31、32，code/ldvh/facts/candidate_discovery.py，code/ldvh/helper/operations/fact_operation_support.py、fact_integrity_operation.py、fact_integrity_request.py、fact_candidate_operation.py、fact_candidate_request.py、commit_precheck_operation.py、commit_precheck_request.py 及列明直接测试内形成严格 Go/No-go；Go 必须由 Code 即时绑定实际 worktree/common-dir、当前规则与 Schema 投影、完整 canonical 事实路径及内容集合、每个 staged 事实候选与已审计 Working Tree 对象内容和真实 Index 关系，任一对象、目录、规则、Index 或候选漂移均回退公共 check-fact-integrity；若证明近似完整重扫或需要 token、witness、receipt、cache、持久状态，则 No-go 并保留现状。specs/03、09、30 只在 Hook 成功证据边界确需澄清时最小修改。排除行动模板 candidate+content 读取契约变更、precheck/Gate 合并、diff/readback/AI 语义审查削弱、两阶段提交、prepared token、witness、journal、alternate Index、聚合 wrapper、Hook 部署或 core.hooksPath 变更、pip/打包/插件、push/PR/release、Spark 修改及任何未列明 dirty/untracked 文件。Gate 1 后仅在存在精确候选且全部验证通过时允许一次原生本地 commit，不使用 --no-verify；No-go 本身不强迫形成事实复用代码，验证失败或候选不清时不提交。
+success_criterion_definitions:
+- criterion_id: criterion-01
+  statement: 普通代码、纯事实与混合候选三类流程形成可复现基线，分别记录 Helper 调用、Git 子进程、墙钟耗时、输出量和诊断轮次，区分八条底线要求的必要检查与已证实的重复成本；测量不改当前项目事实或既有脏文件，也不以单次样本宣称普遍性能结论。
+- criterion_id: criterion-02
+  statement: 真实 commit-msg Hook 的 allow 路径恰好输出一条稳定最小证据行，内容只来自当次 Gate 计算的 passed、source_fingerprint 与 snapshot_identity，足以证明该原生 Hook 事件已执行；不读取环境变量或复用 precheck 结果，不扩张为语义审核、Hook 部署状态或提交整体正确性证明，失败诊断、退出码与 fail-closed 行为不变。
+- criterion_id: criterion-03
+  statement: 事实完整性审计复用形成明确且可验证的 Go/No-go：Go 时由 Code 即时证明实际 worktree/common-dir、当前规则与 Schema 投影、完整事实路径和内容集合、每个 staged 事实候选与已审计对象内容及真实 Index 关系全部同快照，任一漂移自动回退公共全量扫描；No-go 时现有 check-fact-integrity 全量扫描保持不变。对象数、时间戳、单一总指纹、Git 状态或 AI 比较历史输出均不得单独作为复用依据。
+- criterion_id: criterion-04
+  statement: 实现不产生 token、witness、receipt、journal、cache、持久状态或替代 Index，不新增聚合提交 wrapper，不改变行动模板 candidate+content 读取契约，不合并 precheck 与 Gate，也不减少候选声明、逐文件 diff、AI 语义审查、真实 Index precheck、原生 Hook、提交后回读中的任何一项。
+- criterion_id: criterion-05
+  statement: 定向与相关全量测试覆盖 Hook allow/block、稳定证据格式、失败诊断、facts/footer、同快照与各类 worktree/common-dir/规则/Schema/目录/对象/Index/候选漂移回退；ruff、format、diff 与事实完整性检查通过，未在当前平台执行的条件测试如实披露。
+- criterion_id: criterion-06
+  statement: 若形成本地 commit，其候选仅来自本案列明文件并逐文件审核，真实 staged 集合精确一致，Helper precheck 通过，原生 git commit 未绕过 Hook 且观察到新的单行 allow 证据，提交后 HEAD/tree/message/paths/Index/工作树回读一致；无关 dirty 不误带且不 push。若 No-go 后没有需提交候选、验证失败或候选边界不清，则据实保留结果且不创建 commit。
+phase: executing
+plan_version: 1
+work_items:
+- item_id: item-01
+  goal: 建立三类代表性提交流程的可复现成本基线和事实审计复用判据。
+  expected_result: 普通代码、纯事实与混合候选分别形成可比较测量；八条底线中的必要步骤与可避免成本被分开，严格 Go/No-go 判据完整列明，当前 worktree 的事实与既有脏文件未被改写。
+  status: completed
+  approach_summary: 只读观察当前仓库；凡需写入的候选、事实或 Git 事件均在 mktemp 隔离仓库或既有测试 fixture 中生成并清理。测量相同任务边界下的调用、子进程、时间、输出和诊断轮次，不先假定必须增加新入口。
+  result_summary: 在隔离临时受管辖 fixture 中三轮测量：普通候选 Helper 预检中位 0.8035s/17,409B/5 次 Git 读取，真实 Gate 0.8061s/5 次，合计 1.6096s；纯事实为 0.8750s/17,423B/8 次 + 0.8811s/8 次，合计 1.7561s；混合为 0.8735s/17,438B/8 次 + 0.8785s/8 次，合计 1.7520s。当前 146 对象公共事实完整性扫描五次中位 1.1162s、21,629B。判据确认反漂移双重观察是必要成本；跨调用复用必须认证旧完整集合，禁止凭证/状态与 AI 历史比较后没有低于重扫的可信入口，交 item-03 作正式 Go/No-go。
+- item_id: item-02
+  goal: 让真实 commit-msg Hook 在成功时给出最小、稳定、可复核的当次执行证据。
+  expected_result: allow 路径仅输出一行包含 passed、source_fingerprint、snapshot_identity 的稳定证据；真实 Hook 正反事件证明成功证据可见且失败诊断、退出码、HEAD/Index 保持和共享核心不回归。
+  status: completed
+  depends_on:
+  - item-01
+  approach_summary: 只改 Hook 适配层及直接测试，证据由 run_commit_msg_gate 的当次结果生成并写 stderr；不读取环境变量、不调用 precheck、不修改验证规则或部署状态。
+  result_summary: 仅修改 code/ldvh/hooks/commit_msg.py 与直接测试：allow 路径从当次 Gate 结果向 stderr 输出恰好一行 passed、source_fingerprint、snapshot_identity；任一绑定字段缺失时失败关闭。隔离真实 git commit 正例观察到单行证据，block 诊断、退出码与 HEAD/Index 保持断言继续通过；相关 Hook/Helper 定向测试 12 项通过，未修改规范、部署逻辑或校验核心。
+- item_id: item-03
+  goal: 依据严格判据形成并落实受控事实写后完整性审计复用的 Go/No-go。
+  expected_result: 若 Code 能以明显低于完整重扫的成本即时验证全部快照绑定，则实现临时无状态复用并以所有漂移场景证明强制回退；否则形成可审计 No-go，保留公共全量扫描且不引入复用代码、包装层或状态。两种结论均是本 item 的完整终值。
+  status: completed
+  depends_on:
+  - item-01
+  approach_summary: 先用 criterion-03 的全部绑定做 Go/No-go；禁止以时间、对象数、单一指纹、Git 状态或 AI 历史比较替代。证明接近全量重扫、需要跨调用凭据或使入口更复杂时立即 No-go。
+  result_summary: 正式 No-go：写后审计与公共预检之间没有可由 Code 即时认证、且明显低于全量扫描成本的同快照证明。完整对象集指纹依赖 canonical 目录枚举、逐对象内容/Schema/关系检查；mtime/size、Git 状态、单一总指纹或 AI 比较旧输出均不能证明未漂移。跨进程可信复用需要被禁止的 token/receipt/cache/状态，合并入口又会形成被禁止的提交包装器。因此未修改事实/预检代码与规范，保留公共 check-fact-integrity 全量扫描。
+- item_id: item-04
+  goal: 完成整体回归验证，并在条件成立时形成一次精确本地提交和回读。
+  expected_result: 两项优化的实际结果和三类流程复测完整；相关测试、静态检查、事实完整性、独立结果复核前置材料均可用。仅当精确候选存在且全部验证通过时，真实 Index precheck 与原生 commit-msg Hook 通过后创建一个本地 commit并完成回读；否则不提交并如实记录边界。
+  status: in_progress
+  depends_on:
+  - item-02
+  - item-03
+  approach_summary: 对最终差异逐文件复核，复测三类流程并映射八条底线；提交动作保持条件性，发现无关 staged、规则漂移、验证失败或 Hook 证据缺失即停止，不 amend、reset、rebase、重试提交或 push。
+  current_summary: Hook 最小实现和事实审计复用 No-go 已形成，正在执行整体回归、精确候选审查与条件本地提交。
+  resume_from: 运行静态检查、相关回归与公共事实完整性；复核精确候选后执行真实 Index precheck 和一次原生本地 commit。
+creation_reviews:
+- reviewer: Codex independent reviewer (/root/workcase_0059_creation_review)
+  reviewed_at: '2026-08-05T03:59:10Z'
+  subject_version: 1
+  scope: 只读审查 plan_version 1 的 Hook allow 单行证据、同快照事实审计复用 Go/No-go、三类基线测量、work item 依赖、条件本地提交、文件与副作用授权、八条底线及独立结果质量关口；未编辑文件。
+  conclusion: pass_with_followups
+  feedback:
+  - Hook allow 证据必须只包含真实 Gate 当次计算的 passed、source_fingerprint、snapshot_identity，不能读取环境变量、复用 precheck 结果或扩张证明范围。
+  - 同快照复用必须由 Code 即时验证全部 worktree/common-dir、规则与 Schema、完整事实内容集合及 staged 候选与 Index 绑定；任何漂移回退全量扫描，证明接近完整重扫或需要状态时 No-go。
+  - item-01 只交付三类基线和判据，item-03 才作出并落实 Go/No-go，避免职责重叠。
+  - 纯事实与混合流程测量不得改写当前项目事实；写入样本只能位于可清理临时仓库或 fixture。
+  - 本地 commit 必须是严格条件动作，并逐一限死可修改规范、代码、测试和事实范围，排除既有脏文件、Spark、Hook 部署、pip/打包/插件及远端动作。
+  controller_resolution: 五项反馈全部接受并写入 goal、scope、criteria、items 与 execution_authorization：Hook 证据限于当次 Gate 三字段；复用改为 Code 即时全绑定并任一漂移回退，复杂或近似全扫即 No-go；item-01 与 item-03 职责拆开；测量写入隔离；commit 改为严格条件动作并列明文件和禁止项。
+  covered_quality_gate_ids:
+  - independent-result-review
+execution_authorization:
+  authorized_actions:
+  - action_id: authorization-01-baseline-measurement
+    summary: 只读测量三类提交流程并建立 Go/No-go 判据。
+    target_scope: 当前 ldvh v4 worktree 的只读状态、现有 Helper/Hook/测试入口，以及通过 mktemp 创建的隔离临时 Git 仓库和既有测试 fixture。
+    effect_scope: 允许读取与计时当前流程，运行无状态诊断命令，并在隔离临时目录生成和清理普通代码、事实及混合候选；不得改写当前事实、源码、Index、Hook、配置或远端。
+    risk_summary: 测量噪声可能造成错误归因，临时 Git/事实样本可能留下残留；单次结果不代表普遍性能。
+    rollback_summary: 停止不稳定测量并清理明确创建的临时目录；当前 worktree 保持只读，无法清理的临时残留如实报告。
+    rule_refs:
+    - specs/07-Code 工程实践规范.md
+    - specs/30-AI 行动协议.md
+    - ldvh-base/sparks/spark-0019.yaml
+  - action_id: authorization-02-hook-evidence
+    summary: 实现真实 commit-msg Hook 成功路径的稳定单行机械证据。
+    target_scope: 仅 specs/03-事实源与信息溯源规范.md、specs/09-环境接入规范.md、specs/30-AI 行动协议.md（确需澄清时最小修改），code/ldvh/hooks/commit_msg.py、code/tests/git_hooks/test_commit_msg.py、code/tests/helper/test_commit_precheck_operation.py。
+    effect_scope: 允许输出并测试当次 Gate 的 passed、source_fingerprint、snapshot_identity 单行 stderr 证据；不得修改消息机械规则、失败诊断语义、退出码、部署逻辑或 precheck/Gate 分工。
+    risk_summary: 输出格式不稳、证明范围夸大或意外改变失败通道会削弱最终闸门和自动化诊断。
+    rollback_summary: 未提交前用定向补丁撤回本动作差异；正反真实事件任一不一致即停止，不部署 Hook。
+    rule_refs:
+    - specs/03-事实源与信息溯源规范.md
+    - specs/09-环境接入规范.md
+    - specs/30-AI 行动协议.md
+  - action_id: authorization-03-fact-audit-go-no-go
+    summary: 形成并在安全时实现受控事实写后完整性审计的同快照复用。
+    target_scope: 仅 specs/05-事实模型基础规范.md、specs/30-AI 行动协议.md、specs/31-事实对象判定与受控创建行动模板.md、specs/32-事实对象生命周期变更与承接处置行动模板.md；code/ldvh/facts/candidate_discovery.py；code/ldvh/helper/operations/fact_operation_support.py、fact_integrity_operation.py、fact_integrity_request.py、fact_candidate_operation.py、fact_candidate_request.py、commit_precheck_operation.py、commit_precheck_request.py；code/tests/helper/test_fact_candidate_operation.py、test_fact_creation_operation.py、test_fact_update_operation.py、test_fact_integrity_operation.py、test_commit_precheck_operation.py 与 code/tests/testing/test_fact_integrity.py。
+    effect_scope: 允许定义、实现和测试临时无状态的严格快照绑定及漂移回退；若精确绑定无法在该范围内简单成立，则只记录 No-go 并保持公共全量扫描，不扩展文件或入口。
+    risk_summary: 错误复用会让过期全量审计覆盖新事实变化，是本案最高风险；过度绑定也可能把完整重扫换成更复杂的同量工作。
+    rollback_summary: 任何绑定缺失、漂移误放行、复杂度上升或范围不足立即 No-go，并以定向补丁移除未提交复用差异，保留现有 check-fact-integrity。
+    rule_refs:
+    - specs/05-事实模型基础规范.md
+    - specs/30-AI 行动协议.md
+    - specs/31-事实对象判定与受控创建行动模板.md
+    - specs/32-事实对象生命周期变更与承接处置行动模板.md
+  - action_id: authorization-04-verification
+    summary: 执行隔离真实 Git 事件、相关测试与三类流程复测。
+    target_scope: 本案列明规范、代码、测试差异，当前 worktree 的只读 Git/Hook/事实状态，mktemp 隔离仓库及相关 pytest、ruff、format、diff 和事实完整性入口。
+    effect_scope: 允许创建和清理隔离仓库、运行 Hook allow/block 与漂移正反例、定向和相关全量测试及静态检查；不得部署真实 Hook、修改 core.hooksPath 或接管无关文件。
+    risk_summary: 测试可产生临时 Git 对象，平台条件测试可能无法执行；全量回归耗时和输出需要据实记录。
+    rollback_summary: 失败时停止并清理明确临时目录；仅对本案未提交差异做定向修正，不使用 destructive reset，不改用户文件。
+    rule_refs:
+    - specs/07-Code 工程实践规范.md
+    - specs/09-环境接入规范.md
+    - specs/30-AI 行动协议.md
+  - action_id: authorization-05-workcase-updates
+    summary: 通过 Helper 维护本 WorkCase 的活动期生命周期事实。
+    target_scope: 仅 ldvh:workcase:workcase-0059；spark-0019 与其它事实对象均为只读。
+    effect_scope: 允许按实际 plan、item、结果和审核推进使用 WorkCase 专属受控操作更新，逐次精确回读；不得直接编辑事实载体或修改其它事实。
+    risk_summary: 过期指纹、错误 phase 或不实结果会污染事实生命周期。
+    rollback_summary: CAS、Schema、状态机或完整性失败即停止；只提交完整 after，不覆盖并发变化。
+    rule_refs:
+    - specs/05-事实模型基础规范.md
+    - specs/21-WorkCase-工作项.md
+    - specs/32-事实对象生命周期变更与承接处置行动模板.md
+  - action_id: authorization-06-delegate-result-review
+    summary: 委派当前完整结果的必经独立只读复核。
+    target_scope: 仅 workcase-0059 当前 plan/result、实际 diff、三类测量、测试证据、Hook 事件和条件提交候选。
+    effect_scope: 允许委派未参与实施和 Controller 决定的独立 Reviewer 只读检查过期审计捷径、证明扩张、回归和授权越界；Reviewer 不得写文件或替 Human 决策。
+    risk_summary: Reviewer 不独立或证据不全会让最后质量关口失真。
+    rollback_summary: 拒绝不独立、越界或不可回指的输出，重新委派并保持未关闭。
+    rule_refs:
+    - specs/06-行动模板基础规范.md
+    - specs/21-WorkCase-工作项.md
+  - action_id: authorization-07-record-result-review
+    summary: 由 Controller 核验、处置并受控记录独立结果复核。
+    target_scope: 仅 workcase-0059 当前 result projection 与 Reviewer 实际反馈。
+    effect_scope: 允许核对独立性、被审版本、证据和反馈处置后经 Helper 写回；不自动批准结果、关闭或扩大执行范围。
+    risk_summary: 遗漏反馈或绑定错误结果版本会形成虚假质量门记录。
+    rollback_summary: 结果投影变化则递增 result_version 并重新复核；无法核实时停止进入 Gate 2。
+    rule_refs:
+    - specs/06-行动模板基础规范.md
+    - specs/21-WorkCase-工作项.md
+  - action_id: authorization-08-conditional-local-commit
+    summary: 仅在精确候选存在且全部验证通过时创建一次本地原生 Git commit。
+    target_scope: 仅本案实际改变且属于 authorization-02、authorization-03 列明范围的规范、代码、测试文件和 workcase-0059；不含 spark-0019、workcase-0058、spark-0037、spark-0054、spark-0055、workcase-0056、web/src/components/CommitPushStatusBadge.tsx 或其它无关 dirty/untracked/staged 文件。
+    effect_scope: 允许声明候选、逐文件审核 diff、精确暂存、调用 Helper precheck-git-commit，并执行一次不带 --no-verify 的原生 git commit；真实 commit-msg Hook 必须输出单行 allow 证据，不 push。
+    risk_summary: 候选误选、无关 staged、消息不真实、快照漂移或 Hook 未执行会造成错误提交；提交对象创建后不自动改写历史。
+    rollback_summary: 提交前任一条件失败即停止并保留 Index/工作树诊断；提交后仅回读报告，不 amend、reset、rebase、自动重试或删除用户变化。
+    rule_refs:
+    - specs/03-事实源与信息溯源规范.md
+    - specs/21-WorkCase-工作项.md
+    - specs/30-AI 行动协议.md
+  quality_gates:
+  - gate_id: independent-result-review
+    reviewer_mode: independent-read-only
+    delegation_action_id: authorization-06-delegate-result-review
+    result_review_action_id: authorization-07-record-result-review
+  action_ceiling: 仅当前 ldvh v4 worktree 内逐一列明的规范、Hook 适配层、事实快照与提交预检直接实现和测试、workcase-0059；当前仓库只读测量、mktemp 隔离验证、一次严格条件本地 commit 和一次必经独立只读结果复核。
+  prohibited_actions:
+  - 削弱 spark-0019 所列八条提交底线，省略候选声明、逐文件 diff、AI 语义审核、真实 Index precheck、原生 commit-msg Hook 或提交后回读
+  - 仅凭时间戳、对象数、单一总指纹、Git status 或 AI 对历史输出的比较复用事实完整性审计
+  - 创建 prepared token、witness、receipt、journal、cache、持久状态、alternate Index、两阶段提交服务或聚合提交 wrapper
+  - 改变行动模板 candidate+content 读取契约、合并 precheck 与 Gate 或减少 Gate 的反漂移读取
+  - 修改、部署、替换真实 common-dir Hook 或 core.hooksPath
+  - 引入 pip 安装、wheel、sdist、editable distribution、打包或插件部署
+  - 修改 spark-0019、其它事实、未列源码，或暂存、清理、覆盖、删除任何无关 dirty/untracked/staged 文件
+  - amend、reset、rebase、历史改写、push、PR、发布或其它远端写入
+  allowed_adjustments: 允许在列明文件内调整单行证据的稳定字段编码、即时快照绑定的数据结构和直接测试组织；若 Hook 三字段证明边界、Go/No-go 全绑定、任一漂移回退、无状态、八条底线、文件上限或风险上限改变，必须停止并形成 PlanDelta、升版和 fresh creation review，不能在执行中向 Human 临时扩权。
+  verification_and_rollback: 先复测三类基线；Hook 以单元、native gate 和隔离真实 git commit 正反事件验证；事实复用以每一种 worktree/common-dir、规则/Schema、目录、对象内容、Index 和候选漂移验证回退，并运行现有公共全量扫描对照。完成定向与相关全量 pytest、ruff、format、git diff --check、事实完整性和无关 dirty 隔离。任何安全条件失败即 No-go 或停止，用定向补丁撤回本案未提交差异；不执行破坏性 Git 操作。提交仅在精确候选和全部验证通过时发生，提交后只回读且不 push。
+  out_of_bounds_handling: 发现需要未列文件、新入口、持久凭据、Hook 部署、第二阶段、额外提交、远端动作或任何新风险时不执行；受影响优化自动收敛为 No-go 或未形成，保留安全现状和实际证据，进入结果链而不请求隐式扩权。
+  human_prerequisites:
+  - Human 在 Gate 1 明确批准 workcase-0059 plan_version 1 及完整 execution_authorization
+  - 若条件本地提交发生，仍遵守 Human 已确认的边界：只提交精确候选，不误带、不绕过真实 commit-msg Hook、不 push
+change_log:
+- signature:
+    agent_id: codex
+    host_environment: Cindy
+  session_id: codex-workcase-0059-creation
+  at: '2026-08-05T12:00:57.607538+08:00'
+  summary: 依据 Human 要求从 spark-0019 建立提交减负 WorkCase，纳入独立 creation review 的全部反馈并停在 Gate 1 等待批准。
+- signature:
+    agent_id: codex
+    host_environment: Cindy
+  session_id: codex-workcase-0059-execution
+  at: '2026-08-05T12:17:58.300008+08:00'
+  summary: 记录 Human Gate 1 对 plan_version 1 的明确批准，冻结执行授权基线并进入执行阶段。
+- signature:
+    agent_id: codex
+    host_environment: Cindy
+  session_id: codex-workcase-0059-execution
+  at: '2026-08-05T12:18:29.172232+08:00'
+  summary: 开始 item-01：测量普通代码、纯事实与混合候选提交流程，并形成严格复用判据。
+- signature:
+    agent_id: codex
+    host_environment: Cindy
+  session_id: codex-workcase-0059-execution
+  at: '2026-08-05T12:22:47.056325+08:00'
+  summary: 完成 item-01 并开始 item-02：三类基线与严格复用判据已形成，进入 Hook allow 单行证据实现。
+- signature:
+    agent_id: codex
+    host_environment: Cindy
+  session_id: codex-workcase-0059-execution
+  at: '2026-08-05T12:26:04.129622+08:00'
+  summary: 完成 item-02 Hook allow 单行绑定证据；item-03 依据严格判据形成 No-go 并保留公共全量事实扫描，开始 item-04。
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0019
+execution_approval:
+  subject_version: 1
+  approved_at: '2026-08-05T04:17:58.107118Z'
+  summary: Human 明确批准执行 workcase-0059 plan_version 1 及其完整 execution_authorization。
+  baseline_fingerprint: 9092052dd0beb53566244687319a497771ccb92bdc7a3a910eb7ca621f684438
+  source_refs:
+  - conversation:user:批准:workcase-0059-plan-version-1
+summary: item-02 已完成，item-03 形成严格 No-go；正在执行 item-04 整体验证与条件本地提交。
+resume_from: 运行静态检查、相关回归与公共事实完整性；复核精确候选后执行真实 Index precheck 和一次原生本地 commit。
+object_id: workcase-0059
+fact_type_key: workcase
+created_at: '2026-08-05T12:00:57.607538+08:00'
+updated_at: '2026-08-05T12:26:04.129622+08:00'

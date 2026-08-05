@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -15,6 +16,8 @@ from ldvh.git_hooks.commit_msg import (
     render_commit_msg_hook,
     uninstall_commit_msg_hook,
 )
+from ldvh.hooks import commit_msg as commit_msg_gate
+from ldvh.hooks.commit_msg import CommitMsgGateResult
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 SOURCE_LAUNCHER = REPOSITORY_ROOT / "ldvh"
@@ -167,7 +170,7 @@ def test_real_git_commit_is_blocked_and_allowed_by_installed_commit_msg_hook(tmp
     )
     blocked = _git(project, "commit", "-m", missing_body)
 
-    assert blocked.returncode != 0
+    assert blocked.returncode == 1
     assert "validation/body_required" in blocked.stderr
     assert "validation/key_changes_required" in blocked.stderr
     assert "关键变更" in blocked.stderr
@@ -178,11 +181,43 @@ def test_real_git_commit_is_blocked_and_allowed_by_installed_commit_msg_hook(tmp
     allowed = _git(project, "commit", "-m", message)
 
     assert allowed.returncode == 0, (allowed.stdout, allowed.stderr)
+    assert len(allowed.stderr.splitlines()) == 1
+    assert re.fullmatch(
+        r"LDVH Git Gate \(commit-msg\) passed: "
+        r"source_fingerprint=[0-9a-f]{64} snapshot_identity=sha256:[0-9a-f]{64}",
+        allowed.stderr.strip(),
+    )
     after = _checked_git(project, "rev-parse", "HEAD").strip()
     assert after != before
     assert _checked_git(project, "show", "--format=", "--name-only", "HEAD").splitlines() == [changed.name]
     assert _checked_git(project, "log", "-1", "--format=%B").strip() == message
     assert _checked_git(project, "diff", "--cached", "--name-only") == ""
+
+
+def test_passed_gate_without_binding_evidence_fails_closed(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setattr(
+        commit_msg_gate,
+        "run_commit_msg_gate",
+        lambda **_: CommitMsgGateResult("passed", ()),
+    )
+
+    exit_code = commit_msg_gate.main(
+        [
+            "--workspace-root",
+            "/unused-workspace",
+            "--worktree",
+            "/unused-worktree",
+            "--message-file",
+            "/unused-message",
+        ]
+    )
+
+    assert exit_code == 1
+    assert capsys.readouterr().err == (
+        "LDVH Git Gate (commit-msg) unavailable: passed result lacks source_fingerprint or snapshot_identity\n"
+    )
 
 
 def test_independent_clone_does_not_inherit_common_dir_hook(tmp_path: Path) -> None:
