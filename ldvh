@@ -12,8 +12,16 @@ SOURCE_ROOT = Path(__file__).resolve().parent
 CODE_ROOT = SOURCE_ROOT / "code"
 
 
+def _ruamel_yaml_available() -> bool:
+    try:
+        return importlib.util.find_spec("ruamel.yaml") is not None
+    except ModuleNotFoundError:
+        # The parent ``ruamel`` namespace package is absent; the dependency is not installed.
+        return False
+
+
 def _ensure_dependency_runtime() -> None:
-    if importlib.util.find_spec("ruamel.yaml") is not None:
+    if _ruamel_yaml_available():
         return
     candidates = (
         SOURCE_ROOT / ".venv/bin/python",
