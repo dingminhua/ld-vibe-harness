@@ -421,6 +421,89 @@ input::-moz-focus-inner {
   vertical-align: -0.1em;
 }
 
+/* Study reports are evidence-heavy documents.  Keep their source Markdown intact,
+   but give its top-level evidence list and recommendations a readable scan rhythm. */
+.ldvh-study-report-preview {
+  max-width: 54rem;
+  margin-inline: auto;
+  font-size: 0.9375rem;
+  line-height: 1.85;
+}
+
+.ldvh-study-report-preview > :where(h2, h3) {
+  margin-top: 2rem;
+}
+
+.ldvh-study-report-preview > :where(h2):first-child {
+  margin-top: 0;
+}
+
+.ldvh-study-report-preview > :where(p) {
+  max-width: 46rem;
+}
+
+.ldvh-study-report-preview > ul {
+  display: grid;
+  gap: 0.55rem;
+  margin: 1rem 0 1.25rem;
+  padding: 0;
+  list-style: none;
+}
+
+.ldvh-study-report-preview > ul > li {
+  position: relative;
+  margin: 0;
+  padding: 0.7rem 0.85rem 0.7rem 1.65rem;
+  border: 1px solid rgb(var(--ldvh-border) / 0.68);
+  border-radius: 0.5rem;
+  background: rgb(var(--ldvh-bg) / 0.34);
+  color: rgb(var(--ldvh-text-secondary));
+  line-height: 1.8;
+}
+
+.ldvh-study-report-preview > ul > li::before {
+  content: '';
+  position: absolute;
+  /* Center the marker on the first text line, not on the list card. */
+  top: 1.4rem;
+  left: 0.7rem;
+  width: 0.25rem;
+  height: 0.25rem;
+  border-radius: 999px;
+  background: rgb(var(--ldvh-accent));
+}
+
+.ldvh-study-report-preview > ol {
+  display: grid;
+  gap: 0.7rem;
+  margin: 1rem 0 1.25rem;
+  padding: 0;
+  list-style: none;
+}
+
+.ldvh-study-report-preview > ol > li {
+  position: relative;
+  margin: 0;
+  min-height: 3rem;
+  padding: 0.8rem 0.95rem 0.8rem 1.65rem;
+  border: 1px solid rgb(var(--ldvh-border) / 0.72);
+  border-radius: 0.55rem;
+  background: rgb(var(--ldvh-bg) / 0.34);
+  color: rgb(var(--ldvh-text-primary));
+  line-height: 1.82;
+}
+
+.ldvh-study-report-preview > ol > li::before {
+  content: '';
+  position: absolute;
+  top: 1.5rem;
+  left: 0.7rem;
+  width: 0.25rem;
+  height: 0.25rem;
+  border-radius: 999px;
+  background: rgb(var(--ldvh-accent));
+}
+
 .ldvh-inline-markdown :where(p, ul, ol, pre, blockquote) {
   margin-top: 0.375rem;
   margin-bottom: 0.375rem;
