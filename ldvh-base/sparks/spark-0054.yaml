@@ -1,0 +1,50 @@
+title: WC 流程拆分：受控创建与独立审核解耦
+status: open
+priority: P1
+intent: 当前 21 号规范把"至少一项实际独立方案复核"作为受控创建的前置条件（§4.4），导致 creation_reviews、execution_authorization 与计划主体在创建时一次性写入，WC 创建完成后直接处于 human_plan_confirming 阶段。这意味着审核发生在创建事务内部，主控 AI 既是方案撰写者又是创建执行者，subagent 的独立视角无法在创建之后、Gate1 之前以独立阶段介入。Human 希望的流程是：主控 AI 受控创建 WC（完成基本计划主体）→ 调用 subagent 独立审核方案 → 主控 AI 基于审核反馈完善 → 完善后进入 Gate1。若不跨行动保留，这一流程改进方向会随会话结束丢失，后续需要重新通读 21 号规范并重建判断。
+summary: |-
+  ## 当前结论
+
+  **现状核实**：21 号规范 §4.4 要求受控创建"至少一项实际独立方案复核"，创建后 phase 为 `human_plan_confirming`，creation_reviews 已存在。审核是创建事务的组成部分，不是独立阶段。
+
+  **Human 期望流程**：
+  1. 主控 AI 受控创建 WC（形成 goal、scope、criteria、items、execution_authorization，但不含 creation_reviews）
+  2. 调用 subagent 对完整方案进行独立审核
+  3. 主控 AI 根据审核反馈完善方案
+  4. 完善后进入 Gate1 等待 Human 批准
+
+  **核心差异**：规范把审核视为创建的前置条件（创建时必须已完成），Human 把审核视为创建后的独立阶段。
+
+  **待判断**：
+  - 是否解耦 creation_reviews 与受控创建的同事务要求，使创建后可以无 creation_reviews 进入一个新 phase？
+  - 新 phase 如何命名？候选：`plan_reviewing`（独立审核阶段），或复用 `plan_revising` 并扩展其 Gate1 前语义？
+  - subagent 独立审核如何路由？是否需要独立性保障机制（如独立 Agent 类型、隔离上下文）？
+  - 审核后的"完善"与现有 `plan_revising` 是否合并？完善后是否需要 fresh review 才能进入 Gate1？
+  - 该流程变化涉及 21 号规范的哪些章节：§4.4 受控创建、§6.2 phase 闭集、§6.3 presence、§6.5 计划投影与批准、§7 AI 写回检查点？
+
+  **边界**：本 Spark 不授权修改规范、创建 WorkCase 或执行任何实施动作。只保留议题识别、流程分析和方向判断。
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0037
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: workcase
+    object_id: workcase-0056
+evolution:
+- at: '2026-08-05T12:00:00+08:00'
+  summary: Human 提出 WC 流程应当是"先受控创建，再审核，审核后修改，然后进入 Gate1"，指出当前流程与此有出入。经核实 21 号规范 §4.4，确认差异为：当前 creation_reviews 是受控创建的同事务组成部分，不是独立阶段；Human 希望解耦为创建→独立审核→完善→Gate1 四步流程。
+change_log:
+- signature:
+    agent_id: glm-5.2
+    host_environment: claude-code-mcp
+  session_id: session-20260805-spark-creation
+  at: '2026-08-05T12:00:00+08:00'
+  summary: 创建 spark-0054，记录 WC 流程拆分议题：受控创建与独立审核解耦。
+object_id: spark-0054
+fact_type_key: spark
+created_at: '2026-08-05T12:00:00+08:00'
+updated_at: '2026-08-05T12:00:00+08:00'

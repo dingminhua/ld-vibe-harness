@@ -1,0 +1,27 @@
+title: LDVH 流程复杂度是否过度设计
+status: open
+intent: 通过 Windows parity 方案发现 mac 上 LDVH 写入流程已经复杂，引发直觉疑问：这套流程是有必要的严谨，还是已经过度设计了？需要保留此议题在后续讨论中反复回看。
+summary: "## 问题\n\n通过 Windows parity 方案才发现：mac 上 LDVH 的写入流程已经很复杂了。Windows 上因为一个 fsync 差异就要走完整套规划→审阅→改代码→改测试→补 ADR→受控提交→双平台验证→端到端测试，引发了直觉上的疑问：这套流程到底是有必要的严谨，还是已经过度设计了？\n\n## 必要部分\n\n- 分层召回与查重：避免 AI 重复创建同义对象\n- 写后回读：确认写入内容就是预期内容\n- 来源回指：每个事实能追溯到怎么来的\n- Human Gate：关键节点需要开发者确认\n\n## 过度部分\n\n1. **模板激活 vs 实际执行的六层防护网**（31 号模板）—— 摸了门不算进门，进了门不算坐下，坐下了不算点菜，点菜了不算吃上。每一层都防御了某种风险，但叠在一起让 AI 不敢确定「到底走到哪一步才算真正做了」。\n\n2. **规范交叉引用层数过多** —— 创建事实对象需要读 7 份规范才能判断「能不能动笔」（03、05、06、具体类型、31、04、07）。每份规范还定义「我不负责什么」并指向另一个规范。\n\n3. **低风险变更触发全流程** —— Windows 的 fsync(目录) 差异，在大部分场景下（非掉电时刻）根本不影响功能，但走了全套治理流程。LDVH 没有区分「高风险变更」和「低风险变更」。\n\n4. **80/20 场景倒置** —— 80% 的写入场景是简单的（一个新想法 → 建一个 Spark），但流程是为 20% 的复杂边界场景（冲突、合并、替代、回滚）设计的，导致简单场景也被拖进复杂流程。\n\n## 待判断\n\n- 是否应该区分「快速写入」和「受控写入」两条路径？\n- 基础设施决策（如耐久等级）是否应从治理流程中摘出来？\n- 是否需要一份执行速查（QUICKSTART.md）让 AI 能在 3 分钟内找到「写一个 Spark 需要哪几步」？\n- 当前流程中哪些环节是真实价值的，哪些是「防了 1% 的风险、拖慢了 99% 的场景」？\n\n## 来源\n\n- 当前会话中关于 Windows parity 方案的讨论\n- specs/31 事实对象判定与受控创建行动模板\n- specs/03 事实源与信息溯源规范\n- specs/05 事实模型基础规范\n- specs/00 理念与构成\n\n## 处置方向\n\n继续讨论，可能形成：\n- 流程简化方案 → 进入 WorkCase\n- 规范修订建议 → 进入 ADR\n- 或判断当前复杂度合理 → 关闭为 discarded"
+priority: P2
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0019
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0054
+change_log:
+- signature:
+    agent_id: glm-5.2
+    host_environment: claude-code-mcp
+  session_id: session-20260805-spark-creation
+  at: '2026-08-05T02:04:05.505223+08:00'
+  summary: 创建 spark-0055，记录 LDVH 流程复杂度是否过度设计的议题
+object_id: spark-0055
+fact_type_key: spark
+created_at: '2026-08-05T02:04:05.505223+08:00'
+updated_at: '2026-08-05T02:04:05.505223+08:00'
