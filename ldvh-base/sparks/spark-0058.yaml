@@ -1,0 +1,22 @@
+title: 管辖项目临时文件的统一存放约束（仅限 docs 目录）
+status: open
+priority: P3
+intent: 保留议题：要求所有受管辖项目的临时/中间文件（含草稿、转储、缓存式产物、一次性脚本输出）只能写入各项目自身的 docs 目录下，避免散落在仓库根、build/、临时脚本或工作树其它位置造成污染与不可追踪。后续需判断：这是规范层约束（09 环境接入 / 07 Code 实践）还是由各项目 .gitignore 与目录约定落实；如何界定“临时文件”边界与例外（依赖、构建产物、操作系统/编辑器缓存是否纳入）；以及 docs 目录本身是否需要按项目或按类型分子目录。若不跨行动保留此议题，后续每个项目都会各自重新约定临时文件位置，导致工作树污染、跨会话定位困难与清理责任分散。
+summary: "议题：所有受管辖项目的临时文件应统一只写入各项目 docs 目录。\n\n**待判断**\n\n- 约束落点：是规范层约束（09 环境接入 / 07 Code 实践），还是由各项目 .gitignore 与目录约定落实；\n- “临时文件”边界与例外：依赖、构建产物、操作系统/编辑器缓存是否纳入统一管理；\n- docs 目录组织：是否需要按项目或按类型分子目录。\n\n**价值与风险**\n\n价值在于减少工作树污染、提升跨会话可追踪性与可清理性；风险是与构建产物/依赖缓存等既有约定冲突，需明确排除项。"
+change_log:
+- at: '2026-08-06T01:32:58.335490+08:00'
+  session_id: wb-create-spark-0058-20260806
+  summary: 按 Human 要求新建 Spark：管辖项目临时文件统一存放到 docs 目录的约束议题。
+  signature:
+    agent_id: workbuddy
+    host_environment: workbuddy
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0007
+object_id: spark-0058
+fact_type_key: spark
+created_at: '2026-08-06T01:32:58.335490+08:00'
+updated_at: '2026-08-06T01:32:58.335490+08:00'
