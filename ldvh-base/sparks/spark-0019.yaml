@@ -18,6 +18,8 @@ evolution:
   summary: 独立价值审计把原先五项核心闸门补全为八条底线，并确认缺口在摘要归纳而非现行 specs；后续优化边界因此收敛为保持规则语义不变，只减少执行编排、重复观察和无关输出。
 - at: '2026-08-05T12:58:45.525507+08:00'
   summary: workcase-0059 的真实关闭与提交把泛化的流程减负方向收敛为三项可复现交互缺口：模板正文重复传输、关闭候选与写入契约不闭合、失败诊断缺少直接修正信息；后续优先改善窄输出、自解释诊断和候选契约一致性，不削弱既有闸门。
+- at: '2026-08-05T16:40:00+08:00'
+  summary: study-0023 深度审计跨环境复证：Claude Code 环境独立验证 LDVH 完整交互链，12 次 Helper 调用中 3 次 invalid_request 的共同根因是参数命名信息不对称（AI 按语义猜参数名，Helper 要求精确字段名）；建议 capabilities 附带参数 schema 摘要以减少交互摩擦。
 change_log:
 - signature:
     agent_id: codex
@@ -49,7 +51,13 @@ change_log:
   session_id: codex-spark-0019-helper-friction-recording
   at: '2026-08-05T12:58:45.575600+08:00'
   summary: 按 Human 当前记录授权，将 workcase-0059 实测后剩余的规则读取与 Helper 交互摩擦补入现有优化议题。
+- signature:
+    agent_id: GLM-5.2
+    host_environment: claude-code-mcp
+  session_id: session-20260805-deep-audit
+  at: '2026-08-05T19:58:57.068583+08:00'
+  summary: 按 study-0023 立即行动建议，记录 Claude Code 跨环境复证：3 次 invalid_request 根因为参数命名信息不对称。
 object_id: spark-0019
 fact_type_key: spark
 created_at: '2026-07-19T18:47:20.417174+08:00'
-updated_at: '2026-08-05T12:58:45.575600+08:00'
+updated_at: '2026-08-05T19:58:57.068583+08:00'
