@@ -6,6 +6,7 @@ __pycache__/
 build/
 dist/
 .ldvh-test-runs/
+test-results/
 
 # 忽略 docs 目录
 docs/
