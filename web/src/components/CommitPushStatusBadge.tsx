@@ -1,3 +1,5 @@
+import { ArrowUp, GitCommitHorizontal } from 'lucide-react';
+import { useState } from 'react';
 import { useI18n } from '@/i18n/context';
 import type { GitPushStatus } from '@/utils/api';
 
@@ -9,19 +11,46 @@ export default function CommitPushStatusBadge({
   className?: string;
 }) {
   const { t } = useI18n();
+  const [showTooltip, setShowTooltip] = useState(false);
 
   if (status === 'unknown') return null;
 
   const isPushed = status === 'pushed';
+  const label = t(isPushed ? 'changelog.pushed' : 'changelog.unpushed');
+
+  // A commit already reachable from the upstream does not need a per-row
+  // decoration. Only surface the actionable local-ahead state.
+  if (isPushed) return null;
+
   return (
-    <span
-      className={`${className} inline-flex shrink-0 items-center rounded-md border px-2 py-0.5 text-[10px] font-medium leading-4 ${
-        isPushed
-          ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
-          : 'border-amber-500/35 bg-amber-500/10 text-amber-700 dark:text-amber-300'
-      }`}
-    >
-      {t(isPushed ? 'changelog.pushed' : 'changelog.unpushed')}
+    <span className={`${className} relative inline-flex shrink-0`}>
+      <span
+        aria-label={label}
+        className="inline-flex h-6 w-6 items-center justify-center rounded-md text-rose-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ldvh-accent/45 dark:text-rose-400"
+        onBlur={() => setShowTooltip(false)}
+        onFocus={() => setShowTooltip(true)}
+        onMouseEnter={() => setShowTooltip(true)}
+        onMouseLeave={() => setShowTooltip(false)}
+        role="img"
+        tabIndex={0}
+      >
+        <span className="relative block h-4 w-4" aria-hidden="true">
+          <GitCommitHorizontal className="absolute inset-0" size={16} strokeWidth={2} />
+          <ArrowUp
+            className="absolute -right-1 -top-1 bg-ldvh-panel"
+            size={10}
+            strokeWidth={3}
+          />
+        </span>
+      </span>
+      {showTooltip ? (
+        <span
+          className="pointer-events-none absolute right-0 top-full z-20 mt-1 whitespace-nowrap rounded-md border border-ldvh-border bg-ldvh-panel px-2 py-1 text-[10px] font-medium leading-4 text-ldvh-text-primary shadow-md"
+          role="tooltip"
+        >
+          {label}
+        </span>
+      ) : null}
     </span>
   );
 }

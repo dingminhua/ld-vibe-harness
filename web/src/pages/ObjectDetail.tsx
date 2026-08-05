@@ -32,8 +32,9 @@ import { usePanel } from '@/utils/panelContext';
 import { getFactReadMeta, isReadableFact, reconstructFactYaml, type FactCarrier, type FactReadMeta } from '@/utils/factReadMeta';
 import { isResolvedWorkCasePresentationProjection } from '@/shared/workcaseStatus';
 import { WorkCaseReadingLayout } from '@/pages/object-detail/WorkCaseReadingLayout';
-import { AdrReadingLayout, PitfallReadingLayout, PitfallTextNodeContent, SparkReadingLayout } from '@/pages/object-detail/FactReadingLayouts';
+import { AdrReadingLayout, ChangeLogReadingNode, PitfallReadingLayout, PitfallTextNodeContent, SparkReadingLayout } from '@/pages/object-detail/FactReadingLayouts';
 import { FactAssociationsSection } from '@/pages/object-detail/FactAssociationsSection';
+import { fieldIssue } from '@/pages/object-detail/fieldIssues';
 import {
   CHECKLIST_COMPAT_FIELDS,
   COLLAPSIBLE_FIELDS,
@@ -67,7 +68,7 @@ export { AdrReadingLayout, PitfallReadingLayout, SparkReadingLayout } from '@/pa
 
 const STUDY_READING_NODE_FIELDS = new Set([
   'research_intent', 'research_question', 'abstract', 'recommendation_summary', 'report_body',
-  'report_kind', 'input_refs',
+  'report_kind', 'input_refs', 'change_log',
 ]);
 const FORMAL_ASSOCIATION_FIELDS = new Set(['relations']);
 export type ReadingNodeState = 'collapsed' | 'expanded';
@@ -278,7 +279,7 @@ export function FactReadingContent({
       <FieldIssuesSection value={obj.field_issues} />
       <UnparsedStructuresSection value={obj.unparsed_structures} />
 
-      {carrier === 'yaml' && (
+      {(carrier === 'yaml' || objType === 'study') && (
         <YamlDataNode
           yamlSource={reconstructFactYaml(obj)}
           title={t('objectDetail.yamlSource')}
@@ -965,7 +966,7 @@ export function RelatedContentSection({
   title?: string;
 }) {
   const { t } = useI18n();
-  const [state, setState] = useState<ReadingNodeState>('expanded');
+  const [state, setState] = useState<ReadingNodeState>('collapsed');
   if (entries.length === 0) return null;
   return (
     <ReadingNodeSection
@@ -1193,46 +1194,57 @@ const STUDY_READING_NODES: Array<{ field: string; kind: 'text' | 'report' }> = [
   { field: 'report_body', kind: 'report' },
 ];
 
+function getStudyReportMetadataTitle(locale: string) {
+  return locale.startsWith('zh') ? '类型' : 'Type';
+}
+
 function StudyReportMetadata({ obj, locale }: { obj: Record<string, unknown>; locale: string }) {
   const reportKind = typeof obj.report_kind === 'string' ? obj.report_kind : null;
+  const title = reportKind
+    ? `${getStudyReportMetadataTitle(locale)} · ${getFieldValueLabel('report_kind', reportKind, locale)}`
+    : getStudyReportMetadataTitle(locale);
   const inputRefs = Array.isArray(obj.input_refs)
     ? obj.input_refs.filter((value): value is Record<string, unknown> => Boolean(value && typeof value === 'object'))
     : [];
+  const [state, setState] = useState<ReadingNodeState>('collapsed');
   if (!reportKind && inputRefs.length === 0) return null;
 
-  const metadata = (label: string, value: unknown) => (
-    <div className="min-w-0">
-      <dt className="ldvh-caption text-ldvh-text-secondary">{label}</dt>
-      <dd className="mt-0.5 break-words text-sm text-ldvh-text">{String(value)}</dd>
-    </div>
-  );
-
   return (
-    <section className="rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
-      <h3 className="ldvh-caption-strong mb-3">{getFieldLabel('report_metadata', locale)}</h3>
-      {reportKind && (
-        <dl className="grid min-w-0 gap-4 grid-cols-3">
-          {metadata(getFieldLabel('report_kind', locale), getFieldValueLabel('report_kind', reportKind, locale))}
-        </dl>
-      )}
-      {inputRefs.length > 0 && (
-        <div className="mt-4 border-t border-ldvh-border/70 pt-3">
-          <h4 className="ldvh-caption-strong mb-2">{getFieldLabel('input_refs', locale)}</h4>
-          <ul className="grid min-w-0 gap-2">
-            {inputRefs.map((ref, index) => (
-              <li key={`${String(ref.kind)}-${String(ref.locator)}-${index}`} className="rounded-md border border-ldvh-border/70 px-3 py-2">
-                <dl className="grid min-w-0 gap-2 grid-cols-2">
-                  {typeof ref.kind === 'string' && metadata(getFieldLabel('kind', locale), ref.kind)}
-                  {typeof ref.locator === 'string' && metadata(getFieldLabel('locator', locale), ref.locator)}
-                  {typeof ref.version === 'string' && metadata(getFieldLabel('version', locale), ref.version)}
-                  {typeof ref.observed_at === 'string' && metadata(getFieldLabel('observed_at', locale), ref.observed_at)}
-                </dl>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </section>
+    <ReadingNodeSection
+      title={title}
+      state={state}
+      locale={locale}
+      onToggle={() => setState((current) => getReadingNodeNextState(current))}
+    >
+      <div className="divide-y divide-ldvh-border/60">
+        {inputRefs.map((ref, index) => {
+          const meta = [
+            typeof ref.kind === 'string' ? ref.kind : null,
+            typeof ref.version === 'string' ? ref.version : null,
+            typeof ref.observed_at === 'string' ? formatDateTime(ref.observed_at) : null,
+          ].filter((value): value is string => Boolean(value));
+
+          return (
+            <div key={`${String(ref.kind)}-${String(ref.locator)}-${index}`} className="min-w-0 py-2.5 first:pt-0 last:pb-0">
+              {meta.length > 0 && (
+                <div className="ldvh-meta flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 font-medium text-ldvh-text-primary/80">
+                  <span aria-hidden="true" className="h-1 w-1 shrink-0 self-center rounded-full bg-ldvh-text-primary/55" />
+                  {meta.map((value, metaIndex) => (
+                    <span key={`${value}-${metaIndex}`} className="inline-flex items-center gap-x-1.5">
+                      {metaIndex > 0 && <span aria-hidden="true">·</span>}
+                      <span>{value}</span>
+                    </span>
+                  ))}
+                </div>
+              )}
+              {typeof ref.locator === 'string' && (
+                <p className="mt-1 ldvh-meta break-words text-ldvh-text-secondary/80">{ref.locator}</p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </ReadingNodeSection>
   );
 }
 
@@ -1268,7 +1280,6 @@ export function StudyReadingLayout({
           carrier={carrier}
         />
       ))}
-      <StudyReportMetadata obj={obj} locale={locale} />
       {extraPrimaryEntries.map(([fieldKey, value]) => (
         <ContentField
           key={fieldKey}
@@ -1281,6 +1292,8 @@ export function StudyReadingLayout({
       ))}
       <FactAssociationsSection obj={obj} locale={locale} />
       <RelatedContentSection entries={relatedEntries} locale={locale} />
+      <StudyReportMetadata obj={obj} locale={locale} />
+      <ChangeLogReadingNode value={obj.change_log} issue={fieldIssue(obj, 'change_log')} locale={locale} />
     </div>
   );
 }
@@ -1335,7 +1348,14 @@ function StudyReportBodyEntry({
   const openLabel = t('objectDetail.openReadingPanel');
   const openReportBody = () => {
     if (!docPath || carrier !== 'markdown') return;
-    openPanel({ type: 'doc', title, docPath, data: String(value), carrier });
+    openPanel({
+      type: 'doc',
+      title,
+      docPath,
+      data: String(value),
+      carrier,
+      docVariant: 'study-report',
+    });
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {

@@ -138,9 +138,7 @@ def test_fact_write_templates_deliver_process_checks_and_direct_write_rejection(
 
     assert execution.outcome == "ok"
     assert execution.result is not None
-    content_by_key = {
-        item["template_key"]: item["content"] for item in execution.result["items"]
-    }
+    content_by_key = {item["template_key"]: item["content"] for item in execution.result["items"]}
     for content in content_by_key.values():
         assert "绕过 Helper" in content
         assert "`ldvh-base/`" in content
@@ -155,12 +153,31 @@ def test_fact_write_templates_deliver_process_checks_and_direct_write_rejection(
         assert "无论 Helper 外层 `outcome` 为何" in content_by_key[key]
         assert "共同 `changes`" in content_by_key[key]
 
-    assert "无法排除任何事实源写入" in content_by_key[
-        "fact-object-controlled-creation"
-    ]
-    assert "不得等待或假定其它目标回读全部完成" in content_by_key[
-        "fact-object-lifecycle-change"
-    ]
+    assert "无法排除任何事实源写入" in content_by_key["fact-object-controlled-creation"]
+    assert "不得等待或假定其它目标回读全部完成" in content_by_key["fact-object-lifecycle-change"]
+
+
+def test_git_commit_template_requires_real_index_and_real_hook_event(
+    current_specs_repository: Path,
+) -> None:
+    execution = ACTION_TEMPLATE_CONTENT_IMPLEMENTATION.call(
+        _request("git-commit"),
+        inspect_repository(current_specs_repository),
+        OperationExecutionContext(cwd=current_specs_repository),
+    )
+
+    assert execution.outcome == "ok"
+    assert execution.result is not None
+    content = execution.result["items"][0]["content"]
+    assert "AI 已明确声明的当次候选文件清单" in content
+    assert "逐文件审核对应 diff" in content
+    assert "当前真实 Index" in content
+    assert "未声明、无关或归属无法确认的 staged 内容" in content
+    assert "不得触碰、代为 unstage、覆盖、清空或改用临时/alternate Index" in content
+    assert "common-dir `commit-msg` Git Hook" in content
+    assert "不带 `--no-verify` 的原生本地 `git commit`" in content
+    assert "该真实事件必须实际触发" in content
+    assert "Helper 不可用或调用错误都必须保留诊断并停止本次 commit 创建" in content
 
 
 def test_content_operation_requires_nonempty_exact_keys_and_null_disclosure(

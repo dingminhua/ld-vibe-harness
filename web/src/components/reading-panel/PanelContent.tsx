@@ -203,7 +203,7 @@ function getObjectTypeLabel(objectType: string | undefined, locale: string) {
 
 function DocPreview({ content }: { content: PanelContent }) {
   const { t } = useI18n();
-  const { docPath, data, carrier } = content;
+  const { docPath, data, carrier, docVariant } = content;
   const [doc, setDoc] = useState<DocContent | null>(null);
   const [error, setError] = useState<string | null>(null);
   const docContent = typeof data === 'string' ? data : doc?.content ?? '';
@@ -252,7 +252,10 @@ function DocPreview({ content }: { content: PanelContent }) {
         </div>
       ) : isMarkdown ? (
         <article className="rounded-lg border border-ldvh-border bg-ldvh-panel px-4 py-4 shadow-sm shadow-black/10">
-          <MarkdownPreview content={docContent} />
+          <MarkdownPreview
+            content={docContent}
+            className={docVariant === 'study-report' ? 'ldvh-study-report-preview' : undefined}
+          />
           {truncated && <p className="ldvh-caption mt-3">{t('readingPanel.truncated')}</p>}
         </article>
       ) : (

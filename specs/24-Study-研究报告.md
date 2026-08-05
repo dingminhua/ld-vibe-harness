@@ -124,7 +124,7 @@ AI 负责判断研究是否完成、来源是否充分、推断是否越界、�
 | `study-input-refs` | `input_refs` | array | 内部审计、技术评估或比较报告实际使用的可重新定位输入来源 | 不表示来源真实、内容正确或结论已经被采纳 | 内部报告至少一项；成员使用 `study-input-ref`；历史对象可缺失 |
 | `study-input-ref-kind` | `kind` | string | 输入来源的实际种类 | 不建立跨来源权威顺序 | 必填非空；复用 04.Att.01 来源种类语义 |
 | `study-input-ref-locator` | `locator` | string | 按当前判断所需精度重新定位输入来源的位置或引用 | 不表示来源已经正确或被采纳 | 必填非空；不得只写无法复核的模糊名称 |
-| `study-input-ref-version` | `version` | string | 输入依赖的版本、commit 或 ref | 不表示该版本内容正确 | 条件出现；来源依赖版本时必填 |
+| `study-input-ref-version` | `version` | string | 输入依赖的版本、commit 或 ref | 不表示该版本内容正确 | 条件出现；来源依赖版本时必填。对 specification、specification-attachment、fact-objects、git-history 等有 Git 锚点的来源，应写实际 commit SHA（如 `d4677530`），不写 `当前 working tree` 等无追溯价值的占位文本。对 helper-call-results、working-tree-statistics 等会话级来源，省略 version。|
 | `study-input-ref-observed-at` | `observed_at` | string | 输入来源实际观察时点 | 不表示报告创建时点或来源当前仍有效 | 条件出现；来源会变化且结论依赖时点时必填 |
 | `study-research-question` | `research_question` | string | 本报告实际回答的一个以外部或内部对象为主体、可独立引用的研究、审计、评估或比较问题 | 不表示 Human 原话、纯内部 WorkCase 执行目标、ADR 决定问题、搜索关键词或待办 | 必填非空；正文“研究问题”只可展开，不得改变本字段；问题实质变化通常形成新 Study |
 | `study-abstract` | `abstract` | string | 不读完整正文即可理解研究问题、证据边界、主要发现和关键限制的报告摘要 | 不表示标题、进行中进展、完整结论、正式决定、规则或外部事实仍当前 | 必填非空；正文实质变化时同步更新；只作快速入口，不复制整段正文 |
@@ -180,6 +180,8 @@ Study 只记录完成的一轮外部内容调研。搜索、阅读、实验或�
 `urls` 是全体事实对象共用的外部资料字段：每项使用 `{ ref, title, summary }`，`ref` 是绝对 HTTP(S) URL，`title` 是资料标题，`summary` 说明该资料对当前报告支持什么、未支持什么或具有什么限制。`report_kind=external_research` 时 Study 至少有一条 `urls`；内部报告可以省略 `urls`，但必须使用 `input_refs`。
 
 `input_refs` 使用 `study-input-ref` 成员，回指代码、事实源、测试、环境、Git 或其它实际输入；其 `locator` 必须足以按当前判断所需精度重新定位，依赖版本或观察时点时提供 `version` 与 `observed_at`。项目内路径、代码、日志、会话与 Git revision 不得伪装成 `urls`，但可以在 `input_refs` 中按来源回指语义表达。
+
+`version` 的取值应真实提供再定位锚点。对 specification、specification-attachment、fact-objects、git-history 等承载于受管辖项目 Git 历史或工作树中的来源，`version` 写实际 commit SHA（最简为当前 `HEAD` 的完整或短哈希）；对有 Git 锚点的来源不得写 `当前 working tree` 等无法重建当时内容的占位文本。对 helper-call-results、working-tree-statistics 等无稳定版本含义的会话级或快照级来源，省略 `version`，只保留 `observed_at`。`version` 与 `observed_at` 的组合使后续读者能以「基线 commit + dirty diff」恢复研究输入的主要范围；未提交变更的内容本身不因 version 记录而可重建，属正常可接受边界。
 
 研究问题由 `research_question` 表达；外部资料和内部输入的用途、输入边界、关键发现、推断和限制由 `urls`、`input_refs`、正文与 `abstract` 据实说明。不得以 URL、来源回指、关系或验证动作本身代替报告结论。
 

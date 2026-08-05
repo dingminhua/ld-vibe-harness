@@ -11,11 +11,10 @@ from ldvh.facts.content import validate_fact_content
 from ldvh.facts.contracts import LAYOUTS
 from ldvh.facts.schema import FactSchema
 
-_HEADER = re.compile(
-    r"^(?P<type>[a-z]+)(?:\((?P<scope>[a-z]+(?:-[a-z]+)*)\))?(?P<breaking>!)?: (?P<description>.+)$"
-)
+_HEADER = re.compile(r"^(?P<type>[a-z]+)(?:\((?P<scope>[a-z]+(?:-[a-z]+)*)\))?(?P<breaking>!)?: (?P<description>.+)$")
 _CJK = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff]")
 _FIXED_HEADINGS = ("动机:", "关键变更:", "影响边界:", "验证结论:", "风险与后续:")
+_HEADING_LIKE = re.compile(r"^[^\s].*:\s*$")
 _TRAILER = re.compile(r"(?P<name>[A-Za-z][A-Za-z-]*): (?P<value>.*)\Z")
 _REQUIRED_TRAILERS = ("Session-ID", "Agent-ID", "Host-Environment")
 SEMANTIC_CHECKS_REQUIRED = (
@@ -49,7 +48,6 @@ class StagedFactCandidate:
     head_data: bytes | None = None
     head_exists: bool | None = None
     head_observation_issue: str | None = None
-
 
 
 @dataclass(frozen=True, slots=True)
@@ -109,17 +107,61 @@ def _path_issues(paths: tuple[str, ...]) -> list[CommitValidationIssue]:
     return issues
 
 
-def _heading_has_list(body_lines: list[str], heading: str) -> bool:
-    positions = [index for index, line in enumerate(body_lines) if line == heading]
-    if len(positions) != 1:
-        return False
-    start = positions[0] + 1
-    for line in body_lines[start:]:
-        if line in _FIXED_HEADINGS or re.fullmatch(r"[A-Za-z-]+:\s*.*", line):
-            break
-        if line.startswith("- ") and line[2:].strip():
-            return True
-    return False
+def _body_structure_issues(
+    body_lines: list[str],
+    *,
+    require_minimum_body: bool,
+    require_impact_boundary: bool,
+) -> list[CommitValidationIssue]:
+    issues: list[CommitValidationIssue] = []
+    positions = {
+        heading: [index for index, line in enumerate(body_lines) if line == heading] for heading in _FIXED_HEADINGS
+    }
+    unknown_positions = [
+        index
+        for index, line in enumerate(body_lines)
+        if line not in _FIXED_HEADINGS and _HEADING_LIKE.fullmatch(line) is not None
+    ]
+    for index in unknown_positions:
+        issues.append(_issue("body_heading_unknown", f"body 包含未知小标题: {body_lines[index]}"))
+
+    boundaries = sorted([index for indexes in positions.values() for index in indexes] + unknown_positions)
+
+    def section_lines(heading: str) -> list[str] | None:
+        indexes = positions[heading]
+        if len(indexes) != 1:
+            return None
+        start = indexes[0] + 1
+        end = next((index for index in boundaries if index >= start), len(body_lines))
+        return body_lines[start:end]
+
+    for heading, indexes in positions.items():
+        if len(indexes) > 1:
+            issues.append(_issue("body_heading_duplicate", f"body 小标题必须唯一: {heading}"))
+            continue
+        section = section_lines(heading)
+        if section is not None and not any(line.strip() for line in section):
+            issues.append(_issue("body_heading_empty", f"body 小标题不得为空: {heading}"))
+
+    def has_nonempty_list(heading: str) -> bool:
+        section = section_lines(heading)
+        return section is not None and any(line.startswith("- ") and line[2:].strip() for line in section)
+
+    if require_minimum_body and not has_nonempty_list("关键变更:"):
+        issues.append(
+            _issue(
+                "key_changes_required",
+                "所有提交的 body 必须含唯一 `关键变更:`，其下至少一个从行首开始的非空 `- ` 列表项",
+            )
+        )
+    if require_impact_boundary and not has_nonempty_list("影响边界:"):
+        issues.append(
+            _issue(
+                "impact_boundary_required",
+                "使用 ! 时 body 必须含唯一 `影响边界:`，其下至少一个从行首开始的非空 `- ` 列表项",
+            )
+        )
+    return issues
 
 
 def _footer_trailer_start(lines: list[str]) -> int | None:
@@ -164,7 +206,6 @@ def _signature_trailer_issues(lines: list[str]) -> list[CommitValidationIssue]:
     if trailers.get("Signer-Type"):
         issues.append(_issue("signer_type_retired", "footer 禁止已退役的 Signer-Type trailer"))
     return issues
-
 
 
 def _fact_layer(
@@ -370,6 +411,9 @@ def validate_commit(contract: CommitContractProjection, value: CommitValidationI
     assert value.message is not None and value.candidate_paths is not None
     normalized, lines = _normalize_message(value.message)
     failures: list[CommitValidationIssue] = []
+    body_lines: list[str] = []
+    content_body_lines: list[str] = []
+    match: re.Match[str] | None = None
     if not lines or not normalized:
         failures.append(_issue("message_empty", "完整 message 清理后不能为空"))
         header = None
@@ -390,7 +434,6 @@ def validate_commit(contract: CommitContractProjection, value: CommitValidationI
         else:
             commit_type = match.group("type")
             scope = match.group("scope")
-            breaking = match.group("breaking") is not None
             description = match.group("description")
             if commit_type not in contract.type_tokens:
                 failures.append(_issue("type_unknown", f"未知 type: {commit_type}"))
@@ -400,20 +443,28 @@ def validate_commit(contract: CommitContractProjection, value: CommitValidationI
                 failures.append(_issue("description_cjk_missing", "description 至少需要一个 CJK 字符"))
             if description.endswith(("。", ".")):
                 failures.append(_issue("description_period", "description 不使用句号结尾"))
-            body_required = len(value.candidate_paths) >= 2 or breaking or commit_type == "revert"
-            if body_required and body is None:
-                failures.append(_issue("body_required", "当前机械 trigger 要求 body"))
-            if body is not None:
-                if not _heading_has_list(content_body_lines, "关键变更:"):
-                    failures.append(_issue("key_changes_required", "body 必须含关键变更列表"))
-                if breaking and not _heading_has_list(content_body_lines, "影响边界:"):
-                    failures.append(_issue("impact_boundary_required", "使用 ! 时必须含影响边界列表"))
-            signature_issues = _signature_trailer_issues(lines[1:])
-            failures.extend(signature_issues)
-            if not signature_issues:
-                trace_unavailable, trace_failures = _fact_trace_issues(value, _footer_trailers(lines[1:]))
-                unavailable.extend(trace_unavailable)
-                failures.extend(trace_failures)
+    if lines and normalized:
+        minimum_body_required = "all-commits-minimum-body" in contract.mechanical_triggers
+        impact_boundary_required = (
+            match is not None
+            and match.group("breaking") is not None
+            and "breaking-marker" in contract.mechanical_triggers
+        )
+        if minimum_body_required and body is None:
+            failures.append(_issue("body_required", "所有受管辖提交都必须具有最低 body"))
+        failures.extend(
+            _body_structure_issues(
+                content_body_lines,
+                require_minimum_body=minimum_body_required,
+                require_impact_boundary=impact_boundary_required,
+            )
+        )
+        signature_issues = _signature_trailer_issues(body_lines)
+        failures.extend(signature_issues)
+        if not signature_issues:
+            trace_unavailable, trace_failures = _fact_trace_issues(value, _footer_trailers(body_lines))
+            unavailable.extend(trace_unavailable)
+            failures.extend(trace_failures)
     # A mechanically invalid after-image remains a failure even when a separate
     # candidate cannot be observed completely.  The Gate must preserve the
     # decisive rejection rather than downgrade it to an observation gap.

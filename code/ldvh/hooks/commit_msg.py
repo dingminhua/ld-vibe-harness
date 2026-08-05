@@ -115,6 +115,20 @@ def _write_failure(result: CommitMsgGateResult) -> None:
         sys.stderr.write(f"- {issue}\n")
 
 
+def _write_success(result: CommitMsgGateResult) -> bool:
+    if not result.source_fingerprint or not result.snapshot_identity:
+        sys.stderr.write(
+            "LDVH Git Gate (commit-msg) unavailable: passed result lacks source_fingerprint or snapshot_identity\n"
+        )
+        return False
+    sys.stderr.write(
+        "LDVH Git Gate (commit-msg) passed: "
+        f"source_fingerprint={result.source_fingerprint} "
+        f"snapshot_identity={result.snapshot_identity}\n"
+    )
+    return True
+
+
 def main(arguments: list[str] | None = None) -> int:
     parsed = _parser().parse_args(arguments)
     try:
@@ -128,7 +142,7 @@ def main(arguments: list[str] | None = None) -> int:
         sys.stderr.write(f"LDVH Git Gate (commit-msg) unavailable: {error}\n")
         return 1
     if result.allowed:
-        return 0
+        return 0 if _write_success(result) else 1
     _write_failure(result)
     return 1
 

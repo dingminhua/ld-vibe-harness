@@ -18,7 +18,7 @@ def contract() -> CommitContractProjection:
     return CommitContractProjection(
         type_tokens=("feat", "fix", "docs", "style", "refactor", "perf", "test", "build", "ci", "chore", "revert"),
         scope_tokens=("specs", "docs", "rules", "runtime", "code", "web", "tests", "config"),
-        mechanical_triggers=("multiple-paths", "breaking-marker", "revert-type"),
+        mechanical_triggers=("all-commits-minimum-body", "breaking-marker"),
         source_key="source-of-truth-traceability",
         source_path="specs/03-事实源与信息溯源规范.md",
         observed_at="2026-07-15T00:00:00+08:00",
@@ -28,7 +28,11 @@ def contract() -> CommitContractProjection:
 
 def _input(contract: CommitContractProjection, **changes: object) -> CommitValidationInput:
     values: dict[str, object] = {
-        "message": "docs(specs): 明确提交契约\n\nSession-ID: test-session\nAgent-ID: test-agent\nHost-Environment: test-environment",
+        "message": (
+            "docs(specs): 明确提交契约\n\n"
+            "关键变更:\n- 明确测试中的提交契约\n\n"
+            "Session-ID: test-session\nAgent-ID: test-agent\nHost-Environment: test-environment"
+        ),
         "candidate_paths": ("specs/03.md",),
         "git_worktree_root": "/workspace/project",
         "governance_status": "governed_single",
@@ -46,10 +50,12 @@ def _codes(result: object) -> set[str]:
 
 
 def _signed(message: str) -> str:
+    if "\n关键变更:" not in message:
+        message += "\n\n关键变更:\n- 覆盖当前测试变化"
     return message + "\n\nSession-ID: test-session\nAgent-ID: test-agent\nHost-Environment: test-environment"
 
 
-def test_single_path_valid_header_passes_mechanical_layer(contract: CommitContractProjection) -> None:
+def test_single_path_minimum_body_passes_mechanical_layer(contract: CommitContractProjection) -> None:
     result = validate_commit(contract, _input(contract))
 
     assert result.outcome == "passed"
@@ -57,7 +63,11 @@ def test_single_path_valid_header_passes_mechanical_layer(contract: CommitContra
 
 
 def test_crlf_and_leading_comments_are_normalized(contract: CommitContractProjection) -> None:
-    message = "# template\r\n\r\ndocs(specs): 明确提交契约\r\n\r\nSession-ID: test\r\nAgent-ID: test\r\nHost-Environment: test\r\n"
+    message = (
+        "# template\r\n\r\ndocs(specs): 明确提交契约\r\n\r\n"
+        "关键变更:\r\n- 明确换行归一化\r\n\r\n"
+        "Session-ID: test\r\nAgent-ID: test\r\nHost-Environment: test\r\n"
+    )
 
     result = validate_commit(contract, _input(contract, message=message))
 
@@ -91,18 +101,40 @@ def test_header_failures(contract: CommitContractProjection, message: str, code:
     assert code in _codes(result)
 
 
-def test_multiple_paths_require_key_changes_list(contract: CommitContractProjection) -> None:
-    missing = validate_commit(contract, _input(contract, candidate_paths=("a.md", "b.md")))
+def test_invalid_header_still_reports_independent_body_and_footer_failures(
+    contract: CommitContractProjection,
+) -> None:
+    result = validate_commit(contract, _input(contract, message="broken"))
+
+    assert {
+        "header_invalid",
+        "body_required",
+        "key_changes_required",
+        "signature_trailer_missing",
+    } <= _codes(result)
+
+
+def test_every_commit_requires_key_changes_list(contract: CommitContractProjection) -> None:
+    missing = validate_commit(
+        contract,
+        _input(
+            contract,
+            message=(
+                "docs: 更新说明\n\nSession-ID: test-session\nAgent-ID: test-agent\nHost-Environment: test-environment"
+            ),
+        ),
+    )
     valid = validate_commit(
         contract,
         _input(
             contract,
             candidate_paths=("a.md", "b.md"),
-                message=_signed("docs: 更新两份说明\n\n关键变更:\n- 同步规则与示例"),
+            message=_signed("docs: 更新两份说明\n\n关键变更:\n- 同步规则与示例"),
         ),
     )
 
-    assert missing.outcome == "failed" and "body_required" in _codes(missing)
+    assert missing.outcome == "failed"
+    assert {"body_required", "key_changes_required"} <= _codes(missing)
     assert valid.outcome == "passed"
 
 
@@ -115,9 +147,32 @@ def test_breaking_requires_body_and_impact_boundary(contract: CommitContractProj
 
     valid = validate_commit(
         contract,
-            _input(contract, message=_signed(message + "\n\n影响边界:\n- 旧消费者需要迁移")),
+        _input(contract, message=_signed(message + "\n\n影响边界:\n- 旧消费者需要迁移")),
     )
     assert valid.outcome == "passed"
+
+
+def test_breaking_without_body_reports_all_minimum_structure_failures(
+    contract: CommitContractProjection,
+) -> None:
+    result = validate_commit(
+        contract,
+        _input(
+            contract,
+            message=(
+                "feat!: 调整公开契约\n\n"
+                "Session-ID: test-session\n"
+                "Agent-ID: test-agent\n"
+                "Host-Environment: test-environment"
+            ),
+        ),
+    )
+
+    assert {
+        "body_required",
+        "key_changes_required",
+        "impact_boundary_required",
+    } <= _codes(result)
 
 
 def test_revert_requires_body(contract: CommitContractProjection) -> None:
@@ -125,6 +180,42 @@ def test_revert_requires_body(contract: CommitContractProjection) -> None:
 
     assert result.outcome == "failed"
     assert "body_required" in _codes(result)
+
+
+@pytest.mark.parametrize(
+    ("message", "codes"),
+    [
+        (
+            "docs: 重复小标题\n\n关键变更:\n- 第一项\n\n关键变更:\n- 第二项",
+            {"body_heading_duplicate", "key_changes_required"},
+        ),
+        ("docs: 空小标题\n\n动机:\n\n关键变更:\n- 有效变化", {"body_heading_empty"}),
+        ("docs: 未知小标题\n\n关键变更:\n备注:\n- 不得跨标题归属", {"body_heading_unknown", "key_changes_required"}),
+        ("docs: 空列表项\n\n关键变更:\n-   ", {"key_changes_required"}),
+    ],
+)
+def test_body_heading_and_list_boundaries_fail_closed(
+    contract: CommitContractProjection,
+    message: str,
+    codes: set[str],
+) -> None:
+    result = validate_commit(contract, _input(contract, message=_signed(message)))
+
+    assert result.outcome == "failed"
+    assert codes <= _codes(result)
+
+
+def test_body_after_trailers_is_not_accepted_as_minimum_body(contract: CommitContractProjection) -> None:
+    message = (
+        "docs: 错误放置正文\n\n"
+        "Session-ID: test-session\nAgent-ID: test-agent\nHost-Environment: test-environment\n\n"
+        "关键变更:\n- trailers 之后的正文无效"
+    )
+
+    result = validate_commit(contract, _input(contract, message=message))
+
+    assert result.outcome == "failed"
+    assert "signature_trailer_missing" in _codes(result)
 
 
 def test_signature_footer_requires_session_and_two_signature_fields(contract: CommitContractProjection) -> None:
@@ -278,17 +369,20 @@ def test_new_fact_change_log_must_match_commit_footer(contract: CommitContractPr
 def test_new_fact_with_multiple_precommit_change_logs_matches_commit_footer(
     contract: CommitContractProjection,
 ) -> None:
-    data = _VALID_SPARK.replace(
-        b"updated_at: 2026-07-01T00:00:00+08:00",
-        b"updated_at: 2026-07-01T01:00:00+08:00",
-    ) + (
-        "  - signature:\n"
-        "      agent_id: test-agent\n"
-        "      host_environment: test-environment\n"
-        "    session_id: test-session\n"
-        "    at: 2026-07-01T01:00:00+08:00\n"
-        "    summary: 补充测试火花\n"
-    ).encode()
+    data = (
+        _VALID_SPARK.replace(
+            b"updated_at: 2026-07-01T00:00:00+08:00",
+            b"updated_at: 2026-07-01T01:00:00+08:00",
+        )
+        + (
+            "  - signature:\n"
+            "      agent_id: test-agent\n"
+            "      host_environment: test-environment\n"
+            "    session_id: test-session\n"
+            "    at: 2026-07-01T01:00:00+08:00\n"
+            "    summary: 补充测试火花\n"
+        ).encode()
+    )
 
     result = validate_commit(
         contract,
@@ -305,17 +399,20 @@ def test_new_fact_with_multiple_precommit_change_logs_matches_commit_footer(
 def test_new_fact_rejects_any_precommit_change_log_not_matching_footer(
     contract: CommitContractProjection,
 ) -> None:
-    data = _VALID_SPARK.replace(
-        b"updated_at: 2026-07-01T00:00:00+08:00",
-        b"updated_at: 2026-07-01T01:00:00+08:00",
-    ) + (
-        "  - signature:\n"
-        "      agent_id: test-agent\n"
-        "      host_environment: test-environment\n"
-        "    session_id: another-session\n"
-        "    at: 2026-07-01T01:00:00+08:00\n"
-        "    summary: 补充测试火花\n"
-    ).encode()
+    data = (
+        _VALID_SPARK.replace(
+            b"updated_at: 2026-07-01T00:00:00+08:00",
+            b"updated_at: 2026-07-01T01:00:00+08:00",
+        )
+        + (
+            "  - signature:\n"
+            "      agent_id: test-agent\n"
+            "      host_environment: test-environment\n"
+            "    session_id: another-session\n"
+            "    at: 2026-07-01T01:00:00+08:00\n"
+            "    summary: 补充测试火花\n"
+        ).encode()
+    )
 
     result = validate_commit(
         contract,
@@ -430,9 +527,7 @@ def test_legacy_migration_change_log_passes_when_head_has_no_history(
         contract,
         _input(
             contract,
-            fact_candidates=(
-                _fact_candidate(data=data, head_exists=True, head_data=head_data),
-            ),
+            fact_candidates=(_fact_candidate(data=data, head_exists=True, head_data=head_data),),
             fact_schemas=(_spark_schema(),),
         ),
     )
@@ -446,19 +541,24 @@ def test_new_fact_multiple_sessions_match_multiple_footer_session_ids(
 ) -> None:
     """新对象多条 change_log 分属多个 session：footer 声明全部 Session-ID 即通过。"""
 
-    data = _VALID_SPARK.replace(
-        b"updated_at: 2026-07-01T00:00:00+08:00",
-        b"updated_at: 2026-07-01T01:00:00+08:00",
-    ) + (
-        "  - signature:\n"
-        "      agent_id: test-agent\n"
-        "      host_environment: test-environment\n"
-        "    session_id: test-session-2\n"
-        "    at: 2026-07-01T01:00:00+08:00\n"
-        "    summary: 第二个受控写会话\n"
-    ).encode()
+    data = (
+        _VALID_SPARK.replace(
+            b"updated_at: 2026-07-01T00:00:00+08:00",
+            b"updated_at: 2026-07-01T01:00:00+08:00",
+        )
+        + (
+            "  - signature:\n"
+            "      agent_id: test-agent\n"
+            "      host_environment: test-environment\n"
+            "    session_id: test-session-2\n"
+            "    at: 2026-07-01T01:00:00+08:00\n"
+            "    summary: 第二个受控写会话\n"
+        ).encode()
+    )
     message = (
         "docs(specs): 多会话提交\n\n"
+        "关键变更:\n"
+        "- 覆盖多个受控写会话\n\n"
         "Session-ID: test-session\n"
         "Session-ID: test-session-2\n"
         "Agent-ID: test-agent\n"
@@ -483,17 +583,20 @@ def test_new_fact_multiple_sessions_reject_unlisted_session(
 ) -> None:
     """新对象 change_log 的 session 未在 footer 声明：拒绝。"""
 
-    data = _VALID_SPARK.replace(
-        b"updated_at: 2026-07-01T00:00:00+08:00",
-        b"updated_at: 2026-07-01T01:00:00+08:00",
-    ) + (
-        "  - signature:\n"
-        "      agent_id: test-agent\n"
-        "      host_environment: test-environment\n"
-        "    session_id: ghost-session\n"
-        "    at: 2026-07-01T01:00:00+08:00\n"
-        "    summary: 未声明会话\n"
-    ).encode()
+    data = (
+        _VALID_SPARK.replace(
+            b"updated_at: 2026-07-01T00:00:00+08:00",
+            b"updated_at: 2026-07-01T01:00:00+08:00",
+        )
+        + (
+            "  - signature:\n"
+            "      agent_id: test-agent\n"
+            "      host_environment: test-environment\n"
+            "    session_id: ghost-session\n"
+            "    at: 2026-07-01T01:00:00+08:00\n"
+            "    summary: 未声明会话\n"
+        ).encode()
+    )
 
     result = validate_commit(
         contract,
@@ -513,19 +616,24 @@ def test_new_fact_multiple_agents_match_multiple_footer_agent_ids(
 ) -> None:
     """新对象跨多 agent 流水：footer 声明全部 Agent-ID/Host-Environment 即通过。"""
 
-    data = _VALID_SPARK.replace(
-        b"updated_at: 2026-07-01T00:00:00+08:00",
-        b"updated_at: 2026-07-01T01:00:00+08:00",
-    ) + (
-        "  - signature:\n"
-        "      agent_id: another-agent\n"
-        "      host_environment: another-env\n"
-        "    session_id: test-session-2\n"
-        "    at: 2026-07-01T01:00:00+08:00\n"
-        "    summary: 第二个执行者\n"
-    ).encode()
+    data = (
+        _VALID_SPARK.replace(
+            b"updated_at: 2026-07-01T00:00:00+08:00",
+            b"updated_at: 2026-07-01T01:00:00+08:00",
+        )
+        + (
+            "  - signature:\n"
+            "      agent_id: another-agent\n"
+            "      host_environment: another-env\n"
+            "    session_id: test-session-2\n"
+            "    at: 2026-07-01T01:00:00+08:00\n"
+            "    summary: 第二个执行者\n"
+        ).encode()
+    )
     message = (
         "docs(specs): 多执行者提交\n\n"
+        "关键变更:\n"
+        "- 覆盖多个执行者流水\n\n"
         "Session-ID: test-session\n"
         "Session-ID: test-session-2\n"
         "Agent-ID: test-agent\n"
@@ -552,17 +660,20 @@ def test_new_fact_multiple_agents_reject_undeclared_agent(
 ) -> None:
     """新对象流水 agent 未在 footer 声明：拒绝。"""
 
-    data = _VALID_SPARK.replace(
-        b"updated_at: 2026-07-01T00:00:00+08:00",
-        b"updated_at: 2026-07-01T01:00:00+08:00",
-    ) + (
-        "  - signature:\n"
-        "      agent_id: ghost-agent\n"
-        "      host_environment: ghost-env\n"
-        "    session_id: test-session-2\n"
-        "    at: 2026-07-01T01:00:00+08:00\n"
-        "    summary: 未声明执行者\n"
-    ).encode()
+    data = (
+        _VALID_SPARK.replace(
+            b"updated_at: 2026-07-01T00:00:00+08:00",
+            b"updated_at: 2026-07-01T01:00:00+08:00",
+        )
+        + (
+            "  - signature:\n"
+            "      agent_id: ghost-agent\n"
+            "      host_environment: ghost-env\n"
+            "    session_id: test-session-2\n"
+            "    at: 2026-07-01T01:00:00+08:00\n"
+            "    summary: 未声明执行者\n"
+        ).encode()
+    )
     message = (
         "docs(specs): 未声明执行者\n\n"
         "Session-ID: test-session\n"
@@ -591,19 +702,24 @@ def test_legacy_migration_multiple_agents_passes(
     """legacy 迁移对象跨多 agent：HEAD 无 change_log，footer 声明全部签名即通过。"""
 
     head_data = _VALID_SPARK.split(b"change_log:\n")[0]
-    data = _VALID_SPARK.replace(
-        b"updated_at: 2026-07-01T00:00:00+08:00",
-        b"updated_at: 2026-07-01T01:00:00+08:00",
-    ) + (
-        "  - signature:\n"
-        "      agent_id: another-agent\n"
-        "      host_environment: another-env\n"
-        "    session_id: test-session-2\n"
-        "    at: 2026-07-01T01:00:00+08:00\n"
-        "    summary: Human授权兼容旧数据：第二个执行者迁移\n"
-    ).encode()
+    data = (
+        _VALID_SPARK.replace(
+            b"updated_at: 2026-07-01T00:00:00+08:00",
+            b"updated_at: 2026-07-01T01:00:00+08:00",
+        )
+        + (
+            "  - signature:\n"
+            "      agent_id: another-agent\n"
+            "      host_environment: another-env\n"
+            "    session_id: test-session-2\n"
+            "    at: 2026-07-01T01:00:00+08:00\n"
+            "    summary: Human授权兼容旧数据：第二个执行者迁移\n"
+        ).encode()
+    )
     message = (
         "docs(specs): 多执行者迁移提交\n\n"
+        "关键变更:\n"
+        "- 迁移多个执行者的遗留流水\n\n"
         "Session-ID: test-session\n"
         "Session-ID: test-session-2\n"
         "Agent-ID: test-agent\n"
@@ -617,9 +733,7 @@ def test_legacy_migration_multiple_agents_passes(
         _input(
             contract,
             message=message,
-            fact_candidates=(
-                _fact_candidate(data=data, head_exists=True, head_data=head_data),
-            ),
+            fact_candidates=(_fact_candidate(data=data, head_exists=True, head_data=head_data),),
             fact_schemas=(_spark_schema(),),
         ),
     )

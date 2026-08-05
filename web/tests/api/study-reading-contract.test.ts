@@ -17,11 +17,24 @@ test('Study keeps the V3-style three-field overview and one Markdown reading ent
   assert.match(nodes, /report_body/);
   assert.doesNotMatch(nodes, /research_question/);
   assert.doesNotMatch(detail, /parseStudyReportSections/);
-  assert.match(detail, /openPanel\(\{ type: 'doc', title, docPath, data: String\(value\), carrier \}\)/);
-  assert.match(detail, /const showYamlSource = readMeta\.carrier === 'yaml'/);
+  assert.match(detail, /docVariant: 'study-report'/);
+  assert.match(detail, /\(carrier === 'yaml' \|\| objType === 'study'\) && \(/);
   assert.match(detail, /StudyReportMetadata/);
   assert.match(detail, /report_kind/);
   assert.match(detail, /input_refs/);
+  assert.match(detail, /function getStudyReportMetadataTitle/);
+  assert.match(detail, /\$\{getStudyReportMetadataTitle\(locale\)\} · \$\{getFieldValueLabel/);
+  assert.match(detail, /title=\{title\}/);
+  assert.match(detail, /const meta = \[/);
+  assert.match(detail, /h-1 w-1 shrink-0 self-center rounded-full bg-ldvh-text-primary\/55/);
+  assert.match(detail, /function StudyReportMetadata[\s\S]*useState<ReadingNodeState>\('collapsed'\)/);
+  assert.doesNotMatch(detail, /compactMetadata/);
+  assert.doesNotMatch(detail, /overflow-hidden rounded-lg border border-ldvh-border bg-ldvh-bg\/35/);
+  assert.doesNotMatch(detail, /sm:grid-cols-2/);
+  assert.match(detail, /<ChangeLogReadingNode value=\{obj\.change_log\}/);
+  assert.match(detail, /<FactAssociationsSection obj=\{obj\} locale=\{locale\} \/>[\s\S]*<StudyReportMetadata obj=\{obj\} locale=\{locale\} \/>[\s\S]*<ChangeLogReadingNode/);
+  assert.match(detail, /\(carrier === 'yaml' \|\| objType === 'study'\)[\s\S]*<YamlDataNode/);
+  assert.match(detail, /'report_kind', 'input_refs', 'change_log'/);
   assert.doesNotMatch(detail, /report_signature/);
   const model = source('src/pages/object-detail/model.ts');
   assert.match(model, /'carrier'/);
@@ -35,6 +48,7 @@ test('known Study Markdown uses its declared carrier and source paths never fall
   const associations = source('src/pages/object-detail/FactAssociationsSection.tsx');
 
   assert.match(panel, /carrier === 'markdown'/);
+  assert.match(panel, /ldvh-study-report-preview/);
   assert.doesNotMatch(detail, /obj\.path\s*\|\|\s*detail\.target/);
   assert.doesNotMatch(reference, /obj\.path\s*\|\|\s*detail\.target/);
   assert.doesNotMatch(associations, /detail\?\.target/);

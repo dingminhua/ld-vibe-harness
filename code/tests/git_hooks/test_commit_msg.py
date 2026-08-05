@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -15,6 +16,8 @@ from ldvh.git_hooks.commit_msg import (
     render_commit_msg_hook,
     uninstall_commit_msg_hook,
 )
+from ldvh.hooks import commit_msg as commit_msg_gate
+from ldvh.hooks.commit_msg import CommitMsgGateResult
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 SOURCE_LAUNCHER = REPOSITORY_ROOT / "ldvh"
@@ -150,6 +153,71 @@ def test_install_uses_common_dir_and_covers_existing_and_future_linked_worktrees
     )
     assert _invoke_hook(future, hook, "docs: invalid", "future-invalid").returncode == 1
     assert _invoke_hook(future, hook, _signed("docs: 验证后续工作树"), "future-valid").returncode == 0
+
+
+def test_real_git_commit_is_blocked_and_allowed_by_installed_commit_msg_hook(tmp_path: Path) -> None:
+    workspace, project = _managed_project(tmp_path)
+    installed = _install(workspace, project)
+    assert installed.state == "managed", installed
+
+    before = _checked_git(project, "rev-parse", "HEAD").strip()
+    changed = project / "change.txt"
+    changed.write_text("real hook event\n", encoding="utf-8")
+    _checked_git(project, "add", changed.name)
+
+    missing_body = (
+        "docs: 验证单文件正文闸门\n\nSession-ID: test-session\nAgent-ID: test-agent\nHost-Environment: test-environment"
+    )
+    blocked = _git(project, "commit", "-m", missing_body)
+
+    assert blocked.returncode == 1
+    assert "validation/body_required" in blocked.stderr
+    assert "validation/key_changes_required" in blocked.stderr
+    assert "关键变更" in blocked.stderr
+    assert _checked_git(project, "rev-parse", "HEAD").strip() == before
+    assert _checked_git(project, "diff", "--cached", "--name-only").splitlines() == [changed.name]
+
+    message = _signed("docs: 验证真实提交事件")
+    allowed = _git(project, "commit", "-m", message)
+
+    assert allowed.returncode == 0, (allowed.stdout, allowed.stderr)
+    assert len(allowed.stderr.splitlines()) == 1
+    assert re.fullmatch(
+        r"LDVH Git Gate \(commit-msg\) passed: "
+        r"source_fingerprint=[0-9a-f]{64} snapshot_identity=sha256:[0-9a-f]{64}",
+        allowed.stderr.strip(),
+    )
+    after = _checked_git(project, "rev-parse", "HEAD").strip()
+    assert after != before
+    assert _checked_git(project, "show", "--format=", "--name-only", "HEAD").splitlines() == [changed.name]
+    assert _checked_git(project, "log", "-1", "--format=%B").strip() == message
+    assert _checked_git(project, "diff", "--cached", "--name-only") == ""
+
+
+def test_passed_gate_without_binding_evidence_fails_closed(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setattr(
+        commit_msg_gate,
+        "run_commit_msg_gate",
+        lambda **_: CommitMsgGateResult("passed", ()),
+    )
+
+    exit_code = commit_msg_gate.main(
+        [
+            "--workspace-root",
+            "/unused-workspace",
+            "--worktree",
+            "/unused-worktree",
+            "--message-file",
+            "/unused-message",
+        ]
+    )
+
+    assert exit_code == 1
+    assert capsys.readouterr().err == (
+        "LDVH Git Gate (commit-msg) unavailable: passed result lacks source_fingerprint or snapshot_identity\n"
+    )
 
 
 def test_independent_clone_does_not_inherit_common_dir_hook(tmp_path: Path) -> None:
