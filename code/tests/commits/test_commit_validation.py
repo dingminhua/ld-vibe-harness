@@ -8,6 +8,8 @@ from ldvh.commits.contract_source import CommitContractProjection
 from ldvh.commits.validation import (
     CommitValidationInput,
     StagedFactCandidate,
+    _human_gate_trailer_issues,
+    _platform_affected_issues,
     validate_commit,
 )
 from ldvh.facts.schema import FactSchema, ProjectedField
@@ -53,6 +55,104 @@ def _signed(message: str) -> str:
     if "\n关键变更:" not in message:
         message += "\n\n关键变更:\n- 覆盖当前测试变化"
     return message + "\n\nSession-ID: test-session\nAgent-ID: test-agent\nHost-Environment: test-environment"
+
+
+def test_new_spec_without_human_gate_trailer_fails(contract: CommitContractProjection) -> None:
+    result = validate_commit(
+        contract,
+        _input(
+            contract,
+            candidate_paths=("specs/10-新规范.md",),
+            spec_candidate_statuses={"specs/10-新规范.md": "A"},
+        ),
+    )
+    assert result.outcome == "failed"
+    assert "human_gate_trailer_missing" in _codes(result)
+
+
+def test_new_spec_with_empty_human_gate_trailer_fails(contract: CommitContractProjection) -> None:
+    message = (
+        "docs(specs): 新增规范文档\n\n"
+        "关键变更:\n- 新增独立 spec 文档\n\n"
+        "Session-ID: test-session\nAgent-ID: test-agent\nHost-Environment: test-environment\n"
+        "Human-Gate: "
+    )
+    result = validate_commit(
+        contract,
+        _input(
+            contract,
+            message=message,
+            candidate_paths=("specs/10-新规范.md",),
+            spec_candidate_statuses={"specs/10-新规范.md": "A"},
+        ),
+    )
+    assert result.outcome == "failed"
+    assert "human_gate_trailer_missing" in _codes(result)
+
+
+def test_new_spec_with_human_gate_trailer_passes(contract: CommitContractProjection) -> None:
+    message = (
+        "docs(specs): 新增规范文档\n\n"
+        "关键变更:\n- 新增独立 spec 文档\n\n"
+        "Session-ID: test-session\nAgent-ID: test-agent\nHost-Environment: test-environment\n"
+        "Human-Gate: authorized-by-human-20260806"
+    )
+    result = validate_commit(
+        contract,
+        _input(
+            contract,
+            message=message,
+            candidate_paths=("specs/10-新规范.md",),
+            spec_candidate_statuses={"specs/10-新规范.md": "A"},
+        ),
+    )
+    assert result.outcome == "passed"
+
+
+def test_existing_spec_modified_without_human_gate_trailer_passes(contract: CommitContractProjection) -> None:
+    result = validate_commit(
+        contract,
+        _input(
+            contract,
+            candidate_paths=("specs/01-规范模型基础规范.md",),
+            spec_candidate_statuses={"specs/01-规范模型基础规范.md": "M"},
+        ),
+    )
+    assert result.outcome == "passed"
+
+
+def test_fact_object_path_excluded_from_spec_block() -> None:
+    fact = StagedFactCandidate(
+        path="specs/20-Spark-火花.md",
+        fact_type_key="spark",
+        object_id="spark-0001",
+        data=b"x",
+        observation_issue=None,
+    )
+    # A fact object staged as added must NOT be treated as a new spec document.
+    issues = _human_gate_trailer_issues(
+        ["x"],
+        ("specs/20-Spark-火花.md",),
+        (fact,),
+        {"specs/20-Spark-火花.md": "A"},
+    )
+    assert issues == []
+
+
+def test_unknown_spec_status_fails_closed(contract: CommitContractProjection) -> None:
+    # When a status map is supplied but the candidate path is missing from it
+    # (staged status unknown despite a map being provided), the validator
+    # fails closed and still requires the Human-Gate trailer.
+    result = validate_commit(
+        contract,
+        _input(
+            contract,
+            candidate_paths=("specs/10-新规范.md",),
+            spec_candidate_statuses={},
+        ),
+    )
+    assert result.outcome == "failed"
+    assert "human_gate_trailer_missing" in _codes(result)
 
 
 def test_single_path_minimum_body_passes_mechanical_layer(contract: CommitContractProjection) -> None:
@@ -738,4 +838,151 @@ def test_legacy_migration_multiple_agents_passes(
         ),
     )
 
+    assert result.outcome == "passed"
+
+
+# -- platform-related surface (L1 path matching + L2 trailer) -----------------
+
+
+def test_platform_affected_positive_path_match() -> None:
+    paths = ("code/ldvh/filesystem.py",)
+    trailers: dict[str, list[str]] = {}
+    issues = _platform_affected_issues(paths, trailers)
+    codes = {i.code for i in issues}
+    assert "platform_surface_touched" in codes
+    assert "platform_trailer_required" in codes
+
+
+def test_platform_affected_negative_path_no_match() -> None:
+    paths = ("code/ldvh/something_else.py",)
+    trailers: dict[str, list[str]] = {}
+    issues = _platform_affected_issues(paths, trailers)
+    assert issues == []
+
+
+def test_platform_affected_with_valid_trailers() -> None:
+    paths = ("code/ldvh/filesystem.py",)
+    trailers = {"Platform-Affected": ["macos"], "Platform-Verified": ["macos"]}
+    issues = _platform_affected_issues(paths, trailers)
+    # With valid trailers, no issues are emitted (the check passes silently).
+    assert issues == []
+
+
+def test_platform_affected_invalid_trailer_value() -> None:
+    paths = ("code/ldvh/filesystem.py",)
+    trailers = {"Platform-Affected": ["invalid"], "Platform-Verified": ["none"]}
+    issues = _platform_affected_issues(paths, trailers)
+    codes = {i.code for i in issues}
+    assert "platform_trailer_invalid" in codes
+    assert "platform_surface_touched" in codes
+
+
+def test_platform_affected_glob_directory() -> None:
+    paths = ("git_hooks/commit-msg",)
+    trailers: dict[str, list[str]] = {}
+    issues = _platform_affected_issues(paths, trailers)
+    codes = {i.code for i in issues}
+    assert "platform_surface_touched" in codes
+
+
+def test_platform_affected_glob_launcher() -> None:
+    paths = ("ldvh",)
+    trailers: dict[str, list[str]] = {}
+    issues = _platform_affected_issues(paths, trailers)
+    codes = {i.code for i in issues}
+    assert "platform_surface_touched" in codes
+
+
+def test_platform_affected_glob_multiple_matches() -> None:
+    paths = ("code/ldvh/filesystem.py", "code/ldvh/governance/git.py", "code/tests/other.py")
+    trailers: dict[str, list[str]] = {}
+    issues = _platform_affected_issues(paths, trailers)
+    codes = {i.code for i in issues}
+    assert "platform_surface_touched" in codes
+    matched = [i for i in issues if i.code == "platform_surface_touched"]
+    assert matched
+    assert "code/ldvh/filesystem.py" in matched[0].message
+    assert "code/ldvh/governance/git.py" in matched[0].message
+    assert "code/tests/other.py" not in matched[0].message
+
+
+def test_platform_affected_verified_missing() -> None:
+    paths = ("code/ldvh/filesystem.py",)
+    trailers = {"Platform-Affected": ["macos"]}
+    issues = _platform_affected_issues(paths, trailers)
+    codes = {i.code for i in issues}
+    assert "platform_trailer_required" in codes
+
+
+def test_platform_affected_affected_missing() -> None:
+    paths = ("code/ldvh/filesystem.py",)
+    trailers = {"Platform-Verified": ["macos"]}
+    issues = _platform_affected_issues(paths, trailers)
+    codes = {i.code for i in issues}
+    assert "platform_trailer_required" in codes
+
+
+def test_platform_affected_all_valid_values() -> None:
+    for val in ("macos", "windows", "both", "unaffected"):
+        paths = ("code/ldvh/filesystem.py",)
+        trailers = {"Platform-Affected": [val], "Platform-Verified": ["none"]}
+        issues = _platform_affected_issues(paths, trailers)
+        assert not any(i.code == "platform_trailer_invalid" for i in issues)
+
+
+def test_platform_affected_all_verified_values() -> None:
+    for val in ("macos", "windows", "both", "none"):
+        paths = ("code/ldvh/filesystem.py",)
+        trailers = {"Platform-Affected": ["unaffected"], "Platform-Verified": [val]}
+        issues = _platform_affected_issues(paths, trailers)
+        assert not any(i.code == "platform_trailer_invalid" for i in issues)
+
+
+def test_platform_affected_integration_through_validate_commit(
+    contract: CommitContractProjection,
+) -> None:
+    """Platform surface paths without trailer declarations -> Git Gate fails."""
+    message = (
+        "docs(specs): 修改文件系统抽象层\n\n"
+        "关键变更:\n- 调整锁实现\n\n"
+        "Session-ID: test-session\nAgent-ID: test-agent\nHost-Environment: test-environment"
+    )
+    result = validate_commit(
+        contract,
+        _input(contract, message=message, candidate_paths=("code/ldvh/filesystem.py",)),
+    )
+    assert result.outcome == "failed"
+    assert "platform_trailer_required" in {i.code for i in result.issues}
+
+
+def test_platform_affected_integration_with_trailers_passes(
+    contract: CommitContractProjection,
+) -> None:
+    """Platform surface paths with valid trailer declarations -> Git Gate passes."""
+    message = (
+        "docs(specs): 修改文件系统抽象层\n\n"
+        "关键变更:\n- 调整锁实现\n\n"
+        "Session-ID: test-session\nAgent-ID: test-agent\nHost-Environment: test-environment\n"
+        "Platform-Affected: macos\nPlatform-Verified: macos"
+    )
+    result = validate_commit(
+        contract,
+        _input(contract, message=message, candidate_paths=("code/ldvh/filesystem.py",)),
+    )
+    assert result.outcome == "passed"
+
+
+def test_platform_affected_integration_non_platform_path_passes(
+    contract: CommitContractProjection,
+) -> None:
+    """Non-platform paths without trailer declarations -> Git Gate passes."""
+    message = (
+        "docs(specs): 改规范\n\n"
+        "关键变更:\n- 修改说明\n\n"
+        "Session-ID: test-session\nAgent-ID: test-agent\nHost-Environment: test-environment"
+    )
+    result = validate_commit(
+        contract,
+        _input(contract, message=message, candidate_paths=("code/some_other.py",)),
+    )
     assert result.outcome == "passed"

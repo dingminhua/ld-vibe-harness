@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import fnmatch
 import re
 from dataclasses import dataclass
+from pathlib import PurePosixPath
 from typing import Literal
 
 from ldvh.commits.contract_source import CommitContractProjection
@@ -17,6 +19,15 @@ _FIXED_HEADINGS = ("动机:", "关键变更:", "影响边界:", "验证结论:",
 _HEADING_LIKE = re.compile(r"^[^\s].*:\s*$")
 _TRAILER = re.compile(r"(?P<name>[A-Za-z][A-Za-z-]*): (?P<value>.*)\Z")
 _REQUIRED_TRAILERS = ("Session-ID", "Agent-ID", "Host-Environment")
+_SPEC_PATH_RE = re.compile(r"^specs/[0-9]+-.*\.md$")
+_PLATFORM_AFFECTED_GLOBS = (
+    "code/ldvh/filesystem.py",
+    "code/ldvh/governance/git.py",
+    "code/ldvh/testing/test_runs.py",
+    "ldvh",
+    "git_hooks/**",
+)
+_PLATFORM_TRAILERS = ("Platform-Affected", "Platform-Verified")
 SEMANTIC_CHECKS_REQUIRED = (
     "主要目的与拆分",
     "简体中文语义与 description 真实性",
@@ -60,6 +71,7 @@ class CommitValidationInput:
     snapshot_identity: str | None
     source_path: str | None
     source_fingerprint: str | None
+    spec_candidate_statuses: dict[str, str] | None = None
     fact_candidates: tuple[StagedFactCandidate, ...] = ()
     fact_schemas: tuple[FactSchema, ...] = ()
 
@@ -205,6 +217,146 @@ def _signature_trailer_issues(lines: list[str]) -> list[CommitValidationIssue]:
             issues.append(_issue("signature_trailer_missing", f"footer 必须至少含一个非空 {name}: trailer"))
     if trailers.get("Signer-Type"):
         issues.append(_issue("signer_type_retired", "footer 禁止已退役的 Signer-Type trailer"))
+    return issues
+
+
+_VALID_PLATFORM_AFFECTED = frozenset({"macos", "windows", "both", "unaffected"})
+_VALID_PLATFORM_VERIFIED = frozenset({"macos", "windows", "both", "none"})
+
+
+def _platform_affected_issues(
+    paths: tuple[str, ...],
+    trailers: dict[str, list[str]],
+) -> list[CommitValidationIssue]:
+    """Check whether the commit touches platform-affecting code.
+
+    Mechanical glob matching determines whether the Index contains files
+    inside the platform-related surface.  If it does, the commit message
+    must declare ``Platform-Affected`` and ``Platform-Verified`` trailers
+    so reviewers and CI can determine whether cross-platform re-verification
+    is needed.  Semantic judgment (whether the change actually changes
+    behaviour on another platform) is left to AI/Human review.
+    """
+    issues: list[CommitValidationIssue] = []
+    matched = set()
+    for path in paths:
+        pure = PurePosixPath(path)
+        for pattern in _PLATFORM_AFFECTED_GLOBS:
+            if fnmatch.fnmatch(str(pure), pattern):
+                matched.add(str(pure))
+    if not matched:
+        return issues
+
+    affected = trailers.get("Platform-Affected", [])
+    verified = trailers.get("Platform-Verified", [])
+
+    if not affected or not any(value.strip() for value in affected):
+        issues.append(
+            _issue(
+                "platform_trailer_required",
+                "改动触及平台相关面，footer 必须含非空 Platform-Affected: trailer "
+                f"(允许值: {', '.join(sorted(_VALID_PLATFORM_AFFECTED))})",
+            )
+        )
+    else:
+        for value in affected:
+            val = value.strip().lower()
+            if val not in _VALID_PLATFORM_AFFECTED:
+                issues.append(
+                    _issue(
+                        "platform_trailer_invalid",
+                        f"Platform-Affected 值无效: {value!r}，"
+                        f"允许值: {', '.join(sorted(_VALID_PLATFORM_AFFECTED))}",
+                    )
+                )
+
+    if not verified or not any(value.strip() for value in verified):
+        issues.append(
+            _issue(
+                "platform_trailer_required",
+                "改动触及平台相关面，footer 必须含非空 Platform-Verified: trailer "
+                f"(允许值: {', '.join(sorted(_VALID_PLATFORM_VERIFIED))})",
+            )
+        )
+    else:
+        for value in verified:
+            val = value.strip().lower()
+            if val not in _VALID_PLATFORM_VERIFIED:
+                issues.append(
+                    _issue(
+                        "platform_trailer_invalid",
+                        f"Platform-Verified 值无效: {value!r}，"
+                        f"允许值: {', '.join(sorted(_VALID_PLATFORM_VERIFIED))}",
+                    )
+                )
+
+    diagnostics = ", ".join(sorted(matched))
+
+    # When trailers are valid, the check passes without issues.
+    # Only emit the surface-touched diagnostic when there are actual trailer
+    # failures, so the user knows why the check fired.
+    if not issues:
+        return issues
+
+    issues.append(
+        _issue(
+            "platform_surface_touched",
+            f"本次提交触及平台相关面文件: {diagnostics}",
+        )
+    )
+    return issues
+
+
+def _human_gate_trailer_issues(
+    lines: list[str],
+    candidate_paths: tuple[str, ...],
+    fact_candidates: tuple[StagedFactCandidate, ...],
+    spec_statuses: dict[str, str] | None,
+) -> list[CommitValidationIssue]:
+    """Fail-closed mechanical block for new independent spec documents.
+
+    Per 00 §10.1 第 12 条 and 03 §12 第 9 条, a commit that adds a new
+    independent spec document (``specs/<id>-*.md``) must carry a non-empty
+    ``Human-Gate:`` footer trailer recording the Human decision; otherwise the
+    Git Gate fails closed.  Fact objects (Spark/WorkCase/ADR/Pitfall/Study) also
+    live under ``specs/<id>-*.md`` but are excluded here: they are validated
+    through the fact-trace layer instead and are never spec candidates.
+    """
+
+    issues: list[CommitValidationIssue] = []
+    # Legacy callers and older tests that do not supply a staged status map
+    # skip this check. The real Git Gate flow (git_adapter) always supplies
+    # ``spec_candidate_statuses``; when it is absent we cannot tell a new spec
+    # document from a modification of an existing one, so we do not fail closed
+    # here. Fail-closed behaviour applies only when a status map is supplied but
+    # a candidate path is missing from it (see below).
+    if spec_statuses is None:
+        return issues
+    fact_paths = {candidate.path for candidate in fact_candidates}
+    adds_new_spec = False
+    for path in candidate_paths:
+        if path in fact_paths:
+            continue
+        if _SPEC_PATH_RE.match(path):
+            status = spec_statuses.get(path) if spec_statuses else None
+            # status "A" (added) or "C" (copied) means a new file; when the
+            # staged status is unknown the validator fails closed and still
+            # requires the trailer, because it is side-effect-free and cannot
+            # read HEAD itself.
+            if status is None or status.startswith(("A", "C")):
+                adds_new_spec = True
+                break
+    if not adds_new_spec:
+        return issues
+    trailers = _footer_trailers(lines)
+    values = trailers.get("Human-Gate", [])
+    if not values or any(not value.strip() for value in values):
+        issues.append(
+            _issue(
+                "human_gate_trailer_missing",
+                "提交新增独立 spec 文档（specs/<id>-*.md），footer 必须含非空 Human-Gate: trailer 指向 Human 决定；否则 Git Gate 机械阻断",
+            )
+        )
     return issues
 
 
@@ -465,6 +617,14 @@ def validate_commit(contract: CommitContractProjection, value: CommitValidationI
             trace_unavailable, trace_failures = _fact_trace_issues(value, _footer_trailers(body_lines))
             unavailable.extend(trace_unavailable)
             failures.extend(trace_failures)
+        failures.extend(
+            _human_gate_trailer_issues(
+                body_lines, value.candidate_paths, value.fact_candidates, value.spec_candidate_statuses
+            )
+        )
+        failures.extend(
+            _platform_affected_issues(value.candidate_paths, _footer_trailers(body_lines))
+        )
     # A mechanically invalid after-image remains a failure even when a separate
     # candidate cannot be observed completely.  The Gate must preserve the
     # decisive rejection rather than downgrade it to an observation gap.
