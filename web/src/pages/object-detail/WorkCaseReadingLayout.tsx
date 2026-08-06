@@ -183,17 +183,27 @@ export function WorkCaseReadingLayout({
             />
           )}
           {nextControlStepVisible ? (
-            <DetailInlineField
-              label={t("objectDetail.workcaseNextRequiredControlStep")}
-              value={(
-                <div className="min-w-0">
-                  <span className="ldvh-body-primary break-words">{nextControlStepLabel}</span>
-                  <p className="ldvh-caption mt-1 text-ldvh-text-secondary">
-                    {t("objectDetail.workcaseNextRequiredControlStepBoundary")}
-                  </p>
-                </div>
-              )}
-            />
+            <div
+              role="status"
+              title={t("objectDetail.workcaseNextRequiredControlStepBoundary")}
+              className="flex min-w-0 items-center gap-2 px-0.5 py-1 text-ldvh-text-secondary"
+            >
+              <ArrowRight
+                size={WORKCASE_DETAIL_SEMANTIC_ICON_SIZE}
+                strokeWidth={2}
+                className="shrink-0 text-ldvh-accent"
+                aria-hidden="true"
+              />
+              <span className="sr-only">
+                {t("objectDetail.workcaseNextRequiredControlStep")}：
+              </span>
+              <span className="ldvh-body-primary min-w-0 break-words font-medium">
+                {nextControlStepLabel}
+              </span>
+              <span className="sr-only">
+                {t("objectDetail.workcaseNextRequiredControlStepBoundary")}
+              </span>
+            </div>
           ) : !currentProjection ? (
             <p className="ldvh-caption text-ldvh-text-secondary">
               {t("objectDetail.workcaseCurrentSnapshotUnavailableHint")}
@@ -316,6 +326,7 @@ export function WorkCaseReadingLayout({
           title={t("objectDetail.workcaseExecutionApproval")}
           note={t("objectDetail.workcaseExecutionApprovalBoundary")}
           locale={locale}
+          initialState="collapsed"
           contentVariant="semantic"
         >
           {executionApproval && (
@@ -476,6 +487,7 @@ function WorkCaseReadingNode({
   note,
   locale,
   headerMeta,
+  initialState = "expanded",
   contentVariant = "rows",
   children,
 }: {
@@ -483,10 +495,11 @@ function WorkCaseReadingNode({
   note?: string;
   locale: string;
   headerMeta?: ReactNode;
+  initialState?: ReadingNodeState;
   contentVariant?: "rows" | "semantic";
   children: ReactNode;
 }) {
-  const [state, setState] = useState<ReadingNodeState>("expanded");
+  const [state, setState] = useState<ReadingNodeState>(initialState);
   return (
     <ReadingNodeSection
       title={title}
@@ -1492,25 +1505,51 @@ function ExecutionApproval({
         </div>
       )}
       {(subjectVersion !== undefined || approvedAt || baselineFingerprint || sourceRefs.length > 0) && (
-        <div className="mt-3 flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2 border-t border-violet-400/20 pt-2.5 text-violet-900/60 dark:text-violet-100/60">
-          {subjectVersion !== undefined && (
-            <span className="ldvh-meta-muted inline-flex items-center gap-1.5 text-current">
-              <span>{getFieldLabel("subject_version", locale)}</span>
-              <span className="font-mono tabular-nums">{subjectVersion}</span>
-            </span>
-          )}
-          {approvedAt && (
-            <time dateTime={approvedAt} className="ldvh-meta-muted font-mono tabular-nums text-current">
-              {formatDateTime(approvedAt)}
-            </time>
+        <div className="mt-3 grid min-w-0 gap-2.5 border-t border-violet-400/20 pt-3 text-violet-900/60 dark:text-violet-100/60">
+          {(subjectVersion !== undefined || approvedAt) && (
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              {subjectVersion !== undefined && (
+                <span className="ldvh-meta-muted inline-flex items-center gap-1.5 rounded-full border border-violet-400/25 bg-violet-500/[0.06] px-2 py-1 text-current">
+                  <span>{getFieldLabel("subject_version", locale)}</span>
+                  <span className="font-mono font-semibold tabular-nums text-violet-700/85 dark:text-violet-200/85">
+                    {subjectVersion}
+                  </span>
+                </span>
+              )}
+              {approvedAt && (
+                <time dateTime={approvedAt} className="ldvh-meta-muted font-mono tabular-nums text-current">
+                  {formatDateTime(approvedAt)}
+                </time>
+              )}
+            </div>
           )}
           {baselineFingerprint && (
-            <span className="ldvh-meta-muted inline-flex min-w-0 items-center gap-1.5 text-current">
-              <span>{getFieldLabel("baseline_fingerprint", locale)}</span>
-              <span className="min-w-0 break-all font-mono">{baselineFingerprint}</span>
-            </span>
+            <div className="min-w-0 rounded-md border border-violet-400/20 bg-white/35 px-2.5 py-2 dark:bg-black/10">
+              <div className="ldvh-meta-muted text-current">
+                {getFieldLabel("baseline_fingerprint", locale)}
+              </div>
+              <code className="mt-1 block min-w-0 break-all font-mono text-[11px] leading-4 text-violet-800/70 dark:text-violet-100/65">
+                {baselineFingerprint}
+              </code>
+            </div>
           )}
-          {sourceRefs.length > 0 && <StringChips items={sourceRefs} />}
+          {sourceRefs.length > 0 && (
+            <div className="min-w-0">
+              <div className="ldvh-meta-muted text-current">
+                {getFieldLabel("source_refs", locale)}
+              </div>
+              <ul className="mt-1.5 grid min-w-0 gap-1.5">
+                {sourceRefs.map((sourceRef) => (
+                  <li
+                    key={sourceRef}
+                    className="min-w-0 border-l-2 border-violet-400/25 pl-2.5 text-[12px] leading-5 text-violet-950/70 dark:text-violet-100/72"
+                  >
+                    {sourceRef}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       )}
     </section>

@@ -307,7 +307,7 @@ test('field-level issues surface in place inside each WorkCase reading node', ()
   assert.doesNotMatch(layout, /obj\.(?:status|phase)\s*===|switch\s*\([^)]*(?:status|phase)/);
 });
 
-test('WorkCase detail defaults Human reading open and technical diagnostics folded', () => {
+test('WorkCase detail defaults Human reading open except execution approval and technical diagnostics', () => {
   const layout = fs.readFileSync(
     path.join(repositoryRoot, 'web/src/pages/object-detail/WorkCaseReadingLayout.tsx'),
     'utf8',
@@ -329,7 +329,13 @@ test('WorkCase detail defaults Human reading open and technical diagnostics fold
     objectDetail.indexOf('function safeJson'),
   );
 
-  assert.match(workCaseNode, /useState<ReadingNodeState>\("expanded"\)/);
+  assert.match(workCaseNode, /initialState = "expanded"/);
+  assert.match(workCaseNode, /useState<ReadingNodeState>\(initialState\)/);
+  const approvalNode = layout.slice(
+    layout.indexOf('{approvalVisible && ('),
+    layout.indexOf('{resultVisible && ('),
+  );
+  assert.match(approvalNode, /initialState="collapsed"/);
   assert.match(objectDetail, /const \[showYaml, setShowYaml\] = useState\(false\)/);
   assert.match(fieldIssues, /const \[open, setOpen\] = useState\(false\)/);
   assert.match(fieldIssues, /aria-expanded=\{open\}/);
@@ -448,6 +454,14 @@ test('narrative fields read as prose while structured records keep label rows', 
   assert.match(layout, /const progressTrackVisible = !currentProjection/);
   assert.match(layout, /const nextControlStepVisible = currentProjection\?\.next_required_control_step !== "none"/);
   assert.match(layout, /objectDetail\.workcaseNextRequiredControlStep/);
+  const nextControlStepBlock = layout.slice(
+    layout.indexOf('{nextControlStepVisible ? ('),
+    layout.indexOf(') : !currentProjection ? ('),
+  );
+  assert.match(nextControlStepBlock, /role="status"/);
+  assert.match(nextControlStepBlock, /text-ldvh-accent/);
+  assert.match(nextControlStepBlock, /objectDetail\.workcaseNextRequiredControlStepBoundary/);
+  assert.doesNotMatch(nextControlStepBlock, /<DetailInlineField|ldvh-caption mt-1/);
   assert.match(layout, /currentProjection\.next_required_control_step/);
   assert.match(layout, /currentProjection \? \(/);
   assert.match(layout, /objectDetail\.workcaseCurrentSnapshotUnavailableHint/);
@@ -551,11 +565,16 @@ test('narrative fields read as prose while structured records keep label rows', 
   assert.match(layout, /!text-slate-600\/80 dark:!text-slate-300\/75/);
   const executionApproval = layout.slice(
     layout.indexOf('function ExecutionApproval'),
-    layout.indexOf('function InlineStringArrayField'),
+    layout.indexOf('function ExecutionAuthorization'),
   );
   assert.match(executionApproval, /CircleCheck size=\{WORKCASE_DETAIL_SEMANTIC_ICON_SIZE\}/);
   assert.match(executionApproval, /ldvh-detail-semantic-title min-w-0 text-current/);
   assert.match(executionApproval, /ldvh-detail-semantic-body !text-violet-950\/72/);
+  assert.match(executionApproval, /grid min-w-0 gap-2\.5 border-t border-violet-400\/20/);
+  assert.match(executionApproval, /rounded-full border border-violet-400\/25/);
+  assert.match(executionApproval, /getFieldLabel\("baseline_fingerprint", locale\)[\s\S]{0,260}break-all font-mono/);
+  assert.match(executionApproval, /getFieldLabel\("source_refs", locale\)/);
+  assert.doesNotMatch(executionApproval, /<StringChips/);
   const closureOutcome = layout.slice(
     layout.indexOf('function ClosureOutcomeSummary'),
     layout.indexOf('function ResidualDecisionList'),
