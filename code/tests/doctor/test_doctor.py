@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 from pathlib import Path
 
@@ -164,8 +165,14 @@ def test_doctor_rejects_non_explicit_inputs(tmp_path: Path, field: str, value: s
 
 
 def test_doctor_cli_returns_contractual_unavailable_result(tmp_path: Path) -> None:
-    completed = subprocess.run(
-        [
+    # On Windows the launcher is a shell script; invoke it through `sh` so the
+    # shebang resolves via the Git Bash/MSYS runtime.
+    if os.name == "nt":
+        argv = [
+            "sh",
+            "-c",
+            "exec \"$@\"",
+            "--",
             str(HELPER_EXECUTABLE),
             "doctor",
             "--workspace-root",
@@ -174,13 +181,28 @@ def test_doctor_cli_returns_contractual_unavailable_result(tmp_path: Path) -> No
             str(tmp_path),
             "--helper-executable",
             str(tmp_path / "missing-helper"),
-        ],
+        ]
+    else:
+        argv = [
+            str(HELPER_EXECUTABLE),
+            "doctor",
+            "--workspace-root",
+            str(tmp_path),
+            "--work-object-locator",
+            str(tmp_path),
+            "--helper-executable",
+            str(tmp_path / "missing-helper"),
+        ]
+    completed = subprocess.run(
+        argv,
         text=True,
         capture_output=True,
         check=False,
     )
 
-    assert completed.returncode == 1
+    assert completed.returncode == 1, (
+        f"expected rc 1, got {completed.returncode}; stdout={completed.stdout!r}"
+    )
     assert completed.stderr == ""
     response = json.loads(completed.stdout)
     assert response["contract"] == "ldvh-doctor/1"
