@@ -9,7 +9,7 @@ from typing import Any
 from ldvh.facts.contracts import LAYOUTS, WRITABLE_FACT_TYPE_KEYS
 from ldvh.governance.models import ScopeDescriptor, cwd_scope, explicit_scope
 from ldvh.helper.operation_runtime import OperationExecutionContext
-from ldvh.helper.requests import CommonRequest, parse_observed_signature
+from ldvh.helper.requests import CommonRequest
 
 PREPARE_REQUIRED_INPUTS = ("arguments.governed_project_id", "arguments.fact_type_key")
 PREPARE_OPTIONAL_INPUTS = ("work_object_locators", "arguments.workspace_root")
@@ -75,6 +75,71 @@ class CreationRequestParseResult:
     problems: tuple[str, ...]
 
 
+@dataclass(frozen=True, slots=True)
+class ObservedWriteSignature:
+    signature: dict[str, str]
+    session_id: str | None
+    problems: tuple[str, ...]
+
+
+def parse_observed_write_signature(observed_context: dict[str, Any]) -> ObservedWriteSignature:
+    """Parse the write-only observed signature without changing display values."""
+
+    if not observed_context:
+        return ObservedWriteSignature({}, None, ())
+    problems: list[str] = []
+    unknown = sorted(set(observed_context) - {"signature"})
+    if unknown:
+        problems.append(f"observed_context 只允许 signature 子字段: {', '.join(unknown)}")
+        return ObservedWriteSignature({}, None, tuple(problems))
+    raw = observed_context.get("signature", {})
+    if not isinstance(raw, dict):
+        return ObservedWriteSignature({}, None, ("observed_context.signature 必须是 object",))
+    allowed = {"agent_id", "host_environment", "session_id"}
+    unknown_signature = sorted(set(raw) - allowed)
+    if unknown_signature:
+        problems.append(f"observed_context.signature 包含未知字段: {', '.join(unknown_signature)}")
+    values: dict[str, str] = {}
+    for field in sorted(allowed):
+        value = raw.get(field)
+        if value is None:
+            continue
+        if not isinstance(value, str) or not value.strip():
+            problems.append(f"observed_context.signature.{field} 出现时必须是非空 string")
+            continue
+        values[field] = value.strip()
+    signature = {
+        field: value.lower() if field == "agent_id" else value
+        for field, value in values.items()
+        if field in {"agent_id", "host_environment"}
+    }
+    return ObservedWriteSignature(signature, values.get("session_id"), tuple(problems))
+
+
+def observed_signature_injection_problems(
+    observed_context: dict[str, Any],
+    fact_object: dict[str, Any],
+) -> tuple[str, ...]:
+    parsed = parse_observed_write_signature(observed_context)
+    problems = list(parsed.problems)
+    if problems or (not parsed.signature and parsed.session_id is None):
+        return tuple(problems)
+    change_log = fact_object.get("change_log")
+    if not isinstance(change_log, list) or not change_log or not isinstance(change_log[-1], dict):
+        problems.append("observed_context.signature 注入要求 fact_object.change_log 含最新 object 条目")
+        return tuple(problems)
+    existing = change_log[-1].get("signature")
+    merged = dict(existing) if isinstance(existing, dict) else {}
+    merged.update(parsed.signature)
+    if set(merged) != {"agent_id", "host_environment"} or any(
+        not isinstance(merged[field], str) or not merged[field].strip()
+        for field in ("agent_id", "host_environment")
+        if field in merged
+    ):
+        problems.append("observed_context.signature 合并后必须恰含非空 agent_id 与 host_environment")
+    return tuple(problems)
+
+
 def _common(
     request: CommonRequest,
     context: OperationExecutionContext,
@@ -100,7 +165,7 @@ def _common(
         else:
             workspace_root = Path(value)
     if request.observed_context:
-        observed_result = parse_observed_signature(request.observed_context)
+        observed_result = parse_observed_write_signature(request.observed_context)
         problems.extend(observed_result.problems)
     if request.requested_disclosure is not None:
         problems.append("requested_disclosure 对事实对象草案和创建操作必须为 null 或省略")
@@ -163,6 +228,8 @@ def parse_create_request(
     if not isinstance(fact_object, dict):
         problems.append("arguments.fact_object 必须是 object")
         fact_object = {}
+    else:
+        problems.extend(observed_signature_injection_problems(request.observed_context, fact_object))
     if problems:
         return CreationRequestParseResult(None, tuple(problems))
     assert basis is not None
@@ -188,6 +255,9 @@ __all__ = [
     "DraftBasis",
     "FactCreateRequest",
     "FactDraftRequest",
+    "ObservedWriteSignature",
+    "observed_signature_injection_problems",
+    "parse_observed_write_signature",
     "parse_create_request",
     "parse_draft_request",
 ]

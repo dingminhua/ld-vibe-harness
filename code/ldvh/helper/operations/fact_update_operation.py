@@ -13,7 +13,7 @@ from ldvh.facts.relations import ProjectFactIndex
 from ldvh.facts.repository import FactReadResult, read_fact_object
 from ldvh.facts.schema import FactSchema, project_fact_schemas
 from ldvh.facts.update_application import FactUpdateCommand, FactUpdateResult, apply_fact_update
-from ldvh.filesystem import durable_writes_enabled
+from ldvh.filesystem import native_atomic_fact_writes_supported
 from ldvh.governance.resolver import GovernanceResolutionRun, resolve_governance_scope
 from ldvh.helper.operation_runtime import (
     AvailabilityEvaluation,
@@ -22,8 +22,8 @@ from ldvh.helper.operation_runtime import (
     OperationImplementation,
     OperationRequestError,
 )
+from ldvh.helper.operations.fact_creation_operation import inject_observed_write_signature
 from ldvh.helper.operations.fact_operation_support import (
-    inject_observed_signature,
     plain,
     post_write_integrity_audit,
     reading_boundary,
@@ -357,7 +357,7 @@ def _application_failure(
     if result.status == "durability_unavailable":
         return OperationExecution(
             outcome="unavailable",
-            summary="当前平台尚未获准以 file-only 耐久等级更新事实对象",
+            summary="当前平台没有启用公共事实更新的原生原子后端",
             requested_scope=requested,
             not_completed_scope=requested,
             governance_resolution=governance,
@@ -365,8 +365,7 @@ def _application_failure(
             gaps=(
                 {
                     "summary": (
-                        "未创建锁状态或替换事实文件：当前 Windows 实现未满足锁及相应耐久/"
-                        "并发保障；需先说明受影响保障，并由 Human 决定是否接受具体残留风险"
+                        "未创建锁状态或替换事实文件：当前平台没有启用同时承接锁与条件替换的原生原子后端"
                     ),
                     "scope": list(requested),
                     "source_refs": [_CONTRACT],
@@ -647,11 +646,11 @@ def _execute(
             (f"AI 不得填写 Code 托管字段: {', '.join(managed)}",),
             sources=(_CONTRACT,),
         )
-    supplied = inject_observed_signature(supplied, request.observed_context)
-    if not durable_writes_enabled():
+    supplied = inject_observed_write_signature(supplied, request.observed_context)
+    if not native_atomic_fact_writes_supported():
         return OperationExecution(
             outcome="unavailable",
-            summary="当前平台尚未获准以 file-only 耐久等级更新事实对象",
+            summary="当前平台没有启用公共事实更新的原生原子后端",
             requested_scope=requested,
             not_completed_scope=requested,
             governance_resolution=run.result.to_json() if run.result else None,
@@ -659,8 +658,7 @@ def _execute(
             gaps=(
                 {
                     "summary": (
-                        "未创建锁状态或替换事实文件：当前 Windows 实现未满足锁及相应耐久/"
-                        "并发保障；需先说明受影响保障，并由 Human 决定是否接受具体残留风险"
+                        "未创建锁状态或替换事实文件：当前平台没有启用同时承接锁与条件替换的原生原子后端"
                     ),
                     "scope": list(requested),
                     "source_refs": [_CONTRACT],
@@ -774,7 +772,7 @@ def _execute(
         changes=(
             {
                 "summary": (
-                    f"已原子替换并回读事实对象（durability={replacement.durability}, cleanup={replacement.cleanup}）"
+                    f"已原子替换并回读事实对象（sync_scope={replacement.durability}, cleanup={replacement.cleanup}）"
                 ),
                 "status": "updated",
                 "target": reference.to_json(),
@@ -785,7 +783,7 @@ def _execute(
             {
                 "check": (
                     "旧内容指纹、完整目标、转换边界、原子替换和写后机械读取已通过；"
-                    f"namespace={replacement.namespace_state}, durability={replacement.durability}, "
+                    f"namespace={replacement.namespace_state}, sync_scope={replacement.durability}, "
                     f"cleanup={replacement.cleanup}"
                 ),
                 "status": "passed",
@@ -811,13 +809,13 @@ def _check_availability(
 ) -> AvailabilityEvaluation:
     domain = _validated_request(request, context)
     requested = domain.fact_ref.to_json()
-    if not durable_writes_enabled():
+    if not native_atomic_fact_writes_supported():
         return AvailabilityEvaluation(
             availability="unavailable_for_request",
             unavailable_scope=(requested,),
             gaps=(
                 {
-                    "summary": "当前平台尚未获准以 file-only 耐久等级更新事实对象",
+                    "summary": "当前平台没有启用公共事实更新的原生原子后端",
                     "scope": [requested],
                     "source_refs": [_CONTRACT],
                 },

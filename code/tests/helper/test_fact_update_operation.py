@@ -4,8 +4,8 @@ import json
 import os
 import stat
 import subprocess
-from copy import deepcopy
 from concurrent.futures import ThreadPoolExecutor
+from copy import deepcopy
 from pathlib import Path
 
 import pytest
@@ -304,6 +304,37 @@ def test_update_replaces_full_target_and_preserves_managed_identity(tmp_path: Pa
     assert response["changes"][0]["status"] == "updated"
 
 
+def test_observed_partial_signature_and_session_survive_real_generic_update_schema_validation(
+    tmp_path: Path,
+) -> None:
+    workspace, project, _ = _fixture(tmp_path)
+    before = _read(workspace, project)
+    target = _mutable(before)
+    target["summary"] = "After observed signature update"
+    _append_update_log(target)
+    payload = json.loads(
+        _update_payload(workspace, project, before["content_fingerprint"], target)
+    )
+    payload["observed_context"] = {
+        "signature": {"agent_id": "GPT-5", "session_id": "Session-Generic-Update"}
+    }
+
+    response = handle_request(
+        "call", "update-fact-object", json.dumps(payload)
+    ).response
+
+    assert response["outcome"] == "ok", json.dumps(response, ensure_ascii=False, indent=2)
+    newest = response["result"]["fact_object"]["change_log"][-1]
+    assert newest["signature"] == {
+        "agent_id": "gpt-5",
+        "host_environment": "test",
+    }
+    assert newest["session_id"] == "Session-Generic-Update"
+    assert "session_id" not in newest["signature"]
+    reread = _read(workspace, project)
+    assert reread["check_status"] == "mechanically_valid"
+
+
 def test_update_reports_the_independent_post_write_integrity_audit(tmp_path: Path) -> None:
     workspace, project, _ = _fixture(tmp_path)
     before = _read(workspace, project)
@@ -338,14 +369,14 @@ def test_generic_helper_preserves_committed_result_when_coordination_release_is_
         candidate=after,
         readback=after,
         candidate_text="after\n",
-        replacement_result=AtomicWriteResult("replaced", "committed", "file_and_directory", "clean"),
+        replacement_result=AtomicWriteResult.committed("replaced", sync_scope="file_and_directory"),
         coordination_release_uncertain=True,
     )
     monkeypatch.setattr(fact_update_operation, "_validated_request", lambda *_args: domain)
     monkeypatch.setattr(fact_update_operation, "_governance", lambda *_args: run)
     monkeypatch.setattr(fact_update_operation, "_boundary", lambda *_args: boundary)
     monkeypatch.setattr(fact_update_operation, "project_fact_schemas", lambda *_args: {"spark": schema})
-    monkeypatch.setattr(fact_update_operation, "durable_writes_enabled", lambda: True)
+    monkeypatch.setattr(fact_update_operation, "native_atomic_fact_writes_supported", lambda: True)
     monkeypatch.setattr(fact_update_operation, "apply_fact_update", lambda *_args: application)
     event_at = "2026-07-26T16:00:00+08:00"
 
@@ -385,7 +416,7 @@ def test_generic_helper_preserves_candidate_rejection_when_coordination_release_
     monkeypatch.setattr(fact_update_operation, "_governance", lambda *_args: run)
     monkeypatch.setattr(fact_update_operation, "_boundary", lambda *_args: boundary)
     monkeypatch.setattr(fact_update_operation, "project_fact_schemas", lambda *_args: {"spark": schema})
-    monkeypatch.setattr(fact_update_operation, "durable_writes_enabled", lambda: True)
+    monkeypatch.setattr(fact_update_operation, "native_atomic_fact_writes_supported", lambda: True)
     monkeypatch.setattr(fact_update_operation, "apply_fact_update", lambda *_args: application)
 
     execution = fact_update_operation._execute(
@@ -424,7 +455,7 @@ def test_generic_no_change_release_gap_has_observation_but_no_commit_code(
     monkeypatch.setattr(fact_update_operation, "_governance", lambda *_args: run)
     monkeypatch.setattr(fact_update_operation, "_boundary", lambda *_args: boundary)
     monkeypatch.setattr(fact_update_operation, "project_fact_schemas", lambda *_args: {"spark": schema})
-    monkeypatch.setattr(fact_update_operation, "durable_writes_enabled", lambda: True)
+    monkeypatch.setattr(fact_update_operation, "native_atomic_fact_writes_supported", lambda: True)
     monkeypatch.setattr(fact_update_operation, "apply_fact_update", lambda *_args: application)
     event_at = "2026-07-26T16:00:00+08:00"
 
@@ -770,49 +801,49 @@ def test_failed_write_back_read_rolls_back_only_matching_replacement(
     [
         (
             "candidate",
-            AtomicWriteResult("unavailable", "uncertain", "unknown", "clean"),
+            AtomicWriteResult.uncertain(),
             "当前重新读取观察到的实际事实对象载体完整字节内容与本次新载体一致",
             "passed",
             "发生冲突",
         ),
         (
             "before",
-            AtomicWriteResult("conflict", "not_committed", "unknown", "clean"),
+            AtomicWriteResult.not_committed("conflict"),
             "当前重新读取观察到的实际事实对象载体完整字节内容与更新前载体一致",
             "passed",
             "生效情况无法确认",
         ),
         (
             "external",
-            AtomicWriteResult("unavailable", "uncertain", "unknown", "clean"),
+            AtomicWriteResult.uncertain(),
             "当前重新读取观察到的实际事实对象载体是另一机械有效版本",
             "passed",
             "发生冲突",
         ),
         (
             "invalid-read",
-            AtomicWriteResult("conflict", "not_committed", "unknown", "clean"),
+            AtomicWriteResult.not_committed("conflict"),
             "当前实际事实对象载体已安全完整读取，但对象未通过机械检查",
             "failed",
             "残留状态无法确认",
         ),
         (
             "invalid-unread",
-            AtomicWriteResult("conflict", "not_committed", "unknown", "clean"),
+            AtomicWriteResult.not_committed("conflict"),
             "当前实际事实对象载体未能安全完整读取，机械检查未通过（状态为 `invalid`）",
             "failed",
             "已安全完整读取",
         ),
         (
             "not-found",
-            AtomicWriteResult("conflict", "not_committed", "unknown", "clean"),
+            AtomicWriteResult.not_committed("conflict"),
             "当前重新读取确认实际事实对象载体的预期位置不存在",
             "failed",
             "已安全完整读取",
         ),
         (
             "unavailable",
-            AtomicWriteResult("unavailable", "uncertain", "unknown", "clean"),
+            AtomicWriteResult.uncertain(),
             "实际事实对象载体的残留状态无法确认",
             "unavailable",
             "本次新载体一致",
@@ -865,7 +896,7 @@ def test_generic_helper_reports_fresh_residual_without_exceeding_rollback_eviden
         candidate=candidate,
         readback=candidate,
         candidate_text="candidate\n",
-        replacement_result=AtomicWriteResult("replaced", "committed", "file_and_directory", "clean"),
+        replacement_result=AtomicWriteResult.committed("replaced", sync_scope="file_and_directory"),
         rollback_result=rollback,
         residual_readback=residuals[residual_kind],
     )
@@ -947,7 +978,7 @@ def test_update_reports_committed_namespace_when_directory_sync_fails(
 
     assert response["outcome"] == "ok"
     assert response["changes"][0]["status"] == "updated"
-    assert "durability=unknown" in response["changes"][0]["summary"]
+    assert "sync_scope=unknown" in response["changes"][0]["summary"]
     assert "Committed despite directory sync failure" in fact.read_text(encoding="utf-8")
 
 
@@ -960,7 +991,7 @@ def test_update_fails_before_lock_or_file_mutation_when_platform_durability_is_n
     target = _mutable(before)
     target["summary"] = "Must not be written"
     original = fact.read_bytes()
-    monkeypatch.setattr(fact_update_operation, "durable_writes_enabled", lambda: False)
+    monkeypatch.setattr(fact_update_operation, "native_atomic_fact_writes_supported", lambda: False)
 
     response = handle_request(
         "call",
@@ -969,7 +1000,7 @@ def test_update_fails_before_lock_or_file_mutation_when_platform_durability_is_n
     ).response
 
     assert response["outcome"] == "unavailable"
-    assert "file-only" in response["summary"]
+    assert "原生原子后端" in response["summary"]
     assert not (project / ".git/ldvh").exists()
     assert fact.read_bytes() == original
 

@@ -19,7 +19,7 @@ from ldvh.facts.creation_application import FactCreationCommand, FactCreationRes
 from ldvh.facts.models import FactIssue
 from ldvh.facts.repository import FactReadResult
 from ldvh.facts.schema import project_fact_schemas
-from ldvh.filesystem import durable_writes_enabled
+from ldvh.filesystem import native_atomic_fact_writes_supported
 from ldvh.governance.models import ObjectStatus
 from ldvh.governance.resolver import GovernanceResolutionRun, resolve_governance_scope
 from ldvh.helper.operation_runtime import (
@@ -38,12 +38,10 @@ from ldvh.helper.operations.fact_creation_request import (
     FactDraftRequest,
     parse_create_request,
     parse_draft_request,
+    parse_observed_write_signature,
 )
-from ldvh.helper.operations.fact_operation_support import (
-    inject_observed_signature,
-    post_write_integrity_audit,
-)
-from ldvh.helper.requests import CommonRequest, parse_observed_signature
+from ldvh.helper.operations.fact_operation_support import post_write_integrity_audit
+from ldvh.helper.requests import CommonRequest
 from ldvh.helper.responses import source_reference
 from ldvh.specs.repository import RepositoryInspection
 
@@ -73,6 +71,29 @@ def _plain(value: Any) -> Any:
     if isinstance(value, tuple):
         return [_plain(item) for item in value]
     return value
+
+
+def inject_observed_write_signature(
+    supplied: dict[str, Any],
+    observed_context: dict[str, Any],
+) -> dict[str, Any]:
+    """Merge observed values into the newest change-log entry without widening its signature."""
+
+    parsed = parse_observed_write_signature(observed_context)
+    if parsed.problems or (not parsed.signature and parsed.session_id is None):
+        return supplied
+    change_log = supplied.get("change_log")
+    if not isinstance(change_log, list) or not change_log or not isinstance(change_log[-1], dict):
+        return supplied
+    newest = dict(change_log[-1])
+    if parsed.signature:
+        existing = newest.get("signature")
+        merged = dict(existing) if isinstance(existing, dict) else {}
+        merged.update(parsed.signature)
+        newest["signature"] = merged
+    if parsed.session_id is not None:
+        newest["session_id"] = parsed.session_id
+    return {**supplied, "change_log": [*change_log[:-1], newest]}
 
 
 def _governance(domain: FactDraftRequest | FactCreateRequest) -> GovernanceResolutionRun:
@@ -678,7 +699,7 @@ def _create_execute(
             (f"AI 不得填写 Code 托管字段: {', '.join(managed)}",),
             sources=request_sources,
         )
-    supplied = inject_observed_signature(supplied, request.observed_context)
+    supplied = inject_observed_write_signature(supplied, request.observed_context)
     initial_statuses = LAYOUTS[basis.fact_type_key].initial_statuses
     if supplied.get("status") not in initial_statuses:
         rendered_statuses = ", ".join(sorted(initial_statuses))
@@ -763,7 +784,7 @@ def _create_execute(
         return finalized(
             OperationExecution(
                 outcome="unavailable",
-                summary="当前平台尚未获准以 file-only 耐久等级写入事实对象",
+                summary="当前平台没有启用公共事实写入的原生原子后端",
                 requested_scope=requested,
                 not_completed_scope=requested,
                 governance_resolution=run.result.to_json() if run.result else None,
@@ -771,8 +792,8 @@ def _create_execute(
                 gaps=(
                     {
                         "summary": (
-                            "未创建身份分配 counter 状态或事实文件：当前 Windows 实现未满足 counter 及相应耐久/"
-                            "并发保障；需先说明受影响保障，并由 Human 决定是否接受具体残留风险"
+                            "未创建身份分配 counter 状态或事实文件：当前平台没有启用同时承接 counter 与事实文件"
+                            "写入的原生原子后端"
                         ),
                         "scope": list(requested),
                         "source_refs": change_sources,
@@ -1148,7 +1169,7 @@ def _create_execute(
                 {
                     "summary": (
                         "已原子创建并回读事实对象"
-                        f"（durability={creation_result.durability}, cleanup={creation_result.cleanup}）"
+                        f"（sync_scope={creation_result.durability}, cleanup={creation_result.cleanup}）"
                     ),
                     "status": "target-created",
                     "target": layout.canonical_path(actual_id),
@@ -1159,7 +1180,7 @@ def _create_execute(
                 {
                     "check": (
                         "写后读取、派生 Schema、身份、引用和关系机械检查已通过；"
-                        f"namespace={creation_result.namespace_state}, durability={creation_result.durability}, "
+                        f"namespace={creation_result.namespace_state}, sync_scope={creation_result.durability}, "
                         f"cleanup={creation_result.cleanup}"
                     ),
                     "status": "passed",
@@ -1204,14 +1225,14 @@ def _create_availability(
     context: OperationExecutionContext,
 ) -> AvailabilityEvaluation:
     domain = _validated_create(request, context)
-    if not durable_writes_enabled():
+    if not native_atomic_fact_writes_supported():
         requested = (domain.draft_basis.to_json(),)
         return AvailabilityEvaluation(
             availability="unavailable_for_request",
             unavailable_scope=requested,
             gaps=(
                 {
-                    "summary": "当前平台尚未获准以 file-only 耐久等级写入事实对象",
+                    "summary": "当前平台没有启用公共事实写入的原生原子后端",
                     "scope": list(requested),
                     "source_refs": [_CREATE_CONTRACT],
                 },

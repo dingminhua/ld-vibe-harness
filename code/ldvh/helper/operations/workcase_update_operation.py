@@ -12,7 +12,7 @@ from ldvh.facts.project_validation import stabilize_project_index
 from ldvh.facts.relations import ProjectFactIndex
 from ldvh.facts.repository import FactReadResult, read_fact_object
 from ldvh.facts.schema import FactSchema, project_fact_schemas
-from ldvh.filesystem import durable_writes_enabled
+from ldvh.filesystem import native_atomic_fact_writes_supported
 from ldvh.governance.resolver import GovernanceResolutionRun, resolve_governance_scope
 from ldvh.helper.operation_runtime import (
     AvailabilityEvaluation,
@@ -21,8 +21,8 @@ from ldvh.helper.operation_runtime import (
     OperationImplementation,
     OperationRequestError,
 )
+from ldvh.helper.operations.fact_creation_operation import inject_observed_write_signature
 from ldvh.helper.operations.fact_operation_support import (
-    inject_observed_signature,
     plain,
     post_write_integrity_audit,
     reading_boundary,
@@ -383,7 +383,7 @@ def _apply_core_workcase_write(
             schema=schema,
             object_id=domain.fact_ref.object_id,
             expected_content_fingerprint=domain.expected_content_fingerprint,
-            supplied=inject_observed_signature(dict(domain.fact_object), observed_context),
+            supplied=inject_observed_write_signature(dict(domain.fact_object), observed_context),
             event_at=event_at,
             mode=mode,
             authorization_reference=domain.authorization_reference,
@@ -423,7 +423,7 @@ def _application_failure(
     if status == "durability_unavailable":
         return OperationExecution(
             outcome="unavailable",
-            summary="当前平台尚未获准执行 WorkCase 耐久写入",
+            summary="当前平台没有启用 WorkCase 写入的原生原子后端",
             requested_scope=requested,
             not_completed_scope=requested,
             governance_resolution=governance,
@@ -691,10 +691,10 @@ def _execute(
             governance_resolution=run.result.to_json() if run.result else None,
             sources=sources,
         )
-    if not durable_writes_enabled():
+    if not native_atomic_fact_writes_supported():
         return OperationExecution(
             outcome="unavailable",
-            summary="当前平台尚未获准执行 WorkCase 耐久写入",
+            summary="当前平台没有启用 WorkCase 写入的原生原子后端",
             requested_scope=requested,
             not_completed_scope=requested,
             governance_resolution=run.result.to_json() if run.result else None,
@@ -815,7 +815,7 @@ def _execute(
                     if replacement is None
                     else (
                         "完整 after 的结构与转换机械检查、CAS 与写后回读已通过；"
-                        f"namespace={replacement.namespace_state}, durability={replacement.durability}, "
+                        f"namespace={replacement.namespace_state}, sync_scope={replacement.durability}, "
                         f"cleanup={replacement.cleanup}"
                     )
                 ),
@@ -843,13 +843,13 @@ def _check_availability(
 ) -> AvailabilityEvaluation:
     domain = _validated_request(mode, request, context)
     requested = domain.fact_ref.to_json()
-    if not durable_writes_enabled():
+    if not native_atomic_fact_writes_supported():
         return AvailabilityEvaluation(
             availability="unavailable_for_request",
             unavailable_scope=(requested,),
             gaps=(
                 {
-                    "summary": "当前平台耐久写能力未获准",
+                    "summary": "当前平台没有启用 WorkCase 写入的原生原子后端",
                     "scope": [requested],
                     "source_refs": [_SHARED_WRITE_CONTRACT],
                 },

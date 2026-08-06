@@ -11,7 +11,8 @@ from ldvh.facts.contracts import LAYOUTS
 from ldvh.facts.models import FactReference
 from ldvh.governance.models import ScopeDescriptor, cwd_scope, explicit_scope
 from ldvh.helper.operation_runtime import OperationExecutionContext
-from ldvh.helper.requests import CommonRequest, parse_observed_signature
+from ldvh.helper.operations.fact_creation_request import observed_signature_injection_problems
+from ldvh.helper.requests import CommonRequest
 from ldvh.source_references import source_reference_problems
 
 UPDATE_REQUIRED_INPUTS = (
@@ -192,9 +193,7 @@ def _parse_base(
         if managed:
             problems.append(f"arguments.fact_object 不得提交 Code 托管字段: {', '.join(managed)}")
 
-    if request.observed_context:
-        observed_result = parse_observed_signature(request.observed_context)
-        problems.extend(observed_result.problems)
+    problems.extend(observed_signature_injection_problems(request.observed_context, fact_object))
     if request.requested_disclosure is not None:
         problems.append("requested_disclosure 对 WorkCase 写入操作必须为 null 或省略")
     for index, reference in enumerate(request.authorization_reference):

@@ -25,76 +25,32 @@ phase: controller_checking
 execution_approval:
   subject_version: 1
   approved_at: '2026-08-06T15:30:00+08:00'
-  summary: "Human 批准当前计划、完整授权基线，包含 04.Att.01 observed_context signature 注入入参声明、05.Att.01 change-log-signature 取值约定与注入责任、Code 注入实现、03 契约确认及 contract tests"
-  baseline_fingerprint: "c8e4617070990448fc80debdb77b5a9e0959d2edaa67bf1e790c6b4df8624693"
+  summary: Human 批准当前计划、完整授权基线，包含 04.Att.01 observed_context signature 注入入参声明、05.Att.01 change-log-signature 取值约定与注入责任、Code 注入实现、03 契约确认及 contract tests
+  baseline_fingerprint: c8e4617070990448fc80debdb77b5a9e0959d2edaa67bf1e790c6b4df8624693
   source_refs:
   - "Claude Code session: 20260806, user confirmed '第三项也授权执行'"
-plan_version: 1
-result_version: 1
+plan_version: 2
 priority: P2
 work_items:
-- item_id: item-01
-  goal: 在 04.Att.01 共同请求字段 observed_context 子 schema 声明 signature 注入入参
-  expected_result: 04.Att.01 中 observed_context 表新增说明行：signature 为可选 object，含 agent_id/host_environment/session_id 三非空 string，遵循 05.Att.01 change-log-signature 取值约定
+- item_id: item-07
+  goal: 统一 observed_context.signature 与 change_log/Git footer 的字段和取值约定
+  expected_result: 04.Att.01 明确 session_id 注入 change_log entry 顶层，signature 只含完整 agent_id+host_environment；05.Att.01 与 03 明确仅 agent_id 小写、host_environment 保留实际宿主名称且 footer 同约定
   status: completed
-  result_summary: 04.Att.01 observed_context 行已补充 signature 说明：签名对象含 agent_id、host_environment、session_id 三可选非空 string。
-- item_id: item-02
-  goal: 在 05.Att.01 change-log-signature 登记补取值约定与注入责任约束行
-  expected_result: 05.Att.01 中 change-log-signature 及其成员行存在取值约定（agent_id=实际驱动模型/Agent 身份、host_environment=工作环境/宿主工具、禁止重复）与注入责任（由平台/执行会话按实际运行环境自动注入，AI 不应手填），经独立方案复核确认不违反现有条款
-  status: completed
-  result_summary: 05.Att.01 change-log-signature 及其成员行已补取值约定与注入责任：agent_id/host_environment 取值约定改为小写，注入责任为平台/执行会话自动注入。
-- item_id: item-03
-  goal: Code 实现从请求 observed_context.signature 取值并注入 change_log signature
-  expected_result: create-fact-object 与 update-fact-object 应用层读取 observed_context.signature 并机械写入新 change_log 条目的 signature；未提供时保留既有行为，不改变 timestamp 填充逻辑，contract tests 通过
+  result_summary: 已统一 04.Att.01、05.Att.01 与 03：observed_context.signature 输入仍使用 agent_id/host_environment/session_id 三字段；仅 agent_id 归一小写，host_environment 与 session_id 保留实际显示值；写入时 signature 仅含完整 agent_id+host_environment，session_id 映射到 change_log 条目顶层。相关规范与提交契约测试 93 项通过。
+- item_id: item-08
+  goal: 修正 observed signature 解析与注入实现
+  expected_result: session_id 写入新 change_log entry 顶层；仅在最终 agent_id/host_environment 完整时注入/合并 signature；未提供值保持兼容且不产生非法对象
   status: completed
   depends_on:
-  - item-01
-  - item-02
-  result_summary: Code 已实现 inject_observed_signature()，在事实创建/更新/WorkCase 写入编排层从 observed_context.signature 取值并机械注入新 change_log[-1].signature；未提供时保留既有行为。
-- item_id: item-04
-  goal: 03 提交 Git Gate 契约确认 Agent-ID / Host-Environment 遵循同一注入约定
-  expected_result: 03 规范中提交署名相关说明确认与 change_log signature 取值约定一致，不因本 WorkCase 移除多 Agent footer 能力，历史多执行者提交兼容不破坏
+  - item-07
+  result_summary: 三个 request 文件已按 observed_context.signature 闭集校验注入值，三个 operation 文件已在授权范围内合并完整 agent_id/host_environment、将 session_id 写入最新 change_log 条目顶层；仅 agent_id 小写，host/session 保留显示，缺失输入保持兼容。134 项 Helper 回归和注入烟测通过。
+- item_id: item-09
+  goal: 补真实受控写入、Schema 后置验证与回归测试
+  expected_result: 覆盖 create-fact-object、update-fact-object、update-workcase 的完整/部分/含 session_id/缺失输入，真实写后对象机械有效，相关与全量测试通过
   status: completed
   depends_on:
-  - item-02
-  result_summary: 03 §9.4 footer 取值约定已对齐为小写，与 05.Att.01 change-log-signature 一致；未移除多 Agent footer 能力。
-- item_id: item-05
-  goal: contract tests 验证注入正确性与缺失时的兼容回退
-  expected_result: tests 覆盖：(a) 提供 observed_context.signature 时新条目 signature 精确等于注入值；(b) 未提供时新条目签名保持既有行为且 tests 通过；全部 tests 通过
-  status: completed
-  depends_on:
-  - item-03
-  result_summary: 新增 test_observed_signature.py 共 12 项 contract tests 全部通过，覆盖注入正确性、兼容回退与 lowercase 强制。
-- item_id: item-06
-  goal: 受控提交
-  expected_result: 经 30 模板受控提交、Git Gate 通过，commit 路径闭集仅含本 WorkCase 实际变更，提交后 check-fact-integrity outer ok 且 result.status=complete
-  status: completed
-  depends_on:
-  - item-04
-  - item-05
-  result_summary: 受控提交完成：commit 2de4468f3，Git Gate 通过（source_fingerprint=ce9bfa5a6da379d4ec3efa04f1796d9a8e576aa05d912b8ad768ce00e4702b06），14 文件 475 插入 16 删除，check-fact-integrity outer ok（仅 workcase-0065.yaml 预存问题在外）。
-success_criterion_results:
-- criterion_id: criterion-01
-  outcome: satisfied
-  summary: 04.Att.01 observed_context 表已补充 signature 为可选 object（agent_id、host_environment、session_id），出现时非空且遵循 05.Att.01 取值约定。
-- criterion_id: criterion-02
-  outcome: satisfied
-  summary: 05.Att.01 change-log-signature 已补取值约定（agent_id/host_environment 改为小写，禁止重复）与注入责任（平台/执行会话自动注入，AI 不应手填）。
-- criterion_id: criterion-03
-  outcome: satisfied
-  summary: Code 已实现 inject_observed_signature() 在 create-fact-object、update-fact-object、update-workcase 编排层从 observed_context.signature 取值并机械注入 change_log[-1].signature；未提供时保留既有行为。
-- criterion_id: criterion-04
-  outcome: satisfied
-  summary: 12 项 contract tests（test_observed_signature.py）全部通过，覆盖注入正确性、兼容回退与 lowercase 强制。
-- criterion_id: criterion-05
-  outcome: satisfied
-  summary: 03 §9.4 footer 取值约定已对齐为小写，与 05.Att.01 一致；未移除多 Agent footer 能力，历史兼容。
-- criterion_id: criterion-06
-  outcome: satisfied
-  summary: commit 2de4468f3 经 Git Gate 通过（source_fingerprint=ce9bfa5a6da379d4ec3efa04f1796d9a8e576aa05d912b8ad768ce00e4702b06），14 文件仅含本 WorkCase 实际变更，提交后 check-fact-integrity outer ok。
-result_summary: WC-0063 全部 6 项 work item 完成。代码变更通过 Git Gate 受控提交，spec 规范（03、04.Att.01、05.Att.01）和 code 层（3 request + 3 operation 文件 + 1 公共函数）已实现 signature 解析、强制小写与机械注入，12 项 contract tests 覆盖正反场景。未提供 signature 时保留既有行为，向后兼容。
-controller_check_summary: Controller 自检：全部 6 项 item 已 terminal（completed），item 终值与实际结果一致；逐成功标准结果已形成、校验并回读，全部为 satisfied；commit 路径闭集仅含 WC-0063 授权变更，Git Gate 通过，check-fact-integrity outer ok。无未处理反馈或遗留问题。
-validation_summary: 验证覆盖：(a) 12 项 contract tests 全部通过，验证注入正确性、兼容回退与 lowercase 强制；(b) Git Gate 校验通过，commit 2de4468f3 的 header、body、footer 与 fact candidate 均满足 03 契约；(c) check-fact-integrity 运行结果 outer ok（仅 workcase-0065.yaml 预存问题在外，与本 WorkCase 无关）；(d) 165 项既有 tests 保持通过。未验证：跨会话 signature 注入一致性（超出本 WorkCase scope）。
+  - item-08
+  result_summary: 新增 12 项注入单测与三条真实受控写入回归：create-fact-object、update-fact-object、update-workcase 均完成实际写入、精确回读和 mechanically_valid 检查；覆盖完整注入、部分签名合并、顶层 session_id、host 显示保留与缺失输入兼容。全量 1450 passed、10 skipped（仅 native Windows）。
 execution_authorization:
   authorized_actions:
   - action_id: authorization-01
@@ -187,16 +143,19 @@ execution_authorization:
   verification_and_rollback: 每次写入后通过 Helper 精确回读确认；提交前通过 precheck-git-commit 验证；提交后通过 check-fact-integrity 验证；任何失败回退到最近稳定检查点
   out_of_bounds_handling: 发现超界动作时立即停止受影响 item，按 21 §6.5 安全收敛
 creation_reviews:
-- reviewer: glm-5.2 (self-review, switched perspective)
-  reviewed_at: '2026-08-06T15:16:49+08:00'
-  subject_version: 1
-  scope: 对 WorkCase 目标、scope、成功标准、work items 及授权基线的完整独立方案复核，重点检查：目标是否单一可关闭、scope 是否清楚、work item 是否误吸收生命周期关口、授权基线是否完整覆盖、取值约定是否与 spark-0051 承接一致
+- reviewer: gpt-5.6-codex (independent read-only plan reviewer)
+  reviewed_at: '2026-08-06T22:07:05+08:00'
+  subject_version: 2
+  scope: 审查 WC-0063 基线内 PlanΔ 候选对冻结 execution_authorization/execution_approval、既定 goal/scope/success criteria、旧执行事实吸收、work item 生命周期边界、依赖关系及后续生命周期覆盖的符合性。
   conclusion: pass_with_followups
   feedback:
-  - Human Gate 触发判断：本 WorkCase 修改的是 observed_context 子 schema 说明与 change-log-signature 取值约定注入责任，不改变 04 §13 / 05 §14 中 Human Gate 的触发条件，无需新增 Human Gate。
-  - signature 入参位置：通过 observed_context 子 schema 承载而非新建顶层共同字段，符合 04 正文闭集规则且不改变现有行为。
-  - 必填性：signature 为可选出现，未提供时保留既有行为，无向后兼容风险。
-  controller_resolution: 已确认：Human Gate 不触发（仅落地 spark-0051 已议定的取值约定，不改变 04/05 的 Human Gate 条件）；signature 通过 observed_context 传递（已有共同字段，不扰 04 正文闭集）；可选出现（无兼容风险）。
+  - item-07 至 item-09 均为可实施的局部修正工作；将受控提交、结果投影、独立结果复核与 Gate 2 保留给 WorkCase 生命周期/行动模板承接，边界正确。
+  - 三项修正均落在既有授权的规范、Helper 请求/编排代码和 tests 范围内；不扩大目标、scope、风险或禁止动作，冻结 execution_authorization 与 execution_approval 保持不变是正确的。
+  - item-07 → item-08 → item-09 的依赖链合理；三项加后续受控提交、事实完整性检查、结果投影和独立结果复核，能够覆盖既有六项成功标准。
+  - 顶层 summary 必须保留首轮提交 2de4468f3 的实际形成事实、result_version=1 曾形成及独立复核 changes_required 的准确原因，并明确其不能作为当前有效结果；不得把旧 completed item 的失败性实现结论继续呈现为当前完成结论。
+  - item-09 的验收应明确覆盖真实 create-fact-object、update-fact-object 和 update-workcase 写入后对象的机械有效性，并分别断言完整、部分、含 session_id 与缺失输入；仅测试纯解析/注入函数不足以证明 criterion-03/04。
+  - item-07 应明确 session_id 写入 change_log entry 顶层而非 signature；signature 的最终形状必须恰为完整 agent_id 与 host_environment，并与 Git footer 的同一取值约定可逐项比对。
+  controller_resolution: 已按反馈处置：顶层 summary 吸收首轮提交与 changes_required 事实并否定其当前结果效力；item-07 明确 session_id 顶层映射、完整 signature 与 footer 同约定；item-09 明确三类真实写入和四类输入矩阵；受控提交、结果投影、独立复核与 Gate 2 继续由 WorkCase 生命周期承接。
   covered_quality_gate_ids:
   - independent-result-review
 change_log:
@@ -208,23 +167,79 @@ change_log:
     host_environment: Claude Code (macOS)
 - at: '2026-08-06T15:30:00+08:00'
   session_id: claude-code-session-20260806
-  summary: "Human Gate 1 批准执行：Human 确认当前计划与完整授权基线，进入 executing 阶段"
+  summary: Human Gate 1 批准执行：Human 确认当前计划与完整授权基线，进入 executing 阶段
   signature:
     agent_id: glm-5.2
     host_environment: Claude Code (macOS)
 - at: '2026-08-06T19:30:39+08:00'
   session_id: claude-code-session-20260806
-  summary: "执行 authorization-08 与代码实现：放开 Helper 请求层 observed_context 校验（仅允许 signature 子字段）、实现 observed_context.signature 注入编排（3 个 request + 3 个 operation 文件）、补 contract tests（12 项通过）、05.Att.01 取值约定改为小写、03 规范对齐；item-01/02/03/05 完成，item-04 完成"
+  summary: 执行 authorization-08 与代码实现：放开 Helper 请求层 observed_context 校验（仅允许 signature 子字段）、实现 observed_context.signature 注入编排（3 个 request + 3 个 operation 文件）、补 contract tests（12 项通过）、05.Att.01 取值约定改为小写、03 规范对齐；item-01/02/03/05 完成，item-04 完成
   signature:
     agent_id: glm-5.2
     host_environment: Claude Code (macOS)
 - at: '2026-08-06T21:18:30.962402+08:00'
   session_id: claude-code-session-20260806
-  summary: "受控提交完成：commit 2de4468f3，Git Gate 通过，14 文件 475 插入 16 删除，check-fact-integrity outer ok；item-06 完成"
+  summary: 受控提交完成：commit 2de4468f3，Git Gate 通过，14 文件 475 插入 16 删除，check-fact-integrity outer ok；item-06 完成
   signature:
     agent_id: glm-5.2
     host_environment: Claude Code (macOS)
+- session_id: codex-session-20260806-wc0063
+  summary: Controller 已确认完整 canonical result projection 形成、校验并回读；按既定质量关口进入独立结果复核，等待 Reviewer。
+  signature:
+    agent_id: gpt-5
+    host_environment: codex
+  at: '2026-08-06T21:56:23.805144+08:00'
+- session_id: codex-session-20260806-wc0063
+  summary: 独立结果复核完成，结论 changes_required；Controller 已接受全部反馈并决定在当前授权基线内返工。
+  signature:
+    agent_id: gpt-5
+    host_environment: codex
+  at: '2026-08-06T22:05:16.459601+08:00'
+- session_id: codex-session-20260806-wc0063
+  summary: Controller 已完成独立复核 feedback 处置；保留 result_version=1 与完整复核事件，返回 controller_checking 准备按既有授权基线返工。
+  signature:
+    agent_id: gpt-5
+    host_environment: codex
+  at: '2026-08-06T22:05:26.636199+08:00'
+- session_id: codex-session-20260806-wc0063
+  summary: 直接重开原 item 依赖链不可形成合法执行快照；Controller 进入 plan_revising，准备在既有授权基线内以 PlanΔ 形成独立返工 items。
+  signature:
+    agent_id: gpt-5
+    host_environment: codex
+  at: '2026-08-06T22:06:37.248104+08:00'
+- session_id: codex-session-20260806-wc0063
+  summary: PlanΔ 经独立只读方案复核并完成 Controller 处置：plan_version=2 以 item-07 至 item-09 返工，旧 result_version=1 结果链失效，冻结授权与 Human Gate 1 批准保持不变。
+  signature:
+    agent_id: gpt-5
+    host_environment: codex
+  at: '2026-08-06T22:10:02.719931+08:00'
+- session_id: codex-session-20260806-wc0063
+  summary: 开始执行 item-07：统一 observed_context.signature、change_log 顶层 session_id 与 Git footer 的字段和取值约定。
+  signature:
+    agent_id: gpt-5
+    host_environment: codex
+  at: '2026-08-06T22:10:30.772541+08:00'
+- session_id: codex-session-20260806-wc0063
+  summary: item-07 完成：三处规范已统一 session_id 顶层映射、完整 signature 与 Git footer 逐字段同值约定，93 项相关测试通过；同事务开始 item-08 实现修正。
+  signature:
+    agent_id: gpt-5
+    host_environment: codex
+  at: '2026-08-06T22:26:27.814390+08:00'
+- session_id: codex-session-20260806-wc0063
+  summary: item-08 完成：请求校验与三条写入编排已修正，134 项 Helper 回归及注入烟测通过；同事务开始 item-09 真实写后验证。
+  signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  at: '2026-08-06T22:35:04.192419+08:00'
+- session_id: codex-session-20260806-wc0063
+  summary: item-09 完成：三条真实写入与完整/部分/session/缺失输入矩阵均验证通过，全量 1450 passed、10 native-Windows skipped；全部 item terminal，同事务进入 controller_checking 并建立当前 plan 的 result_version=1。
+  signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  at: '2026-08-06T22:52:36.609437+08:00'
+summary: 首轮实现 commit 2de4468f3 及 result_version=1 因独立复核 changes_required 已失效；plan_version=2 的 item-07 至 item-09 现已全部完成，三条真实写入回读机械有效，全量 1450 passed、10 项仅 native Windows 跳过，当前进入 Controller 结果检查。
+result_version: 1
 object_id: workcase-0063
 fact_type_key: workcase
 created_at: '2026-08-06T15:27:15.416665+08:00'
-updated_at: '2026-08-06T21:18:30.962402+08:00'
+updated_at: '2026-08-06T22:52:36.609437+08:00'

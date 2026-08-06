@@ -11,7 +11,8 @@ from ldvh.facts.contracts import LAYOUTS, WRITABLE_FACT_TYPE_KEYS
 from ldvh.facts.models import FactReference
 from ldvh.governance.models import ScopeDescriptor, cwd_scope, explicit_scope
 from ldvh.helper.operation_runtime import OperationExecutionContext
-from ldvh.helper.requests import CommonRequest, parse_observed_signature
+from ldvh.helper.operations.fact_creation_request import observed_signature_injection_problems
+from ldvh.helper.requests import CommonRequest
 
 REQUIRED_INPUTS = (
     "arguments.fact_ref",
@@ -108,9 +109,8 @@ def parse_fact_update_request(
     if not isinstance(fact_object, dict):
         problems.append("arguments.fact_object 必须是 object")
         fact_object = {}
-    if request.observed_context:
-        observed_result = parse_observed_signature(request.observed_context)
-        problems.extend(observed_result.problems)
+    if isinstance(fact_object, dict):
+        problems.extend(observed_signature_injection_problems(request.observed_context, fact_object))
     if request.requested_disclosure is not None:
         problems.append("requested_disclosure 对事实对象更新操作必须为 null 或省略")
     if problems:

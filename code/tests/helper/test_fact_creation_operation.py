@@ -482,7 +482,6 @@ def _assert_creation_result_matrix(response: dict[str, object], fact_type_key: s
         "rollback_state",
         "final_observation",
     }
-
     attempted_id = allocation["attempted_object_id"]
     canonical_path = target["canonical_path"]
     counter_state = allocation["counter_state"]
@@ -584,6 +583,107 @@ def _assert_creation_result_matrix(response: dict[str, object], fact_type_key: s
         rule_locators = {source["locator"] for source in change["source_refs"] if source.get("kind") == "rule"}
         assert any(locator.startswith("fact-model-foundation::11.4") for locator in rule_locators)
         assert type_source in rule_locators
+
+
+def test_observed_signature_survives_real_create_and_workcase_update_schema_validation(
+    tmp_path: Path,
+) -> None:
+    workspace, project = _fixture(tmp_path)
+    basis = _prepare(workspace, project, "workcase")
+    create_payload = json.loads(_create_payload(workspace, project, basis, _workcase()))
+    create_payload["observed_context"] = {
+        "signature": {
+            "agent_id": "GPT-5",
+            "host_environment": "Codex Desktop",
+            "session_id": "Session-Create",
+        }
+    }
+
+    created = handle_request(
+        "call", "create-fact-object", json.dumps(create_payload)
+    ).response
+    assert created["outcome"] == "ok", json.dumps(created, ensure_ascii=False, indent=2)
+    created_object = created["result"]["fact_object"]
+    created_log = created_object["change_log"][-1]
+    assert created_log["signature"] == {
+        "agent_id": "gpt-5",
+        "host_environment": "Codex Desktop",
+    }
+    assert created_log["session_id"] == "Session-Create"
+    assert "session_id" not in created_log["signature"]
+
+    reference = created["result"]["actual_ref"]
+    read = handle_request(
+        "call",
+        "read-fact-objects",
+        json.dumps(
+            {
+                "work_object_locators": [str(project)],
+                "arguments": {
+                    "workspace_root": str(workspace),
+                    "fact_refs": [reference],
+                },
+            }
+        ),
+    ).response["result"]["items"][0]
+    assert read["check_status"] == "mechanically_valid"
+    target = deepcopy(read["fact_object"])
+    for key in ("object_id", "fact_type_key", "created_at", "updated_at"):
+        target.pop(key)
+    target["summary"] = "Waiting for Human execution approval after a real update."
+    target["change_log"].append(
+        {
+            "signature": {
+                "agent_id": "placeholder-agent",
+                "host_environment": "Placeholder Host",
+            },
+            "session_id": "placeholder-session",
+            "at": datetime.now().astimezone().isoformat(),
+            "summary": "Update the real WorkCase fixture.",
+        }
+    )
+    updated = handle_request(
+        "call",
+        "update-workcase",
+        json.dumps(
+            {
+                "work_object_locators": [str(project)],
+                "arguments": {
+                    "workspace_root": str(workspace),
+                    "fact_ref": reference,
+                    "expected_content_fingerprint": read["content_fingerprint"],
+                    "fact_object": target,
+                },
+                "observed_context": {
+                    "signature": {
+                        "host_environment": "Codex Desktop",
+                        "session_id": "Session-Update",
+                    }
+                },
+            }
+        ),
+    ).response
+    assert updated["outcome"] == "ok", json.dumps(updated, ensure_ascii=False, indent=2)
+    updated_log = updated["result"]["fact_object"]["change_log"][-1]
+    assert updated_log["signature"] == {
+        "agent_id": "placeholder-agent",
+        "host_environment": "Codex Desktop",
+    }
+    assert updated_log["session_id"] == "Session-Update"
+    reread = handle_request(
+        "call",
+        "read-fact-objects",
+        json.dumps(
+            {
+                "work_object_locators": [str(project)],
+                "arguments": {
+                    "workspace_root": str(workspace),
+                    "fact_refs": [reference],
+                },
+            }
+        ),
+    ).response["result"]["items"][0]
+    assert reread["check_status"] == "mechanically_valid"
 
 
 def test_prepare_has_no_canonical_side_effect_and_create_injects_managed_fields(tmp_path: Path) -> None:
@@ -725,7 +825,7 @@ def test_create_reports_committed_namespace_when_directory_sync_fails(
         "counter-consumed",
         "target-created",
     ]
-    assert "durability=unknown" in response["changes"][1]["summary"]
+    assert "sync_scope=unknown" in response["changes"][1]["summary"]
     assert (project / "ldvh-base/sparks/spark-0001.yaml").is_file()
 
 
@@ -735,7 +835,7 @@ def test_create_fails_before_allocator_mutation_when_platform_durability_is_not_
 ) -> None:
     workspace, project = _fixture(tmp_path)
     basis = _prepare(workspace, project)
-    monkeypatch.setattr("ldvh.facts.creation_application.durable_writes_enabled", lambda: False)
+    monkeypatch.setattr("ldvh.facts.creation_application.native_atomic_fact_writes_supported", lambda: False)
 
     response = handle_request(
         "call",
@@ -744,7 +844,7 @@ def test_create_fails_before_allocator_mutation_when_platform_durability_is_not_
     ).response
 
     assert response["outcome"] == "unavailable"
-    assert "file-only" in response["summary"]
+    assert "原生原子后端" in response["summary"]
     assert not (project / ".git/ldvh").exists()
     assert not (project / "facts").exists()
 
@@ -908,7 +1008,7 @@ def test_helper_separates_uncertain_allocator_from_unstarted_target_creation(
     expected_allocation = AllocationCommitResult(
         "uncertain",
         None,
-        AtomicWriteResult("unavailable", "uncertain", "unknown", "clean"),
+        AtomicWriteResult.uncertain(),
     )
     target_create_called = False
 
@@ -975,7 +1075,7 @@ def test_helper_reports_known_counter_noncommit_and_unstarted_target(
         return AllocationCommitResult(
             counter_status,
             None,
-            AtomicWriteResult("unavailable", "not_committed", "unknown", "clean"),
+            AtomicWriteResult.not_committed("unavailable"),
         )
 
     def forbidden_target_create(*_args, **_kwargs) -> AtomicWriteResult:
@@ -1061,7 +1161,7 @@ def test_helper_separates_consumed_allocator_from_uncertain_target_residual(
         target = root / layout.canonical_path(object_id)
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(text, encoding="utf-8")
-        return AtomicWriteResult("unavailable", "uncertain", "unknown", "clean")
+        return AtomicWriteResult.uncertain()
 
     monkeypatch.setattr(creation_application, "atomic_create_text", uncertain_target_create)
 
@@ -1106,12 +1206,7 @@ def test_helper_reports_known_target_noncommit_and_consumed_allocator_separately
     monkeypatch.setattr(
         creation_application,
         "atomic_create_text",
-        lambda *_args, **_kwargs: AtomicWriteResult(
-            write_outcome,
-            "not_committed",
-            "unknown",
-            "clean",
-        ),
+        lambda *_args, **_kwargs: AtomicWriteResult.not_committed(write_outcome),
     )
 
     response = handle_request(
@@ -1424,11 +1519,10 @@ def test_failed_write_back_reports_residue_when_exact_rollback_fails(
     )
     monkeypatch.setattr(
         "ldvh.facts.creation_application.rollback_created_text",
-        lambda *args, **kwargs: AtomicWriteResult(
-            "unavailable",
-            rollback_namespace_state,
-            "unknown",
-            "residue",
+        lambda *args, **kwargs: (
+            AtomicWriteResult.uncertain(cleanup_residue=True)
+            if rollback_namespace_state == "uncertain"
+            else AtomicWriteResult.not_committed("unavailable", cleanup_residue=True)
         ),
     )
     monkeypatch.setattr(creation_application, "allocation_lock", release_fails)
@@ -1591,8 +1685,8 @@ def test_creation_helper_reports_the_fresh_actual_residual_after_failed_rollback
             raw_text="failed post-create readback\n",
         ),
         allocation_consumed=True,
-        creation_result=AtomicWriteResult("created", "committed", "file_and_directory", "clean"),
-        rollback_result=AtomicWriteResult("unavailable", "uncertain", "unknown", "residue"),
+        creation_result=AtomicWriteResult.committed("created", sync_scope="file_and_directory"),
+        rollback_result=AtomicWriteResult.uncertain(cleanup_residue=True),
         residual_readback=residuals[residual_kind],
         allocation_status="committed",
         allocation_result=AllocationCommitResult("committed", "spark-0001"),
