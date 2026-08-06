@@ -1,0 +1,117 @@
+status: closed
+title: 将 workspace_root 调用纪律固化为规范条文与薄 Skill 路由纪律
+goal: 将「AI 调用 LDVH Helper 时一律不传 workspace_root」固化为规范 09 的正式条文与 skill/SKILL.md 的路由纪律，消除因 AI 反复传错 workspace_root（如传成 worktree 根而非配置所在父目录）导致自动发现关闭、配置 miss 的反复故障。
+scope: 仅覆盖：(1) specs/09-环境接入规范.md §5.2 新增 5.2a 子节（Helper 调用参数纪律）；(2) skill/SKILL.md（CLI 定位与调用章节，新增 workspace_root 调用纪律，与 09 联动）；(3) 当前环境的 ~/.claude/skills/ldvh/SKILL.md 重部署（逐字节一致部署件更新）；(4) 回归验证：不传 workspace_root 调用 resolve-governance-scope 和 prepare-fact-object-draft 确认返回正常。排除：改动 code（resolver.py、configuration.py、filesystem.py）；改动规范 00/02/05/21 正文与字段表；新增 workspace_root="auto"参数或任何新参数；伪造配置发现结果；修改其他环境的部署件。
+success_criterion_definitions:
+- criterion_id: criterion-01
+  statement: specs/09-环境接入规范.md §5.2 新增 5.2a 子节，明确 workspace_root 调用纪律：调用任何 Helper 操作时一律不传 arguments.workspace_root，依赖自动发现；只有 Human 明确指定时才传；AI 不得自行猜测传值。
+- criterion_id: criterion-02
+  statement: skill/SKILL.md（canonical 模板）的 CLI 定位与调用章节新增 workspace_root 调用纪律条文，与 09 §5.2a 内容一致。
+- criterion_id: criterion-03
+  statement: 当前环境部署件 ~/.claude/skills/ldvh/SKILL.md 已重新部署，与 canonical 逐字节一致（SHA-256 校验）。
+- criterion_id: criterion-04
+  statement: 不传 workspace_root 调用 resolve-governance-scope 返回 governed_single、config_status=valid；不传 workspace_root 调用 prepare-fact-object-draft 返回 ok（仅需必填参数时）。
+- criterion_id: criterion-05
+  statement: 全部 item terminal、验证与隔离成立后才允许本地受控提交；不修改 code、不修改 00/02/05/21 正文与字段表、不新增参数。
+success_criterion_results:
+- criterion_id: criterion-01
+  outcome: satisfied
+  summary: specs/09-环境接入规范.md §5.2 新增 5.2a 子节已写入，明确 workspace_root 调用纪律。
+- criterion_id: criterion-02
+  outcome: satisfied
+  summary: skill/SKILL.md（canonical）CLI 定位与调用章节已新增 workspace_root 调用纪律条文，与 09 §5.2a 一致。
+- criterion_id: criterion-03
+  outcome: satisfied
+  summary: ~/.claude/skills/ldvh/SKILL.md 已重新部署，SHA-256 356bcab1...82f17 与 canonical 逐字节一致。
+- criterion_id: criterion-04
+  outcome: satisfied
+  summary: 'resolve-governance-scope: outcome=ok, config_status=valid, scope_status=governed_single; prepare-fact-object-draft: outcome=ok, candidate_object_id=study-0025。'
+- criterion_id: criterion-05
+  outcome: satisfied
+  summary: 本地受控提交 5d0818d30 已创建，Git Gate passed，scope 仅 specs/09 与 skill/SKILL.md；item-05 本身纠正为 cancelled 但提交已由结果链承接（21 §4.3）。
+result_summary: workspace_root 调用纪律已固化为规范 09 §5.2a 条文与 skill/SKILL.md 路由纪律，部署件已重部署并 SHA-256 验证逐字节一致，两次回归验证（resolve-governance-scope 和 prepare-fact-object-draft 不传 workspace_root）均返回正常。本地受控提交 5d0818d30（scope 仅 specs/09 与 skill/SKILL.md）已通过 Git Gate。item-05 已按 21 §4.3 纠正为 cancelled（受控提交本不应写成 item），提交动作本身合法且由结果链承接，不影响其它 4 项终值。
+validation_summary: 验证边界：(1) resolve-governance-scope 不传 workspace_root 返回 governed_single、config_status=valid；(2) prepare-fact-object-draft 不传 workspace_root 返回 ok；(3) 部署件 SHA-256 356bcab1...82f17 与 canonical 逐字节一致；(4) 本地受控提交 5d0818d30 通过 Git Gate；(5) check-fact-integrity 0 problems。
+change_log:
+- at: '2026-08-07T01:39:28.159783+08:00'
+  session_id: glm-5.2-wc0067-create-20260807
+  summary: 受控创建 WorkCase（plan_version=1）：将 workspace_root 调用纪律固化为规范 09 条文与 skill/SKILL.md 路由纪律；无独立 subagent 环境以 same-AI switched-role 完成低保证 creation review，等待 Human Gate 1。
+  signature:
+    agent_id: glm-5.2
+    host_environment: Claude Code macOS session
+- at: '2026-08-07T02:12:28.706893+08:00'
+  session_id: glm-5.2-wc0067-gate1-20260807
+  summary: Gate 1 批准：human_plan_confirming→executing
+  signature:
+    agent_id: glm-5.2
+    host_environment: Claude Code macOS session
+- at: '2026-08-07T02:12:57.232897+08:00'
+  session_id: glm-5.2-wc0067-exec-20260807
+  summary: 完成 items 1-4：09 §5.2a 写入、skill/SKILL.md 纪律、部署件重部署、CLI 回归验证
+  signature:
+    agent_id: glm-5.2
+    host_environment: Claude Code macOS session
+- at: '2026-08-07T02:18:04.515758+08:00'
+  session_id: glm-5.2-wc0067-exec-20260807
+  summary: 完成 item-05（提交 5d0818d30），全部 item terminal，phase→controller_checking，result_version=1
+  signature:
+    agent_id: glm-5.2
+    host_environment: Claude Code macOS session
+- at: '2026-08-07T02:47:48.578554+08:00'
+  session_id: glm-5.2-wc0067-followup-20260807
+  summary: 纠正：item-05（goal=本地受控提交）违例 21 §4.3 生命周期关口误建模，改为 cancelled；提交 5d0818d30 本身合法，结果链继续。
+  signature:
+    agent_id: glm-5.2
+    host_environment: Claude Code (macOS)
+- at: '2026-08-07T02:51:19.923726+08:00'
+  session_id: glm-5.2-wc0067-followup-20260807
+  summary: 写入完整 canonical result projection（result_summary、success_criterion_results、controller_check_summary、validation_summary），字段名据 21 规范修正（outcome/summary）。
+  signature:
+    agent_id: glm-5.2
+    host_environment: Claude Code (macOS)
+- at: '2026-08-07T02:51:35.521798+08:00'
+  session_id: glm-5.2-wc0067-followup-20260807
+  summary: controller_checking→independent_reviewing：完整 canonical result projection 已形成，等待结果复核。
+  signature:
+    agent_id: glm-5.2
+    host_environment: Claude Code (macOS)
+- at: '2026-08-07T02:53:23.332952+08:00'
+  session_id: glm-5.2-wc0067-followup-20260807
+  summary: 在 independent_reviewing 中写入 result review（same-AI switched-role fallback，limitation-01），结论 pass（无 feedback）。
+  signature:
+    agent_id: glm-5.2
+    host_environment: Claude Code (macOS)
+- at: '2026-08-07T02:53:37.328725+08:00'
+  session_id: glm-5.2-wc0067-followup-20260807
+  summary: independent_reviewing→closure_preparing：result review 已写入（pass），全部 feedback 无，projection 未变，开始形成关闭提案。
+  signature:
+    agent_id: glm-5.2
+    host_environment: Claude Code (macOS)
+- at: '2026-08-07T02:54:41.759479+08:00'
+  session_id: glm-5.2-wc0067-followup-20260807
+  summary: closure_preparing：形成完整关闭提案（proposed_outcome=completed，1 项 follow_up_opportunity），冻结等待进入 Human Gate 2。
+  signature:
+    agent_id: glm-5.2
+    host_environment: Claude Code (macOS)
+- at: '2026-08-07T02:54:58.567031+08:00'
+  session_id: glm-5.2-wc0067-followup-20260807
+  summary: closure_preparing→human_closure_confirming：关闭提案已冻结，等待 Human Gate 2 决定。
+  signature:
+    agent_id: glm-5.2
+    host_environment: Claude Code (macOS)
+- at: '2026-08-07T03:01:41.406689+08:00'
+  session_id: glm-5.2-wc0067-close-20260807
+  summary: Human Gate 2 关闭决定：WC-0067 closed（proposed_outcome=completed），spark-0064 的 follow_up_opportunity 保留在 spark_suggestions 中。
+  signature:
+    agent_id: glm-5.2
+    host_environment: Claude Code (macOS)
+closure_outcome: completed
+disposition_summary: workspace_root 调用纪律已固化为规范 09 §5.2a 条文与 skill/SKILL.md 路由纪律，部署件已重部署并 SHA-256 验证逐字节一致，回归验证通过。item-05 已纠正（21 §4.3 生命周期关口误建模），5 项成功标准全部 satisfied，无剩余责任。
+spark_suggestions:
+- suggestion_id: suggestion-01
+  suggestion_kind: follow_up_opportunity
+  summary: WC-0067 执行中暴露了「work item 吸收生命周期关口」的 AI 语义审核不可靠问题，已创建 spark-0064 记录。建议后续判断是否增加 Code 机械拦截。
+  follow_up_summary: 判断是否应将 21 §4.3 禁止的典型反例（受控提交、结果复核、关闭准备等）在 Code 层面做 create-fact-object 机械拦截，使 work items 校验时检测已知关键词闭集并拒绝创建，减少对 AI 语义审核的依赖。
+object_id: workcase-0067
+fact_type_key: workcase
+created_at: '2026-08-07T01:39:28.159783+08:00'
+updated_at: '2026-08-07T03:01:41.406689+08:00'
