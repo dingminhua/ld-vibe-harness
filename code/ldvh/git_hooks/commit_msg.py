@@ -394,6 +394,15 @@ def render_commit_msg_hook(*, commit_msg_runner: Path, workspace_root: Path) -> 
             '  printf "%s\\n" "LDVH Git commit-msg Hook could not determine the current worktree" >&2',
             "  exit 1",
             "}",
+            "# The source launcher may be named python3 or python on different hosts.",
+            "run_runner() {",
+            "  if command -v python3 >/dev/null 2>&1; then",
+            f"    exec python3 {runner} \"$@\"",
+            "  elif command -v python >/dev/null 2>&1; then",
+            f"    exec python {runner} \"$@\"",
+            "  fi",
+            f"  exec {runner} \"$@\"",
+            "}",
             'case "$1" in',
             "  /*|[A-Za-z]:\\\\*|//*) message_file=$1 ;;",
             '  *) message_file="$worktree/$1" ;;',
@@ -403,10 +412,10 @@ def render_commit_msg_hook(*, commit_msg_runner: Path, workspace_root: Path) -> 
             "    /*|[A-Za-z]:\\\\*|//*) index_file=$GIT_INDEX_FILE ;;",
             '    *) index_file="$worktree/$GIT_INDEX_FILE" ;;',
             "  esac",
-            f'  exec {runner} git-commit-msg --workspace-root {workspace} --worktree "$worktree" '
+            f'  run_runner git-commit-msg --workspace-root {workspace} --worktree "$worktree" '
             f'--message-file "$message_file" --index-file "$index_file"',
             "fi",
-            f'exec {runner} git-commit-msg --workspace-root {workspace} --worktree "$worktree" '
+            f'run_runner git-commit-msg --workspace-root {workspace} --worktree "$worktree" '
             '--message-file "$message_file"',
             "",
         )

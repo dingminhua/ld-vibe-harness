@@ -1,4 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+# Git Hook adapters select python3/python before invoking this source launcher;
+# keep this shebang explicit so direct POSIX execution remains deterministic.
 """Stable source launcher for every LDVH runtime surface."""
 
 from __future__ import annotations
