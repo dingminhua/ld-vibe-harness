@@ -1100,6 +1100,29 @@ def test_review_events_and_same_event_corrections_obey_role_and_event_boundaries
     assert validate_workcase_transition(resolved_on_exit_before, resolved_on_exit) == ()
 
 
+def test_review_method_and_assurance_disclosures_are_reviewer_owned() -> None:
+    reviewing = _independent_reviewing()
+    reviewing["result_reviews"][0]["actual_method"] = "subagent-read-only"
+
+    corrected = deepcopy(reviewing)
+    corrected["result_reviews"][0]["actual_method"] = "same-ai-switched-role-read-only"
+    corrected["result_reviews"][0].update(
+        {
+            "capability_limitation_id": "limitation-subagent-review",
+            "capability_evidence": ["current capability probe is unsupported"],
+            "assurance_gap": "No execution-environment independence.",
+            "stop_condition_assessment": "clear",
+        }
+    )
+    assert validate_workcase_transition(reviewing, corrected) == ()
+
+    corrected_and_advanced = deepcopy(corrected)
+    corrected_and_advanced["phase"] = "controller_checking"
+    issues = validate_workcase_transition(reviewing, corrected_and_advanced)
+
+    assert any(issue.field_path == "result_reviews" and "不得与 status 或 phase" in issue.summary for issue in issues)
+
+
 @pytest.mark.parametrize(("field", "invalid"), [("reviewer", []), ("reviewed_at", {}), ("subject_version", [])])
 def test_invalid_review_identity_is_left_to_snapshot_validation_without_crashing(field: str, invalid: object) -> None:
     before = _base()

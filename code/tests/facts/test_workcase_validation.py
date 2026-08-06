@@ -52,6 +52,33 @@ def _authorization() -> dict[str, object]:
     }
 
 
+def _capability_limitation(*categories: str) -> dict[str, object]:
+    return {
+        "limitation_id": "limitation-subagent-review",
+        "capability": "independent-subagent-review",
+        "availability": "unavailable",
+        "observation_summary": "The current environment exposes no subagent facility.",
+        "evidence": ["tool inventory reports no subagent capability"],
+        "affected_review_categories": list(categories),
+        "fallback_policy": "same-ai-switched-role-read-only",
+        "assurance_gap": "The Reviewer does not have execution-environment independence.",
+        "stop_conditions": [
+            "Capability evidence becomes uncertain",
+            "The review cannot remain read-only and perspective-separated",
+        ],
+    }
+
+
+def _same_ai_disclosure() -> dict[str, object]:
+    return {
+        "actual_method": "same-ai-switched-role-read-only",
+        "capability_limitation_id": "limitation-subagent-review",
+        "capability_evidence": ["current tool inventory still reports no subagent capability"],
+        "assurance_gap": "The Reviewer does not have execution-environment independence.",
+        "stop_condition_assessment": "clear",
+    }
+
+
 def _approval(fields: dict[str, object] | None = None) -> dict[str, object]:
     baseline = fields if fields is not None else _base("executing")
     return {
@@ -735,5 +762,122 @@ def test_completed_proposal_rejects_constrained_responsibility_suggestions() -> 
 
     assert any(
         issue.field_path == "closure_proposal.spark_suggestions" and "completed" in issue.summary
+        for issue in issues
+    )
+
+
+def test_creation_bootstrap_accepts_explicit_same_ai_low_assurance_review() -> None:
+    fields = _base("human_plan_confirming")
+    fields["execution_authorization"]["capability_limitations"] = [
+        _capability_limitation("creation_review", "plan_delta_review", "result_review")
+    ]
+    fields["creation_reviews"][0].update(_same_ai_disclosure())
+    fields["waiting_on"] = "Human Gate1 decision on the disclosed low-assurance creation review."
+
+    assert validate_workcase_snapshot(fields) == ()
+
+
+def test_recorded_limitation_does_not_force_fallback_when_subagent_is_used() -> None:
+    fields = _base("human_plan_confirming")
+    fields["execution_authorization"]["capability_limitations"] = [
+        _capability_limitation("creation_review", "plan_delta_review", "result_review")
+    ]
+    fields["creation_reviews"][0]["actual_method"] = "subagent-read-only"
+    fields["waiting_on"] = "Human Gate1 decision with an actual subagent review."
+
+    assert validate_workcase_snapshot(fields) == ()
+
+
+def test_subagent_method_rejects_fallback_only_assurance_fields() -> None:
+    fields = _base("human_plan_confirming")
+    fields["execution_authorization"]["capability_limitations"] = [_capability_limitation("creation_review")]
+    fields["creation_reviews"][0].update({"actual_method": "subagent-read-only", **_same_ai_disclosure()})
+    fields["creation_reviews"][0]["actual_method"] = "subagent-read-only"
+    fields["waiting_on"] = "Human Gate1 decision."
+
+    issues = validate_workcase_snapshot(fields)
+
+    assert any(
+        issue.field_path == "creation_reviews[0].capability_limitation_id" and "fallback" in issue.summary
+        for issue in issues
+    )
+
+
+@pytest.mark.parametrize(
+    ("mutate", "expected_path"),
+    [
+        (
+            lambda fields: fields["execution_authorization"]["capability_limitations"][0].update(
+                {"availability": "unknown"}
+            ),
+            "execution_authorization.capability_limitations[0].availability",
+        ),
+        (
+            lambda fields: fields["creation_reviews"][0].pop("capability_evidence"),
+            "creation_reviews[0].capability_evidence",
+        ),
+        (
+            lambda fields: fields["execution_authorization"]["capability_limitations"][0].update(
+                {"evidence": []}
+            ),
+            "execution_authorization.capability_limitations[0].evidence",
+        ),
+        (
+            lambda fields: fields["creation_reviews"][0].update({"assurance_gap": "Hidden gap"}),
+            "creation_reviews[0].assurance_gap",
+        ),
+        (
+            lambda fields: fields["creation_reviews"][0].pop("actual_method"),
+            "creation_reviews[0].actual_method",
+        ),
+    ],
+)
+def test_same_ai_review_rejects_unknown_or_incomplete_assurance_disclosure(
+    mutate: object,
+    expected_path: str,
+) -> None:
+    fields = _base("human_plan_confirming")
+    fields["execution_authorization"]["capability_limitations"] = [_capability_limitation("creation_review")]
+    fields["creation_reviews"][0].update(_same_ai_disclosure())
+    fields["waiting_on"] = "Human Gate1 decision."
+    mutate(fields)  # type: ignore[operator]
+
+    issues = validate_workcase_snapshot(fields)
+
+    assert any(issue.field_path == expected_path for issue in issues)
+
+
+def test_gate1_approved_fallback_must_cover_plan_delta_and_result_categories() -> None:
+    plan_delta = _base("executing")
+    plan_delta["plan_version"] = 2
+    plan_delta["creation_reviews"] = [{**_review(2), **_same_ai_disclosure()}]
+    plan_delta["execution_authorization"]["capability_limitations"] = [_capability_limitation("creation_review")]
+    plan_delta["execution_approval"] = _approval(plan_delta)
+
+    issues = validate_workcase_snapshot(plan_delta)
+    assert any(
+        issue.field_path == "creation_reviews[0].capability_limitation_id" and "未覆盖" in issue.summary
+        for issue in issues
+    )
+
+    plan_delta["execution_authorization"]["capability_limitations"][0]["affected_review_categories"] = [
+        "creation_review",
+        "plan_delta_review",
+        "result_review",
+    ]
+    plan_delta["execution_approval"] = _approval(plan_delta)
+    assert validate_workcase_snapshot(plan_delta) == ()
+
+    result = _complete_result("closure_preparing")
+    result["execution_authorization"]["capability_limitations"] = [
+        _capability_limitation("creation_review", "plan_delta_review")
+    ]
+    result["creation_reviews"][0]["actual_method"] = "subagent-read-only"
+    result["result_reviews"] = [{**_review(), **_same_ai_disclosure()}]
+    result["execution_approval"] = _approval(result)
+
+    issues = validate_workcase_snapshot(result)
+    assert any(
+        issue.field_path == "result_reviews[0].capability_limitation_id" and "未覆盖" in issue.summary
         for issue in issues
     )

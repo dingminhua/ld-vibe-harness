@@ -94,7 +94,19 @@ _RESULT_PROJECTION_FIELDS = (
 )
 _RESULT_STATE_FIELDS = ("result_version", *_RESULT_PROJECTION_FIELDS, "result_reviews")
 _ITEM_RUNTIME_FIELDS = ("status", "current_summary", "resume_from", "blocking_summary", "result_summary")
-_REVIEWER_FIELDS = ("reviewer", "reviewed_at", "subject_version", "scope", "conclusion", "feedback")
+_REVIEWER_FIELDS = (
+    "reviewer",
+    "reviewed_at",
+    "subject_version",
+    "scope",
+    "conclusion",
+    "feedback",
+    "actual_method",
+    "capability_limitation_id",
+    "capability_evidence",
+    "assurance_gap",
+    "stop_condition_assessment",
+)
 # ``change_log`` is not a second lifecycle mutation: the shared write core
 # appends its one Code-timestamped trace entry to every accepted transaction.
 # A blocked-status checkpoint must therefore permit that invariant-preserving

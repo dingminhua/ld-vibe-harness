@@ -39,7 +39,7 @@ ldvh_spec:
 
 当前 WorkCase 已精确读取、Gate 1 已经完成，并有当前冻结 `execution_authorization`、`baseline_fingerprint` 匹配该基线且 `source_refs` 可回指真实 Human 输入的 `execution_approval` 时，本文可在 `executing`、包内 `plan_revising`、Controller/独立结果复核、关闭准备和 Gate 2 等 21 允许的后续阶段组织执行与收敛。approval 的 `subject_version` 记录 Gate 1 当时版本；包内 PlanΔ 可以形成新的当前 `plan_version` 与 fresh current plan review，不要求或允许把 approval 改写成当前版本。Human 尚在审阅 Gate 1 材料、当前对象/指纹/授权包/批准不可确定，或工作实质是普通只读调查时，不使用执行分支。授权包逐项列明的事实对象创建、事实变更或本地 Git commit 仍分别由 31、32、30 承接，但不因此离开本模板的 WorkCase 执行组织或重复请求授权。模板候选、approval 字段存在或行动模板 key 都不单独代表适用、能力或授权覆盖。
 
-**独立审核定义**：本模板所引用的独立方案复核、独立结果复核及独立 Reviewer 第二视角，均遵循 21 §4.5「独立审核」定义——独立审核必须由独立 subagent 执行，执行环境独立性是必要条件，同一 AI 切换视角不构成独立审核；没有可用 subagent 能力时独立审核不得进行，不得以降级方式替代。本模板 **隐含「必须委派独立 subagent」的默认假设**。
+**审核方法与保证边界**：本模板所引用的方案复核、结果复核及 Reviewer 第二视角，均遵循 21 §4.5。默认且保证更高的方法是实际委派只读 subagent；同一 AI 切换只读 Reviewer 视角不是 subagent、不是执行环境独立审核，也不得显示成与前者等价。Gate 1 后只有当前冻结 `execution_authorization.capability_limitations` 已覆盖当次 `plan_delta_review` 或 `result_review`、当次能力不可用证据仍然成立、保证差距已披露且停止条件评估为 `clear` 时，才可据实使用 `same-ai-switched-role-read-only`。Gate 1 前的 creation bootstrap 已由 21 的创建链承接，不由本获批计划模板补做、追认或改写。
 
 ## 5. WorkCase 获批计划执行行动模板定义
 
@@ -53,7 +53,7 @@ ldvh_spec:
 
 新的、恢复的、压缩后或委派的执行上下文先取得规则引导，再经 Helper 精确读取当前 WorkCase 的完整对象、`content_fingerprint` 和 `current_snapshot_projection`。执行者只消费 `resolution=resolved` 且 `source_content_fingerprint` 与本次读取内容指纹精确相同的投影；缺失、不匹配、stale 或 unresolved 时先重新精确读取，重复读取后仍不能形成 current 投影则只保留读取缺口，不猜测相邻位置、下一动作或交还话术。
 
-执行者同时读取当前 plan、未完成 item 与依赖、fresh creation review、冻结 `execution_authorization`，以及 baseline fingerprint 和 Human `source_refs` 均准确的 `execution_approval`，逐项核对当前行动是否仍处于目标、影响、风险、能力与禁止项边界内。`status + phase` 是当前活动位置的事实，`status=blocked` 是覆盖层，closed 对象没有 phase；投影只是 21 基于刚回读快照形成的非持久派生合同。21 定义全部字段、phase、转换、quality gate 与投影语义，32 组织受控写回；本文不重述其闭集或成立条件。
+执行者同时读取当前 plan、未完成 item 与依赖、fresh creation review、每项 review 据实记录的 `actual_method` 与条件性保证披露、冻结 `execution_authorization` 及其中实际存在的 capability limitations，以及 baseline fingerprint 和 Human `source_refs` 均准确的 `execution_approval`，逐项核对当前行动是否仍处于目标、影响、风险、能力与禁止项边界内。`status + phase` 是当前活动位置的事实，`status=blocked` 是覆盖层，closed 对象没有 phase；投影只是 21 基于刚回读快照形成的非持久派生合同。21 定义全部字段、phase、转换、quality gate 与投影语义，32 组织受控写回；本文不重述其闭集或成立条件。
 
 ### 5.2 执行循环
 
@@ -65,7 +65,7 @@ ldvh_spec:
 
 跨检查点、可能中断或具有恢复价值的工作在实质开始前先形成实际 item after；每个稳定中间结果、委派或交接、上下文压缩前后，以及每个结果链控制步骤，均以刚回读指纹为 CAS before，经 21 专属 Helper 操作写入完整 after，再精确回读受影响对象并执行当前来源定义的独立事实完整性审计。只有该链全部成功后，新指纹和投影才能成为下一轮输入；聊天内容、旧摘要和工具输出不是替代依据。检查点写回与 Git commit 粒度相互独立，不要求每次事实转换形成单独 commit。
 
-全部 item terminal 后，Controller 按 21/32 连续形成 Controller 检查、完整结果投影、独立结果复核、feedback 处置、关闭提案与 Human 关闭确认。Reviewer pass 只是一项实际 review 输入，不等于 Gate 2：Controller 不得跳过其反馈处置责任；需要修正或返工时按 21 返回 `controller_checking`，投影不变且 feedback 已处置时按 21 的合法边进入 `closure_preparing`。无论采用哪条 21 允许的边，都必须继续形成完整 after、CAS、精确回读与完整性审计，直至真实快照进入 Human 关闭确认；不能只输出聊天总结。
+全部 item terminal 后，Controller 按 21/32 连续形成 Controller 检查、完整结果投影、实际结果复核、feedback 处置、关闭提案与 Human 关闭确认。结果复核默认委派只读 subagent；只有冻结限制、当前证据、审核类别和停止条件共同允许时才可使用并如实记录低保证 fallback。Reviewer pass 只是一项实际 review 输入，不等于 Gate 2：Controller 不得跳过其反馈处置责任；需要修正或返工时按 21 返回 `controller_checking`，投影不变且 feedback 已处置时按 21 的合法边进入 `closure_preparing`。无论采用哪条 21 允许的边，都必须继续形成完整 after、CAS、精确回读与完整性审计，直至真实快照进入 Human 关闭确认；不能只输出聊天总结。
 
 ### 5.4 合法退出
 
@@ -85,7 +85,7 @@ ldvh_spec:
 |---|---|---|---|---|---|---|
 | 模板身份与边界 | 新建、修改或发现模板时 | 声明唯一、只组织执行、不复制 21/32 规则 | 06、21、32、本文 | 声明解析、来源回读 | 当前模板定义 | 修正来源，不消费模板 |
 | item 与生命周期关口边界 | 计划获批后准备消费任一 item 时 | 每项都是可实施并形成局部结果的工作；没有 item 吸收 Controller 自检、独立结果复核、受控提交、关闭准备或 Human Gate | 当前 WorkCase、21 §4.3、本文 | AI 逐 item 语义审核；契约测试只检查当前来源持续交付该边界 | 当次已读计划与来源文本；不证明 Code 能理解任意自然语言 | 停止受影响实施；包内移除或改写后 fresh current-plan review 并自动恢复，超包则取消受影响 item 并进入结果链，不再 Human 批准 |
-| Gate 1 授权消费 | 每项行动、委派、事实写入和本地 commit 前 | 当前 `execution_authorization` 逐项覆盖准确对象、范围、副作用与风险，`execution_approval` 和来源回指有效；进入模板步骤、上下文恢复或切换执行者没有产生伪授权缺口 | 当前 WorkCase、21、30–32、Human Gate 1 来源 | AI 语义覆盖审核、21 结构/绑定校验和行动前回读 | 当次已读授权包与行动；Code 不证明自然语言授权充分，模板不证明 spawn 能力 | 未列明或超界行动不执行；取消/收敛受影响 item并进入结果链，不中途请求扩权 |
+| Gate 1 授权消费 | 每项行动、委派、事实写入和本地 commit 前 | 当前 `execution_authorization` 逐项覆盖准确对象、范围、副作用与风险，`execution_approval` 和来源回指有效；进入模板步骤、上下文恢复或切换执行者没有产生伪授权缺口；采用同一 AI fallback 时，冻结 limitation 覆盖当次类别且当前证据、保证差距与停止条件评估满足 21 | 当前 WorkCase、21、30–32、Human Gate 1 来源 | AI 语义覆盖与当前能力证据审核、21 结构/绑定校验和行动前回读 | 当次已读授权包、行动与实际 review 方法；Code 不证明自然语言授权充分、能力事实或 Reviewer 独立性 | 未列明或超界行动不执行；fallback 条件不成立时改用实际可用 subagent，否则停止当次 review；取消/收敛其它受影响 item 并进入结果链，不中途请求扩权 |
 | 开始与直接完成边界 | 实施前后 | 跨检查点工作先真实回读 in_progress；同检查点结果才直接 completed | 当前 WorkCase、21、完整 after | WorkCase 转换测试与完整 after 回读 | 当次 item 转换 | 停在当前稳定检查点，重新判断 |
 | fresh 投影与执行循环 | 每次执行、恢复和事实写回后 | projection resolved 且 source fingerprint 匹配刚回读内容；AI 重新判断语义、依赖、授权和能力，Code 与结构提示不替代判断 | 当前 WorkCase、21、Helper 回读 | 指纹/投影负矩阵、source-contract 与 AI 对照审核 | 当次刚回读快照和结构提示；不证明 AI 跨会话遵从 | 重新精确读取；仍 unresolved 时只交还读取缺口，不猜测位置或行动 |
 | 阻塞、稳定检查点与阶段收敛 | 每个稳定检查点 | 合法 item/phase/authorization/approval/依赖形状与专属操作路由均成立；每步有完整 after、CAS、精确回读和独立完整性审计；Reviewer pass 后继续至真实关闭确认位置 | 21、32、Helper 回读与完整性审计 | 21 机械校验、Helper 回读、全量事实完整性检查与 source-contract | 当次 WorkCase 写回链；不证明自然语言授权充分或结果正确 | 保持最后合法状态；blocked 等待真实恢复条件，授权超界按结果链收敛，不新增 Human Gate |
@@ -93,10 +93,10 @@ ldvh_spec:
 
 ## 7. Human Gate
 
-本文不新增 Human Gate。当前 WorkCase 正常运行只消费 21 的 Gate 1 与 Gate 2：Gate 1 一次批准当前计划、`execution_authorization` 及其风险边界；Gate 2 判断最终关闭。Gate 1 后，授权包逐项列明的文件与事实写入、事实对象创建/变更、本地 commit、subagent/委派、独立方案复核和独立结果复核直接消费当前 `execution_approval` 与 Human 来源回指，不因进入模板步骤、切换执行者、上下文恢复或调用能力而重复确认。
+本文不新增 Human Gate。当前 WorkCase 正常运行只消费 21 的 Gate 1 与 Gate 2：Gate 1 一次批准当前计划、`execution_authorization` 及其风险边界，并在 capability limitation 实际存在时同时接受或拒绝其 Gate 1 后 fallback policy 与保证差距；Gate 2 判断最终关闭。Gate 1 后，授权包逐项列明的文件与事实写入、事实对象创建/变更、本地 commit、subagent/委派和实际方案/结果复核直接消费当前 `execution_approval` 与 Human 来源回指，不因进入模板步骤、切换执行者、上下文恢复或调用能力而重复确认；但冻结 fallback policy 不能替代每次 review 对当前能力证据和停止条件的重新判断。
 
 Gate 1 不授权未列明行动、对象或影响，不授权范围/风险扩大，也不因一般实施授权扩张为 push、PR、发布、外部消息、破坏性历史操作或其它禁止副作用。执行中遇到这些情况时不得询问扩权；按 §5.2 取消或收敛受影响 item 后继续结果链。Human 主动撤回或改变目标仍按 21 处理，但正常模板不得主动制造第三次确认。
 
 ## 8. Stop Conditions
 
-出现以下任一情况时停止受影响动作但不停止安全收敛：当前 WorkCase、指纹、授权包、批准或依赖不可确认；任一 item 吸收 Controller 自检、独立结果复核、受控提交、关闭准备、Human Gate 或其它 WorkCase 生命周期关口；准备在实际开始前写入 `in_progress` 或在开始后补造它；以测试、子任务或模板步骤推定授权或完成；把 pending→completed 例外用于跨检查点工作；CAS 写后未回读；需要多对象共同生效但能力边界未满足；动作未列明、范围/风险扩大，或准备执行 push、PR、发布、外部消息等禁止副作用；准备以模板自动授权行动、实现调度/spawn 能力、让 Controller 冒充独立 Reviewer 或关闭 WorkCase。命中生命周期关口误建模时按 §5.2 在 `plan_revising` 中作包内修正并 fresh review 后自动恢复；超包与禁止动作零执行、取消或收敛受影响 item并进入结果链；其它恢复按 21、32 与 00 的当前规则进行。不得把任一 Stop Condition 转化为执行期追加 Human 授权请求。
+出现以下任一情况时停止受影响动作但不停止安全收敛：当前 WorkCase、指纹、授权包、批准或依赖不可确认；任一 item 吸收 Controller 自检、结果复核、受控提交、关闭准备、Human Gate 或其它 WorkCase 生命周期关口；准备在实际开始前写入 `in_progress` 或在开始后补造它；以测试、子任务或模板步骤推定授权或完成；把 pending→completed 例外用于跨检查点工作；CAS 写后未回读；需要多对象共同生效但能力边界未满足；动作未列明、范围/风险扩大，或准备执行 push、PR、发布、外部消息等禁止副作用；准备以模板自动授权行动、实现调度/spawn 能力、让 Controller 冒充 Reviewer 或关闭 WorkCase；实际 review 方法未知或被错误标成 subagent；同一 AI fallback 缺少冻结 limitation、当前证据、当次类别、相同 assurance gap 或清晰停止条件评估。命中生命周期关口误建模时按 §5.2 在 `plan_revising` 中作包内修正并 fresh review 后自动恢复；超包与禁止动作零执行、取消或收敛受影响 item并进入结果链；review 方法条件不成立时优先改用实际可用的只读 subagent，否则停止当次 review；其它恢复按 21、32 与 00 的当前规则进行。不得把任一 Stop Condition 转化为执行期追加 Human 授权请求。

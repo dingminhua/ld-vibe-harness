@@ -1290,6 +1290,7 @@ function ReviewList({
         const subjectVersion = detailNumber(review.subject_version);
         const conclusion = detailString(review.conclusion);
         const feedback = detailStrings(review.feedback);
+        const actualMethod = detailString(review.actual_method);
         return (
           <li
             key={`${reviewer}-${reviewedAt}-${subjectVersion ?? "version"}-${index}`}
@@ -1322,6 +1323,7 @@ function ReviewList({
               <ReviewConclusionChip value={conclusion} locale={locale} />
             </div>
             <div className="grid min-w-0 gap-3 px-3.5 py-3">
+              <ReviewMethodDisclosure review={review} actualMethod={actualMethod} locale={locale} />
               <ReviewProseBlock
                 label={t("objectDetail.workcaseReviewScope")}
                 value={review.scope}
@@ -1340,6 +1342,64 @@ function ReviewList({
         );
       })}
     </ul>
+  );
+}
+
+function ReviewMethodDisclosure({
+  review,
+  actualMethod,
+  locale,
+}: {
+  review: Record<string, unknown>;
+  actualMethod: string;
+  locale: string;
+}) {
+  if (!actualMethod) return null;
+  const fallback = actualMethod === "same-ai-switched-role-read-only";
+  return (
+    <section className={`min-w-0 rounded-md border px-3 py-2.5 ${fallback ? "border-amber-400/35 bg-amber-500/[0.055]" : "border-emerald-400/25 bg-emerald-500/[0.04]"}`}>
+      <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+        <span className="ldvh-meta text-ldvh-text-secondary">{getFieldLabel("actual_method", locale)}</span>
+        <span className={`ldvh-chip rounded border px-2 py-0.5 ${fallback ? "border-amber-400/35 text-amber-800 dark:text-amber-100" : "border-emerald-400/30 text-emerald-700 dark:text-emerald-100"}`}>
+          {getFieldValueLabel("actual_method", actualMethod, locale)}
+        </span>
+      </div>
+      {fallback && (
+        <div className="mt-2 grid min-w-0 gap-2 border-t border-amber-400/20 pt-2">
+          <TextField fieldKey="capability_limitation_id" value={review.capability_limitation_id} locale={locale} />
+          <TextField fieldKey="assurance_gap" value={review.assurance_gap} locale={locale} tone="warning" />
+          <ReviewDisclosureList fieldKey="capability_evidence" items={detailStrings(review.capability_evidence)} locale={locale} />
+          <TextField fieldKey="stop_condition_assessment" value={review.stop_condition_assessment} locale={locale} />
+        </div>
+      )}
+    </section>
+  );
+}
+
+function ReviewDisclosureList({
+  fieldKey,
+  items,
+  locale,
+}: {
+  fieldKey: string;
+  items: string[];
+  locale: string;
+}) {
+  if (items.length === 0) return null;
+  return (
+    <div className="min-w-0">
+      <p className="ldvh-meta text-ldvh-text-secondary/75">{getFieldLabel(fieldKey, locale)}</p>
+      <ul className="mt-1 grid min-w-0 gap-1">
+        {items.map((item) => (
+          <li key={item} className="flex min-w-0 items-start gap-2">
+            <span className="mt-2 size-1 shrink-0 rounded-full bg-amber-500/75" aria-hidden="true" />
+            <p className="ldvh-caption min-w-0 break-words text-ldvh-text-secondary">
+              {getFieldValueLabel(fieldKey, item, locale)}
+            </p>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
@@ -1568,9 +1628,12 @@ function ExecutionAuthorization({
     : [];
   const prohibitedActions = detailStrings(authorization.prohibited_actions);
   const prerequisites = detailStrings(authorization.human_prerequisites);
+  const limitations = Array.isArray(authorization.capability_limitations)
+    ? authorization.capability_limitations.filter((value): value is Record<string, unknown> => Boolean(value) && typeof value === "object" && !Array.isArray(value))
+    : [];
   const { t } = useI18n();
-  const [activeTab, setActiveTab] = useState<"actions" | "prohibited" | "prerequisites" | null>(null);
-  const toggleTab = (tab: "actions" | "prohibited" | "prerequisites") => {
+  const [activeTab, setActiveTab] = useState<"actions" | "prohibited" | "prerequisites" | "limitations" | null>(null);
+  const toggleTab = (tab: "actions" | "prohibited" | "prerequisites" | "limitations") => {
     setActiveTab((current) => current === tab ? null : tab);
   };
   const tabStyles = {
@@ -1589,10 +1652,15 @@ function ExecutionAuthorization({
       selected: "border-violet-400/50 border-b-transparent bg-violet-500/[0.08]",
       panel: "border-violet-400/35 bg-violet-500/[0.035]",
     },
+    limitations: {
+      button: "border-amber-400/40 text-amber-800/85 hover:bg-amber-500/[0.07] dark:text-amber-100/85",
+      selected: "border-amber-400/55 border-b-transparent bg-amber-500/[0.09]",
+      panel: "border-amber-400/40 bg-amber-500/[0.045]",
+    },
   };
   return (
     <section className="w-full min-w-0">
-      <div className="grid w-full min-w-0 grid-cols-3 pt-3">
+      <div className={`grid w-full min-w-0 pt-3 ${limitations.length > 0 ? "grid-cols-4" : "grid-cols-3"}`}>
         <button
           type="button"
           aria-controls="workcase-authorization-actions"
@@ -1616,10 +1684,21 @@ function ExecutionAuthorization({
           aria-controls="workcase-authorization-prerequisites"
           aria-expanded={activeTab === "prerequisites"}
           onClick={() => toggleTab("prerequisites")}
-          className={`ldvh-caption-strong w-full min-w-0 rounded-tr-lg border border-l-0 px-2 py-2 text-center transition-colors ${tabStyles.prerequisites.button} ${activeTab === "prerequisites" ? `relative z-10 ${tabStyles.prerequisites.selected}` : ""}`}
+          className={`ldvh-caption-strong w-full min-w-0 border border-l-0 px-2 py-2 text-center transition-colors ${limitations.length === 0 ? "rounded-tr-lg" : ""} ${tabStyles.prerequisites.button} ${activeTab === "prerequisites" ? `relative z-10 ${tabStyles.prerequisites.selected}` : ""}`}
         >
           {t("objectList.workcasePrerequisiteCount", { count: String(prerequisites.length) })}
         </button>
+        {limitations.length > 0 && (
+          <button
+            type="button"
+            aria-controls="workcase-authorization-limitations"
+            aria-expanded={activeTab === "limitations"}
+            onClick={() => toggleTab("limitations")}
+            className={`ldvh-caption-strong w-full min-w-0 rounded-tr-lg border border-l-0 px-2 py-2 text-center transition-colors ${tabStyles.limitations.button} ${activeTab === "limitations" ? `relative z-10 ${tabStyles.limitations.selected}` : ""}`}
+          >
+            {t("objectList.workcaseCapabilityLimitationCount", { count: String(limitations.length) })}
+          </button>
+        )}
       </div>
       {activeTab === "actions" && (
         <div id="workcase-authorization-actions" className={`-mt-px grid min-w-0 gap-3 rounded-b-lg border px-3 py-3 ${tabStyles.actions.panel}`}>
@@ -1638,6 +1717,11 @@ function ExecutionAuthorization({
       {activeTab === "prerequisites" && (
         <div id="workcase-authorization-prerequisites" className={`-mt-px min-w-0 rounded-b-lg border px-3 py-1 ${tabStyles.prerequisites.panel}`}>
           <AuthorizationStringList items={prerequisites} tone="prerequisite" />
+        </div>
+      )}
+      {activeTab === "limitations" && (
+        <div id="workcase-authorization-limitations" className={`-mt-px min-w-0 rounded-b-lg border px-3 py-3 ${tabStyles.limitations.panel}`}>
+          <CapabilityLimitationList limitations={limitations} locale={locale} />
         </div>
       )}
     </section>
@@ -1662,6 +1746,55 @@ function AuthorizationActionsContent({
       </ul>
       <AuthorizationConstraints authorization={authorization} locale={locale} />
     </div>
+  );
+}
+
+function CapabilityLimitationList({
+  limitations,
+  locale,
+}: {
+  limitations: Array<Record<string, unknown>>;
+  locale: string;
+}) {
+  return (
+    <ul className="grid min-w-0 gap-3">
+      {limitations.map((limitation, index) => {
+        const limitationId = detailString(limitation.limitation_id);
+        const evidence = detailStrings(limitation.evidence);
+        const categories = detailStrings(limitation.affected_review_categories);
+        const stopConditions = detailStrings(limitation.stop_conditions);
+        return (
+          <li key={`${limitationId}-${index}`} className="min-w-0 rounded-lg border border-amber-400/30 bg-amber-500/[0.035] px-3.5 py-3">
+            <div className="min-w-0 border-l-2 border-amber-400/65 pl-3">
+              <p className="ldvh-card-decision-title text-amber-900/85 dark:text-amber-100/90">
+                {detailString(limitation.observation_summary)}
+              </p>
+              {limitationId && <p className="ldvh-meta mt-0.5 break-all text-amber-800/60 dark:text-amber-100/60">{limitationId}</p>}
+            </div>
+            <dl className="mt-3 grid min-w-0 grid-cols-2 gap-3">
+              {[
+                ["capability", limitation.capability],
+                ["availability", limitation.availability],
+                ["fallback_policy", limitation.fallback_policy],
+                ["assurance_gap", limitation.assurance_gap],
+              ].map(([fieldKey, value]) => (
+                <div key={String(fieldKey)} className="min-w-0 rounded-md border border-amber-400/20 bg-amber-500/[0.025] px-3 py-2">
+                  <dt className="ldvh-meta text-amber-800/65 dark:text-amber-100/65">{getFieldLabel(String(fieldKey), locale)}</dt>
+                  <dd className="ldvh-caption-strong mt-1 min-w-0 break-words text-amber-950/75 dark:text-amber-100/80">
+                    {getFieldValueLabel(String(fieldKey), detailString(value), locale)}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+            <div className="mt-3 grid min-w-0 gap-2 border-t border-amber-400/20 pt-3">
+              <ReviewDisclosureList fieldKey="affected_review_categories" items={categories} locale={locale} />
+              <ReviewDisclosureList fieldKey="evidence" items={evidence} locale={locale} />
+              <ReviewDisclosureList fieldKey="stop_conditions" items={stopConditions} locale={locale} />
+            </div>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 

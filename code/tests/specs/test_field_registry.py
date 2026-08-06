@@ -16,8 +16,8 @@ def test_current_registry_is_complete_and_resolves_all_current_types(current_spe
     inspection = _inspection(current_specs_repository)
 
     assert inspection.complete is True
-    assert len(inspection.structures) == 21
-    assert len(inspection.registrations) == 143
+    assert len(inspection.structures) == 22
+    assert len(inspection.registrations) == 158
     assert {item.fact_type_key for item in inspection.fact_types} == {
         "spark",
         "workcase",
@@ -73,6 +73,7 @@ def test_workcase_current_structures_have_admission_records(
     assert workcase_structures == {
         "workcase-item",
         "workcase-execution-authorization",
+        "workcase-capability-limitation",
         "workcase-authorized-action",
         "workcase-quality-gate",
         "workcase-review",
@@ -162,4 +163,3 @@ def test_change_log_signature_registration_carries_value_convention(
     assert "实际驱动模型/Agent 身份" in text
     assert "禁止" in text and "重复" in text
     assert "平台/执行会话按实际运行环境注入" in text or "平台/执行会话" in text
-

@@ -335,6 +335,42 @@ def test_workcase_creation_requires_current_quality_gate_authorization(
     assert not (command.boundary.git_common_dir / "ldvh").exists()
 
 
+def test_workcase_creation_accepts_explicit_pre_gate_same_ai_bootstrap(
+    current_specs_repository: Path,
+    tmp_path: Path,
+) -> None:
+    command = _workcase_command(current_specs_repository, tmp_path)
+    command.supplied["execution_authorization"]["capability_limitations"] = [
+        {
+            "limitation_id": "limitation-subagent-review",
+            "capability": "independent-subagent-review",
+            "availability": "unavailable",
+            "observation_summary": "The current environment exposes no subagent facility.",
+            "evidence": ["tool inventory reports no subagent capability"],
+            "affected_review_categories": ["creation_review", "plan_delta_review", "result_review"],
+            "fallback_policy": "same-ai-switched-role-read-only",
+            "assurance_gap": "The Reviewer does not have execution-environment independence.",
+            "stop_conditions": [
+                "Capability evidence becomes uncertain",
+                "The review cannot remain read-only and perspective-separated",
+            ],
+        }
+    ]
+    command.supplied["creation_reviews"][0].update(
+        {
+            "actual_method": "same-ai-switched-role-read-only",
+            "capability_limitation_id": "limitation-subagent-review",
+            "capability_evidence": ["current tool inventory still reports no subagent capability"],
+            "assurance_gap": "The Reviewer does not have execution-environment independence.",
+            "stop_condition_assessment": "clear",
+        }
+    )
+
+    candidate = prepare_fact_creation(command, observed_at="2026-07-26T13:00:00+08:00")
+
+    assert isinstance(candidate, PreparedFactCreation)
+
+
 def test_workcase_creation_rejects_a_locally_valid_target_with_a_missing_deep_dependency(
     current_specs_repository: Path,
     tmp_path: Path,

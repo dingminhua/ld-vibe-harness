@@ -254,7 +254,19 @@ function isValidCriterionDefinitions(value: unknown): value is Array<Record<stri
 function isValidGateReviews(value: unknown): boolean {
   return Array.isArray(value) && value.length > 0 && value.every((candidate) => {
     if (!isRecord(candidate)) return false;
-    return isNonEmptyString(candidate.reviewer)
+    const method = candidate.actual_method;
+    const fallbackFields = ['capability_limitation_id', 'capability_evidence', 'assurance_gap', 'stop_condition_assessment'];
+    const methodValid = method === undefined
+      ? fallbackFields.every((key) => candidate[key] === undefined)
+      : method === 'subagent-read-only'
+        ? fallbackFields.every((key) => candidate[key] === undefined)
+        : method === 'same-ai-switched-role-read-only'
+          && isNonEmptyString(candidate.capability_limitation_id)
+          && isStringArray(candidate.capability_evidence, false)
+          && isNonEmptyString(candidate.assurance_gap)
+          && candidate.stop_condition_assessment === 'clear';
+    return methodValid
+      && isNonEmptyString(candidate.reviewer)
       && isNonEmptyString(candidate.reviewed_at)
       && typeof candidate.subject_version === 'number'
       && isNonEmptyString(candidate.scope)
@@ -262,6 +274,24 @@ function isValidGateReviews(value: unknown): boolean {
       && (candidate.feedback === undefined || isStringArray(candidate.feedback))
       && (candidate.controller_resolution === undefined || isNonEmptyString(candidate.controller_resolution));
   });
+}
+
+function isValidCapabilityLimitations(value: unknown): boolean {
+  return Array.isArray(value) && value.length > 0 && value.every((candidate) => (
+    isRecord(candidate)
+    && isNonEmptyString(candidate.limitation_id)
+    && candidate.capability === 'independent-subagent-review'
+    && candidate.availability === 'unavailable'
+    && isNonEmptyString(candidate.observation_summary)
+    && isStringArray(candidate.evidence, false)
+    && isStringArray(candidate.affected_review_categories, false)
+    && candidate.affected_review_categories.every((category) => (
+      category === 'creation_review' || category === 'plan_delta_review' || category === 'result_review'
+    ))
+    && candidate.fallback_policy === 'same-ai-switched-role-read-only'
+    && isNonEmptyString(candidate.assurance_gap)
+    && isStringArray(candidate.stop_conditions, false)
+  ));
 }
 
 function isValidExecutionAuthorization(value: unknown): value is Record<string, unknown> {
@@ -278,7 +308,8 @@ function isValidExecutionAuthorization(value: unknown): value is Record<string, 
     && isNonEmptyString(value.allowed_adjustments)
     && isNonEmptyString(value.verification_and_rollback)
     && isNonEmptyString(value.out_of_bounds_handling)
-    && (value.human_prerequisites === undefined || isStringArray(value.human_prerequisites, false));
+    && (value.human_prerequisites === undefined || isStringArray(value.human_prerequisites, false))
+    && (value.capability_limitations === undefined || isValidCapabilityLimitations(value.capability_limitations));
 }
 
 function isValidExecutionApproval(value: unknown): boolean {
@@ -332,7 +363,7 @@ function ExecutionAuthorizationCard({
   compact: boolean;
 }) {
   const { t } = useI18n();
-  const [activeTab, setActiveTab] = useState<"actions" | "prohibited" | "prerequisites" | null>(null);
+  const [activeTab, setActiveTab] = useState<"actions" | "prohibited" | "prerequisites" | "limitations" | null>(null);
   if (!isValidExecutionAuthorization(authorization)) {
     return (
       <GateOneFieldSection
@@ -348,8 +379,9 @@ function ExecutionAuthorizationCard({
   const actions = authorization.authorized_actions as Record<string, unknown>[];
   const prohibitedActions = authorization.prohibited_actions as string[];
   const prerequisites = (authorization.human_prerequisites ?? []) as string[];
+  const limitations = (authorization.capability_limitations ?? []) as Record<string, unknown>[];
   const tabTypography = compact ? 'ldvh-meta' : 'ldvh-caption-strong';
-  const toggleTab = (tab: "actions" | "prohibited" | "prerequisites") => {
+  const toggleTab = (tab: "actions" | "prohibited" | "prerequisites" | "limitations") => {
     setActiveTab((current) => current === tab ? null : tab);
   };
   const tabStyles = {
@@ -368,6 +400,11 @@ function ExecutionAuthorizationCard({
       selected: 'border-violet-400/50 border-b-transparent bg-violet-500/[0.08]',
       panel: 'border-violet-400/35 bg-violet-500/[0.035]',
     },
+    limitations: {
+      button: 'border-amber-400/40 text-amber-800/85 hover:bg-amber-500/[0.07] dark:text-amber-100/85',
+      selected: 'border-amber-400/55 border-b-transparent bg-amber-500/[0.09]',
+      panel: 'border-amber-400/40 bg-amber-500/[0.045]',
+    },
   };
 
   return (
@@ -382,16 +419,21 @@ function ExecutionAuthorizationCard({
         {t('objectDetail.workcaseExecutionAuthorizationBoundary')}
       </p>
       <div className="mt-2.5 min-w-0">
-        <div className="grid w-full min-w-0 grid-cols-3">
+        <div className={`grid w-full min-w-0 ${limitations.length > 0 ? 'grid-cols-4' : 'grid-cols-3'}`}>
           <button type="button" aria-controls="workcase-card-authorization-actions" aria-expanded={activeTab === 'actions'} onClick={() => toggleTab('actions')} className={`${tabTypography} w-full min-w-0 border px-1.5 py-1.5 text-center transition-colors first:rounded-tl-md ${tabStyles.actions.button} ${activeTab === 'actions' ? `relative z-10 ${tabStyles.actions.selected}` : ''}`}>
             {t('objectList.workcaseAuthorizedActionCount', { count: String(actions.length) })}
           </button>
           <button type="button" aria-controls="workcase-card-authorization-prohibited" aria-expanded={activeTab === 'prohibited'} onClick={() => toggleTab('prohibited')} className={`${tabTypography} w-full min-w-0 border border-l-0 px-1.5 py-1.5 text-center transition-colors ${tabStyles.prohibited.button} ${activeTab === 'prohibited' ? `relative z-10 ${tabStyles.prohibited.selected}` : ''}`}>
             {t('objectList.workcaseProhibitedActionCount', { count: String(prohibitedActions.length) })}
           </button>
-          <button type="button" aria-controls="workcase-card-authorization-prerequisites" aria-expanded={activeTab === 'prerequisites'} onClick={() => toggleTab('prerequisites')} className={`${tabTypography} w-full min-w-0 rounded-tr-md border border-l-0 px-1.5 py-1.5 text-center transition-colors ${tabStyles.prerequisites.button} ${activeTab === 'prerequisites' ? `relative z-10 ${tabStyles.prerequisites.selected}` : ''}`}>
+          <button type="button" aria-controls="workcase-card-authorization-prerequisites" aria-expanded={activeTab === 'prerequisites'} onClick={() => toggleTab('prerequisites')} className={`${tabTypography} w-full min-w-0 border border-l-0 px-1.5 py-1.5 text-center transition-colors ${limitations.length === 0 ? 'rounded-tr-md' : ''} ${tabStyles.prerequisites.button} ${activeTab === 'prerequisites' ? `relative z-10 ${tabStyles.prerequisites.selected}` : ''}`}>
             {t('objectList.workcasePrerequisiteCount', { count: String(prerequisites.length) })}
           </button>
+          {limitations.length > 0 && (
+            <button type="button" aria-controls="workcase-card-authorization-limitations" aria-expanded={activeTab === 'limitations'} onClick={() => toggleTab('limitations')} className={`${tabTypography} w-full min-w-0 rounded-tr-md border border-l-0 px-1.5 py-1.5 text-center transition-colors ${tabStyles.limitations.button} ${activeTab === 'limitations' ? `relative z-10 ${tabStyles.limitations.selected}` : ''}`}>
+              {t('objectList.workcaseCapabilityLimitationCount', { count: String(limitations.length) })}
+            </button>
+          )}
         </div>
         {activeTab === 'actions' && (
           <div id="workcase-card-authorization-actions" className={`-mt-px min-w-0 rounded-b-md border px-2.5 py-1.5 ${tabStyles.actions.panel}`}>
@@ -413,6 +455,11 @@ function ExecutionAuthorizationCard({
         {activeTab === 'prerequisites' && (
           <div id="workcase-card-authorization-prerequisites" className={`-mt-px min-w-0 rounded-b-md border px-2.5 py-1.5 ${tabStyles.prerequisites.panel}`}>
             <AuthorizationCardItems items={prerequisites} tone="prerequisite" />
+          </div>
+        )}
+        {activeTab === 'limitations' && (
+          <div id="workcase-card-authorization-limitations" className={`-mt-px min-w-0 rounded-b-md border px-2.5 py-2 ${tabStyles.limitations.panel}`}>
+            <GateOneValue value={limitations} locale={locale} depth={0} />
           </div>
         )}
       </div>

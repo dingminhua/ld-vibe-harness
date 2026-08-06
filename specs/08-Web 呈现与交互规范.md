@@ -251,7 +251,7 @@ resolved 投影的 `progress_group=progressing` 且 `progress_step` 非 null 时
 |---|---|---|
 | `item_execution` | 工作项执行 | 当前工作项推进 |
 | `controller_self_check` | 主控自检 | 完整结果投影形成 |
-| `independent_review` | 独立复核 | 结果独立复核 |
+| `independent_review` | 结果复核 | 当前结果的实际 Reviewer 第二视角；稳定键不证明实际方法为 subagent 或执行环境独立 |
 | `controller_synthesis` | 主控收敛 | 关闭提案形成 |
 
 确定性 `status + phase` 映射、阻塞覆盖层、叙述 key 和结构上下一必经控制步骤的闭集只见 21 §9.3，本节不重复。`lifecycle_position=plan_revising` 投影为“推进中”但省略 `progress_step`，Card 显示轨迹外内部位置“方案修订中”。创建前计划形成与 creation review 尚未产生正式 WorkCase，不得投影为外部 WorkCase Card、进展分组或推进环节。所有 `status=blocked` Card，包括处于 `human_closure_confirming` 位置的 Card，都必须在保留投影位置时另行清楚呈现实际 `blocking_summary`；不得把 blocked 改成第五个进展分组，不得用分组掩盖阻塞，也不得显示“关闭待确认”“等待 Gate 2”“仅剩关闭确认”或等义 readiness 结论。unresolved 投影同样不得猜测相邻阶段、进展分组或上述结论。
@@ -264,7 +264,9 @@ WorkCase 列表筛选、Dashboard 聚合或其它以外部 Card 为成员的 Hum
 2. **成功标准**：直接读取 `success_criterion_definitions[].statement`，回答完成后按哪些可观察条件判断结果；
 3. **执行授权边界**：直接读取 `execution_authorization`，确定性显示允许动作、禁止项和实际存在的 Human 前置条件数量；它们是对象入口摘要，不重新生成或解释授权内容。
 
-Web 不得为这三项重新生成 AI 摘要，不得从 `scope`、work items、审核记录或其它字段拼凑替代文本。目标与全部成功标准不得截断、限制条数或用“其余若干项”代替；Card 不提供执行授权的展开、折叠或条目正文，完整授权基线仅在同源详情页呈现，Human 在 Gate1 操作前必须进入详情阅读完整 authorized action、目标范围、影响范围、风险、回滚、action ceiling、prohibited actions、allowed adjustments、verification and rollback、out-of-bounds handling 与实际存在的 Human prerequisites。字段缺失或不可读时必须明确显示相应信息缺失并禁用批准。成功标准是没有先后关系的并列集合，在 Card 中必须统一使用圆点，不得按数组位置、criterion ID 或显示次序添加数字序号。当实际 `status=blocked` 时，Card 必须在判断输入区之外另设独立的当前状态提示区，完整显示顶层 `blocking_summary`；该提示不构成第四项阅读入口，未记录阻塞原因时明确显示相应信息缺失。除这一阻塞提示外，该 Card 不显示 work item 执行统计或关闭材料；scope、work items、依赖、方法、验证安排、creation review 与完整授权基线继续从同源详情读取，并共同构成 Gate1 材料。Gate1 后所有 `progressing` 页面只读显示冻结 authorization/approval，不提供追加授权、重新批准或第三个 Human Gate 控件。
+Web 不得为这三项重新生成 AI 摘要，不得从 `scope`、work items、审核记录或其它字段拼凑替代文本。目标与全部成功标准不得截断、限制条数或用“其余若干项”代替；Card 不提供执行授权的展开、折叠或条目正文，完整授权基线仅在同源详情页呈现，Human 在 Gate1 操作前必须进入详情阅读完整 authorized action、目标范围、影响范围、风险、回滚、action ceiling、prohibited actions、allowed adjustments、verification and rollback、out-of-bounds handling、实际存在的 Human prerequisites，以及实际存在的 capability limitations。每项 limitation 必须显示能力、可用性观察、当前证据、受影响审核类别、fallback policy、保证差距和停止条件；creation review 必须另行显示当次 `actual_method`。同一 AI 方法必须明确显示为低保证的“同一 AI 切换只读视角”，不得以“独立审核”“subagent 审核”或等价文案呈现；Gate1 页面必须区分“创建复核已经实际采用的方法”与“Human 正在决定是否冻结供 Gate1 后使用的 fallback policy”，不得让批准动作追认前者为独立。字段缺失或不可读时必须明确显示相应信息缺失并禁用批准；结构不合法或条件绑定不可读按同一规则处理。成功标准是没有先后关系的并列集合，在 Card 中必须统一使用圆点，不得按数组位置、criterion ID 或显示次序添加数字序号。当实际 `status=blocked` 时，Card 必须在判断输入区之外另设独立的当前状态提示区，完整显示顶层 `blocking_summary`；该提示不构成第四项阅读入口，未记录阻塞原因时明确显示相应信息缺失。除这一阻塞提示外，该 Card 不显示 work item 执行统计或关闭材料；scope、work items、依赖、方法、验证安排、creation review 与完整授权基线继续从同源详情读取，并共同构成 Gate1 材料。Gate1 后所有 `progressing` 页面只读显示冻结 authorization/approval，不提供追加授权、重新批准或第三个 Human Gate 控件。
+
+WorkCase 详情中的每项 creation review 与 result review 必须显示实际 `actual_method`。当方法为 `same-ai-switched-role-read-only` 时，还必须显示 `capability_limitation_id`、当次 `capability_evidence`、`assurance_gap` 与 `stop_condition_assessment`，并使 Human 能在同页对照冻结 limitation；缺失或不一致时显示审核保证信息不可判定，不得只显示 conclusion、feedback 或 Reviewer 名称而隐藏方法差异。兼容对象没有 capability limitations 且 review 合法省略 `actual_method` 时，Web 只能显示方法未记录，不能反推为 subagent。
 
 `progressing` Card 在相同通用对象身份、标题和进展分组之外，正文只显示“目标”和“当前情况”两个区域：
 

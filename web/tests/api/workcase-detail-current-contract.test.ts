@@ -207,7 +207,7 @@ test('closure-confirming detail preserves tri-state results and separates every 
 
   const locales = fs.readFileSync(path.join(repositoryRoot, 'web/src/i18n/locales.ts'), 'utf8');
   assert.match(locales, /workcaseExecutionApprovalBoundary[^\n]+不表示技术结果、验证或关闭已经成立/);
-  assert.match(locales, /workcaseControllerCheckBoundary[^\n]+不等于独立复核或 Human 验收/);
+  assert.match(locales, /workcaseControllerCheckBoundary[^\n]+不等于 Reviewer 结果复核或 Human 验收/);
   assert.match(locales, /workcaseClosureProposalBoundary[^\n]+不是既成终态或关闭批准/);
   assert.match(locales, /proposed_outcome:[\s\S]{0,180}completed: \{ zh: '目标达成', en: 'Achieved'/);
   assert.match(locales, /closure_outcome:[\s\S]{0,120}completed: \{ zh: '完成'/);
@@ -357,16 +357,22 @@ test('WorkCase authorization detail follows the shared overview, object, and sec
     layout.indexOf('function InlineStringArrayField'),
   );
 
-  assert.match(authorization, /useState<"actions" \| "prohibited" \| "prerequisites" \| null>\(null\)/);
+  assert.match(authorization, /useState<"actions" \| "prohibited" \| "prerequisites" \| "limitations" \| null>\(null\)/);
   assert.match(authorization, /workcaseAuthorizedActionCount/);
   assert.match(authorization, /workcaseProhibitedActionCount/);
   assert.match(authorization, /workcasePrerequisiteCount/);
+  assert.match(authorization, /workcaseCapabilityLimitationCount/);
   assert.match(authorization, /aria-controls="workcase-authorization-actions"/);
   assert.match(authorization, /aria-controls="workcase-authorization-prohibited"/);
   assert.match(authorization, /aria-controls="workcase-authorization-prerequisites"/);
+  assert.match(authorization, /aria-controls="workcase-authorization-limitations"/);
   assert.match(authorization, /aria-expanded=\{activeTab === "actions"\}/);
   assert.match(authorization, /aria-expanded=\{activeTab === "prohibited"\}/);
   assert.match(authorization, /aria-expanded=\{activeTab === "prerequisites"\}/);
+  assert.match(authorization, /aria-expanded=\{activeTab === "limitations"\}/);
+  assert.match(authorization, /function CapabilityLimitationList/);
+  assert.match(authorization, /fieldKey="affected_review_categories"/);
+  assert.match(authorization, /fieldKey="stop_conditions"/);
   assert.match(authorization, /workcaseAuthorizationConstraints/);
   assert.match(authorization, /function AuthorizationActionsContent/);
   assert.match(authorization, /<AuthorizationActionsContent[\s\S]*?authorization=\{authorization\}/);
@@ -596,6 +602,12 @@ test('narrative fields read as prose while structured records keep label rows', 
 
   // 复核、批准与关闭处置不再是同权值对表：身份和结论进入标题栏，反馈、主控处置和责任去向分层呈现。
   assert.match(layout, /function ReviewConclusionChip\(/);
+  assert.match(layout, /function ReviewMethodDisclosure\(/);
+  assert.match(layout, /same-ai-switched-role-read-only/);
+  assert.match(layout, /fieldKey="capability_limitation_id"/);
+  assert.match(layout, /fieldKey="assurance_gap"/);
+  assert.match(layout, /fieldKey="capability_evidence"/);
+  assert.match(layout, /fieldKey="stop_condition_assessment"/);
   assert.match(layout, /function ReviewFeedbackBlock\(/);
   assert.match(layout, /function ReviewProseBlock\(/);
   const reviewProseBlock = layout.slice(

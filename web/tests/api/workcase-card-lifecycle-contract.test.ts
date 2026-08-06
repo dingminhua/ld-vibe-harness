@@ -239,11 +239,13 @@ test('WorkCase cards use compact authorization tabs and limit allowed actions to
   const authorization = list.slice(authorizationStart, authorizationEnd);
 
   assert.ok(authorizationStart >= 0 && authorizationEnd > authorizationStart);
-  assert.match(authorization, /useState<"actions" \| "prohibited" \| "prerequisites" \| null>\(null\)/);
-  assert.match(authorization, /grid w-full min-w-0 grid-cols-3/);
-  for (const tab of ['actions', 'prohibited', 'prerequisites']) {
+  assert.match(authorization, /useState<"actions" \| "prohibited" \| "prerequisites" \| "limitations" \| null>\(null\)/);
+  assert.match(authorization, /limitations\.length > 0 \? 'grid-cols-4' : 'grid-cols-3'/);
+  for (const tab of ['actions', 'prohibited', 'prerequisites', 'limitations']) {
     assert.match(authorization, new RegExp(`aria-controls="workcase-card-authorization-${tab}"`));
   }
+  assert.match(authorization, /workcaseCapabilityLimitationCount/);
+  assert.match(authorization, /<GateOneValue value=\{limitations\}/);
   assert.match(authorization, /const tabTypography = compact \? 'ldvh-meta' : 'ldvh-caption-strong';/);
   assert.match(authorization, /key=\{String\(action\.action_id\)\}[\s\S]{0,320}\{String\(action\.summary\)\}/);
   assert.doesNotMatch(authorization, /action\.(scope|effect|risk|rollback|rule_refs)/);

@@ -1,0 +1,233 @@
+title: Gate 1 能力限制披露与切换角色审核降级
+goal: 在保持审核只读和如实留痕的前提下，使缺少独立 subagent 能力的运行环境能够在 Gate 1 前结构化披露能力限制，并以 same-ai-switched-role-read-only 完成明确属于较低保证的 creation review；Gate 1 向 Human 同时呈现该实际审核方式、保证缺口和后续 fallback policy，由 Human 决定是否接受这些材料作为执行基线，并仅在批准后允许被覆盖类别的 PlanΔ/result fallback；禁止将 switched-role 方式冒称为 subagent 审核、执行环境独立审核或等价保证。
+scope: 修改 specs/21-WorkCase-工作项.md，建立无 subagent 环境的 Gate 1 前 bootstrap：当前观察与证据确认 creation_review 所需 subagent 不可用时，可在 Gate 1 前由同一 AI 切换 Reviewer 角色完成明确低保证、只读且如实标注的 creation review；该 review 是已经发生的实际方法，Gate 1 不追溯授权它发生，而是向 Human 呈现能力限制、实际方法、保证缺口和后续 fallback policy，由 Human 决定是否接受这些材料作为执行基线，拒绝时不进入执行。PlanΔ/result fallback 只在 Gate 1 已批准 policy、类别、当前证据、stop conditions 与 fingerprint 同时匹配时准入。同步建立 authorization baseline/fingerprint 绑定、实际方法闭集、兼容和生命周期校验；在 specs/attachments/05.Att.01-事实对象统一字段登记.md 登记新增统一字段，仅在新增机械检查确需登记检查入口时修改 specs/attachments/05.Att.02-事实对象机械校验目录.md；更新 specs/34-WorkCase获批计划执行行动模板.md、specs/08-Web 呈现与交互规范.md 及必要的 specs/attachments/08.Att.01-Web API 阅读契约字段表.md，令 Gate 1 分别展示已发生 creation review actual method/assurance 与未来 policy，不把预计方式显示为事实；实现必要的事实模型验证、canonical authorization projection/fingerprint、创建/转换校验、Schema、Web 类型与详情展示，补 bootstrap、正反、兼容、fingerprint、Web 实际展示测试及全库完整性验证。不新增 Gate 0、临时对象形状、phase、status 或 Helper operation。Gate 1 批准后仅通过 Helper 将仍 open 的 spark-0061 合法转换为 routed：status=routed、移除 priority、形成完整 disposition_summary、建立 routed-to 稳定三元组并更正把 WC0062 说成已实现目标的失真载体文字；这是 Spark 自身的前瞻性终态处置，不是 WC0062 residual 的转交或补路由。全部 item terminal、验证和隔离成立后才允许本地受控提交。不修改 WC0062 的 cancelled/accept_stop 终态、residual_responsibilities、历史结论或 change_log；不实现 spawn/subagent 平台能力；不 push、PR、发布；不混入 WC0063、WC0064 或用户无关改动。
+success_criterion_definitions:
+- criterion_id: criterion-01
+  statement: capability_limitations 形成可机械校验的最小契约：记录当前环境不支持独立 subagent 的当前观察与可复核证据、受影响审核类别闭集 creation_review/plan_delta_review/result_review、fallback_policy、assurance_gap 与 stop_conditions；能力状态未知、未观察或证据不足时停止而不得推断 fallback；字段缺失表示无 fallback，已有合法 WorkCase 不因新增条件字段失效。
+- criterion_id: criterion-02
+  statement: capability limitation 与 fallback policy 进入 Gate 1 canonical authorization baseline/fingerprint；creation fallback 的实际记录在 Gate 1 前形成并随材料呈现，Gate 1 批准表示 Human 接受该较低保证作为执行依据及批准后续 policy，不追溯把它变成独立审核；未批准不得进入执行，PlanΔ/result fallback 未纳入 fingerprint 或未获批准必须拒绝。
+- criterion_id: criterion-03
+  statement: review 实际方法闭集至少区分 subagent-read-only 与 same-ai-switched-role-read-only；actual method 只能随真实 review 形成；same-AI 记录必须引用当前 capability limitation、适用类别、证据与 assurance_gap，绝不标成 subagent、执行环境独立或等价保证。
+- criterion_id: criterion-04
+  statement: 默认优先真实 subagent。creation_review 在当前证据确证 subagent 不可用、limitation 覆盖 creation_review 且 policy 与 stop conditions 允许时，可在 Gate 1 前由 same-AI switched-role 完成低保证只读审核，Human 在 Gate 1 看到实际方法和缺口后决定是否执行；PlanΔ/result 仅在 Gate 1 已批准 policy 覆盖类别，且当前证据、stop conditions 与 fingerprint 匹配时才可 same-AI；未知、证据不足或不匹配均停止。已有 limitation 但实际 subagent 可用时仍使用真实 subagent。
+- criterion_id: criterion-05
+  statement: Gate 1 Web 详情与 API 阅读契约分栏展示实际已发生的 creation review method/assurance 与未来 fallback policy；未发生的 PlanΔ/result 不生成 actual method；Human 决定文案明确为接受较低保证并允许执行及后续 policy，不表述为追溯授予独立性；字段缺失或不可解析时显式报告问题。
+- criterion_id: criterion-06
+  statement: 测试覆盖 bootstrap 正反：无 subagent、有当前证据且 limitation 覆盖 creation_review 时可形成 Gate 1 前 switched-role review 并到达 Gate 1；Human 拒绝时不执行；creation fallback 不错误要求 prior execution_approval。并覆盖真实 subagent、limitation 存在但 subagent 可用、能力未知或证据不足、PlanΔ/result 未批准、类别或模式不匹配、虚假 subagent 标注、旧对象兼容、fingerprint 稳定排序与语义变化、Web 实际字段展示及缺失或不可解析提示；相关与全量测试以及 check-fact-integrity 通过。
+- criterion_id: criterion-07
+  statement: spark-0061 形成完整合法 after：status=routed、priority 不存在、disposition_summary 说明 WC0065 对原始信息需求的完整承接及下游未完成边界、routed-to 目标为 {ldvh, workcase, workcase-0065}，且失真文字被更正；WC0062 无写入；受控提交仅含本 WC 精确路径闭集并通过 Git Gate，不执行 push、PR 或发布。
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0061
+status: open
+phase: controller_checking
+plan_version: 2
+priority: P2
+summary: 全部六个 work item 已 terminal；范围匹配验证完成，已进入 Controller 结果检查，先执行本地受控提交再形成完整结果投影。
+change_log:
+- signature:
+    agent_id: cindy-codex
+    host_environment: cindy desktop
+  session_id: cindy-wc0065-create-20260806
+  at: '2026-08-06T23:09:02.682802+08:00'
+  summary: 受控创建 WorkCase：真实独立只读 subagent 已完成创建前审核，等待 Human Gate 1。
+- signature:
+    agent_id: cindy-codex
+    host_environment: cindy desktop
+  session_id: cindy-wc0065-plan-revision-20260806
+  at: '2026-08-06T23:23:33.221733+08:00'
+  summary: Human 要求按 Controller 意见修正 creation review fallback 的 Gate 1 启动循环；进入 plan_revising，准备形成 plan_version=2 完整候选和 fresh 独立方案复核。
+- signature:
+    agent_id: cindy-codex
+    host_environment: cindy desktop
+  session_id: cindy-wc0065-plan-revision-20260806
+  at: '2026-08-06T23:26:40.986539+08:00'
+  summary: 按 Human 指令完成 Gate 1 前 PlanΔ：plan_version=2 修正 creation review bootstrap 循环，经真实独立只读 subagent fresh review 通过，返回 human_plan_confirming。
+- signature:
+    agent_id: cindy-codex
+    host_environment: cindy desktop
+  session_id: cindy-wc0065-execution-20260806
+  at: '2026-08-06T23:46:02.743990+08:00'
+  summary: Human Gate 1 批准执行 WC0065 plan_version=2；写入精确 baseline fingerprint 与 Human source ref，进入 executing。
+- signature:
+    agent_id: cindy-codex
+    host_environment: cindy desktop
+  session_id: cindy-wc0065-execution-20260806
+  at: '2026-08-06T23:46:55.948101+08:00'
+  summary: 开始 item-01：精确核对并准备通过 Helper 将 spark-0061 收敛为 routed。
+- signature:
+    agent_id: cindy-codex
+    host_environment: cindy desktop
+  session_id: cindy-wc0065-execution-20260806
+  at: '2026-08-06T23:48:07.956358+08:00'
+  summary: item-01 完成：spark-0061 已完整 routed 到 WC0065；开始 item-02 规范契约实现。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy Codex
+  session_id: cindy-wc0065-execution-20260807
+  at: '2026-08-07T00:33:28.208868+08:00'
+  summary: item-02 至 item-05 完成：Gate 1 bootstrap/fallback 规范、字段登记、机械支持和 Web 实际方法/保证披露已实现并通过相关验证；开始 item-06 全量验证。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy Codex
+  session_id: cindy-wc0065-execution-20260807
+  at: '2026-08-07T00:58:27.314937+08:00'
+  summary: item-06 完成：最终 Python 全库、TypeScript、WC0065 Web 定向契约及事实完整性均通过；Web 全库六项既有 HEAD 基线失败已隔离。全部 item terminal，进入 controller_checking。
+work_items:
+- item_id: item-01
+  goal: Gate 1 后通过 Helper 前瞻性收敛 spark-0061
+  expected_result: spark-0061 原子形成完整 routed after：status=routed、移除 priority、disposition_summary 说明 WC0065 已完整承接原始信息需求且 Spark 终态不表示下游完成、建立 routed-to {ldvh, workcase, workcase-0065} 并更正关于 WC0062 已实现目标的失真文字；不写 WC0062。
+  status: completed
+  result_summary: spark-0061 已由 Helper 原子更新并精确回读为 routed：priority 已移除，disposition_summary 完整说明 WC0065 承接和下游未完成边界，routed-to 指向 {ldvh, workcase, workcase-0065}，当前摘要已更正 WC0062 已实现目标的失真叙述；WC0062 无写入，全库完整性 complete。
+- item_id: item-02
+  goal: 定义 Gate 1 前 creation-review bootstrap 与 Gate 1 后 fallback 治理契约
+  expected_result: 21 明确无 subagent 时 Gate 1 前 switched-role creation review 的低保证准入、实际记录与 Human 接受语义，并定义 PlanΔ/result 的 Gate 1 批准绑定、方法闭集、当前证据、未知能力停止、fingerprint 和旧对象兼容。
+  status: completed
+  depends_on:
+  - item-01
+  result_summary: specs/21 已定义 Gate 1 前 creation-review bootstrap、实际方法闭集、低保证披露、Gate 1 冻结 policy 与 PlanΔ/result 当前证据约束；canonical authorization fingerprint 纳入 capability limitations，并保留无新增字段的既有合法对象兼容。
+- item_id: item-03
+  goal: 登记统一字段及必要的机械检查入口
+  expected_result: 05.Att.01 完成新增字段登记；只有新增机械检查确需入口时才修改 05.Att.02。WC0063 仍活动时，写入前精确回读其当前对象和 phase 并检查当前 diff；仅当其 05.Att.01 变化已收敛提交，或目标 hunk 可完全隔离且不会混入任一提交候选时写入，否则本 item blocked 并记录实际 phase、blocker 和恢复条件；绝不修改、暂存或提交 WC0063 变化。
+  status: completed
+  depends_on:
+  - item-02
+  result_summary: 05.Att.01 已登记 capability limitation 结构及 review/authorization 新字段；未新增独立机械检查入口，因此 05.Att.02 无需修改。精确回读确认 WC0063 已 closed，相关 Working Tree 仅有本 WC 的 05.Att.01 目标 hunk。
+- item_id: item-04
+  goal: 实现 creation bootstrap 与后续 fallback 的机械支持
+  expected_result: 现有 code/ldvh 模块完成事实模型、authorization projection/fingerprint、创建与转换校验、Schema 支持；机械区分不要求 prior execution_approval 的 Gate 1 前 creation fallback 与必须匹配已批准 fingerprint 的 PlanΔ/result fallback，不新增 Helper 公开 operation。
+  status: completed
+  depends_on:
+  - item-03
+  result_summary: 事实投影、WorkCase 校验和字段所有权转换已实现：limitations 稳定 canonicalization/fingerprint、creation bootstrap 无 prior approval、Gate 1 后类别与冻结 limitation 绑定、同一 AI 保证披露及兼容路径均有机械支持，未新增 Helper operation。
+- item_id: item-05
+  goal: 实现执行模板及 Gate 1 Web/API 的 actual、assurance 与 policy 分栏
+  expected_result: 准确的 34、08、必要的 08.Att.01 及现有 Gate 1 Web/API 详情分别呈现已发生 creation review actual method/assurance、未来 fallback policy 和 Human 接受较低保证的决定语义，并对缺失或不可解析字段明确提示。
+  status: completed
+  depends_on:
+  - item-02
+  result_summary: specs/34 与 specs/08 已按实际方法/保证边界修正；08.Att.01 的现有嵌套 execution_authorization/creation_reviews/result_reviews 阅读入口足够，无需新增顶层字段。Web 类型、列表授权限制、详情 review/limitation 展示、i18n 与文档均据实区分 subagent 和低保证 same-AI fallback；定向 Web 契约 55 项及 TypeScript 检查通过。
+- item_id: item-06
+  goal: 完成正反、兼容、fingerprint、Web 展示测试及事实完整性验证
+  expected_result: 测试覆盖 Gate 1 前 creation bootstrap、Human 拒绝不执行、无需 prior execution_approval、全部正反/兼容/fingerprint 场景和 Web 实际展示而非仅 TypeScript 类型；相关与全量测试通过，check-fact-integrity 完成；提交、独立结果复核和 Human Gate 继续由生命周期与授权动作承接，不作为 work item。
+  status: completed
+  depends_on:
+  - item-04
+  - item-05
+  result_summary: Bootstrap、无需 prior approval、真实 subagent 优先、same-AI 披露/类别/证据/停止条件、旧对象兼容、fingerprint 稳定性及 Web 实际展示正反测试已覆盖。最终 Python 全库 1464 passed、10 个仅 native Windows skipped；TypeScript check 与 WC0065 Web 定向 55/55 通过；Web 全库 151 passed、6 个当前 HEAD 既有非本 WC 契约失败，已隔离且未越界修复；check-fact-integrity complete，164 对象、0 问题。
+execution_authorization:
+  authorized_actions:
+  - action_id: authorization-01
+    summary: Gate 1 后通过 Helper 收敛 spark-0061
+    target_scope: spark-0061 单对象及其指向 workcase-0065 的 routed-to 稳定三元组
+    effect_scope: 原子写成 status=routed、移除 priority、形成 disposition_summary、建立 routed-to，并更正把 WC0062 说成已实现目标的失真载体文字；不写 WC0062
+    risk_summary: 若完整承接判断或 after 形状不成立会错误关闭 Spark 入口；必须精确回读目标和入向责任并由 Helper 校验
+    rollback_summary: 写前不成立则零写入停止；已写事实仅按事实更正规则追加修正，不伪装为反向状态转换
+    rule_refs:
+    - spark-fact-type::6. 对象语义与生命周期
+  - action_id: authorization-02
+    summary: 更新 WorkCase creation bootstrap 与后续 fallback 主规范
+    target_scope: specs/21-WorkCase-工作项.md 中 Gate 1 前 creation-review bootstrap、Human 接受语义、Gate 1 后 PlanΔ/result fallback、authorization fingerprint、actual method 和兼容语义
+    effect_scope: 仅改变本目标所需的 WorkCase 契约、校验和生命周期说明；不新增 Gate、phase、status 或 Helper operation
+    risk_summary: 若 bootstrap 与批准边界不清，会形成 creation review 启动循环、把 Gate 1 误写成追溯授权，或让后续 fallback 绕过批准
+    rollback_summary: 保留精确 diff，失败时回退本 WC hunk 到最近稳定检查点
+    rule_refs:
+    - workcase-fact-type::4. 正式计划前置与受控创建
+  - action_id: authorization-03
+    summary: 登记统一字段及必要机械检查
+    target_scope: specs/attachments/05.Att.01-事实对象统一字段登记.md；仅确需新机械检查入口时包括 specs/attachments/05.Att.02-事实对象机械校验目录.md
+    effect_scope: 登记本目标新增字段和必要检查入口，不把 05.Att.02 当关系类型登记
+    risk_summary: WC0063 仍活动时同样触及 05.Att.01；未精确隔离会混入另一 WorkCase 的改动
+    rollback_summary: 前置不满足时将 item 标 blocked 并保留实际 phase、blocker、恢复条件；只回退本 WC 可识别 hunk，绝不触碰 WC0063 变化
+    rule_refs:
+    - fact-object-unified-registration::事实对象统一字段登记
+  - action_id: authorization-04
+    summary: 实现 creation bootstrap 与授权指纹机械支持
+    target_scope: code/ldvh 下实现 Gate 1 前 creation fallback、Gate 1 后 PlanΔ/result fallback、事实模型、canonical authorization projection/fingerprint、创建与转换校验、Schema 所必需的既有模块
+    effect_scope: 允许有证据且已披露的 Gate 1 前低保证 creation review，不错误要求 prior execution_approval；PlanΔ/result 仍要求已批准 policy/fingerprint；不新增 Helper 公开 operation
+    risk_summary: 边界错误可能重新产生启动循环、接受未批准的后续 fallback、生成不稳定 fingerprint 或破坏旧对象读取
+    rollback_summary: 以相关测试和精确 diff 为检查点，失败时只回退本 WC 代码 hunk
+    rule_refs:
+    - workcase-fact-type::6.5 完整执行授权与基线指纹
+  - action_id: authorization-05
+    summary: 更新执行模板和 Gate 1 Web/API 呈现
+    target_scope: specs/34-WorkCase获批计划执行行动模板.md、specs/08-Web 呈现与交互规范.md、必要的 specs/attachments/08.Att.01-Web API 阅读契约字段表.md，以及现有 Gate 1 Web/API 类型、详情组件和对应测试
+    effect_scope: 分别展示已发生 creation review actual method/assurance、未来 fallback policy 与 Human 接受较低保证的决定语义，并处理缺失或不可解析问题
+    risk_summary: 若 Gate 1 被展示成追溯授予独立性，或 policy 被展示成 actual，会误导 Human 对审核保证和发生时序的判断
+    rollback_summary: 用组件与渲染测试保护分栏语义；失败时回退本 WC 规范和 Web hunk
+    rule_refs:
+    - web-presentation-spec::Gate 1 呈现
+  - action_id: authorization-06
+    summary: 执行测试、精确回读与完整性验证
+    target_scope: code/tests、现有 Web tests 及只读验证命令
+    effect_scope: 增加 creation bootstrap、Human 拒绝、无 prior approval、后续批准绑定、正反、兼容、fingerprint、Web 实际展示测试并执行相关与全量检查
+    risk_summary: 缺少 bootstrap 与时序测试会掩盖循环或让 creation/PlanΔ/result 使用错误的批准条件；仅类型测试会漏掉实际 UI 问题
+    rollback_summary: 验证失败即停止受影响 item，记录失败证据和恢复条件，不以提交掩盖
+    rule_refs:
+    - workcase-fact-type::11. 停止条件与验证边界
+  - action_id: authorization-07
+    summary: 委派真实独立只读 subagent 结果复核
+    target_scope: workcase-0065 的完整 canonical result projection
+    effect_scope: 当前支持 subagent 的环境中发起只读 Reviewer 委派，不修改文件
+    risk_summary: 必须记录真实委派，不能把未来 fallback 冒充为本次 subagent 审核
+    rollback_summary: 未形成真实委派时不进入结果复核完成状态
+    rule_refs:
+    - workcase-fact-type::6.6 canonical result projection 与结果版本
+  - action_id: authorization-08
+    summary: 执行并记录真实独立只读 subagent 结果复核
+    target_scope: workcase-0065 的完整 canonical result projection 与 independent-result-review gate
+    effect_scope: 由真实独立只读 subagent 给出结果结论和反馈，并记录实际方法
+    risk_summary: 审核覆盖不足会漏掉成功标准或授权越界；结论必须如实处置
+    rollback_summary: changes_required 时返回 Controller 返工；不自动接受结果或关闭
+    rule_refs:
+    - workcase-fact-type::6.6 canonical result projection 与结果版本
+  - action_id: authorization-09
+    summary: 全部 item terminal 后执行本地受控提交
+    target_scope: 仅本 WorkCase 产生的 spark-0061、workcase-0065、列明规范、code/ldvh、Web 和 tests 精确路径及 hunk 闭集
+    effect_scope: 在验证与隔离成立后按 Git Gate 创建一个本地提交，不 push、PR 或发布
+    risk_summary: 共享脏工作树可能混入 WC0062、WC0063、WC0064 或用户改动；禁止宽泛暂存
+    rollback_summary: 提交前 precheck 和 staged diff 不满足即停止；不破坏或清理无关工作树变化
+    rule_refs:
+    - git-commit-spec::Git 提交消息规范
+  quality_gates:
+  - gate_id: independent-result-review
+    reviewer_mode: independent-read-only
+    delegation_action_id: authorization-07
+    result_review_action_id: authorization-08
+  action_ceiling: 仅允许 authorization-01 至 authorization-09：目标限 spark-0061、workcase-0065、21、05.Att.01、确需时的 05.Att.02、准确路径 34、08、必要的 08.Att.01、机械实现必需的既有 code/ldvh 模块、现有 Gate 1 Web/API 与相关 tests；不实现 spawn/subagent 平台，不新增 phase、status、Gate 或 Helper operation，不写 WC0062，不混入其他 WorkCase 或用户改动，不执行 push、PR 或发布。
+  prohibited_actions:
+  - A. 绕过 Gate 1 或在 Human 未接受当前较低保证材料前开始执行
+  - B. 在能力未知、无当前证据、未披露 limitation、类别不覆盖或 stop condition 命中时使用 Gate 1 前 creation fallback
+  - C. 在未纳入 Gate 1 fingerprint、未获批准、类别或当前条件不匹配时使用 PlanΔ/result fallback
+  - D. 将 same-AI switched-role 冒称为 subagent、执行环境独立或等价保证
+  - E. 改写 WC0062 的终态、残余责任、历史结论或 change_log
+  - F. 混入、修改、暂存或提交 WC0063、WC0064 或用户无关改动
+  - G. 使用宽泛暂存、路径猜测或局部测试绕过精确隔离
+  - H. 执行 push、PR、发布或其它未列明动作
+  allowed_adjustments: Controller 可在不改变 goal、scope、success criteria、风险等级、policy/actual 分离和保证闭集的前提下调整命名、章节位置、测试组织与实现细节；任何语义扩张、路径扩大或新授权需求必须进入 PlanΔ 与所需 Human 决策。
+  verification_and_rollback: 所有事实写入仅走 Helper 并精确回读；规范和代码执行 Gate 1 前 creation bootstrap、Human 拒绝、无 prior approval、Gate 1 后批准绑定、相关及全量测试，Web 执行 actual/assurance/policy 分栏组件与渲染测试，fingerprint 验证稳定排序与语义变化；提交前运行 precheck-git-commit 并核对 staged diff，使用原生 Git Gate；提交后运行 check-fact-integrity。任何失败立即停止受影响 item、记录 blocker 和恢复条件；代码/规范只回退本 WC hunk，事实对象仅追加式更正。
+  out_of_bounds_handling: 发现超界、能力证据不足、审核模式失真、WC0063 无法隔离或验证失败时，立即停止受影响 item并保留准确状态、当前 phase、blocker、影响和恢复条件；必要时通过 PlanΔ 或 Human 决策处理，不以 completed、提交或关闭掩盖。
+creation_reviews:
+- reviewer: Pauli / independent read-only subagent
+  reviewed_at: '2026-08-06T23:24:55+08:00'
+  subject_version: 2
+  scope: 复核 Gate 1 前 bootstrap creation review、Human 接受语义、Gate 1 后 PlanΔ/result fallback 绑定、实际方法/保证差异、计划生命周期、Spark/闭合边界、授权与测试收敛。
+  conclusion: pass
+  covered_quality_gate_ids:
+  - independent-result-review
+execution_approval:
+  subject_version: 2
+  approved_at: '2026-08-06T23:46:02+08:00'
+  summary: Human 明确批准执行 WC0065 plan_version=2 的完整计划和执行授权基线，包括 Gate 1 前低保证 creation-review bootstrap、Gate 1 后 PlanΔ/result fallback 约束、Spark 承接、规范/Code/Web/tests、真实 subagent 结果复核及全部 item terminal 后的本地受控提交。
+  baseline_fingerprint: 0ca6bb1afe711190b3418f6f861f0c9285cafe7f4745f3d9c2df85be8396a55c
+  source_refs:
+  - conversation:user-message:批准执行 WC0065@2026-08-06
+resume_from: 读取 git-commit 行动模板，严格排除 spark-0062 与 workcase-0064 等并行事实变化，完成本 WC 本地受控提交；随后补齐 result_version=1 的完整结果投影。
+result_version: 1
+object_id: workcase-0065
+fact_type_key: workcase
+created_at: '2026-08-06T23:09:02.682802+08:00'
+updated_at: '2026-08-07T00:58:27.314937+08:00'

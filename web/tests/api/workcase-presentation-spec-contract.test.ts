@@ -44,7 +44,7 @@ test('Specs define four progress groups and a four-step result track', () => {
   assert.doesNotMatch(cardSection, /Human 已批准当前结果与报告/);
   assert.match(cardSection, /\| `item_execution` \| 工作项执行 \| 当前工作项推进 \|/);
   assert.match(cardSection, /\| `controller_self_check` \| 主控自检 \| 完整结果投影形成 \|/);
-  assert.match(cardSection, /\| `independent_review` \| 独立复核 \| 结果独立复核 \|/);
+  assert.match(cardSection, /\| `independent_review` \| 结果复核 \| 当前结果的实际 Reviewer 第二视角；稳定键不证明实际方法为 subagent 或执行环境独立 \|/);
   assert.match(cardSection, /\| `controller_synthesis` \| 主控收敛 \| 关闭提案形成 \|/);
   assert.match(cardSection, /确定性 `status \+ phase` 映射.*闭集只见 21 §9\.3，本节不重复/);
 });
@@ -303,7 +303,7 @@ test('Current WorkCase phases have direct labels and colors with no retired disp
 
   assert.match(locales, /plan_revising: \{ zh: '方案修订中', en: 'Plan Revision' \}/);
   assert.match(locales, /controller_checking: \{ zh: '主控自检中', en: 'Controller Self-check' \}/);
-  assert.match(locales, /independent_reviewing: \{ zh: '独立复核中', en: 'Independent Review' \}/);
+  assert.match(locales, /independent_reviewing: \{ zh: '结果复核中', en: 'Result Review' \}/);
   assert.match(locales, /closure_preparing: \{ zh: '主控收敛中', en: 'Controller Synthesis' \}/);
   assert.match(colors, /plan_revising: \{ light:/);
   assert.match(colors, /controller_checking: \{ light:/);

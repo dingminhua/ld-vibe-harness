@@ -29,6 +29,13 @@ ACTIVE_PHASES = frozenset(
 )
 ITEM_STATUSES = frozenset({"pending", "in_progress", "blocked", "completed", "cancelled"})
 REVIEW_CONCLUSIONS = frozenset({"pass", "pass_with_followups", "changes_required", "blocked"})
+REVIEW_METHODS = frozenset({"subagent-read-only", "same-ai-switched-role-read-only"})
+SAME_AI_REVIEW_METHOD = "same-ai-switched-role-read-only"
+SUBAGENT_REVIEW_METHOD = "subagent-read-only"
+CAPABILITY_LIMITATION_CAPABILITY = "independent-subagent-review"
+CAPABILITY_LIMITATION_AVAILABILITY = "unavailable"
+CAPABILITY_LIMITATION_FALLBACK_POLICY = SAME_AI_REVIEW_METHOD
+REVIEW_CATEGORIES = frozenset({"creation_review", "plan_delta_review", "result_review"})
 REQUIRED_QUALITY_GATE_ID = "independent-result-review"
 REQUIRED_REVIEWER_MODE = "independent-read-only"
 CRITERION_OUTCOMES = frozenset({"satisfied", "not_satisfied", "not_verified"})
@@ -40,6 +47,7 @@ _RESIDUAL_ID = re.compile(r"residual-[a-z0-9][a-z0-9-]*\Z")
 _SUGGESTION_ID = re.compile(r"suggestion-[a-z0-9][a-z0-9-]*\Z")
 _WORKCASE_ID = re.compile(r"workcase-[0-9]{4,}\Z")
 _AUTHORIZATION_ID = re.compile(r"authorization-[a-z0-9][a-z0-9-]*\Z")
+_LIMITATION_ID = re.compile(r"limitation-[a-z0-9][a-z0-9-]*\Z")
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 
 _RESULT_PROJECTION_FIELDS = frozenset(
@@ -281,6 +289,91 @@ def _validate_items(fields: Mapping[str, object], issues: list[FactIssue]) -> No
         _issue(issues, "work item depends_on 有向图不得成环", "work_items")
 
 
+def _capability_limitations(fields: Mapping[str, object]) -> dict[str, Mapping[str, object]]:
+    authorization = fields.get("execution_authorization")
+    if not isinstance(authorization, Mapping):
+        return {}
+    values = authorization.get("capability_limitations")
+    if not isinstance(values, list):
+        return {}
+    return {
+        str(value["limitation_id"]): value
+        for value in values
+        if isinstance(value, Mapping) and _nonempty_string(value.get("limitation_id"))
+    }
+
+
+def _review_category(fields: Mapping[str, object], array_name: str) -> str:
+    if array_name == "result_reviews":
+        return "result_review"
+    approval = fields.get("execution_approval")
+    plan_version = fields.get("plan_version")
+    approved_version = approval.get("subject_version") if isinstance(approval, Mapping) else None
+    if (
+        _positive_integer(approved_version)
+        and _positive_integer(plan_version)
+        and int(plan_version) > int(approved_version)
+    ):
+        return "plan_delta_review"
+    return "creation_review"
+
+
+def _validate_review_method(
+    fields: Mapping[str, object],
+    review: Mapping[str, object],
+    *,
+    array_name: str,
+    path: str,
+    issues: list[FactIssue],
+) -> None:
+    limitations = _capability_limitations(fields)
+    method = review.get("actual_method")
+    fallback_fields = {
+        "capability_limitation_id",
+        "capability_evidence",
+        "assurance_gap",
+        "stop_condition_assessment",
+    }
+    if method is None:
+        if limitations:
+            _issue(
+                issues,
+                "authorization 含 capability limitations 时 review 必须记录 actual_method",
+                f"{path}.actual_method",
+            )
+        for name in sorted(fallback_fields & set(review)):
+            _issue(issues, "fallback 披露字段要求 actual_method", f"{path}.{name}")
+        return
+    if method not in REVIEW_METHODS:
+        _issue(issues, "review actual_method 不在当前闭集中", f"{path}.actual_method")
+        return
+    if method == SUBAGENT_REVIEW_METHOD:
+        for name in sorted(fallback_fields & set(review)):
+            _issue(issues, "subagent review 禁止 fallback 披露字段", f"{path}.{name}")
+        return
+
+    for name in sorted(fallback_fields - set(review)):
+        _issue(issues, "same-AI fallback review 缺少必填披露字段", f"{path}.{name}")
+    limitation_id = review.get("capability_limitation_id")
+    limitation = limitations.get(str(limitation_id)) if _nonempty_string(limitation_id) else None
+    if limitation is None:
+        _issue(issues, "same-AI fallback 必须精确引用当前 capability limitation", f"{path}.capability_limitation_id")
+    else:
+        category = _review_category(fields, array_name)
+        categories = limitation.get("affected_review_categories")
+        if not isinstance(categories, list) or category not in categories:
+            _issue(issues, "capability limitation 未覆盖当前 review 类别", f"{path}.capability_limitation_id")
+        if limitation.get("fallback_policy") != SAME_AI_REVIEW_METHOD:
+            _issue(issues, "capability limitation fallback_policy 与实际方法不一致", f"{path}.capability_limitation_id")
+        if review.get("assurance_gap") != limitation.get("assurance_gap"):
+            _issue(issues, "review assurance_gap 必须与 capability limitation 精确一致", f"{path}.assurance_gap")
+    _validate_unique_strings(review.get("capability_evidence"), f"{path}.capability_evidence", issues)
+    if review.get("stop_condition_assessment") != "clear":
+        _issue(
+            issues, "same-AI fallback 的 stop_condition_assessment 必须为 clear", f"{path}.stop_condition_assessment"
+        )
+
+
 def _validate_reviews(
     fields: Mapping[str, object],
     array_name: str,
@@ -334,6 +427,7 @@ def _validate_reviews(
             _issue(issues, "离开独立复核前必须处置全部 feedback", f"{path}.controller_resolution")
         if array_name != "creation_reviews" and "covered_quality_gate_ids" in review:
             _issue(issues, "covered_quality_gate_ids 只允许出现在 creation_reviews", f"{path}.covered_quality_gate_ids")
+        _validate_review_method(fields, review, array_name=array_name, path=path, issues=issues)
     if len(event_keys) != len(set(event_keys)):
         _issue(issues, "同一 review 事件三元组不得重复", array_name)
 
@@ -411,6 +505,70 @@ def _validate_execution_authorization(fields: Mapping[str, object], issues: list
     for name in ("prohibited_actions", "human_prerequisites"):
         if name in value:
             _validate_unique_strings(value.get(name), f"execution_authorization.{name}", issues)
+    limitations = value.get("capability_limitations")
+    if limitations is not None:
+        path = "execution_authorization.capability_limitations"
+        if not isinstance(limitations, list) or not limitations:
+            _issue(issues, "capability_limitations 出现时必须是非空 array", path)
+        else:
+            limitation_ids: list[str] = []
+            required = {
+                "limitation_id",
+                "capability",
+                "availability",
+                "observation_summary",
+                "evidence",
+                "affected_review_categories",
+                "fallback_policy",
+                "assurance_gap",
+                "stop_conditions",
+            }
+            for index, limitation in enumerate(limitations):
+                item_path = f"{path}[{index}]"
+                if not isinstance(limitation, Mapping):
+                    _issue(issues, "capability limitation 必须是 object", item_path)
+                    continue
+                _require(limitation, required, issues, context="capability limitation ")
+                unknown = sorted(set(limitation) - required)
+                if unknown:
+                    _issue(issues, "capability limitation 包含未知成员", item_path)
+                limitation_id = limitation.get("limitation_id")
+                if _nonempty_string(limitation_id):
+                    limitation_ids.append(str(limitation_id))
+                    if _LIMITATION_ID.fullmatch(str(limitation_id)) is None:
+                        _issue(issues, "limitation_id 格式不符合当前闭集", f"{item_path}.limitation_id")
+                else:
+                    _issue(issues, "limitation_id 必须是非空 string", f"{item_path}.limitation_id")
+                if limitation.get("capability") != CAPABILITY_LIMITATION_CAPABILITY:
+                    _issue(issues, "capability 不在当前闭集中", f"{item_path}.capability")
+                if limitation.get("availability") != CAPABILITY_LIMITATION_AVAILABILITY:
+                    _issue(issues, "availability 必须明确为 unavailable", f"{item_path}.availability")
+                if not _nonempty_string(limitation.get("observation_summary")):
+                    _issue(issues, "observation_summary 必须是非空 string", f"{item_path}.observation_summary")
+                evidence = _validate_unique_strings(limitation.get("evidence"), f"{item_path}.evidence", issues)
+                categories = _validate_unique_strings(
+                    limitation.get("affected_review_categories"),
+                    f"{item_path}.affected_review_categories",
+                    issues,
+                )
+                for category_index, category in enumerate(categories):
+                    if category not in REVIEW_CATEGORIES:
+                        _issue(
+                            issues,
+                            "affected review category 不在当前闭集中",
+                            f"{item_path}.affected_review_categories[{category_index}]",
+                        )
+                if limitation.get("fallback_policy") != CAPABILITY_LIMITATION_FALLBACK_POLICY:
+                    _issue(issues, "fallback_policy 不在当前闭集中", f"{item_path}.fallback_policy")
+                if not _nonempty_string(limitation.get("assurance_gap")):
+                    _issue(issues, "assurance_gap 必须是非空 string", f"{item_path}.assurance_gap")
+                stop_conditions = _validate_unique_strings(
+                    limitation.get("stop_conditions"), f"{item_path}.stop_conditions", issues
+                )
+                if not evidence or not stop_conditions:
+                    continue
+            if len(limitation_ids) != len(set(limitation_ids)):
+                _issue(issues, "capability limitation_id 不得重复", path)
 
 
 def required_quality_gate_issues(fields: Mapping[str, object]) -> tuple[FactIssue, ...]:
@@ -649,7 +807,11 @@ def _validate_proposal(fields: Mapping[str, object], issues: list[FactIssue]) ->
                 )
             target_id = route_target.get("object_id")
             layout = LAYOUTS.get(target_type) if isinstance(target_type, str) else None
-            if not isinstance(target_id, str) or layout is None or layout.object_id_pattern.fullmatch(target_id) is None:
+            if (
+                not isinstance(target_id, str)
+                or layout is None
+                or layout.object_id_pattern.fullmatch(target_id) is None
+            ):
                 _issue(issues, "route_target.object_id 必须匹配目标类型稳定身份", f"{path}.route_target.object_id")
             elif target_id == fields.get("object_id"):
                 _issue(issues, "route_target 禁止指向当前 WorkCase 自身", f"{path}.route_target.object_id")
@@ -721,11 +883,7 @@ def _validate_relations(fields: Mapping[str, object], issues: list[FactIssue]) -
                     f"{path}.target.fact_type_key",
                 )
             layout = LAYOUTS.get(target_type) if isinstance(target_type, str) else None
-            if (
-                not isinstance(target_id, str)
-                or layout is None
-                or layout.object_id_pattern.fullmatch(target_id) is None
-            ):
+            if not isinstance(target_id, str) or layout is None or layout.object_id_pattern.fullmatch(target_id) is None:
                 _issue(
                     issues,
                     "contributed-to relation target.object_id 必须是目标类型稳定身份",
@@ -734,11 +892,7 @@ def _validate_relations(fields: Mapping[str, object], issues: list[FactIssue]) -
         elif relation_key == "related-to":
             target_type = target.get("fact_type_key")
             layout = LAYOUTS.get(target_type) if isinstance(target_type, str) else None
-            if (
-                not isinstance(target_id, str)
-                or layout is None
-                or layout.object_id_pattern.fullmatch(target_id) is None
-            ):
+            if not isinstance(target_id, str) or layout is None or layout.object_id_pattern.fullmatch(target_id) is None:
                 _issue(
                     issues,
                     "related-to target 必须是当前事实类型稳定身份",
@@ -751,7 +905,11 @@ def _validate_relations(fields: Mapping[str, object], issues: list[FactIssue]) -
             elif relation_key == "depends-on" and target_type != "workcase":
                 _issue(issues, "depends-on target 必须为 workcase", f"{path}.target.fact_type_key")
             layout = LAYOUTS.get(target_type) if isinstance(target_type, str) else None
-            if not isinstance(target_id, str) or layout is None or layout.object_id_pattern.fullmatch(target_id) is None:
+            if (
+                not isinstance(target_id, str)
+                or layout is None
+                or layout.object_id_pattern.fullmatch(target_id) is None
+            ):
                 _issue(issues, "relation target.object_id 必须匹配目标类型稳定身份", f"{path}.target.object_id")
             elif target_id == source_id:
                 _issue(issues, "WorkCase relation 禁止自指", f"{path}.target.object_id")

@@ -236,6 +236,11 @@ export interface WorkCaseReview {
   conclusion: 'pass' | 'pass_with_followups' | 'changes_required' | 'blocked';
   feedback?: string[];
   controller_resolution?: string;
+  actual_method?: 'subagent-read-only' | 'same-ai-switched-role-read-only';
+  capability_limitation_id?: string;
+  capability_evidence?: string[];
+  assurance_gap?: string;
+  stop_condition_assessment?: 'clear';
 }
 
 export interface WorkCaseExecutionApproval {
@@ -256,6 +261,18 @@ export interface WorkCaseAuthorizedAction {
   rule_refs: string[];
 }
 
+export interface WorkCaseCapabilityLimitation {
+  limitation_id: string;
+  capability: 'independent-subagent-review';
+  availability: 'unavailable';
+  observation_summary: string;
+  evidence: string[];
+  affected_review_categories: Array<'creation_review' | 'plan_delta_review' | 'result_review'>;
+  fallback_policy: 'same-ai-switched-role-read-only';
+  assurance_gap: string;
+  stop_conditions: string[];
+}
+
 export interface WorkCaseExecutionAuthorization {
   authorized_actions: WorkCaseAuthorizedAction[];
   action_ceiling: string;
@@ -264,6 +281,7 @@ export interface WorkCaseExecutionAuthorization {
   verification_and_rollback: string;
   out_of_bounds_handling: string;
   human_prerequisites?: string[];
+  capability_limitations?: WorkCaseCapabilityLimitation[];
 }
 
 export interface WorkCaseRouteTarget {

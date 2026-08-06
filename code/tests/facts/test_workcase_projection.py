@@ -278,6 +278,48 @@ def test_quality_gate_declaration_changes_the_approval_baseline_fingerprint() ->
     assert approval_baseline_fingerprint(before) != approval_baseline_fingerprint(after)
 
 
+def test_capability_limitations_are_canonicalized_into_the_approval_baseline() -> None:
+    before = _complete_result()
+    after = deepcopy(before)
+    limitations = [
+        {
+            "limitation_id": "limitation-subagent-review",
+            "capability": "independent-subagent-review",
+            "availability": "unavailable",
+            "observation_summary": "The current environment exposes no subagent facility.",
+            "evidence": [
+                "capability probe: unsupported",
+                "tool inventory: no subagent",
+                "capability probe: unsupported",
+            ],
+            "affected_review_categories": ["result_review", "creation_review", "result_review"],
+            "fallback_policy": "same-ai-switched-role-read-only",
+            "assurance_gap": "The Reviewer does not have execution-environment independence.",
+            "stop_conditions": ["Capability evidence becomes uncertain", "Read-only separation cannot be kept"],
+        }
+    ]
+    after["execution_authorization"]["capability_limitations"] = limitations
+
+    projected = canonical_execution_authorization(after["execution_authorization"])
+
+    assert projected["capability_limitations"][0]["evidence"] == [
+        "capability probe: unsupported",
+        "tool inventory: no subagent",
+    ]
+    assert projected["capability_limitations"][0]["affected_review_categories"] == [
+        "creation_review",
+        "result_review",
+    ]
+    assert approval_baseline_fingerprint(before) != approval_baseline_fingerprint(after)
+
+    reordered = deepcopy(after)
+    limitation = reordered["execution_authorization"]["capability_limitations"][0]
+    limitation["evidence"] = list(reversed(limitation["evidence"]))
+    limitation["affected_review_categories"] = list(reversed(limitation["affected_review_categories"]))
+    limitation["stop_conditions"] = list(reversed(limitation["stop_conditions"]))
+    assert approval_baseline_fingerprint(after) == approval_baseline_fingerprint(reordered)
+
+
 def test_safe_convergence_shape_never_includes_authorization_or_approval() -> None:
     fields = _complete_result()
     fields["phase"] = "controller_checking"
