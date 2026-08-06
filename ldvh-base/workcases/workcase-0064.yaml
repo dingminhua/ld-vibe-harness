@@ -23,7 +23,7 @@ relations:
     fact_type_key: spark
     object_id: spark-0062
 status: open
-phase: controller_checking
+phase: human_closure_confirming
 plan_version: 2
 priority: P2
 work_items:
@@ -210,6 +210,42 @@ change_log:
   signature:
     agent_id: gpt-5
     host_environment: Codex desktop (macOS)
+- at: '2026-08-06T23:44:39.879129+08:00'
+  session_id: codex-desktop-20260806-workcase0064
+  summary: 形成 result_version=1 完整结果投影：六项标准 satisfied，criterion-07 因独立结果复核尚未发生且组合树 full-v4 未通过暂为 not_verified；记录提交 49dacf286 与验证边界。
+  signature:
+    agent_id: gpt-5
+    host_environment: Codex desktop (macOS)
+- at: '2026-08-06T23:45:08.101861+08:00'
+  session_id: codex-desktop-20260806-workcase0064
+  summary: 完整 result_version=1 projection 回读后进入 independent_reviewing，等待真实独立只读 subagent 复核；projection/version 冻结。
+  signature:
+    agent_id: gpt-5
+    host_environment: Codex desktop (macOS)
+- at: '2026-08-06T23:58:43.005963+08:00'
+  session_id: codex-desktop-20260806-workcase0064
+  summary: 记录真实独立 subagent 对 result_version=1 的复核：pass_with_followups；确认 0064 核心与 00 对齐，要求 criterion-07 保持 not_verified 且不 push，待 Controller 处置。
+  signature:
+    agent_id: gpt-5
+    host_environment: Codex desktop (macOS)
+- at: '2026-08-07T00:16:41.097785+08:00'
+  session_id: codex-desktop-20260806-workcase0064
+  summary: Controller 采纳 result_version=1 独立复核并进入 closure_preparing；projection 保持不变，criterion-07 保持 not_verified。
+  signature:
+    agent_id: gpt-5
+    host_environment: Codex desktop (macOS)
+- at: '2026-08-07T00:17:26.677587+08:00'
+  session_id: codex-desktop-20260806-workcase0064
+  summary: 形成 partial closure proposal：保留组合树 lint、full-v4 重跑及新授权 push 的受限后续责任。
+  signature:
+    agent_id: gpt-5
+    host_environment: Codex desktop (macOS)
+- at: '2026-08-07T00:18:02.638158+08:00'
+  session_id: codex-desktop-20260806-workcase0064
+  summary: 完成终态保留与剩余责任覆盖审查，进入 Human Gate 2 等待 partial 关闭决定。
+  signature:
+    agent_id: gpt-5
+    host_environment: Codex desktop (macOS)
 execution_approval:
   subject_version: 1
   approved_at: '2026-08-06T14:37:36.872Z'
@@ -217,10 +253,61 @@ execution_approval:
   baseline_fingerprint: e5a5ab45a64db44ef64fc35326d45de54e497743c0371a47b49834bf618c70e4
   source_refs:
   - current-codex-task:user-message:推进这个wc吧
-summary: 全部四项实施工作已 terminal，进入 Controller 结果检查。0064 范围测试与全量 Code tests 通过；组合树 full-v4 因 70115a3 内 23 个 WC-0063 lint 问题失败，该范围不在冻结授权内。下一步按授权只提交 70115a3 后剩余 0064 差异，再形成完整结果投影和独立结果复核；push 保持禁止。
+summary: WC-0064 已进入 Human Gate 2：核心简化与 criterion-01~06 已完成并由独立 subagent 接受；criterion-07 因组合树 full-v4 未通过保持 not_verified，组合验证与新授权 push 已作为受限 Spark suggestion 保留。
 result_version: 1
-resume_from: 按 git-commit 模板核对当前 HEAD、真实 Index、Hook 和精确候选，只暂存并提交剩余 WC-0064 文件；随后回读提交并形成 result_version=1 的完整 canonical result projection。
+resume_from: Human 阅读当前目标、scope、逐项结果、验证边界、独立复核处置与 partial closure proposal 后，决定是否按该提案关闭 WC-0064。
+success_criterion_results:
+- criterion_id: criterion-01
+  outcome: satisfied
+  summary: code/plans/workcase-0064-atomic-write-result.md 与 README 稳定入口已提交；计划明确安全内核、简化边界、平台验证及 Specs/Windows 不变。
+- criterion_id: criterion-02
+  outcome: satisfied
+  summary: filesystem 实现保留同目录临时文件、文件 fsync、原子发布、directory fsync best-effort、dir_fd/O_NOFOLLOW、no-overwrite、CAS、写后回读和 _reconcile_replace；关键失败路径测试通过。
+- criterion_id: criterion-03
+  outcome: satisfied
+  summary: AtomicWriteResult 只允许 committed、not_committed、uncertain 三类命名构造形状；直接四维构造被禁用并有正反测试。
+- criterion_id: criterion-04
+  outcome: satisfied
+  summary: 业务消费者继续按 outcome/namespace commit state 与操作语义处理；sync scope 和 cleanup residue 仅作为兼容诊断投影与验证证据，直接搜索及测试未发现其充当业务准入。
+- criterion_id: criterion-05
+  outcome: satisfied
+  summary: durable_writes_enabled 已由 native_atomic_fact_writes_supported 取代，表达原生原子后端可用性；POSIX 为真，Windows/未知为假，旧领域 status 仅兼容保留，Windows 仍在 mutation 前失败。
+- criterion_id: criterion-06
+  outcome: satisfied
+  summary: 当前组合树范围回归 257 passed/2 skipped、全量 Code 1452 passed/10 skipped；受影响文件 Ruff check 与 diff check 通过。10 个 skip 均为 native Windows；macOS 已覆盖创建、替换、冲突、目录同步失败、cleanup residue 与 replace reconciliation。
+- criterion_id: criterion-07
+  outcome: not_verified
+  summary: 本地提交 49dacf286 已经 precheck 与原生 Git Gate，16 个路径与声明一致且 70115a3/49dacf286 无重叠路径；独立结果复核尚未绑定当前完整 result_version=1 projection。组合树 full-v4 也仍因 70115a3 中 23 个 WC-0063 lint 问题失败，因此本标准当前不能标为 satisfied。
+result_summary: 0064 已在 70115a3 承载的五组 Helper/test hunks之上完成剩余实现，并以独立提交 49dacf286 落账：AtomicWriteResult 收敛为三个受约束形状，POSIX 安全内核与 Windows 行为保持，直接消费者改用原生后端能力语义，sync/cleanup 只保留诊断作用。
+controller_check_summary: Controller 已核对 70115a3 与 49dacf286 的归因和路径集合：70115a3 为祖先，中间 92af3846e 只关闭 WC-0063，两项目标提交无重叠路径；49dacf286 仅含声明的 16 个剩余 0064 文件，Index 提交后为空，Spark-0062 与 WC-0065 未混入。安全原语、CAS、reconciliation、写后回读和 Windows fail-closed 均未削弱。criterion-07 因当前 projection 尚未独立复核且 full-v4 未通过暂列 not_verified，下一步进入独立结果复核。
+validation_summary: 已验证：范围回归 257 passed/2 skipped；全量 Code tests 1452 passed/10 skipped；受影响文件 ruff check 通过；git diff --check 通过；precheck-git-commit passed（snapshot sha256:7469ab5e...）；原生 Git Gate passed；提交后 check-fact-integrity ok/complete/164。full-v4 run-09e04c93f31441a991773aa2e7fa457a 的 Working Tree evidence complete、changes=[]，但 code-lint 因 70115a3 内 23 个 WC-0063 lint 问题失败，后续步骤未运行；native Windows 未实测。
+result_reviews:
+- reviewer: codex-subagent/wc0064-result-review
+  reviewed_at: '2026-08-06T23:57:50+08:00'
+  subject_version: 1
+  scope: 复核 WC-0064 result_version=1、当前 00/21/34、commits 70115a3/92af384/49dacf2 的实际组合差异、AtomicWriteResult 与安全内核、平台语义及全部验证证据。
+  conclusion: pass_with_followups
+  feedback:
+  - WC-0064 核心实现与 criterion-01 至 criterion-06 可接受，未发现偏离 00 或仍属过度设计；但 full-v4 run-09e04c93f31441a991773aa2e7fa457a 因 70115a3/WC0063 路径中的 23 个 Ruff 问题失败，criterion-07 必须保持 not_verified。Controller 应接受本复核且无需改写 result_version=1，以 partially_succeeded 进入关闭流程；在 full-v4 通过且取得新 WC/Gate1 push 授权前禁止 push。
+  controller_resolution: 采纳全部 feedback：保持 result_version=1 与 canonical result projection 不变，criterion-07 继续为 not_verified；不返工 0064 核心，不越界修复 70115a3/WC0063 的 23 个 lint 问题，不 push。按当前六项 satisfied、一项 not_verified 的结果形成 partial 关闭提案；组合树 lint 修复、full-v4 重跑及新 Gate1 授权后的 push 作为受限后续责任保留。
+closure_proposal:
+  proposed_outcome: partial
+  proposed_disposition_summary: WC-0064 以本地提交 49dacf286 交付核心简化并停止在未 push 状态；criterion-01 至 criterion-06 已满足，criterion-07 因组合树 full-v4 未通过保持未验证。组合历史中的 23 个 Ruff 问题、full-v4 重跑、两项 0064 提交组合验证以及取得新 Gate1 授权后的 push 作为受限后续责任保留，当前 WorkCase 不越界处理。
+  residual_decisions:
+  - residual_id: residual-combined-verification-and-push
+    summary: 组合历史 70115a3、92af3846 与 49dacf286 的 full-v4 尚未通过：23 个 Ruff 问题位于 70115a3/WC0063 路径；当前 0064 授权又明确禁止修复这些越界差异及 push，因此 criterion-07 仍为 not_verified，提交保持仅本地。
+    proposed_disposition: suggest_spark
+    spark_suggestion_id: suggestion-combined-verification-and-push
+  spark_suggestions:
+  - suggestion_id: suggestion-combined-verification-and-push
+    suggestion_kind: constrained_responsibility
+    summary: 修复组合树既有 Ruff 问题，重跑 full-v4，并在新授权下 push 已验证组合
+    restriction_reason: 23 个 Ruff 问题属于 70115a3/WC0063 范围，超出 WC-0064 冻结授权；WC-0064 的 action ceiling 与 prohibited actions 同时禁止 push。
+    impact_summary: full-v4 code-lint 失败使 criterion-07 保持 not_verified；70115a3、92af3846 与 49dacf286 当前仅在本地组合，不能宣称完整验证或已 push。
+    resume_condition: 新的 WorkCase/Gate1 明确授权修复对应 lint 路径、重跑 full-v4 和 push，且组合树 full-v4 实际通过。
+    follow_up_summary: 从 full-v4 run-09e04c93f31441a991773aa2e7fa457a 的 23 个 Ruff 诊断继续，逐项限定修复归属；通过后核对组合提交与远端目标，再按新授权执行 push。
+waiting_on: Human 对当前完整 partial closure proposal 作出 Gate 2 关闭决定
 object_id: workcase-0064
 fact_type_key: workcase
 created_at: '2026-08-06T16:11:46.568109+08:00'
-updated_at: '2026-08-06T23:41:31.629543+08:00'
+updated_at: '2026-08-07T00:18:02.638158+08:00'
