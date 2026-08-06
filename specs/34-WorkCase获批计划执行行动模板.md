@@ -84,7 +84,7 @@ ldvh_spec:
 | 验证对象 | 验证时机 | 成立条件 | 可接受依据 | 验证入口 | 可证明范围 | 未满足时的处理 |
 |---|---|---|---|---|---|---|
 | 模板身份与边界 | 新建、修改或发现模板时 | 声明唯一、只组织执行、不复制 21/32 规则 | 06、21、32、本文 | 声明解析、来源回读 | 当前模板定义 | 修正来源，不消费模板 |
-| item 与生命周期关口边界 | 计划获批后准备消费任一 item 时 | 每项都是可实施并形成局部结果的工作；没有 item 吸收 Controller 自检、独立结果复核、关闭准备或 Human Gate | 当前 WorkCase、21 §4.3、本文 | AI 逐 item 语义审核；契约测试只检查当前来源持续交付该边界 | 当次已读计划与来源文本；不证明 Code 能理解任意自然语言 | 停止受影响实施；包内移除或改写后 fresh current-plan review 并自动恢复，超包则取消受影响 item 并进入结果链，不再 Human 批准 |
+| item 与生命周期关口边界 | 计划获批后准备消费任一 item 时 | 每项都是可实施并形成局部结果的工作；没有 item 吸收 Controller 自检、独立结果复核、受控提交、关闭准备或 Human Gate | 当前 WorkCase、21 §4.3、本文 | AI 逐 item 语义审核；契约测试只检查当前来源持续交付该边界 | 当次已读计划与来源文本；不证明 Code 能理解任意自然语言 | 停止受影响实施；包内移除或改写后 fresh current-plan review 并自动恢复，超包则取消受影响 item 并进入结果链，不再 Human 批准 |
 | Gate 1 授权消费 | 每项行动、委派、事实写入和本地 commit 前 | 当前 `execution_authorization` 逐项覆盖准确对象、范围、副作用与风险，`execution_approval` 和来源回指有效；进入模板步骤、上下文恢复或切换执行者没有产生伪授权缺口 | 当前 WorkCase、21、30–32、Human Gate 1 来源 | AI 语义覆盖审核、21 结构/绑定校验和行动前回读 | 当次已读授权包与行动；Code 不证明自然语言授权充分，模板不证明 spawn 能力 | 未列明或超界行动不执行；取消/收敛受影响 item并进入结果链，不中途请求扩权 |
 | 开始与直接完成边界 | 实施前后 | 跨检查点工作先真实回读 in_progress；同检查点结果才直接 completed | 当前 WorkCase、21、完整 after | WorkCase 转换测试与完整 after 回读 | 当次 item 转换 | 停在当前稳定检查点，重新判断 |
 | fresh 投影与执行循环 | 每次执行、恢复和事实写回后 | projection resolved 且 source fingerprint 匹配刚回读内容；AI 重新判断语义、依赖、授权和能力，Code 与结构提示不替代判断 | 当前 WorkCase、21、Helper 回读 | 指纹/投影负矩阵、source-contract 与 AI 对照审核 | 当次刚回读快照和结构提示；不证明 AI 跨会话遵从 | 重新精确读取；仍 unresolved 时只交还读取缺口，不猜测位置或行动 |
@@ -99,4 +99,4 @@ Gate 1 不授权未列明行动、对象或影响，不授权范围/风险扩大
 
 ## 8. Stop Conditions
 
-出现以下任一情况时停止受影响动作但不停止安全收敛：当前 WorkCase、指纹、授权包、批准或依赖不可确认；任一 item 吸收 Controller 自检、独立结果复核、关闭准备、Human Gate 或其它 WorkCase 生命周期关口；准备在实际开始前写入 `in_progress` 或在开始后补造它；以测试、子任务或模板步骤推定授权或完成；把 pending→completed 例外用于跨检查点工作；CAS 写后未回读；需要多对象共同生效但能力边界未满足；动作未列明、范围/风险扩大，或准备执行 push、PR、发布、外部消息等禁止副作用；准备以模板自动授权行动、实现调度/spawn 能力、让 Controller 冒充独立 Reviewer 或关闭 WorkCase。命中生命周期关口误建模时按 §5.2 在 `plan_revising` 中作包内修正并 fresh review 后自动恢复；超包与禁止动作零执行、取消或收敛受影响 item并进入结果链；其它恢复按 21、32 与 00 的当前规则进行。不得把任一 Stop Condition 转化为执行期追加 Human 授权请求。
+出现以下任一情况时停止受影响动作但不停止安全收敛：当前 WorkCase、指纹、授权包、批准或依赖不可确认；任一 item 吸收 Controller 自检、独立结果复核、受控提交、关闭准备、Human Gate 或其它 WorkCase 生命周期关口；准备在实际开始前写入 `in_progress` 或在开始后补造它；以测试、子任务或模板步骤推定授权或完成；把 pending→completed 例外用于跨检查点工作；CAS 写后未回读；需要多对象共同生效但能力边界未满足；动作未列明、范围/风险扩大，或准备执行 push、PR、发布、外部消息等禁止副作用；准备以模板自动授权行动、实现调度/spawn 能力、让 Controller 冒充独立 Reviewer 或关闭 WorkCase。命中生命周期关口误建模时按 §5.2 在 `plan_revising` 中作包内修正并 fresh review 后自动恢复；超包与禁止动作零执行、取消或收敛受影响 item并进入结果链；其它恢复按 21、32 与 00 的当前规则进行。不得把任一 Stop Condition 转化为执行期追加 Human 授权请求。

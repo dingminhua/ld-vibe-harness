@@ -107,13 +107,13 @@ Human 明确选择“由项目承担这项工作并建立 WorkCase”是进入�
 
 一个 WorkCase 只承担一个关闭责任。共同服务同一关闭判断、具有明确局部目标和预期结果的内容形成 work item；需要独立准入、授权、长期阻塞、责任转交或关闭判断的目标形成另一个 WorkCase。
 
-work item 只承载获批计划内能够实施并形成局部结果的工作，不承载 WorkCase 自身的生命周期关口。`controller_checking`、`independent_reviewing`、`closure_preparing`、`human_closure_confirming` 及其对应的 Controller 自检、独立结果复核、关闭提案和 Human Gate，均由 §6 的 phase 链在全部 item terminal 后承接，不得被写成 item 的 goal、expected result、依赖或“最后一步”。执行中形成测试、扫描或其它验证材料可以是 item 局部交付；使用这些材料形成 canonical result projection、完成独立结果复核或取得 Human 关闭决定不是 item。典型非法反例是新增 goal 为“全部实现完成后安排独立结果复核”的 item：该 item 会等待结果复核，而结果复核又要求全部 item terminal，形成循环。
+work item 只承载获批计划内能够实施并形成局部结果的工作，不承载 WorkCase 自身的生命周期关口。`controller_checking`、`independent_reviewing`、`closure_preparing`、`human_closure_confirming` 及其对应的 Controller 自检、独立结果复核、受控提交、关闭提案和 Human Gate，均由 §6 的 phase 链在全部 item terminal 后承接，不得被写成 item 的 goal、expected result、依赖或“最后一步”。执行中形成测试、扫描或其它验证材料可以是 item 局部交付；使用这些材料形成 canonical result projection、完成独立结果复核或取得 Human 关闭决定不是 item。典型非法反例是新增 goal 为“全部实现完成后安排独立结果复核”的 item：该 item 会等待结果复核，而结果复核又要求全部 item terminal，形成循环；把 goal 为“受控提交”或“执行本地提交”的收敛动作写成 item 同样违规——应在全部 item terminal 后由受控提交承接。
 
 尚无可执行目标、scope 或成功标准的内容属于 Spark 候选；当前行动即可完成且没有稳定回读价值的内容留在当前行动；长期规则进入规范；可复用方法进入行动模板。不得把命令、review checklist、纯结果报告或周期运行入口伪装成 WorkCase。
 
 ### 4.4 受控创建
 
-受控创建必须一次形成完整目标、scope、成功标准定义、`plan_version=1`、非空 work items、完整 `execution_authorization`、至少一项实际独立方案复核、priority、`status=open`、`phase=human_plan_confirming` 和 Human waiting，并完成 Schema 校验、写入与回读。创建时全部 work item 必须为 `pending`。`execution_authorization` 必须把全部已知 Human Gate、目标与影响范围、风险、动作上限、禁止项、允许的调整与重试、验证/回滚和超界安全收敛一次呈现给 Human；只能由 Human 完成的前置动作必须在 Gate1 决定前完成或从本次运行范围明确排除。创建前的 Controller 与独立 Reviewer 必须逐项检查 work item 是否错误吸收 §4.3 的生命周期关口或 Human Gate，并检查已知授权需求是否已进入基线；命中时当前候选计划不得提交 Human 批准或受控创建，必须先返修。创建前 Reviewer feedback 必须由 Controller 处置；新对象不得带 execution approval 或结果字段。
+受控创建必须一次形成完整目标、scope、成功标准定义、`plan_version=1`、非空 work items、完整 `execution_authorization`、至少一项实际独立方案复核、priority、`status=open`、`phase=human_plan_confirming` 和 Human waiting，并完成 Schema 校验、写入与回读。创建时全部 work item 必须为 `pending`。`execution_authorization` 必须把全部已知 Human Gate、目标与影响范围、风险、动作上限、禁止项、允许的调整与重试、验证/回滚和超界安全收敛一次呈现给 Human；只能由 Human 完成的前置动作必须在 Gate1 决定前完成或从本次运行范围明确排除。创建前的 Controller 与独立 Reviewer 必须逐项检查 work item 是否错误吸收 §4.3 的生命周期关口或 Human Gate（含将受控提交、完整结果投影等收敛动作写成 item 的违例），并检查已知授权需求是否已进入基线；命中时当前候选计划不得提交 Human 批准或受控创建，必须先返修。创建前 Reviewer feedback 必须由 Controller 处置；新对象不得带 execution approval 或结果字段。
 
 ### 4.5 独立审核
 
