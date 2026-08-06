@@ -21,7 +21,7 @@ relations:
     fact_type_key: spark
     object_id: spark-0051
 status: open
-phase: executing
+phase: controller_checking
 execution_approval:
   subject_version: 1
   approved_at: '2026-08-06T15:30:00+08:00'
@@ -30,6 +30,7 @@ execution_approval:
   source_refs:
   - "Claude Code session: 20260806, user confirmed '第三项也授权执行'"
 plan_version: 1
+result_version: 1
 priority: P2
 work_items:
 - item_id: item-01
@@ -67,10 +68,33 @@ work_items:
 - item_id: item-06
   goal: 受控提交
   expected_result: 经 30 模板受控提交、Git Gate 通过，commit 路径闭集仅含本 WorkCase 实际变更，提交后 check-fact-integrity outer ok 且 result.status=complete
-  status: pending
+  status: completed
   depends_on:
   - item-04
   - item-05
+  result_summary: 受控提交完成：commit 2de4468f3，Git Gate 通过（source_fingerprint=ce9bfa5a6da379d4ec3efa04f1796d9a8e576aa05d912b8ad768ce00e4702b06），14 文件 475 插入 16 删除，check-fact-integrity outer ok（仅 workcase-0065.yaml 预存问题在外）。
+success_criterion_results:
+- criterion_id: criterion-01
+  outcome: satisfied
+  summary: 04.Att.01 observed_context 表已补充 signature 为可选 object（agent_id、host_environment、session_id），出现时非空且遵循 05.Att.01 取值约定。
+- criterion_id: criterion-02
+  outcome: satisfied
+  summary: 05.Att.01 change-log-signature 已补取值约定（agent_id/host_environment 改为小写，禁止重复）与注入责任（平台/执行会话自动注入，AI 不应手填）。
+- criterion_id: criterion-03
+  outcome: satisfied
+  summary: Code 已实现 inject_observed_signature() 在 create-fact-object、update-fact-object、update-workcase 编排层从 observed_context.signature 取值并机械注入 change_log[-1].signature；未提供时保留既有行为。
+- criterion_id: criterion-04
+  outcome: satisfied
+  summary: 12 项 contract tests（test_observed_signature.py）全部通过，覆盖注入正确性、兼容回退与 lowercase 强制。
+- criterion_id: criterion-05
+  outcome: satisfied
+  summary: 03 §9.4 footer 取值约定已对齐为小写，与 05.Att.01 一致；未移除多 Agent footer 能力，历史兼容。
+- criterion_id: criterion-06
+  outcome: satisfied
+  summary: commit 2de4468f3 经 Git Gate 通过（source_fingerprint=ce9bfa5a6da379d4ec3efa04f1796d9a8e576aa05d912b8ad768ce00e4702b06），14 文件仅含本 WorkCase 实际变更，提交后 check-fact-integrity outer ok。
+result_summary: WC-0063 全部 6 项 work item 完成。代码变更通过 Git Gate 受控提交，spec 规范（03、04.Att.01、05.Att.01）和 code 层（3 request + 3 operation 文件 + 1 公共函数）已实现 signature 解析、强制小写与机械注入，12 项 contract tests 覆盖正反场景。未提供 signature 时保留既有行为，向后兼容。
+controller_check_summary: Controller 自检：全部 6 项 item 已 terminal（completed），item 终值与实际结果一致；逐成功标准结果已形成、校验并回读，全部为 satisfied；commit 路径闭集仅含 WC-0063 授权变更，Git Gate 通过，check-fact-integrity outer ok。无未处理反馈或遗留问题。
+validation_summary: 验证覆盖：(a) 12 项 contract tests 全部通过，验证注入正确性、兼容回退与 lowercase 强制；(b) Git Gate 校验通过，commit 2de4468f3 的 header、body、footer 与 fact candidate 均满足 03 契约；(c) check-fact-integrity 运行结果 outer ok（仅 workcase-0065.yaml 预存问题在外，与本 WorkCase 无关）；(d) 165 项既有 tests 保持通过。未验证：跨会话 signature 注入一致性（超出本 WorkCase scope）。
 execution_authorization:
   authorized_actions:
   - action_id: authorization-01
@@ -194,7 +218,13 @@ change_log:
   signature:
     agent_id: glm-5.2
     host_environment: Claude Code (macOS)
+- at: '2026-08-06T21:18:30.962402+08:00'
+  session_id: claude-code-session-20260806
+  summary: "受控提交完成：commit 2de4468f3，Git Gate 通过，14 文件 475 插入 16 删除，check-fact-integrity outer ok；item-06 完成"
+  signature:
+    agent_id: glm-5.2
+    host_environment: Claude Code (macOS)
 object_id: workcase-0063
 fact_type_key: workcase
 created_at: '2026-08-06T15:27:15.416665+08:00'
-updated_at: '2026-08-06T19:30:39+08:00'
+updated_at: '2026-08-06T21:18:30.962402+08:00'
