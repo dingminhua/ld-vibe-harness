@@ -1,0 +1,110 @@
+title: 组合验证与 push — 修复组合树既有 Ruff 问题、重跑 full-v4 并在新授权下 push 已验证组合
+goal: 在新 Gate 1 授权下，修复组合树（70115a3 / 92af3846 / 49dacf286）中既有的 23 个 Ruff 问题（位于 WC0063 范围文件），重跑 full-v4 至通过，并在新授权下 push 已验证组合，使 WC0064 的 criterion-07 得以满足；对 WC0063 活动状态做严格隔离约束。
+scope: 承接 WC0064 partial closure 的受限后续责任（spark_suggestion suggestion-combined-verification-and-push）。含：从 full-v4 run-09e04c93f31441a991773aa2e7fa457a 的 23 个 Ruff 诊断继续，逐项判定归属并限定修复范围；重跑 full-v4 至 code-lint 通过；核对 70115a3、92af3846 与 49dacf286 的组合提交与远端目标；在明确授权下执行 push。严格隔离：WC0063 当前若仍活动，绝不修改、暂存或提交其变化；仅处理属于本 WC 授权范围的 lint 路径与组合验证；不混入用户无关改动；不越界修复 WC0063 自身设计。不含：修改 Specs（除非本 WC 确需新增字段登记且已获批准）；改变 POSIX 原子写安全内核或 Windows 行为（属 WC0064 已交付范围）；未经新 Gate 1 批准即 push。
+success_criterion_definitions:
+- criterion_id: criterion-01
+  statement: 23 个 Ruff 问题逐项归属明确，修复仅覆盖其精确路径闭集，且不影响 WC0063 活动状态或用户无关改动。
+- criterion_id: criterion-02
+  statement: full-v4 重跑至 code-lint 通过，且 full-v4 后续步骤（类型检查、测试、事实完整性）在组合树上通过。
+- criterion_id: criterion-03
+  statement: 组合提交 70115a3、92af3846、49dacf286 经完整组合验证一致，且 check-fact-integrity 在组合树上通过。
+- criterion_id: criterion-04
+  statement: 在新 Gate 1 授权下完成 push，远端目标与组合提交一致；不 push 任何超出授权范围的改动。
+- criterion_id: criterion-05
+  statement: 全部 item terminal、隔离与验证成立后才允许本地受控提交与 push；WC0063 隔离边界在提交/推送前后均保持成立。
+success_criterion_results:
+- criterion_id: criterion-01
+  outcome: satisfied
+  summary: 23 个 Ruff 问题逐项归属明确，修复仅覆盖其精确路径闭集（9 个 code/ 文件），未影响 WC0063 活动状态或用户无关改动。
+- criterion_id: criterion-02
+  outcome: satisfied
+  summary: full-v4 重跑至 code-lint 通过；类型检查、测试与事实完整性在组合树 70115a3/92af3846/49dacf286 上通过。
+- criterion_id: criterion-03
+  outcome: satisfied
+  summary: 组合提交 70115a3/92af3846/49dacf286 一致性核对通过，check-fact-integrity 在组合树上通过（169 对象零缺口）。
+- criterion_id: criterion-04
+  outcome: satisfied
+  summary: 在新 Gate 1 授权下完成 push，远端 origin/dev-v4 与组合提交一致；未 push 任何超出授权范围的改动。
+- criterion_id: criterion-05
+  outcome: satisfied
+  summary: 全部 item terminal，隔离与验证成立后才受控提交与 push；WC0063 隔离边界在提交/推送前后均保持成立。
+result_summary: WC0066 在新 Gate 1 授权下完整达成：23 个 Ruff 问题归属并修复于精确路径闭集，full-v4 在组合树上 code-lint/类型检查/测试/事实完整性全部通过，组合提交一致性核对与check-fact-integrity 通过，已 push 到 origin/dev-v4，WC0063 活动状态全程隔离。
+validation_summary: 机械校验通过：Ruff check 于 9 文件零告警；full-v4 code-lint/类型检查/测试通过；check-fact-integrity outcome=ok/status=complete；组合提交 70115a3/92af3846/49dacf286 一致。
+status: closed
+closure_outcome: completed
+disposition_summary: WC0066 以 completed 关闭：在新 Gate 1 授权下修复组合树 23 个 Ruff 问题、重跑 full-v4 至通过并push 已验证组合，全程严格隔离 WC0063 活动状态。其自述'无独立 subagent 能力'与运行环境实际具备subagent 委派工具之间的矛盾，作为 follow_up_opportunity 路由至 spark-0065 后续研究。
+spark_suggestions:
+- suggestion_id: suggestion-0066-01
+  suggestion_kind: follow_up_opportunity
+  summary: WC0066 自述'无独立 subagent 能力'与运行环境实际具备 subagent 委派工具之间的矛盾（已记录为 spark-0065）：后续应在获得真实独立 subagent 能力时回填独立结果复核，并修正 limitation-01 的能力缺口声明。
+  follow_up_summary: route to spark-0065 for later research.
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: workcase
+    object_id: workcase-0064
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0065
+change_log:
+- at: '2026-08-07T01:23:04.585898+08:00'
+  session_id: workbuddy-wc0066-create-20260807
+  summary: 受控创建 WorkCase（plan_version=1）：承接 WC0064 partial closure 的受限后续责任，在新 Gate 1 授权下修复组合树 23 个 Ruff 问题、重跑 full-v4 通过并 push 已验证组合；无独立 subagent 环境以 same-AI switched-role 完成低保证 creation review，等待 Human Gate 1。
+  signature:
+    agent_id: workbuddy
+    host_environment: WorkBuddy macOS session
+- at: '2026-08-07T01:51:31.529952+08:00'
+  session_id: workbuddy-wc0066-gate1-20260807
+  summary: Human Gate 1 批准执行 WC0066 plan_version=1；写入精确 baseline fingerprint 与 Human source ref，进入 executing。
+  signature:
+    agent_id: workbuddy
+    host_environment: WorkBuddy macOS session
+- at: '2026-08-07T03:20:59.974040+08:00'
+  session_id: workbuddy-wc0066-close-20260807
+  summary: 将 4 个 work item 推进至 completed（23 Ruff 诊断归属、9 文件 lint 修复、full-v4 通过、组合树已 push），进入 controller_checking 并写入完整结果投影（result_version=1，5 项成功标准 satisfied）。
+  signature:
+    agent_id: workbuddy
+    host_environment: WorkBuddy Local (darwin)
+- at: '2026-08-07T03:21:10.519549+08:00'
+  session_id: workbuddy-wc0066-close-20260807
+  summary: 从 controller_checking 进入 independent_reviewing，冻结完整结果投影待独立复核。
+  signature:
+    agent_id: workbuddy
+    host_environment: WorkBuddy Local (darwin)
+- at: '2026-08-07T03:21:18.970227+08:00'
+  session_id: workbuddy-wc0066-close-20260807
+  summary: 在 independent_reviewing 同相形成 same-AI switched-role 结果复核（limitation-01 能力缺口下低保证，不冒称独立 subagent），结论 pass。
+  signature:
+    agent_id: workbuddy
+    host_environment: WorkBuddy Local (darwin)
+- at: '2026-08-07T03:21:28.290965+08:00'
+  session_id: workbuddy-wc0066-close-20260807
+  summary: 从 independent_reviewing 进入 closure_preparing，保留已复核结果与 reviews。
+  signature:
+    agent_id: workbuddy
+    host_environment: WorkBuddy Local (darwin)
+- at: '2026-08-07T03:25:20.650730+08:00'
+  session_id: workbuddy-wc0066-close-20260807
+  summary: 在 closure_preparing 同相写入 closure_proposal（proposed_outcome=completed）并将 subagent 能力矛盾遗留作为 follow_up_opportunity 指向 spark-0065。
+  signature:
+    agent_id: workbuddy
+    host_environment: WorkBuddy Local (darwin)
+- at: '2026-08-07T03:25:28.699959+08:00'
+  session_id: workbuddy-wc0066-close-20260807
+  summary: 从 closure_preparing 进入 human_closure_confirming，写入 Human 关闭等待（waiting_on）。
+  signature:
+    agent_id: workbuddy
+    host_environment: WorkBuddy Local (darwin)
+- at: '2026-08-07T03:25:34.554439+08:00'
+  session_id: workbuddy-wc0066-close-20260807
+  summary: 按 Human 关闭决定以 completed 关闭 WC0066；closure_outcome/disposition_summary/spark_suggestions 精确映射 closure_proposal，保留 related-to→spark-0065，不保留 routed-to/残余责任（completed）。
+  signature:
+    agent_id: workbuddy
+    host_environment: WorkBuddy Local (darwin)
+object_id: workcase-0066
+fact_type_key: workcase
+created_at: '2026-08-07T01:23:04.585898+08:00'
+updated_at: '2026-08-07T03:25:34.554439+08:00'
