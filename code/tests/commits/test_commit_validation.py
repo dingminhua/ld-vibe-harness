@@ -155,6 +155,62 @@ def test_unknown_spec_status_fails_closed(contract: CommitContractProjection) ->
     assert "human_gate_trailer_missing" in _codes(result)
 
 
+def test_activate_existing_spec_without_human_gate_trailer_fails(contract: CommitContractProjection) -> None:
+    # Activating an existing spec (status flip to active) is a Human Gate event
+    # and must carry the Human-Gate trailer, even though the git status is M.
+    result = validate_commit(
+        contract,
+        _input(
+            contract,
+            candidate_paths=("specs/09-环境接入规范.md",),
+            spec_candidate_statuses={"specs/09-环境接入规范.md": "M"},
+            spec_activated_paths=("specs/09-环境接入规范.md",),
+        ),
+    )
+    assert result.outcome == "failed"
+    assert "human_gate_trailer_missing" in _codes(result)
+
+
+def test_activate_existing_spec_with_human_gate_trailer_passes(contract: CommitContractProjection) -> None:
+    message = (
+        "docs(specs): 激活独立规范文档\n\n"
+        "关键变更:\n- 将 status 转为 active\n\n"
+        "Session-ID: test-session\nAgent-ID: test-agent\nHost-Environment: test-environment\n"
+        "Human-Gate: authorized-by-human-20260806"
+    )
+    result = validate_commit(
+        contract,
+        _input(
+            contract,
+            message=message,
+            candidate_paths=("specs/09-环境接入规范.md",),
+            spec_candidate_statuses={"specs/09-环境接入规范.md": "M"},
+            spec_activated_paths=("specs/09-环境接入规范.md",),
+        ),
+    )
+    assert result.outcome == "passed"
+
+
+def test_activate_fact_object_path_excluded(contract: CommitContractProjection) -> None:
+    # A fact object (e.g. Spark) flipped to active must NOT be treated as a
+    # spec activation requiring a Human-Gate trailer.
+    fact = StagedFactCandidate(
+        path="specs/20-Spark-火花.md",
+        fact_type_key="spark",
+        object_id="spark-0001",
+        data=b"x",
+        observation_issue=None,
+    )
+    issues = _human_gate_trailer_issues(
+        ["x"],
+        ("specs/20-Spark-火花.md",),
+        (fact,),
+        {"specs/20-Spark-火花.md": "M"},
+        ("specs/20-Spark-火花.md",),
+    )
+    assert issues == []
+
+
 def test_single_path_minimum_body_passes_mechanical_layer(contract: CommitContractProjection) -> None:
     result = validate_commit(contract, _input(contract))
 
