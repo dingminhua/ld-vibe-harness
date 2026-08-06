@@ -1,0 +1,16 @@
+title: WC0066 自述‘无独立 subagent 能力’与运行环境实际具备 subagent 工具之间的矛盾
+status: open
+priority: P2
+intent: WC0066 受控创建时记录在 observation_summary 与 assurance_gap 中‘当前 WorkBuddy 运行环境无可用独立 subagent 委派通道 / 无独立 subagent 能力’，但同一会话中 WorkBuddy 实际具备 Agent/Explore/Plan subagent 工具，可派发独立上下文的子任务。需后续研究：二者究竟是治理保证口径（‘独立’= 真正异质审阅实体，同模型子进程不计入）导致的措辞差异，还是 WC0066 创建时的环境能力观察已过时；以及若按 WC0066 自身钩子（‘若环境获得真实 subagent 能力，应改回真实 subagent 完成 creation/result review’）应如何在事实层校正 capability 观察与 creation review 方法。
+summary: "## 现象\n- WC0066（ldvh-base/workcases/workcase-0066.yaml）多处写明：observation_summary‘当前 WorkBuddy 运行环境无可用独立 subagent 委派通道，无法发起真实独立只读 subagent 结果复核或 creation review’；assurance_gap‘当前运行环境无独立 subagent 能力；same-AI 切换角色只读审核低于独立 subagent 保证’；并据此以 same-AI switched-role 完成低保证 creation review。\n- 同一运行环境中，WorkBuddy 实际拥有 subagent 工具（Agent 通用代理、Explore 代码库探索、Plan 规划），可发起具有隔离上下文的子任务。\n\n## 待判断的核心问题\n1. 矛盾性质：是治理保证口径差异（‘独立 subagent’特指异质审阅实体，同模型子进程不视为‘独立’），还是 WC0066 创建时的环境能力观察已过时（工具当时未验证/未暴露，如今可用）。\n2. 记录正确性：WC0066 的 observation_summary / assurance_gap 在工具现已可用的情况下是否应更新；若更新，通过何种治理动作（PlanΔ / 新 item + update-workcase）校正 capability 观察与 creation review 方法。\n3. 保证升级：WC0066 自身第 127 行已留钩子——‘若环境获得真实 subagent 能力，应改回真实 subagent 完成 creation/result review’；若实测 Agent 通道可用，是否应重跑 creation review 并消除 assurance_gap，同时提升保证级别。\n\n## 边界\n- 本 Spark 只记录矛盾现象与待研究问题，不自行改写 WC0066 事实对象；任何校正须经 WC0066 自身生命周期（授权 + update-workcase）。\n- 不判断‘独立’治理口径本身的对错，只判断 WC0066 记录与当前环境是否一致、以及如何依规校正。\n- 与 WC0066 item 终态推进、Git push 整合（远端 dev-v4 已前进、lint 补丁与本地 25 提交纠缠）相互独立，可并行研究。"
+change_log:
+- at: '2026-08-07T02:38:47.535017+08:00'
+  session_id: workbuddy-session-20260807-wc0066
+  summary: 受控创建本 Spark：记录 WC0066 自述‘无独立 subagent 能力’与 WorkBuddy 当前实际具备 Agent/Explore/Plan subagent 工具之间的矛盾，留待后续研究。
+  signature:
+    agent_id: workbuddy
+    host_environment: WorkBuddy Local (darwin)
+object_id: spark-0065
+fact_type_key: spark
+created_at: '2026-08-07T02:38:47.535017+08:00'
+updated_at: '2026-08-07T02:38:47.535017+08:00'
