@@ -4,13 +4,18 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
 from ldvh.commits.contract_source import CommitContractProjection
-from ldvh.commits.validation import CommitValidationInput, StagedFactCandidate
+from ldvh.commits.validation import (
+    CommitValidationInput,
+    StagedFactCandidate,
+    _SPEC_PATH_RE,
+)
 from ldvh.facts.content import MAX_FACT_BYTES
 from ldvh.facts.contracts import LAYOUTS
 from ldvh.governance.git import isolated_git_environment, resolve_git_identity, windows_path_problem
@@ -339,6 +344,113 @@ def _parse_name_status(output: bytes) -> tuple[tuple[str, ...], CommitCandidateO
     return tuple(paths), None
 
 
+def _candidate_status_map(
+    worktree: Path,
+    *,
+    index_file: Path | None = None,
+) -> tuple[dict[str, str], CommitCandidateObservationIssue | None]:
+    """Map each staged path to its git name-status (A/M/R/C/D...).
+
+    Used by the Human Gate enforcement to distinguish a newly added spec
+    document from an edit to an existing one, without the side-effect-free
+    validator reading Git itself.
+    """
+
+    output = _successful(
+        _run_git(
+            worktree,
+            ("diff", "--cached", "--name-status", "-z", "--find-renames", "--find-copies", "--no-ext-diff"),
+            index_file=index_file,
+        ),
+        "staged candidate status",
+    )
+    if isinstance(output, CommitCandidateObservationIssue):
+        return {}, output
+    return _parse_name_status_map(output), None
+
+
+def _parse_name_status_map(output: bytes) -> dict[str, str]:
+    try:
+        tokens = output.decode("utf-8").split("\0")
+    except UnicodeDecodeError:
+        return {}
+    if tokens and tokens[-1] == "":
+        tokens.pop()
+    status_map: dict[str, str] = {}
+    index = 0
+    while index < len(tokens):
+        status = tokens[index]
+        index += 1
+        path_count = 2 if status.startswith(("R", "C")) else 1
+        if not status or index + path_count > len(tokens):
+            return {}
+        observed = tokens[index : index + path_count]
+        index += path_count
+        # For renames/copies the last path is the path now staged.
+        resulting = observed[-1]
+        status_map.setdefault(resulting, status)
+    return status_map
+
+
+def _parse_front_matter_status(text: bytes) -> str | None:
+    """Extract the ``status`` field from a spec's YAML front matter."""
+    try:
+        decoded = text.decode("utf-8")
+    except UnicodeDecodeError:
+        return None
+    match = re.search(r"```yaml\s*\n(.*?)```", decoded, re.DOTALL)
+    block = match.group(1) if match else decoded
+    status_match = re.search(r"^\s*status:\s*[\"']?([^\"'\n]+)[\"']?", block, re.MULTILINE)
+    if not status_match:
+        return None
+    return status_match.group(1).strip().lower()
+
+
+def _detect_activations(
+    worktree: Path,
+    paths: tuple[str, ...],
+    fact_paths: set[str],
+    *,
+    index_file: Path | None = None,
+) -> tuple[tuple[str, ...], CommitCandidateObservationIssue | None]:
+    """Return spec paths whose ``status`` is being flipped to ``active``.
+
+    Per 00 §10.1 第 12 条 and 03 §12 第 9 条, activating an existing independent
+    spec document (flipping its ``status`` to ``active``) is a Human Gate event
+    and must carry a ``Human-Gate:`` trailer, just like adding a new spec. This
+    compares the staged blob (index) against HEAD for each non-fact spec path.
+
+    A flip from any non-``active`` status (including a status absent from HEAD)
+    to ``active`` is reported. A spec that is not yet in HEAD is a new file and
+    is handled by the new-spec status check instead, so it is not reported here.
+    If the staged blob cannot be read, the path is reported fail-closed.
+    """
+
+    activations: list[str] = []
+    failure: CommitCandidateObservationIssue | None = None
+    for path in paths:
+        if path in fact_paths:
+            continue
+        if not _SPEC_PATH_RE.match(path):
+            continue
+        staged = _successful(_run_git(worktree, ("show", f":{path}"), index_file=index_file), "staged spec status")
+        if isinstance(staged, CommitCandidateObservationIssue):
+            failure = staged
+            activations.append(path)
+            continue
+        staged_status = _parse_front_matter_status(staged)
+        head = _successful(_run_git(worktree, ("show", f"HEAD:{path}"), index_file=index_file), "head spec status")
+        if isinstance(head, CommitCandidateObservationIssue):
+            # Not in HEAD (new file) or unreadable: activation does not apply
+            # here, and a genuine read failure is already captured above for the
+            # staged side; skip rather than misreport.
+            continue
+        head_status = _parse_front_matter_status(head)
+        if staged_status == "active" and head_status != "active":
+            activations.append(path)
+    return tuple(activations), failure
+
+
 def _governance_identity(governance: GovernanceScopeResult) -> str:
     encoded = json.dumps(governance.to_json(), ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()
     return f"sha256:{hashlib.sha256(encoded).hexdigest()}"
@@ -360,6 +472,13 @@ def _observe_index(
     )
     if failure is not None:
         return CommitCandidateObservation("unverifiable", None, (failure,), (), snapshot_before)
+    status_map, status_failure = (
+        _candidate_status_map(worktree)
+        if index_file is None
+        else _candidate_status_map(worktree, index_file=index_file)
+    )
+    if status_failure is not None:
+        status_map = {}
     fact_candidates, failure = _fact_candidates(
         worktree,
         paths,
@@ -368,6 +487,8 @@ def _observe_index(
     )
     if failure is not None:
         return CommitCandidateObservation("unverifiable", None, (failure,), paths, snapshot_before)
+    fact_paths = {candidate.path for candidate in fact_candidates}
+    activations, _ = _detect_activations(worktree, paths, fact_paths, index_file=index_file)
     snapshot_after, _, failure = _snapshot(worktree, index_file=index_file)
     if failure is not None:
         return CommitCandidateObservation("unverifiable", None, (failure,), paths, snapshot_before)
@@ -378,6 +499,8 @@ def _observe_index(
     value = CommitValidationInput(
         message=message,
         candidate_paths=paths,
+        spec_candidate_statuses=status_map,
+        spec_activated_paths=activations,
         git_worktree_root=str(worktree),
         governance_status=governance.scope_status.value,
         governance_identity=_governance_identity(governance),

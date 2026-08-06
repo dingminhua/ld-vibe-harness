@@ -72,6 +72,7 @@ class CommitValidationInput:
     source_path: str | None
     source_fingerprint: str | None
     spec_candidate_statuses: dict[str, str] | None = None
+    spec_activated_paths: tuple[str, ...] | None = None
     fact_candidates: tuple[StagedFactCandidate, ...] = ()
     fact_schemas: tuple[FactSchema, ...] = ()
 
@@ -312,41 +313,51 @@ def _human_gate_trailer_issues(
     candidate_paths: tuple[str, ...],
     fact_candidates: tuple[StagedFactCandidate, ...],
     spec_statuses: dict[str, str] | None,
+    spec_activated_paths: tuple[str, ...] | None = None,
 ) -> list[CommitValidationIssue]:
-    """Fail-closed mechanical block for new independent spec documents.
+    """Fail-closed mechanical block for new or activated independent spec docs.
 
     Per 00 §10.1 第 12 条 and 03 §12 第 9 条, a commit that adds a new
-    independent spec document (``specs/<id>-*.md``) must carry a non-empty
-    ``Human-Gate:`` footer trailer recording the Human decision; otherwise the
-    Git Gate fails closed.  Fact objects (Spark/WorkCase/ADR/Pitfall/Study) also
-    live under ``specs/<id>-*.md`` but are excluded here: they are validated
-    through the fact-trace layer instead and are never spec candidates.
+    independent spec document (``specs/<id>-*.md``), or activates an existing one
+    (flips its ``status`` to ``active``), must carry a non-empty ``Human-Gate:``
+    footer trailer recording the Human decision; otherwise the Git Gate fails
+    closed.  Fact objects (Spark/WorkCase/ADR/Pitfall/Study) also live under
+    ``specs/<id>-*.md`` but are excluded here: they are validated through the
+    fact-trace layer instead and are never spec candidates.
     """
 
     issues: list[CommitValidationIssue] = []
-    # Legacy callers and older tests that do not supply a staged status map
-    # skip this check. The real Git Gate flow (git_adapter) always supplies
-    # ``spec_candidate_statuses``; when it is absent we cannot tell a new spec
-    # document from a modification of an existing one, so we do not fail closed
-    # here. Fail-closed behaviour applies only when a status map is supplied but
-    # a candidate path is missing from it (see below).
-    if spec_statuses is None:
+    # Legacy callers and older tests that supply neither a staged status map nor
+    # an activation set skip this check. The real Git Gate flow (git_adapter)
+    # always supplies ``spec_candidate_statuses`` and ``spec_activated_paths``;
+    # when both are absent we cannot tell a new/activated spec from a plain
+    # modification, so we do not fail closed here. Fail-closed behaviour applies
+    # when a status map is supplied but a candidate path is missing from it.
+    if spec_statuses is None and not spec_activated_paths:
         return issues
     fact_paths = {candidate.path for candidate in fact_candidates}
-    adds_new_spec = False
+    activates = set(spec_activated_paths or ())
+    requires_gate = False
     for path in candidate_paths:
         if path in fact_paths:
             continue
-        if _SPEC_PATH_RE.match(path):
-            status = spec_statuses.get(path) if spec_statuses else None
+        if not _SPEC_PATH_RE.match(path):
+            continue
+        status = spec_statuses.get(path) if spec_statuses else None
+        is_new = False
+        if spec_statuses is not None:
             # status "A" (added) or "C" (copied) means a new file; when the
-            # staged status is unknown the validator fails closed and still
-            # requires the trailer, because it is side-effect-free and cannot
-            # read HEAD itself.
-            if status is None or status.startswith(("A", "C")):
-                adds_new_spec = True
-                break
-    if not adds_new_spec:
+            # staged status is missing from a supplied map the validator fails
+            # closed and still requires the trailer, because it is side-effect
+            # free and cannot read HEAD itself.
+            if status is None:
+                is_new = True
+            elif status.startswith(("A", "C")):
+                is_new = True
+        if is_new or path in activates:
+            requires_gate = True
+            break
+    if not requires_gate:
         return issues
     trailers = _footer_trailers(lines)
     values = trailers.get("Human-Gate", [])
@@ -354,7 +365,7 @@ def _human_gate_trailer_issues(
         issues.append(
             _issue(
                 "human_gate_trailer_missing",
-                "提交新增独立 spec 文档（specs/<id>-*.md），footer 必须含非空 Human-Gate: trailer 指向 Human 决定；否则 Git Gate 机械阻断",
+                "提交新增或激活独立 spec 文档（specs/<id>-*.md），footer 必须含非空 Human-Gate: trailer 指向 Human 决定；否则 Git Gate 机械阻断",
             )
         )
     return issues
@@ -619,7 +630,11 @@ def validate_commit(contract: CommitContractProjection, value: CommitValidationI
             failures.extend(trace_failures)
         failures.extend(
             _human_gate_trailer_issues(
-                body_lines, value.candidate_paths, value.fact_candidates, value.spec_candidate_statuses
+                body_lines,
+                value.candidate_paths,
+                value.fact_candidates,
+                value.spec_candidate_statuses,
+                value.spec_activated_paths,
             )
         )
         failures.extend(
