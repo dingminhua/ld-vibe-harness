@@ -266,8 +266,7 @@ def _platform_affected_issues(
                 issues.append(
                     _issue(
                         "platform_trailer_invalid",
-                        f"Platform-Affected 值无效: {value!r}，"
-                        f"允许值: {', '.join(sorted(_VALID_PLATFORM_AFFECTED))}",
+                        f"Platform-Affected 值无效: {value!r}，允许值: {', '.join(sorted(_VALID_PLATFORM_AFFECTED))}",
                     )
                 )
 
@@ -286,8 +285,7 @@ def _platform_affected_issues(
                 issues.append(
                     _issue(
                         "platform_trailer_invalid",
-                        f"Platform-Verified 值无效: {value!r}，"
-                        f"允许值: {', '.join(sorted(_VALID_PLATFORM_VERIFIED))}",
+                        f"Platform-Verified 值无效: {value!r}，允许值: {', '.join(sorted(_VALID_PLATFORM_VERIFIED))}",
                     )
                 )
 
@@ -365,7 +363,8 @@ def _human_gate_trailer_issues(
         issues.append(
             _issue(
                 "human_gate_trailer_missing",
-                "提交新增或激活独立 spec 文档（specs/<id>-*.md），footer 必须含非空 Human-Gate: trailer 指向 Human 决定；否则 Git Gate 机械阻断",
+                "提交新增或激活独立 spec 文档（specs/<id>-*.md），footer 必须含非空 Human-Gate: "
+                "trailer 指向 Human 决定；否则 Git Gate 机械阻断",
             )
         )
     return issues
@@ -637,9 +636,7 @@ def validate_commit(contract: CommitContractProjection, value: CommitValidationI
                 value.spec_activated_paths,
             )
         )
-        failures.extend(
-            _platform_affected_issues(value.candidate_paths, _footer_trailers(body_lines))
-        )
+        failures.extend(_platform_affected_issues(value.candidate_paths, _footer_trailers(body_lines)))
     # A mechanically invalid after-image remains a failure even when a separate
     # candidate cannot be observed completely.  The Gate must preserve the
     # decisive rejection rather than downgrade it to an observation gap.

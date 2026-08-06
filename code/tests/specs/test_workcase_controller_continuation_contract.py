@@ -4,7 +4,6 @@ from pathlib import Path
 
 from ldvh.facts.workcase_presentation import PHASE_PRESENTATION, derive_workcase_presentation
 
-
 ROOT = Path(__file__).resolve().parents[3]
 FOUNDATION = ROOT / "specs/06-行动模板基础规范.md"
 EXECUTION_TEMPLATE = ROOT / "specs/34-WorkCase获批计划执行行动模板.md"
@@ -79,7 +78,9 @@ def test_gate2_language_is_bound_to_the_just_read_resolved_projection() -> None:
     source = _source(EXECUTION_TEMPLATE)
 
     assert "只有 resolved 投影的 `handoff_narrative_key=gate2_waiting`" in source
-    assert "`independent_reviewing`、`closure_preparing`、任何 blocked、stale 或 unresolved 快照均禁止这些结论" in source
+    assert (
+        "`independent_reviewing`、`closure_preparing`、任何 blocked、stale 或 unresolved 快照均禁止这些结论" in source
+    )
 
     projections = [
         derive_workcase_presentation(status, phase, FINGERPRINT)

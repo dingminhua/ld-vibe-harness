@@ -17,7 +17,6 @@ from ldvh.facts.workcase_projection import (
     all_terminal,
     no_execution_facts,
     plan_delta,
-    pre_execution_stop_shape,
     result_delta,
     result_projection_complete,
     safe_convergence_shape,
@@ -368,12 +367,7 @@ def _validate_review_ownership(
                 and "execution_approval" not in before
                 and "execution_approval" not in after
             )
-            if (
-                (added or removed)
-                and not plan_changed
-                and not safe_convergence_removal
-                and not pre_gate_candidate_exit
-            ):
+            if (added or removed) and not plan_changed and not safe_convergence_removal and not pre_gate_candidate_exit:
                 issues.append(_issue("current plan reviews 只能随 PlanΔ 或 Gate1 前完整候选整体替换", key))
             if correction and not correction_position:
                 issues.append(_issue("current plan review 同事件更正只允许停留在计划判断或自动修订位置", key))
@@ -432,7 +426,9 @@ def _validate_approval_ownership(
             _issue("execution approval 只能由首次 Human 计划确认边形成，Gate1 后必须保持原样", "execution_approval")
         )
     if isinstance(new, dict) and new.get("subject_version") != after.get("plan_version") and old is None:
-        issues.append(_issue("首次 execution approval 必须记录 Gate1 当时 plan_version", "execution_approval.subject_version"))
+        issues.append(
+            _issue("首次 execution approval 必须记录 Gate1 当时 plan_version", "execution_approval.subject_version")
+        )
     return issues
 
 
@@ -720,9 +716,7 @@ def _validate_plan_versions(before: Mapping[str, object], after: Mapping[str, ob
             ("plan_revising", "controller_checking"),
         }
         pre_gate_candidate_exit = (
-            not approved
-            and "execution_approval" not in after
-            and edge == ("plan_revising", "human_plan_confirming")
+            not approved and "execution_approval" not in after and edge == ("plan_revising", "human_plan_confirming")
         )
         if approved and edge not in allowed_approved_edges:
             issues.append(_issue("Gate1 后 PlanΔ 只能经 Controller 自动修订边形成", "phase"))
@@ -1170,15 +1164,11 @@ def validate_workcase_transition(
     if before_phase not in _ACTIVE_PHASES or after_phase not in _ACTIVE_PHASES:
         issues.append(_issue("活动期 WorkCase phase 不在当前七项闭集中", "phase"))
     if safe_convergence_shape(before) and after_phase in {"executing", "plan_revising"}:
-        issues.append(
-            _issue("SafeConvergenceShape 只能沿结果、复核与关闭链向后收敛", "phase")
-        )
+        issues.append(_issue("SafeConvergenceShape 只能沿结果、复核与关闭链向后收敛", "phase"))
     if isinstance(before.get("execution_approval"), dict) and not _same_presence_and_value(
         before, after, "execution_authorization"
     ):
-        issues.append(
-            _issue("Gate1 后 execution_authorization 必须保持原样", "execution_authorization")
-        )
+        issues.append(_issue("Gate1 后 execution_authorization 必须保持原样", "execution_authorization"))
 
     status_changed = before_status != after_status
     if status_changed:

@@ -31,7 +31,14 @@ def _imports(path: Path) -> tuple[str, ...]:
 def _chain_modules() -> tuple[Path, ...]:
     modules: list[Path] = []
     for directory in _COMMIT_CHAIN_DIRS:
-        modules.extend(sorted((root / name).resolve() for root, _, files in _PACKAGE_ROOT.joinpath(directory).walk() for name in files if name.endswith(".py")))
+        modules.extend(
+            sorted(
+                (root / name).resolve()
+                for root, _, files in _PACKAGE_ROOT.joinpath(directory).walk()
+                for name in files
+                if name.endswith(".py")
+            )
+        )
     return tuple(modules)
 
 

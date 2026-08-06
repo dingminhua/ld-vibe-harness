@@ -31,15 +31,17 @@ from ldvh.helper.operations.fact_object_operation import FACT_OBJECT_IMPLEMENTAT
 from ldvh.helper.operations.fact_object_operation import OPERATION_KEY as FACT_OBJECT_OPERATION_KEY
 from ldvh.helper.operations.fact_update_operation import FACT_UPDATE_IMPLEMENTATION
 from ldvh.helper.operations.fact_update_operation import OPERATION_KEY as FACT_UPDATE_OPERATION_KEY
-from ldvh.helper.operations.legacy_change_log_migration_operation import (
-    MIGRATION_IMPLEMENTATION,
-    OPERATION_KEY as LEGACY_CHANGE_LOG_MIGRATION_OPERATION_KEY,
-)
 from ldvh.helper.operations.governance_scope_operation import (
     GOVERNANCE_SCOPE_IMPLEMENTATION,
 )
 from ldvh.helper.operations.governance_scope_operation import (
     OPERATION_KEY as GOVERNANCE_SCOPE_OPERATION_KEY,
+)
+from ldvh.helper.operations.legacy_change_log_migration_operation import (
+    MIGRATION_IMPLEMENTATION,
+)
+from ldvh.helper.operations.legacy_change_log_migration_operation import (
+    OPERATION_KEY as LEGACY_CHANGE_LOG_MIGRATION_OPERATION_KEY,
 )
 from ldvh.helper.operations.specification_candidate_operation import (
     OPERATION_KEY as SPECIFICATION_CANDIDATE_OPERATION_KEY,

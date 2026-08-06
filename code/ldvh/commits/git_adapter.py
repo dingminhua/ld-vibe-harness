@@ -12,9 +12,9 @@ from typing import Literal
 
 from ldvh.commits.contract_source import CommitContractProjection
 from ldvh.commits.validation import (
+    _SPEC_PATH_RE,
     CommitValidationInput,
     StagedFactCandidate,
-    _SPEC_PATH_RE,
 )
 from ldvh.facts.content import MAX_FACT_BYTES
 from ldvh.facts.contracts import LAYOUTS
@@ -201,8 +201,6 @@ def _read_staged_blob(
     return content, None
 
 
-
-
 def _head_blob(
     worktree: Path,
     path: str,
@@ -237,7 +235,6 @@ def _head_blob(
         return None, None, "HEAD blob path identity changed"
     data, problem = _read_staged_blob(worktree, oid, index_file=index_file, max_bytes=max_bytes)
     return data, oid, problem
-
 
 
 def _fact_candidates(

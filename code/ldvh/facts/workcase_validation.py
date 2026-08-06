@@ -53,9 +53,7 @@ _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 _RESULT_PROJECTION_FIELDS = frozenset(
     {"success_criterion_results", "result_summary", "controller_check_summary", "validation_summary"}
 )
-_RESULT_CHAIN_FIELDS = frozenset(
-    {"result_version", *_RESULT_PROJECTION_FIELDS, "result_reviews", "closure_proposal"}
-)
+_RESULT_CHAIN_FIELDS = frozenset({"result_version", *_RESULT_PROJECTION_FIELDS, "result_reviews", "closure_proposal"})
 _TERMINAL_FIELDS = frozenset(
     {"closure_outcome", "disposition_summary", "residual_responsibilities", "spark_suggestions"}
 )
@@ -449,12 +447,22 @@ def _validate_execution_approval(fields: Mapping[str, object], issues: list[Fact
         and _positive_integer(approval.get("subject_version"))
         and approval.get("subject_version") > fields.get("plan_version")
     ):
-        _issue(issues, "execution approval subject_version 不得晚于当前 plan_version", "execution_approval.subject_version")
+        _issue(
+            issues, "execution approval subject_version 不得晚于当前 plan_version", "execution_approval.subject_version"
+        )
     baseline = approval.get("baseline_fingerprint")
     if not isinstance(baseline, str) or _SHA256.fullmatch(baseline) is None:
-        _issue(issues, "execution approval baseline_fingerprint 必须是 64 位小写 SHA-256", "execution_approval.baseline_fingerprint")
+        _issue(
+            issues,
+            "execution approval baseline_fingerprint 必须是 64 位小写 SHA-256",
+            "execution_approval.baseline_fingerprint",
+        )
     elif baseline != approval_baseline_fingerprint(fields):
-        _issue(issues, "execution approval baseline_fingerprint 与当前批准基线不一致", "execution_approval.baseline_fingerprint")
+        _issue(
+            issues,
+            "execution approval baseline_fingerprint 与当前批准基线不一致",
+            "execution_approval.baseline_fingerprint",
+        )
     source_refs = approval.get("source_refs")
     _validate_unique_strings(source_refs, "execution_approval.source_refs", issues)
 
@@ -748,9 +756,7 @@ def _validate_proposal(fields: Mapping[str, object], issues: list[FactIssue]) ->
     decisions = proposal.get("residual_decisions")
     if outcome == "completed" and decisions is not None:
         _issue(issues, "completed proposal 必须省略 residual_decisions", "closure_proposal.residual_decisions")
-    if outcome == "completed" and any(
-        kind == "constrained_responsibility" for kind in suggestion_kinds.values()
-    ):
+    if outcome == "completed" and any(kind == "constrained_responsibility" for kind in suggestion_kinds.values()):
         _issue(
             issues,
             "completed proposal 只允许 follow_up_opportunity suggestion",
@@ -783,7 +789,10 @@ def _validate_proposal(fields: Mapping[str, object], issues: list[FactIssue]) ->
         if disposition != "route_existing" and route_target is not None:
             _issue(issues, "非 route_existing decision 禁止 route_target", f"{path}.route_target")
         if disposition == "suggest_spark":
-            if not isinstance(suggestion_id, str) or suggestion_kinds.get(suggestion_id) != "constrained_responsibility":
+            if (
+                not isinstance(suggestion_id, str)
+                or suggestion_kinds.get(suggestion_id) != "constrained_responsibility"
+            ):
                 _issue(
                     issues,
                     "suggest_spark 必须引用同一 proposal 的 constrained_responsibility suggestion",
@@ -883,7 +892,11 @@ def _validate_relations(fields: Mapping[str, object], issues: list[FactIssue]) -
                     f"{path}.target.fact_type_key",
                 )
             layout = LAYOUTS.get(target_type) if isinstance(target_type, str) else None
-            if not isinstance(target_id, str) or layout is None or layout.object_id_pattern.fullmatch(target_id) is None:
+            if (
+                not isinstance(target_id, str)
+                or layout is None
+                or layout.object_id_pattern.fullmatch(target_id) is None
+            ):
                 _issue(
                     issues,
                     "contributed-to relation target.object_id 必须是目标类型稳定身份",
@@ -892,7 +905,11 @@ def _validate_relations(fields: Mapping[str, object], issues: list[FactIssue]) -
         elif relation_key == "related-to":
             target_type = target.get("fact_type_key")
             layout = LAYOUTS.get(target_type) if isinstance(target_type, str) else None
-            if not isinstance(target_id, str) or layout is None or layout.object_id_pattern.fullmatch(target_id) is None:
+            if (
+                not isinstance(target_id, str)
+                or layout is None
+                or layout.object_id_pattern.fullmatch(target_id) is None
+            ):
                 _issue(
                     issues,
                     "related-to target 必须是当前事实类型稳定身份",
@@ -1096,7 +1113,9 @@ def _validate_closed_presence(fields: Mapping[str, object], issues: list[FactIss
         and not routed
         and not any(kind == "constrained_responsibility" for kind in suggestion_kinds.values())
     ):
-        _issue(issues, "非 completed closed WorkCase 必须保留剩余责任、routed-to 或受限 Spark 建议", "disposition_summary")
+        _issue(
+            issues, "非 completed closed WorkCase 必须保留剩余责任、routed-to 或受限 Spark 建议", "disposition_summary"
+        )
 
 
 def validate_workcase_snapshot(fields: Mapping[str, object]) -> tuple[FactIssue, ...]:

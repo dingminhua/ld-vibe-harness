@@ -225,9 +225,7 @@ def change_log_creation_issues(fields: Mapping[str, Any]) -> tuple[FactIssue, ..
     issues = [
         FactIssue("schema", "新建 change_log 不得使用已退役 signer_type", f"change_log[{index}].signature.signer_type")
         for index, entry in enumerate(change_log)
-        if isinstance(entry, dict)
-        and isinstance(entry.get("signature"), dict)
-        and "signer_type" in entry["signature"]
+        if isinstance(entry, dict) and isinstance(entry.get("signature"), dict) and "signer_type" in entry["signature"]
     ]
     if isinstance(change_log[0], dict) and change_log[0].get("at") != fields.get("created_at"):
         issues.append(FactIssue("schema", "新建首条 change_log.at 必须等于 Code 绑定的 created_at", "change_log[0].at"))
@@ -282,7 +280,9 @@ def validate_change_log_transition(
     for index, entry in enumerate(current[len(previous) :], start=len(previous)):
         if isinstance(entry, dict) and isinstance(entry.get("signature"), dict) and "signer_type" in entry["signature"]:
             issues.append(
-                FactIssue("schema", "新增 change_log 不得使用已退役 signer_type", f"change_log[{index}].signature.signer_type")
+                FactIssue(
+                    "schema", "新增 change_log 不得使用已退役 signer_type", f"change_log[{index}].signature.signer_type"
+                )
             )
         if "updated_at" in after and isinstance(entry, dict) and entry.get("at") != after.get("updated_at"):
             issues.append(
@@ -436,12 +436,14 @@ def _validate_relations(fact_type_key: str, fields: dict[str, Any], issues: list
             issues.append(FactIssue("relation", "relation_key 不在当前类型闭集中", f"{path}.relation_key"))
 
 
-STUDY_REPORT_KINDS = frozenset({
-    "external_research",
-    "internal_audit",
-    "technical_assessment",
-    "comparison",
-})
+STUDY_REPORT_KINDS = frozenset(
+    {
+        "external_research",
+        "internal_audit",
+        "technical_assessment",
+        "comparison",
+    }
+)
 
 
 def _nonempty_string(value: object) -> bool:
@@ -467,9 +469,17 @@ def _validate_study(fields: dict[str, Any], issues: list[FactIssue]) -> None:
                 issues.append(FactIssue("reference", "Study input_refs.locator 必须是非空 string", f"{path}.locator"))
             for name in ("version", "observed_at"):
                 if name in value and not _nonempty_string(value[name]):
-                    issues.append(FactIssue("reference", f"Study input_refs.{name} 必须是非空 string", f"{path}.{name}"))
-            if "observed_at" in value and _nonempty_string(value.get("observed_at")) and parse_rfc3339(value["observed_at"]) is None:
-                issues.append(FactIssue("schema", "Study input_refs.observed_at 必须是有效 RFC 3339 时间", f"{path}.observed_at"))
+                    issues.append(
+                        FactIssue("reference", f"Study input_refs.{name} 必须是非空 string", f"{path}.{name}")
+                    )
+            if (
+                "observed_at" in value
+                and _nonempty_string(value.get("observed_at"))
+                and parse_rfc3339(value["observed_at"]) is None
+            ):
+                issues.append(
+                    FactIssue("schema", "Study input_refs.observed_at 必须是有效 RFC 3339 时间", f"{path}.observed_at")
+                )
 
 
 def study_report_creation_issues(fields: dict[str, Any]) -> tuple[FactIssue, ...]:
@@ -522,7 +532,10 @@ def _is_legacy_change_log_signer_type_issue(fields: Mapping[str, Any], issue: Fa
         isinstance(signature, dict)
         and set(signature) == {"signer_type", "agent_id", "host_environment"}
         and signature.get("signer_type") in {"human", "ai-agent"}
-        and all(isinstance(signature.get(name), str) and signature[name].strip() for name in ("agent_id", "host_environment"))
+        and all(
+            isinstance(signature.get(name), str) and signature[name].strip()
+            for name in ("agent_id", "host_environment")
+        )
     )
 
 

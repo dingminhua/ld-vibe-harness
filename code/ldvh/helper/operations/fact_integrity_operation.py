@@ -69,7 +69,9 @@ def _unavailable(
     problems: tuple[dict[str, object], ...],
 ) -> OperationExecution:
     governance_json = None if run.result is None else run.result.to_json()
-    sources = (_INPUT_CONTRACT, _RESULT_CONTRACT) + tuple(plain(source) for source in run.sources) + _IMPLEMENTATION_EVIDENCE
+    sources = (
+        (_INPUT_CONTRACT, _RESULT_CONTRACT) + tuple(plain(source) for source in run.sources) + _IMPLEMENTATION_EVIDENCE
+    )
     return OperationExecution(
         outcome="unavailable",
         summary=summary,
@@ -93,6 +95,18 @@ def _unavailable(
             },
         ),
     )
+
+
+def _format_integrity_problem_summary(problem: dict[str, Any]) -> str:
+    label = problem.get("canonical_path") or problem.get("fact_type_key") or "扫描边界"
+    detail = (
+        "; ".join(
+            str(issue.get("summary")) for issue in problem.get("issues", ()) if isinstance(issue, dict)
+        )
+        or problem.get("check_status")
+        or "读取未完成"
+    )
+    return f"{label}: {detail}"
 
 
 def _execute(
@@ -130,8 +144,7 @@ def _execute(
             run,
             tuple(
                 {
-                    "summary": f"{problem.get('canonical_path') or problem.get('fact_type_key') or '扫描边界'}: "
-                    f"{'; '.join(str(issue.get('summary')) for issue in problem.get('issues', ()) if isinstance(issue, dict)) or problem.get('check_status') or '读取未完成'}",
+                    "summary": _format_integrity_problem_summary(problem),
                     **problem,
                 }
                 for problem in problems
@@ -139,7 +152,9 @@ def _execute(
         )
 
     governance_json = None if run.result is None else run.result.to_json()
-    sources = (_INPUT_CONTRACT, _RESULT_CONTRACT) + tuple(plain(source) for source in run.sources) + _IMPLEMENTATION_EVIDENCE
+    sources = (
+        (_INPUT_CONTRACT, _RESULT_CONTRACT) + tuple(plain(source) for source in run.sources) + _IMPLEMENTATION_EVIDENCE
+    )
     result_json: dict[str, Any] = {
         "status": status,
         "object_count": len(snapshot.keys),
