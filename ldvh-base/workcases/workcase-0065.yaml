@@ -23,10 +23,10 @@ relations:
     fact_type_key: spark
     object_id: spark-0061
 status: open
-phase: controller_checking
+phase: human_closure_confirming
 plan_version: 2
 priority: P2
-summary: 全部六个 work item 已 terminal；范围匹配验证完成，已进入 Controller 结果检查，先执行本地受控提交再形成完整结果投影。
+summary: 完整关闭提案、真实独立结果复核、终态保留与现场隔离均已核对；等待 Human Gate 2 唯一关闭决定。
 change_log:
 - signature:
     agent_id: cindy-codex
@@ -76,6 +76,42 @@ change_log:
   session_id: cindy-wc0065-execution-20260807
   at: '2026-08-07T00:58:27.314937+08:00'
   summary: item-06 完成：最终 Python 全库、TypeScript、WC0065 Web 定向契约及事实完整性均通过；Web 全库六项既有 HEAD 基线失败已隔离。全部 item terminal，进入 controller_checking。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy Codex
+  session_id: cindy-wc0065-result-projection-20260807
+  at: '2026-08-07T01:02:36.362071+08:00'
+  summary: 本地受控提交 c485bd1c8 已通过 Git Gate；形成 result_version=1 完整结果投影，六项既有 Web 基线失败使 criterion-06 据实为 not_satisfied。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy Codex
+  session_id: cindy-wc0065-result-review-20260807
+  at: '2026-08-07T01:02:48.364353+08:00'
+  summary: result_version=1 完整投影已机械校验并精确回读；进入 independent_reviewing，准备真实独立只读 subagent 复核。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy Codex
+  session_id: cindy-wc0065-result-review-20260807
+  at: '2026-08-07T01:04:02.969798+08:00'
+  summary: 真实 Codex subagent 完成 result_version=1 独立只读复核，结论 pass、无 feedback，确认可提出 partial + accept_stop 关闭方案。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy Codex
+  session_id: cindy-wc0065-closure-prep-20260807
+  at: '2026-08-07T01:04:21.336033+08:00'
+  summary: 独立结果复核 pass、无 feedback；projection 未变化，进入 closure_preparing。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy Codex
+  session_id: cindy-wc0065-closure-prep-20260807
+  at: '2026-08-07T01:04:36.324261+08:00'
+  summary: 形成 partial + accept_stop 完整关闭提案；唯一 residual 为六项既有非本 WC Web 基线失败。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy Codex
+  session_id: cindy-wc0065-gate2-20260807
+  at: '2026-08-07T01:04:57.964446+08:00'
+  summary: 终态保留、proposal residual 覆盖、无 depends-on、并行改动隔离及事实完整性均核对完成；进入 Human Gate 2。
 work_items:
 - item_id: item-01
   goal: Gate 1 后通过 Helper 前瞻性收敛 spark-0061
@@ -225,9 +261,48 @@ execution_approval:
   baseline_fingerprint: 0ca6bb1afe711190b3418f6f861f0c9285cafe7f4745f3d9c2df85be8396a55c
   source_refs:
   - conversation:user-message:批准执行 WC0065@2026-08-06
-resume_from: 读取 git-commit 行动模板，严格排除 spark-0062 与 workcase-0064 等并行事实变化，完成本 WC 本地受控提交；随后补齐 result_version=1 的完整结果投影。
 result_version: 1
+success_criterion_results:
+- criterion_id: criterion-01
+  outcome: satisfied
+  summary: capability_limitations 的当前观察、证据、审核类别、fallback policy、assurance gap 与 stop conditions 已形成机械契约；未知或证据不足会停止，字段缺失的既有对象保持兼容。
+- criterion_id: criterion-02
+  outcome: satisfied
+  summary: 能力限制与 fallback policy 已进入 canonical Gate 1 authorization fingerprint；creation bootstrap 与 Gate 1 后 PlanΔ/result 的批准边界、fingerprint 绑定和 Human 接受语义已落实。
+- criterion_id: criterion-03
+  outcome: satisfied
+  summary: review actual_method 已机械区分 subagent-read-only 与 same-ai-switched-role-read-only；same-AI 记录必须带 limitation/category/evidence/gap/stop assessment，且不能冒称独立审核。
+- criterion_id: criterion-04
+  outcome: satisfied
+  summary: 规范、校验和测试均保持真实 subagent 优先；creation bootstrap 无 prior approval 循环，PlanΔ/result fallback 仅在 Gate 1 冻结 policy 与当前证据匹配时准入。
+- criterion_id: criterion-05
+  outcome: satisfied
+  summary: Web/API 详情已分开展示已发生 review 的实际方法与保证、未来 fallback policy 和 Human 接受语义；缺失或不可解析字段有明确问题提示。
+- criterion_id: criterion-06
+  outcome: not_satisfied
+  summary: 所列 bootstrap、正反、兼容、fingerprint 与 Web 实际展示测试已覆盖；Python 全库 1464 passed、10 个仅 native Windows skipped，TypeScript check 与 WC0065 Web 定向契约 55/55 通过，check-fact-integrity 164/0；但 Web 全库仍为 151 passed、6 failed，六项已在原 HEAD 存在且不属于本 WC，因此“相关与全量测试全部通过”的字面标准未满足。
+- criterion_id: criterion-07
+  outcome: satisfied
+  summary: spark-0061 已合法 routed 到 WC0065 并更正失真叙述，WC0062 无写入；本地 commit c485bd1c8542e8c8e7fb011664bfb9a4257c7046 仅含 26 个精确范围文件并通过 LDVH Git Gate，未 push、PR 或发布。
+result_summary: WC0065 已形成可用的 Gate 1 能力限制治理：无独立 subagent 时可在 Gate 1 前以明确低保证的 same-AI switched-role 方式完成 creation review，Human 在 Gate 1 看到实际方法、保证缺口及未来 policy；Gate 1 后 fallback 绑定冻结指纹和当前证据。规范、事实模型、Web/API、测试与 spark-0061 路由已落地，并以 c485bd1c8542e8c8e7fb011664bfb9a4257c7046 完成本地受控提交。目标形成稳定成果；唯一未满足项是当前仓库 Web 全库仍有六个本提交之前已存在的非本 WC 契约失败。
+controller_check_summary: Controller 已逐项核对全部 terminal item、七项成功标准、授权动作、提交范围和验证证据。实现未新增 Gate/phase/status/Helper operation，未写 WC0062，提交未混入 WC0064 或 spark-0062。对 Web 全库六项原 HEAD 既有失败未作越界修复，并将 criterion-06 如实标为 not_satisfied，留待关闭提案由 Human 判断 accept_stop。
+validation_summary: 最终验证：Python 全库 1464 passed、10 skipped（均为 native Windows）；npm run check 通过；WC0065 三组 Web API/呈现定向契约 55/55 通过；Web 全库 151 passed、6 failed，逐项对照原 HEAD 后确认均为既有非本 WC 契约漂移；git diff --check、LDVH precheck、commit-msg Gate 和提交后 check-fact-integrity 均通过，事实库为 164 对象、0 问题。未在 native Windows 环境执行被跳过项，未修复六个范围外 Web 基线失败。
+result_reviews:
+- reviewer: Codex subagent /root/wc65_result_review
+  reviewed_at: '2026-08-07T01:04:00+08:00'
+  subject_version: 1
+  scope: 只读复核 commit c485bd1c8、result_version=1 canonical result projection、七项成功标准、授权与禁止边界、验证披露及 WC0064/spark-0062 工作树隔离；未修改文件、事实对象、Index 或 Git 状态。
+  conclusion: pass
+  actual_method: subagent-read-only
+closure_proposal:
+  proposed_outcome: partial
+  proposed_disposition_summary: WC0065 的 Gate 1 能力限制披露、creation-review bootstrap、Gate 1 后 fallback 约束、Web 呈现、机械校验、spark-0061 路由及本地受控提交均已形成稳定结果；当前 WorkCase 在 partial 分类下停止。唯一未满足责任是仓库 Web 全量测试中的六项既有非本 WC 契约失败，Human 接受后不再由 WC0065 推进；这不表示六项失败已解决，也不把它们归因于本提交。
+  residual_decisions:
+  - residual_id: residual-web-baseline-contracts
+    summary: criterion-06 要求相关与全量测试通过；WC0065 定向 Web 契约、TypeScript、Python 全库和事实完整性均通过，但 Web 全库仍有六项已在 commit 前原 HEAD 存在的非本 WC 契约失败。它们未由本提交引入，修复也不在 WC0065 已批准范围内；停止后这些失败仍存在。
+    proposed_disposition: accept_stop
+waiting_on: Human 对 WC0065 partial + accept_stop 完整关闭提案的 Gate 2 决定。
 object_id: workcase-0065
 fact_type_key: workcase
 created_at: '2026-08-06T23:09:02.682802+08:00'
-updated_at: '2026-08-07T00:58:27.314937+08:00'
+updated_at: '2026-08-07T01:04:57.964446+08:00'
