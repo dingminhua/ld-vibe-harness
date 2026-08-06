@@ -115,6 +115,47 @@ work item 只承载获批计划内能够实施并形成局部结果的工作，�
 
 受控创建必须一次形成完整目标、scope、成功标准定义、`plan_version=1`、非空 work items、完整 `execution_authorization`、至少一项实际独立方案复核、priority、`status=open`、`phase=human_plan_confirming` 和 Human waiting，并完成 Schema 校验、写入与回读。创建时全部 work item 必须为 `pending`。`execution_authorization` 必须把全部已知 Human Gate、目标与影响范围、风险、动作上限、禁止项、允许的调整与重试、验证/回滚和超界安全收敛一次呈现给 Human；只能由 Human 完成的前置动作必须在 Gate1 决定前完成或从本次运行范围明确排除。创建前的 Controller 与独立 Reviewer 必须逐项检查 work item 是否错误吸收 §4.3 的生命周期关口或 Human Gate，并检查已知授权需求是否已进入基线；命中时当前候选计划不得提交 Human 批准或受控创建，必须先返修。创建前 Reviewer feedback 必须由 Controller 处置；新对象不得带 execution approval 或结果字段。
 
+### 4.5 独立审核
+
+「独立审核」在本规范中特指由**独立 Reviewer 以独立 subagent 身份**对 WorkCase 计划版本或结果版本提供的实际第二视角审核。其核心语义是**审核者必须在执行环境层面与 Controller 分离**，而非在同一 AI 会话中以切换视角方式完成。
+
+#### 4.5.1 核心语义
+
+1. **执行环境独立性**：Reviewer 必须以独立 subagent 身份运行，与 Controller 处于不同的执行环境和会话。同一 AI 在同一会话中切换视角不构成独立审核，Controller 不得自称已执行独立审核。
+2. **判断视角独立性**：Reviewer 从独立视角审视计划或结果，不参与形成被审内容，不替 Controller 或 Human 推进状态或作决定。该独立性由实际职责判断，Code 只检查形状。
+3. **只读原则**：所有审核方式均为只读，Reviewer 不修改任何文件、不创建或更新事实对象、不改变任何状态。Reviewer 的输出仅限于 review 结构中的自有字段（reviewer、reviewed_at、subject_version、scope、conclusion、feedback），不写入被审内容。
+4. **无可用 subagent 时不通过**：当执行环境没有可用的 subagent 能力时，独立审核不得进行，WorkCase 不得视为通过独立复核。Controller 不得以"无 subagent 可用"为由降级为自审、checklist 审核或 Helper 只读检查替代，也不得硬等阻塞或跳过审核。
+
+#### 4.5.2 可接受的执行方式（闭集）
+
+| 优先级 | 执行方式 | 适用场景 | 限制 |
+|--------|----------|----------|------|
+| 1 | **委派一个或多个只读 subagent 并行复核** | Controller 委派一个或多个 subagent 以独立执行环境以只读方式执行复核 | **唯一可接受方式**。subagent 数量由 Controller 根据审核范围、复杂度和风险判断，不固定；所有 subagent 均为只读，不修改任何文件或状态 |
+
+以下方式不构成独立审核，不得在独立审核场景中使用：
+- 同一 AI 切换视角自审
+- checklist 审核（适用于标准化检查，但不替代独立审核）
+- Helper 只读检查（适用于客观验证，但不替代独立审核）
+
+#### 4.5.3 不可接受行为
+
+- 同一 AI 以切换视角自称独立审核
+- 冒充独立视角（如 Controller 以 Reviewer 身份自我批准而无实际 subagent 委派）
+- 虚假审核声明（如声称已委托 subagent 审核但未实际执行）
+- 没有可用的 subagent 能力时以降级自审、checklist 或 Helper 检查替代独立审核
+- 没有可用的 subagent 能力时硬等不推进，或以 subagent 不可用为由跳过必要审核
+- 审核中修改被审内容或状态
+- 以命令成功、工具输出、测试通过代替审核结论
+
+#### 4.5.4 适用范围
+
+本定义适用于所有 WorkCase 生命周期中的独立审核场景，包括但不限于：
+- 受控创建前的独立方案复核（creation review）
+- 执行完成后的独立结果复核（result review）
+- 授权基线内 PlanΔ 的 fresh 独立方案复核
+
+独立方案复核与独立结果复核各自遵循 §5 中 `workcase-review` 的字段定义和 §6 的版本绑定规则，不因本定义而改变其阶段归属或字段所有权。
+
 ## 5. WorkCase 类型定义
 
 ### 5.1 类型与身份

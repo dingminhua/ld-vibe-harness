@@ -39,6 +39,8 @@ ldvh_spec:
 
 当前 WorkCase 已精确读取、Gate 1 已经完成，并有当前冻结 `execution_authorization`、`baseline_fingerprint` 匹配该基线且 `source_refs` 可回指真实 Human 输入的 `execution_approval` 时，本文可在 `executing`、包内 `plan_revising`、Controller/独立结果复核、关闭准备和 Gate 2 等 21 允许的后续阶段组织执行与收敛。approval 的 `subject_version` 记录 Gate 1 当时版本；包内 PlanΔ 可以形成新的当前 `plan_version` 与 fresh current plan review，不要求或允许把 approval 改写成当前版本。Human 尚在审阅 Gate 1 材料、当前对象/指纹/授权包/批准不可确定，或工作实质是普通只读调查时，不使用执行分支。授权包逐项列明的事实对象创建、事实变更或本地 Git commit 仍分别由 31、32、30 承接，但不因此离开本模板的 WorkCase 执行组织或重复请求授权。模板候选、approval 字段存在或行动模板 key 都不单独代表适用、能力或授权覆盖。
 
+**独立审核定义**：本模板所引用的独立方案复核、独立结果复核及独立 Reviewer 第二视角，均遵循 21 §4.5「独立审核」定义——独立审核必须由独立 subagent 执行，执行环境独立性是必要条件，同一 AI 切换视角不构成独立审核；没有可用 subagent 能力时独立审核不得进行，不得以降级方式替代。本模板 **隐含「必须委派独立 subagent」的默认假设**。
+
 ## 5. WorkCase 获批计划执行行动模板定义
 
 ### 行动模板声明
