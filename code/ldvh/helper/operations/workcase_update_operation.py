@@ -21,7 +21,12 @@ from ldvh.helper.operation_runtime import (
     OperationImplementation,
     OperationRequestError,
 )
-from ldvh.helper.operations.fact_operation_support import plain, post_write_integrity_audit, reading_boundary
+from ldvh.helper.operations.fact_operation_support import (
+    inject_observed_signature,
+    plain,
+    post_write_integrity_audit,
+    reading_boundary,
+)
 from ldvh.helper.operations.workcase_update_request import (
     CLOSE_OPTIONAL_INPUTS,
     CLOSE_REQUIRED_INPUTS,
@@ -352,6 +357,7 @@ def _apply_core_workcase_write(
     schemas: dict[str, FactSchema],
     schema: FactSchema,
     event_at: str,
+    observed_context: dict[str, Any],
 ) -> object:
     """The only Helper-to-Core WorkCase transaction adapter."""
 
@@ -377,7 +383,7 @@ def _apply_core_workcase_write(
             schema=schema,
             object_id=domain.fact_ref.object_id,
             expected_content_fingerprint=domain.expected_content_fingerprint,
-            supplied=domain.fact_object,
+            supplied=inject_observed_signature(dict(domain.fact_object), observed_context),
             event_at=event_at,
             mode=mode,
             authorization_reference=domain.authorization_reference,
@@ -703,6 +709,7 @@ def _execute(
             schemas,
             schema,
             context.event_at,
+            request.observed_context,
         )
     except FactCoordinationUnavailable as error:
         return _coordination_unavailable(

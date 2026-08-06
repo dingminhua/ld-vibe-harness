@@ -9,7 +9,7 @@ from typing import Any
 from ldvh.facts.contracts import LAYOUTS, WRITABLE_FACT_TYPE_KEYS
 from ldvh.governance.models import ScopeDescriptor, cwd_scope, explicit_scope
 from ldvh.helper.operation_runtime import OperationExecutionContext
-from ldvh.helper.requests import CommonRequest
+from ldvh.helper.requests import CommonRequest, parse_observed_signature
 
 PREPARE_REQUIRED_INPUTS = ("arguments.governed_project_id", "arguments.fact_type_key")
 PREPARE_OPTIONAL_INPUTS = ("work_object_locators", "arguments.workspace_root")
@@ -100,7 +100,8 @@ def _common(
         else:
             workspace_root = Path(value)
     if request.observed_context:
-        problems.append("observed_context 对事实对象草案和创建操作必须为空 object")
+        observed_result = parse_observed_signature(request.observed_context)
+        problems.extend(observed_result.problems)
     if request.requested_disclosure is not None:
         problems.append("requested_disclosure 对事实对象草案和创建操作必须为 null 或省略")
     scope = explicit_scope(locators) if locators else cwd_scope(str(context.cwd))

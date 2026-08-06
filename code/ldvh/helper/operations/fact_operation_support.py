@@ -12,6 +12,7 @@ from ldvh.facts.contracts import LAYOUTS
 from ldvh.governance.models import ObjectStatus
 from ldvh.governance.resolver import GovernanceResolutionRun
 from ldvh.helper.operation_runtime import OperationExecution
+from ldvh.helper.requests import parse_observed_signature
 from ldvh.testing.fact_integrity import assess_fact_snapshot
 
 
@@ -21,6 +22,28 @@ def plain(value: Any) -> Any:
     if isinstance(value, tuple):
         return [plain(item) for item in value]
     return value
+
+
+def inject_observed_signature(supplied: dict[str, Any], observed_context: dict[str, Any]) -> dict[str, Any]:
+    """Mechanically inject ``observed_context.signature`` into the new change_log entry.
+
+    The executing session/caller is responsible for carrying the actual driving
+    model and host environment in ``observed_context.signature``; any non-empty
+    value is written into the newest change_log entry's signature.  When no
+    signature (or an empty one) is provided, the supplied facts are returned
+    unchanged, preserving the legacy AI-provided signature behavior.
+    """
+    parsed = parse_observed_signature(observed_context)
+    if parsed.problems or not parsed.signature:
+        return supplied
+    change_log = supplied.get("change_log")
+    if not isinstance(change_log, list) or not change_log:
+        return supplied
+    newest = change_log[-1]
+    if not isinstance(newest, dict):
+        return supplied
+    signature = parsed.signature
+    return {**supplied, "change_log": [*change_log[:-1], {**newest, "signature": dict(signature)}]}
 
 
 def reading_boundary(run: GovernanceResolutionRun) -> tuple[str, Path, Path] | None:
@@ -103,4 +126,4 @@ def post_write_integrity_audit(
     )
 
 
-__all__ = ["plain", "post_write_integrity_audit", "reading_boundary"]
+__all__ = ["inject_observed_signature", "plain", "post_write_integrity_audit", "reading_boundary"]

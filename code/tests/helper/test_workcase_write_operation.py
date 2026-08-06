@@ -208,11 +208,13 @@ def test_helper_adapter_passes_complete_correct_request_to_core_without_reconstr
         {"workcase": schema},
         schema,
         "2026-07-26T16:00:00+08:00",
+        {},
     )
 
     assert isinstance(result, WorkCaseWriteResult)
     command = captured["command"]
     assert command.mode == "correct"
+    # 未提供 observed_context.signature → supplied 原样保留（既有行为）
     assert command.supplied == domain.fact_object
     assert command.authorization_reference == authorization
     assert command.independent_review_reference == review_reference

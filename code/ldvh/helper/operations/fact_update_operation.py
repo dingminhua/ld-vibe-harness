@@ -22,7 +22,12 @@ from ldvh.helper.operation_runtime import (
     OperationImplementation,
     OperationRequestError,
 )
-from ldvh.helper.operations.fact_operation_support import plain, post_write_integrity_audit, reading_boundary
+from ldvh.helper.operations.fact_operation_support import (
+    inject_observed_signature,
+    plain,
+    post_write_integrity_audit,
+    reading_boundary,
+)
 from ldvh.helper.operations.fact_update_request import (
     OPTIONAL_INPUTS,
     REQUIRED_INPUTS,
@@ -642,6 +647,7 @@ def _execute(
             (f"AI 不得填写 Code 托管字段: {', '.join(managed)}",),
             sources=(_CONTRACT,),
         )
+    supplied = inject_observed_signature(supplied, request.observed_context)
     if not durable_writes_enabled():
         return OperationExecution(
             outcome="unavailable",

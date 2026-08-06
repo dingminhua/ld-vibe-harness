@@ -50,6 +50,50 @@ def _is_object(value: object) -> bool:
     return isinstance(value, dict)
 
 
+SIGNATURE_FIELDS = frozenset({"agent_id", "host_environment", "session_id"})
+
+
+@dataclass(frozen=True, slots=True)
+class ObservedSignatureParseResult:
+    signature: dict[str, str]
+    problems: tuple[str, ...]
+
+
+def parse_observed_signature(observed_context: dict[str, Any]) -> ObservedSignatureParseResult:
+    """Parse the optional ``observed_context.signature`` common sub-field.
+
+    ``observed_context`` is an existing common request field; its ``signature``
+    sub-field lets the executing session inject a responsibility signature
+    (agent_id / host_environment / session_id) without creating a new top-level
+    common field.  When ``observed_context`` is empty or carries no ``signature``,
+    the result holds an empty signature and no problems, preserving legacy calls.
+    """
+    problems: list[str] = []
+    if not observed_context:
+        return ObservedSignatureParseResult({}, ())
+    unknown = sorted(set(observed_context) - {"signature"})
+    if unknown:
+        problems.append(f"observed_context 只允许 signature 子字段: {', '.join(unknown)}")
+        return ObservedSignatureParseResult({}, tuple(problems))
+    raw_sig = observed_context.get("signature", {})
+    if not _is_object(raw_sig):
+        problems.append("observed_context.signature 必须是 object")
+        return ObservedSignatureParseResult({}, tuple(problems))
+    unknown_sig = sorted(set(raw_sig) - SIGNATURE_FIELDS)
+    if unknown_sig:
+        problems.append(f"observed_context.signature 包含未知字段: {', '.join(unknown_sig)}")
+    signature: dict[str, str] = {}
+    for name in sorted(SIGNATURE_FIELDS):
+        value = raw_sig.get(name)
+        if value is None:
+            continue
+        if not isinstance(value, str) or not value.strip():
+            problems.append(f"observed_context.signature.{name} 出现时必须是非空 string")
+        else:
+            signature[name] = value.strip().lower()
+    return ObservedSignatureParseResult(signature, tuple(problems))
+
+
 def parse_common_request(raw: str, *, general_discovery: bool) -> RequestParseResult:
     if not raw.strip():
         value: object = {}

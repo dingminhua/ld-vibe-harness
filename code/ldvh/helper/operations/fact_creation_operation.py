@@ -39,8 +39,11 @@ from ldvh.helper.operations.fact_creation_request import (
     parse_create_request,
     parse_draft_request,
 )
-from ldvh.helper.operations.fact_operation_support import post_write_integrity_audit
-from ldvh.helper.requests import CommonRequest
+from ldvh.helper.operations.fact_operation_support import (
+    inject_observed_signature,
+    post_write_integrity_audit,
+)
+from ldvh.helper.requests import CommonRequest, parse_observed_signature
 from ldvh.helper.responses import source_reference
 from ldvh.specs.repository import RepositoryInspection
 
@@ -675,6 +678,7 @@ def _create_execute(
             (f"AI 不得填写 Code 托管字段: {', '.join(managed)}",),
             sources=request_sources,
         )
+    supplied = inject_observed_signature(supplied, request.observed_context)
     initial_statuses = LAYOUTS[basis.fact_type_key].initial_statuses
     if supplied.get("status") not in initial_statuses:
         rendered_statuses = ", ".join(sorted(initial_statuses))

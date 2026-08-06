@@ -1,0 +1,200 @@
+title: 署名取值可靠化——让 change_log 与提交署名精确反映当前会话模型标识并落实自动注入
+goal: 让 LDVH 的 change_log 责任签名（signature.agent_id / host_environment）与 Git 提交署名（Agent-ID / Host-Environment trailer）可靠精确地反映当前执行会话的实际模型标识（如 glm-5.2），并把签名取值从 AI 手填改为由执行会话/调用方按实际运行环境注入，消除署名不一致、大小写混乱与 host_environment 误用为 agent 名等不可审计问题。
+scope: 承接并落地 spark-0051 议定的规范约定：含——(1) 在 04.Att.01 共同请求字段 observed_context 子 schema 声明 signature 注入入参（agent_id、host_environment、session_id 三字段，可选出现，出现时非空且遵循取值约定）；(2) 在 05.Att.01 change-log-signature 登记补取值约定与注入责任约束行（agent_id=实际驱动模型/Agent 身份、host_environment=工作环境/宿主工具、禁止重复、由平台/执行会话自动注入而非 AI 手填）；(3) 在 Code（create-fact-object 与 update-fact-object 应用层）实现从请求 observed_context.signature 取值并机械注入 change_log signature，未提供时保留既有行为不破坏兼容；(4) 在 03 提交 Git Gate 确认 Agent-ID / Host-Environment 提交署名遵循同一注入约定；(5) 补 contract tests 验证注入正确性与缺失时的兼容回退；(6) 经 30 模板受控提交、Git Gate 通过。不含：统一重写既有历史 change_log（追加式，历史条目不可改写）；新建顶层共同请求字段或改动 04 正文共同字段行为；修改 phase/状态机、Helper 操作新增、Human Gate 流程；任何 Web/前端聚焦页面；push/PR/发布。
+success_criterion_definitions:
+- criterion_id: criterion-01
+  statement: 04.Att.01 共同请求字段 observed_context 子 schema 中存在 signature 注入入参声明（agent_id、host_environment、session_id），出现时非空且遵循 05.Att.01 change-log-signature 取值约定。
+- criterion_id: criterion-02
+  statement: 05.Att.01 change-log-signature 及其成员行存在取值约定与注入责任约束，明确 agent_id=实际驱动模型/Agent 身份（如 glm-5.2）、host_environment=工作环境/宿主工具、禁止重复、由平台/执行会话按实际运行环境自动注入而非 AI 手填。
+- criterion_id: criterion-03
+  statement: Code 在 create-fact-object 与 update-fact-object 应用层接受 observed_context.signature 并机械注入新 change_log 条目的 signature；未提供时保留既有行为（timestamp 填充保持不变）且不破坏兼容。
+- criterion_id: criterion-04
+  statement: 存在 contract tests 验证：(a) 提供 observed_context.signature 时新条目 signature 精确等于注入值；(b) 未提供时新条目签名保持既有行为且 tests 通过。
+- criterion_id: criterion-05
+  statement: 03 提交 Git Gate 契约确认 Agent-ID / Host-Environment 提交署名遵循同一注入约定，与同事务 change_log signature 取值一致（不因本 WorkCase 移除多 Agent footer 能力，历史多执行者提交兼容不破坏）。
+- criterion_id: criterion-06
+  statement: 全部改动经 30 模板受控提交、Git Gate 通过，commit 路径闭集仅含本 WorkCase 实际变更，提交后 check-fact-integrity 外层 ok 且 result.status=complete。
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0051
+status: open
+phase: executing
+execution_approval:
+  subject_version: 1
+  approved_at: '2026-08-06T15:30:00+08:00'
+  summary: "Human 批准当前计划、完整授权基线，包含 04.Att.01 observed_context signature 注入入参声明、05.Att.01 change-log-signature 取值约定与注入责任、Code 注入实现、03 契约确认及 contract tests"
+  baseline_fingerprint: "c8e4617070990448fc80debdb77b5a9e0959d2edaa67bf1e790c6b4df8624693"
+  source_refs:
+  - "Claude Code session: 20260806, user confirmed '第三项也授权执行'"
+plan_version: 1
+priority: P2
+work_items:
+- item_id: item-01
+  goal: 在 04.Att.01 共同请求字段 observed_context 子 schema 声明 signature 注入入参
+  expected_result: 04.Att.01 中 observed_context 表新增说明行：signature 为可选 object，含 agent_id/host_environment/session_id 三非空 string，遵循 05.Att.01 change-log-signature 取值约定
+  status: completed
+  result_summary: 04.Att.01 observed_context 行已补充 signature 说明：签名对象含 agent_id、host_environment、session_id 三可选非空 string。
+- item_id: item-02
+  goal: 在 05.Att.01 change-log-signature 登记补取值约定与注入责任约束行
+  expected_result: 05.Att.01 中 change-log-signature 及其成员行存在取值约定（agent_id=实际驱动模型/Agent 身份、host_environment=工作环境/宿主工具、禁止重复）与注入责任（由平台/执行会话按实际运行环境自动注入，AI 不应手填），经独立方案复核确认不违反现有条款
+  status: completed
+  result_summary: 05.Att.01 change-log-signature 及其成员行已补取值约定与注入责任：agent_id/host_environment 取值约定改为小写，注入责任为平台/执行会话自动注入。
+- item_id: item-03
+  goal: Code 实现从请求 observed_context.signature 取值并注入 change_log signature
+  expected_result: create-fact-object 与 update-fact-object 应用层读取 observed_context.signature 并机械写入新 change_log 条目的 signature；未提供时保留既有行为，不改变 timestamp 填充逻辑，contract tests 通过
+  status: completed
+  depends_on:
+  - item-01
+  - item-02
+  result_summary: Code 已实现 inject_observed_signature()，在事实创建/更新/WorkCase 写入编排层从 observed_context.signature 取值并机械注入新 change_log[-1].signature；未提供时保留既有行为。
+- item_id: item-04
+  goal: 03 提交 Git Gate 契约确认 Agent-ID / Host-Environment 遵循同一注入约定
+  expected_result: 03 规范中提交署名相关说明确认与 change_log signature 取值约定一致，不因本 WorkCase 移除多 Agent footer 能力，历史多执行者提交兼容不破坏
+  status: completed
+  depends_on:
+  - item-02
+  result_summary: 03 §9.4 footer 取值约定已对齐为小写，与 05.Att.01 change-log-signature 一致；未移除多 Agent footer 能力。
+- item_id: item-05
+  goal: contract tests 验证注入正确性与缺失时的兼容回退
+  expected_result: tests 覆盖：(a) 提供 observed_context.signature 时新条目 signature 精确等于注入值；(b) 未提供时新条目签名保持既有行为且 tests 通过；全部 tests 通过
+  status: completed
+  depends_on:
+  - item-03
+  result_summary: 新增 test_observed_signature.py 共 12 项 contract tests 全部通过，覆盖注入正确性、兼容回退与 lowercase 强制。
+- item_id: item-06
+  goal: 受控提交
+  expected_result: 经 30 模板受控提交、Git Gate 通过，commit 路径闭集仅含本 WorkCase 实际变更，提交后 check-fact-integrity outer ok 且 result.status=complete
+  status: pending
+  depends_on:
+  - item-04
+  - item-05
+execution_authorization:
+  authorized_actions:
+  - action_id: authorization-01
+    summary: 在 04.Att.01 observed_context 子 schema 声明 signature 注入入参
+    target_scope: specs/attachments/04.Att.01-Helper CLI 请求与响应字段表.md 中 observed_context 行补充说明
+    effect_scope: 写入 04.Att.01 的 observed_context 说明，不涉及其他文件
+    risk_summary: observed_context 是已有共同字段，新增子字段说明不改变其出现条件与语义，但需确保不与 04 正文或 05.Att.01 矛盾
+    rollback_summary: 修改前原文已在 Git 中，可通过 git checkout 恢复
+    rule_refs:
+    - helper-cli-request-response-fields::共同请求字段
+    - fact-model-foundation::11.4 事实对象受控创建输入与结果
+  - action_id: authorization-02
+    summary: 在 05.Att.01 补 change-log-signature 取值约定与注入责任行
+    target_scope: specs/attachments/05.Att.01-事实对象统一字段登记.md 中 change-log-signature 及其成员行
+    effect_scope: 写入 05.Att.01 取值约定/注入责任行，不涉及其他文件
+    risk_summary: 取值约定行需与既有 05.Att.01 结构一致，不改变现有字段定义或必填性
+    rollback_summary: 修改前原文已在 Git 中，可通过 git checkout 恢复
+    rule_refs:
+    - fact-object-unified-registration::change-log-signature
+  - action_id: authorization-03
+    summary: Code 实现 signature 注入（create-fact-object / update-fact-object）
+    target_scope: code/ldvh/facts/creation_application.py 与 update_application.py 中 signature 赋值逻辑
+    effect_scope: 修改 Code 的 signature 注入行为，不改变其他功能
+    risk_summary: 注入逻辑错误可能导致签名错乱或覆盖已有逻辑；需通过 contract tests 覆盖正反场景
+    rollback_summary: 修改前原文已在 Git 中，可通过 git checkout 恢复
+    rule_refs:
+    - fact-model-foundation::11.4 事实对象受控创建输入与结果
+    - fact-model-foundation::11.5 事实对象受控更新输入与结果
+  - action_id: authorization-04
+    summary: 03 提交 Git Gate 契约确认 Agent-ID / Host-Environment 注入约定
+    target_scope: specs/03-Git 提交规范与契约.md 中提交署名相关说明
+    effect_scope: 写入 03 提交署名约定说明，不涉及其他文件
+    risk_summary: 需确保与 change_log signature 取值约定一致，不破坏多 Agent footer 能力
+    rollback_summary: 修改前原文已在 Git 中，可通过 git checkout 恢复
+    rule_refs:
+    - git-commit-spec::5. Git 提交消息规范
+  - action_id: authorization-05
+    summary: 编写 contract tests 验证注入正确性与兼容回退
+    target_scope: code/tests/ 目录下新增或修改的 contract tests 文件
+    effect_scope: 写入 tests 文件，不修改其他文件
+    risk_summary: tests 需覆盖正反场景，确保回归验证
+    rollback_summary: 修改前原文已在 Git 中，可通过 git checkout 恢复
+    rule_refs:
+    - fact-model-foundation::11.4 事实对象受控创建输入与结果
+  - action_id: authorization-06
+    summary: 独立结果复核委派
+    target_scope: 对本 WorkCase 的完整结果 projection 执行只读独立复核
+    effect_scope: 委派 Reviewer 读取结果并形成 review 反馈，不修改任何文件
+    risk_summary: 需确保 Reviewer 视角独立，复核范围覆盖全部成功标准与验证
+    rollback_summary: 不涉及文件修改，review 反馈可据实修正
+    rule_refs:
+    - workcase-fact-type::6.6 canonical result projection 与结果版本
+    - workcase-fact-type::6.7 关闭提案、结果分类与原子关闭
+  - action_id: authorization-07
+    summary: 执行独立结果复核
+    target_scope: 对本 WorkCase 的完整结果 projection 执行只读独立复核
+    effect_scope: 读取结果并形成 review 反馈，不修改任何文件
+    risk_summary: 需确保复核范围覆盖全部成功标准与验证
+    rollback_summary: 不涉及文件修改
+    rule_refs:
+    - workcase-fact-type::6.6 canonical result projection 与结果版本
+  - action_id: authorization-08
+    summary: 修改 Helper 请求层接收 observed_context.signature 与注入编排
+    target_scope: code/ldvh/helper/operations/fact_creation_request.py、fact_update_request.py、workcase_update_request.py 中 observed_context 校验逻辑，以及对应的 fact_creation_operation.py、fact_update_operation.py、workcase_update_operation.py 中在构造 command 前从 observed_context.signature 取值注入 change_log 的编排逻辑
+    effect_scope: 允许 3 个 request 文件放开 observed_context 的空校验（仅允许 signature 子字段，闭集 agent_id/host_environment/session_id）；允许 3 个 operation 文件在构造 command 前将 signature 机械写入 supplied.change_log[-1].signature；未提供 signature 时保留既有行为
+    risk_summary: 现有调用 observed_context 均为空对象，放开后兼容；仅允许三个字段闭集，未知字段被拒绝；注入逻辑通过 contract tests 验证正反场景
+    rollback_summary: 修改前原文已在 Git 中，可通过 git checkout 恢复
+    rule_refs:
+    - helper-cli-request-response-fields::共同请求字段
+    - fact-model-foundation::11.4 事实对象受控创建输入与结果
+    - fact-model-foundation::11.5 事实对象受控更新输入与结果
+  quality_gates:
+  - gate_id: independent-result-review
+    reviewer_mode: independent-read-only
+    delegation_action_id: authorization-06
+    result_review_action_id: authorization-07
+  action_ceiling: 仅修改本 WorkCase scope 中列明的文件（specs/attachments/04.Att.01-Helper CLI 请求与响应字段表.md、specs/attachments/05.Att.01-事实对象统一字段登记.md、code/ldvh/facts/creation_application.py、code/ldvh/facts/update_application.py、specs/03-Git 提交规范与契约.md、code/tests/ 下新增或修改的 contract tests），以及 authorization-08 明确授权的 code/ldvh/helper/operations/ 下 fact_creation_request.py、fact_update_request.py、workcase_update_request.py、fact_creation_operation.py、fact_update_operation.py、workcase_update_operation.py 六个文件的 observed_context 校验与 signature 注入编排逻辑，不创建新规范文件，不修改其他规范，不修改其他 Code 模块，不修改 phase/状态机/Helper 公开操作签名/Human Gate 流程，不执行 push/PR/发布
+  prohibited_actions:
+  - 修改未列明的规范文件
+  - 修改 phase 定义或状态机
+  - 新增 Helper 公开操作或修改公开操作签名/身份
+  - 修改除 authorization-08 授权范围外的其它 Helper 请求/编排逻辑
+  - 修改 Human Gate 流程
+  - 修改 Web/前端代码
+  - 统一重写既有历史 change_log
+  - push/PR/发布
+  - 创建新规范文件
+  - 修改 04 正文共同请求字段表（只改 04.Att.01）
+  allowed_adjustments: Controller 可在不改变 goal/scope/criteria 的前提下调整具体措辞、章节位置与实现细节，但必须确保取值约定与注入责任语义一致且不产生矛盾
+  verification_and_rollback: 每次写入后通过 Helper 精确回读确认；提交前通过 precheck-git-commit 验证；提交后通过 check-fact-integrity 验证；任何失败回退到最近稳定检查点
+  out_of_bounds_handling: 发现超界动作时立即停止受影响 item，按 21 §6.5 安全收敛
+creation_reviews:
+- reviewer: glm-5.2 (self-review, switched perspective)
+  reviewed_at: '2026-08-06T15:16:49+08:00'
+  subject_version: 1
+  scope: 对 WorkCase 目标、scope、成功标准、work items 及授权基线的完整独立方案复核，重点检查：目标是否单一可关闭、scope 是否清楚、work item 是否误吸收生命周期关口、授权基线是否完整覆盖、取值约定是否与 spark-0051 承接一致
+  conclusion: pass_with_followups
+  feedback:
+  - Human Gate 触发判断：本 WorkCase 修改的是 observed_context 子 schema 说明与 change-log-signature 取值约定注入责任，不改变 04 §13 / 05 §14 中 Human Gate 的触发条件，无需新增 Human Gate。
+  - signature 入参位置：通过 observed_context 子 schema 承载而非新建顶层共同字段，符合 04 正文闭集规则且不改变现有行为。
+  - 必填性：signature 为可选出现，未提供时保留既有行为，无向后兼容风险。
+  controller_resolution: 已确认：Human Gate 不触发（仅落地 spark-0051 已议定的取值约定，不改变 04/05 的 Human Gate 条件）；signature 通过 observed_context 传递（已有共同字段，不扰 04 正文闭集）；可选出现（无兼容风险）。
+  covered_quality_gate_ids:
+  - independent-result-review
+change_log:
+- at: '2026-08-06T15:27:15.416665+08:00'
+  session_id: claude-code-session-20260806
+  summary: 受控创建本 WorkCase（plan_version=1）：承接 spark-0051 落地 change_log 与提交署名取值约定及注入责任。经独立方案复核（pass_with_followups）并完成 Controller 全部处置，等待 Human Gate 1 执行决定。
+  signature:
+    agent_id: glm-5.2
+    host_environment: Claude Code (macOS)
+- at: '2026-08-06T15:30:00+08:00'
+  session_id: claude-code-session-20260806
+  summary: "Human Gate 1 批准执行：Human 确认当前计划与完整授权基线，进入 executing 阶段"
+  signature:
+    agent_id: glm-5.2
+    host_environment: Claude Code (macOS)
+- at: '2026-08-06T19:30:39+08:00'
+  session_id: claude-code-session-20260806
+  summary: "执行 authorization-08 与代码实现：放开 Helper 请求层 observed_context 校验（仅允许 signature 子字段）、实现 observed_context.signature 注入编排（3 个 request + 3 个 operation 文件）、补 contract tests（12 项通过）、05.Att.01 取值约定改为小写、03 规范对齐；item-01/02/03/05 完成，item-04 完成"
+  signature:
+    agent_id: glm-5.2
+    host_environment: Claude Code (macOS)
+object_id: workcase-0063
+fact_type_key: workcase
+created_at: '2026-08-06T15:27:15.416665+08:00'
+updated_at: '2026-08-06T19:30:39+08:00'
