@@ -1,3 +1,4 @@
+status: closed
 title: 简化 macOS POSIX 原子写入结果模型与耐久策略，保留事实安全内核
 goal: 在不削弱原子发布、no-overwrite、CAS、路径安全、异常后命名空间回读和写后验证的前提下，简化 POSIX 原子写入的内部结果模型与上层消费逻辑，使 macOS 路径不再承担无实际决策价值的状态组合和缺少规范依据的 durability 领域准入策略。
 scope: 承接 spark-0062。含：更新 Code Implementation Plan；保留同目录临时文件、文件 fsync、原子发布、目录 fsync best-effort、dir_fd/O_NOFOLLOW、no-overwrite、CAS、写后回读及异常后的 namespace reconciliation；把 AtomicWriteResult 重构为受约束结果形状；上层仅按提交状态、操作语义和冲突决策，sync/cleanup 继续作为诊断证据；移除或隔离缺少规范依据的 durability 领域准入策略；补测试、macOS 验证、独立结果复核和本地受控提交。不含：修改 Specs；删除安全原语；改变 Windows 行为；修改 Spark 状态；push、PR、发布。
@@ -16,139 +17,30 @@ success_criterion_definitions:
   statement: 受影响的 filesystem、Helper 与事实操作测试通过，并在 macOS 验证创建、替换、冲突、目录同步失败、清理残留和 replace 异常后 reconciliation 等关键路径。
 - criterion_id: criterion-07
   statement: 完整结果经只读独立复核确认与 00 一致；本地提交仅含授权范围内的计划、实现与测试变更并通过提交前机械预检。
-relations:
-- relation_key: related-to
-  target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0062
-status: open
-phase: human_closure_confirming
-plan_version: 2
-priority: P2
-work_items:
-- item_id: item-01
-  goal: 形成原子写入简化的 Code Implementation Plan
-  expected_result: 计划明确保留项、简化项、直接消费者、平台边界、验证矩阵和回滚方式，并以 code/plans/README.md 提供稳定入口
-  status: completed
-  result_summary: 已在 code/plans/workcase-0064-atomic-write-result.md 形成并由 code/plans/README.md 登记当前规划；明确安全内核、受约束结果形状、平台能力边界、直接消费者、脏工作树隔离、验证矩阵与回滚条件。
-- item_id: item-02
-  goal: 重构 POSIX 原子写入的内部结果模型
-  expected_result: filesystem.py 使用受约束的 committed / not_committed / uncertain 结果形状或等价模型，保留安全原语与 reconciliation，消除不可达状态组合
-  status: completed
-  depends_on:
-  - item-01
-  result_summary: AtomicWriteResult 已改为 committed、not_committed、uncertain 三个受约束命名构造形状；namespace、durability/sync scope、cleanup 保留只读诊断投影，所有文件系统返回点已迁移，安全系统调用与 reconciliation 未改。聚焦及直接消费者测试 251 项通过。
-- item_id: item-03
-  goal: 收拢上层结果消费并隔离 durability 领域准入策略
-  expected_result: 直接消费者仅按提交状态、操作语义与冲突分支；sync/cleanup 保持诊断可见；Windows 行为不变
-  status: completed
-  depends_on:
-  - item-02
-  result_summary: durable_writes_enabled 已替换为 native_atomic_fact_writes_supported；其语义限定为原生原子事实写后端能力，POSIX 为真、Windows/未知平台为假。直接 facts/Helper 消费者已迁移，成功诊断使用 sync_scope，旧 status 枚举保留兼容，Windows 仍在 mutation 前失败。相关回归 262 passed、2 个 native Windows 测试在 macOS 按条件跳过。
-- item_id: item-04
-  goal: 补齐测试并执行 macOS 范围匹配验证
-  expected_result: 相关测试覆盖成功、冲突、同步失败、残留及 reconciliation 路径并通过，验证报告区分已验证与未验证范围
-  status: completed
-  depends_on:
-  - item-02
-  - item-03
-  result_summary: macOS 范围验证完成：当前树范围回归 257 passed/2 skipped，全量 Code 1452 passed/10 skipped；10 项均为 native Windows 条件跳过。受影响文件 Ruff check 与 git diff --check 通过。full-v4 run-09e04c93f31441a991773aa2e7fa457a 的 Working Tree 证据 complete 且无漂移，但 code-lint 被 70115a3 中 23 个 WC-0063 范围问题阻断，未越界修复；0064 自身相关检查均通过。
-execution_authorization:
-  authorized_actions:
-  - action_id: authorization-01
-    summary: 创建或更新原子写入简化的 Code Implementation Plan 及稳定索引
-    target_scope: code/plans/README.md 与 code/plans/ 下本 WorkCase 专属计划文件
-    effect_scope: 写入 Code Implementation Plan，不修改 Specs 或事实对象
-    risk_summary: 计划若扩大范围会误导实现，必须固定安全内核、Windows 不变和 Specs 不改边界
-    rollback_summary: 通过 Git 差异撤销本 WorkCase 的计划内容
-    rule_refs:
-    - code-engineering-practices::9. Code Implementation Plan
-  - action_id: authorization-02
-    summary: 重构 POSIX 原子写入结果模型并保留安全内核
-    target_scope: code/ldvh/filesystem.py 中 AtomicWriteResult、POSIX create/store/replace/remove、reconciliation 及直接辅助结构
-    effect_scope: 修改内部实现与结果类型，不改变 Specs、事实类型或 Helper 公开操作身份
-    risk_summary: 错误重构可能削弱原子性、CAS、路径安全、异常恢复或掩盖证据
-    rollback_summary: 保留小步测试检查点，失败时撤销本项实现变更
-    rule_refs:
-    - code-engineering-practices::5.5 Code 与规则源的边界
-    - environment-integration::6.3.1 macOS Code 变更
-  - action_id: authorization-03
-    summary: 收拢直接消费者并隔离 durability 领域准入策略
-    target_scope: code/ldvh/ 下精确搜索确认的 AtomicWriteResult、durable_writes_enabled、durability 或 cleanup 直接消费者，仅限适配新模型所需现有 Python 文件
-    effect_scope: 修改消费分支和诊断传递，不新增领域规则，不改变 Windows 行为
-    risk_summary: 适配遗漏可能造成结果误判或诊断证据丢失
-    rollback_summary: 按直接消费者逐文件恢复旧适配
-    rule_refs:
-    - code-engineering-practices::5.5 Code 与规则源的边界
-    - ldvh-root::8.1 工作上下文的信息交付顺序与渐进式披露
-  - action_id: authorization-04
-    summary: 更新并运行相关测试和 macOS 范围匹配验证
-    target_scope: code/tests/ 下 filesystem、Helper、事实创建/更新及 WorkCase 更新相关测试和必要新测试
-    effect_scope: 修改测试并运行本地验证，不修改 Specs、其它事实对象或外部系统
-    risk_summary: 测试可能漏掉失败路径或固化实现细节
-    rollback_summary: 恢复修改前测试或删除本 WorkCase 新增测试
-    rule_refs:
-    - code-engineering-practices::9. Code Implementation Plan
-    - environment-integration::6.3.1 macOS Code 变更
-  - action_id: authorization-05
-    summary: 委派只读独立结果复核
-    target_scope: 完整结果 projection、代码差异、测试证据和 00 一致性
-    effect_scope: Reviewer 只读检查并输出反馈，不修改任何状态
-    risk_summary: 复核范围不足可能漏判安全弱化
-    rollback_summary: 无文件副作用，不成立反馈不采纳并如实记录
-    rule_refs:
-    - workcase-fact-type::4.5 独立审核
-    - workcase-fact-type::6.6 canonical result projection 与结果版本
-  - action_id: authorization-06
-    summary: 执行只读独立结果复核并形成结论
-    target_scope: 当前结果版本的成功标准、证据、残留责任和 00 对齐判断
-    effect_scope: 形成 result review，不执行实现写入或外部动作
-    risk_summary: 证据不足可能导致过度声明
-    rollback_summary: 无实现副作用，结论不成立时形成新结果版本并 fresh review
-    rule_refs:
-    - workcase-fact-type::4.5 独立审核
-    - workcase-fact-type::6.6 canonical result projection 与结果版本
-  - action_id: authorization-07
-    summary: 创建范围受控的本地 Git 提交
-    target_scope: 仅暂存并提交本 WorkCase 的计划、code/ldvh 实现和 code/tests 测试文件
-    effect_scope: 创建本地 commit，不 push、不创建 PR、不发布
-    risk_summary: 脏工作树可能混入无关内容，必须逐路径核对 Index
-    rollback_summary: 提交前取消相关路径暂存，提交后通过修正或 revert commit 回退
-    rule_refs:
-    - git-commit-action-template::5. Git 提交行动模板定义
-  quality_gates:
-  - gate_id: independent-result-review
-    reviewer_mode: independent-read-only
-    delegation_action_id: authorization-05
-    result_review_action_id: authorization-06
-  action_ceiling: 仅允许修改 code/plans/README.md、code/plans/ 下本 WorkCase 专属计划、code/ldvh/filesystem.py、code/ldvh/ 下精确确认的直接消费者和 code/tests/ 下直接相关测试；允许 macOS 本地验证、只读独立结果复核和范围受控本地提交。不得修改 Specs、spark-0062 或其它事实对象，不得改变 Windows 行为，不得 push、创建 PR 或发布。
-  prohibited_actions:
-  - 修改任何 Specs
-  - 删除 directory fsync、_reconcile_replace、dir_fd/O_NOFOLLOW、no-overwrite、CAS 或写后回读
-  - 改变 Windows 写入行为
-  - 修改 spark-0062 或其它非本 WorkCase 事实对象
-  - 新增或改变 Helper 公开操作、事实类型、Schema、Human Gate 或 WorkCase 状态机
-  - 改写无关脏工作树内容
-  - push、创建 PR 或发布
-  allowed_adjustments: 可在不改变 goal、scope、成功标准、安全保留项、Windows 不变和 Specs 不改边界下调整内部命名、组织、测试拆分和计划文件名；发现越界需求时停止并安全收敛。
-  verification_and_rollback: 先记录消费者和行为基线，再小步重构；至少验证创建、替换、冲突、同步失败、cleanup residue 和 replace 异常后 reconciliation。每步检查 Git diff，失败时只回退本 WorkCase 变更。提交前 precheck-git-commit，提交后如实 check-fact-integrity；既有 workcase-0062 问题单独披露。
-  out_of_bounds_handling: 需要修改 Specs、改变 Windows 行为、删除安全原语、触碰未授权文件或接受新风险时，立即停止受影响 item并按 21 安全收敛。
-creation_reviews:
-- reviewer: codex-subagent:/root/wc0064_plan_review (GPT-5)
-  reviewed_at: '2026-08-06T23:23:22+08:00'
-  subject_version: 2
-  scope: 独立只读复核 WC-0064 候选 PlanΔ v2；经源码 Helper 精确读取当前 WorkCase、00、21、34，并核对 70115a320 与 92af3846e。
-  conclusion: pass_with_followups
-  feedback:
-  - 删除 pending item-05/06 正确。独立结果复核与本地受控提交是生命周期/授权行动，应由 phase 链及 authorization-05~07 承接，不能作为 work item。
-  - PlanΔ 事务不得改写 item-04 既有 current_summary/resume_from。21 §6.5 要求保留 item_id 的既有执行事实原样保留；应先在 PlanΔ 中逐值保留 item-01~04，再于返回 executing 并精确回读后，通过独立同-phase 检查点更新 item-04。
-  - 70115a3 确实承载三个 Helper operation 和两个 Helper test 中属于 0064 的迁移 hunks；92af3846e 是其直接子提交且只修改 WC-0063 关闭事实。以 70115a3 作为实现归因基线、以 92af 作为当前 HEAD 并发事实，边界合理。
-  - execution_authorization 与 execution_approval 必须逐值不变。push 仍属于冻结基线明确禁止的动作，不得并入 WC-0064。
-  - 顶层 summary 与计划文件应保留 70115a3/92af 的归因区分、已完成测试证据及 item-05/06 职责归属。
-  controller_resolution: 全部采纳：PlanΔ 保留 item-01~04 原值并移除 item-05/06；summary 与计划文件承载并发归因和中间测试证据；返回 executing 后再独立更新 item-04；授权与 approval 不变，push 保持越界。
-  covered_quality_gate_ids:
-  - independent-result-review
+success_criterion_results:
+- criterion_id: criterion-01
+  outcome: satisfied
+  summary: code/plans/workcase-0064-atomic-write-result.md 与 README 稳定入口已提交；计划明确安全内核、简化边界、平台验证及 Specs/Windows 不变。
+- criterion_id: criterion-02
+  outcome: satisfied
+  summary: filesystem 实现保留同目录临时文件、文件 fsync、原子发布、directory fsync best-effort、dir_fd/O_NOFOLLOW、no-overwrite、CAS、写后回读和 _reconcile_replace；关键失败路径测试通过。
+- criterion_id: criterion-03
+  outcome: satisfied
+  summary: AtomicWriteResult 只允许 committed、not_committed、uncertain 三类命名构造形状；直接四维构造被禁用并有正反测试。
+- criterion_id: criterion-04
+  outcome: satisfied
+  summary: 业务消费者继续按 outcome/namespace commit state 与操作语义处理；sync scope 和 cleanup residue 仅作为兼容诊断投影与验证证据，直接搜索及测试未发现其充当业务准入。
+- criterion_id: criterion-05
+  outcome: satisfied
+  summary: durable_writes_enabled 已由 native_atomic_fact_writes_supported 取代，表达原生原子后端可用性；POSIX 为真，Windows/未知为假，旧领域 status 仅兼容保留，Windows 仍在 mutation 前失败。
+- criterion_id: criterion-06
+  outcome: satisfied
+  summary: 当前组合树范围回归 257 passed/2 skipped、全量 Code 1452 passed/10 skipped；受影响文件 Ruff check 与 diff check 通过。10 个 skip 均为 native Windows；macOS 已覆盖创建、替换、冲突、目录同步失败、cleanup residue 与 replace reconciliation。
+- criterion_id: criterion-07
+  outcome: not_verified
+  summary: 本地提交 49dacf286 已经 precheck 与原生 Git Gate，16 个路径与声明一致且 70115a3/49dacf286 无重叠路径；独立结果复核尚未绑定当前完整 result_version=1 projection。组合树 full-v4 也仍因 70115a3 中 23 个 WC-0063 lint 问题失败，因此本标准当前不能标为 satisfied。
+result_summary: 0064 已在 70115a3 承载的五组 Helper/test hunks之上完成剩余实现，并以独立提交 49dacf286 落账：AtomicWriteResult 收敛为三个受约束形状，POSIX 安全内核与 Windows 行为保持，直接消费者改用原生后端能力语义，sync/cleanup 只保留诊断作用。
+validation_summary: 已验证：范围回归 257 passed/2 skipped；全量 Code tests 1452 passed/10 skipped；受影响文件 ruff check 通过；git diff --check 通过；precheck-git-commit passed（snapshot sha256:7469ab5e...）；原生 Git Gate passed；提交后 check-fact-integrity ok/complete/164。full-v4 run-09e04c93f31441a991773aa2e7fa457a 的 Working Tree evidence complete、changes=[]，但 code-lint 因 70115a3 内 23 个 WC-0063 lint 问题失败，后续步骤未运行；native Windows 未实测。
 change_log:
 - at: '2026-08-06T16:11:46.568109+08:00'
   session_id: codex-desktop-20260806-spark0062
@@ -246,68 +138,29 @@ change_log:
   signature:
     agent_id: gpt-5
     host_environment: Codex desktop (macOS)
-execution_approval:
-  subject_version: 1
-  approved_at: '2026-08-06T14:37:36.872Z'
-  summary: Human 明确要求推进 workcase-0064，批准当前 plan version 1、完整 execution_authorization 与必经质量关口。
-  baseline_fingerprint: e5a5ab45a64db44ef64fc35326d45de54e497743c0371a47b49834bf618c70e4
-  source_refs:
-  - current-codex-task:user-message:推进这个wc吧
-summary: WC-0064 已进入 Human Gate 2：核心简化与 criterion-01~06 已完成并由独立 subagent 接受；criterion-07 因组合树 full-v4 未通过保持 not_verified，组合验证与新授权 push 已作为受限 Spark suggestion 保留。
-result_version: 1
-resume_from: Human 阅读当前目标、scope、逐项结果、验证边界、独立复核处置与 partial closure proposal 后，决定是否按该提案关闭 WC-0064。
-success_criterion_results:
-- criterion_id: criterion-01
-  outcome: satisfied
-  summary: code/plans/workcase-0064-atomic-write-result.md 与 README 稳定入口已提交；计划明确安全内核、简化边界、平台验证及 Specs/Windows 不变。
-- criterion_id: criterion-02
-  outcome: satisfied
-  summary: filesystem 实现保留同目录临时文件、文件 fsync、原子发布、directory fsync best-effort、dir_fd/O_NOFOLLOW、no-overwrite、CAS、写后回读和 _reconcile_replace；关键失败路径测试通过。
-- criterion_id: criterion-03
-  outcome: satisfied
-  summary: AtomicWriteResult 只允许 committed、not_committed、uncertain 三类命名构造形状；直接四维构造被禁用并有正反测试。
-- criterion_id: criterion-04
-  outcome: satisfied
-  summary: 业务消费者继续按 outcome/namespace commit state 与操作语义处理；sync scope 和 cleanup residue 仅作为兼容诊断投影与验证证据，直接搜索及测试未发现其充当业务准入。
-- criterion_id: criterion-05
-  outcome: satisfied
-  summary: durable_writes_enabled 已由 native_atomic_fact_writes_supported 取代，表达原生原子后端可用性；POSIX 为真，Windows/未知为假，旧领域 status 仅兼容保留，Windows 仍在 mutation 前失败。
-- criterion_id: criterion-06
-  outcome: satisfied
-  summary: 当前组合树范围回归 257 passed/2 skipped、全量 Code 1452 passed/10 skipped；受影响文件 Ruff check 与 diff check 通过。10 个 skip 均为 native Windows；macOS 已覆盖创建、替换、冲突、目录同步失败、cleanup residue 与 replace reconciliation。
-- criterion_id: criterion-07
-  outcome: not_verified
-  summary: 本地提交 49dacf286 已经 precheck 与原生 Git Gate，16 个路径与声明一致且 70115a3/49dacf286 无重叠路径；独立结果复核尚未绑定当前完整 result_version=1 projection。组合树 full-v4 也仍因 70115a3 中 23 个 WC-0063 lint 问题失败，因此本标准当前不能标为 satisfied。
-result_summary: 0064 已在 70115a3 承载的五组 Helper/test hunks之上完成剩余实现，并以独立提交 49dacf286 落账：AtomicWriteResult 收敛为三个受约束形状，POSIX 安全内核与 Windows 行为保持，直接消费者改用原生后端能力语义，sync/cleanup 只保留诊断作用。
-controller_check_summary: Controller 已核对 70115a3 与 49dacf286 的归因和路径集合：70115a3 为祖先，中间 92af3846e 只关闭 WC-0063，两项目标提交无重叠路径；49dacf286 仅含声明的 16 个剩余 0064 文件，Index 提交后为空，Spark-0062 与 WC-0065 未混入。安全原语、CAS、reconciliation、写后回读和 Windows fail-closed 均未削弱。criterion-07 因当前 projection 尚未独立复核且 full-v4 未通过暂列 not_verified，下一步进入独立结果复核。
-validation_summary: 已验证：范围回归 257 passed/2 skipped；全量 Code tests 1452 passed/10 skipped；受影响文件 ruff check 通过；git diff --check 通过；precheck-git-commit passed（snapshot sha256:7469ab5e...）；原生 Git Gate passed；提交后 check-fact-integrity ok/complete/164。full-v4 run-09e04c93f31441a991773aa2e7fa457a 的 Working Tree evidence complete、changes=[]，但 code-lint 因 70115a3 内 23 个 WC-0063 lint 问题失败，后续步骤未运行；native Windows 未实测。
-result_reviews:
-- reviewer: codex-subagent/wc0064-result-review
-  reviewed_at: '2026-08-06T23:57:50+08:00'
-  subject_version: 1
-  scope: 复核 WC-0064 result_version=1、当前 00/21/34、commits 70115a3/92af384/49dacf2 的实际组合差异、AtomicWriteResult 与安全内核、平台语义及全部验证证据。
-  conclusion: pass_with_followups
-  feedback:
-  - WC-0064 核心实现与 criterion-01 至 criterion-06 可接受，未发现偏离 00 或仍属过度设计；但 full-v4 run-09e04c93f31441a991773aa2e7fa457a 因 70115a3/WC0063 路径中的 23 个 Ruff 问题失败，criterion-07 必须保持 not_verified。Controller 应接受本复核且无需改写 result_version=1，以 partially_succeeded 进入关闭流程；在 full-v4 通过且取得新 WC/Gate1 push 授权前禁止 push。
-  controller_resolution: 采纳全部 feedback：保持 result_version=1 与 canonical result projection 不变，criterion-07 继续为 not_verified；不返工 0064 核心，不越界修复 70115a3/WC0063 的 23 个 lint 问题，不 push。按当前六项 satisfied、一项 not_verified 的结果形成 partial 关闭提案；组合树 lint 修复、full-v4 重跑及新 Gate1 授权后的 push 作为受限后续责任保留。
-closure_proposal:
-  proposed_outcome: partial
-  proposed_disposition_summary: WC-0064 以本地提交 49dacf286 交付核心简化并停止在未 push 状态；criterion-01 至 criterion-06 已满足，criterion-07 因组合树 full-v4 未通过保持未验证。组合历史中的 23 个 Ruff 问题、full-v4 重跑、两项 0064 提交组合验证以及取得新 Gate1 授权后的 push 作为受限后续责任保留，当前 WorkCase 不越界处理。
-  residual_decisions:
-  - residual_id: residual-combined-verification-and-push
-    summary: 组合历史 70115a3、92af3846 与 49dacf286 的 full-v4 尚未通过：23 个 Ruff 问题位于 70115a3/WC0063 路径；当前 0064 授权又明确禁止修复这些越界差异及 push，因此 criterion-07 仍为 not_verified，提交保持仅本地。
-    proposed_disposition: suggest_spark
-    spark_suggestion_id: suggestion-combined-verification-and-push
-  spark_suggestions:
-  - suggestion_id: suggestion-combined-verification-and-push
-    suggestion_kind: constrained_responsibility
-    summary: 修复组合树既有 Ruff 问题，重跑 full-v4，并在新授权下 push 已验证组合
-    restriction_reason: 23 个 Ruff 问题属于 70115a3/WC0063 范围，超出 WC-0064 冻结授权；WC-0064 的 action ceiling 与 prohibited actions 同时禁止 push。
-    impact_summary: full-v4 code-lint 失败使 criterion-07 保持 not_verified；70115a3、92af3846 与 49dacf286 当前仅在本地组合，不能宣称完整验证或已 push。
-    resume_condition: 新的 WorkCase/Gate1 明确授权修复对应 lint 路径、重跑 full-v4 和 push，且组合树 full-v4 实际通过。
-    follow_up_summary: 从 full-v4 run-09e04c93f31441a991773aa2e7fa457a 的 23 个 Ruff 诊断继续，逐项限定修复归属；通过后核对组合提交与远端目标，再按新授权执行 push。
-waiting_on: Human 对当前完整 partial closure proposal 作出 Gate 2 关闭决定
+- at: '2026-08-07T00:50:22.752206+08:00'
+  session_id: workbuddy-wc0064-close-20260807
+  summary: 受控关闭 WC0064（partial closure）：记录 Human Gate 2 决定（user-message:你负责关闭，并且根据后续遗留开启新的wc@2026-08-07），接受 partial closure 提案；criterion-01~06 satisfied、criterion-07 not_verified 随提案保留；组合验证与 push 作为受限后续责任移交新建 WorkCase。
+  signature:
+    agent_id: workbuddy
+    host_environment: WorkBuddy macOS session
+closure_outcome: partial
+disposition_summary: WC-0064 以本地提交 49dacf286 交付核心简化并停止在未 push 状态；criterion-01 至 criterion-06 已满足，criterion-07 因组合树 full-v4 未通过保持未验证。组合历史中的 23 个 Ruff 问题、full-v4 重跑、两项 0064 提交组合验证以及取得新 Gate1 授权后的 push 作为受限后续责任保留，当前 WorkCase 不越界处理。
+spark_suggestions:
+- suggestion_id: suggestion-combined-verification-and-push
+  suggestion_kind: constrained_responsibility
+  summary: 修复组合树既有 Ruff 问题，重跑 full-v4，并在新授权下 push 已验证组合
+  restriction_reason: 23 个 Ruff 问题属于 70115a3/WC0063 范围，超出 WC-0064 冻结授权；WC-0064 的 action ceiling 与 prohibited actions 同时禁止 push。
+  impact_summary: full-v4 code-lint 失败使 criterion-07 保持 not_verified；70115a3、92af3846 与 49dacf286 当前仅在本地组合，不能宣称完整验证或已 push。
+  resume_condition: 新的 WorkCase/Gate1 明确授权修复对应 lint 路径、重跑 full-v4 和 push，且组合树 full-v4 实际通过。
+  follow_up_summary: 从 full-v4 run-09e04c93f31441a991773aa2e7fa457a 的 23 个 Ruff 诊断继续，逐项限定修复归属；通过后核对组合提交与远端目标，再按新授权执行 push。
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0062
 object_id: workcase-0064
 fact_type_key: workcase
 created_at: '2026-08-06T16:11:46.568109+08:00'
-updated_at: '2026-08-07T00:18:02.638158+08:00'
+updated_at: '2026-08-07T00:50:22.752206+08:00'
