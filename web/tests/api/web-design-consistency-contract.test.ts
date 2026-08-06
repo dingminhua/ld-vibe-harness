@@ -60,12 +60,15 @@ test('detail identity header keeps status immediately before its copy control', 
     objectDetail.indexOf('export function ObjectIdentityHeader'),
     objectDetail.indexOf('function HeaderDateMeta'),
   );
-
-  assert.match(
-    identityHeader,
-    /className="ml-auto flex shrink-0 items-center gap-2"[\s\S]{0,700}statusLabel \|\| status[\s\S]{0,320}<CopyPathButton path=\{target\}/,
+  const identityRow = identityHeader.slice(
+    identityHeader.indexOf('className="mb-1.5 flex min-w-0 flex-wrap items-center'),
+    identityHeader.indexOf('<div className="flex min-w-0 flex-wrap items-center gap-x-3'),
   );
-  assert.doesNotMatch(identityHeader, /\{extraBadges\}[\s\S]{0,320}statusLabel \|\| status/);
+
+  assert.match(identityRow, /\{extraBadges\}[\s\S]*<PriorityIcon[\s\S]*className="ml-auto shrink-0"[\s\S]*<ObjectIdentityActions/);
+  const identityActions = read('src/components/ObjectIdentityActions.tsx');
+  assert.match(identityActions, /\{statusLeadingBadges\}[\s\S]{0,120}\{status && \([\s\S]{0,220}\{actionBadges\}/);
+  assert.doesNotMatch(identityHeader, /&& compact[\s\S]{0,180}<ObjectIdentityActions/);
 });
 
 test('fact reading labels use the central locale registry', () => {

@@ -872,6 +872,8 @@ export const UI_LOCALES = {
     'objectList.workcaseProhibitedActionCount': '{count} 项禁止项',
     'objectList.workcasePrerequisiteCount': '{count} 项前置条件',
     'objectList.workcaseCapabilityLimitationCount': '{count} 项能力限制',
+    'objectList.workcaseIndependentSubagentUnavailable': 'Sub Agent',
+    'objectList.workcaseIndependentSubagentUnavailableHint': '独立 subagent 不可用',
     'objectList.workcaseCoveragePartial': 'WorkCase 读取范围不完整；以下卡片只来自已取得且通过机械检查、可以呈现的对象，不能据此判断项目中只有这些对象。',
     'objectList.workcaseCoverageUnavailable': '当前技术条件不足，无法可靠确定 WorkCase 列表的读取范围；页面不会把它显示成完整空列表。',
     'objectList.workcaseObjectProblems': 'WorkCase 读取范围完整，但部分候选未通过机械检查，无法作为可呈现对象使用；相应正文不会呈现。',
@@ -1105,6 +1107,7 @@ export const UI_LOCALES = {
     'changelog.breakingChange': '不兼容变更',
     'changelog.pushed': '已推送',
     'changelog.unpushed': '未推送',
+    'changelog.incoming': '待同步',
 
     'common.loading': '加载中...',
     'common.loadFailed': '加载失败',
@@ -1395,6 +1398,8 @@ export const UI_LOCALES = {
     'objectList.workcaseProhibitedActionCount': '{count} prohibitions',
     'objectList.workcasePrerequisiteCount': '{count} Human prerequisites',
     'objectList.workcaseCapabilityLimitationCount': '{count} capability limitations',
+    'objectList.workcaseIndependentSubagentUnavailable': 'Sub Agent',
+    'objectList.workcaseIndependentSubagentUnavailableHint': 'Independent subagent unavailable',
     'objectList.workcaseCoveragePartial': 'WorkCase read coverage is incomplete. The cards shown come only from consumable mechanical reads; this does not prove these are the only WorkCases in the project.',
     'objectList.workcaseCoverageUnavailable': 'Technical conditions did not produce a reliable WorkCase list scope. The page will not present this as a complete empty list.',
     'objectList.workcaseObjectProblems': 'WorkCase read coverage is complete, but some candidates did not form consumable mechanically valid objects. Their content is not presented.',
@@ -1628,6 +1633,7 @@ export const UI_LOCALES = {
     'changelog.breakingChange': 'Breaking change',
     'changelog.pushed': 'Pushed',
     'changelog.unpushed': 'Not pushed',
+    'changelog.incoming': 'Sync pending',
 
     'common.loading': 'Loading...',
     'common.loadFailed': 'Failed to load',

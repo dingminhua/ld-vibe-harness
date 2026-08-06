@@ -371,8 +371,16 @@ test('WorkCase authorization detail follows the shared overview, object, and sec
   assert.match(authorization, /aria-expanded=\{activeTab === "prerequisites"\}/);
   assert.match(authorization, /aria-expanded=\{activeTab === "limitations"\}/);
   assert.match(authorization, /function CapabilityLimitationList/);
-  assert.match(authorization, /fieldKey="affected_review_categories"/);
-  assert.match(authorization, /fieldKey="stop_conditions"/);
+  const capabilityLimitations = authorization.slice(
+    authorization.indexOf('function CapabilityLimitationList'),
+    authorization.indexOf('function AuthorizationConstraints'),
+  );
+  assert.match(capabilityLimitations, /getFieldValueLabel\("capability", capability, locale\)/);
+  assert.match(capabilityLimitations, /getFieldValueLabel\("availability", availability, locale\)/);
+  assert.match(capabilityLimitations, /getFieldValueLabel\("fallback_policy", fallbackPolicy, locale\)/);
+  assert.match(capabilityLimitations, /CircleAlert size=\{16\}/);
+  assert.doesNotMatch(capabilityLimitations, /<li[^>]+className="flex/);
+  assert.doesNotMatch(capabilityLimitations, /assurance_gap|affected_review_categories|evidence|stop_conditions|ReviewDisclosureList/);
   assert.match(authorization, /workcaseAuthorizationConstraints/);
   assert.match(authorization, /function AuthorizationActionsContent/);
   assert.match(authorization, /<AuthorizationActionsContent[\s\S]*?authorization=\{authorization\}/);
@@ -387,6 +395,8 @@ test('WorkCase authorization detail follows the shared overview, object, and sec
   assert.match(authorization, /function AuthorizationDisclosure/);
   assert.match(authorization, /function AuthorizationListDisclosure[\s\S]*?<StringChips items=\{items\} \/>/);
   assert.match(authorization, /function AuthorizationStringList[\s\S]*?divide-y divide-emerald-500\/15/);
+  assert.match(authorization, /<AuthorizationStringList items=\{prerequisites\} tone="prerequisite" emptyIsValid \/>/);
+  assert.match(authorization, /return emptyIsValid \? null : <p className="ldvh-caption text-red-400">/);
   assert.match(authorization, /AuthorizationStringList[\s\S]*?gap-2 py-1 first:pt-0 last:pb-0/);
   assert.doesNotMatch(authorization, /\[\s*"action_id",\s*"summary"/);
 });
@@ -604,10 +614,16 @@ test('narrative fields read as prose while structured records keep label rows', 
   assert.match(layout, /function ReviewConclusionChip\(/);
   assert.match(layout, /function ReviewMethodDisclosure\(/);
   assert.match(layout, /same-ai-switched-role-read-only/);
-  assert.match(layout, /fieldKey="capability_limitation_id"/);
-  assert.match(layout, /fieldKey="assurance_gap"/);
-  assert.match(layout, /fieldKey="capability_evidence"/);
-  assert.match(layout, /fieldKey="stop_condition_assessment"/);
+  const reviewMethod = layout.slice(
+    layout.indexOf('function ReviewMethodDisclosure'),
+    layout.indexOf('function reviewConclusionStyle'),
+  );
+  assert.match(reviewMethod, /const MethodIcon = fallback \? CircleAlert : CircleCheck/);
+  assert.match(reviewMethod, /ldvh-card-decision-body mt-2 min-w-0 break-words border-t/);
+  assert.match(reviewMethod, /function ReviewEvidenceDisclosure/);
+  assert.match(reviewMethod, /useState\(false\)/);
+  assert.match(reviewMethod, /aria-expanded=\{expanded\}/);
+  assert.doesNotMatch(reviewMethod, /<TextField|ReviewDisclosureList|grid-cols-/);
   assert.match(layout, /function ReviewFeedbackBlock\(/);
   assert.match(layout, /function ReviewProseBlock\(/);
   const reviewProseBlock = layout.slice(

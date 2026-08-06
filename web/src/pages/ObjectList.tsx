@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { ArrowRight, Circle, CircleAlert, CircleCheck, CircleMinus, CirclePlay, ClipboardList, Clock3, Lightbulb, ListChecks, ShieldCheck, Target } from 'lucide-react';
 import ObjectIdentityActions from '@/components/ObjectIdentityActions';
+import WorkCaseCapabilityStatusBadge from '@/components/WorkCaseCapabilityStatusBadge';
 import ObjectStatusFilter from '@/components/ObjectStatusFilter';
 import WorkCaseProgressFilter from '@/components/WorkCaseProgressFilter';
 import WorkCaseProgressTrack from '@/components/WorkCaseProgressTrack';
@@ -459,11 +460,52 @@ function ExecutionAuthorizationCard({
         )}
         {activeTab === 'limitations' && (
           <div id="workcase-card-authorization-limitations" className={`-mt-px min-w-0 rounded-b-md border px-2.5 py-2 ${tabStyles.limitations.panel}`}>
-            <GateOneValue value={limitations} locale={locale} depth={0} />
+            <CapabilityLimitationCardItems limitations={limitations} locale={locale} />
           </div>
         )}
       </div>
     </section>
+  );
+}
+
+function CapabilityLimitationCardItems({
+  limitations,
+  locale,
+}: {
+  limitations: Record<string, unknown>[];
+  locale: string;
+}) {
+  return (
+    <ul className="grid min-w-0 gap-2">
+      {limitations.map((limitation, index) => {
+        const limitationId = String(limitation.limitation_id ?? '');
+        const capability = String(limitation.capability ?? '');
+        const availability = String(limitation.availability ?? '');
+        const observation = String(limitation.observation_summary ?? '');
+        const fallbackPolicy = String(limitation.fallback_policy ?? '');
+        return (
+          <li key={`${limitationId}-${index}`} className="min-w-0 rounded-md border border-amber-400/20 bg-amber-500/[0.025] px-2.5 py-2">
+            <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+              <CircleAlert size={14} strokeWidth={1.9} className="shrink-0 text-amber-600 dark:text-amber-300" aria-hidden="true" />
+              <p className="ldvh-caption-strong min-w-0 text-amber-950/80 dark:text-amber-100/85">
+                {getFieldValueLabel('capability', capability, locale)}
+              </p>
+              {availability && (
+                <span className="ldvh-meta shrink-0 rounded border border-amber-400/30 px-1.5 py-0.5 text-amber-800 dark:text-amber-100">
+                  {getFieldValueLabel('availability', availability, locale)}
+                </span>
+              )}
+            </div>
+            {observation && <p className="ldvh-caption mt-1 min-w-0 break-words text-ldvh-text-secondary">{observation}</p>}
+            {fallbackPolicy && (
+              <p className="ldvh-meta mt-1 min-w-0 break-words text-amber-800/70 dark:text-amber-100/70">
+                {getFieldLabel('fallback_policy', locale)} · {getFieldValueLabel('fallback_policy', fallbackPolicy, locale)}
+              </p>
+            )}
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
@@ -1209,6 +1251,7 @@ export function ObjectCardFrame({
           statusLabel={getObjectStatusLocale(obj.type, presentedStatus, locale)}
           objectType={obj.type}
           target={obj.id}
+          statusLeadingBadges={<WorkCaseCapabilityStatusBadge source={obj} />}
           copyLabel={t('common.copyObjectId')}
           copiedLabel={t('common.copiedObjectId')}
         />

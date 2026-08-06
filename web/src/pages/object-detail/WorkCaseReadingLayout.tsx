@@ -1356,49 +1356,87 @@ function ReviewMethodDisclosure({
 }) {
   if (!actualMethod) return null;
   const fallback = actualMethod === "same-ai-switched-role-read-only";
+  const MethodIcon = fallback ? CircleAlert : CircleCheck;
+  const limitationId = detailString(review.capability_limitation_id);
+  const assuranceGap = detailString(review.assurance_gap);
+  const stopAssessment = detailString(review.stop_condition_assessment);
+  const evidence = detailStrings(review.capability_evidence);
   return (
-    <section className={`min-w-0 rounded-md border px-3 py-2.5 ${fallback ? "border-amber-400/35 bg-amber-500/[0.055]" : "border-emerald-400/25 bg-emerald-500/[0.04]"}`}>
-      <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
-        <span className="ldvh-meta text-ldvh-text-secondary">{getFieldLabel("actual_method", locale)}</span>
-        <span className={`ldvh-chip rounded border px-2 py-0.5 ${fallback ? "border-amber-400/35 text-amber-800 dark:text-amber-100" : "border-emerald-400/30 text-emerald-700 dark:text-emerald-100"}`}>
-          {getFieldValueLabel("actual_method", actualMethod, locale)}
+    <section className={`min-w-0 rounded-lg border px-3 py-2.5 ${fallback ? "border-amber-400/30 bg-amber-500/[0.035]" : "border-emerald-400/25 bg-emerald-500/[0.03]"}`}>
+      <div className="flex min-w-0 items-start gap-2.5">
+        <span className="flex h-5 shrink-0 items-center" aria-hidden="true">
+          <MethodIcon size={15} strokeWidth={1.9} className={fallback ? "text-amber-600 dark:text-amber-300" : "text-emerald-600 dark:text-emerald-300"} />
         </span>
+        <div className="min-w-0 flex-1">
+          <p className="ldvh-meta text-ldvh-text-secondary/75">{getFieldLabel("actual_method", locale)}</p>
+          <p className={`ldvh-card-decision-title mt-0.5 min-w-0 break-words ${fallback ? "text-amber-950/80 dark:text-amber-100/85" : "text-emerald-900/80 dark:text-emerald-100/85"}`}>
+            {getFieldValueLabel("actual_method", actualMethod, locale)}
+          </p>
+        </div>
       </div>
       {fallback && (
-        <div className="mt-2 grid min-w-0 gap-2 border-t border-amber-400/20 pt-2">
-          <TextField fieldKey="capability_limitation_id" value={review.capability_limitation_id} locale={locale} />
-          <TextField fieldKey="assurance_gap" value={review.assurance_gap} locale={locale} tone="warning" />
-          <ReviewDisclosureList fieldKey="capability_evidence" items={detailStrings(review.capability_evidence)} locale={locale} />
-          <TextField fieldKey="stop_condition_assessment" value={review.stop_condition_assessment} locale={locale} />
-        </div>
+        <>
+          {assuranceGap && (
+            <p className="ldvh-card-decision-body mt-2 min-w-0 break-words border-t border-amber-400/20 pt-2 !text-amber-950/70 dark:!text-amber-100/75">
+              {assuranceGap}
+            </p>
+          )}
+          {(limitationId || stopAssessment) && (
+            <div className="mt-2 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-amber-800/65 dark:text-amber-100/65">
+              {limitationId && (
+                <span className="ldvh-meta min-w-0 break-all">
+                  {getFieldLabel("capability_limitation_id", locale)} · {limitationId}
+                </span>
+              )}
+              {stopAssessment && (
+                <span className="ldvh-meta min-w-0 break-words">
+                  {getFieldLabel("stop_condition_assessment", locale)} · {getFieldValueLabel("stop_condition_assessment", stopAssessment, locale)}
+                </span>
+              )}
+            </div>
+          )}
+          <ReviewEvidenceDisclosure items={evidence} locale={locale} />
+        </>
       )}
     </section>
   );
 }
 
-function ReviewDisclosureList({
-  fieldKey,
+function ReviewEvidenceDisclosure({
   items,
   locale,
 }: {
-  fieldKey: string;
   items: string[];
   locale: string;
 }) {
+  const [expanded, setExpanded] = useState(false);
   if (items.length === 0) return null;
   return (
-    <div className="min-w-0">
-      <p className="ldvh-meta text-ldvh-text-secondary/75">{getFieldLabel(fieldKey, locale)}</p>
-      <ul className="mt-1 grid min-w-0 gap-1">
-        {items.map((item) => (
-          <li key={item} className="flex min-w-0 items-start gap-2">
-            <span className="mt-2 size-1 shrink-0 rounded-full bg-amber-500/75" aria-hidden="true" />
-            <p className="ldvh-caption min-w-0 break-words text-ldvh-text-secondary">
-              {getFieldValueLabel(fieldKey, item, locale)}
-            </p>
-          </li>
-        ))}
-      </ul>
+    <div className="mt-2 min-w-0 border-t border-amber-400/20 pt-1.5">
+      <button
+        type="button"
+        aria-expanded={expanded}
+        onClick={() => setExpanded((current) => !current)}
+        className="flex w-full min-w-0 items-center justify-between gap-2 rounded px-1 py-1 text-left text-amber-800/70 transition-colors hover:bg-amber-500/[0.055] dark:text-amber-100/70"
+      >
+        <span className="ldvh-meta min-w-0">{getFieldLabel("capability_evidence", locale)}</span>
+        <span className="flex shrink-0 items-center gap-1.5">
+          <span className="ldvh-meta font-mono tabular-nums">{items.length}</span>
+          {expanded ? <ChevronUp size={12} aria-hidden="true" /> : <ChevronDown size={12} aria-hidden="true" />}
+        </span>
+      </button>
+      {expanded && (
+        <ul className="mt-1.5 grid min-w-0 gap-1.5 px-1 pb-0.5">
+          {items.map((item) => (
+            <li key={item} className="flex min-w-0 items-start gap-2">
+              <span className="mt-2 size-1 shrink-0 rounded-full bg-amber-500/75" aria-hidden="true" />
+              <p className="ldvh-caption min-w-0 break-words text-ldvh-text-secondary">
+                {getFieldValueLabel("capability_evidence", item, locale)}
+              </p>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
@@ -1716,7 +1754,7 @@ function ExecutionAuthorization({
       )}
       {activeTab === "prerequisites" && (
         <div id="workcase-authorization-prerequisites" className={`-mt-px min-w-0 rounded-b-lg border px-3 py-1 ${tabStyles.prerequisites.panel}`}>
-          <AuthorizationStringList items={prerequisites} tone="prerequisite" />
+          <AuthorizationStringList items={prerequisites} tone="prerequisite" emptyIsValid />
         </div>
       )}
       {activeTab === "limitations" && (
@@ -1757,40 +1795,38 @@ function CapabilityLimitationList({
   locale: string;
 }) {
   return (
-    <ul className="grid min-w-0 gap-3">
+    <ul className="grid min-w-0 gap-2">
       {limitations.map((limitation, index) => {
         const limitationId = detailString(limitation.limitation_id);
-        const evidence = detailStrings(limitation.evidence);
-        const categories = detailStrings(limitation.affected_review_categories);
-        const stopConditions = detailStrings(limitation.stop_conditions);
+        const capability = detailString(limitation.capability);
+        const availability = detailString(limitation.availability);
+        const observation = detailString(limitation.observation_summary);
+        const fallbackPolicy = detailString(limitation.fallback_policy);
         return (
-          <li key={`${limitationId}-${index}`} className="min-w-0 rounded-lg border border-amber-400/30 bg-amber-500/[0.035] px-3.5 py-3">
-            <div className="min-w-0 border-l-2 border-amber-400/65 pl-3">
-              <p className="ldvh-card-decision-title text-amber-900/85 dark:text-amber-100/90">
-                {detailString(limitation.observation_summary)}
+          <li key={`${limitationId}-${index}`} className="min-w-0 rounded-lg border border-amber-400/30 bg-amber-500/[0.035] px-3 py-2.5">
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              <CircleAlert size={16} strokeWidth={1.9} className="shrink-0 text-amber-600 dark:text-amber-300" aria-hidden="true" />
+              <p className="ldvh-card-decision-title min-w-0 text-amber-950/80 dark:text-amber-100/85">
+                {getFieldValueLabel("capability", capability, locale)}
               </p>
-              {limitationId && <p className="ldvh-meta mt-0.5 break-all text-amber-800/60 dark:text-amber-100/60">{limitationId}</p>}
+              {availability && (
+                <span className="ldvh-chip shrink-0 rounded border border-amber-400/35 bg-amber-500/[0.07] px-2 py-0.5 text-amber-800 dark:text-amber-100">
+                  {getFieldValueLabel("availability", availability, locale)}
+                </span>
+              )}
             </div>
-            <dl className="mt-3 grid min-w-0 grid-cols-2 gap-3">
-              {[
-                ["capability", limitation.capability],
-                ["availability", limitation.availability],
-                ["fallback_policy", limitation.fallback_policy],
-                ["assurance_gap", limitation.assurance_gap],
-              ].map(([fieldKey, value]) => (
-                <div key={String(fieldKey)} className="min-w-0 rounded-md border border-amber-400/20 bg-amber-500/[0.025] px-3 py-2">
-                  <dt className="ldvh-meta text-amber-800/65 dark:text-amber-100/65">{getFieldLabel(String(fieldKey), locale)}</dt>
-                  <dd className="ldvh-caption-strong mt-1 min-w-0 break-words text-amber-950/75 dark:text-amber-100/80">
-                    {getFieldValueLabel(String(fieldKey), detailString(value), locale)}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-            <div className="mt-3 grid min-w-0 gap-2 border-t border-amber-400/20 pt-3">
-              <ReviewDisclosureList fieldKey="affected_review_categories" items={categories} locale={locale} />
-              <ReviewDisclosureList fieldKey="evidence" items={evidence} locale={locale} />
-              <ReviewDisclosureList fieldKey="stop_conditions" items={stopConditions} locale={locale} />
-            </div>
+            {observation && (
+              <p className="ldvh-caption mt-1 min-w-0 break-words text-ldvh-text-secondary">
+                {observation}
+              </p>
+            )}
+            {fallbackPolicy && (
+              <p className="ldvh-meta mt-1.5 min-w-0 break-words text-amber-800/70 dark:text-amber-100/70">
+                <span>{getFieldLabel("fallback_policy", locale)}</span>
+                <span className="mx-1" aria-hidden="true">·</span>
+                <span>{getFieldValueLabel("fallback_policy", fallbackPolicy, locale)}</span>
+              </p>
+            )}
           </li>
         );
       })}
@@ -1908,9 +1944,19 @@ function AuthorizationDisclosure({ fieldKey, value, locale, tone }: { fieldKey: 
   );
 }
 
-function AuthorizationStringList({ items, tone }: { items: string[]; tone: "warning" | "prerequisite" }) {
+function AuthorizationStringList({
+  items,
+  tone,
+  emptyIsValid = false,
+}: {
+  items: string[];
+  tone: "warning" | "prerequisite";
+  emptyIsValid?: boolean;
+}) {
   const { t } = useI18n();
-  if (items.length === 0) return <p className="ldvh-caption text-red-400">{t("objectDetail.workcaseGateFieldMissingOrMalformed")}</p>;
+  if (items.length === 0) {
+    return emptyIsValid ? null : <p className="ldvh-caption text-red-400">{t("objectDetail.workcaseGateFieldMissingOrMalformed")}</p>;
+  }
   const bodyClass = tone === "warning" ? "!text-rose-950/75 dark:!text-rose-100/80" : "!text-violet-950/75 dark:!text-violet-100/80";
   const markerClass = tone === "warning" ? "bg-rose-500/75 dark:bg-rose-300/80" : "bg-violet-500/75 dark:bg-violet-300/80";
   return (

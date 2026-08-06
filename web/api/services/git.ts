@@ -14,12 +14,12 @@ const __dirname = path.dirname(__filename)
 const LDVH_ROOT = process.env.LDVH_ROOT || path.resolve(__dirname, '../../..')
 
 /**
- * Whether the local upstream-tracking ref contains this commit.
+ * How this commit relates to the current branch and its upstream-tracking ref.
  *
  * This is deliberately a local Git reachability check, not a network probe:
  * the web can state only what the currently fetched upstream ref proves.
  */
-export type GitPushStatus = 'pushed' | 'unpushed' | 'unknown'
+export type GitPushStatus = 'pushed' | 'unpushed' | 'incoming' | 'unknown'
 
 /** Optional provenance markers carried in Git commit trailers. */
 export type GitCommitSignature = {
@@ -131,16 +131,44 @@ export function parseCommitSignature(body: string): GitCommitSignature | undefin
 /**
  * Classify commits against the current branch's configured upstream.
  *
- * A commit reachable from the locally known upstream ref is shown as pushed;
- * one absent from it is shown as unpushed.  Repositories without an upstream
- * (or whose upstream cannot be read) stay unknown so the UI never invents a
- * push state.
+ * Shared commits are pushed, HEAD-only commits are unpushed, and upstream-only
+ * commits are incoming. Repositories without a readable upstream stay unknown
+ * so the UI never invents a synchronization state.
  */
 export async function getGitPushStatuses(hashes: string[], cwd: string = LDVH_ROOT): Promise<Map<string, GitPushStatus>> {
   const statuses = new Map(hashes.map((hash) => [hash, 'unknown' as GitPushStatus]))
   if (hashes.length === 0) return statuses
 
-  const upstream = await new Promise<string | null>((resolve) => {
+  const upstream = await getGitUpstream(cwd)
+  if (!upstream) return statuses
+
+  const getCommitsOutside = (ref: string) => new Promise<Set<string> | null>((resolve) => {
+    execFile(
+      'git',
+      ['rev-list', '--no-walk', ...hashes, '--not', ref],
+      { cwd, maxBuffer: 5 * 1024 * 1024 },
+      (error, stdout) => resolve(error ? null : new Set(stdout.split(/\r?\n/).filter(Boolean))),
+    )
+  })
+
+  const [outsideHead, outsideUpstream] = await Promise.all([
+    getCommitsOutside('HEAD'),
+    getCommitsOutside(upstream),
+  ])
+  if (!outsideHead || !outsideUpstream) return statuses
+
+  for (const hash of hashes) {
+    const inHead = !outsideHead.has(hash)
+    const inUpstream = !outsideUpstream.has(hash)
+    if (inHead && inUpstream) statuses.set(hash, 'pushed')
+    else if (inHead) statuses.set(hash, 'unpushed')
+    else if (inUpstream) statuses.set(hash, 'incoming')
+  }
+  return statuses
+}
+
+async function getGitUpstream(cwd: string): Promise<string | null> {
+  return new Promise((resolve) => {
     execFile(
       'git',
       ['rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{upstream}'],
@@ -148,32 +176,23 @@ export async function getGitPushStatuses(hashes: string[], cwd: string = LDVH_RO
       (error, stdout) => resolve(error ? null : stdout.trim() || null),
     )
   })
-  if (!upstream) return statuses
-
-  const unpushed = await new Promise<Set<string> | null>((resolve) => {
-    execFile(
-      'git',
-      ['rev-list', ...hashes, '--not', upstream],
-      { cwd, maxBuffer: 5 * 1024 * 1024 },
-      (error, stdout) => resolve(error ? null : new Set(stdout.split(/\r?\n/).filter(Boolean))),
-    )
-  })
-  if (!unpushed) return statuses
-
-  for (const hash of hashes) {
-    statuses.set(hash, unpushed.has(hash) ? 'unpushed' : 'pushed')
-  }
-  return statuses
 }
 
 /**
  * 获取 git log 列表
  */
 export async function getGitLog(count: number = 50, locale: string = 'zh', cwd: string = LDVH_ROOT): Promise<GitLogEntry[]> {
+  const upstream = await getGitUpstream(cwd)
   return new Promise((resolve, reject) => {
     execFile(
       'git',
-      ['log', `-${count}`, '--format=%H%x1f%h%x1f%an%x1f%ai%x1f%B%x1e'],
+      [
+        'log',
+        `-${count}`,
+        ...(upstream ? ['--date-order'] : []),
+        '--format=%H%x1f%h%x1f%an%x1f%ai%x1f%B%x1e',
+        ...(upstream ? ['HEAD', upstream] : []),
+      ],
       { cwd, maxBuffer: 5 * 1024 * 1024 },
       (error, stdout) => {
         if (error) {

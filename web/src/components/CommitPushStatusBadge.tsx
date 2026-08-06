@@ -1,4 +1,4 @@
-import { ArrowUp, GitCommitHorizontal } from 'lucide-react';
+import { CloudDownload } from 'lucide-react';
 import { useState } from 'react';
 import { useI18n } from '@/i18n/context';
 import type { GitPushStatus } from '@/utils/api';
@@ -15,18 +15,19 @@ export default function CommitPushStatusBadge({
 
   if (status === 'unknown') return null;
 
-  const isPushed = status === 'pushed';
-  const label = t(isPushed ? 'changelog.pushed' : 'changelog.unpushed');
+  const label = t(status === 'incoming' ? 'changelog.incoming' : `changelog.${status}`);
 
-  // A commit already reachable from the upstream does not need a per-row
-  // decoration. Only surface the actionable local-ahead state.
-  if (isPushed) return null;
+  // Shared commits do not need per-row decoration. Only surface commits that
+  // require a push or a synchronization action.
+  if (status === 'pushed') return null;
+
+  const isIncoming = status === 'incoming';
 
   return (
     <span className={`${className} relative inline-flex shrink-0`}>
       <span
         aria-label={label}
-        className="inline-flex h-6 w-6 items-center justify-center rounded-md text-rose-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ldvh-accent/45 dark:text-rose-400"
+        className={`inline-flex h-6 w-6 items-center justify-center rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ldvh-accent/45 ${isIncoming ? 'text-violet-600 dark:text-violet-400' : 'text-rose-600 dark:text-rose-400'}`}
         onBlur={() => setShowTooltip(false)}
         onFocus={() => setShowTooltip(true)}
         onMouseEnter={() => setShowTooltip(true)}
@@ -34,14 +35,31 @@ export default function CommitPushStatusBadge({
         role="img"
         tabIndex={0}
       >
-        <span className="relative block h-4 w-4" aria-hidden="true">
-          <GitCommitHorizontal className="absolute inset-0" size={16} strokeWidth={2} />
-          <ArrowUp
-            className="absolute -right-1 -top-1 bg-ldvh-panel"
-            size={10}
-            strokeWidth={3}
-          />
-        </span>
+        {isIncoming ? (
+          <CloudDownload aria-hidden="true" size={17} strokeWidth={2} />
+        ) : (
+          <svg
+            aria-hidden="true"
+            className="h-[18px] w-[18px]"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <path
+              d="M17.5 20H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+            />
+            <path
+              d="M12 14V3m-3.5 3.5L12 3l3.5 3.5"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+            />
+          </svg>
+        )}
       </span>
       {showTooltip ? (
         <span

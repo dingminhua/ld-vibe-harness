@@ -18,7 +18,7 @@
 顶部控制区：随页面滚动固定在顶部
 提交卡片列表
   容器：与对象卡片一致使用 ldvh-section-grid，宽度足够时一行多个
-  默认态：左上 type · scope + 右侧推送状态（可得时）/复制入口 + 标题块（GitHub 剪影图标 + description）+ 右下角更新时间
+  默认态：左上 type · scope + 右侧同步状态（需要行动时）/复制入口 + 标题块（GitHub 剪影图标 + description）+ 右下角更新时间
   点击卡片主体：进入 /changelog/:hash 独立详情页
   点击右侧阅读入口：打开或收起右侧扩展阅读
 右侧扩展阅读
@@ -33,7 +33,7 @@
 - 列表容器使用与研究等对象列表一致的 `ldvh-section-grid`，宽度足够时一行多个卡片，窄屏自动回到单列。
 - 默认态：
   - 顶部左侧展示 `category` 和 `scope`，使用与研究卡片顶栏一致的 `ldvh-meta-muted` 弱元信息样式，并以文字中点分隔，不使用背景 chip；`category` 和 `scope` 按当前语言展示本地化标签，`scope` 为空时不展示；
-  - 顶部右侧在可从本地上游确定时先展示“已推送”或“未推送”短标签，随后固定放置复制提交上下文；不得在右上角放置扩展阅读入口；无上游或无法验证时不展示推送标签；
+  - 顶部右侧只对需要行动的同步状态展示图标，随后固定放置复制提交上下文：本地 `HEAD` 独有的提交使用玫红色云端上传图标，tooltip 为“未推送”；本地已知上游独有的提交使用紫色云端下载图标，tooltip 为“待同步”；两端共有、无上游或无法验证的提交不展示状态图标；不得改变卡片背景或在右上角放置扩展阅读入口；
   - 下方标题块参考研究等对象卡片：使用弱背景、内圈边框和左侧色条，右侧固定放置扩展阅读入口；色条按 commit type 取色；
   - 标题块内使用与侧栏提交入口一致的 GitHub 剪影作为提交记录识别图标；
   - 标题行展示完整 `description`，作为主阅读文本；无法解析时回退到完整 `message`；标题不截断，宽度不足时换行；
@@ -47,7 +47,7 @@
 
 ## 4. 加载范围与筛选
 
-- 页面默认加载最近 50 条提交。
+- 页面默认从当前 `HEAD` 与本地已知上游跟踪引用的并集加载最近 50 条提交；未配置可读上游时只读取 `HEAD`。
 - 用户可在最近 50、100、200 条之间切换；后端 `count` 上限为 200。
 - 加载范围、`type` 和 `scope` 控件使用全局 tab 样式：`ldvh-tab-list`、`ldvh-tab-button`、`ldvh-tab-button-active` 和 `ldvh-tab-button-idle`；该样式也是对象状态筛选和工具页视图切换的统一外观。
 - `type` 和 `scope` 快速筛选只作用于当前加载范围，不表示全仓库全量检索。
@@ -76,7 +76,7 @@
 - 有 commit body 时展示 `提交说明` 节点并默认展开；没有 body 时不显示该节点。
 - `提交说明` 按 Git message body Markdown 渲染，适合展示结构化语义清单；行内可保留 Markdown 强调、代码和链接。Web 只识别 Git 提交规范已规定的固定小标题，例如“动机、关键变更、影响边界、验证结论、风险与后续”，将独立标题行提升为阅读区小标题，不根据自然语言猜测语义。
 - 固定小标题下的正文应来自 07 强制的 `- ` Markdown 无序列表项，因此每条正文都会显示为同一种圆点列表表现；Web 不在显示层把非列表正文伪装成列表。
-- 合法 footer 如随 Git message 一并返回，可以保留在原文中；提交签名 trailer 的 `Session-ID`、`Agent-ID`、`Host-Environment` 不混入“验证结论”等正文段落，而是在详情页单独呈现为“署名信息”三字段；`Signer-Type` 不在页面呈现。非空 `Agent-ID`、`Host-Environment` 仍可作为提交身份元信息复用在卡片和详情页的时间之后。Web 不把它解析成 LDVH 工作对象字段。
+- 合法 footer 如随 Git message 一并返回，可以保留在原文中；提交签名 trailer 的 `Session-ID`、`Agent-ID`、`Host-Environment` 不混入“验证结论”等正文段落，而是在详情页单独呈现为“署名信息”三字段；每个字段保持“标签在上、值在轻量边框内容框内”的统一结构，长会话 ID 允许安全换行；`Signer-Type` 不在页面呈现。非空 `Agent-ID`、`Host-Environment` 仍可作为提交身份元信息复用在卡片和详情页的时间之后。Web 不把它解析成 LDVH 工作对象字段。
 - `提交说明`、`改动文件` 和 `原始信息` 使用与对象正文一致的圆点标题、右侧折叠箭头和节点卡片样式；`改动文件` 和 `原始信息` 默认收起；原始 `git diff --stat` 或 `git show --stat` 文本只作为折叠审计信息保留，不作为主阅读界面。
 
 ## 6. 复制上下文
@@ -127,7 +127,7 @@
 4. 不展示 raw ISO 时间；列表卡片更新时间和详情页绝对时间都使用 `formatDateTime()`。
 5. 不把 commit message 强行翻译；它是 Git 事实内容。
 6. 不把原始 `git show --stat` 文本作为详情主界面；主界面必须先格式化统计和文件列表，文件列表与原始信息都应位于默认收起的正文节点中。
-7. 提交卡片操作区应与对象列表保持方向一致：右上角只放推送状态（可得时）与复制，标题带右侧放扩展阅读入口；提交没有对象状态，不展示对象状态徽标。
+7. 提交卡片操作区应与对象列表保持方向一致：右上角只放需要行动的同步状态图标与复制，标题带右侧放扩展阅读入口；提交没有对象状态，不展示对象状态徽标，也不按同步状态改变整张卡片背景。
 8. 复制内容必须服务 AI 定位沟通，不得退化为只复制短哈希或完整 hash。
 9. 提交记录页不是全量搜索页；所有快速筛选均以当前加载的最近 50 / 100 / 200 条为边界。
 10. 加载范围、type 和 scope 控制区必须使用 sticky 顶部固定表现，保持与对象列表页筛选区一致。
@@ -138,7 +138,7 @@
 
 Changelog 与 ProjectFiles 的提交历史必须复用同一套 commit message 拆分、Conventional Commits 解析和可选署名 trailer 解析函数，统一输出 `message`、`body`、`category`、`scope`、`description`、`isBreaking` 与可选 `signature`。两者可以按页面职责追加字段；不得各自维护一套 commit header 解析规则。
 
-Changelog 卡片和详情身份头还可展示 `pushStatus`：它只按当前分支的**本地已知上游跟踪引用**做 Git 可达性判断。上游包含该提交时为 `pushed`，否则为 `unpushed`；未配置或无法读取上游时为 `unknown`，前端不显示标签。该状态不发起网络请求，也不宣称远端的实时状态。
+Changelog 卡片和详情身份头还可展示 `pushStatus`：它只按当前分支的**本地已知上游跟踪引用**做 Git 可达性判断。当前 `HEAD` 与上游都包含该提交时为 `pushed`；仅 `HEAD` 包含时为 `unpushed`；仅上游包含时为 `incoming`；未配置上游、无法读取或提交不属于两端时为 `unknown`。列表通过 `HEAD` 与该上游引用的并集纳入本地独有和上游独有提交，再在 50 / 100 / 200 条边界内统一按 Git date-order 返回。该读取不发起 `fetch`、合并、变基或其它网络与工作树写入，也不宣称本地上游引用已经反映远端实时状态。
 
 ```typescript
 interface ChangelogEntry {
@@ -150,7 +150,7 @@ interface ChangelogEntry {
   scope: string;
   description: string;
   isBreaking: boolean;
-  pushStatus: 'pushed' | 'unpushed' | 'unknown';
+  pushStatus: 'pushed' | 'unpushed' | 'incoming' | 'unknown';
   signature?: { sessionId?: string; agentId?: string; hostEnvironment?: string };
   author: string;
   date: string;

@@ -298,7 +298,7 @@ WorkCase 只有本文与 05.Att.01 共同定义的当前字段和结构。任何
 | `workcase-authorization-authorized-actions` | `authorized_actions` | array | Gate1 中逐项呈现的已知授权动作闭集 | 不表示工具或命令白名单、动作已执行或未列动作默认允许 | 至少一项；按 `action_id` 唯一；每项使用 `workcase-authorized-action` |
 | `workcase-authorization-quality-gates` | `quality_gates` | array | Gate1 前完整授权基线中的必经质量关口声明 | 不表示 Reviewer 身份证明、实际委派记录或结果复核结论 | 新建与 Gate1 批准候选必须精确含当前一个 `workcase-quality-gate`；其进入 canonical execution authorization 与 baseline fingerprint，Gate1 后冻结；存量 Gate1 前对象可缺失但不得借缺失进入 executing |
 | `workcase-authorization-action-ceiling` | `action_ceiling` | string | 当前 WorkCase 单次运行不得超过的总体对象、权限、副作用与外部影响上限 | 不表示已列动作的技术前提已成立 | 必填非空；必须能与 scope 及各 action 条目共同判断超界 |
-| `workcase-authorization-prohibited-actions` | `prohibited_actions` | array | Gate1 明确不授权的动作、目标或副作用 | 不表示只有列出项才受禁止；未进入 authorized actions 的动作同样未获准 | 非空唯一 string 数组 |
+| `workcase-authorization-prohibited-actions` | `prohibited_actions` | array | Gate1 明确不授权的动作、目标或副作用 | 不表示只有列出项才受禁止；未进入 authorized actions 的动作同样未获准 | 非空唯一 string 数组；成员是无顺序的并列禁止项，正文不得内嵌仅用于展示或引用的数字、字母或其它序号前缀；数组位置、显示顺序和人工编号不产生顺序语义 |
 | `workcase-authorization-allowed-adjustments` | `allowed_adjustments` | string | Gate1 后 Controller 可在不改变基线时自动调整计划、重试、重新委派或替换实现方法的范围 | 不表示可改变 goal/scope/criteria、动作上限、风险接受或禁止项 | 必填非空；PlanΔ 仍需 fresh independent review 并按 §6.5 更新 |
 | `workcase-authorization-verification-and-rollback` | `verification_and_rollback` | string | 与授权动作相匹配的验证范围、失败恢复和不可回滚边界 | 不表示验证已运行、回滚一定可用或风险已消失 | 必填非空；必须据实包含已知不可回滚部分 |
 | `workcase-authorization-out-of-bounds-handling` | `out_of_bounds_handling` | string | 发现未授权动作、新风险或基线改变时的禁止执行、取消受影响 item 与自动结果收敛边界 | 不表示可在执行期索取新授权或把超界风险默认接受 | 必填非空；必须与 §6.5 的安全收敛一致 |

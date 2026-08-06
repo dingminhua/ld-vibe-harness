@@ -11,6 +11,7 @@ import {
   deriveWorkCasePresentationProjection,
   type WorkCaseCurrentSnapshotProjection,
 } from '../../shared/workcaseStatus.js'
+import { hasUnavailableIndependentSubagentReview } from '../../shared/workcaseCapability.js'
 import { FACT_LIST_FIELD_NAMES } from './factFieldContract.js'
 
 export const ACTIVE_OBJECT_TYPES = ['workcase', 'adr', 'pitfall', 'spark', 'study'] as const
@@ -318,6 +319,7 @@ function projectCurrentWorkCaseCardShape(
 ): Record<string, unknown> {
   const projected = copyPresentFields(fact, ['object_id', 'fact_type_key', 'title', 'status', 'phase', 'updated_at', 'change_log'])
   projected.current_snapshot_projection = currentSnapshotProjection
+  if (hasUnavailableIndependentSubagentReview(fact)) projected.independentSubagentUnavailable = true
   const progress = currentSnapshotProjection.resolution === 'resolved'
     ? currentSnapshotProjection
     : null

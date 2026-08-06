@@ -10,6 +10,7 @@ import {
 } from '../../shared/workcaseStatus.ts';
 import { projectCurrentWorkCaseCard } from '../../api/services/facts.ts';
 import { getFieldValueLabel, getObjectStatusLocale } from '../../src/i18n/locales.ts';
+import { hasUnavailableIndependentSubagentReview } from '../../shared/workcaseCapability.ts';
 
 const webRoot = path.resolve(import.meta.dirname, '../..');
 const sourceContentFingerprint = 'a'.repeat(64);
@@ -245,7 +246,19 @@ test('WorkCase cards use compact authorization tabs and limit allowed actions to
     assert.match(authorization, new RegExp(`aria-controls="workcase-card-authorization-${tab}"`));
   }
   assert.match(authorization, /workcaseCapabilityLimitationCount/);
-  assert.match(authorization, /<GateOneValue value=\{limitations\}/);
+  assert.match(authorization, /<CapabilityLimitationCardItems limitations=\{limitations\} locale=\{locale\}/);
+  const capabilityLimitations = authorization.slice(
+    authorization.indexOf('function CapabilityLimitationCardItems'),
+    authorization.indexOf('function AuthorizationCardItems'),
+  );
+  assert.match(capabilityLimitations, /getFieldValueLabel\('capability', capability, locale\)/);
+  assert.match(capabilityLimitations, /getFieldValueLabel\('availability', availability, locale\)/);
+  assert.match(capabilityLimitations, /getFieldValueLabel\('fallback_policy', fallbackPolicy, locale\)/);
+  const limitationIconIndex = capabilityLimitations.indexOf('<CircleAlert size={14}');
+  const limitationTitleIndex = capabilityLimitations.indexOf("getFieldValueLabel('capability', capability, locale)");
+  assert.ok(limitationIconIndex >= 0 && limitationTitleIndex > limitationIconIndex);
+  assert.doesNotMatch(capabilityLimitations, /<li[^>]+className="flex/);
+  assert.doesNotMatch(capabilityLimitations, /assurance_gap|affected_review_categories|evidence|stop_conditions|GateOneValue/);
   assert.match(authorization, /const tabTypography = compact \? 'ldvh-meta' : 'ldvh-caption-strong';/);
   assert.match(authorization, /key=\{String\(action\.action_id\)\}[\s\S]{0,320}\{String\(action\.summary\)\}/);
   assert.doesNotMatch(authorization, /action\.(scope|effect|risk|rollback|rule_refs)/);
@@ -258,6 +271,42 @@ test('WorkCase cards use compact authorization tabs and limit allowed actions to
   assert.match(authorization, /function AuthorizationCardItems/);
   assert.match(authorization, /function AuthorizationCardItems[\s\S]*?divide-y divide-emerald-500\/15/);
   assert.match(authorization, /<p className=\{`ldvh-caption-strong min-w-0 \$\{textClass\}`\}>\{item\}<\/p>/);
+});
+
+test('WorkCase identity exposes an unavailable independent-subagent capability beside status', () => {
+  const factSource = {
+    execution_authorization: {
+      capability_limitations: [
+        { capability: 'independent-subagent-review', availability: 'unavailable' },
+      ],
+    },
+  };
+  assert.equal(hasUnavailableIndependentSubagentReview(factSource), true);
+  assert.equal(hasUnavailableIndependentSubagentReview({ independentSubagentUnavailable: true }), true);
+  assert.equal(hasUnavailableIndependentSubagentReview({ execution_authorization: { capability_limitations: [] } }), false);
+
+  const list = source('src/pages/ObjectList.tsx');
+  const detail = source('src/pages/ObjectDetail.tsx');
+  const badge = source('src/components/WorkCaseCapabilityStatusBadge.tsx');
+  assert.match(list, /statusLeadingBadges=\{<WorkCaseCapabilityStatusBadge source=\{obj\} \/>\}/);
+  assert.match(detail, /statusLeadingBadges=\{capabilityStatusBadge\}[\s\S]{0,100}actionBadges=\{actionBadges\}/);
+  assert.match(badge, /border-amber-400\/35 bg-amber-500\/\[0\.07\]/);
+  assert.match(badge, /workcaseIndependentSubagentUnavailable/);
+  assert.match(badge, /aria-label=\{hint\}/);
+  assert.match(badge, /<CircleAlert size=\{12\} strokeWidth=\{2\} aria-hidden="true" \/>/);
+  assert.match(source('src/i18n/locales.ts'), /'objectList\.workcaseIndependentSubagentUnavailable': 'Sub Agent'/);
+});
+
+test('progressing Card projection carries only the derived independent-subagent warning', () => {
+  const projected = projectCurrentCard(currentWorkCase({
+    execution_authorization: {
+      capability_limitations: [
+        { capability: 'independent-subagent-review', availability: 'unavailable' },
+      ],
+    },
+  }));
+  assert.equal(projected.independentSubagentUnavailable, true);
+  assert.equal('execution_authorization' in projected, false);
 });
 
 test('WorkCase cards keep a neutral outer surface and move emphasis with the current decision', () => {

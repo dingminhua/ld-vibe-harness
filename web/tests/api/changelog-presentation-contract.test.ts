@@ -28,7 +28,11 @@ test('breaking and push-state badges use one presentation in list and detail ide
   assert.match(locales, /'changelog\.breakingChange': '不兼容变更'/);
   assert.match(locales, /'changelog\.breakingChange': 'Breaking change'/);
   assert.match(pushBadge, /status === 'unknown'\) return null/);
-  assert.match(pushBadge, /t\(isPushed \? 'changelog\.pushed' : 'changelog\.unpushed'\)/);
+  assert.match(pushBadge, /import \{ CloudDownload \} from 'lucide-react'/);
+  assert.match(pushBadge, /status === 'incoming' \? 'changelog\.incoming'/);
+  assert.match(pushBadge, /<CloudDownload aria-hidden="true" size=\{17\}/);
+  assert.match(pushBadge, /d="M17\.5 20H9a7 7 0 1 1 6\.71-9h1\.79a4\.5 4\.5 0 1 1 0 9Z"/);
+  assert.match(pushBadge, /d="M12 14V3m-3\.5 3\.5L12 3l3\.5 3\.5"/);
   assert.match(list, /<CommitPushStatusBadge status=\{entry\.pushStatus\} \/>/);
   assert.match(panel, /actionBadges=\{entry\?\.pushStatus \? <CommitPushStatusBadge status=\{entry\.pushStatus\} \/> : undefined\}/);
   assert.match(signatureMeta, /signature\?\.agentId/);
@@ -37,6 +41,10 @@ test('breaking and push-state badges use one presentation in list and detail ide
   assert.match(panel, /<CommitSignatureMeta signature=\{entry\.signature\} \/>/);
   assert.match(panel, /stripCommitSignatureTrailers\(commitBody\)/);
   assert.match(panel, /<CommitSignatureSection signature=\{entry\.signature\} labels=\{labels\} \/>/);
+  assert.match(panel, /<dd className="ldvh-detail-semantic-body mt-1 break-words rounded-md border border-ldvh-border bg-ldvh-bg\/40 px-3 py-2 font-mono">/);
+  assert.match(panel, /<dd className="ldvh-detail-semantic-body mt-1 break-all rounded-md border border-ldvh-border bg-ldvh-bg\/40 px-3 py-2 font-mono">/);
   assert.match(locales, /'changelog\.pushed': '已推送'/);
   assert.match(locales, /'changelog\.unpushed': 'Not pushed'/);
+  assert.match(locales, /'changelog\.incoming': '待同步'/);
+  assert.match(locales, /'changelog\.incoming': 'Sync pending'/);
 });

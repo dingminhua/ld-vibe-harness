@@ -12,6 +12,8 @@ import DocPreviewLink from '@/components/DocPreviewLink';
 import EvidenceBlock from '@/components/EvidenceBlock';
 import CopyPathButton from '@/components/CopyPathButton';
 import ObjectIdentityActions from '@/components/ObjectIdentityActions';
+import WorkCaseCapabilityStatusBadge from '@/components/WorkCaseCapabilityStatusBadge';
+import { hasUnavailableIndependentSubagentReview } from '@/shared/workcaseCapability';
 import ObjectUpdatedMeta from '@/components/ObjectUpdatedMeta';
 import PriorityIcon from '@/components/PriorityIcon';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
@@ -573,10 +575,13 @@ export function ObjectIdentityHeader({
   const inlineTitleMeta = titleMetaAlign === 'content' ? titleMetaEntries : [];
   const actionAlignedTitleMeta = titleMetaAlign === 'actions' ? titleMetaEntries : [];
   const footerEndTitleMeta = titleMetaAlign === 'footerEnd' ? titleMetaEntries : [];
+  const capabilityStatusBadge = hasUnavailableIndependentSubagentReview(source)
+    ? <WorkCaseCapabilityStatusBadge source={source} />
+    : null;
   return (
     <div className={compact ? 'min-w-0' : 'rounded-lg border border-ldvh-border bg-ldvh-panel px-4 py-3'}>
-      <div className="flex min-w-0 items-center justify-between gap-3">
-        <div className="min-w-0 flex-1">
+      <div className="min-w-0">
+        <div className="min-w-0">
           <div className="mb-1.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
             <span
               className="ldvh-chip shrink-0 rounded px-2 py-0.5"
@@ -587,13 +592,14 @@ export function ObjectIdentityHeader({
             <span className="ldvh-meta-muted min-w-0 truncate">{id}</span>
             {extraBadges}
             <PriorityIcon source={source} type={objectType} locale={locale} size={compact ? 'sm' : 'md'} />
-            {!compact && (status || actionBadges || showCopyAction) && (
+            {(capabilityStatusBadge || status || actionBadges || showCopyAction) && (
               <div className="ml-auto shrink-0">
                 <ObjectIdentityActions
                   status={status}
                   statusLabel={statusLabel}
                   objectType={objectType}
                   target={target}
+                  statusLeadingBadges={capabilityStatusBadge}
                   actionBadges={actionBadges}
                   copyLabel={copyLabel}
                   copiedLabel={copiedLabel}
@@ -615,28 +621,14 @@ export function ObjectIdentityHeader({
               </div>
             )}
           </div>
+          {actionAlignedTitleMeta.length > 0 && (
+            <div className="mt-1 flex min-w-0 flex-wrap items-center justify-end gap-x-4 gap-y-1 text-right">
+              {actionAlignedTitleMeta.map((entry) => (
+                <HeaderDateMeta key={entry.label} label={entry.label} value={entry.value} />
+              ))}
+            </div>
+          )}
         </div>
-        {(showCopyAction || actionBadges || status) && compact && (
-          <div className="flex shrink-0 flex-col items-end justify-center gap-2">
-            <ObjectIdentityActions
-              status={status}
-              statusLabel={statusLabel}
-              objectType={objectType}
-              target={target}
-              actionBadges={actionBadges}
-              copyLabel={copyLabel}
-              copiedLabel={copiedLabel}
-              showCopyAction={showCopyAction}
-            />
-            {actionAlignedTitleMeta.length > 0 && (
-              <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-1 text-right">
-                {actionAlignedTitleMeta.map((entry) => (
-                  <HeaderDateMeta key={entry.label} label={entry.label} value={entry.value} />
-                ))}
-              </div>
-            )}
-          </div>
-        )}
       </div>
       {hasFooterMeta && (
         <div className="mt-2 flex min-w-0 flex-wrap items-center justify-end gap-x-4 gap-y-1 text-right">

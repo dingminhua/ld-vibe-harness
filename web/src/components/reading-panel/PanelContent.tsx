@@ -391,13 +391,17 @@ function CommitSignatureSection({
         {identityEntries.map((entry) => (
           <div key={entry.label} className="min-w-0">
             <dt className="ldvh-caption-strong">{entry.label}</dt>
-            <dd className="ldvh-detail-semantic-body mt-1 break-words font-mono">{entry.value}</dd>
+            <dd className="ldvh-detail-semantic-body mt-1 break-words rounded-md border border-ldvh-border bg-ldvh-bg/40 px-3 py-2 font-mono">
+              {entry.value}
+            </dd>
           </div>
         ))}
         {sessionId && (
           <div className="min-w-0">
             <dt className="ldvh-caption-strong">{labels.sessionId}</dt>
-            <dd className="ldvh-detail-semantic-body mt-1 break-all font-mono">{sessionId}</dd>
+            <dd className="ldvh-detail-semantic-body mt-1 break-all rounded-md border border-ldvh-border bg-ldvh-bg/40 px-3 py-2 font-mono">
+              {sessionId}
+            </dd>
           </div>
         )}
       </dl>

@@ -83,6 +83,7 @@ export interface ObjectItem {
   work_items?: WorkCaseItem[] | unknown;
   creation_reviews?: WorkCaseReview[] | unknown;
   execution_authorization?: WorkCaseExecutionAuthorization | unknown;
+  independentSubagentUnavailable?: boolean;
   execution_approval?: WorkCaseExecutionApproval | unknown;
   /** closure_confirmation Card 的“后续贡献”区；仅实际声明 contributed-to 时出现 */
   contributedTo?: WorkCaseContributionTarget[];
@@ -725,7 +726,7 @@ export interface ChangelogEntry {
   signature?: CommitSignature;
 }
 
-export type GitPushStatus = 'pushed' | 'unpushed' | 'unknown';
+export type GitPushStatus = 'pushed' | 'unpushed' | 'incoming' | 'unknown';
 
 export interface CommitSignature {
   sessionId?: string;
