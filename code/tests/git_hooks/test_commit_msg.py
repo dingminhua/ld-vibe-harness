@@ -116,8 +116,13 @@ def _invoke_hook(worktree: Path, hook: Path, message: str, name: str) -> subproc
     _checked_git(worktree, "add", changed.name)
     message_file = worktree.parent / f"{name}.message"
     message_file.write_text(message, encoding="utf-8")
+    argv: tuple[str, ...] = (str(hook), str(message_file))
+    if os.name == "nt":
+        # On Windows the Hook is a POSIX shell script; subprocess.CreateProcess
+        # cannot start it directly. Invoke through `sh` (Git Bash/MSYS).
+        argv = (shutil.which("sh"), *argv)
     return subprocess.run(
-        (str(hook), str(message_file)),
+        argv,
         cwd=worktree,
         check=False,
         capture_output=True,
@@ -139,18 +144,14 @@ def test_install_uses_common_dir_and_covers_existing_and_future_linked_worktrees
     hook = common_dir / "hooks" / "commit-msg"
     assert installed.hook_path == str(hook)
     assert set(installed.worktree_roots) == {str(main), str(existing)}
-    assert _checked_git(main, "rev-parse", "--path-format=absolute", "--git-path", "hooks").strip() == str(hook.parent)
-    assert _checked_git(existing, "rev-parse", "--path-format=absolute", "--git-path", "hooks").strip() == str(
-        hook.parent
-    )
+    assert Path(_checked_git(main, "rev-parse", "--path-format=absolute", "--git-path", "hooks").strip()).resolve() == hook.parent.resolve()
+    assert Path(_checked_git(existing, "rev-parse", "--path-format=absolute", "--git-path", "hooks").strip()).resolve() == hook.parent.resolve()
 
     assert _invoke_hook(main, hook, "docs: invalid", "main-invalid").returncode == 1
     assert _invoke_hook(existing, hook, _signed("docs: 验证既有工作树"), "existing-valid").returncode == 0
 
     future = _linked(main, tmp_path / "future", "future")
-    assert _checked_git(future, "rev-parse", "--path-format=absolute", "--git-path", "hooks").strip() == str(
-        hook.parent
-    )
+    assert Path(_checked_git(future, "rev-parse", "--path-format=absolute", "--git-path", "hooks").strip()).resolve() == hook.parent.resolve()
     assert _invoke_hook(future, hook, "docs: invalid", "future-invalid").returncode == 1
     assert _invoke_hook(future, hook, _signed("docs: 验证后续工作树"), "future-valid").returncode == 0
 
@@ -238,7 +239,7 @@ def test_git_marked_prunable_worktree_does_not_block_live_common_dir_coverage(tm
     stale = _linked(main, tmp_path / "stale", "stale")
     shutil.rmtree(stale)
     inventory = _checked_git(main, "worktree", "list", "--porcelain")
-    assert str(stale) in inventory
+    assert stale.as_posix() in inventory
     assert "prunable" in inventory
 
     installed = _install(workspace, main)
@@ -290,6 +291,7 @@ def test_migrates_only_intact_ldvh_legacy_override_after_common_hook_is_prepared
     legacy_hook.write_text(
         render_commit_msg_hook(commit_msg_runner=SOURCE_LAUNCHER, workspace_root=workspace),
         encoding="utf-8",
+        newline="\n",
     )
     legacy_hook.chmod(0o755)
     _checked_git(linked, "config", "--worktree", "core.hooksPath", ".githooks-v4")
@@ -319,7 +321,7 @@ def test_preflight_failure_keeps_legacy_gate_and_configuration_untouched(
     legacy_dir.mkdir()
     legacy_hook = legacy_dir / "commit-msg"
     original = render_commit_msg_hook(commit_msg_runner=SOURCE_LAUNCHER, workspace_root=workspace)
-    legacy_hook.write_text(original, encoding="utf-8")
+    legacy_hook.write_text(original, encoding="utf-8", newline="\n")
     legacy_hook.chmod(0o755)
     _checked_git(linked, "config", "--worktree", "core.hooksPath", ".githooks-v4")
     common = Path(_checked_git(main, "rev-parse", "--path-format=absolute", "--git-common-dir").strip())
@@ -347,6 +349,7 @@ def test_second_legacy_unset_failure_restores_first_override_and_removes_common_
         legacy_hook.write_text(
             render_commit_msg_hook(commit_msg_runner=SOURCE_LAUNCHER, workspace_root=workspace),
             encoding="utf-8",
+            newline="\n",
         )
         legacy_hook.chmod(0o755)
         _checked_git(worktree, "config", "--worktree", "core.hooksPath", ".githooks-v4")
@@ -382,6 +385,7 @@ def test_effective_directory_failure_restores_legacy_override_and_removes_common
     legacy_hook.write_text(
         render_commit_msg_hook(commit_msg_runner=SOURCE_LAUNCHER, workspace_root=workspace),
         encoding="utf-8",
+        newline="\n",
     )
     legacy_hook.chmod(0o755)
     _checked_git(linked, "config", "--worktree", "core.hooksPath", ".githooks-v4")

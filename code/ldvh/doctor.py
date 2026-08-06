@@ -111,9 +111,14 @@ def _invoke_helper(
     arguments: list[str],
     request: JsonObject,
 ) -> JsonObject:
+    # On Windows (os.name == "nt") a shell-script launcher without .bat/.cmd extension
+    # is not a valid Win32 PE — Python's subprocess.CreateProcess raises WinError 193.
+    # Wrap via POSIX sh (Git Bash/MSYS) so the shebang resolves to a usable interpreter.
+    argv = [str(helper), *arguments]
+    command = argv if os.name != "nt" else ["sh", "-c", "exec \"$@\"", "--", *argv]
     try:
         completed = subprocess.run(
-            [str(helper), *arguments],
+            command,
             cwd=cwd,
             input=json.dumps(request, ensure_ascii=False),
             text=True,

@@ -1,10 +1,11 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Stable source launcher for every LDVH runtime surface."""
 
 from __future__ import annotations
 
 import importlib.util
 import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -20,20 +21,60 @@ def _ruamel_yaml_available() -> bool:
         return False
 
 
+def _runtime_typing_compatible() -> bool:
+    """The codebase imports ``typing.assert_never`` (Python 3.11+) at module load.
+
+    The launcher itself must start on an older interpreter (e.g. the system Python 3.10
+    on Windows) long enough to detect this and hand off to a newer venv; without this
+    check the interpreter would crash on the first ``from typing import assert_never``.
+    """
+    if sys.version_info < (3, 11):
+        return False
+    try:
+        from typing import assert_never  # noqa: F401
+    except ImportError:
+        return False
+    return True
+
+
+def _dependency_runtime_ready() -> bool:
+    return _ruamel_yaml_available() and _runtime_typing_compatible()
+
+
+def _handoff(candidate: Path, source: Path) -> None:
+    """Replace the current process with the venv interpreter, preserving the exit code.
+
+    On POSIX ``os.execv`` atomically replaces the image, so the child's exit code
+    propagates naturally.  On Windows ``os.execv`` is emulated: it spawns a child and
+    waits, then returns — so the return value must be forwarded to the shell
+    explicitly, or every gate/doctor/probe would observe rc 0 regardless of outcome.
+    """
+    if os.name == "nt":
+        completed = subprocess.run(
+            [str(candidate), str(source), *sys.argv[1:]],
+            check=False,
+        )
+        raise SystemExit(completed.returncode)
+    os.execv(str(candidate), [str(candidate), str(source), *sys.argv[1:]])
+    raise SystemExit(1)
+
+
 def _ensure_dependency_runtime() -> None:
-    if _ruamel_yaml_available():
+    if _dependency_runtime_ready():
         return
     candidates = (
         SOURCE_ROOT / ".venv/bin/python",
         SOURCE_ROOT / ".venv/Scripts/python.exe",
     )
+    resolve_source = Path(__file__).resolve()
     for candidate in candidates:
-        if (
-            candidate.is_file()
-            and os.access(candidate, os.X_OK)
-            and Path(sys.executable).resolve() != candidate.resolve()
-        ):
-            os.execv(str(candidate), [str(candidate), str(Path(__file__).resolve()), *sys.argv[1:]])
+        if candidate.is_file() and os.access(candidate, os.X_OK):
+            if sys.executable is not None and Path(sys.executable).resolve() == candidate.resolve():
+                continue
+            resolved_candidate = candidate.resolve()
+            if resolved_candidate == resolve_source:
+                continue
+            _handoff(candidate, resolve_source)
     sys.stderr.write(
         "LDVH source runtime dependency ruamel.yaml is unavailable; prepare the declared third-party dependencies "
         "without installing the LDVH package.\n"

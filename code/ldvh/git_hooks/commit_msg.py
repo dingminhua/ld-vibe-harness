@@ -395,12 +395,12 @@ def render_commit_msg_hook(*, commit_msg_runner: Path, workspace_root: Path) -> 
             "  exit 1",
             "}",
             'case "$1" in',
-            "  /*) message_file=$1 ;;",
+            "  /*|[A-Za-z]:\\\\*|//*) message_file=$1 ;;",
             '  *) message_file="$worktree/$1" ;;',
             "esac",
             'if [ -n "${GIT_INDEX_FILE:-}" ]; then',
             '  case "$GIT_INDEX_FILE" in',
-            "    /*) index_file=$GIT_INDEX_FILE ;;",
+            "    /*|[A-Za-z]:\\\\*|//*) index_file=$GIT_INDEX_FILE ;;",
             '    *) index_file="$worktree/$GIT_INDEX_FILE" ;;',
             "  esac",
             f'  exec {runner} git-commit-msg --workspace-root {workspace} --worktree "$worktree" '
@@ -536,8 +536,19 @@ def _preflight_rendered_hook(rendered: str, worktree: Path) -> str | None:
             return f"commit-msg Hook preflight could not prepare its temporary candidate: {update.stderr.strip()}"
 
         def invoke(message: Path) -> subprocess.CompletedProcess[str]:
+            # The Hook is a POSIX shell script. On Windows (os.name == "nt") subprocess
+            # cannot CreateProcess a shell script without .bat/.cmd extension (WinError 193);
+            # wrap through a POSIX shell available on the Git Bash/MSYS runtime.
+            # Use the shell directly (no exec wrapper) so the hook's own exec call
+            # and the subprocess exit code propagate correctly.
+            hook_argv = (str(hook), str(message))
+            if os.name == "nt":
+                shell = shutil.which("sh")
+                if shell is None:
+                    raise CommitMsgHookError("a POSIX shell is unavailable for commit-msg Hook invocation")
+                hook_argv = (shell, str(hook), str(message))
             return subprocess.run(
-                (str(hook), str(message)),
+                hook_argv,
                 cwd=worktree,
                 check=False,
                 capture_output=True,

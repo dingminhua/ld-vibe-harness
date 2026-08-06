@@ -34,7 +34,7 @@ cd ld-vibe-harness
 
 ## 启动 Web（本地开发）
 
-需要 Node.js 与 npm。在仓库根目录执行：
+需要 Node.js（含 npm）。在仓库根目录执行：
 
 ```bash
 cd web
@@ -43,6 +43,19 @@ npm run dev
 ```
 
 按当前本地开发脚本，前端固定监听 [http://127.0.0.1:5173](http://127.0.0.1:5173)；端口被占用时会启动失败。本地 API 默认使用 `3001`，可由 `PORT` 覆盖；如已通过环境变量调整 API 目标或端口，以实际输出和配置为准。
+
+> `npm run dev` 会同时启动前端（Vite）与后端（nodemon + tsx）。在 Windows 上若需分开管理，可分别执行 `npm run client:dev`（前端）与 `npm run server:dev`（后端）。
+
+### Windows 平台注意
+
+以下为 LDVH 在 Windows 上已验证的已知差异，与 macOS 的行为不同：
+
+- **launcher 入口**：`ldvh` 是 POSIX 脚本，Windows 不能直接 CreateProcess（WinError 193）。已通过 `sh -c exec` 包装解决，但要求系统中有 Git Bash 的 `sh` 在 PATH 中。
+- **Python venv 路径**：Windows 上 `.venv/Scripts/` 代替 `.venv/bin/`，Python 可执行文件后缀为 `.exe`。launcher 的运行时检测和 handoff 已适配，但若手动操作 venv 时需注意。
+- **`os.execv` 不可用**：Windows 的 `os.execv` 是模拟实现，不能实现真正的进程替换。已改用 `subprocess.run` + `SystemExit` 转发退出码。
+- **Git Hook 路径**：Windows 绝对路径格式（`驱动器号:\` 前缀）与 POSIX 不同，Hook 渲染和预检中已适配。
+- **事实对象受控写入**：`create-fact-object` 操作在 Windows 上因 `platform-durability-gate`（`file-only` 耐久等级未获授权）而不可用。需在 macOS/Linux 上执行受控写入，或在 Windows 上直写 `ldvh-base/` 下的 YAML 文件后通过 Git Gate 提交。
+- **技能部署**：在 Cindy/Codex 环境（Windows）下，技能文件必须使用目录格式（`~/.codex/skills/<name>/SKILL.md`），不支持 Claude Code 原生的扁平 `.md` 格式。详见 `ldvh-base/pitfalls/pitfall-0007.yaml`。
 
 ### 接入 AI 开发环境
 

@@ -9,7 +9,8 @@ import pytest
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 LAUNCHER = PROJECT_ROOT / "ldvh"
-VENV_PYTHON = PROJECT_ROOT / ".venv" / "bin" / "python"
+VENV_BIN = PROJECT_ROOT / ".venv" / ("Scripts" if os.name == "nt" else "bin")
+VENV_PYTHON = VENV_BIN / "python.exe" if os.name == "nt" else VENV_BIN / "python"
 
 CAPABILITIES_REQUEST = json.dumps({"response_profile": "compact"})
 
