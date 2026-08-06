@@ -58,6 +58,26 @@ wheel、sdist、editable distribution，也不以 pip 安装 LDVH 本体。源�
 源码 Helper 调用 `read-specification-content` 精确读取 04 及其授权附件的字段表；
 不得反复盲猜参数。
 
+## Helper 调用参数纪律
+
+调用任何 LDVH Helper 公开操作（`resolve-governance-scope`、`prepare-fact-object-draft`、
+`create-fact-object`、`read-fact-objects`、`update-workcase` 等）时，**一律不提供
+`arguments.workspace_root`**。依赖规范 02 §6.2 与 §10.1 定义的自动发现机制：
+不传时，CLI 以 cwd（应在实际 Git worktree 内）作为定位符，从该 worktree 根沿父
+目录链向上查找 `LDVH-GOVERNED-PROJECTS.yaml`，跳过仓库内同名文件，遇第一个
+候选即停；不从定位符子路径、`cwd`、Git common-dir 或平行目录另开查找路径。
+
+下列情形才可传 `workspace_root`：
+- Human 在当次会话中明确指定了一个工作区根路径；
+- 传值时只在该路径下读取配置，不向上查找，也不从其它来源增加发现路径。
+
+AI 不得自行猜测或传递路径。若自动发现返回 `missing`，如实报告给 Human，由 Human
+决定是否显式指定工作区根，AI 不得另猜路径重试。
+
+此纪律不改变 Code 行为，只约束 AI 调用方式。违反纪律会关闭自动发现并造成
+配置 miss，其故障根因在调用方而非 Code；审计追溯由 02 §6.2-5 强制返回实际
+选定配置与依据兜底。
+
 ## 如实报告
 
 区分并报告：**已验证**（当次实际跑通并有输出）、**未验证**（需要真实会话或
