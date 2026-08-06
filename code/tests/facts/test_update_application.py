@@ -208,12 +208,7 @@ def test_known_uncommitted_generic_replacement_has_zero_source_writes(
     monkeypatch.setattr(
         update_application,
         "atomic_replace_text_if_unchanged",
-        lambda *_args, **_kwargs: AtomicWriteResult(
-            "unavailable",
-            "not_committed",
-            "unknown",
-            "clean",
-        ),
+        lambda *_args, **_kwargs: AtomicWriteResult.not_committed("unavailable"),
     )
 
     result = apply_fact_update(command)
@@ -550,7 +545,7 @@ def test_failed_generic_rollback_fresh_reads_the_actual_external_residual(
             candidate_text.replace("After update", "External update after failed readback"),
             encoding="utf-8",
         )
-        return AtomicWriteResult("conflict", "not_committed", "unknown", "clean")
+        return AtomicWriteResult.not_committed("conflict")
 
     monkeypatch.setattr(update_application, "_project_read", failing_readback)
     monkeypatch.setattr(update_application, "atomic_replace_text_if_unchanged", conflicting_rollback)

@@ -16,7 +16,7 @@ from ldvh.facts.project_validation import stabilize_project_index
 from ldvh.facts.relations import ProjectFactIndex
 from ldvh.facts.repository import FactReadResult, read_fact_object
 from ldvh.facts.schema import FactSchema, project_fact_schemas
-from ldvh.filesystem import durable_writes_enabled
+from ldvh.filesystem import native_atomic_fact_writes_supported
 from ldvh.governance.resolver import GovernanceResolutionRun, resolve_governance_scope
 from ldvh.helper.operation_runtime import (
     AvailabilityEvaluation,
@@ -321,17 +321,17 @@ def _execute(
             sources=request_sources,
             gaps=({"summary": "fact_ref 已过期或属于另一项目", "scope": list(requested), "source_refs": [_CONTRACT]},),
         )
-    if not durable_writes_enabled():
+    if not native_atomic_fact_writes_supported():
         return OperationExecution(
             outcome="unavailable",
-            summary="当前平台尚未获准以 file-only 耐久等级迁移事实对象",
+            summary="当前平台没有启用遗留事实迁移的原生原子后端",
             requested_scope=requested,
             not_completed_scope=requested,
             governance_resolution=run.result.to_json() if run.result else None,
             sources=request_sources,
             gaps=(
                 {
-                    "summary": "当前平台不具备声明的共享锁和耐久替换保障",
+                    "summary": "当前平台没有启用同时承接共享锁与条件替换的原生原子后端",
                     "scope": list(requested),
                     "source_refs": [_SHARED_WRITE_CONTRACT],
                 },

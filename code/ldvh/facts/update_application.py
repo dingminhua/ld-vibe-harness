@@ -29,7 +29,7 @@ from ldvh.facts.validation import (
     validate_change_log_transition,
     validate_fact_object,
 )
-from ldvh.filesystem import AtomicWriteResult, durable_writes_enabled
+from ldvh.filesystem import AtomicWriteResult, native_atomic_fact_writes_supported
 
 UpdateStatus = Literal[
     "invalid_request",
@@ -335,7 +335,7 @@ def apply_fact_update(command: FactUpdateCommand) -> FactUpdateResult:
 
     if command.fact_type_key == "workcase":
         return _workcase_rejection(command.event_at)
-    if not durable_writes_enabled():
+    if not native_atomic_fact_writes_supported():
         return FactUpdateResult("durability_unavailable", command.event_at)
     layout = LAYOUTS[command.fact_type_key]
     completed: FactUpdateResult | None = None

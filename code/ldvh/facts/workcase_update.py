@@ -38,7 +38,7 @@ from ldvh.facts.validation import (
     validate_change_log_transition,
     validate_fact_object,
 )
-from ldvh.filesystem import AtomicWriteResult, durable_writes_enabled
+from ldvh.filesystem import AtomicWriteResult, native_atomic_fact_writes_supported
 from ldvh.source_references import validate_source_reference
 
 WorkCaseWriteMode = Literal["update", "close", "correct"]
@@ -1020,7 +1020,7 @@ def apply_workcase_write_locked(command: WorkCaseWriteCommand) -> WorkCaseWriteR
 def apply_workcase_write(command: WorkCaseWriteCommand) -> WorkCaseWriteResult:
     """Validate, lock, CAS-replace, re-read targets, and conditionally roll back."""
 
-    if not durable_writes_enabled():
+    if not native_atomic_fact_writes_supported():
         return _result(command, "durability_unavailable")
     completed: WorkCaseWriteResult | None = None
     try:

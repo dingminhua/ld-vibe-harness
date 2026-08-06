@@ -35,7 +35,7 @@ from ldvh.facts.validation import (
     validate_fact_object,
 )
 from ldvh.facts.workcase_validation import required_quality_gate_issues
-from ldvh.filesystem import AtomicWriteResult, durable_writes_enabled
+from ldvh.filesystem import AtomicWriteResult, native_atomic_fact_writes_supported
 
 CreationStatus = Literal[
     "candidate_rejected",
@@ -262,7 +262,7 @@ def prepare_fact_creation(
         return FactCreationResult("candidate_unavailable", issues=candidate_issues)
     if candidate_issues:
         return FactCreationResult("candidate_rejected", issues=candidate_issues)
-    if not durable_writes_enabled():
+    if not native_atomic_fact_writes_supported():
         return FactCreationResult("durability_unavailable")
     return PreparedFactCreation(snapshot, now)
 

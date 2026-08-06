@@ -9,12 +9,15 @@ from typing import Any
 
 import pytest
 
-from ldvh.filesystem import durable_writes_enabled
+from ldvh.filesystem import native_atomic_fact_writes_supported
 
 pytestmark = [
     pytest.mark.native_windows,
     pytest.mark.skipif(sys.platform != "win32" or os.name != "nt", reason="requires native Windows"),
-    pytest.mark.skipif(durable_writes_enabled(), reason="the current fail-closed policy probe no longer applies"),
+    pytest.mark.skipif(
+        native_atomic_fact_writes_supported(),
+        reason="the current fail-closed backend probe no longer applies",
+    ),
 ]
 
 
@@ -73,7 +76,7 @@ def _project_bytes(project: Path) -> dict[str, bytes]:
 
 
 def test_native_public_create_and_update_are_unavailable_without_side_effects(tmp_path: Path) -> None:
-    assert durable_writes_enabled() is False
+    assert native_atomic_fact_writes_supported() is False
     helper = Path.cwd() / "ldvh"
     workspace, project = _managed_project(tmp_path)
     prepare_request = _request(
@@ -147,7 +150,7 @@ def test_native_public_create_and_update_are_unavailable_without_side_effects(tm
             exit_code, response = _cli(helper, project, command, operation, request)
             assert exit_code == 5
             assert response["outcome"] == "unavailable"
-            assert "file-only" in json.dumps(response, ensure_ascii=False)
+            assert "原生原子后端" in json.dumps(response, ensure_ascii=False)
 
     assert _project_bytes(project) == before
     assert not (project / "facts").exists()

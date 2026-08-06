@@ -9,7 +9,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal, Protocol
+from typing import Literal, Protocol, cast
 
 
 class UnsafePathError(OSError):
@@ -29,21 +29,115 @@ class ReadBudgetExceeded(OSError):
 
 
 WriteOutcome = Literal["created", "replaced", "stored", "removed", "conflict", "unavailable"]
+CommittedWriteOutcome = Literal["created", "replaced", "stored", "removed"]
+NotCommittedWriteOutcome = Literal["conflict", "unavailable"]
 NamespaceState = Literal["not_committed", "committed", "uncertain"]
 Durability = Literal["file_and_directory", "file_only", "unknown"]
 CleanupState = Literal["clean", "residue"]
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, slots=True, init=False)
 class AtomicWriteResult:
     outcome: WriteOutcome
-    namespace_state: NamespaceState
-    durability: Durability
-    cleanup: CleanupState
+    _namespace_state: NamespaceState
+    _sync_scope: Durability
+    _cleanup_residue: bool
+
+    @classmethod
+    def committed(
+        cls,
+        outcome: CommittedWriteOutcome,
+        *,
+        sync_scope: Durability = "unknown",
+        cleanup_residue: bool = False,
+    ) -> AtomicWriteResult:
+        """Build a result whose operation is observed in the target namespace."""
+
+        if outcome not in {"created", "replaced", "stored", "removed"}:
+            raise ValueError(f"committed writes require a successful outcome: {outcome}")
+        return cls._build(outcome, "committed", sync_scope, cleanup_residue)
+
+    @classmethod
+    def not_committed(
+        cls,
+        outcome: NotCommittedWriteOutcome,
+        *,
+        cleanup_residue: bool = False,
+    ) -> AtomicWriteResult:
+        """Build a result known not to have applied the requested operation."""
+
+        if outcome not in {"conflict", "unavailable"}:
+            raise ValueError(f"not-committed writes require conflict or unavailable: {outcome}")
+        return cls._build(outcome, "not_committed", "unknown", cleanup_residue)
+
+    @classmethod
+    def uncertain(cls, *, cleanup_residue: bool = False) -> AtomicWriteResult:
+        """Build a result whose namespace effect could not be determined."""
+
+        return cls._build("unavailable", "uncertain", "unknown", cleanup_residue)
+
+    @classmethod
+    def _from_observation(
+        cls,
+        outcome: WriteOutcome,
+        namespace_state: NamespaceState,
+        *,
+        sync_scope: Durability = "unknown",
+        cleanup_residue: bool = False,
+    ) -> AtomicWriteResult:
+        """Map a syscall state machine's final observation to one valid result shape."""
+
+        if namespace_state == "committed":
+            return cls.committed(
+                cast(CommittedWriteOutcome, outcome),
+                sync_scope=sync_scope,
+                cleanup_residue=cleanup_residue,
+            )
+        if namespace_state == "not_committed":
+            return cls.not_committed(cast(NotCommittedWriteOutcome, outcome), cleanup_residue=cleanup_residue)
+        if outcome != "unavailable":
+            raise ValueError(f"uncertain writes require unavailable outcome: {outcome}")
+        return cls.uncertain(cleanup_residue=cleanup_residue)
+
+    @classmethod
+    def _build(
+        cls,
+        outcome: WriteOutcome,
+        namespace_state: NamespaceState,
+        sync_scope: Durability,
+        cleanup_residue: bool,
+    ) -> AtomicWriteResult:
+        result = object.__new__(cls)
+        object.__setattr__(result, "outcome", outcome)
+        object.__setattr__(result, "_namespace_state", namespace_state)
+        object.__setattr__(result, "_sync_scope", sync_scope)
+        object.__setattr__(result, "_cleanup_residue", cleanup_residue)
+        return result
+
+    @property
+    def namespace_state(self) -> NamespaceState:
+        return self._namespace_state
+
+    @property
+    def durability(self) -> Durability:
+        """Compatibility projection for the observed sync scope."""
+
+        return self._sync_scope
+
+    @property
+    def cleanup(self) -> CleanupState:
+        """Compatibility projection for temporary-carrier cleanup evidence."""
+
+        return "residue" if self._cleanup_residue else "clean"
+
+    def with_cleanup_residue(self) -> AtomicWriteResult:
+        if self._cleanup_residue:
+            return self
+        return self._build(self.outcome, self._namespace_state, self._sync_scope, True)
 
 
-def durable_writes_enabled(platform_name: str | None = None) -> bool:
-    """Return whether public writes may claim the platform's required durability."""
+def native_atomic_fact_writes_supported(platform_name: str | None = None) -> bool:
+    """Return whether the platform has an enabled native backend for public fact writes."""
 
     selected_platform = os.name if platform_name is None else platform_name
     return selected_platform == "posix"
@@ -592,7 +686,12 @@ def _atomic_create_posix(root: Path, relative: Path, payload: bytes, mode: int) 
                 cleanup = "residue"
         if directory_fd is not None:
             os.close(directory_fd)
-    return AtomicWriteResult(outcome, namespace, durability, cleanup)
+    return AtomicWriteResult._from_observation(
+        outcome,
+        namespace,
+        sync_scope=durability,
+        cleanup_residue=cleanup == "residue",
+    )
 
 
 def _atomic_create_portable(root: Path, relative: Path, payload: bytes, mode: int) -> AtomicWriteResult:
@@ -654,7 +753,12 @@ def _atomic_create_portable(root: Path, relative: Path, payload: bytes, mode: in
                 pass
             except OSError:
                 cleanup = "residue"
-    return AtomicWriteResult(outcome, namespace, durability, cleanup)
+    return AtomicWriteResult._from_observation(
+        outcome,
+        namespace,
+        sync_scope=durability,
+        cleanup_residue=cleanup == "residue",
+    )
 
 
 def atomic_create_relative(
@@ -672,11 +776,11 @@ def atomic_create_relative(
     selected_platform = os.name if platform_name is None else platform_name
     if selected_platform == "nt":
         if not allow_file_only:
-            return AtomicWriteResult("unavailable", "not_committed", "unknown", "clean")
+            return AtomicWriteResult.not_committed("unavailable")
         return _atomic_create_portable(root, relative, payload, mode)
     if selected_platform == "posix":
         return _atomic_create_posix(root, relative, payload, mode)
-    return AtomicWriteResult("unavailable", "not_committed", "unknown", "clean")
+    return AtomicWriteResult.not_committed("unavailable")
 
 
 def _atomic_store_posix(root: Path, relative: Path, payload: bytes, mode: int) -> AtomicWriteResult:
@@ -743,7 +847,12 @@ def _atomic_store_posix(root: Path, relative: Path, payload: bytes, mode: int) -
             except OSError:
                 cleanup = "residue"
             os.close(directory_fd)
-    return AtomicWriteResult(outcome, namespace, durability, cleanup)
+    return AtomicWriteResult._from_observation(
+        outcome,
+        namespace,
+        sync_scope=durability,
+        cleanup_residue=cleanup == "residue",
+    )
 
 
 def _atomic_store_portable(root: Path, relative: Path, payload: bytes, mode: int) -> AtomicWriteResult:
@@ -793,7 +902,12 @@ def _atomic_store_portable(root: Path, relative: Path, payload: bytes, mode: int
                 pass
             except OSError:
                 cleanup = "residue"
-    return AtomicWriteResult(outcome, namespace, "file_only" if namespace == "committed" else "unknown", cleanup)
+    return AtomicWriteResult._from_observation(
+        outcome,
+        namespace,
+        sync_scope="file_only" if namespace == "committed" else "unknown",
+        cleanup_residue=cleanup == "residue",
+    )
 
 
 def atomic_store_relative(
@@ -811,11 +925,11 @@ def atomic_store_relative(
     selected_platform = os.name if platform_name is None else platform_name
     if selected_platform == "nt":
         if not allow_file_only:
-            return AtomicWriteResult("unavailable", "not_committed", "unknown", "clean")
+            return AtomicWriteResult.not_committed("unavailable")
         return _atomic_store_portable(root, relative, payload, mode)
     if selected_platform == "posix":
         return _atomic_store_posix(root, relative, payload, mode)
-    return AtomicWriteResult("unavailable", "not_committed", "unknown", "clean")
+    return AtomicWriteResult.not_committed("unavailable")
 
 
 def _comparison_bytes(
@@ -853,12 +967,12 @@ def _reconcile_replace(
         platform_name=platform_name,
     )
     if status == "unavailable":
-        return AtomicWriteResult("unavailable", "uncertain", "unknown", "clean")
+        return AtomicWriteResult.uncertain()
     if observed == replacement:
-        return AtomicWriteResult("replaced", "committed", "unknown", "clean")
+        return AtomicWriteResult.committed("replaced")
     if observed == expected:
-        return AtomicWriteResult("unavailable", "not_committed", "unknown", "clean")
-    return AtomicWriteResult("unavailable", "uncertain", "unknown", "clean")
+        return AtomicWriteResult.not_committed("unavailable")
+    return AtomicWriteResult.uncertain()
 
 
 def _atomic_replace_posix(
@@ -869,18 +983,18 @@ def _atomic_replace_posix(
 ) -> AtomicWriteResult:
     initial_status, initial = _comparison_bytes(root, relative, len(expected), platform_name="posix")
     if initial_status == "unavailable":
-        return AtomicWriteResult("unavailable", "not_committed", "unknown", "clean")
+        return AtomicWriteResult.not_committed("unavailable")
     if initial != expected:
-        return AtomicWriteResult("conflict", "not_committed", "unknown", "clean")
+        return AtomicWriteResult.not_committed("conflict")
     try:
         mode = stat.S_IMODE(validate_relative_regular_file(root, relative).lstat().st_mode)
     except OSError:
-        return AtomicWriteResult("unavailable", "not_committed", "unknown", "clean")
+        return AtomicWriteResult.not_committed("unavailable")
     directory_fd: int | None = None
     temporary_fd: int | None = None
     temporary_name = f".ldvh-update-{secrets.token_hex(12)}.tmp"
     cleanup: CleanupState = "clean"
-    result = AtomicWriteResult("unavailable", "not_committed", "unknown", cleanup)
+    result = AtomicWriteResult.not_committed("unavailable")
     try:
         directory_fd = _open_relative_directory_posix(root, relative.parent, create=False)
         no_follow = os.O_NOFOLLOW
@@ -896,9 +1010,9 @@ def _atomic_replace_posix(
         temporary_fd = None
         second_status, second = _comparison_bytes(root, relative, len(expected), platform_name="posix")
         if second_status == "unavailable":
-            result = AtomicWriteResult("unavailable", "not_committed", "unknown", cleanup)
+            result = AtomicWriteResult.not_committed("unavailable")
         elif second != expected:
-            result = AtomicWriteResult("conflict", "not_committed", "unknown", cleanup)
+            result = AtomicWriteResult.not_committed("conflict")
         else:
             try:
                 os.replace(temporary_name, relative.name, src_dir_fd=directory_fd, dst_dir_fd=directory_fd)
@@ -911,13 +1025,13 @@ def _atomic_replace_posix(
                     platform_name="posix",
                 )
             else:
-                result = AtomicWriteResult("replaced", "committed", "unknown", cleanup)
+                result = AtomicWriteResult.committed("replaced")
                 try:
                     os.fsync(directory_fd)
                 except OSError:
                     pass
                 else:
-                    result = AtomicWriteResult("replaced", "committed", "file_and_directory", cleanup)
+                    result = AtomicWriteResult.committed("replaced", sync_scope="file_and_directory")
     except OSError:
         pass
     finally:
@@ -932,7 +1046,7 @@ def _atomic_replace_posix(
                 cleanup = "residue"
             os.close(directory_fd)
     if cleanup != result.cleanup:
-        result = AtomicWriteResult(result.outcome, result.namespace_state, result.durability, cleanup)
+        result = result.with_cleanup_residue()
     return result
 
 
@@ -944,13 +1058,13 @@ def _atomic_replace_portable(
 ) -> AtomicWriteResult:
     initial_status, initial = _comparison_bytes(root, relative, len(expected), platform_name="nt")
     if initial_status == "unavailable":
-        return AtomicWriteResult("unavailable", "not_committed", "unknown", "clean")
+        return AtomicWriteResult.not_committed("unavailable")
     if initial != expected:
-        return AtomicWriteResult("conflict", "not_committed", "unknown", "clean")
+        return AtomicWriteResult.not_committed("conflict")
     temporary: Path | None = None
     descriptor: int | None = None
     cleanup: CleanupState = "clean"
-    result = AtomicWriteResult("unavailable", "not_committed", "unknown", cleanup)
+    result = AtomicWriteResult.not_committed("unavailable")
     try:
         directory = _ensure_relative_directory_portable(root, relative.parent, directory_mode=0o755)
         target = directory / relative.name
@@ -963,9 +1077,9 @@ def _atomic_replace_portable(
         descriptor = None
         second_status, second = _comparison_bytes(root, relative, len(expected), platform_name="nt")
         if second_status == "unavailable":
-            result = AtomicWriteResult("unavailable", "not_committed", "unknown", cleanup)
+            result = AtomicWriteResult.not_committed("unavailable")
         elif second != expected:
-            result = AtomicWriteResult("conflict", "not_committed", "unknown", cleanup)
+            result = AtomicWriteResult.not_committed("conflict")
         else:
             try:
                 os.replace(temporary, target)
@@ -979,7 +1093,7 @@ def _atomic_replace_portable(
                 )
             else:
                 temporary = None
-                result = AtomicWriteResult("replaced", "committed", "file_only", cleanup)
+                result = AtomicWriteResult.committed("replaced", sync_scope="file_only")
     except OSError:
         pass
     finally:
@@ -993,7 +1107,7 @@ def _atomic_replace_portable(
             except OSError:
                 cleanup = "residue"
     if cleanup != result.cleanup:
-        result = AtomicWriteResult(result.outcome, result.namespace_state, result.durability, cleanup)
+        result = result.with_cleanup_residue()
     return result
 
 
@@ -1012,19 +1126,19 @@ def atomic_replace_relative_if_equal(
     selected_platform = os.name if platform_name is None else platform_name
     if selected_platform == "nt":
         if not allow_file_only:
-            return AtomicWriteResult("unavailable", "not_committed", "unknown", "clean")
+            return AtomicWriteResult.not_committed("unavailable")
         return _atomic_replace_portable(root, relative, expected, replacement)
     if selected_platform == "posix":
         return _atomic_replace_posix(root, relative, expected, replacement)
-    return AtomicWriteResult("unavailable", "not_committed", "unknown", "clean")
+    return AtomicWriteResult.not_committed("unavailable")
 
 
 def _remove_posix(root: Path, relative: Path, expected: bytes) -> AtomicWriteResult:
     status, observed = _comparison_bytes(root, relative, len(expected), platform_name="posix")
     if status == "unavailable":
-        return AtomicWriteResult("unavailable", "not_committed", "unknown", "clean")
+        return AtomicWriteResult.not_committed("unavailable")
     if observed != expected:
-        return AtomicWriteResult("conflict", "not_committed", "unknown", "clean")
+        return AtomicWriteResult.not_committed("conflict")
     directory_fd: int | None = None
     try:
         directory_fd = _open_relative_directory_posix(root, relative.parent, create=False)
@@ -1032,28 +1146,28 @@ def _remove_posix(root: Path, relative: Path, expected: bytes) -> AtomicWriteRes
     except OSError:
         if directory_fd is not None:
             os.close(directory_fd)
-        return AtomicWriteResult("unavailable", "uncertain", "unknown", "clean")
+        return AtomicWriteResult.uncertain()
     try:
         os.fsync(directory_fd)
     except OSError:
-        return AtomicWriteResult("removed", "committed", "unknown", "clean")
+        return AtomicWriteResult.committed("removed")
     finally:
         os.close(directory_fd)
-    return AtomicWriteResult("removed", "committed", "file_and_directory", "clean")
+    return AtomicWriteResult.committed("removed", sync_scope="file_and_directory")
 
 
 def _remove_portable(root: Path, relative: Path, expected: bytes) -> AtomicWriteResult:
     status, observed = _comparison_bytes(root, relative, len(expected), platform_name="nt")
     if status == "unavailable":
-        return AtomicWriteResult("unavailable", "not_committed", "unknown", "clean")
+        return AtomicWriteResult.not_committed("unavailable")
     if observed != expected:
-        return AtomicWriteResult("conflict", "not_committed", "unknown", "clean")
+        return AtomicWriteResult.not_committed("conflict")
     try:
         directory = _ensure_relative_directory_portable(root, relative.parent, directory_mode=0o755)
         (directory / relative.name).unlink()
     except OSError:
-        return AtomicWriteResult("unavailable", "uncertain", "unknown", "clean")
-    return AtomicWriteResult("removed", "committed", "file_only", "clean")
+        return AtomicWriteResult.uncertain()
+    return AtomicWriteResult.committed("removed", sync_scope="file_only")
 
 
 def remove_relative_if_equal(
@@ -1070,11 +1184,11 @@ def remove_relative_if_equal(
     selected_platform = os.name if platform_name is None else platform_name
     if selected_platform == "nt":
         if not allow_file_only:
-            return AtomicWriteResult("unavailable", "not_committed", "unknown", "clean")
+            return AtomicWriteResult.not_committed("unavailable")
         return _remove_portable(root, relative, expected)
     if selected_platform == "posix":
         return _remove_posix(root, relative, expected)
-    return AtomicWriteResult("unavailable", "not_committed", "unknown", "clean")
+    return AtomicWriteResult.not_committed("unavailable")
 
 
 def walk_regular_files(root: Path) -> tuple[Path, ...]:

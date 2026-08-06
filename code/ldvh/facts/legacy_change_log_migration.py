@@ -18,7 +18,7 @@ from ldvh.facts.schema import FactSchema
 from ldvh.facts.transitions import validate_fact_transition
 from ldvh.facts.update import atomic_replace_text_if_unchanged
 from ldvh.facts.validation import parse_rfc3339, validate_fact_object
-from ldvh.filesystem import AtomicWriteResult, durable_writes_enabled
+from ldvh.filesystem import AtomicWriteResult, native_atomic_fact_writes_supported
 
 MigrationStatus = Literal[
     "current_unavailable",
@@ -234,7 +234,7 @@ def apply_legacy_change_log_migration_locked(
 def apply_legacy_change_log_migration(
     command: LegacyChangeLogMigrationCommand,
 ) -> LegacyChangeLogMigrationResult:
-    if not durable_writes_enabled():
+    if not native_atomic_fact_writes_supported():
         return LegacyChangeLogMigrationResult("replacement_unavailable", command.event_at)
     try:
         with allocation_lock(command.boundary, LAYOUTS[command.fact_type_key]):

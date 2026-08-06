@@ -586,7 +586,7 @@ def test_durability_rejection_precedes_allocation_lock(
     monkeypatch,
 ) -> None:
     command = _command(current_specs_repository, tmp_path)
-    monkeypatch.setattr("ldvh.facts.creation_application.durable_writes_enabled", lambda: False)
+    monkeypatch.setattr("ldvh.facts.creation_application.native_atomic_fact_writes_supported", lambda: False)
 
     result = prepare_fact_creation(command)
 
@@ -609,7 +609,7 @@ def test_locked_creation_stops_after_one_known_target_conflict(
     def conflict_once(*_args, **_kwargs) -> AtomicWriteResult:
         nonlocal target_attempts
         target_attempts += 1
-        return AtomicWriteResult("conflict", "not_committed", "unknown", "clean")
+        return AtomicWriteResult.not_committed("conflict")
 
     monkeypatch.setattr(
         "ldvh.facts.creation_application.atomic_create_text",
@@ -675,7 +675,7 @@ def test_allocator_commit_uncertainty_preserves_attempted_identity_without_start
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     command = _command(current_specs_repository, tmp_path)
-    counter_write = AtomicWriteResult("unavailable", "uncertain", "unknown", "clean")
+    counter_write = AtomicWriteResult.uncertain()
     expected_allocation = AllocationCommitResult("uncertain", None, counter_write)
     target_create_called = False
 
@@ -715,7 +715,7 @@ def test_target_namespace_uncertainty_preserves_allocator_and_fresh_target_resid
         target = root / layout.canonical_path(object_id)
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(text, encoding="utf-8")
-        return AtomicWriteResult("unavailable", "uncertain", "unknown", "clean")
+        return AtomicWriteResult.uncertain()
 
     monkeypatch.setattr(creation_application, "atomic_create_text", uncertain_target_create)
 
@@ -743,12 +743,7 @@ def test_target_known_noncommit_preserves_consumed_allocator_and_fresh_not_found
     monkeypatch.setattr(
         creation_application,
         "atomic_create_text",
-        lambda *_args, **_kwargs: AtomicWriteResult(
-            "unavailable",
-            "not_committed",
-            "unknown",
-            "clean",
-        ),
+        lambda *_args, **_kwargs: AtomicWriteResult.not_committed("unavailable"),
     )
 
     result = create_fact_object(command, observed_at="2026-07-26T13:00:00+08:00")
@@ -797,7 +792,7 @@ def test_failed_creation_rollback_fresh_reads_the_actual_external_residual(
     def conflicting_rollback(root: Path, layout, object_id: str, expected_text: str) -> AtomicWriteResult:
         external_text = expected_text.replace("Application boundary", "External occupant")
         (root / layout.canonical_path(object_id)).write_text(external_text, encoding="utf-8")
-        return AtomicWriteResult("conflict", "not_committed", "unknown", "clean")
+        return AtomicWriteResult.not_committed("conflict")
 
     monkeypatch.setattr(creation_application, "_project_read", failing_readback)
     monkeypatch.setattr(creation_application, "rollback_created_text", conflicting_rollback)
@@ -874,11 +869,10 @@ def test_failed_creation_rollback_core_preserves_each_actual_residual_class(
             target.write_text("not: [valid\n", encoding="utf-8")
         elif residual_kind == "not-found":
             target.unlink()
-        return AtomicWriteResult(
-            "unavailable" if residual_kind == "unavailable" else "conflict",
-            "uncertain" if residual_kind == "unavailable" else "not_committed",
-            "unknown",
-            "clean",
+        return (
+            AtomicWriteResult.uncertain()
+            if residual_kind == "unavailable"
+            else AtomicWriteResult.not_committed("conflict")
         )
 
     monkeypatch.setattr(creation_application, "_project_read", failing_then_fresh_read)

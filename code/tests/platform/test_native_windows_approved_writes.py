@@ -5,12 +5,15 @@ import sys
 
 import pytest
 
-from ldvh.filesystem import durable_writes_enabled
+from ldvh.filesystem import native_atomic_fact_writes_supported
 
 pytestmark = [
     pytest.mark.native_windows,
     pytest.mark.skipif(sys.platform != "win32" or os.name != "nt", reason="requires native Windows"),
-    pytest.mark.skipif(not durable_writes_enabled(), reason="Windows file_only durability has not been accepted"),
+    pytest.mark.skipif(
+        not native_atomic_fact_writes_supported(),
+        reason="Windows native atomic fact-write backend has not been enabled",
+    ),
 ]
 
 

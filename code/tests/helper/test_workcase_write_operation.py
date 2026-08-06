@@ -282,7 +282,7 @@ def test_helper_preserves_committed_result_when_coordination_release_is_uncertai
         candidate=after,
         readback=after,
         candidate_text="after\n",
-        replacement_result=AtomicWriteResult("replaced", "committed", "file_and_directory", "clean"),
+        replacement_result=AtomicWriteResult.committed("replaced", sync_scope="file_and_directory"),
         coordination_release_uncertain=True,
     )
 
@@ -294,7 +294,7 @@ def test_helper_preserves_committed_result_when_coordination_release_is_uncertai
         "project_fact_schemas",
         lambda *_args: {"workcase": schema},
     )
-    monkeypatch.setattr(workcase_update_operation, "durable_writes_enabled", lambda: True)
+    monkeypatch.setattr(workcase_update_operation, "native_atomic_fact_writes_supported", lambda: True)
     monkeypatch.setattr(
         workcase_update_operation,
         "_apply_core_workcase_write",
@@ -353,7 +353,7 @@ def test_workcase_helper_preserves_candidate_rejection_when_coordination_release
         "project_fact_schemas",
         lambda *_args: {"workcase": schema},
     )
-    monkeypatch.setattr(workcase_update_operation, "durable_writes_enabled", lambda: True)
+    monkeypatch.setattr(workcase_update_operation, "native_atomic_fact_writes_supported", lambda: True)
     monkeypatch.setattr(
         workcase_update_operation,
         "_apply_core_workcase_write",
@@ -393,7 +393,11 @@ def test_workcase_helper_distinguishes_uncertain_namespace_from_known_noncommit(
     application = WorkCaseWriteResult(
         "replacement_unavailable",
         "2026-07-26T16:00:00+08:00",
-        replacement_result=AtomicWriteResult("unavailable", namespace_state, "unknown", "clean"),
+        replacement_result=(
+            AtomicWriteResult.uncertain()
+            if namespace_state == "uncertain"
+            else AtomicWriteResult.not_committed("unavailable")
+        ),
     )
 
     execution = workcase_update_operation._application_failure(
@@ -438,7 +442,7 @@ def test_no_change_release_gap_keeps_observation_time_without_using_commit_code(
         "project_fact_schemas",
         lambda *_args: {"workcase": schema},
     )
-    monkeypatch.setattr(workcase_update_operation, "durable_writes_enabled", lambda: True)
+    monkeypatch.setattr(workcase_update_operation, "native_atomic_fact_writes_supported", lambda: True)
     monkeypatch.setattr(
         workcase_update_operation,
         "_apply_core_workcase_write",
@@ -476,8 +480,8 @@ def test_workcase_helper_reports_the_fresh_external_residual_after_rollback_conf
         candidate=candidate,
         readback=candidate,
         candidate_text="candidate\n",
-        replacement_result=AtomicWriteResult("replaced", "committed", "file_and_directory", "clean"),
-        rollback_result=AtomicWriteResult("conflict", "not_committed", "unknown", "clean"),
+        replacement_result=AtomicWriteResult.committed("replaced", sync_scope="file_and_directory"),
+        rollback_result=AtomicWriteResult.not_committed("conflict"),
         residual_readback=residual,
     )
 
@@ -518,8 +522,8 @@ def test_workcase_helper_marks_actual_residual_unavailable_without_guessing() ->
         candidate=candidate,
         readback=candidate,
         candidate_text="candidate\n",
-        replacement_result=AtomicWriteResult("replaced", "committed", "file_and_directory", "clean"),
-        rollback_result=AtomicWriteResult("unavailable", "uncertain", "unknown", "clean"),
+        replacement_result=AtomicWriteResult.committed("replaced", sync_scope="file_and_directory"),
+        rollback_result=AtomicWriteResult.uncertain(),
         residual_readback=unavailable,
     )
 
@@ -561,8 +565,8 @@ def test_workcase_helper_separates_complete_carrier_read_from_invalid_object() -
         candidate=candidate,
         readback=candidate,
         candidate_text="candidate\n",
-        replacement_result=AtomicWriteResult("replaced", "committed", "file_and_directory", "clean"),
-        rollback_result=AtomicWriteResult("conflict", "not_committed", "unknown", "clean"),
+        replacement_result=AtomicWriteResult.committed("replaced", sync_scope="file_and_directory"),
+        rollback_result=AtomicWriteResult.not_committed("conflict"),
         residual_readback=invalid,
     )
 
@@ -590,12 +594,12 @@ def test_workcase_helper_separates_complete_carrier_read_from_invalid_object() -
     ("rollback", "expected", "excluded"),
     [
         (
-            AtomicWriteResult("conflict", "not_committed", "unknown", "clean"),
+            AtomicWriteResult.not_committed("conflict"),
             "条件回滚发生冲突，确认未在文件命名空间（namespace）生效",
             "生效情况无法确认",
         ),
         (
-            AtomicWriteResult("unavailable", "uncertain", "unknown", "clean"),
+            AtomicWriteResult.uncertain(),
             "条件回滚在文件命名空间（namespace）中的生效情况无法确认",
             "确认未在文件命名空间（namespace）生效",
         ),
@@ -615,7 +619,7 @@ def test_workcase_helper_separates_rollback_namespace_evidence_when_residual_mat
         candidate=candidate,
         readback=candidate,
         candidate_text="candidate\n",
-        replacement_result=AtomicWriteResult("replaced", "committed", "file_and_directory", "clean"),
+        replacement_result=AtomicWriteResult.committed("replaced", sync_scope="file_and_directory"),
         rollback_result=rollback,
         residual_readback=before,
     )
@@ -678,8 +682,8 @@ def test_workcase_helper_does_not_claim_an_unread_residual_was_fully_read(
         candidate=candidate,
         readback=candidate,
         candidate_text="candidate\n",
-        replacement_result=AtomicWriteResult("replaced", "committed", "file_and_directory", "clean"),
-        rollback_result=AtomicWriteResult("conflict", "not_committed", "unknown", "clean"),
+        replacement_result=AtomicWriteResult.committed("replaced", sync_scope="file_and_directory"),
+        rollback_result=AtomicWriteResult.not_committed("conflict"),
         residual_readback=residual,
     )
 

@@ -8,11 +8,49 @@ import pytest
 
 from ldvh import filesystem
 from ldvh.filesystem import (
+    AtomicWriteResult,
     atomic_create_relative,
     atomic_replace_relative_if_equal,
     atomic_store_relative,
+    native_atomic_fact_writes_supported,
     remove_relative_if_equal,
 )
+
+
+def test_atomic_write_results_only_allow_valid_commit_shapes() -> None:
+    with pytest.raises(TypeError):
+        AtomicWriteResult("created", "not_committed", "unknown", "clean")  # type: ignore[call-arg]
+    with pytest.raises(ValueError, match="committed writes require"):
+        AtomicWriteResult.committed("conflict")  # type: ignore[arg-type]
+    with pytest.raises(ValueError, match="not-committed writes require"):
+        AtomicWriteResult.not_committed("created")  # type: ignore[arg-type]
+
+    committed = AtomicWriteResult.committed("created", sync_scope="file_and_directory")
+    not_committed = AtomicWriteResult.not_committed("conflict")
+    uncertain = AtomicWriteResult.uncertain(cleanup_residue=True)
+
+    assert (committed.namespace_state, committed.durability, committed.cleanup) == (
+        "committed",
+        "file_and_directory",
+        "clean",
+    )
+    assert (not_committed.namespace_state, not_committed.durability, not_committed.cleanup) == (
+        "not_committed",
+        "unknown",
+        "clean",
+    )
+    assert (uncertain.outcome, uncertain.namespace_state, uncertain.durability, uncertain.cleanup) == (
+        "unavailable",
+        "uncertain",
+        "unknown",
+        "residue",
+    )
+
+
+def test_native_atomic_fact_write_support_describes_backend_availability() -> None:
+    assert native_atomic_fact_writes_supported("posix") is True
+    assert native_atomic_fact_writes_supported("nt") is False
+    assert native_atomic_fact_writes_supported("unknown") is False
 
 
 def test_posix_create_publishes_exact_bytes_and_full_durability(tmp_path: Path) -> None:

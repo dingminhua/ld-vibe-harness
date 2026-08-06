@@ -4,6 +4,7 @@
 
 当前适用规划：
 
+- [macOS POSIX 原子写入结果模型简化](workcase-0064-atomic-write-result.md)：约束原子写入结果形状、保留文件系统安全内核，并把平台后端可用性与 sync/cleanup 诊断从业务提交判断中分离。
 - [WorkCase 投影规范到 Python 的精确漂移合同](workcase-presentation-source-contract.md)：覆盖 21 §9.3 非 blocked 六列表的严格 inline-code 语法、测试侧抽取、Python 常量全等比较与 mutation 负向漂移检测。
 - [Cognition 行动事项收录与完整 Card](cognition-actionable-items.md)：覆盖 WorkCase 在既有待决定/推进中模块的唯一归属、blocked 非 Gate 呈现，以及 Pitfall draft 共享普通 Card。
 - [WorkCase 关闭候选只读投影](workcase-closed-candidate-projection.md)：覆盖 proposal 到非托管 closed `fact_object` 的唯一纯投影、`close-workcase` 同源校验与只读候选 Helper 操作。

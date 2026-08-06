@@ -831,12 +831,7 @@ def test_known_uncommitted_replacement_has_zero_source_writes(
     monkeypatch.setattr(
         workcase_update,
         "atomic_replace_text_if_unchanged",
-        lambda *_args, **_kwargs: AtomicWriteResult(
-            "unavailable",
-            "not_committed",
-            "unknown",
-            "clean",
-        ),
+        lambda *_args, **_kwargs: AtomicWriteResult.not_committed("unavailable"),
     )
 
     result = apply_workcase_write(_command(project, before, after, mode="update"))
