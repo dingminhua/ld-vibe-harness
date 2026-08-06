@@ -934,7 +934,15 @@ def test_platform_affected_invalid_trailer_value() -> None:
 
 
 def test_platform_affected_glob_directory() -> None:
-    paths = ("git_hooks/commit-msg",)
+    paths = ("code/ldvh/git_hooks/commit_msg.py",)
+    trailers: dict[str, list[str]] = {}
+    issues = _platform_affected_issues(paths, trailers)
+    codes = {i.code for i in issues}
+    assert "platform_surface_touched" in codes
+
+
+def test_platform_affected_glob_hooks_dir() -> None:
+    paths = ("code/ldvh/hooks/commit_msg.py",)
     trailers: dict[str, list[str]] = {}
     issues = _platform_affected_issues(paths, trailers)
     codes = {i.code for i in issues}

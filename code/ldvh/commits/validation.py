@@ -24,10 +24,10 @@ _PLATFORM_AFFECTED_GLOBS = (
     "code/ldvh/filesystem.py",
     "code/ldvh/governance/git.py",
     "code/ldvh/testing/test_runs.py",
+    "code/ldvh/git_hooks/**",
+    "code/ldvh/hooks/**",
     "ldvh",
-    "git_hooks/**",
 )
-_PLATFORM_TRAILERS = ("Platform-Affected", "Platform-Verified")
 SEMANTIC_CHECKS_REQUIRED = (
     "主要目的与拆分",
     "简体中文语义与 description 真实性",
