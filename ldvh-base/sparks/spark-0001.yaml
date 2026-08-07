@@ -1,0 +1,29 @@
+title: 目标环境生命周期与工作对象范围
+intent: 保留目标环境的 lifecycle 事件与真实工作对象范围如何对应的独立问题，避免把某个环境的 Hook 事件、注册方式、cwd 或插件行为误作通用协议或已正确选中受管项目。后续需判断哪些事件值得接入、每类事件需要何种实际对象证据，以及宽 workspace 歧义如何由 Human 或当前事实收敛。
+status: routed
+summary: "**承接结果**\n\n- `adr-0006` 承接目标环境接入形态与 lifecycle 边界：唯一接入载体是薄 Skill，启动/恢复时只取得规则引导，动手进入 LDVH 领域前经 CLI 取得行动模板；不建立 Hook、插件、adapter 事件矩阵或由 Code 解释自然语言的选项，Git Gate 只承担提交前终局机械把关。\n- `workcase-0007` 承接 startup/resume 的真实工作对象范围与宽 workspace 恢复：只从有效项目登记和现场 Git identity 形成有界候选，精确引用才形成绑定；零个、多个、输入不足或 coverage 不完整时保持 unresolved，并保留候选依据、Human 决策边界和按需展开入口。\n- 两个目标共同覆盖原 Spark 的事件职责、实际对象证据、宽 workspace 歧义、项目绑定与恢复边界；没有未分流内容。旧多环境 Hook、固定事件闭集和 adapter 行为不再是本项目当前接入形态。\n\n**处置边界**\n\n本分流只记录上述职责已经由稳定事实对象完整承接，不表示目标环境之外的任何事件、平台或版本已验证，也不要求跟踪两个目标后续状态。"
+evolution:
+- at: '2026-07-20T17:41:55+08:00'
+  summary: 本次真实工作接续显示：当 Codex 从包含多个受管项目的宽 workspace 启动时，入口只把该根判为 not_governed 并列出子项目，没有形成可恢复候选或利用当前任务、WorkCase 与 Git 状态帮助选择具体受管项目，Agent 仍需人工检查后锁定 ldvh。后续应把宽 workspace 下的候选项目、范围匹配证据、歧义与 Human 决策边界纳入生命周期恢复契约。
+- at: '2026-07-22T13:46:46+08:00'
+  summary: 迁移对照保留了 V3 的协议与适配分层，但收窄当前问题为目标环境的真实工作对象范围：旧多环境事件矩阵和部署结论不直接继承，宽 workspace 的项目选择与范围证据成为当前待验证重点。
+- at: '2026-07-22T14:01:05+08:00'
+  summary: 进一步承接 V3 的会话入口与用户输入分层：会话恢复不裁决用户任务，用户输入出现后必须以真实 target 重新解析；旧 user-input 事件和 receipt 方案不直接继承。
+- at: '2026-08-01T01:58:26+08:00'
+  summary: 接入形态已由 `adr-0006` 收敛为唯一薄 Skill，startup/resume 的真实对象范围与宽 workspace 恢复已由 `workcase-0007` 验证，原议题因此由两个稳定事实对象共同完整承接。
+disposition_summary: '`adr-0006` 完整承接唯一薄 Skill 接入、规则引导/行动模板路由、无 Hook/插件/adapter 和 Git Gate 职责；`workcase-0007` 完整承接 startup/resume 的项目候选、精确绑定、宽 workspace unresolved、有界投影及真实环境验证。两者共同覆盖原始议题全部范围，没有残余内容；目标后续生命周期不影响本次分流。'
+relations:
+- relation_key: routed-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: adr
+    object_id: adr-0006
+- relation_key: routed-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: workcase
+    object_id: workcase-0007
+object_id: spark-0001
+fact_type_key: spark
+created_at: '2026-07-19T08:33:47.543976+08:00'
+updated_at: '2026-08-01T02:03:04.977944+08:00'

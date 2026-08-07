@@ -1,0 +1,29 @@
+title: 修复 WorkCase 质量关口测试夹具回归
+status: closed
+goal: 修复 WorkCase 质量关口字段导致的共享测试夹具回归：creation review 必须覆盖必经质量关口，而 result review 不得携带 creation-only 覆盖字段；使完整关闭路径回归重新可执行。
+scope: 仅修改 code/tests/facts/test_workcase_application.py 中共享 review fixture、其 creation/result 调用点和直接断言，并运行相关事实层测试与完整性检查。排除生产代码、规则/规范、任何既有事实对象（包括已关闭 workcase-0030）、Git commit/push/PR、外部操作和环境配置。
+success_criterion_definitions:
+- criterion_id: criterion-review-shape-separation
+  statement: 共享 review fixture 默认只生成两类 review 均合法的共同字段；只有 creation review 路径显式携带 covered_quality_gate_ids，result review 不携带该字段。
+- criterion_id: criterion-regression-coverage
+  statement: 测试明确覆盖 creation review 的必经关口覆盖、result review 携带该字段被拒绝，以及此前三项关闭路径参数化授权拒绝用例在合法 fixture 下执行。
+- criterion_id: criterion-current-verification
+  statement: 完整 test_workcase_application.py 与直接相关 validation/projection 测试在当前快照通过，diff --check 与 check-fact-integrity 完成；不将无关或未运行检查表述为通过。
+success_criterion_results:
+- criterion_id: criterion-review-shape-separation
+  outcome: satisfied
+  summary: 通用 _review 不再默认写 creation-only 字段，creation 调用点显式使用 _creation_review。
+- criterion_id: criterion-regression-coverage
+  outcome: satisfied
+  summary: 负向形状断言已加入；完整模块运行覆盖此前三项参数化关闭路径。
+- criterion_id: criterion-current-verification
+  outcome: satisfied
+  summary: test_workcase_application.py 通过；validation/projection 68 passed；diff --check 通过；check-fact-integrity complete（109 个对象）。
+result_summary: 已修复共享 review fixture 的字段泄漏：creation review 继续精确覆盖必经质量关口，result review 仅含通用字段，并由负向测试锁定。
+validation_summary: 通过 .venv/bin/pytest code/tests/facts/test_workcase_application.py -q；通过 validation/projection 68 项；通过 git diff --check（目标文件）；全库事实完整性 complete（109 个对象）。
+closure_outcome: completed
+disposition_summary: 已在获批范围内修复共享测试夹具回归并完成记录的验证与独立结果复核；无剩余责任、无路由或建议事项。
+object_id: workcase-0034
+fact_type_key: workcase
+created_at: '2026-08-02T01:29:54.076809+08:00'
+updated_at: '2026-08-02T01:41:31.278625+08:00'

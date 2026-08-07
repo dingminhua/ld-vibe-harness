@@ -1,0 +1,44 @@
+[
+  {
+    "scenario_id": "synthetic-hook-success",
+    "scenario_kind": "simulated_hook_success",
+    "maps_to_real_environment": false,
+    "evidence": {
+      "automatic_trigger_observed": true,
+      "required_input_observed": true,
+      "feedback_observed": true,
+      "helper_outcome": "ok",
+      "real_environment_event": false
+    },
+    "expected": {
+      "fixture_call": "success",
+      "complete_integration": "unverified"
+    }
+  },
+  {
+    "scenario_id": "synthetic-unknown-capability",
+    "scenario_kind": "capability_classification",
+    "maps_to_real_environment": false,
+    "evidence": {
+      "authority_kind": null,
+      "scope_matches_target": false,
+      "affirmative_absence": false
+    },
+    "expected": {
+      "capability_state": "unverified"
+    }
+  },
+  {
+    "scenario_id": "synthetic-confirmed-no-capability",
+    "scenario_kind": "capability_classification",
+    "maps_to_real_environment": false,
+    "evidence": {
+      "authority_kind": "authoritative_material",
+      "scope_matches_target": true,
+      "affirmative_absence": true
+    },
+    "expected": {
+      "capability_state": "unsupported"
+    }
+  }
+]

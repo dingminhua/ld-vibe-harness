@@ -1,0 +1,21 @@
+title: Agent-first Harness 成熟度与持续编排
+intent: 保留 LDVH 是否已具备 Agent-first Harness
+  的可验证成熟度，以及何时才值得进行持续编排实验的问题，避免把若干能力组件、外部研究或局部自动化误作端到端 Harness
+  已成立。后续需形成可检验维度、最小实验边界和退出条件。
+status: open
+priority: P1
+summary: "**当前判断**\n\n- Agent-first Harness 的重点不是增加 Agent 数量，而是让仓库知识、工具、约束、验证、观测、恢复和清理机制对
+  Agent 可发现、可执行、可校验。\n- V4 已有事实源、Helper、确定性 Code、环境接入、Git/Hook Gate、Web 与 Human Gate
+  等组成部分；这些不能自动证明端到端 Harness、持续编排、自动恢复或隔离 worktree 管理已经成立。\n\n**需要形成的成熟度证据**\n\n- Agent
+  能否从最小入口发现适用规则与当前事实，调用正确能力并理解失败边界。\n- 验证能否重跑并回指来源；过程结果能否由主控回收而不冒充事实源；中断后能否从稳定对象恢复。\n\
+  - 过期事实、规则和派生状态能否被发现并清理。\n\n**实验边界**\n\n- 只有上述前提已有真实证据，才定义最小持续编排实验的准入、停止、验证和退出条件；当前没有成熟度等级或已选路线。\n\
+  - 不采用 Symphony、Linear、Codex App Server 或其它特定产品。WorkCase 控制状态由 `spark-0008` 承接，协作纪律由
+  `spark-0010` 承接。"
+evolution:
+- at: '2026-07-22T13:54:04+08:00'
+  summary: 迁移复核保留 V3 的 Harness 成熟度问题与外部研究线索，但移除 Git
+    版本和产品方案断言；当前改为要求每一成熟度维度有真实证据后才进入持续编排实验。
+object_id: spark-0009
+fact_type_key: spark
+created_at: '2026-07-19T10:28:35.563830+08:00'
+updated_at: '2026-07-23T14:21:35.783731+08:00'

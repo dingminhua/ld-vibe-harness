@@ -1,0 +1,126 @@
+status: closed
+title: 确立多执行者提交契约并入库 workcase-0026/0052
+goal: 将 spark-0051 确认的多执行者提交缺口落地：修改提交校验（commits/validation.py 的 footer 匹配从单 agent/host 放宽为多值集合，与已支持的多 Session-ID 同构）、同步 specs/03 footer trailer 契约措辞（Agent-ID/Host-Environment 至少一个、可多个）、新增测试覆盖多 agent 提交通过/未声明拒绝。在契约落地后，并经 Git Gate 提交 workcase-0026/0052 两个对象（workcase-0048 已移交外部 AI 负责），使该两对象不再 dirty；spark-0051 的既有 unstaged 改动归因保留、不纳入本 WorkCase 提交。全程经来源定义与 Helper 受控路径，不绕过 Helper 直写受管事实，不伪造签名。 多 agent 提交是否要求 Human 授权/执行者说明：本 WorkCase 将两对象的多执行者历史如实写入 footer 声明集合，不虚构签名；是否进一步要求 Human 授权由 spark-0051 收口。
+scope: 唯一实际 worktree 为 /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4，git common-dir 为 /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v2/.git，governed_project_id=ldvh。事实写入目标闭集：workcase-0026、workcase-0052（workcase-0048 已移交外部 AI 负责，不在本 WorkCase 范围）、workcase-0054 自身生命周期；spark-0051 只读回读。允许修改的规则/Code/tests 路径闭集：code/ldvh/commits/validation.py（footer 匹配多值集合）、specs/03-事实源与信息溯源规范.md（footer trailer 契约措辞）、code/tests/commits/test_commit_validation.py（新增测试）、code/tests/helper/test_commit_precheck_operation.py（如适用）。执行前必须回读 spark-0051 当前快照并记录指纹为基线证据。Git 提交仅限上述两事实对象与本次修订的 Code/规范/测试文件，且须通过 precheck-git-commit（mechanical_outcome=passed）。排除：其它事实对象写入、其它规范/Code 修改、push/PR/release、外部消息、其它项目/worktree、既有历史 change_log 回溯改写。 说明：workcase-0026 的 change_log 含 Human/Human 与 WorkBuddy/WorkBuddy（host 重复 agent 名）历史条目，属历史不回溯且机械不强制，提交时 footer 声明集合须如实包含全部签名。 说明：.githooks-v4/commit-msg 为分发器 hook（仅调用 ldvh-git-commit-msg），单值逻辑集中在 commits/validation.py，本 WorkCase 不修改该 hook。
+success_criterion_definitions:
+- criterion_id: criterion-multiagent-commit-contract
+  statement: 提交校验支持多执行者：commits/validation.py 的 footer 匹配允许 Agent-ID / Host-Environment 多值集合（每条新增流水签名须属于集合，与多 Session-ID 同构）；specs/03 footer trailer 契约措辞同步（Agent-ID/Host-Environment 至少一个非空、可多个）；未声明 agent/host 的新增流水仍被拒绝。 多 agent 提交的 footer 声明集合如实包含各执行者签名，不虚构；是否要求 Human 授权伴随由 spark-0051 收口，本 WorkCase 不预设。
+- criterion_id: criterion-two-objects-committed
+  statement: 多 agent 契约落地后，workcase-0026/0052 经 precheck-git-commit（mechanical_outcome=passed）与 Git Gate 提交入库；两对象各自 change_log 签名可追溯至提交 footer 声明集合；提交后工作区该两项不再 dirty。
+- criterion_id: criterion-validation-evidence
+  statement: 定向测试覆盖多 agent 提交通过/未声明拒绝；commits 全量回归通过；check-fact-integrity 前后各一次均 ok/complete；workcase-0054 自身 change_log 按取值约定签名；全程经 Helper 受控路径，未伪造签名，未越界修改。
+success_criterion_results:
+- criterion_id: criterion-multiagent-commit-contract
+  outcome: satisfied
+  summary: commits/validation.py 的 _signature_trailer_issues 与 _fact_trace_issues 支持 Agent-ID/Host-Environment 多值集合匹配（_declared 判定：每条流水 session/agent/host 分别属于 footer 声明集合）；specs/03 footer 契约措辞同步（三者均可重复声明多个非空值）；新增 3 个测试（多 agent 通过、未声明拒绝、legacy 多 agent 通过），96 passed。
+- criterion_id: criterion-two-objects-committed
+  outcome: satisfied
+  summary: workcase-0026（3 种签名）与 workcase-0052（2 种签名）经 precheck-git-commit（passed）与 Git Gate 提交入库（db81bb01a）；两对象 change_log 签名可追溯至 footer 声明集合；提交后该两项不再 dirty。
+- criterion_id: criterion-validation-evidence
+  outcome: satisfied
+  summary: commits 全量 96 passed；check-fact-integrity ok/complete/138；workcase-0054 自身 change_log 按约定签名（Deepseek-V4-Flash/workbuddy）；全程经 Helper 受控路径与 Git Gate，未伪造签名、未越界、未 push。
+result_summary: 多执行者提交契约已落地并验证：提交校验支持 agent/host 多值集合（与多 Session-ID 同构）、specs/03 契约同步、3 个新测试；workcase-0026/0052 多执行者历史经 Git Gate 提交入库；3 条判据全部 satisfied。
+validation_summary: 核验手段：(1) commits 全量 96 passed；(2) check-fact-integrity ok/complete/138；(3) workcase-0054 自身 8 条 change_log 签名统一；(4) 提交后回读 0026/0052 完整（closed）。未覆盖：push/PR（不在授权）、0048（已移交外部 AI）。
+closure_outcome: completed
+disposition_summary: 多执行者提交契约已落地并验证：提交校验支持 agent/host 多值集合、specs/03 契约同步、3 个新测试（commits 96 passed）；workcase-0026（3 种签名）与 workcase-0052（2 种签名）经 Git Gate 提交入库；3 条判据全部 satisfied。独立复核 pass_with_followups（5 条 feedback 处置；其中 spark-0051 提交越界已由 Human 追溯授权保留）。无未处置剩余责任。
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0051
+change_log:
+- signature:
+    agent_id: Deepseek-V4-Flash
+    host_environment: workbuddy
+  session_id: workbuddy-workcase-0054-create
+  summary: 按 Human 指令依据 spark-0051 创建：确立多执行者提交契约并入库 workcase-0026/0048/0052。
+  at: '2026-08-04T00:19:17.794576+08:00'
+- signature:
+    agent_id: Deepseek-V4-Flash
+    host_environment: workbuddy
+  session_id: workbuddy-wc54-revising
+  at: '2026-08-04T00:19:38.496299+08:00'
+  summary: Controller 依据独立 Reviewer feedback 进入 plan_revising，准备修订计划为 plan_version=2。
+- signature:
+    agent_id: Deepseek-V4-Flash
+    host_environment: workbuddy
+  session_id: workbuddy-wc54-v2
+  summary: 形成 plan_version=2：落实独立 Reviewer 6 条 feedback 并返回 Human Gate 1。
+  at: '2026-08-04T00:22:20.554471+08:00'
+- signature:
+    agent_id: Deepseek-V4-Flash
+    host_environment: workbuddy
+  session_id: workbuddy-wc54-revising2
+  at: '2026-08-04T00:25:37.572780+08:00'
+  summary: Human 指示将 workcase-0048 移交外部 AI，本 WorkCase 进入 plan_revising 调整范围。
+- signature:
+    agent_id: Deepseek-V4-Flash
+    host_environment: workbuddy
+  session_id: workbuddy-wc54-v3
+  at: '2026-08-04T00:29:05.396635+08:00'
+  summary: 写入 plan_version=3：按 Human 指示将 workcase-0048 移交外部 AI，返回 Human Gate 1。
+- signature:
+    agent_id: Deepseek-V4-Flash
+    host_environment: workbuddy
+  session_id: workbuddy-wc54-gate1
+  at: '2026-08-04T00:33:28.909786+08:00'
+  summary: Human Gate 1 批准 plan_version=3（0048 移交外部、多 agent 契约方向确认），进入 executing。
+- signature:
+    agent_id: Deepseek-V4-Flash
+    host_environment: workbuddy
+  session_id: workbuddy-wc54-item1
+  at: '2026-08-04T00:34:02.752760+08:00'
+  summary: item-read-baseline 完成：确认 agent/host 单值匹配为缺口，进入 item-contract-code。
+- signature:
+    agent_id: Deepseek-V4-Flash
+    host_environment: workbuddy
+  session_id: workbuddy-wc54-item2
+  at: '2026-08-04T00:36:25.974344+08:00'
+  summary: item-contract-code 完成：提交校验支持多 agent/host 多值集合，specs/03 同步，96 测试通过。
+- signature:
+    agent_id: Deepseek-V4-Flash
+    host_environment: workbuddy
+  session_id: workbuddy-wc54-item4
+  at: '2026-08-04T00:38:42.834351+08:00'
+  summary: item-commit-three 与 item-evidence 完成：三判据 satisfied，进入 controller_checking。
+- signature:
+    agent_id: Deepseek-V4-Flash
+    host_environment: workbuddy
+  session_id: workbuddy-wc54-review
+  at: '2026-08-04T00:41:54.663731+08:00'
+  summary: 转入 independent_reviewing：冻结 result projection，委派独立只读复核。
+- signature:
+    agent_id: Deepseek-V4-Flash
+    host_environment: workbuddy
+  session_id: workbuddy-wc54-review-write
+  at: '2026-08-04T00:55:19.407768+08:00'
+  summary: 写入独立复核 result_reviews（pass_with_followups，5 条 feedback 处置，spark-0051 越界上报 Human）。
+- signature:
+    agent_id: Deepseek-V4-Flash
+    host_environment: workbuddy
+  session_id: workbuddy-wc54-back-controller
+  at: '2026-08-04T00:55:38.810038+08:00'
+  summary: 独立复核后原样回 controller_checking：spark-0051 越界待 Human 裁决。
+- signature:
+    agent_id: Deepseek-V4-Flash
+    host_environment: workbuddy
+  session_id: workbuddy-wc54-closure-prep
+  at: '2026-08-04T00:57:05.026549+08:00'
+  summary: 进入 closure_preparing：形成 closure proposal（completed）。
+- signature:
+    agent_id: Deepseek-V4-Flash
+    host_environment: workbuddy
+  session_id: workbuddy-wc54-human-close
+  at: '2026-08-04T00:57:23.947395+08:00'
+  summary: 转入 human_closure_confirming：转交 closure proposal（completed）。
+- signature:
+    agent_id: Deepseek-V4-Flash
+    host_environment: workbuddy
+  session_id: workbuddy-wc54-close
+  at: '2026-08-04T00:58:22.054500+08:00'
+  summary: 关闭 workcase-0054：proposed_outcome=completed，3 条判据全部 satisfied，无剩余责任。
+object_id: workcase-0054
+fact_type_key: workcase
+created_at: '2026-08-04T00:19:17.794576+08:00'
+updated_at: '2026-08-04T00:58:22.054500+08:00'

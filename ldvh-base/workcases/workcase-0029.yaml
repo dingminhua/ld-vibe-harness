@@ -1,0 +1,29 @@
+title: 补足 WorkCase 执行临时工件处置规则
+status: closed
+goal: 在 WorkCase 执行模板中补足临时执行工件的归属、清理、回读与交还边界，避免代理遗留可确认无用的 payload 或一次性脚本，同时保护用户或归属不明的工作区内容。
+scope: 仅修改 specs/34-WorkCase获批计划执行行动模板.md 的 §5.3 与 §6“接续与交还”验证行；仅记录本 WorkCase 必需的受控生命周期事实。排除 specs/06、specs/30、其它 Specs、Code、tests、Git Index/历史、提交、push、PR，以及删除任何既有或归属不明文件。
+success_criterion_definitions:
+- criterion_id: criterion-placement
+  statement: §5.3 明确临时工件优先置于工作区外、工作区内工件的归属识别、仅清理可确认且无继续用途的本次工件，以及归属不明/用户/仍有接续价值工件的保留交还边界。
+- criterion_id: criterion-verification
+  statement: §6 的既有“接续与交还”验证行覆盖临时工件的处置、回读和未明归属交还，且不把该规则扩大为工作目录必须全干净。
+- criterion_id: criterion-scope
+  statement: 最终差异仅含上述 specs/34 两处规则变更与本 WorkCase 的受控事实更新；完成独立结果复核和范围匹配的只读验证。
+success_criterion_results:
+- criterion_id: criterion-placement
+  outcome: satisfied
+  summary: specs/34 §5.3 已明确优先使用 Working Tree 外系统临时目录；仅当前授权覆盖、可确认由本次执行创建且无继续用途的工件可清理并需回读；归属不明、既有、Human/其它事项或仍有恢复/交接价值的工件必须保留交还。
+- criterion_id: criterion-scope
+  outcome: satisfied
+  summary: 范围匹配的只读核对已完成：本次文本差异仅为 specs/34 §5.3 与 §6“接续与交还”行，另有本 WorkCase 的 Helper 受控事实更新。独立 Reviewer 已对 result_version 1 的归口、最小性、范围和四类场景作出 pass 结论；本次因将该实际审核纳入结果投影而升为 result_version 2，仍须对冻结的 v2 投影重新复核。
+- criterion_id: criterion-verification
+  outcome: satisfied
+  summary: specs/34 §6 既有“接续与交还”验证行现覆盖临时工件的识别、清理/保留/不确定分流、路径与 Working Tree 回读及交还；§5.3 和该行均明确不要求 Working Tree 必须干净。
+result_summary: 已在 specs/34 的 §5.3 与 §6“接续与交还”验证行完成最小规则补足：临时工件优先工作区外、只清理本次可确认无用且获授权的工件、其余保留交还，并明确不以 Working Tree 非空为自动清理或未闭环依据。未提交、未清理任何当前工作区文件。
+validation_summary: 已通过 git diff --check 与 git diff --cached --check；定向 pytest code/tests/specs/test_repository.py 与 code/tests/helper/test_action_template_operation.py 本地与独立复跑均为 17 passed。只读差异核对显示 specs/34 仅有 §5.3 新段落和 §6“接续与交还”一行变更。场景审计确认：自建无用工件可在授权内清理并回读；归属不明/既有/用户或其它事项保留；仍有恢复或交接价值者保留；混合 Working Tree 不触发自动清理。未运行全仓库测试；机械检查不替代 v2 独立语义复核。
+closure_outcome: completed
+disposition_summary: 三项成功标准均已满足：specs/34 仅在 §5.3 与 §6“接续与交还”行补足临时工件处置边界，范围检查和定向测试通过，result_version 2 的独立结果复核为 pass。原 scope 内没有未满足、未验证或需转交的责任；未提交、未清理、未处理当前 Working Tree 的其它内容。
+object_id: workcase-0029
+fact_type_key: workcase
+created_at: '2026-08-02T00:37:51.268027+08:00'
+updated_at: '2026-08-02T00:51:46.789229+08:00'

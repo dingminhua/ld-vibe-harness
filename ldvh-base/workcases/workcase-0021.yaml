@@ -1,0 +1,50 @@
+title: HV1-HV5 下位承接与现状对齐
+status: closed
+goal: 以 commit f7188e00e 已生效的 specs/00 为唯一上位基线，使当前仍重述价值边界、直接承载 Human 价值或仍使用旧 H1-H6 的下位规范、术语、公开入口、Web 设计文档和 spark-0037 当前状态获得最小充分、一致、可验证的承接；明确保留 HV4「积累效用直观可见」尚未充分实现的能力缺口，不把文案对齐冒充产品能力完成。
+scope: 纳入 specs/01、specs/attachments/01.Att.01、specs/05、specs/08 的直接矛盾或缺口；审计 specs/03、06、07、20–24、30–34，并只对被证明确需承接 HV1-HV5 的段落作最小修改；纳入 README、web/docs/02-CognitionCenter.md 及经直接依赖审计确认必要的相邻 Web 文档、i18n 或契约测试，但 README 可正常隔离执行，当前 dirty 的 web/docs/01、02、05、10 与 web/tests/api/web-design-consistency-contract.test.ts 必须先由原工作线独立提交且相对新 HEAD clean 后才能编辑；通过 Helper 更新 spark-0037 的当前摘要与 evolution，记录 2026-07-29 旧策略已被 Human 本次决定取代、HV1-HV5 已在 f7188e00e 生效、HV4 仍待加强，并保持 status=open；包含必要测试、回读、diff 检查和只含本案改动的本地 Git commit。排除再次修改 specs/00、新增或实现 Web 模块/指标/仪表盘/HV4 产品机制、修改事实 schema/lifecycle/Helper 行为、重写历史 study-0017、修改 specs/25/FileAsset 提案/环境接入报告等并行工作线、覆盖或夹带现有无关 dirty 改动，以及 push、PR、发布或其它外部动作。
+success_criterion_definitions:
+- criterion_id: criterion-value-boundary
+  statement: 当前下位规范不再以“只允许 V1-V8”否定直接 Human 价值；统一按实际服务对象选择 V1-V8、HV1-HV5 或分别成立，同时主要服务 AI 的规则未被机械追加无依据的 HV 声明。
+- criterion_id: criterion-terminology
+  statement: 双语术语表登记 HV1-HV5 / Human Value Criteria，引用 specs/00 当前标题与编号；不存在由本次变更造成的旧标题、旧编号或当前术语悬空。
+- criterion_id: criterion-carrier-boundary
+  statement: 直接价值载体的规范映射与能力边界准确，HV4 被明确写为待加强能力而非现有完成项，且事实类型 schema、生命周期与 Helper 行为没有因本案改变。
+- criterion_id: criterion-public-web
+  statement: 在既有 Web dirty 改动先由原工作线独立提交并形成 clean 新基线后，README 与 Web 设计层使用 HV1-HV5 和 specs/00 当前来源，现行旧 H1-H6 声明得到清理；派生只读、来源边界与“文档对齐不等于能力实现”保持清楚，历史 study-0017 与 spark-0037 既有 evolution 不作为清理目标。
+- criterion_id: criterion-fact-history
+  statement: spark-0037 经 Helper 回读为 mechanically_valid，当前结论、决定取代关系、commit f7188e00e 与 HV4 缺口可查；既有历史内容保留、status 保持 open，study-0017 相对执行前 HEAD 无差异。
+- criterion_id: criterion-validation-isolation
+  statement: 相关 specs tests、触及 Web 时的契约测试、git diff --check 与 Helper 回读通过；specs/00 不产生本案差异，提交只包含可归属于本案的 hunks，现有无关 dirty 或 staged 内容不进入提交。
+success_criterion_results:
+- criterion_id: criterion-value-boundary
+  outcome: satisfied
+  summary: specs/01 与 05 已按实际服务对象选择 V1-V8、HV1-HV5 或分别判断；31、32、34 只声明其实际直接支持的 HV3/HV2 边界，审计确认 specs/03、06、07、30、33 主要服务 AI 而未机械追加 HV 声明。
+- criterion_id: criterion-terminology
+  outcome: satisfied
+  summary: 双语术语表已登记 HV1-HV5 价值评判标准 / Human Value Criteria，并将 V1-V8 与 HV1-HV5 都回指 specs/00 当前 §6 标题；当前下位文本未发现由本案造成的旧标题或当前术语悬空。
+- criterion_id: criterion-carrier-boundary
+  outcome: satisfied
+  summary: specs/08、20-24 已按 Web 与各事实类型的实际责任区分直接价值、支撑材料和不承接范围；HV4 均限定为积累输入或明确缺口，commit 128e00662 未修改事实 Schema、生命周期或 Helper/Code 运行行为。
+- criterion_id: criterion-public-web
+  outcome: satisfied
+  summary: 在 Web 原工作线 52fd3a358、4d97cdb3e 独立提交并形成 clean 新基线后，README 与 web/docs/02 已使用 specs/00 §6 的 HV1-HV5 当前来源；旧 H1-H6 只作为 spark-0037 历史被明确取代，页面仍保持只读、同源派生、降级范围和 HV4 未实现边界，未新增 Web 功能。
+- criterion_id: criterion-fact-history
+  outcome: satisfied
+  summary: spark-0037 已经 Helper CAS 更新并回读 mechanically_valid，status 保持 open、intent 与 relations 不变、原 summary 全文保留为历史、原 8 条 evolution 保留并追加 1 条当前决定取代记录；study-0017 相对 HEAD 无差异。
+- criterion_id: criterion-validation-isolation
+  outcome: satisfied
+  summary: code/tests/specs 131/131、Web API tests 139/139、TypeScript 0 错误与 git diff --check 通过；Helper 回读 spark-0037 和 workcase-0021 均 mechanically_valid，specs/00 与 study-0017 无差异。commit 128e00662 只含 17 个本案文件，未夹带并行 Code、FileAsset、环境报告或 workcase-0022 改动。
+result_summary: LDVH 下位体系已承接 specs/00 生效的 HV1-HV5：基础规范与事实准入按实际服务对象判断两组价值，Web 与五类事实对象获得有边界的 Human 价值责任，README 和认知中心改用当前上位来源，spark-0037 保存决定取代关系与 HV4 缺口。实现结果已由 commit 128e00662 隔离保存；本案没有修改 specs/00、事实 Schema、生命周期或运行机制，也没有把 HV4 表达为已经实现。
+validation_summary: 在实现提交 128e00662 对应结果上，code/tests/specs 全量 131/131 通过；web 下 npm run test:web:api 全量 139/139 通过；npx tsc --noEmit 0 错误；git diff --check 通过。Helper 精确回读 spark-0037 与 workcase-0021 为 mechanically_valid，并核对 spark 的 open 状态、稳定 intent、9 条 evolution 与当前摘要。Git 检查确认 specs/00、study-0017 无本案差异，提交只含列明的 17 个文件。未执行浏览器视觉走查，因为本案没有改变 Web 可观察行为，只修改设计文档、注释与直接契约测试；未验证也不声明 HV4 的实际使用、复用或可观察效用。
+closure_outcome: completed
+disposition_summary: workcase-0021 原 scope 内的下位 HV1-HV5 承接、公开/Web 当前来源迁移、spark-0037 状态收敛、验证与隔离提交均已完成，六项成功标准全部 satisfied，没有未满足、未验证或需要转交的 scope 内剩余责任。HV4 产品能力仍是 specs/00 与 spark-0037 已明确记录的范围外长期缺口，不由本 WorkCase 实现，也不在本次关闭中新增处置或重复建档。
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0037
+object_id: workcase-0021
+fact_type_key: workcase
+created_at: '2026-07-31T20:38:49.368319+08:00'
+updated_at: '2026-07-31T21:25:47.548062+08:00'

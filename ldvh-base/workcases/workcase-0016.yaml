@@ -1,0 +1,49 @@
+title: 实现三态 Pitfall 与 Spark evolution 20 项边界
+goal: 在保留 WorkCase 关闭责任、Spark 建议与 related-to 模型既有成果的前提下，将 Pitfall 生命周期收敛为 draft/active/discarded 三态，将 Spark evolution 上限调整为 20，完成既有 retired Pitfall 与 spark-0003 直接状态文字的受控迁移，使规范、Code、Helper、Web、事实对象和验证重新一致。
+scope: 覆盖 Pitfall 唯一定义来源、相关附件与 WorkCase/Web 呈现规范；覆盖 Code 中 Pitfall Schema、validation、transition、relations、Helper invalid-before repair、候选投影及直接测试；覆盖 Web 中 draft=待确认、active=活跃、discarded=已废弃的标签、DTO、Card、文档与契约测试；覆盖 specs/20 中 Spark evolution 数量边界、facts.validation 的 20/21 机械边界测试；保留已通过 Helper 将 pitfall-0001、pitfall-0002 迁移为 discarded 的执行事实，并在新上限生效后精确更正 spark-0003 disposition_summary 中 pitfall-0001 的当前状态文字。保留 plan v1/v2 completed item 的 item-level result_summary，不沿用旧顶层结果、复核或批准。必须保留当前 Working Tree 中不相关 dirty 改动。排除：改变 Spark evolution entry shape、语义归位与时间规则，自动删除/合并/压缩历史，其它 Spark 对象迁移，ADR/Study retired，其它事实对象，项目作用域与进度卡并行改动，Git commit/push/PR，真实环境部署。
+success_criterion_definitions:
+- criterion_id: criterion-contract
+  statement: Pitfall 当前状态闭集只含 draft、active、discarded，Human 标签分别为待确认、活跃、已废弃；状态边只含 draft→active、draft→discarded、active→discarded，discarded 为终态，且规范与附件不存在仍把 retired 作为 Pitfall 当前状态或普通边的矛盾。
+- criterion_id: criterion-mechanics
+  statement: 派生 Schema、validation、relations 与 Helper/Code 机械执行三态闭集、状态-only promote、两类 discarded 的正文与 disposition 保留，并具有最终三态下 retired invalid-before→discarded exact-CAS 修复的正反测试；不保留 retired 合法状态、普通边或永久兼容入口。
+- criterion_id: criterion-migration
+  statement: pitfall-0001 与 pitfall-0002 已分别通过受控 exact-CAS 修复为 discarded，只改变 status 与 Code 托管 updated_at，身份、正文、关系和原 disposition_summary 保持；Spark evolution 上限 20 生效后，spark-0003 保留全部 9 条 evolution 与其它正文、关系、状态，只精确更正 disposition_summary 的 retired→discarded 文字并由 Code 托管 updated_at，完成写后回读。
+- criterion_id: criterion-web
+  statement: Web 对 Pitfall 只呈现待确认、活跃、已废弃三种类型化状态，closure Card 与详情不再把 retired 作为 Pitfall 状态，同时保持现有关闭责任与关系呈现边界。
+- criterion_id: criterion-validation
+  statement: 相关 specs/docs、Helper/Code、事实对象和 Web 测试通过；Spark evolution 20 接受/21 拒绝边界通过；运行受影响全量回归与 Pitfall retired 旧语义静态扫描，并如实区分本案失败、部分迁移和既有或范围外失败。
+- criterion_id: criterion-handoff
+  statement: 完成 Controller 自检与独立结果复核，逐项回指三态契约、迁移对象、Web 和验证；执行期间不借本 WorkCase 创建 Spark、ADR、Study、新 WorkCase 或范围外事实对象。
+- criterion_id: criterion-spark-evolution-cap
+  statement: Spark evolution 允许省略或包含 1–20 项；超过 20 项时才要求先语义压缩、重写完整摘要或拆分对象。Code 接受 20 项、拒绝 21 项，且不改变 entry shape、时间边界、内容归位或不得按数量机械删除历史的规则。
+success_criterion_results:
+- criterion_id: criterion-contract
+  outcome: satisfied
+  summary: Pitfall 唯一类型来源、相关规范与附件已统一为 draft/active/discarded 三态、待确认/活跃/已废弃标签和三条正常边；retired 仅作为明确拒绝的旧值与受控 invalid-before 修复输入，不是当前状态或普通边。
+- criterion_id: criterion-mechanics
+  outcome: satisfied
+  summary: Schema、validation、relations、transitions 与 Helper 更新路径机械执行三态；promote 只改状态，两类 discarded 保留正文与关系并要求处置；legacy retired 只能 exact-CAS 等正文修复为 discarded，正反测试覆盖。
+- criterion_id: criterion-migration
+  outcome: satisfied
+  summary: pitfall-0001/0002 已分别经 Helper CAS 迁移为 discarded；逐字段语义比对仅 status 与托管 updated_at 改变。spark-0003 保留 routed、全部 9 条 evolution、正文与关系，仅更正指定 disposition 状态文字及托管时间；三对象回读 mechanically_valid。
+- criterion_id: criterion-web
+  outcome: satisfied
+  summary: Web 的 Pitfall filter、类型化 locale、终态 Card、字段契约、WorkCase 贡献状态、详情和文档只呈现待确认/活跃/已废弃三态；ADR/Study retired 未误改，关闭责任与关系边界保持。
+- criterion_id: criterion-validation
+  outcome: satisfied
+  summary: 核心全量 1288 passed、10 项仅原生 Windows 跳过；Web check、build、46 项相关测试和全量 107 项测试通过；补规范后相关 291 passed，独立审计另跑 217 passed；四事实 Helper 回读、diff check 与旧语义扫描通过。
+- criterion_id: criterion-handoff
+  outcome: satisfied
+  summary: Controller 已逐项自检并吸收独立审计发现的唯一规范缺口；独立 subagent 最终 PASS。执行批准后未创建 Spark、ADR、Study、新 WorkCase 或 draft Pitfall，未运行 commit、push 或 PR，并保留范围外 dirty/untracked 内容。
+- criterion_id: criterion-spark-evolution-cap
+  outcome: satisfied
+  summary: Spark 唯一规则源和 Code 已统一允许 evolution 省略或为 1–20 项，拒绝第 21 项；entry shape、时间边界、语义归位和不得按数量机械删除历史的规则保持不变，20/21 正反边界已验证。
+result_summary: 已将 Pitfall 生命周期收敛为 draft/active/discarded 三态，Human 呈现统一为待确认/活跃/已废弃；正常边、legacy retired 受控修复、contributed-to 目标与 Web 消费已经一致。Spark evolution 上限调整为 20，既有两个 retired Pitfall 和 spark-0003 状态文字均经 Helper 精确迁移并有效回读。
+validation_summary: 核心全量 pytest 为 1288 passed、10 skipped，跳过项全部要求原生 Windows；本案相关回归在最终规范补齐后为 291 passed，独立 subagent 另行运行相关集合得到 217 passed。Web npm run check、生产 build、46 项相关契约测试和全量 107 项 API 测试全部通过。pitfall-0001、pitfall-0002、spark-0003 与 workcase-0016 经 Helper 回读均 mechanically_valid；目标三对象指纹分别为 e4d91d5abc2d52dacb6ee9b0ec8a2d3185649b8e42a7886ed97386ff55ea90df、53d5956b213a86e1e84148bb491505167c1e9f01ee9c3e6b02e0d260e481dbfc、1cbb3ce50e7a86e338e36187326cb744ee062add7e8b21e4f245e96318bf447d。git diff --check 与旧 8 项上限、Pitfall retired 当前状态/旧标签静态扫描通过；剩余 retired 命中仅为 ADR/Study 合法状态、legacy 修复或拒绝测试。未在原生 Windows、真实部署或远端 Git 上验证，均属批准 scope 排除；未运行 commit、push 或 PR。
+status: closed
+closure_outcome: completed
+disposition_summary: plan_version=3 批准范围内的七项成功标准全部满足：Pitfall 三态、legacy retired 受控修复、Spark evolution 20 项边界、三项事实迁移、Web 消费和跨层验证均已完成并通过独立复核。原 scope 内没有需要路由、建议后续建立 Spark 或接受停止的剩余责任；修改仍保留在当前 Working Tree，未 commit、push 或创建 PR，符合批准的排除边界。
+object_id: workcase-0016
+fact_type_key: workcase
+created_at: '2026-07-28T11:07:07.624171+08:00'
+updated_at: '2026-07-30T10:52:05.264729+08:00'

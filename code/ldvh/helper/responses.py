@@ -1,0 +1,116 @@
+"""Single Code maintenance point for the common Helper response shape."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Any, Literal
+
+from ldvh.helper.source_refs import generated_source_reference, project_generated_sources
+
+CONTRACT = "ldvh-helper-cli/2"
+EXIT_CODES = {
+    "ok": 0,
+    "no_change": 0,
+    "partial": 3,
+    "rejected": 4,
+    "unavailable": 5,
+    "invalid_request": 2,
+    "error": 1,
+}
+
+RequestKind = Literal["capabilities", "call"]
+
+
+@dataclass(frozen=True, slots=True)
+class ServiceResult:
+    response: dict[str, Any]
+    exit_code: int
+
+
+def source_reference(kind: str, locator: str, **details: Any) -> dict[str, Any]:
+    return generated_source_reference(kind, locator, **details)
+
+
+def gap(
+    summary: str,
+    *,
+    scope: list[object] | None = None,
+    sources: list[dict[str, Any]] | None = None,
+    code: str | None = None,
+    member_count: int | None = None,
+) -> dict[str, Any]:
+    result: dict[str, Any] = {
+        "summary": summary,
+        "scope": [] if scope is None else scope,
+        "source_refs": [] if sources is None else sources,
+    }
+    if code is not None:
+        result["code"] = code
+    if member_count is not None:
+        if member_count < 1:
+            raise ValueError("gap member_count must be positive")
+        result["member_count"] = member_count
+    return result
+
+
+def diagnostic(summary: str, **details: Any) -> dict[str, Any]:
+    return {"summary": summary, "details": details}
+
+
+def common_response(
+    *,
+    request_kind: RequestKind,
+    operation_key: str | None,
+    outcome: str,
+    summary: str,
+    response_profile: str = "compact",
+    result: dict[str, Any] | None = None,
+    requested_scope: list[object] | None = None,
+    completed_scope: list[object] | None = None,
+    not_completed_scope: list[object] | None = None,
+    governance_resolution: dict[str, Any] | None = None,
+    sources: list[dict[str, Any]] | None = None,
+    disclosure: dict[str, Any] | None = None,
+    gaps: list[dict[str, Any]] | None = None,
+    changes: list[dict[str, Any]] | None = None,
+    verification: list[dict[str, Any]] | None = None,
+    diagnostics: list[dict[str, Any]] | None = None,
+    follow_up: dict[str, Any] | None = None,
+) -> ServiceResult:
+    if outcome not in EXIT_CODES:
+        raise ValueError(f"unsupported Helper outcome: {outcome}")
+    if response_profile not in {"compact", "diagnostic"}:
+        raise ValueError(f"unsupported Helper response profile: {response_profile}")
+    response = {
+        "contract": CONTRACT,
+        "response_profile": response_profile,
+        "request_kind": request_kind,
+        "operation_key": operation_key,
+        "outcome": outcome,
+        "summary": summary,
+        "result": result,
+        "scope": {
+            "requested": [] if requested_scope is None else requested_scope,
+            "completed": [] if completed_scope is None else completed_scope,
+            "not_completed": [] if not_completed_scope is None else not_completed_scope,
+            "governance_resolution": governance_resolution,
+        },
+        "sources": [] if sources is None else sources,
+        "disclosure": disclosure,
+        "gaps": [] if gaps is None else gaps,
+        "changes": [] if changes is None else changes,
+        "verification": [] if verification is None else verification,
+        "diagnostics": [] if diagnostics is None else diagnostics,
+        "follow_up": (
+            {
+                "summary": "当前响应没有能够由 Helper 明确的专属后续信息",
+                "required_inputs": [],
+                "required_human_decisions": [],
+                "resume_conditions": [],
+                "suggested_operations": [],
+            }
+            if follow_up is None
+            else follow_up
+        ),
+    }
+    return ServiceResult(response=project_generated_sources(response), exit_code=EXIT_CODES[outcome])

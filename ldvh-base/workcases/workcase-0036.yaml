@@ -1,0 +1,29 @@
+status: closed
+success_criterion_definitions:
+- criterion_id: criterion-two-gate-contract
+  statement: 当前本地来源与运行行为被准确区分：创建前只读方案复核不是第三个人类 Gate，Gate 1 一次批准完整授权包，Gate 2 只决定关闭。
+- criterion_id: criterion-evidenced-repair
+  statement: 任何实际发现的本地矛盾均被最小修正；若未发现矛盾，修复项据实取消且无变更结论具有可复核证据。
+- criterion_id: criterion-regression-validation
+  statement: 针对创建、Gate 转换和受控创建的测试通过，且不将 Reviewer 真实独立性或环境 spawn 能力误宣称为已证明。
+title: 消除创建前 Reviewer 被误读为第三 Gate
+scope: 仅覆盖 specs/21、31、34，LDVH skill 路由，以及直接承接 WorkCase 创建、授权、复核和 Gate 转换的代码与测试。若发现证据充分的矛盾，只作最小本地规则、实现或测试修正。排除无关功能实现、外部写入或消息、push、PR、发布、破坏性操作和历史改写。
+validation_summary: 在 Gate 1 后运行 .venv/bin/pytest -q code/tests/facts/test_transitions.py code/tests/facts/test_creation_application.py code/tests/helper/test_fact_creation_operation.py；进程退出码为 0。
+success_criterion_results:
+- criterion_id: criterion-two-gate-contract
+  outcome: satisfied
+  summary: 核对的本地规则、技能路由、实现和测试均将创建前只读 Reviewer 作为质量前提，而非第三个人类 Gate；Gate 1 消费完整授权包，Gate 2 保留为关闭决定。
+- criterion_id: criterion-evidenced-repair
+  outcome: satisfied
+  summary: 未找到可回指的本地矛盾，故未作无根据的修复；修复 item 已按批准的调整规则取消。
+- criterion_id: criterion-regression-validation
+  outcome: satisfied
+  summary: 受控创建、状态转换与 Helper 创建的定向测试在获批后以退出码 0 完成；结论未声称已证明真实 Reviewer 独立性或环境 spawn 能力。
+result_summary: 当前 LDVH 本地来源和直接运行验证支持两个人类停点模型；未发现需修复的“创建前 Reviewer 等于第三 Gate”矛盾。
+goal: 核查并消除本地 LDVH 规则、技能路由、实现或测试中把创建前独立只读 Reviewer 误读为第三个人类 Gate 的任何实际矛盾；若没有矛盾，形成已验证的无变更结论。
+closure_outcome: completed
+disposition_summary: 当前本地责任已完成：已验证创建前只读 Reviewer 是质量前提而非第三个人类 Gate，未发现需修复的本地矛盾；无剩余责任、路由目标或 Spark 建议。
+object_id: workcase-0036
+fact_type_key: workcase
+created_at: '2026-08-02T11:58:59.571455+08:00'
+updated_at: '2026-08-02T14:06:29.143147+08:00'

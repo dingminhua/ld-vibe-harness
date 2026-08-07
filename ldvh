@@ -1,0 +1,134 @@
+#!/usr/bin/env python3
+# Git Hook adapters select python3/python before invoking this source launcher;
+# keep this shebang explicit so direct POSIX execution remains deterministic.
+"""Stable source launcher for every LDVH runtime surface."""
+
+from __future__ import annotations
+
+import importlib.util
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+SOURCE_ROOT = Path(__file__).resolve().parent
+CODE_ROOT = SOURCE_ROOT / "code"
+
+
+def _ruamel_yaml_available() -> bool:
+    try:
+        return importlib.util.find_spec("ruamel.yaml") is not None
+    except ModuleNotFoundError:
+        # The parent ``ruamel`` namespace package is absent; the dependency is not installed.
+        return False
+
+
+def _runtime_typing_compatible() -> bool:
+    """The codebase imports ``typing.assert_never`` (Python 3.11+) at module load.
+
+    The launcher itself must start on an older interpreter (e.g. the system Python 3.10
+    on Windows) long enough to detect this and hand off to a newer venv; without this
+    check the interpreter would crash on the first ``from typing import assert_never``.
+    """
+    if sys.version_info < (3, 11):
+        return False
+    try:
+        from typing import assert_never  # noqa: F401
+    except ImportError:
+        return False
+    return True
+
+
+def _dependency_runtime_ready() -> bool:
+    return _ruamel_yaml_available() and _runtime_typing_compatible()
+
+
+def _handoff(candidate: Path, source: Path) -> None:
+    """Replace the current process with the venv interpreter, preserving the exit code.
+
+    On POSIX ``os.execv`` atomically replaces the image, so the child's exit code
+    propagates naturally.  On Windows ``os.execv`` is emulated: it spawns a child and
+    waits, then returns — so the return value must be forwarded to the shell
+    explicitly, or every gate/doctor/probe would observe rc 0 regardless of outcome.
+    """
+    if os.name == "nt":
+        completed = subprocess.run(
+            [str(candidate), str(source), *sys.argv[1:]],
+            check=False,
+        )
+        raise SystemExit(completed.returncode)
+    os.execv(str(candidate), [str(candidate), str(source), *sys.argv[1:]])
+    raise SystemExit(1)
+
+
+def _ensure_dependency_runtime() -> None:
+    if _dependency_runtime_ready():
+        return
+    candidates = (
+        SOURCE_ROOT / ".venv/bin/python",
+        SOURCE_ROOT / ".venv/Scripts/python.exe",
+    )
+    resolve_source = Path(__file__).resolve()
+    for candidate in candidates:
+        if candidate.is_file() and os.access(candidate, os.X_OK):
+            if sys.executable is not None and Path(sys.executable).resolve() == candidate.resolve():
+                continue
+            resolved_candidate = candidate.resolve()
+            if resolved_candidate == resolve_source:
+                continue
+            _handoff(candidate, resolve_source)
+    sys.stderr.write(
+        "LDVH source runtime dependency ruamel.yaml is unavailable; prepare the declared third-party dependencies "
+        "without installing the LDVH package.\n"
+    )
+    raise SystemExit(1)
+
+
+_ensure_dependency_runtime()
+if str(CODE_ROOT) not in sys.path:
+    sys.path.insert(0, str(CODE_ROOT))
+
+
+def _usage() -> int:
+    sys.stderr.write(
+        "usage: ldvh capabilities [operation_key] | ldvh call <operation_key> | "
+        "ldvh {work-context,context-recovery,doctor,git-commit-msg,git-hook} ...\n"
+    )
+    return 2
+
+
+def main() -> int:
+    if len(sys.argv) < 2:
+        return _usage()
+    command = sys.argv[1]
+    if command in {"capabilities", "call"}:
+        from ldvh.cli import main as helper_main
+
+        sys.argv = [sys.argv[0], *sys.argv[1:]]
+        return helper_main()
+    arguments = sys.argv[2:]
+    if command == "work-context":
+        from ldvh.work_context import main as work_context_main
+
+        return work_context_main(arguments)
+    if command == "context-recovery":
+        from ldvh.hooks.context_recovery import main as context_recovery_main
+
+        return context_recovery_main(arguments)
+    if command == "doctor":
+        from ldvh.doctor import main as doctor_main
+
+        return doctor_main(arguments)
+    if command == "git-commit-msg":
+        from ldvh.hooks.commit_msg import main as commit_msg_main
+
+        return commit_msg_main(arguments)
+    if command == "git-hook":
+        from ldvh.git_hooks.commit_msg import main as git_hook_main
+
+        return git_hook_main(arguments)
+    return _usage()
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1,0 +1,17 @@
+[tool.pytest.ini_options]
+testpaths = ["code/tests"]
+addopts = "-ra --strict-markers"
+markers = [
+  "native_windows: requires a native Windows host and is run by the manual evidence gate",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+include = ["code/**/*.py"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["ldvh"]

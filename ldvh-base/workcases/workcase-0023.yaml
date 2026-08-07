@@ -1,0 +1,65 @@
+title: spark-0039 余项规范收口与形态事实处置
+status: closed
+goal: 以 spark-0039 正文、evolution 与关系为权威上下文，据实完成余项 3–6，形成每项独立提交和锚定干净 HEAD 的受影响验证证据，走完 WorkCase 结果链并呈交 Gate2；不为收尾关闭证据不足的 spark-0018。
+scope: 只覆盖 specs/00、01、09、30、31、32，canonical skill/SKILL.md，item 4 路由与静态分发回归断言，受影响测试，当前用户级单一物理 Skill 部署件，以及 spark-0039、spark-0029、spark-0018 与本 WorkCase 的 Helper 受控生命周期。确认现行 adr-0006，不新建或改写 ADR。排除遗留插件清理、Codex 配置、MCP、Hook 学说恢复、全量测试、远端、无关并行改动与历史重写；Gate1 只授权推进到完整 Gate2 提案，close-workcase 另候 Gate2 决定。
+success_criterion_definitions:
+- criterion_id: criterion-process
+  statement: 30/31/32 与 01 orientation 一致规定 Helper-only 事实写入、每次事实写后精确回读与完整性审计、mandatory precheck 双层通过，并经 work-context、Helper 回读和正反代表场景验证。
+- criterion_id: criterion-routing
+  statement: 09 §5.3 静态逐字节分发、Skill work-context 首步和 README 第二路由被复核并由 item 4 独立回归测试提交固定；来源漂移时取消而不自动扩写正文。
+- criterion_id: criterion-statements
+  statement: 三条 Gate1 固定能力边界在 specs/00、specs/09、skill/SKILL.md 完全同文，canonical、发行资产和用户部署件的字节关系在声明范围内验证。
+- criterion_id: criterion-shape
+  statement: 确认 adr-0006 为唯一现行形态 ADR；重读仍支持时 spark-0029 discarded、spark-0018 更新证据矩阵且保持 open，遗留插件不物理清理。
+- criterion_id: criterion-spark
+  statement: 只有 items 3–6 提交与验证均成立时 spark-0039 才收口正文、未决、evolution、adr-0006 关系并 implemented；否则保持 open。
+- criterion_id: criterion-evidence
+  statement: item 3–6 各有独立本地提交，每次 precheck 外层 ok 且 mechanical_outcome passed；每次事实写后回读与 integrity；最终验证锚定干净 HEAD，并形成完整 Gate2 材料与未验证范围。
+success_criterion_results:
+- criterion_id: criterion-process
+  outcome: satisfied
+  summary: 行动模板与规则引导已统一形成 Helper-only 写入、每次事实写后精确回读和完整性审计、提交预检外层 ok 且 mechanical_outcome passed 的双层门槛，并覆盖非成功响应残留的停止边界。独立规范复核通过，相关 Helper 与 work-context 代表性选择集在干净树通过；真实原生 Git Gate 事件不属于本标准已验证范围。
+- criterion_id: criterion-routing
+  outcome: satisfied
+  summary: 环境接入规范现行来源已明确静态、逐字节一致分发；Skill 的 work-context 首步和 README 的第二路由信号均已存在，回归测试固定了三者及发行字节关系，正文未因已覆盖事项重复扩写。
+- criterion_id: criterion-statements
+  outcome: satisfied
+  summary: 三条 Human 固定能力声明已在根规范、环境规范和 canonical Skill 完全同文，且未增加第四职责或第二规则源；canonical、用户级物理部署件与 symlink 视图的 SHA-256 均为 965691514d8c1eccc3d328b784796c63b3e8b134893b5532cfc78f389503ab31，Doctor 状态 ready。
+- criterion_id: criterion-shape
+  outcome: satisfied
+  summary: 现行 adr-0006 已精确确认是唯一形态决定，无需新建或修改 ADR；spark-0029 原已 discarded 且未重写；spark-0018 已更新有限证据、legacy 归因混淆和缺口矩阵，新增 related-to adr-0006 并保持 open/P2，未清理遗留插件。
+- criterion_id: criterion-spark
+  outcome: satisfied
+  summary: items 3–6 的独立交付、验证与事实处置均成立；spark-0039 已经 Helper CAS 收口为 implemented，无 priority、无 routed-to，并以 related-to 连接 adr-0006 和 workcase-0023。终态明确不冒充 spark-0018 的环境行为矩阵已经完成。
+- criterion_id: criterion-evidence
+  outcome: satisfied
+  summary: item 3、4、5、6 和 spark-0039 收口分别形成独立本地提交 426fc5c98、279e8c5f5、88ce080a2、fe4059748、8e27abf23；每次真实 Index 的提交预检均为 outcome ok 且 mechanical_outcome passed。每次事实写后均精确回读并审计；最终目标 HEAD 干净，受影响测试 16 passed，完整性审计 94 个对象、0 problems，Gate2 结果材料明确保留全部未验证边界。 用户级 Skill 卸载与从已知 canonical bytes 恢复的回滚路径均未执行、未验证；它们作为 Gate1 已接受的验证边界被明确保留，不是 spark-0018 或本 WorkCase 的未完成实现责任。
+result_summary: WorkCase 已按 Gate1 基线完成 spark-0039 余项 3–6 及 Spark 自身收口。规则层补齐了 Helper-only 事实写入、逐写回读与完整性审计、双层提交预检和残留停止边界；既有静态逐字节 Skill 分发、work-context 首步与 README 第二路由由回归固定；三条能力边界已完全同文并重部署用户 Skill。形态层确认 adr-0006 已完整决定唯一薄 Skill、插件/Hook/adapter 退出与 MCP 不做，spark-0029 保持既有 discarded，spark-0018 更新证据后保持 open/P2。spark-0039 已 implemented，只结束其六项限定入口；没有把环境行为、原生 Gate 或语义真实性写成已验证。 用户级 Skill 的卸载和从已知 canonical bytes 恢复的回滚路径同样未执行、未验证，并按 Gate1 作为验证边界接受；它们不改变本 WorkCase 原 scope 的完成判断。
+validation_summary: 最终验证锚定隔离分支的干净目标 HEAD 8e27abf23：受影响的行动模板、work-context 与接入文档测试合计 16 passed；item 阶段的干净 HEAD 选择集分别为 13、5、12 passed。canonical Skill、用户级物理部署件与 symlink 视图字节完全相同，SHA-256 为 965691514d8c1eccc3d328b784796c63b3e8b134893b5532cfc78f389503ab31；只读 Doctor 为 ready，Helper 18 个操作可用、配置 valid、管辖 governed_single、接入面 5/5 present。spark-0018、spark-0039 与 WorkCase 每次写后精确回读 mechanically valid，最终 check-fact-integrity 为 outcome ok、status complete、94 个对象、0 problems；spark-0039 六类型全状态入向扫描完整且无 routed-to。未运行全量测试；隔离 worktree 的 core.hooksPath 指向 .githooks-v4 但 commit-msg 文件不存在，因此真实原生 Gate allow/block/bypass 未验证。新部署 Skill 的独立 cold start、隐式选中、无显式指令委派、自动 worktree/clone 切换、恢复/compact 归因、不可用失败与真实负面写入矩阵均未验证；当前规则源仍有 7 项资格条件未由 Code 机械证明；机械通过不证明自然语言事实的语义真实性。 用户级 Skill 卸载未执行、未验证；从已知 canonical bytes 恢复用户部署件的回滚路径也未执行、未验证。两项都是 Human 在 Gate1 已接受的验证边界，不是已验证能力，也不构成本 WorkCase 或 spark-0018 的未完成实现责任。
+closure_outcome: completed
+disposition_summary: WorkCase 按 completed 停止：五个 work item 全部 completed，六条成功标准全部 satisfied，result_version 2 的独立结果复核为 pass；spark-0039 已 implemented，adr-0006 无需改写，spark-0029 保持既有 discarded，spark-0018 按评估保持 open/P2。原 scope 内没有未满足、未验证或未处置的实现责任，因此没有 residual decision、route_existing、suggest_spark 或 accepted-stop 项。未运行全量测试、当前规则源七项资格条件未由 Code 机械证明、真实原生 Git Gate、Skill 独立冷启动与隐式递达、真实负面写入、用户 Skill 卸载与 canonical bytes 回滚以及语义真实性均只作为已披露且 Gate1 已接受的验证边界保留，不被写成已验证能力，也不改变 completed 分类；本次停止只结束 workcase-0023 的冻结责任，不表示项目或独立 open 议题整体完成。
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0039
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0018
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0029
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: adr
+    object_id: adr-0006
+object_id: workcase-0023
+fact_type_key: workcase
+created_at: '2026-08-01T01:49:52.669999+08:00'
+updated_at: '2026-08-01T03:42:58.614254+08:00'

@@ -1,0 +1,39 @@
+title: 闭合 WorkCase Gate 1 授权完整性
+status: closed
+goal: 以最小、结构化且可机械验证的闭环，防止 WorkCase 在 Gate 1 前因缺失必经独立结果复核或 Reviewer 委派授权而获批；Code 只校验声明、引用、覆盖和冻结，不解释授权散文或声称证明 Reviewer 的真实独立性。
+scope: 覆盖 WorkCase 的结构化质量关口/Reviewer 模式声明、创建期与 Gate 1 认可边的拒绝、Gate 1 指纹与冻结、存量 active WorkCase 的兼容与安全过渡，以及相应规则、字段登记、机械校验目录、模板 34、validator、创建入口、transition、projection 和 tests。排除 workcase-0028 与任何既有 WorkCase 的历史授权补写或自动迁移；排除 Git commit、push、外部操作、环境接入和无关事实变更。
+success_criterion_definitions:
+- criterion_id: criterion-structured-quality-gate
+  statement: WorkCase 以有限闭集声明独立结果复核关口与 Reviewer 模式，关口精确引用 execution_authorization.authorized_actions 中实际存在且不重复/不错误复用的 action_id；creation review 以结构化信息确认全部必经关口覆盖，Controller 保留反馈处置。
+- criterion_id: criterion-gate1-rejection-and-freeze
+  statement: create-fact-object 与 human_plan_confirming 到 executing 的 Gate 1 批准边均对缺失必经声明或覆盖的 WorkCase 零写入拒绝；声明纳入 canonical execution authorization 与 approval baseline 指纹，Gate 1 后不可通过重算指纹改写模式或引用。
+- criterion_id: criterion-legacy-safe-transition
+  statement: 存量 Gate 1 前 active WorkCase 不被静默补写；其只能经 plan_revising、fresh creation review 和当前 Gate 1 材料进入批准。SafeConvergenceShape 与既有 Gate 2 链对象可原样收敛关闭。
+- criterion_id: criterion-negative-and-regression-tests
+  statement: 负向与回归测试覆盖缺少声明、未知模式、缺失/不存在/重复/错误复用 action 引用、Reviewer 覆盖不足、新建与旧候选 Gate 1 零写入拒绝、Gate 1 后篡改拒绝、安全收敛和 Gate 2 关闭兼容。
+- criterion_id: criterion-source-and-implementation-alignment
+  statement: 21、05.Att.01、05.Att.02、34 与 WorkCase schema/validator/creation/transition/projection/tests 同步，定向与相关回归测试通过；workcase-0028 的内容与历史授权不被本案修改。
+success_criterion_results:
+- criterion_id: criterion-structured-quality-gate
+  outcome: satisfied
+  summary: 已以固定 gate_id、固定 reviewer_mode、两个不同 action 引用和 creation review 覆盖字段定义质量关口；实现仅做结构和引用验证。
+- criterion_id: criterion-gate1-rejection-and-freeze
+  outcome: satisfied
+  summary: 受控创建、Gate 1 批准边与 canonical authorization projection 均接入质量关口；相关负向测试证明缺项拒绝及 Gate 1 后篡改拒绝。
+- criterion_id: criterion-legacy-safe-transition
+  outcome: satisfied
+  summary: 存量 Gate 1 前对象保持可读但不得绕过新 Gate 1；SafeConvergenceShape 与既有 Gate 2 结果链保持兼容，未补写历史字段。
+- criterion_id: criterion-negative-and-regression-tests
+  outcome: satisfied
+  summary: 公开 create-fact-object 入口、创建、transition、projection、validator、WorkCase Gate 1/2 回归及规范测试的相关定向场景通过，覆盖缺失、未知模式、错误/复用 action、覆盖不足、冻结和 legacy 绕过。
+- criterion_id: criterion-source-and-implementation-alignment
+  outcome: satisfied
+  summary: 规则、字段登记、校验目录、模板、实现和测试同步；workcase-0028 的 HEAD 内容未被改动。
+result_summary: 已完成最小、结构化的 WorkCase 独立结果复核/Reviewer 模式声明及 Gate 1 机械闭环：新建和 Gate 1 缺少必经质量关口时拒绝，获批后声明进入基线并冻结；存量对象不自动补写，并保留安全收敛与关闭链兼容。
+validation_summary: git diff --check 通过；公开 create-fact-object 缺 quality_gates / 缺 covered_quality_gate_ids 的零写入测试，以及该入口的有效 WorkCase 创建，共 5 项通过；创建/transition/projection 定向测试 30、113、20 项通过，validator 47 项通过，Gate 1/2 与 legacy 定向 WorkCase 回归 12 项及新增 3 项通过，规范测试 131 项通过；check-fact-integrity 对 104 个对象结果为 complete。通用 helper 的完整 Spark fixture 模块另见一个既有临时全库审计 unavailable 失败，未触及本案 WorkCase 代码路径，未作为本案相关定向通过的依据。
+closure_outcome: completed
+disposition_summary: 本 WorkCase 的结构化质量关口、Gate 1 拒绝与冻结、存量兼容、负向与相关回归测试、规则/实现同步均已在原 scope 内完成；不存在未满足、未验证或未完成的范围内责任，无需路由、接受停止或提出 Spark 建议。
+object_id: workcase-0030
+fact_type_key: workcase
+created_at: '2026-08-02T00:43:31.520075+08:00'
+updated_at: '2026-08-02T01:18:52.297767+08:00'

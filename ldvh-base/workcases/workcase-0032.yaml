@@ -1,0 +1,45 @@
+title: 收束 07 的 FileAsset 测试证据边界
+goal: 在实际 specs/07-Code 实践与测试规范.md 中收束 FileAsset 候选与测试证据的边界：允许符合 25 条件的最终原始 bytes 作为候选，同时明确 FileAsset 不提升测试材料的证明力或扩大测试、运行、环境与完成结论。
+scope: 仅覆盖 specs/07-Code 实践与测试规范.md §11.2 的最小政策文字，以及本 WorkCase 的受控写回和只读验证。排除 specs/09、specs/24、其它 Specs、Code、tests、Helper、Web、Schema、FileAsset 实例创建、消费者或关系扩张、docs 自动迁移、Git commit/push/PR 和既有 Working Tree 改动。
+success_criterion_definitions:
+- criterion_id: criterion-07-fileasset-candidate
+  statement: 07 明确：测试相关的最终原始 bytes 只有在脱离临时路径后仍具独立消费、复核或引用价值，普通稳定文档或既有事实对象不能无损承载，并满足 25 的对象化、敏感信息、许可、纳入签名与受控创建条件时，才可考虑成为 FileAsset。
+- criterion_id: criterion-07-evidence-boundary
+  statement: 07 明确：FileAsset 仅保存所选 bytes 及完整性元数据；其身份不自动提高测试运行、日志、报告或其它材料的证明力，也不扩大测试范围、通过/完成、环境或其它结论的可证明范围。
+- criterion_id: criterion-docs-boundary
+  statement: 07 既有 docs 临时说明材料边界保持不变，不把 docs 路径或文件名写成已入档、测试输入、能力通过或自动迁移依据。
+- criterion_id: criterion-no-expansion
+  statement: 业务规范修改仅限实际 specs/07-Code 实践与测试规范.md；不新增 FileAsset 实例、消费者、关系、Web、Helper、Schema、Code 或测试改动。
+- criterion_id: criterion-verification
+  statement: 完成 07 的定向文本回读、目标 git diff --check 与 code/tests/specs；以实际输出记录范围，只有测试实际通过才写通过。
+success_criterion_results:
+- criterion_id: criterion-07-fileasset-candidate
+  outcome: satisfied
+  summary: 07 §11.2 已明确最终原始 bytes 的独立价值、普通稳定载体不能无损承载以及 25 的受控摄取条件。
+- criterion_id: criterion-07-evidence-boundary
+  outcome: satisfied
+  summary: 07 §11.2 已明确 FileAsset 仅保存所选 bytes 与完整性元数据，不自动提高证明力或扩大测试、通过/完成、环境及其它结论。
+- criterion_id: criterion-docs-boundary
+  outcome: satisfied
+  summary: 07 §11.2 已保留根级 docs 临时材料边界，禁止由路径、文件名或摄取状态推断测试结论。
+- criterion_id: criterion-no-expansion
+  outcome: satisfied
+  summary: 实际业务规范 diff 仅为 specs/07-Code 实践与测试规范.md 的 §11.2 两段文字；未创建 FileAsset 或修改其它受限范围。
+- criterion_id: criterion-verification
+  outcome: satisfied
+  summary: 目标段落回读和 git diff --check 已通过；code/tests/specs 实际输出为 131 passed in 14.30s。
+result_summary: 已完成 07 §11.2 的最小政策收束：只有满足 25 条件且具独立持续价值的最终原始 bytes 才可考虑成为 FileAsset；FileAsset 身份不提高测试结论的证明力；docs 临时材料边界保持不变。
+validation_summary: 已执行 07 §11.2 目标文本回读和 git diff --check -- specs/07-Code 实践与测试规范.md（通过）；PYTHONDONTWRITEBYTECODE=1 .venv/bin/pytest -q -p no:cacheprovider code/tests/specs（131 passed in 14.30s）。未运行 full-v4，且本案不将该局部规范测试表述为全量 Working Tree 结论。
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0041
+status: closed
+closure_outcome: completed
+disposition_summary: 本案已完成 07 §11.2 的最小 FileAsset 测试证据边界收束；所有成功标准均为 satisfied，原 scope 内无剩余责任。本案不创建 FileAsset 实例、不修改其它规范或实现，且未形成后续 Spark 建议。
+object_id: workcase-0032
+fact_type_key: workcase
+created_at: '2026-08-02T01:19:41.141248+08:00'
+updated_at: '2026-08-02T01:27:36.495600+08:00'

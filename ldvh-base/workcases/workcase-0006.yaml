@@ -1,0 +1,112 @@
+object_id: workcase-0006
+fact_type_key: workcase
+title: 建立 WorkCase 专属受控变更 Helper 操作
+created_at: '2026-07-20T14:50:12.378355+08:00'
+updated_at: '2026-07-26T22:27:30+08:00'
+status: closed
+goal: >-
+  为当时采用 control-contract-v1 的 WorkCase 建立类型专属受控变更操作，减少完整对象复制
+  和机械字段手工拼装错误，同时完整保留 Reviewer、Controller 与 Human 的既有决定权；并
+  统一单次 Helper 受控记录时间，完善响应 profile、预期权限失败诊断和 YAML 序列化质量。
+scope: >-
+  规则范围限 specs/21、32、05、04 与 attachments/04.Att.01；代码范围限 Helper operation
+  runtime、service、responses、registry，新 WorkCase request/operation，generic update
+  可复用事务层，facts/creation 中 YAML serializer 与 common-dir lock 失败映射，以及直接
+  contract、unit、integration、packaging tests 和必要 installed snapshot、登记。核心接口
+  采用当时 control-contract-v1 WorkCase 的顶层 set/remove delta 加闭集 managed_records。
+  Helper 只做确定性 after 构造、统一 event_at、版本与审核字段机械派生、既有 schema、
+  transition、relation 校验、CAS、原子写与回读，不从审核结论或普通字段差异决定 phase、
+  版本、复审或 Human Gate。明确排除修改 00、改变 WorkCase 权责、多对象事务、自动编排、
+  Spark 创建或路由、旧对象迁移、C runner/DTO、Web、D/E、push 和 PR。
+success_criterion_definitions:
+- criterion_id: criterion-01
+  statement: >-
+    新 WorkCase 专属操作具有唯一规则来源，可通过 capabilities 与 installed snapshot 发现；
+    generic update 对其它事实类型和当时的旧对象保持既有行为。
+- criterion_id: criterion-02
+  statement: >-
+    顶层 delta 与闭集 managed_records 可确定性形成完整 after；普通嵌套值只能整项替换，
+    托管记录只能经专属输入形成，未知字段、冲突组合、旧形状或非 WorkCase 请求均零写入拒绝。
+- criterion_id: criterion-03
+  statement: >-
+    Controller 显式拥有 phase、status、plan/result version、复审和 Human Gate 等语义推进
+    选择；任何 Reviewer conclusion 均不自动推进或否决，result review 与 Controller
+    resolution 分步形成。
+- criterion_id: criterion-04
+  statement: >-
+    调用方不能提交自定义或回填的托管时间、版本或指纹；接受的新托管记录与 updated_at、
+    当次 Working Tree observation 使用唯一 event_at，no_change 或非法后继保持零写入。
+- criterion_id: criterion-05
+  statement: >-
+    stale fingerprint、并发、非法 transition、写后回读和回滚保持现有 CAS 语义；Human
+    关闭决定与 closed 只在同一原子变更形成。
+- criterion_id: criterion-06
+  statement: >-
+    common-dir 不可写等预期失败在 target/counter 改变前形成稳定 unavailable 与恢复条件；
+    linked-worktree 并发唯一编号、counter 单调性和共同串行保证不退化。
+- criterion_id: criterion-07
+  statement: >-
+    compact 与 diagnostic 在同一冻结 event_at 下作用于隔离同状态副本后产生相同领域结果
+    与最终 fact carrier bytes；compact gap tuple 唯一且 member_count 精确，固定 capabilities
+    fixture 的 compact UTF-8 bytes 不超过 diagnostic 的 65%，新操作成功结果不超过 4096
+    canonical JSON bytes，diagnostic 可定位且不泄密。
+- criterion_id: criterion-08
+  statement: >-
+    YAML serialize-parse 语义等价且无尾随空格；合同、全状态机、并发、权限、profile、
+    packaging 等外部测试及聚焦、ruff、full-v4 通过。本 WorkCase 使用新操作完成执行交接，
+    后续审核、关闭准备、Human Gate 与 closed 只作工作项之外的生命周期验收。
+success_criterion_results:
+- criterion_id: criterion-01
+  outcome: satisfied
+  summary: >-
+    update-workcase 已由唯一规则来源定义，并在 registry、capabilities 与 installed snapshot
+    中可发现；generic update 与当时旧对象行为由测试保留。
+- criterion_id: criterion-02
+  outcome: satisfied
+  summary: >-
+    顶层 delta、闭集 managed_records、整项嵌套替换、冲突与未知字段、适用对象限制和零写入
+    拒绝均已实现并有正反测试。
+- criterion_id: criterion-03
+  outcome: satisfied
+  summary: >-
+    phase、status、版本、复审与 Human Gate 始终由 Controller 或 Human 显式输入；Reviewer
+    conclusion 不会自动推进或否决。
+- criterion_id: criterion-04
+  outcome: satisfied
+  summary: >-
+    调用方不能写入托管时间、basis 或指纹；接受记录与 updated_at、observation 使用单一
+    event_at，no_change 与非法后继零写入。
+- criterion_id: criterion-05
+  outcome: satisfied
+  summary: >-
+    共享 CAS、并发、非法 transition、写后回读、回滚及 Human 关闭同一原子变更均由实现和
+    完整生命周期测试覆盖。
+- criterion_id: criterion-06
+  outcome: satisfied
+  summary: >-
+    common-dir 权限失败在 target/counter 变化前形成 unavailable，linked-worktree 共同锁域
+    和编号单调性没有降级。
+- criterion_id: criterion-07
+  outcome: satisfied
+  summary: >-
+    冻结 event_at 下 compact 与 diagnostic 的领域结果及 carrier 相同，gap 聚合计数、比例和
+    WorkCase 结果上限均由外部测试量化锁定。
+- criterion_id: criterion-08
+  outcome: satisfied
+  summary: >-
+    YAML roundtrip、无尾随空格、合同、状态机、权限、profile、packaging 验证与正式 full-v4
+    均通过，本 WorkCase 已使用新操作完成执行交接。
+result_summary: >-
+  当时的 WorkCase 专属受控变更 Helper 操作、共享事务、请求构造、registry、打包、统一
+  event_at、CAS 与回滚、common-dir unavailable、compact/diagnostic 和 YAML 序列化均已
+  实现；本 WorkCase 已实际使用该操作完成生命周期验收。
+validation_summary: >-
+  八项成功标准和五个工作项全部满足。规则合同、共享事务、专属请求、构造和 operation、
+  registry、打包、统一 event_at、CAS、回滚、common-dir unavailable、compact、diagnostic、
+  YAML 及全状态机正反测试均完成；实现以本地提交 3a964a9f 保存。正式 full-v4 通过，验证
+  窗口内 Working Tree 无变化。未验证范围为原生 Windows 实机；没有 push 或 PR。
+closure_outcome: completed
+disposition_summary: >-
+  B 已完成批准范围并达到 completed 关闭分类，没有残余修复责任，也不需要 routed-to 或新
+  Spark。提交 3a964a9f 仅含 B 规则、代码、计划与测试。原生 Windows 实证是已披露的未验证
+  范围；类型化 work-item 便利动作和 full-v4 并发变化提示均未形成残余责任或下游承接。

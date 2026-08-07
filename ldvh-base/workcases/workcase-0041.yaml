@@ -1,0 +1,52 @@
+title: 建立 WorkCase 当前快照确定性呈现投影合同
+status: closed
+goal: 建立由 WorkCase 规范唯一赋义、从当前实际输入确定性派生且不持久化的 current snapshot presentation projection；让 Helper 精确读取为 AI 提供绑定来源 content_fingerprint 的投影，让 Web 在字段级读取边界内消费同一合同，先消除生命周期位置、结构上下一必经控制步骤、进展分组和 Gate 2 话术漂移，同时不让 Code 判断授权、能力、行动允许、优先级或工作完成。
+scope: 覆盖 specs/21 的 WorkCase 当前快照呈现投影权威语义、specs/08 的 Web 字段级消费边界、Helper read-fact-objects 输出所需的 specs/04、specs/05 与 04.Att.01 字段合同、编码前 Code Implementation Plan、Python/Helper 投影实现、clean Web shared/API/field-reader/i18n/docs 消费层及跨语言一致性和负向测试。AI/Helper 仅对刚完成的 mechanically-valid 精确读取形成带 source content fingerprint 的非持久投影；Web 继续字段级读取，输入不足或组合非法时 unresolved。排除 specs/34 的 Controller 连续回读与关闭写回、specs/03/30 的提交粒度与行政放大、派生字段写入 WC YAML、ADR/Study、既有事实对象修改、创建前 dirty 文件、push、PR、发布、外部消息和破坏性 Git。0041 不声称 Code 能机械控制 AI 自然语言；后续 34 修订再固定 AI Controller 消费流程。
+success_criterion_definitions:
+- criterion_id: criterion-authoritative-dual-input-contract
+  statement: 21 唯一定义 current snapshot presentation projection 的语义、完整 Gate 2 谓词和 Code 禁区；08 只定义 Web 字段级输入与 Human 呈现消费，04/05/字段附件只承接 Helper 输出载体。AI/Helper 使用 mechanically-valid 刚回读对象及 content_fingerprint；Web 使用同一当前载体中实际可解析字段，输入不足或组合非法时 unresolved。
+- criterion_id: criterion-code-implementation-plan
+  statement: 编码前形成并由 code/plans/README.md 定位一份当前 Code Implementation Plan，记录实现起点与创建前 dirty 基线、唯一 Code 维护位置、模块责任、依赖方向、跨语言生成或一致性方式、Helper/Web 双输入、接口与 Schema、诊断、风险和测试映射；规划不取得领域语义权威。
+- criterion_id: criterion-helper-ai-delivery
+  statement: Helper read-fact-objects 对 mechanically-valid WorkCase 提供非持久呈现投影、来源 content_fingerprint 与合同 currentness；失败读取和非 WorkCase 不猜测投影，使 AI 有真实的刚回读投影消费入口但不由 Code 生成语义授权或完成结论。
+- criterion_id: criterion-web-contract-consumption
+  statement: clean Web shared/API/field-reader/i18n/docs 消费同一投影合同或受生成/一致性检查约束，并保持字段级读取原则。status=blocked 保留 phase 结构位置但突出阻塞；Web 不依赖 AI 文案形成 progress group、progress step 或结构上下一必经控制步骤。
+- criterion_id: criterion-gate2-negative-matrix
+  statement: 全 status/phase 表驱动测试和禁语负测通过：仅 open/human_closure_confirming 可直接表达等待 Gate 2 或关闭待确认；blocked/human_closure_confirming 必须同时突出阻塞且禁止仅剩或可立即关闭；independent_reviewing、closure_preparing 及其它活动 phase 禁止 Human Gate 2 waiting 叙述；closed 无 phase且只能表达已关闭。创建前 dirty 文件未被修改、暂存或提交。
+success_criterion_results:
+- criterion_id: criterion-authoritative-dual-input-contract
+  outcome: satisfied
+  summary: 21 solely assigns status+phase presentation semantics and the Gate2 predicate; 05 carries the Helper read projection, while 08 and 08.Att.01 define Web field-level transport and consumption. Both inputs bind the current carrier fingerprint and unresolved combinations do not guess lifecycle or handoff.
+- criterion_id: criterion-code-implementation-plan
+  outcome: satisfied
+  summary: The implementation plan was created before code changes and is indexed by code/plans/README.md. It records module ownership, dependency direction, one-way Python-to-TypeScript generation, dual inputs, diagnostics, test mapping, dirty exclusions and deferred 34/page work without acquiring semantic authority.
+- criterion_id: criterion-helper-ai-delivery
+  outcome: satisfied
+  summary: The unique Python projection feeds read-fact-objects only for mechanically-valid WorkCases with a current content fingerprint. Live reads of workcase-0041 return contract workcase-current-snapshot-presentation/1 with a source fingerprint equal to the carrier fingerprint; non-WorkCase reads remain null and unresolved output contains no authorization or completion claims.
+- criterion_id: criterion-web-contract-consumption
+  outcome: satisfied
+  summary: Clean Web field reading, generated/shared contract, current list/API services/routes/types, Cognition, i18n and docs consume one projection contract. Production current Cards require the raw-carrier fingerprint; Cognition validates the transported projection and direct local hotspot reads use the actual carrier fingerprint. No current consumer manufactures a fingerprint or emits compatibility progress for unresolved input.
+- criterion_id: criterion-gate2-negative-matrix
+  outcome: satisfied
+  summary: Python and Web table-driven tests cover every active phase for open and blocked status, closed/no-phase, malformed and missing-fingerprint inputs and the unique Gate2 predicate. Only open/human_closure_confirming yields gate2_waiting; blocked closure yields gate2_position_blocked, and independent_reviewing/closure_preparing are negative. All four Gate1-prohibited Web paths remain unchanged.
+result_summary: 'Delivered WorkCase current-snapshot presentation contract version 1 with 21 as semantic authority, a single Python mapping, deterministic TypeScript generation, Helper exact-read delivery and source-bound clean Web field/API/Cognition consumers. The first independent result review found and caused removal of two fake-fingerprint compatibility paths: production current Cards now require the actual raw-carrier fingerprint, and Cognition consumes or derives only source-bound projections. AI and Web can consume lifecycle position, handoff key, structural next control step, progress group/step and blocking overlay without persisting derived state or letting Code decide authorization, capability, permission, priority, completion or phase advancement. Specs 34 and the explicitly deferred page/test paths remain outside this result.'
+validation_summary: 'Passed after review corrections: target Python projection/Helper tests 45/45; expanded target Web projection/Cognition/spec/lifecycle/detail tests 72/72; TypeScript check; target Ruff; generated-contract byte sync; git diff --check; live Helper source/content fingerprint equality; full fact integrity 117/117; prohibited-path diff empty. Full Web API is 153 passed/1 failed, with only commit-label-contract still reading tables from 03 rather than 03.Att.01. Earlier full Python remains 1437 passed/21 failed/10 skipped, with failures confined to unmodified stale scope-count/WorkCase fixtures, coordination-response and linked-worktree tests; broad Ruff reports 26 existing unrelated errors. Seven current rule-source qualification conditions remain mechanically unproved and are not claimed as resolved.'
+closure_outcome: completed
+disposition_summary: 本 WorkCase 承诺的当前快照呈现投影合同、Helper 交付和 clean Web 消费范围已全部满足，独立结果复核通过且反馈已处置；当前 scope 内没有未完成、未验证、需转交或接受停止的责任。页面最终消费、34 模板收敛及更广泛结构清理仅作为范围外后续机会保留，不影响本次完成分类。
+spark_suggestions:
+- suggestion_id: suggestion-page-projection-consumption
+  suggestion_kind: follow_up_opportunity
+  summary: 迁移延期的 WorkCase 页面到 current_snapshot_projection 并退出 legacy projector。
+  follow_up_summary: 在新的获批 WorkCase 中修改本案 Gate1 禁止的 ObjectDetail、WorkCaseProgressTrack、ObjectList/reading layout 及相应契约测试，使可见标签和下一必经动作直接消费 source-bound projection；确认没有生产消费者后删除 projectWorkCaseCard 和 phase-only compatibility facade。
+- suggestion_id: suggestion-controller-template-convergence
+  suggestion_kind: follow_up_opportunity
+  summary: 瘦身 34 并固定 Controller 回读投影后的连续受控写回流程。
+  follow_up_summary: 以 21 为状态与 phase 权威，缩减 34 为前置读取、执行循环、稳定检查点、合法退出和恢复交还；要求 Controller 每次刚回读后消费 current_snapshot_projection，Reviewer pass 后连续完成关闭准备写回，但不让 Code 替 AI 判断授权、完成或 phase 推进。
+- suggestion_id: suggestion-workcase-redundancy-cleanup
+  suggestion_kind: follow_up_opportunity
+  summary: 继续清理 WorkCase 派生字段、提交粒度和恢复字段冗余。
+  follow_up_summary: 另案评估 continuation_required、execution_stalled、下一动作和 Web 分组不入 YAML，检查点写回与 Git commit 按语义单位解耦，并进一步验证顶层 resume_from/summary、item 级恢复入口和固定 quality gate 绑定能否在不误删不同职责结构的前提下简化。
+object_id: workcase-0041
+fact_type_key: workcase
+created_at: '2026-08-02T13:39:37.000653+08:00'
+updated_at: '2026-08-02T15:11:09.509131+08:00'

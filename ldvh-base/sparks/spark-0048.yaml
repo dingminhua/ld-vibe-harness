@@ -1,0 +1,28 @@
+title: 可信签发与验签根的授权边界
+status: open
+priority: P1
+intent: 保留可信签发与验签根如何使授权证据无法由 AI 伪造，以及历史 change_log 如何在专用受控边界中迁移并由 Web 端到端消费的问题，避免把可由调用方填写的引用字段、局部机械校验或提交署名误作有效授权。后续需判断可接受的信任根、签发与验签边界、迁移策略与验证责任，以及何时值得形成独立实施责任。
+summary: "**当前判断**\n\n- 现有 `authorization_reference` 只是调用方可构造的来源回指，不能证明授权证据由可信主体签发。\n- 没有 AI 不可写的签发或验签根时，继续增加授权字段会形成可伪造的表面防护；本次 WorkCase 因此没有实施该部分。\n\n**待判断事项**\n\n- 选择何种可信根及其签发、验签、动作范围、有效期与撤销边界。\n- 明确该机制需要的环境接入、Human Gate、可验证证据与失败处理，并据此判断是否建立新的 WorkCase。\n- 设计专用遗留 `change_log` 迁移边界，并验证迁移后流水能被 Web 端到端消费。\n\n**边界**\n\n- 本 Spark 不授权安装 Keychain、私钥、独立服务或其它外部信任设施，也不表示现有 change_log 或 Git footer 已具备不可伪造的责任证明。"
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: workcase
+    object_id: workcase-0049
+change_log:
+- signature:
+    agent_id: codex
+    host_environment: Cindy
+  session_id: 48bbb4c6-f2ff-4510-b63f-cebcaaa35d2e
+  at: '2026-08-03T14:06:30.110091+08:00'
+  summary: 按 Human 决定建立后续可信签发与验签议题。
+- signature:
+    agent_id: codex
+    host_environment: Cindy
+  session_id: 48bbb4c6-f2ff-4510-b63f-cebcaaa35d2e
+  at: '2026-08-03T14:11:29.954026+08:00'
+  summary: 按 Human 澄清承接可信签发与验签根、专用遗留 change_log 迁移及迁移后 Web 端到端验证的未完成责任。
+object_id: spark-0048
+fact_type_key: spark
+created_at: '2026-08-03T14:06:30.110091+08:00'
+updated_at: '2026-08-03T14:11:29.954026+08:00'

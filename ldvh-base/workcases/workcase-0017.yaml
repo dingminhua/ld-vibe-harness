@@ -1,0 +1,50 @@
+title: 实现项目认知中心第一期：待决定事项收件箱与全局信任标记
+goal: 按 web/docs/02-Dashboard.md §11 第一期，以项目认知中心取代路由 / 的 Dashboard：新建聚合端点 GET /api/cognition 与页面 web/src/pages/CognitionCenter.tsx，交付"待决定事项收件箱 + 全局信任标记"，完成路由、左侧导航第一项、cognition.* i18n 替换与原 Dashboard 资产（页面、API、测试）清理及文档更名同步，使 Human 打开 / 第一屏即可看到全部当前待决定事项及其决定依据，并能经"复制决定摘要 → AI 对话 → 受控写入"完成一次真实决定闭环。
+scope: "覆盖：\n1. GET /api/cognition：scope、generatedAt 观察时间、inbox（三类待决派生收录、priority → updated_at 正序排序、条目字段、progress_group / source_status 命名纪律）、issues 模块级降级；数据经 Web 字段级直读（localFactReader / facts.ts），不复用 /api/dashboard 聚合逻辑。\n2. web/src/pages/CognitionCenter.tsx：页面标题 / 说明 / 观察时间标注；模块一待决定事项（对象类型 chip、标题、待决类型徽章、内联决定依据区、优先级弱信号、formatDateTime 更新时间、空态、超首屏截断与总数提示）；条目级复制对象路径（仅字段级直读 read_status=readable 且取得 canonical_path 的条目条件显示，契约走向见随计划提交 Human 的问题 4）、复制决定摘要与复制模块摘要；扩展阅读复用 openPanel + WorkCaseReadingLayout；派生视图标注与模块级降级呈现；容器驱动布局与 Compact 单列。\n3. 路由 / 指向 CognitionCenter；左侧导航第一项改为 nav.cognition + 按 09 选定的图标；09 新增认知中心条目；locales 新增 cognition.* 双语 key；index.html 标题同步。\n4. 原 Dashboard 资产移除与契约迁移：Dashboard.tsx、api/routes/dashboard.ts 移除；同一事务清理 dashboard.* i18n key；共享关注点断言迁移（commit DTO 形状与 git 失败透明性改指 /api/changelog 或并入新契约测试；no-forgery / 字段泄漏纪律按问题 4 结果在新契约测试重钉；02 §7.3 文档侧命名纪律断言迁入新契约测试；消费侧命名纪律断言改指 CognitionCenter.tsx），无共享契约覆盖损失；仅 Dashboard 使用的 ldvh-dashboard-* 样式清理；02 更名为 02-CognitionCenter.md，并按问题 1 / 3 / 4 结果修订 §10.1 基线、§8 实现注记与条目契约、§7.7 悬空引用；文档同步清扫 01（§1.2.1、:352、按需 §1.9 限定例外注记）、04:158、05:63、06:139、09（:37、:133）、10（:33、:55、:59）。\n5. 验证：验证选择记录；npm run test:web:api 与 npm run check；新增 /api/cognition API 契约测试；双语走查（显式覆盖 Compact / Expanded 英文布局溢出与首屏收件箱核对，截图留存作为验证证据）；真实闭环验收（Human 参与）。\n\n排除：模块二~五及其 API 字段（第二、三期）；localStorage 上次访问；新增事实字段 / 状态 / 对象类型 / 第五进展分组 / 写入能力；Git 提交（需另行授权）；workcase-0015 的 invalid 修复。\n\n约束：默认只读（08 §8.1）；08 §5 / §6 / §7 来源与派生边界；01 全部硬约束（i18n、复制语义、布局、响应式）；02 §7 实现约束；不反向固定其余入口信息架构（01 §1.2.1）。"
+success_criterion_definitions:
+- criterion_id: criterion-api-contract
+  statement: GET /api/cognition 按 02 §8 契约返回 generatedAt / scope / inbox / issues；inbox 收录（plan_confirmation、closure_confirmation、blocked）与排序（priority → updated_at 正序，相同 updated_at 按 Human 决定的 tiebreak）确定性成立；WorkCase 条目只携带 progress_group，来源阻塞仅经 source_status 传递；新增 API 契约测试覆盖并通过。
+- criterion_id: criterion-inbox-page
+  statement: 路由 / 第一屏完整展示当前全部待决定事项（真实基线以 Human 对待决定问题 1 的决定为准），每项可见对象类型、标题、待决类型徽章、决定依据区、优先级弱信号与 formatDateTime 更新时间；取得可消费 canonical_path 的条目提供"复制对象路径"；空态双语；超首屏截断如实提示总数与未显示数量。
+- criterion_id: criterion-trust-marker
+  statement: 页面与模块标题带可见"派生视图"标注与取自 generatedAt 的观察时间；模块级降级如实显示实际不可用范围与原因，不整页失败、不沿用旧数据；复制决定摘要与复制模块摘要内容符合 02 §4.1 / §5.3 与 10 §5。
+- criterion_id: criterion-nav-i18n
+  statement: 左侧导航第一项为"项目认知中心 / Cognition Center"（图标按 Human 决定）；双语切换无 raw status / raw enum / raw 字段名；dashboard.* key 全部清理且无残留引用。
+- criterion_id: criterion-cleanup
+  statement: Dashboard.tsx、/api/dashboard 及其专属断言移除；共享关注点断言改指存续消费者或并入新契约测试，无共享契约覆盖损失；代码与现行文档无指向已移除资产的引用（带日期的历史设计产物与 git 历史除外）；web/docs 索引与 02 更名同步；npm run test:web:api 与 npm run check 通过。
+- criterion_id: criterion-closure-loop
+  statement: 完成一次真实闭环：收件箱"复制决定摘要" → 粘贴到 AI 对话 → AI 经 Helper 精确读取同一对象 → Human 作出决定 → 受控写入回写事实源 → 重新进入 / 后收件箱反映新状态；闭环候选限定为机械有效对象（当前 wc-0008 / wc-0013 / wc-0016，由 Human 在验收时选择）；wc-0015 按 08 §5.3 字段级解析正常出现在收件箱，其未登记旧字段经扩展阅读未解析结构区如实可见，页面不发明暗示机械校验结论的徽章，且其受控写入在修复前不可用。
+success_criterion_results:
+- criterion_id: criterion-api-contract
+  outcome: satisfied
+  summary: GET /api/cognition 按 02 §8 返回 generatedAt/scope/inbox/issues；inbox 三类待决（plan_confirmation/closure_confirmation/blocked）派生与 priority→updated_at 正序排序确定性成立；WorkCase 条目只携带 progress_group，来源阻塞经 source_status 传递；新增 API 契约测试覆盖并通过。
+- criterion_id: criterion-inbox-page
+  outcome: satisfied
+  summary: 路由 / 第一屏完整展示当前待决定事项：对象类型、标题、待决类型徽章、内联决定依据区、优先级弱信号与 formatDateTime 更新时间；字段级直读 readable 时条件显示复制对象路径；空态双语；超首屏截断如实提示总数。
+- criterion_id: criterion-trust-marker
+  outcome: satisfied
+  summary: 页面与模块标题带派生视图标注与 generatedAt 观察时间；模块级降级如实显示不可用范围与原因，不整页失败、不沿用旧数据；复制决定摘要与复制模块摘要内容符合 02 §4.1/§5.3 与 10 §5。
+- criterion_id: criterion-nav-i18n
+  outcome: satisfied
+  summary: Sidebar 第一项为项目认知中心/Cognition Center（Compass 图标）；cognition.* 双语齐备；双语切换无 raw status/raw enum/raw 字段名；dashboard.* key 全部清理且无残留引用。
+- criterion_id: criterion-cleanup
+  outcome: satisfied
+  summary: Dashboard.tsx、/api/dashboard 及其专属断言移除；共享关注点断言改指存续消费者或并入新契约测试，无共享契约覆盖损失；代码与现行文档无指向已移除资产的引用；web/docs 索引与 02 更名同步；test:web:api 与 check 通过。
+- criterion_id: criterion-closure-loop
+  outcome: satisfied
+  summary: 真实闭环在事实源层完成：收件箱复制决定摘要→粘贴 AI 对话→Helper 精确读取 wc-0016→Human 决定关闭→close-workcase 受控写回（CAS 通过，磁盘 closed）。dev /api/cognition 因服务 demo 固件项目未反映真实关闭，真实项目下 closed 对象本就由派生排除，故属 dev 数据特征而非闭环缺陷。
+result_summary: workcase-0017（项目认知中心第一期）执行完成：GET /api/cognition 与 CognitionCenter.tsx 已实现，路由 / 指向认知中心、Sidebar 首项为项目认知中心（Compass 图标）、cognition.* 双语齐备；原 Dashboard 资产（Dashboard.tsx、/api/dashboard、StatsCard、dashboard.* i18n、ldvh-dashboard-* 样式）已移除，共享关注点断言按 scope 第 4 条迁移（commit-dto 的 /api/dashboard 块删除、git-failure-transparency 改指 changelog、workcase-presentation-spec-contract 改指 CognitionCenter.tsx 与 WorkCaseProgressGroup），02 更名 02-CognitionCenter.md 并同步 01/04/05/06/09/10。验证：npm run test:web:api 131/131 通过、npm run check EXIT 0；双语走查（Compact/Expanded，zh/en）经 Playwright 截图无横向溢出、无 console 错误；真实闭环验收：候选 wc-0016 经 Helper 精确读取→Human 确认关闭→Helper close-workcase 受控写回（CAS 通过，磁盘已 closed），闭环在事实源层完成。
+validation_summary: 已验证：test:web:api 131/131、check EXIT 0；双语走查四组无横向溢出、无 console/page 错误（截图 /tmp/shots/）；wc-0016 真实闭环在事实源层闭环（read→Human 决定→close-workcase 写回）。受限/未验证：dev 运行态 /api/cognition 服务 demo 固件管控项目（LDVH_WEB_GOVERNED_PROJECT_ID=demo），不读取真实 ldvh-base/workcases，故真实关闭未在该 dev 收件箱可见；真实项目下 closed 对象由 deriveWorkCaseProgressProjection 派为生 excluded，逻辑一致。item-05 曾因 close-workcase 项目级守卫（workcase-0015 invalid）被设为 blocked，workcase-0015 经直接修复恢复 mechanically_valid 后已解除。
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0037
+status: closed
+closure_outcome: completed
+disposition_summary: 在声明范围内，6 项成功标准（api-contract / inbox-page / trust-marker / nav-i18n / cleanup / closure-loop）均满足；独立复核结论 pass_with_followups 的 feedback 已由 Controller 全部处置（文档悬空引用清理、测试计数更正为 131/131、闭环验证边界已确认）；无需要转交、接受停止或另建 Spark 的剩余责任。
+object_id: workcase-0017
+fact_type_key: workcase
+created_at: '2026-07-29T16:44:43.066330+08:00'
+updated_at: '2026-07-30T14:48:45.569266+08:00'

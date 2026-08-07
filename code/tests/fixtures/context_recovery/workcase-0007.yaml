@@ -1,0 +1,55 @@
+object_id: workcase-0007
+fact_type_key: workcase
+title: Fixed context recovery fixture
+created_at: 2026-07-26T13:00:00+08:00
+updated_at: 2026-07-26T14:00:00+08:00
+status: open
+summary: Execute the approved bounded context recovery plan.
+priority: P1
+goal: Exercise bounded context recovery without depending on a live WorkCase.
+scope: A deterministic test-only WorkCase with one active item.
+success_criterion_definitions:
+  - criterion_id: criterion-01
+    statement: Recovery projects the single in-progress item without inventing evidence.
+phase: executing
+plan_version: 1
+work_items:
+  - item_id: item-01
+    goal: Preserve a pending predecessor for ordering coverage.
+    expected_result: The pending item is not projected as active.
+    status: pending
+  - item_id: item-02
+    goal: Exercise active item projection.
+    expected_result: The item is projected as in progress.
+    status: in_progress
+    current_summary: The deterministic recovery fixture is under test.
+    resume_from: Assert the bounded projection and operation sequence.
+creation_reviews:
+  - reviewer: independent-fixture-reviewer
+    reviewed_at: 2026-07-26T13:20:00+08:00
+    subject_version: 1
+    scope: Goal, scope, criteria, work items, method, validation and risks
+    conclusion: pass
+execution_authorization:
+  authorized_actions:
+    - action_id: authorization-fixture-recovery
+      summary: Execute the approved bounded context recovery fixture plan.
+      target_scope: Fixture project workcase-0007 only.
+      effect_scope: Deterministic test workspace only.
+      risk_summary: No production effect; fixture data only.
+      rollback_summary: Remove the fixture additions and revert the file.
+      rule_refs:
+        - specs/21-WorkCase-工作项.md
+  action_ceiling: Bounded to fixture validation actions.
+  allowed_adjustments: No adjustments beyond the recorded fixture summaries.
+  verification_and_rollback: Run the context recovery test suite.
+  out_of_bounds_handling: Stop and return to Human.
+  prohibited_actions:
+    - Writing outside the deterministic fixture workspace.
+execution_approval:
+  subject_version: 1
+  approved_at: 2026-07-26T13:30:00+08:00
+  summary: Human approved execution of fixture plan version 1.
+  baseline_fingerprint: 015927e770ab484ba6fb96fdf50803791a5239db7ca64c389215bbf89e0dc624
+  source_refs:
+    - human://fixture/workcase-0007/execution-approval

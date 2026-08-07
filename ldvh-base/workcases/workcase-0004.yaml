@@ -1,0 +1,87 @@
+object_id: workcase-0004
+fact_type_key: workcase
+title: Web 规范符合性与工程结构整改
+created_at: '2026-07-20T08:06:53.865799+08:00'
+updated_at: '2026-07-26T22:27:30+08:00'
+status: closed
+goal: >-
+  使 LDVH V4 web/ 在 LDVH 规范符合性与行业工程规范两个维度达到可信基线，消除已知
+  明文违规，并建立防止回归的验证。
+scope: >-
+  覆盖 i18n 合规、事实读取语义（空列表掩盖与治理 YAML 自行解析）、五类事实对象统一
+  读取路径（直读本地文件机械映射、不校验、缺失标注）、巨石组件拆分、api/src 边界、
+  tsconfig 双配置、vite.config 清理。范围限于 web/src、web/api、web/tests、
+  web/tsconfig*、web/vite.config.ts。明确排除：不改动 Python 端 ldvh 包与
+  web_machine 协议定义；不改动 specs/ 任何规范；不新增 Web 写入能力；不做与整改无关的
+  UI 重设计；Git 日志读取保留现状走 git 子进程。事实对象 YAML/MD 由 Web 直读机械映射；
+  治理与协议类 YAML 仍经 Code 受控路径；Git 日志走 git 子进程。
+success_criterion_definitions:
+- criterion_id: criterion-01
+  statement: >-
+    web/src 不再存在 JSX 内联中英文案分支或自建平行 i18n；全部用户可见文案走
+    useI18n()/t()，文案资源集中于 src/i18n/locales.ts，包括 ObjectDetail 内联映射迁回，
+    ReadingPanel 字段 label 与 ObjectDetail 同源复用。
+- criterion_id: criterion-02
+  statement: >-
+    非 spark 类型不再以空列表加 ok:true 掩盖未接入；API 返回可区分的
+    type_not_integrated 语义，页面如实区分“未接入”与“无数据”。
+- criterion_id: criterion-03
+  statement: >-
+    projectFiles 不再自行 yaml.load 治理类 YAML（LDVH-GOVERNED-PROJECTS.yaml），读取回到
+    经 Code 的受控路径。
+- criterion_id: criterion-04
+  statement: >-
+    五类事实对象统一改为直读本地文件机械映射、不校验、缺失如实标注；读取路径不产生
+    Python 子进程；给出基线与整改后的实测耗时对比；create-spark 写入路径不变。
+- criterion_id: criterion-05
+  statement: >-
+    ObjectDetail.tsx、ProjectFiles.tsx、ReadingPanel.tsx 拆分为符合单一职责的模块；api
+    不再反向 import src；tsconfig 拆分为 app/node 双配置并启用 strict、修复 strict 类型
+    错误；vite.config 移除调试输出，allowedHosts 改由环境变量提供并保留默认值。
+- criterion_id: criterion-06
+  statement: >-
+    除标准 2、3、4 的有意呈现变化外，其余既有可观察行为保持不变；Web typecheck、lint、
+    全部 Web API 测试和 production build 通过，并记录本 WorkCase 与 spark-0005 的承接结论。
+success_criterion_results:
+- criterion_id: criterion-01
+  outcome: satisfied
+  summary: >-
+    用户可见文案与对象类型、字段、枚举、commit、signal 映射已集中到 locales.ts；组件内
+    双语字面量分支已移除，机械检索确认 locales.ts 外无平行文案表。
+- criterion_id: criterion-02
+  outcome: satisfied
+  summary: >-
+    缺目录返回 coverage_status=type_not_integrated、非空诊断 items 与专用 UI；已接入空目录
+    返回 complete 和空 items，API 与页面可区分两种状态。
+- criterion_id: criterion-03
+  outcome: satisfied
+  summary: >-
+    Project Files 不再解析治理 YAML，实际调用 Helper resolve-governance-scope；只接受已验证的
+    valid、governed_single 结果，不确定状态拒绝读取。
+- criterion_id: criterion-04
+  outcome: satisfied
+  summary: >-
+    五类事实保持本地机械直读且不启动 Python 子进程；正式扩展名按类型闭合，错载体进入
+    issue/unavailable；create-spark 写入回读继续通过，实测读取约由 895.8ms 降至 1.7ms。
+- criterion_id: criterion-05
+  outcome: satisfied
+  summary: >-
+    ReadingPanel、ProjectFiles、ObjectDetail 已分别拆出内容渲染、控制器、WorkCase 与事实类型
+    布局模块；API 无 src 反向 import；双 tsconfig strict 与 Vite 清理通过。
+- criterion_id: criterion-06
+  outcome: satisfied
+  summary: >-
+    共享 WorkCase phase 投影覆盖列表、Dashboard 与详情；API tests、strict typecheck、lint、
+    production build 与浏览器回归通过，spark-0005 的部分承接结论保持。
+result_summary: >-
+  Web 的 i18n、未接入语义、治理读取、五类事实直读、组件职责、API 边界、TypeScript strict
+  配置和 Vite 配置已完成整改；目标范围内的行为、构建和浏览器回归验证均已通过。
+validation_summary: >-
+  六项成功标准全部满足。i18n、未接入语义、治理读取、多项目 fail-closed、正式载体、五类
+  事实直读、组件职责、WorkCase phase 投影、strict 与 Vite 清理均有当前结果支持；
+  typecheck、lint、Web API tests、production build、差异检查和浏览器回归通过。
+closure_outcome: completed
+disposition_summary: >-
+  批准的 Web 规范符合性与工程结构整改范围已完成，原范围内没有残余责任或需 routed-to 的
+  对象。循环依赖进一步解耦和额外 UI、畸形响应测试未被接纳为本案责任，也没有形成下游
+  承接；如需推进，应另行建立明确责任。

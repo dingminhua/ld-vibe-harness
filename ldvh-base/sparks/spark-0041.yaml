@@ -1,0 +1,15 @@
+title: 收束 FileAsset 跨规范政策与验证基线
+status: implemented
+intent: 在取得独立 Human Gate 1 授权后，以实际规范路径完成 FileAsset 候选与测试证据边界的政策收束，并恢复可判定的规范测试验证基线。
+summary: workcase-0025 的 partial 收束后，workcase-0032 已在独立 Gate 1 下完成实际 07 §11.2 的最小政策补齐：明确最终原始 bytes 仅在满足 25 条件且具有独立持续价值时可成为 FileAsset 候选；FileAsset 身份不提高测试材料证明力或扩大测试、环境、通过/完成等结论；根级 docs 临时材料边界保持不变。定向文本回读和 git diff --check 通过；code/tests/specs 为 131 passed（14.30s），独立结果复核复跑为 131 passed（14.14s）。未运行 full-v4，因此不把该局部规范测试表述为全量 Working Tree 结论；本 Spark 范围内不再有待处置责任。
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: workcase
+    object_id: workcase-0025
+disposition_summary: spark-0041 所限定的 FileAsset 跨规范政策与可判定规范测试基线已由 09、24 的既有完成与 workcase-0032 对实际 07 路径的直接政策收束共同落实。07 定向验证和 code/tests/specs 均通过，独立结果复核通过；未创建 FileAsset 实例、消费者、关系或 Web 能力。该终态只结束本 Spark 的信息入口，不表示 full-v4、整个 Working Tree、Git 提交或其它并行 FileAsset 工作已经完成。
+object_id: spark-0041
+fact_type_key: spark
+created_at: '2026-08-01T21:45:04.750585+08:00'
+updated_at: '2026-08-02T01:38:00.696401+08:00'
