@@ -714,9 +714,9 @@ input::-moz-focus-inner {
   margin-top: 12px;
 }
 
-/* Center the custom unordered-list marker on Spark's fixed 26px reading line. */
+/* Optically center the custom marker on Spark's fixed 26px reading line. */
 .ldvh-study-node-content.ldvh-spark-reading-prose .ldvh-inline-markdown :where(ul > li)::before {
-  top: 10px;
+  top: 12px;
 }
 
 .ldvh-study-node-content .ldvh-inline-markdown :where(ul) {
@@ -737,7 +737,8 @@ input::-moz-focus-inner {
   content: "";
   position: absolute;
   left: 0.35rem;
-  top: 0.72rem;
+  top: calc(0.875em - 1px);
+  transform: translateY(-50%);
   width: 0.35rem;
   height: 0.35rem;
   border-radius: 999px;

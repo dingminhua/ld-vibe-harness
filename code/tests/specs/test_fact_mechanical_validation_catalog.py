@@ -16,6 +16,7 @@ _OPERATIONS_BY_COVERAGE = {
     "workcase-close": "close-workcase",
     "workcase-close-candidate": "prepare-closed-workcase-candidate",
     "workcase-closed-correction": "correct-closed-workcase",
+    "legacy-change-log-migration": "migrate-legacy-change-log",
     "readback": "readback",
     "candidates": "find-fact-object-candidates",
     "integrity": "check-fact-integrity",
