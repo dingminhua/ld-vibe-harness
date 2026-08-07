@@ -1,0 +1,122 @@
+title: 建立可审计的 trial 测量基础设施
+status: open
+goal: 交付可审计、可独立复核且 fail-closed 的 trial 测量基础设施，使后续实验能产生完整、可解释的证据；本工作项不重跑实验，也不修改生产 Helper。
+scope: 仅限 code/ldvh/testing/ 与 code/tests/testing/ 下的测试性模块和测试；可只读读取现行 Helper capabilities/specification 内容以生成并校验提示卡声明；运行数据只能写入由运行器新建、并以创建身份、realpath、lstat 前后校验的 mkdtemp 临时根目录。明确排除任何真实 A/B trial、提示卡效益判断、生产 Helper/调用入口/能力契约、规格、文档、其它事实对象、Git、配置、网络、依赖安装及 WorkCase-0068 产物的修改。
+success_criterion_definitions:
+- criterion_id: criterion-01
+  statement: 存在版本化、严格且禁止未声明字段的 JSON schema，明确 trial_id、task_package_hash、condition、runner/schema/rule/capability fingerprints、correct、first_legal、discover/target/repair/total 调用、extra_calls、invalid_requests、response_bytes、estimated_tokens、duration、timeout、failure、unavailable_reason 的类型、可空性、单位和错误语义；每种终态均能形成完整对象。
+- criterion_id: criterion-02
+  statement: 运行器自动采集而非由 agent 事后填写调用分类及次数、invalid_requests、成功和失败时完整原始 Helper 响应 UTF-8 bytes、monotonic clock duration、timeout/failure；token 不可得时必须为 null 并附 unavailable_reason，绝不可填 0。
+- criterion_id: criterion-03
+  statement: 所有运行数据仅写入运行器新建的 mkdtemp 根目录；创建前后以创建身份、realpath、lstat 校验，拒绝 ..、绝对路径、符号链接逃逸、既有或非自身创建目录及 realpath 漂移；不得回退到仓库或 ldvh-base。
+- criterion_id: criterion-04
+  statement: 提示卡声明由当前 capabilities/specification source 读取生成并记录 provenance 与 fingerprint；无法从当前源验证的声明必须拒绝生成。
+- criterion_id: criterion-05
+  statement: 正常、缺字段、额外字段、畸形 JSON、失败响应、超时、错误提示卡及全部路径逃逸均有 synthetic tests；独立复核者可重跑全量测试，并确认未发生真实 trial、生产契约变更或越权写入。
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0068
+change_log:
+- signature:
+    agent_id: codex
+    host_environment: codex-desktop
+  session_id: spark-0067-measurement-infrastructure-plan
+  at: '2026-08-07T22:09:03.449286+08:00'
+  summary: 用户授权按建议推进；创建仅限 testing-only 的 trial 测量基础设施计划，等待 Gate 1。
+priority: P1
+phase: human_plan_confirming
+plan_version: 1
+waiting_on: Gate 1：请确认当前 testing-only 测量基础设施计划、授权边界和独立复核保证边界；确认前不得改代码、运行真实 trial 或修改生产契约。
+work_items:
+- item_id: item-01
+  goal: 定义严格 schema 与自动采集模型。
+  expected_result: 版本化 fail-closed schema 完整描述所有指标、空值、单位与错误语义。
+  status: pending
+  approach_summary: 先冻结数据结构与采集语义，避免后续运行器用不可比较的临时字段。
+- item_id: item-02
+  goal: 实现受限运行器与来源受控提示卡生成。
+  expected_result: 运行器自动采集 required metrics、临时目录身份与路径 fail-closed，提示卡仅生成可由当前 source 验证的声明。
+  status: pending
+  depends_on:
+  - item-01
+  approach_summary: 把路径隔离和契约来源验证内置于执行边界，而不是依赖执行者约定。
+- item_id: item-03
+  goal: 完成对抗性 synthetic 自检。
+  expected_result: 缺字段、额外字段、畸形 JSON、失败响应、超时、错误提示卡和全部路径逃逸均被拒绝或如实记录。
+  status: pending
+  depends_on:
+  - item-02
+- item_id: item-04
+  goal: 完成就绪审查与独立结果复核。
+  expected_result: 独立复核者重跑全量 synthetic tests，确认无真实 trial、无提示卡效益判断、无生产契约变化及无越权写入。
+  status: pending
+  depends_on:
+  - item-03
+execution_authorization:
+  authorized_actions:
+  - action_id: authorization-testing-implementation
+    summary: 在测试性模块中实现 schema、采集器、受限运行器、来源受控提示卡生成器与测试。
+    target_scope: 仅 code/ldvh/testing/ 与 code/tests/testing/。
+    effect_scope: 仅允许修改上述测试性路径；不得写生产路径、规格、文档、配置、Git 或其它事实对象。
+    risk_summary: 实现错误可能造成测量误判或路径逃逸；生产契约和真实实验均不在本动作范围。
+    rollback_summary: 若任一检查显示超界或 fail-closed 不能保证，停止并取消受影响 item；测试性代码改动可由后续受控变更回退，已存在用户文件不做删除。
+    rule_refs:
+    - 21-WorkCase-工作项.md §6.5
+    - 21-WorkCase-工作项.md §6.3
+  - action_id: authorization-synthetic-validation
+    summary: 运行 synthetic self-check 验证采集语义、schema 和临时目录隔离。
+    target_scope: 仅运行新建测试性模块，临时输出仅限运行器创建且经身份、realpath、lstat 校验的 mkdtemp 根目录。
+    effect_scope: 允许创建并保留受控临时样本；不得执行真实 baseline/candidate trial，不得向仓库或 ldvh-base 写入运行产物。
+    risk_summary: 临时目录校验不足会重现项目根目录写入；测试只证明基础设施行为，不证明提示卡收益。
+    rollback_summary: 路径身份或范围断言失败即停止测试，保留诊断但不回退到其它目录；临时样本由其受控临时根处理。
+    rule_refs:
+    - 21-WorkCase-工作项.md §6.5
+    - 21-WorkCase-工作项.md §6.4
+  - action_id: authorization-delegate-review
+    summary: 委派独立只读复核者审查最终测试结果与范围。
+    target_scope: 仅本 WorkCase 的测试性改动、synthetic test 输出和当前 source provenance。
+    effect_scope: 允许一次只读子代理复核；不授予写入、真实 trial、生产契约修改或外部操作权限。
+    risk_summary: 复核者只能给出咨询性结论，且独立性保证边界须据实记录。
+    rollback_summary: 委派不可用或无法保持只读时不使用替代写入；停止进入结果收敛并据实记录限制。
+    rule_refs:
+    - 21-WorkCase-工作项.md §6.5
+    - 21-WorkCase-工作项.md §6.6
+  - action_id: authorization-result-review
+    summary: 实施并记录独立结果复核。
+    target_scope: 仅本 WorkCase 完整 synthetic test 结果、实际改动范围和禁止项核验。
+    effect_scope: 允许只读复跑测试和写入本 WorkCase 的复核记录；不允许更改测试实现、生产契约或运行真实 trial。
+    risk_summary: 复跑不能替代真实实验，也不保证未知环境差异不存在。
+    rollback_summary: 若复跑失败或发现超界，不将结果升级为通过；停止后续关闭并返回控制检查。
+    rule_refs:
+    - 21-WorkCase-工作项.md §6.5
+    - 21-WorkCase-工作项.md §6.6
+  quality_gates:
+  - gate_id: independent-result-review
+    reviewer_mode: independent-read-only
+    delegation_action_id: authorization-delegate-review
+    result_review_action_id: authorization-result-review
+  action_ceiling: 单次运行上限是测试性测量基础设施与 synthetic self-check；影响范围仅为两条 testing 路径和经验证的 mkdtemp 临时根，绝不跨入生产契约或真实实验。
+  prohibited_actions:
+  - 修改 code/ldvh/helper、调用入口或生产 capabilities
+  - 修改 specification、docs、其它事实对象、Git 或配置
+  - 运行真实 baseline/candidate trials、判断提示卡效益或复算 WorkCase-0068
+  - 网络访问、安装依赖或向项目根目录写入 trial 产物
+  allowed_adjustments: Gate1 后仅可在不改变 goal、scope、成功标准、授权动作、动作上限和禁止项的前提下调整测试实现细节、重试 synthetic tests 或重新委派只读复核；任何超界发现都不执行而安全收敛。
+  verification_and_rollback: 每项改动以测试与路径范围审计验证；失败、不可复现、来源漂移或路径身份异常时停止受影响 item，不以回退目录、补填指标或事后改写 trial 数据规避失败。既有外部或用户数据不属于本 WorkCase 的回滚目标。
+  out_of_bounds_handling: 发现未授权动作、新风险、真实实验需求、生产契约变更需求或无法保持临时目录边界时，禁止执行该动作，取消受影响 item 并按已有事实进入结果收敛；不得在本 WorkCase 内扩权或索取新的执行分支。
+creation_reviews:
+- reviewer: agent:/root/review_wc0069_plan
+  reviewed_at: '2026-08-07T22:09:02+08:00'
+  subject_version: 1
+  scope: 只读审查测试性测量基础设施的范围、采集字段语义、临时目录隔离、真实实验排除和独立结果复核边界。
+  conclusion: pass
+  covered_quality_gate_ids:
+  - independent-result-review
+  actual_method: subagent-read-only
+object_id: workcase-0069
+fact_type_key: workcase
+created_at: '2026-08-07T22:09:03.449286+08:00'
+updated_at: '2026-08-07T22:09:03.449286+08:00'
