@@ -12,6 +12,12 @@ LDVH 以 AI 执行者为第一服务对象，帮助 AI 在长期项目中保持*
 
 它由规范（Specs）、事实对象（Fact Objects）与行动模板（Action Templates）构成，以源码仓库为能力本体，通过薄 Skill、Helper CLI、必部署的 Git Hook、其承接的 Git Gate 和 Web 界面交付，适用于需要 AI 跨会话保持一致、Human 返回后能够核查并接续，以及在不同 AI 开发环境中复用规则的长期项目。
 
+## 管辖项目与 `ldvh-base/`
+
+当 LDVH 部署到你的项目时，AI 会在项目根目录下创建一个 **`ldvh-base/`** 文件夹，用于存放该项目的**事实对象（Fact Objects）**——即项目演进过程中产生的关键决策记录、验证证据、工作案例与经验教训等结构化信息。`ldvh-base/` 是 LDVH 管辖项目的"事实档案库"，所有事实对象按类型分目录存储（`adrs/`、`pitfalls/`、`sparks/`、`studies/`、`workcases/`），由 Git Gate 确保每次新增或修改都有完整的签名链和变更追溯。
+
+部署后，你的项目将拥有自己的事实资产，与 LDVH 本体的 `ldvh-base/` 相互独立，互不干扰。
+
 ---
 
 ## 快速开始
