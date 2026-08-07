@@ -1,5 +1,9 @@
 # LDVH — LD Vibe Harness
 
+<p align="center">
+  <img src="icons/ldvh-plugin-icon.png" alt="LDVH Logo" width="120">
+</p>
+
 **Version: v4.0.0-alpha** — 完善阶段的首个公开发布。能力结构已建立，但部分功能仍在收敛中，不完全视为稳定。
 
 LDVH 以 AI 执行者为第一服务对象，帮助 AI 在长期项目中保持**判断有据、行动可续、结果可验**；同时直接服务 Human，使决策提请清晰可决、授权执行受控可续、入档闭环节点可验，并让项目演进脉络可循。积累效用如何直观可见仍是当前明确待加强的能力，不因事实对象、提交或页面存在就宣称已经实现。
