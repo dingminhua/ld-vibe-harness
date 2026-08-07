@@ -103,26 +103,32 @@ change_log:
   session_id: wc0068
   at: '2026-08-07T20:31:30.484016+08:00'
   summary: Human Gate 2 批准。已关闭。
+- signature:
+    agent_id: codex
+    host_environment: codex-desktop
+  session_id: spark-0067-wc0068-closure-correction
+  at: '2026-08-07T22:02:27.389927+08:00'
+  summary: 依 Human 当前指令与独立复核，更正关闭时已存在的 trial 结果与验证边界；保持 closed / partial，不重开。当前 Helper 拒绝 Spark route target，故保留既有残余责任而不伪造 routed-to。
 success_criterion_results:
 - criterion_id: criterion-01
   outcome: satisfied
-  summary: 协议、SHA-256 均在 mktemp 冻结
+  summary: 协议、任务包与 SHA-256 已在 mktemp 冻结；提示卡含三项错误契约描述，因此冻结不证明实验材料正确。
 - criterion_id: criterion-02
-  outcome: satisfied
-  summary: 24 trial 全部完成
+  outcome: not_satisfied
+  summary: 24 个 trial 文件虽已保留，但多个 trial 缺少冻结要求的标准字段，一个 candidate 结果不是合法 JSON，response_bytes 全部缺失。
 - criterion_id: criterion-03
   outcome: not_verified
-  summary: 数据采集不一致，无法机械验证 signal
+  summary: 冻结算法要求比较 response_bytes 增幅；该指标未采集，无法机械验证 POSITIVE signal。
 - criterion_id: criterion-04
   outcome: satisfied
-  summary: '证据矩阵回指 #1/#5/#8/#13'
+  summary: '证据矩阵回指 #1/#5/#8/#13，并区分能力存在、首次可用、提示上界和生产净收益；样本不外推。'
 - criterion_id: criterion-05
-  outcome: satisfied
-  summary: 临时文件已移回 tmpdir
-result_summary: 提示卡方向性改善（24/24），数据采集不足以验证 criterion-03。
-validation_summary: 独立复核 8 项问题。数据采集 schema 不一致是根因。
+  outcome: not_satisfied
+  summary: 实验执行中至少一次 candidate 临时文件曾写入项目根目录；移回 mktemp 只恢复当前状态，不能满足全程临时数据仅位于 mktemp 的标准。
+result_summary: 完成了 24 个 trial，并观察到提示卡可能降低首次调用摩擦的方向性迹象；由于输出 schema 不一致、关键 bytes 指标缺失、一个结果非法 JSON、提示卡含错误契约描述以及临时文件越界，本 pilot 不验证提示卡收益，也不支持生产方案选择。
+validation_summary: 独立复核识别 8 项问题：输出 schema 不一致、response_bytes 缺失、一个 candidate 结果非法 JSON、提示卡含三项错误契约描述，以及临时文件越界等。它们使预设收益算法不可机械复现；当前只保留能力与方法论学习。
 closure_outcome: partial
-disposition_summary: 方向性改善确认，criterion-03 不可机械验证。剩余决策接受停止。
+disposition_summary: 本 WorkCase 停止于部分结论：保留能力发现与方向性迹象，但不将其视为提示卡收益或生产方案选择依据。三项残余责任保留为后续独立承接范围；当前 Helper 实现拒绝 Spark route target，未伪造 routed-to。
 residual_responsibilities:
 - residual_id: residual-01
   summary: 标准化 trial 输出 schema
@@ -133,4 +139,4 @@ residual_responsibilities:
 object_id: workcase-0068
 fact_type_key: workcase
 created_at: '2026-08-07T19:31:25.415722+08:00'
-updated_at: '2026-08-07T20:31:30.484016+08:00'
+updated_at: '2026-08-07T22:02:27.389927+08:00'
