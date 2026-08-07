@@ -6,6 +6,8 @@
 
 **Version: v4.0.0-alpha** — 完善阶段的首个公开发布。能力结构已建立，但部分功能仍在收敛中，不完全视为稳定。
 
+LDVH 以**环境 Skill（薄 Skill）**的身份部署到 AI 开发环境（如 Claude Code、Codex、Cindy、Trae 等），通过一个轻量路由文件将落入 LDVH 领域的工作引导至仓库中的 Helper CLI。**它是 AI 开发环境的"插件"而非独立运行的程序**——你不需要安装或启动任何服务，只需在 AI 环境启用 LDVH Skill，AI 便会自动按规则引导你完成受控操作。
+
 LDVH 以 AI 执行者为第一服务对象，帮助 AI 在长期项目中保持**判断有据、行动可续、结果可验**；同时直接服务 Human，使决策提请清晰可决、授权执行受控可续、入档闭环节点可验，并让项目演进脉络可循。积累效用如何直观可见仍是当前明确待加强的能力，不因事实对象、提交或页面存在就宣称已经实现。
 
 它由规范（Specs）、事实对象（Fact Objects）与行动模板（Action Templates）构成，以源码仓库为能力本体，通过薄 Skill、Helper CLI、必部署的 Git Hook、其承接的 Git Gate 和 Web 界面交付，适用于需要 AI 跨会话保持一致、Human 返回后能够核查并接续，以及在不同 AI 开发环境中复用规则的长期项目。
@@ -27,7 +29,7 @@ cd ld-vibe-harness
 
 先用 `./ldvh capabilities </dev/null` 验证入口并发现当前公开能力。所有 Helper 入口均无条件读取 stdin 至 EOF，在 AI 环境或无 tty 的自动化中调用时必须闭合 stdin。若入口报告第三方库缺失，按 `requirements.txt` 准备运行依赖；这不等于打包或安装 LDVH 本体。
 
-当前已验证平台为 macOS；其它平台的仓库入口、运行依赖、路径与 Git Hook 执行能力尚未实测，按未验证范围处理。
+当前已验证平台为 **macOS** 与 **Windows**（受控写入，`file_only` 耐久，仅限 NTFS fixed drive）。Windows 的仓库入口、运行依赖、路径写法与 Git Hook 执行能力已在目标平台实测通过（证据见 study-0025）。其它平台按未验证范围处理。
 
 ### 更新
 
@@ -67,7 +69,7 @@ npm run dev
 
 环境接入的完整流程包含四项工作：**环境接入（取得源码、确认必需入口、部署薄 Skill） → 管辖配置 → Git Hook 部署 → 验证**。
 
-将以下提示复制给你的 AI 开发环境（如 Trae、Cursor、ZCode 等）：
+将以下提示复制给你的 AI 开发环境（如 Codex、Cindy、WorkBuddy、Trae 等）：
 
 可复制给目标环境 AI 的提示：
 
