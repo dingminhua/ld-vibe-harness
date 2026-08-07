@@ -60,7 +60,7 @@ def test_plan_is_cross_platform_read_only_and_separates_support_conclusions(tmp_
     assert plan["contract"] == "ldvh-native-windows-verification/1"
     assert set(plan["phases"]) == {"preflight", "core-readonly", "core-full", "adapter-handoff"}
     assert plan["phases"]["core-full"]["human_gate"]
-    assert set(plan["phases"]["core-full"]["matrix"].values()) == {"blocked_by_file_only_human_gate"}
+    assert set(plan["phases"]["core-full"]["matrix"].values()) == {"scheduled"}
     assert plan["phases"]["adapter-handoff"]["automated"] is False
     assert tuple(tmp_path.iterdir()) == ()
 
@@ -261,6 +261,27 @@ def test_junit_probe_matrix_reports_pass_skip_fail_and_policy_blocks(tmp_path: P
     assert matrix["drive_case_alias"] == "failed"
     assert matrix["public_write_fail_closed"] == "not_run"
     assert matrix["allocator_six_process_contiguous_ids"] == "blocked_by_file_only_human_gate"
+
+
+def test_junit_probe_matrix_parses_approved_write_probes_for_core_full(tmp_path: Path) -> None:
+    runner = _runner()
+    work = tmp_path / "work"
+    work.mkdir()
+    (work / "approved-write-probes.xml").write_text(
+        """<?xml version='1.0' encoding='utf-8'?>
+<testsuites><testsuite>
+  <testcase name='test_native_six_process_allocator_contiguous_ids'/>
+  <testcase name='test_native_conditional_update_single_winner'><failure/></testcase>
+</testsuite></testsuites>
+""",
+        encoding="utf-8",
+    )
+
+    matrix = runner._probe_matrix(work, "core-full")
+
+    assert matrix["allocator_six_process_contiguous_ids"] == "passed"
+    assert matrix["main_linked_shared_counter"] == "not_run"
+    assert matrix["conditional_update_single_winner"] == "failed"
 
 
 def test_embedded_lock_worker_is_valid_python() -> None:

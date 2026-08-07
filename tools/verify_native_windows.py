@@ -45,11 +45,12 @@ BASE_PROBES = {
 POLICY_PROBES = {
     "test_native_public_create_and_update_are_unavailable_without_side_effects": "public_write_fail_closed",
 }
-FUTURE_WRITE_PROBES = (
-    "allocator_six_process_contiguous_ids",
-    "main_linked_shared_counter",
-    "conditional_update_single_winner",
-)
+APPROVED_PROBES = {
+    "test_native_six_process_allocator_contiguous_ids": "allocator_six_process_contiguous_ids",
+    "test_native_linked_worktree_shared_counter": "main_linked_shared_counter",
+    "test_native_conditional_update_single_winner": "conditional_update_single_winner",
+}
+FUTURE_WRITE_PROBES = tuple(APPROVED_PROBES.values())
 
 
 def _json(value: object) -> str:
@@ -86,10 +87,11 @@ def verification_plan() -> dict[str, Any]:
             },
             "core-full": {
                 "purpose": (
-                    "reserved for an approved native write matrix; broader Windows release selection needs review"
+                    "approved native write matrix: six-process allocator, shared linked-worktree counter, "
+                    "and conditional-update single-winner probes"
                 ),
-                "human_gate": "Windows file_only durability must be explicitly accepted and implemented",
-                "matrix": dict.fromkeys(FUTURE_WRITE_PROBES, "blocked_by_file_only_human_gate"),
+                "human_gate": "Windows file_only durability accepted via 05 §11.8 condition (c) on 2026-08-07",
+                "matrix": dict.fromkeys(FUTURE_WRITE_PROBES, "scheduled"),
             },
             "adapter-handoff": {
                 "automated": False,
@@ -357,10 +359,13 @@ def _record_command(
 
 def _probe_matrix(work_dir: Path, phase: str) -> dict[str, str]:
     matrix = {**dict.fromkeys(BASE_PROBES.values(), "not_run"), **dict.fromkeys(POLICY_PROBES.values(), "not_run")}
-    matrix.update(dict.fromkeys(FUTURE_WRITE_PROBES, "blocked_by_file_only_human_gate"))
+    future_default = "not_run" if phase == "core-full" else "blocked_by_file_only_human_gate"
+    matrix.update(dict.fromkeys(FUTURE_WRITE_PROBES, future_default))
     files = [(work_dir / "native-probes.xml", BASE_PROBES)]
     if phase == "core-readonly":
         files.append((work_dir / "write-policy-probes.xml", POLICY_PROBES))
+    if phase == "core-full":
+        files.append((work_dir / "approved-write-probes.xml", APPROVED_PROBES))
     for junit, mapping in files:
         if not junit.is_file():
             continue
@@ -518,9 +523,9 @@ def _run(arguments: argparse.Namespace) -> int:
             return _adapter_handoff(evidence_dir, source, work_dir)
         if arguments.phase == "core-full":
             sys.path.insert(0, str(source_root / "code"))
-            from ldvh.filesystem import durable_writes_enabled
+            from ldvh.filesystem import native_atomic_fact_writes_supported
 
-            if not durable_writes_enabled():
+            if not native_atomic_fact_writes_supported("nt"):
                 matrix = dict.fromkeys(FUTURE_WRITE_PROBES, "blocked_by_file_only_human_gate")
                 _write_json(
                     evidence_dir / "core-summary.json",
@@ -574,12 +579,15 @@ def _run(arguments: argparse.Namespace) -> int:
             ],
             "matrix": matrix,
             "write_policy": (
-                "fail_closed_file_only_not_accepted" if arguments.phase == "core-readonly" else "not_exercised"
+                "fail_closed_file_only_not_accepted"
+                if arguments.phase == "core-readonly"
+                else "file_only_approved" if arguments.phase == "core-full" else "not_exercised"
             ),
             "work_dir": work_state,
             "residual_risk": [
                 "Environment thin-Skill integration is a separate Human Gate",
                 "a passing preflight or core-readonly phase does not authorize create/update",
+                "core-full exercises approved file_only writes; directory metadata fsync is not performed on Windows",
             ],
         }
         _write_json(evidence_dir / "core-summary.json", summary)

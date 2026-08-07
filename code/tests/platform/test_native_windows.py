@@ -237,6 +237,11 @@ def test_native_file_only_create_and_replace_report_exact_boundaries(tmp_path: P
         "file_only",
         "clean",
     )
+    # The replaced bytes must be exact (no LF -> CRLF translation on write).
+    # Without O_BINARY on the create/replace open paths, the payload would be
+    # silently rewritten to b"replacement\r\n" and this assertion would fail,
+    # detecting a Windows-only binary-safety regression.
+    assert (root / relative).read_bytes() == b"replacement\n"
 
 
 def test_native_git_linked_worktree_and_temporary_index_are_isolated(tmp_path: Path) -> None:
@@ -269,7 +274,7 @@ def test_native_git_linked_worktree_and_temporary_index_are_isolated(tmp_path: P
 def test_native_drive_letter_case_alias_reads_the_same_file(tmp_path: Path) -> None:
     root = tmp_path / "Drive Case 根"
     root.mkdir()
-    (root / "observed.txt").write_text("same identity\n", encoding="utf-8")
+    (root / "observed.txt").write_bytes(b"same identity\n")
     value = str(root)
     assert len(value) >= 3 and value[1:3] == ":\\"
     alias = Path(value[0].swapcase() + value[1:])

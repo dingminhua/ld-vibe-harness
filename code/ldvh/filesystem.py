@@ -11,6 +11,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal, Protocol, cast
 
+# Windows text-mode translation (LF<->CRLF and Ctrl+Z-as-EOF) corrupts byte
+# payloads.  O_BINARY exists only on Windows; on POSIX it is absent and the
+# getattr fallback of 0 makes it a no-op, so these flags never change macOS
+# / Linux behavior.  See the same pattern used for O_NOFOLLOW / O_DIRECTORY.
+_BINARY_FLAG = getattr(os, "O_BINARY", 0)
+
 
 class UnsafePathError(OSError):
     """A path has a forbidden type or link/reparse topology."""
@@ -140,7 +146,22 @@ def native_atomic_fact_writes_supported(platform_name: str | None = None) -> boo
     """Return whether the platform has an enabled native backend for public fact writes."""
 
     selected_platform = os.name if platform_name is None else platform_name
-    return selected_platform == "posix"
+    return selected_platform in {"posix", "nt"}
+
+
+def _portable_writes_authorized(platform_name: str, allow_file_only: bool) -> bool:
+    """Return whether the portable (file-only) write path may be used.
+
+    ``allow_file_only=True`` is a test-only override that selects the portable
+    path regardless of the platform gate; it still requires ``platform_name`` to
+    be ``"nt"``.  Without it the platform gate is the sole authority.
+    """
+
+    if platform_name != "nt":
+        return False
+    if allow_file_only:
+        return True
+    return native_atomic_fact_writes_supported(platform_name)
 
 
 class _LockingApi(Protocol):
@@ -188,7 +209,7 @@ def _locking_api(platform_name: str) -> _LockingApi:
 @contextmanager
 def _exclusive_file_lock(path: Path, api: _LockingApi) -> Iterator[None]:
     path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
-    descriptor = os.open(path, os.O_RDWR | os.O_CREAT, 0o600)
+    descriptor = os.open(path, os.O_RDWR | os.O_CREAT | _BINARY_FLAG, 0o600)
     locked = False
     try:
         api.lock(descriptor)
@@ -338,7 +359,7 @@ def _open_relative_lock_descriptor(
             try:
                 descriptor = os.open(
                     target_name,
-                    os.O_RDWR | os.O_CREAT | no_follow,
+                    os.O_RDWR | os.O_CREAT | no_follow | _BINARY_FLAG,
                     0o600,
                     dir_fd=directory_fd,
                 )
@@ -347,7 +368,7 @@ def _open_relative_lock_descriptor(
                 # processes concurrently publish the same O_CREAT name.
                 descriptor = os.open(
                     target_name,
-                    os.O_RDWR | os.O_CREAT | no_follow,
+                    os.O_RDWR | os.O_CREAT | no_follow | _BINARY_FLAG,
                     0o600,
                     dir_fd=directory_fd,
                 )
@@ -371,7 +392,7 @@ def _open_relative_lock_descriptor(
     else:
         if is_link_or_reparse(before) or not stat.S_ISREG(before.st_mode):
             raise UnsafePathError("lock path must be a regular non-reparse file")
-    descriptor = os.open(target, os.O_RDWR | os.O_CREAT, 0o600)
+    descriptor = os.open(target, os.O_RDWR | os.O_CREAT | _BINARY_FLAG, 0o600)
     try:
         handle = os.fstat(descriptor)
         after = target.lstat()
@@ -618,7 +639,7 @@ def _atomic_create_posix(root: Path, relative: Path, payload: bytes, mode: int) 
         no_follow = os.O_NOFOLLOW
         temporary_fd = os.open(
             temporary_name,
-            os.O_WRONLY | os.O_CREAT | os.O_EXCL | no_follow,
+            os.O_WRONLY | os.O_CREAT | os.O_EXCL | no_follow | _BINARY_FLAG,
             mode,
             dir_fd=directory_fd,
         )
@@ -705,7 +726,7 @@ def _atomic_create_portable(root: Path, relative: Path, payload: bytes, mode: in
         directory = _ensure_relative_directory_portable(root, relative.parent, directory_mode=0o755)
         temporary = directory / f".ldvh-create-{secrets.token_hex(12)}.tmp"
         target = directory / relative.name
-        descriptor = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL, mode)
+        descriptor = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL | _BINARY_FLAG, mode)
         _write_all(descriptor, payload)
         os.fsync(descriptor)
         os.close(descriptor)
@@ -770,12 +791,16 @@ def atomic_create_relative(
     platform_name: str | None = None,
     allow_file_only: bool = False,
 ) -> AtomicWriteResult:
-    """Atomically publish a new relative file without replacing an existing name."""
+    """Atomically publish a new relative file without replacing an existing name.
+
+    On Windows the portable file-only path is selected when the platform gate is
+    open. ``allow_file_only=True`` is a test override that bypasses the gate.
+    """
 
     relative = _normal_relative_path(relative_path)
     selected_platform = os.name if platform_name is None else platform_name
     if selected_platform == "nt":
-        if not allow_file_only:
+        if not _portable_writes_authorized(selected_platform, allow_file_only):
             return AtomicWriteResult.not_committed("unavailable")
         return _atomic_create_portable(root, relative, payload, mode)
     if selected_platform == "posix":
@@ -808,7 +833,7 @@ def _atomic_store_posix(root: Path, relative: Path, payload: bytes, mode: int) -
                 raise UnsafePathError("state target must be a regular non-reparse file")
         temporary_fd = os.open(
             temporary_name,
-            os.O_WRONLY | os.O_CREAT | os.O_EXCL | no_follow,
+            os.O_WRONLY | os.O_CREAT | os.O_EXCL | no_follow | _BINARY_FLAG,
             mode,
             dir_fd=directory_fd,
         )
@@ -872,7 +897,7 @@ def _atomic_store_portable(root: Path, relative: Path, payload: bytes, mode: int
         else:
             if is_link_or_reparse(existing) or not stat.S_ISREG(existing.st_mode):
                 raise UnsafePathError("state target must be a regular non-reparse file")
-        descriptor = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL, mode)
+        descriptor = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL | _BINARY_FLAG, mode)
         _write_all(descriptor, payload)
         os.fsync(descriptor)
         os.close(descriptor)
@@ -924,7 +949,7 @@ def atomic_store_relative(
     relative = _normal_relative_path(relative_path)
     selected_platform = os.name if platform_name is None else platform_name
     if selected_platform == "nt":
-        if not allow_file_only:
+        if not _portable_writes_authorized(selected_platform, allow_file_only):
             return AtomicWriteResult.not_committed("unavailable")
         return _atomic_store_portable(root, relative, payload, mode)
     if selected_platform == "posix":
@@ -1000,7 +1025,7 @@ def _atomic_replace_posix(
         no_follow = os.O_NOFOLLOW
         temporary_fd = os.open(
             temporary_name,
-            os.O_WRONLY | os.O_CREAT | os.O_EXCL | no_follow,
+            os.O_WRONLY | os.O_CREAT | os.O_EXCL | no_follow | _BINARY_FLAG,
             mode,
             dir_fd=directory_fd,
         )
@@ -1070,7 +1095,7 @@ def _atomic_replace_portable(
         target = directory / relative.name
         mode = stat.S_IMODE(validate_relative_regular_file(root, relative).lstat().st_mode)
         temporary = directory / f".ldvh-update-{secrets.token_hex(12)}.tmp"
-        descriptor = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL, mode)
+        descriptor = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL | _BINARY_FLAG, mode)
         _write_all(descriptor, replacement)
         os.fsync(descriptor)
         os.close(descriptor)
@@ -1125,7 +1150,7 @@ def atomic_replace_relative_if_equal(
     relative = _normal_relative_path(relative_path)
     selected_platform = os.name if platform_name is None else platform_name
     if selected_platform == "nt":
-        if not allow_file_only:
+        if not _portable_writes_authorized(selected_platform, allow_file_only):
             return AtomicWriteResult.not_committed("unavailable")
         return _atomic_replace_portable(root, relative, expected, replacement)
     if selected_platform == "posix":
@@ -1183,7 +1208,7 @@ def remove_relative_if_equal(
     relative = _normal_relative_path(relative_path)
     selected_platform = os.name if platform_name is None else platform_name
     if selected_platform == "nt":
-        if not allow_file_only:
+        if not _portable_writes_authorized(selected_platform, allow_file_only):
             return AtomicWriteResult.not_committed("unavailable")
         return _remove_portable(root, relative, expected)
     if selected_platform == "posix":

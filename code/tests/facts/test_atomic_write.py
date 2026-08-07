@@ -16,6 +16,11 @@ from ldvh.filesystem import (
     remove_relative_if_equal,
 )
 
+# Tests that assert POSIX-specific durability (file_and_directory), directory
+# fsync error injection, or POSIX permission-bit modes.  On Windows the portable
+# path returns file_only durability and these assertions do not apply.
+_POSIX_ONLY = pytest.mark.skipif(os.name == "nt", reason="POSIX-specific durability or fsync behaviour")
+
 
 def test_atomic_write_results_only_allow_valid_commit_shapes() -> None:
     with pytest.raises(TypeError):
@@ -49,10 +54,24 @@ def test_atomic_write_results_only_allow_valid_commit_shapes() -> None:
 
 def test_native_atomic_fact_write_support_describes_backend_availability() -> None:
     assert native_atomic_fact_writes_supported("posix") is True
-    assert native_atomic_fact_writes_supported("nt") is False
+    assert native_atomic_fact_writes_supported("nt") is True
     assert native_atomic_fact_writes_supported("unknown") is False
 
 
+def test_allow_file_only_override_does_not_bypass_platform_gate_on_unknown_platform(tmp_path: Path) -> None:
+    """allow_file_only=True must not enable writes on platforms other than nt."""
+    result = atomic_create_relative(
+        tmp_path,
+        "ldvh-base/sparks/spark-0001.yaml",
+        b"first\n",
+        platform_name="java",
+        allow_file_only=True,
+    )
+    assert result.outcome == "unavailable"
+    assert result.namespace_state == "not_committed"
+
+
+@_POSIX_ONLY
 def test_posix_create_publishes_exact_bytes_and_full_durability(tmp_path: Path) -> None:
     result = atomic_create_relative(tmp_path, "ldvh-base/sparks/spark-0001.yaml", b"first\n")
 
@@ -64,6 +83,7 @@ def test_posix_create_publishes_exact_bytes_and_full_durability(tmp_path: Path) 
     assert not tuple((tmp_path / "ldvh-base/sparks").glob(".ldvh-create-*.tmp"))
 
 
+@_POSIX_ONLY
 def test_posix_create_preserves_public_fact_directory_modes(tmp_path: Path) -> None:
     previous_umask = os.umask(0)
     try:
@@ -143,6 +163,7 @@ def test_file_sync_failure_before_create_commit_leaves_no_target(
     assert not tuple((tmp_path / "ldvh-base/sparks").glob(".ldvh-create-*.tmp"))
 
 
+@_POSIX_ONLY
 def test_new_parent_sync_failure_happens_before_create_commit(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -167,6 +188,7 @@ def test_new_parent_sync_failure_happens_before_create_commit(
     assert not (tmp_path / "ldvh-base/sparks/spark-0001.yaml").exists()
 
 
+@_POSIX_ONLY
 def test_directory_sync_failure_after_create_reports_committed_unknown_durability(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -189,6 +211,7 @@ def test_directory_sync_failure_after_create_reports_committed_unknown_durabilit
     assert (tmp_path / "ldvh-base/sparks/spark-0001.yaml").read_bytes() == b"first\n"
 
 
+@_POSIX_ONLY
 def test_create_syncs_directory_after_target_publish_and_temporary_cleanup(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -223,6 +246,7 @@ def test_create_syncs_directory_after_target_publish_and_temporary_cleanup(
     assert events == ["link", "unlink-temporary", "final-directory-fsync"]
 
 
+@_POSIX_ONLY
 def test_cleanup_failure_is_reported_after_create_commit(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -245,6 +269,7 @@ def test_cleanup_failure_is_reported_after_create_commit(
     assert len(tuple((tmp_path / "ldvh-base/sparks").glob(".ldvh-create-*.tmp"))) == 1
 
 
+@_POSIX_ONLY
 def test_create_reconciles_a_link_that_committed_before_error_return(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -265,6 +290,7 @@ def test_create_reconciles_a_link_that_committed_before_error_return(
     assert (tmp_path / "ldvh-base/sparks/spark-0001.yaml").read_bytes() == b"first\n"
 
 
+@_POSIX_ONLY
 def test_store_reconciles_replace_that_committed_before_error_return(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -302,6 +328,7 @@ def test_replace_conflict_preserves_current_bytes(tmp_path: Path) -> None:
     assert target.read_bytes() == b"current\n"
 
 
+@_POSIX_ONLY
 def test_directory_sync_failure_after_replace_reports_committed_unknown_durability(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -359,12 +386,13 @@ def test_replace_reconciles_namespace_when_replace_commits_before_error_return(
     assert target.read_bytes() == b"replacement\n"
 
 
-def test_windows_public_write_policy_fails_before_mutation(tmp_path: Path) -> None:
+def test_unknown_platform_write_policy_fails_closed_before_mutation(tmp_path: Path) -> None:
+    """Platforms without a native backend (not posix or approved nt) stay fail-closed."""
     create = atomic_create_relative(
         tmp_path,
         "ldvh-base/sparks/spark-0001.yaml",
         b"first\n",
-        platform_name="nt",
+        platform_name="java",
     )
 
     assert create.outcome == "unavailable"

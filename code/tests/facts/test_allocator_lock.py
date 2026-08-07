@@ -25,11 +25,6 @@ from ldvh.filesystem import exclusive_relative_file_lock
 
 CODE_ROOT = Path(__file__).resolve().parents[2]
 
-_POSIX_ALLOCATOR_ONLY = pytest.mark.skipif(
-    os.name == "nt",
-    reason="native Windows counter persistence awaits the atomic filesystem backend",
-)
-
 _LOCK_WORKER = """
 import os
 import sys
@@ -175,7 +170,6 @@ def test_file_lock_is_released_when_holding_process_is_killed(tmp_path: Path) ->
     assert (tmp_path / "probe").is_file()
 
 
-@_POSIX_ALLOCATOR_ONLY
 def test_allocator_assigns_contiguous_ids_across_independent_processes(tmp_path: Path) -> None:
     project, common_dir = _repository(tmp_path)
 
@@ -187,7 +181,6 @@ def test_allocator_assigns_contiguous_ids_across_independent_processes(tmp_path:
     assert counter_path.read_text(encoding="ascii") == "6\n"
 
 
-@_POSIX_ALLOCATOR_ONLY
 def test_main_and_linked_worktree_allocate_from_one_common_counter(tmp_path: Path) -> None:
     unicode_root = tmp_path / "allocator 根目录"
     unicode_root.mkdir()
@@ -209,7 +202,6 @@ def test_main_and_linked_worktree_allocate_from_one_common_counter(tmp_path: Pat
     assert sorted(allocated) == ["spark-0001", "spark-0002"]
 
 
-@_POSIX_ALLOCATOR_ONLY
 def test_corrupt_counter_fails_closed_without_leaving_the_lock_held(tmp_path: Path) -> None:
     project, common_dir = _repository(tmp_path)
     boundary = CreationBoundary("sample", project, common_dir)
@@ -229,7 +221,6 @@ def test_corrupt_counter_fails_closed_without_leaving_the_lock_held(tmp_path: Pa
     assert counter_path.read_text(encoding="ascii") == "corrupt\n"
 
 
-@_POSIX_ALLOCATOR_ONLY
 def test_allocator_preview_is_read_only_and_missing_counter_commit_is_no_overwrite(tmp_path: Path) -> None:
     project, common_dir = _repository(tmp_path)
     boundary = CreationBoundary("sample", project, common_dir)
@@ -247,7 +238,6 @@ def test_allocator_preview_is_read_only_and_missing_counter_commit_is_no_overwri
     assert counter.read_bytes() == b"1\n"
 
 
-@_POSIX_ALLOCATOR_ONLY
 def test_allocator_commit_rejects_stale_preview_without_overwriting_counter(tmp_path: Path) -> None:
     project, common_dir = _repository(tmp_path)
     boundary = CreationBoundary("sample", project, common_dir)
@@ -357,6 +347,7 @@ def test_allocator_lock_does_not_reclassify_permission_failure_inside_body(tmp_p
             raise PermissionError("target write failed after lock entry")
 
 
+@pytest.mark.skipif(os.name == "nt", reason="fstat-on-lock-fd error path is POSIX-specific")
 def test_relative_lock_closes_descriptor_when_fstat_fails(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -410,6 +401,7 @@ def test_relative_lock_builds_api_before_opening_state(
     assert not (tmp_path / "ldvh").exists()
 
 
+@pytest.mark.skipif(os.name == "nt", reason="dir_fd O_CREAT retry is POSIX-specific")
 def test_relative_lock_retries_one_transient_create_enoent_with_identical_flags(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -435,6 +427,7 @@ def test_relative_lock_retries_one_transient_create_enoent_with_identical_flags(
     assert (tmp_path / "ldvh/locks/sample.lock").is_file()
 
 
+@pytest.mark.skipif(os.name == "nt", reason="POSIX directory permission bits are not enforced on Windows")
 def test_allocator_private_state_directories_use_owner_only_mode(tmp_path: Path) -> None:
     previous_umask = os.umask(0)
     try:
@@ -447,7 +440,6 @@ def test_allocator_private_state_directories_use_owner_only_mode(tmp_path: Path)
     assert stat.S_IMODE((tmp_path / "ldvh/locks").stat().st_mode) == 0o700
 
 
-@_POSIX_ALLOCATOR_ONLY
 def test_allocator_keys_separate_projects_and_fact_types(tmp_path: Path) -> None:
     project, common_dir = _repository(tmp_path)
     first = CreationBoundary("first", project, common_dir)
