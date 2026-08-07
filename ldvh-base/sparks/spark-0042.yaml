@@ -1,12 +1,33 @@
 title: WorkCase Gate 1 授权完整性闭环
-status: open
-priority: P1
 intent: 保留 WorkCase Gate 1 为什么会批准缺少独立结果复核与 Reviewer 委派授权的计划这一机制缺口，避免同类授权遗漏在实施完成后才因冻结基线而无法合法修复。后续需判断如何在不让 Code 伪造自然语言授权判断的前提下，使创建前独立方案复核、授权覆盖检查、Helper 校验与测试形成可验证的闭环；否则会增加后续定位、重复分析、返工和质量关口阻塞负担。
-summary: "**已验证的缺口**\n\n- `workcase-0028` 的 `execution_authorization` 仅列出读取/测试、代码与测试修改、两次本地提交；没有独立结果复核或 Reviewer 委派。\n- 该对象仍被 Helper 判为 `mechanically_valid`，说明 Gate 1 前的受控创建未将这类遗漏拒绝为不合格。\n\n**机制原因**\n\n- 当前实现只校验授权动作的结构、非空文本、指纹和 Gate 1 后的不变性；不校验授权动作是否覆盖计划必经的独立结果复核或委派。\n- `creation_reviews` 只保存 Reviewer 的文本结论，未要求其提供“计划动作到授权动作”的覆盖判断，也无法由 Code 证明 Reviewer 的实际独立性。\n- Gate 1 后的基线冻结能够阻止事后补加授权，却无法阻止初始授权缺项，因此形成“可获批但不可继续”的阻塞。\n\n**当前方向**\n\n- Human 已选择最小可机械闭环：用有限、结构化的质量关口/Reviewer 模式表达已知必经授权；Helper 仅校验声明闭集与一致性，不解释授权散文是否充分。\n- 后续 WorkCase 还必须明确存量对象处置和独立 Reviewer 委派，使同一遗漏不会再次发生在 Gate 1 之前。\n\n**待判断的承接方向**\n\n- 应明确哪些授权完整性条件必须由创建前独立 Reviewer 作实际覆盖审核，哪些可由结构化字段、Helper 或负向测试机械检查。\n- 需要设计一个不会让 Code 擅自解释自然语言充分性、又能拒绝已知必经质量关口被遗漏的最小闭环。\n\n**边界**\n\n- 本 Spark 只记录授权完整性与创建前质量关口的机制缺口；不自动修改现有 WorkCase、不补造 Gate 1 授权，也不预先选择实现方案。"
+status: routed
+summary: "**承接结果**\n\n- `workcase-0030`（闭合 WorkCase Gate 1 授权完整性，状态 closed）已在原 scope 内完成结构化质量关口、Gate 1 拒绝与冻结、存量兼容、负向与相关回归测试、规则/实现同步；其处置摘要明确：不存在未满足、未验证或未完成的范围内责任，无需路由、接受停止或提出 Spark 建议。\n- 因此本 Spark 记录的 Gate 1 授权完整性机制缺口已由 workcase-0030 完整承接：创建前独立方案复核、授权覆盖检查、Helper 校验与测试形成可验证闭环，且 workcase-0028 曾暴露的『缺独立结果复核/Reviewer 委派仍判 mechanically_valid』问题已被该闭环覆盖。\n\n**处置边界**\n\n- 本分流只记录上述缺口已由稳定事实对象完整承接，不表示 Gate 1 之外的任何事件、平台或版本已验证；后续若发现新的授权完整性问题应新建 Spark，而非回写本对象。"
 evolution:
 - at: '2026-08-02T00:25:22+08:00'
   summary: Human 选择最小可机械闭环作为后续方向，使议题从一般机制诊断进入可准备实施计划的阶段；仍需先完成独立方案复核。
+- at: '2026-08-08T06:59:59.562673+08:00'
+  summary: 经核查 workcase-0030 已闭合 Gate 1 授权完整性，原 gap 已完整承接；将本 Spark 由 open 分流为 routed，routed-to workcase-0030。
+relations:
+- relation_key: routed-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: workcase
+    object_id: workcase-0030
+disposition_summary: workcase-0030 完整承接 Gate 1 授权完整性闭环（结构化质量关口、Gate 1 拒绝与冻结、存量兼容、负向与回归测试、规则/实现同步均已完成，无范围内残留责任）；本 Spark 经 routed-to 指向该 WorkCase，原机制缺口已闭合。
+change_log:
+- signature:
+    agent_id: workbuddy
+    host_environment: WorkBuddy macOS
+  session_id: 240bdc29-f021-4b68-b286-acc4addd6639
+  at: '2026-08-08T06:59:59.562673+08:00'
+  summary: spark-0042 迁移前无 change_log；据实标注历史不可得，建立可信流水起点以支持后续 open→routed 受控更新。
+- signature:
+    agent_id: workbuddy
+    host_environment: WorkBuddy macOS
+  session_id: d885f34e-380b-42d4-8133-697753d65b21
+  summary: open→routed 分流：经核查 workcase-0030（闭合 WorkCase Gate 1 授权完整性，closed）已在原 scope 内完成结构化质量关口、Gate 1 拒绝与冻结、存量兼容、负向与回归测试、规则/实现同步，本 Spark 记录的授权完整性机制缺口已完整承接；新增 routed-to workcase-0030。
+  at: '2026-08-08T07:04:49.065630+08:00'
 object_id: spark-0042
 fact_type_key: spark
 created_at: '2026-08-02T00:13:30.036887+08:00'
-updated_at: '2026-08-02T00:25:36.690926+08:00'
+updated_at: '2026-08-08T07:04:49.065630+08:00'
