@@ -20,6 +20,8 @@ evolution:
   summary: workcase-0059 的真实关闭与提交把泛化的流程减负方向收敛为三项可复现交互缺口：模板正文重复传输、关闭候选与写入契约不闭合、失败诊断缺少直接修正信息；后续优先改善窄输出、自解释诊断和候选契约一致性，不削弱既有闸门。
 - at: '2026-08-05T16:40:00+08:00'
   summary: study-0023 深度审计跨环境复证：Claude Code 环境独立验证 LDVH 完整交互链，12 次 Helper 调用中 3 次 invalid_request 的共同根因是参数命名信息不对称（AI 按语义猜参数名，Helper 要求精确字段名）；建议 capabilities 附带参数 schema 摘要以减少交互摩擦。
+- at: '2026-08-07T13:48:00+08:00'
+  summary: workcase-0047 的 residual「residual-doctor-operation-count」经 commit 5de851e54（2026-08-03，assert 19→20）与 b838cded4（2026-08-04，移除 rule_snapshot 后 assert 20→18）后被事实解决：当前 code/tests/doctor/test_doctor.py assert == 18，与 code/ldvh/helper/operations/__init__.py 的 18 个注册实现一致，doctor 测试 8 passed。该 residual 未经过其指定的「新 WorkCase + Gate1 授权」路径完成，且防复发的动态计数加固（如 >= 断言或从 capabilities 动态取值）未做，计划并入后续「Helper 响应优化」WorkCase。
 change_log:
 - signature:
     agent_id: codex
@@ -57,7 +59,19 @@ change_log:
   session_id: session-20260805-deep-audit
   at: '2026-08-05T19:58:57.068583+08:00'
   summary: 按 study-0023 立即行动建议，记录 Claude Code 跨环境复证：3 次 invalid_request 根因为参数命名信息不对称。
+- signature:
+    agent_id: glm-5.2
+    host_environment: claude-code-mcp
+  session_id: session-20260807-adr-evolution-commit
+  at: '2026-08-07T13:59:34.292315+08:00'
+  summary: 按 Human 于 2026-08-07 会话的明确授权，追加 evolution 条目记录 workcase-0047 遗留 residual（residual-doctor-operation-count）已被 commit 5de851e54 与 b838cded4 事实解决、当前断言与注册实现及 doctor 测试一致的核实结论。
+- signature:
+    agent_id: glm-5.2
+    host_environment: claude-code-mcp
+  session_id: session-20260807-adr-evolution-commit
+  at: '2026-08-07T14:31:07.670920+08:00'
+  summary: 修正受控更新中 YAML 转义导致的弯引号→直引号变化，恢复 summary 原有弯引号（"、"→"）以保持与 HEAD 原文一致。
 object_id: spark-0019
 fact_type_key: spark
 created_at: '2026-07-19T18:47:20.417174+08:00'
-updated_at: '2026-08-05T19:58:57.068583+08:00'
+updated_at: '2026-08-07T14:31:07.670920+08:00'
