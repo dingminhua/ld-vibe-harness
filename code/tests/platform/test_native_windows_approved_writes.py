@@ -9,8 +9,6 @@ import pytest
 
 from ldvh.filesystem import (
     atomic_create_relative,
-    atomic_replace_relative_if_equal,
-    exclusive_relative_file_lock,
     native_atomic_fact_writes_supported,
     safe_read_relative,
 )
@@ -32,7 +30,12 @@ pytestmark = [
 _COUNTER_WORKER = r"""
 import sys
 from pathlib import Path
-from ldvh.filesystem import exclusive_relative_file_lock, safe_read_relative, atomic_replace_relative_if_equal, atomic_create_relative
+from ldvh.filesystem import (
+    exclusive_relative_file_lock,
+    safe_read_relative,
+    atomic_replace_relative_if_equal,
+    atomic_create_relative,
+)
 
 root = Path(sys.argv[1])
 relative = sys.argv[2]
@@ -209,10 +212,11 @@ def test_native_conditional_update_single_winner(tmp_path: Path) -> None:
 
     # Exactly one winner (replaced + committed); the rest must see conflict or
     # unavailable, and none must report uncertain (which would mean corruption).
-    replaced = sum(1 for o, s in zip(outcomes, states) if o == "replaced" and s == "committed")
+    replaced = sum(1 for o, s in zip(outcomes, states, strict=True) if o == "replaced" and s == "committed")
     uncertain = sum(1 for s in states if s == "uncertain")
     assert replaced == 1, f"expected exactly one winner, got {replaced}: {outcomes}"
-    assert uncertain == 0, f"uncertain result indicates potential corruption: {list(zip(outcomes, states))}"
+    corrupted = [pair for pair in zip(outcomes, states, strict=True) if pair[1] == "uncertain"]
+    assert uncertain == 0, f"uncertain result indicates potential corruption: {corrupted}"
 
     # Target must be exactly version-2 (no torn write).
     assert (root / relative).read_bytes() == b"version-2\n"

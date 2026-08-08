@@ -144,14 +144,17 @@ def test_install_uses_common_dir_and_covers_existing_and_future_linked_worktrees
     hook = common_dir / "hooks" / "commit-msg"
     assert installed.hook_path == str(hook)
     assert set(installed.worktree_roots) == {str(main), str(existing)}
-    assert Path(_checked_git(main, "rev-parse", "--path-format=absolute", "--git-path", "hooks").strip()).resolve() == hook.parent.resolve()
-    assert Path(_checked_git(existing, "rev-parse", "--path-format=absolute", "--git-path", "hooks").strip()).resolve() == hook.parent.resolve()
+    main_hooks = _checked_git(main, "rev-parse", "--path-format=absolute", "--git-path", "hooks").strip()
+    assert Path(main_hooks).resolve() == hook.parent.resolve()
+    existing_hooks = _checked_git(existing, "rev-parse", "--path-format=absolute", "--git-path", "hooks").strip()
+    assert Path(existing_hooks).resolve() == hook.parent.resolve()
 
     assert _invoke_hook(main, hook, "docs: invalid", "main-invalid").returncode == 1
     assert _invoke_hook(existing, hook, _signed("docs: 验证既有工作树"), "existing-valid").returncode == 0
 
     future = _linked(main, tmp_path / "future", "future")
-    assert Path(_checked_git(future, "rev-parse", "--path-format=absolute", "--git-path", "hooks").strip()).resolve() == hook.parent.resolve()
+    future_hooks = _checked_git(future, "rev-parse", "--path-format=absolute", "--git-path", "hooks").strip()
+    assert Path(future_hooks).resolve() == hook.parent.resolve()
     assert _invoke_hook(future, hook, "docs: invalid", "future-invalid").returncode == 1
     assert _invoke_hook(future, hook, _signed("docs: 验证后续工作树"), "future-valid").returncode == 0
 
