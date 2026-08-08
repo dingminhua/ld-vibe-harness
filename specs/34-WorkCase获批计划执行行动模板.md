@@ -59,11 +59,15 @@ ldvh_spec:
 
 每次成功回读后，AI Controller 根据 Human 目标、当前事实、来源规则和冻结授权重新判断语义相关性、item 依赖、能力可用性、行动允许与实际完成情况。`next_required_control_step` 只指出结构上下一必经控制步骤，不自动选择 item、不解除 blocked、不证明能力或授权，也不允许 Code 推进 phase 或断言完成。
 
-存在当前合法下一控制步骤时，Controller 继续消费已批准责任，不以聊天总结、工具成功、测试通过、子任务返回或 item 的 `current_summary` / `resume_from` 代替事实转换。item 的开始、直接完成、阻塞、解阻、完成、取消、计划返修、结果形成与质量链只按 21 的当前规则执行；需要跨对象共同生效时仍服从 32 的能力边界。错误吸收生命周期关口或 Human Gate 的 item——例如 goal 为“全部实现完成后安排独立结果复核”——按 21 作基线内 PlanΔ 或据实取消；基线内修正保留当前批准的授权包并自动返回执行，不再次请求 Human，超界时将受影响 item 据实取消并转入结果链，不由本文建立第三次 Human Gate。该判断由 AI 承担，Code 不从关键词或字段形状替 AI 作出结论。
+存在当前合法下一控制步骤时，Controller 继续消费已批准责任，不以聊天总结、工具成功、测试通过、子任务返回或 item 的 `current_summary` / `resume_from` 代替事实转换。item 的开始、直接完成、阻塞、解阻、完成、取消、计划返修、结果形成与质量链只按 21 的当前规则执行；需要跨对象共同生效时仍服从 32 的能力边界。
+
+**开始控制点：** 跨检查点、可能中断或需恢复的工作项在实施前，必须先完成 `pending → in_progress` 写回，同事务写入非空 `current_summary` 与有界 `resume_from`，经 CAS、精确回读与独立事实完整性审计后，才允许执行实际行动。真实行动不得发生在 `in_progress` 写回之前。同一稳定检查点内可直接 `pending → completed` 的小动作不受此限，但不得用于跨检查点工作。
+
+错误吸收生命周期关口或 Human Gate 的 item——例如 goal 为"全部实现完成后安排独立结果复核"——按 21 作基线内 PlanΔ 或据实取消；基线内修正保留当前批准的授权包并自动返回执行，不再次请求 Human，超界时将受影响 item 据实取消并转入结果链，不由本文建立第三次 Human Gate。该判断由 AI 承担，Code 不从关键词或字段形状替 AI 作出结论。
 
 ### 5.3 稳定检查点
 
-跨检查点、可能中断或具有恢复价值的工作在实质开始前先形成实际 item after；每个稳定中间结果、委派或交接、上下文压缩前后，以及每个结果链控制步骤，均以刚回读指纹为 CAS before，经 21 专属 Helper 操作写入完整 after，再精确回读受影响对象并执行当前来源定义的独立事实完整性审计。只有该链全部成功后，新指纹和投影才能成为下一轮输入；聊天内容、旧摘要和工具输出不是替代依据。检查点写回与 Git commit 粒度相互独立，不要求每次事实转换形成单独 commit。
+每个稳定中间结果、委派或交接、上下文压缩前后，以及每个结果链控制步骤，均以刚回读指纹为 CAS before，经 21 专属 Helper 操作写入完整 after，再精确回读受影响对象并执行当前来源定义的独立事实完整性审计。只有该链全部成功后，新指纹和投影才能成为下一轮输入；聊天内容、旧摘要和工具输出不是替代依据。检查点写回与 Git commit 粒度相互独立，不要求每次事实转换形成单独 commit。
 
 全部 item terminal 后，Controller 按 21/32 连续形成 Controller 检查、完整结果投影、实际结果复核、feedback 处置、关闭提案与 Human 关闭确认。结果复核默认委派只读 subagent；只有冻结限制、当前证据、审核类别和停止条件共同允许时才可使用并如实记录低保证 fallback。Reviewer pass 只是一项实际 review 输入，不等于 Gate 2：Controller 不得跳过其反馈处置责任；需要修正或返工时按 21 返回 `controller_checking`，投影不变且 feedback 已处置时按 21 的合法边进入 `closure_preparing`。无论采用哪条 21 允许的边，都必须继续形成完整 after、CAS、精确回读与完整性审计，直至真实快照进入 Human 关闭确认；不能只输出聊天总结。
 
@@ -86,7 +90,7 @@ ldvh_spec:
 | 模板身份与边界 | 新建、修改或发现模板时 | 声明唯一、只组织执行、不复制 21/32 规则 | 06、21、32、本文 | 声明解析、来源回读 | 当前模板定义 | 修正来源，不消费模板 |
 | item 与生命周期关口边界 | 计划获批后准备消费任一 item 时 | 每项都是可实施并形成局部结果的工作；没有 item 吸收 Controller 自检、独立结果复核、受控提交、关闭准备或 Human Gate | 当前 WorkCase、21 §4.3、本文 | AI 逐 item 语义审核；契约测试只检查当前来源持续交付该边界 | 当次已读计划与来源文本；不证明 Code 能理解任意自然语言 | 停止受影响实施；包内移除或改写后 fresh current-plan review 并自动恢复，超包则取消受影响 item 并进入结果链，不再 Human 批准 |
 | Gate 1 授权消费 | 每项行动、委派、事实写入和本地 commit 前 | 当前 `execution_authorization` 逐项覆盖准确对象、范围、副作用与风险，`execution_approval` 和来源回指有效；进入模板步骤、上下文恢复或切换执行者没有产生伪授权缺口；采用同一 AI fallback 时，冻结 limitation 覆盖当次类别且当前证据、保证差距与停止条件评估满足 21 | 当前 WorkCase、21、30–32、Human Gate 1 来源 | AI 语义覆盖与当前能力证据审核、21 结构/绑定校验和行动前回读 | 当次已读授权包、行动与实际 review 方法；Code 不证明自然语言授权充分、能力事实或 Reviewer 独立性 | 未列明或超界行动不执行；fallback 条件不成立时改用实际可用 subagent，否则停止当次 review；取消/收敛其它受影响 item 并进入结果链，不中途请求扩权 |
-| 开始与直接完成边界 | 实施前后 | 跨检查点工作先真实回读 in_progress；同检查点结果才直接 completed | 当前 WorkCase、21、完整 after | WorkCase 转换测试与完整 after 回读 | 当次 item 转换 | 停在当前稳定检查点，重新判断 |
+| 开始与直接完成边界 | 实施前后 | 跨检查点工作先按 §5.2 开始控制点完成 `pending → in_progress` 写回（含 `current_summary`、`resume_from`），再经 CAS、回读与完整性审计后才执行；同检查点结果才直接 `pending → completed` | 当前 WorkCase、21、完整 after | WorkCase 转换测试与完整 after 回读 | 当次 item 转换 | 停在当前稳定检查点，重新判断 |
 | fresh 投影与执行循环 | 每次执行、恢复和事实写回后 | projection resolved 且 source fingerprint 匹配刚回读内容；AI 重新判断语义、依赖、授权和能力，Code 与结构提示不替代判断 | 当前 WorkCase、21、Helper 回读 | 指纹/投影负矩阵、source-contract 与 AI 对照审核 | 当次刚回读快照和结构提示；不证明 AI 跨会话遵从 | 重新精确读取；仍 unresolved 时只交还读取缺口，不猜测位置或行动 |
 | 阻塞、稳定检查点与阶段收敛 | 每个稳定检查点 | 合法 item/phase/authorization/approval/依赖形状与专属操作路由均成立；每步有完整 after、CAS、精确回读和独立完整性审计；Reviewer pass 后继续至真实关闭确认位置 | 21、32、Helper 回读与完整性审计 | 21 机械校验、Helper 回读、全量事实完整性检查与 source-contract | 当次 WorkCase 写回链；不证明自然语言授权充分或结果正确 | 保持最后合法状态；blocked 等待真实恢复条件，授权超界按结果链收敛，不新增 Human Gate |
 | 合法退出与恢复交还 | 稳定检查点、压缩、委派、会话恢复或关闭准备时 | 普通 executing 检查点不被当成完成出口；blocked、closed、重复读取后的缺口或真实 Human Gate 如实分流；只有 resolved `gate2_waiting` 使用 Gate 2 话术；临时工件服从 06 §8.7 | 当前 WorkCase、21、06、交还内容和实际路径观察 | 新上下文精确读取、投影负向检查、路径与 Working Tree 回读、交还审查 | 当前已读快照及本次实际检查的临时工件范围 | 继续消费合法下一步骤；保留既有、他项、归属不明或仍有恢复价值的工件，不把 Working Tree 非空写成未闭环 |
