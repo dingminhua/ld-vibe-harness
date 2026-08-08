@@ -854,7 +854,6 @@ def test_create_reports_committed_namespace_when_directory_sync_fails(
         "counter-consumed",
         "target-created",
     ]
-    assert "cleanup=clean" in response["changes"][1]["summary"]
     assert (project / "ldvh-base/sparks/spark-0001.yaml").is_file()
 
 
@@ -1549,9 +1548,9 @@ def test_failed_write_back_reports_residue_when_exact_rollback_fails(
     monkeypatch.setattr(
         "ldvh.facts.creation_application.rollback_created_text",
         lambda *args, **kwargs: (
-            AtomicWriteResult.uncertain(cleanup_residue=True)
+            AtomicWriteResult.uncertain()
             if rollback_namespace_state == "uncertain"
-            else AtomicWriteResult.not_committed("unavailable", cleanup_residue=True)
+            else AtomicWriteResult.not_committed("unavailable")
         ),
     )
     monkeypatch.setattr(creation_application, "allocation_lock", release_fails)
@@ -1715,7 +1714,7 @@ def test_creation_helper_reports_the_fresh_actual_residual_after_failed_rollback
         ),
         allocation_consumed=True,
         creation_result=AtomicWriteResult.committed("created"),
-        rollback_result=AtomicWriteResult.uncertain(cleanup_residue=True),
+        rollback_result=AtomicWriteResult.uncertain(),
         residual_readback=residuals[residual_kind],
         allocation_status="committed",
         allocation_result=AllocationCommitResult("committed", "spark-0001"),

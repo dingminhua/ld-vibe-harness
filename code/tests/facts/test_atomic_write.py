@@ -31,18 +31,9 @@ def test_atomic_write_results_only_allow_valid_commit_shapes() -> None:
     not_committed = AtomicWriteResult.not_committed("conflict")
     uncertain = AtomicWriteResult.uncertain()
 
-    assert (committed.namespace_state,
-        "committed",
-        "clean") == (
-        "committed", "clean",
-    )
-    assert (not_committed.namespace_state, not_committed.namespace_state) == (
-        "not_committed", "clean",
-    )
-    assert (uncertain.outcome, uncertain.namespace_state) == (
-        "unavailable",
-        "uncertain", "residue",
-    )
+    assert (committed.outcome, committed.namespace_state) == ("created", "committed")
+    assert (not_committed.outcome, not_committed.namespace_state) == ("conflict", "not_committed")
+    assert (uncertain.outcome, uncertain.namespace_state) == ("unavailable", "uncertain")
 
 def test_native_atomic_fact_write_support_describes_backend_availability() -> None:
     assert native_atomic_fact_writes_supported("posix") is True
@@ -219,7 +210,7 @@ def test_create_syncs_directory_after_target_publish_and_temporary_cleanup(
     monkeypatch.setattr(filesystem.os, "unlink", recording_unlink)
     monkeypatch.setattr(filesystem.os, "fsync", recording_fsync)
 
-    result = atomic_create_relative(tmp_path, "ldvh-base/sparks/spark-0001.yaml", b"first\n")
+    atomic_create_relative(tmp_path, "ldvh-base/sparks/spark-0001.yaml", b"first\n")
 
     assert events == ["link", "unlink-temporary", "final-directory-fsync"]
 
@@ -412,26 +403,10 @@ def test_windows_candidate_create_and_replace_are_file_only_without_posix_backen
         allow_file_only=True,
     )
 
-    assert (created.outcome, created.namespace_state) == (
-        "created",
-        "committed",
-        "file_only",
-    )
-    assert (replaced.outcome, replaced.namespace_state) == (
-        "replaced",
-        "committed",
-        "file_only",
-    )
-    assert (stored.outcome, stored.namespace_state) == (
-        "stored",
-        "committed",
-        "file_only",
-    )
-    assert (removed.outcome, removed.namespace_state) == (
-        "removed",
-        "committed",
-        "file_only",
-    )
+    assert (created.outcome, created.namespace_state) == ("created", "committed")
+    assert (replaced.outcome, replaced.namespace_state) == ("replaced", "committed")
+    assert (stored.outcome, stored.namespace_state) == ("stored", "committed")
+    assert (removed.outcome, removed.namespace_state) == ("removed", "committed")
     assert not (tmp_path / relative).exists()
     assert (tmp_path / "ldvh/fact-id-allocators/sample.counter").read_bytes() == b"1\n"
 

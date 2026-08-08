@@ -771,9 +771,7 @@ def _execute(
         gaps=(_coordination_release_gap(requested, committed=True),) if coordination_release_uncertain else (),
         changes=(
             {
-                "summary": (
-                    f"已原子替换并回读事实对象"
-                ),
+                "summary": "已原子替换并回读事实对象",
                 "status": "updated",
                 "target": reference.to_json(),
                 "source_refs": [working_tree_source],

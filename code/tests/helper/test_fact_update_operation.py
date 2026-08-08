@@ -978,7 +978,6 @@ def test_update_reports_committed_namespace_when_directory_sync_fails(
 
     assert response["outcome"] == "ok"
     assert response["changes"][0]["status"] == "updated"
-    assert "cleanup=clean" in response["changes"][0]["summary"]
     assert "Committed despite directory sync failure" in fact.read_text(encoding="utf-8")
 
 

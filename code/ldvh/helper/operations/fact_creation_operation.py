@@ -1168,10 +1168,7 @@ def _create_execute(
                     "source_refs": change_sources,
                 },
                 {
-                    "summary": (
-                        "已原子创建并回读事实对象"
-                        f""
-                    ),
+                    "summary": "已原子创建并回读事实对象",
                     "status": "target-created",
                     "target": layout.canonical_path(actual_id),
                     "source_refs": [*change_sources, working_tree_source],
