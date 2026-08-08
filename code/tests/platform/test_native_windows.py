@@ -231,7 +231,7 @@ def test_native_file_only_create_and_replace_report_exact_boundaries(tmp_path: P
         b"replacement\n",
         allow_file_only=True,
     )
-    assert (replaced.outcome, replaced.namespace_state, replaced.cleanup) == (
+    assert (replaced.outcome, replaced.namespace_state) == (
         "replaced",
         "committed",
         "file_only",

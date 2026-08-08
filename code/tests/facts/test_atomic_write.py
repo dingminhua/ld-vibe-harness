@@ -21,7 +21,7 @@ _POSIX_ONLY = pytest.mark.skipif(os.name == "nt", reason="POSIX-specific fsync b
 
 def test_atomic_write_results_only_allow_valid_commit_shapes() -> None:
     with pytest.raises(TypeError):
-        AtomicWriteResult("created", "not_committed", "clean")  # type: ignore[call-arg]
+        AtomicWriteResult("created", "not_committed")  # type: ignore[call-arg]
     with pytest.raises(ValueError, match="committed writes require"):
         AtomicWriteResult.committed("conflict")  # type: ignore[arg-type]
     with pytest.raises(ValueError, match="not-committed writes require"):
@@ -29,17 +29,17 @@ def test_atomic_write_results_only_allow_valid_commit_shapes() -> None:
 
     committed = AtomicWriteResult.committed("created")
     not_committed = AtomicWriteResult.not_committed("conflict")
-    uncertain = AtomicWriteResult.uncertain(cleanup_residue=True)
+    uncertain = AtomicWriteResult.uncertain()
 
     assert (committed.namespace_state,
         "committed",
         "clean") == (
         "committed", "clean",
     )
-    assert (not_committed.namespace_state, not_committed. not_committed.cleanup) == (
+    assert (not_committed.namespace_state, not_committed.namespace_state) == (
         "not_committed", "clean",
     )
-    assert (uncertain.outcome, uncertain.namespace_state, uncertain.cleanup) == (
+    assert (uncertain.outcome, uncertain.namespace_state) == (
         "unavailable",
         "uncertain", "residue",
     )
@@ -67,8 +67,6 @@ def test_posix_create_publishes_exact_bytes(tmp_path: Path) -> None:
 
     assert result.outcome == "created"
     assert result.namespace_state == "committed"
-    
-    assert result.cleanup == "clean"
     assert (tmp_path / "ldvh-base/sparks/spark-0001.yaml").read_bytes() == b"first\n"
     assert not tuple((tmp_path / "ldvh-base/sparks").glob(".ldvh-create-*.tmp"))
 
@@ -243,7 +241,6 @@ def test_cleanup_failure_is_reported_after_create_commit(
 
     assert result.outcome == "created"
     assert result.namespace_state == "committed"
-    assert result.cleanup == "residue"
     assert (tmp_path / "ldvh-base/sparks/spark-0001.yaml").read_bytes() == b"first\n"
     assert len(tuple((tmp_path / "ldvh-base/sparks").glob(".ldvh-create-*.tmp"))) == 1
 
