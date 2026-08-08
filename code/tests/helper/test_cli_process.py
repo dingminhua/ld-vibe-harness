@@ -154,6 +154,31 @@ def test_general_discovery_reports_source_bound_implementation(tmp_path: Path) -
     assert sum(item["member_count"] for item in response["gaps"]) == 144
 
 
+def test_real_cli_prepare_exposes_definition_refs_without_a_second_schema() -> None:
+    completed, response = _run(
+        PROJECT_ROOT,
+        "call",
+        "prepare-fact-object-draft",
+        stdin=json.dumps(
+            {
+                "work_object_locators": ["."],
+                "arguments": {"governed_project_id": "ldvh", "fact_type_key": "spark"},
+            }
+        ),
+    )
+
+    assert completed.returncode == 0
+    assert response["outcome"] == "ok"
+    contracts = response["result"]["field_contracts"]
+    priority = next(item for item in contracts if item["field_path"] == "priority")
+    assert priority["definition_ref"] == "fact-object-field-registry::跨类型共享字段定义表::priority"
+    assert priority["constraint_ref"] == "spark-fact-type::6. 对象语义与生命周期"
+    assert all(
+        set(item) == {"field_path", "json_type", "presence", "definition_ref", "constraint_ref"}
+        for item in contracts
+    )
+
+
 def test_diagnostic_profile_expands_qualification_details(tmp_path: Path) -> None:
     completed, response = _run(
         tmp_path,

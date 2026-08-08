@@ -66,7 +66,14 @@ class AllocationCommitResult:
 
 def schema_fingerprint(schema: FactSchema) -> str:
     payload = [
-        (field.path, field.json_type, field.presence, field.value_structure, field.constraint_ref)
+        (
+            field.path,
+            field.json_type,
+            field.presence,
+            field.value_structure,
+            field.definition_ref,
+            field.constraint_ref,
+        )
         for field in schema.fields
     ]
     return hashlib.sha256(json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode()).hexdigest()

@@ -231,6 +231,7 @@ def _prepare_execute(
                 "field_path": field.path,
                 "json_type": field.json_type,
                 "presence": field.presence,
+                "definition_ref": field.definition_ref,
                 "constraint_ref": field.constraint_ref,
             }
             for field in schema.fields

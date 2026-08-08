@@ -15,6 +15,7 @@ class ProjectedField:
     presence: str
     value_structure: str | None
     constraint_ref: str
+    definition_ref: str = ""
 
 
 @dataclass(frozen=True, slots=True)
@@ -40,6 +41,7 @@ def project_fact_schemas(repository: RepositoryInspection) -> dict[str, FactSche
                 presence=field.presence,
                 value_structure=field.value_structure,
                 constraint_ref=field.constraint_ref,
+                definition_ref=field.definition_ref,
             )
         )
     return {key: FactSchema(key, tuple(fields)) for key, fields in grouped.items()}

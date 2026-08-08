@@ -60,7 +60,9 @@ def project_fact_type_fields(
                     json_type=member.json_type,
                     presence=member.base_presence,
                     value_structure=member.value_structure,
-                    definition_ref=f"{member.definition_key}::{member.definition_heading}",
+                    definition_ref=(
+                        f"{member.definition_key}::{member.definition_heading}::{member.field_key}"
+                    ),
                     constraint_ref="inherit",
                 )
             )
@@ -90,7 +92,9 @@ def project_fact_type_fields(
                     json_type=registration.json_type,
                     presence=presence,
                     value_structure=registration.value_structure,
-                    definition_ref=f"{registration.definition_key}::{registration.definition_heading}",
+                    definition_ref=(
+                        f"{registration.definition_key}::{registration.definition_heading}::{registration.field_key}"
+                    ),
                     constraint_ref=constraint_ref,
                 )
             )

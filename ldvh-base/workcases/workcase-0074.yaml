@@ -1,8 +1,5 @@
+status: closed
 title: 补足草案字段定义入口的运行时可发现性
-status: open
-phase: human_plan_confirming
-priority: P0
-plan_version: 1
 goal: 在不内联枚举、约束正文或完整对象模板的前提下，让 prepare-fact-object-draft 的每个 field_contract 同时给出唯一可定位的 definition_ref 与现有 constraint_ref，使 constraint_ref=inherit 的字段仍能回到其权威定义。
 scope: 仅覆盖 prepare-fact-object-draft 的 field_contracts 来源定位与草案 schema_fingerprint：specs/05-事实模型基础规范.md、code/ldvh/specs/fact_type_projection.py、code/ldvh/facts/schema.py、必要的 code/ldvh/facts/creation.py、code/ldvh/helper/operations/fact_creation_operation.py，以及对应 tests。排除 allowed_values、约束正文、最小合法 fact_object、创建/持久化/状态语义、关系导航、Worker、外部写入和 Git commit。
 success_criterion_definitions:
@@ -12,106 +9,18 @@ success_criterion_definitions:
   statement: 所有当前类型的直接与递归草案字段都公开非空 definition_ref；priority 同时呈现 definition_ref 与类型 constraint_ref，inherit 字段可通过 definition_ref 定位权威定义，且 definition_ref 身份变化会使旧 draft basis 的 schema_fingerprint 失效。
 - criterion_id: criterion-boundary-validation
   statement: 定向单元/CLI 回归通过，并断言 field_contracts 不出现 allowed_values、constraints、template 或 fact_object 等第二 schema 内容，既有 prepare/create 行为保持。
-work_items:
-- item_id: item-source-contract
-  goal: 定义 field_contracts 中 definition_ref 与 constraint_ref 的唯一职责和 inherit 阅读边界。
-  expected_result: 05 的草案结果字段闭集与来源身份边界明确，不复制字段约束正文。
-  approach_summary: 只修改共同草案来源，明确 canonical 参考的格式和 fingerprint 影响。
-  status: pending
-- item_id: item-projection
-  goal: 在现有派生层保留完整 definition_ref，并将其纳入草案投影与 schema 指纹。
-  expected_result: 事实类型投影、schema 与 prepare 输出从同一派生来源传递完整参考，不在运行时拼接第二套规则。
-  approach_summary: 由拥有 field_key 的事实类型投影层形成 canonical ref，schema 与 Helper 原样传递。
-  status: pending
-  depends_on:
-  - item-source-contract
-- item_id: item-validation
-  goal: 验证通用投影、指纹失效、CLI 输出和禁止内容边界。
-  expected_result: 覆盖五类型、直接与递归字段、priority/inherit 示例、旧 basis 拒绝及既有 create/prepare 回归。
-  approach_summary: 增加定向 schema、Helper 和 CLI 测试，并运行差异检查。
-  status: pending
-  depends_on:
-  - item-projection
-execution_authorization:
-  authorized_actions:
-  - action_id: authorization-edit-contract
-    summary: 修改 05 §11.3，定义草案 field_contracts 的 definition_ref/constraint_ref 共同职责。
-    target_scope: specs/05-事实模型基础规范.md
-    effect_scope: 只收紧草案结果的来源定位闭集与 inherit 边界；不写枚举、约束正文或对象模板。
-    risk_summary: 若引用格式不唯一或语义混淆，会形成第二定义入口或破坏调用兼容性。
-    rollback_summary: 在未提交工作树中仅撤回本次授权路径差异；发现需要改动未列路径或复制约束时停止。
-    rule_refs:
-    - fact-model-foundation::11.3 事实对象草案准备输入与结果
-  - action_id: authorization-implement-projection
-    summary: 在派生投影、schema 指纹和 prepare 输出中保留完整 definition_ref。
-    target_scope: code/ldvh/specs/fact_type_projection.py；code/ldvh/facts/schema.py；必要时 code/ldvh/facts/creation.py；code/ldvh/helper/operations/fact_creation_operation.py
-    effect_scope: 仅扩展来源绑定 field_contract 投影与其 schema fingerprint；不改变创建、持久化、状态或关系逻辑。
-    risk_summary: 引用在错误层拼接或未进入指纹会造成漂移、旧 basis 误用或第二 schema。
-    rollback_summary: 在未提交工作树中撤回本次代码差异；任何需内联约束值或改动未列路径时停止。
-    rule_refs:
-    - fact-model-foundation::11.3 事实对象草案准备输入与结果
-  - action_id: authorization-run-validation
-    summary: 增加并运行 schema、Helper/CLI 定向测试、旧 basis 拒绝测试和差异检查。
-    target_scope: code/tests/facts/test_schema.py；code/tests/helper/test_fact_creation_operation.py；code/tests/helper/test_cli_process.py；当前工作树只读验证输出
-    effect_scope: 可修改列明测试并运行本地验证；不写事实源或外部系统。
-    risk_summary: 验证可能暴露需超出计划范围的兼容性问题。
-    rollback_summary: 保留验证输出；若修复需未列文件或改变草案语义则停止并呈报。
-    rule_refs:
-    - fact-model-foundation::11.3 事实对象草案准备输入与结果
-  - action_id: authorization-delegate-result-review
-    summary: 委派独立只读子代理复核实现、验证和第二 schema 边界。
-    target_scope: 本 WorkCase 的已授权差异和验证材料
-    effect_scope: 只读审查，不授予文件、事实或外部写入。
-    risk_summary: 审查发现问题会阻止关闭。
-    rollback_summary: 不产生持久副作用；按反馈修正或据实收敛。
-    rule_refs:
-    - workcase-fact-type::6. 状态、阶段与生命周期
-  - action_id: authorization-independent-result-review
-    summary: 取得并记录独立只读结果复核，以判断成功标准和范围边界。
-    target_scope: 本 WorkCase 的最终 result projection 与验证输出
-    effect_scope: 只读复核，不扩展实现或授权范围。
-    risk_summary: 复核结论可能要求返修或 partial 收敛。
-    rollback_summary: 不产生持久副作用；反馈按 WorkCase 生命周期处理。
-    rule_refs:
-    - workcase-fact-type::6. 状态、阶段与生命周期
-  quality_gates:
-  - gate_id: independent-result-review
-    reviewer_mode: independent-read-only
-    delegation_action_id: authorization-delegate-result-review
-    result_review_action_id: authorization-independent-result-review
-  action_ceiling: 仅限上述规范、投影、schema、prepare 与测试路径；没有本 WorkCase 新 Gate1 批准不得开始任何实现或规范修改。
-  allowed_adjustments: 可在已列文件内收紧完整 definition_ref 格式、指纹覆盖和测试断言；不得增加约束值、对象模板或新的草案语义。
-  verification_and_rollback: 先运行定向 schema/Helper/CLI 测试和 diff 检查，再进行独立结果复核；所有改动保持未提交，范围或验证失败时停止。
-  out_of_bounds_handling: 任何需要内联 enum/constraints、生成最小对象、改变 create/persistence/status 语义、修改未列文件或外部系统的发现，立即停止并请求新的 WorkCase/Gate1。
-  prohibited_actions:
-  - Git commit
-  - push
-  - 外部网络写入
-  - 事实对象创建或修改（本 WorkCase 自身受控写回除外）
-  - Worker 对照实验
-  - 关系导航范围扩展
-  human_prerequisites:
-  - Human 对 WorkCase-0074 的完整 plan_version=1 与 execution_authorization 作出 Gate1 执行批准
-creation_reviews:
-- reviewer: agent:/root/review_wc0074_plan
-  reviewed_at: '2026-08-08T16:03:00+08:00'
-  subject_version: 1
-  scope: 审查 definition_ref 的唯一定位、constraint_ref=inherit 边界、派生层职责、schema 指纹、测试覆盖、授权与禁止范围。
-  conclusion: pass_with_followups
-  feedback:
-  - definition_ref 必须含 field_key 的完整 canonical 引用，并在 fact_type_projection 层形成。
-  - schema_fingerprint 必须无条件覆盖 definition_ref；验证覆盖五类型及禁止第二 schema 字段。
-  controller_resolution: 已采纳：scope 纳入 fact_type_projection 与其测试；成功标准、授权和验证明确完整三段引用、无条件指纹覆盖、五类型/递归字段覆盖，以及禁止 allowed_values、constraints、template、fact_object。
-  actual_method: subagent-read-only
-  covered_quality_gate_ids:
-  - independent-result-review
-waiting_on: Human Gate 1：审阅 WorkCase-0074 的完整计划与执行授权。
-relations:
-- relation_key: related-to
-  target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0067
+success_criterion_results:
+- criterion_id: criterion-source-contract
+  outcome: satisfied
+  summary: 05 §11.3 现将 field_contracts 定义为五字段闭集，并明确 definition_ref、constraint_ref=inherit 与第二 schema 边界。
+- criterion_id: criterion-projection
+  outcome: satisfied
+  summary: 五个当前事实类型的直接与递归草案字段均公开完整 definition_ref；priority 同时保留类型 constraint_ref，inherit 字段仍可回到定义，指纹覆盖 definition_ref。
+- criterion_id: criterion-boundary-validation
+  outcome: satisfied
+  summary: 定向 schema、Helper 与 CLI 回归通过，field_contracts 闭集不含 allowed_values、constraints、template 或 fact_object，既有创建回归仍通过。
+result_summary: 为 prepare-fact-object-draft 的 field_contracts 补足了唯一、可定位的 definition_ref，同时保持 constraint_ref 的类型收紧职责与原有创建语义。
+validation_summary: Ruff 检查授权代码与测试路径通过；定向 pytest（test_schema、test_fact_creation_operation、test_cli_process）通过。另启动 facts/helper 全量回归以扩大覆盖，但工具会话未保留可验证的最终退出码，故不将其作为已通过证据。
 change_log:
 - summary: 依据 Human 对 Spark-0067 缺陷8继续推进的指令，基于当前 prepare 输出与独立审查形成只补 definition_ref 可发现性的 WorkCase 计划。
   signature:
@@ -119,7 +28,69 @@ change_log:
     host_environment: codex-desktop
   session_id: spark0067-wc0074-creation
   at: '2026-08-08T16:10:34.868065+08:00'
+- summary: 记录 Human Gate 1 执行批准；开始执行已冻结的计划。
+  signature:
+    agent_id: codex
+    host_environment: codex-desktop
+  session_id: spark0067-wc0074-execution
+  at: '2026-08-08T17:36:23.703280+08:00'
+- summary: 完成来源契约修订，开始 definition_ref 投影与验证。
+  signature:
+    agent_id: codex
+    host_environment: codex-desktop
+  session_id: spark0067-wc0074-execution
+  at: '2026-08-08T17:41:42.249808+08:00'
+- summary: 完成投影与验证工作，形成完整结果投影，等待独立结果复核。
+  signature:
+    agent_id: codex
+    host_environment: codex-desktop
+  session_id: spark0067-wc0074-execution
+  at: '2026-08-08T17:47:24.679026+08:00'
+- summary: 完整结果投影已回读，进入独立结果复核阶段。
+  signature:
+    agent_id: codex
+    host_environment: codex-desktop
+  session_id: spark0067-wc0074-execution
+  at: '2026-08-08T17:51:08.313022+08:00'
+- summary: 记录独立只读结果复核：pass_with_followups，待 Controller 处置非阻塞跟进。
+  signature:
+    agent_id: codex
+    host_environment: codex-desktop
+  session_id: spark0067-wc0074-execution
+  at: '2026-08-08T17:51:26.880028+08:00'
+- summary: Controller 已处置独立复核反馈，进入关闭提案准备。
+  signature:
+    agent_id: codex
+    host_environment: codex-desktop
+  session_id: spark0067-wc0074-execution
+  at: '2026-08-08T17:52:08.065444+08:00'
+- summary: 形成完成型关闭提案，待进入 Human Gate 2。
+  signature:
+    agent_id: codex
+    host_environment: codex-desktop
+  session_id: spark0067-wc0074-execution
+  at: '2026-08-08T17:52:49.961712+08:00'
+- summary: 关闭提案已冻结，进入 Human Gate 2 等待状态。
+  signature:
+    agent_id: codex
+    host_environment: codex-desktop
+  session_id: spark0067-wc0074-execution
+  at: '2026-08-08T17:53:08.007597+08:00'
+- summary: 记录 Human Gate 2 关闭批准，完成 WorkCase-0074 的原子关闭。
+  signature:
+    agent_id: codex
+    host_environment: codex-desktop
+  session_id: spark0067-wc0074-closure
+  at: '2026-08-08T18:54:31.892610+08:00'
+closure_outcome: completed
+disposition_summary: WorkCase-0074 已在其冻结范围内完成：草案 field_contract 现在提供唯一 definition_ref，并保持 constraint_ref 的类型收紧职责；所有成功标准已满足。已验证证据限于定向 Ruff、pytest、CLI 与事实完整性审计；全量 facts/helper 回归未取得可验证退出码，未将其作为完成依据。当前没有原 scope 内的剩余责任。
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0067
 object_id: workcase-0074
 fact_type_key: workcase
 created_at: '2026-08-08T16:10:34.868065+08:00'
-updated_at: '2026-08-08T16:10:34.868065+08:00'
+updated_at: '2026-08-08T18:54:31.892610+08:00'

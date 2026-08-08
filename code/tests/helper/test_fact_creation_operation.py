@@ -72,17 +72,39 @@ def _prepare(workspace: Path, project: Path, fact_type_key: str = "spark") -> di
     return response["result"]
 
 
-def test_prepare_projects_constraint_source_for_conditional_workcase_fields(tmp_path: Path) -> None:
+def test_prepare_projects_definition_and_constraint_sources_without_a_second_schema(tmp_path: Path) -> None:
     workspace, project = _fixture(tmp_path)
 
-    prepared = _prepare(workspace, project, "workcase")
-    contracts = {item["field_path"]: item for item in prepared["field_contracts"]}
+    for fact_type_key in ("spark", "workcase", "adr", "pitfall", "study"):
+        prepared = _prepare(workspace, project, fact_type_key)
+        contracts = prepared["field_contracts"]
+
+        assert contracts
+        assert any("." not in item["field_path"] and "[]" not in item["field_path"] for item in contracts)
+        assert any("." in item["field_path"] or "[]" in item["field_path"] for item in contracts)
+        assert all(
+            set(item) == {"field_path", "json_type", "presence", "definition_ref", "constraint_ref"}
+            for item in contracts
+        )
+        assert all(
+            isinstance(item["definition_ref"], str)
+            and item["definition_ref"].count("::") == 2
+            and all(part.strip() for part in item["definition_ref"].split("::"))
+            for item in contracts
+        )
+        assert all(
+            not ({"allowed_values", "constraints", "template", "fact_object"} & set(item))
+            for item in contracts
+        )
+
+    contracts = {item["field_path"]: item for item in _prepare(workspace, project, "workcase")["field_contracts"]}
 
     resume_from = contracts["resume_from"]
     assert resume_from == {
         "field_path": "resume_from",
         "json_type": "string",
         "presence": "conditional",
+        "definition_ref": "workcase-fact-type::5. WorkCase 类型定义::workcase-resume-from",
         "constraint_ref": "workcase-fact-type::6. 状态、阶段与生命周期",
     }
     for field_path in (
@@ -102,8 +124,15 @@ def test_prepare_projects_constraint_source_for_conditional_workcase_fields(tmp_
         "residual_responsibilities",
     ):
         assert contracts[field_path]["presence"] == "conditional"
+    assert contracts["priority"]["definition_ref"] == (
+        "fact-object-field-registry::跨类型共享字段定义表::priority"
+    )
+    assert contracts["priority"]["constraint_ref"] == "workcase-fact-type::6. 状态、阶段与生命周期"
+    assert contracts["execution_approval.source_refs"]["definition_ref"] == (
+        "workcase-fact-type::5. WorkCase 类型定义::workcase-approval-source-refs"
+    )
+    assert contracts["execution_approval.source_refs"]["constraint_ref"] == "inherit"
     assert contracts["execution_approval.source_refs"]["presence"] == "required"
-    assert all("constraint_ref" in item for item in prepared["field_contracts"])
 
 
 def _spark(title: str = "Controlled creation") -> dict[str, object]:
