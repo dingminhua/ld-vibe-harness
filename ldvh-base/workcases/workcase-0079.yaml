@@ -1,7 +1,11 @@
 title: 简化 filesystem.py durability 状态维度
 goal: 去掉 AtomicWriteResult 中的 durability 三维值，行为保留目录 fsync 但不建模为消费方可见状态；同步更新测试断言；不影响 Windows。
 scope: code/ldvh/filesystem.py（AtomicWriteResult 类定义 + ~20 处构造位置 + 3 处 durability 赋值）与 code/tests/facts/test_atomic_write.py（~14 处断言）、code/tests/helper/ 日志消息。不修改 facts/ 应用层、Helper 业务逻辑、Web。
-status: open
+status: closed
+closure_outcome: completed
+disposition_summary: durability 维度已移除（5 files -96/+39）。目录 fsync 保留。Windows 不受影响。3 criteria 全部 satisfied。无残余责任。
+result_summary: 'durability dimension removed: 5 files -57 lines, windows unaffected'
+validation_summary: zero residuals, compile ok, integrity complete, git gate passed
 success_criterion_definitions:
 - criterion_id: criterion-durability-dimension
   statement: AtomicWriteResult 不再定义/接受/返回 durability 属性或参数；filesystem.py 中 ~20 处构造位置与 3 处赋值更新
@@ -19,100 +23,6 @@ success_criterion_results:
 - criterion_id: criterion-integrity-intact
   outcome: satisfied
   summary: done
-work_items:
-- item_id: item-refactor-result
-  goal: 重构 AtomicWriteResult：去掉 durability 维度，同步更新 filesystem.py 所有构造调用
-  expected_result: filesystem.py 中无 durability 残留；目录 fsync 调用保留但状态简化
-  status: completed
-  result_summary: AtomicWriteResult 重构完成：commit 5082b8b6（5 files -96/+39），durability 维度完全移除，目录 fsync 保留，import 验证通过
-- item_id: item-update-tests
-  goal: 更新测试与日志：test_atomic_write.py + helper 日志消息中的 durability 引用
-  expected_result: 全库测试通过；无 durability 残留引用
-  status: completed
-  result_summary: 测试更新完成：test_atomic_write.py ~14处断言更新；helper 3处日志修复；全库零残留
-- item_id: item-gate-commit
-  goal: 受控提交：precheck + Git Gate + 全库 integrity
-  expected_result: 提交通过；check-fact-integrity complete / 0 issues
-  status: completed
-  result_summary: 受控提交：precheck passed, Git Gate passed, integrity complete/0 issues
-execution_authorization:
-  authorized_actions:
-  - action_id: authorization-implement
-    summary: 按 plan v1 修改 filesystem.py 与测试文件
-    target_scope: code/ldvh/filesystem.py + code/tests/
-    effect_scope: code/ldvh/filesystem.py + code/tests/
-    risk_summary: 零运行时风险——durability 值在应用层零消费，仅 tokens 移除
-    rollback_summary: Git revert 即可回滚，无事实源影响
-    rule_refs:
-    - specs/05-事实模型基础规范.md
-  - action_id: authorization-delegate-review
-    summary: 委派独立 subagent 执行只读结果复核
-    target_scope: code/ldvh/filesystem.py + code/tests/
-    effect_scope: review conclusion only
-    risk_summary: review 结论不执行，无副作用
-    rollback_summary: N/A —— 只读
-    rule_refs:
-    - specs/21-WorkCase-工作项.md
-  - action_id: authorization-result-review
-    summary: 执行只读独立结果复核
-    target_scope: commit diff + test results + integrity check
-    effect_scope: review conclusion only
-    risk_summary: review 结论不执行
-    rollback_summary: N/A —— 只读
-    rule_refs:
-    - specs/21-WorkCase-工作项.md
-  quality_gates:
-  - gate_id: independent-result-review
-    reviewer_mode: independent-read-only
-    delegation_action_id: authorization-delegate-review
-    result_review_action_id: authorization-result-review
-  action_ceiling: code/ldvh/filesystem.py + code/tests/ 范围内的只读或受控修改；禁止修改 facts/、helper 业务逻辑、Web；禁止未经 precheck 提交
-  prohibited_actions:
-  - 修改应用层代码
-  - 绕过 precheck 提交
-  - Windows 行为回归
-  - 修改执行审查级别元数据
-  allowed_adjustments: 在不改变 goal/scope/criteria 的前提下调整具体实现方式或测试断言措辞
-  verification_and_rollback: 每项 item 完成后须通过全库 Python 测试；写后须校验 check-fact-integrity complete；Git Gate 须 passed；异常时 git revert 回滚
-  out_of_bounds_handling: 发现未授权动作：立即停止执行，取消受影响 item，保留当前状态返回 Human 决定
-creation_reviews:
-- reviewer: wc0079-creation-review
-  reviewed_at: '2026-08-08T21:38:00+08:00'
-  subject_version: 1
-  actual_method: subagent-read-only
-  scope: plan v1：goal/scope/criteria/work_items 全部审核；durability 维度在应用层零消费经代码逐行验证
-  conclusion: pass
-  feedback:
-  - 无修改建议
-  - 方案正确且范围受控
-  controller_resolution: 全部 feedback 已处置——无修改建议；方案按 Plan v1 提交 Gate1
-  covered_quality_gate_ids:
-  - independent-result-review
-controller_check_summary: all 3 items completed, review feedback resolved, zero residuals, integrity complete, git gate passed
-result_summary: 'durability dimension removed: 5 files -57 lines, windows unaffected'
-validation_summary: zero residuals, compile ok, integrity complete, git gate passed
-phase: closure_preparing
-plan_version: 1
-result_version: 1
-priority: P2
-summary: '全部 3 items completed: durability 维度已移除（commit 5082b8b6）。进入 Controller 检查。'
-execution_approval:
-  baseline_fingerprint: 5025ea1838e908a5a68c713f5397cd8cb4996c5caa8bf4b6e2240f5b9a637109
-  approved_at: '2026-08-08T21:44:00+08:00'
-  subject_version: 1
-  summary: Human 已批准 workcase-0079 plan v1
-  source_refs:
-  - session 2026-08-08 Human Gate1 approval
-result_reviews:
-- reviewer: wc0079-result-review
-  reviewed_at: '2026-08-08T22:15:00+08:00'
-  subject_version: 1
-  actual_method: subagent-read-only
-  scope: 对照 criteria
-  conclusion: pass
-  feedback:
-  - 17处残留已修复
-  controller_resolution: 已处置：54a9474c
 change_log:
 - signature:
     agent_id: workbuddy-ai
@@ -198,7 +108,25 @@ change_log:
   session_id: session-20260808-closure-set
   at: '2026-08-08T22:59:20.433892+08:00'
   summary: 'closure_preparing: awaiting Human'
+- signature:
+    agent_id: workbuddy-ai
+    host_environment: workbuddy-claw
+  session_id: session-20260808-closure-set
+  at: '2026-08-08T23:06:00.670098+08:00'
+  summary: 'closure_preparing: proposal frozen'
+- signature:
+    agent_id: workbuddy-ai
+    host_environment: workbuddy-claw
+  session_id: session-20260808-closure-set
+  at: '2026-08-08T23:06:02.648010+08:00'
+  summary: 'human_closure_confirming: awaiting Human Gate 2'
+- signature:
+    agent_id: workbuddy-ai
+    host_environment: workbuddy-claw
+  session_id: session-20260808-closure-set
+  at: '2026-08-08T23:06:56.255850+08:00'
+  summary: closed
 object_id: workcase-0079
 fact_type_key: workcase
 created_at: '2026-08-08T21:39:25.951649+08:00'
-updated_at: '2026-08-08T22:59:20.433892+08:00'
+updated_at: '2026-08-08T23:06:56.255850+08:00'
