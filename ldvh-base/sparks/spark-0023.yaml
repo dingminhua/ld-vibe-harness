@@ -1,13 +1,21 @@
 title: 建立 LDVH 版本与发布规范及行动模板
-intent: 保留 LDVH
-  版本与发布的长期规则来源和重复行动结构如何独立成立的问题，避免把开源发布就绪、一次构建或现有脚本误作版本来源、发布条件和授权已经定义。后续需判断规范责任、行动模板和失败处置边界。
-status: open
-priority: P2
-summary: "**需要建立的规则**\n\n- 先按 01 审核独立规范责任、现有承载位置和净价值，再定义 LDVH 自有发行物、唯一版本来源、兼容与发布成立条件、授权、发布后验证、失败版本撤回或替代等稳定规则。\n\
-  - 按 06 建立一次版本发布行动模板；Code、CI 和脚本只负责实现，不替代规则来源或行动授权。\n\n**边界**\n\n- 本 Spark 只聚焦版本与发布
-  Specs 及行动模板建设；整体开源发布就绪与公共契约继续由 `spark-0006` 承接。\n- 当前不创建规范或模板、不选择规范编号、不建立 WorkCase，也不授权版本更新、构建、registry/marketplace
-  发布、push 或 PR。"
+intent: 保留 LDVH 版本与发布的长期规则来源和重复行动结构如何独立成立的问题，避免把开源发布就绪、一次构建或现有脚本误作版本来源、发布条件和授权已经定义。后续需判断规范责任、行动模板和失败处置边界。
+status: discarded
+summary: "**当前结论**\n\n- LDVH 当前为纯源码分发：入口为根目录 `ldvh` launcher 脚本，依赖经 `requirements.txt` + `.venv` 管理，不安装包本体，没有 wheel/sdist 构建过程，也没有 registry/marketplace 发布流程。已有的两次\"发布\"（`v0.0.1`、`v4.0.0`）就是 git tag + CHANGELOG。\n- 原定交付物中\"版本发布行动模板\"已无必要：没有打包过程，发布就是 git tag + CHANGELOG 更新，不值得一个独立行动模板。\n- 原定交付物中\"版本与发布规范\"的实质需求——发布纪律（谁授权发布、版本号规则、CHANGELOG 更新时机、tag 命名、hotfix 分支策略）——属于 `spark-0006`（开源发布就绪与公共契约）的既有范围，不需要独立 Spark。\n\n**处置边界**\n\n- 本次决定不再作为独立 Spark 跟踪该议题；发布纪律问题在 `spark-0006` 的整体发布就绪判断中一并处理。\n- 未来若需要独立的发布规范或模板，应新建 Spark。"
+disposition_summary: Human 决定不再跟踪该议题：LDVH 为纯源码分发，原定的版本发布行动模板已无必要；剩余的发布纪律需求属于 spark-0006（开源发布就绪与公共契约）的既有范围，不需要独立 Spark。本次废弃不建立或暗示任何承接目标。
+evolution:
+- at: '2026-07-21T09:01:55.704419+08:00'
+  summary: 建立时保留版本与发布规范及行动模板的独立成立问题，与 spark-0006（开源发布就绪）分工。
+- at: '2026-08-08T14:44:32+08:00'
+  summary: 确认 LDVH 为纯源码分发、无打包过程，原定行动模板已无必要；发布纪律议题属于 spark-0006 既有范围，该 Spark 不再独立跟踪。
 object_id: spark-0023
 fact_type_key: spark
 created_at: '2026-07-21T09:01:55.704419+08:00'
-updated_at: '2026-07-23T14:21:35.783731+08:00'
+updated_at: '2026-08-08T16:37:05.688130+08:00'
+change_log:
+- signature:
+    agent_id: codex
+    host_environment: codex-desktop
+  session_id: codex-spark0023-trace-repair-20260808
+  at: '2026-08-08T16:37:05.688130+08:00'
+  summary: 受 Human 当前授权为缺少 change_log 的遗留 Spark 建立可信迁移起点；不恢复或伪造原始废弃决定的历史记录。
