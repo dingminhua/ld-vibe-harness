@@ -11,6 +11,7 @@ import SummaryText from '@/components/SummaryText';
 import DocPreviewLink from '@/components/DocPreviewLink';
 import EvidenceBlock from '@/components/EvidenceBlock';
 import CopyPathButton from '@/components/CopyPathButton';
+import ObjectReferenceCopyButton from '@/components/ObjectReferenceCopyButton';
 import ObjectIdentityActions from '@/components/ObjectIdentityActions';
 import WorkCaseCapabilityStatusBadge from '@/components/WorkCaseCapabilityStatusBadge';
 import { hasUnavailableIndependentSubagentReview } from '@/shared/workcaseCapability';
@@ -190,7 +191,7 @@ export default function ObjectDetail() {
               <ObjectIdentityHeader
                 title={displayTitle}
                 id={objId}
-                target={copyTarget}
+                target={objId}
                 objectType={objType}
                 typeColor={typeColor}
                 typeLabel={getTypeLabel(objType, locale)}
@@ -201,8 +202,8 @@ export default function ObjectDetail() {
                 updated={<ObjectUpdatedMeta source={obj} updatedAt={(obj.updated_at ?? obj.updated) as string | undefined} />}
                 auxiliaryMetaEntries={auxiliaryMetaEntries}
                 customMetaEntries={[]}
-                copyLabel={t('common.copyObjectPath')}
-                copiedLabel={t('common.copiedObjectPath')}
+                copyLabel={t('common.copyObjectId')}
+                copiedLabel={t('common.copiedObjectId')}
               />
           </div>
           </div>
@@ -750,7 +751,7 @@ function parseRelatedAssociationValue(item: unknown): RelatedAssociationValue | 
 function RelatedAssociationRow({ fieldKey, reference, locale }: { fieldKey: string; reference: RelatedAssociationValue; locale: string }) {
   const { t } = useI18n();
   const { isOpen: panelOpen, content: panelContent, openPanel } = usePanel();
-  const [objectInfo, setObjectInfo] = useState<{ type: string; title: string; path?: string } | null>(null);
+  const [objectInfo, setObjectInfo] = useState<{ type: string; title: string } | null>(null);
   const [objectMissing, setObjectMissing] = useState(false);
   const value = reference.ref;
   const objectType = parseRefType(value);
@@ -762,16 +763,16 @@ function RelatedAssociationRow({ fieldKey, reference, locale }: { fieldKey: stri
     ? t('common.loading')
     : value;
   const displayTitle = reference.title || objectInfo?.title || (objectMissing ? value : fallbackTitle);
-  const copyValue = objectType ? objectInfo?.path : value;
+  const copyValue = value;
   const copyLabel = objectType
-    ? t('common.copyObjectPath')
+    ? t('common.copyObjectId')
     : isExternal
       ? t('common.copyUrl')
       : isDocPreview
         ? t('common.copyDocPath')
         : t('common.copyReference');
   const copiedLabel = objectType
-    ? t('common.copiedObjectPath')
+    ? t('common.copiedObjectId')
     : isExternal
       ? t('common.copiedUrl')
       : isDocPreview
@@ -802,12 +803,10 @@ function RelatedAssociationRow({ fieldKey, reference, locale }: { fieldKey: stri
       .then((detail) => {
         if (cancelled) return;
         const obj = detail.data;
-        const meta = getFactReadMeta(obj);
         const title = getLocalizedObjectTitle(obj as LocalizedTitleItem, locale, value);
         setObjectInfo({
           type: objectType,
           title,
-          path: isReadableFact(meta) ? meta.canonicalPath : undefined,
         });
       })
       .catch(() => {
@@ -864,7 +863,9 @@ function RelatedAssociationRow({ fieldKey, reference, locale }: { fieldKey: stri
         )}
       </div>
       <div className="flex h-7 shrink-0 items-center gap-1">
-        <CopyPathButton path={copyValue} label={copyLabel} copiedLabel={copiedLabel} />
+        {objectType
+          ? <ObjectReferenceCopyButton objectId={value} label={copyLabel} copiedLabel={copiedLabel} />
+          : <CopyPathButton path={copyValue} label={copyLabel} copiedLabel={copiedLabel} />}
         <button
           type="button"
           onClick={(event) => {

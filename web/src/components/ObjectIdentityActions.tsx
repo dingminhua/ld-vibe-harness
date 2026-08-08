@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import CopyPathButton from '@/components/CopyPathButton';
+import ObjectReferenceCopyButton from '@/components/ObjectReferenceCopyButton';
 import StatusBadge from '@/components/StatusBadge';
 
 /**
@@ -41,7 +42,10 @@ export default function ObjectIdentityActions({
         />
       )}
       {actionBadges}
-      {showCopyAction && (
+      {showCopyAction && (objectType === 'workcase' || objectType === 'adr' || objectType === 'pitfall' || objectType === 'spark' || objectType === 'study') && (
+        <ObjectReferenceCopyButton objectId={target} label={copyLabel} copiedLabel={copiedLabel} />
+      )}
+      {showCopyAction && objectType !== 'workcase' && objectType !== 'adr' && objectType !== 'pitfall' && objectType !== 'spark' && objectType !== 'study' && (
         <CopyPathButton path={target} label={copyLabel} copiedLabel={copiedLabel} />
       )}
     </div>

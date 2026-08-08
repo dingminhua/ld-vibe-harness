@@ -21,7 +21,7 @@ import {
   Target,
 } from "lucide-react";
 import SummaryText from "@/components/SummaryText";
-import CopyPathButton from "@/components/CopyPathButton";
+import ObjectReferenceCopyButton from "@/components/ObjectReferenceCopyButton";
 import { ObjectTypeIcon } from "@/components/SemanticIcon";
 import WorkCaseProgressTrack from "@/components/WorkCaseProgressTrack";
 import { useI18n } from "@/i18n/context";
@@ -2262,6 +2262,7 @@ function RouteTarget({
         <ResolvedRouteTargetRow
           factTypeKey={factTypeKey}
           objectId={objectId}
+          projectId={projectId}
           locale={locale}
         />
       ) : (
@@ -2288,10 +2289,12 @@ function RouteTarget({
 function ResolvedRouteTargetRow({
   factTypeKey,
   objectId,
+  projectId,
   locale,
 }: {
   factTypeKey: string;
   objectId: string;
+  projectId: string;
   locale: string;
 }) {
   const { t } = useI18n();
@@ -2328,7 +2331,6 @@ function ResolvedRouteTargetRow({
           ? source.title
           : "—"
       : "—";
-  const canonicalPath = isReadableFact(readMeta) ? readMeta.canonicalPath : undefined;
   const typeColor = CATEGORY_COLORS[factTypeKey] || CATEGORY_COLORS.other;
   const isCurrentPanelOpen = Boolean(
     panelOpen &&
@@ -2365,7 +2367,7 @@ function ResolvedRouteTargetRow({
         {title}
       </span>
       <span className="ldvh-meta-muted shrink-0">{objectId}</span>
-      <CopyPathButton path={canonicalPath} />
+      <ObjectReferenceCopyButton projectId={projectId} objectId={objectId} />
       <PanelIcon
         size={16}
         className="shrink-0 text-ldvh-text-secondary/70 transition-colors group-hover:text-ldvh-accent"

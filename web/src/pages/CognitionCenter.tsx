@@ -14,6 +14,7 @@ import { useEffect, useState, type KeyboardEvent } from 'react';
 import { AlertCircle, ChevronDown, ChevronUp, CirclePlay, GitFork, HeartPulse, History, Inbox } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import CopyPathButton from '@/components/CopyPathButton';
+import ObjectReferenceCopyButton, { formatObjectReference } from '@/components/ObjectReferenceCopyButton';
 import {
   ObjectCardFrame,
   PitfallCardContent,
@@ -43,6 +44,7 @@ import {
   type WorkCaseContributionTarget,
 } from '@/utils/api';
 import { usePanel } from '@/utils/panelContext';
+import { useProjectScope } from '@/utils/projectContext';
 import { useI18n } from '@/i18n/context';
 import { getFieldLabel, getFieldValueLabel, getLocalizedObjectTitle, getObjectStatusLocale, type LocaleKey } from '@/i18n/locales';
 
@@ -90,7 +92,7 @@ const INBOX_KIND_LABEL_KEYS: Record<CognitionInboxKind, LocaleKey> = {
 type Translate = ReturnType<typeof useI18n>['t'];
 
 /** 面向 AI 对话的模块摘要：模块名、关键计数与条目稳定 ID 列表（不含未精确读取的路径）。 */
-function buildModuleSummary(data: CognitionData, locale: string, t: Translate): string {
+function buildModuleSummary(data: CognitionData, locale: string, t: Translate, projectId: string): string {
   const lines: string[] = [];
   lines.push(t('cognition.inbox.title'));
   const counts: Record<CognitionInboxKind, number> = {
@@ -105,12 +107,12 @@ function buildModuleSummary(data: CognitionData, locale: string, t: Translate): 
     .map((kind) => `${t(INBOX_KIND_LABEL_KEYS[kind])} ${counts[kind]}`);
   lines.push(`total: ${data.inbox.total}${countParts.length > 0 ? ` (${countParts.join(', ')})` : ''}`);
   for (const item of data.inbox.items) {
-    lines.push(`- ${item.id} · ${t(INBOX_KIND_LABEL_KEYS[item.inboxKind])} · ${getLocalizedObjectTitle(item, locale, item.id)}`);
+    lines.push(`- ${formatObjectReference(projectId, item.id)} · ${t(INBOX_KIND_LABEL_KEYS[item.inboxKind])} · ${getLocalizedObjectTitle(item, locale, item.id)}`);
   }
   return lines.join('\n');
 }
 
-function buildRecentActivitySummary(data: CognitionData, locale: string, t: Translate): string {
+function buildRecentActivitySummary(data: CognitionData, locale: string, t: Translate, projectId: string): string {
   const recent = data.recentActivity;
   const lines = [
     t('cognition.recent.title'),
@@ -119,20 +121,20 @@ function buildRecentActivitySummary(data: CognitionData, locale: string, t: Tran
     `events: ${recent.eventTotal}`,
   ];
   for (const item of recent.items) {
-    lines.push(`- ${item.id} · ${item.activityCount} · ${getLocalizedObjectTitle(item, locale, item.id)}`);
+    lines.push(`- ${formatObjectReference(projectId, item.id)} · ${item.activityCount} · ${getLocalizedObjectTitle(item, locale, item.id)}`);
   }
   return lines.join('\n');
 }
 
-function buildActiveWorkCaseSummary(data: CognitionData, locale: string, t: Translate): string {
+function buildActiveWorkCaseSummary(data: CognitionData, locale: string, t: Translate, projectId: string): string {
   const lines = [t('cognition.active.title'), `total: ${data.activeWorkCases.total}`];
   for (const item of data.activeWorkCases.items) {
-    lines.push(`- ${item.id} · ${getLocalizedObjectTitle(item, locale, item.id)}`);
+    lines.push(`- ${formatObjectReference(projectId, item.id)} · ${getLocalizedObjectTitle(item, locale, item.id)}`);
   }
   return lines.join('\n');
 }
 
-function buildSparkHealthSummary(data: CognitionData, locale: string, t: Translate): string {
+function buildSparkHealthSummary(data: CognitionData, locale: string, t: Translate, projectId: string): string {
   const health = data.sparkHealth;
   if (!health) return t('cognition.sparkHealth.title');
   const terminal = (['routed', 'implemented', 'discarded'] as const)
@@ -146,12 +148,12 @@ function buildSparkHealthSummary(data: CognitionData, locale: string, t: Transla
     t('cognition.sparkHealth.silentSummary', { count: String(health.silentCount), days: String(health.silentThresholdDays) }),
   ];
   for (const item of health.silentItems) {
-    lines.push(`- ${item.id} · ${t('cognition.sparkHealth.silentDays', { days: String(item.silentDays) })} · ${getLocalizedObjectTitle(item, locale, item.id)}`);
+    lines.push(`- ${formatObjectReference(projectId, item.id)} · ${t('cognition.sparkHealth.silentDays', { days: String(item.silentDays) })} · ${getLocalizedObjectTitle(item, locale, item.id)}`);
   }
   return lines.join('\n');
 }
 
-function buildRecentHotspotSummary(data: CognitionData, locale: string, t: Translate): string {
+function buildRecentHotspotSummary(data: CognitionData, locale: string, t: Translate, projectId: string): string {
   const hotspots = data.recentHotspots;
   if (!hotspots) return t('cognition.commitHotspots.title');
   const lines = [
@@ -162,7 +164,7 @@ function buildRecentHotspotSummary(data: CognitionData, locale: string, t: Trans
   ];
   for (const cluster of hotspots.clusters) {
     const item = cluster.primary;
-    lines.push(`- ${item.id} · ${item.activityRefs.length} · ${getLocalizedObjectTitle(item, locale, item.id)}`);
+    lines.push(`- ${formatObjectReference(projectId, item.id)} · ${item.activityRefs.length} · ${getLocalizedObjectTitle(item, locale, item.id)}`);
   }
   return lines.join('\n');
 }
@@ -392,7 +394,7 @@ function RecentActivityRow({ item }: { item: CognitionRecentActivityItem }) {
         </span>
         <span className="ml-auto flex shrink-0 items-center gap-1.5">
           {status && <StatusBadge status={status} statusLabel={getObjectStatusLocale(item.type, status, locale)} objectType={item.type} />}
-          <CopyPathButton path={item.id} label={t('common.copyObjectId')} copiedLabel={t('common.copiedObjectId')} />
+          <ObjectReferenceCopyButton objectId={item.id} />
         </span>
       </div>
       <div className="mt-2 flex min-w-0 items-center gap-1.5">
@@ -463,7 +465,7 @@ function SparkHealthRow({ item }: { item: CognitionSparkHealthItem }) {
         <code className="ldvh-caption min-w-0 break-all text-ldvh-text-secondary/55">{item.id}</code>
         <PriorityIcon source={item} type="spark" locale={locale} size="sm" />
         <span className="ml-auto shrink-0">
-          <CopyPathButton path={item.id} label={t('common.copyObjectId')} copiedLabel={t('common.copiedObjectId')} />
+          <ObjectReferenceCopyButton objectId={item.id} />
         </span>
       </div>
       <div className="mt-2 flex min-w-0 items-center gap-1.5">
@@ -525,6 +527,7 @@ export default function CognitionCenter() {
   const [expandedHotspotKey, setExpandedHotspotKey] = useState<string | null>(null);
   const [recentHotspotStatusFilter, setRecentHotspotStatusFilter] = useState<RecentHotspotStatusFilter>('progressing');
   const { t, locale } = useI18n();
+  const { selectedProjectId } = useProjectScope();
 
   // 首次进入才阻塞整页；切换近期窗口保留当前内容，只在本模块内更新快照。
   useEffect(() => {
@@ -645,7 +648,7 @@ export default function CognitionCenter() {
           )}
           <span className="ml-auto flex min-w-0 shrink-0 items-center gap-2">
             <CopyPathButton
-              path={buildModuleSummary(data, locale, t)}
+              path={buildModuleSummary(data, locale, t, selectedProjectId)}
               label={t('cognition.copyModuleSummary')}
               copiedLabel={t('cognition.copiedModuleSummary')}
             />
@@ -723,7 +726,7 @@ export default function CognitionCenter() {
           )}
           <span className="ml-auto flex min-w-0 shrink-0 items-center gap-2">
             <CopyPathButton
-              path={buildActiveWorkCaseSummary(data, locale, t)}
+              path={buildActiveWorkCaseSummary(data, locale, t, selectedProjectId)}
               label={t('cognition.active.copyModuleSummary')}
               copiedLabel={t('cognition.active.copiedModuleSummary')}
             />
@@ -816,7 +819,7 @@ export default function CognitionCenter() {
           </div>
           <span className="ml-auto flex min-w-0 shrink-0 items-center gap-2">
             <CopyPathButton
-              path={buildRecentActivitySummary(data, locale, t)}
+              path={buildRecentActivitySummary(data, locale, t, selectedProjectId)}
               label={t('cognition.recent.copyModuleSummary')}
               copiedLabel={t('cognition.recent.copiedModuleSummary')}
             />
@@ -932,7 +935,7 @@ export default function CognitionCenter() {
           <span className="ml-auto flex min-w-0 shrink-0 items-center gap-2">
             {sparkHealth && (
               <CopyPathButton
-                path={buildSparkHealthSummary(data, locale, t)}
+                path={buildSparkHealthSummary(data, locale, t, selectedProjectId)}
                 label={t('cognition.sparkHealth.copyModuleSummary')}
                 copiedLabel={t('cognition.sparkHealth.copiedModuleSummary')}
               />
@@ -1029,7 +1032,7 @@ export default function CognitionCenter() {
           <span className="ml-auto flex min-w-0 shrink-0 items-center gap-2">
             {recentHotspots && (
               <CopyPathButton
-                path={buildRecentHotspotSummary(data, locale, t)}
+                path={buildRecentHotspotSummary(data, locale, t, selectedProjectId)}
                 label={t('cognition.commitHotspots.copyModuleSummary')}
                 copiedLabel={t('cognition.commitHotspots.copiedModuleSummary')}
               />

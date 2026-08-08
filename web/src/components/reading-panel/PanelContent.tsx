@@ -149,7 +149,7 @@ function ObjectPreview({ content }: { content: PanelContent }) {
         objectType={objectType || ''}
         id={objectId || ''}
         title={title}
-        target={targetPath}
+        target={objectId}
         typeColor={typeColor}
         typeLabel={getObjectTypeLabel(objectType, locale)}
         status={headerStatus}
@@ -158,8 +158,8 @@ function ObjectPreview({ content }: { content: PanelContent }) {
         locale={locale}
         updated={<ObjectUpdatedMeta source={obj || {}} updatedAt={(obj?.updated_at ?? obj?.updated) as string | undefined} />}
         auxiliaryMetaEntries={obj ? getAuxiliaryMetaEntries(obj, objectType || '') : []}
-        copyLabel={t('common.copyObjectPath')}
-        copiedLabel={t('common.copiedObjectPath')}
+        copyLabel={t('common.copyObjectId')}
+        copiedLabel={t('common.copiedObjectId')}
         compact
       />
       {obj && readable && (

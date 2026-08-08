@@ -1,6 +1,6 @@
 import { useEffect, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
-import CopyPathButton from '@/components/CopyPathButton';
+import ObjectReferenceCopyButton from '@/components/ObjectReferenceCopyButton';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
 import StatusBadge from '@/components/StatusBadge';
 import { getFieldLabel, getLocalizedObjectTitle, getObjectStatusLocale, getTypeLabel } from '@/i18n/locales';
@@ -124,7 +124,6 @@ function ReadableRelationTarget({ relation, locale, showRelationKey }: {
   const status = detail?.summary.status;
   const readMeta = getFactReadMeta(detail?.data);
   const title = relationTargetTitle(detail, readMeta, locale);
-  const canonicalPath = isReadableFact(readMeta) ? readMeta.canonicalPath : undefined;
   const typeColor = CATEGORY_COLORS[target.factTypeKey] || CATEGORY_COLORS.other;
   const isCurrentPanelOpen = Boolean(panelOpen && panelContent?.type === 'object'
     && panelContent.objectType === target.factTypeKey && panelContent.objectId === target.objectId);
@@ -143,7 +142,7 @@ function ReadableRelationTarget({ relation, locale, showRelationKey }: {
       <span className="ldvh-meta-primary min-w-0 flex-1 truncate group-hover:text-ldvh-accent">{title}</span>
       <span className="ldvh-meta-muted shrink-0">{target.objectId}</span>
       {status && <StatusBadge status={status} statusLabel={getObjectStatusLocale(target.factTypeKey, status, locale)} objectType={target.factTypeKey} size="sm" />}
-      <CopyPathButton path={canonicalPath} />
+      <ObjectReferenceCopyButton projectId={target.governedProjectId} objectId={target.objectId} />
       <PanelIcon size={16} className="shrink-0 text-ldvh-text-secondary/70 transition-colors group-hover:text-ldvh-accent" aria-hidden="true" />
     </div>
   );

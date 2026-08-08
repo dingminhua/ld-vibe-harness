@@ -758,7 +758,8 @@ test('closure route target resolves the current target like formal relations', (
   assert.match(layout, /function ResolvedRouteTargetRow\(/);
   assert.match(layout, /fetchObjectDetail\(factTypeKey, objectId\)/);
   assert.match(layout, /openPanel\(\{ type: "object", title, objectType: factTypeKey, objectId \}\)/);
-  assert.match(layout, /CopyPathButton/);
+  assert.match(layout, /ObjectReferenceCopyButton/);
+  assert.match(layout, /projectId=\{projectId\} objectId=\{objectId\}/);
   assert.match(layout, /projectId === currentProjectId/);
 
   // 跨项目或身份不完整的目标只如实显示已知稳定身份，不猜测标题。
