@@ -1182,7 +1182,6 @@ def _create_execute(
                     "check": (
                         "写后读取、派生 Schema、身份、引用和关系机械检查已通过；"
                         f"namespace={creation_result.namespace_state}, cleanup={creation_result.cleanup}"
-                        f"cleanup={creation_result.cleanup}"
                     ),
                     "status": "passed",
                     "scope": [actual_ref],

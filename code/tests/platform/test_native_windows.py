@@ -177,7 +177,7 @@ def test_native_file_only_create_and_replace_report_exact_boundaries(tmp_path: P
     created = atomic_create_relative(root, relative, b"first\n", allow_file_only=True)
     conflict = atomic_create_relative(root, relative, b"second\n", allow_file_only=True)
 
-    assert (created.outcome, created.namespace_state, created.durability, created.cleanup) == (
+    assert (created.outcome, created.namespace_state, created.cleanup) == (
         "created",
         "committed",
         "file_only",
@@ -231,7 +231,7 @@ def test_native_file_only_create_and_replace_report_exact_boundaries(tmp_path: P
         b"replacement\n",
         allow_file_only=True,
     )
-    assert (replaced.outcome, replaced.namespace_state, replaced.durability, replaced.cleanup) == (
+    assert (replaced.outcome, replaced.namespace_state, replaced.cleanup) == (
         "replaced",
         "committed",
         "file_only",

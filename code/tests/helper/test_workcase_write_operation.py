@@ -282,7 +282,7 @@ def test_helper_preserves_committed_result_when_coordination_release_is_uncertai
         candidate=after,
         readback=after,
         candidate_text="after\n",
-        replacement_result=AtomicWriteResult.committed("replaced", sync_scope="file_and_directory"),
+        replacement_result=AtomicWriteResult.committed("replaced"),
         coordination_release_uncertain=True,
     )
 
@@ -480,7 +480,7 @@ def test_workcase_helper_reports_the_fresh_external_residual_after_rollback_conf
         candidate=candidate,
         readback=candidate,
         candidate_text="candidate\n",
-        replacement_result=AtomicWriteResult.committed("replaced", sync_scope="file_and_directory"),
+        replacement_result=AtomicWriteResult.committed("replaced"),
         rollback_result=AtomicWriteResult.not_committed("conflict"),
         residual_readback=residual,
     )
@@ -522,7 +522,7 @@ def test_workcase_helper_marks_actual_residual_unavailable_without_guessing() ->
         candidate=candidate,
         readback=candidate,
         candidate_text="candidate\n",
-        replacement_result=AtomicWriteResult.committed("replaced", sync_scope="file_and_directory"),
+        replacement_result=AtomicWriteResult.committed("replaced"),
         rollback_result=AtomicWriteResult.uncertain(),
         residual_readback=unavailable,
     )
@@ -565,7 +565,7 @@ def test_workcase_helper_separates_complete_carrier_read_from_invalid_object() -
         candidate=candidate,
         readback=candidate,
         candidate_text="candidate\n",
-        replacement_result=AtomicWriteResult.committed("replaced", sync_scope="file_and_directory"),
+        replacement_result=AtomicWriteResult.committed("replaced"),
         rollback_result=AtomicWriteResult.not_committed("conflict"),
         residual_readback=invalid,
     )
@@ -619,7 +619,7 @@ def test_workcase_helper_separates_rollback_namespace_evidence_when_residual_mat
         candidate=candidate,
         readback=candidate,
         candidate_text="candidate\n",
-        replacement_result=AtomicWriteResult.committed("replaced", sync_scope="file_and_directory"),
+        replacement_result=AtomicWriteResult.committed("replaced"),
         rollback_result=rollback,
         residual_readback=before,
     )
@@ -682,7 +682,7 @@ def test_workcase_helper_does_not_claim_an_unread_residual_was_fully_read(
         candidate=candidate,
         readback=candidate,
         candidate_text="candidate\n",
-        replacement_result=AtomicWriteResult.committed("replaced", sync_scope="file_and_directory"),
+        replacement_result=AtomicWriteResult.committed("replaced"),
         rollback_result=AtomicWriteResult.not_committed("conflict"),
         residual_readback=residual,
     )

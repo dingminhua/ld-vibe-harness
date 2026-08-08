@@ -36,7 +36,7 @@ def test_atomic_write_results_only_allow_valid_commit_shapes() -> None:
         "clean") == (
         "committed", "clean",
     )
-    assert (not_committed.namespace_state, not_, not_committed.cleanup) == (
+    assert (not_committed.namespace_state, not_committed. not_committed.cleanup) == (
         "not_committed", "clean",
     )
     assert (uncertain.outcome, uncertain.namespace_state, uncertain.cleanup) == (
@@ -190,7 +190,7 @@ def test_directory_sync_failure_after_create_reports_committed(
 
     assert result.outcome == "created"
     assert result.namespace_state == "committed"
-        assert (tmp_path / "ldvh-base/sparks/spark-0001.yaml").read_bytes() == b"first\n"
+    assert (tmp_path / "ldvh-base/sparks/spark-0001.yaml").read_bytes() == b"first\n"
 
 @_POSIX_ONLY
 def test_create_syncs_directory_after_target_publish_and_temporary_cleanup(
@@ -284,7 +284,7 @@ def test_store_reconciles_replace_that_committed_before_error_return(
 
     assert result.outcome == "stored"
     assert result.namespace_state == "committed"
-        assert (tmp_path / "ldvh/fact-id-allocators/sample.counter").read_bytes() == b"1\n"
+    assert (tmp_path / "ldvh/fact-id-allocators/sample.counter").read_bytes() == b"1\n"
 
 def test_replace_conflict_preserves_current_bytes(tmp_path: Path) -> None:
     target = tmp_path / "ldvh-base/sparks/spark-0001.yaml"
@@ -328,7 +328,7 @@ def test_directory_sync_failure_after_replace_reports_committed(
 
     assert result.outcome == "replaced"
     assert result.namespace_state == "committed"
-        assert target.read_bytes() == b"replacement\n"
+    assert target.read_bytes() == b"replacement\n"
 
 def test_replace_reconciles_namespace_when_replace_commits_before_error_return(
     tmp_path: Path,
@@ -354,7 +354,7 @@ def test_replace_reconciles_namespace_when_replace_commits_before_error_return(
 
     assert result.outcome == "replaced"
     assert result.namespace_state == "committed"
-        assert target.read_bytes() == b"replacement\n"
+    assert target.read_bytes() == b"replacement\n"
 
 def test_unknown_platform_write_policy_fails_closed_before_mutation(tmp_path: Path) -> None:
     """Platforms without a native backend (not posix or approved nt) stay fail-closed."""

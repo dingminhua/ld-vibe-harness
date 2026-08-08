@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any, assert_never
 
-from ldvh.governance.models import ScopeDescriptor
+from ldvh.governance.models import ConfigStatus, ScopeDescriptor
 from ldvh.governance.resolver import (
     GovernanceResolutionRun,
     ResolutionDiagnostic,
@@ -34,6 +34,15 @@ OPERATION_KEY = "resolve-governance-scope"
 _INPUT_CONTRACT = source_reference(
     "rule",
     "work-object-governance-scope::10.1 管辖范围解析输入字段",
+)
+_SCOPE_UNKNOWN_SOURCE = source_reference(
+    "rule",
+    "work-object-governance-scope::8.3 scope_unknown 识别、报告与处理",
+)
+_ENVIRONMENT_INTEGRATION_TEMPLATE = source_reference(
+    "rule",
+    "specs/33-环境接入行动模板.md",
+    details={"line": 77},
 )
 _IMPLEMENTATION_EVIDENCE = (
     source_reference(
@@ -146,6 +155,106 @@ def _summary(outcome: str) -> str:
     assert_never(outcome)  # type: ignore[arg-type]
 
 
+def _scope_refs() -> list[Any]:
+    return []
+
+
+def _follow_up_for_config_status(config_status_value: str) -> dict[str, Any] | None:
+    if config_status_value == ConfigStatus.VALID.value:
+        return None
+    if config_status_value == ConfigStatus.MISSING.value:
+        return {
+            "summary": "当前工作区未找到管辖配置；依赖管辖结论的受控操作暂时不可用",
+            "required_inputs": [],
+            "required_human_decisions": [
+                {
+                    "summary": "请确认工作区根目录，并在其下创建 LDVH-GOVERNED-PROJECTS.yaml",
+                    "scope": _scope_refs(),
+                    "source_refs": [_plain(_SCOPE_UNKNOWN_SOURCE)],
+                },
+            ],
+            "resume_conditions": [
+                {
+                    "summary": "工作区根下存在格式有效的 LDVH-GOVERNED-PROJECTS.yaml，且其中登记了当前 Git worktree",
+                    "scope": _scope_refs(),
+                    "source_refs": [_plain(_SCOPE_UNKNOWN_SOURCE)],
+                },
+            ],
+            "suggested_operations": [
+                {
+                    "operation_key": "read-action-template-content",
+                    "summary": "读取环境接入行动模板，按其引导完成管辖配置的创建与验证",
+                    "scope": _scope_refs(),
+                    "source_refs": [_plain(_ENVIRONMENT_INTEGRATION_TEMPLATE)],
+                },
+            ],
+        }
+    if config_status_value == ConfigStatus.INVALID.value:
+        return {
+            "summary": "已找到管辖配置，但格式或字段无效；依赖管辖结论的受控操作暂时不可用",
+            "required_inputs": [],
+            "required_human_decisions": [
+                {
+                    "summary": "请修正 LDVH-GOVERNED-PROJECTS.yaml 的 YAML 格式或字段定义",
+                    "scope": _scope_refs(),
+                    "source_refs": [_plain(_SCOPE_UNKNOWN_SOURCE)],
+                },
+            ],
+            "resume_conditions": [
+                {
+                    "summary": "已按规范修复 LDVH-GOVERNED-PROJECTS.yaml 的格式与字段问题",
+                    "scope": _scope_refs(),
+                    "source_refs": [_plain(_SCOPE_UNKNOWN_SOURCE)],
+                },
+            ],
+            "suggested_operations": [
+                {
+                    "operation_key": "read-action-template-content",
+                    "summary": "读取环境接入行动模板，按其引导完成管辖配置的修复与验证",
+                    "scope": _scope_refs(),
+                    "source_refs": [_plain(_ENVIRONMENT_INTEGRATION_TEMPLATE)],
+                },
+            ],
+        }
+    if config_status_value == ConfigStatus.CONFLICT.value:
+        return {
+            "summary": "存在多个候选管辖配置且产生冲突；依赖管辖结论的受控操作暂时不可用",
+            "required_inputs": [],
+            "required_human_decisions": [
+                {
+                    "summary": "请在多个候选 LDVH-GOVERNED-PROJECTS.yaml 之间选择或合并为单一有效配置",
+                    "scope": _scope_refs(),
+                    "source_refs": [_plain(_SCOPE_UNKNOWN_SOURCE)],
+                },
+            ],
+            "resume_conditions": [
+                {
+                    "summary": "候选冲突已通过选择或合并解决，工作区根下存在单一有效配置",
+                    "scope": _scope_refs(),
+                    "source_refs": [_plain(_SCOPE_UNKNOWN_SOURCE)],
+                },
+            ],
+            "suggested_operations": [
+                {
+                    "operation_key": "read-action-template-content",
+                    "summary": "读取环境接入行动模板，按其引导完成管辖配置冲突的解决与验证",
+                    "scope": _scope_refs(),
+                    "source_refs": [_plain(_ENVIRONMENT_INTEGRATION_TEMPLATE)],
+                },
+            ],
+        }
+    return None
+
+
+def _build_follow_up(run: GovernanceResolutionRun) -> dict[str, Any] | None:
+    if run.result is None:
+        return None
+    config_status_value = getattr(run.result, "config_status", None)
+    if config_status_value is None:
+        return None
+    return _follow_up_for_config_status(config_status_value.value)
+
+
 def _call(
     request: CommonRequest,
     repository: RepositoryInspection,
@@ -154,6 +263,7 @@ def _call(
     del repository
     run = _resolve(request, context)
     outcome = _outcome(run)
+    follow_up = _build_follow_up(run)
     return OperationExecution(
         outcome=outcome,  # type: ignore[arg-type]
         summary=_summary(outcome),
@@ -164,6 +274,7 @@ def _call(
         sources=tuple(_plain(source) for source in run.sources) + _IMPLEMENTATION_EVIDENCE,
         gaps=tuple(_gap_json(item) for item in run.gaps),
         diagnostics=tuple(_diagnostic_json(item) for item in run.diagnostics),
+        follow_up=follow_up,
     )
 
 

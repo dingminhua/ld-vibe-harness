@@ -784,7 +784,6 @@ def _execute(
                 "check": (
                     "旧内容指纹、完整目标、转换边界、原子替换和写后机械读取已通过；"
                     f"namespace={replacement.namespace_state}, cleanup={replacement.cleanup}"
-                    f"cleanup={replacement.cleanup}"
                 ),
                 "status": "passed",
                 "scope": list(requested),

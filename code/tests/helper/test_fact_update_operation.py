@@ -369,7 +369,7 @@ def test_generic_helper_preserves_committed_result_when_coordination_release_is_
         candidate=after,
         readback=after,
         candidate_text="after\n",
-        replacement_result=AtomicWriteResult.committed("replaced", sync_scope="file_and_directory"),
+        replacement_result=AtomicWriteResult.committed("replaced"),
         coordination_release_uncertain=True,
     )
     monkeypatch.setattr(fact_update_operation, "_validated_request", lambda *_args: domain)
@@ -896,7 +896,7 @@ def test_generic_helper_reports_fresh_residual_without_exceeding_rollback_eviden
         candidate=candidate,
         readback=candidate,
         candidate_text="candidate\n",
-        replacement_result=AtomicWriteResult.committed("replaced", sync_scope="file_and_directory"),
+        replacement_result=AtomicWriteResult.committed("replaced"),
         rollback_result=rollback,
         residual_readback=residuals[residual_kind],
     )
@@ -978,7 +978,7 @@ def test_update_reports_committed_namespace_when_directory_sync_fails(
 
     assert response["outcome"] == "ok"
     assert response["changes"][0]["status"] == "updated"
-    assert "sync_scope=unknown" in response["changes"][0]["summary"]
+    assert "cleanup=clean" in response["changes"][0]["summary"]
     assert "Committed despite directory sync failure" in fact.read_text(encoding="utf-8")
 
 

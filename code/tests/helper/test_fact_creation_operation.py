@@ -854,7 +854,7 @@ def test_create_reports_committed_namespace_when_directory_sync_fails(
         "counter-consumed",
         "target-created",
     ]
-    assert "sync_scope=unknown" in response["changes"][1]["summary"]
+    assert "cleanup=clean" in response["changes"][1]["summary"]
     assert (project / "ldvh-base/sparks/spark-0001.yaml").is_file()
 
 
@@ -1714,7 +1714,7 @@ def test_creation_helper_reports_the_fresh_actual_residual_after_failed_rollback
             raw_text="failed post-create readback\n",
         ),
         allocation_consumed=True,
-        creation_result=AtomicWriteResult.committed("created", sync_scope="file_and_directory"),
+        creation_result=AtomicWriteResult.committed("created"),
         rollback_result=AtomicWriteResult.uncertain(cleanup_residue=True),
         residual_readback=residuals[residual_kind],
         allocation_status="committed",
