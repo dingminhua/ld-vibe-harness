@@ -443,11 +443,29 @@ def project_closed_workcase_candidate(before: Mapping[str, Any]) -> dict[str, An
     if isinstance(suggestions, list) and suggestions:
         candidate["spark_suggestions"] = deepcopy(suggestions)
 
+    route_target_identities = {
+        (
+            item["target"]["governed_project_id"],
+            item["target"]["fact_type_key"],
+            item["target"]["object_id"],
+        )
+        for item in route_target_basis
+    }
     relations: list[dict[str, Any]] = []
     before_relations = before.get("relations")
     for relation in before_relations if isinstance(before_relations, list) else []:
-        if isinstance(relation, Mapping) and relation.get("relation_key") in _CLOSED_PRESERVED_RELATION_KEYS:
-            relations.append(deepcopy(dict(relation)))
+        if not isinstance(relation, Mapping) or relation.get("relation_key") not in _CLOSED_PRESERVED_RELATION_KEYS:
+            continue
+        target = relation.get("target")
+        target_mapping = target if isinstance(target, Mapping) else {}
+        target_identity = (
+            target_mapping.get("governed_project_id"),
+            target_mapping.get("fact_type_key"),
+            target_mapping.get("object_id"),
+        )
+        if relation.get("relation_key") == "related-to" and target_identity in route_target_identities:
+            continue
+        relations.append(deepcopy(dict(relation)))
     relations.extend(
         {
             "relation_key": "routed-to",
@@ -556,7 +574,7 @@ def _close_mapping_issues(
         issues.append(
             FactIssue(
                 "relation",
-                f"close-workcase after 的 {relation_key} relations 必须与 before 解析后精确相同",
+                f"close-workcase after 的 {relation_key} relations 必须与预期终态投影精确相同",
                 "relations",
             )
         )

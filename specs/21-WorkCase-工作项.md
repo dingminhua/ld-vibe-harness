@@ -637,7 +637,7 @@ canonical result projection 由以下完整结构组成：
 3. Human 作出决定前，已实际取得并可以阅读目标、scope、成功标准与逐项结果、总体结果、验证边界、独立复核处置和完整 proposal；Human 决定是否关闭、停止边界和责任处置，不为技术结果真实性背书；
 4. 操作绑定完整 source before fingerprint、Human 当次决定和 proposal 中全部 route_existing target fingerprint；
 5. 操作重新读取每个 target；任何变化、缺失、机械无效、不可读、状态不适合形成关系或 fingerprint 不匹配，都拒绝关闭，source 保持不变；Gate2 决定已绑定旧 before，不得在同一运行自动重建 proposal 或重新索取 Human 决定；
-6. after 的 `closure_outcome` 必须精确等于 `proposed_outcome`，`disposition_summary` 必须精确等于 `proposed_disposition_summary`，`residual_responsibilities` 必须精确等于全部 `accept_stop` decision 的 `residual_id + summary`，`spark_suggestions` 必须精确等于 proposal 的同名数组，`routed-to` targets 必须精确等于全部 `route_existing` decision 的稳定三元组按目标去重集合；不得改写 proposal 自然语言、漏项或增加第二目标/建议清单；`suggest_spark` 不形成任何 relation，`contributed-to` 不属于本映射；
+6. after 的 `closure_outcome` 必须精确等于 `proposed_outcome`，`disposition_summary` 必须精确等于 `proposed_disposition_summary`，`residual_responsibilities` 必须精确等于全部 `accept_stop` decision 的 `residual_id + summary`，`spark_suggestions` 必须精确等于 proposal 的同名数组，`routed-to` targets 必须精确等于全部 `route_existing` decision 的稳定三元组按目标去重集合；before 中与该集合任一 target 相同的 `related-to` 不复制到 after，由对应 `routed-to` 覆盖；其它 `related-to` 仍按 §8.2–§8.3 保留。不得改写 proposal 自然语言、漏项或增加第二目标/建议清单；`suggest_spark` 不形成任何 relation，`contributed-to` 不属于本映射；
 8. routed 项不再复制为 terminal residual；accepted-stop 项不形成 routed-to；suggest-spark 项只保留为 suggestion，Human 可在 Spark 尚未创建时先关闭 WC；
 9. 任一校验、CAS、写入或回读失败都不得声称关闭成功；
 10. Human 拒绝关闭或要求修改时不压缩对象、不改 phase；当前运行不恢复执行或关闭准备，新工作只能由新的 WorkCase/Gate1 承接；
@@ -809,6 +809,7 @@ WorkCase 只允许五种正向关系；反向导航由 Code 派生，不写第�
 - 同一 `relation_key + target` 最多一项；数组顺序无语义；没有关系时省略；
 - `depends-on` 与 item `depends_on` 不同，不能相互替代；
 - `routed-to` 指向 Spark 只表示问题已由存量 open Spark 稳定承载，不表示已开始执行或完成责任；
+- 关闭投影中，若 before 的 `related-to` 与 proposal 的 `route_existing` 指向同一稳定三元组，`routed-to` 作为更具体的终态责任关系覆盖该 `related-to`：closed 只保留一条 `routed-to`，不保留同目标 `related-to`。这只适用于同一 target；指向其它 target 的 `related-to` 仍原样保留；
 - `contributed-to` 的 target 闭集缩减为 `pitfall`，并且首次形成时必须为 draft；不指向 Spark、ADR、Study 或 WorkCase；
 - `contributed-to` 不构成 §6.7 剩余责任处置：验收基线内的未完成责任只能由 `residual_decisions` 覆盖，创建贡献对象与写入本边均不免除该义务（§6.8 划界判据）；
 - 入向 `contributed-to` 不构成 22 §7、23 §7 所排除的来源关系、证明材料或准入依据，不影响 ADR / Pitfall 各自的准入条件与对象语义；
@@ -823,7 +824,7 @@ WorkCase 只允许五种正向关系；反向导航由 Code 派生，不写第�
 `contributed-to` 形成时，target 必须实际存在、可读、mechanically valid 且为 draft Pitfall；形成后 target 变为 active 或 discarded 不影响边，也不回写 WC。target 后来被删除或不可读时，该边失效但不自动改变 source 的状态与终态；机械读取如实报告。该边不承载未完成责任，不建立 target 状态变化前的入向检查义务；删除方仍必须按 05 §9.3 先处置全部入向引用。
 
 
-`related-to` 只记录形成时的存量主题联系，不做有向环检查，其它共同引用检查仍成立。close 必须原样保留 before 中已有边。closed WC 不追加未来出现的新关系；后续对象应从自身一侧指向该 WC。一项更正只能修正原关闭时已存在但记错/遗漏的当时事实，不得将后来新建对象冒充“当时遗漏”。
+`related-to` 只记录形成时的存量主题联系，不做有向环检查，其它共同引用检查仍成立。close 必须原样保留 before 中已有边，唯一例外是 §6.7 第 6 项与 §8.2 规定的同目标 `route_existing`：该 target 的 `related-to` 由更具体的 `routed-to` 覆盖，不作为第二条终态边保留。closed WC 不追加未来出现的新关系；后续对象应从自身一侧指向该 WC。一项更正只能修正原关闭时已存在但记错/遗漏的当时事实，不得将后来新建对象冒充“当时遗漏”。
 
 当前契约不定义 WorkCase 的 archive、merge、replace 或 delete 操作，AI、Helper、Code 和 Web 均不得自行实施或用隐藏代替。责任拆分、后续承接或方向变化使用新 WorkCase、当前对象的结果/处置收敛与必要 `routed-to`，不改写或删除已经成立的稳定身份。若 WorkCase 类型本身准备退出，必须先按 05 §12 形成专门处置与事实承接，不得直接删除对象或实现支持。
 

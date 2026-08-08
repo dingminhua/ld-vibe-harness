@@ -399,6 +399,52 @@ def test_closed_candidate_projection_deduplicates_routes_and_separates_fingerpri
     assert issues == ()
 
 
+def test_close_replaces_same_target_related_to_with_routed_to(
+    current_specs_repository: Path,
+    tmp_path: Path,
+) -> None:
+    project = _project(current_specs_repository, tmp_path)
+    target = _snapshot(project, _active("workcase-0008"))
+    unrelated_target = _snapshot(project, _active("workcase-0009"))
+    before = _closing("workcase-0001", outcome="partial", target=target)
+    before["success_criterion_definitions"].append(
+        {"criterion_id": "criterion-complete", "statement": "已形成可保留的局部结果。"}
+    )
+    before["success_criterion_results"].append(
+        {"criterion_id": "criterion-complete", "outcome": "satisfied", "summary": "局部结果已验证。"}
+    )
+    before["relations"] = [
+        {
+            "relation_key": "related-to",
+            "target": target.target.to_json(),
+        },
+        {
+            "relation_key": "related-to",
+            "target": unrelated_target.target.to_json(),
+        },
+    ]
+    before["execution_approval"]["baseline_fingerprint"] = approval_baseline_fingerprint(before)
+    _write(project, before)
+
+    after = workcase_update.project_closed_workcase_candidate(before)
+    result = apply_workcase_write(
+        _command(
+            project,
+            before,
+            after,
+            mode="close",
+            authorization_reference=_human_reference(),
+        )
+    )
+
+    assert result.status == "updated"
+    assert result.readback is not None and result.readback.fields is not None
+    assert result.readback.fields["relations"] == [
+        {"relation_key": "related-to", "target": unrelated_target.target.to_json()},
+        {"relation_key": "routed-to", "target": target.target.to_json()},
+    ]
+
+
 def _command(
     project: _Project,
     before: dict[str, Any],

@@ -1,3 +1,4 @@
+status: closed
 title: 重设计并重跑无契约泄漏的 A 簇提示卡对照实验
 goal: 在不修改生产 Helper 契约且不预设提示卡收益的前提下，先以可审计的非泄漏任务设计证明 baseline/candidate 的唯一差异是来源绑定提示卡，再对当前本地只读 Helper 执行一批 12 baseline 加 12 candidate 的独立上下文对照，形成仅受正确性约束的方向性摩擦证据或如实停止结论。
 scope: 仅允许修改 code/ldvh/testing/ 与 code/tests/testing/。任务包、gold rubric、baseline/candidate prompt、来源绑定卡、原始响应或转录、hash、record、统计输入和范围 manifest 只能写入每批由 SafeTrialTempRoot 新建并经创建身份、realpath 与 lstat 校验的仓库外临时根。明确排除生产 Helper/调用入口/能力契约、规格、文档、配置、WorkCase-0070 或其它既有事实对象、Git、网络、依赖安装、仓库内运行产物、任务包外操作和未登记的额外 trial。
@@ -12,17 +13,24 @@ success_criterion_definitions:
   statement: 预先定义 paired friction、correctness guardrail、terminal failure/missing-data 处置及“仅方向性信号”阈值；只在 candidate 不降低 condition-blind correctness 且 failure 不恶化时报告描述性方向，禁止统计显著性、因果证明或产品净收益主张。
 - criterion_id: criterion-05
   statement: 独立只读结果复核者能够复算冻结哈希、检查非泄漏门禁、校验来源卡与全部 records、重算描述统计并核对范围 manifest；复核不得新增 trial 或把随机复跑表述为相同结果。
-relations:
-- relation_key: related-to
-  target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0068
-- relation_key: related-to
-  target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0070
+success_criterion_results:
+- criterion_id: criterion-01
+  outcome: satisfied
+  summary: 12 个任务、condition-blind gold、相同 baseline/candidate base prompt、当前来源绑定卡、allowlist、环境 fingerprints、随机 seed/order 与 24 个 condition-specific envelope hashes 已在仓库外 SafeTrialTempRoot 冻结；共同材料未包含当前 protected contract terms。
+- criterion_id: criterion-02
+  outcome: satisfied
+  summary: 测试性 preflight 已验证任务/gold 泄漏、条件差异、来源卡、哈希与路径边界；runner adapter 在每次 start_trial 前重验 candidate source 和完整环境 fingerprint 集，并在 dispatch 前拒绝 allowlist 外操作。
+- criterion_id: criterion-03
+  outcome: not_satisfied
+  summary: 当前 Codex worker 共享 shell/workspace，无法保证只持有 envelope 与 runner proxy、无法阻止直接 ./ldvh 或读取协议根；因此未启动任何真实 12 baseline 加 12 candidate trial，也没有 records、transcripts 或 scope after manifest。
+- criterion_id: criterion-04
+  outcome: not_verified
+  summary: paired friction、correctness guardrail、failure/missing-data 处置和禁止主张已预定义，但没有受隔离执行面保护的 records，不能计算或报告方向性信号。
+- criterion_id: criterion-05
+  outcome: not_verified
+  summary: 独立协议审查已复核冻结材料和代码，但没有真实 records、统计输入或 scope after manifest 可供独立结果复算；当前环境阻断项已如实保留。
+result_summary: 结果为 partial：非泄漏协议、runner-owned 采集/绑定与漂移门禁形成了稳定测试性基础；但当前环境不提供可限制 worker 仅经 runner proxy 调用 Helper 的受控执行面，无法保证隔离前提。按 fail-closed 边界，本 WorkCase 未执行任何真实 trial，也不主张提示卡收益、负效应、统计显著性、因果或产品净收益。
+validation_summary: 定向试验测量测试与完整 code/tests/testing 套件均实际通过（115 passed）；Ruff 与 git diff --check 通过。最新冻结材料在 /var/folders/gh/szvhx1md1mn9qy9n6p2b2w5h0000gn/T/ldvh-wc0071-0hc2dztr，仅含 protocol 与 scope before；未观察 records、transcripts、analysis 或 scope after，未发起真实 Helper trial。
 change_log:
 - signature:
     agent_id: codex
@@ -54,121 +62,68 @@ change_log:
   session_id: workcase-0071-protocol-audit
   at: '2026-08-08T08:23:53.146966+08:00'
   summary: 独立协议审查返回 changes_required：共同材料未泄漏，但缺少 runner-owned 调用采集、worker envelope/gold 隔离与 trial-boundary 来源漂移检查；在既有测试性授权内修复，未执行真实 trial。
-status: open
-phase: executing
-plan_version: 1
-priority: P1
-work_items:
-- item_id: item-01
-  goal: 实现并验证冻结协议的契约泄漏与条件差异门禁。
-  expected_result: 测试性 adapter 能从来源绑定卡派生目标契约标记，拒绝共同任务/gold 泄漏和 baseline/candidate 除卡片以外的差异，并保持 SafeTrialTempRoot fail-closed。
-  status: completed
-  approach_summary: 先把 0070 发现的设计失效转化为可执行门禁；门禁不通过时不得调用 Helper。
-  template_keys:
-  - workcase-approved-plan-execution
-  result_summary: 已在 trial_measurement 中加入来源卡派生的 protected contract terms、共同任务/gold 泄漏检测、baseline/candidate base prompt 精确相等检查与 condition-blind gold 检查；新增测试覆盖任务泄漏、gold 泄漏、条件差异和冻结 protocol preflight，定向测试 22 passed、Ruff 与 diff-check 通过。
-- item_id: item-02
-  goal: 形成并独立审查新的 12 任务冻结协议。
-  expected_result: 任务只表达业务目标，gold 保持 condition-blind；来源绑定卡、hash、fingerprints、seed、顺序和只读 allowlist 在仓库外根冻结，独立协议审查确认不存在目标契约泄漏。
-  status: in_progress
-  depends_on:
-  - item-01
-  approach_summary: 协议审查只判定比较设计与冻结材料，和最终结果复核分离；未通过即取消后续 trial。
-  template_keys:
-  - workcase-approved-plan-execution
-  current_summary: 独立协议审查确认 12 任务/gold 没有直接泄漏当前 protected terms，且条件基础提示相同；但发现两项阻断：缺少 runner-owned 实际调用拦截/自动采集，且缺少条件专属 worker envelope 与 gold 隔离。正在在授权测试性 adapter 范围内修复；零真实 trial。
-  resume_from: 实现 runner-owned invocation adapter、hash-bound condition-specific envelopes、gold/root 隔离和 trial-boundary source drift check；重新冻结协议并复审。
-- item_id: item-03
-  goal: 执行合格冻结批次并形成有界证据矩阵。
-  expected_result: 若 item-02 通过，产生 24 个严格 v2 records、范围 manifest 与预定义描述统计；若任何门禁或调用失败，按协议中止并如实形成终态范围。
-  status: pending
-  depends_on:
-  - item-02
-  approach_summary: 仅从冻结记录重算，区分能力存在、正确性和方向性摩擦；不把单批随机输出升级为因果或产品收益。
-  template_keys:
-  - workcase-approved-plan-execution
-execution_authorization:
-  authorized_actions:
-  - action_id: authorization-nonleak-adapter
-    summary: 在测试性路径实现或调整非泄漏预飞门禁、冻结协议和严格 v2 记录支持。
-    target_scope: 仅 code/ldvh/testing/、code/tests/testing/ 与运行器新建的仓库外 SafeTrialTempRoot。
-    effect_scope: 允许修改两条测试性路径，并在临时根生成协议、任务、gold、提示卡、记录、统计输入和范围 manifest；禁止生产路径、规格、文档、配置、其它既有事实对象、Git 与网络。
-    risk_summary: 门禁可能漏检语义等价泄漏或错误拒绝合法协议；adapter 错误可能使比较无效，但不得据此主张提示卡效果。
-    rollback_summary: 任一门禁、hash、来源、schema 或路径验证失败即停止受影响 item；测试性代码可后续受控修正，运行材料保留在受限临时根。
-    rule_refs:
-    - 21-WorkCase-工作项.md §6.5
-    - 32-事实对象生命周期变更与承接处置行动模板.md §5.3
-  - action_id: authorization-protocol-audit
-    summary: 委派一次独立只读协议审查，核对 12 个冻结任务/gold 的非泄漏性、条件隔离、来源绑定和只读 allowlist。
-    target_scope: 仅 WorkCase-0071 的测试性实现、冻结协议及其仓库外临时材料。
-    effect_scope: 允许一次只读子代理审查；不得写入、发起 trial、修改生产路径、执行 Git、网络或外部操作。
-    risk_summary: 审查只能评估当前材料，不能证明未来随机 Helper 输出或语义等价泄漏已被穷尽。
-    rollback_summary: 发现阻断项时停止并取消后续 trial；不得以审查通过替代最终结果复核。
-    rule_refs:
-    - 21-WorkCase-工作项.md §4.4
-    - 21-WorkCase-工作项.md §6.5
-  - action_id: authorization-local-trials
-    summary: 在预飞和独立协议审查通过后，使用冻结协议对当前本地只读 Helper 执行 12 baseline 加 12 candidate trial。
-    target_scope: 仅冻结的 12 个任务、condition-blind gold、当前本地 Helper 冻结只读 allowlist 与每批新建 SafeTrialTempRoot。
-    effect_scope: 允许发起至多 24 次受记录的本地只读 Helper 调用，并只向临时根写入响应材料、v2 record、统计输入与范围 manifest；禁止事实写入、生产修改、外部网络、Git 和任务包外调用。
-    risk_summary: 随机行为、响应结构变化、来源漂移、失败或误判的 allowlist 可能使结果无效；单项改善不代表净收益。
-    rollback_summary: 任何泄漏、指纹漂移、越权操作、schema/path 失败、gold 盲评失效或不完整 record 均立即中止，不汇总为方向性结论。
-    rule_refs:
-    - 21-WorkCase-工作项.md §6.5
-    - 20-Spark-火花.md §8
-  - action_id: authorization-delegate-result-review
-    summary: 委派独立只读复核者验证冻结材料、门禁、records、统计与范围证据。
-    target_scope: 仅 WorkCase-0071 的协议、受限临时证据、测试性改动和结果投影。
-    effect_scope: 允许一次只读子代理复核；不得写入、额外 trial、生产修改、Git、网络或外部操作。
-    risk_summary: 复核不能证明随机试验必然复现，只能验证当前批次证据与计算边界。
-    rollback_summary: 若证据不可读、哈希不匹配、门禁不可复核或统计不可重算，停止关闭准备并按结果版本规则收敛。
-    rule_refs:
-    - 21-WorkCase-工作项.md §6.6
-    - 21-WorkCase-工作项.md §6.7
-  - action_id: authorization-result-review
-    summary: 执行一次独立只读结果复核，验证证据哈希、非泄漏门禁、来源卡、schema records、统计重算与范围 manifest。
-    target_scope: 仅已冻结的 WorkCase-0071 结果投影及其受限临时证据。
-    effect_scope: 允许读取和重算，不允许新建或重复批次，不允许写入、Git、网络或生产变更。
-    risk_summary: 复核不证明随机批次会逐次复现，只验证现有批次记录。
-    rollback_summary: 若验证不足，结论降为未验证并停止关闭准备。
-    rule_refs:
-    - 21-WorkCase-工作项.md §6.6
-    - 21-WorkCase-工作项.md §6.7
-  quality_gates:
-  - gate_id: independent-result-review
-    reviewer_mode: independent-read-only
-    delegation_action_id: authorization-delegate-result-review
-    result_review_action_id: authorization-result-review
-  action_ceiling: 本 WorkCase 最多修改两条测试性路径、实现一个非泄漏协议门禁、冻结并独立审查一个 12-task 协议、执行至多一个登记的 24-trial 本地只读批次并产生一个受限临时证据根；不创建或修改其它既有事实对象，不执行 Git、网络、依赖安装或生产变更。
-  prohibited_actions:
-  - 生产 Helper 或调用入口修改
-  - 能力契约、规格、文档或配置修改
-  - WorkCase-0070 或其它既有事实对象的修改
-  - Git 暂存、提交、推送或历史操作
-  - 网络访问、依赖安装或外部消息
-  - 仓库内、ldvh-base 或非自身临时根的运行产物写入
-  - 任务包外 Helper 操作或未登记的额外 trial 批次
-  - 以提示卡效果为由作统计显著性、因果或产品净收益主张
-  allowed_adjustments: 仅可在不改变任务数量、比较目标、允许操作、来源绑定、试验数、结果口径或行动上限的前提下修正测试性 adapter 的机械错误，或重试尚未形成有效终态 record 且可证明由 runner 基础设施造成的单一 trial；任何任务/gold/条件/来源卡实质变动都必须停止受影响批次并进入结果链。
-  verification_and_rollback: 在冻结前后验证来源、环境指纹、allowlist、条件差异、泄漏门禁、SafeTrialTempRoot 身份与 record schema；批次后重算 records 与范围 manifest，并由独立复核者验证。路径、schema、权限、泄漏或 comparability 失败立即中止相关批次，不把失败记录汇总为方向性结论；不删除用户既有文件。
-  out_of_bounds_handling: 发现未授权路径、操作、环境变化、新风险或需要生产/网络/Git/其它事实对象时零写入停止该动作，取消或收敛受影响 item，不在执行期索取扩权。
-creation_reviews:
-- reviewer: agent:/root/review_wc0069_plan
-  reviewed_at: '2026-08-08T06:54:20+08:00'
-  subject_version: 1
-  scope: 'Independent creation review of WorkCase-0071 Gate 1 plan: conversion of the WorkCase-0070 shared-prompt contract leak into a fail-closed preflight gate; isolation of task/gold/baseline/candidate materials; testing-only scope and authorization ceiling; the single bounded 12+12 local read-only trial batch; and deterministic independent result-evidence review.'
-  conclusion: pass
-  actual_method: subagent-read-only
-  covered_quality_gate_ids:
-  - independent-result-review
-execution_approval:
-  subject_version: 1
-  approved_at: '2026-08-08T06:56:00+08:00'
-  summary: Human approved the complete WorkCase-0071 Gate 1 plan and bounded local execution authorization.
-  baseline_fingerprint: 3e22600f0457f57842df6a0d7b59c70e3fcf6ba151b50671ddb57ccaae8b990e
-  source_refs:
-  - conversation:user-approved-execution-workcase-0071
+- signature:
+    agent_id: codex
+    host_environment: codex-desktop
+  session_id: workcase-0071-protocol-audit-followup
+  at: '2026-08-08T08:27:29.216083+08:00'
+  summary: 协议审查复核仍为 changes_required：worker 可绕过 adapter；并要求 record 持久化 envelope/runner 绑定及每次 trial 全环境指纹重验。先在授权测试性范围补齐机械审计，再按环境能力 fail-close。
+- signature:
+    agent_id: codex
+    host_environment: codex-desktop
+  session_id: workcase-0071-controller-check
+  at: '2026-08-08T08:30:23.531170+08:00'
+  summary: 独立协议审查最终确认当前环境缺少受控 worker 执行面；取消未启动的 trial 与分析 item，形成 partial 结果投影并进入结果复核。
+- signature:
+    agent_id: codex
+    host_environment: codex-desktop
+  session_id: workcase-0071-result-review
+  at: '2026-08-08T08:31:46.916111+08:00'
+  summary: 完整 partial 结果投影已回读并通过事实完整性检查；在不变更 result_version=1 或结果口径的前提下进入独立只读结果复核。
+- signature:
+    agent_id: codex
+    host_environment: codex-desktop
+  session_id: workcase-0071-result-review
+  at: '2026-08-08T08:33:03.378555+08:00'
+  summary: 独立只读结果复核通过：确认协议根零 records/零真实 trial、当前环境无受控 worker 执行面，partial 结果口径与五项 criterion 一致；无 feedback。
+- signature:
+    agent_id: codex
+    host_environment: codex-desktop
+  session_id: workcase-0071-closure-preparing
+  at: '2026-08-08T08:33:26.511547+08:00'
+  summary: 独立结果复核已通过且无 feedback；result_version=1 的结果投影保持不变，进入关闭准备以形成 residual 承接建议。
+- signature:
+    agent_id: codex
+    host_environment: codex-desktop
+  session_id: workcase-0071-closure-preparing
+  at: '2026-08-08T08:34:05.537075+08:00'
+  summary: 在 closure_preparing 形成 partial 关闭提案：将受控 worker 执行面缺口 route_existing 至 Spark-0068；不修改 result_version=1 或将零 trial 表述为效果。
+- signature:
+    agent_id: codex
+    host_environment: codex-desktop
+  session_id: workcase-0071-gate2-waiting
+  at: '2026-08-08T08:34:28.139952+08:00'
+  summary: 关闭提案、Spark-0068 route target 与目标指纹已回读核对；进入 Human Gate 2，等待当前 partial 提案的关闭决定。
+- signature:
+    agent_id: codex
+    host_environment: codex-desktop
+  session_id: workcase-0071-closure
+  at: '2026-08-08T09:12:48.646168+08:00'
+  summary: Human Gate 2 已批准，WorkCase 按当前 partial 关闭提案关闭；受控 worker 执行面缺口仍由 Spark-0068 承接。
+closure_outcome: partial
+disposition_summary: 停止本 WorkCase 中未满足执行隔离前提的批次；已形成的非泄漏协议、runner-owned 采集/绑定与漂移门禁保留为测试性基础。后续只有在存在受控 worker 执行面（移除 worker 对 Helper、shell 和文件系统的直达，仅暴露 runner proxy）时，才由既有 Spark-0068 决定是否重新设计、重新批准并重跑；不把零 trial 解释为提示卡效果。
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: workcase
+    object_id: workcase-0070
+- relation_key: routed-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0068
 object_id: workcase-0071
 fact_type_key: workcase
 created_at: '2026-08-08T06:54:46.961273+08:00'
-updated_at: '2026-08-08T08:23:53.146966+08:00'
+updated_at: '2026-08-08T09:12:48.646168+08:00'

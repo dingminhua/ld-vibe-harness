@@ -1,5 +1,5 @@
+status: closed
 title: 重跑 A 簇提示卡摩擦对照实验
-status: open
 goal: 在不预设正向结果且不修改生产契约的前提下，使用 WorkCase-0069 的可审计测量基础设施，对固定任务集执行本地 Helper 的 baseline/candidate 对照，判断提示卡是否仅呈现受正确性约束的方向性摩擦信号。
 scope: 仅允许修改 code/ldvh/testing/ 与 code/tests/testing/。真实 trial 只能调用当前本地 Helper 的冻结只读 allowlist；任务包、提示卡、原始响应哈希、trial record、统计输入和范围 manifest 只能写入每批由 SafeTrialTempRoot 新建、经创建身份、realpath 与 lstat 校验的仓库外临时根。明确排除生产 Helper/调用入口/能力契约、规格、文档、配置、其它事实对象、Git、网络、依赖安装、WorkCase-0068/0069 更正及未登记的额外 trial。
 success_criterion_definitions:
@@ -13,12 +13,24 @@ success_criterion_definitions:
   statement: 预先定义 primary paired friction calculation、timeout/failure/missing-data 处置和“仅方向性信号”阈值；任何方向性表述必须同时满足 condition-blind correctness guardrail 与 terminal failure 不恶化，且不得声称统计显著性、因果证明或产品净收益。
 - criterion_id: criterion-05
   statement: 独立复核者能够验证冻结哈希、重新生成或校验来源绑定卡、校验全部 records、从原始材料重算描述统计并单独核对范围 manifest；复核不得把随机 agent 重跑表述为相同结果或创建未登记的新批次。
-relations:
-- relation_key: related-to
-  target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0068
+success_criterion_results:
+- criterion_id: criterion-01
+  outcome: satisfied
+  summary: 12 个任务、condition-blind gold rubric、baseline、来源绑定 candidate card、任务包/提示卡/环境指纹、seed 与随机顺序已在仓库外受限临时根冻结；预飞发现任务共同提示泄漏目标参数。
+- criterion_id: criterion-02
+  outcome: not_satisfied
+  summary: 未执行 24 次 trial，因而没有 24 个完整终态严格 schema record、原始转录哈希或调用指标。
+- criterion_id: criterion-03
+  outcome: not_satisfied
+  summary: 没有发起 12 baseline 加 12 candidate 的真实本地只读 Helper 调用；唯一运行材料是冻结协议与 scope before manifest。
+- criterion_id: criterion-04
+  outcome: not_verified
+  summary: primary paired friction calculation 与 guardrail 已在协议中预定义，但任务泄漏使当前批次不具可解释对照，且无 records 可计算。
+- criterion_id: criterion-05
+  outcome: not_verified
+  summary: 冻结材料可供复核，但尚未执行独立结果复核；没有 records 或 scope after manifest 可验证。
+result_summary: 结果为 partial：测量基础设施与冻结链已形成，但在真实调用前发现 baseline/candidate 共同任务提示泄漏了 text_match 请求形状，无法检验 A 簇的运行时契约可发现性。按冻结授权的 fail-closed 边界，本批次未执行任何真实 trial，也不主张提示卡收益或负效应。
+validation_summary: 针对 code/tests/testing/test_trial_measurement.py 的 20 项测试通过；Ruff 与 git diff --check 通过。未调用真实 Helper trial、未写入生产路径、规格、配置、Git 或其它事实对象；运行材料位于 /var/folders/gh/szvhx1md1mn9qy9n6p2b2w5h0000gn/T/ldvh-wc0070-wk6w_68f。
 change_log:
 - signature:
     agent_id: codex
@@ -74,151 +86,21 @@ change_log:
   session_id: workcase-0070-gate2-waiting
   at: '2026-08-08T06:47:28.949272+08:00'
   summary: 关闭提案及 Spark-0068 目标指纹已回读核对；进入 Human Gate 2 等待当前提案的关闭决定。
-priority: P1
-phase: human_closure_confirming
-plan_version: 1
-work_items:
-- item_id: item-01
-  goal: 冻结可比较协议并形成受限测试性 adapter。
-  expected_result: 12 个任务、gold rubric、条件提示、哈希、指纹、随机顺序与只读 allowlist 已冻结，adapter 在测试性边界 fail-closed。
-  status: completed
-  approach_summary: 先固定比较对象与失效条件，再允许任何真实调用，避免把环境或提示漂移混入条件差异。
-  template_keys:
-  - workcase-approved-plan-execution
-  result_summary: 已实现并通过测试的 v2 测量 adapter：严格 record 含 transcript_sha256，冻结协议在仓库外 SafeTrialTempRoot 写入任务、gold、基线、来源绑定卡、顺序与范围 manifest；预飞检查未发起真实 trial。
-- item_id: item-02
-  goal: 执行冻结的本地 Helper 对照批次。
-  expected_result: 12 baseline 加 12 candidate 终态 records 与范围 manifest 在受限临时根形成，失败或无效情形按协议中止而非事后补写。
-  status: cancelled
-  depends_on:
-  - item-01
-  approach_summary: 用独立零历史上下文的配对条件运行，并将 read-only allowlist、路径和 record schema 作为运行门禁。
-  template_keys:
-  - workcase-approved-plan-execution
-  result_summary: 冻结任务把 text_match 的请求形状直接暴露给 baseline 与 candidate；这不再测量运行时契约可发现性。修复需要修改冻结任务/gold，超出 execution_authorization.allowed_adjustments，故零真实 Helper trial 后取消。
-- item_id: item-03
-  goal: 形成有界证据矩阵与描述性分析。
-  expected_result: 从严格 records 输出配对 friction、correctness、failure 与范围结论，明确阈值、缺失处置和不作的收益或因果主张。
-  status: cancelled
-  depends_on:
-  - item-02
-  approach_summary: 只从冻结原始材料重算描述统计；将方向性信号与显著性、因果和产品选择严格分开。
-  template_keys:
-  - workcase-approved-plan-execution
-  result_summary: item-02 因比较设计失效被取消，未形成合格 records；为避免把无试验数据伪装成描述统计，本项随依赖取消。
-execution_authorization:
-  authorized_actions:
-  - action_id: authorization-trial-adapter
-    summary: 在测试性路径中冻结任务协议，并实现或调整只服务该协议的本地 trial adapter。
-    target_scope: 仅 code/ldvh/testing/、code/tests/testing/，以及运行器新建的仓库外 SafeTrialTempRoot。
-    effect_scope: 允许修改上述测试性路径；允许在临时根生成任务包、提示卡、记录与范围 manifest；不得修改生产路径、规格、文档、配置、其它事实对象、Git 或网络。
-    risk_summary: adapter 或协议实现错误可能使对照不可比、指标失真或路径越界；该动作不证明提示卡收益。
-    rollback_summary: 协议、来源绑定、schema 或路径检查失败即停止受影响 item；测试性代码可由后续受控变更修正，运行材料只留在受限临时根。
-    rule_refs:
-    - 21-WorkCase-工作项.md §6.5
-    - 32-事实对象生命周期变更与承接处置行动模板.md §5.3
-  - action_id: authorization-local-trials
-    summary: 使用冻结协议对当前本地只读 Helper 执行 12 baseline 与 12 candidate 对照 trial。
-    target_scope: 仅冻结的 12 个任务、其条件盲评 gold rubric、当前本地 Helper 的只读 allowlist 操作与每次新建的 SafeTrialTempRoot。
-    effect_scope: 允许发起 24 次受记录的本地只读 Helper 调用，并只向受限临时根写入原始响应哈希、trial record 与范围 manifest；禁止事实写入、生产契约修改、外部网络、Git 或任务包外调用。
-    risk_summary: stochastic 行为、来源漂移、失败或错误白名单可能使结果无效；任何单项 first_legal 改善不等于净收益。
-    rollback_summary: 指纹漂移、越权操作、schema/path 失败、gold 盲评失效或记录不完整时中止批次、不形成汇总主张；已存在的受限临时材料仅保留为失败诊断。
-    rule_refs:
-    - 21-WorkCase-工作项.md §6.5
-    - 20-Spark-火花.md §8
-  - action_id: authorization-delegate-result-review
-    summary: 委派独立只读复核者核对冻结材料、记录与范围证据。
-    target_scope: 仅 WorkCase-0070 的协议、临时证据、测试性改动与结果投影。
-    effect_scope: 允许一次只读子代理复核；不得授予写入、额外 trial、生产修改、Git、网络或外部操作。
-    risk_summary: 复核只提供咨询性结论，不使随机 agent 再运行自动复现相同结果。
-    rollback_summary: 复核发现协议、范围或计算缺口时停止关闭准备，按结果版本规则修正或返工；不得掩盖缺口。
-    rule_refs:
-    - 21-WorkCase-工作项.md §6.5
-    - 21-WorkCase-工作项.md §6.6
-  - action_id: authorization-result-review
-    summary: 执行一次独立只读结果复核，验证证据哈希、来源卡、schema records、统计重算与范围 manifest。
-    target_scope: 仅已冻结的 WorkCase-0070 结果投影及其受限临时证据。
-    effect_scope: 允许读取和重算，不允许新建或重复 24-trial 批次，不允许写入、Git、网络或生产变更。
-    risk_summary: 复核不能证明 stochastic trial 将逐次复现，只能验证当前批次的记录与计算边界。
-    rollback_summary: 若证据不可读、哈希不匹配或统计不可重算，结论降为未验证并停止关闭准备。
-    rule_refs:
-    - 21-WorkCase-工作项.md §6.6
-    - 21-WorkCase-工作项.md §6.7
-  quality_gates:
-  - gate_id: independent-result-review
-    reviewer_mode: independent-read-only
-    delegation_action_id: authorization-delegate-result-review
-    result_review_action_id: authorization-result-review
-  action_ceiling: 本 WorkCase 最多修改两条测试性路径、构建一个冻结协议适配器、执行一个登记的 24-trial 本地只读批次并产生一个受限临时证据根；不创建或修改其它事实对象，不执行 Git、网络、依赖安装或生产变更。
-  prohibited_actions:
-  - 生产 Helper 或调用入口修改
-  - 能力契约、规格、文档或配置修改
-  - 任何事实对象的创建、更新或更正
-  - Git 暂存、提交、推送或历史操作
-  - 网络访问、依赖安装或外部消息
-  - 仓库内、ldvh-base 或非自身临时根的运行产物写入
-  - 任务包外 Helper 操作或任何事实写入
-  - 未经登记的额外 trial 批次
-  allowed_adjustments: 仅可在不改变任务、gold rubric、提示哈希、条件、allowlist、试验数、结果口径或行动上限的前提下修正测试性 adapter 的机械错误，或重试尚未形成有效终态 record 且可证明由 runner 基础设施造成的单一 trial；否则停止、取消受影响 item 并按结果链收敛。
-  verification_and_rollback: 每次调用前后验证来源与环境指纹、allowlist、SafeTrialTempRoot 身份和 record schema；批次后重算 records 与范围 manifest，并由独立复核者验证。路径、schema、权限或 comparability 失败立即中止相关批次，不将失败记录汇总为方向性结论；不删除用户既有文件。
-  out_of_bounds_handling: 发现任何未授权路径、操作、环境变化、新风险或需要生产/网络/Git/其它事实对象时零写入停止该动作，取消或收敛受影响 item，不在执行期索取扩权。
-creation_reviews:
-- reviewer: agent:/root/review_wc0069_plan
-  reviewed_at: '2026-08-08T06:29:20+08:00'
-  subject_version: 1
-  scope: 第二次独立 Gate 1 creation review：仅审查 WorkCase-0070 修订后的本地 Helper A 簇对照实验计划，包括冻结协议、只读操作边界、SafeTrialTempRoot 证据、有界分析与独立结果复核。
-  conclusion: pass
-  actual_method: subagent-read-only
-  covered_quality_gate_ids:
-  - independent-result-review
-execution_approval:
-  subject_version: 1
-  approved_at: '2026-08-08T06:35:25+08:00'
-  summary: Human approved the frozen WorkCase-0070 Gate 1 baseline for bounded local execution.
-  baseline_fingerprint: 72f197048604425f1d82ef8484df5ce3a91b9a69667a79c04c9bbfd9da6076f2
-  source_refs:
-  - conversation:user-approved-execution-workcase-0070
-result_version: 1
-success_criterion_results:
-- criterion_id: criterion-01
-  outcome: satisfied
-  summary: 12 个任务、condition-blind gold rubric、baseline、来源绑定 candidate card、任务包/提示卡/环境指纹、seed 与随机顺序已在仓库外受限临时根冻结；预飞发现任务共同提示泄漏目标参数。
-- criterion_id: criterion-02
-  outcome: not_satisfied
-  summary: 未执行 24 次 trial，因而没有 24 个完整终态严格 schema record、原始转录哈希或调用指标。
-- criterion_id: criterion-03
-  outcome: not_satisfied
-  summary: 没有发起 12 baseline 加 12 candidate 的真实本地只读 Helper 调用；唯一运行材料是冻结协议与 scope before manifest。
-- criterion_id: criterion-04
-  outcome: not_verified
-  summary: primary paired friction calculation 与 guardrail 已在协议中预定义，但任务泄漏使当前批次不具可解释对照，且无 records 可计算。
-- criterion_id: criterion-05
-  outcome: not_verified
-  summary: 冻结材料可供复核，但尚未执行独立结果复核；没有 records 或 scope after manifest 可验证。
-result_summary: 结果为 partial：测量基础设施与冻结链已形成，但在真实调用前发现 baseline/candidate 共同任务提示泄漏了 text_match 请求形状，无法检验 A 簇的运行时契约可发现性。按冻结授权的 fail-closed 边界，本批次未执行任何真实 trial，也不主张提示卡收益或负效应。
-controller_check_summary: Controller 核对了冻结协议、source-bound card、SafeTrialTempRoot、v2 record/transcript hash 实现与任务提示。任务共同提示已经给出 text_match 的 text/field_paths 请求形状，candidate 卡无法构成唯一有效干预；修复需改变冻结 task/gold，未列入允许调整。
-validation_summary: 针对 code/tests/testing/test_trial_measurement.py 的 20 项测试通过；Ruff 与 git diff --check 通过。未调用真实 Helper trial、未写入生产路径、规格、配置、Git 或其它事实对象；运行材料位于 /var/folders/gh/szvhx1md1mn9qy9n6p2b2w5h0000gn/T/ldvh-wc0070-wk6w_68f。
-result_reviews:
-- reviewer: agent:/root/review_wc0069_result
-  reviewed_at: '2026-08-08T06:42:26+08:00'
-  subject_version: 1
-  scope: 只读核对 WorkCase-0070 当前结果投影、code/ldvh/testing/trial_measurement.py、code/tests/testing/test_trial_measurement.py 以及冻结证据根 /var/folders/gh/szvhx1md1mn9qy9n6p2b2w5h0000gn/T/ldvh-wc0070-wk6w_68f；复跑既有 Python 3.12 testing suite、ruff 与 diff-check，未发起或新建任何 trial。
-  conclusion: pass
-  actual_method: subagent-read-only
-closure_proposal:
-  proposed_outcome: partial
-  proposed_disposition_summary: 停止本 WorkCase 中已失效的冻结批次；已形成的 v2 测量与冻结防护保留为局部价值。A 簇提示卡对照的有效任务设计、重新冻结与是否重跑，转交既有 Spark-0068 继续判断，不把零 trial 解释为提示卡收益或负效应。
-  residual_decisions:
-  - residual_id: residual-a-cluster-valid-experiment
-    summary: 当前 12 项冻结任务在共同提示中直接给出了 text_match={text, field_paths} 请求形状，baseline 与 candidate 不能隔离运行时契约可发现性；本 WorkCase 未执行任何真实 trial。后续需先设计不泄漏目标契约的固定任务/gold，重新冻结并在独立批准的边界内判断是否重跑。
-    proposed_disposition: route_existing
-    route_target:
-      governed_project_id: ldvh
-      fact_type_key: spark
-      object_id: spark-0068
-      content_fingerprint: a6a1b824d0a4bac6de38e16845bd55de8e9bf6f00bac052ac38679191c9f7f25
-waiting_on: Human Gate 2 closure decision for the current complete proposal.
+- signature:
+    agent_id: codex
+    host_environment: codex-desktop
+  session_id: workcase-0070-closure
+  at: '2026-08-08T09:12:22.731754+08:00'
+  summary: Human Gate 2 已批准，WorkCase 按当前 partial 关闭提案关闭；有效 A 簇实验设计与重跑判断仍由 Spark-0068 承接。
+closure_outcome: partial
+disposition_summary: 停止本 WorkCase 中已失效的冻结批次；已形成的 v2 测量与冻结防护保留为局部价值。A 簇提示卡对照的有效任务设计、重新冻结与是否重跑，转交既有 Spark-0068 继续判断，不把零 trial 解释为提示卡收益或负效应。
+relations:
+- relation_key: routed-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0068
 object_id: workcase-0070
 fact_type_key: workcase
 created_at: '2026-08-08T06:30:33.037307+08:00'
-updated_at: '2026-08-08T06:47:28.949272+08:00'
+updated_at: '2026-08-08T09:12:22.731754+08:00'

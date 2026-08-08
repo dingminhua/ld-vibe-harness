@@ -149,6 +149,36 @@ def test_candidate_operation_returns_complete_nonmanaged_projection_without_read
     }
 
 
+def test_candidate_operation_prefers_route_over_related_to_for_the_same_target(monkeypatch) -> None:
+    fields = _fields()
+    fields["relations"] = [
+        {
+            "relation_key": "related-to",
+            "target": {
+                "governed_project_id": "sample",
+                "fact_type_key": "workcase",
+                "object_id": "workcase-0008",
+            },
+        }
+    ]
+    _install_read(monkeypatch, fields)
+
+    execution = operation._call(_request(), object(), OperationExecutionContext(Path("/project")))  # type: ignore[arg-type]
+
+    assert execution.outcome == "ok"
+    assert execution.result is not None
+    assert execution.result["fact_object"]["relations"] == [
+        {
+            "relation_key": "routed-to",
+            "target": {
+                "governed_project_id": "sample",
+                "fact_type_key": "workcase",
+                "object_id": "workcase-0008",
+            },
+        }
+    ]
+
+
 def test_candidate_operation_rejects_conflicting_route_target_fingerprints_without_changes(monkeypatch) -> None:
     fields = _fields()
     proposal = fields["closure_proposal"]
