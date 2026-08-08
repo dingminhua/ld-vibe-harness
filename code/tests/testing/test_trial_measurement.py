@@ -29,9 +29,12 @@ from ldvh.testing.trial_measurement import (
 def _collector() -> TrialMeasurementCollector:
     return TrialMeasurementCollector(
         trial_id="trial-01",
+        task_id="task-01",
         task_package_hash="a" * 64,
         condition="candidate",
         runner_fingerprint="runner-1",
+        runner_identity="synthetic-runner",
+        worker_envelope_sha256="b" * 64,
         rule_fingerprint="rule-1",
         capability_fingerprint="capability-1",
     )
@@ -343,6 +346,12 @@ def test_persisted_transcript_must_match_record_hash(tmp_path: Path) -> None:
     record = collector.finalize(
         outcome="success", correct=True, estimated_tokens=None, unavailable_reason="not provided"
     )
+    envelope = protocol.worker_envelopes[("task-01", "candidate")]
+    record["worker_envelope_sha256"] = envelope.envelope_sha256
+    record["runner_identity"] = "synthetic-runner"
+    record["runner_fingerprint"] = hashlib.sha256(
+        f"synthetic-runner\0{envelope.envelope_sha256}".encode()
+    ).hexdigest()
     record_path, transcript_path = persist_trial_artifacts(protocol, record=record, transcript=[event])
     assert record_path.exists()
     assert transcript_path.exists()
@@ -352,6 +361,10 @@ def test_persisted_transcript_must_match_record_hash(tmp_path: Path) -> None:
 
 def test_runner_owned_adapter_isolates_envelopes_and_records_actual_dispatch() -> None:
     source = "Use text_match={text, field_paths} for this candidate query."
+    fingerprints = {
+        "candidate_rule_source": hashlib.sha256(source.encode()).hexdigest(),
+        "capability_source": hashlib.sha256(source.encode()).hexdigest(),
+    }
     tasks = [
         FrozenTrialTask(f"task-{index:02d}", f"Complete objective {index}.", {"expected": index})
         for index in range(1, 13)
@@ -364,7 +377,7 @@ def test_runner_owned_adapter_isolates_envelopes_and_records_actual_dispatch() -
         read_current_source={"source": source}.__getitem__,
         allowed_operations=["capabilities", "find-fact-object-candidates"],
         environment_metadata={"model": "test", "permissions": "test-only"},
-        environment_fingerprints={"candidate_rule_source": "a" * 64, "capability_source": "b" * 64},
+        environment_fingerprints=fingerprints,
         seed=7,
     )
     adapter = RunnerOwnedTrialAdapter(
@@ -372,6 +385,7 @@ def test_runner_owned_adapter_isolates_envelopes_and_records_actual_dispatch() -
         read_current_source={"source": source}.__getitem__,
         operation_categories={"capabilities": "discovery", "find-fact-object-candidates": "target"},
         runner_identity="runner-1",
+        environment_readers={name: (lambda source=source: source.encode()) for name in fingerprints},
     )
     baseline = adapter.start_trial(task_id="task-01", condition="baseline", trial_id="trial-01")
     candidate = adapter.start_trial(task_id="task-01", condition="candidate", trial_id="trial-02")
@@ -391,6 +405,9 @@ def test_runner_owned_adapter_isolates_envelopes_and_records_actual_dispatch() -
     )
     assert record["first_legal"] is True
     assert transcript[0].raw_request == b'{"request":"actual"}'
+    record_path, transcript_path = persist_trial_artifacts(protocol, record=record, transcript=transcript)
+    assert record_path.exists()
+    assert transcript_path.exists()
     with pytest.raises(TrialMeasurementError, match="allowlist"):
         baseline.invoke("read-fact-objects", b"{}", dispatch=lambda _operation, _request: b"{}")
 
@@ -398,6 +415,10 @@ def test_runner_owned_adapter_isolates_envelopes_and_records_actual_dispatch() -
 def test_runner_owned_adapter_rejects_source_drift_before_trial() -> None:
     source = "Use text_match={text, field_paths} for this candidate query."
     sources = {"source": source}
+    fingerprints = {
+        "candidate_rule_source": hashlib.sha256(source.encode()).hexdigest(),
+        "capability_source": hashlib.sha256(source.encode()).hexdigest(),
+    }
     tasks = [
         FrozenTrialTask(f"task-{index:02d}", f"Complete objective {index}.", {"expected": index})
         for index in range(1, 13)
@@ -410,7 +431,7 @@ def test_runner_owned_adapter_rejects_source_drift_before_trial() -> None:
         read_current_source=sources.__getitem__,
         allowed_operations=["find-fact-object-candidates"],
         environment_metadata={"model": "test", "permissions": "test-only"},
-        environment_fingerprints={"candidate_rule_source": "a" * 64, "capability_source": "b" * 64},
+        environment_fingerprints=fingerprints,
         seed=7,
     )
     sources["source"] = "drifted"
@@ -419,6 +440,44 @@ def test_runner_owned_adapter_rejects_source_drift_before_trial() -> None:
         read_current_source=sources.__getitem__,
         operation_categories={"find-fact-object-candidates": "target"},
         runner_identity="runner-1",
+        environment_readers={name: (lambda source=source: source.encode()) for name in fingerprints},
     )
     with pytest.raises(TrialMeasurementError, match="fingerprint"):
+        adapter.start_trial(task_id="task-01", condition="baseline", trial_id="trial-01")
+
+
+def test_runner_owned_adapter_rejects_any_frozen_environment_drift() -> None:
+    source = "Use text_match={text, field_paths} for this candidate query."
+    entrypoint = b"frozen entrypoint"
+    fingerprints = {
+        "candidate_rule_source": hashlib.sha256(source.encode()).hexdigest(),
+        "capability_source": hashlib.sha256(source.encode()).hexdigest(),
+        "helper_entrypoint": hashlib.sha256(entrypoint).hexdigest(),
+    }
+    protocol = freeze_trial_protocol(
+        repository_root=Path.cwd(),
+        tasks=[
+            FrozenTrialTask(f"task-{index:02d}", f"Complete objective {index}.", {"expected": index})
+            for index in range(1, 13)
+        ],
+        baseline_prompt="Complete the supplied objective.",
+        candidate_claims=[ContractClaim(source, "source", hashlib.sha256(source.encode()).hexdigest())],
+        read_current_source={"source": source}.__getitem__,
+        allowed_operations=["find-fact-object-candidates"],
+        environment_metadata={"model": "test", "permissions": "test-only"},
+        environment_fingerprints=fingerprints,
+        seed=7,
+    )
+    adapter = RunnerOwnedTrialAdapter(
+        protocol=protocol,
+        read_current_source={"source": source}.__getitem__,
+        operation_categories={"find-fact-object-candidates": "target"},
+        runner_identity="runner-1",
+        environment_readers={
+            "candidate_rule_source": lambda: source.encode(),
+            "capability_source": lambda: source.encode(),
+            "helper_entrypoint": lambda: b"drifted entrypoint",
+        },
+    )
+    with pytest.raises(TrialMeasurementError, match="helper_entrypoint"):
         adapter.start_trial(task_id="task-01", condition="baseline", trial_id="trial-01")

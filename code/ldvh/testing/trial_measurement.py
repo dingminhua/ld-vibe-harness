@@ -74,9 +74,12 @@ def validate_trial_record(record: Mapping[str, Any]) -> None:
     required = {
         "schema_version",
         "trial_id",
+        "task_id",
         "task_package_hash",
         "condition",
         "runner_fingerprint",
+        "runner_identity",
+        "worker_envelope_sha256",
         "schema_fingerprint",
         "rule_fingerprint",
         "capability_fingerprint",
@@ -106,9 +109,12 @@ def validate_trial_record(record: Mapping[str, Any]) -> None:
         raise TrialMeasurementError("unrecognized trial schema version")
     for field_name in (
         "trial_id",
+        "task_id",
         "task_package_hash",
         "condition",
         "runner_fingerprint",
+        "runner_identity",
+        "worker_envelope_sha256",
         "schema_fingerprint",
         "rule_fingerprint",
         "capability_fingerprint",
@@ -119,6 +125,10 @@ def validate_trial_record(record: Mapping[str, Any]) -> None:
         character not in "0123456789abcdef" for character in record["transcript_sha256"]
     ):
         raise TrialMeasurementError("transcript_sha256 must be a lowercase SHA-256")
+    if len(record["worker_envelope_sha256"]) != 64 or any(
+        character not in "0123456789abcdef" for character in record["worker_envelope_sha256"]
+    ):
+        raise TrialMeasurementError("worker_envelope_sha256 must be a lowercase SHA-256")
     if record["condition"] not in {"baseline", "candidate"}:
         raise TrialMeasurementError("condition must be baseline or candidate")
     if record["outcome"] not in _OUTCOMES:
@@ -214,9 +224,12 @@ class TrialMeasurementCollector:
     """Collect metrics from raw events without performing Helper calls."""
 
     trial_id: str
+    task_id: str
     task_package_hash: str
     condition: str
     runner_fingerprint: str
+    runner_identity: str
+    worker_envelope_sha256: str
     rule_fingerprint: str
     capability_fingerprint: str
     expected_calls: int = 1
@@ -255,9 +268,12 @@ class TrialMeasurementCollector:
         record: dict[str, Any] = {
             "schema_version": TRIAL_SCHEMA_VERSION,
             "trial_id": self.trial_id,
+            "task_id": self.task_id,
             "task_package_hash": self.task_package_hash,
             "condition": self.condition,
             "runner_fingerprint": self.runner_fingerprint,
+            "runner_identity": self.runner_identity,
+            "worker_envelope_sha256": self.worker_envelope_sha256,
             "schema_fingerprint": _sha256_text(TRIAL_SCHEMA_VERSION),
             "rule_fingerprint": self.rule_fingerprint,
             "capability_fingerprint": self.capability_fingerprint,
@@ -540,6 +556,17 @@ def persist_trial_artifacts(
     """Persist one validated record and its hash-bound raw response transcript."""
 
     validate_trial_record(record)
+    try:
+        expected_envelope = protocol.worker_envelopes[(record["task_id"], record["condition"])]
+    except KeyError as error:
+        raise TrialMeasurementError("record task and condition have no frozen worker envelope") from error
+    if record["worker_envelope_sha256"] != expected_envelope.envelope_sha256:
+        raise TrialMeasurementError("record envelope hash does not match frozen task and condition")
+    expected_runner_fingerprint = _sha256_text(
+        f"{record['runner_identity']}\0{record['worker_envelope_sha256']}"
+    )
+    if record["runner_fingerprint"] != expected_runner_fingerprint:
+        raise TrialMeasurementError("record runner fingerprint does not bind its envelope and runner identity")
     encoded_events: list[dict[str, Any]] = []
     chunks: list[bytes] = []
     for event in transcript:
@@ -709,6 +736,7 @@ class RunnerOwnedTrialAdapter:
     read_current_source: Callable[[str], str]
     operation_categories: Mapping[str, str]
     runner_identity: str
+    environment_readers: Mapping[str, Callable[[], bytes]]
 
     def __post_init__(self) -> None:
         _nonempty_string(self.runner_identity, "runner_identity")
@@ -716,6 +744,9 @@ class RunnerOwnedTrialAdapter:
             raise TrialMeasurementError("runner categories must cover exactly the frozen allowlist")
         if any(category not in _CALL_CATEGORIES for category in self.operation_categories.values()):
             raise TrialMeasurementError("runner category is not recognized")
+        frozen_fingerprints = self._environment_fingerprints()
+        if set(self.environment_readers) != set(frozen_fingerprints):
+            raise TrialMeasurementError("environment readers must cover exactly the frozen fingerprint set")
 
     @property
     def allowed_operations(self) -> tuple[str, ...]:
@@ -729,18 +760,32 @@ class RunnerOwnedTrialAdapter:
         # Rebuild from the original immutable claims at every runner boundary.
         build_prompt_card(self.protocol.candidate_claims, read_current_source=self.read_current_source)
 
+    def _environment_fingerprints(self) -> Mapping[str, str]:
+        payload = json.loads(self.protocol.protocol_path.read_text(encoding="utf-8"))
+        fingerprints = payload.get("environment_fingerprints")
+        if not isinstance(fingerprints, Mapping) or any(
+            not isinstance(key, str) or not isinstance(value, str) for key, value in fingerprints.items()
+        ):
+            raise TrialMeasurementError("frozen protocol fingerprints are malformed")
+        return fingerprints
+
+    def _assert_environment_current(self) -> Mapping[str, str]:
+        fingerprints = self._environment_fingerprints()
+        for name, expected in fingerprints.items():
+            observed = self.environment_readers[name]()
+            if not isinstance(observed, bytes) or _sha256_bytes(observed) != expected:
+                raise TrialMeasurementError(f"frozen environment fingerprint drifted: {name}")
+        return fingerprints
+
     def start_trial(self, *, task_id: str, condition: str, trial_id: str) -> RunnerOwnedTrialSession:
         """Revalidate sources and return the sole permitted worker delivery package."""
 
         self._assert_source_current()
+        fingerprints = self._assert_environment_current()
         try:
             envelope = self.protocol.worker_envelopes[(task_id, condition)]
         except KeyError as error:
             raise TrialMeasurementError("requested task/condition has no frozen worker envelope") from error
-        payload = json.loads(self.protocol.protocol_path.read_text(encoding="utf-8"))
-        fingerprints = payload.get("environment_fingerprints")
-        if not isinstance(fingerprints, Mapping):
-            raise TrialMeasurementError("frozen protocol fingerprints are malformed")
         rule_fingerprint = _nonempty_string(fingerprints.get("candidate_rule_source"), "candidate rule fingerprint")
         capability_fingerprint = _nonempty_string(fingerprints.get("capability_source"), "capability fingerprint")
         runner_fingerprint = _sha256_text(f"{self.runner_identity}\0{envelope.envelope_sha256}")
@@ -749,9 +794,12 @@ class RunnerOwnedTrialAdapter:
             envelope=envelope,
             collector=TrialMeasurementCollector(
                 trial_id=trial_id,
+                task_id=task_id,
                 task_package_hash=self.protocol.task_package_hash,
                 condition=condition,
                 runner_fingerprint=runner_fingerprint,
+                runner_identity=self.runner_identity,
+                worker_envelope_sha256=envelope.envelope_sha256,
                 rule_fingerprint=rule_fingerprint,
                 capability_fingerprint=capability_fingerprint,
             ),
