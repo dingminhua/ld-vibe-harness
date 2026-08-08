@@ -17,6 +17,7 @@ export const CATEGORY_COLORS: Record<string, string> = {
   perf: '#22c55e',      // green
   ci: '#ec4899',        // pink
   build: '#92400e',     // brown
+  release: '#7c3aed',   // violet
   spec: '#14b8a6',       // teal
   rule: '#f97316',       // orange
   other: '#6b7280',     // gray

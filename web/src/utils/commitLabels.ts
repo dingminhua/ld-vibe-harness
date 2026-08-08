@@ -1,7 +1,7 @@
 import { getCommitScopeLocale, getCommitTypeLocale } from '../i18n/locales.ts';
 
 export const CURRENT_COMMIT_TYPES = [
-  'feat', 'fix', 'docs', 'style', 'refactor', 'perf', 'test', 'build', 'ci', 'chore', 'revert',
+  'feat', 'fix', 'docs', 'style', 'refactor', 'perf', 'test', 'build', 'ci', 'chore', 'release', 'revert',
 ] as const;
 
 export const CURRENT_COMMIT_SCOPES = [
