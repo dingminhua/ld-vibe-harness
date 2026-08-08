@@ -4,7 +4,7 @@
   <img src="icons/ldvh-plugin-icon.png" alt="LDVH Logo" width="120">
 </p>
 
-**Version: v4.0.0** — 首个公开发布。能力结构已建立，部分功能仍在收敛中，完善阶段将持续推进并在后续版本收敛稳定保证。
+**Version: v4.0.1** — 完善阶段增量发布。能力结构已建立，部分功能仍在收敛中，完善阶段将持续推进并在后续版本收敛稳定保证。
 
 LDVH 以**环境 Skill（薄 Skill）**的身份部署到 AI 开发环境（如 Claude Code、Codex、Cindy、Trae 等），通过一个轻量路由文件将落入 LDVH 领域的工作引导至仓库中的 Helper CLI。**它是 AI 开发环境的"插件"而非独立运行的程序**——你不需要安装或启动任何服务，只需在 AI 环境启用 LDVH Skill，AI 便会自动按规则引导你完成受控操作。
 
