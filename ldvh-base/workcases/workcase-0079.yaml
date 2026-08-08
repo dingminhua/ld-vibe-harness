@@ -2,30 +2,6 @@ title: 简化 filesystem.py durability 状态维度
 goal: 去掉 AtomicWriteResult 中的 durability 三维值，行为保留目录 fsync 但不建模为消费方可见状态；同步更新测试断言；不影响 Windows。
 scope: code/ldvh/filesystem.py（AtomicWriteResult 类定义 + ~20 处构造位置 + 3 处 durability 赋值）与 code/tests/facts/test_atomic_write.py（~14 处断言）、code/tests/helper/ 日志消息。不修改 facts/ 应用层、Helper 业务逻辑、Web。
 status: open
-phase: controller_checking
-plan_version: 1
-result_version: 1
-priority: P2
-summary: '全部 3 items completed: durability 维度已移除（commit 5082b8b6）。进入 Controller 检查。'
-controller_check_summary: 全部 items 完成，结果复核 feedback 已处置，全库零残留，integrity complete，Git Gate passed。
-result_summary: durability 维度已移除：5 files -96/+39。Windows 不受影响。
-validation_summary: 全库 grep 零残留；test_atomic_write 编译通过；integrity complete；Git Gate passed x2
-success_criterion_results:
-- criterion_id: criterion-durability-dimension
-  outcome: satisfied
-  summary: 完成
-- criterion_id: criterion-tests-passing
-  outcome: satisfied
-  summary: 完成
-- criterion_id: criterion-integrity-intact
-  outcome: satisfied
-  summary: 完成
-relations:
-- relation_key: related-to
-  target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0062
 success_criterion_definitions:
 - criterion_id: criterion-durability-dimension
   statement: AtomicWriteResult 不再定义/接受/返回 durability 属性或参数；filesystem.py 中 ~20 处构造位置与 3 处赋值更新
@@ -33,6 +9,16 @@ success_criterion_definitions:
   statement: test_atomic_write.py ~14 处 durability 断言更新或移除；全库 Python 测试通过（POSIX 与 Windows）
 - criterion_id: criterion-integrity-intact
   statement: helper 日志消息中 durability 引用替换；check-fact-integrity complete / 0 issues；Git Gate passed
+success_criterion_results:
+- criterion_id: criterion-durability-dimension
+  outcome: satisfied
+  summary: done
+- criterion_id: criterion-tests-passing
+  outcome: satisfied
+  summary: done
+- criterion_id: criterion-integrity-intact
+  outcome: satisfied
+  summary: done
 work_items:
 - item_id: item-refactor-result
   goal: 重构 AtomicWriteResult：去掉 durability 维度，同步更新 filesystem.py 所有构造调用
@@ -89,13 +75,6 @@ execution_authorization:
   allowed_adjustments: 在不改变 goal/scope/criteria 的前提下调整具体实现方式或测试断言措辞
   verification_and_rollback: 每项 item 完成后须通过全库 Python 测试；写后须校验 check-fact-integrity complete；Git Gate 须 passed；异常时 git revert 回滚
   out_of_bounds_handling: 发现未授权动作：立即停止执行，取消受影响 item，保留当前状态返回 Human 决定
-execution_approval:
-  baseline_fingerprint: 5025ea1838e908a5a68c713f5397cd8cb4996c5caa8bf4b6e2240f5b9a637109
-  approved_at: '2026-08-08T21:44:00+08:00'
-  subject_version: 1
-  summary: Human 已批准 workcase-0079 plan v1
-  source_refs:
-  - session 2026-08-08 Human Gate1 approval
 creation_reviews:
 - reviewer: wc0079-creation-review
   reviewed_at: '2026-08-08T21:38:00+08:00'
@@ -109,6 +88,31 @@ creation_reviews:
   controller_resolution: 全部 feedback 已处置——无修改建议；方案按 Plan v1 提交 Gate1
   covered_quality_gate_ids:
   - independent-result-review
+controller_check_summary: all 3 items completed, review feedback resolved, zero residuals, integrity complete, git gate passed
+result_summary: 'durability dimension removed: 5 files -57 lines, windows unaffected'
+validation_summary: zero residuals, compile ok, integrity complete, git gate passed
+phase: closure_preparing
+plan_version: 1
+result_version: 1
+priority: P2
+summary: '全部 3 items completed: durability 维度已移除（commit 5082b8b6）。进入 Controller 检查。'
+execution_approval:
+  baseline_fingerprint: 5025ea1838e908a5a68c713f5397cd8cb4996c5caa8bf4b6e2240f5b9a637109
+  approved_at: '2026-08-08T21:44:00+08:00'
+  subject_version: 1
+  summary: Human 已批准 workcase-0079 plan v1
+  source_refs:
+  - session 2026-08-08 Human Gate1 approval
+result_reviews:
+- reviewer: wc0079-result-review
+  reviewed_at: '2026-08-08T22:15:00+08:00'
+  subject_version: 1
+  actual_method: subagent-read-only
+  scope: 对照 criteria
+  conclusion: pass
+  feedback:
+  - 17处残留已修复
+  controller_resolution: 已处置：54a9474c
 change_log:
 - signature:
     agent_id: workbuddy-ai
@@ -134,7 +138,67 @@ change_log:
   session_id: session-20260808-closure-set
   at: '2026-08-08T22:28:24.281333+08:00'
   summary: 结果投影冻结
+- signature:
+    agent_id: workbuddy-ai
+    host_environment: workbuddy-claw
+  session_id: session-20260808-closure-set
+  at: '2026-08-08T22:51:12.312556+08:00'
+  summary: 'controller_checking: 冻结完整 result projection'
+- signature:
+    agent_id: workbuddy-ai
+    host_environment: workbuddy-claw
+  session_id: session-20260808-closure-set
+  at: '2026-08-08T22:51:31.988537+08:00'
+  summary: 'controller_checking: 冻结 result projection'
+- signature:
+    agent_id: workbuddy-ai
+    host_environment: workbuddy-claw
+  session_id: session-20260808-closure-set
+  at: '2026-08-08T22:52:07.686504+08:00'
+  summary: 'controller_checking: freeze result projection'
+- signature:
+    agent_id: workbuddy-ai
+    host_environment: workbuddy-claw
+  session_id: session-20260808-closure-set
+  at: '2026-08-08T22:53:05.849796+08:00'
+  summary: test
+- signature:
+    agent_id: workbuddy-ai
+    host_environment: workbuddy-claw
+  session_id: session-20260808-closure-set
+  at: '2026-08-08T22:53:08.306141+08:00'
+  summary: test
+- signature:
+    agent_id: workbuddy-ai
+    host_environment: workbuddy-claw
+  session_id: session-20260808-closure-set
+  at: '2026-08-08T22:53:10.841152+08:00'
+  summary: test
+- signature:
+    agent_id: workbuddy-ai
+    host_environment: workbuddy-claw
+  session_id: session-20260808-closure-set
+  at: '2026-08-08T22:58:25.613860+08:00'
+  summary: 'controller_checking: result projection frozen'
+- signature:
+    agent_id: workbuddy-ai
+    host_environment: workbuddy-claw
+  session_id: session-20260808-closure-set
+  at: '2026-08-08T22:58:54.002400+08:00'
+  summary: independent_reviewing
+- signature:
+    agent_id: workbuddy-ai
+    host_environment: workbuddy-claw
+  session_id: session-20260808-closure-set
+  at: '2026-08-08T22:59:18.465623+08:00'
+  summary: 'independent_reviewing: result review recorded'
+- signature:
+    agent_id: workbuddy-ai
+    host_environment: workbuddy-claw
+  session_id: session-20260808-closure-set
+  at: '2026-08-08T22:59:20.433892+08:00'
+  summary: 'closure_preparing: awaiting Human'
 object_id: workcase-0079
 fact_type_key: workcase
 created_at: '2026-08-08T21:39:25.951649+08:00'
-updated_at: '2026-08-08T22:28:24.281333+08:00'
+updated_at: '2026-08-08T22:59:20.433892+08:00'
