@@ -174,6 +174,17 @@ LDVH 核心是环境无关的——它不绑定任何特定 AI 开发环境。�
 
 ---
 
+## 版本与发布
+
+- 版本号遵循语义化版本（SemVer）：含新功能升 MINOR、只修 bug 升 PATCH；pre-release 用 `-alpha`/`-beta`/`-rc.N` 后缀。
+- LDVH 为纯源码分发：发布即 git tag + CHANGELOG 更新，无 wheel/sdist 打包；tag 用 `v` 前缀且与版本号严格一致。
+- **发布是 Human 决定**：打 tag 与 push（含 `--tags`）只在 Human 明确授权后执行；GitHub Release 页由 CI 自动创建，notes 取自 CHANGELOG 对应条目（见 [03 §9.10](specs/03-事实源与信息溯源规范.md)）。
+- **hotfix**：线上问题在 `main` 直接修复并递增 PATCH 版本，随后回合并 `dev-v4`；远端 tag 回退属改写远端历史，需 Human 授权（force-push）。
+- **发布就绪核对**：code 与 web 测试全绿（CI 通过）、ruff 无问题、版本声明点（CHANGELOG / README / `web/package.json` 及其 lockfile）一致、触及 `skill/SKILL.md` 或 Git Hook 部署件时 CHANGELOG 已醒目标注更新方式。
+- 每次发布记录于 [CHANGELOG.md](CHANGELOG.md)，并同步到 [GitHub Releases](https://github.com/dingminhua/ld-vibe-harness/releases)。
+
+---
+
 ## 许可证
 
 本项目采用 [MIT License](LICENSE)。

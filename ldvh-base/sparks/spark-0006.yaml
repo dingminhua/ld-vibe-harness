@@ -1,8 +1,8 @@
 title: LDVH 开源发布就绪与公共契约
 intent: 保留 LDVH 面向开源发布前的整体就绪条件与公共契约边界，避免将局部实现、版本规则或发布准备误作已可公开发布，或在没有明确授权时启动发布执行。后续需判断哪些公共承诺、保障条件与未决风险必须先收敛。
-status: open
-priority: P1
-summary: "LDVH 面向开源发布前仍需判断整体发布就绪条件与公共契约边界，包括哪些承诺应对外成立、哪些风险和保障必须先收敛，以及这些判断与版本、发布规则和实际执行如何分工。\n\n**发布纪律（已落地）**\n\n- LDVH 为纯源码分发（无 wheel/sdist 打包、无 registry 发布），发布即 git tag + CHANGELOG 更新；不需要独立发布规范或行动模板（原 spark-0023 已废弃并入）。\n- 发布纪律已通过 03 §9.10「发布与版本公共契约」与 03.Att.01 落地（2026-08-08 受控修订，独立复核通过）：\n  - `release` 成为 03 提交契约 type 闭集成员，用于标记发布、更新版本号与变更日志、同步版本声明与打 tag；\n  - 版本号遵循 SemVer，pre-release 用 `-alpha`/`-beta`/`-rc.N` 后缀；tag 用 `v` 前缀且与版本号严格一致；版本声明点（CHANGELOG、README、web/package.json 及其 lockfile）不得互相矛盾；\n  - 每个对外版本必须在 CHANGELOG.md 记录 `## [版本] - 日期` 条目（Added/Changed/Fixed/Removed/Known 分区），内容由已提交变更支撑、发布时集中写；\n  - 发布是 Human 决定：AI 可起草并形成发布候选提交，但打 tag 与 push（含 --tags）只在 Human 明确授权后执行；远端 PR/merge 与平台 Release 不经过本地 commit-msg Git Gate。\n  - 部署件变更标注：发布触及 skill/SKILL.md 或 Git Hook 部署件时，CHANGELOG 必须增加醒目分区「⚠️ 需要更新 Skill」并提供简单更新方式（git pull 后重新部署或告知 AI「LDVH 更新了」）；未触及部署件时不得生造。\n- 版本方向已按 G1 处理：文档（CHANGELOG/README）对齐既有 tag `v4.0.0`，不再声称 alpha；并修复 `web/package-lock.json` 的 0.0.0 漂移。\n\n**仍未决（留待本项目后续）**\n\n- hotfix 分支策略属项目级政策，不在 03 共同契约内定义，由项目正式来源另行决定；\n- GitHub Release 页与远端 tag 回退等远端操作边界（03 §12 既有 Human Gate 约束，force-push 需 Human 授权）。\n\n当前只保留该议题，不构成发布计划、发布完成声明、版本更新、构建、push、PR 或立即执行授权。"
+status: implemented
+summary: "LDVH 面向开源发布的整体就绪条件与公共契约已全部落地并完成首次实战（v4.0.1）。\n\n**已落地（发布纪律与工程基础）**\n\n- LDVH 为纯源码分发（无 wheel/sdist 打包、无 registry 发布），发布即 git tag + CHANGELOG 更新；不需要独立发布规范或行动模板（原 spark-0023 已废弃并入）。\n- 发布纪律已通过 03 §9.10「发布与版本公共契约」与 03.Att.01 落地（2026-08-08 受控修订，独立复核通过）：\n  - `release` 成为 03 提交契约 type 闭集成员；\n  - 版本号遵循 SemVer，pre-release 用 `-alpha`/`-beta`/`-rc.N` 后缀；tag 用 `v` 前缀且与版本号严格一致；版本声明点不得互相矛盾；\n  - 每个对外版本必须在 CHANGELOG.md 记录条目（Added/Changed/Fixed/Removed/Known 分区）；\n  - 部署件变更标注：触及 skill/SKILL.md 或 Git Hook 部署件时 CHANGELOG 必须醒目分区并给更新方式（03 §9.10 第 6 条）；\n  - 发布是 Human 决定：打 tag 与 push 只在 Human 明确授权后执行。\n- 工程验证基础：GitHub Actions CI（code pytest+ruff、web tsc+test+build）与自动 Release 工作流（push v* tag 时自动从 CHANGELOG 建 Release 页）已上线。\n- 版本方向按 G1 处理：文档对齐既有 tag `v4.0.0`；v4.0.1 完成新契约下的首次完整发布演练（release 提交 → tag → push → GitHub Release 页）。\n- hotfix 分支策略与发布就绪核对清单已写入 README「版本与发布」小节（项目正式来源）。\n\n**未决项处置**\n\n- hotfix 分支策略：已由 README「版本与发布」承担（main 直接修复 + PATCH 递增 + 回合并 dev-v4）；\n- GitHub Release 远端操作边界：由 03 §9.10 授权边界与 03 §12 Human Gate 承担（force-push 需 Human 授权），实操路径已通过 v4.0.1 演练走通。"
+disposition_summary: 使命完成：发布纪律（版本号、tag 一致性、CHANGELOG 契约、部署件变更标注、授权边界）经 03 §9.10 与 03.Att.01 受控修订落地；CI 与自动 Release 工作流上线；hotfix 与发布就绪核对写入 README 项目正式来源；v4.0.1 完成首次完整发布演练并已公开。无剩余待处置责任。
 evolution:
 - at: '2026-07-19T10:19:29.162601+08:00'
   summary: 建立时保留开源发布就绪与公共契约边界，版本与发布 Specs/行动模板分工给 spark-0023。
@@ -12,6 +12,8 @@ evolution:
   summary: 发布纪律经 03 §9.10 与 03.Att.01 受控修订落地（独立复核通过）：新增 release type、版本/tag 一致性、CHANGELOG 契约与发布授权边界；版本方向 G1（文档对齐 tag v4.0.0）；hotfix 分支策略留待项目正式来源。
 - at: '2026-08-08T16:21:57.957657+08:00'
   summary: 03 §9.10 增补第 6 条「部署件变更标注」：触及 skill/SKILL.md 或 Git Hook 部署件的发布必须在 CHANGELOG 顶部醒目标注并给出简单更新方式；该检查项纳入发布就绪核对。
+- at: '2026-08-08T17:25:16.631891+08:00'
+  summary: 关闭前收尾：CI 与自动 Release 工作流上线；v4.0.1 完成首次完整发布演练；hotfix 策略与发布就绪核对写入 README；处置为 implemented。
 change_log:
 - signature:
     agent_id: deepseek-v4-flash
@@ -31,7 +33,13 @@ change_log:
   session_id: wb-2026-08-08-spark0006-release-contract
   at: '2026-08-08T16:21:58.109678+08:00'
   summary: 记录 03 §9.10 部署件变更标注扩展：skill 更新须醒目提示并提供简单更新方式。
+- signature:
+    agent_id: deepseek-v4-flash
+    host_environment: WorkBuddy (macOS)
+  session_id: wb-2026-08-08-spark0006-release-contract
+  at: '2026-08-08T17:25:16.777201+08:00'
+  summary: 关闭前收尾：CI 与自动 Release 上线、v4.0.1 演练完成、hotfix 与就绪核对写入 README；spark-0006 处置为 implemented。
 object_id: spark-0006
 fact_type_key: spark
 created_at: '2026-07-19T10:19:29.162601+08:00'
-updated_at: '2026-08-08T16:21:58.109678+08:00'
+updated_at: '2026-08-08T17:25:16.777201+08:00'
