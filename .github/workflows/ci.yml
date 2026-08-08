@@ -25,6 +25,17 @@ jobs:
           .venv/bin/pip install -r requirements.txt
       - name: Install Node dependencies (js-yaml for portability test)
         run: npm ci --prefix web
+      - name: Create governed workspace fixture
+        run: |
+          mkdir -p "$(dirname "$GITHUB_WORKSPACE")"
+          cat > "$(dirname "$GITHUB_WORKSPACE")/LDVH-GOVERNED-PROJECTS.yaml" <<EOF
+          product_name: LD Vibe Harness
+          product_description: CI 测试管辖配置 fixture
+          projects:
+            - id: ldvh
+              path: $GITHUB_WORKSPACE
+          default_project_id: ldvh
+          EOF
       - name: Lint (ruff)
         run: ruff check code
       - name: Test (pytest)
