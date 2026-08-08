@@ -40,7 +40,7 @@ _RESULT_CONTRACT = source_reference("rule", "fact-model-foundation::11.6 事实�
 _IMPLEMENTATION_EVIDENCE = (
     source_reference("implementation", "code/ldvh/helper/operations/fact_candidate_operation.py"),
 )
-_TEXT_MATCH_INPUT_EXAMPLES = (
+_INPUT_EXAMPLES = (
     {
         "summary": "按 Spark 标题进行 F2 文本筛选",
         "arguments_fragment": {
@@ -52,6 +52,22 @@ _TEXT_MATCH_INPUT_EXAMPLES = (
         "composition_note": (
             "这是可组合输入片段，不是完整请求；调用者仍须加入当前实际 governed_project_id，"
             "并可按所选类型当前允许的 F2 字段替换 text 与 field_paths。"
+        ),
+    },
+    {
+        "summary": "按关系目标反向查询：找出所有引用指定对象的同类或异类事实",
+        "arguments_fragment": {
+            "card_layer": "F2",
+            "fact_type_keys": ["spark", "workcase"],
+            "relation_targets": [
+                {"governed_project_id": "sample", "fact_type_key": "adr", "object_id": "adr-0001"}
+            ],
+        },
+        "source_refs": (_INPUT_CONTRACT,),
+        "composition_note": (
+            "这是可组合输入片段，不是完整请求；调用者仍须加入当前实际 governed_project_id，"
+            "并按实际目标替换 relation_targets 各项的 fact_type_key 与 object_id。"
+            "relation_targets、relation_source_refs 和 relation_keys 分别支持以目标、来源和关系键反向查询。"
         ),
     },
 )
@@ -904,7 +920,7 @@ FACT_CANDIDATE_IMPLEMENTATION = OperationImplementation(
     evidence=(*_IMPLEMENTATION_EVIDENCE, _RESULT_CONTRACT),
     check_availability=_check_availability,
     call=_execute,
-    input_examples=_TEXT_MATCH_INPUT_EXAMPLES,
+    input_examples=_INPUT_EXAMPLES,
 )
 
 __all__ = ["FACT_CANDIDATE_IMPLEMENTATION", "OPERATION_KEY"]

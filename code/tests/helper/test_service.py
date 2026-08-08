@@ -126,21 +126,20 @@ def test_candidate_discovery_publishes_only_the_source_bound_text_match_input_fr
         for operation in operations
         if operation["operation_key"] != "find-fact-object-candidates"
     )
-    assert candidate_operation["input_examples"] == [
-        {
-            "summary": "按 Spark 标题进行 F2 文本筛选",
-            "arguments_fragment": {
-                "card_layer": "F2",
-                "fact_type_keys": ["spark"],
-                "text_match": {"text": "text", "field_paths": ["title"]},
-            },
-            "source_refs": candidate_operation["input_examples"][0]["source_refs"],
-            "composition_note": (
-                "这是可组合输入片段，不是完整请求；调用者仍须加入当前实际 governed_project_id，"
-                "并可按所选类型当前允许的 F2 字段替换 text 与 field_paths。"
-            ),
-        }
-    ]
+    assert len(candidate_operation["input_examples"]) == 2
+    assert candidate_operation["input_examples"][0] == {
+        "summary": "按 Spark 标题进行 F2 文本筛选",
+        "arguments_fragment": {
+            "card_layer": "F2",
+            "fact_type_keys": ["spark"],
+            "text_match": {"text": "text", "field_paths": ["title"]},
+        },
+        "source_refs": candidate_operation["input_examples"][0]["source_refs"],
+        "composition_note": (
+            "这是可组合输入片段，不是完整请求；调用者仍须加入当前实际 governed_project_id，"
+            "并可按所选类型当前允许的 F2 字段替换 text 与 field_paths。"
+        ),
+    }
     source = candidate_operation["input_examples"][0]["source_refs"][0]
     assert source["kind"] == "rule"
     assert source["locator"] == "fact-model-foundation::11.5 事实对象候选发现输入字段"
