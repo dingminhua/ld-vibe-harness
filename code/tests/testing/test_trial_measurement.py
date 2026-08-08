@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import os
 from pathlib import Path
 
@@ -9,14 +10,19 @@ import pytest
 from ldvh.testing.trial_measurement import (
     TRIAL_SCHEMA_VERSION,
     ContractClaim,
+    FrozenTrialTask,
     HelperResponseEvent,
+    RunnerOwnedTrialAdapter,
     SafeTrialTempRoot,
     TrialMeasurementCollector,
     TrialMeasurementError,
     build_prompt_card,
+    freeze_trial_protocol,
     parse_trial_record,
+    persist_trial_artifacts,
     synthetic_trial,
     validate_trial_record,
+    verify_nonleakage_protocol,
 )
 
 
@@ -49,7 +55,7 @@ def test_collector_captures_successful_and_failed_raw_response_bytes() -> None:
     assert record["response_bytes"] == len("正常".encode()) + len(b"failed response") + len(b"ok")
     assert record["total_calls"] == 3
     assert record["invalid_requests"] == 1
-    assert record["first_legal"] is True
+    assert record["first_legal"] is False
     assert record["estimated_tokens"] is None
     assert record["unavailable_reason"]
 
@@ -95,6 +101,20 @@ def test_schema_rejects_missing_extra_malformed_and_zero_token_substitution(muta
 def test_schema_rejects_malformed_json() -> None:
     with pytest.raises(TrialMeasurementError, match="valid JSON"):
         parse_trial_record('{"unfinished":')
+
+
+def test_schema_rejects_missing_or_malformed_transcript_hash() -> None:
+    record = synthetic_trial(
+        _collector,
+        [HelperResponseEvent("target", "response", True)],
+        outcome="success",
+        correct=True,
+        estimated_tokens=None,
+        unavailable_reason="not provided",
+    )
+    record.pop("transcript_sha256")
+    with pytest.raises(TrialMeasurementError, match="closed"):
+        validate_trial_record(record)
 
 
 def test_prompt_card_requires_current_verified_source() -> None:
@@ -202,3 +222,203 @@ def test_temp_root_rejects_symlink_swap_before_exclusive_write(monkeypatch: pyte
         root.write_json("trial.json", {"ok": True})
     assert not (outside / "escape.json").exists()
     assert not (root.root / "trial.json").exists()
+
+
+def test_freeze_protocol_binds_tasks_cards_fingerprints_and_scope(tmp_path: Path) -> None:
+    source = "text_match is available in the fact candidate query."
+    protocol = freeze_trial_protocol(
+        repository_root=tmp_path,
+        tasks=[
+            FrozenTrialTask(
+                task_id=f"task-{index:02d}",
+                prompt=f"Complete task {index}.",
+                gold_rubric={"expected": f"answer-{index}"},
+            )
+            for index in range(1, 13)
+        ],
+        baseline_prompt="Use only the supplied task.",
+        candidate_claims=[
+            ContractClaim(
+                statement=source,
+                source_ref="helper capabilities",
+                source_fingerprint=hashlib.sha256(source.encode()).hexdigest(),
+            )
+        ],
+        read_current_source={"helper capabilities": source}.__getitem__,
+        allowed_operations=["find-fact-object-candidates", "read-fact-objects"],
+        environment_metadata={"model": "test", "permissions": "test-only"},
+        environment_fingerprints={"helper": "a" * 64, "rule": "b" * 64},
+        seed=7,
+    )
+    payload = json.loads(protocol.protocol_path.read_text(encoding="utf-8"))
+    assert payload["task_count"] == 12
+    assert len(payload["trial_order"]) == 24
+    assert payload["preflight"]["status"] == "passed"
+    assert payload["preflight"]["candidate_base_prompt_hash"] == payload["baseline_prompt_hash"]
+    assert not protocol.root.root.is_relative_to(tmp_path)
+
+
+def test_preflight_rejects_target_contract_leak_in_common_task_or_gold() -> None:
+    source = "Use text_match={text, field_paths} for this candidate query."
+    candidate_card = build_prompt_card(
+        [ContractClaim(source, "capabilities", hashlib.sha256(source.encode()).hexdigest())],
+        read_current_source={"capabilities": source}.__getitem__,
+    )
+    tasks = [FrozenTrialTask("task-01", "Use text_match to find the answer.", {"expected": "ok"})]
+    with pytest.raises(TrialMeasurementError, match="leaks protected contract term"):
+        verify_nonleakage_protocol(
+            tasks=tasks,
+            baseline_prompt="Complete the supplied objective.",
+            candidate_base_prompt="Complete the supplied objective.",
+            candidate_card=candidate_card,
+        )
+    with pytest.raises(TrialMeasurementError, match="leaks protected contract term"):
+        verify_nonleakage_protocol(
+            tasks=[FrozenTrialTask("task-01", "Complete the supplied objective.", {"field_paths": "x"})],
+            baseline_prompt="Complete the supplied objective.",
+            candidate_base_prompt="Complete the supplied objective.",
+            candidate_card=candidate_card,
+        )
+
+
+def test_preflight_rejects_condition_difference_or_condition_labeled_gold() -> None:
+    source = "Use text_match={text, field_paths} for this candidate query."
+    candidate_card = build_prompt_card(
+        [ContractClaim(source, "capabilities", hashlib.sha256(source.encode()).hexdigest())],
+        read_current_source={"capabilities": source}.__getitem__,
+    )
+    tasks = [FrozenTrialTask("task-01", "Complete the supplied objective.", {"expected": "ok"})]
+    with pytest.raises(TrialMeasurementError, match="base prompts must be identical"):
+        verify_nonleakage_protocol(
+            tasks=tasks,
+            baseline_prompt="baseline objective",
+            candidate_base_prompt="candidate objective",
+            candidate_card=candidate_card,
+        )
+    with pytest.raises(TrialMeasurementError, match="condition-blind"):
+        verify_nonleakage_protocol(
+            tasks=[FrozenTrialTask("task-01", "Complete the supplied objective.", {"expected_condition": "candidate"})],
+            baseline_prompt="Complete the supplied objective.",
+            candidate_base_prompt="Complete the supplied objective.",
+            candidate_card=candidate_card,
+        )
+
+
+def test_freeze_protocol_rejects_non_twelve_task_packages(tmp_path: Path) -> None:
+    with pytest.raises(TrialMeasurementError, match="exactly twelve"):
+        freeze_trial_protocol(
+            repository_root=tmp_path,
+            tasks=[],
+            baseline_prompt="baseline",
+            candidate_claims=[
+                ContractClaim("x", "source", hashlib.sha256(b"x").hexdigest()),
+            ],
+            read_current_source={"source": "x"}.__getitem__,
+            allowed_operations=["read-fact-objects"],
+            environment_metadata={"model": "test"},
+            environment_fingerprints={"helper": "a"},
+            seed=1,
+        )
+
+
+def test_persisted_transcript_must_match_record_hash(tmp_path: Path) -> None:
+    source = "text_match is available in the fact candidate query."
+    protocol = freeze_trial_protocol(
+        repository_root=tmp_path,
+        tasks=[
+            FrozenTrialTask(f"task-{index:02d}", f"task {index}", {"expected": index})
+            for index in range(1, 13)
+        ],
+        baseline_prompt="baseline",
+        candidate_claims=[ContractClaim(source, "source", hashlib.sha256(source.encode()).hexdigest())],
+        read_current_source={"source": source}.__getitem__,
+        allowed_operations=["read-fact-objects"],
+        environment_metadata={"model": "test"},
+        environment_fingerprints={"helper": "a"},
+        seed=1,
+    )
+    collector = _collector()
+    event = HelperResponseEvent("target", "response", True)
+    collector.observe(event)
+    record = collector.finalize(
+        outcome="success", correct=True, estimated_tokens=None, unavailable_reason="not provided"
+    )
+    record_path, transcript_path = persist_trial_artifacts(protocol, record=record, transcript=[event])
+    assert record_path.exists()
+    assert transcript_path.exists()
+    with pytest.raises(TrialMeasurementError, match="transcript hash"):
+        persist_trial_artifacts(protocol, record=record, transcript=[])
+
+
+def test_runner_owned_adapter_isolates_envelopes_and_records_actual_dispatch() -> None:
+    source = "Use text_match={text, field_paths} for this candidate query."
+    tasks = [
+        FrozenTrialTask(f"task-{index:02d}", f"Complete objective {index}.", {"expected": index})
+        for index in range(1, 13)
+    ]
+    protocol = freeze_trial_protocol(
+        repository_root=Path.cwd(),
+        tasks=tasks,
+        baseline_prompt="Complete the supplied objective.",
+        candidate_claims=[ContractClaim(source, "source", hashlib.sha256(source.encode()).hexdigest())],
+        read_current_source={"source": source}.__getitem__,
+        allowed_operations=["capabilities", "find-fact-object-candidates"],
+        environment_metadata={"model": "test", "permissions": "test-only"},
+        environment_fingerprints={"candidate_rule_source": "a" * 64, "capability_source": "b" * 64},
+        seed=7,
+    )
+    adapter = RunnerOwnedTrialAdapter(
+        protocol=protocol,
+        read_current_source={"source": source}.__getitem__,
+        operation_categories={"capabilities": "discovery", "find-fact-object-candidates": "target"},
+        runner_identity="runner-1",
+    )
+    baseline = adapter.start_trial(task_id="task-01", condition="baseline", trial_id="trial-01")
+    candidate = adapter.start_trial(task_id="task-01", condition="candidate", trial_id="trial-02")
+    assert "candidate_card" not in baseline.envelope.payload
+    assert "candidate_card" in candidate.envelope.payload
+    assert "gold" not in baseline.envelope.payload
+    assert str(protocol.root.root) not in json.dumps(candidate.envelope.payload, ensure_ascii=False)
+
+    response = baseline.invoke(
+        "find-fact-object-candidates",
+        b'{"request":"actual"}',
+        dispatch=lambda operation, request: b'{"outcome":"ok"}',
+    )
+    assert response == b'{"outcome":"ok"}'
+    record, transcript = baseline.finalize(
+        outcome="success", correct=True, estimated_tokens=None, unavailable_reason="not provided"
+    )
+    assert record["first_legal"] is True
+    assert transcript[0].raw_request == b'{"request":"actual"}'
+    with pytest.raises(TrialMeasurementError, match="allowlist"):
+        baseline.invoke("read-fact-objects", b"{}", dispatch=lambda _operation, _request: b"{}")
+
+
+def test_runner_owned_adapter_rejects_source_drift_before_trial() -> None:
+    source = "Use text_match={text, field_paths} for this candidate query."
+    sources = {"source": source}
+    tasks = [
+        FrozenTrialTask(f"task-{index:02d}", f"Complete objective {index}.", {"expected": index})
+        for index in range(1, 13)
+    ]
+    protocol = freeze_trial_protocol(
+        repository_root=Path.cwd(),
+        tasks=tasks,
+        baseline_prompt="Complete the supplied objective.",
+        candidate_claims=[ContractClaim(source, "source", hashlib.sha256(source.encode()).hexdigest())],
+        read_current_source=sources.__getitem__,
+        allowed_operations=["find-fact-object-candidates"],
+        environment_metadata={"model": "test", "permissions": "test-only"},
+        environment_fingerprints={"candidate_rule_source": "a" * 64, "capability_source": "b" * 64},
+        seed=7,
+    )
+    sources["source"] = "drifted"
+    adapter = RunnerOwnedTrialAdapter(
+        protocol=protocol,
+        read_current_source=sources.__getitem__,
+        operation_categories={"find-fact-object-candidates": "target"},
+        runner_identity="runner-1",
+    )
+    with pytest.raises(TrialMeasurementError, match="fingerprint"):
+        adapter.start_trial(task_id="task-01", condition="baseline", trial_id="trial-01")

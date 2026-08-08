@@ -11,6 +11,8 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import random
+import re
 import stat
 import tempfile
 import time
@@ -19,9 +21,12 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-TRIAL_SCHEMA_VERSION = "ldvh-trial-measurement/1"
+TRIAL_SCHEMA_VERSION = "ldvh-trial-measurement/2"
+FROZEN_PROTOCOL_SCHEMA_VERSION = "ldvh-frozen-trial-protocol/1"
 _CALL_CATEGORIES = frozenset({"discovery", "target", "repair"})
 _OUTCOMES = frozenset({"success", "failure", "timeout"})
+_CONTRACT_IDENTIFIER = re.compile(r"\b[a-zA-Z][a-zA-Z0-9]*(?:[_-][a-zA-Z0-9]+)+\b")
+_BRACED_IDENTIFIER = re.compile(r"[a-zA-Z][a-zA-Z0-9_]*")
 
 
 class TrialMeasurementError(ValueError):
@@ -30,6 +35,10 @@ class TrialMeasurementError(ValueError):
 
 def _sha256_text(value: str) -> str:
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+def _sha256_bytes(value: bytes) -> str:
+    return hashlib.sha256(value).hexdigest()
 
 
 def _nonempty_string(value: object, field_name: str) -> str:
@@ -81,6 +90,7 @@ def validate_trial_record(record: Mapping[str, Any]) -> None:
         "extra_calls",
         "invalid_requests",
         "response_bytes",
+        "transcript_sha256",
         "estimated_tokens",
         "duration_seconds",
         "timed_out",
@@ -102,8 +112,15 @@ def validate_trial_record(record: Mapping[str, Any]) -> None:
         "schema_fingerprint",
         "rule_fingerprint",
         "capability_fingerprint",
+        "transcript_sha256",
     ):
         _nonempty_string(record[field_name], field_name)
+    if len(record["transcript_sha256"]) != 64 or any(
+        character not in "0123456789abcdef" for character in record["transcript_sha256"]
+    ):
+        raise TrialMeasurementError("transcript_sha256 must be a lowercase SHA-256")
+    if record["condition"] not in {"baseline", "candidate"}:
+        raise TrialMeasurementError("condition must be baseline or candidate")
     if record["outcome"] not in _OUTCOMES:
         raise TrialMeasurementError("outcome must be success, failure, or timeout")
     _nullable_bool(record["correct"], "correct")
@@ -157,17 +174,39 @@ class HelperResponseEvent:
     category: str
     raw_response: str | bytes
     legal: bool
+    raw_request: str | bytes | None = None
 
     def byte_count(self) -> int:
         if self.category not in _CALL_CATEGORIES:
             raise TrialMeasurementError("response category is not recognized")
         if type(self.legal) is not bool:
             raise TrialMeasurementError("legal must be a boolean")
-        if isinstance(self.raw_response, bytes):
-            return len(self.raw_response)
         if isinstance(self.raw_response, str):
-            return len(self.raw_response.encode("utf-8"))
-        raise TrialMeasurementError("raw_response must be bytes or text")
+            response_bytes = len(self.raw_response.encode("utf-8"))
+        elif isinstance(self.raw_response, bytes):
+            response_bytes = len(self.raw_response)
+        else:
+            raise TrialMeasurementError("raw_response must be bytes or text")
+        if self.raw_request is not None and not isinstance(self.raw_request, (bytes, str)):
+            raise TrialMeasurementError("raw_request must be bytes, text, or null")
+        return response_bytes
+
+
+def _raw_bytes(value: str | bytes) -> bytes:
+    return value.encode("utf-8") if isinstance(value, str) else value
+
+
+def _event_transcript_chunks(event: HelperResponseEvent) -> tuple[bytes, ...]:
+    """Canonical transcript material for one runner-observed invocation."""
+
+    event.byte_count()
+    request = b"" if event.raw_request is None else _raw_bytes(event.raw_request)
+    response = _raw_bytes(event.raw_response)
+    return (
+        event.category.encode("ascii"), b"\0", b"1" if event.legal else b"0", b"\0",
+        str(len(request)).encode("ascii"), b"\0", request, b"\0",
+        str(len(response)).encode("ascii"), b"\0", response, b"\0",
+    )
 
 
 @dataclass(slots=True)
@@ -186,15 +225,16 @@ class TrialMeasurementCollector:
     _invalid_requests: int = 0
     _response_bytes: int = 0
     _first_legal: bool | None = None
+    _transcript_chunks: list[bytes] = field(default_factory=list)
 
     def observe(self, event: HelperResponseEvent) -> None:
         """Capture a raw response regardless of whether the call was legal."""
 
         byte_count = event.byte_count()
-        total_before = sum(self._calls.values())
         self._calls[event.category] += 1
         self._response_bytes += byte_count
-        if total_before == 0:
+        self._transcript_chunks.extend(_event_transcript_chunks(event))
+        if event.category == "target" and self._first_legal is None:
             self._first_legal = event.legal
         if not event.legal:
             self._invalid_requests += 1
@@ -231,6 +271,7 @@ class TrialMeasurementCollector:
             "extra_calls": max(total_calls - self.expected_calls, 0),
             "invalid_requests": self._invalid_requests,
             "response_bytes": self._response_bytes,
+            "transcript_sha256": _sha256_bytes(b"".join(self._transcript_chunks)),
             "estimated_tokens": estimated_tokens,
             "duration_seconds": time.monotonic() - self._started_monotonic,
             "timed_out": outcome == "timeout",
@@ -239,6 +280,287 @@ class TrialMeasurementCollector:
         }
         validate_trial_record(record)
         return record
+
+
+@dataclass(frozen=True, slots=True)
+class FrozenTrialTask:
+    """One condition-blind task and its evaluator-only gold rubric."""
+
+    task_id: str
+    prompt: str
+    gold_rubric: Mapping[str, Any]
+
+
+def _iter_strings(value: object) -> Sequence[str]:
+    """Return every string-bearing part of a condition-blind task material."""
+
+    if isinstance(value, str):
+        return (value,)
+    if isinstance(value, Mapping):
+        strings: list[str] = []
+        for key, nested in value.items():
+            if isinstance(key, str):
+                strings.append(key)
+            strings.extend(_iter_strings(nested))
+        return tuple(strings)
+    if isinstance(value, Sequence) and not isinstance(value, (bytes, bytearray, str)):
+        strings = []
+        for nested in value:
+            strings.extend(_iter_strings(nested))
+        return tuple(strings)
+    return ()
+
+
+def _protected_contract_terms(candidate_card: Mapping[str, Any]) -> tuple[str, ...]:
+    """Derive terms that only the candidate card may disclose to a runner.
+
+    The extractor intentionally protects operation-style identifiers (for
+    example ``find-fact-object-candidates`` and ``text_match``) plus any
+    identifiers written inside an explicit request shape such as
+    ``{text, field_paths}``.  It is conservative: an ambiguous term blocks a
+    protocol rather than allowing a comparison whose intervention is unclear.
+    """
+
+    claims = candidate_card.get("claims")
+    if not isinstance(claims, list) or not claims:
+        raise TrialMeasurementError("candidate card must contain verified claims")
+    protected: set[str] = set()
+    for claim in claims:
+        if not isinstance(claim, Mapping):
+            raise TrialMeasurementError("candidate card claim must be an object")
+        statement = _nonempty_string(claim.get("statement"), "candidate card claim statement")
+        protected.update(match.group(0) for match in _CONTRACT_IDENTIFIER.finditer(statement))
+        for braced in re.findall(r"\{([^{}]+)\}", statement):
+            protected.update(_BRACED_IDENTIFIER.findall(braced))
+    if not protected:
+        raise TrialMeasurementError("candidate card does not expose a protectable contract term")
+    return tuple(sorted(protected, key=str.casefold))
+
+
+def verify_nonleakage_protocol(
+    *,
+    tasks: Sequence[FrozenTrialTask],
+    baseline_prompt: str,
+    candidate_base_prompt: str,
+    candidate_card: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Fail closed unless the card is the sole contract-discovery intervention."""
+
+    _nonempty_string(baseline_prompt, "baseline_prompt")
+    _nonempty_string(candidate_base_prompt, "candidate_base_prompt")
+    if candidate_base_prompt != baseline_prompt:
+        raise TrialMeasurementError("baseline and candidate base prompts must be identical")
+
+    protected_terms = _protected_contract_terms(candidate_card)
+    common_material: list[tuple[str, str]] = [("baseline prompt", baseline_prompt)]
+    for task in tasks:
+        common_material.append((f"task {task.task_id} prompt", task.prompt))
+        common_material.extend(
+            (f"task {task.task_id} gold", text) for text in _iter_strings(task.gold_rubric)
+        )
+    for location, text in common_material:
+        lowered = text.casefold()
+        for term in protected_terms:
+            if term.casefold() in lowered:
+                raise TrialMeasurementError(
+                    f"non-candidate material leaks protected contract term {term!r} in {location}"
+                )
+    for task in tasks:
+        gold_text = "\n".join(_iter_strings(task.gold_rubric)).casefold()
+        if "baseline" in gold_text or "candidate" in gold_text:
+            raise TrialMeasurementError("gold rubric must remain condition-blind")
+    return {
+        "status": "passed",
+        "protected_terms": list(protected_terms),
+        "candidate_base_prompt_hash": _sha256_text(candidate_base_prompt),
+        "baseline_prompt_hash": _sha256_text(baseline_prompt),
+    }
+
+
+@dataclass(frozen=True, slots=True)
+class FrozenTrialProtocol:
+    """Protocol material written before any trial is allowed to start."""
+
+    root: SafeTrialTempRoot
+    task_package_hash: str
+    baseline_prompt_hash: str
+    candidate_card_fingerprint: str
+    protocol_path: Path
+    worker_envelopes: Mapping[tuple[str, str], WorkerEnvelope]
+    candidate_claims: tuple[ContractClaim, ...]
+
+
+def _canonical_json_bytes(value: object) -> bytes:
+    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+
+
+def freeze_trial_protocol(
+    *,
+    repository_root: Path,
+    tasks: Sequence[FrozenTrialTask],
+    baseline_prompt: str,
+    candidate_base_prompt: str | None = None,
+    candidate_claims: Sequence[ContractClaim],
+    read_current_source: Callable[[str], str],
+    allowed_operations: Sequence[str],
+    environment_metadata: Mapping[str, str],
+    environment_fingerprints: Mapping[str, str],
+    seed: int,
+    prefix: str = "ldvh-wc0071-",
+) -> FrozenTrialProtocol:
+    """Freeze the complete comparison input in a newly-created safe temp root.
+
+    The task prompt deliberately excludes the gold rubric.  The returned root
+    is the sole place this helper may materialize protocol, cards, transcripts,
+    records, analysis input, and the before/after scope manifest.
+    """
+
+    if len(tasks) != 12:
+        raise TrialMeasurementError("the frozen protocol requires exactly twelve tasks")
+    _nonempty_string(baseline_prompt, "baseline_prompt")
+    if type(seed) is not int:
+        raise TrialMeasurementError("seed must be an integer")
+    operation_set = sorted(set(allowed_operations))
+    if not operation_set or any(not isinstance(operation, str) or not operation for operation in operation_set):
+        raise TrialMeasurementError("allowed_operations must contain non-empty operation names")
+    if not environment_metadata or any(
+        not isinstance(key, str) or not key or not isinstance(value, str) or not value
+        for key, value in environment_metadata.items()
+    ):
+        raise TrialMeasurementError("environment_metadata must be a non-empty string mapping")
+    if not environment_fingerprints or any(
+        not isinstance(key, str) or not key or not isinstance(value, str) or not value
+        for key, value in environment_fingerprints.items()
+    ):
+        raise TrialMeasurementError("environment_fingerprints must be a non-empty string mapping")
+
+    task_ids: set[str] = set()
+    package_tasks: list[dict[str, str]] = []
+    gold: dict[str, Mapping[str, Any]] = {}
+    for task in tasks:
+        _nonempty_string(task.task_id, "task.task_id")
+        _nonempty_string(task.prompt, "task.prompt")
+        if task.task_id in task_ids:
+            raise TrialMeasurementError("task ids must be unique")
+        if not isinstance(task.gold_rubric, Mapping) or not task.gold_rubric:
+            raise TrialMeasurementError("task.gold_rubric must be a non-empty mapping")
+        task_ids.add(task.task_id)
+        package_tasks.append({"task_id": task.task_id, "prompt": task.prompt})
+        gold[task.task_id] = dict(task.gold_rubric)
+
+    package_tasks.sort(key=lambda task: task["task_id"])
+    task_package_hash = _sha256_bytes(_canonical_json_bytes(package_tasks))
+    candidate_card = build_prompt_card(candidate_claims, read_current_source=read_current_source)
+    preflight = verify_nonleakage_protocol(
+        tasks=tasks,
+        baseline_prompt=baseline_prompt,
+        candidate_base_prompt=baseline_prompt if candidate_base_prompt is None else candidate_base_prompt,
+        candidate_card=candidate_card,
+    )
+    root = SafeTrialTempRoot.create(prefix=prefix, repository_root=repository_root)
+    worker_envelopes = {
+        (task["task_id"], condition): _worker_envelope(
+            task_id=task["task_id"],
+            condition=condition,
+            baseline_prompt=baseline_prompt,
+            task_prompt=task["prompt"],
+            candidate_card=candidate_card,
+        )
+        for task in package_tasks
+        for condition in ("baseline", "candidate")
+    }
+    root.write_json("protocol/tasks.json", {"tasks": package_tasks, "task_package_hash": task_package_hash})
+    root.write_json("protocol/gold.json", {"gold": gold})
+    root.write_json(
+        "protocol/baseline.json",
+        {"prompt": baseline_prompt, "prompt_sha256": _sha256_text(baseline_prompt)},
+    )
+    root.write_json("protocol/candidate-card.json", candidate_card)
+    trial_order = [
+        {"task_id": task["task_id"], "condition": condition}
+        for task in package_tasks
+        for condition in ("baseline", "candidate")
+    ]
+    random.Random(seed).shuffle(trial_order)
+    protocol = {
+        "schema_version": FROZEN_PROTOCOL_SCHEMA_VERSION,
+        "task_count": len(package_tasks),
+        "conditions": ["baseline", "candidate"],
+        "task_package_hash": task_package_hash,
+        "baseline_prompt_hash": _sha256_text(baseline_prompt),
+        "candidate_card_fingerprint": candidate_card["card_fingerprint"],
+        "preflight": preflight,
+        "worker_envelopes": [
+            {
+                "task_id": envelope.task_id,
+                "condition": envelope.condition,
+                "envelope_sha256": envelope.envelope_sha256,
+            }
+            for _, envelope in sorted(worker_envelopes.items())
+        ],
+        "allowed_operations": operation_set,
+        "environment_metadata": dict(sorted(environment_metadata.items())),
+        "environment_fingerprints": dict(sorted(environment_fingerprints.items())),
+        "seed": seed,
+        "trial_order": trial_order,
+        "primary_measure": {
+            "name": "paired_first_legal_delta",
+            "definition": "candidate first_legal count minus baseline first_legal count across paired tasks",
+            "directional_signal_threshold": 1,
+            "guardrail": "all compared correct values are true and candidate terminal failures do not exceed baseline",
+            "missing_or_timeout": "no directional signal; retain only descriptive counts",
+        },
+        "claims": {
+            "not_made": [
+                "statistical significance",
+                "causal proof",
+                "product net benefit",
+            ]
+        },
+    }
+    protocol_path = root.write_json("protocol/frozen-protocol.json", protocol)
+    root.write_json("scope/before.json", {"repository_root": str(repository_root.resolve()), "changed_paths": []})
+    return FrozenTrialProtocol(
+        root=root,
+        task_package_hash=task_package_hash,
+        baseline_prompt_hash=_sha256_text(baseline_prompt),
+        candidate_card_fingerprint=candidate_card["card_fingerprint"],
+        protocol_path=protocol_path,
+        worker_envelopes=worker_envelopes,
+        candidate_claims=tuple(candidate_claims),
+    )
+
+
+def persist_trial_artifacts(
+    protocol: FrozenTrialProtocol,
+    *,
+    record: Mapping[str, Any],
+    transcript: Sequence[HelperResponseEvent],
+) -> tuple[Path, Path]:
+    """Persist one validated record and its hash-bound raw response transcript."""
+
+    validate_trial_record(record)
+    encoded_events: list[dict[str, Any]] = []
+    chunks: list[bytes] = []
+    for event in transcript:
+        event.byte_count()
+        response = _raw_bytes(event.raw_response)
+        request = None if event.raw_request is None else _raw_bytes(event.raw_request)
+        encoded_events.append(
+            {
+                "category": event.category,
+                "legal": event.legal,
+                "raw_request_utf8": None if request is None else request.decode("utf-8", errors="strict"),
+                "raw_response_utf8": response.decode("utf-8", errors="strict"),
+            }
+        )
+        chunks.extend(_event_transcript_chunks(event))
+    if record["transcript_sha256"] != _sha256_bytes(b"".join(chunks)):
+        raise TrialMeasurementError("record transcript hash does not match supplied raw transcript")
+    trial_id = _nonempty_string(record["trial_id"], "trial_id")
+    transcript_path = protocol.root.write_json(f"transcripts/{trial_id}.json", {"events": encoded_events})
+    record_path = protocol.root.write_json(f"records/{trial_id}.json", dict(record))
+    return record_path, transcript_path
 
 
 @dataclass(frozen=True, slots=True)
@@ -288,6 +610,152 @@ def build_prompt_card(
         )
     card_payload = json.dumps(rendered, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     return {"claims": rendered, "card_fingerprint": _sha256_text(card_payload)}
+
+
+@dataclass(frozen=True, slots=True)
+class WorkerEnvelope:
+    """The only immutable material a condition worker may receive."""
+
+    task_id: str
+    condition: str
+    payload: Mapping[str, Any]
+    envelope_sha256: str
+
+
+def _worker_envelope(
+    *,
+    task_id: str,
+    condition: str,
+    baseline_prompt: str,
+    task_prompt: str,
+    candidate_card: Mapping[str, Any],
+) -> WorkerEnvelope:
+    payload: dict[str, Any] = {
+        "task_id": task_id,
+        "condition": condition,
+        "instructions": baseline_prompt,
+        "task": task_prompt,
+    }
+    if condition == "candidate":
+        payload["candidate_card"] = dict(candidate_card)
+    elif condition != "baseline":
+        raise TrialMeasurementError("worker envelope condition is not recognized")
+    return WorkerEnvelope(
+        task_id=task_id,
+        condition=condition,
+        payload=payload,
+        envelope_sha256=_sha256_bytes(_canonical_json_bytes(payload)),
+    )
+
+
+def _response_is_legal(raw_response: bytes) -> bool:
+    """Derive request legality from the actual Helper response envelope."""
+
+    try:
+        decoded = json.loads(raw_response)
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        return False
+    if not isinstance(decoded, Mapping):
+        return False
+    return decoded.get("outcome") not in {"invalid_request", "rejected", "error"}
+
+
+@dataclass(slots=True)
+class RunnerOwnedTrialSession:
+    """One runner-owned session; workers cannot supply metric classifications."""
+
+    adapter: RunnerOwnedTrialAdapter
+    envelope: WorkerEnvelope
+    collector: TrialMeasurementCollector
+    transcript: list[HelperResponseEvent] = field(default_factory=list)
+
+    def invoke(
+        self,
+        operation: str,
+        request: str | bytes,
+        *,
+        dispatch: Callable[[str, bytes], str | bytes],
+    ) -> bytes:
+        """Dispatch one allowed operation and record actual request/response bytes."""
+
+        if operation not in self.adapter.allowed_operations:
+            raise TrialMeasurementError("operation is outside the frozen read-only allowlist")
+        request_bytes = _raw_bytes(request)
+        response = dispatch(operation, request_bytes)
+        if not isinstance(response, (bytes, str)):
+            raise TrialMeasurementError("runner dispatch must return actual response bytes or text")
+        response_bytes = _raw_bytes(response)
+        event = HelperResponseEvent(
+            category=self.adapter.operation_categories[operation],
+            raw_response=response_bytes,
+            legal=_response_is_legal(response_bytes),
+            raw_request=request_bytes,
+        )
+        self.collector.observe(event)
+        self.transcript.append(event)
+        return response_bytes
+
+    def finalize(self, **terminal: Any) -> tuple[dict[str, Any], tuple[HelperResponseEvent, ...]]:
+        """Return a strict record plus the exact runner-owned transcript."""
+
+        return self.collector.finalize(**terminal), tuple(self.transcript)
+
+
+@dataclass(frozen=True, slots=True)
+class RunnerOwnedTrialAdapter:
+    """Create isolated envelopes and collect only runner-observed Helper calls."""
+
+    protocol: FrozenTrialProtocol
+    read_current_source: Callable[[str], str]
+    operation_categories: Mapping[str, str]
+    runner_identity: str
+
+    def __post_init__(self) -> None:
+        _nonempty_string(self.runner_identity, "runner_identity")
+        if set(self.operation_categories) != set(self.allowed_operations):
+            raise TrialMeasurementError("runner categories must cover exactly the frozen allowlist")
+        if any(category not in _CALL_CATEGORIES for category in self.operation_categories.values()):
+            raise TrialMeasurementError("runner category is not recognized")
+
+    @property
+    def allowed_operations(self) -> tuple[str, ...]:
+        payload = json.loads(self.protocol.protocol_path.read_text(encoding="utf-8"))
+        operations = payload.get("allowed_operations")
+        if not isinstance(operations, list) or any(not isinstance(value, str) for value in operations):
+            raise TrialMeasurementError("frozen protocol allowlist is malformed")
+        return tuple(operations)
+
+    def _assert_source_current(self) -> None:
+        # Rebuild from the original immutable claims at every runner boundary.
+        build_prompt_card(self.protocol.candidate_claims, read_current_source=self.read_current_source)
+
+    def start_trial(self, *, task_id: str, condition: str, trial_id: str) -> RunnerOwnedTrialSession:
+        """Revalidate sources and return the sole permitted worker delivery package."""
+
+        self._assert_source_current()
+        try:
+            envelope = self.protocol.worker_envelopes[(task_id, condition)]
+        except KeyError as error:
+            raise TrialMeasurementError("requested task/condition has no frozen worker envelope") from error
+        payload = json.loads(self.protocol.protocol_path.read_text(encoding="utf-8"))
+        fingerprints = payload.get("environment_fingerprints")
+        if not isinstance(fingerprints, Mapping):
+            raise TrialMeasurementError("frozen protocol fingerprints are malformed")
+        rule_fingerprint = _nonempty_string(fingerprints.get("candidate_rule_source"), "candidate rule fingerprint")
+        capability_fingerprint = _nonempty_string(fingerprints.get("capability_source"), "capability fingerprint")
+        runner_fingerprint = _sha256_text(f"{self.runner_identity}\0{envelope.envelope_sha256}")
+        return RunnerOwnedTrialSession(
+            adapter=self,
+            envelope=envelope,
+            collector=TrialMeasurementCollector(
+                trial_id=trial_id,
+                task_package_hash=self.protocol.task_package_hash,
+                condition=condition,
+                runner_fingerprint=runner_fingerprint,
+                rule_fingerprint=rule_fingerprint,
+                capability_fingerprint=capability_fingerprint,
+            ),
+        )
 
 
 def _contained(path: Path, root: Path) -> bool:
