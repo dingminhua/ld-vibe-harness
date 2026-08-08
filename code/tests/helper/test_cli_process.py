@@ -34,7 +34,7 @@ def _assert_working_tree_implementation(
     assert evidence["kind"] == "implementation"
     assert evidence["locator"] == locator
     assert evidence["details"]["implementation_source_view"] == "working_tree"
-    assert evidence["details"]["git_worktree_root"].endswith("ld-vibe-harness-v4")
+    assert evidence["details"]["git_worktree_root"].endswith(PROJECT_ROOT.name)
 
 
 def test_helper_uses_repository_source_launcher() -> None:
@@ -221,7 +221,7 @@ def test_defined_operation_check_and_call_return_actual_l0_results(tmp_path: Pat
     ]
     assert len(observed_sources) == 1
     assert observed_sources[0]["details"]["rule_source_view"] == "working_tree"
-    assert observed_sources[0]["details"]["git_worktree_root"].endswith("ld-vibe-harness-v4")
+    assert observed_sources[0]["details"]["git_worktree_root"].endswith(PROJECT_ROOT.name)
     assert observed_sources[0]["details"]["responsibility_keys"]
     assert observed_sources[0]["details"]["paths"]
     assert all(
@@ -453,7 +453,7 @@ def test_specification_content_capabilities_and_l4_call_use_exact_current_source
     source = item["parts"][0]["source"]
     assert source["locator"].startswith("specs/00-理念与构成.md#L1-L")
     assert source["observed_at"]
-    assert source["details"]["git_worktree_root"].endswith("ld-vibe-harness-v4")
+    assert source["details"]["git_worktree_root"].endswith(PROJECT_ROOT.name)
     disclosure = call_response["disclosure"]["parts"]
     assert len(disclosure) == 1
     assert disclosure[0]["level"] == "L4"

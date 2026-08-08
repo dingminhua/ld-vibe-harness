@@ -92,6 +92,7 @@ def test_rule_source_location_gap_is_unavailable(monkeypatch) -> None:
 
 def test_capability_profiles_preserve_domain_result_and_compact_size(monkeypatch) -> None:
     monkeypatch.setattr("ldvh.helper.service.datetime", _FrozenDateTime)
+    monkeypatch.setattr("ldvh.governance.resolver.datetime", _FrozenDateTime)
 
     compact = handle_request("capabilities", None, json.dumps({"response_profile": "compact"})).response
     diagnostic = handle_request("capabilities", None, json.dumps({"response_profile": "diagnostic"})).response
