@@ -815,7 +815,7 @@ def _execute(
                     if replacement is None
                     else (
                         "完整 after 的结构与转换机械检查、CAS 与写后回读已通过；"
-                        f"namespace={replacement.namespace_state}, cleanup={creation_result.cleanup}"
+                        f"namespace={replacement.namespace_state}, cleanup={replacement.cleanup}"
                     )
                 ),
                 "status": "passed",
