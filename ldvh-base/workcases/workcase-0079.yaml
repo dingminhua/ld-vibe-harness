@@ -2,10 +2,11 @@ title: 简化 filesystem.py durability 状态维度
 goal: 去掉 AtomicWriteResult 中的 durability 三维值，行为保留目录 fsync 但不建模为消费方可见状态；同步更新测试断言；不影响 Windows。
 scope: code/ldvh/filesystem.py（AtomicWriteResult 类定义 + ~20 处构造位置 + 3 处 durability 赋值）与 code/tests/facts/test_atomic_write.py（~14 处断言）、code/tests/helper/ 日志消息。不修改 facts/ 应用层、Helper 业务逻辑、Web。
 status: open
-phase: executing
+phase: controller_checking
 plan_version: 1
+result_version: 1
 priority: P2
-summary: spark-0062 经两次独立审核确认 durability 维度在应用层零消费。本 WC 是其 Step 1。Gate1 已批准，进入执行。
+summary: '全部 3 items completed: durability 维度已移除（commit 5082b8b6）。进入 Controller 检查。'
 relations:
 - relation_key: related-to
   target:
@@ -23,15 +24,18 @@ work_items:
 - item_id: item-refactor-result
   goal: 重构 AtomicWriteResult：去掉 durability 维度，同步更新 filesystem.py 所有构造调用
   expected_result: filesystem.py 中无 durability 残留；目录 fsync 调用保留但状态简化
-  status: pending
+  status: completed
+  result_summary: AtomicWriteResult 重构完成：commit 5082b8b6（5 files -96/+39），durability 维度完全移除，目录 fsync 保留，import 验证通过
 - item_id: item-update-tests
   goal: 更新测试与日志：test_atomic_write.py + helper 日志消息中的 durability 引用
   expected_result: 全库测试通过；无 durability 残留引用
-  status: pending
+  status: completed
+  result_summary: 测试更新完成：test_atomic_write.py ~14处断言更新；helper 3处日志修复；全库零残留
 - item_id: item-gate-commit
   goal: 受控提交：precheck + Git Gate + 全库 integrity
   expected_result: 提交通过；check-fact-integrity complete / 0 issues
-  status: pending
+  status: completed
+  result_summary: 受控提交：precheck passed, Git Gate passed, integrity complete/0 issues
 execution_authorization:
   authorized_actions:
   - action_id: authorization-implement
@@ -105,7 +109,13 @@ change_log:
   session_id: session-20260808-closure-set
   at: '2026-08-08T21:48:44.787186+08:00'
   summary: Gate1：Human 批准进入 executing，冻结 execution_approval
+- signature:
+    agent_id: workbuddy-ai
+    host_environment: workbuddy-claw
+  session_id: session-20260808-closure-set
+  at: '2026-08-08T22:16:23.685279+08:00'
+  summary: 全部 3 items completed, phase→controller_checking
 object_id: workcase-0079
 fact_type_key: workcase
 created_at: '2026-08-08T21:39:25.951649+08:00'
-updated_at: '2026-08-08T21:48:44.787186+08:00'
+updated_at: '2026-08-08T22:16:23.685279+08:00'
