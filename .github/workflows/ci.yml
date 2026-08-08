@@ -14,8 +14,13 @@ jobs:
         with:
           python-version: '3.12'
           cache: pip
-      - name: Install dependencies
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Python dependencies
         run: pip install -r requirements-dev.txt
+      - name: Install Node dependencies (js-yaml for portability test)
+        run: npm ci --prefix web
       - name: Lint (ruff)
         run: ruff check code
       - name: Test (pytest)
@@ -31,13 +36,31 @@ jobs:
         working-directory: web
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - name: Install Python dependencies (Helper CLI)
+        run: pip install -r requirements.txt
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: npm
           cache-dependency-path: web/package-lock.json
-      - name: Install dependencies
+      - name: Install Node dependencies
         run: npm ci
+      - name: Create governed workspace fixture
+        run: |
+          mkdir -p "$RUNNER_TEMP/ldvh-workspace"
+          cat > "$RUNNER_TEMP/ldvh-workspace/LDVH-GOVERNED-PROJECTS.yaml" <<EOF
+          product_name: LD Vibe Harness
+          product_description: CI 测试管辖配置 fixture
+          projects:
+            - id: ldvh
+              path: $GITHUB_WORKSPACE
+          default_project_id: ldvh
+          EOF
+          echo "LDVH_WORKSPACE_ROOT=$RUNNER_TEMP/ldvh-workspace" >> "$GITHUB_ENV"
       - name: Type check (tsc)
         run: npm run check
       - name: Test (tsx)
