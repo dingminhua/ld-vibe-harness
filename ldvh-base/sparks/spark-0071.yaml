@@ -1,0 +1,163 @@
+title: 恒定锚点 + Helper 状态驱动提醒——WC 执行续跑的"不会忘记问路"方案
+intent: 当前 WC 中途停止的根本原因是 AI 需要记住完整执行编排才能完成所有 approved work items，但 AI 会话天然不持久、上下文可压缩、记忆不可靠。本 Spark 提出一个替代方向：AI 只需记住一个永远不能忘的动作——在特定时机访问 Helper——Helper 基于当前 WC 状态返回"你现在在什么位置、下一步该做什么"的提醒。这样编排记忆从 AI 的推理中剥出，外置到 Helper 的确定性输出中，使 AI 只需"不忘记问路"、Helper 负责"告诉它该往哪走"。
+status: open
+priority: P1
+summary: |-
+  ## 问题
+
+  现有 WC 执行续跑依赖 AI 自主遵守 34 号模板的执行循环，但 AI 仍然会在完成部分 item 后自动停下。调查表明：
+
+  - **没有任何自动续跑/调度机制**：specs 和 code 中都没有轮询、定时器、后台自动推进
+  - **`resume_from` 是字段级手动的**：它记录"恢复入口"但不授予行动权，不能自我触发——必须有外部推动力
+  - **spark-0043 续跑守卫已被否决**：WC-0042 明确否决了"把 continuation_required 持久化到 YAML、让 Code 替 AI 判断"的方案
+  - **context-recovery 已实现但不强制续跑**：它返回当前 WC 投影（含 resume_from），但需要 AI 主动进入事实消费分支才能调用，且不强制 AI 继续执行
+
+  核心矛盾：**AI 需要记住所有执行步骤才能完成 WC，但 AI 的记忆不可靠、不可持久、不可观察。**
+
+  ## 核心提案
+
+  把 AI 的"记忆负担"从"记住全部执行步骤"降为"只记住一个动作"。具体来说：
+
+  **AI 永远不能忘记的事：在特定时机访问 Helper。**
+  **Helper 永远不能忘记的事：基于当前 WC 状态返回下一步提醒。**
+
+  在每次访问中，Helper 基于刚回读的 WC 当前对象（status + phase + items + resume_from + 授权边界 + 依赖关系）返回一个结构化的"状态提醒"，包含：
+  - 当前合法 phase 和下一必经控制步骤（`next_required_control_step`，34 §5.2 已有定义）
+  - 各 item 状态（completed / in_progress with resume_from / pending / blocked）
+  - 未满足的依赖和授权边界
+  - 待回应的 feedback（如有）
+  - 距合法退出（closed / blocked / Human Gate）还有几步
+
+  AI 收到提醒后，根据自身语义判断、当前目标和来源规则决定下一步行动。Helper 不提 AI 做语义判断，不替 AI 断言完成或授权。
+
+  ### 与传统方案的区别
+
+  | 维度 | 传统思路（加字段/状态机） | 本方案（恒定锚点 + Helper 提醒） |
+  |---|---|---|
+  | 记忆负担 | AI 记住全部编排步骤 | AI 只记住"访问 Helper" |
+  | 编排逻辑 | 在 AI 推理中 | 在 Helper 确定性输出中 |
+  | 可观察性 | 靠字段投影，不直观 | Helper 返回即"执行状态快照" |
+  | 可排查性 | 需猜 AI 推理链 | 直接看 Helper 返回了什么 |
+  | 对规范的影响 | 需改 state machine / code | 现有字段已够用，新增 Helper 操作 |
+  | 与 spark-0043 否决 | 冲突（否决了持久化 continuation） | 不冲突——Helper 只提醒、不替 AI 判断 |
+
+  ## 关键设计点
+
+  ### 1. 锚点时机（AI 在哪些时点必须访问 Helper？）
+
+  候选锚点需满足"AI 必然经过"才能保证"不会忘记"。候选集：
+
+  - **T0：会话开始/恢复时**（已有 work-context-core，但可以强化提醒内容）
+  - **T1：每次 item 状态转换后**（pending→in_progress、in_progress→completed、任何→blocked）
+  - **T2：每次稳定检查点写回后**（§5.3 强制写回后）
+  - **T3：结果复核完成后**（feedback 待处置时）
+  - **T4：从 blocked 恢复时**（解阻后需要重新定位）
+  - **T5：从错误/异常恢复时**（Compaction、超时、中断后恢复）
+
+  关键问题：**哪个锚点必须由 AI 主动触发？哪个可以依赖现有 Hook 被动注入？** 没有 Hook 的环境下，锚点的可靠性取决于 AI 能否始终记得在某个动作后访问 Helper——这又回到"不忘记"的问题。
+
+  ### 2. "不忘记"的保证方式
+
+  这是本方案最难的部分。没有 Hook 时，保证 AI "不忘记"的候选方式：
+
+  - **薄 Skill 强化**：在 SKILL.md 中写成唯一一条不可绕过的规则，用"不访问 Helper 就不得继续"的措辞
+  - **模板 34 强化**：在 34 号模板的执行循环中，把"每次 item 完成后访问 Helper 获取下一步提醒"写为模板的强制步骤
+  - **Workflow 脚本编排**（spark-0066 方向）：如果执行由 Workflow 脚本接管，脚本控制流本身就是"确定性推动"，但这是 Claude Code 专有
+  - **Orca Worker 持久会话**（spark-0066 已记录）：Worker 每次被 Lead 调用时自然触发一次"问路"
+
+  需要判读：四种方式在不同环境下的可行性、可靠性和侵入性。
+
+  ### 3. Helper 提醒内容的边界（最关键的规范问题）
+
+  LDVH 的规范哲学（spark-0043 被否决直接相关）明确：**Code/Helper 不能替 AI 判断语义、授权、完成。** 因此 Helper 的"提醒"必须严格限于：
+
+  **✅ 可以说的（有界候选）：**
+  - 当前 status + phase + 各 item 状态（从 WC 直接读）
+  - 每个 `in_progress` item 的 `resume_from`（上一步停在哪儿，21 §6.4 已有）
+  - 结构上的下一必经控制步骤（`next_required_control_step`，34 §5.2 已有）
+  - 未满足的依赖（`depends_on` 关系）
+  - 待回应的 feedback 及其处置状态
+  - 距合法退出还有几步（closed？blocked？Human Gate？）
+  - 授权边界提醒（`action_ceiling`、`prohibited_actions`）
+
+  **❌ 不能说的（越界）：**
+  - "你现在应该做 item-03"（替 AI 选下一个工作项，越语义判断权）
+  - "这个 WC 已经完成了"（替 AI 断言完成，越完成判断权）
+  - "你可以跳过结果复核"（替 AI 判断授权边界）
+  - "Human 已经批准了"（Human Gate 必须由 AI 确认，不能由 Helper 断言）
+
+  **边界判读：** Helper 的"提醒"应止于"基于当前事实的结构性输出"，AI 据提醒做最终判断。这需要 06 行动模板基础规范、34 号模板、Helper 契约（04）三方确认。
+
+  ### 4. 与现有入口的关系
+
+  | 现有入口 | 时机 | 当前返回 | 与本方案的关系 |
+  |---|---|---|---|
+  | `work-context-core` | 会话开始/恢复 | 00 §8.1+§8.2 规则引导 | 可增强为"规则引导 + WC 状态提醒" |
+  | `context-recovery` | AI 进入事实消费分支 | 当前 WC 投影（含 resume_from） | 可作为"T0 锚点提醒"的载体，但需扩展提醒内容 |
+  | `read-action-template-candidates` | 动手前 | 模板候选 | 不变，独立职责 |
+  | 新 Helper 操作（待定） | 每次锚点触发 | WC 状态提醒（结构化） | 可能是本方案的核心新增操作 |
+
+  ### 5. 与 spark-0066（Workflow 编排载体）的互补
+
+  本方案与 spark-0066 不冲突，而是互补：
+
+  - **本方案**定义"AI 必须记住问路"这个永恒锚点 + "Helper 返回什么"这个提醒契约
+  - **Workflow 脚本**提供一种"即便 AI 不记得问路，也能自动推进"的确定性编排方式
+  - 两者可以共存：有 Workflow 环境时用脚本自动推进，无 Workflow 环境时靠"不忘记问路"的锚点人工续跑
+  - 关键判读：是否需要新增一个 `workflow-execution` 模板（spark-0066 的待判读点之一）来吸收本方案的锚点时机？
+
+  ## 待判断
+
+  1. **锚点时机选定**：T0-T5 中哪些是"AI 必然经过"的？哪些需要 Workflow 支持才能保证？
+  2. **"不忘记"的保证方式**：薄 Skill / 模板 34 / Workflow 脚本 / Orca Worker 四种方式各在什么环境可行？是否必须依赖其中一种？
+  3. **Helper 提醒内容的边界**：什么可以提醒、什么不可以提醒？06 和 34 是否需要修订？
+  4. **新 Helper 操作 vs 增强现有入口**：是否需要新增一个 `read-workcase-reminder` 操作，还是增强 `context-recovery` 的返回内容？
+  5. **与现有字段的关系**：当前 `resume_from`、`next_required_control_step`、`current_summary` 是否已足够支撑"提醒"的数据来源？是否需要新增字段？
+  6. **最小实证**：能否在 workcase-0078 上跑一次"Helper 返回下一步提醒 → AI 据提醒继续"的流程，验证概念可行性？
+
+  ## 边界
+
+  - 不新增事实类型，不改变现有 5 类事实对象的字段定义
+  - 不违反 spark-0043 的否决——Helper 只提醒、不替 AI 断言完成/授权
+  - 不预设必须新增 Helper 操作——可能增强 `context-recovery` 或 `work-context-core` 已够用
+  - 与 spark-0070（上下文透明性）不同：spark-0070 关注"AI 收到的提示内容不可观察"，本 Spark 关注"如何让 AI 始终能问到下一步该做什么"
+  - 与 spark-0066（Workflow 编排载体）互补：本方案定义"锚点+提醒"契约，spark-0066 定义"脚本化执行"载体
+  - 与 spark-0043（续跑守卫，已关闭）不重叠：spark-0043 讨论的是续跑守卫字段，本方案讨论的是"问路"机制
+  - 不讨论"不忘记问路"的 AI 训练层面——只讨论 LDVH 侧的规范、模板、Helper 层面对此的支持
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0070
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0066
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0043
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0050
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0045
+object_id: spark-0071
+fact_type_key: spark
+created_at: '2026-08-08T22:00:00+08:00'
+updated_at: '2026-08-08T22:00:00+08:00'
+change_log:
+- summary: 补建变更流水以支持受控提交；spark-0071 为新增 Spark（恒定锚点 + Helper 状态驱动提醒议题），事实内容由其他会话产出，此处仅补审计签名。
+  signature:
+    agent_id: workbuddy-ai
+    host_environment: workbuddy-claw
+  session_id: batch-commit-20260809-spark0071
+  at: '2026-08-08T22:00:00+08:00'
