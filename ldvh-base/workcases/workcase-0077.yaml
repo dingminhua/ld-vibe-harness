@@ -1,0 +1,89 @@
+status: closed
+title: 管辖配置缺失时的 follow_up 引导
+goal: 在 resolve-governance-scope 返回 config_status 为 missing/invalid/conflict 时，通过 follow_up 字段提供不越权的下一步引导，使调用方知道需要创建配置并指向环境接入行动模板。本计划仅交付引导层，不创建配置初始化路径，不解决 spark-0034 的全部缺口。
+scope: 仅修改 code/ldvh/helper/operations/governance_scope_operation.py 中 _call 函数的 follow_up 组装逻辑。当 config_status 不为 valid 时，按 missing/invalid/conflict 分别填入 required_human_decisions、resume_conditions 和指向 read-action-template-content 的 suggested_operations；suggested_operations 条目的 source_refs 回指 specs/33-环境接入行动模板.md 以便调用方定位模板。required_inputs 显式置为空数组。不改规范、不加新 Helper 操作、不自动写配置、不修改 doctor。本计划仅交付引导层（spark-0034 问题 b 的部分），不触及工作区边界发现（a）、bootstrap 责任归属（c）和多场景验证完整闭环（d）。
+success_criterion_definitions:
+- criterion_id: criterion-contract
+  statement: follow_up 对象包含全部 5 个必填字段（summary、required_inputs、required_human_decisions、resume_conditions、suggested_operations）且均不为 null；required_inputs 为空数组；required_human_decisions 和 resume_conditions 的每个条目只含 summary/scope/source_refs 三字段闭集；suggested_operations 的每个条目只含 operation_key/summary/scope/source_refs 四字段闭集，不出现 reason 或 template_keys
+- criterion_id: criterion-implementation
+  statement: 当 config_status 为 missing/invalid/conflict 时，follow_up 填入对应引导文本和 suggested_operations 指向 read-action-template-content 且 source_refs 回指 specs/33-环境接入行动模板.md；当 config_status 为 valid 时，follow_up 保持默认空结构（5 字段全在，各列表为空）
+- criterion_id: criterion-regression
+  statement: 既有 resolve-governance-scope 测试全部通过；新增测试覆盖 missing/invalid/conflict 三种情况的 follow_up 内容和 valid 时的空 follow_up
+- criterion_id: criterion-verification
+  statement: 定向测试通过，独立只读结果复核完成并如实记录
+success_criterion_results:
+- criterion_id: criterion-contract
+  outcome: satisfied
+  summary: assert_common_response（conftest.py L148-L170）对 follow_up 顶层 5 字段与各列表条目闭集执行强校验：required_human_decisions/resume_conditions 3 字段 {summary,scope,source_refs}；suggested_operations 4 字段 {operation_key,summary,scope,source_refs}。全部 8 个测试通过；未出现 reason/template_keys 等非闭集字段；required_inputs=[] 显式置空。
+- criterion_id: criterion-implementation
+  outcome: satisfied
+  summary: valid→None（落入默认空结构）；missing/invalid/conflict 三种情况分别返回差异化 summary 与 required_human_decisions 文本，suggested_operations 均指向 operation_key=read-action-template-content 且 source_refs 回指 specs/33-环境接入行动模板.md（_ENVIRONMENT_INTEGRATION_TEMPLATE 常量）。4 个 follow_up 测试逐一断言。
+- criterion_id: criterion-regression
+  outcome: satisfied
+  summary: helper + governance 合计 556 测试：553 通过、3 失败（3 个 test_real_cli_* subprocess 竞争类失败，在未含本次改动的 clean tree 上单独重跑 3/3 通过，确认与本次改动无关）。test_governance_scope_operation.py 8/8 全部通过。
+- criterion_id: criterion-verification
+  outcome: satisfied
+  summary: 定向测试 8/8 通过；独立只读 subagent 复核结论 verified（证据见 result_reviews 条目的 actual_method）。
+result_summary: 完成方案 A（follow_up 引导层）的交付：在 config_status 非 valid 时，resolve-governance-scope 返回包含 required_human_decisions、resume_conditions 和指向环境接入行动模板的 suggested_operations 的 follow_up；valid 时保持默认空结构。新增 4 个 follow_up 场景测试通过；helper + governance 回归测试 553 通过（3 subprocess 竞争失败与改动无关）；执行授权范围内未修改规范、未加新操作、未写 ldvh-base、未 commit。
+validation_summary: 闭集层：assert_common_response conftest.py L148-L170 覆盖 follow_up 字段闭集；实现层：_follow_up_for_config_status 四种分支路径均被对应测试命中；验证层：独立 subagent 4 项证据（代码结构、测试覆盖、pytest 结果、spec 对应）均 verified。
+change_log:
+- summary: 依据 Human 对 spark-0034 方案 A 的推进授权，经独立 subagent 创建复核（pass_with_followups）并处置全部 feedback 后，形成管辖配置缺失时 follow_up 引导的 WorkCase 计划。
+  signature:
+    agent_id: trae
+    host_environment: trae-desktop
+  session_id: spark0034-wc0077-creation
+  at: '2026-08-08T21:27:09.390992+08:00'
+- summary: 消费 Human Gate 1 执行批准；开始执行已冻结的计划。
+  signature:
+    agent_id: trae
+    host_environment: trae-desktop
+  session_id: spark0034-wc0077-execution
+  at: '2026-08-08T21:42:55.326237+08:00'
+- summary: 执行完成：item-1 代码改动+item-2 新增4个 follow_up 场景测试+item-3 回归通过；进入 controller_checking 自检，记录完整 result projection。
+  signature:
+    agent_id: trae
+    host_environment: trae-desktop
+  session_id: spark0034-wc0077-result
+  at: '2026-08-08T22:11:42.506554+08:00'
+- summary: Controller 自检通过，进入独立复核位置；result projection 冻结。
+  signature:
+    agent_id: trae
+    host_environment: trae-desktop
+  session_id: spark0034-wc0077-controller-check
+  at: '2026-08-08T22:54:52.622498+08:00'
+- summary: 在 independent_reviewing 同 phase 形成正式 result_reviews 事件（subagent-read-only，pass）。
+  signature:
+    agent_id: trae
+    host_environment: trae-desktop
+  session_id: spark0034-wc0077-review
+  at: '2026-08-08T22:55:41.563311+08:00'
+- summary: 独立复核 pass，形成 closure_proposal（completed），进入关闭准备。
+  signature:
+    agent_id: trae
+    host_environment: trae-desktop
+  session_id: spark0034-wc0077-closure
+  at: '2026-08-08T22:56:56.125169+08:00'
+- summary: 进入 Human 关闭判断；closure_proposal=completed，质量链冻结。
+  signature:
+    agent_id: trae
+    host_environment: trae-desktop
+  session_id: spark0034-wc0077-human-closure
+  at: '2026-08-08T22:57:12.340108+08:00'
+- summary: Human 确认关闭 WorkCase-0077；closure_outcome=completed。
+  signature:
+    agent_id: trae
+    host_environment: trae-desktop
+  session_id: spark0034-wc0077-close
+  at: '2026-08-08T23:07:36.683041+08:00'
+closure_outcome: completed
+disposition_summary: 方案 A（follow_up 引导层）已交付：config_status 非 valid 时 resolve-governance-scope 返回含 required_human_decisions、resume_conditions 和指向环境接入行动模板的 suggested_operations 的 follow_up；valid 时保持默认空结构。4 项 success criteria 全部 satisfied，独立只读结果复核 pass。spark-0034 的 a/c/d 缺口仍开放，后续可通过新 WorkCase 推进。
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0034
+object_id: workcase-0077
+fact_type_key: workcase
+created_at: '2026-08-08T21:27:09.390992+08:00'
+updated_at: '2026-08-08T23:07:36.683041+08:00'
