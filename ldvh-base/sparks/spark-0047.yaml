@@ -1,8 +1,14 @@
 title: 记录型授权被误判为实施授权的越权重现与阻断
-status: open
+status: implemented
 intent: 应如何让系统可机械判定并阻断：Human 仅授权创建或更新事实对象（例如建立 Spark）时，AI 却把前序背景需求推定为代码、规范、测试或 Git 提交的实施授权。
-summary: "## 问题\n\n“先记录到 Spark”只授权写入该 Spark，不授权实施、改规范、改代码、运行会改变状态的流程或创建 Git 提交。若 AI 在创建 Spark 后继续执行上述动作，即为授权范围外动作；仅靠提示词、模板、修改流水或提交署名只能追溯，不能在动作发生前可靠阻断。\n\n## 可重复的触发步骤\n\n1. 在同一会话先给出一个尚待落实的需求，例如“事实对象增加修改流水”。\n2. 随后明确限定动作：“先记录为 Spark”或“建立 Spark”，不要授权实现、规范修改、测试、暂存或提交。\n3. 创建 Spark 后，观察 AI 是否把第 1 步的背景需求与第 2 步的记录授权合并解释，继而修改代码/规范/测试或创建 Git commit。\n4. 若发生任一未被第 2 步明确允许的写入或提交，即重现越权；若系统在每个写入口拒绝缺少对应授权凭据的操作，则该轮未重现。\n\n此场景用于检验授权边界，不保证所有模型或运行环境每次都会触发相同行为。\n\n## 待研究的阻断条件\n\n每个有副作用的入口应验证不可由 AI 自行生成的、绑定 Human 原始指令的授权凭据：动作类型、目标对象/路径范围、允许副作用、有效期与撤销状态。仅含 `create_spark` 的凭据不得通过 `implement`、`update_spec`、`run_stateful_action` 或 `git_commit` 的校验；失败需留下可审计的拒绝记录。"
-priority: P1
+summary: "## 当前判断\n\n问题已由既有机制机械解决，不再作为未处置议题保留：\n\n- 21 §6.3.1/§6.3.2 状态机：WorkCase 创建初态即 `human_plan_confirming`，进入 `executing` 的唯一合法边要求 Gate1 批准并同事务写入绑定真实 Human `source_refs` 与 baseline fingerprint 的 `execution_approval`；无批准则只能 `SafeConvergenceShape` 收敛，不存在“跳过 Gate1 直接实施”的合法转换。\n- 21 §7.3 专属写入口：WorkCase 活动期写入只能走 `update-workcase`/`close-workcase`/`correct-closed-workcase`，Code 机械校验状态、版本、review 与 approval 绑定；通用 `update-fact-object` 不接受 WorkCase。\n- 30 模板 Git 提交授权：commit 必须有 Human 当前指令，或 WC `execution_authorization` 逐项列明且 `execution_approval` 有效；模板命中、测试通过、文件已修改都不授予 commit 权限。\n\n因此“先记录为 Spark”只创建事实对象、不产生任何实施或提交授权；正式实施必须经 WorkCase Gate1，而 Gate1 已被状态机机械限制。study-0027（AI 代理授权边界的行业实践调研）确认该形态与行业“授权决策外部化 + 绑定 Human 决策 + 执行点 fail-closed”等价。\n\n## 剩余边界\n\n不建立 WorkCase、也不创建 Git 提交、直接修改代码/规范/测试文件的普通直写动作没有机械执行点，属于薄 Skill 劝告级约束与事后审计范围；这是流程纪律边界而非本 Spark 所述越权形态的机械缺口。"
+disposition_summary: 已落实：记录型授权（如“先记录为 Spark”）不构成实施/规范修改/测试/提交授权，实施必须经 WorkCase Gate1 批准（21 §6.3.1/§6.3.2 状态机、§7.3 专属写入口、30 模板 commit 授权要求共同机械承接）；spark-0047 所述越权形态已被既有机制阻断，不再需要新的阻断设施。无剩余待处置内容，无 routed-to；普通文件直写属薄 Skill 劝告级约束与审计边界，不作为本议题的机械缺口继续跟踪。
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: study
+    object_id: study-0027
 change_log:
 - signature:
     agent_id: codex
@@ -16,7 +22,13 @@ change_log:
   session_id: 48bbb4c6-f2ff-4510-b63f-cebcaaa35d2e
   at: '2026-08-03T12:35:00+08:00'
   summary: 受控迁移所有既有流水，移除 signer_type。
+- signature:
+    agent_id: workbuddy-ai
+    host_environment: workbuddy-claw
+  session_id: session-20260809-spark0047-close
+  at: '2026-08-09T01:08:22.254656+08:00'
+  summary: 转 implemented：依据 study-0027 调研与 21/30 现状核对，确认 WC 状态机（Gate1 批准绑定真实 Human source_refs + baseline fingerprint、专属写入口、commit 授权要求）已机械承接“记录≠实施授权”阻断；移除 priority，写入 disposition_summary，保留并追加 change_log，不新增 routed-to。
 object_id: spark-0047
 fact_type_key: spark
 created_at: '2026-08-03T12:16:09.059675+08:00'
-updated_at: '2026-08-03T12:37:31.753656+08:00'
+updated_at: '2026-08-09T01:08:22.254656+08:00'
