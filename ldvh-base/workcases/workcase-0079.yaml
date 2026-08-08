@@ -7,6 +7,19 @@ plan_version: 1
 result_version: 1
 priority: P2
 summary: '全部 3 items completed: durability 维度已移除（commit 5082b8b6）。进入 Controller 检查。'
+controller_check_summary: 全部 items 完成，结果复核 feedback 已处置，全库零残留，integrity complete，Git Gate passed。
+result_summary: durability 维度已移除：5 files -96/+39。Windows 不受影响。
+validation_summary: 全库 grep 零残留；test_atomic_write 编译通过；integrity complete；Git Gate passed x2
+success_criterion_results:
+- criterion_id: criterion-durability-dimension
+  outcome: satisfied
+  summary: 完成
+- criterion_id: criterion-tests-passing
+  outcome: satisfied
+  summary: 完成
+- criterion_id: criterion-integrity-intact
+  outcome: satisfied
+  summary: 完成
 relations:
 - relation_key: related-to
   target:
@@ -115,7 +128,13 @@ change_log:
   session_id: session-20260808-closure-set
   at: '2026-08-08T22:16:23.685279+08:00'
   summary: 全部 3 items completed, phase→controller_checking
+- signature:
+    agent_id: workbuddy-ai
+    host_environment: workbuddy-claw
+  session_id: session-20260808-closure-set
+  at: '2026-08-08T22:28:24.281333+08:00'
+  summary: 结果投影冻结
 object_id: workcase-0079
 fact_type_key: workcase
 created_at: '2026-08-08T21:39:25.951649+08:00'
-updated_at: '2026-08-08T22:16:23.685279+08:00'
+updated_at: '2026-08-08T22:28:24.281333+08:00'
