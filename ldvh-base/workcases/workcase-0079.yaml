@@ -126,7 +126,13 @@ change_log:
   session_id: session-20260808-closure-set
   at: '2026-08-08T23:06:56.255850+08:00'
   summary: closed
+- signature:
+    agent_id: claude
+    host_environment: claude-code
+  session_id: review-wc0079-cleanup
+  at: '2026-08-08T23:59:00.000000+08:00'
+  summary: 复核后追加说明：change_log 中 22:51:31-22:53:10 的 3 条 "test" 记录与 22:58:25 的冻结记录属测试阶段占位噪声，属历史事实流水，予以保留但注明；不影响 closed 状态与 3 项 success criteria 结论。
 object_id: workcase-0079
 fact_type_key: workcase
 created_at: '2026-08-08T21:39:25.951649+08:00'
-updated_at: '2026-08-08T23:06:56.255850+08:00'
+updated_at: '2026-08-08T23:59:00.000000+08:00'
