@@ -16,47 +16,38 @@ from ldvh.filesystem import (
     remove_relative_if_equal,
 )
 
-# Tests that assert POSIX-specific durability (file_and_directory), directory
-# fsync error injection, or POSIX permission-bit modes.  On Windows the portable
-# path returns file_only durability and these assertions do not apply.
-_POSIX_ONLY = pytest.mark.skipif(os.name == "nt", reason="POSIX-specific durability or fsync behaviour")
-
+# POSIX-specific directory fsync error injection and mode tests.
+_POSIX_ONLY = pytest.mark.skipif(os.name == "nt", reason="POSIX-specific fsync behaviour")
 
 def test_atomic_write_results_only_allow_valid_commit_shapes() -> None:
     with pytest.raises(TypeError):
-        AtomicWriteResult("created", "not_committed", "unknown", "clean")  # type: ignore[call-arg]
+        AtomicWriteResult("created", "not_committed", "clean")  # type: ignore[call-arg]
     with pytest.raises(ValueError, match="committed writes require"):
         AtomicWriteResult.committed("conflict")  # type: ignore[arg-type]
     with pytest.raises(ValueError, match="not-committed writes require"):
         AtomicWriteResult.not_committed("created")  # type: ignore[arg-type]
 
-    committed = AtomicWriteResult.committed("created", sync_scope="file_and_directory")
+    committed = AtomicWriteResult.committed("created")
     not_committed = AtomicWriteResult.not_committed("conflict")
     uncertain = AtomicWriteResult.uncertain(cleanup_residue=True)
 
-    assert (committed.namespace_state, committed.durability, committed.cleanup) == (
+    assert (committed.namespace_state,
         "committed",
-        "file_and_directory",
-        "clean",
+        "clean") == (
+        "committed", "clean",
     )
-    assert (not_committed.namespace_state, not_committed.durability, not_committed.cleanup) == (
-        "not_committed",
-        "unknown",
-        "clean",
+    assert (not_committed.namespace_state, not_, not_committed.cleanup) == (
+        "not_committed", "clean",
     )
-    assert (uncertain.outcome, uncertain.namespace_state, uncertain.durability, uncertain.cleanup) == (
+    assert (uncertain.outcome, uncertain.namespace_state, uncertain.cleanup) == (
         "unavailable",
-        "uncertain",
-        "unknown",
-        "residue",
+        "uncertain", "residue",
     )
-
 
 def test_native_atomic_fact_write_support_describes_backend_availability() -> None:
     assert native_atomic_fact_writes_supported("posix") is True
     assert native_atomic_fact_writes_supported("nt") is True
     assert native_atomic_fact_writes_supported("unknown") is False
-
 
 def test_allow_file_only_override_does_not_bypass_platform_gate_on_unknown_platform(tmp_path: Path) -> None:
     """allow_file_only=True must not enable writes on platforms other than nt."""
@@ -70,18 +61,16 @@ def test_allow_file_only_override_does_not_bypass_platform_gate_on_unknown_platf
     assert result.outcome == "unavailable"
     assert result.namespace_state == "not_committed"
 
-
 @_POSIX_ONLY
-def test_posix_create_publishes_exact_bytes_and_full_durability(tmp_path: Path) -> None:
+def test_posix_create_publishes_exact_bytes(tmp_path: Path) -> None:
     result = atomic_create_relative(tmp_path, "ldvh-base/sparks/spark-0001.yaml", b"first\n")
 
     assert result.outcome == "created"
     assert result.namespace_state == "committed"
-    assert result.durability == "file_and_directory"
+    
     assert result.cleanup == "clean"
     assert (tmp_path / "ldvh-base/sparks/spark-0001.yaml").read_bytes() == b"first\n"
     assert not tuple((tmp_path / "ldvh-base/sparks").glob(".ldvh-create-*.tmp"))
-
 
 @_POSIX_ONLY
 def test_posix_create_preserves_public_fact_directory_modes(tmp_path: Path) -> None:
@@ -95,7 +84,6 @@ def test_posix_create_preserves_public_fact_directory_modes(tmp_path: Path) -> N
     assert stat.S_IMODE((tmp_path / "ldvh-base").stat().st_mode) == 0o755
     assert stat.S_IMODE((tmp_path / "ldvh-base/sparks").stat().st_mode) == 0o755
 
-
 def test_posix_create_never_overwrites_an_existing_target(tmp_path: Path) -> None:
     target = tmp_path / "ldvh-base/sparks/spark-0001.yaml"
     target.parent.mkdir(parents=True)
@@ -106,7 +94,6 @@ def test_posix_create_never_overwrites_an_existing_target(tmp_path: Path) -> Non
     assert result.outcome == "conflict"
     assert result.namespace_state == "not_committed"
     assert target.read_bytes() == b"existing\n"
-
 
 def test_create_rejects_linked_parent_without_touching_external_target(tmp_path: Path) -> None:
     outside = tmp_path / "outside"
@@ -122,7 +109,6 @@ def test_create_rejects_linked_parent_without_touching_external_target(tmp_path:
     assert result.outcome == "unavailable"
     assert result.namespace_state == "not_committed"
     assert not (outside / "sparks/spark-0001.yaml").exists()
-
 
 def test_store_rejects_symlink_counter_without_replacing_or_following_it(tmp_path: Path) -> None:
     outside = tmp_path / "outside.counter"
@@ -140,7 +126,6 @@ def test_store_rejects_symlink_counter_without_replacing_or_following_it(tmp_pat
     assert result.namespace_state == "not_committed"
     assert outside.read_bytes() == b"outside\n"
     assert counter.is_symlink()
-
 
 def test_file_sync_failure_before_create_commit_leaves_no_target(
     tmp_path: Path,
@@ -161,7 +146,6 @@ def test_file_sync_failure_before_create_commit_leaves_no_target(
     assert result.namespace_state == "not_committed"
     assert not (tmp_path / "ldvh-base/sparks/spark-0001.yaml").exists()
     assert not tuple((tmp_path / "ldvh-base/sparks").glob(".ldvh-create-*.tmp"))
-
 
 @_POSIX_ONLY
 def test_new_parent_sync_failure_happens_before_create_commit(
@@ -187,9 +171,8 @@ def test_new_parent_sync_failure_happens_before_create_commit(
     assert result.namespace_state == "not_committed"
     assert not (tmp_path / "ldvh-base/sparks/spark-0001.yaml").exists()
 
-
 @_POSIX_ONLY
-def test_directory_sync_failure_after_create_reports_committed_unknown_durability(
+def test_directory_sync_failure_after_create_reports_committed(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -207,9 +190,7 @@ def test_directory_sync_failure_after_create_reports_committed_unknown_durabilit
 
     assert result.outcome == "created"
     assert result.namespace_state == "committed"
-    assert result.durability == "unknown"
-    assert (tmp_path / "ldvh-base/sparks/spark-0001.yaml").read_bytes() == b"first\n"
-
+        assert (tmp_path / "ldvh-base/sparks/spark-0001.yaml").read_bytes() == b"first\n"
 
 @_POSIX_ONLY
 def test_create_syncs_directory_after_target_publish_and_temporary_cleanup(
@@ -242,9 +223,7 @@ def test_create_syncs_directory_after_target_publish_and_temporary_cleanup(
 
     result = atomic_create_relative(tmp_path, "ldvh-base/sparks/spark-0001.yaml", b"first\n")
 
-    assert result.durability == "file_and_directory"
     assert events == ["link", "unlink-temporary", "final-directory-fsync"]
-
 
 @_POSIX_ONLY
 def test_cleanup_failure_is_reported_after_create_commit(
@@ -268,7 +247,6 @@ def test_cleanup_failure_is_reported_after_create_commit(
     assert (tmp_path / "ldvh-base/sparks/spark-0001.yaml").read_bytes() == b"first\n"
     assert len(tuple((tmp_path / "ldvh-base/sparks").glob(".ldvh-create-*.tmp"))) == 1
 
-
 @_POSIX_ONLY
 def test_create_reconciles_a_link_that_committed_before_error_return(
     tmp_path: Path,
@@ -286,9 +264,8 @@ def test_create_reconciles_a_link_that_committed_before_error_return(
 
     assert result.outcome == "created"
     assert result.namespace_state == "committed"
-    assert result.durability == "file_and_directory"
+    
     assert (tmp_path / "ldvh-base/sparks/spark-0001.yaml").read_bytes() == b"first\n"
-
 
 @_POSIX_ONLY
 def test_store_reconciles_replace_that_committed_before_error_return(
@@ -307,9 +284,7 @@ def test_store_reconciles_replace_that_committed_before_error_return(
 
     assert result.outcome == "stored"
     assert result.namespace_state == "committed"
-    assert result.durability == "unknown"
-    assert (tmp_path / "ldvh/fact-id-allocators/sample.counter").read_bytes() == b"1\n"
-
+        assert (tmp_path / "ldvh/fact-id-allocators/sample.counter").read_bytes() == b"1\n"
 
 def test_replace_conflict_preserves_current_bytes(tmp_path: Path) -> None:
     target = tmp_path / "ldvh-base/sparks/spark-0001.yaml"
@@ -327,9 +302,8 @@ def test_replace_conflict_preserves_current_bytes(tmp_path: Path) -> None:
     assert result.namespace_state == "not_committed"
     assert target.read_bytes() == b"current\n"
 
-
 @_POSIX_ONLY
-def test_directory_sync_failure_after_replace_reports_committed_unknown_durability(
+def test_directory_sync_failure_after_replace_reports_committed(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -354,9 +328,7 @@ def test_directory_sync_failure_after_replace_reports_committed_unknown_durabili
 
     assert result.outcome == "replaced"
     assert result.namespace_state == "committed"
-    assert result.durability == "unknown"
-    assert target.read_bytes() == b"replacement\n"
-
+        assert target.read_bytes() == b"replacement\n"
 
 def test_replace_reconciles_namespace_when_replace_commits_before_error_return(
     tmp_path: Path,
@@ -382,9 +354,7 @@ def test_replace_reconciles_namespace_when_replace_commits_before_error_return(
 
     assert result.outcome == "replaced"
     assert result.namespace_state == "committed"
-    assert result.durability == "unknown"
-    assert target.read_bytes() == b"replacement\n"
-
+        assert target.read_bytes() == b"replacement\n"
 
 def test_unknown_platform_write_policy_fails_closed_before_mutation(tmp_path: Path) -> None:
     """Platforms without a native backend (not posix or approved nt) stay fail-closed."""
@@ -398,7 +368,6 @@ def test_unknown_platform_write_policy_fails_closed_before_mutation(tmp_path: Pa
     assert create.outcome == "unavailable"
     assert create.namespace_state == "not_committed"
     assert not (tmp_path / "facts").exists()
-
 
 def test_windows_candidate_create_and_replace_are_file_only_without_posix_backend(
     tmp_path: Path,
@@ -446,29 +415,28 @@ def test_windows_candidate_create_and_replace_are_file_only_without_posix_backen
         allow_file_only=True,
     )
 
-    assert (created.outcome, created.namespace_state, created.durability) == (
+    assert (created.outcome, created.namespace_state) == (
         "created",
         "committed",
         "file_only",
     )
-    assert (replaced.outcome, replaced.namespace_state, replaced.durability) == (
+    assert (replaced.outcome, replaced.namespace_state) == (
         "replaced",
         "committed",
         "file_only",
     )
-    assert (stored.outcome, stored.namespace_state, stored.durability) == (
+    assert (stored.outcome, stored.namespace_state) == (
         "stored",
         "committed",
         "file_only",
     )
-    assert (removed.outcome, removed.namespace_state, removed.durability) == (
+    assert (removed.outcome, removed.namespace_state) == (
         "removed",
         "committed",
         "file_only",
     )
     assert not (tmp_path / relative).exists()
     assert (tmp_path / "ldvh/fact-id-allocators/sample.counter").read_bytes() == b"1\n"
-
 
 def test_remove_missing_path_does_not_create_parent_directories(tmp_path: Path) -> None:
     result = remove_relative_if_equal(tmp_path, "ldvh-base/sparks/spark-0001.yaml", b"missing\n")

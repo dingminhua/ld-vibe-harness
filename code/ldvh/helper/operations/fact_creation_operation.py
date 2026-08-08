@@ -1170,7 +1170,7 @@ def _create_execute(
                 {
                     "summary": (
                         "已原子创建并回读事实对象"
-                        f"（sync_scope={creation_result.durability}, cleanup={creation_result.cleanup}）"
+                        f"（cleanup={creation_result.cleanup}）"
                     ),
                     "status": "target-created",
                     "target": layout.canonical_path(actual_id),
@@ -1181,7 +1181,7 @@ def _create_execute(
                 {
                     "check": (
                         "写后读取、派生 Schema、身份、引用和关系机械检查已通过；"
-                        f"namespace={creation_result.namespace_state}, sync_scope={creation_result.durability}, "
+                        f"namespace={creation_result.namespace_state}, cleanup={creation_result.cleanup}"
                         f"cleanup={creation_result.cleanup}"
                     ),
                     "status": "passed",

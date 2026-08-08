@@ -772,7 +772,7 @@ def _execute(
         changes=(
             {
                 "summary": (
-                    f"已原子替换并回读事实对象（sync_scope={replacement.durability}, cleanup={replacement.cleanup}）"
+                    f"已原子替换并回读事实对象（cleanup={replacement.cleanup}）"
                 ),
                 "status": "updated",
                 "target": reference.to_json(),
@@ -783,7 +783,7 @@ def _execute(
             {
                 "check": (
                     "旧内容指纹、完整目标、转换边界、原子替换和写后机械读取已通过；"
-                    f"namespace={replacement.namespace_state}, sync_scope={replacement.durability}, "
+                    f"namespace={replacement.namespace_state}, cleanup={replacement.cleanup}"
                     f"cleanup={replacement.cleanup}"
                 ),
                 "status": "passed",
