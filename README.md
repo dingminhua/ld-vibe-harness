@@ -6,6 +6,26 @@
 
 **Version: v4.0.1** — 完善阶段增量发布。能力结构已建立，部分功能仍在收敛中，完善阶段将持续推进并在后续版本收敛稳定保证。
 
+## 更新日志
+
+### v4.0.1 - 2026-08-08
+
+> 完善阶段增量发布：补强发布治理、工程验证与度量基础设施，无破坏性变更。
+
+**Added**
+- 新增 GitHub Actions CI 工作流：push/PR 自动运行 Python 测试与 lint、Web 类型检查/测试/构建。
+- 新增 `release` 提交类型与发布纪律契约（03 §9.10）：版本号、tag、CHANGELOG、发布授权边界与部署件变更标注。
+- 扩展可审计的试验测量基础设施与事实变更度量。
+
+**Changed**
+- 提交契约 footer 闭集补齐 `Platform-Affected` / `Platform-Verified`（与既有验证规则对齐）。
+- 版本声明统一为 `v4.0.0`（对齐既有 tag），修复 `web/package-lock.json` 版本漂移。
+
+**Fixed**
+- 修复既有测试 lint 问题（8 处：未用 import、`zip` 缺 `strict=`、超长行）。
+
+完整历史见 [CHANGELOG.md](CHANGELOG.md)，发布见 [GitHub Releases](https://github.com/dingminhua/ld-vibe-harness/releases)。
+
 LDVH 以**环境 Skill（薄 Skill）**的身份部署到 AI 开发环境（如 Claude Code、Codex、Cindy、Trae 等），通过一个轻量路由文件将落入 LDVH 领域的工作引导至仓库中的 Helper CLI。**它是 AI 开发环境的"插件"而非独立运行的程序**——你不需要安装或启动任何服务，只需在 AI 环境启用 LDVH Skill，AI 便会自动按规则引导你完成受控操作。
 
 LDVH 以 AI 执行者为第一服务对象，帮助 AI 在长期项目中保持**判断有据、行动可续、结果可验**；同时直接服务 Human，使决策提请清晰可决、授权执行受控可续、入档闭环节点可验，并让项目演进脉络可循。积累效用如何直观可见仍是当前明确待加强的能力，不因事实对象、提交或页面存在就宣称已经实现。
