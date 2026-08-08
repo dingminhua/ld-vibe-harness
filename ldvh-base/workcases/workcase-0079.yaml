@@ -2,10 +2,10 @@ title: 简化 filesystem.py durability 状态维度
 goal: 去掉 AtomicWriteResult 中的 durability 三维值，行为保留目录 fsync 但不建模为消费方可见状态；同步更新测试断言；不影响 Windows。
 scope: code/ldvh/filesystem.py（AtomicWriteResult 类定义 + ~20 处构造位置 + 3 处 durability 赋值）与 code/tests/facts/test_atomic_write.py（~14 处断言）、code/tests/helper/ 日志消息。不修改 facts/ 应用层、Helper 业务逻辑、Web。
 status: open
-phase: human_plan_confirming
+phase: executing
 plan_version: 1
 priority: P2
-summary: spark-0062 经两次独立审核确认 durability 维度在应用层零消费。本 WC 是其 Step 1：去掉耐久性状态维度，行为保留。独立 subagent 创建复核已通过。
+summary: spark-0062 经两次独立审核确认 durability 维度在应用层零消费。本 WC 是其 Step 1。Gate1 已批准，进入执行。
 relations:
 - relation_key: related-to
   target:
@@ -72,6 +72,13 @@ execution_authorization:
   allowed_adjustments: 在不改变 goal/scope/criteria 的前提下调整具体实现方式或测试断言措辞
   verification_and_rollback: 每项 item 完成后须通过全库 Python 测试；写后须校验 check-fact-integrity complete；Git Gate 须 passed；异常时 git revert 回滚
   out_of_bounds_handling: 发现未授权动作：立即停止执行，取消受影响 item，保留当前状态返回 Human 决定
+execution_approval:
+  baseline_fingerprint: 5025ea1838e908a5a68c713f5397cd8cb4996c5caa8bf4b6e2240f5b9a637109
+  approved_at: '2026-08-08T21:44:00+08:00'
+  subject_version: 1
+  summary: Human 已批准 workcase-0079 plan v1
+  source_refs:
+  - session 2026-08-08 Human Gate1 approval
 creation_reviews:
 - reviewer: wc0079-creation-review
   reviewed_at: '2026-08-08T21:38:00+08:00'
@@ -85,7 +92,6 @@ creation_reviews:
   controller_resolution: 全部 feedback 已处置——无修改建议；方案按 Plan v1 提交 Gate1
   covered_quality_gate_ids:
   - independent-result-review
-waiting_on: Human Gate1 审查计划并批准执行
 change_log:
 - signature:
     agent_id: workbuddy-ai
@@ -93,7 +99,13 @@ change_log:
   session_id: session-20260808-closure-set
   at: '2026-08-08T21:39:25.951649+08:00'
   summary: 受控创建：承接 spark-0062 Step 1（简化 durability 维度），含独立 subagent 创建复核。范围限于 filesystem.py + 测试，应用层/Windows 不受影响。
+- signature:
+    agent_id: workbuddy-ai
+    host_environment: workbuddy-claw
+  session_id: session-20260808-closure-set
+  at: '2026-08-08T21:48:44.787186+08:00'
+  summary: Gate1：Human 批准进入 executing，冻结 execution_approval
 object_id: workcase-0079
 fact_type_key: workcase
 created_at: '2026-08-08T21:39:25.951649+08:00'
-updated_at: '2026-08-08T21:39:25.951649+08:00'
+updated_at: '2026-08-08T21:48:44.787186+08:00'
