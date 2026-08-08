@@ -29,11 +29,11 @@ test('changelog includes and classifies local-only and upstream-only commits', a
   const other = path.join(root, 'other')
   const remote = path.join(root, 'remote.git')
   fs.mkdirSync(local)
-  git(local, ['init', '--quiet'])
+  git(local, ['init', '--quiet', '--initial-branch=main'])
   configureIdentity(local)
   commitFile(local, 'base.txt', 'base\n', 'chore: shared base')
   git(local, ['branch', '-M', 'main'])
-  execFileSync('git', ['init', '--bare', '--quiet', remote])
+  execFileSync('git', ['init', '--bare', '--quiet', '--initial-branch=main', remote])
   git(local, ['remote', 'add', 'origin', remote])
   git(local, ['push', '--quiet', '--set-upstream', 'origin', 'main'])
 
