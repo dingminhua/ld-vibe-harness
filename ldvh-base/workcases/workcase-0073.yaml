@@ -1,0 +1,108 @@
+status: closed
+title: 补足 F2 text_match 的运行时输入示例
+goal: 在不改变 F2 检索语义、默认筛选、关系导航或事实持久化的前提下，让通用 capabilities 发现展示由当前来源定义的 text_match 嵌套输入片段，使首次调用者能够构造该现有能力的字段形状。
+scope: 仅覆盖 find-fact-object-candidates 的 F2 text_match 输入发现：为 capabilities.result.operations[] 定义并实现受限 input_examples 字段、提供该操作的来源回指输入片段，并以契约与查询测试验证。覆盖 specs/05-事实模型基础规范.md、specs/attachments/04.Att.01-Helper CLI 请求与响应字段表.md、code/ldvh/helper/operation_runtime.py、code/ldvh/helper/service.py、code/ldvh/helper/operations/fact_candidate_operation.py 与对应 tests。排除关系导航、prepare-fact-object-draft 约束展示、检索 parser/匹配语义/默认状态修改、事实持久化、Worker 试验、外部操作和 Git commit。
+success_criterion_definitions:
+- criterion_id: criterion-source-contract
+  statement: 04.Att.01 将 operations[] 的 input_examples 作为字段闭集正式定义；05 只定义 find-fact-object-candidates 的 text_match 可公开输入片段及其边界，且不产生第二套领域参数权威。
+- criterion_id: criterion-discovery-example
+  statement: 通用 ./ldvh capabilities 的 find-fact-object-candidates 条目返回一个带 summary、arguments_fragment、source_refs、composition_note 的 input_examples 项；该片段展示 F2、spark 类型与 text_match.text/field_paths 嵌套形状，并明确仍须补齐当前项目和其他必填输入。
+- criterion_id: criterion-regression-validation
+  statement: 所有无示例 operation 的 input_examples 为 []；compact 与 diagnostic 的领域结果一致；将片段补齐真实 governed_project_id 后可成功调用候选发现，既有 F2 text_match 解析和查询回归仍通过。
+success_criterion_results:
+- criterion_id: criterion-source-contract
+  outcome: satisfied
+  summary: 04.Att.01 已将 operations[].input_examples 定义为共同闭集，并规定四个成员、来源回指及可组合而非完整请求的边界；05 §11.5 仅定义 candidate operation 的 text_match 片段及其组合要求。
+- criterion_id: criterion-discovery-example
+  outcome: satisfied
+  summary: 通用 capabilities 实测显示 find-fact-object-candidates 具有唯一示例，包含 summary、arguments_fragment、source_refs、composition_note，展示 F2、spark 和嵌套 text_match 形状，并明确仍须补入实际 governed_project_id。
+- criterion_id: criterion-regression-validation
+  outcome: satisfied
+  summary: service 与 candidate operation 定向 pytest 共 44 项通过；compact 与 diagnostic 结果一致，其他 operation 的 input_examples 均为空；测试将发现片段补齐 sample 项目后成功命中 Spark，CLI 对 ldvh 项目查询返回 ok。
+result_summary: 已为 find-fact-object-candidates 的 F2 text_match 补足运行时可发现的来源绑定输入片段：capabilities 公开共同 input_examples 闭集，候选发现提供唯一 Spark/title 示例，调用者补入实际项目后即可调用；检索、默认状态、关系导航和事实持久化均未改变。
+validation_summary: PYTHONPATH=code .venv/bin/python -m pytest -q code/tests/helper/test_service.py code/tests/helper/test_fact_candidate_operation.py 通过（44 项）；ruff check 通过；./ldvh capabilities 确认候选操作一个示例、其他操作空数组；补齐 governed_project_id 的 ./ldvh call find-fact-object-candidates 返回 ok；git diff --check 通过。未运行全量测试、Web 或 Git commit，均不在本 WorkCase 范围内。
+change_log:
+- summary: 依据 Human 对 Spark-0067 直接推进的授权，形成只解决 F2 text_match 嵌套输入可发现性的 WorkCase 初始计划，并吸收独立方案审查的收紧意见。
+  signature:
+    agent_id: codex
+    host_environment: codex-desktop
+  session_id: spark0067-wc0073-creation
+  at: '2026-08-08T15:19:48.489418+08:00'
+- summary: 消费 Human Gate 1 批准，进入 executing 并开始受控执行。
+  signature:
+    agent_id: codex
+    host_environment: codex-desktop
+  session_id: spark0067-wc0073-gate1
+  at: '2026-08-08T15:24:32.271175+08:00'
+- summary: 开始 item-source-contract：定义 capabilities input_examples 与 text_match 输入片段的来源契约。
+  signature:
+    agent_id: codex
+    host_environment: codex-desktop
+  session_id: spark0067-wc0073-item-source-contract
+  at: '2026-08-08T15:24:58.321621+08:00'
+- summary: 完成 item-source-contract：公共 input_examples 闭集与 text_match 可组合输入片段的来源边界已写入两份列明规范；开始 item-capability-implementation。
+  signature:
+    agent_id: codex
+    host_environment: codex-desktop
+  session_id: spark0067-wc0073-item-capability-implementation
+  at: '2026-08-08T15:28:15.683053+08:00'
+- summary: 完成 item-capability-implementation：runtime、service 与 candidate operation 已按来源绑定输出唯一 text_match 可组合片段；开始 item-contract-tests。
+  signature:
+    agent_id: codex
+    host_environment: codex-desktop
+  session_id: spark0067-wc0073-item-contract-tests
+  at: '2026-08-08T15:32:14.676956+08:00'
+- summary: 全部执行 work item 已完成，形成 result_version=1 的完整结果投影并进入 controller_checking。
+  signature:
+    agent_id: codex
+    host_environment: codex-desktop
+  session_id: spark0067-wc0073-controller-check
+  at: '2026-08-08T15:35:42.484707+08:00'
+- summary: 完整 result_version=1 已回读并通过完整性审计，进入 independent_reviewing，等待独立只读结果复核。
+  signature:
+    agent_id: codex
+    host_environment: codex-desktop
+  session_id: spark0067-wc0073-independent-review
+  at: '2026-08-08T15:36:08.819155+08:00'
+- summary: 独立只读结果复核已对 result_version=1 给出 pass；保留 independent_reviewing 以完成复核登记与回读。
+  signature:
+    agent_id: codex
+    host_environment: codex-desktop
+  session_id: spark0067-wc0073-result-review-recorded
+  at: '2026-08-08T15:52:38.164755+08:00'
+- summary: result_version=1 的独立结果复核已回读且无 feedback，进入 closure_preparing。
+  signature:
+    agent_id: codex
+    host_environment: codex-desktop
+  session_id: spark0067-wc0073-closure-preparing
+  at: '2026-08-08T15:53:04.155310+08:00'
+- summary: 完成终态保留审查并在 closure_preparing 形成 completed 关闭提案；原 scope 无剩余责任。
+  signature:
+    agent_id: codex
+    host_environment: codex-desktop
+  session_id: spark0067-wc0073-closure-proposal
+  at: '2026-08-08T15:54:49.082007+08:00'
+- summary: 完整关闭提案已回读并通过完整性审计，进入 human_closure_confirming 等待 Human Gate 2。
+  signature:
+    agent_id: codex
+    host_environment: codex-desktop
+  session_id: spark0067-wc0073-gate2-waiting
+  at: '2026-08-08T15:55:12.455700+08:00'
+- summary: 消费 Human Gate 2 批准，以 completed 关闭 WorkCase-0073。
+  signature:
+    agent_id: codex
+    host_environment: codex-desktop
+  session_id: spark0067-wc0073-gate2-close
+  at: '2026-08-08T15:57:57.849498+08:00'
+closure_outcome: completed
+disposition_summary: 已在原 scope 内完成 F2 text_match 运行时输入可发现性整改：共同 input_examples 契约、唯一来源绑定片段和定向回归均已交付并经独立只读复核通过。原 scope 内没有未满足或未验证责任，不需要路由、Spark 建议或 accepted-stop；Git commit 明确排除，现有未提交差异保留供 Human 后续处理。
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0067
+object_id: workcase-0073
+fact_type_key: workcase
+created_at: '2026-08-08T15:19:48.489418+08:00'
+updated_at: '2026-08-08T15:57:57.849498+08:00'

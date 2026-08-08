@@ -511,6 +511,39 @@ def test_f2_workcase_text_match_uses_only_the_current_direct_text_field_closure(
     assert "F2 投影之外" in forbidden["gaps"][0]["summary"]
 
 
+def test_discovery_text_match_fragment_combines_with_an_actual_governed_project(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    spark_id = _create(workspace, project, "spark", _spark("Nested text matching is discoverable"))
+    discovery = handle_request("capabilities", None, "").response
+    operation = next(
+        item for item in discovery["result"]["operations"] if item["operation_key"] == "find-fact-object-candidates"
+    )
+    fragment = operation["input_examples"][0]["arguments_fragment"]
+
+    response = handle_request(
+        "call",
+        "find-fact-object-candidates",
+        json.dumps(
+            {
+                "work_object_locators": [str(project)],
+                "arguments": {
+                    "workspace_root": str(workspace),
+                    "governed_project_id": "sample",
+                    **fragment,
+                },
+            }
+        ),
+    ).response
+
+    assert response["outcome"] == "ok"
+    assert [card["fact_ref"]["object_id"] for card in response["result"]["cards"]] == [spark_id]
+    assert response["result"]["cards"][0]["match_reasons"][-1] == {
+        "kind": "field-text",
+        "field_path": "title",
+        "matched_text": "text",
+    }
+
+
 def test_f2_uses_pitfall_authoritative_fields_without_tags_or_scores(tmp_path: Path) -> None:
     workspace, project = _fixture(tmp_path)
     _create(workspace, project, "pitfall", _pitfall())

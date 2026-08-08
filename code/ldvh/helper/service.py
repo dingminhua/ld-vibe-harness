@@ -210,6 +210,7 @@ def _operation_item(
         "effect": declaration.effect,
         "required_inputs": [] if implementation is None else list(implementation.required_inputs),
         "optional_inputs": [] if implementation is None else list(implementation.optional_inputs),
+        "input_examples": [] if implementation is None else list(implementation.input_examples),
         "implementation": {
             "present": implementation is not None,
             "evidence": [] if implementation is None else list(implementation.evidence),

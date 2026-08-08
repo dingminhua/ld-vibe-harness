@@ -429,15 +429,17 @@ test('progressing cards show only goal and current situation facts', () => {
   assert.doesNotMatch(content, /progressHistory|roundLabel|workcaseRound/);
 });
 
-test('list ordering follows updated time and never groups WorkCases by progress position', () => {
+test('list ordering defaults to updated time and supports object-ID ordering without grouping WorkCases by progress position', () => {
   const list = source('src/pages/ObjectList.tsx');
   const start = list.indexOf('function sortObjectsForList');
   const end = list.indexOf('function sparkViewItem', start);
   const sorting = list.slice(start, end);
 
   assert.ok(start >= 0 && end > start);
-  assert.match(sorting, /Date\.parse\(b\.updated/);
-  assert.match(sorting, /a\.id\.localeCompare\(b\.id\)/);
+  assert.match(sorting, /Date\.parse\(a\.updated/);
+  assert.match(sorting, /sort === 'id_desc'/);
+  assert.match(sorting, /b\.id\.localeCompare\(a\.id\)/);
+  assert.doesNotMatch(sorting, /id_asc|updated_asc/);
   assert.doesNotMatch(sorting, /progress_group|progress_step|PROGRESS_GROUP_INDEX|PROGRESS_STEP_INDEX/);
 });
 

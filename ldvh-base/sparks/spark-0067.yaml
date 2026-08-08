@@ -2,108 +2,7 @@ title: 优化 LDVH：从价值审计到精简方案
 status: open
 priority: P0
 intent: LDVH 已完成五类事实对象、Helper CLI、Git Gate、Web 认知中心和薄 Skill 路由的全面实现，但规范 00 自身承认 HV4「积累效用直观可见」尚未达成，且代码/规范体量与事实对象规模之间存在显著的投产比张力。本议题需要系统回答：(1) 当前各组件中哪些是过度工程化的？(2) 哪些价值维度仍是空白或薄弱的？(3) 优化方向与优先级如何形成？
-summary: |-
-  ## 方向
-
-  Web 是 Human 的导航层。优化目标：降低 AI 已知任务后的「任务 → 关联事实」定位摩擦（V1 加强）。
-
-  ## 渐进式披露模型分析
-
-  回溯 spec 00 §8.1：F1（最小入口，不无差别恢复事实）→ F2（基于当前目标缩小候选范围）→ read（深读展开）。模型本身正确。
-
-  裂缝：规范 00 §8.1 给了方向（"基于当前目标缩小范围"），但没给 F2 的最小语义匹配契约；同时又说"不预设自动语义检索"。F2 实现层做了保守选择——status 过滤 + 可选的 text_match 参数，但 text_match 缺乏可发现性。
-
-  ## 缺陷清单（13 个）
-
-  ### 缺陷 1（根因）：F2 语义匹配契约缺失，text_match 能力不可发现
-  场景：AI 在典型调用中只传 status 过滤，不传 text_match。F2 实现（fact_candidate_operation.py:427-473）确实有 text_match 内容匹配能力，但 capabilities/文档未暴露此参数。后果：62 张卡片全 default-status 匹配，等同于无筛选。方向：改善 text_match 的可发现性（capabilities 暴露参数 + 最小示例），再评估是否需加强匹配逻辑本身。
-
-  ### 缺陷 2：关联对象覆盖关系不透明
-  场景（spark-0019）：有 P1/P2 规划 + 4 个已关闭 WorkCase，但无法快速判断「还剩什么没做」。方向：读 Spark 时附带关联 WorkCase title + disposition；识别覆盖映射。
-
-  ### 缺陷 3：无反向关系查询
-  场景：adr-0001 被哪些对象引用？Helper 无此操作，只能 grep。数据：adr-0001 仅 2 个 inbound 引用。方向：新增反向查询；或读取时附带反向引用列表。
-
-  ### 缺陷 4（根因）：关系图稀疏
-  场景：148 个非 Study 对象中 46% 有 relations，avg 1.7 条/对象。ADR 8/8（100%）零关系，Pitfall 7/7（100%）零关系——引用价值最高的对象最孤立。方向：引导建立更多关联；自动关联建议。
-
-  ### 缺陷 5：参数发现需额外往返
-  场景：AI 猜参数名 → invalid_request → 读 gaps → 重试。数据：study-0023 确认 12 次调用中 5 次 invalid_request 涉及参数。方向：capabilities 附带最小合法请求示例。
-
-  ### 缺陷 6：Study 消费格式断裂
-  场景：Study 是 Markdown + frontmatter，其他四类纯 YAML。数据：典型 body 2,600–8,400 字符。方向：F2 卡片附带 abstract；frontmatter 增加关键词。
-
-  ### 缺陷 7：上下文膨胀
-  场景（spark-0019 + 4 WorkCases）：单次跨类型查询 54KB。方向：关联对象默认只返回摘要，按需展开全文。
-
-  ### 缺陷 8：草案不暴露字段值约束
-  场景：prepare-fact-object-draft 不返回合法值闭集（如 priority 必须是 P0–P3）。方向：draft 内联合法值闭集。
-
-  ### 缺陷 9（根因）：无增量变化感知
-  场景：manifest 的 object_set_fingerprint 证明「变了」但证明不了「什么变了」。方向：manifest 增加 per-object 指纹列表；或新增 changed_since 查询。
-
-  ### 缺陷 10：受控更新路径过重，催生绕过行为
-  场景：spark-0067 本次会话更新 9 次，summary 3000+ 字符 YAML 多行字符串。Edit 工具在 YAML quoted string 上反复失败，只能整文件 Write 绕过 Helper。方向：频繁迭代对象提供轻量更新路径；长文本字段独立文件存储。
-
-  ### 缺陷 11：所有写入都是全量替换，无增量更新路径
-  场景：update-fact-object 要求 fact_ref + fingerprint + 全量 fact_object。改一个字段也要 3 步。方向：区分严格审计和允许迭代的对象。
-
-  ### 缺陷 12：规范源消费摩擦未被覆盖（审核补充）
-  场景：study-0023 记录创建单个 Spark 需穿越 7 份规范 + 23 条 Stop Conditions。spec 00 §8.1 的渐进式披露覆盖规则源和事实源两者，但当前分析聚焦事实源。规范本身的密度是否造成了额外的 AI 消费负担？这是故意划定的分析边界，但作为盲区需记录。
-
-  ### 缺陷 13：F2 的 text_match 能力未被利用（审核补充）
-  场景：F2 实现已支持 text_match 参数（基于 _F2_SEARCH_FIELDS 的全文搜索），但 AI 在典型调用中不使用。根因不是「F2 没有内容匹配」，而是「AI 不知道可以使用 text_match」。这说明参数可发现性问题（缺陷 5）的后果比预想的更严重——不仅造成 invalid_request 往返，还导致已有的能力被闲置。
-
-  ## 操作摩擦横切分析
-
-  缺陷 10（编辑粒度）和 11（全量替换）指向同一横切问题：当前设计把所有操作推到正确性一端，迭代场景的负担与其价值不成比例。
-
-  ## 缺陷归因
-
-  三个根因（缺陷 1、4、9），优先级：
-
-  1. **F2 语义匹配契约缺失（P0）**：规范未定义最小语义匹配契约，text_match 虽有实现但不可发现。这是所有 AI 消费路径的入口瓶颈。
-
-  2. **关系图稀疏（P0-）**：ADR 和 Pitfall 这两个引用价值最高的类型 100% 零关系。即使 F2 的 text_match 被全面使用，没有关系边也找不到关联事实。审核建议从 P1 升到 P0-（与 F2 并行但稍低优先）。
-
-  3. **无增量感知（P1）**：独立机制，F2 没好时收益打折。
-
-  缺陷 12/13 是独立审核发现的两项遗漏，分别指向规范消费负担和能力可发现性盲区。
-
-  ## 独立审核记录（2026-08-07）
-
-  Explore-2 子代理对 spark-0067 进行了独立审核，评级 B+/A-。以下修正已纳入：
-
-  - 缺陷 1 的表述从「F2 无语义筛选」修正为「F2 语义匹配契约缺失，text_match 能力不可发现」——Code 层确实有 text_match 实现，问题是可发现性
-  - 关系图优先级从 P1 上调至 P0-——ADR/Pitfall 100% 零关系的发现强化了其紧迫性
-  - 新增缺陷 12（规范源消费摩擦）和缺陷 13（text_match 能力闲置）
-  - 「主题重叠但无连接」的观察修正：spark-0055 和 spark-0019 之间确实有一条 relation，原先表述略有夸大
-
-  ## 开放观察（不定性，待验证）
-
-  ### 观察 1：事实类型体系缺少对「对象可变性」的区分
-  （内容不变，略）
-
-  ### 观察 2：全量扫描发现的横切模式
-  - ADR 8/8（100%）零关系。Pitfall 7/7（100%）零关系。WorkCase 36/66（55%）零关系。
-  - 37 个 open Spark 中 8 个 ≥13 天未更新，没有活跃度区分机制。
-  - spark-0053、0055、0019、0067 关注相近问题（复杂度/优化/摩擦），但联系稀疏。
-
-  ## 规范链审查发现（2026-08-07）
-
-  Explore-1 子代理审查确认：20 个规范 + 12 个附件的结构引用全闭环。内容一致性无矛盾。一个缺口：规范 00 的 YAML 中缺少 spec_key 字段，"ldvh-root" 由 01.Att.02 单方面赋予。建议在 00 的 YAML 或正文中显式声明。
-
-  ## 工作原则
-
-  所有解决方案在采纳前必须经规范 00 的 V1-V8 / HV1-HV5 价值审查。缺陷发现阶段不受此约束。
-
-  ## 未决事项
-
-  1. F2 改进方向：先暴露 text_match（低代价），还是同时加强匹配逻辑？
-  2. 关系图稀疏靠流程约束还是工具辅助？
-  3. 规范源消费摩擦（缺陷 12）是否值得单独深挖？
-  4. 「对象可变性」是否需要独立定性为设计问题？
-  5. HV4 等宏观问题何时纳入？
+summary: "## 当前行动重基线（优先于下方历史缺陷清单）\n\n目标仍是直接解决 Spark-0067 的优化问题。Spark-0068 已被 Human 指示结束为历史校准材料；它只能提供反证和边界，不能再作为路线图、优先级来源或 WorkCase 派生入口。当前工作区和 Git 历史均未找到曾被提及的 `docs/ldvh-optimization-plan-v1.md`，故本次重基线以本 Spark、当前规则与实现为依据。\n\n### 可直接交付\n\n- **缺陷 1、5、13（合并）**：现有 F2 `text_match` 与关系导航能力存在，但运行时只暴露参数名不足以使首次调用形成合法嵌套对象。应以最小、来源可派生的合法请求示例补足能力发现；不改变匹配语义、默认筛选或召回模型。\n- **缺陷 8（受限纳入）**：`prepare-fact-object-draft` 已有 `constraint_ref`。只在能由当前规则唯一派生、且不复制第二套 schema 的范围内补充常用闭集值或最小合法对象形状；否则保留精确规则入口。\n\n### 需要独立设计判断\n\n- **缺陷 2**：反向关系导航已存在；“还剩什么没做”需要语义覆盖模型，不能由机械关系边直接推导。\n- **缺陷 9**：集合指纹不能定位变化对象的缺口成立，但 per-object manifest 与 `changed_since` 的选择、成本与使用频率尚未判断。\n\n### 暂缓，不以当前材料立项\n\n- **缺陷 4、7、10、11、12**：关系稀疏、响应成本、更新绕过因果、全量 after 成本和规范消费摩擦均缺少能支持具体改动的稳定证据；其中完整 after/CAS 仍是既有正确性边界。\n\n### 撤销或并入\n\n- **缺陷 3**：`relation_targets`、`relation_source_refs` 与 `relation_keys` 已提供反向/正向关系导航，不再作为独立缺口。\n- **缺陷 6**：Study F2 已有 `abstract`，Markdown 与 frontmatter 的混合承载不是格式断裂。\n- **缺陷 13**：并入缺陷 1、5，不单独立项。\n\n下一项只应是一个小而可验证的直接交付：改善现有请求与草案契约的首次可发现性。它必须以当前来源为唯一真相、配套契约测试，并不依赖隔离 worker 或合成收益实验。\n\n---\n\n## 历史原始分析\n\n## 方向\n\nWeb 是 Human 的导航层。优化目标：降低 AI 已知任务后的「任务 → 关联事实」定位摩擦（V1 加强）。\n\n## 渐进式披露模型分析\n\n回溯 spec 00 §8.1：F1（最小入口，不无差别恢复事实）→ F2（基于当前目标缩小候选范围）→ read（深读展开）。模型本身正确。\n\n裂缝：规范 00 §8.1 给了方向（\"基于当前目标缩小范围\"），但没给 F2 的最小语义匹配契约；同时又说\"不预设自动语义检索\"。F2 实现层做了保守选择——status 过滤 + 可选的 text_match 参数，但 text_match 缺乏可发现性。\n\n## 缺陷清单（13 个）\n\n### 缺陷 1（根因）：F2 语义匹配契约缺失，text_match 能力不可发现\n场景：AI 在典型调用中只传 status 过滤，不传 text_match。F2 实现（fact_candidate_operation.py:427-473）确实有 text_match 内容匹配能力，但 capabilities/文档未暴露此参数。后果：62 张卡片全 default-status 匹配，等同于无筛选。方向：改善 text_match 的可发现性（capabilities 暴露参数 + 最小示例），再评估是否需加强匹配逻辑本身。\n\n### 缺陷 2：关联对象覆盖关系不透明\n场景（spark-0019）：有 P1/P2 规划 + 4 个已关闭 WorkCase，但无法快速判断「还剩什么没做」。方向：读 Spark 时附带关联 WorkCase title + disposition；识别覆盖映射。\n\n### 缺陷 3：无反向关系查询\n场景：adr-0001 被哪些对象引用？Helper 无此操作，只能 grep。数据：adr-0001 仅 2 个 inbound 引用。方向：新增反向查询；或读取时附带反向引用列表。\n\n### 缺陷 4（根因）：关系图稀疏\n场景：148 个非 Study 对象中 46% 有 relations，avg 1.7 条/对象。ADR 8/8（100%）零关系，Pitfall 7/7（100%）零关系——引用价值最高的对象最孤立。方向：引导建立更多关联；自动关联建议。\n\n### 缺陷 5：参数发现需额外往返\n场景：AI 猜参数名 → invalid_request → 读 gaps → 重试。数据：study-0023 确认 12 次调用中 5 次 invalid_request 涉及参数。方向：capabilities 附带最小合法请求示例。\n\n### 缺陷 6：Study 消费格式断裂\n场景：Study 是 Markdown + frontmatter，其他四类纯 YAML。数据：典型 body 2,600–8,400 字符。方向：F2 卡片附带 abstract；frontmatter 增加关键词。\n\n### 缺陷 7：上下文膨胀\n场景（spark-0019 + 4 WorkCases）：单次跨类型查询 54KB。方向：关联对象默认只返回摘要，按需展开全文。\n\n### 缺陷 8：草案不暴露字段值约束\n场景：prepare-fact-object-draft 不返回合法值闭集（如 priority 必须是 P0–P3）。方向：draft 内联合法值闭集。\n\n### 缺陷 9（根因）：无增量变化感知\n场景：manifest 的 object_set_fingerprint 证明「变了」但证明不了「什么变了」。方向：manifest 增加 per-object 指纹列表；或新增 changed_since 查询。\n\n### 缺陷 10：受控更新路径过重，催生绕过行为\n场景：spark-0067 本次会话更新 9 次，summary 3000+ 字符 YAML 多行字符串。Edit 工具在 YAML quoted string 上反复失败，只能整文件 Write 绕过 Helper。方向：频繁迭代对象提供轻量更新路径；长文本字段独立文件存储。\n\n### 缺陷 11：所有写入都是全量替换，无增量更新路径\n场景：update-fact-object 要求 fact_ref + fingerprint + 全量 fact_object。改一个字段也要 3 步。方向：区分严格审计和允许迭代的对象。\n\n### 缺陷 12：规范源消费摩擦未被覆盖（审核补充）\n场景：study-0023 记录创建单个 Spark 需穿越 7 份规范 + 23 条 Stop Conditions。spec 00 §8.1 的渐进式披露覆盖规则源和事实源两者，但当前分析聚焦事实源。规范本身的密度是否造成了额外的 AI 消费负担？这是故意划定的分析边界，但作为盲区需记录。\n\n### 缺陷 13：F2 的 text_match 能力未被利用（审核补充）\n场景：F2 实现已支持 text_match 参数（基于 _F2_SEARCH_FIELDS 的全文搜索），但 AI 在典型调用中不使用。根因不是「F2 没有内容匹配」，而是「AI 不知道可以使用 text_match」。这说明参数可发现性问题（缺陷 5）的后果比预想的更严重——不仅造成 invalid_request 往返，还导致已有的能力被闲置。\n\n## 操作摩擦横切分析\n\n缺陷 10（编辑粒度）和 11（全量替换）指向同一横切问题：当前设计把所有操作推到正确性一端，迭代场景的负担与其价值不成比例。\n\n## 缺陷归因\n\n三个根因（缺陷 1、4、9），优先级：\n\n1. **F2 语义匹配契约缺失（P0）**：规范未定义最小语义匹配契约，text_match 虽有实现但不可发现。这是所有 AI 消费路径的入口瓶颈。\n\n2. **关系图稀疏（P0-）**：ADR 和 Pitfall 这两个引用价值最高的类型 100% 零关系。即使 F2 的 text_match 被全面使用，没有关系边也找不到关联事实。审核建议从 P1 升到 P0-（与 F2 并行但稍低优先）。\n\n3. **无增量感知（P1）**：独立机制，F2 没好时收益打折。\n\n缺陷 12/13 是独立审核发现的两项遗漏，分别指向规范消费负担和能力可发现性盲区。\n\n## 独立审核记录（2026-08-07）\n\nExplore-2 子代理对 spark-0067 进行了独立审核，评级 B+/A-。以下修正已纳入：\n\n- 缺陷 1 的表述从「F2 无语义筛选」修正为「F2 语义匹配契约缺失，text_match 能力不可发现」——Code 层确实有 text_match 实现，问题是可发现性\n- 关系图优先级从 P1 上调至 P0-——ADR/Pitfall 100% 零关系的发现强化了其紧迫性\n- 新增缺陷 12（规范源消费摩擦）和缺陷 13（text_match 能力闲置）\n- 「主题重叠但无连接」的观察修正：spark-0055 和 spark-0019 之间确实有一条 relation，原先表述略有夸大\n\n## 开放观察（不定性，待验证）\n\n### 观察 1：事实类型体系缺少对「对象可变性」的区分\n（内容不变，略）\n\n### 观察 2：全量扫描发现的横切模式\n- ADR 8/8（100%）零关系。Pitfall 7/7（100%）零关系。WorkCase 36/66（55%）零关系。\n- 37 个 open Spark 中 8 个 ≥13 天未更新，没有活跃度区分机制。\n- spark-0053、0055、0019、0067 关注相近问题（复杂度/优化/摩擦），但联系稀疏。\n\n## 规范链审查发现（2026-08-07）\n\nExplore-1 子代理审查确认：20 个规范 + 12 个附件的结构引用全闭环。内容一致性无矛盾。一个缺口：规范 00 的 YAML 中缺少 spec_key 字段，\"ldvh-root\" 由 01.Att.02 单方面赋予。建议在 00 的 YAML 或正文中显式声明。\n\n## 工作原则\n\n所有解决方案在采纳前必须经规范 00 的 V1-V8 / HV1-HV5 价值审查。缺陷发现阶段不受此约束。\n\n## 未决事项\n\n1. F2 改进方向：先暴露 text_match（低代价），还是同时加强匹配逻辑？\n2. 关系图稀疏靠流程约束还是工具辅助？\n3. 规范源消费摩擦（缺陷 12）是否值得单独深挖？\n4. 「对象可变性」是否需要独立定性为设计问题？\n5. HV4 等宏观问题何时纳入？"
 relations:
 - relation_key: related-to
   target:
@@ -126,30 +25,48 @@ relations:
     fact_type_key: spark
     object_id: spark-0055
 change_log:
-- signature: {agent_id: workbuddy, host_environment: workbuddy-desktop}
+- signature:
+    agent_id: workbuddy
+    host_environment: workbuddy-desktop
   session_id: ldvh-optimization
   at: '2026-08-07T15:14:23.475769+08:00'
   summary: 初始创建
-- signature: {agent_id: workbuddy, host_environment: workbuddy-desktop}
+- signature:
+    agent_id: workbuddy
+    host_environment: workbuddy-desktop
   session_id: ldvh-optimization
   at: '2026-08-07T15:30:00+08:00'
   summary: 最小可行验证。Human 纠正方向：Web 是导航层
-- signature: {agent_id: workbuddy, host_environment: workbuddy-desktop}
+- signature:
+    agent_id: workbuddy
+    host_environment: workbuddy-desktop
   session_id: ldvh-optimization
   at: '2026-08-07T16:32:00+08:00'
   summary: 回溯 spec 00 §8.1，F1 不是缺陷，F2 问题精化为「实现≠模型要求」
-- signature: {agent_id: workbuddy, host_environment: workbuddy-desktop}
+- signature:
+    agent_id: workbuddy
+    host_environment: workbuddy-desktop
   session_id: ldvh-optimization
   at: '2026-08-07T16:40:00+08:00'
   summary: 新增缺陷 10/11（操作摩擦类）和开放观察（对象可变性）
-- signature: {agent_id: workbuddy, host_environment: workbuddy-desktop}
+- signature:
+    agent_id: workbuddy
+    host_environment: workbuddy-desktop
   session_id: ldvh-optimization
   at: '2026-08-07T16:47:00+08:00'
   summary: 全量 171 对象扫描，ADR/Pitfall 100% 零关系等横切模式
-- signature: {agent_id: workbuddy, host_environment: workbuddy-desktop}
+- signature:
+    agent_id: workbuddy
+    host_environment: workbuddy-desktop
   session_id: ldvh-optimization
   at: '2026-08-07T17:00:00+08:00'
   summary: 两子代理独立审查完成。规范链自洽（1 缺口：00 缺 spec_key）。spark 审核发现 3 处修正：缺陷 1 表述精化（text_match 能力存在但不可发现）、关系图升 P0-、新增缺陷 12/13
+- signature:
+    agent_id: codex
+    host_environment: codex-desktop
+  session_id: spark-0067-action-rebaseline
+  at: '2026-08-08T15:09:32.798116+08:00'
+  summary: 依据 Human 指令完成 Spark-0067 行动重基线：以 0067 为唯一行动主线，合并运行时契约可发现性问题，撤销已存在能力的缺口，冻结证据不足项，并明确下一项为小范围直接交付。
 evolution:
 - at: '2026-08-07T15:30:00+08:00'
   summary: 最小可行验证。
@@ -169,7 +86,9 @@ evolution:
   summary: 缺陷 10/11 + 开放观察。
 - at: '2026-08-07T17:00:00+08:00'
   summary: 两子代理独立审查完成。缺陷 1 表述修正（text_match 存在但不可发现）、关系图升 P0-、新增缺陷 12/13、规范链自洽。缺陷从 11→13，根因从 3 个保持 3 个（优先级微调）。
+- at: '2026-08-08T15:09:32.596118+08:00'
+  summary: Human 要求重新以 Spark-0067 为行动主线；基于当前规则、实现与对 0068 的边界复核，13 项被重分为直接交付、设计选择、暂缓及撤销/并入，0068 不再派生路线。
 object_id: spark-0067
 fact_type_key: spark
 created_at: '2026-08-07T15:14:23.475769+08:00'
-updated_at: '2026-08-07T17:00:00+08:00'
+updated_at: '2026-08-08T15:09:32.798116+08:00'

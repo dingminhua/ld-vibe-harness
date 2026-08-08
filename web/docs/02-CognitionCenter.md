@@ -120,9 +120,9 @@
 
 回答：**这个明确时间范围内，哪些事实对象有可观察到的新建或更新？**
 
-- 时间窗口只由 Human 显式选择：最近 1 天、最近 3 天、最近 1 周、最近 2 周；默认最近 1 天。窗口以本次 API `generatedAt` 向前计算，不维护 Web 上次访问时间，也不使用“我离开期间”这一抽象概念。
+- 时间窗口只由 Human 显式选择：最近 1 天、最近 3 天、最近 1 周；默认最近 1 天。窗口以本次 API `generatedAt` 向前计算，不维护 Web 上次访问时间，也不使用“我离开期间”这一抽象概念。
 - 内容以当前受管项目内事实对象的 `change_log[].at` 为唯一优先时间源：首条可读流水标为“新建”，其后流水标为“更新”。不从摘要推断字段级动作或状态流转。没有可读事实流水的历史对象，才回退使用 `created_at` / `updated_at` 生成一条兼容时间标记；无有效时间标记的对象不收入本模块。相同稳定对象在对象区只显示一次，按其最近一条流水排序；行内以既有“历史图标 + 数值”胶囊表示该对象在窗口内的流水数，不写“几次修改”这类重复文字。第一行呈现相对时间、弱化的对象 ID、存在时的合法优先级、流水数、当前状态与复制对象 ID；第二行直接呈现对象类型图标和完整标题。点击标题打开同源次级阅读。
-- 近期动态分为三个阅读区：最近改动的事实对象、署名 AI、署名环境。前者默认显示五个稳定对象，可局部扩展至最多二十个；后两者以每条完整 `change_log[].signature` 的 `agent_id` / `host_environment` 分组计数、按用量排序，并以并列的半宽条状图表达。两张署名条状图共享一个“显示更多/收起”控制，默认各显示五项、最多各显示二十项。缺失或不完整署名不被猜测或归类。时间窗口 Tab 位于模块标题栏，切换时仅替换本模块快照。
+- 近期动态分为三个阅读区：最近改动的事实对象、署名 AI、署名环境。前者默认显示六个稳定对象，可局部展开显示其余全部对象；后两者以每条完整 `change_log[].signature` 的 `agent_id` / `host_environment` 分组计数、按用量排序，并以并列的半宽条状图表达。两张署名条状图共享一个“显示其余/收起”控制，默认各显示六项，展开后显示全部。缺失或不完整署名不被猜测或归类。时间窗口 Tab 位于模块标题栏，切换时仅替换本模块快照。
 - 本模块不是提交列表，也不把提交消息改写成对象动态。提交及其文件级证据仍只在 `/changes` 与 `/changelog` 阅读；字段级 diff 仍在对象详情与提交记录中核对。
 - 如实声明遗漏范围：流水摘要是事实源提供的文本，页面不据此推断字段级变化、状态流转或执行结果；“更新”只表示存在一条后续 `change_log` 记录。兼容回退的旧对象仍只能表示时间标记，不能伪造缺失的流水。
 - 切换时间窗口时不触发浏览器整页导航或重载，保留原有页面与动态列表，并在近期动态模块内显示更新状态；`GET /api/cognition` 的新快照成功返回后原位替换当前聚焦页快照。单一类型读取失败时就地显示模块级降级，不影响其它类型的动态。
@@ -132,7 +132,7 @@
 
 回答：**这个明确时间范围内，哪些事实对象在自身流水中持续活跃，它们通过哪些正式关系相连？**
 
-- 时间范围与模块二完全共用：最近 1 天、最近 3 天、最近 1 周、最近 2 周。切换范围只更新当前聚焦页快照，不把“近期”解释为 Human 离开期间。
+- 时间范围与模块二完全共用：最近 1 天、最近 3 天、最近 1 周。切换范围只更新当前聚焦页快照，不把“近期”解释为 Human 离开期间。
 - 热点中心至少来自一条当前窗口内的事实 `change_log` 流水；历史对象没有可读流水时，才允许其单条 `created_at` / `updated_at` 兼容标记作为活跃证据。热点表示事实记录活跃度，不表示优先级、重要性、执行建议或方向正确性。
 - 热点首先按事实流水条数、最近流水时间排序；只有两者相同时，非终态 WorkCase 才作为稳定阅读顺序的兜底。每个热点是独立的一跳阅读单元，页面以更大的中心卡、对象图标和更强的标题层级表达中心，不重复显示“主热点”标签；必须优先呈现完整标题与流水数，不能把事实类型、优先级或关系数量误当成热度。
 - 每个热点只展开**与自身直接相连**的入边和出边，并统一收在“围绕它展开的工作”下。相同对象即使存在多条正式关系也只显示一次；原始 `relation_key` 与方向由连线、箭头和顶部图释表达，不在对象卡内重复显示关系文字。无障碍关系文本仍保留同源的本地化关系含义。没有流水、但与热点有正式关系的对象可以作为一跳工作；相邻对象的流水徽标只表示其自身在当前窗口内的事实流水数，不递归展开下一跳。
@@ -158,9 +158,9 @@
 | 池的当前拆分 | 当前全部有效 Spark = 终态（`routed` / `implemented` / `discarded`）+ `open`；以一条满宽比例条显示两个数量 |
 
 - 标题带以弱辅助文字显示静默数量与阈值；比例条内仅居中显示终态与待处理数量，条下按两侧居中展示各自的终态/优先级构成。它表达当前结构，不表示告警、成功或处置建议。
-- 静默列表按完整静默天数倒序、优先级、更新时间、ID 排序；默认显示前三项，其余由局部展开入口显示。每条列出标题、优先级弱信号、静默天数与复制 ID，点击标题打开右侧扩展阅读。
+- 标题带提供“时间”筛选：全部、超过 3 天、超过一周；默认超过一周。筛选对象是当前全部 `open` Spark，按完整静默天数倒序、优先级、更新时间、ID 排序；默认显示六项，其余由局部展开入口显示。每条列出标题、优先级弱信号、静默天数与复制 ID，点击标题打开右侧扩展阅读。静默数仍按 5 天阈值独立派生，仅作为池健康摘要，不改变筛选阈值。
 - 本模块不生成"应当分流到何处"的建议；需要跨行动保留的内容是否应形成 Spark、已有 Spark 是否应分流或进入终态，仍按 20、31、32 与 Human 当前指令判断。页面只呈现来源已有节点和当前池结构；open、终态、静默数量或比例不证明事项整体闭环，更不证明 HV4。
-- 空态：Spark 池当前没有静默积压。
+- 空态：当前筛选条件下没有待处理 Spark。
 
 ## 5. 同源核查与全局信任标记（支撑 HV1-HV3 与 HV5）
 
@@ -202,7 +202,7 @@ Helper 成功写入并回读后，浏览器没有可被 Helper 直接调用的�
 
 ## 8. API 数据结构
 
-`GET /api/cognition?locale=&window=1d|3d|7d|14d` 聚合返回（类型命名仅为契约描述，实现以 TS 类型为准）：
+`GET /api/cognition?locale=&window=1d|3d|7d` 聚合返回（类型命名仅为契约描述，实现以 TS 类型为准）：
 
 ```typescript
 type CognitionObjectType = 'workcase' | 'adr' | 'pitfall' | 'spark' | 'study';
@@ -264,13 +264,13 @@ interface CognitionData {
   scope: { governedProjectId: string };
   inbox: { items: CognitionInboxItem[]; total: number };
   recentActivity: {
-    window: '1d' | '3d' | '7d' | '14d';
+    window: '1d' | '3d' | '7d';
     windowStart: string;
     items: CognitionRecentActivityItem[];
     total: number;
   };
   recentHotspots: {
-    window: '1d' | '3d' | '7d' | '14d';
+    window: '1d' | '3d' | '7d';
     totalEvents: number;
     hotspotTotal: number;
     relationTotal: number;
@@ -302,6 +302,11 @@ interface CognitionData {
     silentThresholdDays: number;           // 展示参数
     silentCount: number;
     total: number;
+    openItems: {
+      type: 'spark'; id: string; title: string; title_en?: string; title_zh?: string; priority?: string;
+      updatedAt: string; silentDays: number; typeColor: string; read_status: string;
+      field_issues?: FieldIssue[]; unparsed_structures?: UnparsedStructure[];
+    }[];
     silentItems: {
       type: 'spark'; id: string; title: string; title_en?: string; title_zh?: string; priority?: string;
       updatedAt: string; silentDays: number; typeColor: string; read_status: string;
@@ -315,7 +320,7 @@ interface CognitionData {
 - WorkCase 聚合遵守 §7 第 3 条命名纪律；其它类型不使用 `progress_group` / `byProgressGroup`。
 - 待决定条目首屏内联复用各自对象列表 Card 的投影；完整事实在点击标题后的同源次级阅读中展开。模块摘要只保留当前收件箱的观察信息与对象索引，不另造事实或写回摘要。
 - 本端点是派生视图服务，不成为事实权威；读取限定在当前唯一管辖项目与实际 worktree。
-- 已实现注记（2026-08-03）：`GET /api/cognition` 返回 `{ generatedAt, scope, inbox, recentActivity, sparkHealth, recentHotspots, issues }`。inbox 收录 plan_confirmation / closure_confirmation WorkCase 与 draft Pitfall，按 `priority → updated_at` 正序排序；近期动态读取五类对象，按 `change_log[].at` 倒序返回窗口内的创建或更新流水；没有可读流水的历史对象才回退到自身时间字段。Spark 健康从当前 Spark 的 `status`、`priority` 和 `updated_at` 派生终态/待处理比例、静默计数与静默列表；近期热点关系复用同一时间窗口，只展示至少有一条事实流水且至少具有一条符合当前类型规则正式关系的热点。API 为每个热点返回独立 `primary + relations[]` 一跳投影，前端将相同相关对象合并为一张卡；缩略态以多列紧凑关系簇概览，展开态将所选热点切换为跨满模块宽度的中心式一跳思维导图，并保留关系方向、本地化弱提示与无障碍关系文本。无正式关系的活跃对象不进入热点关系，Git 提交仍只在 Changelog 阅读；blocked 保留在对象列表/详情，不进入 inbox。原规划中的演进时间线与方向对照不再提供字段或页面占位。
+- 已实现注记（2026-08-08）：`GET /api/cognition` 返回 `{ generatedAt, scope, inbox, recentActivity, sparkHealth, recentHotspots, issues }`。inbox 收录 plan_confirmation / closure_confirmation WorkCase 与 draft Pitfall，按 `priority → updated_at` 正序排序；近期动态读取五类对象，按 `change_log[].at` 倒序返回窗口内的创建或更新流水；没有可读流水的历史对象才回退到自身时间字段。Spark 健康从当前 Spark 的 `status`、`priority` 和 `updated_at` 派生终态/待处理比例、全部待处理对象、静默计数与静默列表；近期热点关系复用同一时间窗口，只展示至少有一条事实流水且至少具有一条符合当前类型规则正式关系的热点。API 为每个热点返回独立 `primary + relations[]` 一跳投影，前端将相同相关对象合并为一张卡；缩略态以多列紧凑关系簇概览，展开态将所选热点切换为跨满模块宽度的中心式一跳思维导图，并保留关系方向、本地化弱提示与无障碍关系文本。无正式关系的活跃对象不进入热点关系，Git 提交仍只在 Changelog 阅读；blocked 保留在对象列表/详情，不进入 inbox。原规划中的演进时间线与方向对照不再提供字段或页面占位。
 
 ## 9. 响应式与移动端
 

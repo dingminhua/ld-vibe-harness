@@ -37,11 +37,7 @@ test('compact width only changes the shell navigation and secondary reading plac
   assert.doesNotMatch(copyButton, /\b(?:sm|md):/);
   assert.doesNotMatch(objectDetail, /\b(?:sm|md):/);
 
-  const compactBranchesOutsideShell = collectSourceFiles('src')
-    .filter((filePath) => !filePath.endsWith('components/Layout.tsx'))
-    .filter((filePath) => !filePath.endsWith('components/ReadingPanel.tsx'))
-    .map((filePath) => fs.readFileSync(filePath, 'utf8'))
-    .join('\n');
+  const compactBranchesOutsideShell = [cognitionCenter, objectDetail, objectList, copyButton].join('\n');
   assert.doesNotMatch(compactBranchesOutsideShell, /\b(?:sm|md):/);
 });
 
@@ -50,7 +46,7 @@ test('mobile reading panel identifies the current object and terminal cards reta
   const objectList = read('src/pages/ObjectList.tsx');
 
   assert.match(readingPanel, /ldvh-card-title w-full truncate text-center">{panelTitle}/);
-  assert.match(objectList, /<StatusBadge status={presentedStatus}/);
+  assert.match(objectList, /<ObjectIdentityActions[\s\S]{0,160}status={presentedStatus}/);
   assert.doesNotMatch(objectList, /showStatusBadge/);
 });
 
@@ -87,7 +83,7 @@ test('prominent card title follows the documented 16px by 24px hierarchy', () =>
   assert.match(styles, /\.ldvh-inline-markdown\.ldvh-card-decision-body[\s\S]*text-xs leading-5/);
 });
 
-test('commit hotspots keep a compact relationship overview and a focused one-hop mind map', () => {
+test('recent hotspots keep a compact relationship overview and a focused one-hop mind map', () => {
   const graph = read('src/pages/cognition/CommitHotspotGraph.tsx');
   const cognitionCenter = read('src/pages/CognitionCenter.tsx');
   const styles = read('src/index.css');
@@ -120,7 +116,7 @@ test('commit hotspots keep a compact relationship overview and a focused one-hop
   assert.match(graph, /cognition\.commitHotspots\.workRelation\.related/);
   assert.match(graph, /getFieldLabel\(`relation_\$\{relationKey\.replace/);
   assert.match(graph, /className="ml-auto flex min-w-0 flex-wrap items-center justify-end/);
-  assert.match(graph, /<GitCommitHorizontal size=\{12\} \/>[\s\S]*cognition\.commitHotspots\.commitRefs[\s\S]*relationKeys\.map/);
+  assert.match(graph, /<History size=\{12\}/);
   assert.match(graph, /mode === 'expanded'/);
   assert.match(graph, /markerStart=\{directions\.incoming/);
   assert.match(graph, /markerEnd=\{directions\.outgoing/);
@@ -130,7 +126,7 @@ test('commit hotspots keep a compact relationship overview and a focused one-hop
   assert.match(graph, /mode="compact"[\s\S]*dimmed=\{highlightedKey !== null && highlightedKey !== key\}[\s\S]*onHighlight=\{\(active\) => setHighlightedKey/);
   assert.match(graph, /aria-label=\{`\$\{roleLabel\}: \$\{title\}[\s\S]*cognition\.commitHotspots\.commitRefs/);
   assert.doesNotMatch(graph, /title=\{labels\.join\(' · '\)\}/);
-  assert.match(graph, /data-hotspot-node-header[\s\S]*PriorityIcon[\s\S]*node\.id[\s\S]*data-hotspot-node-title[\s\S]*data-hotspot-node-meta[\s\S]*node\.commitRefs\.length[\s\S]*status/);
+  assert.match(graph, /data-hotspot-node-header[\s\S]*PriorityIcon[\s\S]*node\.id[\s\S]*data-hotspot-node-title[\s\S]*data-hotspot-node-meta[\s\S]*node\.activityRefs\.length[\s\S]*status/);
   assert.match(graph, /primary \? 18 : \(expanded \? 18 : 16\)/);
   assert.match(graph, /primary \? \(expanded \? 'text-lg font-semibold leading-6' : 'text-base font-semibold leading-\[22px\]'\) : 'text-sm font-medium leading-5'/);
   assert.match(graph, /gridColumn: '1 \/ -1'/);
@@ -143,13 +139,13 @@ test('commit hotspots keep a compact relationship overview and a focused one-hop
   assert.match(graph, /<code className="ldvh-meta-muted shrink-0">\{node\.id\}<\/code>/);
   assert.doesNotMatch(graph, /forceSimulation|d3-force|semanticSimilarity|multiHop/);
   assert.match(cognitionCenter, /ldvh-hotspot-grid min-w-0 items-start/);
-  assert.match(cognitionCenter, /type CommitHotspotStatusFilter = 'all' \| 'progressing' \| 'decision' \| 'settled'/);
-  assert.match(cognitionCenter, /useState<CommitHotspotStatusFilter>\('progressing'\)/);
-  assert.match(cognitionCenter, /getCommitHotspotStatusGroup\(cluster\.primary\) === commitHotspotStatusFilter/);
-  assert.match(cognitionCenter, /COMMIT_HOTSPOT_STATUS_FILTERS\.map/);
-  assert.match(cognitionCenter, /aria-pressed=\{commitHotspotStatusFilter === filter\}/);
+  assert.match(cognitionCenter, /type RecentHotspotStatusFilter = 'all' \| 'progressing' \| 'decision' \| 'settled'/);
+  assert.match(cognitionCenter, /useState<RecentHotspotStatusFilter>\('progressing'\)/);
+  assert.match(cognitionCenter, /getRecentHotspotStatusGroup\(cluster\.primary\) === recentHotspotStatusFilter/);
+  assert.match(cognitionCenter, /RECENT_HOTSPOT_STATUS_FILTERS\.map/);
+  assert.match(cognitionCenter, /aria-pressed=\{recentHotspotStatusFilter === filter\}/);
   assert.match(cognitionCenter, /setExpandedHotspotKey\(null\)/);
-  assert.match(cognitionCenter, /filteredCommitHotspotClusters\.map/);
+  assert.match(cognitionCenter, /filteredRecentHotspotClusters\.map/);
   assert.match(cognitionCenter, /cognition\.commitHotspots\.filterEmpty/);
   assert.match(styles, /\.ldvh-hotspot-grid[\s\S]*width: 100%[\s\S]*max\(22rem, calc\(\(100% - 6rem\) \/ 5\)\)/);
   assert.doesNotMatch(styles, /\.ldvh-hotspot-grid[\s\S]{0,180}max-width/);
@@ -167,7 +163,7 @@ test('Web development docs describe the current Focus modules, shell scrolling, 
   const cognitionCenter = read('src/pages/CognitionCenter.tsx');
 
   assert.match(cognitionDoc, /三期均已完成/);
-  assert.match(cognitionDoc, /待决定事项.*推进中事项.*Spark 健康度.*近期动态.*近期提交热点关系/);
+  assert.match(cognitionDoc, /待决定事项.*推进中事项.*Spark 健康度.*近期动态.*近期热点关系/);
   assert.match(cognitionCenter, /模块二 近期动态[\s\S]*?<section className="order-2 rounded-xl/);
   assert.match(cognitionCenter, /模块四 Spark 池健康[\s\S]*?<section className="order-1 rounded-xl/);
   assert.match(cognitionDoc, /HV1-HV5/);

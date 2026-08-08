@@ -40,6 +40,21 @@ _RESULT_CONTRACT = source_reference("rule", "fact-model-foundation::11.6 事实�
 _IMPLEMENTATION_EVIDENCE = (
     source_reference("implementation", "code/ldvh/helper/operations/fact_candidate_operation.py"),
 )
+_TEXT_MATCH_INPUT_EXAMPLES = (
+    {
+        "summary": "按 Spark 标题进行 F2 文本筛选",
+        "arguments_fragment": {
+            "card_layer": "F2",
+            "fact_type_keys": ["spark"],
+            "text_match": {"text": "text", "field_paths": ["title"]},
+        },
+        "source_refs": (_INPUT_CONTRACT,),
+        "composition_note": (
+            "这是可组合输入片段，不是完整请求；调用者仍须加入当前实际 governed_project_id，"
+            "并可按所选类型当前允许的 F2 字段替换 text 与 field_paths。"
+        ),
+    },
+)
 _TYPE_SOURCES = {
     "spark": "specs/20-Spark-火花.md",
     "workcase": "specs/21-WorkCase-工作项.md",
@@ -889,6 +904,7 @@ FACT_CANDIDATE_IMPLEMENTATION = OperationImplementation(
     evidence=(*_IMPLEMENTATION_EVIDENCE, _RESULT_CONTRACT),
     check_availability=_check_availability,
     call=_execute,
+    input_examples=_TEXT_MATCH_INPUT_EXAMPLES,
 )
 
 __all__ = ["FACT_CANDIDATE_IMPLEMENTATION", "OPERATION_KEY"]

@@ -32,13 +32,12 @@ const router = Router()
 type InboxKind = 'plan_confirmation' | 'closure_confirmation' | 'blocked_resolution' | 'pitfall_confirmation'
 type InboxObjectType = 'workcase' | 'pitfall'
 type RecentActivityKind = 'created' | 'updated'
-type RecentActivityWindow = '1d' | '3d' | '7d' | '14d'
+type RecentActivityWindow = '1d' | '3d' | '7d'
 
 const RECENT_ACTIVITY_WINDOWS: Record<RecentActivityWindow, number> = {
   '1d': 1,
   '3d': 3,
   '7d': 7,
-  '14d': 14,
 }
 const SPARK_SILENT_THRESHOLD_DAYS = 5
 const SPARK_TERMINAL_STATUSES = new Set(['routed', 'implemented', 'discarded'])
@@ -407,6 +406,7 @@ function compareSilentSpark(a: SparkHealthBuildItem, b: SparkHealthBuildItem): n
 function buildSparkHealth(rawItems: Array<Record<string, unknown>>, observedAt: number) {
   const terminalByStatus = { routed: 0, implemented: 0, discarded: 0 }
   const openByPriority: Record<string, number> = {}
+  const openItems: SparkHealthBuildItem[] = []
   const silentItems: SparkHealthBuildItem[] = []
   let total = 0
   let openTotal = 0
@@ -425,8 +425,8 @@ function buildSparkHealth(rawItems: Array<Record<string, unknown>>, observedAt: 
     if (priority) openByPriority[priority] = (openByPriority[priority] ?? 0) + 1
     const updatedAt = typeof raw.updated_at === 'string' ? raw.updated_at : ''
     const days = silentDays(updatedAt, observedAt)
-    if (days === null || days < SPARK_SILENT_THRESHOLD_DAYS) continue
-    silentItems.push({
+    if (days === null) continue
+    const item: SparkHealthBuildItem = {
       object_id: String(raw.object_id ?? ''),
       title: String(raw.title ?? raw.object_id ?? ''),
       ...(typeof raw.title_en === 'string' ? { title_en: raw.title_en } : {}),
@@ -437,9 +437,12 @@ function buildSparkHealth(rawItems: Array<Record<string, unknown>>, observedAt: 
       read_status: String(raw.read_status ?? 'unknown'),
       field_issues: Array.isArray(raw.field_issues) ? raw.field_issues as Array<Record<string, unknown>> : [],
       unparsed_structures: Array.isArray(raw.unparsed_structures) ? raw.unparsed_structures as Array<Record<string, unknown>> : [],
-    })
+    }
+    openItems.push(item)
+    if (days >= SPARK_SILENT_THRESHOLD_DAYS) silentItems.push(item)
   }
 
+  openItems.sort(compareSilentSpark)
   silentItems.sort(compareSilentSpark)
   const terminalTotal = terminalByStatus.routed + terminalByStatus.implemented + terminalByStatus.discarded
   return {
@@ -450,6 +453,7 @@ function buildSparkHealth(rawItems: Array<Record<string, unknown>>, observedAt: 
     openByPriority,
     silentThresholdDays: SPARK_SILENT_THRESHOLD_DAYS,
     silentCount: silentItems.length,
+    openItems,
     silentItems,
   }
 }
@@ -907,6 +911,20 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
           openByPriority: sparkHealth.openByPriority,
           silentThresholdDays: sparkHealth.silentThresholdDays,
           silentCount: sparkHealth.silentCount,
+          openItems: sparkHealth.openItems.map((item) => ({
+            type: 'spark',
+            id: item.object_id,
+            title: item.title,
+            ...(item.title_en !== undefined ? { title_en: item.title_en } : {}),
+            ...(item.title_zh !== undefined ? { title_zh: item.title_zh } : {}),
+            ...(item.priority !== undefined ? { priority: item.priority } : {}),
+            updatedAt: item.updated_at,
+            silentDays: item.silent_days,
+            typeColor: getTypeColor('spark'),
+            read_status: item.read_status,
+            ...(item.field_issues.length > 0 ? { field_issues: item.field_issues } : {}),
+            ...(item.unparsed_structures.length > 0 ? { unparsed_structures: item.unparsed_structures } : {}),
+          })),
           silentItems: sparkHealth.silentItems.map((item) => ({
             type: 'spark',
             id: item.object_id,

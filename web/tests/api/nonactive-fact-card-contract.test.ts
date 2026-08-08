@@ -19,10 +19,10 @@ test('non-active Spark, ADR, Pitfall, and Study cards share the terminal card gr
   assert.match(source, /function PitfallTerminalCardContent/);
   assert.match(source, /function StudyTerminalCardContent/);
   assert.doesNotMatch(source, /<TerminalFactPanel[^>]*title=/);
-  assert.match(source, /<StatusBadge status={presentedStatus}/);
+  assert.match(source, /<ObjectIdentityActions[\s\S]{0,160}status={presentedStatus}/);
   assert.doesNotMatch(source, /showStatusBadge/);
   assert.doesNotMatch(source, /<CopyPathButton path={obj\.path}/);
-  assert.match(source, /<StatusBadge status={presentedStatus}[\s\S]{0,260}<CopyPathButton[\s\S]{0,120}path={obj\.id}/);
-  assert.match(source, /label={t\('common\.copyObjectId'\)}/);
+  assert.match(source, /<ObjectIdentityActions[\s\S]{0,260}target={obj\.id}/);
+  assert.match(source, /copyLabel={t\('common\.copyObjectId'\)}/);
   assert.match(source, /currentType === 'study'[\s\S]*showNonActiveReason={false}[\s\S]*StudyCardContent/);
 });

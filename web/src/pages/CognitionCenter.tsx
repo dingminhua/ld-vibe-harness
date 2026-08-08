@@ -49,12 +49,14 @@ import { getFieldLabel, getFieldValueLabel, getLocalizedObjectTitle, getObjectSt
 /** 首屏截断阈值：Web 展示参数，不是事实；截断时底部如实提示总数与未显示数量。 */
 const INBOX_FIRST_SCREEN_LIMIT = 8;
 const ACTIVE_WORKCASE_FIRST_SCREEN_LIMIT = 8;
-const RECENT_ACTIVITY_FIRST_SCREEN_LIMIT = 5;
-const RECENT_ACTIVITY_MAX_VISIBLE = 20;
-const SPARK_HEALTH_FIRST_SCREEN_LIMIT = 3;
+const RECENT_ACTIVITY_FIRST_SCREEN_LIMIT = 6;
+const RECENT_ACTIVITY_MAX_VISIBLE = Number.MAX_SAFE_INTEGER;
+const SPARK_HEALTH_FIRST_SCREEN_LIMIT = 6;
 const SPARK_PRIORITIES = ['P0', 'P1', 'P2', 'P3'];
 
-const RECENT_ACTIVITY_WINDOWS: CognitionRecentActivityWindow[] = ['1d', '3d', '7d', '14d'];
+const RECENT_ACTIVITY_WINDOWS: CognitionRecentActivityWindow[] = ['1d', '3d', '7d'];
+type SparkHealthAgeFilter = 'all' | '3d' | '7d';
+const SPARK_HEALTH_AGE_FILTERS: SparkHealthAgeFilter[] = ['all', '3d', '7d'];
 
 type RecentHotspotStatusFilter = 'all' | 'progressing' | 'decision' | 'settled';
 
@@ -517,7 +519,8 @@ export default function CognitionCenter() {
   const [recentLoading, setRecentLoading] = useState(false);
   const [recentError, setRecentError] = useState<string | null>(null);
   const [sparkHealthExpanded, setSparkHealthExpanded] = useState(true);
-  const [showAllSilentSpark, setShowAllSilentSpark] = useState(false);
+  const [sparkHealthAgeFilter, setSparkHealthAgeFilter] = useState<SparkHealthAgeFilter>('7d');
+  const [showAllSpark, setShowAllSpark] = useState(false);
   const [recentHotspotsExpanded, setRecentHotspotsExpanded] = useState(true);
   const [expandedHotspotKey, setExpandedHotspotKey] = useState<string | null>(null);
   const [recentHotspotStatusFilter, setRecentHotspotStatusFilter] = useState<RecentHotspotStatusFilter>('progressing');
@@ -588,9 +591,13 @@ export default function CognitionCenter() {
   const recentUsageTruncated = recentUsageTotal > RECENT_ACTIVITY_FIRST_SCREEN_LIMIT;
   const sparkHealth = data.sparkHealth;
   const sparkHealthIssues = (data.issues ?? []).filter((issue) => issue.section === 'sparkHealth');
-  const silentSparkItems = sparkHealth?.silentItems ?? [];
-  const silentSparkTruncated = !showAllSilentSpark && silentSparkItems.length > SPARK_HEALTH_FIRST_SCREEN_LIMIT;
-  const visibleSilentSparkItems = silentSparkTruncated ? silentSparkItems.slice(0, SPARK_HEALTH_FIRST_SCREEN_LIMIT) : silentSparkItems;
+  const openSparkItems = sparkHealth?.openItems ?? [];
+  const filteredSparkItems = openSparkItems.filter((item) => (
+    sparkHealthAgeFilter === 'all'
+      || item.silentDays >= (sparkHealthAgeFilter === '3d' ? 3 : 7)
+  ));
+  const sparkItemsTruncated = !showAllSpark && filteredSparkItems.length > SPARK_HEALTH_FIRST_SCREEN_LIMIT;
+  const visibleSparkItems = sparkItemsTruncated ? filteredSparkItems.slice(0, SPARK_HEALTH_FIRST_SCREEN_LIMIT) : filteredSparkItems;
   const settledRatio = sparkHealth && sparkHealth.total > 0 ? (sparkHealth.terminalTotal / sparkHealth.total) * 100 : 0;
   const terminalDetail = sparkHealth
     ? (['routed', 'implemented', 'discarded'] as const)
@@ -842,27 +849,20 @@ export default function CognitionCenter() {
               </ul>
             )}
             {recentItems.length > RECENT_ACTIVITY_FIRST_SCREEN_LIMIT && (
-              <div className="mt-3 flex min-w-0 flex-wrap items-center justify-between gap-2">
-                <p className="ldvh-caption min-w-0">
-                  {recentTruncated
-                    ? t('cognition.recent.truncated', {
-                      total: String(data.recentActivity.total),
-                      shown: String(visibleRecentItems.length),
-                      hidden: String(recentItems.length - visibleRecentItems.length),
-                    })
-                    : null}
-                </p>
+              <div className="mt-3">
                 <button
                   type="button"
                   onClick={() => setShowAllRecent((previous) => !previous)}
-                  className="ldvh-caption inline-flex h-8 shrink-0 items-center rounded-md border border-ldvh-border px-3 text-ldvh-text-secondary transition-colors hover:border-ldvh-accent/50 hover:text-ldvh-accent"
+                  className="ldvh-caption inline-flex h-8 items-center rounded-md text-ldvh-text-secondary transition-colors hover:text-ldvh-accent focus-visible:outline-none focus-visible:underline"
                 >
-                  {recentTruncated ? t('cognition.recent.showMore') : t('cognition.recent.collapse')}
+                  {recentTruncated
+                    ? t('cognition.recent.showRemaining', { count: String(recentItems.length - visibleRecentItems.length) })
+                    : t('cognition.recent.collapse')}
                 </button>
               </div>
             )}
             <div className="mt-4 border-t border-ldvh-border/70 pt-4">
-              <div className="grid min-w-0 gap-4 sm:grid-cols-2">
+              <div className="grid min-w-0 grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))] gap-4">
                 <RecentActivityUsageBars
                   title={t('cognition.recent.agentUsage')}
                   items={data.recentActivity.agentUsage}
@@ -875,13 +875,15 @@ export default function CognitionCenter() {
                 />
               </div>
               {recentUsageTruncated && (
-                <div className="mt-3 flex justify-end">
+                <div className="mt-3">
                   <button
                     type="button"
                     onClick={() => setShowAllRecentUsage((previous) => !previous)}
-                    className="ldvh-caption inline-flex h-8 items-center rounded-md border border-ldvh-border px-3 text-ldvh-text-secondary transition-colors hover:border-ldvh-accent/50 hover:text-ldvh-accent"
+                    className="ldvh-caption inline-flex h-8 items-center rounded-md text-ldvh-text-secondary transition-colors hover:text-ldvh-accent focus-visible:outline-none focus-visible:underline"
                   >
-                    {showAllRecentUsage ? t('cognition.recent.collapse') : t('cognition.recent.showMore')}
+                    {showAllRecentUsage
+                      ? t('cognition.recent.collapse')
+                      : t('cognition.recent.showRemainingUsage', { count: String(recentUsageTotal - RECENT_ACTIVITY_FIRST_SCREEN_LIMIT) })}
                   </button>
                 </div>
               )}
@@ -903,14 +905,30 @@ export default function CognitionCenter() {
         >
           <HeartPulse size={16} className="shrink-0 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
           <h3 className="ldvh-section-title min-w-0">{t('cognition.sparkHealth.title')}</h3>
-          {sparkHealth && sparkHealth.silentCount > 0 && (
-            <span className="ldvh-caption shrink-0 text-ldvh-text-secondary/55">
-              {t('cognition.sparkHealth.silentSummary', {
-                count: String(sparkHealth.silentCount),
-                days: String(sparkHealth.silentThresholdDays),
-              })}
-            </span>
+          {sparkHealth && (
+            <span className="ldvh-meta shrink-0 text-ldvh-text-secondary/70">{filteredSparkItems.length}</span>
           )}
+          <div
+            className="ldvh-tab-list ml-1 flex min-w-0 flex-wrap"
+            role="group"
+            aria-label={t('cognition.sparkHealth.ageFilter')}
+            onClick={(event) => event.stopPropagation()}
+            onKeyDown={(event) => event.stopPropagation()}
+          >
+            {SPARK_HEALTH_AGE_FILTERS.map((filter) => (
+              <button
+                key={filter}
+                type="button"
+                onClick={() => {
+                  setSparkHealthAgeFilter(filter);
+                  setShowAllSpark(false);
+                }}
+                className={`ldvh-tab-button ${sparkHealthAgeFilter === filter ? 'ldvh-tab-button-active' : 'ldvh-tab-button-idle'}`}
+              >
+                {t(`cognition.sparkHealth.ageFilter.${filter}` as LocaleKey)}
+              </button>
+            ))}
+          </div>
           <span className="ml-auto flex min-w-0 shrink-0 items-center gap-2">
             {sparkHealth && (
               <CopyPathButton
@@ -967,24 +985,24 @@ export default function CognitionCenter() {
               </div>
             )}
 
-            {sparkHealth && silentSparkItems.length === 0 ? (
+            {sparkHealth && filteredSparkItems.length === 0 ? (
               sparkHealthIssues.length === 0 && <p className="ldvh-body-muted">{t('cognition.sparkHealth.empty')}</p>
             ) : (
               <ul className="divide-y divide-ldvh-border/70">
-                {visibleSilentSparkItems.map((item) => <SparkHealthRow key={item.id} item={item} />)}
+                {visibleSparkItems.map((item) => <SparkHealthRow key={item.id} item={item} />)}
               </ul>
             )}
 
-            {sparkHealth && silentSparkItems.length > 0 && (
+            {sparkHealth && filteredSparkItems.length > 0 && (
               <>
-                {silentSparkItems.length > SPARK_HEALTH_FIRST_SCREEN_LIMIT && (
+                {filteredSparkItems.length > SPARK_HEALTH_FIRST_SCREEN_LIMIT && (
                   <button
                     type="button"
-                    onClick={() => setShowAllSilentSpark((previous) => !previous)}
+                    onClick={() => setShowAllSpark((previous) => !previous)}
                     className="mt-3 ldvh-caption inline-flex h-8 items-center rounded-md text-ldvh-text-secondary transition-colors hover:text-ldvh-accent focus-visible:outline-none focus-visible:underline"
                   >
-                    {silentSparkTruncated
-                      ? t('cognition.sparkHealth.showRemaining', { count: String(silentSparkItems.length - visibleSilentSparkItems.length) })
+                    {sparkItemsTruncated
+                      ? t('cognition.sparkHealth.showRemaining', { count: String(filteredSparkItems.length - visibleSparkItems.length) })
                       : t('cognition.sparkHealth.collapseList')}
                   </button>
                 )}

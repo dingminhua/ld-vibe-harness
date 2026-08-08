@@ -101,6 +101,26 @@
     @apply border-ldvh-border bg-transparent text-ldvh-text-secondary hover:border-ldvh-accent/30 hover:text-ldvh-text-primary;
   }
 
+  .ldvh-segmented-control {
+    @apply inline-flex h-7 overflow-hidden rounded-md border border-ldvh-border bg-white;
+  }
+
+  .ldvh-segmented-control-button {
+    @apply inline-flex h-full w-8 items-center justify-center transition-colors focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ldvh-accent/40;
+  }
+
+  .ldvh-segmented-control-button + .ldvh-segmented-control-button {
+    @apply border-l border-ldvh-border;
+  }
+
+  .ldvh-segmented-control-button-active {
+    @apply bg-ldvh-accent/10 text-ldvh-accent;
+  }
+
+  .ldvh-segmented-control-button-idle {
+    @apply text-ldvh-text-secondary hover:bg-ldvh-accent/5 hover:text-ldvh-text-primary;
+  }
+
   .ldvh-tab-count {
     @apply inline-block shrink-0 text-center;
     font: inherit;

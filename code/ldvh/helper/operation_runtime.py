@@ -72,6 +72,7 @@ class OperationExecution:
 
 AvailabilityHandler = Callable[[CommonRequest, RepositoryInspection, OperationExecutionContext], AvailabilityEvaluation]
 CallHandler = Callable[[CommonRequest, RepositoryInspection, OperationExecutionContext], OperationExecution]
+_INPUT_EXAMPLE_FIELDS = frozenset({"summary", "arguments_fragment", "source_refs", "composition_note"})
 
 
 @dataclass(frozen=True, slots=True)
@@ -83,6 +84,7 @@ class OperationImplementation:
     evidence: tuple[dict[str, Any], ...]
     check_availability: AvailabilityHandler
     call: CallHandler
+    input_examples: tuple[dict[str, Any], ...] = ()
 
     def __post_init__(self) -> None:
         if not self.evidence:
@@ -92,6 +94,23 @@ class OperationImplementation:
             raise ValueError("operation input names must be non-empty strings")
         if len(set(fields)) != len(fields):
             raise ValueError("operation input names must be unique")
+        for example in self.input_examples:
+            if not isinstance(example, Mapping) or set(example) != _INPUT_EXAMPLE_FIELDS:
+                raise ValueError("operation input examples must use the closed common field set")
+            if any(
+                not isinstance(example[field], str) or not example[field].strip()
+                for field in ("summary", "composition_note")
+            ):
+                raise ValueError("operation input example text fields must be non-empty strings")
+            if not isinstance(example["arguments_fragment"], Mapping):
+                raise ValueError("operation input example arguments_fragment must be an object")
+            source_refs = example["source_refs"]
+            if (
+                not isinstance(source_refs, tuple)
+                or not source_refs
+                or any(not isinstance(source, Mapping) for source in source_refs)
+            ):
+                raise ValueError("operation input examples require source references")
 
 
 @dataclass(frozen=True, slots=True)

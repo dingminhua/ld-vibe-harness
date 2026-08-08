@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { ArrowRight, Circle, CircleAlert, CircleCheck, CircleMinus, CirclePlay, ClipboardList, Clock3, Lightbulb, ListChecks, ShieldCheck, Target } from 'lucide-react';
+import { ArrowRight, Circle, CircleAlert, CircleCheck, CircleMinus, CirclePlay, ClipboardList, Clock3, Hash, Lightbulb, ListChecks, ShieldCheck, Target } from 'lucide-react';
 import ObjectIdentityActions from '@/components/ObjectIdentityActions';
 import WorkCaseCapabilityStatusBadge from '@/components/WorkCaseCapabilityStatusBadge';
 import ObjectStatusFilter from '@/components/ObjectStatusFilter';
@@ -8,6 +8,7 @@ import WorkCaseProgressFilter from '@/components/WorkCaseProgressFilter';
 import WorkCaseProgressTrack from '@/components/WorkCaseProgressTrack';
 import ObjectPriorityFilter from '@/components/ObjectPriorityFilter';
 import PriorityIcon from '@/components/PriorityIcon';
+import SegmentedControl from '@/components/SegmentedControl';
 import ObjectUpdatedMeta from '@/components/ObjectUpdatedMeta';
 import SummaryText from '@/components/SummaryText';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
@@ -29,6 +30,7 @@ import {
 
 type Translate = ReturnType<typeof useI18n>['t'];
 type StatusReason = { label: string; text: string; missing?: boolean };
+type ObjectListSort = 'updated_desc' | 'id_desc';
 
 const WORKCASE_SECTION_ICON_SIZE = 14;
 /** Shared vertical rhythm between a semantic card title and its first body block. */
@@ -1187,13 +1189,15 @@ function contributionTargetTitle(detail: ObjectDetail | null, readMeta: ReturnTy
   return getLocalizedObjectTitle(detail.data as { title?: string; title_en?: string; title_zh?: string }, locale);
 }
 
-function sortObjectsForList(items: ObjectItem[], _currentType: string): ObjectItem[] {
+function sortObjectsForList(items: ObjectItem[], sort: ObjectListSort): ObjectItem[] {
   return [...items].sort((a, b) => {
-    const updatedDelta = Date.parse(b.updated || '') - Date.parse(a.updated || '');
-    if (Number.isFinite(updatedDelta) && updatedDelta !== 0) return updatedDelta;
-    const lexicalDelta = String(b.updated || '').localeCompare(String(a.updated || ''));
-    if (lexicalDelta !== 0) return lexicalDelta;
-    return a.id.localeCompare(b.id);
+    if (sort === 'id_desc') return b.id.localeCompare(a.id);
+
+    const updatedDelta = Date.parse(a.updated || '') - Date.parse(b.updated || '');
+    if (Number.isFinite(updatedDelta) && updatedDelta !== 0) return -updatedDelta;
+    const lexicalDelta = String(a.updated || '').localeCompare(String(b.updated || ''));
+    if (lexicalDelta !== 0) return -lexicalDelta;
+    return b.id.localeCompare(a.id);
   });
 }
 
@@ -1447,6 +1451,10 @@ export default function ObjectList() {
     ? progressParam
     : null;
   const priorityParam = searchParams.get('priority');
+  const sortParam = searchParams.get('sort');
+  const activeSort: ObjectListSort = sortParam === 'id_desc'
+    ? sortParam
+    : 'updated_desc';
   const supportsPriorityNavigation = currentType === 'spark' || currentType === 'workcase';
   const activePriority = supportsPriorityNavigation && ['P0', 'P1', 'P2', 'P3'].includes(priorityParam ?? '')
     ? priorityParam
@@ -1495,7 +1503,7 @@ export default function ObjectList() {
       .finally(() => setLoading(false));
   }, [currentType, activeStatus, activePriority, activeProgressGroup]);
 
-  const sortedItems = sortObjectsForList(items, currentType);
+  const sortedItems = sortObjectsForList(items, activeSort);
 
   const handleStatusChange = (status: string | null) => {
     const nextParams = new URLSearchParams(searchParams);
@@ -1523,6 +1531,13 @@ export default function ObjectList() {
     } else {
       nextParams.delete('priority');
     }
+    setSearchParams(nextParams);
+  };
+
+  const handleSortChange = (sort: ObjectListSort) => {
+    const nextParams = new URLSearchParams(searchParams);
+    if (sort === 'updated_desc') nextParams.delete('sort');
+    else nextParams.set('sort', sort);
     setSearchParams(nextParams);
   };
 
@@ -1684,7 +1699,7 @@ export default function ObjectList() {
 
   return (
     <div className="ldvh-page-frame">
-      <div className="sticky top-0 z-20 -mx-6 -mt-6 mb-4 flex min-h-8 flex-wrap items-center justify-between gap-3 border-b border-ldvh-border bg-ldvh-bg/95 px-6 py-3 backdrop-blur">
+      <div className="sticky top-0 z-20 -mx-6 -mt-6 mb-4 flex min-h-8 flex-wrap items-start justify-between gap-3 border-b border-ldvh-border bg-ldvh-bg/95 px-6 py-3 backdrop-blur">
         <div className="min-w-0 flex-1">
           {supportsPriorityNavigation && (
             <div className="mb-2 flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-2">
@@ -1728,6 +1743,17 @@ export default function ObjectList() {
               </>
             )}
           </div>
+        </div>
+        <div className="shrink-0">
+          <SegmentedControl
+            ariaLabel={t('objectList.sort')}
+            value={activeSort}
+            onValueChange={handleSortChange}
+            items={[
+              { value: 'updated_desc', label: t('objectList.sortUpdatedDesc'), icon: <Clock3 size={14} aria-hidden="true" /> },
+              { value: 'id_desc', label: t('objectList.sortIdDesc'), icon: <Hash size={14} aria-hidden="true" /> },
+            ]}
+          />
         </div>
       </div>
 

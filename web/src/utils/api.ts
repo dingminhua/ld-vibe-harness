@@ -532,7 +532,7 @@ export interface CognitionActiveWorkCaseItem extends Omit<CognitionInboxItemBase
 }
 
 /** 近期动态由事实对象自身的 change_log 派生；不承载 Git 提交记录或字段级 diff。 */
-export type CognitionRecentActivityWindow = '1d' | '3d' | '7d' | '14d';
+export type CognitionRecentActivityWindow = '1d' | '3d' | '7d';
 export type CognitionRecentActivityKind = 'created' | 'updated';
 
 export interface CognitionRecentActivityItem {
@@ -588,6 +588,8 @@ export interface CognitionSparkHealth {
   /** Web 展示参数；不写回事实源。 */
   silentThresholdDays: number;
   silentCount: number;
+  /** 当前全部待处理 Spark，供界面按未更新时间筛选；不含已收敛项。 */
+  openItems: CognitionSparkHealthItem[];
   silentItems: CognitionSparkHealthItem[];
 }
 
