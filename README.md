@@ -60,6 +60,21 @@ npm run dev
 
 > `npm run dev` 会同时启动前端（Vite）与后端（nodemon + tsx）。在 Windows 上若需分开管理，可分别执行 `npm run client:dev`（前端）与 `npm run server:dev`（后端）。
 
+## 界面一览
+
+Web 界面帮助 Human 如实查看当前项目状态、待决定事项和可核查节点，不建立第二事实源。
+
+<p align="center"><strong>感知中心 — 项目全貌：待决定事项、推进中工作、近期动态、Spark 池健康</strong></p>
+<p align="center"><img src="images/readme/001-dashboard.png" alt="感知中心" width="720"></p>
+
+<p align="center"><strong>聚焦视图 — 收缩侧边栏、展开扩展阅读面板，聚焦当前 WorkCase 的判定依据与执行计划</strong></p>
+<p align="center"><img src="images/readme/002-focus-expanded-reading.png" alt="聚焦视图" width="720"></p>
+
+<p align="center"><strong>WorkCase 管理 — 卡片列表概览，按状态、优先级、进展筛选</strong></p>
+<p align="center"><img src="images/readme/003-workcase-cards.png" alt="WorkCase 卡片" width="720"></p>
+
+---
+
 ### Windows 注意事项
 
 - **前置要求**：`ldvh` 是 POSIX 脚本，Windows 上通过 `sh -c exec` 包装调用，要求系统中有 Git Bash 的 `sh` 在 PATH 中。
