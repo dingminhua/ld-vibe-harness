@@ -124,29 +124,21 @@ def _is_host_product_concatenation(value: str) -> bool:
     return any(lowered.startswith(f"{prefix}-") for prefix in _HOST_PRODUCT_PREFIXES)
 
 
-# Complete workbench names that legitimately contain a separator and must not be
-# collapsed to a "base" platform name (``claude-code`` is one product, ``claude``
-# another).  Anything else shaped ``base-variant`` / ``base/variant`` collapses to
-# the base platform name at write time.
-_WORKBENCH_FULL_NAMES = frozenset({"claude-code", "claude code", "claudecode"})
+# A workbench name is a single platform token: the first token of the value,
+# split on whitespace, ``-`` or ``/``, with the first letter capitalized and the
+# rest lowercased.  ``workbuddy-claw``, ``claude-code`` and ``Claude Code`` all
+# collapse to ``Workbuddy`` / ``Claude``.
+_WORKBENCH_TOKEN_SPLIT = re.compile(r"[\s\-/]+")
 
 
-def _truncate_workbench_compound(value: str) -> str:
-    """Collapse a compound workbench name to its base platform name.
-
-    ``workbuddy-claw`` and ``codex-desktop`` become ``workbuddy`` and ``codex``;
-    ``claude-code-mcp`` keeps the full product name ``claude-code``.  Complete
-    multi-word names such as ``claude-code`` are never truncated.
-    """
+def _normalize_workbench_name(value: str) -> str:
+    """Normalize a workbench name to a single capitalized platform token."""
 
     stripped = value.strip()
-    normalized = " ".join(stripped.lower().split())
-    if normalized in _WORKBENCH_FULL_NAMES:
+    token = _WORKBENCH_TOKEN_SPLIT.split(stripped, 1)[0]
+    if not token:
         return stripped
-    marker = max(normalized.rfind("-"), normalized.rfind("/"))
-    if marker > 0:
-        return stripped[:marker].strip()
-    return stripped
+    return token[0].upper() + token[1:].lower()
 
 
 _WORKBENCH_SYSTEM_SUFFIX = re.compile(r"\s*\([^()]+\)\s*\Z")

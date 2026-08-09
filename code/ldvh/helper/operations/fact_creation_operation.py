@@ -19,7 +19,7 @@ from ldvh.facts.creation_application import FactCreationCommand, FactCreationRes
 from ldvh.facts.models import FactIssue
 from ldvh.facts.repository import FactReadResult
 from ldvh.facts.schema import project_fact_schemas
-from ldvh.facts.validation import _truncate_workbench_compound
+from ldvh.facts.validation import _normalize_workbench_name
 from ldvh.filesystem import native_atomic_fact_writes_supported
 from ldvh.governance.models import ObjectStatus
 from ldvh.governance.resolver import GovernanceResolutionRun, resolve_governance_scope
@@ -97,7 +97,7 @@ def inject_observed_write_signature(
         )
         merged.update(parsed.signature)
         if isinstance(merged.get("agent_workbench"), str):
-            merged["agent_workbench"] = _truncate_workbench_compound(merged["agent_workbench"])
+            merged["agent_workbench"] = _normalize_workbench_name(merged["agent_workbench"])
         newest["signature"] = merged
     if parsed.session_id is not None:
         newest["session_id"] = parsed.session_id

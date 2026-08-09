@@ -329,7 +329,7 @@ def test_observed_partial_signature_and_session_survive_real_generic_update_sche
     newest = response["result"]["fact_object"]["change_log"][-1]
     assert newest["signature"] == {
         "model_id": "gpt-5.6-luna",
-        "agent_workbench": "test",
+        "agent_workbench": "Test",
     }
     assert newest["session_id"] == "Session-Generic-Update"
     assert "session_id" not in newest["signature"]

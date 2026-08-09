@@ -110,7 +110,7 @@ def test_inject_partial_signature_merges_to_complete_signature() -> None:
     )
     assert result["change_log"][-1]["signature"] == {
         "model_id": "gpt-5.6-luna",
-        "agent_workbench": "Old Host",
+        "agent_workbench": "Old",
     }
 
 
@@ -197,34 +197,46 @@ def test_new_signature_tripwires_reject_product_alias_and_system_suffix() -> Non
     assert any("拼接宿主产品名" in problem for problem in spliced.problems)
 
 
-def test_observed_agent_workbench_compound_is_truncated_to_base_platform() -> None:
+def test_observed_agent_workbench_compound_normalizes_to_single_token() -> None:
     compound = parse_observed_write_signature(
         {"signature": {"model_id": "gpt-5", "agent_workbench": "workbuddy-claw", "session_id": "s"}}
     )
     assert compound.problems == ()
-    assert compound.signature["agent_workbench"] == "workbuddy"
+    assert compound.signature["agent_workbench"] == "Workbuddy"
     assert compound.signature["model_id"] == "gpt-5"
 
-    nested = parse_observed_write_signature(
-        {"signature": {"model_id": "gpt-5", "agent_workbench": "claude-code-mcp", "session_id": "s"}}
-    )
-    assert nested.signature["agent_workbench"] == "claude-code"
-
-    slash = parse_observed_write_signature(
-        {"signature": {"model_id": "gpt-5", "agent_workbench": "Cindy/Codex", "session_id": "s"}}
-    )
-    assert slash.signature["agent_workbench"] == "Cindy"
-
-
-def test_observed_agent_workbench_full_product_names_are_not_truncated() -> None:
-    for full in ("claude-code", "Claude Code", "Cindy", "WorkBuddy"):
+    for raw, expected in (
+        ("claude-code", "Claude"),
+        ("claude-code-mcp", "Claude"),
+        ("Claude Code", "Claude"),
+        ("Cindy/Codex", "Cindy"),
+        ("trae-desktop", "Trae"),
+        ("traecode-macos", "Traecode"),
+    ):
         result = parse_observed_write_signature(
-            {"signature": {"model_id": "gpt-5", "agent_workbench": full, "session_id": "s"}}
+            {"signature": {"model_id": "gpt-5", "agent_workbench": raw, "session_id": "s"}}
         )
-        assert result.signature["agent_workbench"] == full
+        assert result.signature["agent_workbench"] == expected, raw
 
 
-def test_inject_truncates_existing_compound_workbench_in_merge() -> None:
+def test_observed_agent_workbench_capitalizes_first_and_lowercases_rest() -> None:
+    for raw, expected in (
+        ("workbuddy", "Workbuddy"),
+        ("WORKBUDDY", "Workbuddy"),
+        ("TraeCode", "Traecode"),
+        ("TRAE", "Trae"),
+        ("Cindy", "Cindy"),
+        ("WorkBuddy", "Workbuddy"),
+        ("Kimi", "Kimi"),
+        ("codex", "Codex"),
+    ):
+        result = parse_observed_write_signature(
+            {"signature": {"model_id": "gpt-5", "agent_workbench": raw, "session_id": "s"}}
+        )
+        assert result.signature["agent_workbench"] == expected, raw
+
+
+def test_inject_normalizes_existing_compound_workbench_in_merge() -> None:
     supplied = {
         "title": "test",
         "change_log": [
@@ -241,5 +253,5 @@ def test_inject_truncates_existing_compound_workbench_in_merge() -> None:
         {"signature": {"model_id": "gpt-5.6-luna", "session_id": "Session-X"}},
     )
     newest = result["change_log"][-1]
-    assert newest["signature"]["agent_workbench"] == "workbuddy"
+    assert newest["signature"]["agent_workbench"] == "Workbuddy"
     assert newest["signature"]["model_id"] == "gpt-5.6-luna"
