@@ -139,17 +139,19 @@ test('change_log accepts the canonical and legacy signature shapes', async () =>
       'object_id: spark-0002', 'fact_type_key: spark', 'title: Signature compatibility',
       'status: open', 'summary: Current observation', 'created_at: "2026-01-01T00:00:00+08:00"', 'updated_at: "2026-01-02T00:00:00+08:00"',
       'change_log:',
-      '  - signature:', '      model_id: gpt-5', '      host_name: Cindy',
+      '  - signature:', '      model_id: gpt-5', '      agent_workbench: Cindy',
       '    session_id: canonical-session', '    at: "2026-01-01T00:00:00+08:00"', '    summary: Canonical entry',
       '  - signature:', '      agent_id: codex', '      host_environment: LegacyHost',
       '    session_id: legacy-session', '    at: "2026-01-02T00:00:00+08:00"', '    summary: Legacy entry',
+      '  - signature:', '      model_id: gpt-5', '      host_name: InterimHost',
+      '    session_id: interim-session', '    at: "2026-01-03T00:00:00+08:00"', '    summary: Interim entry',
     ].join('\n'), 'utf8');
 
     const detail = await readLocalFact('spark', 'spark-0002', scope);
     assert.equal(detail.status, 'ok');
     if (detail.status === 'ok') {
       assert.equal(detail.item.read_status, 'readable');
-      assert.equal((detail.item.fact_object?.change_log as unknown[])?.length, 2);
+      assert.equal((detail.item.fact_object?.change_log as unknown[])?.length, 3);
       assert.deepEqual(detail.item.unparsed_structures, []);
     }
   } finally {

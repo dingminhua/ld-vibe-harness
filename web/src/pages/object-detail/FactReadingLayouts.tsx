@@ -100,7 +100,8 @@ function parseChangeLogEntries(value: unknown): ChangeLogEntry[] {
       ? signature as Record<string, unknown>
       : null;
     const modelId = typeof signatureRecord?.model_id === 'string' ? signatureRecord.model_id : undefined;
-    const hostName = typeof signatureRecord?.host_name === 'string' ? signatureRecord.host_name : undefined;
+    const hostName = typeof signatureRecord?.agent_workbench === 'string' ? signatureRecord.agent_workbench
+      : typeof signatureRecord?.host_name === 'string' ? signatureRecord.host_name : undefined;
     return [{
       key: `${index}-${at}`,
       at,

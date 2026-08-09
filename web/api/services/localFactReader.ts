@@ -171,18 +171,26 @@ function isConsumableRecordMember(type: LocalFactType, field: string, member: Re
 
 function isConsumableChangeLogSignature(value: unknown): boolean {
   if (!isRecord(value) || Object.keys(value).length !== 2) return false
-  const hasCanonicalShape = Object.keys(value).every((key) => key === 'model_id' || key === 'host_name')
+  const hasCanonicalShape = Object.keys(value).every((key) => key === 'model_id' || key === 'agent_workbench')
     && typeof value.model_id === 'string'
     && value.model_id.trim().length > 0
-    && typeof value.host_name === 'string'
-    && value.host_name.trim().length > 0
+    && typeof value.agent_workbench === 'string'
+    && value.agent_workbench.trim().length > 0
   if (hasCanonicalShape) return true
 
-  return Object.keys(value).every((key) => key === 'agent_id' || key === 'host_environment')
+  const hasHostEnvironmentLegacy = Object.keys(value).every((key) => key === 'agent_id' || key === 'host_environment')
     && typeof value.agent_id === 'string'
     && value.agent_id.trim().length > 0
     && typeof value.host_environment === 'string'
     && value.host_environment.trim().length > 0
+  if (hasHostEnvironmentLegacy) return true
+
+  // Historical intermediate shape (model_id + host_name), readable only.
+  return Object.keys(value).every((key) => key === 'model_id' || key === 'host_name')
+    && typeof value.model_id === 'string'
+    && value.model_id.trim().length > 0
+    && typeof value.host_name === 'string'
+    && value.host_name.trim().length > 0
 }
 
 function projectFields(type: LocalFactType, objectId: string, parsed: Record<string, unknown>, extra: Record<string, unknown>): Pick<LocalFactItem, 'fact_object' | 'field_issues' | 'unparsed_structures'> {
