@@ -1,0 +1,127 @@
+title: 复用只读 FactSchema 投影以缩短 full-v4 测试
+status: open
+priority: P1
+goal: 在不改变生产规则读取、规格源刷新语义和每测试项目隔离的前提下，消除 facts 应用与校验测试中反复解析同一规格库并投影 FactSchema 的成本。
+scope: "覆盖：在 conftest 增加 repository-only 的 session 级只读 FactSchema Mapping；改造 creation_application、update_application、workcase_application、validation、legacy_change_log_migration、workcase_validation、schema 七个测试模块，移除仅为 schema 投影使用的 current_specs_repository/inspect_repository/project_fact_schemas；每例项目、事实文件、tmp_path 与 Git 状态继续独立；运行七模块、规则源重读回归、ruff 和同口径计时；完成独立只读结果复核。\n\n排除：不改生产代码、current_specs_repository 现有语义、规格、Helper/CLI、full-v4 runner/记录契约；不共享 RepositoryInspection 或可写 Git/项目状态；不跑 full-v4、不引入 xdist、不提交或推送。"
+success_criterion_definitions:
+- criterion_id: criterion-1
+  statement: 目标测试只投影一次 repository-only FactSchema，并通过不可变 Mapping 共享，不绑定 Helper operation source 完整性
+- criterion_id: criterion-2
+  statement: 七个目标模块不再仅为 schema 投影复制规格仓库，同时每测试事实项目与 Git 状态保持独立
+- criterion_id: criterion-3
+  statement: 七个目标模块、规则源重读回归和 ruff 通过，且同口径计时低于变更前基线
+- criterion_id: criterion-4
+  statement: 独立结果复核确认未引入生产缓存、共享可写状态、来源语义削弱或覆盖并发修改
+phase: human_plan_confirming
+plan_version: 1
+work_items:
+- item_id: item-1
+  goal: 建立 repository-only 的只读 FactSchema session fixture
+  expected_result: 规格库只解析投影一次，外层 Mapping 不可变且不绑定 Helper operations 完整性
+  status: pending
+- item_id: item-2
+  goal: 让七个 facts 测试模块显式使用共享 schemas
+  expected_result: 移除仅为投影使用的规格仓库 fixture，同时保留每例项目、文件、tmp_path 和 Git 隔离
+  status: pending
+  depends_on:
+  - item-1
+- item_id: item-3
+  goal: 验证测试等价性与耗时改善
+  expected_result: 定向 pytest、规则源重读回归和 ruff 通过，并形成同口径前后耗时证据；不运行 full-v4
+  status: pending
+  depends_on:
+  - item-2
+execution_authorization:
+  authorized_actions:
+  - action_id: authorization-schema-fixture
+    summary: 新增 repository-only 只读 FactSchema fixture
+    target_scope: code/tests/conftest.py
+    effect_scope: 仅测试基础设施；一次读取当前规格并暴露不可变 Mapping
+    risk_summary: 共享可写映射或绑定无关 operation 校验会造成耦合
+    rollback_summary: 撤销 fixture 并恢复逐例投影
+    rule_refs:
+    - specs/21-WorkCase-工作项.md
+    - specs/07-Code 实践与测试规范.md
+  - action_id: authorization-migrate-facts-tests
+    summary: 将七个 facts 测试模块改为注入共享 schemas
+    target_scope: code/tests/facts/test_creation_application.py、test_update_application.py、test_workcase_application.py、test_validation.py、test_legacy_change_log_migration.py、test_workcase_validation.py、test_schema.py
+    effect_scope: 仅移除重复规格解析；保留每例项目与 Git 状态
+    risk_summary: 目标文件存在其它修改，必须最小编辑并完整保留
+    rollback_summary: 逐模块撤销本 WorkCase 差异，不覆盖其它修改
+    rule_refs:
+    - specs/21-WorkCase-工作项.md
+    - specs/07-Code 实践与测试规范.md
+  - action_id: authorization-targeted-verification
+    summary: 运行定向 pytest、规则源重读回归、ruff 与计时
+    target_scope: 七个 facts 模块、code/tests/helper/test_rule_source.py 和相关 ruff
+    effect_scope: 仅本地测试进程；不运行 full-v4
+    risk_summary: 计时有波动，须使用相同测试选择并如实记录
+    rollback_summary: 失败时停止并修正或撤销最近局部差异
+    rule_refs:
+    - specs/21-WorkCase-工作项.md
+  - action_id: authorization-delegate-result-review
+    summary: 委派完整差异的只读独立结果复核
+    target_scope: fixture、七个模块、测试与计时证据
+    effect_scope: 只读 subagent 复核
+    risk_summary: Reviewer 不替代 Gate 2
+    rollback_summary: 无实际复核结果则不记录通过
+    rule_refs:
+    - specs/21-WorkCase-工作项.md
+  - action_id: authorization-independent-result-review
+    summary: 执行最终独立只读结果复核
+    target_scope: 成功标准、完整差异、隔离边界与证据
+    effect_scope: 只读复核
+    risk_summary: 遗漏共享状态或边界测试会形成虚假收益
+    rollback_summary: 有缺口则返回实现阶段
+    rule_refs:
+    - specs/21-WorkCase-工作项.md
+  quality_gates:
+  - gate_id: independent-result-review
+    reviewer_mode: independent-read-only
+    delegation_action_id: authorization-delegate-result-review
+    result_review_action_id: authorization-independent-result-review
+  action_ceiling: 仅限测试专用只读 schema fixture、七个目标模块、定向验证和一次独立只读结果复核。
+  prohibited_actions:
+  - 修改生产代码或生产缓存
+  - 修改 current_specs_repository 行为或共享可写 Git/项目状态
+  - 修改 specs、Helper/CLI、full-v4 runner/argv/记录契约
+  - 改变重读、source identity/observed_at、CLI、linked-worktree、Hook 或锁测试语义
+  - 运行 full-v4、引入 xdist、提交、推送、发布或部署
+  - 覆盖目标文件中不属于本 WorkCase 的修改
+  allowed_adjustments: 可在七个模块内调整 Mapping 注解、浅复制位置和 fixture 参数；验证规格变异或路径身份的用例保留原隔离 fixture并记录排除。
+  verification_and_rollback: 先计时七模块基线，再实施并运行相同选择、规则源重读回归与 ruff；事实写回后精确回读和完整性审计；失败则撤销最近模块的本次差异。
+  out_of_bounds_handling: 需要生产缓存、规格/runner 变更、共享可写状态或覆盖并发修改时停止该分支并据实收敛，不扩大范围。
+creation_reviews:
+- reviewer: review-fact-schema-wc-plan
+  reviewed_at: '2026-08-09T17:00:19+08:00'
+  subject_version: 1
+  scope: 只读审核 repository-only fixture、七模块迁移、共享可变性、并发差异和验证矩阵；未运行测试、未改文件。
+  conclusion: pass_with_followups
+  feedback:
+  - 使用 repository-only 检查
+  - 通过 MappingProxyType/Mapping 只读暴露 schemas
+  - 七模块彻底移除仅为投影的规格仓库依赖
+  - 保持项目/tmp_path/Git 状态独立并保留来源边界测试
+  - 验证七模块、ruff 与重读回归，不跑 full-v4
+  controller_resolution: 全部采纳并写入范围、工作项、授权和禁止边界。
+  covered_quality_gate_ids:
+  - independent-result-review
+  actual_method: subagent-read-only
+waiting_on: Human Gate 1：确认是否按当前完整计划与 execution_authorization 执行。
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: workcase
+    object_id: workcase-0085
+change_log:
+- signature:
+    model_id: gpt-5.6
+    host_name: Cindy
+  session_id: current-conversation
+  at: '2026-08-09T09:00:20.871144Z'
+  summary: 创建只读 FactSchema 投影测试优化 WorkCase。
+object_id: workcase-0086
+fact_type_key: workcase
+created_at: '2026-08-09T09:00:20.871144Z'
+updated_at: '2026-08-09T09:00:20.871144Z'
