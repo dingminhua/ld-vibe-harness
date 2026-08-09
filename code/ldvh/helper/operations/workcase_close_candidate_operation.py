@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -28,6 +27,7 @@ from ldvh.helper.operations.workcase_close_candidate_request import (
 from ldvh.helper.requests import CommonRequest
 from ldvh.helper.responses import source_reference
 from ldvh.specs.repository import RepositoryInspection
+from ldvh.time import utc_now_iso
 
 OPERATION_KEY = "prepare-closed-workcase-candidate"
 _CONTRACT = source_reference("rule", "workcase-fact-type::prepare-closed-workcase-candidate 输入与结果")
@@ -62,7 +62,7 @@ def _working_tree_source(root: Path, read: FactReadResult) -> dict[str, Any]:
     return {
         "kind": "working_tree",
         "locator": (root / read.canonical_path).as_posix(),
-        "observed_at": datetime.now().astimezone().isoformat(),
+        "observed_at": utc_now_iso(),
         "details": {"view": "Working Tree", "check_status": read.check_status},
     }
 

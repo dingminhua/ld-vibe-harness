@@ -13,6 +13,8 @@ _OPERATIONS_BY_COVERAGE = {
     "create": "create-fact-object",
     "update": "update-fact-object",
     "workcase-update": "update-workcase",
+    "workcase-termination-begin": "begin-workcase-termination",
+    "workcase-termination-complete": "complete-workcase-termination",
     "workcase-close": "close-workcase",
     "workcase-close-candidate": "prepare-closed-workcase-candidate",
     "workcase-closed-correction": "correct-closed-workcase",
@@ -31,6 +33,7 @@ _CURRENT_WORKCASE_RULE_KEYS = {
     "workcase-result-review-versioning",
     "workcase-proposal-atomic-close",
     "workcase-closed-correction",
+    "workcase-human-termination-transaction",
 }
 _INCOMPLETE_WORKCASE_RULE_KEYS: set[str] = set()
 

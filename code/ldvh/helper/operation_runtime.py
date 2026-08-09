@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
-from datetime import datetime
 from pathlib import Path
 from types import MappingProxyType
 from typing import Any, Literal
@@ -13,6 +12,7 @@ from ldvh.helper.operation_sources import OperationDeclarationCandidate, Operati
 from ldvh.helper.requests import CommonRequest
 from ldvh.helper.responses import diagnostic
 from ldvh.specs.repository import RepositoryInspection
+from ldvh.time import utc_now_iso
 
 Availability = Literal[
     "unavailable_for_request",
@@ -41,7 +41,7 @@ class OperationExecutionContext:
     """Process observations captured once at the Helper service boundary."""
 
     cwd: Path
-    event_at: str = field(default_factory=lambda: datetime.now().astimezone().isoformat())
+    event_at: str = field(default_factory=utc_now_iso)
 
 
 @dataclass(frozen=True, slots=True)

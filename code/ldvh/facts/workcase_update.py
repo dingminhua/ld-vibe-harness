@@ -40,8 +40,9 @@ from ldvh.facts.validation import (
 )
 from ldvh.filesystem import AtomicWriteResult, native_atomic_fact_writes_supported
 from ldvh.source_references import validate_source_reference
+from ldvh.time import canonicalize_new_timestamp_fields
 
-WorkCaseWriteMode = Literal["update", "close", "correct"]
+WorkCaseWriteMode = Literal["update", "close", "correct", "begin_termination", "complete_termination"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -148,7 +149,7 @@ def _complete_after(
     }
     if isinstance(updated_at, str):
         timestamp_appended_change_log(fields, updated_at)
-    return fields
+    return canonicalize_new_timestamp_fields(fields, before=before)
 
 
 def _operation_boundary_issues(
@@ -184,6 +185,47 @@ def _operation_boundary_issues(
     elif command.mode == "correct":
         if before_status != "closed" or after_status != "closed":
             issues.append(FactIssue("schema", "correct-closed-workcase 只接受 closed → closed", "status"))
+    elif command.mode == "begin_termination":
+        if before_status not in ACTIVE_STATUSES or before.get("phase") == "termination_preparing":
+            issues.append(
+                FactIssue("schema", "begin-workcase-termination 要求未进入善后的活动 before", "phase")
+            )
+        if after_status != "open" or after.get("phase") != "termination_preparing":
+            issues.append(
+                FactIssue("schema", "begin-workcase-termination after 必须为 open/termination_preparing", "phase")
+            )
+        for name in ("waiting_on", "blocking_summary", "summary", "resume_from"):
+            if name in after:
+                issues.append(
+                    FactIssue("schema", "begin-workcase-termination 必须移除旧执行检查点", name)
+                )
+        if not command.authorization_reference:
+            issues.append(
+                FactIssue(
+                    "schema",
+                    "begin-workcase-termination 必须回指 Human 当次中止指令",
+                    "authorization_reference",
+                )
+            )
+    elif command.mode == "complete_termination":
+        if before_status != "open" or before.get("phase") != "termination_preparing":
+            issues.append(
+                FactIssue(
+                    "schema",
+                    "complete-workcase-termination 要求 open/termination_preparing before",
+                    "phase",
+                )
+            )
+        if after_status != "closed":
+            issues.append(FactIssue("schema", "complete-workcase-termination after 必须为 closed", "status"))
+        if command.authorization_reference:
+            issues.append(
+                FactIssue(
+                    "schema",
+                    "complete-workcase-termination 不接受第二 Human authorization",
+                    "authorization_reference",
+                )
+            )
     else:
         issues.append(FactIssue("schema", "未知 WorkCase 写入 mode"))
 
@@ -251,6 +293,53 @@ def _gate_issues(
     issues: list[FactIssue] = []
     before_approval = before.get("execution_approval")
     after_approval = after.get("execution_approval")
+    if command.mode == "begin_termination":
+        termination = after.get("termination")
+        if isinstance(termination, Mapping):
+            expected_locators = sorted(
+                str(reference.get("locator"))
+                for reference in command.authorization_reference
+                if isinstance(reference.get("locator"), str) and str(reference.get("locator")).strip()
+            )
+            actual_refs = termination.get("source_refs")
+            if not isinstance(actual_refs, list) or sorted(actual_refs) != expected_locators:
+                issues.append(
+                    FactIssue(
+                        "schema",
+                        "termination.source_refs 必须与 Human authorization locators 精确一致",
+                        "termination.source_refs",
+                    )
+                )
+            if termination.get("source_content_fingerprint") != command.expected_content_fingerprint:
+                issues.append(
+                    FactIssue(
+                        "schema",
+                        "termination source fingerprint 必须精确绑定本次 CAS",
+                        "termination.source_content_fingerprint",
+                    )
+                )
+            expected_snapshots: list[str] = []
+            raw_items = before.get("work_items")
+            for item in raw_items if isinstance(raw_items, list) else []:
+                if not isinstance(item, Mapping):
+                    continue
+                summary = next(
+                    (
+                        item[name]
+                        for name in ("result_summary", "current_summary", "blocking_summary", "resume_from")
+                        if isinstance(item.get(name), str) and str(item[name]).strip()
+                    ),
+                    "no-runtime-summary",
+                )
+                expected_snapshots.append(f"{item.get('item_id')}::{item.get('status')}::{summary}")
+            if termination.get("item_snapshots") != sorted(expected_snapshots):
+                issues.append(
+                    FactIssue(
+                        "schema",
+                        "termination item_snapshots 必须按 item_id 精确投影 before 现场",
+                        "termination.item_snapshots",
+                    )
+                )
     if command.mode == "update" and before_approval is None and isinstance(after_approval, Mapping):
         if not command.authorization_reference:
             issues.append(
@@ -485,6 +574,8 @@ def _close_mapping_issues(
     """Require the closed after to be the exact projection of the current proposal."""
 
     issues: list[FactIssue] = []
+    if "termination" in after:
+        issues.append(FactIssue("schema", "正常 close-workcase 禁止形成 termination 终态", "termination"))
     proposal = before.get("closure_proposal")
     if not isinstance(proposal, Mapping):
         return (
@@ -578,6 +669,35 @@ def _close_mapping_issues(
                 "relations",
             )
         )
+    return tuple(issues)
+
+
+def _termination_close_mapping_issues(
+    before: Mapping[str, Any], after: Mapping[str, Any]
+) -> tuple[FactIssue, ...]:
+    issues: list[FactIssue] = []
+    for field_name in ("title", "goal", "scope", "success_criterion_definitions", "urls", "termination"):
+        if before.get(field_name, _MISSING) != after.get(field_name, _MISSING):
+            issues.append(FactIssue("schema", "完成终止必须原样保留起始责任与 termination 事实", field_name))
+    if workcase_routed_target_identities(after):
+        issues.append(
+            FactIssue(
+                "relation",
+                "complete-workcase-termination 不创建 routed-to；责任去向只可据实保存在 termination 与终态处置中",
+                "relations",
+            )
+        )
+    for relation_key in ("contributed-to", "related-to"):
+        before_relations = {identity for identity in _relation_identities(before) if identity[0] == relation_key}
+        after_relations = {identity for identity in _relation_identities(after) if identity[0] == relation_key}
+        if before_relations != after_relations:
+            issues.append(
+                FactIssue(
+                    "relation",
+                    f"complete-workcase-termination 必须原样保留既有 {relation_key} relations",
+                    "relations",
+                )
+            )
     return tuple(issues)
 
 
@@ -877,7 +997,13 @@ def apply_workcase_write_locked(command: WorkCaseWriteCommand) -> WorkCaseWriteR
 
     mutable_current = {key: value for key, value in current.fields.items() if key not in MANAGED_FIELDS}
     gate_issues = _gate_issues(command, current.fields, preview)
-    close_mapping_issues = _close_mapping_issues(current.fields, preview) if command.mode == "close" else ()
+    close_mapping_issues = (
+        _close_mapping_issues(current.fields, preview)
+        if command.mode == "close"
+        else _termination_close_mapping_issues(current.fields, preview)
+        if command.mode == "complete_termination"
+        else ()
+    )
     preflight_issues = (
         *gate_issues,
         *close_mapping_issues,
@@ -906,7 +1032,7 @@ def apply_workcase_write_locked(command: WorkCaseWriteCommand) -> WorkCaseWriteR
     if mutable_current == dict(command.supplied):
         return _result(command, "no_change", current=current, readback=current)
 
-    if command.mode == "close":
+    if command.mode in {"close", "complete_termination"}:
         dependency_index = _project_index(command)
         dependency_issues, dependency_unavailable = validate_workcase_incoming_dependencies(
             dependency_index,
@@ -977,7 +1103,7 @@ def apply_workcase_write_locked(command: WorkCaseWriteCommand) -> WorkCaseWriteR
     )
     post_dependency_issues: tuple[FactIssue, ...] = ()
     post_dependency_unavailable = False
-    if command.mode == "close":
+    if command.mode in {"close", "complete_termination"}:
         post_dependency_index = _project_index(command)
         post_dependency_issues, post_dependency_unavailable = validate_workcase_incoming_dependencies(
             post_dependency_index,

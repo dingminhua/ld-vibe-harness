@@ -1345,3 +1345,52 @@ def test_legacy_retired_pitfall_invalid_before_repair_is_exact_and_discarded_onl
     rewritten = {**repaired, "symptoms": "迁移中改写的症状"}
     issues = validate_fact_transition("pitfall", before, rewritten, repairing_invalid_before=True)
     assert any(issue.field_path == "symptoms" and "必须保留" in issue.summary for issue in issues)
+
+
+@pytest.mark.parametrize("source_phase", sorted(_ACTIVE_PHASES - {"termination_preparing"}))
+@pytest.mark.parametrize("source_status", ["open", "blocked"])
+def test_dedicated_begin_termination_accepts_every_active_source_phase(
+    source_phase: str,
+    source_status: str,
+) -> None:
+    before = _controller_checking()
+    before["phase"] = source_phase
+    before["status"] = source_status
+    if source_status == "blocked":
+        before["blocking_summary"] = "Original lifecycle work is blocked."
+    after = deepcopy(before)
+    after["status"] = "open"
+    after.pop("blocking_summary", None)
+    after.pop("waiting_on", None)
+    after.pop("summary", None)
+    after.pop("resume_from", None)
+    after["phase"] = "termination_preparing"
+    after["termination"] = {
+        "source_status": before["status"],
+        "source_phase": source_phase,
+    }
+
+    assert validate_workcase_transition(before, after, operation="begin_termination") == ()
+    ordinary = validate_workcase_transition(before, after, operation="update")
+    assert any(issue.field_path == "phase" and "专属终止事务" in issue.summary for issue in ordinary)
+
+    stale_after = deepcopy(after)
+    stale_after["resume_from"] = "Continue the frozen original plan."
+    stale = validate_workcase_transition(before, stale_after, operation="begin_termination")
+    assert any(issue.field_path == "resume_from" and "旧执行检查点" in issue.summary for issue in stale)
+
+
+def test_complete_termination_is_distinct_from_close_workcase() -> None:
+    before = _controller_checking()
+    before["phase"] = "termination_preparing"
+    before["termination"] = {"cleanup_status": "completed"}
+    after = {"status": "closed", "termination": deepcopy(before["termination"])}
+
+    assert validate_workcase_transition(before, after, operation="complete_termination") == ()
+    normal_close = validate_workcase_transition(before, after, operation="close")
+    assert any(issue.field_path == "phase" and "human_closure_confirming" in issue.summary for issue in normal_close)
+
+    corrected_without_termination = deepcopy(after)
+    corrected_without_termination.pop("termination")
+    correction = validate_workcase_transition(after, corrected_without_termination, operation="correct")
+    assert any(issue.field_path == "termination" and "判别器" in issue.summary for issue in correction)

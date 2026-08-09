@@ -12,7 +12,6 @@ import os
 import stat
 from collections import defaultdict
 from dataclasses import dataclass
-from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal
 
@@ -33,6 +32,7 @@ from ldvh.testing.working_tree_evidence import (
     validate_coverage,
     validate_manifest,
 )
+from ldvh.time import utc_now_iso
 
 CaptureStage = Literal["before", "after"]
 BoundaryCode = Literal[
@@ -240,7 +240,7 @@ def capture_manifest(boundary: GovernedWorktreeBoundary, stage: CaptureStage) ->
     complete = not gaps
     policy_fingerprint = coverage["policy_fingerprint"]
     manifest = {
-        "observed_at": datetime.now(UTC).astimezone().isoformat(timespec="microseconds"),
+        "observed_at": utc_now_iso(),
         "status": "complete" if complete else "incomplete",
         "manifest_fingerprint": manifest_fingerprint(files, policy_fingerprint) if complete else None,
         "file_count": len(files),

@@ -15,6 +15,7 @@ from ldvh.facts.repository import FactReadResult
 from ldvh.facts.schema import FactSchema
 from ldvh.facts.update_application import FactUpdateCommand, apply_fact_update
 from ldvh.filesystem import AtomicWriteResult
+from ldvh.time import canonical_utc_timestamp
 
 
 def _git(project: Path, *arguments: str) -> str:
@@ -137,7 +138,7 @@ def test_application_binds_managed_timestamp_and_verifies_exact_readback(
 
     assert result.status == "updated"
     assert result.readback is not None and result.readback.fields is not None
-    assert result.readback.fields["updated_at"] == command.event_at
+    assert result.readback.fields["updated_at"] == canonical_utc_timestamp(command.event_at)
     assert result.readback.fields["summary"] == "After update"
     assert result.readback.raw_text == result.candidate_text
     assert fact.read_text(encoding="utf-8") == result.candidate_text
@@ -462,7 +463,7 @@ def test_generic_update_compares_fractional_seconds_beyond_microseconds_without_
     assert result.status == expected_status
     if expected_status == "updated":
         assert result.readback is not None and result.readback.fields is not None
-        assert result.readback.fields["updated_at"] == event_time
+        assert result.readback.fields["updated_at"] == canonical_utc_timestamp(event_time)
     else:
         assert fact.read_bytes() == original
 

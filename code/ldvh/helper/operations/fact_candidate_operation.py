@@ -6,7 +6,6 @@ import base64
 import hashlib
 import json
 from collections import Counter
-from datetime import datetime
 from pathlib import Path
 from typing import Any, Literal
 
@@ -33,6 +32,7 @@ from ldvh.helper.operations.fact_operation_support import plain, reading_boundar
 from ldvh.helper.requests import CommonRequest
 from ldvh.helper.responses import source_reference
 from ldvh.specs.repository import RepositoryInspection
+from ldvh.time import utc_now_iso
 
 OPERATION_KEY = "find-fact-object-candidates"
 _INPUT_CONTRACT = source_reference("rule", "fact-model-foundation::11.5 事实对象候选发现输入字段")
@@ -223,7 +223,7 @@ def _source_refs(root: Path, fact_type_key: str, read: FactReadResult) -> list[d
         {
             "kind": "working_tree",
             "locator": (root / read.canonical_path).as_posix(),
-            "observed_at": datetime.now().astimezone().isoformat(),
+            "observed_at": utc_now_iso(),
             "details": {"view": "Working Tree", "check_status": read.check_status},
         },
     ]
@@ -545,7 +545,7 @@ def _card(
         fields["work_item_counts"] = {
             status: counts.get(status, 0) for status in ("pending", "in_progress", "blocked", "completed", "cancelled")
         }
-    observed_at = datetime.now().astimezone().isoformat()
+    observed_at = utc_now_iso()
     sources = [
         source_reference("rule", _TYPE_SOURCES[fact_type_key]),
         {

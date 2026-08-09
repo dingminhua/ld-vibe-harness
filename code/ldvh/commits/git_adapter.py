@@ -423,7 +423,7 @@ def _detect_activations(
 ) -> tuple[tuple[str, ...], CommitCandidateObservationIssue | None]:
     """Return spec paths whose ``status`` is being flipped to ``active``.
 
-    Per 00 §10.1 第 12 条 and 03 §12 第 9 条, activating an existing independent
+    Per 00 §10.1 第 12 条 and 03 §13 第 9 条, activating an existing independent
     spec document (flipping its ``status`` to ``active``) is a Human Gate event
     and must carry a ``Human-Gate:`` trailer, just like adding a new spec. This
     compares the staged blob (index) against HEAD for each non-fact spec path.

@@ -15,8 +15,8 @@ _CODE_ROOT = str(Path(__file__).resolve().parent.parent)
 if _CODE_ROOT not in sys.path:
     sys.path.insert(0, _CODE_ROOT)
 
-from ldvh.helper.responses import common_response, diagnostic, gap
-from ldvh.helper.service import handle_request, invalid_request_result
+from ldvh.helper.responses import common_response, diagnostic, gap  # noqa: E402
+from ldvh.helper.service import handle_request, invalid_request_result  # noqa: E402
 
 
 def _emit(response: dict[str, Any]) -> None:

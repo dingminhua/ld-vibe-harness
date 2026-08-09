@@ -19,6 +19,7 @@ from ldvh.facts.transitions import validate_fact_transition
 from ldvh.facts.update import atomic_replace_text_if_unchanged
 from ldvh.facts.validation import parse_rfc3339, validate_fact_object
 from ldvh.filesystem import AtomicWriteResult, native_atomic_fact_writes_supported
+from ldvh.time import canonicalize_new_timestamp_fields
 
 MigrationStatus = Literal[
     "current_unavailable",
@@ -115,6 +116,7 @@ def _candidate(
             "summary": command.migration_summary,
         }
     ]
+    fields = canonicalize_new_timestamp_fields(fields, before=current)
     text = serialize_fact_object(
         layout,
         fields,

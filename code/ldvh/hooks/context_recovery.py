@@ -380,12 +380,25 @@ def _workcase_projection(response: JsonObject, expected_ref: JsonObject) -> tupl
         raise ContextRecoveryError("expanded WorkCase reference does not match the requested reference")
     fact_object = item["fact_object"]
     workcase: JsonObject = {"fact_ref": expected_ref}
-    for field in ("status", "phase", "summary", "resume_from", "waiting_on"):
+    termination_mode = "termination" in fact_object
+    projected_fields = (
+        ("status", "phase", "waiting_on", "blocking_summary")
+        if termination_mode
+        else ("status", "phase", "summary", "resume_from", "waiting_on")
+    )
+    for field in projected_fields:
         if field in fact_object:
             workcase[field] = fact_object[field]
+    if "termination" in fact_object:
+        workcase["termination"] = fact_object["termination"]
+    current_projection = item.get("current_snapshot_projection")
+    if isinstance(current_projection, dict):
+        workcase["current_snapshot_projection"] = current_projection
     raw_items = fact_object.get("work_items", [])
     if not isinstance(raw_items, list):
         raise ContextRecoveryError("expanded WorkCase work_items must be an array")
+    if termination_mode:
+        return workcase, []
     active: list[JsonObject] = []
     for raw_item in raw_items:
         if not isinstance(raw_item, dict) or raw_item.get("status") not in {"in_progress", "blocked"}:

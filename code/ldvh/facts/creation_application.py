@@ -5,7 +5,6 @@ from __future__ import annotations
 import math
 from collections.abc import Mapping
 from dataclasses import dataclass, replace
-from datetime import datetime
 from pathlib import Path
 from types import MappingProxyType
 from typing import Any, Literal
@@ -36,6 +35,7 @@ from ldvh.facts.validation import (
 )
 from ldvh.facts.workcase_validation import required_quality_gate_issues
 from ldvh.filesystem import AtomicWriteResult, native_atomic_fact_writes_supported
+from ldvh.time import canonical_utc_timestamp, canonicalize_new_timestamp_fields, utc_now_iso
 
 CreationStatus = Literal[
     "candidate_rejected",
@@ -217,6 +217,7 @@ def _preflight(
         "updated_at": now,
     }
     timestamp_initial_change_log(fields, now)
+    fields = canonicalize_new_timestamp_fields(fields)
     text = serialize_fact_object(layout, fields, command.body)
     parsed = parse_study_markdown(text) if layout.carrier == "markdown" else parse_yaml_object(text)
     issues = list(parsed.issues)
@@ -256,7 +257,7 @@ def prepare_fact_creation(
         supplied=supplied,
         body=command.body,
     )
-    now = observed_at if observed_at is not None else datetime.now().astimezone().isoformat()
+    now = utc_now_iso() if observed_at is None else canonical_utc_timestamp(observed_at) or observed_at
     _, _, candidate_issues, candidate_unavailable = _preflight(snapshot, snapshot.requested_candidate_id, now)
     if candidate_unavailable:
         return FactCreationResult("candidate_unavailable", issues=candidate_issues)

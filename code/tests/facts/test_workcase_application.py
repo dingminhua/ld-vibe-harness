@@ -22,6 +22,7 @@ from ldvh.facts.update_application import MANAGED_FIELDS
 from ldvh.facts.workcase_projection import approval_baseline_fingerprint
 from ldvh.facts.workcase_update import WorkCaseWriteCommand, apply_workcase_write
 from ldvh.filesystem import AtomicWriteResult
+from ldvh.time import canonical_utc_timestamp
 
 
 def _git(project: Path, *arguments: str) -> str:
@@ -506,6 +507,188 @@ def _human_reference() -> tuple[dict[str, Any], ...]:
     return ({"kind": "conversation", "locator": "human-decision"},)
 
 
+def _termination_for(before: dict[str, Any], fingerprint: str) -> dict[str, Any]:
+    snapshots = []
+    for item in before["work_items"]:
+        summary = next(
+            (
+                item[name]
+                for name in ("result_summary", "current_summary", "blocking_summary", "resume_from")
+                if name in item
+            ),
+            "no-runtime-summary",
+        )
+        snapshots.append(f"{item['item_id']}::{item['status']}::{summary}")
+    return {
+        "initiated_at": "2026-07-26T13:00:00+08:00",
+        "source_status": before["status"],
+        "source_phase": before["phase"],
+        "source_content_fingerprint": fingerprint,
+        "reason": "Human instructed the WorkCase to stop and wind down.",
+        "source_refs": ["human-decision"],
+        "item_snapshots": sorted(snapshots),
+        "quality_steps": [
+            "independent_result_review:not_reached",
+            "closure_proposal:not_reached",
+            "gate_2:not_reached",
+        ],
+        "cleanup_status": "pending",
+        "cleanup_summary": "The original plan is frozen; cleanup inventory is pending.",
+    }
+
+
+def test_begin_update_and_complete_termination_use_one_human_instruction(
+    current_fact_schemas: Mapping[str, FactSchema],
+    tmp_path: Path,
+) -> None:
+    project = _project(current_fact_schemas, tmp_path)
+    before = _closing("workcase-0084")
+    _write(project, before)
+    current = _read(project, before["object_id"])
+    assert current.content_fingerprint is not None
+
+    begun_after = deepcopy(before)
+    begun_after["status"] = "open"
+    begun_after["phase"] = "termination_preparing"
+    for name in ("waiting_on", "blocking_summary", "summary", "resume_from"):
+        begun_after.pop(name, None)
+    begun_after["termination"] = _termination_for(before, current.content_fingerprint)
+    begun = apply_workcase_write(
+        _command(
+            project,
+            before,
+            begun_after,
+            mode="begin_termination",
+            authorization_reference=_human_reference(),
+        )
+    )
+    assert begun.status == "updated", begun.issues
+    assert begun.readback is not None and begun.readback.fields is not None
+    assert begun.readback.fields["phase"] == "termination_preparing"
+
+    cleanup_before = deepcopy(begun.readback.fields)
+    cleanup_after = deepcopy(cleanup_before)
+    termination = deepcopy(cleanup_after["termination"])
+    termination.update(
+        {
+            "retained_scope": ["The already formed bounded result."],
+            "discarded_scope": ["none-observed: no physical discard was requested"],
+            "unverified_scope": ["No additional environment matrix was run after termination."],
+            "relationship_impacts": ["none-observed: no inbound dependency or routed responsibility"],
+            "quality_steps": [
+                "independent_result_review:actual",
+                "closure_proposal:skipped",
+                "gate_2:skipped",
+            ],
+            "cleanup_status": "completed",
+            "cleanup_summary": "Retained work and validation gaps were recorded; no physical discard was requested.",
+        }
+    )
+    cleanup_after["termination"] = termination
+    invalid_cleanup_after = deepcopy(cleanup_after)
+    invalid_cleanup_after["termination"]["quality_steps"][-1] = "gate_2:invented"
+    invalid_cleanup = apply_workcase_write(
+        _command(
+            project,
+            cleanup_before,
+            invalid_cleanup_after,
+            mode="update",
+            event_at="2026-07-26T13:30:00+08:00",
+        )
+    )
+    assert invalid_cleanup.status == "candidate_rejected"
+    assert any("quality_steps" in issue.field_path for issue in invalid_cleanup.issues)
+
+    cleaned = apply_workcase_write(
+        _command(project, cleanup_before, cleanup_after, mode="update", event_at="2026-07-26T14:00:00+08:00")
+    )
+    assert cleaned.status == "updated", cleaned.issues
+    assert cleaned.readback is not None and cleaned.readback.fields is not None
+
+    completed_before = deepcopy(cleaned.readback.fields)
+    closed = {
+        "object_id": completed_before["object_id"],
+        "fact_type_key": "workcase",
+        "title": completed_before["title"],
+        "created_at": completed_before["created_at"],
+        "updated_at": completed_before["updated_at"],
+        "change_log": deepcopy(completed_before["change_log"]),
+        "status": "closed",
+        "goal": completed_before["goal"],
+        "scope": completed_before["scope"],
+        "success_criterion_definitions": deepcopy(completed_before["success_criterion_definitions"]),
+        "success_criterion_results": deepcopy(completed_before["success_criterion_results"]),
+        "result_summary": completed_before["result_summary"],
+        "validation_summary": completed_before["validation_summary"],
+        "closure_outcome": "completed",
+        "disposition_summary": (
+            "Human-initiated termination retained the completed bounded result and recorded skipped gates."
+        ),
+        "termination": deepcopy(completed_before["termination"]),
+    }
+    routed_closed = deepcopy(closed)
+    routed_closed["relations"] = [
+        {
+            "relation_key": "routed-to",
+            "target": {
+                "governed_project_id": "sample",
+                "fact_type_key": "workcase",
+                "object_id": "workcase-0086",
+            },
+        }
+    ]
+    routed_rejected = apply_workcase_write(
+        _command(
+            project,
+            completed_before,
+            routed_closed,
+            mode="complete_termination",
+            event_at="2026-07-26T14:30:00+08:00",
+        )
+    )
+    assert routed_rejected.status == "candidate_rejected"
+    assert any("不创建 routed-to" in issue.summary for issue in routed_rejected.issues)
+
+    dependent = _active("workcase-0085", title="Dependent responsibility")
+    dependent["relations"] = [
+        {
+            "relation_key": "depends-on",
+            "target": {
+                "governed_project_id": "sample",
+                "fact_type_key": "workcase",
+                "object_id": completed_before["object_id"],
+            },
+        }
+    ]
+    dependent_path = _write(project, dependent)
+    rejected = apply_workcase_write(
+        _command(
+            project,
+            completed_before,
+            closed,
+            mode="complete_termination",
+            event_at="2026-07-26T15:00:00+08:00",
+        )
+    )
+    assert rejected.status == "candidate_rejected"
+    assert any("depends-on" in issue.summary for issue in rejected.issues)
+    dependent_path.unlink()
+
+    completed = apply_workcase_write(
+        _command(
+            project,
+            completed_before,
+            closed,
+            mode="complete_termination",
+            event_at="2026-07-26T15:00:00+08:00",
+        )
+    )
+    assert completed.status == "updated", completed.issues
+    assert completed.readback is not None and completed.readback.fields is not None
+    assert completed.readback.fields["status"] == "closed"
+    assert completed.readback.fields["termination"]["quality_steps"][-1] == "gate_2:skipped"
+
+
 def _review_reference() -> dict[str, Any]:
     return {"kind": "conversation", "locator": "independent-review"}
 
@@ -577,7 +760,7 @@ def test_workcase_update_compares_fractional_seconds_beyond_microseconds_without
     assert result.status == expected_status
     if expected_status == "updated":
         assert result.readback is not None and result.readback.fields is not None
-        assert result.readback.fields["updated_at"] == event_time
+        assert result.readback.fields["updated_at"] == canonical_utc_timestamp(event_time)
     else:
         assert path.read_bytes() == original
 
@@ -746,7 +929,7 @@ def test_update_workcase_applies_one_full_after_and_core_managed_fields(
     assert result.readback is not None and result.readback.fields is not None
     assert result.readback.fields["object_id"] == before["object_id"]
     assert result.readback.fields["created_at"] == before["created_at"]
-    assert result.readback.fields["updated_at"] == "2026-07-26T13:00:00+08:00"
+    assert result.readback.fields["updated_at"] == canonical_utc_timestamp("2026-07-26T13:00:00+08:00")
     assert result.readback.fields["title"] == "修正后的当前责任"
     assert path.read_text(encoding="utf-8") == result.candidate_text
 
@@ -1376,7 +1559,9 @@ def test_gate1_approval_requires_matching_request_authorization_and_readback(
 
     assert result.status == "updated"
     assert result.readback is not None and result.readback.fields is not None
-    assert result.readback.fields["execution_approval"] == after["execution_approval"]
+    expected_approval = deepcopy(after["execution_approval"])
+    expected_approval["approved_at"] = canonical_utc_timestamp(expected_approval["approved_at"])
+    assert result.readback.fields["execution_approval"] == expected_approval
 
 
 def test_gate1_freezes_quality_gate_declaration_even_if_baseline_is_recomputed(

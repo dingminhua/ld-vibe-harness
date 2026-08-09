@@ -23,7 +23,7 @@ from ldvh.facts.workcase_projection import (
 )
 from ldvh.facts.workcase_validation import required_quality_gate_issues
 
-WorkCaseOperation = Literal["update", "close", "correct"]
+WorkCaseOperation = Literal["update", "close", "correct", "begin_termination", "complete_termination"]
 
 _STATUS_EDGES = {
     "spark": {("open", "routed"), ("open", "implemented"), ("open", "discarded")},
@@ -41,6 +41,7 @@ _ACTIVE_PHASES = frozenset(
         "independent_reviewing",
         "closure_preparing",
         "human_closure_confirming",
+        "termination_preparing",
     }
 )
 _WORKCASE_PHASE_EDGES = frozenset(
@@ -112,6 +113,28 @@ _REVIEWER_FIELDS = (
 # append while continuing to freeze every semantic domain field.
 _BLOCKED_OVERLAY_FIELDS = frozenset({"status", "blocking_summary", "waiting_on", "updated_at", "change_log"})
 _BLOCKED_FACT_CORRECTION_FIELDS = frozenset({"title", "priority", "urls"})
+_TERMINATION_CONTROL_FIELDS = frozenset(
+    {
+        "status",
+        "phase",
+        "summary",
+        "resume_from",
+        "waiting_on",
+        "blocking_summary",
+        "termination",
+        "updated_at",
+        "change_log",
+    }
+)
+_TERMINATION_SOURCE_FIELDS = (
+    "initiated_at",
+    "source_status",
+    "source_phase",
+    "source_content_fingerprint",
+    "reason",
+    "source_refs",
+    "item_snapshots",
+)
 
 
 def _issue(summary: str, field_path: str) -> FactIssue:
@@ -1142,6 +1165,40 @@ def validate_workcase_transition(
     if repairing_invalid_before:
         return (_issue("当前 WorkCase 专属操作不接受 invalid-before 修复", "status"),)
 
+    if operation == "begin_termination":
+        if before_status not in ACTIVE_STATUSES or before_phase not in _ACTIVE_PHASES - {"termination_preparing"}:
+            issues.append(_issue("begin-workcase-termination 只能消费未进入善后的活动 WorkCase", "phase"))
+        if after_status != "open" or after_phase != "termination_preparing":
+            issues.append(_issue("begin-workcase-termination after 必须为 open/termination_preparing", "phase"))
+        for name in ("waiting_on", "blocking_summary", "summary", "resume_from"):
+            if name in after:
+                issues.append(_issue("开始终止必须移除旧执行检查点；善后检查点随后据实形成", name))
+        changed = _changed_fields(before, after)
+        for name in sorted(changed - _TERMINATION_CONTROL_FIELDS):
+            issues.append(_issue("开始终止必须冻结原计划、授权、item、结果与关系", name))
+        termination = after.get("termination")
+        if not isinstance(termination, Mapping):
+            issues.append(_issue("开始终止必须形成 termination", "termination"))
+        else:
+            if termination.get("source_status") != before_status:
+                issues.append(_issue("termination source_status 必须等于 before", "termination.source_status"))
+            if termination.get("source_phase") != before_phase:
+                issues.append(_issue("termination source_phase 必须等于 before", "termination.source_phase"))
+        return tuple(issues)
+
+    if operation == "complete_termination":
+        if before_status != "open" or before_phase != "termination_preparing":
+            issues.append(_issue("complete-workcase-termination 只能消费 open/termination_preparing before", "phase"))
+        if after_status != "closed" or "phase" in after:
+            issues.append(_issue("complete-workcase-termination after 必须为无 phase 的 closed", "status"))
+        before_termination = before.get("termination")
+        after_termination = after.get("termination")
+        if not isinstance(before_termination, Mapping) or before_termination.get("cleanup_status") != "completed":
+            issues.append(_issue("完成终止前 cleanup_status 必须为 completed", "termination.cleanup_status"))
+        if before_termination != after_termination:
+            issues.append(_issue("完成终止必须原样保留 termination", "termination"))
+        return tuple(issues)
+
     if operation == "close":
         if before_status != "open" or before_phase != "human_closure_confirming":
             issues.append(_issue("close-workcase 只能消费 open/human_closure_confirming before", "phase"))
@@ -1154,15 +1211,30 @@ def validate_workcase_transition(
             issues.append(_issue("correct-closed-workcase 只允许 closed → closed", "status"))
         if "phase" in before or "phase" in after:
             issues.append(_issue("closed WorkCase 不得恢复或保存 phase", "phase"))
+        if not _same_presence_and_value(before, after, "termination"):
+            issues.append(_issue("closed 更正必须保持普通关闭或终止关闭的判别器与 termination 原值", "termination"))
         return tuple(issues)
 
     if before_status not in ACTIVE_STATUSES or after_status not in ACTIVE_STATUSES:
         issues.append(_issue("update-workcase 只接受活动期 WorkCase，不能形成或更正 closed", "status"))
         return tuple(issues)
+    if before_phase == "termination_preparing" or after_phase == "termination_preparing":
+        if before_phase != "termination_preparing" or after_phase != "termination_preparing":
+            return (_issue("phase 不在当前允许边；termination_preparing 只能由两项专属终止事务进入或离开", "phase"),)
+        changed = _changed_fields(before, after)
+        for name in sorted(changed - _TERMINATION_CONTROL_FIELDS):
+            issues.append(_issue("终止善后中原计划、授权、item、结果与关系必须冻结", name))
+        old_termination = before.get("termination")
+        new_termination = after.get("termination")
+        if isinstance(old_termination, Mapping) and isinstance(new_termination, Mapping):
+            for name in _TERMINATION_SOURCE_FIELDS:
+                if old_termination.get(name) != new_termination.get(name):
+                    issues.append(_issue("终止起始现场成员必须冻结", f"termination.{name}"))
+        return tuple(issues)
     if before_phase == "human_closure_confirming":
         return (_issue("human_closure_confirming 只能由 close-workcase 消费，禁止 update-workcase", "phase"),)
     if before_phase not in _ACTIVE_PHASES or after_phase not in _ACTIVE_PHASES:
-        issues.append(_issue("活动期 WorkCase phase 不在当前七项闭集中", "phase"))
+        issues.append(_issue("活动期 WorkCase phase 不在当前八项闭集中", "phase"))
     if safe_convergence_shape(before) and after_phase in {"executing", "plan_revising"}:
         issues.append(_issue("SafeConvergenceShape 只能沿结果、复核与关闭链向后收敛", "phase"))
     if isinstance(before.get("execution_approval"), dict) and not _same_presence_and_value(

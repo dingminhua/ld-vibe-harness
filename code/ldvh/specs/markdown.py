@@ -9,12 +9,12 @@ from __future__ import annotations
 import re
 from collections.abc import Iterator
 from dataclasses import dataclass
-from datetime import datetime
 from pathlib import Path
 
 from ldvh.diagnostics import Issue, SourceLocation
 from ldvh.filesystem import safe_read_relative
 from ldvh.specs.source import ObservedResource
+from ldvh.time import utc_now_iso
 
 _ATX_HEADING = re.compile(r" {0,3}(?P<marks>#{1,6})(?:[ \t]+(?P<title>.*?))?[ \t]*$")
 _SETEXT_UNDERLINE = re.compile(r" {0,3}(?P<marks>=+|-+)[ \t]*$")
@@ -288,7 +288,7 @@ def read_observed_resource(path: Path, relative_path: str | Path) -> ObservedRes
     source_path = relative.as_posix()
     _, repository_root = _validated_resource_path(path, relative)
     raw_bytes = safe_read_relative(repository_root, relative)
-    return ObservedResource(source_path, raw_bytes, datetime.now().astimezone().isoformat())
+    return ObservedResource(source_path, raw_bytes, utc_now_iso())
 
 
 def _validated_resource_path(path: Path, relative_path: Path) -> tuple[Path, Path]:

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 from dataclasses import replace
-from datetime import datetime
 from pathlib import Path
 
 from ldvh.diagnostics import Issue, SourceLocation
@@ -13,12 +12,6 @@ from ldvh.helper.responses import gap, source_reference
 from ldvh.helper.rule_source import RuleSourceResult
 from ldvh.helper.service import handle_request
 from ldvh.specs.repository import RepositoryInspection, inspect_repository
-
-
-class _FrozenDateTime(datetime):
-    @classmethod
-    def now(cls, tz=None):
-        return cls.fromisoformat("2026-07-20T16:30:00+08:00")
 
 
 def _working_rule_source(tmp_path: Path) -> RuleSourceResult:
@@ -91,8 +84,8 @@ def test_rule_source_location_gap_is_unavailable(monkeypatch) -> None:
 
 
 def test_capability_profiles_preserve_domain_result_and_compact_size(monkeypatch) -> None:
-    monkeypatch.setattr("ldvh.helper.service.datetime", _FrozenDateTime)
-    monkeypatch.setattr("ldvh.governance.resolver.datetime", _FrozenDateTime)
+    monkeypatch.setattr("ldvh.helper.service.utc_now_iso", lambda: "2026-07-20T08:30:00Z")
+    monkeypatch.setattr("ldvh.governance.resolver.utc_now_iso", lambda **_: "2026-07-20T08:30:00Z")
 
     compact = handle_request("capabilities", None, json.dumps({"response_profile": "compact"})).response
     diagnostic = handle_request("capabilities", None, json.dumps({"response_profile": "diagnostic"})).response
@@ -335,8 +328,10 @@ def test_unrelated_candidate_problem_does_not_block_defined_operation(
 
     assert discovered.response["outcome"] == "partial"
     assert discovered.response["scope"]["completed"] == [
+        "begin-workcase-termination",
         "check-fact-integrity",
         "close-workcase",
+        "complete-workcase-termination",
         "correct-closed-workcase",
         "create-fact-object",
         "find-fact-object-candidates",

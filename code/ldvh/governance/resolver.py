@@ -10,7 +10,6 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, replace
-from datetime import UTC, datetime
 from enum import StrEnum
 from pathlib import Path
 from types import MappingProxyType
@@ -40,6 +39,7 @@ from ldvh.governance.models import (
     RegisteredProjectCandidate,
     ScopeDescriptor,
 )
+from ldvh.time import utc_now_iso
 
 type SourceReference = Mapping[str, Any]
 
@@ -145,7 +145,7 @@ def resolve_governance_scope(
                 f"The explicit workspace root is unsupported on Windows: {path_problem}",
                 (),
             )
-    observed_at = datetime.now(UTC).astimezone().isoformat(timespec="seconds")
+    observed_at = utc_now_iso(timespec="seconds")
     observations = tuple((item, resolve_git_identity(item.locator, base=base)) for item in requested)
     observation_sources = tuple(
         source for item, observation in observations for source in _observation_sources(item, observation, observed_at)
@@ -808,7 +808,7 @@ def _source_time(sources: Sequence[SourceReference]) -> str:
         observed_at = source.get("observed_at")
         if isinstance(observed_at, str):
             return observed_at
-    return datetime.now(UTC).astimezone().isoformat(timespec="seconds")
+    return utc_now_iso(timespec="seconds")
 
 
 def _freeze_source(value: Mapping[str, Any]) -> SourceReference:

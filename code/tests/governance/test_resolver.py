@@ -584,7 +584,7 @@ def test_sources_are_timestamped_and_domain_result_cannot_cross_read_worktree_co
     assert "only-main" not in repr(serialized)
     assert serialized["object_resolutions"][0]["git_worktree_root"] == str(linked.resolve())
     assert all(
-        re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}", source["observed_at"])
+        re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", source["observed_at"])
         for source in run.sources
     )
     with pytest.raises(TypeError):

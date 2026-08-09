@@ -11,18 +11,26 @@ from ldvh.facts.models import FactReference
 from ldvh.governance.models import LocatorSource, ScopeDescriptor
 from ldvh.helper.operation_runtime import OperationExecutionContext
 from ldvh.helper.operations.workcase_update_request import (
+    BEGIN_TERMINATION_OPTIONAL_INPUTS,
+    BEGIN_TERMINATION_REQUIRED_INPUTS,
     CLOSE_OPTIONAL_INPUTS,
     CLOSE_REQUIRED_INPUTS,
+    COMPLETE_TERMINATION_OPTIONAL_INPUTS,
+    COMPLETE_TERMINATION_REQUIRED_INPUTS,
     CORRECT_CLOSED_OPTIONAL_INPUTS,
     CORRECT_CLOSED_REQUIRED_INPUTS,
     UPDATE_OPTIONAL_INPUTS,
     UPDATE_REQUIRED_INPUTS,
+    BeginWorkCaseTerminationRequest,
     CloseWorkCaseRequest,
+    CompleteWorkCaseTerminationRequest,
     CorrectClosedWorkCaseRequest,
     RouteTargetFingerprint,
     UpdateWorkCaseRequest,
     WorkCaseWriteRequestParseResult,
+    parse_begin_workcase_termination_request,
     parse_close_workcase_request,
+    parse_complete_workcase_termination_request,
     parse_correct_closed_workcase_request,
     parse_update_workcase_request,
 )
@@ -409,3 +417,30 @@ def test_input_metadata_matches_the_three_public_contracts() -> None:
         "arguments.independent_review_reference",
     )
     assert CORRECT_CLOSED_OPTIONAL_INPUTS == UPDATE_OPTIONAL_INPUTS
+    assert BEGIN_TERMINATION_REQUIRED_INPUTS == (*UPDATE_REQUIRED_INPUTS, "authorization_reference")
+    assert BEGIN_TERMINATION_OPTIONAL_INPUTS == CLOSE_OPTIONAL_INPUTS
+    assert COMPLETE_TERMINATION_REQUIRED_INPUTS == UPDATE_REQUIRED_INPUTS
+    assert COMPLETE_TERMINATION_OPTIONAL_INPUTS == CLOSE_OPTIONAL_INPUTS
+
+
+def test_termination_parsers_enforce_one_human_instruction_without_second_gate() -> None:
+    begun = _parse(parse_begin_workcase_termination_request, _request(_arguments()))
+    assert isinstance(begun.request, BeginWorkCaseTerminationRequest)
+
+    missing_human = _parse(
+        parse_begin_workcase_termination_request,
+        _request(_arguments(), authorization=()),
+    )
+    assert missing_human.request is None
+
+    completed = _parse(
+        parse_complete_workcase_termination_request,
+        _request(_arguments(fact_object=_closed_fact_object()), authorization=()),
+    )
+    assert isinstance(completed.request, CompleteWorkCaseTerminationRequest)
+
+    repeated_gate = _parse(
+        parse_complete_workcase_termination_request,
+        _request(_arguments(fact_object=_closed_fact_object())),
+    )
+    assert repeated_gate.request is None

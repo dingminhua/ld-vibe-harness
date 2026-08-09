@@ -80,6 +80,60 @@ def _recover(
     )
 
 
+def test_termination_recovery_returns_only_the_cleanup_control_surface() -> None:
+    fact_ref = {
+        "governed_project_id": "sample-0",
+        "fact_type_key": "workcase",
+        "object_id": "workcase-0084",
+    }
+    termination = {
+        "reason": "Human stopped the original plan.",
+        "cleanup_status": "pending",
+        "cleanup_summary": "Inventory is in progress.",
+    }
+    current_projection = {
+        "contract_identity": "workcase-current-snapshot-presentation/1",
+        "resolution": "resolved",
+        "source_content_fingerprint": "a" * 64,
+        "lifecycle_position": "termination_preparing",
+        "handoff_narrative_key": "termination_cleanup_in_progress",
+        "next_required_control_step": "termination_cleanup",
+        "progress_group": "termination_cleanup",
+        "progress_step": None,
+        "blocking_overlay": False,
+    }
+    response = {
+        "outcome": "ok",
+        "result": {
+            "items": [
+                {
+                    "requested_ref": fact_ref,
+                    "check_status": "mechanically_valid",
+                    "fact_object": {
+                        "status": "open",
+                        "phase": "termination_preparing",
+                        "summary": "Continue the frozen original plan.",
+                        "resume_from": "Resume item-old.",
+                        "termination": termination,
+                        "work_items": [
+                            {"item_id": "item-old", "status": "in_progress", "goal": "Frozen original item"}
+                        ],
+                    },
+                    "current_snapshot_projection": current_projection,
+                }
+            ]
+        },
+    }
+
+    projected, active_items = context_recovery._workcase_projection(response, fact_ref)
+
+    assert projected["termination"] == termination
+    assert projected["current_snapshot_projection"] == current_projection
+    assert "summary" not in projected
+    assert "resume_from" not in projected
+    assert active_items == []
+
+
 def _recorded_recovery(
     monkeypatch: pytest.MonkeyPatch,
     helper: Path,

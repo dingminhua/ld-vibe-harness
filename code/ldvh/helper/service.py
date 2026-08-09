@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -24,6 +23,7 @@ from ldvh.helper.responses import RequestKind, ServiceResult, common_response, d
 from ldvh.helper.rule_source import inspect_colocated_rule_source
 from ldvh.helper.source_refs import RuleReferenceBinder, reset_reference_binder, set_reference_binder
 from ldvh.specs.source import RuleSourceIdentity
+from ldvh.time import utc_now_iso
 
 CONTRACT_SOURCES = [
     source_reference("rule", "specs/04-Helper CLI 服务规范.md"),
@@ -281,7 +281,7 @@ def _handle_request(request_kind: RequestKind, operation_key: str | None, raw_in
         )
     execution_context = OperationExecutionContext(
         cwd=Path.cwd(),
-        event_at=datetime.now().astimezone().isoformat(),
+        event_at=utc_now_iso(),
     )
 
     inspected = inspect_colocated_rule_source(Path(ldvh.__file__))

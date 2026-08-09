@@ -565,17 +565,18 @@ def test_caller_supplied_observation_time_binds_both_managed_timestamps(
 ) -> None:
     command = _command(current_fact_schemas, tmp_path)
     observed_at = "2026-07-15T16:00:00+08:00"
+    canonical_observed_at = "2026-07-15T08:00:00Z"
 
     prepared = prepare_fact_creation(command, observed_at=observed_at)
 
     assert isinstance(prepared, PreparedFactCreation)
-    assert prepared.observed_at == observed_at
+    assert prepared.observed_at == canonical_observed_at
     with allocation_lock(command.boundary, LAYOUTS["spark"]) as counter_path:
         result = create_fact_object_locked(prepared, counter_path)
     assert result.status == "created"
     assert result.read is not None and result.read.fields is not None
-    assert result.read.fields["created_at"] == observed_at
-    assert result.read.fields["updated_at"] == observed_at
+    assert result.read.fields["created_at"] == canonical_observed_at
+    assert result.read.fields["updated_at"] == canonical_observed_at
 
 
 def test_candidate_rejection_has_no_allocator_or_fact_side_effect(

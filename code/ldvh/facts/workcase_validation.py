@@ -25,6 +25,7 @@ ACTIVE_PHASES = frozenset(
         "independent_reviewing",
         "closure_preparing",
         "human_closure_confirming",
+        "termination_preparing",
     }
 )
 ITEM_STATUSES = frozenset({"pending", "in_progress", "blocked", "completed", "cancelled"})
@@ -49,6 +50,9 @@ _WORKCASE_ID = re.compile(r"workcase-[0-9]{4,}\Z")
 _AUTHORIZATION_ID = re.compile(r"authorization-[a-z0-9][a-z0-9-]*\Z")
 _LIMITATION_ID = re.compile(r"limitation-[a-z0-9][a-z0-9-]*\Z")
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
+_TERMINATION_QUALITY_STEP = re.compile(
+    r"(independent_result_review|closure_proposal|gate_2):(not_reached|actual|skipped)\Z"
+)
 
 _RESULT_PROJECTION_FIELDS = frozenset(
     {"success_criterion_results", "result_summary", "controller_check_summary", "validation_summary"}
@@ -83,8 +87,28 @@ _CLOSED_ALLOWED = frozenset(
         "spark_suggestions",
         "relations",
         "urls",
+        "termination",
     }
 )
+
+_TERMINATION_REQUIRED = frozenset(
+    {
+        "initiated_at",
+        "source_status",
+        "source_phase",
+        "source_content_fingerprint",
+        "reason",
+        "source_refs",
+        "item_snapshots",
+        "quality_steps",
+        "cleanup_status",
+        "cleanup_summary",
+    }
+)
+_TERMINATION_OPTIONAL_ARRAYS = frozenset(
+    {"retained_scope", "discarded_scope", "unverified_scope", "relationship_impacts"}
+)
+_TERMINATION_ALLOWED = _TERMINATION_REQUIRED | _TERMINATION_OPTIONAL_ARRAYS
 
 
 def _positive_integer(value: object) -> bool:
@@ -950,6 +974,65 @@ def _require_complete_result(fields: Mapping[str, object], issues: list[FactIssu
         _issue(issues, "canonical result projection 结构不完整", "success_criterion_results")
 
 
+def _validate_termination(fields: Mapping[str, object], issues: list[FactIssue]) -> None:
+    value = fields.get("termination")
+    if not isinstance(value, Mapping):
+        _issue(issues, "termination 必须是 object", "termination")
+        return
+    unknown = set(value) - _TERMINATION_ALLOWED
+    for name in sorted(unknown):
+        _issue(issues, "termination 包含未登记字段", f"termination.{name}")
+    _require(value, _TERMINATION_REQUIRED, issues, context="termination ")
+    for name in ("initiated_at", "reason", "cleanup_summary"):
+        if name in value and not _nonempty_string(value.get(name)):
+            _issue(issues, "termination string 成员必须非空", f"termination.{name}")
+    if value.get("source_status") not in ACTIVE_STATUSES:
+        _issue(issues, "termination source_status 必须为 open 或 blocked", "termination.source_status")
+    source_phase = value.get("source_phase")
+    if source_phase not in ACTIVE_PHASES - {"termination_preparing"}:
+        _issue(issues, "termination source_phase 必须为原活动 phase", "termination.source_phase")
+    fingerprint = value.get("source_content_fingerprint")
+    if not isinstance(fingerprint, str) or _SHA256.fullmatch(fingerprint) is None:
+        _issue(
+            issues,
+            "termination source_content_fingerprint 必须为 SHA-256",
+            "termination.source_content_fingerprint",
+        )
+    for name in ("source_refs", "item_snapshots", "quality_steps"):
+        if name in value:
+            _validate_unique_strings(value.get(name), f"termination.{name}", issues)
+    for name in _TERMINATION_OPTIONAL_ARRAYS:
+        members = value.get(name)
+        if name not in value:
+            continue
+        if not isinstance(members, list) or any(not _nonempty_string(member) for member in members):
+            _issue(
+                issues,
+                "termination 善后范围必须是非空 string array；已检查且无时写 none-observed 边界",
+                f"termination.{name}",
+            )
+        elif len(members) != len(set(members)):
+            _issue(issues, "termination 善后范围不得重复", f"termination.{name}")
+    quality_steps = value.get("quality_steps")
+    if isinstance(quality_steps, list):
+        observed_keys: list[str] = []
+        for member in quality_steps:
+            match = _TERMINATION_QUALITY_STEP.fullmatch(member) if isinstance(member, str) else None
+            if match is None:
+                _issue(
+                    issues,
+                    "termination quality_steps 只允许三项标准步骤及 not_reached/actual/skipped",
+                    "termination.quality_steps",
+                )
+                continue
+            observed_keys.append(match.group(1))
+        expected_keys = {"independent_result_review", "closure_proposal", "gate_2"}
+        if set(observed_keys) != expected_keys or len(observed_keys) != len(expected_keys):
+            _issue(issues, "termination quality_steps 必须逐项且仅一次覆盖三项标准步骤", "termination.quality_steps")
+    if value.get("cleanup_status") not in {"pending", "blocked", "completed"}:
+        _issue(issues, "termination cleanup_status 不在当前闭集", "termination.cleanup_status")
+
+
 def _validate_active_presence(fields: Mapping[str, object], issues: list[FactIssue]) -> None:
     _require(
         fields,
@@ -976,6 +1059,12 @@ def _validate_active_presence(fields: Mapping[str, object], issues: list[FactIss
     if phase not in ACTIVE_PHASES:
         _issue(issues, "phase 不在当前 WorkCase 活动阶段闭集中", "phase")
         return
+
+    if phase == "termination_preparing":
+        _require(fields, {"termination"}, issues, context="termination_preparing ")
+        _validate_termination(fields, issues)
+        return
+    _forbid(fields, {"termination"}, issues, context=f"{phase} ")
     if not _positive_integer(fields.get("plan_version")):
         _issue(issues, "plan_version 必须是正整数", "plan_version")
     if "result_version" in fields and not _positive_integer(fields.get("result_version")):
@@ -1092,6 +1181,20 @@ def _validate_closed_presence(fields: Mapping[str, object], issues: list[FactIss
     for name in sorted(set(fields) - _CLOSED_ALLOWED):
         _issue(issues, "closed WorkCase 白名单禁止该字段", name)
     _validate_outcome(fields.get("closure_outcome"), fields, "closure_outcome", issues)
+    if "termination" in fields:
+        _validate_termination(fields, issues)
+        termination = fields.get("termination")
+        if isinstance(termination, Mapping) and termination.get("cleanup_status") != "completed":
+            _issue(issues, "closed termination 必须已完成善后", "termination.cleanup_status")
+        if isinstance(termination, Mapping):
+            for name in _TERMINATION_OPTIONAL_ARRAYS:
+                if name not in termination:
+                    _issue(issues, "closed termination 必须显式记录已检查的善后范围", f"termination.{name}")
+            quality_steps = termination.get("quality_steps")
+            if isinstance(quality_steps, list) and any(
+                isinstance(member, str) and member.endswith(":not_reached") for member in quality_steps
+            ):
+                _issue(issues, "closed termination 的质量步骤不得保留 not_reached", "termination.quality_steps")
     residuals = fields.get("residual_responsibilities")
     suggestion_kinds = _validate_suggestions(fields.get("spark_suggestions"), "spark_suggestions", issues)
     routed = any(

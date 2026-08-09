@@ -30,6 +30,7 @@ from ldvh.facts.validation import (
     validate_fact_object,
 )
 from ldvh.filesystem import AtomicWriteResult, native_atomic_fact_writes_supported
+from ldvh.time import canonicalize_new_timestamp_fields
 
 UpdateStatus = Literal[
     "invalid_request",
@@ -146,6 +147,7 @@ def _candidate(
         "updated_at": command.event_at,
     }
     timestamp_appended_change_log(fields, command.event_at)
+    fields = canonicalize_new_timestamp_fields(fields, before=before)
     text = serialize_fact_object(layout, fields, command.body)
     parsed = parse_study_markdown(text) if layout.carrier == "markdown" else parse_yaml_object(text)
     issues = list(parsed.issues)

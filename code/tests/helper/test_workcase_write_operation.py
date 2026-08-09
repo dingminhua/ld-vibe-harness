@@ -68,6 +68,8 @@ def test_current_workcase_operations_are_registered_with_exact_inputs() -> None:
     candidate = IMPLEMENTATIONS["prepare-closed-workcase-candidate"]
     update = IMPLEMENTATIONS["update-workcase"]
     close = IMPLEMENTATIONS["close-workcase"]
+    begin = IMPLEMENTATIONS["begin-workcase-termination"]
+    complete = IMPLEMENTATIONS["complete-workcase-termination"]
     correct = IMPLEMENTATIONS["correct-closed-workcase"]
 
     assert candidate.required_inputs == ("arguments.fact_ref",)
@@ -85,6 +87,10 @@ def test_current_workcase_operations_are_registered_with_exact_inputs() -> None:
     )
     assert close.required_inputs == (*update.required_inputs, "authorization_reference")
     assert close.optional_inputs == ("work_object_locators", "arguments.workspace_root")
+    assert begin.required_inputs == (*update.required_inputs, "authorization_reference")
+    assert begin.optional_inputs == close.optional_inputs
+    assert complete.required_inputs == update.required_inputs
+    assert complete.optional_inputs == close.optional_inputs
     assert correct.required_inputs == (
         *update.required_inputs,
         "arguments.route_target_fingerprints",
@@ -106,6 +112,8 @@ def test_capability_discovery_exposes_all_current_implementations() -> None:
             "update-workcase",
             "close-workcase",
             "correct-closed-workcase",
+            "begin-workcase-termination",
+            "complete-workcase-termination",
         }
     }
     assert set(operations) == {
@@ -113,6 +121,8 @@ def test_capability_discovery_exposes_all_current_implementations() -> None:
         "update-workcase",
         "close-workcase",
         "correct-closed-workcase",
+        "begin-workcase-termination",
+        "complete-workcase-termination",
     }
     assert all(item["implementation"]["present"] for item in operations.values())
     assert operations["prepare-closed-workcase-candidate"]["effect"] == "read"
@@ -123,6 +133,10 @@ def test_capability_discovery_exposes_all_current_implementations() -> None:
         "arguments.fact_object",
     ]
     assert operations["close-workcase"]["required_inputs"][-1] == "authorization_reference"
+    assert operations["begin-workcase-termination"]["required_inputs"][-1] == "authorization_reference"
+    assert operations["complete-workcase-termination"]["required_inputs"] == operations["update-workcase"][
+        "required_inputs"
+    ]
     assert operations["correct-closed-workcase"]["required_inputs"][-2:] == [
         "arguments.route_target_fingerprints",
         "arguments.independent_review_reference",
@@ -133,6 +147,8 @@ def test_capability_discovery_exposes_all_current_implementations() -> None:
     assert '"arguments.remove"' not in encoded
     assert "workcase-fact-type::update-workcase 输入与结果" in encoded
     assert "workcase-fact-type::close-workcase 输入与结果" in encoded
+    assert "workcase-fact-type::begin-workcase-termination 输入与结果" in encoded
+    assert "workcase-fact-type::complete-workcase-termination 输入与结果" in encoded
     assert "workcase-fact-type::correct-closed-workcase 输入与结果" in encoded
 
 

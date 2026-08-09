@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -31,6 +30,7 @@ from ldvh.helper.operations.fact_operation_support import plain, reading_boundar
 from ldvh.helper.requests import CommonRequest
 from ldvh.helper.responses import source_reference
 from ldvh.specs.repository import RepositoryInspection
+from ldvh.time import utc_now_iso
 
 OPERATION_KEY = "read-fact-objects"
 _INPUT_CONTRACT = source_reference("rule", "fact-model-foundation::11.1 事实对象读取输入字段")
@@ -70,7 +70,7 @@ def _item_sources(root: Path, scope: FactReferenceScope, canonical_path: str) ->
         {
             "kind": "working_tree",
             "locator": (root / canonical_path).as_posix(),
-            "observed_at": datetime.now().astimezone().isoformat(),
+            "observed_at": utc_now_iso(),
             "details": {"view": "Working Tree"},
         },
     ]

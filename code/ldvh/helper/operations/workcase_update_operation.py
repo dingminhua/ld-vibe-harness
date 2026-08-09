@@ -28,15 +28,21 @@ from ldvh.helper.operations.fact_operation_support import (
     reading_boundary,
 )
 from ldvh.helper.operations.workcase_update_request import (
+    BEGIN_TERMINATION_OPTIONAL_INPUTS,
+    BEGIN_TERMINATION_REQUIRED_INPUTS,
     CLOSE_OPTIONAL_INPUTS,
     CLOSE_REQUIRED_INPUTS,
+    COMPLETE_TERMINATION_OPTIONAL_INPUTS,
+    COMPLETE_TERMINATION_REQUIRED_INPUTS,
     CORRECT_CLOSED_OPTIONAL_INPUTS,
     CORRECT_CLOSED_REQUIRED_INPUTS,
     UPDATE_OPTIONAL_INPUTS,
     UPDATE_REQUIRED_INPUTS,
     CorrectClosedWorkCaseRequest,
     WorkCaseWriteRequest,
+    parse_begin_workcase_termination_request,
     parse_close_workcase_request,
+    parse_complete_workcase_termination_request,
     parse_correct_closed_workcase_request,
     parse_update_workcase_request,
 )
@@ -44,16 +50,20 @@ from ldvh.helper.requests import CommonRequest
 from ldvh.helper.responses import source_reference
 from ldvh.specs.repository import RepositoryInspection
 
-WorkCaseWriteMode = Literal["update", "close", "correct"]
+WorkCaseWriteMode = Literal["update", "close", "correct", "begin_termination", "complete_termination"]
 
 UPDATE_OPERATION_KEY = "update-workcase"
 CLOSE_OPERATION_KEY = "close-workcase"
 CORRECT_CLOSED_OPERATION_KEY = "correct-closed-workcase"
+BEGIN_TERMINATION_OPERATION_KEY = "begin-workcase-termination"
+COMPLETE_TERMINATION_OPERATION_KEY = "complete-workcase-termination"
 
 _CONTRACTS = {
     "update": source_reference("rule", "workcase-fact-type::update-workcase 输入与结果"),
     "close": source_reference("rule", "workcase-fact-type::close-workcase 输入与结果"),
     "correct": source_reference("rule", "workcase-fact-type::correct-closed-workcase 输入与结果"),
+    "begin_termination": source_reference("rule", "workcase-fact-type::begin-workcase-termination 输入与结果"),
+    "complete_termination": source_reference("rule", "workcase-fact-type::complete-workcase-termination 输入与结果"),
 }
 _SHARED_WRITE_CONTRACT = source_reference("rule", "fact-model-foundation::11.8 共享单对象受控写事务")
 _INTEGRITY_CONTRACT = source_reference("rule", "fact-model-foundation::11.9-11.10 事实写后独立完整性审计")
@@ -72,6 +82,10 @@ def _validated_request(
         parsed = parse_update_workcase_request(request, context)
     elif mode == "close":
         parsed = parse_close_workcase_request(request, context)
+    elif mode == "begin_termination":
+        parsed = parse_begin_workcase_termination_request(request, context)
+    elif mode == "complete_termination":
+        parsed = parse_complete_workcase_termination_request(request, context)
     else:
         parsed = parse_correct_closed_workcase_request(request, context)
     if parsed.request is None:
@@ -905,6 +919,22 @@ def _close_call(
     return _execute("close", request, repository, context)
 
 
+def _begin_termination_call(
+    request: CommonRequest,
+    repository: RepositoryInspection,
+    context: OperationExecutionContext,
+) -> OperationExecution:
+    return _execute("begin_termination", request, repository, context)
+
+
+def _complete_termination_call(
+    request: CommonRequest,
+    repository: RepositoryInspection,
+    context: OperationExecutionContext,
+) -> OperationExecution:
+    return _execute("complete_termination", request, repository, context)
+
+
 def _correct_call(
     request: CommonRequest,
     repository: RepositoryInspection,
@@ -929,6 +959,22 @@ def _close_availability(
     return _check_availability("close", request, repository, context)
 
 
+def _begin_termination_availability(
+    request: CommonRequest,
+    repository: RepositoryInspection,
+    context: OperationExecutionContext,
+) -> AvailabilityEvaluation:
+    return _check_availability("begin_termination", request, repository, context)
+
+
+def _complete_termination_availability(
+    request: CommonRequest,
+    repository: RepositoryInspection,
+    context: OperationExecutionContext,
+) -> AvailabilityEvaluation:
+    return _check_availability("complete_termination", request, repository, context)
+
+
 def _correct_availability(
     request: CommonRequest,
     repository: RepositoryInspection,
@@ -943,6 +989,20 @@ UPDATE_WORKCASE_IMPLEMENTATION = OperationImplementation(
     evidence=(_IMPLEMENTATION_SOURCE, _CONTRACTS["update"]),
     check_availability=_update_availability,
     call=_update_call,
+)
+BEGIN_WORKCASE_TERMINATION_IMPLEMENTATION = OperationImplementation(
+    required_inputs=BEGIN_TERMINATION_REQUIRED_INPUTS,
+    optional_inputs=BEGIN_TERMINATION_OPTIONAL_INPUTS,
+    evidence=(_IMPLEMENTATION_SOURCE, _CONTRACTS["begin_termination"]),
+    check_availability=_begin_termination_availability,
+    call=_begin_termination_call,
+)
+COMPLETE_WORKCASE_TERMINATION_IMPLEMENTATION = OperationImplementation(
+    required_inputs=COMPLETE_TERMINATION_REQUIRED_INPUTS,
+    optional_inputs=COMPLETE_TERMINATION_OPTIONAL_INPUTS,
+    evidence=(_IMPLEMENTATION_SOURCE, _CONTRACTS["complete_termination"]),
+    check_availability=_complete_termination_availability,
+    call=_complete_termination_call,
 )
 CLOSE_WORKCASE_IMPLEMENTATION = OperationImplementation(
     required_inputs=CLOSE_REQUIRED_INPUTS,
@@ -961,10 +1021,14 @@ CORRECT_CLOSED_WORKCASE_IMPLEMENTATION = OperationImplementation(
 
 
 __all__ = [
+    "BEGIN_TERMINATION_OPERATION_KEY",
+    "BEGIN_WORKCASE_TERMINATION_IMPLEMENTATION",
     "CLOSE_OPERATION_KEY",
     "CLOSE_WORKCASE_IMPLEMENTATION",
     "CORRECT_CLOSED_OPERATION_KEY",
     "CORRECT_CLOSED_WORKCASE_IMPLEMENTATION",
+    "COMPLETE_TERMINATION_OPERATION_KEY",
+    "COMPLETE_WORKCASE_TERMINATION_IMPLEMENTATION",
     "UPDATE_OPERATION_KEY",
     "UPDATE_WORKCASE_IMPLEMENTATION",
 ]

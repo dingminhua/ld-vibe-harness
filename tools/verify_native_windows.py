@@ -219,9 +219,13 @@ def _volume_observation(path: Path) -> dict[str, Any]:
     return {"filesystem": filesystem.value, "drive_type": drive_type}
 
 
+def _utc_iso(value: datetime | None = None) -> str:
+    return (value or datetime.now(UTC)).astimezone(UTC).isoformat().replace("+00:00", "Z")
+
+
 def _environment(evidence_dir: Path, isolated_temp: Path) -> dict[str, Any]:
     return {
-        "observed_at": datetime.now(UTC).isoformat(),
+        "observed_at": _utc_iso(),
         "platform": platform.platform(),
         "windows_edition": platform.win32_edition(),
         "windows_version": platform.win32_ver(),
@@ -347,8 +351,8 @@ def _record_command(
         "name": name,
         "argv": argv,
         "cwd": str(source_root),
-        "started_at": started.isoformat(),
-        "completed_at": ended.isoformat(),
+        "started_at": _utc_iso(started),
+        "completed_at": _utc_iso(ended),
         "timeout_seconds": COMMAND_TIMEOUT_SECONDS,
         "outcome": outcome,
         "exit_code": exit_code,
@@ -429,7 +433,7 @@ def _rejection(
     if not (evidence_dir / "environment.json").is_file():
         _write_json(
             evidence_dir / "environment.json",
-            {"observed_at": datetime.now(UTC).isoformat(), "status": "initialization_failed"},
+            {"observed_at": _utc_iso(), "status": "initialization_failed"},
         )
     if not (evidence_dir / "source.json").is_file():
         _write_json(evidence_dir / "source.json", source or {"status": "unavailable"})
@@ -476,7 +480,7 @@ def _initialize_evidence(
         _pending_summaries(evidence_dir, phase)
         _write_json(
             evidence_dir / "environment.json",
-            {"observed_at": datetime.now(UTC).isoformat(), "status": "initializing"},
+            {"observed_at": _utc_iso(), "status": "initializing"},
         )
     except (OSError, RuntimeError, UnicodeError) as error:
         if evidence_dir.exists():

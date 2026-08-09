@@ -335,7 +335,7 @@ def _human_gate_trailer_issues(
 ) -> list[CommitValidationIssue]:
     """Fail-closed mechanical block for new or activated independent spec docs.
 
-    Per 00 §10.1 第 12 条 and 03 §12 第 9 条, a commit that adds a new
+    Per 00 §10.1 第 12 条 and 03 §13 第 9 条, a commit that adds a new
     independent spec document (``specs/<id>-*.md``), or activates an existing one
     (flips its ``status`` to ``active``), must carry a non-empty ``Human-Gate:``
     footer trailer recording the Human decision; otherwise the Git Gate fails

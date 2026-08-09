@@ -65,6 +65,13 @@ PHASE_PRESENTATION: dict[str, dict[str, str | None]] = {
         "progress_group": "closure_confirmation",
         "progress_step": None,
     },
+    "termination_preparing": {
+        "lifecycle_position": "termination_preparing",
+        "handoff_narrative_key": "termination_cleanup_in_progress",
+        "next_required_control_step": "termination_cleanup",
+        "progress_group": "termination_cleanup",
+        "progress_step": None,
+    },
 }
 
 CLOSED_PRESENTATION: dict[str, str | None] = {

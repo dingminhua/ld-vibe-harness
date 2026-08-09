@@ -30,6 +30,13 @@ CLOSE_OPTIONAL_INPUTS = (
     "work_object_locators",
     "arguments.workspace_root",
 )
+BEGIN_TERMINATION_REQUIRED_INPUTS = (*UPDATE_REQUIRED_INPUTS, "authorization_reference")
+BEGIN_TERMINATION_OPTIONAL_INPUTS = CLOSE_OPTIONAL_INPUTS
+COMPLETE_TERMINATION_REQUIRED_INPUTS = UPDATE_REQUIRED_INPUTS
+COMPLETE_TERMINATION_OPTIONAL_INPUTS = (
+    "work_object_locators",
+    "arguments.workspace_root",
+)
 CORRECT_CLOSED_REQUIRED_INPUTS = (
     *UPDATE_REQUIRED_INPUTS,
     "arguments.route_target_fingerprints",
@@ -66,6 +73,16 @@ class UpdateWorkCaseRequest(WorkCaseWriteRequest):
 @dataclass(frozen=True, slots=True)
 class CloseWorkCaseRequest(WorkCaseWriteRequest):
     """One complete desired closed snapshot plus a Human authorization reference."""
+
+
+@dataclass(frozen=True, slots=True)
+class BeginWorkCaseTerminationRequest(WorkCaseWriteRequest):
+    """One Human-authorized transition into termination cleanup."""
+
+
+@dataclass(frozen=True, slots=True)
+class CompleteWorkCaseTerminationRequest(WorkCaseWriteRequest):
+    """One completed cleanup transition to the termination closed shape."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -238,6 +255,30 @@ def parse_close_workcase_request(
     return WorkCaseWriteRequestParseResult(CloseWorkCaseRequest(*parsed.values()), ())
 
 
+def parse_begin_workcase_termination_request(
+    request: CommonRequest,
+    context: OperationExecutionContext,
+) -> WorkCaseWriteRequestParseResult:
+    parsed, problems = _parse_base(request, context, allowed_argument_fields=_COMMON_ARGUMENT_FIELDS)
+    if not request.authorization_reference:
+        problems.append("authorization_reference 对 begin-workcase-termination 必须至少包含一项 Human 指令来源")
+    if parsed is None or problems:
+        return WorkCaseWriteRequestParseResult(None, tuple(problems))
+    return WorkCaseWriteRequestParseResult(BeginWorkCaseTerminationRequest(*parsed.values()), ())
+
+
+def parse_complete_workcase_termination_request(
+    request: CommonRequest,
+    context: OperationExecutionContext,
+) -> WorkCaseWriteRequestParseResult:
+    parsed, problems = _parse_base(request, context, allowed_argument_fields=_COMMON_ARGUMENT_FIELDS)
+    if request.authorization_reference:
+        problems.append("authorization_reference 对 complete-workcase-termination 必须为空")
+    if parsed is None or problems:
+        return WorkCaseWriteRequestParseResult(None, tuple(problems))
+    return WorkCaseWriteRequestParseResult(CompleteWorkCaseTerminationRequest(*parsed.values()), ())
+
+
 def _route_target_fingerprints(
     value: object,
     problems: list[str],
@@ -319,19 +360,27 @@ def parse_correct_closed_workcase_request(
 
 
 __all__ = [
+    "BEGIN_TERMINATION_OPTIONAL_INPUTS",
+    "BEGIN_TERMINATION_REQUIRED_INPUTS",
+    "COMPLETE_TERMINATION_OPTIONAL_INPUTS",
+    "COMPLETE_TERMINATION_REQUIRED_INPUTS",
     "CLOSE_OPTIONAL_INPUTS",
     "CLOSE_REQUIRED_INPUTS",
     "CORRECT_CLOSED_OPTIONAL_INPUTS",
     "CORRECT_CLOSED_REQUIRED_INPUTS",
     "UPDATE_OPTIONAL_INPUTS",
     "UPDATE_REQUIRED_INPUTS",
+    "BeginWorkCaseTerminationRequest",
     "CloseWorkCaseRequest",
+    "CompleteWorkCaseTerminationRequest",
     "CorrectClosedWorkCaseRequest",
     "RouteTargetFingerprint",
     "UpdateWorkCaseRequest",
     "WorkCaseWriteRequest",
     "WorkCaseWriteRequestParseResult",
+    "parse_begin_workcase_termination_request",
     "parse_close_workcase_request",
+    "parse_complete_workcase_termination_request",
     "parse_correct_closed_workcase_request",
     "parse_update_workcase_request",
 ]

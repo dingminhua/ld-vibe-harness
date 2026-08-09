@@ -59,8 +59,9 @@ def _validated_request(request: CommonRequest, context: OperationExecutionContex
     if parsed.request.fact_ref.fact_type_key == "workcase":
         raise OperationRequestError(
             (
-                "通用 update-fact-object 不接受 WorkCase；活动期更新、关闭与终态更正必须分别使用 "
-                "update-workcase、close-workcase 与 correct-closed-workcase",
+                "通用 update-fact-object 不接受 WorkCase；活动期更新、主动终止开始、主动终止完成、"
+                "正常关闭与终态更正必须分别使用 update-workcase、begin-workcase-termination、"
+                "complete-workcase-termination、close-workcase 与 correct-closed-workcase",
             ),
             sources=(_CONTRACT,),
         )

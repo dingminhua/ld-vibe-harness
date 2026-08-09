@@ -19,7 +19,7 @@ import tempfile
 import time
 import traceback
 import uuid
-from datetime import UTC, datetime
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -37,6 +37,7 @@ from ldvh.testing.working_tree_evidence import (
     validate_manifest,
     validate_working_tree_evidence,
 )
+from ldvh.time import utc_now_iso
 
 CONTRACT_V1 = "ldvh-test-run/1"
 CONTRACT_V2 = "ldvh-test-run/2"
@@ -49,7 +50,7 @@ WORKER_GATE_TIMEOUT_SECONDS = 10.0
 
 
 def utc_now() -> str:
-    return datetime.now(UTC).isoformat()
+    return utc_now_iso()
 
 
 def _atomic_json(path: Path, value: dict[str, Any]) -> None:
@@ -323,6 +324,127 @@ def _is_offset_datetime(value: object) -> bool:
     except ValueError:
         return False
     return parsed.tzinfo is not None and parsed.utcoffset() is not None
+
+
+def step_duration_seconds(step: object) -> float | None:
+    """Derive a terminal step's wall-clock duration in seconds.
+
+    The value is computed read-side from the already persisted ``started_at``
+    and ``ended_at`` fields; it is never written back into the v2 record, so
+    the fixed step field set enforced by :func:`_validate_v2_steps` stays
+    untouched.  Returns ``None`` when the step is not terminal (``not_run`` or
+    ``running``) or when either timestamp is missing or not parseable as an
+    offset date-time.
+    """
+
+    if not isinstance(step, dict):
+        return None
+    status = step.get("status")
+    if status not in {"passed", "failed", "unknown"}:
+        return None
+    started_at, ended_at = step.get("started_at"), step.get("ended_at")
+    if not _is_offset_datetime(started_at) or not _is_offset_datetime(ended_at):
+        return None
+    try:
+        started = datetime.fromisoformat(str(started_at).replace("Z", "+00:00"))
+        ended = datetime.fromisoformat(str(ended_at).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if started.tzinfo is None or ended.tzinfo is None:
+        return None
+    delta = ended - started
+    if delta.total_seconds() < 0:
+        return None
+    return delta.total_seconds()
+
+
+# Fixed fallback estimates used before enough history has accumulated.  They are
+# deliberately conservative heuristics for the current full-v4 plan and are
+# replaced by real aggregates as v2 run records accumulate.
+FALLBACK_STEP_DURATIONS: dict[str, float] = {
+    "code-lint": 5.0,
+    "code-tests": 60.0,
+    "fact-integrity": 10.0,
+    "web-typecheck": 30.0,
+    "web-tests": 120.0,
+    "web-build": 60.0,
+}
+FALLBACK_TOTAL_SECONDS: float = sum(FALLBACK_STEP_DURATIONS.values())
+
+
+def _median(values: list[float]) -> float:
+    ordered = sorted(values)
+    middle = len(ordered) // 2
+    if len(ordered) % 2 == 1:
+        return ordered[middle]
+    return (ordered[middle - 1] + ordered[middle]) / 2.0
+
+
+def _completed_run_records(runs_root: Path) -> list[dict[str, Any]]:
+    """Return durable v2 records with a terminal status, newest first.
+
+    Only v2 full-v4 records that are mechanically readable and terminal are
+    considered.  Directories are sorted by name descending so the most recent
+    run appears first; records that cannot be parsed are skipped rather than
+    failing the estimate.
+    """
+
+    if not runs_root.is_dir():
+        return []
+    records: list[dict[str, Any]] = []
+    for directory in sorted(runs_root.iterdir(), key=lambda p: p.name, reverse=True):
+        if not directory.is_dir() or not RUN_ID_PATTERN.fullmatch(directory.name):
+            continue
+        record_path = directory / "record.json"
+        if not record_path.is_file():
+            continue
+        try:
+            record = _read_record(record_path)
+        except (OSError, ValueError, json.JSONDecodeError):
+            continue
+        if record.get("contract") != CONTRACT_V2 or record.get("status") not in FINAL_STATUSES:
+            continue
+        records.append(record)
+    return records
+
+
+def recent_step_duration_stats(
+    runs_root: Path,
+    *,
+    window: int = 5,
+    step_names: list[str] | None = None,
+) -> dict[str, dict[str, float | None]]:
+    """Aggregate per-step durations across the most recent terminal v2 runs.
+
+    For every requested step name (defaulting to the fixed full-v4 command
+    names) the result maps the step name to ``{"mean": ..., "median": ...}``
+    computed from at most ``window`` most recent runs that have a derivable
+    duration for that step.  When no history is available for a step the entry
+    falls back to the fixed experience estimate and keeps ``"mean"`` /
+    ``"median"`` as ``None`` so callers can tell real data apart from the
+    fallback.
+    """
+
+    if step_names is None:
+        step_names = list(FALLBACK_STEP_DURATIONS)
+    durations: dict[str, list[float]] = {name: [] for name in step_names}
+    for record in _completed_run_records(runs_root)[:window]:
+        for step in record.get("steps", []):
+            if not isinstance(step, dict):
+                continue
+            name = step.get("name")
+            if name not in durations:
+                continue
+            duration = step_duration_seconds(step)
+            if duration is not None:
+                durations[name].append(duration)
+    result: dict[str, dict[str, float | None]] = {}
+    for name, values in durations.items():
+        if values:
+            result[name] = {"mean": sum(values) / len(values), "median": _median(values)}
+        else:
+            result[name] = {"mean": None, "median": None}
+    return result
 
 
 def _git_identity(workspace: Path) -> dict[str, Any]:
