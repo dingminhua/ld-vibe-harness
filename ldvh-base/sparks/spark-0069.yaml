@@ -1,7 +1,6 @@
 title: 05 §11.2 读取结果字段闭集漏列 carrier 与 fact_object
 intent: 保留 read-fact-objects 响应 items[] 实际返回 carrier 与 fact_object、但 05 §11.2 字段闭集表未列二者的契约漂移问题：Helper 契约承诺未知字段按闭集校验，规范表缺失使消费方无法从权威来源得知可读字段，只能靠实现与测试反推。后续需在 05 §11.2 补齐字段闭集（carrier 恒非空 yaml|markdown；fact_object 仅在 fields 已解析且（mechanically_valid 或有指纹）时为 object 否则 null），并微调 §11.2 引言消除与返回全文的张力。
-status: open
-priority: P2
+status: implemented
 summary: "**问题**\n\n- `read-fact-objects` 响应 items[] 实际返回 `carrier`（yaml|markdown）与 `fact_object`（完整解析内容），但 specs/05-事实模型基础规范.md §11.2 的 items[] 字段闭集表（约 417-428 行）只列 8 个字段，未列二者；04.Att.01 要求未登记字段进入 result 属契约漂移。\n- 同规范 §11.4（466-467 行）与 §11.7（583 行）已定义这两个字段，语义一致；read-fact-objects 是唯一 F3 全文展开操作（§8.1），fact_object 是其核心职责。\n\n**定性（2026-08-08 两次独立审核确认）**\n\n- 漂移方向为规范漏列而非实现越权：实现合理且必要，问题在契约记录不完整。\n- 测试依赖 fact_object（test_fact_object_operation.py 94-116 行）；Web 不消费 Helper read 结果（08 §5.1 直读文件），carrier 来自 Web 自身 DTO。\n\n**修复决定**\n\n- 05 §11.2 items[] 表补两行：`carrier`（string，必填，只允许 yaml|markdown，读取中按类型来源当前载体恒非空）；`fact_object`（object|null，仅 `fields` 已安全完整解析且（mechanically_valid 或有当次 content_fingerprint）时为 object，否则 null，供 F3 语义消费；invalid 但可解析稳定身份且有修复指纹的对象同样返回，以支持 §11.7 CAS 修复快照）。\n- §11.2 表后正文补一句锚定 §8.1 F3 与 §11.4/§11.7 同名字段，说明返回完整对象是显式职责。\n- 微调 §11.2 引言（382 行）消除与返回全文的张力。\n- 不改实现、测试、Web、04/04.Att.01/08。\n- 2026-08-08 交付后独立审核发现初版 fact_object 语义（仅 mechanically_valid 且有指纹时为 object）与实现不符：实现为 fields 已解析且（mechanically_valid OR 有指纹），invalid 可解析对象同样返回；已按实现修正规范措辞与本条记录。\n\n**边界**\n\n- 本次只补 read-fact-objects 的结果闭集；不改变任何运行时行为，不涉及 find-fact-object-candidates（其不返回 F3 全文）。"
 change_log:
 - signature:
@@ -16,7 +15,14 @@ change_log:
   session_id: session-20260808-closure-set
   at: '2026-08-08T21:13:39.783615+08:00'
   summary: content_update：交付后独立审核发现初版记录的 fact_object 语义（仅 mechanically_valid 且有指纹时为 object）与实现不符（实现为 fields 已解析且 mechanically_valid 或有指纹，invalid 可解析对象同样返回）；按实现修正规范措辞与本记录。
+- signature:
+    model_id: hy3
+    agent_workbench: workbuddy-claw
+  session_id: session-20260809-spark-0069-closure
+  at: '2026-08-09T12:40:11.544836Z'
+  summary: single_object_lifecycle + content_update：核实 specs/05-事实模型基础规范.md §11.2 items[] 字段闭集表（约430-431行）已含 carrier 与 fact_object 两行，且 fact_object 语义与实现一致（fields 已解析且 mechanically_valid 或有指纹，invalid 但可解析稳定身份且有修复指纹者同样返回）；表后第433行已补显式职责说明。本 Spark 所记录的合约梯度在规范层面已消除，无剩余待处置内容，无承接事实对象。Human 授权按建议推进（user-query “按你建议推进”），status 由 open 转为 implemented，priority 已移除，新增 disposition_summary，关闭本 Spark。
+disposition_summary: 05 §11.2 items[] 字段闭集表（specs/05 约430-431行）已含 carrier 与 fact_object 两行，且 fact_object 语义与实现一致（fields 已安全完整解析且 mechanically_valid 或有当次 content_fingerprint 时为 object，否则 null；invalid 但可解析稳定身份且有修复指纹的对象同样返回）；表后第433行已补“返回完整对象是显式职责”说明。本 Spark 所记录的合约梯度在规范层面已消除，无剩余待处置内容，无承接事实对象。本 Spark 不再承担待处置入口。
 object_id: spark-0069
 fact_type_key: spark
 created_at: '2026-08-08T21:02:08.434458+08:00'
-updated_at: '2026-08-08T21:13:39.783615+08:00'
+updated_at: '2026-08-09T12:40:11.544836Z'
