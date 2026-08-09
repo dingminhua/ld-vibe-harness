@@ -3,8 +3,17 @@
 from __future__ import annotations
 
 import json
+import select
 import sys
+from pathlib import Path
 from typing import Any
+
+# Allow `python code/ldvh/cli.py ...` to resolve the `ldvh` package without the
+# project launcher. The launcher already puts `code/` on sys.path; this only helps
+# the direct-invocation path that would otherwise raise ModuleNotFoundError.
+_CODE_ROOT = str(Path(__file__).resolve().parent.parent)
+if _CODE_ROOT not in sys.path:
+    sys.path.insert(0, _CODE_ROOT)
 
 from ldvh.helper.responses import common_response, diagnostic, gap
 from ldvh.helper.service import handle_request, invalid_request_result
@@ -21,6 +30,33 @@ def _command(arguments: list[str]) -> tuple[str, str | None] | None:
     if len(arguments) == 2 and arguments[0] in {"capabilities", "call"}:
         return arguments[0], arguments[1]
     return None
+
+
+def _read_request_input() -> str:
+    """Read the machine request body from stdin without blocking.
+
+    An unconditional ``sys.stdin.buffer.read()`` blocks forever when stdin is a
+    pipe without EOF (CI/sandbox/tooling that leaves stdin open), and the
+    surrounding timeout/watchdog then SIGKILLs the process (exit 137). Probe stdin
+    first: read the full body only when data is immediately available, otherwise
+    fall back to an empty body. Callers that pipe a request (``subprocess.run(
+    input=...)`` or ``echo body | ldvh ...``) pre-buffer the data before the Helper
+    finishes importing, so the probe sees it; an idle open pipe yields "" instead
+    of hanging. Windows ``select()`` does not support pipe/file handles, so on that
+    platform the probe raises and we fall back to a blocking read — callers that
+    pipe a body always provide EOF, so body reading is preserved; an idle open pipe
+    would hang there, matching pre-existing behaviour rather than adding a regression.
+    """
+    stdin_buffer = getattr(sys.stdin, "buffer", None)
+    if stdin_buffer is None:
+        return ""
+    try:
+        readable, _, _ = select.select([stdin_buffer], [], [], 0.0)
+    except (OSError, ValueError):
+        return stdin_buffer.read().decode("utf-8")
+    if not readable:
+        return ""
+    return stdin_buffer.read().decode("utf-8")
 
 
 def main() -> int:
@@ -40,7 +76,7 @@ def main() -> int:
     request_kind, operation_key = command
     try:
         try:
-            raw_input = sys.stdin.buffer.read().decode("utf-8")
+            raw_input = _read_request_input()
         except UnicodeDecodeError:
             result = invalid_request_result(request_kind, operation_key, ("标准输入必须是 UTF-8",))
         else:
