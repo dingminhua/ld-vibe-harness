@@ -168,6 +168,17 @@ def test_new_human_decision_need_converges_without_a_third_human_wait() -> None:
     assert "Controller 不得代替 Human 作出该 residual decision" in source
 
 
+def test_gate1_post_approval_criterion_self_reference_converges_without_recursive_review() -> None:
+    source = _source(EXECUTION_TEMPLATE)
+
+    assert "Gate1 后才发现 success criterion" in source
+    assert "冻结验收基线不得改写" in source
+    assert "不重开或新增 item、增加递归复核或建立第三次 Human Gate" in source
+    assert "将该 criterion 据实写为 `not_verified`" in source
+    assert "validation 与 closure proposal 的 residual decision" in source
+    assert "继续既有结果链至 Gate2" in source
+
+
 def test_gate2_language_is_bound_to_the_just_read_resolved_projection() -> None:
     source = _source(EXECUTION_TEMPLATE)
 

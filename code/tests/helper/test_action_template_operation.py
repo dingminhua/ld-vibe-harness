@@ -108,18 +108,30 @@ def test_workcase_execution_template_keeps_result_review_out_of_work_items(
     """Keep one explicit bad plan as a source-delivery contract, not an NLP validator."""
 
     invalid_item_goal = "全部实现完成后安排独立结果复核"
+    invalid_criterion_statement = "独立结果复核确认本 WorkCase 未引入来源语义削弱"
     workcase_source = (current_specs_repository / "specs/21-WorkCase-工作项.md").read_text(encoding="utf-8")
     execution = ACTION_TEMPLATE_CONTENT_IMPLEMENTATION.call(
         _request("workcase-approved-plan-execution"),
         inspect_repository(current_specs_repository),
         OperationExecutionContext(cwd=current_specs_repository),
     )
+    creation = ACTION_TEMPLATE_CONTENT_IMPLEMENTATION.call(
+        _request("fact-object-controlled-creation"),
+        inspect_repository(current_specs_repository),
+        OperationExecutionContext(cwd=current_specs_repository),
+    )
 
     assert execution.outcome == "ok"
     assert execution.result is not None
+    assert creation.outcome == "ok"
+    assert creation.result is not None
     delivered_template_source = execution.result["items"][0]["source_content"]
+    delivered_creation_source = creation.result["items"][0]["source_content"]
     assert invalid_item_goal in workcase_source
     assert invalid_item_goal in delivered_template_source
+    assert invalid_criterion_statement in workcase_source
+    assert invalid_criterion_statement in delivered_template_source
+    assert invalid_criterion_statement in delivered_creation_source
     assert "不得被写成 item" in workcase_source
     assert "保留当前批准的授权包并自动返回执行，不再次请求 Human" in delivered_template_source
     assert "将受影响 item 据实取消并转入结果链" in delivered_template_source

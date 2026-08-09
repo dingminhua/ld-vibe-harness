@@ -109,13 +109,15 @@ Human 明确选择“由项目承担这项工作并建立 WorkCase”是进入�
 
 work item 只承载获批计划内能够实施并形成局部结果的工作，不承载 WorkCase 自身的生命周期关口。`controller_checking`、`independent_reviewing`、`closure_preparing`、`human_closure_confirming` 及其对应的 Controller 自检、独立结果复核、受控提交、关闭提案和 Human Gate，均由 §6 的 phase 链在全部 item terminal 后承接，不得被写成 item 的 goal、expected result、依赖或“最后一步”。执行中形成测试、扫描或其它验证材料可以是 item 局部交付；使用这些材料形成 canonical result projection、完成独立结果复核或取得 Human 关闭决定不是 item。典型非法反例是新增 goal 为“全部实现完成后安排独立结果复核”的 item：该 item 会等待结果复核，而结果复核又要求全部 item terminal，形成循环；把 goal 为“受控提交”或“执行本地提交”的收敛动作写成 item 同样违规——应在全部 item terminal 后由受控提交承接。
 
-Code 不判断自然语言是否属于生命周期关口；Controller 与 Reviewer 必须按本节语义逐项审核，机械测试只固定来源持续交付该边界和明确反例。
+success criterion 只描述能够在 canonical result projection 形成前据实判断的技术、交付或责任状态，不承载形成、复核、处置或接受该 projection 的后置生命周期关口。Controller 自检、独立结果复核、feedback 处置、关闭提案、Gate 2 / Human 关闭确认及其“完成”“通过”“确认”结论不得成为 criterion 自身 `satisfied` 的必要条件；这些关口只审核、处置或接受已经形成的 criterion result。测试、扫描、人工检查或其它在 projection 前已实际取得的材料仍可作为 criterion 的证据，不因本边界被排除。典型非法反例是“独立结果复核确认本 WorkCase 未引入来源语义削弱”：它要求冻结后的 Reviewer 活动证明被冻结 projection 中的自身结果，形成 review → ResultΔ → re-review 的递归。
+
+Code 不判断自然语言是否属于生命周期关口；Controller 与 Reviewer 必须按本节语义逐项审核 item 与 criterion，机械测试只固定来源持续交付该边界和明确反例。
 
 尚无可执行目标、scope 或成功标准的内容属于 Spark 候选；当前行动即可完成且没有稳定回读价值的内容留在当前行动；长期规则进入规范；可复用方法进入行动模板。不得把命令、review checklist、纯结果报告或周期运行入口伪装成 WorkCase。
 
 ### 4.4 受控创建
 
-受控创建必须一次形成完整目标、scope、成功标准定义、`plan_version=1`、非空 work items、完整 `execution_authorization`、至少一项实际方案复核、priority、`status=open`、`phase=human_plan_confirming` 和 Human waiting，并完成 Schema 校验、写入与回读。创建时全部 work item 必须为 `pending`。`execution_authorization` 必须把全部已知 Human Gate、目标与影响范围、风险、动作上限、禁止项、允许的调整与重试、验证/回滚和超界安全收敛一次呈现给 Human；只能由 Human 完成的前置动作必须在 Gate1 决定前完成或从本次运行范围明确排除。创建前的 Controller 与 Reviewer 必须逐项检查 work item 是否错误吸收 §4.3 的生命周期关口或 Human Gate（含将受控提交、完整结果投影等收敛动作写成 item 的违例），并检查已知授权需求是否已进入基线；命中时当前候选计划不得提交 Human 批准或受控创建，必须先返修。创建前 Reviewer feedback 必须由 Controller 处置；新对象不得带 execution approval 或结果字段。
+受控创建必须一次形成完整目标、scope、成功标准定义、`plan_version=1`、非空 work items、完整 `execution_authorization`、至少一项实际方案复核、priority、`status=open`、`phase=human_plan_confirming` 和 Human waiting，并完成 Schema 校验、写入与回读。创建时全部 work item 必须为 `pending`。`execution_authorization` 必须把全部已知 Human Gate、目标与影响范围、风险、动作上限、禁止项、允许的调整与重试、验证/回滚和超界安全收敛一次呈现给 Human；只能由 Human 完成的前置动作必须在 Gate1 决定前完成或从本次运行范围明确排除。创建前的 Controller 与 Reviewer 必须逐项检查 work item 或 success criterion 是否错误吸收 §4.3 的生命周期关口或 Human Gate（含将受控提交、完整结果投影等收敛动作写成 item，或要求未来 result review 证明 criterion 自身的违例），并检查已知授权需求是否已进入基线；命中时当前候选计划不得提交 Human 批准或受控创建，必须先返修。创建前 Reviewer feedback 必须由 Controller 处置；新对象不得带 execution approval 或结果字段。
 
 默认情况下，创建复核使用只读 subagent。若当前环境明确不提供该能力，候选必须在创建时把限制、当前证据、受影响审核类别、低保证差距和停止条件登记到 `execution_authorization.capability_limitations`，并可由同一 AI 以只读 Reviewer 视角完成一次 `same-ai-switched-role-read-only` 创建复核。这个创建 bootstrap 发生在 Gate1 前，不依赖尚未存在的 Gate1 approval；它只形成供 Human 判断的低保证事实，不使 fallback 已获批准，也不得被描述为 subagent、环境独立或等价独立审核。Gate1 必须同时呈现实际创建复核方法、保证差距和拟用于 Gate1 后的 fallback policy；只有 Human 明确接受这份完整基线，WorkCase 才能进入执行。
 
@@ -250,8 +252,8 @@ WorkCase 只有本文与 05.Att.01 共同定义的当前字段和结构。任何
 | `workcase-capability-limitation` | Gate1 前登记的一项已知审核能力缺失、其证据、受影响类别、低保证 fallback 和停止条件 | 不表示能力永远缺失、fallback 已在 Gate1 前获批、同一 AI 已变成独立 subagent 或 Code 已验证证据真实性 | `limitation_id` 在 authorization 内唯一；仅允许当前明确 `unavailable` 的 `independent-subagent-review`；Gate1 后作为冻结 policy 供 PlanΔ/result review 精确引用 |
 | `workcase-authorized-action` | Gate1 基线中一项对象、效果、风险与回滚边界可分别审阅的授权动作 | 不表示命令步骤、工具名白名单、动作已执行或来源规则已满足 | 同一基线内 `action_id` 唯一；目标、效果、风险、回滚和规则回指全部非空；Human 对完整基线一次决定不使各条目丢失自身边界 |
 | `workcase-quality-gate` | Gate1 前固定声明的标准结果复核质量关口、标准 policy 标识与授权 action 引用 | 不表示 Reviewer 已被实际委派、复核已完成、自然语言授权充分、Reviewer 真实独立或当次实际方法必为 subagent | 当前闭集精确为一个稳定兼容标识 `gate_id=independent-result-review`、`reviewer_mode=independent-read-only`；两者只命名标准关口 policy，不覆盖 review 的 `actual_method`；`delegation_action_id` 与 `result_review_action_id` 必须分别精确引用同一 authorization 内不同的 action_id |
-| `workcase-success-criterion` | 一项具有稳定局部身份、可独立检查的成功标准定义 | 不表示执行步骤、结果、验证方法或数组序号 | `criterion_id` 在对象内唯一稳定；statement 与 goal、scope 共同构成验收基线 |
-| `workcase-success-result` | 对一项当前成功标准的实际结果判断与范围说明 | 不表示 Code 已证明正文、Human 已验收或命令成功 | 必须按 `criterion_id` 精确覆盖全部当前定义；unknown 通过 `not_verified` 表达，不补猜 |
+| `workcase-success-criterion` | 一项具有稳定局部身份、可独立检查的成功标准定义 | 不表示执行步骤、结果、验证方法、数组序号，或形成/复核/接受结果的后置生命周期关口 | `criterion_id` 在对象内唯一稳定；statement 与 goal、scope 共同构成验收基线；服从 §4.3 的 criterion 边界 |
+| `workcase-success-result` | 对一项当前成功标准的实际结果判断与范围说明 | 不表示 Code 已证明正文、Reviewer 结论、Human 已验收或命令成功 | 必须按 `criterion_id` 精确覆盖全部当前定义；unknown 通过 `not_verified` 表达，不补猜 |
 | `workcase-closure-proposal` | Controller 提交 Human 判断的一份完整关闭方案 | 不表示 Human 已同意、终态已成立、结果主体或证明收据 | 只在关闭准备与关闭待确认期间出现；始终整体形成，不持久化半成品 |
 | `workcase-residual-decision` | 关闭提案中一项剩余责任及其 `route_existing`、`suggest_spark` 或 `accept_stop` 建议 | 不表示终态责任已经转交、Spark 已建立或 Human 已接受停止 | route_existing 必须有 proposal target；suggest_spark 必须引用同一 proposal 的 constrained suggestion；accept_stop 二者均禁止；所有当前剩余责任必须精确覆盖 |
 | `workcase-proposed-route-target` | 拟路由目标的稳定三元身份与当次完整内容 fingerprint | 不表示 terminal relation、Human 阅读对象、目标接受责任或目标完成 | 只服务关闭事务的目标重读与精确比较；四个成员全部必填，关闭后删除 |
@@ -266,8 +268,8 @@ WorkCase 只有本文与 05.Att.01 共同定义的当前字段和结构。任何
 | `workcase-waiting-on` | `waiting_on` | string | 当前实际等待的 Human、Reviewer、外部输入或能力 | 不表示普通待办、优先级或阻塞原因全文 | 非空且精确指向当前实际等待对象；等待解除时移除 |
 | `workcase-goal` | `goal` | string | WorkCase 期望达成并可独立判断关闭的单一目标 | 不表示标题、步骤、当前进展或结果 | 必填非空；实质变成另一关闭责任时新建对象 |
 | `workcase-scope` | `scope` | string | WorkCase 承诺覆盖的内容、重要约束与明确排除边界 | 不表示当前进展、实现细节或来源全文 | 必填非空；责任边界变化必须经过 §11 的 Human 决定 |
-| `workcase-success-criterion-definitions` | `success_criterion_definitions` | array | 共同构成目标验收边界的成功标准定义闭集 | 不表示工作步骤、结果、测试命令或完成状态 | 至少一项；按 `criterion_id` 唯一；数组位置不表示优先级或顺序 |
-| `workcase-success-criterion-results` | `success_criterion_results` | array | 当前结果版本对全部成功标准的逐项判断 | 不表示总体结果、验证全文或 Human 关闭决定 | 数组一旦存在就必须按 ID 精确覆盖全部定义，禁止持久化半数组；判断闭集见成员定义 |
+| `workcase-success-criterion-definitions` | `success_criterion_definitions` | array | 共同构成目标验收边界的成功标准定义闭集 | 不表示工作步骤、结果、测试命令、完成状态或后置生命周期质量关口 | 至少一项；按 `criterion_id` 唯一；数组位置不表示优先级或顺序；每项服从 §4.3 的 criterion 边界 |
+| `workcase-success-criterion-results` | `success_criterion_results` | array | 当前结果版本对全部成功标准的逐项判断 | 不表示总体结果、验证全文、Reviewer 结论或 Human 关闭决定 | 数组一旦存在就必须按 ID 精确覆盖全部定义，禁止持久化半数组；判断闭集见成员定义 |
 | `workcase-residual-responsibilities` | `residual_responsibilities` | array | Human 已接受不再由当前 WorkCase 推进的具体剩余责任 | 不表示已路由责任、建议、风险列表或待办 | 按 `residual_id` 唯一；已路由项禁止重复；每项必须是 Human 实际接受停止的具体责任 |
 | `workcase-phase` | `phase` | string | 未关闭 WorkCase 当前精确推进位置 | 不表示责任能否继续、Web 进展分组或历史阶段 | 闭集 `human_plan_confirming`、`plan_revising`、`executing`、`controller_checking`、`independent_reviewing`、`closure_preparing`、`human_closure_confirming` |
 | `workcase-plan-version` | `plan_version` | integer | 当前规范化计划投影的版本身份 | 不表示历史次数、Git revision、phase 轮次或结果版本 | 正整数；初值为 1；只有规范化计划投影发生结构差异时精确 +1，禁止跳号和空升版 |
@@ -338,9 +340,9 @@ WorkCase 只有本文与 05.Att.01 共同定义的当前字段和结构。任何
 | `workcase-review-assurance-gap` | `assurance_gap` | string | 当次同一 AI review 向 Human/Controller 明示的低保证差距 | 不表示可接受风险、独立性或等价保证 | 只随同一 AI fallback 出现；必须与所引用 limitation 的 `assurance_gap` 精确相同 |
 | `workcase-review-stop-condition-assessment` | `stop_condition_assessment` | string | 当次 review 对冻结停止条件均未命中的有限声明 | 不表示 Code 已验证证据正文或未来仍可继续 | 只随同一 AI fallback 出现；当前闭集精确为 `clear`；无法确认时不得形成 fallback review |
 | `workcase-criterion-id` | `criterion_id` | string | 成功标准在本对象内稳定唯一的身份 | 不表示数组位置、优先级或 work item | 匹配 `criterion-[a-z0-9][a-z0-9-]*`；创建后稳定 |
-| `workcase-criterion-statement` | `statement` | string | 可独立检查的一项成功条件 | 不表示步骤、证据、测试命令或结果 | 必填非空；应能区分满足、未满足和未验证 |
+| `workcase-criterion-statement` | `statement` | string | 可在 canonical result projection 形成前独立检查的一项成功条件 | 不表示步骤、证据、测试命令、结果，或 Controller/Reviewer/Human 后置关口及其完成、通过或确认 | 必填非空；应能区分满足、未满足和未验证；服从 §4.3 的 criterion 边界 |
 | `workcase-result-criterion-id` | `criterion_id` | string | 当前结果所对应成功标准的稳定身份 | 不表示新标准或数组位置 | 必须精确引用当前定义且覆盖一次 |
-| `workcase-result-outcome` | `outcome` | string | 该成功标准的当前结果分类 | 不表示 WorkCase closure outcome 或 Human 风险接受 | 闭集 `satisfied`、`not_satisfied`、`not_verified` |
+| `workcase-result-outcome` | `outcome` | string | 该成功标准的当前结果分类 | 不表示 WorkCase closure outcome、Reviewer 结论、Gate2 接受或 Human 风险接受 | 闭集 `satisfied`、`not_satisfied`、`not_verified` |
 | `workcase-result-summary` | `summary` | string | 该标准为何得到当前 outcome、实际范围和限制 | 不表示总体结果、验证全文或处置决定 | 必填非空；只写实际已知，不把未验证写成未满足或满足 |
 | `workcase-proposal-outcome` | `proposed_outcome` | string | Controller 依据当前结果与验证形成、随关闭方案提交 Human 判断是否在该分类下停止的技术分类 | 不表示终态已成立，也不表示 Human 选择或改写技术分类 | 使用与 `closure_outcome` 相同闭集，并按当前 criterion results 与 validation 形成；必须在 Gate2 前修正完整，Gate2 不接受时本次操作零写入且不回退 |
 | `workcase-proposal-disposition-summary` | `proposed_disposition_summary` | string | 拟定的整体停止边界、逐目标转交范围和 accepted-stop 存在提示 | 不表示结果正文、逐项 residual 依据或既成终态 | 必填非空；正文可在 Human 同意后直接成为 terminal disposition，不写“拟”“建议”占位语 |
@@ -916,7 +918,7 @@ Card 可以另外派生 item 五状态计数和当前活动 item，但不得把�
 | 验证对象 | 验证时机 | 成立条件 | 可接受依据 | 验证入口 | 可证明范围 | 未满足时的处理 |
 |---|---|---|---|---|---|---|
 | 类型定义与登记 | 新建或实质修改本文、05.Att.01 或派生 Schema 时 | 结构、字段、绑定、H2 引用与统一登记唯一一致，无悬空、遗漏或第二定义 | 00、01、05、05.Att.01 与本文当前 Working Tree | 规范仓库检查、字段登记检查和当前来源回读 | 当前来源的机械结构一致性；不证明自然语言设计正确 | 本文或附件不得进入当前规则源；先修正唯一来源 |
-| 准入与创建 | 建议建立、形成正式计划和受控创建前 | Human 工作意图、单一责任、scope、criteria、查重、净价值、完整计划与实际方案复核成立；若缺少 subagent，限制与低保证 bootstrap 已据实披露；Controller 与 Reviewer 已逐项确认没有 work item 吸收生命周期关口或 Human Gate | Human 当前指令、当前来源、相邻事实回读、候选计划与 Reviewer 实际反馈 | AI 语义审核、逐 item 生命周期关口检查、事实召回、受控创建校验与创建后回读 | 当次候选的已读范围、实际方法、保证边界、语义审核和创建结果；Code 不证明证据语义或未来执行成功 | 不创建；先补齐限制/证据或返修误建模 item，或更新现有对象、留在当前行动、拆分或转 Spark |
+| 准入与创建 | 建议建立、形成正式计划和受控创建前 | Human 工作意图、单一责任、scope、criteria、查重、净价值、完整计划与实际方案复核成立；若缺少 subagent，限制与低保证 bootstrap 已据实披露；Controller 与 Reviewer 已逐项确认没有 item 或 criterion 吸收生命周期关口或 Human Gate | Human 当前指令、当前来源、相邻事实回读、候选计划与 Reviewer 实际反馈 | AI 语义审核、逐 item / criterion 生命周期关口检查、事实召回、受控创建校验与创建后回读 | 当次候选的已读范围、实际方法、保证边界、语义审核和创建结果；Code 不证明证据语义或未来执行成功 | 不创建；先补齐限制/证据或返修误建模 item / criterion，或更新现有对象、留在当前行动、拆分或转 Spark |
 | 活动形状与转换 | 每次读取、写回、phase/status 改变、计划返修或授权变化时 | status/phase/presence、item 组合、plan version、review/approval 绑定和允许转换成立 | 当前对象 before/after、Human 决定、Reviewer feedback 与本文 | Schema、CAS、projection 比较、转换校验和 after 回读 | 可机械检查的形状、版本与转换；不证明当前摘要真实 | 不消费为有效 WorkCase或拒绝转换；修正最小相关范围 |
 | 结果与复核 | 形成结果、发起复核、处置反馈或改变 projection 时 | projection 完整、criterion 全覆盖、版本冻结、实际 review 方法/保证边界与 Controller resolution 成立 | item 终值、当前结果与 validation、Reviewer 实际输出、当前 capability evidence | AI 结果审核、规范化 projection 比较、CAS、review/版本/limitation 检查 | 当次结果包结构、已读观察、实际方法和 review 绑定；不证明证据语义或技术结论天然正确 | 不进入关闭准备；补事实、升版、清旧 review、改用 subagent 或停止 fallback |
 | 关闭提案与终态 | 形成 proposal、进入 Gate2、执行关闭或终态更正时 | proposal 完整、outcome 一致、target 重读、Human 决定、原子 close 与 closed 白名单成立 | 完整 source before、Human 当次决定、目标当前快照与 fingerprints | AI 责任处置审核、target 回读、CAS、专属关闭和 closed after 回读 | 当次停止边界、机械原子性和实际写入结果；不证明 target 已接受或技术事实无误 | Gate2 前不进入确认；Gate2 后失败则 source 保持冻结、不声明关闭且不自动重新请求 Human |
@@ -949,7 +951,7 @@ Code 不能判断：
 
 1. open/blocked 与七个 active phase 的全部合法/非法 presence 组合、status 转换闭集、`open → blocked` / `blocked → open` 可附带的唯一 item 边及夹带其它推进的拒绝、before/after 均 blocked 时不得推进的边界、全部列明及未列明 phase 边，以及 closed 必填/条件/禁止集；
 2. 受控创建、Gate1 完整授权基线、真实 source refs、fingerprint、`SafeConvergenceShape` 同时禁止 creation review/authorization/approval、Gate1 后不回确认、Gate2 只关闭，以及两 Gate 之间不产生 Human waiting；
-3. 五种 item 状态的列明边与未列明边、条件字段、依赖只能由 `completed` 满足、缺失/自指/成环、Controller 返工重开、terminal 分类更正、`executing + AllTerminal` 拒绝、无序 item 与模板 key 成员类型/唯一性；并以“全部实现完成后安排独立结果复核”作为非法 item 反例，检查当前规则和获批计划执行模板持续把该责任留在 phase 链，同时不得把该契约测试表述为 Code 已能理解任意自然语言计划；
+3. 五种 item 状态的列明边与未列明边、条件字段、依赖只能由 `completed` 满足、缺失/自指/成环、Controller 返工重开、terminal 分类更正、`executing + AllTerminal` 拒绝、无序 item 与模板 key 成员类型/唯一性；并以“全部实现完成后安排独立结果复核”作为非法 item 反例、以“独立结果复核确认本 WorkCase 未引入来源语义削弱”作为非法 criterion 反例，检查当前规则和获批计划执行模板持续把这些责任留在 phase 链，同时不得把该契约测试表述为 Code 已能理解任意自然语言计划或成功标准；
 4. `PlanΔ` 的规范化比较、baseline 不变检查、精确 +1、fresh review 自动继续、相同计划不升版、新 item 只以 pending 建立、既有执行事实不得重置/静默删除，以及超界动作取消并进入结果链；
 5. criterion results 数组全覆盖或整体缺失、`controller_checking` 稳定逐成员形成、数组禁止半覆盖、进入独立复核前 projection 完整、首条 review 冻结、`ResultΔ` 确定性升版、同版本不重置和返回 executing；
 6. Reviewer/Controller 字段所有权、同一数组 review 复合身份重复拒绝、新实际复核使用新 `reviewed_at`、同事件事实更正保持复合身份且与生命周期转换不可混用、返修期 review 冻结不可通过删除绕过版本失效；
@@ -1021,7 +1023,7 @@ Gate1 后出现未覆盖的高影响/不可逆行动、新风险接受、范围�
 - 通过删除/改写 approval、手改 phase、假升版或补造 source refs 掩盖基线变化；
 - Gate1 后试图重新授权、扩展 baseline 或重置 plan/result version；
 - item 写成命令、日志、推理、百分比或过期快照；
-- item 吸收 Controller 自检、独立结果复核、关闭准备、Human Gate 或其它 WorkCase 生命周期关口，造成关口等待 item terminal、item 又等待关口的循环；
+- item 或 success criterion 吸收 Controller 自检、独立结果复核、feedback 处置、关闭准备、Human Gate 或其它 WorkCase 生命周期关口，造成 item 与关口相互等待，或 criterion 要求未来关口证明被冻结 projection 中的自身结果；
 - in-progress 缺 current/resume，blocked 缺具体事实和解除条件；
 - 借当前 execution approval 执行未进入 authorized actions、超出 target/effect scope 或 action ceiling、命中 prohibited actions 的事实创建/更新或其它副作用；
 - 当前 scope 内责任没有实际受限原因却停止继续完成，或以空泛“后续建 Spark”代替结果、影响和恢复条件；
@@ -1029,12 +1031,15 @@ Gate1 后出现未覆盖的高影响/不可逆行动、新风险接受、范围�
 
 上述 Gate1 后超界条件只停止受影响动作，不向 Human 请求第三次确认；Controller 据实取消受影响 item，并在全部 item terminal 后继续结果复核与 Gate2。只有 Gate1 与 Gate2 可以把 Human 写为 waiting 对象。
 
+Gate1 后才发现 success criterion 违反 §4.3 时，验收基线已冻结，不得通过改写 criterion、重开或新增 item、增加复核层级或请求第三个 Human Gate 脱困。Controller 必须在 canonical result projection 中将该 criterion 据实判断为 `not_verified`，在 validation 与 closure proposal 的 residual decision 中说明误建模及剩余责任，继续既有独立复核、feedback 处置、关闭提案与 Gate2 链；Gate2 只决定是否接受该停止与处置，不把未来关口倒写成 criterion 已满足。
+
 ### 12.3 结果与复核
 
 出现以下任一情况，暂停进入下一质量关口：
 
 - item 未全部 terminal 就进入 controller checking；
 - result projection 不完整或 criterion results 只覆盖部分标准；
+- criterion 要求当前 result projection 形成后才发生的 Controller、Reviewer、closure 或 Human Gate 活动证明自身成立；
 - 把未验证写成满足或未满足；
 - Reviewer 不独立、scope 不清，或非 pass conclusion 没有可行动 feedback；
 - projection 改变却沿用旧 result version、reviews 或 proposal；

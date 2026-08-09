@@ -71,7 +71,7 @@ Gate 1 后出现新的 Human 决策需求，不构成 blocked 或 unresolved，�
 
 **开始控制点：** 跨检查点、可能中断或需恢复的工作项在实施前，必须先完成 `pending → in_progress` 写回，同事务写入非空 `current_summary` 与有界 `resume_from`，经 CAS、精确回读与独立事实完整性审计后，才允许执行实际行动。真实行动不得发生在 `in_progress` 写回之前。同一稳定检查点内可直接 `pending → completed` 的小动作不受此限，但不得用于跨检查点工作。
 
-错误吸收生命周期关口或 Human Gate 的 item——例如 goal 为"全部实现完成后安排独立结果复核"——按 21 作基线内 PlanΔ 或据实取消；基线内修正保留当前批准的授权包并自动返回执行，不再次请求 Human，超界时将受影响 item 据实取消并转入结果链，不由本文建立第三次 Human Gate。该判断由 AI 承担，Code 不从关键词或字段形状替 AI 作出结论。
+错误吸收生命周期关口或 Human Gate 的 item——例如 goal 为“全部实现完成后安排独立结果复核”——按 21 作基线内 PlanΔ 或据实取消；基线内修正保留当前批准的授权包并自动返回执行，不再次请求 Human，超界时将受影响 item 据实取消并转入结果链。Gate1 后才发现 success criterion 要求独立结果复核、feedback 处置、关闭提案或 Gate2 / Human 确认等未来关口证明自身——例如“独立结果复核确认本 WorkCase 未引入来源语义削弱”——时，冻结验收基线不得改写，也不重开或新增 item、增加递归复核或建立第三次 Human Gate；Controller 将该 criterion 据实写为 `not_verified`，在 validation 与 closure proposal 的 residual decision 中说明边界，并继续既有结果链至 Gate2。该判断由 AI 承担，Code 不从关键词或字段形状替 AI 作出结论。
 
 ### 5.3 稳定检查点
 
@@ -96,7 +96,7 @@ Gate 1 后出现新的 Human 决策需求，不构成 blocked 或 unresolved，�
 | 验证对象 | 验证时机 | 成立条件 | 可接受依据 | 验证入口 | 可证明范围 | 未满足时的处理 |
 |---|---|---|---|---|---|---|
 | 模板身份与边界 | 新建、修改或发现模板时 | 声明唯一、只组织执行、不复制 21/32 规则 | 06、21、32、本文 | 声明解析、来源回读 | 当前模板定义 | 修正来源，不消费模板 |
-| item 与生命周期关口边界 | 计划获批后准备消费任一 item 时 | 每项都是可实施并形成局部结果的工作；没有 item 吸收 Controller 自检、独立结果复核、受控提交、关闭准备或 Human Gate | 当前 WorkCase、21 §4.3、本文 | AI 逐 item 语义审核；契约测试只检查当前来源持续交付该边界 | 当次已读计划与来源文本；不证明 Code 能理解任意自然语言 | 停止受影响实施；包内移除或改写后 fresh current-plan review 并自动恢复，超包则取消受影响 item 并进入结果链，不再 Human 批准 |
+| item、success criterion 与生命周期关口边界 | 计划获批后准备消费任一 item，以及形成 canonical result projection 前 | item 可实施并形成局部结果；criterion 可在 projection 形成前据实判断；两者均未吸收 Controller 自检、独立结果复核、feedback 处置、受控提交、关闭准备或 Human Gate | 当前 WorkCase、21 §4.3、本文 | AI 逐 item / criterion 语义审核；契约测试只检查当前来源持续交付该边界 | 当次已读计划与来源文本；不证明 Code 能理解任意自然语言 | Gate1 前返修；Gate1 后 item 按基线内 PlanΔ 或取消收敛，误建模 criterion 据实 `not_verified` 并经 validation、residual decision 与既有结果链继续到 Gate2；不新增 Human Gate |
 | Gate 1 授权消费 | 每项行动、委派、事实写入和本地 commit 前 | 当前 `execution_authorization` 逐项覆盖准确对象、范围、副作用与风险，`execution_approval` 和来源回指有效；进入模板步骤、上下文恢复或切换执行者没有产生伪授权缺口；采用同一 AI fallback 时，冻结 limitation 覆盖当次类别且当前证据、保证差距与停止条件评估满足 21 | 当前 WorkCase、21、30–32、Human Gate 1 来源 | AI 语义覆盖与当前能力证据审核、21 结构/绑定校验和行动前回读 | 当次已读授权包、行动与实际 review 方法；Code 不证明自然语言授权充分、能力事实或 Reviewer 独立性 | 未列明或超界行动不执行；fallback 条件不成立时改用实际可用 subagent，否则停止当次 review；取消/收敛其它受影响 item 并进入结果链，不中途请求扩权 |
 | 开始与直接完成边界 | 实施前后 | 跨检查点工作先按 §5.2 开始控制点完成 `pending → in_progress` 写回（含 `current_summary`、`resume_from`），再经 CAS、回读与完整性审计后才执行；同检查点结果才直接 `pending → completed` | 当前 WorkCase、21、完整 after | WorkCase 转换测试与完整 after 回读 | 当次 item 转换 | 停在当前稳定检查点，重新判断 |
 | fresh 投影与执行循环 | 每次执行、恢复和事实写回后 | projection resolved 且 source fingerprint 匹配刚回读内容；AI 重新判断语义、依赖、授权和能力，Code 与结构提示不替代判断 | 当前 WorkCase、21、Helper 回读 | 指纹/投影负矩阵、source-contract 与 AI 对照审核 | 当次刚回读快照和结构提示；不证明 AI 跨会话遵从 | 重新精确读取；仍 unresolved 时只交还读取缺口，不猜测位置或行动 |
@@ -111,4 +111,4 @@ Gate 1 不授权未列明行动、对象或影响，不授权范围/风险扩大
 
 ## 8. Stop Conditions
 
-出现以下任一情况时停止受影响动作但不停止安全收敛：当前 WorkCase、指纹、授权包、批准或依赖不可确认；任一 item 吸收 Controller 自检、结果复核、受控提交、关闭准备、Human Gate 或其它 WorkCase 生命周期关口；准备在实际开始前写入 `in_progress` 或在开始后补造它；以测试、子任务或模板步骤推定授权或完成；把 pending→completed 例外用于跨检查点工作；CAS 写后未回读；需要多对象共同生效但能力边界未满足；动作未列明、范围/风险扩大，或准备执行 push、PR、发布、外部消息等禁止副作用；准备以模板自动授权行动、实现调度/spawn 能力、让 Controller 冒充 Reviewer 或关闭 WorkCase；实际 review 方法未知或被错误标成 subagent；同一 AI fallback 缺少冻结 limitation、当前证据、当次类别、相同 assurance gap 或清晰停止条件评估。命中生命周期关口误建模时按 §5.2 在 `plan_revising` 中作包内修正并 fresh review 后自动恢复；超包与禁止动作零执行、取消或收敛受影响 item并进入结果链；review 方法条件不成立时优先改用实际可用的只读 subagent，否则停止当次 review；其它恢复按 21、32 与 00 的当前规则进行。不得把任一 Stop Condition 转化为执行期追加 Human 授权请求。
+出现以下任一情况时停止受影响动作但不停止安全收敛：当前 WorkCase、指纹、授权包、批准或依赖不可确认；任一 item 或 success criterion 吸收 Controller 自检、结果复核、feedback 处置、受控提交、关闭准备、Human Gate 或其它 WorkCase 生命周期关口；准备在实际开始前写入 `in_progress` 或在开始后补造它；以测试、子任务或模板步骤推定授权或完成；把 pending→completed 例外用于跨检查点工作；CAS 写后未回读；需要多对象共同生效但能力边界未满足；动作未列明、范围/风险扩大，或准备执行 push、PR、发布、外部消息等禁止副作用；准备以模板自动授权行动、实现调度/spawn 能力、让 Controller 冒充 Reviewer 或关闭 WorkCase；实际 review 方法未知或被错误标成 subagent；同一 AI fallback 缺少冻结 limitation、当前证据、当次类别、相同 assurance gap 或清晰停止条件评估。命中生命周期关口误建模时按 §5.2 处理：Gate1 前返修；Gate1 后 item 在 `plan_revising` 中作包内修正并 fresh review 后自动恢复，超包 item 零执行、取消或收敛；Gate1 后误建模 criterion 不改写基线，而以 `not_verified`、validation 与 residual decision 沿既有结果链收敛。review 方法条件不成立时优先改用实际可用的只读 subagent，否则停止当次 review；其它恢复按 21、32 与 00 的当前规则进行。全程不得新增第三个 Human Gate，也不得把任一 Stop Condition 转化为执行期追加 Human 授权请求。
