@@ -1,6 +1,6 @@
 [tool.pytest.ini_options]
 testpaths = ["code/tests"]
-addopts = "-ra --strict-markers"
+addopts = "-ra --strict-markers -n auto"
 markers = [
   "native_windows: requires a native Windows host and is run by the manual evidence gate",
 ]

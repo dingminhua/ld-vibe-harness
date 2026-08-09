@@ -8,6 +8,7 @@ import pytest
 from conftest import assert_common_response
 
 from ldvh.commits import git_adapter
+from ldvh.helper import rule_source
 from ldvh.helper.service import handle_request
 from ldvh.hooks.commit_msg import CommitMsgGateResult, run_commit_msg_gate
 
@@ -19,6 +20,20 @@ def _git(project: Path, *arguments: str) -> bytes:
         capture_output=True,
     )
     return completed.stdout
+
+
+def _memoize_rule_repository_inspection(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Parse the unchanged LDVH rule source once per test across both entrypoints."""
+
+    real_inspect = rule_source.inspect_repository
+    inspect_cache: dict[Path, object] = {}
+
+    def memoized_inspect(repository_root: Path):
+        if repository_root not in inspect_cache:
+            inspect_cache[repository_root] = real_inspect(repository_root)
+        return inspect_cache[repository_root]
+
+    monkeypatch.setattr(rule_source, "inspect_repository", memoized_inspect)
 
 
 def _fixture(tmp_path: Path, *, staged: bool = True) -> tuple[Path, Path]:
@@ -156,7 +171,10 @@ def test_single_path_without_minimum_body_fails_identically_in_helper_and_native
     assert helper.response["result"]["contract"]["source_fingerprint"] == gate.source_fingerprint
 
 
-def test_mechanical_failure_is_a_completed_read_not_helper_rejection(tmp_path: Path) -> None:
+def test_mechanical_failure_is_a_completed_read_not_helper_rejection(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _memoize_rule_repository_inspection(monkeypatch)
     workspace, project = _fixture(tmp_path)
     message = "not a valid commit message"
     result = handle_request(
@@ -187,7 +205,10 @@ def test_empty_message_reaches_the_shared_validator(tmp_path: Path) -> None:
     assert {item["code"] for item in result.response["result"]["issues"]} == {"message_empty"}
 
 
-def test_empty_candidate_is_a_completed_unverifiable_mechanical_result(tmp_path: Path) -> None:
+def test_empty_candidate_is_a_completed_unverifiable_mechanical_result(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _memoize_rule_repository_inspection(monkeypatch)
     workspace, project = _fixture(tmp_path, staged=False)
     message = "test: 验证空候选"
     result = handle_request(

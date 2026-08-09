@@ -9,7 +9,7 @@ from ldvh.helper.operation_runtime import AvailabilityEvaluation, OperationExecu
 from ldvh.helper.operation_sources import OperationSourceInspection, inspect_operation_sources
 from ldvh.helper.operations import IMPLEMENTATIONS
 from ldvh.helper.responses import gap, source_reference
-from ldvh.helper.rule_source import RuleSourceResult
+from ldvh.helper.rule_source import RuleSourceResult, inspect_colocated_rule_source
 from ldvh.helper.service import handle_request
 from ldvh.specs.repository import RepositoryInspection, inspect_repository
 
@@ -86,6 +86,15 @@ def test_rule_source_location_gap_is_unavailable(monkeypatch) -> None:
 def test_capability_profiles_preserve_domain_result_and_compact_size(monkeypatch) -> None:
     monkeypatch.setattr("ldvh.helper.service.utc_now_iso", lambda: "2026-07-20T08:30:00Z")
     monkeypatch.setattr("ldvh.governance.resolver.utc_now_iso", lambda **_: "2026-07-20T08:30:00Z")
+    real_inspect = inspect_colocated_rule_source
+    inspect_cache: dict[Path, RuleSourceResult] = {}
+
+    def memoized_inspect(package_file: Path) -> RuleSourceResult:
+        if package_file not in inspect_cache:
+            inspect_cache[package_file] = real_inspect(package_file)
+        return inspect_cache[package_file]
+
+    monkeypatch.setattr("ldvh.helper.service.inspect_colocated_rule_source", memoized_inspect)
 
     compact = handle_request("capabilities", None, json.dumps({"response_profile": "compact"})).response
     diagnostic = handle_request("capabilities", None, json.dumps({"response_profile": "diagnostic"})).response

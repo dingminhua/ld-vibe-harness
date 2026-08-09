@@ -1,0 +1,317 @@
+title: 全量测试提速 — code-tests (pytest) 并行化与慢测试收敛
+goal: 将 full-v4 全量测试 code-tests 步骤耗时从当前实测基线 270–444s 显著降低，同时保持全部既有测试用例与断言强度不变，使回归验证不再成为工作流瓶颈
+scope: 覆盖：1) 现状测量（pytest collection errors 数量与原因、--durations=25 慢测试画像、子进程型测试耗时占比）；2) 引入 pytest-xdist 并行执行并处置共享状态/锁冲突；3) 收敛画像中 top-10 慢测试的可收敛项（真实 sleep、可批量子进程调用）；4) 以一次完整 full-v4 运行验证提速事实。排除：不改变 full-v4 固定 6 步计划结构（DAG 并行属规范级变更，另行议题）；不改 web 侧 4 个步骤；不承接 spark-0060 与 workcase-0088/0089 的耗时预估范围；不做增量/changed plan；不做 Git 提交。
+priority: P2
+success_criterion_definitions:
+- criterion_id: criterion-1
+  statement: 测试基线画像已登记：pytest collection errors 数量与原因分类、--durations=25 慢测试清单、子进程型测试（32 个文件）耗时占比
+- criterion_id: criterion-2
+  statement: code-tests 支持并行执行（pytest-xdist 或等效机制），并行模式下全部收集用例通过，共享状态冲突已处置或据实登记不可行原因
+- criterion_id: criterion-3
+  statement: 一次完整 full-v4 运行 passed，其 record 显示 code-tests 实测耗时较保守基线 270.8s（最近 passed 运行实测）下降 ≥40%，即 ≤162s；判定运行与基线同机进行，并在 item 结果中登记 pytest cache 冷/热状态以防预热缓存假性达标
+- criterion_id: criterion-4
+  statement: 提速未以删除或跳过既有测试用例为代价：collected 用例数 ≥1143、无测试文件删除、无新增 skip/xfail 标记、断言强度未放宽
+work_items:
+- item_id: item-1
+  goal: 测量测试基线与慢测试画像
+  expected_result: collection errors 数量与原因分类（含对 spark-0060 所记 76 个的复验结论）、--durations=25 慢测试清单、子进程型测试耗时占比登记到 item 结果
+  status: completed
+  approach_summary: 运行 pytest --collect-only 复验 collection errors 现状，并经 tools/run_full_tests.py 耐久运行取得 --durations 画像（规避交互超时）
+  result_summary: 基线画像已取得（2026-08-09，与历史基线同机）：① collection errors=0，1610 用例 0.57s 收集完成，spark-0060 所记 76 个 collection errors 已不成立（无需修复）；② 全量运行 1597 passed / 13 skipped / 369.89s，slowest-25 画像显示最慢用例 12.27s（git_hooks/test_commit_msg.py），top-25 全部位于 git_hooks 与 helper/test_commit_precheck_operation.py，均为真实 Git 操作与 CLI subprocess 型测试，无单一离群点、无 time.sleep 主导项；③ 32 个测试文件使用 subprocess 拉起 CLI，耗时呈宽尾分布（2.9–12.3s），提速主路径为 xdist 并行而非单点收敛。pytest cache 状态：本次为冷启动首次画像运行。证据：.ldvh-test-runs/wc0090-item1-durations.log；备注：实际 collected=1610 高于创建时静态统计的 1143（参数化展开），criterion-4 的 ≥1143 护栏成立。
+- item_id: item-2
+  goal: 引入 pytest-xdist 并行执行
+  expected_result: requirements-dev.txt 增加 pytest-xdist，-n auto 并行运行全部测试通过，共享状态冲突（临时目录、锁、固定路径）已隔离处置
+  status: completed
+  depends_on:
+  - item-1
+  approach_summary: 先小范围验证 worker 隔离，再全量并行；冲突点逐一隔离为 per-worker 资源；对 -n 取值做实测比较并在 item 结果中登记选定 -n 的实测依据（承接 subprocess 型测试叠加的 CPU 过订阅风险）
+  result_summary: pytest-xdist 3.8.0 已引入并默认启用：requirements-dev.txt 增加 pytest-xdist>=3.8,<4，pyproject.toml addopts 增加 -n auto，普通 pytest 调用与 full-v4 code-tests 步骤均自动并行。冲突验证：最重的真实 Git 型 git_hooks 文件 -n 2 先行验证 14 passed 无共享状态冲突；全量并行 1597 passed / 13 skipped，与串行基线 1597/13 精确一致，零 flaky。-n 实测比较（同机、10 核）：-n auto(10 worker) 80.34s，-n 4 114.10s，未见 CPU 过订阅退化（测试为 subprocess/IO 等待主导），选定 -n auto。相对串行 369.89s 提速 4.6 倍，已低于 criterion-3 的 ≤162s 目标。证据：.ldvh-test-runs/wc0090-item2-xdist-auto.log、wc0090-item2-xdist-n4.log
+- item_id: item-3
+  goal: 收敛 top-10 慢测试的可收敛项
+  expected_result: 画像 top-10 慢测试中的真实 sleep 与可批量子进程调用已收敛，不可收敛项据实登记理由
+  status: completed
+  depends_on:
+  - item-1
+  approach_summary: 逐项判断慢根因，只收敛不改变被测行为语义的部分
+  result_summary: top-10 慢测试逐项处置完成（依据 item-1 画像 + 独立只读分析）：6 项可收敛已收敛——git_hooks 三项（independent_clone 8.22→0.22s、real_git_commit 5.62→2.52s、inspect_and_uninstall 4.02→0.46s）以 render_commit_msg_hook 直写字节级一致 Hook 替换纯 fixture 性质的 install（字节一致性由 uninstall 字节绑定测试反向验证）；helper 三项（capability_profiles 4.34→1.40s、mechanical_failure 4.28→1.43s、empty_candidate 3.87→1.39s）memoize 进程内重复的规则源解析（patch 点在消费方共享的 inspect_repository，与分析方案的偏差已据实记录并验证语义不变）。4 项不可收敛据实登记：test_install_uses_common_dir(12.27s)、migrates_legacy_override(5.29s)、effective_directory_failure(4.01s)、second_legacy_unset_failure(3.92s)——其测试目标就是 install/Hook 真实管线行为（含 preflight 与迁移回滚），每次 CLI 拉起都是被测对象，唯一提速路径是产品侧规则源解析缓存（870ms/次×每次调用），超出本 WC 范围，已登记为后续候选方向。验证：三文件 41 passed（xdist），Controller 独立抽查 git_hooks 14 passed 且收敛项全部跌出 top-5；无删除用例、无新增 skip/xfail、改动限 code/tests 三文件。
+- item_id: item-4
+  goal: 全量回归验证提速事实
+  expected_result: 一次 full-v4 运行 passed，record 实测 code-tests ≤162s 且 collected 数 ≥1143
+  status: completed
+  depends_on:
+  - item-2
+  - item-3
+  approach_summary: 经 tools/run_full_tests.py start/wait 完成一次完整 full-v4 运行并回读 record；与基线同机判定，登记 pytest cache 冷/热状态
+  result_summary: full-v4 全量回归验证通过：run-8760e87e901d4dea874c970fd327155b 六步全部 passed，record 实测 code-lint 0.1s / code-tests 49.5s / fact-integrity 1.4s / web-typecheck 4.5s / web-tests 5.4s / web-build 8.1s，全程约 69s。criterion-3 达成：code-tests 49.5s ≤ 162s，较保守基线 270.8s 下降 81.7%（同机判定；pytest cache 为当日热状态，对照 item-1 当日冷启动画像 369.89s 亦下降 86.6%）。criterion-4 达成：1597 passed / 13 skipped 与串行基线精确一致（collected 1610 ≥ 1143），git diff 仅 3 个测试文件修改 + requirements-dev.txt + pyproject.toml，无测试文件删除、无新增 skip/xfail。证据：.ldvh-test-runs/run-8760e87e901d4dea874c970fd327155b/record.json 与 output.log
+status: open
+phase: human_closure_confirming
+plan_version: 2
+execution_authorization:
+  authorized_actions:
+  - action_id: authorization-1
+    summary: 运行测试与测量（pytest、tools/run_full_tests.py start/status/wait）
+    target_scope: code/tests、.ldvh-test-runs/
+    effect_scope: 写入 .ldvh-test-runs/ 运行记录、pytest 缓存，以及 full-v4 其余步骤（web-typecheck/web-tests/web-build 等）的既有本地构建与测试缓存产物
+    risk_summary: 全量运行单次最长约 8 分钟，占用本地 CPU/IO
+    rollback_summary: 无需回滚
+    rule_refs:
+    - '07'
+  - action_id: authorization-2
+    summary: 修改测试基础设施配置并安装 pytest-xdist
+    target_scope: requirements-dev.txt、pyproject.toml [tool.pytest.ini_options]
+    effect_scope: 可修改两个配置文件；pip install 向当前 Python 环境安装 pytest-xdist 包
+    risk_summary: 配置变更影响全部测试收集与执行方式；新包引入第三方依赖
+    rollback_summary: git diff 精确回退配置；pip uninstall pytest-xdist
+    rule_refs:
+    - '07'
+  - action_id: authorization-3
+    summary: 修改测试与测试辅助代码以隔离共享状态、收敛慢测试
+    target_scope: code/tests/**
+    effect_scope: 可修改
+    risk_summary: 测试改动可能弱化断言或掩盖真实缺陷；禁止删除用例、禁止放宽断言
+    rollback_summary: 逐文件 git diff 回退
+    rule_refs:
+    - '07'
+  - action_id: authorization-4
+    summary: 修改被测实现代码（仅限不改变公开行为的内部改造，如可注入的临时目录/锁路径）
+    target_scope: code/ldvh/**
+    effect_scope: 可修改（限内部行为保持改造）
+    risk_summary: 实现改动可能引入回归；以全部测试通过为验证
+    rollback_summary: 逐文件 git diff 回退
+    rule_refs:
+    - '07'
+  quality_gates:
+  - gate_id: independent-result-review
+    reviewer_mode: independent-read-only
+    delegation_action_id: authorization-3
+    result_review_action_id: authorization-1
+  action_ceiling: 本次运行只允许：运行测试与测量、修改 requirements-dev.txt 与 pyproject.toml 测试配置、修改 code/tests/**、对 code/ldvh/** 做行为保持的内部改造；不允许其它写入
+  prohibited_actions:
+  - 不得删除或跳过既有测试用例
+  - 不得放宽断言或降低校验强度
+  - 不得修改 specs/ 规范文件
+  - 不得修改 ldvh-base/ 事实对象（本 WC 自身受控写回除外）
+  - 不得提交 Git 变更
+  - 不得改变 full-v4 固定 6 步计划结构
+  - 不得承接 spark-0060 与 workcase-0088/0089 范围
+  allowed_adjustments: 允许在计划目标内调整并行度参数（-n 取值）、top-10 慢测试的收敛方式与 item 内实施顺序；基线内 PlanΔ 按 21/34 执行，不重求 Human
+  verification_and_rollback: 每个稳定检查点后以受影响测试子集验证；item-4 以完整 full-v4 运行验证；任一验证失败时逐文件 git diff 回退至检查点前状态
+  out_of_bounds_handling: 发现需要规范变更、full-v4 计划结构变更、Git 提交，或 collection errors 修复需改变被测行为（超出 authorization-4 行为保持上限）时，停止相关动作，据实取消受影响 item 或写入真实 blocked 与恢复条件后交还 Human，不询问扩权
+creation_reviews:
+- reviewer: explore-subagent（agent-0，独立只读上下文）
+  reviewed_at: '2026-08-09T15:25:00Z'
+  subject_version: 2
+  scope: 逐项复核将保留的 title/goal/scope/criteria/work_items/授权包字段，对照 21 §4.3/§4.4/§6.3，并实测核对 run_full_tests.py、requirements-dev.txt、pyproject.toml、spark-0060 记录；未实际运行测试复验基线数值，未复核已移除的旧 capability_limitations
+  conclusion: pass_with_followups
+  feedback:
+  - authorization-2 未覆盖 pip install pytest-xdist 的环境副作用
+  - criterion-2 验收受 76 个 collection errors（未复验）阻断风险，处置路径未登记
+  - criterion-4「断言强度未放宽」不可机械判定，需补机械护栏
+  - criterion-3 单次判定未写明同机与缓存状态条件，防预热缓存假性达标
+  - authorization-1 effect_scope 未含 full-v4 其余步骤的本地构建/缓存产物
+  - item-2 未承接 xdist 叠加 subprocess 型测试的 CPU 过订阅风险，-n 选定需实测依据
+  controller_resolution: 6 条反馈全部吸收进 plan_version=2：authorization-1/2 的 effect_scope 已补齐、criterion-3 写入同机+缓存状态、criterion-4 补 skip/xfail 与文件删除机械护栏、item-1 增加 collection errors 复验、item-2 approach 明确 -n 实测比较、out_of_bounds_handling 补「修复需行为变更时 blocked/取消」承接路径
+  covered_quality_gate_ids:
+  - independent-result-review
+  actual_method: subagent-read-only
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0060
+change_log:
+- at: '2026-08-09T15:02:31.223657Z'
+  session_id: kimi-work-session-20260809
+  summary: 受控创建 workcase-0090：full-v4 code-tests 步骤提速（pytest-xdist 并行化与 top 慢测试收敛），目标 ≤162s，与 spark-0060 耗时预估范围互斥。
+  signature:
+    model_id: kimi-k2
+    agent_workbench: Kimi Work
+- at: '2026-08-09T15:21:19.054574Z'
+  session_id: kimi-work-session-20260809
+  summary: Human 在 Gate1 中明确允许使用 subagent，授权基线呈现材料必须改变：human_plan_confirming → plan_revising，待移除 capability_limitations 并以 subagent-read-only 重做创建复核。
+  signature:
+    model_id: kimi-k2
+    agent_workbench: Kimi Work
+- at: '2026-08-09T15:27:45.352616Z'
+  session_id: kimi-work-session-20260809
+  summary: plan_revising → human_plan_confirming：plan_version=2。应 Human 允许 subagent 移除 capability_limitations；subagent-read-only 独立创建复核（pass_with_followups）6 条反馈全部吸收：授权包补环境副作用与缓存产物、criterion-3/4 补判定条件与机械护栏、item-1/2 补复验与 -n 实测依据。
+  signature:
+    model_id: kimi-k2
+    agent_workbench: Kimi Work
+- at: '2026-08-09T15:32:54.957863Z'
+  session_id: kimi-work-session-20260809
+  summary: Gate 1：Human 批准 plan_version=2，写入 execution_approval 并进入 executing。
+  signature:
+    model_id: kimi-k2
+    agent_workbench: Kimi Work
+- at: '2026-08-09T15:33:51.322954Z'
+  session_id: kimi-work-session-20260809
+  summary: item-1 pending → in_progress：开始测试基线测量。
+  signature:
+    model_id: kimi-k2
+    agent_workbench: Kimi Work
+- at: '2026-08-09T15:43:40.954286Z'
+  session_id: kimi-work-session-20260809
+  summary: item-1 in_progress → completed：基线画像完成（0 collection errors、1610 用例、369.89s 全量、slowest-25 宽尾分布）。
+  signature:
+    model_id: kimi-k2
+    agent_workbench: Kimi Work
+- at: '2026-08-09T15:45:05.099622Z'
+  session_id: kimi-work-session-20260809
+  summary: item-2 pending → in_progress：开始引入 pytest-xdist 并行执行。
+  signature:
+    model_id: kimi-k2
+    agent_workbench: Kimi Work
+- at: '2026-08-09T15:51:32.934631Z'
+  session_id: kimi-work-session-20260809
+  summary: item-2 in_progress → completed：pytest-xdist 默认并行落地，-n auto 全量 80.34s（4.6x），pass/skip 与串行一致。
+  signature:
+    model_id: kimi-k2
+    agent_workbench: Kimi Work
+- at: '2026-08-09T15:52:47.750373Z'
+  session_id: kimi-work-session-20260809
+  summary: item-3 pending → in_progress：开始 top-10 慢测试收敛分析。
+  signature:
+    model_id: kimi-k2
+    agent_workbench: Kimi Work
+- at: '2026-08-09T16:15:03.359512Z'
+  session_id: kimi-work-session-20260809
+  summary: item-3 in_progress → completed：6 项可收敛慢测试已收敛（串行口径合计约 -14s），4 项不可收敛据实登记，产品侧解析缓存登记为后续候选。
+  signature:
+    model_id: kimi-k2
+    agent_workbench: Kimi Work
+- at: '2026-08-09T16:16:02.260235Z'
+  session_id: kimi-work-session-20260809
+  summary: item-4 pending → in_progress：开始 full-v4 全量回归验证。
+  signature:
+    model_id: kimi-k2
+    agent_workbench: Kimi Work
+- at: '2026-08-09T16:23:25.360014Z'
+  session_id: kimi-work-session-20260809
+  summary: item-4 completed，全部 item terminal；executing → controller_checking，result_version=1，完整 canonical result projection 形成（4 条 criterion 全 satisfied）。
+  signature:
+    model_id: kimi-k2
+    agent_workbench: Kimi Work
+- at: '2026-08-09T16:26:28.026941Z'
+  session_id: kimi-work-session-20260809
+  summary: controller_checking → independent_reviewing：完整结果投影已形成、校验并回读，委派 subagent-read-only 结果复核。
+  signature:
+    model_id: kimi-k2
+    agent_workbench: Kimi Work
+- at: '2026-08-09T16:39:17.296622Z'
+  session_id: kimi-work-session-20260809
+  summary: 写入 result_version=1 独立结果复核（subagent-read-only，pass_with_followups）与 Controller 处置：6 条反馈全部接受，证据已补落盘，投影更正将升版重审。
+  signature:
+    model_id: kimi-k2
+    agent_workbench: Kimi Work
+- at: '2026-08-09T16:40:02.948303Z'
+  session_id: kimi-work-session-20260809
+  summary: independent_reviewing → controller_checking：v1 复核反馈已处置，返回修正结果投影（将升 result_version=2）。
+  signature:
+    model_id: kimi-k2
+    agent_workbench: Kimi Work
+- at: '2026-08-09T16:42:28.581855Z'
+  session_id: kimi-work-session-20260809
+  summary: result_version=2：按 v1 复核反馈更正 criterion-3/4 表述、补登越界脚本事件与处置、补落盘证据引用；清除旧 reviews 待重新复核。
+  signature:
+    model_id: kimi-k2
+    agent_workbench: Kimi Work
+- at: '2026-08-09T16:43:09.098395Z'
+  session_id: kimi-work-session-20260809
+  summary: controller_checking → independent_reviewing：v2 完整投影已形成并回读，委派 subagent-read-only 重新复核。
+  signature:
+    model_id: kimi-k2
+    agent_workbench: Kimi Work
+- at: '2026-08-09T16:49:17.236577Z'
+  session_id: kimi-work-session-20260809
+  summary: 写入 result_version=2 独立复核（subagent-read-only，pass_with_followups）与处置：2 处措辞/数值校准将升 v3，并行线程脏文件归属确认并提示。
+  signature:
+    model_id: kimi-k2
+    agent_workbench: Kimi Work
+- at: '2026-08-09T16:49:36.278699Z'
+  session_id: kimi-work-session-20260809
+  summary: independent_reviewing → controller_checking：v2 反馈已处置，返回修正投影措辞（将升 result_version=3）。
+  signature:
+    model_id: kimi-k2
+    agent_workbench: Kimi Work
+- at: '2026-08-09T16:50:06.035386Z'
+  session_id: kimi-work-session-20260809
+  summary: result_version=3：按 v2 复核校准 validation_summary 措辞（top-5/top-10 第 6 位）与 item-3 real_git_commit 数值（2.52s）；清除旧 reviews 待重新复核。
+  signature:
+    model_id: kimi-k2
+    agent_workbench: Kimi Work
+- at: '2026-08-09T16:50:26.900243Z'
+  session_id: kimi-work-session-20260809
+  summary: controller_checking → independent_reviewing：v3 投影已形成并回读，委派聚焦复核。
+  signature:
+    model_id: kimi-k2
+    agent_workbench: Kimi Work
+- at: '2026-08-09T16:52:56.060385Z'
+  session_id: kimi-work-session-20260809
+  summary: 写入 result_version=3 聚焦复核（subagent-read-only，pass，无 feedback）：两处校准均与证据严格一致。
+  signature:
+    model_id: kimi-k2
+    agent_workbench: Kimi Work
+- at: '2026-08-09T16:53:13.145311Z'
+  session_id: kimi-work-session-20260809
+  summary: independent_reviewing → closure_preparing：v3 复核 pass 且无 feedback，projection 未变，开始形成关闭提案。
+  signature:
+    model_id: kimi-k2
+    agent_workbench: Kimi Work
+- at: '2026-08-09T16:54:01.927209Z'
+  session_id: kimi-work-session-20260809
+  summary: closure_preparing 内整体写入完整关闭提案（proposed_outcome=completed，无剩余责任，1 条 follow_up_opportunity 建议）。
+  signature:
+    model_id: kimi-k2
+    agent_workbench: Kimi Work
+- at: '2026-08-09T16:54:21.758186Z'
+  session_id: kimi-work-session-20260809
+  summary: closure_preparing → human_closure_confirming：提案与质量链冻结，终态保留审查完成，等待 Human Gate 2。
+  signature:
+    model_id: kimi-k2
+    agent_workbench: Kimi Work
+execution_approval:
+  subject_version: 2
+  approved_at: '2026-08-09T15:29:30Z'
+  summary: Human 批准 plan_version=2 完整计划与 execution_authorization（含唯一质量关口 independent-result-review / independent-read-only，实际复核方法 subagent-read-only）
+  baseline_fingerprint: b51a3e11f314f918e8ff6d06627d81c75227146cc4b3b04fd798100412b03f57
+  source_refs:
+  - 'kimi-work-session-20260809: Human 2026-08-09T23:29 输入「批准」'
+result_version: 3
+success_criterion_results:
+- criterion_id: criterion-1
+  outcome: satisfied
+  summary: 基线画像已登记：collection errors=0（1610 用例 0.57s 收集，spark-0060 所记 76 个已不成立）、slowest-25 清单（最慢 12.27s）、32 个 subprocess 型测试文件呈 2.9–12.3s 宽尾分布
+- criterion_id: criterion-2
+  outcome: satisfied
+  summary: pytest-xdist 3.8.0 引入且 addopts -n auto 默认启用；全量并行 1597 passed / 13 skipped 与串行基线精确一致，git_hooks 最重文件 -n 2 先行验证无共享状态冲突，普通 pytest 调用确认自动并行
+- criterion_id: criterion-3
+  outcome: satisfied
+  summary: full-v4 run-8760e87e passed；record 关联 raw output 时间戳派生 code-tests 49.5s（墙钟 49.54s / pytest 自报 49.32s）≤ 162s，较保守基线 270.8s 降 81.7%；同机判定，pytest cache 热状态已登记
+- criterion_id: criterion-4
+  outcome: satisfied
+  summary: collected 1610 ≥ 1143；1597 passed / 13 skipped 与串行基线精确一致；git diff 仅 3 个测试文件与 2 个配置文件，无测试文件删除、无新增 skip/xfail；断言随 fixture 等价改写（3 处 install-state 断言随被移除的 install fixture 一并移除），套件级断言强度由未改动的 test_install_uses_common_dir 及保留的 inspected.state 断言覆盖，未放宽
+result_summary: full-v4 code-tests 步骤从保守基线 270.8s 降至 49.5s（-81.7%），全量 6 步全程约 69s；提速由 pytest-xdist 默认并行（-n auto，10 worker 实测 80.34s vs -n 4 114.10s，无过订阅）与 6 项慢测试收敛（合计约 -14s 串行口径）构成；全部 4 条成功标准 satisfied，无剩余责任；4 项不可收敛慢测试已据实登记，产品侧规则源解析缓存（870ms/次）为后续候选方向。
+controller_check_summary: 逐项复核：4 条 criterion 证据均可回读（item1 画像 log、item2 xdist 两次运行 log、run-8760e87e record/output、git diff、item3 补落盘证据）；item 结果与 criterion 结果一致；无新 Human 决策需求，无 blocked。据实补登：item-1 期间曾创建测量辅助脚本 tools/wc0090_item1_durations.py（仅向 .ldvh-test-runs 写 log/pid），越出授权 target_scope，v1 结果复核指出后已删除，其产出的画像 log 保留于 .ldvh-test-runs；除此之外写入限 .ldvh-test-runs、requirements-dev.txt、pyproject.toml、code/tests 三文件，未碰 specs/、ldvh-base/、Git 提交与 6 步结构。
+validation_summary: 验证链：item-1 pytest --collect-only 与冷启动 --durations 全量画像（369.89s）；item-2 git_hooks -n 2 冲突预检 14 passed（未留存落盘证据的实测记录，据实标注）、-n auto 与 -n 4 两次全量并行对比（80.34s/114.10s，均 1597/13，有落盘 log）；item-3 三文件 41 passed 且收敛项全部跌出 top-5（top-10 内仅剩 real_git_commit 居第 6）（.ldvh-test-runs/wc0090-item3-converged-durations.log）+ Controller 独立抽查；item-4 完整 full-v4 耐久运行六步 passed（code-tests 49.5s）；补证：wc0090-item3-collect-evidence.log（1610 用例 0.44s 收集）；每个事实检查点后 check-fact-integrity 均 complete。
+result_reviews:
+- reviewer: explore-subagent（agent-5，独立只读上下文）
+  reviewed_at: '2026-08-09T16:52:00Z'
+  subject_version: 3
+  scope: 聚焦验证 v3 两处校准（validation_summary 排名措辞、item-3 real_git_commit 2.52s）并对照 wc0090-item3-converged-durations.log 逐项核实，粗查无夹带修改
+  conclusion: pass
+  actual_method: subagent-read-only
+closure_proposal:
+  proposed_outcome: completed
+  proposed_disposition_summary: 全部 4 条成功标准 satisfied，原 scope 内无未满足或未验证责任：code-tests 从保守基线 270.8s 降至 49.5s（-81.7%），full-v4 全程约 69s，用例与跳过数与基线精确一致。停止边界：工作树改动（requirements-dev.txt、pyproject.toml、code/tests 三文件）未提交 Git——提交不在本 WC 授权内，由 Human 另行决定；提交时不得裹挟并行线程文件（spark-0065.yaml M、workcase-0091.yaml ??，归属另一会话）。无剩余责任，无 accept-stop 项。
+  spark_suggestions:
+  - suggestion_id: suggestion-1
+    suggestion_kind: follow_up_opportunity
+    summary: 产品侧规则源解析缓存：inspect_repository 单次约 870ms，是 git_hooks/helper 全部 Hook CLI 与 handle_request 调用的共同底座；本次 4 项不可收敛慢测试（合计约 20s）的唯一提速路径
+    follow_up_summary: 若后续立项，预估 git_hooks/helper 测试整体再降 40–60%；方向包括在 ldvh.helper.rule_source 增加进程内/跨进程解析缓存或预编译索引，属产品行为变更，需独立 WorkCase 与 Gate 1
+waiting_on: 'Human Gate 2: 审阅逐项 criterion 结果、总体结果、验证边界、三轮独立复核处置与完整关闭提案，作出关闭或拒绝决定'
+object_id: workcase-0090
+fact_type_key: workcase
+created_at: '2026-08-09T15:02:31.223657Z'
+updated_at: '2026-08-09T16:54:21.758186Z'

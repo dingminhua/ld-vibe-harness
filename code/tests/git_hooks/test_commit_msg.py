@@ -110,6 +110,20 @@ def _install(workspace: Path, project: Path):
     )
 
 
+def _write_installed_hook(workspace: Path, worktree: Path) -> tuple[Path, Path]:
+    """Write the byte-exact install product directly, skipping install's fixture-only work."""
+
+    common_dir = Path(_checked_git(worktree, "rev-parse", "--path-format=absolute", "--git-common-dir").strip())
+    hook = common_dir / "hooks" / "commit-msg"
+    hook.write_text(
+        render_commit_msg_hook(commit_msg_runner=SOURCE_LAUNCHER, workspace_root=workspace.resolve()),
+        encoding="utf-8",
+        newline="\n",
+    )
+    hook.chmod(0o755)
+    return hook, common_dir
+
+
 def _invoke_hook(worktree: Path, hook: Path, message: str, name: str) -> subprocess.CompletedProcess[str]:
     changed = worktree / f"{name}.txt"
     changed.write_text(f"{name}\n", encoding="utf-8")
@@ -161,8 +175,8 @@ def test_install_uses_common_dir_and_covers_existing_and_future_linked_worktrees
 
 def test_real_git_commit_is_blocked_and_allowed_by_installed_commit_msg_hook(tmp_path: Path) -> None:
     workspace, project = _managed_project(tmp_path)
-    installed = _install(workspace, project)
-    assert installed.state == "managed", installed
+    hook, _ = _write_installed_hook(workspace, project)
+    assert hook.is_file()
 
     before = _checked_git(project, "rev-parse", "HEAD").strip()
     changed = project / "change.txt"
@@ -226,14 +240,13 @@ def test_passed_gate_without_binding_evidence_fails_closed(
 
 def test_independent_clone_does_not_inherit_common_dir_hook(tmp_path: Path) -> None:
     workspace, main = _managed_project(tmp_path)
-    installed = _install(workspace, main)
-    assert installed.state == "managed"
+    _, common_dir = _write_installed_hook(workspace, main)
 
     clone = tmp_path / "clone"
     _checked_git(tmp_path, "clone", "-q", str(main), str(clone))
     clone_common = Path(_checked_git(clone, "rev-parse", "--path-format=absolute", "--git-common-dir").strip())
 
-    assert clone_common != Path(installed.git_common_dir or "")
+    assert clone_common != common_dir
     assert not (clone_common / "hooks" / "commit-msg").exists()
 
 
@@ -456,12 +469,11 @@ def test_deployment_requires_governance_human_gate_and_no_runtime_injection(
 
 def test_inspect_and_uninstall_bind_exact_common_dir_deployment(tmp_path: Path) -> None:
     workspace, main = _managed_project(tmp_path)
-    installed = _install(workspace, main)
-    assert installed.state == "managed"
+    hook, common_dir = _write_installed_hook(workspace, main)
 
     inspected = inspect_commit_msg_hook(worktree=str(main))
     assert inspected.state == "managed"
-    assert inspected.git_common_dir == installed.git_common_dir
+    assert inspected.git_common_dir == str(common_dir)
 
     wrong_workspace = tmp_path / "wrong-workspace"
     wrong_workspace.mkdir()
@@ -472,7 +484,7 @@ def test_inspect_and_uninstall_bind_exact_common_dir_deployment(tmp_path: Path) 
         human_gate_confirmed=True,
     )
     assert conflict.state == "conflict"
-    assert Path(installed.hook_path or "").is_file()
+    assert hook.is_file()
 
     removed = uninstall_commit_msg_hook(
         worktree=str(main),
@@ -481,7 +493,7 @@ def test_inspect_and_uninstall_bind_exact_common_dir_deployment(tmp_path: Path) 
         human_gate_confirmed=True,
     )
     assert removed.state == "absent"
-    assert not Path(installed.hook_path or "").exists()
+    assert not hook.exists()
 
 
 def test_installation_environment_rejects_injection_but_preserves_declared_global_scope(

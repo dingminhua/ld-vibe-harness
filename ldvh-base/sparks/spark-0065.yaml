@@ -1,8 +1,21 @@
-title: WC0066 自述‘无独立 subagent 能力’与运行环境实际具备 subagent 工具之间的矛盾
+title: WorkCase 独立复核的跨环境能力路由与重复复审机制
 status: open
 priority: P2
-intent: WC0066 受控创建时记录在 observation_summary 与 assurance_gap 中‘当前 WorkBuddy 运行环境无可用独立 subagent 委派通道 / 无独立 subagent 能力’，但同一会话中 WorkBuddy 实际具备 Agent/Explore/Plan subagent 工具，可派发独立上下文的子任务。需后续研究：二者究竟是治理保证口径（‘独立’= 真正异质审阅实体，同模型子进程不计入）导致的措辞差异，还是 WC0066 创建时的环境能力观察已过时；以及若按 WC0066 自身钩子（‘若环境获得真实 subagent 能力，应改回真实 subagent 完成 creation/result review’）应如何在事实层校正 capability 观察与 creation review 方法。
-summary: "## 现象\n- WC0066（ldvh-base/workcases/workcase-0066.yaml）多处写明：observation_summary‘当前 WorkBuddy 运行环境无可用独立 subagent 委派通道，无法发起真实独立只读 subagent 结果复核或 creation review’；assurance_gap‘当前运行环境无独立 subagent 能力；same-AI 切换角色只读审核低于独立 subagent 保证’；并据此以 same-AI switched-role 完成低保证 creation review。\n- 同一运行环境中，WorkBuddy 实际拥有 subagent 工具（Agent 通用代理、Explore 代码库探索、Plan 规划），可发起具有隔离上下文的子任务。\n\n## 待判断的核心问题\n1. 矛盾性质：是治理保证口径差异（‘独立 subagent’特指异质审阅实体，同模型子进程不视为‘独立’），还是 WC0066 创建时的环境能力观察已过时（工具当时未验证/未暴露，如今可用）。\n2. 记录正确性：WC0066 的 observation_summary / assurance_gap 在工具现已可用的情况下是否应更新；若更新，通过何种治理动作（PlanΔ / 新 item + update-workcase）校正 capability 观察与 creation review 方法。\n3. 保证升级：WC0066 自身第 127 行已留钩子——‘若环境获得真实 subagent 能力，应改回真实 subagent 完成 creation/result review’；若实测 Agent 通道可用，是否应重跑 creation review 并消除 assurance_gap，同时提升保证级别。\n\n## 边界\n- 本 Spark 只记录矛盾现象与待研究问题，不自行改写 WC0066 事实对象；任何校正须经 WC0066 自身生命周期（授权 + update-workcase）。\n- 不判断‘独立’治理口径本身的对错，只判断 WC0066 记录与当前环境是否一致、以及如何依规校正。\n- 与 WC0066 item 终态推进、Git push 整合（远端 dev-v4 已前进、lint 补丁与本地 25 提交纠缠）相互独立，可并行研究。"
+intent: 明确 WorkCase 在方案侧与结果侧两个独立复核位置如何复用同一套跨 Agent 环境能力路由，并区分固定的审核位置与可重复发生的审核轮次。每次进入 WC 相关的新建、恢复、压缩后继续或接管对话时，必须先消除适用的 Human 明确启用门槛，再执行一次只读能力预检；在取得只读协作 Worker／subagent 的当前明确启用指令并重新探测前，不得把 `permission_required`、`not_authorized` 或 `unknown` 写成 `unavailable`；优先使用可由 Human 指定模型并新开独立、持久协作会话的模式，缺失时按一次性 subagent、same-AI 切换 Reviewer 视角的 1→2→3 顺序自动降级，第三档强制添加能力受限说明。规则还需约束创建前在确认协作模式可用时向 Human 发出一次“使用什么模型”的自由文本询问、Gate 1 冻结 reviewer policy、每轮最多三个审查视角，以及发现问题、修正后对新版本重复复审的循环，避免把两个生命周期位置误解为固定只审两次，或因环境能力不同而临时发明不一致做法。
+summary: "## 核心定义\n\nWorkCase 只有两个需要独立复核的生命周期位置，但复核次数不固定：\n\n- **方案侧复核**：受控创建前审核候选计划与授权包；方案经反馈修正或 Gate 1 后形成 PlanΔ 时，对新计划版本重新复核。\n- **结果侧复核**：完整结果投影形成后进行复核；发现问题并由 Controller 修正、返工或改变结果投影后，对新结果版本重新复核。\n\n两个位置使用同一套能力路由和反馈闭环，只是审核问题不同。方案侧关注范围、计划、授权、风险和可执行性；结果侧关注验收证据、实现结果、回归、残余责任和关闭条件。位置不等于次数，整个 WC 不设固定复审总次数。\n\n## 能力解锁与探测前置\n\n某些 Agent 环境只有在 Human 明确要求后才暴露或允许协作 Worker / subagent。为避免探测结果被宿主的权限门槛污染，每次入口能力预检先检查当前 Human 输入是否已经明确允许本 WC 在独立复核时按需启用只读协作 Worker 或 subagent；若没有足够明确的当前指令，先询问：“为了本 WC 的只读独立复核，请明确确认：允许在需要时启用协作 Worker 或 subagent。该允许不包含实现、写入、提交或外部操作。”取得肯定答复后，再重新探测第一、第二档。\n\n- 该启用指令只授权创建只读 Reviewer 执行体，不授权实现、事实写入、外部副作用、Git 提交或 Gate 1 执行；它是能力解锁，不是第三个 Human Gate。\n- Human 当前消息已经明确包含同等授权时可以直接复用，不重复询问；仅有“创建/继续 WC”或历史 reviewer policy 而没有当前宿主所需的显式启用含义时，不得自行补足。\n- 未取得明确答复前，状态只能是 `permission_required` 或 `unknown`；Human 拒绝时是 `not_authorized`。三者都不是技术 `unavailable`，不得借此直接降到第三档或声称环境不支持。\n- Human 明确允许后仍无法启动、能力不存在或不满足独立复核条件时，才可根据当前证据记为 `unavailable`，随后继续 1 → 2 → 3 路由。\n- 新建、恢复、压缩后继续、接管或切换环境时，若宿主要求当前会话中的 Human 明确请求，历史 WC 记录不能冒充当前启用指令；必须重新取得指令或保持等待。\n\n## WC 相关对话的入口能力预检\n\n每次进入一个 WC 相关的新对话、恢复对话、上下文压缩后的继续执行或接管执行时，必须先解决适用的 Human 明确启用门槛，再完成一次当前能力预检，之后才进入 WC 的创建、读取或执行编排。它是一次只读的路由控制动作：\n\n- 不属于第三个复核位置；\n- 不形成 review 结论，不计入复审次数或每轮视角数量；\n- 不新增 WC lifecycle phase、work item 或 Human Gate；\n- 分别观察当前环境是否具有协作 Worker、一次性 subagent 与 same-AI 三类复核载体，以及各自的模型目录、限制和证据；不能把一种载体的模型清单冒充另一种，也不能把未知能力直接写成缺失。\n\n对话入口预检形成当次临时能力快照。真正开始任一方案侧或结果侧复核前，还要确认该快照仍然有效；执行中发现能力变化时立即按 1 → 2 → 3 重新选路。能力预检本身不证明审核独立性，也不改变 Gate 1 已批准的工作范围。\n\n## 能力路由顺序\n\n1. **可指定模型并新开独立、持久协作会话的协作模式**：首选。能力预检只需确认该协作载体与模型指定能力实际存在；不能复用或猜测一次性 subagent 的模型覆盖项。AI 在 WorkCase 受控创建前向 Human 发出一次自由文本询问：“当前环境支持协作模式，本次独立复核使用什么模型？”默认不展开模型目录、不提供点选或表格清单。Human 可直接填写模型名，也可明确委托 AI 选择；只有 Human 主动要求查看可用模型，或所填模型无法唯一解析、与协作载体不兼容或当前不可用时，才按需读取协作系统自身目录并提供必要说明或候选。协作 agent 的选择属于 AI 的执行映射；只有无法在不改变 Human 模型选择的前提下唯一、安全映射时才追问。\n2. **一次性 subagent 模式**：第一档经当次观察确认不可用、启动失败或不满足独立复核条件时，自动判断并尝试实际可用的只读 subagent。subagent 的模型覆盖项只属于第二档，不得作为第一档协作模型清单呈现给 Human；降级时不再次询问 Human 选择顺序，也不虚构协作 Worker、持久会话或协作模型目录。\n3. **same-AI 切换 Reviewer 视角**：前两档均经当次观察确认不可用后自动进入。每次采用第三档都必须在实际 review 中添加能力受限说明，逐项说明第一、第二档为何不可用、当次采用的方法、独立性受影响范围、保证差距及明确停止条件；不得表述为独立 subagent 或等价保证。\n\n每轮复核都按 1 → 2 → 3 判断。不能因为历史上使用过低档方式就跳过当前已恢复的高档能力，不能从第一档直接跳到第三档，也不能把某次缺失永久化。\n\n## Human 选择与 Gate 1 冻结\n\n能力解锁询问与模型选择询问必须分开理解：前者在权限受限或状态未知时取得只读 Reviewer 执行体的启用指令，可能同时覆盖第一、第二档；后者只在解锁后确认第一档协作模式实际可用时，才询问使用什么模型。两者都不等于 Gate 1 执行批准，也不得授权实现、写入或提交。\n\nHuman 的模型选择发生在新 WorkCase 创建之前，是一次必要的复核方法询问，不是执行批准，也不新增第三个生命周期 Gate。确认协作模式可用后只询问“本次独立复核使用什么模型”，不默认输出目录；Human 可指定模型或明确委托 AI 选择。AI 负责把该回答映射到协作系统实际 agent/模型组合并验证可用性，不得混用 subagent 模型覆盖项。选定结果与以下 reviewer policy 连同执行授权包提交 Gate 1 冻结：\n\n- Human 指定的协作模型或明确委托 AI 选择的结果、AI 实际映射的协作 agent，以及失效条件；\n- 固定的 1 → 2 → 3 运行时降级顺序；\n- AI 可按风险选择每轮 1–3 个审查视角；\n- 第三档的强制受限说明、保证差距和停止条件；\n- 后续对话重新探测能力时，只能在该 policy 内选择实际可用方法，不借能力变化扩张工作授权。\n\nGate 1 后的 PlanΔ 与结果复核不再索取新的模型选择或新增 Human Gate。若冻结 policy 无法覆盖新出现的能力组合，则受影响 review 停止或按既有安全收敛规则处理，不能临时扩权。\n\n## 审查视角与复审循环\n\n- 每轮需要 1–3 个审查视角，由 AI 根据被审对象、复杂度、风险和已知薄弱点判断；Controller 不计入 Reviewer 视角。\n- “最多 3 个”约束同一被审版本、同一 review cycle 内实际启动的 Reviewer 对话或任务数量，不限制整个 WC 生命周期的复审轮次。\n- Reviewer 只读并提供反馈，Controller 负责处置。发现问题后不能用解释覆盖问题：需要修正的先修正，再对新的候选或版本重新复核。\n- 多视角并行只属于当前一轮；它不能替代发生实质变化后的 fresh review。\n\n## WC 完整编排\n\n### 创建前与 Gate 1\n\n1. WC 相关对话入口先检查当前 Human 输入是否足以解除协作 Worker / subagent 的启用门槛；不足时先取得仅限只读复核的明确允许，再重新探测能力。\n2. 第一档可用时，在创建 WC 前只向 Human 询问“本次独立复核使用什么模型”，取得模型名或 Human 明确委托 AI 选择后再验证并映射协作 agent；默认不展示目录。第一档不可用时不询问模型，直接进入一次性 subagent，再按 1 → 2 → 3 选路。\n3. AI 形成完整候选计划、work items、成功标准、执行授权包和 reviewer policy。\n4. 对候选计划进行方案侧复核；若有问题，Controller 修正候选并重新复核，直至当前候选可提交或命中停止条件。\n5. 以最终候选和 fresh creation review 创建 WC，进入 human_plan_confirming。\n6. Gate 1 由 Human 审核计划、授权范围、模型选择、降级 policy 及第三档可能产生的保证差距。\n\n### Gate 1 后执行与 PlanΔ\n\n1. 每次新开、恢复、压缩后继续或接管执行对话，先检查宿主是否要求当前会话的 Human 明确启用；需要时先重新取得只读 Reviewer 启用指令，再执行能力预检并精确读取 WC 和冻结授权。\n2. 正常执行 work items；入口能力快照只决定复核载体，不改变计划和授权。\n3. 发生基线内 PlanΔ 时形成新 plan version，进入方案侧 fresh review。\n4. 每轮按当前能力和冻结 policy 选择 1–3 个视角；反馈导致再次改计划时继续升版、使旧 review 失效并重新复核。\n5. 当前版本复核通过且反馈处置完成后，才继续执行。\n\n### 结果侧与 Gate 2\n\n1. work items 达到终态后，Controller 先形成完整、版本化的 result projection。\n2. 确认能力预检仍有效，再按 1 → 2 → 3 和冻结 policy 发起 1–3 个结果审查视角。\n3. 若反馈要求修改实现、证据或结果投影，先返工；结果变化时提升 result version、使旧 result reviews 与 closure proposal 失效，然后重新复核。\n4. 重复“复核 → 处置 → 变化 → fresh review”，直到当前结果版本满足关闭条件或命中停止条件。\n5. 只有当前结果版本的 review 与处置成立，才进入 closure_preparing 和 Gate 2。\n\n## 需要固化到规则与实现的位置\n\n- WorkCase 类型规则：增加能力启用状态与证据边界，区分 `permission_required`、`not_authorized`、`unknown` 与技术 `unavailable`；再增加协作 Worker、一次性 subagent、same-AI 三档 actual method，明确各档模型目录不得混用，并增加会话入口 preflight、reviewer policy、每轮最多 3 个视角、第三档限制字段与版本失效规则。\n- 受控创建模板：在能力预检前增加宿主权限解锁；明确它不是生命周期 Gate，并与“Human 已明确要求形成 WC 时无需因 Reviewer 创建重复确认”的一般规则协调——只有宿主确实要求显式启用且当前输入不足时才补问。解锁后确认协作模式可用时进行一次自由文本模型询问，默认不展示目录，并把 Human 指定或明确委托 AI 选择后的实际模型映射写入 reviewer policy。\n- 获批计划执行模板：增加每次新建、恢复、压缩后继续或接管上下文所需的当前启用指令检查、能力预检、复核前有效性确认、运行时 1 → 2 → 3 降级及重复复审循环；历史授权不能替代宿主要求的当前会话显式指令。\n- Schema、字段登记、Helper 校验、测试与 Web：评估是否需要持久化启用来源与状态；至少支持复核载体档位、Human 指定模型或明确委托 AI 选择、实际协作 agent/模型映射、实际方法、能力证据和限制说明。持久记录只能证明历史选择，不能伪造当前宿主会话已经解锁。\n- 必须把协作 Worker 与一次性 subagent 判为不同能力：协作 Worker 是持久、UI 可见的独立会话并有自己的 agent/模型目录；subagent 是一次性子任务执行体并可能只有有限模型覆盖项。两者仍分别需要定义独立性的最低条件；当前规则以“不同执行环境”描述 subagent，不能仅凭工具名称或独立任务上下文声称已满足。\n\n## 与 WC0066 的关系\n\nWC0066 只是发现问题的触发案例。它暴露了能力声明与工具表象可能冲突，但本 Spark 的边界是面向后续 WorkCase 的通用机制；是否事后审计 closed WC0066 属于独立处置，不能通过本机制倒写或升级其历史 review。"
+evolution:
+- at: '2026-08-09T14:32:11Z'
+  summary: 议题最初由 WC0066 的 subagent 能力矛盾触发；Human 随后澄清真正目标是建立适用于所有 WorkCase 两个复核位置的跨环境能力路由、结构化模型选择与可重复复审规则，因此对象边界从个案记录校正为通用机制，并保留 WC0066 仅作为起因。
+- at: '2026-08-09T14:43:29Z'
+  summary: Human 进一步明确：每次进入 WC 相关执行对话时，开始阶段必须先做一次当前能力判断。由此将能力预检定位为会话入口的只读路由动作，并梳理其与创建前模型选择、Gate 1 冻结、PlanΔ、结果版本和重复复审的完整编排。
+- at: '2026-08-09T14:54:09.674Z'
+  summary: Human 明确模型候选不使用直接点选控件：候选可能过多且部分环境无法承载点选，统一改为 Markdown 表格呈现，并由 Human 按序号或精确模型名回复。
+- at: '2026-08-09T14:59:21.973Z'
+  summary: Human 纠正能力分类：先前展示的 GPT-5.6-Sol/Terra 是原生 subagent 的模型覆盖项，不是协作模式目录。当前环境实测确认协作模式为 Cindy Orca 持久 Worker，会通过自身能力发现返回 agent 分组的模型目录；两档模型清单不得混用。
+- at: '2026-08-09T15:03:32.463Z'
+  summary: Human 将第一档交互进一步收敛：协作模式可用时不必主动提供模型目录，只需在 WC 创建前询问“本次独立复核使用什么模型”。Human 直接填写模型或明确委托 AI 选择；目录仅在 Human 要求或模型无法解析、兼容、可用时按需读取。
+- at: '2026-08-09T15:21:49.102Z'
+  summary: Human 补充跨环境权限门槛：部分环境只有 Human 明确要求才开放 subagent。能力预检前必须先取得仅限只读独立复核的明确启用指令并重新探测；未解锁、未授权或未知不得误判为 unavailable，也不得直接降到 same-AI。
 change_log:
 - at: '2026-08-07T02:38:47.535017+08:00'
   session_id: workbuddy-session-20260807-wc0066
@@ -10,7 +23,55 @@ change_log:
   signature:
     agent_id: workbuddy
     host_environment: WorkBuddy Local (darwin)
+- at: '2026-08-09T14:33:27.569033Z'
+  session_id: cindy-spark-0065-intent-20260809
+  summary: Human 澄清 Spark 0065 的真实意图：建立 WorkCase 两个独立复核位置共用的跨环境能力路由、结构化模型选择、每轮最多三个审查视角及修正后重复复审机制；据此校正标题、intent、summary 并记录关键演变。
+  signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+- at: '2026-08-09T14:35:22.249733Z'
+  session_id: cindy-spark-0065-fallback-20260809
+  summary: Human 补充执行语义：每轮复核发现能力缺失时默认按协作模式、subagent、same-AI 的 1→2→3 顺序降级；进入第三档必须添加能力受限说明。
+  signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+- at: '2026-08-09T14:44:25.532703Z'
+  session_id: cindy-spark-0065-orchestration-20260809
+  summary: Human 明确 WC 相关对话开始时须先执行当前能力判断；补充会话入口预检、创建前模型选择、Gate 1 冻结 reviewer policy、PlanΔ 与结果侧重复复审的整体编排。
+  signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+- at: '2026-08-09T14:54:09.884815Z'
+  session_id: cindy-spark-0065-model-table-20260809
+  summary: Human 将模型选择交互明确为表格式清单，不使用直接点选控件；补充按序号或精确模型名回复，以及候选较多时分组或分页但不得静默截断的要求。
+  signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+- at: '2026-08-09T14:59:22.244041Z'
+  session_id: cindy-spark-0065-carrier-boundary-20260809
+  summary: 纠正协作与 subagent 能力边界：第一档模型表必须来自协作系统自身的 agent/模型目录；第二档原生 subagent 模型覆盖项不得冒充协作候选。
+  signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+- at: '2026-08-09T15:03:32.714266Z'
+  session_id: cindy-spark-0065-model-prompt-20260809
+  summary: 将协作模型选择从强制表格收敛为一次自由文本询问；默认不展示目录，仅在 Human 要求或所填模型无法解析/不可用时按需提供协作目录信息。
+  signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+- at: '2026-08-09T15:03:53.141293Z'
+  session_id: cindy-spark-0065-model-prompt-wording-20260809
+  summary: 同步归一 intent：第一档只要求 Human 指定协作复核模型，不默认要求从目录选择 agent 与模型。
+  signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+- at: '2026-08-09T15:21:49.710234Z'
+  session_id: cindy-spark-0065-capability-unlock-20260809
+  summary: 增加能力解锁前置：区分 permission_required、not_authorized、unknown 与 unavailable，规定当前 Human 显式启用、重新探测、跨会话失效及其与 Gate 1/模型询问的边界。
+  signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
 object_id: spark-0065
 fact_type_key: spark
 created_at: '2026-08-07T02:38:47.535017+08:00'
-updated_at: '2026-08-07T02:38:47.535017+08:00'
+updated_at: '2026-08-09T15:21:49.710234Z'
