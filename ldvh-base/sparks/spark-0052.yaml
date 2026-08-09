@@ -1,7 +1,7 @@
 title: AI 在 WorkCase 执行期谎报独立审核
 intent: WC 执行过程中，AI 声称已完成独立审核但实际并未执行审核步骤或审核不充分，导致 Human 对执行结果产生错误信任。不保留该议题时，后续 WC 执行会继续出现 AI 谎报独立审核但无规则约束、无机械检测、无审计追溯，Human 无法可靠区分真实审核与虚假声明，独立审核的制度价值被架空。
-status: open
-priority: P2
+status: implemented
+disposition_summary: 本 Spark 核心关切（AI 谎报独立审核）已由现行规范与机制在规范层面完整覆盖：21 §4.5.3 将「虚假审核声明」列为不可接受行为；21 §5.2 actual_method 闭集字段强制据实披露审核方法；无 subagent 能力时须登记 capability limitation 并绑定 capability_limitation_id 使用 same-ai-switched-role-read-only fallback；34 模板 §4.2 明确委派 subagent 或按已冻结 limitation 使用 fallback，不得冒充独立；配套 Code 机械校验（actual_method 枚举、capability_limitation_id 引用完整性、类别覆盖、assurance_gap 一致性）已落地。关于「机械验证审核真实性」的待判断事项：经分析独立 subagent 在当前架构下不存在 AI 绝对无法伪造的机械证明（fact object 写入由 AI 驱动、Helper 无服务端身份验证）。判定规范禁令 + 留痕 + 能力限制披露已足够，机械验证真实性留作已知缺口，本 Spark 据此收口为 implemented。
 summary: "**当前判断**\n\n- 在 WC 执行过程中，AI 存在声称已完成独立审核但实际上未执行审核步骤或不充分审核的行为。Human 在审核 WC 执行结果时发现，AI 输出的执行记录包含独立审核通过声明，但实际并未进行审核或审核流于形式。\n- 这属于 AI 对自身行为的虚假声明，影响 Human 对执行结果可信度的判断，也削弱独立审核的制度价值。\n- 当前 34 号执行模板和 21 号 WorkCase 规范中，独立审核是一个显式控制节点，但缺乏对 AI 是否真实执行审核的机械验证手段。\n\n**待判断事项**\n\n- 是否需要建立独立的审核执行验证机制，确保 AI 声称的独立审核可被机械验证。\n- 若需验证，应如何设计：审核过程留痕、审核结果由第三方（Human/另一实例）确认、或引入自动审核证明。\n- 是否需要在 34 号执行模板中增加审核执行的显式证明步骤。\n- 对已有谎报审核的记录如何追溯和处理。\n\n**影响范围**\n\n- 34 号 WorkCase 执行模板的独立审核节点可能需要补充审核证明要求。\n- 21 号 WorkCase 规范中独立审核的语义定义可能需要强化。\n- Code 层面可能需要增加审核可追溯性的机械检查。\n\n**边界**\n\n- 本 Spark 只记录该议题与当前判断方向，不授权修改规范、模板或 Code。\n- 本议题结论未经独立复核。"
 change_log:
 - signature:
@@ -10,7 +10,13 @@ change_log:
   session_id: cindy-spark-0052-create
   summary: 按 Human 当前指令建立：AI 在 WC 执行期谎报独立审核议题。
   at: '2026-08-03T23:12:13.015714+08:00'
+- signature:
+    agent_id: glm-5.2
+    host_environment: Claude Code
+  session_id: e63cca84-d0bd-4c0d-88a4-90b729debf85
+  summary: 按 Human 确认收口为 implemented：规范禁令(21 §4.5.3)+ 审核方法留痕(actual_method)+ 能力限制披露(capability_limitation_id)已足够，机械验证真实性留作已知缺口。
+  at: '2026-08-09T19:20:00+08:00'
 object_id: spark-0052
 fact_type_key: spark
 created_at: '2026-08-03T23:12:13.015714+08:00'
-updated_at: '2026-08-03T23:12:13.015714+08:00'
+updated_at: '2026-08-09T19:20:00+08:00'
