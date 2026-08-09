@@ -46,7 +46,7 @@ def test_execution_checkpoint_and_blocking_overlay_are_not_successful_exit_short
     source = _source(EXECUTION_TEMPLATE)
 
     assert "存在当前合法下一控制步骤时，Controller 继续消费已批准责任" in source
-    assert "`phase=executing` 的普通 `in_progress` 检查点" in source
+    assert "普通 `in_progress` 检查点" in source
     assert "都不是完成出口" in source
     assert "`status=blocked` 时投影保留生命周期位置只用于定位" in source
     assert "不消费其中结构提示自动续跑" in source
@@ -84,6 +84,88 @@ def test_reviewer_pass_requires_controlled_writeback_before_gate2_handoff() -> N
     gate2 = derive_workcase_presentation("open", "human_closure_confirming", FINGERPRINT)
     assert gate2["handoff_narrative_key"] == "gate2_waiting"
     assert gate2["next_required_control_step"] == "human_gate_2"
+
+
+def test_gate1_post_approval_pre_yield_invariant_covers_the_full_controller_chain() -> None:
+    source = _source(EXECUTION_TEMPLATE)
+
+    assert "Gate 1 后统一 pre-yield 控制点" in source
+    assert "完整 after、CAS、精确回读与独立事实完整性审计" in source
+    assert "`source_content_fingerprint` 与刚回读 `content_fingerprint` 相同" in source
+    assert "fresh projection" in source
+    assert "Controller-owned 结构步骤" in source
+
+    expected_steps = {
+        "plan_revising": "form_current_plan",
+        "executing": "advance_current_work_item",
+        "controller_checking": "form_complete_result_projection",
+        "independent_reviewing": "complete_independent_result_review",
+        "closure_preparing": "form_closure_proposal",
+    }
+    for phase, next_step in expected_steps.items():
+        assert f"`{phase}`" in source
+        projection = derive_workcase_presentation("open", phase, FINGERPRINT)
+        assert projection["resolution"] == "resolved"
+        assert projection["blocking_overlay"] is False
+        assert projection["source_content_fingerprint"] == FINGERPRINT
+        assert projection["handoff_narrative_key"] != "gate2_waiting"
+        assert projection["next_required_control_step"] == next_step
+
+
+def test_intermediate_milestones_cannot_be_used_as_pre_gate2_handoffs() -> None:
+    source = _source(EXECUTION_TEMPLATE)
+
+    for milestone in (
+        "current plan 或 fresh creation review",
+        "单项进入 `completed` / `cancelled` 或全部 item terminal",
+        "完整 canonical result projection",
+        "Reviewer 返回或 feedback 已处置",
+        "进入 `closure_preparing` 或形成完整 closure proposal",
+    ):
+        assert milestone in source
+    assert "每个里程碑写回后仍须按 fresh fingerprint-matched projection 继续" in source
+
+
+def test_only_gate2_blocked_unresolved_closed_are_legal_post_gate1_exits() -> None:
+    source = _source(EXECUTION_TEMPLATE)
+
+    assert "`phase=human_closure_confirming`" in source
+    assert "`handoff_narrative_key=gate2_waiting`" in source
+    assert "`next_required_control_step=human_gate_2`" in source
+    assert "Gate 1 后其它 phase 不构成 Human 交还点" in source
+    assert "真实外部/能力阻塞与恢复条件" in source
+    assert "连续精确读取后投影仍 unresolved" in source
+
+    for phase in PHASE_PRESENTATION:
+        blocked = derive_workcase_presentation("blocked", phase, FINGERPRINT)
+        assert blocked["resolution"] == "resolved"
+        assert blocked["blocking_overlay"] is True
+        assert blocked["handoff_narrative_key"] != "gate2_waiting"
+
+    gate2 = derive_workcase_presentation("open", "human_closure_confirming", FINGERPRINT)
+    assert gate2["resolution"] == "resolved"
+    assert gate2["blocking_overlay"] is False
+    assert gate2["handoff_narrative_key"] == "gate2_waiting"
+    assert gate2["next_required_control_step"] == "human_gate_2"
+
+    closed = derive_workcase_presentation("closed", None, FINGERPRINT)
+    assert closed["resolution"] == "resolved"
+    assert closed["handoff_narrative_key"] == "closed"
+    assert closed["next_required_control_step"] == "none"
+
+
+def test_new_human_decision_need_converges_without_a_third_human_wait() -> None:
+    source = _source(EXECUTION_TEMPLATE)
+
+    assert "新的 Human 决策需求，不构成 blocked 或 unresolved" in source
+    assert "不得新增 Human Gate、写入 Human waiting 或请求第三次确认" in source
+    assert "受影响 item 及无法继续的依赖 item 据实记为 `cancelled`" in source
+    assert "全部 item terminal 后继续结果链" in source
+    assert "若在 items 已 terminal 后才发现，不重开或新增 item" in source
+    assert "结果、验证以及 closure proposal 的 residual decision" in source
+    assert "`cancelled` 不得写成 `completed`" in source
+    assert "不自动决定 closure outcome" in source
+    assert "Controller 不得代替 Human 作出该 residual decision" in source
 
 
 def test_gate2_language_is_bound_to_the_just_read_resolved_projection() -> None:

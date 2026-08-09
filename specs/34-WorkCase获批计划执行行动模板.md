@@ -61,6 +61,12 @@ ldvh_spec:
 
 存在当前合法下一控制步骤时，Controller 继续消费已批准责任，不以聊天总结、工具成功、测试通过、子任务返回或 item 的 `current_summary` / `resume_from` 代替事实转换。item 的开始、直接完成、阻塞、解阻、完成、取消、计划返修、结果形成与质量链只按 21 的当前规则执行；需要跨对象共同生效时仍服从 32 的能力边界。
 
+**Gate 1 后统一 pre-yield 控制点：** Gate 1 获批后，`plan_revising`、`executing`、`controller_checking`、`independent_reviewing` 与 `closure_preparing` 均处于同一条 Controller-owned 收敛链，`status=blocked` 仅作为任一合法活动 phase 上的覆盖层。每个稳定检查点、委派或交接、恢复以及每个结果链控制步骤，都必须先完成完整 after、CAS、精确回读与独立事实完整性审计；Controller 只消费 `resolution=resolved` 且 `source_content_fingerprint` 与刚回读 `content_fingerprint` 相同的 fresh projection。只要刚回读快照仍为 `status=open`、投影仍指向 Controller-owned 结构步骤且尚未形成 §5.4 的合法交还出口，Controller 就继续处理该步骤；AI 仍负责授权、依赖、能力、语义相关性和具体 item 的判断，Code 与 projection 不替 AI 作决定。
+
+以下均只是统一控制点覆盖的中间里程碑，不是普通合法交还点：`plan_revising` 中形成 current plan 或 fresh creation review；`executing` 中 item 为 `in_progress`、单项进入 `completed` / `cancelled` 或全部 item terminal；`controller_checking` 中形成完整 canonical result projection；`independent_reviewing` 中 Reviewer 返回或 feedback 已处置；进入 `closure_preparing` 或形成完整 closure proposal。每个里程碑写回后仍须按 fresh fingerprint-matched projection 继续，直至真实 Gate 2、真实外部/能力 blocked、持续 exact-read unresolved 或 closed。
+
+Gate 1 后出现新的 Human 决策需求，不构成 blocked 或 unresolved，也不得新增 Human Gate、写入 Human waiting 或请求第三次确认。若发生在 `executing`，停止未获授权动作，将受影响 item 及无法继续的依赖 item 据实记为 `cancelled`，保留已有结果、未执行范围与超界原因；全部 item terminal 后继续结果链。若在 items 已 terminal 后才发现，不重开或新增 item，而在结果、验证以及 closure proposal 的 residual decision 中据实记录未做/未验证范围并继续到 Gate 2。`cancelled` 不得写成 `completed`，也不自动决定 closure outcome；Controller 不得代替 Human 作出该 residual decision。
+
 **单项终结控制点：** `item terminal ≠ WorkCase execution terminal`。任一 item 进入 `completed` 或 `cancelled` 并完成完整 after、CAS、精确回读与独立事实完整性审计后，刚回读且指纹匹配的 resolved projection 必须成为下一轮 Controller 输入；仍有非 terminal item 时，Controller 继续按当前授权、依赖和能力判断并消费可执行责任；全部 item terminal 时，则按 21 进入 `controller_checking` 并继续既有结果链。该控制点不表示 phase 一律返回 `executing`，也不授权 Code、Helper 或结构提示选择 item、推进 phase 或断言完成。
 
 **开始控制点：** 跨检查点、可能中断或需恢复的工作项在实施前，必须先完成 `pending → in_progress` 写回，同事务写入非空 `current_summary` 与有界 `resume_from`，经 CAS、精确回读与独立事实完整性审计后，才允许执行实际行动。真实行动不得发生在 `in_progress` 写回之前。同一稳定检查点内可直接 `pending → completed` 的小动作不受此限，但不得用于跨检查点工作。
@@ -75,9 +81,9 @@ ldvh_spec:
 
 ### 5.4 合法退出
 
-本模板只允许在刚回读当前快照支持下退出当前执行循环：对象已经 closed；`status=blocked` 且已写入真实阻塞与恢复条件；重复精确读取后投影仍 unresolved 而只能交还读取缺口；或 resolved 投影已经指向来源保留给 Human 的 Gate。命中授权上限、禁止动作或能力只能超授权完成时，不询问扩权：零执行受影响动作，按 21 据实取消或收敛相应 item，并继续结果链，直到前述合法退出之一真实形成。
+本模板只允许在刚回读当前快照支持下退出当前执行循环：对象已经 closed；`status=blocked` 且已写入真实外部/能力阻塞与恢复条件；连续精确读取后投影仍 unresolved 而只能交还读取缺口；或 `status=open`、`phase=human_closure_confirming` 的 resolved 投影明确给出 `handoff_narrative_key=gate2_waiting` 与 `next_required_control_step=human_gate_2`。Gate 1 后其它 phase 不构成 Human 交还点。命中授权上限、禁止动作或能力只能超授权完成时，不询问扩权：零执行受影响动作，按 §5.2 与 21 据实取消受影响 item，或在 items 已 terminal 后写入结果、验证和 closure proposal residual decision，并继续结果链，直到前述合法退出之一真实形成。
 
-`phase=executing` 的普通 `in_progress` 检查点、单个 terminal item、pending item、局部测试通过、一次本地 commit、Reviewer 返回或恢复入口存在，都不是完成出口。`status=blocked` 时投影保留生命周期位置只用于定位，Controller 不消费其中结构提示自动续跑；解除阻塞必须先按 21 写回并重新读取。
+普通 `in_progress` 检查点、单个 terminal item、pending item、全部 item terminal、完整结果投影、局部测试通过、一次本地 commit、Reviewer 返回或 feedback 处置、进入 `closure_preparing`、完整 closure proposal 或恢复入口存在，都不是完成出口。新 Human 决策需求同样不是 blocked/unresolved 出口。`status=blocked` 时投影保留生命周期位置只用于定位，Controller 不消费其中结构提示自动续跑；解除阻塞必须先按 21 写回并重新读取。
 
 ### 5.5 恢复交还
 
