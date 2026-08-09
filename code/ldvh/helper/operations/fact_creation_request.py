@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from ldvh.facts.contracts import LAYOUTS, WRITABLE_FACT_TYPE_KEYS
-from ldvh.facts.validation import _is_host_product_concatenation
+from ldvh.facts.validation import _is_host_product_concatenation, _truncate_workbench_compound
 from ldvh.governance.models import ScopeDescriptor, cwd_scope, explicit_scope
 from ldvh.helper.operation_runtime import OperationExecutionContext
 from ldvh.helper.requests import CommonRequest
@@ -113,6 +113,8 @@ def parse_observed_write_signature(observed_context: dict[str, Any]) -> Observed
             problems.append(f"observed_context.signature.{field} 出现时必须是非空 string")
             continue
         values[field] = value.strip()
+        if field == "agent_workbench":
+            values[field] = _truncate_workbench_compound(values[field])
         if field == "model_id" and value.strip().lower() in _MODEL_PRODUCT_ALIASES:
             problems.append("observed_context.signature.model_id 不得使用已知裸产品别名")
         if field == "model_id" and _is_host_product_concatenation(value):

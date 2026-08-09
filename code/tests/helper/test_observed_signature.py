@@ -195,3 +195,51 @@ def test_new_signature_tripwires_reject_product_alias_and_system_suffix() -> Non
     assert any("裸产品别名" in problem for problem in alias.problems)
     assert any("括号系统后缀" in problem for problem in suffix.problems)
     assert any("拼接宿主产品名" in problem for problem in spliced.problems)
+
+
+def test_observed_agent_workbench_compound_is_truncated_to_base_platform() -> None:
+    compound = parse_observed_write_signature(
+        {"signature": {"model_id": "gpt-5", "agent_workbench": "workbuddy-claw", "session_id": "s"}}
+    )
+    assert compound.problems == ()
+    assert compound.signature["agent_workbench"] == "workbuddy"
+    assert compound.signature["model_id"] == "gpt-5"
+
+    nested = parse_observed_write_signature(
+        {"signature": {"model_id": "gpt-5", "agent_workbench": "claude-code-mcp", "session_id": "s"}}
+    )
+    assert nested.signature["agent_workbench"] == "claude-code"
+
+    slash = parse_observed_write_signature(
+        {"signature": {"model_id": "gpt-5", "agent_workbench": "Cindy/Codex", "session_id": "s"}}
+    )
+    assert slash.signature["agent_workbench"] == "Cindy"
+
+
+def test_observed_agent_workbench_full_product_names_are_not_truncated() -> None:
+    for full in ("claude-code", "Claude Code", "Cindy", "WorkBuddy"):
+        result = parse_observed_write_signature(
+            {"signature": {"model_id": "gpt-5", "agent_workbench": full, "session_id": "s"}}
+        )
+        assert result.signature["agent_workbench"] == full
+
+
+def test_inject_truncates_existing_compound_workbench_in_merge() -> None:
+    supplied = {
+        "title": "test",
+        "change_log": [
+            {
+                "at": "2000-01-01T00:00:00Z",
+                "session_id": "old",
+                "summary": "create",
+                "signature": {"model_id": "old-model", "agent_workbench": "workbuddy-claw"},
+            }
+        ],
+    }
+    result = inject_observed_write_signature(
+        supplied,
+        {"signature": {"model_id": "gpt-5.6-luna", "session_id": "Session-X"}},
+    )
+    newest = result["change_log"][-1]
+    assert newest["signature"]["agent_workbench"] == "workbuddy"
+    assert newest["signature"]["model_id"] == "gpt-5.6-luna"

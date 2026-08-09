@@ -14,6 +14,7 @@ from ldvh.facts.legacy_change_log_migration import (
     apply_legacy_change_log_migration,
 )
 from ldvh.facts.schema import FactSchema
+from ldvh.time import canonical_utc_timestamp
 
 
 def _git(project: Path, *arguments: str) -> None:
@@ -96,7 +97,7 @@ def test_migration_preserves_all_non_managed_fields(
     assert result.readback is not None and result.readback.fields is not None
     fields = result.readback.fields
     assert fields["created_at"] == "2026-07-14T09:00:00+08:00"
-    assert fields["updated_at"] == "2026-07-14T11:00:00+08:00"
+    assert fields["updated_at"] == canonical_utc_timestamp("2026-07-14T11:00:00+08:00")
     assert fields["status"] == "open"
     assert fields["priority"] == "P2"
     assert fields["summary"] == "Before migration"

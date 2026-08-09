@@ -124,6 +124,31 @@ def _is_host_product_concatenation(value: str) -> bool:
     return any(lowered.startswith(f"{prefix}-") for prefix in _HOST_PRODUCT_PREFIXES)
 
 
+# Complete workbench names that legitimately contain a separator and must not be
+# collapsed to a "base" platform name (``claude-code`` is one product, ``claude``
+# another).  Anything else shaped ``base-variant`` / ``base/variant`` collapses to
+# the base platform name at write time.
+_WORKBENCH_FULL_NAMES = frozenset({"claude-code", "claude code", "claudecode"})
+
+
+def _truncate_workbench_compound(value: str) -> str:
+    """Collapse a compound workbench name to its base platform name.
+
+    ``workbuddy-claw`` and ``codex-desktop`` become ``workbuddy`` and ``codex``;
+    ``claude-code-mcp`` keeps the full product name ``claude-code``.  Complete
+    multi-word names such as ``claude-code`` are never truncated.
+    """
+
+    stripped = value.strip()
+    normalized = " ".join(stripped.lower().split())
+    if normalized in _WORKBENCH_FULL_NAMES:
+        return stripped
+    marker = max(normalized.rfind("-"), normalized.rfind("/"))
+    if marker > 0:
+        return stripped[:marker].strip()
+    return stripped
+
+
 _WORKBENCH_SYSTEM_SUFFIX = re.compile(r"\s*\([^()]+\)\s*\Z")
 
 
