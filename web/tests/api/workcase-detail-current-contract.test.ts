@@ -468,19 +468,29 @@ test('narrative fields read as prose while structured records keep label rows', 
   assert.doesNotMatch(layout, /function SnapshotPhaseField\(|<SnapshotPhaseField/);
   assert.match(layout, /<WorkCaseProgressTrack[\s\S]{0,260}lifecyclePosition=\{currentProjection\?\.lifecycle_position \?\? null\}[\s\S]{0,260}progressGroup=\{currentProjection\?\.progress_group \?\? null\}[\s\S]{0,260}progressStep=\{currentProjection\?\.progress_step \?\? null\}/);
   assert.match(layout, /const progressTrackVisible = !currentProjection/);
-  assert.match(layout, /const nextControlStepVisible = currentProjection\?\.next_required_control_step !== "none"/);
+  assert.match(layout, /const nextControlStepVisible = Boolean\(/);
   assert.match(layout, /objectDetail\.workcaseNextRequiredControlStep/);
   const nextControlStepBlock = layout.slice(
-    layout.indexOf('{nextControlStepVisible ? ('),
+    layout.indexOf('{nextControlStepVisible && currentProjection && nextControlStepLabel ? ('),
     layout.indexOf(') : !currentProjection ? ('),
   );
-  assert.match(nextControlStepBlock, /role="status"/);
-  assert.match(nextControlStepBlock, /text-ldvh-accent/);
-  assert.match(nextControlStepBlock, /objectDetail\.workcaseNextRequiredControlStepBoundary/);
+  assert.match(nextControlStepBlock, /<NextRequiredControlStep/);
+  assert.match(layout, /function NextRequiredControlStep/);
+  assert.match(layout, /role="status"/);
+  assert.match(layout, /workcaseNextControlStepHumanDecision/);
+  assert.match(layout, /border-violet-400\/35 bg-violet-500\/\[0\.055\]/);
+  assert.match(layout, /objectDetail\.workcaseNextRequiredControlStepBoundary/);
   assert.doesNotMatch(nextControlStepBlock, /<DetailInlineField|ldvh-caption mt-1/);
   assert.match(layout, /currentProjection\.next_required_control_step/);
-  assert.match(layout, /title=\{t\("objectDetail\.workcaseTerminationCleanup"\)\}/);
+  assert.match(layout, /title=\{t\("objectDetail\.workcaseTerminationSummary"\)\}/);
   assert.match(layout, /\{termination && <TerminationDetail value=\{termination\} locale=\{locale\} \/>\}/);
+  assert.doesNotMatch(layout, /workcaseTerminationCleanupBoundary/);
+  const terminationDetail = layout.slice(layout.indexOf('function TerminationDetail'), layout.indexOf('/**\n * WorkCase detail'));
+  assert.doesNotMatch(terminationDetail, /quality_steps|initiated_at|source_content_fingerprint|item_snapshots/);
+  assert.match(terminationDetail, /CircleMinus/);
+  assert.match(terminationDetail, /TerminationScopeCard/);
+  assert.match(terminationDetail, /md:grid-cols-2/);
+  assert.match(terminationDetail, /observedTerminationItems/);
   assert.match(layout, /FieldIssueRow fieldKey="termination"/);
   assert.match(layout, /currentProjection \? \(/);
   assert.match(layout, /objectDetail\.workcaseCurrentSnapshotUnavailableHint/);

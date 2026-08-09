@@ -142,7 +142,7 @@ test('WorkCase cards use five progress groups while retaining the four-step resu
   assert.equal(termination.resolution === 'resolved' ? termination.next_required_control_step : null, 'termination_cleanup');
 });
 
-test('termination cleanup projects its dedicated card without reviving the original item track', () => {
+test('termination cleanup is presented with closed cards and only its terminal reason', () => {
   const termination = {
     initiated_at: '2026-07-26T12:30:00+08:00',
     source_status: 'open',
@@ -171,8 +171,11 @@ test('termination cleanup projects its dedicated card without reviving the origi
   assert.equal('executionItems' in card, false);
   assert.equal('work_items' in card, false);
   const list = source('src/pages/ObjectList.tsx');
-  assert.match(list, /if \(progressGroup === 'termination_cleanup'\)/);
-  assert.match(list, /<WorkCaseTerminationContent/);
+  const progressFilter = source('src/components/WorkCaseProgressFilter.tsx');
+  assert.match(list, /const displayProgressGroup = progressGroup === 'termination_cleanup' \? 'closed' : progressGroup/);
+  assert.doesNotMatch(list, /<WorkCaseTerminationContent/);
+  assert.match(progressFilter, /options\.filter\(\(\{ group \}\) => group !== 'termination_cleanup'\)/);
+  assert.doesNotMatch(progressFilter, /WORKCASE_PROGRESS_GROUP_ORDER/);
 
   const closedCard = projectCurrentCard({
     object_id: 'workcase-0084',
@@ -185,7 +188,7 @@ test('termination cleanup projects its dedicated card without reviving the origi
   });
   assert.equal(closedCard.progress_group, 'closed');
   assert.deepEqual(closedCard.termination, termination);
-  assert.match(list, /obj\.termination && <WorkCaseTerminationRecord termination=\{obj\.termination\}/);
+  assert.match(list, /<WorkCaseClosedContent goal=\{obj\.goal\} terminal=\{obj\.closureTerminal\} termination=\{obj\.termination\}/);
 });
 
 test('terminal status labels remain type-specific across fact types', () => {
@@ -428,7 +431,7 @@ test('progressing cards show only goal and current situation facts', () => {
   const list = source('src/pages/ObjectList.tsx');
   const track = source('src/components/WorkCaseProgressTrack.tsx');
   const branchStart = list.indexOf("if (progressGroup === 'progressing')");
-  const branchEnd = list.indexOf("if (progressGroup === 'closure_confirmation')", branchStart);
+  const branchEnd = list.indexOf("if (displayProgressGroup === 'closure_confirmation')", branchStart);
   const branch = list.slice(branchStart, branchEnd);
   const content = list.slice(list.indexOf('function WorkCaseProgressingContent'), list.indexOf('function sortObjectsForList'));
   const notice = list.slice(list.indexOf('function WorkCaseBlockingNotice'), list.indexOf('function WorkCaseProgressingContent'));
@@ -497,15 +500,14 @@ test('list ordering defaults to updated time and supports object-ID ordering wit
 
 test('closure confirmation cards render the closure-decision input zone and declared contributed-to targets', () => {
   const list = source('src/pages/ObjectList.tsx');
-  const branchStart = list.indexOf("if (progressGroup === 'closure_confirmation')");
-  const terminalStatus = list.indexOf("displayStatus={progressGroup ?? 'unknown'}", branchStart);
-  const branchEnd = list.lastIndexOf('      return (', terminalStatus);
+  const branchStart = list.indexOf("if (displayProgressGroup === 'closure_confirmation')");
+  const branchEnd = list.indexOf("if (displayProgressGroup === 'closed')", branchStart);
   const branch = list.slice(branchStart, branchEnd);
   const content = list.slice(list.indexOf('function WorkCaseClosureConfirmationContent'), list.indexOf('function WorkCaseContributionsContent'));
   const contributions = list.slice(list.indexOf('function WorkCaseContributionsContent'), list.indexOf('function sortObjectsForList'));
 
   assert.ok(branchStart >= 0 && branchEnd > branchStart);
-  assert.match(branch, /displayStatus=\{progressGroup\}/);
+  assert.match(branch, /displayStatus="closure_confirmation"/);
   assert.doesNotMatch(branch, /prominentTitle/);
   assert.match(branch, /<WorkCaseClosureConfirmationContent goal=\{obj\.goal\} closureProposal=\{obj\.closureProposal\} \/>/);
   assert.match(branch, /<WorkCaseContributionsContent contributions=\{obj\.contributedTo\} locale=\{locale\} \/>/);
@@ -576,7 +578,7 @@ test('closed cards use terminal closure content while unclassified cards stay mi
   assert.match(terminalBranch, /<ObjectCardFrame/);
   assert.match(terminalBranch, /displayStatus=\{progressGroup \?\? 'unknown'\}/);
   assert.match(terminalBranch, /workcaseProgressGroupUnavailable/);
-  assert.match(list, /<WorkCaseClosedContent goal=\{obj\.goal\} terminal=\{obj\.closureTerminal\} \/>/);
+  assert.match(list, /<WorkCaseClosedContent goal=\{obj\.goal\} terminal=\{obj\.closureTerminal\} termination=\{obj\.termination\} \/>/);
   assert.match(list, /<WorkCaseContributionsContent contributions=\{obj\.contributedTo\}/);
   assert.match(list, /getFieldValueLabel\('proposed_disposition', 'route_existing', locale\)/);
   assert.match(list, /getFieldValueLabel\('proposed_disposition', 'suggest_spark', locale\)/);

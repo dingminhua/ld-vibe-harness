@@ -151,9 +151,12 @@ function getWorkCaseProgressOptions(items: ListedObject[]): ProgressOption[] {
   const counts = new Map<string, number>()
   for (const item of items) {
     if (typeof item.progress_group !== 'string') continue
-    counts.set(item.progress_group, (counts.get(item.progress_group) ?? 0) + 1)
+    const group = item.progress_group === 'termination_cleanup' ? 'closed' : item.progress_group
+    counts.set(group, (counts.get(group) ?? 0) + 1)
   }
-  return WORKCASE_PROGRESS_GROUP_ORDER.map((group) => ({ group, count: counts.get(group) ?? 0 }))
+  return WORKCASE_PROGRESS_GROUP_ORDER
+    .filter((group) => group !== 'termination_cleanup')
+    .map((group) => ({ group, count: counts.get(group) ?? 0 }))
 }
 
 function matchesSparkListFilter(item: ListedObject, status?: string, priority?: string): boolean {
@@ -213,7 +216,9 @@ router.get('/:type', async (req: Request, res: Response): Promise<void> => {
   const rawItems = getRawItems(result)
   const allItems = getResultItems(result)
   const items = type === 'workcase'
-    ? allItems.filter((item) => (!progress || item.progress_group === progress) && (!priority || item.priority === priority))
+    ? allItems.filter((item) => (
+      !progress || (item.progress_group === 'termination_cleanup' ? 'closed' : item.progress_group) === progress
+    ) && (!priority || item.priority === priority))
     : type === 'spark'
       ? allItems.filter((item) => matchesSparkListFilter(item, status, priority))
       : allItems
@@ -229,7 +234,7 @@ router.get('/:type', async (req: Request, res: Response): Promise<void> => {
     result.data.statusTotal = statusItems.length
     if (type === 'spark' || type === 'workcase') {
       const groupItems = type === 'workcase' && progress
-        ? allItems.filter((item) => item.progress_group === progress)
+        ? allItems.filter((item) => (item.progress_group === 'termination_cleanup' ? 'closed' : item.progress_group) === progress)
         : status ? allItems.filter((item) => item.status === status) : allItems
       result.data.priorityOptions = getPriorityOptions(groupItems)
     }

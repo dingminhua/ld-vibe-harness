@@ -255,7 +255,6 @@ test('preserves the shared commit DTO across current API consumers', async () =>
   assert.deepEqual(workcases.data.progressOptions, [
     { group: 'plan_confirmation', count: 0 },
     { group: 'progressing', count: 1 },
-    { group: 'termination_cleanup', count: 0 },
     { group: 'closure_confirmation', count: 0 },
     { group: 'closed', count: 1 },
   ])

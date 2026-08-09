@@ -850,73 +850,6 @@ export function WorkCaseProgressingContent({
   );
 }
 
-function WorkCaseTerminationRecord({ termination, t }: {
-  termination?: unknown;
-  t: Translate;
-}) {
-  const { locale } = useI18n();
-  const record = isRecord(termination) ? termination : null;
-  const listKeys = ['retained_scope', 'discarded_scope', 'unverified_scope', 'relationship_impacts', 'quality_steps'] as const;
-  return (
-    <section className="min-w-0 rounded-md border border-amber-400/30 border-l-2 border-l-amber-400 bg-amber-500/[0.04] px-3.5 py-3">
-        <div className="flex min-w-0 items-center gap-2">
-          <CircleMinus size={WORKCASE_SECTION_ICON_SIZE} className="shrink-0 text-amber-500 dark:text-amber-400" aria-hidden="true" />
-          <h3 className="ldvh-card-decision-title text-amber-700/85 dark:text-amber-200/85">{t('objectDetail.workcaseTerminationCleanup')}</h3>
-        </div>
-        {!record ? (
-          <p className={`ldvh-card-decision-body ${WORKCASE_CARD_TITLE_BODY_GAP_CLASS} text-red-400`}>{t('objectList.workcaseFieldMissing')}</p>
-        ) : (
-          <div className="mt-2 grid gap-2">
-            {['reason', 'cleanup_summary'].map((key) => typeof record[key] === 'string' && String(record[key]).trim() ? (
-              <div key={key} className="min-w-0">
-                <p className="ldvh-meta text-ldvh-text-secondary/75">{getFieldLabel(key, locale)}</p>
-                <SummaryText value={String(record[key])} collapseThreshold={Number.MAX_SAFE_INTEGER} className="ldvh-card-decision-body mt-1 text-ldvh-text-primary/85" />
-              </div>
-            ) : null)}
-            {listKeys.map((key) => Array.isArray(record[key]) && record[key].length > 0 ? (
-              <div key={key} className="min-w-0">
-                <p className="ldvh-meta text-ldvh-text-secondary/75">{getFieldLabel(key, locale)}</p>
-                <ul className="mt-1 grid gap-1">
-                  {(record[key] as unknown[]).map((value, index) => (
-                    <li key={index} className="ldvh-card-decision-body flex min-w-0 items-start gap-2 text-ldvh-text-primary/80">
-                      <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-amber-500/70" aria-hidden="true" />
-                      <span className="min-w-0 break-words">{String(value)}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : null)}
-          </div>
-        )}
-    </section>
-  );
-}
-
-export function WorkCaseTerminationContent({
-  goal,
-  termination,
-  isBlocked,
-  waitingOn,
-  blockingSummary,
-  t,
-}: {
-  goal?: string;
-  termination?: unknown;
-  isBlocked: boolean;
-  waitingOn?: string;
-  blockingSummary?: string;
-  t: Translate;
-}) {
-  return (
-    <div className="grid min-w-0 gap-2">
-      {isBlocked && <WorkCaseBlockingNotice blockingSummary={blockingSummary} t={t} />}
-      {isBlocked && <WorkCaseWaitingOnNotice waitingOn={waitingOn} />}
-      <WorkCaseGoalSection goal={goal} t={t} emphasis="supporting" />
-      <WorkCaseTerminationRecord termination={termination} t={t} />
-    </div>
-  );
-}
-
 /** Closure inputs reuse the same subdued status-card grammar as progressing work items. */
 const PROPOSED_OUTCOME_NOTICE_CLASS: Record<string, string> = {
   completed: 'border-emerald-400/25 border-l-emerald-400 bg-emerald-500/5',
@@ -1102,8 +1035,9 @@ export function WorkCaseClosureConfirmationContent({
   );
 }
 
-function WorkCaseClosedContent({ goal, terminal }: { goal?: string; terminal?: WorkCaseClosureTerminalCard }) {
+function WorkCaseClosedContent({ goal, terminal, termination }: { goal?: string; terminal?: WorkCaseClosureTerminalCard; termination?: unknown }) {
   const { t, locale } = useI18n();
+  const terminationReason = isRecord(termination) && typeof termination.reason === 'string' ? termination.reason.trim() : '';
   return (
     <div className="grid min-w-0 gap-2">
       <WorkCaseGoalSection goal={goal} t={t} emphasis="supporting" />
@@ -1144,6 +1078,8 @@ function WorkCaseClosedContent({ goal, terminal }: { goal?: string; terminal?: W
           )}
           <WorkCaseSparkSuggestions suggestions={terminal.sparkSuggestions} />
         </>
+      ) : terminationReason ? (
+        <WorkCaseOutcomeNotice outcome="not-achieved" dispositionSummary={terminationReason} mode="terminal" />
       ) : (
         <section role="status" className="min-w-0 rounded-md border border-red-400/25 border-l-2 border-l-red-400 bg-red-500/5 px-2.5 py-2">
           <p className="ldvh-card-decision-body text-red-500 dark:text-red-300">{t('objectList.workcaseClosureProposalMissing')}</p>
@@ -1626,6 +1562,7 @@ export default function ObjectList() {
         ? obj.current_snapshot_projection
         : null;
       const progressGroup = currentProjection?.progress_group ?? null;
+      const displayProgressGroup = progressGroup === 'termination_cleanup' ? 'closed' : progressGroup;
       const progressStep = currentProjection?.progress_step ?? null;
       if (progressGroup === 'plan_confirmation') {
         return (
@@ -1660,7 +1597,7 @@ export default function ObjectList() {
             locale={locale}
             onOpen={openObject}
             showNonActiveReason={false}
-            displayStatus={progressGroup}
+            displayStatus="progressing"
           >
             <WorkCaseProgressingContent
               goal={obj.goal}
@@ -1676,7 +1613,7 @@ export default function ObjectList() {
           </ObjectCardFrame>
         );
       }
-      if (progressGroup === 'termination_cleanup') {
+      if (displayProgressGroup === 'closure_confirmation') {
         return (
           <ObjectCardFrame
             key={obj.id}
@@ -1684,28 +1621,7 @@ export default function ObjectList() {
             locale={locale}
             onOpen={openObject}
             showNonActiveReason={false}
-            displayStatus={progressGroup}
-          >
-            <WorkCaseTerminationContent
-              goal={obj.goal}
-              termination={obj.termination}
-              isBlocked={currentProjection?.blocking_overlay ?? false}
-              waitingOn={obj.waiting_on}
-              blockingSummary={obj.blocking_summary}
-              t={t}
-            />
-          </ObjectCardFrame>
-        );
-      }
-      if (progressGroup === 'closure_confirmation') {
-        return (
-          <ObjectCardFrame
-            key={obj.id}
-            obj={obj}
-            locale={locale}
-            onOpen={openObject}
-            showNonActiveReason={false}
-            displayStatus={progressGroup}
+            displayStatus="closure_confirmation"
           >
             <>
               <WorkCaseClosureConfirmationContent goal={obj.goal} closureProposal={obj.closureProposal} />
@@ -1714,7 +1630,7 @@ export default function ObjectList() {
           </ObjectCardFrame>
         );
       }
-      if (progressGroup === 'closed') {
+      if (displayProgressGroup === 'closed') {
         return (
           <ObjectCardFrame
             key={obj.id}
@@ -1722,11 +1638,10 @@ export default function ObjectList() {
             locale={locale}
             onOpen={openObject}
             showNonActiveReason={false}
-            displayStatus={progressGroup}
+            displayStatus={displayProgressGroup}
           >
             <>
-              <WorkCaseClosedContent goal={obj.goal} terminal={obj.closureTerminal} />
-              {obj.termination && <WorkCaseTerminationRecord termination={obj.termination} t={t} />}
+              <WorkCaseClosedContent goal={obj.goal} terminal={obj.closureTerminal} termination={obj.termination} />
               <WorkCaseContributionsContent contributions={obj.contributedTo} locale={locale} />
             </>
           </ObjectCardFrame>

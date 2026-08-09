@@ -41,7 +41,10 @@ import { usePanel } from "@/utils/panelContext";
 import { CATEGORY_COLORS } from "@/utils/categoryColors";
 import { formatDateTime } from "@/utils/dateFormat";
 import { projectCurrentWorkCaseDetail } from "@/shared/workcaseDetailProjection";
-import { isResolvedWorkCasePresentationProjection } from "@/shared/workcaseStatus";
+import {
+  isResolvedWorkCasePresentationProjection,
+  type WorkCaseNextRequiredControlStep,
+} from "@/shared/workcaseStatus";
 import {
   FactAssociationsSection,
 } from "@/pages/object-detail/FactAssociationsSection";
@@ -63,35 +66,125 @@ const WORKCASE_DETAIL_SEMANTIC_ICON_SIZE = 14;
 const WORKCASE_DETAIL_SEMANTIC_SURFACE_PADDING = "px-3.5 pb-2 pt-3";
 
 function TerminationDetail({ value, locale }: { value: Record<string, unknown>; locale: string }) {
+  const { t } = useI18n();
+  const reason = detailString(value.reason);
+  const cleanupSummary = detailString(value.cleanup_summary);
+  const retained = observedTerminationItems(value.retained_scope);
+  const unverified = observedTerminationItems(value.unverified_scope);
+  const relationships = observedTerminationItems(value.relationship_impacts);
+
   return (
     <div className="grid min-w-0 gap-3">
-      {Object.entries(value).map(([key, raw]) => {
-        if (typeof raw === "string") {
-          return (
-            <div key={key} className="min-w-0">
-              <p className="ldvh-meta text-ldvh-text-secondary/75">{getFieldLabel(key, locale)}</p>
-              <SummaryText value={raw} collapseThreshold={Number.MAX_SAFE_INTEGER} className="ldvh-body-primary mt-1 break-words text-ldvh-text-primary/85" />
+      {(reason || cleanupSummary) && (
+        <section className={`min-w-0 rounded-lg border ${WORKCASE_DETAIL_SEMANTIC_SURFACE_PADDING} border-slate-400/30 bg-slate-500/[0.05]`}>
+          <div className="flex min-w-0 items-center gap-2 text-slate-700/85 dark:text-slate-200/85">
+            <CircleMinus size={WORKCASE_DETAIL_SEMANTIC_ICON_SIZE} strokeWidth={2} className="shrink-0" aria-hidden="true" />
+            <span className="ldvh-detail-semantic-title min-w-0 text-current">
+              {t('objectDetail.workcaseTerminationStopped')}
+            </span>
+          </div>
+          {reason && (
+            <SummaryText
+              value={reason}
+              collapseThreshold={Number.MAX_SAFE_INTEGER}
+              className="ldvh-detail-semantic-body mt-2 !text-slate-900/72 dark:!text-slate-100/78"
+            />
+          )}
+          {cleanupSummary && (
+            <div className="mt-3 border-t border-slate-400/20 pt-2.5">
+              <p className="ldvh-meta text-ldvh-text-secondary/75">{getFieldLabel('cleanup_summary', locale)}</p>
+              <SummaryText
+                value={cleanupSummary}
+                collapseThreshold={Number.MAX_SAFE_INTEGER}
+                className="ldvh-body-primary mt-1 break-words text-ldvh-text-primary/80"
+              />
             </div>
-          );
-        }
-        if (Array.isArray(raw)) {
-          return (
-            <div key={key} className="min-w-0">
-              <p className="ldvh-meta text-ldvh-text-secondary/75">{getFieldLabel(key, locale)}</p>
-              <ul className="mt-1 grid gap-1.5">
-                {raw.map((item, index) => (
-                  <li key={index} className="ldvh-body-primary flex min-w-0 items-start gap-2 text-ldvh-text-primary/80">
-                    <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-amber-500/70" aria-hidden="true" />
-                    <span className="min-w-0 break-words">{String(item)}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          );
-        }
-        return null;
-      })}
+          )}
+        </section>
+      )}
+      {(retained.length > 0 || unverified.length > 0) && (
+        <div className="grid min-w-0 gap-3 md:grid-cols-2">
+          {retained.length > 0 && (
+            <TerminationScopeCard
+              fieldKey="retained_scope"
+              items={retained}
+              locale={locale}
+              tone="retained"
+            />
+          )}
+          {unverified.length > 0 && (
+            <TerminationScopeCard
+              fieldKey="unverified_scope"
+              items={unverified}
+              locale={locale}
+              tone="unverified"
+            />
+          )}
+        </div>
+      )}
+      {relationships.length > 0 && (
+        <TerminationScopeCard
+          fieldKey="relationship_impacts"
+          items={relationships}
+          locale={locale}
+          tone="relationships"
+        />
+      )}
     </div>
+  );
+}
+
+function observedTerminationItems(value: unknown): string[] {
+  return detailStrings(value).filter((item) => !/^none-observed\s*:/i.test(item));
+}
+
+function TerminationScopeCard({
+  fieldKey,
+  items,
+  locale,
+  tone,
+}: {
+  fieldKey: 'retained_scope' | 'unverified_scope' | 'relationship_impacts';
+  items: string[];
+  locale: string;
+  tone: 'retained' | 'unverified' | 'relationships';
+}) {
+  const styles = tone === 'retained'
+    ? {
+        Icon: CircleCheck,
+        surface: 'border-emerald-400/30 bg-emerald-500/[0.045]',
+        heading: 'text-emerald-700/85 dark:text-emerald-200/85',
+        marker: 'bg-emerald-500/70',
+      }
+    : tone === 'unverified'
+      ? {
+          Icon: CircleHelp,
+          surface: 'border-amber-400/30 bg-amber-500/[0.045]',
+          heading: 'text-amber-700/85 dark:text-amber-200/85',
+          marker: 'bg-amber-500/70',
+        }
+      : {
+          Icon: ArrowRight,
+          surface: 'border-cyan-400/30 bg-cyan-500/[0.045]',
+          heading: 'text-cyan-700/85 dark:text-cyan-200/85',
+          marker: 'bg-cyan-500/70',
+        };
+  const { Icon } = styles;
+  return (
+    <section className={`min-w-0 rounded-lg border ${WORKCASE_DETAIL_SEMANTIC_SURFACE_PADDING} ${styles.surface}`}>
+      <div className={`flex min-w-0 items-center gap-2 ${styles.heading}`}>
+        <Icon size={WORKCASE_DETAIL_SEMANTIC_ICON_SIZE} strokeWidth={2} className="shrink-0" aria-hidden="true" />
+        <span className="ldvh-detail-semantic-title min-w-0 text-current">{getFieldLabel(fieldKey, locale)}</span>
+      </div>
+      <ul className="mt-2 grid gap-1.5">
+        {items.map((item, index) => (
+          <li key={index} className="ldvh-detail-semantic-body flex min-w-0 items-start gap-2 text-ldvh-text-primary/80">
+            <span className={`mt-2 h-1 w-1 shrink-0 rounded-full ${styles.marker}`} aria-hidden="true" />
+            <span className="min-w-0 break-words">{item}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
@@ -194,7 +287,9 @@ export function WorkCaseReadingLayout({
   const progressTrackVisible = !currentProjection
     || currentProjection.lifecycle_position === "plan_revising"
     || currentProjection.progress_group === "progressing";
-  const nextControlStepVisible = currentProjection?.next_required_control_step !== "none";
+  const nextControlStepVisible = Boolean(
+    currentProjection && currentProjection.next_required_control_step !== "none",
+  );
   const nextControlStepLabel = currentProjection
     ? t(`objectDetail.workcaseNextControlStep.${currentProjection.next_required_control_step}` as LocaleKey)
     : null;
@@ -217,28 +312,11 @@ export function WorkCaseReadingLayout({
               className="mt-0"
             />
           )}
-          {nextControlStepVisible ? (
-            <div
-              role="status"
-              title={t("objectDetail.workcaseNextRequiredControlStepBoundary")}
-              className="flex min-w-0 items-center gap-2 px-0.5 py-1 text-ldvh-text-secondary"
-            >
-              <ArrowRight
-                size={WORKCASE_DETAIL_SEMANTIC_ICON_SIZE}
-                strokeWidth={2}
-                className="shrink-0 text-ldvh-accent"
-                aria-hidden="true"
-              />
-              <span className="sr-only">
-                {t("objectDetail.workcaseNextRequiredControlStep")}：
-              </span>
-              <span className="ldvh-body-primary min-w-0 break-words font-medium">
-                {nextControlStepLabel}
-              </span>
-              <span className="sr-only">
-                {t("objectDetail.workcaseNextRequiredControlStepBoundary")}
-              </span>
-            </div>
+          {nextControlStepVisible && currentProjection && nextControlStepLabel ? (
+            <NextRequiredControlStep
+              step={currentProjection.next_required_control_step}
+              label={nextControlStepLabel}
+            />
           ) : !currentProjection ? (
             <p className="ldvh-caption text-ldvh-text-secondary">
               {t("objectDetail.workcaseCurrentSnapshotUnavailableHint")}
@@ -269,8 +347,7 @@ export function WorkCaseReadingLayout({
 
       {terminationVisible && (
         <WorkCaseReadingNode
-          title={t("objectDetail.workcaseTerminationCleanup")}
-          note={t("objectDetail.workcaseTerminationCleanupBoundary")}
+          title={t("objectDetail.workcaseTerminationSummary")}
           locale={locale}
           contentVariant="semantic"
         >
@@ -571,6 +648,65 @@ function ReadingBoundaryNote({ value }: { value: string }) {
       <Info size={14} strokeWidth={2} className="shrink-0" aria-hidden="true" />
       <p className="ldvh-caption min-w-0 flex-1">{value}</p>
     </div>
+  );
+}
+
+function NextRequiredControlStep({
+  step,
+  label,
+}: {
+  step: WorkCaseNextRequiredControlStep;
+  label: string;
+}) {
+  const { t } = useI18n();
+  const humanGate = step === 'human_gate_1' || step === 'human_gate_2';
+  const styles = humanGate
+    ? {
+        Icon: ClipboardList,
+        surface: 'border-violet-400/35 bg-violet-500/[0.055]',
+        heading: 'text-violet-700/85 dark:text-violet-200/85',
+        body: 'text-violet-950/72 dark:text-violet-100/78',
+      }
+    : step === 'form_closure_proposal'
+      ? {
+          Icon: ClipboardList,
+          surface: 'border-amber-400/30 bg-amber-500/[0.055]',
+          heading: 'text-amber-700/85 dark:text-amber-200/85',
+          body: 'text-amber-950/72 dark:text-amber-100/78',
+        }
+      : step === 'termination_cleanup'
+        ? {
+            Icon: CircleMinus,
+            surface: 'border-slate-400/30 bg-slate-500/[0.05]',
+            heading: 'text-slate-700/85 dark:text-slate-200/85',
+            body: 'text-slate-900/72 dark:text-slate-100/78',
+          }
+        : {
+            Icon: ArrowRight,
+            surface: 'border-sky-400/30 bg-sky-500/[0.05]',
+            heading: 'text-sky-700/85 dark:text-sky-200/85',
+            body: 'text-sky-950/72 dark:text-sky-100/78',
+          };
+  const { Icon } = styles;
+
+  return (
+    <section
+      role="status"
+      title={t('objectDetail.workcaseNextRequiredControlStepBoundary')}
+      className={`min-w-0 rounded-lg border ${WORKCASE_DETAIL_SEMANTIC_SURFACE_PADDING} ${styles.surface}`}
+    >
+      <p className={`ldvh-meta ${styles.heading}`}>{t('objectDetail.workcaseNextRequiredControlStep')}</p>
+      <div className={`mt-1.5 flex min-w-0 flex-wrap items-center gap-2 ${styles.heading}`}>
+        <Icon size={WORKCASE_DETAIL_SEMANTIC_ICON_SIZE} strokeWidth={2} className="shrink-0" aria-hidden="true" />
+        <span className={`ldvh-detail-semantic-title min-w-0 break-words ${styles.body}`}>{label}</span>
+        {humanGate && (
+          <span className="rounded-full border border-violet-400/25 bg-violet-500/10 px-2 py-0.5 text-[11px] font-medium text-violet-700/80 dark:text-violet-200/85">
+            {t('objectDetail.workcaseNextControlStepHumanDecision')}
+          </span>
+        )}
+      </div>
+      <span className="sr-only">{t('objectDetail.workcaseNextRequiredControlStepBoundary')}</span>
+    </section>
   );
 }
 

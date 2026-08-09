@@ -2,10 +2,7 @@ import { useMemo } from 'react';
 import { useI18n } from '@/i18n/context';
 import { getObjectStatusLocale } from '@/i18n/locales';
 import type { FactCoverageStatus, WorkCaseProgressOption } from '@/utils/api';
-import {
-  WORKCASE_PROGRESS_GROUP_ORDER,
-  type WorkCaseProgressGroup,
-} from '@/shared/workcaseStatus';
+import type { WorkCaseProgressGroup } from '@/shared/workcaseStatus';
 
 interface WorkCaseProgressFilterProps {
   activeGroup: WorkCaseProgressGroup | null;
@@ -33,11 +30,11 @@ export default function WorkCaseProgressFilter({
 
   return (
     <div className="ldvh-tab-list" role="group" aria-label={t('objectList.progressGroupFilter')}>
-      {WORKCASE_PROGRESS_GROUP_ORDER.map((group) => (
+      {options.filter(({ group }) => group !== 'termination_cleanup').map(({ group }) => (
         <button
           key={group}
           type="button"
-          onClick={() => onChange(group)}
+          onClick={() => onChange(group as WorkCaseProgressGroup)}
           className={getButtonClass(activeGroup === group)}
         >
           {getObjectStatusLocale('workcase', group, locale)}
