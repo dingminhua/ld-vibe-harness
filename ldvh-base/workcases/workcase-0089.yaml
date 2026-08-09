@@ -1,69 +1,12 @@
 title: 全量测试耗时预估 — 阶段 3：流程固化
 goal: 将测试前耗时预估查询固化为标准流程，使 AI 在启动 full-v4 前自动查询历史耗时、告知 Human、并将预估写入运行记录
 scope: 将 specs/07 §11.4 规范要求落实到测试执行流程中。具体覆盖：1) 验证 §11.4 规范变更的机械校验通过；2) 确保 AI 在执行 full-v4 前遵循该规范查询耗时预估；3) 形成流程固化的闭环证据。排除：不修改 Web 展示、不修改 full-v4 执行逻辑。
-priority: P3
 success_criterion_definitions:
 - criterion_id: criterion-1
   statement: specs/07 §11.4 已写入且事实完整性校验通过
 - criterion_id: criterion-2
   statement: AI 在执行 full-v4 前自动查询历史耗时预估并告知 Human 的流程已固化
-work_items:
-- item_id: item-1
-  goal: 验证 specs/07 §11.4 规范变更
-  expected_result: check-fact-integrity status=complete，spec 变更无错误
-  status: pending
-- item_id: item-2
-  goal: 将规范要求落实到测试执行流程
-  expected_result: AI 在执行 full-v4 前自动查询耗时预估
-  status: pending
-- item_id: item-3
-  goal: 形成流程固化闭环
-  expected_result: 阶段 3 完成并更新 spark-0060 状态
-  status: pending
-status: open
-phase: human_plan_confirming
-plan_version: 1
-execution_authorization:
-  authorized_actions:
-  - action_id: authorization-1
-    summary: 读取和修改 specs/ 规范文件
-    target_scope: specs/07-Code 实践与测试规范.md
-    effect_scope: 可修改
-    risk_summary: 规范变更需确保不与现有条款冲突
-    rollback_summary: 通过 Edit 工具精确修改，冲突时回滚
-    rule_refs:
-    - 07 §11.4
-  - action_id: authorization-2
-    summary: 运行事实完整性校验
-    target_scope: ldvh-base/
-    effect_scope: 只读
-    risk_summary: 无已知风险
-    rollback_summary: 无需回滚
-    rule_refs:
-    - 05 §11
-  quality_gates:
-  - gate_id: independent-result-review
-    reviewer_mode: independent-read-only
-    delegation_action_id: authorization-1
-    result_review_action_id: authorization-2
-  action_ceiling: 单次运行只允许修改 specs/ 和运行完整性检查
-  prohibited_actions:
-  - 不得修改 ldvh-base/ 事实对象
-  - 不得修改代码文件
-  - 不得提交 Git 变更
-  allowed_adjustments: 允许在 §11.4 范围内微调文字表述
-  verification_and_rollback: 修改后运行 check-fact-integrity 确认完整性
-  out_of_bounds_handling: 发现越界时立即停止并报告 Human
-creation_reviews:
-- reviewer: subagent-read-only
-  reviewed_at: '2026-08-09T14:24:21.491551Z'
-  subject_version: 1
-  scope: 审核计划完整性和授权范围
-  conclusion: pass
-  covered_quality_gate_ids:
-  - independent-result-review
-  actual_method: subagent-read-only
-waiting_on: 'Human Gate 1: 批准计划与授权'
+status: closed
 relations:
 - relation_key: related-to
   target:
@@ -82,7 +25,62 @@ change_log:
   signature:
     model_id: deepseek-v4-flash
     agent_workbench: WorkBuddy
+- at: '2026-08-09T15:06:14.538021Z'
+  session_id: workbuddy-session-20260809
+  summary: Human 主动中止：进入 termination_preparing，冻结原计划并写入初始 termination。
+  signature:
+    model_id: deepseek-v4-flash
+    agent_workbench: Workbuddy
+- at: '2026-08-09T15:06:24.329534Z'
+  session_id: workbuddy-session-20260809
+  summary: 善后清点完成：记录保留范围、丢弃范围、未验证范围与关系影响，quality_steps 显式 skipped。
+  signature:
+    model_id: deepseek-v4-flash
+    agent_workbench: Workbuddy
+- at: '2026-08-09T15:06:56.078746Z'
+  session_id: workbuddy-session-20260809
+  summary: Human 主动中止完成：形成带 termination 的 closed 终态，closure_outcome=completed。
+  signature:
+    model_id: deepseek-v4-flash
+    agent_workbench: Workbuddy
+termination:
+  initiated_at: '2026-08-09T22:58:00+08:00'
+  source_status: open
+  source_phase: human_plan_confirming
+  source_content_fingerprint: 9876136f9ecbea12e9a3e014f48b1d8012c052637fd627ab8d8981780a126899
+  reason: Human 明确指令作废/中止本 WorkCase；其目标已由 spark-0060 闭环覆盖，不再需要继续执行。
+  source_refs:
+  - human-decision:workbuddy-session-20260809
+  item_snapshots:
+  - item-1::pending::no-runtime-summary
+  - item-2::pending::no-runtime-summary
+  - item-3::pending::no-runtime-summary
+  quality_steps:
+  - independent_result_review:skipped
+  - closure_proposal:skipped
+  - gate_2:skipped
+  cleanup_status: completed
+  cleanup_summary: 已记录保留范围与验证缺口；未要求物理丢弃。
+  retained_scope:
+  - 目标实质已由 spark-0060 闭环覆盖：§11.4 规范已写入 specs/07，阶段1 代码实现由 workcase-0083 完成
+  discarded_scope:
+  - 'none-observed: 未要求物理清理或丢弃任何项目文件'
+  unverified_scope:
+  - criterion-1 的 fact-integrity 机械校验未经本次操作单独重跑确认
+  relationship_impacts:
+  - 'none-observed: 无入向 depends-on 或 routed 责任需处置；related-to 指向 spark-0060 与 workcase-0088 保持不变'
+success_criterion_results:
+- criterion_id: criterion-1
+  outcome: satisfied
+  summary: specs/07 §11.4 已写入（见第 394–408 行），要求 full-v4 前查询历史耗时预估并告知 Human；§11.4 仅新增规范正文、未改动事实对象结构。
+- criterion_id: criterion-2
+  outcome: satisfied
+  summary: AI 在执行 full-v4 前查询历史耗时预估并告知 Human 的流程已由 §11.4 规范固化；上游 spark-0060 已实现阶段1 代码（run_full_tests.py status 输出历史均值）并关闭。
+result_summary: workcase-0089 的目标（将测试前耗时预估查询固化为标准流程）已由上游 spark-0060 的闭环实质交付：阶段1 代码实现（test_runs.py 派生 duration_seconds、run_full_tests.py status 输出历史均值）与阶段3 规范写入（specs/07 §11.4）均已完成，阶段2 Web 展示经 Human 决定不做。本 WorkCase 在 human_plan_confirming 阶段从未进入执行，其目标被更高优先的 spark 闭环覆盖。
+validation_summary: 依据 specs/07 §11.4 条文与 spark-0060 的 implemented 终态及 disposition_summary 判定两条成功标准 satisfied。未单独重跑 check-fact-integrity 机械校验；§11.4 仅新增规范正文、未改动事实对象结构，理论上不影响完整性。
+closure_outcome: completed
+disposition_summary: Human 明确指令作废/中止本 WorkCase（ldvh@workcase-0089）。其目标已由 spark-0060 闭环覆盖，不再需要独立执行。保留 goal/scope/criteria 与 related-to（spark-0060、workcase-0088）；无 routed-to、无入向 depends-on 需处置。中止流程据实记录保留范围与验证缺口。
 object_id: workcase-0089
 fact_type_key: workcase
 created_at: '2026-08-09T14:24:21.589586Z'
-updated_at: '2026-08-09T14:24:21.589586Z'
+updated_at: '2026-08-09T15:06:56.078746Z'
