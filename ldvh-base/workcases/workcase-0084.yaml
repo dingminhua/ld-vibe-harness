@@ -1,0 +1,125 @@
+status: closed
+title: Human 主动终止 WorkCase 的停止与善后链
+goal: 让 Human 在任意非终态 WorkCase 进行中发现问题时，只需一次明确指令即可立即停止原计划，并由 LDVH 进入有限、可恢复、可追溯的善后链，安全处理已做成果、待丢弃修改、验证缺口、依赖影响和剩余责任后诚实关闭。
+scope: "承诺覆盖：\n1. 选定唯一持久 phase `termination_preparing`，由 Human 一次明确终止指令触发；从 Gate 1 前后全部现有 phase 及 `blocked` 均可经专属原子入口进入。\n2. 开始终止后冻结原计划、原 execution authorization 与旧 closure proposal；只允许盘点、保留、精确丢弃、验证、依赖处置、残余记录和最终关闭，不再恢复原计划。\n3. 采用两段专属事务：开始事务绑定 Human 来源与 source CAS；完成事务在善后成立后形成带不可混淆 `termination` 记录的 `closed`，不索取第二次 Human Gate、不调用或放宽 `close-workcase`。\n4. 活动/终态 termination 形成最小可验证闭集，保留起始 status/phase、item 现场、已做结果、保留与精确丢弃范围、未运行验证、关系影响、质量步骤状态及剩余责任；closure outcome 仍按实际 criterion 结果分类，不由终止入口固定决定。\n5. Helper 只修改 WorkCase 事实；项目文件清理由 AI 按 Human 精确范围执行。范围含混、保留与待丢弃内容混杂、影响其它责任时才暂停询问；已提交内容只能新 revert，禁止 reset --hard 或整树回滚。\n6. 入向 depends-on 可允许先进入终止态以立即停工，但完成关闭前必须如实阻塞并处置依赖影响，不自动修改其它 WorkCase。\n7. 裁决与 SafeConvergenceShape 的唯一分界，保持正常 Gate 2/close-workcase 和 WorkCase-0082 默认安全收敛路径不变。\n8. 同步 Helper、projection、context recovery、Web/card 与定向/全量测试。\n明确排除：不在本 WorkCase 中实际终止任何现有 WorkCase，不清理当前真实未提交修改，不执行 Git commit、push、发布或环境 adapter/Hook 扩建。"
+success_criterion_definitions:
+- criterion_id: criterion-human-command
+  statement: Human 一次明确指令即可从全部非终态 phase 或 blocked 原子进入 termination_preparing，无第二 Human Gate；原计划立即冻结且普通 update/close 不能绕过。
+- criterion_id: criterion-resumable-cleanup
+  statement: termination_preparing 是可持久恢复的唯一善后位置；中断后 projection/context recovery 只返回 termination_cleanup，不恢复旧计划或旧 Gate2。
+- criterion_id: criterion-cleanup-safety
+  statement: 保留、待丢弃与剩余责任被精确区分；Helper 不操作项目文件，物理清理只按明确范围执行并验证，含混、混杂或跨责任影响会停止询问。
+- criterion_id: criterion-terminal-truth
+  statement: 完成终止形成 closed + 不可混淆 termination 记录，完整保留 criterion results、result/validation/disposition、实际质量步骤和保证差距；outcome 依实际结果分类且不伪造 Reviewer/Gate2。
+- criterion_id: criterion-dependency-safety
+  statement: 入向 depends-on、route target、CAS 漂移、无效来源及失败路径均有机械边界；不得静默关闭、自动修改其它 WorkCase 或留下不明部分写入。
+- criterion_id: criterion-normal-regression
+  statement: 正常 close-workcase/Gate2、SafeConvergenceShape 和 WorkCase-0082 默认安全收敛语义保持不变，并有回归测试证明已覆盖范围。
+- criterion_id: criterion-service-surfaces
+  statement: Helper capabilities、current snapshot、context recovery 与 Web/card 对活动和终态 termination 均有一致、来源可回指的呈现，定向测试及 full-v4 结果据实通过或披露缺口。
+success_criterion_results:
+- criterion_id: criterion-human-command
+  outcome: satisfied
+  summary: begin-workcase-termination 可从全部既有活动 phase 与 blocked 原子进入 termination_preparing，绑定一次 Human 来源并冻结原计划；普通 update/close 均不能绕过，完成终止不要求第二 Human Gate。
+- criterion_id: criterion-resumable-cleanup
+  outcome: satisfied
+  summary: termination_preparing 持久承载 cleanup checkpoints；current snapshot 与 context recovery 只给出 termination_cleanup，旧 item、旧 summary/resume 和旧 Gate2 路径不会被恢复。
+- criterion_id: criterion-cleanup-safety
+  outcome: satisfied
+  summary: termination 将 completed work、preserved/discard scopes、validation、relationship impacts、quality steps 与 residual responsibilities 分离；Helper 只写 WorkCase，物理清理由 AI 在明确范围内执行，含混或跨责任影响保留为暂停边界。
+- criterion_id: criterion-terminal-truth
+  outcome: satisfied
+  summary: complete-workcase-termination 只接受 cleanup completed 的专属闭集并形成 closed + termination；criterion/result/validation/outcome/disposition 与实际质量步骤均机械校验，不能伪造正常 Reviewer/Gate2。
+- criterion_id: criterion-dependency-safety
+  outcome: satisfied
+  summary: 开始/完成路径校验 source CAS、Human 来源、入向 depends-on 前后扫描、关系影响和 route 边界；无效来源、漂移、未处置依赖或回读失败拒绝且不自动修改其它 WorkCase。
+- criterion_id: criterion-normal-regression
+  outcome: satisfied
+  summary: 正常 close-workcase/Gate2、SafeConvergenceShape 与 WorkCase-0082 路径保持独立；correct-closed 不能在正常/termination 两种闭合形状间转换，回归套件通过。
+- criterion_id: criterion-service-surfaces
+  outcome: satisfied
+  summary: Helper capabilities、current snapshot、context recovery、Web API/详情/Card 已覆盖活动及终态 termination；稳定 full-v4 六步骤全部通过且工作树证据完整。
+result_summary: 已完成 Human 主动终止 WorkCase 的完整停止与善后链：一次明确 Human 指令进入 termination_preparing 并冻结原计划，随后在可恢复 cleanup 中盘点保留、精确丢弃、验证、依赖和剩余责任，最终通过专属完成事务诚实关闭；正常 Gate 2、close-workcase 与 SafeConvergence 路径未被放宽。
+validation_summary: 定向 Python 终止/转换/应用/恢复测试、Web 终止呈现测试、规则目录检查与 Ruff 均通过；最终稳定 full-v4 run-bb10d46af4854d76b22cc79d19d7d5e6：code-lint、1578 项 code tests（13 项平台条件跳过）、199 对象 fact-integrity、Web typecheck、174 项 Web tests、Web build 全部通过，working-tree evidence=complete 且 change_count=0。前两轮因并行时间/WorkCase-0086 写入标记 stale，未作为最终证据。
+change_log:
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T16:14:38.868279+08:00'
+  summary: Human 已确认完整意图：WorkCase 进行中发现问题时，一次指令立即停止并完成有限善后；本 WorkCase 在独立创建复核后形成待 Gate 1 判断的规范、实现、呈现与测试计划。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T16:20:02.737309+08:00'
+  summary: Human 在 Gate 1 明确批准当前完整计划；冻结 execution_authorization 基线并进入 executing，下一控制点为 item-spec-contract。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T16:20:22.105352+08:00'
+  summary: 写入 item-spec-contract 的稳定 in_progress 检查点；后续从唯一终止生命周期与字段契约开始。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T09:44:35.239799Z'
+  summary: 完成五项实施与稳定 full-v4 验证，形成 result v1 并进入 Controller 结果检查。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T09:45:33.992657Z'
+  summary: canonical result v1 已精确回读并通过事实完整性审计，进入独立结果复核。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T09:47:22.932232Z'
+  summary: 记录独立结果复核 pass_with_followups；无阻断项，两项建议作为范围外测试增强机会保留。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T09:47:39.831663Z'
+  summary: 独立复核无阻断项，已处置两项 follow-up 并进入关闭提案准备。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T09:48:15.121031Z'
+  summary: 形成 completed 关闭提案；原 scope 无剩余责任，两项 Reviewer 建议保留为范围外 follow-up opportunity。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T09:48:28.175639Z'
+  summary: 完整关闭提案与终态保留审查已形成并回读，进入 Human Gate 2。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T13:00:57.608476Z'
+  summary: Human 在 Gate 2 明确同意 completed 关闭；按当前完整 closure proposal 形成终态。
+closure_outcome: completed
+disposition_summary: WorkCase-0084 原 scope 的规则、模型、Helper、恢复/Web 呈现和验证责任均已完成，七项成功标准全部 satisfied，无未满足、未验证或需转交的剩余责任；两项 Reviewer 建议仅作为范围外防回归增强机会保留。
+spark_suggestions:
+- suggestion_id: suggestion-termination-postwrite-race
+  suggestion_kind: follow_up_opportunity
+  summary: 为 complete-workcase-termination 增加专属 post-write 入向依赖竞争故障注入测试。
+  follow_up_summary: 若共享条件回滚路径未来出现操作专属分支，补充直接以 complete-workcase-termination 驱动的竞争注入回归，防止覆盖随实现分化而丢失。
+- suggestion_id: suggestion-termination-web-e2e
+  suggestion_kind: follow_up_opportunity
+  summary: 补充真实 Helper 响应贯通 WorkCase termination API 到 UI 的集成测试。
+  follow_up_summary: 在 Web 测试基础设施能够稳定启动 Helper/项目 fixture 时，验证真实读取响应经 API、详情和 Card 保持同一 termination 投影。
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0063
+object_id: workcase-0084
+fact_type_key: workcase
+created_at: '2026-08-09T16:14:38.868279+08:00'
+updated_at: '2026-08-09T13:00:57.608476Z'
