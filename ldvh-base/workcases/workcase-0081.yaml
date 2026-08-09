@@ -1,0 +1,130 @@
+status: closed
+title: WorkCase 执行控制闭环强化与最小实证
+goal: 强化 LDVH 现有 WorkCase 执行协议，使执行者在单个 work item 终结后重新消费 fresh projection 并继续 Controller 判断，同时用本 WorkCase 自身跨越 item 边界验证该内部协议能否减少提前交还。
+scope: 仅修改 specs/34-WorkCase获批计划执行行动模板.md 与直接契约测试 code/tests/specs/test_workcase_controller_continuation_contract.py；必要时只读核对并联跑 code/tests/helper/test_action_template_operation.py。计划不修改 21 状态机、Skill、事实字段、WorkCase projection 实现、Helper API、work-context、context-recovery、环境事件或其它事实对象；不执行 Git commit、push、发布或外部写入。实证使用本 WorkCase 的 item-02 → item-03 边界，只证明当次协议消费，不证明模型外、跨会话或跨环境的机械保证。
+success_criterion_definitions:
+- criterion_id: criterion-01
+  statement: 34 号模板以不复制 21 状态机的方式明确 item terminal 不等于 WorkCase execution terminal，并规定 item 终结写回后的 fresh resolved projection 必须重新进入 Controller 判断。
+- criterion_id: criterion-02
+  statement: 模板准确区分仍有非终结 item 时的继续判断与全部 item terminal 后进入 controller_checking 及既有结果链，不把“回到 Controller loop”误写成一律回到 executing。
+- criterion_id: criterion-03
+  statement: 直接契约测试覆盖单项终结后的 projection 再消费和全部 item terminal 后继续结果链，相关规范与 Helper 模板交付测试通过。
+- criterion_id: criterion-04
+  statement: 同一获批执行链中，item-02 完成后无需 Human 追加“继续”，执行者精确读取 workcase-0081，确认 projection 与当前 fingerprint 匹配，并启动和完成 item-03 的已授权验证与记录。
+- criterion_id: criterion-05
+  statement: 实际变化严格限于 specs/34、直接契约测试和 workcase-0081 自身受控检查点；没有引入 Hook 模拟、Skill 职责、持久续跑字段、Helper 语义判断或无关工作树改动。
+success_criterion_results:
+- criterion_id: criterion-01
+  outcome: satisfied
+  summary: 34 §5.2 已明确 item terminal ≠ WorkCase execution terminal，并要求单项终结写回后的 fresh resolved projection 重新成为 Controller 输入。
+- criterion_id: criterion-02
+  outcome: satisfied
+  summary: 模板已区分仍有非 terminal item 时继续 Controller 判断与 AllTerminal 时进入 controller_checking 结果链，并明确不表示一律返回 executing。
+- criterion_id: criterion-03
+  outcome: satisfied
+  summary: 直接 continuation 契约测试新增对应断言；与 Helper action-template 交付测试合并复跑共 16 passed，Helper 精确回读新契约 outcome=ok、gaps=[]。
+- criterion_id: criterion-04
+  outcome: satisfied
+  summary: item-02 终结后未获得 Human 追加继续；精确回读 fingerprint 9f0a565432285020766141aeb5f9615b7c43409e23779cf43dce02b6d93e92bb 及匹配的 resolved projection 后，Controller 启动并完成 item-03。
+- criterion_id: criterion-05
+  outcome: satisfied
+  summary: Gate1 后的实施补丁仅修改 specs/34 与直接 continuation 契约测试，事实检查点仅更新 workcase-0081；未修改 Skill、21、projection、Helper、环境入口或其它事实，也未提交、发布或清理既有脏改动。
+result_summary: 已把讨论中的“模拟 BeforeYield”收敛为 LDVH 自身的 WorkCase 执行控制契约：单个 item 终结不是 WorkCase 执行终结，写后 fresh projection 必须重入 Controller；尚有 item 时继续判断，全部 terminal 时继续既有结果链。本 WorkCase 已实际跨越 item-02→item-03 边界一次。
+validation_summary: PYTHONPATH=code .venv/bin/pytest -q 对 continuation 契约与 action-template 交付测试合并运行 16 passed；git diff --check 对两个实施文件通过；read-action-template-content 返回 outcome=ok、gaps=[] 且三项新契约可见；每次 workcase-0081 写入均由 Helper 完成 CAS、写后回读与独立全库机械完整性审计。未运行全量测试；本次实证不验证跨会话、跨环境、宿主 Stop Hook 或模型外机械续跑。
+change_log:
+- signature:
+    model_id: gpt-5
+    host_name: Cindy
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T13:50:28.529259+08:00'
+  summary: 按 Human 指示创建 WorkCase：承接 34 号模板中的 WorkCase 执行控制闭环强化、直接契约测试和一次同一执行链跨 item 的最小实证。
+- signature:
+    model_id: gpt-5
+    host_name: Cindy
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T13:54:39.987309+08:00'
+  summary: 消费当前会话 Human Gate 1 批准，绑定 plan_version=1 的授权基线并进入 executing。
+- signature:
+    model_id: gpt-5
+    host_name: Cindy
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T13:54:54.047423+08:00'
+  summary: 启动 item-01-contract-audit，建立跨检查点 current_summary 与 resume_from。
+- signature:
+    model_id: gpt-5
+    host_name: Cindy
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T13:55:18.622688+08:00'
+  summary: 完成 item-01 契约审计并启动 item-02；最小修改范围保持为 specs/34 与直接契约测试。
+- signature:
+    model_id: gpt-5
+    host_name: Cindy
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T13:56:39.417872+08:00'
+  summary: 完成 item-02：34 号模板与直接契约测试已强化，两个定向测试组通过且 Helper 精确回读新契约。
+- signature:
+    model_id: gpt-5
+    host_name: Cindy
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T13:57:01.640000+08:00'
+  summary: 消费 item-02 终结后的 fresh resolved projection，未请求 Human 追加继续即启动 item-03 实证验证。
+- signature:
+    model_id: gpt-5
+    host_name: Cindy
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T13:57:40.609853+08:00'
+  summary: 完成 item-03 同链续跑实证；全部 item terminal 后同事务进入 controller_checking 并分配 result_version=1。
+- signature:
+    model_id: gpt-5
+    host_name: Cindy
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T13:58:34.301932+08:00'
+  summary: 形成 result_version=1 的完整 canonical result projection，覆盖全部成功标准、Controller 检查与验证边界。
+- signature:
+    model_id: gpt-5
+    host_name: Cindy
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T13:58:52.880261+08:00'
+  summary: 完整结果投影精确回读后进入 independent_reviewing，等待已授权只读独立结果复核。
+- signature:
+    model_id: gpt-5
+    host_name: Cindy
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T14:00:54.759435+08:00'
+  summary: 写入实际只读独立结果复核：result_version=1 获 pass，无 feedback，实际方法为 subagent-read-only。
+- signature:
+    model_id: gpt-5
+    host_name: Cindy
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T14:01:10.929903+08:00'
+  summary: 独立结果复核已回读且无 feedback，结果投影未变，进入 closure_preparing。
+- signature:
+    model_id: gpt-5
+    host_name: Cindy
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T14:01:29.127686+08:00'
+  summary: 在 closure_preparing 整体形成 completed 关闭提案；原 scope 内无剩余责任并保留同链实证的保证边界。
+- signature:
+    model_id: gpt-5
+    host_name: Cindy
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T14:01:46.034191+08:00'
+  summary: 完成终态保留与关闭提案检查；无 route target、无 depends-on，进入 Human Gate 2。
+- signature:
+    model_id: gpt-5
+    host_name: Cindy
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T14:32:48.363937+08:00'
+  summary: 消费当前会话 Human Gate 2 关闭决定，按既有 completed 提案关闭 workcase-0081。
+closure_outcome: completed
+disposition_summary: 建议关闭本 WorkCase：34 号模板与直接测试已形成稳定结果，五项成功标准均 satisfied，独立结果复核为 pass，原 scope 内无剩余责任。保留的停止边界是：item-02→item-03 只证明本次同一执行链中的协议遵从，不证明跨会话、跨环境、宿主事件或模型外机械续跑；本 WorkCase 未授权且未执行 commit、push、发布或清理既有脏工作树。
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0071
+object_id: workcase-0081
+fact_type_key: workcase
+created_at: '2026-08-09T13:50:28.529259+08:00'
+updated_at: '2026-08-09T14:32:48.363937+08:00'

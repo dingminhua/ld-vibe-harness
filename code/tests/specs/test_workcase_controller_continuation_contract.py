@@ -57,6 +57,18 @@ def test_execution_checkpoint_and_blocking_overlay_are_not_successful_exit_short
     assert blocked["next_required_control_step"] == "advance_current_work_item"
 
 
+def test_terminal_item_reenters_controller_without_becoming_workcase_terminal() -> None:
+    source = _source(EXECUTION_TEMPLATE)
+
+    assert "`item terminal ≠ WorkCase execution terminal`" in source
+    assert "刚回读且指纹匹配的 resolved projection 必须成为下一轮 Controller 输入" in source
+    assert "仍有非 terminal item 时，Controller 继续" in source
+    assert "全部 item terminal 时，则按 21 进入 `controller_checking` 并继续既有结果链" in source
+    assert "该控制点不表示 phase 一律返回 `executing`" in source
+    assert "单个 terminal item" in source
+    assert "都不是完成出口" in source
+
+
 def test_reviewer_pass_requires_controlled_writeback_before_gate2_handoff() -> None:
     source = _source(EXECUTION_TEMPLATE)
 

@@ -61,6 +61,8 @@ ldvh_spec:
 
 存在当前合法下一控制步骤时，Controller 继续消费已批准责任，不以聊天总结、工具成功、测试通过、子任务返回或 item 的 `current_summary` / `resume_from` 代替事实转换。item 的开始、直接完成、阻塞、解阻、完成、取消、计划返修、结果形成与质量链只按 21 的当前规则执行；需要跨对象共同生效时仍服从 32 的能力边界。
 
+**单项终结控制点：** `item terminal ≠ WorkCase execution terminal`。任一 item 进入 `completed` 或 `cancelled` 并完成完整 after、CAS、精确回读与独立事实完整性审计后，刚回读且指纹匹配的 resolved projection 必须成为下一轮 Controller 输入；仍有非 terminal item 时，Controller 继续按当前授权、依赖和能力判断并消费可执行责任；全部 item terminal 时，则按 21 进入 `controller_checking` 并继续既有结果链。该控制点不表示 phase 一律返回 `executing`，也不授权 Code、Helper 或结构提示选择 item、推进 phase 或断言完成。
+
 **开始控制点：** 跨检查点、可能中断或需恢复的工作项在实施前，必须先完成 `pending → in_progress` 写回，同事务写入非空 `current_summary` 与有界 `resume_from`，经 CAS、精确回读与独立事实完整性审计后，才允许执行实际行动。真实行动不得发生在 `in_progress` 写回之前。同一稳定检查点内可直接 `pending → completed` 的小动作不受此限，但不得用于跨检查点工作。
 
 错误吸收生命周期关口或 Human Gate 的 item——例如 goal 为"全部实现完成后安排独立结果复核"——按 21 作基线内 PlanΔ 或据实取消；基线内修正保留当前批准的授权包并自动返回执行，不再次请求 Human，超界时将受影响 item 据实取消并转入结果链，不由本文建立第三次 Human Gate。该判断由 AI 承担，Code 不从关键词或字段形状替 AI 作出结论。
@@ -75,7 +77,7 @@ ldvh_spec:
 
 本模板只允许在刚回读当前快照支持下退出当前执行循环：对象已经 closed；`status=blocked` 且已写入真实阻塞与恢复条件；重复精确读取后投影仍 unresolved 而只能交还读取缺口；或 resolved 投影已经指向来源保留给 Human 的 Gate。命中授权上限、禁止动作或能力只能超授权完成时，不询问扩权：零执行受影响动作，按 21 据实取消或收敛相应 item，并继续结果链，直到前述合法退出之一真实形成。
 
-`phase=executing` 的普通 `in_progress` 检查点、pending item、局部测试通过、一次本地 commit、Reviewer 返回或恢复入口存在，都不是完成出口。`status=blocked` 时投影保留生命周期位置只用于定位，Controller 不消费其中结构提示自动续跑；解除阻塞必须先按 21 写回并重新读取。
+`phase=executing` 的普通 `in_progress` 检查点、单个 terminal item、pending item、局部测试通过、一次本地 commit、Reviewer 返回或恢复入口存在，都不是完成出口。`status=blocked` 时投影保留生命周期位置只用于定位，Controller 不消费其中结构提示自动续跑；解除阻塞必须先按 21 写回并重新读取。
 
 ### 5.5 恢复交还
 
