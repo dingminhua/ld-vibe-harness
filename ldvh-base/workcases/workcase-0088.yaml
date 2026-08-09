@@ -1,0 +1,90 @@
+title: 全量测试耗时预估阶段 1 闭环：full-v4 criterion-4 验证
+goal: 验证 full-v4 全量测试通过（criterion-4），闭合 workcase-0083 遗留责任
+scope: 确认最新 full-v4 运行记录 run-c439573ecb194ff08ae70a733b826f14 六步 exit_code=0（整体 status=unknown 因 working_tree_evidence.status=stale），形成证据并更新 workcase-0083 闭合状态。
+priority: P2
+success_criterion_definitions:
+- criterion_id: criterion-1
+  statement: full-v4 六步均 exit_code=0（code-lint / code-tests / fact-integrity / web-typecheck / web-tests / web-build），且如实记录 working_tree_evidence.status=stale 导致整体 status=unknown
+work_items:
+- item_id: item-1
+  goal: 确认 full-v4 六步结果
+  expected_result: run-c439573ecb194ff08ae70a733b826f14 六步均 exit_code=0
+  status: pending
+- item_id: item-2
+  goal: 形成验证证据
+  expected_result: 生成验证报告
+  status: pending
+- item_id: item-3
+  goal: 更新 workcase-0083
+  expected_result: criterion-4 标记 satisfied
+  status: pending
+status: open
+phase: human_plan_confirming
+plan_version: 1
+execution_authorization:
+  authorized_actions:
+  - action_id: authorization-1
+    summary: 读取事实对象与运行记录
+    target_scope: workcase-0083, spark-0060, .ldvh-test-runs/
+    effect_scope: 只读
+    risk_summary: 无已知风险
+    rollback_summary: 无需回滚
+    rule_refs:
+    - 05 §11
+  - action_id: authorization-2
+    summary: 独立复核读取结果
+    target_scope: workcase-0083, spark-0060, .ldvh-test-runs/
+    effect_scope: 只读
+    risk_summary: 无已知风险
+    rollback_summary: 无需回滚
+    rule_refs:
+    - 05 §11
+  quality_gates:
+  - gate_id: independent-result-review
+    reviewer_mode: independent-read-only
+    delegation_action_id: authorization-1
+    result_review_action_id: authorization-2
+  action_ceiling: 单次运行只允许读取和验证，不得修改或提交
+  prohibited_actions:
+  - 不得修改其它事实对象
+  - 不得提交代码变更
+  allowed_adjustments: 允许调整读取参数
+  verification_and_rollback: 每步修改后运行完整性检查
+  out_of_bounds_handling: 发现越界时立即停止并报告
+creation_reviews:
+- reviewer: subagent-read-only
+  reviewed_at: '2026-08-09T14:19:59.718221Z'
+  subject_version: 1
+  scope: 审核计划完整性和授权范围
+  conclusion: pass
+  covered_quality_gate_ids:
+  - independent-result-review
+  actual_method: subagent-read-only
+waiting_on: 'Human Gate 1: 批准计划与授权'
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: workcase
+    object_id: workcase-0083
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0060
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0072
+change_log:
+- at: '2026-08-09T14:19:59.816696Z'
+  session_id: workbuddy-session-20260809
+  summary: 受控创建 workcase-0088：承接 workcase-0083 criterion-4 闭环验证。
+  signature:
+    model_id: deepseek-v4-flash
+    agent_workbench: WorkBuddy
+object_id: workcase-0088
+fact_type_key: workcase
+created_at: '2026-08-09T14:19:59.816696Z'
+updated_at: '2026-08-09T14:19:59.816696Z'

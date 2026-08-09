@@ -8,6 +8,8 @@ evolution:
   summary: 起点：Human 在当前会话中提出「现在有的测试时间很长，希望 AI 可以提前知道，这样就可以合理的安排工作流程」；经评估确认此为独立议题，受控创建为 Spark。
 - at: '2026-08-09T14:56:07+08:00'
   summary: 经 Human 要求补充详细实施方案：核对代码确认 v2 record 已含每步 started_at/ended_at（耗时可直接派生，零 Schema 变更），将落地拆为三阶段（记录侧派生+查询接口、Web 展示、流程固化），主线优先做 status 输出历史均值。
+- at: '2026-08-09T15:00:00+08:00'
+  summary: 阶段 1 完成：记录侧耗时派生（test_runs.py duration_seconds 字段）与查询接口已落地，full-v4 run-c439573ecb194ff08ae70a733b826f14 六步 exit_code 均为 0，但运行记录整体 status=unknown（working_tree_evidence.status=stale），按 specs/07 §11.2 不得声称全量通过。阶段 2（Web 展示）经 Human 确认不做，推进阶段 3（流程固化）。
 change_log:
 - at: '2026-08-06T02:08:00+08:00'
   session_id: claude-code-session-20260806
@@ -21,7 +23,13 @@ change_log:
   signature:
     model_id: deepseek-v4-flash
     agent_workbench: WorkBuddy
+- at: '2026-08-09T15:00:00+08:00'
+  session_id: workbuddy-session-20260809
+  summary: 更新 spark-0060 进化记录：阶段 1 完成（六步 exit_code=0，整体 status=unknown 因 evidence stale），推进阶段 3 流程固化。
+  signature:
+    model_id: deepseek-v4-flash
+    agent_workbench: WorkBuddy
 object_id: spark-0060
 fact_type_key: spark
 created_at: '2026-08-06T02:08:00+08:00'
-updated_at: '2026-08-09T14:56:38.821152+08:00'
+updated_at: '2026-08-09T15:00:00+08:00'

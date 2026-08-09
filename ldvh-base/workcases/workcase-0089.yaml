@@ -1,0 +1,88 @@
+title: 全量测试耗时预估 — 阶段 3：流程固化
+goal: 将测试前耗时预估查询固化为标准流程，使 AI 在启动 full-v4 前自动查询历史耗时、告知 Human、并将预估写入运行记录
+scope: 将 specs/07 §11.4 规范要求落实到测试执行流程中。具体覆盖：1) 验证 §11.4 规范变更的机械校验通过；2) 确保 AI 在执行 full-v4 前遵循该规范查询耗时预估；3) 形成流程固化的闭环证据。排除：不修改 Web 展示、不修改 full-v4 执行逻辑。
+priority: P3
+success_criterion_definitions:
+- criterion_id: criterion-1
+  statement: specs/07 §11.4 已写入且事实完整性校验通过
+- criterion_id: criterion-2
+  statement: AI 在执行 full-v4 前自动查询历史耗时预估并告知 Human 的流程已固化
+work_items:
+- item_id: item-1
+  goal: 验证 specs/07 §11.4 规范变更
+  expected_result: check-fact-integrity status=complete，spec 变更无错误
+  status: pending
+- item_id: item-2
+  goal: 将规范要求落实到测试执行流程
+  expected_result: AI 在执行 full-v4 前自动查询耗时预估
+  status: pending
+- item_id: item-3
+  goal: 形成流程固化闭环
+  expected_result: 阶段 3 完成并更新 spark-0060 状态
+  status: pending
+status: open
+phase: human_plan_confirming
+plan_version: 1
+execution_authorization:
+  authorized_actions:
+  - action_id: authorization-1
+    summary: 读取和修改 specs/ 规范文件
+    target_scope: specs/07-Code 实践与测试规范.md
+    effect_scope: 可修改
+    risk_summary: 规范变更需确保不与现有条款冲突
+    rollback_summary: 通过 Edit 工具精确修改，冲突时回滚
+    rule_refs:
+    - 07 §11.4
+  - action_id: authorization-2
+    summary: 运行事实完整性校验
+    target_scope: ldvh-base/
+    effect_scope: 只读
+    risk_summary: 无已知风险
+    rollback_summary: 无需回滚
+    rule_refs:
+    - 05 §11
+  quality_gates:
+  - gate_id: independent-result-review
+    reviewer_mode: independent-read-only
+    delegation_action_id: authorization-1
+    result_review_action_id: authorization-2
+  action_ceiling: 单次运行只允许修改 specs/ 和运行完整性检查
+  prohibited_actions:
+  - 不得修改 ldvh-base/ 事实对象
+  - 不得修改代码文件
+  - 不得提交 Git 变更
+  allowed_adjustments: 允许在 §11.4 范围内微调文字表述
+  verification_and_rollback: 修改后运行 check-fact-integrity 确认完整性
+  out_of_bounds_handling: 发现越界时立即停止并报告 Human
+creation_reviews:
+- reviewer: subagent-read-only
+  reviewed_at: '2026-08-09T14:24:21.491551Z'
+  subject_version: 1
+  scope: 审核计划完整性和授权范围
+  conclusion: pass
+  covered_quality_gate_ids:
+  - independent-result-review
+  actual_method: subagent-read-only
+waiting_on: 'Human Gate 1: 批准计划与授权'
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0060
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: workcase
+    object_id: workcase-0088
+change_log:
+- at: '2026-08-09T14:24:21.589586Z'
+  session_id: workbuddy-session-20260809
+  summary: 受控创建 workcase-0089：承接 spark-0060 阶段 3 流程固化，将测试前耗时预估查询固化为标准流程。
+  signature:
+    model_id: deepseek-v4-flash
+    agent_workbench: WorkBuddy
+object_id: workcase-0089
+fact_type_key: workcase
+created_at: '2026-08-09T14:24:21.589586Z'
+updated_at: '2026-08-09T14:24:21.589586Z'
