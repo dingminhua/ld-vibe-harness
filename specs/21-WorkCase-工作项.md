@@ -222,6 +222,7 @@ WorkCase 只有本文与 05.Att.01 共同定义的当前字段和结构。任何
 | `workcase-validation-summary` | conditional | `workcase-fact-type::6. 状态、阶段与生命周期` |
 | `workcase-blocking-summary` | conditional | `workcase-fact-type::6. 状态、阶段与生命周期` |
 | `workcase-closure-proposal` | conditional | `workcase-fact-type::6. 状态、阶段与生命周期` |
+| `workcase-termination` | conditional | `workcase-fact-type::6. 状态、阶段与生命周期` |
 | `workcase-spark-suggestions` | conditional | `workcase-fact-type::6. 状态、阶段与生命周期` |
 | `workcase-closure-outcome` | conditional | `workcase-fact-type::6. 状态、阶段与生命周期` |
 
@@ -240,6 +241,7 @@ WorkCase 只有本文与 05.Att.01 共同定义的当前字段和结构。任何
 | 在 Gate1 前记录当前环境缺少独立 subagent review 能力、受影响审核类别、可接受的低保证方法与停止边界 | `workcase-execution-authorization,workcase-review` | `new` | `workcase-capability-limitation` | authorization 必须冻结未来 fallback 边界，review 只记录某次实际方法与当前证据；两者不能互相替代，Gate1 也不能把同一 AI review 追认为环境独立 |
 | 在授权基线内逐项界定一类动作的目标、影响、风险、回滚与来源规则 | `workcase-execution-authorization` | `new` | `workcase-authorized-action` | 顶层基线需要完整动作集，但不应以连续散文隐藏不同目标与副作用；结构化条目便于 Human 分别批准并便于 Code 检查形状与指纹，不让 Code 判断自然语言授权 |
 | 在 Gate1 前声明唯一必经的独立结果复核、其固定 Reviewer 模式和两项已授权 action 引用 | `workcase-execution-authorization,workcase-authorized-action,workcase-review` | `new` | `workcase-quality-gate` | action 条目本身不说明哪项是必经质量关口，review 也不说明计划复核覆盖了完整授权闭环；该有限声明只供 Code 校验枚举、引用、覆盖与冻结，不解释授权散文或证明真实独立性 |
+| 在 Human 主动中止后保留起始现场、善后分类、未验证边界、关系影响和实际质量步骤 | `workcase-closure-proposal,workcase-residual-responsibility,workcase-success-result` | `new` | `workcase-termination` | 正常关闭提案必须等待 Gate2，terminal residual 只保存已接受停止的单项责任，success result 只回答验收结果；三者都不能承载“一次指令立即停工、有限善后后无第二 Human Gate 关闭”的专属现场与保证降级 |
 
 ### 类型专属结构定义
 
@@ -259,6 +261,7 @@ WorkCase 只有本文与 05.Att.01 共同定义的当前字段和结构。任何
 | `workcase-proposed-route-target` | 拟路由目标的稳定三元身份与当次完整内容 fingerprint | 不表示 terminal relation、Human 阅读对象、目标接受责任或目标完成 | 只服务关闭事务的目标重读与精确比较；四个成员全部必填，关闭后删除 |
 | `workcase-residual-responsibility` | closed 中没有符合转交条件目标、且 Human 已接受停止的一项具体责任 | 不表示建议、已处理、已完成、route target 或其它对象已经承接 | 只含 `residual_id` 与 `summary`；已路由责任不得同时保留为 residual |
 | `workcase-spark-suggestion` | 一项尚未建立 Spark、供 Human 日后独立判断的结构化建议 | 不表示 Spark 已建立、已获批、已承接或必须推进 | `constrained_responsibility` 保留当前 scope 内受限事项的原因、影响、恢复条件和后续定位；`follow_up_opportunity` 保留 scope 外机会，不伪造受限原因；不保存未来对象 ID |
+| `workcase-termination` | Human 主动中止的起始现场、有限善后和实际降级质量链 | 不表示宿主 Hook、自动物理回滚、Gate2 决定、结果复核或其它 WorkCase 已同步处置 | 只由 `begin-workcase-termination` 形成；`termination_preparing` 中持续更新善后事实，由 `complete-workcase-termination` 原样保留到 closed；Helper 不执行文件删除、回滚或提交 |
 
 ### 类型专属字段定义
 
@@ -271,7 +274,7 @@ WorkCase 只有本文与 05.Att.01 共同定义的当前字段和结构。任何
 | `workcase-success-criterion-definitions` | `success_criterion_definitions` | array | 共同构成目标验收边界的成功标准定义闭集 | 不表示工作步骤、结果、测试命令、完成状态或后置生命周期质量关口 | 至少一项；按 `criterion_id` 唯一；数组位置不表示优先级或顺序；每项服从 §4.3 的 criterion 边界 |
 | `workcase-success-criterion-results` | `success_criterion_results` | array | 当前结果版本对全部成功标准的逐项判断 | 不表示总体结果、验证全文、Reviewer 结论或 Human 关闭决定 | 数组一旦存在就必须按 ID 精确覆盖全部定义，禁止持久化半数组；判断闭集见成员定义 |
 | `workcase-residual-responsibilities` | `residual_responsibilities` | array | Human 已接受不再由当前 WorkCase 推进的具体剩余责任 | 不表示已路由责任、建议、风险列表或待办 | 按 `residual_id` 唯一；已路由项禁止重复；每项必须是 Human 实际接受停止的具体责任 |
-| `workcase-phase` | `phase` | string | 未关闭 WorkCase 当前精确推进位置 | 不表示责任能否继续、Web 进展分组或历史阶段 | 闭集 `human_plan_confirming`、`plan_revising`、`executing`、`controller_checking`、`independent_reviewing`、`closure_preparing`、`human_closure_confirming` |
+| `workcase-phase` | `phase` | string | 未关闭 WorkCase 当前精确推进位置 | 不表示责任能否继续、Web 进展分组或历史阶段 | 闭集 `human_plan_confirming`、`plan_revising`、`executing`、`controller_checking`、`independent_reviewing`、`closure_preparing`、`human_closure_confirming`、`termination_preparing` |
 | `workcase-plan-version` | `plan_version` | integer | 当前规范化计划投影的版本身份 | 不表示历史次数、Git revision、phase 轮次或结果版本 | 正整数；初值为 1；只有规范化计划投影发生结构差异时精确 +1，禁止跳号和空升版 |
 | `workcase-items` | `work_items` | array | 当前计划及执行、恢复和结果判断所需的工作项闭集 | 不表示内部命令、完整过程历史或独立责任集合 | 非空且 `item_id` 唯一；数组位置不表示顺序；成员组合见 §6.4 |
 | `workcase-execution-authorization` | `execution_authorization` | object | Gate1 一次呈现并经批准后冻结的执行授权基线 | 不表示 Human 已批准、每项技术前提已满足、未知风险获准或任意工具可用 | `human_plan_confirming`、`plan_revising`、`executing` 以及正常批准形状的结果链必填；`SafeConvergenceShape` 禁止；Gate1 后与 goal/scope/criteria 共同冻结；完整成员组合见 §6.5；字段存在不替代 `execution_approval` |
@@ -371,6 +374,21 @@ WorkCase 只有本文与 05.Att.01 共同定义的当前字段和结构。任何
 | `workcase-approval-summary` | `summary` | string | Human 实际批准的执行范围、限制或条件 | 不表示技术真实性、无限授权或关闭同意 | 必填非空；不得把 Controller 建议改写成 Human 原因 |
 | `workcase-approval-baseline-fingerprint` | `baseline_fingerprint` | string | Gate1 实际批准的 canonical execution authorization baseline SHA-256 | 不表示完整 WorkCase 内容指纹、plan version、Human 身份或技术验证摘要 | 必填；精确匹配 `[0-9a-f]{64}` 且等于 §6.5 定义的当前 baseline fingerprint |
 | `workcase-approval-source-refs` | `source_refs` | array | 稳定回指 Human 在 Gate1 实际作出批准的输入引用 | 不表示 AI 转述、证据包、Human 身份证明或批准正文替代物 | 必填非空且成员唯一；只能使用当次环境实际提供的 Human 输入稳定引用；无法取得时不得补造 approval，只能进入无有效 approval 安全收敛 |
+| `workcase-termination` | `termination` | object | Human 主动中止的当次起始现场、善后进展和终态保证边界 | 不表示正常 closure proposal、Gate2 决定或 Helper 已执行文件清理 | `termination_preparing` 与由其完成的 closed 必填；其它形状禁止；开始后 source 成员不变，善后成员只据实覆盖当前状态 |
+| `workcase-termination-initiated-at` | `initiated_at` | string | Human 明确中止被专属开始事务消费的时间 | 不表示物理清理或关闭时间 | 带时区 RFC 3339；开始后不变 |
+| `workcase-termination-source-status` | `source_status` | string | 中止事务前的活动 status | 不表示终止善后当前是否阻塞 | 闭集 `open`、`blocked`；必须精确等于 before |
+| `workcase-termination-source-phase` | `source_phase` | string | 中止事务前的精确 phase | 不表示恢复入口 | 必须是除 `termination_preparing` 外的当前活动 phase，并精确等于 before |
+| `workcase-termination-source-content-fingerprint` | `source_content_fingerprint` | string | 开始事务所绑定 before 的完整内容指纹 | 不表示重新序列化后的对象 hash | 精确匹配 `[0-9a-f]{64}` 且与请求 CAS 指纹相同；开始后不变 |
+| `workcase-termination-reason` | `reason` | string | Human 明确要求停止的当次原因与边界 | 不表示 AI 自行推定的意图 | 必填非空；开始后不变 |
+| `workcase-termination-source-refs` | `source_refs` | array | 稳定回指当次 Human 中止指令 | 不表示身份已验证或普遍授权 | 非空唯一 string 数组，必须与开始请求 authorization reference locators 精确一致；开始后不变 |
+| `workcase-termination-item-snapshots` | `item_snapshots` | array | 开始中止时每个 item 的身份、状态与已形成摘要 | 不表示运行日志或之后的善后步骤 | 非空唯一 string 数组，Code 按 item_id 排序并精确投影为 `item_id::status::summary`；summary 依次取 result/current/blocking/resume，均缺失时为 `no-runtime-summary`；开始后不变 |
+| `workcase-termination-retained-scope` | `retained_scope` | array | 明确保留的成果、修改或责任边界 | 不表示全工作树默认保留 | 出现时为非空唯一 string 数组；必须可与丢弃范围区分 |
+| `workcase-termination-discarded-scope` | `discarded_scope` | array | 已按 Human 精确范围丢弃的修改或产物及证据 | 不表示 Helper 自动删除、未执行的清理计划或整树回滚 | 只在已执行且核对精确目标后出现；非空唯一 string 数组 |
+| `workcase-termination-unverified-scope` | `unverified_scope` | array | 因中止未运行、未完成或无法确认的验证范围 | 不表示验证失败 | 出现时非空唯一 string 数组；未验证不得改写为满足或失败 |
+| `workcase-termination-relationship-impacts` | `relationship_impacts` | array | 当前 WorkCase 终止对入向 depends-on、route target 或其它已知责任的影响与处置 | 不表示其它对象已被自动修改 | 有已知影响时必填非空唯一 string 数组；入向 depends-on 未处置时禁止完成终止 |
+| `workcase-termination-quality-steps` | `quality_steps` | array | 正常结果复核、closure proposal 与 Gate2 在本次终止中的实际执行或跳过状态 | 不表示被跳过的关口已完成 | 必须逐项且仅一次使用 `independent_result_review:<disposition>`、`closure_proposal:<disposition>`、`gate_2:<disposition>`；活动善后允许 `not_reached / actual / skipped`，closed 禁止 `not_reached` |
+| `workcase-termination-cleanup-status` | `cleanup_status` | string | 专属善后当前是否仍需处理 | 不表示 WorkCase status 或物理文件状态 | 闭集 `pending`、`blocked`、`completed`；只有 `completed` 可由完成事务消费 |
+| `workcase-termination-cleanup-summary` | `cleanup_summary` | string | 善后已形成事实、未完成范围和恢复入口的当前摘要 | 不表示命令日志或未执行计划 | 必填非空；每个稳定善后检查点覆盖更新 |
 
 同一 `creation_reviews` 或 `result_reviews` 数组内，`reviewer + reviewed_at + subject_version` 三元组必须唯一，并只作为 Code 识别同一 review 事件、执行字段所有权与获授权事实更正的机械复合身份；它不表示数组顺序、审核先后、review 次数或 Reviewer 独立性。Reviewer 自有内容被获授权更正时该三元组保持不变；新的实际复核必须形成新的 `reviewed_at`，不得覆盖既有事件冒充同一次 review。
 
@@ -397,11 +415,13 @@ WorkCase 只有本文与 05.Att.01 共同定义的当前字段和结构。任何
 
 - `open`：责任可按当前 phase 继续，顶层 `blocking_summary` 禁止；
 - `blocked`：当前 phase 没有任何可继续活动，必须有顶层 `blocking_summary`；block 不自动改变 phase；
-- `closed`：Human 已依据完整关闭提案决定当前 WorkCase 不再推进，是终态，不正常重开。
+- `closed`：WorkCase 已由普通 Gate2 关闭，或由 Human 一次主动中止指令触发的专属终止善后链完成，是终态，不正常重开。
 
 全部活动期对象必须具有身份与时间、`status=open|blocked`、`goal`、`scope`、非空成功标准定义、priority、phase、正整数 plan version 和非空 work items。正常活动形状还必须有全部绑定当前计划版本的非空 `creation_reviews` 与 `execution_authorization`；Gate1 完成后必须同时有与其 baseline fingerprint 匹配的 `execution_approval`。唯一例外是 §6.3 的 `SafeConvergenceShape`：它为了不补造历史 Human 授权或独立方案复核证明，必须同时缺失 `creation_reviews`、`execution_authorization` 与 `execution_approval`，且只能沿结果链向 Gate2 收敛。顶层 `summary` 只在具有独立当前快照价值时出现。终态字段 `closure_outcome`、`disposition_summary`、`residual_responsibilities`、顶层 `spark_suggestions` 和 `routed-to` 在活动期禁止；proposal 内的同名 suggestions 不属于终态字段。
 
 closed 对象的必填集是：`object_id`、`fact_type_key`、`title`、`created_at`、`updated_at`、`status=closed`、`goal`、`scope`、`success_criterion_definitions`、`success_criterion_results`、顶层 `result_summary`、`validation_summary`、`closure_outcome` 和 `disposition_summary`。
+
+由 Human 主动中止链形成的 closed 还必须原样保留 `termination`；正常 Gate2 关闭形状禁止该字段。
 
 
 closed 禁止 `phase`、顶层 `summary`、priority、resume、waiting、blocking、plan version、work items、execution authorization、creation/result reviews、execution approval、result version、controller check 和 closure proposal。closed 没有 `phase=closed`，也没有 `closed_at`。
@@ -417,6 +437,7 @@ closed 禁止 `phase`、顶层 `summary`、priority、resume、waiting、blockin
 | `independent_reviewing` | 当前完整结果投影正在接受实际只读第二视角，或 Controller 正在处置该版本反馈；phase 名为稳定兼容标识，不保证实际方法必为 subagent |
 | `closure_preparing` | 当前结果已按允许的实际方法完成复核，全部 feedback 已由 Controller 处置；Controller 正基于已处置内容形成完整关闭提案 |
 | `human_closure_confirming` | 完整关闭提案已经形成且其它工作全部冻结，正在等待 Gate2 唯一关闭决定 |
+| `termination_preparing` | Human 已明确主动中止原计划；只允许盘点、保留、精确丢弃、验证、关系影响处置和终止完成，不得恢复原计划或进入正常 Gate2 |
 
 phase 是当前精确位置，不记录阶段历史、轮次或完成百分比。Reviewer conclusion 本身不自动改变 phase。
 
@@ -435,6 +456,17 @@ phase 是当前精确位置，不记录阶段历史、轮次或完成百分比�
 | `independent_reviewing` | R；`SafeConvergenceShape` F | R；`SafeConvergenceShape` F | R；`SafeConvergenceShape` F | R | C：形成中；离开到 closure 前至少一项 | F | 实际等待 Reviewer 时 R |
 | `closure_preparing` | R；`SafeConvergenceShape` F | R；`SafeConvergenceShape` F | R；`SafeConvergenceShape` F | R | R | C：只在完整时整体出现 | C：不得等待 Human |
 | `human_closure_confirming` | R；`SafeConvergenceShape` F | R；`SafeConvergenceShape` F | R；`SafeConvergenceShape` F | R | R | R | R：Gate2 判断完整关闭提案 |
+| `termination_preparing` | C：原样冻结 before 已有值 | C：原样冻结 before 已有值 | C：原样冻结 before 已有值 | C：原样冻结 before 已有结果事实 | C：原样冻结 before 已有值 | C：可原样保留但不再是关闭依据 | C：只可等待善后必需外部输入，不得等待第二 Human Gate |
+
+### 6.3.1 Human 主动中止与善后链
+
+Human 一次明确中止指令由 `begin-workcase-termination` 消费；它可从任一 `status=open|blocked` 且尚未进入 `termination_preparing` 的当前 phase 开始。开始事务使用 source content fingerprint 做 CAS，原子写入 `status=open`、`phase=termination_preparing` 与 `termination`，移除旧 `waiting_on`、`blocking_summary`、`summary` 和 `resume_from`；原执行检查点不得冒充善后恢复入口，真实善后阻塞与恢复信息只能在之后由 `update-workcase` 据实形成。起始 status/phase/fingerprint、Human 原因与引用、item 现场在之后冻结；原 goal/scope/criteria/plan/items、授权、review、已有结果和 proposal 仅作为历史现场保留，不再授权继续原计划。
+
+`update-workcase` 不得从其它 phase 进入或离开 `termination_preparing`；它只能在该 phase 内更新 status/blocking/waiting/summary/resume 与 `termination` 善后成员，其它业务字段必须冻结。文件、修改或已提交成果的物理处置由 AI 按 Human 精确范围执行；Helper 只写 WorkCase 事实。范围含混、保留与丢弃无法分离、或影响其它责任时，善后记为 blocked 并询问 Human；已提交内容只能以新 revert 处置，禁止破坏性历史回滚。
+
+`complete-workcase-termination` 只消费 `status=open` 或已解阻的 `termination_preparing` before，要求 `cleanup_status=completed`、完整 criterion results/result/validation/disposition、保留/丢弃/未验证/关系影响和质量步骤已据实收口，并在写前写后都证明无未处置入向 `depends-on`。它原子形成 `closed + termination`，不读取旧 closure proposal 作为映射依据，不消费 Gate2，不要求第二 Human 决定。`closure_outcome` 仍必须由实际 criterion results 决定；被跳过的 independent result review、closure proposal 和 Gate2 必须在 `quality_steps` 显式为 skipped，不得伪造已完成。
+
+本形状与 `SafeConvergenceShape` 互斥：后者仍是没有当前 Gate1 证明时沿正常结果链到 Gate2 的默认收敛；前者只有在 Human 明确主动中止并形成当次来源回指后才成立。正常 `close-workcase` 始终只消费 `human_closure_confirming`，不接受 `termination_preparing`。
 
 前置执行终止链只指：Gate1 未批准、全部 item 仍为 `pending` 且没有执行事实，Human 明确要求不进入执行并按当前事实收敛，由专属转换把全部 item 据实写为 `cancelled`、移除未获批的 `creation_reviews` 与 `execution_authorization` 后进入 `SafeConvergenceShape`。旧对象已有 completed/cancelled 执行事实但无可回指的当前 Gate1 证明或当前 creation review 时，也只能以精确事实迁移进入同一 `SafeConvergenceShape`，不补造 review、authorization、approval 或 source refs。
 
@@ -444,7 +476,7 @@ phase 是当前精确位置，不记录阶段历史、轮次或完成百分比�
 
 `plan_revising` 的四种结果形状还必须满足以下交叉约束：Gate1 前 approval 必须缺失，Gate1 后 approval 必须原样保留；只有 `result_version` 时，Gate1 后正常返工快照至少一项 item 非 terminal；部分或完整 projection 必须 `AllTerminal`；只有完整 projection 可同时冻结 result reviews。`SafeConvergenceShape` 不允许 `phase=plan_revising`。
 
-### 6.3.1 status 转换闭集
+### 6.3.2 status 转换闭集
 
 | from | to | 成立条件 | 同事务必须发生 |
 |---|---|---|---|
@@ -452,10 +484,11 @@ phase 是当前精确位置，不记录阶段历史、轮次或完成百分比�
 | `open` | `blocked` | 当前 phase 确实没有任何可继续活动 | phase 不变；写非空 `blocking_summary`，实际正在等待对象时写 `waiting_on`；可以同事务只把实际造成整体阻塞的 item 由 `pending` / `in_progress` 改为合法 `blocked` 快照，不得推进其它 item |
 | `blocked` | `open` | 已经取得足以解除当前整体阻塞的实际输入或能力 | phase 不变；移除 `blocking_summary`，只按当前 phase 的实际等待情况保留或移除 `waiting_on`；若解除整体阻塞同时使具体 item 可继续，可以同事务只把对应 `blocked` item 改为合法 `in_progress` 快照并重新检查其依赖，其它 item 不得推进 |
 | `open` | `closed` | `phase=human_closure_confirming` 且 §6.7、§7 `close-workcase` 全部成立 | 原子形成 closed 必填集与条件集，移除全部活动期字段 |
+| `open` | `closed` | `phase=termination_preparing` 且 §6.3.1、§7 `complete-workcase-termination` 全部成立 | 原子形成带原样 `termination` 的 closed；不消费 Gate2 |
 
 phase 变化只允许以 before/after 均为 `status=open` 执行；`blocked` 必须先在原 phase 按上表解阻，不得把解阻、方向判断和 phase 跳转隐式合并。before/after 均为 `status=blocked` 时不得推进 item、形成或改写 result projection、新增 review/resolution 或形成 proposal；除 Code 托管的 `updated_at` 外，只允许更新 `blocking_summary`、按实际等待更新/移除 `waiting_on`，以及更正不改变 lifecycle 判断对象的 `title`、priority 或 `urls`，其它顶层字段及嵌套内容全部冻结。`open → blocked` 与 `blocked → open` 仅可附带上表列明、直接建立或解除同一阻塞事实的 item 边，不得夹带其它 item、结果、review、proposal 或 phase 推进。`closed` 不得转回 `open` 或 `blocked`。未在上表出现的 status 变化全部禁止。
 
-### 6.3.2 phase 转换闭集
+### 6.3.3 phase 转换闭集
 
 本表使用以下确定性谓词：
 
@@ -707,7 +740,7 @@ WorkCase 的创建、读取、更新和更正都复用 05 的当前事实源选�
 - proposal/terminal 分离，suggestion 局部引用与精确映射；
 - route_existing target fingerprints、closed 白名单和关系图约束。
 
-WorkCase 的全部活动期写入必须使用 `update-workcase`；关闭必须使用 `close-workcase`；closed 更正必须使用 `correct-closed-workcase`。通用 `update-fact-object` 不接受 WorkCase，不得借完整 after 绕过字段所有权、版本失效、关闭映射或终态更正边界。Human 决定作为受控操作输入被消费，不持久化 `closure_approval` 或证明收据。
+WorkCase 的普通活动期写入必须使用 `update-workcase`；Human 主动中止的开始与完成分别必须使用 `begin-workcase-termination` 与 `complete-workcase-termination`；正常 Gate2 关闭必须使用 `close-workcase`；closed 更正必须使用 `correct-closed-workcase`。通用 `update-fact-object` 不接受 WorkCase，不得借完整 after 绕过字段所有权、版本失效、关闭映射、中止事务或终态更正边界。Human 决定作为受控操作输入被消费，不持久化 `closure_approval` 或证明收据。
 
 ### Helper 公开操作
 
@@ -715,6 +748,8 @@ WorkCase 的全部活动期写入必须使用 `update-workcase`；关闭必须�
 |---|---|---|---|---|
 | `prepare-closed-workcase-candidate` | 从刚读取的 Gate2 source 快照确定性投影完整非托管 closed 候选与 proposal 已保存的目标映射基础，不检查关闭授权或目标当前状态 | `read` | `workcase-fact-type::prepare-closed-workcase-candidate 输入与结果` | `workcase-fact-type::prepare-closed-workcase-candidate 输入与结果` |
 | `update-workcase` | 对一个已精确读取的活动期 WorkCase 提交完整目标 after，并按本文机械执行字段所有权、版本、失效、phase 与 CAS 检查 | `may_change_state` | `workcase-fact-type::update-workcase 输入与结果` | `workcase-fact-type::update-workcase 输入与结果` |
+| `begin-workcase-termination` | 消费 Human 当次明确中止指令与 source CAS，原子冻结原计划并进入唯一善后 phase | `may_change_state` | `workcase-fact-type::begin-workcase-termination 输入与结果` | `workcase-fact-type::begin-workcase-termination 输入与结果` |
+| `complete-workcase-termination` | 在善后、结果与关系影响已收口后，无第二 Human Gate 原子形成带 termination 的 closed | `may_change_state` | `workcase-fact-type::complete-workcase-termination 输入与结果` | `workcase-fact-type::complete-workcase-termination 输入与结果` |
 | `close-workcase` | 消费完整活动期 before、Human 当次关闭决定和目标指纹，原子形成 closed 白名单并回读 | `may_change_state` | `workcase-fact-type::close-workcase 输入与结果` | `workcase-fact-type::close-workcase 输入与结果` |
 | `correct-closed-workcase` | 对一个 closed WorkCase 提交完整更正 after，并在需要时消费新 Human 决定与全部 after route target 指纹 | `may_change_state` | `workcase-fact-type::correct-closed-workcase 输入与结果` | `workcase-fact-type::correct-closed-workcase 输入与结果` |
 
@@ -740,6 +775,14 @@ WorkCase 的全部活动期写入必须使用 `update-workcase`；关闭必须�
 - `update-workcase` 的 before 与 after 都不得为 `status=closed`；活动期 before 要形成 closed 必须改用 `close-workcase`，已经 closed 的 before 要更正必须改用 `correct-closed-workcase`；
 - 成功与 `no_change` 的结果完整复用 05 §11.7，不新增审核、批准、过程历史或证明 receipt。调用方需要当前对象时使用返回的回读对象或再次精确读取。
 
+### begin-workcase-termination 输入与结果
+
+本操作复用 `update-workcase` 的 `fact_ref`、`expected_content_fingerprint`、完整非托管 `fact_object`、CAS、原子替换、写后回读与完整性审计，并额外要求非空 Human `authorization_reference`。before 必须是任一尚未进入 `termination_preparing` 的 mechanically valid 活动 WorkCase；after 必须为 `phase=termination_preparing`、包含与 before/CAS/Human locators 精确一致的初始 `termination`，并冻结除 status/phase/waiting/summary/resume/blocking/termination/change-log 外的全部业务字段。无来源、指纹漂移、现场不一致或任一写入失败时零写入。成功只改变 WorkCase 事实，不执行任何项目文件清理。
+
+### complete-workcase-termination 输入与结果
+
+本操作复用同一完整 after/CAS/原子写后回读事务，但禁止非空 `authorization_reference`。before 必须是 `status=open, phase=termination_preparing`，`termination.cleanup_status=completed`；after 必须为无 phase 的 closed 白名单，原样保留 goal/scope/criteria、`termination` 及既有 `contributed-to` / `related-to`，据实提交完整 criterion results/result/validation/outcome/disposition，移除活动期 `depends-on`，且不带正常 closure proposal/reviews/approval/plan/items。终止完成不得新建 `routed-to`；需要后续承接时只据实保存在 termination relationship impacts 与终态处置中，由新的独立责任另行建立关系。操作在写前写后完整扫描入向 `depends-on`；未处置影响、关系扫描不可用、结果分类不一致或回读失败时零写入或执行已有可审计条件回滚。它不消费 Gate2，不持久化新 Human approval，也不自动修改其它对象。
+
 ### close-workcase 输入与结果
 
 本操作复用 05 §11.7 的共同参数与结果形状、§11.8 的共享事务，并把 `fact_object` 收紧为完整 closed 目标 after：
@@ -755,7 +798,7 @@ WorkCase 的全部活动期写入必须使用 `update-workcase`；关闭必须�
 
 本操作复用 05 §11.7 的共同参数与结果形状、§11.8 的共享事务，并在领域 `arguments` 中追加必填 `route_target_fingerprints` array 与必填 `independent_review_reference` object-or-null：
 
-- before 必须是 mechanically valid 的 closed WorkCase，after 必须仍完全满足 §6.1 closed 必填集、条件集与禁止集，并在已有 `change_log` 上严格追加本次终态更正流水；缺失历史的 legacy closed WorkCase 不得由本操作补写。status 不变，不重开 phase 或补造活动期记录。invalid、unavailable、not-found 或只能解析部分字段的 before 一律拒绝且零写入；本操作不提供旧形状转换或 invalid 记录修复入口；
+- before 必须是 mechanically valid 的 closed WorkCase，after 必须仍完全满足 §6.1 closed 必填集、条件集与禁止集，并在已有 `change_log` 上严格追加本次终态更正流水；缺失历史的 legacy closed WorkCase 不得由本操作补写。status 不变，不重开 phase 或补造活动期记录；`termination` 的出现性与完整值必须原样保持，禁止把普通 Gate2 关闭与 Human 主动终止关闭互相改写。invalid、unavailable、not-found 或只能解析部分字段的 before 一律拒绝且零写入；本操作不提供旧形状转换或 invalid 记录修复入口；
 - 更正只能修复原关闭时已经成立但被记错或遗漏的事实；不得把关闭后才出现的新目标、新责任、新验收边界、target 后续进展或事后方向变化写成原关闭时的事实。新责任必须建立新 WorkCase，必要时由当前 disposition、`routed-to` 链或新对象承接；
 - `route_target_fingerprints[]` 成员字段闭集为 `target` 和 `content_fingerprint`；`target` 使用 05 稳定三元组，`content_fingerprint` 原样复用该 target 当次 `read-fact-objects` 的完整载体 bytes 指纹；数组必须按目标去重，并与 after 全部 `routed-to` targets 精确相等，没有 target 时为空数组；
 - `independent_review_reference` 非空时精确复用 04.Att.01 的单个“来源回指字段” object，不新建裸 string 引用形状；它只定位当次实际独立复核输入，不因存在就证明 Reviewer 独立或结论正确；
@@ -899,6 +942,7 @@ WorkCase 的 AI 交还、Helper 读取结果和 Web Human-facing 呈现共用一
 | `open` / `independent_reviewing` | `independent_reviewing` | `independent_result_review_in_progress` | `complete_independent_result_review` | `progressing` | `independent_review` |
 | `open` / `closure_preparing` | `closure_preparing` | `closure_proposal_preparing` | `form_closure_proposal` | `progressing` | `controller_synthesis` |
 | `open` / `human_closure_confirming` | `human_closure_confirming` | `gate2_waiting` | `human_gate_2` | `closure_confirmation` | `null` |
+| `open` / `termination_preparing` | `termination_preparing` | `termination_cleanup_in_progress` | `termination_cleanup` | `termination_cleanup` | `null` |
 | `closed` / phase 省略 | `closed` | `closed` | `none` | `closed` | `null` |
 
 `status=blocked` 是活动期 phase 之上的阻塞覆盖层，不改变基表中的 `lifecycle_position`、`next_required_control_step`、`progress_group` 或 `progress_step`，但 `blocking_overlay` 必须为 `true`，并必须同时呈现实际 `blocking_summary`。除 `human_closure_confirming` 外，其 `handoff_narrative_key` 固定为 `blocked_at_current_position`；`blocked` / `human_closure_confirming` 固定为 `gate2_position_blocked`，只能说明所处位置及仍有阻塞，不能表达关闭材料已可立即确认、仅剩 Gate 2 或等待 Gate 2。基表中非 blocked 行的 `blocking_overlay` 为 `false`。
@@ -949,7 +993,7 @@ Code 不能判断：
 
 当前契约的最低测试必须覆盖：
 
-1. open/blocked 与七个 active phase 的全部合法/非法 presence 组合、status 转换闭集、`open → blocked` / `blocked → open` 可附带的唯一 item 边及夹带其它推进的拒绝、before/after 均 blocked 时不得推进的边界、全部列明及未列明 phase 边，以及 closed 必填/条件/禁止集；
+1. open/blocked 与八个 active phase 的全部合法/非法 presence 组合、status 转换闭集、`open → blocked` / `blocked → open` 可附带的唯一 item 边及夹带其它推进的拒绝、before/after 均 blocked 时不得推进的边界、全部列明及未列明 phase 边，以及 closed 必填/条件/禁止集；
 2. 受控创建、Gate1 完整授权基线、真实 source refs、fingerprint、`SafeConvergenceShape` 同时禁止 creation review/authorization/approval、Gate1 后不回确认、Gate2 只关闭，以及两 Gate 之间不产生 Human waiting；
 3. 五种 item 状态的列明边与未列明边、条件字段、依赖只能由 `completed` 满足、缺失/自指/成环、Controller 返工重开、terminal 分类更正、`executing + AllTerminal` 拒绝、无序 item 与模板 key 成员类型/唯一性；并以“全部实现完成后安排独立结果复核”作为非法 item 反例、以“独立结果复核确认本 WorkCase 未引入来源语义削弱”作为非法 criterion 反例，检查当前规则和获批计划执行模板持续把这些责任留在 phase 链，同时不得把该契约测试表述为 Code 已能理解任意自然语言计划或成功标准；
 4. `PlanΔ` 的规范化比较、baseline 不变检查、精确 +1、fresh review 自动继续、相同计划不升版、新 item 只以 pending 建立、既有执行事实不得重置/静默删除，以及超界动作取消并进入结果链；
@@ -957,8 +1001,8 @@ Code 不能判断：
 6. Reviewer/Controller 字段所有权、同一数组 review 复合身份重复拒绝、新实际复核使用新 `reviewed_at`、同事件事实更正保持复合身份且与生命周期转换不可混用、返修期 review 冻结不可通过删除绕过版本失效；
 7. proposal/terminal 分离、四种 outcome、三种 residual disposition、两种 suggestion kind 的字段组合、suggestion 局部引用完整性、`completed` 只允许 follow-up suggestions、其它 outcome 对未满足/未验证/未完成 scope 的责任处置、proposal 与 terminal 精确映射、Gate2 route target 漂移后零写入且不退回，以及专属原子关闭；
 9. `correct-closed-workcase` 的 closed before/after、after 全部 route target 指纹精确集合与重读、新增与未变 target 的不同状态条件、实质更正的 Human Gate 与独立复核引用、非实质更正的引用空值、终态责任覆盖，以及因后来事实回溯改写原关闭历史被拒绝；
-10. 未登记字段、半成品结构、空占位、日志/命令/推理字段，以及通用 update 读写 WorkCase、活动期 update 形成 closed、close 更正 closed 均被拒绝；三个 WorkCase 专属操作对 invalid、unavailable、not-found 或只能解析部分字段的 before 必须正向覆盖零写入拒绝，不建立旧形状转换或 invalid 修复正例；
-11. 渐进式召回的触发语义、F1/F2 字段闭集与 coverage、active/closed 默认范围、F3 按场景展开、四个 Web 分组的确定性派生，以及派生信息不写回事实源。
+10. 未登记字段、半成品结构、空占位、日志/命令/推理字段，以及通用 update 读写 WorkCase、活动期 update 形成 closed、close 更正 closed 均被拒绝；五个 WorkCase 专属操作对 invalid、unavailable、not-found 或只能解析部分字段的 before 必须正向覆盖零写入拒绝，不建立旧形状转换或 invalid 修复正例；
+11. 渐进式召回的触发语义、F1/F2 字段闭集与 coverage、active/closed 默认范围、F3 按场景展开、五个 Web 分组的确定性派生，以及派生信息不写回事实源。
 
 测试只针对这份当前契约，不建立历史 profile 或兼容读取；§7.3.1 的一次性迁移必须另有精确 ID/fingerprint、正常形状与 SafeConvergenceShape 分流、零写入/回滚和入口移除测试，迁移交付完成后随入口一起删除。
 

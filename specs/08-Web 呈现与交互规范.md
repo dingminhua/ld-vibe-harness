@@ -240,12 +240,13 @@ WorkCase 列表中的外部 Card 直接服务 Human 对当前工作责任的定�
 |---|---|---|
 | `plan_confirmation` | 方案待确认 | 正式 WorkCase 已创建，等待 Human 判断是否执行当前计划 |
 | `progressing` | 推进中 | 21 §9.3 投影为 `progressing`；实际存在的 Human 等待或责任阻塞另行呈现，不改变进展分组 |
+| `termination_cleanup` | 终止善后中 | Human 已明确主动中止原计划；只显示专属善后事实与实际阻塞，不进入普通四步结果轨迹或 Gate2 |
 | `closure_confirmation` | 关闭待确认 | 仅 21 §9.3 的非 blocked `gate2_waiting` 投影使用该显示词；blocked 时结构分组仍保留，但可见标签必须改为“关闭位置受阻”或等义 blocker-qualified 文案 |
-| `closed` | 已关闭 | Human 已依据完整关闭提案决定停止推进并接受相应责任处置，WorkCase 已进入终态 |
+| `closed` | 已关闭 | Human 已依据完整关闭提案完成普通 Gate2，或 Human 主动中止后的专属善后事务已经完成，WorkCase 已进入终态 |
 
-每张 WorkCase 外部 Card 必须直接、可识别地显示其当前 `progress_group`，不能只在列表筛选、分组标题或 Dashboard 汇总中显示。`blocking_overlay=true` 时必须使用 `handoff_narrative_key` 的 blocker-qualified 可见标签覆盖普通分组显示词：结构化 `progress_group` 继续用于筛选和聚合，但 Card 不得显示会产生 ready 含义的普通标签；其中 `gate2_position_blocked` 显示“关闭位置受阻”或等义文案，不能显示“关闭待确认”。Card 不得把来源 phase 的精确名称另列为与四个进展分组同级的主状态；处于 `progressing` 时，在“推进中”之下补充当前 `progress_step`，或按本节显示轨迹外“方案修订中”。
+每张 WorkCase 外部 Card 必须直接、可识别地显示其当前 `progress_group`，不能只在列表筛选、分组标题或 Dashboard 汇总中显示。`blocking_overlay=true` 时必须使用 `handoff_narrative_key` 的 blocker-qualified 可见标签覆盖普通分组显示词：结构化 `progress_group` 继续用于筛选和聚合，但 Card 不得显示会产生 ready 含义的普通标签；其中 `gate2_position_blocked` 显示“关闭位置受阻”或等义文案，不能显示“关闭待确认”。Card 不得把来源 phase 的精确名称另列为与五个进展分组同级的主状态；处于 `progressing` 时，在“推进中”之下补充当前 `progress_step`，或按本节显示轨迹外“方案修订中”。
 
-resolved 投影的 `progress_group=progressing` 且 `progress_step` 非 null 时，必须使用以下推进环节之一；`progress_step=null` 与其它三个进展分组不显示推进环节：
+resolved 投影的 `progress_group=progressing` 且 `progress_step` 非 null 时，必须使用以下推进环节之一；`progress_step=null` 与其它四个进展分组不显示推进环节：
 
 | `progress_step` | 中文显示 | 显示用途 |
 |---|---|---|
@@ -254,9 +255,9 @@ resolved 投影的 `progress_group=progressing` 且 `progress_step` 非 null 时
 | `independent_review` | 结果复核 | 当前结果的实际 Reviewer 第二视角；稳定键不证明实际方法为 subagent 或执行环境独立 |
 | `controller_synthesis` | 主控收敛 | 关闭提案形成 |
 
-确定性 `status + phase` 映射、阻塞覆盖层、叙述 key 和结构上下一必经控制步骤的闭集只见 21 §9.3，本节不重复。`lifecycle_position=plan_revising` 投影为“推进中”但省略 `progress_step`，Card 显示轨迹外内部位置“方案修订中”。创建前计划形成与 creation review 尚未产生正式 WorkCase，不得投影为外部 WorkCase Card、进展分组或推进环节。所有 `status=blocked` Card，包括处于 `human_closure_confirming` 位置的 Card，都必须在保留投影位置时另行清楚呈现实际 `blocking_summary`；不得把 blocked 改成第五个进展分组，不得用分组掩盖阻塞，也不得显示“关闭待确认”“等待 Gate 2”“仅剩关闭确认”或等义 readiness 结论。unresolved 投影同样不得猜测相邻阶段、进展分组或上述结论。
+确定性 `status + phase` 映射、阻塞覆盖层、叙述 key 和结构上下一必经控制步骤的闭集只见 21 §9.3，本节不重复。`lifecycle_position=plan_revising` 投影为“推进中”但省略 `progress_step`，Card 显示轨迹外内部位置“方案修订中”；`lifecycle_position=termination_preparing` 投影为“终止善后中”且同样省略 `progress_step`，只显示 `termination_cleanup` 下一控制动作。创建前计划形成与 creation review 尚未产生正式 WorkCase，不得投影为外部 WorkCase Card、进展分组或推进环节。所有 `status=blocked` Card，包括处于 `human_closure_confirming` 或 `termination_preparing` 位置的 Card，都必须在保留投影位置时另行清楚呈现实际 `blocking_summary`；不得把 blocked 另建成进展分组，不得用分组掩盖阻塞，也不得显示“关闭待确认”“等待 Gate 2”“仅剩关闭确认”或等义 readiness 结论。unresolved 投影同样不得猜测相邻阶段、进展分组或上述结论。
 
-WorkCase 列表筛选、Dashboard 聚合或其它以外部 Card 为成员的 Human-facing 分组如果表达工作当前进展，必须使用四个 `progress_group`，并明确它是“进展分组”而非生命周期分类；需要说明推进内部位置时再使用四个 `progress_step`。Dashboard 的 WorkCase 聚合键必须命名为 `byProgressGroup`，其条目必须以 `progress_group` 承载这四个值，不得把派生分组写入名为 `status` 的字段，也不得再输出原始 phase、历史显示状态或另一套 Dashboard 分组。如 Dashboard 确有消费实际事实责任状态的需要，必须另以 `source_status` 原样承载，不能用它替代 `progress_group`；两者仍须保留到来源对象和原始 phase 的读取入口，不得把聚合数量表达为事实源自有计数。
+WorkCase 列表筛选、Dashboard 聚合或其它以外部 Card 为成员的 Human-facing 分组如果表达工作当前进展，必须使用五个 `progress_group`，并明确它是“进展分组”而非生命周期分类；只有普通结果推进内部位置使用既有四个 `progress_step`。Dashboard 的 WorkCase 聚合键必须命名为 `byProgressGroup`，其条目必须以 `progress_group` 承载这五个值，不得把派生分组写入名为 `status` 的字段，也不得再输出原始 phase、历史显示状态或另一套 Dashboard 分组。如 Dashboard 确有消费实际事实责任状态的需要，必须另以 `source_status` 原样承载，不能用它替代 `progress_group`；两者仍须保留到来源对象和原始 phase 的读取入口，不得把聚合数量表达为事实源自有计数。
 
 `plan_confirmation` Card 是 Gate1 的对象入口。在通用对象身份、标题和进展分组之外，**计划与授权概览区**显示以下三项 Human 阅读入口：
 
@@ -287,6 +288,8 @@ WorkCase 详情中的每项 creation review 与 result review 必须显示实际
 
 当 `waiting_on` 实际存在时，`progressing` Card 必须以与详情一致的“等待对象”标题完整显示正在等待的对象或条件；不存在时不从当前环节自动推断“等待独立复核”等文案。当 `status=blocked` 时，Card 必须在保留上述四环节及当前位置的同时，以与详情一致的“阻塞说明”标题附加完整显示顶层 `blocking_summary`；未记录阻塞原因时明确显示缺失。Card 中两类标题与详情保持同一语义色和层级关系，但使用适合 Card 的紧凑字号。等待回答“正在等什么”，阻塞回答“为什么不能继续”；两者实际同时存在时均保留，不由 Web 进行语义去重。它们都是覆盖在推进位置上的当前信息，不替代“推进中”或当前推进环节。`progressing` Card 不显示成功标准、scope、依赖、方法、完整工作项计划中的预期结果或执行细节、执行态势条、验证安排、审核记录或关闭材料；除 `item_execution` 时上述全部工作项的身份/目标/状态/阻塞、其它环节 active 项的身份/目标/状态/阻塞，以及顶层等待与阻塞外，其余工作项内容仍从同源详情读取。
 
+`termination_cleanup` Card 显示完整 goal，并直接读取 `termination.reason`、`cleanup_summary`、retained/discarded/unverified scope、relationship impacts 与 quality steps；它不显示普通四步轨迹，不把旧 work items 表达为仍待执行，也不生成 Gate2 入口。字段缺失或结构不符时显示相应信息缺失。`status=blocked` 时继续叠加顶层 `blocking_summary` 与实际 `waiting_on`。详情页以独立“终止善后”阅读节点展示完整 `termination`，包括冻结起始现场；Web 不从这些字段推定物理删除、回滚、复核或关闭已经发生。
+
 `closure_confirmation` Card 在通用对象身份、标题、进展分组和更新时间之外，正文定义以下两区：
 
 **关闭判断输入区**：回答“当前请求确认的是哪一种关闭结论与责任处置”，只显示以下 Human 关闭判断输入，全部直接读取当前 WorkCase 的 `goal` 与 `closure_proposal`：
@@ -303,9 +306,9 @@ Web 不得为上述输入重新摘要，不得从 `result_summary`、`validation
 
 `closure_confirmation` Card 不显示关闭完整性诊断，不从已退出的请求、审核、批准或时间字段推断缺失，也不把活动期过程字段当作 closed 必须保留的内容；除上述两区外，不展开成功标准结果、结果与验证、主控自检、独立结果复核或执行统计，这些内容仍从同源详情读取。只有 `handoff_narrative_key=gate2_waiting` 才使用上述 Gate 2 Card；`gate2_position_blocked` 必须改用 blocker-qualified closure-position Card，首先显示“关闭位置受阻”及完整 `blocking_summary`，可以把已读 `goal` 与 `closure_proposal` 作为来源材料继续展示，但不得显示 Gate 2 判断入口、readiness 话术或关闭操作。`status=closed` 且投影为 `closed` 足以确定“已关闭”分组；关闭决定由专属事务消费，不持久化 approval 或关闭时间收据。
 
-`closed` Card 使用与上述关闭 Card 相同的扫读结构，但从终态字段读取：总体语义块固定以“终态处置”为标题，目标来自 `goal`，处置摘要来自 `disposition_summary`。`closure_outcome` 仍按来源读取并可决定终态处置的语义色与图标，但 Card 与详情均不得在“终态处置”旁重复显示“完成”“部分完成”“未达成”或“已取消”等第二状态标签。route_existing 从 `routed-to` 与当前 target title 呈现，suggest_spark 从顶层 `spark_suggestions` 呈现，accept_stop 从 `residual_responsibilities` 呈现，三者均不反推原 proposal ID。后续贡献仍只显示 `contributed-to` Pitfall 的标题与当前状态，不提供审核控件。`related-to` 只在详情关系区呈现，不进入任一 WorkCase Card 正文。
+`closed` Card 使用与上述关闭 Card 相同的扫读结构，但从终态字段读取：总体语义块固定以“终态处置”为标题，目标来自 `goal`，处置摘要来自 `disposition_summary`。`closure_outcome` 仍按来源读取并可决定终态处置的语义色与图标，但 Card 与详情均不得在“终态处置”旁重复显示“完成”“部分完成”“未达成”或“已取消”等第二状态标签。终止关闭还必须在同一 Card 直接显示终态原样保留的 `termination` 记录，使其不能与普通 Gate2 关闭混淆；不得据此重建旧 item 轨迹。route_existing 从 `routed-to` 与当前 target title 呈现，suggest_spark 从顶层 `spark_suggestions` 呈现，accept_stop 从 `residual_responsibilities` 呈现，三者均不反推原 proposal ID。后续贡献仍只显示 `contributed-to` Pitfall 的标题与当前状态，不提供审核控件。`related-to` 只在详情关系区呈现，不进入任一 WorkCase Card 正文。
 
-本节确定 `plan_confirmation`、`progressing`、`closure_confirmation` 与 `closed` Card 的上述正文。颜色、图标和操作继续由 `web/docs/` 与实现承接，但关闭 Card 不得增加 Pitfall promote/discard 控件。WorkCase 详情页不使用进展分组或推进环节切换、隐藏、重排或另建阅读结构；所有状态复用同一详情阅读结构。详情“关闭提案”节点把 `proposed_outcome` 的紧凑分类放在“关闭提案”标题行，不在处置正文面重复显示。处于 `progressing` 时，详情“当前情况”只消费该详情载体当次形成的 `current_snapshot_projection` 来呈现与 Card 共用的四步轨道或轨迹外“方案修订中”；不得从 raw `phase` 自行重建映射，不得读取列表 DTO 的 `progress_group`、`progress_step` 或工作项计数作为详情事实，也不得把轨道位置表达为完成历史。详情中的每条成功标准必须按与工作项一致的对象语法形成独立轻量对象：标题栏显示弱化的稳定 `criterion_id` 和实际存在的三值结果状态，标准陈述作为主正文，结果摘要作为默认收起的次级内容；收起触发器必须弱于标准陈述，只保留小号文字与相邻箭头，不使用整行色块或完整边框，展开后才显示浅色内容面。工作项的预期结果、方法边界和工作项结果遵守同一轻量披露层级，不得以三个次级框压过工作项主目标。该结构不得引入工作项依赖、执行状态或顺序含义。尚未形成当前结果时只省略状态和结果摘要，不省略标准对象或生成空结果。呈现差异只由当前 `success_criterion_results` 是否实际存在决定，不得按 `phase` 推断、补写或隐藏结果。外部 Card 仍使用本节定义的紧凑圆点清单，不因详情对象化而增加标准 ID、结果或独立对象边界。`contributed-to`、`related-to` 与其它关系一样在详情关系区呈现，具体字段是否实际存在只由当前事实内容及其类型来源决定。WorkCase 的 Human 关联区必须复用其它事实对象相同的“关联”标题、目标类型分组与目标行，不得增加 WorkCase 专属标题或关系 kind 芯片；`relation_key` 仍完整保留在事实源、详情 API 与 YAML 数据中。
+本节确定 `plan_confirmation`、`progressing`、`termination_cleanup`、`closure_confirmation` 与 `closed` Card 的上述正文。颜色、图标和操作继续由 `web/docs/` 与实现承接，但关闭 Card 不得增加 Pitfall promote/discard 控件。WorkCase 详情页不使用进展分组或推进环节切换、隐藏、重排或另建阅读结构；所有状态复用同一详情阅读结构。详情“关闭提案”节点把 `proposed_outcome` 的紧凑分类放在“关闭提案”标题行，不在处置正文面重复显示。处于 `progressing` 时，详情“当前情况”只消费该详情载体当次形成的 `current_snapshot_projection` 来呈现与 Card 共用的四步轨道或轨迹外“方案修订中”；不得从 raw `phase` 自行重建映射，不得读取列表 DTO 的 `progress_group`、`progress_step` 或工作项计数作为详情事实，也不得把轨道位置表达为完成历史。详情中的每条成功标准必须按与工作项一致的对象语法形成独立轻量对象：标题栏显示弱化的稳定 `criterion_id` 和实际存在的三值结果状态，标准陈述作为主正文，结果摘要作为默认收起的次级内容；收起触发器必须弱于标准陈述，只保留小号文字与相邻箭头，不使用整行色块或完整边框，展开后才显示浅色内容面。工作项的预期结果、方法边界和工作项结果遵守同一轻量披露层级，不得以三个次级框压过工作项主目标。该结构不得引入工作项依赖、执行状态或顺序含义。尚未形成当前结果时只省略状态和结果摘要，不省略标准对象或生成空结果。呈现差异只由当前 `success_criterion_results` 是否实际存在决定，不得按 `phase` 推断、补写或隐藏结果。外部 Card 仍使用本节定义的紧凑圆点清单，不因详情对象化而增加标准 ID、结果或独立对象边界。`contributed-to`、`related-to` 与其它关系一样在详情关系区呈现，具体字段是否实际存在只由当前事实内容及其类型来源决定。WorkCase 的 Human 关联区必须复用其它事实对象相同的“关联”标题、目标类型分组与目标行，不得增加 WorkCase 专属标题或关系 kind 芯片；`relation_key` 仍完整保留在事实源、详情 API 与 YAML 数据中。
 
 WorkCase 详情 Human 阅读区不显示 `work_items[].depends_on`。该字段属于机器执行约束，必须继续保留在来源事实、详情数据与 YAML 数据中；Web 不得因 Human 页面隐藏该字段而删除、改写或推断依赖，也不得把工作项渲染顺序表达为依赖顺序。
 
@@ -363,7 +366,13 @@ Web 可以对内部模块、组件、类型、数据读取、样式组织、构�
 
 Web API 或前端不得作为事实类型、字段、ID、初始状态和状态转换的定义来源。实际写入必须由具体来源定义契约并由实际 Code 能力执行，Web 只请求操作并呈现回读结果。
 
-## 10. 验证要求
+## 10. 时间展示
+
+Web API 的时间字段按 RFC 3339 instant 读取；前端展示完整时间时必须由浏览器本地时区格式化，因此历史 `+08:00` 和新写入的 UTC `Z` 只要表示同一瞬时，页面显示应一致。纯日期字段保持原日期，不进行时区换算。
+
+相对时间必须先比较解析后的瞬时值。未来时间必须明确显示“后”或英文 `in ...`，不得显示为“前/ago”，也不得伪装成“1 分钟前”。无法解析的时间显示原文或明确的未知状态，不得静默回退到当前时间。
+
+## 11. 验证要求
 
 | 验证对象 | 验证时机 | 成立条件 | 可接受依据 | 验证入口 | 可证明范围 | 未满足时的处理 |
 |---|---|---|---|---|---|---|
@@ -384,7 +393,7 @@ Web API 或前端不得作为事实类型、字段、ID、初始状态和状态�
 
 本文所涉页面、API、Web tests 与受控交互的能力声明，按 00 §9 及上表对应验证对象判断；设计资料只能支持其实际记录范围。
 
-## 11. Human Gate
+## 12. Human Gate
 
 以下事项必须进入 Human Gate：
 
@@ -398,7 +407,7 @@ Web API 或前端不得作为事实类型、字段、ID、初始状态和状态�
 
 不改变上述可观察行为的内部组件、模块、类型、数据读取或样式组织重构，不因本文单独进入 Human Gate。
 
-## 12. Stop Conditions
+## 13. Stop Conditions
 
 出现以下任一情况时，必须暂停受影响的 Web 呈现、交互或符合性声明：
 
