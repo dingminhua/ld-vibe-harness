@@ -1,15 +1,14 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from copy import deepcopy
-from pathlib import Path
 
 import pytest
 
-from ldvh.facts.schema import project_fact_schemas
+from ldvh.facts.schema import FactSchema
 from ldvh.facts.validation import validate_fact_object
 from ldvh.facts.workcase_projection import approval_baseline_fingerprint
 from ldvh.facts.workcase_validation import validate_workcase_snapshot
-from ldvh.specs.repository import inspect_repository
 
 
 def _review(version: int = 1, *, feedback: bool = False) -> dict[str, object]:
@@ -204,7 +203,7 @@ def _closed() -> dict[str, object]:
 
 
 def test_workcase_review_and_approval_times_accept_arbitrary_fractional_precision(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
 ) -> None:
     fields = _complete_result("independent_reviewing")
     fields["updated_at"] = "2026-07-26T11:00:00.99999999999999999999+08:00"
@@ -215,7 +214,7 @@ def test_workcase_review_and_approval_times_accept_arbitrary_fractional_precisio
     review["reviewed_at"] = "2026-07-26T10:30:00.98765432109876543210+08:00"
     fields["result_reviews"] = [review]
     fields["waiting_on"] = "Waiting for the independent Reviewer."
-    schema = project_fact_schemas(inspect_repository(current_specs_repository))["workcase"]
+    schema = current_fact_schemas["workcase"]
 
     assert validate_fact_object("workcase", fields, schema) == ()
 
@@ -499,9 +498,9 @@ def test_closed_whitelist_removes_activity_and_process_fields() -> None:
 
 
 def test_schema_integration_distinguishes_unknown_fields_from_current_presence_errors(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
 ) -> None:
-    schema = project_fact_schemas(inspect_repository(current_specs_repository))["workcase"]
+    schema = current_fact_schemas["workcase"]
     fields = _human_closure_confirming()
     fields["unknown_field"] = "not registered"
     fields.pop("waiting_on")
@@ -530,11 +529,11 @@ def test_schema_integration_distinguishes_unknown_fields_from_current_presence_e
     ],
 )
 def test_current_workcase_snapshot_rejects_whitespace_only_semantic_strings(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     semantic_family: str,
     field_path: str,
 ) -> None:
-    schema = project_fact_schemas(inspect_repository(current_specs_repository))["workcase"]
+    schema = current_fact_schemas["workcase"]
     fields = _human_closure_confirming()
     blank = " \t\n "
     if semantic_family == "plan":
@@ -586,9 +585,9 @@ def test_workcase_semantic_layer_also_treats_whitespace_only_text_as_empty() -> 
 
 
 def test_snapshot_validation_preserves_meaningful_surrounding_whitespace(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
 ) -> None:
-    schema = project_fact_schemas(inspect_repository(current_specs_repository))["workcase"]
+    schema = current_fact_schemas["workcase"]
     fields = _human_closure_confirming()
     fields["goal"] = "  Keep this exact meaningful text.  "
     fields["execution_approval"]["baseline_fingerprint"] = approval_baseline_fingerprint(fields)

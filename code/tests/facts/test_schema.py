@@ -1,17 +1,16 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import replace
-from pathlib import Path
 
 from ldvh.facts.creation import schema_fingerprint
-from ldvh.facts.schema import FactSchema, project_fact_schemas
-from ldvh.specs.repository import inspect_repository
+from ldvh.facts.schema import FactSchema
 
 
 def test_projected_field_retains_definition_and_constraint_refs_and_fingerprint_covers_them(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
 ) -> None:
-    schema = project_fact_schemas(inspect_repository(current_specs_repository))["workcase"]
+    schema = current_fact_schemas["workcase"]
     resume_from = next(field for field in schema.fields if field.path == "resume_from")
 
     assert resume_from.presence == "conditional"

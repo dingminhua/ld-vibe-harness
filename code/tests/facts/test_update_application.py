@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import ast
 import subprocess
+from collections.abc import Mapping
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -11,10 +12,9 @@ from ldvh.facts import update_application
 from ldvh.facts.creation import CreationBoundary
 from ldvh.facts.models import FactIssue
 from ldvh.facts.repository import FactReadResult
-from ldvh.facts.schema import project_fact_schemas
+from ldvh.facts.schema import FactSchema
 from ldvh.facts.update_application import FactUpdateCommand, apply_fact_update
 from ldvh.filesystem import AtomicWriteResult
-from ldvh.specs.repository import inspect_repository
 
 
 def _git(project: Path, *arguments: str) -> str:
@@ -27,7 +27,7 @@ def _git(project: Path, *arguments: str) -> str:
     return result.stdout.strip()
 
 
-def _command(current_specs_repository: Path, tmp_path: Path) -> tuple[FactUpdateCommand, Path]:
+def _command(current_fact_schemas: Mapping[str, FactSchema], tmp_path: Path) -> tuple[FactUpdateCommand, Path]:
     project = tmp_path / "project"
     project.mkdir()
     _git(project, "init", "-q")
@@ -53,7 +53,7 @@ change_log:
 """,
         encoding="utf-8",
     )
-    schemas = project_fact_schemas(inspect_repository(current_specs_repository))
+    schemas = current_fact_schemas
     current = update_application._project_read(
         FactUpdateCommand(
             boundary=CreationBoundary("sample", project, common_dir),
@@ -105,10 +105,10 @@ def test_application_module_has_no_helper_dependency() -> None:
 
 
 def test_generic_application_hard_rejects_workcase(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    generic, _fact = _command(current_specs_repository, tmp_path)
+    generic, _fact = _command(current_fact_schemas, tmp_path)
     command = FactUpdateCommand(
         boundary=generic.boundary,
         fact_type_key="workcase",
@@ -128,10 +128,10 @@ def test_generic_application_hard_rejects_workcase(
 
 
 def test_application_binds_managed_timestamp_and_verifies_exact_readback(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    command, fact = _command(current_specs_repository, tmp_path)
+    command, fact = _command(current_fact_schemas, tmp_path)
 
     result = apply_fact_update(command)
 
@@ -144,11 +144,11 @@ def test_application_binds_managed_timestamp_and_verifies_exact_readback(
 
 
 def test_committed_generic_update_result_survives_coordination_release_failure(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
     monkeypatch,
 ) -> None:
-    command, fact = _command(current_specs_repository, tmp_path)
+    command, fact = _command(current_fact_schemas, tmp_path)
 
     @contextmanager
     def release_fails(*_args, **_kwargs):
@@ -170,11 +170,11 @@ def test_committed_generic_update_result_survives_coordination_release_failure(
 
 
 def test_rejected_generic_update_result_survives_coordination_release_failure(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    command, fact = _command(current_specs_repository, tmp_path)
+    command, fact = _command(current_fact_schemas, tmp_path)
     original = fact.read_bytes()
 
     @contextmanager
@@ -199,11 +199,11 @@ def test_rejected_generic_update_result_survives_coordination_release_failure(
 
 
 def test_known_uncommitted_generic_replacement_has_zero_source_writes(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
     monkeypatch,
 ) -> None:
-    command, fact = _command(current_specs_repository, tmp_path)
+    command, fact = _command(current_fact_schemas, tmp_path)
     original = fact.read_bytes()
     monkeypatch.setattr(
         update_application,
@@ -222,11 +222,11 @@ def test_known_uncommitted_generic_replacement_has_zero_source_writes(
 
 
 def test_no_change_does_not_require_successor_or_rewrite(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    command, fact = _command(current_specs_repository, tmp_path)
+    command, fact = _command(current_fact_schemas, tmp_path)
     current = update_application._project_read(command)
     assert current.fields is not None
     supplied = {key: value for key, value in current.fields.items() if key not in update_application.MANAGED_FIELDS}
@@ -262,10 +262,10 @@ def test_no_change_does_not_require_successor_or_rewrite(
 
 
 def test_open_spark_can_enter_implemented_without_a_routed_to_target(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    command, _fact = _command(current_specs_repository, tmp_path)
+    command, _fact = _command(current_fact_schemas, tmp_path)
     supplied = dict(command.supplied)
     supplied.update(
         {
@@ -297,10 +297,10 @@ def test_open_spark_can_enter_implemented_without_a_routed_to_target(
 
 
 def test_parseable_invalid_spark_can_be_repaired_to_implemented_with_exact_cas(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    command, fact = _command(current_specs_repository, tmp_path)
+    command, fact = _command(current_fact_schemas, tmp_path)
     fact.write_text(
         """object_id: spark-0001
 fact_type_key: spark
@@ -362,10 +362,10 @@ change_log:
 
 
 def test_non_successor_event_time_and_stale_fingerprint_have_zero_writes(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    command, fact = _command(current_specs_repository, tmp_path)
+    command, fact = _command(current_fact_schemas, tmp_path)
     original = fact.read_bytes()
     non_successor = FactUpdateCommand(
         boundary=command.boundary,
@@ -417,13 +417,13 @@ def test_non_successor_event_time_and_stale_fingerprint_have_zero_writes(
     ],
 )
 def test_generic_update_compares_fractional_seconds_beyond_microseconds_without_loss(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
     current_time: str,
     event_time: str,
     expected_status: str,
 ) -> None:
-    command, fact = _command(current_specs_repository, tmp_path)
+    command, fact = _command(current_fact_schemas, tmp_path)
     fact.write_text(
         fact.read_text(encoding="utf-8").replace(
             "updated_at: 2026-07-20T10:00:00+08:00",
@@ -468,11 +468,11 @@ def test_generic_update_compares_fractional_seconds_beyond_microseconds_without_
 
 
 def test_failed_exact_readback_rolls_back_only_matching_replacement(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
     monkeypatch,
 ) -> None:
-    command, fact = _command(current_specs_repository, tmp_path)
+    command, fact = _command(current_fact_schemas, tmp_path)
     original = fact.read_bytes()
     actual_project_read = update_application._project_read
     calls = 0
@@ -503,11 +503,11 @@ def test_failed_exact_readback_rolls_back_only_matching_replacement(
 
 
 def test_failed_generic_rollback_fresh_reads_the_actual_external_residual(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
     monkeypatch,
 ) -> None:
-    command, fact = _command(current_specs_repository, tmp_path)
+    command, fact = _command(current_fact_schemas, tmp_path)
     actual_project_read = update_application._project_read
     actual_replace = update_application.atomic_replace_text_if_unchanged
     actual_lock = update_application.allocation_lock

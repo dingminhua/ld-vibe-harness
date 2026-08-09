@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import ast
 import subprocess
+from collections.abc import Mapping
 from contextlib import contextmanager
 from copy import deepcopy
 from pathlib import Path
@@ -27,9 +28,8 @@ from ldvh.facts.creation_application import (
 from ldvh.facts.models import FactIssue
 from ldvh.facts.relations import ProjectFactIndex
 from ldvh.facts.repository import FactReadResult
-from ldvh.facts.schema import project_fact_schemas
+from ldvh.facts.schema import FactSchema
 from ldvh.filesystem import AtomicWriteResult
-from ldvh.specs.repository import inspect_repository
 
 
 def _git(project: Path, *arguments: str) -> str:
@@ -42,12 +42,12 @@ def _git(project: Path, *arguments: str) -> str:
     return result.stdout.strip()
 
 
-def _command(current_specs_repository: Path, tmp_path: Path) -> FactCreationCommand:
+def _command(current_fact_schemas: Mapping[str, FactSchema], tmp_path: Path) -> FactCreationCommand:
     project = tmp_path / "project"
     project.mkdir()
     _git(project, "init", "-q")
     common_dir = Path(_git(project, "rev-parse", "--path-format=absolute", "--git-common-dir"))
-    schemas = project_fact_schemas(inspect_repository(current_specs_repository))
+    schemas = current_fact_schemas
     return FactCreationCommand(
         boundary=CreationBoundary("sample", project, common_dir),
         fact_type_key="spark",
@@ -72,8 +72,8 @@ def _command(current_specs_repository: Path, tmp_path: Path) -> FactCreationComm
     )
 
 
-def _workcase_command(current_specs_repository: Path, tmp_path: Path) -> FactCreationCommand:
-    base = _command(current_specs_repository, tmp_path)
+def _workcase_command(current_fact_schemas: Mapping[str, FactSchema], tmp_path: Path) -> FactCreationCommand:
+    base = _command(current_fact_schemas, tmp_path)
     supplied = {
         "title": "Initial WorkCase boundary",
         "status": "open",
@@ -218,10 +218,10 @@ def test_application_module_has_no_helper_dependency() -> None:
 
 
 def test_workcase_creation_preflight_rejects_noninitial_phase_approval_and_plan_version(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    command = _workcase_command(current_specs_repository, tmp_path)
+    command = _workcase_command(current_fact_schemas, tmp_path)
     command.supplied.update(
         {
             "phase": "executing",
@@ -242,7 +242,7 @@ def test_workcase_creation_preflight_rejects_noninitial_phase_approval_and_plan_
 
     second_root = tmp_path / "second"
     second_root.mkdir()
-    revised = _workcase_command(current_specs_repository, second_root)
+    revised = _workcase_command(current_fact_schemas, second_root)
     revised.supplied["plan_version"] = 99
     revised.supplied["creation_reviews"][0]["subject_version"] = 99
     rejected = prepare_fact_creation(revised, observed_at="2026-07-26T13:00:00+08:00")
@@ -252,10 +252,10 @@ def test_workcase_creation_preflight_rejects_noninitial_phase_approval_and_plan_
 
 
 def test_workcase_creation_preflight_rejects_non_open_status_and_nonpending_items(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    blocked = _workcase_command(current_specs_repository, tmp_path)
+    blocked = _workcase_command(current_fact_schemas, tmp_path)
     blocked.supplied["status"] = "blocked"
     blocked.supplied["blocking_summary"] = "The responsibility cannot currently continue"
 
@@ -266,7 +266,7 @@ def test_workcase_creation_preflight_rejects_non_open_status_and_nonpending_item
 
     second_root = tmp_path / "second"
     second_root.mkdir()
-    advancing = _workcase_command(current_specs_repository, second_root)
+    advancing = _workcase_command(current_fact_schemas, second_root)
     advancing.supplied["work_items"][0].update(
         {
             "status": "in_progress",
@@ -285,10 +285,10 @@ def test_workcase_creation_preflight_rejects_non_open_status_and_nonpending_item
 
 
 def test_workcase_creation_rejects_whitespace_only_text_without_writing(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    command = _workcase_command(current_specs_repository, tmp_path)
+    command = _workcase_command(current_fact_schemas, tmp_path)
     command.supplied["goal"] = " \t\n "
     candidate = command.boundary.worktree_root / LAYOUTS["workcase"].canonical_path("workcase-0001")
 
@@ -319,12 +319,12 @@ def test_workcase_creation_rejects_whitespace_only_text_without_writing(
     ],
 )
 def test_workcase_creation_requires_current_quality_gate_authorization(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
     mutate: object,
     expected_path: str,
 ) -> None:
-    command = _workcase_command(current_specs_repository, tmp_path)
+    command = _workcase_command(current_fact_schemas, tmp_path)
     mutate(command.supplied)  # type: ignore[operator]
 
     rejected = prepare_fact_creation(command, observed_at="2026-07-26T13:00:00+08:00")
@@ -336,10 +336,10 @@ def test_workcase_creation_requires_current_quality_gate_authorization(
 
 
 def test_workcase_creation_accepts_explicit_pre_gate_same_ai_bootstrap(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    command = _workcase_command(current_specs_repository, tmp_path)
+    command = _workcase_command(current_fact_schemas, tmp_path)
     command.supplied["execution_authorization"]["capability_limitations"] = [
         {
             "limitation_id": "limitation-subagent-review",
@@ -372,10 +372,10 @@ def test_workcase_creation_accepts_explicit_pre_gate_same_ai_bootstrap(
 
 
 def test_workcase_creation_rejects_a_locally_valid_target_with_a_missing_deep_dependency(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    command = _workcase_command(current_specs_repository, tmp_path)
+    command = _workcase_command(current_fact_schemas, tmp_path)
     intermediate = _write_existing_workcase(
         command,
         "workcase-0002",
@@ -395,10 +395,10 @@ def test_workcase_creation_rejects_a_locally_valid_target_with_a_missing_deep_de
 
 
 def test_unrelated_invalid_workcase_chain_does_not_block_spark_creation(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    workcase = _workcase_command(current_specs_repository, tmp_path)
+    workcase = _workcase_command(current_fact_schemas, tmp_path)
     _write_existing_workcase(
         workcase,
         "workcase-0002",
@@ -434,10 +434,10 @@ def test_unrelated_invalid_workcase_chain_does_not_block_spark_creation(
 
 
 def test_prepared_creation_can_run_under_one_external_allocation_lock(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    command = _command(current_specs_repository, tmp_path)
+    command = _command(current_fact_schemas, tmp_path)
     prepared = prepare_fact_creation(command)
 
     assert isinstance(prepared, PreparedFactCreation)
@@ -452,11 +452,11 @@ def test_prepared_creation_can_run_under_one_external_allocation_lock(
 
 
 def test_public_create_rechecks_final_preflight_after_counter_commit(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    command = _command(current_specs_repository, tmp_path)
+    command = _command(current_fact_schemas, tmp_path)
     actual_preflight = creation_application._preflight
     observed_counters: list[tuple[str, ...]] = []
 
@@ -478,11 +478,11 @@ def test_public_create_rechecks_final_preflight_after_counter_commit(
 
 
 def test_created_result_survives_coordination_release_failure(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    command = _command(current_specs_repository, tmp_path)
+    command = _command(current_fact_schemas, tmp_path)
     actual_lock = creation_application.allocation_lock
 
     @contextmanager
@@ -506,11 +506,11 @@ def test_created_result_survives_coordination_release_failure(
 
 
 def test_non_success_creation_result_survives_coordination_release_failure(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    command = _command(current_specs_repository, tmp_path)
+    command = _command(current_fact_schemas, tmp_path)
 
     @contextmanager
     def release_fails(*_args, **_kwargs):
@@ -538,10 +538,10 @@ def test_non_success_creation_result_survives_coordination_release_failure(
 
 
 def test_prepared_creation_defensively_freezes_nested_supplied_values(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    command = _command(current_specs_repository, tmp_path)
+    command = _command(current_fact_schemas, tmp_path)
     command.supplied["urls"] = [
         {"ref": "https://example.invalid/original", "title": "Original", "summary": "Test material."}
     ]
@@ -560,10 +560,10 @@ def test_prepared_creation_defensively_freezes_nested_supplied_values(
 
 
 def test_caller_supplied_observation_time_binds_both_managed_timestamps(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    command = _command(current_specs_repository, tmp_path)
+    command = _command(current_fact_schemas, tmp_path)
     observed_at = "2026-07-15T16:00:00+08:00"
 
     prepared = prepare_fact_creation(command, observed_at=observed_at)
@@ -579,10 +579,10 @@ def test_caller_supplied_observation_time_binds_both_managed_timestamps(
 
 
 def test_candidate_rejection_has_no_allocator_or_fact_side_effect(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    command = _command(current_specs_repository, tmp_path)
+    command = _command(current_fact_schemas, tmp_path)
     command.supplied.pop("title")
 
     result = prepare_fact_creation(command)
@@ -594,11 +594,11 @@ def test_candidate_rejection_has_no_allocator_or_fact_side_effect(
 
 
 def test_missing_stabilized_candidate_result_is_reported_as_a_check_gap(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    command = _command(current_specs_repository, tmp_path)
+    command = _command(current_fact_schemas, tmp_path)
 
     def omit_candidate(
         index: ProjectFactIndex,
@@ -617,11 +617,11 @@ def test_missing_stabilized_candidate_result_is_reported_as_a_check_gap(
 
 
 def test_durability_rejection_precedes_allocation_lock(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
     monkeypatch,
 ) -> None:
-    command = _command(current_specs_repository, tmp_path)
+    command = _command(current_fact_schemas, tmp_path)
     monkeypatch.setattr("ldvh.facts.creation_application.native_atomic_fact_writes_supported", lambda: False)
 
     result = prepare_fact_creation(command)
@@ -633,11 +633,11 @@ def test_durability_rejection_precedes_allocation_lock(
 
 
 def test_locked_creation_stops_after_one_known_target_conflict(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
     monkeypatch,
 ) -> None:
-    command = _command(current_specs_repository, tmp_path)
+    command = _command(current_fact_schemas, tmp_path)
     prepared = prepare_fact_creation(command)
     assert isinstance(prepared, PreparedFactCreation)
     target_attempts = 0
@@ -675,13 +675,13 @@ def test_locked_creation_stops_after_one_known_target_conflict(
     [("stale", "allocation_stale"), ("unavailable", "allocation_unavailable")],
 )
 def test_pre_atomic_counter_recheck_failure_does_not_form_an_attempted_identity(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     counter_status: str,
     expected_status: str,
 ) -> None:
-    command = _command(current_specs_repository, tmp_path)
+    command = _command(current_fact_schemas, tmp_path)
     target_create_called = False
 
     def pre_atomic_failure(*_args, **_kwargs) -> AllocationCommitResult:
@@ -706,11 +706,11 @@ def test_pre_atomic_counter_recheck_failure_does_not_form_an_attempted_identity(
 
 
 def test_allocator_commit_uncertainty_preserves_attempted_identity_without_starting_target_create(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    command = _command(current_specs_repository, tmp_path)
+    command = _command(current_fact_schemas, tmp_path)
     counter_write = AtomicWriteResult.uncertain()
     expected_allocation = AllocationCommitResult("uncertain", None, counter_write)
     target_create_called = False
@@ -741,11 +741,11 @@ def test_allocator_commit_uncertainty_preserves_attempted_identity_without_start
 
 
 def test_target_namespace_uncertainty_preserves_allocator_and_fresh_target_residual(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    command = _command(current_specs_repository, tmp_path)
+    command = _command(current_fact_schemas, tmp_path)
 
     def uncertain_target_create(root: Path, layout, object_id: str, text: str) -> AtomicWriteResult:
         target = root / layout.canonical_path(object_id)
@@ -771,11 +771,11 @@ def test_target_namespace_uncertainty_preserves_allocator_and_fresh_target_resid
 
 
 def test_target_known_noncommit_preserves_consumed_allocator_and_fresh_not_found_residual(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    command = _command(current_specs_repository, tmp_path)
+    command = _command(current_fact_schemas, tmp_path)
     monkeypatch.setattr(
         creation_application,
         "atomic_create_text",
@@ -796,11 +796,11 @@ def test_target_known_noncommit_preserves_consumed_allocator_and_fresh_not_found
 
 
 def test_failed_creation_rollback_fresh_reads_the_actual_external_residual(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    command = _command(current_specs_repository, tmp_path)
+    command = _command(current_fact_schemas, tmp_path)
     actual_project_read = creation_application._project_read
     actual_lock = creation_application.allocation_lock
     read_calls = 0
@@ -858,13 +858,13 @@ def test_failed_creation_rollback_fresh_reads_the_actual_external_residual(
     ],
 )
 def test_failed_creation_rollback_core_preserves_each_actual_residual_class(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     residual_kind: str,
     expected_status: str,
 ) -> None:
-    command = _command(current_specs_repository, tmp_path)
+    command = _command(current_fact_schemas, tmp_path)
     actual_project_read = creation_application._project_read
     read_calls = 0
 

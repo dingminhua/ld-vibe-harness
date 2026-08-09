@@ -2,14 +2,18 @@ from __future__ import annotations
 
 import shutil
 import subprocess
+from collections.abc import Mapping
 from datetime import datetime
 from pathlib import Path
+from types import MappingProxyType
 from typing import Any
 
 import pytest
 
 import ldvh
+from ldvh.facts.schema import FactSchema, project_fact_schemas
 from ldvh.helper.rule_source import RuleSourceResult, inspect_colocated_rule_source
+from ldvh.specs.repository import inspect_repository
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
@@ -48,6 +52,16 @@ def use_current_rule_source_snapshot(
         "ldvh.helper.service.inspect_colocated_rule_source",
         lambda _: current_rule_source_snapshot,
     )
+
+
+@pytest.fixture(scope="session")
+def current_fact_schemas() -> Mapping[str, FactSchema]:
+    """Project the current repository schemas once for read-only unit tests."""
+
+    repository = inspect_repository(PROJECT_ROOT)
+    assert not repository.issues
+    assert not repository.incomplete_scope
+    return MappingProxyType(project_fact_schemas(repository))
 
 
 def _assert_source_reference(reference: dict[str, Any]) -> None:

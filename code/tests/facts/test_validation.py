@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from pathlib import Path
+from collections.abc import Mapping
 
 import pytest
 
-from ldvh.facts.schema import project_fact_schemas
+from ldvh.facts.schema import FactSchema
 from ldvh.facts.validation import (
     change_log_creation_issues,
     parse_rfc3339,
@@ -13,7 +13,6 @@ from ldvh.facts.validation import (
     validate_change_log_transition,
     validate_fact_object,
 )
-from ldvh.specs.repository import inspect_repository
 
 
 def _common(kind: str, object_id: str, status: str) -> dict[str, object]:
@@ -25,10 +24,6 @@ def _common(kind: str, object_id: str, status: str) -> dict[str, object]:
         "updated_at": "2026-07-14T10:00:00+08:00",
         "status": status,
     }
-
-
-def _schemas(root: Path) -> dict[str, object]:
-    return project_fact_schemas(inspect_repository(root))
 
 
 @pytest.mark.parametrize(
@@ -77,7 +72,7 @@ def test_common_timestamp_parser_rejects_noncanonical_or_invalid_components(valu
     ],
 )
 def test_all_fact_types_reject_unknown_local_offset_in_managed_timestamps(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     fact_type_key: str,
     object_id: str,
     status: str,
@@ -89,7 +84,7 @@ def test_all_fact_types_reject_unknown_local_offset_in_managed_timestamps(
     issues = validate_fact_object(
         fact_type_key,
         fields,
-        _schemas(current_specs_repository)[fact_type_key],
+        current_fact_schemas[fact_type_key],
     )
 
     invalid_time_paths = {
@@ -151,8 +146,8 @@ def test_common_timestamp_parser_compares_more_than_python_integer_digit_limit()
     assert earlier < later
 
 
-def test_urls_are_validated(current_specs_repository: Path) -> None:
-    schema = _schemas(current_specs_repository)["study"]
+def test_urls_are_validated(current_fact_schemas: Mapping[str, FactSchema]) -> None:
+    schema = current_fact_schemas["study"]
     fields = {
         **_common("study", "study-0001", "active"),
         "urls": [
@@ -184,8 +179,8 @@ def test_study_creation_requires_report_metadata_but_legacy_read_does_not() -> N
     assert study_report_creation_issues({})
 
 
-def test_internal_study_uses_input_refs_and_valid_report_kind(current_specs_repository: Path) -> None:
-    schema = _schemas(current_specs_repository)["study"]
+def test_internal_study_uses_input_refs_and_valid_report_kind(current_fact_schemas: Mapping[str, FactSchema]) -> None:
+    schema = current_fact_schemas["study"]
     fields = {
         **_common("study", "study-0001", "active"),
         "report_kind": "internal_audit",
@@ -206,8 +201,8 @@ def test_internal_study_uses_input_refs_and_valid_report_kind(current_specs_repo
     assert study_report_creation_issues(fields) == ()
 
 
-def test_all_fact_types_validate_the_shared_url_member_contract(current_specs_repository: Path) -> None:
-    schema = _schemas(current_specs_repository)["spark"]
+def test_all_fact_types_validate_the_shared_url_member_contract(current_fact_schemas: Mapping[str, FactSchema]) -> None:
+    schema = current_fact_schemas["spark"]
     fields = {
         **_common("spark", "spark-0001", "open"),
         "summary": "A current question.",
@@ -221,9 +216,9 @@ def test_all_fact_types_validate_the_shared_url_member_contract(current_specs_re
 
 
 def test_spark_evolution_accepts_twenty_entries_and_rejects_twenty_one(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
 ) -> None:
-    schema = _schemas(current_specs_repository)["spark"]
+    schema = current_fact_schemas["spark"]
     fields = {
         **_common("spark", "spark-0001", "open"),
         "summary": "A current bounded question.",
@@ -250,8 +245,8 @@ def test_spark_evolution_accepts_twenty_entries_and_rejects_twenty_one(
     assert any(issue.field_path == "evolution" and "最多保留 20 项" in issue.summary for issue in issues)
 
 
-def test_unregistered_reference_fields_are_rejected(current_specs_repository: Path) -> None:
-    schema = _schemas(current_specs_repository)["spark"]
+def test_unregistered_reference_fields_are_rejected(current_fact_schemas: Mapping[str, FactSchema]) -> None:
+    schema = current_fact_schemas["spark"]
     fields = {
         **_common("spark", "spark-0001", "open"),
         "summary": "A current question.",
@@ -263,8 +258,10 @@ def test_unregistered_reference_fields_are_rejected(current_specs_repository: Pa
     assert {issue.field_path for issue in issues} >= {"source_refs", "evidence_refs"}
 
 
-def test_pitfall_uses_natural_language_boundaries_without_reference_fields(current_specs_repository: Path) -> None:
-    schema = _schemas(current_specs_repository)["pitfall"]
+def test_pitfall_uses_natural_language_boundaries_without_reference_fields(
+    current_fact_schemas: Mapping[str, FactSchema],
+) -> None:
+    schema = current_fact_schemas["pitfall"]
     fields = {
         **_common("pitfall", "pitfall-0001", "active"),
         "applicability": "Only the observed local installation conditions; other environments remain unverified.",
@@ -287,8 +284,10 @@ def test_pitfall_uses_natural_language_boundaries_without_reference_fields(curre
     assert {issue.field_path for issue in issues} >= {"source_ref", "evidence_ref"}
 
 
-def test_pitfall_status_contract_has_only_draft_active_and_discarded(current_specs_repository: Path) -> None:
-    schema = _schemas(current_specs_repository)["pitfall"]
+def test_pitfall_status_contract_has_only_draft_active_and_discarded(
+    current_fact_schemas: Mapping[str, FactSchema],
+) -> None:
+    schema = current_fact_schemas["pitfall"]
     fields = {
         **_common("pitfall", "pitfall-0001", "retired"),
         "applicability": "Only the observed environment.",
@@ -306,8 +305,10 @@ def test_pitfall_status_contract_has_only_draft_active_and_discarded(current_spe
     assert any(issue.field_path == "status" and "discarded" in issue.summary for issue in issues)
 
 
-def test_adr_uses_natural_language_boundaries_without_reference_fields(current_specs_repository: Path) -> None:
-    schema = _schemas(current_specs_repository)["adr"]
+def test_adr_uses_natural_language_boundaries_without_reference_fields(
+    current_fact_schemas: Mapping[str, FactSchema],
+) -> None:
+    schema = current_fact_schemas["adr"]
     fields = {
         **_common("adr", "adr-0001", "active"),
         "decision_question": "Which bounded direction has already been selected?",
@@ -328,8 +329,8 @@ def test_adr_uses_natural_language_boundaries_without_reference_fields(current_s
     assert {issue.field_path for issue in issues} >= {"source_ref", "evidence_ref"}
 
 
-def test_relations_accept_only_key_and_target(current_specs_repository: Path) -> None:
-    schema = _schemas(current_specs_repository)["spark"]
+def test_relations_accept_only_key_and_target(current_fact_schemas: Mapping[str, FactSchema]) -> None:
+    schema = current_fact_schemas["spark"]
     fields = {
         **_common("spark", "spark-0001", "open"),
         "summary": "A current question.",
@@ -348,8 +349,10 @@ def test_relations_accept_only_key_and_target(current_specs_repository: Path) ->
     )
 
 
-def test_change_log_accepts_two_field_signatures_and_rejects_bad_order_or_shape(current_specs_repository: Path) -> None:
-    schema = _schemas(current_specs_repository)["spark"]
+def test_change_log_accepts_two_field_signatures_and_rejects_bad_order_or_shape(
+    current_fact_schemas: Mapping[str, FactSchema],
+) -> None:
+    schema = current_fact_schemas["spark"]
     fields = {
         **_common("spark", "spark-0001", "open"),
         "summary": "A current question.",

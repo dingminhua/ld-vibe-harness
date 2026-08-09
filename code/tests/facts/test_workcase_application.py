@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import ast
 import subprocess
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from contextlib import contextmanager
 from copy import deepcopy
 from dataclasses import dataclass, replace
@@ -17,12 +17,11 @@ from ldvh.facts.creation import CreationBoundary, serialize_fact_object
 from ldvh.facts.models import FactIssue, FactReference
 from ldvh.facts.relations import ProjectFactIndex, WorkCaseRouteTargetSnapshot
 from ldvh.facts.repository import read_fact_object
-from ldvh.facts.schema import FactSchema, project_fact_schemas
+from ldvh.facts.schema import FactSchema
 from ldvh.facts.update_application import MANAGED_FIELDS
 from ldvh.facts.workcase_projection import approval_baseline_fingerprint
 from ldvh.facts.workcase_update import WorkCaseWriteCommand, apply_workcase_write
 from ldvh.filesystem import AtomicWriteResult
-from ldvh.specs.repository import inspect_repository
 
 
 def _git(project: Path, *arguments: str) -> str:
@@ -38,16 +37,15 @@ def _git(project: Path, *arguments: str) -> str:
 @dataclass(frozen=True, slots=True)
 class _Project:
     boundary: CreationBoundary
-    schemas: dict[str, FactSchema]
+    schemas: Mapping[str, FactSchema]
 
 
-def _project(current_specs_repository: Path, tmp_path: Path) -> _Project:
+def _project(current_fact_schemas: Mapping[str, FactSchema], tmp_path: Path) -> _Project:
     root = tmp_path / "project"
     root.mkdir()
     _git(root, "init", "-q")
     common_dir = Path(_git(root, "rev-parse", "--path-format=absolute", "--git-common-dir"))
-    schemas = project_fact_schemas(inspect_repository(current_specs_repository))
-    return _Project(CreationBoundary("sample", root, common_dir), schemas)
+    return _Project(CreationBoundary("sample", root, common_dir), current_fact_schemas)
 
 
 def _write(project: _Project, fields: dict[str, Any]) -> Path:
@@ -400,10 +398,10 @@ def test_closed_candidate_projection_deduplicates_routes_and_separates_fingerpri
 
 
 def test_close_replaces_same_target_related_to_with_routed_to(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     target = _snapshot(project, _active("workcase-0008"))
     unrelated_target = _snapshot(project, _active("workcase-0009"))
     before = _closing("workcase-0001", outcome="partial", target=target)
@@ -552,13 +550,13 @@ def test_workcase_transaction_has_no_helper_dependency() -> None:
     ],
 )
 def test_workcase_update_compares_fractional_seconds_beyond_microseconds_without_loss(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
     current_time: str,
     event_time: str,
     expected_status: str,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     before = _active("workcase-0001")
     before["updated_at"] = current_time
     path = _write(project, before)
@@ -599,11 +597,11 @@ def test_workcase_update_compares_fractional_seconds_beyond_microseconds_without
     ],
 )
 def test_core_close_rejects_malformed_authorization_before_read_or_write(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
     authorization_reference: tuple[dict[str, Any], ...],
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     before = _closing("workcase-0001")
     path = _write(project, before)
     original = path.read_bytes()
@@ -638,13 +636,13 @@ def test_core_close_rejects_malformed_authorization_before_read_or_write(
     ],
 )
 def test_core_substantive_correction_rejects_malformed_gate_references_before_read_or_write(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
     authorization_reference: tuple[dict[str, Any], ...],
     independent_review_reference: dict[str, Any],
     expected_path: str,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     before = _closed_from(_closing("workcase-0001"))
     before["updated_at"] = "2026-07-26T12:00:00+08:00"
     path = _write(project, before)
@@ -713,12 +711,12 @@ def test_core_substantive_correction_rejects_malformed_gate_references_before_re
     ],
 )
 def test_each_substantive_closed_root_requires_review_and_human_references(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
     field_name: str,
     changed_value: object,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     before = _closed_from(_closing("workcase-0001"))
     before["updated_at"] = "2026-07-26T12:00:00+08:00"
     _write(project, before)
@@ -734,10 +732,10 @@ def test_each_substantive_closed_root_requires_review_and_human_references(
 
 
 def test_update_workcase_applies_one_full_after_and_core_managed_fields(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     before = _active("workcase-0001")
     path = _write(project, before)
     after = {**before, "title": "修正后的当前责任"}
@@ -754,10 +752,10 @@ def test_update_workcase_applies_one_full_after_and_core_managed_fields(
 
 
 def test_plan_delta_item_execution_fact_removal_without_updated_summary_has_zero_writes(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     before = _gate1_after(_active("workcase-0001"))
     before.update(
         {
@@ -801,12 +799,12 @@ def test_plan_delta_item_execution_fact_removal_without_updated_summary_has_zero
 
 @pytest.mark.parametrize("release_stage", ["unlock", "descriptor close"])
 def test_committed_workcase_result_survives_coordination_release_failure(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     release_stage: str,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     before = _active("workcase-0001")
     path = _write(project, before)
     after = {**before, "title": "已提交且回读成功的责任"}
@@ -833,11 +831,11 @@ def test_committed_workcase_result_survives_coordination_release_failure(
 
 
 def test_rejected_workcase_result_survives_coordination_release_failure(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     before = _active("workcase-0001")
     path = _write(project, before)
     original = path.read_bytes()
@@ -865,11 +863,11 @@ def test_rejected_workcase_result_survives_coordination_release_failure(
 
 
 def test_known_uncommitted_replacement_has_zero_source_writes(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     before = _active("workcase-0001")
     path = _write(project, before)
     original = path.read_bytes()
@@ -891,10 +889,10 @@ def test_known_uncommitted_replacement_has_zero_source_writes(
 
 
 def test_invalid_after_review_identity_is_rejected_without_writing(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     before = _active("workcase-0001")
     path = _write(project, before)
     after = {**before, "creation_reviews": [{**before["creation_reviews"][0], "reviewer": ["invalid"]}]}
@@ -908,10 +906,10 @@ def test_invalid_after_review_identity_is_rejected_without_writing(
 
 
 def test_result_review_rejects_creation_only_quality_gate_coverage(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     fields = _closing("workcase-0001")
     fields["result_reviews"][0]["covered_quality_gate_ids"] = ["independent-result-review"]
     _write(project, fields)
@@ -923,10 +921,10 @@ def test_result_review_rejects_creation_only_quality_gate_coverage(
 
 
 def test_update_rejects_whitespace_only_text_without_writing(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     before = _active("workcase-0001")
     path = _write(project, before)
     after = {**before, "goal": " \t\n "}
@@ -940,10 +938,10 @@ def test_update_rejects_whitespace_only_text_without_writing(
 
 
 def test_full_after_omission_is_rejected_instead_of_merged_from_before(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     before = _active("workcase-0001")
     path = _write(project, before)
     after = dict(before)
@@ -958,10 +956,10 @@ def test_full_after_omission_is_rejected_instead_of_merged_from_before(
 
 
 def test_update_checks_proposal_targets_when_forming_proposal_and_entering_human_confirmation(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     target = _snapshot(project, _active("workcase-0002", title="当前承接目标"))
     before = _preparing(
         "workcase-0001",
@@ -998,10 +996,10 @@ def test_update_checks_proposal_targets_when_forming_proposal_and_entering_human
 
 
 def test_same_phase_proposal_replacement_guard_reads_the_new_after_target(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     old_target = _snapshot(project, _active("workcase-0002", title="原提案目标"))
     new_target_fields = _active("workcase-0003", title="新提案目标")
     new_target_path = _write(project, new_target_fields)
@@ -1053,14 +1051,14 @@ def test_same_phase_proposal_replacement_guard_reads_the_new_after_target(
     ],
 )
 def test_update_proposal_target_failures_have_zero_source_writes(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     case: str,
     expected_status: str,
     summary_fragment: str | None,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     if case == "missing":
         target = WorkCaseRouteTargetSnapshot(
             FactReference("sample", "workcase", "workcase-0002"),
@@ -1148,10 +1146,10 @@ def test_update_proposal_target_failures_have_zero_source_writes(
 
 
 def test_update_proposal_target_must_be_project_relation_stable(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     target_fields = _active("workcase-0002", title="关系不稳定的承接目标")
     target_fields["relations"] = [
         {
@@ -1185,11 +1183,11 @@ def test_update_proposal_target_must_be_project_relation_stable(
 
 
 def test_update_proposal_without_routes_does_not_activate_target_guard(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     before = _preparing("workcase-0001", include_proposal=False)
     _write(project, before)
     after = _preparing("workcase-0001")
@@ -1209,10 +1207,10 @@ def test_update_proposal_without_routes_does_not_activate_target_guard(
 
 
 def test_target_drift_after_proposal_formation_rejects_human_confirmation(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     target_fields = _active("workcase-0002", title="提案形成时的承接目标")
     target = _snapshot(project, target_fields)
     before = _preparing(
@@ -1265,11 +1263,11 @@ def test_target_drift_after_proposal_formation_rejects_human_confirmation(
 
 
 def test_post_write_update_target_drift_conditionally_rolls_back_source(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     target_fields = _active("workcase-0002", title="提案承接目标")
     target_path = _write(project, target_fields)
     target_read = _read(project, "workcase-0002")
@@ -1324,10 +1322,10 @@ def test_post_write_update_target_drift_conditionally_rolls_back_source(
 
 
 def test_stale_source_fingerprint_has_zero_writes(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     before = _active("workcase-0001")
     path = _write(project, before)
     after = {**before, "title": "不会覆盖当前对象的标题"}
@@ -1358,10 +1356,10 @@ def _gate1_after(before: dict[str, Any], *, source_refs: list[str] | None = None
 
 
 def test_gate1_approval_requires_matching_request_authorization_and_readback(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     before = _active("workcase-0001")
     _write(project, before)
     after = _gate1_after(before)
@@ -1382,10 +1380,10 @@ def test_gate1_approval_requires_matching_request_authorization_and_readback(
 
 
 def test_gate1_freezes_quality_gate_declaration_even_if_baseline_is_recomputed(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     before = _active("workcase-0001")
     _write(project, before)
     approved = _gate1_after(before)
@@ -1416,13 +1414,13 @@ def test_gate1_freezes_quality_gate_declaration_even_if_baseline_is_recomputed(
     ],
 )
 def test_gate1_approval_missing_or_mismatched_proof_has_zero_writes(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
     authorization_reference: tuple[dict[str, Any], ...],
     source_refs: list[str],
     expected_path: str,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     before = _active("workcase-0001")
     path = _write(project, before)
     original = path.read_bytes()
@@ -1469,12 +1467,12 @@ def test_gate1_approval_missing_or_mismatched_proof_has_zero_writes(
     ],
 )
 def test_gate1_rejects_incomplete_or_reused_quality_gate_authorization_with_zero_writes(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
     mutate: object,
     expected_path: str,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     before = _active("workcase-0001")
     path = _write(project, before)
     original = path.read_bytes()
@@ -1491,10 +1489,10 @@ def test_gate1_rejects_incomplete_or_reused_quality_gate_authorization_with_zero
 
 
 def test_terminal_legacy_workcase_cannot_bypass_quality_gate_by_entering_result_chain(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     before = _active("workcase-0001")
     before["execution_authorization"].pop("quality_gates")
     before["creation_reviews"][0].pop("covered_quality_gate_ids")
@@ -1535,10 +1533,10 @@ def test_terminal_legacy_workcase_cannot_bypass_quality_gate_by_entering_result_
 
 
 def test_gate1_baseline_fingerprint_mismatch_has_zero_writes(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     before = _active("workcase-0001")
     path = _write(project, before)
     original = path.read_bytes()
@@ -1561,10 +1559,10 @@ def test_gate1_baseline_fingerprint_mismatch_has_zero_writes(
 
 
 def test_approved_plan_delta_keeps_gate1_baseline_and_can_resume_execution(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     gate1 = _gate1_after(_active("workcase-0001"))
     _write(project, gate1)
     revising = deepcopy(gate1)
@@ -1600,10 +1598,10 @@ def test_approved_plan_delta_keeps_gate1_baseline_and_can_resume_execution(
 
 
 def test_pre_gate_plan_revision_roundtrip_does_not_require_or_fabricate_approval(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     confirming = _active("workcase-0001")
     _write(project, confirming)
     revising = deepcopy(confirming)
@@ -1640,10 +1638,10 @@ def test_pre_gate_plan_revision_roundtrip_does_not_require_or_fabricate_approval
 
 
 def test_gate2_rejects_every_update_and_requires_close_operation(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     before = _closing("workcase-0001")
     path = _write(project, before)
     original = path.read_bytes()
@@ -1659,11 +1657,11 @@ def test_gate2_rejects_every_update_and_requires_close_operation(
 
 @pytest.mark.parametrize("mode", ["update", "close", "correct"])
 def test_all_workcase_modes_reject_an_invalid_current_object_without_repair(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
     mode: workcase_update.WorkCaseWriteMode,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     invalid = {**_active("workcase-0001"), "unknown_field": "not-registered"}
     path = _write(project, invalid)
     current = _read(project, "workcase-0001")
@@ -1687,10 +1685,10 @@ def test_all_workcase_modes_reject_an_invalid_current_object_without_repair(
 
 
 def test_close_workcase_projects_the_current_proposal_and_removes_active_state(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     before = _closing("workcase-0001")
     _write(project, before)
     after = _closed_from(before)
@@ -1739,11 +1737,11 @@ def test_close_workcase_projects_the_current_proposal_and_removes_active_state(
     ],
 )
 def test_close_rejects_missing_or_extra_change_log_entries_without_writing(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
     mutation: Callable[[dict[str, Any]], None],
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     before = _closing("workcase-0001")
     path = _write(project, before)
     after = _closed_from(before)
@@ -1766,10 +1764,10 @@ def test_close_rejects_missing_or_extra_change_log_entries_without_writing(
 
 
 def test_correct_closed_workcase_appends_one_change_log_entry(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     before = _closed_from(_closing("workcase-0001"))
     before["updated_at"] = "2026-07-26T12:00:00+08:00"
     _write(project, before)
@@ -1792,10 +1790,10 @@ def test_correct_closed_workcase_appends_one_change_log_entry(
 
 
 def test_correct_closed_legacy_without_change_log_cannot_invent_history(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     before = _closed_from(_closing("workcase-0001"))
     before.pop("change_log")
     before["updated_at"] = "2026-07-26T12:00:00+08:00"
@@ -1820,10 +1818,10 @@ def test_correct_closed_legacy_without_change_log_cannot_invent_history(
 
 
 def test_close_rejects_any_change_to_a_retained_terminal_fact(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     before = _closing("workcase-0001")
     path = _write(project, before)
     after = {**_closed_from(before), "result_summary": "关闭时夹带改写的结果。"}
@@ -1916,10 +1914,10 @@ def test_close_mapping_preserves_spark_suggestions_without_creating_a_relation()
 
 
 def test_close_rejects_an_incoming_depends_on_before_writing(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     before = _closing("workcase-0001")
     _write(project, before)
     dependent = _active("workcase-0002")
@@ -1953,10 +1951,10 @@ def test_close_rejects_an_incoming_depends_on_before_writing(
 
 
 def test_close_is_unavailable_when_a_canonical_peer_is_invalid(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     before = _closing("workcase-0001")
     path = _write(project, before)
     invalid_peer = {**_active("workcase-0002"), "unknown_field": "not-registered"}
@@ -1982,10 +1980,10 @@ def test_close_is_unavailable_when_a_canonical_peer_is_invalid(
 
 
 def test_close_is_unavailable_when_a_locally_valid_peer_is_project_invalid(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     before = _closing("workcase-0001")
     path = _write(project, before)
     peer = _active("workcase-0002")
@@ -2022,11 +2020,11 @@ def test_close_is_unavailable_when_a_locally_valid_peer_is_project_invalid(
 
 
 def test_close_rechecks_incoming_dependencies_after_source_write_and_rolls_back(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     before = _closing("workcase-0001")
     path = _write(project, before)
     original = path.read_bytes()
@@ -2063,10 +2061,10 @@ def test_close_rechecks_incoming_dependencies_after_source_write_and_rolls_back(
 
 
 def test_close_rejects_a_stale_route_target_before_source_write(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     target = _active("workcase-0002", title="初始承接目标")
     target_path = _write(project, target)
     target_read = _read(project, "workcase-0002")
@@ -2106,11 +2104,11 @@ def test_close_rejects_a_stale_route_target_before_source_write(
 
 
 def test_post_write_route_target_drift_conditionally_rolls_back_source(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     target_fields = _active("workcase-0002", title="承接目标")
     target_path = _write(project, target_fields)
     original_target = target_path.read_bytes()
@@ -2162,11 +2160,11 @@ def test_post_write_route_target_drift_conditionally_rolls_back_source(
 
 
 def test_conditional_rollback_does_not_overwrite_a_newer_external_source_write(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     target_fields = _active("workcase-0002", title="承接目标")
     target_path = _write(project, target_fields)
     target_read = _read(project, "workcase-0002")
@@ -2251,13 +2249,13 @@ def test_conditional_rollback_does_not_overwrite_a_newer_external_source_write(
     ],
 )
 def test_urls_only_correction_supports_explicit_nonimpact_or_conservative_gate(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
     authorization_reference: tuple[dict[str, Any], ...],
     independent_review_reference: dict[str, Any] | None,
     expected_status: str,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     closing = _closing("workcase-0001")
     before = _closed_from(closing)
     before["updated_at"] = "2026-07-26T12:00:00+08:00"
@@ -2279,10 +2277,10 @@ def test_urls_only_correction_supports_explicit_nonimpact_or_conservative_gate(
 
 
 def test_title_and_urls_together_require_both_substantive_correction_inputs(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     before = _closed_from(_closing("workcase-0001"))
     before["updated_at"] = "2026-07-26T12:00:00+08:00"
     path = _write(project, before)
@@ -2308,10 +2306,10 @@ def test_title_and_urls_together_require_both_substantive_correction_inputs(
 
 
 def test_correct_closed_requires_exact_after_route_target_fingerprint_set(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     target = _active("workcase-0002", title="承接目标")
     _write(project, target)
     target_read = _read(project, "workcase-0002")
@@ -2335,10 +2333,10 @@ def test_correct_closed_requires_exact_after_route_target_fingerprint_set(
 
 
 def test_identical_closed_after_revalidates_request_target_before_no_change(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     target = _active("workcase-0002", title="承接目标")
     target_path = _write(project, target)
     target_read = _read(project, "workcase-0002")
@@ -2390,11 +2388,11 @@ def test_identical_closed_after_revalidates_request_target_before_no_change(
 
 
 def test_identical_closed_after_returns_no_change_only_after_current_target_check(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     target = _active("workcase-0002", title="承接目标")
     _write(project, target)
     target_read = _read(project, "workcase-0002")
@@ -2439,10 +2437,10 @@ def test_identical_closed_after_returns_no_change_only_after_current_target_chec
 
 
 def test_identical_closed_after_rejects_independent_review_reference(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     source = _closed_from(_closing("workcase-0001"))
     source["updated_at"] = "2026-07-26T12:00:00+08:00"
     path = _write(project, source)
@@ -2464,10 +2462,10 @@ def test_identical_closed_after_rejects_independent_review_reference(
 
 
 def test_correct_closed_allows_an_unchanged_existing_route_target_that_is_now_closed(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     target = _closed_from(_closing("workcase-0002"))
     target["updated_at"] = "2026-07-26T12:00:00+08:00"
     _write(project, target)
@@ -2498,10 +2496,10 @@ def test_correct_closed_allows_an_unchanged_existing_route_target_that_is_now_cl
 
 
 def test_correct_closed_rejects_a_new_route_target_that_is_already_closed(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     target = _closed_from(_closing("workcase-0002"))
     target["updated_at"] = "2026-07-26T12:00:00+08:00"
     _write(project, target)
@@ -2603,10 +2601,10 @@ def _write_pitfall(project: _Project, object_id: str, *, status: str = "draft") 
 
 
 def test_close_preserves_contributed_to_and_rejects_any_add_remove_or_change(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     _write_pitfall(project, "pitfall-0001")
     _write_pitfall(project, "pitfall-0002")
     before = _closing("workcase-0001")
@@ -2673,10 +2671,10 @@ def test_close_mapping_requires_contributed_to_before_after_exact_equality() -> 
 
 
 def test_correct_closed_contributed_to_change_is_substantive_and_ignores_route_fingerprint_set(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     _write_pitfall(project, "pitfall-0001")
     before = _closed_from(_closing("workcase-0001"))
     before["updated_at"] = "2026-07-26T12:00:00+08:00"
@@ -2712,10 +2710,10 @@ def test_correct_closed_contributed_to_change_is_substantive_and_ignores_route_f
 
 
 def test_update_workcase_forms_contributed_to_in_an_active_phase(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     _write_pitfall(project, "pitfall-0001")
     before = _preparing("workcase-0001")
     _write(project, before)
@@ -2729,10 +2727,10 @@ def test_update_workcase_forms_contributed_to_in_an_active_phase(
 
 
 def test_update_workcase_blocked_freeze_rejects_contributed_to_change(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     _write_pitfall(project, "pitfall-0001")
     before = {
         **_active("workcase-0001"),
@@ -2751,10 +2749,10 @@ def test_update_workcase_blocked_freeze_rejects_contributed_to_change(
 
 
 def test_update_workcase_can_enter_blocked_with_its_required_change_log_append(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     before = _gate1_after(_active("workcase-0001"))
     _write(project, before)
     after = deepcopy(before)
@@ -2782,10 +2780,10 @@ def test_update_workcase_can_enter_blocked_with_its_required_change_log_append(
 
 
 def test_update_workcase_human_closure_confirming_allows_legal_relation_but_rejects_every_update(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     _write_pitfall(project, "pitfall-0001")
     before = _closing("workcase-0001")
     before["relations"] = [_contributed("pitfall", "pitfall-0001")]
@@ -2803,10 +2801,10 @@ def test_update_workcase_human_closure_confirming_allows_legal_relation_but_reje
 
 
 def test_update_workcase_entering_human_closure_confirming_freezes_contributed_to(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
-    project = _project(current_specs_repository, tmp_path)
+    project = _project(current_fact_schemas, tmp_path)
     _write_pitfall(project, "pitfall-0001")
     _write_pitfall(project, "pitfall-0002")
     before = _preparing("workcase-0001")

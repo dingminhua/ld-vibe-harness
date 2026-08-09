@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import subprocess
+from collections.abc import Mapping
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -12,8 +13,7 @@ from ldvh.facts.legacy_change_log_migration import (
     LegacyChangeLogMigrationCommand,
     apply_legacy_change_log_migration,
 )
-from ldvh.facts.schema import project_fact_schemas
-from ldvh.specs.repository import inspect_repository
+from ldvh.facts.schema import FactSchema
 
 
 def _git(project: Path, *arguments: str) -> None:
@@ -44,13 +44,13 @@ priority: P2
 
 
 def _command(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     boundary: CreationBoundary,
     fingerprint: str,
     *,
     event_at: str = "2026-07-14T11:00:00+08:00",
 ) -> LegacyChangeLogMigrationCommand:
-    schemas = project_fact_schemas(inspect_repository(current_specs_repository))
+    schemas = current_fact_schemas
     return LegacyChangeLogMigrationCommand(
         boundary=boundary,
         fact_type_key="spark",
@@ -68,10 +68,10 @@ def _command(
     )
 
 
-def _fingerprint(boundary: CreationBoundary, current_specs_repository: Path) -> str:
+def _fingerprint(boundary: CreationBoundary, current_fact_schemas: Mapping[str, FactSchema]) -> str:
     from ldvh.facts.repository import read_fact_object
 
-    schema = project_fact_schemas(inspect_repository(current_specs_repository))["spark"]
+    schema = current_fact_schemas["spark"]
     read = read_fact_object(
         boundary.worktree_root,
         LAYOUTS["spark"],
@@ -84,13 +84,13 @@ def _fingerprint(boundary: CreationBoundary, current_specs_repository: Path) -> 
 
 
 def test_migration_preserves_all_non_managed_fields(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
     boundary = _boundary(tmp_path)
-    fingerprint = _fingerprint(boundary, current_specs_repository)
+    fingerprint = _fingerprint(boundary, current_fact_schemas)
 
-    result = apply_legacy_change_log_migration(_command(current_specs_repository, boundary, fingerprint))
+    result = apply_legacy_change_log_migration(_command(current_fact_schemas, boundary, fingerprint))
 
     assert result.status == "updated"
     assert result.readback is not None and result.readback.fields is not None
@@ -107,38 +107,38 @@ def test_migration_preserves_all_non_managed_fields(
 
 
 def test_migration_rejects_existing_change_log(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
     boundary = _boundary(tmp_path)
-    fingerprint = _fingerprint(boundary, current_specs_repository)
-    first = apply_legacy_change_log_migration(_command(current_specs_repository, boundary, fingerprint))
+    fingerprint = _fingerprint(boundary, current_fact_schemas)
+    first = apply_legacy_change_log_migration(_command(current_fact_schemas, boundary, fingerprint))
     assert first.status == "updated"
-    migrated = _fingerprint(boundary, current_specs_repository)
+    migrated = _fingerprint(boundary, current_fact_schemas)
 
-    replay = apply_legacy_change_log_migration(_command(current_specs_repository, boundary, migrated))
+    replay = apply_legacy_change_log_migration(_command(current_fact_schemas, boundary, migrated))
 
     assert replay.status == "change_log_present"
 
 
 def test_migration_rejects_stale_fingerprint(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
     boundary = _boundary(tmp_path)
-    result = apply_legacy_change_log_migration(_command(current_specs_repository, boundary, "0" * 64))
+    result = apply_legacy_change_log_migration(_command(current_fact_schemas, boundary, "0" * 64))
     assert result.status == "fingerprint_stale"
 
 
 def test_migration_rejects_non_successor_event_time(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
     boundary = _boundary(tmp_path)
-    fingerprint = _fingerprint(boundary, current_specs_repository)
+    fingerprint = _fingerprint(boundary, current_fact_schemas)
     result = apply_legacy_change_log_migration(
         _command(
-            current_specs_repository,
+            current_fact_schemas,
             boundary,
             fingerprint,
             event_at="2026-07-14T10:00:00+08:00",
@@ -149,14 +149,14 @@ def test_migration_rejects_non_successor_event_time(
 
 
 def test_concurrent_migrations_leave_a_single_winner(
-    current_specs_repository: Path,
+    current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
     boundary = _boundary(tmp_path)
-    fingerprint = _fingerprint(boundary, current_specs_repository)
+    fingerprint = _fingerprint(boundary, current_fact_schemas)
 
     def run_one() -> str:
-        return apply_legacy_change_log_migration(_command(current_specs_repository, boundary, fingerprint)).status
+        return apply_legacy_change_log_migration(_command(current_fact_schemas, boundary, fingerprint)).status
 
     with ThreadPoolExecutor(max_workers=2) as pool:
         outcomes = sorted(pool.map(lambda _index: run_one(), range(2)))
