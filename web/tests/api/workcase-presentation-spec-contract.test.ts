@@ -17,22 +17,23 @@ function workCaseCardSection(): string {
   );
 }
 
-test('Specs define four progress groups and a four-step result track', () => {
+test('Specs define five progress groups and retain a four-step result track', () => {
   const cardSection = workCaseCardSection();
 
   assert.match(cardSection, /不是 WorkCase 的 `status`、`phase`、生命周期分类/);
   assert.match(cardSection, /不得显示为“生命周期”“生命周期分类”/);
   assert.match(cardSection, /每张 WorkCase 外部 Card 必须直接、可识别地显示其当前 `progress_group`/);
   assert.match(cardSection, /Dashboard 的 WorkCase 聚合键必须命名为 `byProgressGroup`/);
-  assert.match(cardSection, /条目必须以 `progress_group` 承载这四个值/);
+  assert.match(cardSection, /条目必须以 `progress_group` 承载这五个值/);
   assert.match(cardSection, /不得把派生分组写入名为 `status` 的字段/);
   assert.match(cardSection, /另以 `source_status` 原样承载/);
   assert.match(cardSection, /\| `plan_confirmation` \| 方案待确认 \|/);
   assert.match(cardSection, /\| `progressing` \| 推进中 \|/);
+  assert.match(cardSection, /\| `termination_cleanup` \| 终止善后中 \|/);
   assert.match(cardSection, /实际存在的 Human 等待或责任阻塞另行呈现，不改变进展分组/);
   assert.match(cardSection, /\| `closure_confirmation` \| 关闭待确认 \|/);
   assert.match(cardSection, /\| `closed` \| 已关闭 \|/);
-  assert.match(cardSection, /Human 已依据完整关闭提案决定停止推进并接受相应责任处置/);
+  assert.match(cardSection, /Human 已依据完整关闭提案完成普通 Gate2，或 Human 主动中止后的专属善后事务已经完成/);
   assert.match(cardSection, /固定以“关闭提案”为标题/);
   assert.match(cardSection, /不得取代“关闭提案”标题/);
   assert.match(cardSection, /“目标达成 \/ 部分达成 \/ 未达成 \/ 取消”/);
@@ -163,7 +164,7 @@ test('Current Web docs describe the same latest-only Card and detail boundaries'
   assert.match(detailSection, /不使用整行色块、完整边框或右端对齐的远距离箭头/);
   assert.match(detailSection, /收起态只显示紧凑的小号标题文字与相邻箭头/);
   assert.match(detailSection, /不按 `phase` 猜测或补写结果/);
-  assert.match(listDoc, /progress_group\?: 'plan_confirmation' \| 'progressing' \| 'closure_confirmation' \| 'closed'/);
+  assert.match(listDoc, /progress_group\?: 'plan_confirmation' \| 'progressing' \| 'termination_cleanup' \| 'closure_confirmation' \| 'closed'/);
   assert.match(listDoc, /progress_step\?: 'item_execution' \| 'controller_self_check' \| 'independent_review' \| 'controller_synthesis'/);
   assert.match(listDoc, /executionItems\?: Array<\{/);
   assert.match(listDoc, /id: string;/);
@@ -244,7 +245,7 @@ test('Cognition Center reuses pending and progressing WorkCase Cards with second
   assert.match(apiTypes, /export interface CognitionPitfallInboxItem[\s\S]*?type: 'pitfall';[\s\S]*?status: 'draft';[\s\S]*?inboxKind: 'pitfall_confirmation';/);
   assert.match(apiTypes, /CognitionInboxKind =[\s\S]*?'plan_confirmation'[\s\S]*?'closure_confirmation'[\s\S]*?'blocked_resolution'[\s\S]*?'pitfall_confirmation'/);
   assert.match(apiTypes, /export type CognitionInboxItem = CognitionWorkCaseInboxItem \| CognitionPitfallInboxItem;/);
-  assert.match(apiTypes, /export interface CognitionActiveWorkCaseItem[\s\S]*?progress_group: 'progressing';[\s\S]*?isBlocked: boolean;/);
+  assert.match(apiTypes, /export interface CognitionActiveWorkCaseItem[\s\S]*?progress_group: 'progressing' \| 'termination_cleanup';[\s\S]*?isBlocked: boolean;/);
   const workCaseInboxBlock = apiTypes.match(/export interface CognitionWorkCaseInboxItem extends CognitionInboxItemBase \{[\s\S]*?\n\}/);
   assert.ok(workCaseInboxBlock);
   assert.doesNotMatch(workCaseInboxBlock[0], /\bstatus\??:\s/);

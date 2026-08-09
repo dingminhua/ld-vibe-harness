@@ -59,6 +59,7 @@ export const FACT_FIELD_CONTRACT: Record<FactType, FactFieldContract> = {
     closure_proposal: field('workcase-closure-proposal', 'object', false),
     spark_suggestions: field('workcase-spark-suggestions', 'array', false),
     closure_outcome: field('workcase-closure-outcome', 'string', false),
+    termination: field('workcase-termination', 'object', false),
   },
   adr: {
     ...common,

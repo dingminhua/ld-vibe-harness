@@ -19,6 +19,7 @@ import { getFieldLabel, getFieldValueLabel, getLocalizedObjectTitle, getObjectSt
 import { CATEGORY_COLORS } from '@/utils/categoryColors';
 import { getFactReadMeta, isReadableFact } from '@/utils/factReadMeta';
 import { getEffectiveListStatus, writeListStatusParam } from '@/utils/listStatus';
+import { compareRfc3339Timestamps } from '@/shared/timestamp';
 import {
   WORKCASE_PROGRESS_STEP_ORDER,
   isResolvedWorkCasePresentationProjection,
@@ -849,6 +850,73 @@ export function WorkCaseProgressingContent({
   );
 }
 
+function WorkCaseTerminationRecord({ termination, t }: {
+  termination?: unknown;
+  t: Translate;
+}) {
+  const { locale } = useI18n();
+  const record = isRecord(termination) ? termination : null;
+  const listKeys = ['retained_scope', 'discarded_scope', 'unverified_scope', 'relationship_impacts', 'quality_steps'] as const;
+  return (
+    <section className="min-w-0 rounded-md border border-amber-400/30 border-l-2 border-l-amber-400 bg-amber-500/[0.04] px-3.5 py-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <CircleMinus size={WORKCASE_SECTION_ICON_SIZE} className="shrink-0 text-amber-500 dark:text-amber-400" aria-hidden="true" />
+          <h3 className="ldvh-card-decision-title text-amber-700/85 dark:text-amber-200/85">{t('objectDetail.workcaseTerminationCleanup')}</h3>
+        </div>
+        {!record ? (
+          <p className={`ldvh-card-decision-body ${WORKCASE_CARD_TITLE_BODY_GAP_CLASS} text-red-400`}>{t('objectList.workcaseFieldMissing')}</p>
+        ) : (
+          <div className="mt-2 grid gap-2">
+            {['reason', 'cleanup_summary'].map((key) => typeof record[key] === 'string' && String(record[key]).trim() ? (
+              <div key={key} className="min-w-0">
+                <p className="ldvh-meta text-ldvh-text-secondary/75">{getFieldLabel(key, locale)}</p>
+                <SummaryText value={String(record[key])} collapseThreshold={Number.MAX_SAFE_INTEGER} className="ldvh-card-decision-body mt-1 text-ldvh-text-primary/85" />
+              </div>
+            ) : null)}
+            {listKeys.map((key) => Array.isArray(record[key]) && record[key].length > 0 ? (
+              <div key={key} className="min-w-0">
+                <p className="ldvh-meta text-ldvh-text-secondary/75">{getFieldLabel(key, locale)}</p>
+                <ul className="mt-1 grid gap-1">
+                  {(record[key] as unknown[]).map((value, index) => (
+                    <li key={index} className="ldvh-card-decision-body flex min-w-0 items-start gap-2 text-ldvh-text-primary/80">
+                      <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-amber-500/70" aria-hidden="true" />
+                      <span className="min-w-0 break-words">{String(value)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null)}
+          </div>
+        )}
+    </section>
+  );
+}
+
+export function WorkCaseTerminationContent({
+  goal,
+  termination,
+  isBlocked,
+  waitingOn,
+  blockingSummary,
+  t,
+}: {
+  goal?: string;
+  termination?: unknown;
+  isBlocked: boolean;
+  waitingOn?: string;
+  blockingSummary?: string;
+  t: Translate;
+}) {
+  return (
+    <div className="grid min-w-0 gap-2">
+      {isBlocked && <WorkCaseBlockingNotice blockingSummary={blockingSummary} t={t} />}
+      {isBlocked && <WorkCaseWaitingOnNotice waitingOn={waitingOn} />}
+      <WorkCaseGoalSection goal={goal} t={t} emphasis="supporting" />
+      <WorkCaseTerminationRecord termination={termination} t={t} />
+    </div>
+  );
+}
+
 /** Closure inputs reuse the same subdued status-card grammar as progressing work items. */
 const PROPOSED_OUTCOME_NOTICE_CLASS: Record<string, string> = {
   completed: 'border-emerald-400/25 border-l-emerald-400 bg-emerald-500/5',
@@ -1193,10 +1261,8 @@ function sortObjectsForList(items: ObjectItem[], sort: ObjectListSort): ObjectIt
   return [...items].sort((a, b) => {
     if (sort === 'id_desc') return b.id.localeCompare(a.id);
 
-    const updatedDelta = Date.parse(a.updated || '') - Date.parse(b.updated || '');
-    if (Number.isFinite(updatedDelta) && updatedDelta !== 0) return -updatedDelta;
-    const lexicalDelta = String(a.updated || '').localeCompare(String(b.updated || ''));
-    if (lexicalDelta !== 0) return -lexicalDelta;
+    const updatedDelta = compareRfc3339Timestamps(b.updated, a.updated);
+    if (updatedDelta !== 0) return updatedDelta;
     return b.id.localeCompare(a.id);
   });
 }
@@ -1610,6 +1676,27 @@ export default function ObjectList() {
           </ObjectCardFrame>
         );
       }
+      if (progressGroup === 'termination_cleanup') {
+        return (
+          <ObjectCardFrame
+            key={obj.id}
+            obj={obj}
+            locale={locale}
+            onOpen={openObject}
+            showNonActiveReason={false}
+            displayStatus={progressGroup}
+          >
+            <WorkCaseTerminationContent
+              goal={obj.goal}
+              termination={obj.termination}
+              isBlocked={currentProjection?.blocking_overlay ?? false}
+              waitingOn={obj.waiting_on}
+              blockingSummary={obj.blocking_summary}
+              t={t}
+            />
+          </ObjectCardFrame>
+        );
+      }
       if (progressGroup === 'closure_confirmation') {
         return (
           <ObjectCardFrame
@@ -1639,6 +1726,7 @@ export default function ObjectList() {
           >
             <>
               <WorkCaseClosedContent goal={obj.goal} terminal={obj.closureTerminal} />
+              {obj.termination && <WorkCaseTerminationRecord termination={obj.termination} t={t} />}
               <WorkCaseContributionsContent contributions={obj.contributedTo} locale={locale} />
             </>
           </ObjectCardFrame>

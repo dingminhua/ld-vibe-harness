@@ -21,7 +21,7 @@ function withProjectId(url: string): string {
   return `${url}${separator}projectId=${encodeURIComponent(currentProjectId)}`;
 }
 
-export type WorkCaseProgressGroup = 'plan_confirmation' | 'progressing' | 'closure_confirmation' | 'closed';
+export type WorkCaseProgressGroup = 'plan_confirmation' | 'progressing' | 'termination_cleanup' | 'closure_confirmation' | 'closed';
 export type WorkCaseProgressStep = 'item_execution' | 'controller_self_check' | 'independent_review' | 'controller_synthesis';
 
 export type WorkCasePresentationUnresolvedReason =
@@ -85,6 +85,7 @@ export interface ObjectItem {
   execution_authorization?: WorkCaseExecutionAuthorization | unknown;
   independentSubagentUnavailable?: boolean;
   execution_approval?: WorkCaseExecutionApproval | unknown;
+  termination?: WorkCaseTermination | unknown;
   /** closure_confirmation Card 的“后续贡献”区；仅实际声明 contributed-to 时出现 */
   contributedTo?: WorkCaseContributionTarget[];
   /** closure_confirmation Card 的关闭判断输入区；仅 closure_proposal 结构合法时出现 */
@@ -376,6 +377,17 @@ export interface WorkCaseResidualResponsibility {
   summary: string;
 }
 
+export interface WorkCaseTermination extends Record<string, unknown> {
+  reason: string;
+  cleanup_status: 'pending' | 'blocked' | 'completed';
+  cleanup_summary: string;
+  retained_scope?: string[];
+  discarded_scope?: string[];
+  unverified_scope?: string[];
+  relationship_impacts?: string[];
+  quality_steps?: string[];
+}
+
 /** Exact-detail fields from the single current WorkCase contract. */
 export interface WorkCaseDetailData extends Record<string, unknown> {
   object_id: string;
@@ -388,7 +400,7 @@ export interface WorkCaseDetailData extends Record<string, unknown> {
   scope: string;
   success_criterion_definitions: WorkCaseCriterionDefinition[];
   current_snapshot_projection?: WorkCaseCurrentSnapshotProjection;
-  phase?: 'human_plan_confirming' | 'plan_revising' | 'executing' | 'controller_checking' | 'independent_reviewing' | 'closure_preparing' | 'human_closure_confirming';
+  phase?: 'human_plan_confirming' | 'plan_revising' | 'executing' | 'controller_checking' | 'independent_reviewing' | 'closure_preparing' | 'human_closure_confirming' | 'termination_preparing';
   priority?: 'P0' | 'P1' | 'P2' | 'P3';
   summary?: string;
   resume_from?: string;
@@ -407,6 +419,7 @@ export interface WorkCaseDetailData extends Record<string, unknown> {
   validation_summary?: string;
   closure_proposal?: WorkCaseClosureProposal;
   closure_outcome?: 'completed' | 'partial' | 'not-achieved' | 'cancelled';
+  termination?: WorkCaseTermination;
   disposition_summary?: string;
   residual_responsibilities?: WorkCaseResidualResponsibility[];
   spark_suggestions?: WorkCaseSparkSuggestion[];
@@ -525,7 +538,7 @@ export type CognitionInboxItem = CognitionWorkCaseInboxItem | CognitionPitfallIn
 /** 处于结果推进主链的 WorkCase；与两个 Human Gate 的待决定事项互斥。 */
 export interface CognitionActiveWorkCaseItem extends Omit<CognitionInboxItemBase, 'inboxKind'> {
   type: 'workcase';
-  progress_group: 'progressing';
+  progress_group: 'progressing' | 'termination_cleanup';
   progress_step?: WorkCaseProgressStep;
   lifecycle_position: WorkCaseLifecyclePosition;
   isBlocked: boolean;

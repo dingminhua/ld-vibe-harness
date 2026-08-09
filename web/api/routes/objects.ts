@@ -5,6 +5,7 @@
 import { Router, type Request, type Response } from 'express'
 import { listObjects, showObject, OBJECT_TYPES, type ObjectType } from '../services/facts.js'
 import { ProjectScopeError, requestFactScope } from '../services/requestScope.js'
+import { compareTimestamps } from '../services/time.js'
 import type { LocalFactScope } from '../services/localFactReader.js'
 import {
   WORKCASE_PROGRESS_GROUP_ORDER,
@@ -116,18 +117,14 @@ function countByStatus(items: Array<{ status: string }>): Record<string, number>
   }, {})
 }
 
-function getUpdatedTime(value: string | undefined): number {
-  return new Date(value || 0).getTime() || 0
+function compareByUpdatedDesc<T extends { updated?: string; id: string }>(a: T, b: T): number {
+  const timeDelta = compareTimestamps(b.updated, a.updated)
+  if (timeDelta !== 0) return timeDelta
+  return a.id.localeCompare(b.id)
 }
 
 function sortByUpdatedDesc<T extends { updated?: string; id: string }>(items: T[]): T[] {
-  return [...items].sort((a, b) => {
-    const timeDelta = getUpdatedTime(b.updated) - getUpdatedTime(a.updated)
-    if (timeDelta !== 0) return timeDelta
-    const updatedDelta = String(b.updated || '').localeCompare(String(a.updated || ''))
-    if (updatedDelta !== 0) return updatedDelta
-    return a.id.localeCompare(b.id)
-  })
+  return [...items].sort(compareByUpdatedDesc)
 }
 
 function getStatusOptions(items: ListedObject[]): StatusOption[] {
@@ -243,7 +240,7 @@ router.get('/:type', async (req: Request, res: Response): Promise<void> => {
         .map(normalizeItem)
         .filter((item): item is ListedObject => Boolean(item))
         .filter((item) => matchesSparkListFilter(item, status, priority))
-        .sort((left, right) => String(right.updated || '').localeCompare(String(left.updated || '')))
+        .sort(compareByUpdatedDesc)
       : sortByUpdatedDesc(items)
   }
 

@@ -6,7 +6,7 @@
 import { Router, type Request, type Response } from 'express'
 import { lstat, readdir, readFile, stat } from 'fs/promises'
 import path from 'path'
-import { getGitPushStatuses, parseCommitMessage, parseCommitSignature, splitCommitMessage } from '../services/git.js'
+import { getGitPushStatuses, normalizeTimestamp, parseCommitMessage, parseCommitSignature, splitCommitMessage } from '../services/git.js'
 import { LDVH_WORKSPACE_ROOT } from '../services/pytools.js'
 import { readGovernedProjectsSettings } from '../services/governedProjectsSettings.js'
 import {
@@ -296,7 +296,7 @@ router.get('/git/commits', async (req: Request, res: Response): Promise<void> =>
           shortHash,
           parents,
           author,
-          date,
+          date: normalizeTimestamp(date),
           message,
           body,
           category,
@@ -363,7 +363,7 @@ router.get('/git/commit/:hash', async (req: Request, res: Response): Promise<voi
         shortHash,
         parents,
         author,
-        date,
+        date: normalizeTimestamp(date),
         message,
         body,
         category,

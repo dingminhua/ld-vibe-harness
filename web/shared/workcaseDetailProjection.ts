@@ -9,6 +9,7 @@
 export const WORKCASE_DETAIL_SECTION_ORDER = [
   'responsibility',
   'current_snapshot',
+  'termination_cleanup',
   'success_criteria',
   'plan_and_items',
   'creation_reviews',
@@ -26,6 +27,7 @@ export const WORKCASE_DETAIL_SECTION_ORDER = [
 export interface CurrentWorkCaseDetailProjection {
   responsibility: boolean;
   currentSnapshot: boolean;
+  termination: Record<string, unknown> | null;
   criteria: Array<Record<string, unknown>>;
   criterionResults: Array<Record<string, unknown>>;
   planAndItems: boolean;
@@ -56,6 +58,7 @@ export function projectCurrentWorkCaseDetail(
       obj.waiting_on,
       obj.blocking_summary,
     ),
+    termination: record(obj.termination),
     criteria: records(obj.success_criterion_definitions),
     criterionResults: records(obj.success_criterion_results),
     planAndItems: hasAny(obj.plan_version, obj.work_items),

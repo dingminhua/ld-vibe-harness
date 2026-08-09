@@ -108,8 +108,8 @@ function currentWorkCase(overrides: Record<string, unknown> = {}) {
   };
 }
 
-test('WorkCase cards use four progress groups over the single current phase set', () => {
-  assert.deepEqual(WORKCASE_PROGRESS_GROUP_ORDER, ['plan_confirmation', 'progressing', 'closure_confirmation', 'closed']);
+test('WorkCase cards use five progress groups while retaining the four-step result track', () => {
+  assert.deepEqual(WORKCASE_PROGRESS_GROUP_ORDER, ['plan_confirmation', 'progressing', 'termination_cleanup', 'closure_confirmation', 'closed']);
   assert.deepEqual(WORKCASE_PROGRESS_STEP_ORDER, ['item_execution', 'controller_self_check', 'independent_review', 'controller_synthesis']);
   assert.deepEqual(WORKCASE_CURRENT_PHASES, [
     'human_plan_confirming',
@@ -119,6 +119,7 @@ test('WorkCase cards use four progress groups over the single current phase set'
     'independent_reviewing',
     'closure_preparing',
     'human_closure_confirming',
+    'termination_preparing',
   ]);
   const closurePreparing = deriveWorkCasePresentationProjection('open', 'closure_preparing', sourceContentFingerprint);
   assert.equal(closurePreparing.resolution, 'resolved');
@@ -135,6 +136,56 @@ test('WorkCase cards use four progress groups over the single current phase set'
   const executing = deriveWorkCasePresentationProjection('open', 'executing', sourceContentFingerprint);
   assert.equal(executing.resolution === 'resolved' ? executing.progress_group : null, 'progressing');
   assert.equal(executing.resolution === 'resolved' ? executing.progress_step : null, 'item_execution');
+  const termination = deriveWorkCasePresentationProjection('open', 'termination_preparing', sourceContentFingerprint);
+  assert.equal(termination.resolution === 'resolved' ? termination.progress_group : null, 'termination_cleanup');
+  assert.equal(termination.resolution === 'resolved' ? termination.progress_step : 'unexpected', null);
+  assert.equal(termination.resolution === 'resolved' ? termination.next_required_control_step : null, 'termination_cleanup');
+});
+
+test('termination cleanup projects its dedicated card without reviving the original item track', () => {
+  const termination = {
+    initiated_at: '2026-07-26T12:30:00+08:00',
+    source_status: 'open',
+    source_phase: 'executing',
+    source_content_fingerprint: sourceContentFingerprint,
+    reason: 'Human stopped the original plan.',
+    source_refs: ['human-input:stop'],
+    item_snapshots: ['item-running::in_progress::Work had started.'],
+    retained_scope: ['Existing bounded result.'],
+    discarded_scope: ['none-observed: no discard requested'],
+    unverified_scope: ['Environment matrix not run.'],
+    relationship_impacts: ['none-observed: no dependent responsibility'],
+    quality_steps: ['independent_result_review:skipped', 'closure_proposal:skipped', 'gate_2:skipped'],
+    cleanup_status: 'completed',
+    cleanup_summary: 'Cleanup facts are complete.',
+  };
+  const card = projectCurrentCard(currentWorkCase({
+    phase: 'termination_preparing',
+    termination,
+  }));
+
+  assert.equal(card.progress_group, 'termination_cleanup');
+  assert.equal('progress_step' in card, false);
+  assert.deepEqual(card.termination, termination);
+  assert.equal(card.goal, '只消费当前字段。');
+  assert.equal('executionItems' in card, false);
+  assert.equal('work_items' in card, false);
+  const list = source('src/pages/ObjectList.tsx');
+  assert.match(list, /if \(progressGroup === 'termination_cleanup'\)/);
+  assert.match(list, /<WorkCaseTerminationContent/);
+
+  const closedCard = projectCurrentCard({
+    object_id: 'workcase-0084',
+    fact_type_key: 'workcase',
+    title: 'Human 主动终止',
+    status: 'closed',
+    updated_at: '2026-07-26T15:00:00+08:00',
+    goal: '停止原计划并完成善后。',
+    termination,
+  });
+  assert.equal(closedCard.progress_group, 'closed');
+  assert.deepEqual(closedCard.termination, termination);
+  assert.match(list, /obj\.termination && <WorkCaseTerminationRecord termination=\{obj\.termination\}/);
 });
 
 test('terminal status labels remain type-specific across fact types', () => {
@@ -437,7 +488,7 @@ test('list ordering defaults to updated time and supports object-ID ordering wit
   const sorting = list.slice(start, end);
 
   assert.ok(start >= 0 && end > start);
-  assert.match(sorting, /Date\.parse\(a\.updated/);
+  assert.match(sorting, /compareRfc3339Timestamps\(b\.updated, a\.updated\)/);
   assert.match(sorting, /sort === 'id_desc'/);
   assert.match(sorting, /b\.id\.localeCompare\(a\.id\)/);
   assert.doesNotMatch(sorting, /id_asc|updated_asc/);

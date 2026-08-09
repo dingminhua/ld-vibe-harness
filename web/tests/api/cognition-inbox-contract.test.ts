@@ -15,6 +15,7 @@ import type { Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import { after, before, test } from 'node:test'
 import type { RecentHotspotBuildItem } from '../../api/routes/cognition.ts'
+import { compareTimestamps } from '../../api/services/time.ts'
 
 let server: Server
 let baseUrl = ''
@@ -58,7 +59,8 @@ function compareSort(a: Record<string, unknown>, b: Record<string, unknown>): nu
   const ha = ua !== ''
   const hb = ub !== ''
   if (ha && hb) {
-    if (ua !== ub) return ua < ub ? -1 : 1
+    const timeDelta = compareTimestamps(ua, ub)
+    if (timeDelta !== 0) return timeDelta
     return String(a.id).localeCompare(String(b.id))
   }
   if (ha && !hb) return -1
@@ -265,7 +267,8 @@ test('recent activity accepts only explicit windows and groups fact change-log e
     const expected = items.slice().sort((a, b) => {
       const at = String(a.occurredAt)
       const bt = String(b.occurredAt)
-      if (at !== bt) return at > bt ? -1 : 1
+      const timeDelta = compareTimestamps(bt, at)
+      if (timeDelta !== 0) return timeDelta
       if (a.activity !== b.activity) return a.activity === 'updated' ? -1 : 1
       return `${a.type}:${a.id}`.localeCompare(`${b.type}:${b.id}`)
     })
@@ -325,7 +328,7 @@ test('recent activity accepts canonical change-log signatures', async () => {
   const raw = {
     object_id: 'spark-0002', title: 'Canonical signature', status: 'open',
     change_log: [{
-      signature: { model_id: 'gpt-5', host_name: 'Cindy' },
+      signature: { model_id: 'gpt-5', agent_workbench: 'Cindy' },
       session_id: 'canonical-session', at: '2026-08-01T00:00:00Z', summary: 'Created',
     }],
   }
@@ -400,7 +403,7 @@ test('inbox collects only decision-baseline items with a deterministic sort orde
   })
 })
 
-test('active WorkCases contain only the progressing group and reuse the list Card projection', async () => {
+test('active WorkCases contain ordinary progress or termination cleanup and reuse the list Card projection', async () => {
   const body = await cognition('zh')
   const active = body.activeWorkCases as Record<string, unknown>
   const items = active.items as Array<Record<string, unknown>>
@@ -413,13 +416,13 @@ test('active WorkCases contain only the progressing group and reuse the list Car
   assert.deepEqual(items.map((item) => String(item.id)), items.slice().sort(compareSort).map((item) => String(item.id)))
   for (const item of items) {
     assert.equal(item.type, 'workcase')
-    assert.equal(item.progress_group, 'progressing')
+    assert.ok(['progressing', 'termination_cleanup'].includes(String(item.progress_group)))
     assert.equal(typeof item.lifecycle_position, 'string')
     assert.equal('phase' in item, false)
     assert.equal(typeof item.isBlocked, 'boolean')
     assert.equal('status' in item, false)
     assert.equal('inboxKind' in item, false)
-    assert.equal(inboxIds.has(String(item.id)), false, 'progressing item must not duplicate a Human Gate item')
+    assert.equal(inboxIds.has(String(item.id)), false, 'active item must not duplicate a Human Gate item')
     assert.ok(item.card && typeof item.card === 'object')
     const card = item.card as Record<string, unknown>
     assert.equal(typeof card.goal, 'string')

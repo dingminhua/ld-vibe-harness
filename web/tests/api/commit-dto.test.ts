@@ -255,6 +255,7 @@ test('preserves the shared commit DTO across current API consumers', async () =>
   assert.deepEqual(workcases.data.progressOptions, [
     { group: 'plan_confirmation', count: 0 },
     { group: 'progressing', count: 1 },
+    { group: 'termination_cleanup', count: 0 },
     { group: 'closure_confirmation', count: 0 },
     { group: 'closed', count: 1 },
   ])
@@ -318,7 +319,7 @@ test('commit signature display accepts canonical and legacy trailer names', () =
   assert.deepEqual(parseCommitSignature([
     'Session-ID: canonical-session',
     'Model-ID: gpt-5',
-    'Host-Name: Cindy',
+    'Workbench-Name: Cindy',
   ].join('\n')), {
     sessionId: 'canonical-session',
     modelId: 'gpt-5',

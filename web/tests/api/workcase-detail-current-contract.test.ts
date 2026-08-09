@@ -479,6 +479,9 @@ test('narrative fields read as prose while structured records keep label rows', 
   assert.match(nextControlStepBlock, /objectDetail\.workcaseNextRequiredControlStepBoundary/);
   assert.doesNotMatch(nextControlStepBlock, /<DetailInlineField|ldvh-caption mt-1/);
   assert.match(layout, /currentProjection\.next_required_control_step/);
+  assert.match(layout, /title=\{t\("objectDetail\.workcaseTerminationCleanup"\)\}/);
+  assert.match(layout, /\{termination && <TerminationDetail value=\{termination\} locale=\{locale\} \/>\}/);
+  assert.match(layout, /FieldIssueRow fieldKey="termination"/);
   assert.match(layout, /currentProjection \? \(/);
   assert.match(layout, /objectDetail\.workcaseCurrentSnapshotUnavailableHint/);
   assert.doesNotMatch(layout, /\{currentProjection\?\.next_required_control_step\}/);

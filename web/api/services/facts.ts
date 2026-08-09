@@ -341,6 +341,8 @@ function projectCurrentWorkCaseCardShape(
   } else if (progress?.progress_group === 'progressing') {
     Object.assign(projected, copyPresentFields(fact, ['priority', 'goal', 'waiting_on']))
     Object.assign(projected, projectCardWorkItems(fact.work_items))
+  } else if (progress?.progress_group === 'termination_cleanup') {
+    Object.assign(projected, copyPresentFields(fact, ['priority', 'goal', 'waiting_on', 'termination']))
   } else if (progress?.progress_group === 'closure_confirmation') {
     Object.assign(projected, copyPresentFields(fact, ['goal']))
     const closureProposal = projectClosureProposal(fact.closure_proposal)
@@ -348,7 +350,7 @@ function projectCurrentWorkCaseCardShape(
     const contributedTo = projectContributedToTargets(fact.relations)
     if (contributedTo.length > 0) projected.contributedTo = contributedTo
   } else if (progress?.progress_group === 'closed') {
-    Object.assign(projected, copyPresentFields(fact, ['goal']))
+    Object.assign(projected, copyPresentFields(fact, ['goal', 'termination']))
     const closureTerminal = projectClosedDisposition(fact)
     if (closureTerminal) projected.closureTerminal = closureTerminal
     const contributedTo = projectContributedToTargets(fact.relations)

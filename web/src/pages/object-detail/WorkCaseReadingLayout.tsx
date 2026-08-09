@@ -62,6 +62,39 @@ import {
 const WORKCASE_DETAIL_SEMANTIC_ICON_SIZE = 14;
 const WORKCASE_DETAIL_SEMANTIC_SURFACE_PADDING = "px-3.5 pb-2 pt-3";
 
+function TerminationDetail({ value, locale }: { value: Record<string, unknown>; locale: string }) {
+  return (
+    <div className="grid min-w-0 gap-3">
+      {Object.entries(value).map(([key, raw]) => {
+        if (typeof raw === "string") {
+          return (
+            <div key={key} className="min-w-0">
+              <p className="ldvh-meta text-ldvh-text-secondary/75">{getFieldLabel(key, locale)}</p>
+              <SummaryText value={raw} collapseThreshold={Number.MAX_SAFE_INTEGER} className="ldvh-body-primary mt-1 break-words text-ldvh-text-primary/85" />
+            </div>
+          );
+        }
+        if (Array.isArray(raw)) {
+          return (
+            <div key={key} className="min-w-0">
+              <p className="ldvh-meta text-ldvh-text-secondary/75">{getFieldLabel(key, locale)}</p>
+              <ul className="mt-1 grid gap-1.5">
+                {raw.map((item, index) => (
+                  <li key={index} className="ldvh-body-primary flex min-w-0 items-start gap-2 text-ldvh-text-primary/80">
+                    <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-amber-500/70" aria-hidden="true" />
+                    <span className="min-w-0 break-words">{String(item)}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+        }
+        return null;
+      })}
+    </div>
+  );
+}
+
 /**
  * WorkCase detail has one current reading structure.  Field presence decides
  * whether a node exists; status, phase, card progress groups, and list DTOs do
@@ -83,6 +116,7 @@ export function WorkCaseReadingLayout({
     creationReviews,
     executionAuthorization,
     executionApproval,
+    termination,
     resultReviews,
     closureProposal,
     terminalResiduals,
@@ -131,6 +165,7 @@ export function WorkCaseReadingLayout({
     resultReviews.length > 0 || Boolean(issueFor("result_reviews"));
   const closureProposalVisible =
     Boolean(closureProposal) || Boolean(issueFor("closure_proposal"));
+  const terminationVisible = Boolean(termination) || Boolean(issueFor("termination"));
   const terminalVisible =
     detail.terminalDisposition ||
     Boolean(
@@ -229,6 +264,18 @@ export function WorkCaseReadingLayout({
             locale={locale}
           />
           <FieldIssueRow fieldKey="blocking_summary" issue={issueFor("blocking_summary")} locale={locale} />
+        </WorkCaseReadingNode>
+      )}
+
+      {terminationVisible && (
+        <WorkCaseReadingNode
+          title={t("objectDetail.workcaseTerminationCleanup")}
+          note={t("objectDetail.workcaseTerminationCleanupBoundary")}
+          locale={locale}
+          contentVariant="semantic"
+        >
+          {termination && <TerminationDetail value={termination} locale={locale} />}
+          <FieldIssueRow fieldKey="termination" issue={issueFor("termination")} locale={locale} />
         </WorkCaseReadingNode>
       )}
 

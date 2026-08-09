@@ -10,7 +10,8 @@ export const WORKCASE_CURRENT_PHASES = [
   "controller_checking",
   "independent_reviewing",
   "closure_preparing",
-  "human_closure_confirming"
+  "human_closure_confirming",
+  "termination_preparing"
 ] as const;
 
 export const WORKCASE_PHASE_PRESENTATION = {
@@ -61,6 +62,13 @@ export const WORKCASE_PHASE_PRESENTATION = {
     "handoff_narrative_key": "gate2_waiting",
     "next_required_control_step": "human_gate_2",
     "progress_group": "closure_confirmation",
+    "progress_step": null
+  },
+  "termination_preparing": {
+    "lifecycle_position": "termination_preparing",
+    "handoff_narrative_key": "termination_cleanup_in_progress",
+    "next_required_control_step": "termination_cleanup",
+    "progress_group": "termination_cleanup",
     "progress_step": null
   }
 } as const;

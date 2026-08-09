@@ -13,6 +13,7 @@ export const WORKCASE_DEFAULT_LIST_STATUS = null
 export const WORKCASE_PROGRESS_GROUP_ORDER = [
   'plan_confirmation',
   'progressing',
+  'termination_cleanup',
   'closure_confirmation',
   'closed',
 ] as const

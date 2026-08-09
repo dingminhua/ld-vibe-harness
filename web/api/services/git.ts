@@ -135,7 +135,7 @@ function getCommitTrailerValue(body: string, key: string): string | undefined {
 export function parseCommitSignature(body: string): GitCommitSignature | undefined {
   const sessionId = getCommitTrailerValue(body, 'Session-ID')
   const modelId = getCommitTrailerValue(body, 'Model-ID')
-  const hostName = getCommitTrailerValue(body, 'Host-Name')
+  const hostName = getCommitTrailerValue(body, 'Workbench-Name')
   const agentId = modelId ? undefined : getCommitTrailerValue(body, 'Agent-ID')
   const hostEnvironment = hostName ? undefined : getCommitTrailerValue(body, 'Host-Environment')
   return sessionId || modelId || hostName || agentId || hostEnvironment

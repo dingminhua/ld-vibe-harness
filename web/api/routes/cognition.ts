@@ -24,7 +24,7 @@ import {
   type WorkCaseProgressStep,
 } from '../../shared/workcaseStatus.js'
 import { ProjectScopeError, requestProject } from '../services/requestScope.js'
-import { getRelativeTime } from '../services/time.js'
+import { compareTimestamps, getRelativeTime, parseTimestamp } from '../services/time.js'
 import { getTypeColor } from '../services/typeColors.js'
 
 const router = Router()
@@ -86,7 +86,7 @@ interface InboxBuildItem {
 
 interface ActiveWorkCaseBuildItem {
   type: 'workcase'
-  progress_group: 'progressing'
+  progress_group: 'progressing' | 'termination_cleanup'
   progress_step?: WorkCaseProgressStep
   lifecycle_position: ResolvedWorkCasePresentationProjection['lifecycle_position']
   blocking_overlay: boolean
@@ -223,7 +223,8 @@ function compareCardBuild(
   const ub = b.updated_at
   // updated_at 正序（等待最久在前）；相同按 object_id 升序 tiebreak；缺失排最后。
   if (ua && ub) {
-    if (ua !== ub) return ua < ub ? -1 : 1
+    const timeDelta = compareTimestamps(ua, ub)
+    if (timeDelta !== 0) return timeDelta
     return a.object_id.localeCompare(b.object_id)
   }
   if (ua && !ub) return -1
@@ -249,7 +250,7 @@ function parseRecentActivityWindow(value: unknown): RecentActivityWindow | null 
 
 function timestampInWindow(value: unknown, start: number, end: number): value is string {
   if (typeof value !== 'string') return false
-  const timestamp = Date.parse(value)
+  const timestamp = parseTimestamp(value)
   return Number.isFinite(timestamp) && timestamp >= start && timestamp <= end
 }
 
@@ -260,7 +261,8 @@ function currentWorkCaseProjection(raw: Record<string, unknown>): ResolvedWorkCa
 }
 
 function compareRecentActivity(a: RecentActivityBuildItem, b: RecentActivityBuildItem): number {
-  if (a.occurred_at !== b.occurred_at) return a.occurred_at > b.occurred_at ? -1 : 1
+  const timeDelta = compareTimestamps(b.occurred_at, a.occurred_at)
+  if (timeDelta !== 0) return timeDelta
   if (a.activity !== b.activity) return a.activity === 'updated' ? -1 : 1
   if (a.type !== b.type) return a.type.localeCompare(b.type)
   return a.object_id.localeCompare(b.object_id)
@@ -299,7 +301,8 @@ function readFactChangeSignature(value: unknown): { agent_id: string; host_envir
   if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined
   const record = value as Record<string, unknown>
   const modelId = typeof record.model_id === 'string' ? record.model_id.trim() : ''
-  const hostName = typeof record.host_name === 'string' ? record.host_name.trim() : ''
+  const hostName = typeof record.agent_workbench === 'string' ? record.agent_workbench.trim()
+    : typeof record.host_name === 'string' ? record.host_name.trim() : ''
   if (modelId && hostName) return { agent_id: modelId, host_environment: hostName }
 
   const agentId = typeof record.agent_id === 'string' ? record.agent_id.trim() : ''
@@ -393,7 +396,7 @@ export function buildRecentActivityView(builds: RecentActivityBuildItem[]): {
 
 function silentDays(updatedAt: unknown, observedAt: number): number | null {
   if (typeof updatedAt !== 'string') return null
-  const updatedAtMs = Date.parse(updatedAt)
+  const updatedAtMs = parseTimestamp(updatedAt)
   if (!Number.isFinite(updatedAtMs) || updatedAtMs > observedAt) return null
   return Math.floor((observedAt - updatedAtMs) / MILLISECONDS_PER_DAY)
 }
@@ -402,7 +405,8 @@ function compareSilentSpark(a: SparkHealthBuildItem, b: SparkHealthBuildItem): n
   if (a.silent_days !== b.silent_days) return b.silent_days - a.silent_days
   const priorityDifference = priorityRank(a.priority) - priorityRank(b.priority)
   if (priorityDifference !== 0) return priorityDifference
-  if (a.updated_at !== b.updated_at) return a.updated_at < b.updated_at ? -1 : 1
+  const timeDelta = compareTimestamps(b.updated_at, a.updated_at)
+  if (timeDelta !== 0) return timeDelta
   return a.object_id.localeCompare(b.object_id)
 }
 
@@ -530,7 +534,8 @@ function isDisplayableFormalRelation(
 }
 
 function compareRecentHotspotRef(a: RecentHotspotRef, b: RecentHotspotRef): number {
-  if (a.occurred_at !== b.occurred_at) return a.occurred_at > b.occurred_at ? -1 : 1
+  const timeDelta = compareTimestamps(b.occurred_at, a.occurred_at)
+  if (timeDelta !== 0) return timeDelta
   if (a.activity !== b.activity) return a.activity === 'updated' ? -1 : 1
   return 0
 }
@@ -539,7 +544,8 @@ function compareHotspotNode(a: RecentHotspotNode, b: RecentHotspotNode): number 
   if (a.activityRefs.length !== b.activityRefs.length) return b.activityRefs.length - a.activityRefs.length
   const aLatest = a.activityRefs[0]?.occurred_at ?? ''
   const bLatest = b.activityRefs[0]?.occurred_at ?? ''
-  if (aLatest !== bLatest) return aLatest > bLatest ? -1 : 1
+  const timeDelta = compareTimestamps(bLatest, aLatest)
+  if (timeDelta !== 0) return timeDelta
   // 活跃度相同时，非终态 WorkCase 只作为稳定的阅读顺序兜底，不覆盖事实热点本身。
   const aWorkCase = a.type === 'workcase' && a.progress_group !== 'closed'
   const bWorkCase = b.type === 'workcase' && b.progress_group !== 'closed'
@@ -653,7 +659,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       for (const issue of Array.isArray(data.collection_issues) ? data.collection_issues : []) {
         issues.push({ ...toIssue(issue), section: 'sparkHealth' })
       }
-      sparkHealth = buildSparkHealth(data.items, Date.parse(generatedAt))
+      sparkHealth = buildSparkHealth(data.items, parseTimestamp(generatedAt))
     }
     const builds: InboxBuildItem[] = []
     const activeWorkCaseBuilds: ActiveWorkCaseBuildItem[] = []
@@ -676,9 +682,9 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
           continue
         }
         const progressGroup = progress.progress_group
-        if (progress.progress_group === 'progressing') {
+        if (progress.progress_group === 'progressing' || progress.progress_group === 'termination_cleanup') {
           activeWorkCaseBuilds.push({
-            type: 'workcase', progress_group: 'progressing',
+            type: 'workcase', progress_group: progress.progress_group,
             ...(progress.progress_step ? { progress_step: progress.progress_step } : {}),
             lifecycle_position: progress.lifecycle_position,
             blocking_overlay: progress.blocking_overlay,
@@ -758,7 +764,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
         issues.push({ ...toIssue(issue), section: 'recentActivity' })
       }
       for (const raw of sourceData.items) {
-        recentBuilds.push(...buildFactActivityItems(raw, type, recentStart, Date.parse(generatedAt)))
+        recentBuilds.push(...buildFactActivityItems(raw, type, recentStart, parseTimestamp(generatedAt)))
       }
     }
     recentBuilds.sort(compareRecentActivity)
@@ -781,7 +787,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
           graphFacts.push(projected)
           activityByFact.set(
             factKey(projected.type, projected.object_id),
-            buildFactActivityItems(item.fact_object ?? {}, type, recentStart, Date.parse(generatedAt)).map((activity) => ({
+            buildFactActivityItems(item.fact_object ?? {}, type, recentStart, parseTimestamp(generatedAt)).map((activity) => ({
               occurred_at: activity.occurred_at,
               activity: activity.activity,
             })),
@@ -846,7 +852,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
         ...(build.title_zh !== undefined ? { title_zh: build.title_zh } : {}),
         relativeTime: getRelativeTime(build.updated_at ?? '', locale),
         typeColor: getTypeColor('workcase'),
-        progress_group: 'progressing',
+        progress_group: build.progress_group,
         ...(build.progress_step ? { progress_step: build.progress_step } : {}),
         lifecycle_position: build.lifecycle_position,
         isBlocked: build.blocking_overlay,

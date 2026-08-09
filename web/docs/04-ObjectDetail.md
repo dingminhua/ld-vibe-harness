@@ -48,7 +48,7 @@ YAML 数据折叠区：由精确读取后的事实对象字段重建（Markdown 
 
 ## 4. WorkCase 状态无关阅读契约
 
-WorkCase 详情页用于完整理解同一项当前工作责任，不复制外部 Card 的信息裁剪。身份头部与“当前情况”只消费该详情载体当次形成的 `current_snapshot_projection`，分别呈现 `plan_confirmation / progressing / closure_confirmation / closed` 分组及四步轨道或轨迹外“方案修订中”；不得从 raw `status / phase` 自行重建映射。详情页不得根据这些进展分组或推进环节切换、隐藏、重排字段，也不得为不同状态维护四套阅读结构。各 lifecycle position 与 closed 全部复用同一阅读顺序。条件或可选字段不存在时不渲染相应节点；类型来源必填字段缺失或类型不符时，API 保留字段问题，详情在对应区段显示空态，不升级为 `invalid` 或整个对象读取失败。
+WorkCase 详情页用于完整理解同一项当前工作责任，不复制外部 Card 的信息裁剪。身份头部与“当前情况”只消费该详情载体当次形成的 `current_snapshot_projection`，分别呈现 `plan_confirmation / progressing / termination_cleanup / closure_confirmation / closed` 分组及普通四步轨道、轨迹外“方案修订中”或独立“终止善后”；不得从 raw `status / phase` 自行重建映射。详情页不得根据这些进展分组或推进环节切换、隐藏、重排字段。各 lifecycle position 与 closed 全部复用同一阅读顺序；实际存在 `termination` 时增加固定的终止善后阅读节点。条件或可选字段不存在时不渲染相应节点；类型来源必填字段缺失或类型不符时，API 保留字段问题，详情在对应区段显示空态，不升级为 `invalid` 或整个对象读取失败。
 
 详情页只以 21 当前 WorkCase 字段为事实契约。读取顺序围绕以下八个问题组织；分区名称、折叠粒度和具体组件仍可在后续 Human 讨论后细化，但任何视觉方案都不得丢失这些内容：
 
