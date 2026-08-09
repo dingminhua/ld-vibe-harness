@@ -25,6 +25,8 @@ from ldvh.helper.operations.fact_update_request import FactUpdateRequest
 from ldvh.helper.requests import CommonRequest
 from ldvh.helper.service import handle_request
 
+pytestmark = pytest.mark.usefixtures("use_current_rule_source_snapshot")
+
 
 def _git(project: Path, *arguments: str) -> None:
     subprocess.run(["git", "-C", str(project), *arguments], check=True, capture_output=True)

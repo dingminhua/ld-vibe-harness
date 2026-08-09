@@ -39,6 +39,25 @@ def test_worktree_selection_does_not_depend_on_specs_health(tmp_path: Path) -> N
     assert result.repository.source_identity.view == "working_tree"
 
 
+def test_real_rule_source_discovery_rereads_working_tree_between_calls(tmp_path: Path) -> None:
+    root = tmp_path / "repository"
+    package_file = root / "code/ldvh/__init__.py"
+    package_file.parent.mkdir(parents=True)
+    package_file.write_text("", encoding="utf-8")
+    specs = root / "specs"
+    specs.mkdir()
+    _git_init(root)
+
+    before = inspect_colocated_rule_source(package_file)
+    (specs / "99-added.md").write_text("# Added after first discovery\n", encoding="utf-8")
+    after = inspect_colocated_rule_source(package_file)
+
+    assert before.repository is not None
+    assert after.repository is not None
+    assert before.repository.candidates == ()
+    assert [candidate.relative_path for candidate in after.repository.candidates] == ["specs/99-added.md"]
+
+
 def test_colocated_repository_does_not_require_helper_operation_declarations(
     tmp_path: Path,
     monkeypatch,

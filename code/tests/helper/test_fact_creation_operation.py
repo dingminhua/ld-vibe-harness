@@ -26,6 +26,8 @@ from ldvh.facts.repository import FactReadResult
 from ldvh.filesystem import AtomicWriteResult
 from ldvh.helper.service import handle_request
 
+pytestmark = pytest.mark.usefixtures("use_current_rule_source_snapshot")
+
 
 def _git(project: Path, *arguments: str) -> None:
     subprocess.run(["git", "-C", str(project), *arguments], check=True, capture_output=True)

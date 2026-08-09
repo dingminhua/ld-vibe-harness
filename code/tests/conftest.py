@@ -8,10 +8,46 @@ from typing import Any
 
 import pytest
 
+import ldvh
+from ldvh.helper.rule_source import RuleSourceResult, inspect_colocated_rule_source
+
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
 HELPER_EXECUTABLE = PROJECT_ROOT / "ldvh"
+
+
+@pytest.fixture(scope="session")
+def current_rule_source_snapshot() -> RuleSourceResult:
+    """Parse the current rule source once for explicitly opted-in unit tests.
+
+    The fixture deliberately fails when the Working Tree rule source is not
+    complete.  It is not suitable for tests whose subject is source refresh,
+    observation time, source identity, or source qualification.
+    """
+
+    snapshot = inspect_colocated_rule_source(Path(ldvh.__file__))
+    assert snapshot.problem is None
+    assert snapshot.repository is not None
+    assert snapshot.operations is not None
+    assert not snapshot.repository.issues
+    assert not snapshot.repository.incomplete_scope
+    assert not snapshot.operations.issues
+    assert not snapshot.operations.incomplete_sources
+    return snapshot
+
+
+@pytest.fixture
+def use_current_rule_source_snapshot(
+    monkeypatch: pytest.MonkeyPatch,
+    current_rule_source_snapshot: RuleSourceResult,
+) -> None:
+    """Reuse one immutable rule snapshot without caching request-local state."""
+
+    monkeypatch.setattr(
+        "ldvh.helper.service.inspect_colocated_rule_source",
+        lambda _: current_rule_source_snapshot,
+    )
 
 
 def _assert_source_reference(reference: dict[str, Any]) -> None:
