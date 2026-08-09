@@ -704,13 +704,19 @@ def run_worker(run_dir: Path) -> None:
 
 def _execute_steps(record: dict[str, Any], record_path: Path, log: Any) -> None:
     _append_line(log, f"run_id={record['run_id']} plan={record['plan']} worker_pid={os.getpid()}")
+    workspace = Path(record.get("workspace", "."))
+    code_root = str((workspace / "code").resolve())
+    child_env = os.environ.copy()
+    existing_pythonpath = child_env.get("PYTHONPATH", "")
+    child_env["PYTHONPATH"] = code_root if not existing_pythonpath else code_root + os.pathsep + existing_pythonpath
     for step in record["steps"]:
         step.update({"status": "running", "started_at": utc_now()})
         _atomic_json(record_path, record)
         _append_line(log, f"step={step['name']} cwd={step['cwd']} argv={json.dumps(step['argv'])}")
         try:
             with subprocess.Popen(
-                step["argv"], cwd=step["cwd"], stdout=log, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL
+                step["argv"], cwd=step["cwd"], stdout=log,
+                stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, env=child_env,
             ) as process:
                 exit_code = process.wait()
         except OSError as error:
