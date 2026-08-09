@@ -59,8 +59,8 @@ class StagedFactCandidate:
     data: bytes | None
     observation_issue: str | None
     # The Git adapter supplies the corresponding HEAD after it binds the Index.
-    # Keeping both images lets the Gate prove that a fact's new trace entry is
-    # the one signed by this commit, rather than merely schema-valid YAML.
+    # Keeping both images lets the Gate distinguish newly appended trace entries
+    # from read-only legacy history without coupling either to the commit signer.
     head_data: bytes | None = None
     head_exists: bool | None = None
     head_observation_issue: str | None = None
@@ -214,14 +214,13 @@ def _footer_trailers(lines: list[str]) -> dict[str, list[str]]:
 def _signature_trailer_issues(lines: list[str]) -> list[CommitValidationIssue]:
     trailers = _footer_trailers(lines)
     issues: list[CommitValidationIssue] = []
-    session_values = trailers.get("Session-ID", [])
-    if not session_values or any(not value.strip() for value in session_values):
-        issues.append(_issue("signature_trailer_missing", "footer 必须至少含一个非空 Session-ID: trailer"))
-    for name in ("Model-ID", "Workbench-Name"):
+    for name in _REQUIRED_TRAILERS:
         values = trailers.get(name, [])
         if not values or any(not value.strip() for value in values):
-            issues.append(_issue("signature_trailer_missing", f"footer 必须至少含一个非空 {name}: trailer"))
-        elif name == "Model-ID" and any(value.strip().lower() in _MODEL_PRODUCT_ALIASES for value in values):
+            issues.append(_issue("signature_trailer_missing", f"footer 必须含一个非空 {name}: trailer"))
+        elif len(values) != 1:
+            issues.append(_issue("signature_trailer_multiple", f"footer 的 {name}: 必须恰好声明一次"))
+        if name == "Model-ID" and any(value.strip().lower() in _MODEL_PRODUCT_ALIASES for value in values):
             issues.append(_issue("signature_model_alias", "footer 的 Model-ID 不得使用已知裸产品别名"))
         elif name == "Model-ID" and any(_is_host_product_concatenation(value) for value in values):
             issues.append(_issue("signature_model_host_product", "footer 的 Model-ID 不得拼接宿主产品名"))
@@ -444,34 +443,17 @@ def _fact_layer(
 
 def _fact_trace_issues(
     value: CommitValidationInput,
-    trailers: dict[str, list[str]],
 ) -> tuple[list[CommitValidationIssue], list[CommitValidationIssue]]:
-    """Bind every staged single-file fact event to this commit's footer.
+    """Validate the staged fact's append-only trace independently of commit signing.
 
     The commit validator is deliberately fail-closed when the before image is
-    unavailable: an after image alone cannot establish which log entry is the
-    event introduced by this candidate.
+    unavailable: an after image alone cannot distinguish newly written entries
+    from read-only legacy history.
     """
 
     unavailable: list[CommitValidationIssue] = []
     failures: list[CommitValidationIssue] = []
     schemas = {schema.fact_type_key: schema for schema in value.fact_schemas}
-    session_values = [value for value in trailers.get("Session-ID", []) if value.strip()]
-    model_values = [value for value in trailers.get("Model-ID", []) if value.strip()]
-    host_values = [value for value in trailers.get("Workbench-Name", []) if value.strip()]
-    def _declared(session: object, model: object, host: object) -> bool:
-        """A log entry is declared by this commit iff every member belongs to
-        the footer's declared set for that member.  Declared sets must be
-        non-empty; a missing declared set therefore never matches."""
-        return (
-            bool(session_values)
-            and bool(model_values)
-            and bool(host_values)
-            and session in session_values
-            and model in model_values
-            and host in host_values
-        )
-
     for candidate in value.fact_candidates:
         if candidate.object_id is None or candidate.data is None or candidate.observation_issue is not None:
             continue  # The fact layer already records the primary observation failure.
@@ -511,8 +493,8 @@ def _fact_trace_issues(
         if before_fields is None:
             # A fact may be created and then legitimately progressed several
             # times before its first Git commit.  All of that uncommitted
-            # history belongs to this candidate, so bind every entry to the
-            # commit footer instead of incorrectly requiring one entry.
+            # history belongs to this candidate, so validate every entry as a
+            # newly written trace rather than incorrectly requiring one entry.
             appended = after_log
         elif isinstance(before_log, list) and after_log[: len(before_log)] == before_log:
             appended = after_log[len(before_log) :]
@@ -545,20 +527,6 @@ def _fact_trace_issues(
                 )
             )
             continue
-        if any(
-            not _declared(
-                entry.get("session_id"),
-                entry.get("signature", {}).get("model_id") if isinstance(entry.get("signature"), dict) else None,
-                entry.get("signature", {}).get("agent_workbench") if isinstance(entry.get("signature"), dict) else None,
-            )
-            for entry in appended
-        ):
-            failures.append(
-                _issue(
-                    "fact_trace_signature_mismatch",
-                    f"事实新增流水与提交 footer 的 Session-ID/Model-ID/Workbench-Name 不一致: {candidate.path}",
-                )
-            )
     return unavailable, failures
 
 
@@ -655,7 +623,7 @@ def validate_commit(contract: CommitContractProjection, value: CommitValidationI
         signature_issues = _signature_trailer_issues(body_lines)
         failures.extend(signature_issues)
         if not signature_issues:
-            trace_unavailable, trace_failures = _fact_trace_issues(value, _footer_trailers(body_lines))
+            trace_unavailable, trace_failures = _fact_trace_issues(value)
             unavailable.extend(trace_unavailable)
             failures.extend(trace_failures)
         failures.extend(

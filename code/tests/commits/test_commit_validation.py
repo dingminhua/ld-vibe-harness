@@ -409,6 +409,34 @@ def test_new_signature_trailers_are_canonical_footer(contract: CommitContractPro
     assert result.outcome == "passed", [f"{issue.code}: {issue.message}" for issue in result.issues]
 
 
+@pytest.mark.parametrize(
+    ("duplicate_trailer", "duplicate_value"),
+    [
+        ("Session-ID", "another-session"),
+        ("Model-ID", "another-model"),
+        ("Workbench-Name", "Trae"),
+    ],
+)
+def test_commit_signature_rejects_multiple_values_for_one_current_environment_field(
+    contract: CommitContractProjection,
+    duplicate_trailer: str,
+    duplicate_value: str,
+) -> None:
+    message = (
+        "docs(specs): 拒绝多环境提交签名\n\n"
+        "关键变更:\n- 提交只声明实际执行的当前环境\n\n"
+        "Session-ID: test-session\n"
+        "Model-ID: gpt-5.6-luna\n"
+        "Workbench-Name: Cindy\n"
+        f"{duplicate_trailer}: {duplicate_value}"
+    )
+
+    result = validate_commit(contract, _input(contract, message=message))
+
+    assert result.outcome == "failed"
+    assert "signature_trailer_multiple" in _codes(result)
+
+
 def test_new_signature_footer_tripwires_reject_alias_and_os_suffix(
     contract: CommitContractProjection,
 ) -> None:
@@ -645,10 +673,10 @@ _LEGACY_SHAPE_SPARK = _VALID_SPARK.replace(
 )
 
 
-def test_new_shape_fact_binding_accepts_declared_new_footer(
+def test_new_shape_fact_trace_passes_with_same_commit_environment(
     contract: CommitContractProjection,
 ) -> None:
-    """新形状流水与新 footer 的集合绑定成立即通过。"""
+    """新形状流水与提交环境相同时依然通过。"""
 
     message = (
         "docs(specs): 新形状提交\n\n"
@@ -672,35 +700,34 @@ def test_new_shape_fact_binding_accepts_declared_new_footer(
     assert result.outcome == "passed", [f"{issue.code}: {issue.message}" for issue in result.issues]
 
 
-def test_new_shape_fact_binding_rejects_undeclared_model(
+def test_workbuddy_fact_trace_passes_when_trae_executes_commit(
     contract: CommitContractProjection,
 ) -> None:
-    """新形状流水的 model_id 未被新 footer 声明：拒绝。"""
+    """WorkBuddy/Cindy 写入的流水不会覆盖 Trae 实际提交签名。"""
 
     result = validate_commit(
         contract,
         _input(
             contract,
             message=(
-                "docs(specs): 未声明模型\n\n"
-                "关键变更:\n- 验证 footer 集合绑定\n\n"
-                "Session-ID: test-session\n"
-                "Model-ID: other-model\n"
-                "Workbench-Name: Cindy"
+                "docs(specs): 跨环境提交\n\n"
+                "关键变更:\n- 保留写入流水并由 Trae 提交\n\n"
+                "Session-ID: trae-commit-session\n"
+                "Model-ID: claude-4.1\n"
+                "Workbench-Name: Trae"
             ),
             fact_candidates=(_fact_candidate(data=_NEW_SHAPE_SPARK, head_exists=False),),
             fact_schemas=(_spark_schema_new_signature(),),
         ),
     )
 
-    assert result.outcome == "failed"
-    assert "fact_trace_signature_mismatch" in _codes(result)
+    assert result.outcome == "passed", [f"{issue.code}: {issue.message}" for issue in result.issues]
 
 
 def test_new_footer_does_not_bind_legacy_shape_entries(
     contract: CommitContractProjection,
 ) -> None:
-    """新 footer 不为旧形状流水背书：混合形状提交按绑定失败拒绝。"""
+    """新 footer 不会使本次新写的旧形状流水变成合法。"""
 
     message = (
         "docs(specs): 混合形状提交\n\n"
@@ -779,22 +806,23 @@ def test_valid_staged_fact_candidate_passes(contract: CommitContractProjection) 
     assert result.issues == ()
 
 
-def test_new_fact_change_log_must_match_commit_footer(contract: CommitContractProjection) -> None:
-    mismatched = _VALID_SPARK.replace(b"session_id: test-session", b"session_id: another-session")
+def test_new_fact_change_log_session_is_independent_from_commit_session(
+    contract: CommitContractProjection,
+) -> None:
+    different_writer_session = _VALID_SPARK.replace(b"session_id: test-session", b"session_id: another-session")
     result = validate_commit(
         contract,
         _input(
             contract,
-            fact_candidates=(_fact_candidate(data=mismatched, head_exists=False),),
+            fact_candidates=(_fact_candidate(data=different_writer_session, head_exists=False),),
             fact_schemas=(_spark_schema(),),
         ),
     )
 
-    assert result.outcome == "failed"
-    assert "fact_trace_signature_mismatch" in _codes(result)
+    assert result.outcome == "passed", [f"{issue.code}: {issue.message}" for issue in result.issues]
 
 
-def test_new_fact_with_multiple_precommit_change_logs_matches_commit_footer(
+def test_new_fact_with_multiple_precommit_change_logs_keeps_writer_history(
     contract: CommitContractProjection,
 ) -> None:
     data = (
@@ -824,7 +852,7 @@ def test_new_fact_with_multiple_precommit_change_logs_matches_commit_footer(
     assert result.outcome == "passed"
 
 
-def test_new_fact_rejects_any_precommit_change_log_not_matching_footer(
+def test_new_fact_multiple_writer_sessions_do_not_expand_commit_signature(
     contract: CommitContractProjection,
 ) -> None:
     data = (
@@ -851,8 +879,7 @@ def test_new_fact_rejects_any_precommit_change_log_not_matching_footer(
         ),
     )
 
-    assert result.outcome == "failed"
-    assert "fact_trace_signature_mismatch" in _codes(result)
+    assert result.outcome == "passed", [f"{issue.code}: {issue.message}" for issue in result.issues]
 
 
 def test_illegal_object_id_filename_fails_without_reading_blob(
@@ -964,10 +991,10 @@ def test_legacy_migration_change_log_passes_when_head_has_no_history(
     assert result.outcome == "passed"
 
 
-def test_new_fact_multiple_sessions_match_multiple_footer_session_ids(
+def test_new_fact_multiple_writer_sessions_use_one_trae_commit_session(
     contract: CommitContractProjection,
 ) -> None:
-    """新对象多条 change_log 分属多个 session：footer 声明全部 Session-ID 即通过。"""
+    """多个写入会话保留自身流水，footer 只声明当次 Trae 提交会话。"""
 
     data = (
         _VALID_SPARK.replace(
@@ -986,11 +1013,10 @@ def test_new_fact_multiple_sessions_match_multiple_footer_session_ids(
     message = (
         "docs(specs): 多会话提交\n\n"
         "关键变更:\n"
-        "- 覆盖多个受控写会话\n\n"
-        "Session-ID: test-session\n"
-        "Session-ID: test-session-2\n"
-        "Model-ID: gpt-5.6-luna\n"
-        "Workbench-Name: Cindy"
+        "- 保留多个受控写会话并由 Trae 提交\n\n"
+        "Session-ID: trae-commit-session\n"
+        "Model-ID: claude-4.1\n"
+        "Workbench-Name: Trae"
     )
 
     result = validate_commit(
@@ -1006,10 +1032,10 @@ def test_new_fact_multiple_sessions_match_multiple_footer_session_ids(
     assert result.outcome == "passed"
 
 
-def test_new_fact_multiple_sessions_reject_unlisted_session(
+def test_new_fact_writer_session_need_not_be_declared_by_commit_footer(
     contract: CommitContractProjection,
 ) -> None:
-    """新对象 change_log 的 session 未在 footer 声明：拒绝。"""
+    """新对象流水保留写入会话，不写入提交 footer。"""
 
     data = (
         _VALID_SPARK.replace(
@@ -1035,14 +1061,13 @@ def test_new_fact_multiple_sessions_reject_unlisted_session(
         ),
     )
 
-    assert result.outcome == "failed"
-    assert "fact_trace_signature_mismatch" in _codes(result)
+    assert result.outcome == "passed", [f"{issue.code}: {issue.message}" for issue in result.issues]
 
 
-def test_new_fact_multiple_agents_match_multiple_footer_model_ids(
+def test_new_fact_multiple_writers_use_one_trae_commit_signature(
     contract: CommitContractProjection,
 ) -> None:
-    """新对象跨多模型/宿主流水：footer 声明全部新三元组值即通过。"""
+    """新对象跨多模型/宿主写入后，footer 只声明当次 Trae 提交环境。"""
 
     data = (
         _VALID_SPARK.replace(
@@ -1061,13 +1086,10 @@ def test_new_fact_multiple_agents_match_multiple_footer_model_ids(
     message = (
         "docs(specs): 多执行者提交\n\n"
         "关键变更:\n"
-        "- 覆盖多个执行者流水\n\n"
-        "Session-ID: test-session\n"
-        "Session-ID: test-session-2\n"
-        "Model-ID: gpt-5.6-luna\n"
-        "Model-ID: another-model\n"
-        "Workbench-Name: Cindy\n"
-        "Workbench-Name: Other Host"
+        "- 保留多个执行者流水并由 Trae 提交\n\n"
+        "Session-ID: trae-commit-session\n"
+        "Model-ID: claude-4.1\n"
+        "Workbench-Name: Trae"
     )
 
     result = validate_commit(
@@ -1083,10 +1105,10 @@ def test_new_fact_multiple_agents_match_multiple_footer_model_ids(
     assert result.outcome == "passed"
 
 
-def test_new_fact_multiple_agents_reject_undeclared_agent(
+def test_new_fact_writer_environment_need_not_be_declared_by_commit_footer(
     contract: CommitContractProjection,
 ) -> None:
-    """新对象流水 agent 未在 footer 声明：拒绝。"""
+    """新对象流水保留写入环境，不要求提交环境相同。"""
 
     data = (
         _VALID_SPARK.replace(
@@ -1104,10 +1126,10 @@ def test_new_fact_multiple_agents_reject_undeclared_agent(
     )
     message = (
         "docs(specs): 未声明执行者\n\n"
-        "Session-ID: test-session\n"
-        "Session-ID: test-session-2\n"
-        "Model-ID: test-agent\n"
-        "Workbench-Name: test-environment"
+        "关键变更:\n- 保留写入环境并由 Trae 提交\n\n"
+        "Session-ID: trae-commit-session\n"
+        "Model-ID: claude-4.1\n"
+        "Workbench-Name: Trae"
     )
 
     result = validate_commit(
@@ -1120,14 +1142,13 @@ def test_new_fact_multiple_agents_reject_undeclared_agent(
         ),
     )
 
-    assert result.outcome == "failed"
-    assert "fact_trace_signature_mismatch" in _codes(result)
+    assert result.outcome == "passed", [f"{issue.code}: {issue.message}" for issue in result.issues]
 
 
-def test_legacy_migration_multiple_agents_passes(
+def test_legacy_migration_multiple_writers_uses_one_commit_signature(
     contract: CommitContractProjection,
 ) -> None:
-    """legacy 迁移对象跨多 agent：HEAD 无 change_log，footer 声明全部签名即通过。"""
+    """legacy 迁移对象跨多写入者时，footer 仍只声明当次提交环境。"""
 
     head_data = _VALID_SPARK.split(b"change_log:\n")[0]
     data = (
@@ -1147,13 +1168,10 @@ def test_legacy_migration_multiple_agents_passes(
     message = (
         "docs(specs): 多执行者迁移提交\n\n"
         "关键变更:\n"
-        "- 迁移多个执行者的遗留流水\n\n"
-        "Session-ID: test-session\n"
-        "Session-ID: test-session-2\n"
-        "Model-ID: gpt-5.6-luna\n"
-        "Model-ID: another-model\n"
-        "Workbench-Name: Cindy\n"
-        "Workbench-Name: Other Host"
+        "- 迁移多个写入者的遗留流水并由 Trae 提交\n\n"
+        "Session-ID: trae-commit-session\n"
+        "Model-ID: claude-4.1\n"
+        "Workbench-Name: Trae"
     )
 
     result = validate_commit(

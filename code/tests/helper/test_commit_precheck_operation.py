@@ -85,6 +85,14 @@ def _signed(message: str) -> str:
     )
 
 
+def _trae_signed(message: str) -> str:
+    return (
+        message
+        + "\n\n关键变更:\n- 由 Trae 提交其它环境已完成的事实写入"
+        + "\n\nSession-ID: trae-commit-session\nModel-ID: claude-4.1\nWorkbench-Name: Trae"
+    )
+
+
 def _helper_issues_as_gate_diagnostics(response: dict[str, object]) -> tuple[str, ...]:
     result = response["result"]
     assert isinstance(result, dict)
@@ -410,6 +418,38 @@ def test_valid_staged_fact_candidate_passes_both_entrypoints(tmp_path: Path) -> 
 
     helper = handle_request("call", "precheck-git-commit", _payload(workspace, project, message))
     gate = _gate(workspace, project, message)
+
+    assert helper.exit_code == 0
+    assert helper.response["result"]["mechanical_outcome"] == gate.outcome == "passed"
+    assert helper.response["result"]["issues"] == []
+    assert helper.response["result"]["candidate"]["paths"] == [_FACT_PATH]
+
+
+def test_workbuddy_fact_passes_helper_and_gate_when_trae_executes_commit(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    workbuddy_fact = (
+        _VALID_SPARK.replace("model_id: gpt-5.6-luna", "model_id: hy3")
+        .replace("agent_workbench: Cindy", "agent_workbench: WorkBuddy")
+        .replace("session_id: test-session", "session_id: workbuddy-write-session")
+    )
+    _stage_fact(project, workbuddy_fact)
+    _git(project, "reset", "-q", "change.txt")
+    message = _trae_signed("test: 验证跨环境事实提交")
+    payload = json.dumps(
+        {
+            "work_object_locators": [str(project)],
+            "arguments": {"workspace_root": str(workspace), "message": message},
+        }
+    )
+    message_file = workspace / "COMMIT_EDITMSG"
+    message_file.write_text(message, encoding="utf-8")
+
+    helper = handle_request("call", "precheck-git-commit", payload)
+    gate = run_commit_msg_gate(
+        workspace_root=str(workspace),
+        worktree=str(project),
+        message_file=str(message_file),
+    )
 
     assert helper.exit_code == 0
     assert helper.response["result"]["mechanical_outcome"] == gate.outcome == "passed"
