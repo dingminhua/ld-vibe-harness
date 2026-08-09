@@ -76,7 +76,7 @@ def _create(workspace: Path, project: Path, fact_type_key: str, fields: dict[str
         "change_log",
         [
             {
-                "signature": {"agent_id": "pytest", "host_environment": "pytest"},
+                "signature": {"model_id": "pytest-model", "agent_workbench": "pytest"},
                 "session_id": "candidate-test",
                 "at": "2000-01-01T00:00:00Z",
                 "summary": "Created by the candidate test fixture.",

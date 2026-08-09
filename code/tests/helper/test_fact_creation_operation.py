@@ -463,8 +463,8 @@ def _create_payload(
         [
             {
                 "signature": {
-                    "agent_id": "test-agent",
-                    "host_environment": "pytest",
+                    "model_id": "test-model",
+                    "agent_workbench": "pytest",
                 },
                 "session_id": "creation-test-session",
                 "at": (datetime.now().astimezone() - timedelta(minutes=1)).isoformat(),
@@ -624,8 +624,8 @@ def test_observed_signature_survives_real_create_and_workcase_update_schema_vali
     create_payload = json.loads(_create_payload(workspace, project, basis, _workcase()))
     create_payload["observed_context"] = {
         "signature": {
-            "agent_id": "GPT-5",
-            "host_environment": "Codex Desktop",
+            "model_id": "gpt-5.6-luna",
+            "agent_workbench": "Cindy",
             "session_id": "Session-Create",
         }
     }
@@ -637,8 +637,8 @@ def test_observed_signature_survives_real_create_and_workcase_update_schema_vali
     created_object = created["result"]["fact_object"]
     created_log = created_object["change_log"][-1]
     assert created_log["signature"] == {
-        "agent_id": "gpt-5",
-        "host_environment": "Codex Desktop",
+        "model_id": "gpt-5.6-luna",
+        "agent_workbench": "Cindy",
     }
     assert created_log["session_id"] == "Session-Create"
     assert "session_id" not in created_log["signature"]
@@ -665,8 +665,8 @@ def test_observed_signature_survives_real_create_and_workcase_update_schema_vali
     target["change_log"].append(
         {
             "signature": {
-                "agent_id": "placeholder-agent",
-                "host_environment": "Placeholder Host",
+                "model_id": "placeholder-model",
+                "agent_workbench": "Placeholder Host",
             },
             "session_id": "placeholder-session",
             "at": datetime.now().astimezone().isoformat(),
@@ -687,7 +687,7 @@ def test_observed_signature_survives_real_create_and_workcase_update_schema_vali
                 },
                 "observed_context": {
                     "signature": {
-                        "host_environment": "Codex Desktop",
+                        "agent_workbench": "Cindy",
                         "session_id": "Session-Update",
                     }
                 },
@@ -697,8 +697,8 @@ def test_observed_signature_survives_real_create_and_workcase_update_schema_vali
     assert updated["outcome"] == "ok", json.dumps(updated, ensure_ascii=False, indent=2)
     updated_log = updated["result"]["fact_object"]["change_log"][-1]
     assert updated_log["signature"] == {
-        "agent_id": "placeholder-agent",
-        "host_environment": "Codex Desktop",
+        "model_id": "placeholder-model",
+        "agent_workbench": "Cindy",
     }
     assert updated_log["session_id"] == "Session-Update"
     reread = handle_request(
@@ -796,8 +796,8 @@ def test_helper_create_read_and_update_accept_ignored_current_fact(tmp_path: Pat
     target["change_log"].append(
         {
             "signature": {
-                "agent_id": "test-agent",
-                "host_environment": "pytest",
+                "model_id": "test-model",
+                "agent_workbench": "pytest",
             },
             "session_id": "creation-test-update-session",
             "at": datetime.now().astimezone().isoformat(),

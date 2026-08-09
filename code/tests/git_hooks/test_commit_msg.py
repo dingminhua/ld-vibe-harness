@@ -69,7 +69,7 @@ def _signed(message: str) -> str:
     return (
         message
         + "\n\n关键变更:\n- 验证 common-dir Hook 对目标工作树生效"
-        + "\n\nSession-ID: test-session\nAgent-ID: test-agent\nHost-Environment: test-environment"
+        + "\n\nSession-ID: test-session\nModel-ID: gpt-5.6-luna\nWorkbench-Name: Cindy"
     )
 
 
@@ -170,7 +170,7 @@ def test_real_git_commit_is_blocked_and_allowed_by_installed_commit_msg_hook(tmp
     _checked_git(project, "add", changed.name)
 
     missing_body = (
-        "docs: 验证单文件正文闸门\n\nSession-ID: test-session\nAgent-ID: test-agent\nHost-Environment: test-environment"
+        "docs: 验证单文件正文闸门\n\nSession-ID: test-session\nModel-ID: gpt-5.6-luna\nWorkbench-Name: Cindy"
     )
     blocked = _git(project, "commit", "-m", missing_body)
 

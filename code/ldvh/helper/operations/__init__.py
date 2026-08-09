@@ -61,6 +61,12 @@ from ldvh.helper.operations.specification_context_operation import (
 from ldvh.helper.operations.specification_context_operation import (
     SPECIFICATION_CONTEXT_IMPLEMENTATION,
 )
+from ldvh.helper.operations.uncommitted_signature_normalization_operation import (
+    NORMALIZATION_IMPLEMENTATION,
+)
+from ldvh.helper.operations.uncommitted_signature_normalization_operation import (
+    OPERATION_KEY as UNCOMMITTED_SIGNATURE_NORMALIZATION_OPERATION_KEY,
+)
 from ldvh.helper.operations.workcase_close_candidate_operation import (
     OPERATION_KEY as WORKCASE_CLOSE_CANDIDATE_OPERATION_KEY,
 )
@@ -92,6 +98,7 @@ IMPLEMENTATIONS = MappingProxyType[str, OperationImplementation](
         SPECIFICATION_CANDIDATE_OPERATION_KEY: SPECIFICATION_CANDIDATE_IMPLEMENTATION,
         SPECIFICATION_CONTENT_OPERATION_KEY: SPECIFICATION_CONTENT_IMPLEMENTATION,
         SPECIFICATION_CONTEXT_OPERATION_KEY: SPECIFICATION_CONTEXT_IMPLEMENTATION,
+        UNCOMMITTED_SIGNATURE_NORMALIZATION_OPERATION_KEY: NORMALIZATION_IMPLEMENTATION,
         CLOSE_OPERATION_KEY: CLOSE_WORKCASE_IMPLEMENTATION,
         CORRECT_CLOSED_OPERATION_KEY: CORRECT_CLOSED_WORKCASE_IMPLEMENTATION,
         UPDATE_OPERATION_KEY: UPDATE_WORKCASE_IMPLEMENTATION,

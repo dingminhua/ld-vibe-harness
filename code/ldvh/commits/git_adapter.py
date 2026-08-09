@@ -237,6 +237,17 @@ def _head_blob(
     return data, oid, problem
 
 
+def read_head_regular_file(
+    worktree: Path,
+    path: str,
+    *,
+    max_bytes: int = MAX_FACT_BYTES,
+) -> tuple[bytes | None, str | None, str | None]:
+    """Read one regular-file blob from HEAD without consulting the Index."""
+
+    return _head_blob(worktree, path, max_bytes=max_bytes)
+
+
 def _fact_candidates(
     worktree: Path,
     paths: tuple[str, ...],

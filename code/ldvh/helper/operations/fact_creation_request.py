@@ -7,9 +7,14 @@ from pathlib import Path
 from typing import Any
 
 from ldvh.facts.contracts import LAYOUTS, WRITABLE_FACT_TYPE_KEYS
+from ldvh.facts.validation import _is_host_product_concatenation
 from ldvh.governance.models import ScopeDescriptor, cwd_scope, explicit_scope
 from ldvh.helper.operation_runtime import OperationExecutionContext
 from ldvh.helper.requests import CommonRequest
+
+_MODEL_PRODUCT_ALIASES = frozenset(
+    {"codex", "claude-code", "workbuddy", "workbuddy-ai", "deepseek", "glm", "gpt", "claude", "kimi", "k3"}
+)
 
 PREPARE_REQUIRED_INPUTS = ("arguments.governed_project_id", "arguments.fact_type_key")
 PREPARE_OPTIONAL_INPUTS = ("work_object_locators", "arguments.workspace_root")
@@ -95,7 +100,7 @@ def parse_observed_write_signature(observed_context: dict[str, Any]) -> Observed
     raw = observed_context.get("signature", {})
     if not isinstance(raw, dict):
         return ObservedWriteSignature({}, None, ("observed_context.signature 必须是 object",))
-    allowed = {"agent_id", "host_environment", "session_id"}
+    allowed = {"model_id", "agent_workbench", "session_id"}
     unknown_signature = sorted(set(raw) - allowed)
     if unknown_signature:
         problems.append(f"observed_context.signature 包含未知字段: {', '.join(unknown_signature)}")
@@ -108,10 +113,16 @@ def parse_observed_write_signature(observed_context: dict[str, Any]) -> Observed
             problems.append(f"observed_context.signature.{field} 出现时必须是非空 string")
             continue
         values[field] = value.strip()
+        if field == "model_id" and value.strip().lower() in _MODEL_PRODUCT_ALIASES:
+            problems.append("observed_context.signature.model_id 不得使用已知裸产品别名")
+        if field == "model_id" and _is_host_product_concatenation(value):
+            problems.append("observed_context.signature.model_id 不得拼接宿主产品名")
+        if field == "agent_workbench" and value.strip().endswith(")") and "(" in value.strip():
+            problems.append("observed_context.signature.agent_workbench 不得包含括号系统后缀")
     signature = {
-        field: value.lower() if field == "agent_id" else value
+        field: value.lower() if field == "model_id" else value
         for field, value in values.items()
-        if field in {"agent_id", "host_environment"}
+        if field in {"model_id", "agent_workbench"}
     }
     return ObservedWriteSignature(signature, values.get("session_id"), tuple(problems))
 
@@ -122,21 +133,37 @@ def observed_signature_injection_problems(
 ) -> tuple[str, ...]:
     parsed = parse_observed_write_signature(observed_context)
     problems = list(parsed.problems)
+    change_log = fact_object.get("change_log")
+    if isinstance(change_log, list) and change_log and isinstance(change_log[-1], dict):
+        existing = change_log[-1].get("signature")
+        if isinstance(existing, dict) and set(existing) == {"agent_id", "host_environment"}:
+            problems.append(
+                "最新 change_log.signature 仍为 agent_id/host_environment 旧形状；"
+                "新写入必须使用 model_id 与 agent_workbench"
+            )
+        elif isinstance(existing, dict) and set(existing) == {"model_id", "host_name"}:
+            problems.append(
+                "最新 change_log.signature 仍为 model_id/host_name 旧形状；新写入必须使用 model_id 与 agent_workbench"
+            )
     if problems or (not parsed.signature and parsed.session_id is None):
         return tuple(problems)
-    change_log = fact_object.get("change_log")
     if not isinstance(change_log, list) or not change_log or not isinstance(change_log[-1], dict):
         problems.append("observed_context.signature 注入要求 fact_object.change_log 含最新 object 条目")
         return tuple(problems)
     existing = change_log[-1].get("signature")
-    merged = dict(existing) if isinstance(existing, dict) else {}
+    merged = (
+        {}
+        if isinstance(existing, dict)
+        and set(existing) in ({"agent_id", "host_environment"}, {"model_id", "host_name"})
+        else dict(existing) if isinstance(existing, dict) else {}
+    )
     merged.update(parsed.signature)
-    if set(merged) != {"agent_id", "host_environment"} or any(
+    if set(merged) != {"model_id", "agent_workbench"} or any(
         not isinstance(merged[field], str) or not merged[field].strip()
-        for field in ("agent_id", "host_environment")
+        for field in ("model_id", "agent_workbench")
         if field in merged
     ):
-        problems.append("observed_context.signature 合并后必须恰含非空 agent_id 与 host_environment")
+        problems.append("observed_context.signature 合并后必须恰含非空 model_id 与 agent_workbench")
     return tuple(problems)
 
 

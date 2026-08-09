@@ -81,7 +81,7 @@ def _signed(message: str) -> str:
     return (
         message
         + "\n\n关键变更:\n- 覆盖当前提交预检测试变化"
-        + "\n\nSession-ID: test-session\nAgent-ID: test-agent\nHost-Environment: test-environment"
+        + "\n\nSession-ID: test-session\nModel-ID: gpt-5.6-luna\nWorkbench-Name: Cindy"
     )
 
 
@@ -119,7 +119,7 @@ def test_helper_precheck_and_native_gate_share_one_bound_result(tmp_path: Path) 
 def test_single_path_without_minimum_body_fails_identically_in_helper_and_native_gate(tmp_path: Path) -> None:
     workspace, project = _fixture(tmp_path)
     message = (
-        "test: 验证单文件最低正文\n\nSession-ID: test-session\nAgent-ID: test-agent\nHost-Environment: test-environment"
+            "test: 验证单文件最低正文\n\nSession-ID: test-session\nModel-ID: gpt-5.6-luna\nWorkbench-Name: Cindy"
     )
     payload = json.dumps(
         {
@@ -369,8 +369,8 @@ _VALID_SPARK = (
     "updated_at: '2026-07-01T00:00:00+08:00'\n"
     "change_log:\n"
     "  - signature:\n"
-    "      agent_id: test-agent\n"
-    "      host_environment: test-environment\n"
+    "      model_id: gpt-5.6-luna\n"
+    "      agent_workbench: Cindy\n"
     "    session_id: test-session\n"
     "    at: '2026-07-01T00:00:00+08:00'\n"
     "    summary: 建立测试火花\n"

@@ -50,8 +50,8 @@ summary: Before update
 priority: P2
 change_log:
   - signature:
-      agent_id: test-agent
-      host_environment: test
+      model_id: test-model
+      agent_workbench: test
     session_id: test-session
     at: 2026-07-14T09:00:00+08:00
     summary: Create test fact
@@ -103,8 +103,8 @@ closure_outcome: completed
 disposition_summary: The bounded fixture responsibility is complete.
 change_log:
   - signature:
-      agent_id: test-agent
-      host_environment: test
+      model_id: test-model
+      agent_workbench: test
     session_id: test-session
     at: 2026-07-14T09:00:00+08:00
     summary: Create routing target fixture.
@@ -208,7 +208,7 @@ def _append_update_log(fields: dict[str, object]) -> None:
     assert isinstance(change_log, list)
     change_log.append(
         {
-            "signature": {"agent_id": "test-agent", "host_environment": "test"},
+            "signature": {"model_id": "test-model", "agent_workbench": "test"},
             "session_id": "test-session",
             "at": "2000-01-01T00:00:00Z",
             "summary": "Update test fact",
@@ -318,7 +318,7 @@ def test_observed_partial_signature_and_session_survive_real_generic_update_sche
         _update_payload(workspace, project, before["content_fingerprint"], target)
     )
     payload["observed_context"] = {
-        "signature": {"agent_id": "GPT-5", "session_id": "Session-Generic-Update"}
+        "signature": {"model_id": "gpt-5.6-luna", "agent_workbench": "test", "session_id": "Session-Generic-Update"}
     }
 
     response = handle_request(
@@ -328,8 +328,8 @@ def test_observed_partial_signature_and_session_survive_real_generic_update_sche
     assert response["outcome"] == "ok", json.dumps(response, ensure_ascii=False, indent=2)
     newest = response["result"]["fact_object"]["change_log"][-1]
     assert newest["signature"] == {
-        "agent_id": "gpt-5",
-        "host_environment": "test",
+        "model_id": "gpt-5.6-luna",
+        "agent_workbench": "test",
     }
     assert newest["session_id"] == "Session-Generic-Update"
     assert "session_id" not in newest["signature"]
@@ -534,7 +534,7 @@ change_log:
                         "summary": "Create test fact.",
                     },
                     {
-                        "signature": {"agent_id": "test-agent", "host_environment": "test"},
+                        "signature": {"model_id": "test-model", "agent_workbench": "test"},
                         "session_id": "test-session",
                         "at": "2000-01-01T00:00:00Z",
                         "summary": "Repair invalid test fact.",

@@ -88,7 +88,12 @@ def inject_observed_write_signature(
     newest = dict(change_log[-1])
     if parsed.signature:
         existing = newest.get("signature")
-        merged = dict(existing) if isinstance(existing, dict) else {}
+        merged = (
+            {}
+            if isinstance(existing, dict)
+            and set(existing) in ({"agent_id", "host_environment"}, {"model_id", "host_name"})
+            else dict(existing) if isinstance(existing, dict) else {}
+        )
         merged.update(parsed.signature)
         newest["signature"] = merged
     if parsed.session_id is not None:

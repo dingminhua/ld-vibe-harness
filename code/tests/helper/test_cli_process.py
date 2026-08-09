@@ -49,7 +49,7 @@ def test_general_discovery_reports_source_bound_implementation(tmp_path: Path) -
     assert response["outcome"] == "ok"
     assert response["operation_key"] is None
     assert response["result"]["mode"] == "discovery"
-    assert len(response["result"]["operations"]) == 18
+    assert len(response["result"]["operations"]) == 19
     operations = {item["operation_key"]: item for item in response["result"]["operations"]}
     candidates = operations["find-fact-object-candidates"]
     assert candidates["implementation"]["present"] is True
@@ -151,7 +151,7 @@ def test_general_discovery_reports_source_bound_implementation(tmp_path: Path) -
     assert commit_precheck["required_inputs"] == ["work_object_locators", "arguments.message"]
     assert commit_precheck["optional_inputs"] == ["arguments.workspace_root"]
     assert len(response["gaps"]) == 2
-    assert sum(item["member_count"] for item in response["gaps"]) == 144
+    assert sum(item["member_count"] for item in response["gaps"]) == 152
 
 
 def test_real_cli_prepare_exposes_definition_refs_without_a_second_schema() -> None:
@@ -188,7 +188,7 @@ def test_diagnostic_profile_expands_qualification_details(tmp_path: Path) -> Non
 
     assert completed.returncode == 0
     assert response["response_profile"] == "diagnostic"
-    assert len(response["gaps"]) == 144
+    assert len(response["gaps"]) == 152
     assert all(item["summary"].startswith("当前 Code 尚未自动证明：") for item in response["gaps"])
     assert all("member_count" not in item for item in response["gaps"])
 

@@ -152,14 +152,14 @@ def test_change_log_signature_registration_carries_value_convention(
     registrations = {item.field_key: item for item in inspection.registrations}
     for field_key in (
         "change-log-signature",
-        "change-log-signature-agent-id",
-        "change-log-signature-host-environment",
+        "change-log-signature-model-id",
+        "change-log-signature-workbench-name",
     ):
         assert registrations[field_key].status == "current"
     text = (current_specs_repository / "specs/attachments/05.Att.01-事实对象统一字段登记.md").read_text(
         encoding="utf-8"
     )
     assert "取值约定" in text
-    assert "实际驱动模型/Agent 身份" in text
+    assert "实际驱动模型" in text
     assert "禁止" in text and "重复" in text
     assert "平台/执行会话按实际运行环境注入" in text or "平台/执行会话" in text

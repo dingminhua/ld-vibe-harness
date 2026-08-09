@@ -381,7 +381,73 @@ def test_change_log_accepts_two_field_signatures_and_rejects_bad_order_or_shape(
     fields["change_log"][1]["signature"].pop("agent_id")
     issues = validate_fact_object("spark", fields, schema)
     assert any(issue.field_path == "change_log[1].at" for issue in issues)
-    assert any(issue.field_path == "change_log[1].signature.agent_id" for issue in issues)
+    assert any(issue.field_path == "change_log[1].signature.model_id" for issue in issues)
+
+
+def test_change_log_host_name_interim_legacy_is_readable(
+    current_fact_schemas: Mapping[str, FactSchema],
+) -> None:
+    """The pre-rename host_name shape remains readable, never writable."""
+
+    schema = current_fact_schemas["spark"]
+    fields = {
+        **_common("spark", "spark-0001", "open"),
+        "summary": "A current question.",
+        "priority": "P2",
+        "change_log": [
+            {
+                "signature": {
+                    "model_id": "gpt-5.6",
+                    "host_name": "Cindy",
+                },
+                "session_id": "48bbb4c6-f2ff-4510-b63f-cebcaaa35d2e",
+                "at": "2026-07-14T09:30:00+08:00",
+                "summary": "The Spark was first recorded.",
+            },
+        ],
+    }
+    assert validate_fact_object("spark", fields, schema) == ()
+
+    # Mixing the interim host_name field with the canonical agent_workbench is
+    # still rejected: only the exact legacy set is readable.
+    fields["change_log"][0]["signature"]["agent_workbench"] = "Cindy"
+    issues = validate_fact_object("spark", fields, schema)
+    assert any(issue.field_path == "change_log[0].signature.host_name" for issue in issues)
+
+
+def test_change_log_signature_rejects_host_product_concatenation(
+    current_fact_schemas: Mapping[str, FactSchema],
+) -> None:
+    """A model id spliced from a host product name is mechanically rejected.
+
+    The bare-alias blacklist is exact-match so that real model ids like gpt-5
+    or claude-3-5-sonnet keep validating; host products must never appear.
+    """
+
+    schema = current_fact_schemas["spark"]
+    fields = {
+        **_common("spark", "spark-0001", "open"),
+        "summary": "A current question.",
+        "priority": "P2",
+        "change_log": [
+            {
+                "signature": {"model_id": "workbuddy-hy3", "agent_workbench": "Cindy"},
+                "session_id": "48bbb4c6-f2ff-4510-b63f-cebcaaa35d2e",
+                "at": "2026-07-14T09:30:00+08:00",
+                "summary": "The Spark was first recorded.",
+            },
+        ],
+    }
+    issues = validate_fact_object("spark", fields, schema)
+    assert any(
+        issue.field_path == "change_log[0].signature.model_id" and "拼接宿主产品名" in issue.summary
+        for issue in issues
+    )
+
+    for model_id in ("gpt-5", "claude-3-5-sonnet", "deepseek-chat", "k3-256k", "hy3"):
+        fields["change_log"][0]["signature"]["model_id"] = model_id
+        remaining = validate_fact_object("spark", fields, schema)
+        assert not any("拼接宿主产品名" in issue.summary for issue in remaining)
 
 
 def test_change_log_is_required_on_creation_and_legacy_history_is_not_fabricated() -> None:

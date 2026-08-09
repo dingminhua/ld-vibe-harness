@@ -12,13 +12,18 @@ from ldvh.commits.contract_source import CommitContractProjection
 from ldvh.facts.content import validate_fact_content
 from ldvh.facts.contracts import LAYOUTS
 from ldvh.facts.schema import FactSchema
+from ldvh.facts.validation import _is_host_product_concatenation
 
 _HEADER = re.compile(r"^(?P<type>[a-z]+)(?:\((?P<scope>[a-z]+(?:-[a-z]+)*)\))?(?P<breaking>!)?: (?P<description>.+)$")
 _CJK = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff]")
 _FIXED_HEADINGS = ("动机:", "关键变更:", "影响边界:", "验证结论:", "风险与后续:")
 _HEADING_LIKE = re.compile(r"^[^\s].*:\s*$")
 _TRAILER = re.compile(r"(?P<name>[A-Za-z][A-Za-z-]*): (?P<value>.*)\Z")
-_REQUIRED_TRAILERS = ("Session-ID", "Agent-ID", "Host-Environment")
+_REQUIRED_TRAILERS = ("Session-ID", "Model-ID", "Workbench-Name")
+_MODEL_PRODUCT_ALIASES = frozenset(
+    {"codex", "claude-code", "workbuddy", "workbuddy-ai", "deepseek", "glm", "gpt", "claude", "kimi", "k3"}
+)
+_WORKBENCH_SYSTEM_SUFFIX = re.compile(r"\s*\([^()]+\)\s*\Z")
 _SPEC_PATH_RE = re.compile(r"^specs/[0-9]+-.*\.md$")
 _PLATFORM_AFFECTED_GLOBS = (
     "code/ldvh/filesystem.py",
@@ -212,10 +217,25 @@ def _signature_trailer_issues(lines: list[str]) -> list[CommitValidationIssue]:
     session_values = trailers.get("Session-ID", [])
     if not session_values or any(not value.strip() for value in session_values):
         issues.append(_issue("signature_trailer_missing", "footer 必须至少含一个非空 Session-ID: trailer"))
-    for name in ("Agent-ID", "Host-Environment"):
+    for name in ("Model-ID", "Workbench-Name"):
         values = trailers.get(name, [])
         if not values or any(not value.strip() for value in values):
             issues.append(_issue("signature_trailer_missing", f"footer 必须至少含一个非空 {name}: trailer"))
+        elif name == "Model-ID" and any(value.strip().lower() in _MODEL_PRODUCT_ALIASES for value in values):
+            issues.append(_issue("signature_model_alias", "footer 的 Model-ID 不得使用已知裸产品别名"))
+        elif name == "Model-ID" and any(_is_host_product_concatenation(value) for value in values):
+            issues.append(_issue("signature_model_host_product", "footer 的 Model-ID 不得拼接宿主产品名"))
+        if name == "Model-ID" and any(value.strip() != value.strip().lower() for value in values):
+            issues.append(_issue("signature_model_case", "footer 的 Model-ID 必须全小写"))
+        elif name == "Workbench-Name" and any(_WORKBENCH_SYSTEM_SUFFIX.search(value) for value in values):
+            issues.append(_issue("signature_host_suffix", "footer 的 Workbench-Name 不得包含括号系统后缀"))
+    if trailers.get("Agent-ID") or trailers.get("Host-Environment"):
+        issues.append(
+            _issue(
+                "legacy_signature_trailer_retired",
+                "footer 已禁止 Agent-ID/Host-Environment trailer；新提交必须使用 Model-ID/Workbench-Name",
+            )
+        )
     if trailers.get("Signer-Type"):
         issues.append(_issue("signer_type_retired", "footer 禁止已退役的 Signer-Type trailer"))
     return issues
@@ -437,19 +457,18 @@ def _fact_trace_issues(
     failures: list[CommitValidationIssue] = []
     schemas = {schema.fact_type_key: schema for schema in value.fact_schemas}
     session_values = [value for value in trailers.get("Session-ID", []) if value.strip()]
-    agent_values = [value for value in trailers.get("Agent-ID", []) if value.strip()]
-    host_values = [value for value in trailers.get("Host-Environment", []) if value.strip()]
-
-    def _declared(session: object, agent: object, host: object) -> bool:
+    model_values = [value for value in trailers.get("Model-ID", []) if value.strip()]
+    host_values = [value for value in trailers.get("Workbench-Name", []) if value.strip()]
+    def _declared(session: object, model: object, host: object) -> bool:
         """A log entry is declared by this commit iff every member belongs to
         the footer's declared set for that member.  Declared sets must be
         non-empty; a missing declared set therefore never matches."""
         return (
             bool(session_values)
-            and bool(agent_values)
+            and bool(model_values)
             and bool(host_values)
             and session in session_values
-            and agent in agent_values
+            and model in model_values
             and host in host_values
         )
 
@@ -513,19 +532,31 @@ def _fact_trace_issues(
             failures.append(_issue("fact_trace_append_invalid", f"事实候选必须{requirement}: {candidate.path}"))
             continue
         if any(
+            isinstance(entry.get("signature"), dict)
+            and set(entry["signature"])
+            in ({"agent_id", "host_environment"}, {"model_id", "host_name"})
+            for entry in appended
+        ):
+            failures.append(
+                _issue(
+                    "legacy_signature_write_retired",
+                    "事实新增流水不得使用 agent_id/host_environment 或 model_id/host_name 历史形状；"
+                    f"新写入必须使用 model_id/agent_workbench: {candidate.path}",
+                )
+            )
+            continue
+        if any(
             not _declared(
                 entry.get("session_id"),
-                entry.get("signature", {}).get("agent_id") if isinstance(entry.get("signature"), dict) else None,
-                entry.get("signature", {}).get("host_environment")
-                if isinstance(entry.get("signature"), dict)
-                else None,
+                entry.get("signature", {}).get("model_id") if isinstance(entry.get("signature"), dict) else None,
+                entry.get("signature", {}).get("agent_workbench") if isinstance(entry.get("signature"), dict) else None,
             )
             for entry in appended
         ):
             failures.append(
                 _issue(
                     "fact_trace_signature_mismatch",
-                    f"事实新增流水与提交 footer 的 Session-ID/Agent-ID/Host-Environment 不一致: {candidate.path}",
+                    f"事实新增流水与提交 footer 的 Session-ID/Model-ID/Workbench-Name 不一致: {candidate.path}",
                 )
             )
     return unavailable, failures

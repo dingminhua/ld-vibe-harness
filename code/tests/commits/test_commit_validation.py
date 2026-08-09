@@ -33,7 +33,7 @@ def _input(contract: CommitContractProjection, **changes: object) -> CommitValid
         "message": (
             "docs(specs): 明确提交契约\n\n"
             "关键变更:\n- 明确测试中的提交契约\n\n"
-            "Session-ID: test-session\nAgent-ID: test-agent\nHost-Environment: test-environment"
+            "Session-ID: test-session\nModel-ID: gpt-5.6-luna\nWorkbench-Name: Cindy"
         ),
         "candidate_paths": ("specs/03.md",),
         "git_worktree_root": "/workspace/project",
@@ -54,7 +54,7 @@ def _codes(result: object) -> set[str]:
 def _signed(message: str) -> str:
     if "\n关键变更:" not in message:
         message += "\n\n关键变更:\n- 覆盖当前测试变化"
-    return message + "\n\nSession-ID: test-session\nAgent-ID: test-agent\nHost-Environment: test-environment"
+    return message + "\n\nSession-ID: test-session\nModel-ID: gpt-5.6-luna\nWorkbench-Name: Cindy"
 
 
 def test_new_spec_without_human_gate_trailer_fails(contract: CommitContractProjection) -> None:
@@ -74,7 +74,7 @@ def test_new_spec_with_empty_human_gate_trailer_fails(contract: CommitContractPr
     message = (
         "docs(specs): 新增规范文档\n\n"
         "关键变更:\n- 新增独立 spec 文档\n\n"
-        "Session-ID: test-session\nAgent-ID: test-agent\nHost-Environment: test-environment\n"
+        "Session-ID: test-session\nModel-ID: gpt-5.6-luna\nWorkbench-Name: Cindy\n"
         "Human-Gate: "
     )
     result = validate_commit(
@@ -94,7 +94,7 @@ def test_new_spec_with_human_gate_trailer_passes(contract: CommitContractProject
     message = (
         "docs(specs): 新增规范文档\n\n"
         "关键变更:\n- 新增独立 spec 文档\n\n"
-        "Session-ID: test-session\nAgent-ID: test-agent\nHost-Environment: test-environment\n"
+        "Session-ID: test-session\nModel-ID: gpt-5.6-luna\nWorkbench-Name: Cindy\n"
         "Human-Gate: authorized-by-human-20260806"
     )
     result = validate_commit(
@@ -175,7 +175,7 @@ def test_activate_existing_spec_with_human_gate_trailer_passes(contract: CommitC
     message = (
         "docs(specs): 激活独立规范文档\n\n"
         "关键变更:\n- 将 status 转为 active\n\n"
-        "Session-ID: test-session\nAgent-ID: test-agent\nHost-Environment: test-environment\n"
+        "Session-ID: test-session\nModel-ID: test-agent\nWorkbench-Name: test-environment\n"
         "Human-Gate: authorized-by-human-20260806"
     )
     result = validate_commit(
@@ -222,7 +222,7 @@ def test_crlf_and_leading_comments_are_normalized(contract: CommitContractProjec
     message = (
         "# template\r\n\r\ndocs(specs): 明确提交契约\r\n\r\n"
         "关键变更:\r\n- 明确换行归一化\r\n\r\n"
-        "Session-ID: test\r\nAgent-ID: test\r\nHost-Environment: test\r\n"
+        "Session-ID: test\r\nModel-ID: gpt-5.6-luna\r\nWorkbench-Name: Cindy\r\n"
     )
 
     result = validate_commit(contract, _input(contract, message=message))
@@ -276,7 +276,7 @@ def test_every_commit_requires_key_changes_list(contract: CommitContractProjecti
         _input(
             contract,
             message=(
-                "docs: 更新说明\n\nSession-ID: test-session\nAgent-ID: test-agent\nHost-Environment: test-environment"
+                "docs: 更新说明\n\nSession-ID: test-session\nModel-ID: gpt-5.6-luna\nWorkbench-Name: Cindy"
             ),
         ),
     )
@@ -318,8 +318,8 @@ def test_breaking_without_body_reports_all_minimum_structure_failures(
             message=(
                 "feat!: 调整公开契约\n\n"
                 "Session-ID: test-session\n"
-                "Agent-ID: test-agent\n"
-                "Host-Environment: test-environment"
+                "Model-ID: gpt-5.6-luna\n"
+                "Workbench-Name: Cindy"
             ),
         ),
     )
@@ -364,7 +364,7 @@ def test_body_heading_and_list_boundaries_fail_closed(
 def test_body_after_trailers_is_not_accepted_as_minimum_body(contract: CommitContractProjection) -> None:
     message = (
         "docs: 错误放置正文\n\n"
-        "Session-ID: test-session\nAgent-ID: test-agent\nHost-Environment: test-environment\n\n"
+        "Session-ID: test-session\nModel-ID: gpt-5.6-luna\nWorkbench-Name: Cindy\n\n"
         "关键变更:\n- trailers 之后的正文无效"
     )
 
@@ -384,11 +384,143 @@ def test_signature_footer_requires_session_and_two_signature_fields(contract: Co
         contract,
         _input(
             contract,
-            message="docs: 增加署名\n\nSession-ID: test\nSigner-Type: person\nAgent-ID: a\nHost-Environment: b",
+            message="docs: 增加署名\n\nSession-ID: test\nSigner-Type: person\nModel-ID: a\nWorkbench-Name: b",
         ),
     )
     assert with_retired_legacy_trailer.outcome == "failed"
     assert "signer_type_retired" in _codes(with_retired_legacy_trailer)
+
+
+def test_new_signature_trailers_are_canonical_footer(contract: CommitContractProjection) -> None:
+    """新三元组 footer 直接通过。"""
+
+    result = validate_commit(
+        contract,
+        _input(
+            contract,
+            message=(
+                "docs(specs): 明确提交契约\n\n"
+                "关键变更:\n- 明确测试中的提交契约\n\n"
+                "Session-ID: test-session\nModel-ID: gpt-5.6-luna\nWorkbench-Name: Cindy"
+            ),
+        ),
+    )
+
+    assert result.outcome == "passed", [f"{issue.code}: {issue.message}" for issue in result.issues]
+
+
+def test_new_signature_footer_tripwires_reject_alias_and_os_suffix(
+    contract: CommitContractProjection,
+) -> None:
+    """新 footer 的 Model-ID 裸产品别名与 Workbench-Name 括号系统后缀被机械拒绝。"""
+
+    alias = validate_commit(
+        contract,
+        _input(
+            contract,
+            message=(
+                "docs(specs): 明确提交契约\n\n"
+                "关键变更:\n- 明确测试中的提交契约\n\n"
+                "Session-ID: test-session\nModel-ID: codex\nWorkbench-Name: Cindy"
+            ),
+        ),
+    )
+    assert alias.outcome == "failed"
+    assert "signature_model_alias" in _codes(alias)
+
+    suffix = validate_commit(
+        contract,
+        _input(
+            contract,
+            message=(
+                "docs(specs): 明确提交契约\n\n"
+                "关键变更:\n- 明确测试中的提交契约\n\n"
+                "Session-ID: test-session\nModel-ID: gpt-5.6-luna\nWorkbench-Name: Cindy (macOS)"
+            ),
+        ),
+    )
+    assert suffix.outcome == "failed"
+    assert "signature_host_suffix" in _codes(suffix)
+
+    spliced = validate_commit(
+        contract,
+        _input(
+            contract,
+            message=(
+                "docs(specs): 明确提交契约\n\n"
+                "关键变更:\n- 明确测试中的提交契约\n\n"
+                "Session-ID: test-session\nModel-ID: workbuddy-hy3\nWorkbench-Name: Cindy"
+            ),
+        ),
+    )
+    assert spliced.outcome == "failed"
+    assert "signature_model_host_product" in _codes(spliced)
+
+
+def test_partial_new_signature_footer_requires_both_new_trailers(
+    contract: CommitContractProjection,
+) -> None:
+    """只声明一个新 trailer 时必须补齐新三元组，不回退到旧集合。"""
+
+    result = validate_commit(
+        contract,
+        _input(
+            contract,
+            message=(
+                "docs(specs): 明确提交契约\n\n"
+                "关键变更:\n- 明确测试中的提交契约\n\n"
+                "Session-ID: test-session\nModel-ID: gpt-5.6-luna"
+            ),
+        ),
+    )
+
+    assert result.outcome == "failed"
+    assert "signature_trailer_missing" in _codes(result)
+
+
+def test_missing_signature_footer_messages_point_at_new_trailers(
+    contract: CommitContractProjection,
+) -> None:
+    """新旧 trailer 全缺时，缺失引导指向 Model-ID/Workbench-Name 而非旧名称。"""
+
+    result = validate_commit(
+        contract,
+        _input(
+            contract,
+            message=(
+                "docs(specs): 明确提交契约\n\n"
+                "关键变更:\n- 明确测试中的提交契约\n\n"
+                "Session-ID: test-session"
+            ),
+        ),
+    )
+
+    assert result.outcome == "failed"
+    messages = [issue.message for issue in result.issues if issue.code == "signature_trailer_missing"]
+    assert any("非空 Model-ID" in message for message in messages)
+    assert any("非空 Workbench-Name" in message for message in messages)
+    assert not any("非空 Agent-ID" in message or "非空 Host-Environment" in message for message in messages)
+
+
+def test_legacy_signature_footer_is_rejected_after_write_path_cancellation(
+    contract: CommitContractProjection,
+) -> None:
+    """旧 trailer 写入路径取消后，即使不涉及事实流水也必须拒绝。"""
+
+    result = validate_commit(
+        contract,
+        _input(
+            contract,
+            message=(
+                "docs(specs): 旧署名拒绝\n\n"
+                "关键变更:\n- 验证旧 trailer 已取消\n\n"
+                "Session-ID: test-session\nAgent-ID: test-agent\nHost-Environment: test-environment"
+            ),
+        ),
+    )
+
+    assert result.outcome == "failed"
+    assert "legacy_signature_trailer_retired" in _codes(result)
 
 
 @pytest.mark.parametrize(
@@ -441,8 +573,8 @@ def _spark_schema() -> FactSchema:
             field("summary", presence="conditional"),
             field("change_log", "array", presence="conditional"),
             field("change_log.signature", "object"),
-            field("change_log.signature.agent_id"),
-            field("change_log.signature.host_environment"),
+            field("change_log.signature.model_id"),
+            field("change_log.signature.agent_workbench"),
             field("change_log.session_id"),
             field("change_log.at"),
             field("change_log.summary"),
@@ -460,8 +592,8 @@ _VALID_SPARK = (
     "updated_at: 2026-07-01T00:00:00+08:00\n"
     "change_log:\n"
     "  - signature:\n"
-    "      agent_id: test-agent\n"
-    "      host_environment: test-environment\n"
+    "      model_id: gpt-5.6-luna\n"
+    "      agent_workbench: Cindy\n"
     "    session_id: test-session\n"
     "    at: 2026-07-01T00:00:00+08:00\n"
     "    summary: 建立测试火花\n"
@@ -478,6 +610,146 @@ def _fact_candidate(**changes: object) -> StagedFactCandidate:
     }
     values.update(changes)
     return StagedFactCandidate(**values)  # type: ignore[arg-type]
+
+
+def _spark_schema_new_signature() -> FactSchema:
+    def field(path: str, json_type: str = "string", presence: str = "required") -> ProjectedField:
+        return ProjectedField(path, json_type, presence, None, "test-registry")
+
+    return FactSchema(
+        "spark",
+        (
+            field("object_id"),
+            field("fact_type_key"),
+            field("title"),
+            field("status"),
+            field("priority"),
+            field("created_at"),
+            field("updated_at"),
+            field("summary", presence="conditional"),
+            field("change_log", "array", presence="conditional"),
+            field("change_log.signature", "object"),
+            field("change_log.signature.model_id"),
+            field("change_log.signature.agent_workbench"),
+            field("change_log.session_id"),
+            field("change_log.at"),
+            field("change_log.summary"),
+        ),
+    )
+
+
+_NEW_SHAPE_SPARK = _VALID_SPARK
+_LEGACY_SHAPE_SPARK = _VALID_SPARK.replace(
+    b"      model_id: gpt-5.6-luna\n      agent_workbench: Cindy\n",
+    b"      agent_id: test-agent\n      host_environment: test-environment\n",
+)
+
+
+def test_new_shape_fact_binding_accepts_declared_new_footer(
+    contract: CommitContractProjection,
+) -> None:
+    """新形状流水与新 footer 的集合绑定成立即通过。"""
+
+    message = (
+        "docs(specs): 新形状提交\n\n"
+        "关键变更:\n"
+        "- 覆盖新形状受控写会话\n\n"
+        "Session-ID: test-session\n"
+        "Model-ID: gpt-5.6-luna\n"
+        "Workbench-Name: Cindy"
+    )
+
+    result = validate_commit(
+        contract,
+        _input(
+            contract,
+            message=message,
+            fact_candidates=(_fact_candidate(data=_NEW_SHAPE_SPARK, head_exists=False),),
+            fact_schemas=(_spark_schema_new_signature(),),
+        ),
+    )
+
+    assert result.outcome == "passed", [f"{issue.code}: {issue.message}" for issue in result.issues]
+
+
+def test_new_shape_fact_binding_rejects_undeclared_model(
+    contract: CommitContractProjection,
+) -> None:
+    """新形状流水的 model_id 未被新 footer 声明：拒绝。"""
+
+    result = validate_commit(
+        contract,
+        _input(
+            contract,
+            message=(
+                "docs(specs): 未声明模型\n\n"
+                "关键变更:\n- 验证 footer 集合绑定\n\n"
+                "Session-ID: test-session\n"
+                "Model-ID: other-model\n"
+                "Workbench-Name: Cindy"
+            ),
+            fact_candidates=(_fact_candidate(data=_NEW_SHAPE_SPARK, head_exists=False),),
+            fact_schemas=(_spark_schema_new_signature(),),
+        ),
+    )
+
+    assert result.outcome == "failed"
+    assert "fact_trace_signature_mismatch" in _codes(result)
+
+
+def test_new_footer_does_not_bind_legacy_shape_entries(
+    contract: CommitContractProjection,
+) -> None:
+    """新 footer 不为旧形状流水背书：混合形状提交按绑定失败拒绝。"""
+
+    message = (
+        "docs(specs): 混合形状提交\n\n"
+        "关键变更:\n"
+        "- 覆盖混合形状流水\n\n"
+        "Session-ID: test-session\n"
+        "Model-ID: gpt-5.6-luna\n"
+        "Workbench-Name: Cindy"
+    )
+
+    result = validate_commit(
+        contract,
+        _input(
+            contract,
+            message=message,
+            fact_candidates=(_fact_candidate(data=_LEGACY_SHAPE_SPARK, head_exists=False),),
+            fact_schemas=(_spark_schema(),),
+        ),
+    )
+
+    assert result.outcome == "failed"
+    assert "legacy_signature_write_retired" in _codes(result)
+
+
+def test_legacy_shape_change_log_is_rejected_even_with_legacy_footer(
+    contract: CommitContractProjection,
+) -> None:
+    """旧形状流水与旧 footer 一并出现时，旧写入路径仍机械拒绝。"""
+
+    message = (
+        "docs(specs): 拒绝旧形状流水\n\n"
+        "关键变更:\n"
+        "- 验证旧签名写入路径已取消\n\n"
+        "Session-ID: test-session\n"
+        "Agent-ID: test-agent\n"
+        "Host-Environment: test-environment"
+    )
+    result = validate_commit(
+        contract,
+        _input(
+            contract,
+            message=message,
+            fact_candidates=(_fact_candidate(data=_LEGACY_SHAPE_SPARK, head_exists=False),),
+            fact_schemas=(_spark_schema(),),
+        ),
+    )
+
+    assert result.outcome == "failed"
+    assert "legacy_signature_trailer_retired" in _codes(result)
 
 
 def test_invalid_staged_fact_candidate_fails_with_path_precise_diagnostics(
@@ -532,8 +804,8 @@ def test_new_fact_with_multiple_precommit_change_logs_matches_commit_footer(
         )
         + (
             "  - signature:\n"
-            "      agent_id: test-agent\n"
-            "      host_environment: test-environment\n"
+            "      model_id: gpt-5.6-luna\n"
+            "      agent_workbench: Cindy\n"
             "    session_id: test-session\n"
             "    at: 2026-07-01T01:00:00+08:00\n"
             "    summary: 补充测试火花\n"
@@ -562,8 +834,8 @@ def test_new_fact_rejects_any_precommit_change_log_not_matching_footer(
         )
         + (
             "  - signature:\n"
-            "      agent_id: test-agent\n"
-            "      host_environment: test-environment\n"
+            "      model_id: gpt-5.6-luna\n"
+            "      agent_workbench: Cindy\n"
             "    session_id: another-session\n"
             "    at: 2026-07-01T01:00:00+08:00\n"
             "    summary: 补充测试火花\n"
@@ -672,8 +944,8 @@ def test_legacy_migration_change_log_passes_when_head_has_no_history(
         "updated_at: 2026-07-01T01:00:00+08:00\n"
         "change_log:\n"
         "  - signature:\n"
-        "      agent_id: test-agent\n"
-        "      host_environment: test-environment\n"
+        "      model_id: gpt-5.6-luna\n"
+        "      agent_workbench: Cindy\n"
         "    session_id: test-session\n"
         "    at: 2026-07-01T01:00:00+08:00\n"
         "    summary: Human授权兼容旧数据：建立可信流水起点\n"
@@ -704,8 +976,8 @@ def test_new_fact_multiple_sessions_match_multiple_footer_session_ids(
         )
         + (
             "  - signature:\n"
-            "      agent_id: test-agent\n"
-            "      host_environment: test-environment\n"
+            "      model_id: gpt-5.6-luna\n"
+            "      agent_workbench: Cindy\n"
             "    session_id: test-session-2\n"
             "    at: 2026-07-01T01:00:00+08:00\n"
             "    summary: 第二个受控写会话\n"
@@ -717,8 +989,8 @@ def test_new_fact_multiple_sessions_match_multiple_footer_session_ids(
         "- 覆盖多个受控写会话\n\n"
         "Session-ID: test-session\n"
         "Session-ID: test-session-2\n"
-        "Agent-ID: test-agent\n"
-        "Host-Environment: test-environment"
+        "Model-ID: gpt-5.6-luna\n"
+        "Workbench-Name: Cindy"
     )
 
     result = validate_commit(
@@ -746,8 +1018,8 @@ def test_new_fact_multiple_sessions_reject_unlisted_session(
         )
         + (
             "  - signature:\n"
-            "      agent_id: test-agent\n"
-            "      host_environment: test-environment\n"
+            "      model_id: test-agent\n"
+            "      agent_workbench: test-environment\n"
             "    session_id: ghost-session\n"
             "    at: 2026-07-01T01:00:00+08:00\n"
             "    summary: 未声明会话\n"
@@ -767,10 +1039,10 @@ def test_new_fact_multiple_sessions_reject_unlisted_session(
     assert "fact_trace_signature_mismatch" in _codes(result)
 
 
-def test_new_fact_multiple_agents_match_multiple_footer_agent_ids(
+def test_new_fact_multiple_agents_match_multiple_footer_model_ids(
     contract: CommitContractProjection,
 ) -> None:
-    """新对象跨多 agent 流水：footer 声明全部 Agent-ID/Host-Environment 即通过。"""
+    """新对象跨多模型/宿主流水：footer 声明全部新三元组值即通过。"""
 
     data = (
         _VALID_SPARK.replace(
@@ -779,8 +1051,8 @@ def test_new_fact_multiple_agents_match_multiple_footer_agent_ids(
         )
         + (
             "  - signature:\n"
-            "      agent_id: another-agent\n"
-            "      host_environment: another-env\n"
+            "      model_id: another-model\n"
+            "      agent_workbench: Other Host\n"
             "    session_id: test-session-2\n"
             "    at: 2026-07-01T01:00:00+08:00\n"
             "    summary: 第二个执行者\n"
@@ -792,10 +1064,10 @@ def test_new_fact_multiple_agents_match_multiple_footer_agent_ids(
         "- 覆盖多个执行者流水\n\n"
         "Session-ID: test-session\n"
         "Session-ID: test-session-2\n"
-        "Agent-ID: test-agent\n"
-        "Agent-ID: another-agent\n"
-        "Host-Environment: test-environment\n"
-        "Host-Environment: another-env"
+        "Model-ID: gpt-5.6-luna\n"
+        "Model-ID: another-model\n"
+        "Workbench-Name: Cindy\n"
+        "Workbench-Name: Other Host"
     )
 
     result = validate_commit(
@@ -823,8 +1095,8 @@ def test_new_fact_multiple_agents_reject_undeclared_agent(
         )
         + (
             "  - signature:\n"
-            "      agent_id: ghost-agent\n"
-            "      host_environment: ghost-env\n"
+            "      model_id: ghost-agent\n"
+            "      agent_workbench: ghost-env\n"
             "    session_id: test-session-2\n"
             "    at: 2026-07-01T01:00:00+08:00\n"
             "    summary: 未声明执行者\n"
@@ -834,8 +1106,8 @@ def test_new_fact_multiple_agents_reject_undeclared_agent(
         "docs(specs): 未声明执行者\n\n"
         "Session-ID: test-session\n"
         "Session-ID: test-session-2\n"
-        "Agent-ID: test-agent\n"
-        "Host-Environment: test-environment"
+        "Model-ID: test-agent\n"
+        "Workbench-Name: test-environment"
     )
 
     result = validate_commit(
@@ -865,8 +1137,8 @@ def test_legacy_migration_multiple_agents_passes(
         )
         + (
             "  - signature:\n"
-            "      agent_id: another-agent\n"
-            "      host_environment: another-env\n"
+            "      model_id: another-model\n"
+            "      agent_workbench: Other Host\n"
             "    session_id: test-session-2\n"
             "    at: 2026-07-01T01:00:00+08:00\n"
             "    summary: Human授权兼容旧数据：第二个执行者迁移\n"
@@ -878,10 +1150,10 @@ def test_legacy_migration_multiple_agents_passes(
         "- 迁移多个执行者的遗留流水\n\n"
         "Session-ID: test-session\n"
         "Session-ID: test-session-2\n"
-        "Agent-ID: test-agent\n"
-        "Agent-ID: another-agent\n"
-        "Host-Environment: test-environment\n"
-        "Host-Environment: another-env"
+        "Model-ID: gpt-5.6-luna\n"
+        "Model-ID: another-model\n"
+        "Workbench-Name: Cindy\n"
+        "Workbench-Name: Other Host"
     )
 
     result = validate_commit(
@@ -1009,7 +1281,7 @@ def test_platform_affected_integration_through_validate_commit(
     message = (
         "docs(specs): 修改文件系统抽象层\n\n"
         "关键变更:\n- 调整锁实现\n\n"
-        "Session-ID: test-session\nAgent-ID: test-agent\nHost-Environment: test-environment"
+        "Session-ID: test-session\nModel-ID: test-agent\nWorkbench-Name: test-environment"
     )
     result = validate_commit(
         contract,
@@ -1026,7 +1298,7 @@ def test_platform_affected_integration_with_trailers_passes(
     message = (
         "docs(specs): 修改文件系统抽象层\n\n"
         "关键变更:\n- 调整锁实现\n\n"
-        "Session-ID: test-session\nAgent-ID: test-agent\nHost-Environment: test-environment\n"
+        "Session-ID: test-session\nModel-ID: test-agent\nWorkbench-Name: test-environment\n"
         "Platform-Affected: macos\nPlatform-Verified: macos"
     )
     result = validate_commit(
@@ -1043,7 +1315,7 @@ def test_platform_affected_integration_non_platform_path_passes(
     message = (
         "docs(specs): 改规范\n\n"
         "关键变更:\n- 修改说明\n\n"
-        "Session-ID: test-session\nAgent-ID: test-agent\nHost-Environment: test-environment"
+        "Session-ID: test-session\nModel-ID: test-agent\nWorkbench-Name: test-environment"
     )
     result = validate_commit(
         contract,

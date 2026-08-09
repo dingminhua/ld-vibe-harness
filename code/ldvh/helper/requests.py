@@ -50,7 +50,7 @@ def _is_object(value: object) -> bool:
     return isinstance(value, dict)
 
 
-SIGNATURE_FIELDS = frozenset({"agent_id", "host_environment", "session_id"})
+SIGNATURE_FIELDS = frozenset({"model_id", "agent_workbench", "session_id"})
 
 
 @dataclass(frozen=True, slots=True)
@@ -64,7 +64,7 @@ def parse_observed_signature(observed_context: dict[str, Any]) -> ObservedSignat
 
     ``observed_context`` is an existing common request field; its ``signature``
     sub-field lets the executing session inject a responsibility signature
-    (agent_id / host_environment / session_id) without creating a new top-level
+    (model_id / agent_workbench / session_id) without creating a new top-level
     common field.  When ``observed_context`` is empty or carries no ``signature``,
     the result holds an empty signature and no problems, preserving legacy calls.
     """
@@ -90,7 +90,7 @@ def parse_observed_signature(observed_context: dict[str, Any]) -> ObservedSignat
         if not isinstance(value, str) or not value.strip():
             problems.append(f"observed_context.signature.{name} 出现时必须是非空 string")
         else:
-            signature[name] = value.strip().lower()
+            signature[name] = value.strip().lower() if name == "model_id" else value.strip()
     return ObservedSignatureParseResult(signature, tuple(problems))
 
 
