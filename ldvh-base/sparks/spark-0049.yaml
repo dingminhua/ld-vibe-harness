@@ -1,4 +1,4 @@
-title: AI 回复内联可视化使用纪律
+title: 丰富AI回复展现形式
 status: open
 priority: P2
 intent: LDVH 管辖的 AI 在回复过程中需要可视化呈现关系、对比或流程时，如何主动使用宿主的内联可视化渲染效果，以及 LDVH 以何种形态承接该能力（规则引导提示、行动模板或仅保留实践建议），是待判断的议题。不保留该议题时，后续会话或其它 AI 环境再次处理同类需求，需重新定位既有研究报告与当次结论才能判断承接形态与使用纪律，增加定位、重新分析、分流与上下文恢复负担。
@@ -28,7 +28,13 @@ change_log:
   session_id: 5d667b0e-ab11-4027-a735-e41306c57221
   at: '2026-08-03T22:17:19.846153+08:00'
   summary: 按 Human 澄清精确化承载形态：本议题约束 AI 回复行为，与 Web 呈现规范 specs/08 无关；承载为行动模板（06 体系）或独立呈现纪律规范。
+- signature:
+    agent_id: glm-5.2
+    host_environment: Claude Code
+  session_id: e63cca84-d0bd-4c0d-88a4-90b729debf85
+  at: '2026-08-09T11:19:01.964236+08:00'
+  summary: 按 Human 当前指令，将标题改为”丰富AI回复展现形式”。
 object_id: spark-0049
 fact_type_key: spark
 created_at: '2026-08-03T15:26:53.713420+08:00'
-updated_at: '2026-08-03T22:17:19.846153+08:00'
+updated_at: '2026-08-09T11:19:01.964236+08:00'
