@@ -78,6 +78,15 @@ AI 不得自行猜测或传递路径。若自动发现返回 `missing`，如实�
 配置 miss，其故障根因在调用方而非 Code；审计追溯由 02 §6.2-5 强制返回实际
 选定配置与依据兜底。
 
+## WorkCase 创建路由纪律
+
+当 AI 将要调用 `create-fact-object` 创建一个 WorkCase（fact_type_key=workcase）时，
+在提交 Human Gate 1 之前，必须经 Helper 读取规范 21 §4.3 与 §4.4，及当次适用
+行动模板的 Stop Conditions，照其逐项审核 work items 与 success_criterion_definitions
+是否吸收生命周期关口或 Human Gate；不得凭本文件概括替代规范与模板原文。
+
+此纪律不改变 Code 行为，只约束 AI 审核责任；机械测试无法替代。
+
 ## 如实报告
 
 区分并报告：**已验证**（当次实际跑通并有输出）、**未验证**（需要真实会话或
