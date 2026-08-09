@@ -6,6 +6,7 @@ import type { AddressInfo } from 'node:net'
 import os from 'node:os'
 import path from 'node:path'
 import { after, before, test } from 'node:test'
+import { parseCommitSignature } from '../../api/services/git.ts'
 
 const workspaceRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'ldvh-commit-dto-workspace-'))
 const projectRoot = path.join(workspaceRoot, 'demo')
@@ -311,4 +312,29 @@ test('preserves the shared commit DTO across current API consumers', async () =>
   assertCommitDto(commits.entries[0])
   assert.deepEqual(commits.entries[0].parents, [])
   assert.equal(commits.entries[0].isMerge, false)
+})
+
+test('commit signature display accepts canonical and legacy trailer names', () => {
+  assert.deepEqual(parseCommitSignature([
+    'Session-ID: canonical-session',
+    'Model-ID: gpt-5',
+    'Host-Name: Cindy',
+  ].join('\n')), {
+    sessionId: 'canonical-session',
+    modelId: 'gpt-5',
+    hostName: 'Cindy',
+    agentId: undefined,
+    hostEnvironment: undefined,
+  })
+  assert.deepEqual(parseCommitSignature([
+    'Session-ID: legacy-session',
+    'Agent-ID: codex',
+    'Host-Environment: LegacyHost',
+  ].join('\n')), {
+    sessionId: 'legacy-session',
+    modelId: undefined,
+    hostName: undefined,
+    agentId: 'codex',
+    hostEnvironment: 'LegacyHost',
+  })
 })

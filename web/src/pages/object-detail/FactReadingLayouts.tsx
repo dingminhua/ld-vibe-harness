@@ -34,6 +34,8 @@ type ChangeLogEntry = {
   key: string;
   at: string;
   summary: string;
+  modelId?: string;
+  hostName?: string;
   agentId?: string;
   hostEnvironment?: string;
 };
@@ -73,8 +75,8 @@ export function ChangeLogReadingNode({
                 <span className="tabular-nums">
                   {formatDateTime(entry.at)}
                 </span>
-                {entry.agentId && <><span aria-hidden="true">·</span><span>{entry.agentId}</span></>}
-                {entry.hostEnvironment && <><span aria-hidden="true">·</span><span>{entry.hostEnvironment}</span></>}
+                {(entry.modelId ?? entry.agentId) && <><span aria-hidden="true">·</span><span>{entry.modelId ?? entry.agentId}</span></>}
+                {(entry.hostName ?? entry.hostEnvironment) && <><span aria-hidden="true">·</span><span>{entry.hostName ?? entry.hostEnvironment}</span></>}
               </div>
               <p className="mt-1 ldvh-meta text-ldvh-text-secondary/80">{entry.summary}</p>
             </div>
@@ -97,10 +99,14 @@ function parseChangeLogEntries(value: unknown): ChangeLogEntry[] {
     const signatureRecord = signature && typeof signature === 'object' && !Array.isArray(signature)
       ? signature as Record<string, unknown>
       : null;
+    const modelId = typeof signatureRecord?.model_id === 'string' ? signatureRecord.model_id : undefined;
+    const hostName = typeof signatureRecord?.host_name === 'string' ? signatureRecord.host_name : undefined;
     return [{
       key: `${index}-${at}`,
       at,
       summary,
+      modelId,
+      hostName,
       agentId: typeof signatureRecord?.agent_id === 'string' ? signatureRecord.agent_id : undefined,
       hostEnvironment: typeof signatureRecord?.host_environment === 'string' ? signatureRecord.host_environment : undefined,
     }];

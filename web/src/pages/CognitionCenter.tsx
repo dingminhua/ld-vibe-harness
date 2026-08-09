@@ -379,6 +379,7 @@ function RecentActivityRow({ item }: { item: CognitionRecentActivityItem }) {
   const { openPanel } = usePanel();
   const title = getLocalizedObjectTitle(item, locale, item.id);
   const status = item.type === 'workcase' ? item.progress_group : item.status;
+  const open = () => openPanel({ type: 'object', title, objectType: item.type, objectId: item.id });
   return (
     <li className="min-w-0 py-3">
       <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
@@ -397,17 +398,15 @@ function RecentActivityRow({ item }: { item: CognitionRecentActivityItem }) {
           <ObjectReferenceCopyButton objectId={item.id} />
         </span>
       </div>
-      <div className="mt-2 flex min-w-0 items-center gap-1.5">
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={open}
+        onKeyDown={(event) => openOnKeyboard(event, open)}
+        className="group mt-2 flex min-w-0 cursor-pointer items-center gap-1.5 rounded-md py-1 text-left transition-colors hover:bg-ldvh-border/25 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ldvh-accent/50"
+      >
         <ObjectTypeIcon type={item.type} size={15} className="shrink-0" style={{ color: item.typeColor }} />
-        <h4 className="ldvh-card-title min-w-0 flex-1 whitespace-normal break-words">
-          <button
-            type="button"
-            onClick={() => openPanel({ type: 'object', title, objectType: item.type, objectId: item.id })}
-            className="text-left transition-colors hover:text-ldvh-accent focus-visible:outline-none focus-visible:text-ldvh-accent focus-visible:underline"
-          >
-            {title}
-          </button>
-        </h4>
+        <h4 className="ldvh-card-title min-w-0 flex-1 whitespace-normal break-words group-hover:text-ldvh-accent">{title}</h4>
       </div>
       <RecentActivityReadNotes item={item} locale={locale} />
     </li>
@@ -453,6 +452,7 @@ function SparkHealthRow({ item }: { item: CognitionSparkHealthItem }) {
   const { t, locale } = useI18n();
   const { openPanel } = usePanel();
   const title = getLocalizedObjectTitle(item, locale, item.id);
+  const open = () => openPanel({ type: 'object', title, objectType: 'spark', objectId: item.id });
   const fieldIssues = item.field_issues ?? [];
   const unparsed = item.unparsed_structures ?? [];
   const showReadNotes = item.read_status !== 'readable' || fieldIssues.length > 0 || unparsed.length > 0;
@@ -468,17 +468,15 @@ function SparkHealthRow({ item }: { item: CognitionSparkHealthItem }) {
           <ObjectReferenceCopyButton objectId={item.id} />
         </span>
       </div>
-      <div className="mt-2 flex min-w-0 items-center gap-1.5">
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={open}
+        onKeyDown={(event) => openOnKeyboard(event, open)}
+        className="group mt-2 flex min-w-0 cursor-pointer items-center gap-1.5 rounded-md py-1 text-left transition-colors hover:bg-ldvh-border/25 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ldvh-accent/50"
+      >
         <ObjectTypeIcon type="spark" size={15} className="shrink-0" style={{ color: item.typeColor }} />
-        <h4 className="ldvh-card-title min-w-0 flex-1 whitespace-normal break-words">
-          <button
-            type="button"
-            onClick={() => openPanel({ type: 'object', title, objectType: 'spark', objectId: item.id })}
-            className="text-left transition-colors hover:text-ldvh-accent focus-visible:outline-none focus-visible:text-ldvh-accent focus-visible:underline"
-          >
-            {title}
-          </button>
-        </h4>
+        <h4 className="ldvh-card-title min-w-0 flex-1 whitespace-normal break-words group-hover:text-ldvh-accent">{title}</h4>
       </div>
       {showReadNotes && <div className="mt-1.5 grid min-w-0 gap-1">
         {item.read_status !== 'readable' && (
@@ -499,6 +497,12 @@ function SparkHealthRow({ item }: { item: CognitionSparkHealthItem }) {
       </div>}
     </li>
   );
+}
+
+function openOnKeyboard(event: KeyboardEvent<HTMLDivElement>, open: () => void) {
+  if (event.key !== 'Enter' && event.key !== ' ') return;
+  event.preventDefault();
+  open();
 }
 
 function toggleOnKeyboard(event: KeyboardEvent<HTMLDivElement>, toggle: () => void) {

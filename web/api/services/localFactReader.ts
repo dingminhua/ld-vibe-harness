@@ -159,18 +159,30 @@ const RECORD_ARRAY_FIELDS: Partial<Record<LocalFactType, ReadonlySet<string>>> =
 
 function isConsumableRecordMember(type: LocalFactType, field: string, member: Record<string, unknown>): boolean {
   if (field === 'change_log') {
-    const signature = member.signature
     return typeof member.at === 'string' && member.at.trim().length > 0
       && typeof member.session_id === 'string' && member.session_id.trim().length > 0
       && typeof member.summary === 'string' && member.summary.trim().length > 0
-      && isRecord(signature)
-      && Object.keys(signature).length === 2
-      && typeof signature.agent_id === 'string' && signature.agent_id.trim().length > 0
-      && typeof signature.host_environment === 'string' && signature.host_environment.trim().length > 0
+      && isConsumableChangeLogSignature(member.signature)
   }
   if (type !== 'spark' || field !== 'evolution') return true
   return typeof member.at === 'string' && member.at.trim().length > 0
     && typeof member.summary === 'string' && member.summary.trim().length > 0
+}
+
+function isConsumableChangeLogSignature(value: unknown): boolean {
+  if (!isRecord(value) || Object.keys(value).length !== 2) return false
+  const hasCanonicalShape = Object.keys(value).every((key) => key === 'model_id' || key === 'host_name')
+    && typeof value.model_id === 'string'
+    && value.model_id.trim().length > 0
+    && typeof value.host_name === 'string'
+    && value.host_name.trim().length > 0
+  if (hasCanonicalShape) return true
+
+  return Object.keys(value).every((key) => key === 'agent_id' || key === 'host_environment')
+    && typeof value.agent_id === 'string'
+    && value.agent_id.trim().length > 0
+    && typeof value.host_environment === 'string'
+    && value.host_environment.trim().length > 0
 }
 
 function projectFields(type: LocalFactType, objectId: string, parsed: Record<string, unknown>, extra: Record<string, unknown>): Pick<LocalFactItem, 'fact_object' | 'field_issues' | 'unparsed_structures'> {

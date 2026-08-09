@@ -367,8 +367,9 @@ test('Card targets remain plain relationship facts while Focus may opt into seco
   assert.match(target, /if \(onOpenTarget\) \{/);
   assert.match(target, /<button[\s\S]*onClick=\{\(\) => onOpenTarget\(target, title\)\}/);
   assert.match(target, /<div className=\{rowClassName\}>\{rowContent\}<\/div>/);
-  assert.match(frame, /<button[\s\S]*onClick=\{\(\) => onOpen\(obj\.id\)\}[\s\S]*getLocalizedObjectTitle/);
-  assert.doesNotMatch(frame, /role="button"|tabIndex=\{0\}|onClick=\{\(\) => onOpen\(obj\.id\)\}\n\s*onKeyDown/);
+  assert.match(frame, /role="button"[\s\S]*tabIndex=\{0\}[\s\S]*onClick=\{\(\) => onOpen\(obj\.id\)\}[\s\S]*onKeyDown=/);
+  assert.match(frame, /ldvh-object-title-tray[\s\S]*cursor-pointer/);
+  assert.doesNotMatch(frame, /<button[\s\S]*onClick=\{\(\) => onOpen\(obj\.id\)\}/);
   assert.doesNotMatch(frame, /<ArrowRight size=\{14\}/);
 });
 

@@ -374,9 +374,11 @@ function CommitSignatureSection({
   signature: CommitSignature;
   labels: CommitDetailLabels;
 }) {
+  const modelId = signature.modelId?.trim();
+  const hostName = signature.hostName?.trim();
   const identityEntries = [
-    { label: labels.agentId, value: signature.agentId },
-    { label: labels.hostEnvironment, value: signature.hostEnvironment },
+    { label: modelId ? labels.modelId : labels.agentId, value: modelId ?? signature.agentId },
+    { label: hostName ? labels.hostName : labels.hostEnvironment, value: hostName ?? signature.hostEnvironment },
   ].filter((entry): entry is { label: string; value: string } => Boolean(entry.value?.trim()));
   const sessionId = signature.sessionId?.trim();
   if (identityEntries.length === 0 && !sessionId) return null;

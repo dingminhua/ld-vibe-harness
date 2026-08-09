@@ -320,6 +320,23 @@ test('recent activity aggregation retains the newest fact event and counts compl
   assert.deepEqual(view.environmentUsage, [{ value: 'Cindy', count: 2 }, { value: 'CI', count: 1 }])
 })
 
+test('recent activity accepts canonical change-log signatures', async () => {
+  const { buildFactActivityItems, buildRecentActivityView } = await import('../../api/routes/cognition.ts')
+  const raw = {
+    object_id: 'spark-0002', title: 'Canonical signature', status: 'open',
+    change_log: [{
+      signature: { model_id: 'gpt-5', host_name: 'Cindy' },
+      session_id: 'canonical-session', at: '2026-08-01T00:00:00Z', summary: 'Created',
+    }],
+  }
+  const builds = buildFactActivityItems(raw, 'spark', Date.parse('2026-07-31T00:00:00Z'), Date.parse('2026-08-02T00:00:00Z'))
+  assert.deepEqual(builds[0]?.signature, { agent_id: 'gpt-5', host_environment: 'Cindy' })
+
+  const view = buildRecentActivityView(builds)
+  assert.deepEqual(view.agentUsage, [{ value: 'gpt-5', count: 1 }])
+  assert.deepEqual(view.environmentUsage, [{ value: 'Cindy', count: 1 }])
+})
+
 test('fact activity builder reads change_log first and only falls back for legacy facts without usable entries', async () => {
   const { buildFactActivityItems } = await import('../../api/routes/cognition.ts')
   const raw = {

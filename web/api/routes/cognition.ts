@@ -298,6 +298,10 @@ function buildRecentActivityItem(
 function readFactChangeSignature(value: unknown): { agent_id: string; host_environment: string } | undefined {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined
   const record = value as Record<string, unknown>
+  const modelId = typeof record.model_id === 'string' ? record.model_id.trim() : ''
+  const hostName = typeof record.host_name === 'string' ? record.host_name.trim() : ''
+  if (modelId && hostName) return { agent_id: modelId, host_environment: hostName }
+
   const agentId = typeof record.agent_id === 'string' ? record.agent_id.trim() : ''
   const hostEnvironment = typeof record.host_environment === 'string' ? record.host_environment.trim() : ''
   return agentId && hostEnvironment ? { agent_id: agentId, host_environment: hostEnvironment } : undefined

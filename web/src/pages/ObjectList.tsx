@@ -1261,16 +1261,20 @@ export function ObjectCardFrame({
         />
       </div>
       {/* Keep a neutral title tray for card hierarchy; semantic colour belongs to the icon, never the tray border. */}
-      <div className="ldvh-object-title-tray -mx-1 flex min-w-0 items-center gap-1.5 px-2.5 py-2 text-left">
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => onOpen(obj.id)}
+        onKeyDown={(event) => {
+          if (event.key !== 'Enter' && event.key !== ' ') return;
+          event.preventDefault();
+          onOpen(obj.id);
+        }}
+        className="ldvh-object-title-tray -mx-1 flex min-w-0 cursor-pointer items-center gap-1.5 px-2.5 py-2 text-left transition-colors hover:bg-ldvh-border/25 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ldvh-accent/50"
+      >
         <ObjectTypeIcon type={obj.type} size={14} className="shrink-0" style={{ color: typeColor }} />
         <h2 className="ldvh-card-title min-w-0 flex-1 whitespace-normal break-words">
-          <button
-            type="button"
-            onClick={() => onOpen(obj.id)}
-            className="text-left transition-colors hover:text-ldvh-accent focus-visible:outline-none focus-visible:text-ldvh-accent focus-visible:underline"
-          >
-            {getLocalizedObjectTitle(obj, locale)}
-          </button>
+          {getLocalizedObjectTitle(obj, locale)}
         </h2>
       </div>
       {showNonActiveReason && nonActiveReason && <StatusReasonNote reason={nonActiveReason} />}

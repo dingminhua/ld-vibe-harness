@@ -129,6 +129,34 @@ test('Spark evolution members without a timestamp and forbidden Pitfall tags rem
   }
 });
 
+test('change_log accepts the canonical and legacy signature shapes', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'ldvh-field-reader-'));
+  const scope: LocalFactScope = { worktreeLocator: root, governedProjectId: 'fixture' };
+  const directory = path.join(root, 'ldvh-base', 'sparks');
+  await mkdir(directory, { recursive: true });
+  try {
+    await writeFile(path.join(directory, 'spark-0002.yaml'), [
+      'object_id: spark-0002', 'fact_type_key: spark', 'title: Signature compatibility',
+      'status: open', 'summary: Current observation', 'created_at: "2026-01-01T00:00:00+08:00"', 'updated_at: "2026-01-02T00:00:00+08:00"',
+      'change_log:',
+      '  - signature:', '      model_id: gpt-5', '      host_name: Cindy',
+      '    session_id: canonical-session', '    at: "2026-01-01T00:00:00+08:00"', '    summary: Canonical entry',
+      '  - signature:', '      agent_id: codex', '      host_environment: LegacyHost',
+      '    session_id: legacy-session', '    at: "2026-01-02T00:00:00+08:00"', '    summary: Legacy entry',
+    ].join('\n'), 'utf8');
+
+    const detail = await readLocalFact('spark', 'spark-0002', scope);
+    assert.equal(detail.status, 'ok');
+    if (detail.status === 'ok') {
+      assert.equal(detail.item.read_status, 'readable');
+      assert.equal((detail.item.fact_object?.change_log as unknown[])?.length, 2);
+      assert.deepEqual(detail.item.unparsed_structures, []);
+    }
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
 test('change_log consumes the two-field signature contract and exposes incomplete records', async () => {
   const root = await mkdtemp(path.join(tmpdir(), 'ldvh-field-reader-'));
   const scope: LocalFactScope = { worktreeLocator: root, governedProjectId: 'fixture' };

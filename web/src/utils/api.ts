@@ -732,6 +732,10 @@ export type GitPushStatus = 'pushed' | 'unpushed' | 'incoming' | 'unknown';
 
 export interface CommitSignature {
   sessionId?: string;
+  /** Canonical fact change-log signature fields. */
+  modelId?: string;
+  hostName?: string;
+  /** Legacy Git/fact attribution fields retained for historical compatibility. */
   agentId?: string;
   hostEnvironment?: string;
 }
