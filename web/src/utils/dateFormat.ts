@@ -1,8 +1,16 @@
+import { normalizeGitTimestampInput } from '../../shared/timestamp.ts';
+
 function pad2(value: number): string {
   return String(value).padStart(2, '0');
 }
 
-/** Format app timestamps as YYYY-MM-DD HH:mm; date-only is a defensive fallback for invalid legacy facts. */
+/**
+ * Format an instant as YYYY-MM-DD HH:mm in the browser's local timezone.
+ *
+ * Historical facts may carry an explicit non-UTC offset.  Date must parse the
+ * complete instant before extracting calendar fields; slicing the source text
+ * would display UTC and local-offset values inconsistently.
+ */
 export function formatDateTime(value?: string | null): string {
   if (!value) return '-';
 
@@ -11,14 +19,7 @@ export function formatDateTime(value?: string | null): string {
 
   if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
 
-  const normalized = raw.replace(' ', 'T');
-  const isoLike = normalized.match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2})(?::\d{2}(?:\.\d+)?)?)?/);
-  if (isoLike) {
-    const [, year, month, day, hour = '00', minute = '00'] = isoLike;
-    return `${year}-${month}-${day} ${hour}:${minute}`;
-  }
-
-  const date = new Date(raw);
+  const date = new Date(normalizeGitTimestampInput(raw).replace(' ', 'T'));
   if (Number.isNaN(date.getTime())) return raw;
 
   return [

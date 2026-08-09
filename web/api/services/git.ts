@@ -5,6 +5,7 @@
 import { execFile } from 'child_process'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { canonicalizeRfc3339Timestamp, normalizeGitTimestampInput } from '../../shared/timestamp.ts'
 import { getRelativeTime as sharedGetRelativeTime } from './time.js'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -63,6 +64,11 @@ export type ParsedCommitMessage = {
 export type SplitCommitMessage = {
   subject: string
   body: string
+}
+
+/** Normalize Git's offset-bearing date output at the API boundary. */
+export function normalizeTimestamp(value: string): string {
+  return canonicalizeRfc3339Timestamp(normalizeGitTimestampInput(value)) ?? value
 }
 
 /** Conventional commit 分类颜色 */
@@ -218,7 +224,7 @@ export async function getGitLog(count: number = 50, locale: string = 'zh', cwd: 
             hash,
             shortHash,
             author,
-            date,
+            date: normalizeTimestamp(date),
             message,
             body,
             category,
@@ -294,7 +300,7 @@ export async function getGitLogWithFiles(
               hash,
               shortHash,
               author,
-              date,
+              date: normalizeTimestamp(date),
               message,
               body,
               category,
@@ -341,7 +347,7 @@ export async function getGitCommit(hash: string, locale: string = 'zh', cwd: str
           hash: fullHash,
           shortHash,
           author,
-          date,
+          date: normalizeTimestamp(date),
           message,
           body,
           category,
