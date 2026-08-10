@@ -55,23 +55,29 @@ change_log:
   summary: 按 Human 当前记录授权，将 workcase-0059 实测后剩余的规则读取与 Helper 交互摩擦补入现有优化议题。
 - signature:
     agent_id: GLM-5.2
-    host_environment: claude-code-mcp
+    host_environment: Claude
   session_id: session-20260805-deep-audit
   at: '2026-08-05T19:58:57.068583+08:00'
   summary: 按 study-0023 立即行动建议，记录 Claude Code 跨环境复证：3 次 invalid_request 根因为参数命名信息不对称。
 - signature:
     agent_id: glm-5.2
-    host_environment: claude-code-mcp
+    host_environment: Claude
   session_id: session-20260807-adr-evolution-commit
   at: '2026-08-07T13:59:34.292315+08:00'
   summary: 按 Human 于 2026-08-07 会话的明确授权，追加 evolution 条目记录 workcase-0047 遗留 residual（residual-doctor-operation-count）已被 commit 5de851e54 与 b838cded4 事实解决、当前断言与注册实现及 doctor 测试一致的核实结论。
 - signature:
     agent_id: glm-5.2
-    host_environment: claude-code-mcp
+    host_environment: Claude
   session_id: session-20260807-adr-evolution-commit
   at: '2026-08-07T14:31:07.670920+08:00'
   summary: 修正受控更新中 YAML 转义导致的弯引号→直引号变化，恢复 summary 原有弯引号（"、"→"）以保持与 HEAD 原文一致。
+- at: '2026-08-10T08:40:36.110588Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 5: claude-code-mcp -> Claude; 6: claude-code-mcp -> Claude; 7: claude-code-mcp -> Claude。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-legacy-signature-migration-20260810
 object_id: spark-0019
 fact_type_key: spark
 created_at: '2026-07-19T18:47:20.417174+08:00'
-updated_at: '2026-08-07T14:31:07.670920+08:00'
+updated_at: '2026-08-10T08:40:36.110588Z'
