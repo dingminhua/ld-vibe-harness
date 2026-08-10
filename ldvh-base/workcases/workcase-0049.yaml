@@ -28,125 +28,131 @@ result_summary: 已落实 change_log 的结构、单条追加和 Code 时间绑�
 validation_summary: 已通过 change_log、WorkCase、Git 提交校验和 Web 读取的定向回归及独立复核修正；完整 Web API 套件仍有一项既存的 commit-label-contract 失败。可信根、专用迁移及迁移后端到端验证未执行，已转交 spark-0048。
 change_log:
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 48bbb4c6-f2ff-4510-b63f-cebcaaa35d2e
   at: '2026-08-03T13:00:03.222833+08:00'
   summary: 建立待 Human Gate 1 批准的 AI 防错机制实施计划。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 48bbb4c6-f2ff-4510-b63f-cebcaaa35d2e
   at: '2026-08-03T13:03:51.946543+08:00'
   summary: 记录 Human Gate 1 批准，进入受限执行阶段。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 48bbb4c6-f2ff-4510-b63f-cebcaaa35d2e
   at: '2026-08-03T13:04:06.506162+08:00'
   summary: 开始授权边界盘点与实施。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 48bbb4c6-f2ff-4510-b63f-cebcaaa35d2e
   at: '2026-08-03T13:20:26.196122+08:00'
   summary: 记录授权信任根缺口，停止该受影响工作项。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 48bbb4c6-f2ff-4510-b63f-cebcaaa35d2e
   at: '2026-08-03T13:37:01.627151+08:00'
   summary: 在搁置可信签名机制的前提下继续流水和 Git 追踪防线。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 48bbb4c6-f2ff-4510-b63f-cebcaaa35d2e
   at: '2026-08-03T13:49:13.253026+08:00'
   summary: 完成流水、Git 追踪和 Web 契约的实现与定向验证，进入独立结果复核。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 48bbb4c6-f2ff-4510-b63f-cebcaaa35d2e
   at: '2026-08-03T13:52:12.933543+08:00'
   summary: 独立复核完成并修正 Web signer_type 混合绕过和 Git 失败优先级；记录可信责任派生与专用迁移的未完成边界。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 48bbb4c6-f2ff-4510-b63f-cebcaaa35d2e
   at: '2026-08-03T13:59:03.838630+08:00'
   summary: 当前可执行的 Git 与 Web 防线已收口；因可信签名机制搁置，将 WorkCase 如实标记为 blocked。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 48bbb4c6-f2ff-4510-b63f-cebcaaa35d2e
   at: '2026-08-03T14:06:05.567871+08:00'
   summary: Human 已决定取消未完成授权项并以 Spark 承接；解除整体阻塞以进入受控收敛。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 48bbb4c6-f2ff-4510-b63f-cebcaaa35d2e
   at: '2026-08-03T14:07:05.028321+08:00'
   summary: 取消超出当前范围的可信签发授权项，形成完整结果包并进入 Controller 自检。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 48bbb4c6-f2ff-4510-b63f-cebcaaa35d2e
   at: '2026-08-03T14:07:20.834807+08:00'
   summary: 完整结果包已形成，进入独立结果复核。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 48bbb4c6-f2ff-4510-b63f-cebcaaa35d2e
   at: '2026-08-03T14:09:18.672829+08:00'
   summary: 记录独立结果复核：发现两个已标完成的工作项仍含未达成范围，关闭前须由 Controller 处置。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 48bbb4c6-f2ff-4510-b63f-cebcaaa35d2e
   at: '2026-08-03T14:11:44.734350+08:00'
   summary: 采纳独立复核反馈：将未完成可信根、迁移和迁移后 Web 验证责任转交 spark-0048，并返回 Controller 自检修正结果。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 48bbb4c6-f2ff-4510-b63f-cebcaaa35d2e
   at: '2026-08-03T14:12:05.688419+08:00'
   summary: 按 Human 澄清取消仍含未达成范围的流水与读取契约项，并将可信根、迁移和迁移后 Web 验证完整转交 spark-0048；重建结果版本。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 48bbb4c6-f2ff-4510-b63f-cebcaaa35d2e
   at: '2026-08-03T14:13:14.931119+08:00'
   summary: v2 完整结果投影已形成，进入独立结果复核。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 48bbb4c6-f2ff-4510-b63f-cebcaaa35d2e
   at: '2026-08-03T14:13:27.428337+08:00'
   summary: 记录 v2 独立结果复核通过并采纳 follow-up；准备形成关闭提案。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 48bbb4c6-f2ff-4510-b63f-cebcaaa35d2e
   at: '2026-08-03T14:13:36.668986+08:00'
   summary: v2 独立结果复核及其 follow-up 已完成处置，进入关闭提案准备。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 48bbb4c6-f2ff-4510-b63f-cebcaaa35d2e
   at: '2026-08-03T14:14:07.088807+08:00'
   summary: 形成 partial 关闭提案：可信根、迁移和迁移后 Web 验证路由 spark-0048，并保留既存全量 Web 套件失败的 Gate 2 停止判断。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 48bbb4c6-f2ff-4510-b63f-cebcaaa35d2e
   at: '2026-08-03T14:14:18.535900+08:00'
   summary: 关闭提案与 spark-0048 当前指纹已回读核对，进入 Human Gate 2 关闭确认。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 48bbb4c6-f2ff-4510-b63f-cebcaaa35d2e
   at: '2026-08-03T14:31:17.913691+08:00'
   summary: Human Gate 2 已同意 partial 关闭提案：未完成可信根、迁移和迁移后 Web 验证已路由至 spark-0048，并接受既存全量 Web 套件失败的停止边界。
+- at: '2026-08-10T09:23:43.163295Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: codex -> gpt-5; 1: codex -> gpt-5; 2: codex -> gpt-5; 3: codex -> gpt-5; 4: codex -> gpt-5; 5: codex -> gpt-5; 6: codex -> gpt-5; 7: codex -> gpt-5; 8: codex -> gpt-5; 9: codex -> gpt-5; 10: codex -> gpt-5; 11: codex -> gpt-5; 12: codex -> gpt-5; 13: codex -> gpt-5; 14: codex -> gpt-5; 15: codex -> gpt-5; 16: codex -> gpt-5; 17: codex -> gpt-5; 18: codex -> gpt-5; 19: codex -> gpt-5。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: session-20260810-codex-model-migration
 closure_outcome: partial
 disposition_summary: 当前 WorkCase 以 partial 结束：已保留 change_log 结构、单次追加和时间绑定不变量，Git footer 与新增事实流水三字段精确比对，以及 Web 两字段读取契约。可信签发与验签根、专用遗留 change_log 迁移及迁移后 Web 端到端验证未实施，统一路由至仍为 open 的 spark-0048。完整 Web API 套件的 commit-label-contract 既存失败未在本 WorkCase 修复或重跑，其影响与未验证边界保留为 Human Gate 2 的接受停止项。
 residual_responsibilities:
@@ -161,4 +167,4 @@ relations:
 object_id: workcase-0049
 fact_type_key: workcase
 created_at: '2026-08-03T13:00:03.222833+08:00'
-updated_at: '2026-08-03T14:31:17.913691+08:00'
+updated_at: '2026-08-10T09:23:43.163295Z'

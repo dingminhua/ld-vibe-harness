@@ -29,82 +29,88 @@ validation_summary: 验证覆盖：全部事实写入经 Helper 受控操作并�
 change_log:
 - signature:
     agent_id: kimi
-    host_environment: Kimi Work
+    host_environment: Kimi
   session_id: conv-9b480e23916ebeb1765f4537
   at: '2026-08-05T23:16:43.435078+08:00'
   summary: 受控创建本 WorkCase（plan_version=1）：经独立只读 Reviewer 方案复核（changes_required：1 blocking、2 major、4 minor/nit）并完成 Controller 全部处置，等待 Human Gate 1 执行决定
 - signature:
     agent_id: kimi
-    host_environment: Kimi Work
+    host_environment: Kimi
   session_id: conv-9b480e23916ebeb1765f4537
   at: '2026-08-05T23:29:15.529864+08:00'
   summary: Gate 1：Human 批准执行（含 dirty 树处置选 b），写入 execution_approval 并进入 executing；移除 Human waiting
 - signature:
     agent_id: kimi
-    host_environment: Kimi Work
+    host_environment: Kimi
   session_id: conv-9b480e23916ebeb1765f4537
   at: '2026-08-05T23:31:59.649813+08:00'
   summary: item-01 完成：01 §13 门槛判断（05 既有责任边界内补充）与候选规则逐条核对记录
 - signature:
     agent_id: kimi
-    host_environment: Kimi Work
+    host_environment: Kimi
   session_id: conv-9b480e23916ebeb1765f4537
   at: '2026-08-05T23:34:11.834248+08:00'
   summary: item-02 完成：05 §9.4 增补落文并经 Helper 机械校验回读；item-03 进入 §13.5 独立复核委派
 - signature:
     agent_id: kimi
-    host_environment: Kimi Work
+    host_environment: Kimi
   session_id: conv-9b480e23916ebeb1765f4537
   at: '2026-08-05T23:41:22.363958+08:00'
   summary: item-03 完成：§13.5 独立复核（changes_required，1 major+1 minor+2 nit）并全部处置，条文修订后回读通过
 - signature:
     agent_id: kimi
-    host_environment: Kimi Work
+    host_environment: Kimi
   session_id: conv-9b480e23916ebeb1765f4537
   at: '2026-08-05T23:47:05.594890+08:00'
   summary: item-05 完成：三火花承接处置（0022 承接现状、0055 吸收结论、0004 方向决定），两遗留对象先受控迁移 change_log；item-04 进入受控提交
 - signature:
     agent_id: kimi
-    host_environment: Kimi Work
+    host_environment: Kimi
   session_id: conv-9b480e23916ebeb1765f4537
   at: '2026-08-06T00:05:23.520705+08:00'
   summary: item-04 完成：受控提交 44d00c93a 经 Git Gate 通过；全部 item terminal，进入 controller_checking
 - signature:
     agent_id: kimi
-    host_environment: Kimi Work
+    host_environment: Kimi
   session_id: conv-9b480e23916ebeb1765f4537
   at: '2026-08-06T00:07:55.045353+08:00'
   summary: controller_checking：补全验证摘要，冻结 result projection
 - signature:
     agent_id: kimi
-    host_environment: Kimi Work
+    host_environment: Kimi
   session_id: conv-9b480e23916ebeb1765f4537
   at: '2026-08-06T00:08:28.323296+08:00'
   summary: 进入 independent_reviewing：按 quality_gates 委派独立结果复核（authorization-04）
 - signature:
     agent_id: kimi
-    host_environment: Kimi Work
+    host_environment: Kimi
   session_id: conv-9b480e23916ebeb1765f4537
   at: '2026-08-06T00:26:51.540041+08:00'
   summary: authorization-05：回写独立结果复核（pass，1 nit 已处置），四项成功标准证据逐项核对在案
 - signature:
     agent_id: kimi
-    host_environment: Kimi Work
+    host_environment: Kimi
   session_id: conv-9b480e23916ebeb1765f4537
   at: '2026-08-06T00:27:37.412219+08:00'
   summary: closure_preparing：终态保留审查完成（结果与验证事实已由 result_summary/criterion_results/validation_summary 无损承载），形成关闭提案（completed，原 scope 无剩余责任）
 - signature:
     agent_id: kimi
-    host_environment: Kimi Work
+    host_environment: Kimi
   session_id: conv-9b480e23916ebeb1765f4537
   at: '2026-08-06T00:28:25.811995+08:00'
   summary: 进入 human_closure_confirming：等待 Human Gate 2 关闭决定
 - signature:
     agent_id: kimi
-    host_environment: Kimi Work
+    host_environment: Kimi
   session_id: conv-9b480e23916ebeb1765f4537
   at: '2026-08-06T00:37:04.937194+08:00'
   summary: Gate 2：Human 决定关闭，原子形成 closed（outcome=completed，原 scope 无剩余责任）
+- at: '2026-08-10T08:56:05.376349Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: Kimi Work -> Kimi; 1: Kimi Work -> Kimi; 2: Kimi Work -> Kimi; 3: Kimi Work -> Kimi; 4: Kimi Work -> Kimi; 5: Kimi Work -> Kimi; 6: Kimi Work -> Kimi; 7: Kimi Work -> Kimi; 8: Kimi Work -> Kimi; 9: Kimi Work -> Kimi; 10: Kimi Work -> Kimi; 11: Kimi Work -> Kimi; 12: Kimi Work -> Kimi。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-explicit-signature-migration-20260810
 closure_outcome: completed
 disposition_summary: 全部成功标准 satisfied，原 scope 内无剩余责任；范围外后续由既有 open 火花分别承载：spark-0022（撞号提交 Gate 前置拦截实现与远端观察边界）、spark-0055（流程复杂度待判断项：模板激活层数、规范交叉引用层数、80/20 倒置处置）、spark-0004（Windows 实测验收矩阵执行）。本 WorkCase 交付（05 §9.4 条文、火花承接更新）已随 commit 44d00c93a 固化。
 relations:
@@ -131,4 +137,4 @@ relations:
 object_id: workcase-0060
 fact_type_key: workcase
 created_at: '2026-08-05T23:16:43.435078+08:00'
-updated_at: '2026-08-06T00:37:04.937194+08:00'
+updated_at: '2026-08-10T08:56:05.376349Z'

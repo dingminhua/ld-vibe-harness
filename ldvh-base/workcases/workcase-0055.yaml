@@ -48,110 +48,116 @@ result_summary: LDVH 已完成从 distribution/installed snapshot 到源码仓�
 validation_summary: 源码 Doctor status=ready、6/6 surfaces available、配置 valid/governed_single；6 个 live worktree inspect=managed 且无 core.hooksPath；v2/v3/v4 真实 Hook block_rc=1、allow_rc=0。Hook 回归 12 passed，独立审核相关回归 50 passed，Ruff/format/diff check 通过；Python 共收集 1440 项，10 项 native Windows 保持 skipped。变更相关 Web check 与 12 项 API 测试通过；完整 Web 套件另有 7 项既有且与本次改动无关的 UI/docs contract 失败，未被误报为本次通过。
 change_log:
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 23bc611d-4dc7-4949-ab5c-ffd122a23d22
   at: '2026-08-04T17:46:50.456343+08:00'
   summary: 创建源码唯一接入与 common-dir Git Gate 迁移 WorkCase，并写入已处置的独立 creation review。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 23bc611d-4dc7-4949-ab5c-ffd122a23d22
   at: '2026-08-04T17:48:45.830864+08:00'
   summary: 记录 Human Gate 1 批准，进入 plan_version 1 的受限执行阶段。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 23bc611d-4dc7-4949-ab5c-ffd122a23d22
   at: '2026-08-04T17:49:11.570810+08:00'
   summary: 开始 item-spec-source-model，先迁移规则源与交付规范。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 23bc611d-4dc7-4949-ab5c-ffd122a23d22
   at: '2026-08-04T17:52:41.401359+08:00'
   summary: 完成源码唯一规则模型并开始源码运行时与 Doctor 迁移。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 23bc611d-4dc7-4949-ab5c-ffd122a23d22
   at: '2026-08-04T18:10:31.249307+08:00'
   summary: 完成源码运行时、管辖核验、环境链、common-dir manager 与 packaging 退役；记录真实 Hook 覆盖冲突并保持零写入。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 23bc611d-4dc7-4949-ab5c-ffd122a23d22
   at: '2026-08-04T18:31:38.496694+08:00'
   summary: 完成最终静态复核并记录独立审核 approved：1440 项测试可收集，Hook 分片 12 项通过，Ruff 与 diff check 通过；真实 common-dir 三条旧覆盖因所有权未获 Human 扩权而继续零写入。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 23bc611d-4dc7-4949-ab5c-ffd122a23d22
   at: '2026-08-04T18:35:25.230628+08:00'
   summary: Human 在了解 v3 core.hooksPath=hooks 的含义后明确要求按建议推进；授权精确处置已识别的三条旧 LDVH Hook 覆盖，保留 v3 旧 Hook 文件并完成 common-dir Gate 真实验证。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 23bc611d-4dc7-4949-ab5c-ffd122a23d22
   at: '2026-08-04T18:37:10.520721+08:00'
   summary: 执行三条旧覆盖的受控迁移时发现 common-dir 另有一个无当前 digest、且指向已删除旧源码目录的 LDVH commit-msg Hook；manager fail-closed，事务 ROLLBACK_OK，三条覆盖与旧 Gate 全部恢复，未安装新 Gate。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 23bc611d-4dc7-4949-ab5c-ffd122a23d22
   at: '2026-08-04T20:32:08.166993+08:00'
   summary: Human 在明确了解 common-dir 物理安装位置、非管辖项目隔离及三条覆盖含义后，同意备份并替换精确旧 common-dir Hook，继续完成统一 Gate 迁移与验证。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 23bc611d-4dc7-4949-ab5c-ffd122a23d22
   at: '2026-08-04T20:33:34.522478+08:00'
   summary: 完成 common-dir Git Gate 现实迁移：备份旧 common Hook，取消全部 worktree-local 覆盖，部署 digest-owned 共享 Hook；6 个 live worktree inspect 通过，v2/v3/v4 真实 block/allow 通过，未创建 commit。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 23bc611d-4dc7-4949-ab5c-ffd122a23d22
   at: '2026-08-04T20:37:32.480085+08:00'
   summary: 全部 work item terminal，进入 result_version 1 Controller 检查并形成完整结果投影；8 项成功标准均有当前证据，保留 Windows 未实机验证和既有 Web 非相关失败边界。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 23bc611d-4dc7-4949-ab5c-ffd122a23d22
   at: '2026-08-04T20:37:43.579444+08:00'
   summary: result_version 1 完整投影已通过 Helper 回读，进入独立结果复核。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 23bc611d-4dc7-4949-ab5c-ffd122a23d22
   at: '2026-08-04T20:39:09.531771+08:00'
   summary: 在 independent_reviewing 原 phase 保存 result_version 1 独立复核：pass_with_followups；Controller 采纳三项边界提醒，完整结果投影不变。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 23bc611d-4dc7-4949-ab5c-ffd122a23d22
   at: '2026-08-04T20:39:30.831334+08:00'
   summary: 独立 result review 已形成且全部 feedback 已由 Controller 处置；返回 controller_checking 确认投影不变。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 23bc611d-4dc7-4949-ab5c-ffd122a23d22
   at: '2026-08-04T20:39:42.909308+08:00'
   summary: 经 Controller 复核，result_version 1 与独立 review 保持不变；形成 proposed_outcome=completed 且无剩余责任的关闭提案。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 23bc611d-4dc7-4949-ab5c-ffd122a23d22
   at: '2026-08-04T20:39:55.263396+08:00'
   summary: 关闭提案完整回读并完成终态保留审查；进入 Human Gate 2，等待 Human 确认是否以 completed 正式关闭。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 23bc611d-4dc7-4949-ab5c-ffd122a23d22
   at: '2026-08-04T20:51:33.459242+08:00'
   summary: Human Gate 2 明确确认以 completed 关闭 workcase-0055；按已复核 result_version 1 与无剩余责任关闭提案形成终态。
+- at: '2026-08-10T09:24:12.468171Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: codex -> gpt-5; 1: codex -> gpt-5; 2: codex -> gpt-5; 3: codex -> gpt-5; 4: codex -> gpt-5; 5: codex -> gpt-5; 6: codex -> gpt-5; 7: codex -> gpt-5; 8: codex -> gpt-5; 9: codex -> gpt-5; 10: codex -> gpt-5; 11: codex -> gpt-5; 12: codex -> gpt-5; 13: codex -> gpt-5; 14: codex -> gpt-5; 15: codex -> gpt-5; 16: codex -> gpt-5。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: session-20260810-codex-model-migration
 closure_outcome: completed
 disposition_summary: 当前 WorkCase 的源码唯一迁移、四项接入闭环和 common-dir Git Gate 部署责任已完成；没有需要转交、建议新建 Spark 或由 Human 接受停止的剩余责任。Windows 原生未验证、既有 Web 非相关失败及保留 Hook 资产属于已记录验证/维护边界，不改变 completed 技术分类。
 object_id: workcase-0055
 fact_type_key: workcase
 created_at: '2026-08-04T17:46:50.456343+08:00'
-updated_at: '2026-08-04T20:51:33.459242+08:00'
+updated_at: '2026-08-10T09:24:12.468171Z'

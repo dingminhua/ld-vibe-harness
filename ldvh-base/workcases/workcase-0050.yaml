@@ -28,65 +28,71 @@ result_summary: 已修复 WorkCase 关闭/终态更正的 change_log 与 closed 
 validation_summary: 已通过 code/tests/facts/test_workcase_application.py、code/tests/facts/test_validation.py、code/tests/helper/test_workcase_update_request.py、code/tests/helper/test_fact_object_operation.py 的定向回归；并实际执行 close-workcase 关闭 workcase-0049，写后全库完整性审计通过。未运行与本修复无直接关系的全量套件。
 change_log:
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 48bbb4c6-f2ff-4510-b63f-cebcaaa35d2e
   at: '2026-08-03T14:24:15.280910+08:00'
   summary: 按 Human 决定建立关闭流水与终态白名单冲突的独立修复 WorkCase，等待 Gate 1。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 48bbb4c6-f2ff-4510-b63f-cebcaaa35d2e
   at: '2026-08-03T14:27:47.221001+08:00'
   summary: 记录 Human Gate 1 批准，进入受限执行阶段。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 48bbb4c6-f2ff-4510-b63f-cebcaaa35d2e
   at: '2026-08-03T14:31:04.604164+08:00'
   summary: 完成关闭流水契约统一与定向回归，开始验证并重试 workcase-0049 的既有 Gate 2 关闭。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 48bbb4c6-f2ff-4510-b63f-cebcaaa35d2e
   at: '2026-08-03T14:31:38.783520+08:00'
   summary: 完成关闭流水契约修复、定向回归与 workcase-0049 Gate 2 关闭，形成完整结果投影。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 48bbb4c6-f2ff-4510-b63f-cebcaaa35d2e
   at: '2026-08-03T14:31:52.993326+08:00'
   summary: 完整结果投影已回读，进入独立结果复核。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 48bbb4c6-f2ff-4510-b63f-cebcaaa35d2e
   at: '2026-08-03T14:33:23.884477+08:00'
   summary: 记录独立结果复核通过：定向回归、全库完整性和 workcase-0049 实际关闭均已复核。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 48bbb4c6-f2ff-4510-b63f-cebcaaa35d2e
   at: '2026-08-03T14:33:33.041409+08:00'
   summary: 独立结果复核通过，进入关闭提案准备。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 48bbb4c6-f2ff-4510-b63f-cebcaaa35d2e
   at: '2026-08-03T14:33:44.722957+08:00'
   summary: 形成 completed 关闭提案：严格终态流水契约、回归和实际关闭验证均已完成。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 48bbb4c6-f2ff-4510-b63f-cebcaaa35d2e
   at: '2026-08-03T14:33:54.296916+08:00'
   summary: 关闭提案已形成，进入 Human Gate 2 关闭确认。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 48bbb4c6-f2ff-4510-b63f-cebcaaa35d2e
   at: '2026-08-03T14:40:10.481762+08:00'
   summary: Human Gate 2 已接受 completed 关闭提案，结束关闭流水与终态白名单冲突的独立修复责任。
+- at: '2026-08-10T09:23:35.097628Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: codex -> gpt-5; 1: codex -> gpt-5; 2: codex -> gpt-5; 3: codex -> gpt-5; 4: codex -> gpt-5; 5: codex -> gpt-5; 6: codex -> gpt-5; 7: codex -> gpt-5; 8: codex -> gpt-5; 9: codex -> gpt-5。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: session-20260810-codex-model-migration
 closure_outcome: completed
 disposition_summary: 当前 WorkCase 以 completed 结束：closed WorkCase 的 change_log 白名单、关闭候选、共享字段登记、关闭和终态更正契约已统一为严格保留历史并唯一追加的受控行为；定向回归、全库完整性审计及 workcase-0049 的实际 Gate 2 关闭均已通过。未运行与该局部契约无直接关系的全量套件已保留在 validation_summary，未形成当前 scope 的剩余责任。
 relations:
@@ -98,4 +104,4 @@ relations:
 object_id: workcase-0050
 fact_type_key: workcase
 created_at: '2026-08-03T14:24:15.280910+08:00'
-updated_at: '2026-08-03T14:40:10.481762+08:00'
+updated_at: '2026-08-10T09:23:35.097628Z'

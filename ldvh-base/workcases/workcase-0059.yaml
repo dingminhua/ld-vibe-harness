@@ -38,71 +38,77 @@ result_summary: LDVH 原生 commit-msg Hook 的成功取证已从完整 GIT_TRAC
 validation_summary: 相关 Hook 与 Helper 测试 30 passed（54.48s），未报告 skipped；ruff check、ruff format --check 与 git diff --check 通过。公共 check-fact-integrity 对 146 个对象返回 ok/complete，当前 common-dir Hook inspect 为 managed。真实 Index precheck mechanical_outcome=passed，source_fingerprint=9cb312d2a0efad819def6f18e025b16890cd0a8ab4f7759519460944d7e0e06f，snapshot_identity=sha256:656611c23b7c0df8c2a0fc028c3b02e85e49e05c901e86e6744b7483d9d88ca9；原生 commit 输出同一单行 Hook 证据。commit b4ee14815cfa769b69573a75f9a29e58b597e34b、tree 106f9761afd92b44e3c13aa33287274d41de571b、完整 message、3 个路径和空 Index 已回读；既有无关工作树变化仍在且未误带，未 push。三类性能数字来自隔离 fixture，不代表其它仓库或平台；事实复用为 No-go，故未执行不存在的复用漂移分支测试。
 change_log:
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: codex-workcase-0059-creation
   at: '2026-08-05T12:00:57.607538+08:00'
   summary: 依据 Human 要求从 spark-0019 建立提交减负 WorkCase，纳入独立 creation review 的全部反馈并停在 Gate 1 等待批准。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: codex-workcase-0059-execution
   at: '2026-08-05T12:17:58.300008+08:00'
   summary: 记录 Human Gate 1 对 plan_version 1 的明确批准，冻结执行授权基线并进入执行阶段。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: codex-workcase-0059-execution
   at: '2026-08-05T12:18:29.172232+08:00'
   summary: 开始 item-01：测量普通代码、纯事实与混合候选提交流程，并形成严格复用判据。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: codex-workcase-0059-execution
   at: '2026-08-05T12:22:47.056325+08:00'
   summary: 完成 item-01 并开始 item-02：三类基线与严格复用判据已形成，进入 Hook allow 单行证据实现。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: codex-workcase-0059-execution
   at: '2026-08-05T12:26:04.129622+08:00'
   summary: 完成 item-02 Hook allow 单行绑定证据；item-03 依据严格判据形成 No-go 并保留公共全量事实扫描，开始 item-04。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: codex-workcase-0059-execution
   at: '2026-08-05T12:33:42.227492+08:00'
   summary: 完成 item-04 并进入 Controller 检查：真实 commit b4ee14815cfa769b69573a75f9a29e58b597e34b 经 commit-msg Hook 创建和回读，形成 result_version 1 完整结果投影。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: codex-workcase-0059-execution
   at: '2026-08-05T12:34:09.122504+08:00'
   summary: 完整 result_version 1 经 Controller 检查和机械回读后冻结，进入独立结果复核。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: codex-workcase-0059-execution
   at: '2026-08-05T12:38:34.397711+08:00'
   summary: 记录 result_version 1 正式独立结果复核 pass；Reviewer 未发现 feedback，结果投影保持不变。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: codex-workcase-0059-execution
   at: '2026-08-05T12:38:50.943587+08:00'
   summary: 独立结果复核为 pass 且结果投影未变化，形成 completed 关闭提案并进入关闭准备。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: codex-workcase-0059-execution
   at: '2026-08-05T12:39:07.652114+08:00'
   summary: 终态保留检查确认结果、验证和无剩余责任处置已完整进入可保留字段；关闭提案材料冻结，进入 Human Gate 2。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: codex-workcase-0059-closure
   at: '2026-08-05T12:46:46.756016+08:00'
   summary: Human 在 Gate 2 明确确认以 completed 关闭 workcase-0059；保留终态结果、验证边界与无剩余责任处置。
+- at: '2026-08-10T09:24:21.310194Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: codex -> gpt-5; 1: codex -> gpt-5; 2: codex -> gpt-5; 3: codex -> gpt-5; 4: codex -> gpt-5; 5: codex -> gpt-5; 6: codex -> gpt-5; 7: codex -> gpt-5; 8: codex -> gpt-5; 9: codex -> gpt-5; 10: codex -> gpt-5。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: session-20260810-codex-model-migration
 closure_outcome: completed
 disposition_summary: WorkCase 按 completed 停止：四个 work item 全部 completed，六项成功标准全部 satisfied，result_version 1 的正式独立结果复核为 pass。真实 commit-msg Hook 的放行取证已收敛为当次 Gate 自身的一条绑定证据，缺字段失败关闭；事实完整性审计复用经严格判定为 No-go 并保留公共全量扫描。原 scope 内没有未满足、未验证或未处置责任，因此没有 residual decision、route_existing、suggest_spark 或 accepted-stop 项。隔离 fixture 性能不可外推、No-go 分支没有不存在的漂移测试、提交后 WorkCase 生命周期事实仍为未提交残留、未 push 均已披露；这些边界不冒充验证或远端完成，也不改变 completed 分类。
 relations:
@@ -114,4 +120,4 @@ relations:
 object_id: workcase-0059
 fact_type_key: workcase
 created_at: '2026-08-05T12:00:57.607538+08:00'
-updated_at: '2026-08-05T12:46:46.756016+08:00'
+updated_at: '2026-08-10T09:24:21.310194Z'
