@@ -36,11 +36,11 @@ relations:
 object_id: study-0026
 fact_type_key: study
 created_at: '2026-08-08T00:00:00+08:00'
-updated_at: '2026-08-10T08:49:05.580510Z'
+updated_at: '2026-08-10T09:15:19.591623Z'
 change_log:
 - summary: 补建变更流水以支持受控提交；事实内容（Obsidian 技术对 LDVH AI 关联发现的价值评估）由其他会话产出，此处仅补审计签名。
   signature:
-    agent_id: workbuddy-ai
+    agent_id: hy3
     host_environment: Workbuddy
   session_id: batch-commit-20260809-study0026
   at: '2026-08-08T00:00:00+08:00'
@@ -51,6 +51,12 @@ change_log:
     model_id: gpt-5
   session_id: cindy-legacy-signature-migration-20260810
 
+- at: '2026-08-10T09:15:19.591623Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: workbuddy-ai -> hy3。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-identity-id-migration-20260810
 ---
 
 ## 研究问题
