@@ -32,7 +32,7 @@ change_log:
   summary: 受控创建本 WorkCase（plan_version=1）：经独立只读 Reviewer 方案复核（pass_with_followups）并完成 Controller 全部处置，等待 Human Gate 1 执行决定
   signature:
     agent_id: glm-5.2
-    host_environment: Claude Code (macOS)
+    host_environment: Claude
 - at: '2026-08-06T22:07:04.369354+08:00'
   session_id: cindy-wc0062-close-20260806
   summary: Human 决定中途关闭；取消非法生命周期 item，进入 Controller 结果检查并形成当前完整结果投影。
@@ -99,6 +99,12 @@ change_log:
   signature:
     agent_id: cindy-codex
     host_environment: cindy desktop
+- at: '2026-08-10T08:47:50.982653Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: Claude Code (macOS) -> Claude。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-legacy-signature-migration-20260810
 closure_outcome: cancelled
 disposition_summary: Human 已决定不再继续投入 WC-0062；当前目标未按批准方向实现，提交过程性标准又因历史证据不足而无法完整评价。提案按 cancelled 停止，不修正当前 21/34 的反向规则、不更正 spark-0061 的失真承接记录、不补造 Git Gate 或提交后完整性历史证据；三项剩余责任全部由 Human 明确接受停止，不路由到其它对象，也不建立 Spark 建议。
 residual_responsibilities:
@@ -117,4 +123,4 @@ relations:
 object_id: workcase-0062
 fact_type_key: workcase
 created_at: '2026-08-06T14:30:00+08:00'
-updated_at: '2026-08-06T22:27:36.779412+08:00'
+updated_at: '2026-08-10T08:47:50.982653Z'
