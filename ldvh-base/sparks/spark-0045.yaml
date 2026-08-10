@@ -17,7 +17,7 @@ summary: "**当前判断**\n\n- spark-0009 需要端到端 Harness 成熟度证�
 change_log:
 - signature:
     model_id: glm-5.2
-    agent_workbench: claude-code-mcp
+    agent_workbench: Claude
   session_id: session-merge-b-20260810
   at: '2026-08-10T07:05:46.923852Z'
   summary: 受控引导 change_log 起点：spark-0045 为缺失 change_log 的 legacy 对象，作为 B 组合并的吸收者需要先建立可信迁移起点，再通过普通更新吸收 spark-0070 的输入侧上下文透明性内容
@@ -27,7 +27,13 @@ change_log:
   session_id: session-merge-b-20260810
   at: '2026-08-10T07:11:31.622127Z'
   summary: 吸收 spark-0070（WC 执行上下文透明性）的输入侧议题：将 AI 启动执行时收到的完整提示链纳入行为可观测性闭环，与输出侧事件/健康投影共同形成完整的执行健康度判断。
+- at: '2026-08-10T08:27:44.771777Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: claude-code-mcp -> Claude。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-historical-signature-repair-20260810
 object_id: spark-0045
 fact_type_key: spark
 created_at: '2026-08-02T17:20:55.139466+08:00'
-updated_at: '2026-08-10T07:11:31.622127Z'
+updated_at: '2026-08-10T08:27:44.771777Z'
