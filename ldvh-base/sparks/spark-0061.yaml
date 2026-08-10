@@ -23,7 +23,7 @@ change_log:
     agent_id: glm-5.2
     host_environment: Claude
 - signature:
-    agent_id: cindy-codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: cindy-wc0065-execution-20260806
   at: '2026-08-06T23:47:38.764646+08:00'
@@ -40,6 +40,12 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-explicit-signature-migration-20260810
+- at: '2026-08-10T09:15:04.573480Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 2: cindy-codex -> gpt-5。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-identity-id-migration-20260810
 disposition_summary: 本 Spark 的全部原始信息需求已由同项目稳定 WorkCase workcase-0065 完整承接：能力限制证据、Gate 1 前低保证 creation-review bootstrap、Human 接受语义、Gate 1 后 PlanΔ/result fallback 绑定、实际审核方法与保证差异、Web 呈现、机械校验及验证均在其 goal/scope/criteria 中形成明确责任。此前关于 WC0062 已实现目标的载体文字已据实更正；WC0062 的 cancelled/accept_stop 终态和历史未被改写。进入 routed 仅确认当次分流成立，不表示 workcase-0065 已完成、通过验证、提交或关闭。
 relations:
 - relation_key: routed-to
@@ -50,4 +56,4 @@ relations:
 object_id: spark-0061
 fact_type_key: spark
 created_at: '2026-08-06T14:10:00+08:00'
-updated_at: '2026-08-10T08:55:49.314266Z'
+updated_at: '2026-08-10T09:15:04.573480Z'
