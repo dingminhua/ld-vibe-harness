@@ -17,29 +17,35 @@ evolution:
 change_log:
 - signature:
     agent_id: deepseek-v4-flash
-    host_environment: WorkBuddy (macOS)
+    host_environment: Workbuddy
   session_id: wb-2026-08-08-spark0006-release-contract
   at: '2026-08-08T15:22:02.037225+08:00'
   summary: spark-0006 为缺少 change_log 的遗留对象，且本次需要受控更新；历史形成记录不可得，此处仅建立一条据实标注的迁移可信起点，不恢复原始历史。
 - signature:
     agent_id: deepseek-v4-flash
-    host_environment: WorkBuddy (macOS)
+    host_environment: Workbuddy
   session_id: wb-2026-08-08-spark0006-release-contract
   at: '2026-08-08T15:22:40.959450+08:00'
   summary: 记录 03 发布纪律受控修订决策：release type 入 03 契约、版本方向 G1、CHANGELOG 契约与发布授权边界；hotfix 分支策略留待项目正式来源。
 - signature:
     agent_id: deepseek-v4-flash
-    host_environment: WorkBuddy (macOS)
+    host_environment: Workbuddy
   session_id: wb-2026-08-08-spark0006-release-contract
   at: '2026-08-08T16:21:58.109678+08:00'
   summary: 记录 03 §9.10 部署件变更标注扩展：skill 更新须醒目提示并提供简单更新方式。
 - signature:
     agent_id: deepseek-v4-flash
-    host_environment: WorkBuddy (macOS)
+    host_environment: Workbuddy
   session_id: wb-2026-08-08-spark0006-release-contract
   at: '2026-08-08T17:25:16.777201+08:00'
   summary: 关闭前收尾：CI 与自动 Release 上线、v4.0.1 演练完成、hotfix 与就绪核对写入 README；spark-0006 处置为 implemented。
+- at: '2026-08-10T08:46:07.207598Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: WorkBuddy (macOS) -> Workbuddy; 1: WorkBuddy (macOS) -> Workbuddy; 2: WorkBuddy (macOS) -> Workbuddy; 3: WorkBuddy (macOS) -> Workbuddy。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-legacy-signature-migration-20260810
 object_id: spark-0006
 fact_type_key: spark
 created_at: '2026-07-19T10:19:29.162601+08:00'
-updated_at: '2026-08-08T17:25:16.777201+08:00'
+updated_at: '2026-08-10T08:46:07.207598Z'

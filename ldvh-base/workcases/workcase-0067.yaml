@@ -37,73 +37,79 @@ change_log:
   summary: 受控创建 WorkCase（plan_version=1）：将 workspace_root 调用纪律固化为规范 09 条文与 skill/SKILL.md 路由纪律；无独立 subagent 环境以 same-AI switched-role 完成低保证 creation review，等待 Human Gate 1。
   signature:
     agent_id: glm-5.2
-    host_environment: Claude Code macOS session
+    host_environment: Claude
 - at: '2026-08-07T02:12:28.706893+08:00'
   session_id: glm-5.2-wc0067-gate1-20260807
   summary: Gate 1 批准：human_plan_confirming→executing
   signature:
     agent_id: glm-5.2
-    host_environment: Claude Code macOS session
+    host_environment: Claude
 - at: '2026-08-07T02:12:57.232897+08:00'
   session_id: glm-5.2-wc0067-exec-20260807
   summary: 完成 items 1-4：09 §5.2a 写入、skill/SKILL.md 纪律、部署件重部署、CLI 回归验证
   signature:
     agent_id: glm-5.2
-    host_environment: Claude Code macOS session
+    host_environment: Claude
 - at: '2026-08-07T02:18:04.515758+08:00'
   session_id: glm-5.2-wc0067-exec-20260807
   summary: 完成 item-05（提交 5d0818d30），全部 item terminal，phase→controller_checking，result_version=1
   signature:
     agent_id: glm-5.2
-    host_environment: Claude Code macOS session
+    host_environment: Claude
 - at: '2026-08-07T02:47:48.578554+08:00'
   session_id: glm-5.2-wc0067-followup-20260807
   summary: 纠正：item-05（goal=本地受控提交）违例 21 §4.3 生命周期关口误建模，改为 cancelled；提交 5d0818d30 本身合法，结果链继续。
   signature:
     agent_id: glm-5.2
-    host_environment: Claude Code (macOS)
+    host_environment: Claude
 - at: '2026-08-07T02:51:19.923726+08:00'
   session_id: glm-5.2-wc0067-followup-20260807
   summary: 写入完整 canonical result projection（result_summary、success_criterion_results、controller_check_summary、validation_summary），字段名据 21 规范修正（outcome/summary）。
   signature:
     agent_id: glm-5.2
-    host_environment: Claude Code (macOS)
+    host_environment: Claude
 - at: '2026-08-07T02:51:35.521798+08:00'
   session_id: glm-5.2-wc0067-followup-20260807
   summary: controller_checking→independent_reviewing：完整 canonical result projection 已形成，等待结果复核。
   signature:
     agent_id: glm-5.2
-    host_environment: Claude Code (macOS)
+    host_environment: Claude
 - at: '2026-08-07T02:53:23.332952+08:00'
   session_id: glm-5.2-wc0067-followup-20260807
   summary: 在 independent_reviewing 中写入 result review（same-AI switched-role fallback，limitation-01），结论 pass（无 feedback）。
   signature:
     agent_id: glm-5.2
-    host_environment: Claude Code (macOS)
+    host_environment: Claude
 - at: '2026-08-07T02:53:37.328725+08:00'
   session_id: glm-5.2-wc0067-followup-20260807
   summary: independent_reviewing→closure_preparing：result review 已写入（pass），全部 feedback 无，projection 未变，开始形成关闭提案。
   signature:
     agent_id: glm-5.2
-    host_environment: Claude Code (macOS)
+    host_environment: Claude
 - at: '2026-08-07T02:54:41.759479+08:00'
   session_id: glm-5.2-wc0067-followup-20260807
   summary: closure_preparing：形成完整关闭提案（proposed_outcome=completed，1 项 follow_up_opportunity），冻结等待进入 Human Gate 2。
   signature:
     agent_id: glm-5.2
-    host_environment: Claude Code (macOS)
+    host_environment: Claude
 - at: '2026-08-07T02:54:58.567031+08:00'
   session_id: glm-5.2-wc0067-followup-20260807
   summary: closure_preparing→human_closure_confirming：关闭提案已冻结，等待 Human Gate 2 决定。
   signature:
     agent_id: glm-5.2
-    host_environment: Claude Code (macOS)
+    host_environment: Claude
 - at: '2026-08-07T03:01:41.406689+08:00'
   session_id: glm-5.2-wc0067-close-20260807
   summary: Human Gate 2 关闭决定：WC-0067 closed（proposed_outcome=completed），spark-0064 的 follow_up_opportunity 保留在 spark_suggestions 中。
   signature:
     agent_id: glm-5.2
-    host_environment: Claude Code (macOS)
+    host_environment: Claude
+- at: '2026-08-10T08:48:03.368621Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: Claude Code macOS session -> Claude; 1: Claude Code macOS session -> Claude; 2: Claude Code macOS session -> Claude; 3: Claude Code macOS session -> Claude; 4: Claude Code (macOS) -> Claude; 5: Claude Code (macOS) -> Claude; 6: Claude Code (macOS) -> Claude; 7: Claude Code (macOS) -> Claude; 8: Claude Code (macOS) -> Claude; 9: Claude Code (macOS) -> Claude; 10: Claude Code (macOS) -> Claude; 11: Claude Code (macOS) -> Claude。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-legacy-signature-migration-20260810
 closure_outcome: completed
 disposition_summary: workspace_root 调用纪律已固化为规范 09 §5.2a 条文与 skill/SKILL.md 路由纪律，部署件已重部署并 SHA-256 验证逐字节一致，回归验证通过。item-05 已纠正（21 §4.3 生命周期关口误建模），5 项成功标准全部 satisfied，无剩余责任。
 spark_suggestions:
@@ -114,4 +120,4 @@ spark_suggestions:
 object_id: workcase-0067
 fact_type_key: workcase
 created_at: '2026-08-07T01:39:28.159783+08:00'
-updated_at: '2026-08-07T03:01:41.406689+08:00'
+updated_at: '2026-08-10T08:48:03.368621Z'

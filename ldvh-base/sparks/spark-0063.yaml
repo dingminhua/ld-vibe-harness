@@ -8,7 +8,7 @@ change_log:
   summary: '受控创建本 Spark: 记录 Human 终端干预通道议题——任意阶段授权后直接关闭 WorkCase。发端于 workcase-0062 卡在 independent_reviewing 无法推进的讨论,Human 提出希望在任何阶段由 Human 主动授权即可直接关闭,不依赖走完结果复核链。'
   signature:
     agent_id: glm-5.2
-    host_environment: Claude Code (macOS)
+    host_environment: Claude
 - summary: 刷新 Spark-0063：确认 WorkCase-0082 未覆盖 Human 主动立即终止，将方向从任意阶段放宽 close-workcase 修订为独立 terminate-workcase 候选，并更新 0054、0061、0062、0082 的现状边界。
   signature:
     agent_workbench: Cindy
@@ -21,6 +21,12 @@ change_log:
     model_id: gpt-5
   session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
   at: '2026-08-09T16:15:55.672560+08:00'
+- at: '2026-08-10T08:47:24.333418Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: Claude Code (macOS) -> Claude。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-legacy-signature-migration-20260810
 relations:
 - relation_key: related-to
   target:
@@ -41,4 +47,4 @@ disposition_summary: WorkCase-0084 已完整承接 Human 主动终止的停止�
 object_id: spark-0063
 fact_type_key: spark
 created_at: '2026-08-06T09:58:00+08:00'
-updated_at: '2026-08-09T16:15:55.672560+08:00'
+updated_at: '2026-08-10T08:47:24.333418Z'
