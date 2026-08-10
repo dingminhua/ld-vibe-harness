@@ -47,97 +47,97 @@ change_log:
   summary: 受控创建本 WorkCase（plan_version=1）：承接 spark-0062，保留 POSIX 原子写安全内核并简化结果模型与 durability 策略；独立方案复核反馈已处置，等待 Human Gate 1。
   signature:
     agent_id: gpt-5
-    host_environment: Codex desktop (macOS)
+    host_environment: Codex
 - at: '2026-08-06T22:37:37.095557+08:00'
   session_id: codex-desktop-20260806-workcase0064
   summary: 消费 Human Gate 1 批准：当前 plan version 1 与完整 execution_authorization 已批准，WorkCase 进入 executing。
   signature:
     agent_id: gpt-5
-    host_environment: Codex desktop (macOS)
+    host_environment: Codex
 - at: '2026-08-06T22:38:46.392670+08:00'
   session_id: codex-desktop-20260806-workcase0064
   summary: 开始 item-01：形成原子写入简化的 Code Implementation Plan；记录计划结构、消费者清单和行为基线的恢复入口。
   signature:
     agent_id: gpt-5
-    host_environment: Codex desktop (macOS)
+    host_environment: Codex
 - at: '2026-08-06T22:45:41.703012+08:00'
   session_id: codex-desktop-20260806-workcase0064
   summary: 完成 item-01 Code Implementation Plan 并开始 item-02：计划已登记稳定入口，进入受约束原子写结果模型重构。
   signature:
     agent_id: gpt-5
-    host_environment: Codex desktop (macOS)
+    host_environment: Codex
 - at: '2026-08-06T22:54:41.182568+08:00'
   session_id: codex-desktop-20260806-workcase0064
   summary: 完成 item-02 并开始 item-03：结果模型已收敛为三个受约束形状，251 项相关测试通过；继续隔离平台后端能力与 durability 领域语义。
   signature:
     agent_id: gpt-5
-    host_environment: Codex desktop (macOS)
+    host_environment: Codex
 - at: '2026-08-06T23:01:47.004093+08:00'
   session_id: codex-desktop-20260806-workcase0064
   summary: 完成 item-03 并开始 item-04：平台判断已收敛为原生原子事实写后端能力，直接消费者与诊断完成迁移；262 项回归通过，进入完整验证与差异隔离。
   signature:
     agent_id: gpt-5
-    host_environment: Codex desktop (macOS)
+    host_environment: Codex
 - at: '2026-08-06T23:16:19.951924+08:00'
   session_id: codex-desktop-20260806-workcase0064
   summary: 进入 plan_revising：以并发提交 70115a3 为新实现基线，冻结现有 items、授权与批准，准备 fresh 独立方案复核和基线内 PlanΔ。
   signature:
     agent_id: gpt-5
-    host_environment: Codex desktop (macOS)
+    host_environment: Codex
 - at: '2026-08-06T23:25:07.913941+08:00'
   session_id: codex-desktop-20260806-workcase0064
   summary: 完成基线内 PlanΔ v2：采纳独立方案复核，保留 item-01~04 执行事实，删除生命周期伪 item-05/06，以 70115a3 为实现归因基线并自动返回 executing；授权与 approval 冻结不变。
   signature:
     agent_id: gpt-5
-    host_environment: Codex desktop (macOS)
+    host_environment: Codex
 - at: '2026-08-06T23:25:43.033582+08:00'
   session_id: codex-desktop-20260806-workcase0064
   summary: PlanΔ v2 回到 executing 后更新 item-04 检查点：记录 70115a3/92af 归因、已完成测试、首次 full-v4 失败边界与剩余验证/提交入口。
   signature:
     agent_id: gpt-5
-    host_environment: Codex desktop (macOS)
+    host_environment: Codex
 - at: '2026-08-06T23:41:31.629543+08:00'
   session_id: codex-desktop-20260806-workcase0064
   summary: 完成 item-04 并进入 controller_checking（result_version=1）：范围回归与全量 Code tests 通过；full-v4 因 70115a3 中 23 个 WC-0063 lint 问题失败，按冻结范围不越界修复。
   signature:
     agent_id: gpt-5
-    host_environment: Codex desktop (macOS)
+    host_environment: Codex
 - at: '2026-08-06T23:44:39.879129+08:00'
   session_id: codex-desktop-20260806-workcase0064
   summary: 形成 result_version=1 完整结果投影：六项标准 satisfied，criterion-07 因独立结果复核尚未发生且组合树 full-v4 未通过暂为 not_verified；记录提交 49dacf286 与验证边界。
   signature:
     agent_id: gpt-5
-    host_environment: Codex desktop (macOS)
+    host_environment: Codex
 - at: '2026-08-06T23:45:08.101861+08:00'
   session_id: codex-desktop-20260806-workcase0064
   summary: 完整 result_version=1 projection 回读后进入 independent_reviewing，等待真实独立只读 subagent 复核；projection/version 冻结。
   signature:
     agent_id: gpt-5
-    host_environment: Codex desktop (macOS)
+    host_environment: Codex
 - at: '2026-08-06T23:58:43.005963+08:00'
   session_id: codex-desktop-20260806-workcase0064
   summary: 记录真实独立 subagent 对 result_version=1 的复核：pass_with_followups；确认 0064 核心与 00 对齐，要求 criterion-07 保持 not_verified 且不 push，待 Controller 处置。
   signature:
     agent_id: gpt-5
-    host_environment: Codex desktop (macOS)
+    host_environment: Codex
 - at: '2026-08-07T00:16:41.097785+08:00'
   session_id: codex-desktop-20260806-workcase0064
   summary: Controller 采纳 result_version=1 独立复核并进入 closure_preparing；projection 保持不变，criterion-07 保持 not_verified。
   signature:
     agent_id: gpt-5
-    host_environment: Codex desktop (macOS)
+    host_environment: Codex
 - at: '2026-08-07T00:17:26.677587+08:00'
   session_id: codex-desktop-20260806-workcase0064
   summary: 形成 partial closure proposal：保留组合树 lint、full-v4 重跑及新授权 push 的受限后续责任。
   signature:
     agent_id: gpt-5
-    host_environment: Codex desktop (macOS)
+    host_environment: Codex
 - at: '2026-08-07T00:18:02.638158+08:00'
   session_id: codex-desktop-20260806-workcase0064
   summary: 完成终态保留与剩余责任覆盖审查，进入 Human Gate 2 等待 partial 关闭决定。
   signature:
     agent_id: gpt-5
-    host_environment: Codex desktop (macOS)
+    host_environment: Codex
 - at: '2026-08-07T00:50:22.752206+08:00'
   session_id: workbuddy-wc0064-close-20260807
   summary: 受控关闭 WC0064（partial closure）：记录 Human Gate 2 决定（user-message:你负责关闭，并且根据后续遗留开启新的wc@2026-08-07），接受 partial closure 提案；criterion-01~06 satisfied、criterion-07 not_verified 随提案保留；组合验证与 push 作为受限后续责任移交新建 WorkCase。
@@ -150,6 +150,12 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-legacy-signature-migration-20260810
+- at: '2026-08-10T08:56:11.439632Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: Codex desktop (macOS) -> Codex; 1: Codex desktop (macOS) -> Codex; 2: Codex desktop (macOS) -> Codex; 3: Codex desktop (macOS) -> Codex; 4: Codex desktop (macOS) -> Codex; 5: Codex desktop (macOS) -> Codex; 6: Codex desktop (macOS) -> Codex; 7: Codex desktop (macOS) -> Codex; 8: Codex desktop (macOS) -> Codex; 9: Codex desktop (macOS) -> Codex; 10: Codex desktop (macOS) -> Codex; 11: Codex desktop (macOS) -> Codex; 12: Codex desktop (macOS) -> Codex; 13: Codex desktop (macOS) -> Codex; 14: Codex desktop (macOS) -> Codex; 15: Codex desktop (macOS) -> Codex。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-explicit-signature-migration-20260810
 closure_outcome: partial
 disposition_summary: WC-0064 以本地提交 49dacf286 交付核心简化并停止在未 push 状态；criterion-01 至 criterion-06 已满足，criterion-07 因组合树 full-v4 未通过保持未验证。组合历史中的 23 个 Ruff 问题、full-v4 重跑、两项 0064 提交组合验证以及取得新 Gate1 授权后的 push 作为受限后续责任保留，当前 WorkCase 不越界处理。
 spark_suggestions:
@@ -169,4 +175,4 @@ relations:
 object_id: workcase-0064
 fact_type_key: workcase
 created_at: '2026-08-06T16:11:46.568109+08:00'
-updated_at: '2026-08-10T08:47:57.304757Z'
+updated_at: '2026-08-10T08:56:11.439632Z'
