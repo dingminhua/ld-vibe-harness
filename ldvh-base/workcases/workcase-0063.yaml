@@ -65,43 +65,43 @@ change_log:
   summary: Controller 已确认完整 canonical result projection 形成、校验并回读；按既定质量关口进入独立结果复核，等待 Reviewer。
   signature:
     agent_id: gpt-5
-    host_environment: codex
+    host_environment: Codex
   at: '2026-08-06T21:56:23.805144+08:00'
 - session_id: codex-session-20260806-wc0063
   summary: 独立结果复核完成，结论 changes_required；Controller 已接受全部反馈并决定在当前授权基线内返工。
   signature:
     agent_id: gpt-5
-    host_environment: codex
+    host_environment: Codex
   at: '2026-08-06T22:05:16.459601+08:00'
 - session_id: codex-session-20260806-wc0063
   summary: Controller 已完成独立复核 feedback 处置；保留 result_version=1 与完整复核事件，返回 controller_checking 准备按既有授权基线返工。
   signature:
     agent_id: gpt-5
-    host_environment: codex
+    host_environment: Codex
   at: '2026-08-06T22:05:26.636199+08:00'
 - session_id: codex-session-20260806-wc0063
   summary: 直接重开原 item 依赖链不可形成合法执行快照；Controller 进入 plan_revising，准备在既有授权基线内以 PlanΔ 形成独立返工 items。
   signature:
     agent_id: gpt-5
-    host_environment: codex
+    host_environment: Codex
   at: '2026-08-06T22:06:37.248104+08:00'
 - session_id: codex-session-20260806-wc0063
   summary: PlanΔ 经独立只读方案复核并完成 Controller 处置：plan_version=2 以 item-07 至 item-09 返工，旧 result_version=1 结果链失效，冻结授权与 Human Gate 1 批准保持不变。
   signature:
     agent_id: gpt-5
-    host_environment: codex
+    host_environment: Codex
   at: '2026-08-06T22:10:02.719931+08:00'
 - session_id: codex-session-20260806-wc0063
   summary: 开始执行 item-07：统一 observed_context.signature、change_log 顶层 session_id 与 Git footer 的字段和取值约定。
   signature:
     agent_id: gpt-5
-    host_environment: codex
+    host_environment: Codex
   at: '2026-08-06T22:10:30.772541+08:00'
 - session_id: codex-session-20260806-wc0063
   summary: item-07 完成：三处规范已统一 session_id 顶层映射、完整 signature 与 Git footer 逐字段同值约定，93 项相关测试通过；同事务开始 item-08 实现修正。
   signature:
     agent_id: gpt-5
-    host_environment: codex
+    host_environment: Codex
   at: '2026-08-06T22:26:27.814390+08:00'
 - session_id: codex-session-20260806-wc0063
   summary: item-08 完成：请求校验与三条写入编排已修正，134 项 Helper 回归及注入烟测通过；同事务开始 item-09 真实写后验证。
@@ -187,6 +187,12 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-legacy-signature-migration-20260810
+- at: '2026-08-10T09:00:52.134998Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 4: codex -> Codex; 5: codex -> Codex; 6: codex -> Codex; 7: codex -> Codex; 8: codex -> Codex; 9: codex -> Codex; 10: codex -> Codex。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-codex-signature-migration-20260810
 closure_outcome: partial
 disposition_summary: 署名注入的规范、实现与验证结果已稳定形成；提交 70115a320 的内容隔离标准未满足，混入的原生原子写入迁移及其归属、验证和后续受控提交责任转交给 WC0064；本 WorkCase 不保留 accepted-stop 责任。
 relations:
@@ -203,4 +209,4 @@ relations:
 object_id: workcase-0063
 fact_type_key: workcase
 created_at: '2026-08-06T15:27:15.416665+08:00'
-updated_at: '2026-08-10T08:47:54.110490Z'
+updated_at: '2026-08-10T09:00:52.134998Z'
