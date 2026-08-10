@@ -31,91 +31,91 @@ relations:
     object_id: spark-0051
 change_log:
 - signature:
-    agent_id: Deepseek-V4-Flash
+    agent_id: deepseek-v4-flash
     host_environment: Workbuddy
   session_id: workbuddy-workcase-0054-create
   summary: 按 Human 指令依据 spark-0051 创建：确立多执行者提交契约并入库 workcase-0026/0048/0052。
   at: '2026-08-04T00:19:17.794576+08:00'
 - signature:
-    agent_id: Deepseek-V4-Flash
+    agent_id: deepseek-v4-flash
     host_environment: Workbuddy
   session_id: workbuddy-wc54-revising
   at: '2026-08-04T00:19:38.496299+08:00'
   summary: Controller 依据独立 Reviewer feedback 进入 plan_revising，准备修订计划为 plan_version=2。
 - signature:
-    agent_id: Deepseek-V4-Flash
+    agent_id: deepseek-v4-flash
     host_environment: Workbuddy
   session_id: workbuddy-wc54-v2
   summary: 形成 plan_version=2：落实独立 Reviewer 6 条 feedback 并返回 Human Gate 1。
   at: '2026-08-04T00:22:20.554471+08:00'
 - signature:
-    agent_id: Deepseek-V4-Flash
+    agent_id: deepseek-v4-flash
     host_environment: Workbuddy
   session_id: workbuddy-wc54-revising2
   at: '2026-08-04T00:25:37.572780+08:00'
   summary: Human 指示将 workcase-0048 移交外部 AI，本 WorkCase 进入 plan_revising 调整范围。
 - signature:
-    agent_id: Deepseek-V4-Flash
+    agent_id: deepseek-v4-flash
     host_environment: Workbuddy
   session_id: workbuddy-wc54-v3
   at: '2026-08-04T00:29:05.396635+08:00'
   summary: 写入 plan_version=3：按 Human 指示将 workcase-0048 移交外部 AI，返回 Human Gate 1。
 - signature:
-    agent_id: Deepseek-V4-Flash
+    agent_id: deepseek-v4-flash
     host_environment: Workbuddy
   session_id: workbuddy-wc54-gate1
   at: '2026-08-04T00:33:28.909786+08:00'
   summary: Human Gate 1 批准 plan_version=3（0048 移交外部、多 agent 契约方向确认），进入 executing。
 - signature:
-    agent_id: Deepseek-V4-Flash
+    agent_id: deepseek-v4-flash
     host_environment: Workbuddy
   session_id: workbuddy-wc54-item1
   at: '2026-08-04T00:34:02.752760+08:00'
   summary: item-read-baseline 完成：确认 agent/host 单值匹配为缺口，进入 item-contract-code。
 - signature:
-    agent_id: Deepseek-V4-Flash
+    agent_id: deepseek-v4-flash
     host_environment: Workbuddy
   session_id: workbuddy-wc54-item2
   at: '2026-08-04T00:36:25.974344+08:00'
   summary: item-contract-code 完成：提交校验支持多 agent/host 多值集合，specs/03 同步，96 测试通过。
 - signature:
-    agent_id: Deepseek-V4-Flash
+    agent_id: deepseek-v4-flash
     host_environment: Workbuddy
   session_id: workbuddy-wc54-item4
   at: '2026-08-04T00:38:42.834351+08:00'
   summary: item-commit-three 与 item-evidence 完成：三判据 satisfied，进入 controller_checking。
 - signature:
-    agent_id: Deepseek-V4-Flash
+    agent_id: deepseek-v4-flash
     host_environment: Workbuddy
   session_id: workbuddy-wc54-review
   at: '2026-08-04T00:41:54.663731+08:00'
   summary: 转入 independent_reviewing：冻结 result projection，委派独立只读复核。
 - signature:
-    agent_id: Deepseek-V4-Flash
+    agent_id: deepseek-v4-flash
     host_environment: Workbuddy
   session_id: workbuddy-wc54-review-write
   at: '2026-08-04T00:55:19.407768+08:00'
   summary: 写入独立复核 result_reviews（pass_with_followups，5 条 feedback 处置，spark-0051 越界上报 Human）。
 - signature:
-    agent_id: Deepseek-V4-Flash
+    agent_id: deepseek-v4-flash
     host_environment: Workbuddy
   session_id: workbuddy-wc54-back-controller
   at: '2026-08-04T00:55:38.810038+08:00'
   summary: 独立复核后原样回 controller_checking：spark-0051 越界待 Human 裁决。
 - signature:
-    agent_id: Deepseek-V4-Flash
+    agent_id: deepseek-v4-flash
     host_environment: Workbuddy
   session_id: workbuddy-wc54-closure-prep
   at: '2026-08-04T00:57:05.026549+08:00'
   summary: 进入 closure_preparing：形成 closure proposal（completed）。
 - signature:
-    agent_id: Deepseek-V4-Flash
+    agent_id: deepseek-v4-flash
     host_environment: Workbuddy
   session_id: workbuddy-wc54-human-close
   at: '2026-08-04T00:57:23.947395+08:00'
   summary: 转入 human_closure_confirming：转交 closure proposal（completed）。
 - signature:
-    agent_id: Deepseek-V4-Flash
+    agent_id: deepseek-v4-flash
     host_environment: Workbuddy
   session_id: workbuddy-wc54-close
   at: '2026-08-04T00:58:22.054500+08:00'
@@ -126,7 +126,13 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-workcase-signature-migration-20260810
+- at: '2026-08-10T09:12:52.067793Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: Deepseek-V4-Flash -> deepseek-v4-flash; 1: Deepseek-V4-Flash -> deepseek-v4-flash; 2: Deepseek-V4-Flash -> deepseek-v4-flash; 3: Deepseek-V4-Flash -> deepseek-v4-flash; 4: Deepseek-V4-Flash -> deepseek-v4-flash; 5: Deepseek-V4-Flash -> deepseek-v4-flash; 6: Deepseek-V4-Flash -> deepseek-v4-flash; 7: Deepseek-V4-Flash -> deepseek-v4-flash; 8: Deepseek-V4-Flash -> deepseek-v4-flash; 9: Deepseek-V4-Flash -> deepseek-v4-flash; 10: Deepseek-V4-Flash -> deepseek-v4-flash; 11: Deepseek-V4-Flash -> deepseek-v4-flash; 12: Deepseek-V4-Flash -> deepseek-v4-flash; 13: Deepseek-V4-Flash -> deepseek-v4-flash; 14: Deepseek-V4-Flash -> deepseek-v4-flash。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-model-id-migration-20260810
 object_id: workcase-0054
 fact_type_key: workcase
 created_at: '2026-08-04T00:19:17.794576+08:00'
-updated_at: '2026-08-10T08:52:50.045867Z'
+updated_at: '2026-08-10T09:12:52.067793Z'
