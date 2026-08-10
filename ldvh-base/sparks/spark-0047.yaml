@@ -11,13 +11,13 @@ relations:
     object_id: study-0027
 change_log:
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 48bbb4c6-f2ff-4510-b63f-cebcaaa35d2e
   at: '2026-08-03T12:16:09.059675+08:00'
   summary: 记录仅获准建立 Spark 时被误推定为实施授权的越权问题及可重复步骤。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 48bbb4c6-f2ff-4510-b63f-cebcaaa35d2e
   at: '2026-08-03T12:35:00+08:00'
@@ -40,7 +40,13 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-identity-id-migration-20260810
+- at: '2026-08-10T09:22:41.682304Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: codex -> gpt-5; 1: codex -> gpt-5。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: session-20260810-codex-model-migration
 object_id: spark-0047
 fact_type_key: spark
 created_at: '2026-08-03T12:16:09.059675+08:00'
-updated_at: '2026-08-10T09:14:58.643309Z'
+updated_at: '2026-08-10T09:22:41.682304Z'
