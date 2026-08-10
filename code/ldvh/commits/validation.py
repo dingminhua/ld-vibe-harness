@@ -566,7 +566,7 @@ def _is_historical_signature_repair_transition(
     signature = audit.get("signature")
     if (
         not isinstance(summary, str)
-        or not summary.startswith("受控更正历史 change_log 中的 agent_workbench 格式；修复项为:")
+        or not summary.startswith("受控更正历史 change_log 中的 agent_workbench 格式；修复项为")
         or "原始错误值已由本次更正覆盖并保留本条修复记录。" not in summary
         or not isinstance(signature, dict)
         or set(signature) != {"model_id", "agent_workbench"}
