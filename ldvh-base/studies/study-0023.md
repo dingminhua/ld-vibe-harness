@@ -61,14 +61,21 @@ relations:
 change_log:
 - signature:
     agent_id: GLM-5.2
-    host_environment: claude-code-mcp
+    host_environment: Claude
   session_id: session-20260805-deep-audit
   at: '2026-08-05T16:40:00+08:00'
   summary: Human 授权在 study-0022 基础上做深度审计并追加 subagent 独立审核；本 Study 将 direct audit 发现与 subagent 审核结果合并入档。
+- at: '2026-08-10T08:48:59.624405Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: claude-code-mcp -> Claude。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-legacy-signature-migration-20260810
+
 object_id: study-0023
 fact_type_key: study
 created_at: '2026-08-05T16:40:00+08:00'
-updated_at: '2026-08-05T16:40:00+08:00'
+updated_at: '2026-08-10T08:48:59.624405Z'
 ---
 
 ## 研究问题
