@@ -17,12 +17,13 @@ from ldvh.facts.contracts import LAYOUTS
 from ldvh.facts.creation import CreationBoundary, allocation_lock, serialize_fact_object
 from ldvh.facts.models import FactIssue
 from ldvh.facts.project_validation import stabilize_project_index
-from ldvh.facts.relations import ProjectFactIndex
+from ldvh.facts.relations import ProjectFactIndex, validate_spark_route_target_formation
 from ldvh.facts.repository import FactReadResult, read_fact_object
 from ldvh.facts.schema import FactSchema
 from ldvh.facts.transitions import validate_fact_transition
 from ldvh.facts.update import atomic_replace_text_if_unchanged
 from ldvh.facts.validation import (
+    _normalize_workbench_name,
     parse_rfc3339,
     study_report_creation_issues,
     timestamp_appended_change_log,
@@ -197,6 +198,24 @@ def _event_time_issue(current: FactReadResult, event_at: str) -> FactIssue | Non
     return None
 
 
+def _normalized_mutable(fields: dict[str, Any]) -> dict[str, Any]:
+    """Normalize agent_workbench in the last change_log entry for comparison."""
+    change_log = fields.get("change_log")
+    if not isinstance(change_log, list) or not change_log or not isinstance(change_log[-1], dict):
+        return fields
+    newest = dict(change_log[-1])
+    sig = newest.get("signature")
+    if isinstance(sig, dict):
+        wb = sig.get("agent_workbench")
+        if isinstance(wb, str):
+            normalized_wb = _normalize_workbench_name(wb)
+            if normalized_wb != wb:
+                sig = {**sig, "agent_workbench": normalized_wb}
+                newest = {**newest, "signature": sig}
+                return {**fields, "change_log": [*change_log[:-1], newest]}
+    return fields
+
+
 def apply_fact_update_locked(command: FactUpdateCommand) -> FactUpdateResult:
     """Apply one generic update while the caller holds the type lock."""
 
@@ -217,7 +236,7 @@ def apply_fact_update_locked(command: FactUpdateCommand) -> FactUpdateResult:
     repairing_invalid_before = current.check_status != "mechanically_valid"
     if (
         not repairing_invalid_before
-        and mutable_current == dict(command.supplied)
+        and _normalized_mutable(mutable_current) == _normalized_mutable(dict(command.supplied))
         and (layout.carrier != "markdown" or (current.body or "") == command.body)
     ):
         return FactUpdateResult("no_change", command.event_at, current=current, readback=current)
@@ -276,6 +295,29 @@ def apply_fact_update_locked(command: FactUpdateCommand) -> FactUpdateResult:
             candidate=candidate,
             candidate_text=candidate_text,
         )
+
+    if command.fact_type_key == "spark":
+        formation_index = ProjectFactIndex(
+            command.boundary.worktree_root,
+            command.boundary.governed_project_id,
+            dict(command.schemas),
+            command.boundary.git_common_dir,
+        )
+        formation_issues = validate_spark_route_target_formation(
+            formation_index,
+            command.object_id,
+            current.fields,
+            candidate.fields,
+        )
+        if formation_issues:
+            return FactUpdateResult(
+                "candidate_rejected",
+                command.event_at,
+                issues=formation_issues,
+                current=current,
+                candidate=candidate,
+                candidate_text=candidate_text,
+            )
 
     replacement = atomic_replace_text_if_unchanged(
         command.boundary.worktree_root,

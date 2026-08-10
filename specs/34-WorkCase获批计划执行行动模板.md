@@ -49,13 +49,23 @@ ldvh_spec:
 |---|---|---|
 | `workcase-approved-plan-execution` | 组织已获 Gate 1 批准 WorkCase 的精确读取、授权消费、按真实检查点写回、包内调整、实施、阻塞/恢复、结果复核、Gate 2 与上下文恢复；不复制 21 状态机、不成为调度器也不声称 spawn 能力 | `workcase-approved-plan-execution-action-template::5. WorkCase 获批计划执行行动模板定义` |
 
-### 5.1 前置精确读取
+### 5.1 前置精确读取与执行期能力预检
 
 新的、恢复的、压缩后或委派的执行上下文先取得规则引导，再经 Helper 精确读取当前 WorkCase 的完整对象、`content_fingerprint` 和 `current_snapshot_projection`。执行者只消费 `resolution=resolved` 且 `source_content_fingerprint` 与本次读取内容指纹精确相同的投影；缺失、不匹配、stale 或 unresolved 时先重新精确读取，重复读取后仍不能形成 current 投影则只保留读取缺口，不猜测相邻位置、下一动作或交还话术。
 
 执行者同时读取当前 plan、未完成 item 与依赖、fresh creation review、每项 review 据实记录的 `actual_method` 与条件性保证披露、冻结 `execution_authorization` 及其中实际存在的 capability limitations，以及 baseline fingerprint 和 Human `source_refs` 均准确的 `execution_approval`，逐项核对当前行动是否仍处于目标、影响、风险、能力与禁止项边界内。`status + phase` 是当前活动位置的事实，`status=blocked` 是覆盖层，closed 对象没有 phase；投影只是 21 基于刚回读快照形成的非持久派生合同。21 定义全部字段、phase、转换、quality gate 与投影语义，32 组织受控写回；本文不重述其闭集或成立条件。
 
-若刚回读对象已为 `termination_preparing`，执行者同时读取完整 `termination`，核对冻结的起始 phase、source fingerprint、Human 来源引用与 item 现场；随后只消费 `next_required_control_step=termination_cleanup`。旧 plan、items、授权、review、结果或 proposal 只作为中止起始现场，不得恢复原计划，也不得转回普通结果链或 Gate2。
+**执行期 Reviewer 能力预检：** 每次新建、恢复、压缩后继续或接管执行上下文，在精确读取 WorkCase 后、开始消费任何 item 或发起 review 前，必须完成一次当前能力预检：
+
+1. **宿主权限门槛重检：** 检查当前宿主是否要求当前会话中的 Human 明确启用协作 Worker 或 subagent。若需要且当前输入不足，先取得仅限只读复核的明确启用指令再重新探测。历史 WC 记录、冻结 reviewer policy 或 Gate 1 批准不能替代宿主要求的当前会话显式指令。未取得明确答复前，状态只能是 `permission_required` 或 `unknown`；三者均不是技术 `unavailable`。
+2. **能力预检：** 分别观察当前环境是否具有协作 Worker、一次性 subagent 与 same-AI 三类复核载体，以及各自的模型目录、限制和证据。不能把一种载体的模型清单冒充另一种，也不能把未知能力直接写成缺失。该预检是一次只读路由控制动作，不形成 review 结论，不计入复审次数或每轮视角数量，不新增 lifecycle phase 或 Human Gate。
+3. **复核前有效性确认：** 真正开始任一方案侧或结果侧复核前，确认能力预检快照仍然有效。执行中发现能力变化时立即按冻结 reviewer policy 的 `fallback_order` 重新选路。
+4. **运行时 1→2→3 降级：** 每轮复核都按冻结 reviewer policy 的 `preferred_method` 和 `fallback_order` 判断。不能因为历史上使用过低档方式就跳过当前已恢复的高档能力，不能从第一档直接跳到第三档，也不能把某次缺失永久化。第三档 same-AI 必须在冻结 `capability_limitations` 已覆盖当次审核类别、当次能力不可用证据仍然成立、保证差距已披露且停止条件评估为 `clear` 时才可使用。
+5. **重复复审循环：** 发现问题、修正后对新版本重新复核，不因已复核过一次就跳过。PlanΔ 使旧 creation review 失效，结果版本变化使旧 result review 失效；每次失效后必须 fresh review。每轮复核按冻结 `max_perspectives` 选择 1–3 个审查视角。
+
+能力预检与复核路由的完整规则权威回指 21 §4.5；冻结 reviewer policy 的字段定义回指 21 §5 的 `workcase-reviewer-policy`。
+
+若刚回读对象已为 `termination_preparing`，执行者同时读取完整 `termination`，核对冻结的起始 phase、source fingerprint、Human 来源引用与 item 现场；随后只消费 `next_required_control_step=termination_cleanup`。旧 plan、items、授权、review、结果或 proposal 只作为中止起始现场，不得恢复原计划，也不得转回普通结果链或 Gate2。终止善后不执行 Reviewer 能力预检，不发起新的 review。
 
 ### 5.2 执行循环
 

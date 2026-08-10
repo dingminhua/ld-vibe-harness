@@ -160,13 +160,17 @@ Spark 对象使用 UTF-8 YAML，一文件一对象，当前权威位置固定为
 | status | 语义 | 必须成立 |
 |---|---|---|
 | `open` | Spark 仍有未被稳定位置完整承接的内容，需要继续召回、判断、拆分或分流；面向 Human 的状态词为“待处理”，不把它泛化表述为“未关闭” | `priority` 必填；`disposition_summary` 不得出现；已有关系不等于完整承接 |
-| `routed` | 原始信息需求已经由一个或多个同项目稳定事实对象完整承接，Spark 不再承担待处置入口；它记录当次分流已经成立，不承担下游对象后续状态、阶段、关闭或完成的跟踪 | `priority` 禁止；`disposition_summary` 必填；进入 `routed` 时至少一条 `routed-to` 已实际指向非 Spark、非 Study 的同项目 mechanically valid 事实对象。多个目标时，摘要必须逐项说明各自承接范围且无残留 |
+| `routed` | 原始信息需求已经由一个或多个同项目稳定事实对象完整承接，或已完成部分由稳定事实承接、明确残余范围由一个或多个 open successor Spark 承接；Spark 不再承担原入口的待处置责任；它记录当次分流已经成立，不承担下游对象后续状态、阶段、关闭或完成的跟踪 | `priority` 禁止；`disposition_summary` 必填；进入 `routed` 时至少一条 `routed-to` 已实际指向同项目 mechanically valid 的 WorkCase、ADR、Pitfall 或 open successor Spark，且全部原始范围已有稳定覆盖。多个目标时，摘要必须逐项说明各自承接范围、残余范围与为何不再由源 Spark 跟踪 |
 | `implemented` | Spark 限定的信息需求已经由该 Spark 范围内的直接工作落实到适用规则、实现或其它非事实承载边界，且没有剩余待处置内容或事实承接对象；它只结束该 Spark 入口，不表示项目、规则、代码、Git 提交或下游工作完成，也不得因已分流目标后来完成而取得 | `priority` 禁止；`disposition_summary` 必填；不得有 `routed-to`；说明必须如实限定已落实范围与无剩余责任，不得把文件存在、命令成功、测试通过或 Human 回应单独写成落实成立 |
 | `discarded` | 明确决定该信息不再继续跟踪；这是不产生承接目标的废弃终态，不是分流 | `priority` 禁止；`disposition_summary` 必填；不得仅因暂时无行动或优先级低而废弃 |
 
 正常状态转换只有 `open → routed`、`open → implemented` 和 `open → discarded`。准备从 open 进入任一终态前，必须检查入向 `routed-to`：若有 closed WorkCase 已将剩余责任路由到当前 Spark，必须先确认该责任已由 Spark 的本次处置或后续稳定位置完整承接，不得静默丢失入向责任。终态不直接重开；后来出现新的未处置信息时创建新 Spark；新 Spark 独立 open，在 `disposition_summary` 中说明接替的旧 Spark。若原终态记录本身错误，应按 05 的事实更正规则修正，而不是把更正伪装成领域状态转换；不得建立普通 `routed → implemented` 转换。
 
-`routed` 只表示 Spark 入口职责结束，不表示目标工作完成、决策正确、经验有效或报告结论成立。它也不要求 Spark 持续跟踪分流目标的 status、phase、关闭、完成、替代或其继续分流；目标在分流后发生这些生命周期变化，不反向改变既已成立的 `routed-to` 关系或 Spark 的 `routed` 状态。下游对象产生的新责任、残余或例外，应由其自身或新建事实对象按各自规则承载，不能回流为原 Spark 的未处置内容。Study 只承载研究报告，可以作为 `related-to` 关联，并可以改变当前摘要中的理解；Study 的存在、关联或报告完成均不表示原问题已经承接，也不得成为 `routed-to` 或单独支持 Spark 进入 `routed`。若报告之后仍有行动、决定、规则或其它未承接缺口，Spark 必须保持 open。一个或多个非 Study 的同项目稳定事实对象只有在进入 `routed` 时确实完整覆盖原信息需求时才可以支持 routed；多个承接位置共同完整覆盖时，分别保留 `routed-to`，并在 `disposition_summary` 逐项说明覆盖判断。
+`routed` 只表示 Spark 入口职责结束，不表示目标工作完成、决策正确、经验有效或报告结论成立。它也不要求 Spark 持续跟踪分流目标的 status、phase、关闭、完成、替代或其继续分流；目标在分流后发生这些生命周期变化，不反向改变既已成立的 `routed-to` 关系或 Spark 的 `routed` 状态。下游对象产生的新责任、残余或例外，应由其自身或新建事实对象按各自规则承载，不能回流为原 Spark 的未处置内容。
+
+当大部分内容已被稳定事实对象承接、仍有一个可独立判断的残余议题时，可以由一个新的、同项目、`open` 的 successor Spark 承接该残余范围；successor 必须在自身 `intent` / `summary` 中明确 residual scope，不能只复制源 Spark 标题或摘要。源 Spark 进入 `routed` 前，`summary` 与 `disposition_summary` 必须说明已完成覆盖、每个 successor 或其它目标的承接范围，以及为何剩余责任已转移而不是被省略；源 Spark 不保存 successor 的后续状态或完成跟踪。successor 的 `routed-to` 关系必须与其它承接关系共同保持同项目、自指排除和有向无环，不能把源 Spark 与 successor 互相循环路由。
+
+Study 只承载研究报告，可以作为 `related-to` 关联，并可以改变当前摘要中的理解；Study 的存在、关联或报告完成均不表示原问题已经承接，也不得成为 `routed-to` 或单独支持 Spark 进入 `routed`。若报告之后仍有行动、决定、规则或其它未承接缺口，Spark 必须保持 open。一个或多个非 Study 的同项目稳定事实对象（包括明确残余范围的 open successor Spark）只有在进入 `routed` 时确实共同完整覆盖原信息需求时才可以支持 routed；多个承接位置共同覆盖时，分别保留 `routed-to`，并在 `disposition_summary` 逐项说明覆盖判断。
 
 `discarded` 同样只结束 Spark 入口，但它是无承接目标的否定处置：其 `disposition_summary` 只说明决定不再跟踪的理由，不得声明任何承接位置、后续处理、部分或完整分流，也不得以 `routed-to` 关系伪造处置完成。若后来出现需要继续处置的新信息，必须新建 `open` Spark，在 `disposition_summary` 中说明接替的旧 Spark；这不把旧对象改写为分流。
 
@@ -182,6 +186,7 @@ Spark 的 `relation_key` 闭集为：
 
 | relation_key | 目标、基数与方向 | 跨项目、缺失、自指与循环 | 对状态的影响 |
 |---|---|---|---|
+| `routed-to` | 同项目 `WorkCase`、`ADR`、`Pitfall` 或明确残余范围的 `open` successor `Spark`，一项关系指向一个稳定承接位置；方向为源 Spark → 承接目标，可有多个目标 | 目标必须当前 mechanically valid、具有可呈现的非空 `title`，禁止跨项目、自指、Study 和有向循环；successor Spark 必须是独立对象且不得把源 Spark 重新作为其残余承接目标 | 只允许 source 为 `routed`；关系成立表示源入口职责结束，不表示目标已开始、已完成或后续生命周期仍由源 Spark 跟踪；目标后续状态变化不回溯使关系失效 |
 
 `routed-to` 的唯一权威身份始终是目标的 `governed_project_id`、`fact_type_key` 与 `object_id` 三元组。当前不支持跨项目 Spark 关系：两个 relation key 的目标都必须属于当前管辖项目；实际跨项目需求出现时，必须先另行定义可验证的发现、读取与治理边界。关系中不得复制、人工维护或以 `object_id` 冒充目标名称；面向 Human 的完整名称只能从该目标当前对象的非空 `title` 派生读取。Helper 的项目级关系检查必须实际读取目标并确认该 `title` 可呈现：目标不存在、机械无效或缺少非空 `title` 时，source Spark 的关系无效；目标当前不可读取时，结果保持 `unavailable`。Web 不得把读取到的名称变成关系权威，也不得以编号作为名称回退。
 

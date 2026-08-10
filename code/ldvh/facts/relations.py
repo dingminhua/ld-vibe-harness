@@ -195,7 +195,12 @@ def _target(relation: dict[str, object]) -> dict[str, object] | None:
 
 def _target_condition(source_type: str, relation_key: str, target_type: str, target_status: object) -> bool:
     if source_type == "spark" and relation_key == "routed-to":
-        return target_type not in {"spark", "study"}
+        if target_type == "spark":
+            # A successor must be open when the edge is formed; once formed,
+            # its own lifecycle may advance without invalidating the upstream
+            # routed-to relation.
+            return target_status in {"open", "routed", "implemented", "discarded"}
+        return target_type not in {"study"}
     if source_type == "spark" and relation_key == "related-to":
         return target_type in LAYOUTS
     if source_type == "workcase" and relation_key == "depends-on":
@@ -234,6 +239,65 @@ def _target_has_readable_title(
         return True
     title = target_fields.get("title")
     return isinstance(title, str) and bool(title.strip())
+
+
+def validate_spark_route_target_formation(
+    index: ProjectFactIndex,
+    source_object_id: str,
+    before_fields: Mapping[str, object],
+    after_fields: Mapping[str, object],
+) -> tuple[FactIssue, ...]:
+    """Require newly formed Spark successor edges to target an open Spark.
+
+    The ordinary project relation check validates the current target state so
+    an already-formed edge survives the target's later lifecycle.  This
+    narrow before/after check supplies the formation-time rule for generic
+    single-object Spark updates.
+    """
+
+    def targets(fields: Mapping[str, object]) -> set[tuple[str, str, str]]:
+        values: set[tuple[str, str, str]] = set()
+        relations = fields.get("relations")
+        for relation in relations if isinstance(relations, Sequence) else ():
+            if not isinstance(relation, Mapping) or relation.get("relation_key") != "routed-to":
+                continue
+            target = relation.get("target")
+            if not isinstance(target, Mapping):
+                continue
+            project = target.get("governed_project_id")
+            fact_type = target.get("fact_type_key")
+            object_id = target.get("object_id")
+            if all(isinstance(value, str) for value in (project, fact_type, object_id)):
+                values.add((project, fact_type, object_id))
+        return values
+
+    issues: list[FactIssue] = []
+    previous = targets(before_fields)
+    for project, fact_type, object_id in sorted(targets(after_fields) - previous):
+        if fact_type != "spark":
+            continue
+        path = "relations"
+        if project != index.governed_project_id:
+            continue
+        if object_id == source_object_id:
+            issues.append(FactIssue("relation", "Spark successor routed-to 目标禁止自指", path))
+            continue
+        target_read = index.read_fresh(fact_type, object_id)
+        if target_read is None or target_read.check_status in {"not_found", "invalid"}:
+            issues.append(
+                FactIssue(
+                    "relation",
+                    "新形成的 Spark successor 不存在或不是 mechanically valid 当前对象",
+                    path,
+                )
+            )
+            continue
+        if target_read.check_status == "unavailable" or target_read.fields is None:
+            issues.append(FactIssue("reference", "新形成的 Spark successor 当前不可用，无法确认其 open 状态", path))
+            continue
+        if target_read.fields.get("status") != "open":
+            issues.append(FactIssue("relation", "新形成的 Spark successor 必须为 open", path))
+    return tuple(issues)
 
 
 def _source_condition(source_type: str, relation_key: str, source_fields: dict[str, object]) -> bool:

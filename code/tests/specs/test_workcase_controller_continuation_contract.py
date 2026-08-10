@@ -19,7 +19,7 @@ def test_execution_template_has_only_the_five_controller_flow_sections() -> None
 
     headings = [line for line in source.splitlines() if line.startswith("### 5.")]
     assert headings == [
-        "### 5.1 前置精确读取",
+        "### 5.1 前置精确读取与执行期能力预检",
         "### 5.2 执行循环",
         "### 5.3 稳定检查点",
         "### 5.4 合法退出",
