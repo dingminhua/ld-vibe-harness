@@ -514,6 +514,12 @@ def _fact_trace_issues(
             # established by the controlled migration operation, so the whole
             # current log is the event introduced by this candidate.
             appended = after_log
+        elif _is_historical_signature_repair_transition(before_log, after_log):
+            # Historical signature repair is a controlled exception to the
+            # append-only comparison: the old signature values may change, but
+            # the object body and every non-signature field must remain equal,
+            # and exactly one canonical repair audit entry must be appended.
+            appended = [after_log[-1]]
         else:
             failures.append(
                 _issue("fact_trace_transition_invalid", f"事实流水前后像不能确定唯一新增事件: {candidate.path}")
@@ -538,6 +544,53 @@ def _fact_trace_issues(
             )
             continue
     return unavailable, failures
+
+
+def _is_historical_signature_repair_transition(
+    before_log: list[object], after_log: list[object]
+) -> bool:
+    """Recognize one controlled historical-signature repair event.
+
+    The repair operation updates signature values in existing entries and
+    appends one canonical audit entry.  This shape is distinct from ordinary
+    fact updates and is safe to accept mechanically only when all other fields
+    remain unchanged.
+    """
+
+    if len(after_log) != len(before_log) + 1:
+        return False
+    audit = after_log[-1]
+    if not isinstance(audit, dict):
+        return False
+    summary = audit.get("summary")
+    signature = audit.get("signature")
+    if (
+        not isinstance(summary, str)
+        or not summary.startswith("受控更正历史 change_log 中的 agent_workbench 格式；修复项为:")
+        or "原始错误值已由本次更正覆盖并保留本条修复记录。" not in summary
+        or not isinstance(signature, dict)
+        or set(signature) != {"model_id", "agent_workbench"}
+    ):
+        return False
+
+    changed_signature = False
+    for before, after in zip(before_log, after_log[:-1]):
+        if not isinstance(before, dict) or not isinstance(after, dict):
+            return False
+        before_rest = {key: value for key, value in before.items() if key != "signature"}
+        after_rest = {key: value for key, value in after.items() if key != "signature"}
+        if before_rest != after_rest:
+            return False
+        before_signature = before.get("signature")
+        after_signature = after.get("signature")
+        if not isinstance(before_signature, dict) or not isinstance(after_signature, dict):
+            return False
+        if set(before_signature) != set(after_signature):
+            return False
+        if set(before_signature) - {"agent_id", "model_id", "agent_workbench", "host_environment", "host_name"}:
+            return False
+        changed_signature = changed_signature or before_signature != after_signature
+    return changed_signature
 
 
 def validate_commit(contract: CommitContractProjection, value: CommitValidationInput) -> CommitValidationResult:

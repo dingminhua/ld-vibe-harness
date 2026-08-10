@@ -820,6 +820,57 @@ def test_valid_staged_fact_candidate_passes(contract: CommitContractProjection) 
     assert result.issues == ()
 
 
+def test_historical_signature_repair_transition_passes(
+    contract: CommitContractProjection,
+) -> None:
+    after = _VALID_SPARK.replace(
+        b"model_id: gpt-5.6-luna", b"model_id: glm-5.2"
+    ).replace(
+        b"updated_at: 2026-07-01T00:00:00+08:00",
+        b"updated_at: 2026-08-10T09:05:09.107498Z",
+    )
+    repair_summary = (
+        "受控更正历史 change_log 中的 agent_workbench 格式；修复项为: "
+        "0: gpt-5.6-luna -> glm-5.2。"
+        "原始错误值已由本次更正覆盖并保留本条修复记录。"
+    )
+    after += (
+        b"  - at: 2026-08-10T09:05:09.107498Z\n"
+        + f"    summary: '{repair_summary}'\n".encode()
+        + b"    signature:\n"
+        + b"      model_id: gpt-5\n"
+        + b"      agent_workbench: Cindy\n"
+        + b"    session_id: repair-session\n"
+    )
+    result = validate_commit(
+        contract,
+        _input(
+            contract,
+            fact_candidates=(_fact_candidate(data=after, head_data=_VALID_SPARK, head_exists=True),),
+            fact_schemas=(_spark_schema(),),
+        ),
+    )
+    assert result.outcome == "passed", [f"{issue.code}: {issue.message}" for issue in result.issues]
+
+
+def test_historical_signature_repair_rejects_non_signature_change(
+    contract: CommitContractProjection,
+) -> None:
+    after = _VALID_SPARK.replace("测试火花".encode(), "改动正文".encode()).replace(
+        b"model_id: gpt-5.6-luna", b"model_id: glm-5.2"
+    )
+    result = validate_commit(
+        contract,
+        _input(
+            contract,
+            fact_candidates=(_fact_candidate(data=after, head_data=_VALID_SPARK, head_exists=True),),
+            fact_schemas=(_spark_schema(),),
+        ),
+    )
+    assert result.outcome == "failed"
+    assert "fact_trace_transition_invalid" in _codes(result)
+
+
 def test_new_fact_change_log_session_is_independent_from_commit_session(
     contract: CommitContractProjection,
 ) -> None:
