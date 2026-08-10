@@ -31,7 +31,7 @@ change_log:
   at: '2026-08-06T02:07:00+08:00'
   summary: 受控创建本 Spark：Windows 验收执行入口，承接 spark-0004 第一批执行面，Human 授权在本会话中直接写入（当前 Helper CLI 管辖解析受限，按前例直写文件 + Git 提交）
 - signature:
-    agent_id: workbuddy
+    agent_id: hy3
     host_environment: Workbuddy
   session_id: 8aebc3d4679645e387e76ac85c28a240
   at: '2026-08-08T08:17:31.359146+08:00'
@@ -42,8 +42,14 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-legacy-signature-migration-20260810
+- at: '2026-08-10T09:12:31.522225Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 1: workbuddy -> hy3。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-model-id-migration-20260810
 disposition_summary: Windows 验收执行入口已落地：原执行步骤（clone → doctor/capabilities → 平台无关与 native_windows 测试 → verify_native_windows 证据门 → 受控写验证 → 记录）已在真机实测通过，证据见 study-0025（11 项 native_windows 测试全绿、端到端受控写成功、14 项 commit-msg Git Hook 测试全过）；v4.0.0 已发布。本 Spark 仅定义执行入口，不定义验收矩阵（由 spark-0004 负责），其第一批执行面已无剩余待处置内容。以 related-to study-0025 保留证据回指；未进入 routed。
 object_id: spark-0059
 fact_type_key: spark
 created_at: '2026-08-06T02:07:00+08:00'
-updated_at: '2026-08-10T08:47:12.351065Z'
+updated_at: '2026-08-10T09:12:31.522225Z'
