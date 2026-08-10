@@ -29,49 +29,49 @@ validation_summary: 闭集层：assert_common_response conftest.py L148-L170 覆
 change_log:
 - summary: 依据 Human 对 spark-0034 方案 A 的推进授权，经独立 subagent 创建复核（pass_with_followups）并处置全部 feedback 后，形成管辖配置缺失时 follow_up 引导的 WorkCase 计划。
   signature:
-    agent_id: trae
+    agent_id: deepseek-v4-flash
     host_environment: Trae
   session_id: spark0034-wc0077-creation
   at: '2026-08-08T21:27:09.390992+08:00'
 - summary: 消费 Human Gate 1 执行批准；开始执行已冻结的计划。
   signature:
-    agent_id: trae
+    agent_id: deepseek-v4-flash
     host_environment: Trae
   session_id: spark0034-wc0077-execution
   at: '2026-08-08T21:42:55.326237+08:00'
 - summary: 执行完成：item-1 代码改动+item-2 新增4个 follow_up 场景测试+item-3 回归通过；进入 controller_checking 自检，记录完整 result projection。
   signature:
-    agent_id: trae
+    agent_id: deepseek-v4-flash
     host_environment: Trae
   session_id: spark0034-wc0077-result
   at: '2026-08-08T22:11:42.506554+08:00'
 - summary: Controller 自检通过，进入独立复核位置；result projection 冻结。
   signature:
-    agent_id: trae
+    agent_id: deepseek-v4-flash
     host_environment: Trae
   session_id: spark0034-wc0077-controller-check
   at: '2026-08-08T22:54:52.622498+08:00'
 - summary: 在 independent_reviewing 同 phase 形成正式 result_reviews 事件（subagent-read-only，pass）。
   signature:
-    agent_id: trae
+    agent_id: deepseek-v4-flash
     host_environment: Trae
   session_id: spark0034-wc0077-review
   at: '2026-08-08T22:55:41.563311+08:00'
 - summary: 独立复核 pass，形成 closure_proposal（completed），进入关闭准备。
   signature:
-    agent_id: trae
+    agent_id: deepseek-v4-flash
     host_environment: Trae
   session_id: spark0034-wc0077-closure
   at: '2026-08-08T22:56:56.125169+08:00'
 - summary: 进入 Human 关闭判断；closure_proposal=completed，质量链冻结。
   signature:
-    agent_id: trae
+    agent_id: deepseek-v4-flash
     host_environment: Trae
   session_id: spark0034-wc0077-human-closure
   at: '2026-08-08T22:57:12.340108+08:00'
 - summary: Human 确认关闭 WorkCase-0077；closure_outcome=completed。
   signature:
-    agent_id: trae
+    agent_id: deepseek-v4-flash
     host_environment: Trae
   session_id: spark0034-wc0077-close
   at: '2026-08-08T23:07:36.683041+08:00'
@@ -82,6 +82,12 @@ change_log:
     model_id: gpt-5
   session_id: cindy-legacy-signature-migration-20260810
 
+- at: '2026-08-10T09:31:48.596858Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: trae -> deepseek-v4-flash; 1: trae -> deepseek-v4-flash; 2: trae -> deepseek-v4-flash; 3: trae -> deepseek-v4-flash; 4: trae -> deepseek-v4-flash; 5: trae -> deepseek-v4-flash; 6: trae -> deepseek-v4-flash; 7: trae -> deepseek-v4-flash。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: 4591aaa6-256d-45bb-8c3d-fd0d7619df41
 closure_outcome: completed
 disposition_summary: 方案 A（follow_up 引导层）已交付：config_status 非 valid 时 resolve-governance-scope 返回含 required_human_decisions、resume_conditions 和指向环境接入行动模板的 suggested_operations 的 follow_up；valid 时保持默认空结构。4 项 success criteria 全部 satisfied，独立只读结果复核 pass。spark-0034 的 a/c/d 缺口仍开放，后续可通过新 WorkCase 推进。
 relations:
@@ -93,4 +99,4 @@ relations:
 object_id: workcase-0077
 fact_type_key: workcase
 created_at: '2026-08-08T21:27:09.390992+08:00'
-updated_at: '2026-08-10T08:48:09.495558Z'
+updated_at: '2026-08-10T09:31:48.596858Z'
