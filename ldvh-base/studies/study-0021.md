@@ -30,14 +30,21 @@ input_refs:
 change_log:
 - signature:
     agent_id: Kimi Work
-    host_environment: Kimi Work
+    host_environment: Kimi
   session_id: wd_ld-vibe-harness-v4_24baa608d511
   at: '2026-08-05T15:41:03.043451+08:00'
   summary: Human 授权创建 Study，审计 LDVH 规范残留问题。
+- at: '2026-08-10T08:55:59.308269Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: Kimi Work -> Kimi。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-explicit-signature-migration-20260810
+
 object_id: study-0021
 fact_type_key: study
 created_at: '2026-08-05T15:41:03.043451+08:00'
-updated_at: '2026-08-05T15:41:03.043451+08:00'
+updated_at: '2026-08-10T08:55:59.308269Z'
 ---
 
 ## 研究问题
