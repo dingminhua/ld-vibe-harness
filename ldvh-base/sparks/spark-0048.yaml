@@ -29,11 +29,17 @@ change_log:
   summary: 按 Human 澄清承接可信签发与验签根、专用遗留 change_log 迁移及迁移后 Web 端到端验证的未完成责任。
 - signature:
     agent_id: workbuddy-ai
-    host_environment: workbuddy-claw
+    host_environment: Workbuddy
   session_id: session-20260809-spark0048-close
   at: '2026-08-09T01:08:28.450969+08:00'
   summary: 转 implemented：依据 study-0027 调研确认无需外部信任设施（WC Gate1 批准绑定 Human 决策即行业等价闭环），遗留 change_log 迁移已由 migrate-legacy-change-log 落地，Web 两字段读取契约已覆盖迁移后消费；workcase-0049 路由的三项责任均已承接，移除 priority，写入 disposition_summary，保留并追加 change_log，不新增 routed-to。
+- at: '2026-08-10T08:46:51.506595Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 2: workbuddy-claw -> Workbuddy。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-legacy-signature-migration-20260810
 object_id: spark-0048
 fact_type_key: spark
 created_at: '2026-08-03T14:06:30.110091+08:00'
-updated_at: '2026-08-09T01:08:28.450969+08:00'
+updated_at: '2026-08-10T08:46:51.506595Z'
