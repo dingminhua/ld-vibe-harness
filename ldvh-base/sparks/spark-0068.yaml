@@ -10,31 +10,31 @@ relations:
     object_id: spark-0067
 change_log:
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Codex
   session_id: spark-0067-calibration
   at: '2026-08-07T19:03:21.968580+08:00'
   summary: Human 决定保留 spark-0067 原观点，另建独立校准视角，并计划再由 spark-0066 的多 Agent 编排与环境边界视角复审。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Codex
   session_id: spark-0067-calibration-correction
   at: '2026-08-07T19:12:05.466637+08:00'
   summary: Human 澄清此前提到 spark-0066 属于口误；删除与 spark-0066 的关系和复审表述，明确本议题只围绕 spark-0067，并改为用 0067 原始观点反向审视 0068。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Codex
   session_id: spark-0067-wc0068-followup
   at: '2026-08-07T22:02:49.920721+08:00'
   summary: 吸收 WorkCase-0068 的已校准结果、验证边界和后续实验基础设施前置条件；不将方向性迹象写成产品收益。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Codex
   session_id: spark-0068-wc0070-0071-followup
   at: '2026-08-08T13:40:08.981467+08:00'
   summary: 吸收 WorkCase-0070/0071 的 partial 终态：非泄漏与记录门禁已形成，但当前共享 shell/workspace 缺少受控 worker 执行面；将 A 簇重跑前置收敛为隔离面独立验收，不把零 trial 或既有方向性迹象写成收益。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Codex
   session_id: spark-0068-course-correction
   at: '2026-08-08T14:51:11.577195+08:00'
@@ -45,6 +45,12 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-explicit-signature-migration-20260810
+- at: '2026-08-10T09:21:44.651423Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: codex -> gpt-5; 1: codex -> gpt-5; 2: codex -> gpt-5; 3: codex -> gpt-5; 4: codex -> gpt-5。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: session-20260810-codex-model-migration
 evolution:
 - at: '2026-08-07T19:12:05+08:00'
   summary: 议题边界经 Human 澄清后收敛为 spark-0067 原始判断与 spark-0068 校准判断的双向复审；取消此前误纳入的 spark-0066 编排视角。
@@ -56,4 +62,4 @@ disposition_summary: Human 已决定停止把 Spark-0068 作为独立行动入�
 object_id: spark-0068
 fact_type_key: spark
 created_at: '2026-08-07T19:03:21.968580+08:00'
-updated_at: '2026-08-10T08:55:55.324621Z'
+updated_at: '2026-08-10T09:21:44.651423Z'
