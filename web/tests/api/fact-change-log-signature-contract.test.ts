@@ -39,3 +39,11 @@ test('all fact Cards reuse the shared update and update-log attribution surface'
   assert.doesNotMatch(list, /formatDateTime\(obj\.updated\)/);
   assert.match(facts, /copyPresentFields\(source, \['change_log'\]\)/);
 });
+
+test('Cognition Spark health and recent activity reuse the fact Card attribution surface', () => {
+  const cognition = readFileSync(path.join(repositoryRoot, 'web/src/pages/CognitionCenter.tsx'), 'utf8');
+
+  assert.match(cognition, /import ObjectUpdatedMeta from '@\/components\/ObjectUpdatedMeta'/);
+  assert.match(cognition, /<ObjectUpdatedMeta source=\{\{\}\} updatedAt=\{item\.occurredAt\} signature=\{item\.signature\} \/>/);
+  assert.match(cognition, /<ObjectUpdatedMeta source=\{\{\}\} updatedAt=\{item\.updatedAt\} signature=\{item\.signature\} \/>/);
+});

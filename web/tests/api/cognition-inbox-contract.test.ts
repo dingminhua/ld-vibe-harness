@@ -332,6 +332,11 @@ test('recent activity accepts only explicit windows and groups fact change-log e
       assert.ok(['workcase', 'adr', 'pitfall', 'spark', 'study'].includes(String(item.type)))
       assert.ok(['created', 'updated'].includes(String(item.activity)))
       assert.match(String(item.occurredAt), RFC3339)
+      if (item.signature !== undefined) {
+        const signature = item.signature as Record<string, unknown>
+        assert.equal(typeof (signature.modelId ?? signature.agentId), 'string')
+        assert.equal(typeof (signature.hostName ?? signature.hostEnvironment), 'string')
+      }
       assert.ok(Number(item.activityCount) >= 1)
       assert.equal(typeof item.relativeTime, 'string')
       assert.equal(typeof item.typeColor, 'string')
@@ -354,17 +359,17 @@ test('recent activity aggregation retains the newest fact event and counts compl
     {
       type: 'spark', object_id: 'spark-0001', title: 'A', activity: 'created', occurred_at: '2026-08-01T00:00:00Z',
       status: 'open', read_status: 'readable', field_issues: [], unparsed_structures: [],
-      signature: { agent_id: 'codex', host_environment: 'Cindy' },
+      signature: { agentId: 'codex', hostEnvironment: 'Cindy' },
     },
     {
       type: 'spark', object_id: 'spark-0001', title: 'A', activity: 'updated', occurred_at: '2026-08-01T02:00:00Z',
       status: 'open', read_status: 'readable', field_issues: [], unparsed_structures: [],
-      signature: { agent_id: 'codex', host_environment: 'Cindy' },
+      signature: { agentId: 'codex', hostEnvironment: 'Cindy' },
     },
     {
       type: 'adr', object_id: 'adr-0001', title: 'B', activity: 'updated', occurred_at: '2026-08-01T01:00:00Z',
       status: 'active', read_status: 'readable', field_issues: [], unparsed_structures: [],
-      signature: { agent_id: 'reviewer', host_environment: 'CI' },
+      signature: { agentId: 'reviewer', hostEnvironment: 'CI' },
     },
   ])
   assert.deepEqual(view.items.map((item) => `${item.object_id}:${item.activity_count}:${item.occurred_at}`), [
@@ -385,11 +390,25 @@ test('recent activity accepts canonical change-log signatures', async () => {
     }],
   }
   const builds = buildFactActivityItems(raw, 'spark', Date.parse('2026-07-31T00:00:00Z'), Date.parse('2026-08-02T00:00:00Z'))
-  assert.deepEqual(builds[0]?.signature, { agent_id: 'gpt-5', host_environment: 'Cindy' })
+  assert.deepEqual(builds[0]?.signature, { modelId: 'gpt-5', hostName: 'Cindy' })
 
   const view = buildRecentActivityView(builds)
   assert.deepEqual(view.agentUsage, [{ value: 'gpt-5', count: 1 }])
   assert.deepEqual(view.environmentUsage, [{ value: 'Cindy', count: 1 }])
+})
+
+test('Spark health reuses the newest complete change-log signature for its card-equivalent attribution', async () => {
+  const { buildSparkHealth } = await import('../../api/routes/cognition.ts')
+  const health = buildSparkHealth([{
+    object_id: 'spark-0003', title: 'Spark attribution', status: 'open', priority: 'P1',
+    updated_at: '2026-08-01T03:00:00Z', read_status: 'readable',
+    change_log: [
+      { signature: { agent_id: 'older', host_environment: 'old-host' } },
+      { signature: { agent_id: 'partial' } },
+      { signature: { model_id: 'gpt-5', agent_workbench: 'Cindy' } },
+    ],
+  }], Date.parse('2026-08-08T00:00:00Z'))
+  assert.deepEqual(health.openItems[0]?.signature, { modelId: 'gpt-5', hostName: 'Cindy' })
 })
 
 test('fact activity builder reads change_log first and only falls back for legacy facts without usable entries', async () => {

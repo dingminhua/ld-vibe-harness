@@ -499,6 +499,72 @@ def test_new_signature_footer_tripwires_reject_alias_and_os_suffix(
     assert "signature_workbench_compound" in _codes(compound)
 
 
+def test_signature_footer_rejects_model_family_workbench(contract: CommitContractProjection) -> None:
+    """footer 的 Workbench-Name 不得是模型族 token（如 Gpt）。"""
+
+    bad = validate_commit(
+        contract,
+        _input(
+            contract,
+            message=(
+                "docs(specs): 提交署名\n\n"
+                "关键变更:\n- 工作台名不得是模型族 token\n\n"
+                "Session-ID: test-session\nModel-ID: gpt-5.6-luna\nWorkbench-Name: Gpt"
+            ),
+        ),
+    )
+    assert bad.outcome == "failed"
+    assert "signature_workbench_model_family" in _codes(bad)
+
+    # 宿主/产品工作台名（WorkBuddy、Cindy、Claude）仍合法，不得误杀。
+    for wb in ("Workbuddy", "Cindy", "Claude"):
+        ok = validate_commit(
+            contract,
+            _input(
+                contract,
+                message=(
+                    "docs(specs): 提交署名\n\n"
+                    "关键变更:\n- 合法工作台名\n\n"
+                    f"Session-ID: test-session\nModel-ID: gpt-5.6-luna\nWorkbench-Name: {wb}"
+                ),
+            ),
+        )
+        assert ok.outcome == "passed", (wb, [f"{i.code}: {i.message}" for i in ok.issues])
+
+
+def test_signature_footer_rejects_placeholder_session_id(contract: CommitContractProjection) -> None:
+    """footer 的 Session-ID 不得为占位符（如 current-session）。"""
+
+    bad = validate_commit(
+        contract,
+        _input(
+            contract,
+            message=(
+                "docs(specs): 提交署名\n\n"
+                "关键变更:\n- 会话标识不得为占位符\n\n"
+                "Session-ID: current-session\nModel-ID: gpt-5.6-luna\nWorkbench-Name: Cindy"
+            ),
+        ),
+    )
+    assert bad.outcome == "failed"
+    assert "signature_session_placeholder" in _codes(bad)
+
+    # 任意非占位符 token（含 test-session）与真实 UUID 仍合法。
+    for sid in ("test-session", "trae-commit-session", "fde0af60-4736-4d2d-b2eb-d0be116e163a"):
+        ok = validate_commit(
+            contract,
+            _input(
+                contract,
+                message=(
+                    "docs(specs): 提交署名\n\n"
+                    "关键变更:\n- 合法会话标识\n\n"
+                    f"Session-ID: {sid}\nModel-ID: gpt-5.6-luna\nWorkbench-Name: Cindy"
+                ),
+            ),
+        )
+        assert ok.outcome == "passed", (sid, [f"{i.code}: {i.message}" for i in ok.issues])
+
+
 def test_partial_new_signature_footer_requires_both_new_trailers(
     contract: CommitContractProjection,
 ) -> None:

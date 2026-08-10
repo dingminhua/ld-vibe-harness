@@ -112,7 +112,7 @@ interface RecentActivityBuildItem {
   activity: RecentActivityKind
   occurred_at: string
   /** 只读取对应事实流水的完整署名；兼容时间标记不伪造署名。 */
-  signature?: { agent_id: string; host_environment: string }
+  signature?: FactChangeSignature
   status?: string
   progress_group?: WorkCaseProgressGroup
   priority?: string
@@ -138,10 +138,23 @@ interface SparkHealthBuildItem {
   title_zh?: string
   priority?: string
   updated_at: string
+  /** 取最近一条具备完整署名的事实流水，与对象卡片落款规则一致。 */
+  signature?: FactChangeSignature
   silent_days: number
   read_status: string
   field_issues: Array<Record<string, unknown>>
   unparsed_structures: Array<Record<string, unknown>>
+}
+
+/**
+ * 面向 Web 的事实流水署名。规范形态保留模型 / 工作台字段；历史形态保留
+ * Agent / 宿主字段，由共用落款组件按同一优先级呈现。
+ */
+interface FactChangeSignature {
+  modelId?: string
+  hostName?: string
+  agentId?: string
+  hostEnvironment?: string
 }
 
 export interface RecentHotspotBuildItem {
@@ -273,7 +286,7 @@ function buildRecentActivityItem(
   type: ObjectType,
   activity: RecentActivityKind,
   occurredAt: string,
-  signature?: { agent_id: string; host_environment: string },
+  signature?: FactChangeSignature,
 ): RecentActivityBuildItem {
   const object_id = String(raw.object_id ?? '')
   const status = String(raw.status ?? 'unknown')
@@ -297,17 +310,29 @@ function buildRecentActivityItem(
   }
 }
 
-function readFactChangeSignature(value: unknown): { agent_id: string; host_environment: string } | undefined {
+function readFactChangeSignature(value: unknown): FactChangeSignature | undefined {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined
   const record = value as Record<string, unknown>
   const modelId = typeof record.model_id === 'string' ? record.model_id.trim() : ''
   const hostName = typeof record.agent_workbench === 'string' ? record.agent_workbench.trim()
     : typeof record.host_name === 'string' ? record.host_name.trim() : ''
-  if (modelId && hostName) return { agent_id: modelId, host_environment: hostName }
+  if (modelId && hostName) return { modelId, hostName }
 
   const agentId = typeof record.agent_id === 'string' ? record.agent_id.trim() : ''
   const hostEnvironment = typeof record.host_environment === 'string' ? record.host_environment.trim() : ''
-  return agentId && hostEnvironment ? { agent_id: agentId, host_environment: hostEnvironment } : undefined
+  return agentId && hostEnvironment ? { agentId, hostEnvironment } : undefined
+}
+
+/** 与 ObjectUpdatedMeta 同源：倒序取最新一条完整事实流水署名，不以对象头字段补造。 */
+function getLatestFactChangeSignature(changeLog: unknown): FactChangeSignature | undefined {
+  if (!Array.isArray(changeLog)) return undefined
+  for (let index = changeLog.length - 1; index >= 0; index -= 1) {
+    const entry = changeLog[index]
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) continue
+    const signature = readFactChangeSignature((entry as Record<string, unknown>).signature)
+    if (signature) return signature
+  }
+  return undefined
 }
 
 /**
@@ -322,7 +347,7 @@ export function buildFactActivityItems(
   end: number,
 ): RecentActivityBuildItem[] {
   const changeLog = Array.isArray(raw.change_log) ? raw.change_log : []
-  const logged: Array<{ occurredAt: string; index: number; signature?: { agent_id: string; host_environment: string } }> = []
+  const logged: Array<{ occurredAt: string; index: number; signature?: FactChangeSignature }> = []
   for (let index = 0; index < changeLog.length; index += 1) {
     const entry = changeLog[index]
     if (!entry || typeof entry !== 'object' || Array.isArray(entry)) continue
@@ -379,8 +404,10 @@ export function buildRecentActivityView(builds: RecentActivityBuildItem[]): {
       }
     }
     if (build.signature) {
-      agents.set(build.signature.agent_id, (agents.get(build.signature.agent_id) ?? 0) + 1)
-      environments.set(build.signature.host_environment, (environments.get(build.signature.host_environment) ?? 0) + 1)
+      const agent = build.signature.modelId ?? build.signature.agentId
+      const environment = build.signature.hostName ?? build.signature.hostEnvironment
+      if (agent) agents.set(agent, (agents.get(agent) ?? 0) + 1)
+      if (environment) environments.set(environment, (environments.get(environment) ?? 0) + 1)
     }
   }
 
@@ -411,7 +438,7 @@ function compareSilentSpark(a: SparkHealthBuildItem, b: SparkHealthBuildItem): n
 }
 
 /** Spark 健康度只聚合当前状态与更新时间；不从更新时间推断实际分流发生时刻。 */
-function buildSparkHealth(rawItems: Array<Record<string, unknown>>, observedAt: number) {
+export function buildSparkHealth(rawItems: Array<Record<string, unknown>>, observedAt: number) {
   const terminalByStatus = { routed: 0, implemented: 0, discarded: 0 }
   const openByPriority: Record<string, number> = {}
   const openItems: SparkHealthBuildItem[] = []
@@ -434,6 +461,7 @@ function buildSparkHealth(rawItems: Array<Record<string, unknown>>, observedAt: 
     const updatedAt = typeof raw.updated_at === 'string' ? raw.updated_at : ''
     const days = silentDays(updatedAt, observedAt)
     if (days === null) continue
+    const signature = getLatestFactChangeSignature(raw.change_log)
     const item: SparkHealthBuildItem = {
       object_id: String(raw.object_id ?? ''),
       title: String(raw.title ?? raw.object_id ?? ''),
@@ -441,6 +469,7 @@ function buildSparkHealth(rawItems: Array<Record<string, unknown>>, observedAt: 
       ...(typeof raw.title_zh === 'string' ? { title_zh: raw.title_zh } : {}),
       ...(priority ? { priority } : {}),
       updated_at: updatedAt,
+      ...(signature ? { signature } : {}),
       silent_days: days,
       read_status: String(raw.read_status ?? 'unknown'),
       field_issues: Array.isArray(raw.field_issues) ? raw.field_issues as Array<Record<string, unknown>> : [],
@@ -880,6 +909,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       ...(build.title_zh !== undefined ? { title_zh: build.title_zh } : {}),
       activity: build.activity,
       occurredAt: build.occurred_at,
+      ...(build.signature !== undefined ? { signature: build.signature } : {}),
       activityCount: build.activity_count,
       relativeTime: getRelativeTime(build.occurred_at, locale),
       typeColor: getTypeColor(build.type),
@@ -932,6 +962,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
             ...(item.title_zh !== undefined ? { title_zh: item.title_zh } : {}),
             ...(item.priority !== undefined ? { priority: item.priority } : {}),
             updatedAt: item.updated_at,
+            ...(item.signature !== undefined ? { signature: item.signature } : {}),
             silentDays: item.silent_days,
             typeColor: getTypeColor('spark'),
             read_status: item.read_status,
@@ -946,6 +977,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
             ...(item.title_zh !== undefined ? { title_zh: item.title_zh } : {}),
             ...(item.priority !== undefined ? { priority: item.priority } : {}),
             updatedAt: item.updated_at,
+            ...(item.signature !== undefined ? { signature: item.signature } : {}),
             silentDays: item.silent_days,
             typeColor: getTypeColor('spark'),
             read_status: item.read_status,

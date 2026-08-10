@@ -24,8 +24,6 @@ type VerifiedScopeSnapshot = {
 }
 
 let verifiedSnapshot: VerifiedScopeSnapshot | null = null
-let failedFingerprint: string | null = null
-let failedError: WebGovernanceError | null = null
 let verificationInFlight: Promise<VerifiedScopeSnapshot> | null = null
 
 export class WebGovernanceError extends Error {
@@ -217,23 +215,21 @@ async function currentVerifiedScope(force = false): Promise<VerifiedScopeSnapsho
     throw new WebGovernanceError(`Governance configuration is unavailable: ${error instanceof Error ? error.message : String(error)}`)
   }
   if (!force && verifiedSnapshot?.configurationFingerprint === fingerprint) return verifiedSnapshot
-  if (!force && failedFingerprint === fingerprint && failedError) throw failedError
+  // Helper availability can recover without a configuration-file change (for
+  // example during a local code reload), so only successful observations are
+  // reusable. A failed resolution must be tried again by the next request.
   if (verificationInFlight) return verificationInFlight
 
   verifiedSnapshot = null
   verificationInFlight = refreshVerifiedScope(fingerprint)
     .then((snapshot) => {
       verifiedSnapshot = snapshot
-      failedFingerprint = null
-      failedError = null
       return snapshot
     })
     .catch((error: unknown) => {
       const normalized = error instanceof WebGovernanceError
         ? error
         : new WebGovernanceError(error instanceof Error ? error.message : String(error))
-      failedFingerprint = fingerprint
-      failedError = normalized
       throw normalized
     })
     .finally(() => { verificationInFlight = null })
@@ -254,15 +250,10 @@ export async function verifyWebGovernanceConfiguration(): Promise<void> {
     throw new WebGovernanceError(`Governance configuration is unavailable: ${error instanceof Error ? error.message : String(error)}`)
   }
   verifiedSnapshot = null
-  failedFingerprint = null
-  failedError = null
   const response = await invokeGovernanceScope(configuredWorkspaceRoot(), configuredWorkspaceRoot())
   if (response.outcome !== 'ok' || !isRecord(response.result) || response.result.config_status !== 'valid') {
     const result = isRecord(response.result) ? response.result : {}
-    const error = new WebGovernanceError(`Governance configuration is not valid: ${String(result.config_status ?? response.outcome ?? 'unknown')}`)
-    failedFingerprint = fingerprint
-    failedError = error
-    throw error
+    throw new WebGovernanceError(`Governance configuration is not valid: ${String(result.config_status ?? response.outcome ?? 'unknown')}`)
   }
 }
 

@@ -15,6 +15,7 @@ import { AlertCircle, ChevronDown, ChevronUp, CirclePlay, GitFork, HeartPulse, H
 import PageHeader from '@/components/PageHeader';
 import CopyPathButton from '@/components/CopyPathButton';
 import ObjectReferenceCopyButton, { formatObjectReference } from '@/components/ObjectReferenceCopyButton';
+import ObjectUpdatedMeta from '@/components/ObjectUpdatedMeta';
 import {
   ObjectCardFrame,
   PitfallCardContent,
@@ -409,6 +410,9 @@ function RecentActivityRow({ item }: { item: CognitionRecentActivityItem }) {
         <h4 className="ldvh-card-title min-w-0 flex-1 whitespace-normal break-words group-hover:text-ldvh-accent">{title}</h4>
       </div>
       <RecentActivityReadNotes item={item} locale={locale} />
+      <div className="mt-1.5 flex min-w-0 items-center justify-end text-right">
+        <ObjectUpdatedMeta source={{}} updatedAt={item.occurredAt} signature={item.signature} />
+      </div>
     </li>
   );
 }
@@ -495,6 +499,9 @@ function SparkHealthRow({ item }: { item: CognitionSparkHealthItem }) {
           </p>
         ))}
       </div>}
+      <div className="mt-1.5 flex min-w-0 items-center justify-end text-right">
+        <ObjectUpdatedMeta source={{}} updatedAt={item.updatedAt} signature={item.signature} />
+      </div>
     </li>
   );
 }

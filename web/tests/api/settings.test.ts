@@ -10,6 +10,7 @@ import { after, before, test } from 'node:test'
 const workspaceRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'ldvh-settings-workspace-'))
 const firstProject = path.join(workspaceRoot, 'first')
 const secondProject = path.join(workspaceRoot, 'second')
+const firstLinkedWorktree = path.join(workspaceRoot, 'first-linked')
 const configPath = path.join(workspaceRoot, 'LDVH-GOVERNED-PROJECTS.yaml')
 const repositoryRoot = path.resolve(import.meta.dirname, '../../..')
 
@@ -17,6 +18,10 @@ fs.mkdirSync(firstProject, { recursive: true })
 fs.mkdirSync(secondProject, { recursive: true })
 execFileSync('git', ['init', '-q', firstProject])
 execFileSync('git', ['init', '-q', secondProject])
+fs.writeFileSync(path.join(firstProject, 'README.md'), 'Settings worktree fixture\n')
+execFileSync('git', ['-C', firstProject, '-c', 'user.name=Settings test', '-c', 'user.email=settings@example.test', 'add', 'README.md'])
+execFileSync('git', ['-C', firstProject, '-c', 'user.name=Settings test', '-c', 'user.email=settings@example.test', 'commit', '-qm', 'fixture'])
+execFileSync('git', ['-C', firstProject, 'worktree', 'add', '-q', '-b', 'linked-settings-fixture', firstLinkedWorktree])
 fs.writeFileSync(configPath, [
   '# Settings test configuration.',
   'product_name: Settings test',
@@ -69,6 +74,28 @@ test('validates existing entries only when the explicit verification endpoint is
   const { response, body } = await request('/api/settings/governed-projects/verify', { method: 'POST' })
   assert.equal(response.status, 200)
   assert.equal(body.ok, true)
+})
+
+test('discovers current workspace Git worktrees with read-only status and registration context', async () => {
+  const { response, body } = await request('/api/settings/workspace-worktrees')
+  assert.equal(response.status, 200, JSON.stringify(body))
+  assert.equal(body.workspaceRoot, workspaceRoot)
+  const items = body.items as Array<Record<string, unknown>>
+  const first = items.find((item) => item.path === fs.realpathSync(firstProject))
+  const second = items.find((item) => item.path === fs.realpathSync(secondProject))
+  const linked = items.find((item) => item.path === fs.realpathSync(firstLinkedWorktree))
+  assert.ok(first)
+  assert.ok(second)
+  assert.ok(linked)
+  assert.equal(first.registeredProjectId, 'first')
+  assert.equal(first.governedProjectId, 'first')
+  assert.equal(second.registeredProjectId, undefined)
+  assert.equal(second.governedProjectId, undefined)
+  assert.equal(linked.isMain, false)
+  assert.equal(linked.branch, 'linked-settings-fixture')
+  assert.equal(linked.registeredProjectId, undefined)
+  assert.equal(linked.governedProjectId, 'first')
+  assert.deepEqual(first.status, { staged: 0, unstaged: 0, untracked: 0, conflicted: 0 })
 })
 
 test('renames, adds and removes entries while preserving unmanaged description fields', async () => {

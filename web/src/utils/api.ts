@@ -556,6 +556,8 @@ export interface CognitionRecentActivityItem {
   title_zh?: string;
   activity: CognitionRecentActivityKind;
   occurredAt: string;
+  /** 来自该条近期事实流水的完整署名；缺失时不补造。 */
+  signature?: CommitSignature;
   /** 当前窗口内同一稳定事实对象的可读 change_log 条数。 */
   activityCount: number;
   relativeTime: string;
@@ -584,6 +586,8 @@ export interface CognitionSparkHealthItem {
   title_zh?: string;
   priority?: string;
   updatedAt: string;
+  /** 最近一条完整 change_log 署名，与事实卡片落款一致。 */
+  signature?: CommitSignature;
   /** 距 API 本次 generatedAt 的完整静默天数。 */
   silentDays: number;
   typeColor: string;
@@ -907,8 +911,36 @@ export interface GovernedProjectsSettingsData {
   projects: GovernedProjectSetting[];
 }
 
+export interface WorkspaceWorktreeStatusSummary {
+  staged: number;
+  unstaged: number;
+  untracked: number;
+  conflicted: number;
+}
+
+/** Read-only workspace discovery; these paths do not become governed projects until saved. */
+export interface WorkspaceWorktree {
+  path: string;
+  branch?: string;
+  head?: string;
+  isMain: boolean;
+  status?: WorkspaceWorktreeStatusSummary;
+  registeredProjectId?: string;
+  governedProjectId?: string;
+}
+
+export interface WorkspaceWorktreesData {
+  ok: boolean;
+  workspaceRoot: string;
+  items: WorkspaceWorktree[];
+}
+
 export async function fetchGovernedProjectsSettings(): Promise<GovernedProjectsSettingsData> {
   return request<GovernedProjectsSettingsData>('/settings/governed-projects');
+}
+
+export async function fetchWorkspaceWorktrees(): Promise<WorkspaceWorktreesData> {
+  return request<WorkspaceWorktreesData>('/settings/workspace-worktrees');
 }
 
 export async function verifyGovernedProjectsSettings(): Promise<void> {

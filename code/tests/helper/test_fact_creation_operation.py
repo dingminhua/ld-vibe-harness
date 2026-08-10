@@ -489,7 +489,14 @@ def _create_payload(
                 },
                 "fact_object": supplied,
             },
-        }
+            "observed_context": {
+                "signature": {
+                    "model_id": "test-model",
+                    "agent_workbench": "pytest",
+                    "session_id": "creation-test-session",
+                }
+            },
+        },
     )
 
 
@@ -815,6 +822,13 @@ def test_helper_create_read_and_update_accept_ignored_current_fact(tmp_path: Pat
                     "fact_ref": reference,
                     "expected_content_fingerprint": read["content_fingerprint"],
                     "fact_object": target,
+                },
+                "observed_context": {
+                    "signature": {
+                        "model_id": "test-model",
+                        "agent_workbench": "pytest",
+                        "session_id": "creation-test-update-session",
+                    }
                 },
             }
         ),

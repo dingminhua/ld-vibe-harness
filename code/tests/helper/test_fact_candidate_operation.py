@@ -103,6 +103,13 @@ def _create(workspace: Path, project: Path, fact_type_key: str, fields: dict[str
                     },
                     "fact_object": creation_fields,
                 },
+                "observed_context": {
+                    "signature": {
+                        "model_id": "pytest-model",
+                        "agent_workbench": "pytest",
+                        "session_id": "candidate-test",
+                    }
+                },
             }
         ),
     ).response

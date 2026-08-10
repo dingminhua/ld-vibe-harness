@@ -1,7 +1,7 @@
 import { FormEvent, useCallback, useEffect, useState } from 'react';
-import { CheckCircle2, FolderPlus, Loader2, Save, ShieldCheck, Trash2 } from 'lucide-react';
+import { CheckCircle2, FolderPlus, GitBranch, Loader2, RefreshCw, Save, ShieldCheck, Trash2 } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
-import { fetchGovernedProjectsSettings, saveGovernedProjectsSettings, verifyGovernedProjectsSettings, type GovernedProjectSetting, type GovernedProjectsSettingsData } from '@/utils/api';
+import { fetchGovernedProjectsSettings, fetchWorkspaceWorktrees, saveGovernedProjectsSettings, verifyGovernedProjectsSettings, type GovernedProjectSetting, type GovernedProjectsSettingsData, type WorkspaceWorktree } from '@/utils/api';
 import { useProjectScope } from '@/utils/projectContext';
 import { useI18n } from '@/i18n/context';
 
@@ -14,6 +14,8 @@ export default function Settings() {
   const [saving, setSaving] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [verifiedMessage, setVerifiedMessage] = useState<string | null>(null);
+  const [worktrees, setWorktrees] = useState<WorkspaceWorktree[] | null>(null);
+  const [worktreeLoading, setWorktreeLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { reloadProjects } = useProjectScope();
   const { t } = useI18n();
@@ -60,6 +62,22 @@ export default function Settings() {
     if (!settings) return;
     void save([...settings.projects, newProject]).then((saved) => { if (saved) setNewProject(blankProject); });
   };
+  const refreshWorktrees = async () => {
+    setWorktreeLoading(true); setError(null);
+    try { setWorktrees((await fetchWorkspaceWorktrees()).items); }
+    catch (reason) { setError(reason instanceof Error ? reason.message : String(reason)); }
+    finally { setWorktreeLoading(false); }
+  };
+  const addWorktree = (worktree: WorkspaceWorktree) => {
+    const rawBaseId = worktree.path.split('/').filter(Boolean).pop()?.toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'project';
+    const baseId = rawBaseId.replace(/^-+|-+$/g, '') || 'project';
+    const usedIds = new Set(settings?.projects.map((project) => project.id) ?? []);
+    let id = baseId;
+    let suffix = 2;
+    while (usedIds.has(id)) { id = `${baseId}-${suffix}`; suffix += 1; }
+    setNewProject({ id, path: worktree.path, name: worktree.path.split('/').filter(Boolean).pop() ?? '' });
+    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+  };
 
   return (
     <div className="mx-auto max-w-5xl px-8 py-7">
@@ -77,7 +95,7 @@ export default function Settings() {
         </div>
       </div>
       {loading ? <div className="flex justify-center py-16"><Loader2 className="animate-spin" /></div> : error ? (
-        <div className="mt-6 rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-red-700 dark:text-red-300">{error}</div>
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-red-700 dark:text-red-300"><span>{error}</span><button type="button" onClick={reload} className="ldvh-card-title rounded-md border border-red-500/30 px-3 py-2 text-red-700 hover:bg-red-500/10 dark:text-red-200">{t('settings.retryLoad')}</button></div>
       ) : settings && <>
         <div className="mt-6 rounded-xl border border-ldvh-border bg-ldvh-panel p-4">
           <div className="flex flex-wrap items-center justify-between gap-3"><p className="ldvh-caption-strong">{t('settings.governedProjects')}</p><button type="button" disabled={saving || verifying} onClick={() => void verify()} className="ldvh-card-title inline-flex items-center gap-2 rounded-md border border-ldvh-border px-3 py-2 text-ldvh-text-secondary hover:text-ldvh-text-primary disabled:opacity-50"><ShieldCheck size={15} />{verifying ? t('settings.verifying') : t('settings.verifyCurrent')}</button></div>
@@ -88,6 +106,15 @@ export default function Settings() {
             {settings.projects.map((project) => <ProjectRow key={project.id} project={project} saving={saving} onRename={rename} onRemove={remove} />)}
           </div>
         </div>
+        <section className="mt-5 rounded-xl border border-ldvh-border bg-ldvh-panel p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div><p className="ldvh-caption-strong">{t('settings.workspaceWorktrees')}</p><p className="ldvh-body-muted mt-1">{t('settings.workspaceWorktreesHint')}</p></div>
+            <button type="button" disabled={worktreeLoading || saving} onClick={() => void refreshWorktrees()} className="ldvh-card-title inline-flex items-center gap-2 rounded-md border border-ldvh-border px-3 py-2 text-ldvh-text-secondary hover:text-ldvh-text-primary disabled:opacity-50"><RefreshCw size={15} className={worktreeLoading ? 'animate-spin' : ''} />{t('settings.refreshWorktrees')}</button>
+          </div>
+          {worktrees && <div className="mt-4 grid gap-3">
+            {worktrees.length === 0 ? <p className="ldvh-body-muted">{t('settings.noWorktrees')}</p> : worktrees.map((worktree) => <WorktreeRow key={worktree.path} worktree={worktree} saving={saving} onAdd={addWorktree} />)}
+          </div>}
+        </section>
         <form onSubmit={add} className="mt-5 rounded-xl border border-ldvh-border bg-ldvh-panel p-4">
           <div className="flex items-center gap-2"><FolderPlus size={16} /><p className="ldvh-caption-strong">{t('settings.addProject')}</p></div>
           <div className="mt-4 grid gap-3 lg:grid-cols-3">
@@ -100,6 +127,12 @@ export default function Settings() {
       </>}
     </div>
   );
+}
+
+function WorktreeRow({ worktree, saving, onAdd }: { worktree: WorkspaceWorktree; saving: boolean; onAdd: (worktree: WorkspaceWorktree) => void }) {
+  const { t } = useI18n();
+  const status = worktree.status;
+  return <div className="rounded-lg border border-ldvh-border p-3"><div className="flex min-w-0 flex-wrap items-start justify-between gap-3"><div className="min-w-0"><div className="flex flex-wrap items-center gap-x-2 gap-y-1"><GitBranch size={15} className="shrink-0 text-ldvh-accent" /><span className="ldvh-caption-strong">{worktree.branch || t('settings.detachedHead')}</span>{worktree.isMain && <span className="rounded-full border border-ldvh-accent/30 bg-ldvh-accent/5 px-1.5 py-0.5 text-[11px] text-ldvh-accent">{t('settings.mainWorktree')}</span>}{worktree.head && <code className="ldvh-meta">{worktree.head}</code>}</div><p className="ldvh-meta mt-1 break-all">{worktree.path}</p>{status ? <p className="ldvh-meta mt-2">{t('settings.worktreeStatus', { staged: String(status.staged), unstaged: String(status.unstaged), untracked: String(status.untracked), conflicted: String(status.conflicted) })}</p> : <p className="ldvh-meta mt-2">{t('settings.worktreeStatusUnavailable')}</p>}</div>{worktree.registeredProjectId ? <span className="ldvh-caption shrink-0 rounded-md bg-emerald-500/10 px-2 py-1 text-emerald-600 dark:text-emerald-300">{t('settings.worktreeRegistered', { id: worktree.registeredProjectId })}</span> : worktree.governedProjectId ? <span className="ldvh-caption shrink-0 rounded-md bg-sky-500/10 px-2 py-1 text-sky-600 dark:text-sky-300">{t('settings.worktreeGovernedBy', { id: worktree.governedProjectId })}</span> : <button type="button" disabled={saving} onClick={() => onAdd(worktree)} className="ldvh-card-title shrink-0 rounded-md border border-ldvh-accent/40 px-3 py-2 text-ldvh-accent hover:bg-ldvh-accent/5 disabled:opacity-50">{t('settings.addWorktree')}</button>}</div></div>;
 }
 
 function ProjectRow({ project, saving, onRename, onRemove }: { project: GovernedProjectSetting; saving: boolean; onRename: (project: GovernedProjectSetting, name: string) => void; onRemove: (project: GovernedProjectSetting) => void }) {

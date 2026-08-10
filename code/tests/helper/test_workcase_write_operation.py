@@ -316,7 +316,15 @@ def test_helper_preserves_committed_result_when_coordination_release_is_uncertai
         "_apply_core_workcase_write",
         lambda *_args: application,
     )
-    request = CommonRequest(None, (), {}, None, {}, (), response_profile="diagnostic")
+    request = CommonRequest(
+        None,
+        (),
+        {},
+        None,
+        {"signature": {"model_id": "test-model", "agent_workbench": "pytest", "session_id": "workcase-test-session"}},
+        (),
+        response_profile="diagnostic",
+    )
 
     execution = workcase_update_operation._execute(
         "update",
@@ -378,7 +386,15 @@ def test_workcase_helper_preserves_candidate_rejection_when_coordination_release
 
     execution = workcase_update_operation._execute(
         "update",
-        CommonRequest(None, (), {}, None, {}, (), response_profile="diagnostic"),
+        CommonRequest(
+        None,
+        (),
+        {},
+        None,
+        {"signature": {"model_id": "test-model", "agent_workbench": "pytest", "session_id": "workcase-test-session"}},
+        (),
+        response_profile="diagnostic",
+    ),
         object(),
         OperationExecutionContext(Path("/project"), "2026-07-26T16:00:00+08:00"),
     )
@@ -468,7 +484,15 @@ def test_no_change_release_gap_keeps_observation_time_without_using_commit_code(
 
     execution = workcase_update_operation._execute(
         "update",
-        CommonRequest(None, (), {}, None, {}, (), response_profile="diagnostic"),
+        CommonRequest(
+        None,
+        (),
+        {},
+        None,
+        {"signature": {"model_id": "test-model", "agent_workbench": "pytest", "session_id": "workcase-test-session"}},
+        (),
+        response_profile="diagnostic",
+    ),
         object(),
         OperationExecutionContext(Path("/project"), event_at),
     )

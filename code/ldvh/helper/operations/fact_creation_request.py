@@ -136,6 +136,10 @@ def observed_signature_injection_problems(
     parsed = parse_observed_write_signature(observed_context)
     problems = list(parsed.problems)
     change_log = fact_object.get("change_log")
+    if not isinstance(change_log, list):
+        frontmatter = fact_object.get("frontmatter")
+        if isinstance(frontmatter, dict):
+            change_log = frontmatter.get("change_log")
     if isinstance(change_log, list) and change_log and isinstance(change_log[-1], dict):
         existing = change_log[-1].get("signature")
         if isinstance(existing, dict) and set(existing) == {"agent_id", "host_environment"}:
@@ -147,10 +151,9 @@ def observed_signature_injection_problems(
             problems.append(
                 "最新 change_log.signature 仍为 model_id/host_name 旧形状；新写入必须使用 model_id 与 agent_workbench"
             )
-    if problems or (not parsed.signature and parsed.session_id is None):
+    if problems:
         return tuple(problems)
     if not isinstance(change_log, list) or not change_log or not isinstance(change_log[-1], dict):
-        problems.append("observed_context.signature 注入要求 fact_object.change_log 含最新 object 条目")
         return tuple(problems)
     existing = change_log[-1].get("signature")
     merged = (
@@ -167,6 +170,35 @@ def observed_signature_injection_problems(
     ):
         problems.append("observed_context.signature 合并后必须恰含非空 model_id 与 agent_workbench")
     return tuple(problems)
+
+
+def observed_write_signature_required_problem(observed_context: dict[str, Any]) -> str | None:
+    """Fact writes must attribute the new change-log entry to the current environment.
+
+    A fact write (create/update/close) must carry the current-environment
+    signature via ``observed_context``.  When ``observed_context`` is completely
+    empty — neither a ``signature`` nor a ``session_id`` — the write cannot
+    attribute the entry to the current environment, so a hand-filled or defaulted
+    signature from the draft must not be silently preserved.  The caller turns a
+    non-``None`` result into ``invalid_request`` (create) or an ``unavailable``
+    write (update/close).
+
+    This deliberately targets only the *absent* observed context.  A partial
+    observed context (e.g. supplying ``agent_workbench`` while the draft supplies
+    ``model_id``) still yields a complete, mechanically valid signature and is
+    therefore allowed; only the fully-absent case — the root cause behind the
+    ``Gpt`` / ``current-session`` leak — is rejected.
+    """
+
+    parsed = parse_observed_write_signature(observed_context)
+    if parsed.problems:
+        return "observed_context 解析失败：" + "；".join(parsed.problems)
+    if not parsed.signature and parsed.session_id is None:
+        return (
+            "事实写入必须以 observed_context 注入当前环境署名（model_id 与/或 agent_workbench）；"
+            "observed_context 为空时不得保留草稿手填/默认署名，请求无效"
+        )
+    return None
 
 
 def _common(
@@ -259,6 +291,9 @@ def parse_create_request(
         fact_object = {}
     else:
         problems.extend(observed_signature_injection_problems(request.observed_context, fact_object))
+    required = observed_write_signature_required_problem(request.observed_context)
+    if required is not None:
+        problems.append(required)
     if problems:
         return CreationRequestParseResult(None, tuple(problems))
     assert basis is not None

@@ -12,7 +12,12 @@ from ldvh.commits.contract_source import CommitContractProjection
 from ldvh.facts.content import validate_fact_content
 from ldvh.facts.contracts import LAYOUTS
 from ldvh.facts.schema import FactSchema
-from ldvh.facts.validation import _WORKBENCH_TOKEN_SPLIT, _is_host_product_concatenation
+from ldvh.facts.validation import (
+    _WORKBENCH_TOKEN_SPLIT,
+    _is_host_product_concatenation,
+    MODEL_FAMILY_TOKENS,
+    _SESSION_PLACEHOLDER_RE,
+)
 
 _HEADER = re.compile(r"^(?P<type>[a-z]+)(?:\((?P<scope>[a-z]+(?:-[a-z]+)*)\))?(?P<breaking>!)?: (?P<description>.+)$")
 _CJK = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff]")
@@ -236,6 +241,27 @@ def _signature_trailer_issues(lines: list[str]) -> list[CommitValidationIssue]:
                     "signature_workbench_compound",
                     "footer 的 Workbench-Name 必须为单 token（不使用空格、连字符或斜杠分隔），"
                     "不得使用复合名如 claude-code-mcp 或 Claude Code",
+                )
+            )
+        # 不校验 footer 的 Workbench-Name 是否等于事实写者的 agent_workbench：
+        # 同一台机器/同环境下二者合法相等（specs/03 §9.4），该规则会误杀。
+        if name == "Workbench-Name" and any(
+            value.strip().lower() in MODEL_FAMILY_TOKENS for value in values
+        ):
+            issues.append(
+                _issue(
+                    "signature_workbench_model_family",
+                    "footer 的 Workbench-Name 不得是模型族 token（如 gpt/claude/kimi），"
+                    "宿主产品名（如 WorkBuddy）才填此处",
+                )
+            )
+        if name == "Session-ID" and any(
+            _SESSION_PLACEHOLDER_RE.fullmatch(value.strip()) for value in values
+        ):
+            issues.append(
+                _issue(
+                    "signature_session_placeholder",
+                    "footer 的 Session-ID 不得为占位符（如 current-session），必须是真实会话标识",
                 )
             )
     if trailers.get("Agent-ID") or trailers.get("Host-Environment"):

@@ -145,3 +145,26 @@ test('rejects Project Files when Code governance cannot verify the workspace', a
     fs.renameSync(parkedPath, configPath)
   }
 })
+
+test('retries a recovered Helper without requiring a configuration change', async () => {
+  const configPath = path.join(workspaceRoot, 'LDVH-GOVERNED-PROJECTS.yaml')
+  const originalConfig = fs.readFileSync(configPath, 'utf8')
+  const unavailableHelper = path.join(workspaceRoot, 'unavailable-helper')
+  const configuredHelper = process.env.LDVH_HELPER_EXECUTABLE
+  fs.writeFileSync(unavailableHelper, '#!/bin/sh\necho helper temporarily unavailable >&2\nexit 1\n')
+  fs.chmodSync(unavailableHelper, 0o755)
+  fs.writeFileSync(configPath, `${originalConfig}# Recovery fixture keeps this fingerprint stable.\n`)
+  process.env.LDVH_HELPER_EXECUTABLE = unavailableHelper
+  try {
+    const failed = await get('/api/project-files/projects')
+    assert.equal(failed.response.status, 500)
+    assert.match(String(failed.body.error), /Governance resolver unavailable/)
+
+    process.env.LDVH_HELPER_EXECUTABLE = configuredHelper
+    const recovered = await get('/api/project-files/projects')
+    assert.equal(recovered.response.status, 200, JSON.stringify(recovered.body))
+  } finally {
+    process.env.LDVH_HELPER_EXECUTABLE = configuredHelper
+    fs.writeFileSync(configPath, originalConfig)
+  }
+})

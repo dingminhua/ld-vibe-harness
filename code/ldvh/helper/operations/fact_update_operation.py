@@ -23,6 +23,7 @@ from ldvh.helper.operation_runtime import (
     OperationRequestError,
 )
 from ldvh.helper.operations.fact_creation_operation import inject_observed_write_signature
+from ldvh.helper.operations.fact_creation_request import observed_write_signature_required_problem
 from ldvh.helper.operations.fact_operation_support import (
     plain,
     post_write_integrity_audit,
@@ -646,6 +647,17 @@ def _execute(
         raise OperationRequestError(
             (f"AI 不得填写 Code 托管字段: {', '.join(managed)}",),
             sources=(_CONTRACT,),
+        )
+    observed_problem = observed_write_signature_required_problem(request.observed_context)
+    if observed_problem is not None:
+        return OperationExecution(
+            outcome="unavailable",
+            summary=observed_problem,
+            requested_scope=requested,
+            not_completed_scope=requested,
+            governance_resolution=run.result.to_json() if run.result else None,
+            sources=request_sources,
+            gaps=({"summary": observed_problem, "scope": list(requested), "source_refs": [_CONTRACT]},),
         )
     supplied = inject_observed_write_signature(supplied, request.observed_context)
     if not native_atomic_fact_writes_supported():

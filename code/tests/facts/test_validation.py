@@ -481,6 +481,62 @@ def test_change_log_signature_rejects_compound_agent_workbench(
         assert not any("单 token" in issue.summary for issue in remaining)
 
 
+def test_change_log_signature_rejects_model_family_agent_workbench(
+    current_fact_schemas: Mapping[str, FactSchema],
+) -> None:
+    """agent_workbench 不得是模型族 token（如 Gpt）。"""
+    schema = current_fact_schemas["spark"]
+    fields = {
+        **_common("spark", "spark-0001", "open"),
+        "summary": "A current question.",
+        "priority": "P2",
+        "change_log": [
+            {
+                "signature": {"model_id": "gpt-5", "agent_workbench": "Gpt"},
+                "session_id": "48bbb4c6-f2ff-4510-b63f-cebcaaa35d2e",
+                "at": "2026-07-14T09:30:00+08:00",
+                "summary": "The Spark was first recorded.",
+            },
+        ],
+    }
+    issues = validate_fact_object("spark", fields, schema)
+    assert any(
+        issue.field_path == "change_log[0].signature.agent_workbench" and "模型族 token" in issue.summary
+        for issue in issues
+    )
+
+    # 合法工作台名（含 Claude 等模型同名产品）不受影响。
+    for wb in ("Cindy", "WorkBuddy", "Claude", "Trae"):
+        fields["change_log"][0]["signature"]["agent_workbench"] = wb
+        remaining = validate_fact_object("spark", fields, schema)
+        assert not any("模型族 token" in issue.summary for issue in remaining)
+
+
+def test_change_log_session_id_rejects_placeholder(
+    current_fact_schemas: Mapping[str, FactSchema],
+) -> None:
+    """change_log 的 session_id 不得为占位符（如 current-session）。"""
+    schema = current_fact_schemas["spark"]
+    fields = {
+        **_common("spark", "spark-0001", "open"),
+        "summary": "A current question.",
+        "priority": "P2",
+        "change_log": [
+            {
+                "signature": {"model_id": "gpt-5", "agent_workbench": "Cindy"},
+                "session_id": "current-session",
+                "at": "2026-07-14T09:30:00+08:00",
+                "summary": "The Spark was first recorded.",
+            },
+        ],
+    }
+    issues = validate_fact_object("spark", fields, schema)
+    assert any(
+        issue.field_path == "change_log[0].session_id" and "占位符" in issue.summary
+        for issue in issues
+    )
+
+
 def test_change_log_is_required_on_creation_and_legacy_history_is_not_fabricated() -> None:
     assert any(issue.field_path == "change_log" for issue in change_log_creation_issues({}))
     assert any(issue.field_path == "change_log" for issue in validate_change_log_transition({}, {"change_log": []}))

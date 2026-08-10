@@ -130,6 +130,22 @@ def _is_host_product_concatenation(value: str) -> bool:
 # collapse to ``Workbuddy`` / ``Claude``.
 _WORKBENCH_TOKEN_SPLIT = re.compile(r"[\s\-/]+")
 
+# Conservative denylist of model-family tokens that must never appear as a
+# workbench name.  Only tokens that are unambiguously model families AND not
+# also product/workbench names belong here: ``gpt`` is model-only (the proven
+# ``Gpt`` bug), whereas ``claude``/``codex``/``kimi``/``deepseek``/``glm`` are
+# also legitimate product/workbench names and must stay allowed.  Extend this
+# set only with tokens that can never name a workbench.  Consumed by commit
+# validation too, hence intentionally public.
+MODEL_FAMILY_TOKENS = frozenset({"gpt"})
+# Placeholder session ids (e.g. ``current-session``) are never valid; a real
+# session identifier must be supplied instead.  This is a denylist, not a UUID
+# requirement, because session ids across the suite are arbitrary tokens
+# (test-session, trae-commit-session, …) and a UUID-only rule would false-positive.
+_SESSION_PLACEHOLDER_RE = re.compile(
+    r"^(current-session|session|placeholder|todo|none|null|n/a|tbd)$", re.I
+)
+
 
 def _normalize_workbench_name(value: str) -> str:
     """Normalize a workbench name to a single capitalized platform token."""
@@ -249,6 +265,14 @@ def _validate_change_log_signature(value: object, path: str, issues: list[FactIs
                 f"{path}.agent_workbench",
             )
         )
+    if isinstance(agent_workbench, str) and agent_workbench.strip().lower() in MODEL_FAMILY_TOKENS:
+        issues.append(
+            FactIssue(
+                "schema",
+                "agent_workbench 不得是模型族 token（如 gpt/claude/kimi），宿主产品名（如 WorkBuddy）才填此处",
+                f"{path}.agent_workbench",
+            )
+        )
 
 
 def _validate_change_log(fields: dict[str, Any], issues: list[FactIssue]) -> None:
@@ -263,6 +287,15 @@ def _validate_change_log(fields: dict[str, Any], issues: list[FactIssue]) -> Non
             continue
         path = f"change_log[{index}]"
         _validate_change_log_signature(entry.get("signature"), f"{path}.signature", issues)
+        session_id = entry.get("session_id")
+        if isinstance(session_id, str) and _SESSION_PLACEHOLDER_RE.fullmatch(session_id.strip()):
+            issues.append(
+                FactIssue(
+                    "schema",
+                    "change_log.session_id 不得为占位符（如 current-session），必须是真实会话标识",
+                    f"{path}.session_id",
+                )
+            )
         event_at = _time(entry.get("at"), f"{path}.at", issues)
         if event_at is not None:
             if created is not None and event_at < created:

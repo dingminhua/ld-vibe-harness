@@ -101,7 +101,7 @@ def _request(
         work_object_locators=locators,
         arguments=arguments,
         requested_disclosure=requested_disclosure,
-        observed_context={} if observed_context is None else observed_context,
+        observed_context={"signature": {"model_id": "test-model", "agent_workbench": "test", "session_id": "test-session"}} if observed_context is None else observed_context,
         authorization_reference=authorization,
     )
 

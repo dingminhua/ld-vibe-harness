@@ -110,7 +110,8 @@ def parse_fact_update_request(
         problems.append("arguments.fact_object 必须是 object")
         fact_object = {}
     if isinstance(fact_object, dict):
-        problems.extend(observed_signature_injection_problems(request.observed_context, fact_object))
+        if fact_ref is None or fact_ref.fact_type_key != "workcase":
+            problems.extend(observed_signature_injection_problems(request.observed_context, fact_object))
     if request.requested_disclosure is not None:
         problems.append("requested_disclosure 对事实对象更新操作必须为 null 或省略")
     if problems:

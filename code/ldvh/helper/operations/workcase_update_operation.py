@@ -22,6 +22,7 @@ from ldvh.helper.operation_runtime import (
     OperationRequestError,
 )
 from ldvh.helper.operations.fact_creation_operation import inject_observed_write_signature
+from ldvh.helper.operations.fact_creation_request import observed_write_signature_required_problem
 from ldvh.helper.operations.fact_operation_support import (
     plain,
     post_write_integrity_audit,
@@ -715,6 +716,17 @@ def _execute(
             sources=(*sources, _SHARED_WRITE_CONTRACT),
         )
 
+    observed_problem = observed_write_signature_required_problem(request.observed_context)
+    if observed_problem is not None:
+        return OperationExecution(
+            outcome="unavailable",
+            summary=observed_problem,
+            requested_scope=requested,
+            not_completed_scope=requested,
+            governance_resolution=run.result.to_json() if run.result else None,
+            sources=sources,
+            gaps=({"summary": observed_problem, "scope": list(requested), "source_refs": [_CONTRACTS[mode]]},),
+        )
     try:
         application = _apply_core_workcase_write(
             mode,

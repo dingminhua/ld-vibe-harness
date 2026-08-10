@@ -232,7 +232,14 @@ def _update_payload(
                 "expected_content_fingerprint": fingerprint,
                 "fact_object": fact_object,
             },
-        }
+            "observed_context": {
+                "signature": {
+                    "model_id": "test-model",
+                    "agent_workbench": "test",
+                    "session_id": "test-session",
+                }
+            },
+        },
     )
 
 
@@ -383,7 +390,15 @@ def test_generic_helper_preserves_committed_result_when_coordination_release_is_
     event_at = "2026-07-26T16:00:00+08:00"
 
     execution = fact_update_operation._execute(
-        CommonRequest(None, (), {}, None, {}, (), response_profile="diagnostic"),
+        CommonRequest(
+            None,
+            (),
+            {},
+            None,
+            {"signature": {"model_id": "test-model", "agent_workbench": "test", "session_id": "test-session"}},
+            (),
+            response_profile="diagnostic",
+        ),
         object(),
         OperationExecutionContext(Path("/project"), event_at),
     )
@@ -422,7 +437,15 @@ def test_generic_helper_preserves_candidate_rejection_when_coordination_release_
     monkeypatch.setattr(fact_update_operation, "apply_fact_update", lambda *_args: application)
 
     execution = fact_update_operation._execute(
-        CommonRequest(None, (), {}, None, {}, (), response_profile="diagnostic"),
+        CommonRequest(
+            None,
+            (),
+            {},
+            None,
+            {"signature": {"model_id": "test-model", "agent_workbench": "test", "session_id": "test-session"}},
+            (),
+            response_profile="diagnostic",
+        ),
         object(),
         OperationExecutionContext(Path("/project"), "2026-07-26T16:00:00+08:00"),
     )
@@ -462,7 +485,15 @@ def test_generic_no_change_release_gap_has_observation_but_no_commit_code(
     event_at = "2026-07-26T16:00:00+08:00"
 
     execution = fact_update_operation._execute(
-        CommonRequest(None, (), {}, None, {}, (), response_profile="diagnostic"),
+        CommonRequest(
+            None,
+            (),
+            {},
+            None,
+            {"signature": {"model_id": "test-model", "agent_workbench": "test", "session_id": "test-session"}},
+            (),
+            response_profile="diagnostic",
+        ),
         object(),
         OperationExecutionContext(Path("/project"), event_at),
     )
@@ -1033,6 +1064,13 @@ def test_coordination_permission_failure_is_structured_unavailable_with_zero_wri
                     "expected_content_fingerprint": before["content_fingerprint"],
                     "fact_object": target,
                 },
+                "observed_context": {
+                    "signature": {
+                        "model_id": "test-model",
+                        "agent_workbench": "test",
+                        "session_id": "test-session",
+                    }
+                },
             }
         ),
     ).response
@@ -1151,7 +1189,7 @@ def test_study_update_preserves_submitted_body_boundary(tmp_path: Path) -> None:
             "status": "active",
             "change_log": [
                 {
-                    "signature": {"agent_id": "test-agent", "host_environment": "test"},
+                    "signature": {"model_id": "test-model", "agent_workbench": "test"},
                     "session_id": "test-session",
                     "at": "2000-01-01T00:00:00Z",
                     "summary": "Create Study test fact.",
@@ -1236,6 +1274,13 @@ def test_study_update_preserves_submitted_body_boundary(tmp_path: Path) -> None:
                     },
                     "fact_object": study,
                 },
+                "observed_context": {
+                    "signature": {
+                        "model_id": "test-model",
+                        "agent_workbench": "test",
+                        "session_id": "test-session",
+                    }
+                },
             }
         ),
     ).response
@@ -1262,7 +1307,7 @@ def test_study_update_preserves_submitted_body_boundary(tmp_path: Path) -> None:
         target["frontmatter"].pop(key)
     target["frontmatter"]["change_log"].append(
         {
-            "signature": {"agent_id": "test-agent", "host_environment": "test"},
+            "signature": {"model_id": "test-model", "agent_workbench": "test"},
             "session_id": "test-session",
             "at": "2000-01-01T00:00:00Z",
             "summary": "Update Study test fact.",
@@ -1280,6 +1325,13 @@ def test_study_update_preserves_submitted_body_boundary(tmp_path: Path) -> None:
                     "fact_ref": reference,
                     "expected_content_fingerprint": read["content_fingerprint"],
                     "fact_object": target,
+                },
+                "observed_context": {
+                    "signature": {
+                        "model_id": "test-model",
+                        "agent_workbench": "test",
+                        "session_id": "test-session",
+                    }
                 },
             }
         ),
