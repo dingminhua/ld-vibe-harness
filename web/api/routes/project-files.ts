@@ -9,6 +9,7 @@ import path from 'path'
 import { getGitPushStatuses, normalizeTimestamp, parseCommitMessage, parseCommitSignature, splitCommitMessage } from '../services/git.js'
 import { LDVH_WORKSPACE_ROOT } from '../services/pytools.js'
 import { readGovernedProjectsSettings } from '../services/governedProjectsSettings.js'
+import { scanGovernedProjectWorktrees } from '../services/workspaceWorktrees.js'
 import {
   EXCLUDED_DIRS,
   MAX_DIRECTORY_ENTRIES,
@@ -34,6 +35,7 @@ function isValidCommitHash(hash: string): boolean {
 router.get('/projects', async (_req: Request, res: Response): Promise<void> => {
   try {
     const [projects, settings] = await Promise.all([loadProjects(), readGovernedProjectsSettings()])
+    const worktrees = await scanGovernedProjectWorktrees(settings.projects)
     res.json({
       ok: true,
       workspaceRoot: LDVH_WORKSPACE_ROOT,
@@ -42,6 +44,15 @@ router.get('/projects', async (_req: Request, res: Response): Promise<void> => {
         ...project,
         docsPath: path.join(project.path, 'docs'),
         ldvhBasePath: path.join(project.path, 'ldvh-base'),
+        worktrees: worktrees
+          .filter((worktree) => worktree.governedProjectId === project.id)
+          .map((worktree) => ({
+            path: worktree.path,
+            branch: worktree.branch,
+            head: worktree.head,
+            isMain: worktree.isMain,
+            status: worktree.status,
+          })),
       })),
     })
   } catch (err) {

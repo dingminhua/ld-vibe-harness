@@ -2,6 +2,7 @@ import { execFile } from 'child_process'
 import path from 'path'
 import { LDVH_ROOT } from './pytools.js'
 import { resolveWebGovernedProjects } from './governanceScope.js'
+import { readGovernedProjectsSettings } from './governedProjectsSettings.js'
 
 export const MAX_FILE_BYTES = 300 * 1024
 export const MAX_DIRECTORY_ENTRIES = 500
@@ -54,12 +55,20 @@ export function normalizeProjectPath(rawPath: unknown, baseDir = LDVH_ROOT): str
 }
 
 export async function loadProjects(): Promise<GovernedProject[]> {
-  return (await resolveWebGovernedProjects()).map((project) => ({
-    id: project.id,
-    name: project.id,
-    description: '由 Code 管辖解析确认的 Git worktree',
-    path: project.path,
-  }))
+  const [verifiedProjects, settings] = await Promise.all([
+    resolveWebGovernedProjects(),
+    readGovernedProjectsSettings(),
+  ])
+  const configuredById = new Map(settings.projects.map((project) => [project.id, project]))
+  return verifiedProjects.map((project) => {
+    const configured = configuredById.get(project.id)
+    return {
+      id: project.id,
+      name: configured?.name || project.id,
+      description: '由 Code 管辖解析确认的 Git worktree',
+      path: project.path,
+    }
+  })
 }
 
 export async function getProject(projectId: string): Promise<GovernedProject | null> {

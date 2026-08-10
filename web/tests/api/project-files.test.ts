@@ -79,6 +79,8 @@ test('lists and reads the current supported file kinds', async () => {
   const secondary = governed.find((project) => project.id === 'secondary')
   assert.ok(demo)
   assert.ok(secondary)
+  assert.equal(demo.name, 'Demo')
+  assert.equal(secondary.name, 'Secondary')
   assert.equal(demo.path, fs.realpathSync(projectRoot))
   assert.equal(secondary.path, fs.realpathSync(secondaryProjectRoot))
 

@@ -16,7 +16,7 @@ interface LayoutProps {
 /** Inner layout that consumes panel context */
 function LayoutInner({ children }: LayoutProps) {
   const { isOpen: panelOpen, closePanel, openPanel } = usePanel();
-  const { selectedProjectId } = useProjectScope();
+  const { selectedProjectId, selectedWorktreePath } = useProjectScope();
   const location = useLocation();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     try {
@@ -97,11 +97,11 @@ function LayoutInner({ children }: LayoutProps) {
       {/* 中间主内容 */}
       <main className="ldvh-main-scroll min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-y-contain">
         {/* 项目切换时重建当前路由页，触发数据重取；contents 保证不引入额外布局盒 */}
-        <div key={`page-${selectedProjectId}`} className="contents">{children}</div>
+        <div key={`page-${selectedProjectId}-${selectedWorktreePath}`} className="contents">{children}</div>
       </main>
 
       {/* 右侧扩展阅读区随项目切换重建。 */}
-      <ReadingPanel key={`panel-${selectedProjectId}`} />
+      <ReadingPanel key={`panel-${selectedProjectId}-${selectedWorktreePath}`} />
     </div>
   );
 }

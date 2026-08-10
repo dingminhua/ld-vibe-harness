@@ -11,14 +11,19 @@ const inFlightRequests = new Map<string, Promise<unknown>>();
  *  every request so the backend scopes facts + git to the project shown in the UI.
  *  Lives outside React state so request() can read it synchronously at call time. */
 let currentProjectId = '';
-export function setCurrentProjectId(projectId: string): void {
+let currentWorktreePath = '';
+export function setCurrentProjectScope(projectId: string, worktreePath: string): void {
   currentProjectId = projectId || '';
+  currentWorktreePath = worktreePath || '';
 }
 
-function withProjectId(url: string): string {
-  if (!currentProjectId || /[?&]projectId=/.test(url)) return url;
-  const separator = url.includes('?') ? '&' : '?';
-  return `${url}${separator}projectId=${encodeURIComponent(currentProjectId)}`;
+function withProjectScope(url: string): string {
+  const [pathname, rawQuery = ''] = url.split('?', 2);
+  const search = new URLSearchParams(rawQuery);
+  if (currentProjectId && !search.has('projectId')) search.set('projectId', currentProjectId);
+  if (currentWorktreePath && !search.has('worktreePath')) search.set('worktreePath', currentWorktreePath);
+  const query = search.toString();
+  return `${pathname}${query ? `?${query}` : ''}`;
 }
 
 export type WorkCaseProgressGroup = 'plan_confirmation' | 'progressing' | 'termination_cleanup' | 'closure_confirmation' | 'closed';
@@ -448,7 +453,7 @@ export class ApiRequestError extends Error {
 }
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
-  const fullUrl = `${API_BASE}${withProjectId(url)}`;
+  const fullUrl = `${API_BASE}${withProjectScope(url)}`;
   const cacheKey = init ? `${init.method ?? 'GET'} ${fullUrl}` : fullUrl;
   const existing = !init || init.method === undefined || init.method === 'GET' ? inFlightRequests.get(cacheKey) : undefined;
   if (existing) return existing as Promise<T>;
@@ -794,6 +799,15 @@ export interface GovernedProject {
   path: string;
   docsPath: string;
   ldvhBasePath: string;
+  worktrees: ProjectWorktree[];
+}
+
+export interface ProjectWorktree {
+  path: string;
+  branch?: string;
+  head?: string;
+  isMain: boolean;
+  status?: WorkspaceWorktreeStatusSummary;
 }
 
 export interface ProjectFilesProjectsData {
