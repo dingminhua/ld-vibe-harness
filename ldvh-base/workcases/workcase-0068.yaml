@@ -32,37 +32,37 @@ change_log:
   at: '2026-08-07T19:31:25.415722+08:00'
   summary: Human 授权按计划推进；在三路 0067/0068 对照和三轮创建前只读复核后，将验证范围收敛为单一 A-only 小样本 pilot，并停在 Human Gate 1。
 - signature:
-    agent_id: workbuddy
+    agent_id: hy3
     host_environment: Workbuddy
   session_id: workcase-0068-execution
   at: '2026-08-07T19:49:54.279031+08:00'
   summary: Human Gate 1 批准，phase 推进至 executing。
 - signature:
-    agent_id: workbuddy
+    agent_id: hy3
     host_environment: Workbuddy
   session_id: workcase-0068-execution
   at: '2026-08-07T19:50:52.088112+08:00'
   summary: item-01 开始：冻结 A-only pilot 协议。
 - signature:
-    agent_id: workbuddy
+    agent_id: hy3
     host_environment: Workbuddy
   session_id: workcase-0068-execution
   at: '2026-08-07T19:52:17.799351+08:00'
   summary: item-01 完成：冻结试点协议已形成。item-02 开始：执行 baseline trial。
 - signature:
-    agent_id: workbuddy
+    agent_id: hy3
     host_environment: Workbuddy
   session_id: workcase-0068-execution
   at: '2026-08-07T20:10:07.417406+08:00'
   summary: 'Baseline 聚合完成: fl=2/12, correct=12/12, extra_median=0.5。Candidate 12 trial 已启动。'
 - signature:
-    agent_id: workbuddy
+    agent_id: hy3
     host_environment: Workbuddy
   session_id: workcase-0068-execution
   at: '2026-08-07T20:15:26.649807+08:00'
   summary: item-02 完成：24 trial (12B+12C) 全部执行。Signal=POSITIVE。item-03 开始：证据矩阵。
 - signature:
-    agent_id: workbuddy
+    agent_id: hy3
     host_environment: Workbuddy
   session_id: workcase-0068-execution
   at: '2026-08-07T20:20:08.070761+08:00'
@@ -130,6 +130,13 @@ change_log:
     model_id: gpt-5
   session_id: cindy-codex-alias-migration-20260810
 
+- at: '2026-08-10T09:13:00.991969Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 1: workbuddy -> hy3; 2: workbuddy -> hy3; 3: workbuddy -> hy3; 4: workbuddy -> hy3; 5: workbuddy -> hy3; 6: workbuddy -> hy3。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-model-id-migration-20260810
+
 success_criterion_results:
 - criterion_id: criterion-01
   outcome: satisfied
@@ -160,4 +167,4 @@ residual_responsibilities:
 object_id: workcase-0068
 fact_type_key: workcase
 created_at: '2026-08-07T19:31:25.415722+08:00'
-updated_at: '2026-08-10T09:05:13.668551Z'
+updated_at: '2026-08-10T09:13:00.991969Z'
