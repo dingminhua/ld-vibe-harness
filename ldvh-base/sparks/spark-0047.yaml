@@ -23,7 +23,7 @@ change_log:
   at: '2026-08-03T12:35:00+08:00'
   summary: 受控迁移所有既有流水，移除 signer_type。
 - signature:
-    agent_id: workbuddy-ai
+    agent_id: hy3
     host_environment: Workbuddy
   session_id: session-20260809-spark0047-close
   at: '2026-08-09T01:08:22.254656+08:00'
@@ -34,7 +34,13 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-legacy-signature-migration-20260810
+- at: '2026-08-10T09:14:58.643309Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 2: workbuddy-ai -> hy3。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-identity-id-migration-20260810
 object_id: spark-0047
 fact_type_key: spark
 created_at: '2026-08-03T12:16:09.059675+08:00'
-updated_at: '2026-08-10T08:46:48.552604Z'
+updated_at: '2026-08-10T09:14:58.643309Z'
