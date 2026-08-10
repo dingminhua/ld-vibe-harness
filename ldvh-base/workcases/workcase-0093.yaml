@@ -19,13 +19,16 @@ work_items:
 - item_id: item-path-analysis
   goal: 精确定位 generic update 的 before/after、候选对象和实际替换边界，并记录现有 dirty baseline。
   expected_result: 形成可审查的最小接入位置与文件边界；无法区分已有 dirty diff 时停止，不覆盖无关修改。
-  status: pending
+  status: completed
+  result_summary: 只读定位完成：generic update 的 apply_fact_update_locked 顺序为 current 读取→candidate 构造（_candidate 内已执行 validate_fact_object、validate_fact_transition 与 stabilize_project_index 普通关系/project 校验）→atomic_replace_text_if_unchanged→写后回读。最小接入点确定为 candidate mechanically_valid 后、atomic replacement 前。dirty baseline 已分块确认：update_application.py 有既存 _normalize_workbench_name/_normalized_mutable 改动；relations.py 与 test_relations.py 有前一 WC 的 Spark relation/formation 辅助与测试；test_update_application.py、test_project_validation.py 无既存 diff。
 - item_id: item-formation-enforcement
   goal: 在 generic update 写入前接入 Spark successor routed-to formation-time enforcement。
   expected_result: 只对 before→after 新增的 Spark 目标边执行 open/有效性边界；保留既有边后续生命周期兼容与非 Spark 合法路径。
-  status: pending
+  status: in_progress
   depends_on:
   - item-path-analysis
+  current_summary: 正在在 generic update candidate 通过普通 relation/project 校验后、atomic replacement 前接入 Spark formation-time enforcement；只新增授权范围内的最小调用与错误返回。
+  resume_from: 从 apply_fact_update_locked 的 candidate 成功分支继续；复用 relations.py 已有 before/after formation validator，不收紧既有边生命周期。
 - item_id: item-formation-tests
   goal: 补齐 generic update 与关系/project 校验的正反测试。
   expected_result: 覆盖新 open Spark 通过、新 routed/implemented/discarded Spark 拒绝、既有边后续状态通过、Study/缺失/invalid/title/self/cross-project/cycle 拒绝及 WorkCase/ADR/Pitfall 回归。
@@ -139,9 +142,8 @@ execution_authorization:
   - 不得清理、覆盖、stage、restore 或回退无关 dirty changes。
   human_prerequisites:
   - Human Gate 1 必须批准本 plan_version=1 与完整 execution_authorization 后，才可修改列明代码或测试；本创建对象本身不带 execution approval。
-phase: human_plan_confirming
+phase: executing
 plan_version: 1
-waiting_on: Human Gate 1：审批 generic update_application.py formation-time enforcement 的计划、授权范围与禁止项
 creation_reviews:
 - reviewer: 019feb5b-7955-7c60-8b51-2fdb6c039a5a (Confucius)
   reviewed_at: '2026-08-10T11:11:37.747959Z'
@@ -169,7 +171,38 @@ change_log:
   session_id: fde0af60-4736-4d2d-b2eb-d0be116e163a
   at: '2026-08-10T11:11:37.937719Z'
   summary: Human 要求按建议为 generic update_application.py formation-time enforcement 单独建立 WorkCase；完成相邻对象查重与独立 creation review，形成等待 Human Gate 1 的最小计划。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: fde0af60-4736-4d2d-b2eb-d0be116e163a
+  at: '2026-08-10T11:17:39.899826Z'
+  summary: Human Gate 1 已批准 workcase-0093 plan_version=1 与完整 execution_authorization；进入 executing，先消费 item-path-analysis。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: fde0af60-4736-4d2d-b2eb-d0be116e163a
+  at: '2026-08-10T11:17:59.136905Z'
+  summary: Gate 1 后启动 item-path-analysis：只读定位 generic update before/after 与 atomic replacement 边界，先固定 dirty baseline。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: fde0af60-4736-4d2d-b2eb-d0be116e163a
+  at: '2026-08-10T11:18:41.927606Z'
+  summary: item-path-analysis 完成：确认 generic update 最小接入点与 dirty baseline；准备启动 item-formation-enforcement。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: fde0af60-4736-4d2d-b2eb-d0be116e163a
+  at: '2026-08-10T11:19:04.012770Z'
+  summary: 稳定回读与 integrity 通过；启动 item-formation-enforcement，准备只修改 generic update 接入点。
+execution_approval:
+  subject_version: 1
+  approved_at: '2026-08-10T11:17:39.706188Z'
+  summary: Human 已批准 workcase-0093 的 plan_version=1 与完整 execution_authorization，进入 executing。
+  baseline_fingerprint: 89b7f730797bd435f2e23da4084d929c1a748418734b0aef791a81cf5d0a1b14
+  source_refs:
+  - 批准 workcase-0093 的 Gate 1
 object_id: workcase-0093
 fact_type_key: workcase
 created_at: '2026-08-10T11:11:37.937719Z'
-updated_at: '2026-08-10T11:11:37.937719Z'
+updated_at: '2026-08-10T11:19:04.012770Z'
