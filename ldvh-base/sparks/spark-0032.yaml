@@ -20,11 +20,11 @@ evolution:
 object_id: spark-0032
 fact_type_key: spark
 created_at: '2026-07-24T07:47:36.176894+08:00'
-updated_at: '2026-08-10T08:46:27.872966Z'
+updated_at: '2026-08-10T09:14:52.699538Z'
 change_log:
 - summary: 补建变更流水以支持受控提交；spark-0032 由 open 转 discarded（依据 study-0026 结论：无需引入 Obsidian），事实内容变更由其他会话产出，此处仅补审计签名。
   signature:
-    agent_id: workbuddy-ai
+    agent_id: hy3
     host_environment: Workbuddy
   session_id: batch-commit-20260809-spark0032
   at: '2026-07-24T12:21:30.913531+08:00'
@@ -34,3 +34,9 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-legacy-signature-migration-20260810
+- at: '2026-08-10T09:14:52.699538Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: workbuddy-ai -> hy3。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-identity-id-migration-20260810
