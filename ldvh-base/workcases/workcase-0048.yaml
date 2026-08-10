@@ -34,7 +34,7 @@ validation_summary: 已验证：HEAD=a74a74fcc97d29541f8250d2be430a99e6b8bd0a；
 change_log:
 - signature:
     agent_id: codex
-    host_environment: Codex Desktop
+    host_environment: Codex
   session_id: 919bd4d2-0ded-4643-89d8-86338951f777
   at: '2026-08-03T12:17:18.588386+08:00'
   summary: Created WorkCase to retire FileAsset from the current LDVH product surface.
@@ -122,6 +122,12 @@ change_log:
   session_id: 919bd4d2-0ded-4643-89d8-86338951f777
   at: '2026-08-03T15:16:17.955535+08:00'
   summary: 消费 Human Gate 2 决定，以 cancelled 关闭安全收敛的 workcase-0048。
+- at: '2026-08-10T09:00:46.161075Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: Codex Desktop -> Codex。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-codex-signature-migration-20260810
 closure_outcome: cancelled
 disposition_summary: 本次运行只完成清除前盘点，四项实施成功标准明确未满足，退役后验证标准因没有实施候选而未验证；按当前结果分类规则，本运行提议 cancelled。Gate 1 冻结路径遗漏 4 个已直接证明必需的当前消费者，且 Gate 1 后不得扩权，因此三个 FileAsset、namespace、规则、Code、Web 和 docs 均保持原样。建议关闭当前安全收敛运行，不复用旧批准；后续若继续用户既定目标，应以新的 WorkCase/Gate 1 承接，在批准前纳入 4 个已证明路径，并通过实际实现 diff 判定另外 3 个通用依赖。
 spark_suggestions:
@@ -135,4 +141,4 @@ spark_suggestions:
 object_id: workcase-0048
 fact_type_key: workcase
 created_at: '2026-08-03T12:17:18.588386+08:00'
-updated_at: '2026-08-03T15:16:17.955535+08:00'
+updated_at: '2026-08-10T09:00:46.161075Z'
