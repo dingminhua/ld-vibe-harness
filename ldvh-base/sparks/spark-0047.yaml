@@ -24,11 +24,17 @@ change_log:
   summary: 受控迁移所有既有流水，移除 signer_type。
 - signature:
     agent_id: workbuddy-ai
-    host_environment: workbuddy-claw
+    host_environment: Workbuddy
   session_id: session-20260809-spark0047-close
   at: '2026-08-09T01:08:22.254656+08:00'
   summary: 转 implemented：依据 study-0027 调研与 21/30 现状核对，确认 WC 状态机（Gate1 批准绑定真实 Human source_refs + baseline fingerprint、专属写入口、commit 授权要求）已机械承接“记录≠实施授权”阻断；移除 priority，写入 disposition_summary，保留并追加 change_log，不新增 routed-to。
+- at: '2026-08-10T08:46:48.552604Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 2: workbuddy-claw -> Workbuddy。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-legacy-signature-migration-20260810
 object_id: spark-0047
 fact_type_key: spark
 created_at: '2026-08-03T12:16:09.059675+08:00'
-updated_at: '2026-08-09T01:08:22.254656+08:00'
+updated_at: '2026-08-10T08:46:48.552604Z'
