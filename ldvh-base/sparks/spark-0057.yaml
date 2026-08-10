@@ -6,22 +6,28 @@ disposition_summary: 本 Spark 限定的规范缺口（修订漂移使跨平台�
 change_log:
 - signature:
     agent_id: kimi
-    host_environment: Kimi Work
+    host_environment: Kimi
   session_id: conv-9b480e23916ebeb1765f4537
   at: '2026-08-06T00:51:04.697406+08:00'
   summary: 受控创建本 Spark：跨平台变更传播与再验证纪律议题（Human 在 WC 之外独立发起）
 - signature:
     agent_id: kimi
-    host_environment: Kimi Work
+    host_environment: Kimi
   session_id: conv-9b480e23916ebeb1765f4537
   at: '2026-08-06T00:51:33.373224+08:00'
   summary: 补回首条 evolution：起点说明（创建时 created_at 窗口坍缩，按机械约束后置补写）
 - summary: Human 确认收口：规范缺口已通过 09 §6.3.1、07 §5.5、03.Att.01、Git Gate 及单测完整落实，Windows CI 必要性经评估不属于残留责任，状态从 open 转为 implemented
   signature:
     agent_id: glm-5.2
-    host_environment: Claude Code
+    host_environment: Claude
   session_id: e63cca84-d0bd-4c0d-88a4-90b729debf85
   at: '2026-08-09T11:51:33.367672+08:00'
+- at: '2026-08-10T08:47:09.356354Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 2: Claude Code -> Claude。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-legacy-signature-migration-20260810
 relations:
 - relation_key: related-to
   target:
@@ -46,4 +52,4 @@ evolution:
 object_id: spark-0057
 fact_type_key: spark
 created_at: '2026-08-06T00:51:04.697406+08:00'
-updated_at: '2026-08-09T11:51:33.367672+08:00'
+updated_at: '2026-08-10T08:47:09.356354Z'
