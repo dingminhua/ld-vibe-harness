@@ -25,103 +25,103 @@ success_criterion_results:
   summary: done
 change_log:
 - signature:
-    agent_id: workbuddy-ai
+    agent_id: hy3
     host_environment: Workbuddy
   session_id: session-20260808-closure-set
   at: '2026-08-08T21:39:25.951649+08:00'
   summary: 受控创建：承接 spark-0062 Step 1（简化 durability 维度），含独立 subagent 创建复核。范围限于 filesystem.py + 测试，应用层/Windows 不受影响。
 - signature:
-    agent_id: workbuddy-ai
+    agent_id: hy3
     host_environment: Workbuddy
   session_id: session-20260808-closure-set
   at: '2026-08-08T21:48:44.787186+08:00'
   summary: Gate1：Human 批准进入 executing，冻结 execution_approval
 - signature:
-    agent_id: workbuddy-ai
+    agent_id: hy3
     host_environment: Workbuddy
   session_id: session-20260808-closure-set
   at: '2026-08-08T22:16:23.685279+08:00'
   summary: 全部 3 items completed, phase→controller_checking
 - signature:
-    agent_id: workbuddy-ai
+    agent_id: hy3
     host_environment: Workbuddy
   session_id: session-20260808-closure-set
   at: '2026-08-08T22:28:24.281333+08:00'
   summary: 结果投影冻结
 - signature:
-    agent_id: workbuddy-ai
+    agent_id: hy3
     host_environment: Workbuddy
   session_id: session-20260808-closure-set
   at: '2026-08-08T22:51:12.312556+08:00'
   summary: 'controller_checking: 冻结完整 result projection'
 - signature:
-    agent_id: workbuddy-ai
+    agent_id: hy3
     host_environment: Workbuddy
   session_id: session-20260808-closure-set
   at: '2026-08-08T22:51:31.988537+08:00'
   summary: 'controller_checking: 冻结 result projection'
 - signature:
-    agent_id: workbuddy-ai
+    agent_id: hy3
     host_environment: Workbuddy
   session_id: session-20260808-closure-set
   at: '2026-08-08T22:52:07.686504+08:00'
   summary: 'controller_checking: freeze result projection'
 - signature:
-    agent_id: workbuddy-ai
+    agent_id: hy3
     host_environment: Workbuddy
   session_id: session-20260808-closure-set
   at: '2026-08-08T22:53:05.849796+08:00'
   summary: test
 - signature:
-    agent_id: workbuddy-ai
+    agent_id: hy3
     host_environment: Workbuddy
   session_id: session-20260808-closure-set
   at: '2026-08-08T22:53:08.306141+08:00'
   summary: test
 - signature:
-    agent_id: workbuddy-ai
+    agent_id: hy3
     host_environment: Workbuddy
   session_id: session-20260808-closure-set
   at: '2026-08-08T22:53:10.841152+08:00'
   summary: test
 - signature:
-    agent_id: workbuddy-ai
+    agent_id: hy3
     host_environment: Workbuddy
   session_id: session-20260808-closure-set
   at: '2026-08-08T22:58:25.613860+08:00'
   summary: 'controller_checking: result projection frozen'
 - signature:
-    agent_id: workbuddy-ai
+    agent_id: hy3
     host_environment: Workbuddy
   session_id: session-20260808-closure-set
   at: '2026-08-08T22:58:54.002400+08:00'
   summary: independent_reviewing
 - signature:
-    agent_id: workbuddy-ai
+    agent_id: hy3
     host_environment: Workbuddy
   session_id: session-20260808-closure-set
   at: '2026-08-08T22:59:18.465623+08:00'
   summary: 'independent_reviewing: result review recorded'
 - signature:
-    agent_id: workbuddy-ai
+    agent_id: hy3
     host_environment: Workbuddy
   session_id: session-20260808-closure-set
   at: '2026-08-08T22:59:20.433892+08:00'
   summary: 'closure_preparing: awaiting Human'
 - signature:
-    agent_id: workbuddy-ai
+    agent_id: hy3
     host_environment: Workbuddy
   session_id: session-20260808-closure-set
   at: '2026-08-08T23:06:00.670098+08:00'
   summary: 'closure_preparing: proposal frozen'
 - signature:
-    agent_id: workbuddy-ai
+    agent_id: hy3
     host_environment: Workbuddy
   session_id: session-20260808-closure-set
   at: '2026-08-08T23:06:02.648010+08:00'
   summary: 'human_closure_confirming: awaiting Human Gate 2'
 - signature:
-    agent_id: workbuddy-ai
+    agent_id: hy3
     host_environment: Workbuddy
   session_id: session-20260808-closure-set
   at: '2026-08-08T23:06:56.255850+08:00'
@@ -139,7 +139,14 @@ change_log:
     model_id: gpt-5
   session_id: cindy-legacy-signature-migration-20260810
 
+- at: '2026-08-10T09:15:34.450524Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: workbuddy-ai -> hy3; 1: workbuddy-ai -> hy3; 2: workbuddy-ai -> hy3; 3: workbuddy-ai -> hy3; 4: workbuddy-ai -> hy3; 5: workbuddy-ai -> hy3; 6: workbuddy-ai -> hy3; 7: workbuddy-ai -> hy3; 8: workbuddy-ai -> hy3; 9: workbuddy-ai -> hy3; 10: workbuddy-ai -> hy3; 11: workbuddy-ai -> hy3; 12: workbuddy-ai -> hy3; 13: workbuddy-ai -> hy3; 14: workbuddy-ai -> hy3; 15: workbuddy-ai -> hy3; 16: workbuddy-ai -> hy3。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-identity-id-migration-20260810
+
 object_id: workcase-0079
 fact_type_key: workcase
 created_at: '2026-08-08T21:39:25.951649+08:00'
-updated_at: '2026-08-10T08:48:12.410791Z'
+updated_at: '2026-08-10T09:15:34.450524Z'
