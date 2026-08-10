@@ -77,13 +77,13 @@ relations:
     object_id: spark-0048
 change_log:
 - signature:
-    agent_id: workbuddy-ai
+    agent_id: hy3
     host_environment: Workbuddy
   session_id: session-20260809-study0027
   at: '2026-08-09T00:34:04.998975+08:00'
   summary: 受控创建：记录 AI 代理授权边界（混淆代理与过度代理权）行业实践调研，供 spark-0047 / spark-0048 判断行业解法与 LDVH 务实路径。
 - signature:
-    agent_id: workbuddy-ai
+    agent_id: hy3
     host_environment: Workbuddy
   session_id: session-20260809-study0027-update
   at: '2026-08-09T00:53:33.584333+08:00'
@@ -95,10 +95,16 @@ change_log:
     model_id: gpt-5
   session_id: cindy-legacy-signature-migration-20260810
 
+- at: '2026-08-10T09:15:22.604185Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: workbuddy-ai -> hy3; 1: workbuddy-ai -> hy3。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-identity-id-migration-20260810
 object_id: study-0027
 fact_type_key: study
 created_at: '2026-08-09T00:34:04.998975+08:00'
-updated_at: '2026-08-10T08:49:08.501397Z'
+updated_at: '2026-08-10T09:15:22.604185Z'
 ---
 
 ## 研究问题
