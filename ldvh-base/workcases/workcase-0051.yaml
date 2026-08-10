@@ -33,104 +33,110 @@ result_summary: 三个 active FileAsset 及 canonical namespace 已经受控清�
 validation_summary: 本案精确效果已验证：purge 专项 7 passed；规范/字段/机械目录 18 passed；相关 Python 核心 454 passed，补充子集 142 passed；真实 wheel/sdist 2 passed；Web typecheck 通过且全量 152/152 passed；独立复核另跑 Python 62 passed、Web 定向 17/17 passed；事实完整性 132 objects 零问题；compileall 与 git diff --check 通过；当前产品 FileAsset 扫描零命中。当前 worktree 同时保留五个范围外并发详情/change_log 路径和 ObjectDetail.tsx、PanelContent.tsx 中不归因于本案的泛化阅读 hunk，因此不把整棵 dirty diff 声称为本案唯一变更集。范围外观测：Python 全量（排除 doctor）1412 passed、10 skipped、2 failed，分别是 installed_source_projection 的并发 commit-signature fixture 和 working_tree_capture 的治理 fixture；doctor 旧断言仍期望 20 operations、当前为 17；Web lint 仍有 workcase-presentation-spec-contract.ts:257 的既有 no-regex-spaces 错误及 warnings。这些路径不在本 WorkCase 写入闭集，未修改且不构成本案精确范围内剩余责任。
 change_log:
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 919bd4d2-0ded-4643-89d8-86338951f777
   at: '2026-08-03T15:23:48.872437+08:00'
   summary: 创建完整范围的 FileAsset 退役 WorkCase，等待新的 Human Gate 1。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 919bd4d2-0ded-4643-89d8-86338951f777
   at: '2026-08-03T15:27:13.946250+08:00'
   summary: 记录 Human Gate 1 批准，进入完整范围 FileAsset 退役执行。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 919bd4d2-0ded-4643-89d8-86338951f777
   at: '2026-08-03T15:27:43.726593+08:00'
   summary: 开始不可逆 purge 前的精确 baseline 与并发隔离检查。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 919bd4d2-0ded-4643-89d8-86338951f777
   at: '2026-08-03T15:29:55.815010+08:00'
   summary: 完成 purge 前 baseline，开始临时受控 namespace 退役实现。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 919bd4d2-0ded-4643-89d8-86338951f777
   summary: 受控清除三个 FileAsset 与 namespace 成功，开始退役当前产品消费者。
   at: '2026-08-03T15:38:51.305606+08:00'
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 919bd4d2-0ded-4643-89d8-86338951f777
   at: '2026-08-03T16:33:13.173141+08:00'
   summary: 完成 FileAsset 当前产品面退役与范围隔离验证，形成 result_version=1 的完整结果投影。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 919bd4d2-0ded-4643-89d8-86338951f777
   at: '2026-08-03T16:33:30.026475+08:00'
   summary: 完整结果投影回读有效，进入 result_version=1 独立结果复核。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 919bd4d2-0ded-4643-89d8-86338951f777
   at: '2026-08-03T16:38:16.925967+08:00'
   summary: 写回 result_version=1 独立只读复核：产品退役本体通过，范围隔离措辞需要修订。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 919bd4d2-0ded-4643-89d8-86338951f777
   at: '2026-08-03T16:38:42.453430+08:00'
   summary: 处置 result_version=1 独立复核反馈，确认并发路径排除与混合 hunk 归因边界。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 919bd4d2-0ded-4643-89d8-86338951f777
   at: '2026-08-03T16:39:04.551072+08:00'
   summary: 按独立反馈修订范围隔离表述，结果投影升为 result_version=2 并失效旧 review。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 919bd4d2-0ded-4643-89d8-86338951f777
   at: '2026-08-03T16:39:20.167349+08:00'
   summary: 发起 result_version=2 独立只读结果复核。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 919bd4d2-0ded-4643-89d8-86338951f777
   at: '2026-08-03T16:40:26.513158+08:00'
   summary: 写回 result_version=2 独立复核 pass_with_followups 结论。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 919bd4d2-0ded-4643-89d8-86338951f777
   at: '2026-08-03T16:40:47.172576+08:00'
   summary: 处置 result_version=2 非阻断反馈并形成 completed 关闭提案。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 919bd4d2-0ded-4643-89d8-86338951f777
   at: '2026-08-03T16:41:03.632825+08:00'
   summary: 完成终态保留审查并进入 Human Gate 2。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 919bd4d2-0ded-4643-89d8-86338951f777
   at: '2026-08-03T16:54:27.422684+08:00'
   summary: Human Gate 2 接受 completed 提案，关闭 FileAsset 完整退役 WorkCase。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 919bd4d2-0ded-4643-89d8-86338951f777
   at: '2026-08-03T17:16:16.460714+08:00'
   summary: 依据 Human 已选的仅 FileAsset 退役提交范围，移除未提交前案的 related-to，使提交候选保持自包含。
+- at: '2026-08-10T09:23:29.833444Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: codex -> gpt-5; 1: codex -> gpt-5; 2: codex -> gpt-5; 3: codex -> gpt-5; 4: codex -> gpt-5; 5: codex -> gpt-5; 6: codex -> gpt-5; 7: codex -> gpt-5; 8: codex -> gpt-5; 9: codex -> gpt-5; 10: codex -> gpt-5; 11: codex -> gpt-5; 12: codex -> gpt-5; 13: codex -> gpt-5; 14: codex -> gpt-5; 15: codex -> gpt-5。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: session-20260810-codex-model-migration
 closure_outcome: completed
 disposition_summary: workcase-0051 的精确退役责任已完成，原 scope 内无剩余责任。当前 worktree 的范围外并发详情/change_log 改动与混合 Web 泛化 hunk继续保持排除，不由本案归因、处置或承接。
 object_id: workcase-0051
 fact_type_key: workcase
 created_at: '2026-08-03T15:23:48.872437+08:00'
-updated_at: '2026-08-03T17:16:16.460714+08:00'
+updated_at: '2026-08-10T09:23:29.833444Z'
