@@ -12,11 +12,17 @@ change_log:
   at: '2026-08-03T23:12:13.015714+08:00'
 - signature:
     agent_id: glm-5.2
-    host_environment: Claude Code
+    host_environment: Claude
   session_id: e63cca84-d0bd-4c0d-88a4-90b729debf85
   summary: 按 Human 确认收口为 implemented：规范禁令(21 §4.5.3)+ 审核方法留痕(actual_method)+ 能力限制披露(capability_limitation_id)已足够，机械验证真实性留作已知缺口。
   at: '2026-08-09T19:20:00+08:00'
+- at: '2026-08-10T08:46:57.427691Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 1: Claude Code -> Claude。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-legacy-signature-migration-20260810
 object_id: spark-0052
 fact_type_key: spark
 created_at: '2026-08-03T23:12:13.015714+08:00'
-updated_at: '2026-08-09T19:20:00+08:00'
+updated_at: '2026-08-10T08:46:57.427691Z'
