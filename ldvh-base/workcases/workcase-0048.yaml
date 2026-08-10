@@ -33,91 +33,91 @@ result_summary: 完成清除前盘点并确认冻结授权不完整：已直接�
 validation_summary: 已验证：HEAD=a74a74fcc97d29541f8250d2be430a99e6b8bd0a；三个 FileAsset mechanically_valid、payload matches_manifest；namespace 精确三对象；按三个 target 的 F2 完整反查 total_matching=0；并行 study-0020 mechanically_valid 且未触碰；4 个冻结范围外消费者已有直接 FileAsset 证据。未验证：3 个通用依赖在实际退役 diff 中是否需要修改；purge、五类型规则投影、Code/Web 回归与 commit。
 change_log:
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Codex
   session_id: 919bd4d2-0ded-4643-89d8-86338951f777
   at: '2026-08-03T12:17:18.588386+08:00'
   summary: Created WorkCase to retire FileAsset from the current LDVH product surface.
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 48bbb4c6-f2ff-4510-b63f-cebcaaa35d2e
   at: '2026-08-03T12:35:00+08:00'
   summary: 受控迁移所有既有流水，移除 signer_type。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 919bd4d2-0ded-4643-89d8-86338951f777
   at: '2026-08-03T14:52:45.982755+08:00'
   summary: 记录 Human Gate 1 批准，进入受限执行阶段。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 919bd4d2-0ded-4643-89d8-86338951f777
   at: '2026-08-03T14:53:00.824265+08:00'
   summary: 开始 FileAsset 退役前的精确基线与消费者闭集盘点。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 919bd4d2-0ded-4643-89d8-86338951f777
   at: '2026-08-03T14:56:48.360647+08:00'
   summary: 记录退役消费者超出冻结授权；取消未执行项并形成安全收敛结果。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 919bd4d2-0ded-4643-89d8-86338951f777
   at: '2026-08-03T14:57:05.644358+08:00'
   summary: 冻结安全收敛结果，进入独立只读结果复核。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 919bd4d2-0ded-4643-89d8-86338951f777
   at: '2026-08-03T15:02:57.116945+08:00'
   summary: 写回 result_version 1 独立复核及 Controller 对 changes_required 的采纳处置。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 919bd4d2-0ded-4643-89d8-86338951f777
   at: '2026-08-03T15:02:59.707787+08:00'
   summary: 带已处置复核原样返回 Controller，准备升版更正结果投影。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 919bd4d2-0ded-4643-89d8-86338951f777
   at: '2026-08-03T15:03:24.272187+08:00'
   summary: 采纳独立复核意见，将结果投影升为 v2 并更正越界路径证据分级。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 919bd4d2-0ded-4643-89d8-86338951f777
   at: '2026-08-03T15:03:40.743707+08:00'
   summary: 冻结更正后的 result_version 2，重新进入独立只读结果复核。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 919bd4c6-f2ff-4510-b63f-cebcaaa35d2e
   at: '2026-08-03T15:04:39.733709+08:00'
   summary: 写回 result_version 2 独立只读复核通过结论。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 919bd4d2-0ded-4643-89d8-86338951f777
   at: '2026-08-03T15:04:42.283880+08:00'
   summary: 保持 result_version 2 投影不变，进入关闭提案准备阶段。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 919bd4d2-0ded-4643-89d8-86338951f777
   at: '2026-08-03T15:06:01.428286+08:00'
   summary: 形成 cancelled 关闭提案，完整保留未实施责任与新 WorkCase 承接条件。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 919bd4d2-0ded-4643-89d8-86338951f777
   at: '2026-08-03T15:06:20.624135+08:00'
   summary: 完成终态保留与残余责任覆盖检查，进入 Human Gate 2。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: 919bd4d2-0ded-4643-89d8-86338951f777
   at: '2026-08-03T15:16:17.955535+08:00'
@@ -128,6 +128,12 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-codex-signature-migration-20260810
+- at: '2026-08-10T09:23:01.224817Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: codex -> gpt-5; 1: codex -> gpt-5; 2: codex -> gpt-5; 3: codex -> gpt-5; 4: codex -> gpt-5; 5: codex -> gpt-5; 6: codex -> gpt-5; 7: codex -> gpt-5; 8: codex -> gpt-5; 9: codex -> gpt-5; 10: codex -> gpt-5; 11: codex -> gpt-5; 12: codex -> gpt-5; 13: codex -> gpt-5; 14: codex -> gpt-5。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: session-20260810-codex-model-migration
 closure_outcome: cancelled
 disposition_summary: 本次运行只完成清除前盘点，四项实施成功标准明确未满足，退役后验证标准因没有实施候选而未验证；按当前结果分类规则，本运行提议 cancelled。Gate 1 冻结路径遗漏 4 个已直接证明必需的当前消费者，且 Gate 1 后不得扩权，因此三个 FileAsset、namespace、规则、Code、Web 和 docs 均保持原样。建议关闭当前安全收敛运行，不复用旧批准；后续若继续用户既定目标，应以新的 WorkCase/Gate 1 承接，在批准前纳入 4 个已证明路径，并通过实际实现 diff 判定另外 3 个通用依赖。
 spark_suggestions:
@@ -141,4 +147,4 @@ spark_suggestions:
 object_id: workcase-0048
 fact_type_key: workcase
 created_at: '2026-08-03T12:17:18.588386+08:00'
-updated_at: '2026-08-10T09:00:46.161075Z'
+updated_at: '2026-08-10T09:23:01.224817Z'
