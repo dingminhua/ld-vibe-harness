@@ -26,28 +26,52 @@ relations:
 change_log:
 - signature:
     agent_id: glm-5.2
-    host_environment: claude-code-mcp
+    host_environment: Claude
   session_id: session-20260805-spark-creation
   at: '2026-08-05T02:04:05.505223+08:00'
   summary: 创建 spark-0055，记录 LDVH 流程复杂度是否过度设计的议题
 - signature:
-    agent_id: GLM-5.2
-    host_environment: claude-code-mcp
+    agent_id: glm-5.2
+    host_environment: Claude
   session_id: session-20260805-deep-audit
   at: '2026-08-05T19:59:12.907332+08:00'
   summary: 按 study-0023 立即行动建议，记录规范密度 80/20 倒置的独立复证。
 - signature:
     agent_id: kimi
-    host_environment: Kimi Work
+    host_environment: Kimi
   session_id: conv-9b480e23916ebeb1765f4537
   at: '2026-08-05T23:43:13.517547+08:00'
   summary: 吸收必要性讨论三层结论与审计实测基线；待判断项收窄，保持 open
 - signature:
     model_id: glm-5.2
-    agent_workbench: claude-code-mcp
+    agent_workbench: Claude
   session_id: spark-merge-20260810
   at: '2026-08-10T06:43:16.013935Z'
   summary: 按 Human 授权将本议题并入 spark-0067，标记为 discarded。
+- at: '2026-08-10T08:31:16.487470Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 3: claude-code-mcp -> Claude。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-historical-signature-repair-20260810
+- at: '2026-08-10T08:47:03.434580Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: claude-code-mcp -> Claude; 1: claude-code-mcp -> Claude。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-legacy-signature-migration-20260810
+- at: '2026-08-10T08:55:40.390048Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 2: Kimi Work -> Kimi。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-explicit-signature-migration-20260810
+- at: '2026-08-10T09:30:30.595513Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 1: GLM-5.2 -> glm-5.2。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: 4591aaa6-256d-45bb-8c3d-fd0d7619df41
 evolution:
 - at: '2026-08-05T16:40:00+08:00'
   summary: study-0023 深度审计独立复证：创建单个 Spark 需要穿越 7 份规范 + 3 层交叉引用 + 23 条 Stop Conditions，验证了 spark-0055 提出的 80/20 倒置在规范密度上的表现。
@@ -59,4 +83,4 @@ disposition_summary: 流程复杂度四断面（模板激活层数、规范交�
 object_id: spark-0055
 fact_type_key: spark
 created_at: '2026-08-05T02:04:05.505223+08:00'
-updated_at: '2026-08-10T06:43:16.013935Z'
+updated_at: '2026-08-10T09:30:30.595513Z'
