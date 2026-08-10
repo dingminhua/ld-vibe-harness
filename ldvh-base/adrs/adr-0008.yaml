@@ -7,12 +7,18 @@ rationale: "当前 type_unknown/scope_unknown 只报告“未知 type: xxx”和
 consequences: "正面：type_unknown/scope_unknown 诊断将附带当前允许值列表（如“未知 type: xxx，允许值: fix, feat, chore, test, docs, refactor, perf, style, ci, build, revert”），AI 可一步修正，消除一次规则读取往返。确定性约束诊断（body_heading_unknown 等）补齐允许值闭集。\n\n负面与限制：type_tokens 较长时 message 变长，但 scope_tokens 可能更长——届时应降级为「读取入口」策略而非全量嵌入。message 中的允许值列表是快照性质（绑定到校验时的 contract 投影），不保证调用方使用该值到提交完成之间规则未变，但 content_fingerprint 已经绑定到同一快照，变化会被 source_fingerprint_mismatch 捕获。\n\n本决定不建立第二权威：注入源是 contract 参数，该参数来自 project_commit_contract() 的运行时投影，每次校验重新派生，不以独立副本形式存在于 Code 中。\n\n边界说明：\n- type_unknown（规则驱动）：从 contract.type_tokens 注入允许值，来自 03.Att.01 动态投影。\n- scope_unknown（规则驱动）：从 contract.scope_tokens 注入允许值，超长时降级为读取入口。\n- body_heading_unknown（确定性）：直接列出 _FIXED_HEADINGS 闭集，硬编码闭集由规范正文定义。\n- platform_trailer_invalid（确定性）：已列允许值，维持现状。\n- signature_trailer_missing（确定性）：已说明必需 trailer 名，维持现状。\n\n第三层「精确读取入口」以锚点路径文本并入诊断 message 实现，不扩展 _issue(code, message) 的响应 schema；若未来确需结构化 source 字段，另立 WorkCase 评估。\n\n后续：若 scope_tokens 增长到使 message 过于冗长，应统一为「type 全量 + scope 读取入口」的混合策略，而非恢复硬编码。"
 change_log:
 - signature:
-    agent_id: glm-5.2
-    host_environment: claude-code-mcp
+    model_id: glm-5.2
+    agent_workbench: Claude
   session_id: session-20260807-adr-evolution-commit
   at: '2026-08-07T13:55:52.439190+08:00'
   summary: 受 Human 明确授权创建本 ADR：确立提交预检机械诊断的修正信息权威来源分层策略（确定性约束直接给值、规则驱动值由调用方注入、精确读取入口以锚点文本并入 message）；替代方案合并入 rationale；Human 于 2026-08-07 会话批准方向为 active。
+- at: '2026-08-10T08:44:38.542235Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: claude-code-mcp -> Claude。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-legacy-signature-migration-20260810
 object_id: adr-0008
 fact_type_key: adr
 created_at: '2026-08-07T13:55:52.439190+08:00'
-updated_at: '2026-08-07T13:55:52.439190+08:00'
+updated_at: '2026-08-10T08:44:38.542235Z'
