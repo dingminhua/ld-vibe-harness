@@ -27,7 +27,7 @@ relations:
 change_log:
 - signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: spark-0067-a-validation-plan
   at: '2026-08-07T19:31:25.415722+08:00'
   summary: Human 授权按计划推进；在三路 0067/0068 对照和三轮创建前只读复核后，将验证范围收敛为单一 A-only 小样本 pilot，并停在 Human Gate 1。
@@ -105,7 +105,7 @@ change_log:
   summary: Human Gate 2 批准。已关闭。
 - signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: spark-0067-wc0068-closure-correction
   at: '2026-08-07T22:02:27.389927+08:00'
   summary: 依 Human 当前指令与独立复核，更正关闭时已存在的 trial 结果与验证边界；保持 closed / partial，不重开。当前 Helper 拒绝 Spark route target，故保留既有残余责任而不伪造 routed-to。
@@ -115,6 +115,13 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-legacy-signature-migration-20260810
+
+- at: '2026-08-10T08:52:52.986544Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: codex-desktop -> Codex; 13: codex-desktop -> Codex。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-workcase-signature-migration-20260810
 
 success_criterion_results:
 - criterion_id: criterion-01
@@ -146,4 +153,4 @@ residual_responsibilities:
 object_id: workcase-0068
 fact_type_key: workcase
 created_at: '2026-08-07T19:31:25.415722+08:00'
-updated_at: '2026-08-10T08:48:06.511716Z'
+updated_at: '2026-08-10T08:52:52.986544Z'
