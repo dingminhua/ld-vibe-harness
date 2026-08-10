@@ -19,32 +19,39 @@ input_refs:
 change_log:
 - signature:
     agent_id: workbuddy
-    host_environment: WorkBuddy macOS
+    host_environment: Workbuddy
   session_id: 5d667b0e-ab11-4027-a735-e41306c57221
   at: '2026-08-03T14:50:25.960589+08:00'
   summary: 按 Human 当前指令建立：评估 WorkBuddy 内联可视化渲染设计规范（Visualizer Core Design System）及其对 LDVH 呈现纪律的启示。
 - signature:
     agent_id: workbuddy
-    host_environment: WorkBuddy macOS
+    host_environment: Workbuddy
   session_id: 5d667b0e-ab11-4027-a735-e41306c57221
   at: '2026-08-03T15:16:52.662147+08:00'
   summary: 按 Human 澄清更正研究方向：原方向为可视化规范对 LDVH Web 呈现（specs/08）的启示；更正为 AI 回复过程中的内联可视化渲染效果（非 Web）。
 - signature:
     agent_id: workbuddy
-    host_environment: WorkBuddy macOS
+    host_environment: Workbuddy
   session_id: 5d667b0e-ab11-4027-a735-e41306c57221
   at: '2026-08-03T17:47:21.463140+08:00'
   summary: 按 Human 澄清补充技术细节与讨论结论：能力三层模型（渲染通道/AI 判断/使用纪律）、跨环境迁移方法（迁移纪律而非通道）、LDVH 落地形态（规范内容经薄 Skill/规则引导交付并环境验证）。
 - signature:
     agent_id: workbuddy
-    host_environment: WorkBuddy macOS
+    host_environment: Workbuddy
   session_id: 5d667b0e-ab11-4027-a735-e41306c57221
   at: '2026-08-03T22:17:08.756837+08:00'
   summary: 按 Human 澄清修正承载形态表述：本话题约束 AI 回复行为，与 specs/08（Web 呈现规范）无关；承载形态为行动模板（06 体系）或独立呈现纪律规范，不列为 Web 规范候选。
+- at: '2026-08-10T08:48:56.646409Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: WorkBuddy macOS -> Workbuddy; 1: WorkBuddy macOS -> Workbuddy; 2: WorkBuddy macOS -> Workbuddy; 3: WorkBuddy macOS -> Workbuddy。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-legacy-signature-migration-20260810
+
 object_id: study-0020
 fact_type_key: study
 created_at: '2026-08-03T14:50:25.960589+08:00'
-updated_at: '2026-08-03T22:17:08.756837+08:00'
+updated_at: '2026-08-10T08:48:56.646409Z'
 ---
 
 ## 研究问题
