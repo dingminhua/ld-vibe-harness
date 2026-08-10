@@ -21,7 +21,7 @@ change_log:
   session_id: workbuddy-session-20260807-wc0066
   summary: 受控创建本 Spark：记录 WC0066 自述‘无独立 subagent 能力’与 WorkBuddy 当前实际具备 Agent/Explore/Plan subagent 工具之间的矛盾，留待后续研究。
   signature:
-    agent_id: workbuddy
+    agent_id: hy3
     host_environment: Workbuddy
 - at: '2026-08-09T14:33:27.569033Z'
   session_id: cindy-spark-0065-intent-20260809
@@ -77,7 +77,13 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-legacy-signature-migration-20260810
+- at: '2026-08-10T09:12:34.408886Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: workbuddy -> hy3。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-model-id-migration-20260810
 object_id: spark-0065
 fact_type_key: spark
 created_at: '2026-08-07T02:38:47.535017+08:00'
-updated_at: '2026-08-10T08:47:30.183235Z'
+updated_at: '2026-08-10T09:12:34.408886Z'
