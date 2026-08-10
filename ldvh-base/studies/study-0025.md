@@ -26,14 +26,21 @@ recommendation_summary: 建议经 Human Gate 后将 09 §6.3 的 Windows 声明�
 change_log:
 - signature:
     agent_id: workbuddy-ldvh-verify
-    host_environment: windows-nt-verify
+    host_environment: Codex
   session_id: verify-windows-support-2026-08-07
   at: '2026-08-07T18:56:39.522746+08:00'
   summary: Created by Windows on-target verification evidence collection.
+- at: '2026-08-10T09:05:04.323871Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: windows-nt-verify -> Codex。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-codex-alias-migration-20260810
+
 object_id: study-0025
 fact_type_key: study
 created_at: '2026-08-07T18:56:39.522746+08:00'
-updated_at: '2026-08-07T18:56:39.522746+08:00'
+updated_at: '2026-08-10T09:05:04.323871Z'
 ---
 
 ## 研究问题
