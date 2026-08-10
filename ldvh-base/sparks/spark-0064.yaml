@@ -18,14 +18,26 @@ change_log:
   summary: 受控创建本 Spark：WC-0067 创建时 item-05（goal=受控提交）违例 21 §4.3 未被拦截，暴露「AI 语义审核不可靠」问题。需判断是否增加 Code 机械拦截。
   signature:
     agent_id: glm-5.2
-    host_environment: Claude Code (macOS)
+    host_environment: Claude
 - at: '2026-08-09T13:51:32.383409Z'
   session_id: trae-spark0064-implemented-20260809
   summary: Spark 处置为 implemented：以 Skill 路由纪律作为处置，不做 Code 机械拦截。在 SKILL.md canonical 新增「WorkCase 创建路由纪律」章节。部署件待手动同步。
   signature:
     model_id: glm-5.2
-    agent_workbench: Trae Code
+    agent_workbench: Trae
+- at: '2026-08-10T08:31:19.425854Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 1: Trae Code -> Trae。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-historical-signature-repair-20260810
+- at: '2026-08-10T08:47:27.295901Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: Claude Code (macOS) -> Claude。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-legacy-signature-migration-20260810
 object_id: spark-0064
 fact_type_key: spark
 created_at: '2026-08-07T02:34:34.529232+08:00'
-updated_at: '2026-08-09T13:51:32.383409Z'
+updated_at: '2026-08-10T08:47:27.295901Z'
