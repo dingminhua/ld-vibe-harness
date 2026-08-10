@@ -55,56 +55,62 @@ change_log:
   summary: 受控创建 WorkCase（plan_version=1）：承接 WC0064 partial closure 的受限后续责任，在新 Gate 1 授权下修复组合树 23 个 Ruff 问题、重跑 full-v4 通过并 push 已验证组合；无独立 subagent 环境以 same-AI switched-role 完成低保证 creation review，等待 Human Gate 1。
   signature:
     agent_id: workbuddy
-    host_environment: WorkBuddy macOS session
+    host_environment: Workbuddy
 - at: '2026-08-07T01:51:31.529952+08:00'
   session_id: workbuddy-wc0066-gate1-20260807
   summary: Human Gate 1 批准执行 WC0066 plan_version=1；写入精确 baseline fingerprint 与 Human source ref，进入 executing。
   signature:
     agent_id: workbuddy
-    host_environment: WorkBuddy macOS session
+    host_environment: Workbuddy
 - at: '2026-08-07T03:20:59.974040+08:00'
   session_id: workbuddy-wc0066-close-20260807
   summary: 将 4 个 work item 推进至 completed（23 Ruff 诊断归属、9 文件 lint 修复、full-v4 通过、组合树已 push），进入 controller_checking 并写入完整结果投影（result_version=1，5 项成功标准 satisfied）。
   signature:
     agent_id: workbuddy
-    host_environment: WorkBuddy Local (darwin)
+    host_environment: Workbuddy
 - at: '2026-08-07T03:21:10.519549+08:00'
   session_id: workbuddy-wc0066-close-20260807
   summary: 从 controller_checking 进入 independent_reviewing，冻结完整结果投影待独立复核。
   signature:
     agent_id: workbuddy
-    host_environment: WorkBuddy Local (darwin)
+    host_environment: Workbuddy
 - at: '2026-08-07T03:21:18.970227+08:00'
   session_id: workbuddy-wc0066-close-20260807
   summary: 在 independent_reviewing 同相形成 same-AI switched-role 结果复核（limitation-01 能力缺口下低保证，不冒称独立 subagent），结论 pass。
   signature:
     agent_id: workbuddy
-    host_environment: WorkBuddy Local (darwin)
+    host_environment: Workbuddy
 - at: '2026-08-07T03:21:28.290965+08:00'
   session_id: workbuddy-wc0066-close-20260807
   summary: 从 independent_reviewing 进入 closure_preparing，保留已复核结果与 reviews。
   signature:
     agent_id: workbuddy
-    host_environment: WorkBuddy Local (darwin)
+    host_environment: Workbuddy
 - at: '2026-08-07T03:25:20.650730+08:00'
   session_id: workbuddy-wc0066-close-20260807
   summary: 在 closure_preparing 同相写入 closure_proposal（proposed_outcome=completed）并将 subagent 能力矛盾遗留作为 follow_up_opportunity 指向 spark-0065。
   signature:
     agent_id: workbuddy
-    host_environment: WorkBuddy Local (darwin)
+    host_environment: Workbuddy
 - at: '2026-08-07T03:25:28.699959+08:00'
   session_id: workbuddy-wc0066-close-20260807
   summary: 从 closure_preparing 进入 human_closure_confirming，写入 Human 关闭等待（waiting_on）。
   signature:
     agent_id: workbuddy
-    host_environment: WorkBuddy Local (darwin)
+    host_environment: Workbuddy
 - at: '2026-08-07T03:25:34.554439+08:00'
   session_id: workbuddy-wc0066-close-20260807
   summary: 按 Human 关闭决定以 completed 关闭 WC0066；closure_outcome/disposition_summary/spark_suggestions 精确映射 closure_proposal，保留 related-to→spark-0065，不保留 routed-to/残余责任（completed）。
   signature:
     agent_id: workbuddy
-    host_environment: WorkBuddy Local (darwin)
+    host_environment: Workbuddy
+- at: '2026-08-10T08:48:00.336110Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: WorkBuddy macOS session -> Workbuddy; 1: WorkBuddy macOS session -> Workbuddy; 2: WorkBuddy Local (darwin) -> Workbuddy; 3: WorkBuddy Local (darwin) -> Workbuddy; 4: WorkBuddy Local (darwin) -> Workbuddy; 5: WorkBuddy Local (darwin) -> Workbuddy; 6: WorkBuddy Local (darwin) -> Workbuddy; 7: WorkBuddy Local (darwin) -> Workbuddy; 8: WorkBuddy Local (darwin) -> Workbuddy。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-legacy-signature-migration-20260810
 object_id: workcase-0066
 fact_type_key: workcase
 created_at: '2026-08-07T01:23:04.585898+08:00'
-updated_at: '2026-08-07T03:25:34.554439+08:00'
+updated_at: '2026-08-10T08:48:00.336110Z'
