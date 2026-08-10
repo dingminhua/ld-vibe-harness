@@ -24,85 +24,85 @@ validation_summary: 已验证：F2 对 closed + related-to Spark-0067 的候选�
 change_log:
 - summary: 依据 Human 对 Spark-0067 缺陷 2 的推进授权及独立创建复核，建立仅作语义覆盖核验的 WorkCase 计划。
   signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Codex
   session_id: spark0067-wc0076-creation
   at: '2026-08-08T20:48:33.429650+08:00'
 - summary: 消费 Human Gate 1 执行批准，进入执行阶段；工作项保持原计划等待实际开始检查点。
   signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Codex
   session_id: spark0067-wc0076-execution
   at: '2026-08-08T20:59:20.167336+08:00'
 - summary: 开始 item-01：回读缺陷单元与相关 WorkCase，建立不把关系或关闭状态误作覆盖的证据规则。
   signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Codex
   session_id: spark0067-wc0076-execution
   at: '2026-08-08T20:59:47.213820+08:00'
 - summary: 完成 item-01：固定本次临时缺陷单元与四级证据标签；明确关系边、F2 命中和关闭状态均不单独证明覆盖。
   signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Codex
   session_id: spark0067-wc0076-execution
   at: '2026-08-08T21:01:26.620034+08:00'
 - summary: '开始 item-02：用完整候选范围与逐对象回读建立 #1/#5、#8、#9、#2 的最小证据矩阵。'
   signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Codex
   session_id: spark0067-wc0076-execution
   at: '2026-08-08T21:01:56.585597+08:00'
 - summary: 完成 item-02：完整候选范围与逐对象回读证明关联的关闭 WorkCase 数量不能替代缺陷级语义覆盖判断。
   signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Codex
   session_id: spark0067-wc0076-execution
   at: '2026-08-08T21:02:14.849216+08:00'
 - summary: 开始 item-03：基于已核验矩阵形成最小 no-go 建议，并准备独立只读结果复核。
   signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Codex
   session_id: spark0067-wc0076-execution
   at: '2026-08-08T21:03:42.154219+08:00'
 - summary: 完成 item-03 并进入 Controller 结果检查：形成 result_version=1 的完整 no-go 结果投影。
   signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Codex
   session_id: spark0067-wc0076-execution
   at: '2026-08-08T21:04:31.317672+08:00'
 - summary: 完整 result_version=1 已回读并通过完整性检查；进入独立只读结果复核。
   signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Codex
   session_id: spark0067-wc0076-execution
   at: '2026-08-08T21:05:04.248601+08:00'
 - summary: 在 independent_reviewing 记录 result_version=1 的独立只读复核（pass_with_followups）及 Controller 处置；结果投影未变化。
   signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Codex
   session_id: spark0067-wc0076-execution
   at: '2026-08-08T21:08:08.036027+08:00'
 - summary: result_version=1 的独立复核已完成且全部反馈已处置；结果投影未变化，转入 closure_preparing。
   signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Codex
   session_id: spark0067-wc0076-execution
   at: '2026-08-08T21:08:40.566131+08:00'
 - summary: '完成终态保留审查并形成 completed 关闭提案：保留 no-go 边界及 #8 的当前受限收敛限定，原 scope 内无剩余责任。'
   signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Codex
   session_id: spark0067-wc0076-execution
   at: '2026-08-08T21:09:04.028932+08:00'
 - summary: 完整关闭提案已回读并完成终态保留审查；进入 human_closure_confirming，等待 Human Gate 2。
   signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Codex
   session_id: spark0067-wc0076-execution
   at: '2026-08-08T21:09:23.688665+08:00'
 - summary: '消费 Human Gate 2 关闭决定：以 completed 关闭 WorkCase-0076，保留对 Spark-0067 缺陷 #2 的限定 no-go 结论与验证边界。'
   signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Codex
   session_id: spark0067-wc0076-closure
   at: '2026-08-08T21:14:02.938705+08:00'
@@ -113,6 +113,12 @@ change_log:
     model_id: gpt-5
   session_id: cindy-workcase-signature-migration-20260810
 
+- at: '2026-08-10T09:24:02.667762Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: codex -> gpt-5; 1: codex -> gpt-5; 2: codex -> gpt-5; 3: codex -> gpt-5; 4: codex -> gpt-5; 5: codex -> gpt-5; 6: codex -> gpt-5; 7: codex -> gpt-5; 8: codex -> gpt-5; 9: codex -> gpt-5; 10: codex -> gpt-5; 11: codex -> gpt-5; 12: codex -> gpt-5; 13: codex -> gpt-5。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: session-20260810-codex-model-migration
 closure_outcome: completed
 disposition_summary: '已完成 Spark-0067 缺陷 #2 的限定语义覆盖核验：当前 F2 关联与 closed 状态只能发现候选，不能证明缺陷级覆盖；现有事实未提供稳定机器可读的缺陷单元及 WorkCase—缺陷映射，故不建设或宣称生产覆盖查询/摘要。#8 在本矩阵中仅表示 WorkCase-0074 的当前受限收敛，不表示原始“合法值闭集内联”设想已完整实现；原 scope 内没有未满足或未验证责任。'
 relations:
@@ -124,4 +130,4 @@ relations:
 object_id: workcase-0076
 fact_type_key: workcase
 created_at: '2026-08-08T20:48:33.429650+08:00'
-updated_at: '2026-08-10T08:53:16.709692Z'
+updated_at: '2026-08-10T09:24:02.667762Z'
