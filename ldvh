@@ -92,7 +92,7 @@ if str(CODE_ROOT) not in sys.path:
 def _usage() -> int:
     sys.stderr.write(
         "usage: ldvh capabilities [operation_key] | ldvh call <operation_key> | "
-        "ldvh {work-context,context-recovery,doctor,git-commit-msg,git-hook} ...\n"
+        "ldvh {work-context,context-recovery,doctor,git-commit-msg,prepare-commit-msg,git-hook} ...\n"
     )
     return 2
 
@@ -123,6 +123,10 @@ def main() -> int:
         from ldvh.hooks.commit_msg import main as commit_msg_main
 
         return commit_msg_main(arguments)
+    if command == "prepare-commit-msg":
+        from ldvh.hooks.prepare_commit_msg import main as prepare_commit_msg_main
+
+        return prepare_commit_msg_main(arguments)
     if command == "git-hook":
         from ldvh.git_hooks.commit_msg import main as git_hook_main
 
