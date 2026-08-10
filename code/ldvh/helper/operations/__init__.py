@@ -37,6 +37,12 @@ from ldvh.helper.operations.governance_scope_operation import (
 from ldvh.helper.operations.governance_scope_operation import (
     OPERATION_KEY as GOVERNANCE_SCOPE_OPERATION_KEY,
 )
+from ldvh.helper.operations.historical_signature_repair_operation import (
+    HISTORICAL_SIGNATURE_REPAIR_IMPLEMENTATION,
+)
+from ldvh.helper.operations.historical_signature_repair_operation import (
+    OPERATION_KEY as HISTORICAL_SIGNATURE_REPAIR_OPERATION_KEY,
+)
 from ldvh.helper.operations.legacy_change_log_migration_operation import (
     MIGRATION_IMPLEMENTATION,
 )
@@ -97,6 +103,7 @@ IMPLEMENTATIONS = MappingProxyType[str, OperationImplementation](
         FACT_OBJECT_OPERATION_KEY: FACT_OBJECT_IMPLEMENTATION,
         FACT_UPDATE_OPERATION_KEY: FACT_UPDATE_IMPLEMENTATION,
         LEGACY_CHANGE_LOG_MIGRATION_OPERATION_KEY: MIGRATION_IMPLEMENTATION,
+        HISTORICAL_SIGNATURE_REPAIR_OPERATION_KEY: HISTORICAL_SIGNATURE_REPAIR_IMPLEMENTATION,
         GOVERNANCE_SCOPE_OPERATION_KEY: GOVERNANCE_SCOPE_IMPLEMENTATION,
         PREPARE_OPERATION_KEY: PREPARE_FACT_DRAFT_IMPLEMENTATION,
         SPECIFICATION_CANDIDATE_OPERATION_KEY: SPECIFICATION_CANDIDATE_IMPLEMENTATION,
