@@ -48,14 +48,21 @@ relations:
 change_log:
 - signature:
     agent_id: Kimi Work
-    host_environment: Kimi Work
+    host_environment: Kimi
   session_id: wd_ld-vibe-harness-v4_24baa608d511
   at: '2026-08-05T15:49:52.936666+08:00'
   summary: Human 授权创建 Study：对照 00 价值标准评估 LDVH 设计价值与过度设计，服务 spark-0055 处置。
+- at: '2026-08-10T08:56:02.453054Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: Kimi Work -> Kimi。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-explicit-signature-migration-20260810
+
 object_id: study-0022
 fact_type_key: study
 created_at: '2026-08-05T15:49:52.936666+08:00'
-updated_at: '2026-08-05T15:49:52.936666+08:00'
+updated_at: '2026-08-10T08:56:02.453054Z'
 ---
 
 ## 研究问题
