@@ -29,87 +29,94 @@ change_log:
 - summary: '依据 Human 对 Spark-0067 下一优先项的确认，结合独立审查建立只核验缺陷 #9 方案边界的 WorkCase 计划。'
   signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: spark0067-wc0075-creation
   at: '2026-08-08T20:10:10.758398+08:00'
 - summary: 记录 Human Gate 1 执行批准；开始在冻结的只读证据范围内执行。
   signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: spark0067-wc0075-execution
   at: '2026-08-08T20:17:37.797895+08:00'
 - summary: 开始 item-current-observation：在冻结范围内进行只读能力与证据边界观察。
   signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: spark0067-wc0075-execution
   at: '2026-08-08T20:18:14.848058+08:00'
 - summary: '完成三项只读分析，形成完整结果投影：当前证据支持对缺陷 #9 作 no-go，不选择或实现生产方案。'
   signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: spark0067-wc0075-execution
   at: '2026-08-08T20:19:44.584941+08:00'
 - summary: 完整结果投影已回读并通过 Controller 自检；转入独立只读结果复核。
   signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: spark0067-wc0075-execution
   at: '2026-08-08T20:21:58.982260+08:00'
 - summary: 独立只读结果复核结论为 pass_with_followups；收到一项关于双快照措辞精度的返修反馈。
   signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: spark0067-wc0075-execution
   at: '2026-08-08T20:24:20.740412+08:00'
 - summary: 已处置独立复核反馈，返回 Controller 检查以收紧结果措辞；将按结果版本规则重新形成并复核结果投影。
   signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: spark0067-wc0075-execution
   at: '2026-08-08T20:24:46.250661+08:00'
 - summary: 依独立复核反馈形成 result_version=2：收紧为单次 F1 实测与测试公共比较模型的静态边界，并清除旧版本复核以待重新复核。
   signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: spark0067-wc0075-execution
   at: '2026-08-08T20:25:16.224709+08:00'
 - summary: result_version=2 已完整回读，转入第二次独立只读结果复核。
   signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: spark0067-wc0075-execution
   at: '2026-08-08T20:25:37.438441+08:00'
 - summary: 第二次独立只读结果复核通过 result_version=2；无新增反馈。
   signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: spark0067-wc0075-execution
   at: '2026-08-08T20:27:01.905250+08:00'
 - summary: result_version=2 已获独立只读复核通过；转入关闭提案准备。
   signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: spark0067-wc0075-execution
   at: '2026-08-08T20:27:22.931850+08:00'
 - summary: 形成 completed 关闭提案：no-go 已受证据和独立复核约束，原 scope 内没有剩余责任。
   signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: spark0067-wc0075-execution
   at: '2026-08-08T20:28:08.619262+08:00'
 - summary: 完整关闭提案已回读；进入 Human Gate 2，等待对 no-go 结论和关闭方案的最终确认。
   signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: spark0067-wc0075-execution
   at: '2026-08-08T20:28:33.936124+08:00'
 - summary: 消费 Human Gate 2 关闭决定：以 completed 关闭 WorkCase-0075，保留 no-go 结论和验证边界。
   signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: spark0067-wc0075-closure
   at: '2026-08-08T20:36:38.546413+08:00'
+- at: '2026-08-10T08:53:13.742898Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: codex-desktop -> Codex; 1: codex-desktop -> Codex; 2: codex-desktop -> Codex; 3: codex-desktop -> Codex; 4: codex-desktop -> Codex; 5: codex-desktop -> Codex; 6: codex-desktop -> Codex; 7: codex-desktop -> Codex; 8: codex-desktop -> Codex; 9: codex-desktop -> Codex; 10: codex-desktop -> Codex; 11: codex-desktop -> Codex; 12: codex-desktop -> Codex; 13: codex-desktop -> Codex。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-workcase-signature-migration-20260810
+
 relations:
 - relation_key: related-to
   target:
@@ -122,4 +129,4 @@ disposition_summary: '已完成对 Spark-0067 缺陷 #9 的限定核验：当前
 object_id: workcase-0075
 fact_type_key: workcase
 created_at: '2026-08-08T20:10:10.758398+08:00'
-updated_at: '2026-08-08T20:36:38.546413+08:00'
+updated_at: '2026-08-10T08:53:13.742898Z'
