@@ -43,37 +43,37 @@ result_summary: WC0065 已形成可用的 Gate 1 能力限制治理：无独立 
 validation_summary: 最终验证：Python 全库 1464 passed、10 skipped（均为 native Windows）；npm run check 通过；WC0065 三组 Web API/呈现定向契约 55/55 通过；Web 全库 151 passed、6 failed，逐项对照原 HEAD 后确认均为既有非本 WC 契约漂移；git diff --check、LDVH precheck、commit-msg Gate 和提交后 check-fact-integrity 均通过，事实库为 164 对象、0 问题。未在 native Windows 环境执行被跳过项，未修复六个范围外 Web 基线失败。
 change_log:
 - signature:
-    agent_id: cindy-codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: cindy-wc0065-create-20260806
   at: '2026-08-06T23:09:02.682802+08:00'
   summary: 受控创建 WorkCase：真实独立只读 subagent 已完成创建前审核，等待 Human Gate 1。
 - signature:
-    agent_id: cindy-codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: cindy-wc0065-plan-revision-20260806
   at: '2026-08-06T23:23:33.221733+08:00'
   summary: Human 要求按 Controller 意见修正 creation review fallback 的 Gate 1 启动循环；进入 plan_revising，准备形成 plan_version=2 完整候选和 fresh 独立方案复核。
 - signature:
-    agent_id: cindy-codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: cindy-wc0065-plan-revision-20260806
   at: '2026-08-06T23:26:40.986539+08:00'
   summary: 按 Human 指令完成 Gate 1 前 PlanΔ：plan_version=2 修正 creation review bootstrap 循环，经真实独立只读 subagent fresh review 通过，返回 human_plan_confirming。
 - signature:
-    agent_id: cindy-codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: cindy-wc0065-execution-20260806
   at: '2026-08-06T23:46:02.743990+08:00'
   summary: Human Gate 1 批准执行 WC0065 plan_version=2；写入精确 baseline fingerprint 与 Human source ref，进入 executing。
 - signature:
-    agent_id: cindy-codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: cindy-wc0065-execution-20260806
   at: '2026-08-06T23:46:55.948101+08:00'
   summary: 开始 item-01：精确核对并准备通过 Helper 将 spark-0061 收敛为 routed。
 - signature:
-    agent_id: cindy-codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: cindy-wc0065-execution-20260806
   at: '2026-08-06T23:48:07.956358+08:00'
@@ -138,6 +138,12 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-explicit-signature-migration-20260810
+- at: '2026-08-10T09:15:31.472536Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: cindy-codex -> gpt-5; 1: cindy-codex -> gpt-5; 2: cindy-codex -> gpt-5; 3: cindy-codex -> gpt-5; 4: cindy-codex -> gpt-5; 5: cindy-codex -> gpt-5。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-identity-id-migration-20260810
 closure_outcome: partial
 disposition_summary: WC0065 的 Gate 1 能力限制披露、creation-review bootstrap、Gate 1 后 fallback 约束、Web 呈现、机械校验、spark-0061 路由及本地受控提交均已形成稳定结果；当前 WorkCase 在 partial 分类下停止。唯一未满足责任是仓库 Web 全量测试中的六项既有非本 WC 契约失败，Human 接受后不再由 WC0065 推进；这不表示六项失败已解决，也不把它们归因于本提交。
 residual_responsibilities:
@@ -152,4 +158,4 @@ relations:
 object_id: workcase-0065
 fact_type_key: workcase
 created_at: '2026-08-06T23:09:02.682802+08:00'
-updated_at: '2026-08-10T08:56:14.732673Z'
+updated_at: '2026-08-10T09:15:31.472536Z'
