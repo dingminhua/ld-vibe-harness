@@ -22,7 +22,7 @@ change_log:
   summary: 受控创建本 Spark：记录 WC0066 自述‘无独立 subagent 能力’与 WorkBuddy 当前实际具备 Agent/Explore/Plan subagent 工具之间的矛盾，留待后续研究。
   signature:
     agent_id: workbuddy
-    host_environment: WorkBuddy Local (darwin)
+    host_environment: Workbuddy
 - at: '2026-08-09T14:33:27.569033Z'
   session_id: cindy-spark-0065-intent-20260809
   summary: Human 澄清 Spark 0065 的真实意图：建立 WorkCase 两个独立复核位置共用的跨环境能力路由、结构化模型选择、每轮最多三个审查视角及修正后重复复审机制；据此校正标题、intent、summary 并记录关键演变。
@@ -71,7 +71,13 @@ change_log:
   signature:
     model_id: gpt-5
     agent_workbench: Cindy
+- at: '2026-08-10T08:47:30.183235Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: WorkBuddy Local (darwin) -> Workbuddy。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-legacy-signature-migration-20260810
 object_id: spark-0065
 fact_type_key: spark
 created_at: '2026-08-07T02:38:47.535017+08:00'
-updated_at: '2026-08-09T15:21:49.710234Z'
+updated_at: '2026-08-10T08:47:30.183235Z'
