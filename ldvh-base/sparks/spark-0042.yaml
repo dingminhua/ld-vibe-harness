@@ -16,13 +16,13 @@ relations:
 disposition_summary: workcase-0030 完整承接 Gate 1 授权完整性闭环（结构化质量关口、Gate 1 拒绝与冻结、存量兼容、负向与回归测试、规则/实现同步均已完成，无范围内残留责任）；本 Spark 经 routed-to 指向该 WorkCase，原机制缺口已闭合。
 change_log:
 - signature:
-    agent_id: workbuddy
+    agent_id: hy3
     host_environment: Workbuddy
   session_id: 240bdc29-f021-4b68-b286-acc4addd6639
   at: '2026-08-08T06:59:59.562673+08:00'
   summary: spark-0042 迁移前无 change_log；据实标注历史不可得，建立可信流水起点以支持后续 open→routed 受控更新。
 - signature:
-    agent_id: workbuddy
+    agent_id: hy3
     host_environment: Workbuddy
   session_id: d885f34e-380b-42d4-8133-697753d65b21
   summary: open→routed 分流：经核查 workcase-0030（闭合 WorkCase Gate 1 授权完整性，closed）已在原 scope 内完成结构化质量关口、Gate 1 拒绝与冻结、存量兼容、负向与回归测试、规则/实现同步，本 Spark 记录的授权完整性机制缺口已完整承接；新增 routed-to workcase-0030。
@@ -33,7 +33,13 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-legacy-signature-migration-20260810
+- at: '2026-08-10T09:10:55.573595Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: workbuddy -> hy3; 1: workbuddy -> hy3。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-model-id-migration-20260810
 object_id: spark-0042
 fact_type_key: spark
 created_at: '2026-08-02T00:13:30.036887+08:00'
-updated_at: '2026-08-10T08:46:42.612579Z'
+updated_at: '2026-08-10T09:10:55.573595Z'
