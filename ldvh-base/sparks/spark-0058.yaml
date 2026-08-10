@@ -11,10 +11,16 @@ change_log:
     host_environment: workbuddy
 - signature:
     agent_id: codex
-    host_environment: Codex Desktop
+    host_environment: Codex
   session_id: 019fd56d-838d-7070-a2b2-1f8dedbc156f
   at: '2026-08-06T13:17:50.883590+08:00'
   summary: 按 Human 当前指令，将已由规范直接落实的 spark-0058 从 open 处置为 implemented，并补齐当前摘要、演变与落实边界。
+- at: '2026-08-10T09:00:43.224969Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 1: Codex Desktop -> Codex。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-codex-signature-migration-20260810
 relations:
 - relation_key: related-to
   target:
@@ -28,4 +34,4 @@ disposition_summary: 本 Spark 的信息需求已直接落实到现行规范：�
 object_id: spark-0058
 fact_type_key: spark
 created_at: '2026-08-06T01:32:58.335490+08:00'
-updated_at: '2026-08-06T13:17:50.883590+08:00'
+updated_at: '2026-08-10T09:00:43.224969Z'
