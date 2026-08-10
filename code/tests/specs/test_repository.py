@@ -88,6 +88,7 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
         "read-specification-candidates",
         "read-specification-content",
         "read-specification-context",
+        "repair-historical-change-log-signatures",
         "resolve-governance-scope",
         "update-fact-object",
         "update-workcase",
@@ -114,6 +115,7 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
         "read-specification-candidates": "specs/01-规范模型基础规范.md",
         "read-specification-content": "specs/01-规范模型基础规范.md",
         "read-specification-context": "specs/01-规范模型基础规范.md",
+        "repair-historical-change-log-signatures": "specs/05-事实模型基础规范.md",
         "resolve-governance-scope": "specs/02-工作对象与管辖范围规范.md",
         "update-fact-object": "specs/05-事实模型基础规范.md",
         "update-workcase": "specs/21-WorkCase-工作项.md",
@@ -155,8 +157,8 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
     assert action_templates.issues == ()
     assert action_templates.incomplete_sources == ()
     assert fields.complete is True
-    assert len(fields.structures) == 23
-    assert len(fields.registrations) == 173
+    assert len(fields.structures) == 24
+    assert len(fields.registrations) == 186
 
 
 def test_mechanically_distinct_spec_does_not_create_a_semantic_duplicate_diagnosis(

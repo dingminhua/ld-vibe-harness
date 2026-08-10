@@ -23,8 +23,11 @@ OPTIONAL_INPUTS = ("work_object_locators", "arguments.workspace_root")
 _ARGUMENT_FIELDS = frozenset({"workspace_root", "fact_ref", "expected_content_fingerprint", "repairs"})
 _FACT_REF_FIELDS = frozenset({"governed_project_id", "fact_type_key", "object_id"})
 _REPAIR_FIELDS = frozenset({"change_log_index", "agent_workbench"})
+_LEGACY_REPAIR_FIELDS = frozenset({"change_log_index", "agent_workbench", "source_field", "expected_value"})
+_LEGACY_SOURCE_FIELDS = frozenset({"agent_id", "agent_workbench", "host_environment", "host_name", "model_id"})
 _FINGERPRINT = re.compile(r"[0-9a-f]{64}\Z")
 _TOKEN = re.compile(r"[^\s\-/()]+\Z")
+_MODEL_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*\Z")
 
 
 @dataclass(frozen=True, slots=True)
@@ -91,28 +94,56 @@ def parse_historical_signature_repair_request(
     if not isinstance(raw_repairs, list) or not raw_repairs:
         problems.append("arguments.repairs 必须是非空 array")
     else:
-        seen: set[int] = set()
+        seen: set[tuple[int, str]] = set()
         for index, repair in enumerate(raw_repairs):
-            if not isinstance(repair, dict) or set(repair) != _REPAIR_FIELDS:
-                problems.append(f"arguments.repairs[{index}] 必须恰有 change_log_index 与 agent_workbench")
+            if not isinstance(repair, dict) or set(repair) not in {_REPAIR_FIELDS, _LEGACY_REPAIR_FIELDS}:
+                problems.append(
+                    f"arguments.repairs[{index}] 必须为旧版两字段，或兼容格式迁移四字段"
+                )
                 continue
             log_index = repair["change_log_index"]
             workbench = repair["agent_workbench"]
             if not isinstance(log_index, int) or log_index < 0:
                 problems.append(f"arguments.repairs[{index}].change_log_index 必须是非负 integer")
-            elif log_index in seen:
-                problems.append(f"arguments.repairs[{index}].change_log_index 不得重复")
-            else:
-                seen.add(log_index)
-            if not isinstance(workbench, str) or not workbench.strip() or _TOKEN.fullmatch(workbench.strip()) is None:
+            source_field = repair.get("source_field")
+            repair_key = (log_index, source_field) if isinstance(log_index, int) else None
+            if repair_key in seen:
+                problems.append(f"arguments.repairs[{index}] 的 change_log_index 与 source_field 组合不得重复")
+            elif repair_key is not None:
+                seen.add(repair_key)
+            target_pattern = _MODEL_ID if source_field in {"agent_id", "model_id"} else _TOKEN
+            if (
+                not isinstance(workbench, str)
+                or not workbench.strip()
+                or target_pattern.fullmatch(workbench.strip()) is None
+            ):
                 problems.append(f"arguments.repairs[{index}].agent_workbench 必须是单 token")
+            if set(repair) == _LEGACY_REPAIR_FIELDS:
+                source_field = repair["source_field"]
+                expected_value = repair["expected_value"]
+                if source_field not in _LEGACY_SOURCE_FIELDS:
+                    problems.append(
+                        f"arguments.repairs[{index}].source_field 必须为 agent_id、model_id、"
+                        "agent_workbench、host_environment 或 host_name"
+                    )
+                if not isinstance(expected_value, str) or not expected_value.strip():
+                    problems.append(f"arguments.repairs[{index}].expected_value 必须是非空 string")
             if (
                 isinstance(log_index, int)
                 and log_index >= 0
                 and isinstance(workbench, str)
-                and _TOKEN.fullmatch(workbench.strip())
+                and target_pattern.fullmatch(workbench.strip())
             ):
-                repairs.append({"change_log_index": log_index, "agent_workbench": workbench.strip()})
+                item = {"change_log_index": log_index, "agent_workbench": workbench.strip()}
+                if set(repair) == _LEGACY_REPAIR_FIELDS:
+                    if repair["source_field"] in _LEGACY_SOURCE_FIELDS and isinstance(repair["expected_value"], str):
+                        item.update(
+                            {
+                                "source_field": repair["source_field"],
+                                "expected_value": repair["expected_value"].strip(),
+                            }
+                        )
+                repairs.append(item)
 
     observed = parse_observed_signature(request.observed_context)
     problems.extend(observed.problems)

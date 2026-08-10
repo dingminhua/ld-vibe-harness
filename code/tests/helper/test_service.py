@@ -355,6 +355,7 @@ def test_unrelated_candidate_problem_does_not_block_defined_operation(
         "read-specification-candidates",
         "read-specification-content",
         "read-specification-context",
+        "repair-historical-change-log-signatures",
         "resolve-governance-scope",
         "update-fact-object",
         "update-workcase",
