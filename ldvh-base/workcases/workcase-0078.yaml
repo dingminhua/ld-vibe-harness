@@ -30,99 +30,106 @@ change_log:
 - summary: 依据 Human 对 Spark-0067 缺陷 9 方案核验的推进授权，经独立只读创建复核（pass_with_followups）并处置全部反馈后，形成不实施功能的价值与方案决策 WorkCase。
   signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: spark0067-wc0078-creation
   at: '2026-08-08T21:32:28.117952+08:00'
 - summary: 消费 Human Gate 1：批准 WorkCase-0078 的 plan_version=1 与冻结 execution_authorization，进入 executing；仅可开展授权范围内的只读核验。
   signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: spark0067-wc0078-execution
   at: '2026-08-08T21:36:29.011785+08:00'
 - summary: 开始 item-01：在冻结只读范围内核验集合指纹与既有变化证据边界。
   signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: spark0067-wc0078-execution
   at: '2026-08-08T21:36:59.118293+08:00'
 - summary: 完成 item-01 并开始 item-02：确认公开聚合指纹与测试专用身份 diff 的边界。
   signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: spark0067-wc0078-execution
   at: '2026-08-08T22:11:01.972998+08:00'
 - summary: 完成 item-02 并开始 item-03：已基于当前 F1 manifest、分页 cursor、context recovery 和测试专用 diff 对照两种变化定位路线；未形成生产 API/Schema 设计或实施结论。
   signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: spark0067-wc0078-execution
   at: '2026-08-08T23:43:28.314471+08:00'
 - summary: 完成 item-03 并进入 Controller 自检：依据当前实现、现有测试和 F1 观察形成 defer 建议；未选择、设计或实施生产变化。
   signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: spark0067-wc0078-result
   at: '2026-08-08T23:44:39.271905+08:00'
 - summary: 完整 result_version=1 投影已回读并通过全库机械完整性审计；进入独立只读结果复核，冻结当前结果投影。
   signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: spark0067-wc0078-result-review
   at: '2026-08-08T23:45:10.211778+08:00'
 - summary: 独立只读结果复核完成：changes_required，要求收窄 F1 身份卡与集合级变化锚点的表述；defer 方向不变。
   signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: spark0067-wc0078-result-review
   at: '2026-08-08T23:46:41.589416+08:00'
 - summary: Controller 已处置独立复核反馈：返回自检以收窄 F1 变化定位表述，随后将按结果版本规则重新复核。
   signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: spark0067-wc0078-result-review
   at: '2026-08-08T23:47:07.925290+08:00'
 - summary: 按独立复核反馈修正结果投影：明确 F1 交付当前身份 cards，但没有前后逐对象版本或受契约支持的身份级 delta；result_version 升至 2 并重新进入复核链。
   signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: spark0067-wc0078-result-correction
   at: '2026-08-08T23:47:35.868488+08:00'
 - summary: 更正后的 result_version=2 投影已回读并通过全库机械完整性审计；进入第二次独立只读结果复核。
   signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: spark0067-wc0078-result-review-v2
   at: '2026-08-08T23:47:58.734534+08:00'
 - summary: 第二次独立只读结果复核通过：更正后的 F1 表述和 defer 建议保持证据有界，无进一步反馈。
   signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: spark0067-wc0078-result-review-v2
   at: '2026-08-08T23:48:34.163453+08:00'
 - summary: 独立结果复核已通过且无 feedback；进入关闭提案准备。
   signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: spark0067-wc0078-closure-preparing
   at: '2026-08-08T23:48:53.782865+08:00'
 - summary: 已形成 completed 关闭提案：本 WorkCase 的研究与 defer 决策责任完成；不创建路线目标或生产变更。
   signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: spark0067-wc0078-closure-proposal
   at: '2026-08-08T23:49:15.821760+08:00'
 - summary: 关闭提案已回读，终态保留检查确认无 route_existing、accepted-stop 或 Spark suggestion；进入 Human Gate 2 等待当前 completed 提案确认。
   signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: spark0067-wc0078-gate2
   at: '2026-08-08T23:49:43.877892+08:00'
 - summary: Human Gate 2 已确认当前 completed 关闭提案；WorkCase 关闭，保留 defer 结论且未实施生产变化。
   signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: spark0067-wc0078-closure
   at: '2026-08-08T23:51:41.232289+08:00'
+- at: '2026-08-10T08:53:19.653977Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: codex-desktop -> Codex; 1: codex-desktop -> Codex; 2: codex-desktop -> Codex; 3: codex-desktop -> Codex; 4: codex-desktop -> Codex; 5: codex-desktop -> Codex; 6: codex-desktop -> Codex; 7: codex-desktop -> Codex; 8: codex-desktop -> Codex; 9: codex-desktop -> Codex; 10: codex-desktop -> Codex; 11: codex-desktop -> Codex; 12: codex-desktop -> Codex; 13: codex-desktop -> Codex; 14: codex-desktop -> Codex; 15: codex-desktop -> Codex。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-workcase-signature-migration-20260810
+
 closure_outcome: completed
 disposition_summary: 完成本 WorkCase 的只读核验与决策责任：当前不实施 per-object manifest 或 changed_since。F1 已提供当前 cards 和集合级变化锚点，但缺少前后逐对象版本或受契约支持的身份级 delta；测试专用投影不能证明真实生产净收益。若未来出现可观察的真实跨会话消费需求，须以新的 WorkCase、新的 Human Gate 及收益/成本证据重新判断。
 relations:
@@ -134,4 +141,4 @@ relations:
 object_id: workcase-0078
 fact_type_key: workcase
 created_at: '2026-08-08T21:32:28.117952+08:00'
-updated_at: '2026-08-08T23:51:41.232289+08:00'
+updated_at: '2026-08-10T08:53:19.653977Z'
