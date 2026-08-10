@@ -11,16 +11,22 @@ evolution:
 change_log:
 - signature:
     agent_id: workbuddy
-    host_environment: traecode-macos
+    host_environment: Trae
   session_id: workbuddy-spark0033-implement-20260808
   at: '2026-08-08T20:51:47.118833+08:00'
   summary: spark-0033 载体缺少 change_log，建立历史不可得时的可信迁移起点，以支持后续 implemented 状态变更。
 - signature:
     agent_id: workbuddy
-    host_environment: traecode-macos
+    host_environment: Trae
   session_id: workbuddy-spark0033-implement-20260808
   at: '2026-08-08T20:52:54.899275+08:00'
   summary: Spark 状态从 open 变更为 implemented：系统核查确认原触发事实已失效、规则缺口不存在、五类抽样无字段重叠、长文阅读已由 spark-0015 覆盖。
+- at: '2026-08-10T08:46:30.820996Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: traecode-macos -> Trae; 1: traecode-macos -> Trae。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-legacy-signature-migration-20260810
 relations:
 - relation_key: related-to
   target:
@@ -35,4 +41,4 @@ relations:
 object_id: spark-0033
 fact_type_key: spark
 created_at: '2026-07-24T09:46:14.094720+08:00'
-updated_at: '2026-08-08T20:52:54.899275+08:00'
+updated_at: '2026-08-10T08:46:30.820996Z'
