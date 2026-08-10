@@ -24,50 +24,50 @@ evolution:
   summary: workcase-0047 的 residual「residual-doctor-operation-count」经 commit 5de851e54（2026-08-03，assert 19→20）与 b838cded4（2026-08-04，移除 rule_snapshot 后 assert 20→18）后被事实解决：当前 code/tests/doctor/test_doctor.py assert == 18，与 code/ldvh/helper/operations/__init__.py 的 18 个注册实现一致，doctor 测试 8 passed。该 residual 未经过其指定的「新 WorkCase + Gate1 授权」路径完成，且防复发的动态计数加固（如 >= 断言或从 capabilities 动态取值）未做，计划并入后续「Helper 响应优化」WorkCase。
 change_log:
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: codex-spark-0019-optimization-plan
   at: '2026-08-05T02:28:45.572474+08:00'
   summary: 受 Human 当前记录授权建立遗留对象的可信流水起点；此前修改历史不可恢复，不作伪造回填。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: codex-spark-0019-optimization-plan
   at: '2026-08-05T02:29:42.175557+08:00'
   summary: 根据 Human 记录要求，补充经真实提交验证的 LDVH 提交流程优化规划与排除边界。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: codex-workcase-0058-execution
   at: '2026-08-05T03:04:01.820321+08:00'
   summary: 按 workcase-0058 获批计划修正单文件最小 message 表述，明确普遍最低正文与按需附加段落。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: codex-spark-0019-eight-bottom-lines-audit
   at: '2026-08-05T11:48:45.940696+08:00'
   summary: 按 Human 记录授权，将独立审计形成的八条提交底线、规范覆盖结论和后续优化边界写入当前摘要。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: codex-spark-0019-helper-friction-recording
   at: '2026-08-05T12:58:45.575600+08:00'
   summary: 按 Human 当前记录授权，将 workcase-0059 实测后剩余的规则读取与 Helper 交互摩擦补入现有优化议题。
 - signature:
-    agent_id: GLM-5.2
-    host_environment: Claude
+    model_id: glm-5.2
+    agent_workbench: Claude
   session_id: session-20260805-deep-audit
   at: '2026-08-05T19:58:57.068583+08:00'
   summary: 按 study-0023 立即行动建议，记录 Claude Code 跨环境复证：3 次 invalid_request 根因为参数命名信息不对称。
 - signature:
-    agent_id: glm-5.2
-    host_environment: Claude
+    model_id: glm-5.2
+    agent_workbench: Claude
   session_id: session-20260807-adr-evolution-commit
   at: '2026-08-07T13:59:34.292315+08:00'
   summary: 按 Human 于 2026-08-07 会话的明确授权，追加 evolution 条目记录 workcase-0047 遗留 residual（residual-doctor-operation-count）已被 commit 5de851e54 与 b838cded4 事实解决、当前断言与注册实现及 doctor 测试一致的核实结论。
 - signature:
-    agent_id: glm-5.2
-    host_environment: Claude
+    model_id: glm-5.2
+    agent_workbench: Claude
   session_id: session-20260807-adr-evolution-commit
   at: '2026-08-07T14:31:07.670920+08:00'
   summary: 修正受控更新中 YAML 转义导致的弯引号→直引号变化，恢复 summary 原有弯引号（"、"→"）以保持与 HEAD 原文一致。
@@ -77,7 +77,13 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-legacy-signature-migration-20260810
+- at: '2026-08-10T09:21:24.060645Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: codex -> gpt-5; 1: codex -> gpt-5; 2: codex -> gpt-5; 3: codex -> gpt-5; 4: codex -> gpt-5。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: session-20260810-codex-model-migration
 object_id: spark-0019
 fact_type_key: spark
 created_at: '2026-07-19T18:47:20.417174+08:00'
-updated_at: '2026-08-10T08:40:36.110588Z'
+updated_at: '2026-08-10T09:21:24.060645Z'
