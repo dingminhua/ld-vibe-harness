@@ -850,7 +850,11 @@ def test_collaboration_method_rejects_fallback_only_fields() -> None:
         }
     )
     issues = validate_workcase_snapshot(fields)
-    assert any("fallback" in issue.summary and issue.field_path == "creation_reviews[0].capability_limitation_id" for issue in issues)
+    assert any(
+        "fallback" in issue.summary
+        and issue.field_path == "creation_reviews[0].capability_limitation_id"
+        for issue in issues
+    )
 
 
 def test_reviewer_policy_rejects_unknown_or_out_of_range_values() -> None:

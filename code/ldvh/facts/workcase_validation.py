@@ -696,7 +696,11 @@ def _validate_execution_authorization(fields: Mapping[str, object], issues: list
                     _issue(issues, "reviewer policy fallback_order 成员不在当前闭集中", f"{path}.fallback_order")
             if preferred is not None:
                 if not fallback_order or fallback_order[0] != preferred:
-                    _issue(issues, "reviewer policy fallback_order 首项必须等于 preferred_method", f"{path}.fallback_order")
+                    _issue(
+                        issues,
+                        "reviewer policy fallback_order 首项必须等于 preferred_method",
+                        f"{path}.fallback_order",
+                    )
                 if len(fallback_order) != len(set(fallback_order)):
                     _issue(issues, "reviewer policy fallback_order 成员不得重复", f"{path}.fallback_order")
             max_perspectives = reviewer_policy.get("max_perspectives")
