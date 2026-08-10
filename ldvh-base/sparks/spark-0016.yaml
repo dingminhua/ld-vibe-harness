@@ -13,23 +13,29 @@ evolution:
 change_log:
 - signature:
     agent_id: workbuddy-ai
-    host_environment: workbuddy-claw
+    host_environment: Workbuddy
   session_id: session-20260808-spark0016
   at: '2026-08-08T20:41:17.761729+08:00'
   summary: 历史不可得时建立的迁移可信起点：spark-0016 为 V4 迁移遗留对象，原载体无 change_log 流水，迁移补记首次受控更新起点，不声称恢复原始形成历史。
 - signature:
     agent_id: workbuddy-ai
-    host_environment: workbuddy-claw
+    host_environment: Workbuddy
   session_id: session-20260808-spark0016
   at: '2026-08-08T20:41:50.501264+08:00'
   summary: content_update：复核三类导航实现现状，确认事实候选与正向/反向关系导航已落地（反向经 relation_targets 实测），记录 05 §8.1 反向查询使用指引缺口；剩余未决收窄为代码索引。
 - signature:
     agent_id: workbuddy-ai
-    host_environment: workbuddy-claw
+    host_environment: Workbuddy
   session_id: session-20260808-spark0016
   at: '2026-08-08T20:54:38.785274+08:00'
   summary: single_object_lifecycle：status open→discarded，移除 priority，写入 disposition_summary；代码索引经评估暂不引入，三个子问题均处置完毕，Spark 关闭。
+- at: '2026-08-10T08:46:12.950592Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: workbuddy-claw -> Workbuddy; 1: workbuddy-claw -> Workbuddy; 2: workbuddy-claw -> Workbuddy。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-legacy-signature-migration-20260810
 object_id: spark-0016
 fact_type_key: spark
 created_at: '2026-07-19T10:28:46.306813+08:00'
-updated_at: '2026-08-08T20:54:38.785274+08:00'
+updated_at: '2026-08-10T08:46:12.950592Z'
