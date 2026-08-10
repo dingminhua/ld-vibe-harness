@@ -11,19 +11,19 @@ relations:
     object_id: study-0020
 change_log:
 - signature:
-    agent_id: workbuddy
+    agent_id: hy3
     host_environment: Workbuddy
   session_id: 5d667b0e-ab11-4027-a735-e41306c57221
   at: '2026-08-03T15:26:53.713420+08:00'
   summary: 按 Human 当前指令建立：承接"AI 回复内联可视化使用纪律"议题。
 - signature:
-    agent_id: workbuddy
+    agent_id: hy3
     host_environment: Workbuddy
   session_id: 5d667b0e-ab11-4027-a735-e41306c57221
   at: '2026-08-03T21:51:49.388650+08:00'
   summary: 按 Human 澄清与 study-0020 补充结论，将待判断事项更新为"把回复可视化纪律固化为跨环境规范内容"方向：迁移纪律而非通道，每环境接入时实测呈现能力。
 - signature:
-    agent_id: workbuddy
+    agent_id: hy3
     host_environment: Workbuddy
   session_id: 5d667b0e-ab11-4027-a735-e41306c57221
   at: '2026-08-03T22:17:19.846153+08:00'
@@ -40,7 +40,13 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-legacy-signature-migration-20260810
+- at: '2026-08-10T09:10:58.519272Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: workbuddy -> hy3; 1: workbuddy -> hy3; 2: workbuddy -> hy3。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-model-id-migration-20260810
 object_id: spark-0049
 fact_type_key: spark
 created_at: '2026-08-03T15:26:53.713420+08:00'
-updated_at: '2026-08-10T08:46:54.467133Z'
+updated_at: '2026-08-10T09:10:58.519272Z'
