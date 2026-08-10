@@ -7,7 +7,7 @@ change_log:
   session_id: wb-create-spark-0058-20260806
   summary: 按 Human 要求新建 Spark：管辖项目临时文件统一存放到 docs 目录的约束议题。
   signature:
-    agent_id: workbuddy
+    agent_id: hy3
     host_environment: Workbuddy
 - signature:
     agent_id: codex
@@ -27,6 +27,12 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-workbuddy-capitalization-20260810
+- at: '2026-08-10T09:12:28.576817Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: workbuddy -> hy3。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-model-id-migration-20260810
 relations:
 - relation_key: related-to
   target:
@@ -40,4 +46,4 @@ disposition_summary: 本 Spark 的信息需求已直接落实到现行规范：�
 object_id: spark-0058
 fact_type_key: spark
 created_at: '2026-08-06T01:32:58.335490+08:00'
-updated_at: '2026-08-10T09:03:16.315634Z'
+updated_at: '2026-08-10T09:12:28.576817Z'
