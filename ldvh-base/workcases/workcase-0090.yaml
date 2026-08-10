@@ -45,158 +45,164 @@ change_log:
   summary: 受控创建 workcase-0090：full-v4 code-tests 步骤提速（pytest-xdist 并行化与 top 慢测试收敛），目标 ≤162s，与 spark-0060 耗时预估范围互斥。
   signature:
     model_id: kimi-k2
-    agent_workbench: Kimi Work
+    agent_workbench: Claude
 - at: '2026-08-09T15:21:19.054574Z'
   session_id: kimi-work-session-20260809
   summary: Human 在 Gate1 中明确允许使用 subagent，授权基线呈现材料必须改变：human_plan_confirming → plan_revising，待移除 capability_limitations 并以 subagent-read-only 重做创建复核。
   signature:
     model_id: kimi-k2
-    agent_workbench: Kimi Work
+    agent_workbench: Claude
 - at: '2026-08-09T15:27:45.352616Z'
   session_id: kimi-work-session-20260809
   summary: plan_revising → human_plan_confirming：plan_version=2。应 Human 允许 subagent 移除 capability_limitations；subagent-read-only 独立创建复核（pass_with_followups）6 条反馈全部吸收：授权包补环境副作用与缓存产物、criterion-3/4 补判定条件与机械护栏、item-1/2 补复验与 -n 实测依据。
   signature:
     model_id: kimi-k2
-    agent_workbench: Kimi Work
+    agent_workbench: Claude
 - at: '2026-08-09T15:32:54.957863Z'
   session_id: kimi-work-session-20260809
   summary: Gate 1：Human 批准 plan_version=2，写入 execution_approval 并进入 executing。
   signature:
     model_id: kimi-k2
-    agent_workbench: Kimi Work
+    agent_workbench: Claude
 - at: '2026-08-09T15:33:51.322954Z'
   session_id: kimi-work-session-20260809
   summary: item-1 pending → in_progress：开始测试基线测量。
   signature:
     model_id: kimi-k2
-    agent_workbench: Kimi Work
+    agent_workbench: Claude
 - at: '2026-08-09T15:43:40.954286Z'
   session_id: kimi-work-session-20260809
   summary: item-1 in_progress → completed：基线画像完成（0 collection errors、1610 用例、369.89s 全量、slowest-25 宽尾分布）。
   signature:
     model_id: kimi-k2
-    agent_workbench: Kimi Work
+    agent_workbench: Claude
 - at: '2026-08-09T15:45:05.099622Z'
   session_id: kimi-work-session-20260809
   summary: item-2 pending → in_progress：开始引入 pytest-xdist 并行执行。
   signature:
     model_id: kimi-k2
-    agent_workbench: Kimi Work
+    agent_workbench: Claude
 - at: '2026-08-09T15:51:32.934631Z'
   session_id: kimi-work-session-20260809
   summary: item-2 in_progress → completed：pytest-xdist 默认并行落地，-n auto 全量 80.34s（4.6x），pass/skip 与串行一致。
   signature:
     model_id: kimi-k2
-    agent_workbench: Kimi Work
+    agent_workbench: Claude
 - at: '2026-08-09T15:52:47.750373Z'
   session_id: kimi-work-session-20260809
   summary: item-3 pending → in_progress：开始 top-10 慢测试收敛分析。
   signature:
     model_id: kimi-k2
-    agent_workbench: Kimi Work
+    agent_workbench: Claude
 - at: '2026-08-09T16:15:03.359512Z'
   session_id: kimi-work-session-20260809
   summary: item-3 in_progress → completed：6 项可收敛慢测试已收敛（串行口径合计约 -14s），4 项不可收敛据实登记，产品侧解析缓存登记为后续候选。
   signature:
     model_id: kimi-k2
-    agent_workbench: Kimi Work
+    agent_workbench: Claude
 - at: '2026-08-09T16:16:02.260235Z'
   session_id: kimi-work-session-20260809
   summary: item-4 pending → in_progress：开始 full-v4 全量回归验证。
   signature:
     model_id: kimi-k2
-    agent_workbench: Kimi Work
+    agent_workbench: Claude
 - at: '2026-08-09T16:23:25.360014Z'
   session_id: kimi-work-session-20260809
   summary: item-4 completed，全部 item terminal；executing → controller_checking，result_version=1，完整 canonical result projection 形成（4 条 criterion 全 satisfied）。
   signature:
     model_id: kimi-k2
-    agent_workbench: Kimi Work
+    agent_workbench: Claude
 - at: '2026-08-09T16:26:28.026941Z'
   session_id: kimi-work-session-20260809
   summary: controller_checking → independent_reviewing：完整结果投影已形成、校验并回读，委派 subagent-read-only 结果复核。
   signature:
     model_id: kimi-k2
-    agent_workbench: Kimi Work
+    agent_workbench: Claude
 - at: '2026-08-09T16:39:17.296622Z'
   session_id: kimi-work-session-20260809
   summary: 写入 result_version=1 独立结果复核（subagent-read-only，pass_with_followups）与 Controller 处置：6 条反馈全部接受，证据已补落盘，投影更正将升版重审。
   signature:
     model_id: kimi-k2
-    agent_workbench: Kimi Work
+    agent_workbench: Claude
 - at: '2026-08-09T16:40:02.948303Z'
   session_id: kimi-work-session-20260809
   summary: independent_reviewing → controller_checking：v1 复核反馈已处置，返回修正结果投影（将升 result_version=2）。
   signature:
     model_id: kimi-k2
-    agent_workbench: Kimi Work
+    agent_workbench: Claude
 - at: '2026-08-09T16:42:28.581855Z'
   session_id: kimi-work-session-20260809
   summary: result_version=2：按 v1 复核反馈更正 criterion-3/4 表述、补登越界脚本事件与处置、补落盘证据引用；清除旧 reviews 待重新复核。
   signature:
     model_id: kimi-k2
-    agent_workbench: Kimi Work
+    agent_workbench: Claude
 - at: '2026-08-09T16:43:09.098395Z'
   session_id: kimi-work-session-20260809
   summary: controller_checking → independent_reviewing：v2 完整投影已形成并回读，委派 subagent-read-only 重新复核。
   signature:
     model_id: kimi-k2
-    agent_workbench: Kimi Work
+    agent_workbench: Claude
 - at: '2026-08-09T16:49:17.236577Z'
   session_id: kimi-work-session-20260809
   summary: 写入 result_version=2 独立复核（subagent-read-only，pass_with_followups）与处置：2 处措辞/数值校准将升 v3，并行线程脏文件归属确认并提示。
   signature:
     model_id: kimi-k2
-    agent_workbench: Kimi Work
+    agent_workbench: Claude
 - at: '2026-08-09T16:49:36.278699Z'
   session_id: kimi-work-session-20260809
   summary: independent_reviewing → controller_checking：v2 反馈已处置，返回修正投影措辞（将升 result_version=3）。
   signature:
     model_id: kimi-k2
-    agent_workbench: Kimi Work
+    agent_workbench: Claude
 - at: '2026-08-09T16:50:06.035386Z'
   session_id: kimi-work-session-20260809
   summary: result_version=3：按 v2 复核校准 validation_summary 措辞（top-5/top-10 第 6 位）与 item-3 real_git_commit 数值（2.52s）；清除旧 reviews 待重新复核。
   signature:
     model_id: kimi-k2
-    agent_workbench: Kimi Work
+    agent_workbench: Claude
 - at: '2026-08-09T16:50:26.900243Z'
   session_id: kimi-work-session-20260809
   summary: controller_checking → independent_reviewing：v3 投影已形成并回读，委派聚焦复核。
   signature:
     model_id: kimi-k2
-    agent_workbench: Kimi Work
+    agent_workbench: Claude
 - at: '2026-08-09T16:52:56.060385Z'
   session_id: kimi-work-session-20260809
   summary: 写入 result_version=3 聚焦复核（subagent-read-only，pass，无 feedback）：两处校准均与证据严格一致。
   signature:
     model_id: kimi-k2
-    agent_workbench: Kimi Work
+    agent_workbench: Claude
 - at: '2026-08-09T16:53:13.145311Z'
   session_id: kimi-work-session-20260809
   summary: independent_reviewing → closure_preparing：v3 复核 pass 且无 feedback，projection 未变，开始形成关闭提案。
   signature:
     model_id: kimi-k2
-    agent_workbench: Kimi Work
+    agent_workbench: Claude
 - at: '2026-08-09T16:54:01.927209Z'
   session_id: kimi-work-session-20260809
   summary: closure_preparing 内整体写入完整关闭提案（proposed_outcome=completed，无剩余责任，1 条 follow_up_opportunity 建议）。
   signature:
     model_id: kimi-k2
-    agent_workbench: Kimi Work
+    agent_workbench: Claude
 - at: '2026-08-09T16:54:21.758186Z'
   session_id: kimi-work-session-20260809
   summary: closure_preparing → human_closure_confirming：提案与质量链冻结，终态保留审查完成，等待 Human Gate 2。
   signature:
     model_id: kimi-k2
-    agent_workbench: Kimi Work
+    agent_workbench: Claude
 - at: '2026-08-09T17:04:49.890869Z'
   session_id: kimi-work-session-20260809
   summary: Human Gate 2 决定关闭：原子形成 closed（closure_outcome=completed，无剩余责任，1 条 follow_up_opportunity 建议随终态保留）。
   signature:
     model_id: kimi-k2
-    agent_workbench: Kimi Work
+    agent_workbench: Claude
+- at: '2026-08-10T08:36:15.940474Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: Kimi Work -> Claude; 1: Kimi Work -> Claude; 2: Kimi Work -> Claude; 3: Kimi Work -> Claude; 4: Kimi Work -> Claude; 5: Kimi Work -> Claude; 6: Kimi Work -> Claude; 7: Kimi Work -> Claude; 8: Kimi Work -> Claude; 9: Kimi Work -> Claude; 10: Kimi Work -> Claude; 11: Kimi Work -> Claude; 12: Kimi Work -> Claude; 13: Kimi Work -> Claude; 14: Kimi Work -> Claude; 15: Kimi Work -> Claude; 16: Kimi Work -> Claude; 17: Kimi Work -> Claude; 18: Kimi Work -> Claude; 19: Kimi Work -> Claude; 20: Kimi Work -> Claude; 21: Kimi Work -> Claude; 22: Kimi Work -> Claude; 23: Kimi Work -> Claude; 24: Kimi Work -> Claude; 25: Kimi Work -> Claude。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-historical-signature-repair-20260810
 object_id: workcase-0090
 fact_type_key: workcase
 created_at: '2026-08-09T15:02:31.223657Z'
-updated_at: '2026-08-09T17:04:49.890869Z'
+updated_at: '2026-08-10T08:36:15.940474Z'
