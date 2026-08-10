@@ -1,9 +1,9 @@
 title: Spark 部分责任移交与后继议题分流契约
 status: open
-phase: independent_reviewing
-plan_version: 1
+phase: human_closure_confirming
+plan_version: 2
 priority: P1
-summary: 本 WorkCase 只交付 partial-successor routing 的规则、Core 关系校验、只读审计边界与 Web 正式关系投影准备；不创建 successor、不更新 spark-0034。未来事实迁移另建 multi_object_disposition WorkCase；当前公开 Helper 只有单对象 create/update，事实写入集合恒为空。
+summary: 本 WorkCase 返修 partial-successor routing 的关系级负例与 Web 展示边界；不扩展 Gate1 授权，不修改 update_application.py，不创建 successor、不更新 spark-0034。generic update formation enforcement 作为后续 WorkCase 缺口，当前只交付已授权文件范围内的可审查证据。
 goal: 在不新增 Spark 状态或关系键的前提下，定义并实现合法的“已完成稳定事实 + 明确 residual scope 的 open successor Spark”共同承接契约，补齐 Core 关系校验、只读候选/对象读取审计边界与 Web 正式关系投影，形成未来处理 spark-0034 所需的可审查能力边界。
 scope: 覆盖 specs/20-Spark-火花.md、specs/32-事实对象生命周期变更与承接处置行动模板.md；code/ldvh/facts/relations.py、code/tests/facts/test_relations.py、必要的 code/tests/facts/test_project_validation.py；web/api/routes/cognition.ts 与 web/tests/api/cognition-inbox-contract.test.ts（仅在正式关系命中时）。find-fact-object-candidates/read-fact-objects 只读审计；精确核对 spark-0034/workcase-0077，不修改任何事实对象。排除 successor 创建、spark-0034 更新、多对象原子写入、WorkCase 状态机、bootstrap/config writer、通用图重构、其它 Spark，以及 commit/push/PR/release/external。
 success_criterion_definitions:
@@ -45,6 +45,28 @@ work_items:
   - item-core-validation
   - item-web-projection
   result_summary: 最终验证完成：Python facts/project 59 passed；Web cognition contract 19 passed；TypeScript、Ruff、git diff --check 通过；check-fact-integrity 为 complete（206/206）；只读精确回读 spark-0034/workcase-0077/workcase-0092 均 mechanically_valid；未创建/更新 Spark、Study 或其它业务事实。
+- item_id: item-core-review-remediation
+  goal: 补齐已授权关系级 Spark routed-to 的缺失/invalid、自指、跨项目与循环负例，并据实区分 generic update 写路径缺口。
+  expected_result: relations.py 与已列 Python tests 形成可独立核验的 Spark 专项负例覆盖；不修改 update_application.py，不把 generic write-path formation enforcement 写成已交付。
+  status: completed
+  depends_on:
+  - item-core-validation
+  result_summary: 已在授权 relations.py 与 Python tests 内补齐 Spark routed-to relation/project-level 负例：missing、invalid、自指、跨项目与循环；专项 relations 测试 40 passed。generic update_application.py 集成未修改，作为后续 WorkCase 缺口保留。
+- item_id: item-web-fallback-remediation
+  goal: 补齐已授权 cognition 正式 routed-to 投影的 objectId fallback 边界测试或在授权 Web 文件内收敛该回退。
+  expected_result: 证明缺失/空 title 不以 objectId 伪装正式关系名称，或明确记录无法证明并将 criterion-web 降级；不写事实。
+  status: completed
+  depends_on:
+  - item-web-projection
+  result_summary: Web fallback 边界已收敛：projectRecentHotspotFact 对缺失或空 title 返回不可投影，禁止以 objectId 作为正式标题；新增负例后 cognition contract test 20 passed，TypeScript check 通过。
+- item_id: item-reverification
+  goal: 对返修后的授权范围重新验证并形成独立可核验的结果证据。
+  expected_result: 重跑授权范围测试、Ruff、TypeScript、git diff --check 与 check-fact-integrity；结果中明确 Core generic update 缺口和未提交证据边界。
+  status: completed
+  depends_on:
+  - item-core-review-remediation
+  - item-web-fallback-remediation
+  result_summary: 最终授权范围复核完成：Python 61 passed（含 Spark relation/project 负例）；Web cognition contract 20 passed；TypeScript、Ruff、git diff --check 通过；check-fact-integrity 为 complete（206/206）；精确回读 spark-0034/workcase-0077/workcase-0092 均 mechanically_valid。generic update_application.py 未修改，仍为后续缺口。
 execution_authorization:
   authorized_actions:
   - action_id: authorization-spec
@@ -155,10 +177,10 @@ execution_authorization:
   human_prerequisites:
   - Human Gate 1 必须在任何规则/代码/测试修改前批准 plan_version=1 与完整 execution_authorization.
 creation_reviews:
-- reviewer: 019feaa0-9db9-7612-b8de-07cf4122aca5
-  reviewed_at: '2026-08-10T07:58:00Z'
-  subject_version: 1
-  scope: 完整审查 goal、scope、5 项 criteria、4 个 items、授权、reviewer policy、候选 partial/invalid 基线与 multi_object No-Go；反馈已由 Controller 修订并完成最终 fresh 复核。
+- reviewer: 019feb43-6f47-7fa2-b4c9-f4aca09202df (Zeno)
+  reviewed_at: '2026-08-10T10:49:49.895333Z'
+  subject_version: 2
+  scope: 独立审查 Gate1 冻结边界、四个既有 completed item、三个新增 pending remediation item、结果清除规则与 generic update residual 边界。
   conclusion: pass
   covered_quality_gate_ids:
   - independent-result-review
@@ -229,6 +251,90 @@ change_log:
   session_id: fde0af60-4736-4d2d-b2eb-d0be116e163a
   at: '2026-08-10T10:33:20.089408Z'
   summary: 独立只读 result review 返回 changes_required；反馈显示授权/范围、Spark 负例覆盖、Web 回退与独立证据仍需处置，未进入 closure_preparing。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: fde0af60-4736-4d2d-b2eb-d0be116e163a
+  at: '2026-08-10T10:48:14.438729Z'
+  summary: 独立 review feedback 已由 Controller 转换为不扩授权的 PlanΔ 返修边界；进入 plan_revising 检查点。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: fde0af60-4736-4d2d-b2eb-d0be116e163a
+  at: '2026-08-10T10:49:22.270967Z'
+  summary: 按 WorkCase phase 规则从 plan_revising 返回 controller_checking，准备重新进入独立复核后形成合法 PlanΔ。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: fde0af60-4736-4d2d-b2eb-d0be116e163a
+  at: '2026-08-10T10:49:32.661660Z'
+  summary: 重新冻结现有 result projection，回到 independent_reviewing 以形成合法 PlanΔ。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: fde0af60-4736-4d2d-b2eb-d0be116e163a
+  at: '2026-08-10T10:49:50.083335Z'
+  summary: PlanΔ 形成 plan_version=2：保留四个已完成 item，新增三个授权范围内 remediation item；冻结 authorization/approval，清除旧 result/review，保留 generic update 缺口为后续责任。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: fde0af60-4736-4d2d-b2eb-d0be116e163a
+  at: '2026-08-10T10:50:15.744963Z'
+  summary: plan_version=2 按 phase 规则恢复 executing，保持新增 remediation items 的 pending 初始快照。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: fde0af60-4736-4d2d-b2eb-d0be116e163a
+  at: '2026-08-10T10:50:27.241945Z'
+  summary: 恢复执行后启动 item-core-review-remediation。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: fde0af60-4736-4d2d-b2eb-d0be116e163a
+  at: '2026-08-10T10:51:16.229143Z'
+  summary: item-core-review-remediation 完成（Spark 专项 relations 40 passed）；启动 item-web-fallback-remediation。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: fde0af60-4736-4d2d-b2eb-d0be116e163a
+  at: '2026-08-10T10:52:20.697230Z'
+  summary: item-web-fallback-remediation 完成（Web contract 20 passed，TypeScript check passed）；启动 item-reverification。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: fde0af60-4736-4d2d-b2eb-d0be116e163a
+  at: '2026-08-10T10:53:05.423194Z'
+  summary: item-reverification 完成；形成 result_version=1，criterion-core 据实记为 not_satisfied，进入 controller_checking 等待独立 result review。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: fde0af60-4736-4d2d-b2eb-d0be116e163a
+  at: '2026-08-10T10:56:47.039102Z'
+  summary: Controller 检查完成；冻结 partial result projection，进入 independent_reviewing 接收第二轮独立 result review。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: fde0af60-4736-4d2d-b2eb-d0be116e163a
+  at: '2026-08-10T10:57:00.972301Z'
+  summary: 第二轮独立 result review 返回 pass_with_followups；Controller 已处置 feedback，拟按 partial 结果进入 closure_preparing。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: fde0af60-4736-4d2d-b2eb-d0be116e163a
+  at: '2026-08-10T10:57:11.057077Z'
+  summary: 独立 result review feedback 已处置；进入 closure_preparing，准备形成 partial closure proposal。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: fde0af60-4736-4d2d-b2eb-d0be116e163a
+  at: '2026-08-10T10:59:07.672545Z'
+  summary: 形成 partial closure proposal：明确 generic update_application.py formation enforcement 为后续 WorkCase 缺口，建议 accept_stop；不创建 successor、不修改现有 Spark，准备交 Human Gate 2。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: fde0af60-4736-4d2d-b2eb-d0be116e163a
+  at: '2026-08-10T10:59:22.735399Z'
+  summary: partial closure proposal 已完整形成；进入 human_closure_confirming，等待 Human Gate 2 决定。
 execution_approval:
   subject_version: 1
   approved_at: '2026-08-10T08:09:40Z'
@@ -240,36 +346,43 @@ result_version: 1
 success_criterion_results:
 - criterion_id: criterion-contract
   outcome: satisfied
-  summary: 20/32 规则与 No-Go 边界已形成并通过 WorkCase 执行记录。
+  summary: 20/32 partial-successor routing 与 multi_object No-Go 规则已形成并经过计划/结果链记录。
 - criterion_id: criterion-core
-  outcome: satisfied
-  summary: Core 形成时 open successor 机械边界、后续生命周期稳定性与非法场景测试均已通过。
+  outcome: not_satisfied
+  summary: 关系级 Spark formation/project 负例已补齐并通过，但 generic update 写路径未接入 formation-time enforcement；该缺口不在冻结 Gate1 授权范围内，不能宣称 Core 端到端交付。
 - criterion_id: criterion-web
   outcome: satisfied
-  summary: 正式 cognition 关系命中时显示 successor 当前 title/status；19 项 contract test 与 TypeScript 检查通过。
+  summary: 合法 successor 显示当前 title/status；缺失或空 title 不再回退为 objectId；Web contract 20 passed，TypeScript check passed。
 - criterion_id: criterion-regression
   outcome: satisfied
-  summary: 目标回归、Ruff、diff check、只读对象回读和全库 integrity 均完成；除本 WorkCase 执行快照外未写入业务事实。
+  summary: 授权范围回归、Ruff、diff check、Helper 精确回读和全库 integrity 均完成；除 WorkCase 自身受控执行快照外未写入 Spark、Study 或其它业务事实。
 - criterion_id: criterion-nogo
   outcome: satisfied
-  summary: 规则明确无 multi_object_disposition 原子能力时不得创建 successor、更新源 Spark 或拼接多次单对象写入。
-result_summary: WorkCase-0092 的规则、Core 校验、Web 正式投影与验证均完成；交付的是未来 partial-successor routing 的可审查契约与能力边界，不执行 spark-0034 的事实迁移。
-controller_check_summary: Controller 检查：五项成功标准均有对应实现/测试/只读证据；完整性基线为 complete；dirty 事实变化与本 WorkCase 范围已区分，未扩大到 successor 创建、Spark/Study 更正或 multi_object_disposition。
-validation_summary: 验证证据：Python 59 passed；Web 19 passed；TypeScript check passed；Ruff passed；git diff --check passed；全库 integrity 206/206 complete；spark-0034、workcase-0077、workcase-0092 精确回读 mechanically_valid。
+  summary: 无 multi_object_disposition 原子能力时不创建 successor、不更新源 Spark、不用多次单对象写入伪造整体成功。
+result_summary: WorkCase-0092 完成了 partial-successor routing 的规则、关系级 Core 负例与 Web 标题边界；但 generic update 写路径的 formation-time enforcement 不在冻结授权范围内，作为后续 WorkCase 缺口保留，因此当前不是完整 Core 交付。
+controller_check_summary: Controller 检查：criterion-core 明确 not_satisfied，其余四项有对应测试与回读证据；未扩大 Gate1 authorization，未修改 update_application.py，未写 Spark/Study/其它业务事实。
+validation_summary: 验证证据：Python 61 passed；Web 20 passed；TypeScript check passed；Ruff passed；git diff --check passed；全库 integrity 206/206 complete；spark-0034、workcase-0077、workcase-0092 精确回读 mechanically_valid。workcase-0077 指纹变化来自独立外部事实流水，不归因于本 WC。
 result_reviews:
-- reviewer: 019feb37-94b3-7aa0-ade7-6e6944b44439 (Einstein)
-  reviewed_at: '2026-08-10T10:33:19.890626Z'
+- reviewer: 019feb43-6f47-7fa2-b4c9-f4aca09202df (Zeno)
+  reviewed_at: '2026-08-10T10:57:00.789501Z'
   subject_version: 1
-  scope: 独立审查 WorkCase-0092 result projection、授权/范围、Core/Web 测试证据、事实边界与 integrity 回读。
-  conclusion: changes_required
+  scope: 独立审查 plan_version=2 的完整 result projection、Core/Web 返修证据、残余缺口与关闭建议。
+  conclusion: pass_with_followups
   feedback:
-  - scope 与 authorization-core 未列明实际改动所依赖的 code/ldvh/facts/update_application.py；需明确授权/范围或返工收敛。
-  - criterion-core 对 Spark routed-to 的缺失/invalid、自指、循环与 update_application 集成负例证据不足，当前结论超出可独立核验证据。
-  - criterion-web 只有合法 successor 正例；cognition.ts 保留 objectId 标题回退，需补负例或收敛声明。
-  - validation_summary 的测试与 diff 结果目前主要来自 WorkCase 自身记录，独立 reviewer 未取得可独立核验的运行日志或未提交状态证据。
-  - 未发现 successor 创建、Spark/Study 业务事实写入或 multi_object_disposition 实现；Git 是否发生提交因 review 禁止 Git 检查，保持未验证。
+  - 建议按 partial 结果进入 closure_preparing；不得以 completed 关闭。
+  - closure proposal 必须用 residual decision 承接 generic update_application.py formation enforcement 缺口；不得创建 Spark 或修改现有 Spark。
+  - 当前测试与 integrity 证据可用，但独立原始命令输出回执和 diff 独立复现仍是非阻断 assurance limitation。
+  controller_resolution: Controller 已处置 feedback：采用 partial closure proposal，残余责任明确保留给后续 WorkCase；不创建 Spark、不修改现有 Spark、不把 generic update 缺口写成已完成；assurance limitation 在 validation_summary 与 proposal 中保留。
   actual_method: subagent-read-only
+closure_proposal:
+  proposed_outcome: partial
+  proposed_disposition_summary: 本 WorkCase 已完成规则契约、关系级 Core 负例与 Web 标题边界；generic update_application.py 的 formation-time enforcement 不在冻结 Gate1 授权范围内，作为后续 WorkCase 缺口保留，不创建 successor、不修改现有 Spark。
+  residual_decisions:
+  - residual_id: residual-generic-update-formation
+    summary: 通用 update_application.py 写入路径尚未接入 Spark successor 的 formation-time enforcement；本 WorkCase 的冻结授权明确排除该文件与端到端写路径。
+    proposed_disposition: accept_stop
+waiting_on: Human Gate 2：审阅 partial closure proposal，并决定按 partial 关闭或要求继续处理残余缺口
 object_id: workcase-0092
 fact_type_key: workcase
 created_at: '2026-08-10T08:02:54.796376Z'
-updated_at: '2026-08-10T10:33:20.089408Z'
+updated_at: '2026-08-10T10:59:22.735399Z'
