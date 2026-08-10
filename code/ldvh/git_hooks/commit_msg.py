@@ -469,7 +469,7 @@ def _preflight_rendered_hook(rendered: str, worktree: Path) -> str | None:
                 "关键变更:\n- 验证待部署 Hook 的真实 allow 与 block 路径\n\n"
                 "Session-ID: ldvh-hook-preflight\n"
                 "Model-ID: ldvh-hook-manager\n"
-                "Workbench-Name: local-verification\n",
+                "Workbench-Name: localverification\n",
                 encoding="utf-8",
             )
         except OSError as error:

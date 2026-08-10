@@ -53,10 +53,10 @@ def test_thin_skill_uses_the_canonical_source_template_and_both_repository_route
     assert "**已交付**" in integration_surface
     assert "不得从已安装包、缓存副本或不明 PATH 入口替代" in integration_surface
 
-    work_context_position = skill.index("`work-context-core`")
+    specification_content_position = skill.index("`read-specification-content`")
     action_template_position = skill.index("`read-action-template-candidates`")
-    assert work_context_position < action_template_position
-    assert "环境接入面 `work-context-core` 行" in skill
+    assert specification_content_position < action_template_position
+    assert "环境接入面附件（`environment-integration-surface`）" in skill
 
     candidates_position = readme.index("`read-action-template-candidates`")
     content_position = readme.index("`read-action-template-content`")
