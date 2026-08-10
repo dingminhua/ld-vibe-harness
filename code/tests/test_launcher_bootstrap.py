@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 import os
+import runpy
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -53,41 +55,85 @@ def test_launcher_runs_directly_on_venv_python() -> None:
     _assert_capabilities_response(completed)
 
 
-def _system_python_without_ruamel_yaml() -> Path | None:
-    """Return an interpreter that cannot import ruamel.yaml, so the launcher must fall back.
-
-    Returns None when no such interpreter is available (e.g. /usr/bin/python3 is missing
-    or happens to have ruamel.yaml installed), in which case the fallback test is skipped
-    rather than forced to pass.
-    """
-    candidate = Path("/usr/bin/python3")
-    if not candidate.exists():
-        return None
-    probe = subprocess.run(
-        [str(candidate), "-c", "import ruamel.yaml"],
-        capture_output=True,
+def test_launcher_falls_back_to_its_local_venv_when_ruamel_yaml_absent() -> None:
+    # ``-S`` deterministically hides the invoking interpreter's site-packages. The
+    # launcher must then hand off only to its own local .venv, regardless of whether
+    # /usr/bin/python3 happens to have ruamel.yaml on the test machine.
+    system_python = Path("/usr/bin/python3")
+    assert system_python.exists(), "system Python is required for the fallback fixture"
+    completed = subprocess.run(
+        [str(system_python), "-S", str(LAUNCHER), "capabilities"],
+        input=CAPABILITIES_REQUEST,
         text=True,
+        capture_output=True,
         check=False,
+        timeout=30,
     )
-    if probe.returncode == 0:
-        return None
-    return candidate
-
-
-_SYSTEM_PYTHON = _system_python_without_ruamel_yaml()
-
-
-@pytest.mark.skipif(
-    _SYSTEM_PYTHON is None,
-    reason="No /usr/bin/python3 lacking ruamel.yaml available to exercise the fallback path",
-)
-def test_launcher_falls_back_to_venv_when_ruamel_yaml_absent() -> None:
-    # Regression test: when the launching interpreter lacks ruamel.yaml (and, as on
-    # macOS, may be Python 3.9 that cannot even parse the 3.10+ codebase), the launcher
-    # must detect this and exec .venv/bin/python instead of crashing with a
-    # ModuleNotFoundError/SyntaxError. This was the root cause behind the broken
-    # commit-msg Git Gate and doctor subprocess failures.
-    assert _SYSTEM_PYTHON is not None
-    completed = _run_capabilities(_SYSTEM_PYTHON, clean_env=True)
     _assert_capabilities_response(completed)
     assert "Traceback" not in completed.stderr
+
+
+def test_launcher_reports_unsupported_python_without_false_missing_package(monkeypatch: pytest.MonkeyPatch) -> None:
+    launcher = runpy.run_path(str(LAUNCHER), run_name="ldvh_launcher_test")
+    message_builder = launcher["_runtime_unavailable_message"]
+    monkeypatch.setitem(message_builder.__globals__, "_runtime_typing_compatible", lambda: False)
+    monkeypatch.setitem(message_builder.__globals__, "_ruamel_yaml_available", lambda: True)
+
+    message = message_builder()
+
+    assert "python_requirement: Python 3.11+" in message
+    assert "runtime_issue: unsupported Python typing runtime" in message
+    assert "missing_package: ruamel.yaml" not in message
+    assert "requirements_file: requirements.txt" not in message
+
+
+def test_worktree_preflight_starts_before_runtime_dependencies(tmp_path: Path) -> None:
+    assert VENV_PYTHON.exists(), f"venv python missing at {VENV_PYTHON}"
+    isolated_launcher = tmp_path / "ldvh"
+    isolated_code = tmp_path / "code" / "ldvh"
+    isolated_code.mkdir(parents=True)
+    shutil.copy2(LAUNCHER, isolated_launcher)
+    shutil.copy2(PROJECT_ROOT / "code" / "ldvh" / "__init__.py", isolated_code / "__init__.py")
+    shutil.copy2(
+        PROJECT_ROOT / "code" / "ldvh" / "worktree_bootstrap.py",
+        isolated_code / "worktree_bootstrap.py",
+    )
+    (tmp_path / "requirements.txt").write_text("ruamel.yaml>=0.18.10,<0.19\n", encoding="utf-8")
+    (tmp_path / "requirements-dev.txt").write_text("-r requirements.txt\n", encoding="utf-8")
+    subprocess.run(["git", "init", "-q", str(tmp_path)], check=True)
+
+    completed = subprocess.run(
+        [str(VENV_PYTHON), "-S", str(isolated_launcher), "worktree-bootstrap", "--check"],
+        cwd=tmp_path,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert completed.returncode == 1
+    response = json.loads(completed.stdout)
+    assert response["contract"] == "ldvh-worktree-bootstrap/1"
+    assert response["status"] == "not_ready"
+    assert {item["package"] for item in response["missing_packages"]} == {"ruamel.yaml"}
+
+
+def test_launcher_reports_preflight_when_doctor_cannot_import_runtime(tmp_path: Path) -> None:
+    assert VENV_PYTHON.exists(), f"venv python missing at {VENV_PYTHON}"
+    isolated_launcher = tmp_path / "ldvh"
+    isolated_launcher.write_text(LAUNCHER.read_text(encoding="utf-8"), encoding="utf-8")
+    isolated_launcher.chmod(0o755)
+
+    completed = subprocess.run(
+        [str(VENV_PYTHON), "-S", str(isolated_launcher), "doctor"],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert completed.returncode == 1
+    assert "LDVH source runtime is unavailable" in completed.stderr
+    assert f"worktree: {tmp_path}" in completed.stderr
+    assert "missing_package: ruamel.yaml" in completed.stderr
+    assert "requirements_file: requirements.txt" in completed.stderr
+    assert "status: unavailable" in completed.stderr
+    assert "./ldvh worktree-bootstrap --check" in completed.stderr

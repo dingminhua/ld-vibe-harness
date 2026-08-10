@@ -95,9 +95,21 @@ def test_integration_surface_attachment_matches_current_source_dispatcher() -> N
     launcher = (REPOSITORY_ROOT / "ldvh").read_text(encoding="utf-8")
     surfaces = (REPOSITORY_ROOT / "specs/attachments/09.Att.01-环境接入面.md").read_text(encoding="utf-8")
 
-    for command in ("capabilities", "work-context", "context-recovery", "git-commit-msg", "git-hook", "doctor"):
+    for command in (
+        "capabilities",
+        "worktree-bootstrap",
+        "work-context",
+        "context-recovery",
+        "git-commit-msg",
+        "git-hook",
+        "doctor",
+    ):
         assert command in launcher
         assert command in surfaces
+    assert "ldvh-worktree-bootstrap/1" in surfaces
+    assert "不猜测、借用或搜索相邻 worktree 环境" in surfaces
+    assert "./ldvh worktree-bootstrap --check" in (REPOSITORY_ROOT / "README.md").read_text(encoding="utf-8")
+    assert "不得开始 WorkCase" in (REPOSITORY_ROOT / "README.md").read_text(encoding="utf-8")
     assert "[build-system]" not in project
     assert "[project.scripts]" not in project
     assert "统一厂商 payload" in surfaces

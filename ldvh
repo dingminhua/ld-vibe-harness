@@ -43,6 +43,26 @@ def _dependency_runtime_ready() -> bool:
     return _ruamel_yaml_available() and _runtime_typing_compatible()
 
 
+def _runtime_unavailable_message() -> str:
+    lines = [
+        "LDVH source runtime is unavailable",
+        f"worktree: {SOURCE_ROOT}",
+        f"python: {sys.executable or 'unavailable'}",
+    ]
+    if not _runtime_typing_compatible():
+        lines.extend(("python_requirement: Python 3.11+", "runtime_issue: unsupported Python typing runtime"))
+    if not _ruamel_yaml_available():
+        lines.extend(("missing_package: ruamel.yaml", "requirements_file: requirements.txt"))
+    lines.extend(
+        (
+            "status: unavailable",
+            "Prepare declared third-party dependencies without installing LDVH itself, then run "
+            "./ldvh worktree-bootstrap --check.",
+        )
+    )
+    return "\n".join(lines) + "\n"
+
+
 def _handoff(candidate: Path, source: Path) -> None:
     """Replace the current process with the venv interpreter, preserving the exit code.
 
@@ -77,14 +97,10 @@ def _ensure_dependency_runtime() -> None:
             if resolved_candidate == resolve_source:
                 continue
             _handoff(candidate, resolve_source)
-    sys.stderr.write(
-        "LDVH source runtime dependency ruamel.yaml is unavailable; prepare the declared third-party dependencies "
-        "without installing the LDVH package.\n"
-    )
+    sys.stderr.write(_runtime_unavailable_message())
     raise SystemExit(1)
 
 
-_ensure_dependency_runtime()
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
@@ -92,7 +108,8 @@ if str(CODE_ROOT) not in sys.path:
 def _usage() -> int:
     sys.stderr.write(
         "usage: ldvh capabilities [operation_key] | ldvh call <operation_key> | "
-        "ldvh {work-context,context-recovery,doctor,git-commit-msg,prepare-commit-msg,git-hook} ...\n"
+        "ldvh {worktree-bootstrap,work-context,context-recovery,doctor,git-commit-msg,"
+        "prepare-commit-msg,git-hook} ...\n"
     )
     return 2
 
@@ -101,6 +118,11 @@ def main() -> int:
     if len(sys.argv) < 2:
         return _usage()
     command = sys.argv[1]
+    if command == "worktree-bootstrap":
+        from ldvh.worktree_bootstrap import run as worktree_bootstrap_main
+
+        return worktree_bootstrap_main(SOURCE_ROOT, sys.argv[2:])
+    _ensure_dependency_runtime()
     if command in {"capabilities", "call"}:
         from ldvh.cli import main as helper_main
 

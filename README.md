@@ -73,6 +73,21 @@ cd ld-vibe-harness
 
 先用 `./ldvh capabilities </dev/null` 验证入口并发现当前公开能力。所有 Helper 入口均无条件读取 stdin 至 EOF，在 AI 环境或无 tty 的自动化中调用时必须闭合 stdin。若入口报告第三方库缺失，按 `requirements.txt` 准备运行依赖；这不等于打包或安装 LDVH 本体。
 
+### Linked worktree 的本地运行环境
+
+每次新建或切换到 linked worktree 后，在该 worktree 根目录先执行：
+
+```bash
+./ldvh worktree-bootstrap
+./ldvh worktree-bootstrap --check
+```
+
+`worktree-bootstrap` 只为**当前实际 Git worktree**创建或检查本地 `.venv`，并按 `requirements-dev.txt`（其中包含 `requirements.txt`）准备第三方依赖；不会构建、安装或注册 LDVH 本体，也不会猜测、借用相邻 worktree 的环境。`--check` 不修改环境，会报告实际 Python、缺少的包和应使用的依赖文件。
+
+只有结果为 `ready` 才表示当前 worktree 的源码运行条件已验证；`not_ready` 或 `unavailable` 时不得开始 WorkCase，应先按输出修复该 worktree 的环境后重新检查。这不等同于完整 LDVH 环境接入、Skill 真实递达、Git Hook 部署或真实事件验证。
+
+`.venv` 是每个 worktree 的本地未提交目录。除非未来引入明确配置、独立验证的共享环境机制，否则每个 worktree 都必须拥有完整的独立环境。
+
 当前已验证平台为 **macOS** 与 **Windows**（受控写入，`file_only` 耐久，仅限 NTFS fixed drive）。Windows 的仓库入口、运行依赖、路径写法与 Git Hook 执行能力已在目标平台实测通过（证据见 study-0025）。其它平台按未验证范围处理。
 
 ### 更新
