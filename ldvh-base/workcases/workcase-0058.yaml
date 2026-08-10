@@ -43,89 +43,95 @@ result_summary: 所有受管辖新提交现在都必须通过同一规则驱动�
 validation_summary: 修补后的全量 pytest 为 1409 passed、10 skipped，跳过项全部要求原生 Windows；相关扩展回归 250 passed，非法 header 聚合修正后的定向回归 73 passed。Ruff check 与 format --check、git diff --check、145 个事实对象完整性检查均通过。临时仓库真实 Hook allow/block 事件通过；当前共享 Hook 为 managed、可执行并指向 v4 launcher，未部署或替换。最终真实 Index precheck mechanical_outcome=passed，快照 sha256:0cdf40832610d131588f0603b2d57cc9f85296b8a35a7934ec792ced9c0c6ea4；Git trace 明确调用 commit-msg Hook。commit e96e5a0d6ce22dca9cf357b1ea072d17f454e4f4 的 message、11 路径、空 Index和剩余无关工作树已回读；未 push。非 Windows 环境未执行 10 项原生 Windows 测试。
 change_log:
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: codex-workcase-0058-creation
   at: '2026-08-05T02:51:23.441671+08:00'
   summary: 根据 Human 要求创建 WorkCase 落实所有提交的普遍最低正文，并记录独立对抗性 creation review 及其已纳入的漏洞处置；停在 Gate 1 等待批准。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: codex-workcase-0058-execution
   at: '2026-08-05T02:57:25.354776+08:00'
   summary: 记录 Human Gate 1 对 plan_version 1 的明确批准，冻结执行授权基线并进入执行阶段。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: codex-workcase-0058-execution
   at: '2026-08-05T02:57:36.181945+08:00'
   summary: 开始 item-01：核对提交正文规则、附件机械投影及直接规范测试。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: codex-workcase-0058-execution
   at: '2026-08-05T03:00:59.981441+08:00'
   summary: 完成 item-01 并开始 item-02：最低正文规则、附件投影和直接测试已通过，进入 validator 全入口迁移。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: codex-workcase-0058-execution
   at: '2026-08-05T03:03:40.658128+08:00'
   summary: 完成 item-02 并开始 item-03：validator 全入口迁移与定向回归通过，进入完整验证和 Spark 受控修订。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: codex-workcase-0058-execution
   at: '2026-08-05T03:17:32.091686+08:00'
   summary: 完成 item-03 并开始 item-04：Spark 修正、真实 Hook 事件、全量回归、事实完整性和当前 Hook 静态复核均通过，进入独立审核与精确本地提交。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: codex-workcase-0058-execution
   at: '2026-08-05T03:32:56.140915+08:00'
   summary: 完成 item-04 并进入 Controller 检查：真实 commit e96e5a0d6ce22dca9cf357b1ea072d17f454e4f4 经 commit-msg Hook 创建并回读，形成 result_version 1 完整结果投影。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: codex-workcase-0058-execution
   at: '2026-08-05T03:33:19.673558+08:00'
   summary: 在 result_version 1 尚未复核前，更正 item-03 的最终全量通过数为 1409。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: codex-workcase-0058-execution
   at: '2026-08-05T03:33:30.075499+08:00'
   summary: 完整 result_version 1 经 Controller 检查后冻结并进入独立结果复核。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: codex-workcase-0058-execution
   at: '2026-08-05T03:38:21.015826+08:00'
   summary: 记录 result_version 1 独立结果复核 pass_with_followups；三项非阻塞边界均已由 Controller 核对并处置，结果投影不变。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: codex-workcase-0058-execution
   at: '2026-08-05T03:38:32.690994+08:00'
   summary: 独立结果复核无阻塞且全部 feedback 已处置，结果投影未变化，进入关闭提案准备。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: codex-workcase-0058-execution
   at: '2026-08-05T03:38:43.711550+08:00'
   summary: 完成终态保留审查并形成 completed 关闭提案；七项标准全部 satisfied，原 scope 内无剩余责任。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: codex-workcase-0058-execution
   at: '2026-08-05T03:38:55.998639+08:00'
   summary: 关闭提案、独立结果复核与终态保留审查均已完成，进入 Human Gate 2 等待关闭决定。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: codex-workcase-0058-closure
   at: '2026-08-05T11:19:10.749618+08:00'
   summary: Human 在 Gate 2 明确确认以 completed 关闭 workcase-0058；保留终态结果、验证边界与无剩余责任处置。
+- at: '2026-08-10T09:24:38.956480Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: codex -> gpt-5; 1: codex -> gpt-5; 2: codex -> gpt-5; 3: codex -> gpt-5; 4: codex -> gpt-5; 5: codex -> gpt-5; 6: codex -> gpt-5; 7: codex -> gpt-5; 8: codex -> gpt-5; 9: codex -> gpt-5; 10: codex -> gpt-5; 11: codex -> gpt-5; 12: codex -> gpt-5; 13: codex -> gpt-5。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: session-20260810-codex-model-migration
 closure_outcome: completed
 disposition_summary: 所有受管辖新提交的普遍最低正文机械闸门、规则投影、共享 validator、Helper/native/真实 Hook 一致性、诊断聚合、测试和精确本地提交均已完成并验证；七项成功标准全部 satisfied，原 scope 内无剩余责任。Windows 原生条件测试尚未在 Windows 实机执行、提交后 WorkCase 生命周期事实尚未另行提交、Hook trace 不属于 commit 对象持久证据均已作为验证或现场边界披露，不改变本案完成分类，也不授权新的提交或远端动作。
 relations:
@@ -137,4 +143,4 @@ relations:
 object_id: workcase-0058
 fact_type_key: workcase
 created_at: '2026-08-05T02:51:23.441671+08:00'
-updated_at: '2026-08-05T11:19:10.749618+08:00'
+updated_at: '2026-08-10T09:24:38.956480Z'
