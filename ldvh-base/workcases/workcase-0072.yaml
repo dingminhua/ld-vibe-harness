@@ -34,76 +34,83 @@ validation_summary: Python 3.12 py_compile、兼容 harness、SafeTrialTempRoot 
 change_log:
 - signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: workcase-0072-planning
   at: '2026-08-08T14:02:26.682516+08:00'
   summary: Human 要求按 Spark-0068 的 D 簇验证计划推进；本 WorkCase 只验证增量变化定位的可行性与净价值边界，不预选生产方案。
 - signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: workcase-0072-execution
   at: '2026-08-08T14:08:32.710807+08:00'
   summary: Human 已批准 Gate 1；进入执行，仅消费冻结的测试性 fixture、测量与独立结果复核授权。
 - signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: workcase-0072-execution
   at: '2026-08-08T14:09:05.536252+08:00'
   summary: item-01 已开始：实现四类隔离 fixture、checkpoint 与测量口径；尚未运行确定性测量。
 - signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: workcase-0072-execution
   at: '2026-08-08T14:15:15.130027+08:00'
   summary: item-01 已完成测试性 fixture/checkpoint 测量基础；item-02 开始测量公开 aggregate 边界与候选 identity diff。
 - signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: workcase-0072-result
   at: '2026-08-08T14:17:06.573888+08:00'
   summary: 三项工作已形成 result_version=1：测试性四场景投影和方案中立 No-go 已完成；真实 Helper fixture 重放与官方 pytest 未验证，进入 Controller 检查。
 - signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: workcase-0072-result
   at: '2026-08-08T14:21:05.376020+08:00'
   summary: 独立结果复核要求返修；Controller 未补造证据，将 criterion-01、04 降为 not_verified，补充原始输入缺失边界并更正 result_version=1。
 - signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: workcase-0072-result
   at: '2026-08-08T14:26:24.623770+08:00'
   summary: 完整 result_version=1 已回读并冻结为独立结果复核对象；实际只读复核已完成，下一检查点写入其结果。
 - signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: workcase-0072-result
   at: '2026-08-08T14:26:54.592913+08:00'
   summary: 独立只读 subagent 对当前 result_version=1 的复核结果已写入：pass，无 feedback；结果投影从此冻结。
 - signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: workcase-0072-closure
   at: '2026-08-08T14:27:19.115589+08:00'
   summary: 当前结果已完成独立复核且无 feedback；结果投影保持不变，Controller 开始形成关闭提案与剩余责任处置。
 - signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: workcase-0072-closure
   at: '2026-08-08T14:28:52.397386+08:00'
   summary: 形成完整关闭提案：无 satisfied criterion 且多项 not_verified，拟定 outcome 为 cancelled；全部未完成的 D 簇真实验证与方案比较责任建议 route_existing 至当前 Spark-0068。
 - signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: workcase-0072-closure
   at: '2026-08-08T14:29:24.099609+08:00'
   summary: 关闭提案与 Spark-0068 目标指纹均已形成并回读；进入 Gate2，等待 Human 判断 cancelled 分类、停止边界和 route_existing 责任处置。
 - signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: workcase-0072-closure
   at: '2026-08-08T14:40:30.313079+08:00'
   summary: Human 已批准 Gate2；按已冻结的 cancelled 提案关闭 WorkCase，并将未完成的 D 簇验证与方案比较责任 routed-to Spark-0068。
+- at: '2026-08-10T08:53:04.841353Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: codex-desktop -> Codex; 1: codex-desktop -> Codex; 2: codex-desktop -> Codex; 3: codex-desktop -> Codex; 4: codex-desktop -> Codex; 5: codex-desktop -> Codex; 6: codex-desktop -> Codex; 7: codex-desktop -> Codex; 8: codex-desktop -> Codex; 9: codex-desktop -> Codex; 10: codex-desktop -> Codex; 11: codex-desktop -> Codex。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-workcase-signature-migration-20260810
+
 closure_outcome: cancelled
 disposition_summary: 停止本 WorkCase 的测试性探索，不选择生产方案或宣称净收益；因当前五项标准均未形成 satisfied 且多项仍 not_verified，不能以现有材料判定稳定成果。把真实当前 Helper fixture 重放、冻结原始输入与完整指标、官方 pytest 运行，以及 per-object manifest 与 changed_since 的中立成本比较，路由至仍开放的 Spark-0068 作为 D 簇后续立项判断。
 relations:
@@ -115,4 +122,4 @@ relations:
 object_id: workcase-0072
 fact_type_key: workcase
 created_at: '2026-08-08T14:02:26.682516+08:00'
-updated_at: '2026-08-08T14:40:30.313079+08:00'
+updated_at: '2026-08-10T08:53:04.841353Z'
