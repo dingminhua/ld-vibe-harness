@@ -50,7 +50,7 @@ change_log:
   at: '2026-08-03T22:25:17.489727+08:00'
   summary: 关闭 workcase-0026：proposed_outcome=partial，采纳 Spark 建议 suggestion-default-project-id-routing
 - signature:
-    agent_id: Deepseek-V4-Flash
+    agent_id: deepseek-v4-flash
     host_environment: Workbuddy
   session_id: workbuddy-correct-signature-0026
   at: '2026-08-03T22:37:50.385610+08:00'
@@ -61,7 +61,13 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-workcase-signature-migration-20260810
+- at: '2026-08-10T09:12:46.087693Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 2: Deepseek-V4-Flash -> deepseek-v4-flash。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-model-id-migration-20260810
 object_id: workcase-0026
 fact_type_key: workcase
 created_at: '2026-08-01T15:22:52.156302+08:00'
-updated_at: '2026-08-10T08:52:44.156959Z'
+updated_at: '2026-08-10T09:12:46.087693Z'
