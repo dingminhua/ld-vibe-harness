@@ -96,6 +96,136 @@ change_log:
     )
 
 
+def _write_spark(
+    sparks_dir: Path,
+    object_id: str,
+    status: str,
+    *,
+    relation_target: str | None = None,
+) -> Path:
+    priority = "priority: P2\n" if status == "open" else ""
+    disposition = "" if status == "open" else "disposition_summary: Test disposition with no residual responsibility.\n"
+    relations = ""
+    if relation_target is not None:
+        relations = f"""relations:
+  - relation_key: routed-to
+    target:
+      governed_project_id: sample
+      fact_type_key: spark
+      object_id: {relation_target}
+"""
+    path = sparks_dir / f"{object_id}.yaml"
+    path.write_text(
+        f"""object_id: {object_id}
+fact_type_key: spark
+title: {object_id} target
+created_at: 2026-07-20T09:00:00+08:00
+updated_at: 2026-07-20T10:00:00+08:00
+status: {status}
+summary: Test Spark target
+{priority}{disposition}{relations}change_log:
+  - signature:
+      agent_id: test-agent
+      host_environment: test
+    session_id: test-session
+    at: 2026-07-20T09:00:00+08:00
+    summary: Create test Spark target
+""",
+        encoding="utf-8",
+    )
+    return path
+
+
+def _new_routed_update_command(
+    current_fact_schemas: Mapping[str, FactSchema],
+    tmp_path: Path,
+    target_status: str,
+) -> tuple[FactUpdateCommand, Path]:
+    command, source = _command(current_fact_schemas, tmp_path)
+    target_dir = source.parent
+    if target_status == "routed":
+        _write_spark(target_dir, "spark-0003", "open")
+        _write_spark(target_dir, "spark-0002", target_status, relation_target="spark-0003")
+    else:
+        _write_spark(target_dir, "spark-0002", target_status)
+    current = update_application._project_read(command)
+    assert current.fields is not None and current.content_fingerprint is not None
+    supplied = {key: value for key, value in current.fields.items() if key not in update_application.MANAGED_FIELDS}
+    supplied.pop("priority", None)
+    supplied.update(
+        {
+            "status": "routed",
+            "summary": "Route source Spark to a target",
+            "disposition_summary": "The source is fully covered by the routed target.",
+            "relations": [
+                {
+                    "relation_key": "routed-to",
+                    "target": {
+                        "governed_project_id": "sample",
+                        "fact_type_key": "spark",
+                        "object_id": "spark-0002",
+                    },
+                }
+            ],
+            "change_log": [
+                *current.fields["change_log"],
+                {
+                    "signature": {"agent_id": "test-agent", "host_environment": "test"},
+                    "session_id": "route-test-session",
+                    "at": "2000-01-01T00:00:00Z",
+                    "summary": "Route source Spark",
+                },
+            ],
+        }
+    )
+    return (
+        FactUpdateCommand(
+            boundary=command.boundary,
+            fact_type_key="spark",
+            object_id="spark-0001",
+            schemas=command.schemas,
+            schema=command.schema,
+            expected_content_fingerprint=current.content_fingerprint,
+            supplied=supplied,
+            body=None,
+            event_at="2026-07-20T11:00:00+08:00",
+        ),
+        source,
+    )
+
+
+def _follow_up_update_command(
+    command: FactUpdateCommand,
+    *,
+    summary: str,
+    event_at: str,
+) -> FactUpdateCommand:
+    current = update_application._project_read(command)
+    assert current.fields is not None and current.content_fingerprint is not None
+    supplied = {key: value for key, value in current.fields.items() if key not in update_application.MANAGED_FIELDS}
+    supplied["summary"] = summary
+    supplied["change_log"] = [
+        *current.fields["change_log"],
+        {
+            "signature": {"agent_id": "test-agent", "host_environment": "test"},
+            "session_id": "follow-up-test-session",
+            "at": "2000-01-01T00:00:00Z",
+            "summary": "Update source after route formation",
+        },
+    ]
+    return FactUpdateCommand(
+        boundary=command.boundary,
+        fact_type_key=command.fact_type_key,
+        object_id=command.object_id,
+        schemas=command.schemas,
+        schema=command.schema,
+        expected_content_fingerprint=current.content_fingerprint,
+        supplied=supplied,
+        body=None,
+        event_at=event_at,
+    )
+
+
 def test_application_module_has_no_helper_dependency() -> None:
     module = Path(__file__).resolve().parents[2] / "ldvh/facts/update_application.py"
     tree = ast.parse(module.read_text(encoding="utf-8"))
@@ -126,6 +256,57 @@ def test_generic_application_hard_rejects_workcase(
 
     assert result.status == "invalid_request"
     assert any("不接受 WorkCase" in issue.summary for issue in result.issues)
+
+
+def test_generic_update_allows_new_open_spark_successor(
+    current_fact_schemas: Mapping[str, FactSchema],
+    tmp_path: Path,
+) -> None:
+    command, _source = _new_routed_update_command(current_fact_schemas, tmp_path, "open")
+
+    result = apply_fact_update(command)
+
+    assert result.status == "updated"
+    assert result.readback is not None and result.readback.fields is not None
+    assert result.readback.fields["status"] == "routed"
+
+
+@pytest.mark.parametrize("target_status", ["routed", "implemented", "discarded"])
+def test_generic_update_rejects_new_nonopen_spark_successor(
+    current_fact_schemas: Mapping[str, FactSchema],
+    tmp_path: Path,
+    target_status: str,
+) -> None:
+    command, source = _new_routed_update_command(current_fact_schemas, tmp_path, target_status)
+    original = source.read_bytes()
+
+    result = apply_fact_update(command)
+
+    assert result.status == "candidate_rejected"
+    assert any("必须为 open" in issue.summary for issue in result.issues)
+    assert source.read_bytes() == original
+
+
+def test_generic_update_preserves_existing_spark_edge_after_target_lifecycle_change(
+    current_fact_schemas: Mapping[str, FactSchema],
+    tmp_path: Path,
+) -> None:
+    command, source = _new_routed_update_command(current_fact_schemas, tmp_path, "open")
+    formed = apply_fact_update(command)
+    assert formed.status == "updated"
+
+    _write_spark(source.parent, "spark-0002", "implemented")
+    follow_up = _follow_up_update_command(
+        command,
+        summary="Update source while preserving the established route",
+        event_at="2026-07-20T12:00:00+08:00",
+    )
+
+    result = apply_fact_update(follow_up)
+
+    assert result.status == "updated"
+    assert result.readback is not None and result.readback.fields is not None
+    assert result.readback.fields["summary"] == "Update source while preserving the established route"
 
 
 def test_application_binds_managed_timestamp_and_verifies_exact_readback(
