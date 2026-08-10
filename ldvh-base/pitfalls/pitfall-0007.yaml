@@ -2,17 +2,23 @@ title: Claude Code 技能在 Cindy/Codex 环境中部署失败
 status: active
 change_log:
   - signature:
-      agent_id: GLM-5.2
-      host_environment: Cindy/Codex 2.1.219, Windows
+      agent_id: glm-5.2
+      host_environment: Codex
     session_id: d0fb02a7-769a-40e7-a481-9ce20fe02f99
     at: '2026-08-06T19:29:55+08:00'
     summary: 新建 pitfall-0007：Claude Code 技能在 Cindy/Codex 环境部署失败的经验与规避
   - signature:
-      agent_id: GLM-5.2
-      host_environment: Cindy/Codex 2.1.219, Windows
+      agent_id: glm-5.2
+      host_environment: Codex
     session_id: d0fb02a7-769a-40e7-a481-9ce20fe02f99
     at: '2026-08-06T23:09:31+08:00'
     summary: draft → active：Human 确认 pitfall-0007 完整 draft 后 promote，仅变更 status 与 updated_at
+  - at: '2026-08-10T11:16:25.224362Z'
+    summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: Cindy/Codex 2.1.219, Windows -> Codex; 0: GLM-5.2 -> glm-5.2; 1: Cindy/Codex 2.1.219, Windows -> Codex; 1: GLM-5.2 -> glm-5.2。原始错误值已由本次更正覆盖并保留本条修复记录。'
+    signature:
+      agent_workbench: Cindy
+      model_id: gpt-5
+    session_id: cindy-codex-signature-migration-20260810
 symptoms: |
   1. 按 Claude Code 标准文档将技能文件部署为 ~/.claude/skills/<name>.md 后，重启 Claude Code
      会话看不到技能。
@@ -59,4 +65,4 @@ validation_summary: |
 object_id: pitfall-0007
 fact_type_key: pitfall
 created_at: '2026-08-06T19:29:55+08:00'
-updated_at: '2026-08-06T23:09:31+08:00'
+updated_at: '2026-08-10T11:16:25.224362Z'
