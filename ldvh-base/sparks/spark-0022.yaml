@@ -24,13 +24,13 @@ relations:
 change_log:
 - signature:
     agent_id: kimi
-    host_environment: Kimi Work
+    host_environment: Kimi
   session_id: conv-9b480e23916ebeb1765f4537
   at: '2026-08-05T23:44:49.422949+08:00'
   summary: 遗留对象缺少 change_log 历史；按 05 §11.7.1 建立一次可信流水起点，据实标注历史流水不可得，不恢复原始历史、不改变对象语义与状态（workcase-0060 item-05 更新前置）
 - signature:
     agent_id: kimi
-    host_environment: Kimi Work
+    host_environment: Kimi
   session_id: conv-9b480e23916ebeb1765f4537
   at: '2026-08-05T23:45:53.113734+08:00'
   summary: 承接现状更新：规则层已由 workcase-0060（05 §9.4）承接；残留为 Gate 前置拦截实现，保持 open
@@ -47,7 +47,14 @@ change_log:
     model_id: gpt-5
   session_id: cindy-legacy-signature-migration-20260810
 
+- at: '2026-08-10T08:55:31.579046Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: Kimi Work -> Kimi; 1: Kimi Work -> Kimi。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-explicit-signature-migration-20260810
+
 object_id: spark-0022
 fact_type_key: spark
 created_at: '2026-07-21T04:10:57.798570+08:00'
-updated_at: '2026-08-10T08:46:21.933478Z'
+updated_at: '2026-08-10T08:55:31.579046Z'
