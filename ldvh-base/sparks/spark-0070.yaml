@@ -25,7 +25,7 @@ evolution:
 change_log:
 - signature:
     agent_id: workbuddy-ai
-    host_environment: workbuddy-claw
+    host_environment: Workbuddy
   session_id: batch-commit-20260809-spark0070
   at: '2026-08-08T22:00:00+08:00'
   summary: 补建变更流水以支持受控提交；spark-0070 为新增 Spark（WC 执行上下文透明性议题），事实内容由其他会话产出，此处仅补审计签名。
@@ -35,7 +35,13 @@ change_log:
   session_id: session-merge-b-20260810
   at: '2026-08-10T07:13:23.202003Z'
   summary: 吸收合并：spark-0070 的输入侧执行上下文透明性内容已由 spark-0045 在行为可观测性框架中完整承接，本 Spark 标记为 discarded。
+- at: '2026-08-10T08:47:42.040339Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: workbuddy-claw -> Workbuddy。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-legacy-signature-migration-20260810
 object_id: spark-0070
 fact_type_key: spark
 created_at: '2026-08-08T22:00:00+08:00'
-updated_at: '2026-08-10T07:13:23.202003Z'
+updated_at: '2026-08-10T08:47:42.040339Z'
