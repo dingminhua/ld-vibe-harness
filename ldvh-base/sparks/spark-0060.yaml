@@ -17,7 +17,7 @@ change_log:
   session_id: claude-code-session-20260806
   summary: 受控创建本 Spark：全量测试耗时预估，使 AI 在启动测试前能获知预期耗时以合理编排工作流程。
   signature:
-    agent_id: claude
+    agent_id: glm-5.2
     host_environment: Claude
 - at: '2026-08-09T14:56:38.821152+08:00'
   session_id: workbuddy-session-20260809
@@ -49,7 +49,13 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-workbuddy-case-normalization-20260810
+- at: '2026-08-10T09:33:34.279538Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: claude -> glm-5.2。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: 4591aaa6-256d-45bb-8c3d-fd0d7619df41
 object_id: spark-0060
 fact_type_key: spark
 created_at: '2026-08-06T02:08:00+08:00'
-updated_at: '2026-08-10T08:59:07.811229Z'
+updated_at: '2026-08-10T09:33:34.279538Z'
