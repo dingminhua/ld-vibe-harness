@@ -19,7 +19,7 @@ change_log:
   session_id: claude-code-session-20260806
   summary: 受控创建本 Spark：macOS POSIX 原子写入系统复杂度评估——判断 file_and_directory 层级在开发机场景下是否过度，以及简化方向。
   signature:
-    agent_id: claude
+    agent_id: glm-5.2
     host_environment: Claude
 - signature:
     agent_id: hy3
@@ -39,7 +39,13 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-identity-id-migration-20260810
+- at: '2026-08-10T09:33:35.931211Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: claude -> glm-5.2。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: 4591aaa6-256d-45bb-8c3d-fd0d7619df41
 object_id: spark-0062
 fact_type_key: spark
 created_at: '2026-08-06T16:30:00+08:00'
-updated_at: '2026-08-10T09:15:07.579611Z'
+updated_at: '2026-08-10T09:33:35.931211Z'
