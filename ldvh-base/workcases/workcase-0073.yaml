@@ -25,75 +25,82 @@ change_log:
 - summary: 依据 Human 对 Spark-0067 直接推进的授权，形成只解决 F2 text_match 嵌套输入可发现性的 WorkCase 初始计划，并吸收独立方案审查的收紧意见。
   signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: spark0067-wc0073-creation
   at: '2026-08-08T15:19:48.489418+08:00'
 - summary: 消费 Human Gate 1 批准，进入 executing 并开始受控执行。
   signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: spark0067-wc0073-gate1
   at: '2026-08-08T15:24:32.271175+08:00'
 - summary: 开始 item-source-contract：定义 capabilities input_examples 与 text_match 输入片段的来源契约。
   signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: spark0067-wc0073-item-source-contract
   at: '2026-08-08T15:24:58.321621+08:00'
 - summary: 完成 item-source-contract：公共 input_examples 闭集与 text_match 可组合输入片段的来源边界已写入两份列明规范；开始 item-capability-implementation。
   signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: spark0067-wc0073-item-capability-implementation
   at: '2026-08-08T15:28:15.683053+08:00'
 - summary: 完成 item-capability-implementation：runtime、service 与 candidate operation 已按来源绑定输出唯一 text_match 可组合片段；开始 item-contract-tests。
   signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: spark0067-wc0073-item-contract-tests
   at: '2026-08-08T15:32:14.676956+08:00'
 - summary: 全部执行 work item 已完成，形成 result_version=1 的完整结果投影并进入 controller_checking。
   signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: spark0067-wc0073-controller-check
   at: '2026-08-08T15:35:42.484707+08:00'
 - summary: 完整 result_version=1 已回读并通过完整性审计，进入 independent_reviewing，等待独立只读结果复核。
   signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: spark0067-wc0073-independent-review
   at: '2026-08-08T15:36:08.819155+08:00'
 - summary: 独立只读结果复核已对 result_version=1 给出 pass；保留 independent_reviewing 以完成复核登记与回读。
   signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: spark0067-wc0073-result-review-recorded
   at: '2026-08-08T15:52:38.164755+08:00'
 - summary: result_version=1 的独立结果复核已回读且无 feedback，进入 closure_preparing。
   signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: spark0067-wc0073-closure-preparing
   at: '2026-08-08T15:53:04.155310+08:00'
 - summary: 完成终态保留审查并在 closure_preparing 形成 completed 关闭提案；原 scope 无剩余责任。
   signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: spark0067-wc0073-closure-proposal
   at: '2026-08-08T15:54:49.082007+08:00'
 - summary: 完整关闭提案已回读并通过完整性审计，进入 human_closure_confirming 等待 Human Gate 2。
   signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: spark0067-wc0073-gate2-waiting
   at: '2026-08-08T15:55:12.455700+08:00'
 - summary: 消费 Human Gate 2 批准，以 completed 关闭 WorkCase-0073。
   signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: spark0067-wc0073-gate2-close
   at: '2026-08-08T15:57:57.849498+08:00'
+- at: '2026-08-10T08:53:07.790373Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: codex-desktop -> Codex; 1: codex-desktop -> Codex; 2: codex-desktop -> Codex; 3: codex-desktop -> Codex; 4: codex-desktop -> Codex; 5: codex-desktop -> Codex; 6: codex-desktop -> Codex; 7: codex-desktop -> Codex; 8: codex-desktop -> Codex; 9: codex-desktop -> Codex; 10: codex-desktop -> Codex; 11: codex-desktop -> Codex。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-workcase-signature-migration-20260810
+
 closure_outcome: completed
 disposition_summary: 已在原 scope 内完成 F2 text_match 运行时输入可发现性整改：共同 input_examples 契约、唯一来源绑定片段和定向回归均已交付并经独立只读复核通过。原 scope 内没有未满足或未验证责任，不需要路由、Spark 建议或 accepted-stop；Git commit 明确排除，现有未提交差异保留供 Human 后续处理。
 relations:
@@ -105,4 +112,4 @@ relations:
 object_id: workcase-0073
 fact_type_key: workcase
 created_at: '2026-08-08T15:19:48.489418+08:00'
-updated_at: '2026-08-08T15:57:57.849498+08:00'
+updated_at: '2026-08-10T08:53:07.790373Z'
