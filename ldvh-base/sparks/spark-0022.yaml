@@ -36,11 +36,18 @@ change_log:
   summary: 承接现状更新：规则层已由 workcase-0060（05 §9.4）承接；残留为 Gate 前置拦截实现，保持 open
 - signature:
     agent_id: trae-deepseek-v4
-    host_environment: TraeCode
+    host_environment: Trae
   session_id: spark-0022-disposition-2026-08-08
   at: '2026-08-08T23:55:07.835330+08:00'
   summary: Human 决定关闭：前置拦截经分析判定冗余，与 merge 后检测功能重叠且有竞态，行业不做提交前远端检查；§9.4「依赖同步纪律」立场正确。status open → discarded
+- at: '2026-08-10T08:46:21.933478Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 2: TraeCode -> Trae。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-legacy-signature-migration-20260810
+
 object_id: spark-0022
 fact_type_key: spark
 created_at: '2026-07-21T04:10:57.798570+08:00'
-updated_at: '2026-08-08T23:55:07.835330+08:00'
+updated_at: '2026-08-10T08:46:21.933478Z'
