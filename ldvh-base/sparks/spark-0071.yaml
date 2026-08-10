@@ -11,7 +11,7 @@ change_log:
 - summary: 补建变更流水以支持受控提交；spark-0071 为新增 Spark（恒定锚点 + Helper 状态驱动提醒议题），事实内容由其他会话产出，此处仅补审计签名。
   signature:
     agent_id: workbuddy-ai
-    host_environment: workbuddy-claw
+    host_environment: Workbuddy
   session_id: batch-commit-20260809-spark0071
   at: '2026-08-08T22:00:00+08:00'
 - signature:
@@ -26,6 +26,13 @@ change_log:
   session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
   at: '2026-08-09T14:35:11.369215+08:00'
   summary: 消费 Human 对关联 Spark 的收口授权；依据已关闭 workcase-0081 的完整结果与边界，将 spark-0071 从 open 更新为 implemented。
+- at: '2026-08-10T08:47:45.013000Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: workbuddy-claw -> Workbuddy。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-legacy-signature-migration-20260810
+
 disposition_summary: 第一版已直接落实：WorkCase 单项终结后的 fresh projection 必须重入 Controller，剩余 item 继续判断、全部 terminal 后继续既有结果链；定向契约测试与一次同链跨 item 实证通过。该处置不声称跨会话、跨环境、宿主 Hook 或模型外机械续跑，范围内无剩余责任。
 relations:
 - relation_key: related-to
@@ -51,4 +58,4 @@ relations:
 object_id: spark-0071
 fact_type_key: spark
 created_at: '2026-08-08T22:00:00+08:00'
-updated_at: '2026-08-09T14:35:11.369215+08:00'
+updated_at: '2026-08-10T08:47:45.013000Z'
