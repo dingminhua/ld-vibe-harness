@@ -12,16 +12,22 @@ evolution:
 change_log:
 - signature:
     agent_id: trae
-    host_environment: trae-desktop
+    host_environment: Trae
   session_id: spark0034-legacy-migration
   at: '2026-08-08T23:09:03.657370+08:00'
   summary: 为 spark-0034 补建 change_log 以支持后续受控更新（路由至 WorkCase-0077）。
 - summary: spark-0034 路由至 WorkCase-0077；问题 b（follow_up 引导层）已解决，a/c/d 仍开放。
   signature:
     agent_id: trae
-    host_environment: trae-desktop
+    host_environment: Trae
   session_id: spark0034-route-wc0077
   at: '2026-08-08T23:09:18.171630+08:00'
+- at: '2026-08-10T08:46:33.847735Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: trae-desktop -> Trae; 1: trae-desktop -> Trae。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-legacy-signature-migration-20260810
 disposition_summary: WorkCase-0077 完成了方案 A（follow_up 引导层）的交付：config_status 为 missing/invalid/conflict 时，resolve-governance-scope 通过 follow_up 字段提供不越权的下一步引导，指向环境接入行动模板。spark-0034 的问题 b（引导层）已解决；问题 a（工作区边界发现）、c（bootstrap 责任归属）、d（多场景验证完整闭环）仍开放，后续可通过新 WorkCase 推进。
 relations:
 - relation_key: routed-to
@@ -32,4 +38,4 @@ relations:
 object_id: spark-0034
 fact_type_key: spark
 created_at: '2026-07-24T18:42:00+08:00'
-updated_at: '2026-08-08T23:09:18.171630+08:00'
+updated_at: '2026-08-10T08:46:33.847735Z'
