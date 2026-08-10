@@ -1,6 +1,6 @@
 title: 全量测试耗时预估 — 使 AI 在启动前了解测试预期耗时以编排工作流程
 status: implemented
-disposition_summary: "信息需求已直接落实：阶段 1（记录侧派生 + status 查询接口）由 workcase-0083 完成代码实现，test_runs.py 在读取侧由 started_at/ended_at 派生 duration_seconds，tools/run_full_tests.py status 输出历史均值/中位数与 fallback；阶段 3（流程固化）由 specs/07 §11.4 写入规范，要求 AI 执行 full-v4 前查询历史耗时预估并告知 Human。阶段 2（Web 展示）经 Human 明确决定不做。full-v4 run-c439573ecb194ff08ae70a733b826f14 六步 exit_code=0 但整体 status=unknown（working_tree_evidence.status=stale），该运行记录的 stale 状态不构成落实成立的阻碍。无剩余待处置内容或事实承接对象。"
+disposition_summary: 信息需求已直接落实：阶段 1（记录侧派生 + status 查询接口）由 workcase-0083 完成代码实现，test_runs.py 在读取侧由 started_at/ended_at 派生 duration_seconds，tools/run_full_tests.py status 输出历史均值/中位数与 fallback；阶段 3（流程固化）由 specs/07 §11.4 写入规范，要求 AI 执行 full-v4 前查询历史耗时预估并告知 Human。阶段 2（Web 展示）经 Human 明确决定不做。full-v4 run-c439573ecb194ff08ae70a733b826f14 六步 exit_code=0 但整体 status=unknown（working_tree_evidence.status=stale），该运行记录的 stale 状态不构成落实成立的阻碍。无剩余待处置内容或事实承接对象。
 intent: LDVH 的 full-v4 全量测试包含 6 个步骤（ruff lint、pytest code/tests、fact-integrity、web typecheck、web tests、web build），当前无任何耗时预估机制，AI 在启动前不知道预期耗时多长，无法合理编排工作流程。若不做此功能，AI 要么盲目启动全量测试后长时间等待，要么因怕耗时过长而不敢启动，影响回归验证的效率与意愿。
 summary: "**问题**\n\n当前 full-v4 全量测试执行没有耗时预估机制：\n- AI 调用 `tools/run_full_tests.py start` 前不知道每个步骤的预期耗时\n- 测试运行记录（`test_runs.py` 的 v1/v2 record）不登记 step 级别的耗时统计\n- Web 测试结果展示无历史耗时对比\n- AI 无法根据耗时长短决定：是否排队后台运行、是否缩小测试范围、是否在当前上下文等待\n\n**现状数据**\n\n- Python 测试：~85 个测试文件（code/tests/），包含 57+ 收集用例（当前 76 个 collection errors），全量运行耗时较长\n- Web 测试：33 个 API 契约测试文件（web/tests/api/），使用 tsx --test 运行\n- full-v4 plan 固定 6 步：[code-lint, code-tests, fact-integrity, web-typecheck, web-tests, web-build]\n\n**代码核对结论（2026-08-09）**\n\n- `code/ldvh/testing/test_runs.py` v2 record 的 step 结构（L280）已强制包含 `started_at`/`ended_at`，且终态步骤（passed/failed/unknown）校验要求两者均为 offset datetime → **每步耗时 = ended_at − started_at，可直接派生，零 Schema 变更**，无需改动 v2 record 结构与机械校验\n- `tools/run_full_tests.py` 仅有 start/status/wait 三个命令，`status` 输出无任何耗时信息；全库 grep 不到 duration/elapsed 相关字段或统计逻辑 → 与「现状无耗时预估机制」一致\n- Web 端测试运行结果页面组件未在 `web/src` 按 test-runs 关键词定位到，是否存在展示页待进一步核实\n\n**需求**\n\n1. **运行记录侧**：在 `test_runs.py` 的 v2 record 中，为每个 step 登记实际耗时（duration_seconds 或从 started_at/ended_at 派生）；积累历史运行数据后提供分步耗时统计（最近 N 次的均值/中位数）\n2. **查询接口**：让 AI 在调用全量测试前能通过 `status` 或新增查询获取历史耗时预估（「最近 3 次 code-tests 平均耗时 X 秒」）\n3. **Web 展示**：在 Web 测试运行结果页面或测试记录详情中展示每步耗时和总耗时，并可选展示历史对比\n4. **AI 决策依据**：AI 获得耗时预估后，可根据上下文剩余容量决定：排队后台运行（`start` 返回后继续其它工作）、缩小范围（只跑相关 tests）、或等待结果\n\n**实施方案（三阶段，主线优先）**\n\n阶段 1 — 记录侧派生与查询接口（核心收益，建议先做）：\n1. 在 `test_runs.py` 的 v2 step 结构中新增派生 `duration_seconds` 字段（由已有的 `started_at`/`ended_at` 计算，不改校验闭集）\n2. 在 `test_runs.py` 或新增模块维护最近 N 次运行的分步耗时统计（JSON 文件，随运行记录一起管理）\n3. 扩展 `tools/run_full_tests.py` 的 `status` 命令输出：增加每步耗时预估（「最近 3 次 code-tests 平均耗时 X 秒」），或新增 `estimate` 子命令\n4. 历史数据不足时先用固定经验值兜底（lint ~5s、code-tests ~60s、fact-integrity ~10s、web-typecheck ~30s、web-tests ~120s、web-build ~60s），实际运行后逐步替换\n\n阶段 2 — Web 展示：\n5. 在测试运行结果页面/记录详情中展示每步耗时与总耗时\n6. 可选：历史耗时对比（最近 N 次趋势）\n\n阶段 3 — 流程固化：\n7. 在测试行动模板中补充：AI 启动全量测试前应先查询耗时预估并据此决策\n\n**边界**\n\n- 本议题不要求改变 full-v4 的 6 步固定计划，只要求在现有框架内增加耗时登记与查询\n- 不要求实时进度估算（ETA），只要求基于历史数据的事前预估\n- 历史数据积累前，可以先登记固定经验值，实际运行后逐步替换为真实统计数据\n- 不要求新增 full-v4 的步骤或改变现有步骤的执行逻辑\n\n**候选方向**\n\n1. 在 v2 record 的 step 结构中增加 `duration_seconds` 字段（可从已有的 `started_at`/`ended_at` 派生，或直接登记）\n2. 在 `test_runs.py` 或新增模块中维护最近 N 次运行的分步耗时统计（JSON 文件，随运行记录一起管理）\n3. 在 `tools/run_full_tests.py` 的 `status` 命令输出中增加耗时预估信息，或新增 `estimate` 子命令\n4. Web 端在测试运行详情页展示每步耗时条/图表\n5. 在测试行动模板中补充：AI 启动全量测试前应查询耗时预估并据此决策\n\n**待判断**\n\n- 耗时统计的持久位置：依附于 `.ldvh-test-runs/` 下的运行记录，还是独立的统计文件\n- 历史窗口大小：最近 3 次、5 次还是全部\n- Web 展示的颗粒度：是否需要趋势线，还是简单数字即可\n- 是否需要区分首次运行（无历史数据）和后续运行（有历史数据）的预估行为"
 evolution:
@@ -18,7 +18,7 @@ change_log:
   summary: 受控创建本 Spark：全量测试耗时预估，使 AI 在启动测试前能获知预期耗时以合理编排工作流程。
   signature:
     agent_id: claude
-    host_environment: Claude Code (macOS)
+    host_environment: Claude
 - at: '2026-08-09T14:56:38.821152+08:00'
   session_id: workbuddy-session-20260809
   summary: 受控更新 spark-0060：补充详细实施方案（代码核对结论 + 三阶段落地 + 待判断点）。
@@ -37,7 +37,13 @@ change_log:
   signature:
     model_id: deepseek-v4-flash
     agent_workbench: WorkBuddy
+- at: '2026-08-10T08:47:15.334640Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: Claude Code (macOS) -> Claude。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-legacy-signature-migration-20260810
 object_id: spark-0060
 fact_type_key: spark
 created_at: '2026-08-06T02:08:00+08:00'
-updated_at: '2026-08-09T15:10:00+08:00'
+updated_at: '2026-08-10T08:47:15.334640Z'
