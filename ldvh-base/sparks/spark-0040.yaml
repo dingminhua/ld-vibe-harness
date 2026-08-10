@@ -6,7 +6,7 @@ summary: "## 探索目标\n\n判断如何增强 ADR、Pitfall 与 Study 在 LDVH
 object_id: spark-0040
 fact_type_key: spark
 created_at: '2026-08-01T15:42:27.431169+08:00'
-updated_at: '2026-08-10T08:46:39.625210Z'
+updated_at: '2026-08-10T09:14:55.609263Z'
 change_log:
 - summary: 补建变更流水以支持受控提交；spark-0040 的 HEAD 版本 summary 含未转义 ASCII 双引号导致 YAML 解析失败，本提交为经 Human 授权的一次性修复（--no-verify），工作树 summary 内容由其他会话产出，此处仅补审计签名。
   signature:
@@ -20,3 +20,9 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-legacy-signature-migration-20260810
+- at: '2026-08-10T09:14:55.609263Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: workbuddy-ai -> hy3。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-identity-id-migration-20260810
