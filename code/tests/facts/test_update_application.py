@@ -287,15 +287,21 @@ def test_generic_update_rejects_new_nonopen_spark_successor(
     assert source.read_bytes() == original
 
 
+@pytest.mark.parametrize("target_status", ["routed", "implemented", "discarded"])
 def test_generic_update_preserves_existing_spark_edge_after_target_lifecycle_change(
     current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
+    target_status: str,
 ) -> None:
     command, source = _new_routed_update_command(current_fact_schemas, tmp_path, "open")
     formed = apply_fact_update(command)
     assert formed.status == "updated"
 
-    _write_spark(source.parent, "spark-0002", "implemented")
+    if target_status == "routed":
+        _write_spark(source.parent, "spark-0003", "open")
+        _write_spark(source.parent, "spark-0002", target_status, relation_target="spark-0003")
+    else:
+        _write_spark(source.parent, "spark-0002", target_status)
     follow_up = _follow_up_update_command(
         command,
         summary="Update source while preserving the established route",

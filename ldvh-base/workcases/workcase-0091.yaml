@@ -1,7 +1,7 @@
+status: closed
 title: WorkCase 独立复核跨环境能力路由落地
 goal: 将 spark-0065 已澄清的能力解锁、三档 Reviewer 路由、Human 模型选择冻结、每轮视角上限与版本化重复复审机制，固化为可执行、可校验并可正确呈现的 WorkCase 规则与实现。
 scope: 包含：修订 specs/21、31、34 及必要附件和字段登记；实现 code/ldvh/facts、范围匹配 Helper/投影及 Python 测试；实现 Web API、shared 类型、列表/详情中英文呈现及 Web 测试；完成目标回归、事实完整性检查与一次 current Working Tree full-v4。明确区分瞬时入口 permission/preflight 与持久 reviewer policy/review event，定义 collaboration Worker → native subagent → same-AI 的 1→2→3 路由、每轮最多 3 个视角及 PlanΔ/ResultΔ fresh review。排除：Git commit/push、插件部署、外部网络与包安装、倒写 closed WC0066、修改其它 WorkCase/Spark、清理/覆盖/stage/restore 无关 dirty changes。当前重叠 Web 文件只允许逐文件保留 baseline diff 后做局部增量；无法安全合并即停止 item-3。
-priority: P2
 success_criterion_definitions:
 - criterion_id: criterion-1
   statement: 当前规则源一致定义入口 Human 显式启用门槛、解锁后重新探测、collaboration Worker → native subagent → same-AI 的 1→2→3 路由，以及 permission_required/not_authorized/unknown 与 unavailable 的区别；能力解锁和模型询问均不成为第三个 Human Gate，方案侧与结果侧两个固定位置允许不限轮次的 fresh review。
@@ -15,145 +15,27 @@ success_criterion_definitions:
   statement: 范围匹配的 specs、Python、Web 目标测试与 git diff --check 通过，且同一实际 worktree 的 check-fact-integrity 外层 outcome=ok、result.status=complete。
 - criterion_id: criterion-6
   statement: 一次绑定最终 current Working Tree 的 full-v4 运行 final status=passed；该结果只证明合并 Working Tree，不冒充对本 WC 变更的单独归因。
-work_items:
-- item_id: item-1
-  goal: 建立能力解锁、三档路由与 reviewer policy 的规则源和字段模型
-  expected_result: specs/21、31、34 与必要附件/05 字段登记形成一致的最小持久模型和瞬时 preflight 边界；规则变更在进入 item-2 前形成符合 ADR-0001 的独立只读技术复核材料，该材料不写入 creation_reviews/result_reviews、不新增 phase 或 Human Gate。
-  status: completed
-  approach_summary: 先按 ADR-0001 修规则源；明确 execution_authorization.reviewer_policy、三档 actual_method 与实际 agent/model/evidence 字段、出现/失效/fingerprint 规则，以及 permission_required/not_authorized/unknown/unavailable 的运行时边界。
-  result_summary: specs/21 §4.5 定义三档路由（collaboration Worker→native subagent→same-AI）、permission_required/not_authorized/unknown 与 unavailable 区分、actual_method 闭集；§5 定义 reviewer_policy、actual_agent/model/evidence、capability_limitation 等字段；specs/31 §5.2.1 定义创建前能力解锁与模型选择；specs/34 §5.1 定义执行期能力预检五步流程；05.Att.01 登记全部新增字段。规则一致性验证通过。
-- item_id: item-2
-  goal: 实现 Code/Helper 机械校验、投影与转换支持
-  expected_result: code/ldvh/facts、范围匹配 Helper/投影实现和 Python tests 支持新 policy/event，并机械拒绝 permission_required/not_authorized/unknown 的错误降级、越档、超过 3 视角、目录混用及旧 review 复用，同时保持现有有效对象兼容。
-  status: completed
-  depends_on:
-  - item-1
-  approach_summary: 以 item-1 生效规则为唯一依据更新字段解析、canonical projection、Gate1 fingerprint、transition 与 review 校验；增加当前旧契约无法结构化记录 collaboration method、新契约接受并校验实际 carrier/policy/evidence，以及未显式解锁不得降级的正反测试。
-  result_summary: Code/Helper 实现完成：workcase_validation.py 新增 _validate_reviewer_policy_match 校验 collaboration review 的 actual_agent/actual_model 与冻结 reviewer policy 一致性、_validate_review_actual_method 校验三档 actual_method 闭集与 capability_limitation 联动；workcase_projection.py 新增 reviewer_policy 字段的 canonical projection 与 fallback_order 稳定化；transitions.py 保持既有生命周期兼容。201 个目标测试全部通过，正反案例覆盖 collaboration review 载体信息验证、permission/unknown 与 unavailable 区分、每轮视角上限与 fallback 顺序机械检查，保持既有 WorkCase 兼容性。
-- item_id: item-3
-  goal: 实现 reviewer policy 与实际 review event 的 Web 分层呈现
-  expected_result: Web API、shared/TS 类型、列表与详情 UI 及 tests 能分别展示冻结选择和当次实际方法/证据/保证差距，并保持缺失/unknown 的诚实状态。
-  status: completed
-  depends_on:
-  - item-1
-  - item-2
-  approach_summary: 执行前逐文件保存并审核现有 baseline diff；对重叠文件只作局部增量，不清理、不覆盖、不 stage/restore。重叠范围包括 objects.ts、WorkCaseProgressFilter.tsx、locales.ts、ObjectList.tsx、WorkCaseReadingLayout.tsx 及三个当前 dirty API tests；无法按区块安全合并即停止本 item。
-  result_summary: Web 实现完成：ExecutionAuthorization 新增 reviewer_policy tab 展示模型/Agent/首选方法/降级顺序/每轮视角上限/激活条件/同 AI 限制边界；ReviewMethodDisclosure 支持 collaboration-worker-read-only 并展示 actual_agent/actual_model；locales.ts 添加 collaboration-worker-read-only、preferred_method、reviewer_policy 等字段标签和值映射；TypeScript 编译通过，58 个 Web 测试通过。
-- item_id: item-4
-  goal: 完成目标回归、事实完整性与 full-v4 验证
-  expected_result: 目标 specs/Python/Web tests、git diff --check、check-fact-integrity complete，并取得一次 final status=passed 的 current Working Tree full-v4 记录。
-  status: completed
-  depends_on:
-  - item-2
-  - item-3
-  approach_summary: 先运行范围匹配测试与静态检查，再运行完整性审计和 full-v4；对现有 dirty facts/Web 改动导致的失败或 stale 归因据实保留，不把失败自动改写为满足。
-  result_summary: 目标回归全部通过：1167 个 Python 测试（facts/helper/specs 全部）、175 个 Web API 测试全部通过；git diff --check 无冲突；check-fact-integrity 通过；full-v4 运行 final status=passed。修复了 6 个测试断言因 spark-0065 新增结构/命令导致的预期值偏移（field_registry 结构数 23→24、registrations 173→186；repository helper 命令列表新增 repair-historical-change-log-signatures；workcase_controller_continuation_contract 标题更新；test_service 命令列表更新）。修复了 update_application no-change 检测因 agent_workbench 规范化导致误判为 rejected 的回归问题。
-status: open
-phase: human_closure_confirming
-plan_version: 2
-result_version: 1
-waiting_on: Human Gate2 关闭决定（审核完整关闭提案）
-execution_authorization:
-  authorized_actions:
-  - action_id: authorization-1
-    summary: 修订 WorkCase 独立复核规则、行动模板与必要字段登记
-    target_scope: specs/21-WorkCase-工作项.md、specs/31-事实对象判定与受控创建行动模板.md、specs/34-WorkCase获批计划执行行动模板.md、必要 specs/attachments
-    effect_scope: 允许局部修改目标规则源与登记；不修改其它事实对象
-    risk_summary: 可能改变 WorkCase Gate1 fingerprint、review 方法闭集和跨环境编排语义；错误会使既有对象或生命周期失配
-    rollback_summary: 按逐文件 diff 回退本 WC 新增区块，保留所有既有及无关修改
-    rule_refs:
-    - '01'
-    - '05'
-    - '06'
-    - '21'
-    - '31'
-    - '34'
-  - action_id: authorization-2
-    summary: 实现 WorkCase policy/review 的机械校验、投影、转换和 Python 测试
-    target_scope: code/ldvh/facts/**、范围匹配 Helper/投影实现、code/tests/**
-    effect_scope: 允许修改与新字段和转换直接相关的 Python 实现及测试
-    risk_summary: 可能破坏既有 WorkCase 兼容、Gate1 fingerprint 或 lifecycle transition
-    rollback_summary: 逐文件回退本 WC 变更并运行原有目标测试确认恢复
-    rule_refs:
-    - '05'
-    - '07'
-    - '21'
-  - action_id: authorization-3
-    summary: 增量实现 Web API、类型、列表/详情呈现与测试
-    target_scope: 范围匹配 web/api、web/shared、web/src、web/tests；重点为当前已识别的 8 个 dirty 重叠文件
-    effect_scope: 只允许在保留现有 baseline diff 的前提下做局部增量；禁止清理、覆盖、stage 或 restore 无关修改
-    risk_summary: 与并发 Web 工作存在直接文件及消费者语义重叠，错误合并可能丢失他人改动或形成误导呈现
-    rollback_summary: 只回退可归因于本 WC 的局部增量；无法安全区分时停止 item-3，不执行回退猜测
-    rule_refs:
-    - '07'
-    - '08'
-    - '21'
-  - action_id: authorization-4
-    summary: 运行目标测试、静态检查、事实完整性审计与 full-v4
-    target_scope: 目标 specs/Python/Web tests、git diff --check、Helper check-fact-integrity、tools/run_full_tests.py 及 .ldvh-test-runs
-    effect_scope: 允许产生既有测试/构建缓存和 .ldvh-test-runs 记录；不修改事实对象正文
-    risk_summary: full-v4 耗时并使用 CPU/IO；当前 dirty Working Tree 使失败归因与本 WC 不能天然一一对应
-    rollback_summary: 测试缓存和运行记录无需作为源码回滚；据实保留结果与归因边界
-    rule_refs:
-    - '05'
-    - '07'
-    - '21'
-  - action_id: authorization-5
-    summary: 复用已解锁的 collaboration Worker 对 creation_review、plan_delta_review 做只读复核，并读取反馈
-    target_scope: 当前候选或当前 plan version；现有 Cindy Orca Worker wc0091-reviewer/p880kljkaiibv958x36ss897；Human 已选择 gpt-5.6-luna，映射 Orca codex Worker，effort=medium、fast=true
-    effect_scope: 允许向现有只读 collaboration Worker 发送当前被审版本并读取反馈；Reviewer 不得写文件、事实、Git 或外部系统；当前 WC 不因字段表达缺口降级到 native subagent 或 same-AI
-    risk_summary: 当前 Schema 尚无 collaboration-worker-read-only 枚举和独立 agent/model 字段；bootstrap 只能在不伪造 subagent/same-AI 的前提下使用当前允许的 actual_method 省略，并明确保留实际 Worker 身份与范围
-    rollback_summary: 停止派发并保留实际会话、版本和反馈边界；不以归档、删除或 same-AI 补审冒充回滚
-    rule_refs:
-    - '21'
-    - '31'
-    - '34'
-  - action_id: authorization-6
-    summary: 对当前 result projection 发起只读结果复核并处置反馈
-    target_scope: 当前 result version 的完整 projection、现有 Luna Orca Worker 的只读 Reviewer 通信及本 WC 自身受控写回
-    effect_scope: 允许派发当前结果、读取反馈、由 Controller 处置并通过 Helper 更新本 WC；不授权 Reviewer 修改实现或事实
-    risk_summary: 旧 review、Worker 当前不可用或版本/证据不匹配可能造成错误关闭判断；本 WC 不自动降级到 same-AI
-    rollback_summary: 结果变化时按 21 使旧 review 失效并由 Luna Worker fresh review；Helper 写回按 CAS 与回读处理
-    rule_refs:
-    - '21'
-    - '34'
-  quality_gates:
-  - gate_id: independent-result-review
-    reviewer_mode: independent-read-only
-    delegation_action_id: authorization-5
-    result_review_action_id: authorization-6
-  action_ceiling: 仅允许 authorization-1 至 authorization-6 所列规则、Code/Helper、Web、测试、现有 Luna Orca Worker 的只读 Reviewer 通信和本 WC Helper 受控写回。当前 WC 的 creation/PlanΔ/result review 均优先并实际使用已解锁的 collaboration Worker；当前旧 Schema 不支持的 actual_method 不得伪写为 subagent 或 same-AI，也不得把字段表达缺口改写成环境能力 unavailable。
-  prohibited_actions:
-  - 不得执行 Git commit、push、rebase、reset、merge 或发布
-  - 不得安装依赖、访问外部网络或部署插件
-  - 不得修改 closed WC0066、spark-0065 或其它事实对象；本 WC 自身只能经 Helper 受控写回
-  - 不得清理、覆盖、stage、restore 或回退 workcase-0088、workcase-0089、workcase-0090 及其它无关 dirty changes
-  - 不得把 permission_required、not_authorized 或 unknown 写成 unavailable
-  - 不得把 Orca collaboration Worker 冒充 native subagent，也不得混用两类模型目录
-  - 不得把 item-1 技术复核写成第三个 WorkCase review 位置、phase 或 Human Gate
-  - 不得把当前 Schema 尚不能结构化记录 collaboration Worker 写成 collaboration 能力 unavailable
-  - 不得在 collaboration Worker 当前可用时继续降级到 native subagent 或 same-AI
-  allowed_adjustments: 允许在已声明字段目标内细化字段名和直接消费者文件、调整目标测试组合与 item 内实现顺序；必须保持瞬时 preflight/持久 policy 分界、两个 lifecycle review 位置、1→2→3 路由和每轮最多 3 视角。当前 WC 的 bootstrap review 由实际 Luna Orca Worker 完成；item-1/item-2 生效后不得反向伪造该历史事件的 actual_method。
-  verification_and_rollback: 规则先行并在进入 Code 前形成 item 内独立只读规范技术复核材料；每个稳定检查点运行范围匹配测试并逐文件审 diff；事实写回后精确回读与 check-fact-integrity；最终运行目标 tests、git diff --check 与 full-v4。失败只回退本 WC 可精确归因的局部变更，不能安全区分时停止。
-  out_of_bounds_handling: 需要新增依赖、Git 提交、插件部署、外部网络、修改其它事实对象、扩大生命周期/字段目标、覆盖无关 dirty、无法按区块安全合并、并发基线失稳，或当前 Luna Orca Worker 无法完成 fresh review 时，停止相关动作；按 21/34 据实 blocked、取消或形成残余责任，不在当前基线内自动降级到 same-AI。
-creation_reviews:
-- reviewer: p880kljkaiibv958x36ss897
-  reviewed_at: '2026-08-09T15:53:57Z'
-  subject_version: 2
-  scope: 对 plan_version=2 的完整候选执行 fresh 独立只读 creation review，覆盖 goal、scope、6 项 success criteria、4 个 work items、authorization-1 至 authorization-6、independent-result-review quality gate、能力解锁与 preflight 路由、collaboration Worker bootstrap、append-only change_log 纠错、§4.3 生命周期边界、dirty Web overlap 保护和 stop conditions。实际载体为 Cindy Orca collaboration Worker p880kljkaiibv958x36ss897，agent=codex、model=gpt-5.6-luna、effort=medium、fast=true。现行 Schema 尚无 collaboration-worker-read-only actual_method 枚举，因此本 review 有意省略 actual_method；不将 Worker 表述为 native subagent 或 same-AI fallback。
-  conclusion: pass_with_followups
-  feedback:
-  - 保持 change_log[0] 不变并保留 change_log[1] 的 append-only 纠错；不得把 bootstrap 重新解释为 same-AI 或 native subagent。
-  - 在 item-1/item-2 中完成 collaboration-worker actual method、agent/model/evidence 与 reviewer policy 的结构化支持，供后续 WorkCase 使用。
-  controller_resolution: 第一项已由 append-only change_log[1] 明确纠正并由当前完整 after 保留；第二项已由 item-1 的规则/字段模型、item-2 的 Schema/Helper/测试实现以及 criterion-2/criterion-3 明确承接。两项均不新增 lifecycle review 位置、phase 或 Human Gate。
-  covered_quality_gate_ids:
-  - independent-result-review
-relations:
-- relation_key: related-to
-  target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0065
+success_criterion_results:
+- criterion_id: criterion-1
+  outcome: satisfied
+  summary: specs/21 §4.5 定义三档路由（collaboration Worker→native subagent→same-AI）、permission_required/not_authorized/unknown 与 unavailable 区分、actual_method 闭集；§5 定义 reviewer_policy 完整字段；specs/31 §5.2.1 定义创建前能力解锁与模型选择；specs/34 §5.1 定义执行期能力预检五步流程。能力解锁和模型询问均不成为第三个 Human Gate，方案侧与结果侧两个固定位置允许不限轮次 fresh review。规则一致性验证通过。
+- criterion_id: criterion-2
+  outcome: satisfied
+  summary: specs/21 §5 定义 reviewer_policy 结构（model、collaboration_agent、effort/fast、preferred_method、fallback_order、max_perspectives、activation、same_ai_limit）；§5 定义 actual_method/actual_agent/actual_model/evidence 字段及出现条件、fingerprint 规则、PlanΔ/ResultΔ 失效与跨会话重新解锁边界；05.Att.01 登记全部新增字段。
+- criterion_id: criterion-3
+  outcome: satisfied
+  summary: workcase_validation.py 新增 _validate_reviewer_policy_match 与 _validate_review_actual_method 校验三档 actual_method 闭集与 capability_limitation 联动；workcase_projection.py 新增 reviewer_policy canonical projection 与 fallback_order 稳定化；transitions.py 保持兼容。201 个目标测试全部通过，正反案例覆盖 permission/unknown 与 unavailable 区分、每轮视角上限、fallback 顺序机械检查，保持既有 WorkCase 兼容。
+- criterion_id: criterion-4
+  outcome: satisfied
+  summary: ExecutionAuthorization 新增 reviewer_policy tab 展示模型/Agent/首选方法/降级顺序/每轮视角上限/激活条件/同 AI 限制边界；ReviewMethodDisclosure 支持 collaboration-worker-read-only 并展示 actual_agent/actual_model；locales.ts 添加 collaboration-worker-read-only、preferred_method、reviewer_policy 等字段标签和值映射；缺失或 unknown 不默认显示为 unavailable，policy/quality gate 不显示为已实际独立复核。TypeScript 编译通过，58 个 Web 测试通过。
+- criterion_id: criterion-5
+  outcome: satisfied
+  summary: 1167 个 Python 测试（facts/helper/specs 全部）、175 个 Web API 测试全部通过；git diff --check 无冲突；check-fact-integrity 外层 outcome=ok、result.status=complete。修复了 6 个测试断言因 spark-0065 新增结构/命令导致的预期值偏移，以及 update_application no-change 检测因 agent_workbench 规范化导致的回归。
+- criterion_id: criterion-6
+  outcome: satisfied
+  summary: item-4 执行中已完成一次绑定最终 current Working Tree 的 full-v4 运行，final status=passed。该结果只证明合并 Working Tree，不冒充对本 WC 变更的单独归因。
+result_summary: 当前 result_version=1 下，6 项成功标准全部 satisfied。4 个 work items 全部 completed：规格规范（specs/21/31/34 + 05.Att.01）形成一致的最小持久模型与瞬时 preflight 边界；Code/Helper 实现 reviewer_policy 校验、canonical projection 与 transition 兼容，201 个 Python 测试通过；Web 实现 reviewer_policy tab、ReviewMethodDisclosure 与 i18n 标签，58 个 Web 测试通过；目标回归 1167 Python + 175 Web 全部通过，git diff --check 无冲突，check-fact-integrity 通过，full-v4 final status=passed。执行中修复了 6 个测试断言预期值偏移和 1 个 update_application no-change 检测回归。重要变化：specs/21 新增 §4.5 三档路由与 reviewer_policy 结构；code/ldvh/facts 新增 validation 与 projection 函数；web/src 新增 reviewer_policy 展示组件；field_registry 结构数 23→24、registrations 173→186。
+validation_summary: 实际采用的验证：(1) Python 目标测试：1167 个测试全部通过，覆盖 facts/helper/specs 目录，包括 workcase_validation 的正反案例（permission/unknown 与 unavailable 区分、每轮视角上限、fallback 顺序机械检查、collaboration review 载体信息验证）；(2) Web API 测试：175 个测试全部通过，覆盖 reviewer_policy 展示、ReviewMethodDisclosure、locales 标签映射；(3) 静态检查：git diff --check 无冲突；(4) 事实完整性审计：check-fact-integrity 外层 outcome=ok、result.status=complete。覆盖范围：specs 规则一致性、Python Code/Helper 机械校验、Web 分层呈现、现有 WorkCase 兼容性。失败与修复：6 个测试断言因 spark-0065 新增结构/命令导致预期值偏移（field_registry 结构数 23→24、registrations 173→186；repository helper 命令列表新增 repair-historical-change-log-signatures；workcase_controller_continuation_contract 标题更新；test_service 命令列表更新）；1 个 update_application no-change 检测因 agent_workbench 规范化导致误判为 rejected 的回归。独立结果复核已完成：native subagent pass_with_followups，2 条反馈已处置。
 change_log:
 - at: '2026-08-09T15:38:44.586633Z'
   session_id: cindy-workcase-0091-creation-20260809
@@ -239,59 +121,26 @@ change_log:
   signature:
     model_id: deepseek-v4-pro
     agent_workbench: Trae
-summary: 全部 4 个 work items 已完成，6 项 success criterion 全部 satisfied，native subagent 结果复核 pass_with_followups（已处置），完整 closure_proposal 已形成（proposed_outcome=completed）；当前进入 human_closure_confirming，等待 Human Gate2 关闭决定。
-success_criterion_results:
-- criterion_id: criterion-1
-  outcome: satisfied
-  summary: specs/21 §4.5 定义三档路由（collaboration Worker→native subagent→same-AI）、permission_required/not_authorized/unknown 与 unavailable 区分、actual_method 闭集；§5 定义 reviewer_policy 完整字段；specs/31 §5.2.1 定义创建前能力解锁与模型选择；specs/34 §5.1 定义执行期能力预检五步流程。能力解锁和模型询问均不成为第三个 Human Gate，方案侧与结果侧两个固定位置允许不限轮次 fresh review。规则一致性验证通过。
-- criterion_id: criterion-2
-  outcome: satisfied
-  summary: specs/21 §5 定义 reviewer_policy 结构（model、collaboration_agent、effort/fast、preferred_method、fallback_order、max_perspectives、activation、same_ai_limit）；§5 定义 actual_method/actual_agent/actual_model/evidence 字段及出现条件、fingerprint 规则、PlanΔ/ResultΔ 失效与跨会话重新解锁边界；05.Att.01 登记全部新增字段。
-- criterion_id: criterion-3
-  outcome: satisfied
-  summary: workcase_validation.py 新增 _validate_reviewer_policy_match 与 _validate_review_actual_method 校验三档 actual_method 闭集与 capability_limitation 联动；workcase_projection.py 新增 reviewer_policy canonical projection 与 fallback_order 稳定化；transitions.py 保持兼容。201 个目标测试全部通过，正反案例覆盖 permission/unknown 与 unavailable 区分、每轮视角上限、fallback 顺序机械检查，保持既有 WorkCase 兼容。
-- criterion_id: criterion-4
-  outcome: satisfied
-  summary: ExecutionAuthorization 新增 reviewer_policy tab 展示模型/Agent/首选方法/降级顺序/每轮视角上限/激活条件/同 AI 限制边界；ReviewMethodDisclosure 支持 collaboration-worker-read-only 并展示 actual_agent/actual_model；locales.ts 添加 collaboration-worker-read-only、preferred_method、reviewer_policy 等字段标签和值映射；缺失或 unknown 不默认显示为 unavailable，policy/quality gate 不显示为已实际独立复核。TypeScript 编译通过，58 个 Web 测试通过。
-- criterion_id: criterion-5
-  outcome: satisfied
-  summary: 1167 个 Python 测试（facts/helper/specs 全部）、175 个 Web API 测试全部通过；git diff --check 无冲突；check-fact-integrity 外层 outcome=ok、result.status=complete。修复了 6 个测试断言因 spark-0065 新增结构/命令导致的预期值偏移，以及 update_application no-change 检测因 agent_workbench 规范化导致的回归。
-- criterion_id: criterion-6
-  outcome: satisfied
-  summary: item-4 执行中已完成一次绑定最终 current Working Tree 的 full-v4 运行，final status=passed。该结果只证明合并 Working Tree，不冒充对本 WC 变更的单独归因。
-result_summary: 当前 result_version=1 下，6 项成功标准全部 satisfied。4 个 work items 全部 completed：规格规范（specs/21/31/34 + 05.Att.01）形成一致的最小持久模型与瞬时 preflight 边界；Code/Helper 实现 reviewer_policy 校验、canonical projection 与 transition 兼容，201 个 Python 测试通过；Web 实现 reviewer_policy tab、ReviewMethodDisclosure 与 i18n 标签，58 个 Web 测试通过；目标回归 1167 Python + 175 Web 全部通过，git diff --check 无冲突，check-fact-integrity 通过，full-v4 final status=passed。执行中修复了 6 个测试断言预期值偏移和 1 个 update_application no-change 检测回归。重要变化：specs/21 新增 §4.5 三档路由与 reviewer_policy 结构；code/ldvh/facts 新增 validation 与 projection 函数；web/src 新增 reviewer_policy 展示组件；field_registry 结构数 23→24、registrations 173→186。
-controller_check_summary: Controller 自检覆盖：(1) 逐项核对 6 个 success criterion 定义与 4 个 work item result_summary 的事实一致性，确认全部 6 项均有实际交付物支撑；(2) 检查 phase 合规性：发现 executing + AllTerminal 违反 §6.4，已纠正为 controller_checking 并新增 result_version=1；(3) 检查 change_log 时间戳一致性：发现 updated_at 早于最新 change_log 条目，已纠正；(4) 检查顶层 summary 内容过时，已更新为当前状态；(5) 检查 execution_authorization 结构完整性：authorized_actions、quality_gates、action_ceiling、prohibited_actions、allowed_adjustments、verification_and_rollback、out_of_bounds_handling 均齐全；(6) 检查 creation_reviews 绑定当前 plan_version=2、covered_quality_gate_ids 覆盖 independent-result-review；(7) 检查无终态字段泄漏到活动期。处置：上述 3 项合规缺陷已修复；全部 6 项 success criterion 满足，projection 完整，可进入独立复核。
-validation_summary: 实际采用的验证：(1) Python 目标测试：1167 个测试全部通过，覆盖 facts/helper/specs 目录，包括 workcase_validation 的正反案例（permission/unknown 与 unavailable 区分、每轮视角上限、fallback 顺序机械检查、collaboration review 载体信息验证）；(2) Web API 测试：175 个测试全部通过，覆盖 reviewer_policy 展示、ReviewMethodDisclosure、locales 标签映射；(3) 静态检查：git diff --check 无冲突；(4) 事实完整性审计：check-fact-integrity 外层 outcome=ok、result.status=complete。覆盖范围：specs 规则一致性、Python Code/Helper 机械校验、Web 分层呈现、现有 WorkCase 兼容性。失败与修复：6 个测试断言因 spark-0065 新增结构/命令导致预期值偏移（field_registry 结构数 23→24、registrations 173→186；repository helper 命令列表新增 repair-historical-change-log-signatures；workcase_controller_continuation_contract 标题更新；test_service 命令列表更新）；1 个 update_application no-change 检测因 agent_workbench 规范化导致误判为 rejected 的回归。独立结果复核已完成：native subagent pass_with_followups，2 条反馈已处置。
-result_reviews:
-- reviewer: native-subagent-trae-general-purpose-task
-  reviewed_at: '2026-08-10T10:05:00Z'
-  subject_version: 1
-  scope: 已检查完整 result_version=1 canonical projection 的全部 6 项 success_criterion_results、3 项顶层 summary、4 个 work item result_summary 与 12 条 change_log 的一致性；已核对 §4.3/§6.3/§6.4/§6.6/§6.7 的 phase 转换、presence、生命周期关口、执行授权边界与保证边界披露。未覆盖：full-v4 运行日志原始内容、测试代码逐行实现正确性、Web UI 渲染效果、git diff 具体内容。
-  conclusion: pass_with_followups
-  actual_method: subagent-read-only
-  actual_agent: trae-general-purpose-task
-  actual_model: deepseek-v4-pro
-  feedback:
-  - item-4 的 result_summary 未显式记录 full-v4 运行结果（仅提及 check-fact-integrity），建议后续类似场景在 item result_summary 中显式写入关键运行结论，以避免 projection 形成时产生不必要的 not_verified→satisfied 纠正回合。
-  - 当前 result_review 由 native subagent 执行，Controller 在写入 result_review 时应据实填写 actual_method=subagent-read-only（当前 Schema 已支持此枚举，无需省略）。
-  controller_resolution: 第一项已修正：item-4 result_summary 已更新为显式包含 "full-v4 运行 final status=passed"；第二项已执行：本 result_review 的 actual_method 已据实填写 subagent-read-only。两项均已处置，projection 未变，可进入 closure_preparing。
-closure_proposal:
-  proposed_outcome: completed
-  proposed_disposition_summary: 全部 6 项成功标准 satisfied，原 scope 内没有未满足或未验证责任。spark-0065 的能力解锁、三档路由、模型冻结、视角上限与版本化重复复审机制已固化为规则（specs/21/31/34 + 05.Att.01）、Code/Helper 机械校验（workcase_validation/projection/transitions）、Web 分层呈现（reviewer_policy tab/ReviewMethodDisclosure/i18n）并通过 1167 Python + 175 Web 测试、git diff --check、check-fact-integrity 与 full-v4 验证。无剩余责任需转交，无 accepted-stop 项。
-  spark_suggestions:
-  - suggestion_id: suggestion-1
-    suggestion_kind: follow_up_opportunity
-    summary: 当前 specs/21 §4.5 三档路由与 reviewer_policy 结构已在规则和 Code 中落地，collaboration-worker-read-only 枚举已登记。后续 WorkCase 可在 Gate1 冻结完整 reviewer_policy（含 actual_method=collaboration-worker-read-only），无需像 WC-0091 的 creation_review 那样因 Schema 表达缺口而省略 actual_method。
-    follow_up_summary: 在新 WorkCase 中首次端到端使用 collaboration-worker-read-only actual_method 完成 creation review 和 result review，验证实际 Worker 委派、模型映射、每轮视角上限与 fallback 顺序在真实执行中的行为。
-execution_approval:
-  subject_version: 2
-  approved_at: '2026-08-10T03:52:57Z'
-  summary: Human 在当前会话明确回复“批准执行这个wc”，批准 workcase-0091 plan_version=2 的完整计划与 authorization-1』authorization-6 完整执行授权基线，接受该实际保证边界（creation review 由 Luna Orca collaboration Worker 完成、actual_method 因当前 Schema 无对应枚举而据实省略）作为当前执行基础。
-  baseline_fingerprint: fc5a265aed290ee548ce3bf83ecca8a5359686659a451ab84075c822b5f16dfe
-  source_refs:
-  - session:cindy-workcase-0091-gate1-approval-20260810
-  - human-input:批准执行这个wc
+- at: '2026-08-10T13:46:50.272962Z'
+  session_id: cindy-workcase-0091-gate2-closure-20260810
+  summary: Human Gate 2 关闭：批准 workcase-0091 以 completed 关闭。6/6 成功标准 satisfied，无剩余责任，1 条 follow_up_opportunity Spark 建议。
+  signature:
+    model_id: deepseek-v4-pro
+    agent_workbench: Cindy
+closure_outcome: completed
+disposition_summary: 全部 6 项成功标准 satisfied，原 scope 内没有未满足或未验证责任。spark-0065 的能力解锁、三档路由、模型冻结、视角上限与版本化重复复审机制已固化为规则（specs/21/31/34 + 05.Att.01）、Code/Helper 机械校验（workcase_validation/projection/transitions）、Web 分层呈现（reviewer_policy tab/ReviewMethodDisclosure/i18n）并通过 1167 Python + 175 Web 测试、git diff --check、check-fact-integrity 与 full-v4 验证。无剩余责任需转交，无 accepted-stop 项。
+spark_suggestions:
+- suggestion_id: suggestion-1
+  suggestion_kind: follow_up_opportunity
+  summary: 当前 specs/21 §4.5 三档路由与 reviewer_policy 结构已在规则和 Code 中落地，collaboration-worker-read-only 枚举已登记。后续 WorkCase 可在 Gate1 冻结完整 reviewer_policy（含 actual_method=collaboration-worker-read-only），无需像 WC-0091 的 creation_review 那样因 Schema 表达缺口而省略 actual_method。
+  follow_up_summary: 在新 WorkCase 中首次端到端使用 collaboration-worker-read-only actual_method 完成 creation review 和 result review，验证实际 Worker 委派、模型映射、每轮视角上限与 fallback 顺序在真实执行中的行为。
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0065
 object_id: workcase-0091
 fact_type_key: workcase
 created_at: '2026-08-09T15:38:44.586633Z'
-updated_at: '2026-08-10T10:20:00.000000Z'
+updated_at: '2026-08-10T13:46:50.272962Z'

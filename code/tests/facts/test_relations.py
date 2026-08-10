@@ -100,8 +100,9 @@ def test_new_spark_successor_must_be_open_but_existing_edge_survives_target_life
     ) == ()
 
 
-def test_spark_formation_guard_leaves_non_spark_targets_to_existing_relation_rules() -> None:
-    relation = _relation("routed-to", "workcase-0002", fact_type_key="workcase")
+@pytest.mark.parametrize("target_type", ["workcase", "adr", "pitfall"])
+def test_spark_formation_guard_leaves_non_spark_targets_to_existing_relation_rules(target_type: str) -> None:
+    relation = _relation("routed-to", f"{target_type}-0002", fact_type_key=target_type)
 
     assert validate_spark_route_target_formation(
         _FormationCaseIndex(None),
