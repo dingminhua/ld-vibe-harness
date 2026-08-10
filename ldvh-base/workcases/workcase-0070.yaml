@@ -34,64 +34,71 @@ validation_summary: 针对 code/tests/testing/test_trial_measurement.py 的 20 �
 change_log:
 - signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: workcase-0070-planning
   at: '2026-08-08T06:30:33.037307+08:00'
   summary: Human 已批准建立下一轮 A 簇对照实验的 Gate 1 计划；创建后等待执行决定。
 - signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: workcase-0070-execution
   at: '2026-08-08T06:35:25.573173+08:00'
   summary: Human 已批准 Gate 1；进入执行并开始冻结协议工作项。
 - signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: workcase-0070-execution
   at: '2026-08-08T06:35:50.947419+08:00'
   summary: item-01 已开始：冻结协议与受限测试性 adapter；尚未执行真实 Helper trial。
 - signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: workcase-0070-execution
   at: '2026-08-08T06:40:39.074111+08:00'
   summary: 预飞发现冻结任务泄漏目标请求形状；按 fail-closed 边界取消未经执行的试验与分析项，进入结果核查。
 - signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: workcase-0070-result-review
   at: '2026-08-08T06:42:57.370042+08:00'
   summary: 完整结果投影已形成并回读；进入独立只读结果复核的持久化阶段。
 - signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: workcase-0070-result-review
   at: '2026-08-08T06:43:17.266005+08:00'
   summary: 独立只读结果复核通过：确认任务泄漏、零真实 trial、哈希链与 testing-only 范围结论。
 - signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: workcase-0070-closure-preparing
   at: '2026-08-08T06:45:58.688814+08:00'
   summary: 独立只读结果复核已通过且无 feedback；结果版本保持冻结，进入关闭提案形成阶段。
 - signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: workcase-0070-closure-proposal
   at: '2026-08-08T06:47:09.938703+08:00'
   summary: 终态保留审查已完成并形成 partial 关闭提案：未完成的有效 A 簇实验设计与重跑判断路由至当前 Spark-0068 快照。
 - signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: workcase-0070-gate2-waiting
   at: '2026-08-08T06:47:28.949272+08:00'
   summary: 关闭提案及 Spark-0068 目标指纹已回读核对；进入 Human Gate 2 等待当前提案的关闭决定。
 - signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: workcase-0070-closure
   at: '2026-08-08T09:12:22.731754+08:00'
   summary: Human Gate 2 已批准，WorkCase 按当前 partial 关闭提案关闭；有效 A 簇实验设计与重跑判断仍由 Spark-0068 承接。
+- at: '2026-08-10T08:52:58.911797Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: codex-desktop -> Codex; 1: codex-desktop -> Codex; 2: codex-desktop -> Codex; 3: codex-desktop -> Codex; 4: codex-desktop -> Codex; 5: codex-desktop -> Codex; 6: codex-desktop -> Codex; 7: codex-desktop -> Codex; 8: codex-desktop -> Codex; 9: codex-desktop -> Codex。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-workcase-signature-migration-20260810
+
 closure_outcome: partial
 disposition_summary: 停止本 WorkCase 中已失效的冻结批次；已形成的 v2 测量与冻结防护保留为局部价值。A 簇提示卡对照的有效任务设计、重新冻结与是否重跑，转交既有 Spark-0068 继续判断，不把零 trial 解释为提示卡收益或负效应。
 relations:
@@ -103,4 +110,4 @@ relations:
 object_id: workcase-0070
 fact_type_key: workcase
 created_at: '2026-08-08T06:30:33.037307+08:00'
-updated_at: '2026-08-08T09:12:22.731754+08:00'
+updated_at: '2026-08-10T08:52:58.911797Z'
