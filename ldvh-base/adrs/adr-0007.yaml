@@ -7,12 +7,18 @@ rationale: LDVH 接入形态（adr-0005、adr-0006）已确立薄 Skill 为唯�
 consequences: 正面：每会话获得零成本的递达可见性，Human 一眼可知当次 AI 是否加载规则；规则未递达时早期暴露，而非等到 Git Gate 事后拦截。负面与限制：每次交互多一句问候，增加少量输出开销与阅读噪音；存在 cargo-cult 风险——AI 可能输出问候却未实质遵从规则，故信标只证明表面递达、不证明深度合规、不替代机械校验；问候本身不构成任何事实、提交或行动授权。后续义务：本约定不新增机械执行点，递达仍靠 AI 自觉与 Git Gate 终闸；若未来 LDVH 长出模型外递达阻断能力，应重估本信标的必要性。本 ADR 被规范、Code 或行动模板吸收后不自动退休，退出需 Human 另行授权。
 change_log:
 - signature:
-    agent_id: glm-5.2
-    host_environment: Claude Code (macOS)
+    model_id: glm-5.2
+    agent_workbench: Claude
   session_id: claude-code-session-20260806
   at: '2026-08-06T12:29:41.327924+08:00'
   summary: 受控创建本 ADR：确立每次 AI 交互先问候「你好，LDVH」作为规则递达验证信标；Human 当前指令明确授权创建。
+- at: '2026-08-10T08:44:05.780803Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: Claude Code (macOS) -> Claude。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-legacy-signature-migration-20260810
 object_id: adr-0007
 fact_type_key: adr
 created_at: '2026-08-06T12:29:41.327924+08:00'
-updated_at: '2026-08-06T12:29:41.327924+08:00'
+updated_at: '2026-08-10T08:44:05.780803Z'
