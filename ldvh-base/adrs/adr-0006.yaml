@@ -8,24 +8,30 @@ consequences: 正面：接入面收敛为唯一形态（Skill + git Gate），�
 change_log:
 - signature:
     agent_id: codex
-    host_environment: Codex Desktop
+    host_environment: Codex
   session_id: conversation-2026-08-04-adr-0006-retirement
   at: '2026-08-04T15:32:08.822580+08:00'
   summary: 受 Human 当前明确退役授权建立遗留 change_log 的可信迁移起点；原始形成历史不可得，未恢复或补造历史。
 - signature:
     agent_id: codex
-    host_environment: Codex Desktop
+    host_environment: Codex
   session_id: conversation-2026-08-04-adr-0006-retirement
   at: '2026-08-04T15:33:02.826371+08:00'
   summary: 按 Human 2026-08-04 明确指令将 adr-0006 退役；保留原决定正文，以 disposition_summary 记录撤回边界及后续由 Specs 承接的要求。
 - signature:
     agent_id: codex
-    host_environment: Codex Desktop
+    host_environment: Codex
   session_id: conversation-2026-08-04-architecture-plan-execution
   at: '2026-08-04T15:56:40.150880+08:00'
   summary: 按 Human 确认的真实意图收紧退役处置说明，删除范围过宽的‘其它既有方向’表述；保持 status=retired 与原决定正文不变。
+- at: '2026-08-10T09:00:37.309398Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: Codex Desktop -> Codex; 1: Codex Desktop -> Codex; 2: Codex Desktop -> Codex。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-codex-signature-migration-20260810
 disposition_summary: Human 于 2026-08-04 明确撤回 adr-0006 作为当前决定。原 ADR 不再以 ADR 身份约束后续设计；其中哪些要求继续适用，以后续经 Human 批准并生效的 Specs 为准。Human 已明确仍须保留的薄 Skill、过程机械检查与 Git Hook/Git Gate 最终闸门，应由相应 Specs 直接定义。在相应 Specs 修改生效前，本退役不表示新的下载、接入、配置、部署或覆盖范围已经成立。
 object_id: adr-0006
 fact_type_key: adr
 created_at: '2026-07-30T14:24:13.172669+08:00'
-updated_at: '2026-08-04T15:56:40.150880+08:00'
+updated_at: '2026-08-10T09:00:37.309398Z'
