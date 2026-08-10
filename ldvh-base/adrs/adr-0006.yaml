@@ -7,19 +7,19 @@ rationale: Human 裁决：可选路径的存在本身即造成接入面分叉与
 consequences: 正面：接入面收敛为唯一形态（Skill + git Gate），无分叉、无可选态；知识库无已否形态的死概念；检查职责分层清晰（过程必须、提交终闸）；MCP 立场附明确重估条件，未来证据出现时不需翻案只需评估。负面与限制：失去 Hook 到达必然性兜底，drift 窗口完全由过程机械检查与 git 终闸压缩而非消除；schema 合法但语义造假的事实为残留风险；Skill 递达的长期行为稳定性未验证；已部署实例拆除与文档删除产生一次性清理成本。后续义务：验证并保障行动模板路由可行（前置）；git Gate 事实机械校验与 fact_integrity 一等化（spark-0039 第 1、2 项，终闸成立的前置义务）；共享 SKILL.md 环境中性化与分发落地；删除 09 环境 Hook 协议内容与 Codex 参考实现描述、处置 spark-0029 guardrail 调查知识；README 与 33 按唯一形态修订；各环境已部署 Hook/插件实例拆除（需另行授权）；Codex PreToolUse deny 复核事项随插件形态取消而关闭。本 ADR 被规范、Code 或行动模板吸收后不自动退休，退出需 Human 另行授权。
 change_log:
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Codex
   session_id: conversation-2026-08-04-adr-0006-retirement
   at: '2026-08-04T15:32:08.822580+08:00'
   summary: 受 Human 当前明确退役授权建立遗留 change_log 的可信迁移起点；原始形成历史不可得，未恢复或补造历史。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Codex
   session_id: conversation-2026-08-04-adr-0006-retirement
   at: '2026-08-04T15:33:02.826371+08:00'
   summary: 按 Human 2026-08-04 明确指令将 adr-0006 退役；保留原决定正文，以 disposition_summary 记录撤回边界及后续由 Specs 承接的要求。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Codex
   session_id: conversation-2026-08-04-architecture-plan-execution
   at: '2026-08-04T15:56:40.150880+08:00'
@@ -30,8 +30,14 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-codex-signature-migration-20260810
+- at: '2026-08-10T09:22:28.816167Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: codex -> gpt-5; 1: codex -> gpt-5; 2: codex -> gpt-5。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: session-20260810-codex-model-migration
 disposition_summary: Human 于 2026-08-04 明确撤回 adr-0006 作为当前决定。原 ADR 不再以 ADR 身份约束后续设计；其中哪些要求继续适用，以后续经 Human 批准并生效的 Specs 为准。Human 已明确仍须保留的薄 Skill、过程机械检查与 Git Hook/Git Gate 最终闸门，应由相应 Specs 直接定义。在相应 Specs 修改生效前，本退役不表示新的下载、接入、配置、部署或覆盖范围已经成立。
 object_id: adr-0006
 fact_type_key: adr
 created_at: '2026-07-30T14:24:13.172669+08:00'
-updated_at: '2026-08-10T09:00:37.309398Z'
+updated_at: '2026-08-10T09:22:28.816167Z'
