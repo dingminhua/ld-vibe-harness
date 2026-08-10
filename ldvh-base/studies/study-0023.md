@@ -60,7 +60,7 @@ relations:
     object_id: spark-0055
 change_log:
 - signature:
-    agent_id: GLM-5.2
+    agent_id: glm-5.2
     host_environment: Claude
   session_id: session-20260805-deep-audit
   at: '2026-08-05T16:40:00+08:00'
@@ -72,10 +72,16 @@ change_log:
     model_id: gpt-5
   session_id: cindy-legacy-signature-migration-20260810
 
+- at: '2026-08-10T09:30:27.397681Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: GLM-5.2 -> glm-5.2。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: 4591aaa6-256d-45bb-8c3d-fd0d7619df41
 object_id: study-0023
 fact_type_key: study
 created_at: '2026-08-05T16:40:00+08:00'
-updated_at: '2026-08-10T08:48:59.624405Z'
+updated_at: '2026-08-10T09:30:27.397681Z'
 ---
 
 ## 研究问题
