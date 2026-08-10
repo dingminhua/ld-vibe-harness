@@ -12,19 +12,19 @@ evolution:
   summary: Human 决定关闭：代码索引经评估暂不引入（当前规模下现有定位能力已覆盖、索引成本大于收益），spark-0016 进入 discarded 终态。
 change_log:
 - signature:
-    agent_id: workbuddy-ai
+    agent_id: hy3
     host_environment: Workbuddy
   session_id: session-20260808-spark0016
   at: '2026-08-08T20:41:17.761729+08:00'
   summary: 历史不可得时建立的迁移可信起点：spark-0016 为 V4 迁移遗留对象，原载体无 change_log 流水，迁移补记首次受控更新起点，不声称恢复原始形成历史。
 - signature:
-    agent_id: workbuddy-ai
+    agent_id: hy3
     host_environment: Workbuddy
   session_id: session-20260808-spark0016
   at: '2026-08-08T20:41:50.501264+08:00'
   summary: content_update：复核三类导航实现现状，确认事实候选与正向/反向关系导航已落地（反向经 relation_targets 实测），记录 05 §8.1 反向查询使用指引缺口；剩余未决收窄为代码索引。
 - signature:
-    agent_id: workbuddy-ai
+    agent_id: hy3
     host_environment: Workbuddy
   session_id: session-20260808-spark0016
   at: '2026-08-08T20:54:38.785274+08:00'
@@ -35,7 +35,13 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-legacy-signature-migration-20260810
+- at: '2026-08-10T09:14:49.666785Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: workbuddy-ai -> hy3; 1: workbuddy-ai -> hy3; 2: workbuddy-ai -> hy3。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-identity-id-migration-20260810
 object_id: spark-0016
 fact_type_key: spark
 created_at: '2026-07-19T10:28:46.306813+08:00'
-updated_at: '2026-08-10T08:46:12.950592Z'
+updated_at: '2026-08-10T09:14:49.666785Z'
