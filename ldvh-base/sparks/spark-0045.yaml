@@ -1,5 +1,5 @@
 title: LDVH 行为可观测性与健康投影
-intent: 验证是否能用稳定的行为事件、不变量和外部状态快照，形成对 Agent 与 Controller 执行健康度的可回放判断；后续需要确定事件契约、健康状态、误触发与漏报检测，以及它们和事实源、验证、恢复、清理之间的边界。若不跨行动保留这个议题，后续会反复依赖对话回放和手工判断，增加定位、复核与中断恢复负担。
+intent: 验证是否能用稳定的行为事件、不变量和外部状态快照，以及 AI 执行时接收到的输入上下文，形成对 Agent 与 Controller 执行健康度的可回放判断；后续需要确定事件契约、健康状态、输入上下文快照机制、误触发与漏报检测，以及它们和事实源、验证、恢复、清理之间的边界。若不跨行动保留这个议题，后续会反复依赖对话回放和手工判断，增加定位、复核与中断恢复负担。
 status: open
 priority: P1
 relations:
@@ -8,8 +8,26 @@ relations:
     governed_project_id: ldvh
     fact_type_key: spark
     object_id: spark-0009
-summary: "**当前判断**\n\n- spark-0009 需要端到端 Harness 成熟度证据，但仅靠最终自然语言结果或组件存在性难以稳定判断行为是否发生、失败在哪里以及能否恢复。\n- 可将关键行为定义为稳定 checkpoint，并记录 started、completed、failed、blocked、timeout、recovery 和 cleanup 等事件，再由事件顺序、不变量和外部状态快照形成健康投影。\n- 埋点触发只证明行为被观察到，不自动证明行为正确、事实已写入、任务已完成或 Human 已验收。\n\n**待验证边界**\n\n- 需要区分 observed、failed、not_observed 和 inconclusive，处理事件丢失、重复、乱序、错误放置、重试和 Agent 未启动等情况。\n- 健康判断必须绑定 run、Agent、WorkCase、实际 worktree、输入快照和验证证据，不能让事件流成为第二事实源。\n- 第一轮宜选择规则/来源核对、实现验证、评审/交付三类代表性流程，覆盖正向、负向、超时/权限压力、中断恢复和清理，并统计 false trigger、漏报、重复、延迟与成本。\n\n**尚待判断**\n\n- 是否需要统一事件契约、持久化运行记录、健康状态投影和告警入口；哪些 checkpoint 属于 LDVH 核心边界；以及达到什么证据门槛后才允许扩大持续编排实验。"
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0070
+summary: "**当前判断**\n\n- spark-0009 需要端到端 Harness 成熟度证据，但仅靠最终自然语言结果或组件存在性难以稳定判断行为是否发生、失败在哪里以及能否恢复。\n- 可将关键行为定义为稳定 checkpoint，并记录 started、completed、failed、blocked、timeout、recovery 和 cleanup 等事件，再由事件顺序、不变量和外部状态快照形成健康投影。\n- 埋点触发只证明行为被观察到，不自动证明行为正确、事实已写入、任务已完成或 Human 已验收。\n\n**吸收 spark-0070：输入侧执行上下文透明性**\n\n- 行为可观测性（输出侧）必须与执行上下文透明性（输入侧）共同构成完整闭环：判断 AI 是否收到并执行了任务，需要同时知道 AI 启动执行时实际获得的完整提示链（Skill → work-context rule orientation → 行动模板 → WC 当前对象）具体是什么、是否完整、是否足以支撑完成全部 approved work items。\n- 该提示链当前不可观察、不可复现、不可排查：WC 中途停止时无法区分是提示不足、模板不完整、AI 能力不足还是其他原因；不同会话、不同恢复方式下获得的上下文可能不同但无法追溯差异。\n- 需要考察：是否在 WC 执行记录中记录每次启动时收到的关键上下文摘要；如何区分「AI 收到的提示不足」与「AI 收到了但未遵守」；是否需要建立执行上下文快照以便事后回放；34 号模板是否需要在执行前增加上下文完整性检查。\n\n**待验证边界**\n\n- 需要区分 observed、failed、not_observed 和 inconclusive，处理事件丢失、重复、乱序、错误放置、重试和 Agent 未启动等情况。\n- 健康判断必须绑定 run、Agent、WorkCase、实际 worktree、输入快照和验证证据，不能让事件流成为第二事实源。\n- 第一轮宜选择规则/来源核对、实现验证、评审/交付三类代表性流程，覆盖正向、负向、超时/权限压力、中断恢复和清理，并统计 false trigger、漏报、重复、延迟与成本。\n\n**尚待判断**\n\n- 是否需要统一事件契约、持久化运行记录、健康状态投影、输入上下文快照和告警入口；哪些 checkpoint 属于 LDVH 核心边界；以及达到什么证据门槛后才允许扩大持续编排实验。"
+change_log:
+- signature:
+    model_id: glm-5.2
+    agent_workbench: claude-code-mcp
+  session_id: session-merge-b-20260810
+  at: '2026-08-10T07:05:46.923852Z'
+  summary: 受控引导 change_log 起点：spark-0045 为缺失 change_log 的 legacy 对象，作为 B 组合并的吸收者需要先建立可信迁移起点，再通过普通更新吸收 spark-0070 的输入侧上下文透明性内容
+- signature:
+    model_id: glm-5.2
+    agent_workbench: Claude
+  session_id: session-merge-b-20260810
+  at: '2026-08-10T07:11:31.622127Z'
+  summary: 吸收 spark-0070（WC 执行上下文透明性）的输入侧议题：将 AI 启动执行时收到的完整提示链纳入行为可观测性闭环，与输出侧事件/健康投影共同形成完整的执行健康度判断。
 object_id: spark-0045
 fact_type_key: spark
 created_at: '2026-08-02T17:20:55.139466+08:00'
-updated_at: '2026-08-02T17:20:55.139466+08:00'
+updated_at: '2026-08-10T07:11:31.622127Z'

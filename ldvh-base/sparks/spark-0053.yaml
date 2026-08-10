@@ -1,8 +1,7 @@
 title: 记录 LDVH 对 AI 工作实践的影响并反馈改进
-status: open
-priority: P2
+status: discarded
 intent: LDVH 对 AI 工作实践产生的可复用影响需要在不继续执行原 WorkCase 的前提下被保留，以便后续判断哪些观察应转化为规范、Helper 或工作流改进；若不跨行动保留，原工作责任停止后将增加重新定位、分析和分流这些改进问题的负担。
-summary: "**当前判断**\n\n- workcase-0027 的目标本身仍有价值，但该 WorkCase 不再作为执行载体；其计划未开始执行，不能把未执行的记忆写入、验证或改进草案表述为已经完成。\n- 当前不存在同一议题的 open Spark。spark-0027 记录的是已废弃的 Helper 附件与旧正向流程复现问题，边界不同，不能承接本议题。\n\n**保留范围**\n\n保留 LDVH 对 AI 工作实践的实际影响及其可能的改进方向，重点包括规则路由、事实类型判断与规范附件化等观察；这些观察必须在未来基于当时的事实和规则重新核实。\n\n**待判断**\n\n- 哪些已观察到的影响具有跨会话、跨行动的稳定改进价值；\n- 是否以及何时需要以新的、范围明确的 WorkCase 承接具体记录、验证或规范改进工作；\n- 在不替代 Human 对规范变更和风险取舍的前提下，应如何分流这些改进输入。\n\n**边界**\n\n本 Spark 不授权修改规范、执行旧 WorkCase 计划、写入外部服务或创建 Git 提交。"
+summary: "**当前判断**\n\n- workcase-0027 的目标本身仍有价值，但该 WorkCase 不再作为执行载体；其计划未开始执行，不能把未执行的记忆写入、验证或改进草案表述为已经完成。\n- 本议题已由 spark-0067 完整承接：LDVH 对 AI 工作实践的影响与改进方向观察（规则路由、事实类型判断、规范附件化）已并入 spark-0067 的五问框架，后续判断由 spark-0067 统一管理。\n\n**保留范围**\n\nLDVH 对 AI 工作实践的实际影响及其可能的改进方向，重点包括规则路由、事实类型判断与规范附件化等观察。这些观察已由 spark-0067 在优化审计框架中承接，不再独立跟踪。\n\n**待判断**\n\n- 哪些已观察到的影响具有跨会话、跨行动的稳定改进价值 —— 已移交 spark-0067 判断。\n- 是否以及何时需要以新的、范围明确的 WorkCase 承接具体记录、验证或规范改进工作 —— 已移交 spark-0067。\n- 在不替代 Human 对规范变更和风险取舍的前提下，应如何分流这些改进输入 —— 已移交 spark-0067。\n\n**边界**\n\n本 Spark 不授权修改规范、执行旧 WorkCase 计划、写入外部服务或创建 Git 提交。"
 change_log:
 - signature:
     agent_id: Claude Code
@@ -10,7 +9,23 @@ change_log:
   session_id: cindy-spark-0053-create
   at: '2026-08-04T21:55:10.446832+08:00'
   summary: 按 Human 授权建立独立 Spark，保留 workcase-0027 停止推进后仍需后续判断的 LDVH 改进议题。
+- signature:
+    model_id: glm-5.2
+    agent_workbench: claude-code-mcp
+  session_id: spark-merge-20260810
+  at: '2026-08-10T06:42:16.601742Z'
+  summary: 按 Human 授权将本议题并入 spark-0067，标记为 discarded。
+disposition_summary: 本议题内容已由 spark-0067 在优化审计框架中完整承接（AI 工作实践影响与改进方向观察并入五问框架），不再独立跟踪，标记为 discarded。
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0067
+evolution:
+- at: '2026-08-09T22:00:00Z'
+  summary: 吸收处置：本议题内容并入 spark-0067，标记为 discarded。
 object_id: spark-0053
 fact_type_key: spark
 created_at: '2026-08-04T21:55:10.446832+08:00'
-updated_at: '2026-08-04T21:55:10.446832+08:00'
+updated_at: '2026-08-10T06:42:16.601742Z'

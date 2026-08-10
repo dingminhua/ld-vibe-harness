@@ -1,61 +1,8 @@
 title: WC 执行上下文透明性——AI 接收任务时获得的提示内容不可见，导致 WC 中途停止难以排查
 intent: 每次 AI 接受 WC 执行任务时，实际获得的完整提示链（Skill → work-context rule orientation → 行动模板 34 → WC 当前对象）具体是什么、是否完整、是否足以支撑 AI 完成全部 approved work items，目前没有可观察和可回查的机制。Human 无法知道 AI 启动执行时看到了什么，因此每次 WC 中途停止都无法判断是提示缺失、模板不完整、AI 能力不足还是其他原因。需要让 AI 接收到的完整执行上下文可被 Human 观察、记录和排查，否则 WC 中途停止问题将反复出现且无法定位根因。
-status: open
-priority: P1
-summary: |-
-  ## 问题
-
-  WorkCase 执行仍然存在中途停止的情况——AI 没有完整执行完所有 approved work items 就交还了。从规范层面看，34 号模板已经定义了执行循环、稳定检查点、合法退出等机制，但从实际效果看，AI 仍然会在中途退出。
-
-  ### 核心怀疑
-
-  每次 AI 接受 WC 执行任务时，实际获得的提示内容（prompt/context）才是决定行为的关键。当前 AI 进入 WC 执行时，典型的上下文构成包括：
-
-  1. **Skill/SKILL.md**：薄路由，告知 LDVH 存在，引导到 CLI
-  2. **work-context rule orientation**：00 规范 §8.1 与 §8.2 的规则引导
-  3. **行动模板 34**：WC 获批计划执行模板（执行循环、检查点、退出条件）
-  4. **WC 当前对象的内容**：plan、items、authorization、current_snapshot_projection
-
-  但这一整套内容具有以下问题：
-
-  - **不可观察**：Human 无法知道 AI 实际收到了什么、哪些部分被压缩了、哪些部分被忽略了
-  - **不可复现**：不同会话、不同环境、不同恢复方式下，AI 获得的上下文可能不同，但无法追溯差异
-  - **不可排查**：WC 中途停止时，无法判断是"提示没给够"还是"AI 没遵守"还是"模板本身有漏洞"
-  - **内容可能不完整**：work-context 只交付了 00 规范的两节，但执行 WC 所需的规则远不止这些（21、32、34、05、Helper 契约等），AI 需要自行判断还需要读什么
-
-  ### 具体场景
-
-  - AI 收到 WC 执行任务后，完成了部分 item，然后以"已完成"或"等待下一步"交还，但实际还有 pending item
-  - AI 在 executing 阶段执行了部分工作，但未能进入结果复核链就交还了
-  - AI 恢复已中断的 WC 时，上下文被压缩，关键信息丢失导致无法继续
-
-  ### 当前已有的相关机制
-
-  - **34 号模板 §5.5 恢复交还**：要求只能描述刚回读且指纹匹配的 status + phase + projection
-  - **34 号模板 §5.2 执行循环**：定义 next_required_control_step 和消费已批准责任
-  - **spark-0043**（已由 WC-0042 承接关闭）：执行续跑守卫，防止检查点误作停止
-  - **spark-0050**（open）：WC 执行开始状态可观察性
-  - **spark-0045**（open）：LDVH 行为可观测性与健康投影
-
-  但这些机制都没有解决"AI 启动执行时到底看到了什么"这个根本问题。
-
-  ## 待判断
-
-  1. 如何让 AI 启动 WC 执行时的完整上下文可被 Human 观察和回查？
-  2. 当前 work-context 交付的 §8.1 + §8.2 是否足以支撑 WC 完整执行？是否需要增加交付内容？
-  3. 是否需要在 WC 的 change_log 或单独的执行记录中，记录每次执行启动时 AI 收到的关键上下文摘要？
-  4. 如何区分"AI 收到的提示不足"和"AI 收到了但未遵守"？
-  5. 34 号模板的 Stop Conditions 是否需要在执行启动前增加"上下文完整性检查"？即 AI 在执行前先确认自己是否获得了足够完成全部 item 的规则信息？
-  6. 是否需要建立"执行上下文快照"机制，使每次执行启动时的关键上下文可以事后回放？
-
-  ## 边界
-
-  - 本 Spark 只记录"AI 执行上下文不透明"这个缺口，不授权修改规范、模板或 Code
-  - 不预设解决方案方向——可能是增强模板、增加记录机制、改进 work-context 交付内容，或三者组合
-  - 与 spark-0045（行为可观测性）有交集但不同：spark-0045 关注行为事件和健康投影，本 Spark 关注 AI 接收到的输入内容本身
-  - 与 spark-0050（开始可观察性）有交集但不同：spark-0050 关注 WC item 的 in_progress 状态可见，本 Spark 关注 AI 启动执行时的完整提示链
-  - 不建立新的事实类型或持久化运行日志
-  - 与 spark-0066（Workflow 编排载体）有交集：如果采用 Workflow 执行，agent() 的 prompt 内容也可纳入本议题的透明度范围
+status: discarded
+summary: 本议题已由 spark-0045 在行为可观测性框架中完整承接（输入侧执行上下文透明性作为输出侧行为事件的互补闭环）。参见 spark-0045 的「吸收 spark-0070：输入侧执行上下文透明性」一节。
+disposition_summary: WC 执行上下文透明性议题（输入侧可观测性：AI 启动执行时收到的完整提示链不可观察、不可复现、不可排查）已由 spark-0045 在行为可观测性框架中完整承接，与输出侧行为事件/健康投影共同构成完整的执行健康度判断闭环。
 relations:
 - relation_key: related-to
   target:
@@ -72,14 +19,23 @@ relations:
     governed_project_id: ldvh
     fact_type_key: spark
     object_id: spark-0066
-object_id: spark-0070
-fact_type_key: spark
-created_at: '2026-08-08T22:00:00+08:00'
-updated_at: '2026-08-08T22:00:00+08:00'
+evolution:
+- at: '2026-08-10T07:11:31.000Z'
+  summary: 本议题内容已由 spark-0045 在行为可观测性框架中完整承接（输入侧执行上下文透明性），因此本 Spark 从 open 转为 discarded。
 change_log:
-- summary: 补建变更流水以支持受控提交；spark-0070 为新增 Spark（WC 执行上下文透明性议题），事实内容由其他会话产出，此处仅补审计签名。
-  signature:
+- signature:
     agent_id: workbuddy-ai
     host_environment: workbuddy-claw
   session_id: batch-commit-20260809-spark0070
   at: '2026-08-08T22:00:00+08:00'
+  summary: 补建变更流水以支持受控提交；spark-0070 为新增 Spark（WC 执行上下文透明性议题），事实内容由其他会话产出，此处仅补审计签名。
+- signature:
+    model_id: glm-5.2
+    agent_workbench: Claude
+  session_id: session-merge-b-20260810
+  at: '2026-08-10T07:13:23.202003Z'
+  summary: 吸收合并：spark-0070 的输入侧执行上下文透明性内容已由 spark-0045 在行为可观测性框架中完整承接，本 Spark 标记为 discarded。
+object_id: spark-0070
+fact_type_key: spark
+created_at: '2026-08-08T22:00:00+08:00'
+updated_at: '2026-08-10T07:13:23.202003Z'
