@@ -79,7 +79,6 @@ def post_write_integrity_audit(
     boundary: Any,
     schemas: dict[str, Any],
     audit_contract: dict[str, Any],
-    allow_partial_repair: bool = False,
 ) -> OperationExecution:
     """Attach the independent whole-library audit required after a fact write.
 
@@ -111,12 +110,7 @@ def post_write_integrity_audit(
         return replace(execution, sources=sources, verification=(*execution.verification, audit))
 
     gap = {
-        "summary": (
-            "历史签名修复目标已写入并通过对象级回读，但全库审计仍为 partial；"
-            "可继续同类独立修复，不得提交或声明全库完整"
-            if allow_partial_repair
-            else "事实写入已发生，但写后独立完整性审计未达到 complete；不得继续事实写入、提交或声明成功"
-        ),
+        "summary": "事实写入已发生，但写后独立完整性审计未达到 complete；不得继续事实写入、提交或声明成功",
         "scope": list(execution.requested_scope),
         "source_refs": [audit_contract],
         "code": "post_write_integrity_incomplete",
@@ -126,7 +120,6 @@ def post_write_integrity_audit(
     # neither omit it nor collapse it into the writer's own success claim.
     return replace(
         execution,
-        outcome="partial" if allow_partial_repair else execution.outcome,
         sources=sources,
         gaps=(*execution.gaps, gap),
         verification=(*execution.verification, audit),
