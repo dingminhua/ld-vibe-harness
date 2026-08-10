@@ -7,37 +7,37 @@ change_log:
   at: '2026-07-30T13:35:03.915242+08:00'
   summary: Human授权兼容旧数据：为 change_log 机制落地前形成的遗留对象建立首条可信流水起点
 - signature:
-    agent_id: Controller
+    agent_id: glm-5.2
     host_environment: Codex
   session_id: workcase-0008-closure-td-1
   at: '2026-08-05T13:23:47.148156+08:00'
   summary: WorkCase 已不符合当前项目状态，Human 要求关闭。全部 pending item 据实写为 cancelled，进入 SafeConvergenceShape 结果链。
 - signature:
-    agent_id: Controller
+    agent_id: glm-5.2
     host_environment: Codex
   session_id: workcase-0008-closure-td-2a
   at: '2026-08-05T13:35:40.636951+08:00'
   summary: 完成 Controller 自检，进入独立只读结果复核阶段。
 - signature:
-    agent_id: Controller
+    agent_id: glm-5.2
     host_environment: Codex
   session_id: workcase-0008-closure-td-2b
   at: '2026-08-05T13:36:04.037072+08:00'
   summary: 记录独立只读结果复核 pass 结论，无 feedback。
 - signature:
-    agent_id: Controller
+    agent_id: glm-5.2
     host_environment: Codex
   session_id: workcase-0008-closure-td-3
   at: '2026-08-05T13:36:26.965968+08:00'
   summary: 独立结果复核通过且无反馈，进入关闭提案收敛阶段。
 - signature:
-    agent_id: Controller
+    agent_id: glm-5.2
     host_environment: Codex
   session_id: workcase-0008-closure-td-3b
   at: '2026-08-05T13:39:20.529095+08:00'
   summary: 形成 cancelled 完整关闭提案与 accepted-stop 处置。workcase-0008 已不符合当前项目状态，全部 not_verified 标准无继续验收价值。
 - signature:
-    agent_id: Controller
+    agent_id: glm-5.2
     host_environment: Codex
   session_id: workcase-0008-closure-td-4
   at: '2026-08-05T13:39:33.919477+08:00'
@@ -56,6 +56,12 @@ change_log:
   session_id: cindy-codex-alias-migration-20260810
 - at: '2026-08-10T09:34:29.739727Z'
   summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: Human -> glm-5.2; 7: Human -> glm-5.2。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: 4591aaa6-256d-45bb-8c3d-fd0d7619df41
+- at: '2026-08-10T09:35:05.931543Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 1: Controller -> glm-5.2; 2: Controller -> glm-5.2; 3: Controller -> glm-5.2; 4: Controller -> glm-5.2; 5: Controller -> glm-5.2; 6: Controller -> glm-5.2。原始错误值已由本次更正覆盖并保留本条修复记录。'
   signature:
     agent_workbench: Cindy
     model_id: gpt-5
@@ -95,4 +101,4 @@ residual_responsibilities:
 object_id: workcase-0008
 fact_type_key: workcase
 created_at: '2026-07-21T04:23:03+08:00'
-updated_at: '2026-08-10T09:34:29.739727Z'
+updated_at: '2026-08-10T09:35:05.931543Z'
