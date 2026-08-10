@@ -36,7 +36,7 @@ change_log:
   session_id: workbuddy-spark-0066-discard-20260809
   summary: 经 Human 授权（ldvh@spark-0066 关闭请求），将状态由 open 收口为 discarded：判定不新增 workflow-execution 模板，也不采用 Workflow 脚本作为行动模板执行载体；理由见 disposition_summary。
   signature:
-    agent_id: workbuddy
+    agent_id: hy3
     host_environment: Workbuddy
 - at: '2026-08-10T08:47:33.150163Z'
   summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: Claude Code (macOS) -> Claude; 1: Claude Code (macOS) -> Claude; 2: Claude Code (macOS) -> Claude; 3: WorkBuddy macOS session -> Workbuddy。原始错误值已由本次更正覆盖并保留本条修复记录。'
@@ -44,6 +44,12 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-legacy-signature-migration-20260810
+- at: '2026-08-10T09:12:37.303679Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 3: workbuddy -> hy3。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-model-id-migration-20260810
 evolution:
 - at: '2026-08-09T14:07:42.895338+08:00'
   summary: 本 Spark 原开放问题（Workflow 脚本能否作为行动模板执行载体、是否新增 workflow-execution 模板）经核查判定为不追：所担忧的编排/子 agent 缺口在环境无关核心已由既有行动模板与 Helper 操作覆盖（尤其 34 号 workcase-approved-plan-execution 已定义执行控制闭环、稳定检查点、结果复核与关闭链，见 spark-0071——缺口不是再造全局调度器，而是让执行者稳定消费既有的内部控制闭环）；事实对象的受控创建/更新/读取已由环境无关 Helper 操作（create-fact-object、update-fact-object、read-fact-objects 等 18 项公开操作）原子化承载；宿主专属的 Workflow 工具与子 agent 委派在公共环境已有替代——按 WC0009/WC0014 环境无关原则，核心只提供环境无关入口与 Codex 参考实现，其余宿主以薄 skill 适配（本会话已用 WorkBuddy 的 ldvh skill 经 Helper CLI 读回 spark-0066 验证）。据此将状态由 open 收口为 discarded。
@@ -51,4 +57,4 @@ disposition_summary: 经核查当前 LDVH 实现，决定停止跟踪本 Spark�
 object_id: spark-0066
 fact_type_key: spark
 created_at: '2026-08-07T12:24:06.941988+08:00'
-updated_at: '2026-08-10T08:47:33.150163Z'
+updated_at: '2026-08-10T09:12:37.303679Z'
