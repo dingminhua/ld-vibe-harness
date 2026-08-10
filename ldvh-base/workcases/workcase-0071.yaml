@@ -34,82 +34,89 @@ validation_summary: 定向试验测量测试与完整 code/tests/testing 套件�
 change_log:
 - signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: workcase-0071-planning
   at: '2026-08-08T06:54:46.961273+08:00'
   summary: Human 要求建立新的 WorkCase，以重设计并在独立 Gate 1 后重跑 A 簇提示卡对照；不重开或改写已冻结的 WorkCase-0070。
 - signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: workcase-0071-execution
   at: '2026-08-08T07:24:44.823282+08:00'
   summary: Human 已批准 Gate 1；进入执行并先实现非泄漏协议门禁。
 - signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: workcase-0071-execution
   at: '2026-08-08T07:25:03.898978+08:00'
   summary: item-01 已开始：实现非泄漏冻结协议门禁；尚未执行真实 Helper trial。
 - signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: workcase-0071-execution
   at: '2026-08-08T07:26:31.805258+08:00'
   summary: item-01 完成并通过定向测试；item-02 开始构造非泄漏 12-task 冻结协议，尚未执行真实 trial。
 - signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: workcase-0071-protocol-audit
   at: '2026-08-08T08:23:53.146966+08:00'
   summary: 独立协议审查返回 changes_required：共同材料未泄漏，但缺少 runner-owned 调用采集、worker envelope/gold 隔离与 trial-boundary 来源漂移检查；在既有测试性授权内修复，未执行真实 trial。
 - signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: workcase-0071-protocol-audit-followup
   at: '2026-08-08T08:27:29.216083+08:00'
   summary: 协议审查复核仍为 changes_required：worker 可绕过 adapter；并要求 record 持久化 envelope/runner 绑定及每次 trial 全环境指纹重验。先在授权测试性范围补齐机械审计，再按环境能力 fail-close。
 - signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: workcase-0071-controller-check
   at: '2026-08-08T08:30:23.531170+08:00'
   summary: 独立协议审查最终确认当前环境缺少受控 worker 执行面；取消未启动的 trial 与分析 item，形成 partial 结果投影并进入结果复核。
 - signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: workcase-0071-result-review
   at: '2026-08-08T08:31:46.916111+08:00'
   summary: 完整 partial 结果投影已回读并通过事实完整性检查；在不变更 result_version=1 或结果口径的前提下进入独立只读结果复核。
 - signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: workcase-0071-result-review
   at: '2026-08-08T08:33:03.378555+08:00'
   summary: 独立只读结果复核通过：确认协议根零 records/零真实 trial、当前环境无受控 worker 执行面，partial 结果口径与五项 criterion 一致；无 feedback。
 - signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: workcase-0071-closure-preparing
   at: '2026-08-08T08:33:26.511547+08:00'
   summary: 独立结果复核已通过且无 feedback；result_version=1 的结果投影保持不变，进入关闭准备以形成 residual 承接建议。
 - signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: workcase-0071-closure-preparing
   at: '2026-08-08T08:34:05.537075+08:00'
   summary: 在 closure_preparing 形成 partial 关闭提案：将受控 worker 执行面缺口 route_existing 至 Spark-0068；不修改 result_version=1 或将零 trial 表述为效果。
 - signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: workcase-0071-gate2-waiting
   at: '2026-08-08T08:34:28.139952+08:00'
   summary: 关闭提案、Spark-0068 route target 与目标指纹已回读核对；进入 Human Gate 2，等待当前 partial 提案的关闭决定。
 - signature:
     agent_id: codex
-    host_environment: codex-desktop
+    host_environment: Codex
   session_id: workcase-0071-closure
   at: '2026-08-08T09:12:48.646168+08:00'
   summary: Human Gate 2 已批准，WorkCase 按当前 partial 关闭提案关闭；受控 worker 执行面缺口仍由 Spark-0068 承接。
+- at: '2026-08-10T08:53:01.863811Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: codex-desktop -> Codex; 1: codex-desktop -> Codex; 2: codex-desktop -> Codex; 3: codex-desktop -> Codex; 4: codex-desktop -> Codex; 5: codex-desktop -> Codex; 6: codex-desktop -> Codex; 7: codex-desktop -> Codex; 8: codex-desktop -> Codex; 9: codex-desktop -> Codex; 10: codex-desktop -> Codex; 11: codex-desktop -> Codex; 12: codex-desktop -> Codex。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-workcase-signature-migration-20260810
+
 closure_outcome: partial
 disposition_summary: 停止本 WorkCase 中未满足执行隔离前提的批次；已形成的非泄漏协议、runner-owned 采集/绑定与漂移门禁保留为测试性基础。后续只有在存在受控 worker 执行面（移除 worker 对 Helper、shell 和文件系统的直达，仅暴露 runner proxy）时，才由既有 Spark-0068 决定是否重新设计、重新批准并重跑；不把零 trial 解释为提示卡效果。
 relations:
@@ -126,4 +133,4 @@ relations:
 object_id: workcase-0071
 fact_type_key: workcase
 created_at: '2026-08-08T06:54:46.961273+08:00'
-updated_at: '2026-08-08T09:12:48.646168+08:00'
+updated_at: '2026-08-10T08:53:01.863811Z'
