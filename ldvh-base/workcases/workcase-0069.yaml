@@ -33,73 +33,73 @@ result_summary: 已交付 fail-closed 的 trial 测量基础设施：严格 sche
 validation_summary: 主执行与独立只读复核均使用 Python 3.12 官方 pytest 调用运行 code/tests/testing：106/106 passed；ruff 与 git diff --check passed。独立复核者已检查 testing-only 路径和 WorkCase 生命周期范围。
 change_log:
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Codex
   session_id: spark-0067-measurement-infrastructure-plan
   at: '2026-08-07T22:09:03.449286+08:00'
   summary: 用户授权按建议推进；创建仅限 testing-only 的 trial 测量基础设施计划，等待 Gate 1。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Codex
   session_id: workcase-0069-execution
   at: '2026-08-08T05:14:39.841850+08:00'
   summary: Human Gate 1 已批准，phase 推进至 executing。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Codex
   session_id: workcase-0069-execution
   at: '2026-08-08T05:15:09.436352+08:00'
   summary: item-01 开始：定义严格 schema 与自动采集模型。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Codex
   session_id: workcase-0069-execution
   at: '2026-08-08T05:18:56.729280+08:00'
   summary: item-01 完成；item-02 开始：受限运行器与来源受控提示卡生成。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Codex
   session_id: workcase-0069-execution
   at: '2026-08-08T05:25:37.696888+08:00'
   summary: item-02、item-03、item-04 完成；进入 controller_checking 形成结果投影。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Codex
   session_id: workcase-0069-execution
   at: '2026-08-08T05:28:47.260557+08:00'
   summary: 已形成 result_version 1 的完整结果投影，等待独立结果复核。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Codex
   session_id: workcase-0069-execution
   at: '2026-08-08T05:29:06.578688+08:00'
   summary: 完整结果投影已冻结，进入 independent_reviewing。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Codex
   session_id: workcase-0069-execution
   at: '2026-08-08T05:30:26.134038+08:00'
   summary: 独立结果复核已完成并通过，结果版本 1 已冻结。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Codex
   session_id: workcase-0069-execution
   at: '2026-08-08T05:30:44.196879+08:00'
   summary: 独立结果复核通过，进入 closure_preparing 形成 Gate 2 呈报。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Codex
   session_id: workcase-0069-execution
   at: '2026-08-08T05:30:58.661952+08:00'
   summary: 已形成 completed 的完整 Gate 2 关闭提案，原 scope 内无 residual decision。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Codex
   session_id: workcase-0069-execution
   at: '2026-08-08T05:31:15.500861+08:00'
   summary: 已完成终态保留审查并进入 human_closure_confirming，等待 Human Gate 2。
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Codex
   session_id: workcase-0069-closure
   at: '2026-08-08T05:59:00.418627+08:00'
@@ -111,6 +111,12 @@ change_log:
     model_id: gpt-5
   session_id: cindy-workcase-signature-migration-20260810
 
+- at: '2026-08-10T09:25:05.684233Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: codex -> gpt-5; 1: codex -> gpt-5; 2: codex -> gpt-5; 3: codex -> gpt-5; 4: codex -> gpt-5; 5: codex -> gpt-5; 6: codex -> gpt-5; 7: codex -> gpt-5; 8: codex -> gpt-5; 9: codex -> gpt-5; 10: codex -> gpt-5; 11: codex -> gpt-5。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: session-20260810-codex-model-migration
 closure_outcome: completed
 disposition_summary: 已完成原 scope 内的 testing-only trial 测量基础设施：严格 schema、自动采集、来源绑定提示卡、受限临时输出与对抗性测试均已交付并通过独立复核。未形成真实 trial 或生产契约变更，且这些事项始终不在本 WorkCase scope 内；原 scope 内无剩余责任。
 relations:
@@ -122,4 +128,4 @@ relations:
 object_id: workcase-0069
 fact_type_key: workcase
 created_at: '2026-08-07T22:09:03.449286+08:00'
-updated_at: '2026-08-10T08:52:55.947269Z'
+updated_at: '2026-08-10T09:25:05.684233Z'
