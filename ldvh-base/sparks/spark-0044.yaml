@@ -4,13 +4,13 @@ intent: 保留 WorkCase 关闭时已由规则定义、但只能由调用方重�
 summary: "## 当前结论\n\n- `prepare-closed-workcase-candidate` 已作为只读 Helper 操作实现，用于从当前机械有效的 Gate 2 source 快照和既有 `closure_proposal` 确定性投影完整的 closed after 候选，并返回 source fingerprint 与已保存的目标映射基础。\n- 候选投影与 `close-workcase` 复用同一内部纯映射，避免调用方胶水和关闭校验形成两套字段映射或状态机；对应的定向请求、操作和负向边界测试已落地。\n\n## 保留的硬边界\n\n- `close-workcase` 仍是唯一的受控关闭写入口。候选操作不写入事实、不预留状态、不生成或推断 Human Gate 2 决定，不替代目标当前状态和指纹核对。\n- 实际关闭仍必须由调用方重新取得当前 before、Human 关闭决定、授权引用和 route target 指纹，并通过 `close-workcase` 完成 CAS、目标检查、写后回读与完整性审计。\n\n## 处置范围\n\n本 Spark 原始信息需求已由上述直接实现完整落实，不再承担独立的待判断、待分流或待实施责任；下游 WorkCase 的关闭、目标状态和后续生命周期不由本 Spark 继续跟踪。"
 change_log:
 - signature:
-    agent_id: claude-code_2-1-219_agent
+    agent_id: glm-5.2
     host_environment: Claude
   session_id: c4593fa7-3d0f-458b-a4c7-c10cd8a95318
   at: '2026-08-03T18:29:13.160019+08:00'
   summary: 受 Human 当前授权建立遗留 Spark 的 change_log 可信起点；原始历史不可得，未恢复或伪造原始形成记录。
 - signature:
-    agent_id: claude-code_2-1-219_agent
+    agent_id: glm-5.2
     host_environment: Claude
   session_id: c4593fa7-3d0f-458b-a4c7-c10cd8a95318
   at: '2026-08-03T18:30:25.493663+08:00'
@@ -21,6 +21,12 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-legacy-signature-migration-20260810
+- at: '2026-08-10T09:26:51.108389Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: claude-code_2-1-219_agent -> glm-5.2; 1: claude-code_2-1-219_agent -> glm-5.2。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: session-20260810-model-id-migration
 evolution:
 - at: '2026-08-03T18:29:13.160019+08:00'
   summary: 只读关闭候选投影已实现，并与 close-workcase 复用同一纯映射；原先关于是否提供该能力及其边界的未决问题因此转为已落实范围，保留关闭授权仍由 Human/调用方取得的边界。
@@ -28,4 +34,4 @@ disposition_summary: 本 Spark 所限定的 WorkCase closed after 只读确定�
 object_id: spark-0044
 fact_type_key: spark
 created_at: '2026-08-02T02:37:31.882443+08:00'
-updated_at: '2026-08-10T08:46:45.627312Z'
+updated_at: '2026-08-10T09:26:51.108389Z'
