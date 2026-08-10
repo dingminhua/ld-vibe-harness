@@ -29,53 +29,59 @@ change_log:
   at: '2026-08-01T22:26:44.939343+08:00'
   summary: Human授权兼容旧数据：为 change_log 机制落地前形成的遗留对象建立首条可信流水起点
 - signature:
-    agent_id: Claude Code
+    agent_id: glm-5.2
     host_environment: Cindy
   session_id: cindy-wc0027-unblock-for-safe-convergence
   at: '2026-08-04T21:56:44.214983+08:00'
   summary: Human 已确认 WorkCase 目标正确但要求停止以该 WorkCase 推进；原“目标与意图不符”的阻塞解除，后续按未获 Gate1 批准的安全收敛链处理。
 - signature:
-    agent_id: Claude Code
+    agent_id: glm-5.2
     host_environment: Cindy
   session_id: cindy-wc0027-safe-convergence
   at: '2026-08-04T21:58:33.022196+08:00'
   summary: 依据 Human 不执行并废弃该 WorkCase 的决定，取消全部未开始工作项，移除未获批准的计划授权与创建复核，形成 SafeConvergenceShape 的首个结果版本。
 - signature:
-    agent_id: Claude Code
+    agent_id: glm-5.2
     host_environment: Cindy
   session_id: cindy-wc0027-enter-independent-review
   at: '2026-08-04T22:01:33.477159+08:00'
   summary: SafeConvergenceShape 的完整 result_version=1 已回读并进入 independent_reviewing，等待独立结果复核结论。
 - signature:
-    agent_id: Claude Code
+    agent_id: glm-5.2
     host_environment: Cindy
   session_id: cindy-wc0027-result-review
   at: '2026-08-04T22:02:06.618232+08:00'
   summary: 已取得对 SafeConvergenceShape result_version=1 的实际独立结果复核；结论为 pass_with_followups，等待 Controller 在关闭准备前处置反馈。
 - signature:
-    agent_id: Claude Code
+    agent_id: glm-5.2
     host_environment: Cindy
   session_id: cindy-wc0027-closure-preparing
   at: '2026-08-04T22:02:44.617392+08:00'
   summary: 已处置独立结果复核全部反馈并进入 closure_preparing；将按 not-achieved 与 route_existing→spark-0053 形成完整关闭提案。
 - signature:
-    agent_id: Claude Code
+    agent_id: glm-5.2
     host_environment: Cindy
   session_id: cindy-wc0027-freeze-gate2-proposal
   at: '2026-08-04T22:03:29.559729+08:00'
   summary: 在 closure_preparing 冻结完整关闭提案：proposed_outcome=not-achieved，唯一剩余责任 route_existing 至当前 open 的 spark-0053。
 - signature:
-    agent_id: Claude Code
+    agent_id: glm-5.2
     host_environment: Cindy
   session_id: cindy-wc0027-enter-gate2
   at: '2026-08-04T22:03:44.145898+08:00'
   summary: 完整关闭提案与 route target 指纹已冻结，进入 human_closure_confirming 等待 Human Gate 2 决定。
 - signature:
-    agent_id: Claude Code
+    agent_id: glm-5.2
     host_environment: Cindy
   session_id: cindy-wc0027-gate2-close
   at: '2026-08-04T22:06:10.246705+08:00'
   summary: Human Gate 2 明确确认以 not-achieved 关闭 workcase-0027，并将唯一剩余责任路由至 spark-0053。
+- at: '2026-08-10T09:32:53.820947Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 1: Claude Code -> glm-5.2; 2: Claude Code -> glm-5.2; 3: Claude Code -> glm-5.2; 4: Claude Code -> glm-5.2; 5: Claude Code -> glm-5.2; 6: Claude Code -> glm-5.2; 7: Claude Code -> glm-5.2; 8: Claude Code -> glm-5.2。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: 4591aaa6-256d-45bb-8c3d-fd0d7619df41
 closure_outcome: not-achieved
 disposition_summary: 本 WorkCase 未执行原计划，未形成任何成功标准所要求的稳定结果，因此停止该工作责任。后续判断 LDVH 对 AI 工作实践影响及其改进方向的剩余责任，已转交给当前 open 的 spark-0053；该 Spark 的存在不表示原计划已经执行或验收标准已经满足。
 relations:
@@ -87,4 +93,4 @@ relations:
 object_id: workcase-0027
 fact_type_key: workcase
 created_at: '2026-08-01T22:17:04.632849+08:00'
-updated_at: '2026-08-04T22:06:10.246705+08:00'
+updated_at: '2026-08-10T09:32:53.820947Z'
