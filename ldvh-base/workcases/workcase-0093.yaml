@@ -1,0 +1,175 @@
+title: 通用事实更新的 Spark routed-to 形成时校验
+status: open
+summary: 承接 workcase-0092 明确保留的 generic update_application.py 接入缺口；当前等待 Human Gate 1，不修改业务事实。
+priority: P1
+goal: 让 generic update_application.py 在新增 Spark routed-to 关系时，区分新形成的边与已存在的边，并在实际写入前执行 formation-time enforcement：新增加的 Spark 目标必须是同项目、mechanically valid、具有非空 title 且 status=open；既有边允许目标按自身生命周期继续变化。
+scope: 仅覆盖 code/ldvh/facts/update_application.py、必要且最小的 code/ldvh/facts/relations.py 形成辅助，以及 code/tests/facts/test_update_application.py、test_relations.py、test_project_validation.py。允许读取当前 dirty baseline、只读 Helper、目标测试、Ruff、git diff --check、check-fact-integrity 与指定事实精确回读。明确排除 specs、Web、Helper API/schema、任何 canonical fact 写入、spark-0034/workcase-0092 修改、successor 创建或迁移、multi-object 原子写入、WorkCase 状态机、commit/push/PR/release/external。
+success_criterion_definitions:
+- criterion_id: criterion-formation
+  statement: generic update_application.py 在候选对象通过普通 project/relation 机械校验后、atomic replacement 前，对 before→after 新增的 Spark routed-to 边执行形成时校验；新边目标必须同项目、mechanically valid、非空 title 且 status=open，新增指向 routed/implemented/discarded Spark 的边被拒绝。
+- criterion_id: criterion-existing-edge
+  statement: 已存在的 Spark routed-to 边不因目标后续变为 routed/implemented/discarded 而失效；对源对象的普通后续更新不误拒绝该既有边。
+- criterion_id: criterion-relation-regression
+  statement: Study、缺失、invalid、空 title、自指、跨项目和循环等既有关系约束继续拒绝；WorkCase、ADR、Pitfall 作为 Spark routed-to 的合法非 Spark 承接路径保持可用，不被本 WC 错误收紧。
+- criterion_id: criterion-verification
+  statement: 针对 generic update、relations 与 project validation 的正反测试、Ruff、git diff --check 和全库 check-fact-integrity 通过，并完成指定事实精确回读；无法区分 dirty baseline 时据实停止。
+- criterion_id: criterion-safety
+  statement: 本 WC 不产生任何 canonical business fact write，不创建 successor、不迁移 spark-0034、不实现 multi-object atomicity，不把 formation enforcement 写成 successor 分流已完成。
+work_items:
+- item_id: item-path-analysis
+  goal: 精确定位 generic update 的 before/after、候选对象和实际替换边界，并记录现有 dirty baseline。
+  expected_result: 形成可审查的最小接入位置与文件边界；无法区分已有 dirty diff 时停止，不覆盖无关修改。
+  status: pending
+- item_id: item-formation-enforcement
+  goal: 在 generic update 写入前接入 Spark successor routed-to formation-time enforcement。
+  expected_result: 只对 before→after 新增的 Spark 目标边执行 open/有效性边界；保留既有边后续生命周期兼容与非 Spark 合法路径。
+  status: pending
+  depends_on:
+  - item-path-analysis
+- item_id: item-formation-tests
+  goal: 补齐 generic update 与关系/project 校验的正反测试。
+  expected_result: 覆盖新 open Spark 通过、新 routed/implemented/discarded Spark 拒绝、既有边后续状态通过、Study/缺失/invalid/title/self/cross-project/cycle 拒绝及 WorkCase/ADR/Pitfall 回归。
+  status: pending
+  depends_on:
+  - item-formation-enforcement
+- item_id: item-verification
+  goal: 完成授权范围验证并记录无事实写入边界。
+  expected_result: 目标 Python tests、Ruff、git diff --check、check-fact-integrity 与指定事实回读结果据实形成；保留未验证与 dirty baseline 限制。
+  status: pending
+  depends_on:
+  - item-formation-tests
+execution_authorization:
+  authorized_actions:
+  - action_id: authorization-path-analysis
+    summary: 只读定位 generic update formation-time 接入点与 dirty baseline
+    target_scope: 列明 Python code/tests 与当前 Working Tree
+    effect_scope: 只读分析，不写事实或代码
+    risk_summary: dirty baseline 重叠导致误覆盖或误归因
+    rollback_summary: 不写入；无法区分即停止
+    rule_refs:
+    - '05'
+    - '20'
+    - '21'
+    - '32'
+  - action_id: authorization-code
+    summary: 实现 generic update 的 Spark formation-time enforcement
+    target_scope: update_application.py 与必要最小 relations.py 辅助
+    effect_scope: 只改列明 Python 实现，不改事实、schema、状态机或多对象能力
+    risk_summary: generic path 误拒绝合法既有关系或误放行新边
+    rollback_summary: 仅回退本 WC 可明确归属的局部 diff；重叠无法区分则保留并停止
+    rule_refs:
+    - '05'
+    - '20'
+    - '32'
+  - action_id: authorization-tests
+    summary: 补齐 formation 与既有关系路径的 Python 正反测试
+    target_scope: test_update_application.py、test_relations.py、test_project_validation.py
+    effect_scope: 只改列明测试，不写事实
+    risk_summary: 测试未区分新边与既有边，导致生命周期回归
+    rollback_summary: 仅回退本 WC 可明确归属的测试 diff
+    rule_refs:
+    - '05'
+    - '07'
+    - '20'
+    - '32'
+  - action_id: authorization-verification
+    summary: 执行目标验证和只读事实回读
+    target_scope: 列明 Python tests、Ruff、diff check、integrity、spark-0034/workcase-0077/workcase-0092 回读
+    effect_scope: 只读观察，事实写入恒为空
+    risk_summary: dirty baseline 或外部变化影响归因
+    rollback_summary: 不回滚无关变化，据实记录限制
+    rule_refs:
+    - '05'
+    - '07'
+    - '20'
+    - '21'
+  - action_id: authorization-creation-review
+    summary: 执行本计划的独立只读 creation review
+    target_scope: 本 WC 计划、授权包与相邻 WorkCase/Spark 查重
+    effect_scope: 只读 Reviewer 与 Controller feedback 处置
+    risk_summary: 计划边界或授权覆盖仍有缺口
+    rollback_summary: 未通过则返修计划，不创建对象
+    rule_refs:
+    - '21'
+    - '31'
+    - '34'
+  - action_id: authorization-review-delegation
+    summary: 委派未来结果链的 native subagent 只读 Reviewer
+    target_scope: 本 WC 当前 result projection
+    effect_scope: 只读反馈，不改代码、事实或 Git
+    risk_summary: 能力不可用或版本变化使 review 失效
+    rollback_summary: 按新版本重新复核；禁止 same-AI fallback
+    rule_refs:
+    - '21'
+    - '34'
+  - action_id: authorization-result-review
+    summary: 执行必经独立只读 result review
+    target_scope: 本 WC 完整 result projection
+    effect_scope: 读取反馈并由 Controller 处置，不自动关闭
+    risk_summary: 结果可能暴露 generic path 覆盖缺口
+    rollback_summary: 结果版本变化则 fresh review
+    rule_refs:
+    - '21'
+    - '34'
+  quality_gates:
+  - gate_id: independent-result-review
+    reviewer_mode: independent-read-only
+    delegation_action_id: authorization-review-delegation
+    result_review_action_id: authorization-result-review
+  action_ceiling: 仅允许列明 Python code/tests、只读 Helper、目标验证与两固定 review 位置；不扩展为规则修订、Web/Helper API、事实写入、successor 创建、Spark 迁移或 multi-object atomicity。
+  reviewer_policy:
+    model: gpt-5.6-sol
+    collaboration_agent: native-subagent
+    effort: medium
+    fast: false
+    preferred_method: subagent-read-only
+    fallback_order:
+    - subagent-read-only
+    max_perspectives: 1
+    activation: native subagent 可用且仅承担只读 creation/PlanΔ/result review
+    same_ai_limit: 禁止降级到 same-AI；能力/权限不成立时停止对应 review。
+  allowed_adjustments: 只允许在列明 Python code/tests 内进行最小实现或测试修正，以及同范围失败重试；不得扩大文件、对象、状态、关系语义、事实写入或多对象能力；若需要修改 specs、Web、Helper API/schema 或无法区分 dirty baseline，立即停止。
+  verification_and_rollback: 先记录 update_application.py、relations.py 与相关测试的现有 dirty baseline；逐块审 diff，仅叠加可归属增量。每个稳定检查点运行目标测试、Ruff、git diff --check 与 check-fact-integrity；不回退或覆盖无关 dirty。
+  out_of_bounds_handling: 发现事实写入、successor 创建/迁移、spark-0034/workcase-0092 修改、multi-object 行为、spec/Web/Helper API 扩围、提交发布或无法安全区分 dirty 时，立即停止相关动作并交还新范围。
+  prohibited_actions:
+  - 不得写入任何 canonical fact；不得创建或更新 Spark/WorkCase/Study/ADR/Pitfall。
+  - 不得创建 successor、迁移 spark-0034 或用多次单对象写入伪造整体分流成功。
+  - 不得修改 specs、Web、Helper API/schema、WorkCase 状态机或 multi-object atomicity。
+  - 不得 commit、push、PR、release、部署、安装依赖或发送外部消息。
+  - 不得清理、覆盖、stage、restore 或回退无关 dirty changes。
+  human_prerequisites:
+  - Human Gate 1 必须批准本 plan_version=1 与完整 execution_authorization 后，才可修改列明代码或测试；本创建对象本身不带 execution approval。
+phase: human_plan_confirming
+plan_version: 1
+waiting_on: Human Gate 1：审批 generic update_application.py formation-time enforcement 的计划、授权范围与禁止项
+creation_reviews:
+- reviewer: 019feb5b-7955-7c60-8b51-2fdb6c039a5a (Confucius)
+  reviewed_at: '2026-08-10T11:11:37.747959Z'
+  subject_version: 1
+  scope: 独立审查新 WorkCase 与 workcase-0092 的粒度差异、formation-time 与 relation-time 两层边界、Gate1 授权包、dirty baseline 隔离、工作项/成功标准生命周期边界。
+  conclusion: pass
+  covered_quality_gate_ids:
+  - independent-result-review
+  actual_method: subagent-read-only
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: workcase
+    object_id: workcase-0092
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0034
+change_log:
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: fde0af60-4736-4d2d-b2eb-d0be116e163a
+  at: '2026-08-10T11:11:37.937719Z'
+  summary: Human 要求按建议为 generic update_application.py formation-time enforcement 单独建立 WorkCase；完成相邻对象查重与独立 creation review，形成等待 Human Gate 1 的最小计划。
+object_id: workcase-0093
+fact_type_key: workcase
+created_at: '2026-08-10T11:11:37.937719Z'
+updated_at: '2026-08-10T11:11:37.937719Z'
