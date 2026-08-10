@@ -69,37 +69,37 @@ change_log:
   summary: 独立复核完成（CONDITIONAL）。item-03 完成，phase→controller_checking。
 - signature:
     agent_id: wb
-    host_environment: wb
+    host_environment: Codex
   session_id: wc0068
   at: '2026-08-07T20:26:34.178453+08:00'
   summary: 'controller_checking: freeze result'
 - signature:
     agent_id: wb
-    host_environment: wb
+    host_environment: Codex
   session_id: wc0068
   at: '2026-08-07T20:29:40.498427+08:00'
   summary: controller→review (no reviews yet)
 - signature:
     agent_id: wb
-    host_environment: wb
+    host_environment: Codex
   session_id: wc0068
   at: '2026-08-07T20:29:54.925681+08:00'
   summary: add result_reviews in review phase
 - signature:
     agent_id: wb
-    host_environment: wb
+    host_environment: Codex
   session_id: wc0068
   at: '2026-08-07T20:30:25.563135+08:00'
   summary: review→prepare
 - signature:
     agent_id: wb
-    host_environment: wb
+    host_environment: Codex
   session_id: wc0068
   at: '2026-08-07T20:30:28.698034+08:00'
   summary: prepare→confirm
 - signature:
     agent_id: wb
-    host_environment: wb
+    host_environment: Codex
   session_id: wc0068
   at: '2026-08-07T20:31:30.484016+08:00'
   summary: Human Gate 2 批准。已关闭。
@@ -122,6 +122,13 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-workcase-signature-migration-20260810
+
+- at: '2026-08-10T09:05:13.668551Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 7: wb -> Codex; 8: wb -> Codex; 9: wb -> Codex; 10: wb -> Codex; 11: wb -> Codex; 12: wb -> Codex。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-codex-alias-migration-20260810
 
 success_criterion_results:
 - criterion_id: criterion-01
@@ -153,4 +160,4 @@ residual_responsibilities:
 object_id: workcase-0068
 fact_type_key: workcase
 created_at: '2026-08-07T19:31:25.415722+08:00'
-updated_at: '2026-08-10T08:52:52.986544Z'
+updated_at: '2026-08-10T09:05:13.668551Z'
