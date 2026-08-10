@@ -35,7 +35,7 @@ change_log:
   at: '2026-08-05T23:45:53.113734+08:00'
   summary: 承接现状更新：规则层已由 workcase-0060（05 §9.4）承接；残留为 Gate 前置拦截实现，保持 open
 - signature:
-    agent_id: trae-deepseek-v4
+    agent_id: deepseek-v4-pro
     host_environment: Trae
   session_id: spark-0022-disposition-2026-08-08
   at: '2026-08-08T23:55:07.835330+08:00'
@@ -54,7 +54,13 @@ change_log:
     model_id: gpt-5
   session_id: cindy-explicit-signature-migration-20260810
 
+- at: '2026-08-10T09:29:18.093270Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 2: trae-deepseek-v4 -> deepseek-v4-pro。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: 4591aaa6-256d-45bb-8c3d-fd0d7619df41
 object_id: spark-0022
 fact_type_key: spark
 created_at: '2026-07-21T04:10:57.798570+08:00'
-updated_at: '2026-08-10T08:55:31.579046Z'
+updated_at: '2026-08-10T09:29:18.093270Z'
