@@ -25,7 +25,7 @@ research_intent: 为「把 09 §6.3 中 Windows 从『未验证范围』翻为�
 recommendation_summary: 建议经 Human Gate 后将 09 §6.3 的 Windows 声明由「未验证范围」更新为「已验证平台（受控写入，file_only 耐久，仅限 NTFS fixed drive）」，并保留 05 §11.8 的授权范围与残留风险声明不变。完整接入的其它平台（非 Windows）仍按未验证范围处理。
 change_log:
 - signature:
-    agent_id: workbuddy-ldvh-verify
+    agent_id: hy3
     host_environment: Codex
   session_id: verify-windows-support-2026-08-07
   at: '2026-08-07T18:56:39.522746+08:00'
@@ -37,10 +37,16 @@ change_log:
     model_id: gpt-5
   session_id: cindy-codex-alias-migration-20260810
 
+- at: '2026-08-10T09:32:22.447500Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: workbuddy-ldvh-verify -> hy3。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: 4591aaa6-256d-45bb-8c3d-fd0d7619df41
 object_id: study-0025
 fact_type_key: study
 created_at: '2026-08-07T18:56:39.522746+08:00'
-updated_at: '2026-08-10T09:05:04.323871Z'
+updated_at: '2026-08-10T09:32:22.447500Z'
 ---
 
 ## 研究问题
