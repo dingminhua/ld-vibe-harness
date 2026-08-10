@@ -27,61 +27,67 @@ change_log:
   summary: 受控创建 workcase-0083：承接 spark-0060 阶段 1（全量测试耗时预估：记录侧派生 + status 查询接口）；经两轮创建前独立方案复核（subagent-read-only），第一轮 changes_required 已修正，第二轮 pass_with_followups 全部处置；等待 Human Gate 1 批准。
   signature:
     model_id: deepseek-v4-flash
-    agent_workbench: WorkBuddy
+    agent_workbench: Workbuddy
 - at: '2026-08-09T15:20:04.469673+08:00'
   session_id: workbuddy-session-20260809
   summary: Gate 1 批准：Human 批准 plan_version=1 计划与完整 execution authorization baseline；phase 由 human_plan_confirming 推进到 executing，写入 execution_approval。
   signature:
     model_id: deepseek-v4-flash
-    agent_workbench: WorkBuddy
+    agent_workbench: Workbuddy
 - at: '2026-08-09T15:24:34.781859+08:00'
   session_id: workbuddy-session-20260809
   summary: 执行检查点：item-1~4 完成（耗时派生/聚合/status 预估/pytest），item-5 full-v4 验证进行中。
   signature:
     model_id: deepseek-v4-flash
-    agent_workbench: WorkBuddy
+    agent_workbench: Workbuddy
 - at: '2026-08-09T15:26:51.610641+08:00'
   session_id: workbuddy-session-20260809
   summary: 形成结果投影：result_version=1，criterion-1/2/3 satisfied、criterion-4 not_satisfied（基线 lint 阻断）；phase controller_checking；准备委派独立结果复核。
   signature:
     model_id: deepseek-v4-flash
-    agent_workbench: WorkBuddy
+    agent_workbench: Workbuddy
 - at: '2026-08-09T15:30:49.276929+08:00'
   session_id: workbuddy-session-20260809
   summary: controller_checking 内修正：按独立结果复核 feedback 修正 criterion-3 与 item-4 的测试分组数字描述（派生 7、聚合 7、fallback 2、tool 2）；尚无 review，同版本修改不升版。
   signature:
     model_id: deepseek-v4-flash
-    agent_workbench: WorkBuddy
+    agent_workbench: Workbuddy
 - at: '2026-08-09T15:30:59.279914+08:00'
   session_id: workbuddy-session-20260809
   summary: controller_checking → independent_reviewing：完整 result v1 projection 已冻结并回读；等待独立结果复核。
   signature:
     model_id: deepseek-v4-flash
-    agent_workbench: WorkBuddy
+    agent_workbench: Workbuddy
 - at: '2026-08-09T15:31:12.275318+08:00'
   session_id: workbuddy-session-20260809
   summary: 写入 result_reviews 绑定 result_version=1（subagent-read-only，pass_with_followups）；feedback 已处置（数字描述修正完成）。
   signature:
     model_id: deepseek-v4-flash
-    agent_workbench: WorkBuddy
+    agent_workbench: Workbuddy
 - at: '2026-08-09T15:31:32.693731+08:00'
   session_id: workbuddy-session-20260809
   summary: independent_reviewing → closure_preparing：形成完整关闭提案（proposed_outcome=partial，residual-1 suggest_spark 承接基线 lint 修复）；等待 Human Gate 2。
   signature:
     model_id: deepseek-v4-flash
-    agent_workbench: WorkBuddy
+    agent_workbench: Workbuddy
 - at: '2026-08-09T15:31:50.946320+08:00'
   session_id: workbuddy-session-20260809
   summary: closure_preparing → human_closure_confirming：终态保留审查完成，完整关闭提案与 residual decision 已冻结；等待 Human Gate 2 关闭决定。
   signature:
     model_id: deepseek-v4-flash
-    agent_workbench: WorkBuddy
+    agent_workbench: Workbuddy
 - at: '2026-08-09T16:20:32.380532+08:00'
   session_id: workbuddy-session-20260809
   summary: Gate 2 关闭：Human 批准 partial 关闭；closure_outcome=partial，spark_suggestions 保留 suggestion-1（承接基线 lint 修复）；无 accept_stop residual、无 route_existing target。
   signature:
     model_id: deepseek-v4-flash
-    agent_workbench: WorkBuddy
+    agent_workbench: Workbuddy
+- at: '2026-08-10T08:59:13.826580Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: WorkBuddy -> Workbuddy; 1: WorkBuddy -> Workbuddy; 2: WorkBuddy -> Workbuddy; 3: WorkBuddy -> Workbuddy; 4: WorkBuddy -> Workbuddy; 5: WorkBuddy -> Workbuddy; 6: WorkBuddy -> Workbuddy; 7: WorkBuddy -> Workbuddy; 8: WorkBuddy -> Workbuddy; 9: WorkBuddy -> Workbuddy。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-workbuddy-case-normalization-20260810
 title: 全量测试耗时预估（阶段 1：记录侧派生与 status 查询接口）
 success_criterion_definitions:
 - criterion_id: criterion-1
@@ -106,4 +112,4 @@ spark_suggestions:
 object_id: workcase-0083
 fact_type_key: workcase
 created_at: '2026-08-09T15:16:49.005124+08:00'
-updated_at: '2026-08-09T16:20:32.380532+08:00'
+updated_at: '2026-08-10T08:59:13.826580Z'

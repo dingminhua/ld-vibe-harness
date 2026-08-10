@@ -24,7 +24,7 @@ change_log:
   summary: 受控创建 workcase-0089：承接 spark-0060 阶段 3 流程固化，将测试前耗时预估查询固化为标准流程。
   signature:
     model_id: deepseek-v4-flash
-    agent_workbench: WorkBuddy
+    agent_workbench: Workbuddy
 - at: '2026-08-09T15:06:14.538021Z'
   session_id: workbuddy-session-20260809
   summary: Human 主动中止：进入 termination_preparing，冻结原计划并写入初始 termination。
@@ -43,6 +43,12 @@ change_log:
   signature:
     model_id: deepseek-v4-flash
     agent_workbench: Workbuddy
+- at: '2026-08-10T08:59:19.732063Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: WorkBuddy -> Workbuddy。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-workbuddy-case-normalization-20260810
 termination:
   initiated_at: '2026-08-09T22:58:00+08:00'
   source_status: open
@@ -83,4 +89,4 @@ disposition_summary: Human 明确指令作废/中止本 WorkCase（ldvh@workcase
 object_id: workcase-0089
 fact_type_key: workcase
 created_at: '2026-08-09T14:24:21.589586Z'
-updated_at: '2026-08-09T15:06:56.078746Z'
+updated_at: '2026-08-10T08:59:19.732063Z'

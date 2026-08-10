@@ -60,18 +60,24 @@ evolution:
 change_log:
 - signature:
     agent_id: glm-5.2
-    host_environment: claude-code-mcp
+    host_environment: Claude
   session_id: spark-0037-close-20260805
   at: '2026-08-05T00:42:56.702339+08:00'
   summary: spark-0037 是遗留对象，完全缺少 change_log；本迁移建立一次据实标注历史不可得的可信流水起点，使后续状态更新（close as routed）可以合法进行。
 - at: '2026-08-05T00:48:58.777315+08:00'
   signature:
     agent_id: glm-5.2
-    host_environment: claude-code-mcp
+    host_environment: Claude
   session_id: spark-0037-close-20260805
   summary: 状态变更：open → routed，分流到 workcase-0021（下位规范对齐与承接）。
+- at: '2026-08-10T08:46:36.755991Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: claude-code-mcp -> Claude; 1: claude-code-mcp -> Claude。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-legacy-signature-migration-20260810
 disposition_summary: 本 Spark 的原始议题（Human 认知主体在 00 的定位 + Web 派生视图体现）已由 workcase-0021 完整承接：以 commit f7188e00e 生效的 specs/00 为上位基线，完成基础规范、事实类型、Web 上位规范、README、认知中心设计和本 Spark 当前状态的对齐；残余开放项（HV4 产品缺口、交还留痕改进）属于范围外长期议题，已明确记录。
 object_id: spark-0037
 fact_type_key: spark
 created_at: '2026-07-28T16:53:08.058141+08:00'
-updated_at: '2026-08-05T00:48:58.777315+08:00'
+updated_at: '2026-08-10T08:46:36.755991Z'

@@ -9,17 +9,23 @@ disposition_summary: 使命完成：本议题限定的信息需求已落实到�
 change_log:
 - signature:
     agent_id: deepseek-v4-flash
-    host_environment: WorkBuddy (macOS)
+    host_environment: Workbuddy
   session_id: wb-2026-08-08-spark0017-disposition
   at: '2026-08-08T14:35:16.615875+08:00'
   summary: spark-0017 为缺少 change_log 的遗留对象，且本次需要受控更新；历史形成记录不可得，此处仅建立一条据实标注的迁移可信起点，不恢复原始历史。
 - signature:
     agent_id: deepseek-v4-flash
-    host_environment: WorkBuddy (macOS)
+    host_environment: Workbuddy
   session_id: wb-2026-08-08-spark0017-disposition
   at: '2026-08-08T14:35:54.079781+08:00'
   summary: 将 spark-0017 从 open 处置为 implemented（使命完成）：外部网页证据的来源纪律已由 specs/03 规范吸收，Firecrawl 守势结论已确立，无剩余待处置责任。
+- at: '2026-08-10T08:46:15.833651Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: WorkBuddy (macOS) -> Workbuddy; 1: WorkBuddy (macOS) -> Workbuddy。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-legacy-signature-migration-20260810
 object_id: spark-0017
 fact_type_key: spark
 created_at: '2026-07-19T10:28:47.872563+08:00'
-updated_at: '2026-08-08T14:35:54.079781+08:00'
+updated_at: '2026-08-10T08:46:15.833651Z'
