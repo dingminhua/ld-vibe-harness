@@ -163,9 +163,16 @@ def test_inject_onto_host_name_legacy_restarts_signature() -> None:
     assert "host_name" not in newest["signature"]
 
 
-def test_inject_missing_observed_signature_preserves_supplied() -> None:
+def test_inject_missing_observed_signature_normalizes_existing_agent_workbench() -> None:
+    """空 observed_context 时仍应归一化 change_log 中已有的 agent_workbench。
+
+    _supplied() 的 agent_workbench 是 "Old Host"——多 token 复合形，
+    应被归一化为 "Old"，而不是原样保留。
+    """
     supplied = _supplied()
-    assert inject_observed_write_signature(supplied, {}) == supplied
+    result = inject_observed_write_signature(supplied, {})
+    assert result != supplied  # 归一化改变了内容
+    assert result["change_log"][-1]["signature"]["agent_workbench"] == "Old"
 
 
 def test_inject_without_change_log_preserves_supplied() -> None:

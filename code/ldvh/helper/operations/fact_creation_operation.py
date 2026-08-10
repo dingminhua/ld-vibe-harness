@@ -80,6 +80,22 @@ def inject_observed_write_signature(
 ) -> dict[str, Any]:
     """Merge observed values into the newest change-log entry without widening its signature."""
 
+    # Normalize agent_workbench in the newest change-log entry before any
+    # early return.  This keeps compound names like "claude-code-mcp"
+    # consistent even when observed_context is empty or malformed.
+    change_log = supplied.get("change_log")
+    if isinstance(change_log, list) and change_log and isinstance(change_log[-1], dict):
+        newest = dict(change_log[-1])
+        sig = newest.get("signature")
+        if isinstance(sig, dict):
+            wb = sig.get("agent_workbench")
+            if isinstance(wb, str):
+                normalized_wb = _normalize_workbench_name(wb)
+                if normalized_wb != wb:
+                    sig = {**sig, "agent_workbench": normalized_wb}
+                    newest["signature"] = sig
+                    supplied = {**supplied, "change_log": [*change_log[:-1], newest]}
+
     parsed = parse_observed_write_signature(observed_context)
     if parsed.problems or (not parsed.signature and parsed.session_id is None):
         return supplied
