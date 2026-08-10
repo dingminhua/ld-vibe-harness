@@ -1,0 +1,275 @@
+title: Spark 部分责任移交与后继议题分流契约
+status: open
+phase: independent_reviewing
+plan_version: 1
+priority: P1
+summary: 本 WorkCase 只交付 partial-successor routing 的规则、Core 关系校验、只读审计边界与 Web 正式关系投影准备；不创建 successor、不更新 spark-0034。未来事实迁移另建 multi_object_disposition WorkCase；当前公开 Helper 只有单对象 create/update，事实写入集合恒为空。
+goal: 在不新增 Spark 状态或关系键的前提下，定义并实现合法的“已完成稳定事实 + 明确 residual scope 的 open successor Spark”共同承接契约，补齐 Core 关系校验、只读候选/对象读取审计边界与 Web 正式关系投影，形成未来处理 spark-0034 所需的可审查能力边界。
+scope: 覆盖 specs/20-Spark-火花.md、specs/32-事实对象生命周期变更与承接处置行动模板.md；code/ldvh/facts/relations.py、code/tests/facts/test_relations.py、必要的 code/tests/facts/test_project_validation.py；web/api/routes/cognition.ts 与 web/tests/api/cognition-inbox-contract.test.ts（仅在正式关系命中时）。find-fact-object-candidates/read-fact-objects 只读审计；精确核对 spark-0034/workcase-0077，不修改任何事实对象。排除 successor 创建、spark-0034 更新、多对象原子写入、WorkCase 状态机、bootstrap/config writer、通用图重构、其它 Spark，以及 commit/push/PR/release/external。
+success_criterion_definitions:
+- criterion_id: criterion-contract
+  statement: 20/32 一致定义共同承接、open successor 的明确 residual scope、同项目/title、自指/循环/Study 边界；successor 语义充分性由 AI 审核，Code 只做机械检查，目标后续生命周期不由源 Spark 跟踪。
+- criterion_id: criterion-core
+  statement: Core 校验与正反测试对新形成的 Spark routed-to 仅接受同项目、mechanically valid、非空 title 的 open Spark；既有目标后续合法生命周期不使关系失效；Study、跨项目、缺失/invalid、空 title、自指、循环被拒绝，既有非 Spark 与 WorkCase 路径保持。
+- criterion_id: criterion-web
+  statement: cognition 正式关系投影在命中时显示合法 successor 当前 title/status，不以 ID 代替 title；若只读确认该文件不承载正式关系，则保持不变并记录边界。
+- criterion_id: criterion-regression
+  statement: 范围目标测试与 git diff --check 通过；Helper 只读精确回读 spark-0034/workcase-0077；本 WorkCase 不产生 canonical fact write；全库 check-fact-integrity 只记录已有 partial/invalid baseline，不冒充本 WorkCase 成果或失败原因。
+- criterion_id: criterion-nogo
+  statement: 形成未来迁移 No-Go：无匹配 multi_object_disposition 原子能力时，不创建 successor、不更新源 Spark、不以多次单对象写入拼接整体分流成功。
+work_items:
+- item_id: item-contract
+  goal: 修订 partial-successor routing 规则与多对象 No-Go 边界。
+  expected_result: 20/32 形成一致关系、残余范围、目标生命周期与能力边界文本，不新增状态或关系键。
+  status: completed
+  result_summary: 20/32 已形成一致的 partial-successor routing 契约：open successor 的 residual scope、同项目与标题要求、自指/循环/Study 边界，以及无多对象原子能力时的 No-Go 已写入规则。
+- item_id: item-core-validation
+  goal: 更新 routed-to Core 校验与 Python 正反测试。
+  expected_result: 合法 open successor 与非法目标场景被机械固定，既有路径回归。
+  status: completed
+  depends_on:
+  - item-contract
+  result_summary: Core 关系形成与后续生命周期边界已验证；Python facts/project 回归 59 passed，覆盖 open successor 形成、既有目标后续状态稳定性、自指/循环/Study/跨项目/invalid/空 title 与既有路径兼容。
+- item_id: item-web-projection
+  goal: 核对并按命中情况更新 cognition 正式关系投影及 contract test。
+  expected_result: 投影诚实显示 successor title/status；不承载时形成 no-change 结论。
+  status: completed
+  depends_on:
+  - item-core-validation
+  result_summary: Web cognition 正式关系投影已核对并固定；contract test 19/19 passed，覆盖 routed Spark successor 当前 title/status 呈现，TypeScript check 通过。
+- item_id: item-verification
+  goal: 完成目标测试、差异检查、只读事实回读与 integrity 基线记录。
+  expected_result: 据实记录测试、回读、已有 partial/invalid baseline 和未验证范围，不产生 canonical fact write。
+  status: completed
+  depends_on:
+  - item-core-validation
+  - item-web-projection
+  result_summary: 最终验证完成：Python facts/project 59 passed；Web cognition contract 19 passed；TypeScript、Ruff、git diff --check 通过；check-fact-integrity 为 complete（206/206）；只读精确回读 spark-0034/workcase-0077/workcase-0092 均 mechanically_valid；未创建/更新 Spark、Study 或其它业务事实。
+execution_authorization:
+  authorized_actions:
+  - action_id: authorization-spec
+    summary: 修订 Spark partial-successor 与 No-Go 规则
+    target_scope: 两份列明 spec
+    effect_scope: 只改规则文本，不写事实
+    risk_summary: 改变 routed-to 边界的语义风险
+    rollback_summary: 局部 diff 回退本 WC 段落
+    rule_refs:
+    - '20'
+    - '32'
+    - '05'
+  - action_id: authorization-core
+    summary: 实现 Core 关系校验与 Python 测试
+    target_scope: relations.py 与列明 Python tests
+    effect_scope: 只改机械校验/测试，不改事实或 WorkCase
+    risk_summary: 既有关系兼容风险
+    rollback_summary: 回退本 WC 局部 diff 并重跑测试
+    rule_refs:
+    - '05'
+    - '20'
+    - '32'
+  - action_id: authorization-web
+    summary: 最小更新 cognition 投影与命中测试
+    target_scope: cognition.ts 与 cognition-inbox contract test
+    effect_scope: 仅局部增量，保留 dirty baseline
+    risk_summary: 误呈现 ID/状态风险
+    rollback_summary: 按区块回退，无法区分则停止
+    rule_refs:
+    - '08'
+    - '20'
+    - '05'
+  - action_id: authorization-read-audit
+    summary: 只读召回并精确读取相邻对象与目标事实
+    target_scope: 当前 governed project F2/F3
+    effect_scope: 只读，事实写入恒为空
+    risk_summary: invalid/partial coverage 限制
+    rollback_summary: 不写、不修、不清理，保留缺口
+    rule_refs:
+    - '05'
+    - '20'
+    - '21'
+  - action_id: authorization-verification
+    summary: 运行目标测试、diff check 与 integrity 基线
+    target_scope: 列明测试、diff、当前 worktree
+    effect_scope: 只产生观察/缓存，禁止事实写入
+    risk_summary: dirty/invalid baseline 影响结果
+    rollback_summary: 据实记录，不回滚无关产物
+    rule_refs:
+    - '05'
+    - '07'
+    - '08'
+    - '20'
+  - action_id: authorization-creation-review
+    summary: 执行当前 plan 的只读 creation/PlanΔ review
+    target_scope: 本 WC 计划与授权包
+    effect_scope: Reviewer 只读，Controller 处置 feedback
+    risk_summary: 反馈或能力边界可能要求返修
+    rollback_summary: 旧 review 失效后 fresh review
+    rule_refs:
+    - '21'
+    - '31'
+    - '34'
+  - action_id: authorization-review-delegation
+    summary: 委派未来结果链只读 Reviewer
+    target_scope: 本 WC result projection
+    effect_scope: 只读传递与反馈，不改实现/事实/Git
+    risk_summary: 不可用或版本变化使 review 失效
+    rollback_summary: 按新版本 fresh review
+    rule_refs:
+    - '21'
+    - '34'
+  - action_id: authorization-result-review
+    summary: 执行必经独立只读 result review
+    target_scope: 本 WC 完整 result projection
+    effect_scope: 读取反馈并由 Controller 处置，不自动关闭
+    risk_summary: 结果可能暴露覆盖缺口
+    rollback_summary: 结果版本变化则 fresh review
+    rule_refs:
+    - '21'
+    - '34'
+  quality_gates:
+  - gate_id: independent-result-review
+    reviewer_mode: independent-read-only
+    delegation_action_id: authorization-review-delegation
+    result_review_action_id: authorization-result-review
+  action_ceiling: 仅允许列明规则、代码、测试、只读 Helper 与两个固定 review 位置；事实写入恒为空，不扩展为 successor 创建、spark-0034 更正或 multi_object_disposition 实现。
+  reviewer_policy:
+    model: gpt-5.6-sol
+    collaboration_agent: native-subagent
+    effort: medium
+    fast: false
+    preferred_method: subagent-read-only
+    fallback_order:
+    - subagent-read-only
+    max_perspectives: 1
+    activation: native subagent 可用且仅承担只读 creation/PlanΔ/result review
+    same_ai_limit: 禁止降级到 same-AI；能力/权限不成立时停止对应 review。
+  allowed_adjustments: 只允许细化直接命中文件或 item 顺序；不得扩大对象、状态、关系键、事实写入或多对象能力。
+  verification_and_rollback: 稳定检查点逐文件审 diff、运行目标测试与 check-fact-integrity；事实写入恒不发生。失败或 baseline partial 据实记录，无法区分本 WC 增量则停止。
+  out_of_bounds_handling: 发现 successor 创建、spark-0034 更新、其它事实、多对象原子操作、提交/发布/外部消息或覆盖 dirty 时立即停止相关动作，交未来新 WC，不扩权。
+  prohibited_actions:
+  - 不得创建或更新任何 canonical fact；不得创建 successor 或更正 spark-0034。
+  - 不得新增 Spark status/relation key、修改 WorkCase 状态机或实现 multi_object_disposition。
+  - 不得 commit、push、PR、release、部署、安装依赖或外部消息。
+  - 不得清理、覆盖、stage、restore 或回退无关 dirty changes。
+  - 不得将已有 partial/invalid integrity baseline 改写为本 WC 成果、失败或已闭环。
+  human_prerequisites:
+  - Human Gate 1 必须在任何规则/代码/测试修改前批准 plan_version=1 与完整 execution_authorization.
+creation_reviews:
+- reviewer: 019feaa0-9db9-7612-b8de-07cf4122aca5
+  reviewed_at: '2026-08-10T07:58:00Z'
+  subject_version: 1
+  scope: 完整审查 goal、scope、5 项 criteria、4 个 items、授权、reviewer policy、候选 partial/invalid 基线与 multi_object No-Go；反馈已由 Controller 修订并完成最终 fresh 复核。
+  conclusion: pass
+  covered_quality_gate_ids:
+  - independent-result-review
+  actual_method: subagent-read-only
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0034
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: workcase
+    object_id: workcase-0077
+change_log:
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: fde0af60-4736-4d2d-b2eb-d0be116e163a
+  at: '2026-08-10T08:02:54.796376Z'
+  summary: Human 明确要求按当前 partial Spark 分流目标通过 WorkCase 推进；完成候选召回、相邻对象比较、独立 creation review 与计划返修，形成等待 Gate 1 的契约实现计划。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: fde0af60-4736-4d2d-b2eb-d0be116e163a
+  at: '2026-08-10T08:09:44.114172Z'
+  summary: Human Gate 1 批准 WorkCase-0092 plan_version=1，冻结授权基线并进入 executing。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: fde0af60-4736-4d2d-b2eb-d0be116e163a
+  at: '2026-08-10T08:10:03.503109Z'
+  summary: Gate 1 后开始 item-contract：先建立 partial-successor routing 规则与多对象 No-Go 的跨检查点。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: fde0af60-4736-4d2d-b2eb-d0be116e163a
+  at: '2026-08-10T10:24:08.396440Z'
+  summary: 完整性基线已恢复 complete；记录 item-contract 规则契约完成，并启动 item-core-validation 的 Core 校验与回归验证。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: fde0af60-4736-4d2d-b2eb-d0be116e163a
+  at: '2026-08-10T10:26:40.924930Z'
+  summary: Core 关系校验与 Python 回归完成（59 passed）；启动 Web 正式关系投影与 contract test。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: fde0af60-4736-4d2d-b2eb-d0be116e163a
+  at: '2026-08-10T10:27:02.852577Z'
+  summary: Web cognition 投影与 contract test 完成（19 passed，TypeScript check passed）；启动最终 verification。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: fde0af60-4736-4d2d-b2eb-d0be116e163a
+  at: '2026-08-10T10:28:24.780955Z'
+  summary: 最终 verification 完成；五项 criterion 形成满足结果，进入 controller_checking，等待独立只读 result review。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: fde0af60-4736-4d2d-b2eb-d0be116e163a
+  at: '2026-08-10T10:33:04.868437Z'
+  summary: Controller 检查完成；冻结 result projection，进入 independent_reviewing 接收独立只读审查反馈。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: fde0af60-4736-4d2d-b2eb-d0be116e163a
+  at: '2026-08-10T10:33:20.089408Z'
+  summary: 独立只读 result review 返回 changes_required；反馈显示授权/范围、Spark 负例覆盖、Web 回退与独立证据仍需处置，未进入 closure_preparing。
+execution_approval:
+  subject_version: 1
+  approved_at: '2026-08-10T08:09:40Z'
+  summary: Human 已批准 WorkCase-0092 的 plan_version=1 与完整 execution_authorization，进入 executing。
+  baseline_fingerprint: 97b0d0c5676b7cf1098a88d7b8c5a55fb36a31f4f62df0a0f4a290609e212508
+  source_refs:
+  - 批准执行 workcase-0092
+result_version: 1
+success_criterion_results:
+- criterion_id: criterion-contract
+  outcome: satisfied
+  summary: 20/32 规则与 No-Go 边界已形成并通过 WorkCase 执行记录。
+- criterion_id: criterion-core
+  outcome: satisfied
+  summary: Core 形成时 open successor 机械边界、后续生命周期稳定性与非法场景测试均已通过。
+- criterion_id: criterion-web
+  outcome: satisfied
+  summary: 正式 cognition 关系命中时显示 successor 当前 title/status；19 项 contract test 与 TypeScript 检查通过。
+- criterion_id: criterion-regression
+  outcome: satisfied
+  summary: 目标回归、Ruff、diff check、只读对象回读和全库 integrity 均完成；除本 WorkCase 执行快照外未写入业务事实。
+- criterion_id: criterion-nogo
+  outcome: satisfied
+  summary: 规则明确无 multi_object_disposition 原子能力时不得创建 successor、更新源 Spark 或拼接多次单对象写入。
+result_summary: WorkCase-0092 的规则、Core 校验、Web 正式投影与验证均完成；交付的是未来 partial-successor routing 的可审查契约与能力边界，不执行 spark-0034 的事实迁移。
+controller_check_summary: Controller 检查：五项成功标准均有对应实现/测试/只读证据；完整性基线为 complete；dirty 事实变化与本 WorkCase 范围已区分，未扩大到 successor 创建、Spark/Study 更正或 multi_object_disposition。
+validation_summary: 验证证据：Python 59 passed；Web 19 passed；TypeScript check passed；Ruff passed；git diff --check passed；全库 integrity 206/206 complete；spark-0034、workcase-0077、workcase-0092 精确回读 mechanically_valid。
+result_reviews:
+- reviewer: 019feb37-94b3-7aa0-ade7-6e6944b44439 (Einstein)
+  reviewed_at: '2026-08-10T10:33:19.890626Z'
+  subject_version: 1
+  scope: 独立审查 WorkCase-0092 result projection、授权/范围、Core/Web 测试证据、事实边界与 integrity 回读。
+  conclusion: changes_required
+  feedback:
+  - scope 与 authorization-core 未列明实际改动所依赖的 code/ldvh/facts/update_application.py；需明确授权/范围或返工收敛。
+  - criterion-core 对 Spark routed-to 的缺失/invalid、自指、循环与 update_application 集成负例证据不足，当前结论超出可独立核验证据。
+  - criterion-web 只有合法 successor 正例；cognition.ts 保留 objectId 标题回退，需补负例或收敛声明。
+  - validation_summary 的测试与 diff 结果目前主要来自 WorkCase 自身记录，独立 reviewer 未取得可独立核验的运行日志或未提交状态证据。
+  - 未发现 successor 创建、Spark/Study 业务事实写入或 multi_object_disposition 实现；Git 是否发生提交因 review 禁止 Git 检查，保持未验证。
+  actual_method: subagent-read-only
+object_id: workcase-0092
+fact_type_key: workcase
+created_at: '2026-08-10T08:02:54.796376Z'
+updated_at: '2026-08-10T10:33:20.089408Z'
