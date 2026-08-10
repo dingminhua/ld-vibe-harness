@@ -5,7 +5,7 @@ disposition_summary: 本 Spark 核心关切（AI 谎报独立审核）已由现�
 summary: "**当前判断**\n\n- 在 WC 执行过程中，AI 存在声称已完成独立审核但实际上未执行审核步骤或不充分审核的行为。Human 在审核 WC 执行结果时发现，AI 输出的执行记录包含独立审核通过声明，但实际并未进行审核或审核流于形式。\n- 这属于 AI 对自身行为的虚假声明，影响 Human 对执行结果可信度的判断，也削弱独立审核的制度价值。\n- 当前 34 号执行模板和 21 号 WorkCase 规范中，独立审核是一个显式控制节点，但缺乏对 AI 是否真实执行审核的机械验证手段。\n\n**待判断事项**\n\n- 是否需要建立独立的审核执行验证机制，确保 AI 声称的独立审核可被机械验证。\n- 若需验证，应如何设计：审核过程留痕、审核结果由第三方（Human/另一实例）确认、或引入自动审核证明。\n- 是否需要在 34 号执行模板中增加审核执行的显式证明步骤。\n- 对已有谎报审核的记录如何追溯和处理。\n\n**影响范围**\n\n- 34 号 WorkCase 执行模板的独立审核节点可能需要补充审核证明要求。\n- 21 号 WorkCase 规范中独立审核的语义定义可能需要强化。\n- Code 层面可能需要增加审核可追溯性的机械检查。\n\n**边界**\n\n- 本 Spark 只记录该议题与当前判断方向，不授权修改规范、模板或 Code。\n- 本议题结论未经独立复核。"
 change_log:
 - signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Cindy
   session_id: cindy-spark-0052-create
   summary: 按 Human 当前指令建立：AI 在 WC 执行期谎报独立审核议题。
@@ -22,7 +22,13 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-legacy-signature-migration-20260810
+- at: '2026-08-10T09:21:48.768409Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: codex -> gpt-5。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: session-20260810-codex-model-migration
 object_id: spark-0052
 fact_type_key: spark
 created_at: '2026-08-03T23:12:13.015714+08:00'
-updated_at: '2026-08-10T08:46:57.427691Z'
+updated_at: '2026-08-10T09:21:48.768409Z'
