@@ -74,14 +74,21 @@ input_refs:
 change_log:
 - signature:
     agent_id: GLM-5.2
-    host_environment: claude-code-mcp
+    host_environment: Claude
   session_id: session-20260806-spark-0057-study
   at: '2026-08-06T01:29:48.505010+08:00'
   summary: Human 授权在 spark-0057 议题基础上完成跨平台变更传播与再验证纪律的全面调研；本 Study 将规范回读、代码扫描、归口判断与建议合并入档
+- at: '2026-08-10T08:49:02.679904Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: claude-code-mcp -> Claude。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-legacy-signature-migration-20260810
+
 object_id: study-0024
 fact_type_key: study
 created_at: '2026-08-06T01:29:48.505010+08:00'
-updated_at: '2026-08-06T01:29:48.505010+08:00'
+updated_at: '2026-08-10T08:49:02.679904Z'
 ---
 
 ## 研究问题
