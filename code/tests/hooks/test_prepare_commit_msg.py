@@ -14,6 +14,17 @@ from ldvh.hooks.prepare_commit_msg import (
     run_prepare_commit_msg,
 )
 
+_ALL_ENV_KEYS = (
+    "LDVH_MODEL_ID", "LDVH_WORKBENCH_NAME", "LDVH_SESSION_ID",
+    "CODEBUDDY_SESSION_ID", "CLAUDE_SESSION_ID",
+    "CLIENT_INFO_PRODUCT_NAME",
+)
+
+
+def _clear_all_signature_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    for key in _ALL_ENV_KEYS:
+        monkeypatch.delenv(key, raising=False)
+
 
 @pytest.fixture
 def env_signature(monkeypatch: pytest.MonkeyPatch) -> dict[str, str]:
@@ -95,20 +106,51 @@ class TestInjectEnvironmentSignature:
         assert "FakeBench" not in result
 
     def test_no_env_vars_returns_unchanged(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        for key in ("LDVH_MODEL_ID", "LDVH_WORKBENCH_NAME", "LDVH_SESSION_ID"):
-            monkeypatch.delenv(key, raising=False)
+        _clear_all_signature_env(monkeypatch)
         message = "fix: test\n\nSession-ID: original\n"
         assert inject_environment_signature(message) == message
 
-    def test_partial_env_vars_injects_available(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_partial_env_vars_keeps_ai_value_for_missing(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """When env has model but not session/workbench, AI values are kept for those."""
+        _clear_all_signature_env(monkeypatch)
         monkeypatch.setenv("LDVH_MODEL_ID", "glm-5.2")
-        monkeypatch.delenv("LDVH_WORKBENCH_NAME", raising=False)
-        monkeypatch.delenv("LDVH_SESSION_ID", raising=False)
-        message = "fix: test\n\n关键变更:\n- change\n"
+        message = "fix: test\n\n关键变更:\n- change\n\nSession-ID: ai-session\nModel-ID: gpt-5\nWorkbench-Name: Cindy\n"
         result = inject_environment_signature(message)
-        assert "Model-ID: glm-5.2" in result
-        assert "Workbench-Name:" not in result
-        assert "Session-ID:" not in result
+        assert "Model-ID: glm-5.2" in result  # overridden by env
+        assert "Session-ID: ai-session" in result  # kept from AI
+        assert "Workbench-Name: Cindy" in result  # kept from AI
+        assert "gpt-5" not in result  # AI's wrong model ID was replaced
+
+    def test_env_overrides_only_available_fields(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Env has session+workbench but not model → AI's model ID is preserved."""
+        _clear_all_signature_env(monkeypatch)
+        monkeypatch.setenv("LDVH_SESSION_ID", "env-session")
+        monkeypatch.setenv("LDVH_WORKBENCH_NAME", "EnvBench")
+        message = "fix: test\n\n关键变更:\n- change\n\nSession-ID: ai-wrong\nModel-ID: glm-5.2\nWorkbench-Name: Cindy\n"
+        result = inject_environment_signature(message)
+        assert "Session-ID: env-session" in result  # overridden
+        assert "Workbench-Name: EnvBench" in result  # overridden
+        assert "Model-ID: glm-5.2" in result  # kept from AI (correct)
+        assert "ai-wrong" not in result  # AI's wrong session was replaced
+        assert "Cindy" not in result  # AI's wrong workbench was replaced
+
+    def test_fallback_chain_codebuddy_session_id(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """CODEBUDDY_SESSION_ID is used when LDVH_SESSION_ID is not set."""
+        _clear_all_signature_env(monkeypatch)
+        monkeypatch.setenv("CODEBUDDY_SESSION_ID", "cb-session-123")
+        message = "fix: test\n\n关键变更:\n- change\n\nSession-ID: ai-fake\n"
+        result = inject_environment_signature(message)
+        assert "Session-ID: cb-session-123" in result
+        assert "ai-fake" not in result
+
+    def test_fallback_chain_client_info_product_name(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """CLIENT_INFO_PRODUCT_NAME is used when LDVH_WORKBENCH_NAME is not set."""
+        _clear_all_signature_env(monkeypatch)
+        monkeypatch.setenv("CLIENT_INFO_PRODUCT_NAME", "WorkBuddy")
+        message = "fix: test\n\n关键变更:\n- change\n\nWorkbench-Name: Cindy\n"
+        result = inject_environment_signature(message)
+        assert "Workbench-Name: WorkBuddy" in result
+        assert "Cindy" not in result
 
     def test_strips_ai_trailers_and_appends_env(self, env_signature: dict[str, str]) -> None:
         message = "fix: test\n\n关键变更:\n- change\n\nSession-ID: ai-fake\nModel-ID: gpt-5\nWorkbench-Name: Cindy\n"
@@ -152,8 +194,7 @@ class TestRunPrepareCommitMsg:
         assert "gpt-5" not in content
 
     def test_no_env_vars_leaves_file_unchanged(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-        for key in ("LDVH_MODEL_ID", "LDVH_WORKBENCH_NAME", "LDVH_SESSION_ID"):
-            monkeypatch.delenv(key, raising=False)
+        _clear_all_signature_env(monkeypatch)
         msg_file = tmp_path / "COMMIT_EDITMSG"
         original = "fix: test\n\n关键变更:\n- change\n"
         msg_file.write_text(original, encoding="utf-8")
