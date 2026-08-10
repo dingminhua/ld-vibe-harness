@@ -5,16 +5,22 @@ summary: "## 当前结论\n\n- `prepare-closed-workcase-candidate` 已作为只�
 change_log:
 - signature:
     agent_id: claude-code_2-1-219_agent
-    host_environment: Claude Code
+    host_environment: Claude
   session_id: c4593fa7-3d0f-458b-a4c7-c10cd8a95318
   at: '2026-08-03T18:29:13.160019+08:00'
   summary: 受 Human 当前授权建立遗留 Spark 的 change_log 可信起点；原始历史不可得，未恢复或伪造原始形成记录。
 - signature:
     agent_id: claude-code_2-1-219_agent
-    host_environment: Claude Code
+    host_environment: Claude
   session_id: c4593fa7-3d0f-458b-a4c7-c10cd8a95318
   at: '2026-08-03T18:30:25.493663+08:00'
   summary: 按 Human Gate 1 批准，基于迁移后的新 fingerprint 将 spark-0044 的已实现只读候选投影入口转为 implemented。
+- at: '2026-08-10T08:46:45.627312Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: Claude Code -> Claude; 1: Claude Code -> Claude。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-legacy-signature-migration-20260810
 evolution:
 - at: '2026-08-03T18:29:13.160019+08:00'
   summary: 只读关闭候选投影已实现，并与 close-workcase 复用同一纯映射；原先关于是否提供该能力及其边界的未决问题因此转为已落实范围，保留关闭授权仍由 Human/调用方取得的边界。
@@ -22,4 +28,4 @@ disposition_summary: 本 Spark 所限定的 WorkCase closed after 只读确定�
 object_id: spark-0044
 fact_type_key: spark
 created_at: '2026-08-02T02:37:31.882443+08:00'
-updated_at: '2026-08-03T18:30:25.493663+08:00'
+updated_at: '2026-08-10T08:46:45.627312Z'
