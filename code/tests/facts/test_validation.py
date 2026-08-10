@@ -450,6 +450,37 @@ def test_change_log_signature_rejects_host_product_concatenation(
         assert not any("拼接宿主产品名" in issue.summary for issue in remaining)
 
 
+def test_change_log_signature_rejects_compound_agent_workbench(
+    current_fact_schemas: Mapping[str, FactSchema],
+) -> None:
+    """agent_workbench 复合名（如 claude-code-mcp、Claude Code）被机械拒绝。"""
+    schema = current_fact_schemas["spark"]
+    fields = {
+        **_common("spark", "spark-0001", "open"),
+        "summary": "A current question.",
+        "priority": "P2",
+        "change_log": [
+            {
+                "signature": {"model_id": "gpt-5", "agent_workbench": "claude-code-mcp"},
+                "session_id": "48bbb4c6-f2ff-4510-b63f-cebcaaa35d2e",
+                "at": "2026-07-14T09:30:00+08:00",
+                "summary": "The Spark was first recorded.",
+            },
+        ],
+    }
+    issues = validate_fact_object("spark", fields, schema)
+    assert any(
+        issue.field_path == "change_log[0].signature.agent_workbench" and "单 token" in issue.summary
+        for issue in issues
+    )
+
+    # 验证合法单 token 名不会触发
+    for wb in ("Cindy", "WorkBuddy", "Claude", "Trae"):
+        fields["change_log"][0]["signature"]["agent_workbench"] = wb
+        remaining = validate_fact_object("spark", fields, schema)
+        assert not any("单 token" in issue.summary for issue in remaining)
+
+
 def test_change_log_is_required_on_creation_and_legacy_history_is_not_fabricated() -> None:
     assert any(issue.field_path == "change_log" for issue in change_log_creation_issues({}))
     assert any(issue.field_path == "change_log" for issue in validate_change_log_transition({}, {"change_log": []}))

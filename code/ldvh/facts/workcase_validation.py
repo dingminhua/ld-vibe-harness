@@ -30,15 +30,23 @@ ACTIVE_PHASES = frozenset(
 )
 ITEM_STATUSES = frozenset({"pending", "in_progress", "blocked", "completed", "cancelled"})
 REVIEW_CONCLUSIONS = frozenset({"pass", "pass_with_followups", "changes_required", "blocked"})
-REVIEW_METHODS = frozenset({"subagent-read-only", "same-ai-switched-role-read-only"})
+REVIEW_METHODS = frozenset(
+    {
+        "subagent-read-only",
+        "collaboration-worker-read-only",
+        "same-ai-switched-role-read-only",
+    }
+)
 SAME_AI_REVIEW_METHOD = "same-ai-switched-role-read-only"
 SUBAGENT_REVIEW_METHOD = "subagent-read-only"
+COLLABORATION_REVIEW_METHOD = "collaboration-worker-read-only"
 CAPABILITY_LIMITATION_CAPABILITY = "independent-subagent-review"
 CAPABILITY_LIMITATION_AVAILABILITY = "unavailable"
 CAPABILITY_LIMITATION_FALLBACK_POLICY = SAME_AI_REVIEW_METHOD
 REVIEW_CATEGORIES = frozenset({"creation_review", "plan_delta_review", "result_review"})
 REQUIRED_QUALITY_GATE_ID = "independent-result-review"
 REQUIRED_REVIEWER_MODE = "independent-read-only"
+REVIEWER_PREFERRED_METHODS = frozenset(REVIEW_METHODS)
 CRITERION_OUTCOMES = frozenset({"satisfied", "not_satisfied", "not_verified"})
 CLOSURE_OUTCOMES = frozenset({"completed", "partial", "not-achieved", "cancelled"})
 
@@ -356,6 +364,7 @@ def _validate_review_method(
         "assurance_gap",
         "stop_condition_assessment",
     }
+    carrier_fields = {"actual_agent", "actual_model", "evidence"}
     if method is None:
         if limitations:
             _issue(
@@ -365,35 +374,86 @@ def _validate_review_method(
             )
         for name in sorted(fallback_fields & set(review)):
             _issue(issues, "fallback 披露字段要求 actual_method", f"{path}.{name}")
+        for name in sorted(carrier_fields & set(review)):
+            _issue(issues, "carrier 披露字段要求 actual_method", f"{path}.{name}")
         return
     if method not in REVIEW_METHODS:
         _issue(issues, "review actual_method 不在当前闭集中", f"{path}.actual_method")
         return
-    if method == SUBAGENT_REVIEW_METHOD:
-        for name in sorted(fallback_fields & set(review)):
-            _issue(issues, "subagent review 禁止 fallback 披露字段", f"{path}.{name}")
+    if method == SAME_AI_REVIEW_METHOD:
+        for name in sorted(fallback_fields - set(review)):
+            _issue(issues, "same-AI fallback review 缺少必填披露字段", f"{path}.{name}")
+        limitation_id = review.get("capability_limitation_id")
+        limitation = limitations.get(str(limitation_id)) if _nonempty_string(limitation_id) else None
+        if limitation is None:
+            _issue(
+                issues,
+                "same-AI fallback 必须精确引用当前 capability limitation",
+                f"{path}.capability_limitation_id",
+            )
+        else:
+            category = _review_category(fields, array_name)
+            categories = limitation.get("affected_review_categories")
+            if not isinstance(categories, list) or category not in categories:
+                _issue(
+                    issues,
+                    "capability limitation 未覆盖当前 review 类别",
+                    f"{path}.capability_limitation_id",
+                )
+            if limitation.get("fallback_policy") != SAME_AI_REVIEW_METHOD:
+                _issue(
+                    issues,
+                    "capability limitation fallback_policy 与实际方法不一致",
+                    f"{path}.capability_limitation_id",
+                )
+            if review.get("assurance_gap") != limitation.get("assurance_gap"):
+                _issue(
+                    issues,
+                    "review assurance_gap 必须与 capability limitation 精确一致",
+                    f"{path}.assurance_gap",
+                )
+        _validate_unique_strings(review.get("capability_evidence"), f"{path}.capability_evidence", issues)
+        if review.get("stop_condition_assessment") != "clear":
+            _issue(
+                issues,
+                "same-AI fallback 的 stop_condition_assessment 必须为 clear",
+                f"{path}.stop_condition_assessment",
+            )
+        for name in sorted(carrier_fields & set(review)):
+            _issue(issues, "same-AI review 禁止 carrier 披露字段", f"{path}.{name}")
         return
 
-    for name in sorted(fallback_fields - set(review)):
-        _issue(issues, "same-AI fallback review 缺少必填披露字段", f"{path}.{name}")
-    limitation_id = review.get("capability_limitation_id")
-    limitation = limitations.get(str(limitation_id)) if _nonempty_string(limitation_id) else None
-    if limitation is None:
-        _issue(issues, "same-AI fallback 必须精确引用当前 capability limitation", f"{path}.capability_limitation_id")
-    else:
-        category = _review_category(fields, array_name)
-        categories = limitation.get("affected_review_categories")
-        if not isinstance(categories, list) or category not in categories:
-            _issue(issues, "capability limitation 未覆盖当前 review 类别", f"{path}.capability_limitation_id")
-        if limitation.get("fallback_policy") != SAME_AI_REVIEW_METHOD:
-            _issue(issues, "capability limitation fallback_policy 与实际方法不一致", f"{path}.capability_limitation_id")
-        if review.get("assurance_gap") != limitation.get("assurance_gap"):
-            _issue(issues, "review assurance_gap 必须与 capability limitation 精确一致", f"{path}.assurance_gap")
-    _validate_unique_strings(review.get("capability_evidence"), f"{path}.capability_evidence", issues)
-    if review.get("stop_condition_assessment") != "clear":
-        _issue(
-            issues, "same-AI fallback 的 stop_condition_assessment 必须为 clear", f"{path}.stop_condition_assessment"
-        )
+    # subagent-read-only or collaboration-worker-read-only (non-fallback carriers)
+    for name in sorted(fallback_fields & set(review)):
+        _issue(issues, "独立 review 禁止 fallback 披露字段", f"{path}.{name}")
+    if method == COLLABORATION_REVIEW_METHOD:
+        if not _nonempty_string(review.get("actual_agent")):
+            _issue(issues, "collaboration review 必须记录 actual_agent", f"{path}.actual_agent")
+        if not _nonempty_string(review.get("actual_model")):
+            _issue(issues, "collaboration review 必须记录 actual_model", f"{path}.actual_model")
+        _validate_unique_strings(review.get("evidence"), f"{path}.evidence", issues)
+        _validate_reviewer_policy_match(fields, review, path, issues)
+
+
+def _validate_reviewer_policy_match(
+    fields: Mapping[str, object],
+    review: Mapping[str, object],
+    path: str,
+    issues: list[FactIssue],
+) -> None:
+    """collaboration review 必须与冻结 reviewer policy 的模型/Agent 映射一致并满足每轮视角上限。"""
+    authorization = fields.get("execution_authorization")
+    if not isinstance(authorization, Mapping):
+        return
+    policy = authorization.get("reviewer_policy")
+    if not isinstance(policy, Mapping):
+        return
+    agent = policy.get("collaboration_agent")
+    model = policy.get("model")
+    if _nonempty_string(agent) and _nonempty_string(review.get("actual_agent")) and review.get("actual_agent") != agent:
+        _issue(issues, "collaboration review actual_agent 必须与冻结 reviewer policy 一致", f"{path}.actual_agent")
+    if _nonempty_string(model) and _nonempty_string(review.get("actual_model")) and review.get("actual_model") != model:
+        _issue(issues, "collaboration review actual_model 必须与冻结 reviewer policy 一致", f"{path}.actual_model")
 
 
 def _validate_reviews(
@@ -601,6 +661,52 @@ def _validate_execution_authorization(fields: Mapping[str, object], issues: list
                     continue
             if len(limitation_ids) != len(set(limitation_ids)):
                 _issue(issues, "capability limitation_id 不得重复", path)
+
+    reviewer_policy = value.get("reviewer_policy")
+    if reviewer_policy is not None:
+        path = "execution_authorization.reviewer_policy"
+        if not isinstance(reviewer_policy, Mapping):
+            _issue(issues, "reviewer_policy 必须是 object", path)
+        else:
+            required = {
+                "model",
+                "collaboration_agent",
+                "effort",
+                "fast",
+                "preferred_method",
+                "fallback_order",
+                "max_perspectives",
+                "activation",
+                "same_ai_limit",
+            }
+            _require(reviewer_policy, required, issues, context="reviewer policy ")
+            for name in ("model", "collaboration_agent", "effort", "activation", "same_ai_limit"):
+                if not _nonempty_string(reviewer_policy.get(name)):
+                    _issue(issues, "reviewer policy 文本成员必须是非空 string", f"{path}.{name}")
+            if not isinstance(reviewer_policy.get("fast"), bool):
+                _issue(issues, "reviewer policy fast 必须是 boolean", f"{path}.fast")
+            preferred = reviewer_policy.get("preferred_method")
+            if preferred not in REVIEWER_PREFERRED_METHODS:
+                _issue(issues, "reviewer policy preferred_method 不在当前闭集中", f"{path}.preferred_method")
+            fallback_order = _validate_unique_strings(
+                reviewer_policy.get("fallback_order"), f"{path}.fallback_order", issues
+            )
+            for member in fallback_order:
+                if member not in REVIEWER_PREFERRED_METHODS:
+                    _issue(issues, "reviewer policy fallback_order 成员不在当前闭集中", f"{path}.fallback_order")
+            if preferred is not None:
+                if not fallback_order or fallback_order[0] != preferred:
+                    _issue(issues, "reviewer policy fallback_order 首项必须等于 preferred_method", f"{path}.fallback_order")
+                if len(fallback_order) != len(set(fallback_order)):
+                    _issue(issues, "reviewer policy fallback_order 成员不得重复", f"{path}.fallback_order")
+            max_perspectives = reviewer_policy.get("max_perspectives")
+            if not _positive_integer(max_perspectives):
+                _issue(issues, "reviewer policy max_perspectives 必须是正整数", f"{path}.max_perspectives")
+            elif int(max_perspectives) > 3:
+                _issue(issues, "reviewer policy max_perspectives 不大于 3", f"{path}.max_perspectives")
+            unknown = sorted(set(reviewer_policy) - required)
+            if unknown:
+                _issue(issues, "reviewer policy 包含未知成员", path)
 
 
 def required_quality_gate_issues(fields: Mapping[str, object]) -> tuple[FactIssue, ...]:

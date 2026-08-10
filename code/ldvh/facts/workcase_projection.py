@@ -33,6 +33,7 @@ _AUTHORIZATION_ACTION_FIELDS = (
 _AUTHORIZATION_FIELDS = (
     "authorized_actions",
     "quality_gates",
+    "reviewer_policy",
     "capability_limitations",
     "action_ceiling",
     "prohibited_actions",
@@ -46,6 +47,17 @@ _QUALITY_GATE_FIELDS = (
     "reviewer_mode",
     "delegation_action_id",
     "result_review_action_id",
+)
+_REVIEWER_POLICY_FIELDS = (
+    "model",
+    "collaboration_agent",
+    "effort",
+    "fast",
+    "preferred_method",
+    "fallback_order",
+    "max_perspectives",
+    "activation",
+    "same_ai_limit",
 )
 _CAPABILITY_LIMITATION_FIELDS = (
     "limitation_id",
@@ -164,6 +176,13 @@ def canonical_execution_authorization(value: object) -> dict[str, object]:
     quality_gates = value.get("quality_gates")
     if isinstance(quality_gates, Sequence) and not isinstance(quality_gates, (str, bytes, bytearray)):
         projected["quality_gates"] = _sorted_objects(quality_gates, "gate_id", _QUALITY_GATE_FIELDS)
+    reviewer_policy = value.get("reviewer_policy")
+    if isinstance(reviewer_policy, Mapping):
+        policy = _selected(reviewer_policy, _REVIEWER_POLICY_FIELDS)
+        raw_order = policy.get("fallback_order")
+        if isinstance(raw_order, Sequence) and not isinstance(raw_order, (str, bytes, bytearray)):
+            policy["fallback_order"] = _stable_unique(raw_order)
+        projected["reviewer_policy"] = policy
     limitations = value.get("capability_limitations")
     if isinstance(limitations, Sequence) and not isinstance(limitations, (str, bytes, bytearray)):
         normalized_limitations: list[dict[str, object]] = []

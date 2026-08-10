@@ -787,6 +787,98 @@ def test_recorded_limitation_does_not_force_fallback_when_subagent_is_used() -> 
     assert validate_workcase_snapshot(fields) == ()
 
 
+def _reviewer_policy(**overrides: object) -> dict[str, object]:
+    policy: dict[str, object] = {
+        "model": "gpt-5.6-luna",
+        "collaboration_agent": "codex-worker",
+        "effort": "medium",
+        "fast": True,
+        "preferred_method": "collaboration-worker-read-only",
+        "fallback_order": [
+            "collaboration-worker-read-only",
+            "subagent-read-only",
+            "same-ai-switched-role-read-only",
+        ],
+        "max_perspectives": 3,
+        "activation": "Luna Orca collaboration worker is explicitly unlocked by Human.",
+        "same_ai_limit": "Same-AI fallback only when both collaboration worker and subagent are unavailable.",
+    }
+    policy.update(overrides)
+    return policy
+
+
+def test_collaboration_review_requires_carrier_and_policy_consistency() -> None:
+    fields = _base("human_plan_confirming")
+    fields["execution_authorization"]["reviewer_policy"] = _reviewer_policy()
+    fields["creation_reviews"][0].update(
+        {
+            "actual_method": "collaboration-worker-read-only",
+            "actual_agent": "codex-worker",
+            "actual_model": "gpt-5.6-luna",
+            "evidence": ["Luna Orca worker p880kljkaiibv958x36ss897 reviewed the current candidate."],
+        }
+    )
+    # missing actual_agent / actual_model must be flagged
+    incomplete = deepcopy(fields)
+    incomplete["creation_reviews"][0].pop("actual_agent")
+    assert any(
+        issue.field_path == "creation_reviews[0].actual_agent" for issue in validate_workcase_snapshot(incomplete)
+    )
+
+    # mismatched model against frozen policy must be flagged
+    mismatched = deepcopy(fields)
+    mismatched["creation_reviews"][0]["actual_model"] = "different-model"
+    assert any(
+        issue.field_path == "creation_reviews[0].actual_model" for issue in validate_workcase_snapshot(mismatched)
+    )
+
+    # valid collaboration review with matching policy passes
+    fields["waiting_on"] = "Human Gate1 decision on the collaboration-worker creation review."
+    assert validate_workcase_snapshot(fields) == ()
+
+
+def test_collaboration_method_rejects_fallback_only_fields() -> None:
+    fields = _base("human_plan_confirming")
+    fields["execution_authorization"]["reviewer_policy"] = _reviewer_policy()
+    fields["creation_reviews"][0].update(
+        {
+            "actual_method": "collaboration-worker-read-only",
+            "actual_agent": "codex-worker",
+            "actual_model": "gpt-5.6-luna",
+            "evidence": ["Luna Orca worker reviewed the current candidate."],
+            **{key: value for key, value in _same_ai_disclosure().items() if key != "actual_method"},
+        }
+    )
+    issues = validate_workcase_snapshot(fields)
+    assert any("fallback" in issue.summary and issue.field_path == "creation_reviews[0].capability_limitation_id" for issue in issues)
+
+
+def test_reviewer_policy_rejects_unknown_or_out_of_range_values() -> None:
+    fields = _base("executing")
+    fields["execution_authorization"]["reviewer_policy"] = _reviewer_policy(
+        preferred_method="not-a-method"
+    )
+    issues = validate_workcase_snapshot(fields)
+    assert any("preferred_method" in issue.field_path and "闭集" in issue.summary for issue in issues)
+
+    fields = _base("executing")
+    fields["execution_authorization"]["reviewer_policy"] = _reviewer_policy(max_perspectives=4)
+    issues = validate_workcase_snapshot(fields)
+    assert any("max_perspectives" in issue.field_path and "不大于" in issue.summary for issue in issues)
+
+    fields = _base("executing")
+    fields["execution_authorization"]["reviewer_policy"] = _reviewer_policy(
+        fallback_order=["subagent-read-only"]
+    )
+    issues = validate_workcase_snapshot(fields)
+    assert any("fallback_order" in issue.field_path and "首项" in issue.summary for issue in issues)
+
+    fields = _base("executing")
+    fields["execution_authorization"]["reviewer_policy"] = _reviewer_policy(fast="yes")
+    issues = validate_workcase_snapshot(fields)
+    assert any("fast" in issue.field_path and "boolean" in issue.summary for issue in issues)
+
+
 def test_subagent_method_rejects_fallback_only_assurance_fields() -> None:
     fields = _base("human_plan_confirming")
     fields["execution_authorization"]["capability_limitations"] = [_capability_limitation("creation_review")]

@@ -175,7 +175,7 @@ def test_activate_existing_spec_with_human_gate_trailer_passes(contract: CommitC
     message = (
         "docs(specs): 激活独立规范文档\n\n"
         "关键变更:\n- 将 status 转为 active\n\n"
-        "Session-ID: test-session\nModel-ID: test-agent\nWorkbench-Name: test-environment\n"
+        "Session-ID: test-session\nModel-ID: test-agent\nWorkbench-Name: Test\n"
         "Human-Gate: authorized-by-human-20260806"
     )
     result = validate_commit(
@@ -483,6 +483,20 @@ def test_new_signature_footer_tripwires_reject_alias_and_os_suffix(
     )
     assert spliced.outcome == "failed"
     assert "signature_model_host_product" in _codes(spliced)
+
+    compound = validate_commit(
+        contract,
+        _input(
+            contract,
+            message=(
+                "docs(specs): 明确提交契约\n\n"
+                "关键变更:\n- 明确测试中的提交契约\n\n"
+                "Session-ID: test-session\nModel-ID: gpt-5.6-luna\nWorkbench-Name: claude-code-mcp"
+            ),
+        ),
+    )
+    assert compound.outcome == "failed"
+    assert "signature_workbench_compound" in _codes(compound)
 
 
 def test_partial_new_signature_footer_requires_both_new_trailers(
@@ -1045,7 +1059,7 @@ def test_new_fact_writer_session_need_not_be_declared_by_commit_footer(
         + (
             "  - signature:\n"
             "      model_id: test-agent\n"
-            "      agent_workbench: test-environment\n"
+            "      agent_workbench: Test\n"
             "    session_id: ghost-session\n"
             "    at: 2026-07-01T01:00:00+08:00\n"
             "    summary: 未声明会话\n"
@@ -1077,7 +1091,7 @@ def test_new_fact_multiple_writers_use_one_trae_commit_signature(
         + (
             "  - signature:\n"
             "      model_id: another-model\n"
-            "      agent_workbench: Other Host\n"
+            "      agent_workbench: Other\n"
             "    session_id: test-session-2\n"
             "    at: 2026-07-01T01:00:00+08:00\n"
             "    summary: 第二个执行者\n"
@@ -1118,7 +1132,7 @@ def test_new_fact_writer_environment_need_not_be_declared_by_commit_footer(
         + (
             "  - signature:\n"
             "      model_id: ghost-agent\n"
-            "      agent_workbench: ghost-env\n"
+            "      agent_workbench: Ghost\n"
             "    session_id: test-session-2\n"
             "    at: 2026-07-01T01:00:00+08:00\n"
             "    summary: 未声明执行者\n"
@@ -1159,7 +1173,7 @@ def test_legacy_migration_multiple_writers_uses_one_commit_signature(
         + (
             "  - signature:\n"
             "      model_id: another-model\n"
-            "      agent_workbench: Other Host\n"
+            "      agent_workbench: Other\n"
             "    session_id: test-session-2\n"
             "    at: 2026-07-01T01:00:00+08:00\n"
             "    summary: Human授权兼容旧数据：第二个执行者迁移\n"
@@ -1299,7 +1313,7 @@ def test_platform_affected_integration_through_validate_commit(
     message = (
         "docs(specs): 修改文件系统抽象层\n\n"
         "关键变更:\n- 调整锁实现\n\n"
-        "Session-ID: test-session\nModel-ID: test-agent\nWorkbench-Name: test-environment"
+        "Session-ID: test-session\nModel-ID: test-agent\nWorkbench-Name: Test"
     )
     result = validate_commit(
         contract,
@@ -1316,7 +1330,7 @@ def test_platform_affected_integration_with_trailers_passes(
     message = (
         "docs(specs): 修改文件系统抽象层\n\n"
         "关键变更:\n- 调整锁实现\n\n"
-        "Session-ID: test-session\nModel-ID: test-agent\nWorkbench-Name: test-environment\n"
+        "Session-ID: test-session\nModel-ID: test-agent\nWorkbench-Name: Test\n"
         "Platform-Affected: macos\nPlatform-Verified: macos"
     )
     result = validate_commit(
@@ -1333,7 +1347,7 @@ def test_platform_affected_integration_non_platform_path_passes(
     message = (
         "docs(specs): 改规范\n\n"
         "关键变更:\n- 修改说明\n\n"
-        "Session-ID: test-session\nModel-ID: test-agent\nWorkbench-Name: test-environment"
+        "Session-ID: test-session\nModel-ID: test-agent\nWorkbench-Name: Test"
     )
     result = validate_commit(
         contract,

@@ -12,7 +12,7 @@ from ldvh.commits.contract_source import CommitContractProjection
 from ldvh.facts.content import validate_fact_content
 from ldvh.facts.contracts import LAYOUTS
 from ldvh.facts.schema import FactSchema
-from ldvh.facts.validation import _is_host_product_concatenation
+from ldvh.facts.validation import _WORKBENCH_TOKEN_SPLIT, _is_host_product_concatenation
 
 _HEADER = re.compile(r"^(?P<type>[a-z]+)(?:\((?P<scope>[a-z]+(?:-[a-z]+)*)\))?(?P<breaking>!)?: (?P<description>.+)$")
 _CJK = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff]")
@@ -228,6 +228,16 @@ def _signature_trailer_issues(lines: list[str]) -> list[CommitValidationIssue]:
             issues.append(_issue("signature_model_case", "footer 的 Model-ID 必须全小写"))
         elif name == "Workbench-Name" and any(_WORKBENCH_SYSTEM_SUFFIX.search(value) for value in values):
             issues.append(_issue("signature_host_suffix", "footer 的 Workbench-Name 不得包含括号系统后缀"))
+        if name == "Workbench-Name" and any(
+            _WORKBENCH_TOKEN_SPLIT.search(value.strip()) for value in values
+        ):
+            issues.append(
+                _issue(
+                    "signature_workbench_compound",
+                    "footer 的 Workbench-Name 必须为单 token（不使用空格、连字符或斜杠分隔），"
+                    "不得使用复合名如 claude-code-mcp 或 Claude Code",
+                )
+            )
     if trailers.get("Agent-ID") or trailers.get("Host-Environment"):
         issues.append(
             _issue(

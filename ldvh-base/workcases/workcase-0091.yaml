@@ -19,8 +19,10 @@ work_items:
 - item_id: item-1
   goal: 建立能力解锁、三档路由与 reviewer policy 的规则源和字段模型
   expected_result: specs/21、31、34 与必要附件/05 字段登记形成一致的最小持久模型和瞬时 preflight 边界；规则变更在进入 item-2 前形成符合 ADR-0001 的独立只读技术复核材料，该材料不写入 creation_reviews/result_reviews、不新增 phase 或 Human Gate。
-  status: pending
+  status: in_progress
   approach_summary: 先按 ADR-0001 修规则源；明确 execution_authorization.reviewer_policy、三档 actual_method 与实际 agent/model/evidence 字段、出现/失效/fingerprint 规则，以及 permission_required/not_authorized/unknown/unavailable 的运行时边界。
+  current_summary: 开始 item-1：建立能力解锁、三档路由与 reviewer policy 的规则源和字段模型
+  resume_from: 按 ADR-0001 先修订 specs/21（WorkCase 规则源：review 方法闭集、actual_method 枚举、collaboration-worker-read-only 支持），再修订 specs/31、34、必要附件与 05 字段登记
 - item_id: item-2
   goal: 实现 Code/Helper 机械校验、投影与转换支持
   expected_result: code/ldvh/facts、范围匹配 Helper/投影实现和 Python tests 支持新 policy/event，并机械拒绝 permission_required/not_authorized/unknown 的错误降级、越档、超过 3 视角、目录混用及旧 review 复用，同时保持现有有效对象兼容。
@@ -45,7 +47,7 @@ work_items:
   - item-3
   approach_summary: 先运行范围匹配测试与静态检查，再运行完整性审计和 full-v4；对现有 dirty facts/Web 改动导致的失败或 stale 归因据实保留，不把失败自动改写为满足。
 status: open
-phase: human_plan_confirming
+phase: executing
 plan_version: 2
 execution_authorization:
   authorized_actions:
@@ -142,7 +144,6 @@ creation_reviews:
   controller_resolution: 第一项已由 append-only change_log[1] 明确纠正并由当前完整 after 保留；第二项已由 item-1 的规则/字段模型、item-2 的 Schema/Helper/测试实现以及 criterion-2/criterion-3 明确承接。两项均不新增 lifecycle review 位置、phase 或 Human Gate。
   covered_quality_gate_ids:
   - independent-result-review
-waiting_on: Human Gate 1：审阅 plan_version=2 的完整计划、authorization-1 至 authorization-6、Luna Orca collaboration Worker 的实际 creation review、append-only bootstrap 纠错，以及当前 Schema 暂省略 collaboration actual_method 的表达边界；作出批准、调整或拒绝决定。
 relations:
 - relation_key: related-to
   target:
@@ -168,8 +169,28 @@ change_log:
   signature:
     model_id: gpt-5
     agent_workbench: Cindy
+- at: '2026-08-10T03:56:39.502955Z'
+  session_id: cindy-workcase-0091-gate1-approval-20260810
+  summary: Human Gate 1 批准：Human 在当前会话明确回复“批准执行这个wc”，批准 workcase-0091 plan_version=2 的完整计划与 authorization-1～authorization-6 执行授权基线，并接受该实际保证边界（creation review 由 Luna Orca collaboration Worker 完成、actual_method 因当前 Schema 无对应枚举而据实省略）作为执行基础；对象由 human_plan_confirming 进入 executing。
+  signature:
+    model_id: glm-5.2
+    agent_workbench: Cindy
+- session_id: cindy-workcase-0091-exec-item1-20260810
+  summary: 开始执行 item-1：pending → in_progress，按 ADR-0001 先修规则源再形成独立只读技术复核材料
+  signature:
+    model_id: glm-5.2
+    agent_workbench: Cindy
+  at: '2026-08-10T05:22:36.763504Z'
 summary: Plan v2 已完成 Gate 1 前返修：协作能力据实为 available，移除错误 capability limitation 与 same-AI fallback；当前候选由 Luna Orca collaboration Worker 完成 fresh creation review。
+execution_approval:
+  subject_version: 2
+  approved_at: '2026-08-10T03:52:57Z'
+  summary: Human 在当前会话明确回复“批准执行这个wc”，批准 workcase-0091 plan_version=2 的完整计划与 authorization-1』authorization-6 完整执行授权基线，接受该实际保证边界（creation review 由 Luna Orca collaboration Worker 完成、actual_method 因当前 Schema 无对应枚举而据实省略）作为当前执行基础。
+  baseline_fingerprint: fc5a265aed290ee548ce3bf83ecca8a5359686659a451ab84075c822b5f16dfe
+  source_refs:
+  - session:cindy-workcase-0091-gate1-approval-20260810
+  - human-input:批准执行这个wc
 object_id: workcase-0091
 fact_type_key: workcase
 created_at: '2026-08-09T15:38:44.586633Z'
-updated_at: '2026-08-09T15:57:30.758245Z'
+updated_at: '2026-08-10T05:22:36.763504Z'

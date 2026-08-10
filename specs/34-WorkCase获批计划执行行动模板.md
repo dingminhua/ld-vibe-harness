@@ -39,7 +39,7 @@ ldvh_spec:
 
 当前 WorkCase 已精确读取、Gate 1 已经完成，并有当前冻结 `execution_authorization`、`baseline_fingerprint` 匹配该基线且 `source_refs` 可回指真实 Human 输入的 `execution_approval` 时，本文可在 `executing`、包内 `plan_revising`、Controller/独立结果复核、关闭准备和 Gate 2 等 21 允许的后续阶段组织执行与收敛；Human 在任一活动位置明确主动中止后，本文也只组织 21 的 `termination_preparing` 善后分支。approval 的 `subject_version` 记录 Gate 1 当时版本；包内 PlanΔ 可以形成新的当前 `plan_version` 与 fresh current plan review，不要求或允许把 approval 改写成当前版本。Human 尚在审阅 Gate 1 材料、当前对象/指纹/授权包/批准不可确定，或工作实质是普通只读调查时，不使用普通执行分支。授权包逐项列明的事实对象创建、事实变更或本地 Git commit 仍分别由 31、32、30 承接，但不因此离开本模板的 WorkCase 执行组织或重复请求授权。模板候选、approval 字段存在或行动模板 key 都不单独代表适用、能力或授权覆盖。
 
-**审核方法与保证边界**：本模板所引用的方案复核、结果复核及 Reviewer 第二视角，均遵循 21 §4.5。默认且保证更高的方法是实际委派只读 subagent；同一 AI 切换只读 Reviewer 视角不是 subagent、不是执行环境独立审核，也不得显示成与前者等价。Gate 1 后只有当前冻结 `execution_authorization.capability_limitations` 已覆盖当次 `plan_delta_review` 或 `result_review`、当次能力不可用证据仍然成立、保证差距已披露且停止条件评估为 `clear` 时，才可据实使用 `same-ai-switched-role-read-only`。Gate 1 前的 creation bootstrap 已由 21 的创建链承接，不由本获批计划模板补做、追认或改写。
+**审核方法与保证边界**：本模板所引用的方案复核、结果复核及 Reviewer 第二视角，均遵循 21 §4.5。默认且保证更高的方法按 21 的三档路由顺序选择：collaboration Worker → native subagent → same-AI。Human 已在 Gate1 冻结 reviewer policy 时，执行期全部 review 必须按冻结 policy 的 preferred method、fallback order、模型映射与每轮视角上限执行并经 §5.3 机械校验；同一 AI 切换只读 Reviewer 视角不是 subagent、不是协作 Worker、不是执行环境独立审核，也不得显示成与前者等价。Gate 1 后只有当前冻结 `execution_authorization.capability_limitations` 已覆盖当次 `plan_delta_review` 或 `result_review`、当次能力不可用证据仍然成立、保证差距已披露且停止条件评估为 `clear` 时，才可据实使用 `same-ai-switched-role-read-only`。瞬时入口 `permission_required` / `not_authorized` / `unknown` 不是能力 `unavailable`，不得用作降级依据。Gate 1 前的 creation bootstrap 已由 21 的创建链承接，不由本获批计划模板补做、追认或改写。
 
 ## 5. WorkCase 获批计划执行行动模板定义
 

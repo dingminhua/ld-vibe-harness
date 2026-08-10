@@ -240,6 +240,15 @@ def _validate_change_log_signature(value: object, path: str, issues: list[FactIs
         issues.append(FactIssue("schema", "model_id 必须全小写", f"{path}.model_id"))
     if isinstance(agent_workbench, str) and _WORKBENCH_SYSTEM_SUFFIX.search(agent_workbench):
         issues.append(FactIssue("schema", "agent_workbench 不得包含括号系统后缀", f"{path}.agent_workbench"))
+    if isinstance(agent_workbench, str) and _WORKBENCH_TOKEN_SPLIT.search(agent_workbench.strip()):
+        issues.append(
+            FactIssue(
+                "schema",
+                "agent_workbench 必须为单 token（不使用空格、连字符或斜杠分隔），"
+                "不得使用复合名如 claude-code-mcp 或 Claude Code",
+                f"{path}.agent_workbench",
+            )
+        )
 
 
 def _validate_change_log(fields: dict[str, Any], issues: list[FactIssue]) -> None:
