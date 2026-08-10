@@ -24,61 +24,61 @@ validation_summary: Ruff 检查授权代码与测试路径通过；定向 pytest
 change_log:
 - summary: 依据 Human 对 Spark-0067 缺陷8继续推进的指令，基于当前 prepare 输出与独立审查形成只补 definition_ref 可发现性的 WorkCase 计划。
   signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Codex
   session_id: spark0067-wc0074-creation
   at: '2026-08-08T16:10:34.868065+08:00'
 - summary: 记录 Human Gate 1 执行批准；开始执行已冻结的计划。
   signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Codex
   session_id: spark0067-wc0074-execution
   at: '2026-08-08T17:36:23.703280+08:00'
 - summary: 完成来源契约修订，开始 definition_ref 投影与验证。
   signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Codex
   session_id: spark0067-wc0074-execution
   at: '2026-08-08T17:41:42.249808+08:00'
 - summary: 完成投影与验证工作，形成完整结果投影，等待独立结果复核。
   signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Codex
   session_id: spark0067-wc0074-execution
   at: '2026-08-08T17:47:24.679026+08:00'
 - summary: 完整结果投影已回读，进入独立结果复核阶段。
   signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Codex
   session_id: spark0067-wc0074-execution
   at: '2026-08-08T17:51:08.313022+08:00'
 - summary: 记录独立只读结果复核：pass_with_followups，待 Controller 处置非阻塞跟进。
   signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Codex
   session_id: spark0067-wc0074-execution
   at: '2026-08-08T17:51:26.880028+08:00'
 - summary: Controller 已处置独立复核反馈，进入关闭提案准备。
   signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Codex
   session_id: spark0067-wc0074-execution
   at: '2026-08-08T17:52:08.065444+08:00'
 - summary: 形成完成型关闭提案，待进入 Human Gate 2。
   signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Codex
   session_id: spark0067-wc0074-execution
   at: '2026-08-08T17:52:49.961712+08:00'
 - summary: 关闭提案已冻结，进入 Human Gate 2 等待状态。
   signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Codex
   session_id: spark0067-wc0074-execution
   at: '2026-08-08T17:53:08.007597+08:00'
 - summary: 记录 Human Gate 2 关闭批准，完成 WorkCase-0074 的原子关闭。
   signature:
-    agent_id: codex
+    agent_id: gpt-5
     host_environment: Codex
   session_id: spark0067-wc0074-closure
   at: '2026-08-08T18:54:31.892610+08:00'
@@ -89,6 +89,12 @@ change_log:
     model_id: gpt-5
   session_id: cindy-workcase-signature-migration-20260810
 
+- at: '2026-08-10T09:24:31.463986Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: codex -> gpt-5; 1: codex -> gpt-5; 2: codex -> gpt-5; 3: codex -> gpt-5; 4: codex -> gpt-5; 5: codex -> gpt-5; 6: codex -> gpt-5; 7: codex -> gpt-5; 8: codex -> gpt-5; 9: codex -> gpt-5。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: session-20260810-codex-model-migration
 closure_outcome: completed
 disposition_summary: WorkCase-0074 已在其冻结范围内完成：草案 field_contract 现在提供唯一 definition_ref，并保持 constraint_ref 的类型收紧职责；所有成功标准已满足。已验证证据限于定向 Ruff、pytest、CLI 与事实完整性审计；全量 facts/helper 回归未取得可验证退出码，未将其作为完成依据。当前没有原 scope 内的剩余责任。
 relations:
@@ -100,4 +106,4 @@ relations:
 object_id: workcase-0074
 fact_type_key: workcase
 created_at: '2026-08-08T16:10:34.868065+08:00'
-updated_at: '2026-08-10T08:53:10.741625Z'
+updated_at: '2026-08-10T09:24:31.463986Z'
