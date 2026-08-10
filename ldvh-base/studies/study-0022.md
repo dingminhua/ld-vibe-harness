@@ -47,7 +47,7 @@ relations:
     object_id: spark-0019
 change_log:
 - signature:
-    agent_id: Kimi Work
+    agent_id: kimi
     host_environment: Kimi
   session_id: wd_ld-vibe-harness-v4_24baa608d511
   at: '2026-08-05T15:49:52.936666+08:00'
@@ -59,10 +59,16 @@ change_log:
     model_id: gpt-5
   session_id: cindy-explicit-signature-migration-20260810
 
+- at: '2026-08-10T09:27:46.487482Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: Kimi Work -> kimi。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: session-20260810-kimi-model-id-migration
 object_id: study-0022
 fact_type_key: study
 created_at: '2026-08-05T15:49:52.936666+08:00'
-updated_at: '2026-08-10T08:56:02.453054Z'
+updated_at: '2026-08-10T09:27:46.487482Z'
 ---
 
 ## 研究问题
