@@ -94,31 +94,31 @@ change_log:
   at: '2026-08-03T21:04:19.435746+08:00'
   summary: 进入 independent_reviewing，委派独立只读结果复核。
 - signature:
-    agent_id: glm-5.2_codex-cli_agent
+    agent_id: glm-5.2
     host_environment: Codex
   session_id: de75c749-a639-498b-87fd-34c662522d19
   at: '2026-08-03T21:45:17.409779+08:00'
   summary: 完成独立只读结果复核，result_version=1 conclusion=pass，等待推进至关闭准备。
 - signature:
-    agent_id: glm-5.2_codex-cli_agent
+    agent_id: glm-5.2
     host_environment: Codex
   session_id: de75c749-a639-498b-87fd-34c662522d19
   at: '2026-08-03T21:45:28.398664+08:00'
   summary: 推进至 closure_preparing，等待 Human Gate 2 关闭决定。
 - signature:
-    agent_id: glm-5.2_codex-cli_agent
+    agent_id: glm-5.2
     host_environment: Codex
   session_id: de75c749-a639-498b-87fd-34c662522d19
   at: '2026-08-03T21:56:27.661352+08:00'
   summary: 在 closure_preparing 形成 completed 关闭提案（含范围外 follow-up suggestion）。
 - signature:
-    agent_id: glm-5.2_codex-cli_agent
+    agent_id: glm-5.2
     host_environment: Codex
   session_id: de75c749-a639-498b-87fd-34c662522d19
   at: '2026-08-03T21:56:51.326562+08:00'
   summary: 推进至 human_closure_confirming，提交 completed 关闭提案等待 Human Gate 2。
 - signature:
-    agent_id: glm-5.2_codex-cli_agent
+    agent_id: glm-5.2
     host_environment: Codex
   session_id: de75c749-a639-498b-87fd-34c662522d19
   at: '2026-08-03T22:11:49.521306+08:00'
@@ -141,7 +141,13 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: session-20260810-model-id-migration
+- at: '2026-08-10T09:30:22.584036Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 8: glm-5.2_codex-cli_agent -> glm-5.2; 9: glm-5.2_codex-cli_agent -> glm-5.2; 10: glm-5.2_codex-cli_agent -> glm-5.2; 11: glm-5.2_codex-cli_agent -> glm-5.2; 12: glm-5.2_codex-cli_agent -> glm-5.2。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: 4591aaa6-256d-45bb-8c3d-fd0d7619df41
 object_id: workcase-0052
 fact_type_key: workcase
 created_at: '2026-08-03T18:14:57.290810+08:00'
-updated_at: '2026-08-10T09:26:48.351261Z'
+updated_at: '2026-08-10T09:30:22.584036Z'
