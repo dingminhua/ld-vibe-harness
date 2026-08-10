@@ -466,11 +466,13 @@ function buildSparkHealth(rawItems: Array<Record<string, unknown>>, observedAt: 
   }
 }
 
-function projectRecentHotspotFact(item: LocalFactItem, type: ObjectType): RecentHotspotBuildItem | null {
+export function projectRecentHotspotFact(item: LocalFactItem, type: ObjectType): RecentHotspotBuildItem | null {
   const raw = item.fact_object
   if (item.read_status !== 'readable' || raw === null || item.field_issues.length > 0) return null
   if (item.object_ref.fact_type_key !== type || !item.object_ref.object_id) return null
   const objectId = item.object_ref.object_id
+  const title = typeof raw.title === 'string' && raw.title.trim() ? raw.title : null
+  if (title === null) return null
   const status = typeof raw.status === 'string' ? raw.status : undefined
   const currentProjection = type === 'workcase'
     ? deriveWorkCasePresentationProjection(raw.status, raw.phase, item.source_content_fingerprint)
@@ -482,7 +484,7 @@ function projectRecentHotspotFact(item: LocalFactItem, type: ObjectType): Recent
   return {
     type,
     object_id: objectId,
-    title: typeof raw.title === 'string' && raw.title ? raw.title : objectId,
+    title,
     ...(typeof raw.title_en === 'string' ? { title_en: raw.title_en } : {}),
     ...(typeof raw.title_zh === 'string' ? { title_zh: raw.title_zh } : {}),
     ...(status ? { status } : {}),
@@ -505,6 +507,7 @@ function isDisplayableFormalRelation(
     if (relationKey === 'related-to') return true
     if (relationKey !== 'routed-to' || source.status !== 'routed') return false
     return target.type === 'workcase' || target.type === 'adr' || target.type === 'pitfall'
+      || (target.type === 'spark' && ['open', 'routed', 'implemented', 'discarded'].includes(target.status ?? ''))
   }
   if (source.type === 'workcase') {
     if (!source.status || !['open', 'blocked', 'closed'].includes(source.status)) return false

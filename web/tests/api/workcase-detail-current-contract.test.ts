@@ -357,7 +357,7 @@ test('WorkCase authorization detail follows the shared overview, object, and sec
     layout.indexOf('function InlineStringArrayField'),
   );
 
-  assert.match(authorization, /useState<"actions" \| "prohibited" \| "prerequisites" \| "limitations" \| null>\(null\)/);
+  assert.match(authorization, /useState<"actions" \| "prohibited" \| "prerequisites" \| "limitations" \| "reviewer_policy" \| null>\(null\)/);
   assert.match(authorization, /workcaseAuthorizedActionCount/);
   assert.match(authorization, /workcaseProhibitedActionCount/);
   assert.match(authorization, /workcasePrerequisiteCount/);

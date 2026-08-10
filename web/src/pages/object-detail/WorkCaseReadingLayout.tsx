@@ -1539,22 +1539,50 @@ function ReviewMethodDisclosure({
 }) {
   if (!actualMethod) return null;
   const fallback = actualMethod === "same-ai-switched-role-read-only";
+  const collaboration = actualMethod === "collaboration-worker-read-only";
   const MethodIcon = fallback ? CircleAlert : CircleCheck;
+  const surfaceStyle = collaboration
+    ? "border-emerald-400/25 bg-emerald-500/[0.03]"
+    : fallback
+      ? "border-amber-400/30 bg-amber-500/[0.035]"
+      : "border-emerald-400/25 bg-emerald-500/[0.03]";
+  const textStyle = collaboration
+    ? "text-emerald-900/80 dark:text-emerald-100/85"
+    : fallback
+      ? "text-amber-950/80 dark:text-amber-100/85"
+      : "text-emerald-900/80 dark:text-emerald-100/85";
+  const iconStyle = fallback ? "text-amber-600 dark:text-amber-300" : "text-emerald-600 dark:text-emerald-300";
   const limitationId = detailString(review.capability_limitation_id);
   const assuranceGap = detailString(review.assurance_gap);
   const stopAssessment = detailString(review.stop_condition_assessment);
   const evidence = detailStrings(review.capability_evidence);
+  const actualAgent = detailString(review.actual_agent);
+  const actualModel = detailString(review.actual_model);
   return (
-    <section className={`min-w-0 rounded-lg border px-3 py-2.5 ${fallback ? "border-amber-400/30 bg-amber-500/[0.035]" : "border-emerald-400/25 bg-emerald-500/[0.03]"}`}>
+    <section className={`min-w-0 rounded-lg border px-3 py-2.5 ${surfaceStyle}`}>
       <div className="flex min-w-0 items-start gap-2.5">
         <span className="flex h-5 shrink-0 items-center" aria-hidden="true">
-          <MethodIcon size={15} strokeWidth={1.9} className={fallback ? "text-amber-600 dark:text-amber-300" : "text-emerald-600 dark:text-emerald-300"} />
+          <MethodIcon size={15} strokeWidth={1.9} className={iconStyle} />
         </span>
         <div className="min-w-0 flex-1">
           <p className="ldvh-meta text-ldvh-text-secondary/75">{getFieldLabel("actual_method", locale)}</p>
-          <p className={`ldvh-card-decision-title mt-0.5 min-w-0 break-words ${fallback ? "text-amber-950/80 dark:text-amber-100/85" : "text-emerald-900/80 dark:text-emerald-100/85"}`}>
+          <p className={`ldvh-card-decision-title mt-0.5 min-w-0 break-words ${textStyle}`}>
             {getFieldValueLabel("actual_method", actualMethod, locale)}
           </p>
+          {(actualAgent || actualModel) && (
+            <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-ldvh-text-secondary/70">
+              {actualAgent && (
+                <span className="ldvh-meta min-w-0 break-all">
+                  {getFieldLabel("actual_agent", locale)} · {actualAgent}
+                </span>
+              )}
+              {actualModel && (
+                <span className="ldvh-meta min-w-0 break-all">
+                  {getFieldLabel("actual_model", locale)} · {actualModel}
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </div>
       {fallback && (
@@ -1852,11 +1880,14 @@ function ExecutionAuthorization({
   const limitations = Array.isArray(authorization.capability_limitations)
     ? authorization.capability_limitations.filter((value): value is Record<string, unknown> => Boolean(value) && typeof value === "object" && !Array.isArray(value))
     : [];
+  const reviewerPolicy = detailRecord(authorization.reviewer_policy);
   const { t } = useI18n();
-  const [activeTab, setActiveTab] = useState<"actions" | "prohibited" | "prerequisites" | "limitations" | null>(null);
-  const toggleTab = (tab: "actions" | "prohibited" | "prerequisites" | "limitations") => {
+  const [activeTab, setActiveTab] = useState<"actions" | "prohibited" | "prerequisites" | "limitations" | "reviewer_policy" | null>(null);
+  const toggleTab = (tab: "actions" | "prohibited" | "prerequisites" | "limitations" | "reviewer_policy") => {
     setActiveTab((current) => current === tab ? null : tab);
   };
+  const hasReviewerPolicy = Boolean(reviewerPolicy);
+  const tabCount = 3 + (limitations.length > 0 ? 1 : 0) + (hasReviewerPolicy ? 1 : 0);
   const tabStyles = {
     actions: {
       button: "border-emerald-400/35 text-emerald-800/85 hover:bg-emerald-500/[0.06] dark:text-emerald-100/85",
@@ -1878,10 +1909,15 @@ function ExecutionAuthorization({
       selected: "border-amber-400/55 border-b-transparent bg-amber-500/[0.09]",
       panel: "border-amber-400/40 bg-amber-500/[0.045]",
     },
+    reviewer_policy: {
+      button: "border-sky-400/35 text-sky-700/85 hover:bg-sky-500/[0.06] dark:text-sky-200/85",
+      selected: "border-sky-400/50 border-b-transparent bg-sky-500/[0.08]",
+      panel: "border-sky-400/35 bg-sky-500/[0.035]",
+    },
   };
   return (
     <section className="w-full min-w-0">
-      <div className={`grid w-full min-w-0 pt-3 ${limitations.length > 0 ? "grid-cols-4" : "grid-cols-3"}`}>
+      <div className={`grid w-full min-w-0 pt-3 ${tabCount === 5 ? "grid-cols-5" : tabCount === 4 ? "grid-cols-4" : "grid-cols-3"}`}>
         <button
           type="button"
           aria-controls="workcase-authorization-actions"
@@ -1905,7 +1941,7 @@ function ExecutionAuthorization({
           aria-controls="workcase-authorization-prerequisites"
           aria-expanded={activeTab === "prerequisites"}
           onClick={() => toggleTab("prerequisites")}
-          className={`ldvh-caption-strong w-full min-w-0 border border-l-0 px-2 py-2 text-center transition-colors ${limitations.length === 0 ? "rounded-tr-lg" : ""} ${tabStyles.prerequisites.button} ${activeTab === "prerequisites" ? `relative z-10 ${tabStyles.prerequisites.selected}` : ""}`}
+          className={`ldvh-caption-strong w-full min-w-0 border border-l-0 px-2 py-2 text-center transition-colors ${tabCount === 3 && limitations.length === 0 && !hasReviewerPolicy ? "rounded-tr-lg" : ""} ${tabStyles.prerequisites.button} ${activeTab === "prerequisites" ? `relative z-10 ${tabStyles.prerequisites.selected}` : ""}`}
         >
           {t("objectList.workcasePrerequisiteCount", { count: String(prerequisites.length) })}
         </button>
@@ -1915,9 +1951,20 @@ function ExecutionAuthorization({
             aria-controls="workcase-authorization-limitations"
             aria-expanded={activeTab === "limitations"}
             onClick={() => toggleTab("limitations")}
-            className={`ldvh-caption-strong w-full min-w-0 rounded-tr-lg border border-l-0 px-2 py-2 text-center transition-colors ${tabStyles.limitations.button} ${activeTab === "limitations" ? `relative z-10 ${tabStyles.limitations.selected}` : ""}`}
+            className={`ldvh-caption-strong w-full min-w-0 border border-l-0 px-2 py-2 text-center transition-colors ${!hasReviewerPolicy ? "rounded-tr-lg" : ""} ${tabStyles.limitations.button} ${activeTab === "limitations" ? `relative z-10 ${tabStyles.limitations.selected}` : ""}`}
           >
             {t("objectList.workcaseCapabilityLimitationCount", { count: String(limitations.length) })}
+          </button>
+        )}
+        {hasReviewerPolicy && (
+          <button
+            type="button"
+            aria-controls="workcase-authorization-reviewer-policy"
+            aria-expanded={activeTab === "reviewer_policy"}
+            onClick={() => toggleTab("reviewer_policy")}
+            className={`ldvh-caption-strong w-full min-w-0 rounded-tr-lg border border-l-0 px-2 py-2 text-center transition-colors ${tabStyles.reviewer_policy.button} ${activeTab === "reviewer_policy" ? `relative z-10 ${tabStyles.reviewer_policy.selected}` : ""}`}
+          >
+            {t("objectDetail.reviewPolicy")}
           </button>
         )}
       </div>
@@ -1943,6 +1990,11 @@ function ExecutionAuthorization({
       {activeTab === "limitations" && (
         <div id="workcase-authorization-limitations" className={`-mt-px min-w-0 rounded-b-lg border px-3 py-3 ${tabStyles.limitations.panel}`}>
           <CapabilityLimitationList limitations={limitations} locale={locale} />
+        </div>
+      )}
+      {activeTab === "reviewer_policy" && reviewerPolicy && (
+        <div id="workcase-authorization-reviewer-policy" className={`-mt-px min-w-0 rounded-b-lg border px-3 py-3 ${tabStyles.reviewer_policy.panel}`}>
+          <ReviewerPolicyDetail policy={reviewerPolicy} locale={locale} />
         </div>
       )}
     </section>
@@ -2014,6 +2066,109 @@ function CapabilityLimitationList({
         );
       })}
     </ul>
+  );
+}
+
+function ReviewerPolicyDetail({
+  policy,
+  locale,
+}: {
+  policy: Record<string, unknown>;
+  locale: string;
+}) {
+  const model = detailString(policy.model);
+  const collaborationAgent = detailString(policy.collaboration_agent);
+  const preferredMethod = detailString(policy.preferred_method);
+  const effort = detailString(policy.effort);
+  const fast = policy.fast === true ? "true" : policy.fast === false ? "false" : "";
+  const fallbackOrder = detailStrings(policy.fallback_order);
+  const perRoundPerspectiveLimit = detailNumber(policy.per_round_perspective_limit);
+  const activation = detailString(policy.activation);
+  const sameAiBoundary = detailString(policy.same_ai_boundary);
+  return (
+    <div className="grid min-w-0 gap-3">
+      <div className="flex min-w-0 items-center gap-2 text-sky-700/85 dark:text-sky-200/85">
+        <CircleCheck size={16} strokeWidth={1.9} className="shrink-0 text-sky-600 dark:text-sky-300" aria-hidden="true" />
+        <span className="ldvh-detail-semantic-title min-w-0 text-current">
+          {getFieldLabel("reviewer_policy", locale)}
+        </span>
+      </div>
+      <div className="grid min-w-0 gap-2 rounded-lg border border-sky-400/25 bg-sky-500/[0.025] px-3 py-3">
+        {(model || collaborationAgent) && (
+          <div className="grid min-w-0 grid-cols-2 gap-3">
+            {model && (
+              <ReviewerPolicyField label={getFieldLabel("model", locale)} value={model} />
+            )}
+            {collaborationAgent && (
+              <ReviewerPolicyField label={getFieldLabel("collaboration_agent", locale)} value={collaborationAgent} />
+            )}
+          </div>
+        )}
+        {preferredMethod && (
+          <ReviewerPolicyField
+            label={getFieldLabel("preferred_method", locale)}
+            value={getFieldValueLabel("preferred_method", preferredMethod, locale)}
+          />
+        )}
+        {(effort || fast) && (
+          <div className="flex min-w-0 flex-wrap items-center gap-3">
+            {effort && (
+              <span className="ldvh-meta text-sky-800/70 dark:text-sky-100/70">
+                {getFieldLabel("effort", locale)} · {effort}
+              </span>
+            )}
+            {fast && (
+              <span className="ldvh-chip rounded border border-sky-400/25 bg-sky-500/[0.06] px-2 py-0.5 text-sky-700 dark:text-sky-200">
+                {getFieldLabel("fast", locale)} · {fast}
+              </span>
+            )}
+          </div>
+        )}
+        {fallbackOrder.length > 0 && (
+          <div className="min-w-0">
+            <p className="ldvh-meta mb-1.5 text-sky-800/70 dark:text-sky-100/70">
+              {getFieldLabel("fallback_order", locale)}
+            </p>
+            <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+              {fallbackOrder.map((item, index) => (
+                <span key={item} className="ldvh-chip rounded-md border border-sky-400/25 bg-sky-500/[0.06] px-2 py-0.5 text-sky-700 dark:text-sky-200">
+                  {index + 1}. {getFieldValueLabel("actual_method", item, locale)}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+        {perRoundPerspectiveLimit !== null && (
+          <ReviewerPolicyField
+            label={getFieldLabel("per_round_perspective_limit", locale)}
+            value={String(perRoundPerspectiveLimit)}
+          />
+        )}
+        {activation && (
+          <ReviewerPolicyField
+            label={getFieldLabel("activation", locale)}
+            value={activation}
+          />
+        )}
+        {sameAiBoundary && (
+          <ReviewerPolicyField
+            label={getFieldLabel("same_ai_boundary", locale)}
+            value={sameAiBoundary}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ReviewerPolicyField({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0 rounded-md border border-sky-400/15 bg-sky-500/[0.02] px-3 py-2">
+      <p className="ldvh-meta text-sky-800/60 dark:text-sky-100/60">{label}</p>
+      <p className="ldvh-card-decision-title mt-1 min-w-0 break-words text-sky-900/80 dark:text-sky-100/85">
+        {value}
+      </p>
+    </div>
   );
 }
 

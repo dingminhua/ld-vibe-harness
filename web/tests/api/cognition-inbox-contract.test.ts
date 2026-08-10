@@ -14,7 +14,7 @@ import assert from 'node:assert/strict'
 import type { Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import { after, before, test } from 'node:test'
-import type { RecentHotspotBuildItem } from '../../api/routes/cognition.ts'
+import { projectRecentHotspotFact, type RecentHotspotBuildItem } from '../../api/routes/cognition.ts'
 import { compareTimestamps } from '../../api/services/time.ts'
 
 let server: Server
@@ -224,6 +224,58 @@ test('recent hotspot builder does not absorb transitive peers and rejects invali
   )
   assert.equal(result.clusters[0].relations.some((relation) => relation.node.id === 'spark-0003'), false)
   assert.equal(result.clusters[0].relations.some((relation) => relation.node.id === 'workcase-0002'), false)
+})
+
+test('recent hotspots display a routed Spark successor with its current title and status', async () => {
+  const { buildRecentHotspots } = await import('../../api/routes/cognition.ts')
+  const target = (fact_type_key: string, object_id: string) => ({ governed_project_id: 'demo', fact_type_key, object_id })
+  const facts: RecentHotspotBuildItem[] = [
+    {
+      type: 'spark',
+      object_id: 'spark-0101',
+      title: '源议题',
+      status: 'routed',
+      read_status: 'readable',
+      relations: [{ relation_key: 'routed-to', target: target('spark', 'spark-0102') }],
+    },
+    {
+      type: 'spark',
+      object_id: 'spark-0102',
+      title: '残余议题',
+      status: 'open',
+      read_status: 'readable',
+      relations: [],
+    },
+  ]
+  const activityByFact = new Map([
+    ['spark:spark-0101', [{ occurred_at: '2026-08-01T00:00:00Z', activity: 'updated' as const }]],
+  ])
+
+  const result = buildRecentHotspots(facts, activityByFact, 'demo')
+  assert.equal(result.relationTotal, 1)
+  assert.equal(result.clusters[0]?.relations[0]?.node.id, 'spark-0102')
+  assert.equal(result.clusters[0]?.relations[0]?.node.title, '残余议题')
+  assert.equal(result.clusters[0]?.relations[0]?.node.status, 'open')
+})
+
+test('recent hotspot projection omits facts without a readable title instead of falling back to objectId', () => {
+  const item = {
+    object_ref: { governed_project_id: 'demo', fact_type_key: 'spark', object_id: 'spark-0103' },
+    canonical_path: 'ldvh-base/sparks/spark-0103.yaml',
+    absolute_path: '/tmp/spark-0103.yaml',
+    carrier: 'yaml' as const,
+    read_status: 'readable' as const,
+    source_content_fingerprint: null,
+    fact_object: { object_id: 'spark-0103', status: 'open' },
+    field_issues: [],
+    unparsed_structures: [],
+    issues: [],
+  }
+  assert.equal(projectRecentHotspotFact(item, 'spark'), null)
+  assert.equal(
+    projectRecentHotspotFact({ ...item, fact_object: { ...item.fact_object, title: '  ' } }, 'spark'),
+    null,
+  )
 })
 
 test('Spark health splits the current pool into terminal and open items, with silent items as a thresholded subset', async () => {
