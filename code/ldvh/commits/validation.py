@@ -585,10 +585,16 @@ def _is_historical_signature_repair_transition(
         after_signature = after.get("signature")
         if not isinstance(before_signature, dict) or not isinstance(after_signature, dict):
             return False
-        shape_changed = (set(before_signature), set(after_signature)) in {
-            ({"agent_id", "host_environment"}, {"model_id", "agent_workbench"}),
-            ({"model_id", "host_name"}, {"model_id", "agent_workbench"}),
-        }
+        shape_changed = (
+            (
+                set(before_signature) == {"agent_id", "host_environment"}
+                and set(after_signature) == {"model_id", "agent_workbench"}
+            )
+            or (
+                set(before_signature) == {"model_id", "host_name"}
+                and set(after_signature) == {"model_id", "agent_workbench"}
+            )
+        )
         if set(before_signature) != set(after_signature) and not shape_changed:
             return False
         if set(before_signature) - {"agent_id", "model_id", "agent_workbench", "host_environment", "host_name"}:
