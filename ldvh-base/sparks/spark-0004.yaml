@@ -12,22 +12,28 @@ evolution:
 change_log:
 - signature:
     agent_id: kimi
-    host_environment: Kimi Work
+    host_environment: Kimi
   session_id: conv-9b480e23916ebeb1765f4537
   at: '2026-08-05T23:44:51.077455+08:00'
   summary: 遗留对象缺少 change_log 历史；按 05 §11.7.1 建立一次可信流水起点，据实标注历史流水不可得，不恢复原始历史、不改变对象语义与状态（workcase-0060 item-05 更新前置）
 - signature:
     agent_id: kimi
-    host_environment: Kimi Work
+    host_environment: Kimi
   session_id: conv-9b480e23916ebeb1765f4537
   at: '2026-08-05T23:45:54.724301+08:00'
   summary: 记录方向决定：Windows 工作放到 Windows 执行、入口引导测试为验收起点，保持 open
 - signature:
     agent_id: workbuddy
-    host_environment: WorkBuddy macOS
+    host_environment: Workbuddy
   session_id: 233b3e543e5f49c786ac8b1722ba4a67
   at: '2026-08-08T08:12:17.032340+08:00'
   summary: Human 确认 Windows 验收与 v4.0.0 发布完成；按授权将 Spark 标为 implemented，related-to study-0025 保留真机实测证据回指。
+- at: '2026-08-10T08:46:04.244970Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 2: WorkBuddy macOS -> Workbuddy。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-legacy-signature-migration-20260810
 relations:
 - relation_key: related-to
   target:
@@ -43,4 +49,4 @@ disposition_summary: 原生 Windows 支持范围与真实验收已由真机实�
 object_id: spark-0004
 fact_type_key: spark
 created_at: '2026-07-19T08:33:52.460274+08:00'
-updated_at: '2026-08-08T08:12:17.032340+08:00'
+updated_at: '2026-08-10T08:46:04.244970Z'
