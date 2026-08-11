@@ -35,7 +35,7 @@ type ChangeLogEntry = {
   at: string;
   summary: string;
   modelId?: string;
-  hostName?: string;
+  agentWorkbench?: string;
   agentId?: string;
   hostEnvironment?: string;
 };
@@ -76,7 +76,7 @@ export function ChangeLogReadingNode({
                   {formatDateTime(entry.at)}
                 </span>
                 {(entry.modelId ?? entry.agentId) && <><span aria-hidden="true">·</span><span>{entry.modelId ?? entry.agentId}</span></>}
-                {(entry.hostName ?? entry.hostEnvironment) && <><span aria-hidden="true">·</span><span>{entry.hostName ?? entry.hostEnvironment}</span></>}
+                {(entry.agentWorkbench ?? entry.hostEnvironment) && <><span aria-hidden="true">·</span><span>{entry.agentWorkbench ?? entry.hostEnvironment}</span></>}
               </div>
               <p className="mt-1 ldvh-meta text-ldvh-text-secondary/80">{entry.summary}</p>
             </div>
@@ -100,14 +100,14 @@ function parseChangeLogEntries(value: unknown): ChangeLogEntry[] {
       ? signature as Record<string, unknown>
       : null;
     const modelId = typeof signatureRecord?.model_id === 'string' ? signatureRecord.model_id : undefined;
-    const hostName = typeof signatureRecord?.agent_workbench === 'string' ? signatureRecord.agent_workbench
+    const agentWorkbench = typeof signatureRecord?.agent_workbench === 'string' ? signatureRecord.agent_workbench
       : typeof signatureRecord?.host_name === 'string' ? signatureRecord.host_name : undefined;
     return [{
       key: `${index}-${at}`,
       at,
       summary,
       modelId,
-      hostName,
+      agentWorkbench,
       agentId: typeof signatureRecord?.agent_id === 'string' ? signatureRecord.agent_id : undefined,
       hostEnvironment: typeof signatureRecord?.host_environment === 'string' ? signatureRecord.host_environment : undefined,
     }];
@@ -452,8 +452,7 @@ function SparkTerminalTime({ value }: { value: string }) {
 
 function hasSparkTerminalContent(obj: Record<string, unknown>) {
   const status = typeof obj.status === 'string' ? obj.status : '';
-  return status === 'routed'
-    || status === 'implemented'
+  return status === 'implemented'
     || status === 'discarded'
     || hasDetailContent(obj.disposition_summary);
 }
