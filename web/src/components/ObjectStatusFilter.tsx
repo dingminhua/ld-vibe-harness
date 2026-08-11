@@ -13,7 +13,6 @@ const STATUS_FILTER_ORDER = [
   'cancelled',
   'proposed',
   'accepted',
-  'routed',
   'discarded',
   'archived',
   'retired',
@@ -27,7 +26,7 @@ const statusOrderIndex = new Map(STATUS_FILTER_ORDER.map((status, index) => [sta
 const FALLBACK_STATUSES_BY_TYPE: Record<string, string[]> = {
   adr: ['active', 'retired'],
   pitfall: ['draft', 'active', 'discarded'],
-  spark: ['open', 'routed', 'implemented', 'discarded'],
+  spark: ['open', 'implemented', 'discarded'],
   study: ['active', 'retired'],
 };
 
