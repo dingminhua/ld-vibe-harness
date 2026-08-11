@@ -26,7 +26,7 @@ from ldvh.facts.workcase_validation import required_quality_gate_issues
 WorkCaseOperation = Literal["update", "close", "correct", "begin_termination", "complete_termination"]
 
 _STATUS_EDGES = {
-    "spark": {("open", "routed"), ("open", "implemented"), ("open", "discarded")},
+    "spark": {("open", "implemented"), ("open", "discarded")},
     "adr": {("active", "retired")},
     "pitfall": {("draft", "active"), ("draft", "discarded"), ("active", "discarded")},
     "study": {("active", "retired")},
