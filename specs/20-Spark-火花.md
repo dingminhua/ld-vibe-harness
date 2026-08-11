@@ -217,7 +217,13 @@ AI 创建 Spark 前必须确认准入条件、召回结果、对象粒度、独�
 
 Spark 可以保留终态文件作为历史参考。归档只在未来当前来源另行定义明确位置与消费边界后成立；本文不建立独立 archived 状态。删除仅在来源规则允许、稳定身份与引用已经处置且不会丢失仍适用事实时成立，不能用删除代替 discarded。
 
-Spark 类型停止新增、合并、替代或取消时，必须按 05 处理唯一定义来源、全部当前对象、引用消费者和仍适用事实。18 个历史 routed 对象不在本 WC 迁移；只能报告 legacy baseline、invalid、unavailable 或 not_verified，不能生成默认状态、删除关系或补写字段。
+Spark 类型停止新增、合并、替代或取消时，必须按 05 处理唯一定义来源、全部当前对象、引用消费者和仍适用事实。
+
+### 历史 routed Spark 受控迁移
+
+固定 allow-list 中的历史 `routed` Spark 可以且只能由 `migrate-legacy-routed-spark` 逐条迁移为 `implemented`。每一条都必须绑定当次精确读取的内容指纹、非空且作用范围明确的 Human 授权来源，以及当前环境署名；操作不接受批量请求、目标状态选择、整对象 after、字段补全或语义推断。Code 只从当前 before 构造 after：保留现有标题、摘要、演变、处置说明、普通 `related-to`、时间和既有流水；把每条 Spark 自身 `routed-to` 转为同目标、去重后的 `related-to`，移除 `priority`，把 status 改为 `implemented`，并追加一条本次迁移流水。它不修改任何 WorkCase 自有 `routed-to`，也不表示被提及的下游对象已经完成。
+
+迁移前 AI 必须逐条核对 `disposition_summary` 已据实说明原入口内容被直接落实或交给 WorkCase，且 Human 已针对该条作出当前迁移决定；证据或授权不足时保持 legacy/read-only。每次迁移写后必须精确回读并执行独立完整性审计；失败、冲突、部分或不可观察结果不得继续下一条或写成迁移成功。
 
 ## 9. 验证要求
 

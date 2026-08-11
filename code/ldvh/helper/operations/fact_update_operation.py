@@ -596,6 +596,8 @@ def _execute(
     request: CommonRequest,
     repository: RepositoryInspection,
     context: OperationExecutionContext,
+    *,
+    allow_legacy_routed_spark_migration: bool = False,
 ) -> OperationExecution:
     domain = _validated_request(request, context)
     reference = domain.fact_ref
@@ -691,6 +693,7 @@ def _execute(
                 supplied=supplied,
                 body=body,
                 event_at=context.event_at,
+                allow_legacy_routed_spark_migration=allow_legacy_routed_spark_migration,
             )
         )
     except FactCoordinationUnavailable as error:

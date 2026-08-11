@@ -10,7 +10,7 @@ from typing import Literal
 
 from ldvh.commits.contract_source import CommitContractProjection
 from ldvh.facts.content import validate_fact_content
-from ldvh.facts.contracts import LAYOUTS
+from ldvh.facts.contracts import LAYOUTS, is_legacy_spark_object
 from ldvh.facts.schema import FactSchema
 from ldvh.facts.validation import (
     _WORKBENCH_TOKEN_SPLIT,
@@ -514,7 +514,13 @@ def _fact_trace_issues(
                     )
                 )
                 continue
-            before_checked = validate_fact_content(layout, schema, candidate.object_id, candidate.head_data)
+            before_checked = validate_fact_content(
+                layout,
+                schema,
+                candidate.object_id,
+                candidate.head_data,
+                allow_legacy_spark=is_legacy_spark_object(candidate.object_id),
+            )
             if before_checked.check_status != "mechanically_valid" or before_checked.fields is None:
                 unavailable.append(
                     _issue("fact_trace_unverifiable", f"事实 HEAD before-image 不可机械消费: {candidate.path}")

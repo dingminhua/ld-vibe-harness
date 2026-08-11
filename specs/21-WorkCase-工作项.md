@@ -896,7 +896,7 @@ WorkCase 只允许五种正向关系；反向导航由 Code 派生，不写第�
 
 `depends-on` 解除或 target 准备改变责任边界时，source 必须先把仍影响结果或停止边界的事实吸收到正确自然语言字段并移除关系。target 仍有任何入向 `depends-on` 时不得关闭；closed source 禁止保留 `depends-on`。
 
-`routed-to` 形成时，WorkCase target 的当前 goal/scope 或 Spark target 的当前问题正文必须语义覆盖被转交事项，AI 负责判断，Code 只检查引用、状态、指纹和图约束。形成后 target 按自身生命周期继续，upstream relation 仍保留；消费者沿 target 当前内容理解去向。WorkCase target 关闭/改 scope 或 Spark target 转为 routed/discarded 前必须检查入向 `routed-to`，不得静默丢失已转入责任；必要时由 target 自身当前或终态正文、下一跳关系或 accepted-stop residual 继续说明。
+`routed-to` 形成时，WorkCase target 的当前 goal/scope 或 Spark target 的当前问题正文必须语义覆盖被转交事项，AI 负责判断，Code 只检查引用、状态、指纹和图约束。形成后 target 按自身生命周期继续，upstream relation 仍保留；消费者沿 target 当前内容理解去向。WorkCase target 关闭/改 scope 或 Spark target 转为 implemented/discarded 前必须检查入向 `routed-to`，不得静默丢失已转入责任；必要时由 target 自身当前或终态正文、下一跳关系或 accepted-stop residual 继续说明。
 
 `contributed-to` 形成时，target 必须实际存在、可读、mechanically valid 且为 draft Pitfall；形成后 target 变为 active 或 discarded 不影响边，也不回写 WC。target 后来被删除或不可读时，该边失效但不自动改变 source 的状态与终态；机械读取如实报告。该边不承载未完成责任，不建立 target 状态变化前的入向检查义务；删除方仍必须按 05 §9.3 先处置全部入向引用。
 

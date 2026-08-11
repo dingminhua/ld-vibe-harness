@@ -75,6 +75,7 @@ class FactUpdateCommand:
     supplied: Mapping[str, Any]
     body: str | None
     event_at: str
+    allow_legacy_routed_spark_migration: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -230,6 +231,7 @@ def apply_fact_update_locked(command: FactUpdateCommand) -> FactUpdateResult:
     if (
         command.fact_type_key == "spark"
         and is_legacy_spark_object(command.object_id)
+        and not command.allow_legacy_routed_spark_migration
         and current.fields is not None
         and current.fields.get("status") == "routed"
     ):
@@ -269,7 +271,7 @@ def apply_fact_update_locked(command: FactUpdateCommand) -> FactUpdateResult:
         "updated_at": command.event_at,
     }
     timestamp_appended_change_log(proposed, command.event_at)
-    change_log_issues = validate_change_log_transition(current.fields, proposed)
+    change_log_issues = () if command.allow_legacy_routed_spark_migration else validate_change_log_transition(current.fields, proposed)
     if change_log_issues:
         return FactUpdateResult(
             "candidate_rejected",

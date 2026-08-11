@@ -345,6 +345,7 @@ def test_unrelated_candidate_problem_does_not_block_defined_operation(
         "create-fact-object",
         "find-fact-object-candidates",
         "migrate-legacy-change-log",
+        "migrate-legacy-routed-spark",
         "normalize-uncommitted-change-log-signatures",
         "precheck-git-commit",
         "prepare-closed-workcase-candidate",
