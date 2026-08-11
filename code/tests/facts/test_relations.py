@@ -11,11 +11,9 @@ from ldvh.facts.relations import (
     WorkCaseRouteTargetSnapshot,
     _source_condition,
     _target_condition,
-    _target_has_readable_title,
     proposal_route_target_snapshots,
     request_route_target_snapshots,
     validate_project_relations,
-    validate_spark_route_target_formation,
     validate_workcase_incoming_dependencies,
     validate_workcase_route_target_alignment,
     validate_workcase_route_target_snapshots,
@@ -33,110 +31,10 @@ class _CurrentProjectIndex:
     governed_project_id = _PROJECT
 
 
-class _RouteFormationIndex:
-    governed_project_id = _PROJECT
-
-    def __init__(self, target_status: str) -> None:
-        self.target_status = target_status
-
-    def read_fresh(self, fact_type_key: str, object_id: str) -> FactReadResult:
-        assert fact_type_key == "spark"
-        assert object_id == "spark-0002"
-        return FactReadResult(
-            Path("ldvh-base/sparks/spark-0002.yaml"),
-            "yaml",
-            "mechanically_valid",
-            {"status": self.target_status},
-            None,
-            (),
-        )
-
-
-class _FormationCaseIndex:
-    governed_project_id = _PROJECT
-
-    def __init__(self, read: FactReadResult | None) -> None:
-        self.read = read
-
-    def read_fresh(self, fact_type_key: str, object_id: str) -> FactReadResult | None:
-        assert fact_type_key == "spark"
-        assert object_id == "spark-0002"
-        return self.read
-
-
-def test_spark_routed_to_rejects_study_but_accepts_other_stable_fact_types_across_target_lifecycle_states() -> None:
-    assert not _target_condition("spark", "routed-to", "study", "active")
-    for target_status in ("open", "routed", "implemented", "discarded"):
-        assert _target_condition("spark", "routed-to", "spark", target_status)
-    assert _target_condition("spark", "routed-to", "workcase", "open")
-    assert _target_condition("spark", "routed-to", "workcase", "closed")
-
-
-def test_spark_routed_to_requires_a_nonempty_current_target_title() -> None:
-    assert _target_has_readable_title("spark", "routed-to", {"title": "Helper 事实对象机械结构校验闭环"})
-    assert not _target_has_readable_title("spark", "routed-to", {"title": "  "})
-    assert _target_has_readable_title("spark", "related-to", {})
-
-
-def test_new_spark_successor_must_be_open_but_existing_edge_survives_target_lifecycle() -> None:
-    relation = _relation("routed-to", "spark-0002", fact_type_key="spark")
-    assert validate_spark_route_target_formation(
-        _RouteFormationIndex("open"),
-        "spark-0001",
-        {"relations": []},
-        {"relations": [relation]},
-    ) == ()
-    assert validate_spark_route_target_formation(
-        _RouteFormationIndex("routed"),
-        "spark-0001",
-        {"relations": []},
-        {"relations": [relation]},
-    )[0].summary == "新形成的 Spark successor 必须为 open"
-    assert validate_spark_route_target_formation(
-        _RouteFormationIndex("routed"),
-        "spark-0001",
-        {"relations": [relation]},
-        {"relations": [relation]},
-    ) == ()
-
-
-@pytest.mark.parametrize("target_type", ["workcase", "adr", "pitfall"])
-def test_spark_formation_guard_leaves_non_spark_targets_to_existing_relation_rules(target_type: str) -> None:
-    relation = _relation("routed-to", f"{target_type}-0002", fact_type_key=target_type)
-
-    assert validate_spark_route_target_formation(
-        _FormationCaseIndex(None),
-        "spark-0001",
-        {"relations": []},
-        {"relations": [relation]},
-    ) == ()
-
-
-def test_new_spark_successor_formation_rejects_missing_invalid_and_self_targets() -> None:
-    relation = _relation("routed-to", "spark-0002", fact_type_key="spark")
-    missing = validate_spark_route_target_formation(
-        _FormationCaseIndex(None),
-        "spark-0001",
-        {"relations": []},
-        {"relations": [relation]},
-    )
-    assert missing[0].summary == "新形成的 Spark successor 不存在或不是 mechanically valid 当前对象"
-
-    invalid = validate_spark_route_target_formation(
-        _FormationCaseIndex(_read("spark-0002", "open", fact_type_key="spark", check_status="invalid")),
-        "spark-0001",
-        {"relations": []},
-        {"relations": [relation]},
-    )
-    assert invalid[0].summary == "新形成的 Spark successor 不存在或不是 mechanically valid 当前对象"
-
-    self_ref = validate_spark_route_target_formation(
-        _FormationCaseIndex(_read("spark-0002", "open", fact_type_key="spark")),
-        "spark-0002",
-        {"relations": []},
-        {"relations": [_relation("routed-to", "spark-0002", fact_type_key="spark")]},
-    )
-    assert self_ref[0].summary == "Spark successor routed-to 目标禁止自指"
+def test_spark_current_relations_only_allow_related_to() -> None:
+    assert _target_condition("spark", "related-to", "spark", "implemented")
+    assert _target_condition("spark", "related-to", "workcase", "closed")
+    assert not _target_condition("spark", "routed-to", "workcase", "open")
 
 
 def _validate_spark(
@@ -146,39 +44,6 @@ def _validate_spark(
     assert source.fields is not None
     index = _MemoryIndex(source, *targets)
     return validate_project_relations(index, "spark", str(source.fields["object_id"]), source)  # type: ignore[arg-type]
-
-
-def test_spark_routed_to_rejects_cross_project_and_cycles() -> None:
-    cross_project = _read(
-        "spark-0001",
-        "routed",
-        relations=[_relation("routed-to", "spark-0002", project_id="other-project", fact_type_key="spark")],
-        fact_type_key="spark",
-    )
-    issues, unavailable = _validate_spark(cross_project)
-    assert unavailable is False
-    assert any("同一管辖项目" in issue.summary for issue in issues)
-
-    cyclic_source = _read(
-        "spark-0001",
-        "routed",
-        relations=[_relation("routed-to", "spark-0002", fact_type_key="spark")],
-        fact_type_key="spark",
-    )
-    cyclic_target = _read(
-        "spark-0002",
-        "routed",
-        relations=[_relation("routed-to", "spark-0001", fact_type_key="spark")],
-        fact_type_key="spark",
-    )
-    issues, unavailable = _validate_spark(cyclic_source, cyclic_target)
-    assert unavailable is False
-    assert any("有向循环" in issue.summary for issue in issues)
-
-
-def test_spark_routed_to_source_matches_its_status_semantics() -> None:
-    assert _source_condition("spark", "routed-to", {"status": "routed"})
-    assert not _source_condition("spark", "routed-to", {"status": "discarded"})
 
 
 def test_spark_relations_are_limited_to_the_current_project_until_cross_project_is_designed() -> None:
@@ -212,27 +77,6 @@ def test_spark_relations_are_limited_to_the_current_project_until_cross_project_
 
     assert not unavailable
     assert any(issue.summary == "Spark 关系目标只允许同一管辖项目" for issue in issues)
-
-
-def test_routed_spark_requires_at_least_one_routed_to_relation() -> None:
-    read = FactReadResult(
-        Path("ldvh-base/sparks/spark-0001.yaml"),
-        "yaml",
-        "mechanically_valid",
-        {"status": "routed", "relations": []},
-        None,
-        (),
-    )
-
-    issues, unavailable = validate_project_relations(
-        _CurrentProjectIndex(),
-        "spark",
-        "spark-0001",
-        read,  # type: ignore[arg-type]
-    )
-
-    assert not unavailable
-    assert any(issue.summary == "routed Spark 至少需要一条 routed-to 关系" for issue in issues)
 
 
 def test_spark_related_to_can_target_an_implemented_spark() -> None:
@@ -778,17 +622,6 @@ def test_project_index_marks_invalid_canonical_peer_incomplete_for_closure_only(
     assert ordinary_reads == closure_reads == ()
     assert ordinary_complete is True
     assert closure_complete is False
-
-
-def test_spark_routed_to_current_rules_remain_independent_from_workcase_rules() -> None:
-    assert not _target_condition("spark", "routed-to", "study", "active")
-    assert _target_condition("spark", "routed-to", "spark", "open")
-    assert _target_condition("spark", "routed-to", "spark", "routed")
-    assert _target_condition("spark", "routed-to", "workcase", "closed")
-    assert _target_has_readable_title("spark", "routed-to", {"title": "可读标题"})
-    assert not _target_has_readable_title("spark", "routed-to", {"title": "  "})
-    assert _source_condition("spark", "routed-to", {"status": "routed"})
-    assert not _source_condition("spark", "routed-to", {"status": "discarded"})
 
 
 @pytest.mark.parametrize("target_status", ["draft", "active", "discarded"])
