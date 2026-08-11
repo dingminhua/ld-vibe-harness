@@ -151,7 +151,39 @@ def test_bootstrap_reuses_an_existing_local_venv(tmp_path: Path, monkeypatch: py
     assert worktree_bootstrap._bootstrap(worktree, Path(sys.executable)) is None
 
     assert calls == [
+        [str(local_python), "-m", "pip", "--version"],
         [str(local_python), "-m", "pip", "install", "--requirement", "requirements-dev.txt"],
+        [str(local_python), "-m", "pip", "--version"],
+        [str(local_python), "-m", "pip", "install", "--requirement", "requirements-dev.txt"],
+    ]
+
+
+def test_bootstrap_prefers_existing_supported_local_venv_over_old_requested_python(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    worktree = tmp_path / "worktree"
+    local_python = worktree / ".venv" / "bin" / "python"
+    local_python.parent.mkdir(parents=True)
+    local_python.write_text("local venv marker\n", encoding="utf-8")
+    calls: list[list[str]] = []
+
+    def identity(python: Path):
+        if python == local_python:
+            return {"path": str(local_python), "version": [3, 12, 0]}, None
+        return {"path": str(python), "version": [3, 9, 0]}, None
+
+    monkeypatch.setattr(worktree_bootstrap, "_venv_python", lambda _: local_python)
+    monkeypatch.setattr(worktree_bootstrap, "_python_identity", identity)
+
+    def successful_run(arguments: list[str], *, cwd: Path | None = None) -> subprocess.CompletedProcess[str]:
+        calls.append(arguments)
+        return subprocess.CompletedProcess(arguments, 0, "", "")
+
+    monkeypatch.setattr(worktree_bootstrap, "_run", successful_run)
+
+    assert worktree_bootstrap._bootstrap(worktree, Path("/old/python3.9")) is None
+    assert calls == [
+        [str(local_python), "-m", "pip", "--version"],
         [str(local_python), "-m", "pip", "install", "--requirement", "requirements-dev.txt"],
     ]
 
