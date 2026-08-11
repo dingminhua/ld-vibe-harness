@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 from ldvh.facts.content import MAX_FACT_BYTES, validate_fact_content
-from ldvh.facts.contracts import FactTypeLayout
+from ldvh.facts.contracts import FactTypeLayout, is_legacy_spark_object
 from ldvh.facts.models import FactIssue
 from ldvh.facts.schema import FactSchema
 from ldvh.facts.validation import parse_rfc3339
@@ -162,7 +162,14 @@ def read_fact_object(
             (identity_issue,),
         )
 
-    validation = validate_fact_content(layout, schema, object_id, raw_bytes, max_bytes=effective_max_bytes)
+    validation = validate_fact_content(
+        layout,
+        schema,
+        object_id,
+        raw_bytes,
+        max_bytes=effective_max_bytes,
+        allow_legacy_spark=layout.fact_type_key == "spark" and is_legacy_spark_object(object_id),
+    )
     fingerprint = validation.content_fingerprint
     if validation.check_status == "invalid":
         fingerprint = _repair_fingerprint(validation.fields, layout, object_id, validation.raw_text or "")
