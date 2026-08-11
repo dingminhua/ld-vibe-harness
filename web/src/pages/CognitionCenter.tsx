@@ -28,7 +28,7 @@ import {
 import StatusBadge from '@/components/StatusBadge';
 import PriorityIcon from '@/components/PriorityIcon';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
-import { CommitHotspotCluster } from '@/pages/cognition/CommitHotspotGraph';
+import { CommitHotspotCluster, CommitHotspotRelationLegend } from '@/pages/cognition/CommitHotspotGraph';
 import {
   fetchCognition,
   type CognitionActiveWorkCaseItem,
@@ -637,6 +637,9 @@ export default function CognitionCenter() {
     counts[getRecentHotspotStatusGroup(cluster.primary)] += 1;
     return counts;
   }, { all: 0, progressing: 0, decision: 0, settled: 0 }) ?? { all: 0, progressing: 0, decision: 0, settled: 0 };
+  const recentHotspotRelationKeys = [...new Set(filteredRecentHotspotClusters.flatMap((cluster) => (
+    cluster.relations.map((relation) => relation.relationKey)
+  )))];
 
   return (
     <div className="flex min-h-full flex-col p-6">
@@ -1099,6 +1102,9 @@ export default function CognitionCenter() {
                 recentHotspotIssues.length === 0 && <p className="ldvh-body-muted">{t('cognition.commitHotspots.empty')}</p>
               ) : (
                 <div className="flex min-w-0 flex-col gap-3">
+                  {recentHotspotRelationKeys.length > 0 && (
+                    <CommitHotspotRelationLegend relationKeys={recentHotspotRelationKeys} />
+                  )}
                   {filteredRecentHotspotClusters.length === 0 ? (
                     <p className="ldvh-body-muted">{t('cognition.commitHotspots.filterEmpty')}</p>
                   ) : (

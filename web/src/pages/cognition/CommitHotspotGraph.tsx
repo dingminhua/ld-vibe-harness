@@ -288,27 +288,10 @@ function expandedLayout(items: RelatedWork[], availableWidth?: number): DiagramL
   };
 }
 
-export function CommitHotspotLegend({
-  totalEvents,
-  hotspotTotal,
-  relationTotal,
-  relationKeys,
-}: {
-  totalEvents: number;
-  hotspotTotal: number;
-  relationTotal: number;
-  relationKeys: string[];
-}) {
+function HotspotRelationLegend({ relationKeys }: { relationKeys: string[] }) {
   const { locale, t } = useI18n();
   return (
-    <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5 border-y border-ldvh-border/70 py-2.5">
-      <span className="ldvh-caption text-ldvh-text-secondary">
-        {t('cognition.commitHotspots.totalCommits', { count: String(totalEvents) })}
-      </span>
-      <span className="ldvh-caption text-ldvh-text-secondary">
-        {t('cognition.commitHotspots.summary', { hotspots: String(hotspotTotal), relations: String(relationTotal) })}
-      </span>
-      <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-x-3 gap-y-1">
+    <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-x-3 gap-y-1">
         <span className="inline-flex items-center gap-1.5 ldvh-caption text-ldvh-text-secondary">
           <span
             className="inline-flex items-center justify-center gap-1 rounded-full border border-ldvh-accent/25 bg-ldvh-accent/5 px-1.5 py-0.5 text-[11px] font-medium text-ldvh-accent"
@@ -339,9 +322,37 @@ export function CommitHotspotLegend({
             </span>
           );
         })}
-      </div>
     </div>
   );
+}
+
+export function CommitHotspotLegend({
+  totalEvents,
+  hotspotTotal,
+  relationTotal,
+  relationKeys,
+}: {
+  totalEvents: number;
+  hotspotTotal: number;
+  relationTotal: number;
+  relationKeys: string[];
+}) {
+  const { t } = useI18n();
+  return (
+    <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5 border-y border-ldvh-border/70 py-2.5">
+      <span className="ldvh-caption text-ldvh-text-secondary">
+        {t('cognition.commitHotspots.totalCommits', { count: String(totalEvents) })}
+      </span>
+      <span className="ldvh-caption text-ldvh-text-secondary">
+        {t('cognition.commitHotspots.summary', { hotspots: String(hotspotTotal), relations: String(relationTotal) })}
+      </span>
+      <HotspotRelationLegend relationKeys={relationKeys} />
+    </div>
+  );
+}
+
+export function CommitHotspotRelationLegend({ relationKeys }: { relationKeys: string[] }) {
+  return <HotspotRelationLegend relationKeys={relationKeys} />;
 }
 
 function AccessibleRelationList({

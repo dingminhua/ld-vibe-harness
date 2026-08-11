@@ -6,6 +6,7 @@ export const ALL_STATUS_PARAM = 'all';
 
 export function getDefaultListStatus(type: string): string | null {
   if (type === 'workcase') return WORKCASE_DEFAULT_LIST_STATUS;
+  if (type === 'spark') return 'open';
   return DEFAULT_ACTIVE_TYPES.has(type) ? 'active' : null;
 }
 
