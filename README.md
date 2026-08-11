@@ -96,7 +96,7 @@ cd ld-vibe-harness
 
 - 规范与规则源更新：仓库入口现取现用；仍需按受影响范围复核行为，不安装 LDVH 包；
 - `skill/SKILL.md` 变化：将各环境部署件与新模板逐字节比对，过期者重新部署；
-- 源码 launcher、运行依赖声明、Git Hook 管理实现或 Git Gate 核心入口变化：验证源码入口，并按目标 common-dir 重新检查或部署承接 Git Gate 的 Git Hook；
+- 源码 launcher、运行依赖声明、Git Hook 管理实现或 Git Gate 核心入口变化：验证源码入口，并对全部已管辖项目的每个 Git common-dir 逐一重新检查承接 Git Gate 的 Hook；已是当前受管版本者不写入，缺失或过期者才受控重新部署。同一 common-dir 的主 worktree 与 linked worktree 共用一次部署，独立 clone 另行检查；发现未知 Hook 或配置冲突时停止，不覆盖；
 - 上述处理后按 specs/09 §6.5 与 specs/attachments/09.Att.02 重验受影响范围，不沿用旧验证结论。
 
 ## 启动 Web（本地开发）
