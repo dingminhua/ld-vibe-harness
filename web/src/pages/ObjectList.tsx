@@ -1399,7 +1399,6 @@ function FactAssociationCardRow({ association, locale, unavailableLabel }: { ass
     >
       <ObjectTypeIcon type={target?.factTypeKey} size={13} className="shrink-0" style={{ color: typeColor }} />
       <span className="ldvh-meta-primary min-w-0 flex-1 whitespace-normal break-words text-ldvh-text-secondary/85 group-hover:text-ldvh-accent">{title}</span>
-      {association.available && target && association.status && <StatusBadge status={association.status} statusLabel={getObjectStatusLocale(target.factTypeKey, association.status, locale)} objectType={target.factTypeKey} size="xs" />}
       {canOpen && <PanelIcon size={16} className="shrink-0 text-ldvh-text-secondary/70 transition-colors group-hover:text-ldvh-accent" aria-hidden="true" />}
     </div>
   );
