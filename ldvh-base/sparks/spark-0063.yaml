@@ -1,5 +1,5 @@
 title: Human 主动终止事务——任意阶段可靠停止 WorkCase
-status: routed
+status: implemented
 intent: WorkCase 在执行到一半发现方向、实现或风险有问题时，Human 需要用一次明确指令立即停止原计划，并让 LDVH 在不丢失已做成果、不误删需保留修改、不伪造正常 Gate 2 质量保证的前提下，完成有限、可恢复、可追溯的善后与关闭。该需求必须与流程自行遇到新 Human 决策时的默认安全收敛区分，避免把主动终止变成 AI 逃避推进的旁路。
 summary: "## 已定方案（2026-08-09）\n\nHuman 已确认完整意图：一个 WorkCase 进行中发现问题时，应当方便地停止并善后，而不是任意阶段直接压成 `closed`。\n\n- **一次 Human 指令**：明确终止指定 WorkCase 后立即冻结原计划，不新增第二 Human Gate。\n- **唯一持久善后位置**：全部非终态 phase 与 `blocked` 经专属开始事务进入 `termination_preparing`；中断后只能恢复终止善后，不能恢复原执行或旧 Gate 2。\n- **两段专属事务**：开始事务绑定 Human 来源与 source CAS；完成事务在善后成立后形成终态。两者均不放宽、不调用正常 `close-workcase`。\n- **有限善后闭集**：盘点并区分已形成成果、未验证半成品、精确待丢弃修改、依赖影响和剩余责任；Helper 只写 WorkCase 事实，不删除、回滚或提交项目文件。\n- **物理清理边界**：AI 只按 Human 明确范围处理；范围含混、保留/丢弃混杂或影响其它责任时才暂停询问。已提交修改用新 revert，禁止 reset --hard 或整树回滚。\n- **诚实终态**：复用 `closed` 并保存不可混淆的 `termination` 记录；`closure_outcome` 按实际 criterion 结果分类，不因终止固定为 `cancelled`；跳过的独立复核、closure proposal 或 Gate 2 必须显式披露，不伪造质量证据。\n- **依赖与正常链隔离**：入向 `depends-on` 可允许先停工，但未处置前不得静默完成关闭；SafeConvergenceShape、WorkCase-0082 默认安全收敛和正常 Gate 2/close-workcase 语义保持不变。\n\n## 稳定承接\n\nWorkCase-0084 已以 P1 计划完整承接规范、字段登记、Schema/transition、两段 Helper、projection/context recovery/Web 呈现及全 phase/依赖/失败/正常链回归测试。其当前处于 `human_plan_confirming`，等待 Gate 1；本 Spark 不跟踪下游执行状态，也不表示方案已经实现。\n\n## 历史边界\n\n- WorkCase-0062 是发端案例，只提供问题证据。\n- WorkCase-0082 解决流程内部不得制造第三次 Human Gate及默认安全收敛，不承接 Human 主动终止。\n- 正常 `close-workcase` 仍只服务 Gate 2 完整关闭提案，不作为终止旁路。"
 change_log:
@@ -27,6 +27,12 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-legacy-signature-migration-20260810
+- at: '2026-08-11T13:58:08.758376Z'
+  summary: 经逐条 Human 授权，历史 routed Spark 迁移为 implemented；旧 routed-to 已转为 related-to。
+  signature:
+    agent_workbench: Cindy
+    model_id: glm-5.2
+  session_id: 84578c2d-7b22-47ab-9d36-1d2552699eb2
 relations:
 - relation_key: related-to
   target:
@@ -38,7 +44,7 @@ relations:
     governed_project_id: ldvh
     fact_type_key: workcase
     object_id: workcase-0082
-- relation_key: routed-to
+- relation_key: related-to
   target:
     governed_project_id: ldvh
     fact_type_key: workcase
@@ -47,4 +53,4 @@ disposition_summary: WorkCase-0084 已完整承接 Human 主动终止的停止�
 object_id: spark-0063
 fact_type_key: spark
 created_at: '2026-08-06T09:58:00+08:00'
-updated_at: '2026-08-10T08:47:24.333418Z'
+updated_at: '2026-08-11T13:58:08.758376Z'

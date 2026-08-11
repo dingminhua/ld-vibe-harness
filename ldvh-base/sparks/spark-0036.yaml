@@ -1,6 +1,6 @@
 title: WorkCase 关闭责任、Pitfall 草稿与 related-to 模型
 intent: 需要稳定保留一套减轻 WorkCase 执行负担、又不丢失现场 Pitfall 细节和关闭后责任线索的统一模型，并判断它如何一致落入事实类型、关系、Helper、行动模板与 Web 契约。若不跨行动保留，已经逐项确认的边界容易在多份规范修改中被重新解释，增加重复讨论、语义漂移和遗漏消费闭集的风险。
-status: routed
+status: implemented
 relations:
 - relation_key: related-to
   target:
@@ -12,7 +12,7 @@ relations:
     governed_project_id: ldvh
     fact_type_key: spark
     object_id: spark-0033
-- relation_key: routed-to
+- relation_key: related-to
   target:
     governed_project_id: ldvh
     fact_type_key: workcase
@@ -22,7 +22,14 @@ evolution:
 - at: '2026-07-28T11:07:07.624171+08:00'
   summary: 独立审计确认目标模型无阻断，并据此形成 workcase-0016；本议题由待判断入口转为由准确计划完整承接，后续状态与完成判断归目标 WorkCase 自身负责。
 disposition_summary: workcase-0016 完整承接本 Spark 的原始信息需求：item-contract 负责把已确认模型和审计补文写入唯一规则契约，item-mechanics 负责派生 Schema、关系与 Helper 机械边界，item-web 负责 Human 呈现，item-validation 负责跨层验证和独立结果复核。该分流不声明 WorkCase 已获执行批准、实现已完成或验证已通过；spark-0008 与 spark-0033 仍只作为相邻议题保留。
+change_log:
+- at: '2026-08-11T13:56:16.204717Z'
+  summary: 经逐条 Human 授权，历史 routed Spark 迁移为 implemented；旧 routed-to 已转为 related-to。
+  signature:
+    agent_workbench: Cindy
+    model_id: glm-5.2
+  session_id: 84578c2d-7b22-47ab-9d36-1d2552699eb2
 object_id: spark-0036
 fact_type_key: spark
 created_at: '2026-07-28T11:04:44.202993+08:00'
-updated_at: '2026-07-28T11:07:58.292895+08:00'
+updated_at: '2026-08-11T13:56:16.204717Z'

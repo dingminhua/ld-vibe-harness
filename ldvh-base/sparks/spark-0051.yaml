@@ -1,5 +1,5 @@
 title: change_log 与提交署名取值约定及注入责任
-status: routed
+status: implemented
 intent: LDVH 的 change_log 责任签名（signature.agent_id / host_environment）与 Git 提交署名（Agent-ID / Host-Environment trailer）目前只有字段结构与必填约束，缺少取值约定和注入责任：各执行会话自行填值（codex 填 Codex Desktop/Cindy，workbuddy 填 WorkBuddy macOS/WorkBuddy），大小写不统一、host_environment 被误用为 agent 名重复、模型身份与宿主环境混淆。不定义清楚时，流水和提交的责任记录不可比较、不可审计，同一 Agent 在不同会话的签名不一致，后续追溯与合规检查无法可靠进行。
 summary: "**当前判断与已采纳方向（Human 2026-08-09）**\n\n- 签名信息固定为三元组：提交 trailer 与 change_log 携带同一组信息——**模型id、宿主名称、会话id**；宿主名称只取工具/宿主本身，不含系统名称或括号系统后缀。\n- **方向一：字段与 trailer 按三元组语义更名。** 新形状使用 `model_id`/`host_name`/`session_id`，Git trailer 使用 `Model-ID`/`Host-Name`/`Session-ID`（`Session-ID` 不变）；历史旧形状只读合法，新条目严格写新形状，不迁移改写历史条目。\n- **方向二：保留调用会话自报注入并加入机械排雷。** `model_id` 命中已知产品别名闭集时拒绝或警告，`host_name` 含括号系统后缀时拒绝或警告；规范明确签名是执行会话的声明（attestation），不是已验证身份。模型id的平台可验证注入在当前架构为 unsupported。\n- **方向三：历史不一致对象默认共存并集中登记。** 不批量追加更正流水；个案确需准确归属时单独追加更正。\n\n**已落地的前置事实**\n\n- 取值约定（05.Att.01，commit 9bd81424）、`observed_context.signature` 注入机制（commits 2de4468f/70115a32）和多执行者提交契约（`code/ldvh/commits/validation.py`）已存在；workcase-0026、workcase-0048、workcase-0052 已入库。\n- 现有错误或不一致样例包括 spark-0056 的 `DeepSeek`/`TRAE`、spark-0040 的 `workbuddy-ai`/`workbuddy-claw`，以及其它历史形状差异；这些不一致不因本次方向采纳而被回溯改写。\n\n**承接与边界**\n\n- 新建承接 WorkCase `workcase-0080`，负责字段/trailer 更名、双轨 Schema 与校验、footer 和 Helper 注入链同步、机械排雷、attestation 定性、回归测试及历史样例集中登记；该 WorkCase 当前仍在 `human_plan_confirming`，尚未获 Gate 1，不代表已执行或已落地。\n- 未承接的内容是模型id的平台可验证注入：当前架构明确为 unsupported；历史错值按共存并集中登记口径保留，准确归属需求另行个案更正。\n- 本 Spark 保持 `open`，因为方向已形成承接计划但 WorkCase 尚未完成；待承接 WorkCase 完成后再判断本议题的 routed 处置。"
 evolution:
@@ -72,8 +72,14 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-model-id-migration-20260810
+- at: '2026-08-11T13:58:01.115256Z'
+  summary: 经逐条 Human 授权，历史 routed Spark 迁移为 implemented；旧 routed-to 已转为 related-to。
+  signature:
+    agent_workbench: Cindy
+    model_id: glm-5.2
+  session_id: 84578c2d-7b22-47ab-9d36-1d2552699eb2
 relations:
-- relation_key: routed-to
+- relation_key: related-to
   target:
     governed_project_id: ldvh
     fact_type_key: workcase
@@ -82,4 +88,4 @@ disposition_summary: 签名三元组的字段/trailer 更名、双轨读取、fo
 object_id: spark-0051
 fact_type_key: spark
 created_at: '2026-08-03T22:40:16.024001+08:00'
-updated_at: '2026-08-10T09:12:25.509342Z'
+updated_at: '2026-08-11T13:58:01.115256Z'

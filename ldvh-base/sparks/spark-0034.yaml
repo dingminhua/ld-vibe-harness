@@ -1,6 +1,6 @@
 title: LDVH 自身管辖配置的可恢复性
 intent: 保留 LDVH 在其自身工作树中无法形成可用管辖项目时应如何诊断、引导和恢复的问题，避免把一次配置缺失静默当作普通环境状态，导致事实读取和受控写入不可用而只能绕过既有边界。后续需判断自托管项目的配置发现、初始化提示、失败交付和验证应如何形成最小闭环，同时不让 Helper 猜测上级工作区、自动扩大管辖范围或擅自写入配置。
-status: routed
+status: implemented
 summary: "**完整发现过程（可复核范围）**\n\n1. 当前工作上下文启动时，LDVH 只交付了规则引导，并明确事实恢复状态为 `not_requested`。这符合渐进式披露：尚未有需要项目事实的明确目标时，不应把项目事实无差别恢复到上下文中。\n2. Human 随后要求修改既有 Spark。由于这是对稳定事实对象的实质更新，执行者需要先获得该对象的当前权威内容和内容指纹；按当前规则，这首先要求确定实际工作树所归属的管辖项目。\n3. 已确认当前 Helper 公开 `resolve-governance-scope`，并以当前 LDVH 工作树作为显式工作区根请求解析。这样做没有使用缓存、标题、对象 ID 或目录名称替代管辖判断。\n4. 解析在 `2026-07-24T18:39:33+08:00` 完成：Helper 能观察到该目录存在并且是实际 Git worktree，也能取得其 common-dir 身份；但 `config_path` 为 `null`、`config_status` 为 `missing`、`scope_status` 为 `scope_unknown`，且没有 `governed_project_id`。`outcome: ok` 只说明这次诊断请求按合同完成，不说明已经形成可用管辖范围。\n5. 因工作区根是显式输入，执行者没有越过该边界向上猜测其它配置，也没有从 Git 身份、项目名称、已有事实文件、缓存或相邻目录补造项目身份；这避免把“本次边界内未找到配置”误写成“全局不存在配置”，也避免无授权扩大管辖范围。\n6. 因而，依赖已解析 `governed_project_id` 的事实精确读取和 `update-fact-object` 受控写入不能用于这次工作。为响应 Human 对既有文件内容的明确修改请求，之后只进行了最小的本地文件编辑；该临时路径不是 Helper 受控更新成功，也不能被当作 LDVH 已具备的常规事实变更能力。\n7. Human 随后指出：如果 LDVH 不能确定自身管辖项目，这本身就是需要研究的 LDVH 问题。本 Spark 因此创建，用于把一次可观察的配置缺口与其恢复、授权和验证边界保留下来，而不是直接把它裁定为 Helper 解析缺陷。\n\n**当前观察与解释边界**\n\n- 当前 LDVH 工作树中，以实际工作区根请求 `resolve-governance-scope` 后，Helper 已观察到实际 Git worktree，但返回 `config_status: missing`、`scope_status: scope_unknown`，没有形成 `governed_project_id`。\n- 该结果本身不证明 Helper 的管辖解析错误：它可能表示当前 checkout 尚未完成项目登记、传入的工作区根不是应发现配置的工作区，或自托管场景缺少可定位、可执行的配置初始化与恢复路径。Human 和 AI 不能只凭一次 `outcome: ok` 或局部 `missing` 判断这三种情况。\n\n**待研究的问题**\n\n- 明确 LDVH 自身作为受管项目时，管辖配置应位于何种工作区边界、如何被稳定发现，以及首次 checkout、linked worktree、显式工作区根与配置冲突时各自应交付什么范围、依据和继续入口。\n- 确定缺少或无法确认配置时的最小可恢复体验：诊断应清楚区分“解析请求完成”“当前范围未形成”“需要 Human 选择或登记”，并给出不越权的下一步；不得通过向上猜测、目录遍历、缓存或默认项目身份伪造 `governed_single`。\n- 核对自托管 bootstrap 是否需要由项目仓库、发行物、doctor、Helper 或行动模板中的既有职责承接；若需要新增配置或初始化操作，先界定其 Human 授权、写入范围、回读和回滚边界，再决定最小实现与测试。\n- 用干净 checkout、已登记工作区、linked worktree、缺失配置、无效配置和多个候选配置等案例验证：缺口应可定位和恢复，而不是迫使执行者绕过事实读取或把临时直接修改当作常规路径。\n\n**边界**\n\n- 本 Spark 不预设当前项目应自动生成、自动提交或写入任何管辖配置，也不把当前观察扩大为所有 LDVH 安装或工作区均失效。\n- 不改变 02 对显式工作区、配置冲突和 Human 选择权的边界；研究目标是让 LDVH 自身的缺口可被明确发现和受控解决，而非放宽管辖判定。"
 evolution:
 - at: '2026-07-24T18:42:00+08:00'
@@ -34,9 +34,15 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: 4591aaa6-256d-45bb-8c3d-fd0d7619df41
+- at: '2026-08-11T13:56:14.356958Z'
+  summary: 经逐条 Human 授权，历史 routed Spark 迁移为 implemented；旧 routed-to 已转为 related-to。
+  signature:
+    agent_workbench: Cindy
+    model_id: glm-5.2
+  session_id: 84578c2d-7b22-47ab-9d36-1d2552699eb2
 disposition_summary: WorkCase-0077 完成了方案 A（follow_up 引导层）的交付：config_status 为 missing/invalid/conflict 时，resolve-governance-scope 通过 follow_up 字段提供不越权的下一步引导，指向环境接入行动模板。spark-0034 的问题 b（引导层）已解决；问题 a（工作区边界发现）、c（bootstrap 责任归属）、d（多场景验证完整闭环）仍开放，后续可通过新 WorkCase 推进。
 relations:
-- relation_key: routed-to
+- relation_key: related-to
   target:
     governed_project_id: ldvh
     fact_type_key: workcase
@@ -44,4 +50,4 @@ relations:
 object_id: spark-0034
 fact_type_key: spark
 created_at: '2026-07-24T18:42:00+08:00'
-updated_at: '2026-08-10T09:31:50.312974Z'
+updated_at: '2026-08-11T13:56:14.356958Z'

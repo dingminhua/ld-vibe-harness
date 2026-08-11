@@ -1,6 +1,6 @@
 title: Adapter payload 与 target 身份完整性
 intent: 保留环境 adapter 是否完整传递真实工作对象的独立问题，避免把核心管辖判定、target-first 规则或某次 no-op 结果误认为可靠输入已经抵达。后续需判断各目标环境的 payload、target、cwd 与工具输入是否可验证地贯通，以及缺失或冲突时应如何安全且可诊断地处理。
-status: routed
+status: implemented
 summary: "**承接结果**\n\n- `adr-0006` 已作出当前架构选择：不存在环境 Hook、插件或 adapter 接入层，也不保留可选升级路径；唯一薄 Skill 只把环境中的 LDVH 事项路由到稳定 CLI，不复制规则或自行解释 payload。\n- 该决定消除了原 Spark 所假设的 adapter payload 合同。真实工作对象仍由调用方以显式 locator 交给 Helper，并由治理解析形成单一 worktree 绑定；输入不足、冲突或非管辖结果继续按 Helper 当前契约如实交还，不由 adapter 猜测或补全。\n- 因而原问题中的 payload 转发、target/cwd fallback、现场 adapter 资产归属和跨环境事件矩阵均已被当前架构决定完整收束，不再存在需要独立跟踪的 adapter 责任。\n\n**处置边界**\n\n本分流只说明原 adapter 议题由架构决定承接；它不把任何一次具体 Helper 调用的输入完整性或管辖结果预先判定为正确。"
 evolution:
 - at: '2026-07-22T13:39:50+08:00'
@@ -9,12 +9,19 @@ evolution:
   summary: 当前架构决定取消了 adapter/Hook/plugin 层并统一改由薄 Skill 路由稳定 CLI，原先围绕 payload 转发和 target fallback 的独立问题因此被 `adr-0006` 完整承接。
 disposition_summary: '`adr-0006` 通过取消 Hook/插件/adapter 接入层、确立唯一薄 Skill 与 CLI 路由，完整承接并收束了原 Spark 的 payload 与 target 身份问题。显式工作对象和治理解析继续由现行 Helper 契约负责；原 adapter 范围没有残余内容，ADR 后续生命周期不影响本次分流。'
 relations:
-- relation_key: routed-to
+- relation_key: related-to
   target:
     governed_project_id: ldvh
     fact_type_key: adr
     object_id: adr-0006
+change_log:
+- at: '2026-08-11T09:59:38.725532Z'
+  summary: 经逐条 Human 授权，历史 routed Spark 迁移为 implemented；旧 routed-to 已转为 related-to。
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: 84578c2d-7b22-47ab-9d36-1d2552699eb2
 object_id: spark-0002
 fact_type_key: spark
 created_at: '2026-07-19T08:33:49.319864+08:00'
-updated_at: '2026-08-01T02:03:07.528237+08:00'
+updated_at: '2026-08-11T09:59:38.725532Z'

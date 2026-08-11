@@ -1,18 +1,18 @@
 title: 补齐 WorkCase 执行编排与事实类型行动入口
 intent: 需要稳定保留 WorkCase 获批计划的执行编排：存在跨检查点推进或恢复价值时，先据实写回工作项状态再继续实施；局部结果在同一稳定检查点形成时，保留直接完成例外。并判断五类事实对象如何更清楚地复用统一创建与生命周期模板而不复制规则。若不跨行动保留，执行者仍可能绕过 21 已定义的检查点直接实施，或为改善可发现性拆出重复模板，增加状态失真、规则漂移和接续复核负担。
-status: routed
+status: implemented
 relations:
 - relation_key: related-to
   target:
     governed_project_id: ldvh
     fact_type_key: spark
     object_id: spark-0008
-- relation_key: routed-to
+- relation_key: related-to
   target:
     governed_project_id: ldvh
     fact_type_key: workcase
     object_id: workcase-0018
-- relation_key: routed-to
+- relation_key: related-to
   target:
     governed_project_id: ldvh
     fact_type_key: workcase
@@ -22,7 +22,14 @@ disposition_summary: '`workcase-0018` 承接获批计划执行模板、20–24 �
 evolution:
 - at: '2026-08-01T01:58:26+08:00'
   summary: 两个已验证 WorkCase 已分别收敛执行编排/行动入口和生命周期关口防误建模，原先合并的候选方案现已由稳定事实对象共同完整承接。
+change_log:
+- at: '2026-08-11T13:56:20.046073Z'
+  summary: 经逐条 Human 授权，历史 routed Spark 迁移为 implemented；旧 routed-to 已转为 related-to。
+  signature:
+    agent_workbench: Cindy
+    model_id: glm-5.2
+  session_id: 84578c2d-7b22-47ab-9d36-1d2552699eb2
 object_id: spark-0038
 fact_type_key: spark
 created_at: '2026-07-29T20:18:25.325818+08:00'
-updated_at: '2026-08-01T02:02:01.556246+08:00'
+updated_at: '2026-08-11T13:56:20.046073Z'

@@ -1,6 +1,6 @@
 title: WorkCase Gate 1 授权完整性闭环
 intent: 保留 WorkCase Gate 1 为什么会批准缺少独立结果复核与 Reviewer 委派授权的计划这一机制缺口，避免同类授权遗漏在实施完成后才因冻结基线而无法合法修复。后续需判断如何在不让 Code 伪造自然语言授权判断的前提下，使创建前独立方案复核、授权覆盖检查、Helper 校验与测试形成可验证的闭环；否则会增加后续定位、重复分析、返工和质量关口阻塞负担。
-status: routed
+status: implemented
 summary: "**承接结果**\n\n- `workcase-0030`（闭合 WorkCase Gate 1 授权完整性，状态 closed）已在原 scope 内完成结构化质量关口、Gate 1 拒绝与冻结、存量兼容、负向与相关回归测试、规则/实现同步；其处置摘要明确：不存在未满足、未验证或未完成的范围内责任，无需路由、接受停止或提出 Spark 建议。\n- 因此本 Spark 记录的 Gate 1 授权完整性机制缺口已由 workcase-0030 完整承接：创建前独立方案复核、授权覆盖检查、Helper 校验与测试形成可验证闭环，且 workcase-0028 曾暴露的『缺独立结果复核/Reviewer 委派仍判 mechanically_valid』问题已被该闭环覆盖。\n\n**处置边界**\n\n- 本分流只记录上述缺口已由稳定事实对象完整承接，不表示 Gate 1 之外的任何事件、平台或版本已验证；后续若发现新的授权完整性问题应新建 Spark，而非回写本对象。"
 evolution:
 - at: '2026-08-02T00:25:22+08:00'
@@ -8,7 +8,7 @@ evolution:
 - at: '2026-08-08T06:59:59.562673+08:00'
   summary: 经核查 workcase-0030 已闭合 Gate 1 授权完整性，原 gap 已完整承接；将本 Spark 由 open 分流为 routed，routed-to workcase-0030。
 relations:
-- relation_key: routed-to
+- relation_key: related-to
   target:
     governed_project_id: ldvh
     fact_type_key: workcase
@@ -39,7 +39,13 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-model-id-migration-20260810
+- at: '2026-08-11T13:58:06.712051Z'
+  summary: 经逐条 Human 授权，历史 routed Spark 迁移为 implemented；旧 routed-to 已转为 related-to。
+  signature:
+    agent_workbench: Cindy
+    model_id: glm-5.2
+  session_id: 84578c2d-7b22-47ab-9d36-1d2552699eb2
 object_id: spark-0042
 fact_type_key: spark
 created_at: '2026-08-02T00:13:30.036887+08:00'
-updated_at: '2026-08-10T09:10:55.573595Z'
+updated_at: '2026-08-11T13:58:06.712051Z'

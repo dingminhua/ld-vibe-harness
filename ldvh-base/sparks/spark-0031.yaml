@@ -1,9 +1,9 @@
 title: Helper 关联信息渐进导航能力设计缺口
-status: routed
+status: implemented
 intent: 保留本次对 Helper 关联信息渐进取得能力的设计问题与外部审核入口。当前已澄清 00 的上位原则，但尚未决定是否把跨要素关联导航建设为新的只读公开服务；需要在不让 Helper、Code 或环境入口裁决语义相关性、规则适用、授权或完成的前提下，确认该能力的实际价值、最小范围、下位规范承接和验收边界。
 summary: "**已决结论**\n\n外部审核与 Human 决定已将原问题收敛为方案 C：不新建通用关联视图或 operation_key，而是在既有事实候选发现中补齐从已知事实稳定种子正向取得一跳 relations 的确定性契约。\n\n**承接位置**\n\n`workcase-0011` 承担该契约、实现、测试与验证的完整工作责任。首版只处理事实侧一跳边、F2 候选、精确继续读取入口及可观察的 coverage/gaps；不支持规则种子、跨要素图、语义排序、自动多跳或环境自动调用。\n\n本 Spark 不再保留未决责任。WorkCase 当前仅处于计划等待 Human 执行批准阶段；其尚未实施不影响本 Spark 已完成信息需求分流。"
 relations:
-- relation_key: routed-to
+- relation_key: related-to
   target:
     governed_project_id: ldvh
     fact_type_key: workcase
@@ -12,7 +12,14 @@ disposition_summary: 原 Spark 的全部信息需求已由 workcase-0011 完整�
 evolution:
 - at: '2026-07-23T13:15:11.623Z'
   summary: 外部审核将原先的跨要素新服务设想收敛为事实侧正向一跳候选发现扩展，Human 选择方案 C 并建立 workcase-0011 承接后续实现与验证。
+change_log:
+- at: '2026-08-11T13:55:08.067697Z'
+  summary: 经逐条 Human 授权，历史 routed Spark 迁移为 implemented；旧 routed-to 已转为 related-to。
+  signature:
+    agent_workbench: Cindy
+    model_id: glm-5.2
+  session_id: 84578c2d-7b22-47ab-9d36-1d2552699eb2
 object_id: spark-0031
 fact_type_key: spark
 created_at: '2026-07-23T20:14:18.299589+08:00'
-updated_at: '2026-07-23T21:15:11.804238+08:00'
+updated_at: '2026-08-11T13:55:08.067697Z'

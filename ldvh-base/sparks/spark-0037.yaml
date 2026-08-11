@@ -1,6 +1,6 @@
 title: Human 项目认知连续性的 00 定位与 Web 体现
 intent: 长期 Vibe Coding 项目中，Human 需要在 AI 执行者作为第一服务对象之外，持续了解项目的演进、现状、方向以及一件事衍生出的待完善开放项；00 根规范已有“第一不等于唯一”和 Web→Human→AI 的伏笔，但 Human 作为项目认知主体的需求尚未被系统化命名、判断和承接。后续要判断：是否及如何把“面向 Human 的项目认知连续性”确立为 00 的共同设计目标（含新增 §8.4 的候选方案与相应 Human Gate 流程）、Web 以哪些派生视图体现，以及与相邻议题的边界划分。若不跨行动保留，已完成的缺口识别、落点论证、功能清单与设计红线会随会话结束丢失，后续需要重新通读根规范与相关事实类型规范才能重建同等判断。
-status: routed
+status: implemented
 relations:
 - relation_key: related-to
   target:
@@ -32,7 +32,7 @@ relations:
     governed_project_id: ldvh
     fact_type_key: workcase
     object_id: workcase-0013
-- relation_key: routed-to
+- relation_key: related-to
   target:
     governed_project_id: ldvh
     fact_type_key: workcase
@@ -76,8 +76,14 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-legacy-signature-migration-20260810
+- at: '2026-08-11T13:56:18.108706Z'
+  summary: 经逐条 Human 授权，历史 routed Spark 迁移为 implemented；旧 routed-to 已转为 related-to。
+  signature:
+    agent_workbench: Cindy
+    model_id: glm-5.2
+  session_id: 84578c2d-7b22-47ab-9d36-1d2552699eb2
 disposition_summary: 本 Spark 的原始议题（Human 认知主体在 00 的定位 + Web 派生视图体现）已由 workcase-0021 完整承接：以 commit f7188e00e 生效的 specs/00 为上位基线，完成基础规范、事实类型、Web 上位规范、README、认知中心设计和本 Spark 当前状态的对齐；残余开放项（HV4 产品缺口、交还留痕改进）属于范围外长期议题，已明确记录。
 object_id: spark-0037
 fact_type_key: spark
 created_at: '2026-07-28T16:53:08.058141+08:00'
-updated_at: '2026-08-10T08:46:36.755991Z'
+updated_at: '2026-08-11T13:56:18.108706Z'
