@@ -605,7 +605,7 @@ export interface CognitionSparkHealth {
   total: number;
   openTotal: number;
   terminalTotal: number;
-  terminalByStatus: { routed: number; implemented: number; discarded: number };
+  terminalByStatus: { implemented: number; discarded: number };
   openByPriority: Record<string, number>;
   /** Web 展示参数；不写回事实源。 */
   silentThresholdDays: number;
@@ -756,6 +756,8 @@ export interface CommitSignature {
   sessionId?: string;
   /** Canonical fact change-log signature fields. */
   modelId?: string;
+  agentWorkbench?: string;
+  /** Canonical Git commit-trailer workbench name. */
   hostName?: string;
   /** Legacy Git/fact attribution fields retained for historical compatibility. */
   agentId?: string;
