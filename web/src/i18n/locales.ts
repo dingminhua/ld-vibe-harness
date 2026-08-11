@@ -533,7 +533,8 @@ export type CommitDetailLabels = {
   signature: string;
   sessionId: string;
   modelId: string;
-  hostName: string;
+  agentWorkbench: string;
+  workbenchName: string;
   agentId: string;
   hostEnvironment: string;
 };
@@ -544,14 +545,14 @@ const COMMIT_DETAIL_LABELS: Record<string, CommitDetailLabels> = {
     summary: '变更统计', files: '文件', insertions: '新增', deletions: '删除',
     commitBody: '关键变更', changedFiles: '改动文件', noFiles: '没有可展示的文件统计',
     raw: '原始信息', copyHash: '复制提交 hash', copiedHash: '已复制提交 hash',
-    signature: '署名信息', sessionId: '会话 ID', modelId: '模型 ID', hostName: '宿主名称', agentId: 'Agent ID', hostEnvironment: '宿主环境',
+    signature: '署名信息', sessionId: '会话 ID', modelId: '模型 ID', agentWorkbench: 'Agent 工作台', workbenchName: '工作台名称', agentId: 'Agent ID', hostEnvironment: '宿主环境',
   },
   en: {
     category: 'Category', type: 'Type', scope: 'Scope', commit: 'Commit', time: 'Commit',
     summary: 'Change summary', files: 'Files', insertions: 'Insertions', deletions: 'Deletions',
     commitBody: 'Commit notes', changedFiles: 'Changed files', noFiles: 'No file stat available',
     raw: 'Original info', copyHash: 'Copy commit hash', copiedHash: 'Commit hash copied',
-    signature: 'Signature', sessionId: 'Session ID', modelId: 'Model ID', hostName: 'Host name', agentId: 'Agent ID', hostEnvironment: 'Host environment',
+    signature: 'Signature', sessionId: 'Session ID', modelId: 'Model ID', agentWorkbench: 'Agent workbench', workbenchName: 'Workbench name', agentId: 'Agent ID', hostEnvironment: 'Host environment',
   },
 };
 
