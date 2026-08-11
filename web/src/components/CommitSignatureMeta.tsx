@@ -7,7 +7,10 @@ export default function CommitSignatureMeta({
 }: {
   signature?: CommitSignature;
 }) {
-  const values = [signature?.modelId ?? signature?.agentId, signature?.hostName ?? signature?.hostEnvironment].filter(
+  const values = [
+    signature?.modelId ?? signature?.agentId,
+    signature?.agentWorkbench ?? signature?.hostName ?? signature?.hostEnvironment,
+  ].filter(
     (value): value is string => Boolean(value?.trim()),
   );
   if (values.length === 0) return null;
