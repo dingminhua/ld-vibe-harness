@@ -68,7 +68,7 @@ const RECENT_HOTSPOT_TERMINAL_STATUSES: Record<string, Set<string>> = {
   workcase: new Set(['closed']),
   adr: new Set(['retired']),
   pitfall: new Set(['discarded']),
-  spark: new Set(['routed', 'implemented', 'discarded']),
+  spark: new Set(['implemented', 'discarded']),
   study: new Set(['retired']),
 };
 
@@ -138,7 +138,7 @@ function buildActiveWorkCaseSummary(data: CognitionData, locale: string, t: Tran
 function buildSparkHealthSummary(data: CognitionData, locale: string, t: Translate, projectId: string): string {
   const health = data.sparkHealth;
   if (!health) return t('cognition.sparkHealth.title');
-  const terminal = (['routed', 'implemented', 'discarded'] as const)
+  const terminal = (['implemented', 'discarded'] as const)
     .filter((status) => health.terminalByStatus[status] > 0)
     .map((status) => `${getObjectStatusLocale('spark', status, locale)} ${health.terminalByStatus[status]}`)
     .join(', ');
@@ -614,7 +614,7 @@ export default function CognitionCenter() {
   const visibleSparkItems = sparkItemsTruncated ? filteredSparkItems.slice(0, SPARK_HEALTH_FIRST_SCREEN_LIMIT) : filteredSparkItems;
   const settledRatio = sparkHealth && sparkHealth.total > 0 ? (sparkHealth.terminalTotal / sparkHealth.total) * 100 : 0;
   const terminalDetail = sparkHealth
-    ? (['routed', 'implemented', 'discarded'] as const)
+    ? (['implemented', 'discarded'] as const)
       .filter((status) => sparkHealth.terminalByStatus[status] > 0)
       .map((status) => `${getObjectStatusLocale('spark', status, locale)} ${sparkHealth.terminalByStatus[status]}`)
       .join(' · ')
