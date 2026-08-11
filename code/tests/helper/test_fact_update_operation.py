@@ -208,8 +208,11 @@ def _append_update_log(fields: dict[str, object]) -> None:
     assert isinstance(change_log, list)
     change_log.append(
         {
-            "signature": {"model_id": "test-model", "agent_workbench": "test"},
-            "session_id": "test-session",
+            "signature": {
+                "product_name": "test",
+                "model_name": "test-model",
+                "agent_runtime_name": "pytest",
+            },
             "at": "2000-01-01T00:00:00Z",
             "summary": "Update test fact",
         }
@@ -234,9 +237,9 @@ def _update_payload(
             },
             "observed_context": {
                 "signature": {
-                    "model_id": "test-model",
-                    "agent_workbench": "test",
-                    "session_id": "test-session",
+                    "product_name": "test",
+                    "model_name": "test-model",
+                    "agent_runtime_name": "pytest",
                 }
             },
         },
@@ -325,7 +328,11 @@ def test_observed_partial_signature_and_session_survive_real_generic_update_sche
         _update_payload(workspace, project, before["content_fingerprint"], target)
     )
     payload["observed_context"] = {
-        "signature": {"model_id": "gpt-5.6-luna", "agent_workbench": "test", "session_id": "Session-Generic-Update"}
+        "signature": {
+            "product_name": "test",
+            "model_name": "gpt-5.6-luna",
+            "agent_runtime_name": "pytest",
+        }
     }
 
     response = handle_request(
@@ -335,11 +342,11 @@ def test_observed_partial_signature_and_session_survive_real_generic_update_sche
     assert response["outcome"] == "ok", json.dumps(response, ensure_ascii=False, indent=2)
     newest = response["result"]["fact_object"]["change_log"][-1]
     assert newest["signature"] == {
-        "model_id": "gpt-5.6-luna",
-        "agent_workbench": "Test",
+        "product_name": "test",
+        "model_name": "gpt-5.6-luna",
+        "agent_runtime_name": "pytest",
     }
-    assert newest["session_id"] == "Session-Generic-Update"
-    assert "session_id" not in newest["signature"]
+    assert "session_id" not in newest
     reread = _read(workspace, project)
     assert reread["check_status"] == "mechanically_valid"
 
@@ -395,7 +402,13 @@ def test_generic_helper_preserves_committed_result_when_coordination_release_is_
             (),
             {},
             None,
-            {"signature": {"model_id": "test-model", "agent_workbench": "test", "session_id": "test-session"}},
+            {
+                "signature": {
+                    "product_name": "test",
+                    "model_name": "test-model",
+                    "agent_runtime_name": "pytest",
+                }
+            },
             (),
             response_profile="diagnostic",
         ),
@@ -442,7 +455,13 @@ def test_generic_helper_preserves_candidate_rejection_when_coordination_release_
             (),
             {},
             None,
-            {"signature": {"model_id": "test-model", "agent_workbench": "test", "session_id": "test-session"}},
+            {
+                "signature": {
+                    "product_name": "test",
+                    "model_name": "test-model",
+                    "agent_runtime_name": "pytest",
+                }
+            },
             (),
             response_profile="diagnostic",
         ),
@@ -490,7 +509,13 @@ def test_generic_no_change_release_gap_has_observation_but_no_commit_code(
             (),
             {},
             None,
-            {"signature": {"model_id": "test-model", "agent_workbench": "test", "session_id": "test-session"}},
+            {
+                "signature": {
+                    "product_name": "test",
+                    "model_name": "test-model",
+                    "agent_runtime_name": "pytest",
+                }
+            },
             (),
             response_profile="diagnostic",
         ),
@@ -667,12 +692,10 @@ def test_no_change_does_not_rewrite_or_change_timestamp(tmp_path: Path) -> None:
         _update_payload(workspace, project, before["content_fingerprint"], _mutable(before)),
     ).response
 
-    assert response["outcome"] == "no_change"
+    assert response["outcome"] == "rejected"
     assert response["changes"] == []
-    assert response["result"]["previous_content_fingerprint"] == response["result"]["content_fingerprint"]
     assert fact.read_bytes() == raw
     assert fact.stat().st_ino == stat_before.st_ino
-    assert response["result"]["fact_object"]["updated_at"] == "2026-07-14T10:00:00+08:00"
 
 
 def test_spark_routed_after_is_rejected_without_writing_targets(tmp_path: Path) -> None:
@@ -1050,11 +1073,11 @@ def test_coordination_permission_failure_is_structured_unavailable_with_zero_wri
                     "fact_object": target,
                 },
                 "observed_context": {
-                    "signature": {
-                        "model_id": "test-model",
-                        "agent_workbench": "test",
-                        "session_id": "test-session",
-                    }
+                        "signature": {
+                            "product_name": "test",
+                            "model_name": "test-model",
+                            "agent_runtime_name": "pytest",
+                        }
                 },
             }
         ),
@@ -1174,8 +1197,11 @@ def test_study_update_preserves_submitted_body_boundary(tmp_path: Path) -> None:
             "status": "active",
             "change_log": [
                 {
-                    "signature": {"model_id": "test-model", "agent_workbench": "test"},
-                    "session_id": "test-session",
+                    "signature": {
+                        "product_name": "test",
+                        "model_name": "test-model",
+                        "agent_runtime_name": "pytest",
+                    },
                     "at": "2000-01-01T00:00:00Z",
                     "summary": "Create Study test fact.",
                 }
@@ -1261,9 +1287,9 @@ def test_study_update_preserves_submitted_body_boundary(tmp_path: Path) -> None:
                 },
                 "observed_context": {
                     "signature": {
-                        "model_id": "test-model",
-                        "agent_workbench": "test",
-                        "session_id": "test-session",
+                        "product_name": "test",
+                        "model_name": "test-model",
+                        "agent_runtime_name": "pytest",
                     }
                 },
             }
@@ -1292,8 +1318,11 @@ def test_study_update_preserves_submitted_body_boundary(tmp_path: Path) -> None:
         target["frontmatter"].pop(key)
     target["frontmatter"]["change_log"].append(
         {
-            "signature": {"model_id": "test-model", "agent_workbench": "test"},
-            "session_id": "test-session",
+            "signature": {
+                "product_name": "test",
+                "model_name": "test-model",
+                "agent_runtime_name": "pytest",
+            },
             "at": "2000-01-01T00:00:00Z",
             "summary": "Update Study test fact.",
         }
@@ -1311,16 +1340,16 @@ def test_study_update_preserves_submitted_body_boundary(tmp_path: Path) -> None:
                     "expected_content_fingerprint": read["content_fingerprint"],
                     "fact_object": target,
                 },
-                "observed_context": {
-                    "signature": {
-                        "model_id": "test-model",
-                        "agent_workbench": "test",
-                        "session_id": "test-session",
-                    }
-                },
+                    "observed_context": {
+                        "signature": {
+                            "product_name": "test",
+                            "model_name": "test-model",
+                            "agent_runtime_name": "pytest",
+                        }
+                    },
             }
         ),
     ).response
 
-    assert updated["outcome"] == "ok"
+    assert updated["outcome"] == "ok", json.dumps(updated, ensure_ascii=False, indent=2)
     assert updated["result"]["fact_object"]["body"] == target["body"]

@@ -1,4 +1,4 @@
-"""Normalize only change-log signatures added after the current HEAD snapshot."""
+"""Retired old-signature normalizer; not a registered write entrypoint."""
 
 from __future__ import annotations
 

@@ -826,7 +826,7 @@ WorkCase 的普通活动期写入必须使用 `update-workcase`；Human 主动�
 - 只更正 `title`，或只更正不改变已记支持范围、限制和关闭判断基础的 `urls` 时，array 型 `authorization_reference` 可以省略或使用空列表、不得为 `null`，且 `independent_review_reference` 必须为 `null`。仅更正原关闭时的 `related-to` 记录时，`authorization_reference` 必须非空并回指 Human 决定，`independent_review_reference` 必须为 `null`。无法确定影响时必须走上一条实质更正路径。活动期的 review/approval 过程字段在形成 closed 时已移除，Human 最终决定由 closed 终态内容表达而不另存收据；不得以笔误更正重建 review、approval 或过程历史；
 - 成功与 `no_change` 的结果复用 05 §11.7；必须回读实际 closed after，不返回或保存 Human 决定收据、target 指纹或更正历史。
 
-`normalize-uncommitted-change-log-signatures` 不属于第六种 WorkCase 生命周期操作，也不构成 closed 更正。它只按 05 §11.7.2 在双指纹和 HEAD 日志前缀约束下，把尚未提交后缀中的 `model_id` / `host_name` 键名归一为当前 `model_id` / `agent_workbench`；不得改变 HEAD 历史、追加流水、更新时间或触碰本类型任何语义字段。除此特例外，WorkCase 仍只能由上述五个专属生命周期写入口修改。
+旧签名归一入口已退休，不属于 WorkCase 生命周期操作，也不构成 closed 更正。除当前来源定义的专属操作外，WorkCase 不得以任何旧签名迁移或归一名义写入。
 
 ### recover-invalid-workcase 输入与结果
 

@@ -17,7 +17,7 @@ def test_current_registry_is_complete_and_resolves_all_current_types(current_spe
 
     assert inspection.complete is True
     assert len(inspection.structures) == 24
-    assert len(inspection.registrations) == 186
+    assert len(inspection.registrations) == 189
     assert {item.fact_type_key for item in inspection.fact_types} == {
         "spark",
         "workcase",
@@ -154,14 +154,15 @@ def test_change_log_signature_registration_carries_value_convention(
     registrations = {item.field_key: item for item in inspection.registrations}
     for field_key in (
         "change-log-signature",
-        "change-log-signature-model-id",
-        "change-log-signature-workbench-name",
+        "change-log-signature-product-name",
+        "change-log-signature-model-name",
+        "change-log-signature-agent-runtime-name",
     ):
         assert registrations[field_key].status == "current"
     text = (current_specs_repository / "specs/attachments/05.Att.01-事实对象统一字段登记.md").read_text(
         encoding="utf-8"
     )
     assert "取值约定" in text
-    assert "实际驱动模型" in text
+    assert "模型名称" in text
     assert "禁止" in text and "重复" in text
-    assert "平台/执行会话按实际运行环境注入" in text or "平台/执行会话" in text
+    assert "产品名称" in text

@@ -1,4 +1,4 @@
-"""Controlled bootstrap of a trusted change-log entry for one legacy object."""
+"""Retired legacy migration implementation; not a registered write entrypoint."""
 
 from __future__ import annotations
 

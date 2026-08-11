@@ -23,7 +23,6 @@ from ldvh.facts.schema import FactSchema
 from ldvh.facts.transitions import validate_fact_transition
 from ldvh.facts.update import atomic_replace_text_if_unchanged
 from ldvh.facts.validation import (
-    _normalize_workbench_name,
     parse_rfc3339,
     study_report_creation_issues,
     timestamp_appended_change_log,
@@ -200,20 +199,7 @@ def _event_time_issue(current: FactReadResult, event_at: str) -> FactIssue | Non
 
 
 def _normalized_mutable(fields: dict[str, Any]) -> dict[str, Any]:
-    """Normalize agent_workbench in the last change_log entry for comparison."""
-    change_log = fields.get("change_log")
-    if not isinstance(change_log, list) or not change_log or not isinstance(change_log[-1], dict):
-        return fields
-    newest = dict(change_log[-1])
-    sig = newest.get("signature")
-    if isinstance(sig, dict):
-        wb = sig.get("agent_workbench")
-        if isinstance(wb, str):
-            normalized_wb = _normalize_workbench_name(wb)
-            if normalized_wb != wb:
-                sig = {**sig, "agent_workbench": normalized_wb}
-                newest = {**newest, "signature": sig}
-                return {**fields, "change_log": [*change_log[:-1], newest]}
+    """Keep comparisons byte-semantic; historical signatures are read-only."""
     return fields
 
 

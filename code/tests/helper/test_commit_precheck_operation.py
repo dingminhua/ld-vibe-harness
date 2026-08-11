@@ -96,7 +96,7 @@ def _signed(message: str) -> str:
     return (
         message
         + "\n\n关键变更:\n- 覆盖当前提交预检测试变化"
-        + "\n\nSession-ID: test-session\nModel-ID: gpt-5.6-luna\nWorkbench-Name: Cindy"
+        + "\n\nLDVH-Product-Name: Cindy\nLDVH-Model-Name: gpt-5.6-luna\nLDVH-Agent-Runtime-Name: pytest"
     )
 
 
@@ -104,7 +104,7 @@ def _trae_signed(message: str) -> str:
     return (
         message
         + "\n\n关键变更:\n- 由 Trae 提交其它环境已完成的事实写入"
-        + "\n\nSession-ID: trae-commit-session\nModel-ID: claude-4.1\nWorkbench-Name: Trae"
+        + "\n\nLDVH-Product-Name: Trae\nLDVH-Model-Name: claude-4.1\nLDVH-Agent-Runtime-Name: pytest"
     )
 
 
@@ -142,7 +142,8 @@ def test_helper_precheck_and_native_gate_share_one_bound_result(tmp_path: Path) 
 def test_single_path_without_minimum_body_fails_identically_in_helper_and_native_gate(tmp_path: Path) -> None:
     workspace, project = _fixture(tmp_path)
     message = (
-            "test: 验证单文件最低正文\n\nSession-ID: test-session\nModel-ID: gpt-5.6-luna\nWorkbench-Name: Cindy"
+            "test: 验证单文件最低正文\n\nLDVH-Product-Name: Cindy\n"
+            "LDVH-Model-Name: gpt-5.6-luna\nLDVH-Agent-Runtime-Name: pytest"
     )
     payload = json.dumps(
         {
@@ -398,9 +399,9 @@ _VALID_SPARK = (
     "updated_at: '2026-07-01T00:00:00+08:00'\n"
     "change_log:\n"
     "  - signature:\n"
-    "      model_id: gpt-5.6-luna\n"
-    "      agent_workbench: Cindy\n"
-    "    session_id: test-session\n"
+    "      product_name: Cindy\n"
+    "      model_name: gpt-5.6-luna\n"
+    "      agent_runtime_name: pytest\n"
     "    at: '2026-07-01T00:00:00+08:00'\n"
     "    summary: 建立测试火花\n"
 )
@@ -449,9 +450,8 @@ def test_valid_staged_fact_candidate_passes_both_entrypoints(tmp_path: Path) -> 
 def test_workbuddy_fact_passes_helper_and_gate_when_trae_executes_commit(tmp_path: Path) -> None:
     workspace, project = _fixture(tmp_path)
     workbuddy_fact = (
-        _VALID_SPARK.replace("model_id: gpt-5.6-luna", "model_id: hy3")
-        .replace("agent_workbench: Cindy", "agent_workbench: WorkBuddy")
-        .replace("session_id: test-session", "session_id: workbuddy-write-session")
+        _VALID_SPARK.replace("product_name: Cindy", "product_name: WorkBuddy")
+        .replace("model_name: gpt-5.6-luna", "model_name: hy3")
     )
     _stage_fact(project, workbuddy_fact)
     _git(project, "reset", "-q", "change.txt")

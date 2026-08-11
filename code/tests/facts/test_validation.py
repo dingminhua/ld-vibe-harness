@@ -381,7 +381,7 @@ def test_change_log_accepts_two_field_signatures_and_rejects_bad_order_or_shape(
     fields["change_log"][1]["signature"].pop("agent_id")
     issues = validate_fact_object("spark", fields, schema)
     assert any(issue.field_path == "change_log[1].at" for issue in issues)
-    assert any(issue.field_path == "change_log[1].signature.model_id" for issue in issues)
+    assert any(issue.field_path.startswith("change_log[1].signature") for issue in issues)
 
 
 def test_change_log_host_name_interim_legacy_is_readable(
@@ -415,14 +415,10 @@ def test_change_log_host_name_interim_legacy_is_readable(
     assert any(issue.field_path == "change_log[0].signature.host_name" for issue in issues)
 
 
-def test_change_log_signature_rejects_host_product_concatenation(
+def test_change_log_signature_history_is_readable_without_reinterpreting_old_values(
     current_fact_schemas: Mapping[str, FactSchema],
 ) -> None:
-    """A model id spliced from a host product name is mechanically rejected.
-
-    The bare-alias blacklist is exact-match so that real model ids like gpt-5
-    or claude-3-5-sonnet keep validating; host products must never appear.
-    """
+    """Old model/workbench records stay readable as stored."""
 
     schema = current_fact_schemas["spark"]
     fields = {
@@ -438,22 +434,17 @@ def test_change_log_signature_rejects_host_product_concatenation(
             },
         ],
     }
-    issues = validate_fact_object("spark", fields, schema)
-    assert any(
-        issue.field_path == "change_log[0].signature.model_id" and "拼接宿主产品名" in issue.summary
-        for issue in issues
-    )
+    assert validate_fact_object("spark", fields, schema) == ()
 
     for model_id in ("gpt-5", "claude-3-5-sonnet", "deepseek-chat", "k3-256k", "hy3"):
         fields["change_log"][0]["signature"]["model_id"] = model_id
-        remaining = validate_fact_object("spark", fields, schema)
-        assert not any("拼接宿主产品名" in issue.summary for issue in remaining)
+        assert validate_fact_object("spark", fields, schema) == ()
 
 
-def test_change_log_signature_rejects_compound_agent_workbench(
+def test_change_log_signature_history_keeps_compound_workbench_values_readable(
     current_fact_schemas: Mapping[str, FactSchema],
 ) -> None:
-    """agent_workbench 复合名（如 claude-code-mcp、Claude Code）被机械拒绝。"""
+    """Historical agent_workbench values are not rewritten or reinterpreted."""
     schema = current_fact_schemas["spark"]
     fields = {
         **_common("spark", "spark-0001", "open"),
@@ -468,23 +459,18 @@ def test_change_log_signature_rejects_compound_agent_workbench(
             },
         ],
     }
-    issues = validate_fact_object("spark", fields, schema)
-    assert any(
-        issue.field_path == "change_log[0].signature.agent_workbench" and "单 token" in issue.summary
-        for issue in issues
-    )
+    assert validate_fact_object("spark", fields, schema) == ()
 
     # 验证合法单 token 名不会触发
     for wb in ("Cindy", "WorkBuddy", "Claude", "Trae"):
         fields["change_log"][0]["signature"]["agent_workbench"] = wb
-        remaining = validate_fact_object("spark", fields, schema)
-        assert not any("单 token" in issue.summary for issue in remaining)
+        assert validate_fact_object("spark", fields, schema) == ()
 
 
-def test_change_log_signature_rejects_model_family_agent_workbench(
+def test_change_log_signature_history_keeps_model_family_workbench_values_readable(
     current_fact_schemas: Mapping[str, FactSchema],
 ) -> None:
-    """agent_workbench 不得是模型族 token（如 Gpt）。"""
+    """Historical agent_workbench values are not reclassified by new rules."""
     schema = current_fact_schemas["spark"]
     fields = {
         **_common("spark", "spark-0001", "open"),
@@ -499,17 +485,12 @@ def test_change_log_signature_rejects_model_family_agent_workbench(
             },
         ],
     }
-    issues = validate_fact_object("spark", fields, schema)
-    assert any(
-        issue.field_path == "change_log[0].signature.agent_workbench" and "模型族 token" in issue.summary
-        for issue in issues
-    )
+    assert validate_fact_object("spark", fields, schema) == ()
 
     # 合法工作台名（含 Claude 等模型同名产品）不受影响。
     for wb in ("Cindy", "WorkBuddy", "Claude", "Trae"):
         fields["change_log"][0]["signature"]["agent_workbench"] = wb
-        remaining = validate_fact_object("spark", fields, schema)
-        assert not any("模型族 token" in issue.summary for issue in remaining)
+        assert validate_fact_object("spark", fields, schema) == ()
 
 
 def test_change_log_session_id_rejects_placeholder(

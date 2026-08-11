@@ -102,7 +102,13 @@ def _request(
         arguments=arguments,
         requested_disclosure=requested_disclosure,
         observed_context=(
-            {"signature": {"model_id": "test-model", "agent_workbench": "test", "session_id": "test-session"}}
+            {
+                "signature": {
+                    "product_name": "test",
+                    "model_name": "test-model",
+                    "agent_runtime_name": "pytest",
+                }
+            }
             if observed_context is None
             else observed_context
         ),

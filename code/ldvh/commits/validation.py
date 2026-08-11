@@ -12,23 +12,25 @@ from ldvh.commits.contract_source import CommitContractProjection
 from ldvh.facts.content import validate_fact_content
 from ldvh.facts.contracts import LAYOUTS, is_legacy_spark_object
 from ldvh.facts.schema import FactSchema
-from ldvh.facts.validation import (
-    _SESSION_PLACEHOLDER_RE,
-    _WORKBENCH_TOKEN_SPLIT,
-    MODEL_FAMILY_TOKENS,
-    _is_host_product_concatenation,
-)
 
 _HEADER = re.compile(r"^(?P<type>[a-z]+)(?:\((?P<scope>[a-z]+(?:-[a-z]+)*)\))?(?P<breaking>!)?: (?P<description>.+)$")
 _CJK = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff]")
 _FIXED_HEADINGS = ("动机:", "关键变更:", "影响边界:", "验证结论:", "风险与后续:")
 _HEADING_LIKE = re.compile(r"^[^\s].*:\s*$")
 _TRAILER = re.compile(r"(?P<name>[A-Za-z][A-Za-z-]*): (?P<value>.*)\Z")
-_REQUIRED_TRAILERS = ("Session-ID", "Model-ID", "Workbench-Name")
-_MODEL_PRODUCT_ALIASES = frozenset(
-    {"codex", "claude-code", "workbuddy", "workbuddy-ai", "deepseek", "glm", "gpt", "claude", "kimi", "k3"}
+_SIGNATURE_TRAILERS = (
+    "LDVH-Product-Name",
+    "LDVH-Model-Name",
+    "LDVH-Agent-Runtime-Name",
 )
-_WORKBENCH_SYSTEM_SUFFIX = re.compile(r"\s*\([^()]+\)\s*\Z")
+_RETIRED_SIGNATURE_TRAILERS = (
+    "Session-ID",
+    "Model-ID",
+    "Workbench-Name",
+    "Agent-ID",
+    "Host-Environment",
+    "Signer-Type",
+)
 _SPEC_PATH_RE = re.compile(r"^specs/[0-9]+-.*\.md$")
 _PLATFORM_AFFECTED_GLOBS = (
     "code/ldvh/filesystem.py",
@@ -219,60 +221,26 @@ def _footer_trailers(lines: list[str]) -> dict[str, list[str]]:
 def _signature_trailer_issues(lines: list[str]) -> list[CommitValidationIssue]:
     trailers = _footer_trailers(lines)
     issues: list[CommitValidationIssue] = []
-    for name in _REQUIRED_TRAILERS:
+    present = 0
+    for name in _SIGNATURE_TRAILERS:
         values = trailers.get(name, [])
-        if not values or any(not value.strip() for value in values):
-            issues.append(_issue("signature_trailer_missing", f"footer 必须含一个非空 {name}: trailer"))
+        if not values:
+            continue
+        present += 1
+        if any(not value.strip() for value in values):
+            issues.append(_issue("signature_trailer_empty", f"footer 的 {name}: 不得为空"))
         elif len(values) != 1:
             issues.append(_issue("signature_trailer_multiple", f"footer 的 {name}: 必须恰好声明一次"))
-        if name == "Model-ID" and any(value.strip().lower() in _MODEL_PRODUCT_ALIASES for value in values):
-            issues.append(_issue("signature_model_alias", "footer 的 Model-ID 不得使用已知裸产品别名"))
-        elif name == "Model-ID" and any(_is_host_product_concatenation(value) for value in values):
-            issues.append(_issue("signature_model_host_product", "footer 的 Model-ID 不得拼接宿主产品名"))
-        if name == "Model-ID" and any(value.strip() != value.strip().lower() for value in values):
-            issues.append(_issue("signature_model_case", "footer 的 Model-ID 必须全小写"))
-        elif name == "Workbench-Name" and any(_WORKBENCH_SYSTEM_SUFFIX.search(value) for value in values):
-            issues.append(_issue("signature_host_suffix", "footer 的 Workbench-Name 不得包含括号系统后缀"))
-        if name == "Workbench-Name" and any(
-            _WORKBENCH_TOKEN_SPLIT.search(value.strip()) for value in values
-        ):
-            issues.append(
-                _issue(
-                    "signature_workbench_compound",
-                    "footer 的 Workbench-Name 必须为单 token（不使用空格、连字符或斜杠分隔），"
-                    "不得使用复合名如 claude-code-mcp 或 Claude Code",
-                )
-            )
-        # 不校验 footer 的 Workbench-Name 是否等于事实写者的 agent_workbench：
-        # 同一台机器/同环境下二者合法相等（specs/03 §9.4），该规则会误杀。
-        if name == "Workbench-Name" and any(
-            value.strip().lower() in MODEL_FAMILY_TOKENS for value in values
-        ):
-            issues.append(
-                _issue(
-                    "signature_workbench_model_family",
-                    "footer 的 Workbench-Name 不得是模型族 token（如 gpt/claude/kimi），"
-                    "宿主产品名（如 WorkBuddy）才填此处",
-                )
-            )
-        if name == "Session-ID" and any(
-            _SESSION_PLACEHOLDER_RE.fullmatch(value.strip()) for value in values
-        ):
-            issues.append(
-                _issue(
-                    "signature_session_placeholder",
-                    "footer 的 Session-ID 不得为占位符（如 current-session），必须是真实会话标识",
-                )
-            )
-    if trailers.get("Agent-ID") or trailers.get("Host-Environment"):
+    if present == 0:
+        issues.append(_issue("signature_trailer_missing", "footer 至少需要一个非空 LDVH 三字段署名 trailer"))
+    if any(trailers.get(name) for name in _RETIRED_SIGNATURE_TRAILERS):
         issues.append(
             _issue(
                 "legacy_signature_trailer_retired",
-                "footer 已禁止 Agent-ID/Host-Environment trailer；新提交必须使用 Model-ID/Workbench-Name",
+                "footer 已禁止旧署名 trailer；新提交必须使用 LDVH-Product-Name、"
+                "LDVH-Model-Name、LDVH-Agent-Runtime-Name",
             )
         )
-    if trailers.get("Signer-Type"):
-        issues.append(_issue("signer_type_retired", "footer 禁止已退役的 Signer-Type trailer"))
     return issues
 
 
@@ -558,14 +526,14 @@ def _fact_trace_issues(
         if any(
             isinstance(entry.get("signature"), dict)
             and set(entry["signature"])
-            in ({"agent_id", "host_environment"}, {"model_id", "host_name"})
+            in ({"agent_id", "host_environment"}, {"model_id", "host_name"}, {"model_id", "agent_workbench"})
             for entry in appended
         ):
             failures.append(
                 _issue(
                     "legacy_signature_write_retired",
-                    "事实新增流水不得使用 agent_id/host_environment 或 model_id/host_name 历史形状；"
-                    f"新写入必须使用 model_id/agent_workbench: {candidate.path}",
+                    "事实新增流水不得使用历史署名形状；"
+                    f"新写入必须使用 product_name/model_name/agent_runtime_name: {candidate.path}",
                 )
             )
             continue

@@ -76,8 +76,11 @@ def _create(workspace: Path, project: Path, fact_type_key: str, fields: dict[str
         "change_log",
         [
             {
-                "signature": {"model_id": "pytest-model", "agent_workbench": "pytest"},
-                "session_id": "candidate-test",
+                "signature": {
+                    "product_name": "pytest",
+                    "model_name": "pytest-model",
+                    "agent_runtime_name": "pytest",
+                },
                 "at": "2000-01-01T00:00:00Z",
                 "summary": "Created by the candidate test fixture.",
             }
@@ -105,9 +108,9 @@ def _create(workspace: Path, project: Path, fact_type_key: str, fields: dict[str
                 },
                 "observed_context": {
                     "signature": {
-                        "model_id": "pytest-model",
-                        "agent_workbench": "pytest",
-                        "session_id": "candidate-test",
+                        "product_name": "pytest",
+                        "model_name": "pytest-model",
+                        "agent_runtime_name": "pytest",
                     }
                 },
             }

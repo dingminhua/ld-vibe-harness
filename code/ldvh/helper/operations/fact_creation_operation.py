@@ -19,7 +19,6 @@ from ldvh.facts.creation_application import FactCreationCommand, FactCreationRes
 from ldvh.facts.models import FactIssue
 from ldvh.facts.repository import FactReadResult
 from ldvh.facts.schema import project_fact_schemas
-from ldvh.facts.validation import _normalize_workbench_name
 from ldvh.filesystem import native_atomic_fact_writes_supported
 from ldvh.governance.models import ObjectStatus
 from ldvh.governance.resolver import GovernanceResolutionRun, resolve_governance_scope
@@ -78,45 +77,16 @@ def inject_observed_write_signature(
     supplied: dict[str, Any],
     observed_context: dict[str, Any],
 ) -> dict[str, Any]:
-    """Merge observed values into the newest change-log entry without widening its signature."""
-
-    # Normalize agent_workbench in the newest change-log entry before any
-    # early return.  This keeps compound names like "claude-code-mcp"
-    # consistent even when observed_context is empty or malformed.
-    change_log = supplied.get("change_log")
-    if isinstance(change_log, list) and change_log and isinstance(change_log[-1], dict):
-        newest = dict(change_log[-1])
-        sig = newest.get("signature")
-        if isinstance(sig, dict):
-            wb = sig.get("agent_workbench")
-            if isinstance(wb, str):
-                normalized_wb = _normalize_workbench_name(wb)
-                if normalized_wb != wb:
-                    sig = {**sig, "agent_workbench": normalized_wb}
-                    newest["signature"] = sig
-                    supplied = {**supplied, "change_log": [*change_log[:-1], newest]}
-
+    """Replace the newest change-log signature with one observed snapshot."""
     parsed = parse_observed_write_signature(observed_context)
-    if parsed.problems or (not parsed.signature and parsed.session_id is None):
+    if parsed.problems or parsed.signature is None:
         return supplied
     change_log = supplied.get("change_log")
     if not isinstance(change_log, list) or not change_log or not isinstance(change_log[-1], dict):
         return supplied
     newest = dict(change_log[-1])
-    if parsed.signature:
-        existing = newest.get("signature")
-        merged = (
-            {}
-            if isinstance(existing, dict)
-            and set(existing) in ({"agent_id", "host_environment"}, {"model_id", "host_name"})
-            else dict(existing) if isinstance(existing, dict) else {}
-        )
-        merged.update(parsed.signature)
-        if isinstance(merged.get("agent_workbench"), str):
-            merged["agent_workbench"] = _normalize_workbench_name(merged["agent_workbench"])
-        newest["signature"] = merged
-    if parsed.session_id is not None:
-        newest["session_id"] = parsed.session_id
+    newest["signature"] = parsed.signature.as_dict()
+    newest.pop("session_id", None)
     return {**supplied, "change_log": [*change_log[:-1], newest]}
 
 

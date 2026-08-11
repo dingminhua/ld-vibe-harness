@@ -603,8 +603,13 @@ def _recovery_fact_object(
     if carrier_issues:
         raise RecoverySnapshotError("固定历史载体不是当前 Schema 下机械有效的活动期 WorkCase")
     recovery_entry = {
-        "signature": {},
-        "session_id": "",
+        # The write adapter replaces this complete, all-null placeholder with
+        # the required current LDVH signature before validation or persistence.
+        "signature": {
+            "product_name": None,
+            "model_name": None,
+            "agent_runtime_name": None,
+        },
         "at": event_at,
         "summary": (
             f"{_recovery_marker(domain.fact_ref.object_id)}；按当前 Human 决定，从 "

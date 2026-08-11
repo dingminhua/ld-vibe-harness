@@ -77,9 +77,7 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
         "correct-closed-workcase",
         "create-fact-object",
         "find-fact-object-candidates",
-        "migrate-legacy-change-log",
         "migrate-legacy-routed-spark",
-        "normalize-uncommitted-change-log-signatures",
         "precheck-git-commit",
         "prepare-closed-workcase-candidate",
         "prepare-fact-object-draft",
@@ -105,9 +103,7 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
         "correct-closed-workcase": "specs/21-WorkCase-工作项.md",
         "create-fact-object": "specs/05-事实模型基础规范.md",
         "find-fact-object-candidates": "specs/05-事实模型基础规范.md",
-        "migrate-legacy-change-log": "specs/05-事实模型基础规范.md",
-        "migrate-legacy-routed-spark": "specs/05-事实模型基础规范.md",
-        "normalize-uncommitted-change-log-signatures": "specs/05-事实模型基础规范.md",
+            "migrate-legacy-routed-spark": "specs/05-事实模型基础规范.md",
         "precheck-git-commit": "specs/03-事实源与信息溯源规范.md",
         "prepare-closed-workcase-candidate": "specs/21-WorkCase-工作项.md",
         "prepare-fact-object-draft": "specs/05-事实模型基础规范.md",
@@ -160,7 +156,7 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
     assert action_templates.incomplete_sources == ()
     assert fields.complete is True
     assert len(fields.structures) == 24
-    assert len(fields.registrations) == 186
+    assert len(fields.registrations) == 189
 
 
 def test_mechanically_distinct_spec_does_not_create_a_semantic_duplicate_diagnosis(

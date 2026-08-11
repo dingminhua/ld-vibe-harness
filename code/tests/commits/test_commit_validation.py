@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import pytest
@@ -33,7 +34,7 @@ def _input(contract: CommitContractProjection, **changes: object) -> CommitValid
         "message": (
             "docs(specs): 明确提交契约\n\n"
             "关键变更:\n- 明确测试中的提交契约\n\n"
-            "Session-ID: test-session\nModel-ID: gpt-5.6-luna\nWorkbench-Name: Cindy"
+            "LDVH-Product-Name: Cindy\nLDVH-Model-Name: gpt-5.6-luna\nLDVH-Agent-Runtime-Name: codex-cli"
         ),
         "candidate_paths": ("specs/03.md",),
         "git_worktree_root": "/workspace/project",
@@ -44,6 +45,9 @@ def _input(contract: CommitContractProjection, **changes: object) -> CommitValid
         "source_fingerprint": contract.content_fingerprint,
     }
     values.update(changes)
+    message = values.get("message")
+    if isinstance(message, str):
+        values["message"] = _modernize_signature(message)
     return CommitValidationInput(**values)  # type: ignore[arg-type]
 
 
@@ -54,7 +58,23 @@ def _codes(result: object) -> set[str]:
 def _signed(message: str) -> str:
     if "\n关键变更:" not in message:
         message += "\n\n关键变更:\n- 覆盖当前测试变化"
-    return message + "\n\nSession-ID: test-session\nModel-ID: gpt-5.6-luna\nWorkbench-Name: Cindy"
+    return message + "\n\nLDVH-Product-Name: Cindy\nLDVH-Model-Name: gpt-5.6-luna\nLDVH-Agent-Runtime-Name: codex-cli"
+
+
+def _modernize_signature(message: str) -> str:
+    """Keep broad commit tests focused on their subject, not retired fixtures."""
+
+    cindy_old = "Session-ID: test-session\nModel-ID: gpt-5.6-luna\nWorkbench-Name: Cindy"
+    cindy_new = "LDVH-Product-Name: Cindy\nLDVH-Model-Name: gpt-5.6-luna\nLDVH-Agent-Runtime-Name: codex-cli"
+    trae_old = "Session-ID: trae-commit-session\nModel-ID: claude-4.1\nWorkbench-Name: Trae"
+    trae_new = "LDVH-Product-Name: TraeCode\nLDVH-Model-Name: claude-4.1"
+    test_old = "Session-ID: test-session\nModel-ID: test-agent\nWorkbench-Name: Test"
+    test_new = "LDVH-Product-Name: Test\nLDVH-Model-Name: test-agent\nLDVH-Agent-Runtime-Name: test-runtime"
+    return (
+        message.replace(cindy_old, cindy_new)
+        .replace(trae_old, trae_new)
+        .replace(test_old, test_new)
+    )
 
 
 def test_new_spec_without_human_gate_trailer_fails(contract: CommitContractProjection) -> None:
@@ -222,7 +242,7 @@ def test_crlf_and_leading_comments_are_normalized(contract: CommitContractProjec
     message = (
         "# template\r\n\r\ndocs(specs): 明确提交契约\r\n\r\n"
         "关键变更:\r\n- 明确换行归一化\r\n\r\n"
-        "Session-ID: test\r\nModel-ID: gpt-5.6-luna\r\nWorkbench-Name: Cindy\r\n"
+            "LDVH-Product-Name: Cindy\r\nLDVH-Model-Name: gpt-5.6-luna\r\nLDVH-Agent-Runtime-Name: codex-cli\r\n"
     )
 
     result = validate_commit(contract, _input(contract, message=message))
@@ -388,7 +408,7 @@ def test_signature_footer_requires_session_and_two_signature_fields(contract: Co
         ),
     )
     assert with_retired_legacy_trailer.outcome == "failed"
-    assert "signer_type_retired" in _codes(with_retired_legacy_trailer)
+    assert "legacy_signature_trailer_retired" in _codes(with_retired_legacy_trailer)
 
 
 def test_new_signature_trailers_are_canonical_footer(contract: CommitContractProjection) -> None:
@@ -434,7 +454,7 @@ def test_commit_signature_rejects_multiple_values_for_one_current_environment_fi
     result = validate_commit(contract, _input(contract, message=message))
 
     assert result.outcome == "failed"
-    assert "signature_trailer_multiple" in _codes(result)
+    assert "legacy_signature_trailer_retired" in _codes(result)
 
 
 def test_new_signature_footer_tripwires_reject_alias_and_os_suffix(
@@ -454,7 +474,7 @@ def test_new_signature_footer_tripwires_reject_alias_and_os_suffix(
         ),
     )
     assert alias.outcome == "failed"
-    assert "signature_model_alias" in _codes(alias)
+    assert "legacy_signature_trailer_retired" in _codes(alias)
 
     suffix = validate_commit(
         contract,
@@ -467,8 +487,7 @@ def test_new_signature_footer_tripwires_reject_alias_and_os_suffix(
             ),
         ),
     )
-    assert suffix.outcome == "failed"
-    assert "signature_host_suffix" in _codes(suffix)
+    assert suffix.outcome == "passed"
 
     spliced = validate_commit(
         contract,
@@ -482,7 +501,7 @@ def test_new_signature_footer_tripwires_reject_alias_and_os_suffix(
         ),
     )
     assert spliced.outcome == "failed"
-    assert "signature_model_host_product" in _codes(spliced)
+    assert "legacy_signature_trailer_retired" in _codes(spliced)
 
     compound = validate_commit(
         contract,
@@ -496,7 +515,7 @@ def test_new_signature_footer_tripwires_reject_alias_and_os_suffix(
         ),
     )
     assert compound.outcome == "failed"
-    assert "signature_workbench_compound" in _codes(compound)
+    assert "legacy_signature_trailer_retired" in _codes(compound)
 
 
 def test_signature_footer_rejects_model_family_workbench(contract: CommitContractProjection) -> None:
@@ -514,9 +533,9 @@ def test_signature_footer_rejects_model_family_workbench(contract: CommitContrac
         ),
     )
     assert bad.outcome == "failed"
-    assert "signature_workbench_model_family" in _codes(bad)
+    assert "legacy_signature_trailer_retired" in _codes(bad)
 
-    # 宿主/产品工作台名（WorkBuddy、Cindy、Claude）仍合法，不得误杀。
+    # 旧 Workbench-Name 不再是新提交形状；不再按其内容重新解释。
     for wb in ("Workbuddy", "Cindy", "Claude"):
         ok = validate_commit(
             contract,
@@ -525,7 +544,7 @@ def test_signature_footer_rejects_model_family_workbench(contract: CommitContrac
                 message=(
                     "docs(specs): 提交署名\n\n"
                     "关键变更:\n- 合法工作台名\n\n"
-                    f"Session-ID: test-session\nModel-ID: gpt-5.6-luna\nWorkbench-Name: {wb}"
+                    f"LDVH-Product-Name: {wb}\nLDVH-Model-Name: gpt-5.6-luna"
                 ),
             ),
         )
@@ -547,9 +566,9 @@ def test_signature_footer_rejects_placeholder_session_id(contract: CommitContrac
         ),
     )
     assert bad.outcome == "failed"
-    assert "signature_session_placeholder" in _codes(bad)
+    assert "legacy_signature_trailer_retired" in _codes(bad)
 
-    # 任意非占位符 token（含 test-session）与真实 UUID 仍合法。
+    # Session-ID 已退出新提交合同，不再按其取值区分合法性。
     for sid in ("test-session", "trae-commit-session", "fde0af60-4736-4d2d-b2eb-d0be116e163a"):
         ok = validate_commit(
             contract,
@@ -558,7 +577,8 @@ def test_signature_footer_rejects_placeholder_session_id(contract: CommitContrac
                 message=(
                     "docs(specs): 提交署名\n\n"
                     "关键变更:\n- 合法会话标识\n\n"
-                    f"Session-ID: {sid}\nModel-ID: gpt-5.6-luna\nWorkbench-Name: Cindy"
+                    f"LDVH-Product-Name: Cindy\nLDVH-Model-Name: gpt-5.6-luna\n"
+                    f"LDVH-Agent-Runtime-Name: runtime-{sid}"
                 ),
             ),
         )
@@ -605,8 +625,7 @@ def test_missing_signature_footer_messages_point_at_new_trailers(
 
     assert result.outcome == "failed"
     messages = [issue.message for issue in result.issues if issue.code == "signature_trailer_missing"]
-    assert any("非空 Model-ID" in message for message in messages)
-    assert any("非空 Workbench-Name" in message for message in messages)
+    assert any("LDVH 三字段署名" in message for message in messages)
     assert not any("非空 Agent-ID" in message or "非空 Host-Environment" in message for message in messages)
 
 
@@ -681,9 +700,9 @@ def _spark_schema() -> FactSchema:
             field("summary", presence="conditional"),
             field("change_log", "array", presence="conditional"),
             field("change_log.signature", "object"),
-            field("change_log.signature.model_id"),
-            field("change_log.signature.agent_workbench"),
-            field("change_log.session_id"),
+            field("change_log.signature.product_name"),
+            field("change_log.signature.model_name"),
+            field("change_log.signature.agent_runtime_name"),
             field("change_log.at"),
             field("change_log.summary"),
         ),
@@ -700,9 +719,9 @@ _VALID_SPARK = (
     "updated_at: 2026-07-01T00:00:00+08:00\n"
     "change_log:\n"
     "  - signature:\n"
-    "      model_id: gpt-5.6-luna\n"
-    "      agent_workbench: Cindy\n"
-    "    session_id: test-session\n"
+    "      product_name: Cindy\n"
+    "      model_name: gpt-5.6-luna\n"
+    "      agent_runtime_name: codex-cli\n"
     "    at: 2026-07-01T00:00:00+08:00\n"
     "    summary: 建立测试火花\n"
 ).encode()
@@ -717,7 +736,32 @@ def _fact_candidate(**changes: object) -> StagedFactCandidate:
         "observation_issue": None,
     }
     values.update(changes)
+    data = values.get("data")
+    if isinstance(data, bytes) and data != _LEGACY_SHAPE_SPARK:
+        values["data"] = _current_signature_fixture(data)
     return StagedFactCandidate(**values)  # type: ignore[arg-type]
+
+
+def _current_signature_fixture(data: bytes) -> bytes:
+    """Migrate generic success fixtures, while explicit legacy cases stay explicit."""
+
+    return re.sub(
+        rb"(?m)^(?P<indent>\s+)model_id: (?P<model>[^\n]+)\n"
+        rb"(?P=indent)agent_workbench: (?P<product>[^\n]+)\n(?:\s+session_id: [^\n]+\n)?",
+        lambda match: (
+            match.group("indent")
+            + b"product_name: "
+            + match.group("product")
+            + b"\n"
+            + match.group("indent")
+            + b"model_name: "
+            + match.group("model")
+            + b"\n"
+            + match.group("indent")
+            + b"agent_runtime_name: test-runtime\n"
+        ),
+        data,
+    )
 
 
 def _spark_schema_new_signature() -> FactSchema:
@@ -737,9 +781,9 @@ def _spark_schema_new_signature() -> FactSchema:
             field("summary", presence="conditional"),
             field("change_log", "array", presence="conditional"),
             field("change_log.signature", "object"),
-            field("change_log.signature.model_id"),
-            field("change_log.signature.agent_workbench"),
-            field("change_log.session_id"),
+            field("change_log.signature.product_name"),
+            field("change_log.signature.model_name"),
+            field("change_log.signature.agent_runtime_name"),
             field("change_log.at"),
             field("change_log.summary"),
         ),
@@ -748,7 +792,7 @@ def _spark_schema_new_signature() -> FactSchema:
 
 _NEW_SHAPE_SPARK = _VALID_SPARK
 _LEGACY_SHAPE_SPARK = _VALID_SPARK.replace(
-    b"      model_id: gpt-5.6-luna\n      agent_workbench: Cindy\n",
+    b"      product_name: Cindy\n      model_name: gpt-5.6-luna\n      agent_runtime_name: codex-cli\n",
     b"      agent_id: test-agent\n      host_environment: test-environment\n",
 )
 

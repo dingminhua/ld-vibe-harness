@@ -1,4 +1,4 @@
-"""Expose the controlled single-object legacy change-log migration."""
+"""Retired operation implementation; deliberately absent from public registration."""
 
 from __future__ import annotations
 

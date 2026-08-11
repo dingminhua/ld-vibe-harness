@@ -463,10 +463,10 @@ def _create_payload(
         [
             {
                 "signature": {
-                    "model_id": "test-model",
-                    "agent_workbench": "pytest",
+                    "product_name": "pytest",
+                    "model_name": "test-model",
+                    "agent_runtime_name": "pytest-runtime",
                 },
-                "session_id": "creation-test-session",
                 "at": (datetime.now().astimezone() - timedelta(minutes=1)).isoformat(),
                 "summary": "Created by the controlled test fixture.",
             }
@@ -491,9 +491,9 @@ def _create_payload(
             },
             "observed_context": {
                 "signature": {
-                    "model_id": "test-model",
-                    "agent_workbench": "pytest",
-                    "session_id": "creation-test-session",
+                    "product_name": "pytest",
+                    "model_name": "test-model",
+                    "agent_runtime_name": "pytest-runtime",
                 }
             },
         },
@@ -631,9 +631,9 @@ def test_observed_signature_survives_real_create_and_workcase_update_schema_vali
     create_payload = json.loads(_create_payload(workspace, project, basis, _workcase()))
     create_payload["observed_context"] = {
         "signature": {
-            "model_id": "gpt-5.6-luna",
-            "agent_workbench": "Cindy",
-            "session_id": "Session-Create",
+            "product_name": "Cindy",
+            "model_name": "gpt-5.6-luna",
+            "agent_runtime_name": "codex-cli",
         }
     }
 
@@ -644,10 +644,11 @@ def test_observed_signature_survives_real_create_and_workcase_update_schema_vali
     created_object = created["result"]["fact_object"]
     created_log = created_object["change_log"][-1]
     assert created_log["signature"] == {
-        "model_id": "gpt-5.6-luna",
-        "agent_workbench": "Cindy",
+        "product_name": "Cindy",
+        "model_name": "gpt-5.6-luna",
+        "agent_runtime_name": "codex-cli",
     }
-    assert created_log["session_id"] == "Session-Create"
+    assert "session_id" not in created_log
     assert "session_id" not in created_log["signature"]
 
     reference = created["result"]["actual_ref"]
@@ -671,11 +672,11 @@ def test_observed_signature_survives_real_create_and_workcase_update_schema_vali
     target["summary"] = "Waiting for Human execution approval after a real update."
     target["change_log"].append(
         {
-            "signature": {
-                "model_id": "placeholder-model",
-                "agent_workbench": "Placeholder Host",
-            },
-            "session_id": "placeholder-session",
+                "signature": {
+                    "product_name": "Placeholder Product",
+                    "model_name": "placeholder-model",
+                    "agent_runtime_name": "placeholder-runtime",
+                },
             "at": datetime.now().astimezone().isoformat(),
             "summary": "Update the real WorkCase fixture.",
         }
@@ -694,8 +695,9 @@ def test_observed_signature_survives_real_create_and_workcase_update_schema_vali
                 },
                 "observed_context": {
                     "signature": {
-                        "agent_workbench": "Cindy",
-                        "session_id": "Session-Update",
+                        "product_name": "Cindy",
+                        "model_name": "gpt-5.6-luna",
+                        "agent_runtime_name": "codex-cli",
                     }
                 },
             }
@@ -704,10 +706,11 @@ def test_observed_signature_survives_real_create_and_workcase_update_schema_vali
     assert updated["outcome"] == "ok", json.dumps(updated, ensure_ascii=False, indent=2)
     updated_log = updated["result"]["fact_object"]["change_log"][-1]
     assert updated_log["signature"] == {
-        "model_id": "placeholder-model",
-        "agent_workbench": "Cindy",
+        "product_name": "Cindy",
+        "model_name": "gpt-5.6-luna",
+        "agent_runtime_name": "codex-cli",
     }
-    assert updated_log["session_id"] == "Session-Update"
+    assert "session_id" not in updated_log
     reread = handle_request(
         "call",
         "read-fact-objects",
@@ -803,10 +806,10 @@ def test_helper_create_read_and_update_accept_ignored_current_fact(tmp_path: Pat
     target["change_log"].append(
         {
             "signature": {
-                "model_id": "test-model",
-                "agent_workbench": "pytest",
+                "product_name": "pytest",
+                "model_name": "test-model",
+                "agent_runtime_name": "pytest-runtime",
             },
-            "session_id": "creation-test-update-session",
             "at": datetime.now().astimezone().isoformat(),
             "summary": "Updated by the controlled test fixture.",
         }
@@ -825,9 +828,9 @@ def test_helper_create_read_and_update_accept_ignored_current_fact(tmp_path: Pat
                 },
                 "observed_context": {
                     "signature": {
-                        "model_id": "test-model",
-                        "agent_workbench": "pytest",
-                        "session_id": "creation-test-update-session",
+                        "product_name": "pytest",
+                        "model_name": "test-model",
+                        "agent_runtime_name": "pytest-runtime",
                     }
                 },
             }

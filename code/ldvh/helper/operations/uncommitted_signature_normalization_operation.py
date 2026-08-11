@@ -1,4 +1,4 @@
-"""Expose the controlled normalization of signatures added after HEAD."""
+"""Retired operation implementation; deliberately absent from public registration."""
 
 from __future__ import annotations
 

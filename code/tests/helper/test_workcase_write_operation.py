@@ -321,7 +321,13 @@ def test_helper_preserves_committed_result_when_coordination_release_is_uncertai
         (),
         {},
         None,
-        {"signature": {"model_id": "test-model", "agent_workbench": "pytest", "session_id": "workcase-test-session"}},
+        {
+            "signature": {
+                "product_name": "pytest",
+                "model_name": "test-model",
+                "agent_runtime_name": "pytest",
+            }
+        },
         (),
         response_profile="diagnostic",
     )
@@ -391,7 +397,13 @@ def test_workcase_helper_preserves_candidate_rejection_when_coordination_release
         (),
         {},
         None,
-        {"signature": {"model_id": "test-model", "agent_workbench": "pytest", "session_id": "workcase-test-session"}},
+        {
+            "signature": {
+                "product_name": "pytest",
+                "model_name": "test-model",
+                "agent_runtime_name": "pytest",
+            }
+        },
         (),
         response_profile="diagnostic",
     ),
@@ -489,7 +501,13 @@ def test_no_change_release_gap_keeps_observation_time_without_using_commit_code(
         (),
         {},
         None,
-        {"signature": {"model_id": "test-model", "agent_workbench": "pytest", "session_id": "workcase-test-session"}},
+        {
+            "signature": {
+                "product_name": "pytest",
+                "model_name": "test-model",
+                "agent_runtime_name": "pytest",
+            }
+        },
         (),
         response_profile="diagnostic",
     ),
@@ -846,7 +864,13 @@ def test_valid_0093_recovery_request_parses_with_shared_scope_and_audit_scope() 
             "workspace_root": "/project",
         },
         requested_disclosure=None,
-        observed_context={},
+        observed_context={
+            "signature": {
+                "product_name": "test",
+                "model_name": "test-model",
+                "agent_runtime_name": "pytest",
+            }
+        },
         authorization_reference=references,
         response_profile="diagnostic",
     )

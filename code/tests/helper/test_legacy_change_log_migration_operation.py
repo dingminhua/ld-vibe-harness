@@ -11,7 +11,9 @@ from conftest import assert_common_response
 
 from ldvh.helper.service import handle_request
 
-pytestmark = pytest.mark.usefixtures("use_current_rule_source_snapshot")
+pytestmark = pytest.mark.skip(
+    reason="migrate-legacy-change-log 已退休；旧的可写行为不再是当前 Helper 契约",
+)
 
 
 def _git(project: Path, *arguments: str) -> None:

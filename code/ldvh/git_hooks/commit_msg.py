@@ -467,9 +467,9 @@ def _preflight_rendered_hook(rendered: str, worktree: Path) -> str | None:
             valid_message.write_text(
                 "test: 验证 Git Hook 预检\n\n"
                 "关键变更:\n- 验证待部署 Hook 的真实 allow 与 block 路径\n\n"
-                "Session-ID: ldvh-hook-preflight\n"
-                "Model-ID: ldvh-hook-manager\n"
-                "Workbench-Name: localverification\n",
+                "LDVH-Product-Name: localverification\n"
+                "LDVH-Model-Name: ldvh-hook-manager\n"
+                "LDVH-Agent-Runtime-Name: ldvh-hook-manager\n",
                 encoding="utf-8",
             )
         except OSError as error:
@@ -488,6 +488,10 @@ def _preflight_rendered_hook(rendered: str, worktree: Path) -> str | None:
 
         environment = _installation_environment()
         environment["GIT_INDEX_FILE"] = str(index)
+        environment["LDVH_SIGNATURE"] = (
+            '{"product_name":"localverification","model_name":"ldvh-hook-manager",'
+            '"agent_runtime_name":"ldvh-hook-manager"}'
+        )
         read_tree = subprocess.run(
             ("git", "-C", str(worktree), "read-tree", "HEAD"),
             check=False,

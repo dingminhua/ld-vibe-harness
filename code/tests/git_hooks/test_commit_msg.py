@@ -42,6 +42,10 @@ def _environment() -> dict[str, str]:
             "GIT_AUTHOR_EMAIL": "ldvh@example.invalid",
             "GIT_COMMITTER_NAME": "LDVH Test",
             "GIT_COMMITTER_EMAIL": "ldvh@example.invalid",
+            "LDVH_SIGNATURE": (
+                '{"product_name":"Cindy","model_name":"gpt-5.6-luna",'
+                '"agent_runtime_name":"pytest"}'
+            ),
         }
     )
     return environment
@@ -69,7 +73,7 @@ def _signed(message: str) -> str:
     return (
         message
         + "\n\n关键变更:\n- 验证 common-dir Hook 对目标工作树生效"
-        + "\n\nSession-ID: test-session\nModel-ID: gpt-5.6-luna\nWorkbench-Name: Cindy"
+        + "\n\nLDVH-Product-Name: Cindy\nLDVH-Model-Name: gpt-5.6-luna\nLDVH-Agent-Runtime-Name: pytest"
     )
 
 

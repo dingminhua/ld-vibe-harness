@@ -7,14 +7,10 @@ from pathlib import Path
 from typing import Any
 
 from ldvh.facts.contracts import LAYOUTS, WRITABLE_FACT_TYPE_KEYS
-from ldvh.facts.validation import _is_host_product_concatenation, _normalize_workbench_name
 from ldvh.governance.models import ScopeDescriptor, cwd_scope, explicit_scope
 from ldvh.helper.operation_runtime import OperationExecutionContext
 from ldvh.helper.requests import CommonRequest
-
-_MODEL_PRODUCT_ALIASES = frozenset(
-    {"codex", "claude-code", "workbuddy", "workbuddy-ai", "deepseek", "glm", "gpt", "claude", "kimi", "k3"}
-)
+from ldvh.signature import LDVHSignature, parse_signature
 
 PREPARE_REQUIRED_INPUTS = ("arguments.governed_project_id", "arguments.fact_type_key")
 PREPARE_OPTIONAL_INPUTS = ("work_object_locators", "arguments.workspace_root")
@@ -82,51 +78,18 @@ class CreationRequestParseResult:
 
 @dataclass(frozen=True, slots=True)
 class ObservedWriteSignature:
-    signature: dict[str, str]
-    session_id: str | None
+    signature: LDVHSignature | None
     problems: tuple[str, ...]
 
 
 def parse_observed_write_signature(observed_context: dict[str, Any]) -> ObservedWriteSignature:
     """Parse the write-only observed signature without changing display values."""
 
-    if not observed_context:
-        return ObservedWriteSignature({}, None, ())
-    problems: list[str] = []
     unknown = sorted(set(observed_context) - {"signature"})
     if unknown:
-        problems.append(f"observed_context 只允许 signature 子字段: {', '.join(unknown)}")
-        return ObservedWriteSignature({}, None, tuple(problems))
-    raw = observed_context.get("signature", {})
-    if not isinstance(raw, dict):
-        return ObservedWriteSignature({}, None, ("observed_context.signature 必须是 object",))
-    allowed = {"model_id", "agent_workbench", "session_id"}
-    unknown_signature = sorted(set(raw) - allowed)
-    if unknown_signature:
-        problems.append(f"observed_context.signature 包含未知字段: {', '.join(unknown_signature)}")
-    values: dict[str, str] = {}
-    for field in sorted(allowed):
-        value = raw.get(field)
-        if value is None:
-            continue
-        if not isinstance(value, str) or not value.strip():
-            problems.append(f"observed_context.signature.{field} 出现时必须是非空 string")
-            continue
-        values[field] = value.strip()
-        if field == "agent_workbench":
-            values[field] = _normalize_workbench_name(values[field])
-        if field == "model_id" and value.strip().lower() in _MODEL_PRODUCT_ALIASES:
-            problems.append("observed_context.signature.model_id 不得使用已知裸产品别名")
-        if field == "model_id" and _is_host_product_concatenation(value):
-            problems.append("observed_context.signature.model_id 不得拼接宿主产品名")
-        if field == "agent_workbench" and value.strip().endswith(")") and "(" in value.strip():
-            problems.append("observed_context.signature.agent_workbench 不得包含括号系统后缀")
-    signature = {
-        field: value.lower() if field == "model_id" else value
-        for field, value in values.items()
-        if field in {"model_id", "agent_workbench"}
-    }
-    return ObservedWriteSignature(signature, values.get("session_id"), tuple(problems))
+        return ObservedWriteSignature(None, (f"observed_context 只允许 signature 子字段: {', '.join(unknown)}",))
+    signature, problems = parse_signature(observed_context.get("signature"))
+    return ObservedWriteSignature(signature, problems)
 
 
 def observed_signature_injection_problems(
@@ -135,68 +98,25 @@ def observed_signature_injection_problems(
 ) -> tuple[str, ...]:
     parsed = parse_observed_write_signature(observed_context)
     problems = list(parsed.problems)
-    change_log = fact_object.get("change_log")
-    if not isinstance(change_log, list):
-        frontmatter = fact_object.get("frontmatter")
-        if isinstance(frontmatter, dict):
-            change_log = frontmatter.get("change_log")
-    if isinstance(change_log, list) and change_log and isinstance(change_log[-1], dict):
-        existing = change_log[-1].get("signature")
-        if isinstance(existing, dict) and set(existing) == {"agent_id", "host_environment"}:
-            problems.append(
-                "最新 change_log.signature 仍为 agent_id/host_environment 旧形状；"
-                "新写入必须使用 model_id 与 agent_workbench"
-            )
-        elif isinstance(existing, dict) and set(existing) == {"model_id", "host_name"}:
-            problems.append(
-                "最新 change_log.signature 仍为 model_id/host_name 旧形状；新写入必须使用 model_id 与 agent_workbench"
-            )
-    if problems:
-        return tuple(problems)
-    if not isinstance(change_log, list) or not change_log or not isinstance(change_log[-1], dict):
-        return tuple(problems)
-    existing = change_log[-1].get("signature")
-    merged = (
-        {}
-        if isinstance(existing, dict)
-        and set(existing) in ({"agent_id", "host_environment"}, {"model_id", "host_name"})
-        else dict(existing) if isinstance(existing, dict) else {}
-    )
-    merged.update(parsed.signature)
-    if set(merged) != {"model_id", "agent_workbench"} or any(
-        not isinstance(merged[field], str) or not merged[field].strip()
-        for field in ("model_id", "agent_workbench")
-        if field in merged
-    ):
-        problems.append("observed_context.signature 合并后必须恰含非空 model_id 与 agent_workbench")
     return tuple(problems)
 
 
 def observed_write_signature_required_problem(observed_context: dict[str, Any]) -> str | None:
-    """Fact writes must attribute the new change-log entry to the current environment.
+    """Require exactly one usable, product-neutral signature snapshot.
 
-    A fact write (create/update/close) must carry the current-environment
-    signature via ``observed_context``.  When ``observed_context`` is completely
-    empty — neither a ``signature`` nor a ``session_id`` — the write cannot
-    attribute the entry to the current environment, so a hand-filled or defaulted
-    signature from the draft must not be silently preserved.  The caller turns a
-    non-``None`` result into ``invalid_request`` (create) or an ``unavailable``
-    write (update/close).
-
-    This deliberately targets only the *absent* observed context.  A partial
-    observed context (e.g. supplying ``agent_workbench`` while the draft supplies
-    ``model_id``) still yields a complete, mechanically valid signature and is
-    therefore allowed; only the fully-absent case — the root cause behind the
-    ``Gpt`` / ``current-session`` leak — is rejected.
+    New controlled writes never merge caller-supplied attribution with draft
+    content.  The environment supplies all three keys in ``observed_context``;
+    each value may be unavailable (``null``), but the snapshot cannot be wholly
+    empty.  Historical records are handled only by the read path.
     """
 
     parsed = parse_observed_write_signature(observed_context)
     if parsed.problems:
         return "observed_context 解析失败：" + "；".join(parsed.problems)
-    if not parsed.signature and parsed.session_id is None:
+    if parsed.signature is None:
         return (
-            "事实写入必须以 observed_context 注入当前环境署名（model_id 与/或 agent_workbench）；"
-            "observed_context 为空时不得保留草稿手填/默认署名，请求无效"
+            "事实写入必须以 observed_context 注入完整 LDVH 三字段署名；"
+            "三项全空或缺少字段时不得保留草稿手填/默认署名"
         )
     return None
 

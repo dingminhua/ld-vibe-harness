@@ -13,6 +13,7 @@ from ldvh.facts.contracts import LAYOUTS, TERMINAL_COMMON, is_legacy_spark_objec
 from ldvh.facts.models import FactIssue
 from ldvh.facts.schema import FactSchema
 from ldvh.facts.workcase_validation import validate_workcase_snapshot
+from ldvh.signature import parse_signature
 
 
 @dataclass(slots=True)
@@ -94,6 +95,8 @@ def _validate_mapping(value: dict[str, Any], node: _Node, path: str, issues: lis
             continue
         if child.presence == "forbidden":
             issues.append(FactIssue("schema", "当前类型禁止该字段", child_path))
+            continue
+        if value[key] is None and path.endswith(".signature"):
             continue
         if value[key] is None:
             issues.append(FactIssue("schema", "字段不得使用 null 占位", child_path))
@@ -226,8 +229,7 @@ def _validate_change_log_signature(value: object, path: str, issues: list[FactIs
         return
     legacy_allowed = {"agent_id", "host_environment"}
     if set(value) == legacy_allowed:
-        # Historical shape remains readable and mechanically valid.  New
-        # writes use the canonical model_id/agent_workbench shape below.
+        # Historical shape remains readable and mechanically valid.
         return
     if set(value) == {"signer_type", *legacy_allowed} and value.get("signer_type") in {"human", "ai-agent"}:
         # Existing facts must remain readable long enough for the narrowly
@@ -238,41 +240,18 @@ def _validate_change_log_signature(value: object, path: str, issues: list[FactIs
         isinstance(value.get(name), str) and value[name].strip() for name in interim_legacy
     ):
         # The host_name shape predates the agent_workbench rename.  Historical
-        # records stay readable; new writes use model_id/agent_workbench.
+        # records stay readable.
         return
-    allowed = {"model_id", "agent_workbench"}
-    for name in sorted(set(value) - allowed):
-        issues.append(FactIssue("schema", "change_log.signature 只允许 model_id、agent_workbench", f"{path}.{name}"))
-    for name in sorted(allowed):
-        if not isinstance(value.get(name), str) or not value[name].strip():
-            issues.append(FactIssue("schema", "change_log.signature 字段必须是非空 string", f"{path}.{name}"))
-    model_id = value.get("model_id")
-    agent_workbench = value.get("agent_workbench")
-    if isinstance(model_id, str) and model_id.strip().lower() in _MODEL_PRODUCT_ALIASES:
-        issues.append(FactIssue("schema", "model_id 不得使用已知裸产品别名", f"{path}.model_id"))
-    if isinstance(model_id, str) and _is_host_product_concatenation(model_id):
-        issues.append(FactIssue("schema", "model_id 不得拼接宿主产品名", f"{path}.model_id"))
-    if isinstance(model_id, str) and model_id.strip() != model_id.strip().lower():
-        issues.append(FactIssue("schema", "model_id 必须全小写", f"{path}.model_id"))
-    if isinstance(agent_workbench, str) and _WORKBENCH_SYSTEM_SUFFIX.search(agent_workbench):
-        issues.append(FactIssue("schema", "agent_workbench 不得包含括号系统后缀", f"{path}.agent_workbench"))
-    if isinstance(agent_workbench, str) and _WORKBENCH_TOKEN_SPLIT.search(agent_workbench.strip()):
-        issues.append(
-            FactIssue(
-                "schema",
-                "agent_workbench 必须为单 token（不使用空格、连字符或斜杠分隔），"
-                "不得使用复合名如 claude-code-mcp 或 Claude Code",
-                f"{path}.agent_workbench",
-            )
-        )
-    if isinstance(agent_workbench, str) and agent_workbench.strip().lower() in MODEL_FAMILY_TOKENS:
-        issues.append(
-            FactIssue(
-                "schema",
-                "agent_workbench 不得是模型族 token（如 gpt/claude/kimi），宿主产品名（如 WorkBuddy）才填此处",
-                f"{path}.agent_workbench",
-            )
-        )
+    previous_current = {"model_id", "agent_workbench"}
+    if set(value) == previous_current and all(
+        isinstance(value.get(name), str) and value[name].strip() for name in previous_current
+    ):
+        # This was the canonical shape before LDVH's three-field signature.
+        # It remains a strictly read-only historical shape.
+        return
+    _, problems = parse_signature(value)
+    for problem in problems:
+        issues.append(FactIssue("schema", problem, path))
 
 
 def _validate_change_log(fields: dict[str, Any], issues: list[FactIssue]) -> None:
@@ -675,7 +654,7 @@ def _is_legacy_change_log_signature_issue(fields: Mapping[str, Any], issue: Fact
     """Suppress schema unknown-field issues for the retained old shapes."""
 
     match = re.fullmatch(
-        r"change_log\[(\d+)\]\.signature\.(agent_id|host_environment|model_id|host_name|agent_workbench)",
+        r"change_log\[(\d+)\](?:\.signature\.(agent_id|host_environment|model_id|host_name|agent_workbench|product_name|model_name|agent_runtime_name)|\.session_id)",
         issue.field_path or "",
     )
     if match is None or issue.summary not in {"字段未在当前 Schema 登记", "缺少必填字段"}:
@@ -685,7 +664,11 @@ def _is_legacy_change_log_signature_issue(fields: Mapping[str, Any], issue: Fact
     if not isinstance(change_log, list) or index >= len(change_log) or not isinstance(change_log[index], dict):
         return False
     signature = change_log[index].get("signature")
-    legacy_shapes = (frozenset({"agent_id", "host_environment"}), frozenset({"model_id", "host_name"}))
+    legacy_shapes = (
+        frozenset({"agent_id", "host_environment"}),
+        frozenset({"model_id", "host_name"}),
+        frozenset({"model_id", "agent_workbench"}),
+    )
     if not (
         isinstance(signature, dict)
         and set(signature) in legacy_shapes
@@ -693,7 +676,7 @@ def _is_legacy_change_log_signature_issue(fields: Mapping[str, Any], issue: Fact
     ):
         return False
     return (
-        match.group(2) in {"agent_id", "host_environment", "model_id", "host_name"}
+        match.group(2) in {"agent_id", "host_environment", "model_id", "host_name", "agent_workbench", None}
         or issue.summary == "缺少必填字段"
     )
 
