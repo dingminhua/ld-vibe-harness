@@ -758,7 +758,7 @@ WorkCase 的创建、读取、更新和更正都复用 05 的当前事实源选�
 - proposal/terminal 分离，suggestion 局部引用与精确映射；
 - route_existing target fingerprints、closed 白名单和关系图约束。
 
-WorkCase 的普通活动期写入必须使用 `update-workcase`；Human 主动中止的开始与完成分别必须使用 `begin-workcase-termination` 与 `complete-workcase-termination`；正常 Gate2 关闭必须使用 `close-workcase`；closed 更正必须使用 `correct-closed-workcase`。通用 `update-fact-object` 不接受 WorkCase，不得借完整 after 绕过字段所有权、版本失效、关闭映射、中止事务或终态更正边界。Human 决定作为受控操作输入被消费，不持久化 `closure_approval` 或证明收据。
+WorkCase 的普通活动期写入必须使用 `update-workcase`；Human 主动中止的开始与完成分别必须使用 `begin-workcase-termination` 与 `complete-workcase-termination`；正常 Gate2 关闭必须使用 `close-workcase`；closed 更正必须使用 `correct-closed-workcase`。仅当当前 invalid closed WorkCase、固定历史载体和对象 allowlist 同时精确命中 §7.3 的一次性例外时，才使用 `recover-invalid-workcase`。通用 `update-fact-object` 不接受 WorkCase，不得借完整 after 绕过字段所有权、版本失效、关闭映射、中止事务或终态更正边界。Human 决定作为受控操作输入被消费，不持久化 `closure_approval` 或证明收据。
 
 ### Helper 公开操作
 
@@ -770,6 +770,7 @@ WorkCase 的普通活动期写入必须使用 `update-workcase`；Human 主动�
 | `complete-workcase-termination` | 在善后、结果与关系影响已收口后，无第二 Human Gate 原子形成带 termination 的 closed | `may_change_state` | `workcase-fact-type::complete-workcase-termination 输入与结果` | `workcase-fact-type::complete-workcase-termination 输入与结果` |
 | `close-workcase` | 消费完整活动期 before、Human 当次关闭决定和目标指纹，原子形成 closed 白名单并回读 | `may_change_state` | `workcase-fact-type::close-workcase 输入与结果` | `workcase-fact-type::close-workcase 输入与结果` |
 | `correct-closed-workcase` | 对一个 closed WorkCase 提交完整更正 after，并在需要时消费新 Human 决定与全部 after route target 指纹 | `may_change_state` | `workcase-fact-type::correct-closed-workcase 输入与结果` | `workcase-fact-type::correct-closed-workcase 输入与结果` |
+| `recover-invalid-workcase` | 只对固定清单中的 invalid closed WorkCase，从已验证的固定历史载体重建活动期快照并追加当前恢复流水 | `may_change_state` | `workcase-fact-type::recover-invalid-workcase 输入与结果` | `workcase-fact-type::recover-invalid-workcase 输入与结果` |
 
 ### prepare-closed-workcase-candidate 输入与结果
 
@@ -826,6 +827,17 @@ WorkCase 的普通活动期写入必须使用 `update-workcase`；Human 主动�
 - 成功与 `no_change` 的结果复用 05 §11.7；必须回读实际 closed after，不返回或保存 Human 决定收据、target 指纹或更正历史。
 
 `normalize-uncommitted-change-log-signatures` 不属于第六种 WorkCase 生命周期操作，也不构成 closed 更正。它只按 05 §11.7.2 在双指纹和 HEAD 日志前缀约束下，把尚未提交后缀中的 `model_id` / `host_name` 键名归一为当前 `model_id` / `agent_workbench`；不得改变 HEAD 历史、追加流水、更新时间或触碰本类型任何语义字段。除此特例外，WorkCase 仍只能由上述五个专属生命周期写入口修改。
+
+### recover-invalid-workcase 输入与结果
+
+`recover-invalid-workcase` 是仅为 `workcase-0092` 与 `workcase-0093` 设立的一次性受控恢复入口，不是第六种常规生命周期操作，也不建立通用 changelog 编辑、历史回放或任意 WorkCase 重开能力。它只接受共同 `authorization_reference` 中一条当前 Human 决定、一条当前独立 review 来源回指，以及恢复 0093 时一条当前完整性审计证明；每条回指的 `details.scope` 必须为 `recover-invalid-workcase`。Human 与 review 回指的 `details.target` 必须精确绑定当前恢复对象；0093 的完整性审计回指的 `details.target` 必须精确绑定已恢复的 0092。0093 的完整性审计回指还必须声明 `operation_key=check-fact-integrity`、`audit_scope=full_worktree`、`outcome=ok`、`result_status=complete`，并绑定 0092 恢复后的当前 fingerprint。请求还必须提供目标当前完整载体 fingerprint 和当前实际 worktree；不得接收调用方手写的 after、历史 revision、路径或 blob。
+
+- 固定允许清单精确绑定两个对象及 `3f6310ec36c27168db32b3091ca0c361aee485ce` 中各自 canonical path 与 Git blob：0092 为 `7adb18786a483c66a50033f687dd9dbf7af94879`，0093 为 `0df53dbf63735f007e42d32eab58d092054cc8c8`。目标、revision、路径、blob 或当前指纹任一不匹配时零写入；
+- Code 必须在同一实际 worktree 中读取并精确验证上述历史 carrier，确认其是同身份、完整 UTF-8、可解析且机械有效的活动期 WorkCase；不从 Human 输入、当前环境或关闭 commit footer 推测历史身份；固定 carrier 的 revision、canonical path 与 blob 必须在结构化结果证据中返回；
+- Code 从该历史 snapshot 重建完整 active after，保留历史字段，并只追加一条使用当前 observed context 注入的恢复流水。该流水必须带有不可重复消费的固定恢复标记，并据实说明撤回不能真实归属的关闭记录、固定历史来源和“后续关闭须按当前事实重建”；不得伪造过去的时间、会话、产品、Human 决定或 review；
+- 当前 before 必须是完整可读取、稳定身份明确、`status=closed` 且目标规定的 `check_status=invalid` 载体；已带固定恢复标记的载体确定性拒绝，避免目标后续再次关闭后被重复恢复；普通 closed 更正、普通 update 与这项恢复不得相互替代；
+- 每次调用仅写一个对象。必须先恢复 0092，精确回读并运行全库 `check-fact-integrity`，再提交一条绑定 0092 恢复后 fingerprint、`outcome=ok`、`result.status=complete` 与 `audit_scope=full_worktree` 的审计证明，并根据新鲜的 0093 fingerprint 决定是否恢复 0093；任一失败、崩溃或审计非 complete 时停止，已成功对象不重写、不重复追加流水；任意既有 open/blocked 0092 不得解锁 0093；
+- 该入口在两个固定对象都不再处于可恢复 closed before 后确定性拒绝，不自修改、不自删除、不改写 Git 历史。它的源码与规则移除是另一次受控变更，且只能在两对象各自恢复、审计和提交结果均已保留后进行。
 
 ### 7.3.1 当前合同的一次性迁移边界
 
