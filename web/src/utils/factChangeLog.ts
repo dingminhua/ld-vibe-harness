@@ -21,12 +21,12 @@ export function getLatestFactChangeSignature(value: unknown): CommitSignature | 
     const modelId = typeof signatureRecord.model_id === 'string'
       ? signatureRecord.model_id.trim()
       : '';
-    const hostName = typeof signatureRecord.agent_workbench === 'string'
+    const agentWorkbench = typeof signatureRecord.agent_workbench === 'string'
       ? signatureRecord.agent_workbench.trim()
       : typeof signatureRecord.host_name === 'string'
         ? signatureRecord.host_name.trim()
         : '';
-    if (modelId && hostName) return { modelId, hostName };
+    if (modelId && agentWorkbench) return { modelId, agentWorkbench };
 
     const agentId = typeof signatureRecord.agent_id === 'string'
       ? signatureRecord.agent_id.trim()
