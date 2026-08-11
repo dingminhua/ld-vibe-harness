@@ -743,6 +743,261 @@ def test_workcase_helper_does_not_claim_an_unread_residual_was_fully_read(
     assert execution.verification[0]["status"] == "failed"
 
 
+def _recovery_target(object_id: str) -> FactReference:
+    return FactReference("sample", "workcase", object_id)
+
+
+def _recovery_reference(kind: str, target: FactReference, **details: object) -> dict[str, object]:
+    return {
+        "kind": kind,
+        "locator": f"{kind}:recovery",
+        "details": {
+            "scope": "recover-invalid-workcase",
+            "target": target.to_json(),
+            **details,
+        },
+    }
+
+
+def _recovery_domain(
+    object_id: str,
+    references: tuple[dict[str, object], ...] | None = None,
+) -> workcase_update_operation.WorkCaseWriteRequest:
+    target = _recovery_target(object_id)
+    if references is None:
+        references = (
+            _recovery_reference("human", target),
+            _recovery_reference("review", target),
+        )
+    return workcase_update_operation.WorkCaseWriteRequest(
+        workspace_root=Path("/project"),
+        governance_scope=(),
+        fact_ref=target,
+        expected_content_fingerprint="a" * 64,
+        fact_object={},
+        authorization_reference=references,
+        base=Path("/project"),
+    )
+
+
+def _recovery_read(
+    object_id: str,
+    *,
+    check_status: str,
+    status: str,
+    fingerprint: str = "a" * 64,
+    change_log: list[dict[str, object]] | None = None,
+) -> FactReadResult:
+    return FactReadResult(
+        f"ldvh-base/workcases/{object_id}.yaml",
+        "yaml",
+        check_status,
+        {"status": status, "change_log": [] if change_log is None else change_log},
+        None,
+        (),
+        content_fingerprint=fingerprint,
+        raw_text="workcase\n",
+    )
+
+
+def test_recovery_authorization_requires_exact_target_bound_reference_kinds() -> None:
+    target = _recovery_target("workcase-0092")
+    valid = (
+        _recovery_reference("human", target),
+        _recovery_reference("review", target),
+    )
+    assert workcase_update_operation._recovery_reference_issues(_recovery_domain("workcase-0092", valid)) == ()
+
+    duplicate = valid + (_recovery_reference("review", target),)
+    assert workcase_update_operation._recovery_reference_issues(
+        _recovery_domain("workcase-0092", duplicate)
+    )
+
+    unbound = (
+        _recovery_reference("human", target),
+        _recovery_reference("review", _recovery_target("workcase-0093")),
+    )
+    assert workcase_update_operation._recovery_reference_issues(
+        _recovery_domain("workcase-0092", unbound)
+    )
+
+
+def test_valid_0093_recovery_request_parses_with_shared_scope_and_audit_scope() -> None:
+    target = _recovery_target("workcase-0093")
+    references = (
+        _recovery_reference("human", target),
+        _recovery_reference("review", target),
+        _recovery_reference(
+            "integrity-audit",
+            _recovery_target("workcase-0092"),
+            operation_key="check-fact-integrity",
+            audit_scope="full_worktree",
+            outcome="ok",
+            result_status="complete",
+            content_fingerprint="a" * 64,
+        ),
+    )
+    request = CommonRequest(
+        task=None,
+        work_object_locators=(),
+        arguments={
+            "fact_ref": target.to_json(),
+            "expected_content_fingerprint": "a" * 64,
+            "workspace_root": "/project",
+        },
+        requested_disclosure=None,
+        observed_context={},
+        authorization_reference=references,
+        response_profile="diagnostic",
+    )
+
+    parsed = workcase_update_operation._parse_recover_request(
+        request,
+        OperationExecutionContext(Path("/project"), "2026-07-26T16:00:00+08:00"),
+    )
+
+    assert parsed.fact_ref == target
+    assert workcase_update_operation._recovery_reference_issues(parsed) == ()
+    prerequisite = _recovery_read(
+        "workcase-0092",
+        check_status="mechanically_valid",
+        status="open",
+        fingerprint="a" * 64,
+        change_log=[{"summary": workcase_update_operation._recovery_marker("workcase-0092")}],
+    )
+    assert workcase_update_operation._recovery_integrity_reference_issues(parsed, prerequisite) == ()
+
+
+def test_recovery_marker_check_fails_closed_for_malformed_change_log() -> None:
+    assert not workcase_update_operation._has_recovery_marker(
+        {"change_log": None},
+        "workcase-0092",
+    )
+
+
+def test_recovery_result_exposes_fixed_carrier_identity() -> None:
+    before = _recovery_read("workcase-0092", check_status="invalid", status="closed")
+    after = _recovery_read("workcase-0092", check_status="mechanically_valid", status="open", fingerprint="b" * 64)
+    result = workcase_update_operation._result(
+        before,
+        after,
+        "sample",
+        "workcase-0092",
+        recovery_carrier=workcase_update_operation._recovery_snapshot("workcase-0092"),
+    )
+    assert result["recovery_carrier"] == {
+        "revision": "3f6310ec36c27168db32b3091ca0c361aee485ce",
+        "path": "ldvh-base/workcases/workcase-0092.yaml",
+        "blob": "7adb18786a483c66a50033f687dd9dbf7af94879",
+    }
+
+
+def test_recovery_rejects_consumed_target_before_core_write(monkeypatch: pytest.MonkeyPatch) -> None:
+    domain = _recovery_domain("workcase-0092")
+    marker = workcase_update_operation._recovery_marker("workcase-0092")
+    current = _recovery_read(
+        "workcase-0092",
+        check_status="invalid",
+        status="closed",
+        change_log=[{"summary": f"{marker}；already recovered"}],
+    )
+    monkeypatch.setattr(workcase_update_operation, "_validated_request", lambda *_args: domain)
+    monkeypatch.setattr(workcase_update_operation, "_governance", lambda *_args: _run())
+    monkeypatch.setattr(workcase_update_operation, "_boundary", lambda *_args: _boundary())
+    monkeypatch.setattr(
+        workcase_update_operation,
+        "project_fact_schemas",
+        lambda *_args: {"workcase": FactSchema("workcase", ())},
+    )
+    monkeypatch.setattr(workcase_update_operation, "native_atomic_fact_writes_supported", lambda: True)
+    monkeypatch.setattr(workcase_update_operation, "_current_read", lambda *_args: current)
+    reached: list[str] = []
+    monkeypatch.setattr(workcase_update_operation, "_apply_core_workcase_write", lambda *_args: reached.append("write"))
+
+    execution = workcase_update_operation._execute(
+        "recover",
+        CommonRequest(None, (), {}, None, {}, (), response_profile="diagnostic"),
+        object(),
+        OperationExecutionContext(Path("/project"), "2026-07-26T16:00:00+08:00"),
+    )
+
+    assert execution.outcome == "rejected"
+    assert reached == []
+    assert "已经消费过" in execution.summary
+
+
+def test_recovery_0093_rejects_arbitrary_open_0092_and_missing_audit(monkeypatch: pytest.MonkeyPatch) -> None:
+    target = _recovery_target("workcase-0093")
+    refs = (
+        _recovery_reference("human", target),
+        _recovery_reference("review", target),
+        _recovery_reference(
+            "integrity-audit",
+            _recovery_target("workcase-0092"),
+            operation_key="check-fact-integrity",
+            audit_scope="full_worktree",
+            outcome="ok",
+            result_status="complete",
+            content_fingerprint="b" * 64,
+        ),
+    )
+    domain = _recovery_domain("workcase-0093", refs)
+    current_0093 = _recovery_read("workcase-0093", check_status="invalid", status="closed")
+    arbitrary_0092 = _recovery_read("workcase-0092", check_status="mechanically_valid", status="open")
+    monkeypatch.setattr(workcase_update_operation, "_validated_request", lambda *_args: domain)
+    monkeypatch.setattr(workcase_update_operation, "_governance", lambda *_args: _run())
+    monkeypatch.setattr(workcase_update_operation, "_boundary", lambda *_args: _boundary())
+    monkeypatch.setattr(
+        workcase_update_operation,
+        "project_fact_schemas",
+        lambda *_args: {"workcase": FactSchema("workcase", ())},
+    )
+    monkeypatch.setattr(workcase_update_operation, "native_atomic_fact_writes_supported", lambda: True)
+    monkeypatch.setattr(
+        workcase_update_operation,
+        "_current_read",
+        lambda _boundary, _schemas, object_id: current_0093 if object_id == "workcase-0093" else arbitrary_0092,
+    )
+
+    execution = workcase_update_operation._execute(
+        "recover",
+        CommonRequest(None, (), {}, None, {}, (), response_profile="diagnostic"),
+        object(),
+        OperationExecutionContext(Path("/project"), "2026-07-26T16:00:00+08:00"),
+    )
+
+    assert execution.outcome == "rejected"
+    assert "不能由任意既有 open 0092 解锁" in execution.gaps[0]["summary"]
+
+
+def test_recovery_0093_binds_integrity_audit_to_recovered_0092_fingerprint() -> None:
+    target = _recovery_target("workcase-0093")
+    prerequisite = _recovery_read(
+        "workcase-0092",
+        check_status="mechanically_valid",
+        status="open",
+        fingerprint="c" * 64,
+        change_log=[{"summary": workcase_update_operation._recovery_marker("workcase-0092")}],
+    )
+    refs = (
+        _recovery_reference("human", target),
+        _recovery_reference("review", target),
+        _recovery_reference(
+            "integrity-audit",
+            _recovery_target("workcase-0092"),
+            operation_key="check-fact-integrity",
+            audit_scope="full_worktree",
+            outcome="ok",
+            result_status="complete",
+            content_fingerprint="b" * 64,
+        ),
+    )
+    issues = workcase_update_operation._recovery_integrity_reference_issues(
+        _recovery_domain("workcase-0093", refs), prerequisite
+    )
+    assert "content_fingerprint" in "; ".join(issues)
+
+
 def test_release_uncertainty_code_and_success_boundary_are_defined_by_current_source() -> None:
     foundation = (Path(__file__).resolve().parents[3] / "specs/05-事实模型基础规范.md").read_text(encoding="utf-8")
 
