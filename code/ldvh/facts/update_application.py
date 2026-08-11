@@ -13,11 +13,11 @@ from typing import Any, Literal
 
 from ldvh.facts.carriers.study_markdown import parse_study_markdown
 from ldvh.facts.carriers.yaml_object import parse_yaml_object
-from ldvh.facts.contracts import LAYOUTS
+from ldvh.facts.contracts import LAYOUTS, is_legacy_spark_object
 from ldvh.facts.creation import CreationBoundary, allocation_lock, serialize_fact_object
 from ldvh.facts.models import FactIssue
 from ldvh.facts.project_validation import stabilize_project_index
-from ldvh.facts.relations import ProjectFactIndex, validate_spark_route_target_formation
+from ldvh.facts.relations import ProjectFactIndex
 from ldvh.facts.repository import FactReadResult, read_fact_object
 from ldvh.facts.schema import FactSchema
 from ldvh.facts.transitions import validate_fact_transition
@@ -221,13 +221,24 @@ def apply_fact_update_locked(command: FactUpdateCommand) -> FactUpdateResult:
 
     if command.fact_type_key == "workcase":
         return _workcase_rejection(command.event_at)
-
     current = _project_read(command)
     if current.check_status == "unavailable" or current.fields is None:
         status: UpdateStatus = "current_unavailable" if current.check_status == "unavailable" else "current_rejected"
         return FactUpdateResult(status, command.event_at, issues=current.issues, current=current)
     if current.check_status != "mechanically_valid" and current.content_fingerprint is None:
         return FactUpdateResult("current_rejected", command.event_at, issues=current.issues, current=current)
+    if (
+        command.fact_type_key == "spark"
+        and is_legacy_spark_object(command.object_id)
+        and current.fields is not None
+        and current.fields.get("status") == "routed"
+    ):
+        return FactUpdateResult(
+            "invalid_request",
+            command.event_at,
+            issues=(FactIssue("schema", "历史 routed Spark 仅允许只读审计，禁止 canonical write", "object_id"),),
+            current=current,
+        )
     if current.content_fingerprint != command.expected_content_fingerprint or current.raw_text is None:
         return FactUpdateResult("fingerprint_stale", command.event_at, current=current)
 
@@ -295,29 +306,6 @@ def apply_fact_update_locked(command: FactUpdateCommand) -> FactUpdateResult:
             candidate=candidate,
             candidate_text=candidate_text,
         )
-
-    if command.fact_type_key == "spark":
-        formation_index = ProjectFactIndex(
-            command.boundary.worktree_root,
-            command.boundary.governed_project_id,
-            dict(command.schemas),
-            command.boundary.git_common_dir,
-        )
-        formation_issues = validate_spark_route_target_formation(
-            formation_index,
-            command.object_id,
-            current.fields,
-            candidate.fields,
-        )
-        if formation_issues:
-            return FactUpdateResult(
-                "candidate_rejected",
-                command.event_at,
-                issues=formation_issues,
-                current=current,
-                candidate=candidate,
-                candidate_text=candidate_text,
-            )
 
     replacement = atomic_replace_text_if_unchanged(
         command.boundary.worktree_root,
