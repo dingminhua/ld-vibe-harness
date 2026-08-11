@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+import subprocess
+from collections.abc import Mapping
+from copy import deepcopy
 from dataclasses import replace
 from typing import Any, Literal
 
+from ldvh.facts.carriers.yaml_object import parse_yaml_object
 from ldvh.facts.contracts import LAYOUTS
 from ldvh.facts.creation import CreationBoundary, FactCoordinationUnavailable
 from ldvh.facts.models import FactIssue
@@ -12,6 +16,8 @@ from ldvh.facts.project_validation import stabilize_project_index
 from ldvh.facts.relations import ProjectFactIndex
 from ldvh.facts.repository import FactReadResult, read_fact_object
 from ldvh.facts.schema import FactSchema, project_fact_schemas
+from ldvh.facts.update_application import MANAGED_FIELDS
+from ldvh.facts.validation import validate_fact_object
 from ldvh.filesystem import native_atomic_fact_writes_supported
 from ldvh.governance.resolver import GovernanceResolutionRun, resolve_governance_scope
 from ldvh.helper.operation_runtime import (
@@ -51,13 +57,14 @@ from ldvh.helper.requests import CommonRequest
 from ldvh.helper.responses import source_reference
 from ldvh.specs.repository import RepositoryInspection
 
-WorkCaseWriteMode = Literal["update", "close", "correct", "begin_termination", "complete_termination"]
+WorkCaseWriteMode = Literal["update", "close", "correct", "begin_termination", "complete_termination", "recover"]
 
 UPDATE_OPERATION_KEY = "update-workcase"
 CLOSE_OPERATION_KEY = "close-workcase"
 CORRECT_CLOSED_OPERATION_KEY = "correct-closed-workcase"
 BEGIN_TERMINATION_OPERATION_KEY = "begin-workcase-termination"
 COMPLETE_TERMINATION_OPERATION_KEY = "complete-workcase-termination"
+RECOVER_INVALID_OPERATION_KEY = "recover-invalid-workcase"
 
 _CONTRACTS = {
     "update": source_reference("rule", "workcase-fact-type::update-workcase 输入与结果"),
@@ -65,6 +72,7 @@ _CONTRACTS = {
     "correct": source_reference("rule", "workcase-fact-type::correct-closed-workcase 输入与结果"),
     "begin_termination": source_reference("rule", "workcase-fact-type::begin-workcase-termination 输入与结果"),
     "complete_termination": source_reference("rule", "workcase-fact-type::complete-workcase-termination 输入与结果"),
+    "recover": source_reference("rule", "workcase-fact-type::recover-invalid-workcase 输入与结果"),
 }
 _SHARED_WRITE_CONTRACT = source_reference("rule", "fact-model-foundation::11.8 共享单对象受控写事务")
 _INTEGRITY_CONTRACT = source_reference("rule", "fact-model-foundation::11.9-11.10 事实写后独立完整性审计")
@@ -73,12 +81,187 @@ _IMPLEMENTATION_SOURCE = source_reference(
     "code/ldvh/helper/operations/workcase_update_operation.py",
 )
 
+RECOVER_REQUIRED_INPUTS = (
+    "arguments.fact_ref",
+    "arguments.expected_content_fingerprint",
+    "authorization_reference",
+)
+RECOVER_OPTIONAL_INPUTS = ("work_object_locators", "arguments.workspace_root")
+_RECOVER_ARGUMENT_FIELDS = frozenset({"workspace_root", "fact_ref", "expected_content_fingerprint"})
+_RECOVERY_SNAPSHOTS = {
+    "workcase-0092": {
+        "revision": "3f6310ec36c27168db32b3091ca0c361aee485ce",
+        "path": "ldvh-base/workcases/workcase-0092.yaml",
+        "blob": "7adb18786a483c66a50033f687dd9dbf7af94879",
+    },
+    "workcase-0093": {
+        "revision": "3f6310ec36c27168db32b3091ca0c361aee485ce",
+        "path": "ldvh-base/workcases/workcase-0093.yaml",
+        "blob": "0df53dbf63735f007e42d32eab58d092054cc8c8",
+    },
+}
+
+_RECOVERY_REFERENCE_SCOPE = "recover-invalid-workcase"
+_RECOVERY_REFERENCE_KINDS = frozenset({"human", "review"})
+_RECOVERY_AUDIT_KIND = "integrity-audit"
+_RECOVERY_MARKER_PREFIX = "recover-invalid-workcase|"
+_RECOVERY_REQUIRED_BEFORE_STATUS = {"workcase-0092": "invalid", "workcase-0093": "invalid"}
+
+
+def _recovery_snapshot(object_id: str) -> dict[str, str]:
+    return _RECOVERY_SNAPSHOTS[object_id]
+
+
+def _recovery_carrier_source(object_id: str) -> dict[str, Any]:
+    snapshot = _recovery_snapshot(object_id)
+    return source_reference(
+        "git",
+        f"{snapshot['revision']}:{snapshot['path']}",
+        object_id=object_id,
+        blob=snapshot["blob"],
+    )
+
+
+def _recovery_marker(object_id: str) -> str:
+    snapshot = _recovery_snapshot(object_id)
+    return (
+        f"{_RECOVERY_MARKER_PREFIX}{object_id}|revision={snapshot['revision']}|"
+        f"path={snapshot['path']}|blob={snapshot['blob']}"
+    )
+
+
+def _has_recovery_marker(fields: Mapping[str, Any], object_id: str) -> bool:
+    change_log = fields.get("change_log")
+    if not isinstance(change_log, list):
+        return False
+    return any(
+        isinstance(entry, Mapping)
+        and isinstance(entry.get("summary"), str)
+        and entry["summary"].startswith(_recovery_marker(object_id))
+        for entry in change_log
+    )
+
+
+def _target_details(reference: Mapping[str, Any]) -> Mapping[str, Any] | None:
+    details = reference.get("details")
+    if not isinstance(details, Mapping):
+        return None
+    target = details.get("target")
+    return target if isinstance(target, Mapping) else None
+
+
+def _recovery_reference_issues(request: WorkCaseWriteRequest) -> tuple[str, ...]:
+    references = request.authorization_reference
+    kinds = [reference.get("kind") for reference in references]
+    expected_kinds = set(_RECOVERY_REFERENCE_KINDS)
+    if request.fact_ref.object_id == "workcase-0093":
+        expected_kinds.add(_RECOVERY_AUDIT_KIND)
+    if len(references) != len(expected_kinds) or set(kinds) != expected_kinds:
+        expected = ", ".join(sorted(expected_kinds))
+        return (f"authorization_reference 必须恰好包含 kind={expected} 各一项",)
+    issues: list[str] = []
+    expected_target = request.fact_ref.to_json()
+    prerequisite_target = {**expected_target, "object_id": "workcase-0092"}
+    for index, reference in enumerate(references):
+        target = _target_details(reference)
+        required_target = (
+            prerequisite_target
+            if request.fact_ref.object_id == "workcase-0093" and reference.get("kind") == _RECOVERY_AUDIT_KIND
+            else expected_target
+        )
+        if target != required_target:
+            issues.append(
+                "authorization_reference[{}].details.target 必须精确绑定{}".format(
+                    index,
+                    "已恢复的 workcase-0092" if required_target == prerequisite_target else "当前恢复对象",
+                )
+            )
+        details = reference.get("details")
+        if not isinstance(details, Mapping) or details.get("scope") != _RECOVERY_REFERENCE_SCOPE:
+            issues.append(
+                f"authorization_reference[{index}].details.scope 必须精确等于 {_RECOVERY_REFERENCE_SCOPE}"
+            )
+    return tuple(issues)
+
+
+def _recovery_integrity_reference_issues(
+    request: WorkCaseWriteRequest,
+    prerequisite: FactReadResult,
+) -> tuple[str, ...]:
+    if prerequisite.content_fingerprint is None:
+        return ("0092 当前恢复后指纹不可用，不能绑定完整性审计证明",)
+    reference = next(
+        (item for item in request.authorization_reference if item.get("kind") == _RECOVERY_AUDIT_KIND),
+        None,
+    )
+    details = reference.get("details") if isinstance(reference, Mapping) else None
+    expected_target = {**request.fact_ref.to_json(), "object_id": "workcase-0092"}
+    if not isinstance(details, Mapping):
+        return ("0093 必须提供 integrity-audit 的完整性审计证明 details",)
+    issues: list[str] = []
+    if details.get("operation_key") != "check-fact-integrity":
+        issues.append("integrity-audit 必须回指 check-fact-integrity")
+    if details.get("audit_scope") != "full_worktree":
+        issues.append("integrity-audit 必须声明 audit_scope=full_worktree 范围")
+    if details.get("outcome") != "ok" or details.get("result_status") != "complete":
+        issues.append("integrity-audit 必须同时证明 outcome=ok 与 result.status=complete")
+    if details.get("target") != expected_target:
+        issues.append("integrity-audit target 必须精确绑定 workcase-0092")
+    if details.get("content_fingerprint") != prerequisite.content_fingerprint:
+        issues.append("integrity-audit content_fingerprint 必须精确等于 0092 恢复后当前指纹")
+    return tuple(issues)
+
+
+def _parse_recover_request(
+    request: CommonRequest,
+    context: OperationExecutionContext,
+) -> WorkCaseWriteRequest:
+    unknown = sorted(set(request.arguments) - _RECOVER_ARGUMENT_FIELDS)
+    if unknown:
+        raise OperationRequestError(
+            (f"arguments 包含未知字段: {', '.join(unknown)}",), sources=(_CONTRACTS["recover"],)
+        )
+    synthetic = replace(
+        request,
+        arguments={
+            **request.arguments,
+            "fact_object": {},
+        },
+    )
+    parsed = parse_update_workcase_request(synthetic, context)
+    if parsed.request is None:
+        raise OperationRequestError(parsed.problems, sources=(_CONTRACTS["recover"],))
+    kinds = {reference.get("kind") for reference in parsed.request.authorization_reference}
+    missing = [kind for kind in ("human", "review") if kind not in kinds]
+    if missing:
+        raise OperationRequestError(
+            (
+                f"authorization_reference 必须分别包含 kind=human 与 kind=review 的当前来源回指；"
+                f"缺少: {', '.join(missing)}",
+            ),
+            sources=(_CONTRACTS["recover"],),
+        )
+    if (
+        parsed.request.fact_ref.fact_type_key != "workcase"
+        or parsed.request.fact_ref.object_id not in _RECOVERY_SNAPSHOTS
+    ):
+        raise OperationRequestError(
+            ("recover-invalid-workcase 只允许恢复 workcase-0092 或 workcase-0093",),
+            sources=(_CONTRACTS["recover"],),
+        )
+    recovery_issues = _recovery_reference_issues(parsed.request)
+    if recovery_issues:
+        raise OperationRequestError(recovery_issues, sources=(_CONTRACTS["recover"],))
+    return parsed.request
+
 
 def _validated_request(
     mode: WorkCaseWriteMode,
     request: CommonRequest,
     context: OperationExecutionContext,
 ) -> WorkCaseWriteRequest:
+    if mode == "recover":
+        return _parse_recover_request(request, context)
     if mode == "update":
         parsed = parse_update_workcase_request(request, context)
     elif mode == "close":
@@ -302,10 +485,12 @@ def _result(
     after: FactReadResult,
     project_id: str,
     object_id: str,
+    *,
+    recovery_carrier: Mapping[str, str] | None = None,
 ) -> dict[str, Any]:
     assert before.content_fingerprint is not None
     assert after.content_fingerprint is not None
-    return {
+    result = {
         "actual_ref": {
             "governed_project_id": project_id,
             "fact_type_key": "workcase",
@@ -317,6 +502,9 @@ def _result(
         "content_fingerprint": after.content_fingerprint,
         "fact_object": _fact_object(after),
     }
+    if recovery_carrier is not None:
+        result["recovery_carrier"] = dict(recovery_carrier)
+    return result
 
 
 def _issue_summary(issues: tuple[FactIssue, ...]) -> str:
@@ -331,10 +519,12 @@ def _request_sources(
     review_reference: tuple[dict[str, Any], ...] = ()
     if isinstance(domain, CorrectClosedWorkCaseRequest) and domain.independent_review_reference is not None:
         review_reference = (plain(domain.independent_review_reference),)
+    recovery_source = (_recovery_carrier_source(domain.fact_ref.object_id),) if mode == "recover" else ()
     return (
         *tuple(plain(source) for source in run.sources),
         *tuple(plain(source) for source in domain.authorization_reference),
         *review_reference,
+        *recovery_source,
         _CONTRACTS[mode],
     )
 
@@ -363,6 +553,71 @@ def _rejected(
             },
         ),
     )
+
+
+class RecoverySnapshotError(ValueError):
+    """The fixed historical recovery source cannot produce a safe active after."""
+
+
+def _recovery_fact_object(
+    domain: WorkCaseWriteRequest,
+    boundary: CreationBoundary,
+    schema: FactSchema,
+    event_at: str,
+) -> dict[str, Any]:
+    snapshot = _recovery_snapshot(domain.fact_ref.object_id)
+    reference = f"{snapshot['revision']}:{snapshot['path']}"
+    try:
+        blob = subprocess.run(
+            ["git", "-C", str(boundary.worktree_root), "rev-parse", reference],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        source = subprocess.run(
+            ["git", "-C", str(boundary.worktree_root), "show", reference],
+            check=False,
+            capture_output=True,
+        )
+    except OSError as error:
+        raise RecoverySnapshotError("固定历史载体读取所需的 Git 能力不可用") from error
+    if blob.returncode != 0 or blob.stdout.strip() != snapshot["blob"]:
+        raise RecoverySnapshotError("固定历史载体不可读取，或其 blob 身份与恢复清单不一致")
+    if source.returncode != 0:
+        raise RecoverySnapshotError("固定历史载体内容不可读取")
+    try:
+        text = source.stdout.decode("utf-8")
+    except UnicodeDecodeError as error:
+        raise RecoverySnapshotError("固定历史载体不是完整 UTF-8 YAML") from error
+    parsed = parse_yaml_object(text)
+    fields = parsed.fields
+    if parsed.issues or not isinstance(fields, dict):
+        raise RecoverySnapshotError("固定历史载体无法完整解析")
+    if (
+        fields.get("object_id") != domain.fact_ref.object_id
+        or fields.get("fact_type_key") != "workcase"
+        or fields.get("status") not in {"open", "blocked"}
+    ):
+        raise RecoverySnapshotError("固定历史载体不是该对象的活动期 WorkCase 快照")
+    carrier_issues = validate_fact_object("workcase", fields, schema)
+    if carrier_issues:
+        raise RecoverySnapshotError("固定历史载体不是当前 Schema 下机械有效的活动期 WorkCase")
+    recovery_entry = {
+        "signature": {},
+        "session_id": "",
+        "at": event_at,
+        "summary": (
+            f"{_recovery_marker(domain.fact_ref.object_id)}；按当前 Human 决定，从 "
+            f"{snapshot['revision']} 的已验证历史载体恢复活动期快照；撤回无法真实归属的关闭记录，"
+            "后续关闭必须依据当前事实重新形成。"
+        ),
+    }
+    change_log = fields.get("change_log")
+    if not isinstance(change_log, list):
+        raise RecoverySnapshotError("固定历史载体缺少可追加的 change_log")
+    supplied = {key: deepcopy(value) for key, value in fields.items() if key not in MANAGED_FIELDS}
+    supplied["change_log"] = [*deepcopy(change_log), recovery_entry]
+    return supplied
 
 
 def _apply_core_workcase_write(
@@ -716,6 +971,62 @@ def _execute(
             sources=(*sources, _SHARED_WRITE_CONTRACT),
         )
 
+    if mode == "recover":
+        current = _current_read(boundary, schemas, reference.object_id)
+        expected_check_status = _RECOVERY_REQUIRED_BEFORE_STATUS[reference.object_id]
+        if (
+            current.check_status != expected_check_status
+            or current.fields is None
+            or current.raw_text is None
+            or current.content_fingerprint is None
+            or current.fields.get("status") != "closed"
+        ):
+            return _rejected(
+                mode,
+                domain,
+                run,
+                "当前 WorkCase 不是该固定恢复入口允许的 closed 载体",
+                f"{reference.object_id} 必须是完整可读取、status=closed 且 check_status={expected_check_status}",
+                sources,
+            )
+        if _has_recovery_marker(current.fields, reference.object_id):
+            return _rejected(
+                mode,
+                domain,
+                run,
+                "该 WorkCase 已经消费过固定恢复入口",
+                "恢复标记已经存在；为避免重复重建与重复流水，本入口确定性拒绝再次恢复",
+                sources,
+            )
+        if reference.object_id == "workcase-0093":
+            prerequisite = _current_read(boundary, schemas, "workcase-0092")
+            prerequisite_issues = ()
+            if (
+                prerequisite.check_status != "mechanically_valid"
+                or prerequisite.fields is None
+                or prerequisite.fields.get("status") not in {"open", "blocked"}
+                or not _has_recovery_marker(prerequisite.fields, "workcase-0092")
+            ):
+                prerequisite_issues = (
+                    "0092 当前对象必须是本恢复入口已经形成的 mechanically valid open/blocked 快照，"
+                    "不能由任意既有 open 0092 解锁 0093",
+                )
+            else:
+                prerequisite_issues = _recovery_integrity_reference_issues(domain, prerequisite)
+            if prerequisite_issues:
+                return _rejected(
+                    mode,
+                    domain,
+                    run,
+                    "workcase-0093 必须绑定 0092 的本次恢复与完整性审计证明",
+                    "; ".join(prerequisite_issues),
+                    sources,
+                )
+        try:
+            domain = replace(domain, fact_object=_recovery_fact_object(domain, boundary, schema, context.event_at))
+        except RecoverySnapshotError as error:
+            return _rejected(mode, domain, run, "固定历史快照不能用于恢复", str(error), sources)
+
     observed_problem = observed_write_signature_required_problem(request.observed_context)
     if observed_problem is not None:
         return OperationExecution(
@@ -781,7 +1092,13 @@ def _execute(
         after.canonical_path,
         context.event_at,
     )
-    result = _result(before, after, boundary.governed_project_id, reference.object_id)
+    result = _result(
+        before,
+        after,
+        boundary.governed_project_id,
+        reference.object_id,
+        recovery_carrier=_recovery_snapshot(reference.object_id) if mode == "recover" else None,
+    )
     if no_change:
         return OperationExecution(
             outcome="no_change",
@@ -897,10 +1214,30 @@ def _check_availability(
             ),
         )
     current = _current_read(boundary, schemas, domain.fact_ref.object_id)
-    if (
-        current.check_status != "mechanically_valid"
-        or current.content_fingerprint != domain.expected_content_fingerprint
-    ):
+    if mode == "recover":
+        expected_check_status = _RECOVERY_REQUIRED_BEFORE_STATUS[domain.fact_ref.object_id]
+        recover_unavailable = (
+            current.check_status != expected_check_status
+            or current.fields is None
+            or current.fields.get("status") != "closed"
+            or current.content_fingerprint != domain.expected_content_fingerprint
+            or _has_recovery_marker(current.fields, domain.fact_ref.object_id)
+        )
+        if not recover_unavailable and domain.fact_ref.object_id == "workcase-0093":
+            prerequisite = _current_read(boundary, schemas, "workcase-0092")
+            recover_unavailable = (
+                prerequisite.check_status != "mechanically_valid"
+                or prerequisite.fields is None
+                or prerequisite.fields.get("status") not in {"open", "blocked"}
+                or not _has_recovery_marker(prerequisite.fields, "workcase-0092")
+                or bool(_recovery_integrity_reference_issues(domain, prerequisite))
+            )
+    else:
+        recover_unavailable = (
+            current.check_status != "mechanically_valid"
+            or current.content_fingerprint != domain.expected_content_fingerprint
+        )
+    if recover_unavailable:
         return AvailabilityEvaluation(
             availability="unavailable_for_request",
             unavailable_scope=(requested,),
@@ -955,6 +1292,14 @@ def _correct_call(
     return _execute("correct", request, repository, context)
 
 
+def _recover_call(
+    request: CommonRequest,
+    repository: RepositoryInspection,
+    context: OperationExecutionContext,
+) -> OperationExecution:
+    return _execute("recover", request, repository, context)
+
+
 def _update_availability(
     request: CommonRequest,
     repository: RepositoryInspection,
@@ -995,6 +1340,14 @@ def _correct_availability(
     return _check_availability("correct", request, repository, context)
 
 
+def _recover_availability(
+    request: CommonRequest,
+    repository: RepositoryInspection,
+    context: OperationExecutionContext,
+) -> AvailabilityEvaluation:
+    return _check_availability("recover", request, repository, context)
+
+
 UPDATE_WORKCASE_IMPLEMENTATION = OperationImplementation(
     required_inputs=UPDATE_REQUIRED_INPUTS,
     optional_inputs=UPDATE_OPTIONAL_INPUTS,
@@ -1030,6 +1383,13 @@ CORRECT_CLOSED_WORKCASE_IMPLEMENTATION = OperationImplementation(
     check_availability=_correct_availability,
     call=_correct_call,
 )
+RECOVER_INVALID_WORKCASE_IMPLEMENTATION = OperationImplementation(
+    required_inputs=RECOVER_REQUIRED_INPUTS,
+    optional_inputs=RECOVER_OPTIONAL_INPUTS,
+    evidence=(_IMPLEMENTATION_SOURCE, _CONTRACTS["recover"]),
+    check_availability=_recover_availability,
+    call=_recover_call,
+)
 
 
 __all__ = [
@@ -1039,6 +1399,8 @@ __all__ = [
     "CLOSE_WORKCASE_IMPLEMENTATION",
     "CORRECT_CLOSED_OPERATION_KEY",
     "CORRECT_CLOSED_WORKCASE_IMPLEMENTATION",
+    "RECOVER_INVALID_OPERATION_KEY",
+    "RECOVER_INVALID_WORKCASE_IMPLEMENTATION",
     "COMPLETE_TERMINATION_OPERATION_KEY",
     "COMPLETE_WORKCASE_TERMINATION_IMPLEMENTATION",
     "UPDATE_OPERATION_KEY",
