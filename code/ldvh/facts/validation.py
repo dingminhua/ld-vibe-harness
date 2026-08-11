@@ -9,7 +9,7 @@ from datetime import date
 from typing import Any
 from urllib.parse import urlparse
 
-from ldvh.facts.contracts import LAYOUTS, TERMINAL_COMMON
+from ldvh.facts.contracts import LAYOUTS, TERMINAL_COMMON, is_legacy_spark_object
 from ldvh.facts.models import FactIssue
 from ldvh.facts.schema import FactSchema
 from ldvh.facts.workcase_validation import validate_workcase_snapshot
@@ -418,10 +418,22 @@ def _forbid(fields: dict[str, Any], names: set[str] | frozenset[str], issues: li
             issues.append(FactIssue("schema", "当前状态禁止该字段", name))
 
 
-def _validate_status(fact_type_key: str, fields: dict[str, Any], issues: list[FactIssue]) -> None:
+def _validate_status(
+    fact_type_key: str,
+    fields: dict[str, Any],
+    issues: list[FactIssue],
+    *,
+    allow_legacy_spark: bool = False,
+) -> None:
     status = fields.get("status")
     layout = LAYOUTS[fact_type_key]
-    if not isinstance(status, str) or status not in layout.statuses:
+    legacy_spark = (
+        fact_type_key == "spark"
+        and allow_legacy_spark
+        and is_legacy_spark_object(fields.get("object_id"))
+        and status == "routed"
+    )
+    if not isinstance(status, str) or (status not in layout.statuses and not legacy_spark):
         issues.append(FactIssue("schema", f"status 必须属于 {sorted(layout.statuses)}", "status"))
         return
     if "priority" in fields and fields["priority"] not in {"P0", "P1", "P2", "P3"}:
@@ -430,7 +442,7 @@ def _validate_status(fact_type_key: str, fields: dict[str, Any], issues: list[Fa
         if status == "open":
             _require(fields, {"priority"}, issues)
             _forbid(fields, {"disposition_summary"}, issues)
-        elif status == "routed":
+        elif legacy_spark:
             _require(fields, TERMINAL_COMMON, issues)
             _forbid(fields, {"priority"}, issues)
         else:  # discarded
@@ -519,11 +531,24 @@ def _validate_references(fact_type_key: str, fields: dict[str, Any], issues: lis
         seen.add(ref)
 
 
-def _validate_relations(fact_type_key: str, fields: dict[str, Any], issues: list[FactIssue]) -> None:
+def _validate_relations(
+    fact_type_key: str,
+    fields: dict[str, Any],
+    issues: list[FactIssue],
+    *,
+    allow_legacy_spark: bool = False,
+) -> None:
     relations = fields.get("relations")
     if not isinstance(relations, list):
         return
     allowed = LAYOUTS[fact_type_key].relation_keys
+    if (
+        fact_type_key == "spark"
+        and allow_legacy_spark
+        and is_legacy_spark_object(fields.get("object_id"))
+        and fields.get("status") == "routed"
+    ):
+        allowed = allowed | {"routed-to"}
     for index, relation in enumerate(relations):
         if not isinstance(relation, dict):
             continue
@@ -595,7 +620,13 @@ def study_report_creation_issues(fields: dict[str, Any]) -> tuple[FactIssue, ...
     return tuple(issues)
 
 
-def validate_fact_object(fact_type_key: str, fields: dict[str, Any], schema: FactSchema) -> tuple[FactIssue, ...]:
+def validate_fact_object(
+    fact_type_key: str,
+    fields: dict[str, Any],
+    schema: FactSchema,
+    *,
+    allow_legacy_spark: bool = False,
+) -> tuple[FactIssue, ...]:
     issues: list[FactIssue] = []
     _validate_mapping(fields, _tree(schema), "", issues)
     issues[:] = [
@@ -606,7 +637,7 @@ def validate_fact_object(fact_type_key: str, fields: dict[str, Any], schema: Fac
     ]
     if fields.get("fact_type_key") != fact_type_key:
         issues.append(FactIssue("identity", "fact_type_key 与请求类型不一致", "fact_type_key"))
-    _validate_status(fact_type_key, fields, issues)
+    _validate_status(fact_type_key, fields, issues, allow_legacy_spark=allow_legacy_spark)
     if fact_type_key == "workcase":
         issues.extend(validate_workcase_snapshot(fields))
     elif fact_type_key == "study":
@@ -614,7 +645,7 @@ def validate_fact_object(fact_type_key: str, fields: dict[str, Any], schema: Fac
     _validate_times(fact_type_key, fields, issues)
     _validate_change_log(fields, issues)
     _validate_references(fact_type_key, fields, issues)
-    _validate_relations(fact_type_key, fields, issues)
+    _validate_relations(fact_type_key, fields, issues, allow_legacy_spark=allow_legacy_spark)
     return tuple(issues)
 
 
