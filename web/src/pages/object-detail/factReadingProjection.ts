@@ -27,7 +27,19 @@ export type RelationTargetTypeGroup = {
 /** Project only the two-part fact-object relation contract. */
 export function projectFactReadingAssociations(obj: Record<string, unknown>): FactReadingAssociations {
   const unresolved: UnresolvedAssociation[] = [];
-  return { relations: projectRelations(obj.relations, unresolved), unresolved };
+  return { relations: dedupeRelationsByTarget(projectRelations(obj.relations, unresolved)), unresolved };
+}
+
+/** Multiple formal relation keys can describe one target, but reading presents it once. */
+function dedupeRelationsByTarget(relations: ReadingRelation[]): ReadingRelation[] {
+  const seenTargets = new Set<string>();
+  return relations.filter((relation) => {
+    const { governedProjectId, factTypeKey, objectId } = relation.target;
+    const targetKey = `${governedProjectId}\u0000${factTypeKey}\u0000${objectId}`;
+    if (seenTargets.has(targetKey)) return false;
+    seenTargets.add(targetKey);
+    return true;
+  });
 }
 
 /**

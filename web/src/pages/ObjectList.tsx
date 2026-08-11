@@ -1,7 +1,8 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { ArrowRight, Circle, CircleAlert, CircleCheck, CircleMinus, CirclePlay, ClipboardList, Clock3, Hash, Lightbulb, ListChecks, ShieldCheck, Target } from 'lucide-react';
+import { ArrowRight, ChevronLeft, ChevronRight, Circle, CircleAlert, CircleCheck, CircleMinus, CirclePlay, ClipboardList, Clock3, Hash, Lightbulb, ListChecks, ShieldCheck, Target } from 'lucide-react';
 import ObjectIdentityActions from '@/components/ObjectIdentityActions';
+import StatusBadge from '@/components/StatusBadge';
 import WorkCaseCapabilityStatusBadge from '@/components/WorkCaseCapabilityStatusBadge';
 import ObjectStatusFilter from '@/components/ObjectStatusFilter';
 import WorkCaseProgressFilter from '@/components/WorkCaseProgressFilter';
@@ -13,12 +14,13 @@ import ObjectUpdatedMeta from '@/components/ObjectUpdatedMeta';
 import SummaryText from '@/components/SummaryText';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
 import { WorkCaseCriteriaList, WORKCASE_CRITERIA_SURFACE_CLASS } from '@/components/WorkCaseCriteriaList';
-import { fetchObjectDetail, fetchObjects, type FactCoverageStatus, type FactListProblem, type ObjectDetail, type ObjectItem, type ObjectStatusOption, type WorkCaseClosureProposalCard, type WorkCaseClosureTerminalCard, type WorkCaseContributionTarget, type WorkCaseExecutionItem, type WorkCaseProgressOption, type WorkCaseSparkSuggestionCard } from '@/utils/api';
+import { fetchObjectDetail, fetchObjects, type FactCardAssociation, type FactCoverageStatus, type FactListProblem, type ObjectDetail, type ObjectItem, type ObjectStatusOption, type WorkCaseClosureProposalCard, type WorkCaseClosureTerminalCard, type WorkCaseContributionTarget, type WorkCaseExecutionItem, type WorkCaseProgressOption, type WorkCaseSparkSuggestionCard } from '@/utils/api';
 import { useI18n } from '@/i18n/context';
 import { getFieldLabel, getFieldValueLabel, getLocalizedObjectTitle, getObjectStatusLocale, getTypeLabel } from '@/i18n/locales';
 import { CATEGORY_COLORS } from '@/utils/categoryColors';
 import { getFactReadMeta, isReadableFact } from '@/utils/factReadMeta';
 import { getEffectiveListStatus, writeListStatusParam } from '@/utils/listStatus';
+import { usePanel } from '@/utils/panelContext';
 import { compareRfc3339Timestamps } from '@/shared/timestamp';
 import {
   WORKCASE_PROGRESS_STEP_ORDER,
@@ -1280,6 +1282,7 @@ export function ObjectCardFrame({
       </div>
       {showNonActiveReason && nonActiveReason && <StatusReasonNote reason={nonActiveReason} />}
       {children}
+      <FactAssociationsCardContent associations={obj.factAssociations} />
       {/* Keep the identity → title → update rhythm stable; grid stretch leaves any spare space below. */}
       <div className="flex min-w-0 items-center justify-end pt-0.5 text-right">
         <ObjectUpdatedMeta source={obj} updatedAt={obj.updated} />
@@ -1304,17 +1307,13 @@ function TerminalFactPanel({
   tone,
   content,
 }: {
-  tone: 'implemented' | 'discarded' | 'retired';
+  tone: 'implemented' | 'retired';
   content: string;
 }) {
   const styles = {
     implemented: {
-      panel: 'border-emerald-400/25 border-l-emerald-400 bg-emerald-500/5',
-      body: 'text-emerald-700/75 dark:text-emerald-200/75',
-    },
-    discarded: {
-      panel: 'border-red-400/25 border-l-red-400 bg-red-500/5',
-      body: 'text-red-700/75 dark:text-red-200/75',
+      panel: 'border-slate-400/25 border-l-slate-400 bg-slate-500/5',
+      body: 'text-slate-600/75 dark:text-slate-300/75',
     },
     retired: {
       panel: 'border-zinc-400/25 border-l-zinc-400 bg-zinc-500/5',
@@ -1337,16 +1336,78 @@ function TerminalFactPanel({
 function SparkTerminalCardContent({ obj }: { obj: ObjectItem }) {
   const { t } = useI18n();
   const reason = obj.disposition_summary?.trim() || t('objectList.dispositionMissing');
-  const tone = obj.status === 'discarded' ? 'discarded' : 'implemented';
 
   return (
-    <TerminalFactPanel tone={tone} content={formatReasonText(reason)} />
+    <TerminalFactPanel tone={obj.status === 'implemented' ? 'implemented' : 'retired'} content={formatReasonText(reason)} />
+  );
+}
+
+function FactAssociationsCardContent({ associations }: { associations?: FactCardAssociation[] }) {
+  const { t, locale } = useI18n();
+  if (!associations || associations.length === 0) return null;
+  const visibleAssociations = dedupeFactCardAssociations(associations)
+    .filter((association) => !['closed', 'implemented', 'discarded', 'retired'].includes(association.status ?? ''));
+  if (visibleAssociations.length === 0) return null;
+
+  return (
+    <section onClick={(event) => event.stopPropagation()} className="min-w-0 border-t border-ldvh-border/60 pt-2">
+      <div className="divide-y divide-ldvh-border/45">
+        {visibleAssociations.map((association, index) => <FactAssociationCardRow key={`${association.target?.governedProjectId ?? 'unavailable'}:${association.target?.factTypeKey ?? 'unknown'}:${association.target?.objectId ?? index}:${index}`} association={association} locale={locale} unavailableLabel={t('objectList.associationUnavailable')} />)}
+      </div>
+    </section>
+  );
+}
+
+function dedupeFactCardAssociations(associations: FactCardAssociation[]): FactCardAssociation[] {
+  const seenTargets = new Set<string>();
+  return associations.filter((association) => {
+    const target = association.target;
+    if (!target) return true;
+    const targetKey = `${target.governedProjectId}\u0000${target.factTypeKey}\u0000${target.objectId}`;
+    if (seenTargets.has(targetKey)) return false;
+    seenTargets.add(targetKey);
+    return true;
+  });
+}
+
+function FactAssociationCardRow({ association, locale, unavailableLabel }: { association: FactCardAssociation; locale: string; unavailableLabel: string }) {
+  const target = association.target;
+  const title = association.available
+    ? getLocalizedObjectTitle(association, locale)
+    : unavailableLabel;
+  const typeColor = target ? (CATEGORY_COLORS[target.factTypeKey] || CATEGORY_COLORS.other) : CATEGORY_COLORS.other;
+  const { isOpen: panelOpen, content: panelContent, openPanel } = usePanel();
+  const canOpen = Boolean(association.available && target);
+  const isCurrentPanelOpen = Boolean(canOpen && panelOpen && panelContent?.type === 'object'
+    && panelContent.objectType === target?.factTypeKey && panelContent.objectId === target?.objectId);
+  const PanelIcon = isCurrentPanelOpen ? ChevronLeft : ChevronRight;
+  const open = () => {
+    if (!canOpen || !target) return;
+    openPanel({ type: 'object', title, objectType: target.factTypeKey, objectId: target.objectId });
+  };
+  return (
+    <div
+      role={canOpen ? 'button' : undefined}
+      tabIndex={canOpen ? 0 : -1}
+      onClick={open}
+      onKeyDown={(event) => {
+        if (!canOpen || (event.key !== 'Enter' && event.key !== ' ')) return;
+        event.preventDefault();
+        open();
+      }}
+      className={`group flex min-w-0 items-center gap-2 rounded-md px-1.5 py-2 text-left transition-colors ${canOpen ? 'cursor-pointer hover:bg-ldvh-border/25 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ldvh-accent/50' : 'cursor-default'}`}
+    >
+      <ObjectTypeIcon type={target?.factTypeKey} size={13} className="shrink-0" style={{ color: typeColor }} />
+      <span className="ldvh-meta-primary min-w-0 flex-1 whitespace-normal break-words text-ldvh-text-secondary/85 group-hover:text-ldvh-accent">{title}</span>
+      {association.available && target && association.status && <StatusBadge status={association.status} statusLabel={getObjectStatusLocale(target.factTypeKey, association.status, locale)} objectType={target.factTypeKey} size="xs" />}
+      {canOpen && <PanelIcon size={16} className="shrink-0 text-ldvh-text-secondary/70 transition-colors group-hover:text-ldvh-accent" aria-hidden="true" />}
+    </div>
   );
 }
 
 function SparkCardContent({ obj }: { obj: ObjectItem }) {
-  if (hasSparkDiscardFact(obj) || hasSparkImplementedFact(obj) || hasSparkResolvedFact(obj)) return <SparkTerminalCardContent obj={obj} />;
-  return null;
+  const terminal = hasSparkDiscardFact(obj) || hasSparkImplementedFact(obj) || hasSparkResolvedFact(obj);
+  return terminal ? <SparkTerminalCardContent obj={obj} /> : null;
 }
 
 function PitfallTerminalCardContent({ obj }: { obj: ObjectItem }) {
@@ -1354,7 +1415,7 @@ function PitfallTerminalCardContent({ obj }: { obj: ObjectItem }) {
   const disposition = obj.disposition_summary?.trim() || t('objectList.dispositionMissing');
 
   return (
-    <TerminalFactPanel tone="discarded" content={formatReasonText(disposition)} />
+    <TerminalFactPanel tone="retired" content={formatReasonText(disposition)} />
   );
 }
 
@@ -1618,10 +1679,7 @@ export default function ObjectList() {
             showNonActiveReason={false}
             displayStatus="closure_confirmation"
           >
-            <>
-              <WorkCaseClosureConfirmationContent goal={obj.goal} closureProposal={obj.closureProposal} />
-              <WorkCaseContributionsContent contributions={obj.contributedTo} locale={locale} />
-            </>
+            <WorkCaseClosureConfirmationContent goal={obj.goal} closureProposal={obj.closureProposal} />
           </ObjectCardFrame>
         );
       }
@@ -1635,10 +1693,7 @@ export default function ObjectList() {
             showNonActiveReason={false}
             displayStatus={displayProgressGroup}
           >
-            <>
-              <WorkCaseClosedContent goal={obj.goal} terminal={obj.closureTerminal} termination={obj.termination} />
-              <WorkCaseContributionsContent contributions={obj.contributedTo} locale={locale} />
-            </>
+            <WorkCaseClosedContent goal={obj.goal} terminal={obj.closureTerminal} termination={obj.termination} />
           </ObjectCardFrame>
         );
       }

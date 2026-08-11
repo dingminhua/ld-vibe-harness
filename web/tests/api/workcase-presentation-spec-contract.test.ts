@@ -98,7 +98,7 @@ test('Specs fix plan-confirmation and progressing Card inputs to the latest fiel
   assert.doesNotMatch(cardSection, /progress_history|第 N 轮|轮次未记录/);
 });
 
-test('Specs define the closure-decision input zone and contributed-to section for closure confirmation cards', () => {
+test('Specs define the closure-decision input zone and shared formal associations for closure confirmation cards', () => {
   const cardSection = workCaseCardSection();
 
   assert.match(cardSection, /`closure_confirmation` Card 在通用对象身份、标题、进展分组和更新时间之外，正文定义以下两区/);
@@ -118,14 +118,12 @@ test('Specs define the closure-decision input zone and contributed-to section fo
   assert.match(cardSection, /直接读取 `closure_proposal\.spark_suggestions\[\]`/);
   assert.match(cardSection, /`closure_proposal` 缺失、结构不符或其必要成员不可读时/);
   assert.match(cardSection, /Web 也不得为 `closure_proposal` 补写生成的占位提案/);
-  assert.match(cardSection, /\*\*后续贡献\*\*区：该区逐项列出当前 WorkCase 实际声明的 `contributed-to` Pitfall 目标/);
-  assert.match(cardSection, /`draft`“待确认”、`active`“活跃”、`discarded`“已废弃”/);
-  assert.match(cardSection, /不以 object_id 冒充名称/);
-  assert.match(cardSection, /不把该区表达为剩余责任去向/);
-  assert.match(cardSection, /当前对象没有任何 `contributed-to` 时该区整体省略，不生成空态文案/);
+  assert.match(cardSection, /正式 `relations` 由所有五类事实对象 Card 统一呈现，而不是链接、URL、材料或引用列表/);
+  assert.match(cardSection, /`contributed-to` 只是其中一类正式关联，不再在 WorkCase Card 另设“后续贡献”模块/);
+  assert.match(cardSection, /不根据 relation key 推断分流、依赖、承接责任或终态处置/);
   assert.match(cardSection, /不提供 promote、discard、批量审核或自动过期控件/);
   assert.match(cardSection, /`closure_confirmation` Card 不显示关闭完整性诊断/);
-  assert.match(cardSection, /除上述两区外，不展开成功标准结果、结果与验证、主控自检、独立结果复核或执行统计/);
+  assert.match(cardSection, /除关闭判断输入区与通用正式关联区外，不展开成功标准结果、结果与验证、主控自检、独立结果复核或执行统计/);
   assert.match(cardSection, /`gate2_position_blocked` 必须改用 blocker-qualified closure-position Card/);
   assert.match(cardSection, /首先显示“关闭位置受阻”及完整 `blocking_summary`/);
   assert.match(cardSection, /不得显示 Gate 2 判断入口、readiness 话术或关闭操作/);
@@ -133,7 +131,7 @@ test('Specs define the closure-decision input zone and contributed-to section fo
   assert.match(cardSection, /详情“关闭提案”节点把 `proposed_outcome` 的紧凑分类放在“关闭提案”标题行/);
   assert.match(cardSection, /`closed` Card 使用与上述关闭 Card 相同的扫读结构/);
   assert.match(cardSection, /route_existing 从 `routed-to` 与当前 target title 呈现/);
-  assert.match(cardSection, /`related-to` 只在详情关系区呈现/);
+  assert.match(cardSection, /正式 `relations` 由所有五类事实对象 Card 统一呈现/);
   assert.doesNotMatch(cardSection, /control-contract|workcase_profile|closure_requested_at|review_requested_at|closure_approval/);
 });
 

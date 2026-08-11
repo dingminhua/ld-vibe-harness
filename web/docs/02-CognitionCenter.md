@@ -154,12 +154,12 @@
 |---|---|
 | open 总数与优先级分布 | `status = open`，按 `priority` 分组计数（priority 仅 Spark 适用） |
 | 静默数 | `open` 且 `updated_at` 距今 ≥ 静默阈值（当前由 Web API 常量 `SPARK_SILENT_THRESHOLD_DAYS = 5` 提供，并通过 `silentThresholdDays` 返回；UI 如实标注） |
-| 收敛情况 | 终态（`routed` / `implemented` / `discarded`）数 / 总数 |
-| 池的当前拆分 | 当前全部有效 Spark = 终态（`routed` / `implemented` / `discarded`）+ `open`；以一条满宽比例条显示两个数量 |
+| 收敛情况 | 终态（`implemented` / `discarded`）数 / 总数 |
+| 池的当前拆分 | 当前全部有效 Spark = 终态（`implemented` / `discarded`）+ `open`；以一条满宽比例条显示两个数量 |
 
 - 标题带以弱辅助文字显示静默数量与阈值；比例条内仅居中显示终态与待处理数量，条下按两侧居中展示各自的终态/优先级构成。它表达当前结构，不表示告警、成功或处置建议。
 - 标题带提供“时间”筛选：全部、超过 3 天、超过一周；默认超过一周。筛选对象是当前全部 `open` Spark，按完整静默天数倒序、优先级、更新时间、ID 排序；默认显示六项，其余由局部展开入口显示。每条列出标题、优先级弱信号、静默天数与复制 ID，点击标题打开右侧扩展阅读。静默数仍按 5 天阈值独立派生，仅作为池健康摘要，不改变筛选阈值。
-- 本模块不生成"应当分流到何处"的建议；需要跨行动保留的内容是否应形成 Spark、已有 Spark 是否应分流或进入终态，仍按 20、31、32 与 Human 当前指令判断。页面只呈现来源已有节点和当前池结构；open、终态、静默数量或比例不证明事项整体闭环，更不证明 HV4。
+- 本模块不生成“应当如何处置”的建议；需要跨行动保留的内容是否应形成 Spark、已有 Spark 是否应落实或废弃，仍按 20、31、32 与 Human 当前指令判断。页面只呈现来源已有节点和当前池结构；open、终态、静默数量或比例不证明事项整体闭环，更不证明 HV4。历史 `routed` Spark 只读可见，但不进入当前池、筛选或统计。
 - 空态：当前筛选条件下没有待处理 Spark。
 
 ## 5. 同源核查与全局信任标记（支撑 HV1-HV3 与 HV5）
@@ -297,7 +297,7 @@ interface CognitionData {
   sparkHealth?: {
     openTotal: number;
     terminalTotal: number;
-    terminalByStatus: { routed: number; implemented: number; discarded: number };
+    terminalByStatus: { implemented: number; discarded: number };
     openByPriority: Record<string, number>;
     silentThresholdDays: number;           // 展示参数
     silentCount: number;

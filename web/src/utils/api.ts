@@ -102,6 +102,8 @@ export interface ObjectItem {
   consequences?: string;
   /** Spark-specific */
   evolution?: Array<Record<string, unknown>>;
+  /** Exact-read formal relation targets for every fact list card. */
+  factAssociations?: FactCardAssociation[];
   /** Exact field-level source metadata. */
   object_id?: string;
   fact_type_key?: string;
@@ -136,6 +138,20 @@ export interface ObjectItem {
   avoidance?: string;
   validation_summary?: string;
   applicability?: string;
+}
+
+export interface FactCardAssociation {
+  relationKey?: string;
+  target?: {
+    governedProjectId: string;
+    factTypeKey: string;
+    objectId: string;
+  };
+  title?: string;
+  title_en?: string;
+  title_zh?: string;
+  status?: string;
+  available: boolean;
 }
 
 export interface WorkCaseExecutionItem {

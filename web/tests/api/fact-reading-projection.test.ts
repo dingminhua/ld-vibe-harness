@@ -25,6 +25,19 @@ test('contributed-to relations project through with their stable target', () => 
   assert.deepEqual(projected.unresolved, []);
 });
 
+test('reading presents one association per target even when multiple relation keys point to it', () => {
+  const projected = projectFactReadingAssociations({
+    relations: [
+      { relation_key: 'inspired-by', target: { governed_project_id: 'sample', fact_type_key: 'spark', object_id: 'spark-0003' } },
+      { relation_key: 'informs', target: { governed_project_id: 'sample', fact_type_key: 'spark', object_id: 'spark-0003' } },
+    ],
+  });
+  assert.deepEqual(projected.relations, [{
+    originPath: 'relations[0]', relationKey: 'inspired-by',
+    target: { governedProjectId: 'sample', factTypeKey: 'spark', objectId: 'spark-0003' },
+  }]);
+});
+
 test('legacy reference fields are not projected', () => {
   const projected = projectFactReadingAssociations({ source_refs: [{ kind: 'web-page', locator: 'https://example.com' }], evidence_refs: [] });
   assert.deepEqual(projected.relations, []);

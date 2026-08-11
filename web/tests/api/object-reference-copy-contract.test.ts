@@ -24,7 +24,8 @@ test('all fact-object copy controls use the governed-project object reference', 
   assert.match(detail, /target=\{objId\}/);
   assert.match(detail, /<ObjectReferenceCopyButton objectId=\{value\}/);
   assert.match(panelContent, /target=\{objectId\}/);
-  assert.match(associations, /<ObjectReferenceCopyButton projectId=\{target\.governedProjectId\} objectId=\{target\.objectId\}/);
+  assert.doesNotMatch(associations, /ObjectReferenceCopyButton/);
+  assert.match(associations, /objectType=\{target\.factTypeKey\} size="xs"/);
   assert.match(workcaseReading, /<ObjectReferenceCopyButton projectId=\{projectId\} objectId=\{objectId\}/);
   assert.match(referenceCard, /<ObjectReferenceCopyButton objectId=\{refId\}/);
 

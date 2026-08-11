@@ -42,7 +42,7 @@
 | 提交 | `/changelog`、`/changelog/:hash` | Git commit records 证据追溯 | 筛选 tab、提交卡片、提交详情、复制提交上下文、右侧快速阅读 |
 | 外部调研 | `/objects/study`、`/objects/study/:id` | 外部调研报告阅读界面 | 研究意图、摘要、建议、唯一 Markdown 正文入口和关联资料；终态只在事实存在时显示处置 |
 | 决策 | `/objects/adr`、`/objects/adr/:id` | 决策阅读页 | 对象卡片、标准身份头部、问题/决策/范围/理由/影响节点；retired 以处置收束 |
-| 火花 | `/objects/spark`、`/objects/spark/:id` | 待分流信息阅读页 | 对象卡片、标准身份头部、意图/摘要/演变节点；routed、implemented、discarded 才显示对应终态处置 |
+| 火花 | `/objects/spark`、`/objects/spark/:id` | 待处理信息阅读页 | 对象卡片、标准身份头部、意图/摘要/演变节点；implemented、discarded 才显示对应终态处置；历史 routed 仅只读兼容 |
 | 经验 | `/objects/pitfall`、`/objects/pitfall/:id` | 可复用经验阅读页 | 对象卡片、标准身份头部、现象/触发/范围/验证/根因/方案/规避节点；discarded 以处置收束 |
 
 这五个模块不是孤立样板，而是后续 Web 页面继续收敛的中心。新页面或旧页面改造如涉及列表、详情、右侧扩展阅读、复制入口、关联行、节点折叠或提交证据，应优先复用这五个模块已经形成的语言。
@@ -70,7 +70,7 @@
 | ReadingPanel | 已确认 | 可实现 | 作为 App Shell 扩展阅读，不维护第二套对象摘要 |
 | Study | 已确认 | 可实现 | 外部调研报告阅读界面读取 V4 原生研究意图、摘要、建议摘要、唯一 Markdown 正文和外部资料；研究问题留在正文，正文按声明载体在扩展阅读中完整呈现；不提供历史兼容读取 |
 | ADR | 已确认 | 可实现 | 当前决策阅读页 |
-| Spark | 已确认 | 可实现 | 待分流信息阅读页，只读展示闭环事实 |
+| Spark | 已确认 | 可实现 | 待处理信息阅读页，只读展示闭环事实 |
 | Pitfall | 已确认 | 可实现 | 可复用经验阅读页 |
 | Changelog | 已确认 | 可实现 | Git commit records 证据追溯页 |
 | ProjectFiles | 基本确认 | 可实现 | 工具页，遵守路径、Markdown、提交记录、复制和只读边界 |

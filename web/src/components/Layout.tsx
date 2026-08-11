@@ -40,11 +40,10 @@ function LayoutInner({ children }: LayoutProps) {
   }, [panelOpen, closePanel]);
 
   useEffect(() => {
-    const isObjectListPage = /^\/objects\/[^/]+\/?$/.test(location.pathname);
-    if (isObjectListPage && panelOpen) {
-      closePanel();
-    }
-  }, [location.pathname, panelOpen, closePanel]);
+    // Entering a list starts with a closed reader, but opening a relation from
+    // that list must not immediately close the reader again.
+    if (/^\/objects\/[^/]+\/?$/.test(location.pathname)) closePanel();
+  }, [location.pathname, closePanel]);
 
   useEffect(() => {
     const onRefPreview = (event: Event) => {

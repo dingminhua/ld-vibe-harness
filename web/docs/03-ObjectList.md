@@ -48,8 +48,9 @@
   - 中部：本地化标题，`ldvh-card-title`，放入轻量标题带，左侧使用状态语义短线突出，不通过放大字号突出；标题必须允许换行完整显示，不得用截断省略代替阅读；
   - 优先级字符徽标：WorkCase 和 Spark 如存在 `priority`，在 ID 后面展示 `P0` / `P1` / `P2` / `P3` 字符徽标；标题行只保留 `ObjectTypeIcon(obj.type)` 和标题。徽标使用颜色、轻量边框和 tooltip 表达优先级，不作为错误或阻塞状态；
   - 可选信号：仅当对应对象的字段契约定义该字段时展示；`priority` 只适用于 WorkCase 和 Spark，不得为 ADR、Pitfall 或 Study 杜撰 priority，也不得为任何对象杜撰 importance、category 或 tags；Spark 不维护 category；Pitfall 不维护 repeatability；importance 字段已由 priority 统一承载，不作为独立字段使用
-  - 终态处置：ADR、Pitfall 与 Spark 不复用泛化的“非活跃原因”字段。它们在各自终态卡片中只读取 `disposition_summary`，用弱圆点与小号正文承载，不另造“退出理由”“关闭时间”“分流时间”标签；缺失时如实显示处置缺失提示，仍不得压过标题、状态和更新时间。
-  - Pitfall 状态筛选使用 `draft / active / discarded`，分别显示“待确认 / 活跃 / 已废弃”；Pitfall 卡片不提供 promote、discard 或批量审核控件，也不展示 `tags` 或冗余解决态。
+  - 终态处置：ADR、Pitfall 与 Spark 不复用泛化的“非活跃原因”字段。它们在各自终态卡片中只读取 `disposition_summary`，用弱圆点与小号正文承载，不另造“退出理由”“关闭时间”“处置时间”标签；缺失时如实显示处置缺失提示，仍不得压过标题、状态和更新时间。
+  - 正式 `relations` 由所有五类对象 Card 统一呈现：同一稳定目标只呈现一次，即使来源以多个 relation key 关联它；使用对象语义图标、完整标题、实际状态和进入扩展阅读的箭头。状态为“已关闭”或“已废弃”的关联目标整行不在 Card 中呈现。不设“关联”标题、类型分组标题、对象 ID 或复制按钮，不折叠或截断。它不是链接、URL、材料或引用列表，也不据此推断分流、依赖、承接责任或终态处置。仅当前项目内精确读取成功的目标可点击并打开扩展阅读；跨项目、缺失、不可读或结构无效的关联明确显示“关联信息不可用”，不猜标题或静默遗漏。
+  - Pitfall 状态筛选使用 `draft / active / discarded`，分别显示“待确认 / 活跃 / 已废弃”；`discarded` 与其终态处置说明均使用中性灰，红色只保留给 Pitfall 类型识别。Pitfall 卡片不提供 promote、discard 或批量审核控件，也不展示 `tags` 或冗余解决态。
   - 底部：只展示更新时间，使用 `formatDateTime()`，格式为 `YYYY-MM-DD HH:mm`，样式为弱化元信息 `ldvh-meta-muted`；更新时间行使用 `mt-auto` 贴近卡片下边距，避免不同标题行数或中部内容高度导致时间上浮；对象列表以更新时间排序，创建时间留在详情页身份区展示。
 - 复制对象 ID 只复制，不触发导航。只有详情或引用行完成精确读取并取得可消费 `canonical_path` 后，才可另行显示复制对象路径入口。
 - hover 时边框变为 `border-ldvh-accent/40`，标题变 accent 色。
@@ -59,9 +60,9 @@
 
 ADR 是已经形成、并应在适用边界内执行的当前决策。列表卡片只帮助用户定位当前决策，不在卡片内展开决策影响范围。
 
-- ADR 状态筛选只认 `active / retired`。`active` 是当前有效决策；`retired` 表示不再作为当前决策入口，中文显示为“已废弃”。
+- ADR 状态筛选只认 `active / retired`。`active` 是当前有效决策；`retired` 表示不再作为当前决策入口，中文显示为“已废弃”并使用中性灰。
 - ADR 卡片使用通用卡片结构：ID、状态、完整标题、更新时间；`retired` 时在标题之后以弱处置正文展示 `disposition_summary`。
-- ADR 标题就是最好的摘要；除 retired 的处置正文外，卡片不展示 `decision_question`、`decision`、`applicability`、`rationale`、`consequences`、关联或未采纳备选摘要。
+- ADR 标题就是最好的摘要；除 retired 的处置正文与通用正式关联区外，卡片不展示 `decision_question`、`decision`、`applicability`、`rationale`、`consequences`或未采纳备选摘要。
 - ADR 卡片标题必须允许换行完整显示，避免用截断标题替代决策识别。
 - ADR 卡片不展示 `related_rules` chip，也不展示 `superseded_by`、`proposed`、`accepted`、`rejected`、`superseded`、`alternatives` 或 `affects` 等旧生命周期和旧字段信息。
 
@@ -88,18 +89,19 @@ WorkCase 卡片帮助 Human 识别当前工作责任所处的进展分组，并�
 - “终止善后中”不进入普通四步轨迹，直接读取 `termination` 显示 Human 中止来源、善后摘要、保留/丢弃/未验证范围、关系影响和质量步骤；不把旧工作项呈现为仍待执行，也不生成 Gate 2 入口。
 - 进展分组直接显示在通用卡片头部；正文中的推进环节只表达当前浏览语义。status、phase 与授权的事实含义仍以事实源和详情阅读为准。
 - 投影的 `lifecycle_position=closure_preparing` 表示“推进中 / 主控收敛”：此时 Controller 正在吸收当前结果复核并形成关闭报告与分流建议，尚未向 Human 提交关闭请求。只有同一投影的 `handoff_narrative_key=gate2_waiting` 才显示“关闭待确认”，不得提前制造 Human 待办。
-- `gate2_waiting` Card 正文由“关闭判断输入区”和“后续贡献”区构成。关闭判断输入区直读 `goal` 与 `closure_proposal`，完整显示目标、拟议关闭结论、处置摘要、三类 `residual_decisions[]` 和完整 `spark_suggestions[]`。三类处置显示为 `route_existing`“路由到已有对象”、`suggest_spark`“建议后续建立 Spark”、`accept_stop`“接受停止”；route_existing 按保存的稳定目标读取当前标题和类型，不以 object ID 冒充名称。受限责任建议显示摘要、受限原因、影响、恢复条件和后续定位；后续机会显示摘要和后续定位，不生成受限字段空态，也不显示或猜测未来 Spark ID。后续贡献区只列实际 `contributed-to` Pitfall 的当前标题和状态：draft“待确认”、active“活跃”、discarded“已废弃”，并导航到同源详情；不提供 promote、discard、批量审核或自动过期控件。`closure_proposal` 缺失或结构不符时明确显示信息缺失，不拼凑替代文本。`gate2_position_blocked` 改用“关闭位置受阻”Card，首先显示完整 `blocking_summary`，可以保留来源材料但不得显示 Gate 2 判断入口、关闭待确认或仅剩关闭确认。
-- “已关闭”Card 使用相同扫读结构，从 `goal`、`closure_outcome` 和 `disposition_summary` 读取终态内容；route_existing 从 `routed-to` 呈现，suggest_spark 从顶层 `spark_suggestions` 呈现，accept_stop 从 `residual_responsibilities` 呈现，不反推原 proposal ID。后续贡献仍只显示 Pitfall 标题与当前状态。`related-to` 只在详情关系区呈现，不进入 Card。closed 不保存关闭 approval 或关闭时间，Web 不得据此报缺。
+- `gate2_waiting` Card 正文由“关闭判断输入区”构成。关闭判断输入区直读 `goal` 与 `closure_proposal`，完整显示目标、拟议关闭结论、处置摘要、三类 `residual_decisions[]` 和完整 `spark_suggestions[]`。三类处置显示为 `route_existing`“路由到已有对象”、`suggest_spark`“建议后续建立 Spark”、`accept_stop`“接受停止”；route_existing 按保存的稳定目标读取当前标题和类型，不以 object ID 冒充名称。受限责任建议显示摘要、受限原因、影响、恢复条件和后续定位；后续机会显示摘要和后续定位，不生成受限字段空态，也不显示或猜测未来 Spark ID。实际 `contributed-to` 与其它正式关系由 Card 末尾的通用关系区统一呈现，不作为关闭责任去向或独立“后续贡献”模块；不提供 promote、discard、批量审核或自动过期控件。`closure_proposal` 缺失或结构不符时明确显示信息缺失，不拼凑替代文本。`gate2_position_blocked` 改用“关闭位置受阻”Card，首先显示完整 `blocking_summary`，可以保留来源材料但不得显示 Gate 2 判断入口、关闭待确认或仅剩关闭确认。
+- “已关闭”Card 使用相同扫读结构，从 `goal`、`closure_outcome` 和 `disposition_summary` 读取终态内容；route_existing 从 `routed-to` 呈现，suggest_spark 从顶层 `spark_suggestions` 呈现，accept_stop 从 `residual_responsibilities` 呈现，不反推原 proposal ID。正式 `relations` 由所有五类对象 Card 统一呈现，不限于详情关系区。closed 不保存关闭 approval 或关闭时间，Web 不得据此报缺。
 
 ### 3.5 Spark 卡片
 
-Spark 是“待分流信息”卡片，列表态用于快速定位每条火花，并在已经形成终态处置时提示闭环事实；待处理卡片不展开意图、摘要、演变或长正文。
+Spark 是“待处理信息”卡片，列表态用于快速定位每条火花，并在已经形成终态处置时提示闭环事实；待处理卡片不展开意图、摘要、演变或长正文。
 
 - Spark 卡片保留通用头部、标题、优先级字符徽标、状态和更新时间。
 - Spark 卡片不使用通用非活跃原因块；卡片中部只由 Spark 闭环状态驱动。
 - Spark 卡片中部状态内容必须使用与 Pitfall 归档原因一致的弱说明表达：弱圆点、小号标签、小号正文，无彩色外框、无大面积状态底色、无 section 标题级强调。
 - `open` 时，卡片中部不展示 `intent`、`summary` 或 `evolution`；这些内容留在详情页按阅读节点展开。
-- `routed`、`implemented` 与 `discarded` 时，卡片中部只展示 `disposition_summary`。状态徽章说明终态类别，正文说明实际处置；不在卡片中显示承接目标、额外终态时间或旧的 `resolved_to` / `resolved_at` / `discard_reason` 投影。
+- `implemented` 与 `discarded` 时，卡片中部展示 `disposition_summary`。`implemented`（已关闭）使用低饱和蓝灰，`discarded`（已废弃）使用中性灰；状态徽章说明终态类别，正文说明实际处置；不在卡片中显示承接目标、额外终态时间或旧的 `resolved_to` / `resolved_at` / `discard_reason` 投影。历史 `routed` 仅保留直接只读查看，不是当前列表状态。
+- 实际存在 `relations` 时，Spark 与其它四类对象一样使用 §3.2 的通用正式关联区；它不表示链接或分流。
 - Spark 卡片内部信息区域只用于阅读，不响应主路由跳转；只有卡片标题进入 Spark 详情页，ID、状态、正文、更新时间和卡片空白区域均不触发导航。
 
 ### 3.6 Spark 创建边界
@@ -120,7 +122,7 @@ Spark 列表页保持只读；Web 不提供 Spark 创建、直接捕获、写入
 - 顶部区域统一为左侧对象 ID、右侧状态徽章；候选卡不伪造或复制来源路径，也不得在右侧操作区加入强视觉按钮。
 - 标题带统一使用弱背景、内圈边框、左侧语义短线、对象类型图标、完整标题和右侧进入箭头；标题使用 `ldvh-card-title`，必须允许换行完整显示。
 - 更新时间统一放在卡片底部右侧，使用 `formatDateTime()` 和 `ldvh-meta-muted`；列表排序统一按 `updated` 倒序，最近发生变化的对象在最前。
-- 研究、决策、火花和经验在列表态只展示对象定位所需信息，不展开长正文；ADR 的 `retired`、Pitfall 的 `discarded` 与 Spark 的 `routed` / `implemented` / `discarded` 才展示终态 `disposition_summary`，并使用弱说明表达，不升级为强状态模块。
+- 研究、决策、火花和经验在列表态只展示对象定位所需信息与通用正式关联区，不展开长正文；ADR 的 `retired`、Pitfall 的 `discarded` 与 Spark 的 `implemented` / `discarded` 才展示终态 `disposition_summary`，并使用弱说明表达，不升级为强状态模块。
 - 终态处置在决策、经验和火花中保持一致：弱圆点、小号正文、无额外标签、无醒目外框、大面积状态底色或标题级强调。
 - 四类对象必须继续使用同一 `ObjectStatusFilter` tab 视觉；状态数量数字使用 `ldvh-tab-count`，不得在单个对象页局部改大、改粗或拉开间距。
 
@@ -131,7 +133,7 @@ Spark 列表页保持只读；Web 不提供 Spark 创建、直接捕获、写入
 | 点击左侧导航类型 | 切换到对应 `/objects/:type` |
 | 点击浏览筛选 | WorkCase 更新 `progress` query；其它对象更新 `status` query；按 query 重新读取列表 |
 | 点击对象卡片外层空白、标题带、ID、状态徽章或更新时间 | 跳转到当前对象详情页，保留当前 query，并把当前列表 URL 记录为详情页返回来源 |
-| 点击 WorkCase 关联行 | 跳转到对应 WorkCase 详情页，保留当前列表 URL 作为返回来源 |
+| 点击任意对象 Card 的正式关联行 | 在右侧扩展阅读打开对应对象，不改变当前列表路由 |
 | 点击卡片内部信息框、区块标题、态势条或普通信息区域 | 不触发路由跳转，不表现为独立可点控件 |
 | 从详情页返回对象列表 | 主内容回到 `/objects/:type`，并主动关闭右侧扩展阅读区 |
 | 切换语言 | 状态、标题和空态文案同步切换 |
@@ -145,7 +147,7 @@ Spark 列表页保持只读；Web 不提供 Spark 创建、直接捕获、写入
    - `closure_confirmation` 的结论语义块固定显示“关闭提案”，标题已提供提议身份，因此右侧只显示“目标达成 / 部分达成 / 未达成 / 取消”（英文“Achieved / Partial / Not achieved / Cancel”）的紧凑分类标签，不重复“提议结论 / Proposed conclusion”前缀；整体统一使用中性提案图标和琥珀色提案色调，不把提案分类表现成既成状态。`closed` 的总体语义块固定显示“终态处置”，读取 `closure_outcome` 选择语义色与图标，但 Card 不再重复显示“完成”等第二状态标签。
 5. 候选对象卡片不得用对象 ID、导航 target 或空 `path` 冒充来源路径；精确读取成功后再在详情或引用消费点提供复制入口。
 6. 执行项不作为一级导航 tab，也不拥有独立详情路由。
-7. 对象卡片只有标题是当前对象详情入口，并提供统一 hover/focus 反馈；ID、状态、正文、更新时间和卡片空白区域均不触发导航。只有 WorkCase 关联行等明确通向另一处的内部控件可以单独响应；内部工作项不拥有独立详情路由。
+7. 对象卡片只有标题是当前对象详情入口，并提供统一 hover/focus 反馈；ID、状态、正文、更新时间和卡片空白区域均不触发导航。正式关联行是唯一可单独响应的内部控件，并只打开扩展阅读；内部工作项不拥有独立详情路由。
 
 ## 6. API 数据结构
 

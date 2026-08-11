@@ -498,7 +498,7 @@ test('list ordering defaults to updated time and supports object-ID ordering wit
   assert.doesNotMatch(sorting, /progress_group|progress_step|PROGRESS_GROUP_INDEX|PROGRESS_STEP_INDEX/);
 });
 
-test('closure confirmation cards render the closure-decision input zone and declared contributed-to targets', () => {
+test('closure confirmation cards render the closure-decision input zone and shared formal associations', () => {
   const list = source('src/pages/ObjectList.tsx');
   const branchStart = list.indexOf("if (displayProgressGroup === 'closure_confirmation')");
   const branchEnd = list.indexOf("if (displayProgressGroup === 'closed')", branchStart);
@@ -510,8 +510,8 @@ test('closure confirmation cards render the closure-decision input zone and decl
   assert.match(branch, /displayStatus="closure_confirmation"/);
   assert.doesNotMatch(branch, /prominentTitle/);
   assert.match(branch, /<WorkCaseClosureConfirmationContent goal=\{obj\.goal\} closureProposal=\{obj\.closureProposal\} \/>/);
-  assert.match(branch, /<WorkCaseContributionsContent contributions=\{obj\.contributedTo\} locale=\{locale\} \/>/);
-  assert.ok(branch.indexOf('<WorkCaseClosureConfirmationContent') < branch.indexOf('<WorkCaseContributionsContent'));
+  assert.doesNotMatch(branch, /<WorkCaseContributionsContent contributions=\{obj\.contributedTo\}/);
+  assert.match(list, /<FactAssociationsCardContent associations=\{obj\.factAssociations\} \/>/);
   assert.doesNotMatch(branch, /executionItems|successCriteria|blocking_summary/);
 
   assert.match(content, /<WorkCaseGoalSection goal=\{goal\} t=\{t\} emphasis="supporting" \/>/);
@@ -579,7 +579,8 @@ test('closed cards use terminal closure content while unclassified cards stay mi
   assert.match(terminalBranch, /displayStatus=\{progressGroup \?\? 'unknown'\}/);
   assert.match(terminalBranch, /workcaseProgressGroupUnavailable/);
   assert.match(list, /<WorkCaseClosedContent goal=\{obj\.goal\} terminal=\{obj\.closureTerminal\} termination=\{obj\.termination\} \/>/);
-  assert.match(list, /<WorkCaseContributionsContent contributions=\{obj\.contributedTo\}/);
+  assert.doesNotMatch(terminalBranch, /<WorkCaseContributionsContent contributions=\{obj\.contributedTo\}/);
+  assert.match(list, /<FactAssociationsCardContent associations=\{obj\.factAssociations\} \/>/);
   assert.match(list, /getFieldValueLabel\('proposed_disposition', 'route_existing', locale\)/);
   assert.match(list, /getFieldValueLabel\('proposed_disposition', 'suggest_spark', locale\)/);
   assert.match(closedContent, /<WorkCaseOutcomeNotice outcome=\{terminal\.outcome\} dispositionSummary=\{terminal\.dispositionSummary\} mode="terminal" \/>/);

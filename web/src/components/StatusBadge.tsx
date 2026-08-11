@@ -7,14 +7,20 @@ interface StatusBadgeProps {
   status: string;
   statusLabel?: string;  // Localized display text
   objectType?: string;
-  size?: 'sm' | 'md';
+  size?: 'xs' | 'sm' | 'md';
 }
 
 export default function StatusBadge({ status, statusLabel, objectType = '', size = 'sm' }: StatusBadgeProps) {
   const { resolved } = useTheme();
   const { locale } = useI18n();
-  const color = getStatusColor(status);
-  const sizeClasses = size === 'sm' ? 'px-2 py-0.5' : 'px-2.5 py-1';
+  const color = (objectType === 'spark' && status === 'discarded')
+    || (objectType === 'adr' && status === 'retired')
+    || (objectType === 'pitfall' && status === 'discarded')
+    ? '#6b7280'
+    : getStatusColor(status);
+  const sizeClasses = size === 'xs'
+    ? 'px-1.5 py-0.5 text-[10px] leading-3'
+    : size === 'sm' ? 'px-2 py-0.5' : 'px-2.5 py-1';
   const display = statusLabel || getStatusLocale(status, locale);
   const tooltip = getObjectStatusHint(objectType, status, locale);
 

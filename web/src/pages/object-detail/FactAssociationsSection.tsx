@@ -1,6 +1,5 @@
 import { useEffect, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
-import ObjectReferenceCopyButton from '@/components/ObjectReferenceCopyButton';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
 import StatusBadge from '@/components/StatusBadge';
 import { getFieldLabel, getLocalizedObjectTitle, getObjectStatusLocale, getTypeLabel } from '@/i18n/locales';
@@ -140,9 +139,7 @@ function ReadableRelationTarget({ relation, locale, showRelationKey }: {
       <ObjectTypeIcon type={target.factTypeKey} size={13} className="shrink-0" style={{ color: typeColor }} />
       {showRelationKey && <RelationKeyChip relationKey={relation.relationKey} locale={locale} />}
       <span className="ldvh-meta-primary min-w-0 flex-1 truncate group-hover:text-ldvh-accent">{title}</span>
-      <span className="ldvh-meta-muted shrink-0">{target.objectId}</span>
-      {status && <StatusBadge status={status} statusLabel={getObjectStatusLocale(target.factTypeKey, status, locale)} objectType={target.factTypeKey} size="sm" />}
-      <ObjectReferenceCopyButton projectId={target.governedProjectId} objectId={target.objectId} />
+      {status && <StatusBadge status={status} statusLabel={getObjectStatusLocale(target.factTypeKey, status, locale)} objectType={target.factTypeKey} size="xs" />}
       <PanelIcon size={16} className="shrink-0 text-ldvh-text-secondary/70 transition-colors group-hover:text-ldvh-accent" aria-hidden="true" />
     </div>
   );

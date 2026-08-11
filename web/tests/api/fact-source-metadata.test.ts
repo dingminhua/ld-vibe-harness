@@ -113,3 +113,50 @@ test('list responses keep per-object read failures and collection coverage in th
     await rm(root, { recursive: true, force: true });
   }
 });
+
+test('fact list cards project every formal association through exact readable targets', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'ldvh-web-facts-'));
+  const scope: LocalFactScope = { worktreeLocator: root, governedProjectId: 'fixture' };
+  try {
+    await mkdir(path.join(root, 'ldvh-base', 'sparks'), { recursive: true });
+    await mkdir(path.join(root, 'ldvh-base', 'workcases'), { recursive: true });
+    await writeFile(
+      path.join(root, 'ldvh-base', 'workcases', 'workcase-0001.yaml'),
+      'object_id: workcase-0001\nfact_type_key: workcase\ntitle: Target title\ntitle_zh: 关联目标\nstatus: open\n',
+      'utf8',
+    );
+    await writeFile(
+      path.join(root, 'ldvh-base', 'sparks', 'spark-0001.yaml'),
+      [
+        'object_id: spark-0001', 'fact_type_key: spark', 'title: Spark source', 'status: open', 'relations:',
+        '  - relation_key: related-to', '    target:', '      governed_project_id: fixture', '      fact_type_key: workcase', '      object_id: workcase-0001',
+        '  - relation_key: informs', '    target:', '      governed_project_id: fixture', '      fact_type_key: workcase', '      object_id: workcase-0001',
+        '  - relation_key: related-to', '    target:', '      governed_project_id: fixture', '      fact_type_key: study', '      object_id: study-9999',
+        '  - malformed relation',
+        '',
+      ].join('\n'),
+      'utf8',
+    );
+
+    const listed = await listObjects('spark', undefined, undefined, scope);
+    if (!listed.ok) throw new Error(listed.error);
+    const item = (listed.data.items as Array<Record<string, unknown>>)[0];
+    assert.deepEqual(item?.factAssociations, [
+      {
+        relationKey: 'related-to',
+        target: { governedProjectId: 'fixture', factTypeKey: 'workcase', objectId: 'workcase-0001' },
+        available: true,
+        title: 'Target title',
+        status: 'open',
+      },
+      {
+        relationKey: 'related-to',
+        target: { governedProjectId: 'fixture', factTypeKey: 'study', objectId: 'study-9999' },
+        available: false,
+      },
+      { available: false },
+    ]);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
