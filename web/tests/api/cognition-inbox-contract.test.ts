@@ -113,7 +113,7 @@ test('cognition endpoint returns inbox, fact activity, Spark health, and fact ho
   assert.ok(Array.isArray(sparkHealth.silentItems))
   assert.ok(body.recentHotspots && typeof body.recentHotspots === 'object')
   const hotspots = body.recentHotspots as Record<string, unknown>
-  assert.equal(hotspots.window, '1d')
+  assert.equal(hotspots.window, '7d')
   for (const key of ['totalEvents', 'hotspotTotal', 'relationTotal']) {
     assert.equal(typeof hotspots[key], 'number')
   }
@@ -128,7 +128,7 @@ test('cognition endpoint returns inbox, fact activity, Spark health, and fact ho
 test('recent hotspots preserve only fact activity and one-hop formal relation shape', async () => {
   const body = await cognition('zh', '1d')
   const hotspots = body.recentHotspots as Record<string, unknown>
-  assert.equal(hotspots.window, '1d')
+  assert.equal(hotspots.window, '7d')
   const clusters = hotspots.clusters as Array<Record<string, unknown>>
   const primaryKeys = new Set<string>()
   const assertNode = (node: Record<string, unknown>) => {

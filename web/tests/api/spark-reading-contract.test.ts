@@ -20,7 +20,7 @@ test('every fact list card shows exact-read formal associations in a minimal sec
   assert.match(source, /whitespace-normal break-words/);
   assert.match(source, /openPanel\(\{ type: 'object', title, objectType: target\.factTypeKey, objectId: target\.objectId \}\)/);
   assert.doesNotMatch(source, /StatusBadge status=\{association\.status\}/);
-  assert.match(source, /dedupeFactCardAssociations\(associations\)[\s\S]*\.filter\(\(association\) => !\['closed', 'implemented', 'discarded', 'retired'\]\.includes\(association\.status \?\? ''\)\)/);
+  assert.match(source, /dedupeFactCardAssociations\(associations\)[\s\S]*\.filter\(\(association\) => !\['closed', 'implemented', 'discarded', 'retired', 'deprecated'\]\.includes\(association\.status \?\? ''\)\)/);
   assert.doesNotMatch(source, /getFieldLabel\('fact_associations'/);
   assert.doesNotMatch(source, /ObjectReferenceCopyButton/);
   assert.doesNotMatch(source, /factAssociations[^\n]{0,120}\.slice\(/);

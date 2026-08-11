@@ -86,7 +86,8 @@ export default function ObjectStatusFilter({
   const displayOptions = useMemo(() => {
     if (!(type in FALLBACK_STATUSES_BY_TYPE)) return sortedOptions;
     const counts = new Map(sortedOptions.map((option) => [option.status, option.count]));
-    return fallbackStatuses.map((status) => ({ status, count: counts.get(status) ?? 0 }));
+    const statuses = [...new Set([...fallbackStatuses, ...sortedOptions.map((option) => option.status)])];
+    return statuses.map((status) => ({ status, count: counts.get(status) ?? 0 }));
   }, [fallbackStatuses, sortedOptions, type]);
 
   if (loading && sortedOptions.length === 0) {

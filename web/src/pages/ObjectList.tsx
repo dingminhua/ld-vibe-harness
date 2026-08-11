@@ -19,7 +19,7 @@ import { useI18n } from '@/i18n/context';
 import { getFieldLabel, getFieldValueLabel, getLocalizedObjectTitle, getObjectStatusLocale, getTypeLabel } from '@/i18n/locales';
 import { CATEGORY_COLORS } from '@/utils/categoryColors';
 import { getFactReadMeta, isReadableFact } from '@/utils/factReadMeta';
-import { getEffectiveListStatus, writeListStatusParam } from '@/utils/listStatus';
+import { ALL_STATUS_PARAM, getEffectiveListStatus, writeListStatusParam } from '@/utils/listStatus';
 import { usePanel } from '@/utils/panelContext';
 import { compareRfc3339Timestamps } from '@/shared/timestamp';
 import {
@@ -60,6 +60,10 @@ function statusRequiresDisposition(obj: ObjectItem): boolean {
   return obj.status === 'retired'
     || obj.status === 'discarded'
     || (obj.fact_type_key === 'spark' && obj.status === 'implemented');
+}
+
+function isDeprecatedListCard(obj: ObjectItem): boolean {
+  return obj.status === 'retired' || obj.status === 'discarded' || obj.status === 'deprecated';
 }
 
 function getNonActiveReason(obj: ObjectItem, t: Translate): StatusReason | null {
@@ -1194,8 +1198,20 @@ function contributionTargetTitle(detail: ObjectDetail | null, readMeta: ReturnTy
   return getLocalizedObjectTitle(detail.data as { title?: string; title_en?: string; title_zh?: string }, locale);
 }
 
+function isTerminalListCard(obj: ObjectItem): boolean {
+  return obj.status === 'closed'
+    || obj.status === 'implemented'
+    || obj.status === 'retired'
+    || obj.status === 'discarded'
+    || obj.status === 'deprecated'
+    || obj.progress_group === 'closed'
+    || obj.progress_group === 'termination_cleanup';
+}
+
 function sortObjectsForList(items: ObjectItem[], sort: ObjectListSort): ObjectItem[] {
   return [...items].sort((a, b) => {
+    const terminalDelta = Number(isTerminalListCard(a)) - Number(isTerminalListCard(b));
+    if (terminalDelta !== 0) return terminalDelta;
     if (sort === 'id_desc') return b.id.localeCompare(a.id);
 
     const updatedDelta = compareRfc3339Timestamps(b.updated, a.updated);
@@ -1346,7 +1362,7 @@ function FactAssociationsCardContent({ associations }: { associations?: FactCard
   const { t, locale } = useI18n();
   if (!associations || associations.length === 0) return null;
   const visibleAssociations = dedupeFactCardAssociations(associations)
-    .filter((association) => !['closed', 'implemented', 'discarded', 'retired'].includes(association.status ?? ''));
+    .filter((association) => !['closed', 'implemented', 'discarded', 'retired', 'deprecated'].includes(association.status ?? ''));
   if (visibleAssociations.length === 0) return null;
 
   return (
@@ -1549,7 +1565,8 @@ export default function ObjectList() {
     fetchObjects(currentType, activeStatus ?? undefined, activePriority ?? undefined, activeProgressGroup ?? undefined)
       .then((result) => {
         const receivedItems = result.data?.items ?? [];
-        const nextItems = currentType === 'spark' ? receivedItems.map(sparkViewItem) : receivedItems;
+        const nextItems = (currentType === 'spark' ? receivedItems.map(sparkViewItem) : receivedItems)
+          .filter((item) => !isDeprecatedListCard(item) || searchParams.get('status') === ALL_STATUS_PARAM || activeStatus === item.status);
         setItems(nextItems);
         setStatusOptions(result.data?.statusOptions ?? []);
         setProgressOptions(result.data?.progressOptions ?? []);
@@ -1562,7 +1579,7 @@ export default function ObjectList() {
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-  }, [currentType, activeStatus, activePriority, activeProgressGroup]);
+  }, [currentType, activeStatus, activePriority, activeProgressGroup, statusParam]);
 
   const sortedItems = sortObjectsForList(items, activeSort);
 

@@ -92,6 +92,80 @@ function projectListItem(type: ObjectType, item: LocalFactItem): Record<string, 
   }
 }
 
+type FactAssociationTarget = {
+  governedProjectId: string
+  factTypeKey: string
+  objectId: string
+}
+
+function factAssociationTargetKey(target: FactAssociationTarget): string {
+  return `${target.governedProjectId}\u0000${target.factTypeKey}\u0000${target.objectId}`
+}
+
+function projectFactAssociationTarget(value: unknown): FactAssociationTarget | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null
+  const target = value as Record<string, unknown>
+  if (typeof target.governed_project_id !== 'string' || !target.governed_project_id.trim()
+    || typeof target.fact_type_key !== 'string' || !target.fact_type_key.trim()
+    || typeof target.object_id !== 'string' || !target.object_id.trim()) return null
+  return {
+    governedProjectId: target.governed_project_id,
+    factTypeKey: target.fact_type_key,
+    objectId: target.object_id,
+  }
+}
+
+function isObjectType(value: string): value is ObjectType {
+  return ACTIVE_OBJECT_TYPES.includes(value as ObjectType)
+}
+
+/**
+ * Fact list cards show association targets as an exact-read projection.  A
+ * relation never carries a copied title itself, so an unavailable target stays
+ * explicit instead of being silently omitted or given a guessed title.
+ */
+async function projectFactCardAssociations(item: LocalFactItem, scope: LocalFactScope): Promise<Array<Record<string, unknown>>> {
+  const relations = item.fact_object?.relations
+  if (!Array.isArray(relations)) return []
+  const seenTargets = new Set<string>()
+  const visibleRelations = relations.filter((candidate) => {
+    if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) return true
+    const relation = candidate as Record<string, unknown>
+    const target = projectFactAssociationTarget(relation.target)
+    if (typeof relation.relation_key !== 'string' || target === null) return true
+    const targetKey = factAssociationTargetKey(target)
+    if (seenTargets.has(targetKey)) return false
+    seenTargets.add(targetKey)
+    return true
+  })
+  return Promise.all(visibleRelations.map(async (candidate) => {
+    if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) return { available: false }
+    const relation = candidate as Record<string, unknown>
+    const target = projectFactAssociationTarget(relation.target)
+    if (typeof relation.relation_key !== 'string' || target === null) return { available: false }
+    const projection: Record<string, unknown> = { relationKey: relation.relation_key, target, available: false }
+    if (target.governedProjectId !== scope.governedProjectId || !isObjectType(target.factTypeKey)) return projection
+    const exact = await readLocalFact(target.factTypeKey, target.objectId, scope)
+    if (exact.status !== 'ok' || exact.item.read_status !== 'readable' || exact.item.fact_object === null) return projection
+    const source = exact.item.fact_object
+    if (typeof source.title !== 'string' || !source.title.trim()) return projection
+    return {
+      ...projection,
+      available: true,
+      title: source.title,
+      ...copyPresentFields(source, ['title_en', 'title_zh', 'status']),
+    }
+  }))
+}
+
+async function projectListItemWithAssociations(type: ObjectType, item: LocalFactItem, scope: LocalFactScope): Promise<Record<string, unknown>> {
+  const associations = await projectFactCardAssociations(item, scope)
+  return {
+    ...projectListItem(type, item),
+    ...(associations.length > 0 ? { factAssociations: associations } : {}),
+  }
+}
+
 function copyPresentFields(source: Record<string, unknown>, fields: readonly string[]): Record<string, unknown> {
   return Object.fromEntries(fields.flatMap((field) => Object.prototype.hasOwnProperty.call(source, field) ? [[field, source[field]]] : []))
 }
@@ -380,9 +454,11 @@ export function projectCurrentWorkCaseCard(
 
 export async function listObjects(type: ObjectType, _baseDir?: string, status?: string, scope?: LocalFactScope): Promise<WebFactResult | WebFactError> {
   try {
-    const listed = await listLocalFacts(type, await readingScope(scope))
+    const resolvedScope = await readingScope(scope)
+    const listed = await listLocalFacts(type, resolvedScope)
     if (listed.status !== 'complete') return notIntegrated(type, listed.issues[0]?.message ?? `类型 ${type} 尚无对象目录`)
-    const items = listed.items.map((item) => projectListItem(type, item)).filter((item) => !status || item.status === status)
+    const projectedItems = await Promise.all(listed.items.map((item) => projectListItemWithAssociations(type, item, resolvedScope)))
+    const items = projectedItems.filter((item) => !status || item.status === status)
     const response = result('list', type, { items, coverage_status: 'complete', collection_issues: listed.issues })
     response.issues = [
       ...listed.issues.map((issue) => ({ ...issue })),

@@ -9,7 +9,8 @@ test('discarded Pitfall cards use the terminal disposition presentation', () => 
 
   assert.match(source, /function PitfallTerminalCardContent/);
   assert.match(source, /obj\.status === 'discarded'/);
-  assert.doesNotMatch(source, /obj\.status === 'retired' \|\| obj\.status === 'discarded'/);
+  assert.match(source, /function isDeprecatedListCard[\s\S]*obj\.status === 'retired' \|\| obj\.status === 'discarded' \|\| obj\.status === 'deprecated'/);
+  assert.match(source, /\.filter\(\(item\) => !isDeprecatedListCard\(item\) \|\| searchParams\.get\('status'\) === ALL_STATUS_PARAM \|\| activeStatus === item\.status\)/);
   assert.match(source, /obj\.disposition_summary\?\.trim\(\) \|\| t\('objectList\.dispositionMissing'\)/);
   assert.match(source, /<TerminalFactPanel tone="retired" content=\{formatReasonText\(disposition\)\}/);
   assert.match(source, /tone: 'implemented' \| 'retired';/);

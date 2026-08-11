@@ -28,7 +28,7 @@ import {
 import StatusBadge from '@/components/StatusBadge';
 import PriorityIcon from '@/components/PriorityIcon';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
-import { CommitHotspotCluster, CommitHotspotLegend } from '@/pages/cognition/CommitHotspotGraph';
+import { CommitHotspotCluster } from '@/pages/cognition/CommitHotspotGraph';
 import {
   fetchCognition,
   type CognitionActiveWorkCaseItem,
@@ -632,10 +632,11 @@ export default function CognitionCenter() {
     : recentHotspotStatusFilter === 'all'
       ? recentHotspots.clusters
       : recentHotspots.clusters.filter((cluster) => getRecentHotspotStatusGroup(cluster.primary) === recentHotspotStatusFilter);
-  const filteredRecentHotspotRelationTotal = filteredRecentHotspotClusters.reduce(
-    (total, cluster) => total + cluster.relations.length,
-    0,
-  );
+  const recentHotspotStatusCounts = recentHotspots?.clusters.reduce<Record<RecentHotspotStatusFilter, number>>((counts, cluster) => {
+    counts.all += 1;
+    counts[getRecentHotspotStatusGroup(cluster.primary)] += 1;
+    return counts;
+  }, { all: 0, progressing: 0, decision: 0, settled: 0 }) ?? { all: 0, progressing: 0, decision: 0, settled: 0 };
 
   return (
     <div className="flex min-h-full flex-col p-6">
@@ -1040,6 +1041,31 @@ export default function CognitionCenter() {
         >
           <GitFork size={16} className="shrink-0 text-ldvh-accent" aria-hidden="true" />
           <h3 className="ldvh-section-title min-w-0">{t('cognition.commitHotspots.title')}</h3>
+          {recentHotspots && recentHotspots.hotspotTotal > 0 && (
+            <div
+              className="ldvh-tab-list ml-1 flex min-w-0 flex-wrap"
+              role="group"
+              aria-label={t('cognition.commitHotspots.statusFilterLabel')}
+              onClick={(event) => event.stopPropagation()}
+              onKeyDown={(event) => event.stopPropagation()}
+            >
+              {RECENT_HOTSPOT_STATUS_FILTERS.map((filter) => (
+                <button
+                  key={filter}
+                  type="button"
+                  aria-pressed={recentHotspotStatusFilter === filter}
+                  onClick={() => {
+                    setRecentHotspotStatusFilter(filter);
+                    setExpandedHotspotKey(null);
+                  }}
+                  className={`ldvh-tab-button ${recentHotspotStatusFilter === filter ? 'ldvh-tab-button-active' : 'ldvh-tab-button-idle'}`}
+                >
+                  {t(`cognition.commitHotspots.statusFilter.${filter}` as LocaleKey)}
+                  <span className="ml-1 tabular-nums opacity-75">{recentHotspotStatusCounts[filter]}</span>
+                </button>
+              ))}
+            </div>
+          )}
           <span className="ml-auto flex min-w-0 shrink-0 items-center gap-2">
             {recentHotspots && (
               <CopyPathButton
@@ -1073,41 +1099,6 @@ export default function CognitionCenter() {
                 recentHotspotIssues.length === 0 && <p className="ldvh-body-muted">{t('cognition.commitHotspots.empty')}</p>
               ) : (
                 <div className="flex min-w-0 flex-col gap-3">
-                  <div
-                    className="flex min-w-0 flex-wrap items-center gap-1.5"
-                    role="group"
-                    aria-label={t('cognition.commitHotspots.statusFilterLabel')}
-                  >
-                    <span className="ldvh-caption mr-0.5 text-ldvh-text-secondary/75">
-                      {t('cognition.commitHotspots.statusFilterLabel')}
-                    </span>
-                    {RECENT_HOTSPOT_STATUS_FILTERS.map((filter) => (
-                      <button
-                        key={filter}
-                        type="button"
-                        aria-pressed={recentHotspotStatusFilter === filter}
-                        onClick={() => {
-                          setRecentHotspotStatusFilter(filter);
-                          setExpandedHotspotKey(null);
-                        }}
-                        className={`ldvh-caption inline-flex h-8 items-center rounded-md border px-2.5 transition-colors ${
-                          recentHotspotStatusFilter === filter
-                            ? 'border-ldvh-accent/45 bg-ldvh-accent/10 text-ldvh-accent'
-                            : 'border-ldvh-border text-ldvh-text-secondary hover:border-ldvh-accent/40 hover:text-ldvh-accent'
-                        }`}
-                      >
-                        {t(`cognition.commitHotspots.statusFilter.${filter}` as LocaleKey)}
-                      </button>
-                    ))}
-                  </div>
-                  <CommitHotspotLegend
-                    totalEvents={recentHotspots.totalEvents}
-                    hotspotTotal={filteredRecentHotspotClusters.length}
-                    relationTotal={filteredRecentHotspotRelationTotal}
-                    relationKeys={[...new Set(filteredRecentHotspotClusters.flatMap((cluster) => (
-                      cluster.relations.map((relation) => relation.relationKey)
-                    )))]}
-                  />
                   {filteredRecentHotspotClusters.length === 0 ? (
                     <p className="ldvh-body-muted">{t('cognition.commitHotspots.filterEmpty')}</p>
                   ) : (

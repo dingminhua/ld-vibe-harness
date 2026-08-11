@@ -4,7 +4,7 @@
  * 已交付模块一（待决定事项）、模块二（近期动态）、模块三（近期热点关系）与模块四（Spark 池健康）
  * + §5 全局信任标记所需的派生字段：
  * generatedAt（观察时间）、scope、inbox（WorkCase Human Gate 与 Pitfall draft 审核的派生收录与排序）、
- * recentActivity（指定窗口内事实对象 change_log 的创建 / 更新事件）、recentHotspots（同一事件窗口内
+ * recentActivity（指定窗口内事实对象 change_log 的创建 / 更新事件）、recentHotspots（最近一周内
  * 的事实热点及一跳正式关系）与 issues（模块级降级）。
  * 数据经 Web 字段级直读（localFactReader / facts.ts 的 listObjects），不复用 /api/dashboard 聚合逻辑。
  *
@@ -39,6 +39,7 @@ const RECENT_ACTIVITY_WINDOWS: Record<RecentActivityWindow, number> = {
   '3d': 3,
   '7d': 7,
 }
+const RECENT_HOTSPOT_WINDOW: RecentActivityWindow = '7d'
 const SPARK_SILENT_THRESHOLD_DAYS = 5
 const SPARK_TERMINAL_STATUSES = new Set(['implemented', 'discarded'])
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000
@@ -775,6 +776,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     activeWorkCaseBuilds.sort(compareCardBuild)
 
     const recentStart = new Date(generatedAt).getTime() - RECENT_ACTIVITY_WINDOWS[recentWindow] * 24 * 60 * 60 * 1000
+    const hotspotStart = new Date(generatedAt).getTime() - RECENT_ACTIVITY_WINDOWS[RECENT_HOTSPOT_WINDOW] * 24 * 60 * 60 * 1000
     const recentBuilds: RecentActivityBuildItem[] = []
     const recentSources: Array<[ObjectType, typeof workCaseResult]> = [
       ['workcase', workCaseResult],
@@ -817,7 +819,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
           graphFacts.push(projected)
           activityByFact.set(
             factKey(projected.type, projected.object_id),
-            buildFactActivityItems(item.fact_object ?? {}, type, recentStart, parseTimestamp(generatedAt)).map((activity) => ({
+            buildFactActivityItems(item.fact_object ?? {}, type, hotspotStart, parseTimestamp(generatedAt)).map((activity) => ({
               occurred_at: activity.occurred_at,
               activity: activity.activity,
             })),
@@ -936,7 +938,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       },
       ...(recentHotspots ? {
         recentHotspots: {
-          window: recentWindow,
+          window: RECENT_HOTSPOT_WINDOW,
           totalEvents: recentHotspots.totalEvents,
           hotspotTotal: recentHotspots.hotspotTotal,
           relationTotal: recentHotspots.relationTotal,
