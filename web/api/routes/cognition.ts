@@ -40,7 +40,7 @@ const RECENT_ACTIVITY_WINDOWS: Record<RecentActivityWindow, number> = {
   '7d': 7,
 }
 const SPARK_SILENT_THRESHOLD_DAYS = 5
-const SPARK_TERMINAL_STATUSES = new Set(['routed', 'implemented', 'discarded'])
+const SPARK_TERMINAL_STATUSES = new Set(['implemented', 'discarded'])
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000
 
 type CognitionIssue = { section: string; code: string; message: string; object_ref?: string }
@@ -152,7 +152,7 @@ interface SparkHealthBuildItem {
  */
 interface FactChangeSignature {
   modelId?: string
-  hostName?: string
+  agentWorkbench?: string
   agentId?: string
   hostEnvironment?: string
 }
@@ -314,9 +314,9 @@ function readFactChangeSignature(value: unknown): FactChangeSignature | undefine
   if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined
   const record = value as Record<string, unknown>
   const modelId = typeof record.model_id === 'string' ? record.model_id.trim() : ''
-  const hostName = typeof record.agent_workbench === 'string' ? record.agent_workbench.trim()
+  const agentWorkbench = typeof record.agent_workbench === 'string' ? record.agent_workbench.trim()
     : typeof record.host_name === 'string' ? record.host_name.trim() : ''
-  if (modelId && hostName) return { modelId, hostName }
+  if (modelId && agentWorkbench) return { modelId, agentWorkbench }
 
   const agentId = typeof record.agent_id === 'string' ? record.agent_id.trim() : ''
   const hostEnvironment = typeof record.host_environment === 'string' ? record.host_environment.trim() : ''
@@ -405,7 +405,7 @@ export function buildRecentActivityView(builds: RecentActivityBuildItem[]): {
     }
     if (build.signature) {
       const agent = build.signature.modelId ?? build.signature.agentId
-      const environment = build.signature.hostName ?? build.signature.hostEnvironment
+      const environment = build.signature.agentWorkbench ?? build.signature.hostEnvironment
       if (agent) agents.set(agent, (agents.get(agent) ?? 0) + 1)
       if (environment) environments.set(environment, (environments.get(environment) ?? 0) + 1)
     }
@@ -439,7 +439,7 @@ function compareSilentSpark(a: SparkHealthBuildItem, b: SparkHealthBuildItem): n
 
 /** Spark 健康度只聚合当前状态与更新时间；不从更新时间推断实际分流发生时刻。 */
 export function buildSparkHealth(rawItems: Array<Record<string, unknown>>, observedAt: number) {
-  const terminalByStatus = { routed: 0, implemented: 0, discarded: 0 }
+  const terminalByStatus = { implemented: 0, discarded: 0 }
   const openByPriority: Record<string, number> = {}
   const openItems: SparkHealthBuildItem[] = []
   const silentItems: SparkHealthBuildItem[] = []
@@ -481,7 +481,7 @@ export function buildSparkHealth(rawItems: Array<Record<string, unknown>>, obser
 
   openItems.sort(compareSilentSpark)
   silentItems.sort(compareSilentSpark)
-  const terminalTotal = terminalByStatus.routed + terminalByStatus.implemented + terminalByStatus.discarded
+  const terminalTotal = terminalByStatus.implemented + terminalByStatus.discarded
   return {
     total,
     openTotal,
@@ -534,9 +534,7 @@ function isDisplayableFormalRelation(
 ): boolean {
   if (source.type === 'spark') {
     if (relationKey === 'related-to') return true
-    if (relationKey !== 'routed-to' || source.status !== 'routed') return false
-    return target.type === 'workcase' || target.type === 'adr' || target.type === 'pitfall'
-      || (target.type === 'spark' && ['open', 'routed', 'implemented', 'discarded'].includes(target.status ?? ''))
+    return false
   }
   if (source.type === 'workcase') {
     if (!source.status || !['open', 'blocked', 'closed'].includes(source.status)) return false
@@ -551,7 +549,7 @@ function isDisplayableFormalRelation(
     if (relationKey === 'routed-to') {
       return source.status === 'closed'
         && ((target.type === 'workcase' && ['open', 'blocked', 'closed'].includes(target.status ?? ''))
-          || (target.type === 'spark' && ['open', 'routed', 'implemented', 'discarded'].includes(target.status ?? '')))
+      || (target.type === 'spark' && ['open', 'implemented', 'discarded'].includes(target.status ?? '')))
     }
     if (relationKey === 'contributed-to') {
       return target.type === 'pitfall' && ['draft', 'active', 'discarded'].includes(target.status ?? '')
@@ -993,6 +991,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       res.status(400).json({ ok: false, error: err.message })
       return
     }
+    console.error('Cognition aggregation failed', err)
     res.status(500).json({ ok: false, error: 'Cognition aggregation failed' })
   }
 })
