@@ -12,3 +12,6 @@ test-results/
 
 # 忽略 docs 目录
 docs/
+
+# uv 包管理器自动生成的锁文件（项目使用独立 venv）
+uv.lock
