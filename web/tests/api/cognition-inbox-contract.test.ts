@@ -226,7 +226,7 @@ test('recent hotspot builder does not absorb transitive peers and rejects invali
   assert.equal(result.clusters[0].relations.some((relation) => relation.node.id === 'workcase-0002'), false)
 })
 
-test('recent hotspots display a routed Spark successor with its current title and status', async () => {
+test('recent hotspots do not project a legacy Spark routed-to edge as a current responsibility', async () => {
   const { buildRecentHotspots } = await import('../../api/routes/cognition.ts')
   const target = (fact_type_key: string, object_id: string) => ({ governed_project_id: 'demo', fact_type_key, object_id })
   const facts: RecentHotspotBuildItem[] = [
@@ -252,10 +252,8 @@ test('recent hotspots display a routed Spark successor with its current title an
   ])
 
   const result = buildRecentHotspots(facts, activityByFact, 'demo')
-  assert.equal(result.relationTotal, 1)
-  assert.equal(result.clusters[0]?.relations[0]?.node.id, 'spark-0102')
-  assert.equal(result.clusters[0]?.relations[0]?.node.title, '残余议题')
-  assert.equal(result.clusters[0]?.relations[0]?.node.status, 'open')
+  assert.equal(result.relationTotal, 0)
+  assert.equal(result.clusters.length, 0)
 })
 
 test('recent hotspot projection omits facts without a readable title instead of falling back to objectId', () => {
@@ -282,7 +280,7 @@ test('Spark health splits the current pool into terminal and open items, with si
   const body = await cognition('zh')
   const health = body.sparkHealth as Record<string, unknown>
   const terminalByStatus = health.terminalByStatus as Record<string, unknown>
-  const terminalTotal = Number(terminalByStatus.routed) + Number(terminalByStatus.implemented) + Number(terminalByStatus.discarded)
+  const terminalTotal = Number(terminalByStatus.implemented) + Number(terminalByStatus.discarded)
 
   assert.equal(Number(health.total), Number(health.openTotal) + terminalTotal)
   assert.equal(Number(health.terminalTotal), terminalTotal)
@@ -335,7 +333,7 @@ test('recent activity accepts only explicit windows and groups fact change-log e
       if (item.signature !== undefined) {
         const signature = item.signature as Record<string, unknown>
         assert.equal(typeof (signature.modelId ?? signature.agentId), 'string')
-        assert.equal(typeof (signature.hostName ?? signature.hostEnvironment), 'string')
+        assert.equal(typeof (signature.agentWorkbench ?? signature.hostEnvironment), 'string')
       }
       assert.ok(Number(item.activityCount) >= 1)
       assert.equal(typeof item.relativeTime, 'string')
@@ -390,7 +388,7 @@ test('recent activity accepts canonical change-log signatures', async () => {
     }],
   }
   const builds = buildFactActivityItems(raw, 'spark', Date.parse('2026-07-31T00:00:00Z'), Date.parse('2026-08-02T00:00:00Z'))
-  assert.deepEqual(builds[0]?.signature, { modelId: 'gpt-5', hostName: 'Cindy' })
+  assert.deepEqual(builds[0]?.signature, { modelId: 'gpt-5', agentWorkbench: 'Cindy' })
 
   const view = buildRecentActivityView(builds)
   assert.deepEqual(view.agentUsage, [{ value: 'gpt-5', count: 1 }])
@@ -408,7 +406,7 @@ test('Spark health reuses the newest complete change-log signature for its card-
       { signature: { model_id: 'gpt-5', agent_workbench: 'Cindy' } },
     ],
   }], Date.parse('2026-08-08T00:00:00Z'))
-  assert.deepEqual(health.openItems[0]?.signature, { modelId: 'gpt-5', hostName: 'Cindy' })
+  assert.deepEqual(health.openItems[0]?.signature, { modelId: 'gpt-5', agentWorkbench: 'Cindy' })
 })
 
 test('fact activity builder reads change_log first and only falls back for legacy facts without usable entries', async () => {
