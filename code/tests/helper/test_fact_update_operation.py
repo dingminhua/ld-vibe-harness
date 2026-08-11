@@ -505,7 +505,7 @@ def test_generic_no_change_release_gap_has_observation_but_no_commit_code(
     assert working_tree_source["observed_at"] == event_at
 
 
-def test_update_repairs_a_parseable_invalid_snapshot_with_its_read_fingerprint(tmp_path: Path) -> None:
+def test_update_rejects_a_parseable_invalid_legacy_spark_snapshot(tmp_path: Path) -> None:
     workspace, project, fact = _fixture(tmp_path)
     fact.write_text(
         """object_id: spark-0001
@@ -540,6 +540,7 @@ change_log:
         ),
     ).response
     item = read["result"]["items"][0]
+    original = fact.read_bytes()
 
     assert item["check_status"] == "invalid"
     assert item["content_fingerprint"] is not None
@@ -575,8 +576,9 @@ change_log:
         ),
     ).response
 
-    assert response["outcome"] == "ok", json.dumps(response, ensure_ascii=False, indent=2)
-    assert response["result"]["fact_object"]["status"] == "implemented"
+    assert response["outcome"] == "invalid_request"
+    assert response["changes"] == []
+    assert fact.read_bytes() == original
 
 
 def test_update_repairs_legacy_retired_pitfall_to_equal_body_discarded_with_exact_cas(tmp_path: Path) -> None:
@@ -673,7 +675,7 @@ def test_no_change_does_not_rewrite_or_change_timestamp(tmp_path: Path) -> None:
     assert response["result"]["fact_object"]["updated_at"] == "2026-07-14T10:00:00+08:00"
 
 
-def test_complete_spark_routing_after_is_atomic_and_idempotent(tmp_path: Path) -> None:
+def test_spark_routed_after_is_rejected_without_writing_targets(tmp_path: Path) -> None:
     workspace, project, fact = _fixture(tmp_path)
     routing_targets = {
         "workcase-0001": _write_routing_target(project, "workcase-0001"),
@@ -729,27 +731,10 @@ def test_complete_spark_routing_after_is_atomic_and_idempotent(tmp_path: Path) -
         _update_payload(workspace, project, before["content_fingerprint"], target),
     ).response
 
-    assert routed["outcome"] == "ok", json.dumps(routed, ensure_ascii=False, indent=2)
-    after = routed["result"]["fact_object"]
-    assert after["status"] == "routed"
-    assert after["disposition_summary"] == target["disposition_summary"]
-    assert after["relations"] == target["relations"]
-    assert "priority" not in after
+    assert routed["outcome"] == "rejected"
+    assert routed["changes"] == []
+    assert fact.read_bytes() == original
     assert {object_id: path.read_bytes() for object_id, path in routing_targets.items()} == target_bytes
-
-    routed_bytes = fact.read_bytes()
-    replay_target = dict(after)
-    for field in ("object_id", "fact_type_key", "created_at", "updated_at"):
-        replay_target.pop(field)
-    replay = handle_request(
-        "call",
-        "update-fact-object",
-        _update_payload(workspace, project, routed["result"]["content_fingerprint"], replay_target),
-    ).response
-
-    assert replay["outcome"] == "no_change"
-    assert replay["changes"] == []
-    assert fact.read_bytes() == routed_bytes
 
 
 def test_stale_fingerprint_rejects_without_writing(tmp_path: Path) -> None:
