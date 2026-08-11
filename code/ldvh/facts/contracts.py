@@ -18,6 +18,21 @@ from ldvh.filesystem import is_link_or_reparse
 # Specs 21 §5: "活跃" 语义下的 open / blocked 工作态集合。
 # 单一事实真源在 specs/21；此处仅镜像闭集供实现引用。
 ACTIVE_STATUSES = frozenset({"open", "blocked"})
+CURRENT_SPARK_STATUSES = frozenset({"open", "implemented", "discarded"})
+# Historical Spark objects remain observable as a read-only baseline.  This is
+# deliberately an object allow-list, not a fourth current lifecycle state.
+LEGACY_SPARK_IDS = frozenset(
+    {
+        "spark-0001", "spark-0002", "spark-0003", "spark-0011", "spark-0013",
+        "spark-0028", "spark-0030", "spark-0031", "spark-0034", "spark-0036",
+        "spark-0037", "spark-0038", "spark-0042", "spark-0043", "spark-0051",
+        "spark-0061", "spark-0062", "spark-0063",
+    }
+)
+
+
+def is_legacy_spark_object(object_id: object) -> bool:
+    return isinstance(object_id, str) and object_id in LEGACY_SPARK_IDS
 IGNORED_FACT_TYPE_ROOT_BASENAMES = frozenset({".DS_Store"})
 
 
@@ -71,8 +86,8 @@ LAYOUTS = {
         "spark",
         "sparks",
         initial_statuses=("open",),
-        statuses=("open", "routed", "implemented", "discarded"),
-        relation_keys=("routed-to", "related-to"),
+        statuses=("open", "implemented", "discarded"),
+        relation_keys=("related-to",),
     ),
     "workcase": _layout(
         "workcase",
@@ -113,10 +128,13 @@ TERMINAL_COMMON = frozenset({"disposition_summary"})
 
 __all__ = [
     "ACTIVE_STATUSES",
+    "CURRENT_SPARK_STATUSES",
     "IGNORED_FACT_TYPE_ROOT_BASENAMES",
     "LAYOUTS",
     "TERMINAL_COMMON",
     "WRITABLE_FACT_TYPE_KEYS",
+    "LEGACY_SPARK_IDS",
+    "is_legacy_spark_object",
     "FactTypeLayout",
     "is_ignored_fact_type_root_entry",
 ]
