@@ -11,6 +11,7 @@ import argparse
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -98,6 +99,34 @@ def _python_identity(python: Path) -> tuple[dict[str, Any] | None, str | None]:
     if not isinstance(identity, dict) or not isinstance(identity.get("version"), list):
         return None, "the interpreter reported an invalid identity"
     return identity, None
+
+
+def _python_meets_requirement(identity: dict[str, Any] | None) -> bool:
+    return identity is not None and tuple(identity["version"]) >= PROJECT_PYTHON
+
+
+def _select_bootstrap_python(worktree: Path, requested: Path) -> Path:
+    """Prefer a supported interpreter already provisioned for this worktree.
+
+    A linked worktree may be invoked by an older system ``python3`` while its local
+    virtualenv already contains the supported runtime. Reusing that local interpreter
+    keeps bootstrap self-contained and never reaches into a sibling worktree.
+    """
+    local = _venv_python(worktree)
+    if local.is_file():
+        identity, _ = _python_identity(local)
+        if _python_meets_requirement(identity):
+            return local
+    if _python_meets_requirement(_python_identity(requested)[0]):
+        return requested
+    for name in ("python3.13", "python3.12", "python3.11"):
+        candidate = shutil.which(name)
+        if candidate is None:
+            continue
+        path = Path(candidate)
+        if _python_meets_requirement(_python_identity(path)[0]):
+            return path
+    return requested
 
 
 def _dependency_availability(python: Path, requirements: list[tuple[str, str]]) -> dict[str, bool]:
@@ -230,21 +259,27 @@ def _check(worktree: Path) -> dict[str, Any]:
 
 
 def _bootstrap(worktree: Path, bootstrap_python: Path) -> str | None:
+    venv = _venv_python(worktree)
+    bootstrap_python = _select_bootstrap_python(worktree, bootstrap_python)
     identity, error = _python_identity(bootstrap_python)
     if error is not None:
         return f"bootstrap interpreter is unavailable: {error}"
-    if tuple(identity["version"]) < PROJECT_PYTHON:
+    if not _python_meets_requirement(identity):
         actual_version = ".".join(str(part) for part in identity["version"])
         required_version = f"{PROJECT_PYTHON[0]}.{PROJECT_PYTHON[1]}+"
         return (
             f"bootstrap interpreter {identity['path']} is Python {actual_version}; "
-            f"Python {required_version} is required"
+            f"Python {required_version} is required; pass --python with a supported interpreter"
         )
-    venv = _venv_python(worktree)
     if not venv.is_file():
         created = _run([str(bootstrap_python), "-m", "venv", str(worktree / ".venv")])
         if created.returncode != 0:
             return created.stderr.strip() or "creating the local .venv failed"
+    pip_probe = _run([str(venv), "-m", "pip", "--version"])
+    if pip_probe.returncode != 0:
+        seeded = _run([str(venv), "-m", "ensurepip", "--upgrade"])
+        if seeded.returncode != 0:
+            return seeded.stderr.strip() or "seeding pip in the local .venv failed"
     installed = _run([str(venv), "-m", "pip", "install", "--requirement", "requirements-dev.txt"], cwd=worktree)
     if installed.returncode != 0:
         return installed.stderr.strip() or "preparing declared third-party dependencies failed"
