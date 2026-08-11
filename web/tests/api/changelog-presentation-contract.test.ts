@@ -38,7 +38,7 @@ test('breaking and push-state badges use one presentation in list and detail ide
   assert.match(signatureMeta, /signature\?\.agentId/);
   assert.match(signatureMeta, /signature\?\.hostEnvironment/);
   assert.match(signatureMeta, /signature\?\.modelId/);
-  assert.match(signatureMeta, /signature\?\.hostName/);
+  assert.match(signatureMeta, /signature\?\.agentWorkbench/);
   assert.match(list, /<ObjectUpdatedMeta source=\{\{\}\} updatedAt=\{entry\.date\} signature=\{entry\.signature\} \/>/);
   assert.match(panel, /<CommitSignatureMeta signature=\{entry\.signature\} \/>/);
   assert.match(panel, /stripCommitSignatureTrailers\(commitBody\)/);
