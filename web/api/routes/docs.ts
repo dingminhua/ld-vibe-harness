@@ -4,7 +4,7 @@
 import { Router, type Request, type Response } from 'express'
 import { readFile } from 'fs/promises'
 import path from 'path'
-import { LDVH_ROOT } from '../services/pytools.js'
+import { ProjectScopeError, requestProject } from '../services/requestScope.js'
 
 const router = Router()
 
@@ -34,7 +34,15 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
 
   // Resolve first, then apply the allow-list to the resolved location. Checking
   // the raw prefix would allow e.g. "specs/../.env" to escape the docs roots.
-  const resolvedPath = resolveAllowedDocPath(LDVH_ROOT, docPath)
+  let projectRoot: string
+  try {
+    projectRoot = (await requestProject(req)).path
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Project scope is unavailable'
+    res.status(err instanceof ProjectScopeError ? 400 : 500).json({ error: message })
+    return
+  }
+  const resolvedPath = resolveAllowedDocPath(projectRoot, docPath)
   if (resolvedPath === null) {
     res.status(403).json({ error: 'Path not allowed' })
     return

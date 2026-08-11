@@ -29,6 +29,9 @@ export type GovernedProject = {
   path: string
 }
 
+/** A verified project worktree is sufficient for read-only file and Git access. */
+export type ProjectFileScope = Pick<GovernedProject, 'id' | 'path'>
+
 export type FileKind = 'directory' | 'markdown' | 'yaml' | 'svg' | 'text' | 'binary'
 
 export function runCommand(command: string, args: string[], cwd: string): Promise<string> {
@@ -76,14 +79,14 @@ export async function getProject(projectId: string): Promise<GovernedProject | n
   return projects.find((project) => project.id === projectId) ?? null
 }
 
-export function resolveProjectTarget(project: GovernedProject, relativePath: string): string | null {
+export function resolveProjectTarget(project: ProjectFileScope, relativePath: string): string | null {
   if (relativePath.includes('\0')) return null
   const projectRoot = path.resolve(project.path)
   const target = path.resolve(projectRoot, relativePath || '.')
   return isInside(projectRoot, target) ? target : null
 }
 
-export function toProjectRelative(project: GovernedProject, absolutePath: string): string {
+export function toProjectRelative(project: ProjectFileScope, absolutePath: string): string {
   const relative = path.relative(path.resolve(project.path), absolutePath)
   return relative === '' ? '' : relative.split(path.sep).join('/')
 }
@@ -102,7 +105,7 @@ export function isHiddenPath(relativePath: string): boolean {
   return relativePath.split('/').some((part) => part.startsWith('.') && part.length > 1)
 }
 
-export function parseGitStatusLine(project: GovernedProject, line: string) {
+export function parseGitStatusLine(project: ProjectFileScope, line: string) {
   const status = line.slice(0, 2)
   const rawPath = line.slice(3).trim()
   const pathParts = rawPath.includes(' -> ') ? rawPath.split(' -> ') : [rawPath]
@@ -117,7 +120,7 @@ export function parseGitStatusLine(project: GovernedProject, line: string) {
   }
 }
 
-export function parseCommitFileLine(project: GovernedProject, line: string) {
+export function parseCommitFileLine(project: ProjectFileScope, line: string) {
   const [status = '', ...pathParts] = line.split('\t')
   const filePath = pathParts[pathParts.length - 1] || ''
   return {

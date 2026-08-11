@@ -9,10 +9,12 @@ import { after, before, test } from 'node:test'
 
 const workspaceRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'ldvh-project-files-workspace-'))
 const projectRoot = path.join(workspaceRoot, 'demo')
+const alternateWorktreeRoot = path.join(workspaceRoot, 'demo-alternate')
 const secondaryProjectRoot = path.join(workspaceRoot, 'secondary')
 const repositoryRoot = path.resolve(import.meta.dirname, '../../..')
 fs.mkdirSync(path.join(projectRoot, 'assets'), { recursive: true })
 fs.mkdirSync(path.join(projectRoot, '.private'), { recursive: true })
+fs.mkdirSync(path.join(projectRoot, 'specs'), { recursive: true })
 fs.mkdirSync(secondaryProjectRoot, { recursive: true })
 execFileSync('git', ['init', '-q', projectRoot])
 execFileSync('git', ['init', '-q', secondaryProjectRoot])
@@ -45,6 +47,16 @@ fs.writeFileSync(path.join(projectRoot, 'README.md'), '# Demo\n')
 fs.writeFileSync(path.join(projectRoot, '.private', 'secret.md'), 'hidden\n')
 fs.writeFileSync(path.join(projectRoot, 'large.txt'), `${'a'.repeat(310 * 1024)}tail`)
 fs.writeFileSync(path.join(projectRoot, 'binary.bin'), Buffer.from([0x41, 0x00, 0x42]))
+fs.writeFileSync(path.join(projectRoot, 'specs', 'scope.md'), 'main baseline\n')
+execFileSync('git', ['-C', projectRoot, 'config', 'user.email', 'tests@example.com'])
+execFileSync('git', ['-C', projectRoot, 'config', 'user.name', 'LDVH Tests'])
+execFileSync('git', ['-C', projectRoot, 'add', '.'])
+execFileSync('git', ['-C', projectRoot, 'commit', '-qm', 'fixture'])
+execFileSync('git', ['-C', projectRoot, 'worktree', 'add', '-q', '-b', 'alternate', alternateWorktreeRoot])
+fs.writeFileSync(path.join(projectRoot, 'branch-scope.txt'), 'main worktree\n')
+fs.writeFileSync(path.join(projectRoot, 'specs', 'scope.md'), 'main worktree docs\n')
+fs.writeFileSync(path.join(alternateWorktreeRoot, 'branch-scope.txt'), 'alternate worktree\n')
+fs.writeFileSync(path.join(alternateWorktreeRoot, 'specs', 'scope.md'), 'alternate worktree docs\n')
 
 let server: Server
 let baseUrl = ''
@@ -131,6 +143,29 @@ test('does not represent an unknown project Git status as an empty success resul
   assert.equal(status.response.status, 404)
   assert.equal(status.body.ok, false)
   assert.equal(status.body.error, 'Project not found')
+})
+
+test('reads files, Git status, and documents from the selected linked worktree', async () => {
+  const worktreePath = encodeURIComponent(alternateWorktreeRoot)
+  const canonicalWorktreeRoot = fs.realpathSync(alternateWorktreeRoot)
+  const entries = await get(`/api/project-files/entries?projectId=demo&worktreePath=${worktreePath}`)
+  assert.equal(entries.response.status, 200, JSON.stringify(entries.body))
+  const listed = entries.body.entries as Array<Record<string, unknown>>
+  assert.ok(listed.some((entry) => entry.name === 'branch-scope.txt'))
+
+  const file = await get(`/api/project-files/content?projectId=demo&worktreePath=${worktreePath}&path=branch-scope.txt`)
+  assert.equal(file.response.status, 200, JSON.stringify(file.body))
+  assert.equal(file.body.content, 'alternate worktree\n')
+  assert.equal(file.body.absolutePath, path.join(canonicalWorktreeRoot, 'branch-scope.txt'))
+
+  const status = await get(`/api/project-files/git/status?projectId=demo&worktreePath=${worktreePath}`)
+  assert.equal(status.response.status, 200, JSON.stringify(status.body))
+  const changes = status.body.entries as Array<Record<string, unknown>>
+  assert.ok(changes.some((entry) => entry.path === 'branch-scope.txt' && entry.absolutePath === path.join(canonicalWorktreeRoot, 'branch-scope.txt')))
+
+  const doc = await get(`/api/docs?projectId=demo&worktreePath=${worktreePath}&path=specs%2Fscope.md`)
+  assert.equal(doc.response.status, 200, JSON.stringify(doc.body))
+  assert.equal(doc.body.content, 'alternate worktree docs\n')
 })
 
 test('rejects Project Files when Code governance cannot verify the workspace', async () => {

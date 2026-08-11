@@ -78,11 +78,12 @@ test('global project selection uses the configured default when no valid Human s
   assert.match(context, /nextProjects\.some\(\(project\) => project\.id === current\)/);
 });
 
-test('project switcher changes scope without an application-level refresh path', () => {
+test('project switcher changes worktree scope and only refreshes its worktree list on demand', () => {
   const switcher = fs.readFileSync(path.resolve('src/components/ProjectSwitcher.tsx'), 'utf8');
 
-  assert.match(switcher, /selectProject\(project\.id\);/);
-  assert.doesNotMatch(switcher, /RefreshCcw|RefreshCw|reloadProjects|useManualFactRefresh|refreshFacts|setInterval|visibilitychange/);
+  assert.match(switcher, /selectProject\(project\.id, worktree\.path\);/);
+  assert.match(switcher, /onClick=\{\(\) => reloadProjects\(\)\}/);
+  assert.doesNotMatch(switcher, /useManualFactRefresh|refreshFacts|setInterval|visibilitychange/);
 });
 
 test('workspace changes reads status and diffs for the globally selected project', () => {

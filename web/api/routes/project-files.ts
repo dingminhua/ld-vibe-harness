@@ -9,6 +9,7 @@ import path from 'path'
 import { getGitPushStatuses, normalizeTimestamp, parseCommitMessage, parseCommitSignature, splitCommitMessage } from '../services/git.js'
 import { LDVH_WORKSPACE_ROOT } from '../services/pytools.js'
 import { readGovernedProjectsSettings } from '../services/governedProjectsSettings.js'
+import { ProjectScopeError, requestProject } from '../services/requestScope.js'
 import { scanGovernedProjectWorktrees } from '../services/workspaceWorktrees.js'
 import {
   EXCLUDED_DIRS,
@@ -30,6 +31,11 @@ const router = Router()
 
 function isValidCommitHash(hash: string): boolean {
   return /^[0-9a-f]{7,40}$/i.test(hash)
+}
+
+function projectScopeStatus(err: unknown): number {
+  if (!(err instanceof ProjectScopeError)) return 500
+  return err.message.startsWith('Unknown governed project') ? 404 : 400
 }
 
 router.get('/projects', async (_req: Request, res: Response): Promise<void> => {
@@ -63,14 +69,9 @@ router.get('/projects', async (_req: Request, res: Response): Promise<void> => {
 
 router.get('/entries', async (req: Request, res: Response): Promise<void> => {
   try {
-    const projectId = String(req.query.projectId || '')
     const dir = String(req.query.dir || '')
     const showHidden = String(req.query.showHidden || '') === 'true'
-    const project = await getProject(projectId)
-    if (!project) {
-      res.status(404).json({ ok: false, error: 'Project not found' })
-      return
-    }
+    const project = await requestProject(req)
 
     const target = resolveProjectTarget(project, dir)
     if (!target) {
@@ -123,20 +124,15 @@ router.get('/entries', async (req: Request, res: Response): Promise<void> => {
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Failed to list directory'
-    res.status(500).json({ ok: false, error: message })
+    res.status(projectScopeStatus(err)).json({ ok: false, error: message })
   }
 })
 
 router.get('/content', async (req: Request, res: Response): Promise<void> => {
   try {
-    const projectId = String(req.query.projectId || '')
     const filePath = String(req.query.path || '')
     const showHidden = String(req.query.showHidden || '') === 'true'
-    const project = await getProject(projectId)
-    if (!project) {
-      res.status(404).json({ ok: false, error: 'Project not found' })
-      return
-    }
+    const project = await requestProject(req)
 
     const target = resolveProjectTarget(project, filePath)
     if (!target) {
@@ -186,21 +182,17 @@ router.get('/content', async (req: Request, res: Response): Promise<void> => {
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Failed to read file'
-    res.status(500).json({ ok: false, error: message })
+    res.status(projectScopeStatus(err)).json({ ok: false, error: message })
   }
 })
 
 router.get('/git/status', async (req: Request, res: Response): Promise<void> => {
   try {
     const projectId = String(req.query.projectId || '')
-    const projects = projectId ? [await getProject(projectId)] : await loadProjects()
+    const projects = projectId ? [await requestProject(req)] : await loadProjects()
     const entries = []
 
     for (const project of projects) {
-      if (!project) {
-        res.status(404).json({ ok: false, error: 'Project not found' })
-        return
-      }
       await runCommand('git', ['rev-parse', '--is-inside-work-tree'], project.path)
       const stdout = await runCommand('git', ['status', '--short', '--untracked-files=all'], project.path)
       for (const line of stdout.split('\n').filter(Boolean)) {
@@ -210,21 +202,18 @@ router.get('/git/status', async (req: Request, res: Response): Promise<void> => 
 
     res.json({ ok: true, entries })
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Failed to read git status'
-    res.status(500).json({ ok: false, error: message })
+    const message = err instanceof ProjectScopeError && err.message.startsWith('Unknown governed project')
+      ? 'Project not found'
+      : (err instanceof Error ? err.message : 'Failed to read git status')
+    res.status(projectScopeStatus(err)).json({ ok: false, error: message })
   }
 })
 
 router.get('/git/diff', async (req: Request, res: Response): Promise<void> => {
   try {
-    const projectId = String(req.query.projectId || '')
     const filePath = String(req.query.path || '')
     const statusCode = String(req.query.status || '')
-    const project = await getProject(projectId)
-    if (!project) {
-      res.status(404).json({ ok: false, error: 'Project not found' })
-      return
-    }
+    const project = await requestProject(req)
 
     const target = resolveProjectTarget(project, filePath)
     if (!target) {
@@ -272,19 +261,14 @@ router.get('/git/diff', async (req: Request, res: Response): Promise<void> => {
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Failed to read git diff'
-    res.status(500).json({ ok: false, error: message })
+    res.status(projectScopeStatus(err)).json({ ok: false, error: message })
   }
 })
 
 router.get('/git/commits', async (req: Request, res: Response): Promise<void> => {
   try {
-    const projectId = String(req.query.projectId || '')
     const count = Math.min(Math.max(parseInt(String(req.query.count || '50'), 10) || 50, 1), 200)
-    const project = await getProject(projectId)
-    if (!project) {
-      res.status(404).json({ ok: false, error: 'Project not found' })
-      return
-    }
+    const project = await requestProject(req)
 
     await runCommand('git', ['rev-parse', '--is-inside-work-tree'], project.path)
     const stdout = await runCommand(
@@ -330,19 +314,14 @@ router.get('/git/commits', async (req: Request, res: Response): Promise<void> =>
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Failed to read git commits'
-    res.status(500).json({ ok: false, error: message })
+    res.status(projectScopeStatus(err)).json({ ok: false, error: message })
   }
 })
 
 router.get('/git/commit/:hash', async (req: Request, res: Response): Promise<void> => {
   try {
-    const projectId = String(req.query.projectId || '')
     const { hash } = req.params
-    const project = await getProject(projectId)
-    if (!project) {
-      res.status(404).json({ ok: false, error: 'Project not found' })
-      return
-    }
+    const project = await requestProject(req)
     if (!isValidCommitHash(hash)) {
       res.status(400).json({ ok: false, error: 'Invalid hash format' })
       return
@@ -389,20 +368,15 @@ router.get('/git/commit/:hash', async (req: Request, res: Response): Promise<voi
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Failed to read git commit'
-    res.status(500).json({ ok: false, error: message })
+    res.status(projectScopeStatus(err)).json({ ok: false, error: message })
   }
 })
 
 router.get('/git/commit/:hash/diff', async (req: Request, res: Response): Promise<void> => {
   try {
-    const projectId = String(req.query.projectId || '')
     const filePath = String(req.query.path || '')
     const { hash } = req.params
-    const project = await getProject(projectId)
-    if (!project) {
-      res.status(404).json({ ok: false, error: 'Project not found' })
-      return
-    }
+    const project = await requestProject(req)
     if (!isValidCommitHash(hash)) {
       res.status(400).json({ ok: false, error: 'Invalid hash format' })
       return
@@ -428,7 +402,7 @@ router.get('/git/commit/:hash/diff', async (req: Request, res: Response): Promis
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Failed to read commit file diff'
-    res.status(500).json({ ok: false, error: message })
+    res.status(projectScopeStatus(err)).json({ ok: false, error: message })
   }
 })
 
