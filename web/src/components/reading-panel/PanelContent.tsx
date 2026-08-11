@@ -375,10 +375,14 @@ function CommitSignatureSection({
   labels: CommitDetailLabels;
 }) {
   const modelId = signature.modelId?.trim();
-  const hostName = signature.hostName?.trim();
+  const agentWorkbench = signature.agentWorkbench?.trim();
+  const workbenchName = signature.hostName?.trim();
   const identityEntries = [
     { label: modelId ? labels.modelId : labels.agentId, value: modelId ?? signature.agentId },
-    { label: hostName ? labels.hostName : labels.hostEnvironment, value: hostName ?? signature.hostEnvironment },
+    {
+      label: agentWorkbench ? labels.agentWorkbench : workbenchName ? labels.workbenchName : labels.hostEnvironment,
+      value: agentWorkbench ?? workbenchName ?? signature.hostEnvironment,
+    },
   ].filter((entry): entry is { label: string; value: string } => Boolean(entry.value?.trim()));
   const sessionId = signature.sessionId?.trim();
   if (identityEntries.length === 0 && !sessionId) return null;
