@@ -44,6 +44,7 @@ def validate_fact_content(
     data: bytes,
     *,
     max_bytes: int = MAX_FACT_BYTES,
+    allow_legacy_spark: bool = False,
 ) -> FactContentValidation:
     """Validate raw content bytes against the same core as the read path.
 
@@ -87,7 +88,14 @@ def validate_fact_content(
             len(data),
         )
 
-    issues = list(validate_fact_object(layout.fact_type_key, parsed.fields, schema))
+    issues = list(
+        validate_fact_object(
+            layout.fact_type_key,
+            parsed.fields,
+            schema,
+            allow_legacy_spark=allow_legacy_spark,
+        )
+    )
     if parsed.fields.get("object_id") != object_id:
         issues.append(FactIssue("identity", "object_id 与请求引用及文件名不一致", "object_id"))
     status: ContentCheckStatus = "invalid" if issues else "mechanically_valid"
