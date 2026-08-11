@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal
 
-from ldvh.facts.contracts import ACTIVE_STATUSES, LAYOUTS, is_ignored_fact_type_root_entry
+from ldvh.facts.contracts import ACTIVE_STATUSES, LAYOUTS, is_ignored_fact_type_root_entry, is_legacy_spark_object
 from ldvh.facts.models import FactIssue, FactReference
 from ldvh.facts.repository import (
     MAX_FACT_BYTES,
@@ -195,12 +195,7 @@ def _target(relation: dict[str, object]) -> dict[str, object] | None:
 
 def _target_condition(source_type: str, relation_key: str, target_type: str, target_status: object) -> bool:
     if source_type == "spark" and relation_key == "routed-to":
-        if target_type == "spark":
-            # A successor must be open when the edge is formed; once formed,
-            # its own lifecycle may advance without invalidating the upstream
-            # routed-to relation.
-            return target_status in {"open", "routed", "implemented", "discarded"}
-        return target_type not in {"study"}
+        return False
     if source_type == "spark" and relation_key == "related-to":
         return target_type in LAYOUTS
     if source_type == "workcase" and relation_key == "depends-on":
@@ -233,7 +228,7 @@ def _target_has_readable_title(
     relation_key: str,
     target_fields: dict[str, object],
 ) -> bool:
-    """Require the current title needed by Spark routed-to Human presentation."""
+    """Require a title for retained historical Spark route presentation."""
 
     if source_type != "spark" or relation_key != "routed-to":
         return True
@@ -241,68 +236,7 @@ def _target_has_readable_title(
     return isinstance(title, str) and bool(title.strip())
 
 
-def validate_spark_route_target_formation(
-    index: ProjectFactIndex,
-    source_object_id: str,
-    before_fields: Mapping[str, object],
-    after_fields: Mapping[str, object],
-) -> tuple[FactIssue, ...]:
-    """Require newly formed Spark successor edges to target an open Spark.
-
-    The ordinary project relation check validates the current target state so
-    an already-formed edge survives the target's later lifecycle.  This
-    narrow before/after check supplies the formation-time rule for generic
-    single-object Spark updates.
-    """
-
-    def targets(fields: Mapping[str, object]) -> set[tuple[str, str, str]]:
-        values: set[tuple[str, str, str]] = set()
-        relations = fields.get("relations")
-        for relation in relations if isinstance(relations, Sequence) else ():
-            if not isinstance(relation, Mapping) or relation.get("relation_key") != "routed-to":
-                continue
-            target = relation.get("target")
-            if not isinstance(target, Mapping):
-                continue
-            project = target.get("governed_project_id")
-            fact_type = target.get("fact_type_key")
-            object_id = target.get("object_id")
-            if all(isinstance(value, str) for value in (project, fact_type, object_id)):
-                values.add((project, fact_type, object_id))
-        return values
-
-    issues: list[FactIssue] = []
-    previous = targets(before_fields)
-    for project, fact_type, object_id in sorted(targets(after_fields) - previous):
-        if fact_type != "spark":
-            continue
-        path = "relations"
-        if project != index.governed_project_id:
-            continue
-        if object_id == source_object_id:
-            issues.append(FactIssue("relation", "Spark successor routed-to 目标禁止自指", path))
-            continue
-        target_read = index.read_fresh(fact_type, object_id)
-        if target_read is None or target_read.check_status in {"not_found", "invalid"}:
-            issues.append(
-                FactIssue(
-                    "relation",
-                    "新形成的 Spark successor 不存在或不是 mechanically valid 当前对象",
-                    path,
-                )
-            )
-            continue
-        if target_read.check_status == "unavailable" or target_read.fields is None:
-            issues.append(FactIssue("reference", "新形成的 Spark successor 当前不可用，无法确认其 open 状态", path))
-            continue
-        if target_read.fields.get("status") != "open":
-            issues.append(FactIssue("relation", "新形成的 Spark successor 必须为 open", path))
-    return tuple(issues)
-
-
 def _source_condition(source_type: str, relation_key: str, source_fields: dict[str, object]) -> bool:
-    if source_type == "spark" and relation_key == "routed-to":
-        return source_fields.get("status") == "routed"
     if source_type == "workcase" and relation_key == "depends-on":
         return (
             source_fields.get("status") in ACTIVE_STATUSES
@@ -729,7 +663,11 @@ def validate_project_relations(
     if any("related-to" in keys and len(keys) > 1 for keys in keys_by_target.values()):
         issues.append(FactIssue("relation", "related-to 不得与同一 target 的强关系重叠", "relations"))
 
-    if fact_type_key == "spark" and read.fields.get("status") == "routed":
+    if (
+        fact_type_key == "spark"
+        and is_legacy_spark_object(read.fields.get("object_id"))
+        and read.fields.get("status") == "routed"
+    ):
         if not any(item.get("relation_key") == "routed-to" for item in _relations(read)):
             issues.append(FactIssue("relation", "routed Spark 至少需要一条 routed-to 关系", "relations"))
 
