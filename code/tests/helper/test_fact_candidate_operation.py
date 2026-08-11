@@ -382,7 +382,7 @@ def test_f1_returns_complete_active_adr_and_open_workcase_baseline_with_paginati
     assert first["result"]["coverage"]["status"] == "complete"
     assert first["result"]["coverage"]["total_matching"] == 2
     assert first["result"]["coverage"]["returned"] == 1
-    assert len(first["result"]["recovery_manifest"]["counts"]) == 14
+    assert len(first["result"]["recovery_manifest"]["counts"]) == 13
     assert first["result"]["recovery_manifest"]["current_workcase_ref"] == current_workcase_ref
     assert first["result"]["recovery_manifest"]["selected_fact_refs"] == selected_fact_refs
     assert first["result"]["cards"][0]["fact_ref"]["fact_type_key"] == "adr"
@@ -1103,7 +1103,7 @@ def test_f2_relation_source_uses_the_study_relation_definition_without_crashing(
     )
 
 
-def test_f2_relation_source_keeps_relation_key_filter_observable_without_target_read(tmp_path: Path) -> None:
+def test_f2_rejects_removed_spark_routed_to_relation_key(tmp_path: Path) -> None:
     workspace, project = _fixture(tmp_path)
     workcase_id = _create(workspace, project, "workcase", _workcase())
     spark = _spark("Source with an unselected key")
@@ -1132,26 +1132,8 @@ def test_f2_relation_source_keeps_relation_key_filter_observable_without_target_
         ),
     ).response
 
-    assert response["outcome"] == "ok"
-    assert response["result"]["coverage"]["total_matching"] == 1
-    assert response["result"]["coverage"]["returned"] == 1
-    assert response["result"]["cards"] == []
-    edge = response["result"]["relation_navigation"]["edges"][0]
-    assert set(edge) == {
-        "source_ref",
-        "relation_index",
-        "relation_key",
-        "target_ref",
-        "relation_definition_refs",
-        "source_refs",
-        "edge_status",
-        "reasons",
-    }
-    assert edge["source_ref"]["object_id"] == spark_id
-    assert edge["relation_key"] == "related-to"
-    assert edge["target_ref"]["object_id"] == workcase_id
-    assert edge["edge_status"] == "filtered"
-    assert edge["reasons"] == ["relation-key-filter"]
+    assert response["outcome"] == "invalid_request"
+    assert response["result"] is None
 
 
 def test_f2_relation_source_reports_missing_target_without_hiding_the_edge(tmp_path: Path) -> None:
@@ -1195,7 +1177,7 @@ def test_f2_relation_source_reports_missing_target_without_hiding_the_edge(tmp_p
     )
 
 
-def test_f2_relation_source_reports_source_invalid_when_its_own_relation_is_not_allowed(tmp_path: Path) -> None:
+def test_f2_omits_invalid_legacy_spark_routed_to_edge(tmp_path: Path) -> None:
     workspace, project = _fixture(tmp_path)
     workcase_id = _create(workspace, project, "workcase", _workcase())
     spark_id = _create(workspace, project, "spark", _spark("Source with a disallowed routed-to declaration"))
@@ -1224,9 +1206,7 @@ def test_f2_relation_source_reports_source_invalid_when_its_own_relation_is_not_
     ).response
 
     assert response["outcome"] == "partial"
-    edge = response["result"]["relation_navigation"]["edges"][0]
-    assert edge["edge_status"] == "invalid"
-    assert edge["reasons"] == ["source-invalid"]
+    assert response["result"]["relation_navigation"]["edges"] == []
     assert response["result"]["cards"] == []
 
 
