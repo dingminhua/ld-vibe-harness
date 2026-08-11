@@ -82,7 +82,7 @@ export function getCommitNodeNextState(state: 'collapsed' | 'expanded') {
 
 // specs/03 §9.8 固定提交正文小标题集；渲染必须忠实，不得增删或改义。
 const COMMIT_BODY_SECTION_TITLES = new Set(['关键变更', '动机', '验证结论', '影响边界', '风险与后续']);
-const COMMIT_SIGNATURE_TRAILER = /(?:^|\n)\s*(?:Session-ID|Signer-Type|Agent-ID|Host-Environment|Model-ID|Workbench-Name):\s*/i;
+const COMMIT_SIGNATURE_TRAILER = /(?:^|\n)\s*(?:Session-ID|Signer-Type|Agent-ID|Host-Environment|Model-ID|Agent-Workbench|Workbench-Name):\s*/i;
 
 /**
  * Keep signature trailers out of the prose sections they follow.
