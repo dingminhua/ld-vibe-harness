@@ -39,6 +39,8 @@ test('Spark list exposes lifecycle and priority as separate navigation dimension
   assert.match(list, /objectList\.lifecycleFilter/)
   assert.match(list, /ObjectPriorityFilter/)
   assert.match(list, /writeListStatusParam\('spark', nextParams, 'open'\)/)
+  assert.match(list, /fetchObjects\(currentType, activeStatus \?\? undefined, activePriority \?\? undefined, activeProgressGroup \?\? undefined\)/)
+  assert.doesNotMatch(list, /const fetchStatus = currentType === 'spark'/)
   assert.ok(list.indexOf('<ObjectPriorityFilter') < list.indexOf("t('objectList.lifecycleFilter')"))
   assert.match(priorityFilter, /const SPARK_PRIORITY_ORDER = \['P0', 'P1', 'P2', 'P3'\]/)
   assert.match(priorityFilter, /import PriorityIcon from '@\/components\/PriorityIcon'/)

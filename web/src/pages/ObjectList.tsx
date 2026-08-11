@@ -1562,10 +1562,7 @@ export default function ObjectList() {
     setCoverageStatus('complete');
     setCoverageProblemCount(0);
     setCoverageProblems([]);
-    const fetchStatus = currentType === 'spark' && statusParam === null
-      ? undefined
-      : activeStatus ?? undefined;
-    fetchObjects(currentType, fetchStatus, activePriority ?? undefined, activeProgressGroup ?? undefined)
+    fetchObjects(currentType, activeStatus ?? undefined, activePriority ?? undefined, activeProgressGroup ?? undefined)
       .then((result) => {
         const receivedItems = result.data?.items ?? [];
         const nextItems = (currentType === 'spark' ? receivedItems.map(sparkViewItem) : receivedItems)
