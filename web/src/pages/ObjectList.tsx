@@ -57,7 +57,6 @@ function formatReasonText(value: string): string {
 function statusRequiresDisposition(obj: ObjectItem): boolean {
   return obj.status === 'retired'
     || obj.status === 'discarded'
-    || obj.status === 'routed'
     || (obj.fact_type_key === 'spark' && obj.status === 'implemented');
 }
 
@@ -1290,7 +1289,7 @@ export function ObjectCardFrame({
 }
 
 function hasSparkResolvedFact(obj: ObjectItem) {
-  return obj.status === 'routed';
+  return false;
 }
 
 function hasSparkDiscardFact(obj: ObjectItem) {
@@ -1305,14 +1304,10 @@ function TerminalFactPanel({
   tone,
   content,
 }: {
-  tone: 'routed' | 'implemented' | 'discarded' | 'retired';
+  tone: 'implemented' | 'discarded' | 'retired';
   content: string;
 }) {
   const styles = {
-    routed: {
-      panel: 'border-emerald-400/25 border-l-emerald-400 bg-emerald-500/5',
-      body: 'text-emerald-700/75 dark:text-emerald-200/75',
-    },
     implemented: {
       panel: 'border-emerald-400/25 border-l-emerald-400 bg-emerald-500/5',
       body: 'text-emerald-700/75 dark:text-emerald-200/75',
@@ -1342,7 +1337,7 @@ function TerminalFactPanel({
 function SparkTerminalCardContent({ obj }: { obj: ObjectItem }) {
   const { t } = useI18n();
   const reason = obj.disposition_summary?.trim() || t('objectList.dispositionMissing');
-  const tone = obj.status === 'discarded' ? 'discarded' : obj.status === 'implemented' ? 'implemented' : 'routed';
+  const tone = obj.status === 'discarded' ? 'discarded' : 'implemented';
 
   return (
     <TerminalFactPanel tone={tone} content={formatReasonText(reason)} />
