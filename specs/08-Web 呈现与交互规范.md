@@ -194,7 +194,7 @@ Web 检测到派生内容与当前来源不一致时，应优先呈现差异和�
 
 Spark 阅读中的“关联”呈现正式事实对象关系及可供继续阅读的项目内文档；不得把原始输入归类为“外部资料与输入”塞入关联区，也不得因 `repository-path` 一律伪装为“文档”。项目内文档必须是实际面向阅读的项目文档；代码、测试、构建产物、配置、运行观察和其它非文档文件不得进入 Spark 的关联区。对象自有语义字段与自然语言说明不自动生成“来源”或“证据”阅读区，也不得把代码、测试或运行观察重复投影为 Spark 的扩展阅读。普通 AI 创建或后续 AI 更新确认原始 Human 输入仍是理解 Spark 形成原因的关键上下文时，首条 `evolution` 必须直接说明它。页面不得把原话改名为 `intent` 或替代当前摘要。Spark 不另建“扩展阅读”区；关联是唯一的附加阅读入口。
 
-Spark 详情必须把对象实际存在的 `intent`、当前 `summary` 和 `evolution` 分别呈现为可识别区段；每项 `evolution` 必须直接呈现对象中的 `at` 与 `summary`，不得隐藏、并入摘要、从 Git/更新时间/来源原文重建或补写。对象没有 `evolution` 时，Web 只如实不显示该区段，不得推断“没有发生演变”。`routed` Spark 的分流区只呈现对象实际 `updated_at` 的日期和时间与 `disposition_summary`；它不重复呈现状态节点，也不另设“分流目标”或“分流时间”标签。`discarded` Spark 必须以“废弃”而非“分流”呈现其终态处置；同样只呈现实际 `updated_at` 的日期和时间与 `disposition_summary`，不得显示分流、分流目标、分流时间或虚构承接内容。实际 `routed-to` 关系只在 Spark 的“关联”区呈现：名称从当前目标对象的 `title` 读取，不能显示 `object_id` 作为对象名称；目标尚未读到或不可读时如实呈现读取状态，不以编号猜测或替代名称。两种终态记录都应与演变记录使用同一层级的时间与正文卡片组织；Web 不得从任一种终态处置推断新的承接内容。
+Spark 详情必须把对象实际存在的 `intent`、当前 `summary` 和 `evolution` 分别呈现为可识别区段；每项 `evolution` 必须直接呈现对象中的 `at` 与 `summary`，不得隐藏、并入摘要、从 Git/更新时间/来源原文重建或补写。对象没有 `evolution` 时，Web 只如实不显示该区段，不得推断“没有发生演变”。当前 Spark 只有 `open`、`implemented`、`discarded` 三态；终态只按 `disposition_summary` 呈现“落实”或“废弃”，不得显示 Spark 承接目标或责任路由。历史 routed Spark 只以 legacy/read-only 标识如实读取，不进入当前状态筛选、颜色、终态统计或责任投影。WorkCase 自身的 `routed-to` 关闭处置仍按本规范显示。
 
 Study 详情页的摘要层（research_intent、abstract、recommendation_summary）在主内容区呈现，完整 Markdown 正文默认在侧栏阅读面板中打开，实现渐进阅读。正文以独立的阅读面板承载，使 Human 可同时看到主内容区的摘要和侧栏的正交结构、标题和正文结构。正文的 Markdown 标题、列表、表格和链接必须忠实渲染，保持源文的段落、编号、嵌套关系和语义分组结构。
 
@@ -382,7 +382,7 @@ Web API 的时间字段按 RFC 3339 instant 读取；前端展示完整时间时
 | 页面字段级解析与未解析结构 | 新增或修改事实对象阅读页面、字段投影或来源解析时 | 消费字段按 §5.3 的字段级解析结果呈现；登记为消费字段的每个可读值都有 Human 可见的详情或明确可达次级阅读节点；缺失或类型不符字段显示为空且未升级为对象失败；未消费字段、旧字段、没有呈现节点的已登记字段和无法归类的嵌套结构进入未解析结构区域并带有准确路径、原因和原始值；未解析结构未静默丢弃、未阻断其它内容；只有文件本身无法读取或无法解析时才显示读取失败；页面阅读未引入独立校验进程冷启动、全量目录扫描或完整机械校验链路 | 含缺失、类型不符、额外字段、旧字段及“契约登记但无呈现节点”样例的来源文件、API payload、页面 DOM 与实现依赖 | API/component tests 与代表性浏览器页面对照、Code review | 当次页面、字段和已检查结构类别 | 修正解析或呈现；不得静默丢弃、整对象判失败或伪造内容；没有呈现节点时从消费投影移除并保留为未解析结构；移除非页面消费所需的校验链路 |
 | 派生内容 | 新增缓存、聚合、计数、筛选、排序或关系视图时 | 来源、观察时间、转换、遗漏范围和过期状态可复核，来源变化后刷新或标明过期 | 当前来源、派生输入输出、时间和差异 | API/component tests 与来源变更测试 | 当次派生功能和测试数据 | 不作为当前事实呈现；刷新、标记过期或移除误导结果 |
 | 来源与判断边界呈现 | 新增页面、字段、复制或导航时 | 事实、派生、诊断、Human 输入和未知范围可区分，关键内容能回到来源 | 页面、复制结果、导航目标和来源文件 | 页面、键盘和代表性辅助技术测试 | 当次页面及声明支持方式 | 修正呈现或缩小支持声明 |
-| Spark 状态、演变、终态处置与关联呈现 | 呈现 Spark 状态、演变、终态处置或“关联”区时 | `open` 按 20 显示为“待处理”，不套用“未关闭”；创建缘由仍影响理解时，首条演变直接说明其来源语境；`routed` 的分流区只显示 `updated_at` 的日期/时间与处置说明，以演变同层级的时间/正文卡片组织，不重复状态、“分流目标”或“分流时间”标签；`discarded` 必须显示为“废弃”而不是“分流”，并且只显示 `updated_at` 的日期/时间与废弃理由，不显示承接目标或分流标签；`routed-to` 只在关联区出现，并从当前目标 `title` 显示完整名称，绝不以 object_id 作名称回退；关联区只含正式关系及项目内可阅读文档，没有“来源”“证据”或重复扩展阅读投影 | 20、当前对象、页面 DOM 与来源投影 | component/API contract tests 与代表性浏览器页面对照 | 当次 Spark 页面与已检查来源类别 | 修正映射或投影；不得用通用状态词、来源原文原话、object_id 名称或代码路径补足页面内容 |
+| Spark 状态、演变、终态处置与关联呈现 | 呈现 Spark 状态、演变、终态处置或“关联”区时 | `open` 按 20 显示为“待处理”，不套用“未关闭”；`implemented` 只显示“落实”，`discarded` 只显示“废弃”，二者均只读取 `updated_at` 与 `disposition_summary`；当前 Spark 不投影 `routed-to`，历史 routed 只显示 legacy/read-only 基线；WorkCase 的 `routed-to` 仍在其关闭投影中出现 | 20、当前对象、页面 DOM 与来源投影 | component/API contract tests 与代表性浏览器页面对照 | 当次 Spark 页面、历史 baseline 与已检查来源类别 | 修正映射或投影；不得用 object_id、目标标题或旧状态补足当前 Spark 内容 |
 | Spark 详情语义区段呈现 | 呈现 Spark 详情，或改动 `intent`、`summary`、`evolution` 的读取/组件时 | 实际存在的 `intent`、当前 `summary` 和 `evolution` 分别可识别；每项演变直接显示对象 `at` 与 `summary`，没有被隐藏、并入摘要或由 Git、更新时间、来源推导；字段缺失只按对象实际缺失呈现，不补造“无演变”判断 | 20、当前对象、页面 DOM 与来源字段 | component/API contract tests 与代表性浏览器页面对照 | 当次 Spark 页面、字段和已检查视口 | 修正投影或样式；不由 Web 重建、补写或省略对象已有演变 |
 | Pitfall 状态与 WorkCase 关闭 Card | 呈现 Pitfall，或呈现 closure-confirmation/closed WorkCase Card 时 | Pitfall 三状态使用待确认/活跃/已废弃；Card 显示 goal、outcome、disposition、route_existing/suggest_spark/accept_stop 三类处置和 contributed Pitfall 标题/状态；suggestions 完整且无未来 ID；没有 promote/discard 控件；related-to 只在详情呈现 | 21、23、当前对象、API payload 与页面 DOM | component/API contract tests 与代表性页面对照 | 当次三状态和两种 WorkCase Card | 修正状态词、字段映射或交互；不推断建议对象、不在 Card 执行 draft 审核 |
 | Markdown 结构忠实呈现 | 呈现包含 Markdown 结构的事实对象文本字段时 | 源文通过 Markdown 明确表达的段落、强调式分组标签、小标题、编号、列表及嵌套关系被原样解释并可扫描；无标记普通文本保持普通段落；Web 没有猜测、补写、重排或重写内容结构 | 当前事实对象 Markdown 源文、渲染 DOM、实际页面字号与间距 | component/API contract tests 与代表性浏览器页面对照 | 当次已检查字段、结构种类和视口 | 修正渲染或样式；在源文结构不足时交还内容形成责任，不由 Web 自动重写 |
@@ -422,8 +422,8 @@ Web API 的时间字段按 RFC 3339 instant 读取；前端展示完整时间时
 9. Web 正在根据事实文本含义自动生成、提升、拆分、合并或重排 Markdown 结构，或者用统一文章骨架覆盖源文结构。
 10. Spark 详情隐藏、并入摘要或从 Git、更新时间、来源原文重建对象实际存在的 `evolution`，或者把字段缺失自动呈现为“没有发生演变”。
 11. Spark 页面把对象自有语义字段或自然语言说明自动生成“来源”“证据”区，或把代码、测试、构建产物、配置、运行观察等非文档文件仅因 `repository-path`/仓库位置投影进“关联”或扩展阅读。
-12. `routed` Spark 在分流区重复状态或“分流时间”标签，或不使用 `updated_at` 而以另一时间字段、与演变不一致的属性表替代终态日期/时间与处置说明。
-13. `discarded` Spark 被呈现为“分流”，显示分流目标、分流时间或虚构承接内容，或者复用 routed 的分流文案来解释废弃理由。
+12. 当前 Spark 显示 routed 状态、Spark `routed-to` 责任投影、旧分流终态统计或把历史 baseline 当作当前三态。
+13. `discarded` Spark 被呈现为“分流”，显示承接目标或虚构承接内容，或者复用旧 routed 的分流文案来解释废弃理由。
 14. 页面正在静默丢弃来源中实际存在的字段或嵌套结构，把字段级缺失或类型不符升级为整个对象的读取失败，或者在文件本身可解析时伪造读取失败或内容；包括字段已被 API/DTO/契约登记为“消费”却没有任何 Human 可见呈现节点，因而既未显示也未进入未解析结构的情形。
 15. Pitfall draft/active/discarded 使用了非“待确认/活跃/已废弃”的通用状态词，或 WorkCase 关闭 Card 漏掉三类处置、Spark suggestions、contributed Pitfall 标题/状态，显示未来对象 ID，增加 Pitfall promote/discard 控件，或将 `related-to` 放入 Card 正文。
 
