@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import os
-import tempfile
 from pathlib import Path
 
 import pytest
@@ -157,7 +155,7 @@ class TestInjectEnvironmentSignature:
         result = inject_environment_signature(message)
         lines = result.split("\n")
         # Last three non-empty lines should be the env-injected trailers
-        trailers = [l for l in lines if l.strip()][-3:]
+        trailers = [line for line in lines if line.strip()][-3:]
         assert trailers == [
             "Session-ID: test-session-abc123",
             "Model-ID: glm-5.2",

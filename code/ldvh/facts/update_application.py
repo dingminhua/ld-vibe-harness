@@ -271,7 +271,10 @@ def apply_fact_update_locked(command: FactUpdateCommand) -> FactUpdateResult:
         "updated_at": command.event_at,
     }
     timestamp_appended_change_log(proposed, command.event_at)
-    change_log_issues = () if command.allow_legacy_routed_spark_migration else validate_change_log_transition(current.fields, proposed)
+    change_log_issues = (
+        () if command.allow_legacy_routed_spark_migration
+        else validate_change_log_transition(current.fields, proposed)
+    )
     if change_log_issues:
         return FactUpdateResult(
             "candidate_rejected",

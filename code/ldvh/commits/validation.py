@@ -13,10 +13,10 @@ from ldvh.facts.content import validate_fact_content
 from ldvh.facts.contracts import LAYOUTS, is_legacy_spark_object
 from ldvh.facts.schema import FactSchema
 from ldvh.facts.validation import (
-    _WORKBENCH_TOKEN_SPLIT,
-    _is_host_product_concatenation,
-    MODEL_FAMILY_TOKENS,
     _SESSION_PLACEHOLDER_RE,
+    _WORKBENCH_TOKEN_SPLIT,
+    MODEL_FAMILY_TOKENS,
+    _is_host_product_concatenation,
 )
 
 _HEADER = re.compile(r"^(?P<type>[a-z]+)(?:\((?P<scope>[a-z]+(?:-[a-z]+)*)\))?(?P<breaking>!)?: (?P<description>.+)$")
