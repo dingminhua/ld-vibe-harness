@@ -120,6 +120,6 @@ export const FACT_TERMINAL_STATUSES: Record<FactType, readonly string[]> = {
   workcase: ['closed'],
   adr: ['retired'],
   pitfall: ['discarded'],
-  spark: ['routed', 'implemented', 'discarded'],
+  spark: ['implemented', 'discarded'],
   study: ['retired'],
 }
