@@ -16,11 +16,11 @@ test('object header attribution reads the newest complete signature from change_
   assert.deepEqual(getLatestFactChangeSignature([
     { signature: { agent_id: 'legacy', host_environment: 'old-host' } },
     { signature: { model_id: 'gpt-5', agent_workbench: 'Cindy' } },
-  ]), { modelId: 'gpt-5', hostName: 'Cindy' });
+  ]), { modelId: 'gpt-5', agentWorkbench: 'Cindy' });
 
   assert.deepEqual(getLatestFactChangeSignature([
     { signature: { model_id: 'gpt-5', host_name: 'Cindy' } },
-  ]), { modelId: 'gpt-5', hostName: 'Cindy' });
+  ]), { modelId: 'gpt-5', agentWorkbench: 'Cindy' });
 
   assert.equal(getLatestFactChangeSignature([
     { signature: { agent_id: 'partial' } },
