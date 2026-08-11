@@ -42,7 +42,7 @@ from ldvh.filesystem import AtomicWriteResult, native_atomic_fact_writes_support
 from ldvh.source_references import validate_source_reference
 from ldvh.time import canonicalize_new_timestamp_fields
 
-WorkCaseWriteMode = Literal["update", "close", "correct", "begin_termination", "complete_termination"]
+WorkCaseWriteMode = Literal["update", "close", "correct", "begin_termination", "complete_termination", "recover"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -185,6 +185,15 @@ def _operation_boundary_issues(
     elif command.mode == "correct":
         if before_status != "closed" or after_status != "closed":
             issues.append(FactIssue("schema", "correct-closed-workcase 只接受 closed → closed", "status"))
+    elif command.mode == "recover":
+        if before_status != "closed" or after_status not in ACTIVE_STATUSES:
+            issues.append(
+                FactIssue(
+                    "schema",
+                    "recover-invalid-workcase 只接受无效 closed before 与已验证历史 active after",
+                    "status",
+                )
+            )
     elif command.mode == "begin_termination":
         if before_status not in ACTIVE_STATUSES or before.get("phase") == "termination_preparing":
             issues.append(
@@ -713,7 +722,7 @@ def _candidate(
     if parsed.fields is not None:
         snapshot_issues = validate_fact_object("workcase", parsed.fields, command.schema)
         issues.extend(snapshot_issues)
-        if not snapshot_issues:
+        if not snapshot_issues and command.mode != "recover":
             issues.extend(
                 validate_workcase_transition(
                     before,
@@ -979,7 +988,9 @@ def apply_workcase_write_locked(command: WorkCaseWriteCommand) -> WorkCaseWriteR
     if current.check_status == "unavailable" or current.fields is None:
         status: UpdateStatus = "current_unavailable" if current.check_status == "unavailable" else "current_rejected"
         return _result(command, status, issues=current.issues, current=current)
-    if current.check_status != "mechanically_valid":
+    if current.check_status != "mechanically_valid" and not (
+        command.mode == "recover" and current.check_status == "invalid" and current.fields is not None
+    ):
         return _result(command, "current_rejected", issues=current.issues, current=current)
     if current.content_fingerprint != command.expected_content_fingerprint or current.raw_text is None:
         return _result(command, "fingerprint_stale", current=current)
@@ -996,7 +1007,7 @@ def apply_workcase_write_locked(command: WorkCaseWriteCommand) -> WorkCaseWriteR
         )
 
     mutable_current = {key: value for key, value in current.fields.items() if key not in MANAGED_FIELDS}
-    gate_issues = _gate_issues(command, current.fields, preview)
+    gate_issues = () if command.mode == "recover" else _gate_issues(command, current.fields, preview)
     close_mapping_issues = (
         _close_mapping_issues(current.fields, preview)
         if command.mode == "close"
@@ -1052,7 +1063,7 @@ def apply_workcase_write_locked(command: WorkCaseWriteCommand) -> WorkCaseWriteR
         )
 
     proposed = _complete_after(command, current.fields, updated_at=command.event_at)
-    change_log_issues = validate_change_log_transition(current.fields, proposed)
+    change_log_issues = () if command.mode == "recover" else validate_change_log_transition(current.fields, proposed)
     if change_log_issues:
         return _result(command, "candidate_rejected", issues=change_log_issues, current=current)
 
