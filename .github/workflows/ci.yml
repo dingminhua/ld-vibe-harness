@@ -22,7 +22,7 @@ jobs:
       - name: Create venv for launcher fallback tests
         run: |
           python -m venv .venv
-          .venv/bin/pip install -r requirements.txt
+          .venv/bin/pip install -r requirements-dev.txt
       - name: Install Node dependencies (js-yaml for portability test)
         run: npm ci --prefix web
       - name: Create governed workspace fixture
@@ -40,7 +40,7 @@ jobs:
         run: ruff check code
       - name: Test (pytest)
         env:
-          PYTHONPATH: code
+          PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/code
         run: pytest code/tests
 
   web:
