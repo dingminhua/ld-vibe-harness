@@ -426,7 +426,7 @@ def test_body_after_trailers_is_not_accepted_as_minimum_body(contract: CommitCon
     assert "signature_trailer_missing" in _codes(result)
 
 
-def test_signature_footer_requires_session_and_two_signature_fields(contract: CommitContractProjection) -> None:
+def test_signature_footer_requires_at_least_one_current_signature_field(contract: CommitContractProjection) -> None:
     result = validate_commit(contract, _input(contract, message="docs: 增加署名"))
 
     assert result.outcome == "failed"
@@ -444,7 +444,7 @@ def test_signature_footer_requires_session_and_two_signature_fields(contract: Co
 
 
 def test_new_signature_trailers_are_canonical_footer(contract: CommitContractProjection) -> None:
-    """新三元组 footer 直接通过。"""
+    """当前 LDVH 三字段 footer 直接通过。"""
 
     result = validate_commit(
         contract,
@@ -453,7 +453,8 @@ def test_new_signature_trailers_are_canonical_footer(contract: CommitContractPro
             message=(
                 "docs(specs): 明确提交契约\n\n"
                 "关键变更:\n- 明确测试中的提交契约\n\n"
-                "Session-ID: test-session\nModel-ID: gpt-5.6-luna\nWorkbench-Name: Cindy"
+                "LDVH-Product-Name: Cindy\nLDVH-Model-Name: gpt-5.6-luna\n"
+                "LDVH-Agent-Runtime-Name: codex-cli"
             ),
         ),
     )
@@ -509,7 +510,7 @@ def test_commit_signature_rejects_multiple_values_for_one_current_environment_fi
 def test_new_signature_footer_tripwires_reject_alias_and_os_suffix(
     contract: CommitContractProjection,
 ) -> None:
-    """新 footer 的 Model-ID 裸产品别名与 Workbench-Name 括号系统后缀被机械拒绝。"""
+    """已退休 trailer 一律拒绝，不再按旧字段值解释。"""
 
     alias = validate_commit(
         contract,
@@ -568,8 +569,8 @@ def test_new_signature_footer_tripwires_reject_alias_and_os_suffix(
     assert "legacy_signature_trailer_retired" in _codes(compound)
 
 
-def test_signature_footer_rejects_model_family_workbench(contract: CommitContractProjection) -> None:
-    """footer 的 Workbench-Name 不得是模型族 token（如 Gpt）。"""
+def test_signature_footer_rejects_retired_workbench_name(contract: CommitContractProjection) -> None:
+    """已退休 Workbench-Name 不再作为新提交署名解释。"""
 
     bad = validate_commit(
         contract,
@@ -601,8 +602,8 @@ def test_signature_footer_rejects_model_family_workbench(contract: CommitContrac
         assert ok.outcome == "passed", (wb, [f"{i.code}: {i.message}" for i in ok.issues])
 
 
-def test_signature_footer_rejects_placeholder_session_id(contract: CommitContractProjection) -> None:
-    """footer 的 Session-ID 不得为占位符（如 current-session）。"""
+def test_signature_footer_rejects_retired_session_id(contract: CommitContractProjection) -> None:
+    """已退休 Session-ID 不再作为新提交署名解释。"""
 
     bad = validate_commit(
         contract,
@@ -635,10 +636,10 @@ def test_signature_footer_rejects_placeholder_session_id(contract: CommitContrac
         assert ok.outcome == "passed", (sid, [f"{i.code}: {i.message}" for i in ok.issues])
 
 
-def test_partial_new_signature_footer_requires_both_new_trailers(
+def test_legacy_signature_footer_cannot_replace_current_trailers(
     contract: CommitContractProjection,
 ) -> None:
-    """只声明一个新 trailer 时必须补齐新三元组，不回退到旧集合。"""
+    """旧 trailer 不能替代当前 LDVH 三字段 trailer。"""
 
     result = validate_commit(
         contract,
@@ -656,10 +657,10 @@ def test_partial_new_signature_footer_requires_both_new_trailers(
     assert "signature_trailer_missing" in _codes(result)
 
 
-def test_missing_signature_footer_messages_point_at_new_trailers(
+def test_missing_signature_footer_messages_point_at_current_trailers(
     contract: CommitContractProjection,
 ) -> None:
-    """新旧 trailer 全缺时，缺失引导指向 Model-ID/Workbench-Name 而非旧名称。"""
+    """缺失引导指向当前 LDVH 三字段，而非任何退休字段。"""
 
     result = validate_commit(
         contract,
