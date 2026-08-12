@@ -1353,3 +1353,140 @@ def test_study_update_preserves_submitted_body_boundary(tmp_path: Path) -> None:
 
     assert updated["outcome"] == "ok", json.dumps(updated, ensure_ascii=False, indent=2)
     assert updated["result"]["fact_object"]["body"] == target["body"]
+
+
+def _legacy_fixture(tmp_path: Path, *, include_log: bool = False) -> tuple[Path, Path, Path]:
+    """Create a Spark fixture whose committed baseline lacks ``change_log``.
+
+    ``include_log`` commits a logged object and then rewrites the Working Tree
+    without the log, simulating a deleted committed history.
+    """
+    workspace = tmp_path / "workspace"
+    project = workspace / "project"
+    project.mkdir(parents=True)
+    _git(project, "init", "-q")
+    fact = project / "ldvh-base" / "sparks" / "spark-0001.yaml"
+    fact.parent.mkdir(parents=True)
+    clean = (
+        "object_id: spark-0001\n"
+        "fact_type_key: spark\n"
+        "title: Legacy object\n"
+        "created_at: 2026-07-14T09:00:00+08:00\n"
+        "updated_at: 2026-07-14T10:00:00+08:00\n"
+        "status: open\n"
+        "summary: Before first real update\n"
+        "priority: P2\n"
+    )
+    logged = clean + (
+        "change_log:\n"
+        "  - signature:\n"
+        "      agent_id: test-agent\n"
+        "      host_environment: test\n"
+        "    session_id: test-session\n"
+        "    at: 2026-07-14T09:00:00+08:00\n"
+        "    summary: Create test fact\n"
+    )
+    fact.write_text(logged if include_log else clean, encoding="utf-8")
+    (workspace / "LDVH-GOVERNED-PROJECTS.yaml").write_text(
+        "\n".join(
+            [
+                "product_name: Test Workspace",
+                "product_description: First-log update tests.",
+                "projects:",
+                "  - id: sample",
+                f"    path: {project}",
+                "    name: Sample",
+                "    description: Test project.",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    _git(project, "add", "-A")
+    _git(
+        project,
+        "-c",
+        "user.name=test",
+        "-c",
+        "user.email=test@example.com",
+        "commit",
+        "-q",
+        "-m",
+        "seed",
+    )
+    if include_log:
+        fact.write_text(clean, encoding="utf-8")
+    return workspace, project, fact
+
+
+def test_first_log_generic_update_succeeds_when_head_lacks_log(tmp_path: Path) -> None:
+    workspace, project, fact = _legacy_fixture(tmp_path)
+    before = _read(workspace, project)
+    assert "change_log" not in before["fact_object"]
+    target = _mutable(before)
+    target["summary"] = "First real update"
+    target["change_log"] = [
+        {
+            "signature": {
+                "product_name": "placeholder",
+                "model_name": "placeholder",
+                "agent_runtime_name": "placeholder",
+            },
+            "at": "2000-01-01T00:00:00Z",
+            "summary": "首次真实更新建立流水；此前历史未恢复。",
+        }
+    ]
+
+    response = handle_request(
+        "call",
+        "update-fact-object",
+        _update_payload(workspace, project, before["content_fingerprint"], target),
+    ).response
+
+    assert_common_response(response)
+    assert response["outcome"] == "ok"
+    after_fields = response["result"]["fact_object"]
+    assert after_fields["summary"] == "First real update"
+    assert after_fields["status"] == "open"
+    change_log = after_fields["change_log"]
+    assert len(change_log) == 1
+    entry = change_log[0]
+    assert set(entry["signature"]) == {"product_name", "model_name", "agent_runtime_name"}
+    assert entry["signature"]["model_name"] == "test-model"
+    assert "session_id" not in entry
+    assert entry["at"] == after_fields["updated_at"]
+    assert any(
+        item["check"] == "事实写入后的独立全库机械完整性审计" for item in response["verification"]
+    )
+    assert fact.read_text(encoding="utf-8") != before["fact_object"]
+
+
+def test_first_log_generic_update_rejects_deleted_committed_history(tmp_path: Path) -> None:
+    workspace, project, fact = _legacy_fixture(tmp_path, include_log=True)
+    before = _read(workspace, project)
+    assert "change_log" not in before["fact_object"]
+    original = fact.read_bytes()
+    target = _mutable(before)
+    target["summary"] = "First real update"
+    target["change_log"] = [
+        {
+            "signature": {
+                "product_name": "test",
+                "model_name": "test-model",
+                "agent_runtime_name": "pytest",
+            },
+            "at": "2000-01-01T00:00:00Z",
+            "summary": "首次真实更新建立流水；此前历史未恢复。",
+        }
+    ]
+
+    response = handle_request(
+        "call",
+        "update-fact-object",
+        _update_payload(workspace, project, before["content_fingerprint"], target),
+    ).response
+
+    assert_common_response(response)
+    assert response["outcome"] == "rejected"
+    assert any("HEAD" in gap["summary"] for gap in response["gaps"])
+    assert fact.read_bytes() == original

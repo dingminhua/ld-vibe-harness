@@ -33,7 +33,6 @@ OPERATIONS = {
     "correct-closed-workcase",
     "create-fact-object",
     "find-fact-object-candidates",
-    "migrate-legacy-change-log",
     "precheck-git-commit",
     "prepare-closed-workcase-candidate",
     "prepare-fact-object-draft",

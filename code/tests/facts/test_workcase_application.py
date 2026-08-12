@@ -3017,3 +3017,133 @@ def test_update_workcase_entering_human_closure_confirming_freezes_contributed_t
     assert accepted.status == "updated"
     assert accepted.readback is not None and accepted.readback.fields is not None
     assert accepted.readback.fields["relations"] == before["relations"]
+
+
+def _first_log_after(before: dict[str, Any], *, title: str) -> dict[str, Any]:
+    after = deepcopy(before)
+    after["title"] = title
+    after["change_log"] = [
+        {
+            "signature": {
+                "product_name": "pytest",
+                "model_name": "test-model",
+                "agent_runtime_name": "pytest-runtime",
+            },
+            "at": "2000-01-01T00:00:00Z",
+            "summary": "首次真实更新建立流水；此前历史未恢复。",
+        }
+    ]
+    return after
+
+
+def test_first_log_update_rejects_unborn_head_without_writing(
+    current_fact_schemas: Mapping[str, FactSchema],
+    tmp_path: Path,
+) -> None:
+    project = _project(current_fact_schemas, tmp_path)
+    source = _active("workcase-0001")
+    source.pop("change_log")
+    path = _write(project, source)
+    original = path.read_bytes()
+    after = _first_log_after(source, title="首次真实更新")
+
+    result = apply_workcase_write(_command(project, source, after, mode="update"))
+
+    assert result.status == "candidate_rejected"
+    assert any(issue.field_path == "change_log" and "HEAD" in issue.summary for issue in result.issues)
+    assert path.read_bytes() == original
+
+
+def test_first_log_update_succeeds_when_head_and_wt_lack_log(
+    current_fact_schemas: Mapping[str, FactSchema],
+    tmp_path: Path,
+) -> None:
+    project = _project(current_fact_schemas, tmp_path)
+    source = _active("workcase-0001")
+    source.pop("change_log")
+    path = _write(project, source)
+    _git(project.boundary.worktree_root, "add", "-A")
+    _git(
+        project.boundary.worktree_root,
+        "-c",
+        "user.name=test",
+        "-c",
+        "user.email=test@example.com",
+        "commit",
+        "-q",
+        "-m",
+        "seed",
+    )
+    after = _first_log_after(source, title="首次真实更新")
+
+    result = apply_workcase_write(_command(project, source, after, mode="update"))
+
+    assert result.status == "updated"
+    assert result.readback is not None and result.readback.fields is not None
+    fields = result.readback.fields
+    assert fields["status"] == "open"
+    assert fields["phase"] == "human_plan_confirming"
+    assert fields["title"] == "首次真实更新"
+    change_log = fields["change_log"]
+    assert len(change_log) == 1
+    entry = change_log[0]
+    assert set(entry["signature"]) == {"product_name", "model_name", "agent_runtime_name"}
+    assert "session_id" not in entry
+    assert entry["at"] == fields["updated_at"]
+    assert path.read_text(encoding="utf-8") == result.candidate_text
+
+
+def test_first_log_correct_closed_succeeds_when_head_lacks_log(
+    current_fact_schemas: Mapping[str, FactSchema],
+    tmp_path: Path,
+) -> None:
+    project = _project(current_fact_schemas, tmp_path)
+    target = _active("workcase-0002", title="承接目标")
+    _write(project, target)
+    target_read = _read(project, "workcase-0002")
+    proposal_snapshot = WorkCaseRouteTargetSnapshot(
+        FactReference("sample", "workcase", "workcase-0002"),
+        target_read.content_fingerprint,
+        "closure_proposal.residual_decisions[0].route_target",
+    )
+    request_snapshot = replace(proposal_snapshot, origin_path="route_target_fingerprints[0].target")
+    source = _closed_from(_closing("workcase-0001", outcome="not-achieved", target=proposal_snapshot))
+    source["updated_at"] = "2026-07-26T12:00:00+08:00"
+    source.pop("change_log")
+    _write(project, source)
+    _git(project.boundary.worktree_root, "add", "-A")
+    _git(
+        project.boundary.worktree_root,
+        "-c",
+        "user.name=test",
+        "-c",
+        "user.email=test@example.com",
+        "commit",
+        "-q",
+        "-m",
+        "seed",
+    )
+    after = _first_log_after(source, title="更正原关闭时的标题")
+    after["status"] = "closed"
+
+    result = apply_workcase_write(
+        _command(
+            project,
+            source,
+            after,
+            mode="correct",
+            route_target_fingerprints=(request_snapshot,),
+        )
+    )
+
+    assert result.status == "updated"
+    assert result.readback is not None and result.readback.fields is not None
+    fields = result.readback.fields
+    assert fields["status"] == "closed"
+    assert fields["closure_outcome"] == "not-achieved"
+    change_log = fields["change_log"]
+    assert len(change_log) == 1
+    entry = change_log[0]
+    assert set(entry["signature"]) == {"product_name", "model_name", "agent_runtime_name"}
+    assert "session_id" not in entry
+    assert entry["at"] == fields["updated_at"]

@@ -309,7 +309,8 @@ def test_every_commit_requires_key_changes_list(contract: CommitContractProjecti
         _input(
             contract,
             message=(
-                "docs: 更新说明\n\nLDVH-Product-Name: Cindy\nLDVH-Model-Name: gpt-5.6-luna\nLDVH-Agent-Runtime-Name: codex-cli"
+                "docs: 更新说明\n\n"
+                "LDVH-Product-Name: Cindy\nLDVH-Model-Name: gpt-5.6-luna\nLDVH-Agent-Runtime-Name: codex-cli"
             ),
         ),
     )
@@ -1205,6 +1206,61 @@ def test_first_real_update_rejects_deleted_committed_history(
     assert result.outcome == "failed"
     # Working Tree 删除了全部流水：候选缺失可校验 change_log 而 fail closed。
     assert "fact_trace_missing" in _codes(result)
+
+
+def test_first_real_update_rejects_time_unbound_first_entry(
+    contract: CommitContractProjection,
+) -> None:
+    """HEAD 无 change_log 时，Git 预检强制最后一条 at 等于 updated_at。"""
+
+    head_data = _VALID_SPARK.split(b"change_log:\n")[0]
+    base = (
+        "object_id: spark-0001\n"
+        "fact_type_key: spark\n"
+        "title: 测试火花\n"
+        "status: open\n"
+        "priority: P1\n"
+        "created_at: 2026-07-01T00:00:00+08:00\n"
+    )
+    entry = (
+        "  - signature:\n"
+        "      product_name: Cindy\n"
+        "      model_name: gpt-5.6-luna\n"
+        "      agent_runtime_name: claude-code\n"
+        "    at: 2026-07-01T01:00:00+08:00\n"
+        "    summary: 首写。\n"
+    )
+
+    def candidate(*, updated_at: str, entries: str) -> object:
+        return _fact_candidate(
+            data=(base + f"updated_at: {updated_at}\nchange_log:\n" + entries).encode(),
+            head_exists=True,
+            head_data=head_data,
+        )
+
+    # 多条合法首写（at 递增、updated_at 覆盖最后一条）：多写者场景合法，应通过。
+    second = entry.replace("01:00:00", "01:30:00")
+    multi = validate_commit(
+        contract,
+        _input(
+            contract,
+            fact_candidates=(candidate(updated_at="2026-07-01T01:30:00+08:00", entries=entry + second),),
+            fact_schemas=(_spark_schema(),),
+        ),
+    )
+    assert multi.outcome == "passed"
+
+    # at 与 updated_at 不一致（at 早于 updated_at，内容合法）：必须在首写契约处拒绝。
+    unbound = validate_commit(
+        contract,
+        _input(
+            contract,
+            fact_candidates=(candidate(updated_at="2026-07-01T01:30:00+08:00", entries=entry),),
+            fact_schemas=(_spark_schema(),),
+        ),
+    )
+    assert unbound.outcome == "failed"
+    assert "fact_trace_first_entry_invalid" in _codes(unbound)
 
 
 def test_new_fact_multiple_writer_sessions_use_one_trae_commit_session(

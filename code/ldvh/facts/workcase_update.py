@@ -16,6 +16,7 @@ from typing import Any, Literal
 from ldvh.facts.carriers.yaml_object import parse_yaml_object
 from ldvh.facts.contracts import ACTIVE_STATUSES, LAYOUTS
 from ldvh.facts.creation import CreationBoundary, allocation_lock, serialize_fact_object
+from ldvh.facts.head_change_log import head_change_log_state
 from ldvh.facts.models import FactIssue
 from ldvh.facts.project_validation import stabilize_project_index
 from ldvh.facts.relations import (
@@ -147,6 +148,12 @@ def _complete_after(
         "created_at": before["created_at"],
         "updated_at": updated_at,
     }
+    change_log = fields.get("change_log")
+    if isinstance(change_log, list):
+        # Stamp the newest entry on a private copy so the caller-supplied
+        # mapping is never mutated through the shallow spread above.  This
+        # keeps the ``no_change`` comparison and preview checks honest.
+        fields["change_log"] = [dict(entry) if isinstance(entry, dict) else entry for entry in change_log]
     if isinstance(updated_at, str):
         timestamp_appended_change_log(fields, updated_at)
     return canonicalize_new_timestamp_fields(fields, before=before)
@@ -1062,8 +1069,35 @@ def apply_workcase_write_locked(command: WorkCaseWriteCommand) -> WorkCaseWriteR
             current=current,
         )
 
+    allow_first_log = False
+    if "change_log" not in current.fields and command.mode != "recover":
+        state = head_change_log_state(
+            command.boundary.worktree_root,
+            LAYOUTS["workcase"],
+            command.schema,
+            command.object_id,
+        )
+        if state != "absent":
+            return _result(
+                command,
+                "candidate_rejected",
+                issues=(
+                    FactIssue(
+                        "schema",
+                        "HEAD 基线不是同样缺少 change_log 的机械有效 before；"
+                        "历史被删除、新对象或不可用 HEAD 均不得首写",
+                        "change_log",
+                    ),
+                ),
+                current=current,
+            )
+        allow_first_log = True
+
     proposed = _complete_after(command, current.fields, updated_at=command.event_at)
-    change_log_issues = () if command.mode == "recover" else validate_change_log_transition(current.fields, proposed)
+    change_log_issues = (
+        () if command.mode == "recover"
+        else validate_change_log_transition(current.fields, proposed, allow_first_log=allow_first_log)
+    )
     if change_log_issues:
         return _result(command, "candidate_rejected", issues=change_log_issues, current=current)
 

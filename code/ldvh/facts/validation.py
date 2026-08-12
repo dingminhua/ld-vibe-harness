@@ -316,10 +316,15 @@ def timestamp_initial_change_log(fields: dict[str, Any], event_at: str) -> None:
 
 
 def timestamp_appended_change_log(fields: dict[str, Any], event_at: str) -> None:
-    """Bind the sole proposed update event to Code's observed time."""
+    """Bind the proposed update's newest log entry to Code's observed time.
+
+    A non-empty log binds its last entry.  This covers both a first real update
+    (exactly one entry on a previously log-less object) and ordinary appends.
+    Creation uses :func:`timestamp_initial_change_log` and never reaches here.
+    """
 
     change_log = fields.get("change_log")
-    if isinstance(change_log, list) and len(change_log) >= 2 and isinstance(change_log[-1], dict):
+    if isinstance(change_log, list) and change_log and isinstance(change_log[-1], dict):
         change_log[-1]["at"] = event_at
 
 
@@ -328,17 +333,21 @@ def validate_change_log_transition(
     after: Mapping[str, Any],
     *,
     require_append: bool = True,
+    allow_first_log: bool = False,
 ) -> tuple[FactIssue, ...]:
     """Require one appended event while allowing the one-time signer-type removal.
 
     A legacy object without history cannot acquire an invented history through
-    a normal update.  It must first use a dedicated migration operation whose
-    evidence and source are independently governed.
+    a normal update.  The only path is an explicitly authorized first real
+    update that establishes exactly one current three-field entry; the caller
+    must have already verified the same-path HEAD baseline.
     """
 
     previous = before.get("change_log")
     current = after.get("change_log")
     if not isinstance(previous, list):
+        if allow_first_log:
+            return _first_log_issues(current, after)
         return (
             FactIssue(
                 "schema",
@@ -368,6 +377,34 @@ def validate_change_log_transition(
                 )
             )
     return tuple(issues)
+
+
+def _first_log_issues(current: object, after: Mapping[str, Any]) -> tuple[FactIssue, ...]:
+    """Validate an authorized first real update's single log entry.
+
+    The after must contain exactly one entry whose signature is the current
+    closed three-field set, with no ``session_id``, and whose ``at`` equals the
+    Code-bound ``updated_at``.  Anything else means the first update invented
+    history or fell back to a retired signature shape.
+    """
+
+    if not isinstance(current, list) or len(current) != 1:
+        return (FactIssue("schema", "首次真实更新必须恰好建立一条 change_log 流水", "change_log"),)
+    entry = current[0]
+    if not isinstance(entry, dict):
+        return (FactIssue("schema", "首次 change_log 条目必须是 object", "change_log[0]"),)
+    signature = entry.get("signature")
+    if not isinstance(signature, dict) or set(signature) != {
+        "product_name",
+        "model_name",
+        "agent_runtime_name",
+    }:
+        return (FactIssue("schema", "首次 change_log 必须使用当前三字段署名", "change_log[0].signature"),)
+    if "session_id" in entry:
+        return (FactIssue("schema", "首次 change_log 不得携带 session_id", "change_log[0].session_id"),)
+    if "updated_at" in after and entry.get("at") != after.get("updated_at"):
+        return (FactIssue("schema", "新增 change_log.at 必须等于本次 Code 绑定的 updated_at", "change_log[0].at"),)
+    return ()
 
 
 def _without_legacy_change_log_signer_type(entry: object) -> object:

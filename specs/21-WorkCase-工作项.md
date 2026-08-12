@@ -802,7 +802,7 @@ WorkCase 的普通活动期写入必须使用 `update-workcase`；Human 主动�
 - before 与全部 after 必须满足 §6 的字段所有权、projection、版本、review、approval、proposal 与转换规则；操作不替 Controller 选择 phase、版本或 Human Gate；
 - 当次变化消费 Human 的实际决定或授权时，共同 `authorization_reference` 只能回指该 Human 输入；没有可靠引用时不得补造，Code 也不把引用存在解释为语义授权充分。Reviewer 输入只由当次实际 `creation_reviews` / `result_reviews` 及其字段所有权承载，不写入 `authorization_reference`；
 - `update-workcase` 的 before 与 after 都不得为 `status=closed`；活动期 before 要形成 closed 必须改用 `close-workcase`，已经 closed 的 before 要更正必须改用 `correct-closed-workcase`；
-- 成功与 `no_change` 的结果完整复用 05 §11.7，不新增审核、批准、过程历史或证明 receipt。调用方需要当前对象时使用返回的回读对象或再次精确读取。
+- 成功与 `no_change` 的结果完整复用 05 §11.7，不新增审核、批准、过程历史或证明 receipt。活动期 before 完全缺少 `change_log` 时，只在 05 §11.7 的 Working Tree + HEAD 双基线成立、after 为原本合法的真实更新且恰含一条当前三字段流水时允许首写；缺少流水不放宽本节 phase、字段所有权、review、approval 或 Gate 规则。调用方需要当前对象时使用返回的回读对象或再次精确读取。
 
 ### begin-workcase-termination 输入与结果
 
@@ -827,7 +827,7 @@ WorkCase 的普通活动期写入必须使用 `update-workcase`；Human 主动�
 
 本操作复用 05 §11.7 的共同参数与结果形状、§11.8 的共享事务，并在领域 `arguments` 中追加必填 `route_target_fingerprints` array 与必填 `independent_review_reference` object-or-null：
 
-- before 必须是 mechanically valid 的 closed WorkCase，after 必须仍完全满足 §6.1 closed 必填集、条件集与禁止集，并在已有 `change_log` 上严格追加本次终态更正流水；缺失历史的 legacy closed WorkCase 不得由本操作补写。status 不变，不重开 phase 或补造活动期记录；`termination` 的出现性与完整值必须原样保持，禁止把普通 Gate2 关闭与 Human 主动终止关闭互相改写。invalid、unavailable、not-found 或只能解析部分字段的 before 一律拒绝且零写入；本操作不提供旧形状转换或 invalid 记录修复入口；
+- before 必须是 mechanically valid 的 closed WorkCase，after 必须仍完全满足 §6.1 closed 必填集、条件集与禁止集，并按 05 §11.7 严格追加本次终态更正流水。若 Working Tree 与同路径 HEAD before 都机械有效且完全缺少 `change_log`，本次原本合法的终态更正可以建立恰好一条当前三字段流水；该条只记录本次更正并说明此前历史未恢复，不补造关闭时或活动期记录。HEAD 已有流水但 Working Tree 删除、HEAD 不存在/不可用/无效、旧署名或多条首写均零写入拒绝。status 不变，不重开 phase；`termination` 的出现性与完整值必须原样保持，禁止把普通 Gate2 关闭与 Human 主动终止关闭互相改写。invalid、unavailable、not-found 或只能解析部分字段的 before 一律拒绝且零写入；本操作不提供旧形状转换或 invalid 记录修复入口；
 - 更正只能修复原关闭时已经成立但被记错或遗漏的事实；不得把关闭后才出现的新目标、新责任、新验收边界、target 后续进展或事后方向变化写成原关闭时的事实。新责任必须建立新 WorkCase，必要时由当前 disposition、`routed-to` 链或新对象承接；
 - `route_target_fingerprints[]` 成员字段闭集为 `target` 和 `content_fingerprint`；`target` 使用 05 稳定三元组，`content_fingerprint` 原样复用该 target 当次 `read-fact-objects` 的完整载体 bytes 指纹；数组必须按目标去重，并与 after 全部 `routed-to` targets 精确相等，没有 target 时为空数组；
 - `independent_review_reference` 非空时精确复用 04.Att.01 的单个“来源回指字段” object，不新建裸 string 引用形状；它只定位当次实际独立复核输入，不因存在就证明 Reviewer 独立或结论正确；

@@ -529,6 +529,7 @@ def _fact_trace_issues(
         if not isinstance(after_log, list):
             failures.append(_issue("fact_trace_missing", f"事实候选缺少可校验 change_log: {candidate.path}"))
             continue
+        first_entry_only = False
         if before_fields is None:
             # A fact may be created and then legitimately progressed several
             # times before its first Git commit.  All of that uncommitted
@@ -538,11 +539,13 @@ def _fact_trace_issues(
         elif isinstance(before_log, list) and after_log[: len(before_log)] == before_log:
             appended = after_log[len(before_log) :]
         elif before_log is None:
-            # Legacy migration: the HEAD snapshot predates the change-log
-            # mechanism and has no history.  The first trusted entry was
-            # established by the controlled migration operation, so the whole
-            # current log is the event introduced by this candidate.
+            # The committed before-image predates the change-log mechanism and
+            # has no history.  The only path that may establish a first entry is
+            # an authorized first real update that adds exactly one current
+            # three-field event bound to ``updated_at``; anything else would
+            # fabricate history at the Git boundary.
             appended = after_log
+            first_entry_only = True
         else:
             failures.append(
                 _issue("fact_trace_transition_invalid", f"事实流水前后像不能确定唯一新增事件: {candidate.path}")
@@ -566,7 +569,43 @@ def _fact_trace_issues(
                 )
             )
             continue
+        if first_entry_only and not _valid_legacy_first_entries(appended, after_checked.fields):
+            failures.append(
+                _issue(
+                    "fact_trace_first_entry_invalid",
+                    "缺失 change_log 的 HEAD 基线只能由当前三字段受控写入建立流水；"
+                    f"每条必须使用 product_name/model_name/agent_runtime_name、无 session_id，"
+                    f"且最后一条 at 必须等于 updated_at: {candidate.path}",
+                )
+            )
+            continue
     return unavailable, failures
+
+
+def _valid_legacy_first_entries(appended: list[object], after_fields: dict[str, object]) -> bool:
+    """Enforce the first-log contract at the Git boundary for a HEAD without history.
+
+    HEAD lacked ``change_log``.  Every Working Tree entry is newly written trace
+    (a first real update, and any later updates still awaiting the first commit),
+    so each must be current three-field with no ``session_id``, and the newest
+    entry must be bound to the Code-set ``updated_at``.  This is the same
+    contract the controlled update transaction enforces, so the precheck cannot
+    admit fabricated or time-detached history.
+    """
+
+    if not appended or not all(isinstance(entry, dict) for entry in appended):
+        return False
+    for entry in appended:
+        signature = entry.get("signature")
+        if not isinstance(signature, dict) or set(signature) != {
+            "product_name",
+            "model_name",
+            "agent_runtime_name",
+        }:
+            return False
+        if "session_id" in entry:
+            return False
+    return appended[-1].get("at") == after_fields.get("updated_at")
 
 
 def validate_commit(contract: CommitContractProjection, value: CommitValidationInput) -> CommitValidationResult:

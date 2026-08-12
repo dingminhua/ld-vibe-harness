@@ -9,6 +9,7 @@ from ldvh.facts.validation import (
     change_log_creation_issues,
     parse_rfc3339,
     study_report_creation_issues,
+    timestamp_appended_change_log,
     timestamp_initial_change_log,
     validate_change_log_transition,
     validate_fact_object,
@@ -572,3 +573,77 @@ def test_creation_binds_the_initial_log_to_its_code_event_time() -> None:
     fields = {"change_log": [{"at": "2000-01-01T00:00:00Z"}]}
     timestamp_initial_change_log(fields, "2026-08-03T11:00:00+08:00")
     assert fields["change_log"][0]["at"] == "2026-08-03T11:00:00+08:00"
+
+
+def test_appended_stamp_binds_a_single_first_log_entry() -> None:
+    fields = {"updated_at": "2026-08-03T11:00:00+08:00", "change_log": [{"at": "2000-01-01T00:00:00Z"}]}
+    timestamp_appended_change_log(fields, "2026-08-03T11:00:00+08:00")
+    assert fields["change_log"][0]["at"] == "2026-08-03T11:00:00+08:00"
+
+
+def test_first_log_transition_accepts_exactly_one_current_entry() -> None:
+    before: dict[str, object] = {"object_id": "spark-0001"}
+    after = {
+        "object_id": "spark-0001",
+        "updated_at": "2026-08-03T11:00:00+08:00",
+        "change_log": [
+            {
+                "signature": {
+                    "product_name": "Cindy",
+                    "model_name": "gpt-5.6-sol",
+                    "agent_runtime_name": "claude-code",
+                },
+                "at": "2026-08-03T11:00:00+08:00",
+                "summary": "首次真实更新建立流水；此前历史未恢复。",
+            }
+        ],
+    }
+    assert validate_change_log_transition(before, after, allow_first_log=True) == ()
+    # Without the explicit allowance the default strict path must still reject.
+    assert any(issue.field_path == "change_log" for issue in validate_change_log_transition(before, after))
+
+
+@pytest.mark.parametrize(
+    ("mutate", "summary"),
+    [
+        (
+            lambda after: after["change_log"].append(
+                {
+                    "signature": {"agent_id": "x", "host_environment": "y"},
+                    "at": "2026-08-03T12:00:00+08:00",
+                    "summary": "x",
+                }
+            ),
+            "恰好建立一条",
+        ),
+        (lambda after: after["change_log"].clear(), "恰好建立一条"),
+        (lambda after: after["change_log"][0].update({"session_id": "s"}), "session_id"),
+        (lambda after: after["change_log"][0].__setitem__("at", "2026-08-03T10:00:00+08:00"), "updated_at"),
+        (
+            lambda after: after["change_log"][0].update(
+                {"signature": {"agent_id": "codex", "host_environment": "Cindy"}}
+            ),
+            "三字段署名",
+        ),
+    ],
+)
+def test_first_log_transition_rejects_malformed_first_entries(mutate, summary: str) -> None:
+    before: dict[str, object] = {"object_id": "spark-0001"}
+    after = {
+        "object_id": "spark-0001",
+        "updated_at": "2026-08-03T11:00:00+08:00",
+        "change_log": [
+            {
+                "signature": {
+                    "product_name": "Cindy",
+                    "model_name": "gpt-5.6-sol",
+                    "agent_runtime_name": "claude-code",
+                },
+                "at": "2026-08-03T11:00:00+08:00",
+                "summary": "首次真实更新建立流水；此前历史未恢复。",
+            }
+        ],
+    }
+    mutate(after)
+    issues = validate_change_log_transition(before, after, allow_first_log=True)
+    assert any(summary in issue.summary for issue in issues)

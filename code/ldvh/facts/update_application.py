@@ -15,6 +15,7 @@ from ldvh.facts.carriers.study_markdown import parse_study_markdown
 from ldvh.facts.carriers.yaml_object import parse_yaml_object
 from ldvh.facts.contracts import LAYOUTS, is_legacy_spark_object
 from ldvh.facts.creation import CreationBoundary, allocation_lock, serialize_fact_object
+from ldvh.facts.head_change_log import head_change_log_state
 from ldvh.facts.models import FactIssue
 from ldvh.facts.project_validation import stabilize_project_index
 from ldvh.facts.relations import ProjectFactIndex
@@ -147,6 +148,11 @@ def _candidate(
         "created_at": before["created_at"],
         "updated_at": command.event_at,
     }
+    change_log = fields.get("change_log")
+    if isinstance(change_log, list):
+        # Stamp on a private copy so the caller-supplied mapping is never
+        # mutated through the shallow spread above.
+        fields["change_log"] = [dict(entry) if isinstance(entry, dict) else entry for entry in change_log]
     timestamp_appended_change_log(fields, command.event_at)
     fields = canonicalize_new_timestamp_fields(fields, before=before)
     text = serialize_fact_object(layout, fields, command.body)
@@ -249,6 +255,30 @@ def apply_fact_update_locked(command: FactUpdateCommand) -> FactUpdateResult:
             current=current,
         )
 
+    allow_first_log = False
+    if "change_log" not in current.fields:
+        state = head_change_log_state(
+            command.boundary.worktree_root,
+            LAYOUTS[command.fact_type_key],
+            command.schema,
+            command.object_id,
+        )
+        if state != "absent":
+            return FactUpdateResult(
+                "candidate_rejected",
+                command.event_at,
+                issues=(
+                    FactIssue(
+                        "schema",
+                        "HEAD 基线不是同样缺少 change_log 的机械有效 before；"
+                        "历史被删除、新对象或不可用 HEAD 均不得首写",
+                        "change_log",
+                    ),
+                ),
+                current=current,
+            )
+        allow_first_log = True
+
     proposed = {
         **dict(command.supplied),
         "object_id": current.fields["object_id"],
@@ -259,7 +289,7 @@ def apply_fact_update_locked(command: FactUpdateCommand) -> FactUpdateResult:
     timestamp_appended_change_log(proposed, command.event_at)
     change_log_issues = (
         () if command.allow_legacy_routed_spark_migration
-        else validate_change_log_transition(current.fields, proposed)
+        else validate_change_log_transition(current.fields, proposed, allow_first_log=allow_first_log)
     )
     if change_log_issues:
         return FactUpdateResult(
