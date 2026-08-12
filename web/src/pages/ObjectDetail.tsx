@@ -592,7 +592,7 @@ export function ObjectIdentityHeader({
             </span>
             <span className="ldvh-meta-muted min-w-0 truncate">{id}</span>
             {extraBadges}
-            <PriorityIcon source={source} type={objectType} locale={locale} size={compact ? 'sm' : 'md'} />
+            <PriorityIcon source={source} type={objectType} locale={locale} size="sm" />
             {(capabilityStatusBadge || status || actionBadges || showCopyAction) && (
               <div className="ml-auto shrink-0">
                 <ObjectIdentityActions
