@@ -112,35 +112,6 @@ _RFC3339 = re.compile(
     r"(?P<offset_minute>[0-5][0-9]))\Z"
 )
 _EPOCH_ORDINAL = date(1970, 1, 1).toordinal()
-_MODEL_PRODUCT_ALIASES = frozenset(
-    {"codex", "claude-code", "workbuddy", "workbuddy-ai", "deepseek", "glm", "gpt", "claude", "kimi", "k3"}
-)
-# Host products never appear in a model id.  The bare-alias blacklist is exact
-# match only, because model families (gpt, claude, deepseek, ...) legitimately
-# prefix real ids like gpt-5.  A model id that starts with one of these host
-# products plus ``-`` is a spliced workbench name, e.g. ``workbuddy-hy3``.
-_HOST_PRODUCT_PREFIXES = frozenset({"workbuddy", "workbuddy-ai", "codex", "claude-code"})
-
-
-def _is_host_product_concatenation(value: str) -> bool:
-    lowered = value.strip().lower()
-    return any(lowered.startswith(f"{prefix}-") for prefix in _HOST_PRODUCT_PREFIXES)
-
-
-# A workbench name is a single platform token: the first token of the value,
-# split on whitespace, ``-`` or ``/``, with the first letter capitalized and the
-# rest lowercased.  ``workbuddy-claw``, ``claude-code`` and ``Claude Code`` all
-# collapse to ``Workbuddy`` / ``Claude``.
-_WORKBENCH_TOKEN_SPLIT = re.compile(r"[\s\-/]+")
-
-# Conservative denylist of model-family tokens that must never appear as a
-# workbench name.  Only tokens that are unambiguously model families AND not
-# also product/workbench names belong here: ``gpt`` is model-only (the proven
-# ``Gpt`` bug), whereas ``claude``/``codex``/``kimi``/``deepseek``/``glm`` are
-# also legitimate product/workbench names and must stay allowed.  Extend this
-# set only with tokens that can never name a workbench.  Consumed by commit
-# validation too, hence intentionally public.
-MODEL_FAMILY_TOKENS = frozenset({"gpt"})
 # Placeholder session ids (e.g. ``current-session``) are never valid; a real
 # session identifier must be supplied instead.  This is a denylist, not a UUID
 # requirement, because session ids across the suite are arbitrary tokens
@@ -148,19 +119,6 @@ MODEL_FAMILY_TOKENS = frozenset({"gpt"})
 _SESSION_PLACEHOLDER_RE = re.compile(
     r"^(current-session|session|placeholder|todo|none|null|n/a|tbd)$", re.I
 )
-
-
-def _normalize_workbench_name(value: str) -> str:
-    """Normalize a workbench name to a single capitalized platform token."""
-
-    stripped = value.strip()
-    token = _WORKBENCH_TOKEN_SPLIT.split(stripped, 1)[0]
-    if not token:
-        return stripped
-    return token[0].upper() + token[1:].lower()
-
-
-_WORKBENCH_SYSTEM_SUFFIX = re.compile(r"\s*\([^()]+\)\s*\Z")
 
 
 @dataclass(frozen=True, order=True, slots=True)

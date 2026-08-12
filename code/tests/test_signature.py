@@ -64,6 +64,29 @@ def test_signature_allows_individual_nulls_but_rejects_an_empty_snapshot() -> No
     assert problems == ("LDVH 署名三项均不可得，新的受控写入必须停止",)
 
 
+def test_signature_rejects_a_runtime_name_as_the_product_name() -> None:
+    """外层产品不得取已知 Agent 运行时名称，含大小写/空白/下划线变体。"""
+
+    for product in ("Claude Code", "claude-code", "Codex CLI", "codex_cli", "codex"):
+        signature, problems = parse_signature(
+            {"product_name": product, "model_name": "glm-5.2", "agent_runtime_name": "claude-code"}
+        )
+        assert signature is None, product
+        assert any("product_name 不得取 Agent 运行时名称" in p for p in problems), (product, problems)
+
+
+def test_signature_allows_a_directly_launched_runtime_with_null_product() -> None:
+    """无外层产品时 product_name 必须为 null，而不是填运行时自身名称。"""
+
+    signature, problems = parse_signature(
+        {"product_name": None, "model_name": "gpt-5.6-luna", "agent_runtime_name": "codex-cli"}
+    )
+    assert problems == ()
+    assert signature is not None
+    assert signature.product_name is None
+    assert signature.agent_runtime_name == "codex-cli"
+
+
 def test_signature_null_means_undeclared_not_confirmed_unavailable() -> None:
     """历史 null 表示未声明/未知，不是确认不可得；不得解释为负面证据。"""
 
