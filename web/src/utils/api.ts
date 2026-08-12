@@ -151,6 +151,7 @@ export interface FactCardAssociation {
   title_en?: string;
   title_zh?: string;
   status?: string;
+  progressGroup?: WorkCaseProgressGroup;
   available: boolean;
 }
 
@@ -699,7 +700,7 @@ export interface CognitionData {
     /** 当前窗口内可读事实流水总数；用于模块标题的“动态数”。 */
     eventTotal: number;
     modelUsage: CognitionRecentActivityAttributionUsage[];
-    runtimeUsage: CognitionRecentActivityAttributionUsage[];
+    environmentUsage: CognitionRecentActivityAttributionUsage[];
   };
   /** Spark 列表不可读取时整体省略，并通过 issues 就地说明。 */
   sparkHealth?: CognitionSparkHealth;

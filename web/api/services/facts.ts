@@ -149,11 +149,17 @@ async function projectFactCardAssociations(item: LocalFactItem, scope: LocalFact
     if (exact.status !== 'ok' || exact.item.read_status !== 'readable' || exact.item.fact_object === null) return projection
     const source = exact.item.fact_object
     if (typeof source.title !== 'string' || !source.title.trim()) return projection
+    const workCasePresentation = target.factTypeKey === 'workcase'
+      ? deriveWorkCasePresentationProjection(source.status, source.phase, exact.item.source_content_fingerprint)
+      : null
     return {
       ...projection,
       available: true,
       title: source.title,
       ...copyPresentFields(source, ['title_en', 'title_zh', 'status']),
+      ...(workCasePresentation?.resolution === 'resolved'
+        ? { progressGroup: workCasePresentation.progress_group }
+        : {}),
     }
   }))
 }

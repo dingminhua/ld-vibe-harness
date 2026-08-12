@@ -20,13 +20,20 @@ test('every fact list card shows exact-read formal associations in a minimal sec
   assert.match(source, /whitespace-normal break-words/);
   assert.match(source, /openPanel\(\{ type: 'object', title, objectType: target\.factTypeKey, objectId: target\.objectId \}\)/);
   assert.doesNotMatch(source, /StatusBadge status=\{association\.status\}/);
-  assert.match(source, /dedupeFactCardAssociations\(associations\)[\s\S]*\.filter\(\(association\) => !\['closed', 'implemented', 'discarded', 'retired', 'deprecated'\]\.includes\(association\.status \?\? ''\)\)/);
+  assert.match(source, /function isClosedWorkCaseAssociation/);
+  assert.match(source, /function getFactAssociationState/);
+  assert.match(source, /association\.target\?\.factTypeKey === 'spark' && association\.status === 'open'/);
+  assert.match(source, /association\.progressGroup === 'plan_confirmation' \|\| association\.progressGroup === 'closure_confirmation'/);
+  assert.match(source, /<FactAssociationStateIcon state=\{associationState\} tooltip=\{associationStateTooltip\} \/>/);
+  assert.match(source, /association\.target\?\.factTypeKey === 'workcase' && association\.status === 'closed'/);
+  assert.match(source, /\.filter\(\(association\) => !isHiddenTerminalAssociation\(association\)\)[\s\S]*\.sort\(\(left, right\) => Number\(isClosedWorkCaseAssociation\(left\)\) - Number\(isClosedWorkCaseAssociation\(right\)\)\)/);
   assert.doesNotMatch(source, /getFieldLabel\('fact_associations'/);
   assert.doesNotMatch(source, /ObjectReferenceCopyButton/);
   assert.doesNotMatch(source, /factAssociations[^\n]{0,120}\.slice\(/);
   const detailSource = fs.readFileSync(path.resolve('src/pages/object-detail/factReadingProjection.ts'), 'utf8');
   assert.match(detailSource, /dedupeRelationsByTarget/);
   assert.match(docs, /正式 `relations` 由所有五类对象 Card 统一呈现/);
+  assert.match(docs, /关联状态图标固定放在进入箭头之前/);
 });
 
 test('Spark terminal headings distinguish implemented and discarded with a legacy fallback', () => {

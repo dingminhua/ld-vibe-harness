@@ -101,7 +101,7 @@ test('cognition endpoint returns inbox, fact activity, Spark health, and fact ho
   assert.equal(typeof recent.eventTotal, 'number')
   assert.ok(Number(recent.eventTotal) >= Number(recent.total))
   assert.ok(Array.isArray(recent.modelUsage))
-  assert.ok(Array.isArray(recent.runtimeUsage))
+  assert.ok(Array.isArray(recent.environmentUsage))
   assert.ok(body.sparkHealth && typeof body.sparkHealth === 'object')
   const sparkHealth = body.sparkHealth as Record<string, unknown>
   for (const key of ['total', 'openTotal', 'terminalTotal', 'silentThresholdDays', 'silentCount']) {
@@ -357,17 +357,17 @@ test('recent activity aggregation retains the newest fact event and counts compl
     {
       type: 'spark', object_id: 'spark-0001', title: 'A', activity: 'created', occurred_at: '2026-08-01T00:00:00Z',
       status: 'open', read_status: 'readable', field_issues: [], unparsed_structures: [],
-      signature: { modelName: 'gpt-5.6-luna', agentRuntimeName: 'codex-cli' },
+      signature: { productName: 'cindy', modelName: 'gpt-5.6-luna', agentRuntimeName: 'claude-code' },
     },
     {
       type: 'spark', object_id: 'spark-0001', title: 'A', activity: 'updated', occurred_at: '2026-08-01T02:00:00Z',
       status: 'open', read_status: 'readable', field_issues: [], unparsed_structures: [],
-      signature: { modelName: 'gpt-5.6-luna', agentRuntimeName: 'codex-cli' },
+      signature: { productName: 'cindy', modelName: 'gpt-5.6-luna', agentRuntimeName: 'claude-code' },
     },
     {
       type: 'adr', object_id: 'adr-0001', title: 'B', activity: 'updated', occurred_at: '2026-08-01T01:00:00Z',
       status: 'active', read_status: 'readable', field_issues: [], unparsed_structures: [],
-      signature: { modelName: 'reviewer-model', agentRuntimeName: 'ci-runtime' },
+      signature: { productName: 'ci', modelName: 'reviewer-model' },
     },
   ])
   assert.deepEqual(view.items.map((item) => `${item.object_id}:${item.activity_count}:${item.occurred_at}`), [
@@ -375,7 +375,7 @@ test('recent activity aggregation retains the newest fact event and counts compl
     'adr-0001:1:2026-08-01T01:00:00Z',
   ])
   assert.deepEqual(view.modelUsage, [{ value: 'gpt-5.6-luna', count: 2 }, { value: 'reviewer-model', count: 1 }])
-  assert.deepEqual(view.runtimeUsage, [{ value: 'codex-cli', count: 2 }, { value: 'ci-runtime', count: 1 }])
+  assert.deepEqual(view.environmentUsage, [{ value: 'cindy(claude-code)', count: 2 }, { value: 'ci', count: 1 }])
 })
 
 test('recent activity accepts current change-log signatures and ignores legacy fields', async () => {
@@ -395,7 +395,7 @@ test('recent activity accepts current change-log signatures and ignores legacy f
 
   const view = buildRecentActivityView(builds)
   assert.deepEqual(view.modelUsage, [{ value: 'gpt-5.6-luna', count: 1 }])
-  assert.deepEqual(view.runtimeUsage, [{ value: 'codex-cli', count: 1 }])
+  assert.deepEqual(view.environmentUsage, [{ value: 'Cindy(codex-cli)', count: 1 }])
 })
 
 test('Spark health reuses the newest complete change-log signature for its card-equivalent attribution', async () => {

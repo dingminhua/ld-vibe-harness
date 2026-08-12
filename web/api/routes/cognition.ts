@@ -384,11 +384,11 @@ export function buildFactActivityItems(
 export function buildRecentActivityView(builds: RecentActivityBuildItem[]): {
   items: RecentActivityObjectItem[]
   modelUsage: RecentActivityAttributionUsage[]
-  runtimeUsage: RecentActivityAttributionUsage[]
+  environmentUsage: RecentActivityAttributionUsage[]
 } {
   const byObject = new Map<string, RecentActivityObjectItem>()
   const models = new Map<string, number>()
-  const runtimes = new Map<string, number>()
+  const environments = new Map<string, number>()
 
   for (const build of builds) {
     const key = `${build.type}:${build.object_id}`
@@ -404,9 +404,9 @@ export function buildRecentActivityView(builds: RecentActivityBuildItem[]): {
     }
     if (build.signature) {
       const model = build.signature.modelName
-      const runtime = build.signature.agentRuntimeName
+      const environment = formatAttributionEnvironment(build.signature.productName, build.signature.agentRuntimeName)
       if (model) models.set(model, (models.get(model) ?? 0) + 1)
-      if (runtime) runtimes.set(runtime, (runtimes.get(runtime) ?? 0) + 1)
+      if (environment) environments.set(environment, (environments.get(environment) ?? 0) + 1)
     }
   }
 
@@ -416,8 +416,14 @@ export function buildRecentActivityView(builds: RecentActivityBuildItem[]): {
   return {
     items: [...byObject.values()].sort(compareRecentActivity),
     modelUsage: [...models.entries()].map(([value, count]) => ({ value, count })).sort(compareUsage),
-    runtimeUsage: [...runtimes.entries()].map(([value, count]) => ({ value, count })).sort(compareUsage),
+    environmentUsage: [...environments.entries()].map(([value, count]) => ({ value, count })).sort(compareUsage),
   }
+}
+
+/** One responsibility environment: product(runtime) when both are observed. */
+function formatAttributionEnvironment(productName?: string, runtimeName?: string): string | undefined {
+  if (productName && runtimeName) return `${productName}(${runtimeName})`
+  return productName || runtimeName
 }
 
 function silentDays(updatedAt: unknown, observedAt: number): number | null {
@@ -932,7 +938,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
         total: recentItems.length,
         eventTotal: recentBuilds.length,
         modelUsage: recentActivityView.modelUsage,
-        runtimeUsage: recentActivityView.runtimeUsage,
+        environmentUsage: recentActivityView.environmentUsage,
       },
       ...(recentHotspots ? {
         recentHotspots: {

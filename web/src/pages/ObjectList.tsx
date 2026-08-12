@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { ArrowRight, ChevronLeft, ChevronRight, Circle, CircleAlert, CircleCheck, CircleMinus, CirclePlay, ClipboardList, Clock3, Hash, Lightbulb, ListChecks, ShieldCheck, Target } from 'lucide-react';
+import { Activity, ArrowRight, ChevronLeft, ChevronRight, Circle, CircleAlert, CircleCheck, CircleMinus, CirclePlay, ClipboardList, Clock3, Hash, Lightbulb, ListChecks, ShieldCheck, Target } from 'lucide-react';
 import ObjectIdentityActions from '@/components/ObjectIdentityActions';
 import StatusBadge from '@/components/StatusBadge';
 import WorkCaseCapabilityStatusBadge from '@/components/WorkCaseCapabilityStatusBadge';
@@ -1362,7 +1362,8 @@ function FactAssociationsCardContent({ associations }: { associations?: FactCard
   const { t, locale } = useI18n();
   if (!associations || associations.length === 0) return null;
   const visibleAssociations = dedupeFactCardAssociations(associations)
-    .filter((association) => !['closed', 'implemented', 'discarded', 'retired', 'deprecated'].includes(association.status ?? ''));
+    .filter((association) => !isHiddenTerminalAssociation(association))
+    .sort((left, right) => Number(isClosedWorkCaseAssociation(left)) - Number(isClosedWorkCaseAssociation(right)));
   if (visibleAssociations.length === 0) return null;
 
   return (
@@ -1372,6 +1373,15 @@ function FactAssociationsCardContent({ associations }: { associations?: FactCard
       </div>
     </section>
   );
+}
+
+function isClosedWorkCaseAssociation(association: FactCardAssociation): boolean {
+  return association.target?.factTypeKey === 'workcase' && association.status === 'closed';
+}
+
+function isHiddenTerminalAssociation(association: FactCardAssociation): boolean {
+  return ['implemented', 'discarded', 'retired', 'deprecated'].includes(association.status ?? '')
+    || (association.status === 'closed' && !isClosedWorkCaseAssociation(association));
 }
 
 function dedupeFactCardAssociations(associations: FactCardAssociation[]): FactCardAssociation[] {
@@ -1387,6 +1397,7 @@ function dedupeFactCardAssociations(associations: FactCardAssociation[]): FactCa
 }
 
 function FactAssociationCardRow({ association, locale, unavailableLabel }: { association: FactCardAssociation; locale: string; unavailableLabel: string }) {
+  const { t } = useI18n();
   const target = association.target;
   const title = association.available
     ? getLocalizedObjectTitle(association, locale)
@@ -1397,6 +1408,13 @@ function FactAssociationCardRow({ association, locale, unavailableLabel }: { ass
   const isCurrentPanelOpen = Boolean(canOpen && panelOpen && panelContent?.type === 'object'
     && panelContent.objectType === target?.factTypeKey && panelContent.objectId === target?.objectId);
   const PanelIcon = isCurrentPanelOpen ? ChevronLeft : ChevronRight;
+  const associationState = getFactAssociationState(association);
+  const associationStateTooltip = associationState === null ? null : {
+    pending: t('objectList.associationState.pending'),
+    closed: t('objectList.associationState.closed'),
+    progressing: t('objectList.associationState.progressing'),
+    active: t('objectList.associationState.active'),
+  }[associationState];
   const open = () => {
     if (!canOpen || !target) return;
     openPanel({ type: 'object', title, objectType: target.factTypeKey, objectId: target.objectId });
@@ -1415,8 +1433,46 @@ function FactAssociationCardRow({ association, locale, unavailableLabel }: { ass
     >
       <ObjectTypeIcon type={target?.factTypeKey} size={13} className="shrink-0" style={{ color: typeColor }} />
       <span className="ldvh-meta-primary min-w-0 flex-1 whitespace-normal break-words text-ldvh-text-secondary/85 group-hover:text-ldvh-accent">{title}</span>
+      {associationState !== null && associationStateTooltip !== null && <FactAssociationStateIcon state={associationState} tooltip={associationStateTooltip} />}
       {canOpen && <PanelIcon size={16} className="shrink-0 text-ldvh-text-secondary/70 transition-colors group-hover:text-ldvh-accent" aria-hidden="true" />}
     </div>
+  );
+}
+
+type FactAssociationState = 'pending' | 'closed' | 'progressing' | 'active';
+
+function getFactAssociationState(association: FactCardAssociation): FactAssociationState | null {
+  if (!association.available || !association.status) return null;
+  if (association.target?.factTypeKey === 'spark' && association.status === 'open') return 'pending';
+  if (association.target?.factTypeKey === 'workcase') {
+    if (association.status === 'closed') return 'closed';
+    if (association.progressGroup === 'plan_confirmation' || association.progressGroup === 'closure_confirmation') return 'pending';
+    if (association.progressGroup === 'progressing') return 'progressing';
+  }
+  return 'active';
+}
+
+function FactAssociationStateIcon({ state, tooltip }: { state: FactAssociationState; tooltip: string }) {
+  if (state === 'pending') {
+    return (
+      <span title={tooltip} aria-label={tooltip} className="shrink-0 text-amber-500 dark:text-amber-400">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 12V3a9 9 0 0 1 9 9Z" fill="currentColor" stroke="none" />
+        </svg>
+      </span>
+    );
+  }
+  const presentation = {
+    closed: { Icon: CircleCheck, className: 'text-emerald-500 dark:text-emerald-400' },
+    progressing: { Icon: CirclePlay, className: 'text-sky-500 dark:text-sky-400' },
+    active: { Icon: Activity, className: 'text-ldvh-accent' },
+  }[state];
+  const { Icon } = presentation;
+  return (
+    <span title={tooltip} aria-label={tooltip} className={`shrink-0 ${presentation.className}`}>
+      <Icon size={15} aria-hidden="true" />
+    </span>
   );
 }
 

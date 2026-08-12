@@ -122,7 +122,7 @@ test('fact list cards project every formal association through exact readable ta
     await mkdir(path.join(root, 'ldvh-base', 'workcases'), { recursive: true });
     await writeFile(
       path.join(root, 'ldvh-base', 'workcases', 'workcase-0001.yaml'),
-      'object_id: workcase-0001\nfact_type_key: workcase\ntitle: Target title\ntitle_zh: 关联目标\nstatus: open\n',
+      'object_id: workcase-0001\nfact_type_key: workcase\ntitle: Target title\ntitle_zh: 关联目标\nstatus: open\nphase: executing\n',
       'utf8',
     );
     await writeFile(
@@ -148,6 +148,7 @@ test('fact list cards project every formal association through exact readable ta
         available: true,
         title: 'Target title',
         status: 'open',
+        progressGroup: 'progressing',
       },
       {
         relationKey: 'related-to',
