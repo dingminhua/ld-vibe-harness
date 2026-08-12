@@ -60,7 +60,7 @@
 
 ADR 是已经形成、并应在适用边界内执行的当前决策。列表卡片只帮助用户定位当前决策，不在卡片内展开决策影响范围。
 
-- ADR 状态筛选只认 `active / retired`。`active` 是当前有效决策；`retired` 表示不再作为当前决策入口，中文显示为“已废弃”并使用中性灰。
+- ADR 状态筛选只认 `active / retired`。`active` 是当前有效决策；`retired` 表示不再作为当前决策入口，中文显示为”已退出”并使用中性灰。
 - ADR 卡片使用通用卡片结构：ID、状态、完整标题、更新时间；`retired` 时在标题之后以弱处置正文展示 `disposition_summary`。
 - ADR 标题就是最好的摘要；除 retired 的处置正文与通用正式关联区外，卡片不展示 `decision_question`、`decision`、`applicability`、`rationale`、`consequences`或未采纳备选摘要。
 - ADR 卡片标题必须允许换行完整显示，避免用截断标题替代决策识别。

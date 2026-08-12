@@ -69,7 +69,7 @@ const OBJECT_STATUS_LOCALES: Record<string, Record<string, { zh: string; en: str
     discarded: { zh: '已废弃', en: 'Discarded' },
   },
   adr: {
-    retired: { zh: '已废弃', en: 'Retired' },
+    retired: { zh: '已退出', en: 'Retired' },
   },
   spark: {
     open: { zh: '待处理', en: 'Pending' },
@@ -80,7 +80,7 @@ const OBJECT_STATUS_LOCALES: Record<string, Record<string, { zh: string; en: str
     discarded: { zh: '已废弃', en: 'Discarded' },
   },
   study: {
-    retired: { zh: '已废弃', en: 'Retired' },
+    retired: { zh: '已退出', en: 'Retired' },
   },
 };
 
