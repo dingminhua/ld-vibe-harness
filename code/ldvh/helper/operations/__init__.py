@@ -43,6 +43,8 @@ from ldvh.helper.operations.legacy_routed_spark_migration_operation import (
 from ldvh.helper.operations.legacy_routed_spark_migration_operation import (
     OPERATION_KEY as LEGACY_ROUTED_SPARK_MIGRATION_OPERATION_KEY,
 )
+from ldvh.helper.operations.local_edit_operation import LOCAL_EDIT_IMPLEMENTATION
+from ldvh.helper.operations.local_edit_operation import OPERATION_KEY as LOCAL_EDIT_OPERATION_KEY
 from ldvh.helper.operations.specification_candidate_operation import (
     OPERATION_KEY as SPECIFICATION_CANDIDATE_OPERATION_KEY,
 )
@@ -93,6 +95,7 @@ IMPLEMENTATIONS = MappingProxyType[str, OperationImplementation](
         FACT_OBJECT_OPERATION_KEY: FACT_OBJECT_IMPLEMENTATION,
         FACT_UPDATE_OPERATION_KEY: FACT_UPDATE_IMPLEMENTATION,
         LEGACY_ROUTED_SPARK_MIGRATION_OPERATION_KEY: LEGACY_ROUTED_SPARK_MIGRATION_IMPLEMENTATION,
+        LOCAL_EDIT_OPERATION_KEY: LOCAL_EDIT_IMPLEMENTATION,
         GOVERNANCE_SCOPE_OPERATION_KEY: GOVERNANCE_SCOPE_IMPLEMENTATION,
         PREPARE_OPERATION_KEY: PREPARE_FACT_DRAFT_IMPLEMENTATION,
         SPECIFICATION_CANDIDATE_OPERATION_KEY: SPECIFICATION_CANDIDATE_IMPLEMENTATION,

@@ -1,0 +1,129 @@
+status: closed
+title: 双源只读局部编辑候选辅助
+goal: 交付来源声明的只读 Helper 操作 prepare-local-edit-candidates：为规则源与 Study 的精确局部目标返回基线、stale、候选 before/after unified diff、来源和范围证据；不产生写权限、合并或发布结论。
+scope: 仅覆盖 specs/04-Helper CLI 服务规范.md 及其授权字段附件中的声明/契约，local_edit Helper 实现与注册，相关 Helper/CLI 测试，规则精确读取和 Study 读取。排除 canonical facts（本 WorkCase 除外）、操作内写/CAS/锁、merge/rebase、Study 重建或 patch 发布、其它事实类型、Web、环境/Git Hook、commit/push/PR/release/external。
+success_criterion_definitions:
+- criterion_id: criterion-declared
+  statement: 当前规则源声明 prepare-local-edit-candidates 为 read，注册后 capabilities 发现 implementation.present=true，既有读取公开语义不变。
+- criterion_id: criterion-exact
+  statement: 规则仅接受 responsibility_key 加精确 H2/H3 heading_path，Study 仅接受稳定 fact_ref 加固定正文标题；歧义或缺失明确报告，不以相似名称、数组下标或裸 offset 回退。
+- criterion_id: criterion-baseline
+  statement: 返回规则 hash 或 Study content_fingerprint，准确报告 stale；漂移要求重读重组，不执行 fuzzy match、auto-merge、rebase 或发布。
+- criterion_id: criterion-evidence
+  statement: 返回 before、可选 after、逐行 unified diff、来源/行范围和已展开/未展开范围；未定位或未展开范围不伪装为覆盖。
+- criterion_id: criterion-read-boundary
+  statement: 操作 effect=read 且 changes 为空；规则侧不替代资格、独立复核或 Human Gate，Study 侧不绕过完整 after、CAS、回读或审计，不实现统一 patch 发布。
+- criterion_id: criterion-verification
+  statement: 相关测试、Ruff、diff check、integrity、capabilities 和代表性直接调用完成并如实记录；基线漂移导致不可归因时停止报告。
+success_criterion_results:
+- criterion_id: criterion-declared
+  outcome: satisfied
+  summary: specs/04 已声明 prepare-local-edit-candidates 为 read；注册和 capabilities 已确认 implementation.present=true，既有读取公开语义保持。
+- criterion_id: criterion-exact
+  outcome: satisfied
+  summary: 规则仅以 responsibility_key 加精确 H2/H3 读取；Study 仅以稳定 study fact_ref 加固定 H2 读取。缺失、失活、机械不合格、范围不完整或边界不匹配均明确拒绝或不可用，无模糊回退。
+- criterion_id: criterion-baseline
+  outcome: satisfied
+  summary: 规则选段 SHA-256 与 Study 完整 content_fingerprint 都已返回并比较；匹配和漂移两种路径均受测，漂移只报告 baseline_stale，不执行 merge、rebase 或发布。
+- criterion_id: criterion-evidence
+  outcome: satisfied
+  summary: 两种来源都返回 before、可选 after、逐行 unified diff、来源行范围以及 expanded/unexpanded scope；规则与 Study 的真实 CLI 对照已确认这些边界。
+- criterion_id: criterion-read-boundary
+  outcome: satisfied
+  summary: 公开操作 effect=read；成功、拒绝和不可用路径均保持 changes=[]。规则与 Study 响应只说明既有发布边界，不新增写、CAS、锁、合并或授权。
+- criterion_id: criterion-verification
+  outcome: satisfied
+  summary: 已完成局部和相关回归、Ruff、git diff --check、check-fact-integrity、capabilities 与直接调用；完整 suite 已运行，唯一失败为未安装 js-yaml 的环境依赖，未误报为功能通过。
+result_summary: 已交付 prepare-local-edit-candidates：规则源和 Study 共享严格的只读局部候选输出，包括精确身份、当前基线、stale、可选 unified diff、来源行范围与显式范围覆盖，同时保持各自既有发布路径。
+validation_summary: 已验证：27 项 local-edit 测试、80 项相关 Helper/CLI/Specs/doctor 回归、Ruff、git diff --check、真实规则和 Study 候选调用、check-fact-integrity（211 objects complete）均通过。完整 Python suite：1646 passed、17 skipped、1 failed；唯一失败为 code/tests/facts/test_yaml_portability.py 因环境未安装 js-yaml（MODULE_NOT_FOUND），未修改相关测试或依赖，故该文件级 JS YAML 可移植性在本环境未证明。
+change_log:
+- at: '2026-08-12T10:16:55.455614Z'
+  summary: Human 要求按 study-0030 建议一推进；完成查重、范围判断和两轮只读方案复核，形成等待 Gate 1 的窄范围计划。
+  signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-terra
+    agent_runtime_name: claude-code
+- at: '2026-08-12T10:55:23.250701Z'
+  summary: Human 批准 workcase-0096 的 Gate 1；按冻结的 plan_version=1 和 execution_authorization 进入执行。
+  signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-terra
+    agent_runtime_name: claude-code
+- at: '2026-08-12T10:56:01.832925Z'
+  summary: 开始 item-declare-contract：在冻结授权范围内形成 prepare-local-edit-candidates 的来源声明与契约。
+  signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-terra
+    agent_runtime_name: claude-code
+- at: '2026-08-12T11:13:31.267075Z'
+  summary: 稳定检查点：已声明并实现规则与 Study 的只读候选路径；开始收敛定向测试、回归和 CLI 对照。
+  signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-terra
+    agent_runtime_name: claude-code
+- at: '2026-08-12T11:24:07.188797Z'
+  summary: 稳定检查点：相关回归、Ruff、diff check、完整性审计和 CLI 对照完成；完整 Python suite 的唯一失败为环境缺少 js-yaml，已等待独立结果复核。
+  signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-terra
+    agent_runtime_name: claude-code
+- at: '2026-08-12T13:19:21.880281Z'
+  summary: 处置独立结果复核反馈并完成重新验证：空 candidate_after 改为拒绝，Study 选择失败统一为 rejected，补齐防御分支测试；全部 work item 现已 terminal，形成 result_version=1 的完整 canonical result projection，等待实际结果复核。
+  signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-terra
+    agent_runtime_name: claude-code
+- at: '2026-08-12T13:31:35.843993Z'
+  summary: 完整 result_version=1 canonical result projection 已回读并冻结，进入 independent_reviewing，等待已获授权的只读独立结果复核回传。
+  signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-terra
+    agent_runtime_name: claude-code
+- at: '2026-08-12T13:39:56.254928Z'
+  summary: 已取得 result_version=1 的实际只读独立结果复核；已将 review 事件写入当前 independent_reviewing 检查点，等待 Controller 处置两项非阻断性反馈。
+  signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-terra
+    agent_runtime_name: claude-code
+- at: '2026-08-12T13:40:20.603744Z'
+  summary: Controller 已处置 result_version=1 复核的全部反馈：js-yaml 缺项保留为 scope 外环境验证边界，测试计数歧义记录为后续表述建议；两者均不改变冻结 projection。
+  signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-terra
+    agent_runtime_name: claude-code
+- at: '2026-08-12T13:40:36.939248Z'
+  summary: result_version=1 的实际只读结果复核已形成，全部 feedback 已有 Controller resolution，冻结 projection 不变；进入 closure_preparing 形成完整关闭提案。
+  signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-terra
+    agent_runtime_name: claude-code
+- at: '2026-08-12T13:41:32.341224Z'
+  summary: 完成终态保留审查并形成完整 closure proposal：六项标准、总体结果、验证边界与已处置复核反馈均保留在结果字段；当前原 scope 无剩余责任，提议 outcome=completed。
+  signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-terra
+    agent_runtime_name: claude-code
+- at: '2026-08-12T13:42:00.928428Z'
+  summary: 完整 closure proposal 已回读，终态保留审查确认六项标准、结果、验证边界与复核处置均由关闭前保留字段无损承接；进入 human_closure_confirming，等待 Human Gate 2 对 completed 提案作出唯一关闭决定。
+  signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-terra
+    agent_runtime_name: claude-code
+- at: '2026-08-12T14:59:10.317346Z'
+  summary: Human Gate 2 已接受当前 completed 关闭提案；按完整 source before、关闭映射和原子关闭事务收敛 workcase-0096。
+  signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-terra
+    agent_runtime_name: claude-code
+closure_outcome: completed
+disposition_summary: 当前原 scope 内的六项成功标准均为 satisfied，已交付只读局部编辑候选能力且没有未满足或未验证的当前责任。完整 suite 中 js-yaml 缺项已作为环境排除范围内的验证边界保留在 validation_summary，不构成本 WorkCase 的剩余责任。
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: study
+    object_id: study-0030
+object_id: workcase-0096
+fact_type_key: workcase
+created_at: '2026-08-12T10:16:55.455614Z'
+updated_at: '2026-08-12T14:59:10.317346Z'
