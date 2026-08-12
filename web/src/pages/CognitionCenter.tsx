@@ -386,7 +386,7 @@ function RecentActivityRow({ item }: { item: CognitionRecentActivityItem }) {
       <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
         <span className="ldvh-caption shrink-0 text-ldvh-text-secondary">{item.relativeTime}</span>
         <code className="ldvh-caption min-w-0 break-all text-ldvh-text-secondary/55">{item.id}</code>
-        <PriorityIcon source={item} type={item.type} locale={locale} size="sm" />
+        <PriorityIcon source={item} type={item.type} locale={locale} size="xs" />
         <span
           className="inline-flex shrink-0 items-center justify-center gap-1 rounded-full border border-ldvh-accent/25 bg-ldvh-accent/5 px-1.5 py-0.5 text-[11px] font-medium leading-none text-ldvh-accent"
           title={t('cognition.recent.activityCount', { count: String(item.activityCount) })}
@@ -467,7 +467,7 @@ function SparkHealthRow({ item }: { item: CognitionSparkHealthItem }) {
           {t('cognition.sparkHealth.silentDays', { days: String(item.silentDays) })}
         </span>
         <code className="ldvh-caption min-w-0 break-all text-ldvh-text-secondary/55">{item.id}</code>
-        <PriorityIcon source={item} type="spark" locale={locale} size="sm" />
+        <PriorityIcon source={item} type="spark" locale={locale} size="xs" />
         <span className="ml-auto shrink-0">
           <ObjectReferenceCopyButton objectId={item.id} />
         </span>

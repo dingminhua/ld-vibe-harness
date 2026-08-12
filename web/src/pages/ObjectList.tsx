@@ -1350,8 +1350,12 @@ function FactAssociationsCardContent({ associations }: { associations?: FactCard
   const { t, locale } = useI18n();
   if (!associations || associations.length === 0) return null;
   const visibleAssociations = dedupeFactCardAssociations(associations)
-    .filter((association) => !isHiddenTerminalAssociation(association))
-    .sort((left, right) => Number(isClosedWorkCaseAssociation(left)) - Number(isClosedWorkCaseAssociation(right)));
+    .map((association, index) => ({ association, index }))
+    .sort((left, right) => {
+      const rankDelta = getFactAssociationStateRank(left.association) - getFactAssociationStateRank(right.association);
+      return rankDelta !== 0 ? rankDelta : left.index - right.index;
+    })
+    .map(({ association }) => association);
   if (visibleAssociations.length === 0) return null;
 
   return (
@@ -1363,21 +1367,10 @@ function FactAssociationsCardContent({ associations }: { associations?: FactCard
   );
 }
 
-function isClosedWorkCaseAssociation(association: FactCardAssociation): boolean {
-  return association.target?.factTypeKey === 'workcase'
-    && association.status === 'closed'
-    && association.closureOutcome !== 'cancelled';
-}
-
 function isDiscardedWorkCaseAssociation(association: FactCardAssociation): boolean {
   return association.target?.factTypeKey === 'workcase'
     && association.status === 'closed'
     && association.closureOutcome === 'cancelled';
-}
-
-function isHiddenTerminalAssociation(association: FactCardAssociation): boolean {
-  return ['implemented', 'discarded', 'retired', 'deprecated'].includes(association.status ?? '')
-    || (association.status === 'closed' && !isClosedWorkCaseAssociation(association) && !isDiscardedWorkCaseAssociation(association));
 }
 
 function dedupeFactCardAssociations(associations: FactCardAssociation[]): FactCardAssociation[] {
@@ -1405,6 +1398,7 @@ function FactAssociationCardRow({ association, locale, unavailableLabel }: { ass
     && panelContent.objectType === target?.factTypeKey && panelContent.objectId === target?.objectId);
   const PanelIcon = isCurrentPanelOpen ? ChevronLeft : ChevronRight;
   const associationState = getFactAssociationState(association);
+  const isDiscarded = associationState === 'discarded';
   const associationStateTooltip = associationState === null ? null : {
     pending: t('objectList.associationState.pending'),
     closed: t('objectList.associationState.closed'),
@@ -1426,28 +1420,50 @@ function FactAssociationCardRow({ association, locale, unavailableLabel }: { ass
         event.preventDefault();
         open();
       }}
-      className={`group flex min-w-0 items-center gap-2 rounded-md px-1.5 py-2 text-left transition-colors ${canOpen ? 'cursor-pointer hover:bg-ldvh-border/25 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ldvh-accent/50' : 'cursor-default'}`}
+      className={`group flex min-w-0 items-center gap-2 rounded-md px-1.5 py-2 text-left transition-colors ${isDiscarded ? 'text-slate-400/70 dark:text-slate-500/70' : ''} ${canOpen ? (isDiscarded ? 'cursor-pointer hover:bg-slate-500/5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-400/30' : 'cursor-pointer hover:bg-ldvh-border/25 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ldvh-accent/50') : 'cursor-default'}`}
     >
-      <ObjectTypeIcon type={target?.factTypeKey} size={13} className="shrink-0" style={{ color: typeColor }} />
-      <span className="ldvh-meta-primary min-w-0 flex-1 whitespace-normal break-words text-ldvh-text-secondary/85 group-hover:text-ldvh-accent">{title}</span>
+      <ObjectTypeIcon type={target?.factTypeKey} size={13} className={`shrink-0 ${isDiscarded ? 'text-slate-400/65 dark:text-slate-500/60' : ''}`} style={isDiscarded ? undefined : { color: typeColor }} />
+      <span className={`ldvh-meta-primary min-w-0 flex-1 whitespace-normal break-words ${isDiscarded ? 'text-slate-400/65 dark:text-slate-500/60' : 'text-ldvh-text-secondary/85 group-hover:text-ldvh-accent'}`}>{title}</span>
       {associationState !== null && associationStateTooltip !== null && <FactAssociationStateIcon state={associationState} tooltip={associationStateTooltip} />}
-      {canOpen && <PanelIcon size={16} className="shrink-0 text-ldvh-text-secondary/70 transition-colors group-hover:text-ldvh-accent" aria-hidden="true" />}
+      {canOpen && <PanelIcon size={16} className={`shrink-0 transition-colors ${isDiscarded ? 'text-slate-400/55 dark:text-slate-500/55 group-hover:text-slate-400/75 dark:group-hover:text-slate-400/70' : 'text-ldvh-text-secondary/70 group-hover:text-ldvh-accent'}`} aria-hidden="true" />}
     </div>
   );
 }
 
 type FactAssociationState = 'pending' | 'closed' | 'discarded' | 'progressing' | 'active';
 
+const FACT_ASSOCIATION_STATE_RANK: Record<FactAssociationState, number> = {
+  active: 0,
+  progressing: 1,
+  pending: 2,
+  closed: 3,
+  discarded: 4,
+};
+
 function getFactAssociationState(association: FactCardAssociation): FactAssociationState | null {
   if (!association.available || !association.status) return null;
-  if (association.target?.factTypeKey === 'spark' && association.status === 'open') return 'pending';
+  if (association.target?.factTypeKey === 'spark') {
+    if (association.status === 'open') return 'pending';
+    if (association.status === 'discarded') return 'discarded';
+    if (association.status === 'implemented') return 'closed';
+  }
+  if (association.target?.factTypeKey === 'pitfall') {
+    if (association.status === 'draft') return 'pending';
+    if (association.status === 'discarded') return 'discarded';
+  }
   if (association.target?.factTypeKey === 'workcase') {
     if (isDiscardedWorkCaseAssociation(association)) return 'discarded';
     if (association.status === 'closed') return 'closed';
     if (association.progressGroup === 'plan_confirmation' || association.progressGroup === 'closure_confirmation') return 'pending';
-    if (association.progressGroup === 'progressing') return 'progressing';
+    if (association.progressGroup === 'progressing' || association.progressGroup === 'termination_cleanup') return 'progressing';
   }
+  if (association.status === 'retired') return 'discarded';
   return 'active';
+}
+
+function getFactAssociationStateRank(association: FactCardAssociation): number {
+  const state = getFactAssociationState(association);
+  return state === null ? Number.MAX_SAFE_INTEGER : FACT_ASSOCIATION_STATE_RANK[state];
 }
 
 function FactAssociationStateIcon({ state, tooltip }: { state: FactAssociationState; tooltip: string }) {
@@ -1463,7 +1479,7 @@ function FactAssociationStateIcon({ state, tooltip }: { state: FactAssociationSt
   }
   const presentation = {
     closed: { Icon: CircleCheck, className: 'text-emerald-500 dark:text-emerald-400' },
-    discarded: { Icon: CircleMinus, className: 'text-slate-500 dark:text-slate-400' },
+    discarded: { Icon: CircleMinus, className: 'text-slate-400/70 dark:text-slate-500/70' },
     progressing: { Icon: CirclePlay, className: 'text-sky-500 dark:text-sky-400' },
     active: { Icon: Activity, className: 'text-ldvh-accent' },
   }[state];

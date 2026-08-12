@@ -302,7 +302,7 @@ WorkCase 详情中的每项 creation review 与 result review 必须显示实际
 
 Web 不得为上述输入重新摘要，不得从 `result_summary`、`validation_summary`、复核记录、工作项或其它字段拼凑替代文本。`closure_proposal` 缺失、结构不符或其必要成员不可读时，关闭判断输入区必须明确显示相应信息缺失，不得按 phase、状态或对象内容推断关闭结论；Web 也不得为 `closure_proposal` 补写生成的占位提案。`closure_proposal` 只在 Controller 已形成完整关闭报告与分流建议后出现，其出现本身即表示关闭材料已提交 Human 判断，Card 不另行显示“材料已齐备”之类的完整性结论。
 
-正式 `relations` 由所有五类事实对象 Card 统一呈现，而不是链接、URL、材料或引用列表。同一稳定目标即使有多个 relation key 也只呈现一次；每条关联只显示目标语义图标、精确读取的完整标题、实际状态和打开扩展阅读的箭头；状态为「已关闭」或「已废弃」的关联目标整行不在 Card 中呈现；不设关联标题、类型分组标题、ID 或复制按钮，不折叠或截断，也不根据 relation key 推断分流、依赖、承接责任或终态处置。当前项目内精确读取成功的目标可打开右侧扩展阅读；跨项目、缺失、不可读或结构无效的关联明确显示不可用，不能猜标题或静默遗漏。详情关联区按同一稳定目标去重。`contributed-to` 只是其中一类正式关联，不再在 WorkCase Card 另设“后续贡献”模块，也不表示剩余责任去向；Card 不提供 promote、discard、批量审核或自动过期控件。
+正式 `relations` 由所有五类事实对象 Card 统一呈现，而不是链接、URL、材料或引用列表。同一稳定目标即使有多个 relation key 也只呈现一次；每条关联只显示目标语义图标、精确读取的完整标题、实际状态和打开扩展阅读的箭头；所有可读关联目标（包括已关闭与已废弃的终态目标）均保留，并严格按「活跃 → 推进中 → 待处理 → 已关闭 → 已废弃」排序。已废弃关联整行使用中性 slate 灰色弱化目标语义图标、标题、状态图标、进入箭头及 hover/focus 反馈，但仍必须保持可读、可进入和完整标题；不得以弱化样式替代保留或隐藏终态关联；不设关联标题、类型分组标题、ID 或复制按钮，不折叠或截断，也不根据 relation key 推断分流、依赖、承接责任或终态处置。当前项目内精确读取成功的目标可打开右侧扩展阅读；跨项目、缺失、不可读或结构无效的关联明确显示不可用，不能猜标题或静默遗漏。详情关联区按同一稳定目标去重。`contributed-to` 只是其中一类正式关联，不再在 WorkCase Card 另设“后续贡献”模块，也不表示剩余责任去向；Card 不提供 promote、discard、批量审核或自动过期控件。
 
 `closure_confirmation` Card 不显示关闭完整性诊断，不从已退出的请求、审核、批准或时间字段推断缺失，也不把活动期过程字段当作 closed 必须保留的内容；除关闭判断输入区与通用正式关联区外，不展开成功标准结果、结果与验证、主控自检、独立结果复核或执行统计，这些内容仍从同源详情读取。只有 `handoff_narrative_key=gate2_waiting` 才使用上述 Gate 2 Card；`gate2_position_blocked` 必须改用 blocker-qualified closure-position Card，首先显示“关闭位置受阻”及完整 `blocking_summary`，可以把已读 `goal` 与 `closure_proposal` 作为来源材料继续展示，但不得显示 Gate 2 判断入口、readiness 话术或关闭操作。`status=closed` 且投影为 `closed` 足以确定“已关闭”分组；关闭决定由专属事务消费，不持久化 approval 或关闭时间收据。
 
