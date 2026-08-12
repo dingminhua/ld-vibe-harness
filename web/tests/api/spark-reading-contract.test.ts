@@ -45,7 +45,8 @@ test('every fact list card shows exact-read formal associations in a minimal sec
   const detailSource = fs.readFileSync(path.resolve('src/pages/object-detail/factReadingProjection.ts'), 'utf8');
   assert.match(detailSource, /dedupeRelationsByTarget/);
   assert.match(docs, /正式 `relations` 由所有五类对象 Card 统一呈现/);
-  assert.match(docs, /关联状态图标固定放在进入箭头之前/);
+  assert.doesNotMatch(source, /ChevronLeft|ChevronRight|PanelIcon/);
+  assert.match(docs, /正式 `relations` 由所有五类对象 Card 统一呈现[\s\S]*使用对象语义图标、完整标题和关联状态图标；/);
   assert.match(docs, /closed \+ closure_outcome=cancelled/);
 });
 

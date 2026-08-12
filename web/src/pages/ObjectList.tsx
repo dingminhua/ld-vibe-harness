@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { Activity, ArrowRight, ChevronLeft, ChevronRight, Circle, CircleAlert, CircleCheck, CircleMinus, CirclePlay, ClipboardList, Clock3, Hash, Lightbulb, ListChecks, ShieldCheck, Target } from 'lucide-react';
+import { Activity, ArrowRight, Circle, CircleAlert, CircleCheck, CircleMinus, CirclePlay, ClipboardList, Clock3, Hash, Lightbulb, ListChecks, ShieldCheck, Target } from 'lucide-react';
 import ObjectIdentityActions from '@/components/ObjectIdentityActions';
 import StatusBadge from '@/components/StatusBadge';
 import WorkCaseCapabilityStatusBadge from '@/components/WorkCaseCapabilityStatusBadge';
@@ -1392,11 +1392,8 @@ function FactAssociationCardRow({ association, locale, unavailableLabel }: { ass
     ? getLocalizedObjectTitle(association, locale)
     : unavailableLabel;
   const typeColor = target ? (CATEGORY_COLORS[target.factTypeKey] || CATEGORY_COLORS.other) : CATEGORY_COLORS.other;
-  const { isOpen: panelOpen, content: panelContent, openPanel } = usePanel();
+  const { openPanel } = usePanel();
   const canOpen = Boolean(association.available && target);
-  const isCurrentPanelOpen = Boolean(canOpen && panelOpen && panelContent?.type === 'object'
-    && panelContent.objectType === target?.factTypeKey && panelContent.objectId === target?.objectId);
-  const PanelIcon = isCurrentPanelOpen ? ChevronLeft : ChevronRight;
   const associationState = getFactAssociationState(association);
   const isDiscarded = associationState === 'discarded';
   const associationStateTooltip = associationState === null ? null : {
@@ -1425,7 +1422,6 @@ function FactAssociationCardRow({ association, locale, unavailableLabel }: { ass
       <ObjectTypeIcon type={target?.factTypeKey} size={13} className={`shrink-0 ${isDiscarded ? 'text-slate-400/65 dark:text-slate-500/60' : ''}`} style={isDiscarded ? undefined : { color: typeColor }} />
       <span className={`ldvh-meta-primary min-w-0 flex-1 whitespace-normal break-words ${isDiscarded ? 'text-slate-400/65 dark:text-slate-500/60' : 'text-ldvh-text-secondary/85 group-hover:text-ldvh-accent'}`}>{title}</span>
       {associationState !== null && associationStateTooltip !== null && <FactAssociationStateIcon state={associationState} tooltip={associationStateTooltip} />}
-      {canOpen && <PanelIcon size={16} className={`shrink-0 transition-colors ${isDiscarded ? 'text-slate-400/55 dark:text-slate-500/55 group-hover:text-slate-400/75 dark:group-hover:text-slate-400/70' : 'text-ldvh-text-secondary/70 group-hover:text-ldvh-accent'}`} aria-hidden="true" />}
     </div>
   );
 }
