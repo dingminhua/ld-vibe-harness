@@ -377,7 +377,7 @@ test('recent activity aggregation retains the newest fact event and counts compl
     'adr-0001:1:2026-08-01T01:00:00Z',
   ])
   assert.deepEqual(view.modelUsage, [{ value: 'gpt-5.6-luna', count: 2 }, { value: 'reviewer-model', count: 1 }])
-  assert.deepEqual(view.environmentUsage, [{ value: 'cindy(claude-code)', count: 2 }, { value: 'ci', count: 1 }])
+  assert.deepEqual(view.environmentUsage, [{ value: 'Cindy(Claude)', count: 2 }, { value: 'Ci', count: 1 }])
 })
 
 test('recent activity accepts current change-log signatures and ignores legacy fields', async () => {
@@ -388,16 +388,16 @@ test('recent activity accepts current change-log signatures and ignores legacy f
       signature: { model_id: 'legacy-model', agent_workbench: 'legacy-runtime' },
       session_id: 'legacy-session', at: '2026-07-31T00:00:00Z', summary: 'Legacy',
     }, {
-      signature: { product_name: 'Cindy', model_name: 'gpt-5.6-luna', agent_runtime_name: 'codex-cli' },
+      signature: { product_name: 'cindy', model_name: 'chatgpt/gpt-5.6-terra', agent_runtime_name: 'codex-cli' },
       session_id: 'current-session', at: '2026-08-01T00:00:00Z', summary: 'Created',
     }],
   }
   const builds = buildFactActivityItems(raw, 'spark', Date.parse('2026-07-31T00:00:00Z'), Date.parse('2026-08-02T00:00:00Z'))
-  assert.deepEqual(builds.find((build) => build.occurred_at === '2026-08-01T00:00:00Z')?.signature, { productName: 'Cindy', modelName: 'gpt-5.6-luna', agentRuntimeName: 'codex-cli' })
+  assert.deepEqual(builds.find((build) => build.occurred_at === '2026-08-01T00:00:00Z')?.signature, { productName: 'Cindy', modelName: 'gpt-5.6-terra', agentRuntimeName: 'Codex' })
 
   const view = buildRecentActivityView(builds)
-  assert.deepEqual(view.modelUsage, [{ value: 'gpt-5.6-luna', count: 1 }])
-  assert.deepEqual(view.environmentUsage, [{ value: 'Cindy(codex-cli)', count: 1 }])
+  assert.deepEqual(view.modelUsage, [{ value: 'gpt-5.6-terra', count: 1 }])
+  assert.deepEqual(view.environmentUsage, [{ value: 'Cindy(Codex)', count: 1 }])
 })
 
 test('recent activity retains a current partial signature without inventing a model name', async () => {
@@ -428,7 +428,7 @@ test('Spark health reuses the newest complete change-log signature for its card-
       { signature: { product_name: 'Cindy', model_name: 'gpt-5.6-luna', agent_runtime_name: 'codex-cli' } },
     ],
   }], Date.parse('2026-08-08T00:00:00Z'))
-  assert.deepEqual(health.openItems[0]?.signature, { productName: 'Cindy', modelName: 'gpt-5.6-luna', agentRuntimeName: 'codex-cli' })
+  assert.deepEqual(health.openItems[0]?.signature, { productName: 'Cindy', modelName: 'gpt-5.6-luna', agentRuntimeName: 'Codex' })
 })
 
 test('fact activity builder reads change_log first and only falls back for legacy facts without usable entries', async () => {

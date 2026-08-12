@@ -1,5 +1,6 @@
 import * as React from 'react';
 import type { CommitSignature } from '@/utils/api';
+import { normalizeModelName, normalizeRuntimeName, normalizeSignatureName } from '../../shared/signature';
 
 /** Compactly display the optional product/runtime signature identity. */
 export default function CommitSignatureMeta({
@@ -7,9 +8,9 @@ export default function CommitSignatureMeta({
 }: {
   signature?: CommitSignature;
 }) {
-  const modelName = signature?.modelName?.trim() ?? '';
-  const productName = signature?.productName?.trim() ?? '';
-  const runtimeName = signature?.agentRuntimeName?.trim() ?? '';
+  const modelName = normalizeModelName(signature?.modelName);
+  const productName = normalizeSignatureName(signature?.productName);
+  const runtimeName = normalizeRuntimeName(signature?.agentRuntimeName);
   const environment = productName && runtimeName
     ? `${productName}(${runtimeName})`
     : productName || runtimeName;

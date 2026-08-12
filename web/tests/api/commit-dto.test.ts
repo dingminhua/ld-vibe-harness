@@ -192,7 +192,7 @@ function assertCommitDto(entry: Record<string, unknown>) {
   assert.deepEqual(entry.signature, {
     productName: 'Cindy',
     modelName: 'gpt-5.6-luna',
-    agentRuntimeName: 'codex-cli',
+    agentRuntimeName: 'Codex',
   })
   assert.match(String(entry.body), /动机:/)
   assert.match(String(entry.body), /验证结论:/)
@@ -327,11 +327,16 @@ test('commit signature display reads only current LDVH trailers', () => {
   ].join('\n')), {
     productName: 'Cindy',
     modelName: 'gpt-5.6-luna',
-    agentRuntimeName: 'codex-cli',
+    agentRuntimeName: 'Codex',
   })
   assert.equal(parseCommitSignature([
     'Session-ID: legacy-session',
     'Model-ID: gpt-5',
     'Workbench-Name: Cindy',
   ].join('\n')), undefined)
+  assert.deepEqual(parseCommitSignature([
+    'LDVH-Model-Name: chatgpt/gpt-5.6-terra',
+    'LDVH-Product-Name: cindy',
+    'LDVH-Agent-Runtime-Name: claude-code',
+  ].join('\n')), { modelName: 'gpt-5.6-terra', productName: 'Cindy', agentRuntimeName: 'Claude' })
 })

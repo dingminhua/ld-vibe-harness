@@ -6,6 +6,7 @@ import { execFile } from 'child_process'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { canonicalizeRfc3339Timestamp, normalizeGitTimestampInput } from '../../shared/timestamp.ts'
+import { normalizeModelName, normalizeRuntimeName, normalizeSignatureName } from '../../shared/signature.js'
 import { getRelativeTime as sharedGetRelativeTime } from './time.js'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -129,9 +130,9 @@ function getCommitTrailerValue(body: string, key: string): string | undefined {
  * the compact commit identity only exposes the model/agent and host when present.
  */
 export function parseCommitSignature(body: string): GitCommitSignature | undefined {
-  const productName = getCommitTrailerValue(body, 'LDVH-Product-Name')
-  const modelName = getCommitTrailerValue(body, 'LDVH-Model-Name')
-  const agentRuntimeName = getCommitTrailerValue(body, 'LDVH-Agent-Runtime-Name')
+  const productName = normalizeSignatureName(getCommitTrailerValue(body, 'LDVH-Product-Name')) || undefined
+  const modelName = normalizeModelName(getCommitTrailerValue(body, 'LDVH-Model-Name')) || undefined
+  const agentRuntimeName = normalizeRuntimeName(getCommitTrailerValue(body, 'LDVH-Agent-Runtime-Name')) || undefined
   return productName || modelName || agentRuntimeName
     ? { productName, modelName, agentRuntimeName }
     : undefined

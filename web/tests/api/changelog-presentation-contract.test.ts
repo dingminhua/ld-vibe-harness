@@ -15,19 +15,29 @@ test('compact signature metadata shows model and product(runtime), with field fa
     productName: 'Cindy', modelName: 'gpt-5.6-luna', agentRuntimeName: 'codex-cli',
   } }));
   assert.match(complete, /gpt-5\.6-luna/);
-  assert.match(complete, /Cindy\(codex-cli\)/);
+  assert.match(complete, /Cindy\(Codex\)/);
+
+  const hostedModel = renderToStaticMarkup(createElement(CommitSignatureMeta, { signature: {
+    modelName: 'chatgpt/gpt-5.6-terra',
+    productName: 'cindy',
+    agentRuntimeName: 'claude-code',
+  } }));
+  assert.match(hostedModel, /gpt-5\.6-terra/);
+  assert.doesNotMatch(hostedModel, /chatgpt\//);
+  assert.match(hostedModel, /Cindy\(Claude\)/);
+  assert.doesNotMatch(hostedModel, /cindy\(claude-code\)/);
 
   const productOnly = renderToStaticMarkup(createElement(CommitSignatureMeta, { signature: { productName: 'Cindy' } }));
   assert.match(productOnly, /Cindy/);
   assert.doesNotMatch(productOnly, /undefined|null|\\(\\)/);
 
   const runtimeOnly = renderToStaticMarkup(createElement(CommitSignatureMeta, { signature: { agentRuntimeName: 'codex-cli' } }));
-  assert.match(runtimeOnly, /codex-cli/);
+  assert.match(runtimeOnly, /Codex/);
   assert.doesNotMatch(runtimeOnly, /undefined|null|\\(\\)/);
 
   const modelOnly = renderToStaticMarkup(createElement(CommitSignatureMeta, { signature: { modelName: 'gpt-5.6-luna' } }));
   assert.match(modelOnly, /gpt-5\.6-luna/);
-  assert.doesNotMatch(modelOnly, /Cindy|codex-cli/);
+  assert.doesNotMatch(modelOnly, /Cindy|Codex/);
 });
 
 test('breaking and push-state badges use one presentation in list and detail identities', async () => {

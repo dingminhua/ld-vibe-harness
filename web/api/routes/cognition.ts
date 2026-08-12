@@ -23,6 +23,7 @@ import {
   type WorkCaseProgressGroup,
   type WorkCaseProgressStep,
 } from '../../shared/workcaseStatus.js'
+import { normalizeModelName, normalizeRuntimeName, normalizeSignatureName } from '../../shared/signature.js'
 import { ProjectScopeError, requestProject } from '../services/requestScope.js'
 import { compareTimestamps, getRelativeTime, parseTimestamp } from '../services/time.js'
 import { getTypeColor } from '../services/typeColors.js'
@@ -310,9 +311,9 @@ function buildRecentActivityItem(
 function readFactChangeSignature(value: unknown): FactChangeSignature | undefined {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined
   const record = value as Record<string, unknown>
-  const productName = typeof record.product_name === 'string' ? record.product_name.trim() : ''
-  const modelName = typeof record.model_name === 'string' ? record.model_name.trim() : ''
-  const agentRuntimeName = typeof record.agent_runtime_name === 'string' ? record.agent_runtime_name.trim() : ''
+  const productName = normalizeSignatureName(record.product_name)
+  const modelName = normalizeModelName(record.model_name)
+  const agentRuntimeName = normalizeRuntimeName(record.agent_runtime_name)
   return productName || modelName || agentRuntimeName
     ? {
       ...(productName ? { productName } : {}),
@@ -403,7 +404,7 @@ export function buildRecentActivityView(builds: RecentActivityBuildItem[]): {
       }
     }
     if (build.signature) {
-      const model = build.signature.modelName
+      const model = normalizeModelName(build.signature.modelName)
       const environment = formatAttributionEnvironment(build.signature.productName, build.signature.agentRuntimeName)
       if (model) models.set(model, (models.get(model) ?? 0) + 1)
       if (environment) environments.set(environment, (environments.get(environment) ?? 0) + 1)
@@ -422,8 +423,10 @@ export function buildRecentActivityView(builds: RecentActivityBuildItem[]): {
 
 /** One responsibility environment: product(runtime) when both are observed. */
 function formatAttributionEnvironment(productName?: string, runtimeName?: string): string | undefined {
-  if (productName && runtimeName) return `${productName}(${runtimeName})`
-  return productName || runtimeName
+  const normalizedProductName = normalizeSignatureName(productName)
+  const normalizedRuntimeName = normalizeRuntimeName(runtimeName)
+  if (normalizedProductName && normalizedRuntimeName) return `${normalizedProductName}(${normalizedRuntimeName})`
+  return normalizedProductName || normalizedRuntimeName || undefined
 }
 
 function silentDays(updatedAt: unknown, observedAt: number): number | null {

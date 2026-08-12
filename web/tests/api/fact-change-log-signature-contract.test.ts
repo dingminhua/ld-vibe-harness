@@ -11,7 +11,11 @@ test('object header attribution reads the newest complete signature from change_
     { signature: { model_id: 'legacy', agent_workbench: 'legacy-runtime' } },
     { signature: { agent_id: 'partial' } },
     { signature: { product_name: 'Cindy', model_name: 'gpt-5.6-luna', agent_runtime_name: 'codex-cli' } },
-  ]), { productName: 'Cindy', modelName: 'gpt-5.6-luna', agentRuntimeName: 'codex-cli' });
+  ]), { productName: 'Cindy', modelName: 'gpt-5.6-luna', agentRuntimeName: 'Codex' });
+
+  assert.deepEqual(getLatestFactChangeSignature([
+    { signature: { product_name: 'chatGPT', model_name: 'chatgpt/gpt-5.6-terra', agent_runtime_name: 'codex' } },
+  ]), { productName: 'ChatGPT', modelName: 'gpt-5.6-terra', agentRuntimeName: 'Codex' });
 
   assert.equal(getLatestFactChangeSignature([
     { signature: { agent_id: 'legacy', host_environment: 'old-host' } },

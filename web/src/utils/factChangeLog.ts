@@ -1,4 +1,5 @@
 import type { CommitSignature } from '@/utils/api';
+import { normalizeModelName, normalizeRuntimeName, normalizeSignatureName } from '../../shared/signature';
 
 /**
  * Returns the newest complete attribution carried by a fact's update log.
@@ -18,15 +19,9 @@ export function getLatestFactChangeSignature(value: unknown): CommitSignature | 
     if (!signature || typeof signature !== 'object' || Array.isArray(signature)) continue;
     const signatureRecord = signature as Record<string, unknown>;
 
-    const productName = typeof signatureRecord.product_name === 'string'
-      ? signatureRecord.product_name.trim()
-      : '';
-    const modelName = typeof signatureRecord.model_name === 'string'
-      ? signatureRecord.model_name.trim()
-      : '';
-    const agentRuntimeName = typeof signatureRecord.agent_runtime_name === 'string'
-      ? signatureRecord.agent_runtime_name.trim()
-      : '';
+    const productName = normalizeSignatureName(signatureRecord.product_name);
+    const modelName = normalizeModelName(signatureRecord.model_name);
+    const agentRuntimeName = normalizeRuntimeName(signatureRecord.agent_runtime_name);
     if (productName || modelName || agentRuntimeName) {
       return {
         ...(productName ? { productName } : {}),
