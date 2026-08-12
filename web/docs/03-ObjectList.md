@@ -2,7 +2,7 @@
 
 > 路由：`/objects/:type`
 > 源码：`web/src/pages/ObjectList.tsx`
-> API：`GET /api/objects/:type`；WorkCase 使用 `?progress=<progress_group>`，其它对象按各自契约使用 `?status=<status>`
+> API：`GET /api/objects/:type`；WorkCase 使用 `?progress=<progress_group>`，另允许 Web 派生分类 `?progress=discarded`；其它对象按各自契约使用 `?status=<status>`
 > 图标规范：[`09-图标语义规范.md`](./09-图标语义规范.md)
 
 ## 1. 页面目标
@@ -30,7 +30,7 @@
 - 位于列表顶部。
 - 浏览筛选及同层任务态势图例属于列表切换控制区，必须固定在主滚动容器顶部；对象卡片列表在其下方滚动。
 - WorkCase 由 `WorkCaseProgressFilter` 展示 `plan_confirmation / progressing / termination_cleanup / closure_confirmation / closed` 五个进展分组及“全部”，数量读取 API 的 `progressOptions`；五个值的显示顺序固定，“全部”放在最后。
-- WorkCase 筛选写入 `?progress=<progress_group>`；没有 `progress` 时展示全部 WorkCase。原始 `status` 或 `phase` 不成为 WorkCase 列表的另一套同级筛选。
+- WorkCase 筛选写入 `?progress=<progress_group>`；`closed + closure_outcome=cancelled` 使用派生分类 `?progress=discarded`，不计入“已关闭”。没有 `progress` 时展示全部 WorkCase。原始 `status` 或 `phase` 不成为 WorkCase 列表的另一套同级筛选。
 - 其它对象由 `ObjectStatusFilter` 根据各自状态契约展示“各状态 + 全部 + 数量”，并把选择写入 `?status=<status>`。
 - 两类筛选都使用全局 tab 样式：`ldvh-tab-list`、`ldvh-tab-button`、`ldvh-tab-button-active` 和 `ldvh-tab-button-idle`，与提交记录页加载范围、type、scope 筛选保持一致。
 - 数据返回前先渲染稳定的筛选占位，数字位置使用轻量加载动画，避免对象卡片先出现、顶部筛选后插入造成页面跳动。
@@ -49,7 +49,7 @@
   - 优先级字符徽标：WorkCase 和 Spark 如存在 `priority`，在 ID 后面展示 `P0` / `P1` / `P2` / `P3` 字符徽标；标题行只保留 `ObjectTypeIcon(obj.type)` 和标题。徽标使用颜色、轻量边框和 tooltip 表达优先级，不作为错误或阻塞状态；
   - 可选信号：仅当对应对象的字段契约定义该字段时展示；`priority` 只适用于 WorkCase 和 Spark，不得为 ADR、Pitfall 或 Study 杜撰 priority，也不得为任何对象杜撰 importance、category 或 tags；Spark 不维护 category；Pitfall 不维护 repeatability；importance 字段已由 priority 统一承载，不作为独立字段使用
   - 终态处置：ADR、Pitfall 与 Spark 不复用泛化的“非活跃原因”字段。它们在各自终态卡片中只读取 `disposition_summary`，用弱圆点与小号正文承载，不另造“退出理由”“关闭时间”“处置时间”标签；缺失时如实显示处置缺失提示，仍不得压过标题、状态和更新时间。
-  - 正式 `relations` 由所有五类对象 Card 统一呈现：同一稳定目标只呈现一次，即使来源以多个 relation key 关联它；使用对象语义图标、完整标题、关联状态图标和进入扩展阅读的箭头。关联状态图标固定放在进入箭头之前，悬停显示文字：待处理的 Spark、方案待确认或关闭待确认的 WorkCase 使用待处理图标；已关闭 WorkCase 使用勾选图标；推进中的 WorkCase 使用推进图标；其余可读的活跃对象使用活跃图标。已关闭的 WorkCase 关联仍显示，并稳定排在其它可见关联之后；其它终态关联目标整行不在 Card 中呈现。不设“关联”标题、类型分组标题、对象 ID 或复制按钮，不折叠或截断。它不是链接、URL、材料或引用列表，也不据此推断分流、依赖、承接责任或终态处置。仅当前项目内精确读取成功的目标可点击并打开扩展阅读；跨项目、缺失、不可读或结构无效的关联明确显示“关联信息不可用”，不猜标题或静默遗漏。
+  - 正式 `relations` 由所有五类对象 Card 统一呈现：同一稳定目标只呈现一次，即使来源以多个 relation key 关联它；使用对象语义图标、完整标题、关联状态图标和进入扩展阅读的箭头。关联状态图标固定放在进入箭头之前，悬停显示文字：待处理的 Spark、方案待确认或关闭待确认的 WorkCase 使用待处理图标；已关闭 WorkCase 使用勾选图标；`closed + closure_outcome=cancelled` 的 WorkCase 显示为已废弃并使用废弃图标；推进中的 WorkCase 使用推进图标；其余可读的活跃对象使用活跃图标。已关闭的 WorkCase 关联仍显示，并稳定排在其它可见关联之后；已废弃 WorkCase 也保留显示，但不作为已关闭 WorkCase 归类；其它终态关联目标整行不在 Card 中呈现。不设“关联”标题、类型分组标题、对象 ID 或复制按钮，不折叠或截断。它不是链接、URL、材料或引用列表，也不据此推断分流、依赖、承接责任或终态处置。仅当前项目内精确读取成功的目标可点击并打开扩展阅读；跨项目、缺失、不可读或结构无效的关联明确显示“关联信息不可用”，不猜标题或静默遗漏。
   - Pitfall 状态筛选使用 `draft / active / discarded`，分别显示“待确认 / 活跃 / 已废弃”；`discarded` 与其终态处置说明均使用中性灰，红色只保留给 Pitfall 类型识别。Pitfall 卡片不提供 promote、discard 或批量审核控件，也不展示 `tags` 或冗余解决态。
   - 底部：只展示更新时间，使用 `formatDateTime()`，格式为 `YYYY-MM-DD HH:mm`，样式为弱化元信息 `ldvh-meta-muted`；更新时间行使用 `mt-auto` 贴近卡片下边距，避免不同标题行数或中部内容高度导致时间上浮；对象列表以更新时间排序，创建时间留在详情页身份区展示。
 - 复制对象 ID 只复制，不触发导航。只有详情或引用行完成精确读取并取得可消费 `canonical_path` 后，才可另行显示复制对象路径入口。
@@ -72,7 +72,7 @@ WorkCase 卡片帮助 Human 识别当前工作责任所处的进展分组，并�
 
 - 保留通用卡片头部：ID、进展分组、标题。
 - 不显示虚构的“所属工作责任”归属行；Card 标题识别 WorkCase 自身，内部 work item 只在“推进中”按本节规则呈现当前 active 项。
-- WorkCase Card 和列表筛选只消费 21 §9.3 当前快照投影中的五个进展分组：`plan_confirmation`（方案待确认）、`progressing`（推进中）、`termination_cleanup`（终止善后中）、`closure_confirmation`（关闭位置）、`closed`（已关闭）。仅 `handoff_narrative_key=gate2_waiting` 把 `closure_confirmation` 显示为“关闭待确认”；`gate2_position_blocked` 必须显示“关闭位置受阻”。界面分类轴命名为“进展分组”，不得显示为“生命周期”。创建前计划复核时尚无正式 WorkCase，不提供 Card 或筛选项。
+- WorkCase Card 消费 21 §9.3 当前快照投影中的五个进展分组：`plan_confirmation`（方案待确认）、`progressing`（推进中）、`termination_cleanup`（终止善后中）、`closure_confirmation`（关闭位置）、`closed`（已关闭）。列表分类额外将 `closed + closure_outcome=cancelled` 派生为“已废弃”，不与普通已关闭混计；它不改变事实 `status` 或 `progress_group`。仅 `handoff_narrative_key=gate2_waiting` 把 `closure_confirmation` 显示为“关闭待确认”；`gate2_position_blocked` 必须显示“关闭位置受阻”。界面分类轴命名为“进展分组”，不得显示为“生命周期”。创建前计划复核时尚无正式 WorkCase，不提供 Card 或筛选项。
 - 每张 Card 必须直接显示自己的进展分组，不能要求 Human 只靠顶部筛选位置推断；来源 phase 不再作为与五个分组同级的 Card 主状态。
 - “方案待确认”Card 是 Gate 1 的紧凑入口：完整直读 `goal`、`success_criterion_definitions` 与 `execution_authorization`；三者分别固定使用“目标”“成功标准”“执行授权边界”标题。授权区以允许动作、禁止项、实际存在的 Human 前置条件和 capability limitations 数量形成可扫读入口；能力限制存在时必须可展开阅读 capability/availability、当前观察与证据、受影响复核类别、fallback policy、assurance gap 和停止条件，不能隐藏低保证基础或把同一 AI 切换视角称为独立 subagent。完整授权动作与边界统一留在同源详情页阅读。摘要不替代或截断来源内容。Card 不显示 `scope`、`work_items`、`creation_reviews` 或 `execution_approval`，这些完整材料留在同源详情页；decision mode 仍完整显示 creation reviews 的实际方法与低保证披露。项目认知中心复用同一紧凑 Card；其标题在本页打开同源次级阅读，不增设聚焦页专属正文或条目操作。任一结构缺失或 malformed 时在原位置明确标注，不能丢弃坏成员后形成伪完整基线。
 - “方案待确认”同时出现 `status=blocked` 时，必须在 Gate 1 材料之外完整显示独立的阻塞状态提示，直接读取 `blocking_summary`，缺失时明确提示。阻塞状态提示必须成为 Card 身份头部之后的首个内容块，位于“目标”之前。该提示不是 Gate 1 授权内容，也不把进展分组改成“推进中”或其它分组。

@@ -1,12 +1,11 @@
 import { useMemo } from 'react';
 import { useI18n } from '@/i18n/context';
 import { getObjectStatusLocale } from '@/i18n/locales';
-import type { FactCoverageStatus, WorkCaseProgressOption } from '@/utils/api';
-import type { WorkCaseProgressGroup } from '@/shared/workcaseStatus';
+import type { FactCoverageStatus, WorkCaseListGroup, WorkCaseProgressOption } from '@/utils/api';
 
 interface WorkCaseProgressFilterProps {
-  activeGroup: WorkCaseProgressGroup | null;
-  onChange: (group: WorkCaseProgressGroup | null) => void;
+  activeGroup: WorkCaseListGroup | null;
+  onChange: (group: WorkCaseListGroup | null) => void;
   options?: WorkCaseProgressOption[];
   total?: number;
   loading?: boolean;
@@ -34,7 +33,7 @@ export default function WorkCaseProgressFilter({
         <button
           key={group}
           type="button"
-          onClick={() => onChange(group as WorkCaseProgressGroup)}
+          onClick={() => onChange(group as WorkCaseListGroup)}
           className={getButtonClass(activeGroup === group)}
         >
           {getObjectStatusLocale('workcase', group, locale)}

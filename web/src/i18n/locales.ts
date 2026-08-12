@@ -65,6 +65,9 @@ export function getStatusLocale(status: string, locale: string): string {
 // 状态码可在不同事实对象中复用，但展示语义不必相同。Spark 的 `open`
 // 表示「尚待判断或分流」，不是 WorkCase 式的「未关闭」。
 const OBJECT_STATUS_LOCALES: Record<string, Record<string, { zh: string; en: string }>> = {
+  workcase: {
+    discarded: { zh: '已废弃', en: 'Discarded' },
+  },
   adr: {
     retired: { zh: '已废弃', en: 'Retired' },
   },
@@ -892,6 +895,7 @@ export const UI_LOCALES = {
     'objectList.associationUnavailable': '关联信息不可用。',
     'objectList.associationState.pending': '待处理',
     'objectList.associationState.closed': '已关闭',
+    'objectList.associationState.discarded': '已废弃',
     'objectList.associationState.progressing': '推进中',
     'objectList.associationState.active': '活跃',
     'objectList.discarded': '已废弃',
@@ -1455,6 +1459,7 @@ export const UI_LOCALES = {
     'objectList.associationUnavailable': 'Related information unavailable.',
     'objectList.associationState.pending': 'Pending',
     'objectList.associationState.closed': 'Closed',
+    'objectList.associationState.discarded': 'Discarded',
     'objectList.associationState.progressing': 'In progress',
     'objectList.associationState.active': 'Active',
     'objectList.discarded': 'Discarded',

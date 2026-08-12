@@ -93,21 +93,21 @@ fs.writeFileSync(
 fs.writeFileSync(
   path.join(projectRoot, 'ldvh-base', 'workcases', 'workcase-0002.yaml'),
   [
-    'title: Dashboard 已关闭 WorkCase 投影回归',
+    'title: Dashboard 已废弃 WorkCase 投影回归',
     'status: closed',
     'goal: 固定无 phase 的 closed WorkCase Web 投影。',
-    'scope: 仅测试 closed 分组。',
+    'scope: 仅测试 cancelled 关闭的废弃分组。',
     'success_criterion_definitions:',
     '- criterion_id: criterion-closed-group',
-    '  statement: 已关闭对象进入已关闭分组。',
+    '  statement: 取消关闭对象进入已废弃分组。',
     'success_criterion_results:',
     '- criterion_id: criterion-closed-group',
     '  outcome: satisfied',
-    '  summary: 列表与 Dashboard 均投影为已关闭。',
+    '  summary: 列表与 Dashboard 均投影为已废弃。',
     'result_summary: closed 投影已经形成。',
     'validation_summary: 已检查无 phase 的 closed 投影。',
-    'closure_outcome: completed',
-    'disposition_summary: 当前责任已经完成并关闭。',
+    'closure_outcome: cancelled',
+    'disposition_summary: 当前责任已取消并废弃。',
     'object_id: workcase-0002',
     'fact_type_key: workcase',
     "created_at: '2026-07-20T05:00:00+08:00'",
@@ -255,7 +255,8 @@ test('preserves the shared commit DTO across current API consumers', async () =>
     { group: 'plan_confirmation', count: 0 },
     { group: 'progressing', count: 1 },
     { group: 'closure_confirmation', count: 0 },
-    { group: 'closed', count: 1 },
+    { group: 'closed', count: 0 },
+    { group: 'discarded', count: 1 },
   ])
 
   const prioritizedWorkcases = await getJson('/api/objects/workcase?priority=P1') as {
@@ -296,7 +297,12 @@ test('preserves the shared commit DTO across current API consumers', async () =>
   const closedWorkcases = await getJson('/api/objects/workcase?progress=closed') as {
     data: { items: Array<Record<string, unknown>> }
   }
-  assert.deepEqual(closedWorkcases.data.items.map((item) => item.object_id), ['workcase-0002'])
+  assert.deepEqual(closedWorkcases.data.items.map((item) => item.object_id), [])
+
+  const discardedWorkcases = await getJson('/api/objects/workcase?progress=discarded') as {
+    data: { items: Array<Record<string, unknown>> }
+  }
+  assert.deepEqual(discardedWorkcases.data.items.map((item) => item.object_id), ['workcase-0002'])
 
   const workcaseDetail = await getJson('/api/objects/workcase/workcase-0001') as {
     summary: Record<string, unknown>

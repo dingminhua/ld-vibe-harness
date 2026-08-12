@@ -38,6 +38,14 @@ interface ProgressOption {
   count: number
 }
 
+type WorkCaseListGroup = (typeof WORKCASE_PROGRESS_GROUP_ORDER)[number] | 'discarded'
+
+function getWorkCaseListGroup(item: ListedObject): WorkCaseListGroup | undefined {
+  if (item.progress_group === 'closed' && item.closure_outcome === 'cancelled') return 'discarded'
+  if (typeof item.progress_group !== 'string') return undefined
+  return item.progress_group === 'termination_cleanup' ? 'closed' : item.progress_group as WorkCaseListGroup
+}
+
 const SPARK_PRIORITY_ORDER = ['P0', 'P1', 'P2', 'P3']
 
 const STATUS_PRIORITY: Record<string, number> = {
@@ -150,12 +158,11 @@ function getPriorityOptions(items: ListedObject[]): StatusOption[] {
 function getWorkCaseProgressOptions(items: ListedObject[]): ProgressOption[] {
   const counts = new Map<string, number>()
   for (const item of items) {
-    if (typeof item.progress_group !== 'string') continue
-    const group = item.progress_group === 'termination_cleanup' ? 'closed' : item.progress_group
+    const group = getWorkCaseListGroup(item)
+    if (!group) continue
     counts.set(group, (counts.get(group) ?? 0) + 1)
   }
-  return WORKCASE_PROGRESS_GROUP_ORDER
-    .filter((group) => group !== 'termination_cleanup')
+  return [...WORKCASE_PROGRESS_GROUP_ORDER.filter((group) => group !== 'termination_cleanup'), 'discarded']
     .map((group) => ({ group, count: counts.get(group) ?? 0 }))
 }
 
@@ -189,7 +196,7 @@ router.get('/:type', async (req: Request, res: Response): Promise<void> => {
   const progress = type === 'workcase' && typeof req.query.progress === 'string'
     ? req.query.progress
     : undefined
-  if (progress && !isWorkCaseProgressGroup(progress)) {
+  if (progress && !isWorkCaseProgressGroup(progress) && progress !== 'discarded') {
     res.status(400).json({ ok: false, error: `Invalid WorkCase progress group: ${progress}` })
     return
   }
@@ -217,7 +224,7 @@ router.get('/:type', async (req: Request, res: Response): Promise<void> => {
   const allItems = getResultItems(result)
   const items = type === 'workcase'
     ? allItems.filter((item) => (
-      !progress || (item.progress_group === 'termination_cleanup' ? 'closed' : item.progress_group) === progress
+      !progress || getWorkCaseListGroup(item) === progress
     ) && (!priority || item.priority === priority))
     : type === 'spark'
       ? allItems.filter((item) => matchesSparkListFilter(item, status, priority))
@@ -234,7 +241,7 @@ router.get('/:type', async (req: Request, res: Response): Promise<void> => {
     result.data.statusTotal = statusItems.length
     if (type === 'spark' || type === 'workcase') {
       const groupItems = type === 'workcase' && progress
-        ? allItems.filter((item) => (item.progress_group === 'termination_cleanup' ? 'closed' : item.progress_group) === progress)
+        ? allItems.filter((item) => getWorkCaseListGroup(item) === progress)
         : status ? allItems.filter((item) => item.status === status) : allItems
       result.data.priorityOptions = getPriorityOptions(groupItems)
     }

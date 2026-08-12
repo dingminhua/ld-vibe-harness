@@ -16,6 +16,7 @@ export default function StatusBadge({ status, statusLabel, objectType = '', size
   const color = (objectType === 'spark' && status === 'discarded')
     || (objectType === 'adr' && status === 'retired')
     || (objectType === 'pitfall' && status === 'discarded')
+    || (objectType === 'workcase' && status === 'discarded')
     ? '#6b7280'
     : getStatusColor(status);
   const sizeClasses = size === 'xs'

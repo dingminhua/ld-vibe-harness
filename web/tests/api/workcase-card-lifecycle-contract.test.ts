@@ -192,6 +192,7 @@ test('termination cleanup is presented with closed cards and only its terminal r
 });
 
 test('terminal status labels remain type-specific across fact types', () => {
+  assert.equal(getObjectStatusLocale('workcase', 'discarded', 'zh'), '已废弃');
   assert.equal(getObjectStatusLocale('adr', 'retired', 'zh'), '已废弃');
   assert.equal(getObjectStatusLocale('pitfall', 'draft', 'zh'), '待确认');
   assert.equal(getObjectStatusLocale('pitfall', 'active', 'zh'), '活跃');
@@ -631,10 +632,11 @@ test('closure confirmation and closed public Card projections carry goal but no 
   assert.equal('executionItemsActive' in closure, false);
   assert.equal('contributedTo' in closure, false);
   assert.deepEqual(Object.keys(closed).sort(), [
-    'closureTerminal', 'current_snapshot_projection', 'fact_type_key', 'goal', 'object_id',
+    'closureTerminal', 'closure_outcome', 'current_snapshot_projection', 'fact_type_key', 'goal', 'object_id',
     'progress_group', 'status', 'title', 'updated_at',
   ]);
   assert.equal(closed.goal, '进入已关闭 Card 正文的目标');
+  assert.equal(closed.closure_outcome, 'completed');
   assert.equal('contributedTo' in closed, false);
 });
 

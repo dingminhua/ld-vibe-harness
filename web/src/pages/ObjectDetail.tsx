@@ -513,9 +513,9 @@ export function getObjectHeaderStatus(
   source: Record<string, unknown>,
 ): string | undefined {
   if (objectType !== 'workcase') return status;
-  return isResolvedWorkCasePresentationProjection(source.current_snapshot_projection)
-    ? source.current_snapshot_projection.progress_group
-    : 'unknown';
+  if (!isResolvedWorkCasePresentationProjection(source.current_snapshot_projection)) return 'unknown';
+  if (source.current_snapshot_projection.progress_group === 'closed' && source.closure_outcome === 'cancelled') return 'discarded';
+  return source.current_snapshot_projection.progress_group;
 }
 
 export function ObjectIdentityHeader({

@@ -91,6 +91,7 @@ export interface ObjectItem {
   independentSubagentUnavailable?: boolean;
   execution_approval?: WorkCaseExecutionApproval | unknown;
   termination?: WorkCaseTermination | unknown;
+  closure_outcome?: 'completed' | 'partial' | 'not-achieved' | 'cancelled';
   /** closure_confirmation Card 的“后续贡献”区；仅实际声明 contributed-to 时出现 */
   contributedTo?: WorkCaseContributionTarget[];
   /** closure_confirmation Card 的关闭判断输入区；仅 closure_proposal 结构合法时出现 */
@@ -151,6 +152,7 @@ export interface FactCardAssociation {
   title_en?: string;
   title_zh?: string;
   status?: string;
+  closureOutcome?: 'completed' | 'partial' | 'not-achieved' | 'cancelled';
   progressGroup?: WorkCaseProgressGroup;
   available: boolean;
 }
@@ -177,6 +179,9 @@ export interface WorkCaseProgressOption {
   group: string;
   count: number;
 }
+
+/** Web-only list classification; `discarded` is derived from a closed cancelled WorkCase. */
+export type WorkCaseListGroup = WorkCaseProgressGroup | 'discarded';
 
 export type FactCoverageStatus = 'complete' | 'partial' | 'unavailable' | 'type_not_integrated';
 

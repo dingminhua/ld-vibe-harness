@@ -14,7 +14,7 @@ import ObjectUpdatedMeta from '@/components/ObjectUpdatedMeta';
 import SummaryText from '@/components/SummaryText';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
 import { WorkCaseCriteriaList, WORKCASE_CRITERIA_SURFACE_CLASS } from '@/components/WorkCaseCriteriaList';
-import { fetchObjectDetail, fetchObjects, type FactCardAssociation, type FactCoverageStatus, type FactListProblem, type ObjectDetail, type ObjectItem, type ObjectStatusOption, type WorkCaseClosureProposalCard, type WorkCaseClosureTerminalCard, type WorkCaseContributionTarget, type WorkCaseExecutionItem, type WorkCaseProgressOption, type WorkCaseSparkSuggestionCard } from '@/utils/api';
+import { fetchObjectDetail, fetchObjects, type FactCardAssociation, type FactCoverageStatus, type FactListProblem, type ObjectDetail, type ObjectItem, type ObjectStatusOption, type WorkCaseClosureProposalCard, type WorkCaseClosureTerminalCard, type WorkCaseContributionTarget, type WorkCaseExecutionItem, type WorkCaseListGroup, type WorkCaseProgressOption, type WorkCaseSparkSuggestionCard } from '@/utils/api';
 import { useI18n } from '@/i18n/context';
 import { getFieldLabel, getFieldValueLabel, getLocalizedObjectTitle, getObjectStatusLocale, getTypeLabel } from '@/i18n/locales';
 import { CATEGORY_COLORS } from '@/utils/categoryColors';
@@ -1376,12 +1376,20 @@ function FactAssociationsCardContent({ associations }: { associations?: FactCard
 }
 
 function isClosedWorkCaseAssociation(association: FactCardAssociation): boolean {
-  return association.target?.factTypeKey === 'workcase' && association.status === 'closed';
+  return association.target?.factTypeKey === 'workcase'
+    && association.status === 'closed'
+    && association.closureOutcome !== 'cancelled';
+}
+
+function isDiscardedWorkCaseAssociation(association: FactCardAssociation): boolean {
+  return association.target?.factTypeKey === 'workcase'
+    && association.status === 'closed'
+    && association.closureOutcome === 'cancelled';
 }
 
 function isHiddenTerminalAssociation(association: FactCardAssociation): boolean {
   return ['implemented', 'discarded', 'retired', 'deprecated'].includes(association.status ?? '')
-    || (association.status === 'closed' && !isClosedWorkCaseAssociation(association));
+    || (association.status === 'closed' && !isClosedWorkCaseAssociation(association) && !isDiscardedWorkCaseAssociation(association));
 }
 
 function dedupeFactCardAssociations(associations: FactCardAssociation[]): FactCardAssociation[] {
@@ -1412,6 +1420,7 @@ function FactAssociationCardRow({ association, locale, unavailableLabel }: { ass
   const associationStateTooltip = associationState === null ? null : {
     pending: t('objectList.associationState.pending'),
     closed: t('objectList.associationState.closed'),
+    discarded: t('objectList.associationState.discarded'),
     progressing: t('objectList.associationState.progressing'),
     active: t('objectList.associationState.active'),
   }[associationState];
@@ -1439,12 +1448,13 @@ function FactAssociationCardRow({ association, locale, unavailableLabel }: { ass
   );
 }
 
-type FactAssociationState = 'pending' | 'closed' | 'progressing' | 'active';
+type FactAssociationState = 'pending' | 'closed' | 'discarded' | 'progressing' | 'active';
 
 function getFactAssociationState(association: FactCardAssociation): FactAssociationState | null {
   if (!association.available || !association.status) return null;
   if (association.target?.factTypeKey === 'spark' && association.status === 'open') return 'pending';
   if (association.target?.factTypeKey === 'workcase') {
+    if (isDiscardedWorkCaseAssociation(association)) return 'discarded';
     if (association.status === 'closed') return 'closed';
     if (association.progressGroup === 'plan_confirmation' || association.progressGroup === 'closure_confirmation') return 'pending';
     if (association.progressGroup === 'progressing') return 'progressing';
@@ -1465,6 +1475,7 @@ function FactAssociationStateIcon({ state, tooltip }: { state: FactAssociationSt
   }
   const presentation = {
     closed: { Icon: CircleCheck, className: 'text-emerald-500 dark:text-emerald-400' },
+    discarded: { Icon: CircleMinus, className: 'text-slate-500 dark:text-slate-400' },
     progressing: { Icon: CirclePlay, className: 'text-sky-500 dark:text-sky-400' },
     active: { Icon: Activity, className: 'text-ldvh-accent' },
   }[state];
@@ -1580,8 +1591,8 @@ export default function ObjectList() {
   const statusParam = searchParams.get('status');
   const activeStatus = currentType === 'workcase' ? null : getEffectiveListStatus(currentType, statusParam);
   const progressParam = searchParams.get('progress');
-  const activeProgressGroup = currentType === 'workcase' && isWorkCaseProgressGroup(progressParam)
-    ? progressParam
+  const activeProgressGroup = currentType === 'workcase' && (isWorkCaseProgressGroup(progressParam) || progressParam === 'discarded')
+    ? progressParam as WorkCaseListGroup
     : null;
   const priorityParam = searchParams.get('priority');
   const sortParam = searchParams.get('sort');
@@ -1594,7 +1605,7 @@ export default function ObjectList() {
     : null;
   const isPriorityApplicable = currentType === 'spark'
     ? activeStatus === 'open' || activeStatus === null
-    : currentType === 'workcase' && activeProgressGroup !== 'closed';
+    : currentType === 'workcase' && activeProgressGroup !== 'closed' && activeProgressGroup !== 'discarded';
 
   useEffect(() => {
     const removesLegacyCategory = currentType === 'spark' && searchParams.has('category');
@@ -1648,12 +1659,12 @@ export default function ObjectList() {
     setSearchParams(nextParams);
   };
 
-  const handleProgressGroupChange = (group: WorkCaseProgressGroup | null) => {
+  const handleProgressGroupChange = (group: WorkCaseListGroup | null) => {
     const nextParams = new URLSearchParams(searchParams);
     nextParams.delete('status');
     if (group) nextParams.set('progress', group);
     else nextParams.delete('progress');
-    if (group === 'closed') nextParams.delete('priority');
+    if (group === 'closed' || group === 'discarded') nextParams.delete('priority');
     setSearchParams(nextParams);
   };
 
@@ -1756,6 +1767,7 @@ export default function ObjectList() {
         );
       }
       if (displayProgressGroup === 'closed') {
+        const displayStatus = obj.closure_outcome === 'cancelled' ? 'discarded' : 'closed';
         return (
           <ObjectCardFrame
             key={obj.id}
@@ -1763,7 +1775,7 @@ export default function ObjectList() {
             locale={locale}
             onOpen={openObject}
             showNonActiveReason={false}
-            displayStatus={displayProgressGroup}
+            displayStatus={displayStatus}
           >
             <WorkCaseClosedContent goal={obj.goal} terminal={obj.closureTerminal} termination={obj.termination} />
           </ObjectCardFrame>

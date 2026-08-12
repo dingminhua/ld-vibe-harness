@@ -157,6 +157,9 @@ async function projectFactCardAssociations(item: LocalFactItem, scope: LocalFact
       available: true,
       title: source.title,
       ...copyPresentFields(source, ['title_en', 'title_zh', 'status']),
+      ...(target.factTypeKey === 'workcase' && typeof source.closure_outcome === 'string'
+        ? { closureOutcome: source.closure_outcome }
+        : {}),
       ...(workCasePresentation?.resolution === 'resolved'
         ? { progressGroup: workCasePresentation.progress_group }
         : {}),
@@ -430,7 +433,7 @@ function projectCurrentWorkCaseCardShape(
     const contributedTo = projectContributedToTargets(fact.relations)
     if (contributedTo.length > 0) projected.contributedTo = contributedTo
   } else if (progress?.progress_group === 'closed') {
-    Object.assign(projected, copyPresentFields(fact, ['goal', 'termination']))
+    Object.assign(projected, copyPresentFields(fact, ['goal', 'termination', 'closure_outcome']))
     const closureTerminal = projectClosedDisposition(fact)
     if (closureTerminal) projected.closureTerminal = closureTerminal
     const contributedTo = projectContributedToTargets(fact.relations)

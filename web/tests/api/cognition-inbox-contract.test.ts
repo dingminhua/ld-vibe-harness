@@ -332,8 +332,10 @@ test('recent activity accepts only explicit windows and groups fact change-log e
       assert.match(String(item.occurredAt), RFC3339)
       if (item.signature !== undefined) {
         const signature = item.signature as Record<string, unknown>
-        assert.equal(typeof signature.modelName, 'string')
-        assert.equal(typeof signature.agentRuntimeName, 'string')
+        const presentValues = [signature.productName, signature.modelName, signature.agentRuntimeName]
+          .filter((value) => value !== undefined)
+        assert.ok(presentValues.length > 0)
+        for (const value of presentValues) assert.equal(typeof value, 'string')
       }
       assert.ok(Number(item.activityCount) >= 1)
       assert.equal(typeof item.relativeTime, 'string')
@@ -396,6 +398,23 @@ test('recent activity accepts current change-log signatures and ignores legacy f
   const view = buildRecentActivityView(builds)
   assert.deepEqual(view.modelUsage, [{ value: 'gpt-5.6-luna', count: 1 }])
   assert.deepEqual(view.environmentUsage, [{ value: 'Cindy(codex-cli)', count: 1 }])
+})
+
+test('recent activity retains a current partial signature without inventing a model name', async () => {
+  const { buildFactActivityItems, buildRecentActivityView } = await import('../../api/routes/cognition.ts')
+  const raw = {
+    object_id: 'spark-0003', title: 'Partial signature', status: 'open',
+    change_log: [{
+      signature: { product_name: 'Cindy', model_name: null, agent_runtime_name: 'Codex' },
+      at: '2026-08-01T00:00:00Z', summary: 'Created',
+    }],
+  }
+  const builds = buildFactActivityItems(raw, 'spark', Date.parse('2026-07-31T00:00:00Z'), Date.parse('2026-08-02T00:00:00Z'))
+  assert.deepEqual(builds[0]?.signature, { productName: 'Cindy', agentRuntimeName: 'Codex' })
+
+  const view = buildRecentActivityView(builds)
+  assert.deepEqual(view.modelUsage, [])
+  assert.deepEqual(view.environmentUsage, [{ value: 'Cindy(Codex)', count: 1 }])
 })
 
 test('Spark health reuses the newest complete change-log signature for its card-equivalent attribution', async () => {
