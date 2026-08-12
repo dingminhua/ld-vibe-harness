@@ -58,9 +58,6 @@ def _input(contract: CommitContractProjection, **changes: object) -> CommitValid
         "source_fingerprint": contract.content_fingerprint,
     }
     values.update(changes)
-    message = values.get("message")
-    if isinstance(message, str):
-        values["message"] = _modernize_signature(message)
     return CommitValidationInput(**values)  # type: ignore[arg-type]
 
 
@@ -72,22 +69,6 @@ def _signed(message: str) -> str:
     if "\n关键变更:" not in message:
         message += "\n\n关键变更:\n- 覆盖当前测试变化"
     return message + "\n\nLDVH-Product-Name: Cindy\nLDVH-Model-Name: gpt-5.6-luna\nLDVH-Agent-Runtime-Name: codex-cli"
-
-
-def _modernize_signature(message: str) -> str:
-    """Keep broad commit tests focused on their subject, not retired fixtures."""
-
-    cindy_old = "Session-ID: test-session\nModel-ID: gpt-5.6-luna\nWorkbench-Name: Cindy"
-    cindy_new = "LDVH-Product-Name: Cindy\nLDVH-Model-Name: gpt-5.6-luna\nLDVH-Agent-Runtime-Name: codex-cli"
-    trae_old = "Session-ID: trae-commit-session\nModel-ID: claude-4.1\nWorkbench-Name: Trae"
-    trae_new = "LDVH-Product-Name: TraeCode\nLDVH-Model-Name: claude-4.1"
-    test_old = "Session-ID: test-session\nModel-ID: test-agent\nWorkbench-Name: Test"
-    test_new = "LDVH-Product-Name: Test\nLDVH-Model-Name: test-agent\nLDVH-Agent-Runtime-Name: test-runtime"
-    return (
-        message.replace(cindy_old, cindy_new)
-        .replace(trae_old, trae_new)
-        .replace(test_old, test_new)
-    )
 
 
 def test_new_spec_without_human_gate_trailer_fails(contract: CommitContractProjection) -> None:
@@ -107,7 +88,7 @@ def test_new_spec_with_empty_human_gate_trailer_fails(contract: CommitContractPr
     message = (
         "docs(specs): 新增规范文档\n\n"
         "关键变更:\n- 新增独立 spec 文档\n\n"
-        "Session-ID: test-session\nModel-ID: gpt-5.6-luna\nWorkbench-Name: Cindy\n"
+        "LDVH-Product-Name: Cindy\nLDVH-Model-Name: gpt-5.6-luna\nLDVH-Agent-Runtime-Name: codex-cli\n"
         "Human-Gate: "
     )
     result = validate_commit(
@@ -127,7 +108,7 @@ def test_new_spec_with_human_gate_trailer_passes(contract: CommitContractProject
     message = (
         "docs(specs): 新增规范文档\n\n"
         "关键变更:\n- 新增独立 spec 文档\n\n"
-        "Session-ID: test-session\nModel-ID: gpt-5.6-luna\nWorkbench-Name: Cindy\n"
+        "LDVH-Product-Name: Cindy\nLDVH-Model-Name: gpt-5.6-luna\nLDVH-Agent-Runtime-Name: codex-cli\n"
         "Human-Gate: authorized-by-human-20260806"
     )
     result = validate_commit(
@@ -208,7 +189,7 @@ def test_activate_existing_spec_with_human_gate_trailer_passes(contract: CommitC
     message = (
         "docs(specs): 激活独立规范文档\n\n"
         "关键变更:\n- 将 status 转为 active\n\n"
-        "Session-ID: test-session\nModel-ID: test-agent\nWorkbench-Name: Test\n"
+        "LDVH-Product-Name: Test\nLDVH-Model-Name: test-agent\nLDVH-Agent-Runtime-Name: test-runtime\n"
         "Human-Gate: authorized-by-human-20260806"
     )
     result = validate_commit(
@@ -328,7 +309,7 @@ def test_every_commit_requires_key_changes_list(contract: CommitContractProjecti
         _input(
             contract,
             message=(
-                "docs: 更新说明\n\nSession-ID: test-session\nModel-ID: gpt-5.6-luna\nWorkbench-Name: Cindy"
+                "docs: 更新说明\n\nLDVH-Product-Name: Cindy\nLDVH-Model-Name: gpt-5.6-luna\nLDVH-Agent-Runtime-Name: codex-cli"
             ),
         ),
     )
@@ -369,9 +350,9 @@ def test_breaking_without_body_reports_all_minimum_structure_failures(
             contract,
             message=(
                 "feat!: 调整公开契约\n\n"
-                "Session-ID: test-session\n"
-                "Model-ID: gpt-5.6-luna\n"
-                "Workbench-Name: Cindy"
+                "LDVH-Product-Name: Cindy\n"
+                "LDVH-Model-Name: gpt-5.6-luna\n"
+                "LDVH-Agent-Runtime-Name: codex-cli"
             ),
         ),
     )
@@ -416,7 +397,7 @@ def test_body_heading_and_list_boundaries_fail_closed(
 def test_body_after_trailers_is_not_accepted_as_minimum_body(contract: CommitContractProjection) -> None:
     message = (
         "docs: 错误放置正文\n\n"
-        "Session-ID: test-session\nModel-ID: gpt-5.6-luna\nWorkbench-Name: Cindy\n\n"
+        "LDVH-Product-Name: Cindy\nLDVH-Model-Name: gpt-5.6-luna\nLDVH-Agent-Runtime-Name: codex-cli\n\n"
         "关键变更:\n- trailers 之后的正文无效"
     )
 
@@ -533,7 +514,8 @@ def test_new_signature_footer_tripwires_reject_alias_and_os_suffix(
             message=(
                 "docs(specs): 明确提交契约\n\n"
                 "关键变更:\n- 明确测试中的提交契约\n\n"
-                "Session-ID: test-session\nModel-ID: gpt-5.6-luna\nWorkbench-Name: Cindy (macOS)"
+                "LDVH-Product-Name: Cindy\nLDVH-Model-Name: gpt-5.6-luna [1m]\n"
+                "LDVH-Agent-Runtime-Name: codex-cli"
             ),
         ),
     )
@@ -857,9 +839,9 @@ def test_new_shape_fact_trace_passes_with_same_commit_environment(
         "docs(specs): 新形状提交\n\n"
         "关键变更:\n"
         "- 覆盖新形状受控写会话\n\n"
-        "Session-ID: test-session\n"
-        "Model-ID: gpt-5.6-luna\n"
-        "Workbench-Name: Cindy"
+        "LDVH-Product-Name: Cindy\n"
+        "LDVH-Model-Name: gpt-5.6-luna\n"
+        "LDVH-Agent-Runtime-Name: codex-cli"
     )
 
     result = validate_commit(
@@ -887,9 +869,9 @@ def test_workbuddy_fact_trace_passes_when_trae_executes_commit(
             message=(
                 "docs(specs): 跨环境提交\n\n"
                 "关键变更:\n- 保留写入流水并由 Trae 提交\n\n"
-                "Session-ID: trae-commit-session\n"
-                "Model-ID: claude-4.1\n"
-                "Workbench-Name: Trae"
+                "LDVH-Product-Name: TraeCode\n"
+                "LDVH-Model-Name: claude-4.1\n"
+                "LDVH-Agent-Runtime-Name: claude-agent-sdk"
             ),
             fact_candidates=(_fact_candidate(data=_NEW_SHAPE_SPARK, head_exists=False),),
             fact_schemas=(_spark_schema_new_signature(),),
@@ -908,9 +890,9 @@ def test_new_footer_does_not_bind_legacy_shape_entries(
         "docs(specs): 混合形状提交\n\n"
         "关键变更:\n"
         "- 覆盖混合形状流水\n\n"
-        "Session-ID: test-session\n"
-        "Model-ID: gpt-5.6-luna\n"
-        "Workbench-Name: Cindy"
+        "LDVH-Product-Name: Cindy\n"
+        "LDVH-Model-Name: gpt-5.6-luna\n"
+        "LDVH-Agent-Runtime-Name: codex-cli"
     )
 
     result = validate_commit(
@@ -1248,9 +1230,9 @@ def test_new_fact_multiple_writer_sessions_use_one_trae_commit_session(
         "docs(specs): 多会话提交\n\n"
         "关键变更:\n"
         "- 保留多个受控写会话并由 Trae 提交\n\n"
-        "Session-ID: trae-commit-session\n"
-        "Model-ID: claude-4.1\n"
-        "Workbench-Name: Trae"
+        "LDVH-Product-Name: TraeCode\n"
+        "LDVH-Model-Name: claude-4.1\n"
+        "LDVH-Agent-Runtime-Name: claude-agent-sdk"
     )
 
     result = validate_commit(
@@ -1321,9 +1303,9 @@ def test_new_fact_multiple_writers_use_one_trae_commit_signature(
         "docs(specs): 多执行者提交\n\n"
         "关键变更:\n"
         "- 保留多个执行者流水并由 Trae 提交\n\n"
-        "Session-ID: trae-commit-session\n"
-        "Model-ID: claude-4.1\n"
-        "Workbench-Name: Trae"
+        "LDVH-Product-Name: TraeCode\n"
+        "LDVH-Model-Name: claude-4.1\n"
+        "LDVH-Agent-Runtime-Name: claude-agent-sdk"
     )
 
     result = validate_commit(
@@ -1361,9 +1343,9 @@ def test_new_fact_writer_environment_need_not_be_declared_by_commit_footer(
     message = (
         "docs(specs): 未声明执行者\n\n"
         "关键变更:\n- 保留写入环境并由 Trae 提交\n\n"
-        "Session-ID: trae-commit-session\n"
-        "Model-ID: claude-4.1\n"
-        "Workbench-Name: Trae"
+        "LDVH-Product-Name: TraeCode\n"
+        "LDVH-Model-Name: claude-4.1\n"
+        "LDVH-Agent-Runtime-Name: claude-agent-sdk"
     )
 
     result = validate_commit(
@@ -1403,9 +1385,9 @@ def test_legacy_migration_multiple_writers_uses_one_commit_signature(
         "docs(specs): 多执行者迁移提交\n\n"
         "关键变更:\n"
         "- 迁移多个写入者的遗留流水并由 Trae 提交\n\n"
-        "Session-ID: trae-commit-session\n"
-        "Model-ID: claude-4.1\n"
-        "Workbench-Name: Trae"
+        "LDVH-Product-Name: TraeCode\n"
+        "LDVH-Model-Name: claude-4.1\n"
+        "LDVH-Agent-Runtime-Name: claude-agent-sdk"
     )
 
     result = validate_commit(
@@ -1533,7 +1515,7 @@ def test_platform_affected_integration_through_validate_commit(
     message = (
         "docs(specs): 修改文件系统抽象层\n\n"
         "关键变更:\n- 调整锁实现\n\n"
-        "Session-ID: test-session\nModel-ID: test-agent\nWorkbench-Name: Test"
+        "LDVH-Product-Name: Test\nLDVH-Model-Name: test-agent\nLDVH-Agent-Runtime-Name: test-runtime"
     )
     result = validate_commit(
         contract,
@@ -1550,7 +1532,7 @@ def test_platform_affected_integration_with_trailers_passes(
     message = (
         "docs(specs): 修改文件系统抽象层\n\n"
         "关键变更:\n- 调整锁实现\n\n"
-        "Session-ID: test-session\nModel-ID: test-agent\nWorkbench-Name: Test\n"
+        "LDVH-Product-Name: Test\nLDVH-Model-Name: test-agent\nLDVH-Agent-Runtime-Name: test-runtime\n"
         "Platform-Affected: macos\nPlatform-Verified: macos"
     )
     result = validate_commit(
@@ -1567,7 +1549,7 @@ def test_platform_affected_integration_non_platform_path_passes(
     message = (
         "docs(specs): 改规范\n\n"
         "关键变更:\n- 修改说明\n\n"
-        "Session-ID: test-session\nModel-ID: test-agent\nWorkbench-Name: Test"
+        "LDVH-Product-Name: Test\nLDVH-Model-Name: test-agent\nLDVH-Agent-Runtime-Name: test-runtime"
     )
     result = validate_commit(
         contract,
