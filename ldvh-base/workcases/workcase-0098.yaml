@@ -1,7 +1,5 @@
+status: closed
 title: WorkCase Gate 1 后连续执行与机械 Stop gate 落地
-status: open
-summary: 完整关闭提案已形成，等待 Human Gate 2；Stop gate 应在此安全出口放行。
-priority: P1
 goal: 让 WorkCase 在 Gate 1 批准后持续消费 Controller-owned 控制步骤，仅在 Gate 1、Gate 2、真实 blocked、unresolved 或 closed 时允许交还，并在当前 Claude Code/Cindy 宿主中以 Stop hook 机械纠正非法停止。
 scope: 覆盖 specs/09、21、34 与必要附件；派生 handoff 判定、只读 Helper 操作、context recovery/Web 合同；项目级 Stop hook 与精确绑定；Python/Web/hook/真实会话验证；处置 workcase-0097 与 spark-0073 证据；本地受控 commit。排除 push、PR、远端发布、Code 自动选 item、绕过独立结果复核、增加第三 Human Gate或第二持久状态机。
 success_criterion_definitions:
@@ -17,145 +15,27 @@ success_criterion_definitions:
   statement: 真实 WorkCase 验证在 Gate1 后连续通过 item、结果投影、独立复核和关闭提案，仅在 gate2_waiting 停止；workcase-0097 与 spark-0073 据实收口，事实完整性通过。
 - criterion_id: criterion-6
   statement: 目标回归、全 Python/Web 测试、ldvh check、check-fact-integrity、git diff --check 与受控本地 commit 全部通过；不执行 push。
-phase: human_closure_confirming
-plan_version: 1
-work_items:
-- item_id: item-1
-  goal: 修订规则源和接入边界，定义派生 handoff verdict 与受限宿主 Stop gate。
-  expected_result: specs/09、21、34、附件与 Skill 一致且通过规则契约测试。
-  status: completed
-  approach_summary: 先规范后 Code，保持状态机严格边和两 Gate。
-  result_summary: 已修订 specs/09、21、34、09.Att.01 与 Skill，定义 handoff verdict、安全出口、受限 Stop gate、精确绑定、fail-open 和严格结果链边界。
-- item_id: item-2
-  goal: 实现统一 handoff 判定与只读 Helper 检查入口并同步 Web/context recovery。
-  expected_result: 所有读取面共享同一投影语义且无事实副作用。
-  status: completed
-  approach_summary: 复用 workcase_presentation 与 fact-object read 路径。
-  depends_on:
-  - item-1
-  result_summary: 已实现 workcase-current-snapshot-presentation/2、只读 check-workcase-handoff 操作、context recovery/Web 合同同步；实时对 workcase-0097 返回 controller_owned + form_complete_result_projection。
-- item_id: item-3
-  goal: 实现项目级 Stop hook、精确会话绑定和 fail-open/反死循环行为。
-  expected_result: 合成 hook 输入正反测试与配置 schema 验证通过。
-  status: completed
-  approach_summary: 合并 .claude/settings.json，不覆盖现有 xdtMaker。
-  depends_on:
-  - item-2
-  result_summary: 已实现项目 Stop hook 与 settings 合并；无绑定/异常/stop_hook_active fail-open，精确绑定 workcase-0097 的 pipe-test 返回 decision=block。
-- item_id: item-4
-  goal: 完成 Python/Web/Hook 回归和独立只读结果复核。
-  expected_result: 目标与全量测试通过，Reviewer feedback 全部处置。
-  status: completed
-  approach_summary: 先目标测试，再全量回归，独立 Reviewer 检查规则与误阻塞风险。
-  depends_on:
-  - item-3
-  result_summary: 目标 Python 121 passed；全 Python 1641 passed/17 skipped（初次仅缺 js-yaml，安装 Web 依赖后 YAML 测试通过）；Web typecheck 通过，目标 64 passed，全 Web API 187 passed；独立 Orca Reviewer 已派发，等待结果。
-- item_id: item-5
-  goal: 真实触发 Stop gate 并收敛 workcase-0097、spark-0073 和本 WorkCase 到 Gate2。
-  expected_result: 仅 Gate2 停止的真实证据、完整事实回读和受控本地提交。
-  status: completed
-  approach_summary: 按 fresh projection 连续执行，不跳过 independent_reviewing/closure_preparing。
-  depends_on:
-  - item-4
-  result_summary: 真实 Stop gate 已触发并阻止 executing 非法交还；对 workcase-0097 的 controller_checking 返回 block/form_complete_result_projection，推进至 gate2_waiting 后返回 continue。独立 Orca Reviewer 的唯一阻断项（Stop 资产未跟踪）已修复，附带 ID 校验与交付测试；Python 1644 passed/17 skipped、Web 187 passed、TypeScript check、事实完整性 212 complete 和 diff check 通过。
-creation_reviews:
-- reviewer: plan-explore-and-design-review
-  reviewed_at: '2026-08-12T11:40:00Z'
-  subject_version: 1
-  scope: Architecture, rules, state-machine preservation, hook binding, fail-open, tests and delivery risks.
-  conclusion: pass_with_followups
-  feedback:
-  - 必须保持状态机严格结果链，不增加 controller_checking→Gate2 捷径。
-  - Stop hook 无精确绑定或 Helper 异常时必须 fail-open，避免阻塞普通任务。
-  controller_resolution: 已将两条 feedback 分别落实到 scope、criterion-3、item-3 和禁止动作：保留严格结果链；精确绑定失败或 Helper 异常时 fail-open。
-  covered_quality_gate_ids:
-  - independent-result-review
-execution_authorization:
-  authorized_actions:
-  - action_id: authorization-1
-    summary: 修订 LDVH 规则、附件和 Skill。
-    target_scope: specs/09、21、34、必要附件及 skill/SKILL.md。
-    effect_scope: 当前分支规则源。
-    risk_summary: 规则不一致可能削弱两 Gate 或环境边界。
-    rollback_summary: 恢复变更前文件并重跑规则测试。
-    rule_refs:
-    - specs/00-理念与构成.md
-    - specs/21-WorkCase-工作项.md
-    - specs/34-WorkCase获批计划执行行动模板.md
-  - action_id: authorization-2
-    summary: 实现 handoff verdict、Helper、context recovery 与 Web 合同。
-    target_scope: code/ldvh、code/tests、web/shared、web/tests。
-    effect_scope: 只读交还判定和契约。
-    risk_summary: 误判可能导致错误 Stop 或误阻塞。
-    rollback_summary: 撤销 Code 并重新生成旧合同。
-    rule_refs:
-    - specs/21-WorkCase-工作项.md
-  - action_id: authorization-3
-    summary: 增加项目 Stop hook 和配置。
-    target_scope: .claude/hooks 与 .claude/settings.json。
-    effect_scope: 当前项目 Claude Code/Cindy 会话。
-    risk_summary: 配置错误可能阻塞或不触发。
-    rollback_summary: 移除新增 hook 条目和脚本。
-    rule_refs:
-    - specs/09-环境接入规范.md
-  - action_id: authorization-4
-    summary: 运行测试、真实触发验证和事实完整性检查。
-    target_scope: 当前 worktree、临时 hook 输入与 LDVH 事实库。
-    effect_scope: 测试产物和受控事实写回。
-    risk_summary: 真实触发可能需要 /hooks 或重启。
-    rollback_summary: 清理临时绑定和测试产物。
-    rule_refs:
-    - specs/34-WorkCase获批计划执行行动模板.md
-  - action_id: authorization-5
-    summary: 委派独立只读审核并处置反馈。
-    target_scope: 本 WorkCase 结果、规则、代码和测试证据。
-    effect_scope: 只读审核与受控反馈写回。
-    risk_summary: 审核能力边界必须如实记录。
-    rollback_summary: 不自动接受审核结论。
-    rule_refs:
-    - specs/21-WorkCase-工作项.md
-  - action_id: authorization-6
-    summary: 更新 workcase-0097、spark-0073、本 WorkCase 并创建本地 commit。
-    target_scope: 精确事实对象、当前 diff 与本地 Git history。
-    effect_scope: 当前分支本地事实和提交。
-    risk_summary: 事实或提交范围可能夹带无关变化。
-    rollback_summary: 提交前停止并修正 Index；不 push。
-    rule_refs:
-    - specs/30-Git提交行动模板.md
-    - specs/32-事实对象生命周期变更与承接处置行动模板.md
-  - action_id: authorization-7
-    summary: 执行只读结果审核。
-    target_scope: 本 WorkCase 完整结果投影。
-    effect_scope: 只读审核。
-    risk_summary: 审核结论仅为输入。
-    rollback_summary: 不自动接受审核结论。
-    rule_refs:
-    - specs/21-WorkCase-工作项.md
-  quality_gates:
-  - gate_id: independent-result-review
-    reviewer_mode: independent-read-only
-    delegation_action_id: authorization-5
-    result_review_action_id: authorization-7
-  action_ceiling: 仅当前分支中本 WorkCase 明确列出的规则、Code、Web、hook、测试、事实和本地 commit；不 push、PR、发布或修改无关项目。
-  allowed_adjustments: 允许在不改变两 Gate、严格结果链、精确绑定和 fail-open 的前提下调整内部模块与测试位置。
-  verification_and_rollback: 每个事实写回后 CAS、精确回读和完整性检查；Code 变更跑目标/全量测试；hook pipe-test 和真实触发；失败时撤销对应 item 变更。
-  out_of_bounds_handling: 取消超界工作项并继续结果链，不新增 Human Gate。
-  prohibited_actions:
-  - 新增第三 Human Gate或第二持久状态机。
-  - 让 Code 自动选择 item、推进 phase 或断言业务完成。
-  - 跳过 independent_reviewing 或 closure_preparing 直达 Gate2。
-  - push、PR、发布或改写历史。
-relations:
-- relation_key: related-to
-  target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0073
-- relation_key: related-to
-  target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0097
+success_criterion_results:
+- criterion_id: criterion-1
+  outcome: satisfied
+  summary: 09/21/34、附件与 Skill 一致定义 fresh handoff verdict、安全出口、精确绑定、fail-open 和受限宿主接入。
+- criterion_id: criterion-2
+  outcome: satisfied
+  summary: Python 投影为唯一生成源，Helper/context recovery/Web 共享 handoff_allowed/reason，check-workcase-handoff 只读且精确绑定。
+- criterion_id: criterion-3
+  outcome: satisfied
+  summary: Stop hook 在精确绑定的 Controller-owned 快照返回 block/下一步，Gate2 返回 continue；无绑定/异常/stop_hook_active fail-open，资产已纳入版本控制。
+- criterion_id: criterion-4
+  outcome: satisfied
+  summary: 严格结果链未增加捷径，正反测试覆盖 phase、blocked/unresolved/closed、绑定、异常和 wrapper 交付。
+- criterion_id: criterion-5
+  outcome: satisfied
+  summary: workcase-0097 真实回放已从 Gate1 连续推进 item、结果、复核、提案至 gate2_waiting；当前 Stop feedback 也真实阻止 workcase-0098 executing 交还。
+- criterion_id: criterion-6
+  outcome: not_verified
+  summary: 全部测试、完整性和 diff check 已通过；受控本地 commit 尚未创建，按结果链在 Gate2 前据实保留未验证。
+result_summary: 已交付派生 handoff verdict、只读 check-workcase-handoff、项目 Stop gate、精确会话绑定和 Web/Skill/规范同步。真实 Stop 在 executing/controller_checking 阻止交还并反馈下一步，在 gate2_waiting 放行。
+validation_summary: Python 1644 passed, 17 skipped；Web API 187 passed；TypeScript check passed；Stop/handoff 目标测试 49 passed；WorkCase Web 合同 64 passed；check-fact-integrity outcome=ok/status=complete/212 objects/problems=[]；git diff --check passed。
 change_log:
 - signature:
     product_name: Cindy
@@ -211,64 +91,29 @@ change_log:
     agent_runtime_name: claude-code
   at: '2026-08-12T16:12:53.692859Z'
   summary: 进入 human_closure_confirming；只在 Gate2 交还 Human。
-execution_approval:
-  subject_version: 1
-  approved_at: '2026-08-12T14:56:00Z'
-  summary: Human 明确授权解决 WorkCase 流程不连续问题及所有相关规则、Code、测试、事实和协作。
-  baseline_fingerprint: ed847203055a17e3fe2b5b8b0a630d0a28a9b0b553a36ff1832545a33667ef82
-  source_refs:
-  - current-session:user-authorized-all-related-work
-result_version: 1
-controller_check_summary: Controller 已核对规则、投影、Helper、Stop hook、Web 合同、独立审核反馈、真实 block/allow 触发和全量测试；无未处置 reviewer feedback。
-result_summary: 已交付派生 handoff verdict、只读 check-workcase-handoff、项目 Stop gate、精确会话绑定和 Web/Skill/规范同步。真实 Stop 在 executing/controller_checking 阻止交还并反馈下一步，在 gate2_waiting 放行。
-validation_summary: Python 1644 passed, 17 skipped；Web API 187 passed；TypeScript check passed；Stop/handoff 目标测试 49 passed；WorkCase Web 合同 64 passed；check-fact-integrity outcome=ok/status=complete/212 objects/problems=[]；git diff --check passed。
-success_criterion_results:
-- criterion_id: criterion-1
-  outcome: satisfied
-  summary: 09/21/34、附件与 Skill 一致定义 fresh handoff verdict、安全出口、精确绑定、fail-open 和受限宿主接入。
-- criterion_id: criterion-2
-  outcome: satisfied
-  summary: Python 投影为唯一生成源，Helper/context recovery/Web 共享 handoff_allowed/reason，check-workcase-handoff 只读且精确绑定。
-- criterion_id: criterion-3
-  outcome: satisfied
-  summary: Stop hook 在精确绑定的 Controller-owned 快照返回 block/下一步，Gate2 返回 continue；无绑定/异常/stop_hook_active fail-open，资产已纳入版本控制。
-- criterion_id: criterion-4
-  outcome: satisfied
-  summary: 严格结果链未增加捷径，正反测试覆盖 phase、blocked/unresolved/closed、绑定、异常和 wrapper 交付。
-- criterion_id: criterion-5
-  outcome: satisfied
-  summary: workcase-0097 真实回放已从 Gate1 连续推进 item、结果、复核、提案至 gate2_waiting；当前 Stop feedback 也真实阻止 workcase-0098 executing 交还。
-- criterion_id: criterion-6
-  outcome: not_verified
-  summary: 全部测试、完整性和 diff check 已通过；受控本地 commit 尚未创建，按结果链在 Gate2 前据实保留未验证。
-result_reviews:
-- reviewer: handoff-review
-  reviewed_at: '2026-08-12T16:09:40Z'
-  subject_version: 1
-  scope: 规则边界、handoff projection、Helper 只读性、Stop hook 绑定/fail-open/防循环、Web 合同和测试证据。
-  conclusion: pass_with_followups
-  actual_method: collaboration-worker-read-only
-  actual_agent: codex
-  actual_model: gpt-5.6-terra
-  feedback:
-  - Stop gate 接入资产最初被 .gitignore 忽略，无法随提交交付。
-  - 补充 Helper/hook/Web 的更宽正反测试与共享类型复用。
-  controller_resolution: 阻断项已修复：.gitignore 增加精确例外，Stop settings/wrapper 纳入版本控制并增加 tracked+executable 测试；同时复用 WorkCase ID pattern、共享 Web handoff reason type并补会话 binding 测试。更大范围重构保留为非阻塞维护机会。
-  evidence:
-  - Orca Worker reviewer changes_required 报告
-  - 49 passed Stop/handoff focused tests
-  - 1644 passed Python full suite
-  - 187 passed Web API suite
-  - 真实 Stop block/allow 输出
-closure_proposal:
-  proposed_outcome: partial
-  proposed_disposition_summary: criterion-1~5 satisfied；criterion-6 的全部验证已通过，但本地受控 commit 按既定范围尚未创建。Human 可在 Gate2 接受 partial，并在提交后由后续事实据实记录提交完成。
-  residual_decisions:
-  - residual_id: residual-local-commit
-    summary: 通过受控 Git Gate 创建当前精确范围的本地 commit；不 push。
-    proposed_disposition: accept_stop
-waiting_on: Human closure decision.
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-luna
+    agent_runtime_name: claude-code
+  at: '2026-08-12T18:19:08.785867Z'
+  summary: Human 批准关闭 workcase-0098。
+closure_outcome: partial
+disposition_summary: criterion-1~5 satisfied；criterion-6 的全部验证已通过，但本地受控 commit 按既定范围尚未创建。Human 可在 Gate2 接受 partial，并在提交后由后续事实据实记录提交完成。
+residual_responsibilities:
+- residual_id: residual-local-commit
+  summary: 通过受控 Git Gate 创建当前精确范围的本地 commit；不 push。
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0073
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: workcase
+    object_id: workcase-0097
 object_id: workcase-0098
 fact_type_key: workcase
 created_at: '2026-08-12T14:55:50.198279Z'
-updated_at: '2026-08-12T16:12:53.692859Z'
+updated_at: '2026-08-12T18:19:08.785867Z'
