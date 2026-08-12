@@ -22,7 +22,44 @@ relations:
     governed_project_id: ldvh
     fact_type_key: adr
     object_id: adr-0006
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0029
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0039
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: workcase
+    object_id: workcase-0023
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: workcase
+    object_id: workcase-0026
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: workcase
+    object_id: workcase-0100
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: study
+    object_id: study-0029
+change_log:
+- at: '2026-08-12T19:28:54.613781Z'
+  signature:
+    product_name: Cindy
+    model_name: deepseek/deepseek-v4-flash
+    agent_runtime_name: claude-code
+  summary: 补充关联信息：建立到 spark-0029、spark-0039、workcase-0023、workcase-0026、workcase-0100、study-0029 的 related-to 关联（前次更新均未记录此前历史；本次只记录本次真实变化，未恢复对象创建或完整历史）
 object_id: spark-0018
 fact_type_key: spark
 created_at: '2026-07-19T18:45:09.421410+08:00'
-updated_at: '2026-08-01T15:37:51.567028+08:00'
+updated_at: '2026-08-12T19:28:54.613781Z'
