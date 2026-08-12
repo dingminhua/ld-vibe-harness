@@ -3,9 +3,32 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { createElement } from 'react';
+import CommitSignatureMeta from '../../src/components/CommitSignatureMeta';
 
 const testDir = path.dirname(fileURLToPath(import.meta.url));
 const webRoot = path.resolve(testDir, '../..');
+
+test('compact signature metadata shows model and product(runtime), with field fallbacks', () => {
+  const complete = renderToStaticMarkup(createElement(CommitSignatureMeta, { signature: {
+    productName: 'Cindy', modelName: 'gpt-5.6-luna', agentRuntimeName: 'codex-cli',
+  } }));
+  assert.match(complete, /gpt-5\.6-luna/);
+  assert.match(complete, /Cindy\(codex-cli\)/);
+
+  const productOnly = renderToStaticMarkup(createElement(CommitSignatureMeta, { signature: { productName: 'Cindy' } }));
+  assert.match(productOnly, /Cindy/);
+  assert.doesNotMatch(productOnly, /undefined|null|\\(\\)/);
+
+  const runtimeOnly = renderToStaticMarkup(createElement(CommitSignatureMeta, { signature: { agentRuntimeName: 'codex-cli' } }));
+  assert.match(runtimeOnly, /codex-cli/);
+  assert.doesNotMatch(runtimeOnly, /undefined|null|\\(\\)/);
+
+  const modelOnly = renderToStaticMarkup(createElement(CommitSignatureMeta, { signature: { modelName: 'gpt-5.6-luna' } }));
+  assert.match(modelOnly, /gpt-5\.6-luna/);
+  assert.doesNotMatch(modelOnly, /Cindy|codex-cli/);
+});
 
 test('breaking and push-state badges use one presentation in list and detail identities', async () => {
   const [badge, pushBadge, signatureMeta, list, panel, locales] = await Promise.all([

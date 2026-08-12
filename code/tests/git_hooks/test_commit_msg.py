@@ -14,6 +14,7 @@ from ldvh.git_hooks.commit_msg import (
     inspect_commit_msg_hook,
     install_commit_msg_hook,
     render_commit_msg_hook,
+    render_prepare_commit_msg_hook,
     uninstall_commit_msg_hook,
 )
 from ldvh.hooks import commit_msg as commit_msg_gate
@@ -42,10 +43,7 @@ def _environment() -> dict[str, str]:
             "GIT_AUTHOR_EMAIL": "ldvh@example.invalid",
             "GIT_COMMITTER_NAME": "LDVH Test",
             "GIT_COMMITTER_EMAIL": "ldvh@example.invalid",
-            "LDVH_SIGNATURE": (
-                '{"product_name":"Cindy","model_name":"gpt-5.6-luna",'
-                '"agent_runtime_name":"pytest"}'
-            ),
+            "LDVH_SIGNATURE": ('{"product_name":"Cindy","model_name":"gpt-5.6-luna","agent_runtime_name":"pytest"}'),
         }
     )
     return environment
@@ -125,6 +123,13 @@ def _write_installed_hook(workspace: Path, worktree: Path) -> tuple[Path, Path]:
         newline="\n",
     )
     hook.chmod(0o755)
+    prepare = common_dir / "hooks" / "prepare-commit-msg"
+    prepare.write_text(
+        render_prepare_commit_msg_hook(commit_msg_runner=SOURCE_LAUNCHER),
+        encoding="utf-8",
+        newline="\n",
+    )
+    prepare.chmod(0o755)
     return hook, common_dir
 
 
@@ -187,9 +192,7 @@ def test_real_git_commit_is_blocked_and_allowed_by_installed_commit_msg_hook(tmp
     changed.write_text("real hook event\n", encoding="utf-8")
     _checked_git(project, "add", changed.name)
 
-    missing_body = (
-        "docs: 验证单文件正文闸门\n\nSession-ID: test-session\nModel-ID: gpt-5.6-luna\nWorkbench-Name: Cindy"
-    )
+    missing_body = "docs: 验证单文件正文闸门\n\nSession-ID: test-session\nModel-ID: gpt-5.6-luna\nWorkbench-Name: Cindy"
     blocked = _git(project, "commit", "-m", missing_body)
 
     assert blocked.returncode == 1
@@ -203,11 +206,11 @@ def test_real_git_commit_is_blocked_and_allowed_by_installed_commit_msg_hook(tmp
     allowed = _git(project, "commit", "-m", message)
 
     assert allowed.returncode == 0, (allowed.stdout, allowed.stderr)
-    assert len(allowed.stderr.splitlines()) == 1
+    assert allowed.stderr.splitlines()[0] == "LDVH prepare-commit-msg: injected LDVH signature from environment"
     assert re.fullmatch(
         r"LDVH Git Gate \(commit-msg\) passed: "
         r"source_fingerprint=[0-9a-f]{64} snapshot_identity=sha256:[0-9a-f]{64}",
-        allowed.stderr.strip(),
+        allowed.stderr.splitlines()[1],
     )
     after = _checked_git(project, "rev-parse", "HEAD").strip()
     assert after != before
@@ -299,6 +302,109 @@ def test_unknown_common_hook_or_hooks_path_conflict_has_zero_writes(tmp_path: Pa
     assert not (common2 / "hooks" / "commit-msg").exists()
     assert custom_hook.read_bytes() == original
     assert _checked_git(linked, "config", "--worktree", "--get", "core.hooksPath").strip() == ".custom-hooks"
+
+
+def test_unknown_prepare_hook_conflicts_without_replacing_the_commit_gate(tmp_path: Path) -> None:
+    workspace, main = _managed_project(tmp_path)
+    common = Path(_checked_git(main, "rev-parse", "--path-format=absolute", "--git-common-dir").strip())
+    commit_hook = common / "hooks" / "commit-msg"
+    expected_commit = render_commit_msg_hook(commit_msg_runner=SOURCE_LAUNCHER, workspace_root=workspace)
+    commit_hook.write_text(expected_commit, encoding="utf-8", newline="\n")
+    commit_hook.chmod(0o755)
+    prepare_hook = common / "hooks" / "prepare-commit-msg"
+    original_prepare = b"#!/bin/sh\necho user prepare >&2\n"
+    prepare_hook.write_bytes(original_prepare)
+    prepare_hook.chmod(0o755)
+
+    blocked = _install(workspace, main)
+
+    assert blocked.state == "conflict"
+    assert commit_hook.read_text(encoding="utf-8") == expected_commit
+    assert prepare_hook.read_bytes() == original_prepare
+
+
+def test_equivalent_local_common_hooks_path_is_retained(tmp_path: Path) -> None:
+    workspace, main = _managed_project(tmp_path)
+    common = Path(_checked_git(main, "rev-parse", "--path-format=absolute", "--git-common-dir").strip())
+    hooks = common / "hooks"
+    _checked_git(main, "config", "core.hooksPath", str(hooks))
+
+    installed = _install(workspace, main)
+
+    assert installed.state == "managed", installed
+    assert _checked_git(main, "config", "--get", "core.hooksPath").strip() == str(hooks)
+    assert (hooks / "commit-msg").is_file()
+    assert (hooks / "prepare-commit-msg").is_file()
+
+
+def test_exact_legacy_prepare_hook_is_upgraded_with_the_bundle(tmp_path: Path) -> None:
+    workspace, main = _managed_project(tmp_path)
+    common = Path(_checked_git(main, "rev-parse", "--path-format=absolute", "--git-common-dir").strip())
+    commit_hook = common / "hooks" / "commit-msg"
+    commit_hook.write_text(
+        render_commit_msg_hook(commit_msg_runner=SOURCE_LAUNCHER, workspace_root=workspace),
+        encoding="utf-8",
+        newline="\n",
+    )
+    commit_hook.chmod(0o755)
+    prepare_hook = common / "hooks" / "prepare-commit-msg"
+    prepare_hook.write_text(
+        commit_msg._legacy_prepare_commit_msg_hook(commit_msg_runner=SOURCE_LAUNCHER),
+        encoding="utf-8",
+        newline="\n",
+    )
+    prepare_hook.chmod(0o755)
+
+    installed = _install(workspace, main)
+
+    assert installed.state == "managed", installed
+    assert prepare_hook.read_text(encoding="utf-8") == render_prepare_commit_msg_hook(commit_msg_runner=SOURCE_LAUNCHER)
+
+
+def test_exact_legacy_gate_hook_is_upgraded_with_the_bundle(tmp_path: Path) -> None:
+    workspace, main = _managed_project(tmp_path)
+    common = Path(_checked_git(main, "rev-parse", "--path-format=absolute", "--git-common-dir").strip())
+    commit_hook = common / "hooks" / "commit-msg"
+    commit_hook.write_text(
+        commit_msg._legacy_commit_msg_hook(commit_msg_runner=SOURCE_LAUNCHER, workspace_root=workspace),
+        encoding="utf-8",
+        newline="\n",
+    )
+    commit_hook.chmod(0o755)
+    prepare_hook = common / "hooks" / "prepare-commit-msg"
+    prepare_hook.write_text(
+        commit_msg._legacy_prepare_commit_msg_hook(commit_msg_runner=SOURCE_LAUNCHER),
+        encoding="utf-8",
+        newline="\n",
+    )
+    prepare_hook.chmod(0o755)
+
+    installed = _install(workspace, main)
+
+    assert installed.state == "managed", installed
+    assert commit_hook.read_text(encoding="utf-8") == render_commit_msg_hook(
+        commit_msg_runner=SOURCE_LAUNCHER, workspace_root=workspace
+    )
+
+
+def test_second_bundle_write_failure_restores_the_first_hook(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    workspace, main = _managed_project(tmp_path)
+    common = Path(_checked_git(main, "rev-parse", "--path-format=absolute", "--git-common-dir").strip())
+    original_atomic_write = commit_msg._atomic_write
+
+    def fail_prepare(path: Path, content: str, *, expected: bytes | None) -> None:
+        if path.name == "prepare-commit-msg":
+            raise OSError("simulated second bundle write failure")
+        original_atomic_write(path, content, expected=expected)
+
+    monkeypatch.setattr(commit_msg, "_atomic_write", fail_prepare)
+
+    blocked = _install(workspace, main)
+
+    assert blocked.state == "unavailable"
+    assert "simulated second bundle write failure" in blocked.detail
+    assert not (common / "hooks" / "commit-msg").exists()
+    assert not (common / "hooks" / "prepare-commit-msg").exists()
 
 
 def test_migrates_only_intact_ldvh_legacy_override_after_common_hook_is_prepared(tmp_path: Path) -> None:

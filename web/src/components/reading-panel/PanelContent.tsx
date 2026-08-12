@@ -374,9 +374,14 @@ function CommitSignatureSection({
   signature: CommitSignature;
   labels: CommitDetailLabels;
 }) {
+  const productName = signature.productName?.trim() ?? '';
+  const runtimeName = signature.agentRuntimeName?.trim() ?? '';
+  const environment = productName && runtimeName
+    ? `${productName}(${runtimeName})`
+    : productName || runtimeName;
   const identityEntries = [
     { label: labels.modelName, value: signature.modelName?.trim() },
-    { label: labels.runtimeName, value: signature.agentRuntimeName?.trim() },
+    { label: labels.runtimeName, value: environment },
   ].filter((entry): entry is { label: string; value: string } => Boolean(entry.value));
   if (identityEntries.length === 0) return null;
 

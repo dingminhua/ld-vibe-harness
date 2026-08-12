@@ -129,6 +129,32 @@ test('Spark evolution members without a timestamp and forbidden Pitfall tags rem
   }
 });
 
+test('change_log accepts the current three-field signature shape', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'ldvh-field-reader-'));
+  const scope: LocalFactScope = { worktreeLocator: root, governedProjectId: 'fixture' };
+  const directory = path.join(root, 'ldvh-base', 'sparks');
+  await mkdir(directory, { recursive: true });
+  try {
+    await writeFile(path.join(directory, 'spark-0003.yaml'), [
+      'object_id: spark-0003', 'fact_type_key: spark', 'title: Current signature',
+      'status: open', 'priority: P1', 'summary: Current observation', 'created_at: "2026-01-01"', 'updated_at: "2026-01-02"',
+      'change_log:',
+      '  - signature:', '      product_name: Cindy', '      model_name: gpt-5.6-luna', '      agent_runtime_name: codex-cli',
+      '    session_id: current-session', '    at: "2026-01-01T00:00:00+08:00"', '    summary: Current entry',
+    ].join('\n'), 'utf8');
+
+    const detail = await readLocalFact('spark', 'spark-0003', scope);
+    assert.equal(detail.status, 'ok');
+    if (detail.status === 'ok') {
+      assert.equal(detail.item.read_status, 'readable');
+      assert.equal((detail.item.fact_object?.change_log as unknown[])?.length, 1);
+      assert.deepEqual(detail.item.unparsed_structures, []);
+    }
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
 test('change_log accepts the canonical and legacy signature shapes', async () => {
   const root = await mkdtemp(path.join(tmpdir(), 'ldvh-field-reader-'));
   const scope: LocalFactScope = { worktreeLocator: root, governedProjectId: 'fixture' };

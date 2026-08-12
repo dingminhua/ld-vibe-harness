@@ -79,7 +79,13 @@ def _environment_signature() -> tuple[dict[str, str], tuple[str, ...]]:
 def inject_environment_signature(message: str) -> str:
     """Replace any self-reported or retired signature trailers with the snapshot."""
 
-    env_signature, _ = _environment_signature()
+    env_signature, problems = _environment_signature()
+    # This hook is installed for every Git commit.  Without a usable current
+    # snapshot it must leave an ordinary message byte-for-byte untouched;
+    # stripping trailers before deciding whether injection is possible would
+    # silently corrupt a non-LDVH commit.
+    if problems or not env_signature:
+        return message
     lines = _strip_signature_trailers(message.split("\n"))
     while lines and not lines[-1].strip():
         lines.pop()
@@ -107,6 +113,9 @@ def run_prepare_commit_msg(message_file: str) -> str | None:
         original = path.read_text(encoding="utf-8")
     except (OSError, UnicodeError) as error:
         return f"message file could not be read as UTF-8: {error}"
+    _, problems = _environment_signature()
+    if problems:
+        return "LDVH_SIGNATURE 无效：" + "；".join(problems)
     transformed = inject_environment_signature(original)
     if transformed == original:
         return None
@@ -128,10 +137,17 @@ def main(arguments: list[str] | None = None) -> int:
     error = run_prepare_commit_msg(parsed.message_file)
     if error is not None:
         sys.stderr.write(f"LDVH prepare-commit-msg: {error}\n")
-        return 0
+        return 1
     signature, problems = _environment_signature()
     if signature:
         sys.stderr.write("LDVH prepare-commit-msg: injected LDVH signature from environment\n")
+        missing = tuple(name for name in _SIGNATURE_TRAILER_NAMES if name not in signature)
+        if missing:
+            sys.stderr.write(
+                "LDVH prepare-commit-msg: 请告知 Human 以下署名字段不可得及原因："
+                + "、".join(missing)
+                + "\n"
+            )
     elif problems:
         sys.stderr.write(f"LDVH prepare-commit-msg: {'；'.join(problems)}\n")
     return 0

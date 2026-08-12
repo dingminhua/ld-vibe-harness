@@ -1,4 +1,4 @@
-"""Manage one LDVH ``commit-msg`` Hook at the Git common-dir boundary."""
+"""Manage the LDVH Git Hook bundle at the Git common-dir boundary."""
 
 from __future__ import annotations
 
@@ -21,6 +21,7 @@ from ldvh.governance.models import LocatorSource, ScopeDescriptor, ScopeStatus
 from ldvh.governance.resolver import resolve_governance_scope
 
 _MANAGED_MARKER_PREFIX = "# ldvh-native-commit-msg-hook: v1 sha256:"
+_PREPARE_MANAGED_MARKER_PREFIX = "# ldvh-native-prepare-commit-msg-hook: v1 sha256:"
 _GIT_TIMEOUT_SECONDS = 10
 _HOOK_PREFLIGHT_TIMEOUT_SECONDS = 20
 _LEGACY_HOOKS_PATH = ".githooks-v4"
@@ -53,6 +54,13 @@ class _LegacyOverride:
     config_path: Path
     hook_directory: Path
     hook_path: Path
+
+
+@dataclass(frozen=True, slots=True)
+class _HookDeployment:
+    name: str
+    rendered: str
+    marker_prefix: str
 
 
 class CommitMsgHookError(ValueError):
@@ -270,31 +278,70 @@ def _worktree_config_path(worktree: Path) -> tuple[Path | None, str | None]:
         return None, f"worktree config path could not be resolved: {error}"
 
 
-def _existing_hook_state(path: Path) -> tuple[HookState, str]:
+def _existing_hook_state(path: Path, *, name: str, marker_prefix: str) -> tuple[HookState, str]:
     if path.is_symlink():
-        return "conflict", "existing Git commit-msg Hook is a symbolic link and is not managed by LDVH"
+        return "conflict", f"existing Git {name} Hook is a symbolic link and is not managed by LDVH"
     try:
         info = path.stat()
     except FileNotFoundError:
-        return "absent", "no Git commit-msg Hook is installed at the common-dir Hook path"
+        return "absent", f"no Git {name} Hook is installed at the common-dir Hook path"
     except OSError as error:
-        return "unavailable", f"existing Git commit-msg Hook could not be inspected: {error}"
+        return "unavailable", f"existing Git {name} Hook could not be inspected: {error}"
     if not stat.S_ISREG(info.st_mode):
-        return "conflict", "existing Git commit-msg Hook is not a regular file"
+        return "conflict", f"existing Git {name} Hook is not a regular file"
     try:
         contents = path.read_bytes()
     except OSError as error:
-        return "conflict", f"existing Git commit-msg Hook cannot be identified safely: {error}"
+        return "conflict", f"existing Git {name} Hook cannot be identified safely: {error}"
     prefix = b"#!/bin/sh\n"
     marker, delimiter, body = contents.removeprefix(prefix).partition(b"\n")
-    expected_prefix = _MANAGED_MARKER_PREFIX.encode("ascii")
+    expected_prefix = marker_prefix.encode("ascii")
     if contents.startswith(prefix) and delimiter and marker.startswith(expected_prefix):
         observed = marker.removeprefix(expected_prefix)
         expected = hashlib.sha256(body).hexdigest().encode("ascii")
         if hmac.compare_digest(observed, expected):
-            return "managed", "LDVH owns the current Git commit-msg Hook"
-        return "conflict", "existing Git commit-msg Hook carries an invalid LDVH ownership digest"
-    return "conflict", "an existing Git commit-msg Hook is not owned by LDVH"
+            return "managed", f"LDVH owns the current Git {name} Hook"
+        return "conflict", f"existing Git {name} Hook carries an invalid LDVH ownership digest"
+    return "conflict", f"an existing Git {name} Hook is not owned by LDVH"
+
+
+def _deployment_state(
+    path: Path,
+    deployment: _HookDeployment,
+    *,
+    legacy_content: str | None = None,
+) -> tuple[HookState, str]:
+    """Classify a bundle member, accepting only a byte-exact legacy LDVH asset."""
+
+    state, detail = _existing_hook_state(path, name=deployment.name, marker_prefix=deployment.marker_prefix)
+    if state == "conflict" and legacy_content is not None:
+        try:
+            if not path.is_symlink() and hmac.compare_digest(path.read_bytes(), legacy_content.encode("utf-8")):
+                return "managed", f"LDVH owns the legacy {deployment.name} Hook eligible for upgrade"
+        except OSError:
+            pass
+    return state, detail
+
+
+def _bundle_inventory(
+    hooks: Path,
+    deployments: tuple[_HookDeployment, ...],
+    *,
+    legacy_contents: dict[str, str],
+) -> tuple[dict[str, bytes | None] | None, str | None]:
+    """Preflight ownership for both managed files before any file is changed."""
+
+    originals: dict[str, bytes | None] = {}
+    for deployment in deployments:
+        path = hooks / deployment.name
+        state, detail = _deployment_state(path, deployment, legacy_content=legacy_contents.get(deployment.name))
+        if state in {"conflict", "unavailable"}:
+            return None, detail
+        try:
+            originals[deployment.name] = path.read_bytes() if path.exists() else None
+        except OSError as error:
+            return None, f"existing Git {deployment.name} Hook could not be snapshotted: {error}"
+    return originals, None
 
 
 def _active_hook_assets(directory: Path, *, ignore: frozenset[str] = frozenset()) -> tuple[str, ...] | None:
@@ -334,7 +381,9 @@ def _legacy_override(worktree: Path, entry: _GitConfigEntry) -> tuple[_LegacyOve
         return None, f"legacy Hook directory could not be resolved: {error}"
     if resolved != directory or directory.is_symlink():
         return None, "legacy Hook directory traverses a symbolic link"
-    state, detail = _existing_hook_state(directory / "commit-msg")
+    state, detail = _existing_hook_state(
+        directory / "commit-msg", name="commit-msg", marker_prefix=_MANAGED_MARKER_PREFIX
+    )
     if state != "managed":
         return None, f"legacy worktree override lacks an intact LDVH-owned commit-msg Hook: {detail}"
     active = _active_hook_assets(directory, ignore=frozenset({"commit-msg"}))
@@ -343,7 +392,31 @@ def _legacy_override(worktree: Path, entry: _GitConfigEntry) -> tuple[_LegacyOve
     return _LegacyOverride(worktree, config_path, directory, directory / "commit-msg"), None
 
 
-def _override_inventory(worktrees: tuple[Path, ...]) -> tuple[tuple[_LegacyOverride, ...] | None, str | None]:
+def _equivalent_common_hooks_path(
+    worktree: Path,
+    entries: tuple[_GitConfigEntry, ...],
+    hooks: Path,
+) -> tuple[bool, str | None]:
+    """Accept one local/worktree setting only when it resolves to this common-dir Hook directory."""
+
+    if len(entries) != 1:
+        return False, "multiple core.hooksPath values are not safe to migrate"
+    entry = entries[0]
+    if entry.scope not in {"local", "worktree"}:
+        return False, "effective core.hooksPath is not a local or worktree-scoped common-dir setting"
+    if entry.value.startswith("!"):
+        return False, "effective core.hooksPath uses a command value and is not safe to migrate"
+    effective, failure = _effective_hooks_directory(worktree)
+    if failure is not None or effective is None:
+        return False, failure or "effective core.hooksPath is unavailable"
+    if effective != hooks:
+        return False, "effective core.hooksPath does not resolve to this common-dir Hook directory"
+    return True, None
+
+
+def _override_inventory(
+    worktrees: tuple[Path, ...], hooks: Path
+) -> tuple[tuple[_LegacyOverride, ...] | None, str | None]:
     legacy: list[_LegacyOverride] = []
     for worktree in worktrees:
         entries, failure = _config_entries(worktree, "core.hooksPath")
@@ -353,9 +426,12 @@ def _override_inventory(worktrees: tuple[Path, ...]) -> tuple[tuple[_LegacyOverr
             continue
         if len(entries) != 1:
             return None, f"{worktree}: multiple core.hooksPath values are not safe to migrate"
+        equivalent, equivalent_failure = _equivalent_common_hooks_path(worktree, entries, hooks)
+        if equivalent:
+            continue
         override, failure = _legacy_override(worktree, entries[0])
         if failure is not None or override is None:
-            return None, f"{worktree}: {failure}"
+            return None, f"{worktree}: {equivalent_failure or failure}"
         legacy.append(override)
     return tuple(legacy), None
 
@@ -397,11 +473,11 @@ def render_commit_msg_hook(*, commit_msg_runner: Path, workspace_root: Path) -> 
             "# The source launcher may be named python3 or python on different hosts.",
             "run_runner() {",
             "  if command -v python3 >/dev/null 2>&1; then",
-            f"    exec python3 {runner} \"$@\"",
+            f'    exec python3 {runner} "$@"',
             "  elif command -v python >/dev/null 2>&1; then",
-            f"    exec python {runner} \"$@\"",
+            f'    exec python {runner} "$@"',
             "  fi",
-            f"  exec {runner} \"$@\"",
+            f'  exec {runner} "$@"',
             "}",
             'case "$1" in',
             "  /*|[A-Za-z]:\\\\*|//*) message_file=$1 ;;",
@@ -424,7 +500,122 @@ def render_commit_msg_hook(*, commit_msg_runner: Path, workspace_root: Path) -> 
     return f"#!/bin/sh\n{_MANAGED_MARKER_PREFIX}{digest}\n{body}"
 
 
-def _atomic_write(path: Path, content: str) -> None:
+def render_prepare_commit_msg_hook(*, commit_msg_runner: Path) -> str:
+    """Render the companion signature injector without embedding signature data."""
+
+    runner = shlex.quote(str(commit_msg_runner))
+    body = "\n".join(
+        (
+            "set -eu",
+            'if [ "$#" -lt 1 ]; then',
+            "  exit 0",
+            "fi",
+            "worktree=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0",
+            "run_runner() {",
+            "  if command -v python3 >/dev/null 2>&1; then",
+            f'    exec python3 {runner} "$@"',
+            "  elif command -v python >/dev/null 2>&1; then",
+            f'    exec python {runner} "$@"',
+            "  fi",
+            f'  exec {runner} "$@"',
+            "}",
+            'case "$1" in',
+            "  /*|[A-Za-z]:\\\\*|//*) message_file=$1 ;;",
+            '  *) message_file="$worktree/$1" ;;',
+            "esac",
+            'run_runner prepare-commit-msg --message-file "$message_file"',
+            "",
+        )
+    )
+    digest = hashlib.sha256(body.encode("utf-8")).hexdigest()
+    return f"#!/bin/sh\n{_PREPARE_MANAGED_MARKER_PREFIX}{digest}\n{body}"
+
+
+def _hook_deployments(*, commit_msg_runner: Path, workspace_root: Path) -> tuple[_HookDeployment, ...]:
+    return (
+        _HookDeployment(
+            "commit-msg",
+            render_commit_msg_hook(commit_msg_runner=commit_msg_runner, workspace_root=workspace_root),
+            _MANAGED_MARKER_PREFIX,
+        ),
+        _HookDeployment(
+            "prepare-commit-msg",
+            render_prepare_commit_msg_hook(commit_msg_runner=commit_msg_runner),
+            _PREPARE_MANAGED_MARKER_PREFIX,
+        ),
+    )
+
+
+def _legacy_prepare_commit_msg_hook(*, commit_msg_runner: Path) -> str:
+    """The exact v1 injector wrapper that predated managed bundle deployment.
+
+    It is recognized only to migrate an already-known LDVH asset.  Any variation is
+    deliberately treated as user-owned instead of being overwritten.
+    """
+
+    runner = shlex.quote(str(commit_msg_runner))
+    return "\n".join(
+        (
+            "#!/bin/sh",
+            "# ldvh-native-prepare-commit-msg-hook: v1",
+            "set -eu",
+            'if [ "$#" -lt 1 ]; then',
+            "  exit 0",
+            "fi",
+            "worktree=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0",
+            'case "$1" in',
+            "  /*) message_file=$1 ;;",
+            '  *) message_file="$worktree/$1" ;;',
+            "esac",
+            "# Check all env vars in the fallback chain, not just LDVH_*",
+            'if [ -n "${LDVH_MODEL_ID:-}${LDVH_WORKBENCH_NAME:-}${LDVH_SESSION_ID:-}'
+            '${CODEBUDDY_SESSION_ID:-}${CLAUDE_SESSION_ID:-}${CLIENT_INFO_PRODUCT_NAME:-}" ]; then',
+            f'  {runner} prepare-commit-msg --message-file "$message_file" >&2 || true',
+            "fi",
+            "exit 0",
+            "",
+        )
+    )
+
+
+def _legacy_commit_msg_hook(*, commit_msg_runner: Path, workspace_root: Path) -> str:
+    """The exact pre-bundle Gate wrapper, recognized only with its bindings intact."""
+
+    runner = shlex.quote(str(commit_msg_runner))
+    workspace = shlex.quote(str(workspace_root))
+    body = "\n".join(
+        (
+            "set -eu",
+            'if [ "$#" -ne 1 ]; then',
+            '  printf "%s\\n" "LDVH Git commit-msg Hook expected one message-file argument" >&2',
+            "  exit 1",
+            "fi",
+            "worktree=$(git rev-parse --show-toplevel) || {",
+            '  printf "%s\\n" "LDVH Git commit-msg Hook could not determine the current worktree" >&2',
+            "  exit 1",
+            "}",
+            'case "$1" in',
+            "  /*) message_file=$1 ;;",
+            '  *) message_file="$worktree/$1" ;;',
+            "esac",
+            'if [ -n "${GIT_INDEX_FILE:-}" ]; then',
+            '  case "$GIT_INDEX_FILE" in',
+            "    /*) index_file=$GIT_INDEX_FILE ;;",
+            '    *) index_file="$worktree/$GIT_INDEX_FILE" ;;',
+            "  esac",
+            f'  exec {runner} git-commit-msg --workspace-root {workspace} --worktree "$worktree" '
+            f'--message-file "$message_file" --index-file "$index_file"',
+            "fi",
+            f'exec {runner} git-commit-msg --workspace-root {workspace} --worktree "$worktree" '
+            '--message-file "$message_file"',
+            "",
+        )
+    )
+    digest = hashlib.sha256(body.encode("utf-8")).hexdigest()
+    return f"#!/bin/sh\n{_MANAGED_MARKER_PREFIX}{digest}\n{body}"
+
+
+def _atomic_write(path: Path, content: str, *, expected: bytes | None) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     descriptor, temporary_name = tempfile.mkstemp(prefix=".ldvh-commit-msg-", dir=path.parent)
     temporary = Path(temporary_name)
@@ -432,13 +623,65 @@ def _atomic_write(path: Path, content: str) -> None:
         with os.fdopen(descriptor, "w", encoding="utf-8", newline="\n") as handle:
             handle.write(content)
         temporary.chmod(0o755)
-        state, detail = _existing_hook_state(path)
-        if state not in {"absent", "managed"}:
-            raise CommitMsgHookError(f"Git commit-msg Hook changed before deployment: {detail}")
+        try:
+            current = path.read_bytes()
+        except FileNotFoundError:
+            current = None
+        except OSError as error:
+            raise CommitMsgHookError(f"Git Hook changed before deployment could not be inspected: {error}") from error
+        if current != expected:
+            raise CommitMsgHookError("Git Hook changed before bundle deployment")
         os.replace(temporary, path)
     except Exception:
         temporary.unlink(missing_ok=True)
         raise
+
+
+def _restore_hook_bytes(path: Path, original: bytes | None) -> str | None:
+    """Restore one bundle member exactly; used only after a failed bundle write."""
+
+    try:
+        if original is None:
+            path.unlink(missing_ok=True)
+            return None
+        descriptor, temporary_name = tempfile.mkstemp(prefix=".ldvh-hook-rollback-", dir=path.parent)
+        temporary = Path(temporary_name)
+        try:
+            with os.fdopen(descriptor, "wb") as handle:
+                handle.write(original)
+            os.replace(temporary, path)
+        except Exception:
+            temporary.unlink(missing_ok=True)
+            raise
+        return None
+    except OSError as error:
+        return f"{path}: {error}"
+
+
+def _deploy_hook_bundle(
+    hooks: Path, deployments: tuple[_HookDeployment, ...], originals: dict[str, bytes | None]
+) -> str | None:
+    """Replace the two owned Hook files as one recoverable deployment unit."""
+
+    replaced: list[_HookDeployment] = []
+    try:
+        for deployment in deployments:
+            _atomic_write(hooks / deployment.name, deployment.rendered, expected=originals[deployment.name])
+            replaced.append(deployment)
+    except (CommitMsgHookError, OSError) as error:
+        rollback_failures = [
+            failure
+            for deployment in reversed(replaced)
+            if (failure := _restore_hook_bytes(hooks / deployment.name, originals[deployment.name])) is not None
+        ]
+        detail = f"Git Hook bundle deployment failed: {error}"
+        if rollback_failures:
+            detail += "; rollback failures: " + "; ".join(rollback_failures)
+        return detail
+    for deployment in deployments:
+        if not _matches(hooks / deployment.name, deployment.rendered):
+            return f"Git Hook bundle deployment could not verify {deployment.name}"
+    return None
 
 
 def _matches(path: Path, rendered: str) -> bool:
@@ -582,6 +825,86 @@ def _preflight_rendered_hook(rendered: str, worktree: Path) -> str | None:
     return None
 
 
+def _preflight_rendered_prepare_hook(rendered: str, worktree: Path) -> str | None:
+    """Prove that the injector preserves ordinary messages and injects valid snapshots."""
+
+    shell = shutil.which("sh")
+    if shell is None:
+        return "a POSIX shell is unavailable for prepare-commit-msg Hook syntax verification"
+    with tempfile.TemporaryDirectory(prefix="ldvh-prepare-hook-preflight-") as temporary_name:
+        temporary = Path(temporary_name)
+        hook = temporary / "prepare-commit-msg"
+        message = temporary / "message"
+        try:
+            hook.write_text(rendered, encoding="utf-8", newline="\n")
+            hook.chmod(0o755)
+        except OSError as error:
+            return f"prepare-commit-msg Hook preflight assets could not be prepared: {error}"
+        syntax = subprocess.run(
+            (shell, "-n", str(hook)),
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="strict",
+            timeout=_GIT_TIMEOUT_SECONDS,
+        )
+        if syntax.returncode != 0:
+            return f"rendered prepare-commit-msg Hook failed shell syntax verification: {syntax.stderr.strip()}"
+
+        ordinary = "docs: ordinary\n\nLDVH-Product-Name: retained\n"
+        try:
+            message.write_text(ordinary, encoding="utf-8")
+        except OSError as error:
+            return f"prepare-commit-msg Hook preflight could not write a message: {error}"
+        environment = _installation_environment()
+        environment.pop("LDVH_SIGNATURE", None)
+
+        def invoke(message_path: Path) -> subprocess.CompletedProcess[str]:
+            # Git for Windows supplies a POSIX shell, but CreateProcess cannot
+            # launch an extensionless shell script directly on native Windows.
+            hook_argv = (str(hook), str(message_path))
+            if os.name == "nt":
+                hook_argv = (shell, str(hook), str(message_path))
+            return subprocess.run(
+                hook_argv,
+                cwd=worktree,
+                check=False,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="strict",
+                env=environment,
+                timeout=_HOOK_PREFLIGHT_TIMEOUT_SECONDS,
+            )
+
+        invocation = invoke(message)
+        if invocation.returncode != 0:
+            detail = invocation.stderr.strip() or invocation.stdout.strip() or str(invocation.returncode)
+            return f"rendered prepare-commit-msg Hook did not preserve an ordinary message: {detail}"
+        try:
+            if message.read_text(encoding="utf-8") != ordinary:
+                return "rendered prepare-commit-msg Hook changed an ordinary message without LDVH_SIGNATURE"
+            message.write_text("docs: signed\n\nSession-ID: retired\n", encoding="utf-8")
+        except OSError as error:
+            return f"prepare-commit-msg Hook preflight could not read its message: {error}"
+        environment["LDVH_SIGNATURE"] = (
+            '{"product_name":"localverification","model_name":"ldvh-hook-manager",'
+            '"agent_runtime_name":"ldvh-hook-manager"}'
+        )
+        injected = invoke(message)
+        if injected.returncode != 0:
+            detail = injected.stderr.strip() or injected.stdout.strip() or str(injected.returncode)
+            return f"rendered prepare-commit-msg Hook could not inject a valid signature: {detail}"
+        try:
+            content = message.read_text(encoding="utf-8")
+        except OSError as error:
+            return f"prepare-commit-msg Hook preflight could not read its injected message: {error}"
+        if "Session-ID:" in content or "LDVH-Product-Name: localverification" not in content:
+            return "rendered prepare-commit-msg Hook did not replace retired trailers with LDVH signature trailers"
+    return None
+
+
 def _remove_exact(path: Path, rendered: str) -> str | None:
     if not _matches(path, rendered):
         return "managed Git commit-msg Hook changed before removal"
@@ -625,7 +948,7 @@ def inspect_commit_msg_hook(*, worktree: str) -> CommitMsgHookStatus:
             common_dir=common_dir,
             worktrees=worktrees,
         )
-    legacy, failure = _override_inventory(worktrees)
+    legacy, failure = _override_inventory(worktrees, hooks)
     if failure is not None:
         return _status(
             "conflict", failure, worktree=current, common_dir=common_dir, hook_directory=hooks, worktrees=worktrees
@@ -639,8 +962,44 @@ def inspect_commit_msg_hook(*, worktree: str) -> CommitMsgHookStatus:
             hook_directory=hooks,
             worktrees=worktrees,
         )
-    state, detail = _existing_hook_state(hooks / "commit-msg")
-    return _status(state, detail, worktree=current, common_dir=common_dir, hook_directory=hooks, worktrees=worktrees)
+    states: list[HookState] = []
+    for deployment in _hook_deployments(commit_msg_runner=Path("/unbound"), workspace_root=Path("/unbound")):
+        # Inspection only establishes ownership/digest.  Binding is verified by install
+        # and uninstall, where the intended runner and workspace are explicit.
+        state, detail = _existing_hook_state(
+            hooks / deployment.name, name=deployment.name, marker_prefix=deployment.marker_prefix
+        )
+        if state in {"conflict", "unavailable"}:
+            return _status(
+                state, detail, worktree=current, common_dir=common_dir, hook_directory=hooks, worktrees=worktrees
+            )
+        states.append(state)
+    if all(state == "absent" for state in states):
+        return _status(
+            "absent",
+            "no LDVH Git Hook bundle is installed at the common-dir Hook path",
+            worktree=current,
+            common_dir=common_dir,
+            hook_directory=hooks,
+            worktrees=worktrees,
+        )
+    if all(state == "managed" for state in states):
+        return _status(
+            "managed",
+            "LDVH Git Hook bundle is installed at the common-dir Hook path",
+            worktree=current,
+            common_dir=common_dir,
+            hook_directory=hooks,
+            worktrees=worktrees,
+        )
+    return _status(
+        "conflict",
+        "LDVH Git Hook bundle is incomplete at the common-dir Hook path",
+        worktree=current,
+        common_dir=common_dir,
+        hook_directory=hooks,
+        worktrees=worktrees,
+    )
 
 
 def _restore_overrides(overrides: tuple[_LegacyOverride, ...]) -> list[str]:
@@ -695,7 +1054,7 @@ def install_commit_msg_hook(
             common_dir=common_dir,
             worktrees=worktrees,
         )
-    legacy, failure = _override_inventory(worktrees)
+    legacy, failure = _override_inventory(worktrees, hooks)
     if failure is not None or legacy is None:
         return _status(
             "conflict",
@@ -705,24 +1064,43 @@ def install_commit_msg_hook(
             hook_directory=hooks,
             worktrees=worktrees,
         )
-    hook_path = hooks / "commit-msg"
-    rendered = render_commit_msg_hook(commit_msg_runner=runner, workspace_root=workspace)
-    state, detail = _existing_hook_state(hook_path)
-    if state in {"conflict", "unavailable"}:
+    deployments = _hook_deployments(commit_msg_runner=runner, workspace_root=workspace)
+    originals, detail = _bundle_inventory(
+        hooks,
+        deployments,
+        legacy_contents={
+            "commit-msg": _legacy_commit_msg_hook(commit_msg_runner=runner, workspace_root=workspace),
+            "prepare-commit-msg": _legacy_prepare_commit_msg_hook(commit_msg_runner=runner),
+        },
+    )
+    if originals is None:
         return _status(
             "conflict", detail, worktree=current, common_dir=common_dir, hook_directory=hooks, worktrees=worktrees
         )
-    if state == "managed" and not _matches(hook_path, rendered):
-        return _status(
-            "conflict",
-            "existing LDVH Hook belongs to a different runner or workspace binding",
-            worktree=current,
-            common_dir=common_dir,
-            hook_directory=hooks,
-            worktrees=worktrees,
-        )
+    for deployment in deployments:
+        path = hooks / deployment.name
+        original = originals[deployment.name]
+        legacy_content = {
+            "commit-msg": _legacy_commit_msg_hook(commit_msg_runner=runner, workspace_root=workspace),
+            "prepare-commit-msg": _legacy_prepare_commit_msg_hook(commit_msg_runner=runner),
+        }.get(deployment.name)
+        if (
+            original is not None
+            and not _matches(path, deployment.rendered)
+            and (legacy_content is None or not hmac.compare_digest(original, legacy_content.encode("utf-8")))
+        ):
+            return _status(
+                "conflict",
+                "existing LDVH Hook belongs to a different runner or workspace binding",
+                worktree=current,
+                common_dir=common_dir,
+                hook_directory=hooks,
+                worktrees=worktrees,
+            )
     try:
-        preflight_failure = _preflight_rendered_hook(rendered, current)
+        preflight_failure = _preflight_rendered_hook(deployments[0].rendered, current)
+        if preflight_failure is None:
+            preflight_failure = _preflight_rendered_prepare_hook(deployments[1].rendered, current)
     except (OSError, UnicodeError, subprocess.SubprocessError) as error:
         preflight_failure = f"commit-msg Hook preflight could not complete: {error}"
     if preflight_failure is not None:
@@ -734,18 +1112,11 @@ def install_commit_msg_hook(
             hook_directory=hooks,
             worktrees=worktrees,
         )
-    created = state == "absent"
-    try:
-        if created:
-            _atomic_write(hook_path, rendered)
-        if not _matches(hook_path, rendered):
-            raise CommitMsgHookError("prepared common-dir Hook did not pass exact ownership verification")
-    except (CommitMsgHookError, OSError) as error:
-        if created and _matches(hook_path, rendered):
-            hook_path.unlink(missing_ok=True)
+    deployment_failure = _deploy_hook_bundle(hooks, deployments, originals)
+    if deployment_failure is not None:
         return _status(
             "unavailable",
-            str(error),
+            deployment_failure,
             worktree=current,
             common_dir=common_dir,
             hook_directory=hooks,
@@ -756,12 +1127,14 @@ def install_commit_msg_hook(
     for override in legacy:
         _, failure = _run_git(override.worktree, "config", "--worktree", "--unset-all", "core.hooksPath")
         if failure is not None:
+            migration_failure = failure
             rollback_failures = _restore_overrides(tuple(removed_overrides))
-            if created:
-                cleanup = _remove_exact(hook_path, rendered)
-                if cleanup is not None:
-                    rollback_failures.append(cleanup)
-            detail = f"legacy override migration failed for {override.worktree}: {failure}"
+            rollback_failures.extend(
+                failure
+                for deployment in deployments
+                if (failure := _restore_hook_bytes(hooks / deployment.name, originals[deployment.name])) is not None
+            )
+            detail = f"legacy override migration failed for {override.worktree}: {migration_failure}"
             if rollback_failures:
                 detail += "; rollback failures: " + "; ".join(rollback_failures)
             return _status(
@@ -778,10 +1151,11 @@ def install_commit_msg_hook(
         effective, failure = _effective_hooks_directory(item)
         if failure is not None or effective != hooks:
             rollback_failures = _restore_overrides(tuple(removed_overrides))
-            if created:
-                cleanup = _remove_exact(hook_path, rendered)
-                if cleanup is not None:
-                    rollback_failures.append(cleanup)
+            rollback_failures.extend(
+                failure
+                for deployment in deployments
+                if (failure := _restore_hook_bytes(hooks / deployment.name, originals[deployment.name])) is not None
+            )
             detail = f"{item}: common-dir Hook did not become the effective Hook directory"
             if failure is not None:
                 detail += f": {failure}"
@@ -798,7 +1172,7 @@ def install_commit_msg_hook(
 
     cleanup_failures: list[str] = []
     for override in legacy:
-        state, _ = _existing_hook_state(override.hook_path)
+        state, _ = _existing_hook_state(override.hook_path, name="commit-msg", marker_prefix=_MANAGED_MARKER_PREFIX)
         if state == "managed":
             try:
                 override.hook_path.unlink()
@@ -818,7 +1192,7 @@ def install_commit_msg_hook(
     return _status(
         "managed",
         (
-            f"LDVH common-dir commit-msg Hook is active for {len(worktrees)} worktree(s); "
+            f"LDVH common-dir Git Hook bundle is active for {len(worktrees)} worktree(s); "
             f"migrated {migrated} legacy override(s)"
         ),
         worktree=current,
@@ -868,7 +1242,7 @@ def uninstall_commit_msg_hook(
             common_dir=common_dir,
             worktrees=worktrees,
         )
-    legacy, failure = _override_inventory(worktrees)
+    legacy, failure = _override_inventory(worktrees, hooks)
     if failure is not None or legacy:
         return _status(
             "conflict",
@@ -878,30 +1252,56 @@ def uninstall_commit_msg_hook(
             hook_directory=hooks,
             worktrees=worktrees,
         )
-    rendered = render_commit_msg_hook(commit_msg_runner=runner, workspace_root=workspace)
-    hook_path = hooks / "commit-msg"
-    state, detail = _existing_hook_state(hook_path)
-    if state == "absent":
+    deployments = _hook_deployments(commit_msg_runner=runner, workspace_root=workspace)
+    paths = tuple(hooks / deployment.name for deployment in deployments)
+    states = tuple(
+        _existing_hook_state(path, name=deployment.name, marker_prefix=deployment.marker_prefix)[0]
+        for path, deployment in zip(paths, deployments, strict=True)
+    )
+    if all(state == "absent" for state in states):
         return _status(
-            "absent", detail, worktree=current, common_dir=common_dir, hook_directory=hooks, worktrees=worktrees
-        )
-    if state != "managed" or not _matches(hook_path, rendered):
-        return _status(
-            "conflict",
-            "common-dir Hook is not the exact LDVH deployment requested for removal",
+            "absent",
+            "no LDVH Git Hook bundle is installed",
             worktree=current,
             common_dir=common_dir,
             hook_directory=hooks,
             worktrees=worktrees,
         )
-    failure = _remove_exact(hook_path, rendered)
-    if failure is not None:
+    if any(state != "managed" for state in states) or any(
+        not _matches(path, deployment.rendered) for path, deployment in zip(paths, deployments, strict=True)
+    ):
         return _status(
-            "unavailable", failure, worktree=current, common_dir=common_dir, hook_directory=hooks, worktrees=worktrees
+            "conflict",
+            "common-dir Git Hook bundle is not the exact LDVH deployment requested for removal",
+            worktree=current,
+            common_dir=common_dir,
+            hook_directory=hooks,
+            worktrees=worktrees,
+        )
+    originals = {deployment.name: path.read_bytes() for path, deployment in zip(paths, deployments, strict=True)}
+    failures: list[str] = []
+    for path, deployment in zip(paths, deployments, strict=True):
+        failure = _remove_exact(path, deployment.rendered)
+        if failure is not None:
+            failures.append(failure)
+            break
+    if failures:
+        failures.extend(
+            failure
+            for deployment in deployments
+            if (failure := _restore_hook_bytes(hooks / deployment.name, originals[deployment.name])) is not None
+        )
+        return _status(
+            "unavailable",
+            "; ".join(failures),
+            worktree=current,
+            common_dir=common_dir,
+            hook_directory=hooks,
+            worktrees=worktrees,
         )
     return _status(
         "absent",
-        "the exact LDVH common-dir commit-msg Hook was removed",
+        "the exact LDVH common-dir Git Hook bundle was removed",
         worktree=current,
         common_dir=common_dir,
         hook_directory=hooks,

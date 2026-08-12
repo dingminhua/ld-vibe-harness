@@ -11,6 +11,7 @@ from ldvh.hooks.prepare_commit_msg import (
     _strip_signature_trailers,
     inject_environment_signature,
     run_prepare_commit_msg,
+    main,
 )
 
 
@@ -51,9 +52,41 @@ def test_partial_snapshot_omits_unavailable_trailer(monkeypatch: pytest.MonkeyPa
     assert "LDVH-Model-Name:" not in result
 
 
-def test_empty_or_invalid_snapshot_cannot_preserve_self_report(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_empty_or_invalid_snapshot_does_not_change_message(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("LDVH_SIGNATURE", _signature(product_name=None, model_name=None, agent_runtime_name=None))
-    assert inject_environment_signature("fix: test\n\nLDVH-Product-Name: fabricated") == "fix: test"
+    message = "fix: test\n\nLDVH-Product-Name: fabricated"
+    assert inject_environment_signature(message) == message
+
+
+def test_missing_snapshot_does_not_change_message(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("LDVH_SIGNATURE", raising=False)
+    message = "fix: test\n\nSession-ID: historical"
+    assert inject_environment_signature(message) == message
+
+
+def test_invalid_snapshot_blocks_without_rewriting_message(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setenv("LDVH_SIGNATURE", "not-json")
+    message = tmp_path / "COMMIT_EDITMSG"
+    original = "fix: test\n\nLDVH-Product-Name: keep"
+    message.write_text(original, encoding="utf-8")
+
+    assert run_prepare_commit_msg(str(message)) == "LDVH_SIGNATURE 无效：LDVH_SIGNATURE 不是有效 JSON object"
+    assert message.read_text(encoding="utf-8") == original
+
+
+def test_main_reports_unavailable_signature_fields_to_human(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setenv("LDVH_SIGNATURE", _signature(model_name=None))
+    message = tmp_path / "COMMIT_EDITMSG"
+    message.write_text("fix: test", encoding="utf-8")
+
+    assert main(["--message-file", str(message)]) == 0
+    error = capsys.readouterr().err
+    assert "LDVH-Model-Name" in error
+    assert "Human" in error
 
 
 def test_run_prepare_commit_msg_rewrites_file(signature_env: None, tmp_path: Path) -> None:

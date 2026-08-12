@@ -34,6 +34,7 @@ type ChangeLogEntry = {
   key: string;
   at: string;
   summary: string;
+  productName?: string;
   modelName?: string;
   agentRuntimeName?: string;
 };
@@ -74,7 +75,12 @@ export function ChangeLogReadingNode({
                   {formatDateTime(entry.at)}
                 </span>
                 {entry.modelName && <><span aria-hidden="true">·</span><span>{entry.modelName}</span></>}
-                {entry.agentRuntimeName && <><span aria-hidden="true">·</span><span>{entry.agentRuntimeName}</span></>}
+                {(entry.productName || entry.agentRuntimeName) && (
+                  <>
+                    <span aria-hidden="true">·</span>
+                    <span>{formatSignatureEnvironment(entry.productName, entry.agentRuntimeName)}</span>
+                  </>
+                )}
               </div>
               <p className="mt-1 ldvh-meta text-ldvh-text-secondary/80">{entry.summary}</p>
             </div>
@@ -83,6 +89,11 @@ export function ChangeLogReadingNode({
       )}
     </ReadingNodeSection>
   );
+}
+
+function formatSignatureEnvironment(productName?: string, runtimeName?: string): string {
+  if (productName && runtimeName) return `${productName}(${runtimeName})`;
+  return productName || runtimeName || '';
 }
 
 function parseChangeLogEntries(value: unknown): ChangeLogEntry[] {
@@ -97,14 +108,16 @@ function parseChangeLogEntries(value: unknown): ChangeLogEntry[] {
     const signatureRecord = signature && typeof signature === 'object' && !Array.isArray(signature)
       ? signature as Record<string, unknown>
       : null;
-    const modelName = typeof signatureRecord?.model_name === 'string' ? signatureRecord.model_name : undefined;
+    const productName = typeof signatureRecord?.product_name === 'string' ? signatureRecord.product_name.trim() : undefined;
+    const modelName = typeof signatureRecord?.model_name === 'string' ? signatureRecord.model_name.trim() : undefined;
     const agentRuntimeName = typeof signatureRecord?.agent_runtime_name === 'string'
-      ? signatureRecord.agent_runtime_name
+      ? signatureRecord.agent_runtime_name.trim()
       : undefined;
     return [{
       key: `${index}-${at}`,
       at,
       summary,
+      productName,
       modelName,
       agentRuntimeName,
     }];
