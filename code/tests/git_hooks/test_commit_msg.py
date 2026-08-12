@@ -14,7 +14,6 @@ from ldvh.git_hooks.commit_msg import (
     inspect_commit_msg_hook,
     install_commit_msg_hook,
     render_commit_msg_hook,
-    render_prepare_commit_msg_hook,
     uninstall_commit_msg_hook,
 )
 from ldvh.hooks import commit_msg as commit_msg_gate
@@ -43,7 +42,6 @@ def _environment() -> dict[str, str]:
             "GIT_AUTHOR_EMAIL": "ldvh@example.invalid",
             "GIT_COMMITTER_NAME": "LDVH Test",
             "GIT_COMMITTER_EMAIL": "ldvh@example.invalid",
-            "LDVH_SIGNATURE": ('{"product_name":"Cindy","model_name":"gpt-5.6-luna","agent_runtime_name":"pytest"}'),
         }
     )
     return environment
@@ -123,13 +121,6 @@ def _write_installed_hook(workspace: Path, worktree: Path) -> tuple[Path, Path]:
         newline="\n",
     )
     hook.chmod(0o755)
-    prepare = common_dir / "hooks" / "prepare-commit-msg"
-    prepare.write_text(
-        render_prepare_commit_msg_hook(commit_msg_runner=SOURCE_LAUNCHER),
-        encoding="utf-8",
-        newline="\n",
-    )
-    prepare.chmod(0o755)
     return hook, common_dir
 
 
@@ -168,9 +159,7 @@ def test_install_uses_common_dir_and_covers_existing_and_future_linked_worktrees
     assert installed.hook_path == str(hook)
     assert installed.hook_bundle_version == commit_msg.HOOK_BUNDLE_VERSION
     assert f"# ldvh-hook-bundle-version: {commit_msg.HOOK_BUNDLE_VERSION}" in hook.read_text(encoding="utf-8")
-    assert f"# ldvh-hook-bundle-version: {commit_msg.HOOK_BUNDLE_VERSION}" in (
-        common_dir / "hooks" / "prepare-commit-msg"
-    ).read_text(encoding="utf-8")
+    assert not (common_dir / "hooks" / "prepare-commit-msg").exists()
     assert set(installed.worktree_roots) == {str(main), str(existing)}
     main_hooks = _checked_git(main, "rev-parse", "--path-format=absolute", "--git-path", "hooks").strip()
     assert Path(main_hooks).resolve() == hook.parent.resolve()
@@ -211,11 +200,10 @@ def test_real_git_commit_is_blocked_and_allowed_by_installed_commit_msg_hook(tmp
     allowed = _git(project, "commit", "-m", message)
 
     assert allowed.returncode == 0, (allowed.stdout, allowed.stderr)
-    assert allowed.stderr.splitlines()[0] == "LDVH prepare-commit-msg: injected LDVH signature from environment"
     assert re.fullmatch(
         r"LDVH Git Gate \(commit-msg\) passed: "
         r"source_fingerprint=[0-9a-f]{64} snapshot_identity=sha256:[0-9a-f]{64}",
-        allowed.stderr.splitlines()[1],
+        allowed.stderr.splitlines()[0],
     )
     after = _checked_git(project, "rev-parse", "HEAD").strip()
     assert after != before
@@ -328,6 +316,22 @@ def test_unknown_prepare_hook_conflicts_without_replacing_the_commit_gate(tmp_pa
     assert prepare_hook.read_bytes() == original_prepare
 
 
+def test_digest_valid_prepare_for_a_different_runner_is_not_deleted(tmp_path: Path) -> None:
+    workspace, main = _managed_project(tmp_path)
+    common = Path(_checked_git(main, "rev-parse", "--path-format=absolute", "--git-common-dir").strip())
+    prepare_hook = common / "hooks" / "prepare-commit-msg"
+    foreign = commit_msg.render_prepare_commit_msg_hook(commit_msg_runner=Path("/foreign/ldvh"))
+    prepare_hook.write_text(foreign, encoding="utf-8", newline="\n")
+    prepare_hook.chmod(0o744)
+
+    blocked = _install(workspace, main)
+
+    assert blocked.state == "conflict"
+    assert prepare_hook.read_text(encoding="utf-8") == foreign
+    assert prepare_hook.stat().st_mode & 0o777 == 0o744
+    assert not (common / "hooks" / "commit-msg").exists()
+
+
 def test_equivalent_local_common_hooks_path_is_retained(tmp_path: Path) -> None:
     workspace, main = _managed_project(tmp_path)
     common = Path(_checked_git(main, "rev-parse", "--path-format=absolute", "--git-common-dir").strip())
@@ -339,7 +343,7 @@ def test_equivalent_local_common_hooks_path_is_retained(tmp_path: Path) -> None:
     assert installed.state == "managed", installed
     assert _checked_git(main, "config", "--get", "core.hooksPath").strip() == str(hooks)
     assert (hooks / "commit-msg").is_file()
-    assert (hooks / "prepare-commit-msg").is_file()
+    assert not (hooks / "prepare-commit-msg").exists()
 
 
 def test_exact_legacy_prepare_hook_is_upgraded_with_the_bundle(tmp_path: Path) -> None:
@@ -363,7 +367,7 @@ def test_exact_legacy_prepare_hook_is_upgraded_with_the_bundle(tmp_path: Path) -
     installed = _install(workspace, main)
 
     assert installed.state == "managed", installed
-    assert prepare_hook.read_text(encoding="utf-8") == render_prepare_commit_msg_hook(commit_msg_runner=SOURCE_LAUNCHER)
+    assert not prepare_hook.exists()
 
 
 def test_exact_legacy_gate_hook_is_upgraded_with_the_bundle(tmp_path: Path) -> None:
@@ -392,24 +396,62 @@ def test_exact_legacy_gate_hook_is_upgraded_with_the_bundle(tmp_path: Path) -> N
     )
 
 
-def test_second_bundle_write_failure_restores_the_first_hook(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_previous_managed_bundle_version_is_upgraded_with_the_retired_prepare(tmp_path: Path) -> None:
     workspace, main = _managed_project(tmp_path)
     common = Path(_checked_git(main, "rev-parse", "--path-format=absolute", "--git-common-dir").strip())
-    original_atomic_write = commit_msg._atomic_write
+    commit_hook = common / "hooks" / "commit-msg"
+    commit_hook.write_text(
+        render_commit_msg_hook(
+            commit_msg_runner=SOURCE_LAUNCHER,
+            workspace_root=workspace,
+            bundle_version=commit_msg._LAST_PREPARE_BUNDLE_VERSION,
+        ),
+        encoding="utf-8",
+        newline="\n",
+    )
+    commit_hook.chmod(0o755)
+    prepare_hook = common / "hooks" / "prepare-commit-msg"
+    prepare_hook.write_text(
+        commit_msg.render_prepare_commit_msg_hook(commit_msg_runner=SOURCE_LAUNCHER),
+        encoding="utf-8",
+        newline="\n",
+    )
+    prepare_hook.chmod(0o755)
 
-    def fail_prepare(path: Path, content: str, *, expected: bytes | None) -> None:
-        if path.name == "prepare-commit-msg":
-            raise OSError("simulated second bundle write failure")
-        original_atomic_write(path, content, expected=expected)
+    installed = _install(workspace, main)
 
-    monkeypatch.setattr(commit_msg, "_atomic_write", fail_prepare)
+    assert installed.state == "managed", installed
+    assert commit_hook.read_text(encoding="utf-8") == render_commit_msg_hook(
+        commit_msg_runner=SOURCE_LAUNCHER, workspace_root=workspace
+    )
+    assert not prepare_hook.exists()
+
+
+def test_retired_prepare_removal_failure_restores_the_commit_hook(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    workspace, main = _managed_project(tmp_path)
+    common = Path(_checked_git(main, "rev-parse", "--path-format=absolute", "--git-common-dir").strip())
+    prepare_hook = common / "hooks" / "prepare-commit-msg"
+    prepare_hook.write_text(
+        commit_msg._legacy_prepare_commit_msg_hook(commit_msg_runner=SOURCE_LAUNCHER), encoding="utf-8", newline="\n"
+    )
+    prepare_hook.chmod(0o755)
+    original_unlink = Path.unlink
+
+    def fail_prepare_unlink(path: Path, *args: object, **kwargs: object) -> None:
+        if path == prepare_hook:
+            raise OSError("simulated retired prepare removal failure")
+        original_unlink(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "unlink", fail_prepare_unlink)
 
     blocked = _install(workspace, main)
 
     assert blocked.state == "unavailable"
-    assert "simulated second bundle write failure" in blocked.detail
+    assert "simulated retired prepare removal failure" in blocked.detail
     assert not (common / "hooks" / "commit-msg").exists()
-    assert not (common / "hooks" / "prepare-commit-msg").exists()
+    assert prepare_hook.exists()
 
 
 def test_migrates_only_intact_ldvh_legacy_override_after_common_hook_is_prepared(tmp_path: Path) -> None:
@@ -485,6 +527,10 @@ def test_second_legacy_unset_failure_restores_first_override_and_removes_common_
         legacy_hook.chmod(0o755)
         _checked_git(worktree, "config", "--worktree", "core.hooksPath", ".githooks-v4")
     common = Path(_checked_git(main, "rev-parse", "--path-format=absolute", "--git-common-dir").strip())
+    prepare_hook = common / "hooks" / "prepare-commit-msg"
+    prepare = commit_msg._legacy_prepare_commit_msg_hook(commit_msg_runner=SOURCE_LAUNCHER)
+    prepare_hook.write_text(prepare, encoding="utf-8", newline="\n")
+    prepare_hook.chmod(0o744)
     original_run_git = commit_msg._run_git
 
     def fail_second_unset(worktree: Path, *arguments: str, **kwargs: object):
@@ -502,6 +548,8 @@ def test_second_legacy_unset_failure_restores_first_override_and_removes_common_
         assert _checked_git(worktree, "config", "--worktree", "--get", "core.hooksPath").strip() == ".githooks-v4"
         assert (worktree / ".githooks-v4/commit-msg").is_file()
     assert not (common / "hooks" / "commit-msg").exists()
+    assert prepare_hook.read_text(encoding="utf-8") == prepare
+    assert prepare_hook.stat().st_mode & 0o777 == 0o744
 
 
 def test_effective_directory_failure_restores_legacy_override_and_removes_common_hook(
@@ -521,6 +569,10 @@ def test_effective_directory_failure_restores_legacy_override_and_removes_common
     legacy_hook.chmod(0o755)
     _checked_git(linked, "config", "--worktree", "core.hooksPath", ".githooks-v4")
     common = Path(_checked_git(main, "rev-parse", "--path-format=absolute", "--git-common-dir").strip())
+    prepare_hook = common / "hooks" / "prepare-commit-msg"
+    prepare = commit_msg._legacy_prepare_commit_msg_hook(commit_msg_runner=SOURCE_LAUNCHER)
+    prepare_hook.write_text(prepare, encoding="utf-8", newline="\n")
+    prepare_hook.chmod(0o744)
     original_effective = commit_msg._effective_hooks_directory
 
     def fail_linked_effective(worktree: Path):
@@ -537,6 +589,8 @@ def test_effective_directory_failure_restores_legacy_override_and_removes_common
     assert _checked_git(linked, "config", "--worktree", "--get", "core.hooksPath").strip() == ".githooks-v4"
     assert legacy_hook.is_file()
     assert not (common / "hooks" / "commit-msg").exists()
+    assert prepare_hook.read_text(encoding="utf-8") == prepare
+    assert prepare_hook.stat().st_mode & 0o777 == 0o744
 
 
 def test_invalid_legacy_ownership_blocks_without_touching_config(tmp_path: Path) -> None:

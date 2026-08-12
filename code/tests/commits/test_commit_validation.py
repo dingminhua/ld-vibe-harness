@@ -19,7 +19,20 @@ from ldvh.facts.schema import FactSchema, ProjectedField
 @pytest.fixture
 def contract() -> CommitContractProjection:
     return CommitContractProjection(
-        type_tokens=("feat", "fix", "docs", "style", "refactor", "perf", "test", "build", "ci", "chore", "revert"),
+        type_tokens=(
+            "feat",
+            "fix",
+            "docs",
+            "style",
+            "refactor",
+            "perf",
+            "test",
+            "build",
+            "ci",
+            "chore",
+            "merge",
+            "revert",
+        ),
         scope_tokens=("specs", "docs", "rules", "runtime", "code", "web", "tests", "config"),
         mechanical_triggers=("all-commits-minimum-body", "breaking-marker"),
         source_key="source-of-truth-traceability",
@@ -238,6 +251,25 @@ def test_single_path_minimum_body_passes_mechanical_layer(contract: CommitContra
     assert "主要目的与拆分" in result.semantic_checks_required
 
 
+def test_explicit_merge_commit_message_passes_the_same_contract(contract: CommitContractProjection) -> None:
+    result = validate_commit(
+        contract,
+        _input(
+            contract,
+            message=_signed("merge: 合入已审阅的规则分支\n\n关键变更:\n- 将规则分支整合到当前历史线"),
+        ),
+    )
+
+    assert result.outcome == "passed"
+
+
+def test_automatic_git_merge_message_still_fails_without_body_or_signature(contract: CommitContractProjection) -> None:
+    result = validate_commit(contract, _input(contract, message="Merge branch 'reviewed-rules'"))
+
+    assert result.outcome == "failed"
+    assert {"header_invalid", "body_required", "key_changes_required", "signature_trailer_missing"} <= _codes(result)
+
+
 def test_crlf_and_leading_comments_are_normalized(contract: CommitContractProjection) -> None:
     message = (
         "# template\r\n\r\ndocs(specs): 明确提交契约\r\n\r\n"
@@ -429,6 +461,23 @@ def test_new_signature_trailers_are_canonical_footer(contract: CommitContractPro
     assert result.outcome == "passed", [f"{issue.code}: {issue.message}" for issue in result.issues]
 
 
+def test_signature_trailers_must_use_the_shared_normalized_values(contract: CommitContractProjection) -> None:
+    result = validate_commit(
+        contract,
+        _input(
+            contract,
+            message=(
+                "docs: 规范署名 trailer\n\n关键变更:\n- 拒绝未归一的模型与运行时名称\n\n"
+                "LDVH-Product-Name: Cindy\nLDVH-Model-Name: DeepSeek-V4-Flash[1m]\n"
+                "LDVH-Agent-Runtime-Name: Codex CLI"
+            ),
+        ),
+    )
+
+    assert result.outcome == "failed"
+    assert "signature_trailer_not_normalized" in _codes(result)
+
+
 @pytest.mark.parametrize(
     ("duplicate_trailer", "duplicate_value"),
     [
@@ -487,7 +536,8 @@ def test_new_signature_footer_tripwires_reject_alias_and_os_suffix(
             ),
         ),
     )
-    assert suffix.outcome == "passed"
+    assert suffix.outcome == "failed"
+    assert "signature_trailer_not_normalized" in _codes(suffix)
 
     spliced = validate_commit(
         contract,
@@ -1113,6 +1163,65 @@ def test_legacy_migration_change_log_passes_when_head_has_no_history(
 
     print("L3:", [(i.code, i.message) for i in result.issues])
     assert result.outcome == "passed"
+
+
+def test_first_real_update_three_field_log_passes_when_head_has_no_history(
+    contract: CommitContractProjection,
+) -> None:
+    """HEAD 无 change_log、Working Tree 建立一条当前三字段首写流水：本次提交事件。"""
+
+    head_data = _VALID_SPARK.split(b"change_log:\n")[0]
+    data = (
+        "object_id: spark-0001\n"
+        "fact_type_key: spark\n"
+        "title: 测试火花\n"
+        "status: open\n"
+        "priority: P1\n"
+        "created_at: 2026-07-01T00:00:00+08:00\n"
+        "updated_at: 2026-07-01T01:00:00+08:00\n"
+        "change_log:\n"
+        "  - signature:\n"
+        "      product_name: Cindy\n"
+        "      model_name: gpt-5.6-luna\n"
+        "      agent_runtime_name: claude-code\n"
+        "    at: 2026-07-01T01:00:00+08:00\n"
+        "    summary: 首次真实更新建立流水；此前历史未恢复。\n"
+    ).encode()
+
+    result = validate_commit(
+        contract,
+        _input(
+            contract,
+            fact_candidates=(_fact_candidate(data=data, head_exists=True, head_data=head_data),),
+            fact_schemas=(_spark_schema(),),
+        ),
+    )
+
+    assert result.outcome == "passed"
+    assert "fact_trace_append_invalid" not in _codes(result)
+    assert "legacy_signature_write_retired" not in _codes(result)
+
+
+def test_first_real_update_rejects_deleted_committed_history(
+    contract: CommitContractProjection,
+) -> None:
+    """HEAD 已有 change_log 而 Working Tree 删除了它：不能以首写名义恢复历史。"""
+
+    head_data = _VALID_SPARK
+    data = _VALID_SPARK.split(b"change_log:\n")[0]
+
+    result = validate_commit(
+        contract,
+        _input(
+            contract,
+            fact_candidates=(_fact_candidate(data=data, head_exists=True, head_data=head_data),),
+            fact_schemas=(_spark_schema(),),
+        ),
+    )
+
+    assert result.outcome == "failed"
+    # Working Tree 删除了全部流水：候选缺失可校验 change_log 而 fail closed。
+    assert "fact_trace_missing" in _codes(result)
 
 
 def test_new_fact_multiple_writer_sessions_use_one_trae_commit_session(

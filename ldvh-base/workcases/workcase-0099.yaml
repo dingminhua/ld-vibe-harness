@@ -1,0 +1,204 @@
+title: 退役 Git prepare-commit-msg 署名自动注入
+status: open
+summary: 单 commit-msg Hook 已部署；正在完成真实验证、复核与受控提交准备。
+priority: P1
+goal: 从正式 Hook bundle 退役 prepare-commit-msg 的 LDVH_SIGNATURE 自动署名注入，保留显式 trailer 与 commit-msg Gate。
+scope: 覆盖提交署名规则、环境接入规范和附件、Hook bundle 版本/部署/升级/回滚、显式 trailer 校验、真实 Git 事件测试及本地提交。排除事实 change_log 署名、Web、push、PR、发布和任何产品自动注入适配器。
+success_criterion_definitions:
+- criterion_id: criterion-1
+  statement: 规则和 Skill 一致规定提交署名由执行会话显式提供，LDVH_SIGNATURE 不再是默认接入接口。
+- criterion_id: criterion-2
+  statement: Hook bundle 仅管理 commit-msg；升级只删除可识别的 LDVH prepare Hook，未知或自定义 Hook 停止并交由 Human 决定。
+- criterion_id: criterion-3
+  statement: 预检与 commit-msg Gate 共享三字段 trailer 的解析、归一和拒绝规则，缺署名、旧署名或三项全空不能通过。
+- criterion_id: criterion-4
+  statement: 显式完整提交允许；自动 Git merge message、无正文或无署名提交被拒绝；真实 Git 事件覆盖安装、升级、回滚和 linked worktree common-dir 边界。
+- criterion_id: criterion-5
+  statement: 目标与相关回归、事实完整性、diff 检查和受控本地提交通过；不执行 push。
+phase: executing
+plan_version: 1
+work_items:
+- item_id: item-1
+  goal: 修订署名与环境接入规则，明确显式 trailer 和 prepare Hook 退役边界。
+  expected_result: 规范、附件、Skill 和提交模板不再将自动环境注入描述为正式路径。
+  status: completed
+  approach_summary: 先修订规则，保留事实写入 observed_context.signature 的独立边界。
+  result_summary: 已修订规则、附件、Skill 与提交模板，明确由提交方显式提供署名且不再依赖自动注入。
+- item_id: item-2
+  goal: 收敛显式 trailer 的归一与校验。
+  expected_result: Gate 不依赖环境变量，仍拒绝缺失、旧字段、重复或非规范 trailer。
+  status: completed
+  depends_on:
+  - item-1
+  approach_summary: 复用现有 signature 核心，不新增第二套字段规则。
+  result_summary: 预检与 commit-msg Gate 现经同一 parse_signature 归一化三字段 trailer，并拒绝缺失、旧字段与非规范值。
+- item_id: item-3
+  goal: 将双 Hook bundle 安全迁移为仅 commit-msg。
+  expected_result: 部署、检查与版本比较准确；不覆盖用户 Hook。
+  status: completed
+  depends_on:
+  - item-1
+  - item-2
+  approach_summary: common-dir 事务升级，先预检所有权再删除旧 prepare Hook。
+  result_summary: 已将当前 common-dir 升级为仅 commit-msg 的 2026-08-13 00:00 Hook；旧 prepare 注入 Hook 已安全删除，并覆盖两个 linked worktree。
+- item_id: item-4
+  goal: 完成真实 Git 事件和回归验证、独立复核及本地提交。
+  expected_result: 显式提交通过，自动 merge/无署名/旧 trailer 拒绝，升级与回滚可验证。
+  status: in_progress
+  depends_on:
+  - item-3
+  approach_summary: 覆盖普通和 linked worktree；不 push。
+  current_summary: workcase-0097/0098 已由独立提交完成；Index 为空，开始逐文件建立 workcase-0099 提交候选。
+  resume_from: 仅暂存 workcase-0099 范围内的文件，运行提交预检后创建本地提交。
+creation_reviews:
+- reviewer: injection-security-read-only-reviewer
+  reviewed_at: '2026-08-12T17:43:00Z'
+  subject_version: 1
+  scope: 环境可信边界、跨 worktree 错配、显式 trailer 替代流程、Hook 升级安全与测试范围。
+  conclusion: pass_with_followups
+  feedback:
+  - 普通环境变量不提供会话、工作树或提交候选可信绑定。
+  - 未知或自定义 Hook 不得自动删除。
+  - 显式 trailer 的归一必须由预检与 Gate 共享。
+  controller_resolution: 已将环境变量不作身份凭据、精确识别删除、未知 Hook 停止、共享校验和真实 Git 测试写入计划。
+  covered_quality_gate_ids:
+  - independent-result-review
+execution_authorization:
+  authorized_actions:
+  - action_id: authorization-1
+    summary: 修订规则、附件、Skill 和提交模板。
+    target_scope: specs/03、specs/09、接入附件、skill/SKILL.md 与提交行动模板。
+    effect_scope: 当前规则源和环境接入契约。
+    risk_summary: 规则不一致可能造成错误部署或 Gate 预期。
+    rollback_summary: 恢复规则文件并重跑规则投影和契约测试。
+    rule_refs:
+    - specs/03-事实源与信息溯源规范.md
+    - specs/09-环境接入规范.md
+  - action_id: authorization-2
+    summary: 实现单 Hook bundle 和显式 trailer 共享校验。
+    target_scope: code/ldvh/git_hooks、code/ldvh/hooks、code/ldvh/commits 与对应测试。
+    effect_scope: 当前仓库和共享 common-dir 的 LDVH Hook。
+    risk_summary: 错误迁移可能损坏 Hook、阻塞提交或放宽 Gate。
+    rollback_summary: 管理器事务回滚；未知 Hook 不写入。
+    rule_refs:
+    - specs/09-环境接入规范.md
+  - action_id: authorization-3
+    summary: 运行真实 Git 事件和相关回归。
+    target_scope: 当前 worktree、临时测试仓库/linked worktree、目标测试集。
+    effect_scope: 测试产物和只读审核。
+    risk_summary: 测试失败不得被表述为部署成功。
+    rollback_summary: 清理临时测试目录，保留失败证据并停止。
+    rule_refs:
+    - specs/33-环境接入行动模板.md
+  - action_id: authorization-4
+    summary: 创建本地受控提交。
+    target_scope: 本 WorkCase 列明的规则、代码、测试和事实更新。
+    effect_scope: 当前分支本地 Git 历史。
+    risk_summary: 可能夹带无关变更或未解决冲突。
+    rollback_summary: 提交前核对 Index；遇冲突或无关变更即停止，不 push。
+    rule_refs:
+    - specs/30-Git提交行动模板.md
+  - action_id: authorization-5
+    summary: 委派独立只读结果复核。
+    target_scope: 本 WorkCase 的规则、实现、测试和迁移证据。
+    effect_scope: 只读审核结论。
+    risk_summary: 审核结论不是自动批准。
+    rollback_summary: 不自动采纳，由 Controller 逐项处置。
+    rule_refs:
+    - specs/21-WorkCase-工作项.md
+  - action_id: authorization-6
+    summary: 记录结果复核并形成 Gate 2 材料。
+    target_scope: 本 WorkCase 生命周期更新。
+    effect_scope: 结果投影和 Human Gate 2 等待状态。
+    risk_summary: 测试与审核不能替代 Human Gate 2。
+    rollback_summary: 按状态机停止并交还。
+    rule_refs:
+    - specs/21-WorkCase-工作项.md
+  quality_gates:
+  - gate_id: independent-result-review
+    reviewer_mode: independent-read-only
+    delegation_action_id: authorization-5
+    result_review_action_id: authorization-6
+  action_ceiling: 仅限本 WorkCase 的规则、Hook bundle、提交校验、测试、事实更新与本地提交；不触及 Web、事实写入签名、产品适配器、push、PR 或发布。
+  allowed_adjustments: 允许为保持单一三字段解析、common-dir 原子升级、未知 Hook 安全停止和真实验证调整内部模块和测试位置；不得恢复默认环境变量注入。
+  verification_and_rollback: 每次事实写回后精确回读和完整性检查；代码变更运行目标测试和相关回归；Hook 安装/删除失败必须回滚；真实事件覆盖 allow 与 block；提交前运行预检。
+  out_of_bounds_handling: 发现用户自定义 Hook、无法识别旧 Hook、需要改变三字段语义、需要新增产品适配器或外部发布时停止并交由 Human 决定。
+  prohibited_actions:
+  - 自动删除未知或用户自定义 Hook。
+  - 将 LDVH_SIGNATURE 重新作为默认可信身份来源。
+  - 放宽 Gate 的正文、署名或旧字段拒绝规则。
+  - 修改事实 change_log 的 observed_context.signature 流程。
+  - push、PR、发布或改写历史。
+change_log:
+- summary: 受控创建 WorkCase：形成退役 prepare-commit-msg 自动署名注入的迁移计划，等待 Human Gate 1。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-12T17:44:27.462194Z'
+- summary: Human Gate 1 批准 workcase-0099 计划，进入 executing。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-12T17:49:39.334951Z'
+- summary: 开始 item-1：修订显式提交署名与 prepare Hook 退役规则。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-12T17:50:00.618620Z'
+- summary: 完成 item-1 并开始 item-2：规则改为显式署名，Gate 接入共享三字段归一化校验。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-12T18:15:28.716455Z'
+- summary: 完成 item-2 并开始 item-3：共享三字段归一校验已生效，进入单 Hook 安全迁移。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-12T18:15:46.242303Z'
+- summary: 完成 item-3 并开始 item-4：已部署单 commit-msg Hook，进入验证、复核与受控提交准备。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-12T18:18:05.657495Z'
+- summary: item-4 因真实 Index 含无关暂存 Web 变更而阻断；不 unstage、不清空、不使用临时 Index 绕过，等待 Human 处置或授权。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-12T18:20:10.818632Z'
+- summary: 真实 Index 已无无关暂存内容，解除 item-4 阻塞；开始逐文件建立受控提交候选。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-12T18:25:51.990978Z'
+- summary: item-4 再次阻断：Index 含 workcase-0097/0098 的无关已暂存收口；不 unstage、不清空、不使用临时 Index 绕过，等待 Human 处置或授权。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-12T18:26:36.123145Z'
+- summary: workcase-0097/0098 已由独立提交完成，Index 为空；解除 item-4 阻塞并开始建立 workcase-0099 提交候选。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-12T18:29:55.524266Z'
+execution_approval:
+  subject_version: 1
+  approved_at: '2026-08-12T17:49:00Z'
+  summary: Human 明确同意执行 workcase-0099 的完整退役迁移计划。
+  baseline_fingerprint: 6dff4d84aa57a166385cc8267744e8b7f0b7cfb2e91e94ad2400d40776cc5feb
+  source_refs:
+  - human://cindy/current-session/workcase-0099/gate-1
+resume_from: 完成候选范围核对与提交预检后，形成结果链。
+object_id: workcase-0099
+fact_type_key: workcase
+created_at: '2026-08-12T17:44:27.462194Z'
+updated_at: '2026-08-12T18:29:55.524266Z'

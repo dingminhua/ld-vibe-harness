@@ -72,6 +72,7 @@ def test_projects_current_03_tables_and_fingerprint() -> None:
         "build",
         "ci",
         "chore",
+        "merge",
         "release",
         "revert",
     )

@@ -12,6 +12,7 @@ from ldvh.commits.contract_source import CommitContractProjection
 from ldvh.facts.content import validate_fact_content
 from ldvh.facts.contracts import LAYOUTS, is_legacy_spark_object
 from ldvh.facts.schema import FactSchema
+from ldvh.signature import parse_signature
 
 _HEADER = re.compile(r"^(?P<type>[a-z]+)(?:\((?P<scope>[a-z]+(?:-[a-z]+)*)\))?(?P<breaking>!)?: (?P<description>.+)$")
 _CJK = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff]")
@@ -241,6 +242,34 @@ def _signature_trailer_issues(lines: list[str]) -> list[CommitValidationIssue]:
                 "LDVH-Model-Name、LDVH-Agent-Runtime-Name",
             )
         )
+    trailer_fields = {
+        "LDVH-Product-Name": "product_name",
+        "LDVH-Model-Name": "model_name",
+        "LDVH-Agent-Runtime-Name": "agent_runtime_name",
+    }
+    snapshot = {
+        field: trailers[name][0] if len(trailers.get(name, [])) == 1 else None
+        for name, field in trailer_fields.items()
+    }
+    if present and not any(
+        len(trailers.get(name, [])) != 1 or not trailers[name][0].strip()
+        for name in trailer_fields
+        if trailers.get(name)
+    ):
+        signature, problems = parse_signature(snapshot)
+        if problems or signature is None:
+            issues.append(_issue("signature_trailer_invalid", "；".join(problems)))
+        else:
+            normalized = signature.as_dict()
+            for name, field in trailer_fields.items():
+                raw = snapshot[field]
+                if raw is not None and raw != normalized[field]:
+                    issues.append(
+                        _issue(
+                            "signature_trailer_not_normalized",
+                            f"footer 的 {name}: 必须使用归一后的值 {normalized[field]!r}",
+                        )
+                    )
     return issues
 
 

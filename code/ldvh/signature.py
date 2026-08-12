@@ -9,6 +9,7 @@ from dataclasses import dataclass
 FIELD_NAMES = ("product_name", "model_name", "agent_runtime_name")
 _RUNTIME_SEPARATORS = re.compile(r"[\s_]+")
 _MODEL_SEPARATORS = re.compile(r"\s+")
+_MODEL_TRAILING_BRACKET_ANNOTATION = re.compile(r"\s*\[[^\[\]]*\]\s*$")
 
 
 @dataclass(frozen=True, slots=True)
@@ -59,6 +60,8 @@ def parse_signature(value: object) -> tuple[LDVHSignature | None, tuple[str, ...
             problems.append(f"LDVH 署名.{name} 必须是非空 string 或 null")
         else:
             normalized[name] = _normalize(name, raw)
+            if not normalized[name]:
+                problems.append(f"LDVH 署名.{name} 归一后不得为空")
     if problems:
         return None, tuple(problems)
     signature = LDVHSignature(**normalized)
@@ -67,13 +70,33 @@ def parse_signature(value: object) -> tuple[LDVHSignature | None, tuple[str, ...
     return signature, ()
 
 
-def _normalize(name: str, value: str) -> str:
-    value = value.strip()
-    if name == "product_name":
-        return value
-    if name == "model_name":
-        return _MODEL_SEPARATORS.sub("-", value.lower())
+def _normalize_product_name(value: str) -> str:
+    return value
+
+
+def _normalize_model_name(value: str) -> str:
+    while annotation := _MODEL_TRAILING_BRACKET_ANNOTATION.search(value):
+        value = value[: annotation.start()].rstrip()
+    return _MODEL_SEPARATORS.sub("-", value.lower())
+
+
+def _normalize_agent_runtime_name(value: str) -> str:
     return _RUNTIME_SEPARATORS.sub("-", value.lower())
+
+
+_FIELD_NORMALIZERS = {
+    "product_name": _normalize_product_name,
+    "model_name": _normalize_model_name,
+    "agent_runtime_name": _normalize_agent_runtime_name,
+}
+
+
+def _normalize(name: str, value: str) -> str:
+    """Dispatch every signature field through its one canonical normalizer."""
+
+    value = value.strip()
+    normalizer = _FIELD_NORMALIZERS[name]
+    return normalizer(value)
 
 
 __all__ = ["FIELD_NAMES", "LDVHSignature", "parse_signature"]

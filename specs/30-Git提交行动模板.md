@@ -133,7 +133,7 @@ ldvh_spec:
 1. 对受管辖目标只使用实际 worktree 的当前真实 Index：可以把 AI 已声明、已审核且已获授权的目标文件正常 stage 到该 Index，但不得建立或切换临时/alternate Index。stage 后必须重新读取真实 Index 的精确路径集合和 staged diff；两者必须分别与 AI 已声明的候选文件和已审核内容完全一致。出现额外、缺失、未知或无法归属的 staged 内容时立即停止，且不得为继续提交而 unstage、覆盖或清空既有内容；
 2. 受管辖目标按 `source-of-truth-traceability` §9.2 判断一个可共同说明、验证和回退的主要目的；普通拆分由 AI 依据该来源判断，需要 Human 决定时只按 `source-of-truth-traceability` §12(6) 进入 Human Gate；项目来源要求更细拆分、目标范围无法共同说明、验证不能共同覆盖或候选无法安全隔离时，按实际来源拆分或缩小范围；模板不自行建立拆分政策；
 3. 执行来源要求且与候选快照匹配的验证。验证失败、未运行、过期、对应其它 worktree 或不能覆盖目标时，按来源规则修正、缩小声明或暂停；只有来源明确把风险接受保留给 Human 时，Human 才能决定是否在相应范围继续；不可绕过的门禁不能由确认替代；
-4. 根据候选快照、Human 目标、受管辖目标适用的 `source-of-truth-traceability` §§9.3–9.4、项目附加 message 规则和实际验证形成提交说明。明确非受管辖且没有项目格式规则时，提交说明仍必须据实描述实际变化，不得声称未发生的验证、Git Gate 结果、完成、push 或发布；
+4. 根据候选快照、Human 目标、受管辖目标适用的 `source-of-truth-traceability` §§9.3–9.4、项目附加 message 规则和实际验证形成提交说明；适用署名契约时，由提交方把可观察字段显式写入完整 message，不依赖环境变量或 Hook 自动注入。明确非受管辖且没有项目格式规则时，提交说明仍必须据实描述实际变化，不得声称未发生的验证、Git Gate 结果、完成、push 或发布；
 5. 目标为 `governed_single` 时，必须把完整 message 直接作为 `arguments.message` 调用 `precheck-git-commit`，由该操作重新观察同一实际 worktree 的当前真实 Index；只有 Helper 外层 `outcome=ok` 且 `result.mechanical_outcome=passed`，才继续机械合规路径。`result.mechanical_outcome=failed|unverifiable`、外层 `unavailable`、Helper 不可用或调用错误都必须保留诊断并停止本次 commit 创建，不得把能力缺口、未调用或旧结果改写为通过；
 6. AI 必须独立审核主要目的、拆分、简体中文语义、description 真实性、body 充分性以及验证与风险是否据实，不得把 Helper 机械结果、测试通过或 Human 授权当作语义审核；
 7. 完整 message 默认只保留在当前进程内并直接交给 Helper 和 Git，不得在 Git Working Tree 内创建 `.codex-commit-msg.tmp`、`COMMIT_EDITMSG` 副本或其它临时提交消息文件。确有外部工具只接受文件路径时，只能使用 Working Tree 外的系统临时文件并在调用后清理；
