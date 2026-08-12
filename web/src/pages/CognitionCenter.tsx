@@ -48,6 +48,7 @@ import { usePanel } from '@/utils/panelContext';
 import { useProjectScope } from '@/utils/projectContext';
 import { useI18n } from '@/i18n/context';
 import { getFieldLabel, getFieldValueLabel, getLocalizedObjectTitle, getObjectStatusLocale, type LocaleKey } from '@/i18n/locales';
+import { getDefaultSparkHealthAgeFilter, type SparkHealthAgeFilter } from '@/utils/cognitionSparkHealth';
 
 /** 首屏截断阈值：Web 展示参数，不是事实；截断时底部如实提示总数与未显示数量。 */
 const INBOX_FIRST_SCREEN_LIMIT = 8;
@@ -58,7 +59,6 @@ const SPARK_HEALTH_FIRST_SCREEN_LIMIT = 6;
 const SPARK_PRIORITIES = ['P0', 'P1', 'P2', 'P3'];
 
 const RECENT_ACTIVITY_WINDOWS: CognitionRecentActivityWindow[] = ['1d', '3d', '7d'];
-type SparkHealthAgeFilter = 'all' | '3d' | '7d';
 const SPARK_HEALTH_AGE_FILTERS: SparkHealthAgeFilter[] = ['all', '3d', '7d'];
 
 type RecentHotspotStatusFilter = 'all' | 'progressing' | 'decision' | 'settled';
@@ -551,6 +551,7 @@ export default function CognitionCenter() {
       .then((next) => {
         if (!cancelled) {
           setData(next);
+          setSparkHealthAgeFilter(getDefaultSparkHealthAgeFilter(next.sparkHealth?.openItems ?? []));
           setRecentLoading(false);
         }
       })

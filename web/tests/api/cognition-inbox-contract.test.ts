@@ -11,11 +11,15 @@
  */
 
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import type { Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
+import path from 'node:path'
 import { after, before, test } from 'node:test'
 import { projectRecentHotspotFact, type RecentHotspotBuildItem } from '../../api/routes/cognition.ts'
 import { compareTimestamps } from '../../api/services/time.ts'
+
+const repositoryRoot = path.resolve(import.meta.dirname, '../..')
 
 let server: Server
 let baseUrl = ''
@@ -685,4 +689,14 @@ test('module-level degradation is surfaced via issues without breaking the contr
   if ('issues' in body) {
     assert.ok(Array.isArray(body.issues))
   }
+})
+
+test('Cognition resets Spark health age filter from each successful snapshot', async () => {
+  const cognition = readFileSync(path.join(repositoryRoot, 'src/pages/CognitionCenter.tsx'), 'utf8')
+  const filter = readFileSync(path.join(repositoryRoot, 'src/utils/cognitionSparkHealth.ts'), 'utf8')
+  assert.match(cognition, /getDefaultSparkHealthAgeFilter, type SparkHealthAgeFilter/)
+  assert.match(filter, /silentDays >= 7/)
+  assert.match(filter, /silentDays >= 3/)
+  assert.match(cognition, /setSparkHealthAgeFilter\(getDefaultSparkHealthAgeFilter\(next\.sparkHealth\?\.openItems \?\? \[\]\)\)/)
+  assert.match(cognition, /if \(!cancelled\) \{[\s\S]*setData\(next\);[\s\S]*setSparkHealthAgeFilter\(/)
 })
