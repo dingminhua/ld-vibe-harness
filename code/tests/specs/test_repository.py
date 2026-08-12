@@ -71,6 +71,7 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
     assert inspection.unchecked_conditions == UNCHECKED_CONDITIONS
     assert [declaration.operation_key for declaration in operations.candidate_declarations] == [
         "begin-workcase-termination",
+        "check-current-governed-sources",
         "check-fact-integrity",
         "close-workcase",
         "complete-workcase-termination",
@@ -97,6 +98,7 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
     }
     assert declaration_sources == {
         "begin-workcase-termination": "specs/21-WorkCase-工作项.md",
+        "check-current-governed-sources": "specs/04-Helper CLI 服务规范.md",
         "check-fact-integrity": "specs/05-事实模型基础规范.md",
         "close-workcase": "specs/21-WorkCase-工作项.md",
         "complete-workcase-termination": "specs/21-WorkCase-工作项.md",

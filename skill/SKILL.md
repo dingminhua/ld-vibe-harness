@@ -54,6 +54,11 @@ wheel、sdist、editable distribution，也不以 pip 安装 LDVH 本体。源�
 不可得、未解析到已确认源码或状态不符时如实交还"CLI 不可定位"或迁移缺口，不猜路径或改投
 不明 PATH/安装副本。Helper 操作信封与参数以其 capabilities 及 Helper 服务规范
 （04）的当次内容为准；独立入口的信封以环境接入面附件对应入口行的当次内容为准。
+所有公开入口都必须让 stdin 到达 EOF；无 tty 场景使用 `< /dev/null` 或闭合管道，入口挂起时先排查 stdin 未闭合。已确认源码根后，可先用 `capabilities </dev/null` 发现当次公开操作；当前规则源与当前 worktree 的一次性机械检查使用 `ldvh check </dev/null`。该快捷入口是零输入检查，不应猜测或注入 `workspace_root`。
+
+事实写入后的精确回读仍是必需步骤；在 merge/pull 后或需要当前完整事实库机械结论时，再按当次 capabilities 与来源契约调用 `check-fact-integrity`。它不是独立 shell 子命令，必须经 `ldvh call check-fact-integrity`，并按当次契约提供实际 worktree locator。`ldvh check`、`check-fact-integrity` 和精确回读的结果只用于各自机械边界，不互相替代。
+
+消费检查结果时至少保留外层 `outcome`、领域 `result.status`、`scope.completed`/`scope.not_completed`、`gaps` 和实际规则源/事实源范围；不得从 `ok`、`passed`、文件存在或命令成功退出推导事实语义正确、Human 授权、Git Gate 已验证、Skill 已递达或完整环境接入。
 
 需要 `governed_project_id` 时，从当前目录向其父目录逐级向上查找
 `LDVH-GOVERNED-PROJECTS.yaml`（管辖配置）读取项目 `id`；不得用目录名或仓库名

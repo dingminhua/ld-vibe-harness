@@ -15,6 +15,12 @@ from ldvh.helper.operations.action_template_operation import (
 from ldvh.helper.operations.action_template_operation import (
     CONTENT_OPERATION_KEY as ACTION_TEMPLATE_CONTENT_OPERATION_KEY,
 )
+from ldvh.helper.operations.check_current_governed_sources_operation import (
+    CHECK_CURRENT_GOVERNED_SOURCES_IMPLEMENTATION,
+)
+from ldvh.helper.operations.check_current_governed_sources_operation import (
+    OPERATION_KEY as CHECK_CURRENT_GOVERNED_SOURCES_OPERATION_KEY,
+)
 from ldvh.helper.operations.commit_precheck_operation import COMMIT_PRECHECK_IMPLEMENTATION
 from ldvh.helper.operations.commit_precheck_operation import OPERATION_KEY as COMMIT_PRECHECK_OPERATION_KEY
 from ldvh.helper.operations.fact_candidate_operation import FACT_CANDIDATE_IMPLEMENTATION
@@ -87,6 +93,7 @@ IMPLEMENTATIONS = MappingProxyType[str, OperationImplementation](
         ACTION_TEMPLATE_CANDIDATE_OPERATION_KEY: ACTION_TEMPLATE_CANDIDATE_IMPLEMENTATION,
         ACTION_TEMPLATE_CONTENT_OPERATION_KEY: ACTION_TEMPLATE_CONTENT_IMPLEMENTATION,
         COMMIT_PRECHECK_OPERATION_KEY: COMMIT_PRECHECK_IMPLEMENTATION,
+        CHECK_CURRENT_GOVERNED_SOURCES_OPERATION_KEY: CHECK_CURRENT_GOVERNED_SOURCES_IMPLEMENTATION,
         CREATE_OPERATION_KEY: CREATE_FACT_OBJECT_IMPLEMENTATION,
         FACT_CANDIDATE_OPERATION_KEY: FACT_CANDIDATE_IMPLEMENTATION,
         FACT_INTEGRITY_OPERATION_KEY: FACT_INTEGRITY_IMPLEMENTATION,

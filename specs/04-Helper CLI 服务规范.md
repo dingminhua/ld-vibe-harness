@@ -99,6 +99,7 @@ Helper CLI 的公开可执行入口使用当前源码仓库交付的稳定 `ldvh
 ldvh capabilities
 ldvh capabilities <operation_key>
 ldvh call <operation_key>
+ldvh check
 ```
 
 不带 `operation_key` 的 `capabilities` 用于发现已经由当前规则源定义的公开操作、实现情况和调用所需输入，不对尚未提供的具体请求判断可用性。带 `operation_key` 的 `capabilities` 针对所提供的请求内容检查该操作在当次范围内是否可调用。`call` 通过稳定的 `operation_key` 调用某项公开操作。
@@ -110,6 +111,8 @@ ldvh call <operation_key>
 公开操作集合只回答 Helper 当前公开提供哪些服务，不回答 AI 被允许执行哪些行动。`operation_key`、`capabilities`、实现注册和当次 `availability` 均不得成为 AI 工具、命令或普通求解路径的白名单；不存在、无效、未实现或当次不可用的 Helper 操作，只能证明 Helper 不能按该公开操作承接请求，不能据此禁止 AI 在 Human 当前指令和适用来源规则允许的范围内使用其它能力继续求解。若另一项实际适用的来源规则把某个 Helper 操作规定为当前行动不可替代的前置条件，该操作不可用时仍按该来源暂停或分流；这种局部效力来自该来源，不来自 Helper 服务目录本身。
 
 `capabilities` 是 Helper 的服务发现入口，不自行取得某个领域操作的 `operation_key`。通用发现响应中的 `operation_key` 为 `null`；针对单项操作检查和 `call` 响应回显请求提供的标识，其是否属于公开操作仍按当前规则源判断。
+
+`ldvh check` 是 `ldvh call check-current-governed-sources` 的零输入稳定快捷入口：两者使用同一 `operation_key`、请求和机器响应契约。它只检查当前源码 worktree 的规则源，以及由进程实际 `cwd` 所定位的受管辖 Git worktree 中全部事实对象；不扫描普通业务代码、构建产物或临时文件。快捷入口不得另建第二套结果、缓存或环境事件语义。
 
 命令别名、自动补全和文本装饰属于实现便利，不得成为机器调用的唯一入口。公开操作不得要求 AI 知道内部 Python 模块、Web API、厂商环境机制、缓存路径或 Python distribution 安装位置。
 
@@ -319,6 +322,34 @@ Helper 可以按请求把规范、事实、行动模板、工作对象和能力�
 5. 不因视图可达、相邻或排序靠前而创造规范依据、事实关系、行动顺序或规则优先级。
 
 关联视图是派生输出。来源变化后必须重新生成或标明过期；它不能替代 L3/L4 规则上下文、事实源或具体来源全文。
+
+### 9.3 高频显式检查输入字段
+
+`check-current-governed-sources` 是只读公开操作，用于 AI 在处理当前规范源或当前 worktree 的管辖事实源后主动取得一次低成本机械反馈。它不接受领域 `arguments`、`work_object_locators`、`task`、`observed_context` 或 `authorization_reference`；空共同请求对象是唯一领域输入。调用方可以使用共同 `response_profile` 改变重复证据与诊断的组织方式，但不得改变检查范围或通过条件。
+
+操作以 Helper 进程实际 `cwd` 为唯一事实检查定位输入：该目录必须能够按 02 解析为一个实际受管辖 Git worktree。它不把 `cwd` 当作未提供 locator 的猜测回退，不读取环境变量、缓存、历史会话、业务文件或临时目录来扩大范围。规则子检查固定使用与当前导入 Code 同一实际源码 worktree 的全部当前规则源候选 L0 读取；事实子检查固定使用 05 §11.9–11.10 的当前全库机械检查。两项检查在同一 Helper 进程的当前规则源观察中执行，但不据此判断规则适用、Human Gate、行动允许或上层工作完成。
+
+### 9.4 高频显式检查结果字段
+
+`check-current-governed-sources` 的 `result` 使用下列字段闭集：
+
+| 字段 | JSON 类型 | 要求 | 含义与边界 |
+|---|---|---|---|
+| `status` | string | 必填；`passed` 或 `not_passed` | 只表示本操作定义的两类机械子检查是否共同通过，不表示 AI 已理解规则、事实语义正确、Human 已授权、写后精确回读成立、提交合规或工作完成 |
+| `rules` | object | 必填 | 规则子检查原始报告，字段闭集为 `outcome`、`result`、`scope`、`sources`、`gaps`、`verification`、`diagnostics`；`result` 保留全量 L0 候选读取的原始 `items` 或 `null` |
+| `facts` | object | 必填 | 事实子检查原始报告，字段闭集为 `outcome`、`result`、`scope`、`sources`、`gaps`、`verification`、`diagnostics`；`result` 原样保留 05 §11.10 的 `status`、`object_count`、`problems` 或为 `null` |
+
+两个子报告中的 `scope` 均使用字段闭集 `requested`、`completed`、`not_completed`；其成员保留各自下游检查的原始范围。共同响应顶层 `scope` 另行明确规则范围为当前源码 worktree 的完整规则源，事实范围为实际 `cwd` 所属唯一受管辖 Git worktree 的完整事实库。子报告的 `gaps`、`verification`、`diagnostics` 和 `sources` 必须逐项保留，不能用总摘要、布尔值或顶层 `outcome` 替代。
+
+本操作仅在下列条件同时成立时返回 `result.status: "passed"` 与外层 `outcome: "ok"`：规则子报告 `outcome` 为 `ok` 且没有未完成范围；事实子报告 `outcome` 为 `ok`、其原始 `result.status` 为 `complete` 且没有未完成范围；并且两个子报告均不存在**阻断缺口**。阻断缺口是某一子报告 `gaps[]` 中其 `scope` 与该子报告 `not_completed` 范围存在相同成员的条目；仅表示尚未自动证明资格、但不对应未完成范围的缺口不是阻断缺口。任何 `partial`、`unavailable`、`error`、事实 `result.status: "partial"`、空原始结果，或阻断缺口，都必须使 `status` 为 `not_passed`，不得被另一子报告的成功掩盖。外层结果仍按 §7.2：已有独立完成子范围时使用 `partial`，完全不可用时使用 `unavailable`，实现异常使用 `error`；所有情况保留原始子报告以供 AI 分流。
+
+本操作是高频补充检查，不替代 05、31、32 所要求的每次事实写后精确回读与完整性审计，也不替代 03、30 和真实 Git Hook/Gate 的提交候选兜底。它不启动 watcher、轮询、后台进程或环境 adapter，不运行构建、Web 测试、全量测试或普通业务代码检查。
+
+### Helper 公开操作
+
+| operation_key | summary | effect | arguments_contract | result_contract |
+|---|---|---|---|---|
+| `check-current-governed-sources` | 对当前规则源和当前 worktree 完整事实库执行一次显式只读机械检查 | `read` | `helper-cli-service-contract::9.3 高频显式检查输入字段` | `helper-cli-service-contract::9.4 高频显式检查结果字段` |
 
 ## 10. 环境机制与 Helper 结果的一致性
 

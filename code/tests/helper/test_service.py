@@ -338,6 +338,7 @@ def test_unrelated_candidate_problem_does_not_block_defined_operation(
     assert discovered.response["outcome"] == "partial"
     assert discovered.response["scope"]["completed"] == [
         "begin-workcase-termination",
+        "check-current-governed-sources",
         "check-fact-integrity",
         "close-workcase",
         "complete-workcase-termination",

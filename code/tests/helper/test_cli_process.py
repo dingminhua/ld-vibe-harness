@@ -42,6 +42,19 @@ def test_helper_uses_repository_source_launcher() -> None:
     assert HELPER_EXECUTABLE.is_file()
 
 
+def test_explicit_check_shortcut_uses_the_public_operation_contract() -> None:
+    completed, response = _run(PROJECT_ROOT, "check")
+
+    assert completed.returncode == 0
+    assert response["operation_key"] == "check-current-governed-sources"
+    assert response["outcome"] == "ok"
+    assert response["result"]["status"] == "passed"
+
+    invalid, invalid_response = _run(PROJECT_ROOT, "check", "unexpected")
+    assert invalid.returncode == 2
+    assert invalid_response["outcome"] == "invalid_request"
+
+
 def test_general_discovery_reports_source_bound_implementation(tmp_path: Path) -> None:
     completed, response = _run(tmp_path, "capabilities")
 
@@ -49,8 +62,12 @@ def test_general_discovery_reports_source_bound_implementation(tmp_path: Path) -
     assert response["outcome"] == "ok"
     assert response["operation_key"] is None
     assert response["result"]["mode"] == "discovery"
-    assert len(response["result"]["operations"]) == 21
+    assert len(response["result"]["operations"]) == 22
     operations = {item["operation_key"]: item for item in response["result"]["operations"]}
+    check = operations["check-current-governed-sources"]
+    assert check["implementation"]["present"] is True
+    assert check["required_inputs"] == []
+    assert check["optional_inputs"] == []
     candidates = operations["find-fact-object-candidates"]
     assert candidates["implementation"]["present"] is True
     assert candidates["required_inputs"] == [
@@ -164,7 +181,7 @@ def test_general_discovery_reports_source_bound_implementation(tmp_path: Path) -
     assert commit_precheck["required_inputs"] == ["work_object_locators", "arguments.message"]
     assert commit_precheck["optional_inputs"] == ["arguments.workspace_root"]
     assert len(response["gaps"]) == 2
-    assert sum(item["member_count"] for item in response["gaps"]) == 168
+    assert sum(item["member_count"] for item in response["gaps"]) == 176
 
 
 def test_real_cli_prepare_exposes_definition_refs_without_a_second_schema() -> None:
@@ -187,8 +204,7 @@ def test_real_cli_prepare_exposes_definition_refs_without_a_second_schema() -> N
     assert priority["definition_ref"] == "fact-object-field-registry::跨类型共享字段定义表::priority"
     assert priority["constraint_ref"] == "spark-fact-type::6. 对象语义与生命周期"
     assert all(
-        set(item) == {"field_path", "json_type", "presence", "definition_ref", "constraint_ref"}
-        for item in contracts
+        set(item) == {"field_path", "json_type", "presence", "definition_ref", "constraint_ref"} for item in contracts
     )
 
 
@@ -201,7 +217,7 @@ def test_diagnostic_profile_expands_qualification_details(tmp_path: Path) -> Non
 
     assert completed.returncode == 0
     assert response["response_profile"] == "diagnostic"
-    assert len(response["gaps"]) == 168
+    assert len(response["gaps"]) == 176
     assert all(item["summary"].startswith("当前 Code 尚未自动证明：") for item in response["gaps"])
     assert all("member_count" not in item for item in response["gaps"])
 

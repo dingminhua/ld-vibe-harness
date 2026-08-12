@@ -108,6 +108,7 @@ if str(CODE_ROOT) not in sys.path:
 def _usage() -> int:
     sys.stderr.write(
         "usage: ldvh capabilities [operation_key] | ldvh call <operation_key> | "
+        "ldvh check | "
         "ldvh {worktree-bootstrap,work-context,context-recovery,doctor,git-commit-msg,"
         "prepare-commit-msg,git-hook} ...\n"
     )
@@ -123,10 +124,13 @@ def main() -> int:
 
         return worktree_bootstrap_main(SOURCE_ROOT, sys.argv[2:])
     _ensure_dependency_runtime()
-    if command in {"capabilities", "call"}:
+    if command in {"capabilities", "call", "check"}:
         from ldvh.cli import main as helper_main
 
-        sys.argv = [sys.argv[0], *sys.argv[1:]]
+        if command == "check":
+            sys.argv = [sys.argv[0], "call", "check-current-governed-sources", *sys.argv[2:]]
+        else:
+            sys.argv = [sys.argv[0], *sys.argv[1:]]
         return helper_main()
     arguments = sys.argv[2:]
     if command == "work-context":
