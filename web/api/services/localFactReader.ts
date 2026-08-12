@@ -160,7 +160,6 @@ const RECORD_ARRAY_FIELDS: Partial<Record<LocalFactType, ReadonlySet<string>>> =
 function isConsumableRecordMember(type: LocalFactType, field: string, member: Record<string, unknown>): boolean {
   if (field === 'change_log') {
     return typeof member.at === 'string' && member.at.trim().length > 0
-      && typeof member.session_id === 'string' && member.session_id.trim().length > 0
       && typeof member.summary === 'string' && member.summary.trim().length > 0
       && isConsumableChangeLogSignature(member.signature)
   }

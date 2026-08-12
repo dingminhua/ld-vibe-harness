@@ -129,7 +129,7 @@ test('Spark evolution members without a timestamp and forbidden Pitfall tags rem
   }
 });
 
-test('change_log accepts the current three-field signature shape', async () => {
+test('change_log accepts the current three-field signature shape without retired session_id', async () => {
   const root = await mkdtemp(path.join(tmpdir(), 'ldvh-field-reader-'));
   const scope: LocalFactScope = { worktreeLocator: root, governedProjectId: 'fixture' };
   const directory = path.join(root, 'ldvh-base', 'sparks');
@@ -140,7 +140,7 @@ test('change_log accepts the current three-field signature shape', async () => {
       'status: open', 'priority: P1', 'summary: Current observation', 'created_at: "2026-01-01"', 'updated_at: "2026-01-02"',
       'change_log:',
       '  - signature:', '      product_name: Cindy', '      model_name: gpt-5.6-luna', '      agent_runtime_name: codex-cli',
-      '    session_id: current-session', '    at: "2026-01-01T00:00:00+08:00"', '    summary: Current entry',
+      '    at: "2026-01-01T00:00:00+08:00"', '    summary: Current entry',
     ].join('\n'), 'utf8');
 
     const detail = await readLocalFact('spark', 'spark-0003', scope);
