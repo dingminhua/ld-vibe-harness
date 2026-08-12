@@ -96,7 +96,7 @@ cd ld-vibe-harness
 
 - 规范与规则源更新：仓库入口现取现用；仍需按受影响范围复核行为，不安装 LDVH 包；
 - `skill/SKILL.md` 变化：将各环境部署件与新模板逐字节比对，过期者重新部署；
-- 源码 launcher、运行依赖声明、Git Hook 管理实现或 Git Gate 核心入口变化：验证源码入口，并对全部已管辖项目的每个 Git common-dir 逐一重新检查承接 Git Gate 的 Hook；已是当前受管版本者不写入，缺失或过期者才受控重新部署。同一 common-dir 的主 worktree 与 linked worktree 共用一次部署，独立 clone 另行检查；发现未知 Hook 或配置冲突时停止，不覆盖；
+- 源码 launcher、运行依赖声明、Git Hook 管理实现或 Git Gate 核心入口变化：验证源码入口，并对全部已管辖项目的每个 Git common-dir 逐一重新检查完整 Hook bundle（`prepare-commit-msg` 的署名注入与 `commit-msg` Git Gate）；两者由同一管理器一次预检、升级或回滚，已是当前受管版本者不写入。缺失或过期者才受控重新部署；同一 common-dir 的主 worktree 与 linked worktree 共用一次部署，独立 clone 另行检查；发现未知 Hook 或配置冲突时停止，不覆盖；
 - 上述处理后按 specs/09 §6.5 与 specs/attachments/09.Att.02 重验受影响范围，不沿用旧验证结论。
 
 ## 启动 Web（本地开发）
@@ -145,7 +145,7 @@ Web 界面帮助 Human 如实查看当前项目状态、待决定事项和可核
 
 执行该提示的 AI 请注意：权威流程不在本文件。取得并确认源码仓库后，先读取环境接入面附件，再经源码 launcher 的 `read-action-template-candidates` 定位，并经 `read-action-template-content` 读取当次环境接入行动模板，照模板执行；
 全部入口的调用契约以 `specs/attachments/09.Att.01-环境接入面.md` 当次内容为准；
-薄 Skill 部署件必须与 canonical 模板 `skill/SKILL.md` 逐字节一致；目标项目必须按 02 建立或核验管辖配置并取得当次解析结果；承接 Git Gate 的 Git Hook 必须部署到目标 Git common-dir。环境接入、管辖配置、Git Hook 部署与验证都是完整接入的必需工作，不能二选一。
+薄 Skill 部署件必须与 canonical 模板 `skill/SKILL.md` 逐字节一致；目标项目必须按 02 建立或核验管辖配置并取得当次解析结果；承接 Git Gate 的 Git Hook bundle（`prepare-commit-msg` 与 `commit-msg`）必须部署到目标 Git common-dir。环境接入、管辖配置、Git Hook 部署与验证都是完整接入的必需工作，不能二选一。
 
 AI 完成部署后应提示你执行以下操作：
 
