@@ -100,22 +100,20 @@ def _unavailable(
 def _format_integrity_problem_summary(problem: dict[str, Any]) -> str:
     label = problem.get("canonical_path") or problem.get("fact_type_key") or "扫描边界"
     detail = (
-        "; ".join(
-            str(issue.get("summary")) for issue in problem.get("issues", ()) if isinstance(issue, dict)
-        )
+        "; ".join(str(issue.get("summary")) for issue in problem.get("issues", ()) if isinstance(issue, dict))
         or problem.get("check_status")
         or "读取未完成"
     )
     return f"{label}: {detail}"
 
 
-def _execute(
-    request: CommonRequest,
+def execute_fact_integrity(
+    domain: FactIntegrityRequest,
     repository: RepositoryInspection,
-    context: OperationExecutionContext,
+    *,
+    scope: tuple[dict[str, object], ...] | None = None,
 ) -> OperationExecution:
-    domain = _validated_request(request, context)
-    scope = (_scope(domain),)
+    scope = (_scope(domain),) if scope is None else scope
     run = _governance(domain)
     boundary = reading_boundary(run)
     if boundary is None:
@@ -179,6 +177,14 @@ def _execute(
     )
 
 
+def _execute(
+    request: CommonRequest,
+    repository: RepositoryInspection,
+    context: OperationExecutionContext,
+) -> OperationExecution:
+    return execute_fact_integrity(_validated_request(request, context), repository)
+
+
 def _check_availability(
     request: CommonRequest,
     repository: RepositoryInspection,
@@ -205,4 +211,4 @@ FACT_INTEGRITY_IMPLEMENTATION = OperationImplementation(
     call=_execute,
 )
 
-__all__ = ["FACT_INTEGRITY_IMPLEMENTATION", "OPERATION_KEY"]
+__all__ = ["FACT_INTEGRITY_IMPLEMENTATION", "OPERATION_KEY", "execute_fact_integrity"]

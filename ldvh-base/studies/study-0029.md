@@ -48,10 +48,10 @@ input_refs:
   locator: specs/attachments/09.Att.01-环境接入面.md
   version: 5602766f790a25dd91f67e2ae7864382e49aea1d
   observed_at: '2026-08-10T23:54:36Z'
-research_question: 当 AI 开发环境不提供可靠的 post-write 环境 Hook 时，行业如何在任意写入之后尽早检查结果规范；文件 watcher、稳定快照、验证 receipt、Git Hook 和远端门禁应如何分工，才能让 LDVH 放松写入过程约束而不削弱最终结果与提交边界？
-abstract: 本报告于 2026-08-11 对照 Watchman、Node.js、Gradle、TypeScript、Chokidar、pre-commit、Git、GitHub 与 Bazel 的官方资料。行业主流不是把文件事件当成可靠写入证明，而是让 watcher 使旧结果失效并触发检查，让检查绑定稳定内容快照和可核对 receipt，让关键消费入口现场核对当前指纹；Git Hook 保留为实际 Index 与 commit message 的最后一道本地机械门禁，远端 required check 可选作合并门禁。没有环境 Hook 时无法保证每次任意写入后立刻检查，但可以保证未经当前快照验证的结果不被 LDVH 信任。当前未实现原型、性能基准或故障注入，且既有无效 WorkCase 会使整库审计保持 partial。
-research_intent: Human 希望 LDVH 约束最终结果而非 AI 的具体写入方式，并要求写完后尽早由 Code 检查；目标环境没有可用的 post-write 环境 Hook，但 Git Hook 仍须保留。本研究为 watcher 的可信边界、与 Git Gate 的分工，以及事件丢失或进程未运行时的 fail-closed 行为提供可复读依据。
-recommendation_summary: 建议保留 common-dir 级 Git Hook 与 Git Gate，并新增显式的 worktree 级 ldvh watch/check 过程能力。事件只使旧结果失效；debounce 后比较检查前后完整受管 manifest，只有同一快照通过 Code 才生成绑定 worktree、HEAD、规则与 checker 版本、内容哈希的 receipt。异常均撤销 valid 并全量重扫。可信消费入口现场核对 receipt；Git Hook 独立检查当次 Index。实施前由 ADR 澄清 watcher 是显式 Code/CLI 过程检查而非环境插件，再由 WorkCase 实现轮询 MVP 与故障验证。
+research_question: 当 AI 开发环境不提供可靠的 post-write 环境 Hook 时，行业如何在任意写入之后尽早检查结果规范；显式高频检查、文件 watcher、稳定快照、验证 receipt、Git Hook 和远端门禁应如何分工，才能让 LDVH 放松写入过程约束而不削弱最终结果与提交边界？
+abstract: 本报告于 2026-08-11 对照 Watchman、Node.js、Gradle、TypeScript、Chokidar、pre-commit、Git、GitHub 与 Bazel 的官方资料。行业主流不是把文件事件当成可靠写入证明，而是把 watcher 用作失效或调度信号，把显式检查绑定当前输入，并由 Git Hook 保留提交前最后门禁。根据 Human 后续方向，本研究首期采纳低成本、高频、一次性的显式 ldvh check：它读取当前规则源与当前实际 worktree 的完整管辖事实库，保留原始子结果和 gaps；watcher、receipt 与 ADR 不在首期实现。当前未实现 watcher 原型、性能基准或故障注入。
+research_intent: Human 希望 LDVH 约束最终结果而非 AI 的具体写入方式，并要求写完后尽早由 Code 检查；目标环境没有可用的 post-write 环境 Hook，但 Git Hook 仍须保留。本研究为显式检查的可信边界、与 Git Gate 的分工，以及 watcher 作为可选后续增强的条件提供可复读依据。
+recommendation_summary: 首期保留 common-dir 级 Git Hook 与 Git Gate，并交付显式、一次性、只读的 ldvh check。它固定检查当前源码 worktree 的完整规则源与由实际 cwd 解析出的受管辖 Git worktree 的完整事实库，逐项保留规则与事实子检查的原始结果、gaps 和未完成范围；普通业务代码、构建产物和临时文件不进入输入。事实子检查非 complete、任一子检查 partial/unavailable/error 或合同定义的阻断 gap 时不得返回 passed。该能力补充而不替代每次事实写后的精确回读和完整性审计，也不替代 Git Hook/Gate。watcher、范围级 receipt 和 ADR 仅在显式检查被证明不足且 Human 另行要求更低延迟自动反馈时再研究。
 change_log:
 - signature:
     model_id: gpt-5
@@ -59,10 +59,28 @@ change_log:
   session_id: cindy-study-no-environment-hook-research-20260811
   at: '2026-08-10T23:54:37.152370Z'
   summary: Human 要求将无环境 Hook 条件下的行业处理方式、持续结果检查方案及保留 Git Hook 的修正结论写入 Study。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-12T07:07:10.333487Z'
+  summary: Human 要求补充并收窄 Study 0029：验证按对话/任务声明范围及必要依赖闭包隔离，无关文件变化不影响该范围 receipt。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-12T07:11:17.573523Z'
+  summary: Human 澄清 Study 0029 的监测对象：当前规范源与由工作对象管辖解析出的事实源；普通业务或任意非事实文件不进入 receipt。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-12T08:18:57.934902Z'
+  summary: Human 批准显式高频检查方向后，将首期建议更新为 ldvh check；watcher、receipt 与 ADR 改为可选后续研究。
 object_id: study-0029
 fact_type_key: study
 created_at: '2026-08-10T23:54:37.152370Z'
-updated_at: '2026-08-10T23:54:37.152370Z'
+updated_at: '2026-08-12T08:18:57.934902Z'
 ---
 
 ## 研究问题
@@ -85,9 +103,9 @@ updated_at: '2026-08-10T23:54:37.152370Z'
 
 外部观察：Node.js 明确说明 fs.watch 在平台、网络文件系统和虚拟化环境中可能不一致，filename 也不保证提供。Watchman 遇到事件队列溢出或失去同步时会 recrawl，并把不确定文件保守地视为已变化。编辑器原子保存还可能表现为 unlink/add 或 rename。
 
-项目启发：LDVH watcher 收到受管路径事件时，只能撤销旧验证结果并标记 dirty，不能据此声称完整观察了写入。watcher 未启动、崩溃、心跳过期、后端错误、目录重建或事件溢出时都必须进入 unknown/dirty，并全量重扫。
+项目启发：每次 watch/check 的监测对象只能是当前规范源，以及由该对话或任务所给工作对象定位、经管辖解析得出的事实源范围；必要关系闭包只在这些事实源内展开。普通业务代码、任意非事实文件和未落入该管辖范围的事实不进入 receipt。LDVH watcher 收到规则源或该事实源范围内事件时，只能撤销受影响范围的旧验证结果并标记 dirty，不能据此声称完整观察了写入；范围外变化不得触发或撤销它的 receipt。watcher 未启动、崩溃、心跳过期、后端错误、目录重建或事件溢出时，受影响规则或事实范围必须进入 unknown/dirty 并重扫。
 
-对后续项目工作的直接影响：Human 采纳后应创建 ADR 确认“事件只使 receipt 失效”的信任边界；实现 WorkCase 必须覆盖漏事件、溢出、重启和原子 rename。
+对后续项目工作的直接影响：Human 采纳后应创建 ADR，确认“事件只使受影响规范源或管辖事实源范围的 receipt 失效”及关系闭包的信任边界；实现 WorkCase 必须覆盖漏事件、溢出、重启、原子 rename，以及两个并行对话在不相交管辖事实源范围内工作时互不干扰。
 
 ### 发现二：稳定快照而非静默时间决定结果能否发布
 
@@ -101,9 +119,9 @@ updated_at: '2026-08-10T23:54:37.152370Z'
 
 外部观察：TypeScript 在原生 watcher 受限时提供 polling 回退；Watchman 在监控状态不可信时重新扫描。Bazel 缓存由明确输入和动作摘要寻址，而非只保存脱离输入的“曾经通过”；Watchman flush-subscriptions 还提供显式 barrier。
 
-项目启发：首版可使用显式启动的 worktree 级轮询 watcher：mtime/size 初筛，变化后计算内容哈希，并定期全量 reconcile。receipt 至少绑定 worktree、HEAD、受管 manifest、规则指纹、checker 版本、验证范围、结果、时间和健康代次。阶段推进、事实消费或成功声明必须现场比较当前指纹，无法比较时返回未验证。
+项目启发：首版可使用显式启动的 worktree 级轮询 watcher：mtime/size 初筛，变化后计算范围内容哈希，并定期对已登记范围及其依赖闭包 reconcile。receipt 至少绑定 worktree、HEAD、范围定位器与范围快照、依赖闭包快照、规则指纹、checker 版本、结果、时间和健康代次。阶段推进、事实消费或成功声明必须现场比较当前范围及闭包指纹，无法比较时返回未验证。整库 manifest 审计可以作为独立项目健康检查，不得把无关对象的问题混入某一范围的 receipt。
 
-对后续项目工作的直接影响：ADR 应冻结“异常即失效、定期全扫、内容哈希定案、消费点重验”的语义；WorkCase 必须拒绝旧 worktree、旧 HEAD、旧规则和 stale heartbeat 的 receipt，并测量 CPU、扫描延迟与反馈时间。
+对后续项目工作的直接影响：ADR 应冻结“异常即使受影响范围失效、范围/闭包定期对账、内容哈希定案、消费点重验”的语义；WorkCase 必须拒绝旧 worktree、旧 HEAD、旧规则、过期依赖闭包或 stale heartbeat 的 receipt，并测量 CPU、扫描延迟与反馈时间。
 
 ### 发现四：watcher 前移反馈，Git Hook 保留最后把关
 
@@ -123,23 +141,19 @@ updated_at: '2026-08-10T23:54:37.152370Z'
 
 ## 建议
 
-### 建议一：先创建 watcher 与 Git Gate 分层 ADR
+### 建议一：首期交付高频显式 `ldvh check`
 
-目标对象类型与创建判断：Human 接受长期方向后创建 ADR；当前尚未创建。预期目标是决定保留 Git Hook 的前提下，ldvh watch/check 是否作为显式 Code/CLI 过程检查成立，以及它与 00 §8.2 禁止并行环境接入形态的兼容解释或必要修订。
+首期不建立 ADR，不实现 watcher。新增一次性、只读的 `ldvh check`，使 AI 在处理当前规范源或事实源后可直接调用。命令固定检查当前源码 worktree 的完整规则源，以及由实际 `cwd` 解析出的受管辖 Git worktree 的完整事实库；普通业务代码、构建产物与临时文件不进入输入。
 
-验收条件：明确事件不可信、receipt 绑定、状态闭集、worktree 隔离、异常全扫、轮询回退、消费 barrier、Working Tree 与 Index 的不同视图、Git Hook 独立性，以及无法保证任意写入立即检查的边界；同时比较“不新增 watcher、继续每次显式 check”的替代方案。
+结果必须逐项保留规则与事实子检查的原始结果、范围、gaps、验证和诊断。只有规则检查完成、事实完整性结果为 `complete`，且没有合同定义的阻断 gap 时，组合结果才可报告 `passed`。事实 `partial`、不可用、错误或缺口不能被另一子检查的成功掩盖。
 
-### 建议二：ADR 通过后创建轮询 MVP WorkCase
+### 建议二：保留既有写后与提交兜底
 
-目标对象类型与创建判断：仅在 ADR 批准后创建 WorkCase。预期目标是交付显式的 worktree 级 ldvh watch 与 ldvh check，共享当前 Code validator，不增加厂商环境 Hook、插件或 adapter。
+显式检查只提供早期、方便的反馈，不替代事实写后的精确回读和 `check-fact-integrity`，也不替代真实 Git Hook/Gate 对 Index 与 commit message 的提交门禁。三个入口共享已存在的机械检查核心，但承担不同的时间点和输入视图；本次不修改 Hook 或 Gate。
 
-验收条件：启动全量基线；变化立即 dirty；debounce；检查前后 manifest 一致；异常撤销 valid；定期 reconcile；receipt 绑定 worktree、HEAD、规则、checker 和内容哈希；验证原子 rename、连续写、同大小替换、检查中变化、进程重启、心跳过期和 linked worktree 隔离。
+### 建议三：watcher 仅作为可选后续增强
 
-### 建议三：三个快照视图复用同一验证核心
-
-目标对象类型与创建判断：纳入同一 WorkCase，不另建并行 validator。预期目标是形成 validate(snapshot) 核心，由 Working Tree、Index 和 commit 三种适配器提供明确输入。
-
-验收条件：相同规范错误产生一致分类；每个结果回指实际快照；watcher 结果不能掩盖 Hook 对 Index 的失败；现有 Hook 部署与真实事件绑定不被削弱。远端门禁只在项目确有防本地绕过和跨机器合并需求时另行对象化。
+行业资料仍说明 watcher、稳定快照、receipt 与 reconcile 在需要自动低延迟反馈时的可信边界：事件只能用于失效或调度，不能单独证明结果正确。只有未来实测显示显式检查的反馈成本不足以满足需求、且 Human 明确要求常驻自动反馈时，才另行研究 watcher 的范围、性能、故障恢复和是否需要 ADR；本 Study 不把它们写成当前能力或既定计划。
 
 ## 后续分流
 
@@ -151,3 +165,9 @@ updated_at: '2026-08-10T23:54:37.152370Z'
 | receipt 消费门禁 | 阶段推进、成功声明或 Web 状态需要复用检查结果时，纳入 WorkCase | watcher 只显示临时诊断，不用于可信判断 |
 | 远端 required check | 实际需要跨机器或防本地绕过的合并门禁时，按平台对象化 | 当前只要求本地 Git Gate |
 | 任意写入同步强制 | Human 要求 watcher 停止时仍阻断所有写入时，重新决定受控写入或文件系统拦截 | 接受早期反馈为最佳努力、消费与提交点机械强制 |
+
+### 范围隔离补充：首期监测当前规范源与完整管辖事实源
+
+首期显式检查的基本单位不是对话任意改动的文件清单，也不是普通业务项目全量扫描。它固定由两部分组成：当前规则源，以及实际 `cwd` 所属唯一受管辖 Git worktree 的完整事实库。普通业务代码、构建产物、临时文件及其它非事实载体不属于 `ldvh check` 的输入；结果明确分别报告规则范围和完整事实范围。
+
+因此，V1 不承诺“对话 A 只检查事实 A、与事实 B 完全隔离”的范围级 receipt。该更细粒度的分区、关系闭包、失效与 receipt 消费仍是 watcher 方向的后续研究课题。当前 `ldvh check` 只证明其当次规则和完整事实子检查的机械结果，不证明整个项目业务代码通过、规则适用、Human 授权或工作完成。
