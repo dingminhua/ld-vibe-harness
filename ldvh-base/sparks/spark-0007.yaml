@@ -21,7 +21,19 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-legacy-signature-migration-20260810
+- signature:
+    product_name: Claude Code
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: '2026-08-12T20:40:51.016930Z'
+  summary: '补充 relations: related-to spark:spark-0025'
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0025
 object_id: spark-0007
 fact_type_key: spark
 created_at: '2026-07-19T10:28:32.540645+08:00'
-updated_at: '2026-08-10T08:46:10.084687Z'
+updated_at: '2026-08-12T20:40:51.016930Z'

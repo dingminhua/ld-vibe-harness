@@ -19,6 +19,7 @@ import { useI18n } from '@/i18n/context';
 import { getFieldLabel, getFieldValueLabel, getLocalizedObjectTitle, getObjectStatusLocale, getTypeLabel } from '@/i18n/locales';
 import { CATEGORY_COLORS } from '@/utils/categoryColors';
 import { getFactReadMeta, isReadableFact } from '@/utils/factReadMeta';
+import { getSparkImplementedPresentationStatus } from '@/utils/sparkImplementationStatus';
 import { ALL_STATUS_PARAM, getEffectiveListStatus, writeListStatusParam } from '@/utils/listStatus';
 import { usePanel } from '@/utils/panelContext';
 import { compareRfc3339Timestamps } from '@/shared/timestamp';
@@ -1238,7 +1239,10 @@ export function ObjectCardFrame({
   displayStatus?: string;
 }) {
   const { t } = useI18n();
-  const presentedStatus = displayStatus ?? obj.status;
+  const presentedStatus = displayStatus
+    ?? (obj.type === 'spark' && obj.status === 'implemented'
+      ? getSparkImplementedPresentationStatus(obj.factAssociations)
+      : obj.status);
   const typeColor = CATEGORY_COLORS[obj.type] || CATEGORY_COLORS.other;
   const nonActiveReason = getNonActiveReason(obj, t);
   return (
@@ -1570,6 +1574,60 @@ function StudyCardContent({ obj }: { obj: ObjectItem }) {
   return null;
 }
 
+function ToolbarExtras({
+  idGapCount,
+  isIdGapTooltipOpen,
+  setIsIdGapTooltipOpen,
+  activeSort,
+  handleSortChange,
+  t,
+}: {
+  idGapCount: number;
+  isIdGapTooltipOpen: boolean;
+  setIsIdGapTooltipOpen: (open: boolean) => void;
+  activeSort: ObjectListSort;
+  handleSortChange: (sort: ObjectListSort) => void;
+  t: Translate;
+}) {
+  return (
+    <div className="flex shrink-0 items-center gap-2">
+      {idGapCount > 0 && (
+        <span className="relative inline-flex shrink-0">
+          <span
+            aria-describedby="object-list-id-gap-tooltip"
+            className="ldvh-meta-muted cursor-default select-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ldvh-accent/45"
+            onBlur={() => setIsIdGapTooltipOpen(false)}
+            onFocus={() => setIsIdGapTooltipOpen(true)}
+            onMouseEnter={() => setIsIdGapTooltipOpen(true)}
+            onMouseLeave={() => setIsIdGapTooltipOpen(false)}
+            tabIndex={0}
+          >
+            {t('objectList.idGapCount', { count: String(idGapCount) })}
+          </span>
+          {isIdGapTooltipOpen && (
+            <span
+              id="object-list-id-gap-tooltip"
+              role="tooltip"
+              className="pointer-events-none absolute right-0 top-full z-20 mt-1 w-64 rounded-md border border-ldvh-border bg-ldvh-panel px-2 py-1 text-[10px] font-medium leading-4 text-ldvh-text-primary shadow-md"
+            >
+              {t('objectList.idGapHint', { count: String(idGapCount) })}
+            </span>
+          )}
+        </span>
+      )}
+      <SegmentedControl
+        ariaLabel={t('objectList.sort')}
+        value={activeSort}
+        onValueChange={handleSortChange}
+        items={[
+          { value: 'updated_desc', label: t('objectList.sortUpdatedDesc'), icon: <Clock3 size={14} aria-hidden="true" /> },
+          { value: 'id_desc', label: t('objectList.sortIdDesc'), icon: <Hash size={14} aria-hidden="true" /> },
+        ]}
+      />
+    </div>
+  );
+}
+
 export default function ObjectList() {
   const { type } = useParams<{ type: string }>();
   const navigate = useNavigate();
@@ -1844,24 +1902,28 @@ export default function ObjectList() {
 
   return (
     <div className="ldvh-page-frame">
-      <div className="sticky top-0 z-20 -mx-6 -mt-6 mb-4 flex min-h-8 flex-wrap items-start justify-between gap-3 border-b border-ldvh-border bg-ldvh-bg/95 px-6 py-3 backdrop-blur">
-        <div className="min-w-0 flex-1">
-          {supportsPriorityNavigation && (
-            <div className="mb-2 flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-2">
-              {isPriorityApplicable ? (
-                <ObjectPriorityFilter
-                  activePriority={activePriority}
-                  onChange={handlePriorityChange}
-                  options={priorityOptions}
-                  loading={loading}
-                  coverageStatus={coverageStatus}
-                />
-              ) : (
-                <p className="ldvh-meta text-ldvh-text-secondary">{t('objectList.priorityNotApplicable')}</p>
-              )}
-            </div>
-          )}
-          <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5">
+      <div className="sticky top-0 z-20 -mx-6 -mt-6 mb-4 min-h-8 border-b border-ldvh-border bg-ldvh-bg/95 px-6 py-3 backdrop-blur">
+        {supportsPriorityNavigation && isPriorityApplicable && (
+          <div className="mb-2 flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-2">
+            <ObjectPriorityFilter
+              activePriority={activePriority}
+              onChange={handlePriorityChange}
+              options={priorityOptions}
+              loading={loading}
+              coverageStatus={coverageStatus}
+            />
+            <ToolbarExtras
+              idGapCount={idGapCount}
+              isIdGapTooltipOpen={isIdGapTooltipOpen}
+              setIsIdGapTooltipOpen={setIsIdGapTooltipOpen}
+              activeSort={activeSort}
+              handleSortChange={handleSortChange}
+              t={t}
+            />
+          </div>
+        )}
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-1.5">
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1.5">
             {currentType === 'workcase' ? (
               <>
                 <span className="ldvh-meta shrink-0 text-ldvh-text-secondary">{t('objectList.progressGroupFilter')}</span>
@@ -1888,41 +1950,16 @@ export default function ObjectList() {
               </>
             )}
           </div>
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          {idGapCount > 0 && (
-            <span className="relative inline-flex shrink-0">
-              <span
-                aria-describedby="object-list-id-gap-tooltip"
-                className="ldvh-meta-muted cursor-default select-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ldvh-accent/45"
-                onBlur={() => setIsIdGapTooltipOpen(false)}
-                onFocus={() => setIsIdGapTooltipOpen(true)}
-                onMouseEnter={() => setIsIdGapTooltipOpen(true)}
-                onMouseLeave={() => setIsIdGapTooltipOpen(false)}
-                tabIndex={0}
-              >
-                {t('objectList.idGapCount', { count: String(idGapCount) })}
-              </span>
-              {isIdGapTooltipOpen && (
-                <span
-                  id="object-list-id-gap-tooltip"
-                  role="tooltip"
-                  className="pointer-events-none absolute right-0 top-full z-20 mt-1 w-64 rounded-md border border-ldvh-border bg-ldvh-panel px-2 py-1 text-[10px] font-medium leading-4 text-ldvh-text-primary shadow-md"
-                >
-                  {t('objectList.idGapHint', { count: String(idGapCount) })}
-                </span>
-              )}
-            </span>
+          {!(supportsPriorityNavigation && isPriorityApplicable) && (
+            <ToolbarExtras
+              idGapCount={idGapCount}
+              isIdGapTooltipOpen={isIdGapTooltipOpen}
+              setIsIdGapTooltipOpen={setIsIdGapTooltipOpen}
+              activeSort={activeSort}
+              handleSortChange={handleSortChange}
+              t={t}
+            />
           )}
-          <SegmentedControl
-            ariaLabel={t('objectList.sort')}
-            value={activeSort}
-            onValueChange={handleSortChange}
-            items={[
-              { value: 'updated_desc', label: t('objectList.sortUpdatedDesc'), icon: <Clock3 size={14} aria-hidden="true" /> },
-              { value: 'id_desc', label: t('objectList.sortIdDesc'), icon: <Hash size={14} aria-hidden="true" /> },
-            ]}
-          />
         </div>
       </div>
 

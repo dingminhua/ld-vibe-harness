@@ -1,0 +1,22 @@
+title: 诊断体系优化
+status: open
+priority: P2
+intent: 承接 spark-0019 路由的机械诊断缺少直接修正信息问题，以及在提交预检、Helper 请求校验、事实完整性检查等所有操作中，诊断只报告错误值、不给出允许值、最小合法示例或精确继续读取入口的通用问题。后续需判断哪些确定性约束可以在诊断中安全给出结构化修正提示，而不复制规则正文或形成第二权威。
+summary: "## 来源\n\n- 从 spark-0019 路由：机械诊断缺少直接修正信息。提交预检对未知 scope、未知正文小标题等问题能够准确定位，但只报告错误值，没有同时给出当前允许值、最小合法示例或精确继续读取入口，导致 AI 需要额外查规则和试调。\n- 更广泛的诊断问题：同一问题出现在 Helper 请求校验（字段名错误、signature 格式错）、事实完整性检查等多个操作中。\n\n## 范围\n\n- 覆盖所有产生诊断的 Helper 操作：提交预检、事实校验、请求校验、完整性检查等。\n- 只增加结构化修正提示，不复制规则正文，不形成第二权威。\n- 确定性约束（固定值闭集、枚举、格式）优先；自然语言语义约束不在范围内。\n\n## 排除\n\n- 不改变只读操作的输出契约（由 spark-0074 承接）\n- 不改变写操作的契约或校验逻辑（由 spark-0075 承接）\n- 不改变 Git 提交流程（已由 spark-0019 闭环）\n- 不改变规则源编辑方式"
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0019
+change_log:
+- signature:
+    product_name: Claude Code
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: '2026-08-12T20:25:40.167224Z'
+  summary: 受控创建本 Spark：承接 spark-0019 路由的诊断缺失修正信息问题，聚焦所有操作中机械诊断的允许值/合法示例/修正入口提示。
+object_id: spark-0076
+fact_type_key: spark
+created_at: '2026-08-12T20:25:40.167224Z'
+updated_at: '2026-08-12T20:25:40.167224Z'

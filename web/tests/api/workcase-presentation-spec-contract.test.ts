@@ -119,6 +119,8 @@ test('Specs define the closure-decision input zone and shared formal association
   assert.match(cardSection, /`closure_proposal` 缺失、结构不符或其必要成员不可读时/);
   assert.match(cardSection, /Web 也不得为 `closure_proposal` 补写生成的占位提案/);
   assert.match(cardSection, /正式 `relations` 由所有五类事实对象 Card 统一呈现，而不是链接、URL、材料或引用列表/);
+  assert.match(cardSection, /所有可读关联目标（包括已关闭与已废弃的终态目标）均保留/);
+  assert.match(cardSection, /活跃 → 推进中 → 待处理 → 已关闭 → 已废弃/);
   assert.match(cardSection, /`contributed-to` 只是其中一类正式关联，不再在 WorkCase Card 另设“后续贡献”模块/);
   assert.match(cardSection, /不根据 relation key 推断分流、依赖、承接责任或终态处置/);
   assert.match(cardSection, /不提供 promote、discard、批量审核或自动过期控件/);

@@ -23,7 +23,7 @@ import {
   type WorkCaseProgressGroup,
   type WorkCaseProgressStep,
 } from '../../shared/workcaseStatus.js'
-import { normalizeModelName, normalizeRuntimeName, normalizeSignatureName } from '../../shared/signature.js'
+import { normalizeSignature } from '../../shared/signature.js'
 import { ProjectScopeError, requestProject } from '../services/requestScope.js'
 import { compareTimestamps, getRelativeTime, parseTimestamp } from '../services/time.js'
 import { getTypeColor } from '../services/typeColors.js'
@@ -311,9 +311,11 @@ function buildRecentActivityItem(
 function readFactChangeSignature(value: unknown): FactChangeSignature | undefined {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined
   const record = value as Record<string, unknown>
-  const productName = normalizeSignatureName(record.product_name)
-  const modelName = normalizeModelName(record.model_name)
-  const agentRuntimeName = normalizeRuntimeName(record.agent_runtime_name)
+  const { productName, modelName, agentRuntimeName } = normalizeSignature({
+    productName: record.product_name,
+    modelName: record.model_name,
+    agentRuntimeName: record.agent_runtime_name,
+  })
   return productName || modelName || agentRuntimeName
     ? {
       ...(productName ? { productName } : {}),
@@ -404,7 +406,7 @@ export function buildRecentActivityView(builds: RecentActivityBuildItem[]): {
       }
     }
     if (build.signature) {
-      const model = normalizeModelName(build.signature.modelName)
+      const { modelName: model } = normalizeSignature(build.signature)
       const environment = formatAttributionEnvironment(build.signature.productName, build.signature.agentRuntimeName)
       if (model) models.set(model, (models.get(model) ?? 0) + 1)
       if (environment) environments.set(environment, (environments.get(environment) ?? 0) + 1)
@@ -423,8 +425,10 @@ export function buildRecentActivityView(builds: RecentActivityBuildItem[]): {
 
 /** One responsibility environment: product(runtime) when both are observed. */
 function formatAttributionEnvironment(productName?: string, runtimeName?: string): string | undefined {
-  const normalizedProductName = normalizeSignatureName(productName)
-  const normalizedRuntimeName = normalizeRuntimeName(runtimeName)
+  const { productName: normalizedProductName, agentRuntimeName: normalizedRuntimeName } = normalizeSignature({
+    productName,
+    agentRuntimeName: runtimeName,
+  })
   if (normalizedProductName && normalizedRuntimeName) return `${normalizedProductName}(${normalizedRuntimeName})`
   return normalizedProductName || normalizedRuntimeName || undefined
 }

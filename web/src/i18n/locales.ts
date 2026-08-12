@@ -44,6 +44,8 @@ export const STATUS_LOCALES: Record<string, { zh: string; en: string }> = {
   open: { zh: '未关闭', en: 'Open' },
   routed: { zh: '已分流', en: 'Routed' },
   implemented: { zh: '已关闭', en: 'Implemented' },
+  settled: { zh: '已落实', en: 'Settled' },
+  unclosed: { zh: '未闭环', en: 'Unclosed' },
   degraded: { zh: '受限', en: 'Limited' },
   needs_human_gate: { zh: '需确认', en: 'Needs Gate' },
   pass: { zh: '通过', en: 'Pass' },
@@ -73,6 +75,8 @@ const OBJECT_STATUS_LOCALES: Record<string, Record<string, { zh: string; en: str
   },
   spark: {
     open: { zh: '待处理', en: 'Pending' },
+    settled: { zh: '已落实', en: 'Settled' },
+    unclosed: { zh: '未闭环', en: 'Unclosed' },
   },
   pitfall: {
     draft: { zh: '待确认', en: 'Pending confirmation' },
@@ -624,6 +628,8 @@ export const STATUS_HINT_LOCALES: Record<string, { zh: string; en: string }> = {
   pending: { zh: '待分流处理', en: 'Pending routing' },
   proposed: { zh: '提案中', en: 'Proposed' },
   closed: { zh: '已关闭', en: 'Closed' },
+  settled: { zh: '已落实，无待处理关联', en: 'Settled, no open associations' },
+  unclosed: { zh: '已关闭，但关联对象仍处于活动状态', en: 'Closed, but associated objects are still active' },
 };
 
 export function getStatusHint(status: string, locale: string): string {

@@ -380,6 +380,26 @@ test('recent activity aggregation retains the newest fact event and counts compl
   assert.deepEqual(view.environmentUsage, [{ value: 'Cindy(Claude)', count: 2 }, { value: 'Ci', count: 1 }])
 })
 
+test('recent activity aggregates trailing model bracket annotations with the canonical model name', async () => {
+  const { buildRecentActivityView } = await import('../../api/routes/cognition.ts')
+  const common = {
+    type: 'spark' as const, title: 'Signature normalization', activity: 'updated' as const,
+    status: 'open', read_status: 'readable', field_issues: [], unparsed_structures: [],
+  }
+  const view = buildRecentActivityView([
+    {
+      ...common, object_id: 'spark-0101', occurred_at: '2026-08-01T00:00:00Z',
+      signature: { modelName: 'deepseek-v4-flash' },
+    },
+    {
+      ...common, object_id: 'spark-0102', occurred_at: '2026-08-01T01:00:00Z',
+      signature: { modelName: 'deepseek/deepseek-v4-flash[1m]' },
+    },
+  ])
+
+  assert.deepEqual(view.modelUsage, [{ value: 'deepseek-v4-flash', count: 2 }])
+})
+
 test('recent activity accepts current change-log signatures and ignores legacy fields', async () => {
   const { buildFactActivityItems, buildRecentActivityView } = await import('../../api/routes/cognition.ts')
   const raw = {

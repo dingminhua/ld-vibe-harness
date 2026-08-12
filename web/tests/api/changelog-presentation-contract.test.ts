@@ -68,8 +68,7 @@ test('breaking and push-state badges use one presentation in list and detail ide
   assert.match(pushBadge, /d="M12 14V3m-3\.5 3\.5L12 3l3\.5 3\.5"/);
   assert.match(list, /<CommitPushStatusBadge status=\{entry\.pushStatus\} \/>/);
   assert.match(panel, /actionBadges=\{entry\?\.pushStatus \? <CommitPushStatusBadge status=\{entry\.pushStatus\} \/> : undefined\}/);
-  assert.match(signatureMeta, /signature\?\.productName/);
-  assert.match(signatureMeta, /signature\?\.agentRuntimeName/);
+  assert.match(signatureMeta, /normalizeSignature\(signature \?\? \{\}\)/);
   assert.doesNotMatch(signatureMeta, /signature\?\.agentId|signature\?\.hostEnvironment|signature\?\.modelId|signature\?\.agentWorkbench/);
   assert.match(list, /<ObjectUpdatedMeta source=\{\{\}\} updatedAt=\{entry\.date\} signature=\{entry\.signature\} \/>/);
   assert.match(panel, /<CommitSignatureMeta signature=\{entry\.signature\} \/>/);

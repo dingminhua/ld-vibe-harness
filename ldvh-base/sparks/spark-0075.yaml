@@ -1,0 +1,32 @@
+title: 受控写入优化
+status: open
+priority: P2
+intent: 承接 spark-0019 路由的关闭候选与写入契约不闭合问题，以及 spark-0049 更新实操中暴露的 read→update 契约映射缺失、signature 发现成本高、模板启用判断不明确等受控写入操作的 AI 可消费性优化。按 study-0030 的「公共契约层 → 类型专属层」分层结构，通过逐项 WorkCase 推进，不试图一次性解决所有写入类操作。
+summary: "## 来源\n\n- 从 spark-0019 路由：关闭候选与写入契约不闭合（prepare-closed-workcase-candidate 未包含关闭写入要求的新流水）。\n- 从 spark-0049 更新实操暴露：\n  - read-fact-objects 返回的 fact_object 不能直接用作 update-fact-object 的 after（含 Code 托管字段，需手工 strip）\n  - 新三字段 signature（product_name/model_name/agent_runtime_name）分布在 04.Att.01 和 05.Att.01 两处，每次要翻规范拼装\n  - AI 在简单字段更新时也先读模板，增加无用往返（模板启用判断不明确）\n\n## 相关 Study\n\n- study-0030 建议二：事实写入若试点，先做 Study 正文严格局部请求。但本 Spark 范围更基础——先解决完整 after 的构建成本，而非局部请求。\n\n## 分层结构\n\n### 公共契约层（跨 5 类事实全受益，最高优先）\n\n1. read→update 契约闭合：read 响应附带可消费的 after 基座（mutable_fact_object），或 input_examples 提供最小完整示例\n2. 请求拼装减负：capabilities 直接给出当前环境签名模板，或新增 resolve-current-signature 只读操作\n3. 模板启用判断：read-action-template-candidates 响应增加 trigger_conditions 提示，让 AI 快速判断「这次不需要模板」\n\n### 类型专属层（按 study-0030 顺序逐类推进）\n\n1. WorkCase 关闭候选契约闭合（从 0019 路由的原项）\n2. 后续按 Study、Spark、Pitfall、ADR 顺序逐类判断\n\n## 排除\n\n- 不改变只读操作的输出契约（由 spark-0074 承接）\n- 不改变诊断体系（由 spark-0076 承接）\n- 不改变 Git 提交流程（已由 spark-0019 闭环）\n- 不改变规则源编辑方式（由 study-0030 另行评估）"
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0019
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0049
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: study
+    object_id: study-0030
+change_log:
+- signature:
+    product_name: Claude Code
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: '2026-08-12T20:25:10.993521Z'
+  summary: 受控创建本 Spark：承接 spark-0019 路由的候选契约问题及 spark-0049 实操暴露的受控写入摩擦，按公共契约层与类型专属层分层推进。
+object_id: spark-0075
+fact_type_key: spark
+created_at: '2026-08-12T20:25:10.993521Z'
+updated_at: '2026-08-12T20:25:10.993521Z'

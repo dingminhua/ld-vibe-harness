@@ -77,10 +77,22 @@ change_log:
     agent_runtime_name: codex
   at: '2026-08-12T08:18:57.934902Z'
   summary: Human 批准显式高频检查方向后，将首期建议更新为 ldvh check；watcher、receipt 与 ADR 改为可选后续研究。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-12T16:11:11.630084Z'
+  summary: 建立 informs → spark-0018 关系：本研究关于无环境 Hook 下显式结果检查与 Git Gate 分层的发现和建议应影响该 Spark 的后续判断；不改变研究正文、结论或状态。
+relations:
+- relation_key: informs
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0018
 object_id: study-0029
 fact_type_key: study
 created_at: '2026-08-10T23:54:37.152370Z'
-updated_at: '2026-08-12T08:18:57.934902Z'
+updated_at: '2026-08-12T16:11:11.630084Z'
 ---
 
 ## 研究问题

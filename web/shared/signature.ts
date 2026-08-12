@@ -1,16 +1,25 @@
-/**
- * The fact carrier may prefix a model with its hosting product, such as
- * `chatgpt/gpt-5.6-terra`. Web display consumes the model identity only.
- */
-export function normalizeModelName(value: unknown): string {
+export interface SignatureInput {
+  productName?: unknown
+  modelName?: unknown
+  agentRuntimeName?: unknown
+}
+
+export interface NormalizedSignature {
+  productName: string
+  modelName: string
+  agentRuntimeName: string
+}
+
+function normalizeModelName(value: unknown): string {
   if (typeof value !== 'string') return ''
   const trimmed = value.trim()
   if (!trimmed) return ''
-  return trimmed.slice(trimmed.lastIndexOf('/') + 1).trim()
+  const model = trimmed.slice(trimmed.lastIndexOf('/') + 1).trim()
+  return model.replace(/(?:\s*\[[^\[\]]*\]\s*)+$/, '').trim()
 }
 
 /** Product and runtime names retain their spelling after an uppercase initial. */
-export function normalizeSignatureName(value: unknown): string {
+function normalizeProductName(value: unknown): string {
   if (typeof value !== 'string') return ''
   const trimmed = value.trim()
   if (!trimmed) return ''
@@ -18,7 +27,20 @@ export function normalizeSignatureName(value: unknown): string {
 }
 
 /** Runtime display uses only its family name before the first connector. */
-export function normalizeRuntimeName(value: unknown): string {
+function normalizeAgentRuntimeName(value: unknown): string {
   if (typeof value !== 'string') return ''
-  return normalizeSignatureName(value.trim().split('-', 1)[0])
+  return normalizeProductName(value.trim().split('-', 1)[0])
+}
+
+/**
+ * One presentation dispatcher for all three LDVH signature fields. It never
+ * infers a missing field, and makes cards, commit metadata, and aggregates
+ * consume identical display identities.
+ */
+export function normalizeSignature(value: SignatureInput): NormalizedSignature {
+  return {
+    productName: normalizeProductName(value.productName),
+    modelName: normalizeModelName(value.modelName),
+    agentRuntimeName: normalizeAgentRuntimeName(value.agentRuntimeName),
+  }
 }

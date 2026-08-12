@@ -4,7 +4,7 @@ import remarkGfm from 'remark-gfm';
 import { formatDateTime } from '@/utils/dateFormat';
 import { useI18n } from '@/i18n/context';
 import { getFieldLabel, getObjectStatusLocale } from '@/i18n/locales';
-import { normalizeModelName, normalizeRuntimeName, normalizeSignatureName } from '../../../shared/signature';
+import { normalizeSignature } from '../../../shared/signature';
 import { FactAssociationsSection } from '@/pages/object-detail/FactAssociationsSection';
 import { sortRelatedContentEntries, type RelatedContentEntry } from '@/pages/object-detail/model';
 import {
@@ -109,9 +109,14 @@ function parseChangeLogEntries(value: unknown): ChangeLogEntry[] {
     const signatureRecord = signature && typeof signature === 'object' && !Array.isArray(signature)
       ? signature as Record<string, unknown>
       : null;
-    const productName = normalizeSignatureName(signatureRecord?.product_name) || undefined;
-    const modelName = normalizeModelName(signatureRecord?.model_name) || undefined;
-    const agentRuntimeName = normalizeRuntimeName(signatureRecord?.agent_runtime_name) || undefined;
+    const normalizedSignature = normalizeSignature({
+      productName: signatureRecord?.product_name,
+      modelName: signatureRecord?.model_name,
+      agentRuntimeName: signatureRecord?.agent_runtime_name,
+    });
+    const productName = normalizedSignature.productName || undefined;
+    const modelName = normalizedSignature.modelName || undefined;
+    const agentRuntimeName = normalizedSignature.agentRuntimeName || undefined;
     return [{
       key: `${index}-${at}`,
       at,

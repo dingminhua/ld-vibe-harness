@@ -990,9 +990,9 @@ def test_new_fact_with_multiple_precommit_change_logs_keeps_writer_history(
         )
         + (
             "  - signature:\n"
-            "      model_id: gpt-5.6-luna\n"
-            "      agent_workbench: Cindy\n"
-            "    session_id: test-session\n"
+            "      product_name: Cindy\n"
+            "      model_name: gpt-5.6-luna\n"
+            "      agent_runtime_name: codex-cli\n"
             "    at: 2026-07-01T01:00:00+08:00\n"
             "    summary: 补充测试火花\n"
         ).encode()
@@ -1020,9 +1020,9 @@ def test_new_fact_multiple_writer_sessions_do_not_expand_commit_signature(
         )
         + (
             "  - signature:\n"
-            "      model_id: gpt-5.6-luna\n"
-            "      agent_workbench: Cindy\n"
-            "    session_id: another-session\n"
+            "      product_name: Cindy\n"
+            "      model_name: gpt-5.6-luna\n"
+            "      agent_runtime_name: codex-cli\n"
             "    at: 2026-07-01T01:00:00+08:00\n"
             "    summary: 补充测试火花\n"
         ).encode()
@@ -1129,9 +1129,9 @@ def test_legacy_migration_change_log_passes_when_head_has_no_history(
         "updated_at: 2026-07-01T01:00:00+08:00\n"
         "change_log:\n"
         "  - signature:\n"
-        "      model_id: gpt-5.6-luna\n"
-        "      agent_workbench: Cindy\n"
-        "    session_id: test-session\n"
+        "      product_name: Cindy\n"
+        "      model_name: gpt-5.6-luna\n"
+        "      agent_runtime_name: codex-cli\n"
         "    at: 2026-07-01T01:00:00+08:00\n"
         "    summary: Human授权兼容旧数据：建立可信流水起点\n"
     ).encode()
@@ -1145,7 +1145,6 @@ def test_legacy_migration_change_log_passes_when_head_has_no_history(
         ),
     )
 
-    print("L3:", [(i.code, i.message) for i in result.issues])
     assert result.outcome == "passed"
 
 

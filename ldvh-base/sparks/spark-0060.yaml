@@ -55,7 +55,19 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: 4591aaa6-256d-45bb-8c3d-fd0d7619df41
+- signature:
+    product_name: Claude Code
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: '2026-08-12T20:41:10.766244Z'
+  summary: '补充 relations: related-to workcase:workcase-0083'
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: workcase
+    object_id: workcase-0083
 object_id: spark-0060
 fact_type_key: spark
 created_at: '2026-08-06T02:08:00+08:00'
-updated_at: '2026-08-10T09:33:34.279538Z'
+updated_at: '2026-08-12T20:41:10.766244Z'

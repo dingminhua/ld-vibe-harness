@@ -12,6 +12,10 @@ import {
   isResolvedWorkCasePresentationProjection,
   isWorkCaseProgressGroup,
 } from '../../shared/workcaseStatus.ts'
+import {
+  getSparkImplementedPresentationStatus,
+  isSparkPresentationStatus,
+} from '../../shared/sparkImplementationStatus.ts'
 
 const router = Router()
 
@@ -167,6 +171,31 @@ function getStatusOptions(items: ListedObject[]): StatusOption[] {
     })
 }
 
+/** For Spark lists, replace the single `implemented` bucket with two
+ *  presentation-level buckets (`settled` / `unclosed`) derived from each
+ *  item's factAssociations. The raw status remains `implemented`. */
+function getSparkStatusOptions(items: ListedObject[]): StatusOption[] {
+  const counts = new Map<string, number>()
+  for (const item of items) {
+    let key = item.status
+    if (item.status === 'implemented') {
+      key = getSparkImplementedPresentationStatus(
+        item.factAssociations as Parameters<typeof getSparkImplementedPresentationStatus>[0],
+      )
+    }
+    counts.set(key, (counts.get(key) ?? 0) + 1)
+  }
+  const priority: Record<string, number> = { open: 11, settled: 22, unclosed: 23, discarded: 24 }
+  return [...counts.entries()]
+    .map(([status, count]) => ({ status, count }))
+    .sort((a, b) => {
+      const statusDelta = (priority[a.status] ?? 50) - (priority[b.status] ?? 50)
+      if (statusDelta !== 0) return statusDelta
+      if (a.count !== b.count) return b.count - a.count
+      return a.status.localeCompare(b.status)
+    })
+}
+
 function getPriorityOptions(items: ListedObject[]): StatusOption[] {
   const counts = countByStatus(
     items
@@ -188,8 +217,22 @@ function getWorkCaseProgressOptions(items: ListedObject[]): ProgressOption[] {
 }
 
 function matchesSparkListFilter(item: ListedObject, status?: string, priority?: string): boolean {
-  return (!status || item.status === status)
-    && (!priority || item.priority === priority)
+  let statusMatch: boolean
+  if (!status) {
+    statusMatch = true
+  } else if (isSparkPresentationStatus(status)) {
+    if (item.status !== 'implemented') {
+      statusMatch = false
+    } else {
+      const presentation = getSparkImplementedPresentationStatus(
+        item.factAssociations as Parameters<typeof getSparkImplementedPresentationStatus>[0],
+      )
+      statusMatch = presentation === status
+    }
+  } else {
+    statusMatch = item.status === status
+  }
+  return statusMatch && (!priority || item.priority === priority)
 }
 
 async function listObjectSummaries(type: ObjectType, scope: LocalFactScope): Promise<ListedObject[]> {
@@ -256,6 +299,8 @@ router.get('/:type', async (req: Request, res: Response): Promise<void> => {
       : status ? await listObjectSummaries(type, factScope) : items
     if (type === 'workcase') {
       result.data.progressOptions = getWorkCaseProgressOptions(allItems)
+    } else if (type === 'spark') {
+      result.data.statusOptions = getSparkStatusOptions(statusItems)
     } else {
       result.data.statusOptions = getStatusOptions(statusItems)
     }
@@ -264,7 +309,9 @@ router.get('/:type', async (req: Request, res: Response): Promise<void> => {
     if (type === 'spark' || type === 'workcase') {
       const groupItems = type === 'workcase' && progress
         ? allItems.filter((item) => getWorkCaseListGroup(item) === progress)
-        : status ? allItems.filter((item) => item.status === status) : allItems
+        : status && !isSparkPresentationStatus(status)
+          ? allItems.filter((item) => item.status === status)
+          : allItems
       result.data.priorityOptions = getPriorityOptions(groupItems)
     }
   }

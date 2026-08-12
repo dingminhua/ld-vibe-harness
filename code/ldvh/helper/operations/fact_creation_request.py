@@ -167,6 +167,8 @@ def parse_draft_request(
         problems.append("arguments.fact_type_key 必须匹配当前支持的五类事实类型")
     if request.authorization_reference:
         problems.append("authorization_reference 对无副作用草案操作必须为空 array")
+    if request.observed_context:
+        problems.append("observed_context 对无副作用草案操作必须为空对象")
     if problems:
         return CreationRequestParseResult(None, tuple(problems))
     assert isinstance(project_id, str) and isinstance(fact_type_key, str)

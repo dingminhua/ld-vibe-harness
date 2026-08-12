@@ -1,7 +1,6 @@
 title: Agent 友好的 LDVH Helper 与提交流程
 intent: 保留 AI 在 Helper 事实创建、更新与受管辖 Git 提交流程中的重复发现、请求拼装、机械检查、诊断和回读负担，避免为了表面上的一步操作而削弱候选与 diff 审核、真实 Index 预检、原生 commit-msg Hook 或提交后回读。后续需判断哪些执行编排、诊断与输出优化能降低端到端成本，同时不恢复两阶段提交、第二权威或新的持久事务状态。
-status: open
-priority: P2
+status: implemented
 summary: "## 当前结论\n\n- 真实提交 `c7515314c9f3292e1e95784ccb7a6bf8038d3c10` 已验证：当前流程已经从旧两阶段、alternate Index 和 prepared 状态收敛为正常的 `git add + precheck + git commit + 回读`；真实 `commit-msg` Hook 在原生提交事件中执行并放行。\n- 当前主要成本已经不是 Git 提交模型，而是外围编排：模板发现与全文读取、多个只读检查串行、事实完整性重复扫描、冗长 message、用完整 Git trace 证明 Hook 执行，以及 Helper 成功响应和提交后回读输出过大。\n- 优化目标是减少往返、重复观察和无关输出，不降低机械检查，不把“审查”扩张为通用代码或文档语义评审。\n\n## 提交优化必须坚守的八条底线\n\n1. 授权与身份明确：仅在 Human 已明确授权本地新 commit、唯一实际仓库和 worktree 已确认、管辖结果为 governed_single、当前规则与来源身份已取得时继续。\n2. 候选隔离且目的单一：AI 明确候选文件、逐文件审核 diff，真实 Index 与候选完全一致，不触碰无关改动或 alternate Index；一个 commit 只承载可共同说明、验证和回退的主要目的。\n3. 来源验证与语义判断独立成立：执行或严格复用与当前候选快照匹配的项目及领域验证；AI 独立审核拆分、描述、正文、breaking、回退、验证和风险是否据实。\n4. 提交消息真实且满足契约：准确 header、唯一且非空的关键变更正文和必要 trailers；breaking 时补充影响边界；Session-ID、Agent-ID 与 Host-Environment 反映实际形成过程。\n5. 事实候选附加受控条件：候选含事实载体时，只接受 Helper 受控写入、精确回读，以及对当前同一 worktree 仍有效并返回 outcome=ok、status=complete 的事实完整性检查。\n6. 机械预检绑定最终输入：最终完整 message 与当前真实 Index 必须通过 precheck；message、路径、内容、worktree、管辖、规则或验证任一变化都使旧结论失效；预检与 Git Gate 使用同一来源和确定性核心，但机械通过不代替语义判断。\n7. 原生 Git Gate 不可绕过：commit-msg Hook 在提交前必须静态有效、可执行且无冲突；只通过一次不带 --no-verify 的原生本地 git commit 触发真实事件，不把 amend、rebase、reset、merge、tag、Hook 修改、CI 或 push 扩入默认提交行动。\n8. 写后证据与诚实交还：回读 HEAD、完整 message、tree、精确路径、Hook 当次触发证据、真实 Index 与剩余 Working Tree；如实报告残留和未验证范围，不把本地 commit 等同于验证完成、push、发布或上层责任完成。\n\n## 规范覆盖审计\n\n- 独立审计确认：上述八条的实质要求已经由现行 specs 完整承载；此前缺失发生在五条摘要归纳，而不是规范源。\n- 00 负责 AI-first、价值与 Skill/Hook 核心边界；03 负责提交契约、消息、同快照绑定与失效；05 负责事实受控写入和完整性；09 负责 Hook 部署及真实 Git Gate；30 负责把授权、候选、验证、预检、原生提交和回读组合成一次行动。\n- 这八条是现行规则的审计归纳，不建立第二权威，也不要求为了集中呈现而新增一份并行强制清单。后续优化应落在行动编排、Helper/Code 输出和重复观察消除上；只有发现真实规则缺口时才先修 specs。\n\n## 优化规划\n\n### 第一优先级：不改变规范语义的执行优化\n\n- 并行执行互不依赖的只读检查：Git 状态与候选 diff、事实完整性、Hook inspect、规则身份读取。\n- 正常成功路径只返回结论、候选路径、快照身份和问题；来源、管辖证据与完整诊断仅在失败或 diagnostic 模式展开。\n- 所有提交统一具备准确 header、唯一 `关键变更:`、至少一个据实的非空列表项和必要 trailers，不把单文件或非 breaking 当作省略 body 的捷径；`动机:`、`影响边界:`、`验证结论:`、`风险与后续:` 仅按规则触发或实际需要增加，避免固定五段负担；事实候选仍准确声明全部新增流水的 Session-ID。\n- 将最终 Index/Hook 核对、原生 commit 与提交后只读回读组织为因果连续但往返更少的执行批次，不建立新的持久状态。\n\n### 第二优先级：最小来源与 Code 调整\n\n- 明确定义何时可消费最近一次受控事实写入附带的完整性审计：只有事实集合、规则源、实际 worktree 和相关内容指纹均未变化时才复用；否则重新扫描。目标是消除同一稳定快照上的重复全库检查，而不是建立长期缓存或审计凭证。\n- 让真实 `commit-msg` Hook 通过时输出一行简洁、可回查的成功证据，失败时继续输出 `stage/code/path/field` 诊断，从而不再需要 `GIT_TRACE=1` 的整段日志来证明 Hook 实际触发。\n- 评估在不增加第二权威的前提下合并“行动模板定位 + 内容读取”，并为 Helper 成功响应提供更窄的摘要输出；完整来源仍可按需展开。\n- 合并提交后 HEAD、message、paths、Index 与剩余状态的只读回读输出，但不减少实际检查对象。\n\n## 明确排除\n\n- 不恢复或新建两阶段提交、提交服务、prepared token、handle、witness、challenge、journal、持久事务状态或 alternate Index。\n- 不把 precheck 与最终 Hook 合并为一次检查，也不删除真实 Hook、候选 diff 审核或提交后回读。\n- 不引入 pip、wheel、sdist、editable install、插件部署或 push 自动化。\n- 不以“流程优化”为由增加新的 Human Gate、固定 subagent 审核或通用语义内容审查。\n\n## 待验证\n\n- 分别用普通代码提交、事实对象提交和混合提交测量工具往返数、端到端耗时、输出量、诊断修正次数和误带防护结果。\n- 判断完整性审计复用所需的最小新鲜度绑定是否能保持简单；若绑定成本接近重新扫描，应保留扫描而不引入复杂缓存。\n- 判断 Hook 成功证据和窄响应能否在不污染正常 Git 输出、不过度暴露内部细节的前提下稳定支持 AI 回读。\n- 若执行层优化已经达到可接受速度，不再为了减少少量调用新增公开操作或提交包装器。\n\n## 本次实测新增的剩余摩擦\n\n`workcase-0059` 的关闭与提交实测确认核心 Git 提交路径已经简化；剩余成本集中在规则读取和 Helper 自解释交互，不应通过削弱 Hook、提交预检、事实精确回读或整库机械完整性检查来换取速度。\n\n- **行动模板内容重复传输**：`read-action-template-content` 在正常成功响应中同时返回模板定义 `content` 与包含同一内容的完整 `source_content`，造成规则重复传输、输出膨胀和上下文占用。后续需判断是否让正常路径只返回完成行动所需的最窄定义，把完整来源保留为按需展开，同时维持可追溯性与单一权威。\n- **关闭候选与写入契约不闭合**：`prepare-closed-workcase-candidate` 声称返回完整非托管 closed 候选，但实测候选只保留既有 `change_log`，未包含关闭写入要求追加的新流水；第一次 `close-workcase` 因此被机械拒绝，调用方补写后才能重试。后续需明确候选操作应直接形成可提交的完整 after，还是在结果中结构化列出仍必须由 AI 补齐的字段，避免“完整候选”与真实写入口要求冲突。\n- **机械诊断缺少直接修正信息**：提交预检对未知 scope、未知正文小标题等问题能够准确定位，但只报告错误值，没有同时给出当前允许值、最小合法示例或精确继续读取入口，导致 AI 需要额外查规则和试调。后续需判断哪些确定性约束可以在诊断中安全给出结构化修正提示，而不复制规则正文或形成第二权威。\n\n这些问题属于同一优化方向：让正常成功路径更窄，让失败路径更自解释，让候选输出与后续写入口契约闭合。仍排除两阶段提交、提交包装服务、持久 receipt/cache、alternate Index、pip/打包/插件部署，以及任何绕过原生 `commit-msg` Hook 的捷径。"
 evolution:
 - at: '2026-07-19T18:50:24+08:00'
@@ -83,7 +82,46 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: session-20260810-codex-model-migration
+- signature:
+    product_name: Claude Code
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: '2026-08-12T20:22:35.994782Z'
+  summary: 关闭为 implemented，提交流程部分已闭环，三项 Helper 交互摩擦分别路由至 spark-0074/0075/0076。
+- signature:
+    product_name: Claude Code
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: '2026-08-12T20:40:56.574228Z'
+  summary: '补充 relations: related-to workcase:workcase-0058, workcase:workcase-0059, spark:spark-0074, spark:spark-0075, spark:spark-0076'
+disposition_summary: "本 Spark 的原始 intent 覆盖「Helper 交互 + Git 提交流程」两部分。\n\n**已闭环**：Git 提交模型（两阶段收敛、八条底线、原生 commit-msg Hook 验证）由 workcase-0058、workcase-0059 及真实提交 c7515314 验证闭环，关联 4 个 WorkCase 均已 closed/completed。\n\n**已路由**：以下三项剩余摩擦不再由本 Spark 承接，已分别路由至新 Spark：\n1. 模板内容重复传输（read-action-template-content 同时返回 content 与 source_content）→ spark-0074「Helper 只读交互优化」\n2. 关闭候选与写入契约不闭合（prepare-closed-workcase-candidate 未包含关闭写入要求的新流水）→ spark-0075「受控写入优化」\n3. 机械诊断缺少直接修正信息（错误值报错但不给允许值/合法示例/修正入口）→ spark-0076「诊断体系优化」\n\n本 Spark 不再推进后续工作。"
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: workcase
+    object_id: workcase-0058
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: workcase
+    object_id: workcase-0059
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0074
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0075
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-0076
 object_id: spark-0019
 fact_type_key: spark
 created_at: '2026-07-19T18:47:20.417174+08:00'
-updated_at: '2026-08-10T09:21:24.060645Z'
+updated_at: '2026-08-12T20:40:56.574228Z'

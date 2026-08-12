@@ -15,7 +15,7 @@ import {
   getObjectHeaderStatus,
 } from '@/pages/ObjectDetail';
 import { getCommitDetailLabels, getLocalizedObjectTitle, getObjectStatusLocale, getToggleLabel, getTypeLabel, type CommitDetailLabels } from '@/i18n/locales';
-import { normalizeModelName, normalizeRuntimeName, normalizeSignatureName } from '../../../shared/signature';
+import { normalizeSignature } from '../../../shared/signature';
 import { fetchDocContent, fetchObjectDetail, type CommitDetailPanelData, type CommitSignature, type DocContent, type ObjectDetail as ApiObjectDetail } from '@/utils/api';
 import { CATEGORY_COLORS } from '@/utils/categoryColors';
 import { getCommitScopeLabel, getCommitTypeLabel } from '@/utils/commitLabels';
@@ -375,13 +375,12 @@ function CommitSignatureSection({
   signature: CommitSignature;
   labels: CommitDetailLabels;
 }) {
-  const productName = normalizeSignatureName(signature.productName);
-  const runtimeName = normalizeRuntimeName(signature.agentRuntimeName);
+  const { productName, modelName, agentRuntimeName: runtimeName } = normalizeSignature(signature);
   const environment = productName && runtimeName
     ? `${productName}(${runtimeName})`
     : productName || runtimeName;
   const identityEntries = [
-    { label: labels.modelName, value: normalizeModelName(signature.modelName) },
+    { label: labels.modelName, value: modelName },
     { label: labels.runtimeName, value: environment },
   ].filter((entry): entry is { label: string; value: string } => Boolean(entry.value));
   if (identityEntries.length === 0) return null;

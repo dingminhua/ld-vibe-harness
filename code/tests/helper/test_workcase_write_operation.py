@@ -201,7 +201,17 @@ def test_helper_adapter_passes_complete_correct_request_to_core_without_reconstr
         governance_scope=(ScopeDescriptor(0, "/project", LocatorSource.EXPLICIT_LOCATOR),),
         fact_ref=source,
         expected_content_fingerprint="a" * 64,
-        fact_object={"title": "Corrected", "status": "closed"},
+        fact_object={
+            "title": "Corrected",
+            "status": "closed",
+            "change_log": [
+                {
+                    "signature": {"product_name": "legacy", "model_name": None, "agent_runtime_name": None},
+                    "at": "2026-07-26T15:00:00+08:00",
+                    "summary": "占位流水",
+                }
+            ],
+        },
         authorization_reference=authorization,
         base=Path("/project"),
         route_target_fingerprints=(RouteTargetFingerprint(target, "b" * 64),),
@@ -224,14 +234,20 @@ def test_helper_adapter_passes_complete_correct_request_to_core_without_reconstr
         {"workcase": schema},
         schema,
         "2026-07-26T16:00:00+08:00",
-        {},
+        {"signature": {"product_name": "Cindy", "model_name": "gpt-5.6-luna", "agent_runtime_name": "codex-cli"}},
     )
 
     assert isinstance(result, WorkCaseWriteResult)
     command = captured["command"]
     assert command.mode == "correct"
-    # 未提供 observed_context.signature → supplied 原样保留（既有行为）
-    assert command.supplied == domain.fact_object
+    # 提供 observed_context.signature → supplied 中的 change_log 最新签名被替换为观察快照
+    assert command.supplied != domain.fact_object
+    latest = command.supplied["change_log"][-1]
+    assert latest["signature"]["product_name"] == "Cindy"
+    assert latest["signature"]["agent_runtime_name"] == "codex-cli"
+    # supplied 其余字段原样保留
+    assert command.supplied["title"] == "Corrected"
+    assert command.supplied["status"] == "closed"
     assert command.authorization_reference == authorization
     assert command.independent_review_reference == review_reference
     assert len(command.route_target_fingerprints) == 1
