@@ -1,6 +1,6 @@
 ---
 title: LDVH 大段文本受控写入的局部补丁方案评估
-status: active
+status: retired
 report_kind: external_research
 urls:
 - ref: https://www.rfc-editor.org/rfc/rfc5789.html
@@ -53,10 +53,17 @@ change_log:
   session_id: cindy-study-local-patch-research-20260811
   summary: Human 明确要求创建 Study：记录大段文本受控写入的外部方案调研、适用边界与建议分流。
   at: '2026-08-10T19:43:14.082563Z'
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-terra
+    agent_runtime_name: claude-code
+  summary: Human 决定新建双源、六类资产技术评估并退休本报告；本报告保留历史内容，仅退出当前研究入口。
+  at: '2026-08-12T08:24:05.240745Z'
+disposition_summary: 本报告保留为仅讨论事实源局部补丁的历史研究。其后续调研已将规则源与五类事实对象的不同编辑、治理和发布边界独立展开为 study-0030；旧报告不通过 supersedes 关系替代该新研究。
 object_id: study-0028
 fact_type_key: study
 created_at: '2026-08-10T19:43:14.082563Z'
-updated_at: '2026-08-10T19:43:14.082563Z'
+updated_at: '2026-08-12T08:24:05.240745Z'
 ---
 
 ## 研究问题
