@@ -38,9 +38,18 @@ function normalizeAgentRuntimeName(value: unknown): string {
  * consume identical display identities.
  */
 export function normalizeSignature(value: SignatureInput): NormalizedSignature {
+  const productName = normalizeProductName(value.productName);
+  const agentRuntimeName = normalizeAgentRuntimeName(value.agentRuntimeName);
+  const identityKey = (name: string) => name.replace(/\s/g, '').toLocaleLowerCase();
+  const sameIdentity = Boolean(
+    productName
+      && agentRuntimeName
+      && identityKey(productName) === identityKey(agentRuntimeName),
+  );
+
   return {
-    productName: normalizeProductName(value.productName),
+    productName,
     modelName: normalizeModelName(value.modelName),
-    agentRuntimeName: normalizeAgentRuntimeName(value.agentRuntimeName),
-  }
+    agentRuntimeName: sameIdentity ? '' : agentRuntimeName,
+  };
 }

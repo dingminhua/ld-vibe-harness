@@ -27,6 +27,12 @@ test('compact signature metadata shows model and product(runtime), with field fa
   assert.match(hostedModel, /Cindy\(Claude\)/);
   assert.doesNotMatch(hostedModel, /cindy\(claude-code\)/);
 
+  const duplicateIdentity = renderToStaticMarkup(createElement(CommitSignatureMeta, { signature: {
+    productName: 'Cindy', modelName: 'gpt-5.6-luna', agentRuntimeName: ' c I n d y ',
+  } }));
+  assert.match(duplicateIdentity, /Cindy/);
+  assert.doesNotMatch(duplicateIdentity, /Cindy\(Cindy\)/);
+
   const productOnly = renderToStaticMarkup(createElement(CommitSignatureMeta, { signature: { productName: 'Cindy' } }));
   assert.match(productOnly, /Cindy/);
   assert.doesNotMatch(productOnly, /undefined|null|\\(\\)/);
