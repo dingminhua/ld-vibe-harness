@@ -11,18 +11,6 @@ _RUNTIME_SEPARATORS = re.compile(r"[\s_]+")
 _MODEL_SEPARATORS = re.compile(r"\s+")
 _MODEL_TRAILING_BRACKET_ANNOTATION = re.compile(r"\s*\[[^\[\]]*\]\s*$")
 
-# Known Agent Runtime identifiers (post runtime-normalization: lowercase,
-# whitespace/underscore collapsed to hyphens).  The outer product is the
-# application that hosts the agent runtime; a runtime cannot be its own outer
-# product.  When a CLI runtime is launched directly with no hosting
-# application, there is no outer product and ``product_name`` must be null
-# (with the absence disclosed before writing), not the runtime's own product
-# name.  Therefore ``product_name`` whose runtime-normalized form names a
-# known runtime identifier is a mechanical conflation and rejected.  Extend
-# this set as new runtimes are integrated.
-_KNOWN_AGENT_RUNTIME_IDS = frozenset({"claude-code", "codex", "codex-cli"})
-
-
 @dataclass(frozen=True, slots=True)
 class LDVHSignature:
     """One environment-supplied attribution snapshot.
@@ -73,13 +61,6 @@ def parse_signature(value: object) -> tuple[LDVHSignature | None, tuple[str, ...
             normalized[name] = _normalize(name, raw)
             if not normalized[name]:
                 problems.append(f"LDVH 署名.{name} 归一后不得为空")
-    if normalized["product_name"] is not None:
-        product_as_runtime = _RUNTIME_SEPARATORS.sub("-", normalized["product_name"].strip().lower())
-        if product_as_runtime in _KNOWN_AGENT_RUNTIME_IDS:
-            problems.append(
-                "LDVH 署名.product_name 不得取 Agent 运行时名称；"
-                "运行时被直接启动而无外层产品时该项必须为 null 并在写前披露缺失"
-            )
     if problems:
         return None, tuple(problems)
     signature = LDVHSignature(**normalized)

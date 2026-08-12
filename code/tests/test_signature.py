@@ -64,15 +64,16 @@ def test_signature_allows_individual_nulls_but_rejects_an_empty_snapshot() -> No
     assert problems == ("LDVH 署名三项均不可得，新的受控写入必须停止",)
 
 
-def test_signature_rejects_a_runtime_name_as_the_product_name() -> None:
-    """外层产品不得取已知 Agent 运行时名称，含大小写/空白/下划线变体。"""
+def test_signature_allows_product_names_that_match_runtime_display_names() -> None:
+    """产品显示名与运行时标识相同不证明两字段发生语义混淆。"""
 
     for product in ("Claude Code", "claude-code", "Codex CLI", "codex_cli", "codex"):
         signature, problems = parse_signature(
             {"product_name": product, "model_name": "glm-5.2", "agent_runtime_name": "claude-code"}
         )
-        assert signature is None, product
-        assert any("product_name 不得取 Agent 运行时名称" in p for p in problems), (product, problems)
+        assert problems == (), (product, problems)
+        assert signature is not None
+        assert signature.product_name == product
 
 
 def test_signature_allows_a_directly_launched_runtime_with_null_product() -> None:
