@@ -62,12 +62,16 @@ def test_general_discovery_reports_source_bound_implementation(tmp_path: Path) -
     assert response["outcome"] == "ok"
     assert response["operation_key"] is None
     assert response["result"]["mode"] == "discovery"
-    assert len(response["result"]["operations"]) == 22
+    assert len(response["result"]["operations"]) == 23
     operations = {item["operation_key"]: item for item in response["result"]["operations"]}
     check = operations["check-current-governed-sources"]
     assert check["implementation"]["present"] is True
     assert check["required_inputs"] == []
     assert check["optional_inputs"] == []
+    local_edit = operations["prepare-local-edit-candidates"]
+    assert local_edit["effect"] == "read"
+    assert local_edit["implementation"]["present"] is True
+    assert local_edit["required_inputs"] == ["arguments.source_kind"]
     candidates = operations["find-fact-object-candidates"]
     assert candidates["implementation"]["present"] is True
     assert candidates["required_inputs"] == [
@@ -181,7 +185,41 @@ def test_general_discovery_reports_source_bound_implementation(tmp_path: Path) -
     assert commit_precheck["required_inputs"] == ["work_object_locators", "arguments.message"]
     assert commit_precheck["optional_inputs"] == ["arguments.workspace_root"]
     assert len(response["gaps"]) == 2
-    assert sum(item["member_count"] for item in response["gaps"]) == 176
+    assert sum(item["member_count"] for item in response["gaps"]) == 184
+
+
+def test_real_cli_local_edit_candidates_supports_rule_and_study_modes() -> None:
+    rule_request = {
+        "arguments": {
+            "source_kind": "rule",
+            "responsibility_key": "ldvh-root",
+            "heading_path": ["8. 系统级运行架构", "8.1 工作上下文的信息交付顺序与渐进式披露"],
+            "candidate_after": "candidate\\n",
+        }
+    }
+    study_request = {
+        "work_object_locators": ["."],
+        "arguments": {
+            "source_kind": "study",
+            "fact_ref": {"governed_project_id": "ldvh", "fact_type_key": "study", "object_id": "study-0030"},
+            "body_heading": "建议",
+        },
+    }
+
+    rule_completed, rule_response = _run(
+        PROJECT_ROOT, "call", "prepare-local-edit-candidates", stdin=json.dumps(rule_request, ensure_ascii=False)
+    )
+    study_completed, study_response = _run(
+        PROJECT_ROOT, "call", "prepare-local-edit-candidates", stdin=json.dumps(study_request, ensure_ascii=False)
+    )
+
+    assert rule_completed.returncode == 0
+    assert study_completed.returncode == 0
+    assert rule_response["changes"] == []
+    assert study_response["changes"] == []
+    assert rule_response["result"]["items"][0]["source_kind"] == "rule"
+    assert study_response["result"]["items"][0]["source_kind"] == "study"
+    assert study_response["scope"]["governance_resolution"]["scope_status"] == "governed_single"
 
 
 def test_real_cli_prepare_exposes_definition_refs_without_a_second_schema() -> None:
@@ -217,7 +255,7 @@ def test_diagnostic_profile_expands_qualification_details(tmp_path: Path) -> Non
 
     assert completed.returncode == 0
     assert response["response_profile"] == "diagnostic"
-    assert len(response["gaps"]) == 176
+    assert len(response["gaps"]) == 184
     assert all(item["summary"].startswith("当前 Code 尚未自动证明：") for item in response["gaps"])
     assert all("member_count" not in item for item in response["gaps"])
 

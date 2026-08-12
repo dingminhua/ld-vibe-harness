@@ -53,7 +53,7 @@ def test_doctor_reports_ready_for_explicit_governed_project(tmp_path: Path) -> N
     assert len(result["source_repository"]["revision"]) == 40
     assert result["source_repository"]["working_tree_status"] in {"clean", "dirty"}
     assert result["helper"]["contract"] == "ldvh-helper-cli/2"
-    assert result["helper"]["operation_count"] == 22
+    assert result["helper"]["operation_count"] == 23
     assert result["configuration"]["config_status"] == "valid"
     assert result["configuration"]["scope_status"] == "governed_single"
     assert result["configuration"]["governed_project_id"] == "sample"
@@ -171,7 +171,7 @@ def test_doctor_cli_returns_contractual_unavailable_result(tmp_path: Path) -> No
         argv = [
             "sh",
             "-c",
-            "exec \"$@\"",
+            'exec "$@"',
             "--",
             str(HELPER_EXECUTABLE),
             "doctor",
@@ -200,9 +200,7 @@ def test_doctor_cli_returns_contractual_unavailable_result(tmp_path: Path) -> No
         check=False,
     )
 
-    assert completed.returncode == 1, (
-        f"expected rc 1, got {completed.returncode}; stdout={completed.stdout!r}"
-    )
+    assert completed.returncode == 1, f"expected rc 1, got {completed.returncode}; stdout={completed.stdout!r}"
     assert completed.stderr == ""
     response = json.loads(completed.stdout)
     assert response["contract"] == "ldvh-doctor/1"

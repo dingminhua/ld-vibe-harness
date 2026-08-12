@@ -350,6 +350,7 @@ Helper 可以按请求把规范、事实、行动模板、工作对象和能力�
 | operation_key | summary | effect | arguments_contract | result_contract |
 |---|---|---|---|---|
 | `check-current-governed-sources` | 对当前规则源和当前 worktree 完整事实库执行一次显式只读机械检查 | `read` | `helper-cli-service-contract::9.3 高频显式检查输入字段` | `helper-cli-service-contract::9.4 高频显式检查结果字段` |
+| `prepare-local-edit-candidates` | 为单一规则源或 Study 的精确局部目标返回当前基线、候选 before/after diff、来源行范围、已展开和未展开范围及 stale 反馈 | `read` | `helper-cli-service-contract::12.1 局部编辑候选输入字段` | `helper-cli-service-contract::12.2 局部编辑候选结果字段` |
 
 ## 10. 环境机制与 Helper 结果的一致性
 
@@ -367,7 +368,51 @@ AI 经任何路径调用 Helper——薄 Skill 路由后的调用或直接 shell
 
 `contract` 只标识公开机器接口的兼容边界，不代表 LDVH 产品版本、规范版本或事实版本。当前契约使用授权附件定义的唯一值；本文不预设多版本并行维护机制。确需改变该值时，必须依据真实调用方和同步方案处理，不为低概率升级预建额外状态或流程。
 
-## 12. 验证要求
+## 12. 双源只读局部编辑候选
+
+本节定义规则源和 Study 共用的局部编辑审阅辅助。它只组织已经精确定位的当前内容、调用方提供的可选候选文本、可比较基线、逐行差异和范围证据；不授予写权限，不判断规则适用、语义正确性、独立复核、Human Gate、行动允许、发布或工作完成。
+
+规则模式只读取当前已确认规则源工作树中通过既有机械检查的 active 规范或授权附件；Study 模式只读取唯一受管项目、实际 Git worktree 与 common-dir 边界内的当前 Study。两种模式不得在同一请求混合：它们的读取边界、身份与后续发布路径不同。规则目标使用 `responsibility_key` 和精确 H2/H3 `heading_path`，Study 目标使用稳定 `fact_ref` 和当前 Study 正文固定五个 H2 标题之一；名称相似、数组下标、裸行偏移、模糊匹配和自动重定向均不建立目标身份。
+
+返回的 `before`、`candidate_after` 和 `unified_diff` 仅是当次审阅材料。规则内容 hash 或 Study `content_fingerprint` 与调用方的 `expected_baseline` 不一致时，操作报告 stale 并要求重新读取、重新形成候选；不得 fuzzy match、auto-merge、rebase、写入或发布。规则后续仍走直接工作树编辑后的责任归口、独立复核、风险匹配验证、条件性 Human Gate 与 Git 闭环；Study 后续仍走完整 after、整对象 CAS、原子替换、精确回读和独立完整性审计。
+
+### 12.1 局部编辑候选输入字段
+
+本操作要求 `arguments` 使用以下闭集，`requested_disclosure` 必须为 `null`，`observed_context` 与 `authorization_reference` 必须为空；它不接受写入、锁、CAS、治理判断、发布或行动授权输入。
+
+| 字段 | JSON 类型 | 要求与空值 | 边界 |
+|---|---|---|---|
+| `source_kind` | string | 必填；只允许 `rule` 或 `study` | 一次请求只能选择一种来源；不混合规则与事实读取边界 |
+| `responsibility_key` | string | 仅 `rule` 必填；非空 | 规则载体稳定职责标识符；`study` 模式禁止出现 |
+| `heading_path` | array | 仅 `rule` 必填；长度为 1 或 2 的非空 string；分别精确匹配 H2 或 H2/H3 | 不是裸行偏移或相似标题；`study` 模式禁止出现 |
+| `fact_ref` | object | 仅 `study` 必填；闭集恰为 `governed_project_id`、`fact_type_key`、`object_id`，均为非空 string，且 `fact_type_key` 必须为 `study` | 使用稳定事实引用；`rule` 模式禁止出现 |
+| `body_heading` | string | 仅 `study` 必填；只允许当前 Study 固定正文 H2：`研究问题`、`输入与边界`、`关键发现`、`建议`、`后续分流` | 使用正文结构身份，不接受数组下标、裸偏移或任意标题；`rule` 模式禁止出现 |
+| `expected_baseline` | string 或 null | 可选；缺省或 `null` 表示不比较；非空时为 64 位小写 SHA-256 | 规则模式比较当前选中内容的 SHA-256；Study 模式比较完整对象 `content_fingerprint`；不一致只报告 stale |
+| `candidate_after` | string 或 null | 可选；缺省或 `null` 表示只读取；提供时必须为非空 string，作为当次候选替换文本 | 只用于生成 diff，不写入、不形成 patch 或发布请求 |
+
+规则模式不接受 `work_object_locators`；其 `scope.governance_resolution` 固定为 `null`。Study 模式要求 `work_object_locators` 形成唯一受管项目、实际 Git worktree 与 common-dir 读取边界；不能形成时零事实读取并明确未完成范围。相同精确目标不得重复，且 `candidate_after` 不得用于绕过目标选择、漂移或来源边界。
+
+### 12.2 局部编辑候选结果字段
+
+成功读取的 `result` 使用以下闭集；没有任何已完成目标时为 `null`。每个 `items[]` 只表示该精确范围已经按本操作读取和组织，不表示规则适用、行动允许、Human 授权、语义正确、写入成功或工作完成。
+
+| 字段 | JSON 类型 | 要求与空值 | 边界 |
+|---|---|---|---|
+| `items` | array | 每个已完成精确目标一项 | 不混合 `source_kind` |
+| `items[].source_kind` | string | `rule` 或 `study` | 回显实际读取模式 |
+| `items[].target` | object | 规则返回 `responsibility_key` 与 `heading_path`；Study 返回 `fact_ref` 与 `body_heading` | 返回稳定目标，不改作路径猜测或偏移身份 |
+| `items[].baseline` | object | 必含 `kind`、`value`、`matches_expected` | `kind` 为 `content_sha256` 或 `content_fingerprint`；未提供 expected 时 `matches_expected` 为 `null` |
+| `items[].stale` | boolean | 必填 | 仅表示 expected baseline 与当前值是否不一致 |
+| `items[].before` | string | 必填 | 当前精确目标文本 |
+| `items[].candidate_after` | string 或 null | 必填 | 回显候选审阅文本；不代表可写 after-state |
+| `items[].unified_diff` | string 或 null | 必填 | 有候选时为逐行 unified diff；没有候选时为 `null` |
+| `items[].source_ranges` | array | 必填非空 | 每项含来源回指、起止行和对应已展开范围；Study 行范围使用当前 Markdown 载体 |
+| `items[].scope_coverage` | object | 必含 `expanded` 与 `unexpanded` arrays | 已展开与未展开范围均显式保留；未展开不伪装为覆盖 |
+| `items[].publication_boundary` | object | 必含 `summary` 与 `source_refs` | 只回指既有规则治理或 Study 完整对象发布路径，不新建授权或下一阶段 |
+
+目标无法精确唯一定位、规则载体不具备既有可读取资格、Study 读取边界无法形成，或当前内容无法可信读取时，受影响范围保留在共同 `scope.not_completed`、`gaps` 与必要的 `diagnostics` 中；操作不模糊回退。读取调用的共同 `changes` 始终为空。`capabilities` 和直接调用必须如实区分实现缺失、输入无效、技术不可用、完整读取、部分读取与 stale；stale 本身只改变已完成结果的诊断，不转化为合并、写入、CAS 或发布能力。
+
+## 13. 验证要求
 
 | 验证对象 | 验证时机 | 成立条件 | 可接受依据 | 验证入口 | 可证明范围 | 未满足时的处理 |
 |---|---|---|---|---|---|---|
@@ -384,7 +429,7 @@ AI 经任何路径调用 Helper——薄 Skill 路由后的调用或直接 shell
 
 本文所涉公开操作、Helper CLI 实现和 contract tests 的能力声明，按 00 §9 及上表对应验证对象判断。
 
-## 13. Human Gate
+## 14. Human Gate
 
 以下事项必须进入 Human Gate：
 
@@ -397,7 +442,7 @@ AI 经任何路径调用 Helper——薄 Skill 路由后的调用或直接 shell
 
 普通新增操作仍必须满足本文来源、实现和测试要求，但不因新增本身自动进入 Human Gate。具体操作实际适用的 Human Gate 仍由相应来源规则决定。
 
-## 14. Stop Conditions
+## 15. Stop Conditions
 
 出现以下任一情况时，必须暂停受影响操作、发布或能力声明：
 
