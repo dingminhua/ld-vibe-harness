@@ -698,8 +698,8 @@ export interface CognitionData {
     total: number;
     /** 当前窗口内可读事实流水总数；用于模块标题的“动态数”。 */
     eventTotal: number;
-    agentUsage: CognitionRecentActivityAttributionUsage[];
-    environmentUsage: CognitionRecentActivityAttributionUsage[];
+    modelUsage: CognitionRecentActivityAttributionUsage[];
+    runtimeUsage: CognitionRecentActivityAttributionUsage[];
   };
   /** Spark 列表不可读取时整体省略，并通过 issues 就地说明。 */
   sparkHealth?: CognitionSparkHealth;
@@ -769,15 +769,9 @@ export interface ChangelogEntry {
 export type GitPushStatus = 'pushed' | 'unpushed' | 'incoming' | 'unknown';
 
 export interface CommitSignature {
-  sessionId?: string;
-  /** Canonical fact change-log signature fields. */
-  modelId?: string;
-  agentWorkbench?: string;
-  /** Canonical Git commit-trailer workbench name. */
-  hostName?: string;
-  /** Legacy Git/fact attribution fields retained for historical compatibility. */
-  agentId?: string;
-  hostEnvironment?: string;
+  productName?: string;
+  modelName?: string;
+  agentRuntimeName?: string;
 }
 
 export interface CommitDetailPanelData {

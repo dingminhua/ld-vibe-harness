@@ -1,28 +1,22 @@
-import { Fragment } from 'react';
 import type { CommitSignature } from '@/utils/api';
 
-/** Compact display of the human-readable fields from an optional commit signature. */
+/** Compactly display the optional product/runtime signature identity. */
 export default function CommitSignatureMeta({
   signature,
 }: {
   signature?: CommitSignature;
 }) {
-  const values = [
-    signature?.modelId ?? signature?.agentId,
-    signature?.agentWorkbench ?? signature?.hostName ?? signature?.hostEnvironment,
-  ].filter(
-    (value): value is string => Boolean(value?.trim()),
-  );
-  if (values.length === 0) return null;
+  const productName = signature?.productName?.trim() ?? '';
+  const runtimeName = signature?.agentRuntimeName?.trim() ?? '';
+  if (!productName && !runtimeName) return null;
+  const identity = productName && runtimeName
+    ? `${productName}(${runtimeName})`
+    : productName || runtimeName;
 
   return (
     <span className="inline-flex h-4 shrink-0 items-center leading-4">
-      {values.map((value) => (
-        <Fragment key={value}>
-          <span className="inline-flex h-4 shrink-0 items-center px-1 leading-4 text-ldvh-text-secondary/70" aria-hidden="true">·</span>
-          <span className="inline-flex h-4 shrink-0 items-center leading-4">{value}</span>
-        </Fragment>
-      ))}
+      <span className="inline-flex h-4 shrink-0 items-center px-1 leading-4 text-ldvh-text-secondary/70" aria-hidden="true">·</span>
+      <span className="inline-flex h-4 shrink-0 items-center leading-4">{identity}</span>
     </span>
   );
 }

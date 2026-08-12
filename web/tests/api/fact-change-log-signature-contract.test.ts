@@ -8,19 +8,19 @@ const repositoryRoot = path.resolve(import.meta.dirname, '../../..');
 
 test('object header attribution reads the newest complete signature from change_log only', () => {
   assert.deepEqual(getLatestFactChangeSignature([
-    { signature: { agent_id: 'older', host_environment: 'old-host' } },
+    { signature: { model_id: 'legacy', agent_workbench: 'legacy-runtime' } },
     { signature: { agent_id: 'partial' } },
-    { signature: { agent_id: 'codex', host_environment: 'Cindy' } },
-  ]), { agentId: 'codex', hostEnvironment: 'Cindy' });
+    { signature: { product_name: 'Cindy', model_name: 'gpt-5.6-luna', agent_runtime_name: 'codex-cli' } },
+  ]), { productName: 'Cindy', modelName: 'gpt-5.6-luna', agentRuntimeName: 'codex-cli' });
 
-  assert.deepEqual(getLatestFactChangeSignature([
+  assert.equal(getLatestFactChangeSignature([
     { signature: { agent_id: 'legacy', host_environment: 'old-host' } },
     { signature: { model_id: 'gpt-5', agent_workbench: 'Cindy' } },
-  ]), { modelId: 'gpt-5', agentWorkbench: 'Cindy' });
+  ]), undefined);
 
-  assert.deepEqual(getLatestFactChangeSignature([
+  assert.equal(getLatestFactChangeSignature([
     { signature: { model_id: 'gpt-5', host_name: 'Cindy' } },
-  ]), { modelId: 'gpt-5', agentWorkbench: 'Cindy' });
+  ]), undefined);
 
   assert.equal(getLatestFactChangeSignature([
     { signature: { agent_id: 'partial' } },

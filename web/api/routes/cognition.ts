@@ -147,15 +147,11 @@ interface SparkHealthBuildItem {
   unparsed_structures: Array<Record<string, unknown>>
 }
 
-/**
- * 面向 Web 的事实流水署名。规范形态保留模型 / 工作台字段；历史形态保留
- * Agent / 宿主字段，由共用落款组件按同一优先级呈现。
- */
+/** 面向 Web 的当前三字段事实流水署名；历史字段只读兼容但不投影。 */
 interface FactChangeSignature {
-  modelId?: string
-  agentWorkbench?: string
-  agentId?: string
-  hostEnvironment?: string
+  productName?: string
+  modelName?: string
+  agentRuntimeName?: string
 }
 
 export interface RecentHotspotBuildItem {
@@ -314,14 +310,16 @@ function buildRecentActivityItem(
 function readFactChangeSignature(value: unknown): FactChangeSignature | undefined {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined
   const record = value as Record<string, unknown>
-  const modelId = typeof record.model_id === 'string' ? record.model_id.trim() : ''
-  const agentWorkbench = typeof record.agent_workbench === 'string' ? record.agent_workbench.trim()
-    : typeof record.host_name === 'string' ? record.host_name.trim() : ''
-  if (modelId && agentWorkbench) return { modelId, agentWorkbench }
-
-  const agentId = typeof record.agent_id === 'string' ? record.agent_id.trim() : ''
-  const hostEnvironment = typeof record.host_environment === 'string' ? record.host_environment.trim() : ''
-  return agentId && hostEnvironment ? { agentId, hostEnvironment } : undefined
+  const productName = typeof record.product_name === 'string' ? record.product_name.trim() : ''
+  const modelName = typeof record.model_name === 'string' ? record.model_name.trim() : ''
+  const agentRuntimeName = typeof record.agent_runtime_name === 'string' ? record.agent_runtime_name.trim() : ''
+  return productName || modelName || agentRuntimeName
+    ? {
+      ...(productName ? { productName } : {}),
+      ...(modelName ? { modelName } : {}),
+      ...(agentRuntimeName ? { agentRuntimeName } : {}),
+    }
+    : undefined
 }
 
 /** 与 ObjectUpdatedMeta 同源：倒序取最新一条完整事实流水署名，不以对象头字段补造。 */
@@ -385,12 +383,12 @@ export function buildFactActivityItems(
  */
 export function buildRecentActivityView(builds: RecentActivityBuildItem[]): {
   items: RecentActivityObjectItem[]
-  agentUsage: RecentActivityAttributionUsage[]
-  environmentUsage: RecentActivityAttributionUsage[]
+  modelUsage: RecentActivityAttributionUsage[]
+  runtimeUsage: RecentActivityAttributionUsage[]
 } {
   const byObject = new Map<string, RecentActivityObjectItem>()
-  const agents = new Map<string, number>()
-  const environments = new Map<string, number>()
+  const models = new Map<string, number>()
+  const runtimes = new Map<string, number>()
 
   for (const build of builds) {
     const key = `${build.type}:${build.object_id}`
@@ -405,10 +403,10 @@ export function buildRecentActivityView(builds: RecentActivityBuildItem[]): {
       }
     }
     if (build.signature) {
-      const agent = build.signature.modelId ?? build.signature.agentId
-      const environment = build.signature.agentWorkbench ?? build.signature.hostEnvironment
-      if (agent) agents.set(agent, (agents.get(agent) ?? 0) + 1)
-      if (environment) environments.set(environment, (environments.get(environment) ?? 0) + 1)
+      const model = build.signature.modelName
+      const runtime = build.signature.agentRuntimeName
+      if (model) models.set(model, (models.get(model) ?? 0) + 1)
+      if (runtime) runtimes.set(runtime, (runtimes.get(runtime) ?? 0) + 1)
     }
   }
 
@@ -417,8 +415,8 @@ export function buildRecentActivityView(builds: RecentActivityBuildItem[]): {
   )
   return {
     items: [...byObject.values()].sort(compareRecentActivity),
-    agentUsage: [...agents.entries()].map(([value, count]) => ({ value, count })).sort(compareUsage),
-    environmentUsage: [...environments.entries()].map(([value, count]) => ({ value, count })).sort(compareUsage),
+    modelUsage: [...models.entries()].map(([value, count]) => ({ value, count })).sort(compareUsage),
+    runtimeUsage: [...runtimes.entries()].map(([value, count]) => ({ value, count })).sort(compareUsage),
   }
 }
 
@@ -933,8 +931,8 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
         items: recentItems,
         total: recentItems.length,
         eventTotal: recentBuilds.length,
-        agentUsage: recentActivityView.agentUsage,
-        environmentUsage: recentActivityView.environmentUsage,
+        modelUsage: recentActivityView.modelUsage,
+        runtimeUsage: recentActivityView.runtimeUsage,
       },
       ...(recentHotspots ? {
         recentHotspots: {

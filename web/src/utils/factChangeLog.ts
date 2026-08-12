@@ -18,24 +18,22 @@ export function getLatestFactChangeSignature(value: unknown): CommitSignature | 
     if (!signature || typeof signature !== 'object' || Array.isArray(signature)) continue;
     const signatureRecord = signature as Record<string, unknown>;
 
-    const modelId = typeof signatureRecord.model_id === 'string'
-      ? signatureRecord.model_id.trim()
+    const productName = typeof signatureRecord.product_name === 'string'
+      ? signatureRecord.product_name.trim()
       : '';
-    const agentWorkbench = typeof signatureRecord.agent_workbench === 'string'
-      ? signatureRecord.agent_workbench.trim()
-      : typeof signatureRecord.host_name === 'string'
-        ? signatureRecord.host_name.trim()
-        : '';
-    if (modelId && agentWorkbench) return { modelId, agentWorkbench };
-
-    const agentId = typeof signatureRecord.agent_id === 'string'
-      ? signatureRecord.agent_id.trim()
+    const modelName = typeof signatureRecord.model_name === 'string'
+      ? signatureRecord.model_name.trim()
       : '';
-    const hostEnvironment = typeof signatureRecord.host_environment === 'string'
-      ? signatureRecord.host_environment.trim()
+    const agentRuntimeName = typeof signatureRecord.agent_runtime_name === 'string'
+      ? signatureRecord.agent_runtime_name.trim()
       : '';
-
-    if (agentId && hostEnvironment) return { agentId, hostEnvironment };
+    if (productName || modelName || agentRuntimeName) {
+      return {
+        ...(productName ? { productName } : {}),
+        ...(modelName ? { modelName } : {}),
+        ...(agentRuntimeName ? { agentRuntimeName } : {}),
+      };
+    }
   }
 
   return undefined;

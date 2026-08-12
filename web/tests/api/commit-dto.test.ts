@@ -129,10 +129,9 @@ git([
   'commit', '--quiet', '-m', 'feat(web)!: 调整提交接口', '-m',
   [
     '动机:', '- 统一提交记录结构。', '', '验证结论:', '- 由特征测试固定当前 DTO。', '',
-    'Session-ID: 48bbb4c6-f2ff-4510-b63f-cebcaaa35d2e',
-    'Signer-Type: ai-agent',
-    'Agent-ID: codex',
-    'Host-Environment: Cindy',
+    'LDVH-Product-Name: Cindy',
+    'LDVH-Model-Name: gpt-5.6-luna',
+    'LDVH-Agent-Runtime-Name: codex-cli',
   ].join('\n'),
 ])
 const remoteRoot = path.join(workspaceRoot, 'remote.git')
@@ -191,9 +190,9 @@ function assertCommitDto(entry: Record<string, unknown>) {
   assert.equal(entry.isBreaking, true)
   assert.equal(entry.pushStatus, 'pushed')
   assert.deepEqual(entry.signature, {
-    sessionId: '48bbb4c6-f2ff-4510-b63f-cebcaaa35d2e',
-    agentId: 'codex',
-    hostEnvironment: 'Cindy',
+    productName: 'Cindy',
+    modelName: 'gpt-5.6-luna',
+    agentRuntimeName: 'codex-cli',
   })
   assert.match(String(entry.body), /动机:/)
   assert.match(String(entry.body), /验证结论:/)
@@ -314,27 +313,19 @@ test('preserves the shared commit DTO across current API consumers', async () =>
   assert.equal(commits.entries[0].isMerge, false)
 })
 
-test('commit signature display accepts canonical and legacy trailer names', () => {
+test('commit signature display reads only current LDVH trailers', () => {
   assert.deepEqual(parseCommitSignature([
-    'Session-ID: canonical-session',
+    'LDVH-Product-Name: Cindy',
+    'LDVH-Model-Name: gpt-5.6-luna',
+    'LDVH-Agent-Runtime-Name: codex-cli',
+  ].join('\n')), {
+    productName: 'Cindy',
+    modelName: 'gpt-5.6-luna',
+    agentRuntimeName: 'codex-cli',
+  })
+  assert.equal(parseCommitSignature([
+    'Session-ID: legacy-session',
     'Model-ID: gpt-5',
     'Workbench-Name: Cindy',
-  ].join('\n')), {
-    sessionId: 'canonical-session',
-    modelId: 'gpt-5',
-    hostName: 'Cindy',
-    agentId: undefined,
-    hostEnvironment: undefined,
-  })
-  assert.deepEqual(parseCommitSignature([
-    'Session-ID: legacy-session',
-    'Agent-ID: codex',
-    'Host-Environment: LegacyHost',
-  ].join('\n')), {
-    sessionId: 'legacy-session',
-    modelId: undefined,
-    hostName: undefined,
-    agentId: 'codex',
-    hostEnvironment: 'LegacyHost',
-  })
+  ].join('\n')), undefined)
 })

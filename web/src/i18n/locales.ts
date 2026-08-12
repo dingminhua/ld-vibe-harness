@@ -531,12 +531,8 @@ export type CommitDetailLabels = {
   copyHash: string;
   copiedHash: string;
   signature: string;
-  sessionId: string;
-  modelId: string;
-  agentWorkbench: string;
-  workbenchName: string;
-  agentId: string;
-  hostEnvironment: string;
+  modelName: string;
+  runtimeName: string;
 };
 
 const COMMIT_DETAIL_LABELS: Record<string, CommitDetailLabels> = {
@@ -545,14 +541,14 @@ const COMMIT_DETAIL_LABELS: Record<string, CommitDetailLabels> = {
     summary: '变更统计', files: '文件', insertions: '新增', deletions: '删除',
     commitBody: '关键变更', changedFiles: '改动文件', noFiles: '没有可展示的文件统计',
     raw: '原始信息', copyHash: '复制提交 hash', copiedHash: '已复制提交 hash',
-    signature: '署名信息', sessionId: '会话 ID', modelId: '模型 ID', agentWorkbench: 'Agent 工作台', workbenchName: '工作台名称', agentId: 'Agent ID', hostEnvironment: '宿主环境',
+    signature: '署名信息', modelName: 'AI', runtimeName: '环境（运行时）',
   },
   en: {
     category: 'Category', type: 'Type', scope: 'Scope', commit: 'Commit', time: 'Commit',
     summary: 'Change summary', files: 'Files', insertions: 'Insertions', deletions: 'Deletions',
     commitBody: 'Commit notes', changedFiles: 'Changed files', noFiles: 'No file stat available',
     raw: 'Original info', copyHash: 'Copy commit hash', copiedHash: 'Commit hash copied',
-    signature: 'Signature', sessionId: 'Session ID', modelId: 'Model ID', agentWorkbench: 'Agent workbench', workbenchName: 'Workbench name', agentId: 'Agent ID', hostEnvironment: 'Host environment',
+    signature: 'Signature', modelName: 'AI', runtimeName: 'Environment (runtime)',
   },
 };
 
@@ -760,8 +756,8 @@ export const UI_LOCALES = {
     'cognition.recent.showRemainingUsage': '显示其余 {count} 项署名统计',
     'cognition.recent.collapse': '收起',
     'cognition.recent.activityCount': '{count} 条动态',
-    'cognition.recent.agentUsage': '署名 AI',
-    'cognition.recent.environmentUsage': '署名环境',
+    'cognition.recent.modelUsage': '署名 AI',
+    'cognition.recent.runtimeUsage': '署名环境（运行时）',
     'cognition.recent.expandSection': '展开近期动态',
     'cognition.recent.collapseSection': '收起近期动态',
     'cognition.recent.copyModuleSummary': '复制模块摘要',
@@ -1319,8 +1315,8 @@ export const UI_LOCALES = {
     'cognition.recent.showRemainingUsage': 'Show {count} more attribution entries',
     'cognition.recent.collapse': 'Collapse',
     'cognition.recent.activityCount': '{count} activity entries',
-    'cognition.recent.agentUsage': 'Signing AI',
-    'cognition.recent.environmentUsage': 'Signing environment',
+    'cognition.recent.modelUsage': 'Signing AI',
+    'cognition.recent.runtimeUsage': 'Signing runtime',
     'cognition.recent.expandSection': 'Expand recent activity',
     'cognition.recent.collapseSection': 'Collapse recent activity',
     'cognition.recent.copyModuleSummary': 'Copy module summary',

@@ -100,8 +100,8 @@ test('cognition endpoint returns inbox, fact activity, Spark health, and fact ho
   assert.equal(recent.total, (recent.items as unknown[]).length)
   assert.equal(typeof recent.eventTotal, 'number')
   assert.ok(Number(recent.eventTotal) >= Number(recent.total))
-  assert.ok(Array.isArray(recent.agentUsage))
-  assert.ok(Array.isArray(recent.environmentUsage))
+  assert.ok(Array.isArray(recent.modelUsage))
+  assert.ok(Array.isArray(recent.runtimeUsage))
   assert.ok(body.sparkHealth && typeof body.sparkHealth === 'object')
   const sparkHealth = body.sparkHealth as Record<string, unknown>
   for (const key of ['total', 'openTotal', 'terminalTotal', 'silentThresholdDays', 'silentCount']) {
@@ -332,8 +332,8 @@ test('recent activity accepts only explicit windows and groups fact change-log e
       assert.match(String(item.occurredAt), RFC3339)
       if (item.signature !== undefined) {
         const signature = item.signature as Record<string, unknown>
-        assert.equal(typeof (signature.modelId ?? signature.agentId), 'string')
-        assert.equal(typeof (signature.agentWorkbench ?? signature.hostEnvironment), 'string')
+        assert.equal(typeof signature.modelName, 'string')
+        assert.equal(typeof signature.agentRuntimeName, 'string')
       }
       assert.ok(Number(item.activityCount) >= 1)
       assert.equal(typeof item.relativeTime, 'string')
@@ -357,42 +357,45 @@ test('recent activity aggregation retains the newest fact event and counts compl
     {
       type: 'spark', object_id: 'spark-0001', title: 'A', activity: 'created', occurred_at: '2026-08-01T00:00:00Z',
       status: 'open', read_status: 'readable', field_issues: [], unparsed_structures: [],
-      signature: { agentId: 'codex', hostEnvironment: 'Cindy' },
+      signature: { modelName: 'gpt-5.6-luna', agentRuntimeName: 'codex-cli' },
     },
     {
       type: 'spark', object_id: 'spark-0001', title: 'A', activity: 'updated', occurred_at: '2026-08-01T02:00:00Z',
       status: 'open', read_status: 'readable', field_issues: [], unparsed_structures: [],
-      signature: { agentId: 'codex', hostEnvironment: 'Cindy' },
+      signature: { modelName: 'gpt-5.6-luna', agentRuntimeName: 'codex-cli' },
     },
     {
       type: 'adr', object_id: 'adr-0001', title: 'B', activity: 'updated', occurred_at: '2026-08-01T01:00:00Z',
       status: 'active', read_status: 'readable', field_issues: [], unparsed_structures: [],
-      signature: { agentId: 'reviewer', hostEnvironment: 'CI' },
+      signature: { modelName: 'reviewer-model', agentRuntimeName: 'ci-runtime' },
     },
   ])
   assert.deepEqual(view.items.map((item) => `${item.object_id}:${item.activity_count}:${item.occurred_at}`), [
     'spark-0001:2:2026-08-01T02:00:00Z',
     'adr-0001:1:2026-08-01T01:00:00Z',
   ])
-  assert.deepEqual(view.agentUsage, [{ value: 'codex', count: 2 }, { value: 'reviewer', count: 1 }])
-  assert.deepEqual(view.environmentUsage, [{ value: 'Cindy', count: 2 }, { value: 'CI', count: 1 }])
+  assert.deepEqual(view.modelUsage, [{ value: 'gpt-5.6-luna', count: 2 }, { value: 'reviewer-model', count: 1 }])
+  assert.deepEqual(view.runtimeUsage, [{ value: 'codex-cli', count: 2 }, { value: 'ci-runtime', count: 1 }])
 })
 
-test('recent activity accepts canonical change-log signatures', async () => {
+test('recent activity accepts current change-log signatures and ignores legacy fields', async () => {
   const { buildFactActivityItems, buildRecentActivityView } = await import('../../api/routes/cognition.ts')
   const raw = {
     object_id: 'spark-0002', title: 'Canonical signature', status: 'open',
     change_log: [{
-      signature: { model_id: 'gpt-5', agent_workbench: 'Cindy' },
-      session_id: 'canonical-session', at: '2026-08-01T00:00:00Z', summary: 'Created',
+      signature: { model_id: 'legacy-model', agent_workbench: 'legacy-runtime' },
+      session_id: 'legacy-session', at: '2026-07-31T00:00:00Z', summary: 'Legacy',
+    }, {
+      signature: { product_name: 'Cindy', model_name: 'gpt-5.6-luna', agent_runtime_name: 'codex-cli' },
+      session_id: 'current-session', at: '2026-08-01T00:00:00Z', summary: 'Created',
     }],
   }
   const builds = buildFactActivityItems(raw, 'spark', Date.parse('2026-07-31T00:00:00Z'), Date.parse('2026-08-02T00:00:00Z'))
-  assert.deepEqual(builds[0]?.signature, { modelId: 'gpt-5', agentWorkbench: 'Cindy' })
+  assert.deepEqual(builds.find((build) => build.occurred_at === '2026-08-01T00:00:00Z')?.signature, { productName: 'Cindy', modelName: 'gpt-5.6-luna', agentRuntimeName: 'codex-cli' })
 
   const view = buildRecentActivityView(builds)
-  assert.deepEqual(view.agentUsage, [{ value: 'gpt-5', count: 1 }])
-  assert.deepEqual(view.environmentUsage, [{ value: 'Cindy', count: 1 }])
+  assert.deepEqual(view.modelUsage, [{ value: 'gpt-5.6-luna', count: 1 }])
+  assert.deepEqual(view.runtimeUsage, [{ value: 'codex-cli', count: 1 }])
 })
 
 test('Spark health reuses the newest complete change-log signature for its card-equivalent attribution', async () => {
@@ -401,12 +404,12 @@ test('Spark health reuses the newest complete change-log signature for its card-
     object_id: 'spark-0003', title: 'Spark attribution', status: 'open', priority: 'P1',
     updated_at: '2026-08-01T03:00:00Z', read_status: 'readable',
     change_log: [
-      { signature: { agent_id: 'older', host_environment: 'old-host' } },
-      { signature: { agent_id: 'partial' } },
-      { signature: { model_id: 'gpt-5', agent_workbench: 'Cindy' } },
+      { signature: { model_id: 'legacy-model', agent_workbench: 'legacy-runtime' } },
+      { signature: { model_id: 'partial' } },
+      { signature: { product_name: 'Cindy', model_name: 'gpt-5.6-luna', agent_runtime_name: 'codex-cli' } },
     ],
   }], Date.parse('2026-08-08T00:00:00Z'))
-  assert.deepEqual(health.openItems[0]?.signature, { modelId: 'gpt-5', agentWorkbench: 'Cindy' })
+  assert.deepEqual(health.openItems[0]?.signature, { productName: 'Cindy', modelName: 'gpt-5.6-luna', agentRuntimeName: 'codex-cli' })
 })
 
 test('fact activity builder reads change_log first and only falls back for legacy facts without usable entries', async () => {

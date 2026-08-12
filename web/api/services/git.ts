@@ -24,13 +24,9 @@ export type GitPushStatus = 'pushed' | 'unpushed' | 'incoming' | 'unknown'
 
 /** Optional provenance markers carried in Git commit trailers. */
 export type GitCommitSignature = {
-  sessionId?: string
-  /** Canonical trailers used by current commits. */
-  modelId?: string
-  hostName?: string
-  /** Legacy trailers retained for historical commits. */
-  agentId?: string
-  hostEnvironment?: string
+  productName?: string
+  modelName?: string
+  agentRuntimeName?: string
 }
 
 export interface GitLogEntry {
@@ -133,13 +129,11 @@ function getCommitTrailerValue(body: string, key: string): string | undefined {
  * the compact commit identity only exposes the model/agent and host when present.
  */
 export function parseCommitSignature(body: string): GitCommitSignature | undefined {
-  const sessionId = getCommitTrailerValue(body, 'Session-ID')
-  const modelId = getCommitTrailerValue(body, 'Model-ID')
-  const hostName = getCommitTrailerValue(body, 'Workbench-Name')
-  const agentId = modelId ? undefined : getCommitTrailerValue(body, 'Agent-ID')
-  const hostEnvironment = hostName ? undefined : getCommitTrailerValue(body, 'Host-Environment')
-  return sessionId || modelId || hostName || agentId || hostEnvironment
-    ? { sessionId, modelId, hostName, agentId, hostEnvironment }
+  const productName = getCommitTrailerValue(body, 'LDVH-Product-Name')
+  const modelName = getCommitTrailerValue(body, 'LDVH-Model-Name')
+  const agentRuntimeName = getCommitTrailerValue(body, 'LDVH-Agent-Runtime-Name')
+  return productName || modelName || agentRuntimeName
+    ? { productName, modelName, agentRuntimeName }
     : undefined
 }
 

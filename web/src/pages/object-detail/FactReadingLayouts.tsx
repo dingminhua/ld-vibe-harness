@@ -34,10 +34,8 @@ type ChangeLogEntry = {
   key: string;
   at: string;
   summary: string;
-  modelId?: string;
-  agentWorkbench?: string;
-  agentId?: string;
-  hostEnvironment?: string;
+  modelName?: string;
+  agentRuntimeName?: string;
 };
 
 /**
@@ -75,8 +73,8 @@ export function ChangeLogReadingNode({
                 <span className="tabular-nums">
                   {formatDateTime(entry.at)}
                 </span>
-                {(entry.modelId ?? entry.agentId) && <><span aria-hidden="true">·</span><span>{entry.modelId ?? entry.agentId}</span></>}
-                {(entry.agentWorkbench ?? entry.hostEnvironment) && <><span aria-hidden="true">·</span><span>{entry.agentWorkbench ?? entry.hostEnvironment}</span></>}
+                {entry.modelName && <><span aria-hidden="true">·</span><span>{entry.modelName}</span></>}
+                {entry.agentRuntimeName && <><span aria-hidden="true">·</span><span>{entry.agentRuntimeName}</span></>}
               </div>
               <p className="mt-1 ldvh-meta text-ldvh-text-secondary/80">{entry.summary}</p>
             </div>
@@ -99,17 +97,16 @@ function parseChangeLogEntries(value: unknown): ChangeLogEntry[] {
     const signatureRecord = signature && typeof signature === 'object' && !Array.isArray(signature)
       ? signature as Record<string, unknown>
       : null;
-    const modelId = typeof signatureRecord?.model_id === 'string' ? signatureRecord.model_id : undefined;
-    const agentWorkbench = typeof signatureRecord?.agent_workbench === 'string' ? signatureRecord.agent_workbench
-      : typeof signatureRecord?.host_name === 'string' ? signatureRecord.host_name : undefined;
+    const modelName = typeof signatureRecord?.model_name === 'string' ? signatureRecord.model_name : undefined;
+    const agentRuntimeName = typeof signatureRecord?.agent_runtime_name === 'string'
+      ? signatureRecord.agent_runtime_name
+      : undefined;
     return [{
       key: `${index}-${at}`,
       at,
       summary,
-      modelId,
-      agentWorkbench,
-      agentId: typeof signatureRecord?.agent_id === 'string' ? signatureRecord.agent_id : undefined,
-      hostEnvironment: typeof signatureRecord?.host_environment === 'string' ? signatureRecord.host_environment : undefined,
+      modelName,
+      agentRuntimeName,
     }];
   }).reverse();
 }

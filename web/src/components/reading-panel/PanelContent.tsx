@@ -374,18 +374,11 @@ function CommitSignatureSection({
   signature: CommitSignature;
   labels: CommitDetailLabels;
 }) {
-  const modelId = signature.modelId?.trim();
-  const agentWorkbench = signature.agentWorkbench?.trim();
-  const workbenchName = signature.hostName?.trim();
   const identityEntries = [
-    { label: modelId ? labels.modelId : labels.agentId, value: modelId ?? signature.agentId },
-    {
-      label: agentWorkbench ? labels.agentWorkbench : workbenchName ? labels.workbenchName : labels.hostEnvironment,
-      value: agentWorkbench ?? workbenchName ?? signature.hostEnvironment,
-    },
-  ].filter((entry): entry is { label: string; value: string } => Boolean(entry.value?.trim()));
-  const sessionId = signature.sessionId?.trim();
-  if (identityEntries.length === 0 && !sessionId) return null;
+    { label: labels.modelName, value: signature.modelName?.trim() },
+    { label: labels.runtimeName, value: signature.agentRuntimeName?.trim() },
+  ].filter((entry): entry is { label: string; value: string } => Boolean(entry.value));
+  if (identityEntries.length === 0) return null;
 
   return (
     <section className="rounded-xl border border-ldvh-border bg-ldvh-panel p-4">
@@ -402,14 +395,6 @@ function CommitSignatureSection({
             </dd>
           </div>
         ))}
-        {sessionId && (
-          <div className="min-w-0">
-            <dt className="ldvh-caption-strong">{labels.sessionId}</dt>
-            <dd className="ldvh-detail-semantic-body mt-1 break-all rounded-md border border-ldvh-border bg-ldvh-bg/40 px-3 py-2 font-mono">
-              {sessionId}
-            </dd>
-          </div>
-        )}
       </dl>
     </section>
   );

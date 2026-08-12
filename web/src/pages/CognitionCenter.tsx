@@ -601,7 +601,7 @@ export default function CognitionCenter() {
   const recentVisibleLimit = showAllRecent ? RECENT_ACTIVITY_MAX_VISIBLE : RECENT_ACTIVITY_FIRST_SCREEN_LIMIT;
   const visibleRecentItems = recentItems.slice(0, recentVisibleLimit);
   const recentTruncated = visibleRecentItems.length < recentItems.length;
-  const recentUsageTotal = Math.max(data.recentActivity.agentUsage.length, data.recentActivity.environmentUsage.length);
+  const recentUsageTotal = Math.max(data.recentActivity.modelUsage.length, data.recentActivity.runtimeUsage.length);
   const recentUsageTruncated = recentUsageTotal > RECENT_ACTIVITY_FIRST_SCREEN_LIMIT;
   const sparkHealth = data.sparkHealth;
   const sparkHealthIssues = (data.issues ?? []).filter((issue) => issue.section === 'sparkHealth');
@@ -882,13 +882,13 @@ export default function CognitionCenter() {
             <div className="mt-4 border-t border-ldvh-border/70 pt-4">
               <div className="grid min-w-0 grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))] gap-4">
                 <RecentActivityUsageBars
-                  title={t('cognition.recent.agentUsage')}
-                  items={data.recentActivity.agentUsage}
+                  title={t('cognition.recent.modelUsage')}
+                  items={data.recentActivity.modelUsage}
                   expanded={showAllRecentUsage}
                 />
                 <RecentActivityUsageBars
-                  title={t('cognition.recent.environmentUsage')}
-                  items={data.recentActivity.environmentUsage}
+                  title={t('cognition.recent.runtimeUsage')}
+                  items={data.recentActivity.runtimeUsage}
                   expanded={showAllRecentUsage}
                 />
               </div>

@@ -171,6 +171,16 @@ function isConsumableRecordMember(type: LocalFactType, field: string, member: Re
 
 function isConsumableChangeLogSignature(value: unknown): boolean {
   if (!isRecord(value) || Object.keys(value).length !== 2) return false
+  const hasCurrentShape = Object.keys(value).every((key) => key === 'product_name' || key === 'model_name' || key === 'agent_runtime_name')
+    && Object.keys(value).length === 3
+    && Object.entries(value).every(([key, entry]) => (
+      ['product_name', 'model_name', 'agent_runtime_name'].includes(key)
+        ? entry === null || (typeof entry === 'string' && entry.trim().length > 0)
+        : false
+    ))
+    && Object.values(value).some((entry) => typeof entry === 'string' && entry.trim().length > 0)
+  if (hasCurrentShape) return true
+
   const hasCanonicalShape = Object.keys(value).every((key) => key === 'model_id' || key === 'agent_workbench')
     && typeof value.model_id === 'string'
     && value.model_id.trim().length > 0
