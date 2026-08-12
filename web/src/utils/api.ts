@@ -1,5 +1,6 @@
 import type { FactCarrier, FactReadStatus } from '@/utils/factReadMeta';
 import type {
+  WorkCaseHandoffReason,
   WorkCaseLifecyclePosition,
   WorkCaseNextRequiredControlStep,
 } from '@/shared/workcaseStatus';
@@ -39,7 +40,7 @@ export type WorkCasePresentationUnresolvedReason =
   | 'invalid_status_phase_combination';
 
 export interface ResolvedWorkCaseCurrentSnapshotProjection {
-  contract_identity: 'workcase-current-snapshot-presentation/1';
+  contract_identity: 'workcase-current-snapshot-presentation/2';
   resolution: 'resolved';
   source_content_fingerprint: string;
   lifecycle_position: WorkCaseLifecyclePosition;
@@ -48,13 +49,17 @@ export interface ResolvedWorkCaseCurrentSnapshotProjection {
   progress_group: WorkCaseProgressGroup;
   progress_step: WorkCaseProgressStep | null;
   blocking_overlay: boolean;
+  handoff_allowed: boolean;
+  handoff_reason: WorkCaseHandoffReason;
 }
 
 export interface UnresolvedWorkCaseCurrentSnapshotProjection {
-  contract_identity: 'workcase-current-snapshot-presentation/1';
+  contract_identity: 'workcase-current-snapshot-presentation/2';
   resolution: 'unresolved';
   source_content_fingerprint: string | null;
   unresolved_reason: WorkCasePresentationUnresolvedReason;
+  handoff_allowed: boolean;
+  handoff_reason: WorkCaseHandoffReason;
 }
 
 export type WorkCaseCurrentSnapshotProjection =

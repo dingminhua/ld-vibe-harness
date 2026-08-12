@@ -340,6 +340,7 @@ def test_unrelated_candidate_problem_does_not_block_defined_operation(
         "begin-workcase-termination",
         "check-current-governed-sources",
         "check-fact-integrity",
+        "check-workcase-handoff",
         "close-workcase",
         "complete-workcase-termination",
         "correct-closed-workcase",

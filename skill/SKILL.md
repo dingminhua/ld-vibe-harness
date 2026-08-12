@@ -7,7 +7,7 @@ description: 项目待办/工作项/进展、技术决策/决策记录、踩坑�
 
 # LDVH 接入（薄路由）
 
-> Skill 版本：2026-08-12 07:17
+> Skill 版本：2026-08-12 12:00
 
 LDVH 让长期项目"判断有据、行动可续、结果可验"。本文件不承载规则正文；固定能力边界只作路由提示。
 权威只有一个：LDVH CLI 从当前规则源现取的结果。
@@ -31,11 +31,13 @@ LDVH 让长期项目"判断有据、行动可续、结果可验"。本文件不�
 
 ## 能力边界（非职责）
 
-下列三句只作能力边界路由提示，不增加第四项职责，不代替 CLI 当次现取的权威来源与实际验证：
+下列固定表述只作能力边界路由提示，不增加第四项职责，不代替 CLI 当次现取的权威来源与实际验证：
 
 薄 Skill 对事实写入的保护仅为劝告级：它只能将 AI 路由到 Helper 与行动模板，不能在模型之外机械阻断对 `ldvh-base/` 的直写。
 
 承接 Git Gate 的 Git Hook 以 Git common-dir 为部署边界：一次部署覆盖共享该 common-dir 的主 worktree、现有 linked worktree 与后续新建 linked worktree；纳入当次完整接入目标的独立 clone 具有不同 common-dir，必须单独部署，未纳入目标时不为验收创建或部署。每个真实 Git 事件仍只绑定实际触发它的 worktree、当次 Index 与 commit message；未触发承接 Git Gate 的 Git Hook，或绕过 Git Gate 检查的行动不在覆盖范围。
+
+项目 Stop gate（项目级 `.claude/settings.json` 的 `hooks.Stop` 与 `.claude/hooks/ldvh-workcase-stop.py`）只对环境变量或 `.ldvh-stop-bindings/<session_id>.json` 精确绑定的当前 WorkCase 生效：Controller-owned 快照阻止非法 Stop 并反馈下一控制步骤，安全出口放行，无绑定或任何异常 fail-open，且不得按唯一 open WorkCase 猜测绑定；它不写事实、不推进 phase、不选择 item，也不替代 AI 对语义、依赖、授权或完成的判断。
 
 机械检查能够发现来源已定义的机械不合格，不能据此判断事实内容的语义真实性；即使 Schema 合法，语义污染风险仍然存在，未提交污染窗口只能压缩、不能消除。
 

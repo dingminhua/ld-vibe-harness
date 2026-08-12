@@ -12,8 +12,35 @@ import json
 import re
 from collections.abc import Mapping
 
-CONTRACT_IDENTITY = "workcase-current-snapshot-presentation/1"
+CONTRACT_IDENTITY = "workcase-current-snapshot-presentation/2"
 _FINGERPRINT = re.compile(r"^[0-9a-f]{64}$")
+
+#: Closed set of derived handoff reasons.  ``controller_owned`` marks a
+#: Gate 1 post-approval position that must keep consuming its next control
+#: step instead of yielding to a Human; the other values are safe exits or
+#: fail-open categories.  ``unresolved`` always fails open to ``allow``.
+HANDOFF_REASONS = (
+    "closed",
+    "blocked_at_current_position",
+    "gate2_position_blocked",
+    "gate1_waiting",
+    "gate2_waiting",
+    "controller_owned",
+    "unresolved",
+)
+
+#: Derived open/non-blocked handoff verdict per phase.  ``blocked`` and
+#: ``closed`` are overlays computed separately in :func:`derive_workcase_presentation`.
+PHASE_HANDOFF: dict[str, dict[str, bool | str]] = {
+    "human_plan_confirming": {"handoff_allowed": True, "handoff_reason": "gate1_waiting"},
+    "plan_revising": {"handoff_allowed": False, "handoff_reason": "controller_owned"},
+    "executing": {"handoff_allowed": False, "handoff_reason": "controller_owned"},
+    "controller_checking": {"handoff_allowed": False, "handoff_reason": "controller_owned"},
+    "independent_reviewing": {"handoff_allowed": False, "handoff_reason": "controller_owned"},
+    "closure_preparing": {"handoff_allowed": False, "handoff_reason": "controller_owned"},
+    "human_closure_confirming": {"handoff_allowed": True, "handoff_reason": "gate2_waiting"},
+    "termination_preparing": {"handoff_allowed": False, "handoff_reason": "controller_owned"},
+}
 
 PHASE_PRESENTATION: dict[str, dict[str, str | None]] = {
     "human_plan_confirming": {
@@ -99,7 +126,35 @@ def _unresolved(reason: str, source_content_fingerprint: str | None) -> dict[str
         "resolution": "unresolved",
         "source_content_fingerprint": source_content_fingerprint,
         "unresolved_reason": reason,
+        "handoff_allowed": True,
+        "handoff_reason": "unresolved",
     }
+
+
+def derive_handoff_verdict(status: object, phase: object) -> dict[str, object]:
+    """Derive the closed-set handoff verdict without a lifecycle judgment.
+
+    ``blocked`` and ``closed`` are safe exits; ``unresolved`` fails open so a
+    caller never blocks an ordinary task on an unreadable snapshot.  Every
+    other open position is Controller-owned after Gate 1 and yields only at a
+    Human Gate or a real exit.
+    """
+
+    if not isinstance(status, str) or status not in {"open", "blocked", "closed"}:
+        return {"handoff_allowed": True, "handoff_reason": "unresolved"}
+    if status == "closed":
+        return {"handoff_allowed": True, "handoff_reason": "closed"}
+    if status == "blocked":
+        if phase == "human_closure_confirming":
+            return {"handoff_allowed": True, "handoff_reason": "gate2_position_blocked"}
+        return {"handoff_allowed": True, "handoff_reason": "blocked_at_current_position"}
+    if isinstance(phase, str) and phase in PHASE_HANDOFF:
+        entry = PHASE_HANDOFF[phase]
+        return {
+            "handoff_allowed": bool(entry["handoff_allowed"]),
+            "handoff_reason": str(entry["handoff_reason"]),
+        }
+    return {"handoff_allowed": True, "handoff_reason": "unresolved"}
 
 
 def derive_workcase_presentation(
@@ -130,6 +185,7 @@ def derive_workcase_presentation(
             resolution="resolved",
             source_content_fingerprint=fingerprint,
             blocking_overlay=False,
+            **derive_handoff_verdict(status, phase),
         )
         return projected
 
@@ -152,6 +208,7 @@ def derive_workcase_presentation(
         resolution="resolved",
         source_content_fingerprint=fingerprint,
         blocking_overlay=blocked,
+        **derive_handoff_verdict(status, phase),
     )
     return projected
 
@@ -180,6 +237,11 @@ def render_typescript_contract() -> str:
             "export const WORKCASE_PRESENTATION_UNRESOLVED_REASONS = "
             f"{_typescript_literal(list(UNRESOLVED_REASONS))} as const;",
             "",
+            "export const WORKCASE_PRESENTATION_HANDOFF_REASONS = "
+            f"{_typescript_literal(list(HANDOFF_REASONS))} as const;",
+            "",
+            f"export const WORKCASE_PHASE_HANDOFF = {_typescript_literal(PHASE_HANDOFF)} as const;",
+            "",
         ]
     )
 
@@ -188,3 +250,9 @@ def phase_presentation() -> Mapping[str, Mapping[str, str | None]]:
     """Expose the immutable-by-convention table to deterministic tooling."""
 
     return PHASE_PRESENTATION
+
+
+def phase_handoff() -> Mapping[str, Mapping[str, object]]:
+    """Expose the immutable-by-convention handoff table to deterministic tooling."""
+
+    return PHASE_HANDOFF

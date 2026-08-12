@@ -765,6 +765,7 @@ WorkCase 的普通活动期写入必须使用 `update-workcase`；Human 主动�
 | operation_key | summary | effect | arguments_contract | result_contract |
 |---|---|---|---|---|
 | `prepare-closed-workcase-candidate` | 从刚读取的 Gate2 source 快照确定性投影完整非托管 closed 候选与 proposal 已保存的目标映射基础，不检查关闭授权或目标当前状态 | `read` | `workcase-fact-type::prepare-closed-workcase-candidate 输入与结果` | `workcase-fact-type::prepare-closed-workcase-candidate 输入与结果` |
+| `check-workcase-handoff` | 对精确绑定的当前 WorkCase 快照只读形成 `current_snapshot_projection` 与派生 handoff 判定，不写事实、不推进 phase、不选择 item | `read` | `workcase-fact-type::check-workcase-handoff 输入与结果` | `workcase-fact-type::check-workcase-handoff 输入与结果` |
 | `update-workcase` | 对一个已精确读取的活动期 WorkCase 提交完整目标 after，并按本文机械执行字段所有权、版本、失效、phase 与 CAS 检查 | `may_change_state` | `workcase-fact-type::update-workcase 输入与结果` | `workcase-fact-type::update-workcase 输入与结果` |
 | `begin-workcase-termination` | 消费 Human 当次明确中止指令与 source CAS，原子冻结原计划并进入唯一善后 phase | `may_change_state` | `workcase-fact-type::begin-workcase-termination 输入与结果` | `workcase-fact-type::begin-workcase-termination 输入与结果` |
 | `complete-workcase-termination` | 在善后、结果与关系影响已收口后，无第二 Human Gate 原子形成带 termination 的 closed | `may_change_state` | `workcase-fact-type::complete-workcase-termination 输入与结果` | `workcase-fact-type::complete-workcase-termination 输入与结果` |
@@ -782,6 +783,15 @@ WorkCase 的普通活动期写入必须使用 `update-workcase`；Human 主动�
 - `source_content_fingerprint` 精确绑定形成候选的 source bytes。source 后续变化即使自然语言相似，旧候选也不得作为真实关闭的 `expected_content_fingerprint`；必须重新读取并重新投影。操作不接收 expected fingerprint、Human 决定、route target 第二清单或授权回指；
 - 成功只说明对当次完整 source 完成确定性只读投影。响应和 Code 均不得据此声称 Human 已批准、Gate2 已完成、关闭前提齐备、目标可用、“已准备好关闭”或工作完成；真正关闭仍必须调用 `close-workcase`，在事务内重新读取 source 与全部 target、执行 CAS、指纹、状态、入向依赖和关系图检查并成功回读；
 - source 资格不成立返回 `rejected`，管辖、Schema 或读取技术边界无法完成返回 `unavailable`，均为零写入；操作不生成或改写任何 WorkCase 自然语言事实。
+
+### check-workcase-handoff 输入与结果
+
+本操作是 `read`，只对精确绑定的当前 WorkCase 快照形成 §9.3 / §9.3.1 的确定性只读投影与 handoff 判定，供受控调用方（如项目 Stop gate）在交还前机械核对；它不是生命周期操作、授权检查、Human Gate、完成判断，也不替代 AI 对语义、依赖、能力或授权的判断：
+
+- 共同请求中 `arguments.fact_ref` 必填，成员闭集为 `governed_project_id`、固定值 `fact_type_key=workcase` 与 `object_id`；`arguments.workspace_root` 和顶层 `work_object_locators` 可选并复用 05 §11.1 的当前 Working Tree 管辖定位语义。其它领域参数禁止，`observed_context`、`authorization_reference` 必须为空，`requested_disclosure` 必须为 `null` 或省略；
+- source 必须是当前 Working Tree 中完整、mechanically valid 且带当次 `content_fingerprint` 的 WorkCase。invalid、unavailable、not-found 或只能解析部分字段的 before 一律 `rejected` / `unavailable` 且零写入；本操作不为任何调用方猜测 WorkCase（包括不按唯一 open 候选自动绑定）；
+- 成功结果包含 `actual_ref`、`canonical_path`、`carrier`、`source_content_fingerprint`、`current_snapshot_projection`、派生 `handoff_allowed` / `handoff_reason`，以及 `resolution=resolved` 时的 `next_required_control_step`（unresolved 时为 `null`）。投影与判定只绑定刚读取 source 指纹，source 变化后必须重新精确读取并重新投影；
+- 成功只说明对当次完整 source 完成确定性只读投影，不表示已获授权、Human Gate 成立、工作完成、phase 应推进或下一控制步骤可执行；真正交还或停止仍按 34 §5.4 的合法退出集判断。操作不生成或改写任何 WorkCase 自然语言事实，不推进 phase，不选择 item。
 
 ### update-workcase 输入与结果
 
@@ -952,16 +962,16 @@ closed 消费只依赖：
 
 ### 9.3 当前快照确定性呈现投影
 
-WorkCase 的 AI 交还、Helper 读取结果和 Web Human-facing 呈现共用一份非持久、可失效的 `current_snapshot_projection`。本文是 `status`、`phase` 及其呈现语义的唯一权威；Code 只把本文的确定性映射实现为 `workcase-current-snapshot-presentation/1` 合同，Helper、Web、AI、测试、i18n 和文档均不得另建 phase 表、话术成立条件或第二事实源。投影不进入 WorkCase YAML，不替代当前对象，不反向定义生命周期或授权。
+WorkCase 的 AI 交还、Helper 读取结果和 Web Human-facing 呈现共用一份非持久、可失效的 `current_snapshot_projection`。本文是 `status`、`phase` 及其呈现语义的唯一权威；Code 只把本文的确定性映射实现为 `workcase-current-snapshot-presentation/2` 合同，Helper、Web、AI、测试、i18n 和文档均不得另建 phase 表、话术成立条件或第二事实源。投影不进入 WorkCase YAML，不替代当前对象，不反向定义生命周期或授权。
 
 投影有两个输入边界：
 
 1. Helper 只对刚完成精确读取、`check_status=mechanically_valid` 且带有当次 `content_fingerprint` 的 WorkCase 形成投影；该指纹原样进入 `source_content_fingerprint`；
 2. Web 按 08 §5.3 成功读取当前载体后，以当次原始载体 bytes 的 SHA-256 作为 `source_content_fingerprint`，并只使用字段级可读的 `status` 与 `phase` 形成投影；Web 不以完整机械校验通过为前提，组合缺失、类型不符或不在本节闭集时形成 `unresolved`，同时继续呈现其它可读字段、字段问题和未解析结构。
 
-投影共同字段闭集为：`contract_identity`、`resolution` 和 `source_content_fingerprint`。`contract_identity` 固定为 `workcase-current-snapshot-presentation/1`；`resolution` 只允许 `resolved` 或 `unresolved`；来源指纹通常为 64 位小写十六进制 string，只在 `unresolved_reason=missing_source_content_fingerprint` 时为 `null`。它只绑定当次载体快照，不表示机械有效、语义正确、Git 版本或授权成立。
+投影共同字段闭集为：`contract_identity`、`resolution`、`source_content_fingerprint`、`handoff_allowed` 与 `handoff_reason`。`contract_identity` 固定为 `workcase-current-snapshot-presentation/2`；`resolution` 只允许 `resolved` 或 `unresolved`；来源指纹通常为 64 位小写十六进制 string，只在 `unresolved_reason=missing_source_content_fingerprint` 时为 `null`。`handoff_allowed` 是派生交还判定，`handoff_reason` 使用 §9.3.1 的闭集；两者只绑定当次载体快照，不表示机械有效、语义正确、Git 版本或授权成立。
 
-`resolved` 另有字段 `lifecycle_position`、`handoff_narrative_key`、`next_required_control_step`、`progress_group`、`progress_step` 和 `blocking_overlay`。`progress_step` 无适用值时为 `null`；其余字段必填。非 blocked 的确定性基表如下：
+`resolved` 另有字段 `lifecycle_position`、`handoff_narrative_key`、`next_required_control_step`、`progress_group`、`progress_step` 和 `blocking_overlay`；`handoff_allowed` / `handoff_reason` 仍按 §9.3.1 派生并作为共同字段存在。`progress_step` 无适用值时为 `null`；其余字段必填。非 blocked 的确定性基表如下：
 
 | 当前 `status` / `phase` | `lifecycle_position` | `handoff_narrative_key` | `next_required_control_step` | `progress_group` | `progress_step` |
 |---|---|---|---|---|---|
@@ -979,11 +989,37 @@ WorkCase 的 AI 交还、Helper 读取结果和 Web Human-facing 呈现共用一
 
 只有 `open` / `human_closure_confirming` 的 `gate2_waiting` 可以产生“等待 Gate 2”“仅剩关闭确认”“关闭待确认”或等义的 AI/Web 结论。`independent_reviewing`、`closure_preparing` 以及任何 blocked、unresolved 投影必须负向禁止这些结论；`closed` 只表达已经关闭。AI 交还必须依据刚回读快照所形成的投影 key 描述当前状态，不能凭聊天历史、计划预期、Reviewer pass 或 Web 文案提前生成相邻 phase 的叙述。
 
-`unresolved` 另有 `unresolved_reason`，只允许 `missing_source_content_fingerprint`、`missing_status`、`unsupported_status`、`missing_phase`、`unexpected_phase`、`closed_with_phase` 或 `invalid_status_phase_combination`；不得同时输出生命周期位置、叙述 key、下一控制步骤或进展值，也不得按相似词和相邻 phase 猜测。Web 载体本身不可读或不可解析时沿用 08 `unreadable`，不伪造投影。
+`unresolved` 另有 `unresolved_reason`，只允许 `missing_source_content_fingerprint`、`missing_status`、`unsupported_status`、`missing_phase`、`unexpected_phase`、`closed_with_phase` 或 `invalid_status_phase_combination`；不得同时输出生命周期位置、叙述 key、下一控制步骤或进展值，也不得按相似词和相邻 phase 猜测。`unresolved` 的 `handoff_allowed` 恒为 `true`、`handoff_reason` 固定为 `unresolved`：无法形成可信投影时对外交还采取 fail-open，不阻塞普通任务。Web 载体本身不可读或不可解析时沿用 08 `unreadable`，不伪造投影。
 
 `next_required_control_step` 只说明结构上下一必经控制步骤，不断言该步骤已获授权、能力可用、行动允许、优先级更高、工作完成或 phase 应自动推进。Code 可以形成投影、校验转换和检查禁止话术 key，不能替 AI 作上述语义判断或自动选择工作项。任何缓存若将来出现，必须同时绑定 `contract_identity` 与 `source_content_fingerprint`；来源或合同身份变化即失效，当前增量不建立持久缓存。
 
 Card 可以另外派生 item 五状态计数和当前活动 item，但不得把任何派生结果写回 YAML，不得猜测“第几轮”“第几项”或完成百分比。具体 Card 内容与视觉设计由 08 承接，不能反向要求新增事实字段；Card 的“后续贡献”只列实际 `contributed-to` Pitfall 的标题与当前状态，并以待确认/活跃/已废弃呈现；关闭处置另显示三类 decision 与 Spark suggestions。`related-to` 只在详情中作关系导航，不进入关闭 Card 正文。
+
+### 9.3.1 派生 handoff 判定
+
+`handoff_allowed` 与 `handoff_reason` 是 `current_snapshot_projection` 的派生闭集字段，只回答“该快照在当前生命周期位置是否允许交还 Human / Stop”，不回答语义充分、授权、完成或 phase 应否推进。状态机仍保持 §6.3.3 的严格结果链，本判定不新增 `controller_checking → Gate2` 捷径，不允许 Code 选择 item 或推进 phase，也不断言业务完成。
+
+`handoff_reason` 闭集为 `closed`、`blocked_at_current_position`、`gate2_position_blocked`、`gate1_waiting`、`gate2_waiting`、`controller_owned` 与 `unresolved`。非 blocked open 阶段的确定性基表如下：
+
+| 当前 `status` / `phase` | `handoff_allowed` | `handoff_reason` |
+|---|---|---|
+| `open` / `human_plan_confirming` | `true` | `gate1_waiting` |
+| `open` / `plan_revising` | `false` | `controller_owned` |
+| `open` / `executing` | `false` | `controller_owned` |
+| `open` / `controller_checking` | `false` | `controller_owned` |
+| `open` / `independent_reviewing` | `false` | `controller_owned` |
+| `open` / `closure_preparing` | `false` | `controller_owned` |
+| `open` / `human_closure_confirming` | `true` | `gate2_waiting` |
+| `open` / `termination_preparing` | `false` | `controller_owned` |
+
+覆盖规则：
+
+- `closed` / phase 省略恒为 `handoff_allowed=true`、`handoff_reason=closed`；
+- `status=blocked` 是覆盖层：`human_closure_confirming` 时为 `true` / `gate2_position_blocked`，其余 phase 为 `true` / `blocked_at_current_position`；真实外部/能力阻塞与恢复条件是安全出口；
+- `unresolved` 恒为 `true` / `unresolved`，fail-open；
+- 其余 `open` 阶段均为 `controller_owned`、`handoff_allowed=false`：Gate 1 后这些位置不是 Human 交还点，只允许在真实 blocked、unresolved 读取缺口、Gate 2 或 closed 交还。
+
+只读 Helper 操作 `check-workcase-handoff` 把该判定与 `next_required_control_step` 一起交给受控调用方（如项目 Stop gate）；它不写事实、不推进 phase、不选择 item。任何缓存若将来出现，仍必须同时绑定 `contract_identity` 与 `source_content_fingerprint`。
 
 ## 10. 验证要求
 

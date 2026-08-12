@@ -6,7 +6,9 @@ import pytest
 
 from ldvh.facts.workcase_presentation import (
     CONTRACT_IDENTITY,
+    PHASE_HANDOFF,
     PHASE_PRESENTATION,
+    derive_handoff_verdict,
     derive_workcase_presentation,
     render_typescript_contract,
 )
@@ -24,6 +26,7 @@ def test_open_phase_matrix_is_resolved(phase: str, expected: dict[str, str | Non
         "resolution": "resolved",
         "source_content_fingerprint": FINGERPRINT,
         "blocking_overlay": False,
+        **PHASE_HANDOFF[phase],
     }
 
 
@@ -43,6 +46,8 @@ def test_blocked_phase_matrix_preserves_position_and_overlays_blocker(
         "gate2_position_blocked" if phase == "human_closure_confirming" else "blocked_at_current_position"
     )
     assert projection["handoff_narrative_key"] == expected_narrative
+    assert projection["handoff_allowed"] is True
+    assert projection["handoff_reason"] == expected_narrative
 
 
 def test_only_open_human_closure_confirming_uses_gate2_waiting() -> None:
@@ -56,8 +61,30 @@ def test_only_open_human_closure_confirming_uses_gate2_waiting() -> None:
     assert len(gate2) == 1
     assert gate2[0]["lifecycle_position"] == "human_closure_confirming"
     assert gate2[0]["blocking_overlay"] is False
+    assert gate2[0]["handoff_allowed"] is True
+    assert gate2[0]["handoff_reason"] == "gate2_waiting"
     for phase in ("independent_reviewing", "closure_preparing"):
         assert derive_workcase_presentation("open", phase, FINGERPRINT)["handoff_narrative_key"] != "gate2_waiting"
+
+
+def test_controller_owned_open_phases_deny_handoff_with_the_closed_reason() -> None:
+    for phase, expected in PHASE_HANDOFF.items():
+        if phase in {"human_plan_confirming", "human_closure_confirming"}:
+            continue
+        projection = derive_workcase_presentation("open", phase, FINGERPRINT)
+        assert projection["resolution"] == "resolved"
+        assert projection["handoff_allowed"] is False
+        assert projection["handoff_reason"] == "controller_owned"
+        assert expected["handoff_allowed"] is False
+
+
+def test_gate_waiting_open_phases_allow_handoff_with_the_gate_reason() -> None:
+    gate1 = derive_workcase_presentation("open", "human_plan_confirming", FINGERPRINT)
+    assert gate1["handoff_allowed"] is True
+    assert gate1["handoff_reason"] == "gate1_waiting"
+    gate2 = derive_workcase_presentation("open", "human_closure_confirming", FINGERPRINT)
+    assert gate2["handoff_allowed"] is True
+    assert gate2["handoff_reason"] == "gate2_waiting"
 
 
 def test_closed_requires_phase_absence() -> None:
@@ -67,11 +94,15 @@ def test_closed_requires_phase_absence() -> None:
     assert closed["resolution"] == "resolved"
     assert closed["handoff_narrative_key"] == "closed"
     assert closed["next_required_control_step"] == "none"
+    assert closed["handoff_allowed"] is True
+    assert closed["handoff_reason"] == "closed"
     assert invalid == {
         "contract_identity": CONTRACT_IDENTITY,
         "resolution": "unresolved",
         "source_content_fingerprint": FINGERPRINT,
         "unresolved_reason": "closed_with_phase",
+        "handoff_allowed": True,
+        "handoff_reason": "unresolved",
     }
 
 
@@ -103,6 +134,14 @@ def test_unresolved_projection_never_guesses_lifecycle_or_handoff(
         "progress_group",
         "progress_step",
     }.intersection(projection)
+    assert projection["handoff_allowed"] is True
+    assert projection["handoff_reason"] == "unresolved"
+
+
+def test_handoff_verdict_fails_open_for_unknown_inputs() -> None:
+    assert derive_handoff_verdict(None, "executing") == {"handoff_allowed": True, "handoff_reason": "unresolved"}
+    assert derive_handoff_verdict("paused", "executing") == {"handoff_allowed": True, "handoff_reason": "unresolved"}
+    assert derive_handoff_verdict("open", "unknown") == {"handoff_allowed": True, "handoff_reason": "unresolved"}
 
 
 def test_generated_web_contract_matches_python_renderer() -> None:

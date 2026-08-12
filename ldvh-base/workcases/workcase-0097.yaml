@@ -1,0 +1,204 @@
+title: Spark-0073 最小 WorkCase Controller 执行链验证
+status: open
+summary: 完整关闭提案已形成，其它责任冻结；等待 Human Gate 2。
+priority: P1
+goal: 验证 Gate 1 后 executing 阶段收到普通 Human 输入时，Controller 是否继续消费当前 WorkCase 投影并推进两个低风险工作项，而不是新增 Human Gate。
+scope: 仅当前 LDVH worktree 的两个可观察、低风险本地动作；不修改生产代码、不修改历史 WorkCase、不执行超出授权范围的动作。
+success_criterion_definitions:
+- criterion_id: criterion-1
+  statement: Gate 1 批准后，executing 投影为 resolved，handoff_narrative_key 不是 gate2_waiting，next_required_control_step 为 advance_current_work_item。
+- criterion_id: criterion-2
+  statement: executing 阶段收到普通 Human 输入后，不新增 Human Gate、不写入 Human waiting，Controller 继续推进当前 item。
+- criterion_id: criterion-3
+  statement: 第一个 item terminal 后，存在第二个 pending item 时 Controller 继续结果链，不提前交还 Gate 2。
+- criterion_id: criterion-4
+  statement: 仅在 human_closure_confirming 且 projection 给出 gate2_waiting/human_gate_2 时交还 Human。
+phase: human_closure_confirming
+plan_version: 1
+work_items:
+- item_id: item-1
+  goal: 在当前 worktree 写入并读取一个临时验证标记文件，证明第一个执行检查点发生。
+  expected_result: 临时验证标记可读取，且不修改受管代码或事实对象。
+  status: completed
+  approach_summary: 使用 /tmp 下的专用文件；不触碰仓库内容。
+  result_summary: 已读取 /tmp/spark-0073-controller-verify-workcase-0097/item-1.txt，内容为 item-1 completed。
+- item_id: item-2
+  goal: 在当前 worktree 读取第一个标记并写入第二个临时验证标记，证明 item 链继续。
+  expected_result: 第二个标记可读取，且依赖 item-1 的结果。
+  status: completed
+  approach_summary: 仅操作 /tmp 下的专用文件；不触碰仓库内容。
+  depends_on:
+  - item-1
+  result_summary: 已读取 item-1 标记并写入、读取 item-2 标记，证明 item 链继续。
+creation_reviews:
+- reviewer: current-AI-read-only
+  reviewed_at: '2026-08-12T11:00:00Z'
+  subject_version: 1
+  scope: Goal, scope, criteria, work items, method, validation and risks.
+  conclusion: pass
+  covered_quality_gate_ids:
+  - independent-result-review
+execution_authorization:
+  authorized_actions:
+  - action_id: authorization-1
+    summary: 执行两个临时文件验证动作。
+    target_scope: /tmp/spark-0073-controller-verify-*
+    effect_scope: 仅临时验证文件，不修改仓库。
+    risk_summary: 低风险、可删除、无生产影响。
+    rollback_summary: 删除临时验证文件。
+    rule_refs:
+    - specs/21-WorkCase-工作项.md
+    - specs/34-WorkCase获批计划执行行动模板.md
+  - action_id: authorization-2
+    summary: 在 executing 阶段处理普通 Human 输入并继续当前控制步骤。
+    target_scope: 本验证 WorkCase 的执行期控制链。
+    effect_scope: 仅事实状态推进。
+    risk_summary: 不扩展授权范围。
+    rollback_summary: 停止并报告，不执行未批准动作。
+    rule_refs:
+    - specs/34-WorkCase获批计划执行行动模板.md
+  - action_id: authorization-3
+    summary: 形成结果投影并在 Gate 2 前交还 Human。
+    target_scope: 本验证 WorkCase 的结果链。
+    effect_scope: 只读检查与受控事实写回。
+    risk_summary: 不自动关闭 WorkCase。
+    rollback_summary: Gate 2 前停止。
+    rule_refs:
+    - specs/21-WorkCase-工作项.md
+  - action_id: authorization-4
+    summary: 委派只读结果复核。
+    target_scope: 本验证 WorkCase 结果。
+    effect_scope: 只读复核。
+    risk_summary: 无写入。
+    rollback_summary: 不持久化委派回执。
+    rule_refs:
+    - specs/21-WorkCase-工作项.md
+  quality_gates:
+  - gate_id: independent-result-review
+    reviewer_mode: independent-read-only
+    delegation_action_id: authorization-4
+    result_review_action_id: authorization-3
+  action_ceiling: 仅两个临时文件动作、WorkCase 受控状态推进和 Gate 2 前交还。
+  allowed_adjustments: 仅允许不改变范围的执行顺序和记录性修正。
+  verification_and_rollback: 每个写回后精确回读并执行 check-fact-integrity；临时文件可删除。
+  out_of_bounds_handling: 停止超出授权动作，报告 Human，不请求第三个 Gate。
+  prohibited_actions:
+  - 修改 specs、code、web 或历史事实对象。
+  - 执行网络、系统配置或破坏性动作。
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-luna
+    agent_runtime_name: claude-code
+  at: '2026-08-12T11:16:56.347708Z'
+  summary: 创建最小 Spark-0073 Controller 执行链验证 WorkCase，等待 Human Gate 1。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-luna
+    agent_runtime_name: claude-code
+  at: '2026-08-12T11:30:02.205813Z'
+  summary: Human Gate 1 执行批准：进入 executing，开始验证普通 Human 输入不触发重新授权并继续 item 链。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-luna
+    agent_runtime_name: claude-code
+  at: '2026-08-12T11:30:39.299005Z'
+  summary: executing 普通 Human 输入回放：未新增 Gate，item-1 pending→in_progress。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-luna
+    agent_runtime_name: claude-code
+  at: '2026-08-12T11:30:49.952055Z'
+  summary: item-1 完成：回读后仍有 item-2 pending，Controller 继续下一工作项，不交还 Gate 2。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-luna
+    agent_runtime_name: claude-code
+  at: '2026-08-12T11:31:02.481204Z'
+  summary: item-2 完成：两个 item terminal，进入 controller_checking 形成结果投影。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-12T16:01:38.580415Z'
+  summary: 补全 validation_summary，冻结 workcase-0097 result_version=1 完整结果投影。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-12T16:01:51.405739Z'
+  summary: controller_checking 完成，进入 independent_reviewing。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-12T16:02:22.368396Z'
+  summary: 记录实际只读结果复核 pass，无 feedback。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-12T16:02:38.616883Z'
+  summary: 独立结果复核完成并无 feedback，进入 closure_preparing。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-12T16:04:14.780408Z'
+  summary: 形成 partial closure proposal；criterion-4 保持 not_verified，待下一合法转换验证 Gate2 投影。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-12T16:04:33.628124Z'
+  summary: 进入 human_closure_confirming；只在 Gate2 交还 Human。
+execution_approval:
+  subject_version: 1
+  approved_at: '2026-08-12T11:20:00Z'
+  summary: Human Gate 1 批准当前精确计划。
+  baseline_fingerprint: 0fa99bc230cd7a6b099ea0ecdf76dc8dbb37bedd236525705dbd23bc301f1ca5
+  source_refs:
+  - current-session-turn-gate1-approval
+controller_check_summary: Controller 已检查两个 item 的实际结果、依赖和授权边界，结果投影准备形成。
+result_version: 1
+result_summary: 两个低风险临时动作均完成，executing 阶段普通 Human 输入未新增 Gate，item 链连续推进。
+success_criterion_results:
+- criterion_id: criterion-1
+  outcome: satisfied
+  summary: executing 投影为 resolved，下一步为 advance_current_work_item，非 gate2_waiting。
+- criterion_id: criterion-2
+  outcome: satisfied
+  summary: 普通 Human 输入未新增 Human Gate 或 waiting，Controller 继续推进。
+- criterion_id: criterion-3
+  outcome: satisfied
+  summary: item-1 terminal 后 item-2 继续执行，未提前交还。
+- criterion_id: criterion-4
+  outcome: not_verified
+  summary: 尚未进入 human_closure_confirming，Gate 2 交还尚未验证。
+validation_summary: 真实 Helper/CAS 回放完成：Gate1→executing；普通 Human 输入未形成新 Gate；item-1 pending→in_progress→completed 后继续 item-2；两个临时标记内容已读取；38 个 continuation/presentation 测试通过；当时全量事实完整性 complete。
+result_reviews:
+- reviewer: independent-runtime-review
+  reviewed_at: '2026-08-12T15:57:00Z'
+  subject_version: 1
+  scope: 检查 Gate1 后 executing Human 输入、item 继续、投影、CAS 回读和合法出口证据。
+  conclusion: pass
+  actual_method: collaboration-worker-read-only
+  actual_agent: codex
+  evidence:
+  - workcase-0097 change_log 与 item 结果
+  - current_snapshot_projection/2
+  - 38 passed continuation/presentation tests
+  - check-fact-integrity complete
+  actual_model: gpt-5.6-codex
+closure_proposal:
+  proposed_outcome: partial
+  proposed_disposition_summary: 前三项 continuation 标准 satisfied；criterion-4 的 Gate2 投影只能在关闭提案形成后的下一合法转换验证。剩余仅为进入 human_closure_confirming 并由 Human 决定关闭。
+  residual_decisions:
+  - residual_id: residual-gate2-transition
+    summary: 进入 human_closure_confirming 后验证 gate2_waiting/human_gate_2 投影。
+    proposed_disposition: accept_stop
+waiting_on: Human closure decision.
+object_id: workcase-0097
+fact_type_key: workcase
+created_at: '2026-08-12T11:16:56.347708Z'
+updated_at: '2026-08-12T16:04:33.628124Z'

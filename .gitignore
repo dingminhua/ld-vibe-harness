@@ -1,6 +1,12 @@
 .DS_Store
 .*/
 !/.github/
+!/.claude/
+/.claude/*
+!/.claude/settings.json
+!/.claude/hooks/
+/.claude/hooks/*
+!/.claude/hooks/ldvh-workcase-stop.py
 __pycache__/
 *.py[cod]
 *.egg-info/

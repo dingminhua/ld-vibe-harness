@@ -92,7 +92,7 @@ def test_termination_recovery_returns_only_the_cleanup_control_surface() -> None
         "cleanup_summary": "Inventory is in progress.",
     }
     current_projection = {
-        "contract_identity": "workcase-current-snapshot-presentation/1",
+        "contract_identity": "workcase-current-snapshot-presentation/2",
         "resolution": "resolved",
         "source_content_fingerprint": "a" * 64,
         "lifecycle_position": "termination_preparing",
@@ -101,6 +101,8 @@ def test_termination_recovery_returns_only_the_cleanup_control_surface() -> None
         "progress_group": "termination_cleanup",
         "progress_step": None,
         "blocking_overlay": False,
+        "handoff_allowed": False,
+        "handoff_reason": "controller_owned",
     }
     response = {
         "outcome": "ok",

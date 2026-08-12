@@ -1,12 +1,19 @@
 import {
   WORKCASE_CLOSED_PRESENTATION,
   WORKCASE_CURRENT_PHASES,
+  WORKCASE_PHASE_HANDOFF,
   WORKCASE_PHASE_PRESENTATION,
   WORKCASE_PRESENTATION_CONTRACT_IDENTITY,
+  WORKCASE_PRESENTATION_HANDOFF_REASONS,
   WORKCASE_PRESENTATION_UNRESOLVED_REASONS,
 } from './workcasePresentationContract.generated.js'
 
-export { WORKCASE_CURRENT_PHASES, WORKCASE_PRESENTATION_CONTRACT_IDENTITY }
+export {
+  WORKCASE_CURRENT_PHASES,
+  WORKCASE_PHASE_HANDOFF,
+  WORKCASE_PRESENTATION_CONTRACT_IDENTITY,
+  WORKCASE_PRESENTATION_HANDOFF_REASONS,
+}
 
 export const WORKCASE_DEFAULT_LIST_STATUS = null
 
@@ -30,6 +37,7 @@ export const WORKCASE_PROGRESS_STEP_ORDER = [
 export type WorkCaseProgressStep = typeof WORKCASE_PROGRESS_STEP_ORDER[number]
 export type WorkCaseLifecyclePosition = typeof WORKCASE_CURRENT_PHASES[number] | 'closed'
 export type WorkCaseUnresolvedReason = typeof WORKCASE_PRESENTATION_UNRESOLVED_REASONS[number]
+export type WorkCaseHandoffReason = typeof WORKCASE_PRESENTATION_HANDOFF_REASONS[number]
 export type WorkCaseNextRequiredControlStep =
   | typeof WORKCASE_PHASE_PRESENTATION[keyof typeof WORKCASE_PHASE_PRESENTATION]['next_required_control_step']
   | typeof WORKCASE_CLOSED_PRESENTATION['next_required_control_step']
@@ -49,6 +57,8 @@ export interface ResolvedWorkCasePresentationProjection {
   progress_group: WorkCaseProgressGroup
   progress_step: WorkCaseProgressStep | null
   blocking_overlay: boolean
+  handoff_allowed: boolean
+  handoff_reason: WorkCaseHandoffReason
 }
 
 export interface UnresolvedWorkCasePresentationProjection {
@@ -56,6 +66,8 @@ export interface UnresolvedWorkCasePresentationProjection {
   resolution: 'unresolved'
   source_content_fingerprint: string | null
   unresolved_reason: WorkCaseUnresolvedReason
+  handoff_allowed: boolean
+  handoff_reason: WorkCaseHandoffReason
 }
 
 export type WorkCaseCurrentSnapshotProjection =
@@ -91,7 +103,29 @@ function unresolved(
     resolution: 'unresolved',
     source_content_fingerprint: sourceContentFingerprint,
     unresolved_reason: reason,
+    handoff_allowed: true,
+    handoff_reason: 'unresolved',
   }
+}
+
+export function deriveWorkCaseHandoffVerdict(
+  status: unknown,
+  phase: unknown,
+): { handoff_allowed: boolean; handoff_reason: WorkCaseHandoffReason } {
+  if (typeof status !== 'string' || !['open', 'blocked', 'closed'].includes(status)) {
+    return { handoff_allowed: true, handoff_reason: 'unresolved' }
+  }
+  if (status === 'closed') return { handoff_allowed: true, handoff_reason: 'closed' }
+  if (status === 'blocked') {
+    return phase === 'human_closure_confirming'
+      ? { handoff_allowed: true, handoff_reason: 'gate2_position_blocked' }
+      : { handoff_allowed: true, handoff_reason: 'blocked_at_current_position' }
+  }
+  if (typeof phase === 'string' && phase in WORKCASE_PHASE_HANDOFF) {
+    const entry = WORKCASE_PHASE_HANDOFF[phase as keyof typeof WORKCASE_PHASE_HANDOFF]
+    return { handoff_allowed: entry.handoff_allowed, handoff_reason: entry.handoff_reason }
+  }
+  return { handoff_allowed: true, handoff_reason: 'unresolved' }
 }
 
 export function deriveWorkCasePresentationProjection(
@@ -115,6 +149,7 @@ export function deriveWorkCasePresentationProjection(
       resolution: 'resolved',
       source_content_fingerprint: fingerprint,
       blocking_overlay: false,
+      ...deriveWorkCaseHandoffVerdict(status, phase),
     }
   }
   if (phase === null || phase === undefined || phase === '') return unresolved('missing_phase', fingerprint)
@@ -131,6 +166,7 @@ export function deriveWorkCasePresentationProjection(
     resolution: 'resolved',
     source_content_fingerprint: fingerprint,
     blocking_overlay: blocked,
+    ...deriveWorkCaseHandoffVerdict(status, phase),
   }
 }
 
@@ -155,6 +191,9 @@ export function isResolvedWorkCasePresentationProjection(
       || (typeof projection.progress_step === 'string'
         && WORKCASE_PROGRESS_STEP_ORDER.includes(projection.progress_step as WorkCaseProgressStep)))
     && typeof projection.blocking_overlay === 'boolean'
+    && typeof projection.handoff_allowed === 'boolean'
+    && typeof projection.handoff_reason === 'string'
+    && WORKCASE_PRESENTATION_HANDOFF_REASONS.includes(projection.handoff_reason as WorkCaseHandoffReason)
 }
 
 export function isWorkCaseProgressGroup(value: string | null | undefined): value is WorkCaseProgressGroup {

@@ -1,0 +1,22 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/ldvh-workcase-stop.py",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  },
+  "xdtMaker": {
+    "builtinTools": {
+      "ios-simulator": {
+        "enabled": false
+      }
+    }
+  }
+}

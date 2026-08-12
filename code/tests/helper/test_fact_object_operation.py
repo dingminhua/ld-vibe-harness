@@ -534,7 +534,7 @@ execution_authorization:
 
     assert item["check_status"] == "mechanically_valid"
     assert item["current_snapshot_projection"] == {
-        "contract_identity": "workcase-current-snapshot-presentation/1",
+        "contract_identity": "workcase-current-snapshot-presentation/2",
         "resolution": "resolved",
         "source_content_fingerprint": item["content_fingerprint"],
         "lifecycle_position": "human_plan_confirming",
@@ -543,6 +543,8 @@ execution_authorization:
         "progress_group": "plan_confirmation",
         "progress_step": None,
         "blocking_overlay": False,
+        "handoff_allowed": True,
+        "handoff_reason": "gate1_waiting",
     }
     spark_item = handle_request(
         "call", "read-fact-objects", _payload(workspace, project, "spark-0001")

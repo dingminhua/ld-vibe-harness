@@ -91,10 +91,12 @@ test('current Card and Cognition consumers never manufacture a source fingerprin
   }
   const missing = projectCurrentWorkCaseCard(fact, null)
   assert.deepEqual(missing.current_snapshot_projection, {
-    contract_identity: 'workcase-current-snapshot-presentation/1',
+    contract_identity: 'workcase-current-snapshot-presentation/2',
     resolution: 'unresolved',
     source_content_fingerprint: null,
     unresolved_reason: 'missing_source_content_fingerprint',
+    handoff_allowed: true,
+    handoff_reason: 'unresolved',
   })
   assert.equal(missing.progress_group, undefined)
 
@@ -191,10 +193,12 @@ test('Web list and detail bind projection to raw carrier bytes while preserving 
       [['status', 'type_mismatch']],
     )
     assert.deepEqual(invalid?.current_snapshot_projection, {
-      contract_identity: 'workcase-current-snapshot-presentation/1',
+      contract_identity: 'workcase-current-snapshot-presentation/2',
       resolution: 'unresolved',
       source_content_fingerprint: createHash('sha256').update(invalidStatus).digest('hex'),
       unresolved_reason: 'missing_status',
+      handoff_allowed: true,
+      handoff_reason: 'unresolved',
     })
     assert.equal(invalid?.progress_group, undefined)
   } finally {

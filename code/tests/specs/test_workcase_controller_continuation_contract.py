@@ -141,17 +141,55 @@ def test_only_gate2_blocked_unresolved_closed_are_legal_post_gate1_exits() -> No
         assert blocked["resolution"] == "resolved"
         assert blocked["blocking_overlay"] is True
         assert blocked["handoff_narrative_key"] != "gate2_waiting"
+        assert blocked["handoff_allowed"] is True
+        assert blocked["handoff_reason"] != "controller_owned"
 
     gate2 = derive_workcase_presentation("open", "human_closure_confirming", FINGERPRINT)
     assert gate2["resolution"] == "resolved"
     assert gate2["blocking_overlay"] is False
     assert gate2["handoff_narrative_key"] == "gate2_waiting"
     assert gate2["next_required_control_step"] == "human_gate_2"
+    assert gate2["handoff_allowed"] is True
+    assert gate2["handoff_reason"] == "gate2_waiting"
 
     closed = derive_workcase_presentation("closed", None, FINGERPRINT)
     assert closed["resolution"] == "resolved"
     assert closed["handoff_narrative_key"] == "closed"
     assert closed["next_required_control_step"] == "none"
+    assert closed["handoff_allowed"] is True
+    assert closed["handoff_reason"] == "closed"
+
+
+def test_template_legal_exits_equal_the_derived_handoff_allowed_set() -> None:
+    source = _source(EXECUTION_TEMPLATE)
+    workcase_spec = _source(Path(__file__).resolve().parents[3] / "specs/21-WorkCase-工作项.md")
+
+    assert "handoff_allowed" in source
+    assert "controller_owned" in source
+    assert "§9.3.1 的派生 `handoff_allowed=true`" in source
+    assert "这四类合法退出" in source
+
+    allowed_exits = {
+        ("closed", None),
+        *((status, phase) for status in ("open", "blocked") for phase in PHASE_PRESENTATION),
+    }
+    resolved_allowed = {
+        (status, phase)
+        for status, phase in allowed_exits
+        if derive_workcase_presentation(status, phase, FINGERPRINT)["handoff_allowed"] is True
+    }
+    # 安全出口：closed、真实 blocked 全部、gate1_waiting、gate2_waiting。
+    assert {("closed", None), ("open", "human_plan_confirming"), ("open", "human_closure_confirming")} <= resolved_allowed
+    for status in ("open", "blocked"):
+        for phase in PHASE_PRESENTATION:
+            if status == "blocked":
+                assert (status, phase) in resolved_allowed
+            elif phase not in {"human_plan_confirming", "human_closure_confirming"}:
+                assert (status, phase) not in resolved_allowed
+
+    assert "handoff_allowed" in workcase_spec
+    assert "controller_owned" in workcase_spec
+    assert "不新增 `controller_checking → Gate2` 捷径" in workcase_spec
 
 
 def test_new_human_decision_need_converges_without_a_third_human_wait() -> None:
@@ -196,10 +234,12 @@ def test_gate2_language_is_bound_to_the_just_read_resolved_projection() -> None:
 
     unresolved = derive_workcase_presentation("open", "executing", None)
     assert unresolved == {
-        "contract_identity": "workcase-current-snapshot-presentation/1",
+        "contract_identity": "workcase-current-snapshot-presentation/2",
         "resolution": "unresolved",
         "source_content_fingerprint": None,
         "unresolved_reason": "missing_source_content_fingerprint",
+        "handoff_allowed": True,
+        "handoff_reason": "unresolved",
     }
 
 

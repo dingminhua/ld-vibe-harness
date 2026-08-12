@@ -75,7 +75,7 @@ ldvh_spec:
 
 存在当前合法下一控制步骤时，Controller 继续消费已批准责任，不以聊天总结、工具成功、测试通过、子任务返回或 item 的 `current_summary` / `resume_from` 代替事实转换。item 的开始、直接完成、阻塞、解阻、完成、取消、计划返修、结果形成与质量链只按 21 的当前规则执行；需要跨对象共同生效时仍服从 32 的能力边界。
 
-**Gate 1 后统一 pre-yield 控制点：** Gate 1 获批后，`plan_revising`、`executing`、`controller_checking`、`independent_reviewing` 与 `closure_preparing` 均处于同一条 Controller-owned 收敛链，`status=blocked` 仅作为任一合法活动 phase 上的覆盖层。每个稳定检查点、委派或交接、恢复以及每个结果链控制步骤，都必须先完成完整 after、CAS、精确回读与独立事实完整性审计；Controller 只消费 `resolution=resolved` 且 `source_content_fingerprint` 与刚回读 `content_fingerprint` 相同的 fresh projection。只要刚回读快照仍为 `status=open`、投影仍指向 Controller-owned 结构步骤且尚未形成 §5.4 的合法交还出口，Controller 就继续处理该步骤；AI 仍负责授权、依赖、能力、语义相关性和具体 item 的判断，Code 与 projection 不替 AI 作决定。
+**Gate 1 后统一 pre-yield 控制点：** Gate 1 获批后，`plan_revising`、`executing`、`controller_checking`、`independent_reviewing` 与 `closure_preparing` 均处于同一条 Controller-owned 收敛链，`status=blocked` 仅作为任一合法活动 phase 上的覆盖层。每个稳定检查点、委派或交接、恢复以及每个结果链控制步骤，都必须先完成完整 after、CAS、精确回读与独立事实完整性审计；Controller 只消费 `resolution=resolved` 且 `source_content_fingerprint` 与刚回读 `content_fingerprint` 相同的 fresh projection。只要刚回读快照仍为 `status=open`、投影仍指向 Controller-owned 结构步骤且尚未形成 §5.4 的合法交还出口，Controller 就继续处理该步骤；fresh projection 的派生 `handoff_allowed=false`（reason=controller_owned）即该位置仍为 Controller-owned，必须继续，`handoff_allowed=true` 只在 §5.4 的安全出口成立。AI 仍负责授权、依赖、能力、语义相关性和具体 item 的判断，Code 与 projection 不替 AI 作决定。
 
 `termination_preparing` 是由 Human 主动中止切换出的专属 Controller-owned 善后链：同样服从 fresh projection 与 pre-yield 控制点，但只处理 `termination_cleanup`，不再消费普通生命周期下一步。善后事实闭合、`cleanup_status=completed` 且无入向 `depends-on` 后，Controller 直接调用 `complete-workcase-termination`；成功回读 closed 才退出，不形成正常 closure proposal、不进入 Gate2，也不请求第二次 Human 决定。
 
@@ -99,7 +99,7 @@ Gate 1 后出现新的 Human 决策需求，不构成 blocked 或 unresolved，�
 
 ### 5.4 合法退出
 
-本模板只允许在刚回读当前快照支持下退出当前执行循环：对象已经 closed；`status=blocked` 且已写入真实外部/能力阻塞与恢复条件；连续精确读取后投影仍 unresolved 而只能交还读取缺口；或普通链的 `status=open`、`phase=human_closure_confirming` resolved 投影明确给出 `handoff_narrative_key=gate2_waiting` 与 `next_required_control_step=human_gate_2`。Gate 1 后其它 phase 不构成 Human 交还点；`termination_preparing` 不是等待第二 Human 决定的出口，除真实 blocked/unresolved 外必须继续善后至 closed。命中授权上限、禁止动作或能力只能超授权完成时，不询问扩权：普通链按 §5.2 与 21 据实取消受影响 item 或记录 residual 后继续到 Gate2；Human 主动中止链只按明确范围完成善后，无法安全完成时写 blocked 与恢复条件。
+本模板只允许在刚回读当前快照支持下退出当前执行循环：对象已经 closed；`status=blocked` 且已写入真实外部/能力阻塞与恢复条件；连续精确读取后投影仍 unresolved 而只能交还读取缺口；或普通链的 `status=open`、`phase=human_closure_confirming` resolved 投影明确给出 `handoff_narrative_key=gate2_waiting` 与 `next_required_control_step=human_gate_2`。这四类合法退出与 §9.3.1 的派生 `handoff_allowed=true` 精确一致：closed / 真实 blocked / unresolved / gate2_waiting。Gate 1 后其它 phase 不构成 Human 交还点；`termination_preparing` 不是等待第二 Human 决定的出口，除真实 blocked/unresolved 外必须继续善后至 closed。命中授权上限、禁止动作或能力只能超授权完成时，不询问扩权：普通链按 §5.2 与 21 据实取消受影响 item 或记录 residual 后继续到 Gate2；Human 主动中止链只按明确范围完成善后，无法安全完成时写 blocked 与恢复条件。项目 Stop gate（09 §5.8）对精确绑定 WorkCase 机械执行该退出集：`handoff_allowed=false`（controller_owned）时阻止非法 Stop 并反馈下一控制步骤，安全出口、无绑定或异常一律放行，且不得按唯一 open 候选猜测绑定。
 
 普通 `in_progress` 检查点、单个 terminal item、pending item、全部 item terminal、完整结果投影、局部测试通过、一次本地 commit、Reviewer 返回或 feedback 处置、进入 `closure_preparing`、完整 closure proposal 或恢复入口存在，都不是完成出口。新 Human 决策需求同样不是 blocked/unresolved 出口。`status=blocked` 时投影保留生命周期位置只用于定位，Controller 不消费其中结构提示自动续跑；解除阻塞必须先按 21 写回并重新读取。
 
