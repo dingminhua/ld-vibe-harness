@@ -1,8 +1,11 @@
 title: WorkCase 执行期 Human 输入处理规则——消除获批执行后 AI 非预期停止
-status: open
-priority: P1
+status: implemented
 intent: workcase-0091 Gate 1 批准后，AI 在 executing 阶段停下来询问 Human '是否开始执行 item-1'，而非按 34 §5.2 的 Controller 持续收敛链自动继续。审核与分析确认根因是回合制对话模型（Human 输入→AI 输出→停等）与 LDVH 的 Controller-owned 收敛链（读投影→消费 next_required_control_step→继续直到合法退出）不匹配。规则层面缺少一条针对 AI 回合制模型的显式指令：Human 在 executing 阶段的输入不自动成为交还信号，Controller 必须读投影判断是否到了合法退出点才停下。本 Spark 承接该缺口，在 34 §5.2 中增加显式执行期 Human 输入处理规则与单次回合执行边界判定，在 21 §9.3 投影表中补注 handoff_narrative_key 语义，并同步评估是否需要配合 Code 层微调。
-summary: "## 问题\n\nworkcase-0091 在 Gate 1 批准（human_plan_confirming → executing）后，AI 没有按 34 §5.2 的执行循环自动继续，而是停下来询问 Human '是否开始执行 item-1'。\n\n### 分析根因\n\n独立审核确认了 7 个语义盲区中的核心问题：\n\n1. **回合制思维 vs Controller 收敛链**：AI 的默认行为模式是 Human 输入→处理→输出→停等。但 LDVH 的规则要求 Gate 1 获批后，executing 阶段的 Controller 持续消费 projection 中的 next_required_control_step，直到命中 34 §5.4 的合法退出条件才停下。\n2. **waiting_on 移除后失去指引**：human_plan_confirming 时 waiting_on 指向 Human，转换到 executing 后 waiting_on 被移除，且 executing 不允许 Human 作为等待对象。AI 的'没有明确等待对象=不知道该做什么=问 Human'倾向与规则冲突。\n3. **34 §5.4 合法退出清单未被引用**：pending item 被明确列为'不是完成出口'。批准后所有 item 均为 pending，没有任何合法退出条件成立，AI 本应据此知道不能停。\n4. **投影 handoff_narrative_key 语义未被检查**：executing 的 handoff_narrative_key 是 item_execution_in_progress，不是任何等待类 key。检查这个 key 就能直接判断当前不是等待 Human 的位置。\n\n### 审核员纠正\n\n原分析中'在转换同事务中启动 item-1 为 in_progress'的建议不准确。21 §6.3.3 转换表只要求写入 approval、进入 executing、移除 Human waiting，不要求同事务启动 item。正确关系是：转换事务只完成 phase 切换，后续执行循环的稳定检查点中再读 projection 并开始 item。\n\n### 审核员补充的遗漏\n\n- 34 §5.4 合法退出清单：pending item 不是合法出口\n- 投影 handoff_narrative_key=item_execution_in_progress 不是等待类 key\n- next_required_control_step=advance_current_work_item 已足够精确指导下一步\n\n## 待判断\n\n1. 34 §5.2 是否需要增加显式规则：'executing 阶段且 waiting_on 不存在时，Controller 必须自动继续执行未完成的 item，不得向 Human 询问下一步'？\n2. 是否需要增加'单次回合执行边界'规则，把'何时停下'从'Human 说话了'（回合制默认）改为'投影 handoff_narrative_key 指向合法退出'（LDVH 规则驱动）？\n3. 21 §9.3 投影表是否需要补注 handoff_narrative_key 语义，显式列出哪些 key 是等待类、哪些是执行类？\n4. Code 层是否需要配合调整？例如 workcase_projection.py 在转换后 projection 中强化 next_required_control_step 语义？\n5. 是否需要增加一条'Human 输入判断流程'规则，帮助 AI 在每次 Human 输入后正确判断是否属于合法交还点？"
+summary: "## 已落实范围\n\n- 34 §5.2 执行循环已含「Gate 1 后统一 pre-yield 控制点」：Gate 1 获批后 executing 等 phase 处于同一条 Controller-owned 收敛链，只要刚回读快照仍为 status=open、投影仍指向 Controller-owned 结构步骤、且尚未形成 §5.4 合法退出，Controller 就继续处理；新的 Human 决策需求不构成 blocked/unresolved，也不得新增 Human Gate 或请求第三次确认。\n- 34 §5.4 合法退出明确唯一出口：closed / 真实外部·能力阻塞 / unresolved 读取缺口 / human_closure_confirming 的 gate2_waiting；新 Human 决策需求同样不是 blocked/unresolved 出口。\n- 21 §9.3 投影表含 executing → handoff_narrative_key=item_execution_in_progress / next_required_control_step=advance_current_work_item，并限定仅 gate2_waiting 可表达等待 Gate 2。\n- Code 层 code/ldvh/facts/workcase_presentation.py 的 PHASE_PRESENTATION 投影表与规范一致，executing 行已实现上述 key。\n\n## 时间与承接核对\n\n- 统一 Gate 1 至 Gate 2 交还控制（ac74c99b，2026-08-09，承接 workcase-0082 / spark-0071）先于本 Spark 创建（2026-08-10）落地。\n- workcase-0091（2026-08-10）执行链从 Gate 1 到关闭全程通畅，未再现本 Spark 记录的非预期停止。\n\n## 保留边界\n\n- 规则与 Code 覆盖存在，不机械证明真实会话中 AI 必然遵守；遵守性仍须在真实执行中持续观察。\n- 本 Spark 创建时自述的「规则缺口」与落地后现状不一致，该转折由本条 evolution 说明。\n\n## 当前结论\n\n本 Spark 限定的缺口已由既有规则与 Code 覆盖，按 Human 指示直接落实收口；范围内无剩余待处置内容。后续若在真实执行中再现该停止，应新建 open 入口承接，不重开本 Spark。"
+disposition_summary: 本 Spark 限定的「获批执行后 AI 非预期停止」规则缺口，经核实已由 2026-08-09 落地的统一 Gate 1 至 Gate 2 交还控制覆盖：34 §5.2 执行期 pre-yield 控制点、§5.4 合法退出清单、21 §9.3 投影表及 code/ldvh/facts/workcase_presentation.py 实现一致；workcase-0091 于 2026-08-10 完整走通执行链至关闭，未再现该停止。已落实范围仅指规则与 Code 层覆盖，不机械证明真实会话中 AI 必然遵守；遵守性仍须真实执行观察。范围内无剩余待判断事项。
+evolution:
+- at: '2026-08-12T16:01:16Z'
+  summary: 本 Spark 承接 workcase-0091 Gate 1 批准后 AI 非预期停止问题的分析；核实发现执行期 Human 输入处理规则缺口已在创建前由 ac74c99b（统一 Gate 1 至 Gate 2 交还控制，2026-08-09）落地，原分析前提已过时。按 Human 指示将入口收口为 implemented，规则与 Code 层覆盖已存在、真实执行遵守性保留在范围外。
 relations:
 - relation_key: related-to
   target:
@@ -26,7 +29,13 @@ change_log:
   signature:
     model_id: glm-5.2
     agent_workbench: Cindy
+- at: '2026-08-12T16:02:11.472518Z'
+  summary: 消费 Human 方向指示，将 spark-0073 从 open 更新为 implemented：核实确认执行期 Human 输入处理规则缺口已由 2026-08-09 落地的统一 Gate 1 至 Gate 2 交还控制（34 §5.2/§5.4、21 §9.3、workcase_presentation.py）覆盖，按直接落实收口；移除 priority，新增 disposition_summary，重写 summary 并追加 evolution。
+  signature:
+    product_name: Cindy
+    model_name: deepseek/deepseek-v4-flash[1m]
+    agent_runtime_name: claude-code
 object_id: spark-0073
 fact_type_key: spark
 created_at: '2026-08-10T05:26:01.063002Z'
-updated_at: '2026-08-10T05:26:01.063002Z'
+updated_at: '2026-08-12T16:02:11.472518Z'
