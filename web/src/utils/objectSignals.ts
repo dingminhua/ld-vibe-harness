@@ -9,18 +9,18 @@ export const SIGNAL_FIELDS: SignalField[] = ['priority'];
 
 const SIGNAL_CLASSES: Partial<Record<SignalField, Record<string, string>>> = {
   priority: {
-    P0: 'border-rose-500/20 bg-transparent text-rose-700/90 font-medium dark:text-rose-300/90',
-    P1: 'border-orange-500/20 bg-transparent text-orange-700/90 font-medium dark:text-orange-300/90',
-    P2: 'border-amber-500/20 bg-transparent text-amber-700/90 font-medium dark:text-amber-300/90',
+    P0: 'border-rose-500/35 bg-rose-500/10 text-rose-700/90 font-medium dark:text-rose-300/90',
+    P1: 'border-orange-600/35 bg-orange-500/10 text-orange-700/90 font-medium dark:text-orange-300/90',
+    P2: 'border-yellow-500/35 bg-yellow-400/10 text-yellow-700/90 font-medium dark:text-yellow-300/90',
     P3: 'border-zinc-500/20 bg-transparent text-ldvh-text-secondary font-medium',
   },
 };
 
 const PRIORITY_ICON_CLASSES: Record<string, string> = {
-  P0: 'border-rose-400/45 bg-rose-500/10 text-rose-400',
-  P1: 'border-orange-400/45 bg-orange-500/10 text-orange-400',
-  P2: 'border-amber-400/45 bg-amber-500/10 text-amber-400',
-  P3: 'border-zinc-400/35 bg-zinc-500/10 text-zinc-400',
+  P0: 'border-rose-400/65 bg-rose-500/15 text-rose-700 dark:text-rose-300',
+  P1: 'border-orange-500/65 bg-orange-500/15 text-orange-700 dark:text-orange-300',
+  P2: 'border-yellow-500/65 bg-yellow-400/15 text-yellow-700 dark:text-yellow-300',
+  P3: 'border-zinc-400/35 bg-zinc-500/10 text-zinc-600 dark:text-zinc-400',
 };
 
 function normalizeSignalValue(value: unknown): string | null {

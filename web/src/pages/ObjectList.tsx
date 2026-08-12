@@ -1254,7 +1254,7 @@ export function ObjectCardFrame({
             {getTypeLabel(obj.type, locale)}
           </span>
           <span className="ldvh-meta-muted min-w-0 truncate">{obj.id}</span>
-          <PriorityIcon source={obj} type={obj.type} locale={locale} size="sm" />
+          <PriorityIcon source={obj} type={obj.type} locale={locale} size="xs" />
         </div>
         {/* List cards expose a stable object identity, not an exact-read source path. */}
         <ObjectIdentityActions

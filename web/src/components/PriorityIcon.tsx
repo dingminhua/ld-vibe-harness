@@ -22,7 +22,7 @@ export default function PriorityIcon({
     : size === 'sm'
       ? 'h-5 px-1.5'
       : size === 'xs'
-        ? 'h-4 px-1 text-[10px] leading-3'
+        ? 'h-[18px] px-[5px] text-[10px] leading-3'
         : 'h-6 px-2';
 
   return (
