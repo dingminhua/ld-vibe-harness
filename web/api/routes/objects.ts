@@ -38,6 +38,27 @@ interface ProgressOption {
   count: number
 }
 
+function getObjectIdGaps(type: ObjectType, items: ListedObject[]): string[] {
+  const identifier = new RegExp(`^${type}-(\\d+)$`)
+  const values = items
+    .map((item) => {
+      const match = identifier.exec(item.id)
+      return match ? { value: Number(match[1]), width: match[1].length } : null
+    })
+    .filter((entry): entry is { value: number; width: number } => entry !== null)
+  if (values.length < 2) return []
+
+  const present = new Set(values.map((entry) => entry.value))
+  const first = Math.min(...present)
+  const last = Math.max(...present)
+  const width = Math.max(...values.map((entry) => entry.width))
+  const gaps: string[] = []
+  for (let value = first; value <= last; value += 1) {
+    if (!present.has(value)) gaps.push(`${type}-${String(value).padStart(width, '0')}`)
+  }
+  return gaps
+}
+
 type WorkCaseListGroup = (typeof WORKCASE_PROGRESS_GROUP_ORDER)[number] | 'discarded'
 
 function getWorkCaseListGroup(item: ListedObject): WorkCaseListGroup | undefined {
@@ -239,6 +260,7 @@ router.get('/:type', async (req: Request, res: Response): Promise<void> => {
       result.data.statusOptions = getStatusOptions(statusItems)
     }
     result.data.statusTotal = statusItems.length
+    result.data.id_gaps = getObjectIdGaps(type, allItems)
     if (type === 'spark' || type === 'workcase') {
       const groupItems = type === 'workcase' && progress
         ? allItems.filter((item) => getWorkCaseListGroup(item) === progress)

@@ -1198,20 +1198,8 @@ function contributionTargetTitle(detail: ObjectDetail | null, readMeta: ReturnTy
   return getLocalizedObjectTitle(detail.data as { title?: string; title_en?: string; title_zh?: string }, locale);
 }
 
-function isTerminalListCard(obj: ObjectItem): boolean {
-  return obj.status === 'closed'
-    || obj.status === 'implemented'
-    || obj.status === 'retired'
-    || obj.status === 'discarded'
-    || obj.status === 'deprecated'
-    || obj.progress_group === 'closed'
-    || obj.progress_group === 'termination_cleanup';
-}
-
 function sortObjectsForList(items: ObjectItem[], sort: ObjectListSort): ObjectItem[] {
   return [...items].sort((a, b) => {
-    const terminalDelta = Number(isTerminalListCard(a)) - Number(isTerminalListCard(b));
-    if (terminalDelta !== 0) return terminalDelta;
     if (sort === 'id_desc') return b.id.localeCompare(a.id);
 
     const updatedDelta = compareRfc3339Timestamps(b.updated, a.updated);
@@ -1580,6 +1568,8 @@ export default function ObjectList() {
   const [progressOptions, setProgressOptions] = useState<WorkCaseProgressOption[]>([]);
   const [priorityOptions, setPriorityOptions] = useState<ObjectStatusOption[]>([]);
   const [statusTotal, setStatusTotal] = useState(0);
+  const [idGapCount, setIdGapCount] = useState(0);
+  const [isIdGapTooltipOpen, setIsIdGapTooltipOpen] = useState(false);
   const [coverageStatus, setCoverageStatus] = useState<FactCoverageStatus>('complete');
   const [coverageProblemCount, setCoverageProblemCount] = useState(0);
   const [coverageProblems, setCoverageProblems] = useState<FactListProblem[]>([]);
@@ -1626,6 +1616,7 @@ export default function ObjectList() {
     setProgressOptions([]);
     setPriorityOptions([]);
     setStatusTotal(0);
+    setIdGapCount(0);
     setCoverageStatus('complete');
     setCoverageProblemCount(0);
     setCoverageProblems([]);
@@ -1639,6 +1630,7 @@ export default function ObjectList() {
         setProgressOptions(result.data?.progressOptions ?? []);
         setPriorityOptions(result.data?.priorityOptions ?? []);
         setStatusTotal(result.data?.statusTotal ?? nextItems.length);
+        setIdGapCount(result.data?.id_gaps?.length ?? 0);
         setCoverageStatus(result.data?.coverage_status ?? 'complete');
         const nextCoverageProblems = result.data?.collection_issues ?? [];
         setCoverageProblems(nextCoverageProblems);
@@ -1885,7 +1877,31 @@ export default function ObjectList() {
             )}
           </div>
         </div>
-        <div className="shrink-0">
+        <div className="flex shrink-0 items-center gap-2">
+          {idGapCount > 0 && (
+            <span className="relative inline-flex shrink-0">
+              <span
+                aria-describedby="object-list-id-gap-tooltip"
+                className="ldvh-meta-muted cursor-default select-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ldvh-accent/45"
+                onBlur={() => setIsIdGapTooltipOpen(false)}
+                onFocus={() => setIsIdGapTooltipOpen(true)}
+                onMouseEnter={() => setIsIdGapTooltipOpen(true)}
+                onMouseLeave={() => setIsIdGapTooltipOpen(false)}
+                tabIndex={0}
+              >
+                {t('objectList.idGapCount', { count: String(idGapCount) })}
+              </span>
+              {isIdGapTooltipOpen && (
+                <span
+                  id="object-list-id-gap-tooltip"
+                  role="tooltip"
+                  className="pointer-events-none absolute right-0 top-full z-20 mt-1 w-64 rounded-md border border-ldvh-border bg-ldvh-panel px-2 py-1 text-[10px] font-medium leading-4 text-ldvh-text-primary shadow-md"
+                >
+                  {t('objectList.idGapHint', { count: String(idGapCount) })}
+                </span>
+              )}
+            </span>
+          )}
           <SegmentedControl
             ariaLabel={t('objectList.sort')}
             value={activeSort}

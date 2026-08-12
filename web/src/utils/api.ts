@@ -738,6 +738,8 @@ export async function fetchObjects(
     progressOptions?: WorkCaseProgressOption[];
     priorityOptions?: ObjectStatusOption[];
     statusTotal?: number;
+    /** IDs absent from the current worktree's full object collection. */
+    id_gaps?: string[];
   };
 }> {
   const params = new URLSearchParams();
