@@ -10,8 +10,8 @@ import pytest
 from ldvh.hooks.prepare_commit_msg import (
     _strip_signature_trailers,
     inject_environment_signature,
-    run_prepare_commit_msg,
     main,
+    run_prepare_commit_msg,
 )
 
 

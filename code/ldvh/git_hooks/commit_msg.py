@@ -22,10 +22,12 @@ from ldvh.governance.resolver import resolve_governance_scope
 
 _MANAGED_MARKER_PREFIX = "# ldvh-native-commit-msg-hook: v1 sha256:"
 _PREPARE_MANAGED_MARKER_PREFIX = "# ldvh-native-prepare-commit-msg-hook: v1 sha256:"
+HOOK_BUNDLE_VERSION = "2026-08-12 14:08"
+_BUNDLE_VERSION_PREFIX = "# ldvh-hook-bundle-version: "
 _GIT_TIMEOUT_SECONDS = 10
 _HOOK_PREFLIGHT_TIMEOUT_SECONDS = 20
 _LEGACY_HOOKS_PATH = ".githooks-v4"
-HookState = Literal["absent", "managed", "conflict", "unavailable"]
+HookState = Literal["absent", "managed", "outdated", "conflict", "unavailable"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -39,6 +41,8 @@ class CommitMsgHookStatus:
     hook_path: str | None
     git_common_dir: str | None = None
     worktree_roots: tuple[str, ...] = ()
+    hook_bundle_version: str | None = None
+    expected_hook_bundle_version: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -75,6 +79,8 @@ def _status(
     common_dir: Path | None = None,
     hook_directory: Path | None = None,
     worktrees: tuple[Path, ...] = (),
+    hook_bundle_version: str | None = None,
+    expected_hook_bundle_version: str | None = HOOK_BUNDLE_VERSION,
 ) -> CommitMsgHookStatus:
     hook_path = None if hook_directory is None else hook_directory / "commit-msg"
     return CommitMsgHookStatus(
@@ -85,6 +91,8 @@ def _status(
         None if hook_path is None else str(hook_path),
         None if common_dir is None else str(common_dir),
         tuple(str(item) for item in worktrees),
+        hook_bundle_version,
+        expected_hook_bundle_version,
     )
 
 
@@ -305,18 +313,35 @@ def _existing_hook_state(path: Path, *, name: str, marker_prefix: str) -> tuple[
     return "conflict", f"an existing Git {name} Hook is not owned by LDVH"
 
 
+def _hook_bundle_version(path: Path) -> str | None:
+    """Read the version only from an already digest-verified managed Hook."""
+
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except (OSError, UnicodeError):
+        return None
+    for line in lines[2:4]:
+        if line.startswith(_BUNDLE_VERSION_PREFIX):
+            value = line.removeprefix(_BUNDLE_VERSION_PREFIX)
+            if len(value) == 16 and value[4] == value[7] == "-" and value[10] == " " and value[13] == ":":
+                return value
+    return None
+
+
 def _deployment_state(
     path: Path,
     deployment: _HookDeployment,
     *,
-    legacy_content: str | None = None,
+    legacy_contents: tuple[str, ...] = (),
 ) -> tuple[HookState, str]:
     """Classify a bundle member, accepting only a byte-exact legacy LDVH asset."""
 
     state, detail = _existing_hook_state(path, name=deployment.name, marker_prefix=deployment.marker_prefix)
-    if state == "conflict" and legacy_content is not None:
+    if state == "conflict" and legacy_contents:
         try:
-            if not path.is_symlink() and hmac.compare_digest(path.read_bytes(), legacy_content.encode("utf-8")):
+            if not path.is_symlink() and any(
+                hmac.compare_digest(path.read_bytes(), content.encode("utf-8")) for content in legacy_contents
+            ):
                 return "managed", f"LDVH owns the legacy {deployment.name} Hook eligible for upgrade"
         except OSError:
             pass
@@ -327,14 +352,14 @@ def _bundle_inventory(
     hooks: Path,
     deployments: tuple[_HookDeployment, ...],
     *,
-    legacy_contents: dict[str, str],
+    legacy_contents: dict[str, tuple[str, ...]],
 ) -> tuple[dict[str, bytes | None] | None, str | None]:
     """Preflight ownership for both managed files before any file is changed."""
 
     originals: dict[str, bytes | None] = {}
     for deployment in deployments:
         path = hooks / deployment.name
-        state, detail = _deployment_state(path, deployment, legacy_content=legacy_contents.get(deployment.name))
+        state, detail = _deployment_state(path, deployment, legacy_contents=legacy_contents.get(deployment.name, ()))
         if state in {"conflict", "unavailable"}:
             return None, detail
         try:
@@ -454,79 +479,80 @@ def _governance_failure(worktrees: tuple[Path, ...], workspace: Path, common_dir
     return None
 
 
-def render_commit_msg_hook(*, commit_msg_runner: Path, workspace_root: Path) -> str:
+def render_commit_msg_hook(
+    *, commit_msg_runner: Path, workspace_root: Path, include_bundle_version: bool = True
+) -> str:
     """Render the common-dir POSIX adapter; it contains no LDVH rule data."""
 
     runner = shlex.quote(str(commit_msg_runner))
     workspace = shlex.quote(str(workspace_root))
-    body = "\n".join(
-        (
-            "set -eu",
-            'if [ "$#" -ne 1 ]; then',
-            '  printf "%s\\n" "LDVH Git commit-msg Hook expected one message-file argument" >&2',
-            "  exit 1",
-            "fi",
-            "worktree=$(git rev-parse --show-toplevel) || {",
-            '  printf "%s\\n" "LDVH Git commit-msg Hook could not determine the current worktree" >&2',
-            "  exit 1",
-            "}",
-            "# The source launcher may be named python3 or python on different hosts.",
-            "run_runner() {",
-            "  if command -v python3 >/dev/null 2>&1; then",
-            f'    exec python3 {runner} "$@"',
-            "  elif command -v python >/dev/null 2>&1; then",
-            f'    exec python {runner} "$@"',
-            "  fi",
-            f'  exec {runner} "$@"',
-            "}",
-            'case "$1" in',
-            "  /*|[A-Za-z]:\\\\*|//*) message_file=$1 ;;",
-            '  *) message_file="$worktree/$1" ;;',
-            "esac",
-            'if [ -n "${GIT_INDEX_FILE:-}" ]; then',
-            '  case "$GIT_INDEX_FILE" in',
-            "    /*|[A-Za-z]:\\\\*|//*) index_file=$GIT_INDEX_FILE ;;",
-            '    *) index_file="$worktree/$GIT_INDEX_FILE" ;;',
-            "  esac",
-            f'  run_runner git-commit-msg --workspace-root {workspace} --worktree "$worktree" '
-            f'--message-file "$message_file" --index-file "$index_file"',
-            "fi",
-            f'run_runner git-commit-msg --workspace-root {workspace} --worktree "$worktree" '
-            '--message-file "$message_file"',
-            "",
-        )
-    )
+    lines = [
+        *([f"{_BUNDLE_VERSION_PREFIX}{HOOK_BUNDLE_VERSION}"] if include_bundle_version else []),
+        "set -eu",
+        'if [ "$#" -ne 1 ]; then',
+        '  printf "%s\\n" "LDVH Git commit-msg Hook expected one message-file argument" >&2',
+        "  exit 1",
+        "fi",
+        "worktree=$(git rev-parse --show-toplevel) || {",
+        '  printf "%s\\n" "LDVH Git commit-msg Hook could not determine the current worktree" >&2',
+        "  exit 1",
+        "}",
+        "# The source launcher may be named python3 or python on different hosts.",
+        "run_runner() {",
+        "  if command -v python3 >/dev/null 2>&1; then",
+        f'    exec python3 {runner} "$@"',
+        "  elif command -v python >/dev/null 2>&1; then",
+        f'    exec python {runner} "$@"',
+        "  fi",
+        f'  exec {runner} "$@"',
+        "}",
+        'case "$1" in',
+        "  /*|[A-Za-z]:\\\\*|//*) message_file=$1 ;;",
+        '  *) message_file="$worktree/$1" ;;',
+        "esac",
+        'if [ -n "${GIT_INDEX_FILE:-}" ]; then',
+        '  case "$GIT_INDEX_FILE" in',
+        "    /*|[A-Za-z]:\\\\*|//*) index_file=$GIT_INDEX_FILE ;;",
+        '    *) index_file="$worktree/$GIT_INDEX_FILE" ;;',
+        "  esac",
+        f'  run_runner git-commit-msg --workspace-root {workspace} --worktree "$worktree" '
+        f'--message-file "$message_file" --index-file "$index_file"',
+        "fi",
+        f'run_runner git-commit-msg --workspace-root {workspace} --worktree "$worktree" --message-file "$message_file"',
+        "",
+    ]
+    body = "\n".join(lines)
     digest = hashlib.sha256(body.encode("utf-8")).hexdigest()
     return f"#!/bin/sh\n{_MANAGED_MARKER_PREFIX}{digest}\n{body}"
 
 
-def render_prepare_commit_msg_hook(*, commit_msg_runner: Path) -> str:
+def render_prepare_commit_msg_hook(*, commit_msg_runner: Path, include_bundle_version: bool = True) -> str:
     """Render the companion signature injector without embedding signature data."""
 
     runner = shlex.quote(str(commit_msg_runner))
-    body = "\n".join(
-        (
-            "set -eu",
-            'if [ "$#" -lt 1 ]; then',
-            "  exit 0",
-            "fi",
-            "worktree=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0",
-            "run_runner() {",
-            "  if command -v python3 >/dev/null 2>&1; then",
-            f'    exec python3 {runner} "$@"',
-            "  elif command -v python >/dev/null 2>&1; then",
-            f'    exec python {runner} "$@"',
-            "  fi",
-            f'  exec {runner} "$@"',
-            "}",
-            'case "$1" in',
-            "  /*|[A-Za-z]:\\\\*|//*) message_file=$1 ;;",
-            '  *) message_file="$worktree/$1" ;;',
-            "esac",
-            'run_runner prepare-commit-msg --message-file "$message_file"',
-            "",
-        )
-    )
+    lines = [
+        *([f"{_BUNDLE_VERSION_PREFIX}{HOOK_BUNDLE_VERSION}"] if include_bundle_version else []),
+        "set -eu",
+        'if [ "$#" -lt 1 ]; then',
+        "  exit 0",
+        "fi",
+        "worktree=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0",
+        "run_runner() {",
+        "  if command -v python3 >/dev/null 2>&1; then",
+        f'    exec python3 {runner} "$@"',
+        "  elif command -v python >/dev/null 2>&1; then",
+        f'    exec python {runner} "$@"',
+        "  fi",
+        f'  exec {runner} "$@"',
+        "}",
+        'case "$1" in',
+        "  /*|[A-Za-z]:\\\\*|//*) message_file=$1 ;;",
+        '  *) message_file="$worktree/$1" ;;',
+        "esac",
+        'run_runner prepare-commit-msg --message-file "$message_file"',
+        "",
+    ]
+    body = "\n".join(lines)
     digest = hashlib.sha256(body.encode("utf-8")).hexdigest()
     return f"#!/bin/sh\n{_PREPARE_MANAGED_MARKER_PREFIX}{digest}\n{body}"
 
@@ -963,6 +989,7 @@ def inspect_commit_msg_hook(*, worktree: str) -> CommitMsgHookStatus:
             worktrees=worktrees,
         )
     states: list[HookState] = []
+    versions: list[str | None] = []
     for deployment in _hook_deployments(commit_msg_runner=Path("/unbound"), workspace_root=Path("/unbound")):
         # Inspection only establishes ownership/digest.  Binding is verified by install
         # and uninstall, where the intended runner and workspace are explicit.
@@ -974,6 +1001,8 @@ def inspect_commit_msg_hook(*, worktree: str) -> CommitMsgHookStatus:
                 state, detail, worktree=current, common_dir=common_dir, hook_directory=hooks, worktrees=worktrees
             )
         states.append(state)
+        if state == "managed":
+            versions.append(_hook_bundle_version(hooks / deployment.name))
     if all(state == "absent" for state in states):
         return _status(
             "absent",
@@ -984,13 +1013,34 @@ def inspect_commit_msg_hook(*, worktree: str) -> CommitMsgHookStatus:
             worktrees=worktrees,
         )
     if all(state == "managed" for state in states):
+        if len(set(versions)) != 1 or versions[0] is None:
+            return _status(
+                "conflict",
+                "LDVH Git Hook bundle has missing or inconsistent bundle versions",
+                worktree=current,
+                common_dir=common_dir,
+                hook_directory=hooks,
+                worktrees=worktrees,
+            )
+        if versions[0] != HOOK_BUNDLE_VERSION:
+            return _status(
+                "outdated",
+                "LDVH Git Hook bundle version "
+                f"{versions[0]} is installed, but version {HOOK_BUNDLE_VERSION} is required",
+                worktree=current,
+                common_dir=common_dir,
+                hook_directory=hooks,
+                worktrees=worktrees,
+                hook_bundle_version=versions[0],
+            )
         return _status(
             "managed",
-            "LDVH Git Hook bundle is installed at the common-dir Hook path",
+            f"LDVH Git Hook bundle version {versions[0]} is installed at the common-dir Hook path",
             worktree=current,
             common_dir=common_dir,
             hook_directory=hooks,
             worktrees=worktrees,
+            hook_bundle_version=versions[0],
         )
     return _status(
         "conflict",
@@ -1065,13 +1115,20 @@ def install_commit_msg_hook(
             worktrees=worktrees,
         )
     deployments = _hook_deployments(commit_msg_runner=runner, workspace_root=workspace)
+    legacy_contents = {
+        "commit-msg": (
+            _legacy_commit_msg_hook(commit_msg_runner=runner, workspace_root=workspace),
+            render_commit_msg_hook(commit_msg_runner=runner, workspace_root=workspace, include_bundle_version=False),
+        ),
+        "prepare-commit-msg": (
+            _legacy_prepare_commit_msg_hook(commit_msg_runner=runner),
+            render_prepare_commit_msg_hook(commit_msg_runner=runner, include_bundle_version=False),
+        ),
+    }
     originals, detail = _bundle_inventory(
         hooks,
         deployments,
-        legacy_contents={
-            "commit-msg": _legacy_commit_msg_hook(commit_msg_runner=runner, workspace_root=workspace),
-            "prepare-commit-msg": _legacy_prepare_commit_msg_hook(commit_msg_runner=runner),
-        },
+        legacy_contents=legacy_contents,
     )
     if originals is None:
         return _status(
@@ -1080,14 +1137,11 @@ def install_commit_msg_hook(
     for deployment in deployments:
         path = hooks / deployment.name
         original = originals[deployment.name]
-        legacy_content = {
-            "commit-msg": _legacy_commit_msg_hook(commit_msg_runner=runner, workspace_root=workspace),
-            "prepare-commit-msg": _legacy_prepare_commit_msg_hook(commit_msg_runner=runner),
-        }.get(deployment.name)
+        known_legacy = legacy_contents[deployment.name]
         if (
             original is not None
             and not _matches(path, deployment.rendered)
-            and (legacy_content is None or not hmac.compare_digest(original, legacy_content.encode("utf-8")))
+            and not any(hmac.compare_digest(original, content.encode("utf-8")) for content in known_legacy)
         ):
             return _status(
                 "conflict",
@@ -1192,13 +1246,15 @@ def install_commit_msg_hook(
     return _status(
         "managed",
         (
-            f"LDVH common-dir Git Hook bundle is active for {len(worktrees)} worktree(s); "
+            f"LDVH common-dir Git Hook bundle version {HOOK_BUNDLE_VERSION} is active "
+            f"for {len(worktrees)} worktree(s); "
             f"migrated {migrated} legacy override(s)"
         ),
         worktree=current,
         common_dir=common_dir,
         hook_directory=hooks,
         worktrees=worktrees,
+        hook_bundle_version=HOOK_BUNDLE_VERSION,
     )
 
 
@@ -1317,6 +1373,8 @@ def _write_status(status: CommitMsgHookStatus) -> None:
         ("git_common_dir", status.git_common_dir or ""),
         ("hook_directory", status.hook_directory or ""),
         ("hook_path", status.hook_path or ""),
+        ("hook_bundle_version", status.hook_bundle_version or ""),
+        ("expected_hook_bundle_version", status.expected_hook_bundle_version or ""),
         ("worktree_roots", "\t".join(status.worktree_roots)),
     )
     for key, value in values:

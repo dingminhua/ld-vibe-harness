@@ -166,6 +166,11 @@ def test_install_uses_common_dir_and_covers_existing_and_future_linked_worktrees
     common_dir = Path(_checked_git(main, "rev-parse", "--path-format=absolute", "--git-common-dir").strip())
     hook = common_dir / "hooks" / "commit-msg"
     assert installed.hook_path == str(hook)
+    assert installed.hook_bundle_version == commit_msg.HOOK_BUNDLE_VERSION
+    assert f"# ldvh-hook-bundle-version: {commit_msg.HOOK_BUNDLE_VERSION}" in hook.read_text(encoding="utf-8")
+    assert f"# ldvh-hook-bundle-version: {commit_msg.HOOK_BUNDLE_VERSION}" in (
+        common_dir / "hooks" / "prepare-commit-msg"
+    ).read_text(encoding="utf-8")
     assert set(installed.worktree_roots) == {str(main), str(existing)}
     main_hooks = _checked_git(main, "rev-parse", "--path-format=absolute", "--git-path", "hooks").strip()
     assert Path(main_hooks).resolve() == hook.parent.resolve()
@@ -584,6 +589,8 @@ def test_inspect_and_uninstall_bind_exact_common_dir_deployment(tmp_path: Path) 
     inspected = inspect_commit_msg_hook(worktree=str(main))
     assert inspected.state == "managed"
     assert inspected.git_common_dir == str(common_dir)
+    assert inspected.hook_bundle_version == commit_msg.HOOK_BUNDLE_VERSION
+    assert inspected.expected_hook_bundle_version == commit_msg.HOOK_BUNDLE_VERSION
 
     wrong_workspace = tmp_path / "wrong-workspace"
     wrong_workspace.mkdir()
@@ -604,6 +611,22 @@ def test_inspect_and_uninstall_bind_exact_common_dir_deployment(tmp_path: Path) 
     )
     assert removed.state == "absent"
     assert not hook.exists()
+
+
+def test_inspect_reports_a_managed_but_outdated_bundle_version(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    workspace, main = _managed_project(tmp_path)
+    old_version = "2026-08-12 14:07"
+    with monkeypatch.context() as old_bundle:
+        old_bundle.setattr(commit_msg, "HOOK_BUNDLE_VERSION", old_version)
+        _write_installed_hook(workspace, main)
+
+    inspected = inspect_commit_msg_hook(worktree=str(main))
+
+    assert inspected.state == "outdated"
+    assert inspected.hook_bundle_version == old_version
+    assert inspected.expected_hook_bundle_version == commit_msg.HOOK_BUNDLE_VERSION
+    assert old_version in inspected.detail
+    assert commit_msg.HOOK_BUNDLE_VERSION in inspected.detail
 
 
 def test_installation_environment_rejects_injection_but_preserves_declared_global_scope(
