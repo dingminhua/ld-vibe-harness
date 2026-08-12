@@ -22,6 +22,10 @@ test('object header attribution reads the newest complete signature from change_
   ]), { productName: 'C i n d y' });
 
   assert.deepEqual(getLatestFactChangeSignature([
+    { signature: { product_name: 'Claude Code', model_name: 'glm-5.2', agent_runtime_name: 'claude-code' } },
+  ]), { productName: 'Claude Code', modelName: 'glm-5.2' });
+
+  assert.deepEqual(getLatestFactChangeSignature([
     { signature: { product_name: 'Cindy', model_name: 'deepseek/deepseek-v4-flash[1m]', agent_runtime_name: 'claude-code' } },
   ]), { productName: 'Cindy', modelName: 'deepseek-v4-flash', agentRuntimeName: 'Claude' });
 

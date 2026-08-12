@@ -33,6 +33,12 @@ test('compact signature metadata shows model and product(runtime), with field fa
   assert.match(duplicateIdentity, /Cindy/);
   assert.doesNotMatch(duplicateIdentity, /Cindy\(Cindy\)/);
 
+  const claudeCodeIdentity = renderToStaticMarkup(createElement(CommitSignatureMeta, { signature: {
+    productName: 'Claude Code', modelName: 'gl m-5.2', agentRuntimeName: 'claude-code',
+  } }));
+  assert.match(claudeCodeIdentity, /Claude Code/);
+  assert.doesNotMatch(claudeCodeIdentity, /Claude Code\(Claude\)/);
+
   const productOnly = renderToStaticMarkup(createElement(CommitSignatureMeta, { signature: { productName: 'Cindy' } }));
   assert.match(productOnly, /Cindy/);
   assert.doesNotMatch(productOnly, /undefined|null|\\(\\)/);

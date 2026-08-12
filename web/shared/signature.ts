@@ -39,12 +39,15 @@ function normalizeAgentRuntimeName(value: unknown): string {
  */
 export function normalizeSignature(value: SignatureInput): NormalizedSignature {
   const productName = normalizeProductName(value.productName);
-  const agentRuntimeName = normalizeAgentRuntimeName(value.agentRuntimeName);
-  const identityKey = (name: string) => name.replace(/\s/g, '').toLocaleLowerCase();
+  const rawAgentRuntimeName = typeof value.agentRuntimeName === 'string'
+    ? value.agentRuntimeName.trim()
+    : '';
+  const agentRuntimeName = normalizeAgentRuntimeName(rawAgentRuntimeName);
+  const identityKey = (name: string) => name.replace(/[\s_-]/g, '').toLocaleLowerCase();
   const sameIdentity = Boolean(
     productName
-      && agentRuntimeName
-      && identityKey(productName) === identityKey(agentRuntimeName),
+      && rawAgentRuntimeName
+      && identityKey(productName) === identityKey(rawAgentRuntimeName),
   );
 
   return {
