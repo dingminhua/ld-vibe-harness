@@ -1,0 +1,113 @@
+title: DSH 会话执行可比性审计模块（session_comparability）
+goal: 在 code/ldvh/testing 下交付一个只读的 DSH 会话执行可比性审计模块 session_comparability.py 及其聚焦测试：从 DeepSeek Harness 持久化会话事件日志（~/.dsh/sessions/**/session.jsonl.zstd）机械提取执行载体指纹与事件图完整性，输出 comparable / not_comparable / inconclusive 三值初判及机器原因，先通过真实会话样本验证，为 LDVH 最小执行证据协议与规则精确读取等价复验提供评分前可比性判断的机器化基础。
+scope: 仅新增 code/ldvh/testing/session_comparability.py 只读模块与 code/tests/testing/test_session_comparability.py 聚焦测试；复用 trial_measurement.py 的 SafeTrialTempRoot 与通用测试设施；输入为 DSH 会话日志路径（或 zstd 字节流），只读取结构化字段（事件类型、时间戳、provider/model、工具名、事件配对计数），不读取 user/message 文本、tool/result 内容或 assistant 输出。排除：修改正式规则语义、行动模板、Helper 公共契约；建立健康分、遥测、Dashboard 或告警；Git commit、push、release；其他执行中 WorkCase 的事实文件和作用范围；上游 Spark 的任何写入。
+success_criterion_definitions:
+- criterion_id: criterion-module
+  statement: session_comparability.py 交付为只读模块，公开函数能从 zstd 会话日志（或等价输入）提取执行载体指纹：模型/工具入口序列（含 reason initial/change/resume）、turn/step/tool 事件配对计数、approval/permission/sandbox/compact/retry/hook 事件标记，且不读取消息正文与工具结果内容。
+- criterion_id: criterion-verdict
+  statement: 模块输出 comparable / not_comparable / inconclusive 三值初判及机器原因列表，判定规则与观察面盘点一致：无 request/header → inconclusive；多模型入口 → not_comparable；事件图配对缺失 → not_comparable（或使 comparable 降级）；单模型且配对完整 → comparable。
+- criterion_id: criterion-samples
+  statement: 以当前环境至少 5 个真实 DSH 会话日志为样本运行模块，每个样本输出与人工复核一致的三值初判，结果汇总记录在 WorkCase 结果链中（不含原始会话内容）。
+- criterion_id: criterion-tests
+  statement: 聚焦测试覆盖：单模型完整会话（comparable）、多模型会话（not_comparable）、无请求头会话（inconclusive）、配对缺失检测、zstd 读取错误处理；复用边界回归通过，Ruff 通过。
+- criterion_id: criterion-boundary
+  statement: 结果与 Study 一致区分 harness-delivered 可观察与 host-received unavailable；不把三值初判写成因果结论或总体服务改善证据。
+success_criterion_results:
+- criterion_id: criterion-module
+  outcome: satisfied
+  summary: session_comparability.py 交付为只读模块：iter_events/audit_events/judge_comparability/audit_session 提取 provider/model/reason 序列、工具名、turn/step/tool 配对计数与 approval/permission/sandbox/compact/retry/hook 标志；opaque 事件类型（user/message、assistant/*、tool/result 内容）仅记名跳过，从未读取正文。
+- criterion_id: criterion-verdict
+  outcome: satisfied
+  summary: 三值初判与判定规则一致：无 request/header → inconclusive；多模型入口 → not_comparable；事件图配对缺失 → not_comparable；单模型且配对完整 → comparable；均附带机器原因列表。
+- criterion_id: criterion-samples
+  outcome: satisfied
+  summary: 对 ~/.dsh/sessions 下 11 个真实会话日志运行模块：7 个 comparable、1 个 inconclusive（无请求头）、2 个 not_comparable（多模型，含 4 模型 fa022f70）、1 个 not_comparable（双模型+中断）；判定与人工盘点一致；未保存任何原始会话内容。
+- criterion_id: criterion-tests
+  outcome: satisfied
+  summary: 18 项聚焦测试覆盖单模型完整/多模型/无请求头/配对缺失/zstd 解码错误/opaque 不读取/标志计数/错误输入；复用边界回归 219 passed；Ruff passed。
+- criterion_id: criterion-boundary
+  outcome: satisfied
+  summary: 模块只输出结构化指纹与三值初判，区分 harness-delivered 可观察与 host-received unavailable（不虚构宿主回执）；不写因果结论或总体服务改善证据。
+result_summary: 交付 DSH 会话执行可比性审计模块 session_comparability.py 及其 18 项聚焦测试，经 11 个真实会话样本验证：模块能从 zstd 会话日志机械提取执行载体指纹并输出 comparable/not_comparable/inconclusive 三值初判与机器原因，全部样本判定与人工盘点一致；复用边界 219 项测试与 Ruff 通过。为 LDVH 最小执行证据协议提供评分前可比性判断的机器化基础，未读取或保存任何会话原始内容。
+validation_summary: 聚焦测试 18 passed；复用边界回归（code/tests/testing 全量）219 passed；Ruff passed；11 个真实 zstd 会话日志样本运行通过（含 zstd CLI 解码路径）且判定与人工一致；不保存原始会话内容，隐私边界成立。
+closure_outcome: completed
+disposition_summary: 五项 success criterion 全部 satisfied，原 scope 内无未满足或未验证责任，无 residual decisions；本 WorkCase 按 completed 关闭。评分前可比性判断的机器化基础已交付（session_comparability 模块 + 18 项测试 + 11 真实会话验证）；后续等价复验与最小执行证据协议扩展属于上游 Spark ldvh@SFPVTZ 的持续责任，不构成当前 scope 剩余责任。
+spark_suggestions:
+- suggestion_id: suggestion-follow-up-equivalent-retrial
+  suggestion_kind: follow_up_opportunity
+  summary: 以 session_comparability 模块为执行可比性门槛，使用同一模型/同一工具入口/同一 runner 对规则精确读取任务族（WFPQDZ 延续）做等价复验，评分管线直接消费机器记录并增加重复样本；属 scope 外后续机会。
+  follow_up_summary: 日后独立建立 Spark 时应继续判断：以 session_comparability 的 comparable 判定为门槛，用同一模型/工具入口/runner 对规则精确读取任务族做等价复验（重复样本、机器记录评分），再判断 required 缺失/excluded 增加是否形成可重复且有实际幅度的差异。
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-74ea-a2f9-9f309e85d013
+- relation_key: related-to
+  target:
+    object_uid: 019ffd18-bafe-714f-be81-257c1502b922
+change_log:
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+  at: '2026-08-13T22:13:18.273862Z'
+  summary: 受控创建 plan_version=1：从上游服务质量 Spark 与观察面 Study 下沉 DSH 会话执行可比性审计模块开发；创建前已获 Human 对只读 subagent 复核的明确授权，等待独立方案复核与 Gate 1。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+  at: '2026-08-13T22:19:27.297345Z'
+  summary: 按 Human 当次 Gate 1 批准写入 execution_approval（subject_version=1，baseline_fingerprint 绑定冻结基线），phase human_plan_confirming→executing，移除 Human waiting；保留 authorization、plan、items 与 creation reviews。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+  at: '2026-08-13T22:24:02.942270Z'
+  summary: 全部 3 个 work item 完成（模块/测试/真实样本验证），按 §6.3.3 AllTerminal 转换进入 controller_checking 并写 result_version=1；等待 Controller 自检与独立结果复核。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+  at: '2026-08-13T22:24:59.146844Z'
+  summary: Controller 在 controller_checking 内形成完整 result_version=1 结果投影（5 项 criterion results + result/controller/validation summary）；等待独立结果复核。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+  at: '2026-08-13T22:25:13.080813Z'
+  summary: 完整 result_version=1 投影已形成并回读，按 §6.3.3 进入 independent_reviewing，写 Reviewer waiting；等待独立结果复核。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+  at: '2026-08-13T22:26:55.609779Z'
+  summary: 独立结果复核 pass（feedback 空数组），在 independent_reviewing 内写入 result_reviews（绑定 result_version=1）；下一步推进 closure_preparing 形成关闭提案。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+  at: '2026-08-13T22:27:08.554843Z'
+  summary: result_version=1 复核 pass 且 feedback 空、projection 未变，按 §6.3.3 进入 closure_preparing；开始形成关闭提案。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+  at: '2026-08-13T22:28:08.664922Z'
+  summary: 在 closure_preparing 内整体写入完整关闭提案（proposed_outcome=completed，无 residual decisions，1 项 follow_up_opportunity suggestion）；冻结 proposal 后进入 Human 关闭判断。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+  at: '2026-08-13T22:28:21.169004Z'
+  summary: 完整关闭提案已冻结并回读，按 §6.3.3 进入 human_closure_confirming，写 Human waiting；等待 Human Gate 2 关闭决定。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+  at: '2026-08-13T22:33:46.208449Z'
+  summary: Human Gate 2 接受 completed 关闭；按 §6.7 原子关闭，proposal 逐值映射 closure_outcome/disposition_summary/spark_suggestions，无 residual 与 routed-to。
+status: closed
+object_uid: 019ffd2f-d983-7497-9c41-d9f0a954d3ca
+object_id: workcase-01KZYJZPC3EJBSRGESY2MN9MYA
+fact_type_key: workcase
+created_at: '2026-08-13T22:13:18.273862Z'
+updated_at: '2026-08-13T22:33:46.208449Z'
