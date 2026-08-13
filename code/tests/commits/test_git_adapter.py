@@ -10,6 +10,7 @@ import pytest
 from ldvh.commits import git_adapter
 from ldvh.commits.contract_source import CommitContractProjection
 from ldvh.commits.validation import validate_commit
+from ldvh.facts.identity import locator_from_object_uid
 from ldvh.governance.git import resolve_git_identity
 from ldvh.governance.models import (
     ConfigStatus,
@@ -69,6 +70,13 @@ def test_unsupported_windows_worktree_does_not_start_git(
     assert isinstance(result, git_adapter.CommitCandidateObservationIssue)
     assert result.stage == "git_process"
     assert "unsupported" in result.message
+
+
+def test_git_gate_classifies_uid_locator_and_rejects_non_crockford_path() -> None:
+    locator = locator_from_object_uid("spark", "0198f1c7-8a2b-7c3d-9e4f-123456789abc")
+
+    assert git_adapter._classify_fact_path(f"ldvh-base/sparks/{locator}.yaml") == ("spark", locator)
+    assert git_adapter._classify_fact_path("ldvh-base/sparks/spark-01KZXN5TXNEBSRC6HHGTBQKAI4.yaml") == ("spark", None)
 
 
 def test_public_observe_rejects_unsupported_governance_path_before_resolve(

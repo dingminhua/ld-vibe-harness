@@ -141,33 +141,13 @@ def test_create_contract_closes_single_attempt_result_and_change_matrix() -> Non
     section = markdown.split("### 11.4 事实对象受控创建输入与结果", 1)[1].split("### 11.5", 1)[0]
 
     for field in (
-        "attempted_object_id",
-        "allocated_object_id",
-        "counter_state",
-        "allocation_consumed",
+        "attempted_object_uid",
+        "canonical_path",
         "create_namespace_state",
         "post_create_readback",
-        "rollback_state",
-        "final_observation",
+        "actual_ref",
     ):
         assert f"`{field}`" in section
-    for state in (
-        "not_applicable",
-        "not_needed",
-        "removed",
-        "not_removed",
-        "uncertain",
-        "counter-consumed",
-        "counter-not-advanced",
-        "counter-advance-uncertain",
-        "target-not-attempted",
-        "target-created",
-        "target-not-created",
-        "target-create-uncertain",
-        "target-removed",
-        "target-remove-unconfirmed",
-    ):
-        assert f"`{state}`" in section
-    assert "至多发起一次 counter 原子推进和一次目标 no-overwrite 创建" in section
-    assert "按发生顺序精确包含两项或三项" in section
-    assert "在对具体 `attempted_object_id` 发起 counter 原子推进前失败时，`changes` 必须为空" in section
+    assert "不得包含 `candidate_object_id`" in section
+    assert "`result` 不要求 counter 或顺序编号状态" in section
+    assert "旧顺序路径只读，不得由新建写入" in section

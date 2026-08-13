@@ -129,7 +129,7 @@ AI 负责判断失败是否实际发生、根因判断与解决说明是否同�
 
 ### Schema 与对象载体
 
-Pitfall 对象使用 UTF-8 YAML，一文件一对象，当前权威位置固定为管辖项目仓库中的 `ldvh-base/pitfalls/<object_id>.yaml`。`object_id` 必须匹配 `pitfall-[0-9]{4,}`且与文件名完全一致，只承担兼容定位和命名空间职责；具有 `object_uid` 时其权威身份、legacy 缺失兼容和不可变边界统一按 05 §7.3–§7.4，新建 Pitfall 必须由 Code 生成 UID。`title` 只简短识别失败机制，不复制 `symptoms` 或 `root_cause`。未知或不适用的条件字段必须省略，不使用 `null`、空字符串、空数组、占位时间、默认状态或默认关系。
+Pitfall 对象使用 UTF-8 YAML，一文件一对象；新 UID-native 对象使用 `ldvh-base/pitfalls/pitfall-<uid26>.yaml`，legacy 对象继续从 `ldvh-base/pitfalls/<object_id>.yaml` 双读。legacy `object_id` 必须匹配 `pitfall-[0-9]{4,}`且与旧文件名一致；新建只写 UID 路径，不要求 candidate_object_id 或 counter。具有 `object_uid` 时其权威身份、legacy 缺失兼容和不可变边界统一按 05 §7.3–§7.4，新建 Pitfall 必须由 Code 生成 UID。`title` 只简短识别失败机制，不复制 `symptoms` 或 `root_cause`。未知或不适用的条件字段必须省略，不使用 `null`、空字符串、空数组、占位时间、默认状态或默认关系。
 
 完整 Schema 由统一登记的 `fact-object` 直接字段、本节绑定、跨类型共享定义和类型专属字段定义组合。Pitfall 不得出现 current summary、priority、evolution、tags、`archive_reason`、repeatability、severity、source_objects/source_sparks、related_*、长命令日志字段、实现状态、revision history 或其它未登记内容。
 

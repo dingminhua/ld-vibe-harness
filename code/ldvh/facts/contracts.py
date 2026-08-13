@@ -74,7 +74,9 @@ def _layout(
         directory=f"ldvh-base/{plural}",
         carrier="markdown" if suffix == ".md" else "yaml",
         suffix=suffix,
-        object_id_pattern=re.compile(rf"{re.escape(fact_type_key)}-[0-9]{{4,}}\Z"),
+        object_id_pattern=re.compile(
+            rf"(?:{re.escape(fact_type_key)}-[0-9]{{4,}}|{re.escape(fact_type_key)}-[0-7][0-9A-HJKMNP-TV-Z]{{25}})\Z"
+        ),
         initial_statuses=frozenset(initial_statuses),
         statuses=frozenset(statuses),
         relation_keys=frozenset(relation_keys),

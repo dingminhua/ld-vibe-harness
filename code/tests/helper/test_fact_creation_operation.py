@@ -15,12 +15,9 @@ from conftest import HELPER_EXECUTABLE, assert_common_response
 
 from ldvh.facts import creation_application
 from ldvh.facts.contracts import LAYOUTS
-from ldvh.facts.creation import (
-    AllocationCommitResult,
-    FactCoordinationUnavailable,
-    serialize_fact_object,
-)
+from ldvh.facts.creation import AllocationCommitResult, FactCoordinationUnavailable, serialize_fact_object
 from ldvh.facts.creation_application import FactCreationResult
+from ldvh.facts.identity import object_uid_from_locator
 from ldvh.facts.models import FactIssue
 from ldvh.facts.repository import FactReadResult
 from ldvh.filesystem import AtomicWriteResult
@@ -318,7 +315,7 @@ def test_create_supports_all_yaml_fact_types(
     created_object = response["result"]["fact_object"]
     created_fields = created_object["frontmatter"] if fact_type_key == "study" else created_object
     assert created_fields["fact_type_key"] == fact_type_key
-    assert created_fields["object_id"] == f"{fact_type_key}-0001"
+    assert object_uid_from_locator(fact_type_key, created_fields["object_id"]) == created_fields["object_uid"]
 
 
 def test_create_rejects_non_open_workcase_initial_state(tmp_path: Path) -> None:
@@ -434,7 +431,7 @@ def test_helper_create_rejects_a_three_level_dependency_with_a_missing_target(
     )
     intermediate_bytes = intermediate.read_bytes()
     basis = _prepare(workspace, project, "workcase")
-    assert basis["candidate_object_id"] == "workcase-0002"
+    assert "candidate_object_id" not in basis
     fact_object = _workcase()
     fact_object["relations"] = [_depends_on("workcase-0001")]
 
@@ -482,11 +479,10 @@ def _create_payload(
                 "workspace_root": str(workspace),
                 "draft_basis": {
                     key: basis[key]
-                    for key in (
-                        "governed_project_id",
-                        "fact_type_key",
-                        "candidate_object_id",
-                        "schema_fingerprint",
+                        for key in (
+                            "governed_project_id",
+                            "fact_type_key",
+                            "schema_fingerprint",
                         "worktree_fingerprint",
                     )
                 },
@@ -506,17 +502,11 @@ def _create_payload(
 def _assert_creation_result_matrix(response: dict[str, object], fact_type_key: str = "spark") -> None:
     result = response["result"]
     assert isinstance(result, dict)
-    allocation = result["allocation"]
+    identity = result["identity"]
     target = result["target_namespace"]
-    assert isinstance(allocation, dict)
+    assert isinstance(identity, dict)
     assert isinstance(target, dict)
-    assert set(allocation) == {
-        "attempted_object_uid",
-        "attempted_object_id",
-        "allocated_object_id",
-        "counter_state",
-        "allocation_consumed",
-    }
+    assert set(identity) == {"attempted_object_uid", "attempted_locator"}
     assert set(target) == {
         "canonical_path",
         "create_namespace_state",
@@ -524,9 +514,7 @@ def _assert_creation_result_matrix(response: dict[str, object], fact_type_key: s
         "rollback_state",
         "final_observation",
     }
-    attempted_id = allocation["attempted_object_id"]
     canonical_path = target["canonical_path"]
-    counter_state = allocation["counter_state"]
     create_state = target["create_namespace_state"]
     readback = target["post_create_readback"]
     rollback = target["rollback_state"]
@@ -549,60 +537,37 @@ def _assert_creation_result_matrix(response: dict[str, object], fact_type_key: s
         "unavailable",
     }
 
-    if counter_state == "not_committed":
-        assert allocation["allocated_object_id"] is None
-        assert allocation["allocation_consumed"] is False
-        assert (create_state, readback, rollback, observation) == (
-            "not_attempted",
-            "not_run",
-            "not_applicable",
-            "not_required",
-        )
-    elif counter_state == "uncertain":
-        assert allocation["allocated_object_id"] is None
-        assert allocation["allocation_consumed"] is None
-        assert (create_state, readback, rollback) == ("not_attempted", "not_run", "not_applicable")
+    if create_state == "not_attempted":
+        assert (readback, rollback, observation) == ("not_run", "not_applicable", "not_required")
+    elif create_state in {"not_created", "uncertain"}:
+        assert (readback, rollback) == ("not_run", "not_applicable")
         assert observation in fresh_observations
     else:
-        assert counter_state == "committed"
-        assert allocation["allocated_object_id"] == attempted_id
-        assert allocation["allocation_consumed"] is True
-        if create_state == "not_attempted":
-            assert (readback, rollback, observation) == ("not_run", "not_applicable", "not_required")
-        elif create_state in {"not_created", "uncertain"}:
-            assert (readback, rollback) == ("not_run", "not_applicable")
-            assert observation in fresh_observations
+        assert create_state == "created"
+        if readback == "passed":
+            assert (rollback, observation) == ("not_needed", "not_required")
         else:
-            assert create_state == "created"
-            if readback == "passed":
-                assert (rollback, observation) == ("not_needed", "not_required")
+            assert readback in {"failed", "unavailable"}
+            if rollback == "removed":
+                assert observation == "not_required"
             else:
-                assert readback in {"failed", "unavailable"}
-                if rollback == "removed":
-                    assert observation == "not_required"
-                else:
-                    assert rollback in {"not_removed", "uncertain"}
-                    assert observation in fresh_observations
+                assert rollback in {"not_removed", "uncertain"}
+                assert observation in fresh_observations
 
     success_fields = {"actual_ref", "carrier", "fact_object"}
-    base_fields = {"requested_candidate_id", "allocation", "target_namespace"}
+    base_fields = {"identity", "target_namespace"}
     if create_state == "created" and readback == "passed":
         assert set(result) == base_fields | success_fields
     else:
         assert set(result) == base_fields
 
-    counter_status = {
-        "committed": "counter-consumed",
-        "not_committed": "counter-not-advanced",
-        "uncertain": "counter-advance-uncertain",
-    }[counter_state]
     target_status = {
         "not_attempted": "target-not-attempted",
         "created": "target-created",
         "not_created": "target-not-created",
         "uncertain": "target-create-uncertain",
     }[create_state]
-    expected_statuses = [counter_status, target_status]
+    expected_statuses = [target_status]
     if rollback == "removed":
         expected_statuses.append("target-removed")
     elif rollback in {"not_removed", "uncertain"}:
@@ -611,9 +576,9 @@ def _assert_creation_result_matrix(response: dict[str, object], fact_type_key: s
     changes = response["changes"]
     assert isinstance(changes, list)
     assert [change["status"] for change in changes] == expected_statuses
-    assert [change["target"] for change in changes[:2]] == [attempted_id, canonical_path]
-    if len(changes) == 3:
-        assert changes[2]["target"] == canonical_path
+    assert changes[0]["target"] == canonical_path
+    if len(changes) == 2:
+        assert changes[1]["target"] == canonical_path
     type_source = {
         "spark": "specs/20-Spark-火花.md",
         "workcase": "specs/21-WorkCase-工作项.md",
@@ -736,7 +701,7 @@ def test_prepare_has_no_canonical_side_effect_and_create_injects_managed_fields(
 
     basis = _prepare(workspace, project)
 
-    assert basis["candidate_object_id"] == "spark-0001"
+    assert "candidate_object_id" not in basis
     assert not (project / "facts").exists()
     response = handle_request(
         "call",
@@ -746,25 +711,22 @@ def test_prepare_has_no_canonical_side_effect_and_create_injects_managed_fields(
     assert_common_response(response)
     assert response["outcome"] == "ok"
     _assert_creation_result_matrix(response)
-    assert response["result"]["requested_candidate_id"] == "spark-0001"
-    assert response["result"]["fact_object"]["object_id"] == "spark-0001"
+    locator = response["result"]["fact_object"]["object_id"]
+    uid = response["result"]["actual_ref"]["object_uid"]
+    assert object_uid_from_locator("spark", locator) == uid
     assert set(response["result"]) == {
-        "requested_candidate_id",
-        "allocation",
+        "identity",
         "target_namespace",
         "actual_ref",
         "carrier",
         "fact_object",
     }
-    assert response["result"]["allocation"] == {
-        "attempted_object_uid": response["result"]["actual_ref"]["object_uid"],
-        "attempted_object_id": "spark-0001",
-        "allocated_object_id": "spark-0001",
-        "counter_state": "committed",
-        "allocation_consumed": True,
+    assert response["result"]["identity"] == {
+        "attempted_object_uid": uid,
+        "attempted_locator": locator,
     }
     assert response["result"]["target_namespace"] == {
-        "canonical_path": "ldvh-base/sparks/spark-0001.yaml",
+        "canonical_path": f"ldvh-base/sparks/{locator}.yaml",
         "create_namespace_state": "created",
         "post_create_readback": "passed",
         "rollback_state": "not_needed",
@@ -773,7 +735,7 @@ def test_prepare_has_no_canonical_side_effect_and_create_injects_managed_fields(
     assert response["scope"]["requested"] == response["scope"]["completed"]
     assert response["scope"]["not_completed"] == []
     fact_object = response["result"]["fact_object"]
-    assert fact_object["object_id"] == "spark-0001"
+    assert fact_object["object_id"] == locator
     assert fact_object["fact_type_key"] == "spark"
     assert fact_object["created_at"] == fact_object["updated_at"]
     assert (project / response["result"]["target_namespace"]["canonical_path"]).is_file()
@@ -874,11 +836,8 @@ def test_create_reports_committed_namespace_when_directory_sync_fails(
     ).response
 
     assert response["outcome"] == "ok"
-    assert [change["status"] for change in response["changes"]] == [
-        "counter-consumed",
-        "target-created",
-    ]
-    assert (project / "ldvh-base/sparks/spark-0001.yaml").is_file()
+    assert [change["status"] for change in response["changes"]] == ["target-created"]
+    assert (project / response["result"]["target_namespace"]["canonical_path"]).is_file()
 
 
 def test_create_fails_before_allocator_mutation_when_platform_durability_is_not_approved(
@@ -966,15 +925,15 @@ def test_helper_preserves_created_result_when_coordination_release_is_uncertain(
 ) -> None:
     workspace, project = _fixture(tmp_path)
     basis = _prepare(workspace, project)
-    actual_lock = creation_application.allocation_lock
+    actual_lock = creation_application.creation_lock
 
     @contextmanager
     def release_fails(boundary, layout):
-        with actual_lock(boundary, layout) as counter_path:
-            yield counter_path
+        with actual_lock(boundary, layout):
+            yield
         raise OSError("simulated lock release failure")
 
-    monkeypatch.setattr(creation_application, "allocation_lock", release_fails)
+    monkeypatch.setattr(creation_application, "creation_lock", release_fails)
     payload = json.loads(_create_payload(workspace, project, basis, _spark()))
     payload["response_profile"] = "diagnostic"
 
@@ -984,20 +943,19 @@ def test_helper_preserves_created_result_when_coordination_release_is_uncertain(
     assert response["outcome"] == "ok"
     assert response["scope"]["completed"] == response["scope"]["requested"]
     assert response["scope"]["not_completed"] == []
-    assert response["result"]["fact_object"]["object_id"] == "spark-0001"
-    assert [change["status"] for change in response["changes"]] == [
-        "counter-consumed",
-        "target-created",
-    ]
+    locator = response["result"]["fact_object"]["object_id"]
+    assert object_uid_from_locator("spark", locator) == response["result"]["actual_ref"]["object_uid"]
+    assert [change["status"] for change in response["changes"]] == ["target-created"]
     assert response["verification"][0]["status"] == "passed"
-    release_gap = next(gap for gap in response["gaps"] if "共同锁释放" in gap["summary"])
+    release_gap = next(gap for gap in response["gaps"] if "共同创建锁释放" in gap["summary"])
     assert release_gap["code"] == "controlled_write_lock_release_uncertain"
     assert response["diagnostics"][0]["code"] == "controlled_write_lock_release_uncertain"
     assert response["diagnostics"][0]["details"]["stage"] == "common_dir_lock_release"
     assert response["follow_up"]["resume_conditions"]
-    assert (project / "ldvh-base/sparks/spark-0001.yaml").is_file()
+    assert (project / response["result"]["target_namespace"]["canonical_path"]).is_file()
 
 
+@pytest.mark.skip(reason="顺序编号 counter 契约已取消")
 def test_helper_preserves_allocation_consumed_rejection_when_lock_release_is_uncertain(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -1035,8 +993,9 @@ def test_helper_preserves_allocation_consumed_rejection_when_lock_release_is_unc
         "target-not-attempted",
     ]
     assert response["result"]["allocation"]["counter_state"] == "committed"
+    canonical_path = response["result"]["target_namespace"]["canonical_path"]
     assert response["result"]["target_namespace"] == {
-        "canonical_path": "ldvh-base/sparks/spark-0001.yaml",
+        "canonical_path": canonical_path,
         "create_namespace_state": "not_attempted",
         "post_create_readback": "not_run",
         "rollback_state": "not_applicable",
@@ -1051,6 +1010,7 @@ def test_helper_preserves_allocation_consumed_rejection_when_lock_release_is_unc
     assert "controlled_write_lock_release_uncertain" not in json.dumps(response, ensure_ascii=False)
 
 
+@pytest.mark.skip(reason="顺序编号 counter 契约已取消")
 def test_helper_separates_uncertain_allocator_from_unstarted_target_creation(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -1115,6 +1075,7 @@ def test_helper_separates_uncertain_allocator_from_unstarted_target_creation(
 
 
 @pytest.mark.parametrize("counter_status", ["stale", "unavailable"])
+@pytest.mark.skip(reason="顺序编号 counter 契约已取消")
 def test_helper_reports_known_counter_noncommit_and_unstarted_target(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -1172,6 +1133,7 @@ def test_helper_reports_known_counter_noncommit_and_unstarted_target(
 
 
 @pytest.mark.parametrize("counter_status", ["stale", "unavailable"])
+@pytest.mark.skip(reason="顺序编号 counter 契约已取消")
 def test_helper_keeps_result_null_when_counter_recheck_fails_before_atomic_advance(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -1227,18 +1189,12 @@ def test_helper_separates_consumed_allocator_from_uncertain_target_residual(
 
     assert response["outcome"] == "unavailable"
     _assert_creation_result_matrix(response)
-    assert response["summary"] == "身份分配 counter 已提交并完成回读；目标原子创建未能完成或确认"
-    assert [change["status"] for change in response["changes"]] == [
-        "counter-consumed",
-        "target-create-uncertain",
-    ]
-    assert "完整字节内容与本次创建载体一致" in response["changes"][1]["summary"]
-    assert response["changes"][0]["target"] == "spark-0001"
-    assert response["changes"][1]["target"] == "ldvh-base/sparks/spark-0001.yaml"
+    assert response["summary"] == "UID 定位符目标的原子创建未能完成或确认"
+    assert [change["status"] for change in response["changes"]] == ["target-create-uncertain"]
+    assert "完整字节内容与本次创建载体一致" in response["changes"][0]["summary"]
     assert response["verification"][0]["status"] == "passed"
-    assert response["result"]["allocation"]["counter_state"] == "committed"
     assert response["result"]["target_namespace"] == {
-        "canonical_path": "ldvh-base/sparks/spark-0001.yaml",
+        "canonical_path": response["result"]["target_namespace"]["canonical_path"],
         "create_namespace_state": "uncertain",
         "post_create_readback": "not_run",
         "rollback_state": "not_applicable",
@@ -1271,18 +1227,13 @@ def test_helper_reports_known_target_noncommit_and_consumed_allocator_separately
 
     assert response["outcome"] == "unavailable"
     _assert_creation_result_matrix(response)
-    assert [change["status"] for change in response["changes"]] == [
-        "counter-consumed",
-        "target-not-created",
-    ]
+    assert [change["status"] for change in response["changes"]] == ["target-not-created"]
     expected_prefix = "发生冲突" if write_outcome == "conflict" else "确认未在文件命名空间（namespace）提交"
-    assert expected_prefix in response["changes"][1]["summary"]
-    assert "预期位置不存在" in response["changes"][1]["summary"]
-    assert response["changes"][0]["target"] == "spark-0001"
-    assert response["changes"][1]["target"] == "ldvh-base/sparks/spark-0001.yaml"
+    assert expected_prefix in response["changes"][0]["summary"]
+    assert "预期位置不存在" in response["changes"][0]["summary"]
     assert response["verification"][0]["status"] == "failed"
     assert response["result"]["target_namespace"] == {
-        "canonical_path": "ldvh-base/sparks/spark-0001.yaml",
+        "canonical_path": response["result"]["target_namespace"]["canonical_path"],
         "create_namespace_state": "not_created",
         "post_create_readback": "not_run",
         "rollback_state": "not_applicable",
@@ -1294,7 +1245,7 @@ def test_two_ai_drafts_with_same_candidate_receive_distinct_final_ids(tmp_path: 
     workspace, project = _fixture(tmp_path)
     first_basis = _prepare(workspace, project)
     second_basis = _prepare(workspace, project)
-    assert first_basis["candidate_object_id"] == second_basis["candidate_object_id"] == "spark-0001"
+    assert "candidate_object_id" not in first_basis | second_basis
     payloads = (
         _create_payload(workspace, project, first_basis, _spark("First concurrent draft")),
         _create_payload(workspace, project, second_basis, _spark("Second concurrent draft")),
@@ -1307,11 +1258,9 @@ def test_two_ai_drafts_with_same_candidate_receive_distinct_final_ids(tmp_path: 
 
     assert all(response["outcome"] == "ok" for response in responses)
     actual_ids = {response["result"]["fact_object"]["object_id"] for response in responses}
-    assert actual_ids == {"spark-0001", "spark-0002"}
-    assert sorted(path.name for path in (project / "ldvh-base" / "sparks").glob("*.yaml")) == [
-        "spark-0001.yaml",
-        "spark-0002.yaml",
-    ]
+    assert len(actual_ids) == 2
+    assert all(object_uid_from_locator("spark", value) for value in actual_ids)
+    assert len(tuple((project / "ldvh-base" / "sparks").glob("*.yaml"))) == 2
 
 
 def test_create_rejects_ai_managed_fields_without_writing_or_consuming_id(tmp_path: Path) -> None:
@@ -1329,7 +1278,7 @@ def test_create_rejects_ai_managed_fields_without_writing_or_consuming_id(tmp_pa
     assert response["outcome"] == "invalid_request"
     assert "Code 托管字段" in response["gaps"][0]["summary"]
     assert not (project / "facts").exists()
-    assert _prepare(workspace, project)["candidate_object_id"] == "spark-0001"
+    assert "candidate_object_id" not in _prepare(workspace, project)
 
 
 def test_create_revalidates_cross_type_relation_with_complete_schema_set(tmp_path: Path) -> None:
@@ -1412,7 +1361,8 @@ def test_create_revalidates_cross_type_relation_with_complete_schema_set(tmp_pat
     ).response
 
     assert response["outcome"] == "ok"
-    assert response["result"]["fact_object"]["object_id"] == "spark-0001"
+    created = response["result"]["fact_object"]
+    assert object_uid_from_locator("spark", created["object_id"]) == created["object_uid"]
 
 
 def test_stale_schema_or_worktree_basis_requires_prepare_again(tmp_path: Path) -> None:
@@ -1431,7 +1381,7 @@ def test_stale_schema_or_worktree_basis_requires_prepare_again(tmp_path: Path) -
     assert not (project / "facts").exists()
 
 
-def test_existing_candidate_is_never_overwritten_and_allocator_advances(tmp_path: Path) -> None:
+def test_existing_legacy_object_is_not_overwritten_by_uid_native_creation(tmp_path: Path) -> None:
     workspace, project = _fixture(tmp_path)
     basis = _prepare(workspace, project)
     sparks = project / "ldvh-base" / "sparks"
@@ -1446,8 +1396,8 @@ def test_existing_candidate_is_never_overwritten_and_allocator_advances(tmp_path
     ).response
 
     assert response["outcome"] == "ok"
-    assert response["result"]["requested_candidate_id"] == "spark-0001"
-    assert response["result"]["fact_object"]["object_id"] == "spark-0002"
+    created = response["result"]["fact_object"]
+    assert object_uid_from_locator("spark", created["object_id"]) == created["object_uid"]
     assert existing.read_text(encoding="utf-8") == "manual collision\n"
 
 
@@ -1483,12 +1433,12 @@ def test_linked_worktrees_share_allocator_but_write_to_the_requested_worktree(tm
     ).response
 
     assert main_response["outcome"] == linked_response["outcome"] == "ok"
-    assert main_response["result"]["fact_object"]["object_id"] == "spark-0001"
-    assert linked_basis["candidate_object_id"] == "spark-0002"
-    assert linked_response["result"]["fact_object"]["object_id"] == "spark-0002"
-    assert (project / "ldvh-base" / "sparks" / "spark-0001.yaml").is_file()
-    assert not (project / "facts" / "sparks" / "spark-0002.yaml").exists()
-    assert (linked / "ldvh-base" / "sparks" / "spark-0002.yaml").is_file()
+    main_id = main_response["result"]["fact_object"]["object_id"]
+    linked_id = linked_response["result"]["fact_object"]["object_id"]
+    assert main_id != linked_id
+    assert "candidate_object_id" not in linked_basis
+    assert (project / "ldvh-base" / "sparks" / f"{main_id}.yaml").is_file()
+    assert (linked / "ldvh-base" / "sparks" / f"{linked_id}.yaml").is_file()
 
 
 @pytest.mark.parametrize(
@@ -1523,13 +1473,10 @@ def test_failed_write_back_read_rolls_back_file_but_never_reuses_id(
 
     assert response["outcome"] == "error"
     _assert_creation_result_matrix(response)
-    assert [change["status"] for change in response["changes"]] == [
-        "counter-consumed",
-        "target-created",
-        "target-removed",
-    ]
+    assert [change["status"] for change in response["changes"]] == ["target-created", "target-removed"]
+    canonical_path = response["result"]["target_namespace"]["canonical_path"]
     assert response["result"]["target_namespace"] == {
-        "canonical_path": "ldvh-base/sparks/spark-0001.yaml",
+        "canonical_path": canonical_path,
         "create_namespace_state": "created",
         "post_create_readback": expected_post_create_readback,
         "rollback_state": "removed",
@@ -1537,7 +1484,7 @@ def test_failed_write_back_read_rolls_back_file_but_never_reuses_id(
     }
     assert "actual_ref" not in response["result"]
     assert not (project / "facts" / "sparks" / "spark-0001.yaml").exists()
-    assert _prepare(workspace, project)["candidate_object_id"] == "spark-0002"
+    assert "candidate_object_id" not in _prepare(workspace, project)
 
 
 @pytest.mark.parametrize(
@@ -1552,12 +1499,12 @@ def test_failed_write_back_reports_residue_when_exact_rollback_fails(
 ) -> None:
     workspace, project = _fixture(tmp_path)
     basis = _prepare(workspace, project)
-    actual_lock = creation_application.allocation_lock
+    actual_lock = creation_application.creation_lock
 
     @contextmanager
     def release_fails(boundary, layout):
-        with actual_lock(boundary, layout) as counter_path:
-            yield counter_path
+        with actual_lock(boundary, layout):
+            yield
         raise OSError("simulated lock release failure")
 
     monkeypatch.setattr(
@@ -1579,7 +1526,7 @@ def test_failed_write_back_reports_residue_when_exact_rollback_fails(
             else AtomicWriteResult.not_committed("unavailable")
         ),
     )
-    monkeypatch.setattr(creation_application, "allocation_lock", release_fails)
+    monkeypatch.setattr(creation_application, "creation_lock", release_fails)
     payload = json.loads(_create_payload(workspace, project, basis, _spark()))
     payload["response_profile"] = "diagnostic"
 
@@ -1592,20 +1539,18 @@ def test_failed_write_back_reports_residue_when_exact_rollback_fails(
     assert response["outcome"] == "error"
     _assert_creation_result_matrix(response)
     assert [change["status"] for change in response["changes"]] == [
-        "counter-consumed",
         "target-created",
         "target-remove-unconfirmed",
     ]
-    assert response["changes"][2]["target"] == "ldvh-base/sparks/spark-0001.yaml"
     assert "未能确认删除回滚已经完成" in response["summary"]
-    assert "机械检查未通过（状态为 `invalid`）" in response["changes"][2]["summary"]
+    assert "机械检查未通过（状态为 `invalid`）" in response["changes"][1]["summary"]
     release_gap = next(gap for gap in response["gaps"] if "共同锁释放" in gap["summary"])
     assert "status=readback_failed" in release_gap["summary"]
     assert "code" not in release_gap
     assert "code" not in response["diagnostics"][0]
     assert response["verification"][0]["status"] == "failed"
     assert response["result"]["target_namespace"]["rollback_state"] == expected_rollback_state
-    assert (project / "ldvh-base/sparks/spark-0001.yaml").is_file()
+    assert (project / response["result"]["target_namespace"]["canonical_path"]).is_file()
 
 
 @pytest.mark.parametrize(
@@ -1738,12 +1683,9 @@ def test_creation_helper_reports_the_fresh_actual_residual_after_failed_rollback
             (FactIssue("schema", "forced write-back failure"),),
             raw_text="failed post-create readback\n",
         ),
-        allocation_consumed=True,
         creation_result=AtomicWriteResult.committed("created"),
         rollback_result=AtomicWriteResult.uncertain(),
         residual_readback=residuals[residual_kind],
-        allocation_status="committed",
-        allocation_result=AllocationCommitResult("committed", "spark-0001"),
     )
     monkeypatch.setattr(
         "ldvh.helper.operations.fact_creation_operation.create_fact_object",
@@ -1759,12 +1701,11 @@ def test_creation_helper_reports_the_fresh_actual_residual_after_failed_rollback
     assert response["outcome"] == "error"
     _assert_creation_result_matrix(response)
     assert [change["status"] for change in response["changes"]] == [
-        "counter-consumed",
         "target-created",
         "target-remove-unconfirmed",
     ]
-    assert expected in response["changes"][2]["summary"]
-    assert excluded not in response["changes"][2]["summary"]
+    assert expected in response["changes"][1]["summary"]
+    assert excluded not in response["changes"][1]["summary"]
     assert response["verification"][0]["status"] == verification_status
     assert response["result"]["target_namespace"] == {
         "canonical_path": canonical_path,
@@ -1858,9 +1799,10 @@ Code 可以在最终分配身份后验证完整载体，启发是保留回读；
     assert response["outcome"] == "ok"
     _assert_creation_result_matrix(response, "study")
     assert response["result"]["carrier"] == "markdown"
-    assert response["result"]["fact_object"]["frontmatter"]["object_id"] == "study-0001"
+    frontmatter = response["result"]["fact_object"]["frontmatter"]
+    assert object_uid_from_locator("study", frontmatter["object_id"]) == frontmatter["object_uid"]
     assert response["result"]["fact_object"]["body"].lstrip().startswith("## 研究问题")
-    assert (project / "ldvh-base" / "studies" / "study-0001.md").is_file()
+    assert (project / response["result"]["target_namespace"]["canonical_path"]).is_file()
 
 
 def test_real_cli_prepares_and_creates_fact_object(tmp_path: Path) -> None:
@@ -1900,4 +1842,5 @@ def test_real_cli_prepares_and_creates_fact_object(tmp_path: Path) -> None:
     assert create.stderr == ""
     assert_common_response(create_response)
     assert create_response["outcome"] == "ok"
-    assert create_response["result"]["fact_object"]["object_id"] == "spark-0001"
+    created = create_response["result"]["fact_object"]
+    assert object_uid_from_locator("spark", created["object_id"]) == created["object_uid"]

@@ -196,6 +196,27 @@ def allocation_lock(boundary: CreationBoundary, layout: FactTypeLayout) -> Itera
         raise
 
 
+@contextmanager
+def creation_lock(boundary: CreationBoundary, layout: FactTypeLayout) -> Iterator[None]:
+    """Serialize one project's UID-native creates without allocating a number."""
+
+    project_hash = hashlib.sha256(boundary.governed_project_id.encode()).hexdigest()[:24]
+    lock_path = Path("ldvh") / "fact-creation-locks" / f"{project_hash}-{layout.fact_type_key}.lock"
+    entered = False
+    try:
+        with exclusive_relative_file_lock(boundary.git_common_dir, lock_path):
+            entered = True
+            yield
+    except OSError as error:
+        if entered:
+            raise
+        if error.errno == errno.EROFS:
+            raise FactCoordinationUnavailable("read_only_filesystem") from error
+        if isinstance(error, PermissionError) or error.errno in {errno.EACCES, errno.EPERM}:
+            raise FactCoordinationUnavailable("permission_denied") from error
+        raise
+
+
 def allocate_object_id_locked(
     boundary: CreationBoundary,
     layout: FactTypeLayout,
@@ -311,6 +332,7 @@ __all__ = [
     "atomic_create_text",
     "candidate_object_id",
     "commit_object_id_locked",
+    "creation_lock",
     "preview_object_id_locked",
     "rollback_created_text",
     "schema_fingerprint",

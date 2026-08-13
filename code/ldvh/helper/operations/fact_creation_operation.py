@@ -11,7 +11,6 @@ from ldvh.facts.contracts import LAYOUTS
 from ldvh.facts.creation import (
     CreationBoundary,
     FactCoordinationUnavailable,
-    candidate_object_id,
     schema_fingerprint,
     worktree_fingerprint,
 )
@@ -190,18 +189,17 @@ def _prepare_execute(
         )
     schema = project_fact_schemas(repository).get(domain.fact_type_key)
     layout = LAYOUTS[domain.fact_type_key]
-    candidate = candidate_object_id(boundary, layout)
-    if schema is None or candidate is None:
+    if schema is None:
         return OperationExecution(
             outcome="unavailable",
-            summary="当前来源、Git 身份或身份分配 counter 不能形成可信草案",
+            summary="当前来源或 Git 身份不能形成可信草案",
             requested_scope=requested,
             not_completed_scope=requested,
             governance_resolution=run.result.to_json() if run.result else None,
             sources=tuple(_plain(source) for source in run.sources) + (_PREPARE_CONTRACT,),
             gaps=(
                 {
-                    "summary": "派生 Schema、linked worktree 扫描或身份分配 counter 状态不可用",
+                    "summary": "派生 Schema 或 Git 身份状态不可用",
                     "scope": list(requested),
                     "source_refs": [_PREPARE_CONTRACT],
                 },
@@ -211,13 +209,11 @@ def _prepare_execute(
     basis = {
         "governed_project_id": boundary.governed_project_id,
         "fact_type_key": domain.fact_type_key,
-        "candidate_object_id": candidate,
         "schema_fingerprint": fingerprint,
         "worktree_fingerprint": worktree_fingerprint(boundary),
     }
     result = {
         **basis,
-        "candidate_canonical_path": layout.canonical_path(candidate),
         "carrier": layout.carrier,
         "managed_fields": sorted(_MANAGED_FIELDS),
         "field_contracts": [
@@ -354,38 +350,14 @@ def _creation_final_observation(creation: FactCreationResult) -> str:
 def _creation_domain_result(
     creation: FactCreationResult,
     *,
-    requested_candidate_id: str,
     governed_project_id: str,
     fact_type_key: str,
 ) -> dict[str, Any] | None:
-    """Project the source-defined create result once a counter attempt has begun."""
+    """Project one UID-native create attempt and its target namespace state."""
 
     attempted_id = creation.actual_id
     if attempted_id is None:
         return None
-    allocation = creation.allocation_result
-    if allocation is None:
-        raise AssertionError("counter attempt result must retain AllocationCommitResult")
-
-    if allocation.status == "committed":
-        if allocation.object_id != attempted_id or creation.allocation_consumed is not True:
-            raise AssertionError("committed allocation result is internally inconsistent")
-        counter_state = "committed"
-        allocated_object_id: str | None = attempted_id
-        allocation_consumed: bool | None = True
-    elif allocation.status == "uncertain":
-        if creation.allocation_consumed is not None:
-            raise AssertionError("uncertain allocation must not claim whether the ID was consumed")
-        counter_state = "uncertain"
-        allocated_object_id = None
-        allocation_consumed = None
-    else:
-        if creation.allocation_consumed is not False:
-            raise AssertionError("known non-commit must report an unconsumed allocation")
-        counter_state = "not_committed"
-        allocated_object_id = None
-        allocation_consumed = False
-
     create = creation.creation_result
     if create is None:
         create_namespace_state = "not_attempted"
@@ -430,28 +402,20 @@ def _creation_domain_result(
         rollback_state = "not_removed"
 
     final_observation = _creation_final_observation(creation)
-    observation_required = (
-        counter_state == "uncertain"
-        or create_namespace_state in {"not_created", "uncertain"}
-        or rollback_state in {"not_removed", "uncertain"}
-    )
+    observation_required = create_namespace_state in {"not_created", "uncertain"} or rollback_state in {
+        "not_removed",
+        "uncertain",
+    }
     if observation_required:
         if final_observation == "not_required":
             raise AssertionError("creation outcome requires a fresh final target observation")
     elif final_observation != "not_required":
         raise AssertionError("creation outcome forbids an unrequired final target observation")
-    if counter_state != "committed" and create_namespace_state != "not_attempted":
-        raise AssertionError("target creation cannot start before the counter commit is confirmed")
-
     layout = LAYOUTS[fact_type_key]
     result: dict[str, Any] = {
-        "requested_candidate_id": requested_candidate_id,
-        "allocation": {
+        "identity": {
             "attempted_object_uid": creation.attempted_object_uid,
-            "attempted_object_id": attempted_id,
-            "allocated_object_id": allocated_object_id,
-            "counter_state": counter_state,
-            "allocation_consumed": allocation_consumed,
+            "attempted_locator": attempted_id,
         },
         "target_namespace": {
             "canonical_path": layout.canonical_path(attempted_id),
@@ -486,13 +450,13 @@ def _creation_release_gap(
 ) -> dict[str, Any]:
     gap = {
         "summary": (
-            "事实对象已原子创建并成功回读，身份分配 counter 已提交并回读；共同锁释放未能确认，"
+            "事实对象已原子创建并成功回读；共同创建锁释放未能确认，"
             "后续受控写的串行协调状态未知；再次执行受控写入前须人工核对锁状态"
             if created
             else (
                 f"事实对象创建领域结果（status={status}）已在共同锁释放前形成并保留；"
                 "共同锁释放未能确认，后续受控写的串行协调状态未知；"
-                "目标、编号消耗与残留范围仍以本响应原结果为准，再次执行受控写入前须人工核对锁状态"
+                "目标与残留范围仍以本响应原结果为准，再次执行受控写入前须人工核对锁状态"
             )
         ),
         "scope": list(requested),
@@ -507,14 +471,13 @@ def _creation_release_diagnostic(creation: object, *, created: bool) -> dict[str
     details = {
         "stage": "common_dir_lock_release",
         "creation_result_status": getattr(creation, "status", None),
-        "allocation_consumed": getattr(creation, "allocation_consumed", False),
         "subsequent_controlled_write_serialization": "uncertain",
     }
     if created:
         details.update(
             {
                 "fact_target_state": "created_and_read_back",
-                "counter_state": "committed",
+                "identity_state": "uid_and_locator_bound",
             }
         )
     diagnostic = {
@@ -608,13 +571,13 @@ def _coordination_unavailable(
             "required_access": error.required_access,
             "system_error_category": error.system_error_category,
             "target_unchanged": True,
-            "counter_unchanged": True,
+            "target_namespace_unchanged": True,
         },
         "source_refs": [_SHARED_WRITE_CONTRACT],
     }
     return OperationExecution(
         outcome="unavailable",
-        summary="事实对象共同协调锁当前不可用，未创建对象或推进身份分配 counter",
+        summary="事实对象共同创建锁当前不可用，未创建对象或写入目标文件",
         requested_scope=requested,
         not_completed_scope=requested,
         governance_resolution=run.result.to_json() if run.result else None,
@@ -720,7 +683,6 @@ def _create_execute(
                 fact_type_key=basis.fact_type_key,
                 schemas=schemas,
                 schema=schema,
-                requested_candidate_id=basis.candidate_object_id,
                 supplied=supplied,
                 body=body,
                 configuration_boundaries=configuration_boundaries,
@@ -747,7 +709,6 @@ def _create_execute(
     layout = LAYOUTS[basis.fact_type_key]
     domain_result = _creation_domain_result(
         creation,
-        requested_candidate_id=basis.candidate_object_id,
         governed_project_id=boundary.governed_project_id,
         fact_type_key=basis.fact_type_key,
     )
@@ -788,8 +749,7 @@ def _create_execute(
                 gaps=(
                     {
                         "summary": (
-                            "未创建身份分配 counter 状态或事实文件：当前平台没有启用同时承接 counter 与事实文件"
-                            "写入的原生原子后端"
+                            "未创建事实文件：当前平台没有启用事实文件写入所需的原生原子后端"
                         ),
                         "scope": list(requested),
                         "source_refs": change_sources,
@@ -803,19 +763,13 @@ def _create_execute(
         return finalized(
             OperationExecution(
                 outcome="unavailable" if creation.status == "final_unavailable" else "rejected",
-                summary="最终身份分配后机械前置条件发生变化，未创建对象",
+                summary="最终 UID 定位符机械前置条件发生变化，未创建对象",
                 result=domain_result,
                 requested_scope=requested,
                 not_completed_scope=requested,
                 governance_resolution=run.result.to_json() if run.result else None,
                 sources=request_sources,
                 changes=(
-                    {
-                        "summary": "顺序编号已消耗但未创建对象；编号不会复用",
-                        "status": "counter-consumed",
-                        "target": creation.actual_id,
-                        "source_refs": change_sources,
-                    },
                     {
                         "summary": "最终机械前置检查未通过，目标原子创建未开始",
                         "status": "target-not-attempted",
@@ -824,116 +778,6 @@ def _create_execute(
                     },
                 ),
                 gaps=(_issue_gap(creation.issues, requested[0]),),
-            )
-        )
-    if creation.status in {"allocation_stale", "allocation_unavailable"}:
-        allocation_status = creation.allocation_status
-        attempted_id = creation.actual_id
-        allocation_uncertain = allocation_status == "uncertain"
-        residual = creation.residual_readback
-        residual_source = (
-            _residual_working_tree_source(boundary, residual, context.event_at)
-            if isinstance(residual, FactReadResult)
-            else None
-        )
-        residual_refs = () if residual_source is None else (residual_source,)
-        target_summary, residual_unknown = _current_target_residual_summary(
-            "本次没有开始目标原子创建",
-            residual if isinstance(residual, FactReadResult) else None,
-            None,
-        )
-        if allocation_uncertain:
-            summary = "身份分配 counter 的提交或回读状态无法确认；本次没有开始目标原子创建"
-            changes = (
-                {
-                    "summary": "身份分配 counter 是否已推进无法确认；该尝试身份须在恢复时核对",
-                    "status": "counter-advance-uncertain",
-                    "target": attempted_id or basis.fact_type_key,
-                    "source_refs": change_sources,
-                },
-                *(
-                    (
-                        {
-                            "summary": target_summary,
-                            "status": "target-not-attempted",
-                            "target": layout.canonical_path(attempted_id),
-                            "source_refs": [*change_sources, *residual_refs],
-                        },
-                    )
-                    if attempted_id is not None
-                    else ()
-                ),
-            )
-        else:
-            summary = (
-                "身份分配 counter 观察已过期；counter 未由本次调用推进，未开始目标原子创建"
-                if creation.status == "allocation_stale"
-                else "身份分配 counter 没有形成可确认的最终身份；未开始目标原子创建"
-            )
-            changes = (
-                (
-                    {
-                        "summary": "身份分配 counter 确认未由本次调用推进",
-                        "status": "counter-not-advanced",
-                        "target": attempted_id,
-                        "source_refs": change_sources,
-                    },
-                    {
-                        "summary": "身份分配 counter 未提交本次尝试身份，目标原子创建未开始",
-                        "status": "target-not-attempted",
-                        "target": layout.canonical_path(attempted_id),
-                        "source_refs": change_sources,
-                    },
-                )
-                if attempted_id is not None
-                else ()
-            )
-        return finalized(
-            OperationExecution(
-                outcome="unavailable",
-                summary=summary,
-                result=domain_result,
-                requested_scope=requested,
-                not_completed_scope=requested,
-                governance_resolution=run.result.to_json() if run.result else None,
-                sources=(*request_sources, *residual_refs, _IMPLEMENTATION_SOURCE),
-                changes=changes,
-                gaps=(
-                    {
-                        "summary": "重新读取身份分配 counter 与全部可见身份后，才能判断该尝试编号是否已经消耗",
-                        "scope": list(requested),
-                        "source_refs": change_sources,
-                    },
-                    *(
-                        (
-                            {
-                                "summary": "counter 状态不确定后的实际目标载体无法确认",
-                                "scope": list(requested),
-                                "source_refs": [_CREATE_CONTRACT],
-                            },
-                        )
-                        if allocation_uncertain and residual_unknown
-                        else ()
-                    ),
-                )
-                if allocation_uncertain
-                else (),
-                verification=(
-                    {
-                        "check": "counter 状态不确定后重新精确读取并机械检查尝试身份的实际目标载体",
-                        "status": (
-                            "unavailable"
-                            if not isinstance(residual, FactReadResult) or residual.check_status == "unavailable"
-                            else "passed"
-                            if residual.check_status == "mechanically_valid"
-                            else "failed"
-                        ),
-                        "scope": list(requested),
-                        "evidence": [*residual_refs, _CREATE_CONTRACT],
-                    },
-                )
-                if allocation_uncertain and attempted_id is not None
-                else (),
             )
         )
     if creation.status in {"creation_conflict", "creation_unavailable"}:
@@ -980,19 +824,13 @@ def _create_execute(
         return finalized(
             OperationExecution(
                 outcome="unavailable",
-                summary="身份分配 counter 已提交并完成回读；目标原子创建未能完成或确认",
+                summary="UID 定位符目标的原子创建未能完成或确认",
                 result=domain_result,
                 requested_scope=requested,
                 not_completed_scope=requested,
                 governance_resolution=run.result.to_json() if run.result else None,
                 sources=(*request_sources, *residual_refs, _IMPLEMENTATION_SOURCE),
                 changes=(
-                    {
-                        "summary": "身份分配 counter 已提交并回读，顺序编号已消耗且不会复用",
-                        "status": "counter-consumed",
-                        "target": creation.actual_id,
-                        "source_refs": change_sources,
-                    },
                     {
                         "summary": target_summary,
                         "status": (
@@ -1095,12 +933,6 @@ def _create_execute(
                 sources=(*request_sources, *residual_refs, _IMPLEMENTATION_SOURCE),
                 changes=(
                     {
-                        "summary": "身份分配 counter 已提交并回读，顺序编号已消耗且不会复用",
-                        "status": "counter-consumed",
-                        "target": creation.actual_id,
-                        "source_refs": change_sources,
-                    },
-                    {
                         "summary": "目标事实对象载体已由原子 no-overwrite 创建提交，但写后回读未通过",
                         "status": "target-created",
                         "target": layout.canonical_path(creation.actual_id),
@@ -1153,12 +985,6 @@ def _create_execute(
             governance_resolution=run.result.to_json() if run.result else None,
             sources=sources,
             changes=(
-                {
-                    "summary": "身份分配 counter 已提交并回读，顺序编号已消耗且不会复用",
-                    "status": "counter-consumed",
-                    "target": actual_id,
-                    "source_refs": change_sources,
-                },
                 {
                     "summary": "已原子创建并回读事实对象",
                     "status": "target-created",

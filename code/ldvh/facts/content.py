@@ -16,6 +16,7 @@ from typing import Any, Literal
 from ldvh.facts.carriers.study_markdown import parse_study_markdown
 from ldvh.facts.carriers.yaml_object import parse_yaml_object
 from ldvh.facts.contracts import FactTypeLayout
+from ldvh.facts.identity import is_uid_locator_shape, object_uid_from_locator
 from ldvh.facts.models import FactIssue
 from ldvh.facts.schema import FactSchema
 from ldvh.facts.validation import validate_fact_object
@@ -98,6 +99,11 @@ def validate_fact_content(
     )
     if parsed.fields.get("object_id") != object_id:
         issues.append(FactIssue("identity", "object_id 与请求引用及文件名不一致", "object_id"))
+    locator_uid = object_uid_from_locator(layout.fact_type_key, object_id)
+    if locator_uid is None and is_uid_locator_shape(layout.fact_type_key, object_id):
+        issues.append(FactIssue("identity", "新 locator 不是合法的 UUIDv7 Crockford 编码", "object_uid"))
+    elif locator_uid is not None and parsed.fields.get("object_uid") != locator_uid:
+        issues.append(FactIssue("identity", "新 locator 反解的 object_uid 与载体不一致", "object_uid"))
     status: ContentCheckStatus = "invalid" if issues else "mechanically_valid"
     fingerprint = hashlib.sha256(text.encode("utf-8")).hexdigest()
     return FactContentValidation(

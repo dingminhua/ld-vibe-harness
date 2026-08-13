@@ -173,10 +173,10 @@ checklist 与 Helper 只读检查只提供机械或标准化验证，不能单�
 `fact_type_key` 固定为 `workcase`。对象使用 UTF-8 YAML，一文件一对象，权威位置固定为：
 
 ```text
-ldvh-base/workcases/<object_id>.yaml
+UID-native：`ldvh-base/workcases/workcase-<uid26>.yaml`；legacy：`ldvh-base/workcases/<object_id>.yaml`，两者按 05 §7.4.1 双读。
 ```
 
-`object_id` 必须匹配 `workcase-[0-9]{4,}`，文件名必须与 `object_id` 完全一致，只承担兼容定位和命名空间职责。具有 `object_uid` 时其权威身份、legacy 缺失兼容和不可变边界统一按 05 §7.3–§7.4，新建 WorkCase 必须由 Code 生成 UID。`title` 只简短识别工作责任，不复制 `goal`、当前摘要或关闭结论。
+legacy `object_id` 必须匹配 `workcase-[0-9]{4,}`且与旧文件名一致，只承担兼容定位和命名空间职责；UID-native 新对象的 `object_id` 按 05 §7.4.1 使用完整 UUIDv7 编码并与文件名一致。新建只写 UID 路径，不要求 candidate_object_id 或 counter。具有 `object_uid` 时其权威身份、legacy 缺失兼容和不可变边界统一按 05 §7.3–§7.4，新建 WorkCase 必须由 Code 生成 UID。`title` 只简短识别工作责任，不复制 `goal`、当前摘要或关闭结论。
 
 未知或不适用的条件字段必须省略，不写 `null`、空字符串、空数组、占位时间、默认状态或默认关系。本文不定义 `closed_at`；`created_at` 表示对象创建，`updated_at` 表示当前内容最近一次实质变化并成功回读的时间，终态更正同样更新 `updated_at`。
 

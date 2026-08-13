@@ -11,12 +11,7 @@ import pytest
 
 from ldvh.facts import creation_application
 from ldvh.facts.contracts import LAYOUTS
-from ldvh.facts.creation import (
-    AllocationCommitResult,
-    CreationBoundary,
-    allocation_lock,
-    serialize_fact_object,
-)
+from ldvh.facts.creation import AllocationCommitResult, CreationBoundary, creation_lock, serialize_fact_object
 from ldvh.facts.creation_application import (
     FactCreationCommand,
     FactCreationResult,
@@ -25,6 +20,7 @@ from ldvh.facts.creation_application import (
     create_fact_object_locked,
     prepare_fact_creation,
 )
+from ldvh.facts.identity import locator_from_object_uid, object_uid_from_locator
 from ldvh.facts.models import FactIssue
 from ldvh.facts.relations import ProjectFactIndex
 from ldvh.facts.repository import FactReadResult
@@ -53,7 +49,6 @@ def _command(current_fact_schemas: Mapping[str, FactSchema], tmp_path: Path) -> 
         fact_type_key="spark",
         schemas=schemas,
         schema=schemas["spark"],
-        requested_candidate_id="spark-0001",
         supplied={
             "title": "Application boundary",
             "status": "open",
@@ -96,6 +91,32 @@ def test_prepare_retries_a_configuration_uid_collision_before_any_allocation(
 
     assert isinstance(prepared, PreparedFactCreation)
     assert prepared.object_uid == "0198f1c7-8a2b-7c3d-9e4f-123456789abd"
+
+
+def test_locked_create_uses_reversible_uid_locator_without_counter(
+    current_fact_schemas: Mapping[str, FactSchema],
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    command = _command(current_fact_schemas, tmp_path)
+    uid = "0198f1c7-8a2b-7c3d-9e4f-123456789abc"
+    monkeypatch.setattr(creation_application, "generate_object_uid", lambda: uid)
+    monkeypatch.setattr(
+        creation_application.ConfigurationFactIndex,
+        "resolve_uid",
+        lambda _self, _uid: (None, "not_found"),
+    )
+
+    prepared = prepare_fact_creation(command, observed_at="2026-08-13T10:00:00+08:00")
+    assert isinstance(prepared, PreparedFactCreation)
+    counter_path = tmp_path / "legacy-counter.yaml"
+    result = create_fact_object_locked(prepared)
+
+    expected_id = locator_from_object_uid("spark", uid)
+    assert result.status == "created"
+    assert result.actual_id == expected_id
+    assert (command.boundary.worktree_root / LAYOUTS["spark"].canonical_path(expected_id)).is_file()
+    assert not counter_path.exists()
 
 
 def test_prepare_stops_after_three_configuration_uid_collisions(
@@ -217,7 +238,6 @@ def _workcase_command(current_fact_schemas: Mapping[str, FactSchema], tmp_path: 
         fact_type_key="workcase",
         schemas=base.schemas,
         schema=base.schemas["workcase"],
-        requested_candidate_id="workcase-0001",
         supplied=supplied,
         body=None,
     )
@@ -463,7 +483,6 @@ def test_unrelated_invalid_workcase_chain_does_not_block_spark_creation(
         fact_type_key="spark",
         schemas=workcase.schemas,
         schema=workcase.schemas["spark"],
-        requested_candidate_id="spark-0001",
         supplied={
             "title": "Independent Spark creation",
             "status": "open",
@@ -484,10 +503,11 @@ def test_unrelated_invalid_workcase_chain_does_not_block_spark_creation(
     result = create_fact_object(spark, observed_at="2026-07-26T13:00:00+08:00")
 
     assert result.status == "created"
-    assert result.actual_id == "spark-0001"
+    assert result.actual_id is not None
+    assert object_uid_from_locator("spark", result.actual_id) == result.attempted_object_uid
 
 
-def test_prepared_creation_can_run_under_one_external_allocation_lock(
+def test_prepared_creation_can_run_under_one_external_creation_lock(
     current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
@@ -496,16 +516,16 @@ def test_prepared_creation_can_run_under_one_external_allocation_lock(
 
     assert isinstance(prepared, PreparedFactCreation)
     assert not (command.boundary.git_common_dir / "ldvh").exists()
-    with allocation_lock(command.boundary, LAYOUTS["spark"]) as counter_path:
-        result = create_fact_object_locked(prepared, counter_path)
+    with creation_lock(command.boundary, LAYOUTS["spark"]):
+        result = create_fact_object_locked(prepared)
 
     assert result.status == "created"
-    assert result.actual_id == "spark-0001"
+    assert result.actual_id == locator_from_object_uid("spark", prepared.object_uid)
     assert result.read is not None and result.read.check_status == "mechanically_valid"
-    assert (command.boundary.worktree_root / "ldvh-base/sparks/spark-0001.yaml").is_file()
+    assert (command.boundary.worktree_root / LAYOUTS["spark"].canonical_path(result.actual_id)).is_file()
 
 
-def test_public_create_rechecks_final_preflight_after_counter_commit(
+def test_public_create_rechecks_final_preflight_under_creation_lock_without_counter(
     current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -528,7 +548,7 @@ def test_public_create_rechecks_final_preflight_after_counter_commit(
     result = create_fact_object(command, observed_at="2026-07-26T13:00:00+08:00")
 
     assert result.status == "created"
-    assert observed_counters == [(), ("1\n",)]
+    assert observed_counters == [(), ()]
 
 
 def test_created_result_survives_coordination_release_failure(
@@ -537,26 +557,25 @@ def test_created_result_survives_coordination_release_failure(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     command = _command(current_fact_schemas, tmp_path)
-    actual_lock = creation_application.allocation_lock
+    actual_lock = creation_application.creation_lock
 
     @contextmanager
     def release_fails(boundary: CreationBoundary, layout):
-        with actual_lock(boundary, layout) as counter_path:
-            yield counter_path
+        with actual_lock(boundary, layout):
+            yield
         raise OSError("simulated lock release failure")
 
-    monkeypatch.setattr(creation_application, "allocation_lock", release_fails)
+    monkeypatch.setattr(creation_application, "creation_lock", release_fails)
 
     result = create_fact_object(command, observed_at="2026-07-26T13:00:00+08:00")
 
     assert result.status == "created"
     assert result.coordination_release_uncertain is True
-    assert result.actual_id == "spark-0001"
+    assert result.actual_id is not None
+    assert object_uid_from_locator("spark", result.actual_id) == result.attempted_object_uid
     assert result.read is not None and result.read.check_status == "mechanically_valid"
-    assert (command.boundary.worktree_root / "ldvh-base/sparks/spark-0001.yaml").is_file()
-    counters = tuple((command.boundary.git_common_dir / "ldvh/fact-id-allocators").glob("*.counter"))
-    assert len(counters) == 1
-    assert counters[0].read_text(encoding="ascii") == "1\n"
+    assert (command.boundary.worktree_root / LAYOUTS["spark"].canonical_path(result.actual_id)).is_file()
+    assert not tuple((command.boundary.git_common_dir / "ldvh/fact-id-allocators").glob("*.counter"))
 
 
 def test_non_success_creation_result_survives_coordination_release_failure(
@@ -568,26 +587,22 @@ def test_non_success_creation_result_survives_coordination_release_failure(
 
     @contextmanager
     def release_fails(*_args, **_kwargs):
-        yield Path("unused-counter")
+        yield
         raise OSError("simulated lock release failure")
 
     expected = FactCreationResult(
         "final_rejected",
         issues=(FactIssue("schema", "forced final rejection"),),
-        actual_id="spark-0001",
-        allocation_consumed=True,
-        allocation_status="committed",
-        allocation_result=AllocationCommitResult("committed", "spark-0001"),
+        actual_id="spark-01KZXN5TXNEBSRC6HHGTBQKAJ4",
     )
-    monkeypatch.setattr(creation_application, "allocation_lock", release_fails)
+    monkeypatch.setattr(creation_application, "creation_lock", release_fails)
     monkeypatch.setattr(creation_application, "create_fact_object_locked", lambda *_args: expected)
 
     result = create_fact_object(command, observed_at="2026-07-26T13:00:00+08:00")
 
     assert result.status == "final_rejected"
     assert result.issues == expected.issues
-    assert result.actual_id == "spark-0001"
-    assert result.allocation_consumed is True
+    assert result.actual_id == "spark-01KZXN5TXNEBSRC6HHGTBQKAJ4"
     assert result.coordination_release_uncertain is True
 
 
@@ -604,8 +619,8 @@ def test_prepared_creation_defensively_freezes_nested_supplied_values(
 
     command.supplied["title"] = "mutated"
     command.supplied["urls"][0]["ref"] = "https://example.invalid/mutated"
-    with allocation_lock(command.boundary, LAYOUTS["spark"]) as counter_path:
-        result = create_fact_object_locked(prepared, counter_path)
+    with creation_lock(command.boundary, LAYOUTS["spark"]):
+        result = create_fact_object_locked(prepared)
 
     assert result.status == "created"
     assert result.read is not None and result.read.fields is not None
@@ -625,8 +640,8 @@ def test_caller_supplied_observation_time_binds_both_managed_timestamps(
 
     assert isinstance(prepared, PreparedFactCreation)
     assert prepared.observed_at == canonical_observed_at
-    with allocation_lock(command.boundary, LAYOUTS["spark"]) as counter_path:
-        result = create_fact_object_locked(prepared, counter_path)
+    with creation_lock(command.boundary, LAYOUTS["spark"]):
+        result = create_fact_object_locked(prepared)
     assert result.status == "created"
     assert result.read is not None and result.read.fields is not None
     assert result.read.fields["created_at"] == canonical_observed_at
@@ -758,21 +773,15 @@ def test_locked_creation_stops_after_one_known_target_conflict(
         conflict_once,
     )
 
-    with allocation_lock(command.boundary, LAYOUTS["spark"]) as counter_path:
-        result = create_fact_object_locked(prepared, counter_path)
+    with creation_lock(command.boundary, LAYOUTS["spark"]):
+        result = create_fact_object_locked(prepared)
 
     assert result.status == "creation_conflict"
-    assert result.allocation_consumed is True
-    assert result.actual_id == "spark-0001"
-    assert result.allocation_status == "committed"
-    assert result.allocation_result is not None
-    assert result.allocation_result.status == "committed"
+    assert result.actual_id == locator_from_object_uid("spark", prepared.object_uid)
     assert result.residual_readback is not None
     assert result.residual_readback.check_status == "not_found"
     assert target_attempts == 1
-    counters = tuple((command.boundary.git_common_dir / "ldvh/fact-id-allocators").glob("*.counter"))
-    assert len(counters) == 1
-    assert counters[0].read_text(encoding="ascii") == "1\n"
+    assert not tuple((command.boundary.git_common_dir / "ldvh/fact-id-allocators").glob("*.counter"))
     assert not (command.boundary.worktree_root / "facts").exists()
 
 
@@ -780,6 +789,7 @@ def test_locked_creation_stops_after_one_known_target_conflict(
     ("counter_status", "expected_status"),
     [("stale", "allocation_stale"), ("unavailable", "allocation_unavailable")],
 )
+@pytest.mark.skip(reason="顺序编号 counter 契约已取消")
 def test_pre_atomic_counter_recheck_failure_does_not_form_an_attempted_identity(
     current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
@@ -811,6 +821,7 @@ def test_pre_atomic_counter_recheck_failure_does_not_form_an_attempted_identity(
     assert target_create_called is False
 
 
+@pytest.mark.skip(reason="顺序编号 counter 契约已取消")
 def test_allocator_commit_uncertainty_preserves_attempted_identity_without_starting_target_create(
     current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
@@ -864,11 +875,8 @@ def test_target_namespace_uncertainty_preserves_allocator_and_fresh_target_resid
     result = create_fact_object(command, observed_at="2026-07-26T13:00:00+08:00")
 
     assert result.status == "creation_unavailable"
-    assert result.actual_id == "spark-0001"
-    assert result.allocation_consumed is True
-    assert result.allocation_status == "committed"
-    assert result.allocation_result is not None
-    assert result.allocation_result.status == "committed"
+    assert result.actual_id is not None
+    assert object_uid_from_locator("spark", result.actual_id) == result.attempted_object_uid
     assert result.creation_result is not None
     assert result.creation_result.namespace_state == "uncertain"
     assert result.residual_readback is not None
@@ -891,10 +899,8 @@ def test_target_known_noncommit_preserves_consumed_allocator_and_fresh_not_found
     result = create_fact_object(command, observed_at="2026-07-26T13:00:00+08:00")
 
     assert result.status == "creation_unavailable"
-    assert result.actual_id == "spark-0001"
-    assert result.allocation_consumed is True
-    assert result.allocation_result is not None
-    assert result.allocation_result.status == "committed"
+    assert result.actual_id is not None
+    assert object_uid_from_locator("spark", result.actual_id) == result.attempted_object_uid
     assert result.creation_result is not None
     assert result.creation_result.namespace_state == "not_committed"
     assert result.residual_readback is not None
@@ -908,13 +914,13 @@ def test_failed_creation_rollback_fresh_reads_the_actual_external_residual(
 ) -> None:
     command = _command(current_fact_schemas, tmp_path)
     actual_project_read = creation_application._project_read
-    actual_lock = creation_application.allocation_lock
+    actual_lock = creation_application.creation_lock
     read_calls = 0
 
     @contextmanager
     def release_fails(boundary: CreationBoundary, layout):
-        with actual_lock(boundary, layout) as counter_path:
-            yield counter_path
+        with actual_lock(boundary, layout):
+            yield
         raise OSError("simulated lock release failure")
 
     def failing_readback(application_command: FactCreationCommand, object_id: str) -> FactReadResult:
@@ -938,13 +944,12 @@ def test_failed_creation_rollback_fresh_reads_the_actual_external_residual(
 
     monkeypatch.setattr(creation_application, "_project_read", failing_readback)
     monkeypatch.setattr(creation_application, "rollback_created_text", conflicting_rollback)
-    monkeypatch.setattr(creation_application, "allocation_lock", release_fails)
+    monkeypatch.setattr(creation_application, "creation_lock", release_fails)
 
     result = create_fact_object(command, observed_at="2026-07-26T13:00:00+08:00")
 
     assert result.status == "readback_failed"
     assert result.coordination_release_uncertain is True
-    assert result.allocation_consumed is True
     assert result.rollback_result is not None
     assert result.rollback_result.outcome == "conflict"
     assert result.residual_readback is not None

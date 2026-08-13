@@ -122,7 +122,7 @@ AI 负责判断决定是否已实际成立、是否值得对象化、是否重�
 
 ### Schema 与对象载体
 
-ADR 对象使用 UTF-8 YAML，一文件一对象，当前权威位置固定为管辖项目仓库中的 `ldvh-base/adrs/<object_id>.yaml`。`object_id` 必须匹配 `adr-[0-9]{4,}`且与文件名完全一致，只承担兼容定位和命名空间职责；具有 `object_uid` 时其权威身份、legacy 缺失兼容和不可变边界统一按 05 §7.3–§7.4，新建 ADR 必须由 Code 生成 UID。
+ADR 对象使用 UTF-8 YAML，一文件一对象；新 UID-native 对象使用 `ldvh-base/adrs/adr-<uid26>.yaml`，legacy 对象继续从 `ldvh-base/adrs/<object_id>.yaml` 双读。legacy `object_id` 必须匹配 `adr-[0-9]{4,}`且与旧文件名一致；新建只写 UID 路径，不要求 candidate_object_id 或 counter。具有 `object_uid` 时其权威身份、legacy 缺失兼容和不可变边界统一按 05 §7.3–§7.4，新建 ADR 必须由 Code 生成 UID。
 
 `title` 是对已作决策的简短名称，必须直接表达 `decision` 所确定的方向，使只读标题的人能区分“决定了什么”与“在讨论什么”。它不复制完整 `decision_question` 或 `decision`，也不写成正式规则条文或实现步骤。不得只写领域名、对象名、问题名、章节名、文档标题或“讨论/说明/解释”等未表达决定的名词短语；例如可写“规则缺口时先修规则源”“交付中解释关键术语与代码标识”，不可只写“规则缺口来源先行”“技术术语与代码标识解释”。标题与 `decision` 不一致、无法单独识别决定方向或把决定伪装成字段合同、实现完成时，不得创建或消费该 ADR。
 

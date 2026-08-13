@@ -60,6 +60,27 @@ test('short reference uses every type code and rejects noncanonical UUIDs', () =
   assert.equal(shortFactReference('spark', undefined), undefined);
 });
 
+test('field-level reader discovers a UID-native Crockford carrier name', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'ldvh-field-reader-'));
+  const scope: LocalFactScope = { worktreeLocator: root, governedProjectId: 'fixture' };
+  const directory = path.join(root, 'ldvh-base', 'adrs');
+  await mkdir(directory, { recursive: true });
+  const objectId = 'adr-01KZXN5TXNEBSRC6HHGTBQKAJ4';
+  try {
+    await writeFile(
+      path.join(directory, `${objectId}.yaml`),
+      `object_uid: 019ffb52-ebb5-72f3-861a-31869779aa44\nobject_id: ${objectId}\ntitle: UID locator\n${base}\n`,
+      'utf8',
+    );
+    const listed = await listLocalFacts('adr', scope);
+    assert.equal(listed.items.length, 1);
+    assert.equal(listed.items[0]?.object_ref.object_id, objectId);
+    assert.equal(listed.items[0]?.fact_object?.object_uid, '019ffb52-ebb5-72f3-861a-31869779aa44');
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
 test('field-level reader keeps recoverable field defects separate from unreadable carriers', async () => {
   const root = await mkdtemp(path.join(tmpdir(), 'ldvh-field-reader-'));
   const scope: LocalFactScope = { worktreeLocator: root, governedProjectId: 'fixture' };

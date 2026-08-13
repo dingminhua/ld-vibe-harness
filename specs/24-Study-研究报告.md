@@ -134,7 +134,7 @@ AI 负责判断研究是否完成、来源是否充分、推断是否越界、�
 
 ### Schema、Markdown 正文与对象载体
 
-Study 对象使用 UTF-8 Markdown，一文件一对象，当前权威位置固定为管辖项目仓库中的 `ldvh-base/studies/<object_id>.md`。`object_id` 必须匹配 `study-[0-9]{4,}`且与文件名完全一致，只承担兼容定位和命名空间职责；具有 `object_uid` 时其权威身份、legacy 缺失兼容和不可变边界统一按 05 §7.3–§7.4，新建 Study 必须由 Code 生成 UID。`title` 应以“报告对象 + 当前项目判断主题”简短识别报告，不复制 `research_question`、`abstract`、建议摘要或结论；它是当前文件名之外的可读命名入口。YAML frontmatter 只承载本节绑定字段，之后的 Markdown 正文承载详细报告。未知或不适用的条件字段必须省略，不使用 `null`、空字符串、空数组、占位时间、默认状态或默认关系。
+Study 对象使用 UTF-8 Markdown，一文件一对象；新 UID-native 对象使用 `ldvh-base/studies/study-<uid26>.md`，legacy 对象继续从 `ldvh-base/studies/<object_id>.md` 双读。legacy `object_id` 必须匹配 `study-[0-9]{4,}`且与旧文件名一致；新建只写 UID 路径，不要求 candidate_object_id 或 counter。具有 `object_uid` 时其权威身份、legacy 缺失兼容和不可变边界统一按 05 §7.3–§7.4，新建 Study 必须由 Code 生成 UID。`title` 应以“报告对象 + 当前项目判断主题”简短识别报告，不复制 `research_question`、`abstract`、建议摘要或结论；它是当前文件名之外的可读命名入口。YAML frontmatter 只承载本节绑定字段，之后的 Markdown 正文承载详细报告。未知或不适用的条件字段必须省略，不使用 `null`、空字符串、空数组、占位时间、默认状态或默认关系。
 
 正文必须按顺序各出现且只出现一次以下非空 H2：`研究问题`、`输入与边界`、`关键发现`、`建议`、`后续分流`。这五段不是最小填空骨架；active Study 必须使用下表的可见阅读单元，使读者能区分外部资料的观察、对当前项目的启发、尚未成立的结论和下一步选择。frontmatter 的 research_question 和 abstract 是稳定机器入口，正文不得改变或弱化这些边界。
 
@@ -213,7 +213,7 @@ Study 的 `relations` 支持两种方向明确的候选导航：已知目标对�
 
 ## 8. 变更、更正、删除与类型退出
 
-任何创建或更新都必须先召回相邻对象和当前字段登记，确认 Human 当前指令已经授权，且适用于该行动的全部来源规则许可条件已经成立，随后写入唯一当前文件，回读 Working Tree，并验证 frontmatter、正文、状态和来源。created_at 与 object_id 不因内容修正改变；正文、report_kind、research_intent、abstract、recommendation_summary、来源用途、版本或观察时点实质变化时 updated_at 必须同步更新。
+任何创建或更新都必须先召回相邻对象和当前字段登记，确认 Human 当前指令已经授权，且适用于该行动的全部来源规则许可条件已经成立，随后写入当前 UID 文件名或读取兼容的 legacy 文件，回读 Working Tree，并验证 frontmatter、正文、状态和来源。created_at 与已有 `object_id` 不因内容修正改变；正文、report_kind、research_intent、abstract、recommendation_summary、来源用途、版本或观察时点实质变化时 updated_at 必须同步更新。
 
 active 和 retired 文件均默认保留在当前载体中供研究历史和来源回读；本文不建立 archived 状态或归档位置。删除只有在适用来源允许、全部引用和仍有价值的研究内容已处置且不会丢失研究历史时才成立，不能用删除代替终态。
 

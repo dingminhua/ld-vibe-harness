@@ -128,7 +128,7 @@ function metadataFor(scope: LocalFactScope, type: LocalFactType, objectId: strin
 
 function isExpectedCarrierName(type: LocalFactType, fileName: string): boolean {
   const extension = FACT_TYPE_CARRIERS[type].replace('.', '\\.')
-  return new RegExp(`^${type}-\\d{4,}${extension}$`).test(fileName)
+  return new RegExp(`^${type}-(?:\\d{4,}|[0-7][0-9A-HJKMNP-TV-Z]{25})${extension}$`).test(fileName)
 }
 
 function expectedManifestPath(metadata: LocalFactMetadata): string {

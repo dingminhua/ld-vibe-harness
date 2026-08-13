@@ -130,7 +130,7 @@ AI 创建在写入前满足上述全部条件；既有对象的确定性候选�
 
 ### Schema 与对象载体
 
-Spark 对象使用 UTF-8 YAML，一文件一对象，当前权威位置固定为管辖项目仓库中的 `ldvh-base/sparks/<object_id>.yaml`。`object_id` 必须匹配 `spark-[0-9]{4,}`且与文件名完全一致，只承担兼容定位和命名空间职责；具有 `object_uid` 时其权威身份、legacy 缺失兼容和不可变边界统一按 05 §7.3–§7.4，新建 Spark 必须由 Code 生成 UID。`title` 只用一句短语或问题标识核心议题，不承担创建原因、当前判断或处置结论；`intent` 回答为什么创建并保留该入口；`summary` 表达当前已经形成的语义快照。三者不得互相复制后冒充分工成立。未知或不适用的条件字段必须省略，不使用显式 `null`、空字符串、空数组、占位时间或默认关系。
+Spark 对象使用 UTF-8 YAML，一文件一对象；新 UID-native 对象的权威位置为 `ldvh-base/sparks/spark-<uid26>.yaml`，legacy 对象继续从 `ldvh-base/sparks/<object_id>.yaml` 双读。新路径按 05 §7.4.1 校验完整 UUIDv7 编码与对象内 UID；legacy `object_id` 必须匹配 `spark-[0-9]{4,}`且与旧文件名一致。新建只写 UID 路径，不要求 candidate_object_id 或 counter。`title` 只用一句短语或问题标识核心议题，不承担创建原因、当前判断或处置结论；`intent` 回答为什么创建并保留该入口；`summary` 表达当前已经形成的语义快照。三者不得互相复制后冒充分工成立。未知或不适用的条件字段必须省略，不使用显式 `null`、空字符串、空数组、占位时间或默认关系。
 
 完整 Schema 由统一登记的 `fact-object` 直接字段、本节绑定、类型专属字段定义及 `value_structure` 递归组合。Spark 不得出现未登记字段，也不得向 retired 结构添加类型私有扩展；创建原因由 `intent` 据实提炼，当前内容由 `summary` 表达，二者不得互相冒充。本文没有授权附件，Schema、Code 常量和 test fixture 都只能从当前来源派生。
 

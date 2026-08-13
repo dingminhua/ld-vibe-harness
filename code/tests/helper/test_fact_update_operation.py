@@ -1344,7 +1344,6 @@ def test_study_update_preserves_submitted_body_boundary(tmp_path: Path) -> None:
                         for key in (
                             "governed_project_id",
                             "fact_type_key",
-                            "candidate_object_id",
                             "schema_fingerprint",
                             "worktree_fingerprint",
                         )

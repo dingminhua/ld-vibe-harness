@@ -26,7 +26,6 @@ _DRAFT_BASIS_FIELDS = frozenset(
     {
         "governed_project_id",
         "fact_type_key",
-        "candidate_object_id",
         "schema_fingerprint",
         "worktree_fingerprint",
     }
@@ -37,7 +36,6 @@ _DRAFT_BASIS_FIELDS = frozenset(
 class DraftBasis:
     governed_project_id: str
     fact_type_key: str
-    candidate_object_id: str
     schema_fingerprint: str
     worktree_fingerprint: str
 
@@ -45,7 +43,6 @@ class DraftBasis:
         return {
             "governed_project_id": self.governed_project_id,
             "fact_type_key": self.fact_type_key,
-            "candidate_object_id": self.candidate_object_id,
             "schema_fingerprint": self.schema_fingerprint,
             "worktree_fingerprint": self.worktree_fingerprint,
         }
@@ -203,8 +200,6 @@ def parse_create_request(
             layout = LAYOUTS.get(fact_type_key)
             if layout is None or fact_type_key not in WRITABLE_FACT_TYPE_KEYS:
                 problems.append("arguments.draft_basis.fact_type_key 未匹配当前支持的五类事实类型")
-            elif layout.object_id_pattern.fullmatch(values["candidate_object_id"]) is None:
-                problems.append("arguments.draft_basis.candidate_object_id 与事实类型格式不一致")
             else:
                 basis = DraftBasis(**values)
     fact_object = request.arguments.get("fact_object")

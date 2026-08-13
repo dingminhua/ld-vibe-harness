@@ -10,7 +10,7 @@ from conftest import HELPER_EXECUTABLE, assert_common_response
 from ldvh.facts.carriers.yaml_object import parse_yaml_object
 from ldvh.facts.contracts import LAYOUTS
 from ldvh.facts.creation import serialize_fact_object
-from ldvh.facts.identity import short_reference
+from ldvh.facts.identity import object_uid_from_locator, short_reference
 from ldvh.helper.service import handle_request
 
 pytestmark = pytest.mark.usefixtures("use_current_rule_source_snapshot")
@@ -103,7 +103,6 @@ def _create(workspace: Path, project: Path, fact_type_key: str, fields: dict[str
                         for key in (
                             "governed_project_id",
                             "fact_type_key",
-                            "candidate_object_id",
                             "schema_fingerprint",
                             "worktree_fingerprint",
                         )
@@ -214,9 +213,11 @@ def _workcase() -> dict[str, object]:
 
 def _write_closed_workcase(project: Path, object_id: str) -> None:
     path = project / "ldvh-base" / "workcases" / f"{object_id}.yaml"
+    object_uid = object_uid_from_locator("workcase", object_id)
+    uid_field = "" if object_uid is None else f"object_uid: {object_uid}\n"
     path.write_text(
         f"""object_id: {object_id}
-fact_type_key: workcase
+{uid_field}fact_type_key: workcase
 title: Closed recall contract implementation
 created_at: 2026-07-26T09:00:00+08:00
 updated_at: 2026-07-26T10:00:00+08:00
@@ -470,8 +471,9 @@ def test_f2_workcase_uses_distinct_current_active_and_closed_projections(tmp_pat
 
     assert closed["outcome"] == "ok"
     closed_card = closed["result"]["cards"][0]
-    assert closed_card["fact_ref"]["object_id"] == closed_id
+    assert closed_card["fields"]["object_id"] == closed_id
     assert set(closed_card["fields"]) == {
+        "object_uid",
         "object_id",
         "title",
         "status",
@@ -517,7 +519,7 @@ def test_f2_workcase_text_match_uses_only_the_current_direct_text_field_closure(
     ).response
 
     assert matched["outcome"] == "ok"
-    assert matched["result"]["cards"][0]["fact_ref"]["object_id"] == closed_id
+    assert matched["result"]["cards"][0]["fields"]["object_id"] == closed_id
     assert matched["result"]["cards"][0]["match_reasons"][-1] == {
         "kind": "field-text",
         "field_path": "result_summary",

@@ -43,13 +43,13 @@ def test_duplicate_field_key_is_rejected(current_specs_repository: Path) -> None
     assert any("重复 field_key 'object-id'" == issue.summary for issue in inspection.issues)
 
 
-def test_required_foundation_field_cannot_be_weakened_by_type_binding(current_specs_repository: Path) -> None:
+def test_conditional_object_id_binding_is_allowed_for_uid_native_objects(current_specs_repository: Path) -> None:
     spark = current_specs_repository / "specs/20-Spark-火花.md"
     text = spark.read_text(encoding="utf-8")
     spark.write_text(
         text.replace(
             "| `object-id` | required | `spark-fact-type::5. Spark 类型定义` |",
-            "| `object-id` | conditional | `spark-fact-type::5. Spark 类型定义` |",
+            "| `object-id` | required | `spark-fact-type::5. Spark 类型定义` |",
             1,
         ),
         encoding="utf-8",
@@ -57,8 +57,7 @@ def test_required_foundation_field_cannot_be_weakened_by_type_binding(current_sp
 
     inspection = _inspection(current_specs_repository)
 
-    assert inspection.complete is False
-    assert any("基础必填字段 'object-id' 必须绑定为 required" == issue.summary for issue in inspection.issues)
+    assert inspection.complete is True
 
 
 def test_workcase_current_structures_have_admission_records(
